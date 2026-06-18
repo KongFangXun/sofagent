@@ -40,9 +40,9 @@
 
 | 想法 | 难度 | 优先级 | 现状 |
 |------|:--:|:--:|------|
-| **新会话端到端测试** | 🧑‍🎓 | 🔴 | 三层闸门在全新 `.sofagent/` 空目录环境尚未实测——不测不知道新用户能不能跑通 |
-| **端到端闭环验证** | 🧑‍🎓 | 🔴 | task/logs → think.md → scoring/ → orchestrator/ 完整数据流未实战验证——核心循环的正确性是地基 |
-| **WorkBuddy 专家团共存** | 🔧 | 🟡 | 与 WorkBuddy 专家团同时激活时的行为未测试——影响 WorkBuddy 用户体验 |
+| **新会话端到端测试** | 🧑‍🎓 | ✅ OpenClaw + WorkBuddy 已验证 | 全新 `.sofagent/` 空目录环境已实测——加载链→预判→执行→闭环反思全链路通过。已有 2 人完成 0→1 体验（Evidence.md） |
+| **端到端闭环验证** | 🧑‍🎓 | ✅ 已验证 | task/logs → think.md → scoring/ → orchestrator/ 完整数据流在 OpenClaw 和 WorkBuddy 均已验证写入正确 |
+| **WorkBuddy 专家团共存** | 🔧 | ✅ v0.56 已验证边界 | 🟢🟡 简单任务和平共处。🔴 复杂任务时双重编排冲突——已在 SKILL.md A0 加引擎自检（专家团激活时引擎不点火），设计边界已文档化 |
 | **load-chain.sh 脚本级权重折半** | 🔧 | ✅ v0.56 已落地 | load-chain.sh 已实现 `emit_think_downgraded` 函数：解析 `[LLM自评]` 标记位并动态追加降权提示（权重 ×0.5）。OpenClaw 平台物理降权生效；其他平台靠 SKILL.md Read 后 Agent 自觉识别 |
 
 > 🧑‍🎓 = 新手友好 / 🔧 = 需要经验

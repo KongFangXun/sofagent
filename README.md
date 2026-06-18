@@ -2,7 +2,8 @@
 
 [![License](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-brightgreen)](./LICENSE)
 [![Version](https://img.shields.io/badge/version-v0.56-1E40AF)](./Handbook.md)
-[![Platform](https://img.shields.io/badge/platform-OpenClaw%20%7C%20WorkBuddy%20%7C%20Claude--Code%20%7C%20Codex%20%7C%20Hermes-lightgrey)](./Design.md#平台依赖)
+[![OpenClaw](https://img.shields.io/badge/OpenClaw-主力平台-2563EB)](./Design.md#平台依赖)
+[![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes-lightgrey)](./Design.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
