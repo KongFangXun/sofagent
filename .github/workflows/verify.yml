@@ -11,6 +11,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup minimal sofagent environment
+        run: |
+          mkdir -p ~/.openclaw/skills
+          cp sofagent/constitution/sofagent.md ~/.openclaw/
+          cp sofagent/constitution/rules.md ~/.openclaw/
+          cp -r sofagent/scripts ~/.openclaw/
+          chmod +x ~/.openclaw/scripts/*.sh
+          mkdir -p ~/.openclaw/hooks
+          cp sofagent/scripts/load-chain.sh ~/.openclaw/hooks/load-chain.sh
+          chmod +x ~/.openclaw/hooks/load-chain.sh
+
       - name: Run verify.sh
         run: |
           bash sofagent/scripts/verify.sh --quiet || {
