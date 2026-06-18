@@ -6,7 +6,7 @@
 >
 > v0.56 · 2026-06-18 · 孔放勋
 
-<img src="images/sofagent.png" alt="sofagent logo" width="300" height="300" />
+<img src="images/sofagent.png" alt="sofagent" width="300" />
 
 - [阅读指南](#阅读指南)
 - [5 分钟速览](#5-分钟速览)
