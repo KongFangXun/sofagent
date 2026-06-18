@@ -1,0 +1,61 @@
+# sofagent 双许可声明
+
+本项目采用双许可模式：文档与代码分开授权。
+
+---
+
+## 文档与模板文件
+
+以下类型的文件适用 **Creative Commons Attribution 4.0 International (CC-BY-4.0)**：
+
+- `Handbook.md`、`Design.md`
+- `sofagent/constitution/` 目录下的所有 Markdown 模板文件
+- `sofagent/data/` 目录下的所有 Markdown 模板文件
+- `README.md`、`CONTRIBUTING.md`、`Roadmap.md`
+
+完整许可文本：https://creativecommons.org/licenses/by/4.0/legalcode
+
+### 你可以
+
+- ✅ 在任何介质中复制和分发本作品
+- ✅ 修改、转换或以本作品为基础进行创作
+- ✅ 用于任何目的，包括商业用途
+
+### 你必须
+
+- ⚠️ **署名** — 必须注明原作者「KongFangXun」和本项目链接
+
+---
+
+## 代码文件
+
+以下类型的文件适用 **MIT License**：
+
+- 脚本文件（`.sh`）
+- Runtime 代码（`.js`、`.ts`）
+- 配置文件（`.json`、`.yaml`）
+- 任何其他非文档的可执行文件
+
+```
+MIT License
+
+Copyright (c) 2026 KongFangXun
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
