@@ -4,6 +4,8 @@
 [![Version](https://img.shields.io/badge/version-v0.56-1E40AF)](./Handbook.md)
 [![Platform](https://img.shields.io/badge/platform-OpenClaw%20%7C%20WorkBuddy%20%7C%20Claude--Code%20%7C%20Codex%20%7C%20Hermes-lightgrey)](./Design.md#平台依赖)
 
+<img src="images/sofagent.png" alt="sofagent" width="300" />
+
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
 > v0.56 · 2026-06-18
 
