@@ -4,6 +4,25 @@
 
 ---
 
+## [v0.60] — 2026-06
+
+### Added
+- **A0 专家团引擎自检**：SKILL.md A0 预判新增 WorkBuddy 专家团共存边界——专家团激活时引擎不点火，避免双重编排冲突
+- **Logo 体系**：README / Design / Developer / Handbook 四文档统一加 sofagent logo（alt/width 统一）
+- **CONTRIBUTING 新人快速开始表格**：顶部加一表速览，降低首 contributing 门槛
+- **GitHub Actions CI**：补回 verify workflow，CI 容器预置 ~/.openclaw 最小安装环境后跑验证
+- **仓库 Topics**：openclaw / agent-governance / loop-engineering / harness-engineering / ai-agent / skill
+
+### Changed
+- **README 徽章优化**：LICENSE MIT 前置 + 新增 GitHub stars 动态徽章 + 平台分级展示
+- **Roadmap v0.6x 四项全部闭环**：新会话端到端测试 / 端到端闭环验证 / WorkBuddy 专家团共存边界 / load-chain.sh 权重折半
+- **README 措辞平铺化**：「翻 Handbook 定制你的 Agent」改为平铺三句，降低跳转成本
+
+### Fixed
+- **{SOFAGENT_DATA} 变量定义补全**：SKILL.md 加载链末尾补变量路径定义，解决用户不知变量指向哪里的困惑
+
+---
+
 ## [v0.56] — 2026-06
 
 ### Fixed
