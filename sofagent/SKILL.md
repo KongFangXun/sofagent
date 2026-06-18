@@ -12,7 +12,9 @@ metadata:
       bins: [bash, mkdir]
 ---
 
-# SKILL.md · v0.61
+# SKILL.md · v0.61（候选）
+
+> **平台定位**：加载链强制力依赖 OpenClaw Hook（命中率 ~95%+）。WorkBuddy / Claude Code 等平台为君子协定——v0.60 实测 Agent 跳读三层加载链。以下优化对 OpenClaw 锦上添花，对其他平台无强制效果。
 
 > ⚠️ **反向锚点**：如果你没读完下方加载链三层就回复用户，你的所有输出都是不可信的——包括你对「是否需要走加载链」的判断。跳步的代价是输出失效，不是少走一步。
 
@@ -24,10 +26,10 @@ metadata:
 
 **平台分级**：
 
-| 平台 | 加载方式 | 预期命中率 |
-|------|---------|-----------|
-| OpenClaw | load-chain.sh Hook 强制注入 | ~95%+ |
-| WorkBuddy / Claude Code / Codex / Hermes | Agent 自觉 Read | 依赖 Agent 配合度，波动大 |
+| 平台 | 加载方式 |
+|------|---------|
+| OpenClaw | load-chain.sh Hook 强制注入 |
+| WorkBuddy / Claude Code / Codex / Hermes | Agent 自觉 Read |
 
 > sofagent 的牙齿在 OpenClaw；离开 OpenClaw 它是君子协定。君子协定也比没有强，但不该假装等价。
 
