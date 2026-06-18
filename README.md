@@ -164,7 +164,7 @@ OpenClaw 上全自动，其他平台需手动触发闭环。
 
 ---
 
-**跑通了？** 翻 [Handbook.md](./Handbook.md) 定制你的 Agent。想搞清楚内部怎么跑的，看 [Developer.md](./Developer.md)。想知道为什么这么设计，看 [Design.md](./Design.md)。
+**跑通了？** [Handbook.md](./Handbook.md) 教你怎么调，[Developer.md](./Developer.md) 讲内部怎么跑，[Design.md](./Design.md) 说为什么这么设计。
 
 ---
 
