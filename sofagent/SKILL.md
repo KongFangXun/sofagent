@@ -28,6 +28,7 @@ metadata:
 | 3 | `constitution/rules.md` | 你的规则（最高优先级）| ⚠️ 跳过（未配置）|
 
 > ⛔ 以上三步是地基。第 1 层是宪法、第 2 层是错题本、第 3 层是你说了算。
+> 💡 `{SOFAGENT_DATA}` = `${PWD}/.sofagent`（当前工作目录下的 .sofagent/ 数据目录）。
 
 ---
 
