@@ -6,6 +6,19 @@
 
 ---
 
+## 新人 30 秒快速开始
+
+| 你想... | 怎么做 |
+|------|------|
+| 报 Bug / 提想法 | → [开 Issue](https://github.com/KongFangXun/sofagent/issues/new/choose) |
+| 不知道怎么用 | → [Discussions 去问](https://github.com/KongFangXun/sofagent/discussions) |
+| 不知道怎么测 | → 看 [Testing.md](./Testing.md) 的 5 个标准化用例 |
+| 想直接改代码 | → 跳到下面「提 PR」 |
+
+> 💡 你不需要会写代码。跑一周 sofagent，回来告诉我们发生了什么——不管好坏。
+
+---
+
 ## 怎么参与
 
 ### 提 Issue
