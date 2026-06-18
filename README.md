@@ -1,8 +1,9 @@
 # sofagent
 
-[![License](https://img.shields.io/badge/license-CC--BY--4.0%20%2B%20MIT-blue)](./LICENSE)
+[![License](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-brightgreen)](./LICENSE)
 [![Version](https://img.shields.io/badge/version-v0.56-1E40AF)](./Handbook.md)
 [![Platform](https://img.shields.io/badge/platform-OpenClaw%20%7C%20WorkBuddy%20%7C%20Claude--Code%20%7C%20Codex%20%7C%20Hermes-lightgrey)](./Design.md#平台依赖)
+[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
