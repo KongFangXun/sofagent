@@ -6,6 +6,8 @@
 >
 > v0.56 · 2026-06-18 · 孔放勋
 
+<img src="images/sofagent.png" alt="sofagent logo" width="300" />
+
 ---
 
 ## 速览
