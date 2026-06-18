@@ -1,0 +1,40 @@
+# 离境闸门 · v0.55
+
+> 由 SKILL.md 触发。闭环信号出现后，按此清单逐项执行。
+
+---
+
+## ⬜ 执行清单
+
+> **闭环前先写 task/logs**：
+> ```bash
+> bash scripts/task-record.sh \
+>   --task "任务简述" \
+>   --result "成功|失败|部分完成" \
+>   --model "deepseek-v4|claude-sonnet|..." \
+>   --tokens 4500 \
+>   --cost 0.15 \
+>   --skills "task-aware"
+> ```
+> bash 不可用时降级为 LLM 直接追加写入 `{SOFAGENT_DATA}/task/logs/YYYY-MM/YYYY-MM-DD.md`（格式参考 `data/task.md`）。
+
+```
+⬜ ② 调起 Loop Agent（closure 模式）
+      → 反思 → 评分 → A/B → 汇报
+      详见 loop-agent.md
+```
+
+> ② 不可跳过。执行后写入对应文件（think.md / scoring.md / orchestrator/）。全部打勾才能回用户。
+
+---
+
+## ② 调起 Loop Agent（closure 模式）
+
+传入 loop-agent.md + `mode=closure` + 当前 task/logs + scoring.md + orchestrator/。
+
+Loop Agent 返回：反思摘要 → 主 Agent 写入 think.md / 评分 → 写入 scoring.md / A/B 决策 → 写入 orchestrator/ / 汇报 → 口头返给用户。
+
+> 失败时优先调 Loop Agent（failure 模式）做诊断。可自愈则重试一次，不可则如实汇报。
+
+---
+> 本文件为离境闸门的唯一指令来源。闭环逻辑详见 loop-agent.md。

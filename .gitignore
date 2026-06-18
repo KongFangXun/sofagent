@@ -1,0 +1,16 @@
+# sofagent runtime data
+.sofagent/
+
+# IDE / editor
+.workbuddy/
+.codebuddy/
+.DS_Store
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+
+# WorkBuddy
+.workbuddy/
