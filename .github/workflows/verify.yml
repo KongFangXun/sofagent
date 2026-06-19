@@ -17,19 +17,23 @@ jobs:
           # v0.62: 宪法内联进 SKILL.md，不再需要 sofagent.md
           cp sofagent/constitution/rules.md ~/.openclaw/
           cp sofagent/SKILL.md ~/.openclaw/skills/sofagent/SKILL.md
-          # 部署其他 Skill 文件
-          for f in engine.md entry-gate.md task-aware.md task-closure.md loop-agent.md; do
+          # 部署其他 Skill 文件（v0.63.1: loop-agent.md → loop-check.md）
+          for f in engine.md entry-gate.md task-aware.md task-closure.md loop-check.md; do
             [ -f "sofagent/$f" ] && cp "sofagent/$f" ~/.openclaw/skills/sofagent/
           done
           # 部署数据模板
           mkdir -p ~/.openclaw/skills/sofagent/data
           cp sofagent/data/*.md ~/.openclaw/skills/sofagent/data/ 2>/dev/null || true
+          # 部署 constitution 到 skill 目录（v0.64: SKILL.md 引用 constitution/rules.md 相对路径）
+          mkdir -p ~/.openclaw/skills/sofagent/constitution
+          cp sofagent/constitution/rules.md ~/.openclaw/skills/sofagent/constitution/
           # 部署脚本
           cp -r sofagent/scripts ~/.openclaw/
           chmod +x ~/.openclaw/scripts/*.sh
-          mkdir -p ~/.openclaw/hooks
-          cp sofagent/scripts/load-chain.sh ~/.openclaw/hooks/load-chain.sh
-          chmod +x ~/.openclaw/hooks/load-chain.sh
+          # v0.64: hook 改为声明式内部 hook（HOOK.md + handler.ts），不再是 load-chain.sh
+          mkdir -p ~/.openclaw/hooks/sofagent-load-chain
+          cp sofagent/hooks/sofagent-load-chain/HOOK.md ~/.openclaw/hooks/sofagent-load-chain/
+          cp sofagent/hooks/sofagent-load-chain/handler.ts ~/.openclaw/hooks/sofagent-load-chain/
 
       - name: Run verify.sh
         run: |
