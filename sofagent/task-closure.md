@@ -32,7 +32,11 @@
 
 传入 loop-agent.md + `mode=closure` + 当前 task/logs + scoring.md + orchestrator/。
 
-Loop Agent 返回：反思摘要 → 主 Agent 写入 think.md / 评分 → 写入 scoring.md / A/B 决策 → 写入 orchestrator/ / 汇报 → 口头返给用户。
+**平台分级**：
+- OpenClaw：`session.spawn` 独立子 Agent 做评分——主 Agent 只传 task/logs，不传执行上下文
+- 其他平台：主 Agent 重新 Read task/logs，以文件为唯一依据做证据驱动评审
+
+Loop Agent 返回：反思摘要 → 写入 think.md / 评分 → 写入 scoring.md / A/B 决策 → 写入 orchestrator/ / 汇报 → 口头返给用户。
 
 > 失败时优先调 Loop Agent（failure 模式）做诊断。可自愈则重试一次，不可则如实汇报。
 
