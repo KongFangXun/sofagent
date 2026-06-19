@@ -112,6 +112,9 @@ else
   warn "  bash sofagent/scripts/install.sh --project-dir ~/my-project"
 fi
 
+# ── 统一初始化数据目录路径（所有平台共用，避免 set -u 下未定义）──
+SOFAGENT_DATA="${PROJECT_DIR}/.sofagent"
+
 # ── 按平台确定目标路径 ──
 case "$PLATFORM" in
   openclaw) TARGET="${OPENCLAW_STATE_DIR:-$HOME/.openclaw}" ;;
@@ -119,7 +122,6 @@ case "$PLATFORM" in
     ok "WorkBuddy 平台——部署 Skill 文件并验证数据目录。"
     TARGET="$HOME/.workbuddy"
     # 检查 .sofagent/ 数据目录
-    SOFAGENT_DATA="${PROJECT_DIR}/.sofagent"
     if [ -d "$SOFAGENT_DATA" ]; then
       ok "  · .sofagent/ 数据目录存在"
       if [ -x "${SCRIPT_DIR}/verify.sh" ]; then
@@ -444,8 +446,7 @@ else
   warn "找不到 lib/config.sh，跳过"
 fi
 
-# 创建 .sofagent/ 数据目录
-SOFAGENT_DATA="${PWD}/.sofagent"
+# 创建 .sofagent/ 数据目录（SOFAGENT_DATA 已在平台分支前统一初始化）
 if [ ! -d "$SOFAGENT_DATA" ]; then
   mkdir -p "$SOFAGENT_DATA/task/logs" "$SOFAGENT_DATA/orchestrator/workflows"
   chmod 700 "$SOFAGENT_DATA" 2>/dev/null || true  # 权限加固：仅当前用户可访问

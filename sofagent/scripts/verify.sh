@@ -239,38 +239,44 @@ fi
 _hr
 _section "加载链 Hook（2026.6.x 内部 hook）"
 
-# 新架构：声明式内部 hook。检查目录文件 + openclaw.json 注册，不再直接执行（handler.ts 由 agent:bootstrap 事件触发，非 bash 可跑）
-HOOK_DIR="${OPENCLAW_DIR}/hooks/sofagent-load-chain"
-HOOK_FILES_OK=0
-[ -f "${HOOK_DIR}/HOOK.md" ]   && HOOK_FILES_OK=$((HOOK_FILES_OK+1))
-[ -f "${HOOK_DIR}/handler.ts" ] && HOOK_FILES_OK=$((HOOK_FILES_OK+1))
-
-if [ "$HOOK_FILES_OK" = "2" ]; then
-  check_pass "hook 目录就绪: hooks/sofagent-load-chain/（HOOK.md + handler.ts）"
+# Hook 检查仅对 OpenClaw 平台生效——其他平台（WorkBuddy/Claude/Codex/Hermes）
+# 靠 skill 系统加载或种子指令，不部署内部 hook，检查了只会误报。
+if [ "$PLATFORM" != "openclaw" ]; then
+  check_pass "${PLATFORM} 平台无需内部 hook（靠 skill 系统 / 种子指令加载）"
 else
-  check_fail "hook 文件缺失（期望 HOOK.md + handler.ts，实际 ${HOOK_FILES_OK}/2）"
-fi
+  # 新架构：声明式内部 hook。检查目录文件 + openclaw.json 注册，不再直接执行（handler.ts 由 agent:bootstrap 事件触发，非 bash 可跑）
+  HOOK_DIR="${OPENCLAW_DIR}/hooks/sofagent-load-chain"
+  HOOK_FILES_OK=0
+  [ -f "${HOOK_DIR}/HOOK.md" ]   && HOOK_FILES_OK=$((HOOK_FILES_OK+1))
+  [ -f "${HOOK_DIR}/handler.ts" ] && HOOK_FILES_OK=$((HOOK_FILES_OK+1))
 
-# 检查 openclaw.json 注册
-OC_CONFIG="${OPENCLAW_DIR}/openclaw.json"
-if [ -f "$OC_CONFIG" ]; then
-  if grep -q '"sofagent-load-chain"' "$OC_CONFIG" 2>/dev/null; then
-    check_pass "openclaw.json 已注册 sofagent-load-chain hook"
+  if [ "$HOOK_FILES_OK" = "2" ]; then
+    check_pass "hook 目录就绪: hooks/sofagent-load-chain/（HOOK.md + handler.ts）"
   else
-    check_warn "openclaw.json 未注册 sofagent-load-chain（加载链第 2、3 层不会自动注入）"
+    check_fail "hook 文件缺失（期望 HOOK.md + handler.ts，实际 ${HOOK_FILES_OK}/2）"
   fi
-else
-  check_warn "openclaw.json 不存在（hook 注册无从检查）"
-fi
 
-# 检查注入源文件是否可解析（think.md / rules.md）
-for layer_file in "${PWD}/.sofagent/think.md" "${OPENCLAW_DIR}/rules.md"; do
-  if [ -f "$layer_file" ]; then
-    check_pass "$(basename "$layer_file") 存在（$(wc -m < "$layer_file" | tr -d ' ') 字符）"
+  # 检查 openclaw.json 注册
+  OC_CONFIG="${OPENCLAW_DIR}/openclaw.json"
+  if [ -f "$OC_CONFIG" ]; then
+    if grep -q '"sofagent-load-chain"' "$OC_CONFIG" 2>/dev/null; then
+      check_pass "openclaw.json 已注册 sofagent-load-chain hook"
+    else
+      check_warn "openclaw.json 未注册 sofagent-load-chain（加载链第 2、3 层不会自动注入）"
+    fi
   else
-    check_warn "$(basename "$layer_file") 不存在（首次运行后由 B1 创建 / 需手动配置）"
+    check_warn "openclaw.json 不存在（hook 注册无从检查）"
   fi
-done
+
+  # 检查注入源文件是否可解析（think.md / rules.md）
+  for layer_file in "${PWD}/.sofagent/think.md" "${OPENCLAW_DIR}/rules.md"; do
+    if [ -f "$layer_file" ]; then
+      check_pass "$(basename "$layer_file") 存在（$(wc -m < "$layer_file" | tr -d ' ') 字符）"
+    else
+      check_warn "$(basename "$layer_file") 不存在（首次运行后由 B1 创建 / 需手动配置）"
+    fi
+  done
+fi
 
 _hr
 _section "外部依赖"
