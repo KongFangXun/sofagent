@@ -3,9 +3,9 @@ name: sofagent
 description: >
   为你的 Agent 提供纪律约束与反思循环：三层加载链实现复杂任务自动拆解执行 + 每次跑完任务自动复盘总结。
 image: images/sofagent.png
-triggers: [用户消息]
-scenarios: [任务执行, 任务闭环, 工作目录含.sofagent/]
-not_when: []
+triggers: [Agent行为异常, 复杂任务拆解, 任务反思, 任务闭环, 经验积累]
+scenarios: [需要纪律约束, 需要自动编排, 需要从失败中学习]
+not_when: [简单闲聊, 单步查询, 纯信息检索]
 metadata:
   openclaw:
     requires:
