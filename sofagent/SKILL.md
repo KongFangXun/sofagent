@@ -3,7 +3,7 @@ name: sofagent
 description: >
   为你的 Agent 提供纪律约束与反思循环：三层加载链实现复杂任务自动拆解执行 + 每次跑完任务自动复盘总结。
 image: images/sofagent.png
-triggers: [Agent行为异常, 复杂任务拆解, 任务反思, 任务闭环, 经验积累]
+triggers: [复杂任务拆解, 多步任务, 代码修改, 文件操作, 任务反思, 任务闭环]
 scenarios: [需要纪律约束, 需要自动编排, 需要从失败中学习]
 not_when: [简单闲聊, 单步查询, 纯信息检索]
 metadata:
@@ -12,7 +12,7 @@ metadata:
       bins: [bash, mkdir]
 ---
 
-# SKILL.md · v0.62
+# SKILL.md · v0.63
 
 > ⚠️ **反向锚点**：本文件是加载链第 1 层，随 skill 调用自动注入——你无需 Read 就已有宪法。但第 2、3 层需你主动 Read。如果你没读 rules.md 和 think.md 就回复用户，你的输出可能偏离用户定制和历史教训。
 
