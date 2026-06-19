@@ -4,6 +4,30 @@
 
 ---
 
+## [v0.62] — 2026-06
+
+### Added
+- **load-chain.sh 防御性冗余**：恢复注入宪法（从 SKILL.md 提取），与 skill 系统注入形成双保险。~250 token 冗余可接受——关键系统不怕重复，怕单点失效
+- **SKILL.md description 改为架构导向**：从「4 条底线 + 10 则铁律」改为「三层加载链实现复杂任务自动拆解执行 + 每次跑完任务自动复盘总结」
+- **ARCHITECTURE.md 跨平台说明更新**：诚实声明第 1 层全平台强制（skill 注入 + OpenClaw 兜底），第 2、3 层 OpenClaw 强制、其他平台君子协定
+
+### Changed
+- **宪法内联进 SKILL.md（扁平化重构）**：4 底线 + 10 铁律从 `constitution/sofagent.md` 内联进 SKILL.md。第 1 层不再依赖 Agent Read——skill 调用自动注入，所有平台强制生效。WorkBuddy 新会话验证：第 1 层从「全跳」变为「强制生效」（回复含闸门自检痕迹）
+- **三层加载链重构**：SKILL.md（自动注入）→ think.md（Agent Read）→ rules.md（Agent Read，最高优先级）
+- **铁律重排**：#3 先读再用→#1（含 think.md/rules.md），原 #1→#2，原 #2→#3
+- **文档命名规范化（对齐 GitHub 社区惯例）**：Design.md→ARCHITECTURE.md，Roadmap.md→ROADMAP.md，Handbook.md→HANDBOOK.md，Developer.md→DEVELOPMENT.md，Testing.md→docs/TESTING.md，Evidence.md→docs/EVIDENCE.md
+- **load-chain.sh 重构**：v0.62 先删除宪法注入，v0.62.1 恢复（防御性冗余）
+
+### Removed
+- **删除 constitution/sofagent.md**：宪法内联进 SKILL.md 后不再需要
+
+### Fixed
+- **sofagent.md 引用清理**：23 处文档引用同步更新为 SKILL.md（v0.62 重构遗漏修复）
+- **HANDBOOK 铁律表同步**：v0.62 铁律重排时 HANDBOOK 漏改，本轮修复
+- **uninstall.sh 旧版遗留清理**：新增清理 v0.62 前部署的 sofagent.md 遗留
+
+---
+
 ## [v0.60] — 2026-06
 
 ### Added
