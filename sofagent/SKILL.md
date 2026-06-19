@@ -1,5 +1,8 @@
 ---
 name: sofagent
+slug: sofagent
+version: 0.63.0
+displayName: sofagent
 description: >
   为你的 Agent 提供纪律约束与反思循环：三层加载链实现复杂任务自动拆解执行 + 每次跑完任务自动复盘总结。
 image: images/sofagent.png
