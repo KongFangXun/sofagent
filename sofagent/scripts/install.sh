@@ -58,10 +58,12 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --platform)     PLATFORM="$2"; shift 2 ;;
     --platform=*)   PLATFORM="${1#*=}"; shift ;;
+    --project-dir)  PROJECT_DIR="$2"; shift 2 ;;
+    --project-dir=*) PROJECT_DIR="${1#*=}"; shift ;;
     --no-ao)         NO_AO=1; shift ;;
     --no-config-inject) NO_CONFIG_INJECT=1; shift ;;
     -h|--help)
-      echo "用法: install.sh [--platform openclaw|workbuddy|claude|codex|hermes]"
+      echo "用法: install.sh [--platform openclaw|workbuddy|claude|codex|hermes] [--project-dir DIR]"
       echo ""
       echo "平台说明："
       echo "  openclaw  完整部署（宪法 + Hook + 脚本 + 断路器）→ ~/.openclaw/"
@@ -69,6 +71,7 @@ while [[ $# -gt 0 ]]; do
       echo "  claude    部署宪法 → ~/.claude/ + 输出种子指令（需手动粘贴到 CLAUDE.md）"
       echo "  codex     部署宪法 → ~/.codex/ + 输出种子指令（需手动粘贴到 AGENTS.md）"
       echo "  hermes    部署宪法 → ~/.hermes/ + 输出种子指令（需手动粘贴到 SOUL.md）"
+      echo "  --project-dir DIR   指定项目工作目录（.sofagent/ 数据目录会创建在这里，默认当前目录）"
       echo "  --no-ao             跳过 agency-orchestrator 全局安装（企业环境用）"
       echo "  --no-config-inject  跳过自动注入 OpenClaw config.json（企业环境用）"
       exit 0
@@ -91,6 +94,21 @@ if [ -z "$PLATFORM" ]; then
   fi
 fi
 
+# ── 确定数据目录位置 ──
+if [ -n "${PROJECT_DIR:-}" ]; then
+  # 用户指定了 --project-dir
+  PROJECT_DIR="$(cd "$PROJECT_DIR" 2>/dev/null && pwd)" || {
+    err "--project-dir 目录不存在或无法访问: $PROJECT_DIR"
+    exit 1
+  }
+  ok "数据目录: ${PROJECT_DIR}/.sofagent/"
+else
+  PROJECT_DIR="$PWD"
+  warn "未指定 --project-dir，.sofagent/ 数据目录将创建在当前目录: ${PROJECT_DIR}"
+  warn "  如果这不是你的项目工作目录，请用 --project-dir 指定："
+  warn "  bash sofagent/scripts/install.sh --project-dir ~/my-project"
+fi
+
 # ── 按平台确定目标路径 ──
 case "$PLATFORM" in
   openclaw) TARGET="${OPENCLAW_STATE_DIR:-$HOME/.openclaw}" ;;
@@ -98,7 +116,7 @@ case "$PLATFORM" in
     ok "WorkBuddy 平台——部署 Skill 文件并验证数据目录。"
     TARGET="$HOME/.workbuddy"
     # 检查 .sofagent/ 数据目录
-    SOFAGENT_DATA="${PWD}/.sofagent"
+    SOFAGENT_DATA="${PROJECT_DIR}/.sofagent"
     if [ -d "$SOFAGENT_DATA" ]; then
       ok "  · .sofagent/ 数据目录存在"
       if [ -x "${SCRIPT_DIR}/verify.sh" ]; then
