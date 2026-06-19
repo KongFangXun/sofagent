@@ -2,7 +2,8 @@
 .sofagent/
 
 # ao compose 运行时产物（任务编排生成的工作流文件）
-workflows/
+# 只忽略仓库根目录的 workflows/，不影响 .github/workflows/
+/workflows/
 
 # IDE / editor
 .workbuddy/
