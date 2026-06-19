@@ -3,7 +3,7 @@
 > 由 SKILL.md A0 触发。仅 🔴 复杂任务且用户确认后点火。`{SOFAGENT_DATA}` = `{当前工作目录}/.sofagent/`。
 > ⛔ 三层加载链已在 SKILL.md 启动时完成——engine.md 不重复。编排引擎只管拆解、执行、闭环。
 > B.系统安装 + D.种子指令均为一次性执行（首次后自动跳过）。
-> Skill 检索（ClawHub）→ 见 [Developer §三](../Developer.md#三模型最优选择)「四步集成 + 渐进信任」。
+> Skill 检索（ClawHub）→ 见 [Developer §三](../DEVELOPMENT.md#三模型最优选择)「四步集成 + 渐进信任」。
 > 离线模式：rules.md 含 `offline: true` 时，跳过 ClawHub 搜索，Skills 手动放入 `~/.openclaw/skills/` 目录。
 >
 > 当 `command -v ao` 失败或 rules.md 含 `offline: true` 时，走默认编排：

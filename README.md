@@ -1,9 +1,9 @@
 # sofagent
 
 [![License](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.60-1E40AF)](./Handbook.md)
-[![OpenClaw](https://img.shields.io/badge/OpenClaw-主力平台-2563EB)](./Design.md#平台依赖)
-[![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes-lightgrey)](./Design.md#平台依赖)
+[![Version](https://img.shields.io/badge/version-v0.60-1E40AF)](./HANDBOOK.md)
+[![OpenClaw](https://img.shields.io/badge/OpenClaw-主力平台-2563EB)](./ARCHITECTURE.md#平台依赖)
+[![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes-lightgrey)](./ARCHITECTURE.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
@@ -25,7 +25,7 @@
 | **脚本**（执行）| bash 脚本处理机械活——读写文件、调 API，Agent 调 shell 跑（非 bash 平台降级为 Read/Edit 工具） |
 | **平台兜底**| 加载链 + 断路器 + 死循环检测——OpenClaw 系由 Hook 和配置层兜底，其他平台依赖自身安全机制 |
 
-> ⚠️ sofagent 是软约束层——靠 Agent 读取并自觉遵守，不是硬编码强制执行。执行率受上下文长度、模型能力影响。详见 [Design §三](./Design.md)。
+> ⚠️ sofagent 是软约束层——靠 Agent 读取并自觉遵守，不是硬编码强制执行。执行率受上下文长度、模型能力影响。详见 [Design §三](./ARCHITECTURE.md)。
 
 ---
 
@@ -33,9 +33,9 @@
 
 | 你是谁 | 看哪个 | 一句话 |
 |------|------|------|
-| 普通用户 | [Handbook.md](./Handbook.md)（436 行） | 怎么装、怎么用、什么是铁律 |
-| 开发者 | [Developer.md](./Developer.md)（561 行） | Skill 怎么协同、编排怎么跑、反思怎么闭环 |
-| 设计爱好者 | [Design.md](./Design.md)（573 行） | 为什么选这些设计、已知局限 |
+| 普通用户 | [HANDBOOK.md](./HANDBOOK.md)（436 行） | 怎么装、怎么用、什么是铁律 |
+| 开发者 | [DEVELOPMENT.md](./DEVELOPMENT.md)（561 行） | Skill 怎么协同、编排怎么跑、反思怎么闭环 |
+| 设计爱好者 | [ARCHITECTURE.md](./ARCHITECTURE.md)（573 行） | 为什么选这些设计、已知局限 |
 | 技术 VP 推广 | [docs/team-deploy.md](./docs/team-deploy.md)（3 页） | 装、试、回顾三阶段落地指南 |
 
 ---
@@ -64,13 +64,13 @@
 | **进化** | 渐进减薄——同类任务根据历史成功率调整编排深度，跑崩了恢复完整编排 |
 
 > 💡 核心理念：**厚在治理，薄在复用。** 约束自己定，模板和 Skills 从社区取。为 AI Agent 提供纪律层与反思循环（效果待社区验证）。
-> 💰 安装成本：约 3,000 token 地基常驻（128K 窗口的 2.5%）。编排引擎仅 🔴 复杂任务时额外 ~800 token。详见 [Token 预算](./Handbook.md#token-预算参考)。
+> 💰 安装成本：约 3,000 token 地基常驻（128K 窗口的 2.5%）。编排引擎仅 🔴 复杂任务时额外 ~800 token。详见 [Token 预算](./HANDBOOK.md#token-预算参考)。
 
-> ⚠️ **已知局限**：核心效果尚无第三方实测数据；复盘是 LLM 自评，无客观基准；Loop Agent 非独立进程；纯文件约束依赖 Agent 配合；数据明文存储（task/logs + think.md 含任务记录，无加密）；不是多用户系统（共享 .sofagent/ 会交叉污染经验）。详见 [DESIGN §三](./Design.md)。
+> ⚠️ **已知局限**：核心效果尚无第三方实测数据；复盘是 LLM 自评，无客观基准；Loop Agent 非独立进程；纯文件约束依赖 Agent 配合；数据明文存储（task/logs + think.md 含任务记录，无加密）；不是多用户系统（共享 .sofagent/ 会交叉污染经验）。详见 [DESIGN §三](./ARCHITECTURE.md)。
 
 ## 实际效果
 
-> 🌍 朋友说用起来还行，以后要继续用 → [Case 001](./docs/cases/italy-travel-2026-06-18/) · [Evidence.md](./Evidence.md#第三方测试)
+> 🌍 朋友说用起来还行，以后要继续用 → [Case 001](./docs/cases/italy-travel-2026-06-18/) · [EVIDENCE.md](./docs/EVIDENCE.md#第三方测试)
 > ⚠️ 该案例指标均为 Agent 自评，未经人工核验（v0.54 跑通）
 
 > ⚠️ **以下指标待 v1.0 前由社区填写，作者不自行宣称效果数字。当前全为占位。**
@@ -81,8 +81,8 @@
 | 同一错误重复天数 | _待测_ | _待测_ | _待测_ |
 | 单任务 token 浪费 | _待测_ | _待测_ | _待测_ |
 
-> 详见 [Evidence.md](./Evidence.md)——社区用户的实际使用数据。
-> 想贡献你的数据？跑满一周后把你的 task/log 貼到 Evidence.md。
+> 详见 [EVIDENCE.md](./docs/EVIDENCE.md)——社区用户的实际使用数据。
+> 想贡献你的数据？跑满一周后把你的 task/log 貼到 docs/EVIDENCE.md。
 
 ---
 
@@ -90,7 +90,7 @@
 
 - ❌ 不是 AI 框架——不管模型 API、不写 prompt，那是 Model 层的事
 - ❌ 不是 Skills 商店——不维护可复用 Skills（内置 task-aware 等核心治理 Skill 除外），外部 Skills 从社区获取
-- ✅ 是一套**治理方法**——靠 Skill + 脚本 + 配置三层落地，告诉 Agent 什么能做、什么不能做、什么时候该收手。OpenClaw first，其他平台仅宪法层约束（详见 [Design §三 平台依赖](./Design.md#平台依赖) 能力表）
+- ✅ 是一套**治理方法**——靠 Skill + 脚本 + 配置三层落地，告诉 Agent 什么能做、什么不能做、什么时候该收手。OpenClaw first，其他平台仅宪法层约束（详见 [Design §三 平台依赖](./ARCHITECTURE.md#平台依赖) 能力表）
 
 ---
 
@@ -133,7 +133,7 @@ bash sofagent/scripts/install.sh --platform 你的平台
 > 未指定 `--platform` 时自动探测。
 
 **install.sh 会改什么文件**：
-- OpenClaw：写入 `~/.openclaw/sofagent.md`、`~/.openclaw/rules.md`、`~/.openclaw/skills/sofagent/`（含 6 个 Skill .md + scripts/ + data/ + constitution/）
+- OpenClaw：写入 `~/.openclaw/rules.md`、`~/.openclaw/rules.md`、`~/.openclaw/skills/sofagent/`（含 6 个 Skill .md + scripts/ + data/ + constitution/）
 - WorkBuddy：写入 `~/.workbuddy/skills/sofagent/`（含 SKILL.md + 子目录）
 - Claude Code / Codex / Hermes：写入 `~/.claude/`（或 `~/.codex/`、`~/.hermes/`）的宪法文件，并输出种子指令让你手动贴到 CLAUDE.md / AGENTS.md / SOUL.md
 
@@ -143,19 +143,19 @@ bash sofagent/scripts/install.sh --platform 你的平台
 bash sofagent/scripts/verify.sh
 ```
 
-> 预期：9 类 24+ 检查项全 pass。加 `--json` 可集成到 CI/CD。如果 fail，看 [Handbook §六](./Handbook.md#六常见问题) 排查。
+> 预期：9 类 24+ 检查项全 pass。加 `--json` 可集成到 CI/CD。如果 fail，看 [Handbook §六](./HANDBOOK.md#六常见问题) 排查。
 
 ### 5. 跑第一个任务
 
 打开你的 Agent 客户端，试一个需要多步拆解的任务（这样才能看出 sofagent 的编排能力）：
 
-> `/goal` 是 Claude Code 的自主执行命令；OpenClaw 用户可直接描述复杂任务，Agent 会自动触发编排引擎。详见 [Handbook §四](./Handbook.md#四任务目标制定)。
+> `/goal` 是 Claude Code 的自主执行命令；OpenClaw 用户可直接描述复杂任务，Agent 会自动触发编排引擎。详见 [Handbook §四](./HANDBOOK.md#四任务目标制定)。
 
 ```
 /goal 帮我分析一下这个项目的代码质量，生成一份改进建议报告
 ```
 
-Agent 会自动拆解任务 → 匹配 Skill → 执行 → 反思沉淀。在 OpenClaw 上全程自动；在其他平台部分能力需手动触发（详见 [Design §三 平台依赖](./Design.md#平台依赖) 能力表）。
+Agent 会自动拆解任务 → 匹配 Skill → 执行 → 反思沉淀。在 OpenClaw 上全程自动；在其他平台部分能力需手动触发（详见 [Design §三 平台依赖](./ARCHITECTURE.md#平台依赖) 能力表）。
 
 跑完看结果：
 
@@ -168,7 +168,7 @@ OpenClaw 上全自动，其他平台需手动触发闭环。
 
 ---
 
-**跑通了？** [Handbook.md](./Handbook.md) 教你怎么调，[Developer.md](./Developer.md) 讲内部怎么跑，[Design.md](./Design.md) 说为什么这么设计。
+**跑通了？** [HANDBOOK.md](./HANDBOOK.md) 教你怎么调，[DEVELOPMENT.md](./DEVELOPMENT.md) 讲内部怎么跑，[ARCHITECTURE.md](./ARCHITECTURE.md) 说为什么这么设计。
 
 ---
 
@@ -178,12 +178,12 @@ OpenClaw 上全自动，其他平台需手动触发闭环。
 ├── README.md
 ├── LICENSE                     ← CC-BY-4.0 + MIT 双许可
 ├── CONTRIBUTING.md
-├── Handbook.md        ← 用户手册：怎么用
-├── Developer.md       ← 开发者文档：Skill 结构、编排、反思、数据架构
-├── Design.md          ← 设计哲学：为什么这么设计
-├── Roadmap.md                  ← 路线图：下一步计划和参与方式
-├── Evidence.md                 ← 社区用户实际使用数据（待填写）
-├── Testing.md                  ← 标准化测试用例
+├── HANDBOOK.md        ← 用户手册：怎么用
+├── DEVELOPMENT.md       ← 开发者文档：Skill 结构、编排、反思、数据架构
+├── ARCHITECTURE.md          ← 设计哲学：为什么这么设计
+├── ROADMAP.md                  ← 路线图：下一步计划和参与方式
+├── docs/EVIDENCE.md                 ← 社区用户实际使用数据（待填写）
+├── docs/TESTING.md                  ← 标准化测试用例
 ├── docs/                       ← 文档
 │   ├── enterprise-deploy.md    ←   企业级部署指南
 │   ├── team-deploy.md          ←   技术 VP 落地指南

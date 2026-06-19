@@ -27,8 +27,8 @@
 | 你是谁 | 先读这几章 | 为什么 |
 |------|------|------|
 | 普通用户 | 速览 → §一 → §五 → §六 | 先理解核心，装完用，遇到问题查 FAQ |
-| 想理解内部机制 | [Developer](./Developer.md) | Skill 结构、编排、反思、数据架构 |
-| 想理解设计哲学 | [Design](./Design.md) | 为什么这么设计、已知局限 |
+| 想理解内部机制 | [Developer](./DEVELOPMENT.md) | Skill 结构、编排、反思、数据架构 |
+| 想理解设计哲学 | [Design](./ARCHITECTURE.md) | 为什么这么设计、已知局限 |
 | 想装上试 | §五 → §二 → §三 → §六 | 装完就跑，遇到问题回来查 |
 
 ---
@@ -71,23 +71,23 @@ sofagent 的策略就八个字：**厚在治理，薄在复用。**
 | 岗位定义 | **外部复用** | 从开源社区拉取模板和 Skills，能拿来用的就不自己造 |
 | 上下文与记忆 | **厚** | 用户画像、跨任务记忆——用户控制，不依赖云端 |
 
-> 💡 Context → Harness → Loop 的演进逻辑，以及 sofagent 为什么在这三个阶段中选了 Harness + Loop 双引擎，见 [Design.md](./Design.md#一为什么会有-sofagent)。
+> 💡 Context → Harness → Loop 的演进逻辑，以及 sofagent 为什么在这三个阶段中选了 Harness + Loop 双引擎，见 [ARCHITECTURE.md](./ARCHITECTURE.md#一为什么会有-sofagent)。
 
 ### 每份加载文档 ≤500 字
 
 上面说的「厚」，不是往文件里堆字数——恰恰相反。加载链里的每份文档都有一个硬上限：**500 字以内**。
 
-为什么是 500？来自实践判断——超过这个数 Agent 遵守率明显下降。完整推理见 [Design.md](./Design.md#500-char)。
+为什么是 500？来自实践判断——超过这个数 Agent 遵守率明显下降。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#500-char)。
 
 这个原则贯穿整个体系：
-- sofagent.md 每条规则一行，不展开。翻车案例见 §三 铁律表的「做错时的表现」列
+- SKILL.md 每条规则一行，不展开。翻车案例见 §三 铁律表的「做错时的表现」列
 - 反思摘要（think.md 反思区）控制在 ≤200 字/条，≤2K token
 - 你自己的 rules.md 也建议 500 字以内——写多了 Agent 反而记不住
 - 岗位模板保留索引卡片（≤200 字符），完整实现按需加载
 
-写得多不如写得对。注意区分三个不同级别的长度约束：加载文档 ≤500 字（§一）、Skill 索引卡片 ≤500 字符（[Developer §三](./Developer.md#三模型最优选择)）、岗位模板卡片 ≤200 字符（§二）——三条线各管各的，别搞混。
+写得多不如写得对。注意区分三个不同级别的长度约束：加载文档 ≤500 字（§一）、Skill 索引卡片 ≤500 字符（[Developer §三](./DEVELOPMENT.md#三模型最优选择)）、岗位模板卡片 ≤200 字符（§二）——三条线各管各的，别搞混。
 
-> 💡 先立规范，再开循环。`sofagent.md`（契约层）是 Loop 跑起来的护栏——不保证不出错，但保证出了错你知道为什么。
+> 💡 先立规范，再开循环。`SKILL.md`（宪法内联）（契约层）是 Loop 跑起来的护栏——不保证不出错，但保证出了错你知道为什么。
 
 ---
 
@@ -99,7 +99,7 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 | 层 | 文件 | 干什么的 | 能改吗 |
 |:--:|------|------|:--:|
-| 1 | `sofagent.md` | 契约层：4 条底线 + 10 则行为铁律 | ❌ 千万不要改 |
+| 1 | `SKILL.md`（宪法内联） | 契约层：4 条底线 + 10 则行为铁律 | ❌ 千万不要改 |
 | 2 | `think.md` | 反思层：反思区（日摘要，≤2K token） | ⚠️ 改了没用 |
 | 3 | `rules.md` | 执行层：你的自定义规则，优先级最高 | ✅ 随便改 |
 
@@ -107,19 +107,19 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 ### 为什么常驻
 
-加载链如果只在复杂任务时激活，后果很清楚——think.md 反思区不在则 Agent 重复犯错，rules.md 不在则用户偏好失效。完整推理见 [Design.md](./Design.md#why-resident)。
+加载链如果只在复杂任务时激活，后果很清楚——think.md 反思区不在则 Agent 重复犯错，rules.md 不在则用户偏好失效。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#why-resident)。
 
 > 📎 orchestrator/ 不参与初始加载——由 SKILL.md 判断任务需要编排时按需触发。三层约束注入由 `load-chain.sh`（OpenClaw Hook）执行，带 SHA-256 缓存检测。
 
 ### 编排触发（engine.md + orchestrator/）——🔁 按需点火
 
-地基完成后，SKILL.md 判断任务复杂度。🟢🟡 简单任务不走编排引擎，🔴 复杂任务才点火 engine.md（任务编排引擎）拆解→执行→闭环。编排决策沉淀到 `orchestrator/_index.md`，Agent 自己维护。详见 [Developer §五](./Developer.md#五自进化机制)。
+地基完成后，SKILL.md 判断任务复杂度。🟢🟡 简单任务不走编排引擎，🔴 复杂任务才点火 engine.md（任务编排引擎）拆解→执行→闭环。编排决策沉淀到 `orchestrator/_index.md`，Agent 自己维护。详见 [Developer §五](./DEVELOPMENT.md#五自进化机制)。
 
 ### Token 预算参考
 
 | 文件 | 估算 token |
 |------|------------|
-| sofagent.md（4底线+10铁律） | ~250 |
+| SKILL.md（4底线+10铁律，宪法内联） | ~250 |
 | think.md（反思区） | ≤2,000 |
 | rules.md | ~200 |
 | SKILL.md | ~300 |
@@ -134,7 +134,7 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 ## 三、底线与铁律
 
-契约层（`sofagent.md`）内置了 4 条底线 + 10 则行为铁律。
+契约层（`SKILL.md`（宪法内联））内置了 4 条底线 + 10 则行为铁律。
 
 ### 4 条底线
 
@@ -175,7 +175,7 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 Claude Code 有一个 `/goal` 命令——设一个目标，Agent 自己拆任务、自己跑到完成。这是 Loop Engineering 的雏形：**不再直接 prompt Agent，而是设一个目标让 Agent 自己在循环里跑到完成。** OpenClaw 作者 Peter 和 Claude Code 负责人在同一时间说了几乎一样的话，Addy Osmani 把这套方法论总结为 [Loop Engineering](https://addyo.substack.com/p/loop-engineering)。
 
-白盒循环的设计决策见 [Design.md](./Design.md#white-box-loop)。
+白盒循环的设计决策见 [ARCHITECTURE.md](./ARCHITECTURE.md#white-box-loop)。
 
 ### 能力边界：什么能做，什么不能做
 
@@ -192,7 +192,7 @@ sofagent 就是一个在电脑前干活的人——能通过文字输入输出�
 
 > 💡 代码相关能力需要 shell/bash 平台支持（macOS/Linux）。纯 Web 版 Agent 可能无法执行脚本或文件操作。
 
-每项任务能否完成由模型能力、工具权限、已安装的 Skills（[Developer §三](./Developer.md#三模型最优选择)）共同决定——新装一个 Skill 可能扩展边界，比如装了图像生成的 Skill，就能生成新图片（但不能编辑已有图片）。
+每项任务能否完成由模型能力、工具权限、已安装的 Skills（[Developer §三](./DEVELOPMENT.md#三模型最优选择)）共同决定——新装一个 Skill 可能扩展边界，比如装了图像生成的 Skill，就能生成新图片（但不能编辑已有图片）。
 
 如果用户的任务超出边界——**直接说「这个我做不了」，不给虚假希望。** 但给替代方向：「视频剪不了，不过我可以帮你整理素材清单、写分镜脚本、或者搜剪辑教程。」拒绝 + 替代方案，比假装能做到更有用。
 
@@ -298,7 +298,7 @@ bash sofagent/scripts/install.sh --platform {你的平台}
 | WorkBuddy / OpenClaw | `MEMORY.md` | ✅ | Agent 首次初始化时自动写入种子指令 |
 | Claude Code / Codex / Hermes | `CLAUDE.md` / `AGENTS.md` / `SOUL.md` | ❌ | **你**手动在文件末尾贴一行种子指令 |
 
-两条路终点一样——Agent 每轮都看到种子指令，读到就去加载 Skill。区别只是种子指令是谁写进去的。种子指令的具体内容和手动粘贴位置见 [Developer §一 脚本与文件结构速查](./Developer.md#脚本与文件结构速查)。
+两条路终点一样——Agent 每轮都看到种子指令，读到就去加载 Skill。区别只是种子指令是谁写进去的。种子指令的具体内容和手动粘贴位置见 [Developer §一 脚本与文件结构速查](./DEVELOPMENT.md#脚本与文件结构速查)。
 
 ### 跨平台能力差异
 
@@ -314,7 +314,7 @@ bash sofagent/scripts/install.sh --platform {你的平台}
 
 ### 不管什么平台，约束不会丢
 
-不管什么平台，sofagent.md（4 条底线 + 10 则铁律）是以 MD 文件形式存在的。只要 Agent 能读到这个文件，行为约束就生效。跨平台影响的是自动化程度，不是约束力度。
+不管什么平台，SKILL.md（4 条底线 + 10 则铁律，宪法内联）是以 MD 文件形式存在的。只要 Agent 能读到这个文件，行为约束就生效。跨平台影响的是自动化程度，不是约束力度。
 
 > 📎 能力边界（sofagent 能做什么、不能做什么）详见 §四「能力边界」。
 
@@ -334,7 +334,7 @@ bash sofagent/scripts/install.sh --platform {你的平台}
 | 多个电脑上能用吗 | 不能——不是分布式，跑在单个 Agent 里 |
 | 评分越来越不准 | 经验漂移——翻 task/logs 对照 think.md，清理低置信度旧条目 |
 
-> 💡 更多细节见 [Design.md](./Design.md#known-limits)。
+> 💡 更多细节见 [ARCHITECTURE.md](./ARCHITECTURE.md#known-limits)。
 
 
 ## 特别鸣谢
@@ -371,7 +371,7 @@ bash sofagent/scripts/install.sh --platform {你的平台}
 不想装 Skill？或者你的平台不支持？把下面这段 Prompt 直接扔给 Agent——它读完 Handbook 和 Developer 就会按规矩来。Handbook 讲怎么用，Developer 讲怎么跑。
 
 ```
-请先完整阅读这份 Handbook.md 和 Developer.md。
+请先完整阅读这份 HANDBOOK.md 和 DEVELOPMENT.md。
 
 读完后，从现在开始按 Handbook 约束自己的行为。然后帮我做几件事：
 
@@ -382,7 +382,7 @@ bash sofagent/scripts/install.sh --platform {你的平台}
 - 完成任务后主动收工，别假装没做完
 
 【帮我生成文件】
-1. sofagent.md — 4 底线 + 10 铁律，原样抄
+1. SKILL.md — 4 底线 + 10 铁律（宪法内联），原样抄
 2. think.md — 反思区空白模板
 3. rules.md — 根据你对我的了解先写几条规则
    比如：不生成 md 文件、回复别太长、别替我做决定

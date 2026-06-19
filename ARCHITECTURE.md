@@ -2,7 +2,7 @@
 
 > 一个完全不懂代码的产品经理，在设计 Agent 治理层时都想了些什么。
 >
-> 这份文档不教你怎么用 sofagent——那是 [Handbook](./Handbook.md) 的事。这里只写设计决策、权衡取舍、已知局限，以及我们为什么故意不做某些事。
+> 这份文档不教你怎么用 sofagent——那是 [Handbook](./HANDBOOK.md) 的事。这里只写设计决策、权衡取舍、已知局限，以及我们为什么故意不做某些事。
 >
 > 各节按 Handbook 章节顺序排列，方便两边对照着读。
 >
@@ -37,7 +37,7 @@ sofagent 就是这个系统——一个给 OpenClaw Agent 加的治理层。它�
 
 sofagent 选的是后者。不是因为前者不重要，是因为前者会被模型厂商自己解决，后者才是长期存在的结构性工程问题。这解释了为什么厚在治理、为什么铁律不随模型更新而改变、为什么聚焦于循环而非单次 prompt。
 
-> 🧬 **硬层定义好，软层可进化。裁判碰不到，演化有人审。** 这二十个字是 sofagent 设计的总纲——来自循环工程（Loop Engineering）深度架构分析。硬层（sofagent.md + rules.md）定义「你是谁、要什么、什么算好」，Agent 绝对不能碰；软层（scoring.md + think.md + orchestrator/）是数据不是代码，在客观验证信号下持续进化，但每次修订必须可追溯、可审计。
+> 🧬 **硬层定义好，软层可进化。裁判碰不到，演化有人审。** 这二十个字是 sofagent 设计的总纲——来自循环工程（Loop Engineering）深度架构分析。硬层（SKILL.md + rules.md）定义「你是谁、要什么、什么算好」，Agent 绝对不能碰；软层（scoring.md + think.md + orchestrator/）是数据不是代码，在客观验证信号下持续进化，但每次修订必须可追溯、可审计。
 
 加载链的本质是 Google Skill「模型行为控制器」理念的实现——不靠代码补丁，靠上下文注入的约束文件接管 Agent 行为。Google 的三种 Skill 模式在 sofagent 里各有对应：Reviewer（标准化审查）→ 铁律 #3「验证再继续」；Inversion（先问再做，三级响应：简单直接干→中等说一声→复杂才问）→ 任务感知复杂度分级；Pipeline（关卡验证）→ ao compose 确认 Gate。
 
@@ -75,7 +75,7 @@ sofagent 不是把所有东西堆在一起。它分两层：
 |------|------|
 | think.md 反思区不在上下文 | Agent 不知道上次踩了什么坑，重复犯错 |
 | rules.md 你的规则不在上下文 | 简单任务时你的偏好全部失效（回复风格、文件操作习惯…） |
-| 只有 sofagent.md 底线 | 底线能用但行为规范丢失 |
+| 只有 SKILL.md 底线 | 底线能用但行为规范丢失 |
 
 这就是为什么地基不跟引擎走——治理底座必须永远在线，不管任务简单还是复杂。
 
@@ -90,7 +90,7 @@ sofagent 的实现不堆在一层里。一条任务下来，三样东西各司�
 | 机械操作（文件读写、API 调用、npm 操作、curl 搜索） | 脚本（bash） | 这些是确定性操作——复制、拼接、curl、计数。Agent 不应该自己猜，脚本一条命令精确执行 |
 | 硬安全（加载链、断路器、死循环检测） | OpenClaw 原生配置 | Agent 失控时没法自己管自己。必须在 Agent 外部兜底 |
 
-不是把所有逻辑都写成 Skill（那样机械操作会依赖 LLM 的随机性），也不是全写成代码（那样语义判断会变成硬编码的 if-else）。三是天然的分界——LLM 管判断、脚本管执行、Runtime 管刹车。跨平台时核心约束（sofagent.md）不受影响，但脚本依赖 shell 环境。
+不是把所有逻辑都写成 Skill（那样机械操作会依赖 LLM 的随机性），也不是全写成代码（那样语义判断会变成硬编码的 if-else）。三是天然的分界——LLM 管判断、脚本管执行、Runtime 管刹车。跨平台时核心约束（SKILL.md）不受影响，但脚本依赖 shell 环境。
 
 <a id="white-box-loop"></a>
 ### 白盒循环：为什么不在 `/goal` 原版上直接跑
@@ -102,7 +102,7 @@ Claude Code 的 `/goal` 是 Loop Engineering 的雏形——设一个目标，Ag
 | 我加的 | /goal 原版 | 为什么 |
 |------|------|------|
 | 用户确认 | 循环自主跑到底 | 不懂代码的人不敢让它黑盒跑——先看一眼提案再执行 |
-| 硬层/软层分离 | 没明确切分 | sofagent.md（契约层）是硬层，Agent 碰不了；scoring.md + think.md 是软层，Agent 自己进化 |
+| 硬层/软层分离 | 没明确切分 | SKILL.md（契约层，宪法内联）是硬层，Agent 碰不了；scoring.md + think.md 是软层，Agent 自己进化 |
 
 代价是每次编排多一次用户确认环节——但换来了「不懂代码的 PM 也敢用」。白盒的关键不是加了确认按钮，是**用户和 Agent 一起把目标定清楚，再启动编排**。
 
@@ -117,9 +117,9 @@ sofagent 的四份核心文档有硬性行数上限：Handbook ≤500 行 / Deve
 > 一个不懂代码的人做的设计决策——有疑问直接开 Issue，我大概率说不过你。
 
 <a id="500-char"></a>
-### 500 字原则（[Handbook §一](./Handbook.md#一厚在治理薄在复用)）
+### 500 字原则（[Handbook §一](./HANDBOOK.md#一厚在治理薄在复用)）
 
-加载链里的每份文档——sofagent.md、rules.md——都有一个硬上限：500 字以内。
+加载链里的每份文档——SKILL.md、rules.md——都有一个硬上限：500 字以内。
 
 这个数字来自使用经验而非精确实验，逻辑却很清楚：超过 500 字，Agent 的遵守率明显下降——规则在长文本里会被淹没，Agent 只挑它「看到」的几条遵守，漏掉后面的。
 
@@ -131,23 +131,23 @@ sofagent 的四份核心文档有硬性行数上限：Handbook ≤500 行 / Deve
 
 这个设计背后有研究支撑——Liu et al. 的 *Lost in the Middle*（2023）证明了 LLM 对输入上下文开头和末尾的信息识别率最高，中间部分显著衰减。sofagent 的加载链顺序不是拍脑袋定的，是跟着注意力曲线走的。
 
-### 三层加载链：为什么是这个顺序（[Handbook §二](./Handbook.md#二三层加载链)）
+### 三层加载链：为什么是这个顺序（[Handbook §二](./HANDBOOK.md#二三层加载链)）
 
 从契约到执行，三层按「能不能改」分级：
 
 | 层 | 文件 | 权限 |
 |:--:|------|:--:|
-| 1 | 契约层（`sofagent.md`） | ❌ 千万别碰 |
+| 1 | 契约层（`SKILL.md`（宪法内联）） | ❌ 千万别碰 |
 | 2 | 反思层（`think.md`） | ⚠️ 自动生成，改了没用 |
 | 3 | 执行层（`rules.md`） | ✅ 随便改 |
 
 设计逻辑：契约层是 Agent 的身份和铁律，不能动。反思层是循环中自动生成的错题本，改了也会被覆盖。执行层是你的规则，写了就生效。越往下越自由。
 
-加载顺序受 Lost in the Middle 约束：sofagent.md 放最前面（开头注意力最高），rules.md 放最后面（末尾注意力最高）。中间的 think.md 是参考信息，不是硬约束。
+加载顺序受 Lost in the Middle 约束：SKILL.md 放最前面（开头注意力最高），rules.md 放最后面（末尾注意力最高）。中间的 think.md 是参考信息，不是硬约束。
 
-技术实现用的是 OpenClaw 的 `before_prompt_build` Hook——在 OpenClaw 自己读完 `SOUL.md` / `identity.md` / `USER.md` 之后，sofagent 再注入自己的 `sofagent.md` / `rules.md`。不替换 OpenClaw 的原生文件，只是在系统 prompt 末尾追加一个约束块。SHA-256 缓存检测文件变化——没变就不重新读，省 token。
+技术实现用的是 OpenClaw 的 `before_prompt_build` Hook——在 OpenClaw 自己读完 `SOUL.md` / `identity.md` / `USER.md` 之后，sofagent 再注入自己的 `SKILL.md`（宪法内联） / `rules.md`。不替换 OpenClaw 的原生文件，只是在系统 prompt 末尾追加一个约束块。SHA-256 缓存检测文件变化——没变就不重新读，省 token。
 
-### 铁律为什么是 10 则（[Handbook §三](./Handbook.md#三底线与铁律)）
+### 铁律为什么是 10 则（[Handbook §三](./HANDBOOK.md#三底线与铁律)）
 
 每一条对应我日常使用 OpenClaw 时反复遇到的 Agent 失控行为——不是理论推演，是大半年的痛点积累：
 
@@ -160,9 +160,9 @@ sofagent 的四份核心文档有硬性行数上限：Handbook ≤500 行 / Deve
 
 这 10 则源于 Andrej Karpathy 的 [4 条编码原则](https://github.com/multica-ai/andrej-karpathy-skills)（思考先行、简约至上、精准修改、目标驱动）。前 4 条是 Karpathy 的，后 6 条是我从自己的翻车经历里加的。不是学术框架，是实战反思的工程沉淀。
 
-为什么叫「铁律」不叫「建议」或「指南」：`rules.md` 是你可以自己改的，`sofagent.md` 是写死的——改了就没意义了。铁律兜底，rules 定制。铁律管住最常翻车的 10 种情况，你的 rules 只管你自己的特殊场景。这是「厚在治理」的核心——底线在那摆着，你不用每次重新立规矩。
+为什么叫「铁律」不叫「建议」或「指南」：`rules.md` 是你可以自己改的，`SKILL.md`（宪法内联） 是写死的——改了就没意义了。铁律兜底，rules 定制。铁律管住最常翻车的 10 种情况，你的 rules 只管你自己的特殊场景。这是「厚在治理」的核心——底线在那摆着，你不用每次重新立规矩。
 
-### 四级编排深度（[Developer §二](./Developer.md#二编排哲学)）
+### 四级编排深度（[Developer §二](./DEVELOPMENT.md#二编排哲学)）
 
 编排越深，Agent 自主权越大——但也越容易失控。sofagent 的四级深度（完整编排 → 模板复用 → 轻量调度 → 自主执行）每一级都有明确的晋级和回滚条件。
 
@@ -170,7 +170,7 @@ sofagent 的四份核心文档有硬性行数上限：Handbook ≤500 行 / Deve
 
 关键是回滚——每一级的放手都不是单向的，失败率回升就退回上一级，没有「一旦放手就收不回来」的设计。回滚用滑动窗口失败率（最近 5 次）而非连续失败次数：偶然失败不应触发回滚，趋势恶化才应该。
 
-### Loop Agent：三节点顾问模式（[Developer §二](./Developer.md#二编排哲学)）
+### Loop Agent：三节点顾问模式（[Developer §二](./DEVELOPMENT.md#二编排哲学)）
 
 为什么用一个独立子 Agent 而不是在 task-closure 中内嵌逻辑？因为 Loop 不是只发生在任务结束时——执行过程中（子任务间、预算过半、重大操作前）同样需要停下来检查方向。
 
@@ -243,7 +243,7 @@ Skill 信任等级的具体规则：
 升级/降级规则：每次闭环后 `skill-iterate` 自动评分 → 连续 3 次 ≥ 4.0 自动升级；连续 3 次 < 3.0 降回试用。门槛设这么高是因为 LLM 评分本身有波动——一次高分可能是运气，连续 3 次才可能是真材实料。
 
 <a id="deepseek-choice"></a>
-### 为什么选 DeepSeek（[Developer §三](./Developer.md#三模型最优选择)）
+### 为什么选 DeepSeek（[Developer §三](./DEVELOPMENT.md#三模型最优选择)）
 
 sofagent 默认推荐 DeepSeek。不是技术偏好，是两条底线决定的：
 
@@ -251,11 +251,11 @@ sofagent 默认推荐 DeepSeek。不是技术偏好，是两条底线决定的�
 
 **第二，成本可控。** 编排、反思、评分——这套 Loop 机制每次任务额外消耗 2,000–5,000 token。用 SaaS 按 seat 付费的话，成本不可控；用 DeepSeek API 按 token 付费，每次任务额外成本不到 1 美分。
 
-模型选择是开放的——任何支持 API 的模型都能用。[Developer §三](./Developer.md#三模型最优选择) 提供了切换指南。
+模型选择是开放的——任何支持 API 的模型都能用。[Developer §三](./DEVELOPMENT.md#三模型最优选择) 提供了切换指南。
 
 OpenSquilla 的基准测试给出了一组值得参考的数字：合理路由下相同任务成本可降至 1/9（$0.688 vs $6.233），质量持平（0.9251 vs 0.9255）。这不是说 DeepSeek 一定最便宜——是说不把模型当唯一 SKU、按任务分级的策略本身就能大幅压成本。
 
-### Flash 干粗活、Pro 干细活：模型分级的成本逻辑（[Developer §三](./Developer.md#三模型最优选择)）
+### Flash 干粗活、Pro 干细活：模型分级的成本逻辑（[Developer §三](./DEVELOPMENT.md#三模型最优选择)）
 
 sofagent 不是绑死 DeepSeek 的——只是默认推荐。真正的设计决策是 **为什么不全部用最好的模型**。
 
@@ -294,7 +294,7 @@ sofagent 的 A/B 测试不是「跑两次选更好的」——是 4 步渐进沉
 
 > 💡 这和「文件系统而非数据库」是同一个原则的延伸：不给 Agent 预建它可能用不到的结构。种子只需要描述格式，枝叶让运行时自己长。
 
-### 复盘体系（[Developer §五](./Developer.md#五自进化机制)）
+### 复盘体系（[Developer §五](./DEVELOPMENT.md#五自进化机制)）
 
 最早的 sofagent 只有六维评分：编排准确性、Skill 匹配度、模型经济性、执行流畅度、结果完整性、复用潜力。第七个维度「流程合规」是后来加上的——不是碰巧答对，是真的走了你要的流程。第八个维度「Loop 有效性」是 v4.5 加的——检查点到底帮上忙了还是只在浪费注意力。
 
@@ -304,7 +304,7 @@ sofagent 的 Loop Agent（闭环模式对标 skill-iterate）的复盘体系—�
 
 还有一个隐含维度 sofagent 没有纳入评分体系，但值得记录：**设计意图达成度**——Skill 的 `description` 和入口是不是写错了。Anthropic 内部用 Skill 触发量统计工具分析后发现一个反直觉现象：触发量低常常不是需求少，而是 `description` 描述有误、入口设计有 bug、或该 Skill 从未真正接入工作流。sofagent 的 `skill-iterate` 目前只做正向评分（用了几次、打了几分），不做反向校验（为什么一直没人用）。**可以在 `skill-iterate` 里补一条：Skill 连续 30 天零触发且社区评分 < 4.0 → 主动提醒用户审查 `description` 和入口设计。** 这与第 7 维"流程合规"是同源思路——不是只看做了多少次，也要看为什么没被用过。
 
-### LLM 复盘的信任边界（[Developer §五](./Developer.md#五自进化机制)）
+### LLM 复盘的信任边界（[Developer §五](./DEVELOPMENT.md#五自进化机制)）
 
 复盘、权重计算、技能评估——这些判断全部由独立角色执行。同一组数据跑两次，分数可能差出 0.1 到 1 分，但相比主 Agent 自评，排除了编排者的确认偏误。
 
@@ -322,14 +322,14 @@ sofagent 的 Loop Agent（闭环模式对标 skill-iterate）的复盘体系—�
 新 Skill 装上、新任务类型出现——没有历史数据对照。前 5 次只记录，不做任何判断。第 5 次之后取综合分平均作为观察基线，第 6 次起进入正常「看趋势」模式。不是因为前 5 次的数据不可靠——是因为样本不够时，LLM 的评分波动会被放大成错误决策。冷启动不是保守，是给随机性加缓冲。
 
 <a id="think-zone"></a>
-### 反思区统一（[Developer §六](./Developer.md#六反思工程)）
+### 反思区统一（[Developer §六](./DEVELOPMENT.md#六反思工程)）
 
 sofagent 将教训和记忆合并为一个文件：think.md（反思区）。统一后，Agent 的错题和经历存储在同一个上下文中——降低了认知负担，避免了跨文件检索的 token 开销。
 
 think.md（反思区）是「错题本」——同一个坑踩了 5 次，反思区里只有一条记录，置信度从 0.3 涨到 0.7。更新模式是覆盖而非追加——核心关注点从「记流水账」转为「提炼关键反思」。
 
 <a id="weight-gate"></a>
-### 活跃区权重门禁（[Developer §六](./Developer.md#六反思工程)）
+### 活跃区权重门禁（[Developer §六](./DEVELOPMENT.md#六反思工程)）
 
 反思产生的日摘要不是全进加载链的。中间加了一层筛选：只把权重 ≥0.5 的摘要放进反思区（≤2K token），其余丢进归档区。权重 <0.3 且超过 90 天的自动清理。
 
@@ -340,7 +340,7 @@ think.md（反思区）是「错题本」——同一个坑踩了 5 次，反思
 已归档的记忆在 30 天内不做二次评估——避免同一条记忆在反思区和归档区之间反复横跳，浪费 token。
 
 <a id="self-correct"></a>
-### 记忆自我纠正三道防线（[Developer §六](./Developer.md#六反思工程)）
+### 记忆自我纠正三道防线（[Developer §六](./DEVELOPMENT.md#六反思工程)）
 
 think.md（反思区）既是产出（任务闭环后写入），又是加载链输入（下次启动读到）。写入出错会有连锁影响。三道防线：
 
@@ -354,7 +354,7 @@ sofagent 的失效标记机制（`[已失效] → 新事实 | 原因`，保留�
 
 MAGMA（多图谱记忆架构，将记忆拆成语义/时间/因果/实体四个正交维度分别管理）的消融实验提供了另一个角度的验证：去掉时间维度，准确率跌 0.647；去掉因果维度，跌 0.644；去掉自适应策略，跌 0.637。**把记忆拆成多个独立维度分别管理，不是直觉，是实验验证过的工程必要。** sofagent 的 think.md（反思区，教训/因果 + 经验/语义）、task/logs（时间线）、orchestrator（实体/配置），恰好对应了这些维度的工程实现。
 
-### 不要 Connector（[Developer §七](./Developer.md#七数据文件架构)）
+### 不要 Connector（[Developer §七](./DEVELOPMENT.md#七数据文件架构)）
 
 Loop Engineering 的五大件之一是 Connector——连接外部系统（Jira、CI、监控等）。Osmani 举的例子是每天早上扫 CI → 开 Issue → 派 Agent 修 → 开 PR。
 
@@ -362,7 +362,7 @@ Loop Engineering 的五大件之一是 Connector——连接外部系统（Jira�
 
 如果未来需要推到外部平台，写个脚本自动读最新 task/logs 推送就行。不建接口规范——文件就是接口，Markdown 就是传输格式。
 
-### 文件系统而非数据库（[Developer §七](./Developer.md#七数据文件架构)）
+### 文件系统而非数据库（[Developer §七](./DEVELOPMENT.md#七数据文件架构)）
 
 Agent 治理层最核心的数据是 task/logs——每次任务跑完后一小段 Markdown 摘要。日积月累，每月几十条。
 
@@ -381,7 +381,7 @@ Agent 治理层最核心的数据是 task/logs——每次任务跑完后一小�
 <a id="tree-loading"></a>
 ### 树形加载：为什么是树而不是平铺
 
-约束文件（sofagent.md 等）几百字，全文加载没问题。但 orchestrator/、scoring/ 这些目录可能有几百条记录——全读到上下文里不现实。
+约束文件（SKILL.md 等）几百字，全文加载没问题。但 orchestrator/、scoring/ 这些目录可能有几百条记录——全读到上下文里不现实。
 
 所以数据文件用的是**树形目录 + 按需读取**：Agent 接到任务 → 读 `_index.md`（几十行，目录而已）→ 定位到具体分支 → 只加载那一个叶子文件（十几行）。整棵树可能有几百条记录，每次进上下文的只有目录 + 一个配置，总量不超过 100 行。
 
@@ -467,7 +467,7 @@ sofagent 的应对：think.md 的置信度渐进（0.3→0.5→0.7）和 30 天�
 
 ### 平台依赖
 
-核心约束（sofagent.md / rules.md）是纯 Markdown，任何能读文件的平台都能加载。但自动触发、Skill 加载、脚本执行——取决于平台。install.sh 已做平台抽象（`--platform` 参数），自动探测并适配部署目标。
+核心约束（SKILL.md（宪法内联）/ rules.md）是纯 Markdown，任何能读文件的平台都能加载。但自动触发、Skill 加载、脚本执行——取决于平台。install.sh 已做平台抽象（`--platform` 参数），自动探测并适配部署目标。
 
 | 能力 | OpenClaw | WorkBuddy | Claude Code | Codex | Hermes |
 |------|:--:|:--:|:--:|:--:|:--:|
@@ -494,7 +494,7 @@ SKILL.md 的回复前闸门（⓪①②）和闭合清单（②→③→④→�
 
 ### 核心效果未实测
 
-本项目核心宣称（越用越聪明、纪律性提升）尚无第三方实测数据。Evidence.md 和 Testing.md 均为空白占位，待社区填写。作者不自行宣称效果数字。
+本项目核心宣称（越用越聪明、纪律性提升）尚无第三方实测数据。docs/EVIDENCE.md 和 docs/TESTING.md 均为空白占位，待社区填写。作者不自行宣称效果数字。
 
 ### 安装脚本历史问题
 

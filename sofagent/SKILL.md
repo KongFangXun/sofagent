@@ -66,7 +66,7 @@ metadata:
 
 #10 如实汇报 — 不知道就说不知道
 
-> 每条铁律对应的翻车案例见 [Handbook §三](../Handbook.md#三底线与铁律)。
+> 每条铁律对应的翻车案例见 [Handbook §三](../HANDBOOK.md#三底线与铁律)。
 
 ---
 
