@@ -1,7 +1,7 @@
 ---
 name: sofagent
 description: >
-  为 AI Agent 提供纪律层与反思循环：4 条底线 + 10 则铁律约束行为，复杂任务自动拆解执行，每次跑完自动复盘。
+  为你的 Agent 提供纪律约束与反思循环：三层加载链实现复杂任务自动拆解执行 + 每次跑完任务自动复盘总结。
 image: images/sofagent.png
 triggers: [用户消息]
 scenarios: [任务执行, 任务闭环, 工作目录含.sofagent/]

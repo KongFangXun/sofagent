@@ -1,22 +1,20 @@
 #!/bin/bash
 # ============================================================
-# sofagent 加载链 · Harness Loader（v0.62 扁平化重构）
+# sofagent 加载链 · Harness Loader（v0.62.1 防御性冗余）
 # ============================================================
 # 用途：OpenClaw before_prompt_build Hook 脚本（仅 OpenClaw 平台使用）
 # 由 DeepSeek V4 Pro 辅助生成。
 #
-# v0.62 变更：宪法（4 底线 + 10 铁律）已内联进 SKILL.md，
-#   由 skill 系统自动注入，不再由 load-chain.sh 注入。
-#   本脚本只负责注入第 2 层（think.md）+ 第 3 层（rules.md）。
+# v0.62.1 变更：恢复注入宪法（从 SKILL.md 提取），作为 skill 系统的兜底。
+#   宪法在 OpenClaw 上会出现两次（skill 注入 + load-chain.sh 注入），
+#   ~250 token 冗余可接受——防御性冗余是工程常识，关键系统不怕重复，怕单点失效。
+#
+# 注入顺序：宪法（从 SKILL.md 提取）→ think.md → rules.md → SKILL 强制执行
+#   - 宪法：skill 系统注入为主，load-chain.sh 兜底
+#   - think.md + rules.md：load-chain.sh 唯一注入源
 #
 # OpenClaw 已经自己读的文件（不需要重复注入）：
 #   SOUL.md（大写）/ IDENTITY.md / MEMORY.md / USER.md
-#   SKILL.md（含宪法，由 skill 系统注入）
-#
-# sofagent 需要 Hook 注入的文件（skill 系统不认识）：
-#   think.md → rules.md
-#
-# 加载顺序：think → rules → SKILL 强制执行（rules 最后加载，优先级最高）
 #
 # 用法：
 #   load-chain.sh          正常模式，输出拼接后的约束块
@@ -62,6 +60,9 @@ CACHE_HASH="${CACHE_DIR}/sofagent-loadchain-hash.txt"
 trap 'rm -f "${CACHE_TMP:-}"' EXIT
 
 RULES_FILE="${OPENCLAW_DIR}/rules.md"
+
+# v0.62.1：SKILL.md 路径——用于提取宪法作为兜底注入
+SKILL_FILE="${OPENCLAW_DIR}/skills/sofagent/SKILL.md"
 
 # think.md / orchestrator 在 .sofagent/ 下，不在 ~/.openclaw/
 SOFAGENT_DATA="${SOFAGENT_DATA:-${PWD}/.sofagent}"
@@ -115,7 +116,7 @@ emit_think_downgraded() {
 # ============================================================
 # 缓存判断
 # ============================================================
-FILES_TO_MONITOR=("$RULES_FILE" "$THINK_FILE")
+FILES_TO_MONITOR=("$SKILL_FILE" "$RULES_FILE" "$THINK_FILE")
 NEW_HASH=$(calc_hash "${FILES_TO_MONITOR[@]}")
 
 if [ -f "$CACHE_HASH" ] && [ -f "$CACHE_FILE" ]; then
@@ -140,8 +141,8 @@ fi
 debug "cache miss, rebuilding..."
 
 # ============================================================
-# 重建缓存：读取 2 个文件 → 拼接 → 追加 SKILL 强制执行
-# v0.62：宪法已在 SKILL.md 内联（skill 系统注入），本脚本只注入 think + rules
+# 重建缓存：读取 3 个文件 → 拼接 → 追加 SKILL 强制执行
+# v0.62.1：恢复注入宪法（从 SKILL.md 提取），作为 skill 系统兜底
 # ============================================================
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
@@ -149,21 +150,32 @@ TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 CACHE_TMP="${CACHE_FILE}.tmp.$$"
 
 {
-  echo "<!-- sofagent · 2 层约束块 · ${TIMESTAMP} -->"
+  echo "<!-- sofagent · 3 层约束块 · ${TIMESTAMP} -->"
   echo
 
-  # ── 第 1 层：反思（think.md）──
+  # ── 第 1 层：契约层（从 SKILL.md 提取宪法，兜底注入）──
+  # v0.62.1：skill 系统注入为主，load-chain.sh 兜底
+  # 防御性冗余：~250 token 冗余可接受，防止单点失效
+  if [ -f "$SKILL_FILE" ]; then
+    echo "<!-- ===== 第 1 层：契约层（SKILL.md 宪法兜底）===== -->"
+    cat "$SKILL_FILE"
+    echo
+  else
+    echo "<!-- ⚠️ SKILL.md 未找到，契约层兜底缺失（skill 系统应已注入） -->"
+  fi
+
+  # ── 第 2 层：反思（think.md）──
   # [LLM自评] 条目降权：动态追加提示，不写回原文件
   # SHA-256 缓存按 think.md 原文计算，降权提示不参与缓存判断
   if [ -f "$THINK_FILE" ]; then
-    echo "<!-- ===== 第 1 层：反思（think.md）===== -->"
+    echo "<!-- ===== 第 2 层：反思（think.md）===== -->"
     emit_think_downgraded "$THINK_FILE"
     echo
   fi
 
-  # ── 第 2 层：执行层（rules.md）──
+  # ── 第 3 层：执行层（rules.md）──
   if [ -f "$RULES_FILE" ]; then
-    echo "<!-- ===== 第 2 层：執行層（rules.md）===== -->"
+    echo "<!-- ===== 第 3 层：執行層（rules.md）===== -->"
     cat "$RULES_FILE"
     echo
   fi

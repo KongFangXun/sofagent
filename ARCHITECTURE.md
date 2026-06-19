@@ -145,7 +145,7 @@ sofagent 的四份核心文档有硬性行数上限：Handbook ≤500 行 / Deve
 
 加载顺序受 Lost in the Middle 约束：SKILL.md 放最前面（开头注意力最高），rules.md 放最后面（末尾注意力最高）。中间的 think.md 是参考信息，不是硬约束。
 
-技术实现用的是 OpenClaw 的 `before_prompt_build` Hook——在 OpenClaw 自己读完 `SOUL.md` / `identity.md` / `USER.md` 之后，sofagent 再注入自己的 `SKILL.md`（宪法内联） / `rules.md`。不替换 OpenClaw 的原生文件，只是在系统 prompt 末尾追加一个约束块。SHA-256 缓存检测文件变化——没变就不重新读，省 token。
+技术实现用的是 OpenClaw 的 `before_prompt_build` Hook——在 OpenClaw 自己读完 `SOUL.md` / `identity.md` / `USER.md` 之后，sofagent 再注入自己的约束块。v0.62.1 起，load-chain.sh 注入全部三层（SKILL.md 宪法 + think.md + rules.md），其中宪法部分与 skill 系统注入形成防御性冗余——~250 token 冗余可接受，防止单点失效。SHA-256 缓存检测文件变化——没变就不重新读，省 token。
 
 ### 铁律为什么是 10 则（[Handbook §三](./HANDBOOK.md#三底线与铁律)）
 
@@ -479,7 +479,11 @@ sofagent 的应对：think.md 的置信度渐进（0.3→0.5→0.7）和 30 天�
 | 定时触发 | ❌ | ❌ | ❌ | ❌ | ❌ |
 | install.sh | ✅ 完整部署 | ✅ 自动跳过 | ⚠️ 仅宪法+种子 | ⚠️ 仅宪法+种子 | ⚠️ 仅宪法+种子 |
 
-> 💡 加载链跨平台说明：在 OpenClaw 上，`load-chain.sh` Hook 在每次 prompt 构建前注入约束块（带 SHA-256 缓存）。在 WorkBuddy / Claude Code / Codex / Hermes 上，SKILL.md 的 C 步通过 Read 工具按序加载——效果等价，实现不同。**概念（三层约束按序注入）跨平台通用，机制（Hook vs Read）按平台适配。**
+> 💡 加载链跨平台说明（v0.62.1 扁平化 + 防御性冗余）：
+> - **第 1 层（SKILL.md 含宪法）**：所有平台由 skill 系统自动注入，强制生效。OpenClaw 额外由 load-chain.sh 兜底注入（防御性冗余，~250 token 可接受）
+> - **第 2、3 层（think.md + rules.md）**：OpenClaw 由 load-chain.sh Hook 注入；其他平台由 Agent 主动 Read
+>
+> 概念（三层约束按序注入）跨平台通用，机制（skill 注入 + Hook 兜底 vs 纯 skill 注入 + Agent Read）按平台分级。第 1 层全平台强制，第 2、3 层 OpenClaw 强制、其他平台君子协定。
 
 ### 软层闭合清单的执行率不是 100%
 
