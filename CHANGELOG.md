@@ -4,6 +4,18 @@
 
 ---
 
+## [v0.7.1] — 2026-06-20
+
+### Fixed — Codex 平台兼容性（来自 Case 004 第三方测试报告）
+- **install.sh `SOFAGENT_DATA` 未初始化**：Codex/Claude/Hermes 分支不初始化该变量，但汇总输出阶段引用它，在 `set -u` 下导致退出。修复：在平台分支前统一初始化 `SOFAGENT_DATA="${PROJECT_DIR}/.sofagent"`
+- **verify.sh 误查 OpenClaw Hook**：`verify.sh --platform=codex` 仍检查 `hooks/sofagent-load-chain/` 和 `openclaw.json`，对手动平台产生稳定误报。修复：Hook 检查段加平台守卫，非 OpenClaw 平台跳过并输出 pass
+
+### Added — 第三方测试证据
+- **Case 004**：Codex 平台 10 次连续稳定性测试（qinanxie199229@gmail.com）。1 次完整可审计 + 9 次用户确认等效样本，首次交付无需纠错率 0%→100%。详见 [Case 004](./docs/cases/codex-stability-2026-06-20/)
+- **EVIDENCE.md / TESTING.md**：新增 Case 004 行 + 用例 1/3 补 Codex 平台结果
+
+---
+
 ## [v0.7.0] — 2026-06-19
 
 ### Added — 企业合规（P0/P1）
