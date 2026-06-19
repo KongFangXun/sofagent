@@ -457,6 +457,122 @@ fi
 _hr
 
 # ════════════════════════════════════════
+# 10. 企业合规验证（v0.7x）
+# ════════════════════════════════════════
+if [ "$JSON_MODE" = false ]; then
+  echo -e "${BOLD}${YELLOW}企业合规${NC}"
+fi
+
+# ── 确定脚本目录 ──
+VERIFY_SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# 10.1 脱敏函数验证
+if [ -f "${VERIFY_SCRIPT_DIR}/lib/config.sh" ]; then
+  check_pass "config.sh 共享配置加载器存在"
+else
+  check_warn "config.sh 不存在"
+fi
+
+# 模拟脱敏（不依赖 config.sh，直接测试 sed 链）
+_test_sanitize() {
+  local input="$1"
+  input=$(echo "$input" | sed -E 's/sk-(ant(-api)?-)?[a-zA-Z0-9_-]{20,}/sk-***REDACTED***/g')
+  input=$(echo "$input" | sed -E 's/Bearer +[a-zA-Z0-9._~+\/-]+=*/Bearer ***REDACTED***/g')
+  input=$(echo "$input" | sed -E 's/(password|token|secret|api_key|key)[=:]\s*[^ ]+/\1=***REDACTED***/g')
+  echo "$input"
+}
+
+SANITY_SK=$(_test_sanitize "sk-ant-api03-abcdefghijklmnopqrstuvwxyz123456")
+if echo "$SANITY_SK" | grep -q "REDACTED"; then
+  check_pass "脱敏: API Key 打码正常 (sk- → sk-***REDACTED***)"
+else
+  check_fail "脱敏: API Key 未打码"
+fi
+
+SANITY_PWD=$(_test_sanitize "password=mysecret123")
+if echo "$SANITY_PWD" | grep -q "REDACTED" && ! echo "$SANITY_PWD" | grep -q "mysecret123"; then
+  check_pass "脱敏: 凭证打码正常 (password= → password=***REDACTED***)"
+else
+  check_fail "脱敏: 凭证未打码"
+fi
+
+SANITY_PASS=$(_test_sanitize "普通文本无敏感信息")
+if [ "$SANITY_PASS" = "普通文本无敏感信息" ]; then
+  check_pass "脱敏: 无敏感信息文本原样通过"
+else
+  check_warn "脱敏: 无敏感信息文本被修改"
+fi
+
+# 10.2 cleanup.sh 存在性检查
+CLEANUP_SCRIPT="${VERIFY_SCRIPT_DIR}/cleanup.sh"
+if [ -f "$CLEANUP_SCRIPT" ] && [ -x "$CLEANUP_SCRIPT" ]; then
+  check_pass "cleanup.sh 存在且可执行"
+  # 检查关键参数
+  if bash "$CLEANUP_SCRIPT" --help 2>/dev/null | grep -q "dry-run"; then
+    check_pass "cleanup.sh --dry-run 参数可用"
+  else
+    check_warn "cleanup.sh --dry-run 参数不可用"
+  fi
+else
+  check_fail "cleanup.sh 缺失或不可执行"
+fi
+
+# 10.3 audit.sh 存在性检查
+AUDIT_SCRIPT_VERIFY="${VERIFY_SCRIPT_DIR}/audit.sh"
+if [ -f "$AUDIT_SCRIPT_VERIFY" ] && [ -x "$AUDIT_SCRIPT_VERIFY" ]; then
+  check_pass "audit.sh 存在且可执行"
+  # 检查关键参数
+  if bash "$AUDIT_SCRIPT_VERIFY" --help 2>/dev/null | grep -q "operation"; then
+    check_pass "audit.sh --operation 参数可用"
+  else
+    check_warn "audit.sh --operation 参数不可用"
+  fi
+else
+  check_fail "audit.sh 缺失或不可执行"
+fi
+
+# 10.4 默认关闭确认
+if [ -f "${VERIFY_SCRIPT_DIR}/lib/config.sh" ]; then
+  source "${VERIFY_SCRIPT_DIR}/lib/config.sh" 2>/dev/null || true
+fi
+if [ "${SOFA_SANITIZE:-}" != "true" ] && [ "${SOFA_AUDIT_ENABLED:-}" != "true" ] && [ "${SOFA_CLEANUP_ON_RECORD:-}" != "true" ]; then
+  check_pass "默认关闭: 合规功能全部关闭（向后兼容）"
+else
+  if [ "${SOFA_SANITIZE:-}" = "true" ]; then
+    check_warn "脱敏已启用 (log_sanitize=true)"
+  fi
+  if [ "${SOFA_AUDIT_ENABLED:-}" = "true" ]; then
+    check_warn "审计已启用 (audit_enabled=true)"
+  fi
+  if [ "${SOFA_CLEANUP_ON_RECORD:-}" = "true" ]; then
+    check_warn "清理触发已启用 (data_cleanup_on_record=true)"
+  fi
+fi
+
+# 10.5 rules.md 配置段完整性
+RULES_FILE=""
+for candidate in "${PWD}/sofagent/constitution/rules.md" "$HOME/.openclaw/rules.md" "$HOME/.workbuddy/rules.md"; do
+  if [ -f "$candidate" ]; then RULES_FILE="$candidate"; break; fi
+done
+if [ -n "$RULES_FILE" ]; then
+  missing=0
+  for key in log_sanitize log_sanitize_ips data_retention_days data_retention_max_entries data_cleanup_on_record data_cleanup_frequency audit_enabled; do
+    if ! grep -q "${key}:" "$RULES_FILE" 2>/dev/null; then
+      missing=$((missing + 1))
+    fi
+  done
+  if [ "$missing" -eq 0 ]; then
+    check_pass "rules.md 合规配置段完整（7/7 配置项）"
+  else
+    check_warn "rules.md 合规配置段不完整（缺少 ${missing}/7 项）"
+  fi
+else
+  check_warn "rules.md 未找到，无法验证合规配置段"
+fi
+
+_hr
+
+# ════════════════════════════════════════
 # 总结
 # ════════════════════════════════════════
 total=$((pass + fail + warn_count))

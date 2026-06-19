@@ -26,6 +26,12 @@ set -euo pipefail
 
 VERSION="1.0.0"
 
+# ── 加载合规配置 ──
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "${SCRIPT_DIR}/lib/config.sh" ]; then
+  source "${SCRIPT_DIR}/lib/config.sh"
+fi
+
 # ── 参数 ──
 TASK_NAME=""
 TASK_RESULT=""
@@ -160,6 +166,37 @@ TIMESTAMP=$(date +"%H:%M:%S")
 # ── 创建目录 ──
 mkdir -p "$LOG_DIR"
 
+# ── 脱敏函数 ──
+# 优先级：API Key > Bearer Token > 凭证赋值 > 内网 IP
+sanitize() {
+  local input="$1"
+  # 1. OpenAI / Anthropic API Key
+  input=$(echo "$input" | sed -E 's/sk-(ant(-api)?-)?[a-zA-Z0-9_-]{20,}/sk-***REDACTED***/g')
+  # 2. Bearer token
+  input=$(echo "$input" | sed -E 's/Bearer +[a-zA-Z0-9._~+\/-]+=*/Bearer ***REDACTED***/g')
+  # 3. 凭证赋值（password= / token= / secret= / key= / api_key=）
+  input=$(echo "$input" | sed -E 's/(password|token|secret|api_key|key)[=:]\s*[^ ]+/\1=***REDACTED***/g')
+  # 4. 内网 IP（可选，SOFA_SANITIZE_IPS=true 时启用）
+  if [ "${SOFA_SANITIZE_IPS:-}" = "true" ]; then
+    input=$(echo "$input" | sed -E 's/[[:<:]](10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)[0-9]+\.[0-9]+[[:>:]]/[INTERNAL_IP]/g')
+  fi
+  echo "$input"
+}
+
+# ── 写入前脱敏 ──
+# 用局部变量保存脱敏后值，不修改原始参数变量
+if [ "${SOFA_SANITIZE:-}" = "true" ]; then
+  SANE_TASK_NAME=$(sanitize "$TASK_NAME")
+  SANE_TASK_RESULT=$(sanitize "${TASK_RESULT:-}")
+  SANE_TASK_MODEL=$(sanitize "${TASK_MODEL:-}")
+  SANE_TASK_SKILLS=$(sanitize "${TASK_SKILLS:-}")
+else
+  SANE_TASK_NAME="$TASK_NAME"
+  SANE_TASK_RESULT="${TASK_RESULT:-}"
+  SANE_TASK_MODEL="${TASK_MODEL:-}"
+  SANE_TASK_SKILLS="${TASK_SKILLS:-}"
+fi
+
 # ── 构建 Markdown 条目 ──
 if [ ! -f "$LOG_FILE" ]; then
   echo "# ${TODAY} 任务记录" > "$LOG_FILE"
@@ -169,30 +206,41 @@ fi
 if [ "$IS_CHECKPOINT" = true ]; then
   cat << ENTRY >> "$LOG_FILE"
 
-## ${TIMESTAMP} — #checkpoint ${TASK_NAME}
+## ${TIMESTAMP} — #checkpoint ${SANE_TASK_NAME}
 
 | 字段 | 值 |
 |------|------|
-| 检查点 | ${TASK_RESULT:-评估中} |
+| 检查点 | ${SANE_TASK_RESULT:-评估中} |
 | 当前步数 | ${TASK_STEPS:--} |
 | 重试次数 | ${TASK_RETRIES:--} |
 | 已用 Token | ${TASK_TOKENS:--} |
 | 已用费用 | ${TASK_COST:--} |
-| Skills | ${TASK_SKILLS:--} |
+| Skills | ${SANE_TASK_SKILLS:--} |
 ENTRY
 else
   cat << ENTRY >> "$LOG_FILE"
 
-## ${TIMESTAMP} — ${TASK_NAME}
+## ${TIMESTAMP} — ${SANE_TASK_NAME}
 
 | 字段 | 值 |
 |------|------|
-| 状态 | ${TASK_RESULT:-未记录} |
-| 模型 | ${TASK_MODEL:-未记录} |
+| 状态 | ${SANE_TASK_RESULT:-未记录} |
+| 模型 | ${SANE_TASK_MODEL:-未记录} |
 | Token | ${TASK_TOKENS:--} |
 | 费用 | ${TASK_COST:--} |
-| Skills | ${TASK_SKILLS:--} |
+| Skills | ${SANE_TASK_SKILLS:--} |
 ENTRY
 fi
 
-echo "  已记录: ${TASK_NAME} → ${LOG_FILE}"
+echo "  已记录: ${SANE_TASK_NAME} → ${LOG_FILE}"
+
+# ── 写后概率触发 cleanup.sh ──
+if [ "${SOFA_CLEANUP_ON_RECORD:-}" = "true" ]; then
+  FREQ="${SOFA_CLEANUP_FREQUENCY:-10}"
+  if [ "$((RANDOM % FREQ))" -eq 0 ]; then
+    CLEANUP_SCRIPT="${SCRIPT_DIR}/cleanup.sh"
+    if [ -x "$CLEANUP_SCRIPT" ]; then
+      bash "$CLEANUP_SCRIPT" --force 2>/dev/null || true
+    fi
+  fi
+fi

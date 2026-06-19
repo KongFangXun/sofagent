@@ -13,6 +13,9 @@
 set -euo pipefail
 VERSION="1.0.0"
 
+# ── 确定脚本目录 ──
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
 info()  { echo -e "${BLUE}[uninstall]${NC} $1"; }
 ok()    { echo -e "${GREEN}[✓]${NC} $1"; }
@@ -135,6 +138,9 @@ echo "  保留用户数据："
 echo "    $SOFAGENT_DATA"
 echo ""
 
+# ── 审计：卸载开始 ──
+bash "${SCRIPT_DIR}/audit.sh" --operation "uninstall" --target "开始" --result "v${VERSION}, ${PLATFORM}" 2>/dev/null || true
+
 if [ "$FORCE" != true ]; then
   read -r -p "  确认删除？[y/N] " confirm
   case "$confirm" in
@@ -248,6 +254,9 @@ fi
 # ── 清理安装日志 ──
 INSTALL_LOG="${OPENCLAW_DIR}/.sofagent-install.log"
 rm -f "$INSTALL_LOG"
+
+# ── 审计：卸载完成 ──
+bash "${SCRIPT_DIR}/audit.sh" --operation "uninstall" --target "完成" --result "成功" 2>/dev/null || true
 
 echo ""
 echo "───────────────────────────────────────"

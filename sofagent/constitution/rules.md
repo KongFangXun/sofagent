@@ -56,3 +56,22 @@
 ## 离线模式（企业环境可选）
 # 取消下面这行的注释启用离线模式——跳过 ClawHub API 调用
 # offline: true
+
+---
+
+## 企业合规（v0.7x，可选）
+
+<!-- 去掉对应行 # 启用。所有功能默认关闭，不影响现有用户。 -->
+
+# 日志脱敏：写入 task/logs 前自动打码 API Key / token / 密码
+# log_sanitize: true
+# log_sanitize_ips: false
+
+# 数据保留：超过保留天数或条数上限自动清理。清理前先 tar.gz 归档。
+# data_retention_days: 90
+# data_retention_max_entries: 500
+# data_cleanup_on_record: true
+# data_cleanup_frequency: 10
+
+# 审计日志：记录关键操作（install / uninstall / orchestrate / cleanup）
+# audit_enabled: true
