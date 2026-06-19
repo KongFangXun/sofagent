@@ -310,6 +310,18 @@ bash sofagent/scripts/install.sh --platform {你的平台}
 | Codex | 手动（你写 AGENTS.md） | ❌ | ✅ | 同上 |
 | Hermes | 手动（你写 SOUL.md） | ❌ | ⚠️ | 同上 |
 
+### 非 OpenClaw 用户的 tips
+
+OpenClaw 通过 Hook 强制注入宪法，Agent 无需额外操作即可完整走三层加载链。在 WorkBuddy / Claude Code 等平台上：
+
+- **第 1 层（宪法·底线与铁律）**：已由 Skill 系统自动注入，调用即生效 ✅
+- **第 2 层（think.md 反思区）和第 3 层（rules.md 你的规则）**：需 Agent 主动读取——Agent 可能优先执行任务而非回顾加载链 ⚠️
+
+**复杂任务时建议**：任务前加 `@skill:sofagent` 作为显式锚点，提高 Agent 走完加载链的概率。
+这不是强制保证，但实测能帮助 Agent 对齐约束。
+
+> 💡 加载链步进可靠性是已知局限（详见 [ARCHITECTURE §三](./ARCHITECTURE.md#加载链步进脆弱性v060v062-验证结论)），等各平台支持类似 Hook 机制后会自然解决。
+
 > ⚠️ 上面这些都只是我自己的测试感受，不是严谨的横评。如果你在其他平台上跑通了，欢迎告诉我。
 
 ### 不管什么平台，约束不会丢

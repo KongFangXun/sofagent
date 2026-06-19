@@ -407,6 +407,16 @@ sofagent 的核心机制是 MD 文件注入 Agent 上下文。这意味着：
 
 这不是在吹"我们很好"，是在说"我们在哪些地方不够好，以及为什么不改"。
 
+### 加载链步进脆弱性（v0.60→v0.62 验证结论）
+
+**三层加载链在非 OpenClaw 平台上不可靠。** Agent 声称"跑了 sofagent"，实际可能只读了 1/3（宪法层被跳过）。
+
+v0.62 的扁平化重构将宪法内联进 SKILL.md——第 1 层不再依赖 Agent Read，所有平台强制生效。但第 2、3 层（think.md + rules.md）仍靠 Agent 自觉，在 WorkBuddy / Claude Code / Codex / Hermes 上存在"Agent 优先执行用户任务、跳过加载链"的行为。
+
+实测数据：两轮 WorkBuddy 新会话测试，加载链命中率分别为 1/3 和 0/3。OpenClaw 侧通过 `load-chain.sh` Hook 注入第 2、3 层，无此问题。
+
+**用户侧缓解**：在复杂任务前加 `@skill:sofagent` 作为显式锚点，可提高 Agent 注意到约束的概率——但非强制保证。详见 HANDBOOK。根治需等各平台支持类似 Hook 机制。
+
 ### 定时触发做不到
 
 Loop Engineering 的标志性场景是「每天早上 8 点自动扫 CI」。sofagent 目前只有「每次对话启动」这一种触发方式。OpenClaw 不支持 cron 级定时任务。
