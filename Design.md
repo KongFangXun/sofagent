@@ -39,7 +39,7 @@ sofagent 选的是后者。不是因为前者不重要，是因为前者会被�
 
 > 🧬 **硬层定义好，软层可进化。裁判碰不到，演化有人审。** 这二十个字是 sofagent 设计的总纲——来自循环工程（Loop Engineering）深度架构分析。硬层（sofagent.md + rules.md）定义「你是谁、要什么、什么算好」，Agent 绝对不能碰；软层（scoring.md + think.md + orchestrator/）是数据不是代码，在客观验证信号下持续进化，但每次修订必须可追溯、可审计。
 
-加载链的本质是 Google Skill「模型行为控制器」理念的实现——不靠代码补丁，靠上下文注入的约束文件接管 Agent 行为。Google 的三种 Skill 模式在 sofagent 里各有对应：Reviewer（标准化审查）→ 铁律 #2「验证再继续」；Inversion（先问再做，三级响应：简单直接干→中等说一声→复杂才问）→ 任务感知复杂度分级；Pipeline（关卡验证）→ ao compose 确认 Gate。
+加载链的本质是 Google Skill「模型行为控制器」理念的实现——不靠代码补丁，靠上下文注入的约束文件接管 Agent 行为。Google 的三种 Skill 模式在 sofagent 里各有对应：Reviewer（标准化审查）→ 铁律 #3「验证再继续」；Inversion（先问再做，三级响应：简单直接干→中等说一声→复杂才问）→ 任务感知复杂度分级；Pipeline（关卡验证）→ ao compose 确认 Gate。
 
 设计上参考了 Anthropic Managed Agents 的四层架构：
 - 解耦脑和手：模型规划决策，执行在独立沙盒
@@ -153,9 +153,9 @@ sofagent 的四份核心文档有硬性行数上限：Handbook ≤500 行 / Deve
 
 | 问题 | 表现 | 对应的铁律 |
 |------|------|:--:|
-| 做完了没回复 | 子任务跑完了但没告诉用户 | #1 对用户有回应 |
-| 出错继续跑 | 构建失败后 Agent 假装没看见继续下一步 | #2 验证再继续 |
-| 不看文件就写 | 没读项目代码就开始改，越改越乱 | #3 先读再用 |
+| 做完了没回复 | 子任务跑完了但没告诉用户 | #2 对用户有回应 |
+| 出错继续跑 | 构建失败后 Agent 假装没看见继续下一步 | #3 验证再继续 |
+| 不看文件就写 | 没读项目代码就开始改，越改越乱 | #1 先读再用 |
 | 编造数据 | 不知道就编，被揭穿才承认 | #10 如实汇报 |
 
 这 10 则源于 Andrej Karpathy 的 [4 条编码原则](https://github.com/multica-ai/andrej-karpathy-skills)（思考先行、简约至上、精准修改、目标驱动）。前 4 条是 Karpathy 的，后 6 条是我从自己的翻车经历里加的。不是学术框架，是实战反思的工程沉淀。
@@ -532,7 +532,7 @@ Addy Osmani 在介绍 Loop Engineering 时泼了三盆冷水。这三点不是 s
 
 Agent 说「我做完了」——不是证明，是声明。无人值守的 Loop 也会无人值守地犯错。
 
-铁律 #2「验证再继续」不是让 Agent 自评，是要求可观测证据——测试通过、lint 无报错、API 返回 200、文件 diff 符合预期。不能自动验证的，让用户确认。
+铁律 #3「验证再继续」不是让 Agent 自评，是要求可观测证据——测试通过、lint 无报错、API 返回 200、文件 diff 符合预期。不能自动验证的，让用户确认。
 
 更深一层的问题是 **Good Heart 陷阱**：如果 Agent 既能优化产出，又能修改评判产出的标准，它一定会收敛于「让验证变容易」而不是「让结果变好」——改测试断言、放宽校验规则。所以验证函数必须放在硬层，Agent 的写权限之外。**裁判不可被收买。**
 
@@ -575,7 +575,7 @@ sofagent 站在这些人和作品的基础上：
 | **agency-orchestrator** | `ao compose` 意图识别→任务图生成→模板匹配→分配（Apache-2.0） | [github.com/jnMetaCode/agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator) |
 | **Google Cloud AI Research / UIUC · SkillOS** | 执行与治理分离的技能治理框架——skill-iterate 的架构参照。执行器干活、治理器管技能库全生命周期 | [arXiv 2605.06614](https://arxiv.org/abs/2605.06614) |
 | **MAGMA 多图谱记忆架构** | 四维正交图谱（语义/时间/因果/实体）、消融实验证明多维度记忆分离的必要性——sofagent 反思区统合（think.md）的实验级验证 | [arXiv 2601.03236](https://arxiv.org/abs/2601.03236) |
-| **Google Skill 模式** | Tool Wrapper / Generator / Reviewer / Inversion / Pipeline 五种设计模式——Reviewer/Inversion/Pipeline 与 sofagent 铁律 #2「验证再继续」、task-aware 复杂度分级、ao compose 确认 Gate 形成映射 | [Google Cloud Tech](https://x.com/GoogleCloudTech/article/2033953579824758855) |
+| **Google Skill 模式** | Tool Wrapper / Generator / Reviewer / Inversion / Pipeline 五种设计模式——Reviewer/Inversion/Pipeline 与 sofagent 铁律 #3「验证再继续」、task-aware 复杂度分级、ao compose 确认 Gate 形成映射 | [Google Cloud Tech](https://x.com/GoogleCloudTech/article/2033953579824758855) |
 | **Andrej Karpathy** | 思考先行、简约至上、精准修改、目标驱动——铁律在此基础上扩展 | [4 条编码原则](https://github.com/multica-ai/andrej-karpathy-skills) |
 | **Nelson F. Liu et al.** | *Lost in the Middle*（2023）——LLM 对长上下文中间段注意力衰减的研究，500 字原则和加载链顺序的科学依据 | [arXiv 2307.03172](https://arxiv.org/abs/2307.03172) |
 

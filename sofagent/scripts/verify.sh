@@ -120,12 +120,15 @@ fi
 if [ "$PLATFORM" = "workbuddy" ]; then
   check_pass "WorkBuddy 平台——宪法/Hook/断路器由 SKILL.md 入口流程管理"
 
-  # WorkBuddy 专属检查
-  if [ -f "$HOME/.workbuddy/sofagent.md" ] && [ -s "$HOME/.workbuddy/sofagent.md" ]; then
-    chars=$(wc -m < "$HOME/.workbuddy/sofagent.md" | tr -d ' ')
-    check_pass "sofagent.md 已部署（${chars} 字符）"
+  # WorkBuddy 专属检查（v0.62：宪法内联在 SKILL.md，检查 SKILL.md 而非 sofagent.md）
+  if [ -f "$HOME/.workbuddy/skills/sofagent/SKILL.md" ] && [ -s "$HOME/.workbuddy/skills/sofagent/SKILL.md" ]; then
+    if grep -q "4 底线\|10 铁律" "$HOME/.workbuddy/skills/sofagent/SKILL.md" 2>/dev/null; then
+      check_pass "SKILL.md 已部署且含宪法（4底线+10铁律内联）"
+    else
+      check_warn "SKILL.md 已部署但宪法内容缺失"
+    fi
   else
-    check_warn "sofagent.md 未部署到 ~/.workbuddy/"
+    check_warn "SKILL.md 未部署到 ~/.workbuddy/skills/sofagent/"
   fi
 
   if [ -f "$HOME/.workbuddy/rules.md" ] && [ -s "$HOME/.workbuddy/rules.md" ]; then
@@ -182,9 +185,9 @@ JSONEOF
   exit 0
 fi
 
-_section "宪法文件"
+_section "宪法文件（v0.62：宪法内联在 SKILL.md，此处只检查 rules.md）"
 
-for f in sofagent.md rules.md; do
+for f in rules.md; do
   path="${OPENCLAW_DIR}/${f}"
   if [ -f "$path" ] && [ -s "$path" ]; then
     chars=$(wc -m < "$path" | tr -d ' ')
@@ -247,15 +250,15 @@ if [ -f "$HOOK_PATH" ] && [ -x "$HOOK_PATH" ]; then
   if [ $exit_code -eq 0 ]; then
     check_pass "加载链运行成功 (exit 0)"
 
-    # 检查底线是否存在（已合并入 sofagent.md）
+    # 检查底线是否存在（v0.62：宪法内联在 SKILL.md，由 skill 系统注入）
     if echo "$output" | grep -q "不泄露隐私"; then
-      check_pass "底线注入保护生效"
+      check_pass "底线注入保护生效（think.md/rules.md 已注入）"
     else
-      check_fail "底线缺失 — 输出中未检测到底线规则"
+      check_warn "底线关键词未在 load-chain.sh 输出中检测到（v0.62：宪法由 SKILL.md 注入，非 load-chain.sh）"
     fi
 
-    # 检查每个文件是否都被注入
-    for f in sofagent.md rules.md; do
+    # 检查每个文件是否都被注入（v0.62：只检查 rules.md，sofagent.md 已删除）
+    for f in rules.md; do
       if echo "$output" | grep -q "$f"; then
         check_pass "$f 已注入到系统 prompt"
       else
@@ -428,16 +431,17 @@ if [ "$PLATFORM" != "workbuddy" ]; then
   [ "$JSON_MODE" = false ] && echo -e "${BOLD}${YELLOW}约束验证${NC}"
 fi
 
-# 9.1 加载链内容完整性——不只检查文件，检查内容关键词
+# 9.1 加载链内容完整性——检查 SKILL.md 是否含宪法关键词（v0.62：宪法内联）
 [ "$JSON_MODE" = false ] && echo -n "  约束注入验证: "
-if [ -f "${OPENCLAW_DIR:-$HOME/.openclaw}/sofagent.md" ]; then
-  if grep -q "4.*底线\|10.*铁律" "${OPENCLAW_DIR:-$HOME/.openclaw}/sofagent.md" 2>/dev/null; then
-    check_pass "契约层关键词完整（4底线+10铁律）"
+SKILL_FILE="${OPENCLAW_DIR:-$HOME/.openclaw}/skills/sofagent/SKILL.md"
+if [ -f "$SKILL_FILE" ]; then
+  if grep -q "4.*底线\|10.*铁律" "$SKILL_FILE" 2>/dev/null; then
+    check_pass "契约层关键词完整（4底线+10铁律内联在 SKILL.md）"
   else
-    check_fail "契约层内容异常——关键词缺失"
+    check_fail "SKILL.md 内容异常——宪法关键词缺失"
   fi
 else
-  check_warn "契约层文件不存在，无法验证内容"
+  check_warn "SKILL.md 不存在，无法验证宪法内容"
 fi
 
 # 9.2 闸门通过率——数据层是否在运转

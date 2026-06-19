@@ -1,20 +1,22 @@
 #!/bin/bash
 # ============================================================
-# sofagent 3 层加载链 · Harness Loader
+# sofagent 加载链 · Harness Loader（v0.62 扁平化重构）
 # ============================================================
 # 用途：OpenClaw before_prompt_build Hook 脚本（仅 OpenClaw 平台使用）
 # 由 DeepSeek V4 Pro 辅助生成。
-#       从 $OPENCLAW_STATE_DIR 读取 sofagent 宪法文件，
-#       从 .sofagent/ 读取数据文件，拼接约束块 + SKILL 强制执行
-#       + SHA-256 缓存，注入到系统 prompt 末尾。
+#
+# v0.62 变更：宪法（4 底线 + 10 铁律）已内联进 SKILL.md，
+#   由 skill 系统自动注入，不再由 load-chain.sh 注入。
+#   本脚本只负责注入第 2 层（think.md）+ 第 3 层（rules.md）。
 #
 # OpenClaw 已经自己读的文件（不需要重复注入）：
 #   SOUL.md（大写）/ IDENTITY.md / MEMORY.md / USER.md
+#   SKILL.md（含宪法，由 skill 系统注入）
 #
-# sofagent 需要 Hook 注入的文件（OpenClaw 不认识）：
-#   sofagent.md → think.md → rules.md
+# sofagent 需要 Hook 注入的文件（skill 系统不认识）：
+#   think.md → rules.md
 #
-# 加载顺序：sofagent → think → rules → SKILL 强制执行（rules 最后加载，优先级最高）
+# 加载顺序：think → rules → SKILL 强制执行（rules 最后加载，优先级最高）
 #
 # 用法：
 #   load-chain.sh          正常模式，输出拼接后的约束块
@@ -59,7 +61,6 @@ CACHE_HASH="${CACHE_DIR}/sofagent-loadchain-hash.txt"
 # trap: 退出时清理临时文件
 trap 'rm -f "${CACHE_TMP:-}"' EXIT
 
-SOFAGENT_FILE="${OPENCLAW_DIR}/sofagent.md"
 RULES_FILE="${OPENCLAW_DIR}/rules.md"
 
 # think.md / orchestrator 在 .sofagent/ 下，不在 ~/.openclaw/
@@ -114,7 +115,7 @@ emit_think_downgraded() {
 # ============================================================
 # 缓存判断
 # ============================================================
-FILES_TO_MONITOR=("$SOFAGENT_FILE" "$RULES_FILE" "$THINK_FILE")
+FILES_TO_MONITOR=("$RULES_FILE" "$THINK_FILE")
 NEW_HASH=$(calc_hash "${FILES_TO_MONITOR[@]}")
 
 if [ -f "$CACHE_HASH" ] && [ -f "$CACHE_FILE" ]; then
@@ -139,7 +140,8 @@ fi
 debug "cache miss, rebuilding..."
 
 # ============================================================
-# 重建缓存：读取 3 个文件 → 拼接 → 追加 SOUL 底线
+# 重建缓存：读取 2 个文件 → 拼接 → 追加 SKILL 强制执行
+# v0.62：宪法已在 SKILL.md 内联（skill 系统注入），本脚本只注入 think + rules
 # ============================================================
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
@@ -147,30 +149,21 @@ TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 CACHE_TMP="${CACHE_FILE}.tmp.$$"
 
 {
-  echo "<!-- sofagent · 3 层约束块 · ${TIMESTAMP} -->"
+  echo "<!-- sofagent · 2 层约束块 · ${TIMESTAMP} -->"
   echo
 
-  # ── 第 1 层：契约层（sofagent.md）──
-  if [ -f "$SOFAGENT_FILE" ]; then
-    echo "<!-- ===== 第 1 层：契約層（sofagent.md）===== -->"
-    cat "$SOFAGENT_FILE"
-    echo
-  else
-    echo "<!-- ⚠️ sofagent.md 未找到，契约层缺失 -->"
-  fi
-
-  # ── 第 2 层：反思（think.md）──
+  # ── 第 1 层：反思（think.md）──
   # [LLM自评] 条目降权：动态追加提示，不写回原文件
   # SHA-256 缓存按 think.md 原文计算，降权提示不参与缓存判断
   if [ -f "$THINK_FILE" ]; then
-    echo "<!-- ===== 第 2 层：反思（think.md）===== -->"
+    echo "<!-- ===== 第 1 层：反思（think.md）===== -->"
     emit_think_downgraded "$THINK_FILE"
     echo
   fi
 
-  # ── 第 3 层：执行层（rules.md）──
+  # ── 第 2 层：执行层（rules.md）──
   if [ -f "$RULES_FILE" ]; then
-    echo "<!-- ===== 第 3 层：執行層（rules.md）===== -->"
+    echo "<!-- ===== 第 2 层：執行層（rules.md）===== -->"
     cat "$RULES_FILE"
     echo
   fi

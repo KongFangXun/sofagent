@@ -61,8 +61,8 @@ case "$PLATFORM" in
     echo ""
     removed=0
 
-    # 清理宪法文件
-    for f in sofagent.md rules.md; do
+    # 清理宪法文件（v0.62：宪法内联在 SKILL.md，只清理 rules.md）
+    for f in rules.md; do
       path="$HOME/.workbuddy/$f"
       if [ "$LIST_ONLY" = true ]; then
         if [ -f "$path" ]; then info "  $path"; fi
@@ -71,6 +71,17 @@ case "$PLATFORM" in
       fi
       ((removed++)) || true
     done
+
+    # 清理旧版遗留的 sofagent.md（v0.62 前部署的宪法文件）
+    legacy="$HOME/.workbuddy/sofagent.md"
+    if [ -f "$legacy" ]; then
+      if [ "$LIST_ONLY" = true ]; then
+        info "  $legacy（旧版遗留）"
+      else
+        rm -f "$legacy" && ok "已删除旧版遗留: $legacy"
+      fi
+      ((removed++)) || true
+    fi
 
     # 清理 Skill 目录
     skill_dir="$HOME/.workbuddy/skills/sofagent"
@@ -134,8 +145,8 @@ fi
 
 removed=0
 
-# ── 删除 / 列出宪法文件 ──
-for f in sofagent.md rules.md; do
+# ── 删除 / 列出宪法文件（v0.62：宪法内联在 SKILL.md，只清理 rules.md）──
+for f in rules.md; do
   path="${OPENCLAW_DIR}/${f}"
   if [ -f "$path" ]; then
     if [ "$LIST_ONLY" = true ]; then
@@ -147,6 +158,18 @@ for f in sofagent.md rules.md; do
     ((removed++)) || true
   fi
 done
+
+# ── 清理旧版遗留的 sofagent.md（v0.62 前部署的宪法文件）──
+legacy="${OPENCLAW_DIR}/sofagent.md"
+if [ -f "$legacy" ]; then
+  if [ "$LIST_ONLY" = true ]; then
+    info "  $legacy（旧版遗留）"
+  else
+    rm -f "$legacy" "${legacy}.bak"
+    ok "已删除旧版遗留: sofagent.md"
+  fi
+  ((removed++)) || true
+fi
 
 # ── 删除 / 列出 Skill 文件 ──
 SKILLS_DIR="${OPENCLAW_DIR}/skills/sofagent"

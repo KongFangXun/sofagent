@@ -198,9 +198,8 @@ OpenClaw 上全自动，其他平台需手动触发闭环。
 │   ├── task-aware.md           ←     每任务闸门：边界→判级→澄清
 │   ├── task-closure.md         ←     离境闸门：调 Loop Agent 收口
 │   ├── loop-agent.md           ←     循环顾问：三模式五触发点（checkpoint/failure/closure）
-│   ├── constitution/           ←     宪法文件（部署到对应平台目录）
-│   │   ├── sofagent.md         ←       契约层：4 底线 + 10 铁律
-│   │   └── rules.md            ←       执行层：模型偏好 + 行为规则
+│   ├── constitution/           ←     宪法文件（rules.md 部署到对应平台目录）
+│   │   └── rules.md            ←       执行层：模型偏好 + 行为规则（宪法内联在 SKILL.md）
 │   ├── data/                   ←     数据模板（格式参考）
 │   │   ├── think.md
 │   │   ├── scoring.md
