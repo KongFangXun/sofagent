@@ -4,7 +4,7 @@
 > 一个完全不懂代码的人，给 OpenClaw 写的 Agent 治理手册。
 > **为 AI Agent 提供纪律层与反思循环：4 条底线 + 10 则铁律约束行为，复杂任务自动拆解执行，每次跑完自动复盘。**
 >
-> v0.60 · 2026-06-19 · 孔放勋
+> v0.62 · 2026-06-19 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -403,4 +403,4 @@ bash sofagent/scripts/install.sh --platform {你的平台}
 
 > 大半年 OpenClaw 攒的笔记。不是实验室数据，但对我有用。哪里写得不好，直接告诉我。
 >
-> *v0.60，2026 年 6 月 19 日*
+> *v0.62，2026 年 6 月 19 日*
