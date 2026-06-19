@@ -43,7 +43,7 @@
 
 这不是什么「框架」或「方法论」，只是用大半年 OpenClaw 攒的笔记。第一次用 GitHub、第一次往上面放东西——格式不对、规矩不周的地方，多包涵。
 
-这个项目里的文件都是 DeepSeek V4 Pro 辅助生成的。写得不好的地方很多——分享出来就是期待你也参与进来一起优化。
+这个项目里的文件都是 DeepSeek V4 Pro 和 GLM-5.2 配合生成的。写得不好的地方很多——分享出来就是期待你也参与进来一起优化。
 
 如果你也在折腾 OpenClaw，希望这个对你有用。
 
@@ -109,7 +109,7 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 加载链如果只在复杂任务时激活，后果很清楚——think.md 反思区不在则 Agent 重复犯错，rules.md 不在则用户偏好失效。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#why-resident)。
 
-> 📎 orchestrator/ 不参与初始加载——由 SKILL.md 判断任务需要编排时按需触发。三层约束注入由 `load-chain.sh`（OpenClaw Hook）执行，带 SHA-256 缓存检测。
+> 📎 orchestrator/ 不参与初始加载——由 SKILL.md 判断任务需要编排时按需触发。三层约束注入：第 1 层由 skill 系统自动注入；第 2、3 层在 OpenClaw 上由内部 hook `sofagent-load-chain`（agent:bootstrap 事件）注入，其他平台由 Agent 主动 Read。
 
 ### 编排触发（engine.md + orchestrator/）——🔁 按需点火
 
@@ -381,7 +381,7 @@ Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的�
 ### 最早要谢的
 
 - **[OpenClaw](https://github.com/openclaw/openclaw)** by Peter Steinberger — 整个 sofagent 的基石。从上下文加载到 Hook 触发、从 Skill 注入到 Session 管理，整套体系都建立在 OpenClaw 的能力之上。没有 OpenClaw，这本 Handbook 一页都写不出来
-- **[DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/)** — 这本 Handbook 和所有 sofagent 文件都是用它辅助生成的。一个产品经理能做完这件事，全靠它
+- **[DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/)** — 这本 Handbook 和所有 sofagent 文件都是它与 GLM-5.2 配合生成的。一个产品经理能做完这件事，全靠它们
 
 ### GitHub 项目
 

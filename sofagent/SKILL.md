@@ -1,13 +1,13 @@
 ---
 name: sofagent
 slug: sofagent
-version: 0.63.0
+version: 0.64.0
 displayName: sofagent
 description: >
-  为你的 Agent 提供纪律约束与反思循环：三层加载链实现复杂任务自动拆解执行 + 每次跑完任务自动复盘总结。
+  当你的 Agent 反复偏离目标、任务越做越复杂、刚踩过的坑下次还踩 —— sofagent 能约束其行为、拆解复杂任务、从错误中沉淀教训。
 image: images/sofagent.png
-triggers: [复杂任务拆解, 多步任务, 代码修改, 文件操作, 任务反思, 任务闭环]
-scenarios: [需要纪律约束, 需要自动编排, 需要从失败中学习]
+triggers: [Agent行为失控, 任务复杂需要拆解, 多文件修改, 文件操作有风险, 上次任务出过问题, 需要确认任务已完成, 高风险任务前加约束]
+scenarios: [Agent开始自由发挥偏离目标, 任务包含不可逆操作需要守门员, 连续多个子任务需要编排协调, 刚踩过坑想避免重蹈覆辙, 想让Agent更守规矩]
 not_when: [简单闲聊, 单步查询, 纯信息检索]
 metadata:
   openclaw:
@@ -15,11 +15,11 @@ metadata:
       bins: [bash, mkdir]
 ---
 
-# SKILL.md · v0.63
+# SKILL.md · v0.64
 
 > ⚠️ **反向锚点**：本文件是加载链第 1 层，随 skill 调用自动注入——你无需 Read 就已有宪法。但第 2、3 层需你主动 Read。如果你没读 rules.md 和 think.md 就回复用户，你的输出可能偏离用户定制和历史教训。
 
-> **平台定位**：第 1 层所有平台强制生效（skill 机制保证）；第 2、3 层依赖 Agent 自觉 Read。OpenClaw 通过 load-chain.sh Hook 进一步强化后两层。
+> **平台定位**：第 1 层所有平台强制生效（skill 机制保证）；第 2、3 层依赖 Agent 自觉 Read。OpenClaw 通过内部 hook（`sofagent-load-chain`，agent:bootstrap 事件触发）进一步强化后两层。
 
 ---
 
@@ -31,9 +31,10 @@ metadata:
 |:--:|------|---------|------|------|
 | 1 | **本文件** | skill 调用自动注入 | 4 底线 + 10 铁律（契约层）| — |
 | 2 | `{SOFAGENT_DATA}/think.md` | Agent 主动 Read | 反思区（上次踩了什么坑）| 任务完成后创建 |
-| 3 | `constitution/rules.md` | Agent 主动 Read | 你的规则（最高优先级，可覆盖第 1 层）| 跳过（未配置）|
+| 3 | `~/.openclaw/skills/sofagent/constitution/rules.md` 或 `~/.openclaw/rules.md`（选存在的读） | Agent 主动 Read | 你的规则（最高优先级，可覆盖第 1 层）| 跳过（未配置）|
 
 > 💡 `{SOFAGENT_DATA}` = `${PWD}/.sofagent`（当前工作目录下的 .sofagent/ 数据目录）。
+> 💡 `{OPENCLAW_SCRIPTS}` = `${HOME}/.openclaw/scripts`（OpenClaw 配套脚本目录——task-record.sh、task-orchestrate.sh 的绝对路径）。
 > 第 1 层是宪法（不可变）、第 2 层是错题本、第 3 层是你说了算。
 
 ---

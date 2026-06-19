@@ -159,7 +159,7 @@ sofagent 的三个核心设计选择，在独立研究中得到了方向性印�
 
 加载顺序受 Lost in the Middle 约束：SKILL.md 放最前面（开头注意力最高），rules.md 放最后面（末尾注意力最高）。中间的 think.md 是参考信息，不是硬约束。
 
-技术实现用的是 OpenClaw 的 `before_prompt_build` Hook——在 OpenClaw 自己读完 `SOUL.md` / `identity.md` / `USER.md` 之后，sofagent 再注入自己的约束块。v0.62.1 起，load-chain.sh 注入全部三层（SKILL.md 宪法 + think.md + rules.md），其中宪法部分与 skill 系统注入形成防御性冗余——~250 token 冗余可接受，防止单点失效。SHA-256 缓存检测文件变化——没变就不重新读，省 token。
+技术实现用的是 OpenClaw 2026.6.x 的内部 hook 架构——声明式注册 `sofagent-load-chain`（HOOK.md + handler.ts）到 `~/.openclaw/hooks/`，监听 `agent:bootstrap` 事件，在 Agent 启动时把 think.md（第 2 层）和 rules.md（第 3 层）注入 bootstrap 文件列表。第 1 层宪法由 skill 系统自动注入，hook 不重复。旧版 `load-chain.sh`（config.json.before_prompt_build shell hook）在 2026.6.x 已失效，v0.64 起删除。
 
 ### 铁律为什么是 10 则（[Handbook §三](./HANDBOOK.md#三底线与铁律)）
 
@@ -427,7 +427,7 @@ sofagent 的核心机制是 MD 文件注入 Agent 上下文。这意味着：
 
 v0.62 的扁平化重构将宪法内联进 SKILL.md——第 1 层不再依赖 Agent Read，所有平台强制生效。但第 2、3 层（think.md + rules.md）仍靠 Agent 自觉，在 WorkBuddy / Claude Code / Codex / Hermes 上存在"Agent 优先执行用户任务、跳过加载链"的行为。
 
-实测数据：两轮 WorkBuddy 新会话测试，加载链命中率分别为 1/3 和 0/3。OpenClaw 侧通过 `load-chain.sh` Hook 注入第 2、3 层，无此问题。
+实测数据：两轮 WorkBuddy 新会话测试，加载链命中率分别为 1/3 和 0/3。OpenClaw 侧通过内部 hook `sofagent-load-chain`（agent:bootstrap 事件）注入第 2、3 层，无此问题。
 
 **用户侧缓解**：在复杂任务前加 `@skill:sofagent` 作为显式锚点，可提高 Agent 注意到约束的概率——但非强制保证。详见 HANDBOOK。根治需等各平台支持类似 Hook 机制。
 
@@ -510,15 +510,15 @@ sofagent 的应对：think.md 的置信度渐进（0.3→0.5→0.7）和 30 天�
 |------|:--:|:--:|:--:|:--:|:--:|
 | 核心约束 | ✅ Hook注入 | ✅ SKILL加载 | ⚠️ 种子指令 | ⚠️ 种子指令 | ⚠️ 种子指令 |
 | Skill 自启 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| 加载链脚本 | ✅ load-chain.sh Hook | ❌ 无Hook，C步Read替代 | ❌ | ❌ | ❌ |
+| 加载链脚本 | ✅ 内部 hook（sofagent-load-chain） | ❌ 无Hook，C步Read替代 | ❌ | ❌ | ❌ |
 | 断路器 | ✅ loopDetection | ❌ 平台自有 | ❌ | ❌ | ❌ |
 | 脚本执行 | ✅ | ⚠️ bash可用 | ✅ | ✅ | ✅ |
 | 定时触发 | ❌ | ❌ | ❌ | ❌ | ❌ |
 | install.sh | ✅ 完整部署 | ✅ 自动跳过 | ⚠️ 仅宪法+种子 | ⚠️ 仅宪法+种子 | ⚠️ 仅宪法+种子 |
 
-> 💡 加载链跨平台说明（v0.62.1 扁平化 + 防御性冗余）：
-> - **第 1 层（SKILL.md 含宪法）**：所有平台由 skill 系统自动注入，强制生效。OpenClaw 额外由 load-chain.sh 兜底注入（防御性冗余，~250 token 可接受）
-> - **第 2、3 层（think.md + rules.md）**：OpenClaw 由 load-chain.sh Hook 注入；其他平台由 Agent 主动 Read
+> 💡 加载链跨平台说明（v0.64 适配 OpenClaw 2026.6.x 内部 hook 架构）：
+> - **第 1 层（SKILL.md 含宪法）**：所有平台由 skill 系统自动注入，强制生效
+> - **第 2、3 层（think.md + rules.md）**：OpenClaw 由内部 hook `sofagent-load-chain`（agent:bootstrap 事件触发）注入；其他平台由 Agent 主动 Read
 >
 > 概念（三层约束按序注入）跨平台通用，机制（skill 注入 + Hook 兜底 vs 纯 skill 注入 + Agent Read）按平台分级。第 1 层全平台强制，第 2、3 层 OpenClaw 强制、其他平台君子协定。
 
@@ -531,7 +531,7 @@ SKILL.md 的回复前闸门（⓪①②）和闭合清单（②→③→④→�
 - **结构加固**：将闸门从 §一 末尾提到入口流程 D 之后，增加 `⛔ 硬出口` 节（见 SKILL.md），利用 Lost in the Middle 效应——越靠前的指令 Agent 越不容易漏。v4.5 进一步拆为主 Skill + 五个子 Skill（engine/entry-gate/task-aware/task-closure/loop-check），每个 ≤90 行，Agent 不再迷路
 - **人工审计**：定期翻 task/logs 检查闭合清单是否每次都被执行——这和 Skill 层 Slop 审计是同一个人工兜底策略
 
-> 💡 **设计妥协：MD 强约束对标 Hook 机制**。sofagent 的三层闸门在概念上对标 Cloud/Agent 的 Hook 机制——回复前闸门 ⓪ = pre-tool-use（工具调用前检查），task-closure ②→⑤ = post-tool-use（任务结束后自动沉淀），闭环信号 = stop event（任务完成触发）。但受限于跨五平台兼容性（WorkBuddy/Claude Code/Codex/Hermes 不支持 Shell 级 Hook 拦截），这些只能通过 MD 强约束 + ⛔ 硬出口 + 兜底检查来模拟 Hook 行为。只有 OpenClaw 平台通过 `load-chain.sh` 实现了真正的 Hook 级硬拦截。
+> 💡 **设计妥协：MD 强约束对标 Hook 机制**。sofagent 的三层闸门在概念上对标 Cloud/Agent 的 Hook 机制——回复前闸门 ⓪ = pre-tool-use（工具调用前检查），task-closure ②→⑤ = post-tool-use（任务结束后自动沉淀），闭环信号 = stop event（任务完成触发）。但受限于跨五平台兼容性（WorkBuddy/Claude Code/Codex/Hermes 不支持 Shell 级 Hook 拦截），这些只能通过 MD 强约束 + ⛔ 硬出口 + 兜底检查来模拟 Hook 行为。只有 OpenClaw 平台通过内部 hook `sofagent-load-chain`（2026.6.x）实现了真正的 Hook 级注入。
 
 ### 核心效果未实测
 
@@ -555,7 +555,7 @@ Loop Agent 不是独立进程或独立模型调用——它是主 Agent 在特�
 
 ### 折半机制跨平台生效差异
 
-load-chain.sh 的 `[LLM自评]` 标记位折半（权重 ×0.5）只在 OpenClaw 平台物理生效——通过 `before_prompt_build` Hook 在注入 think.md 时动态追加降权提示。WorkBuddy / Claude Code / Codex / Hermes 没有 load-chain.sh Hook，折半机制靠 SKILL.md C 步 Read think.md 后 Agent 自觉识别 `[LLM自评]` 标记——与上文「反思自评的自噬风险」「复盘评分是 LLM 自评」同一局限。v1.x 引入外部评估器时统一解决。不假装 WorkBuddy 也有脚本级折半。
+内部 hook `sofagent-load-chain` 的 `[LLM自评]` 标记位折半（权重 ×0.5）只在 OpenClaw 平台物理生效——通过 `agent:bootstrap` 事件在注入 think.md 时动态追加降权提示。WorkBuddy / Claude Code / Codex / Hermes 没有该 hook，折半机制靠 SKILL.md C 步 Read think.md 后 Agent 自觉识别 `[LLM自评]` 标记——与上文「反思自评的自噬风险」「复盘评分是 LLM 自评」同一局限。v1.x 引入外部评估器时统一解决。不假装 WorkBuddy 也有脚本级折半。
 
 > 💡 **如果你不同意某个决策**：以上局限中，可通过 `rules.md` 覆盖的有——编排深度晋级阈值、活跃区 token 上限、复盘权重。需等待平台演进的有——定时触发（等 OpenClaw cron）、中间检查点挂起（等 `before_tool` Hook）。其余的（非分布式、Skill 层 Slop、LLM 评估偏差、软层执行率）是架构宿命，不是配置问题。
 
@@ -568,7 +568,7 @@ sofagent 站在这些人和作品的基础上：
 | 来源 | 启发 | 链接 |
 |------|------|------|
 | **OpenClaw** | 运行平台——加载链、Hook、Skill 系统、session 隔离 | [github.com/openclaw/openclaw](https://github.com/openclaw/openclaw) |
-| **DeepSeek** | 模型引擎——本项目所有文件由 DeepSeek V4 Pro 辅助生成 | [deepseek.com](https://deepseek.com) |
+| **DeepSeek + GLM** | 模型引擎——本项目所有文件由 DeepSeek V4 Pro 和 GLM-5.2 配合生成 | [deepseek.com](https://deepseek.com) · [z.ai](https://z.ai) |
 | **Addy Osmani** | Loop Engineering 五大件架构、语义化停止条件、三盆冷水 | [Loop Engineering 原文](https://addyo.substack.com/p/loop-engineering) |
 | **Anthropic** | Managed Agents 四层架构（解耦脑和手、disposable worker、Agent≠Session、Loop>Prompt）——sofagent 核心设计哲学的源头 | [Scaling Managed Agents](https://www.anthropic.com/engineering/managed-agents) |
 | **Codex / Claude Code** | 五层上下文压缩策略、决策冻结、增量笔记 | [codex.ai](https://codex.ai) |

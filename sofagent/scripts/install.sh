@@ -3,7 +3,7 @@
 # sofagent install.sh · 多平台一键安装脚本
 # ============================================================
 # 将 sofagent 约束层部署到目标平台，让 Agent 获得治理能力。
-# 由 DeepSeek V4 Pro 辅助生成。
+# 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
 #
 # 平台支持：
 #   --platform openclaw  → 完整部署（宪法 + Hook + 脚本 + 断路器）
@@ -310,6 +310,19 @@ for f in "$SCRIPT_DIR"/../data/*.md; do
   ((copied++)) || true
 done
 
+# constitution/rules.md — 同时部署到 Skill 目录，使 SKILL.md 的相对路径 `constitution/rules.md` 可解析
+mkdir -p "${SKILL_DST}/constitution"
+RULES_SRC="${CONSTITUTION_SRC}/rules.md"
+RULES_DST="${SKILL_DST}/constitution/rules.md"
+if [ -f "$RULES_SRC" ]; then
+  if [ -f "$RULES_DST" ] && cmp -s "$RULES_SRC" "$RULES_DST" 2>/dev/null; then
+    :  # 内容相同，跳过
+  else
+    cp "$RULES_SRC" "$RULES_DST"
+    ((copied++)) || true
+  fi
+fi
+
 if [ "$copied" -gt 0 ]; then
   ok "$copied 个 Skill/数据文件已部署到 $SKILL_DST"
 else
@@ -320,47 +333,53 @@ fi
 # Step 6: 部署加载链 Hook（仅 OpenClaw）
 # ════════════════════════════════════════
 if [ "$PLATFORM" = "openclaw" ]; then
-info "Step 6/7 · 部署加载链 Hook（OpenClaw）..."
+info "Step 6/7 · 部署加载链 Hook（OpenClaw 2026.6.x 内部 hook 架构）..."
 
-# 部署 load-chain.sh
-mkdir -p "${TARGET}/hooks"
-LOADCHAIN_SRC="${SCRIPT_DIR}/load-chain.sh"
-LOADCHAIN_DST="${TARGET}/hooks/load-chain.sh"
+# OpenClaw 2026.6.x 改用声明式内部 hook：把 HOOK.md + handler.ts 放到
+# ~/.openclaw/hooks/sofagent-load-chain/，并在 openclaw.json 的
+# hooks.internal.entries.sofagent-load-chain 注册 enabled:true，即自动生效。
+# 旧版 load-chain.sh（config.json.before_prompt_build shell hook）已废弃，不再部署。
 
-if [ -f "$LOADCHAIN_SRC" ]; then
-  cp "$LOADCHAIN_SRC" "$LOADCHAIN_DST"
-  chmod +x "$LOADCHAIN_DST"
-  ok "加载链 Hook 已部署: $LOADCHAIN_DST"
+HOOK_SRC_DIR="${SCRIPT_DIR}/../hooks/sofagent-load-chain"
+HOOK_DST_DIR="${TARGET}/hooks/sofagent-load-chain"
 
-  # ── 自动注册 Hook ──
-  # 确定配置路径（优先 OPENCLAW_CONFIG_PATH，其次 TARGET/config.json，再试 WorkBuddy）
+if [ -d "$HOOK_SRC_DIR" ] && [ -f "${HOOK_SRC_DIR}/HOOK.md" ] && [ -f "${HOOK_SRC_DIR}/handler.ts" ]; then
+  mkdir -p "$HOOK_DST_DIR"
+  cp "${HOOK_SRC_DIR}/HOOK.md"   "${HOOK_DST_DIR}/HOOK.md"
+  cp "${HOOK_SRC_DIR}/handler.ts" "${HOOK_DST_DIR}/handler.ts"
+  ok "加载链内部 Hook 已部署: ${HOOK_DST_DIR}（HOOK.md + handler.ts）"
+
+  # ── 在 openclaw.json 注册 hooks.internal.entries.sofagent-load-chain ──
+  # 优先 OPENCLAW_CONFIG_PATH，其次 $TARGET/openclaw.json（2026.6.x 默认配置文件）
   HOOK_CONFIG=""
-  for cfg in "${OPENCLAW_CONFIG_PATH:-}" "${TARGET}/config.json" "$HOME/.workbuddy/config.json"; do
+  for cfg in "${OPENCLAW_CONFIG_PATH:-}" "${TARGET}/openclaw.json"; do
     [ -n "$cfg" ] && [ -f "$cfg" ] && { HOOK_CONFIG="$cfg"; break; }
   done
-  [ -z "$HOOK_CONFIG" ] && HOOK_CONFIG="${TARGET}/config.json"
+  [ -z "$HOOK_CONFIG" ] && HOOK_CONFIG="${TARGET}/openclaw.json"
 
   # 检查是否已注册
-  if [ -f "$HOOK_CONFIG" ] && grep -q "$LOADCHAIN_DST" "$HOOK_CONFIG" 2>/dev/null; then
+  ALREADY_REGISTERED=0
+  if [ -f "$HOOK_CONFIG" ] && grep -q '"sofagent-load-chain"' "$HOOK_CONFIG" 2>/dev/null; then
+    ALREADY_REGISTERED=1
+  fi
+
+  if [ "$ALREADY_REGISTERED" = "1" ]; then
     ok "Hook 已注册: $HOOK_CONFIG"
   else
     info "正在注册 Hook → $HOOK_CONFIG"
-    cp "$HOOK_CONFIG" "${HOOK_CONFIG}.bak" 2>/dev/null || true
+    [ -f "$HOOK_CONFIG" ] && cp "$HOOK_CONFIG" "${HOOK_CONFIG}.bak" 2>/dev/null || true
 
+    REGISTER_OK=0
     if command -v jq &>/dev/null; then
-      # jq 合并 hooks.before_prompt_build
-      jq \
-        --arg cmd "$LOADCHAIN_DST" \
-        '.hooks.before_prompt_build = ((.hooks.before_prompt_build // []) + [{type: "shell", command: $cmd}])' \
+      # jq 合并 hooks.internal.entries.sofagent-load-chain = {enabled:true}
+      jq '.hooks.internal.enabled = ((.hooks.internal.enabled // false) or true) | .hooks.internal.entries = ((.hooks.internal.entries // {}) + {"sofagent-load-chain": {"enabled": true}})' \
         "$HOOK_CONFIG" > "${HOOK_CONFIG}.tmp" 2>/dev/null && \
-      mv "${HOOK_CONFIG}.tmp" "$HOOK_CONFIG" && \
-      ok "Hook 已自动注册" || \
-      warn "Hook 自动注册失败，请手动添加（配置已备份为 ${HOOK_CONFIG}.bak）"
+      mv "${HOOK_CONFIG}.tmp" "$HOOK_CONFIG" && REGISTER_OK=1 || \
+      warn "jq 注册失败（配置已备份为 ${HOOK_CONFIG}.bak）"
     elif command -v node &>/dev/null; then
-      CONFIG_PATH="$HOOK_CONFIG" LOADCHAIN_CMD="$LOADCHAIN_DST" node - << 'HOOK_INJECT'
+      CONFIG_PATH="$HOOK_CONFIG" node - << 'HOOK_INJECT'
 const fs = require('fs');
 const path = process.env.CONFIG_PATH;
-const cmd = process.env.LOADCHAIN_CMD;
 let raw = '{}';
 try { raw = fs.readFileSync(path, 'utf-8'); } catch(e) {}
 let cfg = {};
@@ -372,23 +391,27 @@ try {
   cfg = JSON.parse(cleaned || '{}');
 } catch(e) { cfg = {}; }
 cfg.hooks = cfg.hooks || {};
-cfg.hooks.before_prompt_build = cfg.hooks.before_prompt_build || [];
-cfg.hooks.before_prompt_build.push({type: 'shell', command: cmd});
+cfg.hooks.internal = cfg.hooks.internal || {};
+cfg.hooks.internal.enabled = true;
+cfg.hooks.internal.entries = cfg.hooks.internal.entries || {};
+cfg.hooks.internal.entries['sofagent-load-chain'] = { enabled: true };
 fs.writeFileSync(path, JSON.stringify(cfg, null, 2) + '\n');
 HOOK_INJECT
-      if [ $? -eq 0 ]; then
-        ok "Hook 已自动注册（Node.js）"
-      else
-        warn "Hook 自动注册失败，请手动添加（配置已备份为 ${HOOK_CONFIG}.bak）"
-      fi
+      [ $? -eq 0 ] && REGISTER_OK=1 || warn "Node 注册失败（配置已备份为 ${HOOK_CONFIG}.bak）"
     else
       warn "jq 和 Node.js 均不可用——Hook 需要手动注册"
-      warn "  将以下内容添加到 $HOOK_CONFIG 的 hooks.before_prompt_build："
-      warn "  {\"type\": \"shell\", \"command\": \"$LOADCHAIN_DST\"}"
+    fi
+
+    if [ "$REGISTER_OK" = "1" ]; then
+      ok "Hook 已自动注册（hooks.internal.entries.sofagent-load-chain）"
+    else
+      warn "请手动在 $HOOK_CONFIG 添加："
+      warn '  {"hooks":{"internal":{"enabled":true,"entries":{"sofagent-load-chain":{"enabled":true}}}}}'
     fi
   fi
 else
-  warn "找不到 load-chain.sh，跳过。加载链需要手动部署: $LOADCHAIN_SRC"
+  warn "找不到 hook 源文件（$HOOK_SRC_DIR/HOOK.md 或 handler.ts），跳过部署"
+  warn "  仓库结构异常？请从 https://github.com/KongFangXun/sofagent 重新拉取"
 fi
 
 # 部署配套脚本（task-log + task-orchestrate）
@@ -579,7 +602,7 @@ case "$PLATFORM" in
     echo "  已部署文件："
     echo "    宪法文件:      $TARGET/rules.md（宪法内联在 SKILL.md）"
     echo "    Skill 文件:     $TARGET/skills/sofagent/（6 核心 + 4 数据模板）"
-    echo "    加载链 Hook:    $TARGET/hooks/load-chain.sh"
+    echo "    加载链 Hook:    $TARGET/hooks/sofagent-load-chain/（HOOK.md + handler.ts）"
     echo "    配套脚本:       $TARGET/scripts/{task-record,task-orchestrate}.sh"
     echo "    断路器:         ${CONFIG_FILE:-未配置}（tools.loopDetection）"
     echo "    数据目录:       $SOFAGENT_DATA"
@@ -602,19 +625,21 @@ if [ "${NO_CONFIG_INJECT:-0}" = "1" ]; then
   echo "  ⚠️  --no-config-inject 已启用：未注入断路器配置，需手动配置 tools.loopDetection"
 fi
 if command -v ao &>/dev/null && [ -z "${DEEPSEEK_API_KEY:-}${ANTHROPIC_API_KEY:-}${OPENAI_API_KEY:-}" ]; then
-  echo "  🔑 配置 AO API Key（这是你已有的 LLM Key，不是新的）："
+  echo "  🔑 配置 AO API Key（这是你已有的 LLM Key，三选一）："
   echo "     export DEEPSEEK_API_KEY=你的DeepSeek密钥"
+  echo "     export ANTHROPIC_API_KEY=你的Claude密钥"
+  echo "     export OPENAI_API_KEY=你的OpenAI密钥"
   echo "     写入 ~/.zshrc 永久生效"
   echo ""
 fi
 
 # 加载链状态提示（仅 OpenClaw）
-if [ -f "${HOOK_CONFIG:-}" ] && grep -q "$LOADCHAIN_DST" "$HOOK_CONFIG" 2>/dev/null; then
-  echo "  ✅ Hook 已自动注册 → 每次启动自动注入约束"
+if [ -f "${HOOK_CONFIG:-}" ] && grep -q '"sofagent-load-chain"' "$HOOK_CONFIG" 2>/dev/null; then
+  echo "  ✅ Hook 已自动注册（openclaw.json）→ 每次启动自动注入约束"
 else
   echo "  ⚠️  Hook 未注册 → 约束层不会自动加载"
-  echo "     将以下行加入 ${HOOK_CONFIG} 的 hooks.before_prompt_build："
-  echo "     {\"type\": \"shell\", \"command\": \"$LOADCHAIN_DST\"}"
+  echo "     在 ${HOOK_CONFIG} 的 hooks.internal.entries 添加："
+  echo '     {"sofagent-load-chain":{"enabled":true}}'
 fi
 echo "  💡 运行 verify.sh 验证安装是否完整。"
 fi  # end OpenClaw-only status

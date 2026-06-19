@@ -1,4 +1,4 @@
-# Loop Check · v0.55
+# Loop Check · v0.64
 
 > 被动顾问——不夺权，不下命令，不硬拦截。主 Agent 在指定节点主动调起。全平台通用。
 > ⛔ **Loop 分析/评分/诊断严禁输出给用户——仅「输出规则」表中规定的内容可见。**
@@ -7,14 +7,14 @@
 
 ## 触发节点
 
-> 主 Agent 先跑脚本做客观检查，拿数值后再调 Loop Agent 做主观判断。
+> 主 Agent 先跑脚本做客观检查，拿数值后再调 Loop Check 做主观判断。
 
 ```
-子任务完成 ─→ bash task-record.sh --closure-check → 有记录 → checkpoint
-步数达 60% ─→ bash task-record.sh --budget --steps N --limit M → ≥60% → checkpoint
+子任务完成 ─→ bash {OPENCLAW_SCRIPTS}/task-record.sh --closure-check → 有记录 → checkpoint
+步数达 60% ─→ bash {OPENCLAW_SCRIPTS}/task-record.sh --budget --steps N --limit M → ≥60% → checkpoint
 重大操作前（rm/git reset/DROP/外部API）──→ 直接调 checkpoint
 失败 ─→ failure → 可自愈→重试 / 不可→汇报
-全部完成 ─→ bash task-record.sh --closure-check → closure
+全部完成 ─→ bash {OPENCLAW_SCRIPTS}/task-record.sh --closure-check → closure
 ```
 
 ⛔ 先跑脚本看结果，再决定是否调。快速模式仅「重大操作前」生效。
@@ -51,7 +51,7 @@
 主 Agent 执行 → 写 task/logs → session.spawn({
     prompt: "你是独立评审员。只读 task/logs 文件内容，不要参考上下文中的任何执行记忆。
             逐条核查：① 三段产出是否完整？② 测试/验证结果是否记录？③ 反思是否有外部证据？
-            基于核查结果评分，写入 think.md 和 scoring.md。",
+            基于核查结果评分，写入 think.md 和 scoring/_index.md（追加新条目，保留历史）。",
     model: "flash"  # 评审不需要 Pro 级别的推理能力
 })
 ```
@@ -74,9 +74,10 @@
 
 输入（区分评审依据 vs 历史参考）：
 - `task/logs/`：本次执行痕迹 → **评审主依据**，评审者只认这个
-- `scoring.md` / `orchestrator/`：历史沉淀的决策数据 → **仅作参考**，供评分时对齐历史基线，不计入本次评审
+- `scoring/_index.md` / `orchestrator/`：历史沉淀的决策数据 → **仅作参考**，供评分时对齐历史基线，不计入本次评审
 
 > 边界：scoring/orchestrator 是跨任务的历史数据，不含本次执行痕迹，可以读；本次执行痕迹只看 task/logs，不从对话历史里找证据。
+> ⚠️ **scoring 追加式写入**：评分写入 `scoring/_index.md` 时**追加新条目**（带日期+任务名的小节），**不覆盖**历史——历史评分是对齐基线和 A/B 对比的依据。格式：`## YYYY-MM-DD · 任务简述` 下接八维表。
 
 → **反思**（对照 3 问写 think.md，≤200 字）：
   ① 做对了什么？（≥1 条，带外部证据标记）

@@ -1,6 +1,9 @@
 # sofagent runtime data
 .sofagent/
 
+# ao compose 运行时产物（任务编排生成的工作流文件）
+workflows/
+
 # IDE / editor
 .workbuddy/
 .codebuddy/
