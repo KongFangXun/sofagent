@@ -19,12 +19,13 @@
 > bash 不可用时降级为 LLM 直接追加写入 `{SOFAGENT_DATA}/task/logs/YYYY-MM/YYYY-MM-DD.md`（格式参考 `data/task.md`）。
 
 ```
+⬜ ① 写 task/logs（命令见上方引用块）
 ⬜ ② 调起 Loop Agent（closure 模式）
       → 反思 → 评分 → A/B → 汇报
       详见 loop-agent.md
 ```
 
-> ② 不可跳过。执行后写入对应文件（think.md / scoring.md / orchestrator/）。全部打勾才能回用户。
+> ①② 不可跳过。执行后写入对应文件（think.md / scoring.md / orchestrator/）。全部打勾才能回用户。
 
 ---
 

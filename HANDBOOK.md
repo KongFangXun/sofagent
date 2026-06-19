@@ -4,7 +4,7 @@
 > 一个完全不懂代码的人，给 OpenClaw 写的 Agent 治理手册。
 > **为 AI Agent 提供纪律层与反思循环：4 条底线 + 10 则铁律约束行为，复杂任务自动拆解执行，每次跑完自动复盘。**
 >
-> v0.62 · 2026-06-19 · 孔放勋
+> v0.63 · 2026-06-19 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -285,7 +285,9 @@ bash sofagent/scripts/install.sh --platform {你的平台}
 
 > 💡 WorkBuddy 用户：技能市场安装，或 `git clone` + `bash sofagent/scripts/install.sh --platform workbuddy`。装好后 SKILL.md 首次加载自动完成初始化（B1 步创建 `.sofagent/` 数据目录）。
 
-**怎么验证装好了**：下次开新对话，看 Agent 回复里有没有出现「入口流程已加载」或类似初始化提示。更可靠的方式——跑 `bash sofagent/scripts/verify.sh`，自动检查 9 类 24+ 项。加 `--json` 可集成到 CI/CD。如果没看到，去 §六 FAQ 看「Agent 不遵守铁律」那条排查。
+**怎么验证装好了**：跑 `bash sofagent/scripts/verify.sh`，自动检查 9 类 24+ 项。加 `--json` 可集成到 CI/CD。如果没通过，去 §六 FAQ 看「Agent 不遵守铁律」那条排查。
+
+> 💡 不要靠「看 Agent 回复里有没有初始化提示」验证——SKILL.md 闸门 ① 明确要求「内部执行，不输出给用户」，Agent 不会把初始化过程展示给你。只信 verify.sh。
 
 装完之后，去 §四，试试给 Agent 派个任务。
 
@@ -357,6 +359,20 @@ OpenClaw 通过 Hook 强制注入宪法，Agent 无需额外操作即可完整�
 
 > 💡 更多细节见 [ARCHITECTURE.md](./ARCHITECTURE.md#known-limits)。
 
+### Osmani 三盆冷水（对用户的警告）
+
+Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的设计缺陷，是任何自动化系统的宿命。sofagent 能做的是让你知道它们存在，不能替你解决。
+
+| 冷水 | 意思 | sofagent 的应对 |
+|------|------|------|
+| 验证责任不可替代 | Agent 说「我做完了」是声明不是证明。无人值守的 Loop 也会无人值守地犯错 | 铁律 #3 要求可观测证据（测试通过/lint 无错/API 200/文件 diff）。**Good Heart 陷阱**：Agent 能改评判标准就会收敛于「让验证变容易」——裁判不可被收买 |
+| 理解债 | Loop 交付你没写过的代码越快，理解鸿沟越大 | task/logs 只追加不修改，永远可回溯。关键是愿不愿意翻看 |
+| 认知投降 | 最舒服的状态是不再有自己观点，Agent 说什么就是什么 | rules.md 随时可加规则覆盖 Agent 默认行为；编排深度可回滚 |
+
+两个人搭一模一样的 sofagent，可能得到完全相反的结果——一个用它加速自己深刻理解的工作，另一个用它逃避理解。sofagent 分不出区别，你分得出。
+
+> Klarna 教训：2024 年 2 月宣布用 AI 客服裁掉 700 人、成本降 40%，两年后客户满意度暴跌 22%、季度净亏 9900 万美元。不是 AI 不行，是没有治理层的 AI 不行。
+
 
 ## 特别鸣谢
 
@@ -424,4 +440,4 @@ OpenClaw 通过 Hook 强制注入宪法，Agent 无需额外操作即可完整�
 
 > 大半年 OpenClaw 攒的笔记。不是实验室数据，但对我有用。哪里写得不好，直接告诉我。
 >
-> *v0.62，2026 年 6 月 19 日*
+> *v0.63，2026 年 6 月 19 日*

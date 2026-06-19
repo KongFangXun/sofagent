@@ -58,19 +58,25 @@
 
 **非 OpenClaw 平台**：无 session.spawn，退化到证据驱动评审——
 
+> ⚠️ 本路径为 prompt 级约束，无机制保障，效果未实测。LLM 没有「清空执行记忆」的 API，执行上下文仍在窗口里——下面的「重新 Read」是让 Agent 以文件为评审主依据，不是真的能擦除执行记忆。Agent 可能仍凭执行记忆补充评审，这是已知局限。
+
 ```
-主 Agent 写 task/logs → 主动清空执行记忆 → 重新 Read task/logs → 以文件内容为唯一依据
-逐条对证（不可凭记忆补充）：
+主 Agent 写 task/logs → 重新 Read task/logs → 以文件内容为评审主依据
+逐条对证（执行记忆仅作辅助参考，以 task/logs 文件为准）：
 - 三段输出了吗？→ 看 task/logs 里有没有
 - 测试过了吗？→ 看 task/logs 里有没有记录
-- task/logs 里没有的 → 不算。禁止从对话历史中寻找证据。
+- task/logs 里没有的 → 不算证据
 ```
 
-⛔ 无论如何，禁止「看完 task/logs 觉得太简略，凭记忆中补充」。评审者只认识文件。
+与 OpenClaw 路径的区别：OpenClaw 是工程隔离（子 Agent 看不到执行上下文），非 OpenClaw 是 prompt 级约束（主 Agent 被要求以文件为准，但无机制强制）。两者可靠性不在同一级别——非 OpenClaw 路径的评审仍可能被执行记忆污染。
 
 ### 输入与流程
 
-输入：task/logs + scoring.md + orchestrator/
+输入（区分评审依据 vs 历史参考）：
+- `task/logs/`：本次执行痕迹 → **评审主依据**，评审者只认这个
+- `scoring.md` / `orchestrator/`：历史沉淀的决策数据 → **仅作参考**，供评分时对齐历史基线，不计入本次评审
+
+> 边界：scoring/orchestrator 是跨任务的历史数据，不含本次执行痕迹，可以读；本次执行痕迹只看 task/logs，不从对话历史里找证据。
 
 → **反思**（对照 3 问写 think.md，≤200 字）：
   ① 做对了什么？（≥1 条，带外部证据标记）

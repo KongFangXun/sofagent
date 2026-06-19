@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.62 · 2026-06-19 · 孔放勋
+> v0.63 · 2026-06-19 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -301,11 +301,6 @@ engine.md 在 ao compose 拆完任务后从 ClawHub 搜索并集成。四步：�
 
 ---
 
-
-
----
-
-
 ## 三、模型最优选择
 
 > 负责的子 Skill：`engine.md` 分配模型——Flash 干粗活、Pro 干细活。
@@ -483,19 +478,13 @@ orchestrator/ 就是迭代的中枢。它不记原始数据，只记最优结论
 
 ### 评审者与执行者分离
 
-当前评分由执行任务的 Agent 自己完成——评估者和被评估者是同一个人。上海 AI Lab 的 Self Harness 实验表明：Agent 自评会收敛于「让验证变容易」而非「让结果变好」，通过率分离后提升 14-21%。v0.62.2 已按平台分级落地：
+闭环评分的评审者分离按平台分级实现——OpenClaw 用 `session.spawn` 工程隔离（可类比引用 Self Harness 的方向性结论）；非 OpenClaw 是 prompt 级约束（无机制保障，效果未实测，不引用具体数字）。
 
-| 平台 | 实现方式 | 效果 |
-|------|------|------|
-| **OpenClaw** | `session.spawn` 独立子 Agent——只传 task/logs，不传执行上下文 | 真正角色隔离 |
-| **WorkBuddy 等** | 证据驱动评审——主 Agent 清空记忆，以 task/logs 文件为唯一依据 | 半隔离，靠自觉 |
-
-细节见 `loop-agent.md` closure 模式 §平台分级评审。
+> 完整实现细节与诚实声明见 `loop-agent.md` closure 模式 §平台分级评审；设计权衡见 [ARCHITECTURE.md §三「复盘评分是 LLM 自评」](./ARCHITECTURE.md#复盘评分是-llm-自评评审者与执行者不分离)。
 
 以上是 sofagent 跑起来之后的自我进化逻辑——从 Skills 评分到编排模板，全自动迭代。但在一切开始之前得先把它装上——接下来讲怎么装、在不同平台上怎么跑。
 
 ---
-
 
 ## 六、反思工程
 

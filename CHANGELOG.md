@@ -4,6 +4,33 @@
 
 ---
 
+## [v0.63] — 2026-06-19
+
+### Changed — 诚实化（P0）
+- **loop-agent.md 非 OpenClaw 评审路径去伪强制语气**：删除 `⛔ 禁止凭记忆补充` 等硬标记，加显式声明「prompt 级约束，无机制保障，效果未实测」。承认 LLM 没有「清空执行记忆」的 API——「重新 Read task/logs」是让 Agent 以文件为主依据，不是真的能擦除执行记忆。与 OpenClaw `session.spawn` 工程隔离路径的可靠性不在同一级别，文档不再混淆
+- **ARCHITECTURE 外部研究引用诚实化**：Self Harness / Skill Reducer 删除具体百分比数字（14-21% / 39% / 2.8%），改定性描述；加免责声明「sofagent 核心效果未实测，不代表能达到相同效果」；标注「论文链接待补」（致谢表其他引用均有 arXiv 号）。非 OpenClaw 路径不再引用 Self Harness 的工程隔离实验数字
+- **HANDBOOK §五「验证安装」与闸门矛盾修复**：删除「看 Agent 回复里有没有初始化提示」——SKILL.md 闸门 ① 明确「内部执行，不输出给用户」，两处直接矛盾。改为只推荐 verify.sh，并加说明「不要靠初始化提示验证」
+
+### Changed — 一致性（P1）
+- **SKILL.md triggers 可判定性修复**：删除「Agent行为异常」「经验积累」（事后状态/结果，路由阶段不可判定），新增「多步任务」「代码修改」「文件操作」（事前可路由特征）
+- **task-closure.md 编号断裂修复**：执行清单缺 ①（写 task/logs 被合并进引用块），补 ①② 连续编号
+- **loop-agent.md closure 输入边界讲清楚**：区分 task/logs（评审主依据）vs scoring/orchestrator（历史参考，不计入本次评审），消除「输入含 scoring/orchestrator 但又要求只读 task/logs」的矛盾
+
+### Changed — 文档膨胀裁剪（P2）
+- **ARCHITECTURE.md 612→585 行**：删除 §四「Osmani 三盆冷水」（面向用户的警告，移到 HANDBOOK FAQ），回到 600 硬上限内
+- **DEVELOPMENT.md 610→599 行**：§五「评审者分离」表格精简为指向 loop-agent.md 和 ARCHITECTURE 的引用（避免重复 + 诚实化），清理冗余分隔符，回到 600 硬上限内
+- **HANDBOOK.md 加 Osmani 三盆冷水精简版**（表格形式，443 行 ≤500 上限内）
+
+### Fixed
+- **ARCHITECTURE §三「复盘评分是 LLM 自评」段落诚实化**：原描述「v0.62.2 已按平台分级解决」过度乐观，改为分级表格明确 OpenClaw 工程隔离 vs 非 OpenClaw prompt 级约束的差异，标注非 OpenClaw 不引用具体数字
+
+### 不动
+- OpenClaw `session.spawn` 评审者分离分支（真改进，保留原样）
+- 4 条底线 + 10 则铁律内容
+- 三层加载链结构
+
+---
+
 ## [v0.62] — 2026-06
 
 ### Added
