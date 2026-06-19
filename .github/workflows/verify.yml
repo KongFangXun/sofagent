@@ -13,9 +13,18 @@ jobs:
 
       - name: Setup minimal sofagent environment
         run: |
-          mkdir -p ~/.openclaw/skills
-          cp sofagent/constitution/sofagent.md ~/.openclaw/
+          mkdir -p ~/.openclaw/skills/sofagent
+          # v0.62: 宪法内联进 SKILL.md，不再需要 sofagent.md
           cp sofagent/constitution/rules.md ~/.openclaw/
+          cp sofagent/SKILL.md ~/.openclaw/skills/sofagent/SKILL.md
+          # 部署其他 Skill 文件
+          for f in engine.md entry-gate.md task-aware.md task-closure.md loop-agent.md; do
+            [ -f "sofagent/$f" ] && cp "sofagent/$f" ~/.openclaw/skills/sofagent/
+          done
+          # 部署数据模板
+          mkdir -p ~/.openclaw/skills/sofagent/data
+          cp sofagent/data/*.md ~/.openclaw/skills/sofagent/data/ 2>/dev/null || true
+          # 部署脚本
           cp -r sofagent/scripts ~/.openclaw/
           chmod +x ~/.openclaw/scripts/*.sh
           mkdir -p ~/.openclaw/hooks
