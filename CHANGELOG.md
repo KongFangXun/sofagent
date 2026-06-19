@@ -4,6 +4,21 @@
 
 ---
 
+## [v0.7.0] — 2026-06-19
+
+### Added — 企业合规（P0/P1）
+- **日志脱敏**：task-record.sh 新增 `sanitize()` 函数，写入 task/logs 前自动打码 API Key / token / 凭证。内网 IP 脱敏可选（默认关闭）。通过 `log_sanitize: true` 在 rules.md 启用
+- **数据保留策略**：新增 cleanup.sh 独立脚本，支持按天（`data_retention_days`，默认 90）/ 按条（`data_retention_max_entries`，默认 500）清理。删除前先 tar.gz 归档到 `archive/YYYY-MM.tar.gz`，确认成功后再删除源文件。通过 `data_cleanup_on_record: true` 在 task-record.sh 写入后概率触发（`data_cleanup_frequency`，默认 1/10）
+- **审计日志**：新增 audit.sh 独立脚本，记录关键操作（install / uninstall / orchestrate / cleanup）到 `task/audit/YYYY-MM/YYYY-MM-DD.md`，追加 Markdown 表格行。通过 `audit_enabled: true` 在 rules.md 启用，默认关闭
+- **共享配置层**：新增 lib/config.sh，从 rules.md 解析合规配置项，export 7 个环境变量供所有脚本复用
+- **验证升级**：verify.sh 新增企业合规检查组（脱敏函数验证 / cleanup.sh 参数检查 / audit.sh 参数检查 / 默认关闭确认 / rules.md 配置段完整性）
+
+### Changed
+- **rules.md**：末尾新增「企业合规（v0.7x）」配置段，7 个配置项默认全部注释（向后兼容）
+- **install.sh / uninstall.sh / task-orchestrate.sh**：新增审计钩子（开始/结束处调用 audit.sh，`|| true` 兜底）
+
+---
+
 ## [v0.63] — 2026-06-19
 
 ### Changed — 诚实化（P0）

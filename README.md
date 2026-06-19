@@ -259,7 +259,7 @@ OpenClaw 上全自动，其他平台需手动触发闭环。
 
 - [OpenClaw](https://github.com/openclaw/openclaw) by Peter Steinberger — 整个 sofagent 的基石
 - [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) — 所有文件都是它与 GLM-5.2 配合生成的
-- [GLM-5.2](https://z.ai/) — 与 DeepSeek V4 Pro 一起，负责代码生成与审查
+- [GLM-5.2](https://z.ai/) — 配合 DeepSeek V4 Pro 完成代码生成、审查与测试
 - [Andrej Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills) — 4 条编码原则是 10 则铁律的根基
 - [agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator) + [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh) — 任务编排引擎 + 中文岗位库
 - [Anthropic Skills](https://github.com/anthropics/skills) — 官方 SKILL.md 格式规范

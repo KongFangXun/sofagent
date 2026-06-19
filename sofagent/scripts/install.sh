@@ -47,6 +47,9 @@ echo "  ║   sofagent Harness · installer   ║"
 echo "  ╚═══════════════════════════════════╝"
 echo ""
 
+# ── 审计：安装开始 ──
+bash "${SCRIPT_DIR}/audit.sh" --operation "install" --target "开始" --result "v${VERSION}, $(uname -s)" 2>/dev/null || true
+
 # ════════════════════════════════════════
 # Step 1: 确定平台和目标路径
 # ════════════════════════════════════════
@@ -414,11 +417,11 @@ else
   warn "  仓库结构异常？请从 https://github.com/KongFangXun/sofagent 重新拉取"
 fi
 
-# 部署配套脚本（task-log + task-orchestrate）
+# 部署配套脚本（task-log + task-orchestrate + cleanup + audit）
 SCRIPTS_DST="${TARGET}/scripts"
 mkdir -p "$SCRIPTS_DST"
 
-for script in task-record.sh task-orchestrate.sh; do
+for script in task-record.sh task-orchestrate.sh cleanup.sh audit.sh; do
   src="${SCRIPT_DIR}/${script}"
   dst="${SCRIPTS_DST}/${script}"
   if [ -f "$src" ]; then
@@ -429,6 +432,17 @@ for script in task-record.sh task-orchestrate.sh; do
     warn "找不到 ${script}，跳过"
   fi
 done
+
+# 部署共享配置加载器（lib/config.sh）
+LIB_SRC="${SCRIPT_DIR}/lib/config.sh"
+LIB_DST="${SCRIPTS_DST}/lib/config.sh"
+if [ -f "$LIB_SRC" ]; then
+  mkdir -p "$(dirname "$LIB_DST")"
+  cp "$LIB_SRC" "$LIB_DST"
+  ok "配置加载器已部署: $LIB_DST"
+else
+  warn "找不到 lib/config.sh，跳过"
+fi
 
 # 创建 .sofagent/ 数据目录
 SOFAGENT_DATA="${PWD}/.sofagent"
@@ -603,7 +617,7 @@ case "$PLATFORM" in
     echo "    宪法文件:      $TARGET/rules.md（宪法内联在 SKILL.md）"
     echo "    Skill 文件:     $TARGET/skills/sofagent/（6 核心 + 4 数据模板）"
     echo "    加载链 Hook:    $TARGET/hooks/sofagent-load-chain/（HOOK.md + handler.ts）"
-    echo "    配套脚本:       $TARGET/scripts/{task-record,task-orchestrate}.sh"
+    echo "    配套脚本:       $TARGET/scripts/{task-record,task-orchestrate,cleanup,audit}.sh"
     echo "    断路器:         ${CONFIG_FILE:-未配置}（tools.loopDetection）"
     echo "    数据目录:       $SOFAGENT_DATA"
     ;;
@@ -645,6 +659,9 @@ echo "  💡 运行 verify.sh 验证安装是否完整。"
 fi  # end OpenClaw-only status
 
 echo ""
+
+# ── 审计：安装完成 ──
+bash "${SCRIPT_DIR}/audit.sh" --operation "install" --target "完成" --result "成功" 2>/dev/null || true
 
 # 写入安装日志摘要
 _log "install complete: constitution=1(rules) skills=6 hook=1 loopdetect=1"

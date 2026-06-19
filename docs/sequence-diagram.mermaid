@@ -1,0 +1,123 @@
+sequenceDiagram
+    actor User as 用户/Agent
+    participant Orch as task-orchestrate.sh
+    participant Record as task-record.sh
+    participant Config as lib/config.sh
+    participant Sanitize as sanitize()
+    participant FS as .sofagent/ 文件系统
+    participant Cleanup as cleanup.sh
+    participant Audit as audit.sh
+    participant Install as install.sh
+    participant Uninstall as uninstall.sh
+
+    %% ═══════════════════════════════════════
+    %% 场景 1: 任务执行 → 记录 → 脱敏 → 清理
+    %% ═══════════════════════════════════════
+
+    rect rgb(240, 248, 255)
+        Note over User,FS: 场景 1: 核心闭环 — 任务记录 + 脱敏 + 清理触发
+
+        Orch->>Record: --task "重构" --result "成功" --model deepseek-v4
+        Record->>Config: source lib/config.sh
+        Config-->>Record: SOFA_SANITIZE=true, SOFA_RETENTION_DAYS=90, ...
+
+        alt log_sanitize 启用
+            Record->>Sanitize: sanitize("重构用户模块, key=sk-abc123")
+            Sanitize-->>Record: "重构用户模块, key=***REDACTED***"
+            Record->>Sanitize: sanitize("成功")
+            Sanitize-->>Record: "成功"
+            Record->>Sanitize: sanitize("deepseek-v4")
+            Sanitize-->>Record: "deepseek-v4"
+        end
+
+        Note over Record,FS: 构建脱敏后的 Markdown 条目
+        Record->>FS: cat << ENTRY >> task/logs/2026-06/2026-06-19.md
+
+        opt audit_enabled && 概率触发
+            Record->>Audit: --operation record --target "重构" --result "成功"
+            Audit->>FS: 追加审计记录到 task/audit/2026-06/2026-06-19.md
+        end
+
+        opt cleanup_on_record && RANDOM%10==0
+            Record->>Cleanup: 触发清理检查
+            Cleanup->>Config: source lib/config.sh
+            Cleanup->>FS: find task/logs/ -mtime +90
+            FS-->>Cleanup: 匹配的旧文件列表
+            alt 超过保留天数
+                Cleanup->>FS: rm 旧日志文件
+                Cleanup->>Audit: --operation cleanup --target "task/logs/2026-02/" --result "删除3个文件"
+                Audit->>FS: 追加审计记录
+            end
+            Cleanup-->>Record: 清理完成摘要
+        end
+
+        Record-->>Orch: 已记录: 重构 → logs/2026-06/2026-06-19.md
+    end
+
+    %% ═══════════════════════════════════════
+    %% 场景 2: 安装审计
+    %% ═══════════════════════════════════════
+
+    rect rgb(255, 248, 240)
+        Note over User,FS: 场景 2: 安装操作审计
+
+        User->>Install: bash install.sh --platform openclaw
+        Install->>Config: source lib/config.sh
+
+        alt audit_enabled
+            Install->>Audit: --operation install --target "开始" --result "v1.1.0, openclaw"
+            Audit->>FS: 追加到 task/audit/2026-06/2026-06-19.md
+        end
+
+        Install->>Install: Step 1-7 安装流程...
+
+        alt audit_enabled
+            Install->>Audit: --operation install --target "完成" --result "成功"
+            Audit->>FS: 追加到 task/audit/2026-06/2026-06-19.md
+        end
+    end
+
+    %% ═══════════════════════════════════════
+    %% 场景 3: 卸载审计
+    %% ═══════════════════════════════════════
+
+    rect rgb(255, 240, 240)
+        Note over User,FS: 场景 3: 卸载操作审计
+
+        User->>Uninstall: bash uninstall.sh
+        Uninstall->>Config: source lib/config.sh
+
+        alt audit_enabled
+            Uninstall->>Audit: --operation uninstall --target "开始"
+            Audit->>FS: 追加到 task/audit/2026-06/2026-06-19.md
+        end
+
+        Uninstall->>Uninstall: 卸载流程...
+
+        alt audit_enabled
+            Uninstall->>Audit: --operation uninstall --target "完成" --result "成功"
+            Audit->>FS: 追加到 task/audit/2026-06/2026-06-19.md
+        end
+    end
+
+    %% ═══════════════════════════════════════
+    %% 场景 4: 编排审计
+    %% ═══════════════════════════════════════
+
+    rect rgb(240, 255, 240)
+        Note over User,FS: 场景 4: 编排操作审计
+
+        User->>Orch: task-orchestrate.sh "重构用户模块"
+
+        alt audit_enabled
+            Orch->>Audit: --operation orchestrate --target "重构用户模块" --result "开始, L2"
+            Audit->>FS: 追加到 task/audit/2026-06/2026-06-19.md
+        end
+
+        Orch->>Orch: ao compose → ao run (编排执行)...
+
+        alt audit_enabled
+            Orch->>Audit: --operation orchestrate --target "重构用户模块" --result "成功, L2, 45s"
+            Audit->>FS: 追加到 task/audit/2026-06/2026-06-19.md
+        end
+    end

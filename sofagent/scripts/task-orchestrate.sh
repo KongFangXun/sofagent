@@ -29,6 +29,10 @@ fi
 set -euo pipefail
 
 VERSION="1.0.0"
+
+# ── 确定脚本目录 ──
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
 info()  { echo -e "${BLUE}[orchestrate]${NC} $1"; }
 ok()    { echo -e "${GREEN}[✓]${NC} $1"; }
@@ -107,6 +111,9 @@ LEVEL_LABEL="${LEVEL_DESC[$((LEVEL-1))]:-完整编排}"
 info "任务: $TASK_DESC"
 info "编排深度: L${LEVEL} — ${LEVEL_LABEL}"
 echo ""
+
+# ── 审计：编排开始 ──
+bash "${SCRIPT_DIR}/audit.sh" --operation "orchestrate" --target "${TASK_DESC}" --result "开始, L${LEVEL}" 2>/dev/null || true
 
 # ── 生成任务唯一标识 ──
 TASK_SLUG=$(echo "$TASK_DESC" | shasum -a 256 2>/dev/null | cut -c1-8 || echo "unknown")
@@ -220,10 +227,14 @@ if [ "$AUTO_LEVEL" = true ]; then
   info "🎯 自动模式: 采用 L${LEVEL} (${LEVEL_LABEL})"
 fi
 
-# ── 共享出口：滑窗回滚 + 清理 → exit（避免多出口散落）──
+# ── 共享出口：滑窗回滚 + 审计 + 清理 → exit（避免多出口散落）──
 _exit_orchestrate() {
   local code="${1:-0}"
   sliding_window_rollback "$TASK_SLUG" "$LEVEL" || true
+  # ── 审计：编排结束 ──
+  local result_str
+  if [ "$code" -eq 0 ]; then result_str="成功"; else result_str="失败"; fi
+  bash "${SCRIPT_DIR}/audit.sh" --operation "orchestrate" --target "${TASK_DESC}" --result "${result_str}, L${LEVEL}, ${ELAPSED:-?}s" 2>/dev/null || true
   exit "$code"
 }
 
@@ -304,7 +315,7 @@ if [ "$SKIP_ORCHESTRATE" = true ]; then
   echo "  ════════════════════════════════════"
   echo "  编排结束。exit code: $EXIT_CODE · 深度: L4 (自主执行)"
   echo ""
-  exit $EXIT_CODE
+  _exit_orchestrate "$EXIT_CODE"
 fi
 
 # ── Step 1: AO 编排预览 ──
@@ -343,7 +354,7 @@ else
     ao compose "$TASK_DESC" --run
   fi
   rm -f "$WORKFLOW_FILE"
-  exit 0
+  _exit_orchestrate 0
 fi
 
 fi  # 结束 SKIP_AO_COMPOSE 分支

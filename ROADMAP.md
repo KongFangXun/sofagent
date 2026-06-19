@@ -49,15 +49,15 @@
 
 > ⚠️ **v0.60 发布自检发现：加载链步进脆弱性。** Agent 声称"跑了 sofagent"，实际三层加载链只读了 1/3（宪法层被跳过）。根因：加载链依赖 Agent 自觉，SKILL.md 的 ⛔ 只是文字警告。**v0.61 候选已落地四项改进**（反向锚点 / Step 指令块 / 平台分级表 / think.md 冷启动）。WorkBuddy 侧新会话验证失败（Agent 仍全跳加载链）——证实 SKILL.md 层面改不动此问题，强制力只能来自外部 Hook。OpenClaw 侧待验。A0 前置为第 0 层守门员待 v0.7x。详见 think.md 反思区。
 
-### v0.7x — 企业级（3 项待做）
+### v0.7x — 企业级（3 项全部完成 ✅）
 
-> v0.5x 已落地企业级基础能力（见上方「已完成 → 企业级能力」）。以下 3 项为剩余合规项。
+> v0.5x 已落地企业级基础能力（见上方「已完成 → 企业级能力」）。以下 3 项合规项已于 v0.7.0 完成。
 
 | 想法 | 类别 | 优先级 | 说明 |
 |------|:--:|:--:|------|
-| **数据保留策略** | 合规 | 🟡 | 定义 task/logs 和 think.md 的自动清理规则——保留多久、什么条件下归档 |
-| **task/logs 脱敏** | 合规 | 🟢 | 任务日志中的 API key、token、内网 IP 等敏感信息自动打码 |
-| **审计日志** | 合规 | 🟢 | 记录谁、什么时间、触发了什么编排，满足企业合规审计要求 |
+| **数据保留策略** | 合规 | ✅ | 定义 task/logs 的自动清理规则——按保留天数/条数上限清理，清理前 tar.gz 归档，概率触发 |
+| **task/logs 脱敏** | 合规 | ✅ | 任务日志中的 API key、token、密码等敏感信息写入前自动打码，内网 IP 可选 |
+| **审计日志** | 合规 | ✅ | 记录谁、什么时间、触发了什么操作，满足企业合规审计要求，默认关闭向后兼容 |
 
 ### v1.x — v1.0 发布后
 
@@ -72,6 +72,115 @@
 | **`/review` 命令** | 🔧 | 🟡 | 任务闭环时主动问「要不要总结一下这次用了哪些 Skill、踩了哪些坑？」——把可追溯性变成可消费性 |
 | **Skill 反向校验** | 🧑‍🎓 | 🟡 | 当前 skill-iterate 只看「用了几次」——不检查「为什么一直没人用」。加 30 天零触发提醒 |
 | **外部评估器集成（可选）** | 🔧 | 🟢 | 支持接入 DeepEval / ASSERT 等第三方评估工具作为独立评分来源，与 loop-check 自评做交叉验证。优先实现轻量方案——bash 脚本评估器（`evaluator: bash scripts/eval-{task}.sh`），零外部依赖，输出 JSON 格式分数字段。参考 Coze Loop 的 Code Evaluator 概念；不是搬代码，是偷「用确定性代码跑评估，不靠 LLM 自评」的思路 |
+
+---
+
+#### Device 端常驻脚本（daemon）— v1.x 核心工程
+
+> **要解决的问题**：sofagent 的治理约束活在 session 里。SKILL.md 被注入、think.md 被 Read、rules.md 被加载——全部发生在 Agent 对话过程中。session 一结束，Agent 就不记得任何事了。下一个 session 能不能读到 think.md 里的教训？全看 Agent 心情。这就是「软约束在上下文外不生效」的架构宿命——也是 v0.61 验证失败的根本原因：SKILL.md 层面改不动加载链跳步，因为真正的强制力只能来自 Agent 外部的持续性进程。
+
+##### 什么是 daemon
+
+一个轻量级本地后台进程，不参与 Agent 对话，只做三件事：
+
+1. **看门** — 监控 `.sofagent/` 数据目录的文件变化（新增/修改/删除）
+2. **提醒** — 在 Agent 新 session 启动前，把 think.md 教训和 rules.md 规则\"塞\"到 Agent 眼前
+3. **兜底** — 确保跨 session 的经验不会因为 Agent 忘了读而丢失
+
+daemon 不是\"又一个约束\"，它是**让已有约束跨 session 生效的执行器**。它不创造新规则，只确保已有的规则（constitution / think.md / rules.md）不被遗忘。
+
+##### 架构
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    daemon（常驻进程）                   │
+│                                                       │
+│  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐ │
+│  │ 文件监控模块  │  │ Agent 检测   │  │ 提醒注入    │ │
+│  │              │  │              │  │              │ │
+│  │ watch        │  │ 检测 Agent   │  │ 新 session   │ │
+│  │ .sofagent/   │  │ 平台进程     │  │ 启动前注入   │ │
+│  │ 变更事件     │  │ 启动/关闭    │  │ think+rules  │ │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬──────┘ │
+│         │                 │                 │         │
+│         └─────────┬───────┴─────────────────┘         │
+│                   │                                   │
+│              ┌────▼────┐                              │
+│              │ 状态文件 │  ← daemon.json               │
+│              │ 持久化   │    记录当前监控状态            │
+│              └─────────┘                              │
+└─────────────────────────────────────────────────────┘
+         │                    │
+         ▼                    ▼
+   .sofagent/            Agent 平台进程
+   (think.md,               (OpenClaw /
+    rules.md,                WorkBuddy /
+    task/logs,               Claude Code)
+    scoring/)
+```
+
+##### 核心能力
+
+| 能力 | 触发条件 | 行为 |
+|------|----------|------|
+| **think.md 变更检测** | 文件 mtime 变化 | 标记\"有新反思可用\"，下次 Agent 启动时提醒 Read |
+| **rules.md 变更检测** | 文件 mtime 变化 | 同上，确保配置变更不遗漏 |
+| **Agent 启动检测** | 平台进程出现在进程列表 | 向 Agent 注入启动提示：\"上次学到了 X，注意 Y\" |
+| **复盘提醒** | 距上次 task/logs 写入超过 N 小时 | 通知：\"48 小时没跑了，要不要复盘一下？\" |
+| **健康检查** | 定时（默认每小时） | 检查 .sofagent/ 目录完整性、权限、磁盘空间 |
+| **数据保留触发** | 符合 cleanup.sh 条件 | 自动调用 cleanup.sh（替代当前概率触发机制） |
+
+##### 安装与生命周期
+
+```
+安装: sofagent/scripts/daemon-install.sh
+       → 部署 daemon.sh 到 ~/.sofagent/daemon/
+       → 注册 launchd(macOS) / systemd(Linux) / 任务计划程序(Windows)
+       → 写入 daemon.json 配置文件
+
+启动: launchctl load ~/Library/LaunchAgents/com.sofagent.daemon.plist
+      （系统启动时自动拉起，crash 后自动重启）
+
+停止: launchctl unload ~/Library/LaunchAgents/com.sofagent.daemon.plist
+      或 daemon.sh --stop
+
+卸载: sofagent/scripts/daemon-uninstall.sh
+       → 移除 launchd/systemd 注册
+       → 清理 daemon 目录
+```
+
+##### 设计原则（与 sofagent 哲学一致）
+
+| 原则 | 说明 |
+|------|------|
+| **不僭越** | daemon 只管\"提醒\"和\"兜底\"，不替 Agent 做决策。它告诉 Agent \"该读 think.md 了\"，但不替 Agent 读 |
+| **文件系统优先** | 所有状态通过 Markdown 和 JSON 文件持久化，不引入数据库。daemon.json 是唯一配置文件，人可直接阅读 |
+| **最小依赖** | bash + 平台原生进程管理（launchd/systemd/任务计划程序），不安装额外运行时 |
+| **静默运行** | 不弹窗、不打断用户。提醒通过文件注入实现，Agent 在下一个 session 自然看到 |
+| **渐进式** | MVP：只做 think.md 变更检测 + Agent 启动提醒。后续迭代加入健康检查、复盘提醒、自动清理触发 |
+| **跨平台** | macOS（launchd）/ Linux（systemd）/ Windows（任务计划程序），核心逻辑用 bash 统一 |
+
+##### 分阶段实现
+
+| 阶段 | 功能 | 说明 |
+|------|------|------|
+| **daemon v0.1（MVP）** | 文件监控 + 启动提醒 | watch think.md/rules.md 变更 → Agent 启动时注入提醒。验证\"跨 session 经验不丢失\" |
+| **daemon v0.2** | 复盘提醒 + 健康检查 | 定时检查 + 通知，确保 sofagent 数据目录健康 |
+| **daemon v0.3** | 清理触发 + 状态面板 | 替代 task-record.sh 概率触发 → daemon 定时调 cleanup.sh；增加 `daemon.sh --status` 查看当前运行状态 |
+| **daemon v1.0** | 全平台 + v2.x 就绪 | Windows 任务计划程序支持；能力画像文件自动生成（为 v2.x 路由器提供设备能力数据） |
+
+##### 与 v2.x 的关系
+
+daemon 是 v2.x 的前置条件，具体体现在：
+
+- **发现注册**：daemon 持续运行 → 知道设备\"活着\" → 路由器能发现
+- **能力画像**：daemon v1.0 自动生成能力文件 → v2.x 路由器直接读取，无需重新采集
+- **任务状态**：daemon 监控本地 Agent 进程 → 路由器知道哪个设备正在忙、哪个空闲
+- **反思同步**：daemon 检测 think.md 变更 → 触发向路由器同步
+
+一句话：**没有 daemon，v2.x 的路由器就是一个不知道设备在不在、Agent 忙不忙的盲调度器。**
+
+---
 
 ### v2.x — 多 Agent 协同（规划中）
 

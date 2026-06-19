@@ -382,7 +382,7 @@ Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的�
 
 - **[OpenClaw](https://github.com/openclaw/openclaw)** by Peter Steinberger — 整个 sofagent 的基石。从上下文加载到 Hook 触发、从 Skill 注入到 Session 管理，整套体系都建立在 OpenClaw 的能力之上。没有 OpenClaw，这本 Handbook 一页都写不出来
 - **[DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/)** — 这本 Handbook 和所有 sofagent 文件都是它与 GLM-5.2 配合生成的。一个产品经理能做完这件事，全靠它们
-- **[GLM-5.2](https://z.ai/)** — 与 DeepSeek V4 Pro 协作，负责代码生成与审查
+- **[GLM-5.2](https://z.ai/)** — 配合 DeepSeek V4 Pro 完成代码生成、审查与测试
 
 ### GitHub 项目
 

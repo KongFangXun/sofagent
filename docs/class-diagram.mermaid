@@ -1,0 +1,164 @@
+---
+title: sofagent v0.7x 企业合规 — 组件关系图
+---
+classDiagram
+    direction TB
+
+    %% ═══════════════════════════════════════
+    %% 配置层
+    %% ═══════════════════════════════════════
+
+    class rules_md {
+        +log_sanitize: bool
+        +log_sanitize_ips: bool
+        +data_retention_days: int
+        +data_retention_max_entries: int
+        +data_cleanup_on_record: bool
+        +audit_enabled: bool
+    }
+
+    class config_sh {
+        +SOFA_SANITIZE: env
+        +SOFA_SANITIZE_IPS: env
+        +SOFA_RETENTION_DAYS: env
+        +SOFA_RETENTION_MAX: env
+        +SOFA_CLEANUP_ON_RECORD: env
+        +SOFA_AUDIT_ENABLED: env
+        +parse_config(): export env vars
+    }
+
+    rules_md ..> config_sh : «parsed by»
+
+    %% ═══════════════════════════════════════
+    %% 核心脚本层
+    %% ═══════════════════════════════════════
+
+    class task_record_sh {
+        +VERSION: str
+        +TASK_NAME: str
+        +TASK_RESULT: str
+        +TASK_MODEL: str
+        +TASK_TOKENS: str
+        +TASK_COST: str
+        +TASK_SKILLS: str
+        +FROM_STDIN: bool
+        +sanitize(input: str): str
+        +build_entry(): markdown
+        +write_log(): append to file
+        +trigger_cleanup(): probability 1/10
+    }
+
+    class cleanup_sh {
+        +VERSION: str
+        +DRY_RUN: bool
+        +FORCE: bool
+        +scan_logs(): file list
+        +cleanup_by_days(days: int): deleted count
+        +cleanup_by_count(max: int): deleted count
+        +print_summary(): stdout
+        +audit_cleanup(): call audit.sh
+    }
+
+    class audit_sh {
+        +VERSION: str
+        +OPERATION: str
+        +TARGET: str
+        +RESULT: str
+        +collect_context(): whoami, hostname, timestamp
+        +init_audit_dir(): mkdir -p
+        +write_audit_entry(): append markdown table row
+        +get_caller_script(): script name
+    }
+
+    %% ═══════════════════════════════════════
+    %% 调用方脚本
+    %% ═══════════════════════════════════════
+
+    class install_sh {
+        +VERSION: str
+        +PLATFORM: str
+        +install(): 7-step deployment
+        +audit_install_start(): call audit.sh
+        +audit_install_end(): call audit.sh
+    }
+
+    class uninstall_sh {
+        +VERSION: str
+        +uninstall(): remove deployment
+        +audit_uninstall_start(): call audit.sh
+        +audit_uninstall_end(): call audit.sh
+    }
+
+    class task_orchestrate_sh {
+        +VERSION: str
+        +TASK_DESC: str
+        +LEVEL: int
+        +DRY_RUN: bool
+        +orchestrate(): ao compose + run
+        +audit_orch_start(): call audit.sh
+        +audit_orch_end(): call audit.sh
+        +call_task_record(): invoke task-record.sh
+    }
+
+    class verify_sh {
+        +VERSION: str
+        +verify_sanitize(): test patterns
+        +verify_cleanup_dryrun(): test --dry-run
+        +verify_audit_write(): test audit entry
+        +verify_default_off(): test all disabled
+    }
+
+    %% ═══════════════════════════════════════
+    %% 数据目录
+    %% ═══════════════════════════════════════
+
+    class task_logs_dir {
+        +path: .sofagent/task/logs/YYYY-MM/YYYY-MM-DD.md
+        +format: markdown
+        +mode: append-only
+        +immutable: true
+    }
+
+    class task_audit_dir {
+        +path: .sofagent/task/audit/YYYY-MM/YYYY-MM-DD.md
+        +format: markdown table
+        +mode: append-only
+        +new_in_v070: true
+    }
+
+    %% ═══════════════════════════════════════
+    %% 关系
+    %% ═══════════════════════════════════════
+
+    config_sh <.. task_record_sh : «source»
+    config_sh <.. cleanup_sh : «source»
+    config_sh <.. audit_sh : «source»
+    config_sh <.. install_sh : «source»
+    config_sh <.. uninstall_sh : «source»
+    config_sh <.. task_orchestrate_sh : «source»
+
+    task_orchestrate_sh ..> task_record_sh : «调用» --task --result
+    task_record_sh ..> cleanup_sh : «概率触发» RANDOM%10
+    task_record_sh ..> audit_sh : «可选调用» --operation record
+    cleanup_sh ..> audit_sh : «调用» --operation cleanup
+    install_sh ..> audit_sh : «调用» --operation install
+    uninstall_sh ..> audit_sh : «调用» --operation uninstall
+    task_orchestrate_sh ..> audit_sh : «调用» --operation orchestrate
+
+    task_record_sh ..> task_logs_dir : «写入»
+    audit_sh ..> task_audit_dir : «写入»
+    cleanup_sh ..> task_logs_dir : «删除旧文件»
+    verify_sh ..> task_record_sh : «测试»
+    verify_sh ..> cleanup_sh : «测试»
+    verify_sh ..> audit_sh : «测试»
+
+    %% ═══════════════════════════════════════
+    %% 注解
+    %% ═══════════════════════════════════════
+
+    note for task_record_sh "唯一写入 task/logs 的入口\n新增 sanitize() 函数\n新增概率触发 cleanup.sh"
+    note for cleanup_sh "新建独立脚本\n只操作 task/logs/ 目录\n不做事后脱敏"
+    note for audit_sh "新建独立脚本\n追加模式写入 task/audit/\n|| true 容错"
+    note for config_sh "新建共享库\nsource 方式加载\n仅解析 rules.md 合规段"
+    note for task_logs_dir "现有结构不变\n树形 YYYY-MM/YYYY-MM-DD.md\n只追加不修改"
+    note for task_audit_dir "v0.7x 新增目录\n与 task/logs 互补\n记录人/系统操作"
