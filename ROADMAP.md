@@ -71,7 +71,7 @@
 | **规划器角色分离** | 🔧 | 🟡 | 参考 Anthropic 四角色模型，将规划器从主 Agent 拆为独立子 Skill。架构已预留 |
 | **`/review` 命令** | 🔧 | 🟡 | 任务闭环时主动问「要不要总结一下这次用了哪些 Skill、踩了哪些坑？」——把可追溯性变成可消费性 |
 | **Skill 反向校验** | 🧑‍🎓 | 🟡 | 当前 skill-iterate 只看「用了几次」——不检查「为什么一直没人用」。加 30 天零触发提醒 |
-| **外部评估器集成（可选）** | 🔧 | 🟢 | 支持接入 DeepEval / ASSERT 等第三方评估工具作为独立评分来源，与 loop-agent 自评做交叉验证。优先实现轻量方案——bash 脚本评估器（`evaluator: bash scripts/eval-{task}.sh`），零外部依赖，输出 JSON 格式分数字段。参考 Coze Loop 的 Code Evaluator 概念；不是搬代码，是偷「用确定性代码跑评估，不靠 LLM 自评」的思路 |
+| **外部评估器集成（可选）** | 🔧 | 🟢 | 支持接入 DeepEval / ASSERT 等第三方评估工具作为独立评分来源，与 loop-check 自评做交叉验证。优先实现轻量方案——bash 脚本评估器（`evaluator: bash scripts/eval-{task}.sh`），零外部依赖，输出 JSON 格式分数字段。参考 Coze Loop 的 Code Evaluator 概念；不是搬代码，是偷「用确定性代码跑评估，不靠 LLM 自评」的思路 |
 
 ### v2.x — 多 Agent 协同（规划中）
 

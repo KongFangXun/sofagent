@@ -45,7 +45,7 @@
 | 1 | entry-gate | 入口结束后 | `entry-gate.md` |
 | 2 | task-aware | 收到任何任务时 | `task-aware.md` |
 | 3 | task-closure | 闭环信号时 | `task-closure.md` |
-| 4 | loop-agent | 检查点/失败/闭环 | `loop-agent.md` |
+| 4 | loop-check | 检查点/失败/闭环 | `loop-check.md` |
 
 闭环信号：① 子任务完成+用户确认 ② 用户 /new 或 /reset。
 

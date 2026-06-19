@@ -265,7 +265,7 @@ mkdir -p "$SKILL_DST"
 copied=0
 
 # 核心 Skill 文件（从 sofagent/ 根目录复制）
-for f in SKILL.md engine.md entry-gate.md task-aware.md task-closure.md loop-agent.md; do
+for f in SKILL.md engine.md entry-gate.md task-aware.md task-closure.md loop-check.md; do
   src="${SCRIPT_DIR}/../${f}"
   dst="${SKILL_DST}/${f}"
   if [ -f "$src" ]; then

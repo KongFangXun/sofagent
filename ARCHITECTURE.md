@@ -299,7 +299,7 @@ sofagent 的 A/B 测试不是「跑两次选更好的」——是 4 步渐进沉
 
 `scoring.md` 和 `orchestrator.md` 的模板描述了完整的树形目录结构（`研发/代码生成/skill-a.md`…），但部署时只有一个单文件——不是遗漏，是设计。
 
-**两段式初始化**：安装脚本只创建根 `_index.md`（`scoring/_index.md`、`orchestrator/_index.md`），之后的枝叶由子 Skill 在运行时按需创建——`skill-iterate` 写 `scoring/{分类}/{skill}.md`，闭环流程（task-closure + loop-agent）写 `orchestrator/{分类}/{任务}.md`。
+**两段式初始化**：安装脚本只创建根 `_index.md`（`scoring/_index.md`、`orchestrator/_index.md`），之后的枝叶由子 Skill 在运行时按需创建——`skill-iterate` 写 `scoring/{分类}/{skill}.md`，闭环流程（task-closure + loop-check）写 `orchestrator/{分类}/{任务}.md`。
 
 三个理由：
 1. **懒创建**：Agent 可能只用「研发」分类，不会预建 30 个空目录
@@ -442,7 +442,7 @@ v0.62.2 起按平台分级处理，v0.63 进一步诚实化：
 | OpenClaw | `session.spawn` 创建独立子 Agent，只传 task/logs 不传执行上下文 | 工程隔离，可类比引用 Self Harness 的方向性结论 |
 | 非 OpenClaw | 主 Agent 重新 Read task/logs 作为评审主依据，执行记忆作辅助参考 | prompt 级约束，无机制保障，效果未实测——Agent 仍可能凭执行记忆污染评审 |
 
-细节见 `loop-agent.md` closure 模式。非 OpenClaw 路径不引用 Self Harness 的具体百分比数字——它没有工程隔离，引用会误导。
+细节见 `loop-check.md` closure 模式。非 OpenClaw 路径不引用 Self Harness 的具体百分比数字——它没有工程隔离，引用会误导。
 
 ### 定时触发做不到
 
@@ -528,7 +528,7 @@ SKILL.md 的回复前闸门（⓪①②）和闭合清单（②→③→④→�
 
 这不是设计缺陷，是软层治理的宿命：硬层管底线，软层（scoring.md + think.md + orchestrator）靠循环进化，但不能指望 100% 执行率。应对：
 - **硬层兜底**：rules.md 中写一条「回复前必过闸门」的硬约束，利用 rules.md 在三层加载链中优先级最高的特性增加执行概率
-- **结构加固**：将闸门从 §一 末尾提到入口流程 D 之后，增加 `⛔ 硬出口` 节（见 SKILL.md），利用 Lost in the Middle 效应——越靠前的指令 Agent 越不容易漏。v4.5 进一步拆为主 Skill + 五个子 Skill（engine/entry-gate/task-aware/task-closure/loop-agent），每个 ≤90 行，Agent 不再迷路
+- **结构加固**：将闸门从 §一 末尾提到入口流程 D 之后，增加 `⛔ 硬出口` 节（见 SKILL.md），利用 Lost in the Middle 效应——越靠前的指令 Agent 越不容易漏。v4.5 进一步拆为主 Skill + 五个子 Skill（engine/entry-gate/task-aware/task-closure/loop-check），每个 ≤90 行，Agent 不再迷路
 - **人工审计**：定期翻 task/logs 检查闭合清单是否每次都被执行——这和 Skill 层 Slop 审计是同一个人工兜底策略
 
 > 💡 **设计妥协：MD 强约束对标 Hook 机制**。sofagent 的三层闸门在概念上对标 Cloud/Agent 的 Hook 机制——回复前闸门 ⓪ = pre-tool-use（工具调用前检查），task-closure ②→⑤ = post-tool-use（任务结束后自动沉淀），闭环信号 = stop event（任务完成触发）。但受限于跨五平台兼容性（WorkBuddy/Claude Code/Codex/Hermes 不支持 Shell 级 Hook 拦截），这些只能通过 MD 强约束 + ⛔ 硬出口 + 兜底检查来模拟 Hook 行为。只有 OpenClaw 平台通过 `load-chain.sh` 实现了真正的 Hook 级硬拦截。

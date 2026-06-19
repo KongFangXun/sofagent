@@ -20,26 +20,26 @@
 
 ```
 ⬜ ① 写 task/logs（命令见上方引用块）
-⬜ ② 调起 Loop Agent（closure 模式）
+⬜ ② 调起 Loop Check（closure 模式）
       → 反思 → 评分 → A/B → 汇报
-      详见 loop-agent.md
+      详见 loop-check.md
 ```
 
 > ①② 不可跳过。执行后写入对应文件（think.md / scoring.md / orchestrator/）。全部打勾才能回用户。
 
 ---
 
-## ② 调起 Loop Agent（closure 模式）
+## ② 调起 Loop Check（closure 模式）
 
-传入 loop-agent.md + `mode=closure` + 当前 task/logs + scoring.md + orchestrator/。
+传入 loop-check.md + `mode=closure` + 当前 task/logs + scoring.md + orchestrator/。
 
 **平台分级**：
 - OpenClaw：`session.spawn` 独立子 Agent 做评分——主 Agent 只传 task/logs，不传执行上下文
 - 其他平台：主 Agent 重新 Read task/logs，以文件为唯一依据做证据驱动评审
 
-Loop Agent 返回：反思摘要 → 写入 think.md / 评分 → 写入 scoring.md / A/B 决策 → 写入 orchestrator/ / 汇报 → 口头返给用户。
+Loop Check 返回：反思摘要 → 写入 think.md / 评分 → 写入 scoring.md / A/B 决策 → 写入 orchestrator/ / 汇报 → 口头返给用户。
 
-> 失败时优先调 Loop Agent（failure 模式）做诊断。可自愈则重试一次，不可则如实汇报。
+> 失败时优先调 Loop Check（failure 模式）做诊断。可自愈则重试一次，不可则如实汇报。
 
 ---
-> 本文件为离境闸门的唯一指令来源。闭环逻辑详见 loop-agent.md。
+> 本文件为离境闸门的唯一指令来源。闭环逻辑详见 loop-check.md。
