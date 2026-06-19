@@ -140,6 +140,7 @@
 | 4. 自我约束 | 郝交付 | 2026-06-17 | PASS | — | v0.50 修了 install.sh constitution 路径 + data/路径 + 乱码行 + uninstall 范围；install→verify→uninstall 全流程通过，不误删其他 skills |
 | 4. 自我约束 | — | — | SKIP | — | v0.64 待补：需修改 Skill 文件后验证 |
 | 5. 跨任务反思 | — | — | SKIP | — | 需要至少 2 次 Agent 任务运行 |
+| 5. 跨任务反思 | KongFangXun | 2026-06-19 | PASS | — | OpenClaw 2026.6.8：Task1 写反思「路径断裂教训」→ Task2 新会话加载 think.md → 审计报告中显式引用「think.md 指出 .sofagent/ 目录路径可能不匹配」，证明了反思跨会话生效 |
 
 ### 第三方测试（等你来填）
 
