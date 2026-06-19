@@ -1,6 +1,6 @@
 # sofagent Developer
 
-> 给开发者的内部机制文档。普通用户看 [Handbook](./Handbook.md)，设计决策看 [Design](./Design.md)。
+> 给开发者的内部机制文档。普通用户看 [Handbook](./HANDBOOK.md)，设计决策看 [Design](./ARCHITECTURE.md)。
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
@@ -50,7 +50,7 @@ Skill 不只是 Markdown 文件和一段提示词。根据 Anthropic Cloud Code 
 
 ```
 SKILL.md 启动
-  ├─ 三层加载链（sofagent.md + think.md + rules.md）← load-chain.sh 注入
+  ├─ 三层加载链（SKILL.md + think.md + rules.md）← load-chain.sh 注入
   ├─ A0 判级
   │   ├─ 🟢🟡 简单/中等 → task-aware 直接处理
   │   └─ 🔴 复杂 → engine.md 点火
@@ -68,13 +68,13 @@ SKILL.md 启动
               └─ 口头汇报
 ```
 
-安装方式：把 `SKILL.md` 放到 Skills 目录（OpenClaw 一般在 `~/.openclaw/skills/`），一条命令搞定。OpenClaw 通过 Hook 在 session 启动时自动加载 Skill。WorkBuddy、Claude Code、Codex、Hermes 通过种子指令自启——详见 [Handbook §五](./Handbook.md#五安装与跨平台)。
+安装方式：把 `SKILL.md` 放到 Skills 目录（OpenClaw 一般在 `~/.openclaw/skills/`），一条命令搞定。OpenClaw 通过 Hook 在 session 启动时自动加载 Skill。WorkBuddy、Claude Code、Codex、Hermes 通过种子指令自启——详见 [Handbook §五](./HANDBOOK.md#五安装与跨平台)。
 
 主 Agent 的日常：接活 → 看 `scoring.md`（谁靠谱）→ 看 think.md 反思区（上次踩了什么坑）→ 看 `orchestrator/`（有没有最优配置）→ 干完记入 `task/logs/`。数据流向总结见 [Developer §七](#七数据文件架构)。
 
 ### 实现方式
 
-为什么判断交给 Skill、机械操作交给脚本、硬安全交给 OpenClaw 原生配置——三分架构的设计推理见 [Design.md](./Design.md#skill-runtime)。
+为什么判断交给 Skill、机械操作交给脚本、硬安全交给 OpenClaw 原生配置——三分架构的设计推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#skill-runtime)。
 
 <a id="脚本与文件结构速查"></a>
 ### 脚本与文件结构速查
@@ -118,11 +118,11 @@ SKILL.md 启动
 
 > 负责的子 Skill：`engine.md` 点火 ao compose 拆任务 → `loop-agent.md` 设检查点 + 失败诊断 → `task-closure.md` 闭环收口。
 
-这套编排同时吸收了 Harness 和 Loop 两种思路——约束层保证基本安全（`sofagent.md`），编排层往自我进化方向走（orchestrator/ + A/B 对比）。目标在 [Developer §一](#一工作原理) 定稿了，这一章解决后续问题：循环怎么启动、怎么跑、怎么收口。
+这套编排同时吸收了 Harness 和 Loop 两种思路——约束层保证基本安全（`SKILL.md`（宪法内联）），编排层往自我进化方向走（orchestrator/ + A/B 对比）。目标在 [Developer §一](#一工作原理) 定稿了，这一章解决后续问题：循环怎么启动、怎么跑、怎么收口。
 
-> Loop Engineering 的概念已在 [Developer §一](#一工作原理) 介绍过，这里只做工程映射——sofagent 的编排就是「目标→验证→决策→交接」四环节的实现：**目标**（/goal + 两轮澄清 [Developer §一](#一工作原理)）→ **验证**（铁律 #2 + skill-iterate + 中间检查点 [Handbook §三](./Handbook.md#三底线与铁律)/[Developer §三](#三模型最优选择)/[Developer §五](#五自进化机制)）→ **决策**（ao compose + 编排深度晋级/回滚 本章）→ **交接**（闭环反思→ think.md 反思区 + task/logs [Developer §六](#六反思工程)/[Developer §七](#七数据文件架构)）。
+> Loop Engineering 的概念已在 [Developer §一](#一工作原理) 介绍过，这里只做工程映射——sofagent 的编排就是「目标→验证→决策→交接」四环节的实现：**目标**（/goal + 两轮澄清 [Developer §一](#一工作原理)）→ **验证**（铁律 #2 + skill-iterate + 中间检查点 [Handbook §三](./HANDBOOK.md#三底线与铁律)/[Developer §三](#三模型最优选择)/[Developer §五](#五自进化机制)）→ **决策**（ao compose + 编排深度晋级/回滚 本章）→ **交接**（闭环反思→ think.md 反思区 + task/logs [Developer §六](#六反思工程)/[Developer §七](#七数据文件架构)）。
 
-> Agent 循环不新鲜——React 范式 2023 年就有了。Loop 和 React 的本质区别不在「转圈」而在「收敛」，详见 [Design.md](./Design.md#一为什么会有-sofagent)。下面这三个难题，sofagent 自有解法：
+> Agent 循环不新鲜——React 范式 2023 年就有了。Loop 和 React 的本质区别不在「转圈」而在「收敛」，详见 [ARCHITECTURE.md](./ARCHITECTURE.md#一为什么会有-sofagent)。下面这三个难题，sofagent 自有解法：
 
 | Loop 难题 | sofagent 怎么解的 | 在哪 |
 |------|------|------|
@@ -141,7 +141,7 @@ SKILL.md 启动
 
 超限后，task-aware 做语义确认 → 提醒用户→ 用户确认 → 反思 → 写入 think.md「会话交接」摘要 → 提示 /new。Agent 不能自己 /new，只能建议。
 
-用百分比不用轮次——模型窗口在变大，轮次限制是刻舟求剑。完整推理见 Design.md session-boundary。
+用百分比不用轮次——模型窗口在变大，轮次限制是刻舟求剑。完整推理见 ARCHITECTURE.md session-boundary。
 
 > 子 Agent 不参与这套机制——用完即焚，上下文溢出说明编排拆得不够细。
 
@@ -179,11 +179,11 @@ SKILL.md 启动
 
 主 Agent 不干具体活——它的工作是**派活和收尾**。子 Agent 才是真正干活的，但子 Agent 是主 Agent 临时创建出来的，干完就销毁。
 
-编排的前置条件：目标经过两轮澄清定稿（[Handbook §四](./Handbook.md#四任务目标制定)）。没收敛就继续澄清，不硬进编排。
+编排的前置条件：目标经过两轮澄清定稿（[Handbook §四](./HANDBOOK.md#四任务目标制定)）。没收敛就继续澄清，不硬进编排。
 
 ### 编排深度：渐进减薄
 
-> 设计权衡（四级编排深度、滑动窗口回滚的取舍）见 [Design §二 四级编排深度](./Design.md#四级编排深度)。本章只讲怎么操作。
+> 设计权衡（四级编排深度、滑动窗口回滚的取舍）见 [Design §二 四级编排深度](./ARCHITECTURE.md#四级编排深度)。本章只讲怎么操作。
 
 同类任务跑顺了就少做步骤，跑崩了就加回来。分四级，每级有明确的晋级和回滚条件：
 
@@ -245,7 +245,7 @@ sofagent 补上 ao compose 不做的
   └─ 闭环（反思→评分→A/B→汇报）
 ```
 
-两轮澄清见 [Handbook §四](./Handbook.md#四任务目标制定)，编排深度见本章下节，闭环反思见 [Developer §五](#五自进化机制)。
+两轮澄清见 [Handbook §四](./HANDBOOK.md#四任务目标制定)，编排深度见本章下节，闭环反思见 [Developer §五](#五自进化机制)。
 
 ### 子 Agent（Sub-agent）：用完即焚
 
@@ -257,7 +257,7 @@ sofagent 补上 ao compose 不做的
 
 > 💡 Loop Engineering 强调**执行和审核必须分离**——「写的人和查的人分开，挑刺才客观」。sofagent 的职责分离：**子 Agent 负责干活**（生成器），**skill-iterate 负责评分**（独立评估器——角色分离让执行者不自评，非独立进程，详见 [Developer §五](#五自进化机制) 工程边界），**orchestrator/ 中间检查点负责决策**（继续/停止/回滚）。干活的不能说「我做完了」——那是评估器的事。
 
-多个子 Agent 并行时，如果它们操作同一个代码仓库，用 Worktrees（工作树隔离）解决文件冲突。为什么要用 git worktree 而不是其他方式、什么场景触发、谁负责做什么，见 [Design.md](./Design.md#worktree-isolation)。
+多个子 Agent 并行时，如果它们操作同一个代码仓库，用 Worktrees（工作树隔离）解决文件冲突。为什么要用 git worktree 而不是其他方式、什么场景触发、谁负责做什么，见 [ARCHITECTURE.md](./ARCHITECTURE.md#worktree-isolation)。
 
 > 📎 子 Agent 执行过程中有中间检查点机制——步数/重试/token 任一超标即暂停，由主 Agent 三问评估是否继续。详见 [Developer §五](#五自进化机制)。
 
@@ -283,7 +283,7 @@ sofagent 补上 ao compose 不做的
 
 engine.md 在 ao compose 拆完任务后从 ClawHub 搜索并集成。四步：发现（ClawHub API）→ 初筛（社区评分 < 3.0 过滤）→ 分配（按信任等级）→ 闭环后自动升降级。
 
-信任等级四档（已验证/试用中/未验证/不推荐）的完整规则见 [Design.md](./Design.md#trust-levels)。
+信任等级四档（已验证/试用中/未验证/不推荐）的完整规则见 [ARCHITECTURE.md](./ARCHITECTURE.md#trust-levels)。
 
 > 💡 Skill 选择由主 Agent 自己完成：读 scoring/、做语义匹配、选评分最高且最匹配的——这是 LLM 的长项，不需要额外工具。
 
@@ -312,7 +312,7 @@ engine.md 在 ao compose 拆完任务后从 ClawHub 搜索并集成。四步：�
 
 ### 为什么选 DeepSeek
 
-sofagent 默认用 DeepSeek——性价比：Flash/Pro 两档差 4 倍价，Flash 干粗活、Pro 干细活，最划算的组合。且 API 模式数据不经过第三方平台。完整选型逻辑见 [Design.md](./Design.md#deepseek-choice)。
+sofagent 默认用 DeepSeek——性价比：Flash/Pro 两档差 4 倍价，Flash 干粗活、Pro 干细活，最划算的组合。且 API 模式数据不经过第三方平台。完整选型逻辑见 [ARCHITECTURE.md](./ARCHITECTURE.md#deepseek-choice)。
 
 ### Flash vs Pro 分配
 
@@ -357,7 +357,7 @@ ao compose 拆完任务
 
 两种方式都不需要改代码。整套编排逻辑不变——什么任务用什么档位是策略，策略不绑定具体模型。
 
-编排的开销经济学（一次多花 3%，十次省回来）的完整推理见 [Design.md](./Design.md#token-economics)。
+编排的开销经济学（一次多花 3%，十次省回来）的完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#token-economics)。
 
 ---
 
@@ -391,7 +391,7 @@ ao compose 拆完任务
 - 连续 2 次胜出才标记候选模板，再跑 2 次稳定才正式沉淀
 - 模板可被替换——有更好的拆法冒出来，比一轮，赢了就换
 
-局限：样本量小（最少 7 次才沉淀）、LLM 有随机性、不同难度方差大。模板沉淀后标「待确认」。完整推理见 [Design.md](./Design.md#a-b-test)。
+局限：样本量小（最少 7 次才沉淀）、LLM 有随机性、不同难度方差大。模板沉淀后标「待确认」。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#a-b-test)。
 
 每次闭环评分时，loop-agent closure 模式会把本次踩的坑追加到 `scoring/{skill}.md` 的「踩过的坑」字段，Agent 下次加载 Skill 时先扫一眼——提前知道哪里摔过。
 
@@ -402,7 +402,7 @@ ao compose 拆完任务
 
 > 负责的子 Skill：`loop-agent` + `task-closure` — 反思 → 评分 → A/B → 写入 orchestrator/
 
-前面四章讲了编排（[Handbook §四](./Handbook.md#四任务目标制定)）、Skills（[Developer §三](#三模型最优选择)）、A/B 测试（[Developer §四](#四模板与验证)）、记忆（[Developer §六](#六反思工程)）。单独看每个都说得通——但问题是，它们各跑各的，没有互相反馈。
+前面四章讲了编排（[Handbook §四](./HANDBOOK.md#四任务目标制定)）、Skills（[Developer §三](#三模型最优选择)）、A/B 测试（[Developer §四](#四模板与验证)）、记忆（[Developer §六](#六反思工程)）。单独看每个都说得通——但问题是，它们各跑各的，没有互相反馈。
 
 这一章要解决的问题：**怎么让这四样东西串起来，互相反馈。**
 
@@ -412,7 +412,7 @@ ao compose 拆完任务
 
 ### 复盘自评每次任务闭环后，主 Agent 切换到 Loop Agent 视角，从八个维度评估整套编排：
 
-> ⚠️ 工程边界：Loop Agent 不是独立进程或独立模型调用，是主 Agent 切换 prompt 以顾问身份输出建议。"独立复盘"指角色隔离，不是工程隔离。评分是 LLM 自评，无客观基准，结果仅供横向对比参考。详见 [Design.md](./Design.md#known-limits)。
+> ⚠️ 工程边界：Loop Agent 不是独立进程或独立模型调用，是主 Agent 切换 prompt 以顾问身份输出建议。"独立复盘"指角色隔离，不是工程隔离。评分是 LLM 自评，无客观基准，结果仅供横向对比参考。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#known-limits)。
 
 | 维度 | 评什么 | 怎么评 |
 |------|------|------|
@@ -469,17 +469,17 @@ orchestrator/ 就是迭代的中枢。它不记原始数据，只记最优结论
 
 ### 复盘——不让做事的给自己打分
 
-每次任务闭环后，主 Agent 切换到 Loop Agent 视角完成 ③④——角色隔离让执行者不给自己打分（非工程隔离，详见 [Design.md](./Design.md#known-limits)），比让执行者自评更公平。
+每次任务闭环后，主 Agent 切换到 Loop Agent 视角完成 ③④——角色隔离让执行者不给自己打分（非工程隔离，详见 [ARCHITECTURE.md](./ARCHITECTURE.md#known-limits)），比让执行者自评更公平。
 
 代价：每次闭环多消耗 ~3,000-5,000 token。对于中等以上任务（30K+ token），占比不到 10%。简单任务（🟢）不需要——直接跳过 ③④。
 
-> LLM 的评分本身有波动——同一组配置跑两次可能差 1 分。应对：看趋势不看单次、淘汰门槛设高（连续 3 次 <3.0 才降级）、人工可覆盖。完整讨论见 [Design.md](./Design.md#known-limits)。
+> LLM 的评分本身有波动——同一组配置跑两次可能差 1 分。应对：看趋势不看单次、淘汰门槛设高（连续 3 次 <3.0 才降级）、人工可覆盖。完整讨论见 [ARCHITECTURE.md](./ARCHITECTURE.md#known-limits)。
 
 ### 冷启动怎么办
 
 新 Skill 装上、新任务类型出现——没有历史数据对照的时候：
 
-前 5 次只记录不做判断，第 6 次起进入看趋势模式。为什么是 5 次而不是 3 次或 10 次——完整推理见 [Design.md](./Design.md#cold-start)。
+前 5 次只记录不做判断，第 6 次起进入看趋势模式。为什么是 5 次而不是 3 次或 10 次——完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#cold-start)。
 
 以上是 sofagent 跑起来之后的自我进化逻辑——从 Skills 评分到编排模板，全自动迭代。但在一切开始之前得先把它装上——接下来讲怎么装、在不同平台上怎么跑。
 
@@ -513,7 +513,7 @@ orchestrator/ 就是迭代的中枢。它不记原始数据，只记最优结论
 
 ### 反思区 / 归档区 + 智能权重
 
-反思写入 `think.md` 后，不是全部进加载链。中间加一层筛选：只把权重 ≥0.5 的摘要放进反思区（≤2K token），其余丢进归档区。权重计算逻辑详见 [Design.md](./Design.md#weight-gate)。
+反思写入 `think.md` 后，不是全部进加载链。中间加一层筛选：只把权重 ≥0.5 的摘要放进反思区（≤2K token），其余丢进归档区。权重计算逻辑详见 [ARCHITECTURE.md](./ARCHITECTURE.md#weight-gate)。
 
 ```
 think.md
@@ -527,16 +527,16 @@ think.md
    └─ 历史摘要（权重 <0.5 或 超过 90 天）
 ```
 
-每条摘要带一个权重标签，由 LLM 根据三个信号估算（新鲜度 + 反思关联 + 引用热度）。权重集中管理：≥0.5 进反思区，<0.5 进归档区。算法细节见 [Design.md](./Design.md#weight-gate)。
+每条摘要带一个权重标签，由 LLM 根据三个信号估算（新鲜度 + 反思关联 + 引用热度）。权重集中管理：≥0.5 进反思区，<0.5 进归档区。算法细节见 [ARCHITECTURE.md](./ARCHITECTURE.md#weight-gate)。
 
 > ⚠️ 权重计算由 LLM 执行，同一组数据跑两次可能有 0.1 偏差。反思区的 ≤2K token 硬上限才是真正的安全阀。
-> ⚠️ 反思分三种来源标记：[LLM自评]（纯模型判断，权重 ×0.5）/ [已验证]（有客观证据）/ [用户确认]（用户明确确认）。防止不准的自评通过 think.md 自我强化。详见 [Design §三](./Design.md#反思自评的自噬风险)。
+> ⚠️ 反思分三种来源标记：[LLM自评]（纯模型判断，权重 ×0.5）/ [已验证]（有客观证据）/ [用户确认]（用户明确确认）。防止不准的自评通过 think.md 自我强化。详见 [Design §三](./ARCHITECTURE.md#反思自评的自噬风险)。
 
 权重 <0.3 且超过 90 天的自动清理，不再占反思空间。已归档的记忆 30 天内不做二次评估——避免反复横跳浪费 token。
 
 ### think.md 反思区的自我纠正
 
-三道防线：只存经验不存指令 → 反思区 2K token 硬上限 → 人工可清除。写入前扫指令性关键词（应该/必须/不要/禁止/切忌/务必/严禁/应当/请/一定要），命中 ≥3 处提醒拆到 rules.md。不自拒写、不自动改——最终判断交用户。完整防线详解见 [Design.md](./Design.md#self-correct)。
+三道防线：只存经验不存指令 → 反思区 2K token 硬上限 → 人工可清除。写入前扫指令性关键词（应该/必须/不要/禁止/切忌/务必/严禁/应当/请/一定要），命中 ≥3 处提醒拆到 rules.md。不自拒写、不自动改——最终判断交用户。完整防线详解见 [ARCHITECTURE.md](./ARCHITECTURE.md#self-correct)。
 
 ### 审计：从记忆回溯到原始证据
 
@@ -579,7 +579,7 @@ task/logs 是水源，只追加不修改，永远可以回溯。不需要额外�
 
 > 💡 task/logs 是所有数据的源头。think.md（反思）、scoring.md（技能目录）、orchestrator/（作战手册）从中各自提炼结论，think.md 反思区汇总反思后的经验。
 
-树形加载的设计逻辑见 [Design.md](./Design.md#tree-loading)。
+树形加载的设计逻辑见 [ARCHITECTURE.md](./ARCHITECTURE.md#tree-loading)。
 
 ---
 
@@ -587,11 +587,11 @@ task/logs 是水源，只追加不修改，永远可以回溯。不需要额外�
 
 > ⚠️ 本手册是 `sofagent/` 目录下所有模板文件的**唯一事实来源**。以下规则确保模板与手册永不脱节：
 
-1. **手册变更 → 同步模板**：每次 Handbook 内容更新（特别是 [Handbook §二](./Handbook.md#二三层加载链) 加载链、[Handbook §三](./Handbook.md#三底线与铁律) 铁律、[Developer §七](#七数据文件架构) 数据文件架构）后，必须逐份审查 `sofagent/` 下的全部模板文件（`sofagent.md`、`rules.md`、`think.md`、`task.md`、`orchestrator.md`、`scoring.md`），确保与手册描述一致
+1. **手册变更 → 同步模板**：每次 Handbook 内容更新（特别是 [Handbook §二](./HANDBOOK.md#二三层加载链) 加载链、[Handbook §三](./HANDBOOK.md#三底线与铁律) 铁律、[Developer §七](#七数据文件架构) 数据文件架构）后，必须逐份审查 `sofagent/` 下的全部模板文件（`SKILL.md`（宪法内联）、`rules.md`、`think.md`、`task.md`、`orchestrator.md`、`scoring.md`），确保与手册描述一致
    > 📎 `SKILL.md`、`entry-gate.md`、`task-aware.md`、`task-closure.md` 不在此列——它们是程序文件（入口 + 子 Skill），不属于模板文件范畴。
 2. **模板格式变更 → 反向更新手册**：如果模板的结构或内容需要调整，先在 `sofagent/` 改好，再反向更新手册中对应的示例/描述
 3. **sofagent/ 文件是用户的第一触点**：它们是 `install.sh` 复制到用户 `~/.openclaw/` 的目标文件。手册是说明书，sofagent/ 是产品——说明书写错了用户可能不会发现，产品文件错了用户会直接踩坑
-4. **每次发版前跑一遍对照检查**：打开 [Handbook §二](./Handbook.md#二三层加载链) 的 3 层表格和 [Developer §七](#七数据文件架构) 的模板示例，逐行对照 sofagent/ 下的全部 6 个模板文件
+4. **每次发版前跑一遍对照检查**：打开 [Handbook §二](./HANDBOOK.md#二三层加载链) 的 3 层表格和 [Developer §七](#七数据文件架构) 的模板示例，逐行对照 sofagent/ 下的全部 6 个模板文件
 
 > 📎 一句话：**手册改了，模板必须跟着改。反过来也一样。**
 

@@ -16,14 +16,14 @@
 - [ ] 第 3 天翻一次 `.sofagent/think.md`——看 Agent 写了什么反思
 - [ ] 第 5 天翻一次 `.sofagent/task/logs/`——看执行记录
 - [ ] 如果 Agent 行为异常，第一步查 think.md 删可疑条目
-- [ ] 周末填一次 Evidence.md（哪怕写「没觉得有变化」）
+- [ ] 周末填一次 docs/EVIDENCE.md（哪怕写「没觉得有变化」）
 
 ## 第 1 月：回顾
 
 - [ ] 翻 task/logs 统计：用了几次？复杂任务几次？
 - [ ] 翻 think.md：反思条目有没有帮助？有没有错误经验？
 - [ ] 翻 orchestrator/：有没有沉淀模板？（≥3 次同类任务才会沉淀）
-- [ ] 把你的数据填进 Evidence.md 和 Testing.md
+- [ ] 把你的数据填进 docs/EVIDENCE.md 和 docs/TESTING.md
 - [ ] 决定：继续用 / 调整 rules.md / 卸载
 
 ## 多用户注意

@@ -58,4 +58,4 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对�
 - 独立审计日志
 - think.md gpg 加密自动化
 
-详见 [Roadmap.md](../Roadmap.md) v0.7x 区块。
+详见 [ROADMAP.md](../ROADMAP.md) v0.7x 区块。

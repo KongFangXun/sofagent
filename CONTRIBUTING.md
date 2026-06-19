@@ -12,7 +12,7 @@
 |------|------|
 | 报 Bug / 提想法 | → [开 Issue](https://github.com/KongFangXun/sofagent/issues/new/choose) |
 | 不知道怎么用 | → [Discussions 去问](https://github.com/KongFangXun/sofagent/discussions) |
-| 不知道怎么测 | → 看 [Testing.md](./Testing.md) 的 5 个标准化用例 |
+| 不知道怎么测 | → 看 [TESTING.md](./docs/TESTING.md) 的 5 个标准化用例 |
 | 想直接改代码 | → 跳到下面「提 PR」 |
 
 > 💡 你不需要会写代码。跑一周 sofagent，回来告诉我们发生了什么——不管好坏。
@@ -43,9 +43,9 @@
 
 ### 文档修改须知
 
-Handbook（`Handbook.md`）有一项硬性约束：**改手册必须同步改 `sofagent/` 模板。反过来也一样。**
+Handbook（`HANDBOOK.md`）有一项硬性约束：**改手册必须同步改 `sofagent/` 模板。反过来也一样。**
 
-改之前看一眼 [Developer §七](./Developer.md#七数据文件架构) 的「维护规则」。涉及 § 交叉引用的修改，记得验证上下游一致性。
+改之前看一眼 [Developer §七](./DEVELOPMENT.md#七数据文件架构) 的「维护规则」。涉及 § 交叉引用的修改，记得验证上下游一致性。
 
 ### 改 Skill 文件的注意事项
 
@@ -85,12 +85,12 @@ bash sofagent/scripts/verify.sh
 
 | 优先级 | 需要什么 | 你能得到什么 |
 |:--:|------|------|
-| 🔴 | **真实使用数据** | 在 Evidence.md 留名 + 出现在 README「实际效果」里 |
+| 🔴 | **真实使用数据** | 在 docs/EVIDENCE.md 留名 + 出现在 README「实际效果」里 |
 | 🟡 | **跨平台测试** | Claude Code / Codex / Hermes 用户的运行报告 |
 | 🟡 | **英文翻译** | Handbook 目前只有中文 |
 
 > 你不需要会写代码。跑一周 sofagent，回来告诉我发生了什么——不管好坏。
-> 不知道怎么测？→ [Testing.md](./Testing.md) 有 5 个标准化用例。
+> 不知道怎么测？→ [TESTING.md](./docs/TESTING.md) 有 5 个标准化用例。
 
 ---
 

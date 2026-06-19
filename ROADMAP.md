@@ -18,7 +18,7 @@
 | **think.md 反思区** | 持久化跨 session 经验积累 |
 | **scoring 技能记录** | 按使用频率动态调整 Skill 信任等级 |
 | **task-orchestrate 脚本引擎** | 复杂任务自动拆解为 L1~L4 编排深度 |
-| **seed-plan 种子指令方案** | 最小化加载链（SKILL.md → sofagent.md → think.md → rules.md），~3,100 token 地基 |
+| **seed-plan 种子指令方案** | 最小化加载链（SKILL.md（宪法内联）→ think.md → rules.md），~3,100 token 地基 |
 
 ### 企业级能力（v0.5x）
 
@@ -40,7 +40,7 @@
 
 | 想法 | 难度 | 优先级 | 现状 |
 |------|:--:|:--:|------|
-| **新会话端到端测试** | 🧑‍🎓 | ✅ OpenClaw + WorkBuddy 已验证 | 全新 `.sofagent/` 空目录环境已实测——加载链→预判→执行→闭环反思全链路通过。已有 2 人完成 0→1 体验（Evidence.md） |
+| **新会话端到端测试** | 🧑‍🎓 | ✅ OpenClaw + WorkBuddy 已验证 | 全新 `.sofagent/` 空目录环境已实测——加载链→预判→执行→闭环反思全链路通过。已有 2 人完成 0→1 体验（docs/EVIDENCE.md） |
 | **端到端闭环验证** | 🧑‍🎓 | ✅ 已验证 | task/logs → think.md → scoring/ → orchestrator/ 完整数据流在 OpenClaw 和 WorkBuddy 均已验证写入正确 |
 | **WorkBuddy 专家团共存** | 🔧 | ✅ v0.56 已验证边界 | 🟢🟡 简单任务和平共处。🔴 复杂任务时双重编排冲突——已在 SKILL.md A0 加引擎自检（专家团激活时引擎不点火），设计边界已文档化 |
 | **load-chain.sh 脚本级权重折半** | 🔧 | ✅ v0.56 已落地 | load-chain.sh 已实现 `emit_think_downgraded` 函数：解析 `[LLM自评]` 标记位并动态追加降权提示（权重 ×0.5）。OpenClaw 平台物理降权生效；其他平台靠 SKILL.md Read 后 Agent 自觉识别 |
@@ -116,7 +116,7 @@ v0.5x (当前)               v0.6x ~ v0.7x             v1.x                     
 - **数据主权在设备**：think.md、rules.md、task/logs 留在各设备本地，路由器不存储、不中转业务数据
 - **Markdown 优先**：Agent 间通信协议用 Markdown 格式，和现有文件系统哲学一致——人可直接阅读、git 可 diff
 - **渐进式**：先跑通两台设备协同，再扩展到 N 台。不一步到位设计「完美的分布式架构」
-- **治理不僭越**：路由器只管「谁干什么、怎么配合」，不管每个 Agent 内部的底线和铁律——那是 sofagent.md 的事
+- **治理不僭越**：路由器只管「谁干什么、怎么配合」，不管每个 Agent 内部的底线和铁律——那是 SKILL.md 的事
 
 ---
 ## 不需要的 ❌
@@ -141,7 +141,7 @@ v0.5x (当前)               v0.6x ~ v0.7x             v1.x                     
 | 跨平台测试 | 🧑‍🎓 | 30 分钟 | 你有 Claude Code / Codex / Hermes？装一下种子指令方案，告诉我们能不能跑通 |
 | 补充 FAQ | 🧑‍🎓 | 20 分钟 | 你在用 sofagent 时踩了什么坑？直接提 PR 加到 Handbook §六 |
 | 文档翻译 | 🧑‍🎓 | 1-2 小时 | Handbook 目前只有中文，英文翻译对社区意义巨大 |
-| 第三方证据 | 🧑‍🎓 | 1 周 | 装完用一周，填 Evidence.md 表格——Case 001 已收入（2026-06-18 @cedric123123），持续收集中 |
+| 第三方证据 | 🧑‍🎓 | 1 周 | 装完用一周，填 docs/EVIDENCE.md 表格——Case 001 已收入（2026-06-18 @cedric123123），持续收集中 |
 
 以上任何一个想法，如果你有兴趣实现——直接开 Issue 讨论或提 PR。
 
