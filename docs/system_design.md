@@ -346,10 +346,10 @@ task-orchestrate.sh
 |------|------|
 | **Task ID** | T05 |
 | **任务名称** | 收尾验证：verify.sh 综合检查 + 文档更新 |
-| **源文件** | `sofagent/scripts/verify.sh`（修改：新增合规三项综合验证用例） `CHANGELOG.md`（修改：v0.7.0 条目） `ROADMAP.md`（修改：v0.7x 三项标记为已完成 ✅） |
+| **源文件** | `sofagent/scripts/verify.sh`（修改：新增合规三项综合验证用例） `CHANGELOG.md`（修改：v0.70.0 条目） `ROADMAP.md`（修改：v0.7x 三项标记为已完成 ✅） |
 | **依赖** | T02（脱敏可用）、T03（清理可用）、T04（审计可用） |
 | **优先级** | P1 |
-| **工作内容** | 1. verify.sh 新增「企业合规」检查组：脱敏函数验证、cleanup.sh dry-run 验证、audit.sh 写入验证 2. verify.sh 新增「默认关闭」检查：确认未配置时三项功能均不生效 3. CHANGELOG.md：v0.7.0 条目说明三项新增功能 4. ROADMAP.md：v0.7x 三项状态从 🚧 更新为 ✅ |
+| **工作内容** | 1. verify.sh 新增「企业合规」检查组：脱敏函数验证、cleanup.sh dry-run 验证、audit.sh 写入验证 2. verify.sh 新增「默认关闭」检查：确认未配置时三项功能均不生效 3. CHANGELOG.md：v0.70.0 条目说明三项新增功能 4. ROADMAP.md：v0.7x 三项状态从 🚧 更新为 ✅ |
 
 ---
 

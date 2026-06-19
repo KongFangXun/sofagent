@@ -1,7 +1,7 @@
 # sofagent
 
 [![License](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.63-1E40AF)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/version-v0.70.1-1E40AF)](./HANDBOOK.md)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-主力平台-2563EB)](./ARCHITECTURE.md#平台依赖)
 [![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes-lightgrey)](./ARCHITECTURE.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent/stargazers)
@@ -9,7 +9,7 @@
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
-> v0.63 · 2026-06-19
+> v0.70.1 · 2026-06-20
 
 我叫孔放勋，一个完全不懂代码的产品经理。所有设计决策来自大半年的真实使用经验，文档由 [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) 和 [GLM-5.2](https://z.ai/) 配合生成。欢迎大佬进来改。
 

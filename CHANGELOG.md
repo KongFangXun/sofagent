@@ -4,7 +4,7 @@
 
 ---
 
-## [v0.7.1] — 2026-06-20
+## [v0.70.1] — 2026-06-20
 
 ### Fixed — Codex 平台兼容性（来自 Case 004 第三方测试报告）
 - **install.sh `SOFAGENT_DATA` 未初始化**：Codex/Claude/Hermes 分支不初始化该变量，但汇总输出阶段引用它，在 `set -u` 下导致退出。修复：在平台分支前统一初始化 `SOFAGENT_DATA="${PROJECT_DIR}/.sofagent"`
@@ -16,7 +16,7 @@
 
 ---
 
-## [v0.7.0] — 2026-06-19
+## [v0.70.0] — 2026-06-19
 
 ### Added — 企业合规（P0/P1）
 - **日志脱敏**：task-record.sh 新增 `sanitize()` 函数，写入 task/logs 前自动打码 API Key / token / 凭证。内网 IP 脱敏可选（默认关闭）。通过 `log_sanitize: true` 在 rules.md 启用
