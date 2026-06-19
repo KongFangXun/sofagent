@@ -120,7 +120,7 @@ SKILL.md 启动
 
 这套编排同时吸收了 Harness 和 Loop 两种思路——约束层保证基本安全（`SKILL.md`（宪法内联）），编排层往自我进化方向走（orchestrator/ + A/B 对比）。目标在 [Developer §一](#一工作原理) 定稿了，这一章解决后续问题：循环怎么启动、怎么跑、怎么收口。
 
-> Loop Engineering 的概念已在 [Developer §一](#一工作原理) 介绍过，这里只做工程映射——sofagent 的编排就是「目标→验证→决策→交接」四环节的实现：**目标**（/goal + 两轮澄清 [Developer §一](#一工作原理)）→ **验证**（铁律 #2 + skill-iterate + 中间检查点 [Handbook §三](./HANDBOOK.md#三底线与铁律)/[Developer §三](#三模型最优选择)/[Developer §五](#五自进化机制)）→ **决策**（ao compose + 编排深度晋级/回滚 本章）→ **交接**（闭环反思→ think.md 反思区 + task/logs [Developer §六](#六反思工程)/[Developer §七](#七数据文件架构)）。
+> Loop Engineering 的概念已在 [Developer §一](#一工作原理) 介绍过，这里只做工程映射——sofagent 的编排就是「目标→验证→决策→交接」四环节的实现：**目标**（/goal + 两轮澄清 [Developer §一](#一工作原理)）→ **验证**（铁律 #3 + skill-iterate + 中间检查点 [Handbook §三](./HANDBOOK.md#三底线与铁律)/[Developer §三](#三模型最优选择)/[Developer §五](#五自进化机制)）→ **决策**（ao compose + 编排深度晋级/回滚 本章）→ **交接**（闭环反思→ think.md 反思区 + task/logs [Developer §六](#六反思工程)/[Developer §七](#七数据文件架构)）。
 
 > Agent 循环不新鲜——React 范式 2023 年就有了。Loop 和 React 的本质区别不在「转圈」而在「收敛」，详见 [ARCHITECTURE.md](./ARCHITECTURE.md#一为什么会有-sofagent)。下面这三个难题，sofagent 自有解法：
 
