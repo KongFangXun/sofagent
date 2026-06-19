@@ -11,7 +11,7 @@
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
 > v0.63 · 2026-06-19
 
-我叫孔放勋，一个完全不懂代码的产品经理。所有设计决策来自大半年的真实使用经验，文档由 [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) 和 GLM-5.2 配合生成。欢迎大佬进来改。
+我叫孔放勋，一个完全不懂代码的产品经理。所有设计决策来自大半年的真实使用经验，文档由 [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) 和 [GLM-5.2](https://z.ai/) 配合生成。欢迎大佬进来改。
 
 ---
 
@@ -258,7 +258,8 @@ OpenClaw 上全自动，其他平台需手动触发闭环。
 ## 致谢
 
 - [OpenClaw](https://github.com/openclaw/openclaw) by Peter Steinberger — 整个 sofagent 的基石
-- [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) — 与 GLM-5.2 一起，所有文件都是它们配合生成的
+- [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) — 所有文件都是它与 GLM-5.2 配合生成的
+- [GLM-5.2](https://z.ai/) — 与 DeepSeek V4 Pro 一起，负责代码生成与审查
 - [Andrej Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills) — 4 条编码原则是 10 则铁律的根基
 - [agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator) + [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh) — 任务编排引擎 + 中文岗位库
 - [Anthropic Skills](https://github.com/anthropics/skills) — 官方 SKILL.md 格式规范
