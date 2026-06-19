@@ -86,6 +86,6 @@ metadata:
 ## ⚠️ 回复前闸门（内部执行，不输出给用户）
 
 ① 自检：回复中是否含内部标记（C步/入境闸门/能力注册/每任务闸门/engine已加载/Loop checkpoint/八维评分/think反思/编排决策/task-aware 1./task-closure）？命中 → 删除
-② 闭合：最小成果 + 用户确认 → task/logs → Read `task-closure.md` → 调 Loop Agent → 打勾
-③ 执行中：子任务间 / 60%预算 / 重大操作前 / 失败 → Read `loop-agent.md` → 调起对应模式
+② 闭合：最小成果 + 用户确认 → task/logs → Read `task-closure.md` → 调 Loop Check → 打勾
+③ 执行中：子任务间 / 60%预算 / 重大操作前 / 失败 → Read `loop-check.md` → 调起对应模式
 ④ 兜底：当日 task/logs 不存在 → 口头告警

@@ -33,9 +33,9 @@
 
 | 你是谁 | 看哪个 | 一句话 |
 |------|------|------|
-| 普通用户 | [HANDBOOK.md](./HANDBOOK.md)（436 行） | 怎么装、怎么用、什么是铁律 |
-| 开发者 | [DEVELOPMENT.md](./DEVELOPMENT.md)（561 行） | Skill 怎么协同、编排怎么跑、反思怎么闭环 |
-| 设计爱好者 | [ARCHITECTURE.md](./ARCHITECTURE.md)（573 行） | 为什么选这些设计、已知局限 |
+| 普通用户 | [HANDBOOK.md](./HANDBOOK.md)（443 行） | 怎么装、怎么用、什么是铁律 |
+| 开发者 | [DEVELOPMENT.md](./DEVELOPMENT.md)（599 行） | Skill 怎么协同、编排怎么跑、反思怎么闭环 |
+| 设计爱好者 | [ARCHITECTURE.md](./ARCHITECTURE.md)（585 行） | 为什么选这些设计、已知局限 |
 | 技术 VP 推广 | [docs/team-deploy.md](./docs/team-deploy.md)（3 页） | 装、试、回顾三阶段落地指南 |
 
 ---
@@ -196,8 +196,8 @@ OpenClaw 上全自动，其他平台需手动触发闭环。
 │   ├── engine.md               ← 完整入口引擎（A→D 初始化 + 子 Skill 索引）
 │   ├── entry-gate.md           ←     入境闸门：内部初始化检查
 │   ├── task-aware.md           ←     每任务闸门：边界→判级→澄清
-│   ├── task-closure.md         ←     离境闸门：调 Loop Agent 收口
-│   ├── loop-agent.md           ←     循环顾问：三模式五触发点（checkpoint/failure/closure）
+│   ├── task-closure.md         ←     离境闸门：调 Loop Check 收口
+│   ├── loop-check.md           ←     循环检查：三模式五触发点（checkpoint/failure/closure）
 │   ├── constitution/           ←     宪法文件（rules.md 部署到对应平台目录）
 │   │   └── rules.md            ←       执行层：模型偏好 + 行为规则（宪法内联在 SKILL.md）
 │   ├── data/                   ←     数据模板（格式参考）

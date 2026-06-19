@@ -1,6 +1,6 @@
 # orchestrator/ · 编排决策引擎
 
-> 运行时由 loop-agent closure 模式自动维护。不存原始数据，只存最优决策结论。
+> 运行时由 loop-check closure 模式自动维护。不存原始数据，只存最优决策结论。
 > 树形加载：Agent 先读 `_index.md` → 定位分支 → 只加载目标叶子文件。
 >
 > ⚠️ orchestrator/ 是最后初始化的数据文件——需等待 task/logs 积累 ≥3 次同类任务记录、skills/ 评分就绪后，才会写入第一个最优配置。在此之前该目录只有 `_index.md` 空壳。

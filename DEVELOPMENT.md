@@ -34,7 +34,7 @@
 
 Skill 不只是 Markdown 文件和一段提示词。根据 Anthropic Cloud Code 团队的实践定义，Skill 是一个**完整的工作环境**——包含入口分发器、子 Skill、脚本、资源配置，本质是把模型的泛化能力推进到稳定完成某类特定工作的能力。sofagent 的框架就是这个定义的工程实现。
 
-**1 主 Skill（`SKILL.md`）+ 5 子 Skill（engine/entry-gate/task-aware/task-closure/loop-agent）= 6 个 .md（按需加载）**
+**1 主 Skill（`SKILL.md`）+ 5 子 Skill（engine/entry-gate/task-aware/task-closure/loop-check）= 6 个 .md（按需加载）**
 
 用户只安装 `SKILL.md`（主入口）。每次对话开始时自动加载，A0 预判复杂度——🔴 复杂任务确认后加载 `engine.md` 走完整入口流程（平台检测→安装→加载链→种子指令），🟢🟡 简单/中等任务跳过 engine.md 直接走 task-aware 闸门。子 Skill 按场景按需加载——每个只管一件事，每个 ≤90 行，Agent 不会迷路。
 
@@ -44,7 +44,7 @@ Skill 不只是 Markdown 文件和一段提示词。根据 Anthropic Cloud Code 
 | entry-gate | 入口流程结束后 | 硬出口检查：加载链确认 + 能力注册。入境闸门不开，不接任何任务 | `entry-gate.md` |
 | task-aware | 收到任何用户任务时 | 每任务闸门：边界→语义→健康度→判级→澄清。含硬信号规则 + 检查点触发规则（子任务间/60%预算/重大操作前） | `task-aware.md` |
 | task-closure | 闭环信号出现时 | 离境闸门：调 Loop Agent（closure 模式）→ 反思/评分/A/B/汇报 | `task-closure.md` |
-| loop-agent | 检查点 / 失败 / 闭环 | 顾问 Agent（角色隔离）：读数据→做判断→给建议。三节点调起（checkpoint/failure/closure） | `loop-agent.md` |
+| loop-check | 检查点 / 失败 / 闭环 | 顾问 Agent（角色隔离）：读数据→做判断→给建议。三节点调起（checkpoint/failure/closure） | `loop-check.md` |
 
 > 三层闸门 + 一条回环：入境（初始化证明）→ 每任务（启动前确认）→ Loop（执行中检查+失败诊断）→ 离境（完成后沉淀）。四个全走才能保证 `.sofagent/` 数据层被激活。
 
@@ -58,10 +58,10 @@ SKILL.md 启动
   │         └─ ao compose 拆任务 ← task-orchestrate.sh 包装
   │               ├─ ClawHub 搜 Skills
   │               └─ 分配子 Agent
-  ├─ loop-agent 检查点（子任务间 / 60% 预算 / 重大操作前）
-  ├─ loop-agent 失败诊断（可自愈重试 / 不可→汇报）
+  ├─ loop-check 检查点（子任务间 / 60% 预算 / 重大操作前）
+  ├─ loop-check 失败诊断（可自愈重试 / 不可→汇报）
   └─ task-closure 收口
-        └─ loop-agent closure 模式
+        └─ loop-check closure 模式
               ├─ 反思 → think.md ─┐
               ├─ 评分 → scoring/    ├─ task-record.sh 写入
               ├─ A/B 对比 → orchestrator/ ─┘
@@ -86,7 +86,7 @@ SKILL.md 启动
 - `constitution/`（1 个文件）：rules.md（执行层，用户自定义规则。v0.62：宪法已内联进 SKILL.md）
 - `data/`（5 个文件）：数据模板 think.md、orchestrator.md、task.md、scoring.md、IDENTITY.md
 - `scripts/`（6 个脚本）：install.sh、verify.sh、uninstall.sh、load-chain.sh、task-record.sh、task-orchestrate.sh
-- Skill 文件（6 个 .md）：SKILL.md（主入口）、engine.md（入口引擎）、entry-gate.md（入境闸门）、task-aware.md（每任务闸门）、task-closure.md（离境闸门）、loop-agent.md（循环顾问）
+- Skill 文件（6 个 .md）：SKILL.md（主入口）、engine.md（入口引擎）、entry-gate.md（入境闸门）、task-aware.md（每任务闸门）、task-closure.md（离境闸门）、loop-check.md（循环顾问）
 
 **配套脚本速查**：
 
@@ -116,7 +116,7 @@ SKILL.md 启动
 
 ## 二、编排哲学
 
-> 负责的子 Skill：`engine.md` 点火 ao compose 拆任务 → `loop-agent.md` 设检查点 + 失败诊断 → `task-closure.md` 闭环收口。
+> 负责的子 Skill：`engine.md` 点火 ao compose 拆任务 → `loop-check.md` 设检查点 + 失败诊断 → `task-closure.md` 闭环收口。
 
 这套编排同时吸收了 Harness 和 Loop 两种思路——约束层保证基本安全（`SKILL.md`（宪法内联）），编排层往自我进化方向走（orchestrator/ + A/B 对比）。目标在 [Developer §一](#一工作原理) 定稿了，这一章解决后续问题：循环怎么启动、怎么跑、怎么收口。
 
@@ -359,7 +359,7 @@ ao compose 拆完任务
 
 ## 四、模板与验证
 
-> 负责的子 Skill：`loop-agent` closure 模式 — A/B 对比 → 沉淀最优模板 → 写入 orchestrator/
+> 负责的子 Skill：`loop-check` closure 模式 — A/B 对比 → 沉淀最优模板 → 写入 orchestrator/
 
 ### 任务模板
 
@@ -371,8 +371,8 @@ ao compose 拆完任务
 
 | 产物 | 谁写的 | 怎么写的 |
 |------|------|------|
-| `orchestrator/{任务}.md` | `loop-agent` closure 模式 | 闭环时读 task/logs/ 同类任务记录 → A/B 对比 → 胜出模板写入 |
-| `scoring/{skill}.md` | `loop-agent` closure 模式 | 闭环时评分 → 写入对应 Skill 叶子，含使用次数、评分、备注 |
+| `orchestrator/{任务}.md` | `loop-check` closure 模式 | 闭环时读 task/logs/ 同类任务记录 → A/B 对比 → 胜出模板写入 |
+| `scoring/{skill}.md` | `loop-check` closure 模式 | 闭环时评分 → 写入对应 Skill 叶子，含使用次数、评分、备注 |
 | `task/logs/` | 主 Agent | 每次执行自动生成，只追加不修改 |
 | `IDENTITY.md` | 来自 `agency-agents-zh` | ao compose 拆任务时按角色自动分配，不在 sofagent 项目内 |
 
@@ -388,14 +388,14 @@ ao compose 拆完任务
 
 局限：样本量小（最少 7 次才沉淀）、LLM 有随机性、不同难度方差大。模板沉淀后标「待确认」。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#a-b-test)。
 
-每次闭环评分时，loop-agent closure 模式会把本次踩的坑追加到 `scoring/{skill}.md` 的「踩过的坑」字段，Agent 下次加载 Skill 时先扫一眼——提前知道哪里摔过。
+每次闭环评分时，loop-check closure 模式会把本次踩的坑追加到 `scoring/{skill}.md` 的「踩过的坑」字段，Agent 下次加载 Skill 时先扫一眼——提前知道哪里摔过。
 
 ---
 
 
 ## 五、自进化机制
 
-> 负责的子 Skill：`loop-agent` + `task-closure` — 反思 → 评分 → A/B → 写入 orchestrator/
+> 负责的子 Skill：`loop-check` + `task-closure` — 反思 → 评分 → A/B → 写入 orchestrator/
 
 前面四章讲了编排（[Handbook §四](./HANDBOOK.md#四任务目标制定)）、Skills（[Developer §三](#三模型最优选择)）、A/B 测试（[Developer §四](#四模板与验证)）、记忆（[Developer §六](#六反思工程)）。单独看每个都说得通——但问题是，它们各跑各的，没有互相反馈。
 
@@ -431,7 +431,7 @@ ao compose 拆完任务
 复盘是任务闭环后的总评。Loop 跑的过程中也有三个检查点
 
 **触发条件**（任一触发即暂停）：
-- 步数超过 `orchestrator/` 里该任务类型的历史平均步数 × 2（首次执行取叶子文件的 `首次预估步数` 字段，未配置时默认 50 步。跑满 3 次后 loop-agent closure 模式自动用实际平均值校准该字段）
+- 步数超过 `orchestrator/` 里该任务类型的历史平均步数 × 2（首次执行取叶子文件的 `首次预估步数` 字段，未配置时默认 50 步。跑满 3 次后 loop-check closure 模式自动用实际平均值校准该字段）
 - 同一工具连续失败或重试达到 3 次
 - token 消耗超过该子任务预算的 1.5 倍
 
@@ -445,7 +445,7 @@ ao compose 拆完任务
 | 超标后暂停子 Agent、通知主 Agent | `globalCircuitBreakerThreshold` 触发熔断 | 同上，外部刹车 |
 | 三问评估（Flash 模型判断） | Skill（SKILL.md 中 check 逻辑） | LLM 判断是 Skill 的长项 |
 | 写入 task/logs/ 标 #checkpoint | task-record.sh（脚本） | 确定性机械操作 |
-| 更新 orchestrator/ 阈值 | loop-agent closure 模式 | 需要对比历史数据判断是否校准 |
+| 更新 orchestrator/ 阈值 | loop-check closure 模式 | 需要对比历史数据判断是否校准 |
 
 ### orchestrator/ 怎么决策
 
@@ -480,7 +480,7 @@ orchestrator/ 就是迭代的中枢。它不记原始数据，只记最优结论
 
 闭环评分的评审者分离按平台分级实现——OpenClaw 用 `session.spawn` 工程隔离（可类比引用 Self Harness 的方向性结论）；非 OpenClaw 是 prompt 级约束（无机制保障，效果未实测，不引用具体数字）。
 
-> 完整实现细节与诚实声明见 `loop-agent.md` closure 模式 §平台分级评审；设计权衡见 [ARCHITECTURE.md §三「复盘评分是 LLM 自评」](./ARCHITECTURE.md#复盘评分是-llm-自评评审者与执行者不分离)。
+> 完整实现细节与诚实声明见 `loop-check.md` closure 模式 §平台分级评审；设计权衡见 [ARCHITECTURE.md §三「复盘评分是 LLM 自评」](./ARCHITECTURE.md#复盘评分是-llm-自评评审者与执行者不分离)。
 
 以上是 sofagent 跑起来之后的自我进化逻辑——从 Skills 评分到编排模板，全自动迭代。但在一切开始之前得先把它装上——接下来讲怎么装、在不同平台上怎么跑。
 
@@ -488,7 +488,7 @@ orchestrator/ 就是迭代的中枢。它不记原始数据，只记最优结论
 
 ## 六、反思工程
 
-> 负责的子 Skill：`loop-agent` closure 模式 → 反问「有什么值得记住的」→ 写入 `think.md` 反思区。
+> 负责的子 Skill：`loop-check` closure 模式 → 反问「有什么值得记住的」→ 写入 `think.md` 反思区。
 
 ### 每次任务结束，自问一句
 
