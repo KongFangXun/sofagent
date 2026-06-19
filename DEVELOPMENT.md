@@ -50,7 +50,7 @@ Skill 不只是 Markdown 文件和一段提示词。根据 Anthropic Cloud Code 
 
 ```
 SKILL.md 启动
-  ├─ 三层加载链（SKILL.md + think.md + rules.md）← load-chain.sh 注入
+  ├─ 三层加载链（SKILL.md + think.md + rules.md）← 内部 hook sofagent-load-chain 注入（OpenClaw）/ Agent 主动 Read（其他平台）
   ├─ A0 判级
   │   ├─ 🟢🟡 简单/中等 → task-aware 直接处理
   │   └─ 🔴 复杂 → engine.md 点火
@@ -85,7 +85,8 @@ SKILL.md 启动
 
 - `constitution/`（1 个文件）：rules.md（执行层，用户自定义规则。v0.62：宪法已内联进 SKILL.md）
 - `data/`（5 个文件）：数据模板 think.md、orchestrator.md、task.md、scoring.md、IDENTITY.md
-- `scripts/`（6 个脚本）：install.sh、verify.sh、uninstall.sh、load-chain.sh、task-record.sh、task-orchestrate.sh
+- `scripts/`（5 个脚本）：install.sh、verify.sh、uninstall.sh、task-record.sh、task-orchestrate.sh
+- `hooks/sofagent-load-chain/`（2 个文件）：HOOK.md + handler.ts（OpenClaw 2026.6.x 内部 hook，agent:bootstrap 事件注入第 2、3 层）
 - Skill 文件（6 个 .md）：SKILL.md（主入口）、engine.md（入口引擎）、entry-gate.md（入境闸门）、task-aware.md（每任务闸门）、task-closure.md（离境闸门）、loop-check.md（循环顾问）
 
 **配套脚本速查**：
@@ -95,7 +96,7 @@ SKILL.md 启动
 | `install.sh` | 多平台一键安装（7 步） | 你手动跑 | `bash install.sh --platform openclaw` |
 | `uninstall.sh` | 删约束文件，保留 `.sofagent/` 用户数据 | 你手动跑 | `bash uninstall.sh --platform openclaw` |
 | `verify.sh` | 装后验证 9 类 24+ 检查项 | 安装完自动跑，也可手动 | `bash verify.sh --json`（CI/CD） |
-| `load-chain.sh` | OpenClaw Hook：三层约束注入 + SHA-256 缓存 + `[LLM自评]` 标记位折半（P0-5） | 每次 prompt 构建前自动触发 | 不手动跑 |
+| `load-chain.sh` | ~~已废弃~~（v0.64 删除，改用 `hooks/sofagent-load-chain/` 内部 hook） | — | — |
 | `task-orchestrate.sh` | 包装 ao compose：worktree 隔离 + 约束注入 + 成本汇总 + 清理 | engine.md 拆任务后自动调用 | 不手动跑 |
 | `task-record.sh` | 收集任务数据 → 拼 Markdown → 追加到 task/logs/ | 闭环时自动调用 | 不手动跑 |
 

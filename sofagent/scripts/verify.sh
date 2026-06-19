@@ -3,7 +3,7 @@
 # sofagent verify.sh · 装后验证脚本
 # ============================================================
 # 验证 sofagent 安装完整性（9 个检查类别，24+ 项）
-# 由 DeepSeek V4 Pro 辅助生成。
+# 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
 #
 # 用法：
 #   verify.sh           彩色终端输出
@@ -237,59 +237,40 @@ else
 fi
 
 _hr
-_section "加载链 Hook"
+_section "加载链 Hook（2026.6.x 内部 hook）"
 
-HOOK_PATH="${OPENCLAW_DIR}/hooks/load-chain.sh"
-if [ -f "$HOOK_PATH" ] && [ -x "$HOOK_PATH" ]; then
-  check_pass "load-chain.sh 存在且可执行"
+# 新架构：声明式内部 hook。检查目录文件 + openclaw.json 注册，不再直接执行（handler.ts 由 agent:bootstrap 事件触发，非 bash 可跑）
+HOOK_DIR="${OPENCLAW_DIR}/hooks/sofagent-load-chain"
+HOOK_FILES_OK=0
+[ -f "${HOOK_DIR}/HOOK.md" ]   && HOOK_FILES_OK=$((HOOK_FILES_OK+1))
+[ -f "${HOOK_DIR}/handler.ts" ] && HOOK_FILES_OK=$((HOOK_FILES_OK+1))
 
-  # 测试实际运行
-  output=$(OPENCLAW_STATE_DIR="$OPENCLAW_DIR" bash "$HOOK_PATH" 2>&1)
-  exit_code=$?
+if [ "$HOOK_FILES_OK" = "2" ]; then
+  check_pass "hook 目录就绪: hooks/sofagent-load-chain/（HOOK.md + handler.ts）"
+else
+  check_fail "hook 文件缺失（期望 HOOK.md + handler.ts，实际 ${HOOK_FILES_OK}/2）"
+fi
 
-  if [ $exit_code -eq 0 ]; then
-    check_pass "加载链运行成功 (exit 0)"
-
-    # 检查底线是否存在（v0.62：宪法内联在 SKILL.md，由 skill 系统注入）
-    if echo "$output" | grep -q "不泄露隐私"; then
-      check_pass "底线注入保护生效（think.md/rules.md 已注入）"
-    else
-      check_warn "底线关键词未在 load-chain.sh 输出中检测到（v0.62：宪法由 SKILL.md 注入，非 load-chain.sh）"
-    fi
-
-    # 检查每个文件是否都被注入（v0.62：只检查 rules.md，sofagent.md 已删除）
-    for f in rules.md; do
-      if echo "$output" | grep -q "$f"; then
-        check_pass "$f 已注入到系统 prompt"
-      else
-        check_warn "$f 可能未注入（输出中未找到引用）"
-      fi
-    done
-
-    # Token 预算粗估
-    total_chars=$(echo "$output" | wc -m | tr -d ' ')
-    est_tokens=$(( total_chars * 3 / 2 ))  # 中文粗估 ×1.5
-    check_pass "约束块大小: ${total_chars} 字符 ≈ ${est_tokens} token"
-    if [ "$est_tokens" -gt 15000 ]; then
-      check_warn "Token 预算偏高（> 15K），建议检查文件大小"
-    fi
-
-    # SHA-256 缓存验证
-    cache_result=$(OPENCLAW_STATE_DIR="$OPENCLAW_DIR" bash "$HOOK_PATH" --check 2>/dev/null || echo "error")
-    if [ "$cache_result" = "hit" ]; then
-      check_pass "SHA-256 缓存命中（无变化时复用）"
-    elif [ "$cache_result" = "miss" ]; then
-      check_pass "SHA-256 缓存重建（文件已变化，正常）"
-    else
-      check_warn "SHA-256 缓存状态未知 (${cache_result})"
-    fi
-
+# 检查 openclaw.json 注册
+OC_CONFIG="${OPENCLAW_DIR}/openclaw.json"
+if [ -f "$OC_CONFIG" ]; then
+  if grep -q '"sofagent-load-chain"' "$OC_CONFIG" 2>/dev/null; then
+    check_pass "openclaw.json 已注册 sofagent-load-chain hook"
   else
-    check_fail "加载链运行失败 (exit $exit_code)"
+    check_warn "openclaw.json 未注册 sofagent-load-chain（加载链第 2、3 层不会自动注入）"
   fi
 else
-  check_fail "load-chain.sh 不存在或不可执行"
+  check_warn "openclaw.json 不存在（hook 注册无从检查）"
 fi
+
+# 检查注入源文件是否可解析（think.md / rules.md）
+for layer_file in "${PWD}/.sofagent/think.md" "${OPENCLAW_DIR}/rules.md"; do
+  if [ -f "$layer_file" ]; then
+    check_pass "$(basename "$layer_file") 存在（$(wc -m < "$layer_file" | tr -d ' ') 字符）"
+  else
+    check_warn "$(basename "$layer_file") 不存在（首次运行后由 B1 创建 / 需手动配置）"
+  fi
+done
 
 _hr
 _section "外部依赖"

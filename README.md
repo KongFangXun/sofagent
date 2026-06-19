@@ -11,7 +11,7 @@
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
 > v0.63 · 2026-06-19
 
-我叫孔放勋，一个完全不懂代码的产品经理。所有设计决策来自大半年的真实使用经验，文档由 [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) 辅助生成。欢迎大佬进来改。
+我叫孔放勋，一个完全不懂代码的产品经理。所有设计决策来自大半年的真实使用经验，文档由 [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) 和 GLM-5.2 配合生成。欢迎大佬进来改。
 
 ---
 
@@ -102,7 +102,7 @@
 
 | 依赖 | 版本要求 | 为什么需要 | 检查命令 |
 |------|------|------|------|
-| bash | ≥4 | install.sh / load-chain.sh / task-record.sh | `bash --version` |
+| bash | ≥4 | install.sh / task-record.sh | `bash --version` |
 | git | 任意 | clone 仓库、task/logs 追溯、worktree 隔离 | `git --version` |
 | node | ≥18 | `ao compose` 编排引擎（agency-orchestrator）| `node --version` |
 | npm | ≥9 | 全局安装 agency-orchestrator | `npm --version` |
@@ -209,9 +209,12 @@ OpenClaw 上全自动，其他平台需手动触发闭环。
 │       ├── install.sh          ←       一键安装（多平台兼容）
 │       ├── verify.sh
 │       ├── uninstall.sh
-│       ├── load-chain.sh       ←       三层加载链（OpenClaw Hook）
 │       ├── task-record.sh
 │       └── task-orchestrate.sh
+├── hooks/                      ←     OpenClaw 2026.6.x 内部 hook
+│   └── sofagent-load-chain/    ←       加载链（agent:bootstrap 注入第 2、3 层）
+│       ├── HOOK.md
+│       └── handler.ts
 └── images/
     └── sofagent.png            ← Logo
 ```
@@ -255,7 +258,7 @@ OpenClaw 上全自动，其他平台需手动触发闭环。
 ## 致谢
 
 - [OpenClaw](https://github.com/openclaw/openclaw) by Peter Steinberger — 整个 sofagent 的基石
-- [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) — 所有文件都是它辅助生成的
+- [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) — 与 GLM-5.2 一起，所有文件都是它们配合生成的
 - [Andrej Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills) — 4 条编码原则是 10 则铁律的根基
 - [agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator) + [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh) — 任务编排引擎 + 中文岗位库
 - [Anthropic Skills](https://github.com/anthropics/skills) — 官方 SKILL.md 格式规范

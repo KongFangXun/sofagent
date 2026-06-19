@@ -132,10 +132,13 @@
 | 用例 | 测试人 | 日期 | 结果 | 截图 | 备注 |
 |------|------|------|:--:|------|------|
 | 0. 安装验证 | 郝交付 | 2026-06-18 | PASS | — | v0.55 install+verify 全链路通过，28 pass / 0 fail |
-| 1. 地基加载 | — | — | SKIP | — | 需要运行中的 OpenClaw Agent 客户端 |
-| 2. checkpoint | — | — | SKIP | — | 需要运行中的 OpenClaw Agent 客户端 + 复杂任务 |
+| 0. 安装验证 | KongFangXun | 2026-06-19 | PASS | — | v0.64 install + verify 通过，9 个 Skill/数据文件部署到位，Hook 已注册 |
+| 1. 地基加载 | KongFangXun | 2026-06-19 | PASS | — | OpenClaw 2026.6.8：三层加载链全部生效——第 1 层 skill 注入、第 2 层 engine B1 创建 think.md、第 3 层 rules.md 路径修通可读 |
+| 2. checkpoint | KongFangXun | 2026-06-19 | PASS | — | 🔴 并行任务触发 ao compose + 3 子 Agent + loop-check closure，反思 3 问写入 think.md |
 | 3. 闭环反思 | KongFangXun | 2026-06-18 | PASS | — | WorkBuddy + DeepSeek V4 Pro 实测：task/logs + think.md 双写，闭环跑通。加载链第 1 层漏读已修（v0.56 P0-7）。详见 [Case 002](./docs/cases/workbuddy-self-test-2026-06-18/) |
+| 3. 闭环反思 | KongFangXun | 2026-06-19 | PASS | — | OpenClaw 2026.6.8：task/logs + think.md + scoring 三写；八维评分 7.75/10；LLM 自评降权标记生效 |
 | 4. 自我约束 | 郝交付 | 2026-06-17 | PASS | — | v0.50 修了 install.sh constitution 路径 + data/路径 + 乱码行 + uninstall 范围；install→verify→uninstall 全流程通过，不误删其他 skills |
+| 4. 自我约束 | — | — | SKIP | — | v0.64 待补：需修改 Skill 文件后验证 |
 | 5. 跨任务反思 | — | — | SKIP | — | 需要至少 2 次 Agent 任务运行 |
 
 ### 第三方测试（等你来填）
@@ -146,6 +149,7 @@
 |------|------|------|------|:--:|------|------|
 | 2026-06-18 | @cedric123123 | OpenClaw (kimi-k2.5) | 复杂旅行规划任务 | PASS | [loop-report-screenshot.png](./docs/cases/italy-travel-2026-06-18/loop-report-screenshot.png) | 全流程跑通，3检查点100%通过；效果指标为 Agent 自评未经人工核验 |
 | 2026-06-18 | KongFangXun | WorkBuddy (DeepSeek V4 Pro) | 闭环反思 + 加载链 | PASS（闭环）/ FAIL（加载链第1层） | [Case 002](./docs/cases/workbuddy-self-test-2026-06-18/) | 闭环双写跑通；加载链第1层漏读已修（v0.56 P0-7） |
+| 2026-06-19 | KongFangXun | OpenClaw 2026.6.8 (DeepSeek V4 Flash) | 全链路 E2E（TC01-07） | PASS（5/7）/ PARTIAL（1）/ P0（1） | [Case 003](./docs/cases/openclaw-e2e-2026-06-19/) | v0.64 全链路验证：加载链三层 + ao compose 子 Agent + loop-check 闭环跑通。P0：install.sh 未适配 2026.6.x hook 架构 |
 | — | — | — | — | — | — | 你的这行，模板：日期 / @你的名字 / 平台 / 用例 / 结果 / 截图 / 备注 |
 
 | 用例 | 测试人 | 日期 | 结果 | 截图 | 备注 |

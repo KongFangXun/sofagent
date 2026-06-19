@@ -8,7 +8,7 @@
 #   3. 编排预览（先看 DAG 再决定跑不跑）
 #   4. 结果聚合 + 成本汇总
 #   5. 自动清理 worktree
-# 由 DeepSeek V4 Pro 辅助生成。
+# 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
 #
 
 # 用法：
@@ -395,26 +395,18 @@ fi
 echo ""
 
 # ── Step 3: Harness 约束注入 ──
-info "Step 3/4 · 注入 Harness 约束..."
+info "Step 3/4 · Harness 约束（2026.6.x 自动注入）..."
 OPENCLAW_DIR="${OPENCLAW_STATE_DIR:-$HOME/.openclaw}"
-HOOK_PATH="${OPENCLAW_DIR}/hooks/load-chain.sh"
+HOOK_DIR="${OPENCLAW_DIR}/hooks/sofagent-load-chain"
 
-if [ -f "$HOOK_PATH" ] && [ -x "$HOOK_PATH" ]; then
-  # 生成约束块
-  constraint_block=$(OPENCLAW_STATE_DIR="$OPENCLAW_DIR" bash "$HOOK_PATH" 2>/dev/null || echo "")
-  if [ -n "$constraint_block" ]; then
-    # 写入临时约束文件
-    CONSTRAINT_FILE="${TMPDIR:-/tmp}/sofagent-constraint-$$.txt"
-    echo "$constraint_block" > "$CONSTRAINT_FILE"
-    ok "Harness 约束已注入 (${#constraint_block} 字符)"
-    # AO 通过环境变量感知约束文件
-    export SOFAGENT_CONSTRAINT_FILE="$CONSTRAINT_FILE"
-  else
-    warn "加载链未输出约束，检查安装状态"
-  fi
+# OpenClaw 2026.6.x 起改用声明式内部 hook：ao run 拉起的子 Agent 在 bootstrap 时
+# 自动触发 sofagent-load-chain（注入 think.md + rules.md），第 1 层宪法由 skill 系统
+# 注入。旧版 load-chain.sh 手动生成约束块的方式已废弃——无需在此重复注入。
+if [ -f "${HOOK_DIR}/handler.ts" ] && [ -f "${HOOK_DIR}/HOOK.md" ]; then
+  ok "加载链 hook 就绪（子 Agent bootstrap 时自动注入第 2、3 层）"
 else
-  warn "加载链 Hook 未找到: $HOOK_PATH"
-  warn "请先运行 install.sh 完成部署"
+  warn "加载链 hook 未部署: $HOOK_DIR"
+  warn "子 Agent 可能拿不到 think.md/rules.md，请先运行 install.sh"
 fi
 
 echo ""

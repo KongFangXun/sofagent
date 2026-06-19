@@ -3,7 +3,7 @@
 # sofagent uninstall.sh · 卸载脚本
 # ============================================================
 # 删除 sofagent 约束文件，但保留 .sofagent/ 用户数据。
-# 由 DeepSeek V4 Pro 辅助生成。
+# 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
 #
 # 用法：./uninstall.sh [--platform openclaw|workbuddy|claude|codex|hermes]
 #       ./uninstall.sh --force   跳过确认，直接删除
@@ -184,17 +184,31 @@ if [ -d "$SKILLS_DIR" ]; then
   ((removed++)) || true
 fi
 
-# ── 删除 / 列出加载链 Hook ──
-HOOK_PATH="${OPENCLAW_DIR}/hooks/load-chain.sh"
-if [ -f "$HOOK_PATH" ]; then
+# ── 删除 / 列出加载链 Hook（2026.6.x 内部 hook 目录）──
+HOOK_DIR="${OPENCLAW_DIR}/hooks/sofagent-load-chain"
+if [ -d "$HOOK_DIR" ]; then
   if [ "$LIST_ONLY" = true ]; then
-    info "  $HOOK_PATH"
+    info "  $HOOK_DIR/（HOOK.md + handler.ts）"
   else
-    rm -f "$HOOK_PATH"
+    rm -rf "$HOOK_DIR"
     rmdir "${OPENCLAW_DIR}/hooks" 2>/dev/null || true
-    ok "已删除: hooks/load-chain.sh"
+    ok "已删除: hooks/sofagent-load-chain/"
   fi
   ((removed++)) || true
+fi
+
+# ── 注销 openclaw.json 中的 hook 注册 ──
+OC_CONFIG="${OPENCLAW_DIR}/openclaw.json"
+if [ -f "$OC_CONFIG" ] && command -v jq &>/dev/null; then
+  if jq -e '.hooks.internal.entries."sofagent-load-chain"' "$OC_CONFIG" >/dev/null 2>&1; then
+    if [ "$LIST_ONLY" = true ]; then
+      info "  $OC_CONFIG (hooks.internal.entries.sofagent-load-chain)"
+    else
+      jq 'del(.hooks.internal.entries."sofagent-load-chain")' "$OC_CONFIG" > "${OC_CONFIG}.tmp" 2>/dev/null
+      mv "${OC_CONFIG}.tmp" "$OC_CONFIG" 2>/dev/null && ok "已注销 openclaw.json 中的 sofagent-load-chain hook"
+    fi
+    ((removed++)) || true
+  fi
 fi
 
 # ── 删除 / 列出配套脚本 ──

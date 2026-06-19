@@ -1,4 +1,4 @@
-# 每任务闸门 · v0.55
+# 每任务闸门 · v0.64
 
 > 由 SKILL.md 触发。收到任何用户任务后、开始执行前，逐节走完。
 > ⛔ 1.1~1.4 为 Agent 内部处理，检查结果严禁输出给用户。用户仅收到「响应级别」表中对应的最终回复。子 Agent 任务前主 Agent 代为检查。
@@ -32,5 +32,5 @@
 **第一轮 · 目标确认**：开放式追问——对象/产出/受众/约束。苏格拉底原则：不问「是不是」，问「你想分析哪个方向？」
 **第二轮 · 编排方案**：跑 ao compose → 子任务拆分+Skill匹配+成本预估 → 写 `task/plans/` 标 `#pending` → 用户确认→执行。两轮封顶。
 
-**定稿后**：子任务间/60%预算 → 先跑 `task-record.sh --closure-check` / `--budget` → 再调 Loop Check（checkpoint）。失败调 failure，闭环调 closure。快速模式仅重大操作前生效。详见 `loop-check.md`。
+**定稿后**：子任务间/60%预算 → 先跑 `{OPENCLAW_SCRIPTS}/task-record.sh --closure-check` / `--budget` → 再调 Loop Check（checkpoint）。失败调 failure，闭环调 closure。快速模式仅重大操作前生效。详见 `loop-check.md`。
 
