@@ -83,7 +83,7 @@ SKILL.md 启动
 
 **`sofagent/` 目录结构**（4 个子目录 + 6 个 Skill .md 文件 = 1 主 Skill + 5 子 Skill）：
 
-- `constitution/`（2 个文件）：sofagent.md（契约层）、rules.md（执行层）
+- `constitution/`（1 个文件）：rules.md（执行层，用户自定义规则。v0.62：宪法已内联进 SKILL.md）
 - `data/`（5 个文件）：数据模板 think.md、orchestrator.md、task.md、scoring.md、IDENTITY.md
 - `scripts/`（6 个脚本）：install.sh、verify.sh、uninstall.sh、load-chain.sh、task-record.sh、task-orchestrate.sh
 - Skill 文件（6 个 .md）：SKILL.md（主入口）、engine.md（入口引擎）、entry-gate.md（入境闸门）、task-aware.md（每任务闸门）、task-closure.md（离境闸门）、loop-agent.md（循环顾问）

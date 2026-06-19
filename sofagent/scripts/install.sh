@@ -231,8 +231,8 @@ info "Step 4/7 · 部署宪法文件 → $TARGET"
 
 mkdir -p "$TARGET"
 
-# 宪法文件
-for f in sofagent.md rules.md; do
+# 宪法文件（v0.62：宪法已内联进 SKILL.md，只部署 rules.md）
+for f in rules.md; do
   src="${CONSTITUTION_SRC}/${f}"
   dst="${TARGET}/${f}"
   if [ -f "$src" ]; then
@@ -517,7 +517,7 @@ if [ "$PLATFORM" = "claude" ] || [ "$PLATFORM" = "codex" ] || [ "$PLATFORM" = "h
       echo "  ── 复制以下内容 ──"
       echo ""
       echo "  每次对话开始时，读取以下文件并执行 sofagent 入口流程："
-      echo "  1. 宪法文件：~/.claude/sofagent.md ~/.claude/rules.md"
+      echo "  1. rules.md：~/.claude/rules.md（宪法已在 SKILL.md 内联）"
       echo "  2. 如果工作目录含 .sofagent/ 数据文件，加载记忆和反思"
       echo "  如果数据文件（.sofagent/）不存在，先创建空模板。"
       ;;
@@ -527,7 +527,7 @@ if [ "$PLATFORM" = "claude" ] || [ "$PLATFORM" = "codex" ] || [ "$PLATFORM" = "h
       echo "  ── 复制以下内容 ──"
       echo ""
       echo "  每次对话开始时，读取以下文件并执行 sofagent 入口流程："
-      echo "  1. 宪法文件：~/.codex/sofagent.md ~/.codex/rules.md"
+      echo "  1. rules.md：~/.codex/rules.md（宪法已在 SKILL.md 内联）"
       echo "  2. 如果工作目录含 .sofagent/ 数据文件，加载记忆和反思"
       echo "  如果数据文件（.sofagent/）不存在，先创建空模板。"
       ;;
@@ -537,7 +537,7 @@ if [ "$PLATFORM" = "claude" ] || [ "$PLATFORM" = "codex" ] || [ "$PLATFORM" = "h
       echo "  ── 复制以下内容 ──"
       echo ""
       echo "  每次对话开始时，读取以下文件并执行 sofagent 入口流程："
-      echo "  1. 宪法文件：~/.hermes/sofagent.md ~/.hermes/rules.md"
+      echo "  1. rules.md：~/.hermes/rules.md（宪法已在 SKILL.md 内联）"
       echo "  2. 如果工作目录含 .sofagent/ 数据文件，加载记忆和反思"
       echo "  如果数据文件（.sofagent/）不存在，先创建空模板。"
       ;;
@@ -559,7 +559,7 @@ echo ""
 case "$PLATFORM" in
   openclaw)
     echo "  已部署文件："
-    echo "    宪法文件:      $TARGET/{sofagent,rules}.md"
+    echo "    宪法文件:      $TARGET/rules.md（宪法内联在 SKILL.md）"
     echo "    Skill 文件:     $TARGET/skills/sofagent/（6 核心 + 4 数据模板）"
     echo "    加载链 Hook:    $TARGET/hooks/load-chain.sh"
     echo "    配套脚本:       $TARGET/scripts/{task-record,task-orchestrate}.sh"
@@ -568,7 +568,7 @@ case "$PLATFORM" in
     ;;
   claude|codex|hermes)
     echo "  已部署文件："
-    echo "    宪法文件:      $TARGET/{sofagent,rules}.md"
+    echo "    宪法文件:      $TARGET/rules.md（宪法内联在 SKILL.md）"
     echo "    数据目录:       $SOFAGENT_DATA"
     echo ""
     echo "  ⚠️  ${PLATFORM} 是手动平台——请复制上方种子指令到配置文件。"
@@ -604,5 +604,5 @@ fi  # end OpenClaw-only status
 echo ""
 
 # 写入安装日志摘要
-_log "install complete: constitution=2 skills=6 hook=1 loopdetect=1"
+_log "install complete: constitution=1(rules) skills=6 hook=1 loopdetect=1"
 _log "install log saved to $INSTALL_LOG"
