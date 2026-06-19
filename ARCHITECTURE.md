@@ -6,7 +6,7 @@
 >
 > 各节按 Handbook 章节顺序排列，方便两边对照着读。
 >
-> v0.63 · 2026-06-19 · 孔放勋
+> v0.70.1 · 2026-06-20 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
