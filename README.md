@@ -1,7 +1,7 @@
 # sofagent
 
 [![License](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.71-1E40AF)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/version-v0.72-1E40AF)](./HANDBOOK.md)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--20-lightgrey)](./README.md)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-主力平台-2563EB)](./ARCHITECTURE.md#平台依赖)
 [![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes-lightgrey)](./ARCHITECTURE.md#平台依赖)
@@ -10,7 +10,7 @@
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
-> v0.71 · 2026-06-20
+> v0.72 · 2026-06-27
 
 我叫孔放勋，一个完全不懂代码的产品经理。所有设计决策来自大半年的真实使用经验，文档由 [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) 和 [GLM-5.2](https://z.ai/) 配合生成。欢迎大佬进来改。
 
@@ -69,21 +69,23 @@
 
 > ⚠️ **已知局限**：核心效果尚无第三方实测数据；复盘是 LLM 自评，无客观基准；Loop Agent 非独立进程；纯文件约束依赖 Agent 配合；数据明文存储（task/logs + think.md 含任务记录，无加密）；不是多用户系统（共享 .sofagent/ 会交叉污染经验）。详见 [DESIGN §三](./ARCHITECTURE.md)。
 
+## 平台能力
+
+| 平台 | 加载链 | 编排引擎 | 自动化程度 |
+|------|------|------|------|
+| OpenClaw | 第 1 层 Hook 注入，第 2/3 层 Agent 自觉（有 Hook 辅助提醒）| ao compose 完整可用 | 高 — 安装即生效 |
+| WorkBuddy | 第 1 层 @skill 注入，第 2/3 层 Agent 自觉 | ao compose 可用（需 npm 安装）| 中 — 需手动 @skill:sofagent |
+| Claude Code / Codex / Hermes | 第 1 层通过种子指令加载，第 2/3 层 Agent 自觉（无机制保障）| 不可用（降级为手工拆解）| 低 — 核心约束仍生效，编排引擎缺失 |
+
+> ⚠️ 以上为作者实测结论。如果你在某个平台上跑出了不同的结果——**那才是真实数据**，欢迎告诉我们。
+
+> 📎 「种子指令」是什么：写在 Agent 记忆文件（如 CLAUDE.md / AGENTS.md / SOUL.md）里的一句话，告诉 Agent 启动时先读 sofagent 约束文件。**这不是自动化——是人手动贴的纸条。** OpenClaw 和 WorkBuddy 通过各自的 skill 机制自动加载，不需要种子指令。
+
 ## 实际效果
 
-> 🌍 朋友说用起来还行，以后要继续用 → [Case 001](./docs/cases/italy-travel-2026-06-18/) · [EVIDENCE.md](./docs/EVIDENCE.md#第三方测试)
-> ⚠️ 该案例指标均为 Agent 自评，未经人工核验（v0.54 跑通）
-
-> ⚠️ **以下指标待 v1.0 前由社区填写，作者不自行宣称效果数字。当前全为占位。**
-
-| 指标 | 使用前 | 使用后 | 变化 |
-|------|:--:|:--:|:--:|
-| 任务完成率 | _待测_ | _待测_ | _待测_ |
-| 同一错误重复天数 | _待测_ | _待测_ | _待测_ |
-| 单任务 token 浪费 | _待测_ | _待测_ | _待测_ |
+> **效果？我们诚实地说不知道。** 目前仅有作者自己的日常使用感受，没有第三方长期数据。v0.72 新增了 benchmark.sh 可复现对比测试——欢迎你跑一下，然后把结果告诉我们。
 
 > 详见 [EVIDENCE.md](./docs/EVIDENCE.md)——社区用户的实际使用数据。
-> 想贡献你的数据？跑满一周后把你的 task/log 貼到 docs/EVIDENCE.md。
 
 ---
 
@@ -109,6 +111,8 @@
 | npm | ≥9 | 全局安装 agency-orchestrator | `npm --version` |
 
 > ⚠️ WorkBuddy 用户若不跑编排引擎（只用宪法层约束），node/npm 可不带。OpenClaw / Claude Code / Codex / Hermes 跑复杂任务（🔴）必须有 node + npm。
+
+> ⚠️ **编排引擎依赖第三方 npm 包 `agency-orchestrator`**。若 npm install 失败或未配置 API Key，编排引擎降级为 Agent 手工拆解（模板匹配和角色分配不可用）。约束层不受影响。
 
 ### 2. git clone
 

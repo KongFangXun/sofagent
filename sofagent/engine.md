@@ -1,4 +1,4 @@
-# engine.md · 任务编排引擎 · v0.71
+# engine.md · 任务编排引擎 · v0.72
 
 > 由 SKILL.md A0 触发。仅 🔴 复杂任务且用户确认后点火。`{SOFAGENT_DATA}` = `{当前工作目录}/.sofagent/`。
 > ⛔ 三层加载链已在 SKILL.md 启动时完成——engine.md 不重复。编排引擎只管拆解、执行、闭环。
@@ -15,6 +15,17 @@
 > ⚠️ **ao 降级前必须检查 API Key**：`command -v ao` 成功 ≠ ao 可用。即使 ao 已安装，如果没有配置 LLM API Key（`$DEEPSEEK_API_KEY` / `$ANTHROPIC_API_KEY` / `$OPENAI_API_KEY` 任一非空），ao compose 会静默失败，后续闭环也写不进去。判断细节见下方「A2. ao 能力探测」。
 >
 > 这是简化版编排——没有 ao compose 的模板匹配和自动分配，但保留了"拆解→执行→闭环"的核心结构。比纯手动强，比 ao 弱。
+
+### ao compose vs 默认编排 · 能力差异
+
+| 能力 | ao compose 模式 | 默认编排模式 |
+|------|:--:|:--:|
+| 模板匹配（Task Graph 自动生成）| ✅ | ❌ — Agent 手工按语义簇拆解 |
+| 角色分配（子 Agent 岗位定位）| ✅ — agency-agents-zh 模板 | ⚠️ — Agent 自行判断 |
+| 成本预估（token 预算）| ✅ — ao compose 输出 | ❌ — 无预估 |
+| 并行调度（子任务并发）| ✅ — ao run 管理 | ❌ — 主 Agent 串行执行 |
+| 工作流 YAML 复用 | ✅ — 同类任务直接复跑 | ❌ — 每次重新拆解 |
+| 约束层 | ✅ 不变 | ✅ 不变 — 约束层不依赖 ao |
 
 ---
 

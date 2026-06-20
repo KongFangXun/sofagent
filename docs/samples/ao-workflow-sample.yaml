@@ -1,0 +1,73 @@
+# ============================================================
+# ao compose 工作流样本 · v0.72
+# ============================================================
+# 来自 Case 006（2026-06-20）真实跑通的 ao compose 输出。
+# 任务：「团队周报生成器」Web 应用开发
+# 平台：CLI (ao compose via DeepSeek API)
+# 保存此文件用于离线参考和降级对比。
+# 若 ao compose 输出格式变化，对比此样本判断是上游 break 还是环境问题。
+# ============================================================
+
+version: "1.0"
+app_name: "团队周报生成器"
+tech_stack: "React + TypeScript + Vite + Tailwind CSS"
+
+workflow:
+  - step: 1
+    agent: 产品经理
+    role: requirements_analysis
+    description: "分析团队周报生成器的核心需求，输出功能清单和用户故事"
+    dependencies: []
+    outputs:
+      - type: document
+        description: "需求分析文档"
+
+  - step: 2
+    agent: UX架构师
+    role: ux_architecture
+    description: "设计应用信息架构和页面路由结构"
+    dependencies:
+      - step: 1
+    outputs:
+      - type: document
+        description: "UX 架构设计"
+
+  - step: 3
+    agent: UI设计师
+    role: component_tree_design
+    description: "设计组件树和 UI 布局方案"
+    dependencies:
+      - step: 1
+      - step: 2
+    outputs:
+      - type: document
+        description: "UI 组件树设计"
+
+  - step: 4
+    agent: 组件架构师
+    role: component_architecture
+    description: "定义组件接口、props 类型和状态管理方案"
+    dependencies:
+      - step: 1
+      - step: 2
+      - step: 3
+    outputs:
+      - type: document
+        description: "组件架构文档"
+
+  - step: 5
+    agent: 工程师
+    role: implement_core_types
+    description: "实现核心类型定义和基础组件框架"
+    dependencies:
+      - step: 4
+    outputs:
+      - type: code
+        description: "TypeScript 类型定义和基础组件"
+
+# ── 元信息 ──
+# 角色库：216 个（agency-agents-zh）
+# 变量：2 个（app_name + tech_stack，含启发式修复 + LLM 二次修复）
+# 耗时：~10 秒
+# Token：~8,500
+# provider：DeepSeek API（deepseek-chat）
