@@ -2,7 +2,7 @@
 
 > 设计者：Bob（Architect）
 > 日期：2026-06-19
-> 基于复审：主理人对 DEVELOPMENT.md §七、task-record.sh v1.0.0、ROADMAP.md v0.7x 的审查结论
+> 基于复审：主理人对 DEVELOPMENT.md §七、task-record.sh v0.71、ROADMAP.md v0.7x 的审查结论
 
 ---
 

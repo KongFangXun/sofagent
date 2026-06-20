@@ -9,19 +9,27 @@
 #   cleanup.sh                   正常清理（交互确认）
 #   cleanup.sh --dry-run         仅预览，不执行删除
 #   cleanup.sh --force           跳过确认直接删除
+#   cleanup.sh --purge           等同 --force（合规术语：purge = 强制清理）
+#   cleanup.sh --before DATE     只清理 DATE 之前的日志（DATE 格式 YYYY-MM-DD）
 #   cleanup.sh --help            显示帮助
 #   cleanup.sh --version         显示版本
 #
 # 清理逻辑：
-#   1. 按天：删除 mtime 超过保留期的日志文件
+#   1. 按天：删除 mtime 超过保留期的日志文件（或 --before 指定日期之前）
 #   2. 按条：条目总数超过上限时从最旧月开始删除
 #   3. 归档：删除前先 tar.gz 到 archive/，确认成功后再 rm
 #   4. 审计：清理后调用 audit.sh 记录
 # ============================================================
 
+# ════════════════════════════════════════
+# 调用说明：本脚本通常由 task-record.sh 概率触发（默认 1/10），
+# 而非每次任务记录后都执行。此举意在避免每次写入后都做全量磁盘扫描。
+# 概率参数由 rules.md 的 data_cleanup_frequency 控制（默认 10）。
+# 也可独立运行：cleanup.sh --dry-run / cleanup.sh --force
+# ════════════════════════════════════════
 set -euo pipefail
 
-VERSION="1.0.0"
+VERSION="0.71"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -34,12 +42,25 @@ fi
 # ── 参数解析 ──
 DRY_RUN=false
 FORCE=false
+PURGE=false
+BEFORE_DATE=""
 SHOW_HELP=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run) DRY_RUN=true; shift ;;
     --force)   FORCE=true; shift ;;
+    --purge)   PURGE=true; FORCE=true; shift ;;  # --purge 等同 --force（合规术语）
+    --before)
+      BEFORE_DATE="$2"
+      # 校验日期格式 YYYY-MM-DD
+      if ! echo "$BEFORE_DATE" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+        echo "[cleanup] 错误：--before 需要日期格式 YYYY-MM-DD（收到：${BEFORE_DATE}）"
+        exit 1
+      fi
+      shift 2
+      ;;
+    --before=*) BEFORE_DATE="${1#*=}"; FORCE=true; shift ;;
     --version) echo "sofagent-cleanup v${VERSION}"; exit 0 ;;
     --help)    SHOW_HELP=true; shift ;;
     *) echo "未知参数: $1（--help 查看用法）"; exit 1 ;;
@@ -54,8 +75,14 @@ if [ "$SHOW_HELP" = true ]; then
   echo "    cleanup.sh              正常清理（交互确认）"
   echo "    cleanup.sh --dry-run    仅预览，不执行删除"
   echo "    cleanup.sh --force      跳过确认直接删除"
+  echo "    cleanup.sh --purge      等同 --force（合规术语）"
+  echo "    cleanup.sh --before DATE  只清理 DATE（YYYY-MM-DD）之前的日志"
   echo "    cleanup.sh --help       显示此帮助"
   echo "    cleanup.sh --version    显示版本"
+  echo ""
+  echo "  组合示例:"
+  echo "    cleanup.sh --purge --before 2026-01-01   强制清理 2026 年之前的日志"
+  echo "    cleanup.sh --dry-run --before 2026-06-01 预览清理 6 月之前的日志"
   echo ""
   echo "  配置项（rules.md）："
   echo "    data_retention_days         日志保留天数（默认 90）"
@@ -82,6 +109,9 @@ fi
 if [ "$DRY_RUN" = false ] && [ "$FORCE" = false ]; then
   echo "[cleanup] 即将扫描 ${LOGS_DIR} 进行清理。"
   echo "[cleanup] 保留策略: 保留 ${RETENTION_DAYS} 天内日志，最多 ${RETENTION_MAX} 条记录。"
+  if [ -n "$BEFORE_DATE" ]; then
+    echo "[cleanup] ⚠️ 仅清理 ${BEFORE_DATE} 之前的日志"
+  fi
   read -r -p "  确认执行？[y/N] " confirm
   case "$confirm" in
     [yY]|[yY][eE][sS]) ;;
@@ -90,7 +120,7 @@ if [ "$DRY_RUN" = false ] && [ "$FORCE" = false ]; then
 fi
 
 # ════════════════════════════════════════
-# 1. 按天清理：删除 mtime 超过保留期的日志文件
+# 1. 按天清理：删除 mtime 超过保留期的日志文件（或 --before 指定日期之前）
 # ════════════════════════════════════════
 deleted_files=0
 deleted_entries=0
@@ -99,16 +129,33 @@ if [ "$DRY_RUN" = true ]; then
   echo ""
   echo "[cleanup] === DRY RUN 预览 ==="
   echo "[cleanup] 保留天数: ${RETENTION_DAYS}"
+  [ -n "$BEFORE_DATE" ] && echo "[cleanup] --before 过滤: ${BEFORE_DATE}"
   echo "[cleanup] 扫描目录: ${LOGS_DIR}"
   echo ""
 fi
 
 # 收集过期文件列表
+# --before 指定日期优先（精准日期过滤），否则按 RETENTION_DAYS 天数过滤
 expired_files=()
 shopt -s nullglob 2>/dev/null || true
-while IFS= read -r -d '' file; do
-  expired_files+=("$file")
-done < <(find "$LOGS_DIR" -name "*.md" -not -path "*/archive/*" -mtime "+${RETENTION_DAYS}" -print0 2>/dev/null || true)
+if [ -n "$BEFORE_DATE" ]; then
+  # --before 模式：按文件名日期（YYYY-MM/YYYY-MM-DD.md）过滤
+  # 文件命名约定：task/logs/YYYY-MM/YYYY-MM-DD.md
+  while IFS= read -r -d '' file; do
+    expired_files+=("$file")
+  done < <(find "$LOGS_DIR" -name "*.md" -not -path "*/archive/*" -print0 2>/dev/null | while IFS= read -r -d '' f; do
+    # 提取文件名日期：task/logs/2026-03/2026-03-15.md → 2026-03-15
+    fname=$(basename "$f" .md)
+    if echo "$fname" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' && [[ "$fname" < "$BEFORE_DATE" ]]; then
+      printf '%s\0' "$f"
+    fi
+  done || true)
+else
+  # 默认模式：按 mtime 过滤
+  while IFS= read -r -d '' file; do
+    expired_files+=("$file")
+  done < <(find "$LOGS_DIR" -name "*.md" -not -path "*/archive/*" -mtime "+${RETENTION_DAYS}" -print0 2>/dev/null || true)
+fi
 shopt -u nullglob 2>/dev/null || true
 
 if [ ${#expired_files[@]} -gt 0 ]; then
@@ -198,10 +245,11 @@ if [ "$total_entries" -gt "$RETENTION_MAX" ]; then
   fi
 
   # 按月排序（按目录名排序，最旧的先删）
+  # 加 `|| true` 防止 set -o pipefail 下 grep 零匹配返回 exit 1 时中断
   sorted_months=()
   while IFS= read -r month_dir; do
-    sorted_months+=("$month_dir")
-  done < <(ls -1d "$LOGS_DIR"/*/ 2>/dev/null | grep -v '/archive/' | sort)
+    [ -n "$month_dir" ] && sorted_months+=("$month_dir")
+  done < <({ ls -1d "$LOGS_DIR"/*/ 2>/dev/null | grep -v '/archive/' | sort || true; })
 
   to_remove=$excess
   for month_dir in "${sorted_months[@]}"; do

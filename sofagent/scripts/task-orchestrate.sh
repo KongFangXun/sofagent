@@ -26,9 +26,12 @@ if ! command -v ao &>/dev/null; then
   exit 0
 fi
 
+# set -e: 任何命令失败立即退出，防止编排在半截状态继续执行
+# set -u: 未定义变量引用视为错误，防止空变量导致静默行为异常
+# set -o pipefail: 管道中任一命令失败都计为失败，防止 `grep | wc` 等忽略中间错误
 set -euo pipefail
 
-VERSION="1.0.0"
+VERSION="0.71"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -272,7 +275,7 @@ case $LEVEL in
     fi
     warn "L3 模板缺失或 ao_template 字段为空，降级到 L2 缓存复用"
     LEVEL=2
-    # fall through to L2
+    # L3 fallback：内联 L2 逻辑（复制 L2 case 块作为降级路径，bash case 不支持 fall-through）
     if [ -f "$CACHED_YAML" ]; then
       WORKFLOW_FILE="$CACHED_YAML"
       ok "L2 模板复用 — 复用历史: ${TASK_SLUG}.yaml"

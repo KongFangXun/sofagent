@@ -1,4 +1,4 @@
-# Loop Check · v0.70.1
+# Loop Check · v0.71
 
 > 被动顾问——不夺权，不下命令，不硬拦截。主 Agent 在指定节点主动调起。全平台通用。
 > ⛔ **Loop 分析/评分/诊断严禁输出给用户——仅「输出规则」表中规定的内容可见。**
@@ -16,6 +16,8 @@
 失败 ─→ failure → 可自愈→重试 / 不可→汇报
 全部完成 ─→ bash {OPENCLAW_SCRIPTS}/task-record.sh --closure-check → closure
 ```
+
+> `{OPENCLAW_SCRIPTS}` fallback: 优先 `~/.openclaw/scripts/`，不存在则 Agent 自行搜索 `sofagent/scripts/`。
 
 ⛔ 先跑脚本看结果，再决定是否调。快速模式仅「重大操作前」生效。
 

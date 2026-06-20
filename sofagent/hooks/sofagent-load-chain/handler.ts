@@ -1,6 +1,10 @@
 // sofagent load-chain hook · OpenClaw 2026.6.x
 // 注入第 2 层（think.md）+ 第 3 层（rules.md）到 agent bootstrap
 // 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
+//
+// rules.md 路径优先级（v0.71 统一）：
+//   1. skills/sofagent/constitution/rules.md（install.sh B2 部署目标，权威路径）
+//   2. openclawDir/rules.md（兼容 v0.70 前老安装，已降级为 fallback）
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -36,8 +40,20 @@ const handler = async (event: any) => {
   }
 
   // ── 第 3 层：用户规则（rules.md）──
-  const rulesFile = path.join(openclawDir, "rules.md");
-  if (fs.existsSync(rulesFile)) {
+  // 优先读 install.sh B2 部署的 constitution 路径（权威路径）
+  // fallback 读旧路径 openclawDir/rules.md（兼容 v0.70 前老安装）
+  const rulesCandidates = [
+    path.join(openclawDir, "skills", "sofagent", "constitution", "rules.md"),
+    path.join(openclawDir, "rules.md"),
+  ];
+  let rulesFile = "";
+  for (const candidate of rulesCandidates) {
+    if (fs.existsSync(candidate)) {
+      rulesFile = candidate;
+      break;
+    }
+  }
+  if (rulesFile) {
     const content = fs.readFileSync(rulesFile, "utf-8");
     event.context.bootstrapFiles.push({
       name: "sofagent-rules.md",

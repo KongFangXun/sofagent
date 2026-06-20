@@ -7,7 +7,7 @@
 # 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
 #
 # 用法：
-#   audit.sh --operation install --target "开始" --result "v1.0.0, darwin"
+#   audit.sh --operation install --target "开始" --result "v0.71, darwin"
 #   audit.sh --operation orchestrate --target "重构用户模块" --result "成功, L2, 45s"
 #   audit.sh --operation cleanup --target "task/logs/" --result "删除 3 个文件"
 #   audit.sh --help
@@ -18,7 +18,7 @@
 
 set -euo pipefail
 
-VERSION="1.0.0"
+VERSION="0.71"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

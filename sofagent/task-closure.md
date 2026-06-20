@@ -1,4 +1,4 @@
-# 离境闸门 · v0.70.1
+# 离境闸门 · v0.71
 
 > 由 SKILL.md 触发。闭环信号出现后，按此清单逐项执行。
 
@@ -6,7 +6,7 @@
 
 ## ⬜ 执行清单
 
-> **闭环前先写 task/logs**：
+> **闭环前先写 task/logs**（`{OPENCLAW_SCRIPTS}` 优先 `~/.openclaw/scripts/`，不存在则搜 `sofagent/scripts/`）：
 > ```bash
 > bash {OPENCLAW_SCRIPTS}/task-record.sh \
 >   --task "任务简述" \

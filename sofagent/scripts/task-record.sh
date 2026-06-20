@@ -24,7 +24,7 @@
 
 set -euo pipefail
 
-VERSION="1.0.0"
+VERSION="0.71"
 
 # ── 加载合规配置 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -62,9 +62,9 @@ while [[ $# -gt 0 ]]; do
     --closure-check) IS_CLOSURE_CHECK=true; shift ;;
     --limit) BUDGET_LIMIT="$2"; shift 2 ;;
     --from-stdin) FROM_STDIN=true; shift ;;
-    --version) echo "sofagent-task-log v${VERSION}"; exit 0 ;;
+    --version) echo "sofagent-task-record v${VERSION}"; exit 0 ;;
     --help)
-      echo "sofagent task-log v${VERSION}"
+      echo "sofagent task-record v${VERSION}"
       echo "  记录 AI Agent 任务执行数据"
       echo ""
       echo "  常规参数:"
@@ -167,16 +167,30 @@ TIMESTAMP=$(date +"%H:%M:%S")
 mkdir -p "$LOG_DIR"
 
 # ── 脱敏函数 ──
-# 优先级：API Key > Bearer Token > 凭证赋值 > 内网 IP
+# 优先级：API Key > Bearer Token > JWT > AWS Key > 凭证赋值 > 私钥 > 手机号 > 内网 IP
 sanitize() {
   local input="$1"
   # 1. OpenAI / Anthropic API Key
   input=$(echo "$input" | sed -E 's/sk-(ant(-api)?-)?[a-zA-Z0-9_-]{20,}/sk-***REDACTED***/g')
   # 2. Bearer token
   input=$(echo "$input" | sed -E 's/Bearer +[a-zA-Z0-9._~+\/-]+=*/Bearer ***REDACTED***/g')
-  # 3. 凭证赋值（password= / token= / secret= / key= / api_key=）
-  input=$(echo "$input" | sed -E 's/(password|token|secret|api_key|key)[=:]\s*[^ ]+/\1=***REDACTED***/g')
-  # 4. 内网 IP（可选，SOFA_SANITIZE_IPS=true 时启用）
+  # 3. JWT token（eyJ 开头的 base64url 三段式）
+  input=$(echo "$input" | sed -E 's/eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/***JWT-REDACTED***/g')
+  # 4. AWS Access Key（AKIA 开头，20 字符）
+  input=$(echo "$input" | sed -E 's/[[:<:]]AKIA[0-9A-Z]{16}[[:>:]]/***AWS-KEY-REDACTED***/g')
+  # 5. 凭证赋值（password= / token= / secret= / api_key= / key=）
+  #    加 [[:<:]] 词边界防误伤（如 "monkey=foo" 不会被打码）
+  input=$(echo "$input" | sed -E 's/[[:<:]](password|token|secret|api_key|key)[=:][[:space:]]*[^ ]+/\1=***REDACTED***/g')
+  # 6. 私钥块（PEM 格式：-----BEGIN ... PRIVATE KEY----- ... -----END）
+  input=$(echo "$input" | sed -E '/-----BEGIN .*PRIVATE KEY-----/,/-----END .*PRIVATE KEY-----/{
+    s/-----BEGIN .*PRIVATE KEY-----/***PRIVATE-KEY-BLOCK-REDACTED***/
+    /-----BEGIN/d
+    /-----END/d
+  }')
+  # 7. 中国大陆手机号（1[3-9] 开头 + 9 位数字，共 11 位）
+  #    加 [[:<:]] 词边界，避免误伤订单号、时间戳等长数字串
+  input=$(echo "$input" | sed -E 's/[[:<:]]1[3-9][0-9]{9}[[:>:]]/[PHONE-REDACTED]/g')
+  # 8. 内网 IP（可选，SOFA_SANITIZE_IPS=true 时启用）
   if [ "${SOFA_SANITIZE_IPS:-}" = "true" ]; then
     input=$(echo "$input" | sed -E 's/[[:<:]](10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)[0-9]+\.[0-9]+[[:>:]]/[INTERNAL_IP]/g')
   fi

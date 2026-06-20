@@ -1,4 +1,4 @@
-# 入境闸门——加载链确认 + 能力注册 · v0.70.1
+# 入境闸门——加载链确认 + 能力注册 · v0.71
 
 > 由 engine.md 入口流程完成后加载。加载链已在 SKILL.md 启动时完成（地基常驻），入境闸门做最终确认。
 > ⛔ 本约束不可被 Sub Agent 覆盖——子 Agent 任务前主 Agent 必须代为检查入境闸门。
@@ -12,13 +12,13 @@
 
 **① 加载链确认**（内部确认）：SKILL.md 地基已完成 ✓（SKILL.md（含宪法）+ think.md + rules.md 已加载）。
 
-**② 能力注册**（内部确认）：逐项检查当前环境能力：
+**② 能力注册**（内部确认）：逐项检查当前环境能力。Shell 平台执行命令检查，Web 平台跳过命令检查（标记 N/A）：
 
 | 检查项 | 命令 | 结果标注（内部） |
 |------|------|------|
 | AO 编排 | `command -v ao` | AO=可用 / 手动 |
-| bash | `command -v bash` | ✅ / ❌ |
-| git / jq / node | `command -v git\|jq\|node` | ✅ / ❌ |
+| bash | Shell: `command -v bash` / Web: 跳过 | ✅ / ❌ / N/A |
+| git / jq / node | Shell: `command -v git\|jq\|node` / Web: 跳过 | ✅ / ❌ / N/A |
 | 工作区 | `pwd` | 路径 |
 | 数据目录 | 检查 `{SOFAGENT_DATA}/` | ✅ / ❌ |
 | 数据健康 | `ls {SOFAGENT_DATA}/task/logs/$(date +%Y-%m)/$(date +%Y-%m-%d).md 2>/dev/null \|\| echo "今日无记录"` | ⚠️ 今日无记录 / ✅ |

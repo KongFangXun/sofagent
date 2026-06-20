@@ -12,8 +12,10 @@
 #   verify.sh --help    显示此帮助
 # ============================================================
 
+# set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
+# set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="1.0.0"
+VERSION="0.71"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -188,7 +190,11 @@ fi
 _section "宪法文件（v0.62：宪法内联在 SKILL.md，此处只检查 rules.md）"
 
 for f in rules.md; do
-  path="${OPENCLAW_DIR}/${f}"
+  # v0.71: rules.md 部署到 skills/sofagent/constitution/，~/.openclaw/rules.md 留给用户自定义
+  path="${OPENCLAW_DIR}/skills/sofagent/constitution/${f}"
+  if [ ! -f "$path" ]; then
+    path="${OPENCLAW_DIR}/${f}"  # 兼容旧版安装路径
+  fi
   if [ -f "$path" ] && [ -s "$path" ]; then
     chars=$(wc -m < "$path" | tr -d ' ')
     lines=$(wc -l < "$path" | tr -d ' ')
@@ -269,13 +275,26 @@ else
   fi
 
   # 检查注入源文件是否可解析（think.md / rules.md）
-  for layer_file in "${PWD}/.sofagent/think.md" "${OPENCLAW_DIR}/rules.md"; do
-    if [ -f "$layer_file" ]; then
-      check_pass "$(basename "$layer_file") 存在（$(wc -m < "$layer_file" | tr -d ' ') 字符）"
-    else
-      check_warn "$(basename "$layer_file") 不存在（首次运行后由 B1 创建 / 需手动配置）"
+  # v0.71: rules.md 只检查权威路径 skills/sofagent/constitution/rules.md
+  # ~/.openclaw/rules.md 在 v0.71 起是用户自定义文件，不再作为 sofagent 部署路径检查
+  RULES_AUTHORITY="${OPENCLAW_DIR}/skills/sofagent/constitution/rules.md"
+  if [ -f "$RULES_AUTHORITY" ]; then
+    check_pass "rules.md 权威路径就绪（$(wc -m < "$RULES_AUTHORITY" | tr -d ' ') 字符）"
+  else
+    check_warn "rules.md 未部署到权威路径（${RULES_AUTHORITY}）"
+    # 兼容检查：老版本（v0.70 前）部署到 ~/.openclaw/rules.md
+    LEGACY_RULES="${OPENCLAW_DIR}/rules.md"
+    if [ -f "$LEGACY_RULES" ]; then
+      check_warn "  发现遗留路径（${LEGACY_RULES}）——建议运行 install.sh 升级到 constitution/ 统一路径"
     fi
-  done
+  fi
+  # think.md 检查
+  THINK_FILE="${PWD}/.sofagent/think.md"
+  if [ -f "$THINK_FILE" ]; then
+    check_pass "think.md 存在（$(wc -m < "$THINK_FILE" | tr -d ' ') 字符）"
+  else
+    check_warn "think.md 不存在（首次运行后由 B1 创建）"
+  fi
 fi
 
 _hr
@@ -482,9 +501,24 @@ fi
 # 模拟脱敏（不依赖 config.sh，直接测试 sed 链）
 _test_sanitize() {
   local input="$1"
+  # 1. OpenAI / Anthropic API Key
   input=$(echo "$input" | sed -E 's/sk-(ant(-api)?-)?[a-zA-Z0-9_-]{20,}/sk-***REDACTED***/g')
+  # 2. Bearer token
   input=$(echo "$input" | sed -E 's/Bearer +[a-zA-Z0-9._~+\/-]+=*/Bearer ***REDACTED***/g')
-  input=$(echo "$input" | sed -E 's/(password|token|secret|api_key|key)[=:]\s*[^ ]+/\1=***REDACTED***/g')
+  # 3. JWT token（eyJ 开头的 base64url 三段式）
+  input=$(echo "$input" | sed -E 's/eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/***JWT-REDACTED***/g')
+  # 4. AWS Access Key（AKIA 开头，20 字符）
+  input=$(echo "$input" | sed -E 's/[[:<:]]AKIA[0-9A-Z]{16}[[:>:]]/***AWS-KEY-REDACTED***/g')
+  # 5. 凭证赋值（加 [[:<:]] 词边界）
+  input=$(echo "$input" | sed -E 's/[[:<:]](password|token|secret|api_key|key)[=:][[:space:]]*[^ ]+/\1=***REDACTED***/g')
+  # 6. 私钥块
+  input=$(echo "$input" | sed -E '/-----BEGIN .*PRIVATE KEY-----/,/-----END .*PRIVATE KEY-----/{
+    s/-----BEGIN .*PRIVATE KEY-----/***PRIVATE-KEY-BLOCK-REDACTED***/
+    /-----BEGIN/d
+    /-----END/d
+  }')
+  # 7. 中国大陆手机号（1[3-9] 开头 + 9 位数字，共 11 位）
+  input=$(echo "$input" | sed -E 's/[[:<:]]1[3-9][0-9]{9}[[:>:]]/[PHONE-REDACTED]/g')
   echo "$input"
 }
 
@@ -502,6 +536,30 @@ else
   check_fail "脱敏: 凭证未打码"
 fi
 
+# 手机号脱敏测试（v0.71 P0 修复）
+SANITY_PHONE=$(_test_sanitize "用户电话 13812345678 请回拨")
+if echo "$SANITY_PHONE" | grep -q "PHONE-REDACTED" && ! echo "$SANITY_PHONE" | grep -q "13812345678"; then
+  check_pass "脱敏: 手机号打码正常 (1[3-9]xxxxxxxxx → [PHONE-REDACTED])"
+else
+  check_fail "脱敏: 手机号未打码"
+fi
+
+# 手机号误伤测试——11 位订单号不应被打码
+SANITY_NO_FALSE_POSITIVE=$(_test_sanitize "订单号 28012345678 已生成")
+if ! echo "$SANITY_NO_FALSE_POSITIVE" | grep -q "PHONE-REDACTED"; then
+  check_pass "脱敏: 11 位订单号（非 1[3-9] 开头）未被误伤"
+else
+  check_warn "脱敏: 11 位订单号被误伤（可能误打码）"
+fi
+
+# 词边界防误伤测试——monkey=foo 不应被打码
+SANITY_KEYWORD=$(_test_sanitize "monkey=foo 这是任务名")
+if ! echo "$SANITY_KEYWORD" | grep -q "REDACTED"; then
+  check_pass "脱敏: 词边界保护（monkey=foo 不被误伤）"
+else
+  check_warn "脱敏: 词边界失效（monkey=foo 被误伤）"
+fi
+
 SANITY_PASS=$(_test_sanitize "普通文本无敏感信息")
 if [ "$SANITY_PASS" = "普通文本无敏感信息" ]; then
   check_pass "脱敏: 无敏感信息文本原样通过"
@@ -513,8 +571,9 @@ fi
 CLEANUP_SCRIPT="${VERIFY_SCRIPT_DIR}/cleanup.sh"
 if [ -f "$CLEANUP_SCRIPT" ] && [ -x "$CLEANUP_SCRIPT" ]; then
   check_pass "cleanup.sh 存在且可执行"
-  # 检查关键参数
-  if bash "$CLEANUP_SCRIPT" --help 2>/dev/null | grep -q "dry-run"; then
+  # 检查关键参数（注意：grep -q 在 pipefail 下会因 SIGPIPE 误报，用临时变量避免）
+  CLEANUP_HELP=$(bash "$CLEANUP_SCRIPT" --help 2>/dev/null || true)
+  if echo "$CLEANUP_HELP" | grep -q "dry-run"; then
     check_pass "cleanup.sh --dry-run 参数可用"
   else
     check_warn "cleanup.sh --dry-run 参数不可用"
@@ -527,8 +586,9 @@ fi
 AUDIT_SCRIPT_VERIFY="${VERIFY_SCRIPT_DIR}/audit.sh"
 if [ -f "$AUDIT_SCRIPT_VERIFY" ] && [ -x "$AUDIT_SCRIPT_VERIFY" ]; then
   check_pass "audit.sh 存在且可执行"
-  # 检查关键参数
-  if bash "$AUDIT_SCRIPT_VERIFY" --help 2>/dev/null | grep -q "operation"; then
+  # 检查关键参数（同上，避免 pipefail + grep -q 的 SIGPIPE 误报）
+  AUDIT_HELP=$(bash "$AUDIT_SCRIPT_VERIFY" --help 2>/dev/null || true)
+  if echo "$AUDIT_HELP" | grep -q "operation"; then
     check_pass "audit.sh --operation 参数可用"
   else
     check_warn "audit.sh --operation 参数不可用"
@@ -556,8 +616,13 @@ else
 fi
 
 # 10.5 rules.md 配置段完整性
+# v0.71: 权威路径为 skills/sofagent/constitution/rules.md（install.sh B2 部署目标）
+# 兼容 fallback：工作目录（开发态）/ 旧部署路径（老安装）
 RULES_FILE=""
-for candidate in "${PWD}/sofagent/constitution/rules.md" "$HOME/.openclaw/rules.md" "$HOME/.workbuddy/rules.md"; do
+for candidate in \
+  "${PWD}/sofagent/constitution/rules.md" \
+  "$HOME/.openclaw/skills/sofagent/constitution/rules.md" \
+  "$HOME/.workbuddy/skills/sofagent/constitution/rules.md"; do
   if [ -f "$candidate" ]; then RULES_FILE="$candidate"; break; fi
 done
 if [ -n "$RULES_FILE" ]; then

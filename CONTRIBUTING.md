@@ -41,6 +41,8 @@
 4. 推到你自己的仓库：`git push origin fix/xxx`
 5. 在 GitHub 上提 Pull Request
 
+> 💡 提 PR 前请参考 [PR 模板](./.github/PULL_REQUEST_TEMPLATE.md)——含内容 checklist：同步文档 / 跑 verify / 非 OpenClaw 测试 / 部署循环。
+
 ### 文档修改须知
 
 Handbook（`HANDBOOK.md`）有一项硬性约束：**改手册必须同步改 `sofagent/` 模板。反过来也一样。**
@@ -52,8 +54,7 @@ Handbook（`HANDBOOK.md`）有一项硬性约束：**改手册必须同步改 `s
 Skill 文件改了之后不会自动生效，需要三步：
 
 1. **先改 `sofagent/`**（工作区源文件，唯一权威）
-2. **同步到安装位置**：`cp sofagent/SKILL.md ~/.workbuddy/skills/sofagent/SKILL.md`
-3. **同步到安装位置**：`cp sofagent/SKILL.md ~/.workbuddy/skills/sofagent/SKILL.md`
+2. **重新安装同步**：`bash sofagent/scripts/install.sh --platform openclaw`（覆盖全部 Skill 文件到安装位置）
 
 install.sh 已自动复制全部 6 个 Skill 文件（1 主 + 5 子）及子目录，无需手动 cp。修改后重新运行 install.sh 即可同步。
 

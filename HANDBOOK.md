@@ -4,7 +4,7 @@
 > 一个完全不懂代码的人，给 OpenClaw 写的 Agent 治理手册。
 > **为 AI Agent 提供纪律层与反思循环：4 条底线 + 10 则铁律约束行为，复杂任务自动拆解执行，每次跑完自动复盘。**
 >
-> v0.70.1 · 2026-06-20 · 孔放勋
+> v0.71 · 2026-06-20 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -122,7 +122,6 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 | SKILL.md（4底线+10铁律，宪法内联） | ~250 |
 | think.md（反思区） | ≤2,000 |
 | rules.md | ~200 |
-| SKILL.md | ~300 |
 | 编排引擎（engine.md，仅 🔴 复杂任务） | ~400（回归）–800（首次） |
 | 子 Skill（4 个，按需加载） | ~1,500–2,500 |
 | 岗位模板（ao compose 时注入，每个子 Agent 1 份） | ~1,500–3,000/个 |
@@ -349,7 +348,7 @@ OpenClaw 通过 Hook 强制注入宪法，Agent 无需额外操作即可完整�
 
 | 问题 | 怎么办 |
 |------|------|
-| Agent 不遵守铁律 | 检查文件位置；把最关键规则写到 rules.md |
+| Agent 不遵守铁律 | 检查文件位置；把最关键规则写到 rules.md。非 OpenClaw 平台（WorkBuddy / Claude Code / Codex / Hermes）若 Skill 未自动加载，在对话中手动 `@skill:sofagent` 触发入口流程 |
 | think.md 出现错误记忆 | 直接编辑 think.md 删掉；对照 task/logs 核实 |
 | Skill 评分不准 | 手动改 scoring/ 评分；rules.md 加 `不自动淘汰 Skill` |
 | 编排结果不稳定 | 同类任务跑够 3 次用模板；没模板时少拆子任务、只用已验证 Skill |
