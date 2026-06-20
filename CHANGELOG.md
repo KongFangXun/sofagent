@@ -4,6 +4,54 @@
 
 ---
 
+## [v0.71] — 2026-06-20
+
+### Added — 行业研究驱动
+- **task-aware.md §1.5 目标契约模板**：澄清完成后输出 5 字段（目标/验收标准/验证方式/停止条件/风险边界），来自「下一代 Coding Agent」笔记
+- **task-aware.md §1.1 任务准入拒绝**：新增 5 类高风险任务（需求不清/产品判断/安全权限/支付/数据删除/架构重构）→ 直接拒绝，区分「能力边界外」（拒接+替代方案）与「风险边界外」（拒接+说明原因，不给替代方案），来自「Loop Engineering 三道闸门」笔记
+- **task-aware.md §1.6 任务闸参考**：Loop Engineering 三道闸门概念（任务闸/执行闸/验收闸）+ 执行闸/验收闸入口指引，来自「Loop Engineering 三道闸门」笔记
+- **ARCHITECTURE.md §五 Loop Engineering 三道闸门对照**：闸门对照表 + 核心指标冲突三组对比 + 失败分支显式设计 + "换了一种方式加班"警告 + 第一版 Loop MVP 类比 + 渐进式路径，来自「Loop Engineering 三道闸门」笔记
+- **ARCHITECTURE.md §三 Skill 自进化仍处于经验记录阶段**：标注当前阶段与目标阶段（多轨迹归纳/自验证闭环/可训练参数）的差距
+- **ARCHITECTURE.md §五 行业研究启发与未来方向（8 条）**：防雪崩评审机制 / Diagnosing Box 四维度排查 / rules.md 升级 / 检查点定义 / 权限最小化 / 多重置信度 / 验证门控 / 三种协作模式
+- `.github/PULL_REQUEST_TEMPLATE.md`：自检 checklist（文档同步 / verify.sh / 非 OpenClaw 测试 / 部署循环 / 参数兑现检查）
+
+### Fixed — QA 审计 + 第三方代码审查（共 40+ 项）
+
+**QA 审计 23 项**：
+- **版本号同步**：19 处版本号从 v0.70.x 统一为 v0.71
+- **交叉引用修复**：DEVELOPMENT.md §七 末尾补 docs/system_design.md 引用；CONTRIBUTING.md 删除重复的第 2/3 步
+- **README 树形图补全**：补 17 项缺少的目录/文件
+- **P0 合规修复**：ROADMAP.md 3 项合规描述与 enterprise-deploy.md 同步；install.sh 末尾平台分支能力说明；install.sh Step 2 npm 权限检查
+- **P1 内部一致性**：rules.md 统一到 skills/sofagent/constitution/；{OPENCLAW_SCRIPTS} fallback 链；engine.md B0 路径修正 + AO Key 去优先级；entry-gate 分平台能力注册；SECURITY.md 合规地位更新；install.sh Step 3 npm set +e 包裹
+- **P2 工程化**：PR 模板新建；docs/system_design.md 保留+引用；badge 补 last-updated；CONTRIBUTING 提 PR 模板；脚本注释/脱敏追加；verify.yml install.sh 化；HANDBOOK FAQ 补 @skill:sofagent
+
+**第三方代码审查 P0（文档说谎/功能不存在）**：
+- **cleanup.sh 虚构参数兑现**：SECURITY.md / enterprise-deploy.md 宣称支持 `--purge --before`，代码没有。修复：在 cleanup.sh 真正实现这两个参数（`--purge` = 强制清理；`--before DATE` 按文件名日期过滤），含日期格式校验
+- **手机号脱敏虚构兑现**：task-record.sh 的 `sanitize()` 缺中国大陆手机号 `1[3-9]\d{9}` 打码，但 SECURITY.md / ROADMAP.md / enterprise-deploy.md 全部宣称有。修复：加 `sed -E 's/[[:<:]]1[3-9][0-9]{9}[[:>:]]/[PHONE-REDACTED]/g'` + verify.sh 同步加测试用例（含误伤防护：11 位订单号、`monkey=foo` 不打码）
+- **handler.ts rules.md 路径不一致**：install.sh B2 部署 rules.md 到 `skills/sofagent/constitution/`，但 hook 仍从 `~/.openclaw/rules.md` 读——OpenClaw 第 3 层加载链 silently 失效。修复：handler.ts 改为优先读 constitution 权威路径，fallback 旧路径，删除自认 P0 的 TODO 注释
+
+**第三方代码审查 P1（一致性）**：
+- **脚本版本号统一**：7 个脚本（install/verify/uninstall/task-record/task-orchestrate/cleanup/audit）VERSION 从 `1.0.0` 改为 `0.71`，与 SKILL.md 对齐
+- **task-record.sh 命名统一**：`--version` / `--help` 输出从 `task-log` 改为 `task-record`（3 处）
+- **verify.sh rules.md 路径去重**：B2 统一到 constitution/ 后，verify.sh 仍把 `~/.openclaw/rules.md` 当合法路径检查。修复：改为权威路径优先 + 遗留路径 warning
+- **enterprise-deploy.md 顶部版本号**：`v0.55` → `v0.71`；顺手修复 bash 行内续行符注释错误
+
+**第三方代码审查 P2（工程债务）**：
+- **sanitize key 正则词边界**：加 `[[:<:]]` 防 `monkey=foo` 误伤
+- **AWS Key 正则 BSD 兼容**：`\b` → `[[:>:]]`
+- **task-orchestrate.sh L3 fall-through**：加注释说明"复制 L2 逻辑作降级路径"（bash case 不支持 fall-through）
+- **cleanup.sh grep pipefail 风险**：`ls | grep -v | sort` 加 `|| true`
+- **ARCHITECTURE §五 加 Skill 自进化交叉引用**：现状（§三 经验记录阶段）vs 未来方向（§五）互相指引
+- **ROADMAP ASCII 架构图**：中英混排导致 box 塌陷 → 改纯英文 box + 中文副标题
+- **PR 模板分类**：「非 OpenClaw 平台测试」从必勾改为「仅脚本/Skill 改动时勾选」，避免纯文档 PR 被门槛劝退；加「参数兑现检查」防止再次出现虚构参数类问题
+- **verify.sh pipefail + grep -q SIGPIPE 误报**：`bash script.sh --help | grep -q "dry-run"` 在 pipefail 下因 SIGPIPE 返回 141 → 误报参数不可用。修法：临时变量承接输出再 grep
+
+**第三方代码审查 P3（顺手）**：
+- **install.sh / uninstall.sh 注释里的 `task-log` → `task-record`**：与文件名对齐
+- **docs/system_design.md**：引用 `task-record.sh v1.0.0` → `v0.71`
+
+---
+
 ## [v0.70.1] — 2026-06-20
 
 ### Fixed — Codex 平台兼容性（来自 Case 004 第三方测试报告）

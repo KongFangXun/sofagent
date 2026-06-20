@@ -11,15 +11,16 @@ sofagent 是纯本地治理层，**数据不出本机**——但以下数据以*
 | `scoring/` | `.sofagent/scoring/` | Skill 使用记录 |
 | `orchestrator/` | `.sofagent/orchestrator/` | 编排决策历史 |
 
-**当前状态**：
-- 无加密、无脱敏、无数据保留策略
-- LLM 提炼反思时可能无意写入敏感信息（API Key、密码、手机号等）
+**当前状态（v0.71+）**：
+- ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
+- ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
+- ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
+- ⚠️ 明文存储：`.sofagent/` 下文件仍为 Markdown 明文，未做 gpg 加密
 - `.sofagent/` 目录权限为 700（仅当前用户可访问），但同一服务器其他用户若有 root 权限可读
 
 **企业环境建议**：
 - 对 `.sofagent/` 目录做 gpg 加密或放在加密卷上
-- 等待 v0.7x 的 `task/logs` 脱敏 + 数据保留策略（`--purge` 命令）
-- 详见 [企业部署指南](./docs/enterprise-deploy.md)
+- 脱敏/保留/审计能力已在 v0.71 落地，详见 [企业部署指南](./docs/enterprise-deploy.md)
 
 ## 报告漏洞
 

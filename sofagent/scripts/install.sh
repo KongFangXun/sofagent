@@ -18,7 +18,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.0.0"
+VERSION="0.71"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'
@@ -184,8 +184,11 @@ if command -v npm &>/dev/null; then
   NPM_ROOT=$(npm root -g 2>/dev/null || echo "")
   if [ -n "$NPM_ROOT" ] && [ ! -w "$NPM_ROOT" ]; then
     warn "npm 全局目录不可写 ($NPM_ROOT)"
-    warn "  npm install -g 可能需要 sudo。考虑使用 nvm 或更改 npm prefix："
-    warn "  https://docs.npmjs.com/resolving-eacces-permissions-errors"
+    warn "  npm install -g 可能需要 sudo。考虑以下方案："
+    warn "  方案 1: 使用 nvm 或更改 npm prefix（免 sudo）"
+    warn "    https://docs.npmjs.com/resolving-eacces-permissions-errors"
+    warn "  方案 2: 本次用 sudo npm install -g（不推荐）"
+    warn "  方案 3: 加 --no-ao 跳过编排引擎（不影响底线约束）"
   fi
 else
   warn "npm 未安装"
@@ -203,8 +206,16 @@ if command -v ao &>/dev/null; then
 else
   if command -v npm &>/dev/null; then
     info "正在安装 agency-orchestrator..."
+    set +e
     npm install -g agency-orchestrator 2>&1 | tail -1 || \
       npm install -g agency-orchestrator --registry=https://registry.npmmirror.com 2>&1 | tail -1
+    AO_EXIT_CODE=$?
+    set -e
+    if [ $AO_EXIT_CODE -ne 0 ] && ! command -v ao &>/dev/null; then
+      warn "npm install 失败——编排引擎（ao compose）将不可用"
+      warn "  降级方案：手动拆任务 → bash scripts/task-record.sh 逐条记录 → 手动闭环"
+      warn "  （地基约束层——底线+铁律不受影响）"
+    fi
     if command -v ao &>/dev/null; then
       ok "agency-orchestrator 安装成功"
       _log "ao installed successfully"
@@ -254,28 +265,48 @@ info "Step 4/7 · 部署宪法文件 → $TARGET"
 
 mkdir -p "$TARGET"
 
-# 宪法文件（v0.62：宪法已内联进 SKILL.md，只部署 rules.md）
-for f in rules.md; do
-  src="${CONSTITUTION_SRC}/${f}"
-  dst="${TARGET}/${f}"
-  if [ -f "$src" ]; then
-    if [ -f "$dst" ]; then
-      # 已有文件，对比是否相同
-      if cmp -s "$src" "$dst" 2>/dev/null; then
-        ok "$f — 已存在且内容相同，跳过"
-      else
-        warn "$f — 已有内容不同，已备份为 ${f}.bak → 覆盖更新"
-        cp "$dst" "${dst}.bak"
-        cp "$src" "$dst"
-      fi
+# OpenClaw: rules.md 统一部署到 skills/sofagent/constitution/（~/.openclaw/rules.md 留给用户自定义）
+# 其他平台: rules.md 部署到 $TARGET/rules.md
+if [ "$PLATFORM" = "openclaw" ]; then
+  RULES_DST_DIR="${TARGET}/skills/sofagent/constitution"
+  mkdir -p "$RULES_DST_DIR"
+  RULES_SRC="${CONSTITUTION_SRC}/rules.md"
+  RULES_DST="${RULES_DST_DIR}/rules.md"
+  if [ -f "$RULES_SRC" ]; then
+    if [ -f "$RULES_DST" ] && cmp -s "$RULES_SRC" "$RULES_DST" 2>/dev/null; then
+      ok "rules.md — 已存在且内容相同，跳过（${RULES_DST_DIR}）"
     else
-      cp "$src" "$dst"
-      ok "$f — 已安装"
+      [ -f "$RULES_DST" ] && cp "$RULES_DST" "${RULES_DST}.bak"
+      cp "$RULES_SRC" "$RULES_DST"
+      ok "rules.md — 已安装到 ${RULES_DST_DIR}"
     fi
   else
-    err "$f — 源文件不存在: $src"
+    err "rules.md — 源文件不存在: $RULES_SRC"
   fi
-done
+  warn "~/.openclaw/rules.md 保留为用户自定义文件，不会被覆盖"
+else
+  # 非 OpenClaw 平台：宪法文件部署到 $TARGET 根
+  for f in rules.md; do
+    src="${CONSTITUTION_SRC}/${f}"
+    dst="${TARGET}/${f}"
+    if [ -f "$src" ]; then
+      if [ -f "$dst" ]; then
+        if cmp -s "$src" "$dst" 2>/dev/null; then
+          ok "$f — 已存在且内容相同，跳过"
+        else
+          warn "$f — 已有内容不同，已备份为 ${f}.bak → 覆盖更新"
+          cp "$dst" "${dst}.bak"
+          cp "$src" "$dst"
+        fi
+      else
+        cp "$src" "$dst"
+        ok "$f — 已安装"
+      fi
+    else
+      err "$f — 源文件不存在: $src"
+    fi
+  done
+fi
 
 # ════════════════════════════════════════
 # Step 5: 复制 Skill + 数据文件
@@ -419,7 +450,7 @@ else
   warn "  仓库结构异常？请从 https://github.com/KongFangXun/sofagent 重新拉取"
 fi
 
-# 部署配套脚本（task-log + task-orchestrate + cleanup + audit）
+# 部署配套脚本（task-record + task-orchestrate + cleanup + audit）
 SCRIPTS_DST="${TARGET}/scripts"
 mkdir -p "$SCRIPTS_DST"
 
@@ -615,12 +646,18 @@ echo ""
 case "$PLATFORM" in
   openclaw)
     echo "  已部署文件："
-    echo "    宪法文件:      $TARGET/rules.md（宪法内联在 SKILL.md）"
+    echo "    宪法文件:      $TARGET/skills/sofagent/constitution/rules.md（宪法内联在 SKILL.md）"
     echo "    Skill 文件:     $TARGET/skills/sofagent/（6 核心 + 4 数据模板）"
     echo "    加载链 Hook:    $TARGET/hooks/sofagent-load-chain/（HOOK.md + handler.ts）"
     echo "    配套脚本:       $TARGET/scripts/{task-record,task-orchestrate,cleanup,audit}.sh"
     echo "    断路器:         ${CONFIG_FILE:-未配置}（tools.loopDetection）"
     echo "    数据目录:       $SOFAGENT_DATA"
+    echo ""
+    echo "  ┌──────────────────────────────────────────┐"
+    echo "  │  OpenClaw: 完整就绪                       │"
+    echo "  │  三层加载链自动注入 + Hook 强制加载        │"
+    echo "  │  + 编排引擎 + 脚本 + 断路器，全部可用      │"
+    echo "  └──────────────────────────────────────────┘"
     ;;
   claude|codex|hermes)
     echo "  已部署文件："
@@ -628,6 +665,21 @@ case "$PLATFORM" in
     echo "    数据目录:       $SOFAGENT_DATA"
     echo ""
     echo "  ⚠️  ${PLATFORM} 是手动平台——请复制上方种子指令到配置文件。"
+    echo ""
+    echo "  ┌──────────────────────────────────────────┐"
+    echo "  │  ${PLATFORM}: 仅基础约束生效              │"
+    echo "  │  SKILL.md 底线+铁律有效；Hook/编排不可用   │"
+    echo "  └──────────────────────────────────────────┘"
+    ;;
+  workbuddy)
+    echo "  已部署文件："
+    echo "    Skill 文件:     $TARGET/skills/sofagent/（6 核心 + 4 数据模板）"
+    echo "    数据目录:       $SOFAGENT_DATA"
+    echo ""
+    echo "  ┌──────────────────────────────────────────┐"
+    echo "  │  WorkBuddy: 仅基础约束生效                │"
+    echo "  │  Skill 系统加载底线+铁律；脚本沙箱受限     │"
+    echo "  └──────────────────────────────────────────┘"
     ;;
 esac
 echo ""

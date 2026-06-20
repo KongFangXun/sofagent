@@ -1,4 +1,4 @@
-# engine.md · 任务编排引擎 · v0.70.1
+# engine.md · 任务编排引擎 · v0.71
 
 > 由 SKILL.md A0 触发。仅 🔴 复杂任务且用户确认后点火。`{SOFAGENT_DATA}` = `{当前工作目录}/.sofagent/`。
 > ⛔ 三层加载链已在 SKILL.md 启动时完成——engine.md 不重复。编排引擎只管拆解、执行、闭环。
@@ -32,16 +32,17 @@
 
 按顺序判断，命中即停：
 
-1. ✅ **完整编排** — `command -v ao` 成功 **且** (`$DEEPSEEK_API_KEY` / `$ANTHROPIC_API_KEY` / `$OPENAI_API_KEY` 任一非空) → 走 ao compose（模板匹配 → 子 Agent 分配 → Loop check）。
-2. ⚠️ **口头告知后降级** — `command -v ao` 成功 **但** 三个 Key 全空 → 先口头告知用户：「ao 已安装但未配置 API Key，编排降级为手工拆解。配置任一 LLM API Key（DEEPSEEK_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY）后可用。」然后走默认编排。
-3. ❌ **直接降级** — `command -v ao` 失败 → 走默认编排（ao 未安装）。
+1. ✅ **完整编排** — `command -v ao` 成功 **且** ao 已配置可用 API Key（请自行设置一个可用的 API Key 环境变量，如 `DEEPSEEK_API_KEY` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`）→ 走 ao compose（模板匹配 → 子 Agent 分配 → Loop check）。
+   > 💡 **provider 优先级**：DeepSeek API > OpenAI/Anthropic API > OpenClaw CLI。OpenClaw CLI provider 下 ao compose 存在已知 YAML 格式兼容性问题（跨 3 模型失败），优先使用 API provider。
+2. ⚠️ **口头告知后降级** — `command -v ao` 成功 **但** 未配置 API Key → 先口头告知用户：「ao 已安装但未配置 API Key，编排降级为手工拆解。请自行设置一个可用的 API Key 环境变量后可用。」然后走默认编排。
+3. ❌ **告知后降级** — `command -v ao` 失败 → 口头告知用户：「ao compose 未安装，编排引擎使用简化模式。如需完整编排能力（模板匹配、子 Agent 分配、成本预估），运行：`npm install -g agency-orchestrator && bash {OPENCLAW_SCRIPTS}/install.sh --platform openclaw`。企业内网环境可继续使用当前手动模式（--no-ao），约束层不受影响。」然后走默认编排。
 
 > 默认编排见文件顶部注释块（按语义簇拆 3-5 个子任务 + 手动分配角色 + `{OPENCLAW_SCRIPTS}/task-record.sh` 逐条记录）。
 
 ## B. 系统安装（一次性）
 
 **B0**：
-- OpenClaw → 首次从源仓库运行 `bash sofagent/scripts/install.sh --platform openclaw`（install.sh 是安装器，不部署自身到 scripts/；已安装则跳过）。失败不阻塞。
+- OpenClaw → 首次从源仓库运行 `bash ~/.openclaw/scripts/install.sh --platform openclaw`（install.sh 是安装器，不部署自身到 scripts/；已安装则跳过）。失败不阻塞。
 - WorkBuddy → 跳过（WorkBuddy 靠 skill 系统加载，不依赖 shell hook 与 scripts/，B0 无需调脚本）。
 **B1**：`mkdir -p {SOFAGENT_DATA}/{task/plans,task/logs,scoring,orchestrator}` → 创建 `think.md`（反思区空白模板）→ 创建 `scoring/_index.md` + `orchestrator/_index.md`。bash 不可用：逐条 mkdir + Write。
 **B2**：INIT_OK → 继续 D。失败 → 停止：「初始化失败，检查权限。」

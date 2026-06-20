@@ -11,7 +11,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.0.0"
+VERSION="0.71"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -37,7 +37,7 @@ for arg in "$@"; do
       echo "  --force  跳过确认，直接删除"
       echo "  --list   仅列出会被删除的文件，不执行"
       echo "  --platform 指定目标平台（未指定时自动探测）"
-      echo "  保留: .sofagent/ 数据目录（task-log / orchestrator）"
+      echo "  保留: .sofagent/ 数据目录（task-record / orchestrator）"
       exit 0 ;;
   esac
 done
