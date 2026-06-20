@@ -299,9 +299,10 @@ else
   # ── handler.ts 回归验证（v0.72）──
   # 扫描 OpenClaw 启动日志，确认 sofagent-load-chain hook 被 agent:bootstrap 触发，
   # 第 2/3 层出现在注入列表中。如果 OpenClaw 未安装则跳过。
+  # 兼容 .log 和 .jsonl 两种日志格式（OpenClaw 2026.6.x 使用 .jsonl）。
   OPENCLAW_LOG_DIR="${OPENCLAW_DIR}/logs"
   if [ -d "$OPENCLAW_LOG_DIR" ]; then
-    RECENT_LOGS=$(find "$OPENCLAW_LOG_DIR" -name "*.log" -mtime -30 2>/dev/null | head -5 || true)
+    RECENT_LOGS=$(find "$OPENCLAW_LOG_DIR" \( -name "*.log" -o -name "*.jsonl" \) -mtime -30 2>/dev/null | head -5 || true)
     if [ -n "$RECENT_LOGS" ]; then
       HOOK_TRIGGERED=0
       LAYER2_FOUND=0
@@ -559,9 +560,9 @@ _test_sanitize() {
   # 3. JWT token（eyJ 开头的 base64url 三段式）
   input=$(echo "$input" | sed -E 's/eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/***JWT-REDACTED***/g')
   # 4. AWS Access Key（AKIA 开头，20 字符）
-  input=$(echo "$input" | sed -E 's/[[:<:]]AKIA[0-9A-Z]{16}[[:>:]]/***AWS-KEY-REDACTED***/g')
-  # 5. 凭证赋值（加 [[:<:]] 词边界）
-  input=$(echo "$input" | sed -E 's/[[:<:]](password|token|secret|api_key|key)[=:][[:space:]]*[^ ]+/\1=***REDACTED***/g')
+  input=$(echo "$input" | sed -E 's/AKIA[0-9A-Z]{16}/***AWS-KEY-REDACTED***/g')
+  # 5. 凭证赋值（^|非字母数字 保证不误伤 monkey=key 之类）
+  input=$(echo "$input" | sed -E 's/(^|[^a-zA-Z0-9_])(password|token|secret|api_key|key)[=:][^ ]+/\1\2=***REDACTED***/g')
   # 6. 私钥块
   input=$(echo "$input" | sed -E '/-----BEGIN .*PRIVATE KEY-----/,/-----END .*PRIVATE KEY-----/{
     s/-----BEGIN .*PRIVATE KEY-----/***PRIVATE-KEY-BLOCK-REDACTED***/
@@ -569,7 +570,7 @@ _test_sanitize() {
     /-----END/d
   }')
   # 7. 中国大陆手机号（1[3-9] 开头 + 9 位数字，共 11 位）
-  input=$(echo "$input" | sed -E 's/[[:<:]]1[3-9][0-9]{9}[[:>:]]/[PHONE-REDACTED]/g')
+  input=$(echo "$input" | sed -E 's/1[3-9][0-9]{9}/[PHONE-REDACTED]/g')
   echo "$input"
 }
 
