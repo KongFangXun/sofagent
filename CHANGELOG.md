@@ -4,7 +4,27 @@
 
 ---
 
-## [v0.71] — 2026-06-20
+## [v0.72] — 2026-06-27
+
+### Changed — 门面实证版本
+- **README.md 平台能力表重构**：一行「支持五大平台」替换为三列平台能力表（加载链/编排引擎/自动化程度），加诚实声明 + 种子指令脚注 + 编排引擎依赖说明
+- **README.md 实际效果诚实化**：删除占位指标表，「越用越聪明」等定性说法改为诚实描述，引导用户跑 benchmark.sh
+- **docs/EVIDENCE.md 重构**：标题从「测试记录表」改为「实证仪表盘」；删除「等你来填」空行模板改为社区贡献区；新增「使用时长」列（一次性测试/持续使用/弃用）；首行加诚实标注；新增基准测试区
+- **sofagent/engine.md**：A2 节头部新增 ao compose vs 默认编排 6 行能力差异对比表
+- **sofagent/SKILL.md**：frontmatter 版本号 0.71 → 0.72
+
+### Added — 实证工具
+- **sofagent/scripts/benchmark.sh**：10 个标准化任务半自动对比测试脚本（BSD/macOS 兼容），输出到 docs/benchmark/YYYY-MM-DD.md
+- **docs/samples/ao-workflow-sample.yaml**：来自 Case 006 真实跑通的 ao compose 工作流样本，用于离线参考和降级对比
+- **docs/anti-cases/README.md + TEMPLATE.md**：反案例目录——记录装了 sofagent 但仍然失败的案例
+
+### Fixed — 工程加固
+- **sofagent/scripts/verify.sh**：新增 handler.ts 回归检查（扫描 OpenClaw 日志确认加载链 hook 触发 + 第 2/3 层注入）+ ao compose 健康检查（`ao compose --version`，失败时 warn 非 fail）
+- **sofagent/scripts/install.sh**：npm install agency-orchestrator 时 pin 具体版本号
+- **docs/TESTING.md**：删除「等你来填」空行模板；第三方测试区块加诚实声明
+
+---
+
 
 ### Added — 行业研究驱动
 - **task-aware.md §1.5 目标契约模板**：澄清完成后输出 5 字段（目标/验收标准/验证方式/停止条件/风险边界），来自「下一代 Coding Agent」笔记

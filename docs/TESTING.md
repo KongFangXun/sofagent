@@ -216,9 +216,11 @@
 | 8. ao compose 编排 | KongFangXun | 2026-06-20 | PASS | — | WorkBuddy + ao compose（DeepSeek API）：AI 自动生成 2 步 workflow YAML → 自动修复 1 处变量 → ao run 执行 2/2 完成（6.7s / 11347 tokens）。ao compose + ao run 全链路在 WorkBuddy 上跑通 |
 | — | 完整 16 项测试 | KongFangXun | 2026-06-20 | PASS / 2 ⚠️ | — | 详见 [Case 005](./docs/cases/workbuddy-constraint-ao-test-2026-06-20/)：约束层 5/5 + 编排引擎 4/4 + ao compose/run 5/5 + 模板注入 ✅。⚠️ checkpoint 纪律 + CLI provider 兼容性 |
 
-### 第三方测试（等你来填）
+### 第三方测试（社区数据）
 
-以下是给你的空白行。填完发回来就行——FAIL 比编造的 PASS 有价值 100 倍。
+> 这是我们的数据。如果你在你平台上跑出了不同的结果——**告诉我们是哪里不同**，我们不改（除非它是 bug）。差异本身就是证据。
+
+以下是社区数据——跑出不同结果就告诉我们，FAIL 比编造的 PASS 有价值 100 倍。
 
 | 日期 | 测试人 | 平台 | 用例 | 结果 | 截图 | 备注 |
 |------|------|------|------|:--:|------|------|
@@ -232,16 +234,6 @@
 | 2026-06-20 | KongFangXun | OpenClaw 桌面 + CLI | v0.71 运行时约束测试 6 项 | PASS（6/6） | — | 桌面端：三层加载链 Hook 注入全生效，底线#2 + 任务准入拒绝 + 铁律#3/#5 全部通过。CLI 端：补充 ao compose 测试发现 API Key 过期根因 |
 | 2026-06-20 | KongFangXun | WorkBuddy 桌面 | v0.71 运行时约束测试 5 项 | PASS（5/5） | — | @skill:sofagent → 三层加载链 Agent 自觉读取全生效。非 OpenClaw 平台加载链命中率本次 100% |
 | 2026-06-20 | KongFangXun | CLI (ao compose via DeepSeek) | ao compose 5 步编排流水线 | PASS | [Case 006](./docs/cases/ao-compose-2026-06-20/) | 新 Key 修复后 10s 生成 5 步流水线（📦→🏗️→🎨→⚙️→🔧），4 角色并发度 4。确认 ao compose 集成通路正常 |
-| — | — | — | — | — | — | 你的这行，模板：日期 / @你的名字 / 平台 / 用例 / 结果 / 截图 / 备注 |
-
-| 用例 | 测试人 | 日期 | 结果 | 截图 | 备注 |
-|------|------|------|:--:|------|------|
-| 1. 地基加载 | _你的名字_ | _日期_ | _PASS / FAIL / SKIP_ | _截图路径_ | _一句话说明_ |
-| 2. checkpoint | _你的名字_ | _日期_ | _PASS / FAIL / SKIP_ | _截图路径_ | _一句话说明_ |
-| 3. 闭环反思 | _你的名字_ | _日期_ | _PASS / FAIL / SKIP_ | _截图路径_ | _一句话说明_ |
-| 4. 自我约束 | _你的名字_ | _日期_ | _PASS / FAIL / SKIP_ | _截图路径_ | _一句话说明_ |
-| 5. 跨任务反思 | _你的名字_ | _日期_ | _PASS / FAIL / SKIP_ | _截图路径_ | _一句话说明_ |
-
 ---
 
 > 测试完成后，将最有代表性的截图和数据填入 README「实际效果」区块和 docs/EVIDENCE.md。

@@ -18,7 +18,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.71"
+VERSION="0.72"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'
@@ -207,8 +207,8 @@ else
   if command -v npm &>/dev/null; then
     info "正在安装 agency-orchestrator..."
     set +e
-    npm install -g agency-orchestrator 2>&1 | tail -1 || \
-      npm install -g agency-orchestrator --registry=https://registry.npmmirror.com 2>&1 | tail -1
+    npm install -g agency-orchestrator@0.7.5 2>&1 | tail -1 || \
+      npm install -g agency-orchestrator@0.7.5 --registry=https://registry.npmmirror.com 2>&1 | tail -1
     AO_EXIT_CODE=$?
     set -e
     if [ $AO_EXIT_CODE -ne 0 ] && ! command -v ao &>/dev/null; then

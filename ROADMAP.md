@@ -81,6 +81,52 @@
 
 ---
 
+### v0.72 — 门面实证
+
+> v0.71 修了代码里「宣称有但没实现」的功能。v0.72 修 README 里「说有但做不到」的宣称 + 给效果一个可复现的基准。不碰运行时逻辑。
+>
+> 详细开发日志见 [docs/changelog/v0.72.md](./docs/changelog/v0.72.md)
+
+| 交付物 | 类别 | 说明 |
+|------|:--:|------|
+| **README 平台能力表重构** | 诚信 | 「支持五大平台」→ 每平台实测能力差异表（加载链 / 编排引擎 / 自动化程度） |
+| **benchmark.sh** | 实证 | 10 个标准化任务 × 带不带 sofagent 对比。半自动——生成 prompt，人跑 Agent，脚本记录结果。任何人可复现 |
+| **EVIDENCE 重构** | 诚信 | 从「等你来填」空表格 → 「我们自己先出数据」。新增持续使用列 + 基准测试区 |
+| **anti-cases 反案例目录** | 诚信 | 全 PASS 比没数据更损害信誉。建标准模板，v0.72 测试中产生第一份真实反案例 |
+| **handler.ts 回归验证** | P0 | v0.71 修了第 3 层 silently 失效的 bug——v0.72 在 ≥3 个 OpenClaw 版本上验证修复真的生效 |
+| **ao compose 依赖加固** | P1 | 版本 pin + vendor snapshot + verify.sh 健康检查。不只是文档化 |
+| **engine.md 降级能力清单** | P2 | ao compose vs 默认编排的 5 项能力差异对照表 |
+
+**不包含**：think.md 记忆三规则、scoring 判断力维度、任务闸执行层——全是运行时逻辑改动，推到 v0.73。
+
+---
+
+### v0.73 — 运行时逻辑加固
+
+> v0.72 修了门面，v0.73 修运行时。三道闸门体系落地 + 编排引擎加固 + 记忆系统最小闭环 + 安装门槛降低。
+>
+> 来自技术 VP 评审 + 两份行业研究笔记（循环工程师 / Cloud Code Workflows）。
+
+| 交付物 | 类别 | 说明 |
+|------|:--:|------|
+| **任务闸执行层** | 闸门 | engine.md 加硬检查——🔴 点火前必须显式输出准入检查 PASS/REJECT，Agent 不能跳过 task-aware §1.1 直接开干 |
+| **执行闸权限边界** | 闸门 | entry-gate.md 加权限边界声明字段——不只注册「能做什么」，也声明「绝对不能做什么」 |
+| **验收闸 checklist** | 闸门 | loop-check.md 加结构化 5 项 checklist + 四维度排查（输入/环境/工具/模型）+ 防雪崩说明 |
+| **记忆三规则** | 记忆 | think.md 写入标准（≥2 次重复或可验证后果才写）+ 合并规则（同标签压缩）+ 遗忘规则（30 天降权 / 60 天归档） |
+| **scoring 判断力维度** | 指标 | 第九维——弃权率。拒绝高风险任务计正分。从「多跑多成」到「该停就停」 |
+| **编排引擎加固** | 引擎 | engine.md 检查点定义 + 显式失败分支（6 个场景）+ task-aware 停止条件字段 + --max-retries |
+| **rules.md 升级** | 规范 | 从「自定义规则」→「Agent 运行规范」——含项目目标、验收标准、风险边界、停止条件 |
+| **日志加载优化** | 记忆 | task/logs 加 _recent.md 汇总——Agent 启动时读最近 5-10 条而非全量 |
+| **安装门槛降低** | 体验 | 当前 4 步安装 → 目标 2 步（一 URL + 一命令）。打通 ClawHub/SkillHub 发布流程 |
+| **ROADMAP ASCII → Mermaid** | 视觉 | 移动端渲染正常 |
+
+**行业研究来源**：
+- 循环工程师笔记 → 循环契约概念、触发器系统（daemon 定位的理论基础）
+- Workflows 笔记 → 可观测性产品化（TOI 仪表盘参考）
+- 两条笔记的详细洞察写进 ARCHITECTURE.md §五
+
+---
+
 ### v0.8 — daemon（把房子地基打上）
 
 **要解决什么**：加载链脆弱性。让 Agent 在非 OpenClaw 平台上也能看到 think.md 和 rules.md——不靠 Agent 自觉，靠外部进程提醒。
@@ -278,18 +324,17 @@ daemon 不是"又一个约束"，它是**让已有约束跨 session 生效的执
 **架构演进路径**：
 
 ```
-v0.6–v0.7                v0.8                      v0.9                      v1.0                v2.x
-(released)               (daemon)                  (enterprise + beta)       (stable)            (router)
+v0.6–v0.7          v0.72                 v0.73                   v0.8                      v0.9                      v1.0                v2.x
+(released)         (evidence)            (gate hardening)        (daemon)                  (enterprise + beta)       (stable)            (router)
 
-+----------------+       +-----------------+       +------------------+      +------------+      +------------------+
-| foundation     |       | daemon          |       | enterprise       |      | stable     |      | router           |
-| 4-baselines    |  -->  | cross-session   |  -->  | age encrypt       | -->  | daemon 30d | -->  |   +--+--+--+     |
-| 10-iron-rules  |       | silent reminder |       | audit report     |      | 3+ users   |      |   v  v  v  v     |
-| orchestration  |       | replace RNG%10  |       | sanitize++       |      | 90% pass   |      |  mac win linux  |
-| compliance     |       | 5-platform test |       | multi-user       |      | 5-platform |      |                  |
-+----------------+       +-----------------+       +------------------+      +------------+      +------------------+
++----------+       +------------+        +--------------+         +-----------------+       +------------------+      +------------+      +------------------+
+| foundation|       | README     |       | 3 gates      |         | daemon          |       | enterprise       |      | stable     |      | router           |
+| 4-base   |  -->  | honest     |  -->  | exec gate    |   -->   | cross-session   |  -->  | age encrypt       | -->  | daemon 30d | -->  |   +--+--+--+     |
+| 10-rules |       | benchmark  |       | checkpoint   |         | silent reminder |       | audit report     |      | 3+ users   |      |   v  v  v  v     |
+| compliance|      | anti-cases |       | memory rules |         | replace RNG%10  |       | multi-user       |      | 90% pass   |      |  mac win linux  |
++----------+       +------------+        +--------------+         +-----------------+       +------------------+      +------------+      +------------------+
 
-治理地基 + 合规三件套         跨 session 生命周期          生产级地基                正式发布             跨设备联邦治理
+治理地基+合规          门面实证              运行时加固              跨 session 生命周期         生产级地基                正式发布             跨设备联邦治理
 ```
 
 > 💡 图中每个 box 的内容用英文（短词）保证等宽对齐；中文副标题在下方解释，避免中英混排时 box 塌陷。

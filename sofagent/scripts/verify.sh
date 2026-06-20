@@ -15,7 +15,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="0.71"
+VERSION="0.72"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -295,6 +295,50 @@ else
   else
     check_warn "think.md 不存在（首次运行后由 B1 创建）"
   fi
+
+  # ── handler.ts 回归验证（v0.72）──
+  # 扫描 OpenClaw 启动日志，确认 sofagent-load-chain hook 被 agent:bootstrap 触发，
+  # 第 2/3 层出现在注入列表中。如果 OpenClaw 未安装则跳过。
+  OPENCLAW_LOG_DIR="${OPENCLAW_DIR}/logs"
+  if [ -d "$OPENCLAW_LOG_DIR" ]; then
+    RECENT_LOGS=$(find "$OPENCLAW_LOG_DIR" -name "*.log" -mtime -30 2>/dev/null | head -5 || true)
+    if [ -n "$RECENT_LOGS" ]; then
+      HOOK_TRIGGERED=0
+      LAYER2_FOUND=0
+      LAYER3_FOUND=0
+      for log_file in $RECENT_LOGS; do
+        [ -f "$log_file" ] || continue
+        LOG_CONTENT=$(cat "$log_file" 2>/dev/null || true)
+        if echo "$LOG_CONTENT" | grep -q "sofagent-load-chain"; then
+          HOOK_TRIGGERED=1
+        fi
+        if echo "$LOG_CONTENT" | grep -q "think\\.md"; then
+          LAYER2_FOUND=1
+        fi
+        if echo "$LOG_CONTENT" | grep -q "rules\\.md"; then
+          LAYER3_FOUND=1
+        fi
+        [ "$HOOK_TRIGGERED" = "1" ] && [ "$LAYER2_FOUND" = "1" ] && [ "$LAYER3_FOUND" = "1" ] && break
+      done
+      if [ "$HOOK_TRIGGERED" = "1" ]; then
+        check_pass "handler.ts 回归：sofagent-load-chain hook 已被触发"
+        if [ "$LAYER2_FOUND" = "1" ] && [ "$LAYER3_FOUND" = "1" ]; then
+          check_pass "handler.ts 回归：第 2/3 层出现在注入列表中"
+        else
+          MISSING_LAYERS=""
+          [ "$LAYER2_FOUND" = "0" ] && MISSING_LAYERS="第2层(think.md)"
+          [ "$LAYER3_FOUND" = "0" ] && MISSING_LAYERS="${MISSING_LAYERS:+$MISSING_LAYERS, }第3层(rules.md)"
+          check_warn "handler.ts 回归：${MISSING_LAYERS}未在注入列表中出现"
+        fi
+      else
+        check_warn "handler.ts 回归：sofagent-load-chain hook 在最近日志中未检测到触发"
+      fi
+    else
+      check_warn "handler.ts 回归：最近 30 天无 OpenClaw 日志，跳过"
+    fi
+  else
+    check_pass "handler.ts 回归：OpenClaw 日志目录不存在，跳过（非 OpenClaw 平台或未启动过）"
+  fi
 fi
 
 _hr
@@ -303,6 +347,13 @@ _section "外部依赖"
 if command -v ao &>/dev/null; then
   AO_VER=$(ao --version 2>/dev/null || echo "unknown")
   check_pass "agency-orchestrator (ao) 可用 — v${AO_VER}"
+  # ao compose 健康检查：确认 ao compose 可正常调用（失败时 warn，不阻断）
+  AO_COMPOSE_OUT=$(ao compose --version 2>/dev/null || true)
+  if [ -n "$AO_COMPOSE_OUT" ]; then
+    check_pass "ao compose 健康检查通过"
+  else
+    check_warn "ao compose --version 失败——编排引擎可能不可用（约束层不受影响）"
+  fi
   # 烟雾测试：ao 能否列出角色（用表格行数），
   # 若输出格式变化导致计数异常，降级为检查非空输出
   ROLE_COUNT=$(ao roles 2>/dev/null | grep -c '|' | tr -d '\n' || echo "0")
