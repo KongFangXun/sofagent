@@ -1,7 +1,7 @@
 ---
 name: sofagent
 slug: sofagent
-version: 0.73
+version: 0.74
 displayName: sofagent
 description: >
   当你的 Agent 反复偏离目标、任务越做越复杂、刚踩过的坑下次还踩 —— sofagent 能约束其行为、拆解复杂任务、从错误中沉淀教训。
@@ -15,7 +15,7 @@ metadata:
       bins: [bash, mkdir]
 ---
 
-# SKILL.md · v0.73
+# SKILL.md · v0.74
 
 > ⚠️ **反向锚点**：本文件是加载链第 1 层，随 skill 调用自动注入——你无需 Read 就已有宪法。但第 2、3 层需你主动 Read。如果你没读 rules.md 和 think.md 就回复用户，你的输出可能偏离用户定制和历史教训。
 
@@ -72,6 +72,20 @@ metadata:
 #10 如实汇报 — 不知道就说不知道
 
 > 每条铁律对应的翻车案例见 [Handbook §三](../HANDBOOK.md#三底线与铁律)。
+
+---
+
+## ⛓️ 加载链自检（非 OpenClaw 平台）
+
+> OpenClaw 有 Hook 强制注入三层加载链，无需自检。此节仅在 WorkBuddy / Claude Code / Codex / Hermes 平台上生效。
+
+每次对话开始时，Agent 内部检查：
+- L1 本文件（SKILL.md）— 当前 skill 调用已加载
+- L2 think.md（{SOFAGENT_DATA}/think.md）— 需主动 Read
+- L3 rules.md（~/.openclaw/skills/sofagent/rules.md 或等效路径）— 需主动 Read
+
+如发现 L2 或 L3 未加载，在回复开头简短提醒用户：
+「⚠️ 本次加载链第 X 层未加载，反思记忆/自定义规则不会生效。」
 
 ---
 
