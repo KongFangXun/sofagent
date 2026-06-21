@@ -18,7 +18,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.72"
+VERSION="0.73"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'
@@ -40,12 +40,17 @@ INSTALL_LOG=""  # 等 TARGET 确定后再设置
 
 _log() { echo "[$(date '+%H:%M:%S')] $1" >> "${INSTALL_LOG:-/dev/null}"; }
 
+# ── 快速模式（v0.73：初始化在参数解析之前，set -u 兼容）──
+QUICK_MODE="${QUICK_MODE:-0}"
+
 # ── 欢迎 ──
+if [ "$QUICK_MODE" = "0" ]; then
 echo ""
 echo "  ╔═══════════════════════════════════╗"
 echo "  ║   sofagent Harness · installer   ║"
 echo "  ╚═══════════════════════════════════╝"
 echo ""
+fi
 
 # ── 审计：安装开始 ──
 bash "${SCRIPT_DIR}/audit.sh" --operation "install" --target "开始" --result "v${VERSION}, $(uname -s)" 2>/dev/null || true
@@ -57,6 +62,7 @@ info "Step 1/7 · 确定安装平台..."
 
 # ── 参数解析 ──
 PLATFORM=""
+QUICK_MODE=0  # v0.73: --quick 模式跳过交互确认
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --platform)     PLATFORM="$2"; shift 2 ;;
@@ -65,6 +71,7 @@ while [[ $# -gt 0 ]]; do
     --project-dir=*) PROJECT_DIR="${1#*=}"; shift ;;
     --no-ao)         NO_AO=1; shift ;;
     --no-config-inject) NO_CONFIG_INJECT=1; shift ;;
+    --quick)         QUICK_MODE=1; shift ;;
     -h|--help)
       echo "用法: install.sh [--platform openclaw|workbuddy|claude|codex|hermes] [--project-dir DIR]"
       echo ""
@@ -77,6 +84,7 @@ while [[ $# -gt 0 ]]; do
       echo "  --project-dir DIR   指定项目工作目录（.sofagent/ 数据目录会创建在这里，默认当前目录）"
       echo "  --no-ao             跳过 agency-orchestrator 全局安装（企业环境用）"
       echo "  --no-config-inject  跳过自动注入 OpenClaw config.json（企业环境用）"
+      echo "  --quick             快速模式——跳过交互确认和验证等待，直接完整安装"
       exit 0
       ;;
     *) shift ;;
@@ -148,13 +156,13 @@ echo "=== sofagent install $(date -u +'%Y-%m-%dT%H:%M:%SZ') ===" >> "$INSTALL_LO
 _log "TARGET=$TARGET"
 _log "SCRIPT_DIR=$SCRIPT_DIR"
 
-CONSTITUTION_SRC="${SCRIPT_DIR}/../constitution"
+RULES_SRC="${SCRIPT_DIR}/../rules.md"
 
 # 检查源文件
-if [ ! -d "$CONSTITUTION_SRC" ]; then
-  err "找不到 constitution/ 目录。请在 sofagent 项目根目录下运行此脚本。"
+if [ ! -f "$RULES_SRC" ]; then
+  err "找不到 rules.md。请在 sofagent 项目根目录下运行此脚本。"
   err "  当前脚本位置: $SCRIPT_DIR"
-  err "  期望目录: $CONSTITUTION_SRC"
+  err "  期望文件: $RULES_SRC"
   exit 1
 fi
 
@@ -265,12 +273,11 @@ info "Step 4/7 · 部署宪法文件 → $TARGET"
 
 mkdir -p "$TARGET"
 
-# OpenClaw: rules.md 统一部署到 skills/sofagent/constitution/（~/.openclaw/rules.md 留给用户自定义）
+# OpenClaw: rules.md 统一部署到 skills/sofagent/（~/.openclaw/rules.md 留给用户自定义）
 # 其他平台: rules.md 部署到 $TARGET/rules.md
 if [ "$PLATFORM" = "openclaw" ]; then
-  RULES_DST_DIR="${TARGET}/skills/sofagent/constitution"
+  RULES_DST_DIR="${TARGET}/skills/sofagent"
   mkdir -p "$RULES_DST_DIR"
-  RULES_SRC="${CONSTITUTION_SRC}/rules.md"
   RULES_DST="${RULES_DST_DIR}/rules.md"
   if [ -f "$RULES_SRC" ]; then
     if [ -f "$RULES_DST" ] && cmp -s "$RULES_SRC" "$RULES_DST" 2>/dev/null; then
@@ -283,11 +290,20 @@ if [ "$PLATFORM" = "openclaw" ]; then
   else
     err "rules.md — 源文件不存在: $RULES_SRC"
   fi
+  # v0.73: 旧路径自动迁移——检测 constitution/rules.md → 迁移到新路径，删除旧目录
+  OLD_RULES="${TARGET}/skills/sofagent/constitution/rules.md"
+  if [ -f "$OLD_RULES" ]; then
+    warn "检测到旧路径 constitution/rules.md，自动迁移到新路径 rules.md..."
+    cp "$OLD_RULES" "$RULES_DST" 2>/dev/null && ok "已迁移到 ${RULES_DST}" || warn "迁移失败，请手动复制"
+    rm -f "$OLD_RULES"
+    rmdir "$(dirname "$OLD_RULES")" 2>/dev/null || true
+    ok "旧 constitution/ 目录已清理"
+  fi
   warn "~/.openclaw/rules.md 保留为用户自定义文件，不会被覆盖"
 else
   # 非 OpenClaw 平台：宪法文件部署到 $TARGET 根
   for f in rules.md; do
-    src="${CONSTITUTION_SRC}/${f}"
+    src="${SCRIPT_DIR}/../${f}"
     dst="${TARGET}/${f}"
     if [ -f "$src" ]; then
       if [ -f "$dst" ]; then
@@ -346,10 +362,8 @@ for f in "$SCRIPT_DIR"/../data/*.md; do
   ((copied++)) || true
 done
 
-# constitution/rules.md — 同时部署到 Skill 目录，使 SKILL.md 的相对路径 `constitution/rules.md` 可解析
-mkdir -p "${SKILL_DST}/constitution"
-RULES_SRC="${CONSTITUTION_SRC}/rules.md"
-RULES_DST="${SKILL_DST}/constitution/rules.md"
+# rules.md — 同时部署到 Skill 目录，使 SKILL.md 的相对路径可解析
+RULES_DST="${SKILL_DST}/rules.md"
 if [ -f "$RULES_SRC" ]; then
   if [ -f "$RULES_DST" ] && cmp -s "$RULES_SRC" "$RULES_DST" 2>/dev/null; then
     :  # 内容相同，跳过
@@ -454,7 +468,7 @@ fi
 SCRIPTS_DST="${TARGET}/scripts"
 mkdir -p "$SCRIPTS_DST"
 
-for script in task-record.sh task-orchestrate.sh cleanup.sh audit.sh; do
+for script in task-record.sh task-orchestrate.sh cleanup.sh audit.sh compress-memory.sh; do
   src="${SCRIPT_DIR}/${script}"
   dst="${SCRIPTS_DST}/${script}"
   if [ -f "$src" ]; then
@@ -646,10 +660,10 @@ echo ""
 case "$PLATFORM" in
   openclaw)
     echo "  已部署文件："
-    echo "    宪法文件:      $TARGET/skills/sofagent/constitution/rules.md（宪法内联在 SKILL.md）"
+    echo "    宪法文件:      $TARGET/skills/sofagent/rules.md（宪法内联在 SKILL.md）"
     echo "    Skill 文件:     $TARGET/skills/sofagent/（6 核心 + 4 数据模板）"
     echo "    加载链 Hook:    $TARGET/hooks/sofagent-load-chain/（HOOK.md + handler.ts）"
-    echo "    配套脚本:       $TARGET/scripts/{task-record,task-orchestrate,cleanup,audit}.sh"
+    echo "    配套脚本:       $TARGET/scripts/{task-record,task-orchestrate,cleanup,audit,compress-memory}.sh"
     echo "    断路器:         ${CONFIG_FILE:-未配置}（tools.loopDetection）"
     echo "    数据目录:       $SOFAGENT_DATA"
     echo ""

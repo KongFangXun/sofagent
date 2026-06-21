@@ -29,7 +29,7 @@
 # ════════════════════════════════════════
 set -euo pipefail
 
-VERSION="0.71"
+VERSION="0.73"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

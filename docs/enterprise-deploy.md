@@ -1,4 +1,4 @@
-# sofagent v0.71 · 企业部署指南
+# sofagent v0.73 · 企业部署指南
 
 # 企业级部署指南
 
@@ -52,7 +52,7 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对�
 | 外部 API 调用 | ✅ 可关闭 | 离线模式跳过 ClawHub |
 | 配置文件修改 | ✅ 可控 | --no-config-inject 跳过 |
 
-## 已落地（v0.71+）
+## 已落地（v0.73+）
 
 以下能力原为 v0.7x 规划，已在 v0.71 版本落地：
 - task/logs 脱敏（sanitize() 扫描 API Key/密码/手机号）

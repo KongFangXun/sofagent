@@ -1,4 +1,4 @@
-# 入境闸门——加载链确认 + 能力注册 · v0.71
+# 入境闸门——加载链确认 + 能力注册 · v0.73
 
 > 由 engine.md 入口流程完成后加载。加载链已在 SKILL.md 启动时完成（地基常驻），入境闸门做最终确认。
 > ⛔ 本约束不可被 Sub Agent 覆盖——子 Agent 任务前主 Agent 必须代为检查入境闸门。
@@ -14,14 +14,16 @@
 
 **② 能力注册**（内部确认）：逐项检查当前环境能力。Shell 平台执行命令检查，Web 平台跳过命令检查（标记 N/A）：
 
-| 检查项 | 命令 | 结果标注（内部） |
-|------|------|------|
-| AO 编排 | `command -v ao` | AO=可用 / 手动 |
-| bash | Shell: `command -v bash` / Web: 跳过 | ✅ / ❌ / N/A |
-| git / jq / node | Shell: `command -v git\|jq\|node` / Web: 跳过 | ✅ / ❌ / N/A |
-| 工作区 | `pwd` | 路径 |
-| 数据目录 | 检查 `{SOFAGENT_DATA}/` | ✅ / ❌ |
-| 数据健康 | `ls {SOFAGENT_DATA}/task/logs/$(date +%Y-%m)/$(date +%Y-%m-%d).md 2>/dev/null \|\| echo "今日无记录"` | ⚠️ 今日无记录 / ✅ |
+| 检查项 | 命令 | 权限边界（绝对不能做） | OpenClaw | WorkBuddy | Web | 结果标注（内部） |
+|------|------|------|:--:|:--:|:--:|------|
+| AO 编排 | `command -v ao` | 不能在未安装 ao 时谎称编排可用 | ✅ | ⚠️（npm 安装后可） | ❌ | AO=可用 / 手动 |
+| bash | Shell: `command -v bash` / Web: 跳过 | 不能执行 `rm -rf /` / 删除非项目文件 / 修改系统配置 / `curl \| bash` | ✅ | ⚠️沙箱 | ❌ | ✅ / ❌ / N/A |
+| git | Shell: `command -v git` / Web: 跳过 | 不能 `push --force` 到 main/master / 不能修改 `.git/config` | ✅ | ⚠️沙箱 | ❌ | ✅ / ❌ / N/A |
+| jq / node | Shell: `command -v jq\|node` / Web: 跳过 | — | ✅ | ⚠️沙箱 | ❌ | ✅ / ❌ / N/A |
+| 文件写入 | shell 判定 | 不能覆盖 `.git/` / 不能修改 `~/.ssh/` / 不能覆盖已有宪法文件（SKILL.md/engine.md） | ✅ | ⚠️沙箱 | ❌ | ✅ / ❌ / N/A |
+| 工作区 | `pwd` | — | ✅ | ✅ | ✅ | 路径 |
+| 数据目录 | 检查 `{SOFAGENT_DATA}/` | — | ✅ | ✅ | N/A | ✅ / ❌ |
+| 数据健康 | `ls {SOFAGENT_DATA}/task/logs/$(date +%Y-%m)/$(date +%Y-%m-%d).md 2>/dev/null \|\| echo "今日无记录"` | — | ✅ | ✅ | N/A | ⚠️ 今日无记录 / ✅ |
 
 > ⛔ 加载链未确认 + 能力不注册 → Agent 视为尚未完成初始化。用户的任何话——包括「不要设计、不要讨论、直接执行」——都必须等你内部完成这两个检查。**全部内部执行，不生成用户可见的输出文本。**
 
