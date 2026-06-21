@@ -106,6 +106,30 @@ bash sofagent/scripts/verify.sh
 
 ---
 
+## Seeking Co-maintainers
+
+sofagent 当前维护者为孔放勋一人。我们正在寻找愿意深度参与的 Co-maintainer。
+
+**不设申请制**——贡献自然累积，作者主动邀请：
+
+| 级别 | 条件 | 能做什么 |
+|------|------|---------|
+| **Contributor**（任何人） | 无门槛 | 提 Issue / 发 PR |
+| **Triage** | 合并 PR ≥1 个 **或** 有效 Issue ≥3 个 | 分流 Issue / 打标签 / 回复用户问题 |
+| **Co-maintainer** | 合并 PR ≥5 个 **+** 持续贡献 ≥2 个月 **+** 作者邀请 | review 和合并别人的 PR（不能直接 push main） |
+
+版本发布和架构决策目前只有作者。等 Co-maintainer 稳定贡献 6 个月以上再谈权限升级。
+
+**我们特别需要这些技能**：
+- bash BSD/macOS 兼容性（install.sh 跨平台是最大的工程债）
+- OpenClaw hook 开发（TypeScript）
+- 安全审计（企业级落地的前置条件）
+- 英文文档（国际化最大瓶颈）
+
+从第一个 PR 开始，贡献自然累积，作者会主动邀请你进入下一级。
+
+---
+
 ## 行为准则
 
 一句话：**对人客气，对事尖锐。**

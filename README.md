@@ -1,16 +1,21 @@
 # sofagent
 
+中文 | [English](README.en.md)
+
 [![License](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.74-1E40AF)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/version-v0.75-1E40AF)](./HANDBOOK.md)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--21-lightgrey)](./README.md)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-主力平台-2563EB)](./ARCHITECTURE.md#平台依赖)
 [![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes-lightgrey)](./ARCHITECTURE.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
+<!-- TODO: demo.gif — 15s 左右对比: 裸 Agent 跑偏 vs sofagent 约束后正常 -->
 
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
-> v0.74 · 2026-06-21
+> v0.75 · 2026-06-21
+
+> 📄 **License 分界**：代码文件（.sh / .ts）= MIT License；文档文件（.md）= CC-BY-4.0。简单说——代码随便用，文档引用注明出处。
 
 我叫孔放勋，一个完全不懂代码的产品经理。所有设计决策来自大半年的真实使用经验，文档由 [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) 和 [GLM-5.2](https://z.ai/) 配合生成。欢迎大佬进来改。
 
@@ -43,21 +48,6 @@
 
 ## 怎么工作
 
-```
-三层加载链（常驻地基：宪法 → 反思区 → 你的规则）
-          ↓
-    A0 复杂度预判
-    ├── 🟢🟡 简单 → 快速响应（地基在线）
-    └── 🔴 复杂 → 任务编排引擎点火
-                   │
-              ┌────┴────┐
-         智能拆解 → 分批执行 → Loop 检查（子任务间 · 60%预算 · 重大操作前）
-              │                       │
-              └─── 闭环反思 ←─────────┘
-                      ↓
-              下次参考上次经验
-```
-
 | 做什么 | 怎么做 |
 |------|------|
 | **地基** | 三层加载链——宪法（4底线+10铁律）→ 反思区（自动错题本）→ 你的规则。整个会话期间永远在线 |
@@ -66,6 +56,28 @@
 
 > 💡 核心理念：**厚在治理，薄在复用。** 约束自己定，模板和 Skills 从社区取。为 AI Agent 提供纪律层与反思循环（效果待社区验证）。
 > 💰 安装成本：约 3,000 token 地基常驻（128K 窗口的 2.5%）。编排引擎仅 🔴 复杂任务时额外 ~800 token。详见 [Token 预算](./HANDBOOK.md#token-预算参考)。
+
+### 架构总览
+
+```mermaid
+graph TB
+    subgraph Foundation["🏗️ 地基 Foundation（常驻 ~3,100 token）"]
+        L1["L1: SKILL.md<br/>4 底线 + 10 铁律<br/>宪法 Contract"] --> L2["L2: think.md<br/>反思区<br/>错题本"]
+        L2 --> L3["L3: rules.md<br/>你的规则<br/>最高优先级"]
+    end
+
+    subgraph Engine["🚀 引擎 Engine（🔴点火 ~800 token）"]
+        EG["entry-gate<br/>任务准入"] --> TA["task-aware<br/>复杂度预判"]
+        TA --> TO["task-closure<br/>任务闭环"]
+        TO --> LC["loop-check<br/>Loop 检查"]
+    end
+
+    Foundation -->|"🔴 复杂任务触发"| Engine
+    Engine -->|"反思沉淀"| L2
+
+    style Foundation fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+    style Engine fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
+```
 
 > ⚠️ **已知局限**：核心效果尚无第三方实测数据；复盘是 LLM 自评，无客观基准；Loop Agent 非独立进程；纯文件约束依赖 Agent 配合；数据明文存储（task/logs + think.md 含任务记录，无加密）；不是多用户系统（共享 .sofagent/ 会交叉污染经验）。详见 [DESIGN §三](./ARCHITECTURE.md)。
 
@@ -78,6 +90,8 @@
 | Claude Code / Codex / Hermes | 第 1 层通过种子指令加载，第 2/3 层 Agent 自觉（无机制保障）| 不可用（降级为手工拆解）| 低 — 核心约束仍生效，编排引擎缺失 |
 
 > ⚠️ 以上为作者实测结论。如果你在某个平台上跑出了不同的结果——**那才是真实数据**，欢迎告诉我们。
+
+> ⚠️ **非 OpenClaw 平台预期管理**：编排引擎 / Hook / 断路器三项核心能力仅 OpenClaw 全绿。如果你不用 OpenClaw，sofagent 对你的价值约为完整版的 30%（只有宪法层约束生效）。这不是 bug，是架构宿命——v0.8 daemon 会改善加载链，但编排和 Hook 仍是 OpenClaw 专属。详见 [Design §三 平台依赖](./ARCHITECTURE.md#平台依赖)。
 
 > 📎 「种子指令」是什么：写在 Agent 记忆文件（如 CLAUDE.md / AGENTS.md / SOUL.md）里的一句话，告诉 Agent 启动时先读 sofagent 约束文件。**这不是自动化——是人手动贴的纸条。** OpenClaw 和 WorkBuddy 通过各自的 skill 机制自动加载，不需要种子指令。
 
@@ -155,12 +169,7 @@ bash sofagent/scripts/install.sh --platform 你的平台
 | **Codex** | `bash sofagent/scripts/install.sh --platform codex` | 部署宪法 + 输出种子指令（需手动粘贴到 AGENTS.md） |
 | **Hermes** | `bash sofagent/scripts/install.sh --platform hermes` | 部署宪法 + 输出种子指令（需手动粘贴到 SOUL.md） |
 
-> 未指定 `--platform` 时自动探测。
-
-**install.sh 会改什么文件**：
-- OpenClaw：写入 `~/.openclaw/rules.md`、`~/.openclaw/skills/sofagent/`（含 6 个 Skill .md + scripts/ + data/ + rules.md）
-- WorkBuddy：写入 `~/.workbuddy/skills/sofagent/`（含 SKILL.md + 子目录）
-- Claude Code / Codex / Hermes：写入 `~/.claude/`（或 `~/.codex/`、`~/.hermes/`）的宪法文件，并输出种子指令让你手动贴到 CLAUDE.md / AGENTS.md / SOUL.md
+> 未指定 `--platform` 时自动探测。install.sh 会根据平台写入对应目录（OpenClaw→`~/.openclaw/skills/`，WorkBuddy→`~/.workbuddy/skills/`，其他平台输出种子指令）。
 
 ### 4. 30 秒 smoke test
 
@@ -200,24 +209,12 @@ OpenClaw 上全自动，其他平台需手动触发闭环。
 ## 项目结构
 
 ```
-sofagent/
-├── README / HANDBOOK / DEVELOPMENT / ARCHITECTURE / ROADMAP.md    ← 核心文档
-├── LICENSE / CHANGELOG / CODE_OF_CONDUCT / CONTRIBUTING / SECURITY.md
-├── docs/               ← EVIDENCE / TESTING / enterprise-deploy / system_design + changelog/ + cases/
-├── .github/            ← Issue / PR 模板 + CI (verify.yml)
-└── sofagent/           ← 核心部署文件
-    ├── SKILL.md        ←   🌟 主入口（加载即启动整套体系）
-    ├── engine / entry-gate / task-aware / task-closure / loop-check.md  ← 5 个子 Skill
-    ├── rules.md        ←   执行层：你的运行规范
-    ├── data/           ←   数据模板（IDENTITY / think / scoring / orchestrator / task）
-    ├── hooks/sofagent-load-chain/  ← OpenClaw hook（注入第 2、3 层）
-    ├── scripts/        ←   install / verify / uninstall / task-record / task-orchestrate / cleanup / audit
-    └── images/
+sofagent/                  ← 核心部署文件（SKILL.md 主入口 + 5 子 Skill + 脚本 + hook）
+├── README / HANDBOOK / DEVELOPMENT / ARCHITECTURE / ROADMAP.md  ← 文档
+├── docs/                  ← EVIDENCE / TESTING / changelog / cases
 ```
 
-安装后自动生成 `.sofagent/`（Agent 工作笔记：think.md 反思 + orchestrator/ 配置 + scoring.md 评分 + task/ 日志审计），每次任务自动记录，跨任务自动反思沉淀。
-
-> 💡 6 个 Skill（1 主 + 5 子）+ 脚本各管一件事，复用 4 个开源项目做编排/岗位/Skills 发现，自己只写治理层。详见 [用了哪些外部项目](#用了哪些外部项目)。
+安装后自动生成 `.sofagent/`（think.md 反思 + task/logs 审计 + orchestrator/ 配置），每次任务自动记录，跨任务反思沉淀。
 
 ---
 
@@ -235,6 +232,8 @@ sofagent/
 ## 贡献
 
 欢迎提 Issue 和 PR，尤其是挑刺的那种。详见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+
+> 🧑‍💻 **我们在寻找 Co-maintainer**——特别是熟悉 bash BSD/macOS 兼容性、OpenClaw hook(TS)、安全审计或英文文档的人。从第一个 PR 开始，贡献自然累积，作者主动邀请。详见 [CONTRIBUTING.md § Seeking Co-maintainers](./CONTRIBUTING.md#seeking-co-maintainers)。
 
 ---
 
