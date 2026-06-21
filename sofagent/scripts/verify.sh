@@ -16,7 +16,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="0.75"
+VERSION="0.81"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -791,6 +791,49 @@ if [ -n "$RULES_FILE" ]; then
   fi
 else
   check_warn "rules.md 未找到，无法验证合规配置段"
+fi
+
+_hr
+
+# ════════════════════════════════════════
+# 11. daemon 状态检查
+# ════════════════════════════════════════
+if [ "$JSON_MODE" = false ] && [ "${QUICK_MODE:-false}" = false ]; then
+  echo ""
+fi
+[ "$JSON_MODE" = false ] && [ "$QUIET_MODE" = false ] && [ "${QUICK_MODE:-false}" = false ] && echo -e "${BOLD}${YELLOW}daemon 状态${NC}"
+
+SOFAGENT_DATA="${PWD}/.sofagent"
+DAEMON_PID_FILE="${SOFAGENT_DATA}/daemon.pid"
+DAEMON_JSON="${SOFAGENT_DATA}/daemon.json"
+
+# daemon 是否安装
+DAEMON_SCRIPT="${OPENCLAW_DIR}/scripts/daemon.sh"
+[ ! -f "$DAEMON_SCRIPT" ] && DAEMON_SCRIPT="${PWD}/sofagent/scripts/daemon.sh"
+
+if [ -f "$DAEMON_SCRIPT" ]; then
+  check_pass "daemon.sh 已安装"
+
+  # daemon 是否运行
+  if [ -f "$DAEMON_PID_FILE" ]; then
+    DAEMON_PID=$(cat "$DAEMON_PID_FILE" 2>/dev/null || true)
+    if [ -n "$DAEMON_PID" ] && kill -0 "$DAEMON_PID" 2>/dev/null; then
+      check_pass "daemon 运行中 (PID $DAEMON_PID)"
+    else
+      check_warn "daemon PID 文件存在但进程未运行（可能已崩溃）"
+    fi
+  else
+    check_warn "daemon 未运行（可选功能，不影响约束层）——运行 daemon.sh start 启动"
+  fi
+
+  # daemon.json 可读
+  if [ -f "$DAEMON_JSON" ] && [ -r "$DAEMON_JSON" ]; then
+    check_pass "daemon.json 可读"
+  elif [ -f "$DAEMON_PID_FILE" ]; then
+    check_warn "daemon.json 不可读"
+  fi
+else
+  check_warn "daemon.sh 未安装（可选功能）——运行 daemon-install.sh 安装"
 fi
 
 _hr

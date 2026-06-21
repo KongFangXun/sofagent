@@ -11,7 +11,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.75"
+VERSION="0.81"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -283,6 +283,14 @@ if [ "$LIST_ONLY" = true ]; then
   echo ""
   echo "  共 ${removed} 项会被删除。数据目录 .sofagent/ 保留。"
   exit 0
+fi
+
+# ── daemon 清理 ──
+DAEMON_UNINSTALL="${SCRIPT_DIR}/daemon-uninstall.sh"
+if [ -f "$DAEMON_UNINSTALL" ] && [ -x "$DAEMON_UNINSTALL" ]; then
+  echo ""
+  echo "  清理 daemon..."
+  bash "$DAEMON_UNINSTALL" 2>/dev/null || true
 fi
 
 # ── 清理安装日志 ──

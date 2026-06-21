@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、接下来想做什么、哪些地方需要你的帮助。
-> v0.75 · 2026-06-21
+> v0.81 · 2026-06-22 · v0.82 规划中
 
 ---
 
@@ -38,12 +38,13 @@
 
 > ⚠️ 诚实地说：下面的内容是**方向**，不是承诺。每个版本做不做、做成什么样，取决于我们有限的精力和社区的反馈。没实测过的事，我们标「不知道」——不画饼。
 
-### 现在在哪：v0.75
+### 现在在哪：v0.81
 
 **能用的**：
 - OpenClaw 上，Agent 能读到宪法（4底线+10铁律），复杂任务会自动拆解，跑完会自我复盘
 - 日志会脱敏（写进文件前帮你把 API Key 打码），过期数据会清理——虽然触发方式是 `RANDOM % 10` 概率触发，不是定时任务
 - `install.sh` 一个命令装好（也支持 `curl pipe bash` 一行安装），`verify.sh` 告诉你装好没有（`--quick` 快速模式）；加载链自检声明 + 人类抽样审计也已内置
+- **v0.81 daemon 已跑通**：后台进程能运行、能监控 think.md / rules.md hash 变化、能自动更新 daemon.json——macOS (launchd) 和 Linux (systemd) 已支持，Windows 宪法层仍可用
 
 **还不太行的**：
 - **加载链靠 Agent 自觉**。OpenClaw 上有 Hook 强制注入，4底线+10铁律一定生效。但在 WorkBuddy / Claude Code / Codex / Hermes 上——Agent 有时候读、有时候跳过去。这不是 bug，是架构宿命：没有 Hook 的平台，我们控制不了
@@ -52,9 +53,9 @@
 - **效果没数据**。我们说「减少 token 浪费」「降低偏离率」——都是定性感受，没有 A/B 对照。「Agent 有没有跑偏」本身就很难量化
 
 **最大的三个债**：
-1. **daemon**：需要 Agent 外部有个常驻进程来确保跨 session 经验不丢失。它能不能在所有平台上跑通——我们不知道
+1. ~~**daemon + 治理加固**~~：✅ v0.81 已完成——daemon 进程已跑通（macOS launchd + Linux systemd），5 个治理漏洞已补（独立评判器 / 幂等检查 / 步数闸 / 熔断闸 / 意图债）
 2. **企业级**：加密、审计、多用户、批量部署——现在最多算「单人试用」
-3. **跨平台承诺**：我们现在只敢说 OpenClaw 上好用。其他四个平台——没测过、没数据、不画饼
+3. **跨平台承诺**：v0.81 把五平台验证用例建好了（docs/platform-matrix.md），v0.82 跑实测数据填进去
 
 ---
 
@@ -173,22 +174,43 @@
 
 ---
 
-### v0.8 — daemon（把房子地基打上）
+### v0.81 — daemon 核心骨架 + 治理加固（5 项）✅
 
-**要解决什么**：加载链脆弱性。让 Agent 在非 OpenClaw 平台上也能看到 think.md 和 rules.md——不靠 Agent 自觉，靠外部进程提醒。
+**要解决什么**：让 daemon 进程存在于系统、不崩、能监控文件。同时补 5 个治理漏洞（3 个来自 Loop Engineering 笔记 + 2 个来自 sofagent-dev 前身代码）。
 
-daemon 不是魔法。它只是一个爱唠叨的后台进程——能提醒 Agent「该看笔记了」，不能替 Agent 做决定。Agent 照样可以选择无视。但它至少让「忘记」不再是默认行为。
+| 交付物 | 类别 | 说明 |
+|------|:--:|------|
+| **daemon.sh + daemon-lib.sh** | daemon | 主进程 + 共享函数库：文件 hash 比对（think.md/rules.md 变更检测）、Agent 进程检测（pgrep）、daemon.json 状态读写（纯 bash，零外部依赖） |
+| **launchd/systemd 注册** | daemon | macOS launchd plist + Linux systemd user service。用户登录自动拉起，crash 自动重启 |
+| **daemon-install.sh + daemon-uninstall.sh** | daemon | 独立安装/卸载脚本：部署文件 + 注册系统服务 / 移除注册 + 清理文件 |
+| **daemon-status.sh** | daemon | 状态查询入口：运行状态、PID、运行时长、最近检测到的平台 |
+| **install.sh / verify.sh / uninstall.sh 集成** | daemon | install.sh Step 6b 可选安装 daemon；verify.sh 新增 daemon 状态检查；uninstall.sh 新增 daemon 清理 |
+| **GitHub Actions CI（Linux）** | daemon | ubuntu-latest 容器跑 systemd 测试——无 Docker 环境，push 自动验证 Linux 兼容性 |
+| **loop-check.md 独立评判器分级规则** | 治理 | 闭环验证模型分离——最优（不同模型）→ 可接受（同模型不同 session）→ 最低底线（同模型 + 重新 Read）。⛔ 禁止凭执行记忆评审 |
+| **engine.md idempotency pre-check** | 治理 | 4 类不可逆操作（git push / rm -rf / 外部 API / 数据库写入）执行前查 task/logs 幂等跳过 |
+| **ARCHITECTURE.md 意图债术语** | 治理 | SKILL.md 还的是「意图债」——不用每次任务都重新交代项目背景 |
+| **engine.md 步数闸** | 治理 | MAX_STEPS=50 + GRACE_STEPS=3 两段式预算。达硬上限注入收尾提示，超 MAX+GRACE 强制终止。来自前身 IterationGuard |
+| **engine.md 熔断闸** | 治理 | per-Agent 三态断路器（CLOSED→OPEN→HALF_OPEN），连续失败 3 次熔断冷却 30 秒。来自前身 CircuitBreaker |
 
-| 交付物 | 说明 |
-|------|------|
-| **daemon MVP** | 后台静默运行，Agent 启动时把最近反思塞进上下文。不弹窗、不打断用户 |
-| **task/logs _recent.md 汇总** | 从 v0.73 推迟至此——Agent 启动时读最近 5-10 条 task/logs 摘要而非全量。依赖 daemon 定时触发 |
-| **daemon 接管清理** | 替代 `RANDOM % 10` 概率触发——改成定时跑。保留策略从「偶尔清理」变成「一定清理」 |
-| **平台兼容性摸底** | 在 WorkBuddy / Claude Code / Codex / Hermes 上实测 daemon + 种子指令效果，产出一张能力矩阵：✅ 能用 / ⚠️ 部分可用 / ❌ 不可用 / ❓ 没测过 |
+> 📐 **详细设计**：见 [docs/changelog/v0.81.md](./docs/changelog/v0.81.md) · daemon 设计见 [docs/daemon-design.md](./docs/daemon-design.md)
 
-**不包含**：不会说 daemon 让五个平台「适配完成」——编排引擎/Hook/断路器在非 OpenClaw 平台上天然不可用，daemon 只解决「加载链遗忘」这一个问题。
+---
 
-> 📐 **详细设计**：daemon 架构图、伪代码、launchd/systemd 配置、进程生命周期、降级路径等完整设计文档见 [docs/daemon-design.md](./docs/daemon-design.md)（750 行，含核心函数设计 + 与 install.sh/verify.sh 集成方案）。
+### v0.82 — 五平台实测数据填充
+
+**要解决什么**：v0.81 把 daemon 和 5 项治理加固的**功能**做完了，但五平台能力矩阵还是全 ❓。v0.82 就是把 ❓ 全部变成 ✅ / ❌ / ⚠️——用实测数据替换预估值。
+
+| 交付物 | 类别 | 说明 |
+|------|:--:|------|
+| **五平台实测矩阵** | 验证 | 8 维度 × 5 平台（OpenClaw / WorkBuddy / Claude Code / Codex / Hermes），逐格填实测结果。无平台的标「未测」，不编数据 |
+| **daemon 进程检测验证** | 验证 | 各平台 pgrep 命中率实测——命中不上的平台写降级路径 |
+| **治理加固生效验证** | 验证 | 步数闸 / 熔断闸 / 幂等检查 / 评判器隔离在每个平台是否真的生效 |
+| **docs/platform-matrix.md 填充** | 验证 | v0.81 建的模板，v0.82 填实测数据 |
+| **可能的 bug 修复** | 修复 | 实测中发现的 daemon 兼容性问题 / 进程名不匹配 / 降级路径不优雅 |
+
+**不包含**：新功能开发。v0.82 是纯验证 + 修复版本。
+
+> ⚠️ **诚实声明**：作者不一定有全部 5 个平台的环境（特别是 Codex 和 Hermes）。没有环境的平台标「未测」，不编数据。
 
 ---
 
@@ -203,12 +225,12 @@ daemon 不是魔法。它只是一个爱唠叨的后台进程——能提醒 Age
 | **数据加密** | age 加密 think.md + task/logs | 为什么 age 不是 gpg？age 只要一个二进制文件，没有配置、没有密钥环——对「零依赖」哲学更合适。默认关闭，不影响老用户 |
 | **脱敏增强** | sanitize() 追加 JWT / AWS Key / PEM 私钥 | 当前只覆盖 API Key + 密码 + 内网 IP |
 | **审计报告** | `audit.sh --report` 一键导出 | 不是散落的日志行——是「谁在什么时间做了什么操作、涉及哪些文件」 |
-| **保留策略强制执行** | daemon 定时调 cleanup.sh | 替代概率触发——合规的基础要求 |
+| **保留策略强制执行** | daemon 定时调 cleanup.sh | 替代概率触发——合规的基础要求。v0.81 daemon 骨架跑稳后落地 |
 | **多用户隔离** | 同机权限隔离 + 共享 rules.md | 团队共享团队规则，各自独立反思 |
 | **记忆架构升级** | Ledger-Views-Policy 三层模型 | task/logs（原始账本）→ 按主题/标签的视图层 → 蒸馏/遗忘/同步策略。为内容寻址和智能推荐打底 |
 | **双时态数据** | 每条数据记录生效时间 + 写入时间 | 区分历史状态与当前记录——审计和记忆版本管理的基础 |
 | **ECC 成本感知流水线** | 按复杂度路由 → 预算检查 → 窄范围重试 → 提示缓存 | ComplexityScorer（v0.73）只做了第一步，此处补全后三步。降低企业用户的模型成本浪费 |
-| **OpenViking 三级记忆加载** | L0 Abstract(~100 token) / L1 Overview(~2000 token) / L2 Full 三级加载 | 反思条目爆炸时自动压缩为摘要+概览，Agent 按需展开。**前提**：v0.8 daemon 稳定运行 ≥30 天 + _recent.md 机制上线 + 反思 ≥30 条 |
+| **OpenViking 三级记忆加载** | L0 Abstract(~100 token) / L1 Overview(~2000 token) / L2 Full 三级加载 | 反思条目爆炸时自动压缩为摘要+概览，Agent 按需展开。**前提**：v0.81 daemon 稳定运行 ≥30 天 + 反思 ≥30 条 |
 | **团队部署** | `install.sh --enterprise` 从统一配置源拉取 | 不是 20 个人手动装 20 次 |
 | **容器部署** | `docker compose up` 就能跑 | 企业「试一下」的门槛降到一条命令 |
 
@@ -249,6 +271,7 @@ daemon 不是魔法。它只是一个爱唠叨的后台进程——能提醒 Age
 | **`/review` 命令** | 🔧 | 任务跑完主动问「要不要总结一下这次用了哪些 Skill、踩了哪些坑？」 |
 | **Skill 反向校验** | 🧑‍🎓 | 当前只看「用了几次」——加 30 天零触发提醒，帮你发现僵尸 Skill |
 | **外部评估器** | 🔧 | 不靠 Agent 自评——bash 脚本跑确定性代码评估，输出 JSON 分数。偷了 Coze Loop 的思路，但零外部依赖 |
+| **Windows 支持（待需求验证）** | 🔧 | 若 v0.81 五平台验证显示 Windows 用户有实质需求，走 PowerShell 平行实现路线——bash 版本不动，新增 `.ps1` 文件。不换语言，不引入编译工具链。install.sh 检测到 Windows 时调 PowerShell 版本，用「任务计划程序」注册后台服务 |
 
 ---
 
@@ -286,9 +309,13 @@ flowchart LR
         direction TB
         F3["3 gates<br/>exec gate<br/>checkpoint<br/>memory rules"]
     end
-    subgraph v08["v0.8 (daemon)"]
+    subgraph v08["v0.81 (daemon + hardening)"]
         direction TB
-        F4["daemon<br/>cross-session<br/>silent reminder<br/>replace RNG%10"]
+        F4["daemon<br/>step limiter<br/>circuit breaker<br/>idempotency"]
+    end
+    subgraph v082["v0.82 (validation)"]
+        direction TB
+        F4b["5-platform<br/>matrix fill<br/>bug fixes"]
     end
     subgraph v09["v0.9 (enterprise + beta)"]
         direction TB
@@ -303,10 +330,10 @@ flowchart LR
         F7["router<br/>mac / win / linux<br/>cross-device fed."]
     end
 
-    F1 --> F2 --> F3 --> F4 --> F5 --> F6 --> F7
+    F1 --> F2 --> F3 --> F4 --> F4b --> F5 --> F6 --> F7
 ```
 
-> 每一列底部分别对应：治理地基+合规 → 门面实证 → 运行时加固 → 跨 session 生命周期 → 生产级地基 → 正式发布 → 跨设备联邦治理
+> 每一列底部分别对应：治理地基+合规 → 门面实证 → 运行时加固 → daemon 骨架+治理加固 → 五平台实测数据填充 → 生产级地基 → 正式发布 → 跨设备联邦治理
 
 > 💡 图中每个 box 的内容用英文（短词）保证等宽对齐；中文副标题在下方解释，避免中英混排时 box 塌陷。
 
@@ -335,6 +362,7 @@ flowchart LR
 | 定时触发（cron） | 当前所有 Agent 平台都不支持 cron 级定时。等平台演进 |
 | 动态 Skill Hook | OpenClaw 不支持 Skill 级动态 Hook。等平台支持 |
 | Connector（连接外部系统） | sofagent 是治理层，不是自动化流水线。Markdown 文件就是接口 |
+| **记忆压缩自动化（reminder.md / _recent.md / 日周月蒸馏）** | ❌ **路线已废弃**。v0.56 之前试过记忆分层（日/周/月 13 条窗口），后已取消。每个 Agent 有自己的记忆，让它读自己的记忆内容即可——daemon 层不做蒸馏 |
 
 ---
 

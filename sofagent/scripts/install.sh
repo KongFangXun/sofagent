@@ -18,7 +18,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.75"
+VERSION="0.81"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'
@@ -754,6 +754,43 @@ else
 fi
 echo "  💡 运行 verify.sh 验证安装是否完整。"
 fi  # end OpenClaw-only status
+
+# ── Step 6b: daemon 可选安装 ──
+OS_TYPE="$(uname -s)"
+DAEMON_INSTALL_SCRIPT="${SCRIPT_DIR}/daemon-install.sh"
+if [ "${REMOTE_MODE:-0}" = "1" ]; then
+  DAEMON_INSTALL_SCRIPT="${TARGET_DIR}/sofagent/scripts/daemon-install.sh"
+fi
+
+if [ -f "$DAEMON_INSTALL_SCRIPT" ] && [ -x "$DAEMON_INSTALL_SCRIPT" ]; then
+  case "$OS_TYPE" in
+    Darwin|Linux)
+      echo ""
+      echo "  ┌──────────────────────────────────────────┐"
+      echo "  │  Step 6b: daemon 后台进程（可选）          │"
+      echo "  └──────────────────────────────────────────┘"
+      echo ""
+      echo "  daemon 是一个轻量后台进程，监控 think.md / rules.md 变化。"
+      echo "  macOS (launchd) / Linux (systemd) 支持，Windows 自动跳过。"
+      echo ""
+      echo "  是否安装 daemon？[y/N] "
+      read -r INSTALL_DAEMON
+      if [ "${INSTALL_DAEMON:-n}" = "y" ] || [ "${INSTALL_DAEMON:-n}" = "Y" ]; then
+        bash "$DAEMON_INSTALL_SCRIPT"
+      else
+        echo "  已跳过 daemon 安装（以后可以手动运行: bash sofagent/scripts/daemon-install.sh）"
+      fi
+      ;;
+    *)
+      echo ""
+      echo "  daemon 不支持此系统 ($OS_TYPE)，自动跳过。"
+      echo "  Windows 用户：宪法层约束正常生效，daemon 后台监控跳过。"
+      ;;
+  esac
+else
+  echo ""
+  echo "  daemon-install.sh 未找到，跳过 daemon 安装。"
+fi
 
 echo ""
 

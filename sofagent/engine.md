@@ -1,4 +1,4 @@
-# engine.md · 任务编排引擎 · v0.75
+# engine.md · 任务编排引擎 · v0.81
 
 > 由 SKILL.md A0 触发。仅 🔴 复杂任务且用户确认后点火。`{SOFAGENT_DATA}` = `{当前工作目录}/.sofagent/`。
 > ⛔ 三层加载链已在 SKILL.md 启动时完成——engine.md 不重复。编排引擎只管拆解、执行、闭环。
@@ -113,6 +113,32 @@
 
 SKILL.md 地基 → A0 → 🟢🟡只读task-aware / 🔴→engine→entry-gate。**回复前闸门**每次执行。核心靠 MD 文件，脚本仅在 bash 可用时使用。写入前读确认、写入后验证。数据仅写 `{SOFAGENT_DATA}/`。**加载链、能力注册、每任务闸门、闭环清单——四个硬出口，严禁输出给用户。**
 
+### 幂等检查（Idempotency Pre-check）
+
+> Agent 执行不可逆操作时，如果任务暂停又恢复、或子 Agent 重试，同一个操作可能被执行两次——发两封邮件、扣两次钱。重跑 = 可能重复执行副作用。
+
+覆盖 4 类不可逆操作：
+
+| 操作类型 | 示例 | 检查方式 |
+|---------|------|---------|
+| **git push** | `git push origin main` | 查 task/logs 是否有同 branch + 同 commit-hash 的成功记录 |
+| **rm -rf** | `rm -rf dist/` | 查目标路径是否已不存在（已删 = 已成功） |
+| **外部 API**（POST/PUT/DELETE） | 发邮件、付款 | 查 task/logs 是否有同 operation-id 的成功响应 |
+| **数据库写入** | INSERT / UPDATE | 查 task/logs 是否有同 row-key 的写入记录 |
+
+**操作 ID 生成**：`echo "${task_id}${step_number}${resource}" | shasum -a 256 | cut -c1-16`
+
+**流程**：
+```
+子 Agent 执行不可逆操作前：
+1. 生成唯一操作 ID（task-id + step-number + resource-hash）
+2. 查 task/logs 是否有同 ID 的成功记录
+3. 有 → 跳过（标记「已执行，幂等跳过」）
+4. 无 → 执行 → 写入 task/logs（ID + 执行状态 + 时间戳）
+```
+
+> 只覆盖 4 类不可逆操作。文件创建、代码修改等可重做操作不需要 idempotency 检查。
+
 ### 每步验证节点
 
 > 编排流程中，每步完成后必须跑对应的验证。验证失败 → 不进入下一步。这是铁律 #3「验证再继续」在编排层的具体实现。
@@ -137,3 +163,48 @@ SKILL.md 地基 → A0 → 🟢🟡只读task-aware / 🔴→engine→entry-gate
 | 4 | **任务冲突** | 多个子任务修改同一文件 | 🟡 暂停，合并策略：优先串行化（后来的子任务等前一个完成），若冲突不可自动解决→通知用户 |
 | 5 | **多 Agent 矛盾** | 多个子 Agent 对同一问题输出矛盾结论 | 主 Agent 裁决：比较证据质量（有外部验证 > LLM 自评），取有证据支撑的结论。两者均无外部证据→通知用户选择 |
 | 6 | **成本超预算** | token 消耗超过 A4 ComplexityScorer 预估的 1.5 倍 | 停止剩余子任务，汇报已完成部分 + 已消耗 token，用户决定是否继续或降级为 Flash |
+
+### 步数闸（Step Limiter）
+
+> 来源：sofagent-dev 前身 `iteration-guard.js`。Agent 在无人值守场景下可能反复调工具直到 timeout 被杀——浪费 token。
+
+MAX_STEPS=50（硬上限）+ GRACE_STEPS=3（恩典期，让 Agent 收尾）两段式预算：
+```bash
+MAX_STEPS=50; GRACE_STEPS=3
+step_count=$(($(cat "$STEP_FILE" 2>/dev/null || echo 0) + 1))
+echo "$step_count" > "$STEP_FILE"
+if [ "$step_count" -ge "$MAX_STEPS" ] && [ "$step_count" -lt "$((MAX_STEPS + GRACE_STEPS))" ]; then
+    inject_budget_warning  # 步数将尽，请收尾
+elif [ "$step_count" -ge "$((MAX_STEPS + GRACE_STEPS))" ]; then
+    force_stop "步数预算完全耗尽"
+fi
+```
+
+> 恩典期比 timeout 暴力 kill 更优雅——给 Agent 3 步机会输出最终结果，不丢失中间产出。
+
+### 熔断闸（Circuit Breaker）
+
+> 来源：sofagent-dev 前身 `behavior-validator.js` 三态断路器。防止子 Agent 雪崩——N 个子 Agent × 3 次重试 = 3N 次无效调用。
+
+per-Agent 状态文件，FAILURE_THRESHOLD=3 / COOLDOWN_SECONDS=30：
+```bash
+CIRCUIT_FILE="$TASK_DIR/circuit_state"
+FAILURE_THRESHOLD=3; COOLDOWN_SECONDS=30
+state=$(get_circuit_state "$agent_id")
+case "$state" in
+    OPEN)
+        [ "$(time_since_opened "$agent_id")" -ge "$COOLDOWN_SECONDS" ] \
+            && set_circuit_state "$agent_id" HALF_OPEN \
+            || { skip_agent "$agent_id" "熔断中"; return 1; }
+        ;;
+esac
+if agent_success; then
+    set_circuit_state "$agent_id" CLOSED; reset_failure_count "$agent_id"
+else
+    increment_failure_count "$agent_id"
+    [ "$(get_failure_count "$agent_id")" -ge "$FAILURE_THRESHOLD" ] \
+        && set_circuit_state "$agent_id" OPEN
+fi
+```
+
+> CLOSED→连续失败→OPEN（拒绝 30s）→冷却期满→HALF_OPEN（试探 1 次）→成功回 CLOSED / 失败回 OPEN。
