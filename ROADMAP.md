@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、接下来想做什么、哪些地方需要你的帮助。
-> v0.74 · 2026-06-21
+> v0.75 · 2026-06-21
 
 ---
 
@@ -38,7 +38,7 @@
 
 > ⚠️ 诚实地说：下面的内容是**方向**，不是承诺。每个版本做不做、做成什么样，取决于我们有限的精力和社区的反馈。没实测过的事，我们标「不知道」——不画饼。
 
-### 现在在哪：v0.74
+### 现在在哪：v0.75
 
 **能用的**：
 - OpenClaw 上，Agent 能读到宪法（4底线+10铁律），复杂任务会自动拆解，跑完会自我复盘
@@ -148,6 +148,28 @@
 | **文档去重** | 结构 | README 项目结构树 / ROADMAP 底部文件结构 Mermaid 二选一 |
 
 **不包含**：daemon（v0.8）、企业级（v0.9）——这 10 项没有一个依赖 daemon。
+
+---
+
+### v0.75 — 降低试用门槛 + 补可信度数据 ✅
+
+> v0.74 修了治理层自身，v0.75 修门面和可信度——让看到项目的人更愿意试一下，让试过的人能看到数据。不碰运行时逻辑。
+
+| 交付物 | 类别 | 说明 |
+|------|:--:|------|
+| **benchmark.sh A/B 数据** | 实证 | 10 个标准化任务 × 带/不带 sofagent 两组对比（待作者手动跑） |
+| **demo.gif + 架构图 + 截图** | 体验 | README 可视化——15 秒对比 gif + 两层架构图 + verify 输出截图（待录屏） |
+| **英文 README + EVIDENCE** | 社区 | README.en.md + docs/EVIDENCE.en.md，按英文社区语境重写 |
+| **Co-maintainer 招募（三级权限）** | 社区 | CONTRIBUTING 新增 Contributor→Triage→Co-maintainer 阶梯 |
+| **LICENSE 分界说明** | 合规 | README 明确代码 MIT / 文档 CC-BY-4.0 |
+| **verify.sh ao 版本下限检查** | 加固 | ao --version ≥ 0.7.5 检查，低于则 warn |
+| **非 OpenClaw 平台预期管理** | 诚信 | README 明确「价值约 30%」，非 bug 是架构宿命 |
+| **CI/CD + Migration Checklist** | 企业 | docs/team-deploy.md 加 GitHub Actions YAML + 7 步迁移清单 |
+| **SKILL.md 措辞软化** | 打磨 | 加载链自检改为正面表述 |
+| **verify.sh 日志格式提示** | 打磨 | handler.ts 回归段加日志格式变化提示 |
+| **SECURITY.md 供应链 + 风险声明** | 安全 | ao npm 包供应链说明 + 企业生产环境数据明文风险声明 |
+
+**不包含**：benchmark 实际跑数（#1）、demo.gif 录制（#2）——两项待作者手动完成。daemon + 加密 + 外部评估器仍推到 v0.8/v0.9。
 
 ---
 

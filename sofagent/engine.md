@@ -1,4 +1,4 @@
-# engine.md · 任务编排引擎 · v0.74
+# engine.md · 任务编排引擎 · v0.75
 
 > 由 SKILL.md A0 触发。仅 🔴 复杂任务且用户确认后点火。`{SOFAGENT_DATA}` = `{当前工作目录}/.sofagent/`。
 > ⛔ 三层加载链已在 SKILL.md 启动时完成——engine.md 不重复。编排引擎只管拆解、执行、闭环。

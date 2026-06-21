@@ -4,6 +4,20 @@
 
 ---
 
+## [v0.75] — 2026-06-21
+
+### Changed — 降低试用门槛 + 补可信度数据
+- **文档门槛降低**：新增 README.en.md（英文 README）+ docs/EVIDENCE.en.md（英文 EVIDENCE）；README 顶部加中英文语言切换；LICENSE 分界说明（代码 MIT / 文档 CC-BY-4.0）
+- **社区建设**：CONTRIBUTING.md 新增 Seaking Co-maintainers 段（三级权限：Contributor→Triage→Co-maintainer）；README 底部 Co-maintainer 招募引导
+- **平台预期管理**：README 平台能力表下方强化非 OpenClaw 预期管理声明（「价值约 30%」）
+- **企业可评估性**：SECURITY.md 新增 ao npm 包供应链说明段 + 企业生产环境风险声明；EVIDENCE.md 顶部加诚实声明（LLM 自评 + 数据明文）
+- **CI/CD 集成**：docs/team-deploy.md 新增 GitHub Actions CI 示例 + Migration Checklist（7 步）
+- **工程打磨**：verify.sh 新增 ao 版本下限检查（≥0.7.5）+ 日志格式变化提示；SKILL.md 加载链自检措辞软化
+
+> 详见 [v0.75 详细变更记录](./docs/changelog/v0.75.md)
+
+---
+
 ## [v0.74] — 2026-06-21
 
 ### Changed — 治理层自身治理

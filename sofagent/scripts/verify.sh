@@ -16,7 +16,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="0.74"
+VERSION="0.75"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -412,6 +412,7 @@ else
           [ "$LAYER2_FOUND" = "0" ] && MISSING_LAYERS="第2层(think.md)"
           [ "$LAYER3_FOUND" = "0" ] && MISSING_LAYERS="${MISSING_LAYERS:+$MISSING_LAYERS, }第3层(rules.md)"
           check_warn "handler.ts 回归：${MISSING_LAYERS}未在注入列表中出现"
+          check_warn "handler.ts 回归：日志格式可能已变化（grep 字符串匹配依赖固定格式），如使用非标准 OpenClaw 版本请手动确认加载链是否生效"
         fi
       else
         check_warn "handler.ts 回归：sofagent-load-chain hook 在最近日志中未检测到触发"
@@ -436,6 +437,20 @@ if command -v ao &>/dev/null; then
     check_pass "ao compose 健康检查通过"
   else
     check_warn "ao compose --version 失败——编排引擎可能不可用（约束层不受影响）"
+  fi
+  # ao 版本下限检查（install.sh pin agency-orchestrator@0.7.5）
+  # 解析版本号，低于 0.7.5 时 warn（不 fail，--no-ao 降级可用）
+  _ao_clean="${AO_VER##v}"
+  _ao_major="${_ao_clean%%.*}"
+  _ao_minor_patch="${_ao_clean#*.}"
+  _ao_minor="${_ao_minor_patch%%.*}"
+  if [ "${_ao_major:-0}" -eq 0 ] && [ "${_ao_minor:-0}" -lt 7 ]; then
+    check_warn "ao 版本低于 0.7.5（当前 ${AO_VER}），建议升级：npm install -g agency-orchestrator@0.7.5"
+  elif [ "${_ao_major:-0}" -eq 0 ] && [ "${_ao_minor:-0}" -eq 7 ]; then
+    _ao_patch="${_ao_minor_patch#*.}"
+    if [ "${_ao_patch:-0}" -lt 5 ]; then
+      check_warn "ao 版本低于 0.7.5（当前 ${AO_VER}），建议升级：npm install -g agency-orchestrator@0.7.5"
+    fi
   fi
   # 烟雾测试：ao 能否列出角色（用表格行数），
   # 若输出格式变化导致计数异常，降级为检查非空输出
