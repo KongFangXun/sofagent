@@ -24,7 +24,7 @@
 
 set -euo pipefail
 
-VERSION="0.71"
+VERSION="0.73"
 
 # ── 加载合规配置 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

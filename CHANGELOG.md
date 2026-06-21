@@ -4,6 +4,36 @@
 
 ---
 
+## [v0.73] — 2026-06-21
+
+### Changed — 运行时逻辑加固 + 结构重构
+- **三道闸门体系落地**：任务闸（task-aware.md 准入检查 PASS/REJECT）+ 执行闸（entry-gate.md 能力注册表加权限边界+平台差异列）+ 验收闸（loop-check.md 5 项结构化 checklist + Diagnosing Box 四维度排查 + 防雪崩规则）
+- **ComplexityScorer 模型路由**：engine.md A4 段新增 50 行确定性公式（子任务×0.4 + 跨领域×0.3 + token×0.2 + 代码/报告×0.1），≥0.5→Pro，<0.5→Flash
+- **6 个显式失败分支**：engine.md 编排引擎加单步失败/连续失败/改动过大/任务冲突/多Agent矛盾/成本超预算
+- **记忆系统三规则**：写入规则（≥2次重复或可验证后果）+ 遗忘规则（30天降权×0.3/60天归档）+ 合并规则（compress-memory.sh）
+- **scoring 第九维判断力**：弃权率 +0.5 / 不该做但做了 -1.0，与前八维分开计分
+- **LLM 自评降权 ×0.5→×0.3**：loop-check.md + handler.ts + think.md 模板 + DEVELOPMENT + ARCHITECTURE 全局同步（6 处）
+- **rules.md 升级**：DEVELOPMENT.md + HANDBOOK.md 描述从「自定义规则」改为「Agent 运行规范」（功能不变）
+- **ROADMAP ASCII→Mermaid**：架构演进图从纯文本转为 Mermaid flowchart
+
+### Added — 新功能
+- **compress-memory.sh**（新建）：记忆合并压缩脚本，--dry-run 预览 + --force 跳过确认 + 备份保留 3 份 + 60 天归档
+- **task-orchestrate.sh --max-retries**：默认 3 次重试上限
+- **task-orchestrate.sh --model**：配合 ComplexityScorer 手动指定模型
+
+### Fixed — Bug 修复
+- **install.sh QUICK_MODE bug**：set -u 下 QUICK_MODE 使用前未初始化 → 参数解析前 `${QUICK_MODE:-0}` 兜底
+
+### 结构重构 — constitution/ 扁平化
+- **rules.md 从 constitution/ 提到根目录**：用户更容易找到和修改
+- **旧路径自动迁移**：install.sh 检测到 constitution/rules.md 自动 cp+rm+rmdir，用户无感升级
+- **三级 fallback 兼容**：handler.ts 新权威 → v0.72前 → v0.70前
+- **涉及 10 个文件路径同步**：install/verify/uninstall/config.sh/handler.ts/SKILL.md + 3 文档
+
+> 详见 [v0.73 详细变更记录](./docs/changelog/v0.73.md)
+
+---
+
 ## [v0.72] — 2026-06-27
 
 ### Changed — 门面实证版本

@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、接下来想做什么、哪些地方需要你的帮助。
-> v0.71 · 2026-06-20
+> v0.73 · 2026-06-21
 
 ---
 
@@ -38,7 +38,7 @@
 
 > ⚠️ 诚实地说：下面的内容是**方向**，不是承诺。每个版本做不做、做成什么样，取决于我们有限的精力和社区的反馈。没实测过的事，我们标「不知道」——不画饼。
 
-### 现在在哪：v0.71
+### 现在在哪：v0.73
 
 **能用的**：
 - OpenClaw 上，Agent 能读到宪法（4底线+10铁律），复杂任务会自动拆解，跑完会自我复盘
@@ -115,9 +115,10 @@
 | **记忆三规则** | 记忆 | think.md 写入标准（≥2 次重复或可验证后果才写）+ 合并规则（同标签压缩）+ 遗忘规则（30 天降权 / 60 天归档） |
 | **scoring 判断力维度** | 指标 | 第九维——弃权率。拒绝高风险任务计正分。从「多跑多成」到「该停就停」 |
 | **编排引擎加固** | 引擎 | engine.md 检查点定义 + 显式失败分支（6 个场景）+ task-aware 停止条件字段 + --max-retries |
+| **ComplexityScorer 模型路由** | 引擎 | 50 行确定性公式：总分 = 子任务数×0.4 + 跨领域数×0.3 + 预估 token×0.2 + 含代码/报告×0.1。≥0.5 → ao compose (Pro)；<0.5 → Flash 或默认编排。engine.md A3 段 + task-orchestrate.sh `--model` 参数 |
 | **rules.md 升级** | 规范 | 从「自定义规则」→「Agent 运行规范」——含项目目标、验收标准、风险边界、停止条件 |
-| **日志加载优化** | 记忆 | task/logs 加 _recent.md 汇总——Agent 启动时读最近 5-10 条而非全量 |
 | **安装门槛降低** | 体验 | 当前 4 步安装 → 目标 2 步（一 URL + 一命令）。打通 ClawHub/SkillHub 发布流程 |
+| **constitution/ 扁平化** | 重构 | `constitution/rules.md` → `rules.md`。目录只剩一个文件是历史遗留——用户改规则不用钻两层目录。install.sh 自动迁移旧路径 |
 | **ROADMAP ASCII → Mermaid** | 视觉 | 移动端渲染正常 |
 
 **行业研究来源**：
@@ -136,6 +137,7 @@ daemon 不是魔法。它只是一个爱唠叨的后台进程——能提醒 Age
 | 交付物 | 说明 |
 |------|------|
 | **daemon MVP** | 后台静默运行，Agent 启动时把最近反思塞进上下文。不弹窗、不打断用户 |
+| **task/logs _recent.md 汇总** | 从 v0.73 推迟至此——Agent 启动时读最近 5-10 条 task/logs 摘要而非全量。依赖 daemon 定时触发 |
 | **daemon 接管清理** | 替代 `RANDOM % 10` 概率触发——改成定时跑。保留策略从「偶尔清理」变成「一定清理」 |
 | **平台兼容性摸底** | 在 WorkBuddy / Claude Code / Codex / Hermes 上实测 daemon + 种子指令效果，产出一张能力矩阵：✅ 能用 / ⚠️ 部分可用 / ❌ 不可用 / ❓ 没测过 |
 
@@ -261,6 +263,10 @@ daemon 不是"又一个约束"，它是**让已有约束跨 session 生效的执
 | **审计报告** | `audit.sh --report` 一键导出 | 不是散落的日志行——是「谁在什么时间做了什么操作、涉及哪些文件」 |
 | **保留策略强制执行** | daemon 定时调 cleanup.sh | 替代概率触发——合规的基础要求 |
 | **多用户隔离** | 同机权限隔离 + 共享 rules.md | 团队共享团队规则，各自独立反思 |
+| **记忆架构升级** | Lager-Views-Policy 三层模型 | task/logs（原始账本）→ 按主题/标签的视图层 → 蒸馏/遗忘/同步策略。为内容寻址和智能推荐打底 |
+| **双时态数据** | 每条数据记录生效时间 + 写入时间 | 区分历史状态与当前记录——审计和记忆版本管理的基础 |
+| **ECC 成本感知流水线** | 按复杂度路由 → 预算检查 → 窄范围重试 → 提示缓存 | ComplexityScorer（v0.73）只做了第一步，此处补全后三步。降低企业用户的模型成本浪费 |
+| **OpenViking 三级记忆加载** | L0 Abstract(~100 token) / L1 Overview(~2000 token) / L2 Full 三级加载 | 反思条目爆炸时自动压缩为摘要+概览，Agent 按需展开。**前提**：v0.8 daemon 稳定运行 ≥30 天 + _recent.md 机制上线 + 反思 ≥30 条 |
 | **团队部署** | `install.sh --enterprise` 从统一配置源拉取 | 不是 20 个人手动装 20 次 |
 | **容器部署** | `docker compose up` 就能跑 | 企业「试一下」的门槛降到一条命令 |
 
@@ -320,22 +326,45 @@ daemon 不是"又一个约束"，它是**让已有约束跨 session 生效的执
 | **分布式反思同步** | 🔧 | 🟡 | 多个 Agent 的 think.md 反思区定期汇聚到路由器。A 设备踩的坑 → B 设备自动避开。置信度标记设备来源，防止单一设备的偏见污染全局经验 |
 | **Agent 网络认证与安全** | 🔧 | 🟡 | 跨设备 Agent 互信机制——只有经过认证的设备才能加入协同网络。初期用预共享密钥（PSK）+ 设备指纹，后期考虑 mTLS |
 | **任务失败转移** | 🔧 | 🟡 | 设备 Agent 执行子任务超时/失败时，路由器自动重分配到候补设备，或降级为 LLM-only 模式。保障多设备协同的鲁棒性 |
+| **协同价值场景验证** | 🔧 | 🔴 | 逐一验证四类团队场景——新人上手加速 / 问题排查协作 / 最佳实践沉淀 / 任务交接。每个场景跑通一个真实用户故事 |
 
 **架构演进路径**：
 
-```
-v0.6–v0.7          v0.72                 v0.73                   v0.8                      v0.9                      v1.0                v2.x
-(released)         (evidence)            (gate hardening)        (daemon)                  (enterprise + beta)       (stable)            (router)
+```mermaid
+flowchart LR
+    subgraph v06_v07["v0.6–v0.7 (released)"]
+        direction TB
+        F1["foundation<br/>4-base<br/>10-rules<br/>compliance"]
+    end
+    subgraph v072["v0.72 (evidence)"]
+        direction TB
+        F2["README honest<br/>benchmark<br/>anti-cases"]
+    end
+    subgraph v073["v0.73 (gate hardening)"]
+        direction TB
+        F3["3 gates<br/>exec gate<br/>checkpoint<br/>memory rules"]
+    end
+    subgraph v08["v0.8 (daemon)"]
+        direction TB
+        F4["daemon<br/>cross-session<br/>silent reminder<br/>replace RNG%10"]
+    end
+    subgraph v09["v0.9 (enterprise + beta)"]
+        direction TB
+        F5["enterprise<br/>age encrypt<br/>audit report<br/>multi-user"]
+    end
+    subgraph v10["v1.0 (stable)"]
+        direction TB
+        F6["stable<br/>daemon 30d<br/>3+ users<br/>90% pass"]
+    end
+    subgraph v2x["v2.x (router)"]
+        direction TB
+        F7["router<br/>mac / win / linux<br/>cross-device fed."]
+    end
 
-+----------+       +------------+        +--------------+         +-----------------+       +------------------+      +------------+      +------------------+
-| foundation|       | README     |       | 3 gates      |         | daemon          |       | enterprise       |      | stable     |      | router           |
-| 4-base   |  -->  | honest     |  -->  | exec gate    |   -->   | cross-session   |  -->  | age encrypt       | -->  | daemon 30d | -->  |   +--+--+--+     |
-| 10-rules |       | benchmark  |       | checkpoint   |         | silent reminder |       | audit report     |      | 3+ users   |      |   v  v  v  v     |
-| compliance|      | anti-cases |       | memory rules |         | replace RNG%10  |       | multi-user       |      | 90% pass   |      |  mac win linux  |
-+----------+       +------------+        +--------------+         +-----------------+       +------------------+      +------------+      +------------------+
-
-治理地基+合规          门面实证              运行时加固              跨 session 生命周期         生产级地基                正式发布             跨设备联邦治理
+    F1 --> F2 --> F3 --> F4 --> F5 --> F6 --> F7
 ```
+
+> 每一列底部分别对应：治理地基+合规 → 门面实证 → 运行时加固 → 跨 session 生命周期 → 生产级地基 → 正式发布 → 跨设备联邦治理
 
 > 💡 图中每个 box 的内容用英文（短词）保证等宽对齐；中文副标题在下方解释，避免中英混排时 box 塌陷。
 

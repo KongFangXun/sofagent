@@ -15,7 +15,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="0.72"
+VERSION="0.73"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -190,8 +190,8 @@ fi
 _section "宪法文件（v0.62：宪法内联在 SKILL.md，此处只检查 rules.md）"
 
 for f in rules.md; do
-  # v0.71: rules.md 部署到 skills/sofagent/constitution/，~/.openclaw/rules.md 留给用户自定义
-  path="${OPENCLAW_DIR}/skills/sofagent/constitution/${f}"
+  # v0.73: rules.md 部署到 skills/sofagent/rules.md（扁平化）
+  path="${OPENCLAW_DIR}/skills/sofagent/${f}"
   if [ ! -f "$path" ]; then
     path="${OPENCLAW_DIR}/${f}"  # 兼容旧版安装路径
   fi
@@ -275,9 +275,9 @@ else
   fi
 
   # 检查注入源文件是否可解析（think.md / rules.md）
-  # v0.71: rules.md 只检查权威路径 skills/sofagent/constitution/rules.md
-  # ~/.openclaw/rules.md 在 v0.71 起是用户自定义文件，不再作为 sofagent 部署路径检查
-  RULES_AUTHORITY="${OPENCLAW_DIR}/skills/sofagent/constitution/rules.md"
+  # v0.73: rules.md 权威路径 skills/sofagent/rules.md（扁平化）
+  # ~/.openclaw/rules.md 是用户自定义文件，不再作为 sofagent 部署路径检查
+  RULES_AUTHORITY="${OPENCLAW_DIR}/skills/sofagent/rules.md"
   if [ -f "$RULES_AUTHORITY" ]; then
     check_pass "rules.md 权威路径就绪（$(wc -m < "$RULES_AUTHORITY" | tr -d ' ') 字符）"
   else
@@ -285,7 +285,12 @@ else
     # 兼容检查：老版本（v0.70 前）部署到 ~/.openclaw/rules.md
     LEGACY_RULES="${OPENCLAW_DIR}/rules.md"
     if [ -f "$LEGACY_RULES" ]; then
-      check_warn "  发现遗留路径（${LEGACY_RULES}）——建议运行 install.sh 升级到 constitution/ 统一路径"
+      check_warn "  发现遗留路径（${LEGACY_RULES}）——建议运行 install.sh 升级到 v0.73 扁平化路径"
+    fi
+    # v0.71-0.72 残留：constitution/rules.md → warning
+    LEGACY_CONST="${OPENCLAW_DIR}/skills/sofagent/constitution/rules.md"
+    if [ -f "$LEGACY_CONST" ]; then
+      check_warn "  发现 v0.72 前安装残留（${LEGACY_CONST}）——建议运行 install.sh 升级，旧路径将自动迁移"
     fi
   fi
   # think.md 检查
@@ -668,10 +673,13 @@ else
 fi
 
 # 10.5 rules.md 配置段完整性
-# v0.71: 权威路径为 skills/sofagent/constitution/rules.md（install.sh B2 部署目标）
+# v0.73: 权威路径为 skills/sofagent/rules.md（扁平化）
 # 兼容 fallback：工作目录（开发态）/ 旧部署路径（老安装）
 RULES_FILE=""
 for candidate in \
+  "${PWD}/sofagent/rules.md" \
+  "$HOME/.openclaw/skills/sofagent/rules.md" \
+  "$HOME/.workbuddy/skills/sofagent/rules.md" \
   "${PWD}/sofagent/constitution/rules.md" \
   "$HOME/.openclaw/skills/sofagent/constitution/rules.md" \
   "$HOME/.workbuddy/skills/sofagent/constitution/rules.md"; do

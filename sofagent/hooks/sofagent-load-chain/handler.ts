@@ -2,9 +2,10 @@
 // 注入第 2 层（think.md）+ 第 3 层（rules.md）到 agent bootstrap
 // 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
 //
-// rules.md 路径优先级（v0.71 统一）：
-//   1. skills/sofagent/constitution/rules.md（install.sh B2 部署目标，权威路径）
-//   2. openclawDir/rules.md（兼容 v0.70 前老安装，已降级为 fallback）
+// rules.md 路径优先级（v0.73 扁平化）：
+//   1. skills/sofagent/rules.md（install.sh 部署目标，权威路径）
+//   2. skills/sofagent/constitution/rules.md（兼容 v0.72 前老安装，fallback）
+//   3. openclawDir/rules.md（兼容 v0.70 前老安装，已降级为 fallback）
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -29,7 +30,7 @@ const handler = async (event: any) => {
     // 用非贪婪 + 全局匹配，覆盖同行及跨行的多个自评标记，避免贪婪吞掉整段内容。
     content = content.replace(
       /(\[LLM自评[^\]]*\])/g,
-      "$1（⚠️ 权重×0.5，LLM自评未经外部验证，仅供参考）",
+      "$1（⚠️ 权重×0.3，LLM自评未经外部验证，仅供参考）",
     );
     event.context.bootstrapFiles.push({
       name: "sofagent-think.md",
@@ -40,9 +41,11 @@ const handler = async (event: any) => {
   }
 
   // ── 第 3 层：用户规则（rules.md）──
-  // 优先读 install.sh B2 部署的 constitution 路径（权威路径）
-  // fallback 读旧路径 openclawDir/rules.md（兼容 v0.70 前老安装）
+  // 优先读 install.sh 部署的扁平化路径（权威路径）
+  // fallback 读旧 constitution 路径（兼容 v0.72 前老安装）
+  // 最后 fallback 读旧路径 openclawDir/rules.md（兼容 v0.70 前老安装）
   const rulesCandidates = [
+    path.join(openclawDir, "skills", "sofagent", "rules.md"),
     path.join(openclawDir, "skills", "sofagent", "constitution", "rules.md"),
     path.join(openclawDir, "rules.md"),
   ];

@@ -15,6 +15,8 @@
 #   task-orchestrate.sh "帮我分析一个功能的可行性"
 #   task-orchestrate.sh "重构用户模块" --dry-run
 #   task-orchestrate.sh --worktree "重构用户模块"
+#   task-orchestrate.sh "重构用户模块" --max-retries 5
+#   task-orchestrate.sh "重构用户模块" --model flash
 #   task-orchestrate.sh --help
 # ============================================================
 
@@ -31,7 +33,7 @@ fi
 # set -o pipefail: 管道中任一命令失败都计为失败，防止 `grep | wc` 等忽略中间错误
 set -euo pipefail
 
-VERSION="0.71"
+VERSION="0.73"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -52,6 +54,8 @@ DRY_RUN=false
 USE_WORKTREE=false
 AUTO_LEVEL=false
 LEVEL=1  # 默认完整编排
+MAX_RETRIES=3  # v0.73: 默认重试上限
+AO_MODEL=""    # v0.73: 可选 --model 参数（flash/pro）
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -59,6 +63,10 @@ while [[ $# -gt 0 ]]; do
     --worktree)   USE_WORKTREE=true; shift ;;
     --level)      LEVEL="$2"; shift 2 ;;
     --auto)       AUTO_LEVEL=true; shift ;;
+    --max-retries) MAX_RETRIES="$2"; shift 2 ;;
+    --max-retries=*) MAX_RETRIES="${1#*=}"; shift ;;
+    --model)      AO_MODEL="$2"; shift 2 ;;
+    --model=*)    AO_MODEL="${1#*=}"; shift ;;
     --version)    echo "sofagent-task-orchestrate v${VERSION}"; exit 0 ;;
     --help)
       echo "sofagent task-orchestrate v${VERSION}"
@@ -70,6 +78,8 @@ while [[ $# -gt 0 ]]; do
       echo "    task-orchestrate.sh \"任务描述\" --worktree   创建独立 worktree"
       echo "    task-orchestrate.sh \"任务描述\" --level N    编排深度 (1-4)"
       echo "    task-orchestrate.sh \"任务描述\" --auto       自动选择最优深度"
+      echo "    task-orchestrate.sh \"任务描述\" --max-retries N  重试上限（默认 3）"
+      echo "    task-orchestrate.sh \"任务描述\" --model flash|pro  指定模型"
       echo ""
       echo "  编排深度:"
       echo "    1=完整编排  首次运行，AO 全量分析拆解"
@@ -331,10 +341,14 @@ if [ "$SKIP_AO_COMPOSE" = true ]; then
 else
   # 正常路径：ao compose
   info "Step 1/4 · AO 编排分析..."
+  [ -n "$AO_MODEL" ] && info "  模型: ${AO_MODEL}"
 
 WORKFLOW_FILE="${TMPDIR:-/tmp}/sofagent-workflow-$$.yaml"
 
-ao compose "$TASK_DESC" > "$WORKFLOW_FILE" 2>/dev/null || {
+AO_COMPOSE_ARGS=""
+[ -n "$AO_MODEL" ] && AO_COMPOSE_ARGS="--model ${AO_MODEL}"
+
+ao compose $AO_COMPOSE_ARGS "$TASK_DESC" > "$WORKFLOW_FILE" 2>/dev/null || {
   warn "ao compose 未生成 YAML，尝试直接执行..."
   if [ "$DRY_RUN" = false ]; then
     ao compose "$TASK_DESC" --run
@@ -427,10 +441,24 @@ echo ""
 
 # ── Step 4: 执行编排 ──
 info "Step 4/4 · 执行任务编排..."
+[ -n "$AO_MODEL" ] && info "  模型: ${AO_MODEL}"
 START_TIME=$(date +%s)
 
-ao run "$WORKFLOW_FILE" 2>&1
-EXIT_CODE=$?
+AO_RUN_ARGS=""
+[ -n "$AO_MODEL" ] && AO_RUN_ARGS="--model ${AO_MODEL}"
+
+# ── 重试循环（v0.73: --max-retries 默认 3）──
+RETRY_COUNT=0
+EXIT_CODE=1
+while [ "$RETRY_COUNT" -lt "$MAX_RETRIES" ]; do
+  if [ "$RETRY_COUNT" -gt 0 ]; then
+    warn "重试 ${RETRY_COUNT}/${MAX_RETRIES}..."
+  fi
+  ao run $AO_RUN_ARGS "$WORKFLOW_FILE" 2>&1
+  EXIT_CODE=$?
+  [ "$EXIT_CODE" -eq 0 ] && break
+  RETRY_COUNT=$((RETRY_COUNT + 1))
+done
 
 END_TIME=$(date +%s)
 ELAPSED=$(( END_TIME - START_TIME ))
@@ -439,7 +467,11 @@ echo ""
 
 # ── 结果汇总 ──
 if [ $EXIT_CODE -eq 0 ]; then
-  ok " 任务完成（耗时 ${ELAPSED}s）"
+  if [ "$RETRY_COUNT" -gt 0 ]; then
+    ok " 任务完成（耗时 ${ELAPSED}s，重试 ${RETRY_COUNT} 次后成功）"
+  else
+    ok " 任务完成（耗时 ${ELAPSED}s）"
+  fi
   # 成功后缓存工作流（Level 1 时才生成新 YAML，值得缓存）
   if [ "$SKIP_AO_COMPOSE" = false ] && [ -f "$WORKFLOW_FILE" ]; then
     mkdir -p "$ORCHESTRATOR_DIR"
@@ -447,7 +479,7 @@ if [ $EXIT_CODE -eq 0 ]; then
       info "工作流已缓存: ${TASK_SLUG}.yaml (下次可用 L2 复用)"
   fi
 else
-  warn " 任务结束（exit $EXIT_CODE，耗时 ${ELAPSED}s）"
+  warn " 任务结束（exit $EXIT_CODE，耗时 ${ELAPSED}s，重试 ${RETRY_COUNT}/${MAX_RETRIES} 次）"
 fi
 
 # 记录到 task/logs

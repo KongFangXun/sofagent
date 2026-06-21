@@ -1,8 +1,8 @@
 # sofagent
 
 [![License](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.72-1E40AF)](./HANDBOOK.md)
-[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--20-lightgrey)](./README.md)
+[![Version](https://img.shields.io/badge/version-v0.73-1E40AF)](./HANDBOOK.md)
+[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--21-lightgrey)](./README.md)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-主力平台-2563EB)](./ARCHITECTURE.md#平台依赖)
 [![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes-lightgrey)](./ARCHITECTURE.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent/stargazers)
@@ -10,7 +10,7 @@
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
-> v0.72 · 2026-06-27
+> v0.73 · 2026-06-27
 
 我叫孔放勋，一个完全不懂代码的产品经理。所有设计决策来自大半年的真实使用经验，文档由 [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) 和 [GLM-5.2](https://z.ai/) 配合生成。欢迎大佬进来改。
 
@@ -101,6 +101,20 @@
 
 > 选你的平台，5 步，10 分钟。
 
+### 🚀 一键安装（推荐）
+
+如果你已安装 ClawHub CLI 或 SkillHub CLI，一行命令即可：
+
+```bash
+# ClawHub
+clawhub skill install KongFangXun/sofagent
+
+# SkillHub
+skillhub install sofagent
+```
+
+> 💡 没有 ClawHub CLI？继续往下走传统安装流程，一样简单。
+
 ### 1. 前置依赖
 
 | 依赖 | 版本要求 | 为什么需要 | 检查命令 |
@@ -138,7 +152,7 @@ bash sofagent/scripts/install.sh --platform 你的平台
 > 未指定 `--platform` 时自动探测。
 
 **install.sh 会改什么文件**：
-- OpenClaw：写入 `~/.openclaw/rules.md`、`~/.openclaw/rules.md`、`~/.openclaw/skills/sofagent/`（含 6 个 Skill .md + scripts/ + data/ + constitution/）
+- OpenClaw：写入 `~/.openclaw/rules.md`、`~/.openclaw/skills/sofagent/`（含 6 个 Skill .md + scripts/ + data/ + rules.md）
 - WorkBuddy：写入 `~/.workbuddy/skills/sofagent/`（含 SKILL.md + 子目录）
 - Claude Code / Codex / Hermes：写入 `~/.claude/`（或 `~/.codex/`、`~/.hermes/`）的宪法文件，并输出种子指令让你手动贴到 CLAUDE.md / AGENTS.md / SOUL.md
 
@@ -218,8 +232,7 @@ OpenClaw 上全自动，其他平台需手动触发闭环。
 │   ├── task-aware.md           ←     每任务闸门：边界→判级→澄清
 │   ├── task-closure.md         ←     离境闸门：调 Loop Check 收口
 │   ├── loop-check.md           ←     循环检查：三模式五触发点
-│   ├── constitution/           ←     宪法文件
-│   │   └── rules.md            ←       执行层：模型偏好 + 行为规则
+│   ├── rules.md                ←     执行层：你的运行规范
 │   ├── data/                   ←     数据模板（格式参考）
 │   │   ├── IDENTITY.md         ←       Agent 身份声明
 │   │   ├── think.md

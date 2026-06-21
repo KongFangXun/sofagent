@@ -22,10 +22,12 @@
 _find_rules() {
   local candidate
   for candidate in \
-    "${PWD}/.sofagent/../constitution/rules.md" \
-    "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../constitution" 2>/dev/null && pwd)/rules.md" \
+    "${PWD}/.sofagent/../rules.md" \
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)/rules.md" \
+    "${OPENCLAW_STATE_DIR:-$HOME/.openclaw}/skills/sofagent/rules.md" \
     "${OPENCLAW_STATE_DIR:-$HOME/.openclaw}/rules.md" \
     "$HOME/.openclaw/rules.md" \
+    "$HOME/.openclaw/skills/sofagent/constitution/rules.md" \
     "$HOME/.workbuddy/rules.md"; do
     if [ -f "$candidate" ]; then
       echo "$candidate"

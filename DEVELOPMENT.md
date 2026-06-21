@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.71 · 2026-06-20 · 孔放勋
+> v0.73 · 2026-06-20 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -83,7 +83,7 @@ SKILL.md 启动
 
 **`sofagent/` 目录结构**（4 个子目录 + 6 个 Skill .md 文件 = 1 主 Skill + 5 子 Skill）：
 
-- `constitution/`（1 个文件）：rules.md（执行层，用户自定义规则。v0.62：宪法已内联进 SKILL.md）
+- `rules.md`（1 个文件）：执行层，你的运行规范。v0.62：宪法已内联进 SKILL.md。v0.73：从 constitution/ 扁平化到根目录
 - `data/`（5 个文件）：数据模板 think.md、orchestrator.md、task.md、scoring.md、IDENTITY.md
 - `scripts/`（5 个脚本）：install.sh、verify.sh、uninstall.sh、task-record.sh、task-orchestrate.sh
 - `hooks/sofagent-load-chain/`（2 个文件）：HOOK.md + handler.ts（OpenClaw 2026.6.x 内部 hook，agent:bootstrap 事件注入第 2、3 层）
@@ -502,6 +502,8 @@ orchestrator/ 就是迭代的中枢。它不记原始数据，只记最优结论
 
 有 → 写一条 ≤200 字的日摘要到 `think.md` 反思区。没有 → 跳过。简单直接。
 
+> 💡 **核心度量**：一个记忆条目的价值 = 它在未来任务中被检索并有效辅助决策的次数。不是「存了多少」，是「用了几次」。
+
 ### 反思什么
 
 前面几章的产出汇到这里——编排产生了 task/logs，模型选择决定了成本，Skills 产出了使用记录，A/B 测试产出了最优拆法。反思把这些汇总提炼。
@@ -536,7 +538,7 @@ think.md
 每条摘要带一个权重标签，由 LLM 根据三个信号估算（新鲜度 + 反思关联 + 引用热度）。权重集中管理：≥0.5 进反思区，<0.5 进归档区。算法细节见 [ARCHITECTURE.md](./ARCHITECTURE.md#weight-gate)。
 
 > ⚠️ 权重计算由 LLM 执行，同一组数据跑两次可能有 0.1 偏差。反思区的 ≤2K token 硬上限才是真正的安全阀。
-> ⚠️ 反思分三种来源标记：[LLM自评]（纯模型判断，权重 ×0.5）/ [已验证]（有客观证据）/ [用户确认]（用户明确确认）。防止不准的自评通过 think.md 自我强化。详见 [Design §三](./ARCHITECTURE.md#反思自评的自噬风险)。
+> ⚠️ 反思分三种来源标记：[LLM自评]（纯模型判断，权重 ×0.3）/ [已验证]（有客观证据）/ [用户确认]（用户明确确认）。防止不准的自评通过 think.md 自我强化。详见 [Design §三](./ARCHITECTURE.md#反思自评的自噬风险)。
 
 权重 <0.3 且超过 90 天的自动清理，不再占反思空间。已归档的记忆 30 天内不做二次评估——避免反复横跳浪费 token。
 
@@ -565,7 +567,7 @@ task/logs 是水源，只追加不修改，永远可以回溯。不需要额外�
 | 文件 | 干什么 | 加载 | 初始化时机 | 模板 |
 |------|------|:--:|------|------|
 | `think.md` | 反思摘要，每次会话加载，≤2K token | 全文 | 首次加载 | [模板](sofagent/data/think.md) |
-| `rules.md` | 你的规则，优先级最高 | 全文 | 安装时部署 | [模板](sofagent/constitution/rules.md) |
+| `rules.md` | 你的运行规范（含项目目标、验收标准、风险边界、停止条件），优先级最高 | 全文 | 安装时部署 | [模板](sofagent/rules.md) |
 | `task/plans/` | 任务计划 | 日期文件名 | 第二轮澄清时 | [模板](sofagent/data/task.md) |
 | `task/logs/` | 执行日志 | 日期目录树 | 首次闭环后 | [模板](sofagent/data/task.md) |
 | `scoring/` | Skill 评分记录 | 树形 | 首次任务后 | [模板](sofagent/data/scoring.md) |
