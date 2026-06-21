@@ -4,7 +4,7 @@
 >
 > 从 Context Engineering 到 Harness Engineering 再到 Loop Engineering。
 >
-> v0.75 · 2026-06-21 · 孔放勋
+> v0.81 · 2026-06-21 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -27,8 +27,8 @@
 | 你是谁 | 先读这几章 | 为什么 |
 |------|------|------|
 | 普通用户 | 速览 → §一 → §五 → §六 | 先理解核心，装完用，遇到问题查 FAQ |
-| 想理解内部机制 | [Developer](./DEVELOPMENT.md) | Skill 结构、编排、反思、数据架构 |
-| 想理解设计哲学 | [Design](./ARCHITECTURE.md) | 为什么这么设计、已知局限 |
+| 想理解内部机制 | [开发文档](./DEVELOPMENT.md) | Skill 结构、编排、反思、数据架构 |
+| 想理解设计哲学 | [设计文档](./ARCHITECTURE.md) | 为什么这么设计、已知局限 |
 | 想装上试 | §五 → §二 → §三 → §六 | 装完就跑，遇到问题回来查 |
 
 ---
@@ -57,7 +57,7 @@
 | 怎么装 | `bash sofagent/scripts/install.sh --platform 你的平台` | §五 |
 | 怎么用 | 装完直接派任务，🔴 复杂任务 Agent 自动拆解，🟢🟡 直接干 | §四 |
 | 适用场景 | 需要纪律和反思循环的日常 Agent 使用 | §四能力边界 |
-| 已知局限 | 核心效果待社区验证；复盘是 LLM 自评；Loop Agent 非独立进程；数据明文存储；不是多用户系统 | Design §三 |
+| 已知局限 | 核心效果待社区验证；复盘是 LLM 自评；Loop Agent 非独立进程；数据明文存储；不是多用户系统 | 设计文档 §三 |
 
 ---
 
@@ -85,7 +85,7 @@ sofagent 的策略就八个字：**厚在治理，薄在复用。**
 - 你自己的 rules.md 也建议 500 字以内——写多了 Agent 反而记不住
 - 岗位模板保留索引卡片（≤200 字符），完整实现按需加载
 
-写得多不如写得对。注意区分三个不同级别的长度约束：加载文档 ≤500 字（§一）、Skill 索引卡片 ≤500 字符（[Developer §三](./DEVELOPMENT.md#三模型最优选择)）、岗位模板卡片 ≤200 字符（§二）——三条线各管各的，别搞混。
+写得多不如写得对。注意区分三个不同级别的长度约束：加载文档 ≤500 字（§一）、Skill 索引卡片 ≤500 字符（[开发文档 §三](./DEVELOPMENT.md#三模型最优选择)）、岗位模板卡片 ≤200 字符（§二）——三条线各管各的，别搞混。
 
 > 💡 先立规范，再开循环。`SKILL.md`（宪法内联）（契约层）是 Loop 跑起来的护栏——不保证不出错，但保证出了错你知道为什么。
 
@@ -113,7 +113,7 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 ### 编排触发（engine.md + orchestrator/）——🔁 按需点火
 
-地基完成后，SKILL.md 判断任务复杂度。🟢🟡 简单任务不走编排引擎，🔴 复杂任务才点火 engine.md（任务编排引擎）拆解→执行→闭环。编排决策沉淀到 `orchestrator/_index.md`，Agent 自己维护。详见 [Developer §五](./DEVELOPMENT.md#五自进化机制)。
+地基完成后，SKILL.md 判断任务复杂度。🟢🟡 简单任务不走编排引擎，🔴 复杂任务才点火 engine.md（任务编排引擎）拆解→执行→闭环。编排决策沉淀到 `orchestrator/_index.md`，Agent 自己维护。详见 [开发文档 §五](./DEVELOPMENT.md#五自进化机制)。
 
 ### Token 预算参考
 
@@ -191,7 +191,7 @@ sofagent 就是一个在电脑前干活的人——能通过文字输入输出�
 
 > 💡 代码相关能力需要 shell/bash 平台支持（macOS/Linux）。纯 Web 版 Agent 可能无法执行脚本或文件操作。
 
-每项任务能否完成由模型能力、工具权限、已安装的 Skills（[Developer §三](./DEVELOPMENT.md#三模型最优选择)）共同决定——新装一个 Skill 可能扩展边界，比如装了图像生成的 Skill，就能生成新图片（但不能编辑已有图片）。
+每项任务能否完成由模型能力、工具权限、已安装的 Skills（[开发文档 §三](./DEVELOPMENT.md#三模型最优选择)）共同决定——新装一个 Skill 可能扩展边界，比如装了图像生成的 Skill，就能生成新图片（但不能编辑已有图片）。
 
 如果用户的任务超出边界——**直接说「这个我做不了」，不给虚假希望。** 但给替代方向：「视频剪不了，不过我可以帮你整理素材清单、写分镜脚本、或者搜剪辑教程。」拒绝 + 替代方案，比假装能做到更有用。
 
@@ -299,7 +299,7 @@ bash sofagent/scripts/install.sh --platform {你的平台}
 | WorkBuddy / OpenClaw | `MEMORY.md` | ✅ | Agent 首次初始化时自动写入种子指令 |
 | Claude Code / Codex / Hermes | `CLAUDE.md` / `AGENTS.md` / `SOUL.md` | ❌ | **你**手动在文件末尾贴一行种子指令 |
 
-两条路终点一样——Agent 每轮都看到种子指令，读到就去加载 Skill。区别只是种子指令是谁写进去的。种子指令的具体内容和手动粘贴位置见 [Developer §一 脚本与文件结构速查](./DEVELOPMENT.md#脚本与文件结构速查)。
+两条路终点一样——Agent 每轮都看到种子指令，读到就去加载 Skill。区别只是种子指令是谁写进去的。种子指令的具体内容和手动粘贴位置见 [开发文档 §一 脚本与文件结构速查](./DEVELOPMENT.md#脚本与文件结构速查)。
 
 ### 跨平台能力差异
 
@@ -405,7 +405,7 @@ Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的�
 
 **One More Thing…**
 
-不想装 Skill？或者你的平台不支持？把下面这段 Prompt 直接扔给 Agent——它读完 Handbook 和 Developer 就会按规矩来。Handbook 讲怎么用，Developer 讲怎么跑。
+不想装 Skill？或者你的平台不支持？把下面这段 Prompt 直接扔给 Agent——它读完 Handbook 和开发文档就会按规矩来。Handbook 讲怎么用，开发文档讲怎么跑。
 
 ```
 请先完整阅读这份 HANDBOOK.md 和 DEVELOPMENT.md。
@@ -440,4 +440,4 @@ Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的�
 
 > 大半年 OpenClaw 攒的笔记。不是实验室数据，但对我有用。哪里写得不好，直接告诉我。
 >
-> *v0.75，2026 年 6 月 21 日*
+> *v0.81，2026 年 6 月 21 日*

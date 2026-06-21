@@ -3,7 +3,7 @@
 [中文](README.md) | English
 
 [![License](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.75-1E40AF)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/version-v0.81-1E40AF)](./HANDBOOK.md)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--21-lightgrey)](./README.md)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-primary--platform-2563EB)](./ARCHITECTURE.md#平台依赖)
 [![兼容](https://img.shields.io/badge/compatible-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes-lightgrey)](./ARCHITECTURE.md#平台依赖)
@@ -13,7 +13,7 @@
 <!-- TODO: demo.gif — 15s side-by-side: bare Agent going off-rails vs sofagent-constrained Agent -->
 
 > sofa + agent — because one day, we want to lie on the couch while agents do the work.
-> v0.75 · 2026-06-21
+> v0.81 · 2026-06-21
 
 > 📄 **License boundary**: Code files (.sh / .ts) = MIT License; Documentation files (.md) = CC-BY-4.0. In plain English — use the code freely, credit the docs.
 

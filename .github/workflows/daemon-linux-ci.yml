@@ -1,0 +1,77 @@
+name: daemon-linux-ci
+
+on:
+  push:
+    paths:
+      - 'sofagent/scripts/daemon*'
+      - 'sofagent/scripts/lib/daemon*'
+      - '.github/workflows/daemon-linux-ci.yml'
+  pull_request:
+    paths:
+      - 'sofagent/scripts/daemon*'
+      - 'sofagent/scripts/lib/daemon*'
+  workflow_dispatch:
+
+jobs:
+  daemon-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install daemon
+        run: bash sofagent/scripts/daemon-install.sh
+
+      - name: Verify systemd service registered
+        run: |
+          systemctl --user status sofagent-daemon.service 2>/dev/null && echo "systemd service registered" || echo "systemd service check: may need logind session"
+
+      - name: Start daemon and wait one cycle
+        run: |
+          # 在 CI 环境中 daemon-install.sh 可能已启动
+          # 如果没有 PID 文件，手动启动前台模式 35 秒
+          if [ ! -f .sofagent/daemon.pid ] || ! kill -0 $(cat .sofagent/daemon.pid) 2>/dev/null; then
+            sofagent/scripts/daemon.sh --foreground &
+            DAEMON_PID=$!
+            echo "started daemon foreground PID=$DAEMON_PID"
+            sleep 35
+            kill $DAEMON_PID 2>/dev/null || true
+          else
+            echo "daemon already running"
+            sleep 35
+          fi
+
+      - name: Verify daemon.json has required fields
+        run: |
+          if [ -f .sofagent/daemon.json ]; then
+            echo "daemon.json exists"
+            for field in pid mode detected_platforms think_hash rules_hash last_check; do
+              if grep -q "\"$field\"" .sofagent/daemon.json; then
+                echo "  ✓ $field"
+              else
+                echo "  ✗ $field MISSING"
+                exit 1
+              fi
+            done
+          else
+            echo "daemon.json not found"
+            exit 1
+          fi
+
+      - name: Verify daemon-status.sh --json output
+        run: |
+          STATUS_JSON=$(bash sofagent/scripts/daemon-status.sh --json 2>/dev/null || true)
+          echo "$STATUS_JSON"
+          echo "$STATUS_JSON" | grep -q '"status"' && echo "JSON output valid" || { echo "JSON output invalid"; exit 1; }
+
+      - name: Uninstall daemon
+        run: |
+          bash sofagent/scripts/daemon-uninstall.sh
+          echo "daemon uninstalled"
+
+      - name: Verify cleanup
+        run: |
+          if [ -f "$HOME/.config/systemd/user/sofagent-daemon.service" ]; then
+            echo "systemd service file still exists — cleanup incomplete"
+            exit 1
+          fi
+          echo "cleanup verified"

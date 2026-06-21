@@ -4,11 +4,29 @@
 
 ---
 
+## [v0.81] — 2026-06-22
+
+### Added — daemon 核心骨架
+- **daemon.sh + daemon-lib.sh**：主进程 + 共享函数库（JSON 读写、hash 比对、进程检测、降级），纯 bash 零外部依赖
+- **daemon-install.sh + daemon-uninstall.sh + daemon-status.sh**：launchd（macOS）/ systemd（Linux）系统服务注册 + 卸载 + 状态查询（--detect / --json）
+- **GitHub Actions CI**：`.github/workflows/daemon-linux-ci.yml`（systemd 全流程测试）
+- **install.sh Step 6b + verify.sh daemon Section + uninstall.sh 清理**：集成到现有脚本
+
+### Changed — 治理逻辑加固
+- **engine.md**：新增幂等检查（4 类不可逆操作 + 操作 ID）+ 步数闸（MAX_STEPS=50 + GRACE_STEPS=3）+ 熔断闸（三态机 FAILURE_THRESHOLD=3 / COOLDOWN_SECONDS=30）
+- **loop-check.md**：新增闭环验证模型选择 + 怀疑论提示（模型分离 + 指令污染互补规则）
+- **ARCHITECTURE.md**：新增「意图债」术语
+- **五平台验证**：新增 `docs/platform-matrix.md`（8 维度 × 5 平台能力矩阵）+ `docs/test-cases/platform-v081.md`（标准化测试用例）
+
+> 详见 [v0.81 详细变更记录](./docs/changelog/v0.81.md)
+
+---
+
 ## [v0.75] — 2026-06-21
 
 ### Changed — 降低试用门槛 + 补可信度数据
 - **文档门槛降低**：新增 README.en.md（英文 README）+ docs/EVIDENCE.en.md（英文 EVIDENCE）；README 顶部加中英文语言切换；LICENSE 分界说明（代码 MIT / 文档 CC-BY-4.0）
-- **社区建设**：CONTRIBUTING.md 新增 Seaking Co-maintainers 段（三级权限：Contributor→Triage→Co-maintainer）；README 底部 Co-maintainer 招募引导
+- **社区建设**：CONTRIBUTING.md 新增 Seeking Co-maintainers 段（三级权限：Contributor→Triage→Co-maintainer）；README 底部 Co-maintainer 招募引导
 - **平台预期管理**：README 平台能力表下方强化非 OpenClaw 预期管理声明（「价值约 30%」）
 - **企业可评估性**：SECURITY.md 新增 ao npm 包供应链说明段 + 企业生产环境风险声明；EVIDENCE.md 顶部加诚实声明（LLM 自评 + 数据明文）
 - **CI/CD 集成**：docs/team-deploy.md 新增 GitHub Actions CI 示例 + Migration Checklist（7 步）
