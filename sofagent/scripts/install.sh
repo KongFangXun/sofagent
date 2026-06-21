@@ -18,7 +18,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.73"
+VERSION="0.74"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'
@@ -42,6 +42,7 @@ _log() { echo "[$(date '+%H:%M:%S')] $1" >> "${INSTALL_LOG:-/dev/null}"; }
 
 # ── 快速模式（v0.73：初始化在参数解析之前，set -u 兼容）──
 QUICK_MODE="${QUICK_MODE:-0}"
+REMOTE_MODE="${REMOTE_MODE:-0}"
 
 # ── 欢迎 ──
 if [ "$QUICK_MODE" = "0" ]; then
@@ -50,6 +51,31 @@ echo "  ╔═══════════════════════
 echo "  ║   sofagent Harness · installer   ║"
 echo "  ╚═══════════════════════════════════╝"
 echo ""
+fi
+
+# ── 远程安装模式（curl pipe bash 场景）──
+if [ "${REMOTE_MODE}" = "1" ]; then
+  info "远程安装模式——克隆仓库..."
+  REMOTE_TMP="$(mktemp -d /tmp/sofagent-remote-XXXXXX)"
+  if command -v git &>/dev/null; then
+    git clone https://github.com/KongFangXun/sofagent.git "$REMOTE_TMP" 2>/dev/null || {
+      err "git clone 失败，请检查网络或手动 git clone"
+      exit 1
+    }
+    ok "仓库已克隆到: $REMOTE_TMP"
+    cd "$REMOTE_TMP"
+    # 重新调用 install.sh，去掉 --remote，透传其他参数
+    REMAINING_ARGS=""
+    for arg in "${ORIGINAL_ARGS[@]}"; do
+      [ "$arg" = "--remote" ] && continue
+      REMAINING_ARGS="$REMAINING_ARGS $arg"
+    done
+    exec bash sofagent/scripts/install.sh $REMAINING_ARGS
+  else
+    err "git 不可用——远程安装需要 git。请先安装 git 或使用完整安装方式："
+    err "  git clone https://github.com/KongFangXun/sofagent.git && cd sofagent && bash sofagent/scripts/install.sh"
+    exit 1
+  fi
 fi
 
 # ── 审计：安装开始 ──
@@ -63,6 +89,8 @@ info "Step 1/7 · 确定安装平台..."
 # ── 参数解析 ──
 PLATFORM=""
 QUICK_MODE=0  # v0.73: --quick 模式跳过交互确认
+REMOTE_MODE=0
+ORIGINAL_ARGS=("$@")  # 保存原始参数（--remote 模式下透传用）
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --platform)     PLATFORM="$2"; shift 2 ;;
@@ -72,6 +100,7 @@ while [[ $# -gt 0 ]]; do
     --no-ao)         NO_AO=1; shift ;;
     --no-config-inject) NO_CONFIG_INJECT=1; shift ;;
     --quick)         QUICK_MODE=1; shift ;;
+    --remote)        REMOTE_MODE=1; shift ;;
     -h|--help)
       echo "用法: install.sh [--platform openclaw|workbuddy|claude|codex|hermes] [--project-dir DIR]"
       echo ""
@@ -85,6 +114,7 @@ while [[ $# -gt 0 ]]; do
       echo "  --no-ao             跳过 agency-orchestrator 全局安装（企业环境用）"
       echo "  --no-config-inject  跳过自动注入 OpenClaw config.json（企业环境用）"
       echo "  --quick             快速模式——跳过交互确认和验证等待，直接完整安装"
+      echo "  --remote            远程安装模式——自动 git clone 仓库后安装（配合 curl pipe bash 使用）"
       exit 0
       ;;
     *) shift ;;

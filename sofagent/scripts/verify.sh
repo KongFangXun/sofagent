@@ -9,13 +9,14 @@
 #   verify.sh           彩色终端输出
 #   verify.sh --json     JSON 机器可读输出（CI/CD）
 #   verify.sh --quiet   只显示失败和警告项
+#   verify.sh --quick   快速模式——仅 4 项核心检查，5 秒出结果
 #   verify.sh --help    显示此帮助
 # ============================================================
 
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="0.73"
+VERSION="0.74"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -23,11 +24,13 @@ trap cleanup EXIT
 # ── 参数解析 ──
 JSON_MODE=false
 QUIET_MODE=false
+QUICK_MODE=false
 PLATFORM=""
 for arg in "$@"; do
   case "$arg" in
     --json)  JSON_MODE=true ;;
     --quiet) QUIET_MODE=true ;;
+    --quick) QUICK_MODE=true ;;
     --platform) PLATFORM="$2"; shift 2 ;;
     --platform=*) PLATFORM="${arg#*=}" ;;
     --help)
@@ -35,6 +38,7 @@ for arg in "$@"; do
       echo "  正常模式 彩色终端，显示所有检查项"
       echo "  --json   JSON 机器可读输出（CI/CD 用）"
       echo "  --quiet  只输出失败和警告，全通过时静默"
+      echo "  --quick  快速模式——仅 4 项核心检查（SKILL.md / .sofagent/ / ao compose / rules.md）"
       echo "  --help   显示此帮助"
       echo "退出码: 0=全部通过 1=存在失败项"
       exit 0
@@ -116,6 +120,79 @@ if [ "$JSON_MODE" = false ]; then
     echo "  平台: $PLATFORM | 目标: ${TARGET:-工作区}"
   fi
   _hr
+fi
+
+# ════════════════════════════════════════
+# --quick 模式：仅 4 项核心检查，结束后直接输出总结
+# ════════════════════════════════════════
+if [ "$QUICK_MODE" = true ]; then
+  [ "$JSON_MODE" = false ] && [ "$QUIET_MODE" = false ] && echo "  ⚡ 快速模式 — 4 项核心检查"
+  [ "$JSON_MODE" = false ] && _hr
+
+  # 1. SKILL.md 存在且含 4 底线 + 10 铁律关键词
+  SKILL_QUICK="${OPENCLAW_DIR:-$HOME/.openclaw}/skills/sofagent/SKILL.md"
+  if [ -f "$SKILL_QUICK" ] && grep -q "4.*底线\|10.*铁律" "$SKILL_QUICK" 2>/dev/null; then
+    check_pass "SKILL.md 存在且含宪法（4底线+10铁律）"
+  else
+    check_fail "SKILL.md 缺失或宪法关键词不全"
+  fi
+
+  # 2. .sofagent/ 数据目录存在
+  if [ -d "${PWD}/.sofagent" ]; then
+    check_pass ".sofagent/ 数据目录存在"
+  else
+    check_warn ".sofagent/ 数据目录不存在（首次使用会自动创建）"
+  fi
+
+  # 3. ao compose 可用（或标注降级）
+  if command -v ao &>/dev/null; then
+    AO_VER=$(ao --version 2>/dev/null || echo "unknown")
+    check_pass "ao compose 可用 — v${AO_VER}"
+  else
+    check_warn "ao compose 不可用——编排引擎降级为默认编排"
+  fi
+
+  # 4. rules.md 可读
+  RULES_QUICK=""
+  for c in \
+    "${OPENCLAW_DIR:-$HOME/.openclaw}/skills/sofagent/rules.md" \
+    "${HOME}/.workbuddy/skills/sofagent/rules.md" \
+    "${HOME}/.openclaw/rules.md"; do
+    [ -f "$c" ] && { RULES_QUICK="$c"; break; }
+  done
+  if [ -n "$RULES_QUICK" ] && [ -r "$RULES_QUICK" ]; then
+    check_pass "rules.md 可读 — ${RULES_QUICK}"
+  else
+    check_warn "rules.md 未找到或不可读（未配置自定义规则）"
+  fi
+
+  # 输出总结并退出
+  total=$((pass + fail + warn_count))
+  if [ "$JSON_MODE" = true ]; then
+    cat << JSONEOF
+{
+  "summary": {
+    "pass": ${pass},
+    "warn": ${warn_count},
+    "fail": ${fail},
+    "total": ${total}
+  },
+  "checks": [${_json_items}]
+}
+JSONEOF
+  else
+    echo "───────────────────────────────────────"
+    echo ""
+    echo "  结果: ${GREEN}${pass} 通过${NC} / ${YELLOW}${warn_count} 警告${NC} / ${RED}${fail} 失败${NC}（共 ${total} 项）"
+    echo ""
+    if [ "$fail" -eq 0 ]; then
+      echo "  ✅ quick 模式通过！运行 verify.sh（无 --quick）获取完整检查。"
+    else
+      echo "  ❌ 发现 ${fail} 项失败。请先运行 install.sh 修复。"
+      exit 1
+    fi
+  fi
+  exit 0
 fi
 
 # WorkBuddy 平台：做专属检查后直接结束

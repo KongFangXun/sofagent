@@ -4,6 +4,18 @@
 
 ---
 
+## [v0.74] — 2026-06-21
+
+### Changed — 治理层自身治理
+- **ao compose 依赖加固**：新建 docs/ao-compose-format.md（YAML 格式写死 + 手动编排指南）；task-orchestrate.sh 在 ao 不可用时自动切默认编排；install.sh 新增 --remote 模式
+- **加载链 + 记忆加固**：SKILL.md 新增加载链自检声明（L1/L2/L3 缺失提醒）；loop-check.md 新增人类抽样审计规则 + 冷启动基准线报告
+- **易用性**：verify.sh 新增 --quick 参数（4 项核心检查）；README 新增一行安装命令
+- **文档去重 + 版本同步**：全局版本号 v0.73 → v0.74（15 个文件）；ARCHITECTURE.md 行数声明更新（585→612）
+
+> 详见 [v0.74 详细变更记录](./docs/changelog/v0.74.md)
+
+---
+
 ## [v0.73] — 2026-06-21
 
 ### Changed — 运行时逻辑加固 + 结构重构

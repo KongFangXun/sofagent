@@ -1,7 +1,7 @@
 # sofagent
 
 [![License](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.73-1E40AF)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/version-v0.74-1E40AF)](./HANDBOOK.md)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--21-lightgrey)](./README.md)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-主力平台-2563EB)](./ARCHITECTURE.md#平台依赖)
 [![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes-lightgrey)](./ARCHITECTURE.md#平台依赖)
@@ -10,7 +10,7 @@
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
-> v0.73 · 2026-06-27
+> v0.74 · 2026-06-21
 
 我叫孔放勋，一个完全不懂代码的产品经理。所有设计决策来自大半年的真实使用经验，文档由 [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) 和 [GLM-5.2](https://z.ai/) 配合生成。欢迎大佬进来改。
 
@@ -36,7 +36,7 @@
 |------|------|------|
 | 普通用户 | [HANDBOOK.md](./HANDBOOK.md)（443 行） | 怎么装、怎么用、什么是铁律 |
 | 开发者 | [DEVELOPMENT.md](./DEVELOPMENT.md)（599 行） | Skill 怎么协同、编排怎么跑、反思怎么闭环 |
-| 设计爱好者 | [ARCHITECTURE.md](./ARCHITECTURE.md)（585 行） | 为什么选这些设计、已知局限 |
+| 设计爱好者 | [ARCHITECTURE.md](./ARCHITECTURE.md)（596 行） | 为什么选这些设计、已知局限 |
 | 技术 VP 推广 | [docs/team-deploy.md](./docs/team-deploy.md)（3 页） | 装、试、回顾三阶段落地指南 |
 
 ---
@@ -102,6 +102,12 @@
 > 选你的平台，5 步，10 分钟。
 
 ### 🚀 一键安装（推荐）
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/sofagent/scripts/install.sh | bash -s -- --remote
+```
+
+> 一行安装，自动探测平台。下方保留完整安装方式（git clone + bash install.sh）。
 
 如果你已安装 ClawHub CLI 或 SkillHub CLI，一行命令即可：
 
@@ -194,88 +200,24 @@ OpenClaw 上全自动，其他平台需手动触发闭环。
 ## 项目结构
 
 ```
-├── README.md
-├── LICENSE                     ← CC-BY-4.0 + MIT 双许可
-├── CHANGELOG.md                ← 版本历史
-├── CODE_OF_CONDUCT.md          ← 行为准则
-├── CONTRIBUTING.md             ← 贡献指南
-├── SECURITY.md                 ← 安全策略
-├── HANDBOOK.md                 ← 用户手册：怎么用
-├── DEVELOPMENT.md              ← 开发者文档：Skill 结构、编排、反思、数据架构
-├── ARCHITECTURE.md             ← 设计哲学：为什么这么设计
-├── ROADMAP.md                  ← 路线图：下一步计划和参与方式
-├── workflows/                  ← ao compose 编排工作流
-│   └── 审查-sofagentscriptsinstallsh-的安全性.yaml
-├── docs/                       ← 文档
-│   ├── EVIDENCE.md             ←   社区用户实际使用数据
-│   ├── TESTING.md              ←   标准化测试用例
-│   ├── enterprise-deploy.md    ←   企业级部署指南
-│   ├── team-deploy.md          ←   技术 VP 落地指南
-│   ├── system_design.md        ←   v0.7x 企业合规三件套系统设计
-│   ├── class-diagram.mermaid   ←   系统设计类图
-│   ├── sequence-diagram.mermaid←   系统设计时序图
-│   ├── changelog/              ←   开发日志（每版本开发过程，dogfooding 实录）
-│   └── cases/                  ←   第三方使用案例
-│       ├── codex-stability-2026-06-20/   ← Case 004: Codex 稳定性测试
-│       ├── italy-travel-2026-06-18/      ← Case 001: 首次全流程跑通
-│       ├── openclaw-e2e-2026-06-19/      ← Case 002: OpenClaw E2E 回归
-│       └── workbuddy-self-test-2026-06-18/ ← Case 003: WorkBuddy 自测
-├── .github/                    ← GitHub 配置
-│   ├── ISSUE_TEMPLATE.md       ←   Issue 模板
-│   ├── PULL_REQUEST_TEMPLATE.md←   PR 模板
-│   └── workflows/              ←   CI/CD
-│       └── verify.yml          ←     verify.sh 自动验证
-├── sofagent/                   ← 核心部署文件
-│   ├── SKILL.md                ←   🌟 主入口——加载这个就启动整套体系
-│   ├── engine.md               ←     完整入口引擎（A→D 初始化 + 子 Skill 索引）
-│   ├── entry-gate.md           ←     入境闸门：内部初始化检查
-│   ├── task-aware.md           ←     每任务闸门：边界→判级→澄清
-│   ├── task-closure.md         ←     离境闸门：调 Loop Check 收口
-│   ├── loop-check.md           ←     循环检查：三模式五触发点
-│   ├── rules.md                ←     执行层：你的运行规范
-│   ├── data/                   ←     数据模板（格式参考）
-│   │   ├── IDENTITY.md         ←       Agent 身份声明
-│   │   ├── think.md
-│   │   ├── scoring.md
-│   │   ├── orchestrator.md
-│   │   └── task.md
-│   ├── hooks/                  ←     OpenClaw 内部 hook
-│   │   └── sofagent-load-chain/←       加载链（agent:bootstrap 注入第 2、3 层）
-│   │       ├── HOOK.md
-│   │       └── handler.ts
-│   ├── scripts/                ←     安装和运行脚本
-│   │   ├── install.sh          ←       一键安装（多平台兼容）
-│   │   ├── verify.sh           ←       验证脚本
-│   │   ├── uninstall.sh        ←       卸载脚本
-│   │   ├── task-record.sh      ←       任务记录（含脱敏 + 审计）
-│   │   ├── task-orchestrate.sh ←       编排引擎适配
-│   │   ├── cleanup.sh          ←       数据保留清理
-│   │   ├── audit.sh            ←       审计日志
-│   │   └── lib/                ←       共享函数库
-│   │       └── config.sh       ←         配置解析
-│   └── images/                 ←     Skill 资源
-│       └── sofagent.png        ←       Logo
-└── images/                     ← 项目资源
-    └── sofagent.png            ← Logo
+sofagent/
+├── README / HANDBOOK / DEVELOPMENT / ARCHITECTURE / ROADMAP.md    ← 核心文档
+├── LICENSE / CHANGELOG / CODE_OF_CONDUCT / CONTRIBUTING / SECURITY.md
+├── docs/               ← EVIDENCE / TESTING / enterprise-deploy / system_design + changelog/ + cases/
+├── .github/            ← Issue / PR 模板 + CI (verify.yml)
+└── sofagent/           ← 核心部署文件
+    ├── SKILL.md        ←   🌟 主入口（加载即启动整套体系）
+    ├── engine / entry-gate / task-aware / task-closure / loop-check.md  ← 5 个子 Skill
+    ├── rules.md        ←   执行层：你的运行规范
+    ├── data/           ←   数据模板（IDENTITY / think / scoring / orchestrator / task）
+    ├── hooks/sofagent-load-chain/  ← OpenClaw hook（注入第 2、3 层）
+    ├── scripts/        ←   install / verify / uninstall / task-record / task-orchestrate / cleanup / audit
+    └── images/
 ```
 
-安装后自动生成的 `.sofagent/` 数据目录：
+安装后自动生成 `.sofagent/`（Agent 工作笔记：think.md 反思 + orchestrator/ 配置 + scoring.md 评分 + task/ 日志审计），每次任务自动记录，跨任务自动反思沉淀。
 
-```
-.sofagent/                    ← 运行时数据（Agent 自动维护）
-├── think.md                  ←   反思摘要（加载链第 2 层）
-├── orchestrator/             ←   编排最优配置沉淀
-│   └── workflows/            ←     ao compose 生成的 YAML
-├── scoring.md                ←   Skill 使用评分记录
-└── task/                     ←   任务计划 + 执行日志 + 审计
-    ├── plans/                ←     澄清阶段产出的任务计划
-    ├── logs/                 ←     闭环后按天归档的执行记录
-    └── audit/                ←     审计日志（v0.71 起自动记录关键操作）
-```
-
-> 💡 `.sofagent/` 是 Agent 的「工作笔记」——每次任务自动记录，跨任务自动反思沉淀。
-
-> 💡 你看到的 6 个 Skill 文件（1 主 Skill + 5 子 Skill）+ 6 个脚本不是「堆文件」——Skill 文件各管一件事（入境/每任务/离境/Loop），脚本处理确定性操作（安装/验证/记录/编排）。复用了 4 个开源项目做编排、岗位匹配、Skills 发现，自己只写了治理层。详见 [用了哪些外部项目](#用了哪些外部项目)。
+> 💡 6 个 Skill（1 主 + 5 子）+ 脚本各管一件事，复用 4 个开源项目做编排/岗位/Skills 发现，自己只写治理层。详见 [用了哪些外部项目](#用了哪些外部项目)。
 
 ---
 
@@ -298,12 +240,10 @@ OpenClaw 上全自动，其他平台需手动触发闭环。
 
 ## 致谢
 
-- [OpenClaw](https://github.com/openclaw/openclaw) by Peter Steinberger — 整个 sofagent 的基石
-- [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) — 所有文件都是它与 GLM-5.2 配合生成的
-- [GLM-5.2](https://z.ai/) — 配合 DeepSeek V4 Pro 完成代码生成、审查与测试
+- [OpenClaw](https://github.com/openclaw/openclaw) by Peter Steinberger — sofagent 的基石
+- [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) + [GLM-5.2](https://z.ai/) — 所有文件由二者配合生成
 - [Andrej Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills) — 4 条编码原则是 10 则铁律的根基
 - [agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator) + [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh) — 任务编排引擎 + 中文岗位库
-- [Anthropic Skills](https://github.com/anthropics/skills) — 官方 SKILL.md 格式规范
-- [Anthropic Managed Agents](https://www.anthropic.com/engineering/managed-agents) — 四层架构的设计哲学源头
-- [Loop Engineering](https://addyo.substack.com/p/loop-engineering) by Addy Osmani — 循环工程五大件，sofagent 编排层的理论源头
+- [Anthropic Skills](https://github.com/anthropics/skills) + [Managed Agents](https://www.anthropic.com/engineering/managed-agents) — SKILL.md 格式规范 + 四层架构哲学源头
+- [Loop Engineering](https://addyo.substack.com/p/loop-engineering) by Addy Osmani — 循环工程五大件，编排层理论源头
 - [superpowers](https://github.com/obra/superpowers) — Skill 作为 Harness 杠杆的思路

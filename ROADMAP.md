@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、接下来想做什么、哪些地方需要你的帮助。
-> v0.73 · 2026-06-21
+> v0.74 · 2026-06-21
 
 ---
 
@@ -38,12 +38,12 @@
 
 > ⚠️ 诚实地说：下面的内容是**方向**，不是承诺。每个版本做不做、做成什么样，取决于我们有限的精力和社区的反馈。没实测过的事，我们标「不知道」——不画饼。
 
-### 现在在哪：v0.73
+### 现在在哪：v0.74
 
 **能用的**：
 - OpenClaw 上，Agent 能读到宪法（4底线+10铁律），复杂任务会自动拆解，跑完会自我复盘
 - 日志会脱敏（写进文件前帮你把 API Key 打码），过期数据会清理——虽然触发方式是 `RANDOM % 10` 概率触发，不是定时任务
-- `install.sh` 一个命令装好，`verify.sh` 告诉你装好没有
+- `install.sh` 一个命令装好（也支持 `curl pipe bash` 一行安装），`verify.sh` 告诉你装好没有（`--quick` 快速模式）；加载链自检声明 + 人类抽样审计也已内置
 
 **还不太行的**：
 - **加载链靠 Agent 自觉**。OpenClaw 上有 Hook 强制注入，4底线+10铁律一定生效。但在 WorkBuddy / Claude Code / Codex / Hermes 上——Agent 有时候读、有时候跳过去。这不是 bug，是架构宿命：没有 Hook 的平台，我们控制不了
@@ -128,6 +128,29 @@
 
 ---
 
+### v0.74 — 治理层自身治理
+
+> v0.72 修了门面，v0.73 修了运行时，v0.74 修治理层自己的文档臃肿、可信度缺口和易用性短板。不碰运行时逻辑。
+>
+> 来自第三方评审（前 GitHub 维护者 + 技术 VP）：「设计精良的概念验证」→ 往「可以放心推荐」走一步。
+
+| 交付物 | 类别 | 说明 |
+|------|:--:|------|
+| **文档拆分** | 结构 | ARCHITECTURE §五 → docs/research/industry-insights.md；ROADMAP daemon 详细设计 → 指向 docs/daemon-design.md |
+| **benchmark.sh API 模式** | 实证 | 新增 `--api` 全自动路径（OpenClaw 非交互模式），减少人肉依赖 |
+| **EVIDENCE 最小模板** | 实证 | 3 个数字 + 1 句话模板，填完不超过 1 分钟 |
+| **ao compose 格式文档** | 加固 | YAML 格式写死 + task-orchestrate.sh 自动降级（不只是口头告知） |
+| **加载链自检声明** | 约束 | SKILL.md 加 L1/L2/L3 自检，缺失时提醒用户 |
+| **人类抽样审计** | 约束 | 每 10 次闭环标记一条待人类 review |
+| **verify.sh --quick** | 体验 | 4 项核心检查，5 秒出结果 |
+| **一行安装** | 体验 | `curl pipe bash`，新人 30 秒跑起来 |
+| **Scoring 基准线报告** | 指标 | 前 5 次任务输出九维基准线 + 文字解读 |
+| **文档去重** | 结构 | README 项目结构树 / ROADMAP 底部文件结构 Mermaid 二选一 |
+
+**不包含**：daemon（v0.8）、企业级（v0.9）——这 10 项没有一个依赖 daemon。
+
+---
+
 ### v0.8 — daemon（把房子地基打上）
 
 **要解决什么**：加载链脆弱性。让 Agent 在非 OpenClaw 平台上也能看到 think.md 和 rules.md——不靠 Agent 自觉，靠外部进程提醒。
@@ -143,110 +166,7 @@ daemon 不是魔法。它只是一个爱唠叨的后台进程——能提醒 Age
 
 **不包含**：不会说 daemon 让五个平台「适配完成」——编排引擎/Hook/断路器在非 OpenClaw 平台上天然不可用，daemon 只解决「加载链遗忘」这一个问题。
 
----
-
-#### Device 端常驻脚本（daemon）— v0.8 核心工程
-
-> **要解决的问题**：sofagent 的治理约束活在 session 里。session 一结束，Agent 就不记得任何事了。下一个 session 能不能读到 think.md 里的教训？全看 Agent 心情。这就是「软约束在上下文外不生效」的架构宿命——v0.61 验证失败的根本原因。
-
-##### 什么是 daemon
-
-一个轻量级本地后台进程，不参与 Agent 对话，只做三件事：
-
-1. **看门** — 监控 `.sofagent/` 数据目录的文件变化（新增/修改/删除）
-2. **提醒** — 在 Agent 新 session 启动前，把 think.md 教训和 rules.md 规则"塞"到 Agent 眼前
-3. **兜底** — 确保跨 session 的经验不会因为 Agent 忘了读而丢失
-
-daemon 不是"又一个约束"，它是**让已有约束跨 session 生效的执行器**。
-
-##### 架构
-
-```
-┌─────────────────────────────────────────────────────┐
-│                    daemon（常驻进程）                   │
-│                                                       │
-│  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐ │
-│  │ 文件监控模块  │  │ Agent 检测   │  │ 提醒注入    │ │
-│  │              │  │              │  │              │ │
-│  │ watch        │  │ 检测 Agent   │  │ 新 session   │ │
-│  │ .sofagent/   │  │ 平台进程     │  │ 启动前注入   │ │
-│  │ 变更事件     │  │ 启动/关闭    │  │ think+rules  │ │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬──────┘ │
-│         │                 │                 │         │
-│         └─────────┬───────┴─────────────────┘         │
-│                   │                                   │
-│              ┌────▼────┐                              │
-│              │ 状态文件 │  ← daemon.json               │
-│              │ 持久化   │    记录当前监控状态            │
-│              └─────────┘                              │
-└─────────────────────────────────────────────────────┘
-         │                    │
-         ▼                    ▼
-   .sofagent/            Agent 平台进程
-   (think.md,               (OpenClaw /
-    rules.md,                WorkBuddy /
-    task/logs,               Claude Code)
-    scoring/)
-```
-
-##### 核心能力
-
-| 能力 | 触发条件 | 行为 |
-|------|----------|------|
-| **think.md 变更检测** | 文件 mtime 变化 | 标记"有新反思可用"，下次 Agent 启动时提醒 Read |
-| **rules.md 变更检测** | 文件 mtime 变化 | 同上，确保配置变更不遗漏 |
-| **Agent 启动检测** | 平台进程出现在进程列表 | 向 Agent 注入启动提示："上次学到了 X，注意 Y" |
-| **复盘提醒** | 距上次 task/logs 写入超过 N 小时 | 通知："48 小时没跑了，要不要复盘一下？" |
-| **健康检查** | 定时（默认每小时） | 检查 .sofagent/ 目录完整性、权限、磁盘空间 |
-| **数据保留触发** | 符合 cleanup.sh 条件 | 自动调用 cleanup.sh（替代当前概率触发机制） |
-
-##### 安装与生命周期
-
-```
-安装: sofagent/scripts/daemon-install.sh
-       → 部署 daemon.sh 到 ~/.sofagent/daemon/
-       → 注册 launchd(macOS) / systemd(Linux) / 任务计划程序(Windows)
-       → 写入 daemon.json 配置文件
-
-启动: launchctl load ~/Library/LaunchAgents/com.sofagent.daemon.plist
-      （系统启动时自动拉起，crash 后自动重启）
-
-停止: launchctl unload ~/Library/LaunchAgents/com.sofagent.daemon.plist
-      或 daemon.sh --stop
-
-卸载: sofagent/scripts/daemon-uninstall.sh
-       → 移除 launchd/systemd 注册
-       → 清理 daemon 目录
-```
-
-##### 设计原则
-
-| 原则 | 说明 |
-|------|------|
-| **不僭越** | daemon 只管"提醒"和"兜底"，不替 Agent 做决策 |
-| **文件系统优先** | 所有状态通过 Markdown 和 JSON 文件持久化，不引入数据库 |
-| **最小依赖** | bash + 平台原生进程管理（launchd/systemd/任务计划程序） |
-| **静默运行** | 不弹窗、不打断用户。提醒通过文件注入，Agent 在下一个 session 自然看到 |
-| **渐进式** | MVP：文件监控 + Agent 启动提醒。后续迭代加入健康检查、复盘提醒、自动清理 |
-| **跨平台** | macOS（launchd）/ Linux（systemd）/ Windows（任务计划程序），核心逻辑用 bash 统一 |
-
-##### 分阶段实现
-
-| 阶段 | 功能 | 说明 |
-|------|------|------|
-| **daemon v0.1（MVP）** | 文件监控 + 启动提醒 | watch think.md/rules.md → Agent 启动时注入提醒 |
-| **daemon v0.2** | 复盘提醒 + 健康检查 | 定时检查 + 通知 |
-| **daemon v0.3** | 清理触发 + 状态面板 | 替代概率触发 → 定时调 cleanup.sh；`daemon.sh --status` |
-| **daemon v1.0** | 全平台 + v2.x 就绪 | Windows 支持；能力画像文件自动生成 |
-
-##### 与 v2.x 的关系
-
-- **发现注册**：daemon 持续运行 → 知道设备"活着" → 路由器能发现
-- **能力画像**：daemon v1.0 自动生成能力文件 → v2.x 路由器直接读取
-- **任务状态**：daemon 监控本地 Agent 进程 → 路由器知道哪个设备忙、哪个空闲
-- **反思同步**：daemon 检测 think.md 变更 → 触发向路由器同步
-
-一句话：**没有 daemon，v2.x 的路由器就是一个不知道设备在不在、Agent 忙不忙的盲调度器。**
+> 📐 **详细设计**：daemon 架构图、伪代码、launchd/systemd 配置、进程生命周期、降级路径等完整设计文档见 [docs/daemon-design.md](./docs/daemon-design.md)（750 行，含核心函数设计 + 与 install.sh/verify.sh 集成方案）。
 
 ---
 
@@ -263,7 +183,7 @@ daemon 不是"又一个约束"，它是**让已有约束跨 session 生效的执
 | **审计报告** | `audit.sh --report` 一键导出 | 不是散落的日志行——是「谁在什么时间做了什么操作、涉及哪些文件」 |
 | **保留策略强制执行** | daemon 定时调 cleanup.sh | 替代概率触发——合规的基础要求 |
 | **多用户隔离** | 同机权限隔离 + 共享 rules.md | 团队共享团队规则，各自独立反思 |
-| **记忆架构升级** | Lager-Views-Policy 三层模型 | task/logs（原始账本）→ 按主题/标签的视图层 → 蒸馏/遗忘/同步策略。为内容寻址和智能推荐打底 |
+| **记忆架构升级** | Ledger-Views-Policy 三层模型 | task/logs（原始账本）→ 按主题/标签的视图层 → 蒸馏/遗忘/同步策略。为内容寻址和智能推荐打底 |
 | **双时态数据** | 每条数据记录生效时间 + 写入时间 | 区分历史状态与当前记录——审计和记忆版本管理的基础 |
 | **ECC 成本感知流水线** | 按复杂度路由 → 预算检查 → 窄范围重试 → 提示缓存 | ComplexityScorer（v0.73）只做了第一步，此处补全后三步。降低企业用户的模型成本浪费 |
 | **OpenViking 三级记忆加载** | L0 Abstract(~100 token) / L1 Overview(~2000 token) / L2 Full 三级加载 | 反思条目爆炸时自动压缩为摘要+概览，Agent 按需展开。**前提**：v0.8 daemon 稳定运行 ≥30 天 + _recent.md 机制上线 + 反思 ≥30 条 |

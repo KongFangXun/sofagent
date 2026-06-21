@@ -20,11 +20,46 @@
 #   task-orchestrate.sh --help
 # ============================================================
 
-# ao 不可用时降级提示（不报错退出）
+# ao 不可用时自动切默认编排（不报错退出——口头告知 + 自动降级）
+DEFAULT_ORCHESTRATE() {
+  local task_desc="$1"
+  echo ""
+  echo "  ╔═══════════════════════════════════╗"
+  echo "  ║   sofagent · 默认编排（无 ao）    ║"
+  echo "  ╚═══════════════════════════════════╝"
+  echo ""
+  echo "  任务: ${task_desc}"
+  echo ""
+  echo "  建议手动拆为 3-5 个子任务："
+  echo "    1. 分析/准备 → developer"
+  echo "    2. 核心实现 → developer"
+  echo "    3. 验证/测试 → qa-engineer"
+  echo "    4. 文档/收尾 → technical-writer"
+  echo ""
+  echo "  每完成一个子任务，记录到 task/logs："
+  echo "    bash \${OPENCLAW_SCRIPTS}/task-record.sh --task \"子任务描述\" --result \"成功|失败\""
+  echo ""
+  echo "  全部完成后，手动触发闭环反思（loop-check closure 模式）。"
+  echo ""
+  echo "  📖 手动编排完整指南: docs/ao-compose-format.md"
+  echo ""
+}
 if ! command -v ao &>/dev/null; then
   echo "[sofagent] ⚠️ agency-orchestrator (ao) 未安装——编排引擎不可用"
   echo "[sofagent] 降级方案：手动拆任务 → 用 task-record.sh 逐条记录 → 手动闭环"
-  echo "[sofagent] 安装 ao: npm install -g agency-orchestrator  或  加 --no-ao 参数跳过"
+  echo "[sofagent] 安装 ao: npm install -g agency-orchestrator@0.7.5  或  加 --no-ao 参数跳过"
+  # 如果用户传了任务描述，自动切到默认编排模式
+  TASK_FOR_DEFAULT=""
+  for arg in "$@"; do
+    case "$arg" in
+      --*) ;;
+      -*) ;;
+      *) TASK_FOR_DEFAULT="$arg"; break ;;
+    esac
+  done
+  if [ -n "$TASK_FOR_DEFAULT" ]; then
+    DEFAULT_ORCHESTRATE "$TASK_FOR_DEFAULT"
+  fi
   exit 0
 fi
 
@@ -33,7 +68,7 @@ fi
 # set -o pipefail: 管道中任一命令失败都计为失败，防止 `grep | wc` 等忽略中间错误
 set -euo pipefail
 
-VERSION="0.73"
+VERSION="0.74"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
