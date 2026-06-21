@@ -1,8 +1,8 @@
 # sofagent Handbook
 
-> 从 Context Engineering 到 Harness Engineering 再到 Loop Engineering——
-> 一个完全不懂代码的人，给 OpenClaw 写的 Agent 治理手册。
 > **为 AI Agent 提供纪律层与反思循环：4 条底线 + 10 则铁律约束行为，复杂任务自动拆解执行，每次跑完自动复盘。**
+>
+> 从 Context Engineering 到 Harness Engineering 再到 Loop Engineering。
 >
 > v0.75 · 2026-06-21 · 孔放勋
 
