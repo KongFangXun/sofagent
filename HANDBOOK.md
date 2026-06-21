@@ -57,7 +57,7 @@
 | 怎么装 | `bash sofagent/scripts/install.sh --platform 你的平台` | §五 |
 | 怎么用 | 装完直接派任务，🔴 复杂任务 Agent 自动拆解，🟢🟡 直接干 | §四 |
 | 适用场景 | 需要纪律和反思循环的日常 Agent 使用 | §四能力边界 |
-| 已知局限 | 核心效果待社区验证；复盘是 LLM 自评；Loop Agent 非独立进程；数据明文存储；不是多用户系统 | 设计文档 §三 |
+| 已知局限 | 核心效果待社区验证；复盘是 LLM 自评；Loop Agent 非独立进程；数据明文存储；不是多用户系统 | [LIMITATIONS.md](./LIMITATIONS.md) |
 
 ---
 
@@ -321,7 +321,7 @@ OpenClaw 通过 Hook 强制注入宪法，Agent 无需额外操作即可完整�
 **复杂任务时建议**：任务前加 `@skill:sofagent` 作为显式锚点，提高 Agent 走完加载链的概率。
 这不是强制保证，但实测能帮助 Agent 对齐约束。
 
-> 💡 加载链步进可靠性是已知局限（详见 [ARCHITECTURE §三](./ARCHITECTURE.md#加载链步进脆弱性v060v062-验证结论)），等各平台支持类似 Hook 机制后会自然解决。
+> 💡 加载链步进可靠性是已知局限（详见 [LIMITATIONS.md](./LIMITATIONS.md#加载链步进脆弱性v060v062-验证结论)），等各平台支持类似 Hook 机制后会自然解决。
 
 ### 什么时候用，什么时候不用
 
@@ -356,7 +356,7 @@ OpenClaw 通过 Hook 强制注入宪法，Agent 无需额外操作即可完整�
 | 多个电脑上能用吗 | 不能——不是分布式，跑在单个 Agent 里 |
 | 评分越来越不准 | 经验漂移——翻 task/logs 对照 think.md，清理低置信度旧条目 |
 
-> 💡 更多细节见 [ARCHITECTURE.md](./ARCHITECTURE.md#known-limits)。
+> 💡 更多细节见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 
 ### Osmani 三盆冷水（对用户的警告）
 

@@ -33,7 +33,7 @@
 | **脚本**（执行）| bash 脚本处理机械活——读写文件、调 API，Agent 调 shell 跑（非 bash 平台降级为 Read/Edit 工具） |
 | **平台兜底**| 加载链 + 断路器 + 死循环检测——OpenClaw 系由 Hook 和配置层兜底，其他平台依赖自身安全机制 |
 
-> ⚠️ sofagent 是软约束层——靠 Agent 读取并自觉遵守，不是硬编码强制执行。执行率受上下文长度、模型能力影响。详见 [设计文档 §三](./ARCHITECTURE.md)。
+> ⚠️ sofagent 是软约束层——靠 Agent 读取并自觉遵守，不是硬编码强制执行。执行率受上下文长度、模型能力影响。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 
 ---
 
@@ -81,7 +81,7 @@ graph TB
     style Engine fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
 ```
 
-> ⚠️ **已知局限**：核心效果尚无第三方实测数据；复盘是 LLM 自评，无客观基准；Loop Agent 非独立进程；纯文件约束依赖 Agent 配合；数据明文存储（task/logs + think.md 含任务记录，无加密）；不是多用户系统（共享 .sofagent/ 会交叉污染经验）。详见 [DESIGN §三](./ARCHITECTURE.md)。
+> ⚠️ **已知局限**：核心效果尚无第三方实测数据；复盘是 LLM 自评，无客观基准；Loop Agent 非独立进程；纯文件约束依赖 Agent 配合；数据明文存储（task/logs + think.md 含任务记录，无加密）；不是多用户系统（共享 .sofagent/ 会交叉污染经验）。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 
 ## 平台能力
 
@@ -93,7 +93,7 @@ graph TB
 
 > ⚠️ 以上为作者实测结论。如果你在某个平台上跑出了不同的结果——**那才是真实数据**，欢迎告诉我们。
 
-> ⚠️ **非 OpenClaw 平台预期管理**：编排引擎 / Hook / 断路器三项核心能力仅 OpenClaw 全绿。如果你不用 OpenClaw，sofagent 对你的价值约为完整版的 30%（只有宪法层约束生效）。这不是 bug，是架构宿命——v0.8 daemon 会改善加载链，但编排和 Hook 仍是 OpenClaw 专属。详见 [设计文档 §三 平台依赖](./ARCHITECTURE.md#平台依赖)。
+> ⚠️ **非 OpenClaw 平台预期管理**：编排引擎 / Hook / 断路器三项核心能力仅 OpenClaw 全绿。如果你不用 OpenClaw，sofagent 对你的价值约为完整版的 30%（只有宪法层约束生效）。这不是 bug，是架构宿命——v0.8 daemon 会改善加载链，但编排和 Hook 仍是 OpenClaw 专属。详见 [LIMITATIONS.md 平台依赖](./LIMITATIONS.md#平台依赖)。
 
 > 📎 「种子指令」是什么：写在 Agent 记忆文件（如 CLAUDE.md / AGENTS.md / SOUL.md）里的一句话，告诉 Agent 启动时先读 sofagent 约束文件。**这不是自动化——是人手动贴的纸条。** OpenClaw 和 WorkBuddy 通过各自的 skill 机制自动加载，不需要种子指令。
 
@@ -109,7 +109,7 @@ graph TB
 
 - ❌ 不是 AI 框架——不管模型 API、不写 prompt，那是 Model 层的事
 - ❌ 不是 Skills 商店——不维护可复用 Skills（内置 task-aware 等核心治理 Skill 除外），外部 Skills 从社区获取
-- ✅ 是一套**治理方法**——靠 Skill + 脚本 + 配置三层落地，告诉 Agent 什么能做、什么不能做、什么时候该收手。OpenClaw first，其他平台仅宪法层约束（详见 [设计文档 §三 平台依赖](./ARCHITECTURE.md#平台依赖) 能力表）
+- ✅ 是一套**治理方法**——靠 Skill + 脚本 + 配置三层落地，告诉 Agent 什么能做、什么不能做、什么时候该收手。OpenClaw first，其他平台仅宪法层约束（详见 [LIMITATIONS.md 平台依赖](./LIMITATIONS.md#平台依赖) 能力表）
 
 ---
 
@@ -191,7 +191,7 @@ bash sofagent/scripts/verify.sh
 /goal 帮我分析一下这个项目的代码质量，生成一份改进建议报告
 ```
 
-Agent 会自动拆解任务 → 匹配 Skill → 执行 → 反思沉淀。在 OpenClaw 上全程自动；在其他平台部分能力需手动触发（详见 [设计文档 §三 平台依赖](./ARCHITECTURE.md#平台依赖) 能力表）。
+Agent 会自动拆解任务 → 匹配 Skill → 执行 → 反思沉淀。在 OpenClaw 上全程自动；在其他平台部分能力需手动触发（详见 [LIMITATIONS.md 平台依赖](./LIMITATIONS.md#平台依赖) 能力表）。
 
 跑完看结果：
 
