@@ -100,6 +100,7 @@ while [[ $# -gt 0 ]]; do
     --no-ao)         NO_AO=1; shift ;;
     --no-config-inject) NO_CONFIG_INJECT=1; shift ;;
     --quick)         QUICK_MODE=1; shift ;;
+    --ci)            QUICK_MODE=1; shift ;;  # --ci = --quick 别名，CI 环境用
     --remote)        REMOTE_MODE=1; shift ;;
     -h|--help)
       echo "用法: install.sh [--platform openclaw|workbuddy|claude|codex|hermes] [--project-dir DIR]"
@@ -765,20 +766,27 @@ fi
 if [ -f "$DAEMON_INSTALL_SCRIPT" ] && [ -x "$DAEMON_INSTALL_SCRIPT" ]; then
   case "$OS_TYPE" in
     Darwin|Linux)
-      echo ""
-      echo "  ┌──────────────────────────────────────────┐"
-      echo "  │  Step 6b: daemon 后台进程（可选）          │"
-      echo "  └──────────────────────────────────────────┘"
-      echo ""
-      echo "  daemon 是一个轻量后台进程，监控 think.md / rules.md 变化。"
-      echo "  macOS (launchd) / Linux (systemd) 支持，Windows 自动跳过。"
-      echo ""
-      echo "  是否安装 daemon？[y/N] "
-      read -r INSTALL_DAEMON
-      if [ "${INSTALL_DAEMON:-n}" = "y" ] || [ "${INSTALL_DAEMON:-n}" = "Y" ]; then
-        bash "$DAEMON_INSTALL_SCRIPT"
+      # --quick / CI 环境：跳过 daemon 安装（不交互）
+      if [ "$QUICK_MODE" = "1" ]; then
+        echo ""
+        echo "  ⏭️  --quick 模式：跳过 daemon 安装"
+        echo "  （以后可以手动运行: bash sofagent/scripts/daemon-install.sh）"
       else
-        echo "  已跳过 daemon 安装（以后可以手动运行: bash sofagent/scripts/daemon-install.sh）"
+        echo ""
+        echo "  ┌──────────────────────────────────────────┐"
+        echo "  │  Step 6b: daemon 后台进程（可选）          │"
+        echo "  └──────────────────────────────────────────┘"
+        echo ""
+        echo "  daemon 是一个轻量后台进程，监控 think.md / rules.md 变化。"
+        echo "  macOS (launchd) / Linux (systemd) 支持，Windows 自动跳过。"
+        echo ""
+        echo "  是否安装 daemon？[y/N] "
+        read -r INSTALL_DAEMON
+        if [ "${INSTALL_DAEMON:-n}" = "y" ] || [ "${INSTALL_DAEMON:-n}" = "Y" ]; then
+          bash "$DAEMON_INSTALL_SCRIPT"
+        else
+          echo "  已跳过 daemon 安装（以后可以手动运行: bash sofagent/scripts/daemon-install.sh）"
+        fi
       fi
       ;;
     *)

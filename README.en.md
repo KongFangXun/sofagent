@@ -74,7 +74,7 @@ A **governance layer** for AI agents. Not a framework to build them, not a tool 
 > 💡 Core idea: **Heavy on governance, light on reuse.** Write your own constraints; pull templates and skills from the community. A discipline and reflection loop for AI agents (effectiveness pending community validation).
 > 💰 Cost: ~3,000 foundation tokens always-on (2.5% of 128K window). Orchestration engine only adds ~800 tokens for 🔴 complex tasks. See [Token budget](./HANDBOOK.md#token-预算参考).
 
-> ⚠️ **Known limitations**: No third-party usage data yet; reflection is LLM self-assessment with no objective baseline; the Loop Agent is not a separate process; file-only constraints depend on agent cooperation; data stored in plaintext (task/logs + think.md contain task records, unencrypted); not a multi-user system (sharing .sofagent/ cross-contaminates experience). See full list in [DESIGN §三](./ARCHITECTURE.md).
+> ⚠️ **Known limitations**: No third-party usage data yet; reflection is LLM self-assessment with no objective baseline; the Loop Agent is not a separate process; file-only constraints depend on agent cooperation; data stored in plaintext (task/logs + think.md contain task records, unencrypted); not a multi-user system (sharing .sofagent/ cross-contaminates experience). See full list in [LIMITATIONS.md](./LIMITATIONS.md#known-limits).
 
 ## Platform capabilities
 

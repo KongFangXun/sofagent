@@ -408,7 +408,7 @@ ao compose 拆完任务
 
 ### 复盘自评每次任务闭环后，主 Agent 切换到 Loop Agent 视角，从八个生产力维度评估整套编排（另有第九维「判断力」独立计分，见下）：
 
-> ⚠️ 工程边界：Loop Agent 不是独立进程或独立模型调用，是主 Agent 切换 prompt 以顾问身份输出建议。"独立复盘"指角色隔离，不是工程隔离。评分是 LLM 自评，无客观基准，结果仅供横向对比参考。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#known-limits)。
+> ⚠️ 工程边界：Loop Agent 不是独立进程或独立模型调用，是主 Agent 切换 prompt 以顾问身份输出建议。"独立复盘"指角色隔离，不是工程隔离。评分是 LLM 自评，无客观基准，结果仅供横向对比参考。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 
 八维评分维度：① 编排准确性（子任务粒度/依赖是否跑通）② Skill 匹配度（Skill 是否合适）③ 模型经济性（成本 vs 质量）④ 执行流畅度（有无卡顿/重试/超时）⑤ 结果完整性（用户要的做全了没）⑥ 复用潜力（同类任务通用性）⑦ 流程合规（是否跳步/绕过检查点）⑧ Loop 有效性（检查点是否起作用：5=提前发现/3=漏但修复/1=误报浪费）。另有第九维「判断力」（弃权率/拒绝高风险任务）与前八维分开计分——不放在同一个总分里，「你很能跑」和「你很会判断什么不该跑」是两件事。见 [loop-check.md](./sofagent/loop-check.md) 第九维定义。
 
@@ -456,9 +456,9 @@ orchestrator/ 就是迭代的中枢。它不记原始数据，只记最优结论
 
 ### 复盘——不让做事的给自己打分
 
-每次任务闭环后，主 Agent 切换到 Loop Agent 视角完成 ③④——角色隔离让执行者不给自己打分（非工程隔离，详见 [ARCHITECTURE.md](./ARCHITECTURE.md#known-limits)）。代价：每次闭环多消耗 ~3,000-5,000 token，中等以上任务占比不到 10%；简单任务（🟢）直接跳过 ③④。
+每次任务闭环后，主 Agent 切换到 Loop Agent 视角完成 ③④——角色隔离让执行者不给自己打分（非工程隔离，详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)）。代价：每次闭环多消耗 ~3,000-5,000 token，中等以上任务占比不到 10%；简单任务（🟢）直接跳过 ③④。
 
-> LLM 的评分本身有波动——同一组配置跑两次可能差 1 分。应对：看趋势不看单次、淘汰门槛设高（连续 3 次 <3.0 才降级）、人工可覆盖。完整讨论见 [ARCHITECTURE.md](./ARCHITECTURE.md#known-limits)。
+> LLM 的评分本身有波动——同一组配置跑两次可能差 1 分。应对：看趋势不看单次、淘汰门槛设高（连续 3 次 <3.0 才降级）、人工可覆盖。完整讨论见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 
 ### 冷启动怎么办
 
@@ -468,7 +468,7 @@ orchestrator/ 就是迭代的中枢。它不记原始数据，只记最优结论
 
 闭环评分的评审者分离按平台分级实现——OpenClaw 用 `session.spawn` 工程隔离（可类比引用 Self Harness 的方向性结论）；非 OpenClaw 是 prompt 级约束（无机制保障，效果未实测，不引用具体数字）。
 
-> 完整实现细节与诚实声明见 `loop-check.md` closure 模式 §平台分级评审；设计权衡见 [ARCHITECTURE.md §三「复盘评分是 LLM 自评」](./ARCHITECTURE.md#复盘评分是-llm-自评评审者与执行者不分离)。
+> 完整实现细节与诚实声明见 `loop-check.md` closure 模式 §平台分级评审；设计权衡见 [LIMITATIONS.md「复盘评分是 LLM 自评」](./LIMITATIONS.md#复盘评分是-llm-自评评审者与执行者不分离)。
 
 以上是 sofagent 跑起来之后的自我进化逻辑——从 Skills 评分到编排模板，全自动迭代。但在一切开始之前得先把它装上——接下来讲怎么装、在不同平台上怎么跑。
 
