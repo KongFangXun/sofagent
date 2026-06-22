@@ -2,7 +2,7 @@
 
 > v0.82 五平台实测（2026-06-22）。OpenClaw / WorkBuddy / Codex / Hermes Agent 已实测，Claude Code 待测。
 >
-> 详见测试用例：[docs/test-cases/platform-v081.md](./test-cases/platform-v081.md)
+> 详见测试方法：[docs/platform-test-guide.md](./platform-test-guide.md) · 实测案例：[docs/cases/](./cases/)
 
 ---
 
