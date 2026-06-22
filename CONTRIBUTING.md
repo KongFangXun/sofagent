@@ -140,4 +140,4 @@ sofagent 当前维护者为孔放勋一人。我们正在寻找愿意深度参�
 
 ## License
 
-你贡献的代码和文档，默认跟随本项目的双许可（CC-BY-4.0 + MIT）。详见 [LICENSE](./LICENSE)。
+本项目采用 MIT 许可证。你贡献的代码和文档默认跟随 MIT。详见 [LICENSE](./LICENSE)。
