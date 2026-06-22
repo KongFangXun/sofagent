@@ -44,19 +44,21 @@
 - **verify-evidence.sh**：最小可信验证器，扫描 task/logs 检查客观证据（测试 exit code / lint 结果），有标 `[已验证]`，无标 `[未验证]`
 - **daemon-notice.md**：daemon 最小消费动作，检测 think.md / rules.md 变化后写通知文件
 
-### Pending — 五平台实测（待作者手动执行）
+### ✅ 五平台实测完成（4/5 平台，Claude Code 待测）
 
-- **五平台实测矩阵**：8 维度 × 5 平台逐格填实测结果。无平台标「未测」，不编数据
-- **daemon 进程检测验证**：各平台 pgrep 命中率实测
-- **治理加固生效验证**：步数闸 / 熔断闸 / 幂等检查 / 评判器隔离是否真的生效
-- **docs/platform-matrix.md 填充**：v0.81 建的模板填实测数据
+v0.82 五平台实测已完成 4 个平台，核心结论：
 
-### Added — 五平台实测（已在 ROADMAP 规划）
+| 平台 | 测试人 | 结果 |
+|------|--------|------|
+| OpenClaw | 小嘉 | ✅ 8/8 全维度通过，Hook + 系统级断路器 + session.spawn |
+| WorkBuddy | WorkBuddy AI 代测 | ❌ 治理加固全失效（v0.52 skill 不含 scripts/ 目录） |
+| Codex | Codex CLI 0.140.0 | ✅ 安装+加载通过，治理靠自觉 |
+| Hermes Agent | 姚旭琛 | ❌ 4 项治理全失效，熔断闸实测 5 次未断 |
+| Claude Code | — | 待测 |
 
-- **五平台实测矩阵**：8 维度 × 5 平台逐格填实测结果。无平台标「未测」，不编数据
-- **daemon 进程检测验证**：各平台 pgrep 命中率实测
-- **治理加固生效验证**：步数闸 / 熔断闸 / 幂等检查 / 评判器隔离是否真的生效
-- **docs/platform-matrix.md 填充**：v0.81 建的模板填实测数据
+**关键发现**：步数闸 / 熔断闸 / 幂等检查 / 评判器隔离**仅在 OpenClaw 生效**。其他平台全部降级或失效。文档已诚实标注。
+
+实测数据见 [docs/platform-matrix.md](./docs/platform-matrix.md)。
 
 ### 诚实声明
 
@@ -73,7 +75,7 @@
 - **GitHub Actions CI**：`.github/workflows/daemon-linux-ci.yml`（systemd 全流程测试）
 - **install.sh Step 6b + verify.sh daemon Section + uninstall.sh 清理**：集成到现有脚本
 
-> ⚠️ **验证状态（截至 v0.82）**：以下 5 项治理加固（幂等检查 / 步数闸 / 熔断闸 / 评判器隔离 / 怀疑论提示）均为 prompt 级实现，**未经五平台实测验证**。不要假设它们能在你的平台上生效——实测数据见 `docs/platform-matrix.md`。
+> ⚠️ **验证状态（截至 v0.82 实测）**：以下 5 项治理加固（幂等检查 / 步数闸 / 熔断闸 / 评判器隔离 / 怀疑论提示）经五平台实测确认——**仅在 OpenClaw 生效**。其他平台（WorkBuddy / Codex / Hermes Agent）全部降级为 prompt 级软约束或失效。实测数据见 `docs/platform-matrix.md`。
 
 ### Changed — 治理逻辑加固
 - **engine.md**：新增幂等检查（4 类不可逆操作 + 操作 ID）+ 步数闸（MAX_STEPS=50 + GRACE_STEPS=3）+ 熔断闸（三态机 FAILURE_THRESHOLD=3 / COOLDOWN_SECONDS=30）

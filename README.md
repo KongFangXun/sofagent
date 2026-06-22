@@ -244,3 +244,4 @@ sofagent/                  ← 核心部署文件（SKILL.md 主入口 + 5 子 S
 - [Anthropic Skills](https://github.com/anthropics/skills) + [Managed Agents](https://www.anthropic.com/engineering/managed-agents) — SKILL.md 格式规范 + 四层架构哲学源头
 - [Loop Engineering](https://addyo.substack.com/p/loop-engineering) by Addy Osmani — 循环工程五大件，编排层理论源头
 - [superpowers](https://github.com/obra/superpowers) — Skill 作为 Harness 杠杆的思路
+- [SkillOpt](https://arxiv.org/abs/2605.06614) by Microsoft Research — Skill 文档训练方法论，启发 v0.9 Skill 自进化

@@ -27,8 +27,8 @@
 - **最小可信验证器**：`verify-evidence.sh` 扫描 task/logs 检查有无客观证据（测试 exit code / lint 结果）
 
 **还不太行的**：
-- **加载链靠 Agent 自觉**。OpenClaw 上有 Hook 强制注入，4底线+10铁律一定生效。但在 WorkBuddy / Claude Code / Codex / Hermes Agent 上——Agent 有时候读、有时候跳过去。这不是 bug，是架构宿命：没有 Hook 的平台，我们控制不了
-- **治理加固未经五平台实测**：步数闸 / 熔断闸 / 幂等检查 / 评判器隔离已加约束级别标注，但各平台是否生效待 v0.82 实测验证
+- **加载链靠 Agent 自觉**。OpenClaw 上有 Hook 强制注入，4底线+10铁律一定生效。v0.82 实测确认：WorkBuddy/Codex/Hermes Agent 靠主动触发或搜索加载，命中率不定。这不是 bug，是架构宿命：没有 Hook 的平台，我们控制不了
+- **治理加固仅在 OpenClaw 生效**：v0.82 五平台实测确认——步数闸 / 熔断闸 / 幂等检查 / 评判器隔离在 WorkBuddy / Codex / Hermes Agent 上全部降级或失效。文档已诚实标注，不模糊标 ⚠️
 - **数据是明文的**。`.sofagent/` 下面的反思、日志、评分——谁有文件系统权限谁就能读。我们在 SECURITY.md 里诚实写了
 - **编排引擎是外部依赖**。`ao compose` 是一个 npm 包，不在我们仓库里。离线/内网环境用不了——有 `--no-ao` 降级，但等于放弃了编排能力
 - **效果没数据**。我们说「减少 token 浪费」「降低偏离率」——都是定性感受，没有 A/B 对照。「Agent 有没有跑偏」本身就很难量化
@@ -36,7 +36,7 @@
 **最大的三个债**：
 1. ~~**daemon + 治理加固**~~：✅ v0.81 已完成 + v0.82 约束级别标注 + 最小消费动作 + 可信验证器
 2. **企业级**：加密、审计、多用户、批量部署——现在最多算「单人试用」
-3. **跨平台实测**：五平台验证用例已建好（docs/platform-matrix.md），实测数据待作者手动执行填入
+3. ~~**跨平台实测**~~：✅ v0.82 已完成 4/5 平台（OpenClaw/WorkBuddy/Codex/Hermes Agent），Claude Code 待测。实测数据见 [docs/platform-matrix.md](./docs/platform-matrix.md)
 
 ---
 
@@ -206,21 +206,21 @@
 
 ---
 
-### v0.82 — 五平台实测 + v0.81 评审问题修复（评审修复 ✅ / 实测待执行）
+### v0.82 — 五平台实测 + v0.81 评审问题修复 ✅
 
 **要解决什么**：v0.81 做了 daemon 骨架 + 5 项治理加固，但① 五平台能力矩阵全 ❓ ② v0.81 评审挖出一批 P0/P1 文档与设计问题。v0.82 双线并行：填实测数据 + 修评审问题。
 
-#### A. 五平台实测（验证线 — 待作者手动执行）
+#### A. 五平台实测（验证线 — ✅ 4/5 完成，Claude Code 待测）
 
 | 交付物 | 类别 | 说明 |
 |------|:--:|------|
-| **五平台实测矩阵** | 验证 | 8 维度 × 5 平台（OpenClaw / WorkBuddy / Claude Code / Codex / Hermes Agent），逐格填实测结果。无平台的标「未测」，不编数据 |
-| **daemon 进程检测验证** | 验证 | 各平台 pgrep 命中率实测——命中不上的平台写降级路径 |
-| **治理加固生效验证** | 验证 | 步数闸 / 熔断闸 / 幂等检查 / 评判器隔离在每个平台是否真的生效 |
-| **docs/platform-matrix.md 填充** | 验证 | v0.81 建的模板，v0.82 填实测数据 |
-| **可能的 bug 修复** | 修复 | 实测中发现的 daemon 兼容性问题 / 进程名不匹配 / 降级路径不优雅 |
+| ~~**五平台实测矩阵**~~ | ✅ 验证 | 8 维度 × 5 平台，4 平台已填实测数据（OpenClaw/WorkBuddy/Codex/Hermes Agent），Claude Code 待测 |
+| ~~**daemon 进程检测验证**~~ | ✅ 验证 | OpenClaw ✅ 命中 / Codex ✅ 可执行 / WorkBuddy ❌ 脚本缺失 / Hermes ❌ 脚本缺失 |
+| ~~**治理加固生效验证**~~ | ✅ 验证 | **结论**：步数闸/熔断闸/幂等检查/评判器隔离仅在 OpenClaw 生效，其他平台全部降级或失效 |
+| ~~**docs/platform-matrix.md 填充**~~ | ✅ 验证 | v0.81 建的模板，v0.82 已填 4 平台实测数据 |
+| **可能的 bug 修复** | 修复 | 实测发现 2 个 🔴 问题（OpenClaw Hook 注册 + WorkBuddy scripts 缺失）→ v0.83 处理 |
 
-> ⚠️ 实测底线：若发现步数闸 / 熔断闸 / 幂等检查在非 OpenClaw 平台完全不生效，文档明确说「仅 OpenClaw 生效」，不模糊标 ⚠️。
+> ⚠️ 实测底线确认：步数闸 / 熔断闸 / 幂等检查 / 评判器隔离在非 OpenClaw 平台均不生效。文档已明确标注。
 
 #### B. v0.81 评审问题修复（修复线 — ✅ 全部完成）
 
@@ -279,6 +279,34 @@
 | **OpenViking 三级记忆加载** | L0 Abstract(~100 token) / L1 Overview(~2000 token) / L2 Full 三级加载 | 反思条目爆炸时自动压缩为摘要+概览，Agent 按需展开。**前提**：v0.81 daemon 稳定运行 ≥30 天 + 反思 ≥30 条 |
 | **团队部署** | `install.sh --enterprise` 从统一配置源拉取 | 不是 20 个人手动装 20 次 |
 | **容器部署** | `docker compose up` 就能跑 | 企业「试一下」的门槛降到一条命令 |
+| **Skill 自进化** | 借鉴微软 SkillOpt 方法论，纯 MD + scoring 实现三条原则 | Skill 迭代闭环 |
+
+> #### Skill 自进化详解（借鉴 SkillOpt）
+>
+> **SkillOpt 是什么**：微软研究院开源的方法（2026-05），核心思路是把 Skill 文档当成模型的「外部状态」来训练——像训神经网络一样训 Agent Skill。52/52 任务取得最优，超越人工手写、LLM 直接生成等所有基线。
+>
+> **SkillOpt 四步循环**：Rollout（跑任务记录得分）→ Reflect（分析成败 minibatch 找规律）→ Edit（在预算内做 add/delete/replace）→ Gate（只在 held-out 验证集上得分提高时才接受编辑）。关键创新是**文本学习率**——限制每次编辑规模，防止一次性大改覆盖好规则。
+>
+> **sofagent 的 scoring vs SkillOpt**：
+>
+> | 维度 | SkillOpt | sofagent scoring |
+> |------|---------|-----------------|
+> | 做什么 | 自动优化 Skill 文档内容 | 按使用频率调整 Skill 信任等级 |
+> | 怎么做 | rollout → reflect → edit → gate 四步循环 | 被动观察 → 打分 → 升降权 |
+> | 核心产出 | best_skill.md（优化后的 Skill） | scoring/_index.md（信任等级表） |
+> | 依赖 | Python + 优化器模型 + 验证集 | 零依赖，bash + MD 文件 |
+>
+> scoring 是「观察+打分」，SkillOpt 是「训练+优化」——同一方向，不同深度。
+>
+> **借鉴三原则（纯 MD + scoring 实现，零外部依赖）**：
+>
+> | SkillOpt 概念 | sofagent 落地方式 |
+> |---------------|-------------------|
+> | **文本学习率** | Skill 每次迭代只允许改 ≤N 处，防止大改覆盖好规则。类比神经网络 learning rate：步长太大不收敛，太小学不到东西 |
+> | **Held-out Gate** | 新 Skill 必须在**未见过的任务类型**上跑过且 scoring 得分更高才替换旧版。防止对老任务过拟合——Skill 越通用越好，不是越熟越好 |
+> | **拒绝缓冲区** | 被 Gate 拒绝的编辑不扔掉，留 `#rejected` 标签记录已尝试方向。下次迭代避开死胡同，不在原地打转 |
+>
+> **为什么不直接用 SkillOpt 代码**：SkillOpt 是 Python 研究框架，依赖优化器模型 + 验证集 + 多次 rollout。sofagent 是零依赖纯 bash + MD，引入 SkillOpt = 引入 Python + GPU + 验证基础设施——跟零依赖哲学冲突。方法论可以抄，代码不引入。
 
 **不包含**：不会说「企业级已就绪」——这会让真正搞企业安全的人笑出声。我们会说「企业级能力初具雏形，欢迎安全审计」。
 

@@ -480,6 +480,7 @@ sofagent 站在这些人和作品的基础上：
 | **Nelson F. Liu et al.** | *Lost in the Middle*（2023）——LLM 对长上下文中间段注意力衰减的研究，500 字原则和加载链顺序的科学依据 | [arXiv 2307.03172](https://arxiv.org/abs/2307.03172) |
 | **Matt Pocock** | 调试方法论——输入/环境/工具/模型四维度系统性排查（Diagnosing Box），loop-check 验收闸的排查框架 | [github.com/mattpocock/skills](https://github.com/mattpocock/skills) |
 | **徐远哲 · Ledger-Views-Policy 三件套** | Agent Memory 架构最小形态：Raw Ledger（权威账本）+ Derived Views（派生视图）+ Policy（控制策略）——sofagent 记忆架构（task/logs + think.md + 权重门禁）的理论参照 | [Agent Memory 架构思考](https://xuyuanzhe.github.io/blog/2026/agent-memory-architecture/) |
+| **Microsoft Research · SkillOpt** | 把 Skill 文档当模型「外部状态」训练的方法论——rollout → reflect → edit → gate 四步循环。文本学习率 + Held-out Gate + 拒绝缓冲区三原则启发 sofagent v0.9 Skill 自进化（纯 MD + scoring 实现，不引入代码依赖） | [SkillOpt 论文](https://arxiv.org/abs/2605.06614) |
 
 ---
 
