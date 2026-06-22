@@ -172,7 +172,7 @@
 | **demo.gif + 架构图 + 截图** | 体验 | README 可视化——15 秒对比 gif + 两层架构图 + verify 输出截图（待录屏） |
 | **英文 README + EVIDENCE** | 社区 | README.en.md + docs/EVIDENCE.en.md，按英文社区语境重写 |
 | **Co-maintainer 招募（三级权限）** | 社区 | CONTRIBUTING 新增 Contributor→Triage→Co-maintainer 阶梯 |
-| **LICENSE 分界说明** | 合规 | README 明确代码 MIT / 文档 CC-BY-4.0 |
+| **LICENSE 统一为 MIT** | 合规 | README 明确 MIT License（代码 + 文档统一） |
 | **verify.sh ao 版本下限检查** | 加固 | ao --version ≥ 0.7.5 检查，低于则 warn |
 | **非 OpenClaw 平台预期管理** | 诚信 | README 明确「价值约 30%」，非 bug 是架构宿命 |
 | **CI/CD + Migration Checklist** | 企业 | docs/team-deploy.md 加 GitHub Actions YAML + 7 步迁移清单 |

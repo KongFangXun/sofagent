@@ -2,10 +2,10 @@
 
 中文 | [English](README.en.md)
 
-[![License](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-brightgreen)](./LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
 [![Version](https://img.shields.io/badge/version-v0.82-1E40AF)](./HANDBOOK.md)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--22-lightgrey)](./README.md)
-[![OpenClaw](https://img.shields.io/badge/OpenClaw-主力平台-2563EB)](./ARCHITECTURE.md#平台依赖)
+[![OpenClaw](https://img.shields.io/badge/OpenClaw-优先支持-2563EB)](./ARCHITECTURE.md#平台依赖)
 [![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes%20Agent-lightgrey)](./ARCHITECTURE.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent/stargazers)
 
@@ -15,7 +15,7 @@
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
 > v0.82 · 2026-06-21
 
-> 📄 **License 分界**：代码文件（.sh / .ts）= MIT License；文档文件（.md）= CC-BY-4.0。简单说——代码随便用，文档引用注明出处。
+> 📄 **License**：MIT。代码、文档、模板——随便用，保留版权声明就行。
 
 我叫孔放勋，一个完全不懂代码的产品经理。所有设计决策来自大半年的真实使用经验，文档由 [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) 和 [GLM-5.2](https://z.ai/) 配合生成。欢迎大佬进来改。
 
