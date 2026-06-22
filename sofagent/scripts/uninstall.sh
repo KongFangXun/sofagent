@@ -10,7 +10,7 @@
 #       ./uninstall.sh --help    显示帮助
 # ============================================================
 
-set -euo pipefail
+set -uo pipefail
 VERSION="0.83"
 
 # ── 确定脚本目录 ──
