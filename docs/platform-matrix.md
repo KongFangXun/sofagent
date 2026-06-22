@@ -1,6 +1,6 @@
 # sofagent 五平台能力矩阵
 
-> v0.82 五平台实测全部完成（2026-06-22）。
+> v0.83 五平台实测全部完成（2026-06-22）。
 >
 > 详见测试方法：[docs/platform-test-guide.md](./platform-test-guide.md) · 实测案例：[docs/cases/](./cases/)
 

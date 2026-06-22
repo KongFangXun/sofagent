@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent daemon-status.sh · daemon 状态查询 · v0.82
+# sofagent daemon-status.sh · daemon 状态查询 · v0.83
 # ============================================================
 # 默认：运行状态 + PID + 时长 + mode + detected_platforms
 # --detect：仅进程检测，输出平台列表
@@ -13,7 +13,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.82"
+VERSION="0.83"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SOFAGENT_DATA="${PWD}/.sofagent"
@@ -146,8 +146,8 @@ case "${1:-}" in
       detect_platforms 2>/dev/null || echo ""
     else
       # 内联检测
-      local found=""
-      local pgrep_out
+      found=""
+      pgrep_out=""
       pgrep_out=$(pgrep -f "openclaw" 2>/dev/null | head -1 || true)
       [ -n "$pgrep_out" ] && found="${found}openclaw "
       pgrep_out=$(pgrep -f "[Ww]ork[Bb]uddy" 2>/dev/null | head -1 || true)

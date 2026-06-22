@@ -18,7 +18,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.82"
+VERSION="0.83"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'
@@ -411,6 +411,50 @@ else
 fi
 
 # ════════════════════════════════════════
+# Step 5b: 部署配套脚本 + 数据目录（所有平台公共步骤）
+# ════════════════════════════════════════
+# P0-2/P0-3 修复：配套脚本部署和 .sofagent/ 数据目录创建不再限于 OpenClaw，
+# 对所有平台（WorkBuddy / Claude / Codex / Hermes）均执行。
+
+info "Step 5b/7 · 部署配套脚本 + 数据目录 → $TARGET"
+
+# 部署配套脚本（task-record + task-orchestrate + cleanup + audit + compress-memory）
+SCRIPTS_DST="${TARGET}/scripts"
+mkdir -p "$SCRIPTS_DST"
+
+for script in task-record.sh task-orchestrate.sh cleanup.sh audit.sh compress-memory.sh; do
+  src="${SCRIPT_DIR}/${script}"
+  dst="${SCRIPTS_DST}/${script}"
+  if [ -f "$src" ]; then
+    cp "$src" "$dst"
+    chmod +x "$dst"
+    ok "配套脚本已部署: $dst"
+  else
+    warn "找不到 ${script}，跳过"
+  fi
+done
+
+# 部署共享配置加载器（lib/config.sh）
+LIB_SRC="${SCRIPT_DIR}/lib/config.sh"
+LIB_DST="${SCRIPTS_DST}/lib/config.sh"
+if [ -f "$LIB_SRC" ]; then
+  mkdir -p "$(dirname "$LIB_DST")"
+  cp "$LIB_SRC" "$LIB_DST"
+  ok "配置加载器已部署: $LIB_DST"
+else
+  warn "找不到 lib/config.sh，跳过"
+fi
+
+# 创建 .sofagent/ 数据目录（SOFAGENT_DATA 已在平台分支前统一初始化）
+if [ ! -d "$SOFAGENT_DATA" ]; then
+  mkdir -p "$SOFAGENT_DATA/task/logs" "$SOFAGENT_DATA/orchestrator/workflows"
+  chmod 700 "$SOFAGENT_DATA" 2>/dev/null || true  # 权限加固：仅当前用户可访问
+  ok "数据目录已创建: $SOFAGENT_DATA"
+else
+  ok "数据目录已存在: $SOFAGENT_DATA"
+fi
+
+# ════════════════════════════════════════
 # Step 6: 部署加载链 Hook（仅 OpenClaw）
 # ════════════════════════════════════════
 if [ "$PLATFORM" = "openclaw" ]; then
@@ -448,14 +492,19 @@ if [ -d "$HOOK_SRC_DIR" ] && [ -f "${HOOK_SRC_DIR}/HOOK.md" ] && [ -f "${HOOK_SR
     ok "Hook 已注册: $HOOK_CONFIG"
   else
     info "正在注册 Hook → $HOOK_CONFIG"
+
+    # P0-1 修复：确保配置文件存在且有有效 JSON，防止全新配置目录生成空 .tmp 后 mv 覆盖
+    [ -f "$HOOK_CONFIG" ] || echo '{}' > "$HOOK_CONFIG"
+    [ -s "$HOOK_CONFIG" ] || echo '{}' > "$HOOK_CONFIG"
     [ -f "$HOOK_CONFIG" ] && cp "$HOOK_CONFIG" "${HOOK_CONFIG}.bak" 2>/dev/null || true
 
     REGISTER_OK=0
     if command -v jq &>/dev/null; then
       # jq 合并 hooks.internal.entries.sofagent-load-chain = {enabled:true}
+      # P0-1 修复：jq 输出后检查 .tmp 非空再 mv，避免空文件覆盖配置
       jq '.hooks.internal.enabled = ((.hooks.internal.enabled // false) or true) | .hooks.internal.entries = ((.hooks.internal.entries // {}) + {"sofagent-load-chain": {"enabled": true}})' \
         "$HOOK_CONFIG" > "${HOOK_CONFIG}.tmp" 2>/dev/null && \
-      mv "${HOOK_CONFIG}.tmp" "$HOOK_CONFIG" && REGISTER_OK=1 || \
+      [ -s "${HOOK_CONFIG}.tmp" ] && mv "${HOOK_CONFIG}.tmp" "$HOOK_CONFIG" && REGISTER_OK=1 || \
       warn "jq 注册失败（配置已备份为 ${HOOK_CONFIG}.bak）"
     elif command -v node &>/dev/null; then
       CONFIG_PATH="$HOOK_CONFIG" node - << 'HOOK_INJECT'
@@ -493,42 +542,6 @@ HOOK_INJECT
 else
   warn "找不到 hook 源文件（$HOOK_SRC_DIR/HOOK.md 或 handler.ts），跳过部署"
   warn "  仓库结构异常？请从 https://github.com/KongFangXun/sofagent 重新拉取"
-fi
-
-# 部署配套脚本（task-record + task-orchestrate + cleanup + audit）
-SCRIPTS_DST="${TARGET}/scripts"
-mkdir -p "$SCRIPTS_DST"
-
-for script in task-record.sh task-orchestrate.sh cleanup.sh audit.sh compress-memory.sh; do
-  src="${SCRIPT_DIR}/${script}"
-  dst="${SCRIPTS_DST}/${script}"
-  if [ -f "$src" ]; then
-    cp "$src" "$dst"
-    chmod +x "$dst"
-    ok "配套脚本已部署: $dst"
-  else
-    warn "找不到 ${script}，跳过"
-  fi
-done
-
-# 部署共享配置加载器（lib/config.sh）
-LIB_SRC="${SCRIPT_DIR}/lib/config.sh"
-LIB_DST="${SCRIPTS_DST}/lib/config.sh"
-if [ -f "$LIB_SRC" ]; then
-  mkdir -p "$(dirname "$LIB_DST")"
-  cp "$LIB_SRC" "$LIB_DST"
-  ok "配置加载器已部署: $LIB_DST"
-else
-  warn "找不到 lib/config.sh，跳过"
-fi
-
-# 创建 .sofagent/ 数据目录（SOFAGENT_DATA 已在平台分支前统一初始化）
-if [ ! -d "$SOFAGENT_DATA" ]; then
-  mkdir -p "$SOFAGENT_DATA/task/logs" "$SOFAGENT_DATA/orchestrator/workflows"
-  chmod 700 "$SOFAGENT_DATA" 2>/dev/null || true  # 权限加固：仅当前用户可访问
-  ok "数据目录已创建: $SOFAGENT_DATA"
-else
-  ok "数据目录已存在: $SOFAGENT_DATA"
 fi
 
 fi  # end OpenClaw-only Step 6
@@ -633,49 +646,59 @@ fi
 fi  # end OpenClaw-only Step 7
 
 # ════════════════════════════════════════
-# 手动平台：输出种子指令
+# 手动平台：输出 + 自动写入种子指令
 # ════════════════════════════════════════
 if [ "$PLATFORM" = "claude" ] || [ "$PLATFORM" = "codex" ] || [ "$PLATFORM" = "hermes" ]; then
+
+  # P1-5: 按平台确定种子指令目标文件和内容
+  SEED_FILE=""
+  SEED_PLATFORM_LABEL=""
+  case "$PLATFORM" in
+    claude)
+      SEED_FILE="$HOME/.claude/CLAUDE.md"
+      SEED_PLATFORM_LABEL="~/.claude/rules.md"
+      ;;
+    codex)
+      SEED_FILE="$HOME/.codex/AGENTS.md"
+      SEED_PLATFORM_LABEL="~/.codex/rules.md"
+      ;;
+    hermes)
+      SEED_FILE="$HOME/.hermes/SOUL.md"
+      SEED_PLATFORM_LABEL="~/.hermes/rules.md"
+      ;;
+  esac
+
+  SEED_CONTENT="每次对话开始时，读取以下文件并执行 sofagent 入口流程：
+1. rules.md：${SEED_PLATFORM_LABEL}（宪法已在 SKILL.md 内联）
+2. 如果工作目录含 .sofagent/ 数据文件，加载记忆和反思
+如果数据文件（.sofagent/）不存在，先创建空模板。"
+
+  # P1-5: 自动写入种子指令（查重：已含 sofagent 则跳过）
+  if [ -f "$SEED_FILE" ] && grep -q 'sofagent' "$SEED_FILE" 2>/dev/null; then
+    ok "种子指令已存在于 ${SEED_FILE}，跳过写入"
+  else
+    mkdir -p "$(dirname "$SEED_FILE")"
+    echo "" >> "$SEED_FILE"
+    echo "$SEED_CONTENT" >> "$SEED_FILE"
+    ok "种子指令已自动写入 $SEED_FILE"
+  fi
+
   echo ""
   echo "  ╔══════════════════════════════════════════════╗"
-  echo "  ║  📋 请手动粘贴以下种子指令到配置文件      ║"
+  echo "  ║  📋 种子指令已自动写入配置文件            ║"
   echo "  ╚══════════════════════════════════════════════╝"
   echo ""
 
-  case "$PLATFORM" in
-    claude)
-      echo "  目标文件：项目根目录或 ~/.claude/CLAUDE.md"
-      echo ""
-      echo "  ── 复制以下内容 ──"
-      echo ""
-      echo "  每次对话开始时，读取以下文件并执行 sofagent 入口流程："
-      echo "  1. rules.md：~/.claude/rules.md（宪法已在 SKILL.md 内联）"
-      echo "  2. 如果工作目录含 .sofagent/ 数据文件，加载记忆和反思"
-      echo "  如果数据文件（.sofagent/）不存在，先创建空模板。"
-      ;;
-    codex)
-      echo "  目标文件：项目根目录 AGENTS.md"
-      echo ""
-      echo "  ── 复制以下内容 ──"
-      echo ""
-      echo "  每次对话开始时，读取以下文件并执行 sofagent 入口流程："
-      echo "  1. rules.md：~/.codex/rules.md（宪法已在 SKILL.md 内联）"
-      echo "  2. 如果工作目录含 .sofagent/ 数据文件，加载记忆和反思"
-      echo "  如果数据文件（.sofagent/）不存在，先创建空模板。"
-      ;;
-    hermes)
-      echo "  目标文件：~/.hermes/SOUL.md（在现有内容末尾追加）"
-      echo ""
-      echo "  ── 复制以下内容 ──"
-      echo ""
-      echo "  每次对话开始时，读取以下文件并执行 sofagent 入口流程："
-      echo "  1. rules.md：~/.hermes/rules.md（宪法已在 SKILL.md 内联）"
-      echo "  2. 如果工作目录含 .sofagent/ 数据文件，加载记忆和反思"
-      echo "  如果数据文件（.sofagent/）不存在，先创建空模板。"
-      ;;
-  esac
+  echo "  目标文件：$SEED_FILE"
   echo ""
-  echo "  💡 粘贴后在下一轮对话中回复「sofagent」验证是否加载成功。"
+  echo "  ── 写入内容 ──"
+  echo ""
+  echo "  每次对话开始时，读取以下文件并执行 sofagent 入口流程："
+  echo "  1. rules.md：${SEED_PLATFORM_LABEL}（宪法已在 SKILL.md 内联）"
+  echo "  2. 如果工作目录含 .sofagent/ 数据文件，加载记忆和反思"
+  echo "  如果数据文件（.sofagent/）不存在，先创建空模板。"
+  echo ""
+  echo "  💡 在下一轮对话中回复「sofagent」验证是否加载成功。"
   echo ""
 fi
 
@@ -760,7 +783,7 @@ fi  # end OpenClaw-only status
 OS_TYPE="$(uname -s)"
 DAEMON_INSTALL_SCRIPT="${SCRIPT_DIR}/daemon-install.sh"
 if [ "${REMOTE_MODE:-0}" = "1" ]; then
-  DAEMON_INSTALL_SCRIPT="${TARGET_DIR}/sofagent/scripts/daemon-install.sh"
+  DAEMON_INSTALL_SCRIPT="${REMOTE_TMP}/sofagent/scripts/daemon-install.sh"
 fi
 
 if [ -f "$DAEMON_INSTALL_SCRIPT" ] && [ -x "$DAEMON_INSTALL_SCRIPT" ]; then

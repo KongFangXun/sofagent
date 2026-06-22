@@ -4,7 +4,7 @@
 >
 > 从 Context Engineering 到 Harness Engineering 再到 Loop Engineering。
 >
-> v0.82 · 2026-06-21 · 孔放勋
+> v0.83 · 2026-06-22 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
