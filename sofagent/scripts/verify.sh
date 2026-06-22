@@ -266,29 +266,28 @@ fi
 
 _section "宪法文件（v0.62：宪法内联在 SKILL.md，此处只检查 rules.md）"
 
-for f in rules.md; do
-  # v0.73: rules.md 部署到 skills/sofagent/rules.md（扁平化）
-  path="${OPENCLAW_DIR}/skills/sofagent/${f}"
-  if [ ! -f "$path" ]; then
-    path="${OPENCLAW_DIR}/${f}"  # 兼容旧版安装路径
+f="rules.md"
+# v0.73: rules.md 部署到 skills/sofagent/rules.md（扁平化）
+path="${OPENCLAW_DIR}/skills/sofagent/${f}"
+if [ ! -f "$path" ]; then
+  path="${OPENCLAW_DIR}/${f}"  # 兼容旧版安装路径
+fi
+if [ -f "$path" ] && [ -s "$path" ]; then
+  chars=$(wc -m < "$path" | tr -d ' ')
+  lines=$(wc -l < "$path" | tr -d ' ')
+  check_pass "$f ($chars 字符, $lines 行)"
+  # 权限检查：宪法文件不应 world-writable
+  perms=$(stat -f '%Lp' "$path" 2>/dev/null | tr -d '\n' || stat -c '%a' "$path" 2>/dev/null || echo "???")
+  if [ "${perms: -1}" = "7" ] || [ "${perms: -1}" = "6" ] || [ "${perms: -1}" = "3" ] || [ "${perms: -1}" = "2" ]; then
+    check_warn "$f 权限过于宽松 (${perms})，建议 chmod 644"
   fi
-  if [ -f "$path" ] && [ -s "$path" ]; then
-    chars=$(wc -m < "$path" | tr -d ' ')
-    lines=$(wc -l < "$path" | tr -d ' ')
-    check_pass "$f ($chars 字符, $lines 行)"
-    # 权限检查：宪法文件不应 world-writable
-    perms=$(stat -f '%Lp' "$path" 2>/dev/null | tr -d '\n' || stat -c '%a' "$path" 2>/dev/null || echo "???")
-    if [ "${perms: -1}" = "7" ] || [ "${perms: -1}" = "6" ] || [ "${perms: -1}" = "3" ] || [ "${perms: -1}" = "2" ]; then
-      check_warn "$f 权限过于宽松 (${perms})，建议 chmod 644"
-    fi
-    # 500 字原则（Handbook §二）
-    if [ "$chars" -gt 1200 ]; then
-      check_warn "$f 超过 1200 字符（${chars}），宪法层因含 10 条铁律 + 4 条底线，阈值放宽至 1200"
-    fi
-  else
-    check_fail "$f — 缺失或为空"
+  # 500 字原则（Handbook §二）
+  if [ "$chars" -gt 1200 ]; then
+    check_warn "$f 超过 1200 字符（${chars}），宪法层因含 10 条铁律 + 4 条底线，阈值放宽至 1200"
   fi
-done
+else
+  check_fail "$f — 缺失或为空"
+fi
 
 _hr
 _section "Skill 文件"

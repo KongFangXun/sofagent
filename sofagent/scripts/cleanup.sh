@@ -245,11 +245,11 @@ if [ "$total_entries" -gt "$RETENTION_MAX" ]; then
   fi
 
   # 按月排序（按目录名排序，最旧的先删）
-  # 加 `|| true` 防止 set -o pipefail 下 grep 零匹配返回 exit 1 时中断
+  # 用 printf+glob 替代 ls|grep，避免 shellcheck SC2010
   sorted_months=()
   while IFS= read -r month_dir; do
     [ -n "$month_dir" ] && sorted_months+=("$month_dir")
-  done < <({ ls -1d "$LOGS_DIR"/*/ 2>/dev/null | grep -v '/archive/' | sort || true; })
+  done < <(printf '%s\n' "$LOGS_DIR"/*/ 2>/dev/null | grep -v '/archive/' | sort || true)
 
   to_remove=$excess
   for month_dir in "${sorted_months[@]}"; do

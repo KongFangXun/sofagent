@@ -150,8 +150,8 @@ if [ -n "$SIXTY_DAYS_AGO" ]; then
   TMP_ARCHIVE_ADD="${TMPDIR:-/tmp}/sofagent-think-archive-add-$$.md"
   
   # 提取 60 天前的条目到归档，保留近 60 天条目
-  > "$TMP_ACTIVE"
-  > "$TMP_ARCHIVE_ADD"
+  : > "$TMP_ACTIVE"
+  : > "$TMP_ARCHIVE_ADD"
   
   CURRENT_BLOCK=""
   CURRENT_DATE=""

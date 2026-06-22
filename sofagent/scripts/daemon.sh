@@ -64,9 +64,8 @@ JSONEOF
 
 # ── 查找 think.md 和 rules.md ──
 _find_think() {
-  for f in "${REPO_ROOT}/.sofagent/think.md"; do
-    [ -f "$f" ] && { echo "$f"; return 0; }
-  done
+  local f="${REPO_ROOT}/.sofagent/think.md"
+  [ -f "$f" ] && { echo "$f"; return 0; }
   echo ""
 }
 

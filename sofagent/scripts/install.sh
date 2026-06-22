@@ -330,29 +330,28 @@ if [ "$PLATFORM" = "openclaw" ]; then
     rmdir "$(dirname "$OLD_RULES")" 2>/dev/null || true
     ok "旧 constitution/ 目录已清理"
   fi
-  warn "~/.openclaw/rules.md 保留为用户自定义文件，不会被覆盖"
+  warn "$HOME/.openclaw/rules.md 保留为用户自定义文件，不会被覆盖"
 else
   # 非 OpenClaw 平台：宪法文件部署到 $TARGET 根
-  for f in rules.md; do
-    src="${SCRIPT_DIR}/../${f}"
-    dst="${TARGET}/${f}"
-    if [ -f "$src" ]; then
-      if [ -f "$dst" ]; then
-        if cmp -s "$src" "$dst" 2>/dev/null; then
-          ok "$f — 已存在且内容相同，跳过"
-        else
-          warn "$f — 已有内容不同，已备份为 ${f}.bak → 覆盖更新"
-          cp "$dst" "${dst}.bak"
-          cp "$src" "$dst"
-        fi
+  f="rules.md"
+  src="${SCRIPT_DIR}/../${f}"
+  dst="${TARGET}/${f}"
+  if [ -f "$src" ]; then
+    if [ -f "$dst" ]; then
+      if cmp -s "$src" "$dst" 2>/dev/null; then
+        ok "$f — 已存在且内容相同，跳过"
       else
+        warn "$f — 已有内容不同，已备份为 ${f}.bak → 覆盖更新"
+        cp "$dst" "${dst}.bak"
         cp "$src" "$dst"
-        ok "$f — 已安装"
       fi
     else
-      err "$f — 源文件不存在: $src"
+      cp "$src" "$dst"
+      ok "$f — 已安装"
     fi
-  done
+  else
+    err "$f — 源文件不存在: $src"
+  fi
 fi
 
 # ════════════════════════════════════════
@@ -656,15 +655,15 @@ if [ "$PLATFORM" = "claude" ] || [ "$PLATFORM" = "codex" ] || [ "$PLATFORM" = "h
   case "$PLATFORM" in
     claude)
       SEED_FILE="$HOME/.claude/CLAUDE.md"
-      SEED_PLATFORM_LABEL="~/.claude/rules.md"
+      SEED_PLATFORM_LABEL="$HOME/.claude/rules.md"
       ;;
     codex)
       SEED_FILE="$HOME/.codex/AGENTS.md"
-      SEED_PLATFORM_LABEL="~/.codex/rules.md"
+      SEED_PLATFORM_LABEL="$HOME/.codex/rules.md"
       ;;
     hermes)
       SEED_FILE="$HOME/.hermes/SOUL.md"
-      SEED_PLATFORM_LABEL="~/.hermes/rules.md"
+      SEED_PLATFORM_LABEL="$HOME/.hermes/rules.md"
       ;;
   esac
 
