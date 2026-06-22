@@ -234,10 +234,10 @@
 | 2026-06-20 | KongFangXun | OpenClaw 桌面 + CLI | v0.71 运行时约束测试 6 项 | PASS（6/6） | — | 桌面端：三层加载链 Hook 注入全生效，底线#2 + 任务准入拒绝 + 铁律#3/#5 全部通过。CLI 端：补充 ao compose 测试发现 API Key 过期根因 |
 | 2026-06-20 | KongFangXun | WorkBuddy 桌面 | v0.71 运行时约束测试 5 项 | PASS（5/5） | — | @skill:sofagent → 三层加载链 Agent 自觉读取全生效。非 OpenClaw 平台加载链命中率本次 100% |
 | 2026-06-20 | KongFangXun | CLI (ao compose via DeepSeek) | ao compose 5 步编排流水线 | PASS | [Case 006](./docs/cases/ao-compose-2026-06-20/) | 新 Key 修复后 10s 生成 5 步流水线（📦→🏗️→🎨→⚙️→🔧），4 角色并发度 4。确认 ao compose 集成通路正常 |
-| 2026-06-22 | 小嘉 | OpenClaw (v0.82) | 8 维度五平台测试 | PASS（8/8） | — | verify.sh 41 通过 0 失败。Hook 加载链 100% + 系统级断路器 + session.spawn。详见 [platform-v082](./docs/test-cases/platform-v082.md) |
-| 2026-06-22 | WorkBuddy AI | WorkBuddy (v0.52 实装) | 8 维度五平台测试 | FAIL（0/8 硬约束） | — | scripts/ 目录缺失导致治理全降级。加载链 L1 主动触发时命中。详见 [platform-v082](./docs/test-cases/platform-v082.md) |
-| 2026-06-22 | Codex CLI | Codex (v0.82) | 8 维度五平台测试 | PASS（安装）/ ⚠️（治理靠自觉） | — | install + verify 通过。codex exec 加载链跑通。治理加固为 prompt 级。详见 [platform-v082](./docs/test-cases/platform-v082.md) |
-| 2026-06-22 | 姚旭琛 | Hermes Agent (v0.82) | 8 维度五平台测试 | FAIL（2/8） | — | L1+L3 加载超预期。4 项治理全失效——熔断闸实测 5 次未断。详见 [platform-v082](./docs/test-cases/platform-v082.md) |
+| 2026-06-22 | 小嘉 | OpenClaw (v0.82) | 8 维度五平台测试 | PASS（8/8） | — | verify.sh 41 通过 0 失败。Hook 加载链 100% + 系统级断路器 + session.spawn。详见 [Case 007](./cases/openclaw-v082-2026-06-21/) |
+| 2026-06-22 | WorkBuddy AI | WorkBuddy (v0.52 实装) | 8 维度五平台测试 | FAIL（0/8 硬约束） | — | scripts/ 目录缺失导致治理全降级。加载链 L1 主动触发时命中。详见 [Case 008](./cases/workbuddy-v082-2026-06-22/) |
+| 2026-06-22 | Codex CLI | Codex (v0.82) | 8 维度五平台测试 | PASS（安装）/ ⚠️（治理靠自觉） | — | install + verify 通过。codex exec 加载链跑通。治理加固为 prompt 级。详见 [Case 009](./cases/codex-v082-2026-06-22/) |
+| 2026-06-22 | 姚旭琛 | Hermes Agent (v0.82) | 8 维度五平台测试 | FAIL（2/8） | — | L1+L3 加载超预期。4 项治理全失效——熔断闸实测 5 次未断。详见 [Case 010](./cases/hermes-v082-2026-06-22/) |
 ---
 
 > 测试完成后，将最有代表性的截图和数据填入 README「实际效果」区块和 docs/EVIDENCE.md。
