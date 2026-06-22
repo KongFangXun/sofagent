@@ -74,7 +74,7 @@ set_json_field() {
 compute_hash() {
   local file="$1"
   if [ -f "$file" ] && [ -r "$file" ]; then
-    shasum -a 256 "$file" 2>/dev/null | cut -c1-16
+    { shasum -a 256 "$file" 2>/dev/null || sha256sum "$file" 2>/dev/null; } | cut -c1-16
   else
     echo ""
   fi
