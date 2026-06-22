@@ -65,25 +65,24 @@ case "$PLATFORM" in
     removed=0
 
     # 清理宪法文件（v0.73：rules.md 扁平化）
-    for f in rules.md; do
-      path="$HOME/.workbuddy/$f"
-      if [ "$LIST_ONLY" = true ]; then
-        if [ -f "$path" ]; then info "  $path"; fi
-      else
-        if [ -f "$path" ]; then rm -f "$path" && ok "已删除: $HOME/.workbuddy/$f"; fi
-      fi
-      # 兼容旧 skills/sofagent/ 路径
-      skill_path="$HOME/.workbuddy/skills/sofagent/$f"
-      if [ -f "$skill_path" ]; then
-        if [ "$LIST_ONLY" = true ]; then info "  $skill_path"; else rm -f "$skill_path" && ok "已删除: skills/sofagent/$f"; fi
-      fi
-      # 兼容旧 constitution/ 路径
-      old_path="$HOME/.workbuddy/skills/sofagent/constitution/$f"
-      if [ -f "$old_path" ]; then
-        if [ "$LIST_ONLY" = true ]; then info "  $old_path（v0.72 前残留）"; else rm -f "$old_path" && rmdir "$(dirname "$old_path")" 2>/dev/null || true; ok "已删除旧版残留: constitution/$f"; fi
-      fi
-      ((removed++)) || true
-    done
+    f="rules.md"
+    path="$HOME/.workbuddy/$f"
+    if [ "$LIST_ONLY" = true ]; then
+      if [ -f "$path" ]; then info "  $path"; fi
+    else
+      if [ -f "$path" ]; then rm -f "$path" && ok "已删除: $HOME/.workbuddy/$f"; fi
+    fi
+    # 兼容旧 skills/sofagent/ 路径
+    skill_path="$HOME/.workbuddy/skills/sofagent/$f"
+    if [ -f "$skill_path" ]; then
+      if [ "$LIST_ONLY" = true ]; then info "  $skill_path"; else rm -f "$skill_path" && ok "已删除: skills/sofagent/$f"; fi
+    fi
+    # 兼容旧 constitution/ 路径
+    old_path="$HOME/.workbuddy/skills/sofagent/constitution/$f"
+    if [ -f "$old_path" ]; then
+      if [ "$LIST_ONLY" = true ]; then info "  $old_path（v0.72 前残留）"; else rm -f "$old_path" && rmdir "$(dirname "$old_path")" 2>/dev/null || true; ok "已删除旧版残留: constitution/$f"; fi
+    fi
+    ((removed++)) || true
 
     # 清理旧版遗留的 sofagent.md（v0.62 前部署的宪法文件）
     legacy="$HOME/.workbuddy/sofagent.md"
@@ -162,42 +161,41 @@ fi
 removed=0
 
 # ── 删除 / 列出宪法文件（v0.73：rules.md 扁平化到 skills/sofagent/rules.md）──
-for f in rules.md; do
-  # 新路径
-  path="${OPENCLAW_DIR}/skills/sofagent/${f}"
-  if [ -f "$path" ]; then
-    if [ "$LIST_ONLY" = true ]; then
-      info "  $path"
-    else
-      rm -f "$path" "${path}.bak"
-      ok "已删除: skills/sofagent/$f"
-    fi
-    ((removed++)) || true
+f="rules.md"
+# 新路径
+path="${OPENCLAW_DIR}/skills/sofagent/${f}"
+if [ -f "$path" ]; then
+  if [ "$LIST_ONLY" = true ]; then
+    info "  $path"
+  else
+    rm -f "$path" "${path}.bak"
+    ok "已删除: skills/sofagent/$f"
   fi
-  # 兼容旧 constitution/ 路径
-  old_path="${OPENCLAW_DIR}/skills/sofagent/constitution/${f}"
-  if [ -f "$old_path" ]; then
-    if [ "$LIST_ONLY" = true ]; then
-      info "  $old_path（v0.72 前残留）"
-    else
-      rm -f "$old_path" "${old_path}.bak"
-      rmdir "$(dirname "$old_path")" 2>/dev/null || true
-      ok "已删除旧版残留: constitution/$f"
-    fi
-    ((removed++)) || true
+  ((removed++)) || true
+fi
+# 兼容旧 constitution/ 路径
+old_path="${OPENCLAW_DIR}/skills/sofagent/constitution/${f}"
+if [ -f "$old_path" ]; then
+  if [ "$LIST_ONLY" = true ]; then
+    info "  $old_path（v0.72 前残留）"
+  else
+    rm -f "$old_path" "${old_path}.bak"
+    rmdir "$(dirname "$old_path")" 2>/dev/null || true
+    ok "已删除旧版残留: constitution/$f"
   fi
-  # 旧根路径
-  path="${OPENCLAW_DIR}/${f}"
-  if [ -f "$path" ]; then
-    if [ "$LIST_ONLY" = true ]; then
-      info "  $path"
-    else
-      rm -f "$path" "${path}.bak"
-      ok "已删除: $f"
-    fi
-    ((removed++)) || true
+  ((removed++)) || true
+fi
+# 旧根路径
+path="${OPENCLAW_DIR}/${f}"
+if [ -f "$path" ]; then
+  if [ "$LIST_ONLY" = true ]; then
+    info "  $path"
+  else
+    rm -f "$path" "${path}.bak"
+    ok "已删除: $f"
   fi
-done
+  ((removed++)) || true
+fi
 
 # ── 清理旧版遗留的 sofagent.md（v0.62 前部署的宪法文件）──
 legacy="${OPENCLAW_DIR}/sofagent.md"
