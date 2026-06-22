@@ -1,12 +1,21 @@
 #!/bin/bash
 # ============================================================
-# sofagent lib/daemon-lib.sh · daemon 共享函数库 · v0.81
+# sofagent lib/daemon-lib.sh · daemon 共享函数库 · v0.82
 # ============================================================
 # 纯 bash 实现，零外部依赖。被 daemon.sh / daemon-status.sh 共用。
 # 前提：调用方需先设置 DAEMON_JSON / DAEMON_LOG / DAEMON_PID_FILE 变量。
 # ============================================================
 
 # ── JSON 读写（扁平字段，纯 bash，零 jq 依赖）──
+
+# TODO-v0.9: 当 daemon.json 字段 >10 个或出现嵌套时，迁移到 jq 或 python3 -c。
+# 当前 grep+sed 方案的限制：
+#   1. value 含 | 字符会断（sed 分隔符冲突）
+#   2. 同名 key 匹配错（head -1 只取第一条）
+#   3. 无引号转义（value 含特殊字符）
+# 触发迁移的条件：字段数 >10 或出现嵌套对象
+# 迁移目标：json_read() { jq -r ".$1" "$DAEMON_JSON"; }
+#           json_write() { jq ".$1 = \"$2\"" "$DAEMON_JSON" > tmp && mv tmp "$DAEMON_JSON"; }
 
 # get_json_field "key" → 输出 value
 get_json_field() {

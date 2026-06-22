@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent daemon.sh · daemon 主进程 · v0.81
+# sofagent daemon.sh · daemon 主进程 · v0.82
 # ============================================================
 # 命令行接口：start / stop / status / --foreground
 # 主循环每 30 秒：检测平台进程 + 文件 hash 变化 → 更新 daemon.json
@@ -13,7 +13,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.81"
+VERSION="0.82"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." 2>/dev/null && pwd || echo "$PWD")"
@@ -56,7 +56,8 @@ _init_json() {
   "detected_platforms": "",
   "think_hash": "",
   "rules_hash": "",
-  "last_check": "${now}"
+  "last_check": "${now}",
+  "last_evidence_score": "unknown"
 }
 JSONEOF
 }
@@ -107,9 +108,14 @@ _main_loop() {
 
     if [ -n "$think_hash" ] && [ "$think_hash" != "${old_think:-}" ]; then
       daemon_log "think.md 已变更 (${old_think:-无} → ${think_hash})"
+      # 最小消费动作：写通知文件，下次 Agent 启动时可注入
+      echo "[daemon] $(date -u +"%Y-%m-%dT%H:%M:%SZ") think.md 已变更——下次启动时建议读取最新反思" \
+        > "${SOFAGENT_DATA}/daemon-notice.md"
     fi
     if [ -n "$rules_hash" ] && [ "$rules_hash" != "${old_rules:-}" ]; then
       daemon_log "rules.md 已变更 (${old_rules:-无} → ${rules_hash})"
+      echo "[daemon] $(date -u +"%Y-%m-%dT%H:%M:%SZ") rules.md 已变更——下次启动时建议读取最新规则" \
+        > "${SOFAGENT_DATA}/daemon-notice.md"
     fi
 
     # 4. 更新 daemon.json
@@ -119,6 +125,13 @@ _main_loop() {
     set_json_field "rules_hash" "$rules_hash"
     set_json_field "last_check" "$now"
 
+    # 5. 最小可信验证：跑 verify-evidence.sh，结果写入 daemon.json
+    local evidence_score="unknown"
+    if [ -x "${SCRIPT_DIR}/verify-evidence.sh" ]; then
+      evidence_score=$(bash "${SCRIPT_DIR}/verify-evidence.sh" --daemon 2>/dev/null && echo "verified" || echo "unverified")
+    fi
+    set_json_field "last_evidence_score" "$evidence_score"
+
     sleep 30
   done
 }
@@ -126,6 +139,14 @@ _main_loop() {
 # ── start：后台启动 ──
 _start() {
   _ensure_data_dir
+
+  # 系统兼容性检查：非 macOS/Linux 拒绝启动，避免「假运行」
+  local os_type
+  os_type="$(uname -s)"
+  case "$os_type" in
+    Darwin|Linux) ;;
+    *) echo "daemon 不支持此操作系统 (${os_type})——宪法层正常生效，daemon 后台监控跳过。"; return 1 ;;
+  esac
 
   if daemon_running 2>/dev/null; then
     echo "daemon 已在运行 (PID $(get_daemon_pid))"

@@ -8,7 +8,7 @@
 
 ## 8 维度 × 5 平台
 
-| 维度 | OpenClaw | WorkBuddy | Claude Code | Codex | Hermes |
+| 维度 | OpenClaw | WorkBuddy | Claude Code | Codex | Hermes Agent |
 |------|:---:|:---:|:---:|:---:|:---:|
 | **daemon 进程检测** | ❓ | ❓ | ❓ | ❓ | ❓ |
 | **步数闸生效** | ❓ | ❓ | ❓ | ❓ | ❓ |
@@ -25,7 +25,7 @@
 
 基于 v0.6x 已有数据和各平台架构差异：
 
-| 维度 | OpenClaw | WorkBuddy | Claude Code | Codex | Hermes |
+| 维度 | OpenClaw | WorkBuddy | Claude Code | Codex | Hermes Agent |
 |------|:---:|:---:|:---:|:---:|:---:|
 | daemon 进程检测 | ✅ 预期命中 | ✅ 预期命中 | ❓ 需实测 | ❓ 需实测 | ❓ 需实测 |
 | 步数闸生效 | ✅ Hook 强制 | ⚠️ 靠自觉 | ⚠️ 靠自觉 | ⚠️ 靠自觉 | ⚠️ 靠自觉 |
@@ -67,4 +67,4 @@
 
 ---
 
-> ⚠️ **诚实声明**：作者不一定有全部 5 平台的环境（特别是 Codex 和 Hermes）。没有环境的平台标「未测」，不编数据。
+> ⚠️ **诚实声明**：作者不一定有全部 5 平台的环境（特别是 Codex 和 Hermes Agent）。没有环境的平台标「未测」，不编数据。

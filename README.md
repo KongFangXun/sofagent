@@ -3,17 +3,17 @@
 中文 | [English](README.en.md)
 
 [![License](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.81-1E40AF)](./HANDBOOK.md)
-[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--21-lightgrey)](./README.md)
+[![Version](https://img.shields.io/badge/version-v0.82-1E40AF)](./HANDBOOK.md)
+[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--22-lightgrey)](./README.md)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-主力平台-2563EB)](./ARCHITECTURE.md#平台依赖)
-[![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes-lightgrey)](./ARCHITECTURE.md#平台依赖)
+[![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes%20Agent-lightgrey)](./ARCHITECTURE.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 <!-- TODO: demo.gif — 15s 左右对比: 裸 Agent 跑偏 vs sofagent 约束后正常 -->
 
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
-> v0.81 · 2026-06-21
+> v0.82 · 2026-06-21
 
 > 📄 **License 分界**：代码文件（.sh / .ts）= MIT License；文档文件（.md）= CC-BY-4.0。简单说——代码随便用，文档引用注明出处。
 
@@ -89,9 +89,11 @@ graph TB
 |------|------|------|------|
 | OpenClaw | 第 1 层 Hook 注入，第 2/3 层 Agent 自觉（有 Hook 辅助提醒）| ao compose 完整可用 | 高 — 安装即生效 |
 | WorkBuddy | 第 1 层 @skill 注入，第 2/3 层 Agent 自觉 | ao compose 可用（需 npm 安装）| 中 — 需手动 @skill:sofagent |
-| Claude Code / Codex / Hermes | 第 1 层通过种子指令加载，第 2/3 层 Agent 自觉（无机制保障）| 不可用（降级为手工拆解）| 低 — 核心约束仍生效，编排引擎缺失 |
+| Claude Code / Codex / Hermes Agent | 第 1 层通过种子指令加载，第 2/3 层 Agent 自觉（无机制保障）| 不可用（降级为手工拆解）| 低 — 核心约束仍生效，编排引擎缺失 |
 
 > ⚠️ 以上为作者实测结论。如果你在某个平台上跑出了不同的结果——**那才是真实数据**，欢迎告诉我们。
+
+> ⚠️ **治理加固约束级别**：步数闸 / 熔断闸 / 幂等检查均为 prompt 级软提醒，非进程级硬拦截——Agent 可能跳过。OpenClaw 上 Hook 可升级为硬拦截。各平台实测数据见 [platform-matrix.md](./docs/platform-matrix.md)。
 
 > ⚠️ **非 OpenClaw 平台预期管理**：编排引擎 / Hook / 断路器三项核心能力仅 OpenClaw 全绿。如果你不用 OpenClaw，sofagent 对你的价值约为完整版的 30%（只有宪法层约束生效）。这不是 bug，是架构宿命——v0.8 daemon 会改善加载链，但编排和 Hook 仍是 OpenClaw 专属。详见 [LIMITATIONS.md 平台依赖](./LIMITATIONS.md#平台依赖)。
 
@@ -117,13 +119,14 @@ graph TB
 
 > 选你的平台，5 步，10 分钟。
 
-### 🚀 一键安装（推荐）
+### 🚀 安装（两步）
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/sofagent/scripts/install.sh | bash -s -- --remote
+git clone https://github.com/KongFangXun/sofagent.git
+cd sofagent && bash sofagent/scripts/install.sh
 ```
 
-> 一行安装，自动探测平台。下方保留完整安装方式（git clone + bash install.sh）。
+> 自动探测平台。也可以用一行命令（`curl -fsSL ... | bash`），但企业环境推荐 git clone——代码可审计。
 
 如果你已安装 ClawHub CLI 或 SkillHub CLI，一行命令即可：
 
@@ -135,7 +138,7 @@ clawhub skill install KongFangXun/sofagent
 skillhub install sofagent
 ```
 
-> 💡 没有 ClawHub CLI？继续往下走传统安装流程，一样简单。
+> 💡 没有 ClawHub CLI？继续往下走 git clone 安装流程，一样简单。
 
 ### 1. 前置依赖
 
@@ -146,18 +149,11 @@ skillhub install sofagent
 | node | ≥18 | `ao compose` 编排引擎（agency-orchestrator）| `node --version` |
 | npm | ≥9 | 全局安装 agency-orchestrator | `npm --version` |
 
-> ⚠️ WorkBuddy 用户若不跑编排引擎（只用宪法层约束），node/npm 可不带。OpenClaw / Claude Code / Codex / Hermes 跑复杂任务（🔴）必须有 node + npm。
+> ⚠️ WorkBuddy 用户若不跑编排引擎（只用宪法层约束），node/npm 可不带。OpenClaw / Claude Code / Codex / Hermes Agent 跑复杂任务（🔴）必须有 node + npm。
 
 > ⚠️ **编排引擎依赖第三方 npm 包 `agency-orchestrator`**。若 npm install 失败或未配置 API Key，编排引擎降级为 Agent 手工拆解（模板匹配和角色分配不可用）。约束层不受影响。
 
-### 2. git clone
-
-```bash
-git clone https://github.com/KongFangXun/sofagent.git
-cd sofagent
-```
-
-### 3. 安装
+### 2. 安装
 
 ```bash
 bash sofagent/scripts/install.sh --platform 你的平台
@@ -169,11 +165,11 @@ bash sofagent/scripts/install.sh --platform 你的平台
 | **WorkBuddy** | `bash sofagent/scripts/install.sh --platform workbuddy` 或通过技能市场安装 | 部署 SKILL.md 到 `~/.workbuddy/skills/sofagent/` |
 | **Claude Code** | `bash sofagent/scripts/install.sh --platform claude` | 部署宪法 + 输出种子指令（需手动粘贴到 CLAUDE.md） |
 | **Codex** | `bash sofagent/scripts/install.sh --platform codex` | 部署宪法 + 输出种子指令（需手动粘贴到 AGENTS.md） |
-| **Hermes** | `bash sofagent/scripts/install.sh --platform hermes` | 部署宪法 + 输出种子指令（需手动粘贴到 SOUL.md） |
+| **Hermes Agent** | `bash sofagent/scripts/install.sh --platform hermes` | 部署宪法 + 输出种子指令（需手动粘贴到 SOUL.md） |
 
 > 未指定 `--platform` 时自动探测。install.sh 会根据平台写入对应目录（OpenClaw→`~/.openclaw/skills/`，WorkBuddy→`~/.workbuddy/skills/`，其他平台输出种子指令）。
 
-### 4. 30 秒 smoke test
+### 3. 30 秒 smoke test
 
 ```bash
 bash sofagent/scripts/verify.sh
@@ -181,7 +177,7 @@ bash sofagent/scripts/verify.sh
 
 > 预期：9 类 24+ 检查项全 pass。加 `--json` 可集成到 CI/CD。如果 fail，看 [Handbook §六](./HANDBOOK.md#六常见问题) 排查。
 
-### 5. 跑第一个任务
+### 4. 跑第一个任务
 
 打开你的 Agent 客户端，试一个需要多步拆解的任务（这样才能看出 sofagent 的编排能力）：
 

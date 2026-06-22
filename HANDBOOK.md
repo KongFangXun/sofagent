@@ -4,7 +4,7 @@
 >
 > 从 Context Engineering 到 Harness Engineering 再到 Loop Engineering。
 >
-> v0.81 · 2026-06-21 · 孔放勋
+> v0.82 · 2026-06-21 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -297,7 +297,7 @@ bash sofagent/scripts/install.sh --platform {你的平台}
 | 平台 | 自动注入文件 | Agent 能写吗 | 方式 |
 |------|------|:--:|------|
 | WorkBuddy / OpenClaw | `MEMORY.md` | ✅ | Agent 首次初始化时自动写入种子指令 |
-| Claude Code / Codex / Hermes | `CLAUDE.md` / `AGENTS.md` / `SOUL.md` | ❌ | **你**手动在文件末尾贴一行种子指令 |
+| Claude Code / Codex / Hermes Agent | `CLAUDE.md` / `AGENTS.md` / `SOUL.md` | ❌ | **你**手动在文件末尾贴一行种子指令 |
 
 两条路终点一样——Agent 每轮都看到种子指令，读到就去加载 Skill。区别只是种子指令是谁写进去的。种子指令的具体内容和手动粘贴位置见 [开发文档 §一 脚本与文件结构速查](./DEVELOPMENT.md#脚本与文件结构速查)。
 
@@ -309,7 +309,7 @@ bash sofagent/scripts/install.sh --platform {你的平台}
 | WorkBuddy | 自动（Agent 写 MEMORY.md） | ✅ | ⚠️（沙箱受限） | Skill 自启，部分脚本不可用 |
 | Claude Code | 手动（你写 CLAUDE.md） | ❌ | ✅ | 一行指令兜底，脚本全支持 |
 | Codex | 手动（你写 AGENTS.md） | ❌ | ✅ | 同上 |
-| Hermes | 手动（你写 SOUL.md） | ❌ | ⚠️ | 同上 |
+| Hermes Agent | 手动（你写 SOUL.md） | ❌ | ⚠️ | 同上 |
 
 ### 非 OpenClaw 用户的 tips
 
@@ -348,7 +348,7 @@ OpenClaw 通过 Hook 强制注入宪法，Agent 无需额外操作即可完整�
 
 | 问题 | 怎么办 |
 |------|------|
-| Agent 不遵守铁律 | 检查文件位置；把最关键规则写到 rules.md。非 OpenClaw 平台（WorkBuddy / Claude Code / Codex / Hermes）若 Skill 未自动加载，在对话中手动 `@skill:sofagent` 触发入口流程 |
+| Agent 不遵守铁律 | 检查文件位置；把最关键规则写到 rules.md。非 OpenClaw 平台（WorkBuddy / Claude Code / Codex / Hermes Agent）若 Skill 未自动加载，在对话中手动 `@skill:sofagent` 触发入口流程 |
 | think.md 出现错误记忆 | 直接编辑 think.md 删掉；对照 task/logs 核实 |
 | Skill 评分不准 | 手动改 scoring/ 评分；rules.md 加 `不自动淘汰 Skill` |
 | 编排结果不稳定 | 同类任务跑够 3 次用模板；没模板时少拆子任务、只用已验证 Skill |

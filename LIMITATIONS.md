@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。这里不卖「企业级安全」或「军事级加密」——只写 sofagent 做不到什么、为什么做不到、等什么才能做到。
 >
-> v0.81 · 2026-06-22 · 孔放勋
+> v0.82 · 2026-06-22 · 孔放勋
 
 ---
 
@@ -22,7 +22,7 @@ sofagent 的核心机制是 MD 文件注入 Agent 上下文。这意味着：约
 
 **三层加载链在非 OpenClaw 平台上不可靠。** Agent 声称"跑了 sofagent"，实际可能只读了 1/3（宪法层被跳过）。
 
-v0.62 的扁平化重构将宪法内联进 SKILL.md——第 1 层不再依赖 Agent Read，所有平台强制生效。但第 2、3 层（think.md + rules.md）仍靠 Agent 自觉，在 WorkBuddy / Claude Code / Codex / Hermes 上存在"Agent 优先执行用户任务、跳过加载链"的行为。
+v0.62 的扁平化重构将宪法内联进 SKILL.md——第 1 层不再依赖 Agent Read，所有平台强制生效。但第 2、3 层（think.md + rules.md）仍靠 Agent 自觉，在 WorkBuddy / Claude Code / Codex / Hermes Agent 上存在"Agent 优先执行用户任务、跳过加载链"的行为。
 
 实测数据：两轮 WorkBuddy 新会话测试，加载链命中率分别为 1/3 和 0/3。OpenClaw 侧通过内部 hook `sofagent-load-chain`（agent:bootstrap 事件）注入第 2、3 层，无此问题。
 
@@ -146,7 +146,7 @@ sofagent 的应对：think.md 的置信度渐进（0.3→0.5→0.7）和 30 天�
 
 核心约束（SKILL.md（宪法内联）/ rules.md）是纯 Markdown，任何能读文件的平台都能加载。但自动触发、Skill 加载、脚本执行——取决于平台。install.sh 已做平台抽象（`--platform` 参数），自动探测并适配部署目标。
 
-| 能力 | OpenClaw | WorkBuddy | Claude Code | Codex | Hermes |
+| 能力 | OpenClaw | WorkBuddy | Claude Code | Codex | Hermes Agent |
 |------|:--:|:--:|:--:|:--:|:--:|
 | 核心约束 | ✅ Hook注入 | ✅ SKILL加载 | ⚠️ 种子指令 | ⚠️ 种子指令 | ⚠️ 种子指令 |
 | Skill 自启 | ✅ | ✅ | ❌ | ❌ | ❌ |

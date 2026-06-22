@@ -1,4 +1,4 @@
-# engine.md · 任务编排引擎 · v0.81
+# engine.md · 任务编排引擎 · v0.82
 
 > 由 SKILL.md A0 触发。仅 🔴 复杂任务且用户确认后点火。`{SOFAGENT_DATA}` = `{当前工作目录}/.sofagent/`。
 > ⛔ 三层加载链已在 SKILL.md 启动时完成——engine.md 不重复。编排引擎只管拆解、执行、闭环。
@@ -115,6 +115,8 @@ SKILL.md 地基 → A0 → 🟢🟡只读task-aware / 🔴→engine→entry-gate
 
 ### 幂等检查（Idempotency Pre-check）
 
+> [软约束·全平台] prompt 级提醒——Agent 可能跳过。OpenClaw 上 Hook 可升级为硬拦截
+
 > Agent 执行不可逆操作时，如果任务暂停又恢复、或子 Agent 重试，同一个操作可能被执行两次——发两封邮件、扣两次钱。重跑 = 可能重复执行副作用。
 
 覆盖 4 类不可逆操作：
@@ -166,6 +168,8 @@ SKILL.md 地基 → A0 → 🟢🟡只读task-aware / 🔴→engine→entry-gate
 
 ### 步数闸（Step Limiter）
 
+> [软约束·全平台] prompt 级提醒——Agent 可能跳过。OpenClaw 上 Hook 可升级为硬拦截
+
 > 来源：sofagent-dev 前身 `iteration-guard.js`。Agent 在无人值守场景下可能反复调工具直到 timeout 被杀——浪费 token。
 
 MAX_STEPS=50（硬上限）+ GRACE_STEPS=3（恩典期，让 Agent 收尾）两段式预算：
@@ -183,6 +187,8 @@ fi
 > 恩典期比 timeout 暴力 kill 更优雅——给 Agent 3 步机会输出最终结果，不丢失中间产出。
 
 ### 熔断闸（Circuit Breaker）
+
+> [软约束·全平台] prompt 级提醒——Agent 可能跳过。OpenClaw 上 Hook 可升级为硬拦截
 
 > 来源：sofagent-dev 前身 `behavior-validator.js` 三态断路器。防止子 Agent 雪崩——N 个子 Agent × 3 次重试 = 3N 次无效调用。
 

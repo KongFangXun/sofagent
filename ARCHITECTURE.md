@@ -6,7 +6,7 @@
 >
 > 各节按 Handbook 章节顺序排列，方便两边对照着读。
 >
-> > v0.81 · 2026-06-22 · 孔放勋
+> > v0.82 · 2026-06-22 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -206,7 +206,7 @@ sofagent 的三个核心设计选择，在独立研究中得到了方向性印�
 
 **为什么是独立 Agent 而不是代码逻辑**：因为 Loop 需要读 think.md（反思数据）+ task/logs（历史数据）+ orchestrator/（最优配置）做综合判断——这正是 Agent 的长项（语义理解、模式识别），不是脚本的长项。
 
-**跨平台**：主 Agent 主动暂停调用——不依赖 Hook、不依赖代码拦截。OpenClaw / WorkBuddy / Claude Code / Codex / Hermes 全平台通用。
+**跨平台**：主 Agent 主动暂停调用——不依赖 Hook、不依赖代码拦截。OpenClaw / WorkBuddy / Claude Code / Codex / Hermes Agent 全平台通用。
 
 <a id="session-boundary"></a>
 ### Session 边界：为什么用百分比而不是轮次
