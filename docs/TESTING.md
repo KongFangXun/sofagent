@@ -238,6 +238,7 @@
 | 2026-06-22 | WorkBuddy AI | WorkBuddy (v0.52 实装) | 8 维度五平台测试 | FAIL（0/8 硬约束） | — | scripts/ 目录缺失导致治理全降级。加载链 L1 主动触发时命中。详见 [Case 008](./cases/workbuddy-v082-2026-06-22/) |
 | 2026-06-22 | Codex CLI | Codex (v0.82) | 8 维度五平台测试 | PASS（安装）/ ⚠️（治理靠自觉） | — | install + verify 通过。codex exec 加载链跑通。治理加固为 prompt 级。详见 [Case 009](./cases/codex-v082-2026-06-22/) |
 | 2026-06-22 | 姚旭琛 | Hermes Agent (v0.82) | 8 维度五平台测试 | FAIL（2/8） | — | L1+L3 加载超预期。4 项治理全失效——熔断闸实测 5 次未断。详见 [Case 010](./cases/hermes-v082-2026-06-22/) |
+| 2026-06-22 | KongFangXun | Claude Code (v0.82) | 8 维度五平台测试 | FAIL（0/8 硬约束） | — | scripts/ 未部署，编排引擎完全失效。加载链文件到位但缺种子指令触发。详见 [Case 011](./cases/claude-v082-2026-06-22/) |
 ---
 
 > 测试完成后，将最有代表性的截图和数据填入 README「实际效果」区块和 docs/EVIDENCE.md。

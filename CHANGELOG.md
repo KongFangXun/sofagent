@@ -44,9 +44,9 @@
 - **verify-evidence.sh**：最小可信验证器，扫描 task/logs 检查客观证据（测试 exit code / lint 结果），有标 `[已验证]`，无标 `[未验证]`
 - **daemon-notice.md**：daemon 最小消费动作，检测 think.md / rules.md 变化后写通知文件
 
-### ✅ 五平台实测完成（4/5 平台，Claude Code 待测）
+### ✅ 五平台实测全部完成（5/5）
 
-v0.82 五平台实测已完成 4 个平台，核心结论：
+v0.82 五平台实测全部完成，核心结论：
 
 | 平台 | 测试人 | 结果 |
 |------|--------|------|
@@ -54,7 +54,7 @@ v0.82 五平台实测已完成 4 个平台，核心结论：
 | WorkBuddy | WorkBuddy AI 代测 | ❌ 治理加固全失效（v0.52 skill 不含 scripts/ 目录） |
 | Codex | Codex CLI 0.140.0 | ✅ 安装+加载通过，治理靠自觉 |
 | Hermes Agent | 姚旭琛 | ❌ 4 项治理全失效，熔断闸实测 5 次未断 |
-| Claude Code | — | 待测 |
+| Claude Code | KongFangXun | ❌ 0/8 硬约束生效，scripts/ 未部署 + 种子指令未写入 |
 
 **关键发现**：步数闸 / 熔断闸 / 幂等检查 / 评判器隔离**仅在 OpenClaw 生效**。其他平台全部降级或失效。文档已诚实标注。
 

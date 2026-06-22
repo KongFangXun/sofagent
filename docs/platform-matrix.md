@@ -1,6 +1,6 @@
 # sofagent 五平台能力矩阵
 
-> v0.82 五平台实测（2026-06-22）。OpenClaw / WorkBuddy / Codex / Hermes Agent 已实测，Claude Code 待测。
+> v0.82 五平台实测全部完成（2026-06-22）。
 >
 > 详见测试方法：[docs/platform-test-guide.md](./platform-test-guide.md) · 实测案例：[docs/cases/](./cases/)
 
@@ -10,14 +10,14 @@
 
 | 维度 | OpenClaw | WorkBuddy | Claude Code | Codex | Hermes Agent |
 |------|:---:|:---:|:---:|:---:|:---:|
-| **daemon 进程检测** | ✅ | ❌ | ❓ | ✅ 可执行/未运行 | ❌ 脚本未部署 |
-| **步数闸生效** | ✅ Hook 强制 | ⚠️ 靠自觉 | ❓ | ⚠️ 靠自觉 | ❌ 不生效 |
-| **熔断闸生效** | ✅ 系统级 | ⚠️ 靠自觉 | ❓ | ⚠️ 靠自觉 | ❌ 不生效 |
-| **幂等检查生效** | ✅ Hook+脚本 | ⚠️ 靠自觉 | ❓ | ⚠️ 靠自觉 | ❌ 不生效 |
-| **评判器隔离** | ✅ session.spawn | ❌ 自评 | ❓ | ❓ | ❌ 自评 |
-| **加载链 L1（SKILL.md）** | ✅ 100% | ⚠️ 需主动触发 | ❓ | ✅ AGENTS.md 加载 | ✅ 主动搜索加载 |
-| **加载链 L2（think.md）** | ✅ 100% | ⚠️ 首次空白 | ❓ | ❓ | ❌ 文件不存在 |
-| **加载链 L3（rules.md）** | ✅ 100% | ⚠️ 未配置跳过 | ❓ | ❓ | ✅ 正确读取 |
+| **daemon 进程检测** | ✅ | ❌ | ❌ 未命中 | ✅ 可执行/未运行 | ❌ 脚本未部署 |
+| **步数闸生效** | ✅ Hook 强制 | ⚠️ 靠自觉 | ❌ scripts 未部署 | ⚠️ 靠自觉 | ❌ 不生效 |
+| **熔断闸生效** | ✅ 系统级 | ⚠️ 靠自觉 | ❌ scripts 未部署 | ⚠️ 靠自觉 | ❌ 不生效 |
+| **幂等检查生效** | ✅ Hook+脚本 | ⚠️ 靠自觉 | ❌ scripts 未部署 | ⚠️ 靠自觉 | ❌ 不生效 |
+| **评判器隔离** | ✅ session.spawn | ❌ 自评 | ❌ 不支持 | ❓ | ❌ 自评 |
+| **加载链 L1（SKILL.md）** | ✅ 100% | ⚠️ 需主动触发 | ⚠️ 缺种子指令 | ✅ AGENTS.md 加载 | ✅ 主动搜索加载 |
+| **加载链 L2（think.md）** | ✅ 100% | ⚠️ 首次空白 | ⚠️ 缺加载机制 | ❓ | ❌ 文件不存在 |
+| **加载链 L3（rules.md）** | ✅ 100% | ⚠️ 未配置跳过 | ⚠️ 缺种子指令 | ❓ | ✅ 正确读取 |
 
 ---
 
@@ -73,6 +73,15 @@
 - L2 加载链 ❌——think.md 文件不存在
 - **根因确认**：prompt 级约束在 Hermes Agent 上完全不生效，Agent 不会主动加载 engine.md 执行步数闸/熔断闸
 
+### Claude Code（0/8 硬约束生效）
+
+与 Hermes Agent 同属"手动平台"。install.sh 部署策略是「放文件 + 给指令 + 靠自觉」。三个断裂点导致实际效果 = 0：
+
+- **scripts/ 未部署** 🔴——编排引擎完全失效，治理加固只剩文档
+- **种子指令未写入 CLAUDE.md** 🟡——install.sh 提示手动粘贴，但新用户装完看到"成功"就不会再操作
+- **daemon 不检测 claude** 🟡——即使脚本部署了也没有守门员
+- 加载链 L1/L2/L3 文件已部署但缺触发机制，均为 ⚠️
+
 ---
 
 ## 发现的问题
@@ -85,6 +94,8 @@
 | 4 | daemon-status.sh 状态不稳定 | 🟡 中 | OpenClaw | 进程在运行（PID 可查），但 status 显示 stopped |
 | 5 | verify-evidence.sh 无日志失败 | ℹ️ 低 | 全平台 | 新装环境无 task/logs 记录，属预期失败 |
 | 6 | daemon 未运行 | ℹ️ 低 | 全平台 | --quick 模式跳过 daemon 安装，符合设计 |
+| 7 | Claude Code scripts/ 未部署 | 🔴 高 | Claude Code | install.sh --platform claude 未复制 scripts/ 到 ~/.claude/skills/sofagent/ |
+| 8 | CLAUDE.md 种子指令未自动写入 | 🟡 中 | Claude Code | install.sh 仅提示手动粘贴，用户看到"成功"后不操作 |
 
 ---
 
@@ -93,7 +104,6 @@
 | 标记 | 含义 |
 |:--:|------|
 | ✅ | 已验证生效 |
-| ❓ | 待实测（Claude Code 全部待测） |
 | ❌ | 已知不生效 |
 | ⚠️ | 靠 Agent 自觉，命中率不定 |
 
@@ -107,6 +117,6 @@
 | WorkBuddy | WorkBuddy AI 代测 | 2026-06-22 | v0.52（已装）/ v0.82（测试包） |
 | Codex | Codex CLI 0.140.0 | 2026-06-22 | v0.82（commit 1b3b9d8） |
 | Hermes Agent | 姚旭琛 | 2026-06-22 | v0.82 |
-| Claude Code | — | — | 待测 |
+| Claude Code | KongFangXun（WorkBuddy 代测） | 2026-06-22 | v0.82 |
 
-> ⚠️ **诚实声明**：Claude Code 待测。WorkBuddy 实装版本为 v0.52（非 v0.82），数据反映旧版 skill 表现。
+> ⚠️ **诚实声明**：WorkBuddy 实装版本为 v0.52（非 v0.82），数据反映旧版 skill 表现。
