@@ -80,6 +80,23 @@ bash sofagent/scripts/verify.sh
 
 ---
 
+## 版本发布流程
+
+从 v0.81 起每个版本发布时同步完成以下步骤：
+
+| 步骤 | 命令 / 操作 | 说明 |
+|------|------|------|
+| ① 详细开发日志 | `docs/changelog/vX.Y.md` | 完整叙事：改了什么、为什么改、文件清单 |
+| ② CHANGELOG 索引 | `CHANGELOG.md` 顶部加条目 | 一句话摘要 + 链接到 ① |
+| ③ 版本号统一 | 脚本 `VERSION=` + 文档头 `> vX.Y` | 见 [MEMORY.md 版本号升级检查清单](./.workbuddy/memory/MEMORY.md) |
+| ④ 安装副本同步 | `cp -r sofagent/ ~/.workbuddy/skills/sofagent/` | 工作区 → 安装副本 |
+| ⑤ git tag | `git tag vX.Y && git push origin vX.Y` | 打标签并推送 |
+| ⑥ GitHub Release | `gh release create vX.Y --title "..." --notes "..."` | 内容从 CHANGELOG.md 拉，让访客看到项目活跃度 |
+
+> 💡 步骤 ⑤⑥ 容易漏——v0.82 发版时漏了 tag 和 Release，后来才发现补上。**每个版本都必须有 GitHub Release。**
+
+---
+
 ## 目前最需要的帮助
 
 > ⚠️ 目前项目维护者为孔放勋一人，单点依赖风险已知，欢迎共同维护者加入——尤其需要 OpenClaw / WorkBuddy / Codex / Hermes Agent / Claude Code 跨平台测试和英文翻译方向的贡献者。
