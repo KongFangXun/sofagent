@@ -15,14 +15,32 @@
 
 ## [v0.83] — 开发中
 
-v0.82 五平台实测发现的 3 个 🔴 P0 安装 bug + 1 个 🟡 P1 体验断裂。纯 bugfix，不加新功能。
+v0.82 五平台实测发现的安装断裂 + 双视角评审（GLM + DeepSeek）发现的代码 bug + 文档诚实度修正。纯 bugfix，不加新功能。
 
-| # | 问题 | 平台 | 说明 |
+### 🔴 P0 — 安装/部署断裂
+
+| # | 问题 | 平台 | 来源 |
 |:-:|------|:---:|------|
-| 1 | OpenClaw Hook 自动注册失败 | OpenClaw | 全新配置目录下 `openclaw.json` 注册失败 |
-| 2 | WorkBuddy skill 不含 scripts/ | WorkBuddy | v0.52 skill 包未含 daemon/install 等脚本 |
-| 3 | Claude Code scripts/ 未部署 | Claude Code | install.sh `--platform claude` 未复制 scripts/ |
-| 4 | CLAUDE.md 种子指令未自动写入 | Claude Code | install.sh 仅提示手动粘贴 |
+| 1 | OpenClaw Hook 自动注册失败（全新配置目录生成空 `.tmp`） | OpenClaw | v0.82 实测 |
+| 2 | WorkBuddy skill 不含 scripts/（v0.52 包未打包脚本） | WorkBuddy | v0.82 实测 |
+| 3 | Claude Code scripts/ 未部署（install.sh --platform claude 分支遗漏） | Claude Code | v0.82 实测 |
+| 4 | install.sh `TARGET_DIR` 未定义（REMOTE_MODE=1 时 set -u 炸弹） | install.sh | DeepSeek 评审 |
+
+### 🟡 P1 — 体验断裂 + 代码加固
+
+| # | 问题 | 涉及文件 | 来源 |
+|:-:|------|------|------|
+| 5 | CLAUDE.md 种子指令未自动写入 | install.sh | v0.82 实测 |
+| 6 | daemon-status.sh 状态不稳定（进程在跑但显示 stopped） | daemon-status.sh | v0.82 实测 |
+| 7 | daemon-lib.sh JSON 写入后无验证（python3 兜底） | daemon-lib.sh | DeepSeek 评审 |
+
+### 🟢 P2 — 文档诚实度 + CI
+
+| # | 问题 | 涉及文件 | 来源 |
+|:-:|------|------|------|
+| 8 | engine.md 非 OpenClaw 路径伪代码改决策表（bash 语法误导） | engine.md | DeepSeek 评审 |
+| 9 | 致谢表补 Self Harness / Skill Reducer arXiv 号 | ARCHITECTURE.md | GLM 评审 |
+| 10 | 新增 shellcheck CI（只加 lint，不重构） | .github/workflows/ | GLM 评审 |
 
 ---
 
