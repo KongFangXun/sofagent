@@ -3,17 +3,17 @@
 [中文](README.md) | English
 
 [![License](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.81-1E40AF)](./HANDBOOK.md)
-[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--21-lightgrey)](./README.md)
+[![Version](https://img.shields.io/badge/version-v0.82-1E40AF)](./HANDBOOK.md)
+[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--22-lightgrey)](./README.md)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-primary--platform-2563EB)](./ARCHITECTURE.md#平台依赖)
-[![兼容](https://img.shields.io/badge/compatible-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes-lightgrey)](./ARCHITECTURE.md#平台依赖)
+[![兼容](https://img.shields.io/badge/compatible-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes%20Agent-lightgrey)](./ARCHITECTURE.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 <!-- TODO: demo.gif — 15s side-by-side: bare Agent going off-rails vs sofagent-constrained Agent -->
 
 > sofa + agent — because one day, we want to lie on the couch while agents do the work.
-> v0.81 · 2026-06-21
+> v0.82 · 2026-06-21
 
 > 📄 **License boundary**: Code files (.sh / .ts) = MIT License; Documentation files (.md) = CC-BY-4.0. In plain English — use the code freely, credit the docs.
 
@@ -82,7 +82,7 @@ A **governance layer** for AI agents. Not a framework to build them, not a tool 
 |------|------|------|------|
 | OpenClaw | Layer 1 via hook injection, Layers 2/3 agent-cooperative (hook-assisted) | `ao compose` fully available | High — works out of the box |
 | WorkBuddy | Layer 1 via @skill injection, Layers 2/3 agent-cooperative | `ao compose` available (requires npm install) | Medium — needs manual @skill:sofagent |
-| Claude Code / Codex / Hermes | Layer 1 via seed instruction, Layers 2/3 agent-cooperative (no mechanism guarantee) | Unavailable (falls back to manual decomposition) | Low — core constraints work, orchestration missing |
+| Claude Code / Codex / Hermes Agent | Layer 1 via seed instruction, Layers 2/3 agent-cooperative (no mechanism guarantee) | Unavailable (falls back to manual decomposition) | Low — core constraints work, orchestration missing |
 
 > ⚠️ Author's own testing. If you get different results on a platform — **that is the real data**. Tell us.
 
@@ -110,13 +110,14 @@ A **governance layer** for AI agents. Not a framework to build them, not a tool 
 
 > Pick your platform. 5 steps, 10 minutes.
 
-### 🚀 One-line install (recommended)
+### 🚀 Install (two steps)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/sofagent/scripts/install.sh | bash -s -- --remote
+git clone https://github.com/KongFangXun/sofagent.git
+cd sofagent && bash sofagent/scripts/install.sh
 ```
 
-> Auto-detects your platform. The full install flow (git clone + bash install.sh) is still available below.
+> Auto-detects your platform. You can also use the one-liner (`curl -fsSL ... | bash`), but enterprise environments should prefer git clone — auditable source code.
 
 If you have ClawHub CLI or SkillHub CLI installed, one command is enough:
 
@@ -128,7 +129,7 @@ clawhub skill install KongFangXun/sofagent
 skillhub install sofagent
 ```
 
-> 💡 No ClawHub CLI? Keep going with the traditional install — just as easy.
+> 💡 No ClawHub CLI? Keep going with the git clone install — just as easy.
 
 ### 1. Prerequisites
 
@@ -139,18 +140,11 @@ skillhub install sofagent
 | node | ≥18 | `ao compose` orchestration engine (agency-orchestrator) | `node --version` |
 | npm | ≥9 | global install of agency-orchestrator | `npm --version` |
 
-> ⚠️ WorkBuddy users who won't use orchestration (constitution layer only) can skip node/npm. OpenClaw / Claude Code / Codex / Hermes users running complex (🔴) tasks need node + npm.
+> ⚠️ WorkBuddy users who won't use orchestration (constitution layer only) can skip node/npm. OpenClaw / Claude Code / Codex / Hermes Agent users running complex (🔴) tasks need node + npm.
 
 > ⚠️ **The orchestration engine depends on the third-party npm package `agency-orchestrator`.** If npm install fails or API keys aren't configured, orchestration falls back to manual agent decomposition. The constraint layer is unaffected.
 
-### 2. git clone
-
-```bash
-git clone https://github.com/KongFangXun/sofagent.git
-cd sofagent
-```
-
-### 3. Install
+### 2. Install
 
 ```bash
 bash sofagent/scripts/install.sh --platform your-platform
@@ -162,16 +156,16 @@ bash sofagent/scripts/install.sh --platform your-platform
 | **WorkBuddy** | `bash sofagent/scripts/install.sh --platform workbuddy` or via skill marketplace | Deploys SKILL.md to `~/.workbuddy/skills/sofagent/` |
 | **Claude Code** | `bash sofagent/scripts/install.sh --platform claude` | Deploys constitution + outputs seed instruction (paste into CLAUDE.md) |
 | **Codex** | `bash sofagent/scripts/install.sh --platform codex` | Deploys constitution + outputs seed instruction (paste into AGENTS.md) |
-| **Hermes** | `bash sofagent/scripts/install.sh --platform hermes` | Deploys constitution + outputs seed instruction (paste into SOUL.md) |
+| **Hermes Agent** | `bash sofagent/scripts/install.sh --platform hermes` | Deploys constitution + outputs seed instruction (paste into SOUL.md) |
 
 > Auto-detects platform if `--platform` is omitted.
 
 **What install.sh modifies**:
 - OpenClaw: writes to `~/.openclaw/rules.md`, `~/.openclaw/skills/sofagent/` (6 skill .md + scripts/ + data/ + rules.md)
 - WorkBuddy: writes to `~/.workbuddy/skills/sofagent/` (SKILL.md + subdirectories)
-- Claude Code / Codex / Hermes: writes constitution files to `~/.claude/` (or `~/.codex/`, `~/.hermes/`) and outputs a seed instruction for you to paste into CLAUDE.md / AGENTS.md / SOUL.md
+- Claude Code / Codex / Hermes Agent: writes constitution files to `~/.claude/` (or `~/.codex/`, `~/.hermes/`) and outputs a seed instruction for you to paste into CLAUDE.md / AGENTS.md / SOUL.md
 
-### 4. 30-second smoke test
+### 3. 30-second smoke test
 
 ```bash
 bash sofagent/scripts/verify.sh
@@ -179,7 +173,7 @@ bash sofagent/scripts/verify.sh
 
 > Expected: all 24+ checks pass across 9 categories. Add `--json` for CI/CD integration. If anything fails, see [Handbook §六](./HANDBOOK.md#六常见问题).
 
-### 5. Run your first task
+### 4. Run your first task
 
 Open your agent client. Try a task that needs multi-step decomposition (this is where sofagent's orchestration shines):
 

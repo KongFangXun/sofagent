@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.81 · 2026-06-22 · 孔放勋
+> v0.82 · 2026-06-22 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -68,7 +68,7 @@ SKILL.md 启动
               └─ 口头汇报
 ```
 
-安装方式：把 `SKILL.md` 放到 Skills 目录（OpenClaw 一般在 `~/.openclaw/skills/`），一条命令搞定。OpenClaw 通过 Hook 在 session 启动时自动加载 Skill。WorkBuddy、Claude Code、Codex、Hermes 通过种子指令自启——详见 [Handbook §五](./HANDBOOK.md#五安装与跨平台)。
+安装方式：把 `SKILL.md` 放到 Skills 目录（OpenClaw 一般在 `~/.openclaw/skills/`），一条命令搞定。OpenClaw 通过 Hook 在 session 启动时自动加载 Skill。WorkBuddy、Claude Code、Codex、Hermes Agent 通过种子指令自启——详见 [Handbook §五](./HANDBOOK.md#五安装与跨平台)。
 
 主 Agent 的日常：接活 → 看 `scoring.md`（谁靠谱）→ 看 think.md 反思区（上次踩了什么坑）→ 看 `orchestrator/`（有没有最优配置）→ 干完记入 `task/logs/`。数据流向总结见 [Developer §七](#七数据文件架构)。
 
@@ -104,12 +104,12 @@ SKILL.md 启动
 
 **跨平台自启：种子指令**
 
-五大平台都有自己的 Native 记忆文件，系统保证每轮自动注入。WorkBuddy / OpenClaw 上 Agent 首次初始化时自动写入种子指令；Claude Code / Codex / Hermes 需要你手动在文件末尾贴一行。
+五大平台都有自己的 Native 记忆文件，系统保证每轮自动注入。WorkBuddy / OpenClaw 上 Agent 首次初始化时自动写入种子指令；Claude Code / Codex / Hermes Agent 需要你手动在文件末尾贴一行。
 
 种子指令内容：
 > 每次对话开始，读取 `SKILL.md` 并执行其中的入口流程。如果数据文件（`.sofagent/`）不存在，先执行初始化。
 
-手动平台贴到对应文件末尾：Claude Code → `~/.claude/CLAUDE.md` 或项目根 `CLAUDE.md` | Codex → `AGENTS.md` | Hermes → `SOUL.md`。搞一次永久生效。
+手动平台贴到对应文件末尾：Claude Code → `~/.claude/CLAUDE.md` 或项目根 `CLAUDE.md` | Codex → `AGENTS.md` | Hermes Agent → `SOUL.md`。搞一次永久生效。
 
 
 ---

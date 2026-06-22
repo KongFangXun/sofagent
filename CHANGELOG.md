@@ -13,30 +13,43 @@
 
 ---
 
-## [v0.82] — 开发中（v0.81 评审问题修复 + 五平台实测）
+## [v0.82] — 2026-06-22（v0.81 评审问题修复 + 平台名规范化）
 
 > 来源：2026-06-22 v0.81 版本评审（GitHub 大神视角 + 科技公司技术负责人视角）。评审全文不落盘，问题转成修复任务。
 
-### Known — v0.81 遗留问题（v0.82 目标修复）
+### Fixed — v0.81 评审问题修复
 
 **P0 — 文档说谎 / 约束级别混淆**
 
-- **治理加固约束级别未标注**：engine.md / loop-check.md 新增的步数闸 / 熔断闸 / 幂等检查用代码块 + `if/then` 写法，但本质是 prompt 级软提醒（非进程级硬拦截）。文档未区分「平台级硬约束（OpenClaw Hook）」与「prompt 级软提醒（全平台君子协定）」，易让技术负责人误判为机制保障 → **修复**：每项治理加固前加约束级别标注行（`[硬约束·OpenClaw]` 或 `[软约束·全平台]`）
-- **v0.81 Release Notes 未显著标注「治理加固未经平台验证」**：5 项新增逻辑全是未验证状态，但 CHANGELOG / engine.md 写法像已交付 → **修复**：Release Notes 显著位置加警告框
-- **纯 bash 解析 daemon.json 是定时炸弹**：当前 grep+sed 方案在 daemon.json 字段 >10 个或出现嵌套时会断（value 含 `|` 字符、同名 key 匹配错、无引号转义） → **修复**：daemon-lib.sh 加注释 `# TODO-v0.9: 当 daemon.json 字段 >10 个或出现嵌套时，迁移到 jq 或 python3 -c`，设明确迁移触发条件
-- **daemon 只监控不注入——骨架缺最小消费动作**：v0.81 daemon 检测 think.md hash 变化后只写 daemon.json，无下游消费者 → **修复**：v0.82 给 daemon 一个最小消费动作（如检测变化后写 daemon.log，下次 Agent 启动时注入「反思已更新」提醒），否则在文档明确说「v0.81 daemon 是纯骨架，对 Agent 体验零影响」
+- ~~**治理加固约束级别未标注**：engine.md / loop-check.md 新增的步数闸 / 熔断闸 / 幂等检查用代码块 + `if/then` 写法，但本质是 prompt 级软提醒（非进程级硬拦截）。文档未区分「平台级硬约束（OpenClaw Hook）」与「prompt 级软提醒（全平台君子协定）」，易让技术负责人误判为机制保障~~ → ✅ **已完成**：engine.md 3 处 + loop-check.md 2 处加 `[软约束·全平台]` 标注行
+- ~~**v0.81 Release Notes 未显著标注「治理加固未经平台验证」**：5 项新增逻辑全是未验证状态，但 CHANGELOG / engine.md 写法像已交付~~ → ✅ **已完成**：CHANGELOG v0.81 条目顶部加警告框
+- ~~**纯 bash 解析 daemon.json 是定时炸弹**：当前 grep+sed 方案在 daemon.json 字段 >10 个或出现嵌套时会断（value 含 `|` 字符、同名 key 匹配错、无引号转义）~~ → ✅ **已完成**：daemon-lib.sh 加 `# TODO-v0.9` 注释，设明确迁移触发条件
+- ~~**daemon 只监控不注入——骨架缺最小消费动作**：v0.81 daemon 检测 think.md hash 变化后只写 daemon.json，无下游消费者~~ → ✅ **已完成**：daemon.sh 检测变化后写 daemon-notice.md，下次 Agent 启动时可注入
 
 **P1 — 可维护性 / 可信度**
 
-- **五平台验证矩阵全 ❓**：v0.81 新增的 5 项治理加固在所有平台均未验证生效 → **修复**：v0.82 核心任务（已在 ROADMAP 规划）
-- ~~**文档重复度偏高、交叉引用链太长**：三层加载链 / 500 字原则 / 已知局限在 4 份核心文档各解释一遍，改一个设计决策要同步 4 处 → **修复**：考虑把 ARCHITECTURE §三（已知局限）独立成 `LIMITATIONS.md`，其他文档只引用不摘抄~~ → ✅ **已完成**：`LIMITATIONS.md` 已创建（17 条局限全文搬迁 + 保留所有锚点），ARCHITECTURE §三 改为摘要表 + 引用，HANDBOOK / DEVELOPMENT / README 共 8 处引用全部改为指向 `LIMITATIONS.md`
-- **LLM 自评是根本性结构缺陷**：非 OpenClaw 平台闭环评分本质是自我表扬循环（loop-check.md 自己承认「Agent 可能仍凭执行记忆补充评审」）→ **修复**：v0.82 先做最小可信验证器（bash 脚本查 task/logs 里有无测试 exit code / lint 结果，有标 `[已验证]`，无标 `[未验证]`），外部评估器完整版推到 v0.9
+- **五平台验证矩阵全 ❓**：v0.81 新增的 5 项治理加固在所有平台均未验证生效 → 待五平台实测（作者手动执行）
+- ~~**文档重复度偏高、交叉引用链太长**：三层加载链 / 500 字原则 / 已知局限在 4 份核心文档各解释一遍，改一个设计决策要同步 4 处~~ → ✅ **已完成**：`LIMITATIONS.md` 已创建（17 条局限全文搬迁 + 保留所有锚点），ARCHITECTURE §三 改为摘要表 + 引用，HANDBOOK / DEVELOPMENT / README 共 8 处引用全部改为指向 `LIMITATIONS.md`
+- ~~**LLM 自评是根本性结构缺陷**：非 OpenClaw 平台闭环评分本质是自我表扬循环（loop-check.md 自己承认「Agent 可能仍凭执行记忆补充评审」）~~ → ✅ **已完成**：新增 `verify-evidence.sh` 最小可信验证器（bash 脚本查 task/logs 有无测试 exit code / lint 结果），loop-check.md 加引导行；外部评估器完整版推到 v0.9
 
 **P2 — 工程打磨**
 
-- ~~**CHANGELOG 版本号跳跃**：v0.75 → v0.81 中间 v0.76-v0.80 未说明去向~~ → ✅ **已完成**：CHANGELOG 顶部新增「版本号说明」段，逐段解释版本号跳跃（v0.71 合并进 v0.72 / v0.76-v0.80 为 daemon 内部版本）
-- **README Quick Start 依赖 `curl pipe bash`**：安全敏感用户（企业）会被劝退 → **修复**：`git clone + bash install.sh` 提为推荐路径，`curl pipe bash` 降为备选
-- ~~**CI verify.yml 引用已删的 constitution/ 目录 + --ci 参数未实现**：fallback 路径 `cp sofagent/constitution/rules.md` 在 v0.73 扁平化后失效（目录已删），且 install.sh 不支持 `--ci` 参数（只有 `--quick`），导致 CI exit 1~~ → ✅ **已完成（热修）**：verify.yml fallback 改为 `sofagent/rules.md`（扁平化路径）；`--ci` 改为 `--quick`；install.sh 新增 `--ci` 作为 `--quick` 别名；daemon 安装步骤在 `--quick`/`--ci` 模式下自动跳过交互提示
+- ~~**CHANGELOG 版本号跳跃**：v0.75 → v0.81 中间 v0.76-v0.80 未说明去向~~ → ✅ **已完成**：CHANGELOG 顶部新增「版本号说明」段
+- ~~**README Quick Start 依赖 `curl pipe bash`**：安全敏感用户（企业）会被劝退~~ → ✅ **已完成**：`git clone + bash install.sh` 提为推荐路径，`curl pipe bash` 降为备选
+- ~~**CI verify.yml 引用已删的 constitution/ 目录 + --ci 参数未实现**~~ → ✅ **已完成（热修）**：verify.yml fallback 改为 `sofagent/rules.md`；`--ci` 改为 `--quick`；install.sh 新增 `--ci` 作为别名；daemon 安装步骤在 `--quick`/`--ci` 模式下自动跳过交互
+- ~~**平台名规范化：Hermes → Hermes Agent**：裸名 Hermes 与 NousResearch 的 Hermes 系列开源大模型同名，搜索结果被稀释。正式名称为 **Hermes Agent**（[github.com/NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)）~~ → ✅ **已完成**：15 文件 19 处展示名替换（代码逻辑 `--platform hermes` / `pgrep` / `~/.hermes/` 保持不变）；GitHub 标签 `hermes` 已改为 `hermes-agent`
+
+### Added
+
+- **verify-evidence.sh**：最小可信验证器，扫描 task/logs 检查客观证据（测试 exit code / lint 结果），有标 `[已验证]`，无标 `[未验证]`
+- **daemon-notice.md**：daemon 最小消费动作，检测 think.md / rules.md 变化后写通知文件
+
+### Pending — 五平台实测（待作者手动执行）
+
+- **五平台实测矩阵**：8 维度 × 5 平台逐格填实测结果。无平台标「未测」，不编数据
+- **daemon 进程检测验证**：各平台 pgrep 命中率实测
+- **治理加固生效验证**：步数闸 / 熔断闸 / 幂等检查 / 评判器隔离是否真的生效
+- **docs/platform-matrix.md 填充**：v0.81 建的模板填实测数据
 
 ### Added — 五平台实测（已在 ROADMAP 规划）
 
@@ -47,7 +60,7 @@
 
 ### 诚实声明
 
-- 作者不一定有全部 5 个平台的环境（特别是 Codex 和 Hermes），没有环境的平台标「未测」
+- 作者不一定有全部 5 个平台的环境（特别是 Codex 和 Hermes Agent），没有环境的平台标「未测」
 - 实测若发现步数闸 / 熔断闸 / 幂等检查在非 OpenClaw 平台完全不生效，文档将明确说「仅 OpenClaw 生效」，不模糊地标 ⚠️
 
 ---
@@ -59,6 +72,8 @@
 - **daemon-install.sh + daemon-uninstall.sh + daemon-status.sh**：launchd（macOS）/ systemd（Linux）系统服务注册 + 卸载 + 状态查询（--detect / --json）
 - **GitHub Actions CI**：`.github/workflows/daemon-linux-ci.yml`（systemd 全流程测试）
 - **install.sh Step 6b + verify.sh daemon Section + uninstall.sh 清理**：集成到现有脚本
+
+> ⚠️ **验证状态（截至 v0.82）**：以下 5 项治理加固（幂等检查 / 步数闸 / 熔断闸 / 评判器隔离 / 怀疑论提示）均为 prompt 级实现，**未经五平台实测验证**。不要假设它们能在你的平台上生效——实测数据见 `docs/platform-matrix.md`。
 
 ### Changed — 治理逻辑加固
 - **engine.md**：新增幂等检查（4 类不可逆操作 + 操作 ID）+ 步数闸（MAX_STEPS=50 + GRACE_STEPS=3）+ 熔断闸（三态机 FAILURE_THRESHOLD=3 / COOLDOWN_SECONDS=30）

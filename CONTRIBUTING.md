@@ -82,12 +82,12 @@ bash sofagent/scripts/verify.sh
 
 ## 目前最需要的帮助
 
-> ⚠️ 目前项目维护者为孔放勋一人，单点依赖风险已知，欢迎共同维护者加入——尤其需要 OpenClaw / WorkBuddy / Claude Code / Codex / Hermes 跨平台测试和英文翻译方向的贡献者。
+> ⚠️ 目前项目维护者为孔放勋一人，单点依赖风险已知，欢迎共同维护者加入——尤其需要 OpenClaw / WorkBuddy / Claude Code / Codex / Hermes Agent 跨平台测试和英文翻译方向的贡献者。
 
 | 优先级 | 需要什么 | 你能得到什么 |
 |:--:|------|------|
 | 🔴 | **真实使用数据** | 在 docs/EVIDENCE.md 留名 + 出现在 README「实际效果」里 |
-| 🟡 | **跨平台测试** | Claude Code / Codex / Hermes 用户的运行报告 |
+| 🟡 | **跨平台测试** | Claude Code / Codex / Hermes Agent 用户的运行报告 |
 | 🟡 | **英文翻译** | Handbook 目前只有中文 |
 
 > 你不需要会写代码。跑一周 sofagent，回来告诉我发生了什么——不管好坏。

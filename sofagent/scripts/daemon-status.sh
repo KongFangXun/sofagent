@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent daemon-status.sh · daemon 状态查询 · v0.81
+# sofagent daemon-status.sh · daemon 状态查询 · v0.82
 # ============================================================
 # 默认：运行状态 + PID + 时长 + mode + detected_platforms
 # --detect：仅进程检测，输出平台列表
@@ -13,7 +13,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.81"
+VERSION="0.82"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SOFAGENT_DATA="${PWD}/.sofagent"
@@ -86,6 +86,7 @@ output_json() {
     think_hash=$(grep -o '"think_hash"[[:space:]]*:[[:space:]]*"[^"]*"' "$DAEMON_JSON" 2>/dev/null | sed -E 's/.*"([^"]+)".*/\1/' || echo "")
     rules_hash=$(grep -o '"rules_hash"[[:space:]]*:[[:space:]]*"[^"]*"' "$DAEMON_JSON" 2>/dev/null | sed -E 's/.*"([^"]+)".*/\1/' || echo "")
     last_check=$(grep -o '"last_check"[[:space:]]*:[[:space:]]*"[^"]*"' "$DAEMON_JSON" 2>/dev/null | sed -E 's/.*"([^"]+)".*/\1/' || echo "")
+    evidence_score=$(grep -o '"last_evidence_score"[[:space:]]*:[[:space:]]*"[^"]*"' "$DAEMON_JSON" 2>/dev/null | sed -E 's/.*"([^"]+)".*/\1/' || echo "unknown")
     [ "$status" = "running" ] && uptime=$(_get_uptime "$pid")
   fi
 
@@ -99,7 +100,8 @@ output_json() {
   "started_at": "${started_at}",
   "think_hash": "${think_hash}",
   "rules_hash": "${rules_hash}",
-  "last_check": "${last_check}"
+  "last_check": "${last_check}",
+  "last_evidence_score": "${evidence_score:-unknown}"
 }
 JSONEOF
 }
@@ -117,10 +119,12 @@ output_default() {
   mode="unknown"
   platforms=""
   uptime="-"
+  evidence_score="unknown"
 
   if [ -f "$DAEMON_JSON" ]; then
     mode=$(grep -o '"mode"[[:space:]]*:[[:space:]]*"[^"]*"' "$DAEMON_JSON" 2>/dev/null | sed -E 's/.*"([^"]+)".*/\1/' || echo "unknown")
     platforms=$(grep -o '"detected_platforms"[[:space:]]*:[[:space:]]*"[^"]*"' "$DAEMON_JSON" 2>/dev/null | sed -E 's/.*"([^"]+)".*/\1/' || echo "")
+    evidence_score=$(grep -o '"last_evidence_score"[[:space:]]*:[[:space:]]*"[^"]*"' "$DAEMON_JSON" 2>/dev/null | sed -E 's/.*"([^"]+)".*/\1/' || echo "unknown")
     [ "$status" = "✅ running" ] && uptime=$(_get_uptime "$pid")
   fi
 
@@ -131,6 +135,7 @@ output_default() {
   echo "  运行时长: $uptime"
   echo "  模式: $mode"
   echo "  检测平台: ${platforms:-无}"
+  echo "  可信证据: ${evidence_score:-unknown}"
 }
 
 # ── 路由 ──
