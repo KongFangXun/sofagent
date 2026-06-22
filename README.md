@@ -89,7 +89,7 @@ graph TB
 |------|------|------|------|
 | OpenClaw | 第 1 层 Hook 注入，第 2/3 层 Agent 自觉（有 Hook 辅助提醒）| ao compose 完整可用 | 高 — 安装即生效 |
 | WorkBuddy | 第 1 层 @skill 注入，第 2/3 层 Agent 自觉 | ao compose 可用（需 npm 安装）| 中 — 需手动 @skill:sofagent |
-| Claude Code / Codex / Hermes Agent | 第 1 层通过种子指令加载，第 2/3 层 Agent 自觉（无机制保障）| 不可用（降级为手工拆解）| 低 — 核心约束仍生效，编排引擎缺失 |
+| Codex / Hermes Agent / Claude Code | 第 1 层通过种子指令加载，第 2/3 层 Agent 自觉（无机制保障）| 不可用（降级为手工拆解）| 低 — 核心约束仍生效，编排引擎缺失 |
 
 > ⚠️ 以上为作者实测结论。如果你在某个平台上跑出了不同的结果——**那才是真实数据**，欢迎告诉我们。
 
@@ -149,7 +149,7 @@ skillhub install sofagent
 | node | ≥18 | `ao compose` 编排引擎（agency-orchestrator）| `node --version` |
 | npm | ≥9 | 全局安装 agency-orchestrator | `npm --version` |
 
-> ⚠️ WorkBuddy 用户若不跑编排引擎（只用宪法层约束），node/npm 可不带。OpenClaw / Claude Code / Codex / Hermes Agent 跑复杂任务（🔴）必须有 node + npm。
+> ⚠️ WorkBuddy 用户若不跑编排引擎（只用宪法层约束），node/npm 可不带。OpenClaw / Codex / Hermes Agent / Claude Code 跑复杂任务（🔴）必须有 node + npm。
 
 > ⚠️ **编排引擎依赖第三方 npm 包 `agency-orchestrator`**。若 npm install 失败或未配置 API Key，编排引擎降级为 Agent 手工拆解（模板匹配和角色分配不可用）。约束层不受影响。
 

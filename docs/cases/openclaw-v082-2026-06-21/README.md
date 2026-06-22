@@ -4,9 +4,9 @@
 
 | 字段 | 填写 |
 |------|------|
-| 姓名/昵称 | 小嘉 |
+| 姓名/昵称 | @liudi8785-cell |
 | 测试日期 | 2026-06-21 |
-| 使用的平台 | ✅ OpenClaw  □ WorkBuddy  □ Claude Code  □ Codex  □ Hermes Agent |
+| 使用的平台 | ✅ OpenClaw  □ WorkBuddy  □ Codex  □ Hermes Agent  □ Claude Code |
 | sofagent 版本 | v0.82 |
 | 操作系统 | ✅ macOS  □ Linux  □ Windows |
 | 安装方式 | □ git clone + install.sh  □ curl pipe bash  ☑️ git clone + install.sh |
@@ -137,7 +137,7 @@
 
 ## 更新 platform-matrix.md 建议
 
-| 维度 | OpenClaw | WorkBuddy | Claude Code | Codex | Hermes Agent |
+| 维度 | OpenClaw | WorkBuddy | Codex | Hermes Agent | Claude Code |
 |------|:---:|:---:|:---:|:---:|:---:|
 | daemon 进程检测 | ✅ | 未测 | 未测 | 未测 | 未测 |
 | 步数闸生效 | ✅ Hook 强制 | 未测 | 未测 | 未测 | 未测 |
@@ -150,7 +150,7 @@
 
 ---
 
-> 测试人：小嘉（OpenClaw 平台，macOS）
+> 测试人：@liudi8785-cell（OpenClaw 平台，macOS）
 > 测试日期：2026-06-21
 > sofagent 版本：v0.82
 > 安装来源：https://github.com/KongFangXun/sofagent

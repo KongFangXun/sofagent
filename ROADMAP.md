@@ -443,7 +443,7 @@ flowchart LR
 
 ### ② sofagent Lite
 
-**一句话**：当前版本对非 OpenClaw 用户太重了——6 个 Skill 文件 + 5 个脚本 + 3 层加载链。做一个"只有宪法（SKILL.md）+ 反思（think.md）"的极简版，面向 Claude Code / Codex 用户。
+**一句话**：当前版本对非 OpenClaw 用户太重了——6 个 Skill 文件 + 5 个脚本 + 3 层加载链。做一个"只有宪法（SKILL.md）+ 反思（think.md）"的极简版，面向 Codex / Hermes Agent / Claude Code 用户。
 
 **为什么值得探索**：降低 80% 的复杂度，保留 60% 的价值。非 OpenClaw 平台本来加载链就不可靠（Agent 经常跳步）——与其假装全功能，不如给一个诚实的极简版：宪法生效（100%）+ 反思靠 Agent 自觉（~60%），不假装编排引擎能用。
 
@@ -492,7 +492,7 @@ flowchart LR
 
 | 你能做的事 | 大约多久 | 说明 |
 |------|:--:|------|
-| 跨平台测试 | 30 分钟 | 你有 Claude Code / Codex / Hermes Agent？装一下，告诉我们能不能跑通——哪怕只告诉我们「跑不通」也有用 |
+| 跨平台测试 | 30 分钟 | 你有 Codex / Hermes Agent / Claude Code？装一下，告诉我们能不能跑通——哪怕只告诉我们「跑不通」也有用 |
 | 补充 FAQ | 20 分钟 | 你踩了什么坑？直接改 Handbook §六 |
 | 文档翻译 | 1-2 小时 | Handbook 只有中文，英文翻译对社区意义巨大 |
 | 第三方证据 | 1 周 | 装完用一周，填 EVIDENCE.md。你的真实数据比我们的自我感觉有用一万倍 |

@@ -106,7 +106,7 @@ Loop Agent 不是独立进程或独立模型调用——它是主 Agent 在特�
 
 ### 折半机制跨平台生效差异
 
-内部 hook `sofagent-load-chain` 的 `[LLM自评]` 标记位降权（权重 ×0.3）只在 OpenClaw 平台物理生效——通过 `agent:bootstrap` 事件在注入 think.md 时动态追加降权提示。WorkBuddy / Claude Code / Codex / Hermes 没有该 hook，降权机制靠 SKILL.md C 步 Read think.md 后 Agent 自觉识别 `[LLM自评]` 标记——与上文「反思自评的自噬风险」「复盘评分是 LLM 自评」同一局限。v1.x 引入外部评估器时统一解决。不假装 WorkBuddy 也有脚本级降权。
+内部 hook `sofagent-load-chain` 的 `[LLM自评]` 标记位降权（权重 ×0.3）只在 OpenClaw 平台物理生效——通过 `agent:bootstrap` 事件在注入 think.md 时动态追加降权提示。WorkBuddy / Codex / Hermes / Claude Code 没有该 hook，降权机制靠 SKILL.md C 步 Read think.md 后 Agent 自觉识别 `[LLM自评]` 标记——与上文「反思自评的自噬风险」「复盘评分是 LLM 自评」同一局限。v1.x 引入外部评估器时统一解决。不假装 WorkBuddy 也有脚本级降权。
 
 ### Agent 记忆系统的三套规则
 

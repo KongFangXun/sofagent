@@ -31,7 +31,7 @@
 
 ## A. 平台检测 + 场景判断
 
-**平台**（优先读缓存 `{SOFAGENT_DATA}/platform`）：`~/.openclaw/`→OpenClaw / `~/.workbuddy/`→WorkBuddy / `$CLAUDE_CODE`→Claude Code / `~/.codex/`→Codex / `~/.hermes/`→Hermes → 检测后写缓存。
+**平台**（优先读缓存 `{SOFAGENT_DATA}/platform`）：`~/.openclaw/`→OpenClaw / `~/.workbuddy/`→WorkBuddy / `~/.codex/`→Codex / `~/.hermes/`→Hermes / `$CLAUDE_CODE`→Claude Code → 检测后写缓存。
 
 **场景**（检查 `{SOFAGENT_DATA}/think.md`）：
 → 不存在 → 首次运行：继续 B→D。口头：「sofagent 已就绪。」

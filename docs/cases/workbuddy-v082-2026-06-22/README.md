@@ -8,7 +8,7 @@
 
 | 字段 | 填写 |
 |------|------|
-| 姓名/昵称 | WorkBuddy AI（代测） |
+| 姓名/昵称 | @yeqingan（WorkBuddy AI 代测） |
 | 测试日期 | 2026-06-22 |
 | 使用的平台 | ☑ WorkBuddy |
 | sofagent 版本 | v0.52（已安装；测试包标注 v0.82，实装版本为 v0.52） |
@@ -191,4 +191,4 @@
 
 ---
 
-> 仅 WorkBuddy 平台已测，其余 4 平台标「未测」。数据由 WorkBuddy AI 代测，2026-06-22。
+> 仅 WorkBuddy 平台已测，其余 4 平台标「未测」。数据由 @yeqingan（WorkBuddy AI 代测），2026-06-22。

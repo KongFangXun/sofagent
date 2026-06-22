@@ -1,6 +1,6 @@
 # Hermes Agent × sofagent v0.82 测试记录
 
-> 测试人：姚旭琛（Hermes Agent 自动执行）
+> 测试人：@cedric123123（Hermes Agent 自动执行）
 > 测试日期：2026-06-22
 > 平台：Hermes Agent (macOS 26.4.1, deepseek-v4-pro)
 
