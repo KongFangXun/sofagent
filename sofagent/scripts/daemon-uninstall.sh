@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent daemon-uninstall.sh · daemon 卸载脚本 · v0.82
+# sofagent daemon-uninstall.sh · daemon 卸载脚本 · v0.83
 # ============================================================
 # 停止 daemon、移除系统服务注册、删除脚本文件。
 # 不删 daemon.json / daemon.log / .sofagent 用户数据。
@@ -9,7 +9,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.82"
+VERSION="0.83"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"

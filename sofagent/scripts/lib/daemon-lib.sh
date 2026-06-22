@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent lib/daemon-lib.sh · daemon 共享函数库 · v0.82
+# sofagent lib/daemon-lib.sh · daemon 共享函数库 · v0.83
 # ============================================================
 # 纯 bash 实现，零外部依赖。被 daemon.sh / daemon-status.sh 共用。
 # 前提：调用方需先设置 DAEMON_JSON / DAEMON_LOG / DAEMON_PID_FILE 变量。
@@ -55,6 +55,16 @@ set_json_field() {
       sed -i '' -e "s|\"${key}\"[[:space:]]*:[[:space:]]*[0-9]\{1,\}|\"${key}\": ${value}|" "$DAEMON_JSON" 2>/dev/null || \
       sed -i    -e "s|\"${key}\"[[:space:]]*:[[:space:]]*[0-9]\{1,\}|\"${key}\": ${value}|" "$DAEMON_JSON" 2>/dev/null || true
     fi
+  fi
+
+  # P1-7 修复：写入后校验 JSON 基本完整性——大括号配对
+  local brace_open=0 brace_close=0
+  while IFS= read -r -n1 ch; do
+    [ "$ch" = "{" ] && brace_open=$((brace_open + 1))
+    [ "$ch" = "}" ] && brace_close=$((brace_close + 1))
+  done < "$DAEMON_JSON"
+  if [ "$brace_open" -ne "$brace_close" ]; then
+    return 1
   fi
   return 0
 }

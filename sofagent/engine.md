@@ -1,4 +1,4 @@
-# engine.md · 任务编排引擎 · v0.82
+# engine.md · 任务编排引擎 · v0.83
 
 > 由 SKILL.md A0 触发。仅 🔴 复杂任务且用户确认后点火。`{SOFAGENT_DATA}` = `{当前工作目录}/.sofagent/`。
 > ⛔ 三层加载链已在 SKILL.md 启动时完成——engine.md 不重复。编排引擎只管拆解、执行、闭环。
@@ -41,7 +41,15 @@
 
 > `command -v ao` 成功 ≠ ao 可用。ao compose 静默失败会让 Agent 困在手工拆解里而不自知。本节点把判断做成显式步骤，不依赖「仔细读注释」的自觉。
 
-按顺序判断，命中即停：
+**快速决策表**：
+
+| 条件 | 路径 | 编排能力 |
+|------|------|---------|
+| `command -v ao` ✅ + API Key ✅ | ao compose 完整编排 | 模板匹配 + 子 Agent 分配 + 成本预估 |
+| `command -v ao` ✅ + API Key ❌ | 口头告知 → 默认编排 | 手工拆解 + task-record |
+| `command -v ao` ❌ | 口头告知 → 默认编排 | 手工拆解 + task-record |
+
+> 以下三条为详细判断规则（含用户提示话术），按顺序判断，命中即停：
 
 1. ✅ **完整编排** — `command -v ao` 成功 **且** ao 已配置可用 API Key（请自行设置一个可用的 API Key 环境变量，如 `DEEPSEEK_API_KEY` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`）→ 走 ao compose（模板匹配 → 子 Agent 分配 → Loop check）。
    > 💡 **provider 优先级**：DeepSeek API > OpenAI/Anthropic API > OpenClaw CLI。OpenClaw CLI provider 下 ao compose 存在已知 YAML 格式兼容性问题（跨 3 模型失败），优先使用 API provider。

@@ -2,7 +2,7 @@
 
 每个版本的详细开发日志在 [docs/changelog/](./docs/changelog/) 目录下。本文件是目录索引——一句话知道改了什么，点链接看完整故事。
 
-> 📋 **版本号说明**（v0.82 新增，回应评审 P2-1）：
+> 📋 **版本号说明**（v0.83 新增，回应评审 P2-1）：
 > - **v0.47–v0.56**：早期开发版，每个版本间隔 1-3 天，改动密集
 > - **v0.60–v0.63**：架构重构期（扁平化 + 诚实化）
 > - **v0.70.0/v0.70.1**：企业合规三件套（脱敏/保留/审计）+ Codex 兼容性修复
@@ -13,7 +13,7 @@
 
 ---
 
-## [v0.83] — 开发中
+## [v0.83] — 2026-06-22
 
 v0.82 五平台实测发现的安装断裂 + 双视角评审（GLM + DeepSeek）发现的代码 bug + 文档诚实度修正。纯 bugfix，不加新功能。
 
@@ -22,7 +22,7 @@ v0.82 五平台实测发现的安装断裂 + 双视角评审（GLM + DeepSeek）
 | # | 问题 | 平台 | 来源 |
 |:-:|------|:---:|------|
 | 1 | OpenClaw Hook 自动注册失败（全新配置目录生成空 `.tmp`） | OpenClaw | v0.82 实测 |
-| 2 | WorkBuddy skill 不含 scripts/（v0.52 包未打包脚本） | WorkBuddy | v0.82 实测 |
+| 2 | WorkBuddy scripts/ 未部署（install.sh Step 6 脚本部署被锁在 OpenClaw-only 块内） | WorkBuddy | v0.82 实测 |
 | 3 | Claude Code scripts/ 未部署（install.sh --platform claude 分支遗漏） | Claude Code | v0.82 实测 |
 | 4 | install.sh `TARGET_DIR` 未定义（REMOTE_MODE=1 时 set -u 炸弹） | install.sh | DeepSeek 评审 |
 
@@ -31,16 +31,18 @@ v0.82 五平台实测发现的安装断裂 + 双视角评审（GLM + DeepSeek）
 | # | 问题 | 涉及文件 | 来源 |
 |:-:|------|------|------|
 | 5 | CLAUDE.md 种子指令未自动写入 | install.sh | v0.82 实测 |
-| 6 | daemon-status.sh 状态不稳定（进程在跑但显示 stopped） | daemon-status.sh | v0.82 实测 |
-| 7 | daemon-lib.sh JSON 写入后无验证（python3 兜底） | daemon-lib.sh | DeepSeek 评审 |
+| 6 | daemon-status.sh `local` 在函数外使用（set -euo pipefail 下报错退出） | daemon-status.sh | DeepSeek 评审 |
+| 7 | daemon-lib.sh set_json_field 写入后不校验 JSON 完整性 | daemon-lib.sh | DeepSeek 评审 |
 
 ### 🟢 P2 — 文档诚实度 + CI
 
 | # | 问题 | 涉及文件 | 来源 |
 |:-:|------|------|------|
-| 8 | engine.md 非 OpenClaw 路径伪代码改决策表（bash 语法误导） | engine.md | DeepSeek 评审 |
-| 9 | 致谢表补 Self Harness / Skill Reducer arXiv 号 | ARCHITECTURE.md | GLM 评审 |
+| 8 | engine.md A2 节 ao 能力探测新增快速决策表 | engine.md | DeepSeek 评审 |
+| 9 | ARCHITECTURE.md 致谢表 SkillOpt arXiv 号修正（2605.06614 → 2605.23904） | ARCHITECTURE.md | GLM 评审 |
 | 10 | 新增 shellcheck CI（只加 lint，不重构） | .github/workflows/ | GLM 评审 |
+
+> 📖 [详细开发日志](./docs/changelog/v0.83.md)
 
 ---
 
