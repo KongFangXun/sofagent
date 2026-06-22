@@ -89,6 +89,7 @@ info "Step 1/7 · 确定安装平台..."
 # ── 参数解析 ──
 PLATFORM=""
 QUICK_MODE=0  # v0.73: --quick 模式跳过交互确认
+NO_DAEMON=0   # v0.84: --no-daemon 跳过 daemon 安装
 REMOTE_MODE=0
 ORIGINAL_ARGS=("$@")  # 保存原始参数（--remote 模式下透传用）
 while [[ $# -gt 0 ]]; do
@@ -101,6 +102,8 @@ while [[ $# -gt 0 ]]; do
     --no-config-inject) NO_CONFIG_INJECT=1; shift ;;
     --quick)         QUICK_MODE=1; shift ;;
     --ci)            QUICK_MODE=1; shift ;;  # --ci = --quick 别名，CI 环境用
+    --no-daemon)     NO_DAEMON=1; shift ;;   # v0.84: 跳过 daemon 安装
+    --skip-daemon)   NO_DAEMON=1; shift ;;   # 别名
     --remote)        REMOTE_MODE=1; shift ;;
     -h|--help)
       echo "用法: install.sh [--platform openclaw|workbuddy|claude|codex|hermes] [--project-dir DIR]"
@@ -407,6 +410,24 @@ if [ "$copied" -gt 0 ]; then
   ok "$copied 个 Skill/数据文件已部署到 $SKILL_DST"
 else
   ok "Skill 文件全部就绪（无变更）"
+fi
+
+# v0.84: SKILL.md 部署后确保 disable: true（防止安装副本被平台自动加载）
+DEPLOYED_SKILL="${SKILL_DST}/SKILL.md"
+if [ -f "$DEPLOYED_SKILL" ]; then
+  if ! grep -q "^disable:" "$DEPLOYED_SKILL" 2>/dev/null; then
+    # 在 displayName 行下方插入 disable: true
+    if grep -q "^displayName:" "$DEPLOYED_SKILL" 2>/dev/null; then
+      sed -i.bak '/^displayName:/a\
+disable: true
+' "$DEPLOYED_SKILL" 2>/dev/null && rm -f "${DEPLOYED_SKILL}.bak"
+    else
+      # 没有 displayName 行，在 frontmatter 第二行（name: 之后）插入
+      sed -i.bak '/^name:/a\
+disable: true
+' "$DEPLOYED_SKILL" 2>/dev/null && rm -f "${DEPLOYED_SKILL}.bak"
+    fi
+  fi
 fi
 
 # ════════════════════════════════════════
@@ -789,9 +810,10 @@ if [ -f "$DAEMON_INSTALL_SCRIPT" ] && [ -x "$DAEMON_INSTALL_SCRIPT" ]; then
   case "$OS_TYPE" in
     Darwin|Linux)
       # --quick / CI 环境：跳过 daemon 安装（不交互）
-      if [ "$QUICK_MODE" = "1" ]; then
+      # --no-daemon：用户明确要求跳过
+      if [ "$QUICK_MODE" = "1" ] || [ "$NO_DAEMON" = "1" ]; then
         echo ""
-        echo "  ⏭️  --quick 模式：跳过 daemon 安装"
+        echo "  ⏭️  跳过 daemon 安装"
         echo "  （以后可以手动运行: bash sofagent/scripts/daemon-install.sh）"
       else
         echo ""
