@@ -615,7 +615,8 @@ fi
 # 9.3 反思更新频率
 [ "$JSON_MODE" = false ] && echo -n "  反思更新频率: "
 if [ -f ".sofagent/think.md" ]; then
-  modified_sec=$(($(date +%s) - $(stat -f %m ".sofagent/think.md" 2>/dev/null || echo 0)))
+  # GNU stat (-c %Y) 优先，BSD/macOS (-f %m) 回退；原 BSD-only 写法在 Linux 上恒返回 0 → 永远报"超旧"
+  modified_sec=$(($(date +%s) - $(stat -c %Y ".sofagent/think.md" 2>/dev/null || stat -f %m ".sofagent/think.md" 2>/dev/null || echo 0)))
   modified_days=$((modified_sec / 86400))
   if [ "$modified_days" -le 3 ]; then
     check_pass "think.md ${modified_days} 天前更新（活跃）"

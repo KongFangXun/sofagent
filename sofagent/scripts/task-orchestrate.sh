@@ -164,7 +164,8 @@ echo ""
 bash "${SCRIPT_DIR}/audit.sh" --operation "orchestrate" --target "${TASK_DESC}" --result "开始, L${LEVEL}" 2>/dev/null || true
 
 # ── 生成任务唯一标识 ──
-TASK_SLUG=$(echo "$TASK_DESC" | shasum -a 256 2>/dev/null | cut -c1-8 || echo "unknown")
+# shasum 缺失时回退 sha256sum（Alpine/精简 Linux 无 shasum，否则 TASK_SLUG 恒为 unknown）
+TASK_SLUG=$(echo "$TASK_DESC" | { shasum -a 256 2>/dev/null || sha256sum 2>/dev/null; } | cut -c1-8 || echo "unknown")
 
 # ── 读取 orchestrator/ 配置（如果存在）──
 SOFAGENT_DATA="${PWD}/.sofagent"
