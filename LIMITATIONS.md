@@ -22,7 +22,7 @@ sofagent 的核心机制是 MD 文件注入 Agent 上下文。这意味着：约
 
 **三层加载链在非 OpenClaw 平台上不可靠。** Agent 声称"跑了 sofagent"，实际可能只读了 1/3（宪法层被跳过）。
 
-v0.62 的扁平化重构将宪法内联进 SKILL.md——第 1 层不再依赖 Agent Read，所有平台强制生效。但第 2、3 层（think.md + rules.md）仍靠 Agent 自觉，在 WorkBuddy / Claude Code / Codex / Hermes Agent 上存在"Agent 优先执行用户任务、跳过加载链"的行为。
+v0.62 的扁平化重构将宪法内联进 SKILL.md——第 1 层不再依赖 Agent Read，所有平台强制生效。但第 2、3 层（think.md + rules.md）仍靠 Agent 自觉，在 WorkBuddy / Codex / Hermes Agent / Claude Code 上存在"Agent 优先执行用户任务、跳过加载链"的行为。
 
 实测数据：两轮 WorkBuddy 新会话测试，加载链命中率分别为 1/3 和 0/3。OpenClaw 侧通过内部 hook `sofagent-load-chain`（agent:bootstrap 事件）注入第 2、3 层，无此问题。
 
@@ -146,7 +146,7 @@ sofagent 的应对：think.md 的置信度渐进（0.3→0.5→0.7）和 30 天�
 
 核心约束（SKILL.md（宪法内联）/ rules.md）是纯 Markdown，任何能读文件的平台都能加载。但自动触发、Skill 加载、脚本执行——取决于平台。install.sh 已做平台抽象（`--platform` 参数），自动探测并适配部署目标。
 
-| 能力 | OpenClaw | WorkBuddy | Claude Code | Codex | Hermes Agent |
+| 能力 | OpenClaw | WorkBuddy | Codex | Hermes Agent | Claude Code |
 |------|:--:|:--:|:--:|:--:|:--:|
 | 核心约束 | ✅ Hook注入 | ✅ SKILL加载 | ⚠️ 种子指令 | ⚠️ 种子指令 | ⚠️ 种子指令 |
 | Skill 自启 | ✅ | ✅ | ❌ | ❌ | ❌ |
@@ -173,7 +173,7 @@ SKILL.md 的回复前闸门（⓪①②）和闭合清单（②→③→④→�
 - **结构加固**：将闸门从 §一 末尾提到入口流程 D 之后，增加 `⛔ 硬出口` 节（见 SKILL.md），利用 Lost in the Middle 效应——越靠前的指令 Agent 越不容易漏。v4.5 进一步拆为主 Skill + 五个子 Skill（engine/entry-gate/task-aware/task-closure/loop-check），每个 ≤90 行，Agent 不再迷路
 - **人工审计**：定期翻 task/logs 检查闭合清单是否每次都被执行——这和 Skill 层 Slop 审计是同一个人工兜底策略
 
-> 💡 **设计妥协：MD 强约束对标 Hook 机制**。sofagent 的三层闸门在概念上对标 Cloud/Agent 的 Hook 机制——回复前闸门 ⓪ = pre-tool-use（工具调用前检查），task-closure ②→⑤ = post-tool-use（任务结束后自动沉淀），闭环信号 = stop event（任务完成触发）。但受限于跨五平台兼容性（WorkBuddy/Claude Code/Codex/Hermes 不支持 Shell 级 Hook 拦截），这些只能通过 MD 强约束 + ⛔ 硬出口 + 兜底检查来模拟 Hook 行为。只有 OpenClaw 平台通过内部 hook `sofagent-load-chain`（2026.6.x）实现了真正的 Hook 级注入。
+> 💡 **设计妥协：MD 强约束对标 Hook 机制**。sofagent 的三层闸门在概念上对标 Cloud/Agent 的 Hook 机制——回复前闸门 ⓪ = pre-tool-use（工具调用前检查），task-closure ②→⑤ = post-tool-use（任务结束后自动沉淀），闭环信号 = stop event（任务完成触发）。但受限于跨五平台兼容性（WorkBuddy/Codex/Hermes/Claude Code 不支持 Shell 级 Hook 拦截），这些只能通过 MD 强约束 + ⛔ 硬出口 + 兜底检查来模拟 Hook 行为。只有 OpenClaw 平台通过内部 hook `sofagent-load-chain`（2026.6.x）实现了真正的 Hook 级注入。
 
 ---
 

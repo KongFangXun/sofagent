@@ -82,7 +82,7 @@ A **governance layer** for AI agents. Not a framework to build them, not a tool 
 |------|------|------|------|
 | OpenClaw | Layer 1 via hook injection, Layers 2/3 agent-cooperative (hook-assisted) | `ao compose` fully available | High — works out of the box |
 | WorkBuddy | Layer 1 via @skill injection, Layers 2/3 agent-cooperative | `ao compose` available (requires npm install) | Medium — needs manual @skill:sofagent |
-| Claude Code / Codex / Hermes Agent | Layer 1 via seed instruction, Layers 2/3 agent-cooperative (no mechanism guarantee) | Unavailable (falls back to manual decomposition) | Low — core constraints work, orchestration missing |
+| Codex / Hermes Agent / Claude Code | Layer 1 via seed instruction, Layers 2/3 agent-cooperative (no mechanism guarantee) | Unavailable (falls back to manual decomposition) | Low — core constraints work, orchestration missing |
 
 > ⚠️ Author's own testing. If you get different results on a platform — **that is the real data**. Tell us.
 
@@ -140,7 +140,7 @@ skillhub install sofagent
 | node | ≥18 | `ao compose` orchestration engine (agency-orchestrator) | `node --version` |
 | npm | ≥9 | global install of agency-orchestrator | `npm --version` |
 
-> ⚠️ WorkBuddy users who won't use orchestration (constitution layer only) can skip node/npm. OpenClaw / Claude Code / Codex / Hermes Agent users running complex (🔴) tasks need node + npm.
+> ⚠️ WorkBuddy users who won't use orchestration (constitution layer only) can skip node/npm. OpenClaw / Codex / Hermes Agent / Claude Code users running complex (🔴) tasks need node + npm.
 
 > ⚠️ **The orchestration engine depends on the third-party npm package `agency-orchestrator`.** If npm install fails or API keys aren't configured, orchestration falls back to manual agent decomposition. The constraint layer is unaffected.
 
@@ -163,7 +163,7 @@ bash sofagent/scripts/install.sh --platform your-platform
 **What install.sh modifies**:
 - OpenClaw: writes to `~/.openclaw/rules.md`, `~/.openclaw/skills/sofagent/` (6 skill .md + scripts/ + data/ + rules.md)
 - WorkBuddy: writes to `~/.workbuddy/skills/sofagent/` (SKILL.md + subdirectories)
-- Claude Code / Codex / Hermes Agent: writes constitution files to `~/.claude/` (or `~/.codex/`, `~/.hermes/`) and outputs a seed instruction for you to paste into CLAUDE.md / AGENTS.md / SOUL.md
+- Codex / Hermes Agent / Claude Code: writes constitution files to `~/.codex/` (or `~/.hermes/`, `~/.claude/`) and outputs a seed instruction for you to paste into AGENTS.md / SOUL.md / CLAUDE.md
 
 ### 3. 30-second smoke test
 
