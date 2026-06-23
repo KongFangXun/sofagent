@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent lib/daemon-lib.sh · daemon 共享函数库 · v0.84
+# sofagent lib/daemon-lib.sh · daemon 共享函数库 · v0.85
 # ============================================================
 # 纯 bash 实现，零外部依赖。被 daemon.sh / daemon-status.sh 共用。
 # 前提：调用方需先设置 DAEMON_JSON / DAEMON_LOG / DAEMON_PID_FILE 变量。

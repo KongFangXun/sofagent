@@ -18,7 +18,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.84"
+VERSION="0.85"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'
@@ -90,6 +90,7 @@ info "Step 1/7 · 确定安装平台..."
 PLATFORM=""
 QUICK_MODE=0  # v0.73: --quick 模式跳过交互确认
 NO_DAEMON=0   # v0.84: --no-daemon 跳过 daemon 安装
+LITE_MODE=0   # v0.85: --lite 精简模式（= --quick + --no-ao + --no-daemon + --no-config-inject）
 REMOTE_MODE=0
 ORIGINAL_ARGS=("$@")  # 保存原始参数（--remote 模式下透传用）
 while [[ $# -gt 0 ]]; do
@@ -104,6 +105,7 @@ while [[ $# -gt 0 ]]; do
     --ci)            QUICK_MODE=1; shift ;;  # --ci = --quick 别名，CI 环境用
     --no-daemon)     NO_DAEMON=1; shift ;;   # v0.84: 跳过 daemon 安装
     --skip-daemon)   NO_DAEMON=1; shift ;;   # 别名
+    --lite)          LITE_MODE=1; QUICK_MODE=1; NO_AO=1; NO_DAEMON=1; NO_CONFIG_INJECT=1; shift ;;  # v0.85: 轻量安装
     --remote)        REMOTE_MODE=1; shift ;;
     -h|--help)
       echo "用法: install.sh [--platform openclaw|workbuddy|claude|codex|hermes] [--project-dir DIR]"
@@ -118,6 +120,7 @@ while [[ $# -gt 0 ]]; do
       echo "  --no-ao             跳过 agency-orchestrator 全局安装（企业环境用）"
       echo "  --no-config-inject  跳过自动注入 OpenClaw config.json（企业环境用）"
       echo "  --quick             快速模式——跳过交互确认和验证等待，直接完整安装"
+      echo "  --lite              精简模式——仅部署核心约束文件，跳过 AO/daemon/配置注入（= --quick + --no-ao + --no-daemon + --no-config-inject）"
       echo "  --remote            远程安装模式——自动 git clone 仓库后安装（配合 curl pipe bash 使用）"
       exit 0
       ;;
@@ -430,12 +433,31 @@ disable: true
   fi
 fi
 
+# Lite 模式：创建 think.md 空模板
+if [ "${LITE_MODE:-0}" = "1" ]; then
+  THINK_DST="${SOFAGENT_DATA}/think.md"
+  if [ ! -f "$THINK_DST" ]; then
+    cat > "$THINK_DST" << 'THINK_TEMPLATE'
+# 反思区（think.md）
+
+> sofagent 反思区——自动记录每次任务的教训和经验。
+> 任务闭环后由 task-closure 自动更新，30 天衰减。
+
+（暂无反思记录）
+THINK_TEMPLATE
+    ok "think.md 模板已创建: $THINK_DST"
+  else
+    ok "think.md 已存在，跳过"
+  fi
+fi
+
 # ════════════════════════════════════════
 # Step 5b: 部署配套脚本 + 数据目录（所有平台公共步骤）
 # ════════════════════════════════════════
 # P0-2/P0-3 修复：配套脚本部署和 .sofagent/ 数据目录创建不再限于 OpenClaw，
 # 对所有平台（WorkBuddy / Claude / Codex / Hermes）均执行。
 
+if [ "${LITE_MODE:-0}" != "1" ]; then
 info "Step 5b/7 · 部署配套脚本 + 数据目录 → $TARGET"
 
 # 部署配套脚本（task-record + task-orchestrate + cleanup + audit + compress-memory）
@@ -474,10 +496,14 @@ else
   ok "数据目录已存在: $SOFAGENT_DATA"
 fi
 
+else
+  info "Lite 模式：跳过配套脚本 + 数据目录"
+fi
+
 # ════════════════════════════════════════
 # Step 6: 部署加载链 Hook（仅 OpenClaw）
 # ════════════════════════════════════════
-if [ "$PLATFORM" = "openclaw" ]; then
+if [ "$PLATFORM" = "openclaw" ] && [ "${LITE_MODE:-0}" != "1" ]; then
 info "Step 6/7 · 部署加载链 Hook（OpenClaw 2026.6.x 内部 hook 架构）..."
 
 # OpenClaw 2026.6.x 改用声明式内部 hook：把 HOOK.md + handler.ts 放到
@@ -564,6 +590,8 @@ else
   warn "  仓库结构异常？请从 https://github.com/KongFangXun/sofagent 重新拉取"
 fi
 
+elif [ "${LITE_MODE:-0}" = "1" ]; then
+  info "Lite 模式：跳过 Hook 部署"
 fi  # end OpenClaw-only Step 6
 
 # ════════════════════════════════════════
@@ -725,6 +753,20 @@ fi
 # ════════════════════════════════════════
 # 安装完成 · 使用说明（按平台）
 # ════════════════════════════════════════
+if [ "${LITE_MODE:-0}" = "1" ]; then
+  echo ""
+  echo "  ╔══════════════════════════════════════════╗"
+  echo "  ║  sofagent Lite · 安装完成！              ║"
+  echo "  ╚══════════════════════════════════════════╝"
+  echo ""
+  echo "  已部署：宪法（SKILL.md）+ 反思区（think.md）+ 规则（rules.md）"
+  echo "  跳过：编排引擎 / Hook / 断路器 / daemon / 配套脚本"
+  echo ""
+  echo "  降 80% 复杂度，保 60% 价值。"
+  echo "  非交互式平台推荐先用 Lite 体验核心约束。"
+  echo ""
+  exit 0
+fi
 echo ""
 echo "  ╔══════════════════════════════════════════╗"
 echo "  ║  sofagent · 安装完成！                  ║"

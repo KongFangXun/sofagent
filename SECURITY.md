@@ -11,12 +11,12 @@ sofagent 是纯本地治理层，**数据不出本机**——但以下数据以*
 | `scoring/` | `.sofagent/scoring/` | Skill 使用记录 |
 | `orchestrator/` | `.sofagent/orchestrator/` | 编排决策历史 |
 
-**当前状态（v0.84+）**：
+**当前状态（v0.85+）**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
 - ⚠️ 明文存储：`.sofagent/` 下文件仍为 Markdown 明文，未做加密
-- ⚠️ **企业生产环境暂不建议使用**——数据明文存储 + LLM 自评无外部基准，GDPR / 等保 / SOC2 场景直接出局。age 加密计划于 v0.9
+- ⚠️ **企业生产环境暂不建议使用**——数据明文存储 + LLM 自评无外部基准，GDPR / 等保 / SOC2 场景直接出局。age 加密推到 v1.x+ 待评估（v0.85 砍削决策：先验证核心价值再谈企业级）
 - `.sofagent/` 目录权限为 700（仅当前用户可访问），但同一服务器其他用户若有 root 权限可读
 
 **企业环境建议**：
@@ -49,8 +49,8 @@ sofagent 是纯本地治理层，**数据不出本机**——但以下数据以*
 **agency-orchestrator (ao)** 是 sofagent 编排引擎的运行时依赖（npm 包 `agency-orchestrator@0.7.5`，Apache-2.0 许可）。install.sh 已将版本号 pin 到具体版本。
 
 **降级路径**：
-- `install.sh --no-ao` 可跳过 ao 安装——编排能力退化为手工拆解，约束层不受影响
-- `task-orchestrate.sh` 在 ao 不可用时自动切到默认编排模式（v0.84+）
+- `install.sh --no-ao` 是 v0.85 起推荐的默认路径（非 OpenClaw 平台）。编排能力退化为手工拆解，约束层不受影响
+- `task-orchestrate.sh` 在 ao 不可用时自动切到默认编排模式（v0.84+ 引入，v0.85 升为推荐行为）
 
 **供应链安全建议**：
 - 每次 `npm install` 后运行 `npm audit`

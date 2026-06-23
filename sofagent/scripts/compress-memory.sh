@@ -20,7 +20,7 @@
 
 set -euo pipefail
 
-VERSION="0.84"
+VERSION="0.85"
 
 # ── 确定脚本目录 + 加载配置 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
