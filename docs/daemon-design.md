@@ -749,3 +749,20 @@ daemon v0.8 不是独立版本——它是 v0.72 和 v0.73 改动的自然延续
 
 > daemon 不是又一个约束——它是让已有约束跨 session 生效的执行器。
 > 循环工程的核心公式里，daemon = 触发器。
+
+---
+
+## 十一、远期方向：从提醒到行动
+
+> Cloud Code 从「告知该做什么」（2024）到「直接替你完成」（2026）是产品价值的质变——用户看着 Agent 自己填表单、操作网页，才是真正的顿悟时刻。
+
+当前 daemon MVP 只做提醒——生成 reminder.md，Agent 看到后自觉读。但 daemon 长期不限于提醒：
+
+| 阶段 | daemon 做什么 | 版本 |
+|:--:|------|:--:|
+| 提醒（当前） | 检测文件变化 → 生成 reminder.md | v0.81 ✅ |
+| 熔断 | 检测连续失败 → 自动触发 CircuitBreaker | v0.9 |
+| 同步 | 跨设备反思同步 → think.md 自动汇聚 | v2.x |
+| 行动 | 检测异常 → 自动执行修复脚本 / 推送通知到企业协同平台 | 远期 |
+
+daemon.json 预留 `action` 字段——当前为空字符串（仅提醒），未来可扩展为 `circuit_break` / `sync_reflection` / `push_notification` 等动作类型。MVP 不实现 action 执行，但数据结构先留好。
