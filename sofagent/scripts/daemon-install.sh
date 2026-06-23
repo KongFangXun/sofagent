@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent daemon-install.sh · daemon 安装脚本 · v0.83
+# sofagent daemon-install.sh · daemon 安装脚本 · v0.84
 # ============================================================
 # 部署 daemon.sh + daemon-lib.sh，注册系统服务（launchd/systemd）。
 # macOS: launchd plist → ~/Library/LaunchAgents/
@@ -11,7 +11,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.83"
+VERSION="0.84"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
