@@ -135,7 +135,7 @@
 
 ### 测试套件
 
-测试套件已随报告归档至 `docs/benchmark/sofagent-test-suite/`（5 个任务目录 + README + 本报告）。
+测试套件说明见 [sofagent-test-suite.md](./sofagent-test-suite.md)（任务描述 + 考点 + 评分标准 + 测试者仓库链接）。源码由独立测试者维护。
 
 ---
 
