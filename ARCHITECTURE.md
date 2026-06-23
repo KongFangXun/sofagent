@@ -119,7 +119,7 @@ sofagent 的实现不堆在一层里。一条任务下来，三样东西各司�
 
 **触发条件**：当 bash 脚本数 > 20 或同一脚本重构次数 > 3 时，评估该脚本是否应该迁移到 Node.js。当前 15 个脚本还在 bash 的舒适区，但已经接近边界（项目记忆里大量 BSD/GNU 兼容 hack 占了篇幅）。
 
-**为什么 TypeScript 而非纯 JavaScript**：OpenClaw 的 Hook handler 已经是 TypeScript（`handler.ts`），sofagent-dev 的前身（`iteration-guard.js` / `behavior-validator.js`）是 JavaScript。TypeScript 提供类型安全，在处理 JSON 状态文件（daemon.json）和 git diff 解析时能避免整类运行时错误。Node.js 是运行时（runtime），TypeScript 是语言（language）——TypeScript 编译后跑在 Node.js 上，两者不是竞争关系是配合关系。
+**为什么 TypeScript 而非纯 JavaScript**：OpenClaw 的 Hook handler 已经是 TypeScript（`handler.ts`），sofagent-dev 的前身（`iteration-guard.js` / `behavior-validator.js`）是 JavaScript。TypeScript 提供类型安全，在处理 JSON 状态文件（daemon.json）和 git diff 解析时能避免整类运行时错误。
 
 <a id="white-box-loop"></a>
 ### 白盒循环：为什么不在 `/goal` 原版上直接跑
