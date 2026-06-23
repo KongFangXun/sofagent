@@ -58,8 +58,8 @@ sofagent 不是把所有东西堆在一起。它分两层：
 
 | 层 | 是什么 | 何时激活 | 占用 |
 |:--:|------|:--:|:--:|
-| 地基 | 三层加载链（宪法+反思+规则）| 每个会话启动，永远在线 | ~3,000 token |
-| 引擎 | 任务编排（拆解+Loop+闭环）| 🔴 复杂任务才点火 | ~800 token（首次） |
+| 地基 | 三层加载链（宪法+反思+规则）| 每个会话启动，永远在线 | 上下文预算的 2-3% |
+| 引擎 | 任务编排（拆解+Loop+闭环）| 🔴 复杂任务才点火 | 额外 ~1% （首次） |
 
 地基轻、引擎重——这是有意为之。如果地基也重，Agent 连简单对话都走不动。
 
@@ -103,6 +103,23 @@ sofagent 的实现不堆在一层里。一条任务下来，三样东西各司�
 | 硬安全（加载链、断路器、死循环检测） | OpenClaw 原生配置 | Agent 失控时没法自己管自己。必须在 Agent 外部兜底 |
 
 不是把所有逻辑都写成 Skill（那样机械操作会依赖 LLM 的随机性），也不是全写成代码（那样语义判断会变成硬编码的 if-else）。三是天然的分界——LLM 管判断、脚本管执行、Runtime 管刹车。跨平台时核心约束（SKILL.md）不受影响，但脚本依赖 shell 环境。
+
+#### 技术选型演进：bash → Node.js/TypeScript
+
+> bash 在纪律层阶段是对的（零依赖、透明、exit code 判断），但到了设备阶段是错的工具。这不是全盘迁移，是分层——每层用对的工具。
+
+| 架构层 | 当前实现 | 合适的工具 | 为什么 |
+|:--:|---------|---------|------|
+| **纪律层**（install/verify/task-record） | bash ✅ | **bash 保持不变** | 一次性执行、文件操作、exit code——bash 是完美工具，改 Node.js 是自找麻烦 |
+| **执行层**（daemon 常驻进程） | bash ⚠️ | **Node.js/TypeScript** | 7×24 常驻进程需要：信号处理、子进程管理、JSON 状态、定时调度、优雅退出——bash 全做不了 |
+| **审计层**（sofagent-audit） | 规划中 | **Node.js/TypeScript** | git diff 解析、AST 级检查、GitHub Action 集成——bash 能做但痛苦 |
+| **协同层**（设备控制器） | v2.x 规划 | **Node.js/TypeScript** | 任务队列、多设备同步、API 推送（钉钉/企微/飞书）——bash 根本不是干这个的 |
+
+**演进路线**：bash 管一次性执行（install/verify/task-record 永远是 bash），Node.js/TypeScript 管常驻和复杂逻辑（daemon/audit/device controller）。v0.9 的 sofagent-audit 是第一个该用 Node.js 写的组件——它要解析 git diff、做 AST 检查、作为 GitHub Action 跑。
+
+**触发条件**：当 bash 脚本数 > 20 或同一脚本重构次数 > 3 时，评估该脚本是否应该迁移到 Node.js。当前 15 个脚本还在 bash 的舒适区，但已经接近边界（项目记忆里大量 BSD/GNU 兼容 hack 占了篇幅）。
+
+**为什么 TypeScript 而非纯 JavaScript**：OpenClaw 的 Hook handler 已经是 TypeScript（`handler.ts`），sofagent-dev 的前身（`iteration-guard.js` / `behavior-validator.js`）是 JavaScript。TypeScript 提供类型安全，在处理 JSON 状态文件（daemon.json）和 git diff 解析时能避免整类运行时错误。Node.js 是运行时（runtime），TypeScript 是语言（language）——TypeScript 编译后跑在 Node.js 上，两者不是竞争关系是配合关系。
 
 <a id="white-box-loop"></a>
 ### 白盒循环：为什么不在 `/goal` 原版上直接跑
@@ -647,6 +664,8 @@ DeepSeek 指出：新贡献者看到宪法 + 铁律 + 编排 + daemon + 断路�
 ### 洞察 3：从「工具」转向「标准」（远期方向）
 
 DeepSeek 评审的独有洞察：把纪律规则从"运行时约束"变成"可引用的开放标准"——类似 OWASP Top 10 的 Agent 版。sofagent 是"参考实现"，不是"唯一实现"。平台不仅不会吸收你——平台会引用你。v1.0+ 评估。
+
+> **.editorconfig 类比（v0.86 评审补充）**：DeepSeek 第二轮评审进一步明确定位——sofagent 不应该定位为「唯一的纪律层」，而应该定位为**「跨平台纪律标准」**，像 .editorconfig 之于编辑器：不是最强大的，但是唯一跨平台的。VS Code / Vim / Sublime / IntelliJ 各有自己的格式化引擎（对应各 Agent 平台的 Hook），但 .editorconfig 是它们之间的**最小公约数**——一个文件，所有编辑器都认。sofagent 的 SKILL.md 宪法就是 Agent 世界的 .editorconfig。
 
 ---
 
