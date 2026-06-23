@@ -181,6 +181,8 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 > 负责的子 Skill：`task-aware.md` — 判级 + 澄清。简单任务直接回答，复杂任务才触发两轮澄清。
 
+> 强模型时代，告诉 Agent **要什么**比告诉它**怎么做**更重要——这就是任务目标制定的核心理念。
+
 Claude Code 有一个 `/goal` 命令——设一个目标，Agent 自己拆任务、自己跑到完成。这是 Loop Engineering 的雏形：**不再直接 prompt Agent，而是设一个目标让 Agent 自己在循环里跑到完成。** OpenClaw 作者 Peter 和 Claude Code 负责人在同一时间说了几乎一样的话，Addy Osmani 把这套方法论总结为 [Loop Engineering](https://addyo.substack.com/p/loop-engineering)。
 
 白盒循环的设计决策见 [ARCHITECTURE.md](./ARCHITECTURE.md#white-box-loop)。
@@ -364,6 +366,7 @@ OpenClaw 通过 Hook 强制注入宪法，Agent 无需额外操作即可完整�
 | Agent 卡住不动了 | 断路器保护——任务拆得不够细，拆小点再跑 |
 | 多个电脑上能用吗 | 不能——不是分布式，跑在单个 Agent 里 |
 | 评分越来越不准 | 经验漂移——翻 task/logs 对照 think.md，清理低置信度旧条目 |
+| 什么工作不该让 Agent 做 | 去重、格式校验、文件清理这类确定性操作——用 bash 脚本比 Agent 更快更准更便宜。Agent 管判断，脚本管执行 |
 
 > 💡 更多细节见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 

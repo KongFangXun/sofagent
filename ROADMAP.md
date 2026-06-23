@@ -362,7 +362,7 @@
 | **OpenViking 三级记忆加载** | L0 Abstract(~100 token) / L1 Overview(~2000 token) / L2 Full | 反思条目爆炸时自动压缩为摘要+概览。**前提**：daemon 稳定 ≥30 天 + 反思 ≥30 条 `[自做]` |
 | **团队部署** | `install.sh --enterprise` 从统一配置源拉取 | 不是 20 个人手动装 20 次 `[自做]` |
 | **容器部署** | `docker compose up` 就能跑 | 企业「试一下」的门槛降到一条命令 `[等贡献者]` |
-| **Skill 自进化** | 借鉴微软 SkillOpt 方法论，纯 MD + scoring 实现三条原则 | Skill 迭代闭环 `[自做]` |
+| **Skill 自进化** | 三篇方法论参照：微软 SkillOpt（可训练参数）、TRACE2SKILL（多轨迹归纳：并行分析大量执行轨迹→提出补丁→合并去重→只留通用模式）、Evil Skill（自验证闭环：多子 Agent A/B 对比→只留表现更优的）。纯 MD + scoring 实现 | Skill 迭代闭环 `[自做]` |
 | **bash 可维护性重构** | install/verify 拆公共函数库 + 统一 BSD/GNU 兼容层 | v0.83 只加 shellcheck CI，v0.9 做完整重构 `[等贡献者]` |
 | **英文 HANDBOOK 翻译** | 优先翻译用户手册 | 其他文档标 PR welcome `[等贡献者]` |
 | **daemon.json 迁移 jq** | 替换 grep+sed 解析 | 触发条件：字段 >10 或出现嵌套。v0.83 先加 python3 写入验证兜底 `[自做]` |
@@ -408,7 +408,7 @@
 | **age 加密** | 🔧 | age 加密 think.md + task/logs。默认关闭，不影响老用户 | v0.9→v1.x |
 | **多用户隔离** | 🔧 | 同机权限隔离 + 共享 rules.md | v0.9→v1.x |
 | **记忆架构升级** | 🔧 | Ledger-Views-Policy 三层模型。前提：daemon 稳定 ≥30 天 | v0.9→v1.x |
-| **Skill 自进化** | 🔧 | 借鉴微软 SkillOpt 方法论 | v0.9→v1.x |
+| **Skill 自进化** | 🔧 | SkillOpt（可训练参数）+ TRACE2SKILL（多轨迹归纳）+ Evil Skill（自验证闭环）三篇参照 | v0.9→v1.x |
 | **Loop 检查点自适应** | 🔧 | 检查点数量随编排深度自适应 | 原 v1.x |
 | **规划器角色分离** | 🔧 | 参考 Anthropic 四角色模型 | 原 v1.x |
 | **`/review` 命令** | 🔧 | 任务跑完主动问复盘 | 原 v1.x |
