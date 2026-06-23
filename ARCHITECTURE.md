@@ -188,7 +188,7 @@ sofagent 的核心设计选择，在独立研究中得到了方向性印证：
 | 我们的设计 | 外部验证（定性） | 来源 |
 |------|------|------|
 | 结构化备忘录式记忆（think.md + task/logs + 文件系统）| "结构化行为回溯备忘录 + 精准 Tag 路由 + SQL，搞定 95% 以上场景。真正落地的记忆系统应该是极其清爽的。" | Agent 全局记忆系统设计批判 |
-| 宪法内联 + 子 Skill 按需加载的分层架构 | Skill Reducer 实证：核心规则仅占技能一小部分，分层架构能显著降低 token 占用、保持质量。"结构感知是技能压缩的关键。" | Skill Reducer（港科大/清华/浙工大） |
+| 宪法内联 + 子 Skill 按需加载的分层架构 | Skill Reducer 实证（55,315 样本分析）：26.4% 技能完全缺失描述、10.7% 技能在强模型下已过时。分层架构后 Token 降低 39~48%，质量 +2.8%——直接支撑 sofagent「厚在治理、薄在复用」不走臃肿 Skill 路线。"结构感知是技能压缩的关键。" | Skill Reducer（港科大/清华/浙工大） |
 | 闭环反思 + Loop Agent | Self Harness 四层模型（执行→留痕→提案→晋升验证），在 Terminal Bench 2.0 上分离评审后通过率显著提升。"Agent 可以提议修改，但不能自己批准。" | Self Harness（上海 AI Lab） |
 
 > ⚠️ **诚实声明**：以上为各研究在自己实验条件下的定性结论。Self Harness / Skill Reducer 的具体百分比数字是它们在各自实验集上的结果，不代表 sofagent 能达到相同效果——sofagent 的 OpenClaw 路径有工程隔离（session.spawn），可类比引用；非 OpenClaw 路径只有 prompt 级约束，不引用具体数字。Self Harness / Skill Reducer 的论文链接待补（致谢表其他引用均有 arXiv 号，这两篇暂缺，欢迎补充）。
