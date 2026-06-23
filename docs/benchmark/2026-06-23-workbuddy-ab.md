@@ -1,6 +1,8 @@
-# v0.84 测试报告 — WorkBuddy 平台（Part A + Part B 完整 A/B）
+# A/B 测试报告 — WorkBuddy 平台（Part A + Part B 完整 A/B）
 
-> 测试人：KongFangXun | 日期：2026-06-23 | 平台：WorkBuddy | sofagent v0.83 | 模型：DeepSeek V4
+> 测试人：KongFangXun | 日期：2026-06-23 | 平台：WorkBuddy | **sofagent v0.83（v0.84 改动尚未纳入）** | 模型：DeepSeek V4
+>
+> 本报告数据作为 v0.84 决策的**输入基线**，不作为 v0.84 的测试产出。
 
 ---
 

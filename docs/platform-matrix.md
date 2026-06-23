@@ -1,8 +1,8 @@
 # sofagent 五平台能力矩阵
 
-> v0.83 五平台实测全部完成（2026-06-22）。
+> v0.84 五平台实测全部完成（2026-06-22）。v0.84 补充 CLI 一击 A/B 数据 + 修正 Hook 归因。
 >
-> 详见测试方法：[docs/platform-test-guide.md](./platform-test-guide.md) · 实测案例：[docs/cases/](./cases/)
+> 详见测试方法：[docs/platform-test-guide.md](./platform-test-guide.md) · 实测案例：[docs/cases/](./cases/) · A/B benchmark：[docs/benchmark/](./benchmark/)
 
 ---
 
@@ -88,7 +88,7 @@
 
 | # | 问题 | 严重度 | 平台 | 说明 |
 |:-:|------|:------:|:---:|------|
-| 1 | OpenClaw Hook 自动注册失败 | 🔴 高 | OpenClaw | 全新配置目录下 `openclaw.json` 注册失败，生成空 `.tmp` 文件。需手动添加或修复 install.sh |
+| 1 | ~~OpenClaw Hook 自动注册失败~~ → CLI 一击不触发 bootstrap | 🔴 高 | OpenClaw | **v0.84 修正归因**：Hook 注册正常（`openclaw.json` 配置完整，handler.ts 部署到位）。CLI `--local` 一击模式不走 `agent:bootstrap` 生命周期，Hook 永远不调用。这是架构边界，非注册 bug。交互式对话模式 Hook 正常生效（8/8 通过）。详见 [v0.84 开发日志](./changelog/v0.84.md#基线数据--cli-一击盲区v083-版本实测2026-06-23) |
 | 2 | WorkBuddy skill 不含 scripts/ | 🔴 高 | WorkBuddy | v0.52 skill 包未含 daemon/install 等脚本，治理加固无法运作 |
 | 3 | verify.sh Skills 路径统计瑕疵 | 🟡 中 | Codex | 统计 `skills/*.md` 而非 `skills/sofagent/*.md`，输出误导 |
 | 4 | daemon-status.sh 状态不稳定 | 🟡 中 | OpenClaw | 进程在运行（PID 可查），但 status 显示 stopped |
