@@ -3,7 +3,7 @@
 中文 | [English](README.en.md)
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.85-1E40AF)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/version-v0.86-1E40AF)](./HANDBOOK.md)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--23-lightgrey)](./README.md)
 [![定位](https://img.shields.io/badge/定位-Agent_纪律层-1E40AF)](#这是什么)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-first-2563EB)](./ARCHITECTURE.md#平台依赖)
@@ -14,7 +14,7 @@
 <!-- TODO: demo.gif — 15s 左右对比: 裸 Agent 跑偏 vs sofagent 约束后正常 -->
 
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
-> v0.85 · 2026-06-23
+> v0.86 · 2026-06-23
 
 > 📄 **License**：MIT。代码、文档、模板——随便用，保留版权声明就行。
 
