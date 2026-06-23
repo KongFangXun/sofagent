@@ -4,7 +4,7 @@
 
 > ⚠️ **Honest disclosure**: The data below includes the author's own testing. Reflection scores are LLM self-assessments (no engineering isolation on non-OpenClaw platforms). For enterprise evaluation, wait for v0.9 encryption + external evaluator. Current data is suitable for exploratory assessment only — not production decisions.
 
-> 📊 **A/B benchmark data**: v0.75 first benchmark run — 4/10 constraint tasks PASS (tasks 1/3/4/10), 6/10 orchestration tasks 🔲 pending independent session verification. "Without sofagent" comparison side marked "untestable" due to single-session self-test limitation. See [docs/benchmark/2026-06-21.md](./benchmark/2026-06-21.md) | Methodology note: [Anti-case 001](./anti-cases/001-benchmark-self-test-circularity.md)
+> 📊 **A/B benchmark data**: Five A/B datasets from v0.81-v0.83. Constraint layer: WorkBuddy dialog mode showed only 1/10 clear increment (task 10), CLI one-shot 0/16 complete failure (see [Anti-case 002](./anti-cases/002-cli-one-shot-ineffective.md)). But independent tester's code refactor A/B measured discipline layer increment: discipline 8→10 (+2), first-pass rate 60%→100% (+40%). See [benchmark directory](./benchmark/). Methodology limitation: [Anti-case 001](./anti-cases/001-benchmark-self-test-circularity.md)
 
 ---
 
