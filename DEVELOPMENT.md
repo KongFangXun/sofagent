@@ -612,7 +612,7 @@ task/logs 是水源，只追加不修改，永远可以回溯。不需要额外�
 | 铁律 | 可程序化？ | 检查方式 |
 |------|:--:|------|
 | #1 先读再用 | ✅ | git log 时间线：Write/Edit 前是否有 Read 同文件记录 |
-| #3 验证再继续 | ✅ | 代码修改后是否有 build/test exit code 记录 |
+| #3 验证再干 | ✅ | 代码修改后是否有 build/test exit code 记录 |
 | #7 谨慎修改 | ✅ | diff 范围检查：修改文件数 / 修改行数是否超出任务描述 |
 | #10 如实汇报 | ⚠️ 部分 | 检查是否有"不知道"语义但接了任务的模式 |
 | #2 对用户有回应 | ❌ | 语义判断，不可程序化 |
@@ -628,7 +628,7 @@ discipline-check.sh 的产品化包装。形态：GitHub Action + 独立 CLI 工
 sofagent-audit --diff HEAD~1..HEAD --task "任务描述"
 
 ❌ 铁律 #1 先读再用：handler.ts 被修改，但修改前无 Read 记录
-✅ 铁律 #3 验证再继续：package.json 修改后有 npm test 记录
+✅ 铁律 #3 验证再干：package.json 修改后有 npm test 记录
 ⚠️ 铁律 #7 谨慎修改：本次 diff 修改了 3 个不在任务范围内的文件
 ```
 
