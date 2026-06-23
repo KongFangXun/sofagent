@@ -13,7 +13,35 @@
 | 报 Bug / 提想法 | → [开 Issue](https://github.com/KongFangXun/sofagent/issues/new/choose) |
 | 不知道怎么用 | → [Discussions 去问](https://github.com/KongFangXun/sofagent/discussions) |
 | 不知道怎么测 | → 看 [TESTING.md](./docs/TESTING.md) 的 5 个标准化用例 |
-| 想直接改代码 | → 跳到下面「提 PR」 |
+| 想直接改代码 | → 看下面「贡献者 10 分钟速览」 |
+| 想理解概念但不知道从哪看 | → 看 [ARCHITECTURE.md §五bis](./ARCHITECTURE.md)（评审洞察，概念地图） |
+
+### 贡献者 10 分钟速览
+
+> v0.85 新增。评审指出：「一个开发者想贡献代码，先要搞懂宪法、铁律、编排、daemon、断路器……概念太多了。」这是精简路径——只看这 3 个文件，改这 2 个脚本，跑这 1 条命令验证。
+
+**只看 3 个文件**：
+
+| 顺序 | 文件 | 看什么 | 约几分钟 |
+|:--:|------|------|:--:|
+| 1 | [SKILL.md](./sofagent/SKILL.md)（宪法内联） | 4 底线 + 10 铁律——项目的灵魂，所有概念从这里展开 | 3 min |
+| 2 | [docs/changelog/v0.85.md](./docs/changelog/v0.85.md) | 当前版本做了什么 + 定位校准 + 下一步方向 | 5 min |
+| 3 | [LIMITATIONS.md](./LIMITATIONS.md) | 已知局限——看完你就知道哪些坑可以帮忙填 | 2 min |
+
+**先改 2 个脚本（最低门槛）**：
+
+| 脚本 | 改什么 | 难度 |
+|------|------|:--:|
+| `sofagent/scripts/install.sh` | BSD/macOS 兼容性修复（见 [MEMORY.md 脚本工程教训](./.workbuddy/memory/MEMORY.md)） | ⭐⭐ |
+| `sofagent/scripts/verify.sh` | 新增检查项（加 `--quick` 模式的检查项） | ⭐ |
+
+**跑 1 条命令验证**：
+
+```bash
+bash sofagent/scripts/install.sh && bash sofagent/scripts/verify.sh
+```
+
+通过就可以提 PR。
 
 > 💡 你不需要会写代码。跑一周 sofagent，回来告诉我们发生了什么——不管好坏。
 
@@ -137,11 +165,16 @@ sofagent 当前维护者为孔放勋一人。我们正在寻找愿意深度参�
 
 版本发布和架构决策目前只有作者。等 Co-maintainer 稳定贡献 6 个月以上再谈权限升级。
 
-**我们特别需要这些技能**：
-- bash BSD/macOS 兼容性（install.sh 跨平台是最大的工程债）
-- OpenClaw hook 开发（TypeScript）
-- 安全审计（企业级落地的前置条件）
-- 英文文档（国际化最大瓶颈）
+**我们特别需要这些技能**（v0.85 具体化）：
+
+| 技能方向 | 具体做什么 | 每周时间 | 为什么急需 |
+|------|------|:--:|------|
+| **bash BSD/macOS 兼容** | install/verify/uninstall 跨平台 bug 修复 + 公共函数库重构 | 2-4 小时 | 评审指出「纯 bash 不是大多数人想碰的」，作者也不懂——这是最大工程债 |
+| **安全审计** | 审查 SECURITY.md + 提出企业级合规缺口 | 不限 | 企业落地的前置条件——v0.9 合规三件套需要安全专家 review |
+| **OpenClaw hook (TS)** | handler.ts 回归测试 + Hook 架构升级适配 | 2-3 小时 | OpenClaw 每 3-4 周一个版本，hook 兼容性需要持续维护 |
+| **英文文档** | HANDBOOK + README 英文翻译 | 不限 | 国际化最大瓶颈 |
+
+> 🔴 **v0.85 评审强调**：「你是项目最大的瓶颈。不要等，现在就需要。」如果你是 bash 方向的开发者，每周能投入 2-4 小时，**直接开 Issue 说「我想做 Co-maintainer」**——不用走 Contributor → Triage 的正常流程，我们直接谈。
 
 从第一个 PR 开始，贡献自然累积，作者会主动邀请你进入下一级。
 

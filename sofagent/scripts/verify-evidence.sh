@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# sofagent verify-evidence.sh · 最小可信验证器 · v0.84
+# sofagent verify-evidence.sh · 最小可信验证器 · v0.85
 # ============================================================
 # 扫描 .sofagent/task/logs/ 下今日记录，检查有无客观证据
 # （测试 exit code / lint 结果），有标 [已验证]，无标 [未验证]。
@@ -10,7 +10,7 @@
 # ============================================================
 set -u
 
-VERSION="0.84"
+VERSION="0.85"
 DAEMON_MODE=false
 [ "${1:-}" = "--daemon" ] && DAEMON_MODE=true
 
