@@ -373,7 +373,7 @@ OpenClaw 通过 Hook 强制注入宪法，Agent 无需额外操作即可完整�
 
 ### FDE 场景：sofagent 在企业 AI 落地中的角色
 
-> **FDE（Forward Deployed Engineer）** 是 Anthropic / OpenAI 提出的概念——把工程师派到企业现场，将 AI 嵌入业务流程。sofagent 不做 FDE 服务，做 **FDE 手里的纪律工具**。
+> FDE 定义详见 [README.md](./README.md#fde-场景为什么前沿部署工程师需要纪律层)。sofagent 的定位是 FDE 手里的纪律工具，不是 FDE 引擎。
 
 当 AI Agent 进入企业真实业务，三个安全问题最让技术负责人头疼：
 
