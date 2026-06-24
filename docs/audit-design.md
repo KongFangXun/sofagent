@@ -35,7 +35,7 @@ v0.91 换了思路：**从预防转向检测**。提交时审计不依赖 Agent 
 - GitHub Action 集成需要 npm 包生态
 - 零运行时依赖，只用 Node.js 内置模块：child_process、fs、path
 
-其实主要原因是作者终于学会了 TypeScript，不想再写 bash 了。
+其实主要原因是不想再写 bash 了（以及终于理解了一点 TypeScript——至少能看懂编译报错了）。
 
 ## ⚠️ 误报率
 
