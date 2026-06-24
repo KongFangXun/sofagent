@@ -308,7 +308,7 @@ sofagent/                  ← 核心部署文件（SKILL.md 主入口 + 5 子 S
 |------|------|
 | [OpenClaw](https://github.com/openclaw/openclaw) | Agent 运行时——加载链、Hook、Session 管理 |
 | [agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator)（Apache-2.0） | 任务编排引擎——`ao compose` 一行拆任务、匹配角色 |
-| [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh) | 215 个中文岗位模板 |
+| [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh) | 角色模板来源 |
 | [ClawHub](https://clawhub.ai) / 各平台技能市场 | 外部 Skills 的发现来源——不内置，按需从社区获取 |
 
 ---
