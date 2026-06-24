@@ -28,7 +28,7 @@
 
 给 Agent 配了个「纪律委员」：不是让它更聪明，是让它守规矩。
 
-> ⚠️ **平台生效范围**：OpenClaw 上完整生效（编排 + Hook + 断路器）；WorkBuddy / Codex / Claude Code / Hermes Agent 上**仅宪法层约束生效**（先读后写/验证再干/谨慎修改），治理加固（编排引擎/Hook/断路器）全部降级或失效——非 OpenClaw 平台价值约完整版的 30%。其他平台建议用 `--lite` 安装。详见 [平台能力表](#平台能力)。
+> **平台差异**：OpenClaw 上完整生效（编排 + Hook + 断路器）；WorkBuddy / Codex / Claude Code / Hermes Agent 上仅宪法层约束生效（先读后写/验证再干/谨慎修改），治理加固全部降级或失效——非 OpenClaw 平台价值约完整版的 30%。其他平台建议用 `--lite` 安装。详见 [平台能力表](#平台能力)。
 
 > **v0.85 定位校准**：v0.84 的 5 组 A/B 数据告诉我们，sofagent 的真正价值不在安全约束（模型和平台已覆盖 90%），而在**纪律**——先读后写、验证再干、谨慎修改。独立测试者报告纪律性 +2、首次通过率 +40%。但这份数据有方法论局限（知识传递效应未排除），我们在 v0.85 设计了严格实验来证实或证伪（[详见 v0.85 开发日志](./docs/changelog/v0.85.md)）。
 >
@@ -36,7 +36,7 @@
 
 ### 效果证据状态（v0.85）
 
-> ⚠️ **这是一个正在收集证据的早期项目，不是生产就绪的工具。**
+> 📌 **这是一个正在收集证据的早期项目，不是生产就绪的工具。**
 
 | 维度 | 数据 | 状态 |
 |------|------|:----:|
@@ -51,7 +51,7 @@
 | **脚本**（执行）| bash 脚本处理机械活——读写文件、调 API，Agent 调 shell 跑（非 bash 平台降级为 Read/Edit 工具） |
 | **平台兜底**| 加载链 + 断路器 + 死循环检测——OpenClaw 系由 Hook 和配置层兜底，其他平台依赖自身安全机制 |
 
-> ⚠️ sofagent 是软约束层——靠 Agent 读取并自觉遵守，不是硬编码强制执行。执行率受上下文长度、模型能力影响。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
+> 💡 sofagent 是软约束层——靠 Agent 读取并自觉遵守，不是硬编码强制执行。执行率受上下文长度、模型能力影响。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 
 ---
 
@@ -98,7 +98,7 @@ sofagent 聚合了很多概念——宪法、铁律、加载链、编排引擎�
 
 ### FDE 场景：为什么前沿部署工程师需要纪律层
 
-> **FDE（Forward Deployed Engineer）** 是 Anthropic / OpenAI 提出的企业 AI 落地模式——把工程师派到企业现场，将 AI 嵌入业务流程。sofagent 不做 FDE 服务，做 **FDE 手里的纪律工具**。
+> 💡 **FDE（Forward Deployed Engineer）** 是 Anthropic / OpenAI 提出的企业 AI 落地模式——把工程师派到企业现场，将 AI 嵌入业务流程。sofagent 不做 FDE 服务，做 **FDE 手里的纪律工具**。
 
 当 AI Agent 进入企业真实业务，企业技术决策者面对的不是"Agent 能不能干"，而是三个纪律问题：
 
@@ -110,7 +110,7 @@ sofagent 聚合了很多概念——宪法、铁律、加载链、编排引擎�
 | **跨平台部署一致性？** — 不同企业用不同 Agent 平台 | 纯 MD + bash 跨平台纪律标准（OpenClaw / WorkBuddy / Claude Code / Codex） | ✅ v0.85 |
 | **多设备协同治理？** — 团队多台设备的 Agent 经验无法共享 | 多设备协同层（信号共享网络） | 📋 v2.x |
 
-> ⚠️ **叙事诚实**：v0.91 的 FDE 能力是"安全审查 + 数据声明 + 提交时审计 MVP"三件——审计层完整版（LLM 辅助 + CI gate）在 v0.92，多设备在 v2.x。sofagent 当前是 FDE 场景的**纪律底座**，不是完整的 FDE 解决方案。
+> **当前交付**：v0.91 的 FDE 能力是"安全审查 + 数据声明 + 提交时审计 MVP"三件——审计层完整版（LLM 辅助 + CI gate）在 v0.92，多设备在 v2.x。sofagent 当前是 FDE 场景的**纪律底座**，不是完整的 FDE 解决方案。
 
 ### 架构总览
 
@@ -134,7 +134,7 @@ graph TB
     style Engine fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
 ```
 
-> ⚠️ **已知局限**：核心效果尚无第三方实测数据；复盘是 LLM 自评，无客观基准；Loop Agent 非独立进程；纯文件约束依赖 Agent 配合；数据明文存储（task/logs + think.md 含任务记录，v0.90 不加密，age 加密计划 v1.0+——详见 LIMITATIONS）；不是多用户系统（共享 .sofagent/ 会交叉污染经验）。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
+> **已知局限**：核心效果尚无第三方实测数据；复盘是 LLM 自评，无客观基准；Loop Agent 非独立进程；纯文件约束依赖 Agent 配合；数据明文存储（task/logs + think.md 含任务记录，v0.90 不加密，age 加密计划 v1.0+——详见 LIMITATIONS）；不是多用户系统（共享 .sofagent/ 会交叉污染经验）。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 
 ## 平台能力
 
@@ -146,11 +146,9 @@ graph TB
 | WorkBuddy | ✅ 宪法+反思+规则（@skill 加载）| ⚠️ 编排可装但需 npm，Hook/断路器降级 | ~40% |
 | Codex / Hermes / Claude Code | ⚠️ 宪法（种子指令手动贴），反思/规则靠 Agent 自觉 | ❌ 全部缺失 | ~30% |
 
-> ⚠️ CLI one-shot 场景（非交互式）：加载链 0% 生效（Agent 跳过 Read 直接执行），包括 OpenClaw。这是架构宿命，不是 bug。详见 [LIMITATIONS.md](./LIMITATIONS.md#加载链步进脆弱性v060v062-验证结论)。
+> 📌 CLI one-shot 场景（非交互式）：加载链 0% 生效（Agent 跳过 Read 直接执行），包括 OpenClaw。这是架构宿命，不是 bug。详见 [LIMITATIONS.md](./LIMITATIONS.md#加载链步进脆弱性v060v062-验证结论)。
 
-> ⚠️ **治理加固约束级别**：步数闸 / 熔断闸 / 幂等检查均为 prompt 级软提醒，非进程级硬拦截——Agent 可能跳过。OpenClaw 上 Hook 可升级为硬拦截。各平台实测数据见 [platform-matrix.md](./docs/platform-matrix.md)。
-
-> ⚠️ **非 OpenClaw 平台预期管理**：编排引擎 / Hook / 断路器三项核心能力仅 OpenClaw 全绿。如果你不用 OpenClaw，sofagent 对你的价值约为完整版的 30%（只有宪法层约束生效）。这不是 bug，是架构宿命——v0.8 daemon 会改善加载链，但编排和 Hook 仍是 OpenClaw 专属。详见 [LIMITATIONS.md 平台依赖](./LIMITATIONS.md#平台依赖)。
+> **约束级别说明**：步数闸 / 熔断闸 / 幂等检查均为 prompt 级软提醒，非进程级硬拦截——Agent 可能跳过。OpenClaw 上 Hook 可升级为硬拦截。各平台实测数据见 [platform-matrix.md](./docs/platform-matrix.md)。
 
 > 📎 「种子指令」是什么：写在 Agent 记忆文件（如 CLAUDE.md / AGENTS.md / SOUL.md）里的一句话，告诉 Agent 启动时先读 sofagent 约束文件。**这不是自动化——是人手动贴的纸条。** OpenClaw 和 WorkBuddy 通过各自的 skill 机制自动加载，不需要种子指令。
 
@@ -177,7 +175,7 @@ sofagent-audit --diff HEAD~1..HEAD --task "任务描述"
 ⚠️ 铁律 #7 谨慎修改：本次 diff 修改了 3 个不在任务范围内的文件
 ```
 
-为什么这个方向杀手级：(1) 不依赖 Agent 配合（看 diff，Agent 没法绕过）；(2) 跨平台（任何 git 仓库）；(3) 确定性输出（exit code，不是 LLM 评分）。详见 [v0.85 开发日志](./docs/changelog/v0.85.md#p1新主线方向sofagent-audit--提交时审计)。
+> 💡 为什么不依赖 Agent 配合就是杀手级：(1) 看的是 git diff，Agent 没法绕过；(2) 跨平台，任何 git 仓库都能跑；(3) 确定性输出 exit code，不是 LLM 评分。
 
 > 这不意味着放弃运行时治理——两者互补。运行时治理减少问题发生，提交时审计兜底检测漏网之鱼。
 
@@ -235,9 +233,9 @@ skillhub install sofagent
 | node | ≥18 | `ao compose` 编排引擎（agency-orchestrator）| `node --version` |
 | npm | ≥9 | 全局安装 agency-orchestrator | `npm --version` |
 
-> ⚠️ WorkBuddy 用户若不跑编排引擎（只用宪法层约束），node/npm 可不带——v0.85 起 `--no-ao` 升为非 OpenClaw 平台的推荐默认路径。OpenClaw 跑复杂任务（🔴）需 node + npm。
+> 💡 WorkBuddy 用户若不跑编排引擎（只用宪法层约束），node/npm 可不带——v0.85 起 `--no-ao` 升为非 OpenClaw 平台的推荐默认路径。OpenClaw 跑复杂任务（🔴）需 node + npm。
 
-> ⚠️ **编排引擎是可选增强，不是核心依赖**。核心约束层（宪法 + 反思 + 规则）零外部依赖。编排引擎依赖第三方 npm 包 `agency-orchestrator`——v0.84 A/B 数据表明编排不是当前差异化所在，v0.85 将其从"核心功能"降级为"OpenClaw 增强项"。详见 [v0.85 开发日志](./docs/changelog/v0.85.md#编排引擎降级)。
+> 📌 **编排引擎是可选增强，不是核心依赖**。核心约束层（宪法 + 反思 + 规则）零外部依赖。编排引擎依赖第三方 npm 包 `agency-orchestrator`——v0.84 A/B 数据表明编排不是当前差异化所在，v0.85 将其从"核心功能"降级为"OpenClaw 增强项"。详见 [v0.85 开发日志](./docs/changelog/v0.85.md#编排引擎降级)。
 
 ### 2. 安装
 
