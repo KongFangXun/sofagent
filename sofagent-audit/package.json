@@ -1,0 +1,25 @@
+{
+  "name": "sofagent-audit",
+  "version": "0.1.0",
+  "description": "sofagent 提交时审计——扫描 git diff，检查 Agent 是否遵守铁律",
+  "main": "dist/index.js",
+  "bin": {
+    "sofagent-audit": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "check": "tsc --noEmit"
+  },
+  "keywords": ["sofagent", "audit", "git", "agent", "discipline"],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

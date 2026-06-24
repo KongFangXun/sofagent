@@ -10,7 +10,7 @@
 # ============================================================
 set -u
 
-VERSION="0.85"
+VERSION="0.91"
 DAEMON_MODE=false
 [ "${1:-}" = "--daemon" ] && DAEMON_MODE=true
 

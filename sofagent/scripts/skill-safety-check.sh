@@ -19,7 +19,7 @@
 
 set -uo pipefail
 
-VERSION="0.90"
+VERSION="0.91"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # -------------------------------------------
