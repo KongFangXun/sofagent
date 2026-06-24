@@ -13,6 +13,38 @@
 
 ---
 
+## [v0.90] — 2026-06-24
+
+安全审查 + P0 修复 + 文档清理——给 Skill 自动抓取加安全门，修三个安装断裂 bug，清理 7 个 SOP 中间产物。
+
+### 🔴 skill-safety-check.sh（22 条正则安全审查）
+
+编排引擎从 ClawHub 自动抓取 Skill 后、进入候选池之前，必须过两步安全审查：第一步正则硬门（22 条规则，5 类：恶意命令/密钥泄露/危险调用/注入攻击/混淆代码，Agent 不可绕过），第二步 LLM 语义审查（补正则盲区，可被 prompt injection 绕过——诚实记录为已知局限）。
+
+### 🔴 P0 修复（3 个）
+
+| # | 问题 | 修复 |
+|:--:|------|------|
+| 1 | `--remote` 参数顺序：REMOTE_MODE 在参数解析前未初始化，`set -u` 炸弹 | 预扫描 `--remote`，提前初始化 |
+| 2 | `--lite` 模式跳过 Step 5b 导致 `$SOFAGENT_DATA` 未创建，think.md 写入失败 | think.md 写入前 `mkdir -p` |
+| 3 | 8 个脚本各自硬编码 `SOFAGENT_DATA="${PWD}/.sofagent"`，`--project-dir` 装在 A 目录从 B 目录跑找不到数据 | `config.sh` 新增 `_sofa_find_data_dir()` 统一解析，4 级优先链 |
+
+**连带修复**：`config.sh` 布尔型配置不再被空值覆盖——rules.md 无匹配时保留已有环境变量。
+
+### 证据体系
+
+Case 012（社区 A/B 测试）：社区成员小嘉用 DeepSeek Reasoner 跑 5 个代码重构任务真 A/B 对照——sofagent 组首次无 bug 率 5/5，裸 Agent 组 4/5；陷阱注释全保留 vs 部分移除；类型完整 interface vs `any` 绕过。5 维度全正向。
+
+反案例 003（方法论陷阱）：另一组测试 16/16 满分但不可信——6 个方法论硬伤（版本号矛盾/无对照/模型未控制/N=2/MEMORY 污染/设计过于显眼）。核心教训：「满分但不可信」比「50 分但可信」危险 100 倍。
+
+### FDE 叙事 + 文档清理
+
+README/ARCHITECTURE/HANDBOOK 三处加入 FDE 能力矩阵（纪律层核心 vs 审计层规划）。删除 7 个 SOP 中间产物（system_design/class-diagram/sequence-diagram/research/samples/ao-compose-format/platform-test-guide，净减 1300 行）。
+
+> 📖 [详细开发日志](./docs/changelog/v0.90.md)
+
+---
+
 ## [v0.86] — 2026-06-23
 
 v0.85 重新定位为纪律层，v0.86 补三个核心能力：Agent 更聪明地拆任务、更清楚什么时候该停、更不容易跑偏。
