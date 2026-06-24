@@ -88,7 +88,7 @@ sofagent 聚合了很多概念——宪法、铁律、加载链、编排引擎�
 | 反思区（think.md 自动错题本）| 断路器（session 隔离 + circuit breaker） |
 | 规则定制（rules.md 你的规则）| 步数闸（MAX+GRACE 两段式） |
 | Loop Agent 三节点（全平台通用）| 渐进减薄（orchestrator/ 目录） |
-| 文件系统审计（task/logs）| Skill 信任四级（已验证→不推荐） |
+| 文件系统审计（task/logs）| Skill 信任五级 + 引擎自动抓取安全审查（正则+LLM）|
 
 **左侧是 sofagent 的差异化所在**——纪律层（先读后写/验证再干/谨慎修改），不依赖任何平台，所有平台都生效。
 
@@ -118,7 +118,7 @@ graph TB
     style Engine fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
 ```
 
-> ⚠️ **已知局限**：核心效果尚无第三方实测数据；复盘是 LLM 自评，无客观基准；Loop Agent 非独立进程；纯文件约束依赖 Agent 配合；数据明文存储（task/logs + think.md 含任务记录，无加密）；不是多用户系统（共享 .sofagent/ 会交叉污染经验）。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
+> ⚠️ **已知局限**：核心效果尚无第三方实测数据；复盘是 LLM 自评，无客观基准；Loop Agent 非独立进程；纯文件约束依赖 Agent 配合；数据明文存储（task/logs + think.md 含任务记录，v0.90 不加密，age 加密计划 v1.0+——详见 LIMITATIONS）；不是多用户系统（共享 .sofagent/ 会交叉污染经验）。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 
 ## 平台能力
 
