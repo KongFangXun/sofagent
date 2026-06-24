@@ -666,18 +666,20 @@ think.md 反思区可能出现矛盾条目（上次说「先做 A 再做 B」，
 
 ### sofagent-audit —— 提交时审计
 
-discipline-check.sh 的产品化包装。形态：GitHub Action + 独立 CLI 工具。不依赖 Agent 平台的 Hook。
+discipline-check.sh 的产品化实现（v0.91）。TypeScript CLI，源码 `sofagent-audit/src/`，零运行时依赖，只用了 Node.js 内置模块。
+
+扫描 git diff + `.sofagent/task/logs/` 操作日志，对四条可程序化铁律做确定性判定：
 
 ```bash
-# v0.9 MVP 设计
-sofagent-audit --diff HEAD~1..HEAD --task "任务描述"
+cd sofagent-audit && npm ci && npm run build
+node dist/index.js --diff HEAD~1..HEAD --task "任务描述"
 
 ❌ 铁律 #1 先读再用：handler.ts 被修改，但修改前无 Read 记录
 ✅ 铁律 #3 验证再干：package.json 修改后有 npm test 记录
 ⚠️ 铁律 #7 谨慎修改：本次 diff 修改了 3 个不在任务范围内的文件
 ```
 
-详见 [v0.85 开发日志 §三](./docs/changelog/v0.85.md#p1确定性纪律检查器discipline-checksh)。
+exit code：0 = PASS / 1 = WARN / 2 = FAIL。设计文档见 [audit-design.md](../docs/audit-design.md)。
 
 ---
 
