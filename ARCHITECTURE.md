@@ -595,7 +595,7 @@ Agent 治理层最核心的数据是 task/logs——每次任务跑完后一小�
 
 ### FDE 能力矩阵：纪律层在企业 AI 落地中的定位
 
-> **FDE（Forward Deployed Engineer）** 是 Anthropic / OpenAI 提出的企业 AI 落地模式——把工程师派到企业现场，将 AI 嵌入业务流程。sofagent 不做 FDE 服务，做 **FDE 手里的纪律工具**。
+> FDE 定义详见 [README.md](./README.md#fde-场景为什么前沿部署工程师需要纪律层)。sofagent 的定位是 FDE 手里的纪律工具，不是 FDE 引擎。
 
 sofagent 的四层架构对应 FDE 场景的四个递进需求：
 
