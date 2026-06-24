@@ -6,7 +6,7 @@
 [![Version](https://img.shields.io/badge/version-v0.91-16B8F3)](./HANDBOOK.md)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--24-16B8F3)](./README.md)
 [![定位](https://img.shields.io/badge/定位-Agent_纪律层-16B8F3)](#这是什么)
-[![OpenClaw](https://img.shields.io/badge/优先_🦞-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
+[![OpenClaw](https://img.shields.io/badge/🦞优先-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
 [![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes%20Agent-lightgrey)](./LIMITATIONS.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9FStarred)](https://github.com/KongFangXun/sofagent/stargazers)
 
