@@ -55,7 +55,7 @@ bash sofagent/scripts/install.sh && bash sofagent/scripts/verify.sh
 
 如果你想：
 
-- 报告文档中的错误（逻辑矛盾、术语不一致、交叉引用断裂）
+- 文档里有写错的地方直接提 issue——不用讲究。
 - 建议新增设计点
 - 问「这个东西到底怎么用」
 
@@ -77,7 +77,7 @@ bash sofagent/scripts/install.sh && bash sofagent/scripts/verify.sh
 
 Handbook（`HANDBOOK.md`）有一项硬性约束：**改手册必须同步改 `sofagent/` 模板。反过来也一样。**
 
-改之前看一眼 [Developer §七](./DEVELOPMENT.md#七数据文件架构) 的「维护规则」。涉及 § 交叉引用的修改，记得验证上下游一致性。
+改之前看一眼 [Developer §七](./DEVELOPMENT.md#七数据文件架构) 的「维护规则」。涉及 § 交叉引用的修改，看看引用的地方有没有坏链。
 
 ### 改 Skill 文件的注意事项
 
@@ -116,7 +116,7 @@ bash sofagent/scripts/verify.sh
 
 | 步骤 | 命令 / 操作 | 说明 |
 |------|------|------|
-| ① 详细开发日志 | `docs/changelog/vX.Y.md` | 完整叙事：改了什么、为什么改、文件清单 |
+| ① 详细开发日志 | `docs/changelog/vX.Y.md` | 记录一下：改了什么、为什么改、文件清单 |
 | ② CHANGELOG 索引 | `CHANGELOG.md` 顶部加条目 | 一句话摘要 + 链接到 ① |
 | ③ 版本号统一 | 脚本 `VERSION=` + 文档头 `> vX.Y` | 见 [MEMORY.md 版本号升级检查清单](./.workbuddy/memory/MEMORY.md) |
 | ④ 安装副本同步 | `cp -r sofagent/ ~/.workbuddy/skills/sofagent/` | 工作区 → 安装副本 |
@@ -146,7 +146,7 @@ bash sofagent/scripts/verify.sh
 
 | 方向 | 难度 | 说明 |
 |------|:--:|------|
-| 文档纠错 | ⭐ | 找矛盾、找遗漏、找术语不统一 |
+| 文档纠错 | ⭐ | |
 | 设计补充 | ⭐⭐ | 模糊段落的精确化、新增设计要点 |
 | Skill 精简 | ⭐⭐⭐ | 当前 5 个子 Skill 合计 246 行，token 预算偏紧。帮我们优化，不压缩语义 |
 | 安装脚本 | ⭐⭐⭐ | install.sh（五平台 `--platform` 参数）/ verify.sh / uninstall.sh |
@@ -187,6 +187,7 @@ sofagent 当前维护者为孔放勋一人。我们正在寻找愿意深度参�
 一句话：**对人客气，对事尖锐。**
 
 批评设计没问题，批评人不行。别把 Issue 区变成战场。
+我们连自己都会骂（上面那段「我不会写代码」），你骂设计完全 OK。✌️
 
 ---
 
