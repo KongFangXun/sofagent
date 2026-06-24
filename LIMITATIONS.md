@@ -8,11 +8,11 @@
 
 <a id="known-limits"></a>
 
-### 治理层自身在上下文里
+### 💡 治理层自身在上下文里
 
 sofagent 的核心机制是 MD 文件注入 Agent 上下文。这意味着：约束力 = Agent 的注意力 × 平台的加载可靠性。上下文窗口太小约束可能被截断；选择性忽略长文本（Lost in the Middle），中间铁律可能漏掉；约束机制依赖 Agent 配合——它必须"愿意读"。
 
-我们选择了这个代价，因为它换来了：**零外部依赖、零进程管理、跨平台兼容、纯文本可审计**。
+我们选择了这个代价，因为它换来了：不依赖任何外部服务、不需要额外进程管理、一份代码到处能跑、所有配置都是纯文本可以直接审计。
 
 ---
 
@@ -47,7 +47,7 @@ v0.62.2 起按平台分级处理，v0.63 进一步诚实化：
 
 ---
 
-### Skill 自进化仍处于「经验记录」阶段
+### 🌱 Skill 自进化仍处于「经验记录」阶段
 
 > ⚠️ 来自「Agent Skill 自进化机制深度研究」(2026-06-20)。
 
@@ -68,7 +68,7 @@ sofagent 的 `scoring/` + `think.md` 自进化机制当前处于**第一阶段�
 
 ---
 
-### 定时触发做不到
+### ⏰ 定时触发做不到
 
 Loop Engineering 的标志性场景是「每天早上 8 点自动扫 CI」。sofagent 目前只有「每次对话启动」这一种触发方式。OpenClaw 不支持 cron 级定时任务。
 
@@ -78,7 +78,7 @@ Loop Engineering 的标志性场景是「每天早上 8 点自动扫 CI」。sof
 
 ---
 
-### B1 数据初始化依赖 bash
+### 🐚 B1 数据初始化依赖 bash
 
 SKILL.md B1 步用 bash heredoc 创建 `.sofagent/` 数据目录和核心文件。OpenClaw / WorkBuddy / macOS/Linux 默认有 bash，但 Windows 或受限沙盒环境可能没有。
 
@@ -86,7 +86,7 @@ SKILL.md B1 步用 bash heredoc 创建 `.sofagent/` 数据目录和核心文件�
 
 ---
 
-### 中间检查点挂起
+### ⏸️ 中间检查点挂起
 
 中间检查点设计：子 Agent 超标 → 暂停 → 主 Agent 三问评估（继续/停止/回滚）。「暂停」需要 OpenClaw `before_tool` Hook 拦截工具调用，当前不支持。
 
@@ -110,7 +110,7 @@ sofagent 目前没有这个能力：Hook 是 OpenClaw 配置层的静态设置�
 
 ---
 
-### 不是分布式系统
+### 🧩 不是分布式系统
 
 sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实例协调，没有分布式状态管理。子 Agent 是 OpenClaw 的 session 隔离，不是真正的独立 Agent 进程。
 
@@ -126,7 +126,7 @@ sofagent 跑在单个 Agent 里，.sofagent/ 是单用户工作目录。如果�
 
 ---
 
-### 数据存储安全
+### 🔒 数据存储安全
 
 task/logs 和 think.md 以明文 Markdown 存储任务记录和反思摘要，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。
 
