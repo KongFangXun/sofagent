@@ -361,7 +361,7 @@ OpenClaw 通过 Hook 强制注入宪法，Agent 无需额外操作即可完整�
 | 多个电脑上能用吗 | 不能——不是分布式，跑在单个 Agent 里 |
 | 评分越来越不准 | 经验漂移——翻 task/logs 对照 think.md，清理低置信度旧条目 |
 | 什么工作不该让 Agent 做 | 去重、格式校验、文件清理这类确定性操作——用 bash 脚本比 Agent 更快更准更便宜。Agent 管判断，脚本管执行 |
-| **企业部署安全吗？** | v0.90 起 Skill 安全审查（22 条正则硬门 + LLM 语义审查）+ 数据存储声明已就位，审计层 v0.91。详见 [README FDE 场景](./README.md#fde-场景为什么前沿部署工程师需要纪律层)。安装第三方 Skill 前建议使用 [Skill Specter](https://github.com/) 等工具进行安全扫描——检测提示词注入、数据外传、供应链工具投毒等 64 类风险 |
+| **企业部署安全吗？** | v0.90 起 Skill 安全审查（22 条正则硬门 + LLM 语义审查）+ 数据存储声明已就位，审计层 v0.91。详见 [README FDE 场景](./README.md#fde-场景为什么前沿部署工程师需要纪律层)。安装第三方 Skill 前建议使用 [SkillSpector](https://github.com/NVIDIA/SkillSpector) 等工具进行安全扫描——检测提示词注入、数据外传、供应链工具投毒等 64 类风险 |
 
 > 💡 更多细节见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 
