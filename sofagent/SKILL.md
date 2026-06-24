@@ -1,7 +1,7 @@
 ---
 name: sofagent
 slug: sofagent
-version: 0.85
+version: 0.91
 displayName: sofagent
 description: >
   当你的 Agent 反复偏离目标、任务越做越复杂、刚踩过的坑下次还踩 —— sofagent 能约束其行为、拆解复杂任务、从错误中沉淀教训。

@@ -3,22 +3,22 @@
 中文 | [English](README.en.md)
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.90-1E40AF)](./HANDBOOK.md)
-[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--23-lightgrey)](./README.md)
+[![Version](https://img.shields.io/badge/version-v0.91-1E40AF)](./HANDBOOK.md)
+[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--24-lightgrey)](./README.md)
 [![定位](https://img.shields.io/badge/定位-Agent_纪律层-1E40AF)](#这是什么)
-[![OpenClaw](https://img.shields.io/badge/OpenClaw-first-2563EB)](./ARCHITECTURE.md#平台依赖)
-[![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes%20Agent-lightgrey)](./ARCHITECTURE.md#平台依赖)
+[![OpenClaw](https://img.shields.io/badge/OpenClaw-first-2563EB)](./LIMITATIONS.md#平台依赖)
+[![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes%20Agent-lightgrey)](./LIMITATIONS.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 <!-- TODO: demo.gif — 15s 左右对比: 裸 Agent 跑偏 vs sofagent 约束后正常 -->
 
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
-> v0.90 · 2026-06-24
+> v0.91 · 2026-06-24
 
 > 📄 **License**：MIT。代码、文档、模板——随便用，保留版权声明就行。
 
-我叫孔放勋，一个完全不懂代码的产品经理。所有设计决策来自大半年的真实使用经验，文档由 [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) 和 [GLM-5.2](https://z.ai/) 配合生成。欢迎大佬进来改。
+我叫孔放勋，一个不是很懂代码的产品经理。所有设计决策来自大半年的真实使用经验，文档由 [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) 和 [GLM-5.2](https://z.ai/) 配合生成。欢迎大佬进来改。
 
 ---
 
@@ -59,10 +59,10 @@
 
 | 你是谁 | 看哪个 | 一句话 |
 |------|------|------|
-| 普通用户 | [HANDBOOK.md](./HANDBOOK.md)（443 行） | 怎么装、怎么用、什么是铁律 |
-| 开发者 | [DEVELOPMENT.md](./DEVELOPMENT.md)（599 行） | Skill 怎么协同、编排怎么跑、反思怎么闭环 |
-| 设计爱好者 | [ARCHITECTURE.md](./ARCHITECTURE.md)（596 行） | 为什么选这些设计、已知局限 |
-| 技术 VP 推广 | [docs/team-deploy.md](./docs/team-deploy.md)（3 页） | 装、试、回顾三阶段落地指南 |
+| 普通用户 | [HANDBOOK.md](./HANDBOOK.md)（450 行） | 怎么装、怎么用、什么是铁律 |
+| 开发者 | [DEVELOPMENT.md](./DEVELOPMENT.md)（691 行） | Skill 怎么协同、编排怎么跑、反思怎么闭环 |
+| 设计爱好者 | [ARCHITECTURE.md](./ARCHITECTURE.md)（385 行） | 为什么选这些设计、已知局限 |
+| 企业技术决策者 | [docs/team-deploy.md](./docs/team-deploy.md)（3 页） | 装、试、回顾三阶段落地指南 |
 
 ---
 
@@ -100,17 +100,17 @@ sofagent 聚合了很多概念——宪法、铁律、加载链、编排引擎�
 
 > **FDE（Forward Deployed Engineer）** 是 Anthropic / OpenAI 提出的企业 AI 落地模式——把工程师派到企业现场，将 AI 嵌入业务流程。sofagent 不做 FDE 服务，做 **FDE 手里的纪律工具**。
 
-当 AI Agent 进入企业真实业务，技术负责人面对的不是"Agent 能不能干"，而是三个纪律问题：
+当 AI Agent 进入企业真实业务，企业技术决策者面对的不是"Agent 能不能干"，而是三个纪律问题：
 
 | FDE 痛点 | sofagent 能力 | 版本 |
 |---------|-------------|:----:|
 | **外部 Skill 安全吗？** — Agent 自动拉来的社区 Skill 可能藏恶意命令、泄密端点 | Skill 安全审查（22 条正则硬门 + LLM 语义审查软门） | ✅ v0.90 |
 | **数据合规吗？** — 企业敏感数据明文落盘，审计不通过 | 数据存储安全声明（明文 + 加密计划 age v1.0+） | ✅ v0.90 |
-| **Agent 乱改代码怎么办？** — 没有 review 的 commit 进入生产环境 | 提交时审计 sofagent-audit（看 git diff，不依赖 Agent 配合） | 🔨 v0.92 |
+| **Agent 乱改代码怎么办？** — 没有 review 的 commit 进入生产环境 | 提交时审计 sofagent-audit（看 git diff，不依赖 Agent 配合） | 🔨 v0.91 |
 | **跨平台部署一致性？** — 不同企业用不同 Agent 平台 | 纯 MD + bash 跨平台纪律标准（OpenClaw / WorkBuddy / Claude Code / Codex） | ✅ v0.85 |
 | **多设备协同治理？** — 团队多台设备的 Agent 经验无法共享 | 多设备协同层（信号共享网络） | 📋 v2.x |
 
-> ⚠️ **叙事诚实**：v0.90 的 FDE 能力是"安全审查 + 数据声明"两件——审计层在 v0.92，多设备在 v2.x。sofagent 当前是 FDE 场景的**纪律底座**，不是完整的 FDE 解决方案。
+> ⚠️ **叙事诚实**：v0.91 的 FDE 能力是"安全审查 + 数据声明 + 提交时审计 MVP"三件——审计层完整版（LLM 辅助 + CI gate）在 v0.92，多设备在 v2.x。sofagent 当前是 FDE 场景的**纪律底座**，不是完整的 FDE 解决方案。
 
 ### 架构总览
 
@@ -169,7 +169,7 @@ v0.85 确立的新主线方向——**从运行时治理（预防）转向提交
 当前架构依赖 Agent 配合读取 MD 文件——不配合就全失效（CLI 0/16）。审计方向不依赖 Agent 配合，看的是已经发生的 git diff：
 
 ```bash
-# v0.9 MVP 设计（v0.85 只确立方向）
+# v0.91 MVP（v0.85 只确立方向）
 sofagent-audit --diff HEAD~1..HEAD --task "任务描述"
 
 ❌ 铁律 #1 先读再用：handler.ts 被修改，但修改前无 Read 记录
@@ -330,4 +330,4 @@ sofagent/                  ← 核心部署文件（SKILL.md 主入口 + 5 子 S
 - [Anthropic Skills](https://github.com/anthropics/skills) + [Managed Agents](https://www.anthropic.com/engineering/managed-agents) — SKILL.md 格式规范 + 四层架构哲学源头
 - [Loop Engineering](https://addyo.substack.com/p/loop-engineering) by Addy Osmani — 循环工程五大件，编排层理论源头
 - [superpowers](https://github.com/obra/superpowers) — Skill 作为 Harness 杠杆的思路
-- [SkillOpt](https://arxiv.org/abs/2605.06614) by Microsoft Research — Skill 文档训练方法论，启发 v0.9 Skill 自进化
+- [SkillOpt](https://arxiv.org/abs/2605.06614) by Microsoft Research — Skill 文档训练方法论，启发 v0.9x Skill 自进化

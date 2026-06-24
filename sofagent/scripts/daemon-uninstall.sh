@@ -9,7 +9,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.85"
+VERSION="0.91"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"

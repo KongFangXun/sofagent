@@ -1,0 +1,23 @@
+name: sofagent-audit
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install sofagent-audit
+        run: cd sofagent-audit && npm ci && npm run build
+
+      - name: Run audit
+        run: node sofagent-audit/dist/index.js --diff HEAD~1..HEAD --task "${{ github.event.pull_request.title }}"

@@ -1,4 +1,4 @@
-# engine.md · 任务编排引擎 · v0.90
+# engine.md · 任务编排引擎 · v0.91
 
 > 由 SKILL.md A0 触发。仅 🔴 复杂任务且用户确认后点火。`{SOFAGENT_DATA}` = `{当前工作目录}/.sofagent/`。
 > ⛔ 三层加载链已在 SKILL.md 启动时完成——engine.md 不重复。编排引擎只管拆解、执行、闭环。
@@ -244,7 +244,7 @@ SKILL.md 地基 → A0 → 🟢🟡只读task-aware / 🔴→engine→entry-gate
 | 文件操作 | `ls -la` 确认文件存在且非空 / `cmp` 验证内容 | 重新执行写操作 |
 | 编排步骤 | `bash {OPENCLAW_SCRIPTS}/task-record.sh --closure-check` | 记录失败原因，继续下一子任务 |
 
-### 6 个显式失败分支
+### 7 个显式失败分支
 
 > 不靠 catch-all 的「失败→降级」。每条失败路径有名字、有触发条件、有处理策略。
 
@@ -256,6 +256,7 @@ SKILL.md 地基 → A0 → 🟢🟡只读task-aware / 🔴→engine→entry-gate
 | 4 | **任务冲突** | 多个子任务修改同一文件 | 🟡 暂停，合并策略：优先串行化（后来的子任务等前一个完成），若冲突不可自动解决→通知用户 |
 | 5 | **多 Agent 矛盾** | 多个子 Agent 对同一问题输出矛盾结论 | 主 Agent 裁决：比较证据质量（有外部验证 > LLM 自评），取有证据支撑的结论。两者均无外部证据→通知用户选择 |
 | 6 | **成本超预算** | token 消耗超过 A4 ComplexityScorer 预估的 1.5 倍 | 停止剩余子任务，汇报已完成部分 + 已消耗 token，用户决定是否继续或降级为 Flash |
+| 7 | **Ghost 无响应** | 子 Agent 超过 N 分钟无输出（默认 N=5） | 标记为 ghost，自动中止该子 Agent，交还主 Agent 决策。Ghost 率数据：约 28%（Code Review 范式转移笔记，AI 收到主观反馈后停止响应的比例） |
 
 ### 步数闸（Step Limiter）
 

@@ -3,17 +3,17 @@
 [中文](README.md) | English
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.90-1E40AF)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/version-v0.91-1E40AF)](./HANDBOOK.md)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--23-lightgrey)](./README.md)
-[![OpenClaw](https://img.shields.io/badge/OpenClaw-priority--platform-2563EB)](./ARCHITECTURE.md#平台依赖)
-[![兼容](https://img.shields.io/badge/compatible-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes%20Agent-lightgrey)](./ARCHITECTURE.md#平台依赖)
+[![OpenClaw](https://img.shields.io/badge/OpenClaw-priority--platform-2563EB)](./LIMITATIONS.md#平台依赖)
+[![兼容](https://img.shields.io/badge/compatible-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes%20Agent-lightgrey)](./LIMITATIONS.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 <!-- TODO: demo.gif — 15s side-by-side: bare Agent going off-rails vs sofagent-constrained Agent -->
 
 > sofa + agent — because one day, we want to lie on the couch while agents do the work.
-> v0.90 · 2026-06-24
+> v0.91 · 2026-06-24
 
 > 📄 **License**: MIT. Code, docs, templates — use freely, just keep the copyright notice.
 
@@ -86,7 +86,7 @@ A **governance layer** for AI agents. Not a framework to build them, not a tool 
 
 > ⚠️ Author's own testing. If you get different results on a platform — **that is the real data**. Tell us.
 
-> ⚠️ **Non-OpenClaw reality check**: Orchestration engine / Hook / Circuit breaker — all three core capabilities are OpenClaw-only. If you're not on OpenClaw, sofagent delivers about 30% of its full value (constitution layer only). This is not a bug — it's an architectural reality. v0.8 daemon will improve the loading chain, but orchestration and hooks remain OpenClaw-exclusive. See [Design §三 Platform Dependencies](./ARCHITECTURE.md#平台依赖).
+> ⚠️ **Non-OpenClaw reality check**: Orchestration engine / Hook / Circuit breaker — all three core capabilities are OpenClaw-only. If you're not on OpenClaw, sofagent delivers about 30% of its full value (constitution layer only). This is not a bug — it's an architectural reality. v0.8 daemon will improve the loading chain, but orchestration and hooks remain OpenClaw-exclusive. See [Design §三 Platform Dependencies](./LIMITATIONS.md#平台依赖).
 
 > 📎 "Seed instruction" — a single line pasted into the agent's memory file (e.g. CLAUDE.md / AGENTS.md / SOUL.md) telling the agent to read sofagent constraint files at startup. **This is not automation — it's a manual sticky note.** OpenClaw and WorkBuddy auto-load via their skill mechanisms; no seed instruction needed.
 
@@ -102,7 +102,7 @@ A **governance layer** for AI agents. Not a framework to build them, not a tool 
 
 - ❌ Not an AI framework — doesn't manage model APIs or write prompts. That's the model layer's job
 - ❌ Not a skills marketplace — doesn't maintain reusable skills (except core governance skills like task-aware). External skills come from the community
-- ✅ It is a **governance methodology** — delivered via Skill + Scripts + Config, telling agents what they can do, can't do, and when to stop. OpenClaw first; other platforms get the constitution layer only (see [Design §三 Platform Dependencies](./ARCHITECTURE.md#平台依赖))
+- ✅ It is a **governance methodology** — delivered via Skill + Scripts + Config, telling agents what they can do, can't do, and when to stop. OpenClaw first; other platforms get the constitution layer only (see [Design §三 Platform Dependencies](./LIMITATIONS.md#平台依赖))
 
 ---
 
@@ -183,7 +183,7 @@ Open your agent client. Try a task that needs multi-step decomposition (this is 
 /goal Analyze the code quality of this project and generate an improvement recommendations report
 ```
 
-The agent will auto-decompose the task → match skills → execute → write reflections. Fully automatic on OpenClaw; other platforms require manual triggers for some capabilities (see [Design §三 Platform Dependencies](./ARCHITECTURE.md#平台依赖)).
+The agent will auto-decompose the task → match skills → execute → write reflections. Fully automatic on OpenClaw; other platforms require manual triggers for some capabilities (see [Design §三 Platform Dependencies](./LIMITATIONS.md#平台依赖)).
 
 Check the results:
 
