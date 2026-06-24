@@ -18,7 +18,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.85"
+VERSION="0.90"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'
@@ -44,6 +44,13 @@ _log() { echo "[$(date '+%H:%M:%S')] $1" >> "${INSTALL_LOG:-/dev/null}"; }
 QUICK_MODE="${QUICK_MODE:-0}"
 REMOTE_MODE="${REMOTE_MODE:-0}"
 
+# v0.90 P0-1 修复：提前保存原始参数 + 预扫描 --remote
+# 原因：远程安装检查在完整参数解析之前执行，需要先拿到 REMOTE_MODE 和 ORIGINAL_ARGS
+ORIGINAL_ARGS=("$@")
+for _arg in "$@"; do
+  [ "$_arg" = "--remote" ] && REMOTE_MODE=1
+done
+
 # ── 欢迎 ──
 if [ "$QUICK_MODE" = "0" ]; then
 echo ""
@@ -66,9 +73,9 @@ if [ "${REMOTE_MODE}" = "1" ]; then
     cd "$REMOTE_TMP"
     # 重新调用 install.sh，去掉 --remote，透传其他参数
     REMAINING_ARGS=""
-    for arg in "${ORIGINAL_ARGS[@]}"; do
-      [ "$arg" = "--remote" ] && continue
-      REMAINING_ARGS="$REMAINING_ARGS $arg"
+    for _arg in "${ORIGINAL_ARGS[@]}"; do
+      [ "$_arg" = "--remote" ] && continue
+      REMAINING_ARGS="$REMAINING_ARGS $_arg"
     done
     exec bash sofagent/scripts/install.sh $REMAINING_ARGS
   else
@@ -91,8 +98,7 @@ PLATFORM=""
 QUICK_MODE=0  # v0.73: --quick 模式跳过交互确认
 NO_DAEMON=0   # v0.84: --no-daemon 跳过 daemon 安装
 LITE_MODE=0   # v0.85: --lite 精简模式（= --quick + --no-ao + --no-daemon + --no-config-inject）
-REMOTE_MODE=0
-ORIGINAL_ARGS=("$@")  # 保存原始参数（--remote 模式下透传用）
+# v0.90 P0-1 修复：REMOTE_MODE 和 ORIGINAL_ARGS 已在远程检查前提前初始化，此处不再重复
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --platform)     PLATFORM="$2"; shift 2 ;;
@@ -159,6 +165,16 @@ fi
 
 # ── 统一初始化数据目录路径（所有平台共用，避免 set -u 下未定义）──
 SOFAGENT_DATA="${PROJECT_DIR}/.sofagent"
+
+# v0.90 P0-3 修复：写入数据目录标记文件，供 audit/verify/orchestrate 等脚本定位
+# 标记文件放在平台 skill 目录下，config.sh 读取它来还原 --project-dir 指定的路径
+case "$PLATFORM" in
+  openclaw|workbuddy)
+    _SKILL_DIR="${TARGET:-${HOME}/.${PLATFORM}/skills/sofagent}"
+    mkdir -p "$_SKILL_DIR" 2>/dev/null || true
+    echo "$SOFAGENT_DATA" > "$_SKILL_DIR/.sofagent-data-path" 2>/dev/null || true
+    ;;
+esac
 
 # ── 按平台确定目标路径 ──
 case "$PLATFORM" in
@@ -435,6 +451,7 @@ fi
 
 # Lite 模式：创建 think.md 空模板
 if [ "${LITE_MODE:-0}" = "1" ]; then
+  mkdir -p "$SOFAGENT_DATA"  # v0.90 P0-2 修复：Lite 跳过 Step 5b，需提前创建数据目录
   THINK_DST="${SOFAGENT_DATA}/think.md"
   if [ ! -f "$THINK_DST" ]; then
     cat > "$THINK_DST" << 'THINK_TEMPLATE'
@@ -460,11 +477,11 @@ fi
 if [ "${LITE_MODE:-0}" != "1" ]; then
 info "Step 5b/7 · 部署配套脚本 + 数据目录 → $TARGET"
 
-# 部署配套脚本（task-record + task-orchestrate + cleanup + audit + compress-memory）
+# 部署配套脚本（task-record + task-orchestrate + cleanup + audit + compress-memory + skill-safety-check）
 SCRIPTS_DST="${TARGET}/scripts"
 mkdir -p "$SCRIPTS_DST"
 
-for script in task-record.sh task-orchestrate.sh cleanup.sh audit.sh compress-memory.sh; do
+for script in task-record.sh task-orchestrate.sh cleanup.sh audit.sh compress-memory.sh skill-safety-check.sh; do
   src="${SCRIPT_DIR}/${script}"
   dst="${SCRIPTS_DST}/${script}"
   if [ -f "$src" ]; then
@@ -779,7 +796,7 @@ case "$PLATFORM" in
     echo "    宪法文件:      $TARGET/skills/sofagent/rules.md（宪法内联在 SKILL.md）"
     echo "    Skill 文件:     $TARGET/skills/sofagent/（6 核心 + 4 数据模板）"
     echo "    加载链 Hook:    $TARGET/hooks/sofagent-load-chain/（HOOK.md + handler.ts）"
-    echo "    配套脚本:       $TARGET/scripts/{task-record,task-orchestrate,cleanup,audit,compress-memory}.sh"
+    echo "    配套脚本:       $TARGET/scripts/{task-record,task-orchestrate,cleanup,audit,compress-memory,skill-safety-check}.sh"
     echo "    断路器:         ${CONFIG_FILE:-未配置}（tools.loopDetection）"
     echo "    数据目录:       $SOFAGENT_DATA"
     echo ""

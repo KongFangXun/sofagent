@@ -43,6 +43,8 @@
 | 2026-06-22 | @kangjianrong | Codex (v0.82) | 一次性测试 | 8 维度 | ✅ 能（安装） | 安装+加载通过，治理靠自觉 | — | verify.sh Skills 路径统计瑕疵（🟡 中） | **Codex 安装烟测+平台验证通过。codex exec 真实加载测试：AGENTS.md → rules.md → SKILL.md 跑通，正确回答 4 条底线。详见 [Case 009](./cases/codex-v082-2026-06-22/)。** |
 | 2026-06-22 | @cedric123123 | Hermes Agent (v0.82, deepseek-v4-pro) | 一次性测试 | 8 维度 | ❌ 不能 | **4 项治理全失效**：熔断闸实测连续 5 次调用不存在 API 未熔断 | — | daemon 脚本缺失；engine.md 不自动加载；think.md 不存在 | **最诚实的测试。prompt 级约束在 Hermes Agent 上完全不生效。L1+L3 加载超预期（Agent 主动搜索）。详见 [Case 010](./cases/hermes-v082-2026-06-22/)。** |
 | 2026-06-22 | KongFangXun | Claude Code (v0.82) | 一次性测试 | 8 维度 | ❌ 不能 | **0/8 硬约束生效**：scripts/ 未部署，编排引擎完全失效 | — | scripts/ 未部署（🔴）；CLAUDE.md 种子指令未写入（🟡）；daemon 不检测 claude（🟡） | **Claude Code 与 Hermes Agent 同属"手动平台"。三个断裂点导致效果 = 0。详见 [Case 011](./cases/claude-v082-2026-06-22/)。** |
+| 2026-06-24 | @jm4170134-droid（小嘉） | Mac mini (DeepSeek Reasoner, v0.86 tag) | 一次性测试 | 5 任务 A/B | ✅ 能 | **5 维度全正向**：陷阱注释全部保留 vs 部分移除、exports 完整 vs 遗漏、首次无 bug 5/5 vs 4/5、类型严谨 vs `any` 绕过 | — | N=1 单次运行（方差未知）；反序组设计（B 先 A 后）；评估非盲 | **社区第三方 A/B：5 个代码重构任务，sofagent 组全面优于裸 Agent 组。两组同模型（DeepSeek Reasoner），唯一变量是 sofagent 有无。详见 [Case 012](./cases/community-ab-test-2026-06-24/)。** |
+| 2026-06-24 | @cedric123123（明我小助手） | OpenClaw main session (Opus 4.7) | 一次性测试 | task6 + task7 | ✅ 能 | **16/16 满分，但数据不可信**：6 个方法论硬伤导致无法归因 | task6: ~150K / task7: ~226K | 🔴 实际加载 v0.81-0.85 非 v0.86 / 🔴 无对照组 / 🔴 模型未控制（Opus vs deepseek）/ 🟡 N=2 / 🟡 task7 过于显眼 / 🟡 MEMORY.md 污染 | **满分报告 ≠ 可信报告。task6 读型分流 8/8 + task7 Loop 退出 8/8，但版本错配 + 无对照 + 模型混淆。方法论教训详见 [反案例 003](./anti-cases/003-test-methodology-pitfalls.md)。** |
 
 > 使用时长分类：**一次性测试**（装上跑完验证就停了）/ **持续使用 N 天**（日常工作在使用）/ **弃用**（装过但不用了——**请写原因，这对我们最有价值**）
 

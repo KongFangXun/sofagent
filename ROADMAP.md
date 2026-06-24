@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.86 · 2026-06-23 · 运行时加固 + 设计约束补充 + 评审反馈落地
+> v0.90 · 2026-06-24 · 运行时加固 + 设计约束补充 + 评审反馈落地
 >
 > **先证明纪律层增量是真的，再做其他任何事。**
 
@@ -176,7 +176,7 @@
 
 | 交付物 | 类别 | 说明 |
 |------|:--:|------|
-| **文档拆分** | 结构 | ARCHITECTURE §五 → docs/research/industry-insights.md；ROADMAP daemon 详细设计 → 指向 docs/daemon-design.md |
+| **文档拆分** | 结构 | ROADMAP daemon 详细设计 → 指向 docs/daemon-design.md |
 | **benchmark.sh API 模式** | 实证 | 新增 `--api` 全自动路径（OpenClaw 非交互模式），减少人肉依赖 |
 | **EVIDENCE 最小模板** | 实证 | 3 个数字 + 1 句话模板，填完不超过 1 分钟 |
 | **ao compose 格式文档** | 加固 | YAML 格式写死 + task-orchestrate.sh 自动降级（不只是口头告知） |

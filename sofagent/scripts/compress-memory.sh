@@ -69,7 +69,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ── 定位 think.md ──
-SOFAGENT_DATA="${PWD}/.sofagent"
+# v0.90 P0-3 修复：SOFAGENT_DATA 由 lib/config.sh 统一解析（已 source）
 THINK_FILE="${SOFAGENT_DATA}/think.md"
 ARCHIVE_FILE="${SOFAGENT_DATA}/think.archive.md"
 

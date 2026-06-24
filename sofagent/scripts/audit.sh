@@ -18,7 +18,7 @@
 
 set -euo pipefail
 
-VERSION="0.85"
+VERSION="0.90"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -80,7 +80,7 @@ LOCAL_DATE=$(date +"%Y-%m-%d")
 LOCAL_MONTH=$(date +"%Y-%m")
 
 # ── 路径 ──
-SOFAGENT_DATA="${PWD}/.sofagent"
+# v0.90 P0-3 修复：SOFAGENT_DATA 由 lib/config.sh 统一解析（已 source），不再硬编码 ${PWD}
 AUDIT_DIR="${SOFAGENT_DATA}/task/audit/${LOCAL_MONTH}"
 AUDIT_FILE="${AUDIT_DIR}/${LOCAL_DATE}.md"
 

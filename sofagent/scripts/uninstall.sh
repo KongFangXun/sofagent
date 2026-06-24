@@ -16,6 +16,11 @@ VERSION="0.85"
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# v0.90 P0-3 修复：加载统一数据目录配置
+if [ -f "${SCRIPT_DIR}/lib/config.sh" ]; then
+  source "${SCRIPT_DIR}/lib/config.sh"
+fi
+
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
 info()  { echo -e "${BLUE}[uninstall]${NC} $1"; }
 ok()    { echo -e "${GREEN}[✓]${NC} $1"; }
@@ -59,7 +64,7 @@ fi
 case "$PLATFORM" in
   openclaw) TARGET="${OPENCLAW_STATE_DIR:-$HOME/.openclaw}" ;;
   workbuddy)
-    SOFAGENT_DATA="${PWD}/.sofagent"
+    # v0.90 P0-3 修复：SOFAGENT_DATA 由 config.sh 统一解析
     echo "WorkBuddy 平台——准备清理 sofagent 部署文件"
     echo ""
     removed=0
@@ -132,7 +137,7 @@ case "$PLATFORM" in
 esac
 
 OPENCLAW_DIR="$TARGET"  # 保持变量名兼容
-SOFAGENT_DATA="${PWD}/.sofagent"
+# v0.90 P0-3 修复：SOFAGENT_DATA 已由 config.sh 统一解析（不覆盖）
 
 echo ""
 echo "  ╔═══════════════════════════════════╗"

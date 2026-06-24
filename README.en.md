@@ -3,7 +3,7 @@
 [中文](README.md) | English
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.86-1E40AF)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/version-v0.90-1E40AF)](./HANDBOOK.md)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--23-lightgrey)](./README.md)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-priority--platform-2563EB)](./ARCHITECTURE.md#平台依赖)
 [![兼容](https://img.shields.io/badge/compatible-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes%20Agent-lightgrey)](./ARCHITECTURE.md#平台依赖)
@@ -13,7 +13,7 @@
 <!-- TODO: demo.gif — 15s side-by-side: bare Agent going off-rails vs sofagent-constrained Agent -->
 
 > sofa + agent — because one day, we want to lie on the couch while agents do the work.
-> v0.86 · 2026-06-23
+> v0.90 · 2026-06-24
 
 > 📄 **License**: MIT. Code, docs, templates — use freely, just keep the copyright notice.
 
