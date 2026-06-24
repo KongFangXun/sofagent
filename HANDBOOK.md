@@ -337,6 +337,31 @@ OpenClaw 通过 Hook 强制注入宪法，Agent 无需额外操作即可完整�
 | 需要从失败中积累经验 | 纯信息检索 |
 | 需要纪律约束（不乱改文件、不跳过测试） | 一次性的临时问询 |
 
+### 提交后审计：Agent 改完代码，你凭什么信？
+
+Agent 改完代码 commit 了——它遵守了铁律吗？`sofagent-audit` 帮你回答这个问题。
+
+它是一个独立 CLI 工具（TypeScript），扫描 git diff 和 `.sofagent/task/logs/` 操作日志，对照四条铁律逐条判定：
+
+```bash
+cd sofagent-audit && npm ci && npm run build
+node dist/index.js --diff HEAD~1..HEAD --task "修复登录页 bug"
+```
+
+输出：
+
+```
+❌ 铁律 #1 先读再用：src/handler.ts 被修改，但修改前无 Read 记录
+✅ 铁律 #3 验证再干：package.json 修改后有 npm test 记录
+⚠️ 铁律 #7 谨慎修改：3 个文件不在任务范围内
+```
+
+exit code：**0 = 全通过 / 1 = 有警告 / 2 = 有违规**。
+
+**原理**：不依赖 Agent 配合——看的是已经发生的 git diff，Agent 没法绕过。和运行时治理（三层加载链）互补：治理减少问题发生，审计兜底检测漏网之鱼。
+
+> 💡 详细设计见 [DEVELOPMENT §八](./DEVELOPMENT.md#八确定性纪律检查与提交时审计)，源码在 `sofagent-audit/src/`。
+
 > ⚠️ 上面这些都只是我自己的测试感受，不是严谨的横评。如果你在其他平台上跑通了，欢迎告诉我。
 
 ### 不管什么平台，约束不会丢
