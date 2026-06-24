@@ -96,6 +96,22 @@ sofagent 聚合了很多概念——宪法、铁律、加载链、编排引擎�
 
 > 不用 OpenClaw？看左侧就够了。用 OpenClaw？左侧是基础，右侧让基础更牢。
 
+### FDE 场景：为什么前沿部署工程师需要纪律层
+
+> **FDE（Forward Deployed Engineer）** 是 Anthropic / OpenAI 提出的企业 AI 落地模式——把工程师派到企业现场，将 AI 嵌入业务流程。sofagent 不做 FDE 服务，做 **FDE 手里的纪律工具**。
+
+当 AI Agent 进入企业真实业务，技术负责人面对的不是"Agent 能不能干"，而是三个纪律问题：
+
+| FDE 痛点 | sofagent 能力 | 版本 |
+|---------|-------------|:----:|
+| **外部 Skill 安全吗？** — Agent 自动拉来的社区 Skill 可能藏恶意命令、泄密端点 | Skill 安全审查（22 条正则硬门 + LLM 语义审查软门） | ✅ v0.90 |
+| **数据合规吗？** — 企业敏感数据明文落盘，审计不通过 | 数据存储安全声明（明文 + 加密计划 age v1.0+） | ✅ v0.90 |
+| **Agent 乱改代码怎么办？** — 没有 review 的 commit 进入生产环境 | 提交时审计 sofagent-audit（看 git diff，不依赖 Agent 配合） | 🔨 v0.92 |
+| **跨平台部署一致性？** — 不同企业用不同 Agent 平台 | 纯 MD + bash 跨平台纪律标准（OpenClaw / WorkBuddy / Claude Code / Codex） | ✅ v0.85 |
+| **多设备协同治理？** — 团队多台设备的 Agent 经验无法共享 | 多设备协同层（信号共享网络） | 📋 v2.x |
+
+> ⚠️ **叙事诚实**：v0.90 的 FDE 能力是"安全审查 + 数据声明"两件——审计层在 v0.92，多设备在 v2.x。sofagent 当前是 FDE 场景的**纪律底座**，不是完整的 FDE 解决方案。
+
 ### 架构总览
 
 ```mermaid
