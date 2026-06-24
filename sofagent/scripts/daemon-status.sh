@@ -16,12 +16,14 @@ set -euo pipefail
 VERSION="0.85"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SOFAGENT_DATA="${PWD}/.sofagent"
+
+# v0.90 P0-3 修复：先 source config.sh 统一解析数据目录
+[ -f "$SCRIPT_DIR/lib/config.sh" ] && source "$SCRIPT_DIR/lib/config.sh" 2>/dev/null || true
+
+# SOFAGENT_DATA 已由 config.sh 设置（fallback ${PWD}/.sofagent）
 DAEMON_JSON="${SOFAGENT_DATA}/daemon.json"
 DAEMON_PID_FILE="${SOFAGENT_DATA}/daemon.pid"
 
-# 尝试读取 config.sh
-[ -f "$SCRIPT_DIR/lib/config.sh" ] && source "$SCRIPT_DIR/lib/config.sh" 2>/dev/null || true
 [ -f "$SCRIPT_DIR/lib/daemon-lib.sh" ] && source "$SCRIPT_DIR/lib/daemon-lib.sh" 2>/dev/null || true
 
 # ── 简易内联函数（不依赖 daemon-lib.sh 时使用）──

@@ -2,7 +2,7 @@
 
 > v0.84 五平台实测全部完成（2026-06-22）。v0.84 补充 CLI 一击 A/B 数据 + 修正 Hook 归因。
 >
-> 详见测试方法：[docs/platform-test-guide.md](./platform-test-guide.md) · 实测案例：[docs/cases/](./cases/) · A/B benchmark：[docs/benchmark/](./benchmark/)
+> 实测案例：[docs/cases/](./cases/) · A/B benchmark：[docs/benchmark/](./benchmark/)
 
 ---
 

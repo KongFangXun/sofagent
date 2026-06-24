@@ -16,7 +16,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="0.85"
+VERSION="0.90"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -48,6 +48,12 @@ done
 
 # 平台参数转小写（兼容 WorkBuddy / OPENCLAW 等大写输入）
 PLATFORM="$(echo "$PLATFORM" | tr '[:upper:]' '[:lower:]')"
+
+# v0.90 P0-3 修复：提前 source config.sh 统一数据目录
+_VERIFY_SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "${_VERIFY_SCRIPT_DIR}/lib/config.sh" ]; then
+  source "${_VERIFY_SCRIPT_DIR}/lib/config.sh" 2>/dev/null || true
+fi
 
 # ── 平台探测（未指定时自动检测）──
 if [ -z "$PLATFORM" ]; then
@@ -521,7 +527,7 @@ fi
 _hr
 _section "数据目录"
 
-SOFAGENT_DATA="${PWD}/.sofagent"
+# v0.90 P0-3 修复：SOFAGENT_DATA 已由顶部 config.sh 统一解析
 if [ -d "$SOFAGENT_DATA" ]; then
   check_pass ".sofagent/ 数据目录存在"
   # 检查子目录
@@ -803,7 +809,7 @@ if [ "$JSON_MODE" = false ] && [ "${QUICK_MODE:-false}" = false ]; then
 fi
 [ "$JSON_MODE" = false ] && [ "$QUIET_MODE" = false ] && [ "${QUICK_MODE:-false}" = false ] && echo -e "${BOLD}${YELLOW}daemon 状态${NC}"
 
-SOFAGENT_DATA="${PWD}/.sofagent"
+# v0.90 P0-3 修复：SOFAGENT_DATA 已由顶部 config.sh 统一解析（不覆盖）
 DAEMON_PID_FILE="${SOFAGENT_DATA}/daemon.pid"
 DAEMON_JSON="${SOFAGENT_DATA}/daemon.json"
 

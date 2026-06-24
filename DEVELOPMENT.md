@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.86 · 2026-06-23 · 孔放勋
+> v0.90 · 2026-06-24 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -631,8 +631,6 @@ think.md 反思区可能出现矛盾条目（上次说「先做 A 再做 B」，
 **审查原则**：模型自己能做的，sofagent 不重复管。删掉冗余规则，让加载链更轻。但**纪律层核心（先读后写/验证再干/谨慎修改）不随模型变化**——这些不是模型能力问题，是工程纪律问题。模型再强，不读文件就改的坑依然存在。
 
 > 详见 [ARCHITECTURE.md §加载链瘦身审查](./ARCHITECTURE.md#加载链瘦身审查)。设计来源：Logan Kilpatrick（Google DeepMind）——"每一行外部脚手架，都是对模型无能的妥协"。
-
-> 💡 v0.7x 企业合规三件套（日志脱敏 / 数据保留 / 审计日志）的系统设计详见 [docs/system_design.md](./docs/system_design.md)——含 sanitize 脱敏链、cleanup 清理逻辑、audit 审计流的完整架构说明。
 
 ### sofagent 四层记忆模型（对照 Agent 记忆机制设计指南）
 
