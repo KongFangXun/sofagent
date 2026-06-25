@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.92 · 2026-06-25 · 审查修复——安全加固 + 信任模型声明 + 69 tests 全量通过 + 10 组反转实验启动
+> v0.93 · 2026-06-26 · 工程迁移 + 实验验证——4 项 FP 修复 + bash→TS 迁移 + 10 组实验完成（纪律层增量 = f(陷阱难度)，高难度场景 0% vs 100% 误伤）
 >
 > **先证明纪律层增量是真的，再做其他任何事。**
 
@@ -9,28 +9,28 @@
 
 ## 目录
 
-- [**现在在哪：v0.92**](#现在在哪v092)
+- [**现在在哪：v0.93**](#现在在哪v093)
 - [**迭代历程**](#迭代历程) — 倒叙，从最新到最早
-- [**未来去哪**](#未来去哪) — v0.93 → v0.94 → v1.0 → v2.x
+- [**未来去哪**](#未来去哪) — v0.94 → v1.0 → v2.x
 - [**探索方向**](#探索方向)
 - [**不需要的**](#不需要的)
 - [**欢迎参与**](#欢迎参与)
 
 ---
 
-## 现在在哪：v0.92
+## 现在在哪：v0.93
 
-> v0.92 是**审查修复版本**。v0.91 经两轮独立审查（GLM-5.2 + DeepSeek V4 Pro），14 项 P0/P1/P2 全部落地，综合评分 5.7→7.0。
+> v0.93 是**工程迁移 + 实验验证版本**。v0.92 经三视角全身审查（GitHub 大神 + 企业 CTO + 未来参与者），17 项问题中的 11 项落地。
 
 | 级别 | 交付 | 状态 |
 |------|------|:--:|
-| P0 | execSync→execFileSync（安全）+ 信任模型三层声明 + 铁律 #1 精确匹配 | ✅ |
-| P1 | bash→TS 前置基建 + set -e 统一 + 阈值修正 + 69 tests + 规则注册表 + BUILD_FILES 扩展 | ✅ |
-| P2 | 文档预算收紧 + ROADMAP v2.x 砍削 + FDE 收敛 + HANDBOOK 日期 + 自我介绍重写 | ✅ |
+| P0 | 4 项 FP 修复（deleted / docker build / 低风险排除 / --strict 模式）+ rule-07 ^锚点修复 | ✅ |
+| P1 | bash→TS 迁移（verify-evidence + skill-safety-check）+ 检测精度闭环（27 cases FP=0% FN=0%）| ✅ |
+| P2 | 6 项文档修缮 + package.json bin 补齐 + 温故知新增量吸收 | ✅ |
+| 实验 | 10 组对照实验完成：纪律层增量 = f(陷阱难度)——高难度 0% vs 100% 误伤，低难度无差异 | ✅ |
+| 代码 | 7 files / 100 tests / build 全绿 / 零 execSync | ✅ |
 
-> 🔴 **反转实验已启动**：Task 1（camelCase → snake_case）OpenClaw 独立 session 对照完成。sofagent 组变量名误伤率 0%，裸 Agent 100%。[实验记录](./docs/benchmark/2026-06-25-openclaw-task1-control.md)。10 组进行中（从 45 组缩减——Task 1 已确认趋势，先看方向再补量）。
-
-> 📖 [详细开发日志](./docs/changelog/v0.92.md)
+> 📖 [详细开发日志](./docs/changelog/v0.93.md) · [实验总览](./docs/benchmark/2026-06-26-openclaw-task2-4-summary.md)
 
 ---
 
@@ -38,9 +38,20 @@
 
 > 倒叙排列，从最新到最早。每个版本有独立开发日志。
 
-### v0.92 — 审查修复 ✅
+### v0.93 — 工程迁移 + 实验验证 ✅
 
-> v0.91 经两轮独立审查，14 项 P0/P1/P2 全部落地。📖 [开发日志](./docs/changelog/v0.92.md)
+> v0.92 全身审查落地 + bash→TS 迁移 + 10 组实验完成。📖 [开发日志](./docs/changelog/v0.93.md)
+
+| # | 交付物 | 说明 |
+|:--:|------|------|
+| 1 | **4 项 FP 修复 + --strict** | deleted / docker build / 低风险排除 / ^锚点 / strict 模式 |
+| 2 | **bash→TS 迁移** | verify-evidence + skill-safety-check（额外发现 2 个 bash bug） |
+| 3 | **检测精度闭环** | 27 cases JSON fixture，FP=0% FN=0% |
+| 4 | **10 组对照实验** | 4 任务 × 2 条件 × 独立 session，结论：增量 = f(陷阱难度) |
+| 5 | **6 项文档修缮** | 信任模型精确化 / 中英文对齐 / 温故知新吸收 / LIMITATIONS 补 recovery path |
+| 6 | **bin 补齐** | verify-evidence + skill-safety-check CLI 入口 |
+
+### v0.92 — 审查修复 ✅
 
 | # | 交付物 | 说明 |
 |:--:|------|------|
@@ -242,17 +253,7 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 
 #### v0.93：工程迁移 + 检测精度闭环 + 文档修缮
 
-- 3 个边角误报修复（deleted 文件 / docker build 漏检 / 低风险排除）
-- bash→TypeScript 逐脚本迁移（verify-evidence.sh、skill-safety-check.sh 起）
-- 检测精度闭环：合成测试工具化 + 真实数据采集
-- 10 组对照实验执行
-- Windows 社区 PR 合入跟进（.ps1 审查 / .gitattributes / shasum 跨平台）
-- 文档修缮：中英文定位对齐、信任模型表述精确化、前置依赖表补全、SECURITY.md 刷新
-- 新增 `--strict` 模式：CI 中无日志直接 FAIL
-
-> ⚠️ 如果 10 组实验增量无法复现，工程迁移部分缩减为「仅实验分析 + 结果发表」，bash→TS 迁移顺延到后续版本。JSONL 结构化日志和 MCP server 设计已在 v0.94。
-
-#### v0.94：JSONL 结构化日志 + MCP server MVP + Agency Agent 对接 + 文档精修
+> ⚠️ 如果 10 组实验增量无法复现，MCP server 和 Agency Agent 对接顺延，优先做文档精修和社区复现。
 
 - task/logs JSONL 结构化日志：MD→JSONL，审计工具精确匹配
 - MCP server MVP：watch `.sofagent/task/logs/`，任务完成立即推送

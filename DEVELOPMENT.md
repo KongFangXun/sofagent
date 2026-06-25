@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.92 · 2026-06-25 · 孔放勋
+> v0.93 · 2026-06-26 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 

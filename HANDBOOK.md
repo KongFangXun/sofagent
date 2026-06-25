@@ -4,7 +4,7 @@
 >
 > 从 Context Engineering 到 Harness Engineering 再到 Loop Engineering。
 >
-> v0.92 · 2026-06-25 · 孔放勋
+> v0.93 · 2026-06-26 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -473,4 +473,4 @@ Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的�
 
 > 大半年 OpenClaw 攒的笔记。不是实验室数据，但对我有用。哪里写得不好，直接告诉我。
 >
-> *v0.92，2026 年 6 月 25 日*
+> *v0.93，2026 年 6 月 26 日*
