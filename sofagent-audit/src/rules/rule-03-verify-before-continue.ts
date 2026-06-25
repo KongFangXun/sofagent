@@ -4,14 +4,13 @@
 // 违规 → exit code 2
 // ============================================================
 
-import type { DiffFile } from '../diff-parser';
-import type { LogEntry } from '../log-checker';
 import { hasTestOrBuildExecution } from '../log-checker';
-import type { RuleCheck } from '../reporter';
+import type { AuditContext, RuleCheck } from './types';
 
-const BUILD_FILES = ['package.json', 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'build.gradle', 'build.gradle.kts', 'Cargo.toml', 'Cargo.lock', 'requirements.txt', 'Pipfile', 'pyproject.toml', 'go.mod', 'go.sum', 'Gemfile', 'composer.json'];
+const BUILD_FILES = ['package.json', 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'build.gradle', 'build.gradle.kts', 'Cargo.toml', 'Cargo.lock', 'requirements.txt', 'Pipfile', 'pyproject.toml', 'go.mod', 'go.sum', 'Gemfile', 'composer.json', 'Dockerfile', 'docker-compose.yml', 'Makefile', '.env.example', 'tsconfig.json', 'next.config.js', 'vite.config.ts'];
 
-export function checkRule03(diffFiles: DiffFile[], logEntries: LogEntry[]): RuleCheck {
+export function checkRule03(ctx: AuditContext): RuleCheck {
+  const { diffFiles, logEntries } = ctx;
   const rule: RuleCheck = {
     name: '铁律 #3 验证再干',
     number: 3,
@@ -32,7 +31,7 @@ export function checkRule03(diffFiles: DiffFile[], logEntries: LogEntry[]): Rule
 
   // 有构建文件变更，检查是否有 test/build 执行记录
   if (logEntries.length === 0) {
-    rule.status = 'FAIL';
+    rule.status = 'WARN';
     rule.details.push(`构建文件变更 (${buildFileChanges.map((f) => f.path).join(', ')}) 后无测试/构建执行记录（未找到任务日志）。`);
     return rule;
   }

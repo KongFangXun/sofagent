@@ -13,8 +13,8 @@
 #   bash benchmark.sh --platform openclaw --summary            # 汇总
 # ============================================================
 
-set -uo pipefail
-VERSION="0.91"
+set -euo pipefail
+VERSION="0.92"
 
 # ── 颜色 ──
 RED='\033[0;31m'

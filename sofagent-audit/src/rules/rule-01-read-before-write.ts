@@ -4,12 +4,12 @@
 // 违规 → exit code 2
 // ============================================================
 
-import type { DiffFile } from '../diff-parser';
-import type { LogEntry } from '../log-checker';
+import { basename } from 'path';
 import { getReadAccessMap } from '../log-checker';
-import type { RuleCheck } from '../reporter';
+import type { AuditContext, RuleCheck } from './types';
 
-export function checkRule01(diffFiles: DiffFile[], logEntries: LogEntry[]): RuleCheck {
+export function checkRule01(ctx: AuditContext): RuleCheck {
+  const { diffFiles, logEntries } = ctx;
   const rule: RuleCheck = {
     name: '铁律 #1 先读再用',
     number: 1,
@@ -31,19 +31,23 @@ export function checkRule01(diffFiles: DiffFile[], logEntries: LogEntry[]): Rule
 
   const uncheckedFiles: string[] = [];
   for (const path of modifiedFiles) {
-    // 检查文件名或路径片段是否出现在日志中
-    const fileName = path.split('/').pop() || path;
+    // 精确文件名匹配——比对 path.basename，避免子串误报（config.ts ≠ tsconfig.json）
+    const targetName = basename(path);
     let found = false;
+
+    // 第一优先：精确比对 readFiles 集合中的 basename
     for (const readFile of readFiles) {
-      if (readFile.includes(fileName) || fileName.includes(readFile)) {
+      if (basename(readFile) === targetName) {
         found = true;
         break;
       }
     }
-    // 也检查日志原始内容中是否包含文件路径
+
+    // 第二优先：仅匹配日志中 Read 操作条目（不匹配整篇日志的任意文件名引用）
     if (!found) {
       for (const entry of logEntries) {
-        if (entry.raw.includes(fileName) || entry.raw.includes(path)) {
+        if (entry.operation !== 'read') continue;
+        if (entry.file && basename(entry.file) === targetName) {
           found = true;
           break;
         }

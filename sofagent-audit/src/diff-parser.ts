@@ -2,7 +2,7 @@
 // diff-parser.ts · git diff 解析器
 // ============================================================
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
 export interface DiffFile {
   path: string;
@@ -17,9 +17,17 @@ export interface DiffFile {
 export function parseDiff(range: string): DiffFile[] {
   const files: DiffFile[] = [];
 
+  // 参数格式校验：range 只允许 [a-zA-Z0-9~^.\-] 字符，防止命令注入和 git flag 注入
+  if (!/^[a-zA-Z0-9~^.\-]+$/.test(range)) {
+    console.error(
+      `参数校验失败: range "${range}" 包含非法字符。只允许 [a-zA-Z0-9~^.-] 字符。`
+    );
+    return files;
+  }
+
   try {
-    // 获取变更文件列表
-    const output = execSync(`git diff --name-status ${range}`, {
+    // 获取变更文件列表——execFileSync 不 spawn shell，参数作为数组传递，避免命令注入
+    const output = execFileSync('git', ['diff', '--name-status', range], {
       encoding: 'utf-8',
       maxBuffer: 10 * 1024 * 1024,
     });
@@ -54,7 +62,7 @@ export function parseDiff(range: string): DiffFile[] {
         // 读取具体 diff 内容
         let diffLines: string[] = [];
         try {
-          const diffContent = execSync(`git diff ${range} -- "${path}"`, {
+          const diffContent = execFileSync('git', ['diff', range, '--', path], {
             encoding: 'utf-8',
             maxBuffer: 5 * 1024 * 1024,
           });

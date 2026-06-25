@@ -3,28 +3,26 @@
 中文 | [English](README.en.md)
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.91-16B8F3)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/version-v0.92-16B8F3)](./HANDBOOK.md)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--25-16B8F3)](./README.md)
 [![定位](https://img.shields.io/badge/定位-Agent_纪律层-16B8F3)](#这是什么)
 [![OpenClaw](https://img.shields.io/badge/🦞优先-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
-[![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes%20Agent-lightgrey)](./LIMITATIONS.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9FStarred)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 <!-- TODO: demo.gif — 15s 左右对比: 裸 Agent 跑偏 vs sofagent 约束后正常 -->
 
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
-> v0.91 · 2026-06-25
 
 > 📄 **License**：MIT。代码、文档、模板——随便用，保留版权声明就行。
 
-我叫孔放勋，一个不是很懂代码的产品经理。所有设计决策来自大半年的真实使用经验，文档由 [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) 和 [GLM-5.2](https://z.ai/) 配合生成。欢迎大佬进来改。
+我叫孔放勋，一个只懂点前端代码的产品经理。所有设计决策来自大半年的真实使用经验，文档由 [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) 和 [GLM-5.2](https://z.ai/) 互相校验生成。欢迎大佬进来改。
 
-这个项目是怎么做出来的？一句话：疯狂烧 token，大力出奇迹。
+这个项目是怎么做出来的？说到底是场实验——AI 模型们能不能在迭代中互相校验，写出一个像样的技术产品？
 
-我代码写得很糟糕，所以换了一种方式——把 sofagent 自己的铁律反过来用在自己身上。DeepSeek 写代码，GLM 审设计，两个模型在 loop 里互相校验，我坐在中间当产品经理：定约束、看产出、做终审。相当于请了两个 AI 工程师加一个 AI QA，代码在「烧 token 换质量」的循环里磨出来。
+我代码写得很糟糕，所以换了一种方式：DeepSeek V4 Pro 和 GLM-5.2 各自写代码，也各自审对方的代码——两个模型都在写、都在审、都在改。我也不跳出这个循环，坐在中间跟着一起滚：定约束、看产出、做终审。整个项目在「模型 A 写 → 模型 B 审 → 模型 A 改 → 再审」的循环里打磨出来。
 
-> 💡 代价是每次迭代的 token 消耗大概是正常人写代码的 3-5 倍，好处是全程不用碰代码——设计决策、经验积累、方向判断，这些是我能做的。
+> 🔥 大力出奇迹的代价是 token 消耗是正常写代码的 3-5 倍，烧 token 换项目产出与质量保证。好处是人不需要碰代码——设计决策、经验积累、方向判断，这些是人能做的。至于这种模式能不能稳定复现，说实话还不知道——所以这既是项目，也是实验。
 
 ---
 
@@ -32,7 +30,7 @@
 
 当你的 Agent 改代码不看上下文、做完了不验证、同一个坑反复踩——sofagent 能约束其工作习惯、从错误中沉淀教训。
 
-给 Agent 配了个 🎖️「纪律委员」：不是让它更聪明，是让它守规矩。
+给你设备上的 Agent 配个纪律委员：不是让它更聪明，是让它守规矩。
 
 > **平台差异**：OpenClaw 上完整生效（编排 + Hook + 断路器）；WorkBuddy / Codex / Claude Code / Hermes Agent 上仅宪法层约束生效（先读后写/验证再干/谨慎修改），治理加固全部降级或失效——非 OpenClaw 平台价值约完整版的 30%。其他平台建议用 `--lite` 安装。详见 [平台能力表](#平台能力)。
 
@@ -40,14 +38,14 @@
 >
 > 从「治理层」改为「纪律层」，不是因为治理层错了——治理层是长期目标。是因为**当前被验证的差异化在纪律层**，我们不想用一个大词掩盖一个还没证实的小结果。如果你是老用户，加载链、宪法、反思区全部不变——变的是我们怎么定位自己。
 
-### 效果证据状态（v0.85）
+### 效果证据状态
 
 > 📌 **这是一个正在收集证据的早期项目，不是生产就绪的工具。**
 
 | 维度 | 数据 | 状态 |
 |------|------|:----:|
-| 约束层增量 | 1/10（WorkBuddy 对话），0/16（CLI 一击） | 天花板低，被模型安全训练+用户配置文件覆盖 |
-| 纪律层增量 | 独立测试者报告 +2/10，首次通过率 +40% | promising 但未排除方法论局限，待反转验证 |
+| 核心效果 | v0.92 OpenClaw 对照实验（独立 session）：sofagent 组变量名误伤率 0%，裸 Agent 组 100%——纪律性 +2 | 单任务单模型，待多任务多模型验证 |
+| 无关文件修改率 | 纪律层约束后 ≤20%（v0.92 P1-6 阈值校准），待正式对照验证 | 单点观察，无对照组 |
 | 非 OpenClaw 平台 | 全功能价值约 30%，4 项治理加固全部降级或失效 | 架构宿命，非 bug |
 | 持续使用数据 | 0 个 ≥1 周样本 | 待社区补充 |
 
@@ -102,21 +100,11 @@ sofagent 聚合了很多概念——宪法、铁律、加载链、编排引擎�
 
 > 不用 OpenClaw？看左侧就够了。用 OpenClaw？左侧是基础，右侧让基础更牢。
 
-### FDE 场景：为什么前沿部署工程师需要纪律层
+### FDE 场景：设备端 Agent 纪律委员
 
-> 💡 **FDE（Forward Deployed Engineer）** 是 Anthropic / OpenAI 提出的企业 AI 落地模式——把工程师派到企业现场，将 AI 嵌入业务流程。sofagent 不做 FDE 服务，做 **FDE 手里的纪律工具**。
+sofagent 的终局是一台设备上的 **Agent 纪律委员**——安装时自带 OpenClaw 底座，通过 AO compose 编排任务、用 Agency Agent 注入模板，结果通过 MCP server 直接推到支持 webhook 的企业协同平台（钉钉/企微/飞书/Slack/Teams 等）。**数据主权在设备**——所有记忆、日志、决策记录都在设备本地，不经过云端。一台 Mac Mini 或旧电脑装上 sofagent，就是企业 AI workflow 里的 7×24 自动化节点。**当前交付 3/5 层（地基 + 引擎 + 审计），剩余 2 层（daemon 增强 / 协同）规划中。**
 
-当 AI Agent 进入企业真实业务，企业技术决策者面对的不是"Agent 能不能干"，而是三个纪律问题：
-
-| FDE 痛点 | sofagent 能力 | 版本 |
-|---------|-------------|:----:|
-| **外部 Skill 安全吗？** — Agent 自动拉来的社区 Skill 可能藏恶意命令、泄密端点 | Skill 安全审查（22 条正则硬门 + LLM 语义审查软门） | ✅ v0.90 |
-| **数据合规吗？** — 企业敏感数据明文落盘，审计不通过 | 数据存储安全声明（明文 + 加密计划 age v1.0+） | ✅ v0.90 |
-| **Agent 乱改代码怎么办？** — 没有 review 的 commit 进入生产环境 | 提交时审计 sofagent-audit（看 git diff，不依赖 Agent 配合） | 🔨 v0.91 |
-| **跨平台部署一致性？** — 不同企业用不同 Agent 平台 | 纯 MD + bash 跨平台纪律标准（OpenClaw / WorkBuddy / Claude Code / Codex） | ✅ v0.85 |
-| **多设备协同治理？** — 团队多台设备的 Agent 经验无法共享 | 多设备协同层（信号共享网络） | 📋 v2.x |
-
-> **当前交付**：v0.91 的 FDE 能力是"安全审查 + 数据声明 + 提交时审计 MVP"三件——审计层完整版（LLM 辅助 + CI gate）在 v0.92，多设备在 v2.x。sofagent 当前是 FDE 场景的**纪律底座**，不是完整的 FDE 解决方案。
+> 🔗 完整架构见 [ARCHITECTURE.md §产品架构展望](./ARCHITECTURE.md#fde-architecture)。
 
 ### 架构总览
 
@@ -140,7 +128,9 @@ graph TB
     style Engine fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
 ```
 
-> **已知局限**：核心效果尚无第三方实测数据；复盘是 LLM 自评，无客观基准；Loop Agent 非独立进程；纯文件约束依赖 Agent 配合；数据明文存储（task/logs + think.md 含任务记录，v0.90 不加密，age 加密计划 v1.0+——详见 LIMITATIONS）；不是多用户系统（共享 .sofagent/ 会交叉污染经验）。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
+> **已知局限**：复盘是 LLM 自评，无客观基准；Loop Agent 非独立进程；数据明文存储（task/logs + think.md 含任务记录，age 加密计划 v1.0+——详见 LIMITATIONS）；不是多用户系统（共享 .sofagent/ 会交叉污染经验）。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
+>
+> **效果证据**：v0.92 OpenClaw 对照实验中，带 sofagent 的 Agent 变量名误伤率 0%（0/7），裸 Agent 误伤率 100%（7/7）。详见 [benchmark](./docs/benchmark/2026-06-25-openclaw-task1-control.md)。
 
 ## 🖥️ 平台能力
 
@@ -173,7 +163,7 @@ v0.85 确立的新主线方向——**从运行时治理（预防）转向提交
 当前架构依赖 Agent 配合读取 MD 文件——不配合就全失效（CLI 0/16）。审计方向不依赖 Agent 配合，看的是已经发生的 git diff：
 
 ```bash
-# v0.91 MVP（v0.85 只确立方向）
+# v0.92（v0.91 MVP + v0.92 审查修复）
 sofagent-audit --diff HEAD~1..HEAD --task "任务描述"
 
 ❌ 铁律 #1 先读再用：handler.ts 被修改，但修改前无 Read 记录
@@ -182,6 +172,8 @@ sofagent-audit --diff HEAD~1..HEAD --task "任务描述"
 ```
 
 > 💡 为什么不依赖 Agent 配合就是杀手级：(1) 看的是 git diff，Agent 没法绕过；(2) 跨平台，任何 git 仓库都能跑；(3) 确定性输出 exit code，不是 LLM 评分。
+
+> ⚠️ **审计依赖说明**：铁律 #1/#3 的日志检查依赖 `.sofagent/task/logs/` 目录——如果 Agent 不写日志或日志不完整，审计会退化。详见 [LIMITATIONS.md](./LIMITATIONS.md)。
 
 > 这不意味着放弃运行时治理——两者互补。运行时治理减少问题发生，提交时审计兜底检测漏网之鱼。
 

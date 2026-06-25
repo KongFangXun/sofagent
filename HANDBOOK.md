@@ -4,7 +4,7 @@
 >
 > 从 Context Engineering 到 Harness Engineering 再到 Loop Engineering。
 >
-> v0.91 · 2026-06-25 · 孔放勋
+> v0.92 · 2026-06-25 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -35,7 +35,7 @@
 
 ## 楔子
 
-我叫孔放勋，曾经是钉钉智能硬件的产品经理，懂一点技术皮毛但从来没写过代码，现在从事科技领域的投资。
+我叫孔放勋，曾经是钉钉智能硬件的产品经理，只懂点前端代码，现在从事科技领域的投资。
 
 2026 年初我才开始用 OpenClaw，用了一段时间后攒了些想法，整理成了这份 Handbook。
 
@@ -386,7 +386,7 @@ exit code：**0 = 全通过 / 1 = 有警告 / 2 = 有违规**。
 | 多个电脑上能用吗 | 不能——不是分布式，跑在单个 Agent 里 |
 | 评分越来越不准 | 经验漂移——翻 task/logs 对照 think.md，清理低置信度旧条目 |
 | 什么工作不该让 Agent 做 | 去重、格式校验、文件清理这类确定性操作——用 bash 脚本比 Agent 更快更准更便宜。Agent 管判断，脚本管执行 |
-| **企业部署安全吗？** | v0.90 起 Skill 安全审查（22 条正则硬门 + LLM 语义审查）+ 数据存储声明已就位，审计层 v0.91。详见 [README FDE 场景](./README.md#fde-场景为什么前沿部署工程师需要纪律层)。安装第三方 Skill 前建议使用 [SkillSpector](https://github.com/NVIDIA/SkillSpector) 等工具进行安全扫描——检测提示词注入、数据外传、供应链工具投毒等 64 类风险 |
+| **企业部署安全吗？** | v0.90 起 Skill 安全审查（22 条正则硬门 + LLM 语义审查）+ 数据存储声明已就位，审计层 v0.92。详见 [README FDE 场景](./README.md#fde-场景为什么前沿部署工程师需要纪律层)。安装第三方 Skill 前建议使用 [SkillSpector](https://github.com/NVIDIA/SkillSpector) 等工具进行安全扫描——检测提示词注入、数据外传、供应链工具投毒等 64 类风险 |
 
 > 💡 更多细节见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 
@@ -472,4 +472,4 @@ Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的�
 
 > 大半年 OpenClaw 攒的笔记。不是实验室数据，但对我有用。哪里写得不好，直接告诉我。
 >
-> *v0.81，2026 年 6 月 21 日*
+> *v0.92，2026 年 6 月 25 日*

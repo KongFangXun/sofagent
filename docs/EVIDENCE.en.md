@@ -4,7 +4,11 @@
 
 > ⚠️ **Honest disclosure**: The data below includes the author's own testing. Reflection scores are LLM self-assessments (no engineering isolation on non-OpenClaw platforms). For enterprise evaluation, wait for v0.9 encryption + external evaluator. Current data is suitable for exploratory assessment only — not production decisions.
 
-> 📊 **A/B benchmark data**: Five A/B datasets from v0.81-v0.83. Constraint layer: WorkBuddy dialog mode showed only 1/10 clear increment (task 10), CLI one-shot 0/16 complete failure (see [Anti-case 002](./anti-cases/002-cli-one-shot-ineffective.md)). But independent tester's code refactor A/B measured discipline layer increment: discipline 8→10 (+2), first-pass rate 60%→100% (+40%). See [benchmark directory](./benchmark/). Methodology limitation: [Anti-case 001](./anti-cases/001-benchmark-self-test-circularity.md)
+> 📊 **A/B benchmark data**:
+>
+> **v0.92 OpenClaw Control Experiment**: Same model, independent sessions, Task 1 (camelCase → snake_case). Sofagent group: 0% variable over-modification (0/7). Bare agent group: 100% over-modification (7/7). Discipline +2, first-pass rate unchanged. See [OpenClaw Task 1 Control](./benchmark/2026-06-25-openclaw-task1-control.md).
+>
+> **v0.81-v0.83 Historical Data**: Five A/B datasets. Constraint layer: WorkBuddy dialog mode showed only 1/10 clear increment, CLI one-shot 0/16 complete failure (see [Anti-case 002](./anti-cases/002-cli-one-shot-ineffective.md)). Independent tester's code refactor A/B measured discipline layer increment: discipline 8→10 (+2), first-pass rate 60%→100% (+40%), but knowledge transfer effect was not excluded (see [Anti-case 001](./anti-cases/001-benchmark-self-test-circularity.md) and [WorkBuddy A/B warning](./benchmark/2026-06-23-workbuddy-ab.md)).
 
 ---
 

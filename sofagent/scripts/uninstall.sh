@@ -10,8 +10,8 @@
 #       ./uninstall.sh --help    显示帮助
 # ============================================================
 
-set -uo pipefail
-VERSION="0.91"
+set -euo pipefail
+VERSION="0.92"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

@@ -16,7 +16,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="0.91"
+VERSION="0.92"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -85,28 +85,28 @@ YELLOW='\033[1;33m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-pass=0; fail=0; warn_count=0
+pass=0; FAILED=0; warn_count=0
 
 # ── 输出函数 ──
 if [ "$JSON_MODE" = true ]; then
   _json_items=""
   _json_comma() { if [ -n "$_json_items" ]; then _json_items+=","; fi; }
   check_pass() { if [ -n "$_json_items" ]; then _json_items+=","; fi; _json_items+="{\"status\":\"pass\",\"item\":\"$1\"}"; ((pass++)) || true; }
-  check_fail() { if [ -n "$_json_items" ]; then _json_items+=","; fi; _json_items+="{\"status\":\"fail\",\"item\":\"$1\"}"; ((fail++)) || true; }
+  check_fail() { if [ -n "$_json_items" ]; then _json_items+=","; fi; _json_items+="{\"status\":\"fail\",\"item\":\"$1\"}"; ((FAILED++)) || true; }
   check_warn() { if [ -n "$_json_items" ]; then _json_items+=","; fi; _json_items+="{\"status\":\"warn\",\"item\":\"$1\"}"; ((warn_count++)) || true; }
   _banner() { :; }
   _section() { :; }
   _hr()   { :; }
 elif [ "$QUIET_MODE" = true ]; then
   check_pass() { ((pass++)) || true; }
-  check_fail() { echo -e "  ${RED}✗${NC} $1"; ((fail++)) || true; }
+  check_fail() { echo -e "  ${RED}✗${NC} $1"; ((FAILED++)) || true; }
   check_warn() { echo -e "  ${YELLOW}⚠${NC} $1"; ((warn_count++)) || true; }
   _banner() { :; }
   _section() { :; }
   _hr()   { :; }
 else
   check_pass() { echo -e "  ${GREEN}✓${NC} $1"; ((pass++)) || true; }
-  check_fail() { echo -e "  ${RED}✗${NC} $1"; ((fail++)) || true; }
+  check_fail() { echo -e "  ${RED}✗${NC} $1"; ((FAILED++)) || true; }
   check_warn() { echo -e "  ${YELLOW}⚠${NC} $1"; ((warn_count++)) || true; }
   _banner() {
     echo ""; echo "  ╔═══════════════════════════════════╗"
@@ -116,6 +116,19 @@ else
   _section() { echo "── $1 ──"; }
   _hr()   { echo ""; }
 fi
+
+# ── run_check 封装：统一检查入口，自动路由到 check_pass/check_fail/check_warn
+# 用法：run_check "描述" 命令（返回码 0=通过, 1=失败, 2=警告）
+run_check() {
+  local desc="$1" cmd="$2"
+  eval "$cmd"
+  case $? in
+    0) check_pass "$desc" ;;
+    1) check_fail "$desc" ;;
+    2) check_warn "$desc" ;;
+    *) check_fail "$desc" ;;
+  esac
+}
 
 # ── 路径（已由平台探测设置）──
 # OPENCLAW_DIR 已在上方按平台赋值
@@ -173,14 +186,14 @@ if [ "$QUICK_MODE" = true ]; then
   fi
 
   # 输出总结并退出
-  total=$((pass + fail + warn_count))
+  total=$((pass + FAILED + warn_count))
   if [ "$JSON_MODE" = true ]; then
     cat << JSONEOF
 {
   "summary": {
     "pass": ${pass},
     "warn": ${warn_count},
-    "fail": ${fail},
+    "fail": ${FAILED},
     "total": ${total}
   },
   "checks": [${_json_items}]
@@ -189,12 +202,12 @@ JSONEOF
   else
     echo "───────────────────────────────────────"
     echo ""
-    echo "  结果: ${GREEN}${pass} 通过${NC} / ${YELLOW}${warn_count} 警告${NC} / ${RED}${fail} 失败${NC}（共 ${total} 项）"
+    echo "  结果: ${GREEN}${pass} 通过${NC} / ${YELLOW}${warn_count} 警告${NC} / ${RED}${FAILED} 失败${NC}（共 ${total} 项）"
     echo ""
-    if [ "$fail" -eq 0 ]; then
+    if [ "$FAILED" -eq 0 ]; then
       echo "  ✅ quick 模式通过！运行 verify.sh（无 --quick）获取完整检查。"
     else
-      echo "  ❌ 发现 ${fail} 项失败。请先运行 install.sh 修复。"
+      echo "  ❌ 发现 ${FAILED} 项失败。请先运行 install.sh 修复。"
       exit 1
     fi
   fi
@@ -238,14 +251,14 @@ if [ "$PLATFORM" = "workbuddy" ]; then
   fi
 
   # 输出总结并退出
-  total=$((pass + fail + warn_count))
+  total=$((pass + FAILED + warn_count))
   if [ "$JSON_MODE" = true ]; then
     cat << JSONEOF
 {
   "summary": {
     "pass": ${pass},
     "warn": ${warn_count},
-    "fail": ${fail},
+    "fail": ${FAILED},
     "total": ${total}
   },
   "checks": [${_json_items}]
@@ -254,16 +267,16 @@ JSONEOF
   else
     echo "───────────────────────────────────────"
     echo ""
-    echo "  结果: ${GREEN}${pass} 通过${NC} / ${YELLOW}${warn_count} 警告${NC} / ${RED}${fail} 失败${NC}（共 ${total} 项）"
+    echo "  结果: ${GREEN}${pass} 通过${NC} / ${YELLOW}${warn_count} 警告${NC} / ${RED}${FAILED} 失败${NC}（共 ${total} 项）"
     echo ""
-    if [ "$fail" -eq 0 ]; then
+    if [ "$FAILED" -eq 0 ]; then
       echo "  ✅ sofagent WorkBuddy 部署验证通过！"
       echo ""
       echo "  下一步:"
       echo "    1. 确认 sofagent Skill 已加载（下次对话应出现初始化提示）"
       echo "    2. 试用 /goal 命令开始第一个任务"
     else
-      echo "  ❌ 发现 ${fail} 项失败。请先运行 install.sh 修复。"
+      echo "  ❌ 发现 ${FAILED} 项失败。请先运行 install.sh 修复。"
       exit 1
     fi
   fi
@@ -847,7 +860,7 @@ _hr
 # ════════════════════════════════════════
 # 总结
 # ════════════════════════════════════════
-total=$((pass + fail + warn_count))
+total=$((pass + FAILED + warn_count))
 
 if [ "$JSON_MODE" = true ]; then
   cat << JSONEOF
@@ -855,28 +868,28 @@ if [ "$JSON_MODE" = true ]; then
   "summary": {
     "pass": ${pass},
     "warn": ${warn_count},
-    "fail": ${fail},
+    "fail": ${FAILED},
     "total": ${total}
   },
   "checks": [${_json_items}]
 }
 JSONEOF
 else
-  [ "$QUIET_MODE" = true ] && [ "$fail" -gt 0 ] && {
+  [ "$QUIET_MODE" = true ] && [ "$FAILED" -gt 0 ] && {
     echo "───────────────────────────────────────"
     echo ""
-    echo "  结果: ${GREEN}${pass} 通过${NC} / ${YELLOW}${warn_count} 警告${NC} / ${RED}${fail} 失败${NC}（共 ${total} 项）"
+    echo "  结果: ${GREEN}${pass} 通过${NC} / ${YELLOW}${warn_count} 警告${NC} / ${RED}${FAILED} 失败${NC}（共 ${total} 项）"
     echo ""
   }
   [ "$QUIET_MODE" = false ] && {
     echo "───────────────────────────────────────"
     echo ""
-    echo "  结果: ${GREEN}${pass} 通过${NC} / ${YELLOW}${warn_count} 警告${NC} / ${RED}${fail} 失败${NC}（共 ${total} 项）"
+    echo "  结果: ${GREEN}${pass} 通过${NC} / ${YELLOW}${warn_count} 警告${NC} / ${RED}${FAILED} 失败${NC}（共 ${total} 项）"
     echo ""
   }
 fi
 
-if [ "$fail" -eq 0 ]; then
+if [ "$FAILED" -eq 0 ]; then
   [ "$JSON_MODE" = false ] && [ "$QUIET_MODE" = false ] && {
     echo "  ✅ sofagent 安装验证通过！"
     echo ""
@@ -902,7 +915,7 @@ if [ "$fail" -eq 0 ]; then
   [ "$QUIET_MODE" = true ] && [ "$pass" -gt 0 ] && echo "  ✅ ${pass} 项全部通过"
   [ "$JSON_MODE" = true ] && true  # exit 0 implicitly
 else
-  [ "$JSON_MODE" = false ] && echo "  ❌ 发现 ${fail} 项失败。请先运行 install.sh 修复。"
+  [ "$JSON_MODE" = false ] && echo "  ❌ 发现 ${FAILED} 项失败。请先运行 install.sh 修复。"
   exit 1
 fi
 echo ""
