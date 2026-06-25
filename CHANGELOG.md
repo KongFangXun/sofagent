@@ -18,6 +18,15 @@
 > - **v0.90**：skill-safety-check 安全审查 + P0 安装断裂修复 + 文档清理
 > - **v0.91**：评审落地 + sofagent-audit MVP + 文档瘦身 47%
 > - **v0.92**：v0.91 审查修复——execSync 安全加固 + 信任模型诚实声明 + 铁律检测精度的边界 + 单元测试覆盖
+> - **v0.93**：工程迁移 + 3 个边角误报修复 + 2 份社区 PR 合入跟进——bash→TS 第一步 + Windows .ps1 审查
+
+---
+
+## [v0.93] — 计划中
+
+工程迁移 + 检测精度闭环——v0.92 合成测试发现的 3 个边角误报修复 + bash→TypeScript 迁移起步（verify-evidence / skill-safety-check）+ 10 组实验继续。
+
+> 📖 [开发日志](./docs/changelog/v0.93.md)
 
 ---
 
