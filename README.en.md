@@ -57,11 +57,15 @@ A **governance layer** for AI agents. Not a framework to build them, not a tool 
     └── 🔴 Complex → task orchestration engine fires up
                    │
               ┌────┴────┐
-        Smart decomposition → batched execution → Loop check (between subtasks · 60% budget · before risky ops)
-              │                       │
-              └─── Reflection loop ←───┘
-                      ↓
-              next task learns from the last
+        Smart decomposition → batched execution → Loop check
+              │         │
+              │  (between subtasks·60% budget·before risky ops)
+              │         │
+              └────┬────┘
+                   │
+            Reflection loop ★
+                   ↓
+          next task learns from the last
 ```
 
 | Layer | What it does |
