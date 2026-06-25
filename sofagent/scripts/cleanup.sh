@@ -60,7 +60,14 @@ while [[ $# -gt 0 ]]; do
       fi
       shift 2
       ;;
-    --before=*) BEFORE_DATE="${1#*=}"; FORCE=true; shift ;;
+    --before=*)
+      BEFORE_DATE="${1#*=}"
+      if ! echo "$BEFORE_DATE" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+        echo "[cleanup] 错误：--before 需要日期格式 YYYY-MM-DD（收到：${BEFORE_DATE}）"
+        exit 1
+      fi
+      shift
+      ;;
     --version) echo "sofagent-cleanup v${VERSION}"; exit 0 ;;
     --help)    SHOW_HELP=true; shift ;;
     *) echo "未知参数: $1（--help 查看用法）"; exit 1 ;;

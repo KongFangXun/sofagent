@@ -207,7 +207,7 @@ analyze_track_record() {
   local total=0 success=0
   # 搜索 task/logs 中匹配的记录
   shopt -s nullglob 2>/dev/null || true
-  for logfile in "${SOFAGENT_DATA}"/task/logs/*/*/*.md; do
+  for logfile in "${SOFAGENT_DATA}"/task/logs/*/*.md; do
     [ -f "$logfile" ] || continue
     grep -q "$slug" "$logfile" 2>/dev/null || continue
     while IFS= read -r line; do
@@ -224,7 +224,7 @@ analyze_track_record() {
 sliding_window_rollback() {
   local slug="$1" current_level="$2" success_count=0 total=0
   shopt -s nullglob 2>/dev/null || true
-  for logfile in "${SOFAGENT_DATA}"/task/logs/*/*/*.md; do
+  for logfile in "${SOFAGENT_DATA}"/task/logs/*/*.md; do
     [ -f "$logfile" ] || continue
     # 用 awk 提取匹配任务的执行状态行，支持 bash/sh 无引号转义
     awk -v task="$TASK_DESC" '
@@ -313,7 +313,8 @@ case $LEVEL in
         done < <(jq -r '.inputs // {} | to_entries[] | "\(.key)=\(.value)"' "${ORCHESTRATOR_DIR}/${TASK_SLUG}.json" 2>/dev/null)
         info "Step 1-3/4 · L3 — 跳过编排，直接执行模板"
         START_TIME=$(date +%s)
-        ao run "$AO_TEMPLATE" $AO_INPUTS 2>&1; EXIT_CODE=$?
+        # set -e 下裸命令失败会立即退出 → 用 || 捕获，保证失败处理/日志可达
+        EXIT_CODE=0; ao run "$AO_TEMPLATE" $AO_INPUTS 2>&1 || EXIT_CODE=$?
         END_TIME=$(date +%s); ELAPSED=$(( END_TIME - START_TIME ))
         echo ""
         [ $EXIT_CODE -eq 0 ] && ok "任务完成（耗时 ${ELAPSED}s）" || warn "任务结束（exit $EXIT_CODE）"
@@ -355,7 +356,7 @@ if [ "$SKIP_ORCHESTRATE" = true ]; then
   info "Step 1-3/4 · L4 — 跳过编排/Harness/worktree"
   info "Step 4/4 · 直接执行任务..."
   START_TIME=$(date +%s)
-  ao run "$TASK_DESC" 2>&1; EXIT_CODE=$?
+  EXIT_CODE=0; ao run "$TASK_DESC" 2>&1 || EXIT_CODE=$?
   END_TIME=$(date +%s); ELAPSED=$(( END_TIME - START_TIME ))
   echo ""
   if [ $EXIT_CODE -eq 0 ]; then
@@ -489,14 +490,15 @@ AO_RUN_ARGS=""
 [ -n "$AO_MODEL" ] && AO_RUN_ARGS="--model ${AO_MODEL}"
 
 # ── 重试循环（v0.73: --max-retries 默认 3）──
+# set -e 下裸 ao run 失败会立即退出（重试/失败日志都成死代码）→ 用 || 捕获退出码（fork 修复）
 RETRY_COUNT=0
 EXIT_CODE=1
 while [ "$RETRY_COUNT" -lt "$MAX_RETRIES" ]; do
   if [ "$RETRY_COUNT" -gt 0 ]; then
     warn "重试 ${RETRY_COUNT}/${MAX_RETRIES}..."
   fi
-  ao run $AO_RUN_ARGS "$WORKFLOW_FILE" 2>&1
-  EXIT_CODE=$?
+  EXIT_CODE=0
+  ao run $AO_RUN_ARGS "$WORKFLOW_FILE" 2>&1 || EXIT_CODE=$?
   [ "$EXIT_CODE" -eq 0 ] && break
   RETRY_COUNT=$((RETRY_COUNT + 1))
 done
@@ -539,7 +541,8 @@ fi
 # ── 滑窗回滚：分析最近 5 次，写降级建议 ──
 
 # 清理
-rm -f "$WORKFLOW_FILE" "${SOFAGENT_CONSTRAINT_FILE:-}"
+rm -f "$WORKFLOW_FILE"
+[ -n "${SOFAGENT_CONSTRAINT_FILE:-}" ] && rm -f "$SOFAGENT_CONSTRAINT_FILE"
 
 echo ""
 echo "  ════════════════════════════════════"

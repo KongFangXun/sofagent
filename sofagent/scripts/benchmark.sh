@@ -62,7 +62,7 @@ while [[ $# -gt 0 ]]; do
       SUMMARY_ONLY=true; shift ;;
     --api)
       API_MODE=true; shift ;;
-    *) shift ;;
+    *) echo "未知参数: $1（--help 查看用法）"; exit 1 ;;
   esac
 done
 

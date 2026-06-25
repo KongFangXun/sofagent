@@ -164,7 +164,7 @@ else
 fi
 
 # ── 统一初始化数据目录路径（所有平台共用，避免 set -u 下未定义）──
-SOFAGENT_DATA="${PROJECT_DIR}/.sofagent"
+SOFAGENT_DATA="${SOFAGENT_DATA:-${PROJECT_DIR}/.sofagent}"
 
 # v0.90 P0-3 修复：写入数据目录标记文件，供 audit/verify/orchestrate 等脚本定位
 # 标记文件放在平台 skill 目录下，config.sh 读取它来还原 --project-dir 指定的路径
@@ -617,12 +617,8 @@ fi  # end OpenClaw-only Step 6
 if [ "$PLATFORM" = "openclaw" ] && [ "${NO_CONFIG_INJECT:-0}" != "1" ]; then
 info "Step 7/7 · 注入断路器配置..."
 
-# 确定配置文件路径（优先 OPENCLAW_CONFIG_PATH，其次 $TARGET/config.json）
-if [ -n "${OPENCLAW_CONFIG_PATH:-}" ]; then
-  CONFIG_FILE="$OPENCLAW_CONFIG_PATH"
-else
-  CONFIG_FILE="${TARGET}/config.json"
-fi
+# loopDetection 写入 config.json（与 openclaw.json 分离；OPENCLAW_CONFIG_PATH 仅指 hook 配置）
+CONFIG_FILE="${TARGET}/config.json"
 
 LOOPDETECT_BLOCK='{
   "tools": {
