@@ -25,7 +25,7 @@
 | # | 交付物 | 说明 |
 |:--:|------|------|
 | 1 | **sofagent-audit MVP** | TypeScript CLI，扫描 git diff 对标 4 条铁律（#1/#3/#7/#10），exit code 0/1/2。不依赖 Agent 配合、跨平台、Agent 无法绕过 |
-| 2 | **ARCHITECTURE 瘦身** | 710→385 行（47% 减），只回答"为什么这么设计"，外部研究印证拆到 docs/research/ |
+| 2 | **ARCHITECTURE 瘦身** | 710→385 行（47% 减），只回答"为什么这么设计" |
 | 3 | **ROADMAP 版本号理顺** | v0.9 15+ 处引用 → 按内容分拆为 v0.91/v0.92/v0.93 |
 | 4 | **COMMUNITY.md** | 社区状态 + 贡献者阶梯 + 透明指标看板 |
 | 5 | **engine.md Ghost 超时** | 第 7 个失败分支——Agent 无响应超时（28% 数据） |
