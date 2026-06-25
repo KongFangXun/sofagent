@@ -378,7 +378,7 @@ sofagent 站在这些人和作品的基础上：
 | **Matt Pocock** | 调试方法论——loop-check 验收闸的排查框架 | [github.com/mattpocock/skills](https://github.com/mattpocock/skills) |
 | **AI 代码审查实验**（146 PR × 4 AI Reviewer） | 93.4% 的问题仅被单一工具识别，0% 被所有工具共同识别——验证 loop-check + scoring + 人类审查三层设计的必要性 | AI 时代代码审查范式转移笔记 |
 
-> 完整外部研究引用列表（含 MAGMA、SkillOpt、Google Skill 模式、多智能体成本研究、Bun 反驳层案例等）详见 [Loop Engineering 深度研究笔记](./docs/research/loop-engineering-insights.md)。
+> 更多外部研究引用（MAGMA、SkillOpt、Google Skill 模式、多智能体成本研究等）详见 [DEVELOPMENT.md](./DEVELOPMENT.md) 对应章节。
 
 ---
 

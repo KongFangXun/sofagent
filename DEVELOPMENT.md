@@ -683,11 +683,5 @@ exit code：0 = PASS / 1 = WARN / 2 = FAIL。设计文档见 [audit-design.md](.
 
 ---
 
-### 延伸阅读：外部研究与深度设计笔记
-
-以下内容从 ARCHITECTURE.md 迁出（v0.91 瘦身），回答的是"外部研究怎么印证 sofagent 设计"，不是"为什么这么设计"——后者在 ARCHITECTURE，前者在这里：
-
-- **[Loop Engineering 深度研究笔记](./docs/research/loop-engineering-insights.md)** —— 五大组件对照、三设计盲区、检查标准不可篡改性、Maker-Checker 上下文隔离、Bun 反驳层案例、循环反噬风险（理解债/认知投降）、五层回拉映射、管道与闸门、外部研究印证表
-
 ---
 
