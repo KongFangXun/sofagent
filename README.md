@@ -127,7 +127,7 @@ sofagent 的终局是一台设备上的 **Agent 纪律委员**——安装时自
 >
 > **效果证据**：v0.92 OpenClaw 对照实验中，带 sofagent 的 Agent 变量名误伤率 0%（0/7），裸 Agent 误伤率 100%（7/7）。详见 [benchmark](./docs/benchmark/2026-06-25-openclaw-task1-control.md)。
 
-## 🖥️ 平台能力
+## <a id="平台能力"></a> 🖥️ 平台能力
 
 > "兼容"不等于"支持"。核心约束（MD 文件）所有平台可读——这叫兼容。完整治理（编排引擎 + Hook + 断路器 + daemon）只在 OpenClaw 上生效——这叫支持。
 
