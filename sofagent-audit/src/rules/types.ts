@@ -27,6 +27,8 @@ export interface AuditContext {
   logEntries: LogEntry[];
   /** --task 参数传入的任务描述（用于铁律 #7 谨慎修改） */
   task?: string;
+  /** --strict 模式：无日志时铁律 #1 返回 FAIL 而非 WARN */
+  strict?: boolean;
 }
 
 /**

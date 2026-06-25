@@ -1,0 +1,260 @@
+{
+  "version": "0.93",
+  "updated": "2026-06-25",
+  "rules": {
+    "rule01": {
+      "label": "#1 先读再用",
+      "cases": [
+        {
+          "name": "#1 改 config.ts 无 Read",
+          "diffFiles": [{ "path": "src/config.ts", "status": "modified", "lines": [] }],
+          "logEntries": [{ "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "src/other.ts", "raw": "" }],
+          "targetRule": 1,
+          "expectStatus": "FAIL"
+        },
+        {
+          "name": "#1 改 3 个文件只读了 2 个",
+          "diffFiles": [
+            { "path": "a.ts", "status": "modified", "lines": [] },
+            { "path": "b.ts", "status": "modified", "lines": [] },
+            { "path": "c.ts", "status": "modified", "lines": [] }
+          ],
+          "logEntries": [
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "a.ts", "raw": "" },
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "b.ts", "raw": "" }
+          ],
+          "targetRule": 1,
+          "expectStatus": "FAIL"
+        },
+        {
+          "name": "#1 改 Makefile 无 Read",
+          "diffFiles": [{ "path": "Makefile", "status": "modified", "lines": [] }],
+          "logEntries": [],
+          "targetRule": 1,
+          "expectStatus": "WARN"
+        },
+        {
+          "name": "#1 改 .env 无 Read",
+          "diffFiles": [{ "path": ".env", "status": "modified", "lines": [] }],
+          "logEntries": [{ "timestamp": "2026-01-01T00:00:00.000Z", "operation": "write", "file": ".env", "raw": "" }],
+          "targetRule": 1,
+          "expectStatus": "FAIL"
+        },
+        {
+          "name": "#1 改了且读了",
+          "diffFiles": [{ "path": "src/foo.ts", "status": "modified", "lines": [] }],
+          "logEntries": [{ "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "src/foo.ts", "raw": "" }],
+          "targetRule": 1,
+          "expectStatus": "PASS"
+        },
+        {
+          "name": "#1 basename 匹配跨目录",
+          "diffFiles": [{ "path": "lib/config.ts", "status": "modified", "lines": [] }],
+          "logEntries": [{ "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "src/config.ts", "raw": "" }],
+          "targetRule": 1,
+          "expectStatus": "PASS"
+        },
+        {
+          "name": "#1 config.ts ≠ tsconfig.json",
+          "diffFiles": [{ "path": "tsconfig.json", "status": "modified", "lines": [] }],
+          "logEntries": [{ "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "config.ts", "raw": "" }],
+          "targetRule": 1,
+          "expectStatus": "FAIL"
+        },
+        {
+          "name": "#1 Write 操作不算 Read",
+          "diffFiles": [{ "path": "src/foo.ts", "status": "modified", "lines": [] }],
+          "logEntries": [
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "write", "file": "src/foo.ts", "raw": "" },
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "src/bar.ts", "raw": "" }
+          ],
+          "targetRule": 1,
+          "expectStatus": "FAIL"
+        },
+        {
+          "name": "#1 execute 操作不算 Read",
+          "diffFiles": [{ "path": "src/foo.ts", "status": "modified", "lines": [] }],
+          "logEntries": [
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "execute", "file": "src/foo.ts", "raw": "读取 src/foo.ts" },
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "src/foo.ts", "raw": "" }
+          ],
+          "targetRule": 1,
+          "expectStatus": "PASS"
+        },
+        {
+          "name": "#1 Read Dockerfile",
+          "diffFiles": [{ "path": "Dockerfile", "status": "modified", "lines": [] }],
+          "logEntries": [{ "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "Dockerfile", "raw": "" }],
+          "targetRule": 1,
+          "expectStatus": "PASS"
+        },
+        {
+          "name": "#1 改 Makefile 且读了",
+          "diffFiles": [{ "path": "Makefile", "status": "modified", "lines": [] }],
+          "logEntries": [{ "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "Makefile", "raw": "" }],
+          "targetRule": 1,
+          "expectStatus": "PASS"
+        },
+        {
+          "name": "#1 否定语义过滤——未读取不算",
+          "diffFiles": [{ "path": "src/foo.ts", "status": "modified", "lines": [] }],
+          "logEntries": [
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "src/foo.ts", "raw": "" },
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "src/bar.ts", "raw": "未读取 src/foo.ts" }
+          ],
+          "targetRule": 1,
+          "expectStatus": "PASS"
+        },
+        {
+          "name": "#1 deleted 不检查",
+          "diffFiles": [{ "path": "src/foo.ts", "status": "deleted", "lines": [] }],
+          "logEntries": [],
+          "targetRule": 1,
+          "expectStatus": "PASS"
+        },
+        {
+          "name": "#1 added+has Read",
+          "diffFiles": [{ "path": "src/new.ts", "status": "added", "lines": [] }],
+          "logEntries": [{ "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "src/new.ts", "raw": "" }],
+          "targetRule": 1,
+          "expectStatus": "PASS"
+        }
+      ]
+    },
+    "rule03": {
+      "label": "#3 验证再干",
+      "cases": [
+        {
+          "name": "#3 改 package.json 无 test",
+          "diffFiles": [{ "path": "package.json", "status": "modified", "lines": [] }],
+          "logEntries": [{ "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "package.json", "raw": "" }],
+          "targetRule": 3,
+          "expectStatus": "FAIL"
+        },
+        {
+          "name": "#3 改 Dockerfile 无 build",
+          "diffFiles": [{ "path": "Dockerfile", "status": "modified", "lines": [] }],
+          "logEntries": [{ "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "Dockerfile", "raw": "" }],
+          "targetRule": 3,
+          "expectStatus": "FAIL"
+        },
+        {
+          "name": "#3 改 tsconfig.json 无 tsc",
+          "diffFiles": [{ "path": "tsconfig.json", "status": "modified", "lines": [] }],
+          "logEntries": [{ "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "tsconfig.json", "raw": "" }],
+          "targetRule": 3,
+          "expectStatus": "FAIL"
+        },
+        {
+          "name": "#3 普通文件不触发",
+          "diffFiles": [{ "path": "src/foo.ts", "status": "modified", "lines": [] }],
+          "logEntries": [],
+          "targetRule": 3,
+          "expectStatus": "PASS"
+        },
+        {
+          "name": "#3 改 pkg.json 有 test 记录",
+          "diffFiles": [{ "path": "package.json", "status": "modified", "lines": [] }],
+          "logEntries": [
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "execute", "raw": "npm test" },
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "package.json", "raw": "" }
+          ],
+          "targetRule": 3,
+          "expectStatus": "PASS"
+        },
+        {
+          "name": "#3 改 pkg.json 无日志→WARN",
+          "diffFiles": [{ "path": "package.json", "status": "modified", "lines": [] }],
+          "logEntries": [],
+          "targetRule": 3,
+          "expectStatus": "WARN"
+        },
+        {
+          "name": "#3 Dockerfile+build",
+          "diffFiles": [{ "path": "Dockerfile", "status": "modified", "lines": [] }],
+          "logEntries": [
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "execute", "raw": "docker build ." },
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "Dockerfile", "raw": "" }
+          ],
+          "targetRule": 3,
+          "expectStatus": "PASS"
+        },
+        {
+          "name": "#3 tsconfig.json+tsc",
+          "diffFiles": [{ "path": "tsconfig.json", "status": "modified", "lines": [] }],
+          "logEntries": [
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "execute", "raw": "npm run build" },
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "tsconfig.json", "raw": "" }
+          ],
+          "targetRule": 3,
+          "expectStatus": "PASS"
+        },
+        {
+          "name": "#3 多个构建文件只改一个",
+          "diffFiles": [{ "path": "package.json", "status": "modified", "lines": [] }],
+          "logEntries": [
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "execute", "raw": "npm test" },
+            { "timestamp": "2026-01-01T00:00:00.000Z", "operation": "read", "file": "package.json", "raw": "" }
+          ],
+          "targetRule": 3,
+          "expectStatus": "PASS"
+        }
+      ]
+    },
+    "rule07": {
+      "label": "#7 谨慎修改",
+      "cases": [
+        {
+          "name": "#7 3/5 文件不相关（60%>20%）",
+          "diffFiles": [
+            { "path": "a.ts", "status": "modified", "lines": [] },
+            { "path": "b.ts", "status": "modified", "lines": [] },
+            { "path": "scripts/deploy.sh", "status": "modified", "lines": [] },
+            { "path": "docs/api.md", "status": "modified", "lines": [] },
+            { "path": "tests/e2e.ts", "status": "modified", "lines": [] }
+          ],
+          "logEntries": [],
+          "task": "改 a.ts b.ts",
+          "targetRule": 7,
+          "expectStatus": "WARN"
+        },
+        {
+          "name": "#7 无 task→跳过",
+          "diffFiles": [
+            { "path": "a.ts", "status": "modified", "lines": [] },
+            { "path": "README.md", "status": "modified", "lines": [] }
+          ],
+          "logEntries": [],
+          "targetRule": 7,
+          "expectStatus": "PASS"
+        },
+        {
+          "name": "#7 全部相关",
+          "diffFiles": [
+            { "path": "a.ts", "status": "modified", "lines": [] },
+            { "path": "b.ts", "status": "modified", "lines": [] }
+          ],
+          "logEntries": [],
+          "task": "改 a.ts b.ts",
+          "targetRule": 7,
+          "expectStatus": "PASS"
+        },
+        {
+          "name": "#7 低风险文件排除",
+          "diffFiles": [
+            { "path": "a.ts", "status": "modified", "lines": [] },
+            { "path": "README.md", "status": "modified", "lines": [] }
+          ],
+          "logEntries": [],
+          "task": "改 a.ts",
+          "targetRule": 7,
+          "expectStatus": "PASS"
+        }
+      ]
+    },
+    "rule10": {
+      "label": "#10 如实汇报",
+      "cases": []
+    }
+  }
+}

@@ -146,7 +146,7 @@ export function getReadAccessMap(entries: LogEntry[]): Set<string> {
  * 检查是否有测试/构建命令执行记录
  */
 export function hasTestOrBuildExecution(entries: LogEntry[]): boolean {
-  const testPatterns = [/npm test/, /npm run test/, /npm run build/, /yarn test/, /yarn build/, /pnpm test/, /pnpm build/, /make/, /gradle/];
+  const testPatterns = [/npm test/, /npm run test/, /npm run build/, /yarn test/, /yarn build/, /pnpm test/, /pnpm build/, /make\s+(build|test)/, /gradle/, /docker\s+(build|compose\s+build)/, /tsc\b/];
   for (const entry of entries) {
     if (entry.operation === 'execute') {
       for (const pattern of testPatterns) {

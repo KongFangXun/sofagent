@@ -42,7 +42,7 @@ npx sofagent-audit --diff origin/main..HEAD
 
 - **零运行时依赖**——只用 Node.js 内置模块
 - **焊死的门**——检查规则独立只读，Agent 不可篡改
-- **不依赖 Agent 配合**——看的是 git diff（已经发生的历史记录）
+- **不依赖 Agent 运行时配合**——看的是 git diff（已经发生的历史记录）。铁律 #1/#3 的日志检查依赖 Agent 写入的 `.sofagent/task/logs/` 文件
 
 ## 开发
 

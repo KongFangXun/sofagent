@@ -146,9 +146,9 @@ describe('hasTestOrBuildExecution', () => {
     expect(hasTestOrBuildExecution(entries)).toBe(true);
   });
 
-  it('execute 操作含 make → true', () => {
+  it('execute 操作含 make build → true', () => {
     const entries: LogEntry[] = [
-      { timestamp: new Date(), operation: 'execute', raw: 'make install' },
+      { timestamp: new Date(), operation: 'execute', raw: 'make build' },
     ];
     expect(hasTestOrBuildExecution(entries)).toBe(true);
   });

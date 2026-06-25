@@ -117,6 +117,34 @@ describe('铁律 #1 先读再用', () => {
     expect(result.status).toBe('FAIL');
   });
 
+  it('全部是 deleted 文件 + 无日志 → PASS（不触发 WARN）', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('src/deleted.ts', 'deleted')],
+      []
+    );
+    const result = checkRule01(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('--strict 模式 + 无日志 → FAIL', () => {
+    const ctx: AuditContext = {
+      diffFiles: [makeDiffFile('src/index.ts')],
+      logEntries: [],
+      strict: true,
+    };
+    const result = checkRule01(ctx);
+    expect(result.status).toBe('FAIL');
+  });
+
+  it('默认模式 + 无日志 → WARN（行为不变）', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('src/index.ts')],
+      []
+    );
+    const result = checkRule01(ctx);
+    expect(result.status).toBe('WARN');
+  });
+
   it('deleted 文件不纳入检查', () => {
     const ctx = makeCtx(
       [makeDiffFile('src/deleted.ts', 'deleted'), makeDiffFile('src/config.ts')],

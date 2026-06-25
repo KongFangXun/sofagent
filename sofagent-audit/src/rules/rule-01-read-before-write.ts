@@ -22,10 +22,20 @@ export function checkRule01(ctx: AuditContext): RuleCheck {
     .filter((f) => f.status === 'modified' || f.status === 'added')
     .map((f) => f.path);
 
+  // 如果没有需要检查的修改文件（全是 deleted 或 renamed），跳过检查
+  if (modifiedFiles.length === 0) {
+    return { ...rule, status: 'PASS' };
+  }
+
   // 如果没有日志记录（可能是新项目或日志被清空），发出提示但不判定违规
   if (logEntries.length === 0) {
-    rule.status = 'WARN';
-    rule.details.push('未找到 .sofagent/task/logs/ 任务记录——可能是首次使用或日志目录为空。跳过「先读再用」检查。');
+    if (ctx.strict) {
+      rule.status = 'FAIL';
+      rule.details.push('--strict 模式：未找到任务日志，铁律 #1 检查失败。Agent 必须记录操作日志。');
+    } else {
+      rule.status = 'WARN';
+      rule.details.push('未找到 .sofagent/task/logs/ 任务记录——可能是首次使用或日志目录为空。跳过「先读再用」检查。');
+    }
     return rule;
   }
 

@@ -197,13 +197,13 @@ SKILL.md 的回复前闸门（⓪①②）和闭合清单（②→③→④→�
 
 当前架构是**运行时治理**——Agent 跑任务时约束其行为，依赖 Agent 配合读取 MD 文件。v0.84 数据证明：不配合就全失效（CLI 0/16），甚至可能反向效果（宪法可被篡改，Hermes 2/2 复现）。
 
-v0.85 确立新方向：**提交时审计**（sofagent-audit）。不依赖 Agent 配合——看的是已经发生的 git diff。但这不意味着放弃运行时治理——两者互补。当前阶段运行时治理仍是主体，提交时审计是 v0.91 的 MVP 方向。
+v0.85 确立新方向：**提交时审计**（sofagent-audit）。不依赖 Agent 在运行时配合（看的是已经发生的 git diff），但依赖 Agent 诚实记录了日志。但这不意味着放弃运行时治理——两者互补。当前阶段运行时治理仍是主体，提交时审计是 v0.91 的 MVP 方向。
 
 | 维度 | 运行时治理（当前） | 提交时审计（v0.91 MVP） |
 |------|------|------|
-| 依赖 Agent 配合 | ✅ 必须 | ❌ 不需要 |
+| 依赖 Agent 配合 | ✅ 必须（读 MD 文件） | ⚠️ 不依赖运行时配合，但依赖日志真实性 |
 | 跨平台 | ⚠️ OpenClaw 全功能，其他 30% | ✅ 任何 git 仓库 |
-| Agent 能绕过 | ✅ 能 | ❌ 不能 |
+| Agent 能绕过 | ✅ 能（不读文件） | ⚠️ 不能绕过 git diff，但可伪造日志绕过 #1/#3 |
 
 ---
 
@@ -215,6 +215,12 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `.sofagent/task/logs/
 
 > 这不是实现 bug，是架构选择。修不了，但必须诚实标注。v0.93+ 计划用结构化日志（JSONL）替代自然语言 MD，让审计工具做精确匹配而非启发式猜测。
 
+**企业用户缓解措施**（在平台级 audit log 可用之前）：
+
+1. **交叉验证**：CI 中配合 `git log --diff-filter=M --name-only` 与日志中的文件列表做时间戳交叉对比——Agent 声称读过但 git 无记录的 → 异常信号
+2. **人工抽查**：日志为 Markdown 明文，团队 Lead 可定期随机抽查 1-2 条任务的日志完整性，成本极低
+3. **`--strict` 模式**（v0.93 新增）：CI 中启用 `sofagent-audit --strict`，无日志直接 FAIL——确保 Agent 至少写了日志才有机会通过审计
+
 ---
 
 ### 铁律 #1 检测可靠性边界
@@ -224,6 +230,19 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `.sofagent/task/logs/
 铁律 #1 检测基于 Agent 任务日志的正则匹配，v0.92 代码层面已做 5 项加固（见下段），但未经真实任务日志实测——误报率/漏报率留待 v0.93 在真实环境中测量。并非 100% 可靠——Agent 可在日志中伪造读取记录。
 
 v0.92 已做第一步改进：子串匹配 → 精确 `path.basename` 匹配（config.ts 不再误匹配 tsconfig.json）、正则扩展支持无扩展名文件（Makefile/Dockerfile/.env）、仅匹配日志中 Read 操作条目（排除 write/execute 条目中的文件名引用）、`extractOperation` 增加否定语义过滤（"未读取""跳过读取"不算 Read 操作）。但根本解法是结构化日志（task/logs 从 MD → JSONL），计划 v0.93 评估。
+
+#### 真实日志审计验证（2026-06-26）
+
+| 项目 | 值 |
+|------|-----|
+| 日期 | 2026-06-26 |
+| 任务 | 修改 README.md「## 这是什么」节：纪律委员 → 设备端 Agent 纪律委员，补充铁律引用 |
+| 模型 | deepseek-v4-pro + glm-5.2（代码提交） / deepseek-v4-pro（审计执行） |
+| 平台 | WorkBuddy（非 OpenClaw，Hook 层不可用） |
+| 审计命令 | `sofagent-audit --diff HEAD~1..HEAD --task "<任务>" --strict` |
+| 退出码 | **1** (WARN) |
+| 审计输出 | 扫描 1 个变更文件。铁律 #1：未找到 .sofagent/task/logs/ 任务记录 → 跳过检查。判定: ⚠️ WARN |
+| 结论 | 审计工具正确检测到日志缺失并降级为 WARN。但核心问题不在审计工具——在 WorkBuddy 平台生成日志需要 Hook 层（不可用），Agent 实际执行了「先读再改」也无法被证明。本次验证证实了「未经真实任务日志实测」的局限描述。 |
 
 ---
 
@@ -246,5 +265,17 @@ v0.92 已在 `sofagent-audit/src/utils/` 建设了 TypeScript 工具函数（`co
 这是真实问题。sofagent 的概念密度对新手不友好——一个开发者想贡献代码，先要搞懂十几个概念之间的关系。v0.85 的缓解措施是在 CONTRIBUTING 里加「贡献者 10 分钟速览」（只看这 3 个文件，改这 2 个脚本，跑这 1 条命令验证）。根治需要概念精简——但当前阶段验证纪律层增量优先于概念重构。
 
 ---
+
+### 缺少显性任务恢复路径（recovery path）
+
+> v0.93 新增。来自 Google Cloud Code 7-Entry Pre-Flight Checklist 对照。
+
+Google Cloud Code 的 7-Entry Checklist 中，`recovery path`（失败回退路径）是独立一环——任务执行失败后，Agent 知道回退到哪一步重试。sofagent 当前只有 think.md 做反思记录，没有显性的「失败了怎么恢复」机制。think.md 记录了踩坑，但下一轮 Agent 读到的是一段自然语言叙述，不是结构化的回退指令。
+
+**现状**：loop-check.md 的 failure 分支有「记录失败 + 交还人类」但缺少自动回退逻辑。编排引擎的渐进减薄设计可以部分覆盖（跑崩加回来），但这是手动操作，不是自动恢复。
+
+**等什么**：结构化任务状态（task/logs JSONL，v0.94）落地后，可以在任务日志中记录每个步骤的检查点状态，让下一轮 Agent（或下一个 Agent）直接从断点恢复。
+
+> Google Cloud Code 的 7-Entry Pre-Flight Checklist: contact → assembly → model → loop → permission gate → executor → state transcript → **recovery path**。sofagent 覆盖了前 6 项（contact~executor）和 state transcript（四字段已规划），缺少 recovery path。
 
 > 这份局限文档和 [设计文档](./ARCHITECTURE.md) 一样，是开放的。如果你发现了我们没列出来的局限——开 Issue，直接说。已知的坑不怕多，怕不知道。

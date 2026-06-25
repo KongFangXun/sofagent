@@ -1,7 +1,7 @@
 # 原生 Windows 环境（PowerShell + 非 WSL）
 
 > "原生 Windows" = **Windows PowerShell 5.1（`powershell.exe`）+ 非 WSL**（用户定义）。
-> 完整环境矩阵 + 编码/换行踩坑全集见 [`docs/bug_fix/tests/ENVIRONMENTS.md`](../../bug_fix/tests/ENVIRONMENTS.md)。
+> 完整环境矩阵 + 编码/换行踩坑全集见 [`docs/platform/ENVIRONMENTS.md`](../platform/ENVIRONMENTS.md)。
 
 > 📦 **安装 / 使用 / 卸载（面向用户的操作指南）见 [install.md](install.md)。** 本文是环境勘察 + 移植现状 + 踩坑记录（面向维护者）。
 

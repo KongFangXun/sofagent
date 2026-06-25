@@ -185,6 +185,34 @@ describe('hasTestOrBuildExecution', () => {
     expect(hasTestOrBuildExecution(entries)).toBe(false);
   });
 
+  it('检测 docker build 命令', () => {
+    const entries: LogEntry[] = [
+      { timestamp: new Date(), operation: 'execute', raw: 'docker build -t myapp .' },
+    ];
+    expect(hasTestOrBuildExecution(entries)).toBe(true);
+  });
+
+  it('检测 docker compose build 命令', () => {
+    const entries: LogEntry[] = [
+      { timestamp: new Date(), operation: 'execute', raw: 'docker compose build' },
+    ];
+    expect(hasTestOrBuildExecution(entries)).toBe(true);
+  });
+
+  it('检测 tsc 命令', () => {
+    const entries: LogEntry[] = [
+      { timestamp: new Date(), operation: 'execute', raw: 'npx tsc --noEmit' },
+    ];
+    expect(hasTestOrBuildExecution(entries)).toBe(true);
+  });
+
+  it('make clean 不触发（只匹配 make build/test）', () => {
+    const entries: LogEntry[] = [
+      { timestamp: new Date(), operation: 'execute', raw: 'make clean' },
+    ];
+    expect(hasTestOrBuildExecution(entries)).toBe(false);
+  });
+
   it('无匹配命令时返回 false', () => {
     const entries: LogEntry[] = [
       { timestamp: new Date(), operation: 'execute', raw: 'ls -la' },
