@@ -17,6 +17,7 @@
 | 不知道怎么测 | → 看 [TESTING.md](./docs/TESTING.md) 的 5 个标准化用例 |
 | 想直接改代码 | → 看下面「贡献者 10 分钟速览」 |
 | 想理解概念但不知道从哪看 | → 看 [ARCHITECTURE.md §五bis](./ARCHITECTURE.md)（评审洞察，概念地图） |
+| 想跑实验 | → 看 docs/benchmark/ 的实验记录模板 |
 
 ### 贡献者 10 分钟速览
 

@@ -1,6 +1,6 @@
 # sofagent-audit
 
-> v0.92 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守 sofagent 铁律。
+> v0.93 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守 sofagent 铁律。
 
 ## 安装
 

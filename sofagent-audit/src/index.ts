@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v0.92 · 审查修复：execFileSync + 信任模型 + 69 tests
+// v0.93 · 工程迁移：execFileSync + 信任模型 + 69 tests
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守 sofagent 铁律。
 // 零运行时依赖——只用 Node.js 内置模块。
@@ -36,7 +36,7 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === '--strict') {
       args.strict = true;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
-      console.log('sofagent-audit v0.92 · 提交时审计\n');
+      console.log('sofagent-audit v0.93 · 提交时审计\n');
       console.log('用法: sofagent-audit --diff <range> [--task <description>] [--strict]');
       console.log('  --diff    git diff 范围（默认 HEAD~1..HEAD）');
       console.log('  --task    任务描述（用于铁律 #7 谨慎修改检查）');
@@ -44,7 +44,7 @@ function parseArgs(argv: string[]): Args {
       console.log('退出码: 0=全通过 / 1=有警告 / 2=有违规');
       process.exit(0);
     } else if (argv[i] === '--version') {
-      console.log('sofagent-audit v0.92');
+      console.log('sofagent-audit v0.93');
       process.exit(0);
     }
   }

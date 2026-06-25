@@ -3,8 +3,8 @@
 中文 | [English](README.en.md)
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.92-16B8F3)](./HANDBOOK.md)
-[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--25-16B8F3)](./README.md)
+[![Version](https://img.shields.io/badge/version-v0.93-16B8F3)](./HANDBOOK.md)
+[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--26-16B8F3)](./README.md)
 [![定位](https://img.shields.io/badge/定位-Agent_纪律层-16B8F3)](#这是什么)
 [![OpenClaw](https://img.shields.io/badge/🦞优先-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9FStarred)](https://github.com/KongFangXun/sofagent/stargazers)
@@ -45,7 +45,7 @@
 
 | 维度 | 数据 | 状态 |
 |------|------|:----:|
-| 核心效果 | v0.92 OpenClaw 对照实验（独立 session）：sofagent 组变量名误伤率 0%，裸 Agent 组 100%——纪律性 +2 | 单任务单模型，待多任务多模型验证 |
+| 核心效果 | v0.93 OpenClaw 10 组对照实验（独立 session，4 任务 × 2 条件）：高难度「同名语义混淆」场景 sofagent 组变量名误伤率 0%，裸 Agent 100%——纪律性 +2。精确指令场景无显著差异。⚠️ 方法论诚实：sofagent 条件为 prompt 前缀注入（非真实 Skill 加载链） | 待多模型交叉 + 真实 Skill 加载验证 |
 | 无关文件修改率 | 纪律层约束后 ≤20%（v0.92 P1-6 阈值校准），待正式对照验证 | 单点观察，无对照组 |
 | 非 OpenClaw 平台 | 全功能价值约 30%，4 项治理加固全部降级或失效 | 架构宿命，非 bug |
 | 持续使用数据 | 0 个 ≥1 周样本 | 待社区补充 |

@@ -14,7 +14,7 @@ metadata:
     requires: {}
 ---
 
-# SKILL.md · v0.92
+# SKILL.md · v0.93
 
 > ⚠️ **反向锚点**：本文件是加载链第 1 层，随 skill 调用自动注入——你无需 Read 就已有宪法。但第 2、3 层需你主动 Read。如果你没读 rules.md 和 think.md 就回复用户，你的输出可能偏离用户定制和历史教训。
 
