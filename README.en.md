@@ -3,17 +3,17 @@
 [中文](README.md) | English
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.91-1E40AF)](./HANDBOOK.md)
-[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--23-lightgrey)](./README.md)
-[![OpenClaw](https://img.shields.io/badge/OpenClaw-priority--platform-2563EB)](./LIMITATIONS.md#平台依赖)
+[![Version](https://img.shields.io/badge/version-v0.91-16B8F3)](./HANDBOOK.md)
+[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--25-16B8F3)](./README.md)
+[![OpenClaw](https://img.shields.io/badge/🦞priority-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
 [![兼容](https://img.shields.io/badge/compatible-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes%20Agent-lightgrey)](./LIMITATIONS.md#平台依赖)
-[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9FStarred)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 <!-- TODO: demo.gif — 15s side-by-side: bare Agent going off-rails vs sofagent-constrained Agent -->
 
 > sofa + agent — because one day, we want to lie on the couch while agents do the work.
-> v0.91 · 2026-06-24
+> v0.91 · 2026-06-25
 
 > 📄 **License**: MIT. Code, docs, templates — use freely, just keep the copyright notice.
 

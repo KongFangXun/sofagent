@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
 [![Version](https://img.shields.io/badge/version-v0.91-16B8F3)](./HANDBOOK.md)
-[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--24-16B8F3)](./README.md)
+[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--25-16B8F3)](./README.md)
 [![定位](https://img.shields.io/badge/定位-Agent_纪律层-16B8F3)](#这是什么)
 [![OpenClaw](https://img.shields.io/badge/🦞优先-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
 [![兼容](https://img.shields.io/badge/兼容-WorkBuddy%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Hermes%20Agent-lightgrey)](./LIMITATIONS.md#平台依赖)
@@ -14,7 +14,7 @@
 <!-- TODO: demo.gif — 15s 左右对比: 裸 Agent 跑偏 vs sofagent 约束后正常 -->
 
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
-> v0.91 · 2026-06-24
+> v0.91 · 2026-06-25
 
 > 📄 **License**：MIT。代码、文档、模板——随便用，保留版权声明就行。
 
@@ -66,7 +66,7 @@
 | 你是谁 | 看哪个 | 一句话 |
 |------|------|------|
 | 普通用户 | [HANDBOOK.md](./HANDBOOK.md)（450 行） | 怎么装、怎么用、什么是铁律 |
-| 开发者 | [DEVELOPMENT.md](./DEVELOPMENT.md)（691 行） | Skill 怎么协同、编排怎么跑、反思怎么闭环 |
+| 开发者 | [DEVELOPMENT.md](./DEVELOPMENT.md)（693 行） | Skill 怎么协同、编排怎么跑、反思怎么闭环 |
 | 设计爱好者 | [ARCHITECTURE.md](./ARCHITECTURE.md)（385 行） | 为什么选这些设计、已知局限 |
 | 企业技术决策者 | [docs/team-deploy.md](./docs/team-deploy.md)（3 页） | 装、试、回顾三阶段落地指南 |
 
