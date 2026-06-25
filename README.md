@@ -108,24 +108,19 @@ sofagent 的终局是一台设备上的 **Agent 纪律委员**——安装时自
 
 ### 架构总览
 
-```mermaid
-graph TB
-    subgraph Foundation["🏗️ 地基 Foundation（常驻 ~3,100 token）"]
-        L1["L1: SKILL.md<br/>4 底线 + 10 铁律<br/>宪法 Contract"] --> L2["L2: think.md<br/>反思区<br/>错题本"]
-        L2 --> L3["L3: rules.md<br/>你的规则<br/>最高优先级"]
-    end
-
-    subgraph Engine["🚀 引擎 Engine（🔴点火 ~800 token）"]
-        EG["entry-gate<br/>任务准入"] --> TA["task-aware<br/>复杂度预判"]
-        TA --> TO["task-closure<br/>任务闭环"]
-        TO --> LC["loop-check<br/>Loop 检查"]
-    end
-
-    Foundation -->|"🔴 复杂任务触发"| Engine
-    Engine -->|"反思沉淀"| L2
-
-    style Foundation fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
-    style Engine fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
+```
+三层加载链（常驻地基：宪法 → 反思区 → 你的规则）
+          ↓
+    A0 复杂度预判
+    ├── 🟢🟡 简单 → 直接回答（地基在线）
+    └── 🔴 复杂 → 任务编排引擎点火
+                   │
+              ┌────┴────┐
+        智能拆解 → 批量执行 → Loop 检查（子任务间 · 60% 预算 · 高风险操作前）
+              │                       │
+              └─── 反思闭环 ←─────────┘
+                      ↓
+              下个任务从上个任务中学习
 ```
 
 > **已知局限**：复盘是 LLM 自评，无客观基准；Loop Agent 非独立进程；数据明文存储（task/logs + think.md 含任务记录，age 加密计划 v1.0+——详见 LIMITATIONS）；不是多用户系统（共享 .sofagent/ 会交叉污染经验）。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
