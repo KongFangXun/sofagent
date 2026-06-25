@@ -1,5 +1,7 @@
 # A/B 测试报告 — WorkBuddy 平台（Part A + Part B 完整 A/B）
 
+> ⚠️ **方法论缺陷**：本测试在同一 session 按固定顺序执行（先裸 Agent 后 sofagent），无法排除知识传递效应——第二轮可能受益于第一轮上下文，而非 sofagent 的真实约束效果。v0.85 的反转实验设计已将本测试降级为参考数据，不作为纪律层增量证据。基准结论以 [independent-refactor-ab.md](./2026-06-23-independent-refactor-ab.md) 和 [OpenClaw 反转对照](./2026-06-25-openclaw-task1-control.md) 为准。
+
 > 测试人：KongFangXun | 日期：2026-06-23 | 平台：WorkBuddy | **sofagent v0.83（v0.84 改动尚未纳入）** | 模型：DeepSeek V4
 >
 > 本报告数据作为 v0.84 决策的**输入基线**，不作为 v0.84 的测试产出。

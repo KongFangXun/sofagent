@@ -1,20 +1,16 @@
 // ============================================================
 // reporter.ts · 审计结果聚合与输出
+// v0.92 重构：改用注册表模式——从 rules/index.ts 导入规则数组，
+// 循环调用 rule.check(ctx)，不再硬编码 import 4 条规则
 // ============================================================
 
 import type { DiffFile } from './diff-parser';
 import type { LogEntry } from './log-checker';
-import { checkRule01 } from './rules/rule-01-read-before-write';
-import { checkRule03 } from './rules/rule-03-verify-before-continue';
-import { checkRule07 } from './rules/rule-07-careful-modify';
-import { checkRule10 } from './rules/rule-10-honest-report';
+import { rules } from './rules';
+import type { AuditContext, RuleCheck } from './rules/types';
 
-export interface RuleCheck {
-  name: string;
-  number: number;
-  status: 'PASS' | 'WARN' | 'FAIL';
-  details: string[];
-}
+// 向后兼容：re-export RuleCheck（index.ts 等模块通过 reporter 导入此类型）
+export type { RuleCheck } from './rules/types';
 
 export interface AuditResult {
   rules: RuleCheck[];
@@ -22,33 +18,26 @@ export interface AuditResult {
 }
 
 /**
- * 运行全部审计规则
+ * 运行全部审计规则（注册表模式）
  */
 export function runRules(
   diffFiles: DiffFile[],
   logEntries: LogEntry[],
   task?: string
 ): AuditResult {
-  const rules: RuleCheck[] = [];
+  const ctx: AuditContext = { diffFiles, logEntries, task };
+  const results: RuleCheck[] = [];
 
-  // 铁律 #1 先读再用
-  rules.push(checkRule01(diffFiles, logEntries));
-
-  // 铁律 #3 验证再干
-  rules.push(checkRule03(diffFiles, logEntries));
-
-  // 铁律 #7 谨慎修改
-  rules.push(checkRule07(diffFiles, task));
-
-  // 铁律 #10 如实汇报
-  rules.push(checkRule10());
+  for (const rule of rules) {
+    results.push(rule.check(ctx));
+  }
 
   // 汇总判定
   let exitCode = 0;
-  for (const rule of rules) {
+  for (const rule of results) {
     if (rule.status === 'FAIL') exitCode = 2;
     else if (rule.status === 'WARN' && exitCode === 0) exitCode = 1;
   }
 
-  return { rules, exitCode };
+  return { rules: results, exitCode };
 }

@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.91 · 2026-06-25 · 孔放勋
+> v0.92 · 2026-06-25 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -119,49 +119,17 @@ SKILL.md 启动
 
 > 负责的子 Skill：`engine.md` 点火 ao compose 拆任务 → `loop-check.md` 设检查点 + 失败诊断 → `task-closure.md` 闭环收口。
 
-这套编排同时吸收了 Harness 和 Loop 两种思路——约束层保证基本安全（`SKILL.md`（宪法内联）），编排层往自我进化方向走（orchestrator/ + A/B 对比）。目标在 [Developer §一](#一工作原理) 定稿了，这一章解决后续问题：循环怎么启动、怎么跑、怎么收口。
-
-> Loop Engineering 的概念已在 [Developer §一](#一工作原理) 介绍过，这里只做工程映射——sofagent 的编排就是「目标→验证→决策→交接」四环节的实现：**目标**（/goal + 两轮澄清 [Developer §一](#一工作原理)）→ **验证**（铁律 #3 + skill-iterate + 中间检查点 [Handbook §三](./HANDBOOK.md#三底线与铁律)/[Developer §三](#三模型最优选择)/[Developer §五](#五自进化机制)）→ **决策**（ao compose + 编排深度晋级/回滚 本章）→ **交接**（闭环反思→ think.md 反思区 + task/logs [Developer §六](#六反思工程)/[Developer §七](#七数据文件架构)）。
-
-> Agent 循环不新鲜——React 范式 2023 年就有了。Loop 和 React 的本质区别不在「转圈」而在「收敛」，详见 [ARCHITECTURE.md](./ARCHITECTURE.md#一为什么会有-sofagent)。下面这三个难题，sofagent 自有解法：
-
-| Loop 难题 | sofagent 怎么解的 | 在哪 |
-|------|------|------|
-| 什么时候停？ | Session 边界（缓存/Token 双阈值自动提醒）+ 中间检查点（步数/重试/Token超标暂停） | 本章 + [Developer §五](#五自进化机制) |
-| 失败了怎么办？ | 任务闭环：反思→think.md 反思归因→下次自动避开。不是简单重试，是带反思的重试 | 本章 |
-| 状态怎么管？ | task/logs 水源 + think.md 反思区 + orchestrator/ 决策沉淀 | [Developer §六](#六反思工程) + [Developer §七](#七数据文件架构) |
+这套编排吸收了 Harness 和 Loop 两种思路——约束层保证安全（SKILL.md），编排层往自我进化方向走（orchestrator/ + A/B 对比）。三个核心问题：什么时候停（Session 边界 + 中间检查点）、失败了怎么办（带反思的闭环重试）、状态怎么管（task/logs + think.md + orchestrator/）。
 
 ### Session 边界
 
-主 Agent 监控两个指标，任一超限提醒用户新开会话：
-
-| 指标 | 阈值 |
-|------|------|
-| 缓存占用 | ≥50% |
-| Token 总量 | ≥模型上限的 70% |
-
-超限后，task-aware 做语义确认 → 提醒用户→ 用户确认 → 反思 → 写入 think.md「会话交接」摘要 → 提示 /new。Agent 不能自己 /new，只能建议。
-
-用百分比不用轮次——模型窗口在变大，轮次限制是刻舟求剑。完整推理见 ARCHITECTURE.md session-boundary。
-
-> 子 Agent 不参与这套机制——脏数据隔离，上下文溢出说明编排拆得不够细。
+主 Agent 监控两个指标，任一超限提醒用户新开会话：缓存占用 ≥50%，或 Token 总量 ≥模型上限的 70%。用百分比不用轮次——模型窗口在变大，轮次限制是刻舟求剑。完整推理见 ARCHITECTURE.md session-boundary。子 Agent 不参与这套机制——脏数据隔离。
 
 ### 编排（Orchestration）：ao compose + /goal + 用户确认
 
-编排用了 [agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator)（Apache-2.0）的 `ao compose`——意图识别、任务图生成、模板匹配、分配这四步它都做了。模型选择不在 ao compose 的范围内，我另外补。
+编排用了 [agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator)（Apache-2.0）的 `ao compose`——意图识别、任务图生成、模板匹配、分配这四步它都做了。
 
-全套流程是：/goal 触发两轮澄清（[Developer §一](#一工作原理)）→ 目标定稿 → ao compose 拆任务 → 生成提案 → 用户确认 → Loop 执行：
-
-```
-用户一句话（/goal）
-  → 两轮澄清（[Developer §一](#一工作原理)）：目标确认 → 方案预览 → 定稿
-  → ao compose 拆成任务图（怎么干）
-  → 生成任务提案（Skill、模型、成本全透明）
-  → 用户确认（看一下，不满意就改）
-  → 确认后，Loop 启动——Agent 按提案自动跑循环
-```
-
-**/goal 触发澄清，澄清定目标，ao compose 拆任务，用户批方案，Loop 跑执行。** 和 `/goal` 原版（黑盒自主循环）的区别已经在 [Developer §一](#一工作原理) 讲清楚了——这里只讲怎么跑。
+全套流程：/goal 触发两轮澄清 → 目标定稿 → ao compose 拆任务 → 生成提案 → 用户确认 → Loop 执行。和 `/goal` 原版（黑盒自主循环）的区别是加了用户确认——先看一眼提案再执行。
 
 ### ao compose 生成了什么
 
@@ -222,40 +190,10 @@ SKILL.md 启动
 ### 主 Agent 工作流
 
 ```
-用户一句话
-  │
-  ▼
-两轮澄清（详见 [Developer §一](#一工作原理)）
-  ├─ 第一轮：目标确认（苏格拉底式提问）
-  ├─ 第二轮：编排方案（ao compose 直接出方案）
-  │
-  ▼
-ao compose 生成任务提案（AO 做四步）
-  ├─ 意图识别：你要做什么
-  ├─ 任务拆分：拆成几个子任务
-  ├─ 模板匹配：每个子任务谁来干
-  └─ 分配：pinnedRoles 锁阵容
-  │
-  ▼
-sofagent 补上 ao compose 不做的
-  ├─ Skill 选择：每个子任务用什么技能
-  ├─ 模型选择：Flash 还是 Pro（详见 [Developer §三](#三模型最优选择)）
-  └─ 成本预估：大约多少 token、大概多少钱
-  │
-  ▼
-┌─────────────────────────────┐
-│  任务提案展示给用户            │
-│  ✅ 确认 → 继续               │
-│  🔄 修改 → 调整后再确认        │
-└─────────────────────────────┘
-  │
-  ▼
-执行
-  ├─ ao compose 分配（pinnedRoles 锁阵容）
-  ├─ Harness 注入 sofagent/铁律/反思
-  ├─ 子 Agent 并行干活
-  ├─ 主 Agent 聚合结果
-  └─ 闭环（反思→评分→A/B→汇报）
+用户一句话 → 两轮澄清（目标确认 + 编排方案）
+  → ao compose 生成任务提案（意图识别→任务拆分→模板匹配→分配）
+  → sofagent 补上 Skill 选择 + 模型选择 + 成本预估
+  → 用户确认 → 执行（分配 + 注入 + 并行 + 聚合 + 闭环）
 ```
 
 两轮澄清见 [Handbook §四](./HANDBOOK.md#四任务目标制定)，编排深度见本章下节，闭环反思见 [Developer §五](#五自进化机制)。
@@ -282,35 +220,13 @@ sofagent 补上 ao compose 不做的
 四步通过「影响链」互相关联——踩的坑和哪个 Skill 表现不好之间的关联，主 Agent 在 think.md 记一笔下次自动避开。详见 [Developer §五](#五自进化机制)。
 
 
-### 外部 Skill 来源
+### 外部 Skill 来源与获取
 
-岗位模板和 Skills 从开源社区获取，sofagent 只负责「发现」和「加载」，不做内容生产。
+岗位模板从 [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh)（215 个中文岗位模板）获取，编排引擎用 [agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator)，外部 Skills 从 [ClawHub](https://clawhub.ai) 社区获取。
 
-| 源 | 拿来做什么 |
-|------|------|
-| [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh) | 215 个中文岗位模板，IDENTITY 层素材来源 |
-| [agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator) | 编排引擎——`ao compose` 一行命令完成意图识别→任务图生成→模板匹配→分配（详见 [Developer §二](#二编排哲学)） |
-| [ClawHub](https://clawhub.ai) | 全球 Skills 社区，与 OpenClaw 互通 |
+engine.md 在 ao compose 拆完任务后从 ClawHub 搜索并集成：发现（ClawHub API）→ 初筛（社区评分 < 3.0 过滤）→ 分配（按信任等级）→ 闭环后自动升降级。信任等级四档（已验证/试用中/未验证/不推荐）见 [ARCHITECTURE.md](./ARCHITECTURE.md#trust-levels)。
 
-### 外部 Skill 获取
-
-engine.md 在 ao compose 拆完任务后从 ClawHub 搜索并集成。四步：发现（ClawHub API）→ 初筛（社区评分 < 3.0 过滤）→ 分配（按信任等级）→ 闭环后自动升降级。
-
-信任等级四档（已验证/试用中/未验证/不推荐）的完整规则见 [ARCHITECTURE.md](./ARCHITECTURE.md#trust-levels)。
-
-> 💡 Skill 选择由主 Agent 自己完成：读 scoring/、做语义匹配、选评分最高且最匹配的——这是 LLM 的长项，不需要额外工具。当前 Skill < 100 直接匹配足够；超 100 后走两阶段（关键词召回 top-20 → LLM 重排），这是远期工程预留。
-
-
-### Skill 描述分离
-
-每个 Skill 自带一张「索引卡片」——写清名称、触发场景、什么时候不该用。Agent 先读卡片做匹配，命中后才加载完整实现。这套格式不是 sofagent 定的，是社区惯例——ClawHub 上的 Skill 都这么写。
-
-| 部分 | 用途 |
-|------|------|
-| Skill 索引卡片（≤500 字符） | 快速匹配——Agent 扫描结构化字段决定用哪个 |
-| 完整实现（无限制） | 命中后按需加载到子 Agent 上下文 |
-
-> 💡 卡片不是 sofagent 生成的，是 Skill 作者自己写的。sofagent 只负责读卡、匹配、决定用哪个。
+每个 Skill 自带「索引卡片」（≤500 字符）——写清名称、触发场景、什么时候不该用。Agent 先读卡片做匹配，命中后才加载完整实现。
 
 ---
 
@@ -418,11 +334,11 @@ ao compose 拆完任务
 
 闭环后从四个角度反馈：① 编排对不对 → orchestrator/ | ② Skills 选得对不对 → scoring.md | ③ A/B 有没有新结论 → orchestrator/ | ④ 模型选得值不值 → orchestrator/ 成本对比。四路汇总到 orchestrator/，下次同类任务直接用最优配置。
 
-### 复盘自评每次任务闭环后，主 Agent 切换到 Loop Agent 视角，从八个生产力维度评估整套编排（另有第九维「判断力」独立计分，见下）：
+### 复盘自评
 
-> ⚠️ 工程边界：Loop Agent 不是独立进程或独立模型调用，是主 Agent 切换 prompt 以顾问身份输出建议。"独立复盘"指角色隔离，不是工程隔离。评分是 LLM 自评，无客观基准，结果仅供横向对比参考。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
+每次任务闭环后，主 Agent 切换到 Loop Agent 视角，从八维生产力评估整套编排（另有第九维「判断力」独立计分——弃权率/拒绝高风险任务，不放在同一个总分里）。八维：编排准确性、Skill 匹配度、模型经济性、执行流畅度、结果完整性、复用潜力、流程合规、Loop 有效性。
 
-八维评分维度：① 编排准确性（子任务粒度/依赖是否跑通）② Skill 匹配度（Skill 是否合适）③ 模型经济性（成本 vs 质量）④ 执行流畅度（有无卡顿/重试/超时）⑤ 结果完整性（用户要的做全了没）⑥ 复用潜力（同类任务通用性）⑦ 流程合规（是否跳步/绕过检查点）⑧ Loop 有效性（检查点是否起作用：5=提前发现/3=漏但修复/1=误报浪费）。另有第九维「判断力」（弃权率/拒绝高风险任务）与前八维分开计分——不放在同一个总分里，「你很能跑」和「你很会判断什么不该跑」是两件事。见 [loop-check.md](./sofagent/loop-check.md) 第九维定义。
+> ⚠️ 工程边界：Loop Agent 不是独立进程，是主 Agent 切换 prompt 以顾问身份输出建议。评分是 LLM 自评，无客观基准，仅供横向对比参考。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 
 复盘加权算出总分，分比上次高 → 覆盖 orchestrator/ 为最优配置。分比上次低 → 不动，标「待验证」。
 
@@ -432,24 +348,11 @@ ao compose 拆完任务
 
 ### 中间检查点
 
-复盘是任务闭环后的总评。Loop 跑的过程中也有三个检查点
+Loop 跑的过程中有三个检查点，触发条件（任一触发即暂停）：步数超过历史平均 ×2、同一工具连续失败/重试达 3 次、token 消耗超过子任务预算的 1.5 倍。
 
-**触发条件**（任一触发即暂停）：
-- 步数超过 `orchestrator/` 里该任务类型的历史平均步数 × 2（首次执行取叶子文件的 `首次预估步数` 字段，未配置时默认 50 步。跑满 3 次后 loop-check closure 模式自动用实际平均值校准该字段）
-- 同一工具连续失败或重试达到 3 次
-- token 消耗超过该子任务预算的 1.5 倍
+**暂停后**：主 Agent 用 Flash 模型快速三问——① 进展和目标对齐吗？② 继续跑有希望完成吗？③ 需要用户介入吗？三全「是」→ 继续，重置计数；任一「否」→ 写 task/logs 标 `#checkpoint`，通知用户决定。
 
-**暂停后做什么**：主 Agent 把子任务当前进展拉出来，用 Flash 模型快速问三个问题——① 当前进展和目标还对齐吗？② 继续跑有希望完成吗？③ 需要用户介入吗？三个全「是」→ 继续执行，重置计数；任一「否」→ 写入 task/logs/ 标 `#checkpoint`，通知用户决定。处理逻辑记入 orchestrator/ 的 `checkpoint` 字段，跑多了之后同任务类型的阈值自动校准。
-
-**实现分工**：
-
-| 做什么 | 谁来做 | 为什么 |
-|------|------|------|
-| 监控步数/重试/token 是否超标 | OpenClaw `tools.loopDetection`（原生配置） | 必须实时计数，Skill 做不到 |
-| 超标后暂停子 Agent、通知主 Agent | `globalCircuitBreakerThreshold` 触发熔断 | 同上，外部刹车 |
-| 三问评估（Flash 模型判断） | Skill（SKILL.md 中 check 逻辑） | LLM 判断是 Skill 的长项 |
-| 写入 task/logs/ 标 #checkpoint | task-record.sh（脚本） | 确定性机械操作 |
-| 更新 orchestrator/ 阈值 | loop-check closure 模式 | 需要对比历史数据判断是否校准 |
+**实现分工**：OpenClaw `tools.loopDetection` 监控步数/重试/token（必须实时计数）→ 熔断触发暂停 → Skill 做三问判断（LLM 长项）→ task-record.sh 写日志 → loop-check closure 更新阈值。
 
 ### orchestrator/ 怎么决策
 
@@ -529,47 +432,19 @@ think.md
    └─ 历史摘要（权重 <0.5 或 超过 90 天）
 ```
 
-每条摘要带一个权重标签，由 LLM 根据三个信号估算（新鲜度 + 反思关联 + 引用热度）。权重集中管理：≥0.5 进反思区，<0.5 进归档区。算法细节见 [ARCHITECTURE.md](./ARCHITECTURE.md#weight-gate)。
-
-> ⚠️ 权重计算由 LLM 执行，同一组数据跑两次可能有 0.1 偏差。反思区的 ≤2K token 硬上限才是真正的安全阀。
-> ⚠️ 反思分三种来源标记：[LLM自评]（纯模型判断，权重 ×0.3）/ [已验证]（有客观证据）/ [用户确认]（用户明确确认）。防止不准的自评通过 think.md 自我强化。详见 [LLM 复盘的信任边界](./ARCHITECTURE.md#llm-复盘的信任边界developer-五自进化机制)。
-
-权重 <0.3 且超过 90 天的自动清理，不再占反思空间。已归档的记忆 30 天内不做二次评估——避免反复横跳浪费 token。
+每条摘要带一个权重标签，由 LLM 根据三个信号估算（新鲜度 + 反思关联 + 引用热度）。≥0.5 进反思区，<0.5 进归档区；<0.3 且超过 90 天的自动清理。权重由 LLM 执行有浮动，≤2K token 硬上限是真正的安全阀。算法细节见 [ARCHITECTURE.md](./ARCHITECTURE.md#weight-gate)。
 
 ### think.md 反思区的自我纠正
 
 三道防线：只存经验不存指令 → 反思区 2K token 硬上限 → 人工可清除。写入前扫指令性关键词（应该/必须/不要/禁止/切忌/务必/严禁/应当/请/一定要），命中 ≥3 处提醒拆到 rules.md。不自拒写、不自动改——最终判断交用户。完整防线详解见 [ARCHITECTURE.md](./ARCHITECTURE.md#self-correct)。
 
-### 审计：从记忆回溯到原始证据
+### 审计
 
-如果怀疑 think.md 反思区有错误，不用猜——每条反思都带了来源标记，沿着标记翻回原始 task/logs 就能确认。三层审计链：
+审计能力由 [提交时审计](#八提交时审计)（sofagent-audit）承担——运行时治理防止错误，git diff 审计兜底检测。不再使用文件目录结构做手动审计。
 
-```
-反思区 → 归档区 → task/logs 原始账本
-（答案）   （历史）   （证据：只追加、不可改）
-```
+#### 记忆存储与冲突处理
 
-task/logs 是水源，只追加不修改，永远可以回溯。不需要额外的审计工具——文件目录结构本身就是审计路径。
-
-#### 记忆存储三策略
-
-> 什么时候用哪种存储？这不是哲学问题，是工程决策。
-
-| 策略 | 写到哪 | 典型内容 | sofagent 对应 |
-|------|--------|---------|------|
-| **关键事实走结构化** | rules.md `key: value` | 项目目标、验收标准、用户偏好 | rules.md 键值对 |
-| **近期变化走摘要** | think.md 反思区 | 今天的任务总结、新踩的坑 | think.md 日摘要 ≤200 字 |
-| **经验案例走混合检索** | task/logs/ + orchestrator/ | 历史任务记录、最优拆法 | 树形目录 + 按需读取 |
-
-#### 记忆冲突处理三步法
-
-think.md 反思区可能出现矛盾条目（上次说「先做 A 再做 B」，这次说「应该先 B 后 A」）。三步处理：
-
-1. **检测**——写入前扫描反思区，发现同一主题有矛盾条目时标记 `⚠️ 冲突`
-2. **融合**——两条都保留，各自标注来源和置信度；不自动覆盖，让用户判断哪个对
-3. **重心明确**——矛盾条目不进反思区权重计算（防止互相抵消导致都进不了加载链）
-
-> 当前 sofagent think.md 是追加模式，不具备自动冲突检测（见下方已知局限）。这三步是 v0.9 的设计目标。
+三策略：关键事实走结构化（rules.md）、近期变化走摘要（think.md）、经验案例走混合检索（task/logs/ + orchestrator/）。当前 think.md 是追加模式，自动冲突检测是 v0.9 设计目标。
 
 ---
 
@@ -588,16 +463,7 @@ think.md 反思区可能出现矛盾条目（上次说「先做 A 再做 B」，
 | `orchestrator/` | 最优拆法决策 | 树形 | 同类任务 ≥3 次 | [模板](sofagent/data/orchestrator.md) |
 | `orchestrator/workflows/` | ao compose 生成的 YAML | 按任务名平铺 | 每次 ao compose | — |
 
-### 数据流向总结
-
-```
-每次任务闭环
-  │
-  ├─→ think.md 反思区  ← 提炼反思摘要
-  ├─→ scoring/        ← 更新 Skill 评分
-  ├─→ orchestrator/   ← A/B 对比后覆写最优拆法
-  └─→ task/logs/      ← 原始执行记录（只追加）
-```
+### 数据流向总结：每次任务闭环后，反思进 think.md → 评分更新 scoring/ → 最优拆法覆写 orchestrator/ → 执行记录追加到 task/logs/（只追加）。
 
 > 💡 task/logs 是所有数据的源头。think.md（反思）、scoring.md（技能目录）、orchestrator/（作战手册）从中各自提炼结论，think.md 反思区汇总反思后的经验。
 
@@ -607,79 +473,23 @@ think.md 反思区可能出现矛盾条目（上次说「先做 A 再做 B」，
 
 ### 维护规则
 
-> ⚠️ 本手册是 `sofagent/` 目录下所有模板文件的**唯一事实来源**。以下规则确保模板与手册永不脱节：
+> ⚠️ 本手册是 `sofagent/` 目录下所有模板文件的**唯一事实来源**。手册变更 → 同步模板；模板格式变更 → 反向更新手册。每次发版前跑一遍对照检查。一句话：**手册改了，模板必须跟着改。反过来也一样。**
 
-1. **手册变更 → 同步模板**：每次 Handbook 内容更新（特别是 [Handbook §二](./HANDBOOK.md#二三层加载链) 加载链、[Handbook §三](./HANDBOOK.md#三底线与铁律) 铁律、[Developer §七](#七数据文件架构) 数据文件架构）后，必须逐份审查 `sofagent/` 下的全部模板文件（`SKILL.md`（宪法内联）、`rules.md`、`think.md`、`task.md`、`orchestrator.md`、`scoring.md`），确保与手册描述一致
-   > 📎 `SKILL.md`、`entry-gate.md`、`task-aware.md`、`task-closure.md` 不在此列——它们是程序文件（入口 + 子 Skill），不属于模板文件范畴。
-2. **模板格式变更 → 反向更新手册**：如果模板的结构或内容需要调整，先在 `sofagent/` 改好，再反向更新手册中对应的示例/描述
-3. **sofagent/ 文件是用户的第一触点**：它们是 `install.sh` 复制到用户 `~/.openclaw/` 的目标文件。手册是说明书，sofagent/ 是产品——说明书写错了用户可能不会发现，产品文件错了用户会直接踩坑
-4. **每次发版前跑一遍对照检查**：打开 [Handbook §二](./HANDBOOK.md#二三层加载链) 的 3 层表格和 [Developer §七](#七数据文件架构) 的模板示例，逐行对照 sofagent/ 下的全部 6 个模板文件
+### 加载链瘦身审查
 
-> 📎 一句话：**手册改了，模板必须跟着改。反过来也一样。**
+> 每轮主流模型发布后审查核心入口文件，删掉已被模型能力覆盖的冗余规则。核心纪律不随模型变化。详见独立运维文档。
 
-### 加载链瘦身审查（每次大模型发布后执行）
+### sofagent 四层记忆模型
 
-> Anthropic 团队每次新模型发布时，会读系统提示，移除不再需要的部分——如模型升级后自动具备 to-do list 能力，即删手动注入的 to-do list 功能。sofagent 同理。
-
-**审查时机**：每次主流大模型发布后（GPT/Gemini/Claude/DeepSeek 大版本）
-
-**审查对象**：
-1. SKILL.md 10 条铁律——哪些已被模型内置能力覆盖？
-2. engine.md 编排规则——哪些已被模型推理能力替代？
-3. loop-check.md 检查项——哪些已被模型自我验证覆盖？
-
-**审查原则**：模型自己能做的，sofagent 不重复管。删掉冗余规则，让加载链更轻。但**纪律层核心（先读后写/验证再干/谨慎修改）不随模型变化**——这些不是模型能力问题，是工程纪律问题。模型再强，不读文件就改的坑依然存在。
-
-> 详见 [§七 加载链瘦身审查](#加载链瘦身审查每次大模型发布后执行)。设计来源：Logan Kilpatrick（Google DeepMind）——"每一行外部脚手架，都是对模型无能的妥协"。
-
-### sofagent 四层记忆模型（对照 Agent 记忆机制设计指南）
-
-> 来源：「Agent 记忆机制设计指南」(2026-06-20)。核心判断："记什么比存多少更重要"。
-
-四层映射：当前窗口（平台 session）→ 近期摘要（`think.md` 反思区 ≤2K token）→ 用户档案（`rules.md` `key: value`）→ 历史事件（`task/logs/` + `orchestrator/`）。三层原则：① 写入——记稳定模式/重复错误/用户确认的偏好，不记单次异常和 LLM 推测；② 更新——冲突时检测→合并或覆盖，非简单追加；③ 遗忘——`cleanup.sh` 定时清理，缺低价值自动压缩。
-
-**已知局限**：think.md 当前为追加模式，不具备冲突检测和合并能力——3 条矛盾反思可并存。规划版本 v0.9。
+> 四层映射：当前窗口 → 近期摘要（think.md）→ 用户档案（rules.md）→ 历史事件（task/logs/ + orchestrator/）。详见 [ARCHITECTURE.md](./ARCHITECTURE.md) 记忆机制设计。
 
 ---
 
-## 八、确定性纪律检查与提交时审计
+## 八、提交时审计
 
-> v0.85 新增设计节。来自评审（GLM-5.2 + DeepSeek V4 Pro）的核心建议——把纪律层从主观 LLM 评分转向确定性工具检查。v0.9 执行，v0.85 只做设计。
+sofagent-audit（v0.92）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对四条可程序化铁律（#1/#3/#7/#10）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 配合——看的是已经发生的 git diff，Agent 无法绕过。
 
-### 为什么需要确定性检查
-
-当前验证依赖 LLM 评分（"纪律性 +2"是主观判断）。v0.84 独立测试者的数据有方法论局限，其中最致命的是知识传递效应——第二轮可能受益于第一轮上下文。需要一个**确定性工具**，用 exit code 和 diff 做客观检查，让验证结果可复现、可盲评、可统计。
-
-### discipline-check.sh —— 10 铁律的可程序化子集
-
-10 铁律里能程序化检查的 6-7 条：
-
-| 铁律 | 可程序化？ | 检查方式 |
-|------|:--:|------|
-| #1 先读再用 | ✅ | git log 时间线：Write/Edit 前是否有 Read 同文件记录 |
-| #3 验证再干 | ✅ | 代码修改后是否有 build/test exit code 记录。同时检查测试改动是否仅为了匹配错误行为（"绿灯路径"：AI 改行为 → 顺手改测试断言 → 全绿通过——来自 146 PR 实验数据，200 个测试全绿也不能说明代码无问题） |
-| #7 谨慎修改 | ✅ | diff 范围检查：修改文件数 / 修改行数是否超出任务描述。**测试文件改动优先级高于主代码**——先扫测试改动（被修改的断言、被删除的测试、被跳过的检查），确认合理后再审查代码 |
-| #10 如实汇报 | ⚠️ 部分 | 检查是否有"不知道"语义但接了任务的模式 |
-| #2 对用户有回应 | ❌ | 语义判断，不可程序化 |
-| #5 不确定就问 | ❌ | 语义判断 |
-| #8 目标驱动 | ❌ | 语义判断 |
-
-### sofagent-audit —— 提交时审计
-
-discipline-check.sh 的产品化实现（v0.91）。TypeScript CLI，源码 `sofagent-audit/src/`，零运行时依赖，只用了 Node.js 内置模块。
-
-扫描 git diff + `.sofagent/task/logs/` 操作日志，对四条可程序化铁律做确定性判定：
-
-```bash
-cd sofagent-audit && npm ci && npm run build
-node dist/index.js --diff HEAD~1..HEAD --task "任务描述"
-
-❌ 铁律 #1 先读再用：handler.ts 被修改，但修改前无 Read 记录
-✅ 铁律 #3 验证再干：package.json 修改后有 npm test 记录
-⚠️ 铁律 #7 谨慎修改：本次 diff 修改了 3 个不在任务范围内的文件
-```
-
-exit code：0 = PASS / 1 = WARN / 2 = FAIL。设计文档见 [audit-design.md](../docs/audit-design.md)。
+> 运行时治理减少问题发生，提交时审计兜底检测漏网之鱼——两者互补。设计文档见 [audit-design.md](../docs/audit-design.md)。
 
 ---
 

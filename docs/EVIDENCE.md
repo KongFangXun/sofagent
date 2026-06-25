@@ -4,7 +4,11 @@
 
 > ⚠️ **诚实声明**：以下数据含作者自测。复盘评分为 LLM 自评（非 OpenClaw 平台无工程隔离）。企业级评估请等待 v0.9 加密 + 外部评估器。当前数据适合探索性评估，不适用于生产决策。
 
-> 📊 **A/B benchmark 数据**：v0.81-v0.83 共五组 A/B 数据。约束层在 WorkBuddy 对话模式仅 1/10 明确增量（任务 10），CLI 一击 0/16 全失效（见 [反案例 002](./anti-cases/002-cli-one-shot-ineffective.md)）。但独立测试者代码重构 A/B 测出纪律层增量：纪律性 8→10（+2），首次通过率 60%→100%（+40%）。详见 [benchmark 目录](./benchmark/)。方法论局限：[反案例 001](./anti-cases/001-benchmark-self-test-circularity.md)
+> 📊 **A/B benchmark 数据**：
+>
+> **v0.92 OpenClaw 对照实验**：同一模型在独立 session 中跑 Task 1（camelCase → snake_case），sofagent 组变量名误伤率 0%（0/7），裸 Agent 组误伤率 100%（7/7）。纪律性 +2，首次通过率持平。详见 [OpenClaw Task 1 对照](./benchmark/2026-06-25-openclaw-task1-control.md)。
+>
+> **v0.81-v0.83 历史数据**：五组 A/B。约束层在 WorkBuddy 对话模式仅 1/10 明确增量，CLI 一击 0/16 全失效（见 [反案例 002](./anti-cases/002-cli-one-shot-ineffective.md)）。独立测试者代码重构 A/B 测出纪律层增量：纪律性 8→10（+2），首次通过率 60%→100%（+40%），但存在知识传递效应未排除的方法论局限（见 [反案例 001](./anti-cases/001-benchmark-self-test-circularity.md) 和 [WorkBuddy A/B 警告](./benchmark/2026-06-23-workbuddy-ab.md)）。
 
 ---
 

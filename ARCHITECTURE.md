@@ -1,8 +1,8 @@
 # sofagent Architecture
 
-> 一个不是很懂代码的产品经理，在设计 Agent 纪律层时都想了些什么。这里只写设计决策、权衡取舍、已知局限，以及为什么故意不做某些事。各节按 Handbook 章节顺序排列，方便对照。
+> 一个只懂点前端代码的产品经理，在设计 Agent 纪律层时都想了些什么。这里只写设计决策、权衡取舍、已知局限，以及为什么故意不做某些事。各节按 Handbook 章节顺序排列，方便对照。
 >
-> > v0.91 · 2026-06-25 · 孔放勋
+> > v0.92 · 2026-06-25 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -42,16 +42,18 @@ sofagent 分两层——地基轻、引擎重，这是有意为之：
 
 治理底座必须永远在线，不管任务简单还是复杂。
 
-### 产品架构展望（四层）
+<a id="fde-architecture"></a>
+### 产品架构展望（五层）
 
-最终形态是四层，每层独立验证，下层为上层的底座：
+最终形态是五层，每层独立验证，下层为上层的底座：
 
 | 层 | 部署在哪 | 干什么 | 当前状态 |
 |:--:|------|------|:--:|
 | **纪律层** | Agent 上下文 | 纯 MD 文件（SKILL.md + engine.md + think.md + rules.md），Agent 读即生效 | ✅ 已可用 |
-| **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失、定时清理。不依赖任何 Agent 平台 | ✅ v0.81 |
-| **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff，不依赖 Agent 配合 | v0.91 |
-| **协同层** | 多设备 + 云端 | TaskBoard 云端管理 + 多设备任务分发 + 企业协同平台推送 | v2.x 规划 |
+| **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失、定时清理 | ✅ v0.81 |
+| **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff，不依赖 Agent 配合 | ✅ v0.92 |
+| **MCP 推送层** | 设备 MCP server | 文件监听 + 主动推送——任务完成直接推到企业协作平台 | v0.94 |
+| **协同层** | 多设备 + 云端 | 多设备任务分发 + 联邦治理 | v2.x 规划 |
 
 每层跑通再加下一层——不推翻已验证的东西。
 
@@ -68,18 +70,15 @@ sofagent 分两层——地基轻、引擎重，这是有意为之：
 
 LLM 管判断、脚本管执行、Runtime 管刹车——天然的分界。
 
+### 为什么 OpenClaw 是唯一底座
+
+选 OpenClaw 三个理由：开源 + Node.js（技术栈一致，深度集成）、原生编排（AO compose 拆解 → DAG 执行）、Agency Agent 兼容（同一开发者，233 个岗位模板直接对接）。
+
+设备上安装 OpenClaw 后，任意 Agent（WorkBuddy、Claude Code、用户自选）都能被作为 sub agent 调度。固定 workflow 节点只需首次 AO compose 编排 + Agency Agent 注入模板，之后每次开启新 session 复用即可。
+
 #### 技术选型演进：bash → Node.js/TypeScript
 
-bash 在纪律层阶段是对的（零依赖、透明、exit code 判断），但到了设备/审计/协同层是错的工具——分层演进：
-
-| 架构层 | 合适的工具 | 为什么 |
-|:--:|---------|------|
-| **纪律层**（install/verify/task-record） | bash 保持不变 | 一次性执行、文件操作、exit code |
-| **执行层**（daemon 常驻进程） | Node.js/TypeScript | 信号处理、子进程管理、定时调度 |
-| **审计层**（sofagent-audit） | Node.js/TypeScript | git diff 解析、AST 检查、GitHub Action |
-| **协同层**（设备控制器） | Node.js/TypeScript | 任务队列、多设备同步、API 推送 |
-
-**触发条件**：bash 脚本数 > 20 或同一脚本重构次数 > 3 时评估迁移。选 TypeScript 因为提供类型安全，能避免 JSON 状态文件和 git diff 解析时的运行时错误。
+bash 在纪律层阶段是对的（零依赖、透明、exit code 判断），但到了设备/审计/协同层是错的工具。纪律层保持 bash，执行层/审计层/协同层迁移到 Node.js/TypeScript——提供类型安全，避免 JSON 状态文件和 git diff 解析时的运行时错误。触发条件：bash 脚本数 > 20 或同一脚本重构次数 > 3。
 
 <a id="white-box-loop"></a>
 ### 白盒循环：为什么不在 `/goal` 原版上直接跑
@@ -88,7 +87,7 @@ Claude Code 的 `/goal` 是纯黑盒——目标给出去后 Agent 闷头跑，�
 
 | 我加的 | /goal 原版 | 为什么 |
 |------|------|------|
-| 用户确认 | 循环自主跑到底 | 不懂代码的人不敢让它黑盒跑——先看一眼提案再执行 |
+| 用户确认 | 循环自主跑到底 | 只懂点前端代码的人不敢让它黑盒跑——先看一眼提案再执行 |
 | 硬层/软层分离 | 没明确切分 | SKILL.md 是硬层，Agent 碰不了；scoring.md + think.md 是软层，Agent 自己进化 |
 
 白盒的关键不是加了确认按钮，是**用户和 Agent 一起把目标定清楚，再启动编排**。
@@ -99,15 +98,13 @@ Claude Code 的 `/goal` 是纯黑盒——目标给出去后 Agent 闷头跑，�
 
 ### 模型与 Harness 的博弈
 
-模型会吃掉一部分 Harness——任务拆解、上下文选择、工具调用，这些能力模型自己越来越强。但生产级 Harness 不会死，它从「外部脚手架」升级成「生产级 Agent 运行的底座」。模型决定能想到哪步，Harness 决定能不能把事情做完。
-
-Google 的 Anti Gravity 已将这个方向产品化——跨 Search/Gemini/Cloud/AI Studio 的统一 Agent Harness 运行框架。sofagent 选择「厚在治理」正是这个趋势的印证：模型越强，纪律层越重要（Agent 越强，闸门越重要）。
+模型会吃掉一部分 Harness——任务拆解、上下文选择、工具调用，这些能力模型自己越来越强。但生产级 Harness 从「外部脚手架」升级成「生产级 Agent 运行的底座」。模型决定能想到哪步，Harness 决定能不能把事情做完。Agent 越强，闸门越重要。
 
 ---
 
 ## 二、核心设计决策
 
-> 一个不懂代码的人做的设计决策——有疑问直接开 Issue，我大概率说不过你。
+> 一个只懂点前端代码的人做的设计决策——有疑问直接开 Issue，我大概率说不过你。
 
 <a id="500-char"></a>
 ### 500 字原则（[Handbook §一](./HANDBOOK.md#一厚在治理薄在复用)）
@@ -177,9 +174,23 @@ Worktree 不是全局默认——只在共享仓库场景下触发。选 git wor
 
 `ao compose` 生成的 YAML 存到 `.sofagent/orchestrator/workflows/`——定义角色、任务分解、依赖关系。**用户不用手写，看就行。**
 
-### 渐进式披露：索引卡片不是路由机制，是上下文策略
+### Session 生命周期：为什么需要关闭重开
 
-索引卡片——每张卡 5 个字段、控制在 500 字符以内。主文件只告诉模型「这里有什么」，需要时再引导读取完整实现。好处：省上下文（先扫卡片再决定加载）、结构清晰（卡片是目录，实现是正文）、五要素对应渐进式披露三阶段（知道→判断→找到）。
+企业 workflow 中的固定节点 Agent 会反复执行同类任务，session 越滚越长会导致上下文爆炸和记忆混乱。解决方案：每次任务完成（或每 N 小时）触发记忆蒸馏——提炼关键决策 + 踩过的坑 → MCP server 持久化为结构化记忆（JSONL）→ 关闭旧 session → 新 session 通过 MCP 读到蒸馏记忆，轻装上阵。
+
+这和 think.md + loop-check 一脉相承，区别是：强制触发（不是 Agent 自觉）、结构化存储（不是自然语言 MD）、主动注入（不是新 session 自己读）。
+
+> 🔒 **数据主权在设备**：所有记忆文件、task/logs、think.md 都只在设备本地 `.sofagent/` 目录，不经过云端。企业决策者最关心的问题——「Agent 处理的数据去哪了」——答案是哪也没去，就在这台设备上。这和 sofagent-dev 的 Task Board 产品层不同：Task Board 展示结果需要云端，但原始数据和记忆永远在本地。
+
+### 多设备记忆管理：从单设备到企业知识库
+
+一台设备跑久了，积累的记忆和 task/logs 是散落在本地的。多台设备一起跑，问题变成：怎么让「A 设备的 bug fix 经验被 B 设备的 Agent 读到」？
+
+**第一阶段（v2.x 早期）**：设备间记忆索引——每台设备通过 MCP server 暴露 `sofagent_list_memories` 接口，只给元数据不传原始数据。**第二阶段（v2.x）**：企业 Agent 知识库——蒸馏记忆同步到企业自有 NAS/云盘，由专职「知识库管理员 Agent」自动分类、去重、建索引。知识库底层检索引擎推荐 [RAGFlow](https://github.com/infiniflow/ragflow)。
+
+> 💡 不把数据存到 sofagent 的服务器。企业信不过开源项目的数据库——但信自己的 NAS 和企业云盘。sofagent 做连接器和查询层，存储永远在企业自己指定的地方。
+
+索引卡片——每张卡 5 个字段、控制在 500 字符以内。主文件只告诉模型「这里有什么」，需要时再引导读取完整实现。先扫卡片再决定加载，五要素对应渐进式披露三阶段。
 
 ### 不要写显而易见的事：Skill 写作的第一原则
 
@@ -217,16 +228,12 @@ Flash 和 Pro 差约 4 倍价，但简单任务 Flash 质量并不明显逊色�
 <a id="token-economics"></a>
 ### 编排开销的经济学：一次多花 3%，十次省回来
 
-Loop 机制每次任务比裸跑多消耗约 2,000–5,000 token（约占 128K 窗口的 2–4%）。值得花——这些 token 用于沉淀最优拆法、记住踩过的坑、自动调整 Skill 信任等级。跑一次多花的 token，后面十次省回来了。
-
-token 价格的长期趋势往下，每降一个数量级，编排开销的占比就缩一个数量级。
+Loop 机制每次任务比裸跑多消耗约 2,000–5,000 token（约占 128K 窗口的 2–4%）。值得花——这些 token 用于沉淀最优拆法、记住踩过的坑、自动调整 Skill 信任等级。跑一次多花的 token，后面十次省回来了。token 价格长期往下，每降一个数量级，编排开销的占比就缩一个数量级。
 
 <a id="a-b-test"></a>
 ### A/B 测试为什么不是一次性评估
 
-sofagent 的 A/B 测试是 4 步渐进沉淀：同一类任务做 3 次以上 → 某种拆法连续 2 次复盘最高 → 标记为候选模板 → 再跑 2 次依然稳定 → 正式沉淀进 orchestrator/。
-
-保守是因为 LLM 复盘本身有偏差——一次高分可能是运气，连续高分才可能是规律。A/B 是持续进行的进化机制，不是一次性决策。
+sofagent 的 A/B 测试是 4 步渐进沉淀：同一类任务做 3 次以上 → 某种拆法连续 2 次复盘最高 → 标记为候选模板 → 再跑 2 次依然稳定 → 正式沉淀进 orchestrator/。保守是因为 LLM 复盘有偏差——一次高分可能是运气，连续高分才可能是规律。
 
 ### 渐进初始化：为什么模板是单文件而非预建目录树
 
@@ -299,23 +306,13 @@ orchestrator/、scoring/ 这些目录可能有几百条记录——全读到上�
 
 ## 三、诚实坦白：已知局限
 
-> 17 条已知局限详见 **[LIMITATIONS.md](./LIMITATIONS.md)**。核心局限摘要：
-
-| 局限 | 等什么 |
-|------|------|
-| 治理层自身在上下文里——约束力 = Agent 注意力 × 平台加载可靠性 | 架构宿命 |
-| [加载链步进脆弱性](./LIMITATIONS.md#加载链步进脆弱性v060v062-验证结论)——非 OpenClaw 平台可能跳过 | 各平台支持 Hook |
-| [复盘评分是 LLM 自评](./LIMITATIONS.md#复盘评分是-llm-自评评审者与执行者不分离)——评审者与执行者不分离 | v0.9x 外部评估器 |
-| Skill 自进化处于经验记录阶段——单次轨迹不可靠 | v0.92 验证门控 |
-| 定时触发做不到——只有「每次对话启动」一种 | 平台支持 cron |
-| 不是分布式系统——没有 agent-to-agent 通信 | v2.x router |
-| [核心效果缺持续数据](./LIMITATIONS.md#核心效果未实测)——11 Case 全是一次性测试 | 社区补持续使用 + A/B |
+> 17 条已知局限详见 **[LIMITATIONS.md](./LIMITATIONS.md)**。核心局限：治理层自身在上下文里（约束力 = Agent 注意力 × 平台加载可靠性）、加载链步进脆弱性（非 OpenClaw 平台可能跳过）、复盘评分是 LLM 自评（评审者与执行者不分离）、Skill 自进化处于经验记录阶段、核心效果缺持续数据。
 
 > 💡 其他文档引用已知局限时，统一指向 `LIMITATIONS.md` 对应锚点，不在各自文档里重复摘抄——改一处，全局生效。
 
 ---
 
-## 五、未来方向
+## 四、未来方向
 
 > 仅供后续版本设计参考。路线图详见 [ROADMAP.md](./ROADMAP.md)。
 
@@ -331,52 +328,19 @@ orchestrator/、scoring/ 这些目录可能有几百条记录——全读到上�
 
 ---
 
-## 六、评审洞察
-
-> 两份独立外部评审带来了 v0.85 的战略校准。完整分析见 [v0.85 开发日志](./docs/changelog/v0.85.md)。
-
-### 洞察 1：三层差异化——约束层 / 纪律层 / 持久化层
-
-| 层 | 当前能力 | 被覆盖程度 | 增量天花板 |
-|:--:|------|:--:|:--:|
-| **约束层**（base） | 4 底线 + 10 铁律的拒绝/追问行为 | 高——模型安全训练覆盖 | ★☆☆（<12 个月） |
-| **纪律层**（value） | 先读再用 / 验证再干 / 谨慎修改 | 低——没有人替你管工程纪律 | ★★★★★（3-5 年） |
-| **持久化层** | think.md + task/logs + daemon | 中——平台不会做本地文件治理 | ★★★☆（取决于执行） |
-
-约束层是地基，纪律层是当前被验证的真价值层。
-
-### 洞察 2：运行时治理 vs 提交时审计
-
-| 维度 | 运行时治理（当前） | 提交时审计（新方向） |
-|------|------|------|
-| 依赖 Agent 配合 | ✅ 必须 | ❌ 不需要 |
-| 跨平台 | ⚠️ OpenClaw 全功能，其他 30% | ✅ 任何 git 仓库 |
-| Agent 能绕过 | ✅ 能 | ❌ 不能（看的是 diff） |
-
-两者互补：运行时治理减少问题发生，提交时审计兜底检测漏网之鱼。审计工具用法见 [HANDBOOK §提交后审计](./HANDBOOK.md#提交后审计agent-改完代码你凭什么信)，源码见 `sofagent-audit/src/`。
-
-### 洞察 3：从「工具」转向「标准」（远期方向）
-
-把纪律规则从"运行时约束"变成"可引用的开放标准"——类似 .editorconfig 之于编辑器：不是最强大的，但是唯一跨平台的。sofagent 的 SKILL.md 宪法就是 Agent 世界的 .editorconfig。v1.0+ 评估。
-
----
-
-## 七、参考与致谢
+## 五、参考与致谢
 
 sofagent 站在这些人和作品的基础上：
 
-| 来源 | 启发 | 链接 |
-|------|------|------|
-| **OpenClaw** | 运行平台——加载链、Hook、Skill 系统、session 隔离 | [github.com/openclaw/openclaw](https://github.com/openclaw/openclaw) |
-| **DeepSeek + GLM** | 模型引擎——本项目所有文件由 DeepSeek V4 Pro 和 GLM-5.2 配合生成 | [deepseek.com](https://deepseek.com) · [z.ai](https://z.ai) |
-| **Addy Osmani** | Loop Engineering 五大件架构、语义化停止条件、三盆冷水 | [Loop Engineering 原文](https://addyo.substack.com/p/loop-engineering) |
-| **Anthropic** | Managed Agents 四层架构——sofagent 核心设计哲学的源头 | [Scaling Managed Agents](https://www.anthropic.com/engineering/managed-agents) |
-| **Codex / Claude Code** | 五层上下文压缩策略、决策冻结、增量笔记 | [codex.ai](https://codex.ai) |
-| **agency-orchestrator** | `ao compose` 意图识别→任务图生成→模板匹配→分配（Apache-2.0） | [github.com/jnMetaCode/agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator) |
-| **Andrej Karpathy** | 思考先行、简约至上、精准修改、目标驱动——铁律在此基础上扩展 | [4 条编码原则](https://github.com/multica-ai/andrej-karpathy-skills) |
-| **Nelson F. Liu et al.** | *Lost in the Middle*（2023）——500 字原则和加载链顺序的科学依据 | [arXiv 2307.03172](https://arxiv.org/abs/2307.03172) |
-| **Matt Pocock** | 调试方法论——loop-check 验收闸的排查框架 | [github.com/mattpocock/skills](https://github.com/mattpocock/skills) |
-| **AI 代码审查实验**（146 PR × 4 AI Reviewer） | 93.4% 的问题仅被单一工具识别，0% 被所有工具共同识别——验证 loop-check + scoring + 人类审查三层设计的必要性 | AI 时代代码审查范式转移笔记 |
+| 来源 | 启发 |
+|------|------|
+| **OpenClaw** | 运行平台——加载链、Hook、Skill 系统、session 隔离 |
+| **DeepSeek + GLM** | 模型引擎——所有文件由二者配合生成 |
+| **Addy Osmani** | Loop Engineering 五大件架构、语义化停止条件 |
+| **Anthropic** | Managed Agents 四层架构——核心设计哲学源头 |
+| **agency-orchestrator** | `ao compose` 意图识别→任务图生成→模板匹配→分配 |
+| **Andrej Karpathy** | 思考先行、简约至上、精准修改、目标驱动——铁律在此基础上扩展 |
+| **Nelson F. Liu et al.** | *Lost in the Middle*——500 字原则和加载链顺序的科学依据 |
 
 > 更多外部研究引用（MAGMA、SkillOpt、Google Skill 模式、多智能体成本研究等）详见 [DEVELOPMENT.md](./DEVELOPMENT.md) 对应章节。
 

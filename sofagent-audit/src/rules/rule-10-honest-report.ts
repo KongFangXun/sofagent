@@ -4,8 +4,8 @@
 // 违规 → exit code 1（警告）
 // ============================================================
 
-import { execSync } from 'child_process';
-import type { RuleCheck } from '../reporter';
+import { execFileSync } from 'child_process';
+import type { AuditContext, RuleCheck } from './types';
 
 const PLACEHOLDER_PATTERNS = [
   /^(fix|update|wip|test|chore|doc|refactor)$/i,
@@ -15,7 +15,7 @@ const PLACEHOLDER_PATTERNS = [
   /^tmp/i,
 ];
 
-export function checkRule10(): RuleCheck {
+export function checkRule10(ctx: AuditContext): RuleCheck {
   const rule: RuleCheck = {
     name: '铁律 #10 如实汇报',
     number: 10,
@@ -24,7 +24,7 @@ export function checkRule10(): RuleCheck {
   };
 
   try {
-    const message = execSync('git log -1 --pretty=%B', { encoding: 'utf-8' }).trim();
+    const message = execFileSync('git', ['log', '-1', '--pretty=%B'], { encoding: 'utf-8' }).trim();
 
     if (!message) {
       rule.status = 'FAIL';

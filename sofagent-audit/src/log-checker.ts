@@ -39,17 +39,18 @@ export function checkLogs(logDir?: string): LogEntry[] {
       for (const { name } of sorted.slice(0, 10)) {
         try {
           const content = readFileSync(join(dir, name), 'utf-8');
+          const op = extractOperation(content);
           entries.push({
             timestamp: statSync(join(dir, name)).mtime,
-            operation: extractOperation(content),
+            operation: op,
             raw: content,
           });
-          // 提取文件引用
+          // 提取文件引用——继承父日志操作类型，让 getReadAccessMap 能正确关联文件与操作
           const fileRefs = extractFileReferences(content);
           for (const ref of fileRefs) {
             entries.push({
               timestamp: statSync(join(dir, name)).mtime,
-              operation: 'file-access',
+              operation: op,
               file: ref,
               raw: content,
             });
@@ -69,17 +70,33 @@ export function checkLogs(logDir?: string): LogEntry[] {
 
 /**
  * 从日志内容中提取操作类型
+ * 结构化操作上下文检查（逐行匹配）+ 否定语义过滤
+ * 不再使用 content.includes() 子串匹配——避免整篇日志中任意出现的关键词被误判为操作
  */
 function extractOperation(content: string): string {
-  if (content.includes('Read') || content.includes('读取') || content.includes('read_file')) {
-    return 'read';
+  const lines = content.split('\n');
+
+  // 否定语义模式：「未读取」「跳过读取」「没有读取」等不算 Read 操作
+  const negateRead = /(未|没有|没|跳过|不|did\s+not|skip(ped)?)\s*(read|读取)/i;
+
+  // 按优先级逐行检查操作上下文：read > write > execute
+  // 注意：\b 词边界只对英文 [a-zA-Z0-9_] 有效，中文关键词需单独匹配
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (negateRead.test(trimmed)) continue; // 否定语义过滤
+    if (/\b(read|read_file)\b/i.test(trimmed) || /读取/.test(trimmed)) return 'read';
   }
-  if (content.includes('Write') || content.includes('写入') || content.includes('write_to_file')) {
-    return 'write';
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/\b(write|write_to_file)\b/i.test(trimmed) || /写入/.test(trimmed)) return 'write';
   }
-  if (content.includes('Bash') || content.includes('执行') || content.includes('run_command')) {
-    return 'execute';
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/\b(bash|run_command)\b/i.test(trimmed) || /执行/.test(trimmed)) return 'execute';
   }
+
   return 'other';
 }
 
@@ -90,7 +107,11 @@ function extractFileReferences(content: string): string[] {
   const refs: string[] = [];
   // 匹配常见的文件路径模式
   const patterns = [
+    // 带扩展名的文件路径
     /[`"']?([a-zA-Z0-9_\-/.]+\.(?:ts|js|py|md|json|yaml|yml|sh|tsx|jsx|html|css))[`"']?/g,
+    // 无扩展名的常见文件（Makefile、Dockerfile、.env 等）
+    /[`"']?(Makefile|Dockerfile|docker-compose\.ya?ml|\.env(?:\.\w+)?|\.gitignore|\.editorconfig|Jenkinsfile|Vagrantfile|LICENSE|CHANGELOG)[`"']?/gi,
+    // file/path/文件 标签后的路径
     /(?:file|path|文件)[:：]\s*([^\s,\n]+)/gi,
   ];
 
