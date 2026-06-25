@@ -44,6 +44,28 @@ _log() { echo "[$(date '+%H:%M:%S')] $1" >> "${INSTALL_LOG:-/dev/null}"; }
 QUICK_MODE="${QUICK_MODE:-0}"
 REMOTE_MODE="${REMOTE_MODE:-0}"
 
+# ── 环境检测（区分 WSL/Windows/Linux/macOS）──
+_detect_env() {
+  local env_name="unknown"
+  if [ -n "${WSL_DISTRO_NAME:-}" ]; then
+    # 仅认 WSL_DISTRO_NAME——WSLENV 在装了 WSL 的 Windows 主机上也会被设，不能作判据
+    env_name="WSL (${WSL_DISTRO_NAME:-unknown})"
+  elif [ -n "${MSYSTEM:-}" ]; then
+    env_name="MSYS2/Git Bash ($MSYSTEM)"
+  elif [ -n "${CYGWIN:-}" ]; then
+    env_name="Cygwin"
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    env_name="macOS"
+  elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    env_name="Linux"
+  elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+    env_name="Windows (native bash)"
+  fi
+  echo "$env_name"
+}
+
+RUNTIME_ENV=$(_detect_env)
+
 # v0.90 P0-1 修复：提前保存原始参数 + 预扫描 --remote
 # 原因：远程安装检查在完整参数解析之前执行，需要先拿到 REMOTE_MODE 和 ORIGINAL_ARGS
 ORIGINAL_ARGS=("$@")
@@ -58,6 +80,16 @@ echo "  ╔═══════════════════════
 echo "  ║   sofagent Harness · installer   ║"
 echo "  ╚═══════════════════════════════════╝"
 echo ""
+info "运行环境: $RUNTIME_ENV"
+
+# Windows 原生 bash（非 WSL）提示使用 PowerShell 脚本
+if [[ "$RUNTIME_ENV" == "Windows (native bash)" ]] && [ -z "${WSL_DISTRO_NAME:-}" ]; then
+  warn "检测到 Windows 原生 bash 环境"
+  warn "  建议使用 PowerShell 脚本: .\\install.ps1 -Platform workbuddy"
+  warn "  bash 脚本在 Windows 上可能遇到 CRLF 换行符问题"
+  warn "  如坚持使用 bash，请确保脚本已转换为 LF 换行符"
+  echo ""
+fi
 fi
 
 # ── 远程安装模式（curl pipe bash 场景）──

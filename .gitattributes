@@ -1,0 +1,9 @@
+# shell 脚本强制 LF —— core.autocrlf=true 下防止 checkout 成 CRLF，
+# 否则在 Linux/Alpine/WSL 里会 `bad interpreter: /bin/sh^M` 跑不了。
+*.sh   text eol=lf
+*.bash text eol=lf
+
+# Windows 脚本用 CRLF
+*.ps1  text eol=crlf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf

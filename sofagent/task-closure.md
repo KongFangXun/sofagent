@@ -16,7 +16,11 @@
 >   --cost 0.15 \
 >   --skills "task-aware"
 > ```
-> bash 不可用时降级为 LLM 直接追加写入 `{SOFAGENT_DATA}/task/logs/YYYY-MM/YYYY-MM-DD.md`（格式参考 `data/task.md`）。
+> 🖥️ **Windows PowerShell（非 WSL，无 bash）**等价命令（见 SKILL.md「跨平台脚本调用约定」）：
+> ```powershell
+> powershell -File {OPENCLAW_SCRIPTS}/task-record.ps1 -Task "任务简述" -Result "成功|失败|部分完成" -Model "deepseek-v4|..." -Tokens 4500 -Cost 0.15 -Skills "task-aware"
+> ```
+> 两者都不可用时降级为 LLM 直接追加写入 `{SOFAGENT_DATA}/task/logs/YYYY-MM/YYYY-MM-DD.md`（格式参考 `data/task.md`）。
 
 ```
 ⬜ ① 写 task/logs（命令见上方引用块）
