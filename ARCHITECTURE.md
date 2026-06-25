@@ -341,6 +341,9 @@ sofagent 站在这些人和作品的基础上：
 | **agency-orchestrator** | `ao compose` 意图识别→任务图生成→模板匹配→分配 |
 | **Andrej Karpathy** | 思考先行、简约至上、精准修改、目标驱动——铁律在此基础上扩展 |
 | **Nelson F. Liu et al.** | *Lost in the Middle*——500 字原则和加载链顺序的科学依据 |
+| **AI 代码审查实验（146 PR × 4 AI Reviewer）** | 93.4% 的问题仅被单一 AI 工具识别，0% 被所有工具共同识别——多视角评估不是「nice to have」，是「must have」。验证 sofagent loop-check + scoring + 人类审查三层设计 |
+| **Google Cloud Code 论文** | Agent 运行时 7 组件架构（entry → context → loop → permission → state）。核心结论：loop 不是产品——Harness 的可控性、可恢复性、可审计性才是上生产的决定因素 |
+| **Hirom 定律 + Lima 演化定律** | 系统所有可观察行为都会被依赖 + 不加控制则复杂度持续增长。验证 sofagent 「先读再用」「验证再干」「谨慎修改」三条铁律的理论根基 |
 
 > 更多外部研究引用（MAGMA、SkillOpt、Google Skill 模式、多智能体成本研究等）详见 [DEVELOPMENT.md](./DEVELOPMENT.md) 对应章节。
 
