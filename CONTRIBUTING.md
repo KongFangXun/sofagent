@@ -43,6 +43,8 @@
 bash sofagent/scripts/install.sh && bash sofagent/scripts/verify.sh
 ```
 
+> 💡 只改了 .sh 脚本？跑 `bash sofagent/scripts/check-portability.sh` 做语法检查就行，比完整安装验证快。
+
 通过就可以提 PR。
 
 > 💡 你不需要会写代码。跑一周 sofagent，回来告诉我们发生了什么——不管好坏。

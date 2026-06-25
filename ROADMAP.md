@@ -59,7 +59,7 @@
 
 | # | 交付物 | 说明 |
 |:--:|------|------|
-| 1 | **sofagent-audit MVP** | TypeScript CLI，扫描 git diff 对标 4 条铁律（#1/#3/#7/#10），exit code 0/1/2。不依赖 Agent 配合、跨平台、Agent 无法绕过 |
+| 1 | **sofagent-audit MVP** | TypeScript CLI，扫描 git diff 对标 4 条铁律（#1/#3/#7/#10），exit code 0/1/2。不依赖 Agent 运行时配合，跨平台 |
 | 2 | **ARCHITECTURE 瘦身** | 710→378 行（47% 减），只回答"为什么这么设计" |
 | 3 | **ROADMAP 版本号理顺** | v0.9 15+ 处引用 → 按内容分拆为 v0.91/v0.92/v0.93 |
 | 4 | **COMMUNITY.md** | 社区状态 + 贡献者阶梯 + 透明指标看板 |
@@ -92,7 +92,7 @@
 | 2 | **ROADMAP 砍削** | 20+ 项企业级功能砍到合规刚需 3 项 + 验证工具 3 项 |
 | 3 | **验证实验设计** | 45 组对照（3 模型 × 5 任务 × 3 次），确定性指标 + 盲评 + 反转设计 |
 | 4 | **sofagent Lite** | `install.sh --lite`——30 秒只装宪法层 |
-| 5 | **sofagent-audit 方向确立** | 提交时审计——从预防转向检测，不依赖 Agent 配合 |
+| 5 | **sofagent-audit 方向确立** | 提交时审计——从预防转向检测，不依赖 Agent 运行时配合 |
 | 6 | **编排引擎降级** | `--no-ao` 升为非 OpenClaw 推荐默认 |
 
 **能用的（v0.84 继承）**：OpenClaw 上 Agent 能读到宪法，复杂任务自动拆解，跑完自我复盘。日志脱敏，过期数据清理。`install.sh` 一键安装。daemon 已跑通骨架。5 组 A/B benchmark 数据已回。
@@ -240,20 +240,30 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 
 ### v0.9x — 纪律层验证 + 工程基底
 
-#### v0.93：工程迁移 + MCP 设计
+#### v0.93：工程迁移 + 检测精度闭环 + 文档修缮
 
-- bash→TypeScript 逐脚本迁移（从 verify-evidence.sh、skill-safety-check.sh 开始）
-- task/logs 从自然语言 MD → JSONL 结构化日志
-- MCP server 设计：文件监听 + 主动推送 + webhook 客户端
-- discipline-check.sh + sofagent-audit 完整版
-- 数据存储安全声明
+- 3 个边角误报修复（deleted 文件 / docker build 漏检 / 低风险排除）
+- bash→TypeScript 逐脚本迁移（verify-evidence.sh、skill-safety-check.sh 起）
+- 检测精度闭环：合成测试工具化 + 真实数据采集
+- 10 组对照实验执行
+- Windows 社区 PR 合入跟进（.ps1 审查 / .gitattributes / shasum 跨平台）
+- 文档修缮：中英文定位对齐、信任模型表述精确化、前置依赖表补全、SECURITY.md 刷新
+- 新增 `--strict` 模式：CI 中无日志直接 FAIL
 
-#### v0.94：MCP server MVP + Agency Agent 对接
+> ⚠️ 如果 10 组实验增量无法复现，工程迁移部分缩减为「仅实验分析 + 结果发表」，bash→TS 迁移顺延到后续版本。JSONL 结构化日志和 MCP server 设计已在 v0.94。
 
+#### v0.94：JSONL 结构化日志 + MCP server MVP + Agency Agent 对接 + 文档精修
+
+- task/logs JSONL 结构化日志：MD→JSONL，审计工具精确匹配
 - MCP server MVP：watch `.sofagent/task/logs/`，任务完成立即推送
 - 对接 Agency Agent 模板库（同一开发者，天然兼容，不需要从零建模板注入器）
 - OpenClaw 预装集成：`install.sh` 自动装 OpenClaw + 注册系统服务
 - 合规三件套（脱敏增强 + 审计报告 + 保留策略强制执行）
+- **文档精修**：DEVELOPMENT.md 重构（绿灯路径检测独立成节 + 状态账本模板）、ARCHITECTURE.md 引用砍削（Hirom+Lima 合并）、信任模型缓解措施完善
+- **社区复现计划**：标准化复现脚本 + COMMUNITY.md 第三方复现任务入口
+- demo.gif 录制（实验数据完整后）
+
+> ⚠️ 如果 10 组实验增量无法复现，MCP server 和 Agency Agent 对接顺延，优先做文档精修和社区复现。
 
 #### v0.95：首个企业平台 webhook
 
@@ -334,6 +344,11 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 | **CI/CD Gate** | 工程团队 / DevOps | 铁律打包成 GitHub Action，PR 自动检查 Agent 生成的代码 |
 | **sofagent Lite** | 个人开发者 | 只有宪法（SKILL.md）+ 反思（think.md），30 秒装好 |
 | **审计报告** | 企业管理者 / 合规 | task/logs → "你的 Agent 这周有没有违反铁律"的周报 |
+| **轻量插件** | 非 OpenClaw 平台用户 | 浏览器/IDE 插件在 DOM 层注入 1-2 条核心铁律，最低限度的纪律层 |
+| **双闸验证** | 安全敏感场景 | 工具执行前 gate + 执行后副作用复查（Google Cloud Code 模式）——不光问「能不能做」，还要问「做完了对不对」 |
+| **审计工具健康度** | DevOps / 长期运维 | sofagent-audit 规则本身也需要被审计——规则是否因模型升级失效？baseline 是否悄悄漂移？ |
+| **Agent 疲劳度检测** | 长时间任务用户 | 监控上下文窗口污染和决策质量衰减信号，铁律 #2 的专门化扩展 |
+| **IDE 实时防护整合** | Cursor/Copilot 用户 | 与 IDE 原生能力（diff 级撤销、inline suggestion）的整合方向 + 道德风险检测 |
 
 ---
 

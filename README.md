@@ -10,7 +10,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9FStarred)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
-<!-- TODO: demo.gif — 15s 左右对比: 裸 Agent 跑偏 vs sofagent 约束后正常 -->
+<!-- TODO v0.94: demo.gif — 15s 左右对比: 裸 Agent 跑偏 vs sofagent 约束后正常。v0.93 暂无素材，完成后再录 -->
 
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
 
@@ -160,7 +160,7 @@ sofagent 的终局是一台设备上的 **Agent 纪律委员**——安装时自
 
 v0.85 确立的新主线方向——**从运行时治理（预防）转向提交时审计（检测）**。
 
-当前架构依赖 Agent 配合读取 MD 文件——不配合就全失效（CLI 0/16）。审计方向不依赖 Agent 配合，看的是已经发生的 git diff：
+当前架构依赖 Agent 配合读取 MD 文件——不配合就全失效（CLI 0/16）。审计方向不依赖 Agent 运行时配合（看的是已经发生的 git diff），但依赖 Agent 诚实记录了日志：
 
 ```bash
 # v0.92（v0.91 MVP + v0.92 审查修复）
@@ -171,7 +171,7 @@ sofagent-audit --diff HEAD~1..HEAD --task "任务描述"
 ⚠️ 铁律 #7 谨慎修改：本次 diff 修改了 3 个不在任务范围内的文件
 ```
 
-> 💡 为什么不依赖 Agent 配合就是杀手级：(1) 看的是 git diff，Agent 没法绕过；(2) 跨平台，任何 git 仓库都能跑；(3) 确定性输出 exit code，不是 LLM 评分。
+> 💡 为什么审计方向是杀手级：(1) 看的是 git diff，Agent 没法绕过运行时行为；(2) 跨平台，任何 git 仓库都能跑；(3) 确定性输出 exit code，不是 LLM 评分。⚠️ 但审计工具依赖 Agent 写入的 `.sofagent/task/logs/` 日志——如果 Agent 不写日志或日志不完整，铁律 #1/#3 的检查会退化。这不影响铁律 #7（谨慎修改）和 #10（如实汇报），它们只看 git diff。详见 [LIMITATIONS.md](./LIMITATIONS.md)
 
 > ⚠️ **审计依赖说明**：铁律 #1/#3 的日志检查依赖 `.sofagent/task/logs/` 目录——如果 Agent 不写日志或日志不完整，审计会退化。详见 [LIMITATIONS.md](./LIMITATIONS.md)。
 
@@ -228,10 +228,10 @@ skillhub install sofagent
 |------|------|------|------|
 | bash | ≥4 | install.sh / task-record.sh | `bash --version` |
 | git | 任意 | clone 仓库、task/logs 追溯、worktree 隔离 | `git --version` |
-| node | ≥18 | `ao compose` 编排引擎（agency-orchestrator）| `node --version` |
+| node | ≥18 | `ao compose` 编排引擎（agency-orchestrator）+ sofagent-audit 审计工具 | `node --version` |
 | npm | ≥9 | 全局安装 agency-orchestrator | `npm --version` |
 
-> 💡 WorkBuddy 用户若不跑编排引擎（只用宪法层约束），node/npm 可不带——v0.85 起 `--no-ao` 升为非 OpenClaw 平台的推荐默认路径。OpenClaw 跑复杂任务（🔴）需 node + npm。
+> 💡 WorkBuddy 用户若不跑编排引擎（只用宪法层约束），node/npm 可不带——v0.85 起 `--no-ao` 升为非 OpenClaw 平台的推荐默认路径。OpenClaw 跑复杂任务（🔴）需 node + npm。审计工具（sofagent-audit）需要 Node.js ≥18，如不使用审计功能可跳过。
 
 > 📌 **编排引擎是可选增强，不是核心依赖**。核心约束层（宪法 + 反思 + 规则）零外部依赖。编排引擎依赖第三方 npm 包 `agency-orchestrator`——v0.84 A/B 数据表明编排不是当前差异化所在，v0.85 将其从"核心功能"降级为"OpenClaw 增强项"。详见 [v0.85 开发日志](./docs/changelog/v0.85.md#编排引擎降级)。
 

@@ -21,6 +21,12 @@ const LOW_RISK_PATTERNS = [
   /\.eslintrc/,
   /\.prettierrc/,
   /tsconfig.*\.json$/,
+  /readme(\.\w+)?\.md$/,     // README.md, README.en.md, README.zh.md（任意路径）
+  /changelog\.md$/,
+  /license$/,
+  /code_of_conduct\.md$/,
+  /contributing\.md$/,
+  /security\.md$/,
 ];
 
 /**

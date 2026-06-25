@@ -9,7 +9,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9FStarred)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
-<!-- TODO: demo.gif — 15s side-by-side: bare Agent going off-rails vs sofagent-constrained Agent -->
+<!-- TODO v0.94: demo.gif — 15s side-by-side: bare Agent going off-rails vs sofagent-constrained Agent. No footage yet for v0.93, will record after experiments complete -->
 
 > sofa + agent — because one day, we want to lie on the couch while agents do the work.
 > v0.92 · 2026-06-25
@@ -22,7 +22,7 @@ My name is KongFangXun. I'm a product manager who doesn't write code. All design
 
 ## What is this?
 
-A **governance layer** for AI agents. Not a framework to build them, not a tool to make them smarter — a set of rules and guardrails to stop them from going off the rails.
+A **discipline layer** for AI agents. Not a framework to build them, not a tool to make them smarter — a set of rules and guardrails to stop them from going off the rails. Think of it as a "discipline officer" for your agents, not a governance framework.
 
 | Component | How it works |
 |------|------|
@@ -105,7 +105,7 @@ A **governance layer** for AI agents. Not a framework to build them, not a tool 
 
 - ❌ Not an AI framework — doesn't manage model APIs or write prompts. That's the model layer's job
 - ❌ Not a skills marketplace — doesn't maintain reusable skills (except core governance skills like task-aware). External skills come from the community
-- ✅ It is a **governance methodology** — delivered via Skill + Scripts + Config, telling agents what they can do, can't do, and when to stop. OpenClaw first; other platforms get the constitution layer only (see [Design §三 Platform Dependencies](./LIMITATIONS.md#平台依赖))
+- ✅ It is a **discipline methodology** — delivered via Skill + Scripts + Config, telling agents what they can do, can't do, and when to stop. OpenClaw first; other platforms get the constitution layer only (see [Design §三 Platform Dependencies](./LIMITATIONS.md#平台依赖))
 
 ---
 
@@ -140,10 +140,10 @@ skillhub install sofagent
 |------|------|------|------|
 | bash | ≥4 | install.sh / task-record.sh | `bash --version` |
 | git | any | clone, task/logs tracing, worktree isolation | `git --version` |
-| node | ≥18 | `ao compose` orchestration engine (agency-orchestrator) | `node --version` |
+| node | ≥18 | `ao compose` orchestration engine (agency-orchestrator) + sofagent-audit | `node --version` |
 | npm | ≥9 | global install of agency-orchestrator | `npm --version` |
 
-> ⚠️ WorkBuddy users who won't use orchestration (constitution layer only) can skip node/npm. OpenClaw / Codex / Hermes Agent / Claude Code users running complex (🔴) tasks need node + npm.
+> ⚠️ WorkBuddy users who won't use orchestration (constitution layer only) can skip node/npm. OpenClaw / Codex / Hermes Agent / Claude Code users running complex (🔴) tasks need node + npm. sofagent-audit requires Node.js ≥18; skip it if you don't need commit-time auditing.
 
 > ⚠️ **The orchestration engine depends on the third-party npm package `agency-orchestrator`.** If npm install fails or API keys aren't configured, orchestration falls back to manual agent decomposition. The constraint layer is unaffected.
 

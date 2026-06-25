@@ -2,7 +2,7 @@
 
 > 面向 **Windows 11 + WorkBuddy/OpenClaw + 纯 PowerShell（非 WSL）** 用户。
 > 这是 [`sofagent-quickstart.md`](../../../sofagent-quickstart.md)（bash 版）的 PowerShell 平行版。
-> 环境矩阵与编码踩坑见 [README.md](README.md) 与 [`docs/bug_fix/tests/ENVIRONMENTS.md`](../../bug_fix/tests/ENVIRONMENTS.md)。
+> 环境矩阵与编码踩坑见 [README.md](README.md) 与 [`docs/platform/ENVIRONMENTS.md`](../platform/ENVIRONMENTS.md)。
 
 > **何时用 .ps1，何时用 .sh**
 > - Windows 11 + WorkBuddy/OpenClaw + 纯 PowerShell → **本指南（.ps1）**

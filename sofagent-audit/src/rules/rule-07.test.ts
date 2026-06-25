@@ -68,13 +68,42 @@ describe('铁律 #7 谨慎修改', () => {
     ];
     const ctx = makeCtx(files, 'login auth');
     const result = checkRule07(ctx);
+    // README.md 和 CHANGELOG.md 已被 LOW_RISK_PATTERNS 排除
+    // 剩余 3 个文件中 docs/guide.md 不匹配 → 1/3 = 33% > 20% → WARN
     expect(result.status).toBe('WARN');
-    expect(result.details[0]).toContain('3/5');
+    expect(result.details[0]).toContain('1/3');
   });
 
   it('低风险文件（package-lock.json）不计入检查', () => {
     const ctx = makeCtx(
       [makeDiffFile('src/login.ts'), makeDiffFile('package-lock.json')],
+      '修复 login 模块'
+    );
+    const result = checkRule07(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('低风险文件（README.md）不计入检查', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('src/login.ts'), makeDiffFile('README.md')],
+      '修复 login 模块'
+    );
+    const result = checkRule07(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('低风险文件（CHANGELOG.md）不计入检查', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('src/login.ts'), makeDiffFile('CHANGELOG.md')],
+      '修复 login 模块'
+    );
+    const result = checkRule07(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('低风险文件在子目录也排除（无 ^ 锚点）', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('src/login.ts'), makeDiffFile('packages/foo/README.md')],
       '修复 login 模块'
     );
     const result = checkRule07(ctx);

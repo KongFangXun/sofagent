@@ -23,9 +23,10 @@ export interface AuditResult {
 export function runRules(
   diffFiles: DiffFile[],
   logEntries: LogEntry[],
-  task?: string
+  task?: string,
+  strict?: boolean
 ): AuditResult {
-  const ctx: AuditContext = { diffFiles, logEntries, task };
+  const ctx: AuditContext = { diffFiles, logEntries, task, strict };
   const results: RuleCheck[] = [];
 
   for (const rule of rules) {

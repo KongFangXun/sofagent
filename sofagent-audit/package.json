@@ -4,7 +4,9 @@
   "description": "sofagent 提交时审计——扫描 git diff，检查 Agent 是否遵守铁律",
   "main": "dist/index.js",
   "bin": {
-    "sofagent-audit": "dist/index.js"
+    "sofagent-audit": "dist/index.js",
+    "verify-evidence": "dist/verify-evidence.js",
+    "skill-safety-check": "dist/skill-safety-check.js"
   },
   "scripts": {
     "build": "tsc",

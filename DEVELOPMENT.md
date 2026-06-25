@@ -487,7 +487,7 @@ think.md
 
 ## 八、提交时审计
 
-sofagent-audit（v0.92）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对四条可程序化铁律（#1/#3/#7/#10）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 配合——看的是已经发生的 git diff，Agent 无法绕过。
+sofagent-audit（v0.92）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对四条可程序化铁律（#1/#3/#7/#10）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 运行时配合——看的是已经发生的 git diff，但铁律 #1/#3 的日志检查依赖 Agent 写入的任务日志。铁律 #7/#10 只看 git diff，Agent 无法绕过。
 
 > **绿灯路径检测（v0.93 规划）**：AI 修改行为→顺手改测试→全绿通过——这不是恶意，是梯度下降找最低成本通过路径的本能。146 个真实 PR × 4 AI 审查器的实验显示，200 个测试全率也不能说明代码没问题。铁律 #3 不仅要检查是否有 build/test 记录，还应检查测试改动是否为了匹配错误行为（"焊死的门"防的就是这个）。
 >

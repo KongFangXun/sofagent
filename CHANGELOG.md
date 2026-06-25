@@ -18,15 +18,24 @@
 > - **v0.90**：skill-safety-check 安全审查 + P0 安装断裂修复 + 文档清理
 > - **v0.91**：评审落地 + sofagent-audit MVP + 文档瘦身 47%
 > - **v0.92**：v0.91 审查修复——execSync 安全加固 + 信任模型诚实声明 + 铁律检测精度的边界 + 单元测试覆盖
-> - **v0.93**：工程迁移 + 3 个边角误报修复 + 2 份社区 PR 合入跟进——bash→TS 第一步 + Windows .ps1 审查
+> - **v0.93**：工程迁移 + 4 项 FP 修复 + 6 项文档修缮 + 2 份社区 PR 合入跟进——bash→TS 第一步 + 信任模型精确化 + 中英文定位对齐
+> - **v0.94**：JSONL 结构化日志 + MCP server MVP + Agency Agent 对接 + 文档精修 + 社区复现计划——计划中
 
 ---
 
 ## [v0.93] — 计划中
 
-工程迁移 + 检测精度闭环——v0.92 合成测试发现的 3 个边角误报修复 + bash→TypeScript 迁移起步（verify-evidence / skill-safety-check）+ 10 组实验继续。
+工程迁移 + 检测精度闭环 + 文档修缮——v0.92 全身审查 17 项问题中的 11 项落地（4 项 FP 修复含 --strict + 6 项文档修缮 + 10 组实验执行）+ bash→TypeScript 迁移起步 + 两份社区 PR 合入跟进。
 
 > 📖 [开发日志](./docs/changelog/v0.93.md)
+
+---
+
+## [v0.94] — 计划中
+
+task/logs JSONL 结构化日志 + MCP server MVP + Agency Agent 对接 + 文档精修 + 社区复现计划——v0.92 审查遗留的 5 项较大改动排入此版。
+
+> 📖 [开发日志](./docs/changelog/v0.94.md)
 
 ---
 
@@ -44,7 +53,7 @@ v0.91 审查修复版本——DeepSeek V4 Pro 驱动的 WorkBuddy 专家团审�
 
 ### 🔴 sofagent-audit MVP（提交时审计）
 
-TypeScript CLI，扫描 git diff 对标 4 条可程序化铁律（#1 先读再用 / #3 验证再干 / #7 谨慎修改 / #10 如实汇报），exit code 0/1/2 确定性输出。不依赖 Agent 配合、跨平台、Agent 无法绕过。误报率红线 < 10%。焊死的门原则：检查规则独立只读。
+TypeScript CLI，扫描 git diff 对标 4 条可程序化铁律（#1 先读再用 / #3 验证再干 / #7 谨慎修改 / #10 如实汇报），exit code 0/1/2 确定性输出。不依赖 Agent 运行时配合——看的是已经发生的 git diff。铁律 #1/#3 的日志检查依赖 Agent 写入的任务日志（见 LIMITATIONS.md 信任模型）。误报率红线 < 10%。焊死的门原则：检查规则独立只读。
 
 ### 🔴 评审落地（文档瘦身 + 叙事降温）
 

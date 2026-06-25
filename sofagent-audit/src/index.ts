@@ -23,20 +23,24 @@ import { runRules, type AuditResult } from './reporter';
 interface Args {
   diffRange: string;
   task?: string;
+  strict: boolean;
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD' };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff' && argv[i + 1]) {
       args.diffRange = argv[++i];
     } else if (argv[i] === '--task' && argv[i + 1]) {
       args.task = argv[++i];
+    } else if (argv[i] === '--strict') {
+      args.strict = true;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       console.log('sofagent-audit v0.92 · 提交时审计\n');
-      console.log('用法: sofagent-audit --diff <range> [--task <description>]');
+      console.log('用法: sofagent-audit --diff <range> [--task <description>] [--strict]');
       console.log('  --diff    git diff 范围（默认 HEAD~1..HEAD）');
       console.log('  --task    任务描述（用于铁律 #7 谨慎修改检查）');
+      console.log('  --strict  严格模式：无日志时铁律 #1 返回 FAIL 而非 WARN');
       console.log('退出码: 0=全通过 / 1=有警告 / 2=有违规');
       process.exit(0);
     } else if (argv[i] === '--version') {
@@ -62,7 +66,7 @@ async function main(): Promise<void> {
   const logEntries = checkLogs();
 
   // 3. 运行规则
-  const results = runRules(diffFiles, logEntries, args.task);
+  const results = runRules(diffFiles, logEntries, args.task, args.strict);
 
   // 4. 输出结果
   printResults(results, diffFiles);
