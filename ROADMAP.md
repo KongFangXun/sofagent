@@ -307,6 +307,7 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 | Windows 支持 | 🔧 | PowerShell 平行实现（待需求验证） |
 | 认知投降防线 / 外部评估器 / loop-check 反驳层 | 🔧 | 原 v1.x |
 | 企业 workflow 可视化后台 | 🔧 | Web 后台快速梳理企业 workflow，可视化画布中每个节点对应 sofagent 的固定 Agent session |
+| 分布式反思同步 | 🔧 | 多设备 Agent 反思聚合——参照 Gossip 去中心化协议（vs 中心化黑板）+ 信任加权投票（基于历史正确率动态权重矩阵）处理多 Agent 冲突裁定。CAP 理论权衡框架与 sofagent「不追求完美方案」哲学一致 |
 
 ---
 
