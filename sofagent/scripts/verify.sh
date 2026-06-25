@@ -26,13 +26,15 @@ JSON_MODE=false
 QUIET_MODE=false
 QUICK_MODE=false
 PLATFORM=""
-for arg in "$@"; do
-  case "$arg" in
-    --json)  JSON_MODE=true ;;
-    --quiet) QUIET_MODE=true ;;
-    --quick) QUICK_MODE=true ;;
+# 用 while+shift 解析：for arg in "$@" 里取 $2 是脚本位置参数(非"下一个arg")且 shift 无效——
+# 会导致 `--quiet --platform X` 把 PLATFORM 误设为 "--platform"（fork 修复）
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --json)  JSON_MODE=true; shift ;;
+    --quiet) QUIET_MODE=true; shift ;;
+    --quick) QUICK_MODE=true; shift ;;
     --platform) PLATFORM="$2"; shift 2 ;;
-    --platform=*) PLATFORM="${arg#*=}" ;;
+    --platform=*) PLATFORM="${1#*=}"; shift ;;
     --help)
       echo "sofagent verify v${VERSION}"
       echo "  正常模式 彩色终端，显示所有检查项"
@@ -43,6 +45,7 @@ for arg in "$@"; do
       echo "退出码: 0=全部通过 1=存在失败项"
       exit 0
       ;;
+    *) shift ;;
   esac
 done
 
@@ -156,8 +159,8 @@ if [ "$QUICK_MODE" = true ]; then
     check_fail "SKILL.md 缺失或宪法关键词不全"
   fi
 
-  # 2. .sofagent/ 数据目录存在
-  if [ -d "${PWD}/.sofagent" ]; then
+  # 2. .sofagent/ 数据目录存在（v0.90 P0-3：用 config.sh 解析的 SOFAGENT_DATA，非 PWD）
+  if [ -d "$SOFAGENT_DATA" ]; then
     check_pass ".sofagent/ 数据目录存在"
   else
     check_warn ".sofagent/ 数据目录不存在（首次使用会自动创建）"
@@ -243,8 +246,8 @@ if [ "$PLATFORM" = "workbuddy" ]; then
     check_warn "Skills 目录不存在"
   fi
 
-  # 数据目录检查
-  if [ -d "${PWD}/.sofagent" ]; then
+  # 数据目录检查（v0.90 P0-3：用 SOFAGENT_DATA，非 PWD）
+  if [ -d "$SOFAGENT_DATA" ]; then
     check_pass ".sofagent/ 数据目录存在"
   else
     check_warn ".sofagent/ 数据目录不存在（首次使用会自动创建）"
@@ -388,8 +391,8 @@ else
       check_warn "  发现 v0.72 前安装残留（${LEGACY_CONST}）——建议运行 install.sh 升级，旧路径将自动迁移"
     fi
   fi
-  # think.md 检查
-  THINK_FILE="${PWD}/.sofagent/think.md"
+  # think.md 检查（v0.90 P0-3：用 SOFAGENT_DATA，非 PWD）
+  THINK_FILE="${SOFAGENT_DATA}/think.md"
   if [ -f "$THINK_FILE" ]; then
     check_pass "think.md 存在（$(wc -m < "$THINK_FILE" | tr -d ' ') 字符）"
   else
@@ -558,10 +561,8 @@ fi
 _hr
 _section "断路器配置"
 
+# loopDetection 在 config.json（与 openclaw.json 分离；OPENCLAW_CONFIG_PATH 仅指 hook 配置）
 CONFIG_FILE="${OPENCLAW_DIR}/config.json"
-if [ -n "${OPENCLAW_CONFIG_PATH:-}" ]; then
-  CONFIG_FILE="$OPENCLAW_CONFIG_PATH"
-fi
 
 if command -v jq &>/dev/null; then
   check_pass "jq 可用"

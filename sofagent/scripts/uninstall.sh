@@ -30,12 +30,14 @@ err()   { echo -e "${RED}[✗]${NC} $1"; }
 FORCE=false
 LIST_ONLY=false
 PLATFORM=""
-for arg in "$@"; do
-  case "$arg" in
-    --force) FORCE=true ;;
-    --list)  LIST_ONLY=true ;;
-    --platform) PLATFORM="$2"; shift ;;
-    --platform=*) PLATFORM="${arg#*=}" ;;
+# 用 while+shift 解析：for arg in "$@" 里取 $2 是脚本位置参数(非"下一个arg")且 shift 无效——
+# 会导致 `--force --platform X` 把 PLATFORM 误设为 "--platform"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --force) FORCE=true; shift ;;
+    --list)  LIST_ONLY=true; shift ;;
+    --platform) PLATFORM="$2"; shift 2 ;;
+    --platform=*) PLATFORM="${1#*=}"; shift ;;
     --help)
       echo "sofagent uninstall [--platform openclaw|workbuddy|claude|codex|hermes]"
       echo "  正常模式 交互确认后删除约束文件"
@@ -44,6 +46,7 @@ for arg in "$@"; do
       echo "  --platform 指定目标平台（未指定时自动探测）"
       echo "  保留: .sofagent/ 数据目录（task-record / orchestrator）"
       exit 0 ;;
+    *) shift ;;
   esac
 done
 
