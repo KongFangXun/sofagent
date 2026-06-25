@@ -18,6 +18,7 @@
 ```
 
 > `{OPENCLAW_SCRIPTS}` fallback: 优先 `~/.openclaw/scripts/`，不存在则 Agent 自行搜索 `sofagent/scripts/`。
+> 🖥️ **Windows PowerShell（非 WSL）**：上面 `bash X.sh --flag` 改用 `powershell -File X.ps1 -Flag`（见 SKILL.md「跨平台脚本调用约定」）。例：`powershell -File {OPENCLAW_SCRIPTS}/task-record.ps1 -ClosureCheck` / `-Budget -Steps N -Limit M`。
 
 ⛔ 先跑脚本看结果，再决定是否调。快速模式仅「重大操作前」生效。
 

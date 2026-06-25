@@ -1,5 +1,8 @@
 // sofagent load-chain hook · OpenClaw 2026.6.x
-// 注入第 2 层（think.md）+ 第 3 层（rules.md）到 agent bootstrap
+// 注入三层加载链到 agent:bootstrap：
+//   L1 SKILL.md（4 底线 + 10 铁律，openclaw 技能系统只注入 description ≈240 chars，本 hook 补注全文）
+//   L2 think.md（反思区）
+//   L3 rules.md（用户规则）
 // 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
 //
 // rules.md 路径优先级（v0.73 扁平化）：
@@ -14,10 +17,27 @@ const handler = async (event: any) => {
     return;
   }
 
-  const home = process.env.HOME || "/tmp";
+  const home =
+    process.env.HOME ||
+    process.env.USERPROFILE ||
+    (process.platform === "win32" ? "C:\\Users\\Default" : "/tmp");
   const openclawDir =
     process.env.OPENCLAW_STATE_DIR || path.join(home, ".openclaw");
   const pushed: string[] = [];
+
+  // ── 第 1 层：宪法（SKILL.md 全文）──
+  // OpenClaw 技能系统仅注入 description 字段（≈240 chars），不注入全文。
+  // 本 hook 补注完整 SKILL.md，确保 4 底线 + 10 铁律进入 agent 上下文。
+  const skillMdFile = path.join(openclawDir, "skills", "sofagent", "SKILL.md");
+  if (fs.existsSync(skillMdFile)) {
+    const content = fs.readFileSync(skillMdFile, "utf-8");
+    event.context.bootstrapFiles.push({
+      name: "sofagent-SKILL.md",
+      path: skillMdFile,
+      content: `<!-- ===== sofagent 第 1 层：宪法（SKILL.md）===== -->\n${content}`,
+    });
+    pushed.push("SKILL.md");
+  }
 
   // ── 第 2 层：反思区（think.md）──
   // 从 .sofagent/ 数据目录读取。优先 SOFAGENT_DATA 环境变量，其次 process.cwd()。
