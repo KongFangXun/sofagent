@@ -16,5 +16,5 @@
     "moduleResolution": "node"
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "tests", "src/**/*.test.ts"]
+  "exclude": ["node_modules", "dist", "tests", "src/**/*.test.ts", "src/measure-detection.ts"]
 }
