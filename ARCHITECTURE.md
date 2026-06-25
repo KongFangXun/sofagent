@@ -281,11 +281,11 @@ sofagent 的失效标记机制（`[已失效] → 新事实 | 原因`）保留�
 
 ### 不要 Connector（[Developer §七](./DEVELOPMENT.md#七数据文件架构)）
 
-sofagent 是 Agent 治理层，不是软件工程自动化流水线。它的「外部世界」就是文件系统——task/logs、scoring/、orchestrator/、think.md。这些 Markdown 文件已经构成完整的可审计闭环。文件就是接口，Markdown 就是传输格式。
+sofagent 是 Agent 纪律层，不是软件工程自动化流水线。它的「外部世界」就是文件系统——task/logs、scoring/、orchestrator/、think.md。这些 Markdown 文件已经构成完整的可审计闭环。文件就是接口，Markdown 就是传输格式。
 
 ### 文件系统而非数据库（[Developer §七](./DEVELOPMENT.md#七数据文件架构)）
 
-Agent 治理层最核心的数据是 task/logs——每次任务跑完后一小段 Markdown 摘要。选文件系统的三个原因：
+Agent 纪律层最核心的数据是 task/logs——每次任务跑完后一小段 Markdown 摘要。选文件系统的三个原因：
 
 - **无额外依赖**：`cat task/logs/2026-06-15.md` 就能拿到记录，不需要 SQL/连接串/权限管理
 - **天然可审计**：`ls task/logs/` 就是审计入口，怀疑做错了决策打开文件看一眼

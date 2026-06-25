@@ -346,7 +346,7 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 | 自研行为验证器 `behavior-validator.js` | OpenClaw 原生 `tools.loopDetection` 已覆盖 |
 | 定时触发（cron） | 当前所有 Agent 平台都不支持 cron 级定时 |
 | 动态 Skill Hook | OpenClaw 不支持 Skill 级动态 Hook |
-| Connector（连接外部系统） | sofagent 是治理层，不是自动化流水线。Markdown 文件就是接口 |
+| Connector（连接外部系统） | sofagent 是纪律层，不是自动化流水线。Markdown 文件就是接口 |
 | 记忆压缩自动化 | v0.56 前试过，已取消。每个 Agent 有自己的记忆 |
 
 ---
