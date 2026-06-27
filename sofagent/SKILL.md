@@ -1,7 +1,7 @@
 ---
 name: sofagent
 slug: sofagent
-version: 0.92
+version: 0.94
 displayName: sofagent
 description: >
   当你的 Agent 反复偏离目标、任务越做越复杂、刚踩过的坑下次还踩 —— sofagent 能约束其行为、拆解复杂任务、从错误中沉淀教训。
@@ -14,7 +14,7 @@ metadata:
     requires: {}
 ---
 
-# SKILL.md · v0.93
+# SKILL.md · v0.94
 
 > ⚠️ **反向锚点**：本文件是加载链第 1 层，随 skill 调用自动注入——你无需 Read 就已有宪法。但第 2、3 层需你主动 Read。如果你没读 rules.md 和 think.md 就回复用户，你的输出可能偏离用户定制和历史教训。
 
