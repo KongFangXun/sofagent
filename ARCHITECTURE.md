@@ -79,6 +79,20 @@ sofagent 分两层——地基轻、引擎重，这是有意为之：
 
 这层设计的底线：**审计工具在零 Agent 配合下仍然有判定能力。** Agent 日志让审计更精确，但没有日志审计不失效。
 
+<a id="design-principles"></a>
+### 三条设计原则
+
+来自 FDE Agent Harness、Loop Engineering、MCP 扩展架构三篇行业笔记（2026-06）：
+
+1. **「吃下痛苦，排出产品」**（Palantir CTO 卡普）<br>
+   Agent 的管理痛苦——过程不可信、结果不可审计、经验不沉淀——由 sofagent 消化，产出企业敢放进流程里的纪律层。不把这些痛苦原样还给用户。
+
+2. **「模型输出是提案，不是命令」**（FDE Agent Harness 笔记）<br>
+   Agent 的每次代码改动是一份**提案**，git diff 是**证据**，审计工具对照铁律**验收**，不合格的提案**拒收**。这跟 MiroFish 的「工具调用与最终答案分离」是同一个设计基因。
+
+3. **「先有掌控感，再自动化」**（Harness 设计笔记）<br>
+   install → verify.sh 确认约束生效 → 用户拥有了对 Agent 行为的掌控感 → 然后才能放心把任务交给编排引擎。这条原则解释了为什么 sofagent 的安装流程必须包含 verify 步骤——不是技术需要，是心理需要。
+
 <a id="skill-runtime"></a>
 ### 为什么是 Skill + 脚本 + Runtime，不是纯 Skill 或纯代码
 

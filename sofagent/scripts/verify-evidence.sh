@@ -10,7 +10,7 @@
 # ============================================================
 set -euo pipefail
 
-VERSION="0.92"
+VERSION="0.94"
 DAEMON_MODE=false
 [ "${1:-}" = "--daemon" ] && DAEMON_MODE=true
 

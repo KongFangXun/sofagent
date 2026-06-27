@@ -27,7 +27,7 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
-$VERSION_STR = "0.91"
+$VERSION_STR = "0.94"
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
 
 function W-Info($m) { Write-Host "[benchmark] $m" -ForegroundColor Blue }
