@@ -8,9 +8,9 @@ P="${1:-}"
 [ "$P" = "--platform" ] && P="${2:-}"
 
 # 自动探测
-[ -z "$P" -o "$P" = "--platform" ] && [ -d "$HOME/.openclaw/skills" ] && P="openclaw"
-[ -z "$P" -o "$P" = "--platform" ] && [ -d "$HOME/.workbuddy/skills" ] && P="workbuddy"
-[ -z "$P" -o "$P" = "--platform" ] && P="manual"
+{ [ -z "$P" ] || [ "$P" = "--platform" ]; } && [ -d "$HOME/.openclaw/skills" ] && P="openclaw"
+{ [ -z "$P" ] || [ "$P" = "--platform" ]; } && [ -d "$HOME/.workbuddy/skills" ] && P="workbuddy"
+{ [ -z "$P" ] || [ "$P" = "--platform" ]; } && P="manual"
 
 case "$P" in
   openclaw)

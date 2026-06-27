@@ -121,8 +121,7 @@ echo ""
 
 # 1. package.json version 字段（SSOT，3 段格式）
 echo -e "${BOLD}[1/8] package.json（SSOT）${NC}"
-for pj in \
-  "$PROJECT_ROOT/sofagent-audit/package.json"; do
+for pj in "$PROJECT_ROOT/sofagent-audit/package.json"; do
   if [[ -f "$pj" ]]; then
     local_content=$(cat "$pj")
     local_new=$(echo "$local_content" | sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g")
