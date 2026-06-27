@@ -1,9 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.93 · 2026-06-26 · 工程迁移 + 实验验证——4 项 FP 修复 + bash→TS 迁移 + 10 组实验完成（纪律层增量 = f(陷阱难度)，高难度场景 0% vs 100% 误伤）
->
-> v0.94 规划已更新（2026-06-27）：双轮评审后重排，优先级从 MCP/Agency 转向代码止血 + 审计独立化 + FDE + 实验补证。详见 [v0.94 开发日志](./docs/changelog/v0.94.md)
+> v0.94 · 2026-06-27 · 代码止血 + 审计独立化（沉默模式 + 7 条纯 diff 规则）+ FDE 部署者优先 + 社区复现指南——双轮评审（GLM-5.2 + DeepSeek V4 Pro）后重排，MiroFish「工具调用与最终答案分离」模式启发审计证据分层。详见 [v0.94 开发日志](./docs/changelog/v0.94.md)
 >
 > **先证明纪律层增量是真的，再做其他任何事。**
 
@@ -11,28 +9,28 @@
 
 ## 目录
 
-- [**现在在哪：v0.93**](#现在在哪v093)
+- [**现在在哪：v0.94**](#现在在哪v094)
 - [**迭代历程**](#迭代历程) — 倒叙，从最新到最早
-- [**未来去哪**](#未来去哪) — v0.94 → v0.95 → v0.96 → v1.0 → v2.x
+- [**未来去哪**](#未来去哪) — v0.95 → v0.96 → v1.0 → v2.x
 - [**探索方向**](#探索方向)
 - [**不需要的**](#不需要的)
 - [**欢迎参与**](#欢迎参与)
 
 ---
 
-## 现在在哪：v0.93 → v0.94 方向
+## 现在在哪：v0.94
 
-> v0.93 是**工程迁移 + 实验验证版本**。v0.94 方向已定：代码止血 + 审计独立化 + FDE 部署者优先。核心洞察来自 MiroFish 开源项目——「信任产出（git diff），不信任过程（Agent 日志）」。详见 [ARCHITECTURE.md §审计层的证据分层](./ARCHITECTURE.md#audit-evidence-layering)。
+> v0.94 是**代码止血 + 审计独立化版本**。核心洞察来自 MiroFish 开源项目——「信任产出（git diff），不信任过程（Agent 日志）」。详见 [ARCHITECTURE.md §审计层的证据分层](./ARCHITECTURE.md#audit-evidence-layering)。
 
 | 级别 | 交付 | 状态 |
 |------|------|:--:|
-| P0 | 4 项 FP 修复（deleted / docker build / 低风险排除 / --strict 模式）+ rule-07 ^锚点修复 | ✅ |
-| P1 | bash→TS 迁移（verify-evidence + skill-safety-check）+ 检测精度闭环（27 cases FP=0% FN=0%）| ✅ |
-| P2 | 6 项文档修缮 + package.json bin 补齐 + 温故知新增量吸收 | ✅ |
-| 实验 | 10 组对照实验完成：纪律层增量 = f(陷阱难度)——高难度 0% vs 100% 误伤，低难度无差异 | ✅ |
-| 代码 | 7 files / 100 tests / build 全绿 / 零 execSync | ✅ |
+| P0 | 6 项代码止血（VERSION 不一致 / 正则 i flag / 词边界 / 正负证据 / 三元死代码 / checkLogs 拆分）+ 沉默审计模式 `--silent`（7 条纯 diff 规则）| ✅ |
+| P1 | LogFormat 可插拔（MD + JSONL 双格式）+ task-record.ts JSONL 结构化日志 + #1/#3 双路径回退 | ✅ |
+| P2 | FDE Skill 部署者优先 + 社区复现指南 + 全项目版本号 v0.93→v0.94 + SMB 部署者入口 | ✅ |
+| 实验 | 真实 Skill 加载链复现实验（待 v0.94 发布后执行） | ⬜ |
+| 代码 | 12 files / 197 tests / build 全绿 / tsc 零错误 | ✅ |
 
-> 📖 [详细开发日志](./docs/changelog/v0.93.md) · [实验总览](./docs/benchmark/2026-06-26-openclaw-task2-4-summary.md)
+> 📖 [详细开发日志](./docs/changelog/v0.94.md)
 
 ---
 
@@ -266,22 +264,7 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 
 ### v0.9x — 纪律层验证 + 工程基底
 
-> v0.93 双轮评审（GLM-5.2 + DeepSeek V4 Pro）后重排。核心调整：**先止血（代码硬伤）→ 再补强（审计独立化）→ 后扩展（FDE/SMB）**。MCP/Agency Agent/OpenClaw 预装从 v0.94 推到 v0.95——它们依赖"审计可信了"才有意义。
-
-#### v0.94：工程硬伤止血 + 审计独立化 + FDE 部署者优先 + 实验补证
-
-> 📖 [开发日志](./docs/changelog/v0.94.md)
-
-- **代码硬伤止血（P0）**：6 项——VERSION 不一致 / 正则大小写 bug / verify-evidence 正则过宽 / 正负证据不区分 / tsc\b 过宽 / checkLogs 迭代修改数组 + 三元死代码
-- **沉默审计模式 `--silent`（P0）**：纯 git diff 行为分析，不依赖 Agent 日志。铁律 #7/#10 完全自治，#3 有条件 WARN。把审计从"60% 依赖 Agent 配合"降到"20%"。设计灵感来自 MiroFish 的「工具调用与最终答案分离」模式——git diff = 最终答案，Agent 日志 = 工具调用，信任产出不信任过程
-- **LogFormat 可插拔接口（P0）**：MarkdownLogReader + JSONLLogReader，审计工具核心弱点改善
-- **task/logs JSONL 结构化日志（P0）**：精确匹配替代启发式正则
-- **真实 Skill 加载链复现实验（P0）**：WorkBuddy 完整加载链 vs prompt 注入对照，回答"核心价值是否真实"
-- **sofagent Lite（P0）**：独立轻量版，30 秒装好宪法层。`sofagent-lite/install.sh` 独立安装，SkillHub/ClawHub 独立发布。面向非 OpenClaw 平台 + FDE 驻场快速部署 + 个人开发者
-- **sofagent-fde Skill（P0，从 P1 升级）**：十步部署流程 + 企业专属 Skill 生成 + 质量抽检。中小企业 AI 落地唯一可行路径
-- **6 个子 Skill 检查点（P1）**：SKILL.md（主入口）+ engine/entry-gate/task-aware/task-closure/loop-check 五个子 Skill——每个做一次「≤90 行 + Gotcha 章节完整性 + 文件路径引用有效性」检查。子 Skill 是产品形态不是功能，需要持续维护
-- **文档降温（P1）**：ARCHITECTURE T/S/S "完全同构"→"结构类比" + Hirom/Lima 合并 + README SMB 部署者入口
-- **社区复现计划（P2）**：标准化复现脚本 + 第三方复现入口
+> v0.94 已交付。v0.95 起延续双轮评审后方向：**先止血→再补强→后扩展**。MCP/Agency Agent/OpenClaw 预装推至 v0.95——依赖"审计可信了"才有意义。
 
 #### v0.95：审计配置化 + 推送层 + 编排对接
 
