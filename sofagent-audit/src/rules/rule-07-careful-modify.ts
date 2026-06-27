@@ -14,19 +14,19 @@ import type { AuditContext, RuleCheck } from './types';
 
 // 这些文件类型的变更通常与具体任务无关（配置文件、锁文件等）
 const LOW_RISK_PATTERNS = [
-  /package-lock\.json$/,
-  /yarn\.lock$/,
-  /pnpm-lock\.yaml$/,
-  /\.gitignore$/,
-  /\.eslintrc/,
-  /\.prettierrc/,
-  /tsconfig.*\.json$/,
-  /readme(\.\w+)?\.md$/,     // README.md, README.en.md, README.zh.md（任意路径）
-  /changelog\.md$/,
-  /license$/,
-  /code_of_conduct\.md$/,
-  /contributing\.md$/,
-  /security\.md$/,
+  /package-lock\.json$/i,
+  /yarn\.lock$/i,
+  /pnpm-lock\.yaml$/i,
+  /\.gitignore$/i,
+  /\.eslintrc/i,
+  /\.prettierrc/i,
+  /tsconfig.*\.json$/i,
+  /readme(\.\w+)?\.md$/i,
+  /changelog\.md$/i,
+  /license$/i,
+  /code_of_conduct\.md$/i,
+  /contributing\.md$/i,
+  /security\.md$/i,
 ];
 
 /**
@@ -102,6 +102,7 @@ export function checkRule07(ctx: AuditContext): RuleCheck {
     number: 7,
     status: 'PASS',
     details: [],
+    evidenceMode: 'git-diff',
   };
 
   if (!task) {

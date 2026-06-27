@@ -93,7 +93,7 @@ describe('verifyEvidence', () => {
     expect(result).toBe(0);
   });
 
-  it('日志中有 ❌.*fail 关键词 → exit 0（也算有证据）', () => {
+  it('日志中有 ❌ fail 负向证据 → exit 1（不视为已验证）', () => {
     const logPath = writeLog('log.md', [
       '## 任务日志',
       '',
@@ -101,7 +101,7 @@ describe('verifyEvidence', () => {
       '❌ fail: timeout',
     ].join('\n'));
     const result = verifyEvidence(logPath, true);
-    expect(result).toBe(0);
+    expect(result).toBe(1);
   });
 
   it('日志中有 make 命令 → exit 0', () => {
@@ -113,5 +113,25 @@ describe('verifyEvidence', () => {
     ].join('\n'));
     const result = verifyEvidence(logPath, true);
     expect(result).toBe(0);
+  });
+
+  it('"make sure" 不触发 BUILD 证据 → exit 1', () => {
+    const logPath = writeLog('log.md', [
+      '## 任务日志', '',
+      'make sure the config is correct',
+      'make a decision about routing',
+    ].join('\n'));
+    const result = verifyEvidence(logPath, true);
+    expect(result).toBe(1);
+  });
+
+  it('"splinter" 不触发 LINT 证据 → exit 1', () => {
+    const logPath = writeLog('log.md', [
+      '## 任务日志', '',
+      'removed a splinter from the wood',
+      'a glint of light',
+    ].join('\n'));
+    const result = verifyEvidence(logPath, true);
+    expect(result).toBe(1);
   });
 });

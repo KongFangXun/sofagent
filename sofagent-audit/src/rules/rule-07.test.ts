@@ -92,6 +92,24 @@ describe('铁律 #7 谨慎修改', () => {
     expect(result.status).toBe('PASS');
   });
 
+  it('低风险文件（LICENSE 全大写）被正确识别', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('src/login.ts'), makeDiffFile('LICENSE')],
+      '修复 login 模块'
+    );
+    const result = checkRule07(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('低风险文件（Readme.md 混合大小写）被正确识别', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('src/login.ts'), makeDiffFile('Readme.md')],
+      '修复 login 模块'
+    );
+    const result = checkRule07(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
   it('低风险文件（CHANGELOG.md）不计入检查', () => {
     const ctx = makeCtx(
       [makeDiffFile('src/login.ts'), makeDiffFile('CHANGELOG.md')],

@@ -2,6 +2,7 @@
 // 铁律 #3 验证再干
 // package.json / build.gradle 等构建文件变更后是否有 test/build 命令记录
 // 违规 → exit code 2
+// v0.94：新增 --silent 双路径——无日志 + silent 走 diff 启发式，只 WARN 不 FAIL
 // ============================================================
 
 import { hasTestOrBuildExecution } from '../log-checker';
@@ -16,6 +17,7 @@ export function checkRule03(ctx: AuditContext): RuleCheck {
     number: 3,
     status: 'PASS',
     details: [],
+    evidenceMode: 'hybrid',
   };
 
   // 检查是否有构建/依赖文件变更
@@ -26,6 +28,13 @@ export function checkRule03(ctx: AuditContext): RuleCheck {
 
   if (buildFileChanges.length === 0) {
     // 没有构建文件变更，不需要检查
+    return rule;
+  }
+
+  // 无日志 + silent → 只 WARN 不 FAIL
+  if (ctx.silent && logEntries.length === 0) {
+    rule.status = 'WARN';
+    rule.details.push(`--silent 模式：构建文件变更 (${buildFileChanges.map((f) => f.path).join(', ')}) 后无日志，无法验证是否执行测试/构建。`);
     return rule;
   }
 
