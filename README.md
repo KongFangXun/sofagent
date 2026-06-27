@@ -169,17 +169,19 @@ v0.85 确立的新主线方向——**从运行时治理（预防）转向提交
 ```bash
 # 沉默模式（v0.94）——只跑 git-diff 规则，不依赖 Agent 日志
 # 任何 git 仓库都能跑，零依赖 Agent 配合
-sofagent-audit --silent --diff HEAD~1..HEAD
+sofagent-audit --silent --diff HEAD~1..HEAD --task "将用户认证从 JWT 迁移到 Session"
 
 # 完整模式——git diff + Agent 日志交叉验证
-sofagent-audit --diff HEAD~1..HEAD --task "任务描述"
+sofagent-audit --diff HEAD~1..HEAD --task "将用户认证从 JWT 迁移到 Session"
 
-❌ 铁律 #11 敏感文件：.env 被修改
-❌ 铁律 #7 谨慎修改：本次 diff 修改了 3 个不在任务范围内的文件
-⚠️ 铁律 #12 测试缺失：src/ 改了但 __tests__/ 没有变化
+❌ R11 敏感文件：.env 被修改
+❌ 铁律 #7 谨慎修改：3 个文件不在任务范围内（README.md, CHANGELOG.md, package-lock.json）
+⚠️ 铁律 #10 如实汇报：commit message 为纯占位符 "fix"——缺少具体内容描述
+⚠️ R2 测试缺失：src/auth/ 改了 5 个文件，__tests__/ 没有变化
+⚠️ R12 低注释率：新增 347 行代码，注释率仅 2%
 ```
 
-> 💡 为什么审计方向是杀手级：(1) 看的是 git diff，Agent 没法绕过；(2) 跨平台，任何 git 仓库都能跑；(3) 确定性 exit code，不是 LLM 评分；(4) `--silent` 模式零依赖 Agent 日志——Agent 不写日志也能独立判定。铁律 #7/#10/#11/#12/#13 全部基于 git diff 运行。详见 [ARCHITECTURE.md §审计层的证据分层](./ARCHITECTURE.md#audit-evidence-layering)。
+> 💡 为什么审计方向是杀手级：(1) 看的是 git diff，Agent 没法绕过；(2) 跨平台，任何 git 仓库都能跑；(3) 确定性 exit code，不是 LLM 评分；(4) `--silent` 模式零依赖 Agent 日志——Agent 不写日志也能独立判定。铁律 #7/#10 及 R1-R5/R11/R12 共 9 条审计规则全部基于 git diff 运行。详见 [ARCHITECTURE.md §审计层的证据分层](./ARCHITECTURE.md#audit-evidence-layering)。
 
 > 这不意味着放弃运行时治理——两者互补。运行时治理减少问题发生，提交时审计兜底检测漏网之鱼。
 

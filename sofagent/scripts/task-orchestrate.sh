@@ -68,7 +68,7 @@ fi
 # set -o pipefail: 管道中任一命令失败都计为失败，防止 `grep | wc` 等忽略中间错误
 set -euo pipefail
 
-VERSION="0.92"
+VERSION="0.94"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
