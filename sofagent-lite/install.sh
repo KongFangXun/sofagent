@@ -3,9 +3,9 @@
 # 用法: sh install.sh [openclaw|workbuddy|--platform openclaw|--platform workbuddy]
 set -u
 SKILL="$(cd "$(dirname "$0")" && pwd)/SKILL.md"
-P="$1"
+P="${1:-}"
 
-[ "$P" = "--platform" ] && P="$2"
+[ "$P" = "--platform" ] && P="${2:-}"
 
 # 自动探测
 [ -z "$P" -o "$P" = "--platform" ] && [ -d "$HOME/.openclaw/skills" ] && P="openclaw"

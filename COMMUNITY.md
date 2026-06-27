@@ -1,6 +1,6 @@
 # COMMUNITY.md · sofagent 社区
 
-> v0.93 · 2026-06-26 · 孔放勋
+> v0.94 · 2026-06-27 · 孔放勋
 
 ## 📌 当前状态
 
@@ -37,6 +37,20 @@
 | 跨平台实测数据 | OpenClaw 完整，其余 4 平台部分 | Windows/Hermes Agent 实测 |
 | A/B 对照实验 | v0.93 已完成（10 组，结论：增量 = f(陷阱难度)） | 独立测试者 / 真实 Skill 加载对照 |
 | 多语言文档 | 中英双语 README，HANDBOOK 仅中文 | 英文翻译 |
+
+## 🔄 第三方复现
+
+sofagent 的纪律层增量效果需要独立验证，不能只靠作者自己跑的数据。
+
+**复现指南**：[docs/benchmark/reproduction-guide.md](./docs/benchmark/reproduction-guide.md)
+
+**最小复现路径**（30 分钟）：
+1. 克隆 [sofagent-test-suite](https://github.com/cedric123123/sofagent-test-suite)（baseline `56160e1`）
+2. 跑 Task 1（camelCase → snake_case）——A 裸 Agent vs B sofagent 约束
+3. 用 `docs/benchmark/scripts/run-trial.sh` 自动评分（变量名误伤率）
+4. 把结果发到 [GitHub Discussions](https://github.com/KongFangXun/sofagent/discussions)
+
+> 你的复现数据（无论正反）都有价值。数据和作者的结论不一致？更好——说明有值得调查的差异。
 
 ## 行为准则
 

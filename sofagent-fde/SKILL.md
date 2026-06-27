@@ -2,7 +2,7 @@
 name: sofagent-fde
 displayName: sofagent FDE
 slug: sofagent-fde
-version: 0.1.0
+version: 0.94.0
 description: >
   FDE 部署 Agent——当你被注入到部署专家和企业之间的 session 中时，
   引导部署专家按顺序完成：确定场景 → 盘点平台 → 工作流深挖 → 识别 AI 节点 → 价值量化 → 出方案 → 部署交付。

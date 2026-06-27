@@ -3,7 +3,7 @@
 中文 | [English](README.en.md)
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.93-16B8F3)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/version-v0.94-16B8F3)](./HANDBOOK.md)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--26-16B8F3)](./README.md)
 [![定位](https://img.shields.io/badge/定位-Agent_纪律层-16B8F3)](#这是什么)
 [![OpenClaw](https://img.shields.io/badge/🦞优先-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
@@ -182,6 +182,30 @@ sofagent-audit --diff HEAD~1..HEAD --task "任务描述"
 > 💡 为什么审计方向是杀手级：(1) 看的是 git diff，Agent 没法绕过；(2) 跨平台，任何 git 仓库都能跑；(3) 确定性 exit code，不是 LLM 评分；(4) `--silent` 模式零依赖 Agent 日志——Agent 不写日志也能独立判定。铁律 #7/#10/#11/#12/#13 全部基于 git diff 运行。详见 [ARCHITECTURE.md §审计层的证据分层](./ARCHITECTURE.md#audit-evidence-layering)。
 
 > 这不意味着放弃运行时治理——两者互补。运行时治理减少问题发生，提交时审计兜底检测漏网之鱼。
+
+---
+
+## 给部署者：中小企业 AI 落地
+
+你是帮企业部署 AI Agent 的人——FDE 工程师、企业 IT、或者公司里懂点技术的年轻人。
+
+sofagent 给你三样东西：
+
+1. **安装脚本**——30 秒挂上纪律底线（4 底线 + 10 铁律），Agent 不会跑飞
+2. **审计工具**——Agent 改了什么、改对了没有，git diff 一看便知。`--silent` 模式不需要 Agent 配合
+3. **FDE Skill**——十步标准化部署流程，含企业专属 Skill 生成机制
+
+你的客户（企业老板）不需要看这些——他只看你交付的**部署方案书**和**运行报告**。老板的无感是目标，不是问题。
+
+```bash
+# 30 秒部署
+clawhub skill install sofagent-lite
+
+# 审计 Agent 的改动
+sofagent-audit --ci --diff HEAD~1..HEAD
+```
+
+> 详见 [sofagent-fde/SKILL.md](./sofagent-fde/SKILL.md) 十步部署流程。
 
 ---
 

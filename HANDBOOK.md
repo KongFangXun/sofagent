@@ -4,7 +4,7 @@
 >
 > 从 Context Engineering 到 Harness Engineering，再到 Loop Engineering，再到纪律层——AI 和人的协作方式正在从「写好 Prompt」进化到「管好 Agent」。
 >
-> v0.93 · 2026-06-26 · 孔放勋
+> v0.94 · 2026-06-27 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
