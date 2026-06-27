@@ -31,6 +31,10 @@
 当你的 Agent 改代码不看上下文、做完了不验证、同一个坑反复踩——sofagent 能约束其工作习惯、从错误中沉淀教训。
 
 给你设备上的 Agent 配个设备端 Agent 纪律委员：不是让它更聪明，是让它守规矩。
+
+> **纪律层 vs 大模型**：不要和模型比谁更会写代码——那是它的主场。模型越强，剩下那 10% 没人敢省略的环节（验证、审计、为结果负责）反而越值钱。sofagent 做的是这 10%：Agent 改完代码跑验证了吗？踩过的坑记下来了吗？别人能复现它的工作吗？[阅读更多](#效果证据状态)
+
+> **FDE 场景**：Forward Deployed Engineer 带着 AI Agent 进驻企业跑通了落地，但人一走 Agent 如果没人管——改了不该改的、踩了坑不记、产出没人审——就成技术债。sofagent 是 FDE 走之后企业仍然能管住 Agent 的纪律底座。详见 [企业落地](./docs/team-deploy.md)。
 > 验证再干——10 条铁律是底线不是建议。
 
 > **平台差异**：OpenClaw 上完整生效（编排 + Hook + 断路器）；WorkBuddy / Codex / Claude Code / Hermes Agent 上仅宪法层约束生效（先读后写/验证再干/谨慎修改），治理加固全部降级或失效——非 OpenClaw 平台价值约完整版的 30%。其他平台建议用 `--lite` 安装。详见 [平台能力表](#平台能力)。
@@ -160,20 +164,22 @@ sofagent 的终局是一台设备上的 **Agent 纪律委员**——安装时自
 
 v0.85 确立的新主线方向——**从运行时治理（预防）转向提交时审计（检测）**。
 
-当前架构依赖 Agent 配合读取 MD 文件——不配合就全失效（CLI 0/16）。审计方向不依赖 Agent 运行时配合（看的是已经发生的 git diff），但依赖 Agent 诚实记录了日志：
+核心设计原则来自 MiroFish 开源项目的「工具调用与最终答案分离」模式：**git diff 是最终答案（硬证据），Agent 日志是工具调用过程（软证据）。** 审计优先信任 git——Agent 可以骗日志，骗不了 git。
 
 ```bash
-# v0.92（v0.91 MVP + v0.92 审查修复）
+# 沉默模式（v0.94）——只跑 git-diff 规则，不依赖 Agent 日志
+# 任何 git 仓库都能跑，零依赖 Agent 配合
+sofagent-audit --silent --diff HEAD~1..HEAD
+
+# 完整模式——git diff + Agent 日志交叉验证
 sofagent-audit --diff HEAD~1..HEAD --task "任务描述"
 
-❌ 铁律 #1 先读再用：handler.ts 被修改，但修改前无 Read 记录
-✅ 铁律 #3 验证再干：package.json 修改后有 npm test 记录
-⚠️ 铁律 #7 谨慎修改：本次 diff 修改了 3 个不在任务范围内的文件
+❌ 铁律 #11 敏感文件：.env 被修改
+❌ 铁律 #7 谨慎修改：本次 diff 修改了 3 个不在任务范围内的文件
+⚠️ 铁律 #12 测试缺失：src/ 改了但 __tests__/ 没有变化
 ```
 
-> 💡 为什么审计方向是杀手级：(1) 看的是 git diff，Agent 没法绕过运行时行为；(2) 跨平台，任何 git 仓库都能跑；(3) 确定性输出 exit code，不是 LLM 评分。⚠️ 但审计工具依赖 Agent 写入的 `.sofagent/task/logs/` 日志——如果 Agent 不写日志或日志不完整，铁律 #1/#3 的检查会退化。这不影响铁律 #7（谨慎修改）和 #10（如实汇报），它们只看 git diff。详见 [LIMITATIONS.md](./LIMITATIONS.md)
-
-> ⚠️ **审计依赖说明**：铁律 #1/#3 的日志检查依赖 `.sofagent/task/logs/` 目录——如果 Agent 不写日志或日志不完整，审计会退化。详见 [LIMITATIONS.md](./LIMITATIONS.md)。
+> 💡 为什么审计方向是杀手级：(1) 看的是 git diff，Agent 没法绕过；(2) 跨平台，任何 git 仓库都能跑；(3) 确定性 exit code，不是 LLM 评分；(4) `--silent` 模式零依赖 Agent 日志——Agent 不写日志也能独立判定。铁律 #7/#10/#11/#12/#13 全部基于 git diff 运行。详见 [ARCHITECTURE.md §审计层的证据分层](./ARCHITECTURE.md#audit-evidence-layering)。
 
 > 这不意味着放弃运行时治理——两者互补。运行时治理减少问题发生，提交时审计兜底检测漏网之鱼。
 
@@ -193,13 +199,21 @@ sofagent-audit --diff HEAD~1..HEAD --task "任务描述"
 
 ### ⚡ 快速体验（仅宪法层，30 秒）
 
-只想试试 sofagent 的核心约束？不需要完整安装：
+只想试试 sofagent 的核心约束？不需要完整安装。
+
+Lite 版只装 4 底线 + 10 铁律——不装 daemon、编排引擎、审计工具。适合非 OpenClaw 平台、FDE 驻场快速部署、个人开发者轻量使用。
 
 ```bash
-bash sofagent/scripts/install.sh --lite
-```
+# ClawHub
+clawhub skill install sofagent-lite
 
-装完你会得到：宪法（4 底线 + 10 铁律）+ 反思区模板（think.md）+ 规则模板（rules.md）。编排引擎、daemon、脚本工具都不装——降 80% 复杂度，保 60% 价值。非 OpenClaw 平台推荐先用 Lite。
+# SkillHub
+skillhub install sofagent-lite
+
+# 或从仓库手动装
+git clone https://github.com/KongFangXun/sofagent.git
+sh sofagent/sofagent-lite/install.sh
+```
 
 ### 🚀 完整安装（两步）
 

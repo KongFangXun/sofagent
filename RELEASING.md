@@ -58,8 +58,12 @@
 
 ### 发布
 
-- [ ] `git tag v0.93 && git push origin v0.93`
-- [ ] `gh release create v0.93`
-- [ ] `clawhub skill publish ./sofagent --slug sofagent --version 0.93.0`
-- [ ] `skillhub publish <temp-dir-without-images> --version 0.93.0`
-- [ ] 验证：`git tag -l` / `gh release view` / 安装副本版本号
+- [ ] `git tag v0.94 && git push origin v0.94`
+- [ ] `gh release create v0.94`
+- [ ] `clawhub skill publish ./sofagent --slug sofagent --version 0.94.0`
+- [ ] `clawhub skill publish ./sofagent-lite --slug sofagent-lite --version 0.1.0`
+- [ ] `skillhub publish <temp-dir> --version 0.94.0`
+- [ ] `skillhub publish <temp-lite-dir> --version 0.1.0`
+- [ ] 安装副本同步：WorkBuddy ✅ / OpenClaw ✅
+- [ ] 验证：tag ✅ / release ✅ / 安装副本版本号 ✅
+- [ ] 后续版本同步：sofagent-lite SKILL.md 宪法内容 ≠ 独立 fork，是 sofagent/SKILL.md 宪法节的**自动化摘取**。v0.9x 期间人工同步，v1.0 起写脚本自动同步

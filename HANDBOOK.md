@@ -2,7 +2,7 @@
 
 > **为 AI Agent 提供纪律层与反思循环：4 条底线 + 10 则铁律约束工作习惯，复杂任务自动拆解执行，每次跑完自动复盘。**
 >
-> 从 Context Engineering 到 Harness Engineering 再到 Loop Engineering。
+> 从 Context Engineering 到 Harness Engineering，再到 Loop Engineering，再到纪律层——AI 和人的协作方式正在从「写好 Prompt」进化到「管好 Agent」。
 >
 > v0.93 · 2026-06-26 · 孔放勋
 
@@ -177,7 +177,7 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 > 强模型时代，告诉 Agent **要什么**比告诉它**怎么做**更重要——这就是任务目标制定的核心理念。
 
-Claude Code 有一个 `/goal` 命令——设一个目标，Agent 自己拆任务、自己跑到完成。这是 Loop Engineering 的雏形：**不再直接 prompt Agent，而是设一个目标让 Agent 自己在循环里跑到完成。** OpenClaw 作者 Peter 和 Claude Code 负责人在同一时间说了几乎一样的话，Addy Osmani 把这套方法论总结为 [Loop Engineering](https://addyo.substack.com/p/loop-engineering)。
+Claude Code 有一个 `/goal` 命令——设一个目标，Agent 自己拆任务、自己跑到完成。这是 Loop Engineering 的雏形：**不再直接 prompt Agent，而是设一个目标让 Agent 自己在循环里跑到完成。** OpenClaw 作者 Peter 和 Claude Code 负责人在同一时间说了几乎一样的话，Addy Osmani 把这套方法论总结为 [Loop Engineering](https://addyo.substack.com/p/loop-engineering)。而 sofagent 的纪律层是 Loop Engineering 之后的一步：不只让 Agent 自己跑循环，还给它加了规则、审计和复盘机制。
 
 白盒循环的设计决策见 [ARCHITECTURE.md](./ARCHITECTURE.md#white-box-loop)。
 
@@ -276,6 +276,19 @@ git clone https://github.com/KongFangXun/sofagent.git
 cd sofagent
 bash sofagent/scripts/install.sh --platform {你的平台}
 ```
+
+**Lite 版（30 秒，仅宪法层）**：只想挂个纪律底线、不需要全套？装独立 Lite 版本：
+
+```bash
+clawhub skill install sofagent-lite             # ClawHub
+skillhub install sofagent-lite                  # SkillHub
+
+# 或从仓库手动装
+git clone https://github.com/KongFangXun/sofagent.git
+sh sofagent/sofagent-lite/install.sh
+```
+
+Lite 版只装 4 底线 + 10 铁律，不装 daemon、编排引擎、审计工具。适合非 OpenClaw 平台、FDE 驻场快速部署、个人开发者轻量使用。
 
 | 平台 | install.sh 行为 |
 |------|------|
@@ -387,7 +400,7 @@ exit code：**0 = 全通过 / 1 = 有警告 / 2 = 有违规**。
 | 评分越来越不准 | 经验漂移——翻 task/logs 对照 think.md，清理低置信度旧条目 |
 | 什么工作不该让 Agent 做 | 去重、格式校验、文件清理这类确定性操作——用 bash 脚本比 Agent 更快更准更便宜。Agent 管判断，脚本管执行 |
 | **企业部署安全吗？** | v0.90 起 Skill 安全审查（22 条正则硬门 + LLM 语义审查）+ 数据存储声明已就位，审计层 v0.92。详见 [README FDE 场景](./README.md#fde-场景为什么前沿部署工程师需要纪律层)。安装第三方 Skill 前建议使用 [SkillSpector](https://github.com/NVIDIA/SkillSpector) 等工具进行安全扫描——检测提示词注入、数据外传、供应链工具投毒等 64 类风险 |
-| **怎么判断自己在做 Loop Engineering？** | 三个自检问题：① 任务是否有明确的完成标准？② AI 每完成一步是否有反馈机制指导下一步优化？③ 是否提前规划了人工介入的关键节点，而非全程盯守？如果三个都是「是」，你就在设计 Loop 而不是写 Prompt。参见 [Loop Engineering 五大要素](./ARCHITECTURE.md#五参考与致谢) |
+| **怎么判断自己在做 Loop Engineering？** | 三个自检问题：① 任务是否有明确的完成标准？② AI 每完成一步是否有反馈机制指导下一步优化？③ 是否提前规划了人工介入的关键节点，而非全程盯守？如果三个都是「是」，你就在设计 Loop 而不是写 Prompt。参见 [五大要素](./ARCHITECTURE.md#五参考与致谢) |
 
 > 💡 更多细节见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 

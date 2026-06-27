@@ -24,6 +24,10 @@ My name is KongFangXun. I'm a product manager who doesn't write code. All design
 
 A **discipline layer** for AI agents. Not a framework to build them, not a tool to make them smarter — a set of rules and guardrails to stop them from going off the rails. Think of it as a "discipline officer" for your agents, not a governance framework.
 
+> **The 90/10 rule**: Don't compete with AI models on the 90% they already do well (code generation). The real value is in the 10% nobody dares skip — verification, audit trails, accountability. As AI models get stronger, this 10% becomes MORE valuable. sofagent owns that 10%.
+
+> **Post-FDE governance**: Forward Deployed Engineers bring AI agents into enterprises and make them work. But after FDEs leave, who keeps those agents in line? sofagent is the discipline layer that enterprises use after deployment — ensuring agents don't turn into unmanaged technical debt. See [Enterprise deployment](./docs/team-deploy.md).
+
 | Component | How it works |
 |------|------|
 | **Skill** (judgment) | Markdown files as rulebooks. Agent loads them and follows: 3-layer loading chain, complexity estimation, reflection loop |

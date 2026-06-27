@@ -19,7 +19,8 @@
 > - **v0.91**：评审落地 + sofagent-audit MVP + 文档瘦身 47%
 > - **v0.92**：v0.91 审查修复——execSync 安全加固 + 信任模型诚实声明 + 铁律检测精度的边界 + 单元测试覆盖
 > - **v0.93**：工程迁移 + 4 项 FP 修复 + 6 项文档修缮 + 2 份社区 PR 合入跟进——bash→TS 第一步 + 信任模型精确化 + 中英文定位对齐
-> - **v0.94**：JSONL 结构化日志 + MCP server MVP + Agency Agent 对接 + 文档精修 + 社区复现计划——计划中
+> - **v0.94**：工程硬伤止血 + 审计独立化（沉默审计 + LogFormat 可插拔）+ FDE 部署者优先 + 真实 Skill 加载链复现实验——双轮评审重排，MCP/Agency 推到 v0.95
+> - **v0.95**：审计配置化 + MCP server + Agency Agent 对接 + OpenClaw 预装——依赖 v0.94 审计独立化先落地
 
 ---
 
@@ -29,15 +30,21 @@
 
 > 📖 [开发日志](./docs/changelog/v0.93.md)
 
-> 📖 [开发日志](./docs/changelog/v0.93.md)
+---
+
+## [v0.94] — 计划中（评审重排）
+
+工程硬伤止血 + 审计独立化 + FDE 部署者优先 + 实验补证——v0.93 双轮评审（GLM-5.2 + DeepSeek V4 Pro）后重排，MCP/Agency Agent 推到 v0.95。
+
+> 📖 [开发日志](./docs/changelog/v0.94.md)
 
 ---
 
-## [v0.94] — 计划中
+## [v0.95] — 计划中
 
-task/logs JSONL 结构化日志 + MCP server MVP + Agency Agent 对接 + 文档精修 + 社区复现计划——v0.92 审查遗留的 5 项较大改动排入此版。
+审计配置化 + MCP server + Agency Agent 对接 + OpenClaw 预装 + 合规三件套——依赖 v0.94 审计独立化先落地。
 
-> 📖 [开发日志](./docs/changelog/v0.94.md)
+> 📖 [开发日志](./docs/changelog/v0.95.md)
 
 ---
 
