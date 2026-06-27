@@ -213,6 +213,8 @@ v0.85 确立新方向：**提交时审计**（sofagent-audit）。不依赖 Agen
 
 sofagent-audit 的全部证据来源是 Agent 自己写的 `.sofagent/task/logs/*.md` 文件。铁律 #1/#3 的日志检查依赖 Agent 写入的任务日志——Agent 可在日志中伪造记录绕过检测。这是架构选择（不依赖 Agent 平台 hook），不是实现 bug。审计工具的可靠性上限 = Agent 日志的真实性。
 
+> 💡 v0.94 起提供 `--silent` 模式：只跑纯 git-diff 规则（敏感文件触碰 / 源码改测试没动 / 超大无注释等），不依赖 Agent 日志。Agent 不写日志时审计仍有判定力——虽然精确度会降。详见 [ARCHITECTURE.md §审计层的证据分层](./ARCHITECTURE.md#audit-evidence-layering)。
+
 > 这不是实现 bug，是架构选择。修不了，但必须诚实标注。v0.93+ 计划用结构化日志（JSONL）替代自然语言 MD，让审计工具做精确匹配而非启发式猜测。
 
 **企业用户缓解措施**（在平台级 audit log 可用之前）：
@@ -220,6 +222,8 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `.sofagent/task/logs/
 1. **交叉验证**：CI 中配合 `git log --diff-filter=M --name-only` 与日志中的文件列表做时间戳交叉对比——Agent 声称读过但 git 无记录的 → 异常信号
 2. **人工抽查**：日志为 Markdown 明文，团队 Lead 可定期随机抽查 1-2 条任务的日志完整性，成本极低
 3. **`--strict` 模式**（v0.93 新增）：CI 中启用 `sofagent-audit --strict`，无日志直接 FAIL——确保 Agent 至少写了日志才有机会通过审计
+
+> 📖 **为什么用退出码而不是 LLM 判定**：Palantir CEO 卡普在 2026 年 CNBC 访谈中提出了一个底层二分法——AI 任务分两档：**概率友好型**（50% 正确率就能盈利，如内容创作）和 **99.9% 确定性刚需**（每个环节必须可追溯、可追责、可修复，如制造业/军工/医疗）。大模型是前者，审计是后者。sofagent-audit 选择确定性退出码（0/1/2）而不是 LLM 判定，正是因为审计属于「99.9% 确定性刚需」——你不能让一个概率性的模型去判定另一个 Agent 的输出是否合格。退出码是确定性的，LLM 判定不是。
 
 ---
 

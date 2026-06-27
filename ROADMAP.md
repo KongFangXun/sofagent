@@ -3,6 +3,8 @@
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
 > v0.93 · 2026-06-26 · 工程迁移 + 实验验证——4 项 FP 修复 + bash→TS 迁移 + 10 组实验完成（纪律层增量 = f(陷阱难度)，高难度场景 0% vs 100% 误伤）
 >
+> v0.94 规划已更新（2026-06-27）：双轮评审后重排，优先级从 MCP/Agency 转向代码止血 + 审计独立化 + FDE + 实验补证。详见 [v0.94 开发日志](./docs/changelog/v0.94.md)
+>
 > **先证明纪律层增量是真的，再做其他任何事。**
 
 ---
@@ -11,16 +13,16 @@
 
 - [**现在在哪：v0.93**](#现在在哪v093)
 - [**迭代历程**](#迭代历程) — 倒叙，从最新到最早
-- [**未来去哪**](#未来去哪) — v0.94 → v1.0 → v2.x
+- [**未来去哪**](#未来去哪) — v0.94 → v0.95 → v0.96 → v1.0 → v2.x
 - [**探索方向**](#探索方向)
 - [**不需要的**](#不需要的)
 - [**欢迎参与**](#欢迎参与)
 
 ---
 
-## 现在在哪：v0.93
+## 现在在哪：v0.93 → v0.94 方向
 
-> v0.93 是**工程迁移 + 实验验证版本**。v0.92 经三视角全身审查（GitHub 大神 + 企业 CTO + 未来参与者），17 项问题中的 11 项落地。
+> v0.93 是**工程迁移 + 实验验证版本**。v0.94 方向已定：代码止血 + 审计独立化 + FDE 部署者优先。核心洞察来自 MiroFish 开源项目——「信任产出（git diff），不信任过程（Agent 日志）」。详见 [ARCHITECTURE.md §审计层的证据分层](./ARCHITECTURE.md#audit-evidence-layering)。
 
 | 级别 | 交付 | 状态 |
 |------|------|:--:|
@@ -220,7 +222,9 @@
 > ⚠️ 诚实地说：下面是**方向**，不是承诺。没实测过的事标「不知道」——不画饼。
 > **v0.85 砍削原则**：验证优先于功能，先证明纪律层增量是真的，再做其他任何事。
 
-### 终局：设备端 Agent 纪律委员
+### 终局：中小企业 AI 落地的纪律底座
+
+sofagent 的终局是两层：**设备端 Agent 纪律委员**（技术形态）+ **中小企业 AI 落地的纪律底座**（用户价值）。
 
 ```mermaid
 flowchart TB
@@ -245,45 +249,66 @@ flowchart TB
     style oc fill:#FF4D4D,color:#fff
 ```
 
+#### 两条路径，同一终局
+
+| 路径 | 面向谁 | 怎么落地 | 终点 |
+|------|------|------|------|
+| **FDE 驻场部署** | 传统中小企业（无技术团队） | FDE 工程师进场 → sofagent-fde 十步流程 → 部署交付 → 撤离。老板无感，只知道"AI 能用了" | 企业 Agent 不出错的纪律底座 |
+| **开发者自部署** | 开源社区 / 技术团队 | git clone → install.sh → 审计工具 → CI 集成 | 设备端 Agent 纪律委员 |
+
+> 💡 **客户 ≠ 使用者**。传统中小企业的老板不读 README，不跑 install.sh——他只看 FDE 交付的方案书和运行报告。真正部署 sofagent 的是 FDE 工程师、企业 IT、或公司里懂点技术的年轻人。sofagent 面向**部署者**，不面向买单者。
+
+#### 设备端形态
+
 sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带 OpenClaw，通过它调度设备上任意 Agent。固定 workflow 节点只需首次编排——AO compose 拆解 + Agency Agent 注入模板后固化，之后每次开启新 session 复用即可。做完的结果通过 MCP server 直接推到支持 webhook 的企业协同平台。**数据主权在设备**——所有记忆、日志、决策记录永不离开本地。一台设备 = 一个 7×24 的 AI 工作流节点。
 
 ---
 
 ### v0.9x — 纪律层验证 + 工程基底
 
-#### v0.93：工程迁移 + 检测精度闭环 + 文档修缮
+> v0.93 双轮评审（GLM-5.2 + DeepSeek V4 Pro）后重排。核心调整：**先止血（代码硬伤）→ 再补强（审计独立化）→ 后扩展（FDE/SMB）**。MCP/Agency Agent/OpenClaw 预装从 v0.94 推到 v0.95——它们依赖"审计可信了"才有意义。
 
-> ⚠️ 如果 10 组实验增量无法复现，MCP server 和 Agency Agent 对接顺延，优先做文档精修和社区复现。
+#### v0.94：工程硬伤止血 + 审计独立化 + FDE 部署者优先 + 实验补证
 
-- task/logs JSONL 结构化日志：MD→JSONL，审计工具精确匹配
-- MCP server MVP：watch `.sofagent/task/logs/`，任务完成立即推送
-- 对接 Agency Agent 模板库（同一开发者，天然兼容，不需要从零建模板注入器）
-- OpenClaw 预装集成：`install.sh` 自动装 OpenClaw + 注册系统服务
-- 合规三件套（脱敏增强 + 审计报告 + 保留策略强制执行）
-- **文档精修**：DEVELOPMENT.md 重构（绿灯路径检测独立成节 + 状态账本模板）、ARCHITECTURE.md 引用砍削（Hirom+Lima 合并）、信任模型缓解措施完善
-- **社区复现计划**：标准化复现脚本 + COMMUNITY.md 第三方复现任务入口
-- demo.gif 录制（实验数据完整后）
+> 📖 [开发日志](./docs/changelog/v0.94.md)
 
-> ⚠️ 如果 10 组实验增量无法复现，MCP server 和 Agency Agent 对接顺延，优先做文档精修和社区复现。
+- **代码硬伤止血（P0）**：6 项——VERSION 不一致 / 正则大小写 bug / verify-evidence 正则过宽 / 正负证据不区分 / tsc\b 过宽 / checkLogs 迭代修改数组 + 三元死代码
+- **沉默审计模式 `--silent`（P0）**：纯 git diff 行为分析，不依赖 Agent 日志。铁律 #7/#10 完全自治，#3 有条件 WARN。把审计从"60% 依赖 Agent 配合"降到"20%"。设计灵感来自 MiroFish 的「工具调用与最终答案分离」模式——git diff = 最终答案，Agent 日志 = 工具调用，信任产出不信任过程
+- **LogFormat 可插拔接口（P0）**：MarkdownLogReader + JSONLLogReader，审计工具核心弱点改善
+- **task/logs JSONL 结构化日志（P0）**：精确匹配替代启发式正则
+- **真实 Skill 加载链复现实验（P0）**：WorkBuddy 完整加载链 vs prompt 注入对照，回答"核心价值是否真实"
+- **sofagent Lite（P0）**：独立轻量版，30 秒装好宪法层。`sofagent-lite/install.sh` 独立安装，SkillHub/ClawHub 独立发布。面向非 OpenClaw 平台 + FDE 驻场快速部署 + 个人开发者
+- **sofagent-fde Skill（P0，从 P1 升级）**：十步部署流程 + 企业专属 Skill 生成 + 质量抽检。中小企业 AI 落地唯一可行路径
+- **6 个子 Skill 检查点（P1）**：SKILL.md（主入口）+ engine/entry-gate/task-aware/task-closure/loop-check 五个子 Skill——每个做一次「≤90 行 + Gotcha 章节完整性 + 文件路径引用有效性」检查。子 Skill 是产品形态不是功能，需要持续维护
+- **文档降温（P1）**：ARCHITECTURE T/S/S "完全同构"→"结构类比" + Hirom/Lima 合并 + README SMB 部署者入口
+- **社区复现计划（P2）**：标准化复现脚本 + 第三方复现入口
 
-#### v0.95：首个企业平台 webhook
+#### v0.95：审计配置化 + 推送层 + 编排对接
 
-- 支持 webhook 的企业协同平台接入（选一个平台做 MVP，如飞书或 Slack）
-- 任务完成 → MCP server 检测 → 主动推送到企业平台
-- 支持 webhook bot 机器人接收任务 + 回传结果
-- 对标 Claude 的 Slack 集成
+> 📖 [开发日志](./docs/changelog/v0.95.md)
 
-#### v0.96：跨 Agent 分发 + 实验验证
+- **审计配置化（P0）**：`.sofagent/config.yml`——LOW_RISK_PATTERNS / testPatterns / 规则阈值全部可配，FDE 部署者为每个企业定制
+- **MCP server MVP（P1）**：watch JSONL + 任务完成推送企业平台
+- **Agency Agent 模板对接（P1）**：`--with-agency` + 角色匹配注入
+- **OpenClaw 预装集成（P1）**：install.sh 自动装底座 + 系统服务注册
+- **合规三件套增强（P2）**：脱敏增强 + 审计报告 + 保留策略强制执行
+- **CLI 体验补全（P2）**：`--json` 输出 + pre-commit hook 模板
 
-- OpenClaw AO compose 拆解任务 → Agency Agent 注入模板 → sub agent 执行
-- 45 组反转实验数据分析：p<0.05 证实 / p≥0.05 存疑 / 无趋势证伪
+#### v0.96：实验强化 + 跨 Agent 分发
+
+- **多模型交叉验证**：GLM-5.2 + Claude 对照（当前仅 DeepSeek V4 Flash 单模型）
+- **反转设计**：A→B / B→A 顺序实验（排除执行顺序效应）
+- **Task 2 异常复现**：sof-1 的 1/4 vs 裸 4/4——n≥5 确认是噪声还是系统性缺陷
+- **高难度陷阱补充**：设计更多类似 Task 1「同名语义混淆」的场景
+- **扩大样本**：每个条件 n=5，降低单次波动影响
+- **跨 Agent 分发**：OpenClaw AO compose → Agency Agent 注入 → sub agent 执行
 - **最坏情况预案**：如果增量无法复现——诚实发表结果
 
 #### Beta 公测（v0.97-0.99）
 
 - 招募 20 个用户（至少 2 个企业场景），30 天试用
 - Beta 期间只修反馈，不加新功能
-- 飞书 webhook 接入（补第三个平台）
+- 至少一个企业平台 webhook 接入
 
 ---
 
@@ -309,11 +334,12 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 
 | 想法 | 难度 | 说明 |
 |------|:--:|------|
+| **Skill 自进化闭环** | 🔧🔧 | FDE 部署时生成的企业专属 Skill → workflow 检查点标记不合格任务 → skillopt 自动分析失败模式 → Skill 自动升级。形成"部署→运行→检查→进化"四步闭环 |
+| 质量抽检仪表盘 | 🔧 | 每个企业节点的抽检合格率、不合格趋势、skillopt 迭代记录可视化 |
 | age 加密 | 🔧 | age 加密 think.md + task/logs |
 | 多用户隔离 | 🔧 | 同机权限隔离 + 共享 rules.md |
 | 多企业平台 webhook | 🔧 | 飞书 + 自定义 webhook |
 | 记忆架构升级 | 🔧 | Ledger-Views-Policy 三层模型 |
-| Skill 自进化 | 🔧 | SkillOpt + TRACE2SKILL + Evil Skill |
 | 成本仪表盘 | 🔧 | bash 读 task/logs 输出 token/循环次数/失败率 |
 | Windows 支持 | 🔧 | PowerShell 平行实现（待需求验证） |
 | 认知投降防线 / 外部评估器 / loop-check 反驳层 | 🔧 | 原 v1.x |
@@ -342,14 +368,15 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 
 | 方向 | 面向谁 | 一句话 |
 |------|------|------|
-| **CI/CD Gate** | 工程团队 / DevOps | 铁律打包成 GitHub Action，PR 自动检查 Agent 生成的代码 |
-| **sofagent Lite** | 个人开发者 | 只有宪法（SKILL.md）+ 反思（think.md），30 秒装好 |
-| **审计报告** | 企业管理者 / 合规 | task/logs → "你的 Agent 这周有没有违反铁律"的周报 |
+| **CI/CD Gate** | 工程团队 / DevOps | 铁律打包成 GitHub Action，PR 自动检查 Agent 生成的代码（→ v1.0） |
+| **双闸验证** | 安全敏感场景 | 工具执行前 gate + 执行后副作用复查——不光问「能不能」，还问「做对没」（→ v1.x） |
+| **Agent 疲劳度检测** | 长时间任务用户 | 监控上下文窗口污染和决策质量衰减信号（→ v1.x） |
 | **轻量插件** | 非 OpenClaw 平台用户 | 浏览器/IDE 插件在 DOM 层注入 1-2 条核心铁律，最低限度的纪律层 |
-| **双闸验证** | 安全敏感场景 | 工具执行前 gate + 执行后副作用复查（Google Cloud Code 模式）——不光问「能不能做」，还要问「做完了对不对」 |
-| **审计工具健康度** | DevOps / 长期运维 | sofagent-audit 规则本身也需要被审计——规则是否因模型升级失效？baseline 是否悄悄漂移？ |
-| **Agent 疲劳度检测** | 长时间任务用户 | 监控上下文窗口污染和决策质量衰减信号，铁律 #2 的专门化扩展 |
 | **IDE 实时防护整合** | Cursor/Copilot 用户 | 与 IDE 原生能力（diff 级撤销、inline suggestion）的整合方向 + 道德风险检测 |
+| **FDU 前线部署单元** | 企业 FDE 团队 | 参照 IBM 提出的 FDU 模式（6 人干 30 人的活），sofagent 作为 FDU 中间层的 Agent 纪律底座（→ v1.x） |
+| **AI 热词路线对标** | 产品定位 | sofagent 踩在 AI 演化路线的三个节点上：Skill（第 7 阶段）、Harness Engineering（第 10 阶段）、Workspace Agent（第 12 阶段） |
+| **SMB 场景铁律扩展** | 传统中小企业 | 铁律从代码开发扩展到数据处理/报表生成/文档撰写——"验证再干"对 SMB 不是 `npm test`，是"数据算对了没有"（→ v0.96 探索） |
+| **平台级审计日志对接** | 企业安全 | 对接 OpenClaw hook 级 / WorkBuddy API 级审计日志，替代 Agent 自我报告——根治审计信任根问题（→ v1.x） |
 
 ---
 

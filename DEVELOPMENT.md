@@ -340,6 +340,8 @@ ao compose 拆完任务
 
 > ⚠️ 工程边界：Loop Agent 不是独立进程，是主 Agent 切换 prompt 以顾问身份输出建议。评分是 LLM 自评，无客观基准，仅供横向对比参考。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 
+> 📖 **实现参照**：MOI 自动化项目（2026 年 6 月落地）采用了「云端规划 + Codex 隔离 work tree 实现 + 主工作区仅确认后修改」的权责分离架构，与 sofagent 的 entry-gate → task-aware → task-closure 三道闸门的设计原则一致——都是「规划/执行/审核」三层隔离。MOI 的 Dispatch Gate 是最后一道关卡，决定代码变更是否落地；sofagent 的 loop-check closure 模式是最后一道关卡，决定任务闭环能否通过。
+
 复盘加权算出总分，分比上次高 → 覆盖 orchestrator/ 为最优配置。分比上次低 → 不动，标「待验证」。
 
 这和 Loop Engineering 的「造/验分离」是同一个原则——做任务的子 Agent 不给自己复盘，由 Loop Agent 来做复盘评估。
