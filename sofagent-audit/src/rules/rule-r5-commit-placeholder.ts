@@ -1,11 +1,10 @@
 // ============================================================
-// 铁律 #10 如实汇报
-// commit message 是否为空 / 是否纯占位符（"fix"/"update"/"wip"）
-// 违规 → exit code 1（警告）
-// v0.94：优先使用 ctx.commitMsg，为空时 fallback 到 git 读取（向后兼容）
+// R5 占位 commit
+// commit message 只有 "fix"/"update"/"wip" → WARN
+// evidenceMode: git-diff（纯 diff 判定，只看 commitMsg 不看日志）
+// ⚠️ 与 #10 功能重叠，但 #10 是 hybrid（有日志也跑），R5 是 git-diff（纯 diff）
 // ============================================================
 
-import { execFileSync } from 'child_process';
 import type { AuditContext, RuleCheck } from './types';
 
 const PLACEHOLDER_PATTERNS = [
@@ -16,30 +15,20 @@ const PLACEHOLDER_PATTERNS = [
   /^tmp/i,
 ];
 
-export function checkRule10(ctx: AuditContext): RuleCheck {
+export function checkRuleR5(ctx: AuditContext): RuleCheck {
   const rule: RuleCheck = {
-    name: '铁律 #10 如实汇报',
-    number: 10,
+    name: 'R5 占位 commit',
+    number: 105,
     status: 'PASS',
     details: [],
     evidenceMode: 'git-diff',
   };
 
-  // 优先使用 ctx.commitMsg
-  let message = (ctx.commitMsg || '').trim();
+  const message = (ctx.commitMsg || '').trim();
 
-  // 如果 ctx.commitMsg 为空，fallback 到 git 读取（向后兼容）
+  // commit message 为空 → WARN
   if (!message) {
-    try {
-      message = execFileSync('git', ['log', '-1', '--pretty=%B'], { encoding: 'utf-8' }).trim();
-    } catch (err) {
-      rule.details.push('无法读取 commit message: ' + (err as Error).message);
-      return rule;
-    }
-  }
-
-  if (!message) {
-    rule.status = 'FAIL';
+    rule.status = 'WARN';
     rule.details.push('commit message 为空。');
     return rule;
   }

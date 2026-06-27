@@ -2,6 +2,7 @@
 // 铁律 #1 先读再用
 // 被修改的文件，修改前是否有 Read 操作记录（检查 .sofagent/task/logs/ 目录）
 // 违规 → exit code 2
+// v0.94：新增 --silent 双路径——无日志 + silent 走 diff 启发式，只 WARN 不 FAIL
 // ============================================================
 
 import { basename } from 'path';
@@ -15,6 +16,7 @@ export function checkRule01(ctx: AuditContext): RuleCheck {
     number: 1,
     status: 'PASS',
     details: [],
+    evidenceMode: 'hybrid',
   };
 
   const readFiles = getReadAccessMap(logEntries);
@@ -24,7 +26,14 @@ export function checkRule01(ctx: AuditContext): RuleCheck {
 
   // 如果没有需要检查的修改文件（全是 deleted 或 renamed），跳过检查
   if (modifiedFiles.length === 0) {
-    return { ...rule, status: 'PASS' };
+    return rule;
+  }
+
+  // 双路径：无日志 + silent → 走 diff 启发式，只 WARN 不 FAIL
+  if (ctx.silent && logEntries.length === 0) {
+    rule.status = 'WARN';
+    rule.details.push('--silent 模式：无任务日志，跳过精确「先读再用」检查（git diff 无法证明读取行为）。');
+    return rule;
   }
 
   // 如果没有日志记录（可能是新项目或日志被清空），发出提示但不判定违规

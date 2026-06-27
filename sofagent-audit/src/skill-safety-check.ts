@@ -19,7 +19,7 @@
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
 import { join, extname } from 'path';
 
-const VERSION = '0.92';
+const VERSION = '0.94';
 
 // ANSI 颜色代码
 const RED = '\x1b[0;31m';
@@ -30,7 +30,8 @@ const NC = '\x1b[0m';
 
 /** 安全检查规则 */
 export interface SafetyRule {
-  pattern: RegExp;
+  pattern: RegExp;       // 原始 pattern（保留，用于 source 展示）
+  regex?: RegExp;        // 预编译的执行用正则（无 g flag）
   category: string;
   severity: 'DANGEROUS' | 'SUSPICIOUS' | 'INFO';
   description: string;
@@ -118,7 +119,11 @@ const RULES: SafetyRule[] = [
   { pattern: /eval\(atob\(/, category: '混淆代码', severity: 'DANGEROUS', description: 'eval(atob()) Base64 混淆执行' },
 ];
 
-/** 可扫描的文件扩展名 */
+/** 预编译规则（去除 g flag，避免 lastIndex 状态问题） */
+const COMPILED_RULES = RULES.map(r => ({
+  ...r,
+  regex: new RegExp(r.pattern.source, r.pattern.flags.replace(/g/g, '')),
+}));
 const SCANNABLE_EXTENSIONS = new Set(['.md', '.js', '.ts', '.py', '.sh', '.json', '.yaml', '.yml']);
 
 // ============================================================
@@ -187,11 +192,9 @@ export function scanFile(filePath: string): SafetyHit[] {
     return hits;
   }
 
-  for (const rule of RULES) {
-    // 重置 lastIndex
-    const re = new RegExp(rule.pattern.source, rule.pattern.flags.includes('g') ? rule.pattern.flags : rule.pattern.flags);
+  for (const rule of COMPILED_RULES) {
+    const re = rule.regex;
     for (let lineNum = 0; lineNum < lines.length; lineNum++) {
-      re.lastIndex = 0;
       if (re.test(lines[lineNum])) {
         hits.push({
           file: filePath,
