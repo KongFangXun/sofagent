@@ -6,14 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { checkRuleE4 } from './rule-e4-low-comment-ratio';
 import type { AuditContext } from './types';
 import type { DiffFile } from '../diff-parser';
-
-function makeDiffFile(path: string, lines: string[] = []): DiffFile {
-  return { path, status: 'modified', lines };
-}
-
-function makeCtx(diffFiles: DiffFile[]): AuditContext {
-  return { diffFiles, logEntries: [] };
-}
+import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('E4 不低注释', () => {
   it('新增 > 200 行 + 注释率 < 5% → WARN', () => {

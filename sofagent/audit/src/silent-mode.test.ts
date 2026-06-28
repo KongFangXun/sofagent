@@ -13,14 +13,7 @@ import { checkRuleA1 } from './rules/rule-a1-sensitive-files';
 import { checkRuleE4 } from './rules/rule-e4-low-comment-ratio';
 import type { AuditContext } from './rules/types';
 import type { DiffFile } from './diff-parser';
-
-function makeCtx(diffFiles: DiffFile[], opts?: Partial<AuditContext>): AuditContext {
-  return { diffFiles, logEntries: [], ...opts };
-}
-
-function makeDiffFile(path: string, lines: string[] = [], status: DiffFile['status'] = 'modified'): DiffFile {
-  return { path, status, lines };
-}
+import { makeDiffFile, makeCtx } from './test-utils';
 
 describe('沉默审计模式 · 7 条纯 diff 规则', () => {
   describe('R1 无关文件', () => {

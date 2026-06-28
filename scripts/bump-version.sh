@@ -14,9 +14,11 @@
 #   3. .ps1 文件: $VERSION = "OLD" 或 $VERSION_STR = "OLD"
 #   4. index.ts:  vOLD（仅 sofagent/audit/src/index.ts）
 #   5. MD 文件头: > vOLD（排除 docs/changelog/）
-#   6. README badge: version-vOLD
+#   6. README badge: version-OLD
 #   7. SKILL.md frontmatter: version: OLD（及 3 段格式 OLD.0）
 #   8. package.json version 字段: OLD.0 → NEW.0
+#   9. SKILL.md 正文标题: # · vOLD
+#  10. MD 尾部署名: *vOLD，日期*
 #
 # 不处理: docs/changelog/ 目录下任何文件
 #
@@ -84,32 +86,26 @@ echo ""
 # ── 统计变量 ──────────────────────────────────────────────────
 TOTAL_CHANGED=0
 
-# ── 替换辅助函数（BSD sed 兼容）────────────────────────────────
-# 用法: do_replace <文件> <sed表达式> <描述>
-do_replace() {
+# ── 替换辅助函数（BSD sed 兼容，SC2001 无警告）─────────────────
+# sed_inplace_replace <文件> <旧字符串> <新字符串> <描述>
+# 使用 sed 直接读文件（非 echo | sed），避免 SC2001
+sed_inplace_replace() {
   local file="$1"
-  local pattern="$2"
-  local desc="$3"
+  local old_str="$2"
+  local new_str="$3"
+  local desc="$4"
 
-  if [[ ! -f "$file" ]]; then
-    return 0
-  fi
+  [[ -f "$file" ]] || return 0
 
-  # 检查是否匹配
-  if ! grep -qF "$(echo "$pattern" | sed 's/.*s\///;s/\///;s/\$.*//')" "$file" 2>/dev/null; then
-    # 上面的 grep 过于脆弱，直接用 sed 检查
-    :
-  fi
+  local content new_content
+  content=$(cat "$file")
+  new_content=$(sed "s|${old_str}|${new_str}|g" "$file")
 
-  # 用 sed 替换并检查是否有变化
-  local content
-  content=$(sed "$pattern" "$file")
-
-  if [[ "$content" != "$(cat "$file")" ]]; then
+  if [[ "$new_content" != "$content" ]]; then
     echo -e "  ${GREEN}✓${NC} $desc"
     echo -e "    ${CYAN}$file${NC}"
     if ! $DRY_RUN; then
-      printf '%s\n' "$content" > "$file"
+      printf '%s\n' "$new_content" > "$file"
     fi
     TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
   fi
@@ -120,14 +116,14 @@ echo -e "${BOLD}── 将要修改的文件 ──${NC}"
 echo ""
 
 # 1. package.json version 字段（SSOT，3 段格式）
-echo -e "${BOLD}[1/8] package.json（SSOT）${NC}"
+echo -e "${BOLD}[1/10] package.json（SSOT）${NC}"
 PJ="$PROJECT_ROOT/sofagent/audit/package.json"
 if [[ -f "$PJ" ]]; then
   pj_content=$(cat "$PJ")
-  pj_new=$(echo "$pj_content" | sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g")
+  pj_new=$(sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g" "$PJ")
   # 如果 3 段没匹配到，试 2 段格式
   if [[ "$pj_new" == "$pj_content" ]]; then
-    pj_new=$(echo "$pj_content" | sed "s/\"version\": \"$OLD_2SEG\"/\"version\": \"$NEW_2SEG\"/g")
+    pj_new=$(sed "s/\"version\": \"$OLD_2SEG\"/\"version\": \"$NEW_2SEG\"/g" "$PJ")
   fi
   if [[ "$pj_new" != "$pj_content" ]]; then
     echo -e "  ${GREEN}✓${NC} version: $OLD_3SEG → $NEW_3SEG"
@@ -141,19 +137,19 @@ fi
 echo ""
 
 # 2. .ts 文件: const VERSION = 'OLD'（动态扫描，不硬编码文件列表）
-echo -e "${BOLD}[2/8] TypeScript 常量${NC}"
+echo -e "${BOLD}[2/10] TypeScript 常量${NC}"
 ts_count=0
 while IFS= read -r ts; do
   [[ -f "$ts" ]] || continue
-  local_content=$(cat "$ts")
-  local_new=$(echo "$local_content" | sed "s/const VERSION = '$OLD_2SEG'/const VERSION = '$NEW_2SEG'/g")
-  if [[ "$local_new" != "$local_content" ]]; then
+  ts_content=$(cat "$ts")
+  ts_new=$(sed "s/const VERSION = '$OLD_2SEG'/const VERSION = '$NEW_2SEG'/g" "$ts")
+  if [[ "$ts_new" != "$ts_content" ]]; then
     if [[ $ts_count -eq 0 ]]; then
       echo -e "  ${GREEN}✓${NC} const VERSION = '$OLD_2SEG' → '$NEW_2SEG'"
     fi
     echo -e "    ${CYAN}$ts${NC}"
     if ! $DRY_RUN; then
-      printf '%s\n' "$local_new" > "$ts"
+      printf '%s\n' "$ts_new" > "$ts"
     fi
     ts_count=$((ts_count + 1))
     TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
@@ -168,17 +164,17 @@ fi
 echo ""
 
 # 3. index.ts: vOLD → vNEW（仅 index.ts 这一个文件）
-echo -e "${BOLD}[3/8] index.ts 版本引用${NC}"
+echo -e "${BOLD}[3/10] index.ts 版本引用${NC}"
 INDEX_TS="$PROJECT_ROOT/sofagent/audit/src/index.ts"
 if [[ -f "$INDEX_TS" ]]; then
-  local_content=$(cat "$INDEX_TS")
+  idx_content=$(cat "$INDEX_TS")
   # 替换 vOLD 为 vNEW（注意不能误伤 vOLDx 这种）
-  local_new=$(echo "$local_content" | sed "s/v$OLD_2SEG/v$NEW_2SEG/g")
-  if [[ "$local_new" != "$local_content" ]]; then
+  idx_new=$(sed "s/v$OLD_2SEG/v$NEW_2SEG/g" "$INDEX_TS")
+  if [[ "$idx_new" != "$idx_content" ]]; then
     echo -e "  ${GREEN}✓${NC} v$OLD_2SEG → v$NEW_2SEG"
     echo -e "    ${CYAN}$INDEX_TS${NC}"
     if ! $DRY_RUN; then
-      printf '%s\n' "$local_new" > "$INDEX_TS"
+      printf '%s\n' "$idx_new" > "$INDEX_TS"
     fi
     TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
   fi
@@ -186,21 +182,21 @@ fi
 echo ""
 
 # 4. .sh 文件: VERSION="OLD"
-echo -e "${BOLD}[4/8] Shell 脚本${NC}"
+echo -e "${BOLD}[4/10] Shell 脚本${NC}"
 SH_DIR="$PROJECT_ROOT/sofagent/scripts"
 if [[ -d "$SH_DIR" ]]; then
   sh_count=0
   for sh in "$SH_DIR"/*.sh; do
     [[ -f "$sh" ]] || continue
-    local_content=$(cat "$sh")
-    local_new=$(echo "$local_content" | sed "s/VERSION=\"$OLD_2SEG\"/VERSION=\"$NEW_2SEG\"/g")
-    if [[ "$local_new" != "$local_content" ]]; then
+    sh_content=$(cat "$sh")
+    sh_new=$(sed "s/VERSION=\"$OLD_2SEG\"/VERSION=\"$NEW_2SEG\"/g" "$sh")
+    if [[ "$sh_new" != "$sh_content" ]]; then
       if [[ $sh_count -eq 0 ]]; then
         echo -e "  ${GREEN}✓${NC} VERSION=\"$OLD_2SEG\" → VERSION=\"$NEW_2SEG\""
       fi
       echo -e "    ${CYAN}$sh${NC}"
       if ! $DRY_RUN; then
-        printf '%s\n' "$local_new" > "$sh"
+        printf '%s\n' "$sh_new" > "$sh"
       fi
       sh_count=$((sh_count + 1))
       TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
@@ -210,22 +206,22 @@ fi
 echo ""
 
 # 5. .ps1 文件: $VERSION 或 $VERSION_STR = "OLD"
-echo -e "${BOLD}[5/8] PowerShell 脚本${NC}"
+echo -e "${BOLD}[5/10] PowerShell 脚本${NC}"
 PS1_DIR="$PROJECT_ROOT/sofagent/scripts/windows"
 if [[ -d "$PS1_DIR" ]]; then
   ps1_count=0
   for ps1 in "$PS1_DIR"/*.ps1; do
     [[ -f "$ps1" ]] || continue
-    local_content=$(cat "$ps1")
+    ps1_content=$(cat "$ps1")
     # 覆盖 $VERSION 和 $VERSION_STR 两种变量名
-    local_new=$(echo "$local_content" | sed -E "s/\\\$VERSION(_STR)? = \"$OLD_2SEG\"/\$VERSION\1 = \"$NEW_2SEG\"/g")
-    if [[ "$local_new" != "$local_content" ]]; then
+    ps1_new=$(sed -E "s/\\\$VERSION(_STR)? = \"$OLD_2SEG\"/\$VERSION\1 = \"$NEW_2SEG\"/g" "$ps1")
+    if [[ "$ps1_new" != "$ps1_content" ]]; then
       if [[ $ps1_count -eq 0 ]]; then
         echo -e "  ${GREEN}✓${NC} \$VERSION[_STR]? = \"$OLD_2SEG\" → \"$NEW_2SEG\""
       fi
       echo -e "    ${CYAN}$ps1${NC}"
       if ! $DRY_RUN; then
-        printf '%s\n' "$local_new" > "$ps1"
+        printf '%s\n' "$ps1_new" > "$ps1"
       fi
       ps1_count=$((ps1_count + 1))
       TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
@@ -234,19 +230,19 @@ if [[ -d "$PS1_DIR" ]]; then
 fi
 echo ""
 
-# 6. MD 文件头: > vOLD → > vNEW（排除 docs/changelog/）
-echo -e "${BOLD}[6/8] Markdown 文件头（排除 docs/changelog/）${NC}"
+# 6. MD 文件头: > vOLD · → > vNEW ·（排除 docs/changelog/）
+echo -e "${BOLD}[6/10] Markdown 文件头（排除 docs/changelog/）${NC}"
 md_count=0
 # 收集所有 MD 文件（排除 docs/changelog/, node_modules/, .git/, dist/）
 while IFS= read -r md; do
-  local_content=$(cat "$md")
+  md_content=$(cat "$md")
   # 只替换版本头格式 "> vOLD · "（带 · 分隔符），避免误改叙述正文
-  local_new=$(echo "$local_content" | sed "s/^> v$OLD_2SEG · /> v$NEW_2SEG · /g")
-  if [[ "$local_new" != "$local_content" ]]; then
+  md_new=$(sed "s/^> v$OLD_2SEG · /> v$NEW_2SEG · /g" "$md")
+  if [[ "$md_new" != "$md_content" ]]; then
     echo -e "  ${GREEN}✓${NC} > v$OLD_2SEG · → > v$NEW_2SEG ·"
     echo -e "    ${CYAN}$md${NC}"
     if ! $DRY_RUN; then
-      printf '%s\n' "$local_new" > "$md"
+      printf '%s\n' "$md_new" > "$md"
     fi
     md_count=$((md_count + 1))
     TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
@@ -261,39 +257,44 @@ done < <(find "$PROJECT_ROOT" \
 echo -e "  ${YELLOW}已扫描 $md_count 个 MD 文件有匹配${NC}"
 echo ""
 
-# 7. README badge: version-vOLD → version-vNEW
-echo -e "${BOLD}[7/8] README badge${NC}"
+# 7. README badge: version-OLD → version-NEW（兼容 v 前缀有无）
+echo -e "${BOLD}[7/10] README badge${NC}"
 for readme in \
   "$PROJECT_ROOT/README.md" \
   "$PROJECT_ROOT/README.en.md"; do
   [[ -f "$readme" ]] || continue
-  local_content=$(cat "$readme")
-  local_new=$(echo "$local_content" | sed "s/version-v$OLD_2SEG/version-v$NEW_2SEG/g")
-  if [[ "$local_new" != "$local_content" ]]; then
-    echo -e "  ${GREEN}✓${NC} version-v$OLD_2SEG → version-v$NEW_2SEG"
+  readme_content=$(cat "$readme")
+  # 匹配 version-v0.94 和 version-0.94 两种格式
+  readme_new=$(sed -E "s/version-v?$OLD_2SEG/version-v$NEW_2SEG/g" "$readme")
+  if [[ "$readme_new" != "$readme_content" ]]; then
+    echo -e "  ${GREEN}✓${NC} version-(v?)$OLD_2SEG → version-v$NEW_2SEG"
     echo -e "    ${CYAN}$readme${NC}"
     if ! $DRY_RUN; then
-      printf '%s\n' "$local_new" > "$readme"
+      printf '%s\n' "$readme_new" > "$readme"
     fi
     TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
   fi
 done
 echo ""
 
-# 8. SKILL.md frontmatter: version: OLD → version: NEW（含 3 段格式）
-echo -e "${BOLD}[8/8] SKILL.md frontmatter${NC}"
+# 8. SKILL.md frontmatter: version: OLD → version: NEW（含 3 段格式）+ 正文标题
+echo -e "${BOLD}[8/10] SKILL.md frontmatter + 正文标题${NC}"
 skill_count=0
 while IFS= read -r skill; do
-  local_content=$(cat "$skill")
-  # 尝试 2 段格式: version: 0.94
-  local_new=$(echo "$local_content" | sed "s/^version: $OLD_2SEG$/version: $NEW_2SEG/g")
-  # 尝试 3 段格式: version: 0.94.0
-  local_new=$(echo "$local_new" | sed "s/^version: $OLD_3SEG$/version: $NEW_3SEG/g")
-  if [[ "$local_new" != "$local_content" ]]; then
-    echo -e "  ${GREEN}✓${NC} version: $OLD_2SEG → version: $NEW_2SEG"
+  skill_content=$(cat "$skill")
+  # frontmatter 2 段格式: version: 0.94
+  skill_new=$(sed "s/^version: $OLD_2SEG$/version: $NEW_2SEG/g" "$skill")
+  # frontmatter 3 段格式: version: 0.94.0（需正则锚点，无法用 bash 原生替换）
+  # shellcheck disable=SC2001
+  skill_new=$(sed "s/^version: $OLD_3SEG$/version: $NEW_3SEG/g" <<< "$skill_new")
+  # 正文标题: # SKILL.md · v0.94（需全局替换含 · 前缀）
+  # shellcheck disable=SC2001
+  skill_new=$(sed "s/· v$OLD_2SEG/· v$NEW_2SEG/g" <<< "$skill_new")
+  if [[ "$skill_new" != "$skill_content" ]]; then
+    echo -e "  ${GREEN}✓${NC} version/frontmatter: $OLD_2SEG → $NEW_2SEG"
     echo -e "    ${CYAN}$skill${NC}"
     if ! $DRY_RUN; then
-      printf '%s\n' "$local_new" > "$skill"
+      printf '%s\n' "$skill_new" > "$skill"
     fi
     skill_count=$((skill_count + 1))
     TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
@@ -304,6 +305,38 @@ done < <(find "$PROJECT_ROOT" \
   -not -path '*/.git/*' \
   -not -path '*/dist/*' \
   -type f)
+echo ""
+
+# 9. MD tail signature: > *vOLD,date* -> > *vNEW,date* (blockquote italic)
+echo -e "${BOLD}[9/10] MD tail signature (> *vOLD...*)${NC}"
+sig_count=0
+while IFS= read -r md; do
+  md_content=$(cat "$md")
+  # Only match "> *v0.94" at start of line (signature format)
+  md_new=$(sed "s/^> \*v$OLD_2SEG/> \*v$NEW_2SEG/g" "$md")
+  if [[ "$md_new" != "$md_content" ]]; then
+    echo -e "  ${GREEN}✓${NC} > *v$OLD_2SEG -> > *v$NEW_2SEG"
+    echo -e "    ${CYAN}$md${NC}"
+    if ! $DRY_RUN; then
+      printf '%s\n' "$md_new" > "$md"
+    fi
+    sig_count=$((sig_count + 1))
+    TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
+  fi
+done < <(find "$PROJECT_ROOT" \
+  -name '*.md' \
+  -not -path '*/node_modules/*' \
+  -not -path '*/.git/*' \
+  -not -path '*/dist/*' \
+  -not -path '*/docs/changelog/*' \
+  -type f)
+if [[ $sig_count -eq 0 ]]; then
+  echo -e "  ${YELLOW}(no match)${NC}"
+fi
+echo ""
+
+# 10. 汇总
+echo -e "${BOLD}[10/10] 完成${NC}"
 echo ""
 
 # ── 汇总 ──────────────────────────────────────────────────────

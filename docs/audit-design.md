@@ -1,6 +1,6 @@
 # sofagent-audit 设计文档
 
-> v0.95 · 2026-06-27 · 提交时审计
+> v0.96 · 2026-06-27 · 提交时审计
 > **v0.95 更新**：铁律从 10 条减为 6 条，原 #1/#3/#7/#10 迁移为审计 A3/A5/A7/A8。下文铁律编号为 v0.94 历史设计记录。
 
 写这篇 doc 的原因是：v0.90 的约束 Agent 根本不理我。所以干脆不看它，直接 audit git diff。
@@ -75,3 +75,85 @@ v0.91 换了思路：**从预防转向检测**。提交时审计不依赖 Agent 
 1. ~~铁律 #7 中英不互通~~ → **v0.92 修复**（P1-6：中文文件名精确匹配 + 路径模式匹配）
 2. ~~铁律 #3 构建文件白名单不完整~~ → **v0.92 修复**（P1-9：BUILD_FILES 扩展 7 项含 tsconfig.json 等）
 3. ~~铁律 #1 对新项目友好但可能漏判~~ → **v0.92 修复**（P0-3：无日志 WARN 降级 + 精确 basename 匹配）
+
+---
+
+## 🔮 扩展审计规则草案
+
+> v0.96 只写规则定义。代码实现推 v0.97。
+
+### A9 · 不纳注入（No Prompt Injection）
+
+**问题**：Agent 从外部网页、Issue、PR 描述等读取内容时，可能被注入恶意指令（「忽略之前的指令」「你现在是 DAN」等），导致生成代码中嵌入后门或越权操作。A1-A8 覆盖了「Agent 粗心」，无法覆盖「Agent 被攻击」。
+
+**触发条件**（二选一即 WARN，同时命中即 FAIL）：
+
+| 条件 | 检测方式 | 证据类型 |
+|------|------|:--:|
+| 特征匹配 | git diff 内容中出现注入特征串 | git-diff |
+| 范围偏离 | diff 改了文件，但改动内容与 `--task` 声明的任务描述相似度过低 | git-diff |
+
+**「相似度过低」的判定方法**（v0.97 实现时定）：
+
+草案阶段只给方向，不给阈值——避免过早锁死实现。候选方案：
+
+| 方案 | 思路 | 优点 | 缺点 |
+|------|------|------|------|
+| **token 级 Jaccard** | task 描述和 diff 内容分别分词 → 交集/并集 → 相似度 < 0.1 判为零交集 | 稳健，对词序不敏感 | 中文分词需要分词器（jieba 等） |
+| 全词匹配 | task 关键词在 diff 中出现的比例 < 阈值 | 零依赖 | 英文大小写 / 中文无空格容易误判 |
+| 子串匹配 | task 描述的子串在 diff 中命中 | 简单 | 误报率高（短 task 描述几乎都有子串命中） |
+
+**推荐**：token 级 Jaccard，阈值 < 0.1。中文场景用字符级 bigram 替代分词器——零额外依赖。最终方案在 v0.97 实现时用真实 fixture 数据验证后确定。
+
+**注入特征串清单**（初始版本，后续版本可扩展）：
+```
+ignore previous instructions
+ignore all previous prompts
+you are now DAN
+you are now a
+your new role is
+system:
+<prompt>
+<|im_start|>
+do not follow the rules
+forget everything above
+```
+
+**严重级别**：WARN（单命中）/ FAIL（双命中）
+
+**--silent 模式**：✅ 可跑——纯 git diff 规则，不依赖 Agent 日志。
+
+**本规则不覆盖**：LLM 语义级注入（如「用微妙的方式说服用户放弃审计」）——那不是正则能判断的，留给 v1.x 外部评估器。
+
+---
+
+### A10 · 不引毒源（No Supply Chain Poisoning）
+
+**问题**：Agent 可能在 package.json / requirements.txt / Cargo.toml 等依赖文件中引入恶意依赖——指向非官方源、锁定到特定 git commit、或使用了已知恶意包名。
+
+**触发条件**：
+
+| 条件 | 说明 | 判定 |
+|------|------|:--:|
+| 依赖文件有新增 entries | `package.json` diff 中 `dependencies` / `devDependencies` 出现新增条目 | WARN |
+| 版本号指向非标准源 | 版本字段为 git+https:// / file: / github: 等非注册表格式 | FAIL |
+
+**不做的**：
+- 不做注册表信誉查询（NPM/PyPI 恶意包名单）——那是独立安全服务的事，v0.97 不在范围内
+- 不做依赖漏洞扫描——已有 `npm audit` / `pip audit` 等工具覆盖
+
+**严重级别**：WARN（新增依赖）/ FAIL（非标准源）
+
+**--silent 模式**：✅ 可跑——纯 git diff 规则。
+
+---
+
+### A11 · 不滥资源（No Resource Exhaustion）——推迟
+
+**状态**：推迟到 daemon 运行时职责。
+
+**原因**：死循环 / fork bomb / 过量 API 调用 / 磁盘写满——这些行为从 git diff 检测不到。git diff 只能看到「改了什么文件」，看不到「Agent 跑了多久、调了多少次 API、产生了多少临时文件」。
+
+**替代方案**：由 OpenClaw 的 `tools.loopDetection`（断路器）在运行时兜底。审计层无法替代运行时监控。
+
+**重新评估时机**：daemon 稳定运行 ≥30 天后，如果 daemon 的运行时日志足够详细（任务耗时、API 调用次数、临时文件数），可以考虑在审计报告里加一条「本次任务资源消耗摘要」——但这不是规则判定，是数据展示。

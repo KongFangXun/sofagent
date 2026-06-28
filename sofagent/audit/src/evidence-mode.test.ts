@@ -12,10 +12,7 @@ import { rules } from './rules';
 import type { AuditContext } from './rules/types';
 import type { DiffFile } from './diff-parser';
 import type { LogEntry } from './log-checker';
-
-function makeDiffFile(path: string, status: DiffFile['status'] = 'modified'): DiffFile {
-  return { path, status, lines: [] };
-}
+import { makeDiffFile } from './test-utils';
 
 function makeReadEntry(file: string): LogEntry {
   return {

@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.95 · 2026-06-28 · 孔放勋
+> v0.96 · 2026-06-29 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -118,6 +118,8 @@ SKILL.md 启动
 ## 二、编排哲学
 
 > 负责的子 Skill：`engine.md` 点火 ao compose 拆任务 → `loop-check.md` 设检查点 + 失败诊断 → `task-closure.md` 闭环收口。
+
+> **v0.97 编排拆出**：编排引擎（engine.md / task-aware.md / loop-check.md）将在 v0.97 从 sofagent 核心拆出到 FDE Skill 专用。entry-gate.md + task-closure.md 留在核心（所有平台需要的轻量检查）。编排深度从四级简化为两档拆解（拆 vs. 不拆）——FDE 场景下 workflow 节点粒度已确定，不需要渐进减薄。三档自由度同步砍除。
 
 这套编排吸收了 Harness 和 Loop 两种思路——约束层保证安全（SKILL.md），编排层往自我进化方向走（orchestrator/ + A/B 对比）。三个核心问题：什么时候停（Session 边界 + 中间检查点）、失败了怎么办（带反思的闭环重试）、状态怎么管（task/logs + think.md + orchestrator/）。
 
@@ -489,7 +491,7 @@ think.md
 
 ## 八、提交时审计
 
-sofagent-audit（v0.92）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对四条审计规则（A3/A5/A7/A8）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 运行时配合——看的是已经发生的 git diff，但审计 A7/A8 的日志检查依赖 Agent 写入的任务日志。A3/A5 只看 git diff，Agent 无法绕过。
+sofagent-audit（v0.92）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对审计规则（A1-A8）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 运行时配合——看的是已经发生的 git diff，但审计 A7/A8 的日志检查依赖 Agent 写入的任务日志。A3/A5 只看 git diff，Agent 无法绕过。v0.97 将扩展至 A1-A11。
 
 ### 绿灯路径检测：AI 的「最低成本通过」本能
 
@@ -512,7 +514,7 @@ sofagent-audit（v0.92）是 TypeScript CLI，扫描 git diff + `.sofagent/task/
 
 `task/logs` 的模板设计参照这个四字段结构。状态外化到文件——Agent 失忆，文件不失忆。
 
-> 运行时治理减少问题发生，提交时审计兜底检测漏网之鱼——两者互补。设计文档见 [audit-design.md](../docs/audit-design.md)。
+> 运行时治理减少问题发生，提交时审计兜底检测漏网之鱼——两者互补。设计文档见 [audit-design.md](./docs/audit-design.md)。
 
 ---
 

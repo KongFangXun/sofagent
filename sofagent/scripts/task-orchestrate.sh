@@ -1,6 +1,8 @@
 #!/bin/bash
+# @deprecated v0.96 起迁移到 sofagent/audit/src/task-orchestrate.ts，本文件将在 v0.98 删除。
+#           新用法: node dist/task-orchestrate.js "任务描述" [--参数]
 # ============================================================
-# sofagent task-orchestrate.sh · AO 编排包装脚本
+# sofagent task-orchestrate.sh · AO 编排包装脚本 (DEPRECATED)
 # ============================================================
 # 包装 agency-orchestrator 的 ao compose，增加：
 #   1. 工作区隔离（git worktree，多子任务不同分支互不干扰）
@@ -68,7 +70,7 @@ fi
 # set -o pipefail: 管道中任一命令失败都计为失败，防止 `grep | wc` 等忽略中间错误
 set -euo pipefail
 
-VERSION="0.95"
+VERSION="0.96"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
