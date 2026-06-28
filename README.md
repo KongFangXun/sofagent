@@ -3,13 +3,13 @@
 中文 | [English](README.en.md)
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-0.95-16B8F3)](./HANDBOOK.md)
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 ![ShellCheck](https://github.com/KongFangXun/sofagent/actions/workflows/shellcheck.yml/badge.svg)
-[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9FStarred)](https://github.com/KongFangXun/sofagent/stargazers)
+[![Version](https://img.shields.io/badge/version-0.95-16B8F3)](./HANDBOOK.md)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--28-16B8F3)](./README.md)
 [![定位](https://img.shields.io/badge/定位-Agent_纪律层-16B8F3)](#这是什么)
 [![OpenClaw](https://img.shields.io/badge/🦞优先-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
+[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9FStarred)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 <!-- TODO: demo.gif — 15s 左右对比: 裸 Agent 跑偏 vs sofagent 约束后正常。暂无素材，完成后再录 -->
