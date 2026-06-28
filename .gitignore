@@ -18,3 +18,4 @@ Thumbs.db
 
 # agency-orchestrator local config
 .env
+skills/
