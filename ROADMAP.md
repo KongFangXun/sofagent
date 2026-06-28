@@ -1,7 +1,9 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.94 · 2026-06-27 · 代码止血 + 审计独立化（沉默模式 + 7 条纯 diff 规则）+ FDE 部署者优先 + 社区复现指南——双轮评审（GLM-5.2 + DeepSeek V4 Pro）后重排，MiroFish「工具调用与最终答案分离」模式启发审计证据分层。详见 [v0.94 开发日志](./docs/changelog/v0.94.md)
+> v0.95 · 2026-06-28 · 审计体系重构（4·6·8·4）+ 铁律 10→6 + 目录改名 + ARCHITECTURE 三源收敛 + FDE 商业模式——铁律精简为 6 条（4 条移审计层），sofagent-audit/ → sofagent/audit/。详见 [v0.95 开发日志](./docs/changelog/v0.95.md)
+
+> 面向：人类决策 + AI 检索
 >
 > **先证明纪律层增量是真的，再做其他任何事。**
 
@@ -9,34 +11,44 @@
 
 ## 目录
 
-- [**现在在哪：v0.94**](#现在在哪v094)
+- [**现在在哪：v0.95**](#现在在哪v095)
 - [**迭代历程**](#迭代历程) — 倒叙，从最新到最早
-- [**未来去哪**](#未来去哪) — v0.95 → v0.96 → v1.0 → v2.x
+- [**未来去哪**](#未来去哪) — v0.96 → v1.0 → v2.x
 - [**探索方向**](#探索方向)
 - [**不需要的**](#不需要的)
 - [**欢迎参与**](#欢迎参与)
 
 ---
 
-## 现在在哪：v0.94
+## 现在在哪：v0.95
 
-> v0.94 是**代码止血 + 审计独立化版本**。核心洞察来自 MiroFish 开源项目——「信任产出（git diff），不信任过程（Agent 日志）」。详见 [ARCHITECTURE.md §审计层的证据分层](./ARCHITECTURE.md#audit-evidence-layering)。
+> v0.95 是**审计体系重构版本**。核心改动：铁律 10→6（4 条有 git diff 痕迹的移审计层）+ 目录改名 sofagent-audit/ → sofagent/audit/ + ARCHITECTURE 三源收敛（Ralph Loop + MiroFish + 卡普）。详见 [v0.95 开发日志](./docs/changelog/v0.95.md)。
 
 | 级别 | 交付 | 状态 |
 |------|------|:--:|
-| P0 | 6 项代码止血（VERSION 不一致 / 正则 i flag / 词边界 / 正负证据 / 三元死代码 / checkLogs 拆分）+ 沉默审计模式 `--silent`（7 条纯 diff 规则）| ✅ |
-| P1 | LogFormat 可插拔（MD + JSONL 双格式）+ task-record.ts JSONL 结构化日志 + #1/#3 双路径回退 | ✅ |
-| P2 | FDE Skill 部署者优先 + 社区复现指南 + 全项目版本号 v0.93→v0.94 + SMB 部署者入口 | ✅ |
-| 实验 | 真实 Skill 加载链复现实验（待 v0.94 发布后执行） | ⬜ |
-| 代码 | 12 files / 197 tests / build 全绿 / tsc 零错误 | ✅ |
+| P0 | 审计体系 4·6·8·4（4 底线 + 6 铁律 + 8 审计 A1-A8 + 4 扩展 E1-E4）+ 铁律 10→6 + 目录改名 sofagent-audit/ → sofagent/audit/ | ✅ |
+| P1 | ARCHITECTURE 三源收敛（Ralph Loop + MiroFish 模式 + 卡普二分法）+ FDE 商业模式（三阶梯收费 + 五类客户）+ EVIDENCE 量化锚点 | ✅ |
+| P2 | 安装副本同步（workbuddy + openclaw）+ pre-commit hook 模板 + 版本号统一 | ✅ |
+| 代码 | 12 files / 256 tests / build 全绿 / tsc 零错误 | ✅ |
 
-> 📖 [详细开发日志](./docs/changelog/v0.94.md)
+> 📖 [详细开发日志](./docs/changelog/v0.95.md)
 
 ---
 
 ## 迭代历程
 
 > 倒叙排列，从最新到最早。每个版本有独立开发日志。
+
+### v0.94 — 代码止血 + 审计独立化 ✅
+
+> v0.93 双轮评审重排落地。📖 [开发日志](./docs/changelog/v0.94.md)
+
+| # | 交付物 | 说明 |
+|:--:|------|------|
+| 1 | **6 项代码止血** | VERSION 不一致 / 正则 i flag / 词边界 / 正负证据 / 三元死代码 / checkLogs 拆分 |
+| 2 | **沉默审计 --silent** | 7 条纯 git-diff 规则，零依赖 Agent 配合 |
+| 3 | **LogFormat 可插拔** | MD + JSONL 双格式 + task-record.ts JSONL 结构化日志 |
+| 4 | **FDE Skill 部署者优先** | 社区复现指南 + SMB 部署者入口 |
 
 ### v0.93 — 工程迁移 + 实验验证 ✅
 
@@ -57,7 +69,7 @@
 |:--:|------|------|
 | 1 | **安全加固** | execSync→execFileSync + range 格式校验，命令注入零残留 |
 | 2 | **信任模型声明** | LIMITATIONS + audit-design + README 三层诚实标注 |
-| 3 | **铁律 #1 检测加固** | 子串匹配→精确 basename，支持无扩展名文件，否定语义过滤 |
+| 3 | **审计 A7 检测加固** | 子串匹配→精确 basename，支持无扩展名文件，否定语义过滤 |
 | 4 | **工程欠债清算** | bash 技术债标注 + TS utils + set -e 统一 + 69 tests + 规则注册表 |
 | 5 | **文档预算** | 全局预算明确化 + ROADMAP 砍削 + FDE 收敛 |
 | 6 | **反转实验启动** | 🔴 Task 1 OpenClaw 对照完成（sofagent 0% 误伤 vs 裸 100%），10 组进行中 |
@@ -70,7 +82,7 @@
 
 | # | 交付物 | 说明 |
 |:--:|------|------|
-| 1 | **sofagent-audit MVP** | TypeScript CLI，扫描 git diff 对标 4 条铁律（#1/#3/#7/#10），exit code 0/1/2。不依赖 Agent 运行时配合，跨平台 |
+| 1 | **sofagent-audit MVP** | TypeScript CLI，扫描 git diff 对标 4 条审计规则（A3/A5/A7/A8），exit code 0/1/2。不依赖 Agent 运行时配合，跨平台 |
 | 2 | **ARCHITECTURE 瘦身** | 710→378 行（47% 减），只回答"为什么这么设计" |
 | 3 | **ROADMAP 版本号理顺** | v0.9 15+ 处引用 → 按内容分拆为 v0.91/v0.92/v0.93 |
 | 4 | **COMMUNITY.md** | 社区状态 + 贡献者阶梯 + 透明指标看板 |
@@ -204,7 +216,7 @@
 
 ### v0.1 ~ v0.4 — 治理核心 ✅
 
-- **4 底线 + 10 铁律**：宪法层，定义 Agent 不可逾越的行为边界
+- **4 底线 + 6 则铁律**：宪法层，定义 Agent 不可逾越的行为边界（v0.95 前为 10 铁律，4 条有 git diff 痕迹的移至审计层）
 - **Loop Agent**：checkpoint / failure / closure 三层循环
 - **三层闸门**：入境 → 每任务 → Loop → 离境
 - **渐进减薄编排**：跑顺减步骤、跑崩加回来
@@ -262,27 +274,9 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 
 ---
 
-### v0.9x — 纪律层验证 + 工程基底
+### v0.9x — 纪律层验证 + 工程基底（已完成）
 
-> v0.94 已交付。v0.95 起延续双轮评审后方向：**先止血→再补强→后扩展**。MCP/Agency Agent/OpenClaw 预装推至 v0.95——依赖"审计可信了"才有意义。
-
-#### v0.95：审计配置化 + 铁律分级 + 推送层 + 编排对接 + 效果量化锚点
-
-> 📖 [开发日志](./docs/changelog/v0.95.md)
-
-- **审计配置化（P0）**：`.sofagent/config.yml`——LOW_RISK_PATTERNS / testPatterns / 规则阈值全部可配，FDE 部署者为每个企业定制
-- **铁律分级标签（P0）**：11 条规则标注 `ruleClass: "业务底线" | "能力拐杖"`——从 FDE Agent Harness 笔记（「业务底线要硬，能力拐杖要软」）。企业部署时一眼看清哪些绝不能关、哪些可以按模型能力调
-- **上下文成本仪表盘（P0）**：verify.sh 输出「治理层占用 ~3,200 token（窗口的 2.5%）」——从 MCP 扩展架构笔记（「context 是预算不是文件夹」）。治理层自身成本透明化
-- **审计输出审查提醒（P0）**：`--ci` 通过后追加一行「审计通过 ≠ 代码正确」——从 Loop 笔记（「理解债务：Agent 产出越快人越不审」）
-- **审计效果量化锚点（P1）**：在 EVIDENCE.md 立目标方向——从 Karpathy 笔记（规则化将 Claude 错误率从 41% 降到 11%）。目标格式：「将 Agent 违规率从 X% 降到 Y%」，当前未知，先写「待基线数据」
-- **MCP server MVP（P1）**：watch JSONL + 任务完成推送企业平台
-- **Agency Agent 模板对接（P1）**：`--with-agency` + 角色匹配注入
-- **OpenClaw 预装集成（P1）**：install.sh 自动装底座 + 系统服务注册
-- **审计历史聚合脚本（P1）**：`scripts/audit-summary.sh`——月度统计哪个规则触发最多、哪些文件反复标记。从 FDE 笔记（「FDE 的反馈回路：现场经验→产品迭代」）。审计结果反哺体系自身
-- **FDE Skill 商业模式建议（P1）**：诊断→POC→长期运维三阶梯收费路径——从 FDE 研报（「中国市场的务实商业模式」）
-- **文档术语对齐（P1）**：ARCHITECTURE 标注编排引擎 = Go Mode 内嵌于 Loop——从 Loop 笔记（「Go Mode 是 Loop 内部的执行单元」）。用行业共识术语降低理解成本
-- **合规三件套增强（P2）**：脱敏增强 + 审计报告 + 保留策略强制执行
-- **CLI 体验补全（P2）**：`--json` 输出 + pre-commit hook 模板
+> v0.94 和 v0.95 均已交付。这一阶段的任务是**工程止血 + 审计独立化 + 编号体系理清**。v0.94 做沉默审计模式和 7 条纯 diff 规则；v0.95 做铁律 10→6 + 审计 4·6·8·4 重构 + 目录改名。下一站 v0.96 进入实验强化阶段。
 
 #### v0.96：实验强化 + 审计闭环 + 跨 Agent 分发
 
@@ -330,6 +324,7 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 | 想法 | 难度 | 说明 |
 |------|:--:|------|
 | **Skill 自进化闭环** | 🔧🔧 | FDE 部署时生成的企业专属 Skill → workflow 检查点标记不合格任务 → skillopt 自动分析失败模式 → Skill 自动升级。形成"部署→运行→检查→进化"四步闭环 |
+| **Ralph 范式声明文档** | 🔧 | docs/ralph-loop-and-sofagent.md：Huntley 原帖哲学 + Boris Cherny 30 天数据 + Ralph/Hermes 双范式对比 + sofagent 为什么选 Ralph（文件外化=可审计、无状态=可扩展） |
 | 质量抽检仪表盘 | 🔧 | 每个企业节点的抽检合格率、不合格趋势、skillopt 迭代记录可视化 |
 | age 加密 | 🔧 | age 加密 think.md + task/logs |
 | 多用户隔离 | 🔧 | 同机权限隔离 + 共享 rules.md |
@@ -351,9 +346,19 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 1. 协同编排协议：Markdown 优先，人可直接阅读、git 可 diff
 2. Agent 发现与注册：内网自动发现 + 手动白名单
 3. 跨设备任务分发：根据能力画像智能分派
-4. 企业 Agent 知识库：多设备蒸馏记忆聚合到企业自有 NAS 或云盘，知识库管理员 Agent 自动分类、去重、建索引，通过 MCP server 连接器同步
+4. 企业 Agent 知识库：多设备蒸馏记忆聚合到企业自有 NAS 或云盘，知识库管理员 Agent 自动分类、去重、建索引，底层检索引擎用 [Graphify](https://github.com/safishamsi/graphify)（轻量知识图谱，原生支持 OpenClaw），通过 MCP server 连接器同步
 
 **设计原则**：数据主权在设备、存储在企业自己指定的云端、Markdown 优先、渐进式、治理不僭越。
+
+**演化路径——从 Ralph（真菌）到无身份 Agent（细菌）**：
+
+> 来自「人与Agent」系列五期 + Geoffrey Huntley 的进化软件工厂愿景。
+
+| 阶段 | 形态 | 对应版本 | 特征 |
+|------|------|:--:|------|
+| Ralph 循环（真菌） | 状态外化到文件，Agent 本体无状态 | v0.x-v1.x | 当前阶段——SKILL.md/task/logs/git 是持久层 |
+| Ralph 工厂（Huntley 的 Loom/Gas Town Level 9） | 自治循环进化产品，自动优化营收 | v2.x 规划 | 参考 Huntley 的「进化软件工厂」愿景 |
+| 无身份 Agent（细菌） | 用完即焚，全新生成，零状态 | v3.x 远景 | HTTP 无状态三十年 → Agent 无状态可以更长 |
 
 ---
 

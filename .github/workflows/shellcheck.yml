@@ -5,11 +5,15 @@ on:
     branches: [main]
     paths:
       - 'sofagent/scripts/**/*.sh'
+      - 'sofagent-lite/**/*.sh'
+      - 'scripts/**/*.sh'
       - '.github/workflows/shellcheck.yml'
   pull_request:
     branches: [main]
     paths:
       - 'sofagent/scripts/**/*.sh'
+      - 'sofagent-lite/**/*.sh'
+      - 'scripts/**/*.sh'
       - '.github/workflows/shellcheck.yml'
 
 jobs:

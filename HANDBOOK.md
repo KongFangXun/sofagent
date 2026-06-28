@@ -1,10 +1,12 @@
 # sofagent Handbook
 
-> **为 AI Agent 提供纪律层与反思循环：4 条底线 + 10 则铁律约束工作习惯，复杂任务自动拆解执行，每次跑完自动复盘。**
+> **为 AI Agent 提供纪律层与反思循环：4 条底线 + 6 则铁律约束工作习惯，复杂任务自动拆解执行，每次跑完自动复盘。**
 >
 > 从 Context Engineering 到 Harness Engineering，再到 Loop Engineering，再到纪律层——AI 和人的协作方式正在从「写好 Prompt」进化到「管好 Agent」。
 >
-> v0.94 · 2026-06-27 · 孔放勋
+> v0.95 · 2026-06-28 · 孔放勋
+
+> 面向：人类学习（想理解设计哲学）
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -53,7 +55,7 @@
 
 | 你想知道的 | 一句话 | 详见 |
 |------|------|------|
-| 这是什么 | 给 Agent 配「纪律委员」——4 底线 + 10 铁律约束行为，复杂任务自动拆解 | §一 |
+| 这是什么 | 给 Agent 配「纪律委员」——4 底线 + 6 则铁律约束行为，复杂任务自动拆解 | §一 |
 | 怎么装 | `bash sofagent/scripts/install.sh --platform 你的平台` | §五 |
 | 怎么用 | 装完直接派任务，🔴 复杂任务 Agent 自动拆解，🟢🟡 直接干 | §四 |
 | 适用场景 | 需要纪律和反思循环的日常 Agent 使用 | §四能力边界 |
@@ -89,7 +91,7 @@ sofagent 的策略就八个字：**厚在治理，薄在复用。**
 
 sofagent 概念不少——宪法、铁律、加载链、编排引擎、断路器……你不需要全部理解才能用起来。先记住两件事：
 
-1. **核心**：4 底线 + 10 铁律 + 三层加载链（SKILL → think → rules）。这些**所有平台都生效**，是你装了 sofagent 就能拿到的纪律约束
+1. **核心**：4 底线 + 6 则铁律 + 三层加载链（SKILL → think → rules）。这些**所有平台都生效**，是你装了 sofagent 就能拿到的纪律约束
 2. **增强**：编排引擎、断路器、Hook 自动注入。这些**只有 OpenClaw 全绿**，其他平台部分缺失或降级
 
 不是 OpenClaw 用户？核心部分就是你全部需要的。用 OpenClaw？核心打底，增强让约束更自动、更严密。完整概念分层表见 [README](./README.md#概念分层哪些是核心哪些是增强)。
@@ -104,7 +106,7 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 | 层 | 文件 | 干什么的 | 能改吗 |
 |:--:|------|------|:--:|
-| 1 | `SKILL.md`（宪法内联） | 契约层：4 条底线 + 10 则行为铁律 | ❌ 千万不要改 |
+| 1 | `SKILL.md`（宪法内联） | 契约层：4 条底线 + 6 则行为铁律 | ❌ 千万不要改 |
 | 2 | `think.md` | 反思层：反思区（日摘要，≤2K token） | ⚠️ 改了没用 |
 | 3 | `rules.md` | 执行层：你的运行规范，优先级最高 | ✅ 随便改 |
 
@@ -124,7 +126,7 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 | 文件 | 估算 token | 🗜️压缩后保留 |
 |------|------------|:--:|
-| SKILL.md（4底线+10铁律，宪法内联） | ~250 | ✅ 驻留 |
+| SKILL.md（4底线+6则铁律，宪法内联） | ~250 | ✅ 驻留 |
 | think.md（反思区） | ≤2,000 | ⚠️ 可能裁切 |
 | rules.md | ~200 | ✅ 驻留 |
 | 编排引擎（engine.md，仅 🔴 复杂任务） | ~400（回归）–800（首次） | ⚠️ 可能裁切 |
@@ -136,7 +138,7 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 ## 三、底线与铁律
 
-契约层（`SKILL.md`（宪法内联））内置了 4 条底线 + 10 则行为铁律。
+契约层（`SKILL.md`（宪法内联））内置了 4 条底线 + 6 则行为铁律。
 
 ### 4 条底线
 
@@ -149,22 +151,20 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 这些铁律来自我使用 OpenClaw 过程中的痛点总结——每一条对应一种我遇到过的 Agent 失控行为。不是实验室数据，是大半年日常使用中反复出现的问题。也许你的痛点不一样，在 `rules.md` 里加你自己的。
 
-这 10 则是在 [Andrej Karpathy 的 4 条编码原则](https://github.com/multica-ai/andrej-karpathy-skills)（思考先行、简约至上、精准修改、目标驱动）基础上扩展出来的——向 Karpathy 致敬，往里面塞了自己的反思。
+这 6 则是在 [Andrej Karpathy 的 4 条编码原则](https://github.com/multica-ai/andrej-karpathy-skills)（思考先行、简约至上、精准修改、目标驱动）基础上扩展出来的——向 Karpathy 致敬，往里面塞了自己的反思。v0.95 把 4 条有 git diff 痕迹的铁律（先读再用 / 验证再干 / 谨慎修改 / 如实汇报）移到了审计层（sofagent-audit A3/A5/A7/A8），铁律只保留纯行为准则。
 
-### 10 则行为铁律
+### 6 则行为铁律
 
 | # | 铁律 | 一句话 | 做错时的表现 |
 |:--:|------|------|------|
-| 1 | 先读再用 | 先搜后写，不盲写（含本 skill 要求的 think.md / rules.md） | 不看已有代码就改，越改越乱 |
-| 2 | 对用户有回应 | 做完要说结果 | 子任务跑完了但没告诉用户，用户不知道做到哪了 |
-| 3 | 验证再干 | 每步验证，失败即停 | 构建失败当没看见，继续跑 |
-| 4 | 全局视角 | 用现成的，不造轮子 | 有现成库不用，自己重写或装新依赖 |
-| 5 | 不确定就问 | 列两种理解让用户选 | 猜用户意思，猜错了全白做 |
-| 6 | 错误显性化 | 报什么错、在哪步，别吞 | 报错静默跳过，用户蒙在鼓里 |
-| 7 | 谨慎修改 | 只改必要，不动无关 | 修一个 bug，改了 300 行无关代码 |
-| 8 | 目标驱动 | 回到原始意图，不跑偏 | 做着做着跑偏了，最后做的根本不是用户要的 |
-| 9 | 成本意识 | 批量处理，短答不啰嗦 | 100 个文件一个一个改；查天气都用最贵的模型 |
-| 10 | 如实汇报 | 不知道就说不知道 | 不知道就编，被揭穿了才承认 |
+| 1 | 对用户有回应 | 做完要说结果 | 子任务跑完了但没告诉用户，用户不知道做到哪了 |
+| 2 | 全局视角 | 用现成的，不造轮子 | 有现成库不用，自己重写或装新依赖 |
+| 3 | 不确定就问 | 列两种理解让用户选 | 猜用户意思，猜错了全白做 |
+| 4 | 错误显性化 | 报什么错、在哪步，别吞 | 报错静默跳过，用户蒙在鼓里 |
+| 5 | 目标驱动 | 回到原始意图，不跑偏 | 做着做着跑偏了，最后做的根本不是用户要的 |
+| 6 | 成本意识 | 批量处理，短答不啰嗦 | 100 个文件一个一个改；查天气都用最贵的模型 |
+
+> v0.95 移走的 4 条（先读再用 / 验证再干 / 谨慎修改 / 如实汇报）已在审计层（sofagent-audit A3/A5/A7/A8）通过 git diff 自动检测。详见 [审计设计](./docs/audit-design.md)。
 
 > ⚠️ 「验证」不是 Agent 自说自话——是跑测试、跑 lint、API 返回码、文件 diff。能自动验证的用工具，不能的让用户确认。
 
@@ -288,7 +288,7 @@ git clone https://github.com/KongFangXun/sofagent.git
 sh sofagent/sofagent-lite/install.sh
 ```
 
-Lite 版只装 4 底线 + 10 铁律，不装 daemon、编排引擎、审计工具。适合非 OpenClaw 平台、FDE 驻场快速部署、个人开发者轻量使用。
+Lite 版只装 4 底线 + 6 则铁律，不装 daemon、编排引擎、审计工具。适合非 OpenClaw 平台、FDE 驻场快速部署、个人开发者轻量使用。
 
 | 平台 | install.sh 行为 |
 |------|------|
@@ -364,22 +364,22 @@ node dist/index.js --diff HEAD~1..HEAD --task "修复登录页 bug"
 输出：
 
 ```
-❌ 铁律 #1 先读再用：src/handler.ts 被修改，但修改前无 Read 记录
-✅ 铁律 #3 验证再干：package.json 修改后有 npm test 记录
-⚠️ 铁律 #7 谨慎修改：3 个文件不在任务范围内
+❌ 审计 A7 不存盲改：src/handler.ts 被修改，但修改前无 Read 记录
+✅ 审计 A8 不逃验证：package.json 修改后有 npm test 记录
+⚠️ 审计 A3 不改越界：3 个文件不在任务范围内
 ```
 
 exit code：**0 = 全通过 / 1 = 有警告 / 2 = 有违规**。
 
-**原理**：审计不依赖 Agent 在运行时配合（看的是已经发生的 git diff），但铁律 #1/#3 的日志检查依赖 Agent 诚实记录了日志。和运行时治理（三层加载链）互补：治理减少问题发生，审计兜底检测漏网之鱼。
+**原理**：审计不依赖 Agent 在运行时配合（看的是已经发生的 git diff），但审计 A7/A8 的日志检查依赖 Agent 诚实记录了日志。和运行时治理（三层加载链）互补：治理减少问题发生，审计兜底检测漏网之鱼。
 
-> 💡 详细设计见 [DEVELOPMENT §八](./DEVELOPMENT.md#八确定性纪律检查与提交时审计)，源码在 `sofagent-audit/src/`。
+> 💡 详细设计见 [DEVELOPMENT §八](./DEVELOPMENT.md#八确定性纪律检查与提交时审计)，源码在 `sofagent/audit/src/`。
 
 > ⚠️ 上面这些都只是我自己的测试感受，不是严谨的横评。如果你在其他平台上跑通了，欢迎告诉我。
 
 ### 不管什么平台，约束不会丢
 
-不管什么平台，SKILL.md（4 条底线 + 10 则铁律，宪法内联）是以 MD 文件形式存在的。只要 Agent 能读到这个文件，行为约束就生效。跨平台影响的是自动化程度，不是约束力度。
+不管什么平台，SKILL.md（4 条底线 + 6 则铁律，宪法内联）是以 MD 文件形式存在的。只要 Agent 能读到这个文件，行为约束就生效。跨平台影响的是自动化程度，不是约束力度。
 
 > 📎 能力边界（sofagent 能做什么、不能做什么）详见 §四「能力边界」。
 
@@ -410,7 +410,7 @@ Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的�
 
 | 冷水 | 意思 | sofagent 的应对 |
 |------|------|------|
-| 验证责任不可替代 | Agent 说「我做完了」是声明不是证明。无人值守的 Loop 也会无人值守地犯错 | 铁律 #3 要求可观测证据（测试通过/lint 无错/API 200/文件 diff）。**Good Heart 陷阱**：Agent 能改评判标准就会收敛于「让验证变容易」——裁判不可被收买 |
+| 验证责任不可替代 | Agent 说「我做完了」是声明不是证明。无人值守的 Loop 也会无人值守地犯错 | 审计 A8 要求可观测证据（测试通过/lint 无错/API 200/文件 diff）。**Good Heart 陷阱**：Agent 能改评判标准就会收敛于「让验证变容易」——裁判不可被收买 |
 | 理解债 | Loop 交付你没写过的代码越快，理解鸿沟越大 | task/logs 只追加不修改，永远可回溯。关键是愿不愿意翻看 |
 | 认知投降 | 最舒服的状态是不再有自己观点，Agent 说什么就是什么 | rules.md 随时可加规则覆盖 Agent 默认行为；编排深度可回滚 |
 
@@ -431,7 +431,7 @@ Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的�
 
 ### GitHub 项目
 
-- [Andrej Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills) — 4 条编码原则是 10 则铁律的根基。感谢 Karpathy
+- [Andrej Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills) — 4 条编码原则是 6 则铁律的根基。感谢 Karpathy
 - [agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator)（Apache-2.0） — `ao compose` 一行命令搞定编排：意图识别→任务图生成→模板匹配→分配
 - [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh) — 215 个中文岗位模板，IDENTITY 层素材来源
 - [superpowers](https://github.com/obra/superpowers) — Skill 作为 Harness 杠杆的思路，启发了 Skills 体系的设计
@@ -440,6 +440,8 @@ Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的�
 
 ### 社区与文章
 
+- [Ralph Loop](https://ghuntley.com/loop/) by Geoffrey Huntley —「Agent 失忆，文件不失忆」是 sofagent 的哲学基因。一行 bash 循环 + Stop Hook + 新鲜上下文每轮刷新，启发了审计方向：git diff 是无状态地面真相
+- [MiroFish](https://github.com/666ghj/MiroFish) —「工具调用与最终答案严格分离」模式，启发了 sofagent 审计层的证据分层设计
 - [ClawHub](https://clawhub.ai) — 全球 Skills 社区，Skills 体系的外部来源
 - [/goal 命令](https://docs.anthropic.com/en/docs/claude-code/goal) — Claude Code 的自主执行循环，启发了我加用户确认的设计
 - [Loop Engineering](https://addyo.substack.com/p/loop-engineering) — Addy Osmani 的文章，帮我理清了 Context → Harness → Loop 三层框架的关系
@@ -459,13 +461,13 @@ Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的�
 读完后，从现在开始按 Handbook 约束自己的行为。然后帮我做几件事：
 
 【行为底线】
-- 遵守 4 条底线 + 10 则铁律（§二、§三）
+- 遵守 4 条底线 + 6 则铁律（§二、§三）
 - 每步验证再干，失败就停、别蒙
 - 不确定就问，列 2 种理解让我选
 - 完成任务后主动收工，别假装没做完
 
 【帮我生成文件】
-1. SKILL.md — 4 底线 + 10 铁律（宪法内联），原样抄
+1. SKILL.md — 4 底线 + 6 则铁律（宪法内联），原样抄
 2. think.md — 反思区空白模板
 3. rules.md — 根据你对我的了解先写几条规则
    比如：不生成 md 文件、回复别太长、别替我做决定
@@ -486,4 +488,4 @@ Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的�
 
 > 大半年 OpenClaw 攒的笔记。不是实验室数据，但对我有用。哪里写得不好，直接告诉我。
 >
-> *v0.94，2026 年 6 月 27 日*
+> *v0.95，2026 年 6 月 28 日*

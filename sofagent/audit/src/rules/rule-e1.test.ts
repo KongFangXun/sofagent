@@ -1,0 +1,64 @@
+// ============================================================
+// rule-e1.test.ts · E1 不落测试——测试文件缺失检测测试
+// ============================================================
+
+import { describe, it, expect } from 'vitest';
+import { checkRuleE1 } from './rule-e1-no-test-files';
+import type { AuditContext } from './types';
+import type { DiffFile } from '../diff-parser';
+
+function makeDiffFile(path: string, lines: string[] = []): DiffFile {
+  return { path, status: 'modified', lines };
+}
+
+function makeCtx(diffFiles: DiffFile[]): AuditContext {
+  return { diffFiles, logEntries: [] };
+}
+
+describe('E1 不落测试', () => {
+  it('src/ 变了有 .test.ts → PASS', () => {
+    const ctx = makeCtx([
+      makeDiffFile('src/index.ts'),
+      makeDiffFile('src/index.test.ts'),
+    ]);
+    const result = checkRuleE1(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('src/ 变了无测试文件 → WARN', () => {
+    const ctx = makeCtx([
+      makeDiffFile('src/index.ts'),
+      makeDiffFile('src/config.ts'),
+    ]);
+    const result = checkRuleE1(ctx);
+    expect(result.status).toBe('WARN');
+    expect(result.details[0]).toContain('测试文件');
+  });
+
+  it('无 src/ 变更 → PASS', () => {
+    const ctx = makeCtx([
+      makeDiffFile('README.md'),
+      makeDiffFile('package.json'),
+    ]);
+    const result = checkRuleE1(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('src/ 变了有 .spec.js → PASS', () => {
+    const ctx = makeCtx([
+      makeDiffFile('src/utils.js'),
+      makeDiffFile('src/utils.spec.js'),
+    ]);
+    const result = checkRuleE1(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('evidenceMode 标注为 git-diff', () => {
+    const ctx = makeCtx([
+      makeDiffFile('src/index.ts'),
+      makeDiffFile('src/index.test.ts'),
+    ]);
+    const result = checkRuleE1(ctx);
+    expect(result.evidenceMode).toBe('git-diff');
+  });
+});

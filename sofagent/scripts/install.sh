@@ -18,7 +18,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.94"
+VERSION="0.95"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'
@@ -513,7 +513,7 @@ info "Step 5b/7 · 部署配套脚本 + 数据目录 → $TARGET"
 SCRIPTS_DST="${TARGET}/scripts"
 mkdir -p "$SCRIPTS_DST"
 
-for script in task-record.sh task-orchestrate.sh cleanup.sh audit.sh compress-memory.sh skill-safety-check.sh; do
+for script in task-record.sh task-orchestrate.sh cleanup.sh audit.sh compress-memory.sh skill-safety-check.sh audit-summary.sh; do
   src="${SCRIPT_DIR}/${script}"
   dst="${SCRIPTS_DST}/${script}"
   if [ -f "$src" ]; then
@@ -824,7 +824,7 @@ case "$PLATFORM" in
     echo "    宪法文件:      $TARGET/skills/sofagent/rules.md（宪法内联在 SKILL.md）"
     echo "    Skill 文件:     $TARGET/skills/sofagent/（6 核心 + 4 数据模板）"
     echo "    加载链 Hook:    $TARGET/hooks/sofagent-load-chain/（HOOK.md + handler.ts）"
-    echo "    配套脚本:       $TARGET/scripts/{task-record,task-orchestrate,cleanup,audit,compress-memory,skill-safety-check}.sh"
+    echo "    配套脚本:       $TARGET/scripts/{task-record,task-orchestrate,cleanup,audit,compress-memory,skill-safety-check,audit-summary}.sh"
     echo "    断路器:         ${CONFIG_FILE:-未配置}（tools.loopDetection）"
     echo "    数据目录:       $SOFAGENT_DATA"
     echo ""

@@ -1,0 +1,24 @@
+#!/bin/bash
+# sofagent pre-commit hook
+# 安装：cp sofagent/audit/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# 或：sofagent audit --install-hook
+
+DIFF=$(git diff --cached --name-only)
+if [ -z "$DIFF" ]; then
+  exit 0
+fi
+
+node sofagent/audit/dist/index.js --diff HEAD --silent --ci --task "$(cat .git/COMMIT_EDITMSG 2>/dev/null || echo 'pre-commit audit')"
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 2 ]; then
+  echo "❌ sofagent audit: 检测到违规（A1/A2），commit 已阻止。"
+  echo "   如需跳过，使用 git commit --no-verify（不推荐）。"
+  exit 1
+fi
+
+if [ $EXIT_CODE -eq 1 ]; then
+  echo "⚠️  sofagent audit: 检测到警告，但允许 commit。"
+fi
+
+exit 0

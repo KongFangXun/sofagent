@@ -1,6 +1,6 @@
 // sofagent load-chain hook · OpenClaw 2026.6.x
 // 注入三层加载链到 agent:bootstrap：
-//   L1 SKILL.md（4 底线 + 10 铁律，openclaw 技能系统只注入 description ≈240 chars，本 hook 补注全文）
+//   L1 SKILL.md（4 底线 + 6 则铁律，openclaw 技能系统只注入 description ≈240 chars，本 hook 补注全文）
 //   L2 think.md（反思区）
 //   L3 rules.md（用户规则）
 // 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
@@ -27,7 +27,7 @@ const handler = async (event: any) => {
 
   // ── 第 1 层：宪法（SKILL.md 全文）──
   // OpenClaw 技能系统仅注入 description 字段（≈240 chars），不注入全文。
-  // 本 hook 补注完整 SKILL.md，确保 4 底线 + 10 铁律进入 agent 上下文。
+  // 本 hook 补注完整 SKILL.md，确保 4 底线 + 6 则铁律进入 agent 上下文。
   const skillMdFile = path.join(openclawDir, "skills", "sofagent", "SKILL.md");
   if (fs.existsSync(skillMdFile)) {
     const content = fs.readFileSync(skillMdFile, "utf-8");

@@ -11,7 +11,7 @@ sofagent 是纯本地纪律层，**数据不出本机**——但以下数据以*
 | `scoring/` | `.sofagent/scoring/` | Skill 使用记录 |
 | `orchestrator/` | `.sofagent/orchestrator/` | 编排决策历史 |
 
-**当前状态（v0.94）**：
+**当前状态（v0.95）**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
@@ -50,7 +50,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，执行 `execFileSync('git', ...)`
 
 **数据访问**：审计工具只读取 git diff 输出和 `.sofagent/task/logs/` 目录下的 Markdown 文件，不发起网络请求，不写入任何文件。
 
-**信任边界**：审计工具本身是确定性的——给定相同的 git diff 和日志，输出相同。但铁律 #1/#3 的结果依赖 Agent 日志的真实性（Agent 可以伪造日志）。这不是审计工具的安全漏洞，是架构级别的信任模型选择。详见 [LIMITATIONS.md](./LIMITATIONS.md#信任模型)。
+**信任边界**：审计工具本身是确定性的——给定相同的 git diff 和日志，输出相同。但审计 A7/A8 的结果依赖 Agent 日志的真实性（Agent 可以伪造日志）。这不是审计工具的安全漏洞，是架构级别的信任模型选择。详见 [LIMITATIONS.md](./LIMITATIONS.md#信任模型)。
 
 ---
 

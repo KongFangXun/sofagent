@@ -2,6 +2,8 @@
 
 每个版本的详细开发日志在 [docs/changelog/](./docs/changelog/) 目录下。本文件是目录索引——一句话知道改了什么，点链接看完整故事。
 
+> 面向：双方证据（人类核实 + AI 引用）
+
 > 📋 **版本号说明**（v0.83 新增，回应评审 P2-1）：
 > - **v0.47–v0.56**：早期开发版，每个版本间隔 1-3 天，改动密集
 > - **v0.60–v0.63**：架构重构期（扁平化 + 诚实化）
@@ -20,7 +22,23 @@
 > - **v0.92**：v0.91 审查修复——execSync 安全加固 + 信任模型诚实声明 + 铁律检测精度的边界 + 单元测试覆盖
 > - **v0.93**：工程迁移 + 4 项 FP 修复 + 6 项文档修缮 + 2 份社区 PR 合入跟进——bash→TS 第一步 + 信任模型精确化 + 中英文定位对齐
 > - **v0.94**：工程硬伤止血 + 审计独立化（沉默审计 + LogFormat 可插拔）+ FDE 部署者优先 + 真实 Skill 加载链复现实验——双轮评审重排，MCP/Agency 推到 v0.95
-> - **v0.95**：审计配置化 + 铁律分级（业务底线/能力拐杖）+ 上下文成本仪表盘 + MCP server + Agency Agent 对接 + OpenClaw 预装——依赖 v0.94 审计独立化先落地。新增 8 项来自 9 篇行业笔记（FDE 研报/Harness 设计/Loop 工程/MCP 架构/Karpathy 规则）
+> - **v0.95**：审计体系重构（4·6·8·4：4 底线 + 6 则铁律 + 8 审计 + 4 扩展）+ 铁律 10→6（4 条有 git diff 痕迹的移审计层 A3/A5/A7/A8）+ 目录改名（sofagent-audit/ → sofagent/audit/）+ ARCHITECTURE 三源收敛（Ralph Loop + MiroFish + 卡普二分法）+ FDE 商业模式——MCP/Agency/demogif 推迟 v1.0
+
+---
+
+## [v0.95] — 2026-06-28
+
+审计体系重构（4·6·8·4）+ 铁律 10→6 + 目录改名 + ARCHITECTURE 三源收敛 + FDE 商业模式——铁律从 10 条精简为 6 条（4 条有 git diff 痕迹的移至审计层 A3/A5/A7/A8），sofagent-audit/ 目录改名为 sofagent/audit/，CLI 命令名 sofagent-audit 保留。MCP/Agency/demogif 因接口不稳定推迟 v1.0。
+
+> 📖 [开发日志](./docs/changelog/v0.95.md)
+
+---
+
+## [v0.94] — 2026-06-27
+
+工程硬伤止血 + 审计独立化（沉默模式 + 7 条纯 diff 规则）+ FDE 部署者优先 + 社区复现指南——双轮评审（GLM-5.2 + DeepSeek V4 Pro）后重排，MCP/Agency 推到 v0.95。
+
+> 📖 [开发日志](./docs/changelog/v0.94.md)
 
 ---
 
@@ -29,22 +47,6 @@
 工程迁移 + 检测精度闭环 + 文档修缮 + 10 组实验——v0.92 全身审查 17 项问题中的 11 项落地（4 项 FP 修复含 --strict + 6 项文档修缮 + 10 组实验执行）+ bash→TypeScript 迁移起步 + 两份社区 PR 合入跟进。实验结论：纪律层增量 = f(陷阱难度)——在高难度「同名语义混淆」场景效果显著（0% vs 100% 误伤），在精确指令场景无显著差异。
 
 > 📖 [开发日志](./docs/changelog/v0.93.md)
-
----
-
-## [v0.94] — 计划中（评审重排）
-
-工程硬伤止血 + 审计独立化 + FDE 部署者优先 + 实验补证——v0.93 双轮评审（GLM-5.2 + DeepSeek V4 Pro）后重排，MCP/Agency Agent 推到 v0.95。
-
-> 📖 [开发日志](./docs/changelog/v0.94.md)
-
----
-
-## [v0.95] — 计划中
-
-审计配置化 + MCP server + Agency Agent 对接 + OpenClaw 预装 + 合规三件套——依赖 v0.94 审计独立化先落地。
-
-> 📖 [开发日志](./docs/changelog/v0.95.md)
 
 ---
 
@@ -62,7 +64,7 @@ v0.91 审查修复版本——DeepSeek V4 Pro 驱动的 WorkBuddy 专家团审�
 
 ### 🔴 sofagent-audit MVP（提交时审计）
 
-TypeScript CLI，扫描 git diff 对标 4 条可程序化铁律（#1 先读再用 / #3 验证再干 / #7 谨慎修改 / #10 如实汇报），exit code 0/1/2 确定性输出。不依赖 Agent 运行时配合——看的是已经发生的 git diff。铁律 #1/#3 的日志检查依赖 Agent 写入的任务日志（见 LIMITATIONS.md 信任模型）。误报率红线 < 10%。焊死的门原则：检查规则独立只读。
+TypeScript CLI，扫描 git diff 对标 4 条可程序化铁律（#1 先读再用 / #3 验证再干 / #7 谨慎修改 / #10 如实汇报），exit code 0/1/2 确定性输出。不依赖 Agent 运行时配合——看的是已经发生的 git diff。铁律 #1/#3 的日志检查依赖 Agent 写入的任务日志（见 LIMITATIONS.md 信任模型）。误报率红线 < 10%。焊死的门原则：检查规则独立只读。> v0.95 起，这 4 条铁律已迁移至审计层（A3/A5/A7/A8），铁律减为 6 则。
 
 ### 🔴 评审落地（文档瘦身 + 叙事降温）
 

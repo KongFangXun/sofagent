@@ -2,7 +2,9 @@
 
 > 诚实坦白：已知局限。这里不卖「企业级安全」或「军事级加密」——只写 sofagent 做不到什么、为什么做不到、等什么才能做到。
 >
-> v0.94 · 2026-06-27 · 孔放勋
+> v0.95 · 2026-06-28 · 孔放勋
+
+> 面向：AI 检索（诚实坦白已知局限）
 
 ---
 
@@ -211,7 +213,7 @@ v0.85 确立新方向：**提交时审计**（sofagent-audit）。不依赖 Agen
 
 > v0.92 新增。来自 P0 安全审查。
 
-sofagent-audit 的全部证据来源是 Agent 自己写的 `.sofagent/task/logs/*.md` 文件。铁律 #1/#3 的日志检查依赖 Agent 写入的任务日志——Agent 可在日志中伪造记录绕过检测。这是架构选择（不依赖 Agent 平台 hook），不是实现 bug。审计工具的可靠性上限 = Agent 日志的真实性。
+sofagent-audit 的全部证据来源是 Agent 自己写的 `.sofagent/task/logs/*.md` 文件。审计 A7/A8 的日志检查依赖 Agent 写入的任务日志——Agent 可在日志中伪造记录绕过检测。这是架构选择（不依赖 Agent 平台 hook），不是实现 bug。审计工具的可靠性上限 = Agent 日志的真实性。
 
 > 💡 v0.94 起提供 `--silent` 模式：只跑纯 git-diff 规则（敏感文件触碰 / 源码改测试没动 / 超大无注释等），不依赖 Agent 日志。Agent 不写日志时审计仍有判定力——虽然精确度会降。详见 [ARCHITECTURE.md §审计层的证据分层](./ARCHITECTURE.md#audit-evidence-layering)。
 
@@ -227,11 +229,11 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `.sofagent/task/logs/
 
 ---
 
-### 铁律 #1 检测可靠性边界
+### 审计 A7 检测可靠性边界
 
 > v0.92 新增。来自 P0 安全审查。
 
-铁律 #1 检测基于 Agent 任务日志的正则匹配，v0.92 代码层面已做 5 项加固（见下段），但未经真实任务日志实测——误报率/漏报率留待 v0.93 在真实环境中测量。并非 100% 可靠——Agent 可在日志中伪造读取记录。
+审计 A7（不存盲改）检测基于 Agent 任务日志的正则匹配，v0.92 代码层面已做 5 项加固（见下段），但未经真实任务日志实测——误报率/漏报率留待 v0.93 在真实环境中测量。并非 100% 可靠——Agent 可在日志中伪造读取记录。
 
 v0.92 已做第一步改进：子串匹配 → 精确 `path.basename` 匹配（config.ts 不再误匹配 tsconfig.json）、正则扩展支持无扩展名文件（Makefile/Dockerfile/.env）、仅匹配日志中 Read 操作条目（排除 write/execute 条目中的文件名引用）、`extractOperation` 增加否定语义过滤（"未读取""跳过读取"不算 Read 操作）。但根本解法是结构化日志（task/logs 从 MD → JSONL），计划 v0.93 评估。
 
@@ -245,7 +247,7 @@ v0.92 已做第一步改进：子串匹配 → 精确 `path.basename` 匹配（c
 | 平台 | WorkBuddy（非 OpenClaw，Hook 层不可用） |
 | 审计命令 | `sofagent-audit --diff HEAD~1..HEAD --task "<任务>" --strict` |
 | 退出码 | **1** (WARN) |
-| 审计输出 | 扫描 1 个变更文件。铁律 #1：未找到 .sofagent/task/logs/ 任务记录 → 跳过检查。判定: ⚠️ WARN |
+| 审计输出 | 扫描 1 个变更文件。审计 A7：未找到 .sofagent/task/logs/ 任务记录 → 跳过检查。判定: ⚠️ WARN |
 | 结论 | 审计工具正确检测到日志缺失并降级为 WARN。但核心问题不在审计工具——在 WorkBuddy 平台生成日志需要 Hook 层（不可用），Agent 实际执行了「先读再改」也无法被证明。本次验证证实了「未经真实任务日志实测」的局限描述。 |
 
 ---
@@ -258,7 +260,7 @@ v0.92 已做第一步改进：子串匹配 → 精确 `path.basename` 匹配（c
 
 这是已知技术债，**不单独建 bash 基础设施来管理它**。sofagent 的战略方向是 bash → TypeScript 迁移（v0.91 ARCHITECTURE 已确立）。新建 `lib/output.sh`、`lib/platform.sh` 等 bash 基础设施是在投资即将被替换的旧技术栈——走回头路。bash 脚本在短期内仍然需要这些函数，但接受重复作为已知债务。v0.93 开始逐脚本迁移——先从 `verify-evidence.sh`（45 行，最简单）和 `skill-safety-check.sh`（301 行，最需要类型安全）开始。
 
-v0.92 已在 `sofagent-audit/src/utils/` 建设了 TypeScript 工具函数（`colors.ts` + `logger.ts`），作为 bash→TS 迁移的前置基础设施。
+v0.92 已在 `sofagent/audit/src/utils/` 建设了 TypeScript 工具函数（`colors.ts` + `logger.ts`），作为 bash→TS 迁移的前置基础设施。
 
 ---
 
