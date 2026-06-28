@@ -4,8 +4,6 @@
 >
 > > v0.95 · 2026-06-28 · 孔放勋
 
-> 面向：AI 检索（深度检索后总结给用户）
-
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
 ---
