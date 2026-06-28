@@ -16,7 +16,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="0.94"
+VERSION="0.95"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -151,10 +151,10 @@ if [ "$QUICK_MODE" = true ]; then
   [ "$JSON_MODE" = false ] && [ "$QUIET_MODE" = false ] && echo "  ⚡ 快速模式 — 4 项核心检查"
   [ "$JSON_MODE" = false ] && _hr
 
-  # 1. SKILL.md 存在且含 4 底线 + 10 铁律关键词
+  # 1. SKILL.md 存在且含 4 底线 + 6 则铁律关键词
   SKILL_QUICK="${OPENCLAW_DIR:-$HOME/.openclaw}/skills/sofagent/SKILL.md"
-  if [ -f "$SKILL_QUICK" ] && grep -q "4.*底线\|10.*铁律" "$SKILL_QUICK" 2>/dev/null; then
-    check_pass "SKILL.md 存在且含宪法（4底线+10铁律）"
+  if [ -f "$SKILL_QUICK" ] && grep -q "4.*底线\|6.*铁律" "$SKILL_QUICK" 2>/dev/null; then
+    check_pass "SKILL.md 存在且含宪法（4底线+6则铁律）"
   else
     check_fail "SKILL.md 缺失或宪法关键词不全"
   fi
@@ -223,8 +223,8 @@ if [ "$PLATFORM" = "workbuddy" ]; then
 
   # WorkBuddy 专属检查（v0.62：宪法内联在 SKILL.md，检查 SKILL.md 而非 sofagent.md）
   if [ -f "$HOME/.workbuddy/skills/sofagent/SKILL.md" ] && [ -s "$HOME/.workbuddy/skills/sofagent/SKILL.md" ]; then
-    if grep -q "4 底线\|10 铁律" "$HOME/.workbuddy/skills/sofagent/SKILL.md" 2>/dev/null; then
-      check_pass "SKILL.md 已部署且含宪法（4底线+10铁律内联）"
+    if grep -q "4 底线\|6 则铁律" "$HOME/.workbuddy/skills/sofagent/SKILL.md" 2>/dev/null; then
+      check_pass "SKILL.md 已部署且含宪法（4底线+6则铁律内联）"
     else
       check_warn "SKILL.md 已部署但宪法内容缺失"
     fi
@@ -305,7 +305,7 @@ if [ -f "$path" ] && [ -s "$path" ]; then
   fi
   # 500 字原则（Handbook §二）
   if [ "$chars" -gt 1200 ]; then
-    check_warn "$f 超过 1200 字符（${chars}），宪法层因含 10 条铁律 + 4 条底线，阈值放宽至 1200"
+    check_warn "$f 超过 1200 字符（${chars}），宪法层因含 6 则铁律 + 4 条底线，阈值放宽至 1200"
   fi
 else
   check_fail "$f — 缺失或为空"
@@ -609,8 +609,8 @@ fi
 [ "$JSON_MODE" = false ] && echo -n "  约束注入验证: "
 SKILL_FILE="${OPENCLAW_DIR:-$HOME/.openclaw}/skills/sofagent/SKILL.md"
 if [ -f "$SKILL_FILE" ]; then
-  if grep -q "4.*底线\|10.*铁律" "$SKILL_FILE" 2>/dev/null; then
-    check_pass "契约层关键词完整（4底线+10铁律内联在 SKILL.md）"
+  if grep -q "4.*底线\|6.*铁律" "$SKILL_FILE" 2>/dev/null; then
+    check_pass "契约层关键词完整（4底线+6则铁律内联在 SKILL.md）"
   else
     check_fail "SKILL.md 内容异常——宪法关键词缺失"
   fi

@@ -60,7 +60,7 @@ id            记录 UUID
    - **风险画像**：`needs-approval` vs `auto-approved` 比例 → sofagent 是否让 Agent 更主动求批/更谨慎
    - **失败率**：`decision=failed` 计数
    - **底线验证**：陷阱任务里 command-safety 记录的是**实际执行**还是**拦截**
-   - **自述失真度**：`task-record` 声称"成功" vs 本日志同 session `decision=failed` → 量诚实差（验证铁律 #10）
+   - **自述失真度**：`task-record` 声称"成功" vs 本日志同 session `decision=failed` → 量诚实差（验证审计 A5）
 
 ## 限制（诚实）
 

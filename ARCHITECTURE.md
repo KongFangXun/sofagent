@@ -2,7 +2,9 @@
 
 > 一个只懂点前端代码的产品经理，在设计 Agent 纪律层时都想了些什么。这里只写设计决策、权衡取舍、已知局限，以及为什么故意不做某些事。各节按 Handbook 章节顺序排列，方便对照。
 >
-> > v0.94 · 2026-06-27 · 孔放勋
+> > v0.95 · 2026-06-28 · 孔放勋
+
+> 面向：AI 检索（深度检索后总结给用户）
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -17,6 +19,8 @@ AI 工程方法一直在往前走：Prompt Engineering 解决「怎么对 AI 说
 Agent 跑完任务后，谁来告诉它「下一个任务是什么」？谁来确认「上一个任务做对了吗」？谁来记录「这次踩了什么坑下次别踩」？
 
 纪律层解决的就是这个问题——Agent 跑完任务之后，不是等着人验收，而是自己完成「拆解→执行→验证→复盘」的完整闭环。sofagent 不跑你的任务，它管跑你任务的 Agent。
+
+> sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。Agent 的记忆长在文件系统（git diff / task/logs / SKILL.md），不长在 Agent 内部。审计层优先信任 git diff（硬证据），不信任 Agent 日志（软证据）。sofagent 是 Ralph 范式的治理层实现。
 
 > 🤔 「纪律层」不是什么新造的词——Palantir CEO 卡普在 2026 年 CNBC 三小时访谈中讲得很清楚：大模型本身不值钱，值钱的是「从模型到业务、到执行、到责任的全链路闭环」里的系统能力。AI 落地真正缺的不是更强的模型，是有人确保 Agent 按规矩干活、出错了能追溯、交付了能验货。sofagent 做的就是这个——Agent 的纪律层，不是 Agent 的替代品。
 
@@ -54,7 +58,7 @@ sofagent 分两层——地基轻、引擎重，这是有意为之：
 | **纪律层** | Agent 上下文 | 纯 MD 文件（SKILL.md + engine.md + think.md + rules.md），Agent 读即生效 | ✅ 已可用 |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失、定时清理 | ✅ v0.81 |
 | **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff，不依赖 Agent 运行时配合 | ✅ v0.92 |
-| **MCP 推送层** | 设备 MCP server | 文件监听 + 主动推送——任务完成直接推到企业协作平台 | v0.94 |
+| **MCP 推送层** | 设备 MCP server | 文件监听 + 主动推送——任务完成直接推到企业协作平台 | v1.0 规划 |
 | **协同层** | 多设备 + 云端 | 多设备任务分发 + 联邦治理 | v2.x 规划 |
 
 **这五层不是随便分的**——麦肯锡 2026 年 6 月的「AI-Native 时代新三角色」框架（Technologist/Scientist/Strategist）提供了一个结构类比：纪律层定义 Agent 行为的数据底座（T），反思闭环发现规律（S），编排层做决策（St）。后面的执行/审计/协同层是这三种能力在设备和企业级的延展。但不追求严格对应——五层是工程产物，不是理论模型。
@@ -64,7 +68,7 @@ sofagent 分两层——地基轻、引擎重，这是有意为之：
 <a id="audit-evidence-layering"></a>
 ### 审计层的证据分层：信任产出，不信任过程
 
-审计层（sofagent-audit）的核心设计决策来自两个独立来源的收敛——MiroFish 开源项目的「工具调用与最终答案严格分离」模式，以及 Palantir 卡普的「99.9% 确定性刚需」二分法。结论一致：**git diff 是最终答案（硬证据），Agent 日志是工具调用过程（软证据）。**
+审计层（sofagent-audit）的核心设计决策来自三个独立来源的收敛——Geoffrey Huntley 的 Ralph Loop「Agent 失忆，文件不失忆」哲学、MiroFish 开源项目的「工具调用与最终答案严格分离」模式，以及 Palantir 卡普的「99.9% 确定性刚需」二分法。三者指向同一个结论：**git diff 是最终答案（硬证据），Agent 日志是工具调用过程（软证据）。**
 
 | 证据源 | 依赖 Agent 配合 | 可绕过 | 判定精确度 |
 |------|:--:|:--:|:--:|
@@ -79,8 +83,22 @@ sofagent 分两层——地基轻、引擎重，这是有意为之：
 
 这层设计的底线：**审计工具在零 Agent 配合下仍然有判定能力。** Agent 日志让审计更精确，但没有日志审计不失效。
 
+<a id="audit-ooda"></a>
+#### OODA 审计决策环
+
+审计层的判定逻辑映射 OODA 模型：
+
+| OODA 阶段 | 审计对应 | sofagent 实现 |
+|-----------|---------|--------------|
+| Observe（观察） | 采集证据 | git diff 解析 + Agent 日志读取（可选） |
+| Orient（定向） | 规则匹配 | A1-A8 规则逐条比对 |
+| Decide（决策） | 判定 exit code | PASS(0) / WARN(1) / FAIL(2) |
+| Act（行动） | 输出结果 | 终端报告 + --ci 提醒 + --json 结构化输出 |
+
+这对应 Loop Engineering 的「Human in/on/out of the loop」：PASS = out of the loop（放行），WARN = on the loop（提醒但不阻断），FAIL = in the loop（必须人工介入）。
+
 <a id="design-principles"></a>
-### 三条设计原则
+### 四条设计原则
 
 来自 FDE Agent Harness、Loop Engineering、MCP 扩展架构三篇行业笔记（2026-06）：
 
@@ -92,6 +110,9 @@ sofagent 分两层——地基轻、引擎重，这是有意为之：
 
 3. **「先有掌控感，再自动化」**（Harness 设计笔记）<br>
    install → verify.sh 确认约束生效 → 用户拥有了对 Agent 行为的掌控感 → 然后才能放心把任务交给编排引擎。这条原则解释了为什么 sofagent 的安装流程必须包含 verify 步骤——不是技术需要，是心理需要。
+
+4. **「状态最贵」**（Ralph Loop 哲学）<br>
+   Agent 的上下文窗口是有限预算，不是无限文件夹。治理层总占用承诺不超过窗口的 5%（当前约 2.5%）。每多塞一段不必要的上下文，就少一段留给任务的空间。sofagent 的三层加载链 + 编排引擎都是在「最少上下文占用量」约束下设计的——用文件外化状态，用 git diff 替代 Agent 记忆。
 
 <a id="skill-runtime"></a>
 ### 为什么是 Skill + 脚本 + Runtime，不是纯 Skill 或纯代码
@@ -105,6 +126,8 @@ sofagent 分两层——地基轻、引擎重，这是有意为之：
 | 硬安全（加载链、断路器、死循环检测） | OpenClaw 原生配置 | Agent 失控时没法自己管自己，必须在外部兜底 |
 
 LLM 管判断、脚本管执行、Runtime 管刹车——天然的分界。
+
+> sofagent 的编排引擎（entry-gate → task-aware → task-closure 三道闸门）对应 Addy Osmani 在 Loop Engineering 中提出的「Go Mode」——当任务满足触发条件时，从「人工确认每一步」切换到「Agent 自主循环 + 检查点兜底」。sofagent 的 Go Mode 触发条件更保守：仅 🔴 复杂任务才点火，不像 Loop Engineering 原版那样对中等复杂度也自动启动。
 
 ### 为什么 OpenClaw 是唯一底座
 
@@ -136,6 +159,8 @@ Claude Code 的 `/goal` 是纯黑盒——目标给出去后 Agent 闷头跑，�
 
 模型会吃掉一部分 Harness——任务拆解、上下文选择、工具调用，这些能力模型自己越来越强。但生产级 Harness 从「外部脚手架」升级成「生产级 Agent 运行的底座」。模型决定能想到哪步，Harness 决定能不能把事情做完。Agent 越强，闸门越重要。
 
+> sofagent 自身的开发过程就是 Ralph 循环的活体验证——两个模型（GLM + DeepSeek）自循环 loop：GLM 定框架 → DeepSeek 写实现 → GLM 审查 → DeepSeek 修复 → 下一轮。10 天 17 个版本，在传统软件工程里是灾难信号，在 AI Loop 语境下恰恰是产品价值的证据。
+
 ---
 
 ## 二、核心设计决策
@@ -161,18 +186,19 @@ Claude Code 的 `/goal` 是纯黑盒——目标给出去后 Agent 闷头跑，�
 
 加载顺序受 Lost in the Middle 约束：SKILL.md 放最前面（开头注意力最高），rules.md 放最后面（末尾注意力最高）。技术实现用 OpenClaw hook 架构——声明式注册 `sofagent-load-chain` 监听 `agent:bootstrap` 事件。
 
-### 铁律为什么是 10 则（[Handbook §三](./HANDBOOK.md#三底线与铁律)）
+### 铁律为什么是 6 则（[Handbook §三](./HANDBOOK.md#三底线与铁律)）
 
-每一条对应日常使用中反复遇到的 Agent 失控行为——不是理论推演，是痛点积累：
+每一条对应日常使用中反复遇到的 Agent 失控行为——不是理论推演，是痛点积累。v0.95 将 4 条有 git diff 痕迹的铁律移至审计层（A3/A5/A7/A8），铁律只保留纯行为准则：
 
-| 问题 | 表现 | 对应的铁律 |
+| 问题 | 表现 | 对应规则 |
 |------|------|:--:|
-| 做完了没回复 | 子任务跑完了但没告诉用户 | #2 对用户有回应 |
-| 出错继续跑 | 构建失败后 Agent 假装没看见继续下一步 | #3 验证再干 |
-| 不看文件就写 | 没读项目代码就开始改，越改越乱 | #1 先读再用 |
-| 编造数据 | 不知道就编，被揭穿才承认 | #10 如实汇报 |
+| 做完了没回复 | 子任务跑完了但没告诉用户 | #1 对用户有回应 |
+| 越界改代码 | 改了不在任务范围内的文件 | 审计 A3 不改越界 |
+| 出错继续跑 | 构建失败后 Agent 假装没看见继续下一步 | 审计 A8 不逃验证 |
+| 不看文件就写 | 没读项目代码就开始改，越改越乱 | 审计 A7 不存盲改 |
+| 编造数据 | 不知道就编，被揭穿才承认 | 审计 A5 不瞒真相 |
 
-前 4 条源于 Andrej Karpathy 的 [4 条编码原则](https://github.com/multica-ai/andrej-karpathy-skills)，后 6 条是实战翻车经历的工程沉淀。`rules.md` 是你可以自己改的，`SKILL.md`（宪法内联）是写死的——铁律兜底，rules 定制。
+前 4 条源于 Andrej Karpathy 的 [4 条编码原则](https://github.com/multica-ai/andrej-karpathy-skills)，后 2 条是实战翻车经历的工程沉淀。`rules.md` 是你可以自己改的，`SKILL.md`（宪法内联）是写死的——铁律兜底，rules 定制。
 
 ### 四级编排深度（[Developer §二](./DEVELOPMENT.md#二编排哲学)）
 
@@ -222,7 +248,7 @@ Worktree 不是全局默认——只在共享仓库场景下触发。选 git wor
 
 一台设备跑久了，积累的记忆和 task/logs 是散落在本地的。多台设备一起跑，问题变成：怎么让「A 设备的 bug fix 经验被 B 设备的 Agent 读到」？
 
-**第一阶段（v2.x 早期）**：设备间记忆索引——每台设备通过 MCP server 暴露 `sofagent_list_memories` 接口，只给元数据不传原始数据。**第二阶段（v2.x）**：企业 Agent 知识库——蒸馏记忆同步到企业自有 NAS/云盘，由专职「知识库管理员 Agent」自动分类、去重、建索引。知识库底层检索引擎推荐 [RAGFlow](https://github.com/infiniflow/ragflow)。
+**第一阶段（v2.x 早期）**：设备间记忆索引——每台设备通过 MCP server 暴露 `sofagent_list_memories` 接口，只给元数据不传原始数据。**第二阶段（v2.x）**：企业 Agent 知识库——蒸馏记忆同步到企业自有 NAS/云盘，由专职「知识库管理员 Agent」自动分类、去重、建索引。知识库底层检索引擎推荐 [Graphify](https://github.com/safishamsi/graphify)——基于 tree-sitter AST 的轻量知识图谱，原生支持 OpenClaw，比向量检索 RAG 方案更适合 SMB 场景。
 
 > 💡 不把数据存到 sofagent 的服务器。企业信不过开源项目的数据库——但信自己的 NAS 和企业云盘。sofagent 做连接器和查询层，存储永远在企业自己指定的地方。
 
@@ -362,6 +388,8 @@ orchestrator/、scoring/ 这些目录可能有几百条记录——全读到上�
 
 **设计原则**：sofagent 是 FDE 场景的纪律底座，不是 FDE 引擎。两者是工具和工具箱的关系——工具箱不替你干活，但保证工具不会伤手。
 
+> **范围声明**：sofagent 是 FDE 的**纪律底座**，不是**运维底座**。覆盖 FDE 问题空间约 20%（Agent 质量层：代码纪律 + 审计 + 经验沉淀），运维层（监控/告警/重启/日志轮转，约 80%）不在范围内。
+
 ---
 
 ## 五、参考与致谢
@@ -376,6 +404,8 @@ sofagent 站在这些人和作品的基础上：
 | **Anthropic** | Managed Agents 四层架构——核心设计哲学源头 |
 | **agency-orchestrator** | `ao compose` 意图识别→任务图生成→模板匹配→分配 |
 | **Andrej Karpathy** | 思考先行、简约至上、精准修改、目标驱动——铁律在此基础上扩展 |
+| **Geoffrey Huntley** | Ralph Loop——「Agent 失忆，文件不失忆」哲学。一行 bash 循环 + Stop Hook + 确定性完成承诺，启发 sofagent 审计层核心设计：git diff 无状态证据优于 Agent 日志有状态证据。详见 [§审计层的证据分层](#audit-evidence-layering)。原帖 [ghuntley.com/loop](https://ghuntley.com/loop) |
+| **MiroFish** |「工具调用与最终答案严格分离」模式——ReportAgent 的治理机制启发了 sofagent 审计层的证据分层：git diff = 最终答案，Agent 日志 = 工具调用过程 |
 | **Nelson F. Liu et al.** | *Lost in the Middle*——500 字原则和加载链顺序的科学依据 |
 | **AI 代码审查实验（146 PR × 4 AI Reviewer）** | 93.4% 的问题仅被单一 AI 工具识别，0% 被所有工具共同识别——多视角评估不是「nice to have」，是「must have」。验证 sofagent loop-check + scoring + 人类审查三层设计 |
 | **Google Cloud Code 论文** | Agent 运行时 7 组件架构（entry → context → loop → permission → state）。核心结论：loop 不是产品——Harness 的可控性、可恢复性、可审计性才是上生产的决定因素 |

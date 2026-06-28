@@ -27,7 +27,7 @@
 
 | 顺序 | 文件 | 看什么 | 约几分钟 |
 |:--:|------|------|:--:|
-| 1 | [SKILL.md](./sofagent/SKILL.md)（宪法内联） | 4 底线 + 10 铁律——项目的灵魂，所有概念从这里展开 | 3 min |
+| 1 | [SKILL.md](./sofagent/SKILL.md)（宪法内联） | 4 底线 + 6 则铁律——项目的灵魂，所有概念从这里展开 | 3 min |
 | 2 | [docs/changelog/v0.85.md](./docs/changelog/v0.85.md) | 当前版本做了什么 + 定位校准 + 下一步方向 | 5 min |
 | 3 | [LIMITATIONS.md](./LIMITATIONS.md) | 已知局限——看完你就知道哪些坑可以帮忙填 | 2 min |
 

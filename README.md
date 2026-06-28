@@ -3,26 +3,26 @@
 中文 | [English](README.en.md)
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.94-16B8F3)](./HANDBOOK.md)
-[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--26-16B8F3)](./README.md)
+[![Version](https://img.shields.io/badge/version-0.95-16B8F3)](./HANDBOOK.md)
+![CI](https://github.com/KongFangXun/sofagent/actions/workflows/ci.yml/badge.svg)
+![ShellCheck](https://github.com/KongFangXun/sofagent/actions/workflows/shellcheck.yml/badge.svg)
+[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--28-16B8F3)](./README.md)
 [![定位](https://img.shields.io/badge/定位-Agent_纪律层-16B8F3)](#这是什么)
 [![OpenClaw](https://img.shields.io/badge/🦞优先-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9FStarred)](https://github.com/KongFangXun/sofagent/stargazers)
 
+> 面向：人类决策（30 秒判断要不要用）
+
 <img src="images/sofagent.png" alt="sofagent" width="300" />
-<!-- TODO v0.94: demo.gif — 15s 左右对比: 裸 Agent 跑偏 vs sofagent 约束后正常。v0.93 暂无素材，完成后再录 -->
+<!-- TODO: demo.gif — 15s 左右对比: 裸 Agent 跑偏 vs sofagent 约束后正常。暂无素材，完成后再录 -->
 
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
 
-> 📄 **License**：MIT。代码、文档、模板——随便用，保留版权声明就行。
+> **License**：MIT。代码、文档、模板——随便用，保留版权声明就行。
 
 我叫孔放勋，一个只懂点前端代码的产品经理。所有设计决策来自大半年的真实使用经验，文档由 [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) 和 [GLM-5.2](https://z.ai/) 互相校验生成。欢迎大佬进来改。
 
-这个项目是怎么做出来的？说到底是场实验——AI 模型们能不能在迭代中互相校验，写出一个像样的技术产品？
-
-我代码写得很糟糕，所以换了一种方式：DeepSeek V4 Pro 和 GLM-5.2 各自写代码，也各自审对方的代码——两个模型都在写、都在审、都在改。我也不跳出这个循环，坐在中间跟着一起滚：定约束、看产出、做终审。整个项目在「模型 A 写 → 模型 B 审 → 模型 A 改 → 再审」的循环里打磨出来。
-
-> 🔥 大力出奇迹的代价是 token 消耗是正常写代码的 3-5 倍，烧 token 换项目产出与质量保证。好处是人不需要碰代码——设计决策、经验积累、方向判断，这些是人能做的。至于这种模式能不能稳定复现，说实话还不知道——所以这既是项目，也是实验。
+> 每个版本经独立模型评审，详见 [CHANGELOG](./CHANGELOG.md)。
 
 ---
 
@@ -35,7 +35,7 @@
 > **纪律层 vs 大模型**：不要和模型比谁更会写代码——那是它的主场。模型越强，剩下那 10% 没人敢省略的环节（验证、审计、为结果负责）反而越值钱。sofagent 做的是这 10%：Agent 改完代码跑验证了吗？踩过的坑记下来了吗？别人能复现它的工作吗？[阅读更多](#效果证据状态)
 
 > **FDE 场景**：Forward Deployed Engineer 带着 AI Agent 进驻企业跑通了落地，但人一走 Agent 如果没人管——改了不该改的、踩了坑不记、产出没人审——就成技术债。sofagent 是 FDE 走之后企业仍然能管住 Agent 的纪律底座。详见 [企业落地](./docs/team-deploy.md)。
-> 验证再干——10 条铁律是底线不是建议。
+> 验证再干——6 则铁律 + 8 项审计是底线不是建议。
 
 > **平台差异**：OpenClaw 上完整生效（编排 + Hook + 断路器）；WorkBuddy / Codex / Claude Code / Hermes Agent 上仅宪法层约束生效（先读后写/验证再干/谨慎修改），治理加固全部降级或失效——非 OpenClaw 平台价值约完整版的 30%。其他平台建议用 `--lite` 安装。详见 [平台能力表](#平台能力)。
 
@@ -45,7 +45,7 @@
 
 ### 效果证据状态
 
-> 📌 **这是一个正在收集证据的早期项目，不是生产就绪的工具。**
+> **注意**：这是一个正在收集证据的早期项目，不是生产就绪的工具。
 
 | 维度 | 数据 | 状态 |
 |------|------|:----:|
@@ -60,11 +60,11 @@
 | **脚本**（执行）| bash 脚本处理机械活——读写文件、调 API，Agent 调 shell 跑（非 bash 平台降级为 Read/Edit 工具） |
 | **平台兜底**| 加载链 + 断路器 + 死循环检测——OpenClaw 系由 Hook 和配置层兜底，其他平台依赖自身安全机制 |
 
-> 💡 sofagent 是软约束层——靠 Agent 读取并自觉遵守，不是硬编码强制执行。执行率受上下文长度、模型能力影响。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
+> **提示**：sofagent 是软约束层——靠 Agent 读取并自觉遵守，不是硬编码强制执行。执行率受上下文长度、模型能力影响。详见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 
 ---
 
-## 📖 三份文档
+## 三份文档
 
 | 你是谁 | 看哪个 | 一句话 |
 |------|------|------|
@@ -79,20 +79,20 @@
 
 | 做什么 | 怎么做 |
 |------|------|
-| **地基** | 三层加载链——宪法（4底线+10铁律）→ 反思区（自动错题本）→ 你的规则。整个会话期间永远在线 |
+| **地基** | 三层加载链——宪法（4底线+6则铁律）→ 反思区（自动错题本）→ 你的规则。整个会话期间永远在线 |
 | **引擎** | 任务编排引擎——🔴 复杂任务时点火，智能拆解 + Loop 检查 + 闭环反思 |
 | **进化** | 渐进减薄——同类任务根据历史成功率调整编排深度，跑崩了恢复完整编排 |
 
-> 💡 核心理念：**厚在治理，薄在复用。** 约束自己定，模板和 Skills 从社区取。**当前被验证的差异化在纪律层（先读后写/验证再干/谨慎修改），不在约束层。** 为 AI Agent 提供纪律层与反思循环（效果待社区验证）。
-> 💰 安装成本：约 3,000 token 地基常驻（128K 窗口的 2.5%）。编排引擎仅 🔴 复杂任务时额外 ~800 token。详见 [Token 预算](./HANDBOOK.md#token-预算参考)。
+> **提示**：核心理念：**厚在治理，薄在复用。** 约束自己定，模板和 Skills 从社区取。**当前被验证的差异化在纪律层（先读后写/验证再干/谨慎修改），不在约束层。** 为 AI Agent 提供纪律层与反思循环（效果待社区验证）。
+> **成本**：安装成本：约 3,000 token 地基常驻（128K 窗口的 2.5%）。编排引擎仅 🔴 复杂任务时额外 ~800 token。详见 [Token 预算](./HANDBOOK.md#token-预算参考)。
 
 ### 概念分层：哪些是核心，哪些是增强
 
 sofagent 聚合了很多概念——宪法、铁律、加载链、编排引擎、断路器、daemon……新用户容易晕。v0.85 把它们拆成两列（来自 DeepSeek 评审「架构概念过载」洞察）：
 
-| 🔧 纪律层核心（所有平台） | 🚀 治理层增强（OpenClaw 专属） |
+| 纪律层核心（所有平台） | 治理层增强（OpenClaw 专属） |
 |------|------|
-| 4 底线 + 10 铁律（SKILL.md 宪法）| 编排引擎（ao compose，需 npm） |
+| 4 底线 + 6 则铁律（SKILL.md 宪法）| 编排引擎（ao compose，需 npm） |
 | 三层加载链（SKILL → think → rules）| 加载链 Hook 自动注入（非 OpenClaw 靠 Agent 自觉） |
 | 反思区（think.md 自动错题本）| 断路器（session 隔离 + circuit breaker） |
 | 规则定制（rules.md 你的规则）| 步数闸（MAX+GRACE 两段式） |
@@ -109,7 +109,7 @@ sofagent 聚合了很多概念——宪法、铁律、加载链、编排引擎�
 
 sofagent 的终局是一台设备上的 **Agent 纪律委员**——安装时自带 OpenClaw 底座，通过 AO compose 编排任务、用 Agency Agent 注入模板，结果通过 MCP server 直接推到支持 webhook 的企业协同平台（钉钉/企微/飞书/Slack/Teams 等）。**数据主权在设备**——所有记忆、日志、决策记录都在设备本地，不经过云端。一台 Mac Mini 或旧电脑装上 sofagent，就是企业 AI workflow 里的 7×24 自动化节点。**当前交付 3/5 层（地基 + 引擎 + 审计），剩余 2 层（daemon 增强 / 协同）规划中。**
 
-> 🔗 完整架构见 [ARCHITECTURE.md §产品架构展望](./ARCHITECTURE.md#fde-architecture)。
+> 详见 [ARCHITECTURE.md §产品架构展望](./ARCHITECTURE.md#fde-architecture)。
 
 ### 架构总览
 
@@ -117,7 +117,7 @@ sofagent 的终局是一台设备上的 **Agent 纪律委员**——安装时自
 三层加载链（常驻地基：宪法 → 反思区 → 你的规则）
           ↓
     A0 复杂度预判
-    ├── 🟢🟡 简单 → 直接回答（地基在线）
+    ├── ✅⚠️ 简单 → 直接回答（地基在线）
     └── 🔴 复杂 → 任务编排引擎点火
                    │
               ┌────┴────┐
@@ -136,7 +136,7 @@ sofagent 的终局是一台设备上的 **Agent 纪律委员**——安装时自
 >
 > **效果证据**：v0.92 OpenClaw 对照实验中，带 sofagent 的 Agent 变量名误伤率 0%（0/7），裸 Agent 误伤率 100%（7/7）。详见 [benchmark](./docs/benchmark/2026-06-25-openclaw-task1-control.md)。
 
-## <a id="平台能力"></a> 🖥️ 平台能力
+## <a id="平台能力"></a> 平台能力
 
 > "兼容"不等于"支持"。核心约束（MD 文件）所有平台可读——这叫兼容。完整治理（编排引擎 + Hook + 断路器 + daemon）只在 OpenClaw 上生效——这叫支持。
 
@@ -146,11 +146,11 @@ sofagent 的终局是一台设备上的 **Agent 纪律委员**——安装时自
 | WorkBuddy | ✅ 宪法+反思+规则（@skill 加载）| ⚠️ 编排可装但需 npm，Hook/断路器降级 | ~40% |
 | Codex / Hermes / Claude Code | ⚠️ 宪法（种子指令手动贴），反思/规则靠 Agent 自觉 | ❌ 全部缺失 | ~30% |
 
-> 📌 CLI one-shot 场景（非交互式）：加载链 0% 生效（Agent 跳过 Read 直接执行），包括 OpenClaw。这是架构宿命，不是 bug。详见 [LIMITATIONS.md](./LIMITATIONS.md#加载链步进脆弱性v060v062-验证结论)。
+> **注意**：CLI one-shot 场景（非交互式）：加载链 0% 生效（Agent 跳过 Read 直接执行），包括 OpenClaw。这是架构宿命，不是 bug。详见 [LIMITATIONS.md](./LIMITATIONS.md#加载链步进脆弱性v060v062-验证结论)。
 
 > **约束级别说明**：步数闸 / 熔断闸 / 幂等检查均为 prompt 级软提醒，非进程级硬拦截——Agent 可能跳过。OpenClaw 上 Hook 可升级为硬拦截。各平台实测数据见 [platform-matrix.md](./docs/platform-matrix.md)。
 
-> 📎 「种子指令」是什么：写在 Agent 记忆文件（如 CLAUDE.md / AGENTS.md / SOUL.md）里的一句话，告诉 Agent 启动时先读 sofagent 约束文件。**这不是自动化——是人手动贴的纸条。** OpenClaw 和 WorkBuddy 通过各自的 skill 机制自动加载，不需要种子指令。
+> **注意**：「种子指令」是什么：写在 Agent 记忆文件（如 CLAUDE.md / AGENTS.md / SOUL.md）里的一句话，告诉 Agent 启动时先读 sofagent 约束文件。**这不是自动化——是人手动贴的纸条。** OpenClaw 和 WorkBuddy 通过各自的 skill 机制自动加载，不需要种子指令。
 
 ## 实际效果
 
@@ -167,21 +167,21 @@ v0.85 确立的新主线方向——**从运行时治理（预防）转向提交
 核心设计原则来自 MiroFish 开源项目的「工具调用与最终答案分离」模式：**git diff 是最终答案（硬证据），Agent 日志是工具调用过程（软证据）。** 审计优先信任 git——Agent 可以骗日志，骗不了 git。
 
 ```bash
-# 沉默模式（v0.94）——只跑 git-diff 规则，不依赖 Agent 日志
+# 沉默模式——只跑 git-diff 规则，不依赖 Agent 日志
 # 任何 git 仓库都能跑，零依赖 Agent 配合
 sofagent-audit --silent --diff HEAD~1..HEAD --task "将用户认证从 JWT 迁移到 Session"
 
 # 完整模式——git diff + Agent 日志交叉验证
 sofagent-audit --diff HEAD~1..HEAD --task "将用户认证从 JWT 迁移到 Session"
 
-❌ R11 敏感文件：.env 被修改
-❌ 铁律 #7 谨慎修改：3 个文件不在任务范围内（README.md, CHANGELOG.md, package-lock.json）
-⚠️ 铁律 #10 如实汇报：commit message 为纯占位符 "fix"——缺少具体内容描述
-⚠️ R2 测试缺失：src/auth/ 改了 5 个文件，__tests__/ 没有变化
-⚠️ R12 低注释率：新增 347 行代码，注释率仅 2%
+❌ A1 敏感文件：.env 被修改
+❌ A3 不改越界：3 个文件不在任务范围内（README.md, CHANGELOG.md, package-lock.json）
+⚠️ A5 不瞒真相：commit message 为纯占位符 "fix"——缺少具体内容描述
+⚠️ A2 测试缺失：src/auth/ 改了 5 个文件，__tests__/ 没有变化
+⚠️ A4 低注释率：新增 347 行代码，注释率仅 2%
 ```
 
-> 💡 为什么审计方向是杀手级：(1) 看的是 git diff，Agent 没法绕过；(2) 跨平台，任何 git 仓库都能跑；(3) 确定性 exit code，不是 LLM 评分；(4) `--silent` 模式零依赖 Agent 日志——Agent 不写日志也能独立判定。铁律 #7/#10 及 R1-R5/R11/R12 共 9 条审计规则全部基于 git diff 运行。详见 [ARCHITECTURE.md §审计层的证据分层](./ARCHITECTURE.md#audit-evidence-layering)。
+> **提示**：为什么审计方向是杀手级：(1) 看的是 git diff，Agent 没法绕过；(2) 跨平台，任何 git 仓库都能跑；(3) 确定性 exit code，不是 LLM 评分；(4) `--silent` 模式零依赖 Agent 日志——Agent 不写日志也能独立判定。A1-A8 共 8 条审计规则全部基于 git diff 运行。详见 [ARCHITECTURE.md §审计层的证据分层](./ARCHITECTURE.md#audit-evidence-layering)。
 
 > 这不意味着放弃运行时治理——两者互补。运行时治理减少问题发生，提交时审计兜底检测漏网之鱼。
 
@@ -193,7 +193,7 @@ sofagent-audit --diff HEAD~1..HEAD --task "将用户认证从 JWT 迁移到 Sess
 
 sofagent 给你三样东西：
 
-1. **安装脚本**——30 秒挂上纪律底线（4 底线 + 10 铁律），Agent 不会跑飞
+1. **安装脚本**——30 秒挂上纪律底线（4 底线 + 6 则铁律），Agent 不会跑飞
 2. **审计工具**——Agent 改了什么、改对了没有，git diff 一看便知。`--silent` 模式不需要 Agent 配合
 3. **FDE Skill**——十步标准化部署流程，含企业专属 Skill 生成机制
 
@@ -223,11 +223,11 @@ sofagent-audit --ci --diff HEAD~1..HEAD
 
 > 选你的平台，5 步，10 分钟。
 
-### ⚡ 快速体验（仅宪法层，30 秒）
+### 快速体验（仅宪法层，30 秒）
 
 只想试试 sofagent 的核心约束？不需要完整安装。
 
-Lite 版只装 4 底线 + 10 铁律——不装 daemon、编排引擎、审计工具。适合非 OpenClaw 平台、FDE 驻场快速部署、个人开发者轻量使用。
+Lite 版只装 4 底线 + 6 则铁律——不装 daemon、编排引擎、审计工具。适合非 OpenClaw 平台、FDE 驻场快速部署、个人开发者轻量使用。
 
 ```bash
 # ClawHub
@@ -241,7 +241,7 @@ git clone https://github.com/KongFangXun/sofagent.git
 sh sofagent/sofagent-lite/install.sh
 ```
 
-### 🚀 完整安装（两步）
+### 完整安装（两步）
 
 ```bash
 git clone https://github.com/KongFangXun/sofagent.git
@@ -260,7 +260,7 @@ clawhub skill install KongFangXun/sofagent
 skillhub install sofagent
 ```
 
-> 💡 没有 ClawHub CLI？继续往下走 git clone 安装流程，一样简单。
+> **提示**：没有 ClawHub CLI？继续往下走 git clone 安装流程，一样简单。
 
 ### 1. 前置依赖
 
@@ -271,9 +271,9 @@ skillhub install sofagent
 | node | ≥18 | `ao compose` 编排引擎（agency-orchestrator）+ sofagent-audit 审计工具 | `node --version` |
 | npm | ≥9 | 全局安装 agency-orchestrator | `npm --version` |
 
-> 💡 WorkBuddy 用户若不跑编排引擎（只用宪法层约束），node/npm 可不带——v0.85 起 `--no-ao` 升为非 OpenClaw 平台的推荐默认路径。OpenClaw 跑复杂任务（🔴）需 node + npm。审计工具（sofagent-audit）需要 Node.js ≥18，如不使用审计功能可跳过。
+> **提示**：WorkBuddy 用户若不跑编排引擎（只用宪法层约束），node/npm 可不带——v0.85 起 `--no-ao` 升为非 OpenClaw 平台的推荐默认路径。OpenClaw 跑复杂任务（🔴）需 node + npm。审计工具（sofagent-audit）需要 Node.js ≥18，如不使用审计功能可跳过。
 
-> 📌 **编排引擎是可选增强，不是核心依赖**。核心约束层（宪法 + 反思 + 规则）零外部依赖。编排引擎依赖第三方 npm 包 `agency-orchestrator`——v0.84 A/B 数据表明编排不是当前差异化所在，v0.85 将其从"核心功能"降级为"OpenClaw 增强项"。详见 [v0.85 开发日志](./docs/changelog/v0.85.md#编排引擎降级)。
+> **注意**：**编排引擎是可选增强，不是核心依赖**。核心约束层（宪法 + 反思 + 规则）零外部依赖。编排引擎依赖第三方 npm 包 `agency-orchestrator`——v0.84 A/B 数据表明编排不是当前差异化所在，v0.85 将其从"核心功能"降级为"OpenClaw 增强项"。详见 [v0.85 开发日志](./docs/changelog/v0.85.md#编排引擎降级)。
 
 ### 2. 安装
 
@@ -328,13 +328,16 @@ OpenClaw 上全自动，其他平台需手动触发闭环。
 
 ## 项目结构
 
-```
-sofagent/                  ← 核心部署文件（SKILL.md 主入口 + 5 子 Skill + 脚本 + hook）
-├── README / HANDBOOK / DEVELOPMENT / ARCHITECTURE / ROADMAP.md  ← 文档
-├── docs/                  ← EVIDENCE / TESTING / changelog / cases
-```
+sofagent 是 monorepo——三个变体各管一个场景，共享同一套纪律基因。
 
-安装后自动生成 `.sofagent/`（think.md 反思 + task/logs 审计 + orchestrator/ 配置），每次任务自动记录，跨任务反思沉淀。
+| 目录 | 是什么 | 给谁 | 入口 |
+|------|--------|------|------|
+| 根目录（`/`） | 完整版——宪法 + 编排引擎 + 审计工具 + daemon | OpenClaw 用户 / 深度开发者 | 本文件（README.md） |
+| `sofagent-lite/` | 轻量版——只有宪法（4 底线 + 6 则铁律），30 秒装好 | 个人开发者 / 非 OpenClaw 平台 / FDE 驻场 | [sofagent-lite/README.md](./sofagent-lite/README.md) |
+| `sofagent-fde/` | FDE 版——十步企业部署流程 Skill | FDE 工程师 / 企业 IT | [sofagent-fde/README.md](./sofagent-fde/README.md) |
+| `sofagent/audit/` | 审计工具——git diff 扫 Agent 改了什么 | 所有需要提交时审计的用户 | [sofagent/audit/](./sofagent/audit/) |
+
+> 安装后自动生成 `.sofagent/`（think.md 反思 + task/logs 审计 + orchestrator/ 配置），每次任务自动记录，跨任务反思沉淀。
 
 ---
 
@@ -349,11 +352,11 @@ sofagent/                  ← 核心部署文件（SKILL.md 主入口 + 5 子 S
 
 ---
 
-## 🤝 贡献
+## 贡献
 
 欢迎提 Issue 和 PR，尤其是挑刺的那种。详见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
-> 🧑‍💻 **我们在寻找 Co-maintainer**——特别是熟悉 bash BSD/macOS 兼容性、OpenClaw hook(TS)、安全审计或英文文档的人。从第一个 PR 开始，贡献自然累积，作者主动邀请。详见 [CONTRIBUTING.md § Seeking Co-maintainers](./CONTRIBUTING.md#seeking-co-maintainers)。
+> **我们在寻找 Co-maintainer**——特别是熟悉 bash BSD/macOS 兼容性、OpenClaw hook(TS)、安全审计或英文文档的人。从第一个 PR 开始，贡献自然累积，作者主动邀请。详见 [CONTRIBUTING.md § Seeking Co-maintainers](./CONTRIBUTING.md#seeking-co-maintainers)。
 
 ---
 
@@ -361,9 +364,11 @@ sofagent/                  ← 核心部署文件（SKILL.md 主入口 + 5 子 S
 
 - [OpenClaw](https://github.com/openclaw/openclaw) by Peter Steinberger — sofagent 的基石
 - [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) + [GLM-5.2](https://z.ai/) — 所有文件由二者配合生成
-- [Andrej Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills) — 4 条编码原则是 10 则铁律的根基
+- [Andrej Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills) — 4 条编码原则是 6 则铁律的根基
+- [Ralph Loop](https://ghuntley.com/loop/) by Geoffrey Huntley —「Agent 失忆，文件不失忆」哲学基因。一行 bash 循环启发了 sofagent 的审计方向：git diff 是无状态地面真相，Agent 日志是有状态辅助证据
 - [agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator) + [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh) — 任务编排引擎 + 中文岗位库
 - [Anthropic Skills](https://github.com/anthropics/skills) + [Managed Agents](https://www.anthropic.com/engineering/managed-agents) — SKILL.md 格式规范 + 四层架构哲学源头
 - [Loop Engineering](https://addyo.substack.com/p/loop-engineering) by Addy Osmani — 循环工程五大件，编排层理论源头
+- [MiroFish](https://github.com/666ghj/MiroFish) —「工具调用与最终答案分离」模式启发审计证据分层设计
 - [superpowers](https://github.com/obra/superpowers) — Skill 作为 Harness 杠杆的思路
 - [SkillOpt](https://arxiv.org/abs/2605.06614) by Microsoft Research — Skill 文档训练方法论，启发 v0.9x Skill 自进化

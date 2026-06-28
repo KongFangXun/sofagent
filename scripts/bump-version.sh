@@ -12,7 +12,7 @@
 #   1. .ts 文件:  const VERSION = 'OLD'
 #   2. .sh 文件:  VERSION="OLD"
 #   3. .ps1 文件: $VERSION = "OLD" 或 $VERSION_STR = "OLD"
-#   4. index.ts:  vOLD（仅 sofagent-audit/src/index.ts）
+#   4. index.ts:  vOLD（仅 sofagent/audit/src/index.ts）
 #   5. MD 文件头: > vOLD（排除 docs/changelog/）
 #   6. README badge: version-vOLD
 #   7. SKILL.md frontmatter: version: OLD（及 3 段格式 OLD.0）
@@ -121,7 +121,7 @@ echo ""
 
 # 1. package.json version 字段（SSOT，3 段格式）
 echo -e "${BOLD}[1/8] package.json（SSOT）${NC}"
-for pj in "$PROJECT_ROOT/sofagent-audit/package.json"; do
+for pj in "$PROJECT_ROOT/sofagent/audit/package.json"; do
   if [[ -f "$pj" ]]; then
     local_content=$(cat "$pj")
     local_new=$(echo "$local_content" | sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g")
@@ -141,29 +141,36 @@ for pj in "$PROJECT_ROOT/sofagent-audit/package.json"; do
 done
 echo ""
 
-# 2. .ts 文件: const VERSION = 'OLD'
+# 2. .ts 文件: const VERSION = 'OLD'（动态扫描，不硬编码文件列表）
 echo -e "${BOLD}[2/8] TypeScript 常量${NC}"
-for ts in \
-  "$PROJECT_ROOT/sofagent-audit/src/verify-evidence.ts" \
-  "$PROJECT_ROOT/sofagent-audit/src/skill-safety-check.ts"; do
-  if [[ -f "$ts" ]]; then
-    local_content=$(cat "$ts")
-    local_new=$(echo "$local_content" | sed "s/const VERSION = '$OLD_2SEG'/const VERSION = '$NEW_2SEG'/g")
-    if [[ "$local_new" != "$local_content" ]]; then
+ts_count=0
+while IFS= read -r ts; do
+  [[ -f "$ts" ]] || continue
+  local_content=$(cat "$ts")
+  local_new=$(echo "$local_content" | sed "s/const VERSION = '$OLD_2SEG'/const VERSION = '$NEW_2SEG'/g")
+  if [[ "$local_new" != "$local_content" ]]; then
+    if [[ $ts_count -eq 0 ]]; then
       echo -e "  ${GREEN}✓${NC} const VERSION = '$OLD_2SEG' → '$NEW_2SEG'"
-      echo -e "    ${CYAN}$ts${NC}"
-      if ! $DRY_RUN; then
-        printf '%s\n' "$local_new" > "$ts"
-      fi
-      TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
     fi
+    echo -e "    ${CYAN}$ts${NC}"
+    if ! $DRY_RUN; then
+      printf '%s\n' "$local_new" > "$ts"
+    fi
+    ts_count=$((ts_count + 1))
+    TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
   fi
-done
+done < <(grep -rl "const VERSION = '$OLD_2SEG'" \
+  --include='*.ts' \
+  "$PROJECT_ROOT/sofagent/audit/src/" \
+  2>/dev/null || true)
+if [[ $ts_count -eq 0 ]]; then
+  echo -e "  ${YELLOW}（无匹配——可能已是 $NEW_2SEG 或 audit/src/ 下无 const VERSION）${NC}"
+fi
 echo ""
 
 # 3. index.ts: vOLD → vNEW（仅 index.ts 这一个文件）
 echo -e "${BOLD}[3/8] index.ts 版本引用${NC}"
-INDEX_TS="$PROJECT_ROOT/sofagent-audit/src/index.ts"
+INDEX_TS="$PROJECT_ROOT/sofagent/audit/src/index.ts"
 if [[ -f "$INDEX_TS" ]]; then
   local_content=$(cat "$INDEX_TS")
   # 替换 vOLD 为 vNEW（注意不能误伤 vOLDx 这种）

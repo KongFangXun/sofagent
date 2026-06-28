@@ -21,7 +21,7 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
-$VERSION_STR = "0.94"
+$VERSION_STR = "0.95"
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
 
 $cfg = Join-Path $PSScriptRoot "lib\config.ps1"
@@ -96,7 +96,7 @@ if ($Quick) {
     $skillQuick = @("$OPENCLAW_DIR\skills\sofagent\SKILL.md", "$up\.workbuddy\skills\sofagent\SKILL.md", "$up\.openclaw\skills\sofagent\SKILL.md") | Where-Object { Test-Path $_ } | Select-Object -First 1
     # PS 5.1 Select-String -Path 用系统编码读文件，改用 .NET API 读 UTF-8
     $skillQuickContent = if ($skillQuick) { [System.IO.File]::ReadAllText($skillQuick) } else { "" }
-    if ($skillQuick -and ($skillQuickContent -match "4.*底线|10.*铁律")) { Check-Pass "SKILL.md 存在且含宪法（4底线+10铁律）" } else { Check-Fail "SKILL.md 缺失或宪法关键词不全" }
+    if ($skillQuick -and ($skillQuickContent -match "4.*底线|6.*铁律")) { Check-Pass "SKILL.md 存在且含宪法（4底线+6则铁律）" } else { Check-Fail "SKILL.md 缺失或宪法关键词不全" }
     if (Test-Path $sofagentData) { Check-Pass ".sofagent/ 数据目录存在" } else { Check-Warn ".sofagent/ 数据目录不存在（首次使用会自动创建）" }
     if (Get-Command ao -ErrorAction SilentlyContinue) { Check-Pass "ao compose 可用 — v$(ao --version 2>$null)" } else { Check-Warn "ao compose 不可用——编排引擎降级为默认编排" }
     $rulesQuick = @("$OPENCLAW_DIR\skills\sofagent\rules.md", "$up\.workbuddy\skills\sofagent\rules.md", "$up\.openclaw\rules.md") | Where-Object { Test-Path $_ } | Select-Object -First 1
@@ -111,7 +111,7 @@ if ($Platform -eq "workbuddy") {
     if ((Test-Path $wbSkill) -and (Get-Item $wbSkill).Length -gt 0) {
         # PS 5.1 Select-String -Path 用系统编码读文件，改用 .NET API 读 UTF-8
         $wbSkillContent = [System.IO.File]::ReadAllText($wbSkill)
-        if ($wbSkillContent -match "4 底线|10 铁律") { Check-Pass "SKILL.md 已部署且含宪法（4底线+10铁律内联）" } else { Check-Warn "SKILL.md 已部署但宪法内容缺失" }
+        if ($wbSkillContent -match "4 底线|6 则铁律") { Check-Pass "SKILL.md 已部署且含宪法（4底线+6则铁律内联）" } else { Check-Warn "SKILL.md 已部署但宪法内容缺失" }
     } else { Check-Warn "SKILL.md 未部署到 ~/.workbuddy/skills/sofagent/" }
     $wbRules = "$up\.workbuddy\rules.md"
     if ((Test-Path $wbRules) -and (Get-Item $wbRules).Length -gt 0) { Check-Pass "rules.md 已部署（$(Get-CharCount $wbRules) 字符）" } else { Check-Warn "rules.md 未部署到 ~/.workbuddy/" }
@@ -172,7 +172,7 @@ $skillFile = Join-Path $OPENCLAW_DIR "skills\sofagent\SKILL.md"
 if (Test-Path $skillFile) {
     # PS 5.1 Select-String -Path 用系统编码读文件，改用 .NET API 读 UTF-8
     $skillFileContent = [System.IO.File]::ReadAllText($skillFile)
-    if ($skillFileContent -match "4.*底线|10.*铁律") { Check-Pass "契约层关键词完整（4底线+10铁律内联在 SKILL.md）" } else { Check-Fail "SKILL.md 内容异常——宪法关键词缺失" }
+    if ($skillFileContent -match "4.*底线|6.*铁律") { Check-Pass "契约层关键词完整（4底线+6则铁律内联在 SKILL.md）" } else { Check-Fail "SKILL.md 内容异常——宪法关键词缺失" }
 } else { Check-Warn "SKILL.md 不存在，无法验证宪法内容" }
 
 $logsDir = Join-Path $sofagentData "task\logs"

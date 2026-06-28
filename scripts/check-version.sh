@@ -58,7 +58,7 @@ echo -e "${BOLD}${CYAN}═══════════════════
 echo ""
 
 # ── 1. 从 package.json 读 SSOT ────────────────────────────────
-PACKAGE_JSON="${PROJECT_ROOT}/sofagent-audit/package.json"
+PACKAGE_JSON="${PROJECT_ROOT}/sofagent/audit/package.json"
 if [[ ! -f "${PACKAGE_JSON}" ]]; then
   echo -e "${RED}✗ 找不到 SSOT: ${PACKAGE_JSON}${NC}"
   exit 1
@@ -102,18 +102,12 @@ extract_version() {
   echo "$1" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1
 }
 
-# ── 2. 检查 .ts 文件 const VERSION = 'X.Y' ───────────────────
+# ── 2. 检查 .ts 文件 const VERSION = 'X.Y'（动态扫描，不硬编码文件列表）
 echo -e "${BOLD}── [1/8] TypeScript 常量 ──${NC}"
-for ts in \
-  "${PROJECT_ROOT}/sofagent-audit/src/verify-evidence.ts" \
-  "${PROJECT_ROOT}/sofagent-audit/src/skill-safety-check.ts"; do
-  if [[ ! -f "${ts}" ]]; then
-    echo -e "  ${YELLOW}⚠${NC} 文件不存在: ${ts}"
-    continue
-  fi
+while IFS= read -r ts; do
+  [[ -f "${ts}" ]] || continue
   match=$(grep -n "const VERSION = '" "${ts}" | head -1)
   if [[ -z "${match}" ]]; then
-    echo -e "  ${YELLOW}⚠${NC} 未找到 VERSION 常量: ${ts}"
     continue
   fi
   found_ver=$(extract_version "${match}")
@@ -122,12 +116,15 @@ for ts in \
   else
     report_ok "${ts}" "${found_ver}"
   fi
-done
+done < <(grep -rl "const VERSION = '" \
+  --include='*.ts' \
+  "${PROJECT_ROOT}/sofagent/audit/src/" \
+  2>/dev/null || true)
 echo ""
 
 # ── 3. 检查 index.ts vOLD 引用 ────────────────────────────────
 echo -e "${BOLD}── [2/8] index.ts 版本引用 ──${NC}"
-INDEX_TS="${PROJECT_ROOT}/sofagent-audit/src/index.ts"
+INDEX_TS="${PROJECT_ROOT}/sofagent/audit/src/index.ts"
 if [[ ! -f "${INDEX_TS}" ]]; then
   echo -e "  ${YELLOW}⚠${NC} 文件不存在: ${INDEX_TS}"
 else
