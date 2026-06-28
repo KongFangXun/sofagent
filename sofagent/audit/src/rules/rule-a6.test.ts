@@ -6,14 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { checkRuleA6 } from './rule-a6-build-broken';
 import type { AuditContext } from './types';
 import type { DiffFile } from '../diff-parser';
-
-function makeDiffFile(path: string, lines: string[] = []): DiffFile {
-  return { path, status: 'modified', lines };
-}
-
-function makeCtx(diffFiles: DiffFile[]): AuditContext {
-  return { diffFiles, logEntries: [] };
-}
+import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('A6 不坏构建', () => {
   it('vite.config.ts 删除 > 5 行 → WARN', () => {

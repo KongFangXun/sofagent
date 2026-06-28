@@ -6,14 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { checkRuleA1 } from './rule-a1-sensitive-files';
 import type { AuditContext } from './types';
 import type { DiffFile } from '../diff-parser';
-
-function makeDiffFile(path: string): DiffFile {
-  return { path, status: 'modified', lines: [] };
-}
-
-function makeCtx(diffFiles: DiffFile[]): AuditContext {
-  return { diffFiles, logEntries: [] };
-}
+import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('A1 不碰敏感', () => {
   it('.env → FAIL', () => {

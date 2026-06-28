@@ -6,21 +6,14 @@ import { describe, it, expect } from 'vitest';
 import { checkRuleE3 } from './rule-e3-large-deletion';
 import type { AuditContext } from './types';
 import type { DiffFile } from '../diff-parser';
-
-function makeDiffFile(path: string, lines: string[] = []): DiffFile {
-  return { path, status: 'modified', lines };
-}
-
-function makeCtx(diffFiles: DiffFile[], task?: string): AuditContext {
-  return { diffFiles, logEntries: [], task };
-}
+import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('E3 不滥删除', () => {
   it('单文件删 > 100 行 + 与 task 无关 → WARN', () => {
     const deletedLines = Array.from({ length: 101 }, () => '-some code line');
     const ctx = makeCtx(
       [makeDiffFile('src/legacy.ts', deletedLines)],
-      'login feature'
+      { task: 'login feature' }
     );
     const result = checkRuleE3(ctx);
     expect(result.status).toBe('WARN');
@@ -31,7 +24,7 @@ describe('E3 不滥删除', () => {
     const deletedLines = Array.from({ length: 101 }, () => '-some code line');
     const ctx = makeCtx(
       [makeDiffFile('src/login.ts', deletedLines)],
-      'login feature'
+      { task: 'login feature' }
     );
     const result = checkRuleE3(ctx);
     expect(result.status).toBe('PASS');
@@ -48,7 +41,7 @@ describe('E3 不滥删除', () => {
     const deletedLines = Array.from({ length: 50 }, () => '-some code line');
     const ctx = makeCtx(
       [makeDiffFile('src/legacy.ts', deletedLines)],
-      'login feature'
+      { task: 'login feature' }
     );
     const result = checkRuleE3(ctx);
     expect(result.status).toBe('PASS');
@@ -58,7 +51,7 @@ describe('E3 不滥删除', () => {
     const deletedLines = Array.from({ length: 101 }, () => '-some code line');
     const ctx = makeCtx(
       [makeDiffFile('src/legacy.ts', deletedLines)],
-      'login feature'
+      { task: 'login feature' }
     );
     const result = checkRuleE3(ctx);
     expect(result.evidenceMode).toBe('git-diff');

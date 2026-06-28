@@ -6,14 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { checkRuleA2 } from './rule-a2-secret-leak';
 import type { AuditContext } from './types';
 import type { DiffFile } from '../diff-parser';
-
-function makeDiffFile(path: string, lines: string[] = []): DiffFile {
-  return { path, status: 'modified', lines };
-}
-
-function makeCtx(diffFiles: DiffFile[]): AuditContext {
-  return { diffFiles, logEntries: [] };
-}
+import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('A2 不泄密钥', () => {
   it('新增行含 AWS Access Key → FAIL', () => {

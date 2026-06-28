@@ -18,7 +18,7 @@
 #   4. .sh 文件: VERSION="X.Y"
 #   5. .ps1 文件: $VERSION / $VERSION_STR = "X.Y"
 #   6. MD 文件头: > vX.Y · 日期/描述（带 · 分隔符的才是版本头）
-#   7. README badge: version-vX.Y
+#   7. README badge: version-(v?)X.Y
 #   8. SKILL.md frontmatter: version: X.Y
 #
 # 排除目录: docs/changelog/, node_modules/, .git/, dist/
@@ -179,6 +179,7 @@ else
   for ps1 in "${PS1_DIR}"/*.ps1; do
     [[ -f "${ps1}" ]] || continue
     # 同时匹配 $VERSION = " 和 $VERSION_STR = " 两种变量名
+    # shellcheck disable=SC2016
     match=$(grep -nE '\$VERSION(_STR)? = "' "${ps1}" | head -1)
     if [[ -z "${match}" ]]; then
       continue
@@ -233,7 +234,7 @@ for readme in \
   "${PROJECT_ROOT}/README.md" \
   "${PROJECT_ROOT}/README.en.md"; do
   [[ -f "${readme}" ]] || continue
-  match=$(grep -oE 'version-v[0-9]+\.[0-9]+' "${readme}" | head -1)
+  match=$(grep -oE 'version-v?[0-9]+\.[0-9]+' "${readme}" | head -1)
   if [[ -z "${match}" ]]; then
     echo -e "  ${YELLOW}⚠${NC} 未找到 badge: $(basename "${readme}")"
     continue
@@ -261,7 +262,7 @@ while IFS= read -r skill; do
   if [[ "${found_2seg}" != "${SSOT_2SEG}" ]]; then
     report_error "${skill}" "version: ${found_ver}" "version: ${SSOT_2SEG}"
   else
-    report_ok "$(echo "${skill}" | sed "s|${PROJECT_ROOT}/||")" "${found_ver}"
+    report_ok "${skill#"${PROJECT_ROOT}"/}" "${found_ver}"
   fi
 done < <(find "${PROJECT_ROOT}" \
   -name 'SKILL.md' \

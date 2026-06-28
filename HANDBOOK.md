@@ -4,7 +4,7 @@
 >
 > 从 Context Engineering 到 Harness Engineering，再到 Loop Engineering，再到纪律层——AI 和人的协作方式正在从「写好 Prompt」进化到「管好 Agent」。
 >
-> v0.95 · 2026-06-28 · 孔放勋
+> v0.96 · 2026-06-29 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -65,6 +65,8 @@
 
 sofagent 的策略就八个字：**厚在治理，薄在复用。**
 
+> **v1.0 定位**：Agent 工作验收工具（正式）+ Agent 纪律层（实验）+ FDE 部署框架（规划）。审计层跨平台、零 Agent 依赖、有独立技术价值——是 v1.0 的主产品。
+
 | 做什么 | 策略 | 原因 |
 |------|:--:|------|
 | 身份与约束 | **厚** | 行为底线、执行契约——永久治理，不随模型升级消失 |
@@ -83,7 +85,7 @@ sofagent 的策略就八个字：**厚在治理，薄在复用。**
 - 反思摘要（think.md 反思区）控制在 ≤200 字/条，≤2K token
 - 你自己的 rules.md 也建议 500 字以内——写多了 Agent 反而记不住
 
-> 💡 先立规范，再开循环。`SKILL.md`（宪法内联）（契约层）是 Loop 跑起来的护栏——不保证不出错，但保证出了错你知道为什么。
+> 💡 先立规范，再开循环。`SKILL.md`（宪法内联）（契约层）是 Loop 跑起来的护栏——不能说不出错，但出了错你能知道为什么。
 
 ### 概念太多分不清？先记住两件事
 
@@ -93,6 +95,18 @@ sofagent 概念不少——宪法、铁律、加载链、编排引擎、断路�
 2. **增强**：编排引擎、断路器、Hook 自动注入。这些**只有 OpenClaw 全绿**，其他平台部分缺失或降级
 
 不是 OpenClaw 用户？核心部分就是你全部需要的。用 OpenClaw？核心打底，增强让约束更自动、更严密。完整概念分层表见 [README](./README.md#概念分层哪些是核心哪些是增强)。
+
+### AI 中台的纪律底座
+
+企业搭 AI 中台，卡在三件事上：
+
+| 难 | 卡在哪 | sofagent 怎么解 |
+|----|--------|---------------|
+| 接入难 | 各系统 API 不统一，Agent 节点怎么接 | FDE 十步梳理工作流，MCP 桥接平台 |
+| 信任难 | Agent 改了代码数据，老板凭什么信 | git diff 审计，确定性 exit code |
+| 沉淀难 | FDE 走了经验跟着走 | think.md 反思 + task/logs 沉淀 |
+
+sofagent 不做 AI 中台——做 AI 中台里**纪律那一层**。模型管推理，平台管调度，sofagent 管纪律。
 
 ---
 
@@ -119,6 +133,8 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 ### 编排触发（engine.md + orchestrator/）——🔁 按需点火
 
 地基完成后，SKILL.md 判断任务复杂度。🟢🟡 简单任务不走编排引擎，🔴 复杂任务才点火 engine.md（任务编排引擎）拆解→执行→闭环。编排决策沉淀到 `orchestrator/_index.md`，Agent 自己维护。详见 [开发文档 §五](./DEVELOPMENT.md#五自进化机制)。
+
+> **v0.97 备注**：编排引擎（engine.md / task-aware.md / loop-check.md）将在 v0.97 从 sofagent 核心拆出到 FDE Skill 专用——个人开发者不需要编排，只装纪律层就够了。编排深度从四级简化为两档拆解（拆 vs. 不拆）。
 
 ### Token 预算参考
 
@@ -155,12 +171,12 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 | # | 铁律 | 一句话 | 做错时的表现 |
 |:--:|------|------|------|
-| 1 | 对用户有回应 | 做完要说结果 | 子任务跑完了但没告诉用户，用户不知道做到哪了 |
-| 2 | 全局视角 | 用现成的，不造轮子 | 有现成库不用，自己重写或装新依赖 |
-| 3 | 不确定就问 | 列两种理解让用户选 | 猜用户意思，猜错了全白做 |
-| 4 | 错误显性化 | 报什么错、在哪步，别吞 | 报错静默跳过，用户蒙在鼓里 |
-| 5 | 目标驱动 | 回到原始意图，不跑偏 | 做着做着跑偏了，最后做的根本不是用户要的 |
-| 6 | 成本意识 | 批量处理，短答不啰嗦 | 100 个文件一个一个改；查天气都用最贵的模型 |
+| 1 | 对用户有回应 | 任务完成主动收工，不确定时问「这样行不行」 | 子任务跑完了但没告诉用户，用户不知道做到哪了 |
+| 2 | 错误显性化 | 报什么错、在哪一步、试过了什么，不许吞错静默跳过 | 报错静默跳过，用户蒙在鼓里 |
+| 3 | 不确定就问 | 列出两种以上理解让用户选，不猜 | 猜用户意思，猜错了全白做 |
+| 4 | 目标驱动 | 回到原始意图，不跑偏、不越做越复杂 | 做着做着跑偏了，最后做的根本不是用户要的 |
+| 5 | 全局视角 | 先找现有代码和工具，不重复造轮子 | 有现成库不用，自己重写或装新依赖 |
+| 6 | 成本意识 | 批量处理重复操作，简短回答不啰嗦 | 100 个文件一个一个改；查天气都用最贵的模型 |
 
 > v0.95 移走的 4 条（先读再用 / 验证再干 / 谨慎修改 / 如实汇报）已在审计层（sofagent-audit A3/A5/A7/A8）通过 git diff 自动检测。详见 [审计设计](./docs/audit-design.md)。
 
@@ -288,6 +304,19 @@ sh sofagent/sofagent-lite/install.sh
 
 Lite 版只装 4 底线 + 6 则铁律，不装 daemon、编排引擎、审计工具。适合非 OpenClaw 平台、FDE 驻场快速部署、个人开发者轻量使用。
 
+**前置依赖详细表**（从 README 移入）：
+
+| 依赖 | 版本要求 | 为什么需要 | 检查命令 |
+|------|------|------|------|
+| bash | ≥4 | install.sh / task-record.sh | `bash --version` |
+| git | 任意 | clone 仓库、task/logs 追溯、worktree 隔离 | `git --version` |
+| node | ≥18 | `ao compose` 编排引擎（agency-orchestrator）+ sofagent-audit 审计工具 | `node --version` |
+| npm | ≥9 | 全局安装 agency-orchestrator | `npm --version` |
+
+> 💡 WorkBuddy 用户若不跑编排引擎（只用宪法层约束），node/npm 可不带。OpenClaw 跑复杂任务（🔴）需 node + npm。审计工具需要 Node.js ≥18，如不使用审计功能可跳过。
+
+> 💡 **编排引擎是可选增强，不是核心依赖**。核心约束层（宪法 + 反思 + 规则）零外部依赖。
+
 | 平台 | install.sh 行为 |
 |------|------|
 | `openclaw` | 完整部署——宪法 + load-chain Hook + 配套脚本 + 断路器 → `~/.openclaw/` |
@@ -337,6 +366,32 @@ OpenClaw 通过 Hook 强制注入宪法，Agent 无需额外操作即可完整�
 **复杂任务时建议**：任务前加 `@skill:sofagent` 作为显式锚点，提高 Agent 走完加载链的概率。
 这不是强制保证，但实测能帮助 Agent 对齐约束。
 
+### 装完之后做这 3 件事（按平台）
+
+> 非 OpenClaw 平台无法自动走完三层加载链。装完之后做这 3 件事，把约束力拉满。
+
+**WorkBuddy：**
+1. 在新会话开头输入 `@skill:sofagent` 显式激活
+2. 在你的 MEMORY.md 里加一行：`每次任务前先确认 sofagent 的铁律已加载`
+3. 跑 `bash sofagent/scripts/verify.sh` 确认安装完整
+
+**Claude Code：**
+1. 在项目根目录的 CLAUDE.md 顶部加一行：`启动时先读取 ~/.openclaw/skills/sofagent/SKILL.md`
+2. 任务完成后手动跑 `sofagent-audit --silent --diff HEAD~1..HEAD`
+3. 注册 pre-commit hook：`sofagent-audit --install-hook`
+
+**Codex：**
+1. 在 AGENTS.md 顶部加一行种子指令：`每次会话启动时先读取 sofagent 的 SKILL.md`
+2. 任务完成后手动跑 git diff 审计
+3. 用 `@sofagent` 触发 think.md 反思记录
+
+**Hermes Agent：**
+1. 在 SOUL.md 顶部加一行种子指令：`每次会话启动时先读取 sofagent 的 SKILL.md`
+2. 任务完成后手动跑 git diff 审计
+3. 手动触发 think.md 写入：`请回顾本次任务，把踩坑记录写入 .sofagent/think.md`
+
+> ⚠️ 这些 checklist 不能替代 OpenClaw 的 Hook 自动注入——只能让非 OC 平台的用户最大化利用已有的 30-40% 约束力。等各平台支持 Hook 机制后会自然解决。
+
 > 💡 加载链步进可靠性是已知局限（详见 [LIMITATIONS.md](./LIMITATIONS.md#加载链步进脆弱性v060v062-验证结论)），等各平台支持类似 Hook 机制后会自然解决。
 
 ### 什么时候用，什么时候不用
@@ -352,10 +407,10 @@ OpenClaw 通过 Hook 强制注入宪法，Agent 无需额外操作即可完整�
 
 Agent 改完代码 commit 了——它遵守了铁律吗？`sofagent-audit` 帮你回答这个问题。
 
-它是一个独立 CLI 工具（TypeScript），扫描 git diff 和 `.sofagent/task/logs/` 操作日志，对照四条铁律逐条判定：
+它是一个独立 CLI 工具（TypeScript），扫描 git diff 和 `.sofagent/task/logs/` 操作日志，对照审计规则逐条判定。当前覆盖 8 条默认审计（A1-A8），v0.97 将新增 A9（prompt injection 检测）和 A10（供应链检测）。A11（资源耗尽）推迟到 daemon 运行时——git diff 检测不到。
 
 ```bash
-cd sofagent-audit && npm ci && npm run build
+cd sofagent/audit && npm ci && npm run build
 node dist/index.js --diff HEAD~1..HEAD --task "修复登录页 bug"
 ```
 
@@ -389,16 +444,14 @@ exit code：**0 = 全通过 / 1 = 有警告 / 2 = 有违规**。
 
 | 问题 | 怎么办 |
 |------|------|
-| Agent 不遵守铁律 | 检查文件位置；把最关键规则写到 rules.md。非 OpenClaw 平台（WorkBuddy / Codex / Hermes Agent / Claude Code）若 Skill 未自动加载，在对话中手动 `@skill:sofagent` 触发入口流程 |
-| think.md 出现错误记忆 | 直接编辑 think.md 删掉；对照 task/logs 核实 |
-| Skill 评分不准 | 手动改 scoring/ 评分；rules.md 加 `不自动淘汰 Skill` |
-| 编排结果不稳定 | 同类任务跑够 3 次用模板；没模板时少拆子任务、只用已验证 Skill |
+| Agent 不遵守铁律 | 检查文件位置；关键规则写到 rules.md。非 OpenClaw 平台手动 `@skill:sofagent` 触发 |
+| think.md 出现错误记忆 | 直接编辑删掉；对照 task/logs 核实 |
+| Skill 评分不准 | 手动改 scoring/；rules.md 加 `不自动淘汰 Skill` |
+| 编排结果不稳定 | 同类任务跑够 3 次用模板；没模板时少拆子任务 |
 | Agent 卡住不动了 | 断路器保护——任务拆得不够细，拆小点再跑 |
 | 多个电脑上能用吗 | 不能——不是分布式，跑在单个 Agent 里 |
 | 评分越来越不准 | 经验漂移——翻 task/logs 对照 think.md，清理低置信度旧条目 |
-| 什么工作不该让 Agent 做 | 去重、格式校验、文件清理这类确定性操作——用 bash 脚本比 Agent 更快更准更便宜。Agent 管判断，脚本管执行 |
-| **企业部署安全吗？** | v0.90 起 Skill 安全审查（22 条正则硬门 + LLM 语义审查）+ 数据存储声明已就位，审计层 v0.92。详见 [README FDE 场景](./README.md#fde-场景为什么前沿部署工程师需要纪律层)。安装第三方 Skill 前建议使用 [SkillSpector](https://github.com/NVIDIA/SkillSpector) 等工具进行安全扫描——检测提示词注入、数据外传、供应链工具投毒等 64 类风险 |
-| **怎么判断自己在做 Loop Engineering？** | 三个自检问题：① 任务是否有明确的完成标准？② AI 每完成一步是否有反馈机制指导下一步优化？③ 是否提前规划了人工介入的关键节点，而非全程盯守？如果三个都是「是」，你就在设计 Loop 而不是写 Prompt。参见 [五大要素](./ARCHITECTURE.md#五参考与致谢) |
+| 什么工作不该让 Agent 做 | 确定性操作（去重、格式校验、文件清理）用 bash 脚本更快更准更便宜 |
 
 > 💡 更多细节见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 
@@ -486,4 +539,4 @@ Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的�
 
 > 大半年 OpenClaw 攒的笔记。不是实验室数据，但对我有用。哪里写得不好，直接告诉我。
 >
-> *v0.95，2026 年 6 月 28 日*
+> *v0.96，2026 年 6 月 29 日*

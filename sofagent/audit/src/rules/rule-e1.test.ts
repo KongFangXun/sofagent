@@ -6,14 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { checkRuleE1 } from './rule-e1-no-test-files';
 import type { AuditContext } from './types';
 import type { DiffFile } from '../diff-parser';
-
-function makeDiffFile(path: string, lines: string[] = []): DiffFile {
-  return { path, status: 'modified', lines };
-}
-
-function makeCtx(diffFiles: DiffFile[]): AuditContext {
-  return { diffFiles, logEntries: [] };
-}
+import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('E1 不落测试', () => {
   it('src/ 变了有 .test.ts → PASS', () => {

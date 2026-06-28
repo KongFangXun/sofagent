@@ -6,14 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { checkRuleA3 } from './rule-a3-careful-modify';
 import type { AuditContext } from './types';
 import type { DiffFile } from '../diff-parser';
-
-function makeDiffFile(path: string): DiffFile {
-  return { path, status: 'modified', lines: [] };
-}
-
-function makeCtx(diffFiles: DiffFile[], task?: string): AuditContext {
-  return { diffFiles, logEntries: [], task };
-}
+import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('A3 不改越界', () => {
   it('无 task 参数 → PASS（跳过检查）', () => {
@@ -35,7 +28,7 @@ describe('A3 不改越界', () => {
   it('任务描述含中文关键词 + diff 文件路径含英文 → 中文关键词无法匹配英文路径，触发 WARN', () => {
     const ctx = makeCtx(
       [makeDiffFile('src/auth/session.ts')],
-      '修复登录认证逻辑'
+      { task: '修复登录认证逻辑' }
     );
     const result = checkRuleA3(ctx);
     expect(result.status).toBe('WARN');
@@ -50,7 +43,7 @@ describe('A3 不改越界', () => {
       makeDiffFile('src/token.ts'),
       makeDiffFile('README.md'), // 不在任务范围
     ];
-    const ctx = makeCtx(files, 'login auth session token');
+    const ctx = makeCtx(files, { task: 'login auth session token' });
     const result = checkRuleA3(ctx);
     expect(result.status).toBe('PASS');
   });
@@ -63,7 +56,7 @@ describe('A3 不改越界', () => {
       makeDiffFile('CHANGELOG.md'),
       makeDiffFile('src/unrelated.ts'),
     ];
-    const ctx = makeCtx(files, 'login auth');
+    const ctx = makeCtx(files, { task: 'login auth' });
     const result = checkRuleA3(ctx);
     expect(result.status).toBe('WARN');
     expect(result.details[0]).toContain('1/3');
@@ -147,7 +140,7 @@ describe('A3 不改越界', () => {
       makeDiffFile('src/auth.ts'),
       makeDiffFile('src/unrelated.ts'),
     ];
-    const ctx = makeCtx(files, 'login auth');
+    const ctx = makeCtx(files, { task: 'login auth' });
     const result = checkRuleA3(ctx);
     expect(result.status).toBe('WARN');
   });
@@ -187,7 +180,7 @@ describe('A3 不改越界', () => {
   it('*.log 低风险模式不误匹配 auth/login.ts（glob 转义回归测试）', () => {
     const ctx = makeCtx(
       [makeDiffFile('auth/login.ts')],
-      '修复认证模块的会话逻辑'
+      { task: '修复认证模块的会话逻辑' }
     );
     const result = checkRuleA3(ctx);
     expect(result.status).toBe('WARN');

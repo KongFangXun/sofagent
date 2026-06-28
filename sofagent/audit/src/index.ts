@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v0.95 · 铁律与审计分离
+// v0.96 · 铁律与审计分离
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
 // 零运行时依赖——只用 Node.js 内置模块。
@@ -35,7 +35,7 @@ interface Args {
   json: boolean;
 }
 
-const VERSION = '0.95';
+const VERSION = '0.96';
 
 function parseArgs(argv: string[]): Args {
   const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false };

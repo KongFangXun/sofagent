@@ -10,13 +10,7 @@ import { checkRuleA5 } from './rules/rule-a5-honest-report';
 import { rules } from './rules';
 import type { AuditContext } from './rules/types';
 import type { DiffFile } from './diff-parser';
-
-function makeDiffFile(path: string, lines: string[] = [], status: DiffFile['status'] = 'modified'): DiffFile {
-  return { path, status, lines };
-}
-function makeCtx(diffFiles: DiffFile[], opts?: Partial<AuditContext>): AuditContext {
-  return { diffFiles, logEntries: [], ...opts };
-}
+import { makeDiffFile, makeCtx } from './test-utils';
 
 describe('QA 边界验证 · R11 敏感文件', () => {
   it('.env → FAIL（不需 task/silent/logs）', () => {

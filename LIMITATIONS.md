@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。这里不卖「企业级安全」或「军事级加密」——只写 sofagent 做不到什么、为什么做不到、等什么才能做到。
 >
-> v0.95 · 2026-06-28 · 孔放勋
+> v0.96 · 2026-06-29 · 孔放勋
 
 ---
 
@@ -170,6 +170,16 @@ sofagent 的应对：think.md 的置信度渐进（0.3→0.5→0.7）和 30 天�
 >
 > 概念（三层约束按序注入）跨平台通用，机制（skill 注入 + Hook 兜底 vs 纯 skill 注入 + Agent Read）按平台分级。第 1 层全平台强制，第 2、3 层 OpenClaw 强制、其他平台君子协定。
 
+### 平台实际价值速查
+
+| 平台 | 核心约束 | 完整治理 | 实际价值 |
+|------|:---:|:---:|:---:|
+| OpenClaw | ✅ Hook 注入 | ✅ 编排+Hook+断路器 | ~100% |
+| WorkBuddy | ✅ SKILL 加载 | ⚠️ 部分降级 | ~40% |
+| Codex / Hermes / Claude Code | ⚠️ 种子指令 | ❌ 缺失 | ~30% |
+
+> "兼容"不等于"支持"。核心约束（MD 文件）所有平台可读，完整治理只在 OpenClaw 上生效。
+
 ---
 
 ### 软层闭合清单的执行率不是 100%
@@ -258,7 +268,7 @@ v0.92 已做第一步改进：子串匹配 → 精确 `path.basename` 匹配（c
 
 这是已知技术债，**不单独建 bash 基础设施来管理它**。sofagent 的战略方向是 bash → TypeScript 迁移（v0.91 ARCHITECTURE 已确立）。新建 `lib/output.sh`、`lib/platform.sh` 等 bash 基础设施是在投资即将被替换的旧技术栈——走回头路。bash 脚本在短期内仍然需要这些函数，但接受重复作为已知债务。v0.93 开始逐脚本迁移——先从 `verify-evidence.sh`（45 行，最简单）和 `skill-safety-check.sh`（301 行，最需要类型安全）开始。
 
-v0.92 已在 `sofagent/audit/src/utils/` 建设了 TypeScript 工具函数（`colors.ts` + `logger.ts`），作为 bash→TS 迁移的前置基础设施。
+v0.96 已清理死代码，审计层工具改用内联颜色常量。
 
 ---
 
@@ -281,5 +291,11 @@ Google Cloud Code 的 7-Entry Checklist 中，`recovery path`（失败回退路�
 **等什么**：结构化任务状态（task/logs JSONL，v0.94）落地后，可以在任务日志中记录每个步骤的检查点状态，让下一轮 Agent（或下一个 Agent）直接从断点恢复。
 
 > Google Cloud Code 的 7-Entry Pre-Flight Checklist: contact → assembly → model → loop → permission gate → executor → state transcript → **recovery path**。sofagent 覆盖了前 6 项（contact~executor）和 state transcript（四字段已规划），缺少 recovery path。
+
+---
+
+### 组织记忆维护风险
+
+sofagent 选了共享文件路线（SKILL.md + rules.md + task/logs）作为组织记忆载体。这条路线的优势是透明可审计（git 可 diff），劣势是**无法自动更新，需人工维护**——规则文件不会随使用自动进化。当前的 scoring 评分和 task/logs 复盘机制是否足以驱动规则文件的持续更新，是需要长期关注的结构性问题。
 
 > 这份局限文档和 [设计文档](./ARCHITECTURE.md) 一样，是开放的。如果你发现了我们没列出来的局限——开 Issue，直接说。已知的坑不怕多，怕不知道。
