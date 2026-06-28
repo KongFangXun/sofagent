@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
 [![Version](https://img.shields.io/badge/version-0.95-16B8F3)](./HANDBOOK.md)
-![CI](https://github.com/KongFangXun/sofagent/actions/workflows/ci.yml/badge.svg)
+![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 ![ShellCheck](https://github.com/KongFangXun/sofagent/actions/workflows/shellcheck.yml/badge.svg)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--28-16B8F3)](./README.md)
 [![定位](https://img.shields.io/badge/定位-Agent_纪律层-16B8F3)](#这是什么)
