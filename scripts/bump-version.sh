@@ -121,24 +121,23 @@ echo ""
 
 # 1. package.json version 字段（SSOT，3 段格式）
 echo -e "${BOLD}[1/8] package.json（SSOT）${NC}"
-for pj in "$PROJECT_ROOT/sofagent/audit/package.json"; do
-  if [[ -f "$pj" ]]; then
-    local_content=$(cat "$pj")
-    local_new=$(echo "$local_content" | sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g")
-    # 如果 3 段没匹配到，试 2 段格式
-    if [[ "$local_new" == "$local_content" ]]; then
-      local_new=$(echo "$local_content" | sed "s/\"version\": \"$OLD_2SEG\"/\"version\": \"$NEW_2SEG\"/g")
-    fi
-    if [[ "$local_new" != "$local_content" ]]; then
-      echo -e "  ${GREEN}✓${NC} version: $OLD_3SEG → $NEW_3SEG"
-      echo -e "    ${CYAN}$pj${NC}"
-      if ! $DRY_RUN; then
-        printf '%s\n' "$local_new" > "$pj"
-      fi
-      TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
-    fi
+PJ="$PROJECT_ROOT/sofagent/audit/package.json"
+if [[ -f "$PJ" ]]; then
+  pj_content=$(cat "$PJ")
+  pj_new=$(echo "$pj_content" | sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g")
+  # 如果 3 段没匹配到，试 2 段格式
+  if [[ "$pj_new" == "$pj_content" ]]; then
+    pj_new=$(echo "$pj_content" | sed "s/\"version\": \"$OLD_2SEG\"/\"version\": \"$NEW_2SEG\"/g")
   fi
-done
+  if [[ "$pj_new" != "$pj_content" ]]; then
+    echo -e "  ${GREEN}✓${NC} version: $OLD_3SEG → $NEW_3SEG"
+    echo -e "    ${CYAN}$PJ${NC}"
+    if ! $DRY_RUN; then
+      printf '%s\n' "$pj_new" > "$PJ"
+    fi
+    TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
+  fi
+fi
 echo ""
 
 # 2. .ts 文件: const VERSION = 'OLD'（动态扫描，不硬编码文件列表）

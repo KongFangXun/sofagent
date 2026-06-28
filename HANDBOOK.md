@@ -6,8 +6,6 @@
 >
 > v0.95 · 2026-06-28 · 孔放勋
 
-> 面向：人类学习（想理解设计哲学）
-
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
 - [阅读指南](#阅读指南)
