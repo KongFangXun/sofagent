@@ -7,7 +7,7 @@
 ## 怎么做
 
 ```
-1. 构建自测   → rm -rf dist/ && npm run build && npm test（必须全绿）
+1. 构建自测   → rm -rf dist/ && npm run build && npm test && shellcheck sofagent/scripts/*.sh（必须全绿）
 2. 审核       → 独立审查逐项核对 changelog，FAIL 项修完二次复核
 3. 版本号升级 → ./tools/bump-version.sh <旧版本> <新版本>（一键替换，见下方）
 4. 版本号校验 → ./tools/check-version.sh（必须全绿）

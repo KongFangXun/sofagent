@@ -329,13 +329,12 @@ SCRIPTS_DIR="${OPENCLAW_DIR}/scripts"
 if [ -d "$SCRIPTS_DIR" ]; then
   script_count=$(ls -1 "$SCRIPTS_DIR"/*.sh 2>/dev/null | wc -l | tr -d ' ')
   check_pass "scripts/ 目录存在: ${script_count} 个 .sh 文件"
-  for s in task-record.sh; do
-    if [ -f "${SCRIPTS_DIR}/${s}" ] && [ -x "${SCRIPTS_DIR}/${s}" ]; then
-      check_pass "  ${s} 已部署且可执行"
-    else
-      check_warn "  ${s} 缺失或不可执行"
-    fi
-  done
+  s="task-record.sh"
+  if [ -f "${SCRIPTS_DIR}/${s}" ] && [ -x "${SCRIPTS_DIR}/${s}" ]; then
+    check_pass "  ${s} 已部署且可执行"
+  else
+    check_warn "  ${s} 缺失或不可执行"
+  fi
 else
   check_warn "scripts/ 目录不存在，部分功能可能不可用"
 fi
