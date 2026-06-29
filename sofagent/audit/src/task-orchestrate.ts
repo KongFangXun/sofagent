@@ -13,8 +13,8 @@
 // ============================================================
 
 import { execFileSync } from 'child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync, statSync, readdirSync } from 'fs';
-import { join, dirname } from 'path';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync, readdirSync } from 'fs';
+import { join } from 'path';
 import { createHash } from 'crypto';
 
 const VERSION = '0.96';
@@ -35,6 +35,8 @@ let autoLevel = false;
 let level = 1;
 let maxRetries = 3;
 let aoModel = '';
+
+void maxRetries; // v0.96 保留参数解析但未实现重试循环（bash 版有此功能，v0.97 补）
 
 const args = process.argv.slice(2);
 for (let i = 0; i < args.length; i++) {
@@ -121,7 +123,6 @@ function analyzeTrackRecord(slug: string): [number, number] {
 }
 
 const [totalRuns, successRuns] = analyzeTrackRecord(taskDesc);
-const failRuns = totalRuns - successRuns;
 
 // ── Auto-level ──
 let suggestedLevel = level;
@@ -163,7 +164,6 @@ if (level === 4) {
         r.code === 0 ? ok(`任务完成（耗时 ${elapsed}s）`) : warn(`任务结束（exit ${r.code}）`);
         console.log('');
         console.log(`  编排结束。exit code: ${r.code} · 深度: L3 (模板: ${cfg.ao_template})`);
-        awaitTimeout(0);
         process.exit(r.code);
       }
     } catch { /* fall through */ }
@@ -184,18 +184,21 @@ if (skipOrchestrate) {
   const start = Date.now();
   const r = runAo([taskDesc]);
   const elapsed = Math.round((Date.now() - start) / 1000);
-  awaitTimeout(0);
+  console.log('');
+  r.code === 0 ? ok(`任务完成（耗时 ${elapsed}s）`) : warn(`任务结束（exit ${r.code}，耗时 ${elapsed}s）`);
   process.exit(r.code);
 }
 
 // ── Step 1: AO compose ──
+let workflowFile = '';
 if (skipAoCompose) {
   info(`跳过 ao compose，使用缓存模板`);
+  workflowFile = cachedYaml;
 } else {
   info('Step 1/4 · AO 编排分析...');
   if (aoModel) info(`  模型: ${aoModel}`);
 
-  let workflowFile = join(process.env.TMPDIR || '/tmp', `sofagent-workflow-${process.pid}.yaml`);
+  workflowFile = join(process.env.TMPDIR || '/tmp', `sofagent-workflow-${process.pid}.yaml`);
   try {
     const args_ = aoModel ? ['compose', '--model', aoModel, taskDesc] : ['compose', taskDesc];
     const output = execFileSync('ao', args_, { encoding: 'utf-8', timeout: 120000 });
@@ -304,7 +307,14 @@ console.log('');
 // ── Step 4: Execute ──
 info('Step 4/4 · 执行任务编排...');
 const startTime = Date.now();
-const result = runAo(['compose', taskDesc, '--run']);
+let result: { code: number };
+if (workflowFile && existsSync(workflowFile)) {
+  // 有编排文件 → ao run 执行
+  result = runAo(['run', workflowFile]);
+} else {
+  // 无编排文件 → ao compose --run 直接执行
+  result = runAo(['compose', taskDesc, '--run']);
+}
 const elapsed = Math.round((Date.now() - startTime) / 1000);
 console.log('');
 if (result.code === 0) {
@@ -377,5 +387,3 @@ function showHelp(): void {
   console.log('');
   console.log('  依赖: agency-orchestrator (ao), git (worktree 模式)');
 }
-
-function awaitTimeout(_ms: number): void { /* placeholder for async cleanup */ }

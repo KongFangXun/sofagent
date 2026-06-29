@@ -9,7 +9,7 @@
 import type { DiffFile } from './diff-parser';
 import type { LogEntry } from './log-checker';
 import type { AuditConfig } from './config-loader';
-import { defaultRules, extendedRules, rules } from './rules';
+import { defaultRules, rules } from './rules';
 import type { AuditContext, RuleCheck, Rule } from './rules/types';
 
 // 向后兼容：re-export RuleCheck（index.ts 等模块通过 reporter 导入此类型）

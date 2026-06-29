@@ -15,7 +15,7 @@
 // ============================================================
 
 import { existsSync } from 'fs';
-import { VERSION, type SafetyResult, type SafetyHit, type SafetyRule } from './rules/skill-safety-rules';
+import { VERSION, type SafetyResult } from './rules/skill-safety-rules';
 import { findFiles, scanFile } from './rules/skill-safety-engine';
 import {
   printFileResult,
