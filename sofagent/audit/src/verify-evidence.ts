@@ -104,7 +104,7 @@ function countMatches(content: string, pattern: RegExp): MatchResult {
   const re = new RegExp(pattern.source, flags);
 
   let positive = 0;
-  let match: RegExpExecArray | null;
+  let match;
   while ((match = re.exec(content)) !== null) {
     positive++;
   }

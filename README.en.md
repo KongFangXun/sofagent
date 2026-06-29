@@ -14,7 +14,7 @@
 <!-- TODO v1.0: demo.gif — 15s side-by-side: bare Agent going off-rails vs sofagent-constrained Agent. Postponed from v0.95, no footage yet -->
 
 > sofa + agent — because one day, we want to lie on the couch while agents do the work.
-> v0.96 · 2026-06-28
+> v0.96 · 2026-06-29
 
 > 📄 **License**: MIT. Code, docs, templates — use freely, just keep the copyright notice.
 
@@ -44,10 +44,10 @@ A **discipline layer** for AI agents. Not a framework to build them, not a tool 
 
 | You are | Read this | In a sentence |
 |------|------|------|
-| User | [HANDBOOK.md](./HANDBOOK.md) (443 lines) | How to install, use, and what the rules are |
-| Developer | [DEVELOPMENT.md](./DEVELOPMENT.md) (599 lines) | How skills coordinate, orchestration runs, reflection loops |
-| Design nerd | [ARCHITECTURE.md](./ARCHITECTURE.md) (596 lines) | Why these design choices, known limitations |
-| Tech lead deploying to a team | [docs/team-deploy.md](./docs/team-deploy.md) (3 pages) | Install, try, review — three-phase rollout guide |
+| User | [HANDBOOK.md](./HANDBOOK.md) | How to install, use, and what the rules are |
+| Developer | [DEVELOPMENT.md](./DEVELOPMENT.md) | How skills coordinate, orchestration runs, reflection loops |
+| Design nerd | [ARCHITECTURE.md](./ARCHITECTURE.md) | Why these design choices, known limitations |
+| Tech lead deploying to a team | [docs/team-deploy.md](./docs/team-deploy.md) | Install, try, review — three-phase rollout guide |
 
 > ⚠️ Core documents are in Chinese. If you need English versions, opening an issue or PR for translation is one of the highest-impact contributions right now.
 
@@ -76,7 +76,7 @@ A **discipline layer** for AI agents. Not a framework to build them, not a tool 
 
 | Layer | What it does |
 |------|------|
-| **Foundation** | 3-layer loading chain — constitution (4 hard rules + 10 principles) → reflection zone (auto mistake log) → your rules. Always online for the session |
+| **Foundation** | 3-layer loading chain — constitution (4 hard rules + 6 principles) → reflection zone (auto mistake log) → your rules. Always online for the session |
 | **Engine** | Task orchestration engine — fires up for 🔴 complex tasks: smart decomposition + Loop checks + reflection |
 | **Evolution** | Progressive thinning — repeat tasks get lighter orchestration based on success rate. If it breaks, restore full orchestration |
 
@@ -252,12 +252,4 @@ Issues and PRs welcome — especially the critical kind. See [CONTRIBUTING.md](.
 
 ## Acknowledgements
 
-- [OpenClaw](https://github.com/openclaw/openclaw) by Peter Steinberger — the foundation sofagent runs on
-- [DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/) + [GLM-5.2](https://z.ai/) — all files generated collaboratively by these two
-- [Andrej Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills) — 4 coding principles are the roots of the 10 guiding rules
-- [Ralph Loop](https://ghuntley.com/loop/) by Geoffrey Huntley — "Agent forgets, files don't" is sofagent's philosophical DNA. A one-line bash loop inspired the audit direction: git diff is the stateless ground truth, agent logs are stateful supplements
-- [agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator) + [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh) — orchestration engine + Chinese role library
-- [Anthropic Skills](https://github.com/anthropics/skills) + [Managed Agents](https://www.anthropic.com/engineering/managed-agents) — SKILL.md format spec + philosophical source of the 4-layer architecture
-- [Loop Engineering](https://addyo.substack.com/p/loop-engineering) by Addy Osmani — the 5 pillars of loop engineering, theoretical source of the orchestration layer
-- [MiroFish](https://github.com/666ghj/MiroFish) — "tool call / final answer separation" pattern inspired the audit evidence layering design
-- [superpowers](https://github.com/obra/superpowers) — the idea of skills as harness leverage
+sofagent stands on the shoulders of 8 open-source projects and 7 articles/communities. &rarr; [Full credits](./THANKS.md)

@@ -1,3 +1,7 @@
+---
+tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程]
+---
+
 # sofagent Architecture
 
 > 一个只懂点前端代码的产品经理，在设计 Agent 纪律层时都想了些什么。这里只写设计决策、权衡取舍、已知局限，以及为什么故意不做某些事。各节按 Handbook 章节顺序排列，方便对照。
@@ -18,7 +22,7 @@ Agent 跑完任务后，谁来告诉它「下一个任务是什么」？谁来�
 
 纪律层解决的就是这个问题——Agent 跑完任务之后，不是等着人验收，而是自己完成「拆解→执行→验证→复盘」的完整闭环。sofagent 不跑你的任务，它管跑你任务的 Agent。
 
-> sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。Agent 的记忆长在文件系统（git diff / task/logs / SKILL.md），不长在 Agent 内部。审计层优先信任 git diff（硬证据），不信任 Agent 日志（软证据）。sofagent 是 Ralph 范式的治理层实现。
+> sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。Agent 的记忆长在文件系统（git diff / task/logs / SKILL.md），不长在 Agent 内部。审计层优先信任 git diff（硬证据），不信任 Agent 日志（软证据）。sofagent 是 Ralph 范式的纪律层实现。
 
 > **三元原语的交叉验证**：Ralph Loop 和 Karpathy AutoResearch 完全独立地收敛到同一底层范式——**可编辑资产 → 单一衡量标准 → 定时循环迭代**。这是同一范式在工程（Ralph）和科研（Karpathy）的两种落地形态，构成 sofagent 三层加载链设计的外部交叉验证。
 
@@ -122,7 +126,7 @@ sofagent 不替代 AI 中台——它是 AI 中台里 Agent 治理那一层的�
    install → verify.sh 确认约束生效 → 用户拥有了对 Agent 行为的掌控感 → 然后才能放心把任务交给编排引擎。这条原则解释了为什么 sofagent 的安装流程必须包含 verify 步骤——不是技术需要，是心理需要。
 
 4. **「状态最贵」**（Ralph Loop 哲学）<br>
-   Agent 的上下文窗口是有限预算，不是无限文件夹。治理层总占用承诺不超过窗口的 5%（当前约 2.5%）。每多塞一段不必要的上下文，就少一段留给任务的空间。sofagent 的三层加载链 + 编排引擎都是在「最少上下文占用量」约束下设计的——用文件外化状态，用 git diff 替代 Agent 记忆。
+   Agent 的上下文窗口是有限预算，不是无限文件夹。纪律层总占用承诺不超过窗口的 5%（当前约 2.5%）。每多塞一段不必要的上下文，就少一段留给任务的空间。sofagent 的三层加载链 + 编排引擎都是在「最少上下文占用量」约束下设计的——用文件外化状态，用 git diff 替代 Agent 记忆。
 
 <a id="skill-runtime"></a>
 ### 为什么是 Skill + 脚本 + Runtime，不是纯 Skill 或纯代码
@@ -384,7 +388,7 @@ orchestrator/、scoring/ 这些目录可能有几百条记录——全读到上�
 
 ## 三、诚实坦白：已知局限
 
-> 17 条已知局限详见 **[LIMITATIONS.md](./LIMITATIONS.md)**。核心局限：治理层自身在上下文里（约束力 = Agent 注意力 × 平台加载可靠性）、加载链步进脆弱性（非 OpenClaw 平台可能跳过）、复盘评分是 LLM 自评（评审者与执行者不分离）、Skill 自进化处于经验记录阶段、核心效果缺持续数据。
+> 17 条已知局限详见 **[LIMITATIONS.md](./LIMITATIONS.md)**。核心局限：纪律层自身在上下文里（约束力 = Agent 注意力 × 平台加载可靠性）、加载链步进脆弱性（非 OpenClaw 平台可能跳过）、复盘评分是 LLM 自评（评审者与执行者不分离）、Skill 自进化处于经验记录阶段、核心效果缺持续数据。
 
 > 💡 其他文档引用已知局限时，统一指向 `LIMITATIONS.md` 对应锚点，不在各自文档里重复摘抄——改一处，全局生效。
 

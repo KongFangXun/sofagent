@@ -110,7 +110,6 @@ function parseSimpleYaml(content: string): Partial<AuditConfig> {
 
   let inAuditSection = false;
   let inListField: keyof AuditConfig | null = null;
-  let listIndent = 0;
 
   for (const rawLine of lines) {
     // 去除行尾注释（# 后面的内容），但保留 # 在引号内的情况
@@ -171,11 +170,9 @@ function parseSimpleYaml(content: string): Partial<AuditConfig> {
       if (key === 'lowRiskPatterns') {
         inListField = 'lowRiskPatterns';
         if (!result.lowRiskPatterns) result.lowRiskPatterns = [];
-        listIndent = indent;
       } else if (key === 'testPatterns') {
         inListField = 'testPatterns';
         if (!result.testPatterns) result.testPatterns = [];
-        listIndent = indent;
       } else {
         inListField = null;
       }

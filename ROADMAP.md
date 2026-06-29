@@ -36,7 +36,7 @@
 | P0 | 代码审计清理：删除 ~460 行死代码 + 新建 test-utils.ts（消除 13 个测试文件重复） | ✅ |
 | P1 | 编排引擎定位澄清 + 精简设计（两档拆解 + 砍四级深度/三档自由度/渐进减薄/信任等级） | ✅ |
 | P1 | 4 平台「装完做 3 件事」checklist（WorkBuddy/Claude Code/Codex/Hermes） | ✅ |
-| P1 | v0.95 遗留项：上下文成本仪表盘 + ARCHITECTURE frontmatter + OpenClaw 预装（推迟 v0.97）+ 文档去重 | 🔄 |
+| P1 | v0.95 遗留项：上下文成本仪表盘（✅）+ OpenClaw 预装（推迟 v0.97）+ 文档去重 + ARCHITECTURE frontmatter | 🔄 |
 | P1 | 文档变更：ARCHITECTURE（Ralph 起源 + 状态最贵 + OODA 映射 + 编排引擎章节）+ HANDBOOK（铁律更新 + 跨平台 checklist）+ DEVELOPMENT（绿灯路径 + 状态账本） | ✅ |
 | **推** | 纪律层证伪实验 → v0.97（需要独立版本） | |
 | **推** | 审计闭环六步 → v0.98（需要真实数据） | |

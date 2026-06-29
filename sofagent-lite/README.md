@@ -22,7 +22,7 @@ cd sofagent/sofagent-lite && sh install.sh
 `install.sh` 自动探测你的平台：
 - **OpenClaw** → 装到 `~/.openclaw/skills/sofagent-lite/`
 - **WorkBuddy** → 装到 `~/.workbuddy/skills/sofagent-lite/`
-- **没检测到**（Claude Code / Codex / Hermes 等）→ 直接把 10 条规则打印到终端，你复制粘贴到 Agent 配置顶部即可
+- **没检测到**（Claude Code / Codex / Hermes 等）→ 直接把 4 底线 + 6 则铁律打印到终端，你复制粘贴到 Agent 配置顶部即可
 
 手动指定平台：`sh install.sh openclaw` 或 `sh install.sh workbuddy`
 
@@ -36,14 +36,14 @@ cd sofagent/sofagent-lite && sh install.sh
 
 **一个文件：`SKILL.md`。** 40 行，没有任何脚本、没有依赖、没有后台进程。
 
-10 条规则分两层：
+4 底线 + 6 则铁律，分两层：
 
 | 层 | 条数 | 管什么 |
 |:--:|:--:|------|
 | **4 底线** | 4 条 | 红线——不泄露隐私、不执行危险操作、不生成有害内容、不冒充人类 |
 | **6 则铁律** | 6 条 | 工作习惯——对用户有回应、全局视角、不确定就问、错误显性化、目标驱动、成本意识 |
 
-> 这 10 条和完整版宪法层**完全一致**——同一个 SKILL.md，同样的内容。区别是 lite 只装这一层，完整版在上面还叠了反思、编排、审计。
+> 这 4+6 条和完整版宪法层**完全一致**——同一个 SKILL.md，同样的内容。区别是 lite 只装这一层，完整版在上面还叠了反思、编排、审计。
 
 ---
 

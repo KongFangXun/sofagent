@@ -85,7 +85,7 @@ SKILL.md 启动
 
 - `rules.md`（1 个文件）：执行层，你的运行规范。v0.62：宪法已内联进 SKILL.md。v0.73：从 constitution/ 扁平化到根目录
 - `data/`（5 个文件）：数据模板 think.md、orchestrator.md、task.md、scoring.md、IDENTITY.md
-- `scripts/`（5 个脚本）：install.sh、verify.sh、uninstall.sh、task-record.sh、task-orchestrate.sh
+- `scripts/`（核心 5 个）：install.sh、verify.sh、uninstall.sh、task-record.sh、task-orchestrate.sh（v0.96 起迁移到 TS 版，bash 版标记 deprecated）
 - `hooks/sofagent-load-chain/`（2 个文件）：HOOK.md + handler.ts（OpenClaw 2026.6.x 内部 hook，agent:bootstrap 事件注入第 2、3 层）
 - Skill 文件（6 个 .md）：SKILL.md（主入口）、engine.md（入口引擎）、entry-gate.md（入境闸门）、task-aware.md（每任务闸门）、task-closure.md（离境闸门）、loop-check.md（循环顾问）
 

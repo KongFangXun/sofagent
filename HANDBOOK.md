@@ -17,7 +17,7 @@
 - [四、任务目标制定](#四任务目标制定)
 - [五、安装与跨平台](#五安装与跨平台)
 - [六、常见问题](#六常见问题)
-- [特别鸣谢](#特别鸣谢)
+- [致谢](#致谢)
 - [彩蛋](#彩蛋)
 
 ---
@@ -43,7 +43,7 @@
 
 这不是什么「框架」或「方法论」，只是用大半年 OpenClaw 攒的笔记。第一次用 GitHub、第一次往上面放东西——格式不对、规矩不周的地方，多包涵。
 
-这个项目里的文件都是 DeepSeek V4 Pro 和 GLM-5.2 配合生成的。写得不好的地方很多——分享出来就是期待你也参与进来一起优化。
+这个项目里的文件是模型间 Loop 实验的产物——多 session 内互改互审，直到所有模型都版本通过。参与的核心模型是 DeepSeek V4 Pro 和 GLM-5.2，详见 [致谢](./THANKS.md#生成伙伴)。写得不好的地方很多——分享出来就是期待你也参与进来一起优化。
 
 如果你也在折腾 OpenClaw，希望这个对你有用。
 
@@ -467,38 +467,12 @@ Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的�
 
 两个人搭一模一样的 sofagent，可能得到完全相反的结果——一个用它加速自己深刻理解的工作，另一个用它逃避理解。sofagent 分不出区别，你分得出。
 
-> Klarna 教训：2024 年 2 月宣布用 AI 客服裁掉 700 人、成本降 40%，两年后客户满意度暴跌 22%、季度净亏 9900 万美元。不是 AI 不行，是没有治理层的 AI 不行。
+> Klarna 教训：2024 年 2 月宣布用 AI 客服裁掉 700 人、成本降 40%，两年后客户满意度暴跌 22%、季度净亏 9900 万美元。不是 AI 不行，是没有纪律层的 AI 不行。
 
 
-## 特别鸣谢
+## 致谢
 
-感谢这些项目、产品和作者，没有他们就没有 sofagent。
-
-### 最早要谢的
-
-- **[OpenClaw](https://github.com/openclaw/openclaw)** by Peter Steinberger — 整个 sofagent 的基石。从上下文加载到 Hook 触发、从 Skill 注入到 Session 管理，整套体系都建立在 OpenClaw 的能力之上。没有 OpenClaw，这本 Handbook 一页都写不出来
-- **[DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/)** — 这本 Handbook 和所有 sofagent 文件都是它与 GLM-5.2 配合生成的。一个产品经理能做完这件事，全靠它们
-- **[GLM-5.2](https://z.ai/)** — 配合 DeepSeek V4 Pro 完成代码生成、审查与测试
-
-### GitHub 项目
-
-- [Andrej Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills) — 4 条编码原则是 6 则铁律的根基。感谢 Karpathy
-- [agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator)（Apache-2.0） — `ao compose` 一行命令搞定编排：意图识别→任务图生成→模板匹配→分配
-- [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh) — 215 个中文岗位模板，IDENTITY 层素材来源
-- [superpowers](https://github.com/obra/superpowers) — Skill 作为 Harness 杠杆的思路，启发了 Skills 体系的设计
-- [Anthropic Skills](https://github.com/anthropics/skills) — 官方 SKILL.md 格式规范，描述-实现分离和Skill 索引卡片参考了它
-- [best-of-agent-harnesses](https://github.com/RyanAlberts/best-of-agent-harnesses) — 101+ 个 Harness 项目索引，让我了解这个领域已经有什么人在做什么事
-
-### 社区与文章
-
-- [Ralph Loop](https://ghuntley.com/loop/) by Geoffrey Huntley —「Agent 失忆，文件不失忆」是 sofagent 的哲学基因。一行 bash 循环 + Stop Hook + 新鲜上下文每轮刷新，启发了审计方向：git diff 是无状态地面真相
-- [MiroFish](https://github.com/666ghj/MiroFish) —「工具调用与最终答案严格分离」模式，启发了 sofagent 审计层的证据分层设计
-- [ClawHub](https://clawhub.ai) — 全球 Skills 社区，Skills 体系的外部来源
-- [/goal 命令](https://docs.anthropic.com/en/docs/claude-code/goal) — Claude Code 的自主执行循环，启发了我加用户确认的设计
-- [Loop Engineering](https://addyo.substack.com/p/loop-engineering) — Addy Osmani 的文章，帮我理清了 Context → Harness → Loop 三层框架的关系
-- [OpenAI Harness Engineering](https://openai.com/index/harness-engineering/) — Harness 概念的系统化参考
-- [Anthropic Effective harnesses](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) — 长时间运行 Agent 的有效治理思路
-- [Lost in the Middle](https://arxiv.org/abs/2307.03172) — 模型对长文档中段注意力衰减的研究，500 字原则的理论源头
+sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完整致谢](./THANKS.md)
 
 ## 彩蛋
 
