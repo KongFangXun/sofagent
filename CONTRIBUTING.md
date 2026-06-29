@@ -16,7 +16,7 @@
 | 不知道怎么用 | → [Discussions 去问](https://github.com/KongFangXun/sofagent/discussions) |
 | 不知道怎么测 | → 看 [TESTING.md](./docs/TESTING.md) 的 5 个标准化用例 |
 | 想直接改代码 | → 看下面「贡献者 10 分钟速览」 |
-| 想理解概念但不知道从哪看 | → 看 [ARCHITECTURE.md §五bis](./ARCHITECTURE.md)（评审洞察，概念地图） |
+| 想理解概念但不知道从哪看 | → 看 [ARCHITECTURE.md](./ARCHITECTURE.md) 的设计决策（两档拆解、三层加载链、审计证据分层） |
 | 想跑实验 | → 看 docs/benchmark/ 的实验记录模板 |
 
 ### 贡献者 10 分钟速览
@@ -28,7 +28,7 @@
 | 顺序 | 文件 | 看什么 | 约几分钟 |
 |:--:|------|------|:--:|
 | 1 | [SKILL.md](./sofagent/SKILL.md)（宪法内联） | 4 底线 + 6 则铁律——项目的灵魂，所有概念从这里展开 | 3 min |
-| 2 | [docs/changelog/v0.96.md](./docs/changelog/v0.96.md) | 当前版本做了什么 + 诚实收缩 + 下一步方向 | 5 min |
+| 2 | [docs/changelog/v0.97.md](./docs/changelog/v0.97.md) | 当前版本做了什么 + 概念精简（两档拆解 + 编排引擎 FDE 专用 + preferences.md 用户偏好） + 下一步方向 | 5 min |
 | 3 | [LIMITATIONS.md](./LIMITATIONS.md) | 已知局限——看完你就知道哪些坑可以帮忙填 | 2 min |
 
 **先改 2 个脚本（最低门槛）**：

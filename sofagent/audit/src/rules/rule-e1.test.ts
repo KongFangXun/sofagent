@@ -54,4 +54,39 @@ describe('E1 不落测试', () => {
     const result = checkRuleE1(ctx);
     expect(result.evidenceMode).toBe('git-diff');
   });
+
+  it('src/ 下 .jsx 有 .test.jsx → PASS', () => {
+    const ctx = makeCtx([
+      makeDiffFile('src/Component.jsx'),
+      makeDiffFile('src/Component.test.jsx'),
+    ]);
+    const result = checkRuleE1(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('src/ 下 .spec.tsx 匹配 → PASS', () => {
+    const ctx = makeCtx([
+      makeDiffFile('src/component.tsx'),
+      makeDiffFile('src/component.spec.tsx'),
+    ]);
+    const result = checkRuleE1(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('非 src/ 目录变更 + 无测试文件 → PASS', () => {
+    const ctx = makeCtx([
+      makeDiffFile('docs/guide.md'),
+      makeDiffFile('scripts/deploy.sh'),
+    ]);
+    const result = checkRuleE1(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('src/ 仅有测试文件变更 → PASS（无需额外测试覆盖）', () => {
+    const ctx = makeCtx([
+      makeDiffFile('src/utils.test.ts'),
+    ]);
+    const result = checkRuleE1(ctx);
+    expect(result.status).toBe('PASS');
+  });
 });

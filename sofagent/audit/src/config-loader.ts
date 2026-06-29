@@ -1,6 +1,7 @@
 // ============================================================
 // config-loader.ts · .sofagent/config.yml 配置加载器
 // v0.95 新增：三级 fallback + 手写极简 YAML 解析器
+// v0.97 扩展：环境变量配置（从 lib/config.sh 合并）
 // ============================================================
 // 配置格式只支持两种语法：
 //   key: value          （键值对）
@@ -230,4 +231,108 @@ function stripQuotes(s: string): string {
     }
   }
   return s;
+}
+
+// ============================================================
+// v0.97: 环境变量配置（从 lib/config.sh 合并）
+// ============================================================
+
+/**
+ * 运行时配置——由环境变量加载（对应 lib/config.sh 导出项）
+ */
+export interface SofaEnvConfig {
+  /** 数据目录路径 */
+  dataDir: string;
+  /** 日志脱敏开关 */
+  sanitizeEnabled: boolean;
+  /** 内网 IP 脱敏开关 */
+  sanitizeIpsEnabled: boolean;
+  /** 日志保留天数 */
+  retentionDays: number;
+  /** 日志最大条数 */
+  retentionMax: number;
+  /** 写日志后是否触发清理 */
+  cleanupOnRecord: boolean;
+  /** 清理触发频率（1/N 概率） */
+  cleanupFrequency: number;
+  /** 审计日志开关 */
+  auditEnabled: boolean;
+}
+
+/** 环境变量默认值 */
+export const ENV_DEFAULTS: Omit<SofaEnvConfig, 'dataDir'> = {
+  sanitizeEnabled: false,
+  sanitizeIpsEnabled: false,
+  retentionDays: 90,
+  retentionMax: 500,
+  cleanupOnRecord: false,
+  cleanupFrequency: 10,
+  auditEnabled: false,
+};
+
+/**
+ * 从环境变量加载运行时配置
+ * 对应 lib/config.sh 的 _parse_conf + export 逻辑
+ */
+export function loadEnvConfig(): SofaEnvConfig {
+  const homeDir = homedir();
+  const dataDir = resolveDataDir(homeDir);
+
+  return {
+    dataDir,
+    sanitizeEnabled: resolveBoolEnv('SOFA_SANITIZE', ENV_DEFAULTS.sanitizeEnabled),
+    sanitizeIpsEnabled: resolveBoolEnv('SOFA_SANITIZE_IPS', ENV_DEFAULTS.sanitizeIpsEnabled),
+    retentionDays: resolveNumberEnv('SOFA_RETENTION_DAYS', ENV_DEFAULTS.retentionDays),
+    retentionMax: resolveNumberEnv('SOFA_RETENTION_MAX', ENV_DEFAULTS.retentionMax),
+    cleanupOnRecord: resolveBoolEnv('SOFA_CLEANUP_ON_RECORD', ENV_DEFAULTS.cleanupOnRecord),
+    cleanupFrequency: resolveNumberEnv('SOFA_CLEANUP_FREQUENCY', ENV_DEFAULTS.cleanupFrequency),
+    auditEnabled: resolveBoolEnv('SOFA_AUDIT_ENABLED', ENV_DEFAULTS.auditEnabled),
+  };
+}
+
+/**
+ * 解析数据目录（对应 _sofa_find_data_dir 函数）
+ * 优先级：环境变量 > 当前目录 > 标记文件 > fallback
+ */
+function resolveDataDir(home: string): string {
+  // 1. 环境变量显式指定
+  if (process.env.SOFAGENT_DATA && existsSync(process.env.SOFAGENT_DATA)) {
+    return process.env.SOFAGENT_DATA;
+  }
+
+  // 2. 当前目录有 .sofagent/
+  const cwdData = join(process.cwd(), '.sofagent');
+  if (existsSync(cwdData)) {
+    return cwdData;
+  }
+
+  // 3. 标记文件
+  const markers = [
+    join(home, '.openclaw', 'skills', 'sofagent', '.sofagent-data-path'),
+    join(home, '.workbuddy', 'skills', 'sofagent', '.sofagent-data-path'),
+  ];
+  for (const marker of markers) {
+    if (existsSync(marker)) {
+      try {
+        const path = readFileSync(marker, 'utf-8').trim();
+        if (path && existsSync(path)) return path;
+      } catch { /* */ }
+    }
+  }
+
+  // 4. fallback
+  return join(process.cwd(), '.sofagent');
+}
+
+function resolveBoolEnv(key: string, defaultValue: boolean): boolean {
+  const val = process.env[key];
+  if (val === undefined || val === '') return defaultValue;
+  return val.toLowerCase() === 'true' || val === '1' || val.toLowerCase() === 'yes';
+}
+
+function resolveNumberEnv(key: string, defaultValue: number): number {
+  const val = process.env[key];
+  if (val === undefined || val === '') return defaultValue;
+  const num = parseInt(val, 10);
+  return isNaN(num) ? defaultValue : num;
 }

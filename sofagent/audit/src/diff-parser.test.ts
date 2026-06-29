@@ -3,8 +3,8 @@
 // ============================================================
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { parseDiff, getAddedLines, getRemovedLines } from './diff-parser';
-import type { DiffFile } from './diff-parser';
+import { parseDiff, getAddedLines, getRemovedLines, parseNumstat } from './diff-parser';
+import type { DiffFile, NumstatEntry } from './diff-parser';
 
 // Mock execFileSync 以避免依赖真实 git 仓库
 vi.mock('child_process', () => ({
@@ -184,5 +184,36 @@ describe('getRemovedLines', () => {
     };
     const removed = getRemovedLines(file);
     expect(removed).toEqual(['real removal']);
+  });
+});
+
+describe('parseNumstat', () => {
+  it('解析标准 numstat 输出', () => {
+    const output = '10\t5\tsrc/index.ts\n0\t20\tsrc/legacy.ts\n200\t0\tsrc/new-file.ts';
+    const result = parseNumstat(output);
+    expect(result).toHaveLength(3);
+    expect(result[0]).toEqual({ path: 'src/index.ts', addedLines: 10, deletedLines: 5 });
+    expect(result[1]).toEqual({ path: 'src/legacy.ts', addedLines: 0, deletedLines: 20 });
+    expect(result[2]).toEqual({ path: 'src/new-file.ts', addedLines: 200, deletedLines: 0 });
+  });
+
+  it('处理二进制文件（- 标记）', () => {
+    const output = '-\t-\tassets/logo.png\n5\t3\tsrc/app.ts';
+    const result = parseNumstat(output);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({ path: 'assets/logo.png', addedLines: 0, deletedLines: 0 });
+    expect(result[1]).toEqual({ path: 'src/app.ts', addedLines: 5, deletedLines: 3 });
+  });
+
+  it('空输出 → 返回空数组', () => {
+    const result = parseNumstat('');
+    expect(result).toEqual([]);
+  });
+
+  it('处理大数字统计', () => {
+    const output = '99999\t50000\tsrc/big-file.ts';
+    const result = parseNumstat(output);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({ path: 'src/big-file.ts', addedLines: 99999, deletedLines: 50000 });
   });
 });

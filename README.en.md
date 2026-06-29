@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 ![ShellCheck](https://github.com/KongFangXun/sofagent/actions/workflows/shellcheck.yml/badge.svg)
-[![Version](https://img.shields.io/badge/version-0.96-16B8F3)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/version-v0.97-16B8F3)](./HANDBOOK.md)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--29-16B8F3)](./README.md)
 [![OpenClaw](https://img.shields.io/badge/🦞priority-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9FStarred)](https://github.com/KongFangXun/sofagent/stargazers)
@@ -14,7 +14,7 @@
 <!-- TODO v1.0: demo.gif — 15s side-by-side: bare Agent going off-rails vs sofagent-constrained Agent. Postponed from v0.95, no footage yet -->
 
 > sofa + agent — because one day, we want to lie on the couch while agents do the work.
-> v0.96 · 2026-06-29
+> v0.97 · 2026-06-29
 
 > 📄 **License**: MIT. Code, docs, templates — use freely, just keep the copyright notice.
 

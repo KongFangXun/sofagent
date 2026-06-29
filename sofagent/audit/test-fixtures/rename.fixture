@@ -1,0 +1,3 @@
+R100	src/old-name.ts	src/new-name.ts
+M	src/index.ts
+R050	src/components/OldButton.tsx	src/components/NewButton.tsx

@@ -38,4 +38,45 @@ describe('E4 不低注释', () => {
     const result = checkRuleE4(ctx);
     expect(result.evidenceMode).toBe('git-diff');
   });
+
+  it('空文件变更 → PASS', () => {
+    const ctx = makeCtx([makeDiffFile('src/empty.ts', [])]);
+    const result = checkRuleE4(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('新增 201 行 + 注释率恰好 5% → PASS', () => {
+    const codeLines = Array.from({ length: 191 }, (_, i) => `+const x${i} = ${i};`);
+    // 10 条注释行，10/201 ≈ 4.975%，略低于 5%
+    const commentLines = Array.from({ length: 10 }, () => '+// comment');
+    const ctx = makeCtx([makeDiffFile('src/file.ts', [...codeLines, ...commentLines])]);
+    const result = checkRuleE4(ctx);
+    // 10/201 = 4.975% < 5% → WARN
+    expect(result.status).toBe('WARN');
+  });
+
+  it('# 注释被识别（Python 风格）', () => {
+    const codeLines = Array.from({ length: 191 }, (_, i) => `+x${i} = ${i}`);
+    const commentLines = Array.from({ length: 15 }, () => '+# this is a python comment');
+    const ctx = makeCtx([makeDiffFile('src/script.py', [...codeLines, ...commentLines])]);
+    const result = checkRuleE4(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('/* */ 注释被识别', () => {
+    const codeLines = Array.from({ length: 191 }, (_, i) => `+const x${i} = ${i};`);
+    const commentLines = Array.from({ length: 15 }, () => '+/* block comment */');
+    const ctx = makeCtx([makeDiffFile('src/file.ts', [...codeLines, ...commentLines])]);
+    const result = checkRuleE4(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('空行不计入新增代码行', () => {
+    const codeLines = Array.from({ length: 191 }, (_, i) => `+const x${i} = ${i};`);
+    const blankLines = Array.from({ length: 50 }, () => '+');
+    const commentLines = Array.from({ length: 10 }, () => '+// comment');
+    const ctx = makeCtx([makeDiffFile('src/file.ts', [...codeLines, ...blankLines, ...commentLines])]);
+    const result = checkRuleE4(ctx);
+    expect(result.status).toBe('WARN');
+  });
 });

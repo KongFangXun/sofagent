@@ -1,6 +1,6 @@
 # sofagent-audit
 
-> v0.96 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
+> v0.97 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
 
 ## 安装
 

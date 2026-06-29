@@ -2,9 +2,9 @@
 # ============================================================
 # bump-version.sh · 一键升级全项目版本号
 # ============================================================
-# 用法: ./scripts/bump-version.sh <旧版本> <新版本> [--dry-run]
-#   ./scripts/bump-version.sh 0.94 0.95          # 实际替换
-#   ./scripts/bump-version.sh 0.94 0.95 --dry-run # 只打印，不修改
+# 用法: ./tools/bump-version.sh <旧版本> <新版本> [--dry-run]
+#   ./tools/bump-version.sh 0.94 0.95          # 实际替换
+#   ./tools/bump-version.sh 0.94 0.95 --dry-run # 只打印，不修改
 #
 # 版本号格式: 2 段（如 0.94），package.json 自动补 3 段（0.94.0）
 #
@@ -67,7 +67,7 @@ NEW_2SEG=$(echo "$NEW_VERSION" | cut -d. -f1-2)
 OLD_3SEG="${OLD_2SEG}.0"
 NEW_3SEG="${NEW_2SEG}.0"
 
-# ── 项目根目录（脚本在 scripts/ 下，根在上一级）──────────────
+# ── 项目根目录（脚本在 tools/ 下，根在上一级）──────────────
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
@@ -349,7 +349,7 @@ else
     echo -e "${YELLOW}  无文件需要修改（版本号可能已经是 ${NEW_2SEG}）${NC}"
   else
     echo -e "${GREEN}  ✓ 完成: 共修改 $TOTAL_CHANGED 处${NC}"
-    echo -e "  建议运行 ${CYAN}./scripts/check-version.sh${NC} 确认一致性"
+    echo -e "  建议运行 ${CYAN}./tools/check-version.sh${NC} 确认一致性"
   fi
 fi
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"

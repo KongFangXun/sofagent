@@ -8,7 +8,7 @@
 param([switch]$Detect, [switch]$Json)
 
 $ErrorActionPreference = "Continue"
-$VERSION_STR = "0.96"
+$VERSION_STR = "0.97"
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
 
 $cfg = Join-Path $PSScriptRoot "lib\config.ps1"

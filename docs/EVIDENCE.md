@@ -84,3 +84,5 @@
 > ⚠️ 以上目标为 v0.95 设计锚点，非已验证数据。「基线」列标「待采集」的指标需独立第三方跑——作者自测不算数。
 
 > 💡 为什么选 11%？Karpathy 的数据是人审后的错误率下限。sofagent 的命题是：**用机器审计替代人审，能不能逼近同一个下限。** 能不能做到是 v1.0 才能回答的问题——v0.95 先把测量框架搭好。
+
+> 📌 行业趋势（Loop Engineering）见 [ARCHITECTURE.md](../ARCHITECTURE.md)「架构基因」节——Ralph 循环被列为 Loop Engineering 的前期基础，sofagent 的设计方向与行业共识一致。

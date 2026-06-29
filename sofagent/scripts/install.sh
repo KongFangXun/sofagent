@@ -18,7 +18,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.96"
+VERSION="0.97"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'
@@ -419,7 +419,7 @@ mkdir -p "$SKILL_DST"
 copied=0
 
 # 核心 Skill 文件（从 sofagent/ 根目录复制）
-for f in SKILL.md engine.md entry-gate.md task-aware.md task-closure.md loop-check.md; do
+for f in SKILL.md entry-gate.md task-aware.md task-closure.md loop-check.md; do
   src="${SCRIPT_DIR}/../${f}"
   dst="${SKILL_DST}/${f}"
   if [ -f "$src" ]; then
@@ -509,11 +509,11 @@ fi
 if [ "${LITE_MODE:-0}" != "1" ]; then
 info "Step 5b/7 · 部署配套脚本 + 数据目录 → $TARGET"
 
-# 部署配套脚本（task-record + task-orchestrate + cleanup + audit + compress-memory + skill-safety-check）
+# 部署配套脚本（task-record + cleanup + audit）
 SCRIPTS_DST="${TARGET}/scripts"
 mkdir -p "$SCRIPTS_DST"
 
-for script in task-record.sh task-orchestrate.sh cleanup.sh audit.sh compress-memory.sh skill-safety-check.sh audit-summary.sh; do
+for script in task-record.sh cleanup.sh audit.sh; do
   src="${SCRIPT_DIR}/${script}"
   dst="${SCRIPTS_DST}/${script}"
   if [ -f "$src" ]; then
@@ -824,7 +824,7 @@ case "$PLATFORM" in
     echo "    宪法文件:      $TARGET/skills/sofagent/rules.md（宪法内联在 SKILL.md）"
     echo "    Skill 文件:     $TARGET/skills/sofagent/（6 核心 + 4 数据模板）"
     echo "    加载链 Hook:    $TARGET/hooks/sofagent-load-chain/（HOOK.md + handler.ts）"
-    echo "    配套脚本:       $TARGET/scripts/{task-record,task-orchestrate,cleanup,audit,compress-memory,skill-safety-check,audit-summary}.sh"
+    echo "    配套脚本:       $TARGET/scripts/{task-record,cleanup,audit}.sh"
     echo "    断路器:         ${CONFIG_FILE:-未配置}（tools.loopDetection）"
     echo "    数据目录:       $SOFAGENT_DATA"
     echo ""

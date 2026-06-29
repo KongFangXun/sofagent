@@ -1,6 +1,6 @@
 # sofagent Release Process
 
-> v0.96 · 2026-06-28。跑命令 → 对清单 → 打 tag。
+> v0.97 · 2026-06-28。跑命令 → 对清单 → 打 tag。
 
 ---
 
@@ -9,8 +9,8 @@
 ```
 1. 构建自测   → rm -rf dist/ && npm run build && npm test（必须全绿）
 2. 审核       → 独立审查逐项核对 changelog，FAIL 项修完二次复核
-3. 版本号升级 → ./scripts/bump-version.sh <旧版本> <新版本>（一键替换，见下方）
-4. 版本号校验 → ./scripts/check-version.sh（必须全绿）
+3. 版本号升级 → ./tools/bump-version.sh <旧版本> <新版本>（一键替换，见下方）
+4. 版本号校验 → ./tools/check-version.sh（必须全绿）
 5. 索引文档   → CHANGELOG 新增条目 + 版本说明；ROADMAP 三步更新
 6. 内容新鲜度 → 核对 7 项（效果证据 / 局限标注 / FDE 完成度 / 依赖表 / 英文同步 / COMMUNITY）
 7. 确认关口   → git diff --stat 展示全部改动，确认后开发日志打 [x]
@@ -26,10 +26,10 @@
 
 ```bash
 # 先 dry-run 看会影响哪些文件
-./scripts/bump-version.sh 0.94 0.95 --dry-run
+./tools/bump-version.sh 0.94 0.95 --dry-run
 
 # 确认后实际替换
-./scripts/bump-version.sh 0.94 0.95
+./tools/bump-version.sh 0.94 0.95
 ```
 
 **覆盖 8 类位置**（全自动，新增 .ts 文件自动扫描）：
@@ -47,7 +47,7 @@
 ### check-version.sh — 一致性校验
 
 ```bash
-./scripts/check-version.sh
+./tools/check-version.sh
 ```
 
 从 package.json 读 SSOT 版本号，逐项比对全项目 8 类位置。任何不一致 → 红字报错 + exit 1。
@@ -63,9 +63,9 @@
 
 ### 版本号（🔴 用脚本，不用手动 grep）
 
-- [ ] `./scripts/bump-version.sh <旧> <新> --dry-run` → 确认影响文件列表
-- [ ] `./scripts/bump-version.sh <旧> <新>` → 实际替换
-- [ ] `./scripts/check-version.sh` → 全绿（38+ 项）
+- [ ] `./tools/bump-version.sh <旧> <新> --dry-run` → 确认影响文件列表
+- [ ] `./tools/bump-version.sh <旧> <新>` → 实际替换
+- [ ] `./tools/check-version.sh` → 全绿（38+ 项）
 
 ### 内容新鲜度
 

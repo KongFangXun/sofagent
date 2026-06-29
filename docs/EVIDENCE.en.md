@@ -52,3 +52,28 @@
 > Reproducible A/B test results. Run `bash sofagent/scripts/benchmark.sh --platform your-platform` to generate.
 
 See [docs/benchmark/](./docs/benchmark/) — auto-updated with each run.
+
+---
+
+## Community contributions
+
+Your data. Any format, just be real.
+
+---
+
+## Quantification anchors (v0.95 targets)
+
+> Benchmarking against Andrej Karpathy's "LLM raw coding error rate 41% → 11% after human review" — sofagent's goal is to approach human-review-level quality using discipline layer + audit layer without human reviewers.
+
+| Metric | Definition | Baseline (bare Agent) | v0.95 target | Measurement |
+|------|------|:--:|:--:|------|
+| Agent violation rate | % of tasks triggering ironclad/audit rules | TBD | < 11% | A/B control, sofagent vs bare |
+| Audit detection rate | % of known issues caught by git-diff rules | 0% (no audit) | > 80% | Manually label violations → run audit → recall |
+| False positive red line | Audit reports FAIL but no real issue | — | < 5% | Manual review of each FAIL batch |
+| First-pass rate | % of tasks delivered without rework | TBD | > 85% | A/B control count |
+
+> ⚠️ The above targets are v0.95 design anchors, not verified data. Metrics marked "TBD" for baseline require independent third-party runs — author self-tests don't count.
+
+> 💡 Why 11%? Karpathy's figure is the floor after human review. sofagent's proposition: **can machine auditing replace human review and approach the same floor?** Whether it can is a question for v1.0 to answer — v0.95 just sets up the measurement framework.
+
+> 📌 Industry trend (Loop Engineering) — see [ARCHITECTURE.md](../ARCHITECTURE.md): Ralph Loop is cited as a foundational precursor to Loop Engineering, confirming sofagent's design direction aligns with the emerging industry consensus.
