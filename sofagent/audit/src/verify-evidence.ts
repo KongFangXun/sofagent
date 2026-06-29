@@ -10,7 +10,7 @@
 
 import { readFileSync, existsSync } from 'fs';
 
-const VERSION = '0.96';
+const VERSION = '0.97';
 
 /** 测试相关证据关键词 */
 const TEST_PATTERN = /exit\.code|测试.*(pass|fail|通过|失败)|test.*(pass|fail)|✅.*pass|❌.*fail/i;
@@ -18,8 +18,8 @@ const TEST_PATTERN = /exit\.code|测试.*(pass|fail|通过|失败)|test.*(pass|f
 /** lint 相关证据关键词 */
 const LINT_PATTERN = /\b(lint|eslint|prettier|shellcheck)\b/i;
 
-/** build 相关证据关键词 */
-const BUILD_PATTERN = /build.*(success|fail)|编译.*(成功|失败)|npm run build|\bmake\b\s+(build|all|install|clean)/i;
+/** build 相关证据关键词（make 后用负向先行断言排除自然语言如 "make all the"） */
+const BUILD_PATTERN = /build.*(success|fail)|编译.*(成功|失败)|npm run build|\bmake\b\s+(?:build|all|install|clean)(?!\s+[a-zA-Z])/i;
 
 /** 负向证据关键词——出现时表明任务失败，不应视为"已验证" */
 const NEGATIVE_PATTERN = /fail|❌|失败|error|broken|crash/i;
@@ -56,13 +56,13 @@ export function verifyEvidence(filePath?: string, daemonMode: boolean = false): 
     return 1;
   }
 
-  // 检查客观证据关键词（区分正负证据）
+  // 检查客观证据关键词（正负证据分开统计——负向只扫一次全文，避免三倍计数）
   const testMatch = countMatches(content, TEST_PATTERN);
   const lintMatch = countMatches(content, LINT_PATTERN);
   const buildMatch = countMatches(content, BUILD_PATTERN);
 
   const totalPositive = testMatch.positive + lintMatch.positive + buildMatch.positive;
-  const totalNegative = testMatch.negative + lintMatch.negative + buildMatch.negative;
+  const totalNegative = countNegativeMatches(content);
 
   // 有负向证据（fail/❌/失败/error/broken/crash）→ 不视为已验证
   if (totalNegative > 0) {
@@ -90,13 +90,12 @@ export function verifyEvidence(filePath?: string, daemonMode: boolean = false): 
   return 1;
 }
 
-/** 正负证据统计结果 */
-interface MatchResult { positive: number; negative: number; }
+/** 正向证据统计结果 */
+interface MatchResult { positive: number; }
 
 /**
- * 统计内容中正则匹配的次数，并区分正向 / 负向证据。
- * - positive：匹配到 pattern 且该匹配行不含负向关键词
- * - negative：内容中含负向关键词（fail/❌/失败/error/broken/crash）的数量
+ * 统计内容中正则 pattern 的匹配次数（仅正向证据）。
+ * 负向证据改为独立函数 countNegativeMatches，只扫一次全文，避免三倍计数 bug。
  */
 function countMatches(content: string, pattern: RegExp): MatchResult {
   // 构建带 g flag 的正则，避免全局正则状态问题
@@ -109,14 +108,21 @@ function countMatches(content: string, pattern: RegExp): MatchResult {
     positive++;
   }
 
-  // 统计负向关键词出现次数
+  return { positive };
+}
+
+/**
+ * 统计负向关键词（fail/❌/失败/error/broken/crash）在全文中的出现次数。
+ * 独立于 countMatches，只扫一次全文——避免被多个 pattern 重复调用放大计数。
+ */
+function countNegativeMatches(content: string): number {
   const negRe = new RegExp(NEGATIVE_PATTERN.source, NEGATIVE_PATTERN.flags.includes('g') ? NEGATIVE_PATTERN.flags : NEGATIVE_PATTERN.flags + 'g');
   let negative = 0;
-  while ((negRe.exec(content)) !== null) {
+  let match;
+  while ((match = negRe.exec(content)) !== null) {
     negative++;
   }
-
-  return { positive, negative };
+  return negative;
 }
 
 /**

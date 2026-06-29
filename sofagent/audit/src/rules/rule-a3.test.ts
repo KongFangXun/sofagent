@@ -185,4 +185,28 @@ describe('A3 不改越界', () => {
     const result = checkRuleA3(ctx);
     expect(result.status).toBe('WARN');
   });
+
+  // v0.97 追加 test cases
+  it('空字符串 task → PASS（跳过检查）', () => {
+    const ctx = makeCtx([makeDiffFile('src/index.ts')], { task: '' });
+    const result = checkRuleA3(ctx);
+    expect(result.status).toBe('PASS');
+    expect(result.details[0]).toContain('未提供');
+  });
+
+  it('undefined task → PASS（跳过检查）', () => {
+    const ctx = makeCtx([makeDiffFile('src/index.ts')], { task: undefined });
+    const result = checkRuleA3(ctx);
+    expect(result.status).toBe('PASS');
+    expect(result.details[0]).toContain('未提供');
+  });
+
+  it('路径关键词匹配但不同文件 → WARN（关键词 auth 匹配 auth.ts 但任务只提 login）', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('src/auth.ts')],
+      { task: '修复 login 的登录逻辑' }
+    );
+    const result = checkRuleA3(ctx);
+    expect(result.status).toBe('WARN');
+  });
 });

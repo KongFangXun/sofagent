@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 ![ShellCheck](https://github.com/KongFangXun/sofagent/actions/workflows/shellcheck.yml/badge.svg)
-[![Version](https://img.shields.io/badge/version-0.96-16B8F3)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/version-v0.97-16B8F3)](./HANDBOOK.md)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--29-16B8F3)](./README.md)
 [![定位](https://img.shields.io/badge/定位-AI中台纪律底座-16B8F3)](#一句话定位)
 [![OpenClaw](https://img.shields.io/badge/🦞优先-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
@@ -25,6 +25,8 @@
 
 给你的 Agent 配一个设备端纪律委员：不是让它更聪明，是让它**守规矩、留痕迹、能复盘**。4 底线 + 6 铁律约束行为，git diff 审计兜底验证，FDE 走了企业也能管住 Agent。
 
+> 💡 **为什么需要纪律层**：企业 AI 落地的核心矛盾，是将概率性的大模型装进必须可追踪、可控制、可问责的传统业务流程中。模型负责建议，系统负责验收，工具负责执行——这就是 sofagent 做的事。
+
 > - ❌ 不是 AI 框架、不写 prompt
 > - ❌ 不是 Skills 商店
 > - ✅ 是一套**跨平台纪律框架**——OpenClaw 完整生效，其他平台核心约束可用（详见 [平台差异](./LIMITATIONS.md#平台依赖)）
@@ -35,8 +37,8 @@
 
 | | **Lite** | **Full** | **FDE** |
 |---|---|---|---|
-| **装什么** | 4 底线 + 6 铁律（30 秒） | + 编排引擎 + 审计 + 反思记忆 | + 十步企业部署流程 |
-| **适合谁** | 个人开发者、快速试用 | 研发团队、跑复杂任务 | 企业、FDE 工程师 |
+| **装什么** | 4 底线 + 6 铁律（30 秒） | + 编排引擎 + 审计 + 反思记忆 | FDE 十步部署流程 + 企业专属 Skill 生成 + 撤离后的 Agent 纪律底座 |
+| **适合谁** | 个人开发者、快速试用 | 研发团队、跑复杂任务 | FDE 工程师、企业 IT |
 | **平台** | 全平台（宪法层生效） | OpenClaw 完整，其他平台核心约束可用 | 企业闲置设备 |
 
 > Lite 在任何平台都能用——OpenClaw 上全套生效，WorkBuddy / Cursor / Windsurf 等平台只有宪法层（4 底线 + 6 铁律），编排引擎和审计需要 OpenClaw hook 支持。不确定装哪个？先 Lite 30 秒试试。
@@ -126,7 +128,7 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
 |----|------|
 | **地基** | 三层加载链——宪法（4 底线 + 6 铁律）→ 反思区（自动错题本）→ 你的规则，整个会话期间永远在线 |
 | **引擎** | 任务编排引擎——🔴 复杂任务时点火，智能拆解 + Loop 检查 + 闭环反思 |
-| **进化** | 渐进减薄——同类任务根据历史成功率调整编排深度，跑崩了恢复完整编排 |
+| **进化** | 编排引擎（FDE 专用）——复杂任务两档拆解（拆 vs. 不拆），AO compose 一次性生成 DAG，think.md 反思驱动拆解策略持续优化 |
 
 > 核心理念：**厚在治理，薄在复用。** 约束自己定，模板和 Skills 从社区取。
 
@@ -135,6 +137,12 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
 ---
 
 ## FDE：从工作流到无人计算节点
+
+### FDE 部署场景
+
+Forward Deployed Engineer（前线部署工程师）进驻企业后，做三件事：梳理工作流 → 识别 AI 可切入节点 → 部署 Agent。但 FDE 离开后，谁来管这些 Agent？
+
+sofagent 是 FDE 撤离后留在线上的纪律层——Agent 改了代码，你能看到改了什么；Agent 跳过验证，审计工具能发现。FDE 负责「AI 怎么部署到企业」，sofagent 负责「部署完后 Agent 按什么规矩跑」。
 
 企业搭 AI 中台，卡在三件事上——sofagent 是纪律那一层的解法：
 

@@ -11,7 +11,7 @@ sofagent 是纯本地纪律层，**数据不出本机**——但以下数据以*
 | `scoring/` | `.sofagent/scoring/` | Skill 使用记录 |
 | `orchestrator/` | `.sofagent/orchestrator/` | 编排决策历史 |
 
-**当前状态（v0.95）**：
+**当前状态（v0.96）**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
@@ -60,7 +60,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，执行 `execFileSync('git', ...)`
 
 **降级路径**：
 - `install.sh --no-ao` 是 v0.85 起推荐的默认路径（非 OpenClaw 平台）。编排能力退化为手工拆解，约束层不受影响
-- `task-orchestrate.sh` 在 ao 不可用时自动切到默认编排模式（v0.84+ 引入，v0.85 升为推荐行为）
+- `task-orchestrate.ts`（v0.97 起已从 bash 迁移至 TypeScript）在 ao 不可用时自动切到默认编排模式
 
 **供应链安全建议**：
 - 每次 `npm install` 后运行 `npm audit`

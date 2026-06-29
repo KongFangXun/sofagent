@@ -12,6 +12,16 @@ export interface DiffFile {
 }
 
 /**
+ * git diff --numstat 输出的单条记录
+ * 格式：<added_lines>\t<deleted_lines>\t<file_path>
+ */
+export interface NumstatEntry {
+  path: string;
+  addedLines: number;
+  deletedLines: number;
+}
+
+/**
  * 解析 git diff 指定范围的文件变更
  */
 export function parseDiff(range: string): DiffFile[] {
@@ -108,4 +118,37 @@ export function getRemovedLines(diffFile: DiffFile): string[] {
   return diffFile.lines
     .filter((line) => line.startsWith('-') && !line.startsWith('---'))
     .map((line) => line.substring(1));
+}
+
+/**
+ * 解析 git diff --numstat 输出
+ * 格式示例：
+ *   10\t5\tsrc/index.ts
+ *   0\t20\tsrc/legacy.ts
+ *   200\t0\tsrc/new-file.ts
+ * 第一列：添加行数，第二列：删除行数（- 表示二进制），第三列：文件路径
+ */
+export function parseNumstat(numstatOutput: string): NumstatEntry[] {
+  const entries: NumstatEntry[] = [];
+  const lines = numstatOutput.trim().split('\n').filter(Boolean);
+
+  for (const line of lines) {
+    const parts = line.split('\t');
+    if (parts.length < 3) continue;
+
+    const addedStr = parts[0];
+    const deletedStr = parts[1];
+    if (addedStr === undefined || deletedStr === undefined) continue;
+    const path = parts.slice(2).join('\t'); // 文件名可能含 \t
+
+    // 处理二进制文件（显示为 -）
+    const addedLines = addedStr === '-' ? 0 : parseInt(addedStr, 10);
+    const deletedLines = deletedStr === '-' ? 0 : parseInt(deletedStr, 10);
+
+    if (isNaN(addedLines) || isNaN(deletedLines)) continue;
+
+    entries.push({ path, addedLines, deletedLines });
+  }
+
+  return entries;
 }

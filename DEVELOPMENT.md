@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.96 · 2026-06-29 · 孔放勋
+> v0.97 · 2026-06-29 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -26,7 +26,7 @@
 
 ## 一、工作原理
 
-> 本章内容：1 主 Skill + 5 子 Skill = 6 个 .md —— 怎么协同、靠什么执行
+> 本章内容：1 主 Skill + 4 子 Skill = 5 个 .md —— 怎么协同、靠什么执行
 
 ### sofagent Skill 工作原理
 
@@ -34,13 +34,13 @@
 
 Skill 不只是 Markdown 文件和一段提示词。根据 Anthropic Cloud Code 团队的实践定义，Skill 是一个**完整的工作环境**——包含入口分发器、子 Skill、脚本、资源配置，本质是把模型的泛化能力推进到稳定完成某类特定工作的能力。sofagent 的框架就是这个定义的工程实现。
 
-**1 主 Skill（`SKILL.md`）+ 5 子 Skill（engine/entry-gate/task-aware/task-closure/loop-check）= 6 个 .md（按需加载）**
+**1 主 Skill（`SKILL.md`）+ 4 子 Skill（entry-gate/task-aware/task-closure/loop-check）= 5 个 .md（按需加载）**
 
-用户只安装 `SKILL.md`（主入口）。每次对话开始时自动加载，A0 预判复杂度——🔴 复杂任务确认后加载 `engine.md` 走完整入口流程（平台检测→安装→加载链→种子指令），🟢🟡 简单/中等任务跳过 engine.md 直接走 task-aware 闸门。子 Skill 按场景按需加载——每个只管一件事，每个 ≤90 行，Agent 不会迷路。
+用户只安装 `SKILL.md`（主入口）。每次对话开始时自动加载，A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程（平台检测→安装→加载链→种子指令），🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。子 Skill 按场景按需加载——每个只管一件事，每个 ≤90 行，Agent 不会迷路。
 
 | 文件 | 何时加载 | 干什么 | 位置 |
 |------|------|------|------|
-| engine | 🔴 复杂任务确认后 | 入口引擎：平台检测→安装→加载链→种子指令，后接 Skill 检索 + ao compose | `engine.md` |
+| engage | 🔴 复杂任务确认后 | 入口引擎：平台检测→安装→加载链→种子指令，后接 Skill 检索 + ao compose | `engage.md` |
 | entry-gate | 入口流程结束后 | 硬出口检查：加载链确认 + 能力注册。入境闸门不开，不接任何任务 | `entry-gate.md` |
 | task-aware | 收到任何用户任务时 | 每任务闸门：边界→语义→健康度→判级→澄清。含硬信号规则 + 检查点触发规则（子任务间/60%预算/重大操作前） | `task-aware.md` |
 | task-closure | 闭环信号出现时 | 离境闸门：调 Loop Agent（closure 模式）→ 反思/评分/A/B/汇报 | `task-closure.md` |
@@ -53,9 +53,9 @@ SKILL.md 启动
   ├─ 三层加载链（SKILL.md + think.md + rules.md）← 内部 hook sofagent-load-chain 注入（OpenClaw）/ Agent 主动 Read（其他平台）
   ├─ A0 判级
   │   ├─ 🟢🟡 简单/中等 → task-aware 直接处理
-  │   └─ 🔴 复杂 → engine.md 点火
+  │   └─ 🔴 复杂 → engage.md 点火（FDE 场景）
   │         ├─ 平台检测 + 初始化 ← install.sh / verify.sh
-  │         └─ ao compose 拆任务 ← task-orchestrate.sh 包装
+  │         └─ ao compose 拆任务 ← task-orchestrate.ts（v0.97 起已迁至 TypeScript）
   │               ├─ ClawHub 搜 Skills
   │               └─ 分配子 Agent
   ├─ loop-check 检查点（子任务间 / 60% 预算 / 重大操作前）
@@ -85,9 +85,9 @@ SKILL.md 启动
 
 - `rules.md`（1 个文件）：执行层，你的运行规范。v0.62：宪法已内联进 SKILL.md。v0.73：从 constitution/ 扁平化到根目录
 - `data/`（5 个文件）：数据模板 think.md、orchestrator.md、task.md、scoring.md、IDENTITY.md
-- `scripts/`（核心 5 个）：install.sh、verify.sh、uninstall.sh、task-record.sh、task-orchestrate.sh（v0.96 起迁移到 TS 版，bash 版标记 deprecated）
+- `scripts/`（核心 5 个）：install.sh、verify.sh、uninstall.sh、task-record.sh。task-orchestrate.sh 已迁移到 `audit/src/task-orchestrate.ts`（v0.97）
 - `hooks/sofagent-load-chain/`（2 个文件）：HOOK.md + handler.ts（OpenClaw 2026.6.x 内部 hook，agent:bootstrap 事件注入第 2、3 层）
-- Skill 文件（6 个 .md）：SKILL.md（主入口）、engine.md（入口引擎）、entry-gate.md（入境闸门）、task-aware.md（每任务闸门）、task-closure.md（离境闸门）、loop-check.md（循环顾问）
+- Skill 文件（5 个 .md）：SKILL.md（主入口）、entry-gate.md（入境闸门）、task-aware.md（每任务闸门）、task-closure.md（离境闸门）、loop-check.md（循环顾问）。编排引擎已拆出到 engage.md（FDE 专用）
 
 **配套脚本速查**：
 
@@ -97,7 +97,7 @@ SKILL.md 启动
 | `uninstall.sh` | 删约束文件，保留 `.sofagent/` 用户数据 | 你手动跑 | `bash uninstall.sh --platform openclaw` |
 | `verify.sh` | 装后验证 9 类 24+ 检查项 | 安装完自动跑，也可手动 | `bash verify.sh --json`（CI/CD） |
 | `load-chain.sh` | ~~已废弃~~（v0.64 删除，改用 `hooks/sofagent-load-chain/` 内部 hook） | — | — |
-| `task-orchestrate.sh` | 包装 ao compose：worktree 隔离 + 约束注入 + 成本汇总 + 清理 | engine.md 拆任务后自动调用 | 不手动跑 |
+| `task-orchestrate.ts`（已迁移至 TypeScript） | 包装 ao compose：worktree 隔离 + 约束注入 + 成本汇总 + 清理 | engage.md 拆任务后自动调用 | 不手动跑 |
 | `task-record.sh` | 收集任务数据 → 拼 Markdown → 追加到 task/logs/ | 闭环时自动调用 | 不手动跑 |
 
 > 💡 前三个是用户侧工具（装/卸/验），后三个是运行时脚本（Agent 自动调，你不需要手动跑）。**设计原则**：确定性操作脚本化——去重、格式校验、文件清理这类即刻运算，脚本比 Agent 更快更省更可靠。Agent 只负责判断和执行，代码做稳定工具，Markdown 保存状态。
@@ -117,9 +117,9 @@ SKILL.md 启动
 
 ## 二、编排哲学
 
-> 负责的子 Skill：`engine.md` 点火 ao compose 拆任务 → `loop-check.md` 设检查点 + 失败诊断 → `task-closure.md` 闭环收口。
+> 负责的子 Skill：`engage.md` 点火 ao compose 拆任务 → `loop-check.md` 设检查点 + 失败诊断 → `task-closure.md` 闭环收口。
 
-> **v0.97 编排拆出**：编排引擎（engine.md / task-aware.md / loop-check.md）将在 v0.97 从 sofagent 核心拆出到 FDE Skill 专用。entry-gate.md + task-closure.md 留在核心（所有平台需要的轻量检查）。编排深度从四级简化为两档拆解（拆 vs. 不拆）——FDE 场景下 workflow 节点粒度已确定，不需要渐进减薄。三档自由度同步砍除。
+> **v0.97 编排拆出**：编排引擎（原 engine.md / task-aware.md / loop-check.md，现已迁至 engage.md）已在 v0.97 从 sofagent 核心拆出到 FDE Skill 专用。entry-gate.md + task-closure.md 留在核心（所有平台需要的轻量检查）。编排深度从四级简化为两档拆解（拆 vs. 不拆）——FDE 场景下 workflow 节点粒度已确定，不需要渐进减薄。三档自由度同步砍除。
 
 这套编排吸收了 Harness 和 Loop 两种思路——约束层保证安全（SKILL.md），编排层往自我进化方向走（orchestrator/ + A/B 对比）。三个核心问题：什么时候停（Session 边界 + 中间检查点）、失败了怎么办（带反思的闭环重试）、状态怎么管（task/logs + think.md + orchestrator/）。
 
@@ -152,42 +152,11 @@ SKILL.md 启动
 
 编排的前置条件：目标经过两轮澄清定稿（[Handbook §四](./HANDBOOK.md#四任务目标制定)）。没收敛就继续澄清，不硬进编排。
 
-### 编排深度：渐进减薄
+### 编排引擎：两档拆解（v0.97）
 
-> 设计权衡（四级编排深度、滑动窗口回滚的取舍）见 [ARCHITECTURE §四级编排深度](./ARCHITECTURE.md#四级编排深度developer-二编排哲学)。本章只讲怎么操作。
+编排引擎已从核心拆出到 `engage.md`，定位 FDE 专用。个人开发者不需要编排。
 
-同类任务跑顺了就少做步骤，跑崩了就加回来。分四级，每级有明确的晋级和回滚条件：
-
-| 深度 | 晋级条件 | 做什么 | 确认模式 | 回滚条件 |
-|:--:|------|------|:--:|------|
-| 四级·完整编排 | 新任务 / 失败率回升 | ao compose 全程：意图→任务图→模板→分配→注入→聚合 | 用户确认 | — |
-| 三级·模板复用 | 同类任务连续 3 次跑通（失败率 = 0%） | 跳过意图识别和任务图，直接用沉淀模板 + ao compose 分配 | 用户确认 | 失败率 > 20%* |
-| 二级·轻量调度 | 候选模板沉淀后（使用 ≥7 次，败率 < 20%） | 固定角色阵容 + pinnedRoles，只跑分配和注入 | 自动执行，事后通知 | 连续 2 次未达预期 |
-| 一级·自主执行 | 任务模板稳定 10 次以上（失败率 = 0%） | 用户一句话直接分派，跳过编排层 | 无需确认 | 用户主动干预或失败 |
-
-> \* 失败率均按最近 5 次同类任务的滑动窗口计算，详见下文「失败率怎么算」。
-
-> 📎 pinnedRoles = 锁定的角色阵容，同一类任务复用同一组 Agent 角色，不用每次重新匹配。
-
-> 💬 **实际案例**：「数据分析报表」第一次跑是完整编排（用户确认每个子任务），连续 3 次跑通后自动跳到模板复用（用户只看方案），跑满 10 次零失败后 Agent 直接接活回来报告结果——你只说一句「出报表」。
-
-放手的前提是可回滚——每一级都在 `task/logs/` 和 `orchestrator/` 里留了痕迹。减薄不是全局的，是对这个任务类型减薄。
-
-**失败率怎么算**：每次任务闭环后，主 Agent 自评任务结果——如果任一子任务**未完成 / 任务偏差 / 用户中途纠正**，记为 1 次失败。**滑动窗口**：取最近 5 次同类任务，失败数 / 5 = 失败率。
-
-**怎么标 #badcase**：在 think.md 反思区的对应日摘要末尾加 `#badcase` 即可，例如：`今天做了数据分析报表。Skill A 超时 3 次。#badcase`。主 Agent 下次反思时会读取这个标签并计入失败率。用户也可以随时删除标签来撤销标注。不需要改其他文件，不需要执行任何命令——就加 8 个字符。
-
-#### 自由度控制三档（与编排深度正交）
-
-> 编排深度按熟练度决策（跑了几次），自由度控制按风险决策（干砸了多严重）。两者正交——同一任务在四级编排深度下，还要再过一次自由度档位。
-
-| 风险档 | 自由度 | 典型场景 | 控制方式 |
-|:--:|:--:|------|------|
-| **低风险高创造** | 高 | 选题、标题、观点组织 | 给方向不给细节，让 Agent 自由发挥 |
-| **中等风险** | 中 | 周报复盘、需求文档 | 模板 + 检查清单，结构约束内容自由 |
-| **高风险** | 低 | 批量改文件、正式文档处理 | 收紧自由度，逐步确认，铁律 #8 谨慎修改兜底 |
-
-一句话：**编排深度管「放不放手」，自由度档位管「放手到什么程度」。**
+两档拆解：**拆**（AO compose 一次性生成 DAG）vs **不拆**（Agent 直接处理）。`think.md` 反思驱动拆解策略优化——踩过的坑通过反思反馈到下一次编排决策中。
 
 ### 主 Agent 工作流
 
@@ -226,7 +195,7 @@ SKILL.md 启动
 
 岗位模板从 [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh)（215 个中文岗位模板）获取，编排引擎用 [agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator)，外部 Skills 从 [ClawHub](https://clawhub.ai) 社区获取。
 
-engine.md 在 ao compose 拆完任务后从 ClawHub 搜索并集成：发现（ClawHub API）→ 初筛（社区评分 < 3.0 过滤）→ 分配（按信任等级）→ 闭环后自动升降级。信任等级四档（已验证/试用中/未验证/不推荐）见 [ARCHITECTURE.md](./ARCHITECTURE.md#trust-levels)。
+engage.md 在 ao compose 拆完任务后从 ClawHub 搜索并集成：发现（ClawHub API）→ 初筛（社区评分 < 3.0 过滤）→ 分配 → 闭环后自动升降级。
 
 每个 Skill 自带「索引卡片」（≤500 字符）——写清名称、触发场景、什么时候不该用。Agent 先读卡片做匹配，命中后才加载完整实现。
 
@@ -234,7 +203,7 @@ engine.md 在 ao compose 拆完任务后从 ClawHub 搜索并集成：发现（C
 
 ## 三、模型最优选择
 
-> 负责的子 Skill：`engine.md` 分配模型——Flash 干粗活、Pro 干细活。
+> 负责的子 Skill：`engage.md` 分配模型——Flash 干粗活、Pro 干细活。
 
 ### 为什么选 DeepSeek
 

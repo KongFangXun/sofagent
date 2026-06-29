@@ -56,4 +56,48 @@ describe('E3 不滥删除', () => {
     const result = checkRuleE3(ctx);
     expect(result.evidenceMode).toBe('git-diff');
   });
+
+  it('正好 100 行删除 → PASS（阈值以上才触发）', () => {
+    const deletedLines = Array.from({ length: 100 }, () => '-code line');
+    const ctx = makeCtx(
+      [makeDiffFile('src/legacy.ts', deletedLines)],
+      { task: 'login feature' }
+    );
+    const result = checkRuleE3(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('单文件删 > 100 行 + task 关键词部分匹配文件路径 → PASS', () => {
+    const deletedLines = Array.from({ length: 150 }, () => '-code line');
+    const ctx = makeCtx(
+      [makeDiffFile('src/feature-login.ts', deletedLines)],
+      { task: 'implement feature feature' }
+    );
+    const result = checkRuleE3(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('多文件大删除 + 与 task 无关 → WARN', () => {
+    const deletedLines = Array.from({ length: 150 }, () => '-code line');
+    const ctx = makeCtx(
+      [
+        makeDiffFile('src/legacy1.ts', deletedLines),
+        makeDiffFile('src/legacy2.ts', deletedLines),
+      ],
+      { task: 'login feature' }
+    );
+    const result = checkRuleE3(ctx);
+    expect(result.status).toBe('WARN');
+    expect(result.details[0]).toContain('2 个文件');
+  });
+
+  it('task 为空字符串 → PASS（无 task 跳过）', () => {
+    const deletedLines = Array.from({ length: 101 }, () => '-some code line');
+    const ctx = makeCtx(
+      [makeDiffFile('src/legacy.ts', deletedLines)],
+      { task: '' }
+    );
+    const result = checkRuleE3(ctx);
+    expect(result.status).toBe('PASS');
+  });
 });

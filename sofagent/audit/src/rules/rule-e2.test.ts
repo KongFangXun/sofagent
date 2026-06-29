@@ -54,4 +54,41 @@ describe('E2 不空标记', () => {
     const result = checkRuleE2(ctx);
     expect(result.evidenceMode).toBe('git-diff');
   });
+
+  it('FIXME + 未提 fixme → WARN', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('src/index.ts', ['+// FIXME: broken logic'])],
+      { commitMsg: 'refactor code' }
+    );
+    const result = checkRuleE2(ctx);
+    expect(result.status).toBe('WARN');
+    expect(result.details[0]).toContain('FIXME');
+  });
+
+  it('diff 含多个 TODO + commitMsg 提了 todo → PASS', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('src/index.ts', ['+// TODO: item1', '+// TODO: item2'])],
+      { commitMsg: 'add todo items for cleanup' }
+    );
+    const result = checkRuleE2(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('无 commitMsg 但有 TODO → WARN', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('src/index.ts', ['+// TODO: implement later'])],
+      // 不传 commitMsg
+    );
+    const result = checkRuleE2(ctx);
+    expect(result.status).toBe('WARN');
+  });
+
+  it('commitMsg 含 FIXME（大写）但 diff 中 FIXME 是小写 → PASS', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('src/index.ts', ['+// fixme: broken thing'])],
+      { commitMsg: 'address FIXME comments' }
+    );
+    const result = checkRuleE2(ctx);
+    expect(result.status).toBe('PASS');
+  });
 });

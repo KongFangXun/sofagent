@@ -2,7 +2,7 @@
 # ============================================================
 # check-version.sh · 检查全项目版本号一致性
 # ============================================================
-# 用法: ./scripts/check-version.sh
+# 用法: ./tools/check-version.sh
 #
 # 功能: 从 package.json 读 version（SSOT），检查全项目"结构性"位置
 #       的版本号是否一致，不一致则报错 exit 1。
@@ -293,7 +293,7 @@ if [[ ${ERRORS} -eq 0 ]]; then
 else
   echo -e "${RED}${BOLD}  ✗ 发现 ${ERRORS} 处不一致！${NC}"
   echo -e "  期望版本: ${SSOT_2SEG} (SSOT: ${SSOT_VERSION})"
-  echo -e "  修复: ./scripts/bump-version.sh <旧版本> ${SSOT_2SEG}"
+  echo -e "  修复: ./tools/bump-version.sh <旧版本> ${SSOT_2SEG}"
   echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
   exit 1
 fi

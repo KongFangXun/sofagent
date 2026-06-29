@@ -2,7 +2,7 @@
 name: sofagent-lite
 slug: sofagent-lite
 displayName: sofagent Lite
-version: 0.96.0
+version: 0.97.0
 description: >
   sofagent 轻量版——30 秒装好，只有宪法（4 底线 + 6 则铁律），不装 daemon、不装编排引擎、不装审计。
   适合只想给 Agent 挂个纪律底线的个人开发者，也适合 FDE 驻场快速部署。

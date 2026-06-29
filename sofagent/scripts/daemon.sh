@@ -13,7 +13,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.96"
+VERSION="0.97"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." 2>/dev/null && pwd || echo "$PWD")"
@@ -124,10 +124,12 @@ _main_loop() {
     set_json_field "rules_hash" "$rules_hash"
     set_json_field "last_check" "$now"
 
-    # 5. 最小可信验证：跑 verify-evidence.sh，结果写入 daemon.json
+    # 5. 最小可信验证：跑 verify-evidence TS 版，结果写入 daemon.json
+    # v0.97：verify-evidence.sh 已删除，改用 audit/dist 编译产物（如存在）
     local evidence_score="unknown"
-    if [ -x "${SCRIPT_DIR}/verify-evidence.sh" ]; then
-      evidence_score=$(bash "${SCRIPT_DIR}/verify-evidence.sh" --daemon 2>/dev/null && echo "verified" || echo "unverified")
+    local AUDIT_DIST="${SCRIPT_DIR}/../audit/dist/index.js"
+    if [ -f "$AUDIT_DIST" ]; then
+      evidence_score=$(node "$AUDIT_DIST" --verify-evidence 2>/dev/null && echo "verified" || echo "unverified")
     fi
     set_json_field "last_evidence_score" "$evidence_score"
 

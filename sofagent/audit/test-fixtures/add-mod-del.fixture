@@ -1,0 +1,5 @@
+A	src/new-file.ts
+M	src/existing-file.ts
+D	src/old-file.ts
+A	src/another-new.ts
+M	src/config.ts

@@ -16,7 +16,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="0.96"
+VERSION="0.97"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -329,7 +329,7 @@ SCRIPTS_DIR="${OPENCLAW_DIR}/scripts"
 if [ -d "$SCRIPTS_DIR" ]; then
   script_count=$(ls -1 "$SCRIPTS_DIR"/*.sh 2>/dev/null | wc -l | tr -d ' ')
   check_pass "scripts/ 目录存在: ${script_count} 个 .sh 文件"
-  for s in task-record.sh task-orchestrate.sh; do
+  for s in task-record.sh; do
     if [ -f "${SCRIPTS_DIR}/${s}" ] && [ -x "${SCRIPTS_DIR}/${s}" ]; then
       check_pass "  ${s} 已部署且可执行"
     else

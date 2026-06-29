@@ -1,10 +1,13 @@
 # think.md · 反思
 
+> ⚠️ **产权声明（v0.97）**：本文件只记录踩坑反思——做错了什么、为什么错、下次怎么改。**用户偏好（如「不要生成 markdown 文件」「回复控制在 200 字以内」）请写入 `preferences.md`**——两者平行、各司其职。think.md = 错题本，preferences.md = 运行规范。
+
 > 由 sofagent 子 Skill 自动维护。每次任务闭环后，主 Agent 反问自己「有什么值得记住的」→ 写入反思区。
 >
 > 本文件是格式参考——实际文件在 SKILL.md B1 初始化时自动创建到 `{SOFAGENT_DATA}/think.md`。
 >
 > 数据来源：task/logs/ + scoring.md + orchestrator/。读取方：加载链第 2 层（每次会话启动注入）。
+> 💡 用户偏好请写入同目录下的 `preferences.md`——两文件平行、各司其职。
 
 ---
 
@@ -29,8 +32,6 @@
 ← task/logs/YYYY-MM-DD.md
 
 ### 当前项目：sofagent Harness | 核心任务：编写 Handbook、设计 Skill
-
-### 用户偏好：简洁回复+表格 / 不要未经确认创建文件 / loading 时展示 thinking
 
 ### 最优拆法：数据分析报表 | 4 子任务
 [已失效] 3 子任务拆法 → 4 子任务 | 原因：A/B 测试新方案胜出
