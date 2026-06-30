@@ -28,7 +28,6 @@ metadata:
 |:--:|------|---------|------|------|
 | 1 | **本文件** | skill 调用自动注入 | 4 底线 + 6 则铁律 | — |
 | 2 | `{SOFAGENT_DATA}/think.md` | Agent 主动 Read | 反思区（上次踩了什么坑）| 任务完成后创建 |
-| 2′ | `{SOFAGENT_DATA}/preferences.md` | Agent 主动 Read | 用户偏好（与 think.md 平行）| 跳过（未配置）|
 | 3 | `~/.openclaw/skills/sofagent/fde.md` | Agent 主动 Read | 企业规范（FDE 工程师制定，最高优先级）| 跳过（未配置）|
 
 > 💡 `{SOFAGENT_DATA}` = `${PWD}/.sofagent`
@@ -83,6 +82,5 @@ metadata:
 
 ## Gotcha
 
-- **L2′ preferences.md 被遗忘**——加载链确认时跳过了 preferences.md，用户偏好（如"不要生成 md 文件"）全部失效。后果：Agent 按默认行为运行，忽视用户定制规范。
 - **回复前闸门静默修正**——发现内部标记泄漏到回复里，悄悄删掉不汇报。后果：用户不知道闸门在起作用，下次闸门失效时无法感知。
 - **加载链提醒吓到用户**——「⚠️ 第 X 层未加载」输出太技术化。后果：用户以为出故障了，实际只是 think.md 还没创建。
