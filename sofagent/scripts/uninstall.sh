@@ -11,7 +11,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.97"
+VERSION="0.98"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -72,8 +72,8 @@ case "$PLATFORM" in
     echo ""
     removed=0
 
-    # 清理宪法文件（v0.73：rules.md 扁平化）
-    f="rules.md"
+    # 清理宪法文件（v0.73：fde.md 扁平化）
+    f="fde.md"
     path="$HOME/.workbuddy/$f"
     if [ "$LIST_ONLY" = true ]; then
       if [ -f "$path" ]; then info "  $path"; fi
@@ -106,7 +106,7 @@ case "$PLATFORM" in
     # 清理 Skill 目录
     skill_dir="$HOME/.workbuddy/skills/sofagent"
     if [ -d "$skill_dir" ]; then
-      skill_count=$(ls -1 "$skill_dir"/*.md 2>/dev/null | wc -l | tr -d ' ')
+      skill_count=$(find "$skill_dir" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
       if [ "$LIST_ONLY" = true ]; then
         info "  $skill_dir/（${skill_count} 个文件）"
       else
@@ -168,8 +168,8 @@ fi
 
 removed=0
 
-# ── 删除 / 列出宪法文件（v0.73：rules.md 扁平化到 skills/sofagent/rules.md）──
-f="rules.md"
+# ── 删除 / 列出宪法文件（v0.73：fde.md 扁平化到 skills/sofagent/fde.md）──
+f="fde.md"
 # 新路径
 path="${OPENCLAW_DIR}/skills/sofagent/${f}"
 if [ -f "$path" ]; then
@@ -220,7 +220,7 @@ fi
 # ── 删除 / 列出 Skill 文件 ──
 SKILLS_DIR="${OPENCLAW_DIR}/skills/sofagent"
 if [ -d "$SKILLS_DIR" ]; then
-  skill_count=$(ls -1 "$SKILLS_DIR"/*.md 2>/dev/null | wc -l | tr -d ' ')
+  skill_count=$(find "$SKILLS_DIR" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
   if [ "$LIST_ONLY" = true ]; then
     info "  $SKILLS_DIR/（${skill_count} 个文件）"
   else
@@ -260,7 +260,7 @@ fi
 # ── 删除 / 列出配套脚本 ──
 SCRIPTS_DIR="${OPENCLAW_DIR}/scripts"
 if [ -d "$SCRIPTS_DIR" ]; then
-  script_count=$(ls -1 "$SCRIPTS_DIR"/*.sh 2>/dev/null | wc -l | tr -d ' ')
+  script_count=$(find "$SCRIPTS_DIR" -maxdepth 1 -name '*.sh' 2>/dev/null | wc -l | tr -d ' ')
   if [ "$LIST_ONLY" = true ]; then
     info "  $SCRIPTS_DIR/（${script_count} 个文件）"
   else

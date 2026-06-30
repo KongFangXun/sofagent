@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 ![ShellCheck](https://github.com/KongFangXun/sofagent/actions/workflows/shellcheck.yml/badge.svg)
-[![Version](https://img.shields.io/badge/version-v0.97-16B8F3)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/version-v0.98-16B8F3)](./HANDBOOK.md)
 [![Last Updated](https://img.shields.io/badge/last--updated-2026--06--29-16B8F3)](./README.md)
 [![OpenClaw](https://img.shields.io/badge/🦞priority-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9FStarred)](https://github.com/KongFangXun/sofagent/stargazers)
@@ -14,7 +14,7 @@
 <!-- TODO v1.0: demo.gif — 15s side-by-side: bare Agent going off-rails vs sofagent-constrained Agent. Postponed from v0.95, no footage yet -->
 
 > sofa + agent — because one day, we want to lie on the couch while agents do the work.
-> v0.97 · 2026-06-29
+> v0.98 · 2026-06-29
 
 > 📄 **License**: MIT. Code, docs, templates — use freely, just keep the copyright notice.
 
@@ -28,7 +28,7 @@ A **discipline layer** for AI agents. Not a framework to build them, not a tool 
 
 > **The 90/10 rule**: Don't compete with AI models on the 90% they already do well (code generation). The real value is in the 10% nobody dares skip — verification, audit trails, accountability. As AI models get stronger, this 10% becomes MORE valuable. sofagent owns that 10%.
 
-> **Post-FDE governance**: Forward Deployed Engineers bring AI agents into enterprises and make them work. But after FDEs leave, who keeps those agents in line? sofagent is the discipline layer that enterprises use after deployment — ensuring agents don't turn into unmanaged technical debt. See [Enterprise deployment](./docs/team-deploy.md).
+> **Post-FDE governance**: Forward Deployed Engineers bring AI agents into enterprises and make them work. But after FDEs leave, who keeps those agents in line? sofagent is the discipline layer that enterprises use after deployment — ensuring agents don't turn into unmanaged technical debt. See [Enterprise deployment](./docs/guides/team-deploy.md).
 
 | Component | How it works |
 |------|------|
@@ -47,7 +47,7 @@ A **discipline layer** for AI agents. Not a framework to build them, not a tool 
 | User | [HANDBOOK.md](./HANDBOOK.md) | How to install, use, and what the rules are |
 | Developer | [DEVELOPMENT.md](./DEVELOPMENT.md) | How skills coordinate, orchestration runs, reflection loops |
 | Design nerd | [ARCHITECTURE.md](./ARCHITECTURE.md) | Why these design choices, known limitations |
-| Tech lead deploying to a team | [docs/team-deploy.md](./docs/team-deploy.md) | Install, try, review — three-phase rollout guide |
+| Tech lead deploying to a team | [docs/guides/team-deploy.md](./docs/guides/team-deploy.md) | Install, try, review — three-phase rollout guide |
 
 > ⚠️ Core documents are in Chinese. If you need English versions, opening an issue or PR for translation is one of the highest-impact contributions right now.
 
@@ -101,9 +101,9 @@ A **discipline layer** for AI agents. Not a framework to build them, not a tool 
 
 ## Does it actually work?
 
-> **v0.92 OpenClaw control experiment**: same model, independent sessions, Task 1 (camelCase → snake_case). Sofagent: 0% variable over-modification (0/7). Bare agent: 100% over-modification (7/7). Discipline +2. [Full report](./docs/benchmark/2026-06-25-openclaw-task1-control.md).
+> **v0.92 OpenClaw control experiment**: same model, independent sessions, Task 1 (camelCase → snake_case). Sofagent: 0% variable over-modification (0/7). Bare agent: 100% over-modification (7/7). Discipline +2. [Full report](./docs/evidence/benchmark/2026-06-25-openclaw-task1-control.md).
 >
-> See [EVIDENCE.md](./docs/EVIDENCE.md) for community-reported data.
+> See [evidence.md](./docs/evidence/evidence.md) for community-reported data.
 
 ---
 
@@ -170,7 +170,7 @@ bash sofagent/scripts/install.sh --platform your-platform
 > Auto-detects platform if `--platform` is omitted.
 
 **What install.sh modifies**:
-- OpenClaw: writes to `~/.openclaw/rules.md`, `~/.openclaw/skills/sofagent/` (6 skill .md + scripts/ + data/ + rules.md)
+- OpenClaw: writes to `~/.openclaw/fde.md`, `~/.openclaw/skills/sofagent/` (6 skill .md + scripts/ + data/ + fde.md)
 - WorkBuddy: writes to `~/.workbuddy/skills/sofagent/` (SKILL.md + subdirectories)
 - Codex / Hermes Agent / Claude Code: writes constitution files to `~/.codex/` (or `~/.hermes/`, `~/.claude/`) and outputs a seed instruction for you to paste into AGENTS.md / SOUL.md / CLAUDE.md
 
@@ -213,12 +213,12 @@ cat .sofagent/think.md         # auto-generated reflection summary
 sofagent/
 ├── README / HANDBOOK / DEVELOPMENT / ARCHITECTURE / ROADMAP.md    ← core docs
 ├── LICENSE / CHANGELOG / CODE_OF_CONDUCT / CONTRIBUTING / SECURITY.md
-├── docs/               ← EVIDENCE / TESTING / enterprise-deploy / system_design + changelog/ + cases/
+├── docs/               ← evidence/ + guides/ + design/ + changelog/
 ├── .github/            ← Issue / PR templates + CI (verify.yml)
 └── sofagent/           ← core deployment files
     ├── SKILL.md        ←   🌟 main entry (loading this bootstraps the entire system)
     ├── engine / entry-gate / task-aware / task-closure / loop-check.md  ← 5 sub-skills
-    ├── rules.md        ←   execution layer: your operating rules
+    ├── fde.md        ←   execution layer: your operating rules
     ├── data/           ←   data templates (IDENTITY / think / scoring / orchestrator / task)
     ├── hooks/sofagent-load-chain/  ← OpenClaw hook (injects layers 2 and 3)
     ├── scripts/        ←   install / verify / uninstall / task-record / task-orchestrate / cleanup / audit

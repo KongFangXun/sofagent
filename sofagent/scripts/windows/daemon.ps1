@@ -2,7 +2,7 @@
 # sofagent daemon.ps1 · daemon 主进程 (Windows PowerShell)
 # ============================================================
 # daemon.sh 的原生 Windows 移植。命令：start / stop / status / -Foreground。
-# 主循环每 30s：检测平台进程 + think.md/rules.md hash 变化 → 更新 daemon.json + daemon-notice.md。
+# 主循环每 30s：检测平台进程 + think.md/fde.md hash 变化 → 更新 daemon.json + daemon-notice.md。
 # bash 版拒绝在非 Unix 运行；本版**支持 Windows**（Get-Process/Start-Process/Get-FileHash）。
 #
 # 用法：daemon.ps1 start | stop | status | -Foreground
@@ -14,7 +14,7 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
-$VERSION_STR = "0.97"
+$VERSION_STR = "0.98"
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
 
 $cfg = Join-Path $PSScriptRoot "lib\config.ps1"
@@ -47,7 +47,7 @@ function Find-ThinkFile {
     if (Test-Path $f) { return $f } else { return "" }
 }
 function Find-RulesFile {
-    foreach ($c in @("$env:USERPROFILE\.openclaw\skills\sofagent\rules.md", "$env:USERPROFILE\.workbuddy\skills\sofagent\rules.md", "$env:USERPROFILE\.openclaw\rules.md", "$env:USERPROFILE\.workbuddy\rules.md")) {
+    foreach ($c in @("$env:USERPROFILE\.openclaw\skills\sofagent\fde.md", "$env:USERPROFILE\.workbuddy\skills\sofagent\fde.md", "$env:USERPROFILE\.openclaw\fde.md", "$env:USERPROFILE\.workbuddy\fde.md")) {
         if (Test-Path $c) { return $c }
     }
     return ""
@@ -68,8 +68,8 @@ function Invoke-MainLoop {
                 [System.IO.File]::WriteAllText((Join-Path $script:SOFAGENT_DATA "daemon-notice.md"), "[daemon] $now think.md 已变更——下次启动时建议读取最新反思`n", $utf8NoBom)
             }
             if ($rulesHash -and $rulesHash -ne $o.rules_hash) {
-                Write-DaemonLog "rules.md 已变更 ($($o.rules_hash) -> $rulesHash)"
-                [System.IO.File]::WriteAllText((Join-Path $script:SOFAGENT_DATA "daemon-notice.md"), "[daemon] $now rules.md 已变更——下次启动时建议读取最新规则`n", $utf8NoBom)
+                Write-DaemonLog "fde.md 已变更 ($($o.rules_hash) -> $rulesHash)"
+                [System.IO.File]::WriteAllText((Join-Path $script:SOFAGENT_DATA "daemon-notice.md"), "[daemon] $now fde.md 已变更——下次启动时建议读取最新规则`n", $utf8NoBom)
             }
             $o.pid = $PID; $o.detected_platforms = $platforms; $o.think_hash = $thinkHash; $o.rules_hash = $rulesHash; $o.last_check = $now
             # 最小可信验证

@@ -1,6 +1,6 @@
 # COMMUNITY.md · sofagent 社区
 
-> v0.97 · 2026-06-29 · 孔放勋
+> v0.98 · 2026-06-30 · 孔放勋
 
 ## 📌 当前状态
 
@@ -44,12 +44,12 @@
 
 sofagent 的纪律层增量效果需要独立验证，不能只靠作者自己跑的数据。
 
-**复现指南**：[docs/benchmark/reproduction-guide.md](./docs/benchmark/reproduction-guide.md)
+**复现指南**：[docs/evidence/benchmark/reproduction-guide.md](./docs/evidence/benchmark/reproduction-guide.md)
 
 **最小复现路径**（30 分钟）：
 1. 克隆 [sofagent-test-suite](https://github.com/cedric123123/sofagent-test-suite)（baseline `56160e1`）
 2. 跑 Task 1（camelCase → snake_case）——A 裸 Agent vs B sofagent 约束
-3. 用 `docs/benchmark/scripts/run-trial.sh` 自动评分（变量名误伤率）
+3. 用 `docs/evidence/benchmark/scripts/run-trial.sh` 自动评分（变量名误伤率）
 4. 把结果发到 [GitHub Discussions](https://github.com/KongFangXun/sofagent/discussions)
 
 > 你的复现数据（无论正反）都有价值。数据和作者的结论不一致？更好——说明有值得调查的差异。

@@ -2,7 +2,7 @@
 # ============================================================
 # sofagent lib/config.sh · 企业合规共享配置加载器
 # ============================================================
-# 从 rules.md 中提取企业合规配置项，export 为环境变量。
+# 从 fde.md 中提取企业合规配置项，export 为环境变量。
 # 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
 #
 # 用法：source "$(dirname "$0")/lib/config.sh"
@@ -57,18 +57,18 @@ _sofa_find_data_dir() {
 SOFAGENT_DATA="$(_sofa_find_data_dir)"
 export SOFAGENT_DATA
 
-# ── 定位 rules.md ──
+# ── 定位 fde.md ──
 # 优先级：当前工作目录、脚本相对路径、OPENCLAW_DIR
 _find_rules() {
   local candidate
   for candidate in \
-    "${PWD}/.sofagent/../rules.md" \
-    "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)/rules.md" \
-    "${OPENCLAW_STATE_DIR:-$HOME/.openclaw}/skills/sofagent/rules.md" \
-    "${OPENCLAW_STATE_DIR:-$HOME/.openclaw}/rules.md" \
-    "$HOME/.openclaw/rules.md" \
-    "$HOME/.openclaw/skills/sofagent/constitution/rules.md" \
-    "$HOME/.workbuddy/rules.md"; do
+    "${PWD}/.sofagent/../fde.md" \
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)/fde.md" \
+    "${OPENCLAW_STATE_DIR:-$HOME/.openclaw}/skills/sofagent/fde.md" \
+    "${OPENCLAW_STATE_DIR:-$HOME/.openclaw}/fde.md" \
+    "$HOME/.openclaw/fde.md" \
+    "$HOME/.openclaw/skills/sofagent/constitution/fde.md" \
+    "$HOME/.workbuddy/fde.md"; do
     if [ -f "$candidate" ]; then
       echo "$candidate"
       return 0
@@ -79,7 +79,7 @@ _find_rules() {
 
 SOFA_RULES_FILE="$(_find_rules)"
 
-# ── 辅助函数：从 rules.md 提取 key: value ──
+# ── 辅助函数：从 fde.md 提取 key: value ──
 # 匹配行格式：(可选 # )key: value（# 表示注释，未启用）
 _parse_conf() {
   local key="$1"
@@ -102,9 +102,9 @@ _parse_conf() {
 }
 
 # ── 导出配置 ──
-# v0.90 P0-3 连带修复：_parse_conf 在 rules.md 无匹配时返回空值，
-# 会覆盖环境变量（如 SOFA_AUDIT_ENABLED=true 被 rules.md 无配置时清空）。
-# 修复：先读 rules.md，仅在 rules.md 有明确值时覆盖；否则保留已有环境变量。
+# v0.90 P0-3 连带修复：_parse_conf 在 fde.md 无匹配时返回空值，
+# 会覆盖环境变量（如 SOFA_AUDIT_ENABLED=true 被 fde.md 无配置时清空）。
+# 修复：先读 fde.md，仅在 fde.md 有明确值时覆盖；否则保留已有环境变量。
 
 # 日志脱敏
 if [ -n "$(_parse_conf "log_sanitize" "")" ]; then

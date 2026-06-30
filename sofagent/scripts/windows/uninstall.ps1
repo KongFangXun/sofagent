@@ -20,7 +20,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$VERSION = "0.97"
+$VERSION = "0.98"
 
 function Write-Info { param($msg) Write-Host "[sofagent] $msg" -ForegroundColor Cyan }
 function Write-Ok   { param($msg) Write-Host "[OK] $msg" -ForegroundColor Green }
@@ -93,7 +93,7 @@ Write-Info "平台: $Platform -> 目标: $TARGET"
 
 # 收集将删除项 (对应 install.ps1 部署的内容)
 $skillDir  = Join-Path $TARGET "skills\sofagent"
-$rulesFile = Join-Path $TARGET "rules.md"
+$rulesFile = Join-Path $TARGET "fde.md"
 $scriptsDir = Join-Path $TARGET "scripts"
 $targets = @()
 if (Test-Path $skillDir)   { $targets += $skillDir }
@@ -101,7 +101,7 @@ if (Test-Path $rulesFile)  { $targets += $rulesFile }
 if (Test-Path $scriptsDir) { $targets += $scriptsDir }
 
 if ($targets.Count -eq 0) {
-    Write-Warn "未发现 sofagent 部署文件 ($TARGET 下无 skills\sofagent 或 rules.md)"
+    Write-Warn "未发现 sofagent 部署文件 ($TARGET 下无 skills\sofagent 或 fde.md)"
     exit 0
 }
 

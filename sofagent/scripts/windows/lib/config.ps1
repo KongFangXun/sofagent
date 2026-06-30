@@ -1,7 +1,7 @@
 ﻿# ============================================================
 # sofagent lib/config.ps1 · 企业合规共享配置加载器 (PowerShell)
 # ============================================================
-# config.sh 的原生 Windows 移植。从 rules.md 提取合规配置，设为 $env:SOFA_*。
+# config.sh 的原生 Windows 移植。从 fde.md 提取合规配置，设为 $env:SOFA_*。
 # 用法（在其他 .ps1 顶部 dot-source）：
 #   $cfg = Join-Path $PSScriptRoot "lib\config.ps1"; if (Test-Path $cfg) { . $cfg }
 #
@@ -38,12 +38,12 @@ function Find-SofaRulesFile {
     $sofagentRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
     $up = $env:USERPROFILE
     $candidates = @(
-        (Join-Path (Get-Location).Path "rules.md"),
-        (Join-Path $sofagentRoot "rules.md"),
-        "$up\.openclaw\skills\sofagent\rules.md",
-        "$up\.openclaw\rules.md",
-        "$up\.openclaw\skills\sofagent\constitution\rules.md",
-        "$up\.workbuddy\rules.md"
+        (Join-Path (Get-Location).Path "fde.md"),
+        (Join-Path $sofagentRoot "fde.md"),
+        "$up\.openclaw\skills\sofagent\fde.md",
+        "$up\.openclaw\fde.md",
+        "$up\.openclaw\skills\sofagent\constitution\fde.md",
+        "$up\.workbuddy\fde.md"
     )
     foreach ($c in $candidates) {
         if (-not [string]::IsNullOrEmpty($c) -and (Test-Path $c)) { return $c }
@@ -63,7 +63,7 @@ function Get-SofaConf($key, $default) {
 $script:SofaRulesFile = Find-SofaRulesFile
 $env:SOFAGENT_DATA = Find-SofaDataDir
 
-# v0.90 P0-3 连带修复：rules.md 无匹配时保留已有环境变量
+# v0.90 P0-3 连带修复：fde.md 无匹配时保留已有环境变量
 $parsed = Get-SofaConf "log_sanitize" ""
 if (-not [string]::IsNullOrEmpty($parsed)) { $env:SOFA_SANITIZE = $parsed }
 

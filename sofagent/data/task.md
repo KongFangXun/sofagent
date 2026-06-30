@@ -6,7 +6,7 @@
 >
 > 本文件是格式参考——实际目录在 Skill 首次加载时自动初始化。
 >
-> 读取方：反思（→ think.md）、skill-iterate（→ scoring.md）、闭环流程（→ orchestrator/）。
+> 读取方：反思（→ think.md）、编排引擎（→ scoring.md、→ orchestrator/）。
 >
 > ⚠️ 以下路径为相对于 `{SOFAGENT_DATA}/` 的简写。实际读写时请加 `{SOFAGENT_DATA}/` 前缀。
 

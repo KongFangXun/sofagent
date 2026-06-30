@@ -27,7 +27,7 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
-$VERSION_STR = "0.97"
+$VERSION_STR = "0.98"
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
 
 function _Ts      { (Get-Date -Format "HH:mm:ss") }
@@ -213,7 +213,7 @@ function Set-SofagentHook([bool]$enable) {
 
 # ── sofagent 工作区上下文注入（relay/embedded 模式下的实际约束注入机制）──────
 # openclaw loadInternalHooks() 只在 gateway 进程启动时调用，relay/embedded 模式 hook 从不触发。
-# 有效路径：直接将 SKILL.md + rules.md 写入 ~/.openclaw/workspace/AGENTS.md（全模式均加载）。
+# 有效路径：直接将 SKILL.md + fde.md 写入 ~/.openclaw/workspace/AGENTS.md（全模式均加载）。
 function Set-SofagentContext([bool]$enable) {
     $agentsPath = Get-AgentsMdPath
     $homeDir = if ($env:USERPROFILE) { $env:USERPROFILE } else { $env:HOME }
@@ -242,15 +242,15 @@ function Set-SofagentContext([bool]$enable) {
             }
         }
 
-        # L3: 用户规则（rules.md，优先级最高，可覆盖 constraints）
-        $rulesPath = Join-Path $ocDir "skills\sofagent\rules.md"
-        if (-not (Test-Path $rulesPath)) { $rulesPath = Join-Path $ocDir "rules.md" }
+        # L3: 用户规则（fde.md，优先级最高，可覆盖 constraints）
+        $rulesPath = Join-Path $ocDir "skills\sofagent\fde.md"
+        if (-not (Test-Path $rulesPath)) { $rulesPath = Join-Path $ocDir "fde.md" }
         if (Test-Path $rulesPath) {
             $rulesContent = [System.IO.File]::ReadAllText($rulesPath, [System.Text.Encoding]::UTF8)
-            # 只注入非空 rules.md（跳过全注释模板，避免将空模板误作约束）
+            # 只注入非空 fde.md（跳过全注释模板，避免将空模板误作约束）
             $activeLines = ($rulesContent -split "`n" | Where-Object { $_ -match "^\s*[^#\s]" }).Count
             if ($activeLines -gt 0) {
-                $parts.Add("<!-- ===== sofagent L3：用户规则（rules.md）===== -->")
+                $parts.Add("<!-- ===== sofagent L3：用户规则（fde.md）===== -->")
                 $parts.Add($rulesContent)
             }
         }
