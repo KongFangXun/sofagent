@@ -272,7 +272,11 @@
 
 ### 终局：FDE 工程师帮企业 AI 化的一站式底座
 
+> **行业定位**：sofagent 是**组织级 Agent Harness 的治理底座标准**。Agent 赛道正从「模型能力 + 交互入口」转向「组织协作体系搭建能力」——谁能把散落在员工头脑中的历史逻辑、协作关联方、共享上下文、组织记忆重新串联起来，谁就赢（参考 Anthropic Cloudtag / Lance Martin 的 Org Level Agent Harness 定义）。sofagent 不做全栈产品，做的是：Agent 进组织时的纪律层标准——就像 Linux 不是云平台，但所有云平台都跑在 Linux 上。
+
 sofagent 的终局是：**FDE 工程师帮企业 AI 化的一站式底座**。FDE 工程师用自己的 Agent 对话，sofagent 引导梳理 workflow，后台 OpenClaw 执行 AI 节点，审计结果自动推送到协作平台。
+
+> **与"组织级 Agent Harness"的关系**：OpenClaw / Hermes 解决的是 Agent **接入问题**（让 Agent 能跑）；sofagent 解决的是 Agent **治理问题**（让 Agent 在组织里守规矩、有记忆、可审计）。两者是互补关系，不是竞争——OpenClaw 负责让 Agent 能进组织协作频道，sofagent 负责进组织后不闯祸、不犯错、可追溯。
 
 ```mermaid
 flowchart TB
@@ -347,7 +351,7 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 
 - **engage-fde.md 引导逻辑实现（P0）**：FDE 场景主动引导 → 自动产出 yaml + 方案书
 - **install.sh OpenClaw 必装实现（P0）**：自动检测 + 共存复用 + 幂等注册
-- **workflow.yaml schema 定义（P0）**：基于 FDE §六 自动产出
+- **workflow.yaml schema 定义（P0）**：基于 FDE §六 自动产出——workflow.yaml 不只是 AI 节点定义，还承载组织协作流程的历史沉淀（参考「组织记忆」概念）
 - **DAG JSON 格式对接（P0）**：查 OpenClaw `ao compose` 标准输出
 - **FDE 完整链路端到端验证（P0）**：装环境→FDE 引导→梳理 workflow→编排→执行→审计→推送
 - **MCP webhook 后台开发（P1）**：从 POC 到可用的推送服务
@@ -424,6 +428,8 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 ### v2.x — 多设备协同（规划中）
 
 > v1.0 之后——从单设备纪律委员进化到跨设备联邦。模型厂不做硬件、不做跨平台治理、不做本地数据治理，这三个"不做"就是 sofagent 的生存空间。
+>
+> **组织级 Harness 对标**：参考 Anthropic Cloudtag 的「组织级 Agent Harness」概念（Lance Martin 定义），v2.x 的目标是让 Agent 真正融入组织协作——携带独立身份（fde.md 企业约束）、专属连接器（MCP webhook）、组织记忆（think.md 共享版）。Agent 从「个人助手」进入「组织协作频道」，sofagent 是其纪律底座。
 
 **四阶段渐进**：
 1. 协同编排协议：Markdown 优先，人可直接阅读、git 可 diff
@@ -457,6 +463,8 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 | **Agent 疲劳度检测** | 长时间任务用户 | 监控上下文窗口污染和决策质量衰减信号 |
 | **双闸验证** | 安全敏感场景 | 工具执行前 gate + 执行后副作用复查——不光问「能不能」，还问「做对没」 |
 | **SMB 场景审计扩展** | 传统中小企业 | 审计规则从代码开发扩展到数据处理/报表生成/文档撰写——"验证再干"对 SMB 不是 `npm test`，是"数据算对了没有" |
+| **组织记忆主动调取** | 企业协作 | Agent 接到任务前，先检索 think.md 共享版（组织记忆），补全历史前情和关联方——参考 Cloudtag「被动到主动」变革 |
+| **异步长任务自治** | 长周期业务 | daemon 从「监控文件变化」升级为「长任务自主运行、自主检查、自主纠偏、异步交付结果」——参考 Cloudtag「同步到异步」变革 |
 
 ---
 
@@ -476,6 +484,7 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 | **三层加载链叙事** | v0.98 废弃——三层拆分为独立产品（宪法内联 + think.md 自动生成 + FDE.md 企业约束） |
 | **sofagent-fde 独立 Skill** | v0.98 改为根目录 FDE.md 大文档——FDE 工程师自己装，Skill 机制意义不大 |
 | **纪律层实验第三次重跑** | v0.97 + v0.98 两次各 100 次都因任务设计无法结论，结果已作废。第三次不会有不同结果，换赛道到日常使用审计数据 |
+| **全栈组织级 Harness 产品** | Cloudtag 做全栈（身份 + 连接器 + 协作频道 + 组织记忆），sofagent 只做治理底座标准（纪律 + 审计）。不做聊天入口，不做文档库，不做协作频道——做 Agent 进组织时的纪律标准 |
 
 ---
 
