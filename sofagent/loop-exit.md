@@ -1,7 +1,6 @@
-# Loop Exit · v0.95
+# Loop Exit
 
-> 拆自原 loop-check.md（退出条件 + 边界处理部分）。Loop Check（检查规则）见 `loop-check.md`。
-> 本文件定义循环什么时候停、怎么停、停了之后做什么。
+> 本文件定义循环什么时候停、怎么停、停了之后做什么。Loop Check（检查规则）见 `loop-check.md`。
 
 ---
 

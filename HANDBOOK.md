@@ -1,6 +1,6 @@
 # sofagent Handbook
 
-> **AI 改完代码，你点 merge 之前——sofagent 帮你看一眼。4 底线 + 6 铁律约束 Agent 行为，git diff 审计兜底验证，复杂任务自动拆解执行。**
+> **FDE 部署底座——面向中小企业（SMB）和一人公司（OPC）。部署专家用标准化流程搭建 workflow AI 节点，实施后审计引擎 + 编排引擎托管，企业自己管得住、成本可核算、效果可量化。**
 >
 > 从 Context Engineering 到 Harness Engineering，再到 Loop Engineering，再到纪律层——AI 和人的协作方式正在从「写好 Prompt」进化到「管好 Agent」。
 >
@@ -116,8 +116,6 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 地基完成后，SKILL.md 判断任务复杂度。🟢🟡 简单任务不走编排引擎，🔴 复杂任务 + FDE 部署场景才点火 engage.md（编排引擎）拆解→执行→闭环。编排决策沉淀到 `orchestrator/_index.md`，Agent 自己维护。详见 [开发文档 §五](./DEVELOPMENT.md#五自进化机制)。
 
-> **v0.97 备注**：编排引擎（原 engine.md / task-aware.md / loop-check.md，现已迁至 engage.md）已在 v0.97 从 sofagent 核心拆出到 FDE Skill 专用——个人开发者不需要编排，只装纪律层就够了。编排深度从四级简化为两档拆解（拆 vs. 不拆）。
-
 ### Token 预算参考
 
 | 文件 | 估算 token | 🗜️压缩后保留 |
@@ -147,7 +145,7 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 这些铁律来自我使用 OpenClaw 过程中的痛点总结——每一条对应一种我遇到过的 Agent 失控行为。不是实验室数据，是大半年日常使用中反复出现的问题。也许你的痛点不一样，在 `fde.md` 里加你自己的。
 
-这 6 则是在 [Andrej Karpathy 的 4 条编码原则](https://github.com/multica-ai/andrej-karpathy-skills)（思考先行、简约至上、精准修改、目标驱动）基础上扩展出来的——向 Karpathy 致敬，往里面塞了自己的反思。v0.95 把 4 条有 git diff 痕迹的铁律（先读再用 / 验证再干 / 谨慎修改 / 如实汇报）移到了审计层（sofagent-audit A3/A5/A7/A8），铁律只保留纯行为准则。
+这 6 则是在 [Andrej Karpathy 的 4 条编码原则](https://github.com/multica-ai/andrej-karpathy-skills)（思考先行、简约至上、精准修改、目标驱动）基础上扩展出来的——向 Karpathy 致敬，往里面塞了自己的反思。
 
 ### 6 则行为铁律
 
@@ -159,8 +157,6 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 | 4 | 目标驱动 | 回到原始意图，不跑偏、不越做越复杂 | 做着做着跑偏了，最后做的根本不是用户要的 |
 | 5 | 全局视角 | 先找现有代码和工具，不重复造轮子 | 有现成库不用，自己重写或装新依赖 |
 | 6 | 成本意识 | 批量处理重复操作，简短回答不啰嗦 | 100 个文件一个一个改；查天气都用最贵的模型 |
-
-> v0.95 移走的 4 条（先读再用 / 验证再干 / 谨慎修改 / 如实汇报）已在审计层（sofagent-audit A3/A5/A7/A8）通过 git diff 自动检测。详见 [审计设计](./docs/design/audit-design.md)。
 
 > ⚠️ 「验证」不是 Agent 自说自话——是跑测试、跑 lint、API 返回码、文件 diff。能自动验证的用工具，不能的让用户确认。
 
@@ -310,72 +306,19 @@ bash sofagent/scripts/install.sh --lite
 
 未指定 `--platform` 时自动探测。OpenClaw 用户可直接 `bash sofagent/scripts/install.sh`。
 
-> 💡 WorkBuddy 用户：技能市场安装，或 `git clone` + `bash sofagent/scripts/install.sh --platform workbuddy`。装好后 SKILL.md 首次加载自动完成初始化（B1 步创建 `.sofagent/` 数据目录）。
-
 **怎么验证装好了**：跑 `bash sofagent/scripts/verify.sh`，自动检查 9 类 24+ 项。加 `--json` 可集成到 CI/CD。如果没通过，去 §六 FAQ 看「Agent 不遵守铁律」那条排查。
 
 > 💡 不要靠「看 Agent 回复里有没有初始化提示」验证——SKILL.md 闸门 ① 明确要求「内部执行，不输出给用户」，Agent 不会把初始化过程展示给你。只信 verify.sh。
 
 装完之后，去 §四，试试给 Agent 派个任务。
 
-### 跨平台自启：种子指令
+### 跨平台自启与能力差异
 
-五大平台都有自己的 Native 记忆文件，系统保证每轮自动注入。区别在于——**Agent 能不能自己往里写。**
-
-| 平台 | 自动注入文件 | Agent 能写吗 | 方式 |
-|------|------|:--:|------|
-| WorkBuddy / OpenClaw | `MEMORY.md` | ✅ | Agent 首次初始化时自动写入种子指令 |
-| Codex / Hermes Agent / Claude Code | `AGENTS.md` / `SOUL.md` / `CLAUDE.md` | ❌ | **你**手动在文件末尾贴一行种子指令 |
-
-两条路终点一样——Agent 每轮都看到种子指令，读到就去加载 Skill。区别只是种子指令是谁写进去的。种子指令的具体内容和手动粘贴位置见 [开发文档 §一 脚本与文件结构速查](./DEVELOPMENT.md#脚本与文件结构速查)。
-
-### 跨平台能力差异
-
-| 平台 | 自启方式 | Skill 支持 | 脚本 | 实际效果 |
-|------|------|:--:|:--:|------|
-| OpenClaw | 自动（Agent 写 MEMORY.md） | ✅ | ✅ | Hook + Skill + 脚本，完整能力 |
-| WorkBuddy | 自动（Agent 写 MEMORY.md） | ✅ | ⚠️（沙箱受限） | Skill 自启，部分脚本不可用 |
-| Claude Code | 手动（你写 CLAUDE.md） | ❌ | ✅ | 一行指令兜底，脚本全支持 |
-| Codex | 手动（你写 AGENTS.md） | ❌ | ✅ | 同上 |
-| Hermes Agent | 手动（你写 SOUL.md） | ❌ | ⚠️ | 同上 |
+五大平台各有 Native 记忆文件，系统每轮自动注入。WorkBuddy / OpenClaw 由 Agent 自动写入种子指令；Codex / Hermes Agent / Claude Code 需手动粘贴。OpenClaw 完整能力，其他平台部分降级。种子指令内容和手动配置见 [开发文档 §一](./DEVELOPMENT.md#脚本与文件结构速查)。
 
 ### 非 OpenClaw 用户的 tips
 
-OpenClaw 通过 Hook 强制注入宪法，Agent 无需额外操作即可完整走三层加载链。在 WorkBuddy / Claude Code 等平台上：
-
-- **第 1 层（宪法·底线与铁律）**：已由 Skill 系统自动注入，调用即生效 ✅
-- **第 2 层（think.md 反思区）和第 3 层（fde.md 你的规则）**：需 Agent 主动读取——Agent 可能优先执行任务而非回顾加载链 ⚠️
-
-**复杂任务时建议**：任务前加 `@skill:sofagent` 作为显式锚点，提高 Agent 走完加载链的概率。
-这不是强制保证，但实测能帮助 Agent 对齐约束。
-
-### 装完之后做这 3 件事（按平台）
-
-> 非 OpenClaw 平台无法自动走完三层加载链。装完之后做这 3 件事，把约束力拉满。
-
-**WorkBuddy：**
-1. 在新会话开头输入 `@skill:sofagent` 显式激活
-2. 在你的 MEMORY.md 里加一行：`每次任务前先确认 sofagent 的铁律已加载`
-3. 跑 `bash sofagent/scripts/verify.sh` 确认安装完整
-
-**Claude Code：**
-1. 在项目根目录的 CLAUDE.md 顶部加一行：`启动时先读取 ~/.openclaw/skills/sofagent/SKILL.md`
-2. 任务完成后手动跑 `sofagent-audit --silent --diff HEAD~1..HEAD`
-3. 注册 pre-commit hook：`sofagent-audit --install-hook`
-
-**Codex：**
-1. 在 AGENTS.md 顶部加一行种子指令：`每次会话启动时先读取 sofagent 的 SKILL.md`
-2. 任务完成后手动跑 git diff 审计
-3. 用 `@sofagent` 触发 think.md 反思记录
-
-**Hermes Agent：**
-1. 在 SOUL.md 顶部加一行种子指令：`每次会话启动时先读取 sofagent 的 SKILL.md`
-2. 任务完成后手动跑 git diff 审计
-3. 手动触发 think.md 写入：`请回顾本次任务，把踩坑记录写入 .sofagent/think.md`
-
-> ⚠️ 这些 checklist 不能替代 OpenClaw 的 Hook 自动注入——只能让非 OC 平台的用户最大化利用已有的 30-40% 约束力。等各平台支持 Hook 机制后会自然解决。
-
-> 💡 加载链步进可靠性是已知局限（详见 [LIMITATIONS.md](./LIMITATIONS.md#加载链步进脆弱性v060v062-验证结论)），等各平台支持类似 Hook 机制后会自然解决。
+非 OpenClaw 平台无法自动走完三层加载链。复杂任务前加 `@skill:sofagent` 作为显式锚点。手动配置见 [开发文档 §一](./DEVELOPMENT.md#脚本与文件结构速查)。
 
 ### 什么时候用，什么时候不用
 
@@ -413,14 +356,6 @@ exit code：**0 = 全通过 / 1 = 有警告 / 2 = 有违规**。
 
 > ⚠️ 上面这些都只是我自己的测试感受，不是严谨的横评。如果你在其他平台上跑通了，欢迎告诉我。
 
-### 不管什么平台，约束不会丢
-
-不管什么平台，SKILL.md（4 条底线 + 6 则铁律，宪法内联）是以 MD 文件形式存在的。只要 Agent 能读到这个文件，行为约束就生效。跨平台影响的是自动化程度，不是约束力度。
-
-> 📎 能力边界（sofagent 能做什么、不能做什么）详见 §四「能力边界」。
-
-> 🚀 装好了？去 §四，试试给 Agent 派个任务。
-
 ---
 
 ## 六、常见问题
@@ -449,9 +384,6 @@ Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的�
 | 认知投降 | 最舒服的状态是不再有自己观点，Agent 说什么就是什么 | fde.md 随时可加规则覆盖 Agent 默认行为；编排深度可回滚 |
 
 两个人搭一模一样的 sofagent，可能得到完全相反的结果——一个用它加速自己深刻理解的工作，另一个用它逃避理解。sofagent 分不出区别，你分得出。
-
-> Klarna 教训：2024 年 2 月宣布用 AI 客服裁掉 700 人、成本降 40%，两年后客户满意度暴跌 22%、季度净亏 9900 万美元。不是 AI 不行，是没有纪律层的 AI 不行。
-
 
 ## 致谢
 
