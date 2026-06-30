@@ -24,13 +24,13 @@
 > - **v0.96**：诚实收缩——README 六段式重构（373→166 行）+ AI 中台叙事贯通 + bash→TS 第一波（僵尸清理 + task-orchestrate）+ 铁律重排 + 审计 A9/A10/A11 规则草案 + 编排引擎定位澄清
 > - **v0.97**：证据版本——审计 A9/A10/A11 + 编排引擎重构 + bash→TS 第二波 + 概念精简（纪律层实验 100 次对照结果作废）
 > - **v0.98**：架构重组版——产品核心从事前约束转向事后审计 + FDE 企业部署，OpenClaw 必装，v1.0 转向 FDE 部署底座，新增 THINK.md 项目反思文档
-> - **v0.99**：v1.0 前收尾——准入条件 6 条核查 + 外部反馈整理 + 文档终审 + FDE 完整链路端到端验证
+> - **v0.99**：v1.0 前收尾——审查全面修复 + Skill ≤90 行 + 放弃条件 + bus factor + GitHub Action + MCP Server + FDE 工具箱（/FDE + sofagent-fde Skill）+ 文档预算 ≤5,000。
 
 ---
 
-## [v0.99] — 规划中
+## [v0.99] — v1.0 前收尾版 ✅
 
-v1.0 前收尾——不进新功能，只做 bugfix + 文档终审 + 准入核查。v1.0 准入条件 6 条逐一打勾。外部反馈整理 + GitHub Issues triage。文档终审（13 份核心文档复核 + 概念去重复查 + 一致性自动化检查）。FDE 完整链路端到端验证（装环境→梳理 workflow→编排→执行→反思→审计→推送）。bus factor 缓解（目标：≥3 个外部 PR 合入）。所有未完成 TODO 要么完成要么诚实标注「推迟 v1.x」。
+v1.0 前收尾——完成两份独立深度审查的全部修复（7 批次 + v0.99 4 节）。文档信任修复（entry-gate 加载链 / SECURITY 行数 / DEVELOPMENT ≤90 行宣称 / README 格式）。Skill 全部 ≤90 行（loop-check 拆分 + engage/entry-gate 精简）。44 处 rules.md 死链清零。中英文 README 对齐 + 90/10 rule + 成熟度声明。项目放弃条件 5 条正式写入 ROADMAP。v1.0 准入条件 9 条核查。bus factor + 模型依赖声明。内容去重。GitHub Action 模板。preferences.md 删除。think-generator.ts 死代码清理。tools/check-docs.sh 自动化检查。398 tests 全绿，tsc 零错误。文档预算 ≤5,000。FDE 工具箱（/FDE + sofagent-fde Skill）。data/fde.md 加载链模板。npm 包 README（@sofagent/audit）。MCP Server 配置文档合并精简。ARCHITECTURE MCP 推送层状态更新为 v0.99。
 
 > 📖 [开发日志](./docs/changelog/v0.99.md)
 
@@ -158,118 +158,16 @@ daemon 核心骨架（纯 bash：launchd/systemd + 文件 hash 监控）+ 5 项�
 
 ---
 
-## [v0.75] — 降低门槛
+## v0.47–v0.80 — 早期开发期（摘要）
 
-降低试用门槛（README.en.md + 一行安装 + Mermaid 架构图）+ 补可信度数据（EVIDENCE 诚实声明 + benchmark.sh API 模式 + 企业风险评估）+ 社区建设（CONTRIBUTING 三级权限）。
+> 这段时间每个版本间隔 1-3 天，改动密集。只保留摘要，详细日志在 [docs/changelog/](./docs/changelog/) 下。
 
-> 📖 [详细开发日志](./docs/changelog/v0.75.md)
+| 版本区间 | 主题 |
+|---------|------|
+| v0.47–v0.50 | 项目首次发布 + 安装断裂修复 |
+| v0.51–v0.53 | 宣称对齐 + 评审反馈修复 |
+| v0.54–v0.56 | 架构重构（Handbook 拆分）+ 加载链防漏读 |
+| v0.60–v0.63 | CI 闭环 + 宪法内联 + 诚实化 |
+| v0.70–v0.80 | 企业合规三件套 + 降低试用门槛 |
 
----
-
-## [v0.74] — 依赖加固
-
-治理层自身治理：ao compose 依赖加固（YAML 格式写死 + 自动降级）+ 加载链自检声明 + 人类抽样审计 + verify.sh --quick + 一行安装 + 文档去重。
-
-> 📖 [详细开发日志](./docs/changelog/v0.74.md)
-
----
-
-## [v0.73] — 闸门体系
-
-运行时逻辑加固：三道闸门体系落地（任务闸/执行闸/验收闸）+ ComplexityScorer 模型路由 + 6 个显式失败分支 + 记忆系统三规则 + LLM 自评降权 ×0.5→×0.3。结构重构：rules.md 从 constitution/ 扁平化到根目录。
-
-> 📖 [详细开发日志](./docs/changelog/v0.73.md)
-
----
-
-## [v0.72] — 门面实证
-
-门面实证版本：README 平台能力表重构（三列：加载链/编排引擎/自动化程度）+ EVIDENCE 重构 + benchmark.sh 标准化测试。
-
-> 包含 v0.71 内容（QA 审计 23 项 + 第三方代码审查 40+ 项 + 行业研究驱动），v0.71 未独立发布。
-
-> 📖 [详细开发日志](./docs/changelog/v0.72.md)
-
----
-
-## [v0.70.0 / v0.70.1] — 企业合规
-
-企业合规三件套：日志脱敏（task-record.sh sanitize()）+ 数据保留策略（cleanup.sh）+ 审计日志（audit.sh）+ 共享配置层（lib/config.sh）。v0.70.1 修 Codex 平台兼容性（SOFAGENT_DATA 未初始化 + verify.sh 误查 OpenClaw Hook）。
-
----
-
-## [v0.63] — 诚实化
-
-诚实化：loop-agent.md 非OpenClaw评审路径去伪强制语气 + 外部研究引用诚实化（删百分比数字）+ HANDBOOK 闸门矛盾修复 + 文档膨胀裁剪（ARCHITECTURE 612→585，DEVELOPMENT 610→599）。
-
----
-
-## [v0.62] — 宪法内联
-
-宪法内联进 SKILL.md（扁平化重构）——第 1 层不再依赖 Agent Read，所有平台强制生效。三层加载链重构（SKILL.md→think.md→rules.md）。铁律重排。文档命名规范化（Design→ARCHITECTURE 等）。
-
----
-
-## [v0.60] — CI 闭环
-
-A0 专家团引擎自检 + Logo 体系 + GitHub Actions CI + README 徽章优化 + Roadmap v0.6x 四项全部闭环。
-
----
-
-## [v0.56] — 2026-06
-
-删假引用（Open Viking 编造）+ 折半机制真实现（load-chain.sh emit_think_downgraded）+ 加载链防漏读 ⛔ 硬出口 + "兼容"措辞诚实化 + Quick Start 重写 + Case 002 归档。
-
----
-
-## [v0.55] — 2026-06
-
-架构重构：978 行 Handbook 拆为三文件（Handbook + Developer + Design）。Case 001 归档（@cedric123123 OpenClaw + kimi-k2.5 首次跑通）。企业部署文档。
-
----
-
-## [v0.54] — 2026-06
-
-反思自噬根因修复（三标记权重折半）+ ao compose 单点故障（默认编排策略）+ 约束回响 + 6 条企业级开关。
-
----
-
-## [v0.53] — 2026-06
-
-评审反馈 22/23 项修复 + Handbook 瘦身 1136→983 行（-13.5%）。
-
----
-
-## [v0.52] — 2026-06
-
-风格统一 + 边界补齐。
-
----
-
-## [v0.51] — 2026-06
-
-宣称对齐。
-
----
-
-## [v0.50] — 2026-06
-
-全链路通——install→verify→uninstall 首次跑通。
-
----
-
-## [v0.49] — 2026-06
-
-自测挖 bug。
-
----
-
-## [v0.48] — 2026-06
-
-install.sh 文件复制不全问题（OpenClaw 路径仅复制 2/6 个 Skill 文件）+ 报告不实问题。
-
----
-
-## [v0.47] — 2026-06
-
-项目首次发布——装不上（install.sh 路径错误）。
+> 早期版本的完整日志在 [docs/changelog/](./docs/changelog/) 目录下。

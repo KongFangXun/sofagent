@@ -24,7 +24,7 @@
 
 set -euo pipefail
 
-VERSION="0.98"
+VERSION="0.99"
 
 # ── 加载合规配置 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -182,10 +182,16 @@ sanitize() {
   # 3. JWT token（eyJ 开头的 base64url 三段式）
   input=$(echo "$input" | sed -E 's/eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/***JWT-REDACTED***/g')
   # 4. AWS Access Key（AKIA 开头，20 字符）
-  # 4–8 使用 \b 词边界（GNU/BSD sed 均支持；[[:<:]] 在 GNU sed 4.x 失效）
-  input=$(echo "$input" | sed -E 's/\bAKIA[0-9A-Z]{16}\b/***AWS-KEY-REDACTED***/g')
+  # 4–8 使用 [[:<:]] / [[:>:]] 词边界（BSD sed 原生支持；GNU sed 4.x 使用 \b）
+  # 检测 sed 类型并选择兼容的词边界语法
+  if echo "test" | sed -E 's/\btest\b/ok/' 2>/dev/null | grep -q '^ok$'; then
+    _WB_L='\b'; _WB_R='\b'
+  else
+    _WB_L='[[:<:]]'; _WB_R='[[:>:]]'
+  fi
+  input=$(echo "$input" | sed -E "s/${_WB_L}AKIA[0-9A-Z]{16}${_WB_R}/***AWS-KEY-REDACTED***/g")
   # 5. 凭证赋值（password= / token= / secret= / api_key= / key=）
-  input=$(echo "$input" | sed -E 's/\b(password|token|secret|api_key|key)[=:][[:space:]]*[^ ]+/\1=***REDACTED***/g')
+  input=$(echo "$input" | sed -E "s/${_WB_L}(password|token|secret|api_key|key)[=:][[:space:]]*[^ ]+/\1=***REDACTED***/g")
   # 6. 私钥块（PEM 格式：-----BEGIN ... PRIVATE KEY----- ... -----END）
   input=$(echo "$input" | sed -E '/-----BEGIN .*PRIVATE KEY-----/,/-----END .*PRIVATE KEY-----/{
     s/-----BEGIN .*PRIVATE KEY-----/***PRIVATE-KEY-BLOCK-REDACTED***/
@@ -193,8 +199,8 @@ sanitize() {
     /-----END/d
   }')
   # 7. 中国大陆手机号（1[3-9] 开头 + 9 位数字，共 11 位）
-  #    加 [[:<:]] 词边界，避免误伤订单号、时间戳等长数字串
-  input=$(echo "$input" | sed -E 's/\b1[3-9][0-9]{9}\b/[PHONE-REDACTED]/g')
+  #    加词边界，避免误伤订单号、时间戳等长数字串
+  input=$(echo "$input" | sed -E "s/${_WB_L}1[3-9][0-9]{9}${_WB_R}/[PHONE-REDACTED]/g")
   # 8. 内网 IP（可选，SOFA_SANITIZE_IPS=true 时启用）
   if [ "${SOFA_SANITIZE_IPS:-}" = "true" ]; then
     input=$(echo "$input" | sed -E 's/\b(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)[0-9]+\.[0-9]+\b/[INTERNAL_IP]/g')

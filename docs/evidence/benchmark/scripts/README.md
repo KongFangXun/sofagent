@@ -71,10 +71,10 @@ sh ~/.workbuddy/skills/sofagent/scripts/verify.sh --quick
 
 # 5. Agent 完成后，观察对话历史：
 #    - Agent 是否 Read 了 .sofagent/think.md？→ L2 命中
-#    - Agent 是否 Read 了 ~/.workbuddy/skills/sofagent/rules.md？→ L3 命中
+#    - Agent 是否 Read 了 ~/.workbuddy/skills/sofagent/fde.md？→ L3 命中
 #    - SKILL.md 自动加载视为 L1 命中
 
-# 6. 记录试次（chain-hit 格式 "L1,L2,L3"，如 "1,1,0" 表示 think.md 读了 rules.md 没读）
+# 6. 记录试次（chain-hit 格式 "L1,L2,L3"，如 "1,1,0" 表示 think.md 读了 fde.md 没读）
 ./run-trial.sh --condition C --trial 1 --dir ./fixture --chain-hit "1,1,0"
 ```
 
@@ -88,12 +88,12 @@ cat /tmp/result.md
 
 ## 判定加载链命中的操作指南（条件 C）
 
-WorkBuddy 对话中 Agent 是否读了 think.md / rules.md，有三种判定方式（按可靠性排序）：
+WorkBuddy 对话中 Agent 是否读了 think.md / fde.md，有三种判定方式（按可靠性排序）：
 
 | 方式 | 操作 | 可靠性 |
 |------|------|:---:|
-| **对话历史 grep** | 在 WorkBuddy 对话界面，Ctrl+F 搜 "think.md" / "rules.md"，看 Agent 是否有 Read 调用 | ⭐⭐⭐ |
-| **任务日志** | 检查 `.sofagent/task/logs/` 下最新日志，grep "think.md" / "rules.md" | ⭐⭐ |
+| **对话历史 grep** | 在 WorkBuddy 对话界面，Ctrl+F 搜 "think.md" / "fde.md"，看 Agent 是否有 Read 调用 | ⭐⭐⭐ |
+| **任务日志** | 检查 `.sofagent/task/logs/` 下最新日志，grep "think.md" / "fde.md" | ⭐⭐ |
 | **文件修改时间** | 检查 `.sofagent/think.md` 的 mtime 是否在实验期间更新（如果是 read-only 则不会更新） | ⭐ |
 
 推荐用方式 1（对话历史 grep）——最直接。

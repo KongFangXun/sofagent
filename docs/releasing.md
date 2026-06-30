@@ -1,20 +1,20 @@
 # sofagent Release Process
 
-> v0.98 · 2026-06-28。跑命令 → 对清单 → 打 tag。
+> v0.99 · 2026-07-01。跑命令 → 对清单 → 打 tag。
 
 ---
 
 ## 怎么做
 
 ```
-1. 构建自测   → rm -rf dist/ && npm run build && npm test && shellcheck sofagent/scripts/*.sh（必须全绿）
+1. 构建自测   → rm -rf dist/ && npm run build && npm test && shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh && bash tools/check-docs.sh（必须全绿）
 2. 审核       → 独立审查逐项核对 changelog，FAIL 项修完二次复核
 3. 版本号升级 → ./tools/bump-version.sh <旧版本> <新版本>（一键替换，见下方）
 4. 版本号校验 → ./tools/check-version.sh（必须全绿）
 5. 索引文档   → CHANGELOG 新增条目 + 版本说明；ROADMAP 三步更新
 6. 内容新鲜度 → 核对 7 项（效果证据 / 局限标注 / FDE 完成度 / 依赖表 / 英文同步 / COMMUNITY）
 7. 确认关口   → git diff --stat 展示全部改动，确认后开发日志打 [x]
-8. 安装副本   → cp SKILL.md 到 ~/.workbuddy/skills/ 和 ~/.openclaw/skills/
+8. 安装副本   → cp -r skill/ ~/.workbuddy/skills/sofagent/ && cp -r skill/ ~/.openclaw/skills/sofagent/
 9. 发布       → git tag → gh release → clawhub → skillhub → 验证
 ```
 
@@ -65,7 +65,7 @@
 
 - [ ] `./tools/bump-version.sh <旧> <新> --dry-run` → 确认影响文件列表
 - [ ] `./tools/bump-version.sh <旧> <新>` → 实际替换
-- [ ] `./tools/check-version.sh` → 全绿（38+ 项）
+- [ ] `./tools/check-version.sh` → 全绿（36 项）
 
 ### 内容新鲜度
 
@@ -92,8 +92,11 @@
 
 - [ ] `git tag vX.YY && git push origin vX.YY`
 - [ ] `gh release create vX.YY`
-- [ ] `clawhub skill publish ./sofagent --slug sofagent --version X.YY.0`
+- [ ] `clawhub skill publish ./skill --slug sofagent --version X.YY.0`
 - [ ] `skillhub publish <temp-dir> --version X.YY.0`（排除 images/）
-- [ ] cp SKILL.md → `~/.workbuddy/skills/sofagent/`
-- [ ] cp SKILL.md → `~/.openclaw/skills/sofagent/`
-- [ ] 验证：`git tag -l vX.YY` / `gh release view vX.YY` / `check-version.sh` / 6 diff 零差异
+- [ ] `clawhub skill publish ./FDE --slug sofagent-fde --version X.YY.0`（FDE 工程师 Skill）
+- [ ] `skillhub publish <fde-temp-dir> --version X.YY.0`（排除 images/）
+- [ ] cp -r skill/ → `~/.workbuddy/skills/sofagent/`
+- [ ] cp -r skill/ → `~/.openclaw/skills/sofagent/`
+- [ ] cp -r FDE/ → `~/.workbuddy/skills/sofagent-fde/`（FDE 工程师 Skill）
+- [ ] 验证：`git tag -l vX.YY` / `gh release view vX.YY` / `check-version.sh` / `check-docs.sh`

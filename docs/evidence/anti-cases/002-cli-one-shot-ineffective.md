@@ -18,7 +18,7 @@
 |--------|:----:|------|
 | Hook 注册 | ✅ 正常 | `~/.openclaw/openclaw.json` → `hooks.internal.entries.sofagent-load-chain.enabled: true` |
 | Hook 文件 | ✅ 完整 | `~/.openclaw/hooks/sofagent-load-chain/handler.ts` + `HOOK.md` 均部署到位 |
-| Hook 注入内容 | ✅ 正确 | L2 think.md + L3 rules.md 双层注入逻辑完整 |
+| Hook 注入内容 | ✅ 正确 | L2 think.md + L3 fde.md 双层注入逻辑完整 |
 | **Hook 触发条件** | 🔴 **根因** | `handler.ts:13`：`if (event.type !== "agent" || event.action !== "bootstrap") { return; }` — CLI 一击不走 bootstrap |
 
 ### 模式对照

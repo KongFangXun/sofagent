@@ -38,8 +38,8 @@ function Find-SofaRulesFile {
     $sofagentRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
     $up = $env:USERPROFILE
     $candidates = @(
-        (Join-Path (Get-Location).Path "fde.md"),
-        (Join-Path $sofagentRoot "fde.md"),
+        (Join-Path (Get-Location).Path "sofagent\skill\fde.md"),
+        (Join-Path $sofagentRoot "skill\fde.md"),
         "$up\.openclaw\skills\sofagent\fde.md",
         "$up\.openclaw\fde.md",
         "$up\.openclaw\skills\sofagent\constitution\fde.md",

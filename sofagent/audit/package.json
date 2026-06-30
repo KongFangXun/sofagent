@@ -1,21 +1,25 @@
 {
   "name": "@sofagent/audit",
-  "version": "0.98.0",
+  "version": "0.99.0",
   "description": "sofagent 提交时审计——扫描 git diff，检查 Agent 是否遵守工作纪律",
   "main": "dist/index.js",
   "bin": {
     "sofagent-audit": "dist/index.js",
+    "sofagent-mcp": "dist/mcp-server.js",
+    "sofagent-verify": "dist/verify.js",
     "verify-evidence": "dist/verify-evidence.js",
     "skill-safety-check": "dist/skill-safety-check.js",
     "task-orchestrate": "dist/task-orchestrate.js"
   },
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build && chmod +x dist/index.js dist/mcp-server.js dist/verify.js dist/verify-evidence.js dist/skill-safety-check.js dist/task-orchestrate.js",
     "start": "node dist/index.js",
+    "start:mcp": "node dist/mcp-server.js",
     "test": "vitest run",
     "check": "tsc --noEmit"
   },
-  "keywords": ["sofagent", "audit", "git", "agent", "discipline"],
+  "keywords": ["sofagent", "audit", "git", "agent", "discipline", "mcp", "model-context-protocol"],
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -24,5 +28,10 @@
   },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "files": [
+    "dist/",
+    "hooks/",
+    "README.md"
+  ]
 }

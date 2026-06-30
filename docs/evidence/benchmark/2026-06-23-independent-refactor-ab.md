@@ -20,7 +20,7 @@
 | TypeScript | 6.0.3 |
 | Agent 模型 | deepseek/deepseek-chat |
 | sofagent 版本 | 0.81.0 |
-| sofagent 加载链 | L1: SKILL.md → L2: think.md → L3: rules.md |
+| sofagent 加载链 | L1: SKILL.md → L2: think.md → L3: fde.md |
 
 ### 被测代码规模
 

@@ -84,7 +84,7 @@
 
 3. **sof-1 的异常漏报值得关注**：Task 2 中 sof-1 只发现 1/4 个 bug，可能原因是规则前缀改变了 prompt 结构导致 Agent 过早终止分析。但由于 sof-2/sof-3 均正常，n=3 无法确认这是系统性缺陷还是随机波动。
 
-4. **prompt 前缀注入 vs 真实 Skill 加载的差异**：本次实验的 sofagent 条件是 prompt 前缀注入 4 条核心规则，与真实 WorkBuddy 中加载的完整 SKILL.md + think.md + rules.md 加载链有本质差异——后者包含 4 条底线、10 条铁律、三层加载链、反思区等更丰富的上下文。实验结果可能**低估**了 sofagent 的实际效果。
+4. **prompt 前缀注入 vs 真实 Skill 加载的差异**：本次实验的 sofagent 条件是 prompt 前缀注入 4 条核心规则，与真实 WorkBuddy 中加载的完整 SKILL.md + think.md + fde.md 加载链有本质差异——后者包含 4 条底线、10 条铁律、三层加载链、反思区等更丰富的上下文。实验结果可能**低估**了 sofagent 的实际效果。
 
 ### 方法论局限
 

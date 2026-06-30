@@ -13,7 +13,7 @@ v0.84–v0.93 的对照实验（[2026-06-25-openclaw-task1-control.md](./2026-06
 
 | 实验批次 | sofagent 条件的实现 | 质疑 |
 |------|------|------|
-| v0.84 三轴交叉（Task 3/4/5/6/10） | **prompt 前缀注入** 4 条核心规则 | Agent 会不会因为"规则已经在 prompt 里"而格外听话？真实加载链下 Agent 可能根本没读 think.md/rules.md |
+| v0.84 三轴交叉（Task 3/4/5/6/10） | **prompt 前缀注入** 4 条核心规则 | Agent 会不会因为"规则已经在 prompt 里"而格外听话？真实加载链下 Agent 可能根本没读 think.md/fde.md |
 | v0.92 Task 1（camelCase） | **WorkBuddy 完整加载链** | 样本量只有 1 组，无法和 prompt 注入组直接对比 |
 
 v0.94 要补上这个缺口：**同一任务、同一模型，在三种条件下各跑 3 组**，对比变量名误伤率 + 加载链命中率。
@@ -28,7 +28,7 @@ v0.94 要补上这个缺口：**同一任务、同一模型，在三种条件下
 | H₁ | 加载链条件优于 prompt 注入 | 加载链组误伤率显著更低（完整约束体系比 4 条规则更强） |
 | H₂ | 加载链条件差于 prompt 注入 | 加载链组误伤率更高（加载链机制本身有损耗——Agent 没读到或读不全） |
 
-**关键诊断变量**：加载链命中率。如果命中率 < 50%，说明 Agent 根本没读到 think.md/rules.md，那加载链的任何效果差异都和"约束内容"无关，而是"约束有没有被读到"的问题。
+**关键诊断变量**：加载链命中率。如果命中率 < 50%，说明 Agent 根本没读到 think.md/fde.md，那加载链的任何效果差异都和"约束内容"无关，而是"约束有没有被读到"的问题。
 
 ---
 
@@ -40,7 +40,7 @@ v0.94 要补上这个缺口：**同一任务、同一模型，在三种条件下
 |------|------|:---:|------|
 | **A 裸 Agent** | 不安装 sofagent | ❌ | 基线——无约束的 Agent 行为 |
 | **B prompt 注入** | 手贴 4 条核心规则到 prompt 开头 | ❌ | 对照组——复现 v0.93 实验条件 |
-| **C 真实加载链** | WorkBuddy 中完整 sofagent Skill（SKILL.md + think.md + rules.md） | ✅ | 实验组——回答评审质疑的核心 |
+| **C 真实加载链** | WorkBuddy 中完整 sofagent Skill（SKILL.md + think.md + fde.md） | ✅ | 实验组——回答评审质疑的核心 |
 
 ### 2.2 任务
 
@@ -94,9 +94,9 @@ v0.94 要补上这个缺口：**同一任务、同一模型，在三种条件下
 |---|---|---|
 | 第 1 层 | `SKILL.md` | WorkBuddy 自动加载（不需要验证读取） |
 | 第 2 层 | `think.md` | Agent 是否主动 Read 了 `.sofagent/think.md` |
-| 第 3 层 | `rules.md` | Agent 是否主动 Read 了 `~/.workbuddy/skills/sofagent/rules.md` |
+| 第 3 层 | `fde.md` | Agent 是否主动 Read 了 `~/.workbuddy/skills/sofagent/fde.md` |
 
-**验证方式**：实验结束后检查 WorkBuddy 对话历史（或 `.sofagent/task/logs/`）中是否出现对 think.md / rules.md 的 Read 操作。
+**验证方式**：实验结束后检查 WorkBuddy 对话历史（或 `.sofagent/task/logs/`）中是否出现对 think.md / fde.md 的 Read 操作。
 
 - 命中率 = 被读到的层数 / 3
 - 命中率 < 50%（< 1.5 层）→ 加载链机制本身有问题，回到 [LIMITATIONS.md](../../../LIMITATIONS.md) 讨论
@@ -142,7 +142,7 @@ v0.94 要补上这个缺口：**同一任务、同一模型，在三种条件下
 4. 给出 Task 1 prompt（原始版，不注入规则）
 5. Agent 完成后，记录：
    a. git diff / node src/index.js exit code / 变量名误伤数 / 耗时
-   b. **加载链命中**：检查对话历史中 Agent 是否 Read 了 think.md 和 rules.md
+   b. **加载链命中**：检查对话历史中 Agent 是否 Read 了 think.md 和 fde.md
 6. 还原
 ```
 
@@ -175,7 +175,7 @@ v0.94 要补上这个缺口：**同一任务、同一模型，在三种条件下
 | 结果 | 含义 | 决策 |
 |---|---|---|
 | C 组误伤率 ≤ B 组 ≤ A 组 | 加载链至少不差于注入，注入不差于裸 Agent | ✅ 继续推广加载链，v0.94 实验通过 |
-| C 组误伤率 > B 组 | 完整加载链反而干扰了 Agent（可能 think.md/rules.md 太长导致 Agent 分心） | ⚠️ 排查加载链中哪一层导致干扰，考虑精简 |
+| C 组误伤率 > B 组 | 完整加载链反而干扰了 Agent（可能 think.md/fde.md 太长导致 Agent 分心） | ⚠️ 排查加载链中哪一层导致干扰，考虑精简 |
 | C 组加载链命中率 < 50% | Agent 根本没读到约束 | 🔴 加载链机制本身有问题，回到 LIMITATIONS 讨论，考虑 v0.95 的 --silent 审计模式作为替代 |
 | C 组误伤率 ≈ A 组 | 加载链等于没装 | 🔴 同上，且说明 v0.84 的 prompt 注入数据不可推广到真实场景 |
 
@@ -253,7 +253,7 @@ cd docs/benchmark/scripts
 
 ### 10.2 加载链命中率（仅 C 组）
 
-| 试次 | 第 1 层 SKILL.md | 第 2 层 think.md | 第 3 层 rules.md | 命中率 |
+| 试次 | 第 1 层 SKILL.md | 第 2 层 think.md | 第 3 层 fde.md | 命中率 |
 |---|:---:|:---:|:---:|:---:|
 | 1 | — | — | — | — |
 | 2 | — | — | — | — |
@@ -273,7 +273,7 @@ WorkBuddy 里跑 Agent 时，Agent 就是我（被调度的这个 Agent）。我
 1. 作者（孔老师）打开一个新的 WorkBuddy 对话
 2. 把测试套件代码放到工作区
 3. 给出 Task 1 prompt
-4. 观察那个对话里的 Agent 是否 Read 了 think.md / rules.md
+4. 观察那个对话里的 Agent 是否 Read 了 think.md / fde.md
 5. 记录结果
 
 这个操作只能由作者手动完成。脚本无法替代。

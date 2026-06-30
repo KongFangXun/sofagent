@@ -8,7 +8,7 @@
 
 ## 一句话结论
 
-**WorkBuddy 闭环机制跑通**（task/logs + think.md 双写），但发现加载链第 1 层（宪法层）漏读——4 底线 + 10 铁律未注入。根因是 constitution/ 下双文件命名歧义，Agent 读了 rules.md 后误判宪法层已覆盖。v0.56 已修复（SKILL.md 加载链防漏读强化）。
+**WorkBuddy 闭环机制跑通**（task/logs + think.md 双写），但发现加载链第 1 层（宪法层）漏读——4 底线 + 10 铁律未注入。根因是 constitution/ 下双文件命名歧义，Agent 读了 fde.md 后误判宪法层已覆盖。v0.56 已修复（SKILL.md 加载链防漏读强化）。
 
 ---
 
@@ -31,10 +31,10 @@
 | 1 | 三层加载链全部读取 | 1→2→3 逐层执行 | 漏读第 1 层（constitution/sofagent.md）| ❌ |
 | 2 | 第 1 层：4 底线 + 10 铁律注入 | 注入后约束行为 | 未注入，导致后续无约束 | ❌ |
 | 3 | 第 2 层：think.md 反思区加载 | 加载 | ✅ | ✅ |
-| 4 | 第 3 层：rules.md 自定义规则 | 加载 | ✅ | ✅ |
+| 4 | 第 3 层：fde.md 自定义规则 | 加载 | ✅ | ✅ |
 | 5 | 漏读后用户纠偏 → 补全加载链 | 快速定位缺失，逐层补全 | 用户指出后，定位到第 1 层漏读，补全 | ✅ |
 
-**根因分析**：`constitution/sofagent.md` 和 `constitution/rules.md` 同目录，文件名一个叫「sofagent」一个叫「rules」，Agent 看到 rules.md 后误判宪法层已覆盖，跳过最核心的文件。不是设计问题，是执行纪律问题——逐项打勾机制未生效。
+**根因分析**：`constitution/sofagent.md` 和 `constitution/fde.md` 同目录，文件名一个叫「sofagent」一个叫「rules」，Agent 看到 fde.md 后误判宪法层已覆盖，跳过最核心的文件。不是设计问题，是执行纪律问题——逐项打勾机制未生效。
 
 ---
 
@@ -79,7 +79,7 @@
 | 闭环完整性 | ✅ 良好 | 日志 + 反思双写 |
 | 故障恢复 | ✅ 良好 | 用户纠偏后快速定位并补全 |
 
-**关键发现**：`constitution/` 下双文件的命名（sofagent.md + rules.md）在 Agent 视角容易产生歧义——看到 rules.md 即误判为「宪法层已覆盖」。v0.56 已在 SKILL.md 加载链表格上方加 ⛔ 硬出口 + 逐文件确认机制。
+**关键发现**：`constitution/` 下双文件的命名（sofagent.md + fde.md）在 Agent 视角容易产生歧义——看到 fde.md 即误判为「宪法层已覆盖」。v0.56 已在 SKILL.md 加载链表格上方加 ⛔ 硬出口 + 逐文件确认机制。
 
 **综合评价**：核心机制运转正常，加载链需在 Agent 执行层加固。本次测试暴露的不是设计缺陷，是 LLM 执行纪律的波动。
 

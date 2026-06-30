@@ -4,6 +4,7 @@ sofagent 在真实环境中的使用记录。按时间倒序排列。
 
 | 日期 | 案例 | 平台 | 摘要 |
 |------|------|------|------|
+| 2026-07-01 | [v0.99 发版前三线并行测试](./v099-release-test-2026-07-01/README.md) | WorkBuddy + OpenClaw | 发版前全量测试（398 tests + ao compose 多智能体审查） |
 | 2026-06-24 | [社区 A/B 测试](./community-ab-test-2026-06-24/README.md) | Community | 社区用户 A/B 对比测试 |
 | 2026-06-22 | [Claude v0.82 测试](./claude-v082-2026-06-22/README.md) | Claude | Claude Agent 纪律层验证 |
 | 2026-06-22 | [Codex v0.82 测试](./codex-v082-2026-06-22/README.md) | Codex | Codex Agent 纪律层验证 |

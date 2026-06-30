@@ -17,7 +17,7 @@
 | 评判器隔离 | ❌ 不生效 | Hermes Agent自己评自己，无独立评判session/model |
 | 加载链 L1（SKILL.md） | ✅ 1/1 | cron新会话测试：Agent搜索找到SKILL.md并正确列出4条底线 |
 | 加载链 L2（think.md） | ❌ 0/1 | .sofagent/think.md 不存在，cron Agent报告「文件不存在」 |
-| 加载链 L3（rules.md） | ✅ 1/1 | cron新会话测试：Agent正确读取并总结rules.md规则要点 |
+| 加载链 L3（fde.md） | ✅ 1/1 | cron新会话测试：Agent正确读取并总结fde.md规则要点 |
 
 ---
 
@@ -25,7 +25,7 @@
 
 ### ✅ 生效的
 - **L1 加载链**：Hermes Agent 可以从 skills 列表中发现 sofagent，并通过 search+read 加载 SKILL.md 内容（非自动注入，需主动搜索）
-- **L3 加载链**：rules.md 文件存在且可被读取
+- **L3 加载链**：fde.md 文件存在且可被读取
 
 ### ❌ 不生效的（全部为 prompt 级软约束）
 - **4 项治理加固**：步数闸、熔断闸、幂等检查、评判器隔离在 Hermes 上全是 prompt 级，依赖 Agent 自觉遵守 engine.md/loop-check.md 中的指令
@@ -63,7 +63,7 @@ Agent 搜索 `.sofagent` → 搜索 `底线` 关键词 → 读取 `SKILL.md` →
 Agent 尝试读取 `/Users/mingworkassistant/.sofagent/think.md` → 文件不存在 → 报告 ❌
 
 ### 维度8 L3 cron测试（新会话）
-Agent 正确读取 `rules.md` → 列出模型偏好、行为规则、阈值覆盖等可配置项
+Agent 正确读取 `fde.md` → 列出模型偏好、行为规则、阈值覆盖等可配置项
 
 ---
 

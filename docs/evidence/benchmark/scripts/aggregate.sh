@@ -121,7 +121,7 @@ done
 echo ""
 echo "### 加载链命中率（仅 C 组）"
 echo ""
-echo "| 试次 | L1 SKILL.md | L2 think.md | L3 rules.md | 命中率 |"
+echo "| 试次 | L1 SKILL.md | L2 think.md | L3 fde.md | 命中率 |"
 echo "|---|:---:|:---:|:---:|:---:|"
 for TRIAL in 1 2 3; do
   DIR="${TRIALS_DIR}/C-${TRIAL}"

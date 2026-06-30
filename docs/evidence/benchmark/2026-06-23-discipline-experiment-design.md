@@ -158,7 +158,7 @@ v0.84 只有一条路径（A→B），无法排除知识传递。v0.85 加反转
    2.4 记录：用时 / 工具调用次数 / 退出码 / diff
 3. 重置代码（git checkout . && git clean -fd）
 4. 跑「使用 sofagent」条件
-   4.1 确认加载链完整（SKILL.md → think.md → rules.md 读取记录）
+   4.1 确认加载链完整（SKILL.md → think.md → fde.md 读取记录）
    4.2 给出相同的任务 prompt
    4.3 Agent 修改代码
    4.4 记录：用时 / 工具调用次数 / 退出码 / diff / 反思输出

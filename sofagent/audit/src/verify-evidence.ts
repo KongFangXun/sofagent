@@ -10,7 +10,7 @@
 
 import { readFileSync, existsSync } from 'fs';
 
-const VERSION = '0.98';
+const VERSION = '0.99';
 
 /** 测试相关证据关键词 */
 const TEST_PATTERN = /exit\.code|测试.*(pass|fail|通过|失败)|test.*(pass|fail)|✅.*pass|❌.*fail/i;
@@ -176,6 +176,8 @@ export function main(): void {
 }
 
 // 直接运行时执行 CLI
+// 保留原因：package.json bin 字段注册了 "verify-evidence": "dist/verify-evidence.js"，
+// 需要 main() 作为 CLI 入口供 npx verify-evidence 调用。
 if (require.main === module) {
   main();
 }

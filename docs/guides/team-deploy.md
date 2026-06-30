@@ -8,7 +8,7 @@
 - [ ] `bash sofagent/scripts/install.sh --platform 你的平台`
 - [ ] `bash sofagent/scripts/verify.sh` 确认 0 fail
 - [ ] 跑一个简单任务（「帮我查一下今天的日程」），确认 Agent 正常回复
-- [ ] 企业内网：加 `--no-ao --no-config-inject`，编辑 rules.md 取消 `offline: true` 注释
+- [ ] 企业内网：加 `--no-ao --no-config-inject`，编辑 fde.md 取消 `offline: true` 注释
 
 > 应该没什么问题——如果装不上可能是我写错了，开 issue 告诉我。
 
@@ -26,14 +26,14 @@
 - [ ] 翻 think.md：反思条目有没有帮助？有没有错误经验？
 - [ ] 翻 orchestrator/：有没有沉淀模板？（≥3 次同类任务才会沉淀）
 - [ ] 把你的数据填进 docs/evidence/evidence.md 和 docs/guides/testing.md
-- [ ] 决定：继续用 / 调整 rules.md / 卸载
+- [ ] 决定：继续用 / 调整 fde.md / 卸载
 
 ## 多用户注意
 
 sofagent 是单用户设计。如果团队多人用：
 - 每人独立工作目录（独立 .sofagent/）
 - 不要共享 think.md——一个人的错误经验会污染所有人
-- rules.md 可以共享（团队偏好），think.md 不能共享（个人经验）
+- fde.md 可以共享（团队偏好），think.md 不能共享（个人经验）
 
 ## ⛔ 什么时候不该用
 

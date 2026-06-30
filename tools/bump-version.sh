@@ -238,6 +238,12 @@ while IFS= read -r md; do
   md_content=$(cat "$md")
   # 只替换版本头格式 "> vOLD · "（带 · 分隔符），避免误改叙述正文
   md_new=$(sed "s/^> v$OLD_2SEG · /> v$NEW_2SEG · /g" "$md")
+  # 额外处理双 > 引用的文件头（如 ARCHITECTURE.md: > > v0.98 ·）
+  md_new=$(sed "s/^> > v$OLD_2SEG · /> > v$NEW_2SEG · /g" <<< "$md_new")
+  # 额外处理 MD 文件标题中的 · vOLD（如 engage-fde.md: # x · v0.98）
+  md_new=$(sed "s/· v$OLD_2SEG/· v$NEW_2SEG/g" <<< "$md_new")
+  # 额外处理 SECURITY.md 当前状态标注（**当前状态（v0.98）**）
+  md_new=$(sed "s/\*\*当前状态（v$OLD_2SEG）\*\*/\*\*当前状态（v$NEW_2SEG）\*\*/g" <<< "$md_new")
   if [[ "$md_new" != "$md_content" ]]; then
     echo -e "  ${GREEN}✓${NC} > v$OLD_2SEG · → > v$NEW_2SEG ·"
     echo -e "    ${CYAN}$md${NC}"

@@ -11,7 +11,7 @@ sofagent 是纯本地纪律层，**数据不出本机**——但以下数据以*
 | `scoring/` | `.sofagent/scoring/` | Skill 使用记录 |
 | `orchestrator/` | `.sofagent/orchestrator/` | 编排决策历史 |
 
-**当前状态（v0.98）**：
+**当前状态（v0.99）**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
@@ -33,7 +33,7 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 |------|------|------|
 | 创建目录 | `~/.openclaw/skills/sofagent/` 或 `~/.workbuddy/skills/sofagent/` | 按平台部署 Skill 文件 |
 | 创建目录 | `${项目目录}/.sofagent/task/logs/` | 数据目录，权限 700 |
-| 复制文件 | 宪法(rules.md) + 6 核心 Skill + 数据模板 + 配套脚本 | 从仓库 `sofagent/` 复制到目标目录 |
+| 复制文件 | 宪法(fde.md) + 6 核心 Skill + 数据模板 + 配套脚本 | 从仓库 `sofagent/skill/` 和 `sofagent/scripts/` 复制到目标目录 |
 | 写入配置 | `~/.openclaw/openclaw.json`（仅 OpenClaw） | 注册加载链 Hook |
 | 写入配置 | `~/.openclaw/config.json`（仅 OpenClaw） | 注入 loopDetection 断路器 |
 | npm install | `agency-orchestrator`（仅 OpenClaw + 有 npm） | 编排引擎依赖 |
@@ -53,11 +53,13 @@ install.sh 拆分为以下模块，便于逐模块审查：
 
 | 模块 | 行数 | 职责 |
 |------|------|------|
-| `install.sh` | ~193 | 主入口（组装 + 参数解析） |
-| `lib/platform-detect.sh` | ~96 | 平台探测 + 参数解析 |
-| `lib/file-deploy.sh` | ~101 | 文件部署 |
-| `lib/daemon-register.sh` | ~104 | Hook + daemon 注册 |
-| `lib/post-install.sh` | ~97 | 安装后检查 + 输出 |
+| `install.sh` | 193 | 主入口（组装 + 参数解析） |
+| `lib/config.sh` | 143 | 配置加载 + 常量定义 |
+| `lib/daemon-lib.sh` | 142 | daemon 公共函数库 |
+| `lib/daemon-register.sh` | 115 | Hook + daemon 注册 |
+| `lib/file-deploy.sh` | 109 | 文件部署 |
+| `lib/platform-detect.sh` | 102 | 平台探测 + 参数解析 |
+| `lib/post-install.sh` | 97 | 安装后检查 + 输出 |
 
 ## 报告漏洞
 
@@ -86,7 +88,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，执行 `execFileSync('git', ...)`
 
 **数据访问**：审计工具只读取 git diff 输出和 `.sofagent/task/logs/` 目录下的 Markdown 文件，不发起网络请求，不写入任何文件。
 
-**信任边界**：审计工具本身是确定性的——给定相同的 git diff 和日志，输出相同。但审计 A7/A8 的结果依赖 Agent 日志的真实性（Agent 可以伪造日志）。这不是审计工具的安全漏洞，是架构级别的信任模型选择。详见 [LIMITATIONS.md](./LIMITATIONS.md#信任模型)。
+**信任边界**：审计工具本身是确定性的——给定相同的 git diff 和日志，输出相同。但审计 A7/A8 的结果依赖 Agent 日志的真实性（Agent 可以伪造日志）。这不是审计工具的安全漏洞，是架构级别的信任模型选择。详见 [LIMITATIONS.md](./LIMITATIONS.md)（「审计工具信任模型：Agent 自我报告」节）。
 
 ---
 

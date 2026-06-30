@@ -1,122 +1,32 @@
 # sofagent 五平台能力矩阵
 
-> v0.84 五平台实测全部完成（2026-06-22）。v0.84 补充 CLI 一击 A/B 数据 + 修正 Hook 归因。
->
-> 实测案例：[docs/cases/](../evidence/cases/) · A/B benchmark：[docs/benchmark/](../evidence/benchmark/)
+> v0.84 五平台实测（2026-06-22）。实测案例：[docs/cases/](../evidence/cases/)
 
----
+## 8 维度 × 5 平台
 
-## 8 维度 × 5 平台（实测结果）
-
-| 维度 | OpenClaw | WorkBuddy | Codex | Hermes Agent | Claude Code |
+| 维度 | OpenClaw | WorkBuddy | Codex | Hermes | Claude Code |
 |------|:---:|:---:|:---:|:---:|:---:|
-| **daemon 进程检测** | ✅ | ❌ | ✅ 可执行/未运行 | ❌ 脚本未部署 | ❌ 未命中 |
-| **步数闸生效** | ✅ Hook 强制 | ⚠️ 靠自觉 | ⚠️ 靠自觉 | ❌ 不生效 | ❌ scripts 未部署 |
-| **熔断闸生效** | ✅ 系统级 | ⚠️ 靠自觉 | ⚠️ 靠自觉 | ❌ 不生效 | ❌ scripts 未部署 |
-| **幂等检查生效** | ✅ Hook+脚本 | ⚠️ 靠自觉 | ⚠️ 靠自觉 | ❌ 不生效 | ❌ scripts 未部署 |
-| **评判器隔离** | ✅ session.spawn | ❌ 自评 | ❓ | ❌ 自评 | ❌ 不支持 |
-| **加载链 L1（SKILL.md）** | ✅ 100% | ⚠️ 需主动触发 | ✅ AGENTS.md 加载 | ✅ 主动搜索加载 | ⚠️ 缺种子指令 |
-| **加载链 L2（think.md）** | ✅ 100% | ⚠️ 首次空白 | ❓ | ❌ 文件不存在 | ⚠️ 缺加载机制 |
-| **加载链 L3（rules.md）** | ✅ 100% | ⚠️ 未配置跳过 | ❓ | ✅ 正确读取 | ⚠️ 缺种子指令 |
+| daemon 检测 | ✅ | ❌ | ✅ 可执行 | ❌ 脚本缺失 | ❌ |
+| 步数闸 | ✅ Hook | ⚠️ 自觉 | ⚠️ 自觉 | ❌ 不生效 | ❌ |
+| 熔断闸 | ✅ 系统级 | ⚠️ 自觉 | ⚠️ 自觉 | ❌ 5次未熔断 | ❌ |
+| 幂等检查 | ✅ Hook | ⚠️ 自觉 | ⚠️ 自觉 | ❌ 不生效 | ❌ |
+| 评判器隔离 | ✅ session.spawn | ❌ 自评 | ❓ | ❌ 自评 | ❌ |
+| L1 SKILL.md | ✅ 100% | ⚠️ 需触发 | ✅ 超预期 | ✅ 超预期 | ⚠️ |
+| L2 think.md | ✅ 100% | ⚠️ 空白 | ❓ | ❌ 不存在 | ⚠️ |
+| L3 fde.md | ✅ 100% | ⚠️ 未配置 | ❓ | ✅ 超预期 | ⚠️ |
 
----
-
-## 预期 vs 实测对比
-
-| 维度 | OpenClaw | WorkBuddy | Codex | Hermes Agent |
-|------|:---:|:---:|:---:|:---:|
-| **daemon 检测** | ✅ 预期命中 → ✅ 实测命中 | ✅ 预期命中 → ❌ 脚本不存在 | ❓ 需实测 → ✅ 可执行 | ❓ 需实测 → ❌ 脚本缺失 |
-| **步数闸** | ✅ Hook 强制 → ✅ 实测生效 | ⚠️ 靠自觉 → ⚠️ 靠自觉（未触发） | ⚠️ 靠自觉 → ⚠️ 靠自觉 | ⚠️ 靠自觉 → ❌ 不生效 |
-| **熔断闸** | ✅ Hook 强制 → ✅ 系统级 | ⚠️ 靠自觉 → ⚠️ 1 次即停 | ⚠️ 靠自觉 → ⚠️ 靠自觉 | ⚠️ 靠自觉 → ❌ 5 次未熔断 |
-| **幂等检查** | ✅ Hook 强制 → ✅ 实测通过 | ⚠️ 靠自觉 → ⚠️ task/logs 为空 | ⚠️ 靠自觉 → ⚠️ 靠自觉 | ⚠️ 靠自觉 → ❌ 不生效 |
-| **评判器隔离** | ✅ session.spawn → ✅ 最优 | ⚠️ 靠自觉 → ❌ 自己评自己 | ⚠️ 靠自觉 → ❓ | ⚠️ 靠自觉 → ❌ 自己评自己 |
-| **加载链 L1** | ✅ 已验证 → ✅ 100% | ✅ 已验证 → ⚠️ 需主动触发 | ⚠️ ~50% → ✅ 超预期 | ⚠️ ~40% → ✅ 超预期 |
-| **加载链 L2** | ✅ 已验证 → ✅ 100% | ⚠️ ~70% → ⚠️ 首次空白 | ⚠️ ~30% → ❓ | ⚠️ ~20% → ❌ 文件不存在 |
-| **加载链 L3** | ✅ 已验证 → ✅ 100% | ⚠️ ~60% → ⚠️ 未配置 | ⚠️ ~20% → ❓ | ❌ ~10% → ✅ 超预期 |
-
-> ✅ = 已验证生效 / ⚠️ = 靠 Agent 自觉 / ❌ = 已知不生效 / ❓ = 待实测
-
----
+> ✅ = 生效 / ⚠️ = Agent 自觉 / ❌ = 不生效 / ❓ = 待实测
 
 ## 关键发现
 
-### OpenClaw（8/8 通过）
+**OpenClaw**（8/8）：唯一全通平台。Hook 自动注入 + loopDetection 断路器 + session.spawn 评判器隔离 = 完整纪律闭环。verify.sh 41/0。
 
-唯一全维度通过的平台。Hook 系统 + systemd 级断路器 + session.spawn 评判器隔离构成完整纪律闭环。
+**WorkBuddy**：核心约束（SKILL.md）需主动 `@skill:sofagent` 触发。步数闸/熔断闸/幂等检查靠 Agent 自觉，无法强制。评判器不能隔离（自己评自己）。
 
-- verify.sh 41 通过 0 失败
-- 加载链 L1-L3 通过 Hook 自动注入，命中率 100%
-- 熔断闸为系统级（loopDetection），30 步全局熔断
+**Codex**：AGENTS.md 加载 L1 超预期（主动搜索），但缺乏脚本基础设施，L2/L3 不可靠。
 
-### WorkBuddy（0/8 硬约束生效）
+**Hermes Agent**：加载链 L1/L3 主动搜索超预期，但所有治理加固（步数闸/熔断闸/幂等）不生效——prompt 级约束在此平台完全无效。
 
-**核心问题**：已安装 skill 为 v0.52，不含 `scripts/` 目录，daemon/install/task-record 脚本均不存在。治理加固全部降级为 prompt 自觉。
+**Claude Code**：缺乏种子指令和脚本部署，大部分能力不可用。
 
-- 加载链 L1 在主动触发时命中，但无 Hook 自动注入
-- 评判器隔离 ❌——单模型限制，自己评自己
-- 建议：scripts/ 打包进 skill 或提供纯 LLM 实现路径
-
-### Codex（安装通过，治理靠自觉）
-
-安装烟测 + 平台验证均通过。`codex exec` 真实加载测试通过——AGENTS.md 种子指令 → rules.md → SKILL.md 加载链跑通，正确回答 4 条底线。
-
-- verify.sh --platform codex：23 通过 / 11 警告 / 0 失败
-- daemon-status.sh 可执行，状态 stopped（--quick 模式未装 daemon）
-- 治理加固为 prompt 级，靠 Agent 自觉
-
-### Hermes Agent（2/8 生效）
-
-最诚实的测试。4 项治理加固全部不生效，熔断闸实测连续 5 次调用不存在 API 未熔断。
-
-- L1 加载链 ✅——Agent 主动搜索找到 SKILL.md（非自动注入）
-- L3 加载链 ✅——rules.md 正确读取
-- L2 加载链 ❌——think.md 文件不存在
-- **根因确认**：prompt 级约束在 Hermes Agent 上完全不生效，Agent 不会主动加载 engine.md 执行步数闸/熔断闸
-
-### Claude Code（0/8 硬约束生效）
-
-与 Hermes Agent 同属"手动平台"。install.sh 部署策略是「放文件 + 给指令 + 靠自觉」。三个断裂点导致实际效果 = 0：
-
-- **scripts/ 未部署** 🔴——编排引擎完全失效，治理加固只剩文档
-- **种子指令未写入 CLAUDE.md** 🟡——install.sh 提示手动粘贴，但新用户装完看到"成功"就不会再操作
-- **daemon 不检测 claude** 🟡——即使脚本部署了也没有守门员
-- 加载链 L1/L2/L3 文件已部署但缺触发机制，均为 ⚠️
-
----
-
-## 发现的问题
-
-| # | 问题 | 严重度 | 平台 | 说明 |
-|:-:|------|:------:|:---:|------|
-| 1 | ~~OpenClaw Hook 自动注册失败~~ → CLI 一击不触发 bootstrap | 🔴 高 | OpenClaw | **v0.84 修正归因**：Hook 注册正常（`openclaw.json` 配置完整，handler.ts 部署到位）。CLI `--local` 一击模式不走 `agent:bootstrap` 生命周期，Hook 永远不调用。这是架构边界，非注册 bug。交互式对话模式 Hook 正常生效（8/8 通过）。详见 [v0.84 开发日志](../changelog/v0.84.md#基线数据--cli-一击盲区v083-版本实测2026-06-23) |
-| 2 | WorkBuddy skill 不含 scripts/ | 🔴 高 | WorkBuddy | v0.52 skill 包未含 daemon/install 等脚本，治理加固无法运作 |
-| 3 | verify.sh Skills 路径统计瑕疵 | 🟡 中 | Codex | 统计 `skills/*.md` 而非 `skills/sofagent/*.md`，输出误导 |
-| 4 | daemon-status.sh 状态不稳定 | 🟡 中 | OpenClaw | 进程在运行（PID 可查），但 status 显示 stopped |
-| 5 | verify-evidence.sh 无日志失败 | ℹ️ 低 | 全平台 | 新装环境无 task/logs 记录，属预期失败 |
-| 6 | daemon 未运行 | ℹ️ 低 | 全平台 | --quick 模式跳过 daemon 安装，符合设计 |
-| 7 | Claude Code scripts/ 未部署 | 🔴 高 | Claude Code | install.sh --platform claude 未复制 scripts/ 到 ~/.claude/skills/sofagent/ |
-| 8 | CLAUDE.md 种子指令未自动写入 | 🟡 中 | Claude Code | install.sh 仅提示手动粘贴，用户看到"成功"后不操作 |
-
----
-
-## 图例
-
-| 标记 | 含义 |
-|:--:|------|
-| ✅ | 已验证生效 |
-| ❌ | 已知不生效 |
-| ⚠️ | 靠 Agent 自觉，命中率不定 |
-
----
-
-## 测试来源
-
-| 平台 | 测试人 | 日期 | 版本 |
-|------|--------|------|------|
-| OpenClaw | @liudi8785-cell | 2026-06-21 | v0.82 |
-| WorkBuddy | @yeqingan | 2026-06-22 | v0.52（已装）/ v0.82（测试包） |
-| Codex | @kangjianrong | 2026-06-22 | v0.82（commit 1b3b9d8） |
-| Hermes Agent | @cedric123123 | 2026-06-22 | v0.82 |
-| Claude Code | KongFangXun（WorkBuddy 代测） | 2026-06-22 | v0.82 |
-
-> ⚠️ **诚实声明**：WorkBuddy 实装版本为 v0.52（非 v0.82），数据反映旧版 skill 表现。
+> 完整实测数据见 [docs/evidence/cases/](../evidence/cases/)

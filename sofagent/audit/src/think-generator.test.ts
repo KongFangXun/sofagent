@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { generateThinkEntry, _resetThinkCache } from './think-generator';
+import { generateThinkEntry } from './think-generator';
 import type { DiffFile } from './diff-parser';
 import type { AuditResult } from './reporter';
 import type { RuleCheck } from './rules/types';
@@ -16,12 +16,10 @@ const fixedTime = new Date('2026-06-30T18:00:00');
 
 beforeEach(() => {
   tempDir = mkdtempSync(join(tmpdir(), 'sofagent-think-test-'));
-  _resetThinkCache();
 });
 
 afterEach(() => {
   rmSync(tempDir, { recursive: true, force: true });
-  _resetThinkCache();
 });
 
 function makeDiffFile(path: string): DiffFile {
@@ -83,7 +81,6 @@ describe('think-generator', () => {
 
   it('think.md 已存在 → 追加不覆盖', () => {
     writeFileSync(join(tempDir, 'think.md'), '## 旧记录\n\n之前的反思\n', 'utf-8');
-    _resetThinkCache();
 
     const diff = [makeDiffFile('src/a.ts')];
     generateThinkEntry(diff, makeResult([], 0), '新任务', { dataDir: tempDir, now: fixedTime });
@@ -126,7 +123,6 @@ describe('think-generator', () => {
 - #教训: 改了任务描述之外的文件，下次注意聚焦
 `;
     writeFileSync(join(tempDir, 'think.md'), existing, 'utf-8');
-    _resetThinkCache();
 
     const diff = [makeDiffFile('src/a.ts'), makeDiffFile('src/b.ts')];
     const a3Rule: RuleCheck = {

@@ -2,13 +2,11 @@
 
 中文 | [English](README.en.md)
 
-[![License](https://img.shields.io/badge/license-MIT-brightgreen)](./LICENSE)
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
-![ShellCheck](https://github.com/KongFangXun/sofagent/actions/workflows/shellcheck.yml/badge.svg)
-[![Version](https://img.shields.io/badge/version-v0.98-16B8F3)](./HANDBOOK.md)
-[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--30-16B8F3)](./README.md)
-[![定位](https://img.shields.io/badge/定位-FDE部署底座-16B8F3)](#一句话定位)
-[![OpenClaw](https://img.shields.io/badge/🦞优先-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
+[![License](https://img.shields.io/badge/📄license-MIT-brightgreen)](./LICENSE)
+[![Version](https://img.shields.io/badge/🏷️version-v0.99-16B8F3)](./HANDBOOK.md)
+[![定位](https://img.shields.io/badge/🎯定位-FDE底座_+_审计引擎-16B8F3)](#一句话定位)
+[![OpenClaw](https://img.shields.io/badge/🦞平台-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9FStarred)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
@@ -23,13 +21,17 @@
 
 FDE 部署底座 —— 面向中小企业（SMB）和一人公司（OPC）。部署专家用标准化流程搭建 workflow AI 节点，实施后审计引擎 + 编排引擎托管，企业自己管得住、成本可核算、效果可量化。
 
+> ⚠️ **成熟度声明**：审计引擎 v0.92+ 可用（独立 TypeScript CLI，零平台依赖）。FDE 部署流程为技术预览（未经端到端验证）。详见 [LIMITATIONS.md](./LIMITATIONS.md)。
+
+> **90/10 法则**：不要和 AI 模型竞争它们已经擅长的 90%（代码生成）。真正的价值在没人敢跳过的 10%——验证、审计、问责。AI 模型越强，这 10% 就越值钱。sofagent 做这 10%。
+
 > 💡 **为什么需要 sofagent**：企业 AI 落地的核心矛盾，是将概率性的大模型装进必须可追踪、可控制、可问责的传统业务流程中。模型负责建议，系统负责验收，工具负责执行——这就是 sofagent 做的事。
+
+> **Post-FDE 治理**：FDE（Forward Deployed Engineer）把 AI 带进企业、让它跑起来。但 FDE 离开后，谁来管住这些 Agent？sofagent 是企业用 FDE 之后的纪律底座——确保 Agent 不会变成无人维护的技术债。详见 [企业部署指南](./docs/guides/team-deploy.md)。
 
 > - ❌ 不是 AI 框架、不写 prompt
 > - ❌ 不是 Skills 商店
 > - ✅ 是一套**FDE 部署底座 + 审计引擎**——git diff 审计兜底，OpenClaw 必装执行引擎（详见 [平台依赖](./LIMITATIONS.md#平台依赖)）
-
----
 
 ---
 
@@ -63,8 +65,14 @@ cd sofagent && bash sofagent/scripts/install.sh
 ### 30 秒 smoke test
 
 ```bash
-bash sofagent/scripts/verify.sh    # 预期 9 类 24+ 检查全 pass
+# Skill 用户（通过 install.sh 安装）
+bash sofagent/scripts/verify.sh
+
+# CLI 用户（通过 npm 安装）
+npm install -g @sofagent/audit && sofagent-verify
 ```
+
+两种方式等效——50 项检查全 pass 即安装就绪。
 
 ### 跑第一个任务
 
@@ -123,7 +131,7 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
 
 > 核心理念：**厚在治理，薄在复用。** 约束自己定，模板和 Skills 从社区取。
 
-> 效果数据正在持续收集，详见 [evidence.md](./docs/evidence/evidence.md)。已知局限见 [LIMITATIONS.md](./LIMITATIONS.md)。
+> 已知局限见 [LIMITATIONS.md](./LIMITATIONS.md)。
 
 ---
 
@@ -147,22 +155,12 @@ sofagent 是 FDE 撤离后留在线上的纪律层——Agent 改了代码，你
 
 ### 两步落地
 
-**第一步：梳理 workflow。** 逐个岗位、逐段流程摸清楚，识别哪些节点能被 AI 接管（🔄 自动执行 / ⚡ 强化岗位 / 👤 暂时不动）。
+1. **梳理 workflow**——逐个岗位、逐段流程识别 AI 可接管的节点（🔄 自动执行 / ⚡ 强化 / 👤 暂不动）
+2. **AI 节点上底座**——利用企业闲置设备搭建 AI 节点，sofagent 提供纪律底座
 
-**第二步：AI 节点上底座。** 每个 🔄 自动执行节点，利用企业**闲置设备**（旧电脑、空闲服务器）搭建 AI 节点——sofagent 提供纪律底座，Agent 自动执行任务并推送结果，不需要人盯着。
+> 完整十步部署流程见 [FDE/FDE.md](./FDE/FDE.md)。FDE 可直接装 [sofagent-fde Skill](./FDE/SKILL.md)——Agent 自动走流程，不用手动记步骤。
 
-### 不只是开发者
-
-不论是中小企业（SMB）还是一人公司（OPC），sofagent 对你同样有用。它提升的是公司自动化办公效率：梳理业务工作流，让 AI 节点接管重复任务，即使只有一人也能跑出以一当百的产出。
-
-> 完整十步 FDE 部署流程见 [FDE.md](./FDE.md)
-
-**提交时审计**：
-
-```bash
-# 任何 git 仓库都能跑，零依赖 Agent 配合
-sofagent-audit --silent --diff HEAD~1..HEAD --task "迁移认证方案"
-```
+不论是中小企业（SMB）还是一人公司（OPC），让 AI 节点接管重复任务，即使只有一人也能跑出以一当百的产出。
 
 ---
 
@@ -177,6 +175,15 @@ sofagent-audit --silent --diff HEAD~1..HEAD --task "迁移认证方案"
 | 实际效果数据 | [evidence.md](./docs/evidence/evidence.md) |
 | 平台能力与已知局限 | [LIMITATIONS.md](./LIMITATIONS.md) |
 | 版本路线图 | [ROADMAP.md](./ROADMAP.md) |
+| 版本历史 | [CHANGELOG.md](./CHANGELOG.md) |
+| 项目反思 | [THINK.md](./THINK.md) |
+| 贡献指南 | [CONTRIBUTING.md](./CONTRIBUTING.md) |
+| GitHub Action 审计集成 | [docs/guides/github-action.md](./docs/guides/github-action.md) |
+| FDE 工具箱 | [FDE/](./FDE/) |
+| 安全声明 | [SECURITY.md](./SECURITY.md) |
+| 社区与数据 | [COMMUNITY.md](./COMMUNITY.md) |
+| 行为准则 | [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) |
+| 致谢 | [THANKS.md](./THANKS.md) |
 
 ---
 
@@ -186,4 +193,8 @@ sofagent-audit --silent --diff HEAD~1..HEAD --task "迁移认证方案"
 
 sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完整致谢](./THANKS.md)
 
-> 我叫孔放勋，一个只懂点前端代码的产品经理。所有设计决策来自大半年的真实使用经验。每个版本经独立模型评审，详见 [CHANGELOG](./CHANGELOG.md)。
+> 我叫孔放勋，一个只懂点前端代码的产品经理。
+>
+> **项目维护模型声明**：sofagent 的代码由 AI 模型（DeepSeek V4 Pro / GLM-5.2）生成，作者做产品决策和终审。这意味着 bug 修复依赖 AI 模型可用性——如果模型停止服务，项目失去修复能力。这是比单人维护更深层的结构性风险。
+>
+> 每个版本经独立模型评审，详见 [CHANGELOG](./CHANGELOG.md)。我们在寻找 Co-maintainer。

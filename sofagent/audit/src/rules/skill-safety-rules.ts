@@ -4,7 +4,7 @@
 // SafetyRule.pattern = 原始正则（用于 COMPILED_RULES 预编译和 SafetyHit.pattern 展示）
 // SafetyRule.regex  = 编译后无 g flag 的版本（scanFile 实际使用，避免 lastIndex 状态问题）
 
-export const VERSION = '0.98';
+export const VERSION = '0.99';
 
 export const SCANNABLE_EXTENSIONS = new Set(['.md', '.js', '.ts', '.py', '.sh', '.json', '.yaml', '.yml']);
 

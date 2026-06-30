@@ -18,7 +18,7 @@ bash sofagent/scripts/install.sh --platform openclaw \
 
 ### 2. 离线模式（跳过 ClawHub API）
 
-编辑 `~/.openclaw/rules.md`，取消 `offline: true` 的注释。
+编辑 `~/.openclaw/fde.md`，取消 `offline: true` 的注释。
 Agent 检测到后跳过 ClawHub 搜索，Skills 手动放入 `~/.openclaw/skills/` 目录。
 
 ### 3. 编排降级
