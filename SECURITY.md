@@ -11,7 +11,7 @@ sofagent 是纯本地纪律层，**数据不出本机**——但以下数据以*
 | `scoring/` | `.sofagent/scoring/` | Skill 使用记录 |
 | `orchestrator/` | `.sofagent/orchestrator/` | 编排决策历史 |
 
-**当前状态（v0.96）**：
+**当前状态（v0.98）**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
@@ -21,7 +21,43 @@ sofagent 是纯本地纪律层，**数据不出本机**——但以下数据以*
 
 **企业环境建议**：
 - 对 `.sofagent/` 目录做 gpg 加密或放在加密卷上
-- 脱敏/保留/审计能力已在 v0.71 落地，详见 [企业部署指南](./docs/enterprise-deploy.md)
+- 脱敏/保留/审计能力已在 v0.71 落地，详见 [企业部署指南](./docs/guides/enterprise-deploy.md)
+
+## install.sh 行为说明
+
+install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单，供安全审查：
+
+### 脚本会做的事
+
+| 操作 | 路径 | 说明 |
+|------|------|------|
+| 创建目录 | `~/.openclaw/skills/sofagent/` 或 `~/.workbuddy/skills/sofagent/` | 按平台部署 Skill 文件 |
+| 创建目录 | `${项目目录}/.sofagent/task/logs/` | 数据目录，权限 700 |
+| 复制文件 | 宪法(rules.md) + 6 核心 Skill + 数据模板 + 配套脚本 | 从仓库 `sofagent/` 复制到目标目录 |
+| 写入配置 | `~/.openclaw/openclaw.json`（仅 OpenClaw） | 注册加载链 Hook |
+| 写入配置 | `~/.openclaw/config.json`（仅 OpenClaw） | 注入 loopDetection 断路器 |
+| npm install | `agency-orchestrator`（仅 OpenClaw + 有 npm） | 编排引擎依赖 |
+| 安装服务 | launchd(macOS) / systemd(Linux) | daemon 后台进程（交互确认后） |
+
+### 脚本不会做的事
+
+- ❌ 不会 `sudo`——所有操作在用户权限范围内
+- ❌ 不会改系统文件——不碰 `/etc`、`/usr`、`/System`
+- ❌ 不会联网下载额外内容（除了 npm install ao，且可 `--no-ao` 跳过）
+- ❌ 不会执行远程脚本（`--remote` 模式只做 git clone 官方仓库）
+- ❌ 不会收集或上传任何用户数据
+
+### 源码审查
+
+install.sh 从 v0.98 起模块化拆分为 5 个文件，便于逐模块审查：
+
+| 模块 | 行数 | 职责 |
+|------|------|------|
+| `install.sh` | ~193 | 主入口（组装 + 参数解析） |
+| `lib/platform-detect.sh` | ~96 | 平台探测 + 参数解析 |
+| `lib/file-deploy.sh` | ~101 | 文件部署 |
+| `lib/daemon-register.sh` | ~104 | Hook + daemon 注册 |
+| `lib/post-install.sh` | ~97 | 安装后检查 + 输出 |
 
 ## 报告漏洞
 
@@ -60,7 +96,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，执行 `execFileSync('git', ...)`
 
 **降级路径**：
 - `install.sh --no-ao` 是 v0.85 起推荐的默认路径（非 OpenClaw 平台）。编排能力退化为手工拆解，约束层不受影响
-- `task-orchestrate.ts`（v0.97 起已从 bash 迁移至 TypeScript）在 ao 不可用时自动切到默认编排模式
+- `task-orchestrate.ts`（已从 bash 迁移至 TypeScript）在 ao 不可用时自动切到默认编排模式
 
 **供应链安全建议**：
 - 每次 `npm install` 后运行 `npm audit`

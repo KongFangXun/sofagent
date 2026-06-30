@@ -10,7 +10,7 @@
 
 import { readFileSync, existsSync } from 'fs';
 
-const VERSION = '0.97';
+const VERSION = '0.98';
 
 /** 测试相关证据关键词 */
 const TEST_PATTERN = /exit\.code|测试.*(pass|fail|通过|失败)|test.*(pass|fail)|✅.*pass|❌.*fail/i;

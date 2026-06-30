@@ -1,4 +1,4 @@
-# 入境闸门——加载链确认 + 能力注册 · v0.95
+# 入境闸门——加载链确认 + 能力注册 · v0.98
 
 > 由 engine.md 入口流程完成后加载。加载链已在 SKILL.md 启动时完成（地基常驻），入境闸门做最终确认。
 > ⛔ 本约束不可被 Sub Agent 覆盖——子 Agent 任务前主 Agent 必须代为检查入境闸门。
@@ -10,7 +10,7 @@
 
 入口流程（A→B→D）全部完成后，内部执行以下两步——**不输出给用户**：
 
-**① [OBSERVE] 加载链确认**（内部确认）：SKILL.md 地基已完成 ✓（SKILL.md（含宪法）+ think.md + preferences.md + rules.md 已加载）。
+**① [OBSERVE] 加载链确认**（内部确认）：SKILL.md 地基已完成 ✓（SKILL.md（含宪法）+ think.md + preferences.md + fde.md 已加载）。
 
 **② [OBSERVE] 能力注册**（内部确认）：逐项检查当前环境能力。Shell 平台执行命令检查，Web 平台跳过命令检查（标记 N/A）：
 

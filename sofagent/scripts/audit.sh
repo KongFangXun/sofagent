@@ -13,12 +13,12 @@
 #   audit.sh --help
 #
 # 配置：
-#   rules.md audit_enabled: true → 启用（默认关闭）
+#   fde.md audit_enabled: true → 启用（默认关闭）
 # ============================================================
 
 set -euo pipefail
 
-VERSION="0.97"
+VERSION="0.98"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -52,7 +52,7 @@ while [[ $# -gt 0 ]]; do
       echo "    --result      操作结果"
       echo ""
       echo "  配置:"
-      echo "    rules.md audit_enabled: true → 启用（默认关闭）"
+      echo "    fde.md audit_enabled: true → 启用（默认关闭）"
       echo "    audit.sh 自身调用用 || true 兜底，不阻塞主流程"
       exit 0
       ;;
@@ -98,7 +98,7 @@ fi
 
 # ── 追加审计行 ──
 # 转义 Markdown 表格中的 | 字符
-_escape_pipe() { echo "$1" | sed 's/|/\\|/g'; }
+_escape_pipe() { printf '%s' "${1//|/\\|}"; }
 
 OP_ESC=$(_escape_pipe "$OPERATION")
 TARGET_ESC=$(_escape_pipe "${TARGET:--}")

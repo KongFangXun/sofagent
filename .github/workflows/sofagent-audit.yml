@@ -1,0 +1,37 @@
+# ============================================================
+# sofagent-audit · GitHub Action 模板
+# 放到任意仓库的 .github/workflows/sofagent-audit.yml 即可在 PR 时自动审计
+# sofagent-audit 尚未发布到 npm，因此使用本地构建方式
+# ============================================================
+
+name: sofagent-audit
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 构建 sofagent-audit
+        working-directory: ./sofagent/audit
+        run: |
+          npm ci
+          npm run build
+
+      - name: 运行审计
+        run: |
+          cd sofagent/audit
+          node dist/index.js --diff origin/${{ github.base_ref }}..HEAD --ci --strict

@@ -3,7 +3,7 @@
 # ============================================================
 # audit.sh 的原生 Windows 移植。记录关键操作到
 # .sofagent/task/audit/YYYY-MM/YYYY-MM-DD.md，追加 Markdown 表格行。
-# 仅 rules.md audit_enabled: true 时写入（默认关闭，静默退出）。
+# 仅 fde.md audit_enabled: true 时写入（默认关闭，静默退出）。
 #
 # 用法：
 #   audit.ps1 -Operation install -Target "开始" -Result "v0.91, windows"
@@ -19,7 +19,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$VERSION_STR = "0.97"
+$VERSION_STR = "0.98"
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
 
 if ($Version) { Write-Host "sofagent-audit v$VERSION_STR"; exit 0 }
@@ -27,7 +27,7 @@ if ($Help) {
     Write-Host "sofagent audit v$VERSION_STR (PowerShell)"
     Write-Host "  记录关键操作到 .sofagent/task/audit/YYYY-MM/YYYY-MM-DD.md"
     Write-Host "  用法: audit.ps1 -Operation <操作> -Target <对象> -Result <结果>"
-    Write-Host "  开关: rules.md audit_enabled: true 启用（默认关闭）"
+    Write-Host "  开关: fde.md audit_enabled: true 启用（默认关闭）"
     exit 0
 }
 

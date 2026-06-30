@@ -1,51 +1,59 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.97 · 2026-06-29 · 证据版本——纪律层证伪实验 + 审计 A9/A10/A11 + 编排引擎重构 + bash→TS 第二波 + 概念精简。详见 [v0.97 开发日志](./docs/changelog/v0.97.md)
+> v0.98 · 2026-06-30 · 架构重组版——产品核心从事前约束转向事后审计 + FDE 企业部署，OpenClaw 重定义为必装引擎，v1.0 定位转向 FDE 部署底座。详见 [v0.98 开发日志](./docs/changelog/v0.98.md)
 >
-> **先证明纪律层增量是真的，再做其他任何事。**
+> **先跑通 FDE 部署闭环，再谈其他。**
 
-> **为什么纪律层有价值**：模型能完成 90% 常规任务，但剩余 10% 高风险场景（验证/兜底/为结果负责）价值反升——模型越强，这 10% 越值钱。sofagent 纪律层占据的正是那 10%。不是和模型抢活，是填补模型做不到的事。
-
-> 🎯 **v1.0 定位**：Agent 工作验收工具（正式）+ Agent 纪律层（实验）+ FDE 部署框架（规划）。审计层跨平台、零 Agent 依赖、有独立技术价值——是 v1.0 的主产品。纪律层的效果证明需要长期数据，v1.0 标注为「实验版」比标注为「正式版」更诚实、更经得起外部挑战。
+> 🎯 **v1.0 定位**：**FDE 部署底座**——帮 FDE 工程师快速梳理企业 workflow → 定义 AI 节点 → 部署到任意设备 → 审计结果自动推送到协作平台。装 sofagent 自带 OpenClaw 引擎（必装，不再强调平台兼容性）。审计引擎是主产品，FDE 引导逻辑内联，think.md 由审计引擎自动生成。
 
 ---
 
 ## 目录
 
-- [**现在在哪：v0.97**](#现在在哪v097)
+- [**现在在哪：v0.98**](#现在在哪v098)
 - [**迭代历程**](#迭代历程) — 倒叙，从最新到最早
-- [**未来去哪**](#未来去哪) — v0.97 → v1.0 → v2.x
+- [**未来去哪**](#未来去哪) — v0.99 → v1.0 → v2.x
 - [**探索方向**](#探索方向)
 - [**不需要的**](#不需要的)
 - [**欢迎参与**](#欢迎参与)
 
 ---
 
-## 现在在哪：v0.97
+## 现在在哪：v0.98
 
-> v0.97 是 **证据版本**——纪律层证伪实验 + 审计 A9/A10/A11 + 编排引擎重构 + bash→TS 第二波 + 概念精简。详见 [v0.97 开发日志](./docs/changelog/v0.97.md)。
+> v0.98 是 **架构重组版**——产品核心从事前约束转向事后审计 + FDE 企业部署，OpenClaw 重定义为必装引擎。详见 [v0.98 开发日志](./docs/changelog/v0.98.md)。
 
 | 级别 | 交付 | 状态 |
 |------|------|:----:|
-| P0 | 纪律层证伪实验（反转 + 真实加载链 + n=5） | ✅ |
-| P0 | 审计 A9/A10 代码实现（prompt injection + 供应链检测） | ✅ |
-| P0 | 编排引擎精简重构（砍四级深度/三档自由度/渐进减薄/信任等级 → 两档拆解 + engage.md） | ✅ |
-| P0 | bash→TS 第二波：6 个核心脚本 + daemon 家族迁移 | ✅ |
-| P1 | 概念精简：22 条规则 → 14 条核心概念 | ✅ |
-| P1 | think.md 产权拆分 + preferences.md 新建 | ✅ |
-| P1 | entry-gate.md 理解成本检查 + OODA 决策归属标记 | ✅ |
-| **推** | 非 OC 平台加载链实测 → v0.98（部分完成） | |
-| **推** | 审计闭环六步 → v0.98（需要真实数据） | |
-| **推** | HANDBOOK 按场景重组 → v0.98 | |
+| P0 | 产品架构重组（lite 删除 + rules→FDE.md + think.md 自动生成） | ✅ |
+| P0 | OpenClaw 重定义为必装引擎（平台能力矩阵删除） | ✅ |
+| P0 | ROADMAP v1.0 定位重构（审计工具 → FDE 部署底座） | ✅ |
+| P0 | 审计闭环六步（检测→分类→根因→改进→回归→上线） | ✅ |
+| P1 | GitHub Action 模板（审计进 CI） | ❌ 推迟 v0.99 |
+| P1 | install.sh 模块化（941→~580 行，4 模块 + 1 主入口） | ❌ 推迟 v0.99 |
+| P1 | MCP webhook 推送 POC（钉钉/飞书/企微） | ❌ 推迟 v0.99 |
+| P1 | 文档诚实化（README/HANDBOOK/ARCHITECTURE 叙事更新） | ✅ |
+| P1 | FDE 从 Skill 改为根目录文档 + engage-fde.md 引导逻辑 | ✅ |
 
-> 📖 [详细开发日志](./docs/changelog/v0.97.md)
+> 📖 [详细开发日志](./docs/changelog/v0.98.md)
 
 ---
 
 ## 迭代历程
 
 > 倒叙排列，从最新到最早。每个版本有独立开发日志。
+
+### v0.97 — 证据版本 ✅
+
+> 审计 A9/A10/A11 + 编排引擎重构 + bash→TS 第二波 + 概念精简。📖 [开发日志](./docs/changelog/v0.97.md)
+
+| 级别 | 交付 | 状态 |
+|------|------|:----:|
+| P0 | 审计 A9/A10 代码实现（prompt injection + 供应链检测） | ✅ |
+| P0 | 编排引擎精简重构（砍四级深度 → 两档拆解 + engage.md） | ✅ |
+| P0 | bash→TS 第二波：6 个核心脚本 + daemon 家族迁移 | ✅ |
+| P1 | 概念精简：22 条规则 → 14 条核心概念 | ✅ |
 
 ### v0.96 — 诚实收缩 ✅
 
@@ -168,7 +176,7 @@
 
 - macOS launchd + Linux systemd 注册，crash 自动重启
 - GitHub Actions CI（Linux）
-- daemon 检测 think.md / rules.md 变化后写 daemon-notice.md
+- daemon 检测 think.md / fde.md 变化后写 daemon-notice.md
 
 ---
 
@@ -203,7 +211,7 @@
 - 记忆三规则（写入/合并/遗忘）
 - scoring 第九维——弃权率
 - ComplexityScorer 模型路由
-- rules.md 升级 + constitution/ 扁平化
+- fde.md 升级 + constitution/ 扁平化
 
 ---
 
@@ -253,7 +261,7 @@
 - **think.md 反思区**：持久化跨 session 经验积累
 - **scoring 技能记录**：按使用频率动态调整 Skill 信任等级
 - **task-orchestrate 脚本引擎**：复杂任务自动拆解为 L1~L4 编排深度
-- **seed-plan 种子指令方案**：最小化加载链（SKILL.md → think.md → rules.md），~3,100 token 地基
+- **seed-plan 种子指令方案**：最小化加载链（SKILL.md → think.md → fde.md），~3,100 token 地基
 
 ---
 
@@ -262,30 +270,47 @@
 > ⚠️ 诚实地说：下面是**方向**，不是承诺。没实测过的事标「不知道」——不画饼。
 > **v0.85 砍削原则**：验证优先于功能，先证明纪律层增量是真的，再做其他任何事。
 
-### 终局：中小企业 AI 落地的纪律底座
+### 终局：FDE 工程师帮企业 AI 化的一站式底座
 
-sofagent 的终局是两层：**设备端 Agent 纪律委员**（技术形态）+ **中小企业 AI 落地的纪律底座**（用户价值）。
+sofagent 的终局是：**FDE 工程师帮企业 AI 化的一站式底座**。装 sofagent 自带 OpenClaw 引擎——FDE 工程师用自己的 Agent（任何）对话，sofagent 引导梳理 workflow，后台 OpenClaw 执行 AI 节点，审计结果自动推送到协作平台。
 
 ```mermaid
 flowchart TB
-    subgraph device["设备端（Mac Mini / 旧电脑 / 无头 Linux）"]
-        sofagent["sofagent 纪律层"]
-        oc["OpenClaw 底座"]
-        ao["AO compose 编排引擎"]
-        agency["Agency Agent 模板库"]
-        mcp["MCP server（文件监听 + 主动推送）"]
-        sub["sub agent 池"]
+    subgraph front["对话层（FDE 工程师的 Agent）"]
+        agent["WorkBuddy / Claude Code / Codex / Hermes"]
     end
 
-    企业平台["钉钉 / 企微 / 飞书 / Slack / Teams 等"] <-->|"webhook + 机器人"| mcp
-    sofagent --> oc
-    oc --> ao
-    oc --> agency
-    ao --> sub
-    agency --> sub
-    mcp --> 企业平台
+    subgraph core["引导 + 审计层（sofagent）"]
+        fde["FDE 引导逻辑 engage-fde.md"]
+        audit["审计引擎 A1-A11"]
+        think["think.md 自动生成"]
+        orch["编排引擎"]
+    end
 
-    style sofagent fill:#16B8F3,color:#fff
+    subgraph engine["执行层（OpenClaw 必装引擎）"]
+        oc["OpenClaw"]
+        ao["AO compose"]
+        sub_pool["sub-agent 池"]
+    end
+
+    subgraph push["推送层（MCP webhook）"]
+        mcp["MCP server"]
+    end
+
+    企业平台["钉钉 / 企微 / 飞书"] <-->|"webhook"| mcp
+
+    agent --> fde
+    fde --> oc
+    oc --> ao
+    ao --> sub_pool
+    sub_pool --> audit
+    audit --> think
+    think --> orch
+    orch --> oc
+    audit --> mcp
+
+    style fde fill:#16B8F3,color:#fff
+    style audit fill:#16B8F3,color:#fff
     style oc fill:#FF4D4D,color:#fff
 ```
 
@@ -293,7 +318,7 @@ flowchart TB
 
 | 路径 | 面向谁 | 怎么落地 | 终点 |
 |------|------|------|------|
-| **FDE 驻场部署** | 传统中小企业（无技术团队） | FDE 工程师进场 → sofagent-fde 十步流程 → 部署交付 → 撤离。老板无感，只知道"AI 能用了" | 企业 Agent 不出错的纪律底座 |
+| **FDE 驻场部署** | 传统中小企业（无技术团队） | FDE 工程师进场 → FDE.md 十步流程 → 部署交付 → 撤离。老板无感，只知道"AI 能用了" | 企业 Agent 不出错的纪律底座 |
 | **开发者自部署** | 开源社区 / 技术团队 | git clone → install.sh → 审计工具 → CI 集成 | 设备端 Agent 纪律委员 |
 
 > 💡 **客户 ≠ 使用者**。传统中小企业的老板不读 README，不跑 install.sh——他只看 FDE 交付的方案书和运行报告。真正部署 sofagent 的是 FDE 工程师、企业 IT、或公司里懂点技术的年轻人。sofagent 面向**部署者**，不面向买单者。
@@ -304,74 +329,95 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 
 ---
 
-### v0.9x — 纪律层验证 + 工程基底（v0.97 进行中）
+### v0.9x — 审计独立化 + 架构重组（v0.98 进行中）
 
 > v0.93-v0.97 已交付。v0.98-v0.99 两步走到 v1.0。
 
-#### v0.98：审计独立化
+#### v0.98：架构重组 + FDE 转身
 
-- **审计闭环六步（P0）**：检测→分类→根因→改进→回归→上线，基于 v0.97 真实数据
-- **首个持续使用案例（P0）**：≥1 个外部用户持续使用 **≥7 天**（门槛低、招人快，覆盖一个完整工作周期）
-- **GitHub Action 模板（P1）**：零配置 CI 集成，exit code 驱动 block PR
-- **部署层 bash 保留决策（P1）**：bootstrap 层永久留 bash，不迁 TS
-- **企业平台 webhook 推送（P1）**：钉钉优先，审计报告推送到群
-- **HANDBOOK 按场景重组（P1）**：按「第一次用→装完做事→日常→出问题→定制→FDE」重组（从 v0.97 推迟，等实验结论）
-- **概念精简（P1）**：22 条规则→14 条，编排 10+ 概念→3 概念
-- **文档诚实化（P1）**：中英文 README 信息对齐（英文版结构反哺中文版）+ HANDBOOK 楔子→THANKS.md（扩充已有作者自述段）+ install.sh 安全性说明 + README 平台声明诚实标注
-- **demo.gif（P1）**：15 秒 asciinema 侧边对比（裸 Agent vs sofagent 约束 Agent），替换 README.en.md TODO 占位
-- **MCP 推送层 POC（P1）**：100 行概念验证（`fs.watch` + webhook 推送），验证五层架构第四层的工程可行性
+- **产品架构重组（P0）**：lite 删除 + rules→FDE.md + think.md 自动生成 + FDE 从 Skill 改为根目录文档
+- **OpenClaw 重定义为必装引擎（P0）**：平台能力矩阵删除，后台统一 OpenClaw
+- **审计闭环六步（P0）**：检测→分类→根因→改进→回归→上线
+- **GitHub Action 模板（P1）**：零配置 CI 集成
+- **install.sh 模块化（P1）**：941→~580 行，4 模块 + 1 主入口
+- **MCP webhook 推送 POC（P1）**：钉钉优先，验证推送链路
+- **文档诚实化（P1）**：README/HANDBOOK 叙事更新 + v1.0 定位重构
 
 #### v0.99：v1.0 前收尾
 
-- **v1.0 准入条件 9 条核查（P0）**：逐条打勾，不满意的诚实调低 v1.0 定位
-- **外部反馈整理（P0）**：GitHub Issues triage + 反馈摘要 + EVIDENCE 更新
-- **文档终审（P0）**：13 份核心文档复核 + 概念去重复查 + 一致性自动化检查脚本
-- **FDE 完整链路端到端验证（P1）**：装环境→梳理 workflow→编排→执行→反思→审计→推送
-- **sofagent-audit 独立 npm 包评估（P1）**：审计闭环跑通后，评估拆/留（决策矩阵 + 触发条件：30 天内无外部 PR → 拆）
-- **bus factor 缓解（P1）**：目标 ≥3 个外部 PR 合入，如做不到在 v1.0 诚实声明。Co-maintainer 诱因升级（Admin 权限/单独列名/英文文档 Owner）+ 模型依赖单点故障声明
+- **engage-fde.md 引导逻辑实现（P0）**：FDE 场景主动引导 → 自动产出 yaml + 方案书
+- **install.sh OpenClaw 必装实现（P0）**：自动检测 + 共存复用 + 幂等注册
+- **workflow.yaml schema 定义（P0）**：基于 FDE §六 自动产出
+- **DAG JSON 格式对接（P0）**：查 OpenClaw `ao compose` 标准输出
+- **FDE 完整链路端到端验证（P0）**：装环境→FDE 引导→梳理 workflow→编排→执行→审计→推送
+- **MCP webhook 后台开发（P1）**：从 POC 到可用的推送服务
+- **v1.0 准入条件核查（P0）**：逐条打勾，不满意的诚实调低
+- **外部反馈整理（P0）**：GitHub Issues triage + EVIDENCE 更新
 
 ---
 
-### v1.0 — 正式版：Agent 工作验收工具
+### v1.0 — 正式版：FDE 部署底座
 
-> **定位**：Agent 工作验收工具（正式）+ Agent 纪律层（实验）+ FDE 部署框架（规划）。审计层跨平台、零 Agent 依赖——是 v1.0 的主产品。纪律层的效果证明需要长期数据，v1.0 标注为「实验版」比标注为「正式版」更诚实。
+> **定位**：**FDE 部署底座**——帮 FDE 工程师快速梳理企业 workflow → 定义 AI 节点 → 部署到任意设备 → 审计结果自动推送到协作平台。装 sofagent 自带 OpenClaw 引擎（必装）。审计引擎是主产品，think.md 由审计引擎自动生成（不依赖 Agent 自觉），FDE 引导逻辑内联。
+
+**v1.0 三条主线**：
+
+| # | 主线 | 做什么 |
+|:--:|------|------|
+| 1 | 快速帮 FDE 工程师实现 workflow | FDE 引导逻辑（engage-fde.md）→ 自动产出 workflow.yaml + 部署方案书 |
+| 2 | 任意节点部署 + 执行 | 部署好的 FDE 方案装到任意电脑/设备 → OpenClaw 跑 workflow AI 节点 |
+| 3 | 审计结果主动推送 | MCP webhook → 钉钉/飞书/企微，审计文档自动推给 FDE 工程师 |
 
 **什么时候发**：当下面这些条件同时满足：
 
-- 纪律层增量在反转实验中有明确结论（证实或证伪都行，不能「不知道」）
-- 审计工具实现完整六步闭环（检测→分类→根因→改进→回归→上线）——从 OpenAI Tax AI 案例
-- 纪律层上下文成本 ≤ 窗口大小的 5%（设计上限声明）——从 MCP 扩展架构笔记
-- OpenClaw 预装 + AO compose + Agency Agent 全链路跑通
-- MCP server + 至少一个企业平台 webhook 跑通
-- daemon 在 macOS 和 Linux 上稳定运行 ≥ 30 天
-- 至少 3 个外部用户的 **7 天持续使用数据**
-- install → verify → 首次任务通过率 ≥ 90%
-- 能力矩阵五个平台都有实测数据
+| # | 准入条件 | 衡量方式 |
+|:--:|------|------|
+| 1 | FDE 引导逻辑（engage-fde.md）跑通十步 | 至少 1 次完整 FDE 部署 |
+| 2 | workflow.yaml → DAG → OpenClaw 执行全链路 | 端到端跑通 |
+| 3 | 审计引擎自动生成 think.md | 不依赖 Agent 自觉 |
+| 4 | MCP webhook 推送 ≥1 个平台（钉钉优先） | 推到群里人能看到 |
+| 5 | OpenClaw 必装 + 共存检测 | install.sh 自动处理 |
+| 6 | 至少 1 个企业节点持续运行 ≥7 天 | 真实任务，不是实验 |
+
+> 原 9 条准入条件中的"3 个外部用户 30 天"、"daemon 30 天"、"五平台实测数据"已调整：外部用户和 daemon 降级为"持续观察"而非准入门槛。纪律层实验结果已作废（见 [anti-cases/004](./docs/evidence/anti-cases/004-discipline-experiment-inconclusive.md)）。
 
 **发布动作**：GitHub Release + 更新 ClawHub/SkillHub + v1.0 公告。
 
-**🔴 硬性截止日期**：**2026-09-30**。如果这个日期前「daemon 稳定 ≥ 30 天」或「3 个外部用户 30 天数据」未达标，v1.0 定位诚实降为「审计工具技术预览版」，纪律层和 FDE 保留实验标签。没有截止日期的 roadmap 是愿望清单。
+**🔴 硬性截止日期**：**2026-09-30**。如果这个日期前准入条件达标率 < 3/6，v1.0 定位诚实降为「审计工具 + FDE 技术预览版」。没有截止日期的 roadmap 是愿望清单。
+
+### 🔴 放弃条件（v0.99 正式引入）
+
+> 来源：2026-06-29 两份独立审查共识 + 2026-06-30 架构重组调整。
+
+| # | 触发条件 | 判定时机 | 处置 |
+|:--:|------|:--:|------|
+| 1 | FDE 部署链路验证失败（engage-fde.md 跑不通十步） | v1.0 发布前 | FDE 降为"文档参考"，只保留审计引擎 |
+| 2 | 审计工具推出 3 个月，推广 20 人，0 安装 | v1.0 后 3 个月 | archive 仓库，写事后总结 |
+| 3 | 2026-09-30 准入达标率 < 3/6 | 截止日期 | 诚实降级定位 |
+| 4 | OpenClaw 架构变更，hook 兼容丢失，3 个月无迁移路径 | 变更时 | 只保留审计引擎 |
+| 5 | 作者 30 天无 commit，无 Co-maintainer 接手 | 连续 30 天 | archive，标注「不再维护」 |
+
+> **「放弃」不是失败的标签——是诚实的工程决策。** 触发后公开写事后总结，文档保持原样。
 
 ---
 
 ### v1.x — 发布后
 
-> 纪律层验证通过后再评估的功能。
+> v1.0 FDE 部署底座跑通后再评估的功能。
 
 | 想法 | 难度 | 说明 |
 |------|:--:|------|
 | **Skill 自进化闭环** | 🔧🔧 | FDE 部署时生成的企业专属 Skill → workflow 检查点标记不合格任务 → skillopt 自动分析失败模式 → Skill 自动升级。形成"部署→运行→检查→进化"四步闭环 |
-| **Ralph 范式声明文档** | 🔧 | docs/ralph-loop-and-sofagent.md：Huntley 原帖哲学 + Boris Cherny 30 天数据 + Ralph/Hermes 双范式对比 + sofagent 为什么选 Ralph（文件外化=可审计、无状态=可扩展） |
+| **workflow 自主迭代机制** | 🔧🔧 | 基于 think.md 反馈，编排引擎自动优化任务拆分策略。workflow 不是静态的——随节点执行次数增加越来越精准 |
 | 质量抽检仪表盘 | 🔧 | 每个企业节点的抽检合格率、不合格趋势、skillopt 迭代记录可视化 |
 | age 加密 | 🔧 | age 加密 think.md + task/logs |
-| 多用户隔离 | 🔧 | 同机权限隔离 + 共享 rules.md |
-| 多企业平台 webhook | 🔧 | 飞书 + 自定义 webhook |
+| 多用户隔离 | 🔧 | 同机权限隔离 + 共享 FDE.md |
+| 多企业平台 webhook | 🔧 | 飞书 + 企微 + 自定义 webhook |
 | 记忆架构升级 | 🔧 | Ledger-Views-Policy 三层模型 |
 | 成本仪表盘 | 🔧 | bash 读 task/logs 输出 token/循环次数/失败率 |
 | Windows 支持 | 🔧 | PowerShell 平行实现（待需求验证） |
-| 认知投降防线 / 外部评估器 / loop-check 反驳层 | 🔧 | 原 v1.x |
 | 企业 workflow 可视化后台 | 🔧 | Web 后台快速梳理企业 workflow，可视化画布中每个节点对应 sofagent 的固定 Agent session |
-| 分布式反思同步 | 🔧 | 多设备 Agent 反思聚合——参照 Gossip 去中心化协议（vs 中心化黑板）+ 信任加权投票（基于历史正确率动态权重矩阵）处理多 Agent 冲突裁定。CAP 理论权衡框架与 sofagent「不追求完美方案」哲学一致 |
+| 分布式反思同步 | 🔧 | 多设备 Agent 反思聚合——参照 Gossip 去中心化协议 + 信任加权投票处理多 Agent 冲突裁定 |
 
 ---
 
@@ -405,15 +451,12 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 
 | 方向 | 面向谁 | 一句话 |
 |------|------|------|
-| **CI/CD Gate** | 工程团队 / DevOps | 铁律打包成 GitHub Action，PR 自动检查 Agent 生成的代码（→ v1.0） |
-| **双闸验证** | 安全敏感场景 | 工具执行前 gate + 执行后副作用复查——不光问「能不能」，还问「做对没」（→ v1.x） |
-| **Agent 疲劳度检测** | 长时间任务用户 | 监控上下文窗口污染和决策质量衰减信号（→ v1.x） |
-| **轻量插件** | 非 OpenClaw 平台用户 | 浏览器/IDE 插件在 DOM 层注入 1-2 条核心铁律，最低限度的纪律层 |
-| **IDE 实时防护整合** | Cursor/Copilot 用户 | 与 IDE 原生能力（diff 级撤销、inline suggestion）的整合方向 + 道德风险检测 |
-| **FDU 前线部署单元** | 企业 FDE 团队 | 参照 IBM 提出的 FDU 模式（6 人干 30 人的活），sofagent 作为 FDU 中间层的 Agent 纪律底座（→ v1.x） |
-| **AI 热词路线对标** | 产品定位 | sofagent 踩在 AI 演化路线的三个节点上：Skill（第 7 阶段）、Harness Engineering（第 10 阶段）、Workspace Agent（第 12 阶段） |
-| **SMB 场景铁律扩展** | 传统中小企业 | 铁律从代码开发扩展到数据处理/报表生成/文档撰写——"验证再干"对 SMB 不是 `npm test`，是"数据算对了没有"（→ v0.96 探索） |
-| **平台级审计日志对接** | 企业安全 | 对接 OpenClaw hook 级 / WorkBuddy API 级审计日志，替代 Agent 自我报告——根治审计信任根问题（→ v1.x） |
+| **workflow 外部模板扩充** | FDE 工程师 | 除 n8n-workflows 外，引入 BPMN 2.0 标准 / Coze / Dify 作为行业流程参考 |
+| **多企业平台 webhook** | 企业安全 | v1.0 钉钉优先，v1.x 扩展飞书/企微/Slack/Teams |
+| **企业 AI 节点知识库** | FDE 工程师 + 企业 | 多设备蒸馏记忆聚合到企业自有 NAS 或云盘，知识库管理员 Agent 自动分类、去重、建索引 |
+| **Agent 疲劳度检测** | 长时间任务用户 | 监控上下文窗口污染和决策质量衰减信号 |
+| **双闸验证** | 安全敏感场景 | 工具执行前 gate + 执行后副作用复查——不光问「能不能」，还问「做对没」 |
+| **SMB 场景审计扩展** | 传统中小企业 | 审计规则从代码开发扩展到数据处理/报表生成/文档撰写——"验证再干"对 SMB 不是 `npm test`，是"数据算对了没有" |
 
 ---
 
@@ -426,8 +469,13 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 | 自研行为验证器 `behavior-validator.js` | OpenClaw 原生 `tools.loopDetection` 已覆盖 |
 | 定时触发（cron） | 当前所有 Agent 平台都不支持 cron 级定时 |
 | 动态 Skill Hook | OpenClaw 不支持 Skill 级动态 Hook |
-| Connector（连接外部系统） | sofagent 是纪律层，不是自动化流水线。Markdown 文件就是接口 |
+| Connector（连接外部系统） | sofagent 是纪律层+审计层，不是自动化流水线。Markdown 文件就是接口 |
 | 记忆压缩自动化 | v0.56 前试过，已取消。每个 Agent 有自己的记忆 |
+| **sofagent-lite 独立产品** | v0.98 删除——OpenClaw 自带约束机制，独立宪法 skill 多余。宪法层内联到主 SKILL.md |
+| **平台能力矩阵五平台** | v0.98 删除——后台统一 OpenClaw，不再强调跨平台兼容性 |
+| **三层加载链叙事** | v0.98 废弃——三层拆分为独立产品（宪法内联 + think.md 自动生成 + FDE.md 企业约束） |
+| **sofagent-fde 独立 Skill** | v0.98 改为根目录 FDE.md 大文档——FDE 工程师自己装，Skill 机制意义不大 |
+| **纪律层实验第三次重跑** | v0.97 + v0.98 两次各 100 次都因任务设计无法结论，结果已作废。第三次不会有不同结果，换赛道到日常使用审计数据 |
 
 ---
 

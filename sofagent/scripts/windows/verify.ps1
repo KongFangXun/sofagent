@@ -21,7 +21,7 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
-$VERSION_STR = "0.97"
+$VERSION_STR = "0.98"
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
 
 $cfg = Join-Path $PSScriptRoot "lib\config.ps1"
@@ -99,8 +99,8 @@ if ($Quick) {
     if ($skillQuick -and ($skillQuickContent -match "4.*底线|6.*铁律")) { Check-Pass "SKILL.md 存在且含宪法（4底线+6则铁律）" } else { Check-Fail "SKILL.md 缺失或宪法关键词不全" }
     if (Test-Path $sofagentData) { Check-Pass ".sofagent/ 数据目录存在" } else { Check-Warn ".sofagent/ 数据目录不存在（首次使用会自动创建）" }
     if (Get-Command ao -ErrorAction SilentlyContinue) { Check-Pass "ao compose 可用 — v$(ao --version 2>$null)" } else { Check-Warn "ao compose 不可用——编排引擎降级为默认编排" }
-    $rulesQuick = @("$OPENCLAW_DIR\skills\sofagent\rules.md", "$up\.workbuddy\skills\sofagent\rules.md", "$up\.openclaw\rules.md") | Where-Object { Test-Path $_ } | Select-Object -First 1
-    if ($rulesQuick) { Check-Pass "rules.md 可读 — $rulesQuick" } else { Check-Warn "rules.md 未找到或不可读" }
+    $rulesQuick = @("$OPENCLAW_DIR\skills\sofagent\fde.md", "$up\.workbuddy\skills\sofagent\fde.md", "$up\.openclaw\fde.md") | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if ($rulesQuick) { Check-Pass "fde.md 可读 — $rulesQuick" } else { Check-Warn "fde.md 未找到或不可读" }
     Write-Summary; exit $(if ($script:fail -gt 0) { 1 } else { 0 })
 }
 
@@ -113,8 +113,8 @@ if ($Platform -eq "workbuddy") {
         $wbSkillContent = [System.IO.File]::ReadAllText($wbSkill)
         if ($wbSkillContent -match "4 底线|6 则铁律") { Check-Pass "SKILL.md 已部署且含宪法（4底线+6则铁律内联）" } else { Check-Warn "SKILL.md 已部署但宪法内容缺失" }
     } else { Check-Warn "SKILL.md 未部署到 ~/.workbuddy/skills/sofagent/" }
-    $wbRules = "$up\.workbuddy\rules.md"
-    if ((Test-Path $wbRules) -and (Get-Item $wbRules).Length -gt 0) { Check-Pass "rules.md 已部署（$(Get-CharCount $wbRules) 字符）" } else { Check-Warn "rules.md 未部署到 ~/.workbuddy/" }
+    $wbRules = "$up\.workbuddy\fde.md"
+    if ((Test-Path $wbRules) -and (Get-Item $wbRules).Length -gt 0) { Check-Pass "fde.md 已部署（$(Get-CharCount $wbRules) 字符）" } else { Check-Warn "fde.md 未部署到 ~/.workbuddy/" }
     if (Test-Path "$up\.workbuddy\skills\sofagent") {
         $cnt = (Get-ChildItem "$up\.workbuddy\skills\sofagent" -Filter *.md -ErrorAction SilentlyContinue | Measure-Object).Count
         Check-Pass "Skills 目录已部署（$cnt 个 .md 文件）"
@@ -124,14 +124,14 @@ if ($Platform -eq "workbuddy") {
 }
 
 # ════════ 完整检查（非 workbuddy）════════
-Section "宪法文件（rules.md）"
-$rp = Join-Path $OPENCLAW_DIR "skills\sofagent\rules.md"
-if (-not (Test-Path $rp)) { $rp = Join-Path $OPENCLAW_DIR "rules.md" }
+Section "宪法文件（fde.md）"
+$rp = Join-Path $OPENCLAW_DIR "skills\sofagent\fde.md"
+if (-not (Test-Path $rp)) { $rp = Join-Path $OPENCLAW_DIR "fde.md" }
 if ((Test-Path $rp) -and (Get-Item $rp).Length -gt 0) {
     $chars = Get-CharCount $rp; $lines = (Get-Content $rp -Encoding UTF8).Count
-    Check-Pass "rules.md ($chars 字符, $lines 行)"
-    if ($chars -gt 1200) { Check-Warn "rules.md 超过 1200 字符（$chars），宪法层阈值放宽至 1200" }
-} else { Check-Fail "rules.md — 缺失或为空" }
+    Check-Pass "fde.md ($chars 字符, $lines 行)"
+    if ($chars -gt 1200) { Check-Warn "fde.md 超过 1200 字符（$chars），宪法层阈值放宽至 1200" }
+} else { Check-Fail "fde.md — 缺失或为空" }
 
 Section "Skill 文件"
 $skillsDir = Join-Path $OPENCLAW_DIR "skills"
@@ -213,8 +213,8 @@ foreach ($cs in @("audit.ps1", "task-record.ps1")) {
     if (Test-Path (Join-Path $ScriptDir $cs)) { Check-Pass "$cs 存在" } else { Check-Warn "$cs 缺失" }
 }
 
-# rules.md 合规配置段完整性
-$rulesCfg = @("$((Get-Location).Path)\sofagent\rules.md", "$up\.openclaw\skills\sofagent\rules.md", "$up\.workbuddy\skills\sofagent\rules.md", "$OPENCLAW_DIR\skills\sofagent\rules.md") | Where-Object { Test-Path $_ } | Select-Object -First 1
+# fde.md 合规配置段完整性
+$rulesCfg = @("$((Get-Location).Path)\sofagent\fde.md", "$up\.openclaw\skills\sofagent\fde.md", "$up\.workbuddy\skills\sofagent\fde.md", "$OPENCLAW_DIR\skills\sofagent\fde.md") | Where-Object { Test-Path $_ } | Select-Object -First 1
 if ($rulesCfg) {
     # PS 5.1 Select-String -Path 用系统编码读文件，改用 .NET API 读 UTF-8
     $rulesCfgContent = [System.IO.File]::ReadAllText($rulesCfg)
@@ -222,8 +222,8 @@ if ($rulesCfg) {
     foreach ($key in @("log_sanitize", "log_sanitize_ips", "data_retention_days", "data_retention_max_entries", "data_cleanup_on_record", "data_cleanup_frequency", "audit_enabled")) {
         if ($rulesCfgContent -notmatch "${key}:") { $missing++ }
     }
-    if ($missing -eq 0) { Check-Pass "rules.md 合规配置段完整（7/7 配置项）" } else { Check-Warn "rules.md 合规配置段不完整（缺少 $missing/7 项）" }
-} else { Check-Warn "rules.md 未找到，无法验证合规配置段" }
+    if ($missing -eq 0) { Check-Pass "fde.md 合规配置段完整（7/7 配置项）" } else { Check-Warn "fde.md 合规配置段不完整（缺少 $missing/7 项）" }
+} else { Check-Warn "fde.md 未找到，无法验证合规配置段" }
 
 # ════════ 总结 ════════
 Write-Summary

@@ -12,7 +12,7 @@ import { platform, homedir, hostname, userInfo } from 'os';
 import { existsSync } from 'fs';
 import { execFileSync } from 'child_process';
 
-const VERSION = '0.97';
+const VERSION = '0.98';
 
 export interface EnvReport {
   /** 环境变量 */

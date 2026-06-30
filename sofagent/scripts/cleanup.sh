@@ -24,12 +24,12 @@
 # ════════════════════════════════════════
 # 调用说明：本脚本通常由 task-record.sh 概率触发（默认 1/10），
 # 而非每次任务记录后都执行。此举意在避免每次写入后都做全量磁盘扫描。
-# 概率参数由 rules.md 的 data_cleanup_frequency 控制（默认 10）。
+# 概率参数由 fde.md 的 data_cleanup_frequency 控制（默认 10）。
 # 也可独立运行：cleanup.sh --dry-run / cleanup.sh --force
 # ════════════════════════════════════════
 set -euo pipefail
 
-VERSION="0.97"
+VERSION="0.98"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -91,7 +91,7 @@ if [ "$SHOW_HELP" = true ]; then
   echo "    cleanup.sh --purge --before 2026-01-01   强制清理 2026 年之前的日志"
   echo "    cleanup.sh --dry-run --before 2026-06-01 预览清理 6 月之前的日志"
   echo ""
-  echo "  配置项（rules.md）："
+  echo "  配置项（fde.md）："
   echo "    data_retention_days         日志保留天数（默认 90）"
   echo "    data_retention_max_entries   日志最大条数（默认 500）"
   echo "    audit_enabled                审计开关"
@@ -193,7 +193,7 @@ if [ ${#expired_files[@]} -gt 0 ]; then
       continue
     fi
 
-    file_count=$(ls "$month_dir"/*.md 2>/dev/null | wc -l | tr -d ' ')
+    file_count=$(find "$month_dir" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
     entry_count=$({ grep -ch "^## " "$month_dir"/*.md 2>/dev/null || echo "0"; } | awk '{s+=$1}END{print s+0}')
 
     if [ "$DRY_RUN" = true ]; then
@@ -264,7 +264,7 @@ if [ "$total_entries" -gt "$RETENTION_MAX" ]; then
     [ -d "$month_dir" ] || continue
 
     month=$(basename "$month_dir")
-    file_count=$(ls "$month_dir"/*.md 2>/dev/null | wc -l | tr -d ' ')
+    file_count=$(find "$month_dir" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
     entry_count=$({ grep -ch "^## " "$month_dir"/*.md 2>/dev/null || echo "0"; } | awk '{s+=$1}END{print s+0}')
 
     if [ "$DRY_RUN" = true ]; then

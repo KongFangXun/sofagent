@@ -2,13 +2,13 @@
 // 注入三层加载链到 agent:bootstrap：
 //   L1 SKILL.md（4 底线 + 6 则铁律，openclaw 技能系统只注入 description ≈240 chars，本 hook 补注全文）
 //   L2 think.md（反思区）
-//   L3 rules.md（用户规则）
+//   L3 fde.md（用户规则）
 // 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
 //
-// rules.md 路径优先级（v0.73 扁平化）：
-//   1. skills/sofagent/rules.md（install.sh 部署目标，权威路径）
-//   2. skills/sofagent/constitution/rules.md（兼容 v0.72 前老安装，fallback）
-//   3. openclawDir/rules.md（兼容 v0.70 前老安装，已降级为 fallback）
+// fde.md 路径优先级（v0.73 扁平化）：
+//   1. skills/sofagent/fde.md（install.sh 部署目标，权威路径）
+//   2. skills/sofagent/constitution/fde.md（兼容 v0.72 前老安装，fallback）
+//   3. openclawDir/fde.md（兼容 v0.70 前老安装，已降级为 fallback）
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -60,14 +60,14 @@ const handler = async (event: any) => {
     pushed.push("think.md");
   }
 
-  // ── 第 3 层：用户规则（rules.md）──
+  // ── 第 3 层：用户规则（fde.md）──
   // 优先读 install.sh 部署的扁平化路径（权威路径）
   // fallback 读旧 constitution 路径（兼容 v0.72 前老安装）
-  // 最后 fallback 读旧路径 openclawDir/rules.md（兼容 v0.70 前老安装）
+  // 最后 fallback 读旧路径 openclawDir/fde.md（兼容 v0.70 前老安装）
   const rulesCandidates = [
-    path.join(openclawDir, "skills", "sofagent", "rules.md"),
-    path.join(openclawDir, "skills", "sofagent", "constitution", "rules.md"),
-    path.join(openclawDir, "rules.md"),
+    path.join(openclawDir, "skills", "sofagent", "fde.md"),
+    path.join(openclawDir, "skills", "sofagent", "constitution", "fde.md"),
+    path.join(openclawDir, "fde.md"),
   ];
   let rulesFile = "";
   for (const candidate of rulesCandidates) {
@@ -79,11 +79,11 @@ const handler = async (event: any) => {
   if (rulesFile) {
     const content = fs.readFileSync(rulesFile, "utf-8");
     event.context.bootstrapFiles.push({
-      name: "sofagent-rules.md",
+      name: "sofagent-fde.md",
       path: rulesFile,
-      content: `<!-- ===== sofagent 第 3 层：用户规则（rules.md）===== -->\n${content}`,
+      content: `<!-- ===== sofagent 第 3 层：用户规则（fde.md）===== -->\n${content}`,
     });
-    pushed.push("rules.md");
+    pushed.push("fde.md");
   }
 
   if (pushed.length > 0) {

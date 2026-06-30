@@ -16,7 +16,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="0.97"
+VERSION="0.98"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -40,7 +40,7 @@ while [[ $# -gt 0 ]]; do
       echo "  正常模式 彩色终端，显示所有检查项"
       echo "  --json   JSON 机器可读输出（CI/CD 用）"
       echo "  --quiet  只输出失败和警告，全通过时静默"
-      echo "  --quick  快速模式——仅 4 项核心检查（SKILL.md / .sofagent/ / ao compose / rules.md）"
+      echo "  --quick  快速模式——仅 4 项核心检查（SKILL.md / .sofagent/ / ao compose / fde.md）"
       echo "  --help   显示此帮助"
       echo "退出码: 0=全部通过 1=存在失败项"
       exit 0
@@ -174,18 +174,18 @@ if [ "$QUICK_MODE" = true ]; then
     check_warn "ao compose 不可用——编排引擎降级为默认编排"
   fi
 
-  # 4. rules.md 可读
+  # 4. fde.md 可读
   RULES_QUICK=""
   for c in \
-    "${OPENCLAW_DIR:-$HOME/.openclaw}/skills/sofagent/rules.md" \
-    "${HOME}/.workbuddy/skills/sofagent/rules.md" \
-    "${HOME}/.openclaw/rules.md"; do
+    "${OPENCLAW_DIR:-$HOME/.openclaw}/skills/sofagent/fde.md" \
+    "${HOME}/.workbuddy/skills/sofagent/fde.md" \
+    "${HOME}/.openclaw/fde.md"; do
     [ -f "$c" ] && { RULES_QUICK="$c"; break; }
   done
   if [ -n "$RULES_QUICK" ] && [ -r "$RULES_QUICK" ]; then
-    check_pass "rules.md 可读 — ${RULES_QUICK}"
+    check_pass "fde.md 可读 — ${RULES_QUICK}"
   else
-    check_warn "rules.md 未找到或不可读（未配置自定义规则）"
+    check_warn "fde.md 未找到或不可读（未配置自定义规则）"
   fi
 
   # 输出总结并退出
@@ -232,15 +232,15 @@ if [ "$PLATFORM" = "workbuddy" ]; then
     check_warn "SKILL.md 未部署到 ~/.workbuddy/skills/sofagent/"
   fi
 
-  if [ -f "$HOME/.workbuddy/rules.md" ] && [ -s "$HOME/.workbuddy/rules.md" ]; then
-    chars=$(wc -m < "$HOME/.workbuddy/rules.md" | tr -d ' ')
-    check_pass "rules.md 已部署（${chars} 字符）"
+  if [ -f "$HOME/.workbuddy/fde.md" ] && [ -s "$HOME/.workbuddy/fde.md" ]; then
+    chars=$(wc -m < "$HOME/.workbuddy/fde.md" | tr -d ' ')
+    check_pass "fde.md 已部署（${chars} 字符）"
   else
-    check_warn "rules.md 未部署到 ~/.workbuddy/"
+    check_warn "fde.md 未部署到 ~/.workbuddy/"
   fi
 
   if [ -d "$HOME/.workbuddy/skills/sofagent" ]; then
-    count=$(ls -1 "$HOME/.workbuddy/skills/sofagent"/*.md 2>/dev/null | wc -l | tr -d ' ')
+    count=$(find "$HOME/.workbuddy/skills/sofagent" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
     check_pass "Skills 目录已部署（${count} 个 .md 文件）"
   else
     check_warn "Skills 目录不存在"
@@ -286,10 +286,10 @@ JSONEOF
   exit 0
 fi
 
-_section "宪法文件（v0.62：宪法内联在 SKILL.md，此处只检查 rules.md）"
+_section "宪法文件（v0.62：宪法内联在 SKILL.md，此处只检查 fde.md）"
 
-f="rules.md"
-# v0.73: rules.md 部署到 skills/sofagent/rules.md（扁平化）
+f="fde.md"
+# v0.73: fde.md 部署到 skills/sofagent/fde.md（扁平化）
 path="${OPENCLAW_DIR}/skills/sofagent/${f}"
 if [ ! -f "$path" ]; then
   path="${OPENCLAW_DIR}/${f}"  # 兼容旧版安装路径
@@ -316,7 +316,7 @@ _section "Skill 文件"
 
 SKILLS_DIR="${OPENCLAW_DIR}/skills"
 if [ -d "$SKILLS_DIR" ]; then
-  skill_count=$(ls -1 "$SKILLS_DIR"/*.md 2>/dev/null | wc -l | tr -d ' ')
+  skill_count=$(find "$SKILLS_DIR" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
   check_pass "Skills 目录存在: ${skill_count} 个 .md 文件"
 else
   check_fail "Skills 目录不存在: $SKILLS_DIR"
@@ -327,7 +327,7 @@ _section "配套脚本"
 
 SCRIPTS_DIR="${OPENCLAW_DIR}/scripts"
 if [ -d "$SCRIPTS_DIR" ]; then
-  script_count=$(ls -1 "$SCRIPTS_DIR"/*.sh 2>/dev/null | wc -l | tr -d ' ')
+  script_count=$(find "$SCRIPTS_DIR" -maxdepth 1 -name '*.sh' 2>/dev/null | wc -l | tr -d ' ')
   check_pass "scripts/ 目录存在: ${script_count} 个 .sh 文件"
   s="task-record.sh"
   if [ -f "${SCRIPTS_DIR}/${s}" ] && [ -x "${SCRIPTS_DIR}/${s}" ]; then
@@ -371,21 +371,21 @@ else
     check_warn "openclaw.json 不存在（hook 注册无从检查）"
   fi
 
-  # 检查注入源文件是否可解析（think.md / rules.md）
-  # v0.73: rules.md 权威路径 skills/sofagent/rules.md（扁平化）
-  # ~/.openclaw/rules.md 是用户自定义文件，不再作为 sofagent 部署路径检查
-  RULES_AUTHORITY="${OPENCLAW_DIR}/skills/sofagent/rules.md"
+  # 检查注入源文件是否可解析（think.md / fde.md）
+  # v0.73: fde.md 权威路径 skills/sofagent/fde.md（扁平化）
+  # ~/.openclaw/fde.md 是用户自定义文件，不再作为 sofagent 部署路径检查
+  RULES_AUTHORITY="${OPENCLAW_DIR}/skills/sofagent/fde.md"
   if [ -f "$RULES_AUTHORITY" ]; then
-    check_pass "rules.md 权威路径就绪（$(wc -m < "$RULES_AUTHORITY" | tr -d ' ') 字符）"
+    check_pass "fde.md 权威路径就绪（$(wc -m < "$RULES_AUTHORITY" | tr -d ' ') 字符）"
   else
-    check_warn "rules.md 未部署到权威路径（${RULES_AUTHORITY}）"
-    # 兼容检查：老版本（v0.70 前）部署到 ~/.openclaw/rules.md
-    LEGACY_RULES="${OPENCLAW_DIR}/rules.md"
+    check_warn "fde.md 未部署到权威路径（${RULES_AUTHORITY}）"
+    # 兼容检查：老版本（v0.70 前）部署到 ~/.openclaw/fde.md
+    LEGACY_RULES="${OPENCLAW_DIR}/fde.md"
     if [ -f "$LEGACY_RULES" ]; then
       check_warn "  发现遗留路径（${LEGACY_RULES}）——建议运行 install.sh 升级到 v0.73 扁平化路径"
     fi
-    # v0.71-0.72 残留：constitution/rules.md → warning
-    LEGACY_CONST="${OPENCLAW_DIR}/skills/sofagent/constitution/rules.md"
+    # v0.71-0.72 残留：constitution/fde.md → warning
+    LEGACY_CONST="${OPENCLAW_DIR}/skills/sofagent/constitution/fde.md"
     if [ -f "$LEGACY_CONST" ]; then
       check_warn "  发现 v0.72 前安装残留（${LEGACY_CONST}）——建议运行 install.sh 升级，旧路径将自动迁移"
     fi
@@ -430,7 +430,7 @@ else
         else
           MISSING_LAYERS=""
           [ "$LAYER2_FOUND" = "0" ] && MISSING_LAYERS="第2层(think.md)"
-          [ "$LAYER3_FOUND" = "0" ] && MISSING_LAYERS="${MISSING_LAYERS:+$MISSING_LAYERS, }第3层(rules.md)"
+          [ "$LAYER3_FOUND" = "0" ] && MISSING_LAYERS="${MISSING_LAYERS:+$MISSING_LAYERS, }第3层(fde.md)"
           check_warn "handler.ts 回归：${MISSING_LAYERS}未在注入列表中出现"
           check_warn "handler.ts 回归：日志格式可能已变化（grep 字符串匹配依赖固定格式），如使用非标准 OpenClaw 版本请手动确认加载链是否生效"
         fi
@@ -783,17 +783,17 @@ else
   fi
 fi
 
-# 10.5 rules.md 配置段完整性
-# v0.73: 权威路径为 skills/sofagent/rules.md（扁平化）
+# 10.5 fde.md 配置段完整性
+# v0.73: 权威路径为 skills/sofagent/fde.md（扁平化）
 # 兼容 fallback：工作目录（开发态）/ 旧部署路径（老安装）
 RULES_FILE=""
 for candidate in \
-  "${PWD}/sofagent/rules.md" \
-  "$HOME/.openclaw/skills/sofagent/rules.md" \
-  "$HOME/.workbuddy/skills/sofagent/rules.md" \
-  "${PWD}/sofagent/constitution/rules.md" \
-  "$HOME/.openclaw/skills/sofagent/constitution/rules.md" \
-  "$HOME/.workbuddy/skills/sofagent/constitution/rules.md"; do
+  "${PWD}/sofagent/fde.md" \
+  "$HOME/.openclaw/skills/sofagent/fde.md" \
+  "$HOME/.workbuddy/skills/sofagent/fde.md" \
+  "${PWD}/sofagent/constitution/fde.md" \
+  "$HOME/.openclaw/skills/sofagent/constitution/fde.md" \
+  "$HOME/.workbuddy/skills/sofagent/constitution/fde.md"; do
   if [ -f "$candidate" ]; then RULES_FILE="$candidate"; break; fi
 done
 if [ -n "$RULES_FILE" ]; then
@@ -804,12 +804,12 @@ if [ -n "$RULES_FILE" ]; then
     fi
   done
   if [ "$missing" -eq 0 ]; then
-    check_pass "rules.md 合规配置段完整（7/7 配置项）"
+    check_pass "fde.md 合规配置段完整（7/7 配置项）"
   else
-    check_warn "rules.md 合规配置段不完整（缺少 ${missing}/7 项）"
+    check_warn "fde.md 合规配置段不完整（缺少 ${missing}/7 项）"
   fi
 else
-  check_warn "rules.md 未找到，无法验证合规配置段"
+  check_warn "fde.md 未找到，无法验证合规配置段"
 fi
 
 _hr

@@ -1,0 +1,115 @@
+#!/bin/bash
+# daemon-register.sh · Hook 部署(Step 6) + 断路器注入(Step 7) + daemon(Step 6b)
+# 导出：deploy_hook / inject_loopdetect / install_daemon
+# OpenClaw 2026.6.x 声明式 hook：HOOK.md+handler.ts → ~/.openclaw/hooks/sofagent-load-chain/
+# 在 openclaw.json hooks.internal.entries.sofagent-load-chain 注册 enabled:true 即生效
+
+deploy_hook() {  # Step 6: 部署加载链 Hook（仅 OpenClaw）
+  [ "${LITE_MODE:-0}" = "1" ] && { info "Lite 模式：跳过 Hook 部署"; return 0; }
+  [ "$PLATFORM" != "openclaw" ] && return 0
+  info "Step 6/7 · 部署加载链 Hook（OpenClaw 2026.6.x 内部 hook 架构）..."
+  local HOOK_SRC_DIR="${SCRIPT_DIR}/../hooks/sofagent-load-chain"
+  local HOOK_DST_DIR="${TARGET}/hooks/sofagent-load-chain"
+  if [ ! -d "$HOOK_SRC_DIR" ] || [ ! -f "${HOOK_SRC_DIR}/HOOK.md" ] || [ ! -f "${HOOK_SRC_DIR}/handler.ts" ]; then
+    warn "找不到 hook 源文件（$HOOK_SRC_DIR/HOOK.md 或 handler.ts），跳过部署"
+    warn "  仓库结构异常？请从 https://github.com/KongFangXun/sofagent 重新拉取"; return 0; fi
+  mkdir -p "$HOOK_DST_DIR"
+  cp "${HOOK_SRC_DIR}/HOOK.md" "${HOOK_DST_DIR}/HOOK.md"
+  cp "${HOOK_SRC_DIR}/handler.ts" "${HOOK_DST_DIR}/handler.ts"
+  ok "加载链内部 Hook 已部署: ${HOOK_DST_DIR}（HOOK.md + handler.ts）"
+  # 注册到 openclaw.json（优先 OPENCLAW_CONFIG_PATH，其次 $TARGET/openclaw.json）
+  HOOK_CONFIG=""
+  for cfg in "${OPENCLAW_CONFIG_PATH:-}" "${TARGET}/openclaw.json"; do
+    [ -n "$cfg" ] && [ -f "$cfg" ] && { HOOK_CONFIG="$cfg"; break; }; done
+  [ -z "$HOOK_CONFIG" ] && HOOK_CONFIG="${TARGET}/openclaw.json"
+  if [ -f "$HOOK_CONFIG" ] && grep -q '"sofagent-load-chain"' "$HOOK_CONFIG" 2>/dev/null; then ok "Hook 已注册: $HOOK_CONFIG"; return 0; fi
+  info "正在注册 Hook → $HOOK_CONFIG"
+  # P0-1 修复：确保配置文件存在且有有效 JSON，防止空 .tmp 覆盖
+  [ -f "$HOOK_CONFIG" ] || echo '{}' > "$HOOK_CONFIG"; [ -s "$HOOK_CONFIG" ] || echo '{}' > "$HOOK_CONFIG"
+  cp "$HOOK_CONFIG" "${HOOK_CONFIG}.bak" 2>/dev/null || true
+  local REGISTER_OK=0
+  if command -v jq &>/dev/null; then
+    jq '.hooks.internal.enabled = ((.hooks.internal.enabled // false) or true) | .hooks.internal.entries = ((.hooks.internal.entries // {}) + {"sofagent-load-chain": {"enabled": true}})' \
+      "$HOOK_CONFIG" > "${HOOK_CONFIG}.tmp" 2>/dev/null
+    if [ -s "${HOOK_CONFIG}.tmp" ]; then
+      mv "${HOOK_CONFIG}.tmp" "$HOOK_CONFIG" && REGISTER_OK=1
+    else
+      warn "jq 注册失败（配置已备份为 ${HOOK_CONFIG}.bak）"
+    fi
+  elif command -v node &>/dev/null; then
+    if CONFIG_PATH="$HOOK_CONFIG" node - << 'H' 2>/dev/null; then
+const fs=require('fs'),p=process.env.CONFIG_PATH;let r='{}';try{r=fs.readFileSync(p,'utf-8')}catch(e){}
+let c={};try{c=JSON.parse(r.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\/\/.*$/gm,'').replace(/,(\s*[}\]])/g,'$1')||'{}')}catch(e){c={}}
+c.hooks=c.hooks||{};c.hooks.internal=c.hooks.internal||{};c.hooks.internal.enabled=true
+c.hooks.internal.entries=c.hooks.internal.entries||{};c.hooks.internal.entries['sofagent-load-chain']={enabled:true}
+fs.writeFileSync(p,JSON.stringify(c,null,2)+'\n')
+H
+      REGISTER_OK=1
+    else
+      warn "Node 注册失败（配置已备份为 ${HOOK_CONFIG}.bak）"
+    fi
+  else warn "jq 和 Node.js 均不可用——Hook 需要手动注册"; fi
+  if [ "$REGISTER_OK" = "1" ]; then
+    ok "Hook 已自动注册（hooks.internal.entries.sofagent-load-chain）"
+  else
+    warn "请手动在 $HOOK_CONFIG 添加："
+    warn '  {"hooks":{"internal":{"enabled":true,"entries":{"sofagent-load-chain":{"enabled":true}}}}}'
+  fi
+}
+inject_loopdetect() {  # Step 7: 注入 loopDetection（仅 OpenClaw，写入 config.json）
+  [ "$PLATFORM" != "openclaw" ] || [ "${NO_CONFIG_INJECT:-0}" = "1" ] && return 0
+  info "Step 7/7 · 注入断路器配置..."
+  CONFIG_FILE="${TARGET}/config.json"
+  local B='{"tools":{"loopDetection":{"enabled":true,"historySize":30,"warningThreshold":10,"criticalThreshold":20,"globalCircuitBreakerThreshold":30,"detectors":{"genericRepeat":true,"knownPollNoProgress":true,"pingPong":true}}}}'
+  # 用 jq 合并（jq 不可用时降级 Node.js）
+  _inject_loopdetect() {
+    local config="$1"
+    if ! command -v jq &>/dev/null; then
+      warn "jq 未安装，尝试用 Node.js 注入..."
+      if command -v node &>/dev/null; then
+        [ -f "$config" ] && cp "$config" "${config}.bak"
+        CONFIG_PATH="$config" NODE_INJECT_BLOCK="$B" node - << 'N'
+const fs=require('fs'),p=process.env.CONFIG_PATH,b=JSON.parse(process.env.NODE_INJECT_BLOCK);let r='{}';try{r=fs.readFileSync(p,'utf-8')}catch(e){}
+let c={};try{c=JSON.parse(r.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\/\/.*$/gm,'').replace(/,(\s*[}\]])/g,'$1')||'{}')}catch(e){c={}}
+c.tools=Object.assign(c.tools||{},b.tools);fs.writeFileSync(p,JSON.stringify(c,null,2)+'\n')
+N
+        return $?; else return 1; fi
+    fi
+    if [ -f "$config" ]; then
+      cp "$config" "${config}.bak"; jq '. * '"$B"'' "$config" > "${config}.tmp" 2>/dev/null || {
+        warn "配置文件格式异常，已备份为 ${config}.bak"; echo "$B" | jq '.' > "${config}.tmp" 2>/dev/null || return 1; }
+    else echo "$B" | jq '.' > "${config}.tmp" 2>/dev/null || return 1; fi
+    mv "${config}.tmp" "$config"; return 0
+  }
+  if [ -f "$CONFIG_FILE" ] && grep -q 'loopDetection' "$CONFIG_FILE" 2>/dev/null; then
+    ok "loopDetection 配置已存在，跳过"; _log "loopdetect: already configured"
+  elif _inject_loopdetect "$CONFIG_FILE"; then ok "loopDetection 安全配置已生效"; _log "loopdetect: injected into $CONFIG_FILE"
+  else warn "loopDetection 注入失败"; warn "请手动将以下配置写入 $CONFIG_FILE："; warn "  https://docs.openclaw.ai/zh-CN/gateway/config-tools"; fi
+}
+install_daemon() {  # Step 6b: daemon 可选安装
+  local OS_TYPE="$(uname -s)" DAEMON_INSTALL_SCRIPT="${SCRIPT_DIR}/daemon-install.sh"
+  [ "${REMOTE_MODE:-0}" = "1" ] && DAEMON_INSTALL_SCRIPT="${REMOTE_TMP}/sofagent/scripts/daemon-install.sh"
+  if [ -f "$DAEMON_INSTALL_SCRIPT" ] && [ -x "$DAEMON_INSTALL_SCRIPT" ]; then
+    case "$OS_TYPE" in
+      Darwin|Linux)
+        # --quick / CI：跳过（不交互）；--no-daemon：用户明确要求跳过
+        if [ "$QUICK_MODE" = "1" ] || [ "$NO_DAEMON" = "1" ]; then
+          echo ""; echo "  ⏭️  跳过 daemon 安装"
+          echo "  （以后可以手动运行: bash sofagent/scripts/daemon-install.sh）"
+        else
+          echo ""; echo "  ┌──────────────────────────────────────────┐"
+          echo "  │  Step 6b: daemon 后台进程（可选）          │"
+          echo "  └──────────────────────────────────────────┘"; echo ""
+          echo "  daemon 是一个轻量后台进程，监控 think.md / fde.md 变化。"
+          echo "  macOS (launchd) / Linux (systemd) 支持，Windows 自动跳过。"
+          echo ""; echo "  是否安装 daemon？[y/N] "
+          read -r INSTALL_DAEMON
+          if [ "${INSTALL_DAEMON:-n}" = "y" ] || [ "${INSTALL_DAEMON:-n}" = "Y" ]; then bash "$DAEMON_INSTALL_SCRIPT"
+          else echo "  已跳过 daemon 安装（以后可以手动运行: bash sofagent/scripts/daemon-install.sh）"; fi
+        fi ;;
+      *)
+        echo ""; echo "  daemon 不支持此系统 ($OS_TYPE)，自动跳过。"
+        echo "  Windows 用户：宪法层约束正常生效，daemon 后台监控跳过。" ;;
+    esac
+  else echo ""; echo "  daemon-install.sh 未找到，跳过 daemon 安装。"; fi
+}

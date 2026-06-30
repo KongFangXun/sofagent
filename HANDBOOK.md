@@ -1,10 +1,10 @@
 # sofagent Handbook
 
-> **为 AI Agent 提供纪律层与反思循环：4 条底线 + 6 则铁律约束工作习惯，复杂任务自动拆解执行，每次跑完自动复盘。**
+> **AI 改完代码，你点 merge 之前——sofagent 帮你看一眼。4 底线 + 6 铁律约束 Agent 行为，git diff 审计兜底验证，复杂任务自动拆解执行。**
 >
 > 从 Context Engineering 到 Harness Engineering，再到 Loop Engineering，再到纪律层——AI 和人的协作方式正在从「写好 Prompt」进化到「管好 Agent」。
 >
-> v0.97 · 2026-06-29 · 孔放勋
+> v0.98 · 2026-06-29 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -65,7 +65,7 @@ sofagent 的策略就八个字：**厚在治理，薄在复用。**
 这个原则贯穿整个体系：
 - SKILL.md 每条规则一行，不展开。翻车案例见 §三 铁律表的「做错时的表现」列
 - 反思摘要（think.md 反思区）控制在 ≤200 字/条，≤2K token
-- 你自己的 rules.md 也建议 500 字以内——写多了 Agent 反而记不住
+- 你自己的 fde.md 也建议 500 字以内——写多了 Agent 反而记不住
 
 > 💡 先立规范，再开循环。`SKILL.md`（宪法内联）（契约层）是 Loop 跑起来的护栏——不能说不出错，但出了错你能知道为什么。
 
@@ -73,7 +73,7 @@ sofagent 的策略就八个字：**厚在治理，薄在复用。**
 
 sofagent 概念不少——宪法、铁律、加载链、编排引擎、断路器……你不需要全部理解才能用起来。先记住两件事：
 
-1. **核心**：4 底线 + 6 则铁律 + 三层加载链（SKILL → think → rules）。这些**所有平台都生效**，是你装了 sofagent 就能拿到的纪律约束
+1. **核心**：4 底线 + 6 则铁律 + 三层加载链（SKILL → think → fde.md）。这些**所有平台都生效**，是你装了 sofagent 就能拿到的纪律约束
 2. **增强**：编排引擎、断路器、Hook 自动注入。这些**只有 OpenClaw 全绿**，其他平台部分缺失或降级
 
 不是 OpenClaw 用户？核心部分就是你全部需要的。用 OpenClaw？核心打底，增强让约束更自动、更严密。完整概念分层表见 [README](./README.md#概念分层哪些是核心哪些是增强)。
@@ -102,13 +102,13 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 |:--:|------|------|:--:|
 | 1 | `SKILL.md`（宪法内联） | 契约层：4 条底线 + 6 则行为铁律 | ❌ 千万不要改 |
 | 2 | `think.md` | 反思层：反思区（日摘要，≤2K token） | ⚠️ 改了没用 |
-| 3 | `rules.md` | 执行层：你的运行规范，优先级最高 | ✅ 随便改 |
+| 3 | `fde.md` | 执行层：你的运行规范，优先级最高 | ✅ 随便改 |
 
-`rules.md` 最后加载，优先级最高——你的规则说了算。写什么？比如「不要生成 markdown 文件」「回复控制在 200 字以内」「优先用中文」，写了就生效。底线和铁律的详细内容见 [下一章](#三底线与铁律)。
+`fde.md` 最后加载，优先级最高——你的规则说了算。写什么？比如「不要生成 markdown 文件」「回复控制在 200 字以内」「优先用中文」，写了就生效。底线和铁律的详细内容见 [下一章](#三底线与铁律)。
 
 ### 为什么常驻
 
-加载链如果只在复杂任务时激活，后果很清楚——think.md 反思区不在则 Agent 重复犯错，rules.md 不在则用户偏好失效。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#why-resident)。
+加载链如果只在复杂任务时激活，后果很清楚——think.md 反思区不在则 Agent 重复犯错，fde.md 不在则用户偏好失效。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#why-resident)。
 
 > 📎 orchestrator/ 不参与初始加载——由 SKILL.md 判断任务需要编排时按需触发。三层约束注入：第 1 层由 skill 系统自动注入；第 2、3 层在 OpenClaw 上由内部 hook `sofagent-load-chain`（agent:bootstrap 事件）注入，其他平台由 Agent 主动 Read。
 
@@ -124,7 +124,7 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 |------|------------|:--:|
 | SKILL.md（4底线+6则铁律，宪法内联） | ~250 | ✅ 驻留 |
 | think.md（反思区） | ≤2,000 | ⚠️ 可能裁切 |
-| rules.md | ~200 | ✅ 驻留 |
+| fde.md | ~200 | ✅ 驻留 |
 | 编排引擎（engage.md，仅 FDE 复杂任务） | ~400（回归）–800（首次） | ⚠️ 可能裁切 |
 | 子 Skill（4 个，按需加载） | ~1,500–2,500 | ⚠️ 可能裁切 |
 | **地基合计（常驻）** | **~3,000** | |
@@ -145,7 +145,7 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 
 > 💡 4 条底线，每一条都简单直白——不求完备，只求 Agent 看得懂、用户记得住。
 
-这些铁律来自我使用 OpenClaw 过程中的痛点总结——每一条对应一种我遇到过的 Agent 失控行为。不是实验室数据，是大半年日常使用中反复出现的问题。也许你的痛点不一样，在 `rules.md` 里加你自己的。
+这些铁律来自我使用 OpenClaw 过程中的痛点总结——每一条对应一种我遇到过的 Agent 失控行为。不是实验室数据，是大半年日常使用中反复出现的问题。也许你的痛点不一样，在 `fde.md` 里加你自己的。
 
 这 6 则是在 [Andrej Karpathy 的 4 条编码原则](https://github.com/multica-ai/andrej-karpathy-skills)（思考先行、简约至上、精准修改、目标驱动）基础上扩展出来的——向 Karpathy 致敬，往里面塞了自己的反思。v0.95 把 4 条有 git diff 痕迹的铁律（先读再用 / 验证再干 / 谨慎修改 / 如实汇报）移到了审计层（sofagent-audit A3/A5/A7/A8），铁律只保留纯行为准则。
 
@@ -160,7 +160,7 @@ sofagent 每次对话启动时，先加载 3 个文件作为常驻地基——�
 | 5 | 全局视角 | 先找现有代码和工具，不重复造轮子 | 有现成库不用，自己重写或装新依赖 |
 | 6 | 成本意识 | 批量处理重复操作，简短回答不啰嗦 | 100 个文件一个一个改；查天气都用最贵的模型 |
 
-> v0.95 移走的 4 条（先读再用 / 验证再干 / 谨慎修改 / 如实汇报）已在审计层（sofagent-audit A3/A5/A7/A8）通过 git diff 自动检测。详见 [审计设计](./docs/audit-design.md)。
+> v0.95 移走的 4 条（先读再用 / 验证再干 / 谨慎修改 / 如实汇报）已在审计层（sofagent-audit A3/A5/A7/A8）通过 git diff 自动检测。详见 [审计设计](./docs/design/audit-design.md)。
 
 > ⚠️ 「验证」不是 Agent 自说自话——是跑测试、跑 lint、API 返回码、文件 diff。能自动验证的用工具，不能的让用户确认。
 
@@ -273,18 +273,19 @@ cd sofagent
 bash sofagent/scripts/install.sh --platform {你的平台}
 ```
 
-**Lite 版（30 秒，仅宪法层）**：只想挂个纪律底线、不需要全套？装独立 Lite 版本：
+**精简模式（30 秒，仅宪法层）**：只想挂个纪律底线、不需要全套？宪法层（4 底线 + 6 铁律）已内联到 SKILL.md 顶部，装主产品即获得。v0.98 起 `--lite` 参数已移除——OpenClaw 自带约束机制，独立精简版多余。
 
 ```bash
-clawhub skill install sofagent-lite             # ClawHub
-skillhub install sofagent-lite                  # SkillHub
+# ClawHub / SkillHub
+clawhub skill install KongFangXun/sofagent             # ClawHub
+skillhub install sofagent                              # SkillHub
 
 # 或从仓库手动装
 git clone https://github.com/KongFangXun/sofagent.git
-sh sofagent/sofagent-lite/install.sh
+bash sofagent/scripts/install.sh --lite
 ```
 
-Lite 版只装 4 底线 + 6 则铁律，不装 daemon、编排引擎、审计工具。适合非 OpenClaw 平台、FDE 驻场快速部署、个人开发者轻量使用。
+`--lite` 参数只装宪法层（4 底线 + 6 铁律），不装 daemon、编排引擎、审计工具。适合非 OpenClaw 平台、FDE 驻场快速部署、个人开发者轻量使用。
 
 **前置依赖详细表**（从 README 移入）：
 
@@ -343,7 +344,7 @@ Lite 版只装 4 底线 + 6 则铁律，不装 daemon、编排引擎、审计工
 OpenClaw 通过 Hook 强制注入宪法，Agent 无需额外操作即可完整走三层加载链。在 WorkBuddy / Claude Code 等平台上：
 
 - **第 1 层（宪法·底线与铁律）**：已由 Skill 系统自动注入，调用即生效 ✅
-- **第 2 层（think.md 反思区）和第 3 层（rules.md 你的规则）**：需 Agent 主动读取——Agent 可能优先执行任务而非回顾加载链 ⚠️
+- **第 2 层（think.md 反思区）和第 3 层（fde.md 你的规则）**：需 Agent 主动读取——Agent 可能优先执行任务而非回顾加载链 ⚠️
 
 **复杂任务时建议**：任务前加 `@skill:sofagent` 作为显式锚点，提高 Agent 走完加载链的概率。
 这不是强制保证，但实测能帮助 Agent 对齐约束。
@@ -426,9 +427,9 @@ exit code：**0 = 全通过 / 1 = 有警告 / 2 = 有违规**。
 
 | 问题 | 怎么办 |
 |------|------|
-| Agent 不遵守铁律 | 检查文件位置；关键规则写到 rules.md。非 OpenClaw 平台手动 `@skill:sofagent` 触发 |
+| Agent 不遵守铁律 | 检查文件位置；关键规则写到 fde.md。非 OpenClaw 平台手动 `@skill:sofagent` 触发 |
 | think.md 出现错误记忆 | 直接编辑删掉；对照 task/logs 核实 |
-| Skill 评分不准 | 手动改 scoring/；rules.md 加 `不自动淘汰 Skill` |
+| Skill 评分不准 | 手动改 scoring/；fde.md 加 `不自动淘汰 Skill` |
 | 编排结果不稳定 | 同类任务跑够 3 次用模板；没模板时少拆子任务 |
 | Agent 卡住不动了 | 断路器保护——任务拆得不够细，拆小点再跑 |
 | 多个电脑上能用吗 | 不能——不是分布式，跑在单个 Agent 里 |
@@ -445,7 +446,7 @@ Addy Osmani 在 Loop Engineering 里泼了三盆冷水——不是 sofagent 的�
 |------|------|------|
 | 验证责任不可替代 | Agent 说「我做完了」是声明不是证明。无人值守的 Loop 也会无人值守地犯错 | 审计 A8 要求可观测证据（测试通过/lint 无错/API 200/文件 diff）。**Good Heart 陷阱**：Agent 能改评判标准就会收敛于「让验证变容易」——裁判不可被收买 |
 | 理解债 | Loop 交付你没写过的代码越快，理解鸿沟越大 | task/logs 只追加不修改，永远可回溯。关键是愿不愿意翻看 |
-| 认知投降 | 最舒服的状态是不再有自己观点，Agent 说什么就是什么 | rules.md 随时可加规则覆盖 Agent 默认行为；编排深度可回滚 |
+| 认知投降 | 最舒服的状态是不再有自己观点，Agent 说什么就是什么 | fde.md 随时可加规则覆盖 Agent 默认行为；编排深度可回滚 |
 
 两个人搭一模一样的 sofagent，可能得到完全相反的结果——一个用它加速自己深刻理解的工作，另一个用它逃避理解。sofagent 分不出区别，你分得出。
 
@@ -476,7 +477,7 @@ sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 【帮我生成文件】
 1. SKILL.md — 4 底线 + 6 则铁律（宪法内联），原样抄
 2. think.md — 反思区空白模板
-3. rules.md — 根据你对我的了解先写几条规则
+3. fde.md — 根据你对我的了解先写几条规则
    比如：不生成 md 文件、回复别太长、别替我做决定
 
 【最后告诉我】
@@ -495,4 +496,4 @@ sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 > 大半年 OpenClaw 攒的笔记。不是实验室数据，但对我有用。哪里写得不好，直接告诉我。
 >
-> *v0.97，2026 年 6 月 29 日*
+> *v0.98，2026 年 6 月 29 日*

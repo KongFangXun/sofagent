@@ -29,7 +29,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$VERSION = "0.97"
+$VERSION = "0.98"
 
 # v0.85: Lite = Quick + NoAO + NoDaemon + NoConfigInject
 if ($Lite) { $Quick = $true; $NoAO = $true; $NoDaemon = $true; $NoConfigInject = $true }
@@ -58,7 +58,7 @@ if ($Help) {
     Write-Host "  -NoAO            跳过 agency-orchestrator 安装（仅 openclaw 相关）"
     Write-Host "  -NoConfigInject  跳过 OpenClaw 断路器 loopDetection 注入"
     Write-Host "  -NoDaemon        跳过 daemon 安装（默认行为；需 daemon 时用 -WithDaemon）"
-    Write-Host "  -WithDaemon      安装后台 daemon（Windows 计划任务，监控 think.md/rules.md）"
+    Write-Host "  -WithDaemon      安装后台 daemon（Windows 计划任务，监控 think.md/fde.md）"
     Write-Host "  -Quick           快速模式——跳过欢迎横幅与冗长收尾提示"
     Write-Host "  -Ci              CI 模式（= -Quick，非交互安装）"
     Write-Host "  -Lite            精简模式——仅部署核心约束文件，跳过脚本/Hook/daemon（= -Quick -NoAO -NoDaemon -NoConfigInject）"
@@ -228,16 +228,16 @@ if ($copied -gt 0) {
     Write-Ok "Skill 文件全部就绪（无变更）"
 }
 
-# rules.md 同步到 skills/sofagent/（AGENTS.md 注入优先查此路径，高于 $TARGET/rules.md）
-$_rulesSrc2 = Join-Path $SKILL_SRC_DIR "rules.md"
-if (-not (Test-Path $_rulesSrc2)) { $_rulesSrc2 = Join-Path $SKILL_SRC_DIR "constitution\rules.md" }
-$_rulesDst2 = Join-Path $SKILL_DST "rules.md"
+# fde.md 同步到 skills/sofagent/（AGENTS.md 注入优先查此路径，高于 $TARGET/fde.md）
+$_rulesSrc2 = Join-Path $SKILL_SRC_DIR "fde.md"
+if (-not (Test-Path $_rulesSrc2)) { $_rulesSrc2 = Join-Path $SKILL_SRC_DIR "constitution\fde.md" }
+$_rulesDst2 = Join-Path $SKILL_DST "fde.md"
 if (Test-Path $_rulesSrc2) {
     $_needCopy2 = $true
     if (Test-Path $_rulesDst2) {
         if ((Get-FileHash $_rulesSrc2 -Algorithm SHA256).Hash -eq (Get-FileHash $_rulesDst2 -Algorithm SHA256).Hash) { $_needCopy2 = $false }
     }
-    if ($_needCopy2) { Copy-Item $_rulesSrc2 $_rulesDst2 -Force; Write-Ok "rules.md → $SKILL_DST" }
+    if ($_needCopy2) { Copy-Item $_rulesSrc2 $_rulesDst2 -Force; Write-Ok "fde.md → $SKILL_DST" }
 }
 
 # constraints.md 同步到 skills/sofagent/（嵌入模式行为约束注入源，替代 SKILL.md 避免框架元指令干扰）
@@ -319,16 +319,16 @@ Write-Ok "$psCount 个 .ps1 脚本已部署到 $scriptsDst"
 }
 
 # ════════════════════════════════════════
-# Step 3: 部署 rules.md
+# Step 3: 部署 fde.md
 # ════════════════════════════════════════
-Write-Info "Step 3/4 · 部署宪法文件 → $TARGET\rules.md"
+Write-Info "Step 3/4 · 部署宪法文件 → $TARGET\fde.md"
 
-# v0.73 起 rules.md 扁平化到 sofagent/rules.md；旧布局 fallback 到 constitution/rules.md
-$rulesSrc = Join-Path $SKILL_SRC_DIR "rules.md"
+# v0.73 起 fde.md 扁平化到 sofagent/fde.md；旧布局 fallback 到 constitution/fde.md
+$rulesSrc = Join-Path $SKILL_SRC_DIR "fde.md"
 if (-not (Test-Path $rulesSrc)) {
-    $rulesSrc = Join-Path $SKILL_SRC_DIR "constitution\rules.md"
+    $rulesSrc = Join-Path $SKILL_SRC_DIR "constitution\fde.md"
 }
-$rulesDst = Join-Path $TARGET "rules.md"
+$rulesDst = Join-Path $TARGET "fde.md"
 
 if (Test-Path $rulesSrc) {
     $needCopy = $true
@@ -339,12 +339,12 @@ if (Test-Path $rulesSrc) {
     }
     if ($needCopy) {
         Copy-Item $rulesSrc $rulesDst -Force
-        Write-Ok "rules.md 已安装"
+        Write-Ok "fde.md 已安装"
     } else {
-        Write-Ok "rules.md 已存在且内容相同，跳过"
+        Write-Ok "fde.md 已存在且内容相同，跳过"
     }
 } else {
-    Write-Err "rules.md 源文件不存在: $rulesSrc"
+    Write-Err "fde.md 源文件不存在: $rulesSrc"
 }
 
 # ════════════════════════════════════════
@@ -462,15 +462,15 @@ if ($Platform -eq "openclaw" -and -not $Lite) {
 $SEED_FILE = ""
 if ($Platform -in @("claude", "codex", "hermes")) {
     $seedMap = @{
-        claude = @{ file = "CLAUDE.md"; rules = "$env:USERPROFILE\.claude\rules.md" }
-        codex  = @{ file = "AGENTS.md"; rules = "$env:USERPROFILE\.codex\rules.md" }
-        hermes = @{ file = "SOUL.md";   rules = "$env:USERPROFILE\.hermes\rules.md" }
+        claude = @{ file = "CLAUDE.md"; rules = "$env:USERPROFILE\.claude\fde.md" }
+        codex  = @{ file = "AGENTS.md"; rules = "$env:USERPROFILE\.codex\fde.md" }
+        hermes = @{ file = "SOUL.md";   rules = "$env:USERPROFILE\.hermes\fde.md" }
     }
     $SEED_FILE  = Join-Path $TARGET $seedMap[$Platform].file
     $seedRules  = $seedMap[$Platform].rules
     $seedContent = @(
         "每次对话开始时，读取以下文件并执行 sofagent 入口流程：",
-        "1. rules.md：$seedRules（宪法已在 SKILL.md 内联）",
+        "1. fde.md：$seedRules（宪法已在 SKILL.md 内联）",
         "2. 如果工作目录含 .sofagent/ 数据文件，加载记忆和反思",
         "如果数据文件（.sofagent/）不存在，先创建空模板。"
     ) -join "`r`n"
@@ -493,7 +493,7 @@ if ($Platform -in @("claude", "codex", "hermes")) {
 # 注：install.sh 在 Windows 上跳过 daemon（用 launchd/systemd）；本 .ps1 的 daemon 原生支持
 # Windows（Register-ScheduledTask），故这里提供 -WithDaemon 开关。
 if ($WithDaemon -and -not $Lite) {
-    Write-Info "安装 daemon（Windows 计划任务，监控 think.md/rules.md 变化）..."
+    Write-Info "安装 daemon（Windows 计划任务，监控 think.md/fde.md 变化）..."
     $daemonInstall = Join-Path $SCRIPT_DIR "daemon-install.ps1"
     if (Test-Path $daemonInstall) {
         try { & powershell -NoProfile -ExecutionPolicy Bypass -File $daemonInstall }
@@ -512,7 +512,7 @@ if ($Lite) {
     Write-Host "  |  sofagent Lite · 安装完成！          |"
     Write-Host "  +======================================+"
     Write-Host ""
-    Write-Host "  已部署：宪法（SKILL.md）+ 反思区（think.md）+ 规则（rules.md）"
+    Write-Host "  已部署：宪法（SKILL.md）+ 反思区（think.md）+ 规则（fde.md）"
     Write-Host "  跳过：编排引擎 / Hook / 断路器 / daemon / 配套脚本"
     Write-Host ""
     Write-Host "  降 80% 复杂度，保 60% 价值。"

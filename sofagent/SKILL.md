@@ -1,7 +1,7 @@
 ---
 name: sofagent
 slug: sofagent
-version: 0.97
+version: 0.98
 displayName: sofagent
 description: >
   当你的 Agent 反复偏离目标、任务越做越复杂、刚踩过的坑下次还踩 —— sofagent 能约束其行为、拆解复杂任务、从错误中沉淀教训。
@@ -14,9 +14,9 @@ metadata:
     requires: {}
 ---
 
-# SKILL.md · v0.97
+# SKILL.md · v0.98
 
-> ⚠️ **反向锚点**：本文件是加载链第 1 层，随 skill 调用自动注入——你无需 Read 就已有宪法。但第 2、3 层需你主动 Read。如果你没读 rules.md 和 think.md 就回复用户，你的输出可能偏离用户定制和历史教训。
+> ⚠️ **反向锚点**：本文件是加载链第 1 层，随 skill 调用自动注入——你无需 Read 就已有宪法。但第 2、3 层需你主动 Read。如果你没读 fde.md 和 think.md 就回复用户，你的输出可能偏离企业规范和历史教训。
 
 > **平台定位**：第 1 层所有平台强制生效（skill 机制保证）；第 2、3 层依赖 Agent 自觉 Read。OpenClaw 通过内部 hook（`sofagent-load-chain`，agent:bootstrap 事件触发）进一步强化后两层。
 
@@ -31,7 +31,7 @@ metadata:
 | 1 | **本文件** | skill 调用自动注入 | 4 底线 + 6 则铁律（契约层）| — |
 | 2 | `{SOFAGENT_DATA}/think.md` | Agent 主动 Read | 反思区（上次踩了什么坑）| 任务完成后创建 |
 | 2′ | `{SOFAGENT_DATA}/preferences.md` | Agent 主动 Read | 用户偏好（运行规范，与 think.md 平行）| 跳过（未配置）|
-| 3 | `~/.openclaw/skills/sofagent/rules.md` | Agent 主动 Read | 你的运行规范（最高优先级，可覆盖第 1 层）| 跳过（未配置）|
+| 3 | `~/.openclaw/skills/sofagent/fde.md` | Agent 主动 Read | 企业运行规范（FDE 工程师制定，最高优先级，可覆盖第 1 层）| 跳过（未配置）|
 > 💡 `~/.openclaw/rules.md` 留给用户自定义，sofagent 不再部署到此路径。|
 
 > 💡 `{SOFAGENT_DATA}` = `${PWD}/.sofagent`（当前工作目录下的 .sofagent/ 数据目录）。
@@ -74,18 +74,18 @@ metadata:
 
 ## ⛓️ 加载链自检
 
-> 你的平台可能没有 Hook 自动注入后两层，所以 sofagent 帮你加了加载链提醒——首次使用时请确认 L2（think.md）和 L3（rules.md）是否都已读到。如果某层没读到，对话中会有提醒。
+> 你的平台可能没有 Hook 自动注入后两层，所以 sofagent 帮你加了加载链提醒——首次使用时请确认 L2（think.md）和 L3（fde.md）是否都已读到。如果某层没读到，对话中会有提醒。
 
 每次对话开始时，Agent 内部检查：
 - L1 本文件（SKILL.md）— 当前 skill 调用已加载
 - L2 think.md（{SOFAGENT_DATA}/think.md）— 需主动 Read
 - L2′ preferences.md（{SOFAGENT_DATA}/preferences.md）— 需主动 Read
-- L3 rules.md（~/.openclaw/skills/sofagent/rules.md 或等效路径）— 需主动 Read
+- L3 fde.md（~/.openclaw/skills/sofagent/fde.md 或等效路径）— 需主动 Read
 
 如发现 L2 或 L3 未加载，在回复开头简短提醒用户：
-「⚠️ 本次加载链第 X 层未加载，反思记忆/自定义规则不会生效。请检查 think.md / preferences.md / rules.md 是否已配置。」
+「⚠️ 本次加载链第 X 层未加载，反思记忆/企业规范不会生效。请检查 think.md / preferences.md / fde.md 是否已配置。」
 
-> 💡 **daemon 通知**：如果 `.sofagent/daemon-notice.md` 存在，Read 它——里面是 daemon 检测到的文件变化提醒（think.md / preferences.md / rules.md 已更新）。
+> 💡 **daemon 通知**：如果 `.sofagent/daemon-notice.md` 存在，Read 它——里面是 daemon 检测到的文件变化提醒（think.md / preferences.md / fde.md 已更新）。
 
 ---
 
@@ -95,7 +95,7 @@ metadata:
 - 🟢🟡 → Read `task-aware.md` → 输出简复
 - 闲聊 → 不激活编排
 
-# 编排引擎已迁移至 sofagent-fde（FDE 部署场景专用），个人开发者不需要
+# 编排引擎已迁移至 FDE.md（FDE 部署场景专用），个人开发者不需要
 
 ---
 

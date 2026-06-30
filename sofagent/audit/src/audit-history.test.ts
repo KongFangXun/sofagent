@@ -1,0 +1,159 @@
+// ============================================================
+// audit-history.test.ts · 审计历史持久化测试
+// v0.98 新增
+// ============================================================
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { existsSync, readFileSync, rmSync, mkdirSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
+import { randomBytes } from 'crypto';
+import {
+  appendHistory,
+  loadHistory,
+  clearHistory,
+  getHistoryFilePath,
+  type AuditHistoryEntry,
+} from './audit-history';
+
+function tmpDir(): string {
+  const dir = join(tmpdir(), `sofagent-history-test-${Date.now()}-${randomBytes(4).toString('hex')}`);
+  mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+/** 构造一条测试用的历史条目 */
+function makeEntry(timestamp: string, exitCode: number, ruleResults?: AuditHistoryEntry['ruleResults']): AuditHistoryEntry {
+  return {
+    timestamp,
+    diffRange: 'HEAD~1..HEAD',
+    task: '测试任务',
+    exitCode,
+    ruleResults: ruleResults ?? [
+      { name: 'A1 不碰敏感', number: 1, status: 'PASS', details: [] },
+      { name: 'A2 不泄密钥', number: 2, status: exitCode >= 1 ? 'WARN' : 'PASS', details: exitCode >= 1 ? ['发现 src/config.ts'] : [] },
+    ],
+    diffFileCount: 3,
+    commitMsg: 'test commit',
+  };
+}
+
+describe('audit-history', () => {
+  let testDir: string;
+
+  beforeEach(() => {
+    testDir = tmpDir();
+  });
+
+  afterEach(() => {
+    try { rmSync(testDir, { recursive: true, force: true }); } catch { /* */ }
+  });
+
+  it('appendHistory 写入到正确的文件路径', () => {
+    // 验证：追加后文件存在，且内容为 JSONL 格式
+    const entry = makeEntry('2026-01-01T00:00:00.000Z', 0);
+    appendHistory(entry, testDir);
+
+    const filePath = getHistoryFilePath(testDir);
+    expect(existsSync(filePath)).toBe(true);
+
+    const content = readFileSync(filePath, 'utf-8');
+    const lines = content.trim().split('\n');
+    expect(lines.length).toBe(1);
+
+    const parsed = JSON.parse(lines[0]!);
+    expect(parsed.timestamp).toBe('2026-01-01T00:00:00.000Z');
+    expect(parsed.exitCode).toBe(0);
+  });
+
+  it('appendHistory 目录不存在时自动创建', () => {
+    // 验证：数据目录的 audit 子目录不存在时也能正常写入
+    const entry = makeEntry('2026-01-01T00:00:00.000Z', 0);
+    appendHistory(entry, testDir);
+
+    // audit 子目录应该被自动创建
+    expect(existsSync(join(testDir, 'audit'))).toBe(true);
+    expect(existsSync(getHistoryFilePath(testDir))).toBe(true);
+  });
+
+  it('appendHistory 多次追加不覆盖', () => {
+    // 验证：多次追加产生多行 JSONL
+    appendHistory(makeEntry('2026-01-01T00:00:00.000Z', 0), testDir);
+    appendHistory(makeEntry('2026-01-02T00:00:00.000Z', 1), testDir);
+    appendHistory(makeEntry('2026-01-03T00:00:00.000Z', 2), testDir);
+
+    const content = readFileSync(getHistoryFilePath(testDir), 'utf-8');
+    const lines = content.trim().split('\n');
+    expect(lines.length).toBe(3);
+  });
+
+  it('loadHistory 返回按时间倒序的数组', () => {
+    // 验证：加载历史，最新（时间戳最大）的排前面
+    appendHistory(makeEntry('2026-01-01T00:00:00.000Z', 0), testDir);
+    appendHistory(makeEntry('2026-01-03T00:00:00.000Z', 2), testDir);
+    appendHistory(makeEntry('2026-01-02T00:00:00.000Z', 1), testDir);
+
+    const entries = loadHistory(undefined, testDir);
+    expect(entries.length).toBe(3);
+    // 倒序——最新的在前
+    expect(entries[0]!.timestamp).toBe('2026-01-03T00:00:00.000Z');
+    expect(entries[1]!.timestamp).toBe('2026-01-02T00:00:00.000Z');
+    expect(entries[2]!.timestamp).toBe('2026-01-01T00:00:00.000Z');
+  });
+
+  it('loadHistory limit 参数限制返回条数', () => {
+    // 验证：limit=2 时只返回最近 2 条
+    for (let i = 1; i <= 5; i++) {
+      appendHistory(makeEntry(`2026-01-0${i}T00:00:00.000Z`, 0), testDir);
+    }
+
+    const entries = loadHistory(2, testDir);
+    expect(entries.length).toBe(2);
+    // 返回最近 2 条
+    expect(entries[0]!.timestamp).toBe('2026-01-05T00:00:00.000Z');
+    expect(entries[1]!.timestamp).toBe('2026-01-04T00:00:00.000Z');
+  });
+
+  it('loadHistory 文件不存在时返回空数组', () => {
+    // 验证：无历史文件时返回空数组，不报错
+    const entries = loadHistory(undefined, testDir);
+    expect(entries).toEqual([]);
+  });
+
+  it('loadHistory 跳过解析失败的行（容错）', () => {
+    // 验证：JSONL 中混入损坏行时，正常行不受影响
+    const filePath = getHistoryFilePath(testDir);
+    mkdirSync(join(testDir, 'audit'), { recursive: true });
+
+    // 手动写入：1 行正常 + 1 行损坏 + 1 行正常
+    const validEntry = JSON.stringify(makeEntry('2026-01-01T00:00:00.000Z', 0));
+    const corruptedLine = '{ this is not valid json !!!';
+    const validEntry2 = JSON.stringify(makeEntry('2026-01-02T00:00:00.000Z', 1));
+    const content = `${validEntry}\n${corruptedLine}\n${validEntry2}\n`;
+
+    // 用 appendFileSync 直接写入（绕过 appendHistory）
+    const { appendFileSync } = require('fs');
+    appendFileSync(filePath, content, 'utf-8');
+
+    const entries = loadHistory(undefined, testDir);
+    // 损坏行被跳过，正常行保留
+    expect(entries.length).toBe(2);
+  });
+
+  it('clearHistory 清空历史文件内容', () => {
+    // 验证：清空后文件存在但内容为空
+    appendHistory(makeEntry('2026-01-01T00:00:00.000Z', 0), testDir);
+    appendHistory(makeEntry('2026-01-02T00:00:00.000Z', 1), testDir);
+
+    expect(loadHistory(undefined, testDir).length).toBe(2);
+
+    clearHistory(testDir);
+
+    // 文件还在，但内容为空
+    const filePath = getHistoryFilePath(testDir);
+    expect(existsSync(filePath)).toBe(true);
+    const content = readFileSync(filePath, 'utf-8');
+    expect(content).toBe('');
+    expect(loadHistory(undefined, testDir)).toEqual([]);
+  });
+});

@@ -18,7 +18,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$VERSION_STR = "0.97"
+$VERSION_STR = "0.98"
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
 if ($Purge) { $Force = $true }
 
@@ -27,7 +27,7 @@ if ($Help) {
     Write-Host "sofagent cleanup v$VERSION_STR (PowerShell)"
     Write-Host "  按保留策略清理 .sofagent/task/logs/ 过期日志"
     Write-Host "  -DryRun 仅预览   -Force/-Purge 跳过确认   -Before YYYY-MM-DD 只清该日期前"
-    Write-Host "  配置(rules.md): data_retention_days(默认90) / data_retention_max_entries(默认500)"
+    Write-Host "  配置(fde.md): data_retention_days(默认90) / data_retention_max_entries(默认500)"
     exit 0
 }
 if (-not [string]::IsNullOrEmpty($Before) -and $Before -notmatch '^\d{4}-\d{2}-\d{2}$') {

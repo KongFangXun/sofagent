@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.97 · 2026-06-29 · 孔放勋
+> v0.98 · 2026-06-29 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -26,7 +26,7 @@
 
 ## 一、工作原理
 
-> 本章内容：1 主 Skill + 4 子 Skill = 5 个 .md —— 怎么协同、靠什么执行
+> 本章内容：1 主 Skill + 5 子 Skill = 6 个 .md —— 怎么协同、靠什么执行
 
 ### sofagent Skill 工作原理
 
@@ -34,7 +34,7 @@
 
 Skill 不只是 Markdown 文件和一段提示词。根据 Anthropic Cloud Code 团队的实践定义，Skill 是一个**完整的工作环境**——包含入口分发器、子 Skill、脚本、资源配置，本质是把模型的泛化能力推进到稳定完成某类特定工作的能力。sofagent 的框架就是这个定义的工程实现。
 
-**1 主 Skill（`SKILL.md`）+ 4 子 Skill（entry-gate/task-aware/task-closure/loop-check）= 5 个 .md（按需加载）**
+**1 主 Skill（`SKILL.md`）+ 5 子 Skill（entry-gate/task-aware/task-closure/loop-check/engage）= 6 个 .md（按需加载）**
 
 用户只安装 `SKILL.md`（主入口）。每次对话开始时自动加载，A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程（平台检测→安装→加载链→种子指令），🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。子 Skill 按场景按需加载——每个只管一件事，每个 ≤90 行，Agent 不会迷路。
 
@@ -48,25 +48,33 @@ Skill 不只是 Markdown 文件和一段提示词。根据 Anthropic Cloud Code 
 
 > 三层闸门 + 一条回环：入境（初始化证明）→ 每任务（启动前确认）→ Loop（执行中检查+失败诊断）→ 离境（完成后沉淀）。四个全走才能保证 `.sofagent/` 数据层被激活。
 
+sofagent v0.98 有**两个引擎**，数据流分离但在 think.md 交汇：
+
 ```
-SKILL.md 启动
-  ├─ 三层加载链（SKILL.md + think.md + rules.md）← 内部 hook sofagent-load-chain 注入（OpenClaw）/ Agent 主动 Read（其他平台）
-  ├─ A0 判级
-  │   ├─ 🟢🟡 简单/中等 → task-aware 直接处理
-  │   └─ 🔴 复杂 → engage.md 点火（FDE 场景）
-  │         ├─ 平台检测 + 初始化 ← install.sh / verify.sh
-  │         └─ ao compose 拆任务 ← task-orchestrate.ts（v0.97 起已迁至 TypeScript）
-  │               ├─ ClawHub 搜 Skills
-  │               └─ 分配子 Agent
-  ├─ loop-check 检查点（子任务间 / 60% 预算 / 重大操作前）
-  ├─ loop-check 失败诊断（可自愈重试 / 不可→汇报）
-  └─ task-closure 收口
-        └─ loop-check closure 模式
-              ├─ 反思 → think.md ─┐
-              ├─ 评分 → scoring/    ├─ task-record.sh 写入
-              ├─ A/B 对比 → orchestrator/ ─┘
-              └─ 口头汇报
+审计引擎（提交时）                 编排引擎（运行时）
+    │                                  │
+    ├─ git diff                        ├─ SKILL.md 加载（宪法内联）
+    ├─ 规则检查 A1-A11                ├─ A0 判级
+    ├─ think-generator.ts              ├─ 🟢🟡 简单/中等 → task-aware 直接处理
+    │   └→ 写 think.md ─────┐         │   └─ 🔴 复杂 → engage.md 点火（FDE 场景）
+    │                       │         │         ├─ 平台检测 + 初始化
+    │                       │         │         └─ ao compose 拆任务
+    │                       │         │               ├─ ClawHub 搜 Skills
+    │                       │         │               └─ 分配子 Agent
+    │                       │         ├─ loop-check 检查点（子任务间 / 60% 预算 / 重大操作前）
+    │                       │         ├─ loop-check 失败诊断（可自愈重试 / 不可→汇报）
+    │                       │         └─ task-closure 收口
+    │                       │               ├─ 反思 → think.md ─┐
+    │                       │               ├─ 评分 → scoring/   ├─ task-record.sh 写入
+    │                       │               ├─ A/B 对比 → orchestrator/ ─┘
+    │                       │               └─ 口头汇报
+    │                       │               │
+    └───────────────────────┴───────────────┘
+                    think.md 是交汇点
+           （审计引擎写 / 编排引擎读）
 ```
+
+**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**看 task/logs + orchestrator + scoring（运行时），依赖 Agent 配合。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思条目，编排引擎下次点火时读取优化策略。
 
 安装方式：把 `SKILL.md` 放到 Skills 目录（OpenClaw 一般在 `~/.openclaw/skills/`），一条命令搞定。OpenClaw 通过 Hook 在 session 启动时自动加载 Skill。WorkBuddy、Codex、Hermes Agent、Claude Code 通过种子指令自启——详见 [Handbook §五](./HANDBOOK.md#五安装与跨平台)。
 
@@ -83,11 +91,11 @@ SKILL.md 启动
 
 **`sofagent/` 目录结构**（4 个子目录 + 6 个 Skill .md 文件 = 1 主 Skill + 5 子 Skill）：
 
-- `rules.md`（1 个文件）：执行层，你的运行规范。v0.62：宪法已内联进 SKILL.md。v0.73：从 constitution/ 扁平化到根目录
-- `data/`（5 个文件）：数据模板 think.md、orchestrator.md、task.md、scoring.md、IDENTITY.md
+- `fde.md`（1 个文件）：执行层，企业运行规范（FDE 工程师写）。v0.98：rules.md 改名为 fde.md，定位从「用户偏好」升级为「企业约束」
+- `data/`（6 个文件）：数据模板 think.md、orchestrator.md、task.md、scoring.md、IDENTITY.md、preferences.md（preferences.md v0.98 起废弃，保留模板供参考）
 - `scripts/`（核心 5 个）：install.sh、verify.sh、uninstall.sh、task-record.sh。task-orchestrate.sh 已迁移到 `audit/src/task-orchestrate.ts`（v0.97）
 - `hooks/sofagent-load-chain/`（2 个文件）：HOOK.md + handler.ts（OpenClaw 2026.6.x 内部 hook，agent:bootstrap 事件注入第 2、3 层）
-- Skill 文件（5 个 .md）：SKILL.md（主入口）、entry-gate.md（入境闸门）、task-aware.md（每任务闸门）、task-closure.md（离境闸门）、loop-check.md（循环顾问）。编排引擎已拆出到 engage.md（FDE 专用）
+- Skill 文件（6 个 .md）：SKILL.md（主入口）、entry-gate.md（入境闸门）、task-aware.md（每任务闸门）、task-closure.md（离境闸门）、loop-check.md（循环顾问）、engage.md（编排引擎，FDE 专用）
 
 **配套脚本速查**：
 
@@ -229,8 +237,8 @@ sofagent 默认用 DeepSeek——性价比：Flash/Pro 两档差 4 倍价，Flas
 
 ```
 ao compose 拆完任务
-  → 主 Agent 先查 rules.md：你有没有写模型偏好？
-  → 有 → 按你写的来（rules.md 优先级最高）
+  → 主 Agent 先查 fde.md：你有没有写模型偏好？
+  → 有 → 按你写的来（fde.md 优先级最高）
   → 没有 → 查 orchestrator/：这个任务类型有没有最优模型？
   → 有 → 直接用缓存的配置
   → 没有 → 按默认策略（简单 Flash / 复杂 Pro）
@@ -238,7 +246,7 @@ ao compose 拆完任务
   → OpenClaw 返回 resolvedModel，确认已生效 ✅
 ```
 
-三层优先级：**rules.md（你写的）> orchestrator/（A/B 测出来的）> 系统默认（Flash/Pro 策略）**。你的规则永远排第一。
+三层优先级：**fde.md（FDE 工程师写的企业约束）> orchestrator/（A/B 测出来的）> 系统默认（Flash/Pro 策略）**。企业约束永远排第一。
 
 不需要额外脚本，不需要 Runtime 代码——OpenClaw 原生支持这个参数，SKILL.md 只是告诉主 Agent 按什么顺序查配置、用哪个。
 
@@ -246,7 +254,7 @@ ao compose 拆完任务
 
 不用 DeepSeek？有两条路：
 
-**简单方式**：在 `rules.md` 里写一行模型偏好（模板见 [Developer §七](#七数据文件架构) rules.md 模板）。主 Agent 每次先读 rules.md，看到你的偏好就直接用，跳过后面所有步骤。适合「我就想全局换一个模型」。
+**简单方式**：在 `fde.md` 里写一行模型偏好（模板见 [Developer §七](#七数据文件架构) fde.md 模板）。主 Agent 每次先读 fde.md，看到你的偏好就直接用，跳过后面所有步骤。适合「我就想全局换一个模型」。
 
 **精细方式**：改 `orchestrator/` 叶子文件里的「最优模型」字段（详见 [Developer §七](#七数据文件架构) orchestrator/ 示例）。适合「数据分析用 Claude，写代码继续用 DeepSeek」这种按任务类型分模型的需求。
 
@@ -409,7 +417,7 @@ think.md
 
 ### think.md 反思区的自我纠正
 
-三道防线：只存经验不存指令 → 反思区 2K token 硬上限 → 人工可清除。写入前扫指令性关键词（应该/必须/不要/禁止/切忌/务必/严禁/应当/请/一定要），命中 ≥3 处提醒拆到 rules.md。不自拒写、不自动改——最终判断交用户。完整防线详解见 [ARCHITECTURE.md](./ARCHITECTURE.md#self-correct)。
+三道防线：只存经验不存指令 → 反思区 2K token 硬上限 → 人工可清除。写入前扫指令性关键词（应该/必须/不要/禁止/切忌/务必/严禁/应当/请/一定要），命中 ≥3 处提醒拆到 fde.md。不自拒写、不自动改——最终判断交用户。完整防线详解见 [ARCHITECTURE.md](./ARCHITECTURE.md#self-correct)。
 
 ### 审计
 
@@ -417,28 +425,49 @@ think.md
 
 #### 记忆存储与冲突处理
 
-三策略：关键事实走结构化（rules.md）、近期变化走摘要（think.md）、经验案例走混合检索（task/logs/ + orchestrator/）。当前 think.md 是追加模式，自动冲突检测是 v0.9 设计目标。
+三策略：关键事实走结构化（fde.md）、近期变化走摘要（think.md）、经验案例走混合检索（task/logs/ + orchestrator/）。当前 think.md 是追加模式（审计引擎 v0.98 起自动生成），自动冲突检测是 v0.9 设计目标。
 
 ---
 
 
 ## 七、数据文件架构
 
-你可以在 `.sofagent/` 下看到这些数据文件——部分存原始记录，部分存提炼结论，每次任务闭环后更新。按初始化依赖排列：
+v0.98 起 sofagent 有两个引擎，数据文件按归属分为三类：**审计引擎管**（提交时）、**编排引擎管**（运行时）、**废弃**。
 
-| 文件 | 干什么 | 加载 | 初始化时机 | 模板 |
-|------|------|:--:|------|------|
-| `think.md` | 反思摘要，每次会话加载，≤2K token | 全文 | 首次加载 | [模板](sofagent/data/think.md) |
-| `rules.md` | 你的运行规范（含项目目标、验收标准、风险边界、停止条件），优先级最高 | 全文 | 安装时部署 | [模板](sofagent/rules.md) |
-| `task/plans/` | 任务计划 | 日期文件名 | 第二轮澄清时 | [模板](sofagent/data/task.md) |
-| `task/logs/` | 执行日志 | 日期目录树 | 首次闭环后 | [模板](sofagent/data/task.md) |
-| `scoring/` | Skill 评分记录 | 树形 | 首次任务后 | [模板](sofagent/data/scoring.md) |
-| `orchestrator/` | 最优拆法决策 | 树形 | 同类任务 ≥3 次 | [模板](sofagent/data/orchestrator.md) |
-| `orchestrator/workflows/` | ao compose 生成的 YAML | 按任务名平铺 | 每次 ao compose | — |
+### 按引擎归属
 
-### 数据流向总结：每次任务闭环后，反思进 think.md → 评分更新 scoring/ → 最优拆法覆写 orchestrator/ → 执行记录追加到 task/logs/（只追加）。
+| 文件 | 归属引擎 | 干什么 | 加载 | 模板 |
+|------|---------|------|:--:|------|
+| `think.md` | **审计引擎写 / 编排引擎读** | 反思摘要。v0.98 起审计引擎基于 git diff 自动生成（think-generator.ts），编排引擎点火时读取优化策略 | 全文 | [模板](sofagent/data/think.md) |
+| `task/logs/` | **审计引擎读 / 编排引擎写** | 执行日志。审计 A7/A8 读它检查有没有盲改；编排引擎闭环时写入 | 日期目录树 | [模板](sofagent/data/task.md) |
+| `fde.md` | **编排引擎读** | 企业运行规范（FDE 工程师写），含项目目标、验收标准、风险边界。v0.98 从 rules.md 改名 | 全文 | [模板](sofagent/fde.md) |
+| `task/plans/` | **编排引擎写** | 任务计划，第二轮澄清时生成 | 日期文件名 | [模板](sofagent/data/task.md) |
+| `orchestrator/` | **编排引擎核心数据** | 最优拆法决策树，同类任务 ≥3 次后写入。编排引擎点火前先查它 | 树形 | [模板](sofagent/data/orchestrator.md) |
+| `scoring.md` | **编排引擎辅助数据** | Skill 评分记录，闭环时更新，选 Skill 时参考 | 树形 | [模板](sofagent/data/scoring.md) |
+| `IDENTITY.md` | **编排引擎辅助** | 岗位匹配（agency-agents-zh），编排引擎拆任务时按角色分配 | 全文 | [模板](sofagent/data/IDENTITY.md) |
+| ~~`preferences.md`~~ | **废弃** | v0.98 前用于用户个人偏好。rules.md→fde.md 后，个人偏好不属于 sofagent 管理范围 | — | [模板](sofagent/data/preferences.md)（仅参考） |
 
-> 💡 task/logs 是所有数据的源头。think.md（反思）、scoring.md（技能目录）、orchestrator/（作战手册）从中各自提炼结论，think.md 反思区汇总反思后的经验。
+### 两个引擎的数据流
+
+```
+审计引擎（提交时，不依赖 Agent）          编排引擎（运行时，依赖 Agent）
+    │                                        │
+    ├─ 输入：git diff                        ├─ 输入：用户任务 + fde.md + think.md
+    ├─ 输出：think.md（自动生成反思条目）    ├─ 输出：task/plans/ + task/logs/
+    │                                        ├─ 读 orchestrator/ 决定怎么拆
+    │                                        ├─ 读 scoring.md 决定用哪个 Skill
+    │                                        └─ 闭环写 orchestrator/ + scoring.md
+    │                                        │
+    └──────── think.md 是交汇点 ─────────────┘
+         审计写（基于 diff 硬证据）
+         编排读（下次点火优化策略）
+```
+
+### 数据流向总结
+
+每次任务闭环后：反思进 think.md（审计引擎自动生成）→ 评分更新 scoring.md → 最优拆法覆写 orchestrator/ → 执行记录追加到 task/logs/（只追加）。
+
+> 💡 task/logs 是所有数据的源头。think.md（反思）、scoring.md（技能目录）、orchestrator/（作战手册）从中各自提炼结论。v0.98 起 think.md 的生成不再依赖 Agent 自觉——审计引擎基于 git diff 硬证据自动写。
 
 树形加载的设计逻辑见 [ARCHITECTURE.md](./ARCHITECTURE.md#tree-loading)。
 
@@ -454,13 +483,13 @@ think.md
 
 ### sofagent 四层记忆模型
 
-> 四层映射：当前窗口 → 近期摘要（think.md）→ 用户档案（rules.md）→ 历史事件（task/logs/ + orchestrator/）。详见 [ARCHITECTURE.md](./ARCHITECTURE.md) 记忆机制设计。
+> 四层映射：当前窗口 → 近期摘要（think.md）→ 企业约束（fde.md）→ 历史事件（task/logs/ + orchestrator/）。详见 [ARCHITECTURE.md](./ARCHITECTURE.md) 记忆机制设计。
 
 ---
 
 ## 八、提交时审计
 
-sofagent-audit（v0.92）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对审计规则（A1-A8）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 运行时配合——看的是已经发生的 git diff，但审计 A7/A8 的日志检查依赖 Agent 写入的任务日志。A3/A5 只看 git diff，Agent 无法绕过。v0.97 将扩展至 A1-A11。
+sofagent-audit（v0.92）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对审计规则（A1-A10）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 运行时配合——看的是已经发生的 git diff，但审计 A7/A8 的日志检查依赖 Agent 写入的任务日志。A3/A5 只看 git diff，Agent 无法绕过。A9（prompt injection）、A10（供应链检测）已在 v0.97 实现。A11（资源耗尽）推迟到 daemon 运行时。
 
 ### 绿灯路径检测：AI 的「最低成本通过」本能
 
@@ -483,7 +512,7 @@ sofagent-audit（v0.92）是 TypeScript CLI，扫描 git diff + `.sofagent/task/
 
 `task/logs` 的模板设计参照这个四字段结构。状态外化到文件——Agent 失忆，文件不失忆。
 
-> 运行时治理减少问题发生，提交时审计兜底检测漏网之鱼——两者互补。设计文档见 [audit-design.md](./docs/audit-design.md)。
+> 运行时治理减少问题发生，提交时审计兜底检测漏网之鱼——两者互补。设计文档见 [audit-design.md](./docs/design/audit-design.md)。
 
 ---
 

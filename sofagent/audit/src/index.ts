@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v0.97 · 铁律与审计分离
+// v0.98 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
 // 零运行时依赖——只用 Node.js 内置模块。
@@ -10,6 +10,8 @@
 //   node sofagent/audit/dist/index.js --diff HEAD~1..HEAD --task "修复登录页 bug"
 //   node sofagent/audit/dist/index.js --diff HEAD~1..HEAD --silent --task "test"
 //   node sofagent/audit/dist/index.js --diff HEAD~1..HEAD --ci --task "test"
+//   node sofagent/audit/dist/index.js --root-cause
+//   node sofagent/audit/dist/index.js --regression ./test-fixtures
 //
 // 退出码：
 //   0 = 全通过
@@ -18,12 +20,20 @@
 // ============================================================
 
 import { execFileSync } from 'child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { parseDiff, type DiffFile } from './diff-parser';
 import { checkLogs } from './log-checker';
 import { runRules, type AuditResult } from './reporter';
 import { loadConfig } from './config-loader';
+import { loadHistory } from './audit-history';
+import { analyzeRootCause } from './audit-root-cause';
+import { formatSuggestions } from './config-suggestion';
+import { runRegression, type DiffSnapshot } from './audit-regression';
+import { defaultRules } from './rules';
+import type { RuleCheck } from './rules/types';
+import { pushAuditResult, type WebhookPlatform } from './webhook';
+import { generateThinkEntry } from './think-generator';
 
 interface Args {
   diffRange: string;
@@ -33,12 +43,16 @@ interface Args {
   ci: boolean;
   installHook: boolean;
   json: boolean;
+  rootCause: boolean;
+  regressionDir?: string;
+  webhook?: WebhookPlatform;
+  webhookUrl?: string;
 }
 
-const VERSION = '0.97';
+const VERSION = '0.98';
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff' && argv[i + 1]) {
       i++;
@@ -58,9 +72,28 @@ function parseArgs(argv: string[]): Args {
       args.installHook = true;
     } else if (argv[i] === '--json') {
       args.json = true;
+    } else if (argv[i] === '--root-cause') {
+      args.rootCause = true;
+    } else if (argv[i] === '--regression' && argv[i + 1]) {
+      i++;
+      args.regressionDir = argv[i]!;
+    } else if (argv[i] === '--webhook' && argv[i + 1]) {
+      i++;
+      const platform = argv[i]!;
+      if (platform === 'dingtalk' || platform === 'feishu' || platform === 'wecom') {
+        args.webhook = platform;
+      } else {
+        console.error(`❌ 无效的 webhook 平台: ${platform}（支持: dingtalk / feishu / wecom）`);
+        process.exit(1);
+      }
+    } else if (argv[i] === '--webhook-url' && argv[i + 1]) {
+      i++;
+      args.webhookUrl = argv[i]!;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
-      console.log(`sofagent-audit v${VERSION} · 铁律与审计分离\n`);
+      console.log(`sofagent-audit v${VERSION} · 审计闭环六步\n`);
       console.log('用法: sofagent-audit --diff <range> [--task <description>] [--strict] [--silent] [--ci] [--json] [--install-hook]');
+      console.log('      sofagent-audit --root-cause');
+      console.log('      sofagent-audit --regression <dir>');
       console.log('  --diff          git diff 范围（默认 HEAD~1..HEAD）');
       console.log('  --task          任务描述（用于 A3 不改越界检查）');
       console.log('  --strict        严格模式：无日志时 A7 返回 FAIL 而非 WARN');
@@ -68,6 +101,10 @@ function parseArgs(argv: string[]): Args {
       console.log('  --ci            CI 模式 = strict + silent（适合无 Agent 日志的 CI 环境）');
       console.log('  --json          JSON 输出模式：输出 { exitCode, rules } JSON，适合 CI 解析');
       console.log('  --install-hook  安装 git pre-commit hook 到当前仓库的 .git/hooks/');
+      console.log('  --root-cause    分析审计历史，输出根因报告 + 配置建议');
+      console.log('  --regression <dir>  对指定目录下的历史快照跑回归验证');
+      console.log('  --webhook <platform>  webhook 推送平台（dingtalk / feishu / wecom），有 WARN/FAIL 时推送');
+      console.log('  --webhook-url <url>   webhook URL（也可通过 SOFAGENT_WEBHOOK_URL 环境变量设置）');
       console.log('退出码: 0=全通过 / 1=有警告 / 2=有违规');
       process.exit(0);
     } else if (argv[i] === '--version') {
@@ -133,12 +170,118 @@ function installHook(): void {
   process.exit(0);
 }
 
+/**
+ * --root-cause 模式：分析审计历史，输出根因报告 + 配置建议
+ */
+function runRootCauseAnalysis(): void {
+  const history = loadHistory();
+
+  if (history.length === 0) {
+    console.log('无历史数据。运行 sofagent-audit --diff <range> 后会自动记录审计历史。');
+    process.exit(0);
+  }
+
+  const report = analyzeRootCause(history);
+  const output = formatSuggestions(report);
+  console.log(output);
+
+  process.exit(0);
+}
+
+/**
+ * --regression 模式：对指定目录下的历史快照跑回归验证
+ * 第一版只接受 fixture 目录路径，加载里面的预构筑 snapshots
+ * @param dir fixture 目录路径
+ */
+function runRegressionMode(dir: string): void {
+  if (!existsSync(dir)) {
+    console.error(`❌ 目录不存在: ${dir}`);
+    process.exit(1);
+  }
+
+  // 从 fixture 目录加载 snapshots
+  // fixture 目录结构：每个 .json 文件是一个 snapshot
+  const snapshots = loadSnapshotsFromDir(dir);
+
+  if (snapshots.length === 0) {
+    console.log(`目录 ${dir} 中没有找到快照文件。`);
+    console.log('快照文件格式：JSON，包含 timestamp / diffFiles / logEntries / previousResults 字段。');
+    process.exit(0);
+  }
+
+  const report = runRegression(snapshots, defaultRules);
+
+  console.log('\n=== 回归验证报告 ===\n');
+  console.log(`快照数: ${report.totalSnapshots}`);
+  console.log(`新增问题: ${report.newIssues}`);
+  console.log(`解决问题: ${report.resolvedIssues}`);
+  console.log(`无变化: ${report.unchanged}`);
+
+  if (report.details.length > 0) {
+    console.log('\n--- 详细变化 ---');
+    for (const detail of report.details) {
+      const icon = detail.newStatus === 'PASS' ? '✅' : detail.newStatus === 'WARN' ? '⚠️ ' : '❌';
+      console.log(`  ${icon} [${detail.timestamp}] ${detail.ruleName}: ${detail.oldStatus} → ${detail.newStatus}`);
+    }
+  }
+
+  console.log('\n=== 报告结束 ===\n');
+  process.exit(0);
+}
+
+/**
+ * 从 fixture 目录加载快照文件
+ * @param dir 目录路径
+ * @returns DiffSnapshot 数组
+ */
+function loadSnapshotsFromDir(dir: string): DiffSnapshot[] {
+  const snapshots: DiffSnapshot[] = [];
+
+  let files: string[];
+  try {
+    files = readdirSync(dir).filter((f) => f.endsWith('.json'));
+  } catch {
+    return snapshots;
+  }
+
+  for (const file of files) {
+    try {
+      const content = readFileSync(join(dir, file), 'utf-8');
+      const data = JSON.parse(content);
+      // 宽松解析——只提取必要字段
+      snapshots.push({
+        timestamp: data.timestamp || file,
+        diffFiles: data.diffFiles || [],
+        logEntries: data.logEntries || [],
+        task: data.task,
+        previousResults: (data.previousResults || []) as RuleCheck[],
+      });
+    } catch {
+      // 跳过解析失败的文件
+    }
+  }
+
+  return snapshots;
+}
+
 async function main(): Promise<void> {
   const args = parseArgs(process.argv);
 
   // --install-hook 在开头处理，完成后退出
   if (args.installHook) {
     installHook();
+    return;
+  }
+
+  // --root-cause 模式：分析审计历史，输出根因报告 + 配置建议
+  if (args.rootCause) {
+    runRootCauseAnalysis();
+    return;
+  }
+
+  // --regression 模式：对指定目录下的历史快照跑回归验证
+  if (args.regressionDir) {
+    runRegressionMode(args.regressionDir);
     return;
   }
 
@@ -173,6 +316,34 @@ async function main(): Promise<void> {
 
   // 6. 输出结果
   printResults(results, diffFiles, args.json, args.ci);
+
+  // 7. webhook 推送（fire-and-forget，有 WARN/FAIL 且配置了 webhook 时推送）
+  if (results.exitCode > 0 && args.webhook && args.webhookUrl) {
+    try {
+      const pushed = await pushAuditResult({
+        platform: args.webhook,
+        url: args.webhookUrl,
+        task: args.task,
+        rules: results.rules,
+        exitCode: results.exitCode,
+      });
+      if (!pushed) {
+        console.warn('⚠️  webhook 推送失败或无需推送（不影响审计结果）。');
+      }
+    } catch {
+      console.warn('⚠️  webhook 推送异常（不影响审计结果）。');
+    }
+  }
+
+  // 8. 自动生成 think.md（方案 A：基于 git diff 硬证据）
+  if (diffFiles.length > 0) {
+    try {
+      generateThinkEntry(diffFiles, results, args.task);
+    } catch {
+      // think 生成失败不影响审计结果
+    }
+  }
+
   process.exit(results.exitCode);
 }
 

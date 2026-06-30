@@ -10,7 +10,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSy
 import { join } from 'path';
 import { homedir } from 'os';
 
-const VERSION = '0.97';
+const VERSION = '0.98';
 
 export interface AuditEntry {
   operation: string;

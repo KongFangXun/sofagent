@@ -24,7 +24,7 @@ const AO_TIMEOUT = 180_000;
 /** ao 其他操作超时（30s） */
 const AO_UTIL_TIMEOUT = 30_000;
 
-const VERSION = '0.97';
+const VERSION = '0.98';
 const RED = '\x1b[0;31m'; const GREEN = '\x1b[0;32m'; const YELLOW = '\x1b[1;33m'; const BLUE = '\x1b[0;34m'; const NC = '\x1b[0m';
 
 function info(msg: string) { console.log(`${BLUE}[orchestrate]${NC} ${msg}`); }
@@ -262,7 +262,7 @@ if (existsSync(join(hookDir, 'handler.ts')) && existsSync(join(hookDir, 'HOOK.md
   ok('加载链 hook 就绪');
 } else {
   warn(`加载链 hook 未部署: ${hookDir}`);
-  warn('子 Agent 可能拿不到 think.md/rules.md');
+  warn('子 Agent 可能拿不到 think.md/fde.md');
 }
 console.log('');
 

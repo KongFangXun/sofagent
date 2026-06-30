@@ -13,7 +13,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.97"
+VERSION="0.98"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." 2>/dev/null && pwd || echo "$PWD")"
@@ -62,7 +62,7 @@ _init_json() {
 JSONEOF
 }
 
-# ── 查找 think.md 和 rules.md ──
+# ── 查找 think.md 和 fde.md ──
 _find_think() {
   local f="${REPO_ROOT}/.sofagent/think.md"
   [ -f "$f" ] && { echo "$f"; return 0; }
@@ -71,10 +71,10 @@ _find_think() {
 
 _find_rules() {
   for f in \
-    "${HOME}/.openclaw/skills/sofagent/rules.md" \
-    "${HOME}/.workbuddy/skills/sofagent/rules.md" \
-    "${HOME}/.openclaw/rules.md" \
-    "${HOME}/.workbuddy/rules.md"; do
+    "${HOME}/.openclaw/skills/sofagent/fde.md" \
+    "${HOME}/.workbuddy/skills/sofagent/fde.md" \
+    "${HOME}/.openclaw/fde.md" \
+    "${HOME}/.workbuddy/fde.md"; do
     [ -f "$f" ] && { echo "$f"; return 0; }
   done
   echo ""
@@ -112,8 +112,8 @@ _main_loop() {
         > "${SOFAGENT_DATA}/daemon-notice.md"
     fi
     if [ -n "$rules_hash" ] && [ "$rules_hash" != "${old_rules:-}" ]; then
-      daemon_log "rules.md 已变更 (${old_rules:-无} → ${rules_hash})"
-      echo "[daemon] $(date -u +"%Y-%m-%dT%H:%M:%SZ") rules.md 已变更——下次启动时建议读取最新规则" \
+      daemon_log "fde.md 已变更 (${old_rules:-无} → ${rules_hash})"
+      echo "[daemon] $(date -u +"%Y-%m-%dT%H:%M:%SZ") fde.md 已变更——下次启动时建议读取最新规则" \
         > "${SOFAGENT_DATA}/daemon-notice.md"
     fi
 
