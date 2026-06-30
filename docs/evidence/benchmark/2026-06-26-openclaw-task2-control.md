@@ -130,7 +130,7 @@ class DataProcessor {
 3. **纪律层对分析类任务影响不显著**：Task 2 是纯文本分析（不改代码），sofagent 的「先读再用」「谨慎修改」规则对此类任务理论上不产生约束。规则前缀的存在可能干扰或无关——需要更大样本确认方向。
 
 4. **实验方法论局限**：
-   - sofagent 规则以 prompt 前缀注入，与真实 WorkBuddy 中通过 Skill 系统加载的 SKILL.md + think.md + rules.md 完整加载链不同——效果可能被低估
+   - sofagent 规则以 prompt 前缀注入，与真实 WorkBuddy 中通过 Skill 系统加载的 SKILL.md + think.md + fde.md 完整加载链不同——效果可能被低估
    - n=3 样本量不足以下结论，建议延续到 n=5 或不同模型交叉验证
 
 ### 原始对话摘要

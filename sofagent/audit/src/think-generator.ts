@@ -185,21 +185,6 @@ function detectRepeatPattern(thinkContent: string, currentLessons: string): stri
   return patterns.length > 0 ? patterns.join('；') : null;
 }
 
-/** 安全读取 think.md（模块级缓存，formatThinkEntry 调用前读） */
-let _thinkCache: string | null = null;
-function thinkPathSafe(): string {
-  if (_thinkCache === null) {
-    const dataDir = getSofagentDataDir();
-    const thinkPath = join(dataDir, 'think.md');
-    try {
-      _thinkCache = existsSync(thinkPath) ? readFileSync(thinkPath, 'utf-8') : '';
-    } catch {
-      _thinkCache = '';
-    }
-  }
-  return _thinkCache;
-}
-
 /** 格式化时间戳 YYYY-MM-DD HH:MM */
 function formatTimestamp(d: Date): string {
   const yyyy = d.getFullYear();
@@ -224,7 +209,3 @@ function readThinkForCache(thinkPath: string): string {
   }
 }
 
-/** 测试用：重置缓存 */
-export function _resetThinkCache(): void {
-  _thinkCache = null;
-}

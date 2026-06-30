@@ -29,7 +29,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$VERSION = "0.98"
+$VERSION = "0.99"
 
 # v0.85: Lite = Quick + NoAO + NoDaemon + NoConfigInject
 if ($Lite) { $Quick = $true; $NoAO = $true; $NoDaemon = $true; $NoConfigInject = $true }
@@ -102,10 +102,11 @@ Write-Ok "运行环境: Windows PowerShell"
 
 # ── 确定脚本所在目录 ──
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
-# scripts/windows/ → scripts/ → sofagent/ (项目内 skill 源码目录)
-$SKILL_SRC_DIR = Split-Path -Parent (Split-Path -Parent $SCRIPT_DIR)
+# scripts/windows/ → scripts/ → sofagent/ → sofagent/skill/ (项目内 skill 源码目录)
+$SKILL_SRC_DIR = Join-Path (Split-Path -Parent (Split-Path -Parent $SCRIPT_DIR)) "skill"
+$SOFAGENT_DIR = Split-Path -Parent $SKILL_SRC_DIR  # sofagent/ (hooks/audit/scripts 所在目录)
 # sofagent/ → 项目根目录
-$PROJECT_ROOT = Split-Path -Parent $SKILL_SRC_DIR
+$PROJECT_ROOT = Split-Path -Parent $SOFAGENT_DIR
 
 # ── 平台探测 ──
 Write-Info "Step 1/4 · 确定安装平台..."
@@ -176,7 +177,7 @@ if (-not (Test-Path $SKILL_DST)) {
 }
 
 # 核心 Skill 文件
-$skillFiles = @("SKILL.md", "engine.md", "entry-gate.md", "task-aware.md", "task-closure.md", "loop-check.md")
+$skillFiles = @("SKILL.md", "entry-gate.md", "task-aware.md", "task-closure.md", "loop-check.md", "engage.md", "engage-fde.md", "loop-evaluate.md", "loop-exit.md")
 $copied = 0
 
 foreach ($f in $skillFiles) {
@@ -411,7 +412,7 @@ if ($Platform -eq "openclaw" -and -not $Lite) {
     $utf8b = New-Object System.Text.UTF8Encoding $false
     # ── Hook 部署 ──
     Write-Info "OpenClaw · 部署加载链 Hook..."
-    $hookSrc = Join-Path $SKILL_SRC_DIR "hooks\sofagent-load-chain"
+    $hookSrc = Join-Path $SOFAGENT_DIR "hooks\sofagent-load-chain"
     $hookDst = Join-Path $TARGET "hooks\sofagent-load-chain"
     if ((Test-Path (Join-Path $hookSrc "HOOK.md")) -and (Test-Path (Join-Path $hookSrc "handler.ts"))) {
         New-Item -ItemType Directory -Force -Path $hookDst | Out-Null

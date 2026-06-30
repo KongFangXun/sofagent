@@ -62,7 +62,7 @@
 | T5 | 8s | 21s | 2.6× |
 | **总平均** | **10.4s** | **21.2s** | **2.0×** |
 
-B 组（sofagent）耗时翻倍。这是加载三层纪律链（SKILL.md → think.md → rules.md）的真实开销。
+B 组（sofagent）耗时翻倍。这是加载三层纪律链（SKILL.md → think.md → fde.md）的真实开销。
 
 ### 2.3 sofagent 激活证据
 

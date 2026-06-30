@@ -133,16 +133,16 @@
 
 ---
 
-### 维度 ⑧ 加载链 L3（rules.md）
+### 维度 ⑧ 加载链 L3（fde.md）
 
-**结论：⚠️ constitution/rules.md 不存在，按规范跳过**
+**结论：⚠️ constitution/fde.md 不存在，按规范跳过**
 
-**操作**：新建会话 → 问「rules.md 里的规则有哪些？」→ 重复 3 次取命中率
+**操作**：新建会话 → 问「fde.md 里的规则有哪些？」→ 重复 3 次取命中率
 
 | 平台 | 命中次数 | 命中率 | 备注 |
 |------|:------:|:------:|------|
 | OpenClaw | 未测 | — | 无环境 |
-| WorkBuddy | 0/1 | ⚠️ 未配置 | constitution/rules.md 在 skill 目录和工作目录下均不存在。SKILL.md 加载链第 3 层注明「不存在时：⚠️ 跳过（未配置）」，属预期行为，不算 ❌。用户未配置自定义规则。 |
+| WorkBuddy | 0/1 | ⚠️ 未配置 | constitution/fde.md 在 skill 目录和工作目录下均不存在。SKILL.md 加载链第 3 层注明「不存在时：⚠️ 跳过（未配置）」，属预期行为，不算 ❌。用户未配置自定义规则。 |
 | Claude Code | 未测 | — | 无环境 |
 | Codex | 未测 | — | 无环境 |
 | Hermes Agent | 未测 | — | 无环境 |
@@ -154,7 +154,7 @@
 | # | 发现 | 严重度 | 说明 |
 |:-:|------|:------:|------|
 | 1 | sofagent skill v0.52 中无 `scripts/` 目录 | 🔴 高 | daemon-status.sh、install.sh、task-record.sh 等脚本测试包中提及，但实际 skill 包未包含。导致 daemon 检测、步数计数、幂等检查的脚本路径均不可用。 |
-| 2 | constitution/ 目录不存在 | 🟡 中 | sofagent.md 和 rules.md 均未找到，加载链第 1 层（宪法）实际上无法加载真实文件内容，仅靠 skill 注入的 prompt。 |
+| 2 | constitution/ 目录不存在 | 🟡 中 | sofagent.md 和 fde.md 均未找到，加载链第 1 层（宪法）实际上无法加载真实文件内容，仅靠 skill 注入的 prompt。 |
 | 3 | 测试包版本号不一致 | 🟡 中 | 测试包标注 v0.82，但已安装的 skill 版本为 v0.52。测试指南基于 v0.81 特性（5 项治理加固），而安装版本未包含对应脚本。 |
 | 4 | WorkBuddy 平台无 Hook 机制 | ℹ️ 低 | 步数闸、熔断闸、幂等检查均为 prompt 自觉级，非 Hook 强制。符合测试包预期（⚠️ 靠自觉）。 |
 | 5 | daemon 进程检测在 macOS 沙箱中不可用 | ℹ️ 低 | WorkBuddy 在 macOS 沙箱内运行，pgrep 无法检测到 Electron 进程。即使 daemon.sh 存在也无法完成检测。 |
@@ -172,7 +172,7 @@
 | 评判器隔离 | ❌ 自评 |
 | 加载链 L1（SKILL.md） | ⚠️ 需主动触发 |
 | 加载链 L2（think.md） | ⚠️ 首次空白 |
-| 加载链 L3（rules.md） | ⚠️ 未配置跳过 |
+| 加载链 L3（fde.md） | ⚠️ 未配置跳过 |
 
 ---
 

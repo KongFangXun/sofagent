@@ -3,7 +3,7 @@
 // ============================================================
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { parseDiff, getAddedLines, getRemovedLines, parseNumstat } from './diff-parser';
+import { parseDiff, getAddedLines, getRemovedLines, parseNumstat, isInGitRepo } from './diff-parser';
 import type { DiffFile, NumstatEntry } from './diff-parser';
 
 // Mock execFileSync 以避免依赖真实 git 仓库
@@ -20,6 +20,19 @@ describe('parseDiff', () => {
     mockExecFileSync.mockReset();
   });
 
+  // 辅助函数：预置 isInGitRepo() mock（返回 'true'）
+  // 用法： mockGitRepo().mockReturnValueOnce(nameStatus).mockReturnValueOnce(diff)
+  function mockGitRepo() {
+    return mockExecFileSync.mockReturnValueOnce('true\n');
+  }
+
+  // 辅助函数：模拟非 git 仓库（isInGitRepo 抛异常）
+  function mockNonGitRepo() {
+    return mockExecFileSync.mockImplementationOnce(() => {
+      throw new Error('not a git repository');
+    });
+  }
+
   it('解析标准 modified 文件', () => {
     const nameStatusOutput = 'M\tsrc/index.ts';
     const diffOutput = `diff --git a/src/index.ts b/src/index.ts
@@ -31,7 +44,7 @@ index 1234567..abcdefg 100644
 +new line
  line3`;
 
-    mockExecFileSync
+    mockGitRepo()
       .mockReturnValueOnce(nameStatusOutput) // git diff --name-status
       .mockReturnValueOnce(diffOutput); // git diff <range> -- <path>
 
@@ -43,7 +56,7 @@ index 1234567..abcdefg 100644
   });
 
   it('解析 added 文件', () => {
-    mockExecFileSync
+    mockGitRepo()
       .mockReturnValueOnce('A\tsrc/new-file.ts')
       .mockReturnValueOnce('diff --git a/src/new-file.ts b/src/new-file.ts\n+new content');
 
@@ -54,7 +67,7 @@ index 1234567..abcdefg 100644
   });
 
   it('解析 deleted 文件', () => {
-    mockExecFileSync
+    mockGitRepo()
       .mockReturnValueOnce('D\tsrc/old-file.ts')
       .mockReturnValueOnce('diff --git a/src/old-file.ts b/src/old-file.ts\n-old content');
 
@@ -65,7 +78,7 @@ index 1234567..abcdefg 100644
   });
 
   it('解析 renamed 文件（R100）', () => {
-    mockExecFileSync
+    mockGitRepo()
       .mockReturnValueOnce('R100\tsrc/old.ts\tsrc/new.ts')
       .mockReturnValueOnce('diff --git a/src/old.ts b/src/new.ts\nrename from src/old.ts\nrename to src/new.ts');
 
@@ -77,14 +90,14 @@ index 1234567..abcdefg 100644
   });
 
   it('空输出 → 返回空数组', () => {
-    mockExecFileSync.mockReturnValueOnce('');
+    mockGitRepo().mockReturnValueOnce('');
     const result = parseDiff('HEAD~1..HEAD');
     expect(result).toEqual([]);
   });
 
   it('多个文件变更', () => {
     const nameStatusOutput = 'M\tsrc/a.ts\nM\tsrc/b.ts\nA\tsrc/c.ts';
-    mockExecFileSync
+    mockGitRepo()
       .mockReturnValueOnce(nameStatusOutput)
       .mockReturnValueOnce('diff --git a/src/a.ts b/src/a.ts\n+change a')
       .mockReturnValueOnce('diff --git a/src/b.ts b/src/b.ts\n+change b')
@@ -109,24 +122,44 @@ index 1234567..abcdefg 100644
   });
 
   it('合法 range（HEAD~1..HEAD）→ 正常执行', () => {
-    mockExecFileSync.mockReturnValueOnce('');
+    mockGitRepo().mockReturnValueOnce('');
     const result = parseDiff('HEAD~1..HEAD');
     expect(result).toEqual([]);
     expect(mockExecFileSync).toHaveBeenCalled();
   });
 
   it('合法 range（含 ^ 和 ~）→ 正常执行', () => {
-    mockExecFileSync.mockReturnValueOnce('');
+    mockGitRepo().mockReturnValueOnce('');
     const result = parseDiff('HEAD~3..HEAD~1');
     expect(result).toEqual([]);
   });
 
   it('git diff 失败 → 返回空数组', () => {
     mockExecFileSync.mockImplementation(() => {
+      throw new Error('git diff failed');
+    });
+    const result = parseDiff('HEAD~1..HEAD');
+    expect(result).toEqual([]);
+  });
+
+  it('非 git 仓库 → 返回空数组', () => {
+    mockExecFileSync.mockImplementation(() => {
       throw new Error('not a git repository');
     });
     const result = parseDiff('HEAD~1..HEAD');
     expect(result).toEqual([]);
+  });
+
+  it('isInGitRepo 在 git 仓库内 → true', () => {
+    mockExecFileSync.mockReturnValueOnce('true\n');
+    expect(isInGitRepo()).toBe(true);
+  });
+
+  it('isInGitRepo 不在 git 仓库内 → false', () => {
+    mockExecFileSync.mockImplementationOnce(() => {
+      throw new Error('not a git repository');
+    });
+    expect(isInGitRepo()).toBe(false);
   });
 });
 

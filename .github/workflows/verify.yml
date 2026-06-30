@@ -17,13 +17,11 @@ jobs:
             # install.sh fallback 到手动部署
             echo "[CI] install.sh failed, fallback to manual setup"
             mkdir -p ~/.openclaw/skills/sofagent
-            cp sofagent/rules.md ~/.openclaw/skills/sofagent/rules.md
-            cp sofagent/SKILL.md ~/.openclaw/skills/sofagent/SKILL.md
-            for f in engine.md entry-gate.md task-aware.md task-closure.md loop-check.md; do
-              [ -f "sofagent/$f" ] && cp "sofagent/$f" ~/.openclaw/skills/sofagent/
+            for f in SKILL.md engage.md engage-fde.md entry-gate.md task-aware.md task-closure.md loop-check.md loop-evaluate.md loop-exit.md fde.md; do
+              [ -f "sofagent/skill/$f" ] && cp "sofagent/skill/$f" ~/.openclaw/skills/sofagent/
             done
             mkdir -p ~/.openclaw/skills/sofagent/data
-            cp sofagent/data/*.md ~/.openclaw/skills/sofagent/data/ 2>/dev/null || true
+            cp sofagent/skill/data/*.md ~/.openclaw/skills/sofagent/data/ 2>/dev/null || true
             cp -r sofagent/scripts ~/.openclaw/
             chmod +x ~/.openclaw/scripts/*.sh
             mkdir -p ~/.openclaw/hooks/sofagent-load-chain

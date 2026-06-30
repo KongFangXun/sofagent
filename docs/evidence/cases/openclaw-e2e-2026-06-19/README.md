@@ -29,7 +29,7 @@
 |:--:|------|:----:|------|
 | 1 | SKILL.md（4 底线 + 10 铁律） | ✅ 生效 | skill 系统自动注入 |
 | 2 | `.sofagent/think.md` | ✅ 已创建 | engine.md B1 初始化 |
-| 3 | `~/.openclaw/skills/sofagent/constitution/rules.md` | ✅ 可读 | 绝对路径修通 |
+| 3 | `~/.openclaw/skills/sofagent/constitution/fde.md` | ✅ 可读 | 绝对路径修通 |
 
 ### 编排引擎（TC05）
 

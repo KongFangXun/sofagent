@@ -13,7 +13,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.98"
+VERSION="0.99"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." 2>/dev/null && pwd || echo "$PWD")"
@@ -125,7 +125,6 @@ _main_loop() {
     set_json_field "last_check" "$now"
 
     # 5. 最小可信验证：跑 verify-evidence TS 版，结果写入 daemon.json
-    # v0.97：verify-evidence.sh 已删除，改用 audit/dist 编译产物（如存在）
     local evidence_score="unknown"
     local AUDIT_DIST="${SCRIPT_DIR}/../audit/dist/index.js"
     if [ -f "$AUDIT_DIST" ]; then

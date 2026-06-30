@@ -36,16 +36,17 @@ deploy_constitution() {
 }
 deploy_skill_files() {
   info "Step 5/7 · 部署 Skill 文件 → $TARGET/skills/sofagent"
+  local SKILL_SRC="${SCRIPT_DIR}/../skill"
   local SKILL_DST="${TARGET}/skills/sofagent"; mkdir -p "$SKILL_DST"; local copied=0 f src dst
-  for f in SKILL.md entry-gate.md task-aware.md task-closure.md loop-check.md; do  # 核心 Skill 文件
-    src="${SCRIPT_DIR}/../${f}"; dst="${SKILL_DST}/${f}"
+  for f in SKILL.md entry-gate.md task-aware.md task-closure.md loop-check.md engage.md engage-fde.md loop-evaluate.md loop-exit.md; do  # 核心 Skill 文件
+    src="${SKILL_SRC}/${f}"; dst="${SKILL_DST}/${f}"
     if [ -f "$src" ]; then
       [ -f "$dst" ] && cmp -s "$src" "$dst" 2>/dev/null && continue
       cp "$src" "$dst"; ((copied++)) || true
     else warn "找不到 ${f}，跳过（源: $src）"; fi
   done
   mkdir -p "${SKILL_DST}/data"
-  for f in "$SCRIPT_DIR"/../data/*.md; do  # 数据模板
+  for f in "$SKILL_SRC"/data/*.md; do  # 数据模板
     [ -f "$f" ] || continue; dst="${SKILL_DST}/data/$(basename "$f")"
     [ -f "$dst" ] && cmp -s "$f" "$dst" 2>/dev/null && continue
     cp "$f" "$dst"; ((copied++)) || true

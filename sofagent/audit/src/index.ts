@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v0.98 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v0.99 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
 // 零运行时依赖——只用 Node.js 内置模块。
@@ -22,7 +22,7 @@
 import { execFileSync } from 'child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
-import { parseDiff, type DiffFile } from './diff-parser';
+import { parseDiff, isInGitRepo, type DiffFile } from './diff-parser';
 import { checkLogs } from './log-checker';
 import { runRules, type AuditResult } from './reporter';
 import { loadConfig } from './config-loader';
@@ -47,19 +47,20 @@ interface Args {
   regressionDir?: string;
   webhook?: WebhookPlatform;
   webhookUrl?: string;
+  mcp: boolean;
 }
 
-const VERSION = '0.98';
+const VERSION = '0.99';
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff' && argv[i + 1]) {
       i++;
-      args.diffRange = argv[i]!;
+      args.diffRange = argv[i] as string;
     } else if (argv[i] === '--task' && argv[i + 1]) {
       i++;
-      args.task = argv[i]!;
+      args.task = argv[i] as string;
     } else if (argv[i] === '--strict') {
       args.strict = true;
     } else if (argv[i] === '--silent') {
@@ -76,10 +77,10 @@ function parseArgs(argv: string[]): Args {
       args.rootCause = true;
     } else if (argv[i] === '--regression' && argv[i + 1]) {
       i++;
-      args.regressionDir = argv[i]!;
+      args.regressionDir = argv[i] as string;
     } else if (argv[i] === '--webhook' && argv[i + 1]) {
       i++;
-      const platform = argv[i]!;
+      const platform = argv[i] as string;
       if (platform === 'dingtalk' || platform === 'feishu' || platform === 'wecom') {
         args.webhook = platform;
       } else {
@@ -88,12 +89,16 @@ function parseArgs(argv: string[]): Args {
       }
     } else if (argv[i] === '--webhook-url' && argv[i + 1]) {
       i++;
-      args.webhookUrl = argv[i]!;
+      args.webhookUrl = argv[i] as string;
+    } else if (argv[i] === '--mcp') {
+      // MCP Server 模式：启动 JSON-RPC 2.0 over stdio
+      args.mcp = true;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       console.log(`sofagent-audit v${VERSION} · 审计闭环六步\n`);
       console.log('用法: sofagent-audit --diff <range> [--task <description>] [--strict] [--silent] [--ci] [--json] [--install-hook]');
       console.log('      sofagent-audit --root-cause');
       console.log('      sofagent-audit --regression <dir>');
+      console.log('      sofagent-audit --mcp');
       console.log('  --diff          git diff 范围（默认 HEAD~1..HEAD）');
       console.log('  --task          任务描述（用于 A3 不改越界检查）');
       console.log('  --strict        严格模式：无日志时 A7 返回 FAIL 而非 WARN');
@@ -105,6 +110,7 @@ function parseArgs(argv: string[]): Args {
       console.log('  --regression <dir>  对指定目录下的历史快照跑回归验证');
       console.log('  --webhook <platform>  webhook 推送平台（dingtalk / feishu / wecom），有 WARN/FAIL 时推送');
       console.log('  --webhook-url <url>   webhook URL（也可通过 SOFAGENT_WEBHOOK_URL 环境变量设置）');
+      console.log('  --mcp           启动 MCP Server（JSON-RPC 2.0 over stdio），暴露审计能力给 MCP Client');
       console.log('退出码: 0=全通过 / 1=有警告 / 2=有违规');
       process.exit(0);
     } else if (argv[i] === '--version') {
@@ -267,6 +273,12 @@ function loadSnapshotsFromDir(dir: string): DiffSnapshot[] {
 async function main(): Promise<void> {
   const args = parseArgs(process.argv);
 
+  // --mcp 模式：启动 MCP Server，交出 stdin/stdout 控制权
+  if (args.mcp) {
+    require('./mcp-server');
+    return;
+  }
+
   // --install-hook 在开头处理，完成后退出
   if (args.installHook) {
     installHook();
@@ -285,7 +297,15 @@ async function main(): Promise<void> {
     return;
   }
 
-  // 1. 解析 git diff
+  // 1. 检查 git 仓库
+  if (!isInGitRepo()) {
+    if (args.json) {
+      console.log(JSON.stringify({ exitCode: 2, rules: [], error: 'NOT_A_GIT_REPO' }, null, 2));
+    }
+    process.exit(2);
+  }
+
+  // 2. 解析 git diff
   const diffFiles = parseDiff(args.diffRange);
 
   if (diffFiles.length === 0) {

@@ -10,7 +10,7 @@
 
 ### 脚本 / Skill 改动额外检查（纯文档改动可跳过）
 
-> 仅当本 PR 修改了 `sofagent/scripts/` 或 `sofagent/*.md` 时勾选
+> 仅当本 PR 修改了 `sofagent/scripts/` 或 `sofagent/skill/*.md` 时勾选
 
 - [ ] **非 OpenClaw 平台测试**：在至少一个非 OpenClaw 平台（Claude Code / WorkBuddy / Codex）验证过行为
 - [ ] **参数兑现检查**：文档中描述的脚本参数（`--help` 输出）在代码中真实存在，没有虚构参数
@@ -23,7 +23,7 @@
 ## 影响范围
 
 <!-- 标记受影响的模块： -->
-- [ ] 宪法 / 规则层（rules.md、SKILL.md）
+- [ ] 宪法 / 规则层（fde.md、SKILL.md）
 - [ ] 脚本层（scripts/）
 - [ ] Skill / Hook 层
 - [ ] 数据文件模板（.sofagent/）

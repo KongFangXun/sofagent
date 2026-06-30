@@ -13,7 +13,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.98"
+VERSION="0.99"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 

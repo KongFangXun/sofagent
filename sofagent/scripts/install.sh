@@ -10,7 +10,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.98"
+VERSION="0.99"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
@@ -92,7 +92,7 @@ echo "" >> "$INSTALL_LOG"
 echo "=== sofagent install $(date -u +'%Y-%m-%dT%H:%M:%SZ') ===" >> "$INSTALL_LOG"
 _log "TARGET=$TARGET"; _log "SCRIPT_DIR=$SCRIPT_DIR"
 
-RULES_SRC="${SCRIPT_DIR}/../fde.md"
+RULES_SRC="${SCRIPT_DIR}/../skill/fde.md"
 if [ ! -f "$RULES_SRC" ]; then
   err "找不到 fde.md。请在 sofagent 项目根目录下运行此脚本。"
   err "  当前脚本位置: $SCRIPT_DIR"; err "  期望文件: $RULES_SRC"; exit 1

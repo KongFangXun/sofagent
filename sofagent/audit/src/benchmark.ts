@@ -10,7 +10,7 @@ import { performance } from 'perf_hooks';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
-const VERSION = '0.98';
+const VERSION = '0.99';
 
 export interface BenchConfig {
   /** 运行次数 */

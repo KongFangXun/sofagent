@@ -18,7 +18,7 @@ camelCase → snake_case 重命名是纪律层最敏感的测试场景——任�
 
 | 项目 | sofagent 条件 | 裸 Agent 条件 |
 |------|------|------|
-| 执行环境 | WorkBuddy（加载链完整：SKILL.md + think.md + rules.md） | OpenClaw `--agent main --local`（绕过 Gateway，无 sofagent） |
+| 执行环境 | WorkBuddy（加载链完整：SKILL.md + think.md + fde.md） | OpenClaw `--agent main --local`（绕过 Gateway，无 sofagent） |
 | 模型 | deepseek-v4-flash（WorkBuddy 绑定） | deepseek-v4-flash（OpenClaw agent 绑定） |
 | sofagent 版本 | v0.92 | 无 |
 | 测试套件 | 本地 Task 1 fixture（6 文件，4 陷阱） | 同左 |

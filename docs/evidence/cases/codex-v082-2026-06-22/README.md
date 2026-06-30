@@ -46,15 +46,15 @@
 | Codex 安装分支 | 通过 | `install.sh --platform codex --quick` exit 0，部署到临时 `$HOME/.codex` |
 | Codex 平台验证 | 通过/有警告 | `verify.sh --platform codex --json`：23 通过 / 11 警告 / 0 失败 |
 | Codex quick 验证 | 通过/有警告 | `verify.sh --platform codex --quick`：3 通过 / 1 警告 / 0 失败；警告为项目 `.sofagent/` 尚未创建 |
-| Codex 子会话加载测试 | 通过 | 真实运行 `codex exec`，按 `AGENTS.md` 读取 `rules.md` 和 `SKILL.md` 后正确回答 4 条底线 |
+| Codex 子会话加载测试 | 通过 | 真实运行 `codex exec`，按 `AGENTS.md` 读取 `fde.md` 和 `SKILL.md` 后正确回答 4 条底线 |
 
 Codex 子会话输出已保存到：`outputs/codex-sofagent-smoke-output.txt`
 
 子会话结论：
 
 - `AGENTS.md` 种子指令能被 Codex 加载。
-- Codex 先读取了 `rules.md`。
-- 因 `rules.md` 未列出 4 条底线，Codex 继续定位并读取 `SKILL.md`。
+- Codex 先读取了 `fde.md`。
+- 因 `fde.md` 未列出 4 条底线，Codex 继续定位并读取 `SKILL.md`。
 - Codex 正确回答 4 条底线：
   1. 不泄露隐私
   2. 不执行危险操作

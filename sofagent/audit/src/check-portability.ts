@@ -10,7 +10,7 @@ import { platform, arch, release, type } from 'os';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
-const VERSION = '0.98';
+const VERSION = '0.99';
 
 export interface PortabilityReport {
   os: string;

@@ -22,6 +22,21 @@ export interface NumstatEntry {
 }
 
 /**
+ * 判断当前工作目录是否在 git 仓库内
+ */
+export function isInGitRepo(): boolean {
+  try {
+    execFileSync('git', ['rev-parse', '--is-inside-work-tree'], {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'], // 静默 stderr
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * 解析 git diff 指定范围的文件变更
  */
 export function parseDiff(range: string): DiffFile[] {
@@ -32,6 +47,12 @@ export function parseDiff(range: string): DiffFile[] {
     console.error(
       `参数校验失败: range "${range}" 包含非法字符。只允许 [a-zA-Z0-9~^.-] 字符。`
     );
+    return files;
+  }
+
+  // 非 git 仓库检测——给用户明确的错误提示
+  if (!isInGitRepo()) {
+    console.error('错误：当前目录不在 git 仓库内。sofagent-audit 需要 git 仓库才能运行。');
     return files;
   }
 

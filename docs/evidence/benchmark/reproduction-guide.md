@@ -57,13 +57,9 @@ sofagent 声称：给 AI Agent 加纪律约束后，代码重构任务的变量�
 
 5. **还原 fixture**：`git checkout . && git clean -fd`
 
-6. 安装 sofagent（任选其一）：
+6. 安装 sofagent：
    ```bash
-   # 方式一：完整版（OpenClaw 用户推荐）
    clawhub skill install sofagent
-
-   # 方式二：Lite 版（其他平台 / 快速体验）
-   clawhub skill install sofagent-lite
    ```
 
 7. 给出**同样的 prompt**，让 Agent 在 sofagent 约束下跑。

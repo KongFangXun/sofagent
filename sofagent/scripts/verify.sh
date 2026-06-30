@@ -16,7 +16,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="0.98"
+VERSION="0.99"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -788,10 +788,10 @@ fi
 # 兼容 fallback：工作目录（开发态）/ 旧部署路径（老安装）
 RULES_FILE=""
 for candidate in \
-  "${PWD}/sofagent/fde.md" \
+  "${PWD}/sofagent/skill/fde.md" \
   "$HOME/.openclaw/skills/sofagent/fde.md" \
   "$HOME/.workbuddy/skills/sofagent/fde.md" \
-  "${PWD}/sofagent/constitution/fde.md" \
+  "${PWD}/sofagent/skill/constitution/fde.md" \
   "$HOME/.openclaw/skills/sofagent/constitution/fde.md" \
   "$HOME/.workbuddy/skills/sofagent/constitution/fde.md"; do
   if [ -f "$candidate" ]; then RULES_FILE="$candidate"; break; fi

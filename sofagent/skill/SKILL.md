@@ -1,7 +1,7 @@
 ---
 name: sofagent
 slug: sofagent
-version: 0.98
+version: 0.99
 displayName: sofagent
 description: >
   当你的 Agent 反复偏离目标、任务越做越复杂、刚踩过的坑下次还踩 —— sofagent 能约束其行为、拆解复杂任务、从错误中沉淀教训。
@@ -14,7 +14,7 @@ metadata:
     requires: {}
 ---
 
-# SKILL.md · v0.98
+# SKILL.md · v0.99
 
 > ⚠️ **反向锚点**：本文件随 skill 调用自动注入——你无需 Read 就已有宪法。但 think.md 和 fde.md 需你主动 Read。如果你没读就回复用户，你的输出可能偏离历史教训和企业规范。
 
@@ -28,7 +28,7 @@ metadata:
 |:--:|------|---------|------|------|
 | 1 | **本文件** | skill 调用自动注入 | 4 底线 + 6 则铁律 | — |
 | 2 | `{SOFAGENT_DATA}/think.md` | Agent 主动 Read | 反思区（上次踩了什么坑）| 任务完成后创建 |
-| 3 | `~/.openclaw/skills/sofagent/fde.md` | Agent 主动 Read | 企业规范（FDE 工程师制定，最高优先级）| 跳过（未配置）|
+| 3 | `~/.openclaw/skills/sofagent/fde.md` | Agent 主动 Read | 企业规范（FDE 制定，最高优先级）| 跳过（未配置）|
 
 > 💡 `{SOFAGENT_DATA}` = `${PWD}/.sofagent`
 > 💡 `{OPENCLAW_SCRIPTS}` = `${HOME}/.openclaw/scripts/`
