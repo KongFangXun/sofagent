@@ -308,6 +308,19 @@ bash sofagent/scripts/install.sh --lite
 
 **怎么验证装好了**：跑 `bash sofagent/scripts/verify.sh`，自动检查 9 类 24+ 项。加 `--json` 可集成到 CI/CD。如果没通过，去 §六 FAQ 看「Agent 不遵守铁律」那条排查。
 
+### 安装后的目录关系
+
+```
+你的项目根目录（$PWD）               OpenClaw 用户目录
+├── src/                             ~/.openclaw/
+├── .sofagent/          ← 数据目录   │
+│   ├── think.md                     ├── skills/sofagent/   ← Skill 文件（所有 .md）
+│   └── task/logs/                   └── scripts/           ← 部署脚本
+└── ...
+```
+
+> 💡 `.sofagent/` 建在**你的项目根目录**（不是 sofagent 仓库目录）。Skill 文件装在 `~/.openclaw/skills/sofagent/`。
+
 > 💡 不要靠「看 Agent 回复里有没有初始化提示」验证——SKILL.md 闸门 ① 明确要求「内部执行，不输出给用户」，Agent 不会把初始化过程展示给你。只信 verify.sh。
 
 装完之后，去 §四，试试给 Agent 派个任务。
@@ -333,7 +346,7 @@ bash sofagent/scripts/install.sh --lite
 
 Agent 改完代码 commit 了——它遵守了铁律吗？`sofagent-audit` 帮你回答这个问题。
 
-它是一个独立 CLI 工具（TypeScript），扫描 git diff 和 `.sofagent/task/logs/` 操作日志，对照审计规则逐条判定。当前覆盖 8 条默认审计（A1-A8），v0.97 将新增 A9（prompt injection 检测）和 A10（供应链检测）。A11（资源耗尽）推迟到 daemon 运行时——git diff 检测不到。
+它是一个独立 CLI 工具（TypeScript），扫描 git diff 和 `.sofagent/task/logs/` 操作日志，对照审计规则逐条判定。当前覆盖 11 条默认审计规则（A1-A11）。
 
 ```bash
 cd sofagent/audit && npm ci && npm run build
