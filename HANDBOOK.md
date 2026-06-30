@@ -273,7 +273,7 @@ cd sofagent
 bash sofagent/scripts/install.sh --platform {你的平台}
 ```
 
-**精简模式（30 秒，仅宪法层）**：只想挂个纪律底线、不需要全套？宪法层（4 底线 + 6 铁律）已内联到 SKILL.md 顶部，装主产品即获得。v0.98 起 `--lite` 参数已移除——OpenClaw 自带约束机制，独立精简版多余。
+**精简模式（30 秒，仅宪法层）**：只想挂个纪律底线、不需要全套？宪法层（4 底线 + 6 铁律）已内联到 SKILL.md 顶部，装主产品即获得。
 
 ```bash
 # ClawHub / SkillHub

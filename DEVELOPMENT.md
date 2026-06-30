@@ -91,8 +91,8 @@ sofagent v0.98 有**两个引擎**，数据流分离但在 think.md 交汇：
 
 **`sofagent/` 目录结构**（4 个子目录 + 6 个 Skill .md 文件 = 1 主 Skill + 5 子 Skill）：
 
-- `fde.md`（1 个文件）：执行层，企业运行规范（FDE 工程师写）。v0.98：rules.md 改名为 fde.md，定位从「用户偏好」升级为「企业约束」
-- `data/`（6 个文件）：数据模板 think.md、orchestrator.md、task.md、scoring.md、IDENTITY.md、preferences.md（preferences.md v0.98 起废弃，保留模板供参考）
+- `fde.md`（1 个文件）：执行层，企业运行规范（FDE 工程师写）
+- `data/`（6 个文件）：数据模板 think.md、orchestrator.md、task.md、scoring.md、IDENTITY.md、preferences.md（已废弃，保留模板供参考）
 - `scripts/`（核心 5 个）：install.sh、verify.sh、uninstall.sh、task-record.sh。task-orchestrate.sh 已迁移到 `audit/src/task-orchestrate.ts`（v0.97）
 - `hooks/sofagent-load-chain/`（2 个文件）：HOOK.md + handler.ts（OpenClaw 2026.6.x 内部 hook，agent:bootstrap 事件注入第 2、3 层）
 - Skill 文件（6 个 .md）：SKILL.md（主入口）、entry-gate.md（入境闸门）、task-aware.md（每任务闸门）、task-closure.md（离境闸门）、loop-check.md（循环顾问）、engage.md（编排引擎，FDE 专用）
@@ -425,27 +425,27 @@ think.md
 
 #### 记忆存储与冲突处理
 
-三策略：关键事实走结构化（fde.md）、近期变化走摘要（think.md）、经验案例走混合检索（task/logs/ + orchestrator/）。当前 think.md 是追加模式（审计引擎 v0.98 起自动生成），自动冲突检测是 v0.9 设计目标。
+三策略：关键事实走结构化（fde.md）、近期变化走摘要（think.md）、经验案例走混合检索（task/logs/ + orchestrator/）。当前 think.md 是追加模式（审计引擎自动生成），自动冲突检测是 v0.9 设计目标。
 
 ---
 
 
 ## 七、数据文件架构
 
-v0.98 起 sofagent 有两个引擎，数据文件按归属分为三类：**审计引擎管**（提交时）、**编排引擎管**（运行时）、**废弃**。
+sofagent 有两个引擎，数据文件按归属分为三类：**审计引擎管**（提交时）、**编排引擎管**（运行时）、**废弃**。
 
 ### 按引擎归属
 
 | 文件 | 归属引擎 | 干什么 | 加载 | 模板 |
 |------|---------|------|:--:|------|
-| `think.md` | **审计引擎写 / 编排引擎读** | 反思摘要。v0.98 起审计引擎基于 git diff 自动生成（think-generator.ts），编排引擎点火时读取优化策略 | 全文 | [模板](sofagent/data/think.md) |
+| `think.md` | **审计引擎写 / 编排引擎读** | 反思摘要。审计引擎基于 git diff 自动生成（think-generator.ts），编排引擎点火时读取优化策略 | 全文 | [模板](sofagent/data/think.md) |
 | `task/logs/` | **审计引擎读 / 编排引擎写** | 执行日志。审计 A7/A8 读它检查有没有盲改；编排引擎闭环时写入 | 日期目录树 | [模板](sofagent/data/task.md) |
-| `fde.md` | **编排引擎读** | 企业运行规范（FDE 工程师写），含项目目标、验收标准、风险边界。v0.98 从 rules.md 改名 | 全文 | [模板](sofagent/fde.md) |
+| `fde.md` | **编排引擎读** | 企业运行规范（FDE 工程师写），含项目目标、验收标准、风险边界 | 全文 | [模板](sofagent/fde.md) |
 | `task/plans/` | **编排引擎写** | 任务计划，第二轮澄清时生成 | 日期文件名 | [模板](sofagent/data/task.md) |
 | `orchestrator/` | **编排引擎核心数据** | 最优拆法决策树，同类任务 ≥3 次后写入。编排引擎点火前先查它 | 树形 | [模板](sofagent/data/orchestrator.md) |
 | `scoring.md` | **编排引擎辅助数据** | Skill 评分记录，闭环时更新，选 Skill 时参考 | 树形 | [模板](sofagent/data/scoring.md) |
 | `IDENTITY.md` | **编排引擎辅助** | 岗位匹配（agency-agents-zh），编排引擎拆任务时按角色分配 | 全文 | [模板](sofagent/data/IDENTITY.md) |
-| ~~`preferences.md`~~ | **废弃** | v0.98 前用于用户个人偏好。rules.md→fde.md 后，个人偏好不属于 sofagent 管理范围 | — | [模板](sofagent/data/preferences.md)（仅参考） |
+| ~~`preferences.md`~~ | **废弃** | 个人偏好不属于 sofagent 管理范围 | — | [模板](sofagent/data/preferences.md)（仅参考） |
 
 ### 两个引擎的数据流
 
@@ -467,7 +467,7 @@ v0.98 起 sofagent 有两个引擎，数据文件按归属分为三类：**审�
 
 每次任务闭环后：反思进 think.md（审计引擎自动生成）→ 评分更新 scoring.md → 最优拆法覆写 orchestrator/ → 执行记录追加到 task/logs/（只追加）。
 
-> 💡 task/logs 是所有数据的源头。think.md（反思）、scoring.md（技能目录）、orchestrator/（作战手册）从中各自提炼结论。v0.98 起 think.md 的生成不再依赖 Agent 自觉——审计引擎基于 git diff 硬证据自动写。
+> 💡 task/logs 是所有数据的源头。think.md（反思）、scoring.md（技能目录）、orchestrator/（作战手册）从中各自提炼结论。think.md 由审计引擎基于 git diff 硬证据自动生成。
 
 树形加载的设计逻辑见 [ARCHITECTURE.md](./ARCHITECTURE.md#tree-loading)。
 
