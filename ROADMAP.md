@@ -272,7 +272,7 @@
 
 ### 终局：FDE 工程师帮企业 AI 化的一站式底座
 
-sofagent 的终局是：**FDE 工程师帮企业 AI 化的一站式底座**。装 sofagent 自带 OpenClaw 引擎——FDE 工程师用自己的 Agent（任何）对话，sofagent 引导梳理 workflow，后台 OpenClaw 执行 AI 节点，审计结果自动推送到协作平台。
+sofagent 的终局是：**FDE 工程师帮企业 AI 化的一站式底座**。FDE 工程师用自己的 Agent 对话，sofagent 引导梳理 workflow，后台 OpenClaw 执行 AI 节点，审计结果自动推送到协作平台。
 
 ```mermaid
 flowchart TB
@@ -358,7 +358,7 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 
 ### v1.0 — 正式版：FDE 部署底座
 
-> **定位**：**FDE 部署底座**——帮 FDE 工程师快速梳理企业 workflow → 定义 AI 节点 → 部署到任意设备 → 审计结果自动推送到协作平台。装 sofagent 自带 OpenClaw 引擎（必装）。审计引擎是主产品，think.md 由审计引擎自动生成（不依赖 Agent 自觉），FDE 引导逻辑内联。
+> **定位**：**FDE 部署底座**——帮 FDE 工程师快速梳理企业 workflow → 定义 AI 节点 → 部署到任意设备 → 审计结果自动推送到协作平台。审计引擎是主产品，think.md 由审计引擎自动生成（不依赖 Agent 自觉），FDE 引导逻辑内联。
 
 **v1.0 三条主线**：
 
@@ -472,7 +472,7 @@ sofagent 会变成一台设备上的 **Agent 纪律委员**。安装时自动带
 | Connector（连接外部系统） | sofagent 是纪律层+审计层，不是自动化流水线。Markdown 文件就是接口 |
 | 记忆压缩自动化 | v0.56 前试过，已取消。每个 Agent 有自己的记忆 |
 | **sofagent-lite 独立产品** | v0.98 删除——OpenClaw 自带约束机制，独立宪法 skill 多余。宪法层内联到主 SKILL.md |
-| **平台能力矩阵五平台** | v0.98 删除——后台统一 OpenClaw，不再强调跨平台兼容性 |
+| **平台能力矩阵五平台** | v0.98 删除——后台统一 OpenClaw |
 | **三层加载链叙事** | v0.98 废弃——三层拆分为独立产品（宪法内联 + think.md 自动生成 + FDE.md 企业约束） |
 | **sofagent-fde 独立 Skill** | v0.98 改为根目录 FDE.md 大文档——FDE 工程师自己装，Skill 机制意义不大 |
 | **纪律层实验第三次重跑** | v0.97 + v0.98 两次各 100 次都因任务设计无法结论，结果已作废。第三次不会有不同结果，换赛道到日常使用审计数据 |
