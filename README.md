@@ -37,9 +37,9 @@ FDE 部署底座 —— 面向中小企业（SMB）和一人公司（OPC）。�
 
 > 需要 bash 4+ 和 git。OpenClaw 跑复杂任务另需 Node.js ≥18 + npm（详见 [HANDBOOK](./HANDBOOK.md)）。
 > 📋 安装脚本做了什么？看 [SECURITY.md · install.sh 行为说明](./SECURITY.md#installsh-行为说明)。
-### 快速体验（宪法层）
+### 快速体验
 
-只想挂个纪律底线？装主产品即可——宪法层（4 底线 + 6 铁律）已内联到 SKILL.md 顶部。
+只想挂个纪律层？装主产品即可——4 底线 + 6 铁律已内联到 SKILL.md 顶部。
 
 ```bash
 # ClawHub / SkillHub
