@@ -92,8 +92,8 @@ sofagent v0.98 有**两个引擎**，数据流分离但在 think.md 交汇：
 **`sofagent/` 目录结构**（4 个子目录 + 6 个 Skill .md 文件 = 1 主 Skill + 5 子 Skill）：
 
 - `fde.md`（1 个文件）：执行层，企业运行规范（FDE 工程师写）
-- `data/`（6 个文件）：数据模板 think.md、orchestrator.md、task.md、scoring.md、IDENTITY.md、preferences.md（已废弃，保留模板供参考）
-- `scripts/`（核心 5 个）：install.sh、verify.sh、uninstall.sh、task-record.sh。task-orchestrate.sh 已迁移到 `audit/src/task-orchestrate.ts`（v0.97）
+- `data/`（6 个文件）：数据模板 think.md、orchestrator.md、task.md、scoring.md、IDENTITY.md、preferences.md（已废弃）
+- `scripts/`（核心 4 个）：install.sh、verify.sh、uninstall.sh、task-record.sh
 - `hooks/sofagent-load-chain/`（2 个文件）：HOOK.md + handler.ts（OpenClaw 2026.6.x 内部 hook，agent:bootstrap 事件注入第 2、3 层）
 - Skill 文件（6 个 .md）：SKILL.md（主入口）、entry-gate.md（入境闸门）、task-aware.md（每任务闸门）、task-closure.md（离境闸门）、loop-check.md（循环顾问）、engage.md（编排引擎，FDE 专用）
 
@@ -104,20 +104,12 @@ sofagent v0.98 有**两个引擎**，数据流分离但在 think.md 交汇：
 | `install.sh` | 多平台一键安装（7 步） | 你手动跑 | `bash install.sh --platform openclaw` |
 | `uninstall.sh` | 删约束文件，保留 `.sofagent/` 用户数据 | 你手动跑 | `bash uninstall.sh --platform openclaw` |
 | `verify.sh` | 装后验证 9 类 24+ 检查项 | 安装完自动跑，也可手动 | `bash verify.sh --json`（CI/CD） |
-| `load-chain.sh` | ~~已废弃~~（v0.64 删除，改用 `hooks/sofagent-load-chain/` 内部 hook） | — | — |
 | `task-orchestrate.ts`（已迁移至 TypeScript） | 包装 ao compose：worktree 隔离 + 约束注入 + 成本汇总 + 清理 | engage.md 拆任务后自动调用 | 不手动跑 |
 | `task-record.sh` | 收集任务数据 → 拼 Markdown → 追加到 task/logs/ | 闭环时自动调用 | 不手动跑 |
 
-> 💡 前三个是用户侧工具（装/卸/验），后三个是运行时脚本（Agent 自动调，你不需要手动跑）。**设计原则**：确定性操作脚本化——去重、格式校验、文件清理这类即刻运算，脚本比 Agent 更快更省更可靠。Agent 只负责判断和执行，代码做稳定工具，Markdown 保存状态。
+> 💡 前三个是用户侧工具（装/卸/验），后两个是运行时脚本（Agent 自动调，你不需要手动跑）。**设计原则**：确定性操作脚本化——去重、格式校验、文件清理这类即刻运算，脚本比 Agent 更快更省更可靠。Agent 只负责判断和执行，代码做稳定工具，Markdown 保存状态。
 
-**跨平台自启：种子指令**
-
-五大平台都有自己的 Native 记忆文件，系统保证每轮自动注入。WorkBuddy / OpenClaw 上 Agent 首次初始化时自动写入种子指令；Codex / Hermes Agent / Claude Code 需要你手动在文件末尾贴一行。
-
-种子指令内容：
-> 每次对话开始，读取 `SKILL.md` 并执行其中的入口流程。如果数据文件（`.sofagent/`）不存在，先执行初始化。
-
-手动平台贴到对应文件末尾：Codex → `AGENTS.md` | Hermes Agent → `SOUL.md` | Claude Code → `~/.claude/CLAUDE.md` 或项目根 `CLAUDE.md`。搞一次永久生效。
+跨平台自启参见 [Handbook §五](./HANDBOOK.md#五安装与跨平台)。
 
 
 ---
@@ -127,7 +119,7 @@ sofagent v0.98 有**两个引擎**，数据流分离但在 think.md 交汇：
 
 > 负责的子 Skill：`engage.md` 点火 ao compose 拆任务 → `loop-check.md` 设检查点 + 失败诊断 → `task-closure.md` 闭环收口。
 
-> **v0.97 编排拆出**：编排引擎（原 engine.md / task-aware.md / loop-check.md，现已迁至 engage.md）已在 v0.97 从 sofagent 核心拆出到 FDE Skill 专用。entry-gate.md + task-closure.md 留在核心（所有平台需要的轻量检查）。编排深度从四级简化为两档拆解（拆 vs. 不拆）——FDE 场景下 workflow 节点粒度已确定，不需要渐进减薄。三档自由度同步砍除。
+> 编排引擎（engage.md）定位 FDE 专用，两档拆解（拆 vs. 不拆）。
 
 这套编排吸收了 Harness 和 Loop 两种思路——约束层保证安全（SKILL.md），编排层往自我进化方向走（orchestrator/ + A/B 对比）。三个核心问题：什么时候停（Session 边界 + 中间检查点）、失败了怎么办（带反思的闭环重试）、状态怎么管（task/logs + think.md + orchestrator/）。
 
@@ -445,7 +437,6 @@ sofagent 有两个引擎，数据文件按归属分为三类：**审计引擎管
 | `orchestrator/` | **编排引擎核心数据** | 最优拆法决策树，同类任务 ≥3 次后写入。编排引擎点火前先查它 | 树形 | [模板](sofagent/data/orchestrator.md) |
 | `scoring.md` | **编排引擎辅助数据** | Skill 评分记录，闭环时更新，选 Skill 时参考 | 树形 | [模板](sofagent/data/scoring.md) |
 | `IDENTITY.md` | **编排引擎辅助** | 岗位匹配（agency-agents-zh），编排引擎拆任务时按角色分配 | 全文 | [模板](sofagent/data/IDENTITY.md) |
-| ~~`preferences.md`~~ | **废弃** | 个人偏好不属于 sofagent 管理范围 | — | [模板](sofagent/data/preferences.md)（仅参考） |
 
 ### 两个引擎的数据流
 

@@ -1,7 +1,7 @@
 # engage.md · 编排引擎（精简版）· v0.98
 
 > FDE 部署场景专用——workflow 节点触发时点火。个人开发者不需要。
-> 两档拆解（拆 vs. 不拆），砍掉四级渐进减薄。
+> 两档拆解（拆 vs. 不拆）。
 
 ---
 
@@ -63,8 +63,6 @@ dag:
 ```bash
 ao run workflow.yaml
 ```
-
-> AO compose 只做一次拆解，不做渐进减薄。FDE 场景下 workflow 节点粒度已在 §三 深挖时确定。
 
 ---
 

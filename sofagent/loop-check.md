@@ -1,8 +1,7 @@
-# Loop Check · v0.98
+# Loop Check
 
-> 拆自原 loop-check.md（检查规则部分）。被动顾问——不夺权，不下命令，不硬拦截。主 Agent 在指定节点主动调起。全平台通用。
+> 被动顾问——不夺权，不下命令，不硬拦截。主 Agent 在指定节点主动调起。全平台通用。
 > ⛔ **Loop 分析/评分/诊断严禁输出给用户——仅「输出规则」表中规定的内容可见。**
-> 退出条件 + 边界处理见 `loop-exit.md`。
 
 ---
 
@@ -68,17 +67,7 @@
 
 **非 OpenClaw 平台**：无 session.spawn，退化到证据驱动评审——
 
-> ⚠️ 本路径为 prompt 级约束，无机制保障，效果未实测。LLM 没有「清空执行记忆」的 API，执行上下文仍在窗口里——下面的「重新 Read」是让 Agent 以文件为评审主依据，不是真的能擦除执行记忆。Agent 可能仍凭执行记忆补充评审，这是已知局限。
-
-```
-主 Agent 写 task/logs → 重新 Read task/logs → 以文件内容为评审主依据
-逐条对证（执行记忆仅作辅助参考，以 task/logs 文件为准）：
-- 三段输出了吗？→ 看 task/logs 里有没有
-- 测试过了吗？→ 看 task/logs 里有没有记录
-- task/logs 里没有的 → 不算证据
-```
-
-与 OpenClaw 路径的区别：OpenClaw 是工程隔离（子 Agent 看不到执行上下文），非 OpenClaw 是 prompt 级约束（主 Agent 被要求以文件为准，但无机制强制）。两者可靠性不在同一级别——非 OpenClaw 路径的评审仍可能被执行记忆污染。
+> ⚠️ 非 OpenClaw 平台：主 Agent 重新 Read task/logs → 以文件内容为评审主依据，逐条对证（task/logs 里没有的 → 不算证据）。无机制保障，效果未实测——Agent 可能仍凭执行记忆补充评审，这是已知局限。
 
 ### 闭环验证模型选择与怀疑论提示
 
@@ -236,7 +225,6 @@ Log：`Loop checkpoint|{节点}|{结果}|{依据}|{动作}` / `Loop failure|{根
 ---
 
 > Loop Check = 顾问。读数据、做判断、给建议——主 Agent 自己决定怎么做。脚本数数，Agent 判断。
-> 退出条件 + 边界处理见 `loop-exit.md`。
 
 ## Gotcha
 

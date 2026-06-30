@@ -28,7 +28,7 @@ Agent 跑完任务后，谁来告诉它「下一个任务是什么」？谁来�
 
 > **三元原语的交叉验证**：Ralph Loop 和 Karpathy AutoResearch 完全独立地收敛到同一底层范式——**可编辑资产 → 单一衡量标准 → 定时循环迭代**。这是同一范式在工程（Ralph）和科研（Karpathy）的两种落地形态，构成 sofagent 三层加载链设计的外部交叉验证。
 >
-> ⚠️ v0.98 起，sofagent 的架构核心从 Ralph 循环转向双引擎（审计引擎 + 编排引擎）。Ralph 范式仍然是审计层设计的历史基因，但不再是产品架构的中心叙事。
+> ⚠️ 当前核心：双引擎（审计引擎 + 编排引擎）。
 
 > 🤔 「纪律层」不是什么新造的词——Palantir CEO 卡普在 2026 年 CNBC 三小时访谈中讲得很清楚：大模型本身不值钱，值钱的是「从模型到业务、到执行、到责任的全链路闭环」里的系统能力。AI 落地真正缺的不是更强的模型，是有人确保 Agent 按规矩干活、出错了能追溯、交付了能验货。sofagent 做的就是这个——Agent 的纪律层，不是 Agent 的替代品。
 
@@ -147,8 +147,6 @@ sofagent 不替代 AI 中台——它是 AI 中台里 Agent 治理那一层的�
 
 LLM 管判断、脚本管执行、Runtime 管刹车——天然的分界。
 
-> **编排引擎 v0.97 拆出**：编排引擎（engine.md / task-aware.md / loop-check.md）从 sofagent 核心拆出，定位为 FDE 部署场景专用——个人开发者不需要编排，只装纪律层就够了。entry-gate.md + task-closure.md 留在核心（所有平台需要的轻量检查）。编排深度从四级简化为两档拆解（拆 vs. 不拆）——FDE 场景下 workflow 节点粒度已确定，不需要渐进减薄。
-
 > sofagent 的编排引擎（entry-gate → task-aware → task-closure 三道闸门）对应 Addy Osmani 在 Loop Engineering 中提出的「Go Mode」——当任务满足触发条件时，从「人工确认每一步」切换到「Agent 自主循环 + 检查点兜底」。sofagent 的 Go Mode 触发条件更保守：仅 🔴 复杂任务才点火，不像 Loop Engineering 原版那样对中等复杂度也自动启动。
 
 ### 为什么 OpenClaw 是唯一底座
@@ -212,7 +210,7 @@ Claude Code 的 `/goal` 是纯黑盒——目标给出去后 Agent 闷头跑，�
 
 ### 铁律为什么是 6 则（[Handbook §三](./HANDBOOK.md#三底线与铁律)）
 
-每一条对应日常使用中反复遇到的 Agent 失控行为——不是理论推演，是痛点积累。v0.95 将 4 条有 git diff 痕迹的铁律移至审计层（A3/A5/A7/A8），铁律只保留纯行为准则：
+每一条对应日常使用中反复遇到的 Agent 失控行为——不是理论推演，是痛点积累。
 
 | 问题 | 表现 | 对应规则 |
 |------|------|:--:|
@@ -222,11 +220,7 @@ Claude Code 的 `/goal` 是纯黑盒——目标给出去后 Agent 闷头跑，�
 | 不看文件就写 | 没读项目代码就开始改，越改越乱 | 审计 A7 不存盲改 |
 | 编造数据 | 不知道就编，被揭穿才承认 | 审计 A5 不瞒真相 |
 
-前 4 条源于 Andrej Karpathy 的 [4 条编码原则](https://github.com/multica-ai/andrej-karpathy-skills)，后 2 条是实战翻车经历的工程沉淀。`fde.md` 是你可以自己改的，`SKILL.md`（宪法内联）是写死的——铁律兜底，rules 定制。
-
-### 编排引擎：两档拆解（[Developer §二](./DEVELOPMENT.md#二编排哲学)）
-
-> v0.97 编排引擎从核心拆出：四级编排深度（完整编排 → 模板复用 → 轻量调度 → 自主执行）→ 两档拆解（拆 vs. 不拆）。FDE 场景下 workflow 节点粒度已由 FDE 梳理确定，不需要渐进减薄。编排引擎（engage.md）定位为 FDE 专用能力——个人开发者直接跳过。
+前 4 条源于 Andrej Karpathy 的 [4 条编码原则](https://github.com/multica-ai/andrej-karpathy-skills)，后 2 条是实战翻车经历的工程沉淀。
 
 ### Loop Agent：三节点顾问模式（[Developer §二](./DEVELOPMENT.md#二编排哲学)）
 
@@ -392,7 +386,7 @@ orchestrator/、scoring/ 这些目录可能有几百条记录——全读到上�
 ### 版本路线速览
 
 - **v0.9x**：安全审查 ✅ → 审计层（sofagent-audit）→ daemon TypeScript 化
-- **v1.0 定位**：Agent 工作验收工具（正式）+ Agent 纪律层（实验——v0.97+v0.98 两次共 200 次实验，方法缺陷无法结论，已作废）+ FDE 部署框架（规划）。审计层跨平台、零 Agent 依赖、有独立技术价值——是 v1.0 的主产品
+- **v1.0 定位**：Agent 工作验收工具（正式）+ Agent 纪律层（实验）+ FDE 部署框架（规划）。审计层跨平台、零 Agent 依赖、有独立技术价值——是 v1.0 的主产品
 - **v1.x**：Skill 自进化验证门控（A/B 对比 + 外部评估器）→ 设备固件
 - **v2.x**：多设备协同层 / 信号共享网络 → FDE 完整形态
 
