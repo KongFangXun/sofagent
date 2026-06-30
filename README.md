@@ -39,7 +39,7 @@ FDE 部署底座 —— 面向中小企业（SMB）和一人公司（OPC）。�
 > 📋 安装脚本做了什么？看 [SECURITY.md · install.sh 行为说明](./SECURITY.md#installsh-行为说明)。
 ### 快速体验
 
-只想挂个纪律层？装主产品即可——4 底线 + 6 铁律已内联到 SKILL.md 顶部。
+只想挂个纪律层？把 4 底线 + 6 铁律复制进你的 Agent 设置就行，不需要装整个 sofagent。
 
 ```bash
 # ClawHub / SkillHub
