@@ -22,11 +22,34 @@
 | 理解反思闭环 | [反思工程](#六反思工程) |
 | 理解数据文件 | [数据文件架构](#七数据文件架构) |
 
+### 概念 → 文件速查
+
+| 你想找什么 | 文件/目录 |
+|-----------|---------|
+| 审计规则代码 | `sofagent/audit/src/rules/` |
+| 审计 CLI 入口 | `sofagent/audit/src/index.ts` |
+| 审计报告生成 | `sofagent/audit/src/reporter.ts` |
+| think.md 自动生成 | `sofagent/audit/src/think-generator.ts` |
+| Skill 主入口（宪法内联） | `sofagent/SKILL.md` |
+| 编排引擎 | `sofagent/engage.md` |
+| FDE 场景引导 | `sofagent/engage-fde.md` |
+| 入境闸门 | `sofagent/entry-gate.md` |
+| 每任务闸门 | `sofagent/task-aware.md` |
+| 离境闸门 | `sofagent/task-closure.md` |
+| 循环检查 | `sofagent/loop-check.md` |
+| 循环退出 | `sofagent/loop-exit.md` |
+| 企业约束模板 | `sofagent/fde.md` |
+| 数据模板 | `sofagent/data/` |
+| 部署脚本 | `sofagent/scripts/` |
+| 加载链 Hook | `sofagent/hooks/sofagent-load-chain/` |
+| 架构设计决策 | `ARCHITECTURE.md` |
+| 内部机制说明 | `DEVELOPMENT.md` |
+
 ---
 
 ## 一、工作原理
 
-> 本章内容：1 主 Skill + 5 子 Skill = 6 个 .md —— 怎么协同、靠什么执行
+> 本章内容：1 主 Skill + 7 子 Skill = 8 个 .md（+ 1 数据模板 fde.md）—— 怎么协同、靠什么执行
 
 ### sofagent Skill 工作原理
 
@@ -34,17 +57,21 @@
 
 Skill 不只是 Markdown 文件和一段提示词。根据 Anthropic Cloud Code 团队的实践定义，Skill 是一个**完整的工作环境**——包含入口分发器、子 Skill、脚本、资源配置，本质是把模型的泛化能力推进到稳定完成某类特定工作的能力。sofagent 的框架就是这个定义的工程实现。
 
-**1 主 Skill（`SKILL.md`）+ 5 子 Skill（entry-gate/task-aware/task-closure/loop-check/engage）= 6 个 .md（按需加载）**
+**1 主 Skill（`SKILL.md`）+ 7 子 Skill（engage/engage-fde/entry-gate/task-aware/task-closure/loop-check/loop-exit）= 8 个 .md（按需加载）**
 
 用户只安装 `SKILL.md`（主入口）。每次对话开始时自动加载，A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程（平台检测→安装→加载链→种子指令），🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。子 Skill 按场景按需加载——每个只管一件事，每个 ≤90 行，Agent 不会迷路。
 
 | 文件 | 何时加载 | 干什么 | 位置 |
 |------|------|------|------|
 | engage | 🔴 复杂任务确认后 | 入口引擎：平台检测→安装→加载链→种子指令，后接 Skill 检索 + ao compose | `engage.md` |
+| engage-fde | FDE 部署场景检测到后 | FDE 场景引导：部署流程主动引导逻辑，与根目录 FDE.md（知识文档）互补 | `engage-fde.md` |
 | entry-gate | 入口流程结束后 | 硬出口检查：加载链确认 + 能力注册。入境闸门不开，不接任何任务 | `entry-gate.md` |
 | task-aware | 收到任何用户任务时 | 每任务闸门：边界→语义→健康度→判级→澄清。含硬信号规则 + 检查点触发规则（子任务间/60%预算/重大操作前） | `task-aware.md` |
 | task-closure | 闭环信号出现时 | 离境闸门：调 Loop Agent（closure 模式）→ 反思/评分/A/B/汇报 | `task-closure.md` |
 | loop-check | 检查点 / 失败 / 闭环 | 顾问 Agent（角色隔离）：读数据→做判断→给建议。三节点调起（checkpoint/failure/closure） | `loop-check.md` |
+| loop-exit | 循环终止信号出现时 | 循环终止条件与收尾：定义循环什么时候停、怎么停、停了之后做什么 | `loop-exit.md` |
+
+> fde.md 是数据模板（非 Skill），FDE 工程师编写企业约束。
 
 > 三层闸门 + 一条回环：入境（初始化证明）→ 每任务（启动前确认）→ Loop（执行中检查+失败诊断）→ 离境（完成后沉淀）。四个全走才能保证 `.sofagent/` 数据层被激活。
 
@@ -89,13 +116,13 @@ sofagent v0.98 有**两个引擎**，数据流分离但在 think.md 交汇：
 
 > 从 Handbook §五 移入的 Developer 级参考内容——普通用户不需要看，开发者改 Skill / 脚本时查这里。
 
-**`sofagent/` 目录结构**（4 个子目录 + 6 个 Skill .md 文件 = 1 主 Skill + 5 子 Skill）：
+**`sofagent/` 目录结构**（4 个子目录 + 8 个 Skill .md 文件 = 1 主 Skill + 7 子 Skill）：
 
-- `fde.md`（1 个文件）：执行层，企业运行规范（FDE 工程师写）
+- `fde.md`（1 个文件）：数据模板（非 Skill），执行层，企业运行规范（FDE 工程师写）
 - `data/`（6 个文件）：数据模板 think.md、orchestrator.md、task.md、scoring.md、IDENTITY.md、preferences.md（已废弃）
 - `scripts/`（核心 4 个）：install.sh、verify.sh、uninstall.sh、task-record.sh
 - `hooks/sofagent-load-chain/`（2 个文件）：HOOK.md + handler.ts（OpenClaw 2026.6.x 内部 hook，agent:bootstrap 事件注入第 2、3 层）
-- Skill 文件（6 个 .md）：SKILL.md（主入口）、entry-gate.md（入境闸门）、task-aware.md（每任务闸门）、task-closure.md（离境闸门）、loop-check.md（循环顾问）、engage.md（编排引擎，FDE 专用）
+- Skill 文件（8 个 .md）：SKILL.md（主入口）、engage.md（编排引擎）、engage-fde.md（FDE 场景引导）、entry-gate.md（入境闸门）、task-aware.md（每任务闸门）、task-closure.md（离境闸门）、loop-check.md（循环顾问）、loop-exit.md（循环终止）
 
 **配套脚本速查**：
 
@@ -480,7 +507,7 @@ sofagent 有两个引擎，数据文件按归属分为三类：**审计引擎管
 
 ## 八、提交时审计
 
-sofagent-audit（v0.92）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对审计规则（A1-A10）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 运行时配合——看的是已经发生的 git diff，但审计 A7/A8 的日志检查依赖 Agent 写入的任务日志。A3/A5 只看 git diff，Agent 无法绕过。A9（prompt injection）、A10（供应链检测）已在 v0.97 实现。A11（资源耗尽）推迟到 daemon 运行时。
+sofagent-audit（v0.92）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对审计规则（A1-A11）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 运行时配合——看的是已经发生的 git diff，但审计 A7/A8 的日志检查依赖 Agent 写入的任务日志。A3/A5 只看 git diff，Agent 无法绕过。A9（prompt injection）、A10（供应链检测）已在 v0.97 实现。A11（资源耗尽，daemon 运行时检测）。
 
 ### 绿灯路径检测：AI 的「最低成本通过」本能
 
