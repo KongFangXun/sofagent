@@ -37,7 +37,7 @@ FDE 部署底座 —— 面向中小企业（SMB）和一人公司（OPC）。�
 
 > 需要 bash 4+ 和 git。OpenClaw 跑复杂任务另需 Node.js ≥18 + npm（详见 [HANDBOOK](./HANDBOOK.md)）。
 > 📋 安装脚本做了什么？看 [SECURITY.md · install.sh 行为说明](./SECURITY.md#installsh-行为说明)。
-> v0.98 起 OpenClaw 是 sofagent 的必装执行引擎（install.sh 自动检测+安装）。不再强调平台兼容性——装 sofagent 自带 OpenClaw 引擎。
+> v0.98 起 OpenClaw 是 sofagent 的必装执行引擎。
 
 ### 快速体验（宪法层）
 
