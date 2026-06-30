@@ -6,7 +6,7 @@
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 ![ShellCheck](https://github.com/KongFangXun/sofagent/actions/workflows/shellcheck.yml/badge.svg)
 [![Version](https://img.shields.io/badge/version-v0.98-16B8F3)](./HANDBOOK.md)
-[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--29-16B8F3)](./README.md)
+[![Last Updated](https://img.shields.io/badge/last--updated-2026--06--30-16B8F3)](./README.md)
 [![定位](https://img.shields.io/badge/定位-FDE部署底座-16B8F3)](#一句话定位)
 [![OpenClaw](https://img.shields.io/badge/🦞优先-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
 [![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9FStarred)](https://github.com/KongFangXun/sofagent/stargazers)
@@ -21,9 +21,7 @@
 
 ## 一句话定位
 
-**每次 AI 帮你改完代码后，sofagent 自动检查：它有没有跳过测试、有没有乱改不相关的文件、有没有引入安全漏洞。**
-
-一句话：AI 改完代码，你点 merge 之前——sofagent 帮你看一眼。4 底线 + 6 铁律约束 Agent 行为，git diff 审计兜底验证。
+FDE 部署底座 —— 面向中小企业（SMB）和一人公司（OPC）。部署专家用标准化流程搭建 workflow AI 节点，实施后审计引擎 + 编排引擎托管，企业自己管得住、成本可核算、效果可量化。
 
 > 💡 **为什么需要纪律层**：企业 AI 落地的核心矛盾，是将概率性的大模型装进必须可追踪、可控制、可问责的传统业务流程中。模型负责建议，系统负责验收，工具负责执行——这就是 sofagent 做的事。
 
