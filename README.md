@@ -31,8 +31,6 @@ FDE 部署底座 —— 面向中小企业（SMB）和一人公司（OPC）。�
 
 ---
 
-> v0.98 起 OpenClaw 是 sofagent 的必装执行引擎（install.sh 自动检测+安装）。装 sofagent 自带 OpenClaw 引擎，不再强调平台兼容性。宪法层（4 底线 + 6 铁律）已内联到 SKILL.md 顶部，非 OpenClaw 平台装主产品后可通过种子指令获得宪法层约束。
-
 ---
 
 ## Quick Start
