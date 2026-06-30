@@ -1,5 +1,7 @@
 ---
 name: sofagent-fde
+slug: sofagent-fde
+displayName: sofagent-fde
 description: FDE 专属——装上之后 Agent 帮你走十步部署流程，识别 AI 节点、出方案书、建知识库。你负责聊业务，Agent 负责出方案。
 version: 0.99
 tags: [fde, workflow, deployment, enterprise, ai-agent]
