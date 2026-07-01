@@ -27,7 +27,7 @@ FDE 部署底座 —— 面向中小企业（SMB）和一人公司（OPC）。�
 
 > - ❌ 不是 AI 框架、不写 prompt
 > - ❌ 不是 Skills 商店
-> - ✅ 是一套**FDE 部署底座 + 审计引擎**——git diff 审计兜底，OpenClaw 必装执行引擎（详见 [平台依赖](./LIMITATIONS.md#平台依赖)）
+> - ✅ 是 **FDE 底座 + 审计引擎**——git diff 审计兜底，编排引擎依赖 OpenClaw（详见 [平台依赖](./LIMITATIONS.md#平台依赖)）
 
 ---
 
@@ -125,9 +125,7 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
 | **审计引擎** | git diff → 规则检查 → 自动生成 think.md | ❌ 不依赖 |
 | **编排引擎** | 复杂任务拆解 + Loop 检查 + 闭环反思 | ✅ 依赖 |
 
-> 核心理念：**厚在治理，薄在复用。** 约束自己定，模板和 Skills 从社区取。
-
-> 已知局限见 [LIMITATIONS.md](./LIMITATIONS.md)。
+> 约束自己定，模板和 Skills 从社区取。已知局限见 [LIMITATIONS.md](./LIMITATIONS.md)。
 
 ---
 
@@ -135,9 +133,7 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
 
 ### FDE 部署场景
 
-Forward Deployed Engineer（前线部署工程师）进驻企业后，做三件事：梳理工作流 → 识别 AI 可切入节点 → 部署 Agent。但 FDE 离开后，谁来管这些 Agent？
-
-sofagent 是 FDE 撤离后留在线上的纪律层——Agent 改了代码，你能看到改了什么；Agent 跳过验证，审计工具能发现。FDE 负责「AI 怎么部署到企业」，sofagent 负责「部署完后 Agent 按什么规矩跑」。
+Forward Deployed Engineer（前向部署工程师）进驻企业后，做三件事：梳理工作流 → 识别 AI 可切入节点 → 部署 Agent。sofagent 是部署后的治理层——Agent 改了代码你能看到，跳过验证审计能发现，节点持续运行有 daemon 盯着。
 
 企业搭 AI 中台，卡在三件事上——sofagent 是纪律那一层的解法：
 

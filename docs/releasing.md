@@ -88,15 +88,15 @@
 - [ ] `git diff --stat` → 展示全部改动，作者确认
 - [ ] 开发日志发布检查清单全部 [x]
 
-### 发布（七步）
+### 发布
+
+> ClawHub 和 SkillHub 共享命名空间，推 ClawHub 即可覆盖两边。
 
 - [ ] `git tag vX.YY && git push origin vX.YY`
 - [ ] `gh release create vX.YY`
 - [ ] `clawhub skill publish ./skill --slug sofagent --version X.YY.0`
-- [ ] `skillhub publish <temp-dir> --version X.YY.0`（排除 images/）
-- [ ] `clawhub skill publish ./FDE --slug sofagent-fde --version X.YY.0`（FDE 工程师 Skill）
-- [ ] `skillhub publish <fde-temp-dir> --version X.YY.0`（排除 images/）
+- [ ] `clawhub skill publish ./FDE --slug sofagent-fde --version X.YY.0`
 - [ ] cp -r skill/ → `~/.workbuddy/skills/sofagent/`
 - [ ] cp -r skill/ → `~/.openclaw/skills/sofagent/`
-- [ ] cp -r FDE/ → `~/.workbuddy/skills/sofagent-fde/`（FDE 工程师 Skill）
+- [ ] cp -r FDE/ → `~/.workbuddy/skills/sofagent-fde/`
 - [ ] 验证：`git tag -l vX.YY` / `gh release view vX.YY` / `check-version.sh` / `check-docs.sh`

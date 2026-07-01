@@ -14,13 +14,13 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 ## 一、为什么会有 sofagent
 
-AI 工程方法一直在往前走：Prompt Engineering 解决「怎么对 AI 说话」，Context Engineering 解决「AI 应该知道什么」，Harness Engineering 解决「AI 在什么约束下跑」。到了这一步，剩下一个没人管的问题：**谁来按回车？**
+AI 工程方法一直在往前走：提示工程（Prompt Engineering）解决「怎么对 AI 说话」，上下文工程（Context Engineering）解决「AI 应该知道什么」，约束工程（Harness Engineering）解决「AI 在什么约束下跑」。到了这一步，剩下一个没人管的问题：**谁来按回车？**
 
 纪律层解决的就是这个问题——Agent 跑完任务之后，不是等着人验收，而是自己完成「拆解→执行→验证→复盘」的完整闭环。
 
 > sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。Agent 的记忆长在文件系统（git diff / task/logs / SKILL.md），不长在 Agent 内部。审计层优先信任 git diff（硬证据），不信任 Agent 日志（软证据）。
 >
-> 2026 年 6 月，Loop Engineering 由 Addy Osmani 正式命名并在博客发表后迅速成为行业共识，Huntley 一年前在博客里提的，现在成了全行业的方向。
+> 2026 年 6 月，循环工程（Loop Engineering）由 Addy Osmani 正式命名并在博客发表后迅速成为行业共识，Huntley 一年前在博客里提的，现在成了全行业的方向。
 
 > 🧬 **硬层定义好，软层可进化。裁判碰不到，演化有人审。** 硬层（SKILL.md + fde.md）Agent 绝对不能碰；软层（scoring.md + think.md + orchestrator/）是数据不是代码，在客观验证信号下持续进化。
 
@@ -33,7 +33,7 @@ sofagent 分两层——地基轻、引擎重：
 | 地基 | 三层加载链（宪法+反思+fde）| 每个会话启动，永远在线 | 上下文预算的 2-3% |
 | 引擎 | 任务编排（拆解+Loop+闭环）| 🔴 复杂任务才点火 | 额外 ~1% |
 
-如果加载链只在复杂任务时才激活：think.md 反思区不在上下文 → Agent 重复犯错；fde.md 不在上下文 → 简单任务时你的偏好全部失效。治理底座必须永远在线。
+如果加载链只在复杂任务时才激活：think.md 反思区不在上下文 → Agent 重复犯错；fde.md 不在上下文 → 简单任务时你的偏好全部失效。三层加载链必须永远在线。
 
 ### 产品架构展望（五层）
 
@@ -200,7 +200,7 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 
 **两个原则性警告**：①「不要让智能体自我验证」——根治需 v1.x 外部评估器；②「Agent 越强，闸门越重要」。
 
-> **范围声明**：sofagent 是 FDE 的**纪律底座**，不是**运维底座**。覆盖 FDE 问题空间约 20%（Agent 质量层），运维层（监控/告警/重启/日志轮转，~80%）不在范围内。
+> **范围声明**：sofagent 覆盖 Agent 质量层（代码纪律 + 审计 + 经验沉淀），不覆盖运维层（监控/告警/重启/日志轮转）。
 
 ---
 
