@@ -25,7 +25,7 @@
 
 set -uo pipefail
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 
 # ── 颜色 ──
 RED='\033[0;31m'

@@ -3,7 +3,7 @@
 set -euo pipefail
 shopt -s nullglob
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 ERRORS=0
 
 echo "=== 1. 死链检查 ==="
