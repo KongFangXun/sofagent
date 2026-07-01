@@ -133,7 +133,7 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
 
 ### FDE 部署场景
 
-Forward Deployed Engineer（前向部署工程师）进驻企业后，做三件事：梳理工作流 → 识别 AI 可切入节点 → 部署 Agent。sofagent 是部署后的治理层——Agent 改了代码你能看到，跳过验证审计能发现，节点持续运行有 daemon 盯着。
+Forward Deployed Engineer（前向部署工程师）进驻企业后，做三件事：梳理工作流 → 识别 AI 可切入节点 → 部署 Agent。sofagent 是部署后的纪律层——Agent 改了代码你能看到，跳过验证审计能发现，节点持续运行有 daemon 盯着。
 
 企业搭 AI 中台，卡在三件事上——sofagent 是纪律那一层的解法：
 
