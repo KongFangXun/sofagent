@@ -17,7 +17,8 @@ jobs:
         run: |
           rm package-lock.json -Force -ErrorAction SilentlyContinue
           rm node_modules -Recurse -Force -ErrorAction SilentlyContinue
-          npm install --force
+          npm install
+          npm ls @rollup/rollup-win32-x64-msvc 2>$null || npm install @rollup/rollup-win32-x64-msvc --no-save
         working-directory: sofagent/audit
       - name: Run tests
         run: npm test
