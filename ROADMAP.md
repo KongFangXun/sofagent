@@ -67,7 +67,7 @@
 | **v0.7x** | 企业合规：数据保留 + task/logs 脱敏 + 审计日志 | — |
 | **v0.6x** | 质量加固：端到端测试 + 闭环验证 + WorkBuddy 专家团共存 | — |
 | **v0.5x** | 企业级能力：install.sh/uninstall.sh + 离线模式 + 编排 fallback | — |
-| **v0.1~v0.4** | 治理核心：4 底线 + 6 铁律 + Loop Agent + 三层闸门 + 渐进减薄 + 反思区 + scoring | — |
+| **v0.1~v0.4** | 核心约束：4 底线 + 6 铁律 + Loop Agent + 三层闸门 + 渐进减薄 + 反思区 + scoring | — |
 
 ---
 

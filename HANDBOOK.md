@@ -35,7 +35,7 @@
 
 | 你想知道的 | 一句话 | 详见 |
 |------|------|------|
-| 这是什么 | 给 Agent 配「纪律委员」——4 底线 + 6 则铁律约束行为 | 场景二 |
+| 这是什么 | 给 Agent 加行为约束——4 底线 + 6 则铁律 | 场景二 |
 | 怎么装 | `bash sofagent/scripts/install.sh` | 场景一 |
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | 场景二 |
 | 已知局限 | 核心效果见 [evidence.md](./docs/evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](./LIMITATIONS.md) |

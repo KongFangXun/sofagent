@@ -19,13 +19,13 @@
 
 ## 关键发现
 
-**OpenClaw**（8/8）：唯一全通平台。Hook 自动注入 + loopDetection 断路器 + session.spawn 评判器隔离 = 完整纪律闭环。verify.sh 41/0。
+**OpenClaw**（8/8）：唯一全通平台。Hook 自动注入 + loopDetection 断路器 + session.spawn 评判器隔离 = 完整约束闭环。verify.sh 41/0。
 
 **WorkBuddy**：核心约束（SKILL.md）需主动 `@skill:sofagent` 触发。步数闸/熔断闸/幂等检查靠 Agent 自觉，无法强制。评判器不能隔离（自己评自己）。
 
 **Codex**：AGENTS.md 加载 L1 超预期（主动搜索），但缺乏脚本基础设施，L2/L3 不可靠。
 
-**Hermes Agent**：加载链 L1/L3 主动搜索超预期，但所有治理加固（步数闸/熔断闸/幂等）不生效——prompt 级约束在此平台完全无效。
+**Hermes Agent**：加载链 L1/L3 主动搜索超预期，但所有强制约束（步数闸/熔断闸/幂等）不生效——prompt 级约束在此平台完全无效。
 
 **Claude Code**：缺乏种子指令和脚本部署，大部分能力不可用。
 

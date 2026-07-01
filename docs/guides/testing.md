@@ -36,7 +36,7 @@
 **步骤**：完成任务后检查 `cat .sofagent/think.md` 和 `ls .sofagent/task/logs/`。
 **通过标准**：think.md 有新的反思条目（带 `← task/logs/...` 来源标记），task/logs/ 有当天新记录。
 
-## 用例 4：治理层自我约束
+## 用例 4：Harness 层自我约束
 
 **目的**：验证 sofagent「吃自己的狗粮」。
 **步骤**：修改 `sofagent/skill/` 下 Skill 文件，检查 Agent 是否在闭环前提醒「已修改但未同步」。
@@ -65,7 +65,7 @@
 
 **目的**：验证编排链路（A0 预判 → 拆解 → 执行 → checkpoint → 闭环）跑通。
 **步骤**：发 🔴 复杂任务「sofagent 项目文档一致性审查」→ 观察 A0 识别 🔴 → 按语义簇拆解子任务 → checkpoint 检查 → 闭环反思写入 think.md。
-**通过标准**：全链路跑通。⚠️ checkpoint 纪律在无外部 Hook 平台靠 Agent 自觉。
+**通过标准**：全链路跑通。⚠️ checkpoint 检查在无外部 Hook 平台靠 Agent 自觉。
 
 ## 用例 8：ao compose AI 编排验证
 
@@ -105,7 +105,7 @@
 | 2026-06-20 | qinanxie199229 | Codex | 10 次稳定性 | PASS(10/10) | 首个 Codex 第三方测试 |
 | 2026-06-22 | @liudi8785-cell | OpenClaw (v0.82) | 五平台测试 | PASS(8/8) | [Case 007](../evidence/cases/openclaw-v082-2026-06-21/) |
 | 2026-06-22 | @yeqingan | WorkBuddy (v0.82) | 五平台测试 | FAIL(0/8) | scripts/ 目录缺失 |
-| 2026-06-22 | @kangjianrong | Codex (v0.82) | 五平台测试 | ⚠️ | 治理靠自觉 |
+| 2026-06-22 | @kangjianrong | Codex (v0.82) | 五平台测试 | ⚠️ | 约束靠自觉 |
 | 2026-06-22 | @cedric123123 | Hermes (v0.82) | 五平台测试 | FAIL(2/8) | 熔断闸实测 5 次未断 |
 | 2026-06-22 | KongFangXun | Claude Code (v0.82) | 五平台测试 | FAIL(0/8) | scripts/ 未部署 |
 
