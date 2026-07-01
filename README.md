@@ -27,7 +27,7 @@ FDE 底座 —— 面向中小企业（SMB）和一人公司（OPC）。部署�
 
 > - ❌ 不是 AI 框架、不写 prompt
 > - ❌ 不是 Skills 商店
-> - ✅ 是 **FDE 底座 + 审计引擎**——git diff 审计兜底，编排引擎依赖 OpenClaw（详见 [平台依赖](./LIMITATIONS.md#平台依赖)）
+> - ✅ 是 **FDE 底座 + 审计引擎**——git diff 审计兜底。OpenClaw 做后台 AI 控制节点（你用自己的 Agent 对话，OpenClaw 在后台跑编排+审计）
 
 ---
 

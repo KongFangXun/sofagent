@@ -77,7 +77,13 @@ LLM 管判断、脚本管执行、Runtime 管刹车——天然的分界。
 
 ### 为什么 OpenClaw 是唯一运行平台
 
-选 OpenClaw 三个理由：开源 + Node.js（技术栈一致，深度集成）、原生编排（AO compose 拆解 → DAG 执行）、Agency Agent 兼容（233 个岗位模板直接对接）。技术选型演进：bash → Node.js/TypeScript——Harness 层（纯 MD 规则，无代码）、审计/验证/编排/证据迁移到 TS（npm 包暴露 6 个 bin），OS 集成层（install/daemon）保持 bash。
+不是偏好——是可行性。WorkBuddy、Codex、Claude Code 都测试过，各有各的封闭性：Hook 注入不可控、session 无法隔离、sub-agent 不能外部管理。OpenClaw 是唯一开源程度足够让 sofagent 挂上 Harness 层的平台。
+
+**但用户不需要用 OpenClaw**。两种模式：
+- **FDE 自己**：用习惯的 Agent 对话，OpenClaw 在后台做看不见的 AI 控制节点——FDE 聊业务，OpenClaw 跑编排+审计
+- **企业部署**：闲置设备上跑 OpenClaw + sofagent = AI 控制底座。企业采购的 Agent（WorkBuddy/Codex）也装在这台设备上，sofagent 通过 OpenClaw 的 Hook + session 隔离约束所有 Agent
+
+选 OpenClaw 的技术理由：开源 + Node.js（技术栈一致）、原生编排（AO compose → DAG 执行）、Agency Agent 兼容（233 个岗位模板）。技术选型演进：bash → Node.js/TS——Harness 层（纯 MD 规则，无代码）、审计/验证/编排迁移到 TS（npm 包 6 个 bin），OS 集成层（install/daemon）保持 bash。
 
 ### 白盒循环
 
