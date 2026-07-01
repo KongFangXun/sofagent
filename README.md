@@ -25,8 +25,6 @@ FDE 部署底座 —— 面向中小企业（SMB）和一人公司（OPC）。�
 
 > 💡 **为什么需要 sofagent**：企业 AI 落地的核心矛盾，是将概率性的大模型装进必须可追踪、可控制、可问责的传统业务流程中。模型负责建议，系统负责验收，工具负责执行——这就是 sofagent 做的事。
 
-> **Post-FDE 治理**：FDE（Forward Deployed Engineer）把 AI 带进企业、让它跑起来。但 FDE 离开后，谁来管住这些 Agent？sofagent 是企业用 FDE 之后的纪律底座——确保 Agent 不会变成无人维护的技术债。详见 [企业部署指南](./docs/guides/team-deploy.md)。
-
 > - ❌ 不是 AI 框架、不写 prompt
 > - ❌ 不是 Skills 商店
 > - ✅ 是一套**FDE 部署底座 + 审计引擎**——git diff 审计兜底，OpenClaw 必装执行引擎（详见 [平台依赖](./LIMITATIONS.md#平台依赖)）
