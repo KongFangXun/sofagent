@@ -135,15 +135,15 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
 
 Forward Deployed Engineer（前向部署工程师）进驻企业后，做三件事：梳理工作流 → 识别 AI 可切入节点 → 部署 Agent。sofagent 是部署后约束 Agent 行为的那一层——Agent 改了代码你能看到，跳过验证审计能发现，节点持续运行有 daemon 盯着。
 
-企业搭 AI 中台，卡在三件事上——sofagent 是纪律那一层的解法：
+企业搭 AI 中台，真正难的是部署后的事——谁盯着 Agent 不乱改代码、谁保证产出质量、谁把经验留下来。sofagent 做这三件：
 
-| AI 中台三难 | 卡在哪 | sofagent 怎么解 |
-|------------|--------|---------------|
-| **接入难** | 各系统 API 不统一，Agent 节点怎么接 | FDE 十步流程梳理工作流 + MCP 桥接平台 |
-| **信任难** | Agent 改了代码/数据，老板凭什么信 | git diff 审计（确定性 exit code），不是 LLM 评分 |
-| **沉淀难** | FDE 走了，经验跟着走了 | think.md 反思区 + task/logs 经验沉淀 |
+| 问题 | sofagent 怎么解 |
+|------|------|
+| Agent 改了什么你不知道 | git diff 审计（确定性 exit code），一次 commit 全查完 |
+| Agent 产出质量参差不齐 | think.md 反思 + Loop 检查闭环，越用越校准 |
+| FDE 走了经验跟着走了 | task/logs 执行日志 + daemon 持续监控 |
 
-> sofagent 不做 AI 中台——做 AI 中台里**纪律那一层**。模型管推理，平台管调度，sofagent 管纪律。
+> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。
 
 ### 两步落地
 

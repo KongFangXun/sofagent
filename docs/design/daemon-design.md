@@ -1,6 +1,6 @@
 # daemon MVP · 架构设计
 
-> sofagent v0.99 · sofagent 的第一个 session 外触发器——让治理从「Agent 自觉」升级为「外部进程强制」。
+> sofagent v0.99 · sofagent 的第一个 session 外触发器——让约束从「Agent 自觉」升级为「外部进程强制」。
 > v0.99 · 更新于 2026-07-01
 
 ---
