@@ -525,3 +525,182 @@ mcp-server.ts 导入链（拆分后）：
 | `--mcp` 标志 | 改为打印引导信息 | 最小 breaking change，语义更清晰 |
 | 公共 API 入口 | `public-api.ts` barrel export | 集中管理外部可见 API，不污染 index.ts（CLI 入口） |
 | workspace 协议 | `workspace:*` | npm publish 自动替换版本号，本地开发零配置 |
+
+## 附录 C：类关系图
+
+```mermaid
+classDiagram
+    class AuditPublicAPI {
+        &lt;&lt;barrel export&gt;&gt;
+        +parseDiff(range: string): DiffFile[]
+        +isInGitRepo(): boolean
+        +getAddedLines(diffFile: DiffFile): string[]
+        +getRemovedLines(diffFile: DiffFile): string[]
+        +checkLogs(logDir?: string): LogEntry[]
+        +getReadAccessMap(entries: LogEntry[]): Set~string~
+        +hasTestOrBuildExecution(entries: LogEntry[]): boolean
+        +runRules(diffFiles, logEntries, task?, strict?, silent?, commitMsg?, config?): AuditResult
+        +loadConfig(cwd?: string): AuditConfig
+        +generateThinkEntry(diffFiles, results, task?, opts?): void
+        +loadHistory(limit?, dataDir?): AuditHistoryEntry[]
+        +appendHistory(entry, dataDir?): void
+        +pickLogReader(filePath: string): LogReader
+    }
+    class McpServer {
+        -initialized: boolean
+        +start(): void
+        -handleRequest(request: JsonRpcRequest): Promise~void~
+        -checkInitialized(id): boolean
+        -handleInitialize(id, params): void
+        -handleToolsList(id): void
+        -handleToolsCall(id, params): Promise~void~
+        -toolRunAudit(id, args): Promise~void~
+        -toolGetThink(id, args): void
+        -toolWriteThink(id, args): void
+        -handleResourcesList(id): void
+        -handleResourcesRead(id, params): void
+        -resourceReadThinkLatest(id): void
+        -resourceReadLogsToday(id): void
+        -resourceReadAuditHistory(id): void
+        -sendResult(id, result): void
+        -sendError(id, code, message, data?): void
+        -sendToolResult(id, payload): void
+        -writeLine(line): void
+    }
+    class JsonRpcRequest {
+        +jsonrpc: "2.0"
+        +id: number | string | null
+        +method: string
+        +params?: Record~string, unknown~
+    }
+    class JsonRpcResponse {
+        +jsonrpc: "2.0"
+        +id: number | string | null
+        +result?: unknown
+        +error?: { code, message, data? }
+    }
+    class DiffFile {
+        +path: string
+        +status: "added" | "modified" | "deleted" | "renamed"
+        +oldPath?: string
+        +lines: string[]
+    }
+    class LogEntry {
+        +timestamp: Date
+        +operation: string
+        +file?: string
+        +raw: string
+    }
+    class AuditResult {
+        +rules: RuleCheck[]
+        +exitCode: number
+    }
+    class AuditContext {
+        +diffFiles: DiffFile[]
+        +logEntries: LogEntry[]
+        +task?: string
+        +strict?: boolean
+        +silent?: boolean
+        +commitMsg?: string
+        +config?: AuditConfig
+    }
+    class AuditConfig {
+        +lowRiskPatterns: string[]
+        +testPatterns: string[]
+        +carefulModifyThreshold: number
+        +extendedRulesEnabled: boolean
+    }
+    class RuleCheck {
+        +name: string
+        +number: number
+        +status: "PASS" | "WARN" | "FAIL"
+        +details: string[]
+        +evidenceMode?: EvidenceMode
+        +ruleClass?: RuleClass
+    }
+    class LogReader {
+        &lt;&lt;interface&gt;&gt;
+        +extractOperation(content: string): string
+        +extractFileReferences(content: string): string[]
+    }
+    AuditPublicAPI ..> DiffFile
+    AuditPublicAPI ..> LogEntry
+    AuditPublicAPI ..> AuditResult
+    AuditPublicAPI ..> AuditContext
+    AuditPublicAPI ..> AuditConfig
+    AuditPublicAPI ..> RuleCheck
+    AuditPublicAPI ..> LogReader
+    McpServer --> AuditPublicAPI
+    McpServer --> JsonRpcRequest
+    McpServer --> JsonRpcResponse
+    AuditContext --> DiffFile
+    AuditContext --> LogEntry
+    AuditContext --> AuditConfig
+    AuditResult --> RuleCheck
+```
+
+## 附录 D：MCP 调用时序图
+
+```mermaid
+sequenceDiagram
+    participant Client as MCP Client
+    participant Stdio as stdio (stdin/stdout)
+    participant McpSrv as McpServer<br/>(@sofagent/mcp)
+    participant Audit as @sofagent/audit<br/>公共 API
+    participant Git as git CLI
+    participant FS as FileSystem
+
+    Note over Client,FS: === 握手阶段 ===
+    Client->>Stdio: JSON-RPC initialize
+    Stdio->>McpSrv: handleRequest({method:"initialize"})
+    McpSrv-->>Stdio: {protocolVersion:"2024-11-05", capabilities:{tools, resources}}
+    Stdio-->>Client: JSON-RPC response
+    Client->>Stdio: JSON-RPC initialized (notification)
+
+    Note over Client,FS: === Tool 调用: run_audit ===
+    Client->>Stdio: JSON-RPC tools/call
+    Stdio->>McpSrv: handleToolsCall(id, params)
+    McpSrv->>McpSrv: toolRunAudit(id, args)
+    Note over McpSrv,Audit: 审计管线（全部通过 @sofagent/audit 公共 API）
+    McpSrv->>Audit: parseDiff("HEAD~1..HEAD")
+    Audit->>Git: git diff --name-status
+    Git-->>Audit: 文件变更列表
+    Audit->>Git: git diff -- &lt;file&gt;
+    Git-->>Audit: 逐文件 diff 内容
+    Audit-->>McpSrv: DiffFile[]
+    McpSrv->>Audit: checkLogs()
+    Audit->>FS: 读取 .sofagent/task/logs/
+    FS-->>Audit: 日志内容
+    Audit->>Audit: pickLogReader → 解析
+    Audit-->>McpSrv: LogEntry[]
+    McpSrv->>Git: git log -1 --pretty=%B
+    Git-->>McpSrv: commitMsg
+    McpSrv->>Audit: loadConfig()
+    Audit->>FS: 读取 config.yml (三级 fallback)
+    FS-->>Audit: YAML 配置
+    Audit-->>McpSrv: AuditConfig
+    McpSrv->>Audit: runRules(diffFiles, logEntries, ...)
+    Note over Audit: 构建 AuditContext<br/>循环调用 15 条规则 rule.check(ctx)
+    Audit-->>McpSrv: AuditResult {rules, exitCode}
+    McpSrv->>Audit: generateThinkEntry(diffFiles, results, task)
+    Audit->>FS: 追加写入 .sofagent/think.md
+    McpSrv-->>Stdio: JSON-RPC response (tool result)
+    Stdio-->>Client: {content:[{...}], _meta:{...}}
+
+    Note over Client,FS: === Resource 调用 ===
+    Client->>Stdio: JSON-RPC resources/read
+    Stdio->>McpSrv: handleResourcesRead(id, params)
+    McpSrv->>FS: 读取 .sofagent/think.md
+    FS-->>McpSrv: think.md 内容
+    McpSrv->>McpSrv: 解析最后一条 ## 条目
+    McpSrv-->>Stdio: JSON-RPC response (resource content)
+    Stdio-->>Client: {contents:[{uri:"think://latest", ...}]}
+
+    Note over Client,FS: === 关闭阶段 ===
+    Client->>Stdio: JSON-RPC shutdown
+    Stdio->>McpSrv: handleRequest({method:"shutdown"})
+    McpSrv-->>Stdio: {result:null}
+    Client->>Stdio: JSON-RPC exit
+    Stdio->>McpSrv: handleRequest({method:"exit"})
+    McpSrv->>McpSrv: process.exit(0)
+```
