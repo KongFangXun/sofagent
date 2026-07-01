@@ -5,7 +5,7 @@
 >
 > **先跑通 FDE 部署闭环，再谈其他。**
 >
-> 🎯 **v1.0 定位**：**FDE 部署底座**——帮 FDE 快速梳理企业 workflow → 定义 AI 节点 → 部署到任意设备 → 审计结果自动推送到协作平台。
+> 🎯 **v1.0 定位**：**FDE 底座**——帮 FDE 快速梳理企业 workflow → 定义 AI 节点 → 部署到任意设备 → 审计结果自动推送到协作平台。
 
 ---
 
@@ -86,7 +86,7 @@
 **v0.98**：产品架构重组（lite 删除 + think.md 自动生成 + FDE 从 Skill 改为根目录文档）+ OpenClaw 重定义为必装引擎 + 审计闭环六步 + GitHub Action 模板 + install.sh 模块化
 **v0.99**：两份独立审查全面修复 + Skill 全部 ≤90 行 + 文档预算 4849≤5000 + 放弃条件引入 + bus factor 声明 + GitHub Action 模板 + MCP Server 实现 + verify.sh → TS 重构（sofagent-verify 第 6 个 bin）。FDE 端到端验证推迟 v1.0。
 
-### v1.0 — 正式版：FDE 部署底座
+### v1.0 — 正式版：FDE 底座
 
 三条主线：
 1. FDE 引导逻辑 → 自动产出 workflow.yaml + 部署方案书
@@ -163,7 +163,7 @@
 | 三层加载链叙事 | 三层拆分为独立产品 |
 | sofagent-fde 独立 Skill | 改为 FDE/FDE.md，FDE 自己装 |
 | 纪律层实验第三次重跑 | 两次各 100 次都因任务设计无法结论 |
-| 全栈组织级 Harness 产品 | sofagent 只做治理底座标准（纪律 + 审计） |
+| 全栈组织级 Harness 产品 | sofagent 只做约束规范 + 审计工具 |
 
 ---
 

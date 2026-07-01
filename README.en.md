@@ -30,7 +30,7 @@ FDE deployment base — for SMBs and one-person companies. Deployment experts us
 | **Scripts** (execution) | Bash scripts for mechanical work. Agent invokes via shell (falls back to Read/Edit tools on non-bash platforms) |
 | **Platform safety net** | Loading chain + circuit breaker + loop detection — enforced by OpenClaw hooks |
 
-> ⚠️ sofagent is a **soft constraint layer** — it works when the agent reads and chooses to comply. It is not hard-coded enforcement.
+> sofagent is a constraint layer — it works when the agent reads and chooses to comply. It is not hard-coded enforcement.
 
 ---
 
@@ -43,7 +43,7 @@ FDE deployment base — for SMBs and one-person companies. Deployment experts us
 | Design nerd | [ARCHITECTURE.md](./ARCHITECTURE.md) | Why these design choices, known limitations |
 | Tech lead | [docs/guides/team-deploy.md](./docs/guides/team-deploy.md) | Install, try, review — three-phase rollout |
 
-> ⚠️ Core documents are in Chinese. English translation is one of the highest-impact contributions right now.
+> Core documents are in Chinese. English translation is one of the highest-impact contributions right now.
 
 ---
 
@@ -78,7 +78,7 @@ FDE deployment base — for SMBs and one-person companies. Deployment experts us
 | WorkBuddy | Layer 1 via @skill, L2/3 agent-cooperative | `ao compose` available | Medium |
 | Codex / Hermes / Claude Code | Layer 1 via seed instruction, L2/3 cooperative | Unavailable | Low |
 
-> ⚠️ Non-OpenClaw: orchestration / Hook / circuit breaker are OpenClaw-only. Other platforms get ~30% of full value (constitution layer only). See [LIMITATIONS.md](./LIMITATIONS.md#平台依赖).
+> Non-OpenClaw: orchestration / Hook / circuit breaker are OpenClaw-only. Other platforms get constitution layer only. See [LIMITATIONS.md](./LIMITATIONS.md#平台依赖).
 
 ## Does it actually work?
 
@@ -90,7 +90,7 @@ FDE deployment base — for SMBs and one-person companies. Deployment experts us
 
 - ❌ Not an AI framework — doesn't manage model APIs
 - ❌ Not a skills marketplace — doesn't maintain reusable skills
-- ✅ It is a **discipline methodology** — telling agents what they can do, can't do, and when to stop
+- ✅ FDE base + audit engine — telling agents what they can do, can't do, and when to stop
 
 ---
 
