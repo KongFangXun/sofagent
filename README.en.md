@@ -22,8 +22,6 @@ My name is KongFangXun. I'm a product manager who doesn't write code. All design
 
 FDE deployment base — for SMBs and one-person companies. Deployment experts use standardized workflows to set up AI nodes on idle devices, with audit engine + orchestration engine hosting after implementation.
 
-> ⚠️ **Maturity**: Audit engine v0.92+ is production-ready — a standalone TypeScript CLI with zero platform dependencies. FDE deployment workflow is a technical preview (not end-to-end validated). See [LIMITATIONS.md](./LIMITATIONS.md).
-
 > **The 90/10 rule**: Don't compete with AI models on the 90% they already do well (code generation). The real value is in the 10% nobody dares skip — verification, audit trails, accountability. sofagent owns that 10%.
 
 | Component | How it works |
