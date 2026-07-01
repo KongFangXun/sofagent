@@ -1,12 +1,13 @@
 # sofagent Release Process
 
-> v0.99.1 · 2026-07-01。跑命令 → 对清单 → 打 tag。
+> v0.99.1 · 2026-07-01。推前预检 → 跑命令 → 对清单 → 打 tag。
 
 ---
 
 ## 怎么做
 
 ```
+0. 推前预检   → ./tools/pre-push-check.sh（全绿才推——shellcheck + version + docs + build + test + audit 全跑）
 1. 构建自测   → rm -rf dist/ && npm run build && npm test && shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh && bash tools/check-docs.sh（必须全绿）
 2. 审核       → 独立审查逐项核对 changelog，FAIL 项修完二次复核
 3. 版本号升级 → ./tools/bump-version.sh <旧版本> <新版本>（一键替换，见下方）
@@ -58,6 +59,7 @@
 
 ### 构建
 
+- [ ] `./tools/pre-push-check.sh` → 全绿（推前必跑——本地 CI 等价检查）
 - [ ] `rm -rf dist/ && npm run build` exit 0
 - [ ] `npm test` 全部通过
 
