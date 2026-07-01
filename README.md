@@ -1,6 +1,6 @@
 # sofagent
 
-中文 | [English](README.en.md)
+> 🇬🇧 [English abridged version →](README.en.md) | 🇨🇳 中文完整版
 
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
