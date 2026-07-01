@@ -4,7 +4,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 # sofagent Architecture
 
-> 一个只懂点前端代码的产品经理，在设计 Agent 纪律层时都想了些什么。这里只写设计决策、权衡取舍、已知局限。
+> 一个只懂点前端代码的产品经理，在设计 Agent Harness 层时都想了些什么。这里只写设计决策、权衡取舍、已知局限。
 >
 > > v0.99 · 2026-07-01 · 孔放勋
 
@@ -16,7 +16,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 AI 工程方法一直在往前走：提示工程（Prompt Engineering）解决「怎么对 AI 说话」，上下文工程（Context Engineering）解决「AI 应该知道什么」，约束工程（Harness Engineering）解决「AI 在什么约束下跑」。到了这一步，剩下一个没人管的问题：**谁来按回车？**
 
-纪律层解决的就是这个问题——Agent 跑完任务之后，不是等着人验收，而是自己完成「拆解→执行→验证→复盘」的完整闭环。
+Harness 层解决的就是这个问题——Agent 跑完任务之后，不是等着人验收，而是自己完成「拆解→执行→验证→复盘」的完整闭环。
 
 > sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。Agent 的记忆长在文件系统（git diff / task/logs / SKILL.md），不长在 Agent 内部。审计层优先信任 git diff（硬证据），不信任 Agent 日志（软证据）。
 >
@@ -39,7 +39,7 @@ sofagent 分两层——地基轻、引擎重：
 
 | 层 | 部署在哪 | 干什么 | 当前状态 |
 |:--:|------|------|:--:|
-| **纪律层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ 已可用 |
+| **Harness 层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ 已可用 |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ v0.81 |
 | **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff | ✅ v0.92 |
 | **MCP 推送层** | 设备 MCP server | MCP Server 已实现（v0.99），推送待端到端验证 | v0.99 MCP Server ✅ |
@@ -60,10 +60,10 @@ sofagent 分两层——地基轻、引擎重：
 
 ### 四条设计原则
 
-1. **「吃下痛苦，排出产品」**——Agent 的管理痛苦由 sofagent 消化，产出的纪律层企业敢放进流程里
+1. **「吃下痛苦，排出产品」**——Agent 的管理痛苦由 sofagent 消化，产出的 Harness 规则企业敢放进流程里
 2. **「模型输出是提案，不是命令」**——Agent 每次代码改动是提案，git diff 是证据，审计工具验收
 3. **「先有掌控感，再自动化」**——install → verify.sh 确认约束生效 → 然后才能放心交给编排引擎
-4. **「状态最贵」**——纪律层总占用承诺不超过窗口 5%（当前约 2.5%）。用文件外化状态，用 git diff 替代 Agent 记忆
+4. **「状态最贵」**——Harness 层总占用承诺不超过窗口 5%（当前约 2.5%）。用文件外化状态，用 git diff 替代 Agent 记忆
 
 ### 为什么是 Skill + 脚本 + Runtime
 
@@ -77,7 +77,7 @@ LLM 管判断、脚本管执行、Runtime 管刹车——天然的分界。
 
 ### 为什么 OpenClaw 是唯一底座
 
-选 OpenClaw 三个理由：开源 + Node.js（技术栈一致，深度集成）、原生编排（AO compose 拆解 → DAG 执行）、Agency Agent 兼容（233 个岗位模板直接对接）。技术选型演进：bash → Node.js/TypeScript——纪律层（纯 MD 规则，无代码）、审计/验证/编排/证据迁移到 TS（npm 包暴露 6 个 bin），OS 集成层（install/daemon）保持 bash。
+选 OpenClaw 三个理由：开源 + Node.js（技术栈一致，深度集成）、原生编排（AO compose 拆解 → DAG 执行）、Agency Agent 兼容（233 个岗位模板直接对接）。技术选型演进：bash → Node.js/TypeScript——Harness 层（纯 MD 规则，无代码）、审计/验证/编排/证据迁移到 TS（npm 包暴露 6 个 bin），OS 集成层（install/daemon）保持 bash。
 
 ### 白盒循环
 
@@ -185,7 +185,7 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 
 ## 三、诚实坦白：已知局限
 
-> 18 条已知局限详见 **[LIMITATIONS.md](./LIMITATIONS.md)**。核心局限：纪律层自身在上下文里、加载链步进脆弱性、复盘评分是 LLM 自评、Skill 自进化处于经验记录阶段、核心效果缺持续数据。
+> 18 条已知局限详见 **[LIMITATIONS.md](./LIMITATIONS.md)**。核心局限：Harness 层自身在上下文里、加载链步进脆弱性、复盘评分是 LLM 自评、Skill 自进化处于经验记录阶段、核心效果缺持续数据。
 
 ---
 
@@ -194,7 +194,7 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 > 路线图详见 [ROADMAP.md](./ROADMAP.md)。
 
 - **v0.9x**：安全审查 ✅ → 审计层（sofagent-audit）→ daemon TypeScript 化
-- **v1.0 定位**：Agent 工作验收工具（正式）+ 纪律层（实验）+ FDE 部署框架（规划）。审计层跨平台、零 Agent 依赖——是 v1.0 的主产品
+- **v1.0 定位**：Agent 工作验收工具（正式）+ Harness 层（实验）+ FDE 部署框架（规划）。审计层跨平台、零 Agent 依赖——是 v1.0 的主产品
 - **v1.x**：Skill 自进化验证门控（A/B 对比 + 外部评估器）
 - **v2.x**：多设备协同层 / 联邦治理 → FDE 完整形态
 

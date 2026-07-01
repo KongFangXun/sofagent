@@ -37,7 +37,7 @@ FDE 部署底座 —— 面向中小企业（SMB）和一人公司（OPC）。�
 > 📋 安装脚本做了什么？看 [SECURITY.md · install.sh 行为说明](./SECURITY.md#installsh-行为说明)。
 ### 快速体验
 
-只想挂个纪律层？把 4 底线 + 6 铁律复制进你的 Agent 设置就行，不需要装整个 sofagent。
+只想加 Agent 行为约束？把 4 底线 + 6 铁律复制进你的 Agent 设置就行，不需要装整个 sofagent。
 
 ```bash
 # ClawHub / SkillHub
@@ -133,7 +133,7 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
 
 ### FDE 部署场景
 
-Forward Deployed Engineer（前向部署工程师）进驻企业后，做三件事：梳理工作流 → 识别 AI 可切入节点 → 部署 Agent。sofagent 是部署后的纪律层——Agent 改了代码你能看到，跳过验证审计能发现，节点持续运行有 daemon 盯着。
+Forward Deployed Engineer（前向部署工程师）进驻企业后，做三件事：梳理工作流 → 识别 AI 可切入节点 → 部署 Agent。sofagent 是部署后约束 Agent 行为的那一层——Agent 改了代码你能看到，跳过验证审计能发现，节点持续运行有 daemon 盯着。
 
 企业搭 AI 中台，卡在三件事上——sofagent 是纪律那一层的解法：
 
