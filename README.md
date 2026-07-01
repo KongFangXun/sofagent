@@ -7,8 +7,8 @@
 [![Version](https://img.shields.io/badge/Version-v0.99.1-16B8F3)](./HANDBOOK.md)
 [![定位：FDE工具包](https://img.shields.io/badge/定位-FDE工具包-16B8F3)](#一句话定位)
 [![核心：约束底座 + 审计引擎](https://img.shields.io/badge/核心-约束底座_+_审计引擎-16B8F3)](#一句话定位)
-[![OpenClaw](https://img.shields.io/badge/🦞_平台-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
-[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9F_Starred)](https://github.com/KongFangXun/sofagent/stargazers)
+[![OpenClaw](https://img.shields.io/badge/🦞_引擎-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
+[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9F%20Starred)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
