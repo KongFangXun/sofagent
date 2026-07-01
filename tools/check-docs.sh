@@ -33,7 +33,7 @@ echo "  package.json: $VERSION_PKG"
 
 echo ""
 echo "=== 4. 文档总量预算 ==="
-TOTAL=$(find . -name "*.md" -not -path "*/changelog/*" -not -path "*/evidence/*" -not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/skill/*" -not -path "*/FDE/*" | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}')
+TOTAL=$(find . -name "*.md" -not -path "*/changelog/*" -not -path "*/evidence/*" -not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/skill/*" -not -path "*/FDE/*" -print0 | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1}')
 echo "  核心文档总量: ${TOTAL} 行 (硬上限 5000)"
 if [ "${TOTAL:-0}" -gt 5000 ]; then
   echo "  ⚠️ 超标！需要删减旧文档"
