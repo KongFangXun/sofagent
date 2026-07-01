@@ -13,11 +13,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install dependencies (rm lock + reinstall for Windows optional deps)
+      - name: Install dependencies
         run: |
           rm package-lock.json -Force -ErrorAction SilentlyContinue
           rm node_modules -Recurse -Force -ErrorAction SilentlyContinue
-          npm install
+          npm install --force
         working-directory: sofagent/audit
       - name: Run tests
         run: npm test
