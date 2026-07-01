@@ -22,7 +22,7 @@ Harness 层解决的就是这个问题——Agent 跑完任务之后，不是等
 >
 > 2026 年 6 月，循环工程（Loop Engineering）由 Addy Osmani 正式命名并在博客发表后迅速成为行业共识，Huntley 一年前在博客里提的，现在成了全行业的方向。
 
-> 🧬 **硬层定义好，软层可进化。裁判碰不到，演化有人审。** 硬层（SKILL.md + fde.md）Agent 绝对不能碰；软层（scoring.md + think.md + orchestrator/）是数据不是代码，在客观验证信号下持续进化。
+> 🧬 **Rules frozen, data evolving. Judge can't touch.** 规则层（SKILL.md + fde.md）Agent 绝对不能碰；数据层（scoring.md + think.md + orchestrator/）是数据不是代码，在客观验证信号下持续进化。
 
 ### 两层架构：地基 vs 引擎
 
@@ -31,7 +31,7 @@ sofagent 分两层——地基轻、引擎重：
 | 层 | 是什么 | 何时激活 | 占用 |
 |:--:|------|:--:|:--:|
 | 地基 | 三层加载链（宪法+反思+fde）| 每个会话启动，永远在线 | 上下文预算的 2-3% |
-| 引擎 | 任务编排（拆解+Loop+闭环）| 🔴 复杂任务才点火 | 额外 ~1% |
+| 引擎 | 任务编排（拆解+Loop+闭环）| 🔴 复杂任务才点火 | 附加 ~800 token |
 
 如果加载链只在复杂任务时才激活：think.md 反思区不在上下文 → Agent 重复犯错；fde.md 不在上下文 → 简单任务时你的偏好全部失效。三层加载链必须永远在线。
 
@@ -86,7 +86,7 @@ Claude Code 的 `/goal` 是纯黑盒——目标给出去 Agent 闷头跑，方�
 | 我加的 | /goal 原版 | 为什么 |
 |------|------|------|
 | 用户确认 | 循环自主跑到底 | 不敢让它黑盒跑——先看一眼提案再执行 |
-| 硬层/软层分离 | 没明确切分 | SKILL.md 是硬层，Agent 碰不了；scoring.md + think.md 是软层，Agent 自己进化 |
+| 规则/数据分离 | 没明确切分 | SKILL.md 规则层，Agent 碰不了；scoring.md + think.md 数据层，Agent 自己进化 |
 
 白盒的关键不是加了确认按钮，是**用户和 Agent 一起把目标定清楚，再启动编排**。
 
