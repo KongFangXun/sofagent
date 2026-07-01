@@ -1,5 +1,7 @@
 # Evidence.md — sofagent 真的有用吗？
 
+> 注：本证据录于 v0.99 时间点，当时测试数为 398。v0.99.1 增至 406 项全绿。
+
 > 我们不替你回答。以下是装了 sofagent 的人自己记录的。
 
 > ⚠️ **诚实声明**：以下数据含作者自测。复盘评分为 LLM 自评（非 OpenClaw 平台无工程隔离）。企业级评估请等待 v0.9 加密 + 外部评估器。当前数据适合探索性评估，不适用于生产决策。
@@ -52,6 +54,8 @@
 | 2026-06-24 | @jm4170134-droid（小嘉） | Mac mini (DeepSeek Reasoner, v0.86 tag) | 一次性测试 | 5 任务 A/B | ✅ 能 | **5 维度全正向**：陷阱注释全部保留 vs 部分移除、exports 完整 vs 遗漏、首次无 bug 5/5 vs 4/5、类型严谨 vs `any` 绕过 | — | N=1 单次运行（方差未知）；反序组设计（B 先 A 后）；评估非盲 | **社区第三方 A/B：5 个代码重构任务，sofagent 组全面优于裸 Agent 组。两组同模型（DeepSeek Reasoner），唯一变量是 sofagent 有无。详见 [Case 012](./cases/community-ab-test-2026-06-24/)。** |
 | 2026-06-24 | @cedric123123（明我小助手） | OpenClaw main session (Opus 4.7) | 一次性测试 | task6 + task7 | ✅ 能 | **16/16 满分，但数据不可信**：6 个方法论硬伤导致无法归因 | task6: ~150K / task7: ~226K | 🔴 实际加载 v0.81-0.85 非 v0.86 / 🔴 无对照组 / 🔴 模型未控制（Opus vs deepseek）/ 🟡 N=2 / 🟡 task7 过于显眼 / 🟡 MEMORY.md 污染 | **满分报告 ≠ 可信报告。task6 读型分流 8/8 + task7 Loop 退出 8/8，但版本错配 + 无对照 + 模型混淆。方法论教训详见 [反案例 003](./anti-cases/003-test-methodology-pitfalls.md)。** |
 | 2026-07-01 | KongFangXun | WorkBuddy + OpenClaw (deepseek-chat, v0.99) | 一次性测试 | 49 用例 + ao compose | ✅ 能 | **确定性测试 42/49 通过，2 个 P0（npm pack 打包源文件 + bin 无执行权限）当场修复**；ao compose 4 并行多智能体审查编排成功（76s / 57K token），但 Agent 无法自动读项目文件，审查为模拟性 | ~58K/会话 | ao compose Agent 无文件注入能力（P1）；audit-history 目录路径不一致（P2 已修）；MCP 未初始化时重复响应（P2 已修）；非 git 仓库无友好提示（P2 已修） | **Case 013：v0.99 发版前三线并行测试（确定性 + DeepSeek 代码审查 + ao 多智能体）。核心代码全绿：398 测试 + tsc 零错误 + 版本号 34 项一致 + 零依赖属实 + 命令注入防护到位。3 个 P0 + 10 个 P1 + 3 个 P2 全部当场修复。ao compose 工作流结构正确（4 并行+汇总），但发现 Agent 无文件注入能力是编排引擎的下一个改进点。** |
+| 2026-07-01 | AI Agent（WorkBuddy + OpenClaw 自动执行） | WorkBuddy + OpenClaw 2026.6.8 (deepseek-chat, v0.99.2) | 一次性测试 | 6 TC 自动化测试套件 | ✅ 能 | **6/6 全绿**：daemon 核心功能 + verify.sh 50 项 + MCP 4 tools + 审计六步闭环 + ao 0.7.5 + macOS 全绿。v1.0 准入条件 3 项 ⏳→✅ | ~15K/会话 | TC-1 daemon 需重试一次（macOS 无 timeout 命令，改用后台进程+sleep）；install.sh 存在但缺 darwin 平台分支代码 | **Case 014：v0.99.2 审查驱动质量修复 + 本地验证。18 个问题修复（3 P0 + 9 P1 + 6 P2），406 测试全绿，版本号 33 项一致。测试由 Agent 自动执行，零人工介入。详见 [Case 014](./cases/v0992-release-test-2026-07-01/)。** |
+| 2026-07-01 | 关联企业同事 | WorkBuddy (deepseek-chat, v0.99.2) | 一次性测试 | 5 TC 靶向违规构造 | ✅ 能 | **5/5 100% 检出**：A2 密钥/A3 越界/A4 删配置/A5 commit/E1 缺测试。A3 守门员效应确认。扩展规则框架正常。 | ~3K/会话 | 靶向构造非真实场景；未测误报率；密钥正则要求 48 字符 | **Case 015：审计引擎检出率首次外部实测。关联企业同事在独立仓库中构造已知违规，全部检出。详见 [Case 015](./cases/v0992-audit-detection-2026-07-01/)。** |
 
 > 使用时长分类：**一次性测试**（装上跑完验证就停了）/ **持续使用 N 天**（日常工作在使用）/ **弃用**（装过但不用了——**请写原因，这对我们最有价值**）
 

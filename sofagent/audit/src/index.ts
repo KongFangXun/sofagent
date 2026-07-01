@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v0.99.1 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v0.99.2 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
 // 零运行时依赖——只用 Node.js 内置模块。
@@ -50,7 +50,7 @@ interface Args {
   mcp: boolean;
 }
 
-const VERSION = '0.99.1';
+const VERSION = '0.99.2';
 
 function parseArgs(argv: string[]): Args {
   const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false };

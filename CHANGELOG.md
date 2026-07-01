@@ -23,9 +23,10 @@
 > - **v0.95**：审计体系重构（4·6·8·4：4 底线 + 6 则铁律 + 8 审计 + 4 扩展）+ 铁律 10→6（4 条有 git diff 痕迹的移审计层 A3/A5/A7/A8）+ 目录改名（sofagent-audit/ → sofagent/audit/）+ ARCHITECTURE 三源收敛（Ralph Loop + MiroFish + 卡普二分法）+ FDE 商业模式——MCP/Agency/demogif 推迟 v1.0
 > - **v0.96**：诚实收缩——README 六段式重构（373→166 行）+ AI 中台叙事贯通 + bash→TS 第一波（僵尸清理 + task-orchestrate）+ 铁律重排 + 审计 A9/A10/A11 规则草案 + 编排引擎定位澄清
 > - **v0.97**：证据版本——审计 A9/A10/A11 + 编排引擎重构 + bash→TS 第二波 + 概念精简（纪律层实验 100 次对照结果作废）
-> - **v0.98**：架构重组版——产品核心从事前约束转向事后审计 + FDE 企业部署，OpenClaw 必装，v1.0 转向 FDE 部署底座，新增 THINK.md 项目反思文档
+> - **v0.98**：架构重组版——产品核心从事前约束转向事后审计 + FDE 企业部署，OpenClaw 必装，v1.0 转向 FDE 工具包，新增 THINK.md 项目反思文档
 > - **v0.99**：v1.0 前收尾——审查全面修复 + Skill ≤90 行 + 放弃条件 + bus factor + GitHub Action + MCP Server + FDE 工具箱（/FDE + sofagent-fde Skill）+ 文档预算 ≤5,000。
 - **v0.99.1**：审查跟进——OpenClaw 叙事重写（两层架构/审计层平台无关/编排层 FDE 工具包）+ P0 代码清理（手写YAML→js-yaml + MCP Server 拆分 @sofagent/mcp）+ 局限声明修正 + 案例模板。
+- **v0.99.2**：审查驱动质量修复——双 LLM 审查驱动的全面修复（daemon 歧义根治 + 死链清零 + 文档一致性），v1.0 前最后一次质量加固。
 
 ---
 
@@ -45,9 +46,17 @@ v1.0 前收尾——完成两份独立深度审查的全部修复（7 批次 + v
 
 ---
 
+## [v0.99.2] — 审查驱动质量修复版 ✅
+
+v1.0 前最后一次质量加固。基于 DeepSeek V4 Pro + GLM-5.2 两份独立十维审查，修复 18 个问题（3 P0 + 9 P1 + 6 P2）：daemon 歧义根治 + 死链清零 + 过期引用修复 + 术语统一 + 作者背景一致 + bin 命名 + Windows 兼容 + A/B 时间窗口 + LLM 阅读理解防御性优化。
+
+> 📖 [开发日志](./docs/changelog/v0.99.2.md)
+
+---
+
 ## [v0.98] — 架构重组版
 
-架构重组 + 审计独立化——产品核心从事前约束转向事后审计 + FDE 企业部署，面向中小企业（SMB）和一人公司（OPC）。100 次对照实验结论作废（详见 [anti-cases/004](./docs/evidence/anti-cases/004-discipline-experiment-inconclusive.md)）→ lite 删除 + 宪法内联 + rules→fde.md 全脚本同步 + think.md 由审计引擎自动生成 + FDE 从 Skill 改为根目录文档 + OpenClaw 重定义为必装引擎。v1.0 定位从"Agent 工作验收工具"转向"FDE 部署底座"。新增 [THINK.md](./THINK.md)——项目反思文档。
+架构重组 + 审计独立化——产品核心从事前约束转向事后审计 + FDE 企业部署，面向中小企业（SMB）和一人公司（OPC）。100 次对照实验结论作废（详见 [anti-cases/004](./docs/evidence/anti-cases/004-discipline-experiment-inconclusive.md)）→ lite 删除 + 宪法内联 + rules→fde.md 全脚本同步 + think.md 由审计引擎自动生成 + FDE 从 Skill 改为根目录文档 + OpenClaw 重定义为必装引擎。v1.0 定位从"Agent 工作验收工具"转向"FDE 工具包"。新增 [THINK.md](./THINK.md)——项目反思文档。
 
 > 📖 [开发日志](./docs/changelog/v0.98.md)
 

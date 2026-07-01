@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.99.1 · 2026-07-01 · 孔放勋
+> v0.99.2 · 2026-07-01 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -32,7 +32,7 @@
 
 ### Skill 文件结构
 
-**1 主 Skill（`SKILL.md`）+ 9 子 Skill = 10 个 .md（按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤90 行（v0.99.1 全部达标）。
+**1 主 Skill（`SKILL.md`）+ 8 子 Skill = 9 个 .md（不含 fde.md，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤90 行（v0.99.2 全部达标）。
 
 | 文件 | 何时加载 | 干什么 |
 |------|------|------|
@@ -101,7 +101,7 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇：
 
 ### 编排流程
 
-`/goal` 触发两轮澄清 → 目标定稿 → [ao compose](https://github.com/jnMetaCode/agency-orchestrator) 拆任务 → 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 `task-orchestrate.sh` 执行前注入。
+任务到达 → 两轮澄清 → 目标定稿 → [ao compose](https://github.com/jnMetaCode/agency-orchestrator) 拆任务 → 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 `orchestrate-compare.ts` 执行前注入。
 
 ### 主 Agent / 子 Agent
 

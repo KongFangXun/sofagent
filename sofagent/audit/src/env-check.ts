@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// env-check.ts · FDE 环境验证 CLI — v0.99.1
+// env-check.ts · FDE 环境验证 CLI — v0.99.2
 // 用法: sofagent-env-check [--json]
 
 import { execFileSync } from 'child_process';
@@ -7,7 +7,7 @@ import { existsSync, statfsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 
-const VERSION = '0.99.1';
+const VERSION = '0.99.2';
 const R = '\x1b[31m', G = '\x1b[32m', Y = '\x1b[33m', N = '\x1b[0m', D = '\x1b[2m';
 const C = (ok: boolean) => ok ? `${G}✓${N}` : `${R}✗${N}`;
 
@@ -36,15 +36,20 @@ export function checkEnv(): EnvResult {
   try { execFileSync('npm', ['--version'], { stdio: 'pipe' }); npmAvail = true; } catch { /* */ }
 
   let freeMB = 0;
-  try {
-    const s = statfsSync(homedir());
-    freeMB = Math.round((s.bsize * s.bfree) / (1024 * 1024));
-  } catch {
+  if (process.platform === 'win32') {
+    // Windows: statfsSync 不存在，跳过磁盘检查
+    freeMB = 0;
+  } else {
     try {
-      const out = execFileSync('df', ['-m', homedir()], { encoding: 'utf-8' }).trim();
-      const m = out.split('\n')[1]?.match(/(\d+)\s+\d+%/);
-      if (m) freeMB = parseInt(m[1]!, 10);
-    } catch { /* */ }
+      const s = statfsSync(homedir());
+      freeMB = Math.round((s.bsize * s.bfree) / (1024 * 1024));
+    } catch {
+      try {
+        const out = execFileSync('df', ['-m', homedir()], { encoding: 'utf-8' }).trim();
+        const m = out.split('\n')[1]?.match(/(\d+)\s+\d+%/);
+        if (m) freeMB = parseInt(m[1]!, 10);
+      } catch { /* */ }
+    }
   }
 
   const ocExists = existsSync(join(homedir(), '.openclaw'));

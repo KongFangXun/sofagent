@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
-// mcp-push-poc.ts · MCP 推送层概念验证
+// mcp-push-poc.ts · MCP 推送层概念验证 · DEPRECATED
+// 正式 MCP Server 见 sofagent/mcp/src/mcp-server.ts（@sofagent/mcp）
 // POC: 不处理边界情况，只验证「文件变化 → 推送」链路
 // 监听 task/logs 目录，新文件出现时推送钉钉 webhook
 //

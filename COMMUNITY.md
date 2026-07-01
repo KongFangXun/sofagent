@@ -1,6 +1,6 @@
 # COMMUNITY.md · sofagent 社区
 
-> v0.99.1 · 2026-07-01 · 孔放勋
+> v0.99.2 · 2026-07-01 · 孔放勋
 
 ## 📌 当前状态
 
@@ -13,20 +13,14 @@
 
 ## 🪜 贡献者阶梯
 
-| 级别 | 权限 | 条件 |
-|------|------|------|
-| **Contributor** | 提交 PR、参与 Issue 讨论 | 任意有效 PR 被合并 |
-| **Triage** | 管理 Issue 标签、关闭重复/无效 Issue | 持续贡献 ≥ 3 个月 + 活跃参与 Issue 讨论 |
-| **Co-maintainer** | 合并 PR、管理 Release、决策权 | 持续贡献 ≥ 6 个月 + 深入理解项目架构 + 作者邀请 |
-
-> 🔴 如果你是 bash 方向的开发者，每周能投入 2-4 小时，直接开 Issue 说「我想做 Co-maintainer」——不用走正常流程，我们直接谈。
+详见 [CONTRIBUTING.md §贡献者阶梯](./CONTRIBUTING.md)。
 
 ## 🎯 从哪开始
 
 | 类型 | 说明 | 难度 |
 |------|------|:--:|
 | **跨平台测试** | 在 Windows/WSL/Linux 上跑 install.sh + verify.sh，报告结果 | ★ |
-| **FAQ 补充** | HANDBOOK §六 常见问题需要更多真实场景的回答 | ★ |
+| **FAQ 补充** | HANDBOOK §三（场景三：排查问题）需要更多真实场景的回答 | ★ |
 | **文档翻译** | README 已有英文版，需要维护和更新 | ★★ |
 | **安全审计** | 审查 install.sh / skill-safety-check.sh 的安全性 | ★★★ |
 | **规则优化** | 改进 skill-safety-check.sh 的正则规则，减少误报 | ★★★ |

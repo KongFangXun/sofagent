@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.99.1 · 2026-07-01 · 审查跟进版——OpenClaw 叙事重写 + P0 代码清理 + 局限声明修正。
+> v0.99.2 · 2026-07-01 · 审查修复版——双 LLM 审查驱动的全面修复（daemon 歧义根治 + 死链清零 + 文档一致性），v1.0 前最后一次质量加固。
 >
 > **先跑通 FDE 部署闭环，再谈其他。**
 >
@@ -25,9 +25,30 @@
 
 ---
 
-## 现在在哪：v0.99.1
+## 现在在哪：v0.99.2
 
-> v0.99.1 是 **审查跟进版**——不进新功能，只做 OpenClaw 叙事重写 + P0 代码清理 + 诚实声明。
+> v0.99.2 是 **审查修复版**——双 LLM 审查驱动的全面修复（daemon 歧义根治 + 死链清零 + 文档一致性），v1.0 前最后一次质量加固。
+
+| 级别 | 交付 | 状态 |
+|------|------|:----:|
+| P0 | daemon 歧义根治——ROADMAP 准入条件 LLM 防御性重写 + 6 文件标注 | ✅ |
+| P0 | HANDBOOK §6 死链修复 + task-orchestrate 过期引用（4 处） | ✅ |
+| P0 | evidence 测试数 398→406 时间点加注 + 审查提示词术语修复 | ✅ |
+| P1 | 中英文 README 对齐（英文版精简声明） | ✅ |
+| P1 | Skill 计数 9→8 统一 + ROADMAP 重复条目删除 | ✅ |
+| P1 | 贡献者阶梯合并（COMMUNITY→CONTRIBUTING）+ CHANGELOG 旧术语统一 | ✅ |
+| P1 | 术语对照表（ARCHITECTURE）+ 作者描述统一 | ✅ |
+| P1 | dist 僵尸清理 + prepublishOnly 加固 | ✅ |
+| P1 | bin 加 sofagent- 前缀 + alias 兼容 | ✅ |
+| P1 | A/B 对比时间窗口 + 连续胜出注释 | ✅ |
+| P1 | Windows 兼容性（which→where + statfsSync）| ✅ |
+| P1 | 设计文档过期引用（mcp-server-design + enterprise-deploy）| ✅ |
+| P2 | check-version.sh badge 正则修复（35/35 全绿） | ✅ |
+| P2 | 遗漏修复（install.sh 注释 / mcp-server 版本号 / mcp-push-poc 标注）| ✅ |
+
+> 📖 [详细开发日志](./docs/changelog/v0.99.2.md) · v1.0 准入条件进度：6/9 ✅（#2 审计六步闭环 / #6 daemon 核心功能 / #8 安装验证 本轮达标）
+
+### v0.99.1（上一版）
 
 | 级别 | 交付 | 状态 |
 |------|------|:----:|
@@ -35,15 +56,12 @@
 | P0 | 手写 YAML 解析器 → js-yaml（config-loader.ts -102行） | ✅ |
 | P0 | MCP Server 独立包拆分（@sofagent/mcp，npm workspaces） | ✅ |
 | P0 | FDE 验证状态修正 + 编排引擎/模型依赖局限声明新增 | ✅ |
-| P1 | Case study 模板（docs/evidence/case-study-template.md） | ✅ |
-| P1 | 审计引擎边界修复（audit-history 目录创建 + MCP 重复响应 + 非 git 仓库退出码） | ✅ |
-| P1 | Case study 模板（docs/evidence/case-study-template.md） | ✅ |
-| P1 | 叙事降调（README 成熟度声明 + HANDBOOK FDE 实验性标注 + LIMITATIONS 审计闭环/测试覆盖） | ✅ |
-| P2 | CI/CD 扩展（release workflow: npm publish audit + mcp 双包） + CONTRIBUTING 链接更新 | ✅ |
+| P1 | Case study 模板 + 审计引擎边界修复 + 叙事降调 | ✅ |
+| P2 | CI/CD 扩展（release workflow）+ CONTRIBUTING 链接更新 | ✅ |
 
 > 📖 [详细开发日志](./docs/changelog/v0.99.1.md)
 
-### v0.99（上一版）
+### v0.99（更早）
 
 | 级别 | 交付 | 状态 |
 |------|------|:----:|
@@ -65,6 +83,7 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
+| **v0.99.2** | 审查修复：双 LLM 审查 + daemon 歧义根治 + 死链清零 + 文档一致性 + P2 清零 | [📖](./docs/changelog/v0.99.2.md) |
 | **v0.99.1** | 审查跟进：OpenClaw 叙事重写 + YAML→js-yaml + MCP 独立包 + 局限声明修正 | [📖](./docs/changelog/v0.99.1.md) |
 | **v0.99** | v1.0 前收尾：两份审查修复 + Skill≤90行 + 放弃条件 + MCP Server + verify→TS | [📖](./docs/changelog/v0.99.md) |
 | **v0.97** | 审计 A9/A10/A11 + 编排引擎重构（砍四级深度→两档拆解 + engage.md）+ bash→TS 第二波 + 概念精简 | [📖](./docs/changelog/v0.97.md) |
@@ -114,15 +133,15 @@
 
 | # | v1.0 准入条件 | 状态 |
 |:--:|------|------|
-| 1 | Harness 层增量在反转实验中被证实 | ❌ 实验缺陷，诚实调低定位 |
-| 2 | 审计工具实现完整六步闭环 | ⏳ 需端到端验证 |
+| 1 | 审计引擎检出率验证 | ✅ v0.99.2 首次实测——5/5 100% 检出（Case 015）。局限：靶向构造、未测误报率、非盲测 |
+| 2 | 审计工具实现完整六步闭环 | ✅ v0.99.2 端到端验证通过（Case 014） |
 | 3 | Harness 层上下文成本 ≤ 窗口 5% | ✅ ~2.5% |
-| 4 | OpenClaw + AO compose 全链路跑通 | ⏳ 未端到端验证 |
-| 5 | MCP server + webhook 跑通 | ⏳ MCP Server 已拆分为 @sofagent/mcp（v0.99.1），webhook 推送待端到端验证 |
-| 6 | daemon 稳定运行 ≥ 30 天 | ❌ 移除 |
-| 7 | ≥ 1 外部用户 + 5 个一次性测试 | ❌ 0 外部用户 |
-| 8 | install → verify → 首次任务通过率 ≥ 90% | ⏳ 未测 |
-| 9 | 能力矩阵五平台实测 | ⏳ 部分完成 |
+| 4 | OpenClaw + AO compose 全链路跑通 | ⚠️ ao 0.7.5 + OpenClaw 2026.6.8 本地可用，全链路（ao→Agent→反馈）仍需 OpenClaw 会话实际验证 |
+| 5 | MCP server + webhook 跑通 | ⚠️ MCP Server 本地通过（initialize/tools/list/tools/call），webhook 推送仍需外部 DingTalk/Feishu/WeCom webhook URL |
+| 6 | daemon 核心功能通过自动化测试 | ✅ v0.99.2 验证通过——daemon.json 完整创建、平台检测正常、pid/mode 字段齐全 |
+| 7 | ≥ 1 外部用户 + 5 个一次性测试 | ⚠️ 关联企业已在试用，测试数据收集整理中 |
+| 8 | install → verify → 首次任务通过率 ≥ 90% | ✅ v0.99.2 验证通过——verify.sh exit 0，50 项检查全绿 |
+| 9 | 三操作系统实测（macOS/Linux/Windows） | ✅ macOS ✅——Case 014。Linux ✅——GitHub Actions `daemon-linux-ci`。Windows ✅——GitHub Actions `windows-ci`（build + tsc + smoke test 全绿。vitest 在 Windows 上有 rollup 原生模块兼容问题，单元测试待解决） |
 
 **硬性截止日期**：2026-09-30。如果 #7 不达标 → v1.0 降为「审计工具技术预览版」。
 
@@ -195,7 +214,7 @@
 | 你能做的事 | 时间 | 说明 |
 |------|:--:|------|
 | 跨平台测试 | 30 min | 你有 Codex / Hermes / Claude Code？装一下告诉我们 |
-| 补充 FAQ | 20 min | 你踩了什么坑？直接改 Handbook §六 |
+| 补充 FAQ | 20 min | 你踩了什么坑？直接改 HANDBOOK §三（排查问题） |
 | 文档翻译 | 1-2 h | 英文翻译对社区意义巨大 |
 | 第三方证据 | 1 周 | 装完用一周，填 EVIDENCE.md |
 | 安全审计 | 不限 | 给 SECURITY.md 挑刺 |
