@@ -6,7 +6,7 @@
 
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-v0.99.2-16B8F3)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/Version-v0.99.3-16B8F3)](./HANDBOOK.md)
 [![What: FDE toolkit](https://img.shields.io/badge/What-FDE_toolkit-16B8F3)](#what-is-this)
 [![Core: Harness + Audit](https://img.shields.io/badge/Core-Harness_+_Audit-16B8F3)](#what-is-this)
 [![OpenClaw](https://img.shields.io/badge/Platform-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)

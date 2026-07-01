@@ -7,7 +7,7 @@ import { existsSync, statfsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 
-const VERSION = '0.99.2';
+const VERSION = '0.99.3';
 const R = '\x1b[31m', G = '\x1b[32m', Y = '\x1b[33m', N = '\x1b[0m', D = '\x1b[2m';
 const C = (ok: boolean) => ok ? `${G}✓${N}` : `${R}✗${N}`;
 

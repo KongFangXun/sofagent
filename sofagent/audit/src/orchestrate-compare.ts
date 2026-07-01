@@ -19,7 +19,7 @@ export interface Metric { runCount: number; auditViolations: number; avgSteps: n
 interface Args { current: string; candidate: string; output: string; }
 type Winner = 'Current' | 'Candidate' | '—';
 
-const VERSION = '0.99.2';
+const VERSION = '0.99.3';
 const RED = '\x1b[0;31m'; const GREEN = '\x1b[0;32m'; const YELLOW = '\x1b[1;33m'; const BLUE = '\x1b[0;34m'; const NC = '\x1b[0m';
 const AO_TIMEOUT = 180_000;
 const AO_UTIL_TIMEOUT = 30_000;

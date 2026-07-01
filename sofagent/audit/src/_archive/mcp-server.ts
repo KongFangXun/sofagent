@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // mcp-server.ts · MCP Server (Model Context Protocol)
-// v0.99.2: MCP Server 已拆分为 @sofagent/mcp 独立包。本文件不再参与编译。
+// v0.99.3: MCP Server 已拆分为 @sofagent/mcp 独立包。本文件不再参与编译。
 //
 // 协议：https://spec.modelcontextprotocol.io/
 // 传输：stdio（stdin/stdout，每行一个 JSON-RPC 消息）
@@ -51,7 +51,7 @@ const SERVER_NAME = 'sofagent-mcp';
 
 // DEPRECATED: MCP Server 已拆分到 sofagent/mcp/src/mcp-server.ts（@sofagent/mcp 独立包）。
 // 本文件保留仅供参考，不参与编译（tsconfig.json exclude 列表）。
-const SERVER_VERSION = '0.99.2';
+const SERVER_VERSION = '0.99.3';
 const PROTOCOL_VERSION = '2024-11-05';
 
 interface JsonRpcRequest {

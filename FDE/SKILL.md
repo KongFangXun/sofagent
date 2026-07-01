@@ -3,7 +3,7 @@ name: sofagent-fde
 slug: sofagent-fde
 displayName: sofagent-fde
 description: FDE 专属——装上之后 Agent 帮你走十步部署流程，识别 AI 节点、出方案书、建知识库。你负责聊业务，Agent 负责出方案。
-version: 0.99.2
+version: 0.99.3
 tags: [fde, workflow, deployment, enterprise, ai-agent]
 ---
 
@@ -51,7 +51,7 @@ cp -r FDE/ ~/.openclaw/skills/sofagent-fde/
 1. Read `FDE/FDE.md`——十步流程知识文档
 2. Read `FDE/workflow/template.yaml`——流程模板
 3. Read `FDE/agents/templates.md`——Agent 角色定义（分析师/规划师/部署工程师）
-4. 输出：「FDE 工具箱已就绪。请告诉我这次部署的企业基本信息（名称/行业/规模/部门），我们开始 §一 进场。」
+4. 输出：「FDE 工具包已就绪。请告诉我这次部署的企业基本信息（名称/行业/规模/部门），我们开始 §一 进场。」
 
 ## 流程规则
 

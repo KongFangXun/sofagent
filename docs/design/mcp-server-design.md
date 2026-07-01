@@ -1,7 +1,7 @@
 # 系统设计文档：MCP Server 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
 
 > **设计师**: Bob (Architect)  
-> **日期**: 2025-07-01  
+> **日期**: 2026-07-01  
 > **版本**: v0.99.1-mcp-split
 
 ---

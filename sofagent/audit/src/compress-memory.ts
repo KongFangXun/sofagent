@@ -12,7 +12,7 @@ import { existsSync, readFileSync, writeFileSync, copyFileSync, mkdirSync, readd
 import { join } from 'path';
 import { homedir } from 'os';
 
-const VERSION = '0.99.2';
+const VERSION = '0.99.3';
 
 /** think.md 路径 */
 function getThinkPath(dataBase?: string): string {

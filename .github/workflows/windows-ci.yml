@@ -1,5 +1,9 @@
 name: windows-ci
 
+# Note: vitest is NOT run on Windows due to rollup native module
+# compatibility issues. Unit tests run on macOS/Linux CI instead.
+# See ROADMAP.md v1.0 criteria #9 for details.
+
 on:
   push:
     branches: [main]

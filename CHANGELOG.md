@@ -13,7 +13,7 @@
 > - **v0.82**：评审修复 + 五平台实测 5/5 完成 + ROADMAP 重构 + License MIT
 > - **v0.83**：安装断裂修复 + 代码加固 + 文档诚实度修正（纯 bugfix）
 > - **v0.84**：A/B benchmark 数据补全 + 4 底线优化 + Hook 归因修正
-> - **v0.85**：定位重构（治理层→纪律层）+ ROADMAP 砍削（20+→6）
+> - **v0.85**：定位重构（治理层→约束底座）+ ROADMAP 砍削（20+→6）
 > - **v0.86**：读写型复杂任务分流 + Loop 成熟度四问 + 管道闸门
 > - **v0.90**：skill-safety-check 安全审查 + P0 安装断裂修复 + 文档清理
 > - **v0.91**：评审落地 + sofagent-audit MVP + 文档瘦身 47%
@@ -22,17 +22,24 @@
 > - **v0.94**：工程硬伤止血 + 审计独立化（沉默审计 + LogFormat 可插拔）+ FDE 部署者优先 + 真实 Skill 加载链复现实验——双轮评审重排，MCP/Agency 推到 v0.95
 > - **v0.95**：审计体系重构（4·6·8·4：4 底线 + 6 则铁律 + 8 审计 + 4 扩展）+ 铁律 10→6（4 条有 git diff 痕迹的移审计层 A3/A5/A7/A8）+ 目录改名（sofagent-audit/ → sofagent/audit/）+ ARCHITECTURE 三源收敛（Ralph Loop + MiroFish + 卡普二分法）+ FDE 商业模式——MCP/Agency/demogif 推迟 v1.0
 > - **v0.96**：诚实收缩——README 六段式重构（373→166 行）+ AI 中台叙事贯通 + bash→TS 第一波（僵尸清理 + task-orchestrate）+ 铁律重排 + 审计 A9/A10/A11 规则草案 + 编排引擎定位澄清
-> - **v0.97**：证据版本——审计 A9/A10/A11 + 编排引擎重构 + bash→TS 第二波 + 概念精简（纪律层实验 100 次对照结果作废）
+> - **v0.97**：证据版本——审计 A9/A10/A11 + 编排引擎重构 + bash→TS 第二波 + 概念精简（约束底座实验 100 次对照结果作废）
 > - **v0.98**：架构重组版——产品核心从事前约束转向事后审计 + FDE 企业部署，OpenClaw 必装，v1.0 转向 FDE 工具包，新增 THINK.md 项目反思文档
-> - **v0.99**：v1.0 前收尾——审查全面修复 + Skill ≤90 行 + 放弃条件 + bus factor + GitHub Action + MCP Server + FDE 工具箱（/FDE + sofagent-fde Skill）+ 文档预算 ≤5,000。
+> - **v0.99**（当时 398 tests，v0.99.1 增至 406）：v1.0 前收尾——审查全面修复 + Skill ≤90 行 + 放弃条件 + bus factor + GitHub Action + MCP Server + FDE 工具包（/FDE + sofagent-fde Skill）+ 文档预算 ≤5,000。
 - **v0.99.1**：审查跟进——OpenClaw 叙事重写（两层架构/审计层平台无关/编排层 FDE 工具包）+ P0 代码清理（手写YAML→js-yaml + MCP Server 拆分 @sofagent/mcp）+ 局限声明修正 + 案例模板。
 - **v0.99.2**：审查驱动质量修复——双 LLM 审查驱动的全面修复（daemon 歧义根治 + 死链清零 + 文档一致性），v1.0 前最后一次质量加固。
+- **v0.99.3**：文档校准版——双 LLM 审查驱动 23 项一致性清零（术语/幽灵引用/ROADMAP 对齐/CI 合并/档案归档）+ bump-version.sh 修复，v1.0 前的一轮文档收尾。
 
 ---
 
-## [v0.99] — v1.0 前收尾版 ✅
+## [v0.99.3] — 文档校准版 ✅
 
-v1.0 前收尾——完成两份独立深度审查的全部修复（7 批次 + v0.99 4 节）。文档信任修复（entry-gate 加载链 / SECURITY 行数 / DEVELOPMENT ≤90 行宣称 / README 格式）。Skill 全部 ≤90 行（loop-check 拆分 + engage/entry-gate 精简）。44 处 rules.md 死链清零。中英文 README 对齐 + 90/10 rule + 成熟度声明。项目放弃条件 5 条正式写入 ROADMAP。v1.0 准入条件 9 条核查。bus factor + 模型依赖声明。内容去重。GitHub Action 模板。preferences.md 删除。think-generator.ts 死代码清理。tools/check-docs.sh 自动化检查。398 tests 全绿，tsc 零错误。文档预算 ≤5,000。FDE 工具箱（/FDE + sofagent-fde Skill）。data/fde.md 加载链模板。npm 包 README（@sofagent/audit）。MCP Server 配置文档合并精简。ARCHITECTURE MCP 推送层状态更新为 v0.99。
+双 LLM 审查（GLM-5.2 + DeepSeek V4 Pro）驱动 23 项一致性清零。P0：benchmark.sh 幽灵引用 7 处改为 verify.sh + ROADMAP v1.0 准入条件三处口径统一（6/9 ✅ + 3/9 ⚠️）+ bump-version.sh Unicode 编码 bug 修复。P1：全量外部链接验证 + windows-ci vitest 注释 + CI workflow 合并 + CONTRIBUTING/CoC 去重。P2：CHANGELOG 纪律层/纪律底座全线→约束底座 + THINK.md 术语注 + evidence 量化锚点更新 + benchmark 段落状态声明 + team-deploy 部署流程修正 + mcp-server-design 日期修正 + daemon-design 版本号 + mcp-server/mcp-push-poc 归档 + mcp/package.json files 字段 + ROADMAP 放弃条件删除 + CHANGELOG v0.99 398→406 注记。406 tests 全绿，tsc strict 零错误，check-version 38/38 全绿。
+
+> 📖 [开发日志](./docs/changelog/v0.99.3.md)
+
+## [v0.99] — v1.0 前收尾版（当时 398 tests，v0.99.1 增至 406） ✅
+
+v1.0 前收尾——完成两份独立深度审查的全部修复（7 批次 + v0.99 4 节）。文档信任修复（entry-gate 加载链 / SECURITY 行数 / DEVELOPMENT ≤90 行宣称 / README 格式）。Skill 全部 ≤90 行（loop-check 拆分 + engage/entry-gate 精简）。44 处 rules.md 死链清零。中英文 README 对齐 + 90/10 rule + 成熟度声明。项目放弃条件 5 条正式写入 ROADMAP。v1.0 准入条件 9 条核查。bus factor + 模型依赖声明。内容去重。GitHub Action 模板。preferences.md 删除。think-generator.ts 死代码清理。tools/check-docs.sh 自动化检查。398 tests 全绿，tsc 零错误。文档预算 ≤5,000。FDE 工具包（/FDE + sofagent-fde Skill）。data/fde.md 加载链模板。npm 包 README（@sofagent/audit）。MCP Server 配置文档合并精简。ARCHITECTURE MCP 推送层状态更新为 v0.99。
 
 > 📖 [开发日志](./docs/changelog/v0.99.md)
 
@@ -66,7 +73,7 @@ v1.0 前最后一次质量加固。基于 DeepSeek V4 Pro + GLM-5.2 两份独立
 
 ## [v0.97] — 证据版本 ✅
 
-审计 A9/A10/A11 + 编排引擎重构 + bash→TS 第二波 + 概念精简。纪律层实验 100 次对照因方法缺陷结果作废（详见 [anti-cases/004](./docs/evidence/anti-cases/004-discipline-experiment-inconclusive.md)）。
+审计 A9/A10/A11 + 编排引擎重构 + bash→TS 第二波 + 概念精简。约束底座实验 100 次对照因方法缺陷结果作废（详见 [anti-cases/004](./docs/evidence/anti-cases/004-discipline-experiment-inconclusive.md)）。
 
 > 📖 [开发日志](./docs/changelog/v0.97.md)
 
@@ -74,7 +81,7 @@ v1.0 前最后一次质量加固。基于 DeepSeek V4 Pro + GLM-5.2 两份独立
 
 ## [v0.96] — 诚实收缩
 
-诚实收缩版本——README 从 373 行重构为 166 行六段式 + AI 中台纪律底座叙事首次贯通文档体系。bash→TS 迁移第一波：3 个僵尸脚本清理 + task-orchestrate.sh 迁移（其余 6 个核心脚本推 v0.97）。铁律 6 条按重要性重排 + 精炼描述，去掉（底线）（拐杖）标签。审计 A9/A10/A11 规则草案（prompt injection / 供应链 / 资源耗尽，实现推 v0.97）。编排引擎定位澄清——从 sofagent 核心拆出，定位为 FDE 场景专用。两份外部审查吸收。纪律层证伪实验推 v0.97（独立版本），审计闭环六步推 v0.98（需要真实数据），FDE 经验抽象推 v0.99（需要真实客户）。
+诚实收缩版本——README 从 373 行重构为 166 行六段式 + AI 中台约束底座叙事首次贯通文档体系。bash→TS 迁移第一波：3 个僵尸脚本清理 + task-orchestrate.sh 迁移（其余 6 个核心脚本推 v0.97）。铁律 6 条按重要性重排 + 精炼描述，去掉（底线）（拐杖）标签。审计 A9/A10/A11 规则草案（prompt injection / 供应链 / 资源耗尽，实现推 v0.97）。编排引擎定位澄清——从 sofagent 核心拆出，定位为 FDE 场景专用。两份外部审查吸收。约束底座证伪实验推 v0.97（独立版本），审计闭环六步推 v0.98（需要真实数据），FDE 经验抽象推 v0.99（需要真实客户）。
 
 > 📖 [开发日志](./docs/changelog/v0.96.md)
 
@@ -98,7 +105,7 @@ v1.0 前最后一次质量加固。基于 DeepSeek V4 Pro + GLM-5.2 两份独立
 
 ## [v0.93] — 工程迁移
 
-工程迁移 + 检测精度闭环 + 文档修缮 + 10 组实验——v0.92 全身审查 17 项问题中的 11 项落地（4 项 FP 修复含 --strict + 6 项文档修缮 + 10 组实验执行）+ bash→TypeScript 迁移起步 + 两份社区 PR 合入跟进。实验结论：纪律层增量 = f(陷阱难度)——在高难度「同名语义混淆」场景效果显著（0% vs 100% 误伤），在精确指令场景无显著差异。
+工程迁移 + 检测精度闭环 + 文档修缮 + 10 组实验——v0.92 全身审查 17 项问题中的 11 项落地（4 项 FP 修复含 --strict + 6 项文档修缮 + 10 组实验执行）+ bash→TypeScript 迁移起步 + 两份社区 PR 合入跟进。实验结论：约束底座增量 = f(陷阱难度)——在高难度「同名语义混淆」场景效果显著（0% vs 100% 误伤），在精确指令场景无显著差异。
 
 > 📖 [开发日志](./docs/changelog/v0.93.md)
 
@@ -138,7 +145,7 @@ skill-safety-check 安全审查（22 条正则 + LLM 双门）+ 三个 P0 安装
 
 ## [v0.85] — 定位重构
 
-定位重构（治理层→纪律层）+ ROADMAP 砍削（20+→6 项）——基于 GLM-5.2 + DeepSeek V4 Pro 双评审的战略校准。
+定位重构（治理层→约束底座）+ ROADMAP 砍削（20+→6 项）——基于 GLM-5.2 + DeepSeek V4 Pro 双评审的战略校准。
 
 > 📖 [详细开发日志](./docs/changelog/v0.85.md)
 
@@ -146,7 +153,7 @@ skill-safety-check 安全审查（22 条正则 + LLM 双门）+ 三个 P0 安装
 
 ## [v0.84] — 证据打磨
 
-A/B benchmark 五组数据 + 4 底线优化 + Hook 归因修正。核心发现：差异化在纪律层不在约束层（测错了维度）。
+A/B benchmark 五组数据 + 4 底线优化 + Hook 归因修正。核心发现：差异化在约束底座不在约束层（测错了维度）。
 
 > 📖 [详细开发日志](./docs/changelog/v0.84.md)
 

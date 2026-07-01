@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.99.2 · 2026-07-01 · 审查修复版——双 LLM 审查驱动的全面修复（daemon 歧义根治 + 死链清零 + 文档一致性），v1.0 前最后一次质量加固。
+> v0.99.3 · 2026-07-01 · 文档校准版——双 LLM 审查驱动的全面修复 + 23 项文档/代码一致性清零（术语统一/幽灵引用/ROADMAP 对齐/CI 合并/档案归档），v1.0 前的一轮文档收尾。
 >
 > **先跑通 FDE 部署闭环，再谈其他。**
 >
@@ -9,44 +9,25 @@
 
 ---
 
-## 🔴 放弃条件
+## 现在在哪：v0.99.3
 
-> 不是悲观——是诚实。一个知道什么时候该停的项目，比一个永远在「下个版本」的项目更值得信赖。
-
-| # | 触发条件 | 判定时机 | 处置 |
-|:--:|------|:--:|------|
-| 1 | **Harness 层实验第三次失败** | v0.98 发布时 | 砍掉 Harness 层叙事，只保留审计工具 |
-| 2 | **审计工具推出后 3 个月，推广 20 人，0 安装** | v1.0 后 3 个月 | archive 仓库，写事后总结 |
-| 3 | **v1.0 截止 2026-09-30，准入达标率 < 3/9** | 2026-09-30 | 诚实降级为「审计工具技术预览版」 |
-| 4 | **OpenClaw 架构变更，hook 兼容丢失，3 月无迁移路径** | 变更时 | 只保留审计工具 |
-| 5 | **作者 30 天无 commit，无 Co-maintainer 接手** | 连续 30 天 | archive，「不再维护」 |
-
-> **「放弃」不是失败的标签——是诚实的工程决策。** 触发后公开写事后总结，文档保持原样。
-
----
-
-## 现在在哪：v0.99.2
-
-> v0.99.2 是 **审查修复版**——双 LLM 审查驱动的全面修复（daemon 歧义根治 + 死链清零 + 文档一致性），v1.0 前最后一次质量加固。
+> v0.99.3 是 **文档校准版**——双 LLM 审查驱动的全面修复 + 23 项文档/代码一致性清零（术语统一/幽灵引用/ROADMAP 对齐/CI 合并/档案归档），v1.0 前的一轮文档收尾。
 
 | 级别 | 交付 | 状态 |
 |------|------|:----:|
-| P0 | daemon 歧义根治——ROADMAP 准入条件 LLM 防御性重写 + 6 文件标注 | ✅ |
-| P0 | HANDBOOK §6 死链修复 + task-orchestrate 过期引用（4 处） | ✅ |
-| P0 | evidence 测试数 398→406 时间点加注 + 审查提示词术语修复 | ✅ |
-| P1 | 中英文 README 对齐（英文版精简声明） | ✅ |
-| P1 | Skill 计数 9→8 统一 + ROADMAP 重复条目删除 | ✅ |
-| P1 | 贡献者阶梯合并（COMMUNITY→CONTRIBUTING）+ CHANGELOG 旧术语统一 | ✅ |
-| P1 | 术语对照表（ARCHITECTURE）+ 作者描述统一 | ✅ |
-| P1 | dist 僵尸清理 + prepublishOnly 加固 | ✅ |
-| P1 | bin 加 sofagent- 前缀 + alias 兼容 | ✅ |
-| P1 | A/B 对比时间窗口 + 连续胜出注释 | ✅ |
-| P1 | Windows 兼容性（which→where + statfsSync）| ✅ |
-| P1 | 设计文档过期引用（mcp-server-design + enterprise-deploy）| ✅ |
-| P2 | check-version.sh badge 正则修复（35/35 全绿） | ✅ |
-| P2 | 遗漏修复（install.sh 注释 / mcp-server 版本号 / mcp-push-poc 标注）| ✅ |
+| P0 | benchmark.sh 幽灵引用清零——7 处文档引用改为 verify.sh | ✅ |
+| P0 | ROADMAP v1.0 准入条件三处口径统一（6/9 ✅ + 3/9 ⚠️） | ✅ |
+| P0 | bump-version.sh Unicode 编码 bug 修复 | ✅ |
+| P1 | 全量外部链接验证 + windows-ci.yml vitest 跳过注释 + CI workflow 合并（audit.yml→sofagent-audit.yml） | ✅ |
+| P1 | CONTRIBUTING 版本号修正 + CoC 去重 | ✅ |
+| P2 | 术语全线清零：CHANGELOG 7 处纪律层/纪律底座→约束底座 + THINK.md 术语注 | ✅ |
+| P2 | evidence 量化锚点更新 + benchmark 段落状态声明 + team-deploy 部署流程修正 | ✅ |
+| P2 | mcp-server-design 日期修正 + daemon-design 版本号 | ✅ |
+| P2 | mcp-server.ts + mcp-push-poc.ts 归档至 _archive/ + mcp/package.json files 字段 | ✅ |
+| P2 | ROADMAP 放弃条件节删除 | ✅ |
+| P2 | CHANGELOG v0.99 条目 398→406 注记 | ✅ |
 
-> 📖 [详细开发日志](./docs/changelog/v0.99.2.md) · v1.0 准入条件进度：6/9 ✅（#2 审计六步闭环 / #6 daemon 核心功能 / #8 安装验证 本轮达标）
+> 📖 [详细开发日志](./docs/changelog/v0.99.3.md) · v1.0 准入条件进度：6/9 ✅ + 3/9 ⚠️
 
 ### v0.99.1（上一版）
 
@@ -83,6 +64,7 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
+| **v0.99.3** | 文档校准：双 LLM 审查驱动 23 项一致性清零（术语/幽灵引用/ROADMAP/CI/归档）+ bump-version 修复 | [📖](./docs/changelog/v0.99.3.md) |
 | **v0.99.2** | 审查修复：双 LLM 审查 + daemon 歧义根治 + 死链清零 + 文档一致性 + P2 清零 | [📖](./docs/changelog/v0.99.2.md) |
 | **v0.99.1** | 审查跟进：OpenClaw 叙事重写 + YAML→js-yaml + MCP 独立包 + 局限声明修正 | [📖](./docs/changelog/v0.99.1.md) |
 | **v0.99** | v1.0 前收尾：两份审查修复 + Skill≤90行 + 放弃条件 + MCP Server + verify→TS | [📖](./docs/changelog/v0.99.md) |
@@ -131,17 +113,23 @@
 2. 部署方案装到任意设备 → OpenClaw 跑 workflow AI 节点
 3. 审计结果通过 MCP webhook 推送到协作平台
 
+**状态符号说明**：
+- ✅ = 已通过，无已知限制
+- ⚠️ = 有条件通过——核心功能已实现并本地验证，但端到端全链路或跨平台覆盖尚未完成
+- ❌ = 未通过
+- ⏳ = 未开始验证
+
 | # | v1.0 准入条件 | 状态 |
 |:--:|------|------|
 | 1 | 审计引擎检出率验证 | ✅ v0.99.2 首次实测——5/5 100% 检出（Case 015）。局限：靶向构造、未测误报率、非盲测 |
 | 2 | 审计工具实现完整六步闭环 | ✅ v0.99.2 端到端验证通过（Case 014） |
 | 3 | Harness 层上下文成本 ≤ 窗口 5% | ✅ ~2.5% |
-| 4 | OpenClaw + AO compose 全链路跑通 | ⚠️ ao 0.7.5 + OpenClaw 2026.6.8 本地可用，全链路（ao→Agent→反馈）仍需 OpenClaw 会话实际验证 |
-| 5 | MCP server + webhook 跑通 | ⚠️ MCP Server 本地通过（initialize/tools/list/tools/call），webhook 推送仍需外部 DingTalk/Feishu/WeCom webhook URL |
+| 4 | OpenClaw + AO compose 全链路跑通 | ⚠️ ao 0.7.5 compose 生成有效 workflow（v0.99.2 实测，216 角色可用，输出完整 YAML）。全链路运行（ao run）需 OpenClaw 会话 |
+| 5 | MCP server + webhook 跑通 | ⚠️ MCP Server 本地通过（initialize/tools/list/tools/call）。Webhook 推送代码完整（`pushAuditResult` 支持 dingtalk/feishu/wecom，fire-and-forget），需真实 webhook URL 完成端到端 |
 | 6 | daemon 核心功能通过自动化测试 | ✅ v0.99.2 验证通过——daemon.json 完整创建、平台检测正常、pid/mode 字段齐全 |
 | 7 | ≥ 1 外部用户 + 5 个一次性测试 | ⚠️ 关联企业已在试用，测试数据收集整理中 |
 | 8 | install → verify → 首次任务通过率 ≥ 90% | ✅ v0.99.2 验证通过——verify.sh exit 0，50 项检查全绿 |
-| 9 | 三操作系统实测（macOS/Linux/Windows） | ✅ macOS ✅——Case 014。Linux ✅——GitHub Actions `daemon-linux-ci`。Windows ✅——GitHub Actions `windows-ci`（build + tsc + smoke test 全绿。vitest 在 Windows 上有 rollup 原生模块兼容问题，单元测试待解决） |
+| 9 | 三操作系统实测（macOS/Linux/Windows） | ⚠️ macOS ✅——Case 014。Linux ✅——GitHub Actions `daemon-linux-ci`。Windows ✅——GitHub Actions `windows-ci`（build + tsc + smoke test 全绿。vitest 在 Windows 上有 rollup 原生模块兼容问题，单元测试待解决） |
 
 **硬性截止日期**：2026-09-30。如果 #7 不达标 → v1.0 降为「审计工具技术预览版」。
 
@@ -161,7 +149,9 @@
 | ARCHITECTURE 可读性 | 降低外部引用密度，让新人 10 分钟能看懂
 | 恢复路径结构化 | think.md 记录失败但没有结构化恢复机制，等 JSONL 落地
 
-### v2.x — 多设备协同（规划中）
+### v2.x — 多设备协同：组织级 Agent Harness（规划中）
+
+> 💡 定位澄清：v2.x 的本质不是"设备能通信"，而是"每个 AI 节点拥有独立身份，能主动进入协作现场"。这是从个人助手 Harness 到组织级 Agent Harness 的跨越——Agent 不再是某个人的工具，而是组织的独立成员。详见项目记忆中的 [组织级 Agent Harness 研判](.workbuddy/memory/MEMORY.md#组织级-agent-harness2026-06-30-cloudtag-研判笔记)。
 
 四阶段渐进：协同编排协议（Markdown 优先）→ Agent 发现与注册 → 跨设备任务分发 → 企业 Agent 知识库（多设备蒸馏记忆聚合到企业自有 NAS/云盘，底层用 [Graphify](https://github.com/safishamsi/graphify) 轻量知识图谱）
 
@@ -186,6 +176,8 @@
 | SMB 场景审计扩展 | 审计从代码开发扩展到数据处理/报表生成 |
 | 组织记忆主动调取 | Agent 接任务前先检索 think.md 共享版 |
 | 异步长任务自治 | daemon 从文件监控升级为长任务自主运行 |
+| PE/VC 多企业审计仪表盘 | 投后管理场景——所有被投企业的 AI 审计数据汇总到一个面板，投后团队统一监控 |
+| FDE 陪跑期机制 | 部署后前 2 周 AI 节点 daily review，人类反馈和 AI 反思双向写入 think.md |
 
 ---
 

@@ -4,13 +4,15 @@
 
 > ⚠️ **Honest disclosure**: The data below includes the author's own testing. Reflection scores are LLM self-assessments (no engineering isolation on non-OpenClaw platforms). For enterprise evaluation, wait for v0.9 encryption + external evaluator. Current data is suitable for exploratory assessment only — not production decisions.
 
+> ⚠️ **Since v0.99.2**: benchmark.sh has been removed. The data below is from v0.92-v0.93 historical experiments. For deployment validation, use `bash sofagent/scripts/verify.sh --quiet` (50 checks all green = pass). The benchmark system will be rebuilt in v1.x.
+>
 > 📊 **A/B benchmark data**:
 >
-> **v0.93 OpenClaw 10-Group Control Experiments**: 4 tasks × 2 conditions (with/without sofagent) × independent sessions. **Key finding: discipline layer increment = f(trap difficulty)**. On the high-difficulty "same-name semantic confusion" scenario (Task 1 camelCase→snake_case), sofagent group had 0% false modification rate (0/7) vs bare agent 100% (7/7). On precise-instruction scenarios (Task 3/4), no significant difference. Task 2 (code analysis) sof-1 anomaly (1/4 bugs found) needs larger sample confirmation. ⚠️ Methodology note: sofagent condition used prompt-prefix injection of 4 core rules (not real Skill loading chain), which may underestimate actual effects. See [Task 2-4 Experiment Summary](./benchmark/2026-06-26-openclaw-task2-4-summary.md).
+> **v0.93 OpenClaw 10-Group Control Experiments**: 4 tasks × 2 conditions (with/without sofagent) × independent sessions. **Key finding: harness layer increment = f(trap difficulty)**. On the high-difficulty "same-name semantic confusion" scenario (Task 1 camelCase→snake_case), sofagent group had 0% false modification rate (0/7) vs bare agent 100% (7/7). On precise-instruction scenarios (Task 3/4), no significant difference. Task 2 (code analysis) sof-1 anomaly (1/4 bugs found) needs larger sample confirmation. ⚠️ Methodology note: sofagent condition used prompt-prefix injection of 4 core rules (not real Skill loading chain), which may underestimate actual effects. See [Task 2-4 Experiment Summary](./benchmark/2026-06-26-openclaw-task2-4-summary.md).
 >
 > **v0.92 OpenClaw Control Experiment**: Same model, independent sessions, Task 1 (camelCase → snake_case). Sofagent group: 0% variable over-modification (0/7). Bare agent group: 100% over-modification (7/7). Discipline +2, first-pass rate unchanged. See [OpenClaw Task 1 Control](./benchmark/2026-06-25-openclaw-task1-control.md).
 >
-> **v0.81-v0.83 Historical Data**: Five A/B datasets. Constraint layer: WorkBuddy dialog mode showed only 1/10 clear increment, CLI one-shot 0/16 complete failure (see [Anti-case 002](./anti-cases/002-cli-one-shot-ineffective.md)). Independent tester's code refactor A/B measured discipline layer increment: discipline 8→10 (+2), first-pass rate 60%→100% (+40%), but knowledge transfer effect was not excluded (see [Anti-case 001](./anti-cases/001-benchmark-self-test-circularity.md) and [WorkBuddy A/B warning](./benchmark/2026-06-23-workbuddy-ab.md)).
+> **v0.81-v0.83 Historical Data**: Five A/B datasets. Constraint layer: WorkBuddy dialog mode showed only 1/10 clear increment, CLI one-shot 0/16 complete failure (see [Anti-case 002](./anti-cases/002-cli-one-shot-ineffective.md)). Independent tester's code refactor A/B measured harness layer increment: discipline 8→10 (+2), first-pass rate 60%→100% (+40%), but knowledge transfer effect was not excluded (see [Anti-case 001](./anti-cases/001-benchmark-self-test-circularity.md) and [WorkBuddy A/B warning](./benchmark/2026-06-23-workbuddy-ab.md)).
 
 ---
 
@@ -49,9 +51,9 @@
 
 ## Benchmark testing
 
-> Reproducible A/B test results. Run `bash sofagent/scripts/benchmark.sh --platform your-platform` to generate.
+> Reproducible A/B test results. Run `bash sofagent/scripts/verify.sh --quiet` (50 checks all green = ✓).
 
-See [docs/benchmark/](./benchmark/) — auto-updated with each run.
+Historical benchmark records: [docs/benchmark/](./benchmark/) — archived, no longer auto-updated.
 
 ---
 
@@ -61,18 +63,18 @@ Your data. Any format, just be real.
 
 ---
 
-## Quantification anchors (v0.95 targets)
+## Quantification anchors (v0.95 design anchors — data collection starts v1.0)
 
-> Benchmarking against Andrej Karpathy's "LLM raw coding error rate 41% → 11% after human review" — sofagent's goal is to approach human-review-level quality using discipline layer + audit layer without human reviewers.
+> Benchmarking against Andrej Karpathy's "LLM raw coding error rate 41% → 11% after human review" — sofagent's goal is to approach human-review-level quality using harness layer + audit layer without human reviewers.
 
 | Metric | Definition | Baseline (bare Agent) | v0.95 target | Measurement |
 |------|------|:--:|:--:|------|
-| Agent violation rate | % of tasks triggering ironclad/audit rules | TBD | < 11% | A/B control, sofagent vs bare |
+| Agent violation rate | % of tasks triggering ironclad/audit rules | TBD (v1.0 start) | < 11% | A/B control, sofagent vs bare |
 | Audit detection rate | % of known issues caught by git-diff rules | 0% (no audit) | > 80% | Manually label violations → run audit → recall |
 | False positive red line | Audit reports FAIL but no real issue | — | < 5% | Manual review of each FAIL batch |
-| First-pass rate | % of tasks delivered without rework | TBD | > 85% | A/B control count |
+| First-pass rate | % of tasks delivered without rework | TBD (v1.0 start) | > 85% | A/B control count |
 
-> ⚠️ The above targets are v0.95 design anchors, not verified data. Metrics marked "TBD" for baseline require independent third-party runs — author self-tests don't count.
+> ⚠️ The above targets are v0.95 design anchors, not verified data. Metrics marked "TBD" for baseline require independent third-party runs — author self-tests don't count. Data collection starts v1.0.
 
 > 💡 Why 11%? Karpathy's figure is the floor after human review. sofagent's proposition: **can machine auditing replace human review and approach the same floor?** Whether it can is a question for v1.0 to answer — v0.95 just sets up the measurement framework.
 
