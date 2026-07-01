@@ -75,7 +75,7 @@ sofagent 分两层——地基轻、引擎重：
 
 LLM 管判断、脚本管执行、Runtime 管刹车——天然的分界。
 
-### 为什么 OpenClaw 是唯一底座
+### 为什么 OpenClaw 是唯一运行平台
 
 选 OpenClaw 三个理由：开源 + Node.js（技术栈一致，深度集成）、原生编排（AO compose 拆解 → DAG 执行）、Agency Agent 兼容（233 个岗位模板直接对接）。技术选型演进：bash → Node.js/TypeScript——Harness 层（纯 MD 规则，无代码）、审计/验证/编排/证据迁移到 TS（npm 包暴露 6 个 bin），OS 集成层（install/daemon）保持 bash。
 
@@ -92,7 +92,7 @@ Claude Code 的 `/goal` 是纯黑盒——目标给出去 Agent 闷头跑，方�
 
 ### 模型与 Harness 的博弈
 
-模型会吃掉一部分 Harness——任务拆解、上下文选择、工具调用这些能力模型自己越来越强。但生产级 Harness 从「外部脚手架」升级成「生产级 Agent 运行的底座」。**Agent 越强，闸门越重要。**
+模型会吃掉一部分 Harness——任务拆解、上下文选择、工具调用这些能力模型自己越来越强。但生产级 Harness 从「外部脚手架」升级成「生产级 Agent 运行基础设施」。**Agent 越强，闸门越重要。**
 
 sofagent 自身的开发过程本身就是这一循环的活体验证——两个模型（GLM + DeepSeek）自循环 loop：GLM 定框架 → DeepSeek 写实现 → GLM 审查 → DeepSeek 修复 → 下一轮。
 
