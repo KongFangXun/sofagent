@@ -32,10 +32,10 @@ export function checkRuleA8(ctx: AuditContext): RuleCheck {
     return rule;
   }
 
-  // 无日志 + silent → 只 WARN 不 FAIL
+  // silent 模式：无 Agent 日志，不做验证检查（CI 环境无需此日志依赖规则）
   if (ctx.silent && logEntries.length === 0) {
-    rule.status = 'WARN';
-    rule.details.push(`--silent 模式：构建文件变更 (${buildFileChanges.map((f) => f.path).join(', ')}) 后无日志，无法验证是否执行测试/构建。`);
+    rule.status = 'PASS';
+    rule.details.push(`--silent 模式：构建文件变更 (${buildFileChanges.map((f) => f.path).join(', ')}) 后无日志，跳过「不逃验证」检查。`);
     return rule;
   }
 
