@@ -4,7 +4,7 @@
 
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-v0.99.2-16B8F3)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/Version-v0.99.3-16B8F3)](./HANDBOOK.md)
 [![定位：FDE工具包](https://img.shields.io/badge/定位-FDE工具包-16B8F3)](#一句话定位)
 [![核心：约束底座 + 审计引擎](https://img.shields.io/badge/核心-约束底座_+_审计引擎-16B8F3)](#一句话定位)
 [![OpenClaw](https://img.shields.io/badge/🦞_引擎-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
@@ -30,6 +30,16 @@
 > - ❌ 不是 AI 框架、不写 prompt
 > - ❌ 不是 Skills 商店
 > - ✅ 是 **FDE 工具包：约束底座 + 审计引擎**——git diff 审计兜底。OpenClaw 做后台 harness 层（你用自己的 Agent 对话，OpenClaw 在后台管约束+审计）
+>
+> **FDE 做什么**：就像工头带着一群 AI 员工进企业上岗——适配上下文、搭建工作台、确保每个 AI 节点能独立产出价值后才能离开。sofagent 是这个过程的工具包，提供三样东西：
+>
+> | 工具 | 做什么 | 一句话 |
+> |------|------|------|
+> | **编排引擎** | 帮 FDE 梳理企业 workflow，识别哪些环节该由 AI 节点接管 | 画地图 |
+> | **约束底座** | 给每个 AI 节点装上缰绳——4 底线 + 6 铁律，不让它越界 | 装缰绳 |
+> | **审计引擎** | 每次 AI 改完代码自动审计，git diff 硬证据，不依赖 AI 自觉 | 查作业 |
+>
+> > 💡 行业共识：Rolling AI（服务 100+ 企业 4 年的 AI 咨询公司）指出，AI 落地中技术占比不超过 1/3，真正的挑战是组织变革和业务适配。sofagent 解决的是技术侧的那 1/3——让 FDE 不用操心 Agent 会不会跑偏。详见 [FDE/FDE.md](./FDE/FDE.md)。
 
 ### 两层架构
 
@@ -191,7 +201,7 @@ Forward Deployed Engineer（前向部署工程师）进驻企业后，做三件�
 | 项目反思 | [THINK.md](./THINK.md) |
 | 贡献指南 | [CONTRIBUTING.md](./CONTRIBUTING.md) |
 | GitHub Action 审计集成 | [docs/guides/github-action.md](./docs/guides/github-action.md) |
-| FDE 工具箱 | [FDE/](./FDE/) |
+| FDE 工具包 | [FDE/](./FDE/) |
 | 安全声明 | [SECURITY.md](./SECURITY.md) |
 | 社区与数据 | [COMMUNITY.md](./COMMUNITY.md) |
 | 行为准则 | [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) |

@@ -24,7 +24,7 @@
 | 顺序 | 文件 | 看什么 | 约几分钟 |
 |:--:|------|------|:--:|
 | 1 | [SKILL.md](./sofagent/skill/SKILL.md) | 4 底线 + 6 则铁律 | 3 min |
-| 2 | [docs/changelog/v0.99.1.md](./docs/changelog/v0.99.1.md) | 当前版本做了什么 | 5 min |
+| 2 | [docs/changelog/v0.99.2.md](./docs/changelog/v0.99.2.md) | 当前版本做了什么 | 5 min |
 | 3 | [LIMITATIONS.md](./LIMITATIONS.md) | 已知局限 | 2 min |
 
 **先改 2 个脚本（最低门槛）**：
@@ -114,7 +114,7 @@ sofagent 当前维护者为孔放勋一人。不设申请制——贡献自然�
 
 ## 行为准则
 
-一句话：**对人客气，对事尖锐。** 批评设计没问题，批评人不行。
+详见 [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)。一句话：**对人客气，对事尖锐。**
 
 ---
 

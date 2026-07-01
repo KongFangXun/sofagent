@@ -6,13 +6,15 @@
 
 > ⚠️ **诚实声明**：以下数据含作者自测。复盘评分为 LLM 自评（非 OpenClaw 平台无工程隔离）。企业级评估请等待 v0.9 加密 + 外部评估器。当前数据适合探索性评估，不适用于生产决策。
 
+> ⚠️ **v0.99.2 起**：benchmark.sh 已移除。以下 benchmark 数据为 v0.92-v0.93 期间的历史实验记录。当前部署验证请使用 `bash sofagent/scripts/verify.sh --quiet`（50 项全绿即通过）。benchmark 体系将在 v1.x 重建。
+>
 > 📊 **A/B benchmark 数据**：
 >
-> **v0.93 OpenClaw 10 组对照实验**：4 任务 × 2 条件（有/无 sofagent）× 独立 session。结论：**纪律层增量 = f(陷阱难度)**。在高难度「同名语义混淆」场景（Task 1 camelCase→snake_case），sofagent 组变量名误伤率 0%（0/7），裸 Agent 100%（7/7）。在精确指令场景（Task 3/4）无显著差异。Task 2（代码分析）sof-1 异常漏报（1/4 bugs）需更大样本确认。⚠️ 方法论诚实：本次实验 sofagent 条件为 prompt 前缀注入 4 条核心规则（非真实 Skill 加载链），可能低估实际效果。详见 [Task 2-4 实验总览](./benchmark/2026-06-26-openclaw-task2-4-summary.md)。
+> **v0.93 OpenClaw 10 组对照实验**：4 任务 × 2 条件（有/无 sofagent）× 独立 session。结论：**约束底座增量 = f(陷阱难度)**。在高难度「同名语义混淆」场景（Task 1 camelCase→snake_case），sofagent 组变量名误伤率 0%（0/7），裸 Agent 100%（7/7）。在精确指令场景（Task 3/4）无显著差异。Task 2（代码分析）sof-1 异常漏报（1/4 bugs）需更大样本确认。⚠️ 方法论诚实：本次实验 sofagent 条件为 prompt 前缀注入 4 条核心规则（非真实 Skill 加载链），可能低估实际效果。详见 [Task 2-4 实验总览](./benchmark/2026-06-26-openclaw-task2-4-summary.md)。
 >
 > **v0.92 OpenClaw 对照实验**：同一模型在独立 session 中跑 Task 1（camelCase → snake_case），sofagent 组变量名误伤率 0%（0/7），裸 Agent 组误伤率 100%（7/7）。纪律性 +2，首次通过率持平。详见 [OpenClaw Task 1 对照](./benchmark/2026-06-25-openclaw-task1-control.md)。
 >
-> **v0.81-v0.83 历史数据**：五组 A/B。约束层在 WorkBuddy 对话模式仅 1/10 明确增量，CLI 一击 0/16 全失效（见 [反案例 002](./anti-cases/002-cli-one-shot-ineffective.md)）。独立测试者代码重构 A/B 测出纪律层增量：纪律性 8→10（+2），首次通过率 60%→100%（+40%），但存在知识传递效应未排除的方法论局限（见 [反案例 001](./anti-cases/001-benchmark-self-test-circularity.md) 和 [WorkBuddy A/B 警告](./benchmark/2026-06-23-workbuddy-ab.md)）。
+> **v0.81-v0.83 历史数据**：五组 A/B。约束层在 WorkBuddy 对话模式仅 1/10 明确增量，CLI 一击 0/16 全失效（见 [反案例 002](./anti-cases/002-cli-one-shot-ineffective.md)）。独立测试者代码重构 A/B 测出约束底座增量：纪律性 8→10（+2），首次通过率 60%→100%（+40%），但存在知识传递效应未排除的方法论局限（见 [反案例 001](./anti-cases/001-benchmark-self-test-circularity.md) 和 [WorkBuddy A/B 警告](./benchmark/2026-06-23-workbuddy-ab.md)）。
 
 ---
 
@@ -63,9 +65,11 @@
 
 ## 基准测试
 
-> 可复现对比测试结果。运行 `bash sofagent/scripts/benchmark.sh --platform 你的平台` 生成。
+> 可复现对比测试结果。运行 `bash sofagent/scripts/verify.sh --quiet`（50 项检查全绿即 ✓）。
+>
+> 说明：benchmark.sh 已在 v0.99.2 移除，部署验证改用 verify.sh。
 
-详见 [docs/benchmark/](./benchmark/) — 每次运行自动更新。
+历史 benchmark 实验记录见 [docs/benchmark/](./benchmark/) — 存档参考，不再自动更新。
 
 ---
 
@@ -75,18 +79,18 @@
 
 ---
 
-## 量化锚点（v0.95 目标）
+## 量化锚点（v0.95 设计锚点，v1.0 启动数据采集）
 
-> 对标 Andrej Karpathy「LLM 原始编码错误率 41% → 人审后 11%」——sofagent 的目标是用纪律层 + 审计层在无人审的情况下逼近人审后水平。
+> 对标 Andrej Karpathy「LLM 原始编码错误率 41% → 人审后 11%」——sofagent 的目标是用约束底座 + 审计层在无人审的情况下逼近人审后水平。
 
 | 指标 | 定义 | 基线（裸 Agent） | v0.95 目标 | 测量方式 |
 |------|------|:--:|:--:|------|
-| Agent 违规率 | 触发铁律/审计规则的任务占比 | 待采集 | < 11% | A/B 对照，sofagent 组 vs 裸 Agent 组 |
+| Agent 违规率 | 触发铁律/审计规则的任务占比 | 待采集（v1.0 启动） | < 11% | A/B 对照，sofagent 组 vs 裸 Agent 组 |
 | 审计检出率 | git diff 规则命中已知问题的比例 | 0%（无审计） | > 80% | 人工标注违规集 → 跑 audit → 计算召回率 |
 | 误报率红线 | 审计报告为 FAIL 但实际无问题 | — | < 5% | 每批 FAIL 报告人工复核，误报 / 总 FAIL |
-| 首次通过率 | 任务无需返工即交付的比例 | 待采集 | > 85% | A/B 对照计数 |
+| 首次通过率 | 任务无需返工即交付的比例 | 待采集（v1.0 启动） | > 85% | A/B 对照计数 |
 
-> ⚠️ 以上目标为 v0.95 设计锚点，非已验证数据。「基线」列标「待采集」的指标需独立第三方跑——作者自测不算数。
+> ⚠️ 以上目标为 v0.95 设计锚点，非已验证数据。「基线」列标「待采集（v1.0 启动）」的指标需独立第三方跑——作者自测不算数。
 
 > 💡 为什么选 11%？Karpathy 的数据是人审后的错误率下限。sofagent 的命题是：**用机器审计替代人审，能不能逼近同一个下限。** 能不能做到是 v1.0 才能回答的问题——v0.95 先把测量框架搭好。
 

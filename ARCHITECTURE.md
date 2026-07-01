@@ -17,7 +17,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 | 对外（读者看到的） | 对内（工程内部） | 说明 |
 |------|------|------|
 | 约束底座 | harness 层 | 约束 Agent 行为的规则和文件 |
-| FDE 工具包 | FDE toolkit | FDE 带过去的工具箱 |
+| FDE 工具包 | FDE toolkit | FDE 随身的工具包 |
 | 审计引擎 | audit engine | git diff 硬证据审计 |
 
 ---
@@ -27,6 +27,8 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 AI 工程方法一直在往前走：提示工程（Prompt Engineering）解决「怎么对 AI 说话」，上下文工程（Context Engineering）解决「AI 应该知道什么」，约束工程（Harness Engineering）解决「AI 在什么约束下跑」。到了这一步，剩下一个没人管的问题：**谁来按回车？**
 
 Harness 层解决的就是这个问题——Agent 跑完任务之后，不是等着人验收，而是自己完成「拆解→执行→验证→复盘」的完整闭环。
+
+> 💡 **从传统 SOP 到 AI 时代 Harness 层**：传统 SOP 是工业时代的管理工具——标准化流程保证全局 60 分底线，代价是抹平一线差异。AI 时代的管理逻辑变了——每个 AI 节点自带个性化上下文（门店周边的暴雨、邻居超市的低价竞争、店长的街头智慧），一刀切的 SOP 不再是正确答案。sofagent 的约束底座不是给 AI 写 SOP——是给每个 AI 节点装缰绳，让它在个性化上下文中跑出 85-90 分而不越界。这个认知来自 Rolling AI 服务 100+ 企业的实战观察：「标准化代表着慢、代表着落后，AI 可以让每个一线单元都达到 85-90 分。」详见项目记忆中的 [FDE 认知框架](./.workbuddy/memory/MEMORY.md#fde-认知框架2026-07-01-rolling-ai-播客笔记)。
 
 > sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。Agent 的记忆长在文件系统（git diff / task/logs / SKILL.md），不长在 Agent 内部。审计层优先信任 git diff（硬证据），不信任 Agent 日志（软证据）。
 >
@@ -53,7 +55,7 @@ sofagent 分两层——地基轻、引擎重：
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ v0.81 |
 | **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff | ✅ v0.92 |
 | **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v0.99.2），推送待端到端验证 | v0.99.2 MCP Server ✅ |
-| **协同层** | 多设备 + 云端 | 多设备任务分发 + 联邦治理 | v2.x 规划 |
+| **协同层** | 多设备 + 云端 | 组织级 Agent Harness——Agent 以独立身份进入协作现场，共享上下文 + 组织记忆 + 主动参与 | v2.x 规划 |
 
 每层跑通再加下一层——不推翻已验证的东西。
 
@@ -235,7 +237,7 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 - **v1.x**：daemon TypeScript 化
 - **v1.0 定位**：Agent 工作验收工具（正式）+ Harness 层（实验）+ FDE 部署框架（规划）。审计层跨平台、零 Agent 依赖——是 v1.0 的主产品
 - **v1.x**：Skill 自进化验证门控（A/B 对比 + 外部评估器）
-- **v2.x**：多设备协同层 / 联邦治理 → FDE 完整形态
+- **v2.x**：组织级 Agent Harness——Agent 独立身份 + 组织共享记忆 + 主动协作参与 → FDE 完整形态
 
 **两个原则性警告**：①「不要让智能体自我验证」——根治需 v1.x 外部评估器；②「Agent 越强，闸门越重要」。
 

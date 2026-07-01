@@ -2,7 +2,7 @@
 
 > **FDE 工具包——面向中小企业（SMB）和一人公司（OPC）。约束底座管 Agent 行为，审计引擎盯代码变更。装上按十步流程走，自己做自己的 FDE。**
 >
-> v0.99.2 · 2026-07-01 · 孔放勋
+> v0.99.3 · 2026-07-01 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -237,6 +237,12 @@ Agent 先判断任务复杂度：
 > **为什么要自己做 FDE**：中小企业没有预算请外部顾问，也不需要。装上工具包，Agent 带你走十步流程梳理 workflow、识别 AI 节点，然后找一台闲置设备装 sofagent——上面跑的就是 harness 层，约束底座 + 审计引擎管着上面所有 AI 节点。从头到尾自己搞定，不用请人。
 
 > FDE = Forward Deployed Engineer（前向部署工程师）。完整十步流程见 [FDE/FDE.md](./FDE/FDE.md)。建议装 [sofagent-fde Skill](./FDE/SKILL.md)——Agent 自动加载 FDE 工作台。
+
+> 💡 **部署后的陪跑期**：Rolling AI 的经验——AI 节点部署后前 2 周是关键，需要 human-in-loop 陪跑：每天 review AI 的产出、把人类反馈和 AI 反思双向写入 think.md。这就像新员工入职后的带教期——不是盯着他干活，是帮他快速适应上下文。sofagent 的编排引擎会在这期间自动生成 daily review 模板。
+
+> 💡 **找好师傅**：每个企业里都有一些「街头智慧」——优秀的店长、销售、管家，他们脑子里有 AI 学不到的经验。FDE 的第一步不是写 workflow，是找到这些师傅、让他们教 AI。Rolling AI 的实践：先让 AI 帮师傅干活（排班、预估），让师傅感受到价值后才会愿意分享经验。sofagent 的 think.md 就是 AI 的「学徒笔记」。
+>
+> > 更多 FDE 方法论和行业背景：[FDE/FDE.md](./FDE/FDE.md) 开头。
 
 编排引擎（`engage.md`）是 FDE 部署的核心——🔴 复杂任务 + FDE 场景才点火：
 

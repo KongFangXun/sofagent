@@ -244,14 +244,14 @@ md_count=0
 # 收集所有 MD 文件（排除 docs/changelog/, node_modules/, .git/, dist/）
 while IFS= read -r md; do
   md_content=$(cat "$md")
-  # 只替换版本头格式 "> vOLD · "（带 · 分隔符），避免误改叙述正文
-  md_new=$(sed "s/^> v$OLD_2SEG · /> v$NEW_2SEG · /g" "$md")
-  # 额外处理双 > 引用的文件头（如 ARCHITECTURE.md: > > v0.98 ·）
-  md_new=$(sed "s/^> > v$OLD_2SEG · /> > v$NEW_2SEG · /g" <<< "$md_new")
-  # 额外处理 MD 文件标题中的 · vOLD（如 engage-fde.md: # x · v0.98）
-  md_new=$(sed "s/· v$OLD_2SEG/· v$NEW_2SEG/g" <<< "$md_new")
-  # 额外处理 SECURITY.md 当前状态标注（**当前状态（v0.98）**）
-  md_new=$(sed "s/\*\*当前状态（v$OLD_2SEG）\*\*/\*\*当前状态（v$NEW_2SEG）\*\*/g" <<< "$md_new")
+  # 用 sed 管道一次处理，全部从文件读取，避免 heredoc 和 Unicode 编码问题
+  md_new=$(sed \
+    -e "s/^> v${OLD_2SEG} · /> v${NEW_2SEG} · /g" \
+    -e "s/^> > v${OLD_2SEG} · /> > v${NEW_2SEG} · /g" \
+    -e "s/· v${OLD_2SEG}/· v${NEW_2SEG}/g" \
+    "$md")
+  # SECURITY.md 状态标注单独处理
+  md_new=$(echo "$md_new" | sed "s/\*\*当前状态（v${OLD_2SEG}）\*\*/\*\*当前状态（v${NEW_2SEG}）\*\*/g")
   if [[ "$md_new" != "$md_content" ]]; then
     echo -e "  ${GREEN}✓${NC} > v$OLD_2SEG · → > v$NEW_2SEG ·"
     echo -e "    ${CYAN}$md${NC}"

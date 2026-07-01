@@ -1,5 +1,8 @@
 name: sofagent-audit
 
+# 项目唯一的审计 CI 入口（原 audit.yml 已合并至此）。
+# 只有 FAIL(exit 2) 才阻断 CI；WARN(exit 1) 只提醒不阻断。
+
 on:
   push:
     branches: [main, master]
