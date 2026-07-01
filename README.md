@@ -148,7 +148,7 @@ Forward Deployed Engineer（前向部署工程师）进驻企业后，做三件�
 ### 两步落地
 
 1. **梳理 workflow**——逐个岗位、逐段流程识别 AI 可接管的节点（🔄 自动执行 / ⚡ 强化 / 👤 暂不动）
-2. **AI 节点上底座**——利用企业闲置设备搭建 AI 节点，sofagent 提供纪律底座
+2. **AI 节点上底座**——利用企业闲置设备搭建 AI 节点，sofagent 帮你管住 Agent 行为 + 审计每次变更
 
 > 完整十步部署流程见 [FDE/FDE.md](./FDE/FDE.md)。FDE 可直接装 [sofagent-fde Skill](./FDE/SKILL.md)——Agent 自动走流程，不用手动记步骤。
 
