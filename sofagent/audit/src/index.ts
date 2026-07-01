@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v0.99 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v0.99.1 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
 // 零运行时依赖——只用 Node.js 内置模块。
@@ -26,7 +26,7 @@ import { parseDiff, isInGitRepo, type DiffFile } from './diff-parser';
 import { checkLogs } from './log-checker';
 import { runRules, type AuditResult } from './reporter';
 import { loadConfig } from './config-loader';
-import { loadHistory } from './audit-history';
+import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-history';
 import { analyzeRootCause } from './audit-root-cause';
 import { formatSuggestions } from './config-suggestion';
 import { runRegression, type DiffSnapshot } from './audit-regression';
@@ -50,7 +50,7 @@ interface Args {
   mcp: boolean;
 }
 
-const VERSION = '0.99';
+const VERSION = '0.99.1';
 
 function parseArgs(argv: string[]): Args {
   const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false };
@@ -273,10 +273,24 @@ function loadSnapshotsFromDir(dir: string): DiffSnapshot[] {
 async function main(): Promise<void> {
   const args = parseArgs(process.argv);
 
-  // --mcp 模式：启动 MCP Server，交出 stdin/stdout 控制权
+  // --mcp 模式：MCP Server 已拆分为独立包 @sofagent/mcp
   if (args.mcp) {
-    require('./mcp-server');
-    return;
+    console.log('MCP Server 已拆分为独立包 @sofagent/mcp。');
+    console.log('请使用 sofagent-mcp 命令启动，或在 package.json 中安装 @sofagent/mcp。');
+    console.log('');
+    console.log('安装: npm install @sofagent/mcp');
+    console.log('启动: npx sofagent-mcp');
+    console.log('');
+    console.log('MCP Client 配置示例:');
+    console.log('  {');
+    console.log('    "mcpServers": {');
+    console.log('      "sofagent": {');
+    console.log('        "command": "npx",');
+    console.log('        "args": ["sofagent-mcp"]');
+    console.log('      }');
+    console.log('    }');
+    console.log('  }');
+    process.exit(0);
   }
 
   // --install-hook 在开头处理，完成后退出
@@ -301,6 +315,8 @@ async function main(): Promise<void> {
   if (!isInGitRepo()) {
     if (args.json) {
       console.log(JSON.stringify({ exitCode: 2, rules: [], error: 'NOT_A_GIT_REPO' }, null, 2));
+    } else {
+      console.error('错误：当前目录不在 git 仓库内。sofagent-audit 需要 git 仓库才能运行。');
     }
     process.exit(2);
   }
@@ -355,7 +371,23 @@ async function main(): Promise<void> {
     }
   }
 
-  // 8. 自动生成 think.md（方案 A：基于 git diff 硬证据）
+  // 8. 写入审计历史（JSONL 持久化，用于根因分析和回归验证）
+  try {
+    const historyEntry: AuditHistoryEntry = {
+      timestamp: new Date().toISOString(),
+      diffRange: args.diffRange,
+      task: args.task,
+      exitCode: results.exitCode,
+      ruleResults: results.rules,
+      diffFileCount: diffFiles.length,
+      commitMsg: commitMsg || undefined,
+    };
+    appendHistory(historyEntry);
+  } catch {
+    // 历史写入失败不影响审计结果
+  }
+
+  // 9. 自动生成 think.md（方案 A：基于 git diff 硬证据）
   if (diffFiles.length > 0) {
     try {
       generateThinkEntry(diffFiles, results, args.task);

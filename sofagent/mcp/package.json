@@ -1,0 +1,30 @@
+{
+  "name": "@sofagent/mcp",
+  "version": "0.99.1",
+  "description": "sofagent MCP Server — 暴露审计能力给 MCP Client（JSON-RPC 2.0 over stdio）",
+  "main": "dist/mcp-server.js",
+  "bin": {
+    "sofagent-mcp": "dist/mcp-server.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit"
+  },
+  "keywords": [
+    "sofagent",
+    "mcp",
+    "model-context-protocol",
+    "audit"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@sofagent/audit": "0.99.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

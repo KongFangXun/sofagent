@@ -2,11 +2,8 @@
 // config-loader.ts · .sofagent/config.yml 配置加载器
 // v0.95 新增：三级 fallback + 手写极简 YAML 解析器
 // v0.97 扩展：环境变量配置（从 lib/config.sh 合并）
+// v0.99.1 重构：用 js-yaml 替代手写 YAML 解析器
 // ============================================================
-// 配置格式只支持两种语法：
-//   key: value          （键值对）
-//   - item              （列表项）
-// 解析 audit 段下的字段，其余段忽略。
 //
 // 三级 fallback：
 //   1. ${cwd}/.sofagent/config.yml
@@ -17,6 +14,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
+import { load as yamlLoad } from 'js-yaml';
 
 /**
  * 审计配置——由 .sofagent/config.yml 加载
@@ -74,6 +72,13 @@ export function loadConfig(cwd?: string): AuditConfig {
 
 /**
  * 尝试从 YAML 文件加载配置，文件不存在或解析失败时返回 null
+ * 配置结构：
+ *   audit:
+ *     lowRiskPatterns:
+ *       - package-lock.json
+ *       - yarn.lock
+ *     carefulModifyThreshold: 0.2
+ *     等等...
  */
 function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
   if (!existsSync(filePath)) {
@@ -87,114 +92,19 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
     return null;
   }
 
-  return parseSimpleYaml(content);
-}
-
-/**
- * 极简 YAML 解析器
- * 支持格式：
- *   audit:
- *     lowRiskPatterns:
- *       - package-lock.json
- *       - yarn.lock
- *     testPatterns:
- *       - npm test
- *     carefulModifyThreshold: 0.2
- *     extendedRulesEnabled: false
- *
- * 只解析 audit 段下的字段，其他段忽略。
- * 支持 # 注释（行尾注释和整行注释）。
- */
-function parseSimpleYaml(content: string): Partial<AuditConfig> {
-  const result: Partial<AuditConfig> = {};
-  const lines = content.split('\n');
-
-  let inAuditSection = false;
-  let inListField: keyof AuditConfig | null = null;
-
-  for (const rawLine of lines) {
-    // 去除行尾注释（# 后面的内容），但保留 # 在引号内的情况
-    const line = stripComment(rawLine);
-
-    // 空行跳过
-    if (line.trim() === '') {
-      continue;
+  try {
+    const parsed = yamlLoad(content) as Record<string, unknown> | null;
+    if (!parsed || typeof parsed !== 'object') {
+      return null;
     }
-
-    const indent = line.length - line.trimStart().length;
-    const trimmed = line.trim();
-
-    // 顶层段（indent === 0）
-    if (indent === 0) {
-      inAuditSection = false;
-      inListField = null;
-
-      if (trimmed === 'audit:') {
-        inAuditSection = true;
-      }
-      continue;
+    const audit = parsed['audit'];
+    if (!audit || typeof audit !== 'object') {
+      return null;
     }
-
-    // 不在 audit 段内，跳过
-    if (!inAuditSection) {
-      continue;
-    }
-
-    // 列表项（以 - 开头）
-    if (trimmed.startsWith('- ')) {
-      if (inListField) {
-        const item = trimmed.substring(2).trim();
-        // 去除可能的引号
-        const cleanItem = stripQuotes(item);
-        if (inListField === 'lowRiskPatterns') {
-          if (!result.lowRiskPatterns) result.lowRiskPatterns = [];
-          result.lowRiskPatterns.push(cleanItem);
-        } else if (inListField === 'testPatterns') {
-          if (!result.testPatterns) result.testPatterns = [];
-          result.testPatterns.push(cleanItem);
-        }
-      }
-      continue;
-    }
-
-    // 键值对
-    const colonIdx = trimmed.indexOf(':');
-    if (colonIdx === -1) {
-      continue;
-    }
-
-    const key = trimmed.substring(0, colonIdx).trim();
-    const value = trimmed.substring(colonIdx + 1).trim();
-
-    // 值为空——可能是列表段（后续行以 - 开头）
-    if (value === '') {
-      if (key === 'lowRiskPatterns') {
-        inListField = 'lowRiskPatterns';
-        if (!result.lowRiskPatterns) result.lowRiskPatterns = [];
-      } else if (key === 'testPatterns') {
-        inListField = 'testPatterns';
-        if (!result.testPatterns) result.testPatterns = [];
-      } else {
-        inListField = null;
-      }
-      continue;
-    }
-
-    // 有值——标量字段
-    inListField = null;
-
-    if (key === 'carefulModifyThreshold') {
-      const num = parseFloat(stripQuotes(value));
-      if (!isNaN(num)) {
-        result.carefulModifyThreshold = num;
-      }
-    } else if (key === 'extendedRulesEnabled') {
-      const cleaned = stripQuotes(value).toLowerCase();
-      result.extendedRulesEnabled = cleaned === 'true' || cleaned === 'yes' || cleaned === '1';
-    }
+    return audit as Partial<AuditConfig>;
+  } catch {
+    return null;
   }
-
-  return result;
 }
 
 /**
@@ -207,30 +117,6 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     carefulModifyThreshold: partial.carefulModifyThreshold ?? DEFAULT_CONFIG.carefulModifyThreshold,
     extendedRulesEnabled: partial.extendedRulesEnabled ?? DEFAULT_CONFIG.extendedRulesEnabled,
   };
-}
-
-/**
- * 去除行尾注释（# 后面的内容）
- * 不处理引号内的 # ——极简解析器，配置文件中的 # 通常不需要出现在值中
- */
-function stripComment(line: string): string {
-  const hashIdx = line.indexOf('#');
-  if (hashIdx === -1) return line;
-  // 如果 # 在行首（缩进后），整行是注释
-  if (line.trim().startsWith('#')) return '';
-  return line.substring(0, hashIdx);
-}
-
-/**
- * 去除字符串两端的引号（单引号或双引号）
- */
-function stripQuotes(s: string): string {
-  if (s.length >= 2) {
-    if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
-      return s.substring(1, s.length - 1);
-    }
-  }
-  return s;
 }
 
 // ============================================================

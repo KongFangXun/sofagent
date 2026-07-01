@@ -25,6 +25,7 @@
 > - **v0.97**：证据版本——审计 A9/A10/A11 + 编排引擎重构 + bash→TS 第二波 + 概念精简（纪律层实验 100 次对照结果作废）
 > - **v0.98**：架构重组版——产品核心从事前约束转向事后审计 + FDE 企业部署，OpenClaw 必装，v1.0 转向 FDE 部署底座，新增 THINK.md 项目反思文档
 > - **v0.99**：v1.0 前收尾——审查全面修复 + Skill ≤90 行 + 放弃条件 + bus factor + GitHub Action + MCP Server + FDE 工具箱（/FDE + sofagent-fde Skill）+ 文档预算 ≤5,000。
+- **v0.99.1**：审查跟进——OpenClaw 叙事重写（两层架构/审计层平台无关/编排层 FDE 工具包）+ P0 代码清理（手写YAML→js-yaml + MCP Server 拆分 @sofagent/mcp）+ 局限声明修正 + 案例模板。
 
 ---
 
@@ -33,6 +34,14 @@
 v1.0 前收尾——完成两份独立深度审查的全部修复（7 批次 + v0.99 4 节）。文档信任修复（entry-gate 加载链 / SECURITY 行数 / DEVELOPMENT ≤90 行宣称 / README 格式）。Skill 全部 ≤90 行（loop-check 拆分 + engage/entry-gate 精简）。44 处 rules.md 死链清零。中英文 README 对齐 + 90/10 rule + 成熟度声明。项目放弃条件 5 条正式写入 ROADMAP。v1.0 准入条件 9 条核查。bus factor + 模型依赖声明。内容去重。GitHub Action 模板。preferences.md 删除。think-generator.ts 死代码清理。tools/check-docs.sh 自动化检查。398 tests 全绿，tsc 零错误。文档预算 ≤5,000。FDE 工具箱（/FDE + sofagent-fde Skill）。data/fde.md 加载链模板。npm 包 README（@sofagent/audit）。MCP Server 配置文档合并精简。ARCHITECTURE MCP 推送层状态更新为 v0.99。
 
 > 📖 [开发日志](./docs/changelog/v0.99.md)
+
+---
+
+## [v0.99.1] — 审查跟进版 ✅
+
+审查跟进——OpenClaw 叙事重写（README/ARCHITECTURE 中英文 + 术语统一为"FDE 的工具包"）+ P0 代码清理（手写 YAML 解析器替换 js-yaml、MCP Server 拆分为 @sofagent/mcp 独立包 + npm workspaces）+ 局限声明修正（FDE 验证状态 + 编排引擎稳定性 + 模型依赖增强）+ Case study 模板。
+
+> 📖 [开发日志](./docs/changelog/v0.99.1.md)
 
 ---
 

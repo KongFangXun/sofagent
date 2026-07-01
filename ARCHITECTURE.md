@@ -6,7 +6,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 > 一个只懂点前端代码的产品经理，在设计 Agent Harness 层时都想了些什么。这里只写设计决策、权衡取舍、已知局限。
 >
-> > v0.99 · 2026-07-01 · 孔放勋
+> > v0.99.1 · 2026-07-01 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -31,7 +31,7 @@ sofagent 分两层——地基轻、引擎重：
 | 层 | 是什么 | 何时激活 | 占用 |
 |:--:|------|:--:|:--:|
 | 地基 | 三层加载链（宪法+反思+fde）| 每个会话启动，永远在线 | 上下文预算的 2-3% |
-| 引擎 | 任务编排（拆解+Loop+闭环）| 🔴 复杂任务才点火 | 附加 ~800 token |
+| 引擎 | FDE 进场一次性生成 workflow + 定期 A/B 重优化 | FDE 部署时 / 定时触发 | ~800 token |
 
 如果加载链只在复杂任务时才激活：think.md 反思区不在上下文 → Agent 重复犯错；fde.md 不在上下文 → 简单任务时你的偏好全部失效。三层加载链必须永远在线。
 
@@ -42,7 +42,7 @@ sofagent 分两层——地基轻、引擎重：
 | **Harness 层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ 已可用 |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ v0.81 |
 | **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff | ✅ v0.92 |
-| **MCP 推送层** | 设备 MCP server | MCP Server 已实现（v0.99），推送待端到端验证 | v0.99 MCP Server ✅ |
+| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1），推送待端到端验证 | v0.99.1 MCP Server ✅ |
 | **协同层** | 多设备 + 云端 | 多设备任务分发 + 联邦治理 | v2.x 规划 |
 
 每层跑通再加下一层——不推翻已验证的东西。
@@ -75,13 +75,31 @@ sofagent 分两层——地基轻、引擎重：
 
 LLM 管判断、脚本管执行、Runtime 管刹车——天然的分界。
 
-### 为什么 OpenClaw 是唯一运行平台
+### OpenClaw 在架构中的角色
 
-不是偏好——是可行性。WorkBuddy、Codex、Claude Code 都测试过，各有各的封闭性：Hook 注入不可控、session 无法隔离、sub-agent 不能外部管理。OpenClaw 是唯一开源程度足够让 sofagent 挂上 Harness 层的平台。
+#### 审计层不需要 OpenClaw
 
-**但用户不需要用 OpenClaw**。两种模式：
-- **FDE 自己**：用习惯的 Agent 对话，OpenClaw 在后台做看不见的 AI 控制节点——FDE 聊业务，OpenClaw 跑编排+审计
-- **企业部署**：闲置设备上跑 OpenClaw + sofagent = AI 控制底座。企业采购的 Agent（WorkBuddy/Codex）也装在这台设备上，sofagent 通过 OpenClaw 的 Hook + session 隔离约束所有 Agent
+sofagent-audit 是一个 TypeScript CLI。它的输入是 git diff，输出是 exit code。它不关心你的代码是谁写的——Cursor 写的、Codex 写的、人写的，都一样。pre-commit hook 在 `git commit` 时自动触发，跟 Agent 无关。
+
+这意味着：即使你不装 OpenClaw，审计层照样能工作。企业团队今天就能 `npm install -g @sofagent/audit`，配 pre-commit hook，让所有 Agent（不管什么平台）的提交都经过审计。
+
+#### 编排层为什么需要 OpenClaw
+
+编排引擎要做三件事，目前只有 OpenClaw 的 Hook + session 机制能做到：
+
+1. **自动加载约束**——OpenClaw 的 `sofagent-load-chain` hook 在 Agent 启动时注入约束文件，不依赖 Agent "自觉去读"
+2. **session 隔离**——OpenClaw 的 `session.spawn` 创建独立子 Agent 跑 workflow 节点，主 Agent 不受污染
+3. **断路器**——OpenClaw 的 `tools.loopDetection` 在 Agent 死循环时硬停止
+
+我们测过 WorkBuddy / Codex / Claude Code——Hook 注入不可控、session 无法外部隔离、sub-agent 不能外部管理。不是我们"选择独占 OpenClaw"，是其他平台不开源到这个程度。
+
+但注意：编排层是给 FDE workflow 节点用的，不是给企业员工的日常 Agent 用的。企业员工不需要感知 OpenClaw——它只在后台跑 FDE 部署的 workflow 节点。
+
+#### 两种使用模式
+
+- **模式 A（FDE 自己用）**：FDE 用自己顺手的 Agent（WorkBuddy / Codex / Cursor）对话。当需要跑 FDE workflow 节点时，Agent 后台调用 OpenClaw 节点。OpenClaw 跑完后把结果返回给 FDE 的 Agent——FDE 全程看不到 OpenClaw 的 UI，它是一个后台 AI 节点。
+
+- **模式 B（企业设备上的 FDE 工具包）**：FDE 帮企业部署完后，企业闲置设备上装 OpenClaw + sofagent，搭成一个 harness 层，上面跑 AI 节点。企业自己采购的 Agent（WorkBuddy / Codex 等）也装在这台设备上——**Agent 不跑在 OpenClaw session 里**。sofagent 对企业 Agent 的审计走**文件系统层 + git pre-commit hook**：Agent 各自独立运行，各自用自己的 git 仓库，commit 时 hook 自动触发 sofagent-audit。Agent 完全不感知 OpenClaw。相当于：OpenClaw 是地基，其他 Agent 是住在上面的租户，sofagent 是物业管理。租户爱干嘛干嘛，物业管的是楼的安全。
 
 选 OpenClaw 的技术理由：开源 + Node.js（技术栈一致）、原生编排（AO compose → DAG 执行）、Agency Agent 兼容（233 个岗位模板）。技术选型演进：bash → Node.js/TS——Harness 层（纯 MD 规则，无代码）、审计/验证/编排迁移到 TS（npm 包 6 个 bin），OS 集成层（install/daemon）保持 bash。
 
@@ -171,7 +189,11 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 
 ### A/B 测试为什么不是一次性评估
 
-4 步渐进沉淀：同类任务做 3 次以上 → 某种拆法连续 2 次复盘最高 → 标记为候选模板 → 再跑 2 次依然稳定 → 正式沉淀。保守是因为 LLM 复盘有偏差——一次高分可能是运气，连续高分才可能是规律。
+编排引擎在 FDE 进场时生成第一版 workflow（current）。运行一段时间后，定期触发重新编排生成 candidate，用 `sofagent-orchestrate-compare` 做确定性对比——从 task/logs 中提取运行次数、违规率、步数、通过率四项客观指标，不由 Agent 主观判断。Candidate 连续两次胜出才 promote 为新的 current，旧方案归档进 history/。
+
+保守是因为 LLM 复盘有偏差——一次高分可能是运气，连续高分才可能是规律。CLI 工具的确定性对比消除了 Agent 自我评估的偏差。
+
+> orchestrator/ 目录结构：current/（生产用）+ candidate/（候选方案）+ comparisons/（对比报告）+ history/（被替换的旧方案）
 
 ### 渐进初始化 / 复盘体系 / 反思区 / 权重门禁
 

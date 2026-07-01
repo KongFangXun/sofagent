@@ -1,0 +1,121 @@
+classDiagram
+    class AuditPublicAPI {
+        &lt;&lt;barrel export&gt;&gt;
+        +parseDiff(range: string): DiffFile[]
+        +isInGitRepo(): boolean
+        +getAddedLines(diffFile: DiffFile): string[]
+        +getRemovedLines(diffFile: DiffFile): string[]
+        +checkLogs(logDir?: string): LogEntry[]
+        +getReadAccessMap(entries: LogEntry[]): Set~string~
+        +hasTestOrBuildExecution(entries: LogEntry[]): boolean
+        +runRules(diffFiles, logEntries, task?, strict?, silent?, commitMsg?, config?): AuditResult
+        +loadConfig(cwd?: string): AuditConfig
+        +generateThinkEntry(diffFiles, results, task?, opts?): void
+        +loadHistory(limit?, dataDir?): AuditHistoryEntry[]
+        +appendHistory(entry, dataDir?): void
+        +pickLogReader(filePath: string): LogReader
+    }
+
+    class McpServer {
+        -initialized: boolean
+        +start(): void
+        -handleRequest(request: JsonRpcRequest): Promise~void~
+        -checkInitialized(id): boolean
+        -handleInitialize(id, params): void
+        -handleToolsList(id): void
+        -handleToolsCall(id, params): Promise~void~
+        -toolRunAudit(id, args): Promise~void~
+        -toolGetThink(id, args): void
+        -toolWriteThink(id, args): void
+        -handleResourcesList(id): void
+        -handleResourcesRead(id, params): void
+        -resourceReadThinkLatest(id): void
+        -resourceReadLogsToday(id): void
+        -resourceReadAuditHistory(id): void
+        -sendResult(id, result): void
+        -sendError(id, code, message, data?): void
+        -sendToolResult(id, payload): void
+        -writeLine(line): void
+    }
+
+    class JsonRpcRequest {
+        +jsonrpc: "2.0"
+        +id: number | string | null
+        +method: string
+        +params?: Record~string, unknown~
+    }
+
+    class JsonRpcResponse {
+        +jsonrpc: "2.0"
+        +id: number | string | null
+        +result?: unknown
+        +error?: { code, message, data? }
+    }
+
+    class DiffFile {
+        +path: string
+        +status: "added" | "modified" | "deleted" | "renamed"
+        +oldPath?: string
+        +lines: string[]
+    }
+
+    class LogEntry {
+        +timestamp: Date
+        +operation: string
+        +file?: string
+        +raw: string
+    }
+
+    class AuditResult {
+        +rules: RuleCheck[]
+        +exitCode: number
+    }
+
+    class AuditContext {
+        +diffFiles: DiffFile[]
+        +logEntries: LogEntry[]
+        +task?: string
+        +strict?: boolean
+        +silent?: boolean
+        +commitMsg?: string
+        +config?: AuditConfig
+    }
+
+    class AuditConfig {
+        +lowRiskPatterns: string[]
+        +testPatterns: string[]
+        +carefulModifyThreshold: number
+        +extendedRulesEnabled: boolean
+    }
+
+    class RuleCheck {
+        +name: string
+        +number: number
+        +status: "PASS" | "WARN" | "FAIL"
+        +details: string[]
+        +evidenceMode?: EvidenceMode
+        +ruleClass?: RuleClass
+    }
+
+    class LogReader {
+        &lt;&lt;interface&gt;&gt;
+        +extractOperation(content: string): string
+        +extractFileReferences(content: string): string[]
+    }
+
+    AuditPublicAPI ..> DiffFile : 导出类型
+    AuditPublicAPI ..> LogEntry : 导出类型
+    AuditPublicAPI ..> AuditResult : 导出类型
+    AuditPublicAPI ..> AuditContext : 导出类型
+    AuditPublicAPI ..> AuditConfig : 导出类型
+    AuditPublicAPI ..> RuleCheck : 导出类型
+    AuditPublicAPI ..> LogReader : 导出类型
+
+    McpServer --> AuditPublicAPI : import from "@sofagent/audit"
+    McpServer --> JsonRpcRequest : 使用
+    McpServer --> JsonRpcResponse : 使用
+
+    AuditContext --> DiffFile : 包含
+    AuditContext --> LogEntry : 包含
+    AuditContext --> AuditConfig : 可选包含
+    AuditResult --> RuleCheck : 包含

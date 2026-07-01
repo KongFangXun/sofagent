@@ -1,6 +1,6 @@
 # @sofagent/audit
 
-> v0.99 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
+> v0.99.1 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
 >
 > 零运行时依赖。TypeScript 实现。Node.js 18+。
 
@@ -27,7 +27,8 @@ npx @sofagent/audit --diff HEAD~1..HEAD
 | `sofagent-mcp` | MCP Server（独立进程） |
 | `verify-evidence` | 证据验证工具 |
 | `skill-safety-check` | Skill 文件安全检查 |
-| `task-orchestrate` | 任务编排工具 |
+| `sofagent-orchestrate-compare` | 编排 A/B 对比 + promote + compose |
+| `sofagent-env-check` | FDE 环境验证 |
 
 ---
 
@@ -315,7 +316,7 @@ cd sofagent/sofagent/audit
 
 npm ci           # 安装依赖
 npm run build    # 编译 TypeScript
-npm test         # 运行测试（398 tests）
+npm test         # 运行测试（406 tests）
 npm run check    # 类型检查（tsc --noEmit）
 ```
 
