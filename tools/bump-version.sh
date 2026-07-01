@@ -63,12 +63,20 @@ done
 OLD_2SEG=$(echo "$OLD_VERSION" | cut -d. -f1-2)
 NEW_2SEG=$(echo "$NEW_VERSION" | cut -d. -f1-2)
 
-# 3 段版本号（补零）
-OLD_3SEG="${OLD_2SEG}.0"
-NEW_3SEG="${NEW_2SEG}.0"
+# 3 段版本号（从实际 package.json 读取，而非 .0 补零）
+# 注意：根 package.json 无 version 字段（workspaces 根），SSOT 在 sofagent/audit/package.json
 
 # ── 项目根目录（脚本在 tools/ 下，根在上一级）──────────────
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# 从实际 SSOT 读取 3 段版本号（audit/package.json），而非 .0 补零
+PJ_SSOT="${PROJECT_ROOT}/sofagent/audit/package.json"
+OLD_3SEG=$(grep '"version":' "${PJ_SSOT}" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+NEW_3SEG="${NEW_2SEG}.$(echo "${OLD_3SEG}" | cut -d. -f3)"
+# 如果旧版本是 2 段格式，新版本也保持 2 段 + .0
+if [[ "${OLD_VERSION}" != *.*.* ]]; then
+  NEW_3SEG="${NEW_2SEG}.0"
+fi
 
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 echo -e "${BOLD}${CYAN}  bump-version${NC}"

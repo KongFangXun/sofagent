@@ -107,7 +107,7 @@ extract_version() {
 echo -e "${BOLD}── [1/8] TypeScript 常量 ──${NC}"
 while IFS= read -r ts; do
   [[ -f "${ts}" ]] || continue
-  match=$(grep -n "const VERSION = '" "${ts}" | head -1)
+  match=$(grep -n "const [A-Z_]*VERSION = '" "${ts}" | head -1)
   if [[ -z "${match}" ]]; then
     continue
   fi
@@ -117,9 +117,10 @@ while IFS= read -r ts; do
   else
     report_ok "${ts}" "${found_ver}"
   fi
-done < <(grep -rl "const VERSION = '" \
+done < <(grep -rl "const [A-Z_]*VERSION = '" \
   --include='*.ts' \
   "${PROJECT_ROOT}/sofagent/audit/src/" \
+  "${PROJECT_ROOT}/sofagent/mcp/src/" \
   2>/dev/null || true)
 echo ""
 
@@ -235,7 +236,7 @@ for readme in \
   "${PROJECT_ROOT}/README.md" \
   "${PROJECT_ROOT}/README.en.md"; do
   [[ -f "${readme}" ]] || continue
-  match=$(grep -oE 'version-v?[0-9]+\.[0-9]+' "${readme}" | head -1)
+  match=$(grep -oiE 'version-v?[0-9]+\.[0-9]+' "${readme}" | head -1)
   if [[ -z "${match}" ]]; then
     echo -e "  ${YELLOW}⚠${NC} 未找到 badge: $(basename "${readme}")"
     continue
@@ -281,6 +282,18 @@ if [[ "${seg_count}" -ne 2 ]]; then
   ERRORS=$((ERRORS + 1))
 else
   echo -e "  ${GREEN}✓${NC} package.json version = ${SSOT_VERSION} (3 段格式正确)"
+fi
+echo ""
+
+# ── 10. 检查 sofagent/mcp 依赖 @sofagent/audit 版本与 SSOT 一致 ─
+MCP_PKG="${PROJECT_ROOT}/sofagent/mcp/package.json"
+if [[ -f "${MCP_PKG}" ]]; then
+  dep_ver=$(grep '"@sofagent/audit":' "${MCP_PKG}" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
+  if [[ "${dep_ver}" != "${SSOT_VERSION}" ]]; then
+    report_error "${MCP_PKG}" "@sofagent/audit: ${dep_ver}" "@sofagent/audit: ${SSOT_VERSION}"
+  else
+    report_ok "${MCP_PKG#"${PROJECT_ROOT}"/}" "${dep_ver}"
+  fi
 fi
 echo ""
 

@@ -24,7 +24,7 @@ import { join } from 'path';
 import { execFileSync, spawnSync } from 'child_process';
 import { homedir } from 'os';
 
-const VERSION = '0.99.1';
+const VERSION = '0.99.2';
 
 // ── 颜色（与 index.ts 风格一致）──
 const RED = '\x1b[0;31m';

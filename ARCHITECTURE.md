@@ -6,9 +6,19 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 > 一个只懂点前端代码的产品经理，在设计 Agent Harness 层时都想了些什么。这里只写设计决策、权衡取舍、已知局限。
 >
-> > v0.99.1 · 2026-07-01 · 孔放勋
+> > v0.99.2 · 2026-07-01 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
+
+---
+
+## 术语对照
+
+| 对外（读者看到的） | 对内（工程内部） | 说明 |
+|------|------|------|
+| 约束底座 | harness 层 | 约束 Agent 行为的规则和文件 |
+| FDE 工具包 | FDE toolkit | FDE 带过去的工具箱 |
+| 审计引擎 | audit engine | git diff 硬证据审计 |
 
 ---
 
@@ -42,7 +52,7 @@ sofagent 分两层——地基轻、引擎重：
 | **Harness 层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ 已可用 |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ v0.81 |
 | **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff | ✅ v0.92 |
-| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1），推送待端到端验证 | v0.99.1 MCP Server ✅ |
+| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v0.99.2），推送待端到端验证 | v0.99.2 MCP Server ✅ |
 | **协同层** | 多设备 + 云端 | 多设备任务分发 + 联邦治理 | v2.x 规划 |
 
 每层跑通再加下一层——不推翻已验证的东西。
@@ -221,7 +231,8 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 
 > 路线图详见 [ROADMAP.md](./ROADMAP.md)。
 
-- **v0.9x**：安全审查 ✅ → 审计层（sofagent-audit）→ daemon TypeScript 化
+- **v0.9x**：安全审查 ✅ → 审计层（sofagent-audit）
+- **v1.x**：daemon TypeScript 化
 - **v1.0 定位**：Agent 工作验收工具（正式）+ Harness 层（实验）+ FDE 部署框架（规划）。审计层跨平台、零 Agent 依赖——是 v1.0 的主产品
 - **v1.x**：Skill 自进化验证门控（A/B 对比 + 外部评估器）
 - **v2.x**：多设备协同层 / 联邦治理 → FDE 完整形态

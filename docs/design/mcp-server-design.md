@@ -117,8 +117,8 @@ audit/src/ 下的所有其他文件保持不变：
   diff-parser.ts, log-checker.ts, log-reader.ts, reporter.ts,
   config-loader.ts, think-generator.ts, audit-history.ts,
   rules/*.ts（所有规则文件 + types.ts）,
-  benchmark.ts, verify.ts, verify-evidence.ts,
-  skill-safety-check.ts, task-orchestrate.ts 等
+  benchmark.ts (已删除), verify.ts, verify-evidence.ts,
+  skill-safety-check.ts, task-orchestrate.ts (已合并为 orchestrate-compare.ts) 等
 ```
 
 ### 3. Data Structures and Interfaces

@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 // sofagent-orchestrate-compare · 编排方案 A/B 对比 + 任务编排 CLI
+//
+// 连续胜出说明：架构设计要求「Candidate 连续两次胜出才 promote」，
+// 但当前代码只做单次对比。连续胜出判断需手动执行两次 compare 后人工决策。
+// TODO: v1.x 加连续胜出计数器。
+//
 // 用法:
 //   sofagent-orchestrate-compare --current <dir> --candidate <dir> --output <dir>
 //   sofagent-orchestrate-compare promote --candidate <dir>
@@ -14,7 +19,7 @@ export interface Metric { runCount: number; auditViolations: number; avgSteps: n
 interface Args { current: string; candidate: string; output: string; }
 type Winner = 'Current' | 'Candidate' | '—';
 
-const VERSION = '0.99.1';
+const VERSION = '0.99.2';
 const RED = '\x1b[0;31m'; const GREEN = '\x1b[0;32m'; const YELLOW = '\x1b[1;33m'; const BLUE = '\x1b[0;34m'; const NC = '\x1b[0m';
 const AO_TIMEOUT = 180_000;
 const AO_UTIL_TIMEOUT = 30_000;
@@ -24,7 +29,8 @@ function ok(msg: string) { console.log(`${GREEN}[✓]${NC} ${msg}`); }
 function warn(msg: string) { console.log(`${YELLOW}[!]${NC} ${msg}`); }
 function err(msg: string) { console.error(`${RED}[✗]${NC} ${msg}`); }
 function cmdExists(cmd: string): boolean {
-  try { execFileSync('which', [cmd], { stdio: 'ignore' }); return true; } catch { return false; }
+  const which = process.platform === 'win32' ? 'where' : 'which';
+  try { execFileSync(which, [cmd], { stdio: 'ignore' }); return true; } catch { return false; }
 }
 
 // ════════════════════════════════════════
@@ -494,6 +500,13 @@ function main(): void {
   const args = parseArgs(process.argv);
   for (const [label, dir] of [['current', args.current], ['candidate', args.candidate]] as const) {
     if (!existsSync(dir)) { console.error(`❌ ${label} 目录不存在: ${dir}`); process.exit(1); }
+  }
+  // 时间窗口校验：两个目录的日志如果来自不同时间段，对比意义有限
+  const mtimeA = statSync(args.current).mtimeMs;
+  const mtimeB = statSync(args.candidate).mtimeMs;
+  const timeDiffHours = Math.abs(mtimeA - mtimeB) / (1000 * 60 * 60);
+  if (timeDiffHours > 24) {
+    console.warn(`⚠️ 数据时间跨度 ${timeDiffHours.toFixed(1)} 小时，A/B 对比置信度可能降低`);
   }
   const curr = extractMetrics(args.current);
   const cand = extractMetrics(args.candidate);

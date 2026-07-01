@@ -23,7 +23,7 @@ Agent 检测到后跳过 ClawHub 搜索，Skills 手动放入 `~/.openclaw/skill
 
 ### 3. 编排降级
 
-没装 ao 时，task-orchestrate.ts（v0.97 已迁 TypeScript） 会提示降级方案：
+没装 ao 时，orchestrate-compare.ts（原 task-orchestrate，v0.99.1 已合并） 会提示降级方案：
 - 手动拆任务
 - 用 task-record.sh 逐条记录
 - 手动闭环

@@ -2,6 +2,11 @@
 // audit-history.ts · 审计历史持久化
 // v0.98 新增：审计闭环六步——历史持久化层
 // ============================================================
+//
+// 并发安全说明：appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的。
+// 审计历史条目通常 < 1KB，单次写入安全。多进程同时写入可能导致行交错，
+// 但概率极低（审计触发频率 < 1次/分钟）。TODO: v1.x 加 file lock 或改为单 writer 模式。
+//
 // 每次 sofagent-audit 运行后，把结果追加到
 // ${SOFAGENT_DATA}/audit/history.jsonl（JSONL 格式）。
 // 用于根因分析（audit-root-cause）和回归验证（audit-regression）。
