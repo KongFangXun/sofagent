@@ -98,7 +98,7 @@ scoring.md + think.md 在循环中持续自我修订，会引入**经验漂移**
 
 ### 平台依赖
 
-核心约束（SKILL.md / fde.md）是纯 Markdown，任何能读文件的平台都能加载。但自动触发、Skill 加载、脚本执行取决于平台。
+核心约束（SKILL.md / fde.md）是纯 Markdown，任何能读文件的平台都能加载。但深度集成（Hook 注入、session 隔离、sub-agent 管理）只有 OpenClaw 能做到——不是我们选择独占，是其他平台不开源到这个程度。
 
 | 能力 | OpenClaw | WorkBuddy | Codex / Hermes / Claude Code |
 |------|:--:|:--:|:--:|
@@ -107,7 +107,11 @@ scoring.md + think.md 在循环中持续自我修订，会引入**经验漂移**
 | 加载链脚本 | ✅ 内部 hook | ❌ Agent Read替代 | ❌ |
 | 断路器 | ✅ loopDetection | ❌ | ❌ |
 
-> "兼容"不等于"支持"。核心约束所有平台可读，完整约束闭环只在 OpenClaw 上生效。
+> **两种使用模式**：
+> - **FDE 自己用**：用习惯的 Agent 对话，OpenClaw 在后台做 AI 控制节点（编排+审计），FDE 看不到 OpenClaw UI
+> - **企业部署**：闲置设备跑 OpenClaw + sofagent = AI 控制底座，企业自己采购的 Agent 装在同一设备上受约束
+>
+> "兼容"不等于"支持"。核心约束所有平台可读，深度集成只在 OpenClaw 上生效。
 
 ---
 
