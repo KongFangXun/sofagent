@@ -97,7 +97,7 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇：
 
 ## 二、编排哲学
 
-> 编排引擎（engage.md）定位 FDE 专用，两档拆解（拆 vs. 不拆）。约束层保证安全（SKILL.md），编排层往自我进化方向走。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#编排哲学)。
+> 编排引擎（engage.md）定位 FDE 专用，两档拆解（拆 vs. 不拆）。约束层保证安全（SKILL.md），编排层从反思中持续调优。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#编排哲学)。
 
 ### 编排流程
 
