@@ -7,6 +7,8 @@ on:
       - 'sofagent/scripts/**/*.sh'
       - 'sofagent-lite/**/*.sh'
       - 'scripts/**/*.sh'
+      - 'tools/**/*.sh'
+      - 'FDE/**/*.sh'
       - '.github/workflows/shellcheck.yml'
   pull_request:
     branches: [main]
@@ -14,6 +16,8 @@ on:
       - 'sofagent/scripts/**/*.sh'
       - 'sofagent-lite/**/*.sh'
       - 'scripts/**/*.sh'
+      - 'tools/**/*.sh'
+      - 'FDE/**/*.sh'
       - '.github/workflows/shellcheck.yml'
 
 jobs:
