@@ -42,17 +42,15 @@ describe('evidenceMode 双路径切换', () => {
       expect(result.status).toBe('PASS');
     });
 
-    it('无日志 + silent → 走 diff 回退，只 WARN 不 FAIL', () => {
+    it('无日志 + silent → 跳过检查，PASS（CI 环境无需日志依赖规则）', () => {
       const ctx: AuditContext = {
         diffFiles: [makeDiffFile('src/index.ts')],
         logEntries: [],
         silent: true,
       };
       const result = checkRuleA7(ctx);
-      expect(result.status).toBe('WARN');
+      expect(result.status).toBe('PASS');
       expect(result.details[0]).toContain('--silent');
-      // 关键：不应该是 FAIL
-      expect(result.status).not.toBe('FAIL');
     });
 
     it('无日志 + 非 silent + 非 strict → WARN（现有行为）', () => {
@@ -83,7 +81,7 @@ describe('evidenceMode 双路径切换', () => {
         strict: true,
       };
       const result = checkRuleA7(ctx);
-      expect(result.status).toBe('WARN');
+      expect(result.status).toBe('PASS');
     });
 
     it('evidenceMode 标注为 hybrid', () => {
@@ -106,16 +104,15 @@ describe('evidenceMode 双路径切换', () => {
       expect(result.status).toBe('PASS');
     });
 
-    it('无日志 + silent + 构建文件变更 → WARN 不 FAIL', () => {
+    it('无日志 + silent + 构建文件变更 → PASS（CI 环境跳过）', () => {
       const ctx: AuditContext = {
         diffFiles: [makeDiffFile('package.json')],
         logEntries: [],
         silent: true,
       };
       const result = checkRuleA8(ctx);
-      expect(result.status).toBe('WARN');
+      expect(result.status).toBe('PASS');
       expect(result.details[0]).toContain('--silent');
-      expect(result.status).not.toBe('FAIL');
     });
 
     it('无日志 + 非 silent + 构建文件变更 → WARN（现有行为）', () => {

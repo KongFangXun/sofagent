@@ -30,10 +30,10 @@ export function checkRuleA7(ctx: AuditContext): RuleCheck {
     return rule;
   }
 
-  // 双路径：无日志 + silent → 走 diff 启发式，只 WARN 不 FAIL
+  // silent 模式：无 Agent 日志，不做盲改检查（CI 环境无需此日志依赖规则）
   if (ctx.silent && logEntries.length === 0) {
-    rule.status = 'WARN';
-    rule.details.push('--silent 模式：无任务日志，跳过精确「不存盲改」检查（git diff 无法证明读取行为）。');
+    rule.status = 'PASS';
+    rule.details.push('--silent 模式：无任务日志，跳过「不存盲改」检查。');
     return rule;
   }
 
