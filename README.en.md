@@ -8,7 +8,6 @@
 [![What: FDE toolkit](https://img.shields.io/badge/What-FDE_toolkit-16B8F3)](#what-is-this)
 [![Core: Harness + Audit](https://img.shields.io/badge/Core-Harness_+_Audit-16B8F3)](#what-is-this)
 [![OpenClaw](https://img.shields.io/badge/Platform-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
-[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=Starred)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
