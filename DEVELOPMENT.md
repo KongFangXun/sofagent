@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.99 · 2026-06-29 · 孔放勋
+> v0.99.1 · 2026-07-01 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -32,7 +32,7 @@
 
 ### Skill 文件结构
 
-**1 主 Skill（`SKILL.md`）+ 9 子 Skill = 10 个 .md（按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤90 行（v0.99 全部达标）。
+**1 主 Skill（`SKILL.md`）+ 9 子 Skill = 10 个 .md（按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤90 行（v0.99.1 全部达标）。
 
 | 文件 | 何时加载 | 干什么 |
 |------|------|------|
@@ -49,26 +49,26 @@
 sofagent 有**两个引擎**，数据流分离但在 think.md 交汇：
 
 ```
-审计引擎（提交时）                 编排引擎（运行时）
-    │                                  │
-    ├─ git diff                        ├─ SKILL.md 加载（宪法内联）
-    ├─ 规则检查 A1-A11                ├─ A0 判级
-    ├─ think-generator.ts              ├─ 🟢🟡 → task-aware 直接处理
-    │   └→ 写 think.md ─────┐         │   └─ 🔴 → engage.md 点火
-    │                       │         │         ├─ 平台检测 + 初始化
-    │                       │         │         ├─ ao compose 拆任务
-    │                       │         │         ├─ loop-check 检查点
-    │                       │         │         ├─ loop-check 失败诊断
-    │                       │         │         └─ task-closure 收口
-    │                       │         │               ├─ 反思 → think.md
-    │                       │         │               ├─ 评分 → scoring/
-    │                       │         │               └─ A/B → orchestrator/
-    └───────────────────────┴─────────┘
+审计引擎（每次提交）                  编排引擎（FDE 进场 + 定期重测）
+    │                                       │
+    ├─ git diff                             ├─ FDE 进场：一次性生成 workflow.yaml
+    ├─ 规则检查 A1-A11                      │       └─ ao compose 拆任务 → 写入 orchestrator/current/
+    ├─ think-generator.ts                   │
+    │   └→ 写 think.md ─────┐              ├─ 生产运行：AI 节点按 workflow 执行
+    │                       │              │       ├─ 🔄 自动执行
+    │                       │              │       └─ ⚡ AI 领航员辅助
+    │                       │              │
+    │                       │              ├─ 定期 A/B 重测
+    │                       │              │       ├─ 编排引擎重出 candidate 方案
+    │                       │              │       ├─ orchestrate-compare 确定性对比
+    │                       │              │       └─ Candidate 胜出 → promote
+    │                       │              │
+    └───────────────────────┴──────────────┘
                   think.md 是交汇点
-         （审计引擎写 / 编排引擎读）
+         （审计引擎写 / 编排引擎读 / A/B 结果写入 orchestrator/）
 ```
 
-**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**看 task/logs + orchestrator + scoring（运行时），依赖 Agent 配合。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎点火时读取优化策略。
+**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 FDE 进场时一次性生成 workflow，之后 AI 节点按固定流程执行，定期用 `sofagent-orchestrate-compare` 做 A/B 重优化。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
 
 主 Agent 的日常：接活 → 看 `scoring.md` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#skill-runtime)。
 
@@ -88,7 +88,7 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇：
 | `install.sh` | 多平台一键安装（7 步） | 手动跑 |
 | `uninstall.sh` | 删约束文件，保留 `.sofagent/` | 手动跑 |
 | `verify.sh` | 装后验证 9 类 24+ 检查项 | 安装完自动跑，也可手动 |
-| `task-orchestrate.ts` | 包装 ao compose：worktree 隔离 + 约束注入 + 成本汇总 | engage.md 拆任务后自动调用 |
+| `orchestrate-compare.ts` | A/B 对比 + promote + compose（合并了原 task-orchestrate） | 编排引擎定期调用 |
 | `task-record.sh` | 收集任务数据 → 拼 Markdown → 追加到 task/logs/ | 闭环时自动调用 |
 
 > 前三个是用户侧工具，后两个是运行时脚本。**设计原则**：确定性操作脚本化——去重、格式校验、文件清理这类即刻运算，脚本比 Agent 更快更省更可靠。
@@ -179,7 +179,7 @@ ao compose 拆完任务
 
 ### A/B 测试
 
-不是单独的测试模式——日常跑任务时自然发生。同类任务做了几次，每次都记在 task/logs/ 里，闭环时对比最优的写入 orchestrator/。
+`sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排引擎定期重出 candidate 方案后与 current 对比——Candidate 连续两次胜出才 promote 为新的 current，旧方案归档到 history/。
 
 规则：不主动创造对照组、同类型才比、连续 2 次胜出标记候选、再跑 2 次稳定才沉淀、模板可被替换。局限：样本量小（最少 7 次）、LLM 有随机性。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#a-b-test)。
 

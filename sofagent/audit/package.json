@@ -1,27 +1,42 @@
 {
   "name": "@sofagent/audit",
-  "version": "0.99.0",
+  "version": "0.99.1",
   "description": "sofagent 提交时审计——扫描 git diff，检查 Agent 是否遵守工作纪律",
   "main": "dist/index.js",
+  "types": "dist/public-api.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/public-api.d.ts",
+      "default": "./dist/public-api.js"
+    }
+  },
   "bin": {
     "sofagent-audit": "dist/index.js",
-    "sofagent-mcp": "dist/mcp-server.js",
     "sofagent-verify": "dist/verify.js",
     "verify-evidence": "dist/verify-evidence.js",
     "skill-safety-check": "dist/skill-safety-check.js",
-    "task-orchestrate": "dist/task-orchestrate.js"
+    "sofagent-orchestrate-compare": "dist/orchestrate-compare.js",
+    "sofagent-env-check": "dist/env-check.js"
   },
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "npm run build && chmod +x dist/index.js dist/mcp-server.js dist/verify.js dist/verify-evidence.js dist/skill-safety-check.js dist/task-orchestrate.js",
+    "prepublishOnly": "npm run build && chmod +x dist/index.js dist/verify.js dist/verify-evidence.js dist/skill-safety-check.js dist/orchestrate-compare.js dist/env-check.js",
     "start": "node dist/index.js",
-    "start:mcp": "node dist/mcp-server.js",
     "test": "vitest run",
     "check": "tsc --noEmit"
   },
-  "keywords": ["sofagent", "audit", "git", "agent", "discipline", "mcp", "model-context-protocol"],
+  "keywords": [
+    "sofagent",
+    "audit",
+    "git",
+    "agent",
+    "discipline",
+    "mcp",
+    "model-context-protocol"
+  ],
   "license": "MIT",
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.0.0",
     "typescript": "^5.4.0",
     "vitest": "^1.6.0"
@@ -33,5 +48,8 @@
     "dist/",
     "hooks/",
     "README.md"
-  ]
+  ],
+  "dependencies": {
+    "js-yaml": "^5.2.0"
+  }
 }

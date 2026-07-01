@@ -1,11 +1,11 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.99 · 2026-07-01 · v1.0 前收尾版——不进新功能，只做 bugfix + 文档终审 + 审查修复。
+> v0.99.1 · 2026-07-01 · 审查跟进版——OpenClaw 叙事重写 + P0 代码清理 + 局限声明修正。
 >
 > **先跑通 FDE 部署闭环，再谈其他。**
 >
-> 🎯 **v1.0 定位**：**FDE 底座**——帮 FDE 快速梳理企业 workflow → 定义 AI 节点 → 部署到任意设备 → 审计结果自动推送到协作平台。
+> 🎯 **v1.0 定位**：**FDE 工具包**——帮 FDE 快速梳理企业 workflow → 定义 AI 节点 → 部署到任意设备 → 审计结果自动推送到协作平台。
 
 ---
 
@@ -25,9 +25,25 @@
 
 ---
 
-## 现在在哪：v0.99
+## 现在在哪：v0.99.1
 
-> v0.99 是 **v1.0 前收尾版**——不进新功能，只做 bugfix、文档终审、准入条件核查。
+> v0.99.1 是 **审查跟进版**——不进新功能，只做 OpenClaw 叙事重写 + P0 代码清理 + 诚实声明。
+
+| 级别 | 交付 | 状态 |
+|------|------|:----:|
+| P0 | OpenClaw 叙事重写（README/ARCHITECTURE/LIMITATIONS 中英文 + 术语统一） | ✅ |
+| P0 | 手写 YAML 解析器 → js-yaml（config-loader.ts -102行） | ✅ |
+| P0 | MCP Server 独立包拆分（@sofagent/mcp，npm workspaces） | ✅ |
+| P0 | FDE 验证状态修正 + 编排引擎/模型依赖局限声明新增 | ✅ |
+| P1 | Case study 模板（docs/evidence/case-study-template.md） | ✅ |
+| P1 | 审计引擎边界修复（audit-history 目录创建 + MCP 重复响应 + 非 git 仓库退出码） | ✅ |
+| P1 | Case study 模板（docs/evidence/case-study-template.md） | ✅ |
+| P1 | 叙事降调（README 成熟度声明 + HANDBOOK FDE 实验性标注 + LIMITATIONS 审计闭环/测试覆盖） | ✅ |
+| P2 | CI/CD 扩展（release workflow: npm publish audit + mcp 双包） + CONTRIBUTING 链接更新 | ✅ |
+
+> 📖 [详细开发日志](./docs/changelog/v0.99.1.md)
+
+### v0.99（上一版）
 
 | 级别 | 交付 | 状态 |
 |------|------|:----:|
@@ -49,6 +65,8 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
+| **v0.99.1** | 审查跟进：OpenClaw 叙事重写 + YAML→js-yaml + MCP 独立包 + 局限声明修正 | [📖](./docs/changelog/v0.99.1.md) |
+| **v0.99** | v1.0 前收尾：两份审查修复 + Skill≤90行 + 放弃条件 + MCP Server + verify→TS | [📖](./docs/changelog/v0.99.md) |
 | **v0.97** | 审计 A9/A10/A11 + 编排引擎重构（砍四级深度→两档拆解 + engage.md）+ bash→TS 第二波 + 概念精简 | [📖](./docs/changelog/v0.97.md) |
 | **v0.96** | README 六段式重构（373→166行）+ bash→TS 第一波 + 铁律重排 + 编排定位澄清 | [📖](./docs/changelog/v0.96.md) |
 | **v0.95** | 铁律精简 10→6（4 条移审计层）+ 目录改名 + 三源收敛 + FDE 商业模式 | [📖](./docs/changelog/v0.95.md) |
@@ -64,7 +82,7 @@
 | **v0.74** | 文档拆分去重 + verify.sh --quick + Scoring 基准线 | [📖](./docs/changelog/v0.74.md) |
 | **v0.73** | 三道闸门体系 + 编排加固 + 记忆最小闭环 + scoring 第九维 | [📖](./docs/changelog/v0.73.md) |
 | **v0.72** | README 平台能力表重构 + benchmark.sh + anti-cases | [📖](./docs/changelog/v0.72.md) |
-| **v0.7x** | 企业合规：数据保留 + task/logs 脱敏 + 审计日志 | — |
+| **v0.7x** | 企业合规：数据保留 + task/logs 脱敏 + 审计日志 | [📖](./docs/changelog/v0.75.md) |
 | **v0.6x** | 质量加固：端到端测试 + 闭环验证 + WorkBuddy 专家团共存 | — |
 | **v0.5x** | 企业级能力：install.sh/uninstall.sh + 离线模式 + 编排 fallback | — |
 | **v0.1~v0.4** | 核心约束：4 底线 + 6 铁律 + Loop Agent + 三层闸门 + 渐进减薄 + 反思区 + scoring | — |
@@ -85,8 +103,9 @@
 
 **v0.98**：产品架构重组（lite 删除 + think.md 自动生成 + FDE 从 Skill 改为根目录文档）+ OpenClaw 重定义为必装引擎 + 审计闭环六步 + GitHub Action 模板 + install.sh 模块化
 **v0.99**：两份独立审查全面修复 + Skill 全部 ≤90 行 + 文档预算 4849≤5000 + 放弃条件引入 + bus factor 声明 + GitHub Action 模板 + MCP Server 实现 + verify.sh → TS 重构（sofagent-verify 第 6 个 bin）。FDE 端到端验证推迟 v1.0。
+**v0.99.1**：审查跟进——OpenClaw 叙事重写（两层架构 / 审计层平台无关 / 编排层 FDE 工具包）+ P0 代码清理（手写 YAML→js-yaml、MCP Server 拆分为 @sofagent/mcp）+ 局限声明修正 + 案例模板
 
-### v1.0 — 正式版：FDE 底座
+### v1.0 — 正式版：FDE 工具包
 
 三条主线：
 1. FDE 引导逻辑 → 自动产出 workflow.yaml + 部署方案书
@@ -99,13 +118,13 @@
 | 2 | 审计工具实现完整六步闭环 | ⏳ 需端到端验证 |
 | 3 | Harness 层上下文成本 ≤ 窗口 5% | ✅ ~2.5% |
 | 4 | OpenClaw + AO compose 全链路跑通 | ⏳ 未端到端验证 |
-| 5 | MCP server + webhook 跑通 | ⏳ MCP Server 已实现（v0.99），webhook 推送待端到端验证 |
-| 6 | daemon 稳定运行 ≥ 30 天 | 🔴 价值重评估 |
+| 5 | MCP server + webhook 跑通 | ⏳ MCP Server 已拆分为 @sofagent/mcp（v0.99.1），webhook 推送待端到端验证 |
+| 6 | daemon 稳定运行 ≥ 30 天 | ❌ 移除 |
 | 7 | ≥ 1 外部用户 + 5 个一次性测试 | ❌ 0 外部用户 |
 | 8 | install → verify → 首次任务通过率 ≥ 90% | ⏳ 未测 |
 | 9 | 能力矩阵五平台实测 | ⏳ 部分完成 |
 
-**硬性截止日期**：2026-09-30。如果 #6/#7 不达标 → v1.0 降为「审计工具技术预览版」。
+**硬性截止日期**：2026-09-30。如果 #7 不达标 → v1.0 降为「审计工具技术预览版」。
 
 ### v1.x — 发布后
 
@@ -118,6 +137,10 @@
 | 记忆架构升级 | Ledger-Views-Policy 三层模型 |
 | Windows 支持 | PowerShell 平行实现（待需求验证） |
 | 分布式反思同步 | Gossip 协议 + 信任加权投票 |
+| bash 代码债清理 | ~450 行重复代码 bash→TS 迁移完成 |
+| 英文文档扩展 | HANDBOOK/DEVELOPMENT/ARCHITECTURE 英文翻译 |
+| ARCHITECTURE 可读性 | 降低外部引用密度，让新人 10 分钟能看懂
+| 恢复路径结构化 | think.md 记录失败但没有结构化恢复机制，等 JSONL 落地
 
 ### v2.x — 多设备协同（规划中）
 

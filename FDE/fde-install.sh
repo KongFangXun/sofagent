@@ -25,6 +25,11 @@ PLATFORM="${1:-openclaw}"
 PLATFORM="${PLATFORM#--platform }"
 PLATFORM="${PLATFORM#--platform=}"
 
+# Fix: if $2 is provided and $1 was --platform, use $2
+if [ "$PLATFORM" = "--platform" ] && [ -n "${2:-}" ]; then
+  PLATFORM="$2"
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 

@@ -1,8 +1,8 @@
 # sofagent Handbook
 
-> **FDE 底座——面向中小企业（SMB）和一人公司（OPC）。部署专家用标准化流程搭建 workflow AI 节点，实施后审计引擎 + 编排引擎托管，企业自己管得住、成本可核算、效果可量化。**
+> **FDE 工具包——面向中小企业（SMB）和一人公司（OPC）。约束底座管 Agent 行为，审计引擎盯代码变更。装上按十步流程走，自己做自己的 FDE。**
 >
-> v0.99 · 2026-06-29 · 孔放勋
+> v0.99.1 · 2026-07-01 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -51,12 +51,7 @@ git clone https://github.com/KongFangXun/sofagent.git
 cd sofagent && bash sofagent/scripts/install.sh
 ```
 
-**精简模式（30 秒，仅宪法层）**：`--lite` 参数只装 4 底线 + 6 铁律，不装 daemon、编排引擎、审计工具。
-
-```bash
-clawhub skill install KongFangXun/sofagent    # ClawHub
-skillhub install sofagent                     # SkillHub
-```
+> 只想加 Agent 行为约束？不需要装整个 sofagent——把 4 底线 + 6 铁律复制进你的 Agent 设置就行，详见 [README §快速体验](./README.md#快速体验)。
 
 **前置依赖**：
 
@@ -237,6 +232,10 @@ Agent 先判断任务复杂度：
 
 ## 场景五：FDE 部署
 
+> ⚠️ **成熟度**：FDE 部署流程我们自己公司里在用，但还没有打磨到「装完就能跑」的程度。审计引擎是稳定的，编排和部署这块如果你试了遇到问题，开 Issue 告诉我们。
+>
+> **为什么要自己做 FDE**：中小企业没有预算请外部顾问，也不需要。装上工具包，Agent 带你走十步流程梳理 workflow、识别 AI 节点，然后找一台闲置设备装 sofagent——上面跑的就是 harness 层，约束底座 + 审计引擎管着上面所有 AI 节点。从头到尾自己搞定，不用请人。
+
 > FDE = Forward Deployed Engineer（前向部署工程师）。完整十步流程见 [FDE/FDE.md](./FDE/FDE.md)。建议装 [sofagent-fde Skill](./FDE/SKILL.md)——Agent 自动加载 FDE 工作台。
 
 编排引擎（`engage.md`）是 FDE 部署的核心——🔴 复杂任务 + FDE 场景才点火：
@@ -277,4 +276,4 @@ sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 > 大半年 OpenClaw 实战笔记。如有更好的用法，欢迎开 Issue。
 >
-> *v0.99，2026 年 6 月 29 日*
+> *v0.99.1，2026 年 7 月 1 日*

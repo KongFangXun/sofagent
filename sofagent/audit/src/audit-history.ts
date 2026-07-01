@@ -11,7 +11,7 @@
 // ============================================================
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { loadEnvConfig } from './config-loader';
 import type { RuleCheck } from './rules/types';
 
@@ -53,7 +53,7 @@ export function getHistoryFilePath(dataDir?: string): string {
  */
 export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void {
   const filePath = getHistoryFilePath(dataDir);
-  const dir = join(filePath, '..');
+  const dir = dirname(filePath);
 
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });

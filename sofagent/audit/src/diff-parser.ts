@@ -37,6 +37,25 @@ export function isInGitRepo(): boolean {
 }
 
 /**
+ * 检测 git 命令输出是否为帮助文本（而非正常的 diff 输出）
+ * 当 git diff 收到无效参数时可能输出帮助文本到 stdout
+ *
+ * 启发式检测：
+ * - 以 "usage:" 开头（英文帮助）
+ * - 以 "用法：" 开头（中文帮助）
+ * - 第一行包含 "git diff"
+ */
+function isGitHelpText(output: string): boolean {
+  const firstLine = output.split('\n')[0]?.toLowerCase() ?? '';
+  return (
+    firstLine.startsWith('usage:') ||
+    firstLine.startsWith('用法：') ||
+    firstLine.startsWith('用法:') ||
+    (firstLine.includes('git diff') && !firstLine.includes('\t'))
+  );
+}
+
+/**
  * 解析 git diff 指定范围的文件变更
  */
 export function parseDiff(range: string): DiffFile[] {
@@ -63,7 +82,15 @@ export function parseDiff(range: string): DiffFile[] {
       maxBuffer: 10 * 1024 * 1024,
     });
 
-    const lines = output.trim().split('\n').filter(Boolean);
+    // 检测 git 帮助文本：当 range 无效时，git diff 可能输出帮助文本而非 diff
+    // 帮助文本以 "usage:" 开头或包含 "git diff" 帮助内容
+    const trimmedOutput = output.trim();
+    if (trimmedOutput.length > 0 && isGitHelpText(trimmedOutput)) {
+      console.error(`错误：git diff "${range}" 返回了帮助文本而非差异输出。请检查 diff range 参数是否有效。`);
+      return files;
+    }
+
+    const lines = trimmedOutput.split('\n').filter(Boolean);
 
     for (const line of lines) {
       const parts = line.split('\t');

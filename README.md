@@ -3,11 +3,12 @@
 中文 | [English](README.en.md)
 
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
-[![License](https://img.shields.io/badge/📄license-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/🏷️version-v0.99-16B8F3)](./HANDBOOK.md)
-[![定位](https://img.shields.io/badge/🎯定位-FDE底座_+_审计引擎-16B8F3)](#一句话定位)
-[![OpenClaw](https://img.shields.io/badge/🦞平台-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
-[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9FStarred)](https://github.com/KongFangXun/sofagent/stargazers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
+[![Version](https://img.shields.io/badge/Version-v0.99.1-16B8F3)](./HANDBOOK.md)
+[![FDE工具包](https://img.shields.io/badge/FDE工具包-16B8F3)](#一句话定位)
+[![约束底座 + 审计引擎](https://img.shields.io/badge/约束底座_+_审计引擎-16B8F3)](#一句话定位)
+[![OpenClaw](https://img.shields.io/badge/Platform-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
+[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&color=F1C40F&label=%F0%9F%8C%9F_Starred)](https://github.com/KongFangXun/sofagent/stargazers)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -19,7 +20,9 @@
 
 ## 一句话定位
 
-FDE 底座 —— 面向中小企业（SMB）和一人公司（OPC）。部署专家用标准化流程搭建 workflow AI 节点，实施后审计引擎 + 编排引擎托管，企业自己管得住、成本可核算、效果可量化。
+面向中小企业（SMB）和一人公司（OPC）的开源 FDE 工具包——约束底座管 Agent 行为，审计引擎盯代码变更。自己就能梳理 workflow、搭建 AI 节点。
+
+> **成熟度说明**：sofagent 是我们自己公司（投资/科技/电商）里跑了一个多月的东西，现在开源出来。审计引擎（sofagent-audit）日常使用稳定可靠，406 个自动化测试全绿。编排引擎和 FDE 部署流程我们自己用着没问题，但还没有打磨到「别人装上就能跑」的程度。如果你愿意试，我们很想知道你在什么场景下用、遇到了什么问题。
 
 > **90/10 法则**：不要和 AI 模型竞争它们已经擅长的 90%（代码生成）。真正的价值在没人敢跳过的 10%——验证、审计、问责。AI 模型越强，这 10% 就越值钱。sofagent 做这 10%。
 
@@ -27,7 +30,20 @@ FDE 底座 —— 面向中小企业（SMB）和一人公司（OPC）。部署�
 
 > - ❌ 不是 AI 框架、不写 prompt
 > - ❌ 不是 Skills 商店
-> - ✅ 是 **FDE 底座 + 审计引擎**——git diff 审计兜底。OpenClaw 做后台 AI 控制节点（你用自己的 Agent 对话，OpenClaw 在后台跑编排+审计）
+> - ✅ 是 **FDE 工具包：约束底座 + 审计引擎**——git diff 审计兜底。OpenClaw 做后台 harness 层（你用自己的 Agent 对话，OpenClaw 在后台管约束+审计）
+
+### 两层架构
+
+sofagent 分两层——审计层平台无关，编排层跑在 OpenClaw 上：
+
+| 层 | 做什么 | 依赖什么 |
+|------|------|------|
+| **审计层**（sofagent-audit） | 审计 Agent 写的代码——git diff 硬证据，11 条规则，pre-commit hook 闸门 | 只要你的代码在 git 仓库里，就能用。不挑 Agent，不挑平台 |
+| **编排层** | 跑 FDE 部署的 workflow AI 节点，自动拆任务、记反思、管 think.md | OpenClaw（FDE 的工具包，不是你的日常 Agent） |
+
+OpenClaw 不是你要"用"的东西——它装在设备上，在后台跑 FDE 的 workflow 节点。你和你的团队用什么 Agent 写代码、提代码，跟 OpenClaw 无关。sofagent-audit 通过 pre-commit hook 审计所有 Agent 的产出，不管是谁写的。
+
+> 两种使用模式的完整说明见 [LIMITATIONS.md §平台依赖](./LIMITATIONS.md#平台依赖)。
 
 ---
 
@@ -106,24 +122,29 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
 ### 节点内部怎么跑
 
 ```
-    审计引擎（提交时）                    编排引擎（运行时）
-         │                                     │
-         ├─ git diff 扫描                      ├─ SKILL.md 加载（宪法内联）
-         ├─ 规则检查 A1-A11                    ├─ 复杂度预判
-         │                                     │   ├─ 🟢🟡 简单 → 直接处理
-         │                                     │   └─ 🔴 复杂 → 编排引擎点火
-         │                                     │         ├─ 智能拆解
-         │                                     │         └─ Loop 检查
-         │                                     └─ 闭环反思
-         │                                          │
-         └────────────── think.md ─────────────────┘
-                  （审计引擎写 / 编排引擎读）
+    审计引擎（每次提交）                 编排引擎（FDE 进场 + 定期重测）
+         │                                       │
+         ├─ git diff 扫描                        ├─ FDE 进场：一次性生成 workflow.yaml
+         ├─ 规则检查 A1-A11                      │       └─ 智能拆解 → 生成编排方案
+         │                                       │
+         │                                       ├─ 生产运行：AI 节点按 workflow 执行
+         │                                       │       ├─ 🔄 自动执行
+         │                                       │       └─ ⚡ AI 领航员辅助
+         │                                       │
+         │                                       ├─ 定期 A/B 重测（每 N 个 session）
+         │                                       │       ├─ 编排引擎重出一版新方案
+         │                                       │       └─ sofagent-orchestrate-compare 对比
+         │                                       │              ├─ 新方案胜出 → promote
+         │                                       │              └─ 旧方案更好 → 保留
+         │                                       │
+         └────────────── think.md ─────────────────────┘
+              （审计引擎写 / 编排引擎读 / A/B 结果写入 orchestrator/）
 ```
 
-| 引擎 | 做什么 | 依赖 Agent |
-|------|------|:--:|
-| **审计引擎** | git diff → 规则检查 → 自动生成 think.md | ❌ 不依赖 |
-| **编排引擎** | 复杂任务拆解 + Loop 检查 + 闭环反思 | ✅ 依赖 |
+| 引擎 | 做什么 | 依赖 Agent | 触发方式 |
+|------|------|:--:|------|
+| **审计引擎** | git diff → 规则检查 → 自动生成 think.md | ❌ | 每次 git commit |
+| **编排引擎** | FDE 进场一次性生成 workflow + 定期 A/B 重优化 | ✅ | FDE 部署时 / 定时触发 |
 
 > 约束自己定，模板和 Skills 从社区取。已知局限见 [LIMITATIONS.md](./LIMITATIONS.md)。
 
@@ -131,9 +152,9 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
 
 ## FDE：从工作流到 AI 节点
 
-### FDE 部署场景
+Forward Deployed Engineer（前向部署工程师）进驻企业后，做三件事：梳理工作流 → 识别 AI 可切入节点 → 部署 Agent。sofagent 是部署后约束 Agent 行为的那一层——Agent 改了代码你能看到，跳过验证审计能发现，think.md 持续沉淀反思。
 
-Forward Deployed Engineer（前向部署工程师）进驻企业后，做三件事：梳理工作流 → 识别 AI 可切入节点 → 部署 Agent。sofagent 是部署后约束 Agent 行为的那一层——Agent 改了代码你能看到，跳过验证审计能发现，节点持续运行有 daemon 盯着。
+**中小企业不需要请顾问——自己就能做 FDE。** 装上 FDE 工具包，Agent 带着你按十步流程走完梳理和识别，然后找一台闲置设备（旧电脑、服务器、Nas 都行），把 sofagent 装上去——这台闲置设备上跑的是 sofagent 的 harness 层——约束底座管着 Agent 行为，审计引擎盯着代码变更。之上是你梳理出来的一个个 AI 节点：🔄 自动执行的跑在上面，⚡ 辅助员工的在你同事手边。从头到尾，不需要一个外部顾问。
 
 企业搭 AI 中台，真正难的是部署后的事——谁盯着 Agent 不乱改代码、谁保证产出质量、谁把经验留下来。sofagent 做这三件：
 

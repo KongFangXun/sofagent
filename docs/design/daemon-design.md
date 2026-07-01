@@ -1,7 +1,7 @@
 # daemon MVP · 架构设计
 
-> sofagent v0.99 · sofagent 的第一个 session 外触发器——让约束从「Agent 自觉」升级为「外部进程强制」。
-> v0.99 · 更新于 2026-07-01
+> sofagent v0.99.1 · sofagent 的第一个 session 外触发器——让约束从「Agent 自觉」升级为「外部进程强制」。
+> v0.99.1 · 更新于 2026-07-01
 
 ---
 
@@ -60,4 +60,4 @@ daemon 不是靠文件存在判断合规——它实际运行 verify.sh 做验�
 
 ## 当前局限
 
-daemon 只做文件监控 + 写 notice，功能比 cron job 简单。v0.99 ROADMAP 准入条件 #6 已做价值重评估——如果 daemon 仍无新增用户价值，该条准入条件降级或删除。**不要为了凑准入条件而维护没有价值的东西。**
+daemon 只做文件监控 + 写 notice，功能比 cron job 简单。v1.0 ROADMAP 准入条件 #6 已移除（❌）——daemon 从未获得新增用户价值，维护它只会偏离核心目标。**不要为了凑准入条件而维护没有价值的东西。**

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // mcp-server.ts · MCP Server (Model Context Protocol)
-// v0.99: 实现 JSON-RPC 2.0 over stdio，暴露审计能力给 MCP Client
+// v0.99.1: MCP Server 已拆分为 @sofagent/mcp 独立包。本文件不再参与编译。
 //
 // 协议：https://spec.modelcontextprotocol.io/
 // 传输：stdio（stdin/stdout，每行一个 JSON-RPC 消息）
@@ -169,7 +169,10 @@ class McpServer {
 
   private checkInitialized(id: number | string | null): boolean {
     if (!this.initialized) {
-      this.sendError(id, -32002, 'Server not initialized. Call "initialize" first.');
+      // JSON-RPC 2.0: 通知消息（id 为 null）不应收到响应
+      if (id !== null) {
+        this.sendError(id, -32002, 'Server not initialized. Call "initialize" first.');
+      }
       return false;
     }
     return true;
@@ -179,6 +182,11 @@ class McpServer {
   // initialize
   // ============================================================
   private handleInitialize(id: number | string | null, _params: unknown): void {
+    // 幂等守卫：如果已经初始化过，不发送重复响应
+    if (this.initialized) {
+      process.stderr.write(`[${SERVER_NAME}] Already initialized, ignoring duplicate initialize request\n`);
+      return;
+    }
     this.initialized = true;
     this.sendResult(id, {
       protocolVersion: PROTOCOL_VERSION,

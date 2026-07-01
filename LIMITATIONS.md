@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v0.99 · 2026-06-29 · 孔放勋
+> v0.99.1 · 2026-07-01 · 孔放勋
 
 ---
 
@@ -100,18 +100,50 @@ scoring.md + think.md 在循环中持续自我修订，会引入**经验漂移**
 
 核心约束（SKILL.md / fde.md）是纯 Markdown，任何能读文件的平台都能加载。但深度集成（Hook 注入、session 隔离、sub-agent 管理）只有 OpenClaw 能做到——不是我们选择独占，是其他平台不开源到这个程度。
 
+#### OpenClaw 的两种角色
+
+OpenClaw 不是用户的 Agent。它在两种场景下出现：
+
+**模式 A：FDE 后台节点（sofagent 做 sub-agent）**
+
+FDE 日常用自己顺手的 Agent（WorkBuddy / Codex / Cursor）。当需要跑 FDE workflow 节点（编排任务、审计分析）时，Agent 后台调用 OpenClaw 节点。OpenClaw 跑完后把结果返回，FDE 的 Agent 继续和人沟通。FDE 全程看不到 OpenClaw 的 UI——它是一个后台 AI 节点。
+
+```
+FDE ↔ 自己的 Agent（任意）→ 调用 → OpenClaw 节点（装了 sofagent）
+                                              ↓
+                                    拆任务、记反思、审计变更
+```
+
+**模式 B：企业设备上的 FDE 工具包（企业 Agent 做租户）**
+
+FDE 帮企业部署完后，企业闲置设备上装 OpenClaw + sofagent。这台设备上跑着 sofagent 的 harness 层：
+- OpenClaw 跑 FDE 部署的 workflow 节点（🔄 自动执行 + ⚡ 强化岗位）
+- 企业自己采购的 Agent 也装在这台设备上
+- sofagent-audit 通过 pre-commit hook 审计这台设备上所有 git 仓库的提交
+
+关键：企业 Agent 不跑在 OpenClaw session 里。它们各自独立运行，各自用自己的 git 仓库。sofagent-audit 通过文件系统层的 pre-commit hook 审计它们的产出——Agent 完全不感知 OpenClaw 的存在，就像 App 不感知操作系统的安全模块一样。
+
+```
+设备（无头盒子 / 服务器 / 老旧电脑）
+  ├─ OpenClaw（编排层 — 跑 workflow 节点，FDE 部署的）
+  │     └─ sofagent 编排引擎 + think.md 反思
+  ├─ sofagent-audit（审计层 — pre-commit hook，对设备上所有 git 仓库生效）
+  └─ 企业 Agent（任意 — WorkBuddy / Codex / Cursor，各自独立运行）
+        └─ git commit → hook 触发 → sofagent-audit 审计
+```
+
+OpenClaw 是地基，企业 Agent 是住在上面的租户，sofagent 是物业管理。租户爱干嘛干嘛，物业管的是楼的安全。
+
+**模式 B 的技术路径**：企业 Agent 不跑在 OpenClaw session 里。OpenClaw 不拦截 Agent 的 API 调用。不提供 Docker。sofagent 对企业 Agent 的审计走的是**文件系统层 + git hook**——Agent 在设备上正常安装、正常运行，代码仓库在设备文件系统上，`git commit` 时 pre-commit hook 自动触发 sofagent-audit。不需要"控制"Agent，不需要 Agent 配合，只需要 hook 它们的 git 仓库。
+
+> 以下表格说的是"哪些能力在哪个层生效"——不是"哪些 Agent 被支持"。审计层对所有 Agent 一视同仁（只看 git diff），编排层只在 OpenClaw 上生效。
+
 | 能力 | OpenClaw | WorkBuddy | Codex / Hermes / Claude Code |
 |------|:--:|:--:|:--:|
 | 核心约束 | ✅ Hook注入 | ✅ SKILL加载 | ⚠️ 种子指令 |
 | Skill 自启 | ✅ | ✅ | ❌ |
 | 加载链脚本 | ✅ 内部 hook | ❌ Agent Read替代 | ❌ |
 | 断路器 | ✅ loopDetection | ❌ | ❌ |
-
-> **两种使用模式**：
-> - **FDE 自己用**：用习惯的 Agent 对话，OpenClaw 在后台做 AI 控制节点（编排+审计），FDE 看不到 OpenClaw UI
-> - **企业部署**：闲置设备跑 OpenClaw + sofagent = AI 控制底座，企业自己采购的 Agent 装在同一设备上受约束
->
-> "兼容"不等于"支持"。核心约束所有平台可读，深度集成只在 OpenClaw 上生效。
 
 ---
 
@@ -138,6 +170,38 @@ SKILL.md 的回复前闸门和闭合清单由 Agent 自觉执行——没有 Hoo
 
 ---
 
+### 审计闭环成熟度
+
+sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARCHITECTURE.md](./ARCHITECTURE.md)），但各步骤的成熟度不同：
+
+| 步骤 | 成熟度 | 说明 |
+|------|:--:|------|
+| 1. git diff 扫描 | ✅ 生产可用 | 纯 git 操作，确定性输出 |
+| 2. 规则检查 A1-A11 | ✅ 生产可用 | 11 条规则全部有测试覆盖 |
+| 3. 审计报告生成 | ✅ 生产可用 | JSON/text/table 三种格式 |
+| 4. think.md 自动更新 | ⚠️ 实验性 | LLM 生成，质量依赖模型 |
+| 5. MCP 推送 | ⚠️ 实验性 | MCP Server 已实现，端到端链路未验证 |
+| 6. 闭环反思 | ❌ 技术预览 | 反思评分是 LLM 自评，评估者与执行者不分离 |
+
+审计闭环的核心价值在步骤 1-3（硬证据 + 规则判定），步骤 4-6 是增量增强。企业用户应优先依赖 git diff 审计结果，反思和推送作为辅助参考。
+
+---
+
+### 测试覆盖范围
+
+当前 406 个测试全绿，但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+
+| 模块 | 测试状态 | 风险 |
+|------|:--:|------|
+| install.sh | 无独立测试 | 跨平台行为变化无法自动捕获 |
+| daemon 脚本 | 无独立测试 | launchd/systemd 注册失败无早期预警 |
+| MCP Server | 仅手动验证 | JSON-RPC 协议边界情况未覆盖 |
+| verify.sh/verify.ts | 部分覆盖 | 50 项检查的逻辑分支未穷举 |
+
+缓解：install.sh 和 verify.sh 有 verify.sh 50 项检查作为 smoke test，审计引擎核心逻辑已有全面测试。上述模块的测试缺口不会影响审计结果的可靠性。
+
+---
+
 ### 审计工具信任模型：Agent 自我报告
 
 sofagent-audit 的全部证据来源是 Agent 自己写的 `.sofagent/task/logs/*.md` 文件。审计工具的可靠性上限 = Agent 日志的真实性。v0.94 起提供 `--silent` 模式：只跑纯 git-diff 规则，不依赖 Agent 日志。
@@ -155,10 +219,31 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `.sofagent/task/logs/
 
 ---
 
+### 编排引擎稳定性
+
+编排引擎依赖 `engage.md` + `ao compose`（agency-orchestrator）做任务拆解——本质上是 prompt 驱动，没有确定性 fallback。编排效果完全依赖模型质量：模型换了或者降级了，任务拆解和 Loop 检查就可能失效。Agent 变弱，编排跟着变弱；如果 agency-orchestrator 停止维护或模型 API 不可用，编排层直接不可用。
+
+缓解：审计层（git diff）不依赖编排层，独立工作。编排层是可选增强——即使编排不可用，核心约束和审计仍然生效。最终解决方案是 v2.x 协同层的确定性编排引擎。
+
+---
+
+### FDE 端到端验证状态
+
+FDE 完整十步部署流程（[FDE/FDE.md](./FDE/FDE.md)）已在作者自有企业（投资/科技/电商等公司）中实际部署使用。编排引擎、daemon 持续监控、设备间 workflow 节点联动均在自有环境中运行。
+
+但以下两点影响外部信任：
+
+1. **缺乏第三方独立验证**：所有部署案例均为作者自有企业，没有外部用户或客户的独立验证数据。外部审查者只能看到「作者说它工作了」，看不到「别人验证过它工作了」。
+2. **缺乏公开案例**：没有可公开引用的 case study 文档——包括部署规模、使用的具体功能、遇到的问题、量化效果。已有 [case study 模板](./docs/evidence/case-study-template.md)，等待真实用户填写。
+
+缓解：如果你在真实环境中使用了 sofagent，欢迎提交 case study——这比任何内部测试都更有说服力。模板在 `docs/evidence/case-study-template.md`。
+
+---
+
 ### 组织记忆维护风险 / 模型依赖维护风险
 
 - **组织记忆**：选了共享文件路线（透明可审计），但规则文件不会随使用自动进化，需人工维护
-- **模型依赖**：代码由 AI 模型生成，如果 DeepSeek V4 Pro 或 GLM-5.2 停止服务，项目失去修复 bug 的能力。未来方向：bus factor ≥ 2 后引入多个模型 fallback
+- **模型依赖**：代码由 AI 模型生成，如果 DeepSeek V4 Pro 或 GLM-5.2 停止服务，项目失去修复 bug 的能力。当前 bus factor = 1（唯一维护者），且模型依赖构成了比单人维护更深层的结构性风险——维护者本人没有独立写出这些代码的能力，必须依赖模型。未来方向：bus factor ≥ 2 后引入多个模型 fallback
 
 ---
 

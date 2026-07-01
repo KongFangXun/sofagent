@@ -17,5 +17,5 @@
     "moduleResolution": "node"
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "tests", "src/**/*.test.ts", "src/measure-detection.ts"]
+  "exclude": ["node_modules", "dist", "tests", "src/**/*.test.ts", "src/mcp-server.ts", "src/test-utils.ts"]
 }

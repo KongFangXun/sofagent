@@ -31,8 +31,9 @@
 #
 # 版本号格式说明:
 #   - package.json 用 3 段格式（0.94.0）
-#   - 其余位置用 2 段格式（0.94）
-#   - check 时取 SSOT 前 2 段与各位置比对
+#   - .ts/.sh/.ps1 源码常量用 3 段格式（0.94.0）——check 时与 SSOT 完整 3 段比对
+#   - MD 版本头 / SKILL.md frontmatter 用 2 段格式（0.94）——check 时取 SSOT 前 2 段比对
+#   - README badge 用 2 段格式
 # ============================================================
 
 set -uo pipefail
@@ -75,7 +76,7 @@ fi
 SSOT_2SEG=$(echo "${SSOT_VERSION}" | cut -d. -f1-2)
 
 echo -e "  ${BOLD}SSOT (package.json):${NC}  ${SSOT_VERSION}"
-echo -e "  ${BOLD}期望版本 (2 段):${NC}     ${SSOT_2SEG}"
+echo -e "  ${BOLD}期望版本 (完整):${NC}   ${SSOT_VERSION}"
 echo -e "  ${BOLD}项目根:${NC}             ${PROJECT_ROOT}"
 echo ""
 
@@ -111,8 +112,8 @@ while IFS= read -r ts; do
     continue
   fi
   found_ver=$(extract_version "${match}")
-  if [[ "${found_ver}" != "${SSOT_2SEG}" ]]; then
-    report_error "${ts}" "${found_ver}" "${SSOT_2SEG}"
+  if [[ "${found_ver}" != "${SSOT_VERSION}" ]]; then
+    report_error "${ts}" "${found_ver}" "${SSOT_VERSION}"
   else
     report_ok "${ts}" "${found_ver}"
   fi
@@ -131,8 +132,8 @@ else
   index_ok=true
   while IFS= read -r line; do
     found_ver=$(extract_version "${line}")
-    if [[ -n "${found_ver}" ]] && [[ "${found_ver}" != "${SSOT_2SEG}" ]]; then
-      report_error "${INDEX_TS}" "v${found_ver}" "v${SSOT_2SEG}"
+    if [[ -n "${found_ver}" ]] && [[ "${found_ver}" != "${SSOT_VERSION}" ]]; then
+      report_error "${INDEX_TS}" "v${found_ver}" "v${SSOT_VERSION}"
       index_ok=false
     fi
   done < <(grep -nE 'v[0-9]+\.[0-9]+' "${INDEX_TS}")
@@ -160,8 +161,8 @@ else
       continue
     fi
     found_ver=$(extract_version "${match}")
-    if [[ "${found_ver}" != "${SSOT_2SEG}" ]]; then
-      report_error "${sh}" "${found_ver}" "${SSOT_2SEG}"
+    if [[ "${found_ver}" != "${SSOT_VERSION}" ]]; then
+      report_error "${sh}" "${found_ver}" "${SSOT_VERSION}"
     else
       report_ok "$(basename "${sh}")" "${found_ver}"
     fi
@@ -186,8 +187,8 @@ else
     fi
     ps1_found_any=true
     found_ver=$(extract_version "${match}")
-    if [[ "${found_ver}" != "${SSOT_2SEG}" ]]; then
-      report_error "${ps1}" "${found_ver}" "${SSOT_2SEG}"
+    if [[ "${found_ver}" != "${SSOT_VERSION}" ]]; then
+      report_error "${ps1}" "${found_ver}" "${SSOT_VERSION}"
     else
       report_ok "$(basename "${ps1}")" "${found_ver}"
     fi
@@ -206,14 +207,14 @@ md_checked=0
 md_mismatch=0
 while IFS= read -r md; do
   # 只匹配版本头: "> vX.Y · " 格式（· 是版本头分隔符）
-  match=$(grep -m3 -nE '^> v[0-9]+\.[0-9]+ · ' "${md}" | head -1)
+  match=$(grep -m3 -nE '^> v[0-9]+\.[0-9]+(\.[0-9]+)? · ' "${md}" | head -1)
   if [[ -z "${match}" ]]; then
     # 没有 · 分隔符的版本头——不是版本头格式，跳过
     continue
   fi
   found_ver=$(extract_version "${match}")
-  if [[ "${found_ver}" != "${SSOT_2SEG}" ]]; then
-    report_error "${md}" "> v${found_ver}" "> v${SSOT_2SEG}"
+  if [[ "${found_ver}" != "${SSOT_VERSION}" ]]; then
+    report_error "${md}" "> v${found_ver}" "> v${SSOT_VERSION}"
     md_mismatch=$((md_mismatch + 1))
   else
     md_checked=$((md_checked + 1))
@@ -286,14 +287,14 @@ echo ""
 # ── 汇总 ──────────────────────────────────────────────────────
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then
-  echo -e "${GREEN}${BOLD}  ✓ 全部一致！版本号 = ${SSOT_2SEG}${NC}"
+  echo -e "${GREEN}${BOLD}  ✓ 全部一致！版本号 = ${SSOT_VERSION}${NC}"
   echo -e "  检查通过: ${CHECKS} 项"
   echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
   exit 0
 else
   echo -e "${RED}${BOLD}  ✗ 发现 ${ERRORS} 处不一致！${NC}"
-  echo -e "  期望版本: ${SSOT_2SEG} (SSOT: ${SSOT_VERSION})"
-  echo -e "  修复: ./tools/bump-version.sh <旧版本> ${SSOT_2SEG}"
+  echo -e "  期望版本: ${SSOT_VERSION} (SSOT: ${SSOT_VERSION})"
+  echo -e "  修复: ./tools/bump-version.sh <旧版本> ${SSOT_VERSION}"
   echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
   exit 1
 fi
