@@ -14,7 +14,7 @@
 >
 > **范围声明**：sofagent 覆盖 Agent 质量层（代码纪律 + 审计 + 经验沉淀）。不覆盖运维层（监控 / 告警 / 重启 / 日志轮转）。
 >
-> **为什么 FDE 重要**：组织推进 AI 化时，真正的痛点不是缺少 AI 聊天入口，而是缺少能把历史逻辑、协作关联方、共享上下文和组织记忆串联起来的**公共协作环境**。FDE 部署的不是单个 AI 工具——是整个组织的 Agent 协作环境。sofagent 是这个协作环境的纪律层。
+> **为什么 FDE 重要**：组织推进 AI 化时，真正的痛点不是缺少 AI 聊天入口，而是缺少能把历史逻辑、协作关联方、共享上下文和组织记忆串联起来的**公共协作环境**。FDE 部署的不是单个 AI 工具——是整个组织的 Agent 协作环境。sofagent 是这个协作环境里约束 Agent 行为的那一层。
 
 > **状态**：FDE 十步流程框架已完成，审计引擎已可用。端到端验证计划在 v1.0 前完成。详见 [LIMITATIONS.md](./LIMITATIONS.md)。
 
@@ -193,7 +193,7 @@ nodes:
 
 ## §九 商业模式
 
-纪律层开源免费（MIT），企业增值在设备协同和定制服务。详见 [ROADMAP.md](../ROADMAP.md#v1x--发布后)。
+sofagent 开源免费（MIT），企业增值在设备协同和定制服务。详见 [ROADMAP.md](../ROADMAP.md#v1x--发布后)。
 
 ---
 
@@ -235,4 +235,4 @@ nodes:
 
 ## 参考资源
 
-workflow 模板参考：[n8n-workflows](https://github.com/Zie619/n8n-workflows)（流程管道层）。Agent 行为约束、验证门控、反思闭环由 sofagent 纪律层保证。
+workflow 模板参考：[n8n-workflows](https://github.com/Zie619/n8n-workflows)（流程管道层）。Agent 行为约束、验证门控、反思闭环由 sofagent 保证。

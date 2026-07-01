@@ -42,7 +42,7 @@
 
 ## 🔄 第三方复现
 
-sofagent 的纪律层增量效果需要独立验证，不能只靠作者自己跑的数据。
+sofagent 的约束效果的增量数据需要独立验证，不能只靠作者自己跑的数据。
 
 **复现指南**：[docs/evidence/benchmark/reproduction-guide.md](./docs/evidence/benchmark/reproduction-guide.md)
 
