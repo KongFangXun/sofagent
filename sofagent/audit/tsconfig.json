@@ -17,5 +17,5 @@
     "moduleResolution": "node"
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "tests", "src/**/*.test.ts", "src/_archive/**", "src/mcp-push-poc.ts", "src/test-utils.ts"]
+  "exclude": ["node_modules", "dist", "tests", "src/**/*.test.ts", "src/_archive/**", "src/test-utils.ts"]
 }

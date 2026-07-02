@@ -14,12 +14,12 @@ import { execFileSync } from 'child_process';
 import { existsSync, readdirSync, readFileSync, statSync, mkdirSync, writeFileSync, copyFileSync, renameSync, rmSync } from 'fs';
 import { join, resolve } from 'path';
 import { createHash } from 'crypto';
+import { VERSION } from './shared/constants.js';
 
 export interface Metric { runCount: number; auditViolations: number; avgSteps: number; firstPassRate: number; }
 interface Args { current: string; candidate: string; output: string; }
 type Winner = 'Current' | 'Candidate' | '—';
 
-const VERSION = '0.99.3';
 const RED = '\x1b[0;31m'; const GREEN = '\x1b[0;32m'; const YELLOW = '\x1b[1;33m'; const BLUE = '\x1b[0;34m'; const NC = '\x1b[0m';
 const AO_TIMEOUT = 180_000;
 const AO_UTIL_TIMEOUT = 30_000;
@@ -92,13 +92,12 @@ export function extractMetrics(dir: string): Metric {
   };
 }
 
-function compare(current: number, candidate: number, lowerBetter: boolean): Winner {
-  if (current === candidate) return '—';
-  const cw = lowerBetter ? current < candidate : current > candidate;
-  return cw ? 'Current' : 'Candidate';
-}
-
 export function generateReport(curr: Metric, cand: Metric, date: string): string {
+  const compare = (current: number, candidate: number, lowerBetter: boolean): Winner => {
+    if (current === candidate) return '—';
+    const cw = lowerBetter ? current < candidate : current > candidate;
+    return cw ? 'Current' : 'Candidate';
+  };
   type Row = [string, string, string, Winner];
   const rows: Row[] = [
     ['Runs', String(curr.runCount), String(cand.runCount), '—'],
@@ -183,6 +182,10 @@ export function promoteWorkflow(candidateDir: string): void {
 
 const BINARY_MODE = { SPLIT: '拆', DIRECT: '不拆' } as const;
 
+function shouldSkipAoCompose(cachedYaml: string): boolean {
+  return existsSync(cachedYaml);
+}
+
 function composeTask(args: string[]): void {
   let taskDesc = '';
   let dryRun = false;
@@ -232,11 +235,10 @@ function composeTask(args: string[]): void {
     info(`历史记录: ${totalRuns} 次运行 · 成功率 ${pct}%`);
   }
 
-  let mode: string;
-  let skipAoCompose = false;
+  let mode: '拆' | '不拆';
+  let skipAoCompose = shouldSkipAoCompose(cachedYaml);
 
-  if (existsSync(cachedYaml)) {
-    skipAoCompose = true;
+  if (skipAoCompose) {
     mode = BINARY_MODE.DIRECT;
     ok(`缓存复用 — ${taskSlug}.yaml（跳编排）`);
   } else if (totalRuns >= 3 && successRuns >= totalRuns) {

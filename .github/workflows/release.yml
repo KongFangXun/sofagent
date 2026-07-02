@@ -18,6 +18,10 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci
       - run: npm test
+        # 如果 npm test 因 rollup 原生模块（@rollup/rollup-linux-x64-gnu）缺失而失败：
+        # 检查 audit/package.json 的 optionalDependencies 是否包含该包。
+        # npm 的 optional dependency 解析 bug 可能致其未安装，可选 Fallback：
+        #   npm install --no-save @rollup/rollup-linux-x64-gnu || true
       - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-// env-check.ts · FDE 环境验证 CLI — v0.99.2
+// env-check.ts · FDE 环境验证 CLI — v0.99.3
 // 用法: sofagent-env-check [--json]
 
 import { execFileSync } from 'child_process';
 import { existsSync, statfsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
+import { VERSION } from './shared/constants.js';
 
-const VERSION = '0.99.3';
 const R = '\x1b[31m', G = '\x1b[32m', Y = '\x1b[33m', N = '\x1b[0m', D = '\x1b[2m';
 const C = (ok: boolean) => ok ? `${G}✓${N}` : `${R}✗${N}`;
 

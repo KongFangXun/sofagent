@@ -34,6 +34,7 @@ import { defaultRules } from './rules';
 import type { RuleCheck } from './rules/types';
 import { pushAuditResult, type WebhookPlatform } from './webhook';
 import { generateThinkEntry } from './think-generator';
+import { VERSION } from './shared/constants.js';
 
 interface Args {
   diffRange: string;
@@ -50,7 +51,6 @@ interface Args {
   mcp: boolean;
 }
 
-const VERSION = '0.99.3';
 
 function parseArgs(argv: string[]): Args {
   const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false };

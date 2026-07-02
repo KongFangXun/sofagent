@@ -23,8 +23,7 @@ import { existsSync, readFileSync, statSync, readdirSync, type Dirent } from 'fs
 import { join } from 'path';
 import { execFileSync, spawnSync } from 'child_process';
 import { homedir } from 'os';
-
-const VERSION = '0.99.3';
+import { VERSION } from './shared/constants.js';
 
 // ── 颜色（与 index.ts 风格一致）──
 const RED = '\x1b[0;31m';

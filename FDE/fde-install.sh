@@ -34,7 +34,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}${CYAN}  sofagent FDE 工具箱 · 一键部署${NC}"
+echo -e "${BOLD}${CYAN}  sofagent FDE 工具包 · 一键部署${NC}"
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 echo -e "  平台: ${BOLD}${PLATFORM}${NC}"
 echo ""
@@ -88,7 +88,7 @@ bash "$PROJECT_ROOT/sofagent/scripts/verify.sh" --quick 2>&1 | tail -3
 echo ""
 
 echo -e "${BOLD}${GREEN}═══════════════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}${GREEN}  FDE 工具箱部署完成${NC}"
+echo -e "${BOLD}${GREEN}  FDE 工具包部署完成${NC}"
 echo -e "${BOLD}${GREEN}═══════════════════════════════════════════════════════════${NC}"
 echo ""
 if [ "$PLATFORM" = "openclaw" ]; then

@@ -24,9 +24,9 @@
 - 未经明确许可发布他人的私人信息（如物理或电子地址）
 - 其他在专业环境下可被合理认定为不当的行为
 
-## 项目特定补充
+## 项目特定规则
 
-> **对人客气，对事尖锐。** 批评设计没问题，批评人不行。别把 Issue 区变成战场——但设计决策值得被尖锐地质疑，礼貌地。
+项目行为准则补充（「对人客气，对事尖锐」等）已移至 [CONTRIBUTING.md 的行为准则小节](./CONTRIBUTING.md#行为准则)。
 
 ## 执行职责
 
@@ -47,7 +47,3 @@
 本行为准则改编自 [Contributor Covenant][homepage] 2.1 版，<https://www.contributor-covenant.org/version/2/1/code_of_conduct.html>。
 
 [homepage]: https://www.contributor-covenant.org
-
----
-
-> sofagent 是一个只懂点前端代码的 PM 用 AI 辅助生成的项目。我们尤其欢迎新人参与——你不需要会写代码，你的想法比你的代码量重要。

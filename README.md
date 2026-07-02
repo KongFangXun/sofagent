@@ -4,7 +4,7 @@
 
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-v0.99.3-16B8F3)](./HANDBOOK.md)
+[![Version](https://img.shields.io/badge/Version-v0.99.3-16B8F3)](./CHANGELOG.md)
 [![定位：FDE工具包](https://img.shields.io/badge/定位-FDE工具包-16B8F3)](#一句话定位)
 [![核心：约束底座 + 审计引擎](https://img.shields.io/badge/核心-约束底座_+_审计引擎-16B8F3)](#一句话定位)
 [![OpenClaw](https://img.shields.io/badge/🦞_引擎-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
@@ -19,7 +19,7 @@
 
 ## 一句话定位
 
-面向中小企业（SMB）和一人公司（OPC）的开源 FDE 工具包——约束底座管 Agent 行为，审计引擎盯代码变更。自己就能梳理 workflow、搭建 AI 节点。
+面向中小企业（SMB）和一人公司（OPC）的开源 FDE 工具包——约束底座管 Agent 行为，审计引擎盯代码变更。不用请顾问、不用写 prompt，装完就能跑。自己就能梳理 workflow、搭建 AI 节点。
 
 > **成熟度说明**：sofagent 是我们自己公司（投资/科技/电商）里跑了一个多月的东西，现在开源出来。审计引擎（sofagent-audit）日常使用稳定可靠，406 个自动化测试全绿。编排引擎和 FDE 部署流程我们自己用着没问题，但还没有打磨到「别人装上就能跑」的程度。如果你愿意试，我们很想知道你在什么场景下用、遇到了什么问题。
 

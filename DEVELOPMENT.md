@@ -34,7 +34,7 @@
 
 ### Skill 文件结构
 
-**1 主 Skill（`SKILL.md`）+ 8 子 Skill = 9 个 .md（不含 fde.md，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤90 行（v0.99.2 全部达标）。
+**1 主 Skill（`SKILL.md`）+ 8 子 Skill = 9 个 .md（不含 fde.md，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤90 行（v0.99.3 全部达标）。
 
 | 文件 | 何时加载 | 干什么 |
 |------|------|------|

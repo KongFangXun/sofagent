@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "rm -rf dist/ && npm run build",
     "check": "tsc --noEmit"
   },
   "keywords": [
