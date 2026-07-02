@@ -26,7 +26,7 @@ Open-source FDE toolkit for SMBs and one-person companies — harness base gover
 
 > **The 90/10 rule**: Don't compete with AI models on the 90% they already do well (code generation). The real value is in the 10% nobody dares skip — verification, audit trails, accountability. sofagent owns that 10%.
 
-> **Maturity**: sofagent is something we've been running in our own companies (investment / tech / e-commerce) for about a month, now open sourced. The audit engine (sofagent-audit) is stable in daily use, with 406 automated tests all passing. The orchestration engine and FDE deployment workflow work for us, but aren't polished to "install and go" yet. If you try it, we'd love to hear what you're using it for and what breaks.
+> **Maturity**: I built sofagent and it's been open source from day one. I switch to each new version immediately and use it in my own company — this has been going for over a month. The FDE deployment flow is already running in companies I've invested in — the audit engine (sofagent-audit) is stable in daily use with 406 automated tests all passing, and the orchestration engine works too — but the toolkit as a whole isn't polished to "install and go" yet. If you try it, I'd love to hear what you're using it for and what breaks.
 
 | Component | How it works |
 |------|------|
