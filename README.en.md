@@ -36,16 +36,17 @@ Open-source FDE toolkit for SMBs and one-person companies — harness base gover
 
 > sofagent is a constraint layer — it works when the agent reads and chooses to comply. It is not hard-coded enforcement.
 
-### Two-layer architecture
+### How it runs
 
-sofagent has two layers — the audit layer is platform-independent, the orchestration layer runs on OpenClaw:
+How the three tools run and what they depend on:
 
-| Layer | What it does | Dependencies |
+| Tool | How it runs | Dependencies |
 |------|------|------|
-| **Audit layer** (sofagent-audit) | Audits agent-written code — git diff as hard evidence, 11 rules, pre-commit hook gate | If your code is in a git repo, it works. Agent-agnostic, platform-agnostic |
-| **Orchestration layer** | Runs FDE-deployed workflow AI nodes — auto task decomposition, reflection recording, think.md management | OpenClaw (FDE toolkit, not your daily agent) |
+| **Harness base** | Pure MD rule files, auto-loaded into the agent's context on startup | None — just install |
+| **Audit engine** | Install globally via npm, attach to git pre-commit hook, runs on every commit | Git repo — agent-agnostic, platform-agnostic |
+| **Orchestration engine** | Runs FDE-deployed workflow AI nodes — auto task decomposition, reflection recording, think.md management | OpenClaw (installed on a spare device, runs FDE nodes in the background — not your daily agent) |
 
-OpenClaw is not something you "use" — it runs on the device, handling FDE workflow nodes in the background. You and your team use whatever agent you like to write and commit code. sofagent-audit audits all agent output via pre-commit hooks — regardless of who wrote it.
+OpenClaw is not something you "use" — it runs on the device, handling FDE workflow nodes in the background. The harness base and audit engine do not need OpenClaw. You and your team use whatever agent you like to write and commit code. sofagent-audit audits all agent output via pre-commit hooks — regardless of who wrote it.
 
 > Full explanation of the two usage modes: [LIMITATIONS.md §Platform Dependencies](./LIMITATIONS.md#平台依赖).
 
