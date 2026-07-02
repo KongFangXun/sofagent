@@ -75,9 +75,9 @@ cd sofagent && bash sofagent/scripts/install.sh
 ### 验证装好了
 
 ```bash
-bash sofagent/scripts/verify.sh    # 50 项检查，--json 可进 CI
+bash sofagent/scripts/verify.sh    # 跑 verify 检查，通过即装好可用（--json 可进 CI）
 # 或 npm 安装后直接用
-sofagent-verify                     # 同样 50 项检查
+sofagent-verify                     # 同样跑 verify 检查
 ```
 
 > ⚠️ 不要靠 Agent 回复验证——SKILL.md 闸门要求初始化过程不输出给用户。只信验证脚本的输出。
@@ -213,7 +213,7 @@ Agent 先判断任务复杂度：
 
 ### 改写 fde.md
 
-`fde.md` 是你的运行规范，优先级最高。写什么就生效什么。建议 ≤500 字——写多了 Agent 反而记不住。
+`fde.md` 是你的运行规范，优先级最高。写什么就生效什么。设计理想 ≤500 字（当前实际 ~1,700 字——写少了 Agent 记得更牢，v1.x 计划精简）
 
 模板在 `sofagent/skill/fde.md`。常用配置：
 - 模型偏好（`深度思考优先` / `速度优先`）

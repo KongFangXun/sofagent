@@ -104,7 +104,7 @@ extract_version() {
 }
 
 # ── 2. 检查 .ts 文件 const VERSION = 'X.Y'（动态扫描，不硬编码文件列表）
-echo -e "${BOLD}── [1/8] TypeScript 常量 ──${NC}"
+echo -e "${BOLD}── [1/9] TypeScript 常量 ──${NC}"
 while IFS= read -r ts; do
   [[ -f "${ts}" ]] || continue
   match=$(grep -n "const [A-Z_]*VERSION = '" "${ts}" | head -1)
@@ -125,7 +125,7 @@ done < <(grep -rl "const [A-Z_]*VERSION = '" \
 echo ""
 
 # ── 3. 检查 index.ts vOLD 引用 ────────────────────────────────
-echo -e "${BOLD}── [2/8] index.ts 版本引用 ──${NC}"
+echo -e "${BOLD}── [2/9] index.ts 版本引用 ──${NC}"
 INDEX_TS="${PROJECT_ROOT}/sofagent/audit/src/index.ts"
 if [[ ! -f "${INDEX_TS}" ]]; then
   echo -e "  ${YELLOW}⚠${NC} 文件不存在: ${INDEX_TS}"
@@ -145,7 +145,7 @@ fi
 echo ""
 
 # ── 4. 检查 .sh 文件 VERSION="X.Y" ────────────────────────────
-echo -e "${BOLD}── [3/8] Shell 脚本 ──${NC}"
+echo -e "${BOLD}── [3/9] Shell 脚本 ──${NC}"
 SH_DIR="${PROJECT_ROOT}/sofagent/scripts"
 if [[ ! -d "${SH_DIR}" ]]; then
   echo -e "  ${YELLOW}⚠${NC} 目录不存在: ${SH_DIR}"
@@ -172,7 +172,7 @@ fi
 echo ""
 
 # ── 5. 检查 .ps1 文件 $VERSION / $VERSION_STR = "X.Y" ──────────
-echo -e "${BOLD}── [4/8] PowerShell 脚本 ──${NC}"
+echo -e "${BOLD}── [4/9] PowerShell 脚本 ──${NC}"
 PS1_DIR="${PROJECT_ROOT}/sofagent/scripts/windows"
 if [[ ! -d "${PS1_DIR}" ]]; then
   echo -e "  ${YELLOW}⚠${NC} 目录不存在: ${PS1_DIR}"
@@ -203,7 +203,7 @@ echo ""
 # ── 6. 检查 MD 文件头 > vX.Y · date（版本头格式）──────────────
 # 只匹配 "> vX.Y · " 格式（带 · 分隔符），这是版本头标记。
 # 正文中引用旧版本的 "> v0.84 只记录..." 不带 · 分隔符，自然被过滤。
-echo -e "${BOLD}── [5/8] Markdown 版本头 (> vX.Y · 日期/描述) ──${NC}"
+echo -e "${BOLD}── [5/9] Markdown 版本头 (> vX.Y · 日期/描述) ──${NC}"
 md_checked=0
 md_mismatch=0
 while IFS= read -r md; do
@@ -227,11 +227,11 @@ done < <(find "${PROJECT_ROOT}" \
   -not -path '*/dist/*' \
   -not -path '*/docs/changelog/*' \
   -type f)
-echo -e "  ${GREEN}✓${NC} ${md_checked} 个 MD 版本头一致"
+echo -e "  ${GREEN}✓${NC} ${md_checked} 个 MD 版本头一致（共检查 $((md_checked + md_mismatch)) 个）"
 echo ""
 
 # ── 7. 检查 README badge version-vX.Y ─────────────────────────
-echo -e "${BOLD}── [6/8] README badge ──${NC}"
+echo -e "${BOLD}── [6/9] README badge ──${NC}"
 for readme in \
   "${PROJECT_ROOT}/README.md" \
   "${PROJECT_ROOT}/README.en.md"; do
@@ -251,7 +251,7 @@ done
 echo ""
 
 # ── 8. 检查 SKILL.md frontmatter version: X.Y ─────────────────
-echo -e "${BOLD}── [7/8] SKILL.md frontmatter ──${NC}"
+echo -e "${BOLD}── [7/9] SKILL.md frontmatter ──${NC}"
 while IFS= read -r skill; do
   match=$(grep -m5 -nE '^version: [0-9]+\.[0-9]+' "${skill}" | head -1)
   if [[ -z "${match}" ]]; then
@@ -275,7 +275,7 @@ done < <(find "${PROJECT_ROOT}" \
 echo ""
 
 # ── 9. 检查 package.json SSOT 格式（必须 3 段）─────────────────
-echo -e "${BOLD}── [8/8] package.json SSOT 格式 ──${NC}"
+echo -e "${BOLD}── [8/9] package.json SSOT 格式 ──${NC}"
 seg_count=$(echo "${SSOT_VERSION}" | tr -cd '.' | wc -c | tr -d ' ')
 if [[ "${seg_count}" -ne 2 ]]; then
   echo -e "  ${RED}✗${NC} package.json version 应为 3 段格式（如 0.94.0），当前: ${SSOT_VERSION}"
@@ -299,23 +299,34 @@ echo ""
 
 # ── 11. 检查正文中"当前 vX.Y"是否与项目版本一致 ─
 echo -e "${BOLD}── [9/9] 正文版本号引用 ──${NC}"
-echo -n "  Checking inline version references in docs..."
-CURRENT_VERSION=$(node -p "require('./sofagent/audit/package.json').version" 2>/dev/null || echo "0.99.3")
-OLD_MAJOR_MINOR=$(echo "$CURRENT_VERSION" | sed 's/\.[0-9]*$//')
-LEAKS=$(grep -rn "当前 v${OLD_MAJOR_MINOR}" --include="*.md" . 2>/dev/null | grep -v node_modules | grep -v ".workbuddy/" | grep -v "docs/changelog/" || true)
-if [ -n "$LEAKS" ]; then
-  echo " FAIL"
-  echo "$LEAKS"
-else
-  echo " OK"
+inline_checked=0
+inline_errors=0
+while IFS=: read -r file line_num rest; do
+  # 提取"当前 v"后面的完整版本号（2 段或 3 段）
+  found_ver=$(echo "$rest" | grep -oE '当前 v[0-9]+\.[0-9]+(\.[0-9]+)?' | sed 's/当前 v//' | head -1)
+  if [[ -z "$found_ver" ]]; then
+    continue
+  fi
+  inline_checked=$((inline_checked + 1))
+  # 与 SSOT 完整版本号比对（3 段 vs 3 段）
+  if [[ "$found_ver" != "$SSOT_VERSION" ]]; then
+    report_error "${file}:${line_num}" "当前 v${found_ver}" "当前 v${SSOT_VERSION}"
+    inline_errors=$((inline_errors + 1))
+  fi
+done < <(grep -rn "当前 v[0-9]" --include="*.md" . 2>/dev/null | grep -v node_modules | grep -v ".workbuddy/" | grep -v "docs/changelog/" || true)
+if [[ $inline_checked -eq 0 ]]; then
+  echo -e "  ${YELLOW}⚠${NC} 未找到"当前 vX.Y"版本引用"
+elif [[ $inline_errors -eq 0 ]]; then
+  echo -e "  ${GREEN}✓${NC} ${inline_checked} 处正文版本号引用一致"
 fi
 echo ""
 
 # ── 汇总 ──────────────────────────────────────────────────────
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then
+  TOTAL=$((CHECKS + ERRORS))
   echo -e "${GREEN}${BOLD}  ✓ 全部一致！版本号 = ${SSOT_VERSION}${NC}"
-  echo -e "  检查通过: ${CHECKS} 项"
+  echo -e "  检查通过: ${CHECKS}/${TOTAL} 项"
   echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
   exit 0
 else

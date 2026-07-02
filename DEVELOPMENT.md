@@ -181,9 +181,9 @@ ao compose 拆完任务
 
 ### A/B 测试
 
-`sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排引擎定期重出 candidate 方案后与 current 对比——Candidate 连续两次胜出才 promote 为新的 current，旧方案归档到 history/。
+`sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排引擎定期重出 candidate 方案后与 current 对比——单次对比后标记胜出方，连续两次胜出目前需手动二次运行确认（v1.1 计划实现自动计数器）。旧方案归档到 history/。
 
-规则：不主动创造对照组、同类型才比、连续 2 次胜出标记候选、再跑 2 次稳定才沉淀、模板可被替换。局限：样本量小（最少 7 次）、LLM 有随机性。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#a-b-test)。
+规则：不主动创造对照组、同类型才比、单次胜出标记候选（连续 2 次需手动二次确认）、再跑 2 次稳定才沉淀、模板可被替换。局限：样本量小（最少 7 次）、LLM 有随机性。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#a-b-test)。
 
 ---
 
@@ -282,6 +282,19 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 ### 维护规则
 
 > ⚠️ 手册变更 → 同步模板；模板格式变更 → 反向更新手册。每次发版前跑一遍对照检查。
+
+### 发版前数字核实（v1.0 起强制执行）
+
+在 CHANGELOG 写版本条目之前，跑以下 6 步：
+
+1. `./tools/check-version.sh`——把输出的「N 项」数字抄进 CHANGELOG，确认无 FAIL
+2. `bash sofagent/scripts/verify.sh --quiet`——确认输出数字与文档中引用一致
+3. `cd sofagent/audit && npm test 2>&1 | grep "Tests"`——确认通过数
+4. `wc -m sofagent/skill/SKILL.md sofagent/skill/fde.md`——确认 Skill 字数旁注准确
+5. 全文件类型术语扫描：`grep -rn "纪律层\|纪律底座\|工具箱\|FDE 工程师\|部署底座\|AI 控制节点" --include="*.md" --include="*.sh" --include="*.ps1" . | grep -v docs/changelog/ | grep -v docs/evidence/`
+6. `./tools/check-version.sh > /dev/null 2>&1; echo $?`——必须为 0
+
+**铁律**：不是跑完看绿色就过。把实际输出数字逐字抄进 CHANGELOG。
 
 ### 文档总量预算
 

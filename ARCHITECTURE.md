@@ -30,11 +30,7 @@ AI 工程方法一直在往前走：提示工程（Prompt Engineering）解决�
 
 Harness 层解决的就是这个问题——Agent 跑完任务之后，不是等着人验收，而是自己完成「拆解→执行→验证→复盘」的完整闭环。
 
-> 💡 **从传统 SOP 到 AI 时代 Harness 层**：传统 SOP 是工业时代的管理工具——标准化流程保证全局 60 分底线，代价是抹平一线差异。
->
-> AI 时代的管理逻辑变了——每个 AI 节点自带个性化上下文（门店周边的暴雨、邻居超市的低价竞争、店长的街头智慧），一刀切的 SOP 不再是正确答案。
->
-> sofagent 的约束底座不是给 AI 写 SOP——是给每个 AI 节点装缰绳，让它在个性化上下文中跑出 85-90 分而不越界。这个认知来自 Rolling AI 服务 100+ 企业的实战观察：「标准化代表着慢、代表着落后，AI 可以让每个一线单元都达到 85-90 分。」详见项目记忆中的 [FDE 认知框架](./.workbuddy/memory/MEMORY.md#fde-认知框架2026-07-01-rolling-ai-播客笔记)。
+> 💡 **从 SOP 到 Harness 层**：传统 SOP 保底 60 分，代价抹平一线差异。AI 时代每个节点自带个性化上下文——sofagent 不是给 AI 写 SOP，是装缰绳，让它在个性化上下文里跑出 85-90 分而不越界。（Rolling AI 服务 100+ 企业的观察，详见 FDE 认知框架。）
 
 > sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。Agent 的记忆长在文件系统（git diff / task/logs / SKILL.md），不长在 Agent 内部。审计层优先信任 git diff（硬证据），不信任 Agent 日志（软证据）。
 >
@@ -78,10 +74,10 @@ sofagent 分两层——地基轻、引擎重：
 
 ### 四条设计原则
 
-1. **「吃下痛苦，排出产品」**——Agent 的管理痛苦由 sofagent 消化，产出的 Harness 规则企业敢放进流程里
-2. **「模型输出是提案，不是命令」**——Agent 每次代码改动是提案，git diff 是证据，审计工具验收
-3. **「先有掌控感，再自动化」**——install → verify.sh 确认约束生效 → 然后才能放心交给编排引擎
-4. **「状态最贵」**——Harness 层总占用承诺不超过窗口 5%（当前约 2.5%）。用文件外化状态，用 git diff 替代 Agent 记忆
+> 1. **「吃下痛苦，排出产品」**——Agent 的管理痛苦由 sofagent 消化，产出的 Harness 规则企业敢放进流程里
+> 2. **「模型输出是提案，不是命令」**——Agent 每次代码改动是提案，git diff 是证据，审计工具验收
+> 3. **「先有掌控感，再自动化」**——install → verify.sh 确认约束生效 → 然后才能放心交给编排引擎
+> 4. **「状态最贵」**——Harness 层总占用承诺不超过窗口 5%（当前约 2.5%）。用文件外化状态，用 git diff 替代 Agent 记忆
 
 ### 为什么是 Skill + 脚本 + Runtime
 
@@ -144,7 +140,7 @@ sofagent 自身的开发过程本身就是这一循环的活体验证——两�
 
 ### 500 字原则
 
-加载链里的每份文档——SKILL.md、fde.md——都有一个设计目标 ≤500 字。超过 500 字 Agent 遵守率明显下降——规则在长文本里会被淹没。500 字不只是「让 Agent 好好读」，更是「让 Agent 在被压缩后还能读到」。
+加载链的理想设计是每份文件 ≤500 字（Agent 压缩后可读的最低保证）。当前 SKILL.md ~2,000 字、fde.md ~1,700 字——远超目标，是 v1.x 计划解决的技术债。超过 500 字 Agent 遵守率明显下降——规则在长文本里会被淹没。500 字不只是「让 Agent 好好读」，更是「让 Agent 在被压缩后还能读到」。
 
 > **污染理论**：agents.md 的每个字节在每次 Loop 中被反复消耗——一份臃肿的 agents.md 会污染未来每一轮的上下文。500 字原则不仅省 token，更是「降低所有未来 Loop 的持续污染成本」。
 
@@ -181,7 +177,7 @@ Loop 不是只发生在任务结束时——执行过程中同样需要停下来
 <a id="session-boundary"></a>
 ### Session 边界 / Worktree 隔离 / 编排产物
 
-- **Session 边界**：用百分比（缓存≥50%，token≥70%）不用轮次——模型窗口在变大，轮次限制是刻舟求剑。详见 [§session-boundary](#session-boundary)。
+- **Session 边界**：用百分比（缓存≥50%，token≥70%）不用轮次——模型窗口在变大，轮次限制是刻舟求剑。
 - **Worktree 隔离**：多子 Agent 并行操作同一仓库时用 git worktree 隔离——零额外依赖，git 原生能力。
 - **编排产物**：`ao compose` 生成的 YAML 存到 `.sofagent/orchestrator/workflows/`——用户不用手写，看就行。
 
@@ -207,7 +203,7 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 
 ### A/B 测试为什么不是一次性评估
 
-编排引擎在 FDE 进场时生成第一版 workflow（current）。运行一段时间后，定期触发重新编排生成 candidate，用 `sofagent-orchestrate-compare` 做确定性对比——从 task/logs 中提取运行次数、违规率、步数、通过率四项客观指标，不由 Agent 主观判断。Candidate 连续两次胜出才 promote 为新的 current，旧方案归档进 history/。
+编排引擎在 FDE 进场时生成第一版 workflow（current）。运行一段时间后，定期触发重新编排生成 candidate，用 `sofagent-orchestrate-compare` 做确定性对比——从 task/logs 中提取运行次数、违规率、步数、通过率四项客观指标，不由 Agent 主观判断。单次对比后标记胜出方，连续两次胜出目前需手动二次运行确认。v1.1 计划实现自动连续胜出计数器，旧方案归档进 history/。
 
 保守是因为 LLM 复盘有偏差——一次高分可能是运气，连续高分才可能是规律。CLI 工具的确定性对比消除了 Agent 自我评估的偏差。
 

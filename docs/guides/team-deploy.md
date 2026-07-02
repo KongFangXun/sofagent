@@ -52,8 +52,8 @@ sofagent 是单用户设计。如果团队多人用：
 1. [ ] **安装 sofagent**：`bash sofagent/scripts/install.sh --platform 你的平台`
 2. [ ] **跑 verify.sh**：`bash sofagent/scripts/verify.sh --quick` 确认 4/4 通过
 3. [ ] **先跑一个简单任务**：不做大改动，用现有 prompt 跑一次，观察 Agent 回复是否正常
-4. [ ] **跑 verify.sh 环境验证**：`bash sofagent/scripts/verify.sh --quiet` 确认 50 项全绿
-5. [ ] **部署后验证**：`bash sofagent/scripts/verify.sh --quiet` 确认部署生效（50 项全绿）
+4. [ ] **跑 verify.sh 环境验证**：`bash sofagent/scripts/verify.sh --quiet` 确认全绿
+5. [ ] **部署后验证**：`bash sofagent/scripts/verify.sh --quiet` 确认部署生效（全绿）
 6. [ ] **翻 think.md**：接入后第 3 天翻一次反思，看 Agent 记了什么
 7. [ ] **决定是否继续**：如果有改善 → 继续用；如果没感觉 → 卸载，记得告诉我们为什么
 

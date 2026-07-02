@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.99.3 · 2026-07-01 · 文档校准版——23 项文档/代码一致性清零（术语统一/幽灵引用/ROADMAP 对齐/CI 合并/档案归档），v1.0 前的一轮文档收尾。
+> v0.99.3 · 2026-07-01 · 文档校准版——16 项文档/代码一致性清零（术语统一/幽灵引用/ROADMAP 对齐/CI 合并/档案归档），v1.0 前的一轮文档收尾。
 >
 
 > 🎯 **v1.0 定位**：**FDE 工具包**——帮 FDE 快速梳理企业 workflow → 定义 AI 节点 → 部署到任意设备 → 审计结果自动推送到协作平台。
@@ -10,12 +10,12 @@
 
 ## 现在在哪：v0.99.3
 
-> v0.99.3 是 **文档校准版**——23 项文档/代码一致性清零（术语统一/幽灵引用/ROADMAP 对齐/CI 合并/档案归档），v1.0 前的一轮文档收尾。
+> v0.99.3 是 **文档校准版**——16 项文档/代码一致性清零（术语统一/幽灵引用/ROADMAP 对齐/CI 合并/档案归档），v1.0 前的一轮文档收尾。
 
 | 级别 | 交付 | 状态 |
 |------|------|:----:|
 | P0 | benchmark.sh 幽灵引用清零——7 处文档引用改为 verify.sh | ✅ |
-| P0 | ROADMAP v1.0 准入条件三处口径统一（经独立审查修正为 5/9 ✅ + 4/9 ⚠️） | ✅ |
+| P0 | ROADMAP v1.0 准入条件三处口径统一（经独立审查修正为 6/10 ✅ + 4/10 ⚠️） | ✅ |
 | P0 | bump-version.sh Unicode 编码 bug 修复 | ✅ |
 | P1 | 全量外部链接验证 + windows-ci.yml vitest 跳过注释 + CI workflow 合并（audit.yml→sofagent-audit.yml） | ✅ |
 | P1 | CONTRIBUTING 版本号修正 + CoC 去重 | ✅ |
@@ -26,7 +26,7 @@
 | P2 | ROADMAP 放弃条件节删除 | ✅ |
 | P2 | CHANGELOG v0.99 条目 398→406 注记 | ✅ |
 
-> 📖 [详细开发日志](./docs/changelog/v0.99.3.md) · v1.0 准入条件进度：5/9 ✅ + 4/9 ⚠️
+> 📖 [详细开发日志](./docs/changelog/v0.99.3.md) · v1.0 准入条件进度：6/10 ✅ + 4/10 ⚠️
 
 ### v0.99.2 — 审查驱动质量修复版
 
@@ -78,7 +78,7 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
-| **v0.99.3** | 文档校准：23 项一致性清零（术语/幽灵引用/ROADMAP/CI/归档）+ bump-version 修复 | [📖](./docs/changelog/v0.99.3.md) |
+| **v0.99.3** | 文档校准：16 项一致性清零（术语/幽灵引用/ROADMAP/CI/归档）+ bump-version 修复 | [📖](./docs/changelog/v0.99.3.md) |
 | **v0.99.2** | 审查修复：daemon 歧义根治 + 死链清零 + 文档一致性 + P2 清零 | [📖](./docs/changelog/v0.99.2.md) |
 | **v0.99.1** | 审查跟进：OpenClaw 叙事重写 + YAML→js-yaml + MCP 独立包 + 局限声明修正 | [📖](./docs/changelog/v0.99.1.md) |
 | **v0.99** | v1.0 前收尾：两份审查修复 + Skill≤90行 + 放弃条件 + MCP Server + verify→TS | [📖](./docs/changelog/v0.99.md) |
@@ -116,7 +116,7 @@
 
 ### v0.98-v0.99：架构重组 + v1.0 前收尾
 
-**v0.98**：产品架构重组（lite 删除 + think.md 自动生成 + FDE 从 Skill 改为根目录文档）+ OpenClaw 重定义为必装引擎 + 审计闭环六步 + GitHub Action 模板 + install.sh 模块化
+**v0.98**：产品架构重组（lite 删除 + think.md 自动生成 + FDE 从 Skill 改为根目录文档）+ OpenClaw 重定义为必装引擎 + 审计闭环六步 + GitHub Action 模板 + install.sh 模块化。v0.98 交付明细已合并到下方 v0.99 交付表中。
 **v0.99**：两份独立审查全面修复 + Skill 全部 ≤90 行 + 文档预算 4849≤5000 + 放弃条件引入 + bus factor 声明 + GitHub Action 模板 + MCP Server 实现 + verify.sh → TS 重构（sofagent-verify 第 6 个 bin）。FDE 端到端验证推迟 v1.0。
 **v0.99.1**：审查跟进——OpenClaw 叙事重写（两层架构 / 审计层平台无关 / 编排层 FDE 工具包）+ P0 代码清理（手写 YAML→js-yaml、MCP Server 拆分为 @sofagent/mcp）+ 局限声明修正 + 案例模板
 
@@ -142,10 +142,9 @@
 | 5 | MCP server + webhook 跑通 | ⚠️ MCP Server 本地通过（initialize/tools/list/tools/call）。Webhook 推送代码完整（`pushAuditResult` 支持 dingtalk/feishu/wecom，fire-and-forget），需真实 webhook URL 完成端到端 |
 | 6 | daemon 核心功能通过自动化测试 | ✅ v0.99.2 验证通过——daemon.json 完整创建、平台检测正常、pid/mode 字段齐全 |
 | 7 | ≥ 1 外部用户 + 5 个一次性测试 | ⚠️ 关联企业已在试用，测试数据收集整理中 |
-| 8 | install → verify → 首次任务通过率 ≥ 90% | ✅ v0.99.2 验证通过——verify.sh exit 0，50 项检查全绿 |
-| 9 | 三操作系统实测（macOS/Linux/Windows） | ⚠️* macOS ✅——Case 014。Linux ✅——GitHub Actions `daemon-linux-ci`。Windows ✅——GitHub Actions `windows-ci`（build + tsc + smoke test 全绿。vitest 在 Windows 上有 rollup 原生模块兼容问题，单元测试待解决） |
-> \* 核心功能（build + tsc + smoke test）三系统均已通过。vitest 在 Windows 上有 rollup 原生模块兼容问题，单元测试待解决。
-
+| 8 | install → verify → 首次任务通过率 ≥ 90% | ✅ v0.99.2 验证通过——verify.sh exit 0，检查全绿 |
+| 9a | 三操作系统核心功能（build + tsc + smoke test） | ✅ macOS——Case 014。Linux——`daemon-linux-ci`。Windows——`windows-ci` |
+| 9b | vitest 在 Windows 上全量通过 | ⚠️ rollup 原生模块兼容问题，单元测试待解决 |
 **硬性截止日期**：2026-09-30。如果 #7 不达标 → v1.0 降为「审计工具技术预览版」。
 
 ### v1.x — 发布后

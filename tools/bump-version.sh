@@ -8,6 +8,22 @@
 #
 # 版本号格式: 2 段（如 0.94），package.json 自动补 3 段（0.94.0）
 #
+# ⚠️ 不支持 patch 级版本号变更（如 0.99.3 → 0.99.4）。
+#    只支持 major.minor → major.minor 替换（如 0.99 → 1.0）。
+#    patch bump 需手工执行以下步骤：
+#      1. vi sofagent/audit/package.json          # 改 version 字段
+#      2. vi sofagent/audit/src/index.ts           # 改 v0.99.3 → v0.99.4
+#      3. vi sofagent/scripts/*.sh                 # 改 VERSION="0.99.3"
+#      4. vi sofagent/scripts/windows/*.ps1        # 改 $VERSION = "0.99.3"
+#      5. vi ROADMAP.md                             # 改文件头 > v0.99.3 ·
+#      6. vi ARCHITECTURE.md                        # 改文件头 > v0.99.3 ·
+#      7. vi HANDBOOK.md                            # 改文件头 > v0.99.3 ·
+#      8. vi README.md README.en.md                 # 改 badge Version-v0.99.3
+#      9. vi sofagent/skill/SKILL.md                # 改 frontmatter + 正文标题
+#     10. vi sofagent/skill/data/*.md               # 改正文标题 · v0.99.3
+#     11. vi FDE/SKILL.md                           # 改 frontmatter
+#     12. 跑 ./tools/check-version.sh 确认一致性
+#
 # 替换范围（结构性位置，不碰历史引用）:
 #   1. .ts 文件:  const VERSION = 'OLD'
 #   2. .sh 文件:  VERSION="OLD"
@@ -245,13 +261,19 @@ md_count=0
 while IFS= read -r md; do
   md_content=$(cat "$md")
   # 用 sed 管道一次处理，全部从文件读取，避免 heredoc 和 Unicode 编码问题
+  # 先匹配 3 段格式（> v0.99.3 ·），再匹配 2 段格式（> v0.99 ·）
   md_new=$(sed \
+    -e "s/^> v${OLD_3SEG} · /> v${NEW_3SEG} · /g" \
     -e "s/^> v${OLD_2SEG} · /> v${NEW_2SEG} · /g" \
+    -e "s/^> > v${OLD_3SEG} · /> > v${NEW_3SEG} · /g" \
     -e "s/^> > v${OLD_2SEG} · /> > v${NEW_2SEG} · /g" \
+    -e "s/· v${OLD_3SEG}/· v${NEW_3SEG}/g" \
     -e "s/· v${OLD_2SEG}/· v${NEW_2SEG}/g" \
     "$md")
-  # SECURITY.md 状态标注单独处理
-  md_new=$(echo "$md_new" | sed "s/\*\*当前状态（v${OLD_2SEG}）\*\*/\*\*当前状态（v${NEW_2SEG}）\*\*/g")
+  # SECURITY.md 状态标注单独处理（支持 2 段和 3 段格式）
+  md_new=$(echo "$md_new" | sed \
+    -e "s/\*\*当前状态（v${OLD_3SEG}）\*\*/\*\*当前状态（v${NEW_3SEG}）\*\*/g" \
+    -e "s/\*\*当前状态（v${OLD_2SEG}）\*\*/\*\*当前状态（v${NEW_2SEG}）\*\*/g")
   if [[ "$md_new" != "$md_content" ]]; then
     echo -e "  ${GREEN}✓${NC} > v$OLD_2SEG · → > v$NEW_2SEG ·"
     echo -e "    ${CYAN}$md${NC}"
@@ -279,7 +301,12 @@ for readme in \
   [[ -f "$readme" ]] || continue
   readme_content=$(cat "$readme")
   # 匹配 version-v0.94 和 version-0.94 两种格式
-  readme_new=$(sed -E "s/version-v?$OLD_2SEG/version-v$NEW_2SEG/g" "$readme")
+  readme_new=$(sed -E \
+    -e "s/version-v${OLD_3SEG}/version-v${NEW_3SEG}/g" \
+    -e "s/version-v${OLD_2SEG}/version-v${NEW_2SEG}/g" \
+    -e "s/version-${OLD_3SEG}/version-${NEW_3SEG}/g" \
+    -e "s/version-${OLD_2SEG}/version-${NEW_2SEG}/g" \
+    "$readme")
   if [[ "$readme_new" != "$readme_content" ]]; then
     echo -e "  ${GREEN}✓${NC} version-(v?)$OLD_2SEG → version-v$NEW_2SEG"
     echo -e "    ${CYAN}$readme${NC}"
@@ -326,8 +353,11 @@ echo -e "${BOLD}[9/10] MD tail signature (> *vOLD...*)${NC}"
 sig_count=0
 while IFS= read -r md; do
   md_content=$(cat "$md")
-  # Only match "> *v0.94" at start of line (signature format)
-  md_new=$(sed "s/^> \*v$OLD_2SEG/> \*v$NEW_2SEG/g" "$md")
+  # Only match "> *v0.94" or "> *v0.94.3" at start of line (signature format)
+  md_new=$(sed \
+    -e "s/^> \*v${OLD_3SEG}/> \*v${NEW_3SEG}/g" \
+    -e "s/^> \*v${OLD_2SEG}/> \*v${NEW_2SEG}/g" \
+    "$md")
   if [[ "$md_new" != "$md_content" ]]; then
     echo -e "  ${GREEN}✓${NC} > *v$OLD_2SEG -> > *v$NEW_2SEG"
     echo -e "    ${CYAN}$md${NC}"
