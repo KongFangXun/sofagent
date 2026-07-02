@@ -11,8 +11,7 @@
 import { platform, homedir, hostname, userInfo } from 'os';
 import { existsSync } from 'fs';
 import { execFileSync } from 'child_process';
-
-const VERSION = '0.99.3';
+import { VERSION } from './shared/constants.js';
 
 export interface EnvReport {
   /** 环境变量 */

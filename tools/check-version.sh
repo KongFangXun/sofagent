@@ -297,6 +297,20 @@ if [[ -f "${MCP_PKG}" ]]; then
 fi
 echo ""
 
+# ── 11. 检查正文中"当前 vX.Y"是否与项目版本一致 ─
+echo -e "${BOLD}── [9/9] 正文版本号引用 ──${NC}"
+echo -n "  Checking inline version references in docs..."
+CURRENT_VERSION=$(node -p "require('./sofagent/audit/package.json').version" 2>/dev/null || echo "0.99.3")
+OLD_MAJOR_MINOR=$(echo "$CURRENT_VERSION" | sed 's/\.[0-9]*$//')
+LEAKS=$(grep -rn "当前 v${OLD_MAJOR_MINOR}" --include="*.md" . 2>/dev/null | grep -v node_modules | grep -v ".workbuddy/" | grep -v "docs/changelog/" || true)
+if [ -n "$LEAKS" ]; then
+  echo " FAIL"
+  echo "$LEAKS"
+else
+  echo " OK"
+fi
+echo ""
+
 # ── 汇总 ──────────────────────────────────────────────────────
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then

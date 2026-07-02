@@ -6,7 +6,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 > 一个只懂点前端代码的产品经理，在设计 Agent Harness 层时都想了些什么。这里只写设计决策、权衡取舍、已知局限。
 >
-> > v0.99.2 · 2026-07-01 · 孔放勋
+> > v0.99.3 · 2026-07-01 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -19,6 +19,8 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 | 约束底座 | harness 层 | 约束 Agent 行为的规则和文件 |
 | FDE 工具包 | FDE toolkit | FDE 随身的工具包 |
 | 审计引擎 | audit engine | git diff 硬证据审计 |
+| 编排引擎 | orchestration engine | 任务拆解 + workflow 生成 |
+| 加载链 | load chain | Agent 启动时注入的三层约束文件 |
 
 ---
 
@@ -28,7 +30,11 @@ AI 工程方法一直在往前走：提示工程（Prompt Engineering）解决�
 
 Harness 层解决的就是这个问题——Agent 跑完任务之后，不是等着人验收，而是自己完成「拆解→执行→验证→复盘」的完整闭环。
 
-> 💡 **从传统 SOP 到 AI 时代 Harness 层**：传统 SOP 是工业时代的管理工具——标准化流程保证全局 60 分底线，代价是抹平一线差异。AI 时代的管理逻辑变了——每个 AI 节点自带个性化上下文（门店周边的暴雨、邻居超市的低价竞争、店长的街头智慧），一刀切的 SOP 不再是正确答案。sofagent 的约束底座不是给 AI 写 SOP——是给每个 AI 节点装缰绳，让它在个性化上下文中跑出 85-90 分而不越界。这个认知来自 Rolling AI 服务 100+ 企业的实战观察：「标准化代表着慢、代表着落后，AI 可以让每个一线单元都达到 85-90 分。」详见项目记忆中的 [FDE 认知框架](./.workbuddy/memory/MEMORY.md#fde-认知框架2026-07-01-rolling-ai-播客笔记)。
+> 💡 **从传统 SOP 到 AI 时代 Harness 层**：传统 SOP 是工业时代的管理工具——标准化流程保证全局 60 分底线，代价是抹平一线差异。
+>
+> AI 时代的管理逻辑变了——每个 AI 节点自带个性化上下文（门店周边的暴雨、邻居超市的低价竞争、店长的街头智慧），一刀切的 SOP 不再是正确答案。
+>
+> sofagent 的约束底座不是给 AI 写 SOP——是给每个 AI 节点装缰绳，让它在个性化上下文中跑出 85-90 分而不越界。这个认知来自 Rolling AI 服务 100+ 企业的实战观察：「标准化代表着慢、代表着落后，AI 可以让每个一线单元都达到 85-90 分。」详见项目记忆中的 [FDE 认知框架](./.workbuddy/memory/MEMORY.md#fde-认知框架2026-07-01-rolling-ai-播客笔记)。
 
 > sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。Agent 的记忆长在文件系统（git diff / task/logs / SKILL.md），不长在 Agent 内部。审计层优先信任 git diff（硬证据），不信任 Agent 日志（软证据）。
 >
@@ -54,7 +60,7 @@ sofagent 分两层——地基轻、引擎重：
 | **Harness 层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ 已可用 |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ v0.81 |
 | **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff | ✅ v0.92 |
-| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v0.99.2），推送待端到端验证 | v0.99.2 MCP Server ✅ |
+| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v0.99.3），推送待端到端验证 | v0.99.3 MCP Server ✅ |
 | **协同层** | 多设备 + 云端 | 组织级 Agent Harness——Agent 以独立身份进入协作现场，共享上下文 + 组织记忆 + 主动参与 | v2.x 规划 |
 
 每层跑通再加下一层——不推翻已验证的东西。
@@ -113,7 +119,7 @@ sofagent-audit 是一个 TypeScript CLI。它的输入是 git diff，输出是 e
 
 - **模式 B（企业设备上的 FDE 工具包）**：FDE 帮企业部署完后，企业闲置设备上装 OpenClaw + sofagent，搭成一个 harness 层，上面跑 AI 节点。企业自己采购的 Agent（WorkBuddy / Codex 等）也装在这台设备上——**Agent 不跑在 OpenClaw session 里**。sofagent 对企业 Agent 的审计走**文件系统层 + git pre-commit hook**：Agent 各自独立运行，各自用自己的 git 仓库，commit 时 hook 自动触发 sofagent-audit。Agent 完全不感知 OpenClaw。相当于：OpenClaw 是地基，其他 Agent 是住在上面的租户，sofagent 是物业管理。租户爱干嘛干嘛，物业管的是楼的安全。
 
-选 OpenClaw 的技术理由：开源 + Node.js（技术栈一致）、原生编排（AO compose → DAG 执行）、Agency Agent 兼容（233 个岗位模板）。技术选型演进：bash → Node.js/TS——Harness 层（纯 MD 规则，无代码）、审计/验证/编排迁移到 TS（npm 包 6 个 bin），OS 集成层（install/daemon）保持 bash。
+选 OpenClaw 的技术理由：开源 + Node.js（技术栈一致）、原生编排（AO compose → DAG 执行）、Agency Agent 兼容（233 个岗位模板）。技术选型演进：bash → Node.js/TS——Harness 层（纯 MD 规则，无代码）、审计/验证/编排迁移到 TS（npm 包 8 个 bin），OS 集成层（install/daemon）保持 bash。
 
 ### 白盒循环
 
@@ -138,7 +144,7 @@ sofagent 自身的开发过程本身就是这一循环的活体验证——两�
 
 ### 500 字原则
 
-加载链里的每份文档——SKILL.md、fde.md——都有一个硬上限：500 字以内。超过 500 字 Agent 遵守率明显下降——规则在长文本里会被淹没。500 字不只是「让 Agent 好好读」，更是「让 Agent 在被压缩后还能读到」。
+加载链里的每份文档——SKILL.md、fde.md——都有一个设计目标 ≤500 字。超过 500 字 Agent 遵守率明显下降——规则在长文本里会被淹没。500 字不只是「让 Agent 好好读」，更是「让 Agent 在被压缩后还能读到」。
 
 > **污染理论**：agents.md 的每个字节在每次 Loop 中被反复消耗——一份臃肿的 agents.md 会污染未来每一轮的上下文。500 字原则不仅省 token，更是「降低所有未来 Loop 的持续污染成本」。
 

@@ -9,8 +9,7 @@
 // ============================================================
 
 import { readFileSync, existsSync } from 'fs';
-
-const VERSION = '0.99.3';
+import { VERSION } from './shared/constants.js';
 
 /** 测试相关证据关键词 */
 const TEST_PATTERN = /exit\.code|测试.*(pass|fail|通过|失败)|test.*(pass|fail)|✅.*pass|❌.*fail/i;

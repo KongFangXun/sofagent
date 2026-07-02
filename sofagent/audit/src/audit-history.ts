@@ -104,12 +104,10 @@ export function loadHistory(limit?: number, dataDir?: string): AuditHistoryEntry
     }
   }
 
-  // 按时间戳倒序排序（最新的在前）
   entries.sort((a, b) => {
     return b.timestamp.localeCompare(a.timestamp);
   });
 
-  // 取最近 maxLimit 条
   return entries.slice(0, maxLimit);
 }
 
@@ -124,6 +122,5 @@ export function clearHistory(dataDir?: string): void {
     return;
   }
 
-  // 写入空内容（保留文件，清空数据）
   writeFileSync(filePath, '', 'utf-8');
 }

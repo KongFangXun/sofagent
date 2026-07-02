@@ -26,14 +26,14 @@
 > - **v0.98**：架构重组版——产品核心从事前约束转向事后审计 + FDE 企业部署，OpenClaw 必装，v1.0 转向 FDE 工具包，新增 THINK.md 项目反思文档
 > - **v0.99**（当时 398 tests，v0.99.1 增至 406）：v1.0 前收尾——审查全面修复 + Skill ≤90 行 + 放弃条件 + bus factor + GitHub Action + MCP Server + FDE 工具包（/FDE + sofagent-fde Skill）+ 文档预算 ≤5,000。
 - **v0.99.1**：审查跟进——OpenClaw 叙事重写（两层架构/审计层平台无关/编排层 FDE 工具包）+ P0 代码清理（手写YAML→js-yaml + MCP Server 拆分 @sofagent/mcp）+ 局限声明修正 + 案例模板。
-- **v0.99.2**：审查驱动质量修复——双 LLM 审查驱动的全面修复（daemon 歧义根治 + 死链清零 + 文档一致性），v1.0 前最后一次质量加固。
-- **v0.99.3**：文档校准版——双 LLM 审查驱动 23 项一致性清零（术语/幽灵引用/ROADMAP 对齐/CI 合并/档案归档）+ bump-version.sh 修复，v1.0 前的一轮文档收尾。
+- **v0.99.2**：审查驱动质量修复——全面修复（daemon 歧义根治 + 死链清零 + 文档一致性），v1.0 前最后一次质量加固。
+- **v0.99.3**：文档校准版——23 项一致性清零（术语/幽灵引用/ROADMAP 对齐/CI 合并/档案归档）+ bump-version.sh 修复，v1.0 前的一轮文档收尾。
 
 ---
 
 ## [v0.99.3] — 文档校准版 ✅
 
-双 LLM 审查（GLM-5.2 + DeepSeek V4 Pro）驱动 23 项一致性清零。P0：benchmark.sh 幽灵引用 7 处改为 verify.sh + ROADMAP v1.0 准入条件三处口径统一（6/9 ✅ + 3/9 ⚠️）+ bump-version.sh Unicode 编码 bug 修复。P1：全量外部链接验证 + windows-ci vitest 注释 + CI workflow 合并 + CONTRIBUTING/CoC 去重。P2：CHANGELOG 纪律层/纪律底座全线→约束底座 + THINK.md 术语注 + evidence 量化锚点更新 + benchmark 段落状态声明 + team-deploy 部署流程修正 + mcp-server-design 日期修正 + daemon-design 版本号 + mcp-server/mcp-push-poc 归档 + mcp/package.json files 字段 + ROADMAP 放弃条件删除 + CHANGELOG v0.99 398→406 注记。406 tests 全绿，tsc strict 零错误，check-version 38/38 全绿。
+23 项一致性清零。P0：benchmark.sh 幽灵引用 7 处改为 verify.sh + ROADMAP v1.0 准入条件三处口径统一（初版为 6/9 ✅ + 3/9 ⚠️，独立审查发现计数偏差修正为 5/9 ✅ + 4/9 ⚠️）+ bump-version.sh Unicode 编码 bug 修复。P1：全量外部链接验证 + windows-ci vitest 注释 + CI workflow 合并 + CONTRIBUTING/CoC 去重。P2：CHANGELOG 纪律层/纪律底座全线→约束底座 + THINK.md 术语注 + evidence 量化锚点更新 + benchmark 段落状态声明 + team-deploy 部署流程修正 + mcp-server-design 日期修正 + daemon-design 版本号 + mcp-server/mcp-push-poc 归档 + mcp/package.json files 字段 + ROADMAP 放弃条件删除 + CHANGELOG v0.99 398→406 注记。406 tests 全绿，tsc strict 零错误，check-version 38/38 全绿。
 
 > 📖 [开发日志](./docs/changelog/v0.99.3.md)
 

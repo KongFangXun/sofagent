@@ -7,7 +7,7 @@ version: 0.99.3
 tags: [fde, workflow, deployment, enterprise, ai-agent]
 ---
 
-# sofagent-fde · SKILL.md · v0.99.2
+# sofagent-fde · SKILL.md · v0.99.3
 
 > FDE 专属 Skill。激活后加载十步部署流程，
 > 按 FDE.md §一到§九 引导你完成企业 AI 部署。

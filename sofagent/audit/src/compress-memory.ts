@@ -11,8 +11,7 @@
 import { existsSync, readFileSync, writeFileSync, copyFileSync, mkdirSync, readdirSync, unlinkSync, statSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
-
-const VERSION = '0.99.3';
+import { VERSION } from './shared/constants.js';
 
 /** think.md 路径 */
 function getThinkPath(dataBase?: string): string {

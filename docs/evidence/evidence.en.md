@@ -1,5 +1,9 @@
 # Evidence.md — Does sofagent actually work?
 
+> ⚠️ **English version is an early snapshot (up to Case 005, June 20).**
+> For the complete 15 cases (Case 001–015 up to July 1), see [中文版](./evidence.md).
+> Full English parity is planned for v1.0.
+
 > We don't answer for you. Below is what people who installed sofagent have reported.
 
 > ⚠️ **Honest disclosure**: The data below includes the author's own testing. Reflection scores are LLM self-assessments (no engineering isolation on non-OpenClaw platforms). For enterprise evaluation, wait for v0.9 encryption + external evaluator. Current data is suitable for exploratory assessment only — not production decisions.

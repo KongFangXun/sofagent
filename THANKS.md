@@ -73,5 +73,3 @@ sofagent 在这些社区里传播和生长。
 - **[/goal 命令](https://docs.anthropic.com/en/docs/claude-code/goal)** — Claude Code 的自主执行循环，启发了我加用户确认的设计
 
 ---
-
-> 我叫孔放勋，一个只懂点前端代码的产品经理。所有设计决策来自大半年的真实使用经验。如果你看到任何不对的地方，[告诉我](https://github.com/KongFangXun/sofagent/issues)，不会介意。

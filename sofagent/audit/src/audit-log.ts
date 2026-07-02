@@ -9,8 +9,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, appendFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
-
-const VERSION = '0.99.3';
+import { VERSION } from './shared/constants.js';
 
 export interface AuditEntry {
   operation: string;
