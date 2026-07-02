@@ -41,16 +41,17 @@
 >
 > > 💡 行业共识：Rolling AI（服务 100+ 企业 4 年的 AI 咨询公司）指出，AI 落地中技术占比不超过 1/3，真正的挑战是组织变革和业务适配。sofagent 解决的是技术侧的那 1/3——让 FDE 不用操心 Agent 会不会跑偏。详见 [FDE/FDE.md](./FDE/FDE.md)。
 
-### 两层架构
+### 怎么跑
 
-sofagent 分两层——审计层平台无关，编排层跑在 OpenClaw 上：
+三件工具怎么跑、依赖什么：
 
-| 层 | 做什么 | 依赖什么 |
+| 工具 | 怎么跑 | 依赖 |
 |------|------|------|
-| **审计层**（sofagent-audit） | 审计 Agent 写的代码——git diff 硬证据，11 条规则，pre-commit hook 闸门 | 只要你的代码在 git 仓库里，就能用。不挑 Agent，不挑平台 |
-| **编排层** | 跑 FDE 部署的 workflow AI 节点，自动拆任务、记反思、管 think.md | OpenClaw（FDE 的工具包，不是你的日常 Agent） |
+| **约束底座** | 纯 MD 规则文件，Agent 启动时自动读到上下文里 | 无——装了就行 |
+| **审计引擎** | npm 全局安装，挂载 git pre-commit hook，每次提交自动跑 | git 仓库，不挑 Agent、不挑平台 |
+| **编排引擎** | FDE 部署的 workflow AI 节点，自动拆任务、记反思、管 think.md | OpenClaw（装在闲置设备上，后台跑 FDE 节点，不是你的日常 Agent） |
 
-OpenClaw 不是你要"用"的东西——它装在设备上，在后台跑 FDE 的 workflow 节点。你和你的团队用什么 Agent 写代码、提代码，跟 OpenClaw 无关。sofagent-audit 通过 pre-commit hook 审计所有 Agent 的产出，不管是谁写的。
+OpenClaw 不是你要"用"的东西——它装在设备上，在后台跑 FDE 的 workflow 节点。你和你的团队用什么 Agent 写代码、提代码，跟 OpenClaw 无关。约束底座和审计引擎不需要 OpenClaw。sofagent-audit 通过 pre-commit hook 审计所有 Agent 的产出，不管是谁写的。
 
 > 两种使用模式的完整说明见 [LIMITATIONS.md §平台依赖](./LIMITATIONS.md#平台依赖)。
 
