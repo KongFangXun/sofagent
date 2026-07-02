@@ -33,6 +33,23 @@ while [[ $# -gt 0 ]]; do
     --json)  JSON_MODE=true; shift ;;
     --quiet) QUIET_MODE=true; shift ;;
     --quick) QUICK_MODE=true; shift ;;
+    --list)
+      echo "sofagent verify v${VERSION} — 检查清单（共 9 类）"
+      echo ""
+      echo "1. 文件存在性（SKILL.md / fde.md / entry-gate.md / task-aware.md 等）"
+      echo "2. Hook 注入（pre-prompt / pre-commit / repo-root）"
+      echo "3. 依赖与权限（ao / jq / git / npm / 文件权限）"
+      echo "4. daemon 运行状态（launchd / systemd）"
+      echo "5. 约束注入（闸门 / 铁律 / 管道）"
+      echo "6. 审计引擎（pre-commit hook / 历史记录）"
+      echo "7. 数据完整性（think.md / scoring / 反思区）"
+      echo "8. 脱敏与合规（身份证 / 手机号 / token 脱敏）"
+      echo "9. 平台兼容性（macOS / Linux / Windows WSL）"
+      echo ""
+      echo "部分检查因平台或环境跳过属正常现象（如 Windows 无 launchd）。"
+      echo "运行 verify.sh（无 --list）执行全量检查。"
+      exit 0
+      ;;
     --platform) PLATFORM="$2"; shift 2 ;;
     --platform=*) PLATFORM="${1#*=}"; shift ;;
     --help)
@@ -42,6 +59,7 @@ while [[ $# -gt 0 ]]; do
       echo "  --quiet  只输出失败和警告，全通过时静默"
       echo "  --quick  快速模式——仅 4 项核心检查（SKILL.md / .sofagent/ / ao compose / fde.md）"
       echo "  --help   显示此帮助"
+      echo "  --list   打印所有检查项清单（不执行检查）"
       echo "退出码: 0=全部通过 1=存在失败项"
       exit 0
       ;;
@@ -886,7 +904,7 @@ else
     echo ""
     echo "  结果: ${GREEN}${pass} 通过${NC} / ${YELLOW}${warn_count} 警告${NC} / ${RED}${FAILED} 失败${NC}（共 ${total} 项）"
     echo ""
-    echo "  📊 纪律层占用：~3,000 token（128K 窗口的 2.5%）"
+    echo "  📊 约束底座占用：~3,000 token（128K 窗口的 2.5%）"
     echo ""
   }
 fi
@@ -894,6 +912,7 @@ fi
 if [ "$FAILED" -eq 0 ]; then
   [ "$JSON_MODE" = false ] && [ "$QUIET_MODE" = false ] && {
     echo "  ✅ sofagent 安装验证通过！"
+    echo "  📋 本次环境实际执行 ${pass} 项通过 / ${warn_count} 项警告 / ${FAILED} 项失败（共检查 ${total} 项）"
     echo ""
     case "$PLATFORM" in
       openclaw)

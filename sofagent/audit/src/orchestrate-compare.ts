@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // sofagent-orchestrate-compare · 编排方案 A/B 对比 + 任务编排 CLI
 //
-// 连续胜出说明：架构设计要求「Candidate 连续两次胜出才 promote」，
-// 但当前代码只做单次对比。连续胜出判断需手动执行两次 compare 后人工决策。
-// TODO: v1.x 加连续胜出计数器。
+// TODO(v1.1): 实现连续胜出计数器（CONSECUTIVE_WINS_REQUIRED = 2）
+// 当前只做单次对比。连续胜出判断需手动执行两次 compare 后人工决策。
+// 参见 ARCHITECTURE.md §A/B 测试
 //
 // 用法:
 //   sofagent-orchestrate-compare --current <dir> --candidate <dir> --output <dir>
@@ -70,6 +70,8 @@ export function scanLogFiles(dir: string): string[] {
   return files.sort();
 }
 
+// ⚠️ extractMetrics 用 emoji 计数（✅/🔴）计算首次通过率
+// 此方法受日志输出格式影响，格式变更时需同步更新计数逻辑。
 export function extractMetrics(dir: string): Metric {
   const files = scanLogFiles(dir);
   let fails = 0, steps = 0, pass = 0, fail = 0;

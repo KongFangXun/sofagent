@@ -83,7 +83,7 @@ sofagent-audit --diff HEAD~1..HEAD --ci --json
 ### 装后验证
 
 ```bash
-# 完整检查（50 项——文件/Hook/权限/daemon/脱敏/断路器/平台兼容性）
+# 完整检查（文件/Hook/权限/daemon/脱敏/断路器/平台兼容性）
 sofagent-verify
 
 # 快速模式（4 项核心检查，5 秒出结果）
