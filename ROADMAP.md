@@ -134,7 +134,7 @@
 ### v1.0 — 正式版：Agent 审计工具（+ FDE 编排引擎实验性附带）
 
 三条主线：
-1. FDE 引导逻辑 → 自动产出 workflow.yaml + 部署方案书
+1. FDE 引导逻辑 → 自动产出 workflow.yaml + 部署方案
 2. 部署方案装到任意设备 → OpenClaw 跑 workflow AI 节点
 3. 审计结果通过 MCP webhook 推送到协作平台
 
