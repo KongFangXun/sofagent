@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/audit",
-  "version": "0.99.3",
+  "version": "0.99.4",
   "description": "sofagent 提交时审计——扫描 git diff，检查 Agent 是否遵守工作纪律",
   "main": "dist/index.js",
   "types": "dist/public-api.d.ts",
@@ -22,7 +22,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "rm -rf dist/ && npm run build && chmod +x dist/*.js",
+    "prepublishOnly": "rm -rf dist/ && npm run build && chmod +x dist/*.js && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete",
     "start": "node dist/index.js",
     "test": "vitest run",
     "check": "tsc --noEmit"

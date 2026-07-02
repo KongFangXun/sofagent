@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/mcp",
-  "version": "0.99.3",
+  "version": "0.99.4",
   "description": "sofagent MCP Server — 暴露审计能力给 MCP Client（JSON-RPC 2.0 over stdio）",
   "main": "dist/mcp-server.js",
   "files": ["dist/", "README.md"],
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "rm -rf dist/ && npm run build",
+    "prepublishOnly": "rm -rf dist/ && npm run build && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete",
     "check": "tsc --noEmit"
   },
   "keywords": [
@@ -20,7 +20,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@sofagent/audit": "0.99.3"
+    "@sofagent/audit": "0.99.4"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

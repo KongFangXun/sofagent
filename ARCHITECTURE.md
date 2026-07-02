@@ -4,9 +4,9 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 # sofagent Architecture
 
-> 一个只懂点前端代码的产品经理，在设计 Agent Harness 层时都想了些什么。这里只写设计决策、权衡取舍、已知局限。
+> sofagent 的设计决策记录——从 Harness 层的工程约束到五层架构的取舍。
 >
-> > v0.99.3 · 2026-07-01 · 孔放勋
+> > v0.99.4 · 2026-07-01 · 孔放勋
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -26,18 +26,11 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 ## 一、为什么会有 sofagent
 
-AI 工程方法一直在往前走：提示工程（Prompt Engineering）解决「怎么对 AI 说话」，上下文工程（Context Engineering）解决「AI 应该知道什么」，约束工程（Harness Engineering）解决「AI 在什么约束下跑」。到了这一步，剩下一个没人管的问题：**谁来按回车？**
-
-Harness 层解决的就是这个问题——Agent 跑完任务之后，不是等着人验收，而是自己完成「拆解→执行→验证→复盘」的完整闭环。
+提示工程管「说什么」，上下文工程管「知道什么」，约束工程管「跑在哪」。sofagent 管最后一步：跑完谁验收。
 
 > 💡 **从 SOP 到 Harness 层**：传统 SOP 保底 60 分，代价抹平一线差异。AI 时代每个节点自带个性化上下文——sofagent 不是给 AI 写 SOP，是装缰绳，让它在个性化上下文里跑出 85-90 分而不越界。（Rolling AI 服务 100+ 企业的观察，详见 FDE 认知框架。）
-
-> sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。Agent 的记忆长在文件系统（git diff / task/logs / SKILL.md），不长在 Agent 内部。审计层优先信任 git diff（硬证据），不信任 Agent 日志（软证据）。
 >
-> 2026 年 6 月，循环工程（Loop Engineering）由 Addy Osmani 正式命名并在博客发表后迅速成为行业共识，Huntley 一年前在博客里提的，现在成了全行业的方向。
-
-> 🧬 **Rules frozen, data evolving. Judge can't touch.** 规则层（SKILL.md + fde.md）Agent 绝对不能碰；数据层（scoring.md + think.md + orchestrator/）是数据不是代码，在客观验证信号下持续进化。
-
+> sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。Agent 的记忆长在文件系统（git diff / task/logs / SKILL.md），不长在 Agent 内部。审计层优先信任 git diff（硬证据），不信任 Agent 日志（软证据）。通用 Agent 平台解决「会不会做」的能力问题，sofagent 解决「能不能每次都按规则稳定做对」的执行控制问题——二者是上下层关系，不替代。
 ### 两层架构：地基 vs 引擎
 
 sofagent 分两层——地基轻、引擎重：
@@ -47,7 +40,7 @@ sofagent 分两层——地基轻、引擎重：
 | 地基 | 三层加载链（宪法+反思+fde）| 每个会话启动，永远在线 | 上下文预算的 2-3% |
 | 引擎 | FDE 进场一次性生成 workflow + 定期 A/B 重优化 | FDE 部署时 / 定时触发 | ~800 token |
 
-如果加载链只在复杂任务时才激活：think.md 反思区不在上下文 → Agent 重复犯错；fde.md 不在上下文 → 简单任务时你的偏好全部失效。三层加载链必须永远在线。
+如果加载链只在复杂任务时才激活：think.md 反思区不在上下文 → Agent 重复犯错；fde.md 不在上下文 → 简单任务时用户偏好全部失效。三层加载链必须永远在线。
 
 ### 产品架构展望（五层）
 
@@ -56,7 +49,7 @@ sofagent 分两层——地基轻、引擎重：
 | **Harness 层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ 已可用 |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ v0.81 |
 | **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff | ✅ v0.92 |
-| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v0.99.3），推送待端到端验证 | v0.99.3 MCP Server ✅ |
+| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v0.99.4），推送待端到端验证 | v0.99.4 MCP Server |✅ |
 | **协同层** | 多设备 + 云端 | 组织级 Agent Harness——Agent 以独立身份进入协作现场，共享上下文 + 组织记忆 + 主动参与 | v2.x 规划 |
 
 每层跑通再加下一层——不推翻已验证的东西。
@@ -93,9 +86,9 @@ LLM 管判断、脚本管执行、Runtime 管刹车——天然的分界。
 
 #### 审计层不需要 OpenClaw
 
-sofagent-audit 是一个 TypeScript CLI。它的输入是 git diff，输出是 exit code。它不关心你的代码是谁写的——Cursor 写的、Codex 写的、人写的，都一样。pre-commit hook 在 `git commit` 时自动触发，跟 Agent 无关。
+sofagent-audit 是一个 TypeScript CLI。它的输入是 git diff，输出是 exit code。它不关心代码是谁写的——Cursor 写的、Codex 写的、人写的，都一样。pre-commit hook 在 `git commit` 时自动触发，跟 Agent 无关。
 
-这意味着：即使你不装 OpenClaw，审计层照样能工作。企业团队今天就能 `npm install -g @sofagent/audit`，配 pre-commit hook，让所有 Agent（不管什么平台）的提交都经过审计。
+这意味着：即使不装 OpenClaw，审计层照样能工作。企业团队今天就能 `npm install -g @sofagent/audit`，配 pre-commit hook，让所有 Agent（不管什么平台）的提交都经过审计。
 
 #### 编排层为什么需要 OpenClaw
 
@@ -105,7 +98,7 @@ sofagent-audit 是一个 TypeScript CLI。它的输入是 git diff，输出是 e
 2. **session 隔离**——OpenClaw 的 `session.spawn` 创建独立子 Agent 跑 workflow 节点，主 Agent 不受污染
 3. **断路器**——OpenClaw 的 `tools.loopDetection` 在 Agent 死循环时硬停止
 
-我们测过 WorkBuddy / Codex / Claude Code——Hook 注入不可控、session 无法外部隔离、sub-agent 不能外部管理。不是我们"选择独占 OpenClaw"，是其他平台不开源到这个程度。
+实测过 WorkBuddy / Codex / Claude Code——Hook 注入不可控、session 无法外部隔离、sub-agent 不能外部管理。不是「选择独占 OpenClaw」，是其他平台不开源到这个程度。
 
 但注意：编排层是给 FDE workflow 节点用的，不是给企业员工的日常 Agent 用的。企业员工不需要感知 OpenClaw——它只在后台跑 FDE 部署的 workflow 节点。
 
@@ -121,7 +114,7 @@ sofagent-audit 是一个 TypeScript CLI。它的输入是 git diff，输出是 e
 
 Claude Code 的 `/goal` 是纯黑盒——目标给出去 Agent 闷头跑，方向歪了交回来的不是想要的。sofagent 把黑盒变成白盒：
 
-| 我加的 | /goal 原版 | 为什么 |
+| sofagent 扩展的 | /goal 原版 | 为什么 |
 |------|------|------|
 | 用户确认 | 循环自主跑到底 | 不敢让它黑盒跑——先看一眼提案再执行 |
 | 规则/数据分离 | 没明确切分 | SKILL.md 规则层，Agent 碰不了；scoring.md + think.md 数据层，Agent 自己进化 |
@@ -203,7 +196,7 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 
 ### A/B 测试为什么不是一次性评估
 
-编排引擎在 FDE 进场时生成第一版 workflow（current）。运行一段时间后，定期触发重新编排生成 candidate，用 `sofagent-orchestrate-compare` 做确定性对比——从 task/logs 中提取运行次数、违规率、步数、通过率四项客观指标，不由 Agent 主观判断。单次对比后标记胜出方，连续两次胜出目前需手动二次运行确认。v1.1 计划实现自动连续胜出计数器，旧方案归档进 history/。
+编排引擎在 FDE 进场时生成第一版 workflow（current）。运行一段时间后，定期触发重新编排生成 candidate，用 `sofagent-orchestrate-compare` 做确定性对比——从 task/logs 中提取运行次数、违规率、步数、通过率四项客观指标，不由 Agent 主观判断。单次对比后标记胜出方，连续两次胜出目前需手动二次运行确认。⚠️ 连续胜出判断为 TODO(v1.1)——当前只做单次对比，需手动执行两次后人工决策。v1.1 计划实现自动连续胜出计数器，旧方案归档进 history/。
 
 保守是因为 LLM 复盘有偏差——一次高分可能是运气，连续高分才可能是规律。CLI 工具的确定性对比消除了 Agent 自我评估的偏差。
 

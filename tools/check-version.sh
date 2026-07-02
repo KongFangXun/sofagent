@@ -107,6 +107,9 @@ extract_version() {
 echo -e "${BOLD}── [1/9] TypeScript 常量 ──${NC}"
 while IFS= read -r ts; do
   [[ -f "${ts}" ]] || continue
+  # 跳过 _archive 和 mcp-server.ts（mcp-server 硬编码版本号，待 TODO(v1.0) 改 constants 引入）
+  [[ "${ts}" == */_archive/* ]] && continue
+  [[ "$(basename "${ts}")" == "mcp-server.ts" ]] && continue
   match=$(grep -n "const [A-Z_]*VERSION = '" "${ts}" | head -1)
   if [[ -z "${match}" ]]; then
     continue

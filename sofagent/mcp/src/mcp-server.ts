@@ -50,7 +50,7 @@ import type { AuditResult } from '@sofagent/audit';
 // ============================================================
 
 const SERVER_NAME = 'sofagent-mcp';
-const SERVER_VERSION = '0.99.3';
+const SERVER_VERSION = '0.99.3'; // TODO(v1.0): import VERSION from @sofagent/audit shared/constants
 const PROTOCOL_VERSION = '2024-11-05';
 
 interface JsonRpcRequest {

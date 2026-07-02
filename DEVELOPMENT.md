@@ -4,9 +4,9 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.99.3 · 2026-07-01 · 孔放勋
+> v0.99.4 · 2026-07-01 · 孔放勋
 
-> 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE 做什么、为什么需要它——详见 [FDE/FDE.md](./FDE/FDE.md) 和项目记忆中的 [FDE 认知框架](./.workbuddy/memory/MEMORY.md#fde-认知框架2026-07-01-rolling-ai-播客笔记)。
+> 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE = Forward Deployed Engineer，企业里的 AI 部署工程师。详见 [FDE/FDE.md](./FDE/FDE.md) 和项目记忆中的 [FDE 认知框架](./.workbuddy/memory/MEMORY.md#fde-认知框架2026-07-01-rolling-ai-播客笔记)。
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
 
@@ -34,7 +34,7 @@
 
 ### Skill 文件结构
 
-**1 主 Skill（`SKILL.md`）+ 8 子 Skill = 9 个 .md（不含 fde.md，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤90 行（v0.99.3 全部达标）。
+**1 主 Skill（`SKILL.md`）+ 8 子 Skill = 9 个 .md（不含 fde.md，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤90 行（v0.99.4 全部达标）。
 
 | 文件 | 何时加载 | 干什么 |
 |------|------|------|
@@ -85,6 +85,8 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇：
 - `sofagent/scripts/`（核心 4 个）：`install.sh` / `verify.sh` / `uninstall.sh` / `task-record.sh`
 - `sofagent/hooks/sofagent-load-chain/`：`HOOK.md` + `handler.ts`（OpenClaw 内部 hook）
 
+> npm 包 @sofagent/audit 含 8 个 bin 条目：6 个独立 CLI（sofagent-audit / sofagent-verify / sofagent-verify-evidence / sofagent-skill-safety-check / sofagent-orchestrate-compare / sofagent-env-check）+ 2 个别名（verify-evidence → sofagent-verify-evidence、skill-safety-check → sofagent-skill-safety-check）
+
 | 脚本 | 干什么 | 什么时候跑 |
 |------|------|------|
 | `install.sh` | 多平台一键安装（7 步） | 手动跑 |
@@ -99,9 +101,7 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇：
 
 ## 二、编排哲学
 
-> 编排引擎（engage.md）定位 FDE 专用，两档拆解（拆 vs. 不拆）。约束层保证安全（SKILL.md），编排层从反思中持续调优。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#编排哲学)。
-
-### 编排流程
+编排流程
 
 任务到达 → 两轮澄清 → 目标定稿 → [ao compose](https://github.com/jnMetaCode/agency-orchestrator) 拆任务 → 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 `orchestrate-compare.ts` 执行前注入。
 
@@ -181,7 +181,7 @@ ao compose 拆完任务
 
 ### A/B 测试
 
-`sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排引擎定期重出 candidate 方案后与 current 对比——单次对比后标记胜出方，连续两次胜出目前需手动二次运行确认（v1.1 计划实现自动计数器）。旧方案归档到 history/。
+`sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排引擎定期重出 candidate 方案后与 current 对比——单次对比后标记胜出方，连续两次胜出目前需手动二次运行确认（v1.1 计划实现自动计数器）。旧方案归档到 history/。⚠️ 连续胜出判断为 TODO(v1.1)——当前只做单次对比，需手动执行两次后人工决策。
 
 规则：不主动创造对照组、同类型才比、单次胜出标记候选（连续 2 次需手动二次确认）、再跑 2 次稳定才沉淀、模板可被替换。局限：样本量小（最少 7 次）、LLM 有随机性。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#a-b-test)。
 
@@ -228,7 +228,7 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 
 ### 评审者与执行者分离
 
-闭环评分按平台分级——OpenClaw 用 `session.spawn` 工程隔离；非 OpenClaw 是 prompt 级约束（无机制保障）。详见 `loop-check.md` closure 模式。
+多维评分按平台分级——OpenClaw 用 `session.spawn` 工程隔离；非 OpenClaw 是 prompt 级约束（无机制保障）。详见 `loop-check.md` closure 模式。
 
 ---
 

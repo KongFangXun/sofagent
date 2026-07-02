@@ -1238,7 +1238,7 @@ function main(): void {
             break;
         }
         console.log('');
-        console.log('  📊 纪律层占用：~3,000 token（128K 窗口的 2.5%）');
+        console.log('  📊 约束底座占用：~3,000 token（128K 窗口的 2.5%）');
         console.log('');
       } else if (v.passTotal > 0) {
         console.log(`  ✅ ${v.passTotal} 项全部通过`);

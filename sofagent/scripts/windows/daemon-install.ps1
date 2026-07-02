@@ -8,7 +8,7 @@
 # ============================================================
 
 $ErrorActionPreference = "Continue"
-$VERSION_STR = "0.99.3"
+$VERSION_STR = "0.99.4"
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
 
 $daemonPs = Join-Path $PSScriptRoot "daemon.ps1"

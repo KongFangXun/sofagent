@@ -28,13 +28,24 @@
 - **v0.99.1**：审查跟进——OpenClaw 叙事重写（两层架构/审计层平台无关/编排层 FDE 工具包）+ P0 代码清理（手写YAML→js-yaml + MCP Server 拆分 @sofagent/mcp）+ 局限声明修正 + 案例模板。
 - **v0.99.2**：审查驱动质量修复——全面修复（daemon 歧义根治 + 死链清零 + 文档一致性），v1.0 前最后一次质量加固。
 - **v0.99.3**：文档校准版——16 项一致性清零（术语/幽灵引用/ROADMAP 对齐/CI 合并/档案归档）+ bump-version.sh 修复，v1.0 前的一轮文档收尾。
+- **v0.99.4**：审查修复版——41 项全面修复（P0×7 + P1×15 + P2×19），准入条件 6✅→3✅ 诚实化，全仓 doc-vs-reality 清零。
 
 ---
+
+## [v0.99.4] — 审查修复版 ✅
+
+41 项全面修复（P0×7 + P1×15 + P2×19），基于 DeepSeek V4 Pro + GLM-5.2 双模型独立审查 + 齐活林交叉查漏。
+- P0：evidence「4家→1家」诚信修复；ROADMAP 准入 3 条自欺 ✅→⚠️（3✅/7⚠️）；npm pack .js.map→0；verify 50→41项 + --list；mcp VERSION TODO；mcp 零测试声明；FDE case 原始数据不可验证声明
+- P1：README 定位「FDE 工具包」→「Agent 审计工具」+ 英文同步；HANDBOOK 第一段定位修正；CHANGELOG 数字历史保留 + 重评估注；FDE 成熟度声明；bin 构成注明；orchestrate emoji/嵌套 TODO + 连续胜出文档诚实化；check-version false positive 修复；bump-version major 盲区修复；verify.sh ⚠ 标注；组件集成测试声明；闭环评分→多维评分
+- P2：ARCHITECTURE 人设移除 + AI 工程段精简 + 引用密度降低；README 精简 + Rolling AI 因果建立 + OpenClaw 去重；HANDBOOK 陪跑段移 FDE；DEVELOPMENT 精简；人称一致性；ROADMAP v1.x 补 A12/A13/规则模板/测试工具 4 项规划
+- 质量：406 tests 全绿，check-version 30/30，verify 41 项全绿，npm pack .js.map=0
+
+> 📖 [开发日志](./docs/changelog/v0.99.4.md)
 
 ## [v0.99.3] — 文档校准版 ✅
 
 16 项一致性清零（check-version 30/30 全绿）。
-- P0：benchmark.sh 幽灵引用 7 处→verify.sh；ROADMAP v1.0 准入口径统一为 5✅/4⚠️；bump-version.sh Unicode bug 修复
+- P0：benchmark.sh 幽灵引用 7 处→verify.sh；ROADMAP v1.0 准入口径统一为 6✅/4⚠️（v0.99.3 时评定，v0.99.4 重新评定为 3✅/7⚠️）；bump-version.sh Unicode bug 修复
 - P1：外部链接全量验证；windows-ci vitest 跳过注释；CI workflow 合并；CONTRIBUTING/CoC 去重
 - P2：CHANGELOG 术语统一 / evidence 锚点更新 / benchmark 状态声明 / 归档清理 / ROADMAP 放弃条件删除 等
 - 质量：406 tests 全绿，tsc strict 零错误

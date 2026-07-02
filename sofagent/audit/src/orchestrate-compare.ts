@@ -56,6 +56,7 @@ function parseArgs(argv: string[]): Args {
 }
 
 export function scanLogFiles(dir: string): string[] {
+  // TODO(v1.1): 嵌套 try/catch 应展平为函数式错误处理管道
   if (!existsSync(dir)) return [];
   const files: string[] = [];
   try {
@@ -72,6 +73,7 @@ export function scanLogFiles(dir: string): string[] {
 
 // ⚠️ extractMetrics 用 emoji 计数（✅/🔴）计算首次通过率
 // 此方法受日志输出格式影响，格式变更时需同步更新计数逻辑。
+// TODO(v1.1): emoji 计数脆弱——依赖日志输出格式，应改用结构化 metric 字段。
 export function extractMetrics(dir: string): Metric {
   const files = scanLogFiles(dir);
   let fails = 0, steps = 0, pass = 0, fail = 0;

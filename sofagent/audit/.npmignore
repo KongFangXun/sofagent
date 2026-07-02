@@ -1,1 +1,2 @@
-*.map
+dist/*.js.map
+dist/*.d.ts.map
