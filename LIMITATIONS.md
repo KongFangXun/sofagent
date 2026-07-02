@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v0.99.3 · 2026-07-01 · 孔放勋
+> v0.99.4 · 2026-07-01 · 孔放勋
 
 ---
 
@@ -195,7 +195,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 |------|:--:|------|
 | install.sh | 无独立测试 | 跨平台行为变化无法自动捕获 |
 | daemon 脚本 | 测试覆盖不足 | launchd/systemd 注册失败无早期预警；计划 v1.x 补充核心功能测试 |
-| MCP Server | 仅手动验证 | JSON-RPC 协议边界情况未覆盖 |
+| MCP Server | 仅手动验证 | JSON-RPC 协议边界情况未覆盖。无自动测试。核心逻辑（run_audit/get_think/write_think）调用 audit 包已测方法。 |
 | verify.sh/verify.ts | 部分覆盖 | 50 项检查的逻辑分支未穷举 |
 
 缓解：install.sh 和 verify.sh 有 verify.sh 50 项检查作为 smoke test，审计引擎核心逻辑已有全面测试。上述模块的测试缺口不会影响审计结果的可靠性。
@@ -237,6 +237,12 @@ FDE 完整十步部署流程（[FDE/FDE.md](./FDE/FDE.md)）已在作者自有�
 2. **缺乏公开案例**：没有可公开引用的 case study 文档——包括部署规模、使用的具体功能、遇到的问题、量化效果。已有 [case study 模板](./docs/evidence/case-study-template.md)，等待真实用户填写。
 
 缓解：如果你在真实环境中使用了 sofagent，欢迎提交 case study——这比任何内部测试都更有说服力。模板在 `docs/evidence/case-study-template.md`。
+
+---
+
+### 组件间集成测试
+
+**状态：无集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排引擎 ao compose 通过——但 daemon → MCP → webhook → 编排四组件串联行为未验证。v1.1 计划补全链路 smoke test。
 
 ---
 

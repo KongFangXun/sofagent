@@ -69,3 +69,5 @@
 
 > 📋 完整验证记录见 [v1.0 准入验证方案填写版](../../../../Desktop/sofagent测试/福瑞士/v1.0-准入条件-验证方案_填写版.md)
 > 📋 完整 Case Study 见 [福瑞士电池_CaseStudy.md](../../../../Desktop/sofagent测试/福瑞士/福瑞士电池_CaseStudy.md)
+
+> ⚠️ 原始部署产物（workflow.yaml / 部署日志 / 验证截图）存放在部署企业内网。联系仓库维护者获取脱敏版本。

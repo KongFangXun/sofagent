@@ -5,8 +5,8 @@
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
 [![Version](https://img.shields.io/badge/Version-v0.99.3-16B8F3)](./CHANGELOG.md)
-[![定位：FDE工具包](https://img.shields.io/badge/定位-FDE工具包-16B8F3)](#一句话定位)
-[![核心：约束底座 + 审计引擎](https://img.shields.io/badge/核心-约束底座_+_审计引擎-16B8F3)](#一句话定位)
+[![定位：Agent 审计工具](https://img.shields.io/badge/定位-Agent_审计工具-16B8F3)](#一句话定位)
+[![核心：审计引擎](https://img.shields.io/badge/核心-审计引擎-16B8F3)](#一句话定位)
 [![OpenClaw](https://img.shields.io/badge/🦞_引擎-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
@@ -19,41 +19,17 @@
 
 ## 一句话定位
 
-面向中小企业（SMB）和一人公司（OPC）的开源 FDE 工具包——约束底座管 Agent 行为，审计引擎盯代码变更。不用请顾问、不用写 prompt，装完就能跑。自己就能梳理 workflow、搭建 AI 节点。
+给 AI Agent 装一个提交时审计官——不看 Agent 怎么说，只看 git diff 怎么变。11 条审计规则扫描每次代码变更，自动判定违规、生成反思。中小企业装完就能用，不用请顾问、不用写 prompt。
 
-> **成熟度说明**：作者自用一个多月，审计引擎日常稳定（406 tests 全绿），编排引擎能跑但未到「装上就能用」。如果你试了，告诉我什么场景、什么问题。
+> **成熟度说明**：作者自用一个多月，审计引擎日常稳定（406 tests 全绿，5/5 靶向违规全部检出）。编排引擎能跑但未到「装上就能用」。如果你试了，告诉我什么场景、什么问题。
 
-> **90/10 法则**：不要和 AI 模型竞争它们已经擅长的 90%（代码生成）。真正的价值在没人敢跳过的 10%——验证、审计、问责。AI 模型越强，这 10% 就越值钱。sofagent 做这 10%。
-
-> 💡 **为什么需要 sofagent**：企业 AI 落地的核心矛盾，是将概率性的大模型装进必须可追踪、可控制、可问责的传统业务流程中。模型负责建议，系统负责验收，工具负责执行——这就是 sofagent 做的事。
-
-> - ❌ 不是 AI 框架、不写 prompt
-> - ❌ 不是 Skills 商店
-> - ✅ 是 **FDE 工具包：约束底座 + 审计引擎**——git diff 审计兜底。OpenClaw 做后台 harness 层（你用自己的 Agent 对话，OpenClaw 在后台管约束+审计）
->
-> **FDE 做什么**：就像工头带着一群 AI 员工进企业上岗——适配上下文、搭建工作台、确保每个 AI 节点能独立产出价值后才能离开。sofagent 是这个过程的工具包，提供三样东西：
->
-> | 工具 | 做什么 | 一句话 |
-> |------|------|------|
-> | **约束底座** | 给每个 AI 节点装上缰绳——4 底线 + 6 铁律，不让它越界 | 装缰绳 |
-> | **审计引擎** | 每次 AI 改完代码自动审计，git diff 硬证据，不依赖 AI 自觉 | 查作业 |
-> | **编排引擎** | FDE 识别出 AI 节点后，拆成可执行任务链，定期 A/B 重优化 | 拆任务 |
->
-> > 💡 行业共识：Rolling AI（服务 100+ 企业 4 年的 AI 咨询公司）指出，AI 落地中技术占比不超过 1/3，真正的挑战是组织变革和业务适配。sofagent 解决的是技术侧的那 1/3——让 FDE 不用操心 Agent 会不会跑偏。详见 [FDE/FDE.md](./FDE/FDE.md)。
-
-### 怎么跑
-
-三件工具怎么跑、依赖什么：
-
-| 工具 | 怎么跑 | 依赖 |
+| 组件 | 做什么 | 怎么跑 |
 |------|------|------|
-| **约束底座** | 纯 MD 规则文件，Agent 启动时自动读到上下文里 | 无——装了就行 |
-| **审计引擎** | npm 全局安装，挂载 git pre-commit hook，每次提交自动跑 | git 仓库，不挑 Agent、不挑平台 |
-| **编排引擎** | FDE 部署的 workflow AI 节点，自动拆任务、记反思、管 think.md | OpenClaw（装在闲置设备上，后台跑 FDE 节点，不是你的日常 Agent） |
+| **审计引擎** | git diff → 11 条规则 → exit code | git pre-commit hook，不挑 Agent、不挑平台 |
+| **约束底座** | MD 规则注入 Agent 上下文 | install.sh 装完自动加载 |
+| **编排引擎**（实验性）| FDE 拆任务 → workflow → 部署 | OpenClaw + ao compose |
 
-OpenClaw 不是你要"用"的东西——它装在设备上，在后台跑 FDE 的 workflow 节点。你和你的团队用什么 Agent 写代码、提代码，跟 OpenClaw 无关。约束底座和审计引擎不需要 OpenClaw。sofagent-audit 通过 pre-commit hook 审计所有 Agent 的产出，不管是谁写的。
-
-> 两种使用模式的完整说明见 [LIMITATIONS.md §平台依赖](./LIMITATIONS.md#平台依赖)。
+审计引擎零 Agent 依赖——看的是已发生的 git diff。约束底座和审计引擎不需要 OpenClaw。编排引擎才需要。
 
 ---
 

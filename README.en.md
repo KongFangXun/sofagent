@@ -7,8 +7,8 @@
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
 [![Version](https://img.shields.io/badge/Version-v0.99.3-16B8F3)](./CHANGELOG.md)
-[![What: FDE toolkit](https://img.shields.io/badge/What-FDE_toolkit-16B8F3)](#what-is-this)
-[![Core: Harness + Audit](https://img.shields.io/badge/Core-Harness_+_Audit-16B8F3)](#what-is-this)
+[![What: Agent Audit Tool](https://img.shields.io/badge/What-Agent_Audit_Tool-16B8F3)](#what-is-this)
+[![Core: Audit Engine](https://img.shields.io/badge/Core-Audit_Engine-16B8F3)](#what-is-this)
 [![OpenClaw](https://img.shields.io/badge/Platform-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
 
 <img src="images/sofagent.png" alt="sofagent" width="300" />
@@ -22,7 +22,7 @@ My name is KongFangXun. I'm a product manager who doesn't write code. All design
 
 ## What is this?
 
-Open-source FDE toolkit for SMBs and one-person companies — harness base governs agent behavior, audit engine watches code changes. DIY: map your workflows, deploy AI nodes, all on your own.
+A commit-time auditor for AI agents — doesn't trust what the agent says, only what git diff shows. 11 audit rules scan every code change, automatically flag violations, generate reflections, and push results to collaboration platforms. SMBs can install and run on their own — no consultants, no prompt engineering required.
 
 > **The 90/10 rule**: Don't compete with AI models on the 90% they already do well (code generation). The real value is in the 10% nobody dares skip — verification, audit trails, accountability. sofagent owns that 10%.
 
@@ -119,7 +119,7 @@ sofagent-audit --diff HEAD~1..HEAD --task "your task description"
 
 - ❌ Not an AI framework — doesn't manage model APIs
 - ❌ Not a skills marketplace — doesn't maintain reusable skills
-- ✅ FDE toolkit: harness base + audit engine — telling agents what they can do, can't do, and when to stop
+- ✅ Agent audit tool: commit-time audit engine — scans git diff, tells you what the agent actually changed
 
 ---
 

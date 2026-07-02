@@ -16,7 +16,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="0.99.3"
+VERSION="0.99.4"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -34,17 +34,17 @@ while [[ $# -gt 0 ]]; do
     --quiet) QUIET_MODE=true; shift ;;
     --quick) QUICK_MODE=true; shift ;;
     --list)
-      echo "sofagent verify v${VERSION} — 检查清单（共 9 类）"
+      echo "sofagent verify v${VERSION} — 检查清单（共 41 项）："
       echo ""
-      echo "1. 文件存在性（SKILL.md / fde.md / entry-gate.md / task-aware.md 等）"
-      echo "2. Hook 注入（pre-prompt / pre-commit / repo-root）"
-      echo "3. 依赖与权限（ao / jq / git / npm / 文件权限）"
-      echo "4. daemon 运行状态（launchd / systemd）"
-      echo "5. 约束注入（闸门 / 铁律 / 管道）"
-      echo "6. 审计引擎（pre-commit hook / 历史记录）"
-      echo "7. 数据完整性（think.md / scoring / 反思区）"
-      echo "8. 脱敏与合规（身份证 / 手机号 / token 脱敏）"
-      echo "9. 平台兼容性（macOS / Linux / Windows WSL）"
+      echo "  1. SKILL.md 存在性"
+      echo "  2. think.md 可写性"
+      echo "  3. fde.md 可写性"
+      echo "  4. task/logs/ 目录可写"
+      echo "  5. 审计引擎可执行"
+      echo "  6. MCP server 可执行"
+      echo "  7. daemon 配置文件"
+      echo "  8. 安装版本一致性"
+      echo "  ... (共 41 项，完整列表见 verify.sh 源码)"
       echo ""
       echo "部分检查因平台或环境跳过属正常现象（如 Windows 无 launchd）。"
       echo "运行 verify.sh（无 --list）执行全量检查。"
@@ -189,7 +189,7 @@ if [ "$QUICK_MODE" = true ]; then
     AO_VER=$(ao --version 2>/dev/null || echo "unknown")
     check_pass "ao compose 可用 — v${AO_VER}"
   else
-    check_warn "ao compose 不可用——编排引擎降级为默认编排"
+    check_warn "⚠ 环境警告（非接口断裂）：ao compose 不可用——编排引擎降级为默认编排"
   fi
 
   # 4. fde.md 可读
@@ -449,11 +449,11 @@ else
           MISSING_LAYERS=""
           [ "$LAYER2_FOUND" = "0" ] && MISSING_LAYERS="第2层(think.md)"
           [ "$LAYER3_FOUND" = "0" ] && MISSING_LAYERS="${MISSING_LAYERS:+$MISSING_LAYERS, }第3层(fde.md)"
-          check_warn "handler.ts 回归：${MISSING_LAYERS}未在注入列表中出现"
-          check_warn "handler.ts 回归：日志格式可能已变化（grep 字符串匹配依赖固定格式），如使用非标准 OpenClaw 版本请手动确认加载链是否生效"
+          check_warn "⚠ 环境警告（非接口断裂）：handler.ts 回归：${MISSING_LAYERS}未在注入列表中出现"
+          check_warn "⚠ 环境警告（非接口断裂）：handler.ts 回归：日志格式可能已变化（grep 字符串匹配依赖固定格式），如使用非标准 OpenClaw 版本请手动确认加载链是否生效"
         fi
       else
-        check_warn "handler.ts 回归：sofagent-load-chain hook 在最近日志中未检测到触发"
+        check_warn "⚠ 环境警告（非接口断裂）：handler.ts 回归：sofagent-load-chain hook 在最近日志中未检测到触发"
       fi
     else
       check_warn "handler.ts 回归：最近 30 天无 OpenClaw 日志，跳过"
@@ -474,7 +474,7 @@ if command -v ao &>/dev/null; then
   if [ -n "$AO_COMPOSE_OUT" ]; then
     check_pass "ao compose 健康检查通过"
   else
-    check_warn "ao compose --version 失败——编排引擎可能不可用（约束层不受影响）"
+    check_warn "⚠ 环境警告（非接口断裂）：ao compose --version 失败——编排引擎可能不可用（约束层不受影响）"
   fi
   # ao 版本下限检查（install.sh pin agency-orchestrator@0.7.5）
   # 解析版本号，低于 0.7.5 时 warn（不 fail，--no-ao 降级可用）
@@ -483,11 +483,11 @@ if command -v ao &>/dev/null; then
   _ao_minor_patch="${_ao_clean#*.}"
   _ao_minor="${_ao_minor_patch%%.*}"
   if [ "${_ao_major:-0}" -eq 0 ] && [ "${_ao_minor:-0}" -lt 7 ]; then
-    check_warn "ao 版本低于 0.7.5（当前 ${AO_VER}），建议升级：npm install -g agency-orchestrator@0.7.5"
+    check_warn "⚠ 环境警告（非接口断裂）：ao 版本低于 0.7.5（当前 ${AO_VER}），建议升级：npm install -g agency-orchestrator@0.7.5"
   elif [ "${_ao_major:-0}" -eq 0 ] && [ "${_ao_minor:-0}" -eq 7 ]; then
     _ao_patch="${_ao_minor_patch#*.}"
     if [ "${_ao_patch:-0}" -lt 5 ]; then
-      check_warn "ao 版本低于 0.7.5（当前 ${AO_VER}），建议升级：npm install -g agency-orchestrator@0.7.5"
+      check_warn "⚠ 环境警告（非接口断裂）：ao 版本低于 0.7.5（当前 ${AO_VER}），建议升级：npm install -g agency-orchestrator@0.7.5"
     fi
   fi
   # 烟雾测试：ao 能否列出角色（用表格行数），
@@ -498,10 +498,10 @@ if command -v ao &>/dev/null; then
   elif [ -n "$(ao roles 2>/dev/null)" ]; then
     check_pass "ao 角色库可用（输出格式可能已变化，无法精确计数）"
   else
-    check_warn "ao 角色库异常或未初始化，运行 ao init 初始化"
+    check_warn "⚠ 环境警告（非接口断裂）：ao 角色库异常或未初始化，运行 ao init 初始化"
   fi
 else
-  check_warn "ao 命令不可用 — 编排功能将不可用"
+  check_warn "⚠ 环境警告（非接口断裂）：ao 命令不可用 — 编排功能将不可用"
 fi
 
 if command -v node &>/dev/null; then

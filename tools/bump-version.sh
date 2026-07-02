@@ -82,13 +82,34 @@ NEW_2SEG=$(echo "$NEW_VERSION" | cut -d. -f1-2)
 # 3 段版本号（从实际 package.json 读取，而非 .0 补零）
 # 注意：根 package.json 无 version 字段（workspaces 根），SSOT 在 sofagent/audit/package.json
 
+# 用于实际文件替换的模式——优先 3 段精确匹配
+# 这是因为大多数文件中的版本号是 3 段格式（如 VERSION="0.99.3"），
+# 而 MD 头 / SKILL frontmatter 固定用 2 段格式（如 > v0.99 · / version: 0.99）
+if [[ "$OLD_VERSION" == *.*.* ]]; then
+  HAS_PATCH=true
+else
+  HAS_PATCH=false
+fi
+
 # ── 项目根目录（脚本在 tools/ 下，根在上一级）──────────────
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 # 从实际 SSOT 读取 3 段版本号（audit/package.json），而非 .0 补零
 PJ_SSOT="${PROJECT_ROOT}/sofagent/audit/package.json"
 OLD_3SEG=$(grep '"version":' "${PJ_SSOT}" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-NEW_3SEG="${NEW_2SEG}.$(echo "${OLD_3SEG}" | cut -d. -f3)"
+# NEW_3SEG: 新版本是 3 段时直接用用户输入；2 段时用 new_2seg + old_patch
+if [[ "$NEW_VERSION" == *.*.* ]]; then
+  NEW_3SEG="$NEW_VERSION"
+else
+  NEW_3SEG="${NEW_2SEG}.$(echo "${OLD_3SEG}" | cut -d. -f3)"
+fi
+
+# 2 段相同但 3 段不同（如同一个 major.minor 内的小版本升级，如 0.99.3→0.99.4）——只做 3 段替换
+if $HAS_PATCH && [[ "$OLD_2SEG" == "$NEW_2SEG" ]] && [[ "$OLD_3SEG" != "$NEW_3SEG" ]]; then
+  PATCH_ONLY=true
+else
+  PATCH_ONLY=false
+fi
 # 如果旧版本是 2 段格式，新版本也保持 2 段 + .0
 if [[ "${OLD_VERSION}" != *.*.* ]]; then
   NEW_3SEG="${NEW_2SEG}.0"
@@ -144,10 +165,14 @@ echo -e "${BOLD}[1/10] package.json（SSOT）${NC}"
 PJ="$PROJECT_ROOT/sofagent/audit/package.json"
 if [[ -f "$PJ" ]]; then
   pj_content=$(cat "$PJ")
-  pj_new=$(sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g" "$PJ")
-  # 如果 3 段没匹配到，试 2 段格式
-  if [[ "$pj_new" == "$pj_content" ]]; then
-    pj_new=$(sed "s/\"version\": \"$OLD_2SEG\"/\"version\": \"$NEW_2SEG\"/g" "$PJ")
+  if $PATCH_ONLY; then
+    pj_new=$(sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g" "$PJ")
+  else
+    pj_new=$(sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g" "$PJ")
+    # 如果 3 段没匹配到，试 2 段格式
+    if [[ "$pj_new" == "$pj_content" ]]; then
+      pj_new=$(sed "s/\"version\": \"$OLD_2SEG\"/\"version\": \"$NEW_2SEG\"/g" "$PJ")
+    fi
   fi
   if [[ "$pj_new" != "$pj_content" ]]; then
     echo -e "  ${GREEN}✓${NC} version: $OLD_3SEG → $NEW_3SEG"
@@ -166,7 +191,15 @@ ts_count=0
 while IFS= read -r ts; do
   [[ -f "$ts" ]] || continue
   ts_content=$(cat "$ts")
-  ts_new=$(sed "s/const VERSION = '$OLD_2SEG'/const VERSION = '$NEW_2SEG'/g" "$ts")
+  if $PATCH_ONLY; then
+    ts_new=$(sed "s/const VERSION = '$OLD_3SEG'/const VERSION = '$NEW_3SEG'/g" "$ts")
+  else
+    ts_new=$(sed "s/const VERSION = '$OLD_2SEG'/const VERSION = '$NEW_2SEG'/g" "$ts")
+    # 2 段没匹配到，试 3 段格式
+    if $HAS_PATCH && [[ "$ts_new" == "$ts_content" ]]; then
+      ts_new=$(sed "s/const VERSION = '$OLD_3SEG'/const VERSION = '$NEW_3SEG'/g" "$ts")
+    fi
+  fi
   if [[ "$ts_new" != "$ts_content" ]]; then
     if [[ $ts_count -eq 0 ]]; then
       echo -e "  ${GREEN}✓${NC} const VERSION = '$OLD_2SEG' → '$NEW_2SEG'"
@@ -193,7 +226,15 @@ INDEX_TS="$PROJECT_ROOT/sofagent/audit/src/index.ts"
 if [[ -f "$INDEX_TS" ]]; then
   idx_content=$(cat "$INDEX_TS")
   # 替换 vOLD 为 vNEW（注意不能误伤 vOLDx 这种）
-  idx_new=$(sed "s/v$OLD_2SEG/v$NEW_2SEG/g" "$INDEX_TS")
+  if $PATCH_ONLY; then
+    idx_new=$(sed "s/v$OLD_3SEG/v$NEW_3SEG/g" "$INDEX_TS")
+  else
+    idx_new=$(sed "s/v$OLD_2SEG/v$NEW_2SEG/g" "$INDEX_TS")
+    # 2 段没匹配到，试 3 段格式
+    if $HAS_PATCH && [[ "$idx_new" == "$idx_content" ]]; then
+      idx_new=$(sed "s/v$OLD_3SEG/v$NEW_3SEG/g" "$INDEX_TS")
+    fi
+  fi
   if [[ "$idx_new" != "$idx_content" ]]; then
     echo -e "  ${GREEN}✓${NC} v$OLD_2SEG → v$NEW_2SEG"
     echo -e "    ${CYAN}$INDEX_TS${NC}"
@@ -213,7 +254,15 @@ if [[ -d "$SH_DIR" ]]; then
   for sh in "$SH_DIR"/*.sh; do
     [[ -f "$sh" ]] || continue
     sh_content=$(cat "$sh")
-    sh_new=$(sed "s/VERSION=\"$OLD_2SEG\"/VERSION=\"$NEW_2SEG\"/g" "$sh")
+    if $PATCH_ONLY; then
+      sh_new=$(sed "s/VERSION=\"$OLD_3SEG\"/VERSION=\"$NEW_3SEG\"/g" "$sh")
+    else
+      sh_new=$(sed "s/VERSION=\"$OLD_2SEG\"/VERSION=\"$NEW_2SEG\"/g" "$sh")
+      # 2 段没匹配到，试 3 段格式
+      if $HAS_PATCH && [[ "$sh_new" == "$sh_content" ]]; then
+        sh_new=$(sed "s/VERSION=\"$OLD_3SEG\"/VERSION=\"$NEW_3SEG\"/g" "$sh")
+      fi
+    fi
     if [[ "$sh_new" != "$sh_content" ]]; then
       if [[ $sh_count -eq 0 ]]; then
         echo -e "  ${GREEN}✓${NC} VERSION=\"$OLD_2SEG\" → VERSION=\"$NEW_2SEG\""
@@ -237,8 +286,15 @@ if [[ -d "$PS1_DIR" ]]; then
   for ps1 in "$PS1_DIR"/*.ps1; do
     [[ -f "$ps1" ]] || continue
     ps1_content=$(cat "$ps1")
-    # 覆盖 $VERSION 和 $VERSION_STR 两种变量名
-    ps1_new=$(sed -E "s/\\\$VERSION(_STR)? = \"$OLD_2SEG\"/\$VERSION\1 = \"$NEW_2SEG\"/g" "$ps1")
+    if $PATCH_ONLY; then
+      ps1_new=$(sed -E "s/\\\$VERSION(_STR)? = \"$OLD_3SEG\"/\$VERSION\1 = \"$NEW_3SEG\"/g" "$ps1")
+    else
+      ps1_new=$(sed -E "s/\\\$VERSION(_STR)? = \"$OLD_2SEG\"/\$VERSION\1 = \"$NEW_2SEG\"/g" "$ps1")
+      # 2 段没匹配到，试 3 段格式
+      if $HAS_PATCH && [[ "$ps1_new" == "$ps1_content" ]]; then
+        ps1_new=$(sed -E "s/\\\$VERSION(_STR)? = \"$OLD_3SEG\"/\$VERSION\1 = \"$NEW_3SEG\"/g" "$ps1")
+      fi
+    fi
     if [[ "$ps1_new" != "$ps1_content" ]]; then
       if [[ $ps1_count -eq 0 ]]; then
         echo -e "  ${GREEN}✓${NC} \$VERSION[_STR]? = \"$OLD_2SEG\" → \"$NEW_2SEG\""
@@ -265,8 +321,12 @@ while IFS= read -r md; do
   md_new=$(sed \
     -e "s/^> v${OLD_3SEG} · /> v${NEW_3SEG} · /g" \
     -e "s/^> v${OLD_2SEG} · /> v${NEW_2SEG} · /g" \
+    -e "s/^> v${OLD_3SEG}·/> v${NEW_3SEG}·/g" \
+    -e "s/^> v${OLD_2SEG}·/> v${NEW_2SEG}·/g" \
     -e "s/^> > v${OLD_3SEG} · /> > v${NEW_3SEG} · /g" \
     -e "s/^> > v${OLD_2SEG} · /> > v${NEW_2SEG} · /g" \
+    -e "s/^> > v${OLD_3SEG}·/> > v${NEW_3SEG}·/g" \
+    -e "s/^> > v${OLD_2SEG}·/> > v${NEW_2SEG}·/g" \
     -e "s/· v${OLD_3SEG}/· v${NEW_3SEG}/g" \
     -e "s/· v${OLD_2SEG}/· v${NEW_2SEG}/g" \
     "$md")

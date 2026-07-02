@@ -1,21 +1,31 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.99.3 · 2026-07-01 · 文档校准版——16 项文档/代码一致性清零（术语统一/幽灵引用/ROADMAP 对齐/CI 合并/档案归档），v1.0 前的一轮文档收尾。
+> v0.99.4 · 2026-07-02 · 审查修复版——41 项全面修复（P0×7 + P1×15 + P2×19），准入条件 6✅→3✅ 诚实化，全仓 doc-vs-reality 清零。
 >
 
-> 🎯 **v1.0 定位**：**FDE 工具包**——帮 FDE 快速梳理企业 workflow → 定义 AI 节点 → 部署到任意设备 → 审计结果自动推送到协作平台。
+> 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（FDE 部署用）为实验性附带。
 
 ---
 
-## 现在在哪：v0.99.3
+## 现在在哪：v0.99.4
 
-> v0.99.3 是 **文档校准版**——16 项文档/代码一致性清零（术语统一/幽灵引用/ROADMAP 对齐/CI 合并/档案归档），v1.0 前的一轮文档收尾。
+> v0.99.4 是 **审查修复版**——41 项全面修复（P0×7 + P1×15 + P2×19），基于 DeepSeek V4 Pro + GLM-5.2 双模型独立审查 + 齐活林交叉查漏。准入条件从 6✅/4⚠️ 诚实化为 3✅/7⚠️，全仓 doc-vs-reality 清零。
+
+| 级别 | 交付 | 状态 |
+|------|------|:----:|
+| P0 | evidence「4家→1家」诚信修复 + ROADMAP 准入 3✅→⚠️ + npm pack .js.map→0 + verify 50→41项 + mcp VERSION TODO + mcp 零测试声明 + FDE case 原始数据声明 | ✅ |
+| P1 | README/HANDBOOK 定位收敛 + CHANGELOG 数字对齐 + FDE 成熟度声明 + bin 构成注明 + orchestrate TODO 标注 + 连续胜出文档诚实化 + check-version/bump-version 修复 + verify ⚠ 标注 + 集成测试声明 + 闭环→多维 | ✅ |
+| P2 | ARCHITECTURE 人设移除 + AI 工程段精简 + README 精简 + Rolling AI 因果 + 人称一致性 + ROADMAP v1.x 规划（A12/A13/规则模板/测试工具） | ✅ |
+
+> 📖 [详细开发日志](./docs/changelog/v0.99.4.md) · v1.0 准入条件进度：3/10 ✅ + 7/10 ⚠️
+
+### v0.99.3 — 文档校准版
 
 | 级别 | 交付 | 状态 |
 |------|------|:----:|
 | P0 | benchmark.sh 幽灵引用清零——7 处文档引用改为 verify.sh | ✅ |
-| P0 | ROADMAP v1.0 准入条件三处口径统一（经独立审查修正为 6/10 ✅ + 4/10 ⚠️） | ✅ |
+| P0 | ROADMAP v1.0 准入条件三处口径统一（经独立审查修正为 6/10 ✅ + 4/10 ⚠️，v0.99.4 重新评定为 3/10 ✅ + 7/10 ⚠️） | ✅ |
 | P0 | bump-version.sh Unicode 编码 bug 修复 | ✅ |
 | P1 | 全量外部链接验证 + windows-ci.yml vitest 跳过注释 + CI workflow 合并（audit.yml→sofagent-audit.yml） | ✅ |
 | P1 | CONTRIBUTING 版本号修正 + CoC 去重 | ✅ |
@@ -26,7 +36,7 @@
 | P2 | ROADMAP 放弃条件节删除 | ✅ |
 | P2 | CHANGELOG v0.99 条目 398→406 注记 | ✅ |
 
-> 📖 [详细开发日志](./docs/changelog/v0.99.3.md) · v1.0 准入条件进度：6/10 ✅ + 4/10 ⚠️
+> 📖 [详细开发日志](./docs/changelog/v0.99.3.md) · v1.0 准入条件进度：3/10 ✅ + 7/10 ⚠️
 
 ### v0.99.2 — 审查驱动质量修复版
 
@@ -78,6 +88,7 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
+| **v0.99.4** | 审查修复：41 项全面修复，准入 6✅→3✅ 诚实化，doc-vs-reality 清零，闭环→多维 | [📖](./docs/changelog/v0.99.4.md) |
 | **v0.99.3** | 文档校准：16 项一致性清零（术语/幽灵引用/ROADMAP/CI/归档）+ bump-version 修复 | [📖](./docs/changelog/v0.99.3.md) |
 | **v0.99.2** | 审查修复：daemon 歧义根治 + 死链清零 + 文档一致性 + P2 清零 | [📖](./docs/changelog/v0.99.2.md) |
 | **v0.99.1** | 审查跟进：OpenClaw 叙事重写 + YAML→js-yaml + MCP 独立包 + 局限声明修正 | [📖](./docs/changelog/v0.99.1.md) |
@@ -120,7 +131,7 @@
 **v0.99**：两份独立审查全面修复 + Skill 全部 ≤90 行 + 文档预算 4849≤5000 + 放弃条件引入 + bus factor 声明 + GitHub Action 模板 + MCP Server 实现 + verify.sh → TS 重构（sofagent-verify 第 6 个 bin）。FDE 端到端验证推迟 v1.0。
 **v0.99.1**：审查跟进——OpenClaw 叙事重写（两层架构 / 审计层平台无关 / 编排层 FDE 工具包）+ P0 代码清理（手写 YAML→js-yaml、MCP Server 拆分为 @sofagent/mcp）+ 局限声明修正 + 案例模板
 
-### v1.0 — 正式版：FDE 工具包
+### v1.0 — 正式版：Agent 审计工具（+ FDE 编排引擎实验性附带）
 
 三条主线：
 1. FDE 引导逻辑 → 自动产出 workflow.yaml + 部署方案书
@@ -136,11 +147,11 @@
 | # | v1.0 准入条件 | 状态 |
 |:--:|------|------|
 | 1 | 审计引擎检出率验证 | ✅ v0.99.2 首次实测——5/5 100% 检出（Case 015）。局限：靶向构造、未测误报率、非盲测 |
-| 2 | 审计工具实现完整六步闭环 | ✅ v0.99.2 端到端验证通过（Case 014） |
-| 3 | Harness 层上下文成本 ≤ 窗口 5% | ✅ ~2.5% |
+| 2 | 审计工具实现完整六步闭环 | ⚠️ 步骤 1-3 生产可用，步骤 4-6 实验性/技术预览（见 LIMITATIONS） |
+| 3 | Harness 层上下文成本 ≤ 窗口 5% | ⚠️ ~2.5%（自报，无独立验证。「500 字原则」未达——SKILL.md≈2000+字，fde.md=1679 字符） |
 | 4 | OpenClaw + AO compose 全链路跑通 | ⚠️ ao 0.7.5 compose 生成有效 workflow（v0.99.2 实测，216 角色可用，输出完整 YAML）。全链路运行（ao run）需 OpenClaw 会话 |
 | 5 | MCP server + webhook 跑通 | ⚠️ MCP Server 本地通过（initialize/tools/list/tools/call）。Webhook 推送代码完整（`pushAuditResult` 支持 dingtalk/feishu/wecom，fire-and-forget），需真实 webhook URL 完成端到端 |
-| 6 | daemon 核心功能通过自动化测试 | ✅ v0.99.2 验证通过——daemon.json 完整创建、平台检测正常、pid/mode 字段齐全 |
+| 6 | daemon 核心功能通过自动化测试 | ⚠️ 手动验证通过（Case 014），无独立自动化测试（见 LIMITATIONS） |
 | 7 | ≥ 1 外部用户 + 5 个一次性测试 | ⚠️ 关联企业已在试用，测试数据收集整理中 |
 | 8 | install → verify → 首次任务通过率 ≥ 90% | ✅ v0.99.2 验证通过——verify.sh exit 0，检查全绿 |
 | 9a | 三操作系统核心功能（build + tsc + smoke test） | ✅ macOS——Case 014。Linux——`daemon-linux-ci`。Windows——`windows-ci` |
@@ -162,12 +173,20 @@
 | 英文文档扩展 | HANDBOOK/DEVELOPMENT/ARCHITECTURE 英文翻译 |
 | ARCHITECTURE 可读性 | 降低外部引用密度，让新人 10 分钟能看懂
 | 恢复路径结构化 | think.md 记录失败但没有结构化恢复机制，等 JSONL 落地
+| 审计规则模板消除重复 | RuleFunction 类型工厂 + Runner 注册模式（15 个 rule-*.ts 减少 30% 重复代码）
+| 测试工具函数提取 | makeDiffFile / runDiffParse 等重复定义收敛到 test-utils.ts
+| A12 供应链安全 | 依赖变更审计
+| A13 文件权限 | chmod 操作检测
 
 ### v2.x — 多设备协同：组织级 Agent Harness（规划中）
 
 > 💡 定位澄清：v2.x 的本质不是"设备能通信"，而是"每个 AI 节点拥有独立身份，能主动进入协作现场"。这是从个人助手 Harness 到组织级 Agent Harness 的跨越——Agent 不再是某个人的工具，而是组织的独立成员。详见项目记忆中的 [组织级 Agent Harness 研判](.workbuddy/memory/MEMORY.md#组织级-agent-harness2026-06-30-cloudtag-研判笔记)。
 
 四阶段渐进：协同编排协议（Markdown 优先）→ Agent 发现与注册 → 跨设备任务分发 → 企业 Agent 知识库（多设备蒸馏记忆聚合到企业自有 NAS/云盘，底层用 [Graphify](https://github.com/safishamsi/graphify) 轻量知识图谱）
+
+> 🧠 **技术底座参考 — A2A 协议**：Google A2A（Agent-to-Agent）协议为多智能体协作定义了三个关键层级：① 动态服务发现（Agent 版 DNS——Agent 广播能力，匹配条件者自动响应）、② 能力契约对齐（入参/输出 Schema 握手，消除自然语言歧义）、③ 全状态接力（任务交接时同时移交执行目标 + 前置共识 + 专属记忆）。MCP 解决「脑和手」的工具调用，A2A 解决「脑和脑」的协作分工。
+>
+> 同时也需防御 A2A 的三大工程雷区：**语义漂移**（多 Agent 链路中每层推理偏差累积导致末端动作与原始需求南辕北辙）、**死循环雪崩**（Agent 互等形成逻辑闭环，数秒内耗尽 Token 预算）、**权限穿透**（低权限 Agent 构造恶意 A2A 请求诱骗高权限 Agent 执行危险操作）。防御方案三板斧：协调者中枢监控 + 强类型 Schema 前置拦截 + 零信任动态令牌——这三条将纳入 sofagent v2.x 的审计规则体系。
 
 **演化路径**：
 

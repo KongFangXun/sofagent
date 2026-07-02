@@ -1,68 +1,104 @@
-# FDE 十步部署 workflow 模板
+# FDE 12 步部署 workflow 模板（4 阶段：进场→挖掘→交付→检查离场）
 # Agent 点火后按此模板拆解任务，逐步引导 FDE 工程师完成部署
 #
 # agent 列对应 FDE/agents/ 下的角色模板，留空表示暂未预配
 
 version: "1.0"
-name: FDE 十步部署流程
+name: FDE 12 步部署流程
 description: |
   FDE 工程师进驻企业 → 梳理 workflow → 识别 AI 节点 → 部署交付。
   sofagent 在后台帮你拆任务、记反思、沉淀经验——你负责跟企业的人聊业务，
   Agent 负责把聊出来的东西变成方案书、知识库、workflow.yaml。
 
 steps:
-  - id: section-1
-    name: 进场·确定场景
+  # ═══ 进场阶段 ═══
+  - id: step-1
+    name: 1. 确定场景
+    phase: 进场
     input: 企业名称、行业、规模、部门
-    output: 企业画像（一段话 + 部门/岗位清单）
+    output: 企业画像基础信息（业务描述 + 部门/岗位清单）
     agent: analyst
     note: 不要聊 AI，只聊业务
 
-  - id: section-2
-    name: 盘点平台与工具
+  - id: step-2
+    name: 2. 盘点平台
+    phase: 进场
     input: 企业画像
     output: 技术环境清单（协同平台、业务系统、数据可达性）
     agent: analyst
 
-  - id: section-3
-    name: 工作流深挖
-    input: 技术环境清单 + 企业画像
+  - id: step-3
+    name: 3. 快速建档
+    phase: 进场
+    input: step-1 + step-2 产出
+    output: 完整企业画像（含技术环境）
+    agent: analyst
+    note: 与部署专家确认画像准确后进入挖掘阶段
+
+  # ═══ 挖掘阶段 ═══
+  - id: step-4
+    name: 4. 梳理工作流
+    phase: 挖掘
+    input: 企业画像 + 技术环境清单
     output: 完整工作流节点图（每个节点含五要素）
     agent: analyst
     loop: true
 
-  - id: section-4
-    name: 识别 AI 节点
+  - id: step-5
+    name: 5. 识别 AI 节点
+    phase: 挖掘
     input: 工作流节点图
     output: 节点分类清单（🔄/⚡/👤 + 判定理由）
     agent: analyst
 
-  - id: section-5
-    name: 价值量化
+  - id: step-6
+    name: 6. 成果量化
+    phase: 挖掘
     input: 节点分类清单
     output: 节点价值清单（成本/节省/回本周期）
     agent: planner
 
-  - id: section-6
-    name: 出方案
+  # ═══ 交付阶段 ═══
+  - id: step-7
+    name: 7. 交付方案
+    phase: 交付
     input: 节点价值清单
     output: 节点→方案对照表 + workflow.yaml
     agent: planner
 
-  - id: section-7
-    name: 部署与交付
+  - id: step-8
+    name: 8. 方案部署
+    phase: 交付
     input: 方案对照表 + workflow.yaml
     output: 在跑的 AI 节点 + 知识库五个文档
     agent: deployer
 
-  - id: section-8
-    name: 交付物清单
-    input: 前七步所有产出
+  - id: step-9
+    name: 9. 交接清单
+    phase: 交付
+    input: 前八步所有产出
     output: 方案书.md + 知识库五个 .md + 运行中的 AI 节点确认
     agent: planner
 
-  - id: section-9
-    name: 离场
-    input: 交付物清单
-    output: 离场检查清单（9 项全部打勾）
+  # ═══ 检查离场 ═══
+  - id: step-10
+    name: 10. 节点全跑通
+    phase: 检查离场
+    input: 交接清单 + 运行时确认
+    output: 所有 🔄/⚡ 节点验证通过、Skill 注入确认
+    agent: deployer
+
+  - id: step-11
+    name: 11. 两周无报错
+    phase: 检查离场
+    input: 运行时日志 + 审计周报
+    output: 连续两周无关键报错确认
+    agent: deployer
+    note: 陪跑期，每日检查审计周报
+
+  - id: step-12
+    name: 12. 确认后离场
+    phase: 检查离场
+    input: step-10 + step-11 确认
+    output: 企业负责人签字确认离场
     agent: deployer

@@ -76,7 +76,7 @@ export function verifyEvidence(filePath?: string, daemonMode: boolean = false): 
   if (totalPositive > 0) {
     if (!daemonMode) {
       console.log(`[已验证] 检测到客观证据：测试 ${testMatch.positive} 处 / lint ${lintMatch.positive} 处 / build ${buildMatch.positive} 处`);
-      console.log('→ 本轮闭环评分有客观证据支撑');
+      console.log('→ 本轮多维评分有客观证据支撑');
     }
     return 0;
   }
@@ -84,7 +84,7 @@ export function verifyEvidence(filePath?: string, daemonMode: boolean = false): 
   // 无任何证据 → 未验证
   if (!daemonMode) {
     console.log('[未验证] 未检测到测试 / lint / build 等客观证据');
-    console.log('→ 本轮闭环评分依赖 LLM 自评，可信度有限');
+    console.log('→ 本轮多维评分依赖 LLM 自评，可信度有限');
   }
   return 1;
 }
