@@ -177,6 +177,10 @@
 | 测试工具函数提取 | makeDiffFile / runDiffParse 等重复定义收敛到 test-utils.ts
 | A12 供应链安全 | 依赖变更审计
 | A13 文件权限 | chmod 操作检测
+| MCP/Plugin/Skill/Hook 四组件扩展 | 在现有 MCP+Skill 基础上架构 Plugin+Hook 层
+| 双闸验证：执行前 + 副作用写回前 | 审计从事后 diff 扩展到事前拦截
+| loop-check 三元统一出口 | pass/fail/warn 收敛，对齐审计引擎 exit code 0/1/2
+| 记忆产权三维框架 | 对象归属 / 锁定策略 / 边界定义补充到记忆层
 
 ### v2.x — 多设备协同：组织级 Agent Harness（规划中）
 
