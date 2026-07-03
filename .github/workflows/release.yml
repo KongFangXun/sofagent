@@ -17,7 +17,7 @@ jobs:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci
-      - run: npm install --no-save @rollup/rollup-linux-x64-gnu || true
+      - run: npm install --no-save @rollup/rollup-linux-x64-gnu
         # npm ci 从 macOS 生成的 lock 文件在 Linux 上可能漏装 optional native 模块
         # (https://github.com/npm/cli/issues/4828)
       - run: npm test
