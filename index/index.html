@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>sofagent · 中小企业和 OPC 的 FDE 工具包</title>
+<meta property="og:title" content="sofagent · 企业上AI，先上缰绳再上路">
+<meta property="og:description" content="中小企业和 OPC 的 FDE 工具包——约束底座管行为，审计引擎盯结果。">
+<meta property="og:image" content="https://kongfangxun-d1gc3w0x3d6a74f96-1428477840.tcloudbaseapp.com/sofagent/sofagent.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png?v=1">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{brand:'#16B8F3','brand-dark':'#0E9AD4','brand-light':'#E8F8FE'}}}}</script>
+<style>
+:root {
+  --brand: #16B8F3;
+  --brand-dark: #0E9AD4;
+  --brand-light: #E8F8FE;
+  --bg-alt: #F9F9FB;
+  --text: #0F172A;
+  --text-sec: #64748B;
+  --text-muted: #94A3B8;
+  --border: #E7E7EA;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  color: var(--text); line-height: 1.65; font-size: 16px; background: #fff;
+}
+
+.ctn { max-width: 1024px; margin: 0 auto; padding: 0 24px; }
+.section { padding: 96px 0; }
+.section-alt { background: var(--bg-alt); }
+.section-title {
+  font-size: clamp(26px, 4vw, 34px); font-weight: 800; line-height: 1.25;
+  letter-spacing: -0.02em; margin-bottom: 14px; text-align: center;
+}
+.section-desc {
+  font-size: 16px; color: var(--text-sec); max-width: 600px; margin: 0 auto 48px;
+  text-align: center; line-height: 1.7;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 14px; font-weight: 600; padding: 11px 24px;
+  border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s;
+  border: none; text-decoration: none; min-height: 44px;
+}
+.btn-primary { background: var(--brand); color: #fff; }
+.btn-primary:hover { background: var(--brand-dark); }
+.btn-outline { background: transparent; color: var(--text); border: 1.5px solid var(--border); }
+.btn-outline:hover { border-color: var(--brand); color: var(--brand); }
+.btn-dark { background: rgba(255,255,255,0.1); color: #fff; }
+.btn-dark:hover { background: rgba(255,255,255,0.18); }
+.btn-white { background: #fff; color: #0F172A; }
+.btn-white:hover { background: #E2E8F0; }
+
+/* Cards */
+.card {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 32px; transition: all 0.2s;
+}
+.card:hover { border-color: var(--brand); box-shadow: 0 4px 12px rgba(15,20,25,0.06); }
+.card:hover { border-color: #D1D5DB; box-shadow: 0 4px 12px rgba(15,20,25,0.06); }
+
+/* Nav */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(255,255,255,0.88); backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border); height: 56px;
+  opacity: 0; transform: translateY(-100%); transition: all 0.3s;
+}
+.nav.visible { opacity: 1; transform: translateY(0); }
+.nav-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  max-width: 1024px; margin: 0 auto; padding: 0 24px; height: 100%;
+}
+.nav-logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 16px; }
+.nav-logo img { width: 30px; height: 30px; }
+.nav-tag { font-size: 11px; font-weight: 600; color: var(--brand); background: var(--brand-light); padding: 2px 8px; border-radius: 100px; display: inline-flex; align-items: center; vertical-align: middle; }
+.nav-links { display: flex; align-items: center; gap: 24px; }
+.nav-link { font-size: 13px; color: var(--text-sec); text-decoration: none; font-weight: 500; }
+.nav-link:hover { color: var(--brand); }
+.nav-cta { font-size: 13px; font-weight: 600; color: #fff; background: var(--brand); padding: 7px 16px; border-radius: var(--radius-sm); text-decoration: none; }
+.nav-cta:hover { background: var(--brand-dark); }
+
+/* Hero */
+.hero { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 80px 0 80px; text-align: center; }
+.hero-logo { width: 120px; height: auto; margin: 0 auto 20px; }
+.hero-badge {
+  display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+  color: var(--brand); background: var(--brand-light); padding: 5px 14px;
+  border-radius: 100px; margin-bottom: 20px; border: 1px solid rgba(22,184,243,0.12);
+}
+.hero-title { font-size: clamp(36px, 6vw, 54px); font-weight: 900; line-height: 1.15; letter-spacing: -0.03em; margin-bottom: 18px; }
+.hero-title em { font-style: normal; color: var(--brand); }
+.hero-subtitle { font-size: 16px; color: var(--text-sec); line-height: 1.7; max-width: 660px; margin: 0 auto 20px; }
+.hero-tagline { font-size: 14px; color: var(--text-muted); font-style: italic; line-height: 1.7; max-width: 660px; margin: 0 auto 24px; }
+.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* Trust */
+.trust-row {
+  display: flex; align-items: center; justify-content: center; gap: 32px;
+  padding: 28px 0; font-size: 14px; color: var(--text-sec); flex-wrap: wrap;
+}
+.trust-dot { width: 10px; height: 10px; border-radius: 50%; background: #10B981; display: inline-block; margin-right: 6px; box-shadow: 0 0 8px rgba(16,185,129,0.3); }
+.trust-num { font-weight: 700; color: var(--text); }
+
+/* Harness */
+.harness-quote {
+  padding: 0 0 0 24px; border-left: 3px solid var(--brand);
+  font-size: 16px; color: var(--text-sec); line-height: 1.75; margin-bottom: 12px;
+}
+.harness-human { font-size: 15px; color: var(--text-muted); font-style: italic; }
+
+/* Pain grid */
+.pain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 884px; margin: 0 auto; }
+.pain-card { padding: 24px 28px; }
+.pain-card-header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+.pain-card-icon {
+  width: 34px; height: 34px; border-radius: 8px; background: var(--bg-alt);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: var(--brand); flex-shrink: 0;
+}
+.pain-card-title { font-size: 15px; font-weight: 700; }
+.pain-card-desc { font-size: 13px; color: var(--text-sec); line-height: 1.65; text-align: center; }
+
+/* Engine grid - equal height */
+.engine-grid { display: flex; gap: 24px; align-items: stretch; justify-content: center; }
+.engine-card { flex: 1; max-width: 430px; padding: 36px 32px; display: flex; flex-direction: column; }
+.engine-card-header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+.engine-card-icon {
+  width: 34px; height: 34px; border-radius: 8px; background: var(--bg-alt);
+  display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--brand); flex-shrink: 0;
+}
+.engine-card-title { font-size: 15px; font-weight: 700; }
+.engine-card-desc { font-size: 13px; color: var(--text-sec); line-height: 1.7; margin-bottom: 20px; }
+.engine-features { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+.engine-feat { display: flex; gap: 8px; font-size: 13px; color: #475569; line-height: 1.5; }
+.engine-feat-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); flex-shrink: 0; margin-top: 6px; }
+
+/* Chain diagram */
+.chain-wrap { border: 1px solid var(--border); border-radius: var(--radius-sm); margin-top: auto; height: 180px; display: flex; flex-direction: column; }
+.chain-row { display: flex; gap: 10px; padding: 0 16px; font-size: 13px; align-items: center; flex: 1; }
+.chain-row + .chain-row { border-top: 1px solid var(--border); }
+.chain-row-icon { 
+  width: 28px; height: 28px; border-radius: 6px; background: var(--bg-alt);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: var(--brand); flex-shrink: 0;
+}
+.chain-row-title { font-weight: 600; color: var(--text); }
+.chain-row-desc { color: var(--text-muted); margin-top: 1px; }
+
+/* MCP diagram */
+.mcp-box { text-align: center; padding: 18px; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-top: auto; display: flex; flex-direction: column; justify-content: center; height: 180px; }
+.mcp-flow { font-size: 13px; color: var(--text-sec); }
+.mcp-flow > div { padding: 4px 0; }
+.mcp-flow .arr { color: var(--brand); font-weight: 700; padding: 0; line-height: 1; }
+.mcp-platforms { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.mcp-pill { font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 100px; background: var(--brand-light); color: var(--brand); }
+
+/* 4 step flow */
+.step-row { display: flex; gap: 0; justify-content: center; margin-bottom: 48px; }
+.step-item { display: flex; flex-direction: column; align-items: center; flex: 1; text-align: center; position: relative; }
+.step-num { width: 36px; height: 36px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; margin-bottom: 10px; flex-shrink: 0; position: relative; z-index: 2; }
+.step-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.step-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; padding: 0 4px; }
+.step-line { position: absolute; top: 18px; left: 50%; width: 100%; height: 2px; background: var(--border); z-index: 1; }
+.step-item:last-child .step-line { display: none; }
+
+/* SOP comparison - card style */
+.sop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+.sop-card { padding: 28px; text-align: center; }
+.sop-card.bad { border: 1px solid var(--border); background: #FAFAFA; }
+.sop-card.good { border: 2px solid var(--brand); background: var(--brand-light); }
+.sop-card-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; }
+.sop-card-label.bad { color: var(--text-muted); }
+.sop-card-label.good { color: var(--brand); }
+.sop-card-item { font-size: 14px; color: var(--text-sec); line-height: 1.7; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.sop-card-item:last-child { border-bottom: none; }
+.sop-card-item strong { color: var(--text); }
+.sop-note {
+  font-size: 15px; color: var(--text-sec); line-height: 1.7; text-align: center;
+  padding: 20px 28px; background: var(--brand-light); border-radius: var(--radius);
+  border: 1px solid rgba(22,184,243,0.12);
+}
+
+/* FDE Phase Cards - pills with arrows */
+.fde-phase-cards { display: flex; flex-direction: column; gap: 0; margin-bottom: 0; }
+.fde-phase-card { border: 1px solid #D1D5DB; border-radius: var(--radius); background: #fff; overflow: hidden; max-width: 884px; margin: 0 auto; width: 100%; transition: all 0.2s; }
+.fde-phase-card.key { border-color: var(--brand); background: var(--brand-light); }
+.fde-phase-card.key .fde-pill { background: #fff; }
+.fde-phase-card:hover { border-color: var(--brand); box-shadow: 0 4px 12px rgba(15,20,25,0.06); }
+.fde-phase-card-title { text-align: center; padding: 14px 16px 8px; font-size: 14px; font-weight: 700; color: var(--text); }
+.fde-phase-row { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px 10px 18px; flex-wrap: wrap; }
+.fde-pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 20px; border: 1px solid var(--border); border-radius: 100px; font-size: 13px; font-weight: 600; color: var(--text); background: var(--bg-alt); min-width: 130px; }
+.fde-pill.fde-final { border-color: var(--brand); background: var(--brand-light); color: var(--brand); font-size: 14px; padding: 10px 24px; }
+.fde-num { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: var(--brand); color: #fff; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+.fde-arr { color: var(--text-muted); font-size: 12px; flex-shrink: 0; }
+.fde-down { display: flex; justify-content: center; padding: 8px 0; color: var(--brand); font-size: 20px; }
+.fde-check-bar { max-width: 884px; margin: 0 auto; width: 100%; }
+.fde-check-card { border: 1px solid #D1D5DB; border-radius: var(--radius); background: #fff; overflow: hidden; transition: all 0.2s; }
+.fde-check-card:hover { border-color: var(--brand); box-shadow: 0 4px 12px rgba(15,20,25,0.06); }
+.fde-check-title { text-align: center; padding: 14px 16px 8px; font-size: 14px; font-weight: 700; color: var(--text); }
+.fde-check-row { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px 16px 18px; flex-wrap: wrap; }
+.fde-check-row .fde-pill { }
+
+/* Evidence / Architecture cards */
+.info-card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.info-card { padding: 24px; display: flex; flex-direction: column; gap: 8px; }
+.info-card-num { font-size: 28px; font-weight: 900; color: var(--brand); }
+.info-card-title { font-size: 16px; font-weight: 700; }
+.info-card-desc { font-size: 13px; color: var(--text-sec); line-height: 1.6; }
+
+/* AB card */
+.ab-card { padding: 28px; margin-top: 32px; }
+.ab-card-title { font-weight: 700; font-size: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.ab-card-desc { font-size: 14px; color: var(--text-sec); line-height: 1.8; }
+
+/* Sub-section divider */
+.sub-sep { margin-top: 48px; padding-top: 48px; border-top: 1px solid var(--border); }
+
+/* Orchestration card (third engine card, full width) */
+.orch-card { max-width: 884px !important; margin-left: auto; margin-right: auto; }
+.orch-flow-inline { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.ofi-step { display: flex; align-items: center; gap: 5px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 100px; font-size: 12px; font-weight: 600; background: var(--bg-alt); transition: all 0.2s; cursor: default; }
+.ofi-step:hover { border-color: var(--brand); }
+.ofi-num { width: 18px; height: 18px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+.ofi-arr { color: var(--text-muted); font-size: 14px; flex-shrink: 0; }
+.ofi-step.active { border-color: var(--brand); background: var(--brand-light); }
+
+.orch-metrics-bar { margin-top: 12px; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); text-align: center; font-size: 12px; color: var(--text-sec); line-height: 1.6; background: #fff; }
+
+/* Dual engine architecture - simplified */
+.dual-engine { max-width: 884px; margin: 0 auto; }
+
+.de-flow-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 0; }
+.de-pill { padding: 8px 18px; border: 1px solid var(--brand); border-radius: 100px; font-size: 13px; font-weight: 700; background: #fff; }
+.de-pill-outline { padding: 6px 14px; border: 1px dashed var(--border); border-radius: 100px; font-size: 12px; font-weight: 600; }
+
+/* AI node pills */
+.de-node-pill { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: 100px; font-size: 13px; font-weight: 700; border: 1.5px solid var(--brand); background: #fff; color: var(--brand); transition: all 0.2s; cursor: default; }
+.de-node-pill:hover { background: var(--brand-light); }
+.de-node-label { color: var(--text-muted); font-size: 13px; padding: 0 6px; }
+
+/* Constraint base card */
+.de-con-card { border: 1px solid var(--border); border-radius: var(--radius); background: #fff; padding: 14px 24px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+.de-con-card:hover { border-color: var(--brand); box-shadow: 0 4px 12px rgba(15,20,25,0.06); }
+.de-con-card-icon { width: 34px; height: 34px; border-radius: 8px; background: var(--bg-alt); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.de-con-card-icon i { color: var(--brand); font-size: 16px; }
+
+/* Engine card hover */
+.engine-card { transition: all 0.2s; }
+.engine-card:hover { border-color: var(--brand); box-shadow: 0 4px 12px rgba(15,20,25,0.06); }
+.engine-features { text-align: left; }
+
+.orch-features { text-align: center; }
+.orch-features .engine-feat { justify-content: center; }
+
+.center-features { text-align: center; }
+.center-features .engine-feat { justify-content: center; }
+
+/* Step item hover */
+.step-item { transition: all 0.2s; cursor: default; }
+.step-item:hover .step-num { transform: scale(1.1); }
+.step-item:hover .step-title { color: var(--brand); }
+
+/* FDE phase card hover already exists */
+
+/* Hover for standalone pills */
+.fde-pill { transition: all 0.2s; cursor: default; }
+.fde-pill:hover { border-color: var(--brand); }
+.de-ar { color: var(--brand); font-size: 14px; }
+.de-arrow { text-align: center; color: var(--brand); font-size: 20px; padding: 8px 0; }
+
+/* Dual engines */
+.de-engines { display: flex; gap: 0; align-items: stretch; }
+.de-engine { flex: 1; border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; background: #fff; transition: all 0.2s; text-align: center; }
+.de-engine:hover { border-color: var(--brand); box-shadow: 0 4px 12px rgba(15,20,25,0.06); }
+.de-engine-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.de-engine-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
+.de-engine-steps { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+.de-step { font-size: 12px; color: var(--text-sec); padding: 3px 0; }
+.de-plus { display: flex; align-items: center; padding: 0 12px; font-size: 18px; color: var(--brand); font-weight: 700; flex-shrink: 0; }
+
+@media (max-width: 768px) {
+  .de-engines { flex-direction: column; gap: 12px; }
+  .de-plus { justify-content: center; transform: rotate(90deg); padding: 4px 0; }
+}
+
+/* Value quantification */
+.value-grid { display: flex; gap: 20px; justify-content: center; margin-bottom: 0; }
+.value-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 28px; background: #fff; transition: all 0.2s; text-align: center; flex: 1; max-width: 430px; }
+.value-card:hover { border-color: var(--brand); box-shadow: 0 4px 12px rgba(15,20,25,0.06); }
+.value-card-icon { width: 34px; height: 34px; border-radius: 8px; background: var(--bg-alt); display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--brand); flex-shrink: 0; }
+.value-card-title { font-size: 15px; font-weight: 700; }
+.value-card-desc { font-size: 13px; color: var(--text-sec); line-height: 1.6; margin-top: 8px; }
+
+/* Deliverables */
+.deliver-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 884px; margin: 0 auto; }
+.deliver-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 24px; background: #fff; transition: all 0.2s; text-align: center; }
+.deliver-card:hover { border-color: var(--brand); box-shadow: 0 4px 12px rgba(15,20,25,0.06); }
+.deliver-card-emoji { width: 34px; height: 34px; border-radius: 8px; background: var(--bg-alt); display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--brand); flex-shrink: 0; }
+.deliver-card-title { font-size: 15px; font-weight: 700; }
+.deliver-card-desc { font-size: 13px; color: var(--text-sec); line-height: 1.6; margin-top: 10px; }
+
+/* Knowledge base */
+.kb-split { display: flex; align-items: stretch; gap: 16px; justify-content: center; margin-bottom: 28px; }
+.kb-col { flex: 1; max-width: 430px; border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 24px; background: #fff; transition: all 0.2s; text-align: center; display: flex; flex-direction: column; }
+.kb-col:hover { border-color: var(--brand); box-shadow: 0 4px 12px rgba(15,20,25,0.06); }
+.kb-col-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; justify-content: center; }
+.kb-col-icon { width: 34px; height: 34px; border-radius: 8px; background: var(--bg-alt); display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--brand); flex-shrink: 0; }
+.kb-col-icon.grow i { color: #2ECC71; }
+.kb-col-title { font-size: 15px; font-weight: 700; }
+.kb-items { display: flex; flex-direction: column; gap: 10px; align-items: center; flex: 1; }
+.kb-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text-sec); line-height: 1.5; text-align: left; }
+.kb-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 7px; flex-shrink: 0; background: var(--brand); }
+.kb-dot.grow { background: #2ECC71; }
+.kb-col-note { margin-top: 16px; font-size: 12px; color: var(--text-muted); font-style: italic; line-height: 1.6; }
+.kb-divider { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 16px; flex-shrink: 0; min-height: 200px; }
+.kb-arrow { font-size: 24px; color: var(--brand); font-weight: 700; opacity: 0.6; }
+.kb-arrow-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 6px; line-height: 1.5; }
+.kb-who { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; padding: 20px 28px; background: var(--brand-light); border-radius: var(--radius); border: 1px solid rgba(22,184,243,0.12); font-size: 14px; color: var(--text-sec); line-height: 1.7; }
+
+/* Agent nodes */
+.agent-text { font-size: 15px; color: var(--text-sec); line-height: 1.75; text-align: center; max-width: 680px; margin: 0 auto 24px; }
+.platform-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.platform-pill { font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: 100px; border: 1px solid var(--border); background: #fff; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.platform-pill.star { border-color: var(--brand); background: var(--brand-light); color: var(--brand); }
+
+/* Final CTA */
+.final-cta { padding: 96px 0; text-align: center; background: #0F172A; color: #fff; }
+.final-cta-title { font-size: clamp(28px, 5vw, 40px); font-weight: 800; margin-bottom: 12px; }
+.final-cta-desc { font-size: 16px; color: #94A3B8; max-width: 480px; margin: 0 auto 32px; line-height: 1.65; }
+.code-block {
+  background: #1E293B; border-radius: var(--radius-sm); padding: 18px 24px;
+  max-width: 884px; margin: 0 auto 24px; text-align: center;
+  font-family: 'SF Mono','Fira Code','Menlo',monospace; font-size: 13px; line-height: 1.8;
+  overflow-x: auto; color: #CBD5E1;
+}
+.code-block .prompt { color: var(--brand); }
+
+/* Footer */
+.footer { padding: 48px 0; border-top: 1px solid var(--border); }
+.footer-grid { display: flex; justify-content: center; gap: 80px; margin-bottom: 0; flex-wrap: wrap; }
+.footer-brand { text-align: center; }
+.footer-brand-name { font-weight: 800; font-size: 20px; margin-bottom: 6px; }
+.footer-brand-name .blue { color: var(--brand); }
+.footer-brand-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+.footer-col-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+.footer-links { display: flex; flex-direction: column; gap: 6px; }
+.footer-link { font-size: 13px; color: var(--text-sec); text-decoration: none; }
+.footer-bottom { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.footer-sep { color: var(--text-muted); font-size: 13px; }
+.footer-link:hover { color: var(--brand); }
+.footer-bottom { padding-top: 24px; border-top: 1px solid var(--border); text-align: center; font-size: 12px; color: var(--text-muted); display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.footer-quote { color: var(--text-sec); font-style: italic; }
+
+/* Compatibility grid */
+.compat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 884px; margin: 0 auto; }
+.compat-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 20px 20px; background: #fff; transition: all 0.2s; text-align: center; }
+.compat-card:hover { border-color: var(--brand); box-shadow: 0 4px 12px rgba(15,20,25,0.06); }
+.compat-card-icon { width: 34px; height: 34px; border-radius: 8px; background: var(--bg-alt); display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--brand); flex-shrink: 0; }
+.compat-card-title { font-size: 15px; font-weight: 700; }
+.compat-card-desc { font-size: 13px; color: var(--text-sec); }
+.compat-card-pills { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+.compat-card-pills span { padding: 4px 12px; border: 1px solid var(--border); border-radius: 100px; font-size: 11px; font-weight: 600; background: var(--bg-alt); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .section { padding: 64px 0; }
+  .hero { padding: 120px 0 64px; }
+  .hero-logo { width: 88px; }
+  .section-desc { padding: 0 16px; }
+  
+  /* Pain grid */
+  .pain-grid { grid-template-columns: 1fr; }
+  
+  /* Engine cards */
+  .engine-grid { flex-direction: column; }
+  .engine-card { max-width: none; }
+  
+  /* Step row */
+  .step-row { flex-direction: column; gap: 0; align-items: center; }
+  .step-item { flex-direction: column; align-items: center; gap: 8px; padding: 0; }
+  .step-item + .step-item { border-top: none; }
+  .step-line { display: none; }
+  .step-item:not(:last-child)::after { content: "\F282"; font-family: "bootstrap-icons"; font-size: 18px; color: var(--brand); margin: 8px 0; }
+
+  /* FDE flow cards */
+  .fde-phase-cards { flex-direction: column; gap: 16px; }
+  .fde-phase-row { flex-wrap: wrap; }
+  .fde-phase-card { max-width: none; }
+
+  /* Deliverables & Value */
+  .deliver-grid, .compat-grid { grid-template-columns: 1fr; max-width: none; }
+  .value-grid { flex-direction: column; align-items: stretch; }
+  .value-card { max-width: none; flex: none; width: 100%; }
+  .kb-split { flex-direction: column; }
+  .kb-col { max-width: none; }
+  .kb-divider { flex-direction: row; min-height: auto; padding: 12px 0; }
+  .kb-arrow { transform: rotate(90deg); }
+  .kb-arrow-label { text-align: left; margin-left: 8px; margin-top: 0; }
+  .kb-who { flex-direction: column; gap: 10px; text-align: center; }
+
+  /* FDE & wide cards */
+  .fde-check-bar { max-width: none; }
+  .orch-card { max-width: none !important; }
+  .deliver-card { max-width: none; }
+  .compat-card { max-width: none; }
+  
+  /* CTA */
+  .hero-actions { flex-direction: column; align-items: center; }
+  .hero-actions .btn { width: 100%; max-width: 280px; }
+
+  /* Nav */
+  .nav-links { gap: 12px; }
+  .nav-inner { padding: 0 16px; }
+  .nav-link { font-size: 12px; }
+  .nav-logo { font-size: 14px; }
+  .nav-logo img { width: 24px; height: 24px; }
+  .nav-tag { font-size: 10px; padding: 1px 6px; }
+  .nav-links .btn { padding: 6px 12px; font-size: 11px; }
+
+  /* Footer */
+  .footer-grid { flex-direction: column; align-items: center; text-align: center; gap: 16px; }
+  .footer-brand { text-align: center !important; }
+  .footer div[style*="flex"] { justify-content: center !important; }
+}
+
+@media (max-width: 480px) {
+  .ctn { padding: 0 16px; }
+  .hero-title { font-size: 28px; }
+  .section-title { font-size: 23px; }
+  .engine-card { padding: 24px 20px; }
+  .fde-pill { min-width: 90px; padding: 6px 8px; font-size: 11px; }
+  .fde-num { width: 16px; height: 16px; font-size: 9px; }
+  .fde-arr { font-size: 10px; }
+  .fde-phase-row { gap: 6px; padding: 8px 8px 14px; }
+  .fde-check-row { gap: 4px; flex-wrap: nowrap; padding: 8px 6px 14px; }
+  .fde-check-row .fde-pill { min-width: 80px; padding: 5px 6px; font-size: 10px; }
+  .orch-flow-inline { gap: 4px; }
+  .ofi-step { padding: 5px 8px; font-size: 11px; }
+  .ofi-arr { font-size: 10px; }
+  .mcp-pill { padding: 3px 8px; font-size: 10px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="main-nav">
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <img src="sofagent.png" alt="sofagent">
+      <span><span style="color:var(--brand)">sofa</span>gent</span>
+      <span class="nav-tag">FDE</span>
+    </div>
+    <div class="nav-links">
+      <a href="https://github.com/KongFangXun/sofagent" class="nav-link" target="_blank">GitHub</a>
+      <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/FDE.md" class="nav-link" target="_blank">FDE</a>
+      <a href="https://github.com/KongFangXun/sofagent" class="nav-link" target="_blank">安装</a>
+      <iframe src="https://ghbtns.com/github-btn.html?user=KongFangXun&repo=sofagent&type=star&count=true" 
+        frameborder="0" scrolling="0" width="95" height="20" title="Star"
+        style="vertical-align:middle;"></iframe>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<section class="hero" id="hero">
+  <div class="ctn">
+    <img src="sofagent.png" alt="sofagent" class="hero-logo">
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">
+      <span class="hero-badge" style="margin-bottom:0">FDE 工具包</span>
+      <span class="hero-badge" style="margin-bottom:0;background:#fff;color:var(--text-muted);border-color:var(--border)">MIT 开源</span>
+      <span class="hero-badge" style="margin-bottom:0;background:#fff;color:var(--text-muted);border-color:var(--border)">v1.0</span>
+    </div>
+    <h1 class="hero-title">企业上 AI，<em>先上缰绳再上路</em></h1>
+    <p class="hero-subtitle">
+      中小企业和 OPC 的 FDE 工具包——约束底座管行为，审计引擎盯结果<br>
+      不用请昂贵顾问，不用养 AI 团队，自己就能搭建 AI 节点，让你的企业在 AI 时代先人一步
+    </p>
+    <p class="hero-tagline">
+      sofagent 做的不是帮企业"接上 AI"，是帮企业"用对 AI"<br>FDE 就像一个工头，带着一群 AI 工人为企业干活
+    </p>
+    <div class="hero-actions">
+      <a href="#cta" class="btn btn-primary" style="padding:10px 22px;font-size:14px;min-width:140px;justify-content:center;">
+        <i class="bi bi-download"></i> 开始安装
+      </a>
+      <a href="https://github.com/KongFangXun/sofagent" class="btn btn-outline" target="_blank" style="padding:10px 22px;font-size:14px;min-width:140px;justify-content:center;">
+        <i class="bi bi-github"></i> GitHub
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PAIN POINTS ===== -->
+<section class="section section-alt" id="pain">
+  <div class="ctn">
+    <h2 class="section-title">AI 落地难</h2>
+    <p class="section-desc">95%+ 的中小企业与 OPC 卡在这三道坎</p>
+    <div class="pain-grid">
+      <div class="card pain-card">
+        <div class="pain-card-header">
+          <span class="pain-card-icon"><i class="bi bi-exclamation-triangle"></i></span>
+          <span class="pain-card-title">预期太高</span>
+        </div>
+        <div class="pain-card-desc">买了一堆工具，以为 AI 什么都能干<br>不是 AI 不行，是没人梳理工作流</div>
+      </div>
+      <div class="card pain-card">
+        <div class="pain-card-header">
+          <span class="pain-card-icon"><i class="bi bi-terminal"></i></span>
+          <span class="pain-card-title">技术主导</span>
+        </div>
+        <div class="pain-card-desc">技术视角看不到业务节点<br>AI 落地不是 IT 项目，是业务改造</div>
+      </div>
+      <div class="card pain-card">
+        <div class="pain-card-header">
+          <span class="pain-card-icon"><i class="bi bi-eye-slash"></i></span>
+          <span class="pain-card-title">装了没人管</span>
+        </div>
+        <div class="pain-card-desc">AI 干得好不好没人知道<br>行为没约束、结果缺审计</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section class="section" id="how">
+  <div class="ctn">
+    <h2 class="section-title">sofagent 的解法：FDE 工具包</h2>
+    <p class="section-desc">四步，把企业工作流改造成 AI Workflow</p>
+
+    <!-- 4 steps -->
+    <div class="step-row">
+      <div class="step-item">
+        <div class="step-num">1</div><div class="step-line"></div>
+        <div class="step-title">梳理工作流</div>
+        <div class="step-desc">把企业工作流画出来</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div><div class="step-line"></div>
+        <div class="step-title">识别 AI 节点</div>
+        <div class="step-desc">标注自动或辅助节点</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div><div class="step-line"></div>
+        <div class="step-title">装上工具包</div>
+        <div class="step-desc">闲置设备装 sofagent</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-title">自动跑业务</div>
+        <div class="step-desc">AI 自己干活、汇报、复盘</div>
+      </div>
+    </div>
+
+    <!-- 10 step -->
+    <div cl    </div>
+  </div>
+</section>
+
+<!-- ===== ENGINES ===== -->
+<section class="section section-alt" id="engines">
+  <div class="ctn">
+    <h2 class="section-title">FDE 工具包架构</h2>
+    <p class="section-desc">约束 AI 行为 + 审计产出质量 + 编排任务干活</p>
+    <div class="engine-grid">
+      <!-- 约束底座 -->
+      <div class="card engine-card">
+        <div class="engine-card-header">
+          <div class="engine-card-icon"><i class="bi bi-shield-check"></i></div>
+          <div class="engine-card-title">约束底座</div>
+        </div>
+        <div class="engine-card-desc" style="text-align:center">宪法层 + 反思层 + 规范层自动注入，AI 跑偏自动纠正<br>兼容 WorkBuddy / Claude Code / Codex</div>
+        <div class="engine-features center-features">
+          <div class="engine-feat"><span class="engine-feat-dot"></span>三层加载链：宪法 → 反思 → 规范，永久在线</div>
+          <div class="engine-feat"><span class="engine-feat-dot"></span>复杂度判断：简单直接做，复杂拆成小任务做</div>
+          <div class="engine-feat"><span class="engine-feat-dot"></span>干完活主动总结反思，踩过的坑下次自动避开</div>
+        </div>
+        <div class="chain-wrap">
+          <div class="chain-row"><span class="chain-row-icon"><i class="bi bi-journal-bookmark"></i></span><div><div class="chain-row-title">宪法层</div><div class="chain-row-desc">4 条底线 + 6 则铁律</div></div></div>
+          <div class="chain-row"><span class="chain-row-icon"><i class="bi bi-lightbulb"></i></span><div><div class="chain-row-title">反思层</div><div class="chain-row-desc">think.md 错题本，以前踩的坑自动复盘</div></div></div>
+          <div class="chain-row"><span class="chain-row-icon"><i class="bi bi-building"></i></span><div><div class="chain-row-title">规范层</div><div class="chain-row-desc">fde.md 企业专属规则，最高优先级</div></div></div>
+        </div>
+      </div>
+      <!-- 审计引擎 -->
+      <div class="card engine-card">
+        <div class="engine-card-header">
+          <div class="engine-card-icon"><i class="bi bi-clipboard-check"></i></div>
+          <div class="engine-card-title">审计引擎</div>
+        </div>
+        <div class="engine-card-desc" style="text-align:center">11 项审计，每次 git commit 自动触发<br>MCP 自动推送结果，评分全程透明可追溯</div>
+        <div class="engine-features center-features">
+          <div class="engine-feat"><span class="engine-feat-dot"></span>独立运行，AI 零依赖</div>
+          <div class="engine-feat"><span class="engine-feat-dot"></span>不用配环境，一行命令装好</div>
+          <div class="engine-feat"><span class="engine-feat-dot"></span>直接看做了啥——不可绕过，也赖不掉</div>
+        </div>
+        <div class="mcp-box">
+          <div class="mcp-flow">
+            <div>Agent 执行任务</div>
+            <div class="arr">↓</div>
+            <div>审计引擎检查</div>
+            <div class="arr">↓</div>
+            <div>MCP Server 自动推送结果</div>
+          </div>
+          <div class="mcp-platforms">
+            <span class="mcp-pill">钉钉</span><span class="mcp-pill">飞书</span><span class="mcp-pill">企业微信</span><span class="mcp-pill">Slack</span><span class="mcp-pill">Teams</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 编排引擎 card -->
+    <div style="margin-top:24px;">
+      <div class="card engine-card orch-card">
+        <div class="engine-card-header">
+          <div class="engine-card-icon"><i class="bi bi-diagram-3"></i></div>
+          <div class="engine-card-title">编排引擎</div>
+        </div>
+        <div class="orch-flow-inline">
+          <div class="ofi-step"><span class="ofi-num">1</span> 任务拆解</div>
+          <i class="bi bi-chevron-right ofi-arr"></i>
+          <div class="ofi-step"><span class="ofi-num">2</span> 匹配模板</div>
+          <i class="bi bi-chevron-right ofi-arr"></i>
+          <div class="ofi-step"><span class="ofi-num">3</span> 并行执行</div>
+          <i class="bi bi-chevron-right ofi-arr"></i>
+          <div class="ofi-step"><span class="ofi-num">4</span> 多维评分</div>
+          <i class="bi bi-chevron-right ofi-arr"></i>
+          <div class="ofi-step"><span class="ofi-num">5</span> A/B 优化</div>
+        </div>
+
+        <div class="engine-features orch-features" style="margin-top:20px;margin-bottom:0;">
+          <div class="engine-feat"><span class="engine-feat-dot"></span>进场自动出方案干活</div>
+          <div class="engine-feat"><span class="engine-feat-dot"></span>大任务拆小，多任务并行</div>
+          <div class="engine-feat"><span class="engine-feat-dot"></span>边干边查，干完自动打总结</div>
+          <div class="engine-feat"><span class="engine-feat-dot"></span>定期 A/B 测试，测的谁好就用谁</div>
+        </div>
+
+        <div class="orch-metrics-bar">
+          对比标准：运行次数 · 违规率 · 执行步数 · 通过率 &nbsp;|&nbsp; 连续两次跑赢 → 替换，只赢一次 → 不动
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== ARCHITECTURE ===== -->
+<section class="section" id="architecture">
+  <div class="ctn">
+    <h2 class="section-title">怎么工作</h2>
+    <p class="section-desc">约束底座常驻在线，审计和编排双引擎并行运转</p>
+
+    <div class="dual-engine">
+      <!-- Row 1: AI node types -->
+      <div class="de-flow-row">
+        <span class="de-node-pill auto"><i class="bi bi-arrow-repeat"></i> 自动执行</span>
+        <span class="de-node-label">两种 AI 节点</span>
+        <span class="de-node-pill assist"><i class="bi bi-lightning-charge"></i> 强化岗位</span>
+      </div>
+      <div class="de-arrow"><i class="bi bi-chevron-down"></i></div>
+
+      <!-- Row 2: Constraint base -->
+      <div class="de-con-card">
+        <div class="de-con-card-icon"><i class="bi bi-shield-check"></i></div>
+        <div>约束底座 —— 自动加载，永久在线</div>
+      </div>
+      <div class="de-arrow"><i class="bi bi-chevron-down"></i></div>
+
+      <!-- Row 3: Dual engines -->
+      <div class="de-engines">
+        <div class="de-engine">
+          <div class="de-engine-title">审计引擎</div>
+          <div class="de-engine-sub">每次提交自动触发</div>
+          <div class="de-engine-steps">
+            <div class="de-step">git diff 硬证据扫描</div>
+            <div class="de-step">A1-A11 逐一规则检查</div>
+            <div class="de-step">MCP 推送结果到协同平台</div>
+          </div>
+        </div>
+        <div class="de-plus">+</div>
+        <div class="de-engine">
+          <div class="de-engine-title">编排引擎</div>
+          <div class="de-engine-sub">接收任务自动点火</div>
+          <div class="de-engine-steps">
+            <div class="de-step">进场自动拆解任务</div>
+            <div class="de-step">匹配模板并行执行</div>
+            <div class="de-step">定期 A/B 重测优化</div>
+          </div>
+        </div>
+      </div>
+      <div class="de-arrow"><i class="bi bi-chevron-down"></i></div>
+
+      <!-- Row 4: think.md -->
+      <div class="de-con-card">
+        <div class="de-con-card-icon"><i class="bi bi-journal-text"></i></div>
+        <div>think.md —— 审计写入反思 · 编排读取优化 · A/B 结果归档</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== VALUE ===== -->
+<section class="section section-alt" id="value">
+  <div class="ctn">
+    <h2 class="section-title">成果可量化</h2>
+    <p class="section-desc">算清楚每个 AI 节点到底能省多少钱</p>
+
+    <div class="value-grid">
+      <div class="value-card">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;">
+          <div class="value-card-icon"><i class="bi bi-arrow-repeat"></i></div>
+          <div class="value-card-title">替人成本</div>
+        </div>
+        <div class="value-card-desc">这个节点现在谁在做？什么职级、大致薪资？<br>给出 AI 接管后释放出的人力「价值」</div>
+      </div>
+      <div class="value-card">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;">
+          <div class="value-card-icon"><i class="bi bi-lightning-charge"></i></div>
+          <div class="value-card-title">升级成本</div>
+        </div>
+        <div class="value-card-desc">该岗位升级到「高效完成此节点」要多少成本？<br>招一个这样的岗位年薪多少？差值多少？</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DELIVERABLES ===== -->
+<section class="section" id="deliver">
+  <div class="ctn">
+    <h2 class="section-title">三项重要产物</h2>
+    <p class="section-desc">一份谁都能看懂的部署方案、一套在跑的 AI 节点集群、一个会自己生长的知识库</p>
+
+    <div class="deliver-grid">
+      <div class="deliver-card d1">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;">
+          <div class="deliver-card-emoji"><i class="bi bi-file-earmark-text"></i></div>
+          <div class="deliver-card-title">部署方案</div>
+        </div>
+        <div class="deliver-card-desc">一份五章文档，从现状到如何部署<br>任何人翻一遍都能懂</div>
+      </div>
+      <div class="deliver-card d3">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;">
+          <div class="deliver-card-emoji"><i class="bi bi-play-circle"></i></div>
+          <div class="deliver-card-title">AI 节点</div>
+        </div>
+        <div class="deliver-card-desc">自动执行 + 辅助岗位的所有节点都在跑<br>按要求定时出审计报告</div>
+      </div>
+      <div class="deliver-card d2">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;">
+          <div class="deliver-card-emoji"><i class="bi bi-journals"></i></div>
+          <div class="deliver-card-title">知识库</div>
+        </div>
+        <div class="deliver-card-desc">不用人来维护的 AI 知识库<br>AI 干的活自己记录自己查</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== KNOWLEDGE BASE ===== -->
+<section class="section section-alt" id="knowledge">
+  <div class="ctn">
+    <h2 class="section-title">知识库：AI 工作记忆</h2>
+    <p class="section-desc">不是扔下一堆文档——静态部分是地基，动态部分是 AI 自己写进去的工作记录</p>
+
+    <div class="kb-split">
+      <div class="kb-col">
+        <div class="kb-col-header">
+          <div class="kb-col-icon"><i class="bi bi-building"></i></div>
+          <span class="kb-col-title">部署时创建</span>
+        </div>
+        <div class="kb-items">
+          <div class="kb-item"><span class="kb-dot"></span>企业工作流全景图</div>
+          <div class="kb-item"><span class="kb-dot"></span>工作流节点手册</div>
+          <div class="kb-item"><span class="kb-dot"></span>AI 节点运维手册</div>
+          <div class="kb-item"><span class="kb-dot"></span>新员工上手文档</div>
+          <div class="kb-item"><span class="kb-dot"></span>常见问题与故障排查</div>
+        </div>
+        <div class="kb-col-note">五个 .md 文档，所有岗位按需查阅</div>
+      </div>
+
+      <div class="kb-col">
+        <div class="kb-col-header">
+          <div class="kb-col-icon" style="color:#2ECC71;"><i class="bi bi-tree" style="color:#2ECC71;"></i></div>
+          <span class="kb-col-title">AI 自主生成</span>
+        </div>
+        <div class="kb-items">
+          <div class="kb-item"><span class="kb-dot grow"></span>自动执行节点的产出</div>
+          <div class="kb-item"><span class="kb-dot grow"></span>强化岗位的 AI 辅助记录</div>
+          <div class="kb-item"><span class="kb-dot grow"></span>审计周报</div>
+          <div class="kb-item"><span class="kb-dot grow"></span>异常事件与处理记录</div>
+        </div>
+        <div class="kb-col-note">无需专人维护，每个在跑的 AI 节点自动更新<br>新的 AI 节点启动时自动检索学习经验</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FDE 十步流程 ===== -->
+<section class="section" id="fde-flow">
+  <div class="ctn">
+    <h2 class="section-title">装好 sofagent</h2>
+    <p class="section-desc">自己就能快速开始做 FDE</p>
+
+    <!-- 10 step - 3 cards stacked with arrows -->
+    <div class="fde-phase-cards">
+      <div class="fde-phase-card">
+        <div class="fde-phase-card-title">进场阶段</div>
+        <div class="fde-phase-row">
+          <span class="fde-pill"><span class="fde-num">1</span> 确定场景</span>
+          <span class="fde-arr"><i class="bi bi-chevron-right"></i></span>
+          <span class="fde-pill"><span class="fde-num">2</span> 盘点平台</span>
+          <span class="fde-arr"><i class="bi bi-chevron-right"></i></span>
+          <span class="fde-pill"><span class="fde-num">3</span> 快速建档</span>
+        </div>
+      </div>
+      <div class="fde-down"><i class="bi bi-chevron-down"></i></div>
+      <div class="fde-phase-card key">
+        <div class="fde-phase-card-title">挖掘阶段</div>
+        <div class="fde-phase-row">
+          <span class="fde-pill"><span class="fde-num">4</span> 梳理工作流</span>
+          <span class="fde-arr"><i class="bi bi-chevron-right"></i></span>
+          <span class="fde-pill"><span class="fde-num">5</span> 识别 AI 节点</span>
+          <span class="fde-arr"><i class="bi bi-chevron-right"></i></span>
+          <span class="fde-pill"><span class="fde-num">6</span> 成果量化</span>
+        </div>
+      </div>
+      <div class="fde-down"><i class="bi bi-chevron-down"></i></div>
+      <div class="fde-phase-card">
+        <div class="fde-phase-card-title">交付阶段</div>
+        <div class="fde-phase-row">
+          <span class="fde-pill"><span class="fde-num">7</span> 交付方案</span>
+          <span class="fde-arr"><i class="bi bi-chevron-right"></i></span>
+          <span class="fde-pill"><span class="fde-num">8</span> 方案部署</span>
+          <span class="fde-arr"><i class="bi bi-chevron-right"></i></span>
+          <span class="fde-pill"><span class="fde-num">9</span> 交接清单</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fde-down"><i class="bi bi-chevron-down"></i></div>
+    <div class="fde-check-bar">
+      <div class="fde-check-card">
+        <div class="fde-check-title">检查离场</div>
+        <div class="fde-check-row">
+          <span class="fde-pill"><span class="fde-num">10</span> 节点全跑通</span>
+          <span class="fde-arr"><i class="bi bi-chevron-right"></i></span>
+          <span class="fde-pill"><span class="fde-num">11</span> 两周无报错</span>
+          <span class="fde-arr"><i class="bi bi-chevron-right"></i></span>
+          <span class="fde-pill"><span class="fde-num">12</span> 确认后离场</span>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== COMPATIBILITY ===== -->
+<section class="section section-alt" id="agent">
+  <div class="ctn">
+    <h2 class="section-title">平台支持</h2>
+    <p class="section-desc">OpenClaw 全支持，约束与审计其他平台均可用</p>
+
+    <div class="compat-grid">
+      <div class="compat-card">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+          <div class="compat-card-icon"><i class="bi bi-shield-check"></i></div>
+          <div class="compat-card-title">约束底座</div>
+        </div>
+        <div class="compat-card-desc">全平台可用 · OpenClaw 优先</div>
+      </div>
+      <div class="compat-card">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+          <div class="compat-card-icon"><i class="bi bi-clipboard-check"></i></div>
+          <div class="compat-card-title">审计引擎</div>
+        </div>
+        <div class="compat-card-desc">独立 CLI，全平台可用</div>
+      </div>
+      <div class="compat-card">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+          <div class="compat-card-icon"><i class="bi bi-diagram-3"></i></div>
+          <div class="compat-card-title">编排引擎</div>
+        </div>
+        <div class="compat-card-desc">仅限 OpenClaw</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FINAL CTA ===== -->
+<section class="final-cta" id="cta">
+  <div class="ctn">
+    <h2 class="final-cta-title">一条命令，快速安装</h2>
+    <p class="final-cta-desc">完整安装包含：约束底座 + 审计引擎 + 编排引擎</p>
+    <div class="code-block">
+      <span class="prompt">$</span> git clone https://github.com/KongFangXun/sofagent.git<br>
+      <span class="prompt">$</span> cd sofagent && bash sofagent/scripts/install.sh
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a href="https://github.com/KongFangXun/sofagent" class="btn btn-primary" target="_blank" style="padding:13px 32px;font-size:15px;min-width:140px;justify-content:center;">
+        <i class="bi bi-github"></i> GitHub
+      </a>
+      <a href="https://github.com/KongFangXun/sofagent" class="btn btn-white" target="_blank" style="padding:13px 32px;font-size:15px;min-width:140px;justify-content:center;border-radius:var(--radius-sm);">
+        <i class="bi bi-star"></i> Star
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <div class="ctn">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+      <div class="footer-brand-name"><span class="blue">sofa</span>gent <span class="nav-tag">FDE</span></div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <a href="https://github.com/KongFangXun/sofagent/blob/main/README.md" class="footer-link" target="_blank">README</a>
+        <a href="https://github.com/KongFangXun/sofagent/blob/main/HANDBOOK.md" class="footer-link" target="_blank">HANDBOOK</a>
+        <a href="https://github.com/KongFangXun/sofagent/blob/main/ARCHITECTURE.md" class="footer-link" target="_blank">ARCHITECTURE</a>
+        <a href="https://github.com/KongFangXun/sofagent/blob/main/LICENSE" class="footer-link" target="_blank">MIT License</a>
+        <span class="footer-link" style="color:var(--text-muted);cursor:default;">作者：孔放勋</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function() {
+  var nav = document.getElementById('main-nav');
+  var hero = document.getElementById('hero');
+  if (!nav || !hero) return;
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      nav.classList.toggle('visible', !entry.isIntersecting);
+    });
+  }, { threshold: 0 });
+  observer.observe(hero);
+})();
+</script>
+</body>
+</html>

@@ -11,7 +11,7 @@
 [![Core: Audit Engine](https://img.shields.io/badge/Core-Audit_Engine-16B8F3)](#what-is-this)
 [![OpenClaw](https://img.shields.io/badge/Platform-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
 
-<img src="images/sofagent.png" alt="sofagent" width="300" />
+<img src="index/sofagent.png" alt="sofagent" width="300" />
 
 > sofa + agent — because one day, we want to lie on the couch while agents do the work.
 > 📄 **License**: MIT.

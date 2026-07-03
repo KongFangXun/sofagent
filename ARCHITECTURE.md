@@ -8,7 +8,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 >
 > > v0.99.5 · 2026-07-01 · 孔放勋
 
-<img src="images/sofagent.png" alt="sofagent" width="300" />
+<img src="index/sofagent.png" alt="sofagent" width="300" />
 
 ---
 

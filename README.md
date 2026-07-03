@@ -9,7 +9,7 @@
 [![核心：审计引擎](https://img.shields.io/badge/核心-审计引擎-16B8F3)](#一句话定位)
 [![OpenClaw](https://img.shields.io/badge/🦞_引擎-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
 
-<img src="images/sofagent.png" alt="sofagent" width="300" />
+<img src="index/sofagent.png" alt="sofagent" width="300" />
 
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
 >
