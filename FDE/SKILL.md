@@ -3,11 +3,11 @@ name: sofagent-fde
 slug: sofagent-fde
 displayName: sofagent-fde
 description: FDE 专属——装上之后 Agent 帮你走 12 步部署流程，识别 AI 节点、出方案书、建知识库。你负责聊业务，Agent 负责出方案。
-version: 0.99.4
+version: 0.99.5
 tags: [fde, workflow, deployment, enterprise, ai-agent]
 ---
 
-# sofagent-fde · SKILL.md · v0.99.4
+# sofagent-fde · SKILL.md · v0.99.5
 
 > FDE 专属 Skill。激活后加载 12 步部署流程，
 > 按 FDE.md §1-12 引导你完成企业 AI 部署。
