@@ -28,7 +28,24 @@
 - **v0.99.1**：审查跟进——OpenClaw 叙事重写（两层架构/审计层平台无关/编排层 FDE 工具包）+ P0 代码清理（手写YAML→js-yaml + MCP Server 拆分 @sofagent/mcp）+ 局限声明修正 + 案例模板。
 - **v0.99.2**：审查驱动质量修复——全面修复（daemon 歧义根治 + 死链清零 + 文档一致性），v1.0 前最后一次质量加固。
 - **v0.99.3**：文档校准版——16 项一致性清零（术语/幽灵引用/ROADMAP 对齐/CI 合并/档案归档）+ bump-version.sh 修复，v1.0 前的一轮文档收尾。
+- **v0.99.5**：CI 自动化发布版——OIDC Trusted Publishing 替代手动 npm auth，rollup 原生模块 Linux CI 修复。
 - **v0.99.4**：审查修复版——41 项全面修复（P0×7 + P1×15 + P2×19），准入条件 6✅→3✅ 诚实化，全仓 doc-vs-reality 清零。
+
+---
+
+## [v0.99.5] — CI 自动化发布版 ✅
+
+> 2026-07-03
+
+v0.99.4 发版时 npm auth/2FA/token 消耗 1+ 小时手动操作。v0.99.5 用 OIDC Trusted Publishing 彻底解决问题：`git tag` + `git push` → npm 全自动发布，零手动。
+
+**核心变更**：
+- release.yml 切换 OIDC（`id-token: write` × 2 jobs，移除 NPM_TOKEN）
+- release.yml 新增 `workflow_dispatch` 手动触发 + rollup 原生模块 fallback
+- npm 端 `@sofagent/audit` + `@sofagent/mcp` 均配置 Trusted Publisher
+- SOFAGENT_VERSION_SOP.md 同步更新（bump-version 覆盖 mcp/src/ / shellcheck 降阈值 / 检查清单降权）
+
+> 📖 [开发日志](./docs/changelog/v0.99.5.md)
 
 ---
 

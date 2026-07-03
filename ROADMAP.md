@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.99.4 · 2026-07-02 · 审查修复版——41 项全面修复（P0×7 + P1×15 + P2×19），准入条件 6✅→3✅ 诚实化，全仓 doc-vs-reality 清零。
+> v0.99.5 · 2026-07-03 · CI 自动化发布版——OIDC Trusted Publishing 替代手动 npm auth，release.yml + npm 双端配置完成。
 >
 
 > 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（FDE 部署用）为实验性附带。
@@ -88,6 +88,7 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
+| **v0.99.5** | CI 自动化：OIDC Trusted Publishing + rollup 原生模块修复 + SOP 同步更新 | [📖](./docs/changelog/v0.99.5.md) |
 | **v0.99.4** | 审查修复：41 项全面修复，准入 6✅→3✅ 诚实化，doc-vs-reality 清零，闭环→多维 | [📖](./docs/changelog/v0.99.4.md) |
 | **v0.99.3** | 文档校准：16 项一致性清零（术语/幽灵引用/ROADMAP/CI/归档）+ bump-version 修复 | [📖](./docs/changelog/v0.99.3.md) |
 | **v0.99.2** | 审查修复：daemon 歧义根治 + 死链清零 + 文档一致性 + P2 清零 | [📖](./docs/changelog/v0.99.2.md) |
