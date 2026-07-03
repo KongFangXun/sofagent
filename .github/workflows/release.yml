@@ -8,6 +8,9 @@ on:
 jobs:
   publish-audit:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # Trusted Publishing OIDC
     defaults:
       run:
         working-directory: sofagent/audit
@@ -23,12 +26,14 @@ jobs:
         # (https://github.com/npm/cli/issues/4828)
       - run: npm test
       - run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # 认证走 OIDC Trusted Publishing，无需 NPM_TOKEN
 
   publish-mcp:
     needs: publish-audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # Trusted Publishing OIDC
     defaults:
       run:
         working-directory: sofagent/mcp
@@ -41,5 +46,4 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # 认证走 OIDC Trusted Publishing，无需 NPM_TOKEN
