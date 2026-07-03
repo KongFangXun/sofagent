@@ -7,7 +7,7 @@ description: >
   识别 AI 节点、出部署方案、建知识库。你负责聊业务，Agent 负责出方案。
 version: 0.99.5
 tags: [fde, workflow, deployment, enterprise, ai-agent]
-image: images/sofagent.png
+image: index/sofagent.png
 triggers: [FDE部署, 企业AI化, 梳理工作流, 识别AI节点, 出部署方案, 建知识库, 企业工作流改造]
 scenarios: [企业要做AI化但不知道从哪开始, 梳理完工作流不知道怎么识别AI节点, 部署后不知道怎么管Agent行为, 想让Agent自动出部署方案书]
 not_when: [纯技术讨论, 代码bug修复, 写业务代码]

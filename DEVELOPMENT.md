@@ -8,7 +8,7 @@
 
 > 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE = Forward Deployed Engineer，企业里的 AI 部署工程师。详见 [FDE/FDE.md](./FDE/FDE.md) 和项目记忆中的 [FDE 认知框架](./.workbuddy/memory/MEMORY.md#fde-认知框架2026-07-01-rolling-ai-播客笔记)。
 
-<img src="images/sofagent.png" alt="sofagent" width="300" />
+<img src="index/sofagent.png" alt="sofagent" width="300" />
 
 ---
 

@@ -4,7 +4,7 @@
 >
 > v0.99.5 · 2026-07-01 · 孔放勋
 
-<img src="images/sofagent.png" alt="sofagent" width="300" />
+<img src="index/sofagent.png" alt="sofagent" width="300" />
 
 - [阅读指南](#阅读指南)
 - [5 分钟速览](#5-分钟速览)
