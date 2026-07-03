@@ -33,7 +33,7 @@
 
 ---
 
-## [v0.99.5] — CI 自动化发布版 ✅
+## [v0.99.5] — CI 自动化 + 文案对齐版 ✅
 
 > 2026-07-03
 
@@ -44,6 +44,10 @@ v0.99.4 发版时 npm auth/2FA/token 消耗 1+ 小时手动操作。v0.99.5 用 
 - release.yml 新增 `workflow_dispatch` 手动触发 + rollup 原生模块 fallback
 - npm 端 `@sofagent/audit` + `@sofagent/mcp` 均配置 Trusted Publisher
 - SOFAGENT_VERSION_SOP.md 同步更新（bump-version 覆盖 mcp/src/ / shellcheck 降阈值 / 检查清单降权）
+- **文案对齐 landing page**：「企业上 AI，先上缰绳再上路」tagline、四阶段十二步、三样交付物
+- **landing page 入仓**：`index/` 目录含 index.html + sofagent.png + favicon.png，删除 images/
+- FDE/SKILL.md 补 triggers/scenarios/not_when + 交付物表
+- README/README.en badge 版本号同步 v0.99.5
 
 > 📖 [开发日志](./docs/changelog/v0.99.5.md)
 
