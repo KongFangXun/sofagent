@@ -1,6 +1,6 @@
 # sofagent Handbook
 
-> **sofagent 使用手册——装上审计引擎，每次 Agent 提交代码时自动检查变更。配合约束底座管 Agent 行为，编排引擎拆解任务（FDE 部署用）。**
+> **企业上 AI，先上缰绳再上路——装上审计引擎，每次 Agent 提交代码时自动检查变更。配合约束底座管 Agent 行为，编排引擎拆解任务（FDE 部署用）。**
 >
 > v0.99.5 · 2026-07-01 · 孔放勋
 
@@ -234,9 +234,9 @@ Agent 先判断任务复杂度：
 
 > ⚠️ **成熟度**：FDE 部署流程我们自己公司里在用，但还没有打磨到「装完就能跑」的程度。审计引擎是稳定的，编排和部署这块如果你试了遇到问题，开 Issue 告诉我们。
 >
-> **为什么要自己做 FDE**：中小企业没有预算请外部顾问，也不需要。装上工具包，Agent 带你走十步流程梳理 workflow、识别 AI 节点，然后找一台闲置设备装 sofagent——上面跑的就是 harness 层，约束底座 + 审计引擎管着上面所有 AI 节点。从头到尾自己搞定，不用请人。
+> **为什么要自己做 FDE**：中小企业没有预算请外部顾问，也不需要。装上工具包，Agent 带你走完四阶段十二步流程（进场→挖掘→交付→检查离场），梳理 workflow、识别 AI 节点，然后找一台闲置设备装 sofagent——从头到尾自己搞定，不用请人。
 
-> FDE = Forward Deployed Engineer（前向部署工程师）。完整十步流程见 [FDE/FDE.md](./FDE/FDE.md)。建议装 [sofagent-fde Skill](./FDE/SKILL.md)——Agent 自动加载 FDE 工作台。
+> FDE = Forward Deployed Engineer（前向部署工程师）。完整四阶段十二步流程见 [FDE/FDE.md](./FDE/FDE.md)。建议装 [sofagent-fde Skill](./FDE/SKILL.md)——Agent 自动加载 FDE 工作台。
 
 > 💡 FDE 部署后的「陪跑期」机制详见 [FDE.md](FDE/FDE.md)。
 

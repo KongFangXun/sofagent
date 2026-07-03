@@ -229,7 +229,7 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `.sofagent/task/logs/
 
 ### FDE 端到端验证状态
 
-FDE 完整十步部署流程（[FDE/FDE.md](./FDE/FDE.md)）已在作者自有企业（投资/科技/电商等公司）中实际部署使用。编排引擎、daemon 持续监控、设备间 workflow 节点联动均在自有环境中运行。
+FDE 完整四阶段十二步部署流程（[FDE/FDE.md](./FDE/FDE.md)）已在作者自有企业（投资/科技/电商等公司）中实际部署使用。
 
 但以下两点影响外部信任：
 
