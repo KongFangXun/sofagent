@@ -248,3 +248,48 @@ clawhub skill publish ./skill --slug sofagent --version X.YY.1
 | GitHub Release | `gh release edit --prerelease` | ~1 min |
 | ClawHub | `clawhub skill publish` | ~3 min |
 | **总耗时**（含发修复版 bump+build+publish） | | **~30 min** |
+
+---
+
+## NPM_TOKEN 管理（🔴 CI 发布认证）
+
+> release.yml 用 `NPM_TOKEN`（GitHub Secret）认证 npm publish。token 失效 = CI 发不了包。
+
+### token 类型选择
+
+npm Access Tokens 有两种，sofagent 用 **Granular Access Token**（细粒度 token）：
+
+| 类型 | 权限范围 | 推荐场景 |
+|------|------|------|
+| **Granular Access Token**（推荐） | 仅 `@sofagent/*` scope，仅 publish 权限，可设过期时间 | ✅ sofagent 用这种 |
+| Legacy Automation Token | 全账户 publish 权限，不过期 | ❌ 权限过大不推荐 |
+
+### 创建/更新流程
+
+1. 登录 https://www.npmjs.com/settings/kongfangxun/tokens （账户：kongfangxun）
+2. **Create Granular Access Token**：
+   - Name: `sofagent-ci-publish`
+   - Expiration: 1 年（到期前 1 个月 GitHub 会发邮件提醒）
+   - Packages and scopes: Only `@sofagent/*`
+   - Permissions: Read and write
+3. 复制 token（只显示一次）
+4. 更新 GitHub Secret：
+   ```bash
+   gh secret set NPM_TOKEN --repos KongFangXun/sofagent
+   # 粘贴 token，回车
+   ```
+5. 验证：手动触发 `gh workflow run release.yml`，检查 publish 步骤成功
+
+### token 过期/失效的表现和应对
+
+| 现象 | 原因 | 解决 |
+|------|------|------|
+| CI publish 步骤报 E403 | token 过期或权限不足 | 按上面流程更新 token |
+| npm publish 本地也报 E403 | 账户本身 2FA 问题 | 检查 npm 账户 2FA 设置（kongfangxun 已开 2FA） |
+| CI 跑了但 npm 上没新版本 | version-check skip 了（版本已存在） | 正常——「npm 先行」策略下手动已发 |
+
+### 过期预警
+
+- npm Granular Token 最长 1 年，建议每 11 个月更新一次
+- GitHub 不主动检测 token 有效性——只有 publish 失败时才发现
+- 建议在 `docs/changelog/` 下记录上次更新 token 的日期，发版时顺带检查

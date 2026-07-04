@@ -98,6 +98,14 @@ report_ok() {
   CHECKS=$((CHECKS + 1))
 }
 
+report_warn() {
+  local file="$1"
+  local msg="$2"
+  echo -e "  ${YELLOW}⚠${NC} ${file}"
+  echo -e "    ${YELLOW}${msg}${NC}"
+  CHECKS=$((CHECKS + 1))
+}
+
 # 从匹配行中提取版本号（纯数字+点号）
 extract_version() {
   echo "$1" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1
@@ -315,6 +323,10 @@ if [[ -f "${MCP_PKG}" ]]; then
     report_error "${MCP_PKG}" "@sofagent/audit: ${dep_ver}" "major.minor = ${ssot_major_minor}.x"
   elif [[ "${dep_patch}" -gt "${ssot_patch}" ]]; then
     report_error "${MCP_PKG}" "@sofagent/audit: ${dep_ver}" "≤ ${SSOT_VERSION}"
+  elif [[ $(( ssot_patch - dep_patch )) -ge 3 ]]; then
+    # patch 落后 ≥ 3 提示警告（不 fail，但提示同步）
+    _gap=$(( ssot_patch - dep_patch ))
+    report_warn "${MCP_PKG#"${PROJECT_ROOT}"/}" "@sofagent/audit: ${dep_ver}（落后 SSOT ${_gap} 个 patch，建议同步到 ^${SSOT_VERSION}）"
   else
     report_ok "${MCP_PKG#"${PROJECT_ROOT}"/}" "@sofagent/audit: ${dep_line#*: }"
   fi

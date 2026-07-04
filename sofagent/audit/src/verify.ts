@@ -2,7 +2,7 @@
 // ============================================================
 // sofagent-verify · 装后验证脚本（TypeScript 版）
 // ============================================================
-// NOTE: 本文件 1256 行，v1.1 考虑按检查类别拆分（file/hook/platform/daemon）
+// NOTE: 本文件 1257 行，v1.1 考虑按检查类别拆分（file/hook/platform/daemon）
 // 验证 sofagent 安装完整性（9 个检查类别，41 项）。
 // 由 verify.sh (942 行 bash) + windows/verify.ps1 合并而来，
 // 注册为 npm 包 bin。最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
@@ -581,9 +581,9 @@ function main(): void {
         v.checkWarn(`${f} 权限过于宽松 (${perms})，建议 chmod 644`);
       }
 
-      // 500 字原则（宪法层因含铁律+底线，阈值放宽至 1200）
-      if (chars > 1200) {
-        v.checkWarn(`${f} 超过 1200 字符（${chars}），宪法层因含 6 则铁律 + 4 条底线，阈值放宽至 1200`);
+      // 字符上限（宪法层 fde.md 是 FDE 部署模板，含完整配置项 + 示例注释，行数上限 90 行约对应 1800 字符）
+      if (chars > 1800) {
+        v.checkWarn(`${f} 超过 1800 字符（${chars}），fde.md 行数上限 90 行，建议精简示例注释`);
       }
     } else {
       v.checkFail(`${f} — 缺失或为空`);
