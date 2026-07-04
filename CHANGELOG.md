@@ -15,7 +15,7 @@ v0.99.6 三轮独立审查（GLM-5.2 + DeepSeek × 2）发现 11 项发布基础
 - P0-1：release.yml 加版本存在性检查（`npm view` 检查已发布则跳过），删除 `id-token: write` 死代码
 - P0-2：OIDC 文档谎言清零——12+ 处 OIDC/Trusted Publishing 统一改为 NPM_TOKEN
 - P0-3：releasing.md 新增「回滚与降级」章节（npm deprecate + dist-tag + git revert + ClawHub 四通道）
-- P1-1：mcp 依赖从精确 `"0.99.6"` 改为范围 `"^0.99.6"` + package-lock.json 同步
+- P1-1：mcp 依赖从精确 `"0.99.6"` 改为范围 `"^0.99.6"`
 - P1-2：package-lock.json 同步（npm install --package-lock-only）
 - P1-3：releasing.md 悬空引用修复（「见下方步骤 f」→「见 npm 双包验证步骤」）
 - P1-4：Tag 卫生——v0.7.0/v0.7.1 改名为 v0.70.0/v0.70.1（semver 一致）

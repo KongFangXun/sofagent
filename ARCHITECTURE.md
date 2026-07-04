@@ -6,7 +6,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 > sofagent 的设计决策记录——从 Harness 层的工程约束到五层架构的取舍。
 >
-> > v0.99.7 · 2026-07-04 · 孔放勋
+> > v0.99.7 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 
