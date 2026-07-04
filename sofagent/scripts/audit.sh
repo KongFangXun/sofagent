@@ -7,7 +7,7 @@
 # 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
 #
 # 用法：
-#   audit.sh --operation install --target "开始" --result "v0.71, darwin"
+#   audit.sh --operation install --target "开始" --result "v0.99.7, darwin"
 #   audit.sh --operation orchestrate --target "重构用户模块" --result "成功, L2, 45s"
 #   audit.sh --operation cleanup --target "task/logs/" --result "删除 3 个文件"
 #   audit.sh --help
@@ -80,7 +80,7 @@ LOCAL_DATE=$(date +"%Y-%m-%d")
 LOCAL_MONTH=$(date +"%Y-%m")
 
 # ── 路径 ──
-# v0.90 P0-3 修复：SOFAGENT_DATA 由 lib/config.sh 统一解析（已 source），不再硬编码 ${PWD}
+# v0.99.7 P0-3 修复：SOFAGENT_DATA 由 lib/config.sh 统一解析（已 source），不再硬编码 ${PWD}
 AUDIT_DIR="${SOFAGENT_DATA}/task/audit/${LOCAL_MONTH}"
 AUDIT_FILE="${AUDIT_DIR}/${LOCAL_DATE}.md"
 

@@ -6,7 +6,7 @@
 # 仅 fde.md audit_enabled: true 时写入（默认关闭，静默退出）。
 #
 # 用法：
-#   audit.ps1 -Operation install -Target "开始" -Result "v0.91, windows"
+#   audit.ps1 -Operation install -Target "开始" -Result "v0.99.7, windows"
 #   audit.ps1 -Operation orchestrate -Target "重构模块" -Result "成功, L2, 45s"
 # ============================================================
 

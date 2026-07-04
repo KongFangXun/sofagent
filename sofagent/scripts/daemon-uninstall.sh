@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent daemon-uninstall.sh · daemon 卸载脚本 · v0.92
+# sofagent daemon-uninstall.sh · daemon 卸载脚本 · v0.99.7
 # ============================================================
 # 停止 daemon、移除系统服务注册、删除脚本文件。
 # 不删 daemon.json / daemon.log / .sofagent 用户数据。
