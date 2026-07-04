@@ -321,9 +321,9 @@ if [ -f "$path" ] && [ -s "$path" ]; then
   if [ "${perms: -1}" = "7" ] || [ "${perms: -1}" = "6" ] || [ "${perms: -1}" = "3" ] || [ "${perms: -1}" = "2" ]; then
     check_warn "$f 权限过于宽松 (${perms})，建议 chmod 644"
   fi
-  # 500 字原则（Handbook §二）
-  if [ "$chars" -gt 1200 ]; then
-    check_warn "$f 超过 1200 字符（${chars}），宪法层因含 6 则铁律 + 4 条底线，阈值放宽至 1200"
+  # 字符上限（fde.md 是 FDE 部署模板，行数上限 90 行约对应 1800 字符）
+  if [ "$chars" -gt 1800 ]; then
+    check_warn "$f 超过 1800 字符（${chars}），fde.md 行数上限 90 行，建议精简示例注释"
   fi
 else
   check_fail "$f — 缺失或为空"

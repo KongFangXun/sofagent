@@ -30,9 +30,10 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           if npm view "@sofagent/audit@${VERSION}" version 2>/dev/null; then
             echo "skip=true" >> $GITHUB_OUTPUT
-            echo "⚠️ @sofagent/audit@${VERSION} already published, skipping"
+            echo "✅ @sofagent/audit@${VERSION} 已通过 npm 先行策略发布，CI 自动跳过 publish 步骤"
           else
             echo "skip=false" >> $GITHUB_OUTPUT
+            echo "📦 @sofagent/audit@${VERSION} 未发布，CI 将执行 npm publish"
           fi
       - name: Publish to npm
         if: steps.version-check.outputs.skip != 'true'
@@ -70,9 +71,10 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           if npm view "@sofagent/mcp@${VERSION}" version 2>/dev/null; then
             echo "skip=true" >> $GITHUB_OUTPUT
-            echo "⚠️ @sofagent/mcp@${VERSION} already published, skipping"
+            echo "✅ @sofagent/mcp@${VERSION} 已通过 npm 先行策略发布，CI 自动跳过 publish 步骤"
           else
             echo "skip=false" >> $GITHUB_OUTPUT
+            echo "📦 @sofagent/mcp@${VERSION} 未发布，CI 将执行 npm publish"
           fi
       - name: Publish to npm
         if: steps.version-check.outputs.skip != 'true'
