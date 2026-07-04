@@ -13,7 +13,7 @@
 // （从 git log 重建，或从测试 fixture 加载）。
 // 自动重建待 v1.x。
 //
-// 零外部依赖——只用 Node.js 内置模块。
+// 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
 // ============================================================
 
 import type { DiffFile } from './diff-parser';

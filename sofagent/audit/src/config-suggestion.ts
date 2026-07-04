@@ -7,7 +7,7 @@
 //   1. formatSuggestions: 把 suggestions 格式化为人类可读的终端输出
 //   2. applySuggestion: 返回应用建议后的新配置（不修改原对象）
 //
-// 零外部依赖——只用 Node.js 内置模块。
+// 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
 // ============================================================
 
 import type { RootCauseReport, ConfigSuggestion } from './audit-root-cause';

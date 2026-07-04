@@ -1,6 +1,6 @@
 # sofagent-audit 设计文档
 
-> v0.99.5 · 2026-07-01 · 提交时审计
+> v0.99.5 · 2026-07-04 · 提交时审计
 > v0.95 铁律从 10→6 条，原 #1/#3/#7/#10 迁移为审计 A3/A5/A7/A8。
 
 v0.90 的约束 Agent 不理——干脆不看它，直接 audit git diff。
@@ -20,7 +20,7 @@ v0.90 的约束 Agent 不理——干脆不看它，直接 audit git diff。
 
 ## 技术选型
 
-TypeScript，零运行时依赖（child_process/fs/path）。主要是不想再写 bash 了。
+TypeScript，最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块（child_process/fs/path）。主要是不想再写 bash 了。
 
 ## 焊死的门
 

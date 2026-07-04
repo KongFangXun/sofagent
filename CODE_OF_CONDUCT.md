@@ -38,7 +38,7 @@
 
 ## 执行
 
-辱骂、骚扰或其他不可接受的行为可通过联系项目维护者报告：开 [私密 Issue](https://github.com/KongFangXun/sofagent/issues) 或发邮件。所有投诉都将及时公正地审查和调查。
+辱骂、骚扰或其他不可接受的行为可通过联系项目维护者报告：开 [私密 Issue](https://github.com/KongFangXun/sofagent/issues) 或发邮件至 kong.yao@evfrey.com。所有投诉都将及时公正地审查和调查。
 
 所有社区领导者都有义务尊重隐私和安全报告者的身份。
 

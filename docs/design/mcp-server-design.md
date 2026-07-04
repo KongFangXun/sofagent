@@ -39,7 +39,7 @@ mcp-server.ts 直接导入：
 | **类型共享** | `AuditContext`、`DiffFile`、`LogEntry`、`RuleCheck` 等类型在 `rules/types.ts` 中定义，被 reporter 和所有规则文件 import |
 | **向后兼容** | 当前 `package.json` 中 `"sofagent-mcp": "dist/mcp-server.js"` bin 需平滑迁移 |
 | **主 CLI 的 --mcp 标志** | `index.ts` 中 `require('./mcp-server')` 需要适配 |
-| **零运行时依赖** | 两个包都不能引入第三方 npm 运行时依赖（Node.js 内置模块 + 彼此除外） |
+| **最小运行时依赖** | audit 包仅 js-yaml（YAML 配置解析），mcp 包零第三方运行时依赖（Node.js 内置模块 + @sofagent/audit 除外） |
 
 #### 1.2 方案选择
 
@@ -50,7 +50,7 @@ sofagent/                        ← 仓库根目录（新增 root package.json�
 ├── package.json                 ← workspaces: ["sofagent/audit", "sofagent/mcp"]
 ├── sofagent/
 │   ├── audit/                   ← @sofagent/audit（现有包，增强导出）
-│   │   └── package.json         ←   dependencies: {}（零外部依赖不变）
+│   │   └── package.json         ←   dependencies: {}（最小运行时依赖：仅 js-yaml不变）
 │   └── mcp/                     ← @sofagent/mcp（新包）
 │       └── package.json         ←   dependencies: { "@sofagent/audit": "workspace:*" }
 ```
@@ -291,7 +291,7 @@ typescript@^5.4.0                 # devDependency，编译 TypeScript
 @types/node@^20.0.0               # devDependency，Node.js 类型定义
 ```
 
-注意：`@sofagent/mcp` 不引入任何第三方运行时依赖。唯一的运行时依赖是同项目的 `@sofagent/audit`，而 audit 本身也零外部依赖。
+注意：`@sofagent/mcp` 不引入任何第三方运行时依赖。唯一的运行时依赖是同项目的 `@sofagent/audit`，而 audit 本身也最小运行时依赖：仅 js-yaml。
 
 ### 7. Task List (ordered by dependency)
 

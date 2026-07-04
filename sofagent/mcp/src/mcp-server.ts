@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // mcp-server.ts · MCP Server (Model Context Protocol)
-// v0.99.2: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
+// v0.99.5: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
 //
 // 协议：https://spec.modelcontextprotocol.io/
 // 传输：stdio（stdin/stdout，每行一个 JSON-RPC 消息）
@@ -42,6 +42,7 @@ import {
   loadConfig,
   generateThinkEntry,
   loadHistory,
+  VERSION,
 } from '@sofagent/audit';
 import type { AuditResult } from '@sofagent/audit';
 
@@ -50,7 +51,7 @@ import type { AuditResult } from '@sofagent/audit';
 // ============================================================
 
 const SERVER_NAME = 'sofagent-mcp';
-const SERVER_VERSION = '0.99.3'; // TODO(v1.0): import VERSION from @sofagent/audit shared/constants
+const SERVER_VERSION = VERSION; // 从 @sofagent/audit 共享 SSOT
 const PROTOCOL_VERSION = '2024-11-05';
 
 interface JsonRpcRequest {

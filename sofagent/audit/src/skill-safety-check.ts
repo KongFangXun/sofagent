@@ -2,7 +2,7 @@
 // skill-safety-check.ts · Skill 安全审查（入口）
 // ============================================================
 // 扫描 Skill 文件中的安全威胁——恶意命令/密钥泄露/危险API/Prompt注入/数据外泄。
-// 纯 TypeScript + Node.js 内置模块，零外部依赖。
+// 纯 TypeScript + Node.js 内置模块，最小运行时依赖：仅 js-yaml。
 //
 // 用法：
 //   npx ts-node src/skill-safety-check.ts <skill-file-or-dir>

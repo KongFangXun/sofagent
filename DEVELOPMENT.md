@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.99.5 · 2026-07-01 · 孔放勋
+> v0.99.5 · 2026-07-04 · 孔放勋
 
 > 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE = Forward Deployed Engineer，企业里的 AI 部署工程师。详见 [FDE/FDE.md](./FDE/FDE.md) 和项目记忆中的 [FDE 认知框架](./.workbuddy/memory/MEMORY.md#fde-认知框架2026-07-01-rolling-ai-播客笔记)。
 
@@ -34,7 +34,7 @@
 
 ### Skill 文件结构
 
-**1 主 Skill（`SKILL.md`）+ 8 子 Skill = 9 个 .md（不含 fde.md，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤90 行（v0.99.4 全部达标）。
+**1 主 Skill（`SKILL.md`）+ 9 子 Skill = 10 个 .md（含 fde.md，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤90 行（v0.99.5 全部达标）。
 
 | 文件 | 何时加载 | 干什么 |
 |------|------|------|
@@ -44,7 +44,9 @@
 | task-aware | 收到任何用户任务时 | 每任务闸门：边界→语义→健康度→判级→澄清 |
 | task-closure | 闭环信号出现时 | 离境闸门：调 Loop Agent → 反思/评分/A/B/汇报 |
 | loop-check | 检查点/失败/闭环 | 顾问 Agent：读数据→做判断→给建议 |
+| loop-evaluate | loop-check closure 模式触发 | 复盘/评分/沉淀，评审者与执行者分离 |
 | loop-exit | 循环终止信号出现时 | 循环终止条件与收尾 |
+| fde | FDE 部署时按需加载 | 企业约束层：合规要求/脱敏规则/审计频率 |
 
 > 三层闸门 + 一条回环：入境 → 每任务 → Loop → 离境。四个全走才能保证 `.sofagent/` 数据层被激活。
 
