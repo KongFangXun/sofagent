@@ -13,7 +13,8 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.99.6"
+# shellcheck disable=SC2034  # VERSION 供版本追踪用，不直接引用
+VERSION="0.99.7"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 

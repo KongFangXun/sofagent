@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
     defaults:
       run:
         working-directory: sofagent/audit
@@ -25,7 +24,19 @@ jobs:
         # npm ci 从 macOS 生成的 lock 文件在 Linux 上可能漏装 optional native 模块
         # (https://github.com/npm/cli/issues/4828)
       - run: npm test
-      - run: npm publish --access public
+      - name: Check if version already published
+        id: version-check
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@sofagent/audit@${VERSION}" version 2>/dev/null; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "⚠️ @sofagent/audit@${VERSION} already published, skipping"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Publish to npm
+        if: steps.version-check.outputs.skip != 'true'
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -34,7 +45,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -53,7 +63,20 @@ jobs:
         working-directory: sofagent/mcp
       - run: npm run build
         working-directory: sofagent/mcp
-      - run: npm publish --access public
+      - name: Check if version already published
+        id: version-check
+        working-directory: sofagent/mcp
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@sofagent/mcp@${VERSION}" version 2>/dev/null; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "⚠️ @sofagent/mcp@${VERSION} already published, skipping"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Publish to npm
+        if: steps.version-check.outputs.skip != 'true'
+        run: npm publish --access public
         working-directory: sofagent/mcp
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/mcp",
-  "version": "0.99.6",
+  "version": "0.99.7",
   "description": "sofagent MCP Server — 暴露审计能力给 MCP Client（JSON-RPC 2.0 over stdio）",
   "main": "dist/mcp-server.js",
   "files": [
@@ -27,7 +27,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@sofagent/audit": "0.99.6"
+    "@sofagent/audit": "^0.99.6"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent install.sh · 多平台一键安装脚本（v0.99.6）
+# sofagent install.sh · 多平台一键安装脚本（v0.99.7）
 # ============================================================
 # 将 sofagent 约束层部署到目标平台，让 Agent 获得治理能力。
 # v0.98: 从 941 行拆分为 4 个 lib 模块 + 纯组装入口
@@ -10,7 +10,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.99.6"
+VERSION="0.99.7"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
@@ -97,7 +97,7 @@ if [ ! -f "$RULES_SRC" ]; then
   err "找不到 fde.md。请在 sofagent 项目根目录下运行此脚本。"
   err "  当前脚本位置: $SCRIPT_DIR"; err "  期望文件: $RULES_SRC"; exit 1
 fi
-CONFIG_FILE=""  # Step 7 会精确判断，这里先设默认值避免 unbound variable
+# CONFIG_FILE 不预声明——Step 7 中用 local 声明（避免 SC2034 unused 警告）
 
 # ════════════════════════════════════════
 # Step 2: 检查环境（Node.js + npm）

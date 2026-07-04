@@ -29,7 +29,7 @@
 # ════════════════════════════════════════
 set -euo pipefail
 
-VERSION="0.99.6"
+VERSION="0.99.7"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -42,7 +42,6 @@ fi
 # ── 参数解析 ──
 DRY_RUN=false
 FORCE=false
-PURGE=false
 BEFORE_DATE=""
 SHOW_HELP=false
 
@@ -50,7 +49,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run) DRY_RUN=true; shift ;;
     --force)   FORCE=true; shift ;;
-    --purge)   PURGE=true; FORCE=true; shift ;;  # --purge 等同 --force（合规术语）
+    --purge)   FORCE=true; shift ;;  # --purge 等同 --force（合规术语别名）
     --before)
       BEFORE_DATE="$2"
       # 校验日期格式 YYYY-MM-DD

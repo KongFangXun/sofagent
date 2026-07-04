@@ -1,18 +1,18 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.99.6 · 2026-07-04 · 审查修复版——补全 v0.99.5 遗留的 mcp npm 发布 + 修正文档一致性（双审 25 项修复）
+> v0.99.7 · 2026-07-05 · 发布基础设施修复版——CI E403 根治 + OIDC 文档谎言清零 + mcp 依赖解锁 + shellcheck 清零 + Windows 诚实标注
 >
 
 > 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（FDE 部署用）为实验性附带。
 
 ---
 
-## 现在在哪：v0.99.6 ✅
+## 现在在哪：v0.99.7 ✅
 
-> 审查修复版——v0.99.5 发版后双审发现 25 项问题（P0×4 + P1×7），本版补全 @sofagent/mcp npm 发布 + 修正全仓文档一致性。v1.0 准入 3/10 ✅ + 7/10 ⚠️。
+> 发布基础设施修复版——v0.99.6 三轮独立审查发现 11 项问题（CI E403 + OIDC 文档谎言 + mcp 依赖锁定 + shellcheck 残留 + Windows 未标注），本版全部修复。首次采用「npm 先行」发布策略。v1.0 准入 3/10 ✅ + 7/10 ⚠️。
 >
-> 📖 [开发日志](./docs/changelog/v0.99.6.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [开发日志](./docs/changelog/v0.99.7.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -22,8 +22,9 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
+| **v0.99.7** | 发布基础设施修复：CI E403 根治 + OIDC 清零 + mcp 依赖解锁 + shellcheck 清零 + Windows 标注（11 项，三轮审查驱动） | [📖](./docs/changelog/v0.99.7.md) |
 | **v0.99.6** | 审查修复：mcp npm 同步发布 + 文档一致性（25 项，双审驱动） | [📖](./docs/changelog/v0.99.6.md) |
-| **v0.99.5** | CI 自动化 + 审查修复：OIDC Trusted Publishing + P0×6/P1×10 修复 + 工具增强 | [📖](./docs/changelog/v0.99.5.md) |
+| **v0.99.5** | CI 自动化 + 审查修复：NPM_TOKEN 自动发布 + P0×6/P1×10 修复 + 工具增强 | [📖](./docs/changelog/v0.99.5.md) |
 | **v0.99.4** | 审查修复：41 项全面修复，准入 6✅→3✅ 诚实化，doc-vs-reality 清零，闭环→多维 | [📖](./docs/changelog/v0.99.4.md) |
 | **v0.99.3** | 文档校准：16 项一致性清零（术语/幽灵引用/ROADMAP/CI/归档）+ bump-version 修复 | [📖](./docs/changelog/v0.99.3.md) |
 | **v0.99.2** | 审查修复：daemon 歧义根治 + 死链清零 + 文档一致性 + P2 清零 | [📖](./docs/changelog/v0.99.2.md) |

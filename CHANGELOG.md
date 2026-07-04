@@ -4,13 +4,35 @@
 
 ---
 
+## [v0.99.7] — 发布基础设施修复版 ✅
+
+> 2026-07-05
+
+v0.99.6 三轮独立审查（GLM-5.2 + DeepSeek × 2）发现 11 项发布基础设施问题，本版全部修复。核心：CI E403 根治（加版本存在性检查）+ OIDC 文档谎言清零（12+ 处改 NPM_TOKEN）+ mcp 依赖解锁（精确改范围）+ 回滚文档补全 + shellcheck SC2034 清零 + Windows 实验性标注 + logo 压缩 84%。**首次采用「npm 先行」发布策略。**
+
+**npm 发布状态**：@sofagent/audit ✅ 0.99.7 · @sofagent/mcp ✅ 0.99.7（npm 先行手动发布，CI 自动 skip）
+
+- P0-1：release.yml 加版本存在性检查（`npm view` 检查已发布则跳过），删除 `id-token: write` 死代码
+- P0-2：OIDC 文档谎言清零——12+ 处 OIDC/Trusted Publishing 统一改为 NPM_TOKEN
+- P0-3：releasing.md 新增「回滚与降级」章节（npm deprecate + dist-tag + git revert + ClawHub 四通道）
+- P1-1：mcp 依赖从精确 `"0.99.6"` 改为范围 `"^0.99.6"` + package-lock.json 同步
+- P1-2：package-lock.json 同步（npm install --package-lock-only）
+- P1-3：releasing.md 悬空引用修复（「见下方步骤 f」→「见 npm 双包验证步骤」）
+- P1-4：Tag 卫生——v0.7.0/v0.7.1 改名为 v0.70.0/v0.70.1（semver 一致）
+- P2-1：Windows 实验性诚实标注（README + LIMITATIONS，含 .sh vs .ps1 行数对比）
+- P2-2：shellcheck SC2034 全部清除（7 个脚本，CI 等价扫描 0 警告）
+- P2-3：logo 压缩 84%（334KB → 52KB，400×400px 保留 alpha）
+- P2-4：orchestrate-compare.ts 注释修正（回退→并集 OR）
+
+> 📖 [开发日志](./docs/changelog/v0.99.7.md)
+
 ## [v0.99.6] — 审查修复版 ✅
 
 > 2026-07-04
 
 v0.99.5 发版后双审（齐活林 + GLM-5.2）发现 25 项问题（P0×4 + P1×7 + P2×11 + P3×3），本版全部修复。核心：@sofagent/mcp npm 同步发布 + README 创建 + .npmignore/files 双重保险 + 全仓文档一致性修正 + 新增 mcp 单元测试 13 tests + bump-version 工具增强。
 
-**npm 发布状态**：@sofagent/audit ⏳ 待发布 0.99.6 · @sofagent/mcp ⏳ 待同步发布 0.99.6（npm 当前仍 0.99.4，gh release 后自动 OIDC 发布）
+**npm 发布状态**：@sofagent/audit ✅ 已发布 0.99.6 · @sofagent/mcp ✅ 已同步发布 0.99.6（手动发布，CI 加版本存在性检查后续版本自动跳过）
 
 - P0-1：release.yml 去掉 mcp 对 audit 的 `needs` 依赖——两个包独立发布
 - P0-2：创建 @sofagent/mcp README.md（之前 npm 页面无 README）
@@ -31,7 +53,7 @@ v0.99.5 发版后双审（齐活林 + GLM-5.2）发现 25 项问题（P0×4 + P1
 
 > 2026-07-03 初版 / 2026-07-04 修复
 
-OIDC Trusted Publishing + 文案对齐（07-03）。审查驱动修复：P0×6（badge版本号、ROADMAP节标题、mcp版本、.js.map、零依赖假话、env-check残留）+ P1×10 + bump-version/check-version 增强，全仓版本号/日期一致性清零（07-04）。
+NPM_TOKEN 自动发布 + 文案对齐（07-03）。审查驱动修复：P0×6（badge版本号、ROADMAP节标题、mcp版本、.js.map、零依赖假话、env-check残留）+ P1×10 + bump-version/check-version 增强，全仓版本号/日期一致性清零（07-04）。
 
 > ⚠️ **发版后审查**：发现 25 项新问题（P0×4 + P1×7 + P2×11 + P3×3），已在 [v0.99.6](#v0996---审查修复版-) 全部修复。
 >
