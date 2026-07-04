@@ -44,6 +44,11 @@ jobs:
       # 从根目录安装——workspace 模式让 mcp 链接到本地 @sofagent/audit
       - run: npm ci
         working-directory: .
+      - run: npm install --no-save @rollup/rollup-linux-x64-gnu
+        working-directory: .
+      # 先 build audit——mcp 的 tsc 需要它的 .d.ts 类型声明
+      - run: npm run build
+        working-directory: sofagent/audit
       - run: npm run check
         working-directory: sofagent/mcp
       - run: npm run build
