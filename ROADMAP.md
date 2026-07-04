@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.99.7 · 2026-07-05 · 发布基础设施修复版——CI E403 根治 + OIDC 文档谎言清零 + mcp 依赖解锁 + shellcheck 清零 + Windows 诚实标注
+> v0.99.7 · 2026-07-04（UTC）· 北京时间 07-05 · 发布基础设施修复版——CI E403 根治 + OIDC 文档谎言清零 + mcp 依赖解锁 + shellcheck 清零 + Windows 诚实标注
 >
 
 > 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（FDE 部署用）为实验性附带。
