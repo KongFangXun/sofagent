@@ -1,6 +1,7 @@
 #!/bin/bash
 # platform-detect.sh · 平台探测 + 环境检测 + 参数解析 + 数据目录
 # 导出：detect_env / parse_args / auto_detect_platform / resolve_data_dir
+# shellcheck disable=SC2034  # 本文件被 source 到 install.sh，变量跨文件使用
 
 detect_env() {
   local n="unknown"

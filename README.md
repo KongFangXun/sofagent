@@ -4,7 +4,7 @@
 
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-v0.99.6-16B8F3)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-v0.99.7-16B8F3)](./CHANGELOG.md)
 [![定位：Agent 审计工具](https://img.shields.io/badge/定位-Agent_审计工具-16B8F3)](#一句话定位)
 [![核心：审计引擎](https://img.shields.io/badge/核心-审计引擎-16B8F3)](#一句话定位)
 [![OpenClaw](https://img.shields.io/badge/🦞_引擎-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
@@ -39,6 +39,8 @@
 
 > 需要 bash 4+ 和 git。OpenClaw 跑复杂任务另需 Node.js ≥18 + npm（详见 [HANDBOOK](./HANDBOOK.md)）。
 > 📋 安装脚本做了什么？看 [SECURITY.md · install.sh 行为说明](./SECURITY.md#installsh-行为说明)。
+>
+> **平台支持**：macOS / Linux 全功能。Windows 为**实验性**（PowerShell 脚本功能覆盖不全，核心审计引擎可用但部分检查项缺失，详见 [LIMITATIONS](./LIMITATIONS.md#windows-支持是实验性的)）。
 ### 快速体验
 
 只想加 Agent 行为约束？把 4 底线 + 6 铁律复制进你的 Agent 设置就行，不需要装整个 sofagent。

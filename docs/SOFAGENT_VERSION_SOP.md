@@ -202,16 +202,29 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
 
 ### 7.2 执行发布
 
+> **npm 先行策略**（v0.99.7 起推荐）：先手动发布 npm 双包，再 git tag + push。即使 CI 失败，npm 包已就位。CI 加了版本存在性检查，手动发完后 CI 自动 skip publish，不会冲突。
+
 ```
-1. git tag v0.XX + git push origin v0.XX
-2. gh release create v0.XX
+── Step 1: 手动发布 npm 双包（npm 先行）──
+1. cd sofagent/audit && npm run build && npm publish --access public
+2. cd ../mcp && npm publish --access public   # prepublishOnly 自动 build
+3. npm view @sofagent/audit version   # 验证：必须是新版本号
+4. npm view @sofagent/mcp version     # 验证：必须是新版本号
+
+── Step 2: git tag + push ──
+5. git tag vX.XX + git push origin vX.XX
+6. 🔴 gh release create vX.XX
    → 自动触发 .github/workflows/release.yml
-   → OIDC Trusted Publishing 发布 @sofagent/audit + @sofagent/mcp 到 npm
-3. clawhub skill publish ./skill --slug sofagent --version 0.XX.0
-4. clawhub skill publish ./FDE --slug sofagent-fde --version 0.XX.0
-5. cp -r skill/ → ~/.workbuddy/skills/sofagent/
-6. cp -r skill/ → ~/.openclaw/skills/sofagent/
-7. cp -r FDE/ → ~/.workbuddy/skills/sofagent-fde/
+   → CI 检测版本已发布，自动 skip npm publish（P0-1 修复验证点）
+   → 🔴 Release body 必须包含开发日志链接：
+      📖 [详细开发日志](./docs/changelog/v0.XX.md)
+
+── Step 3: Skill 分发 ──
+7. clawhub skill publish ./skill --slug sofagent --version 0.XX.0
+8. clawhub skill publish ./FDE --slug sofagent-fde --version 0.XX.0
+9. cp -r skill/ → ~/.workbuddy/skills/sofagent/
+10. cp -r skill/ → ~/.openclaw/skills/sofagent/
+11. cp -r FDE/ → ~/.workbuddy/skills/sofagent-fde/
 ```
 
 ### 7.3 发布后验证
@@ -221,11 +234,9 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
 git tag -l | grep v0.XX
 gh release view v0.XX
 
-# npm（OIDC 自动发布，等待 1-2 分钟）
+# npm（npm 先行策略下已在发布前验证，这里确认 CI skip 正常）
 npm view @sofagent/audit version        # 期望: 0.XX.X
 npm view @sofagent/mcp version          # 期望: 0.XX.X
-npm view @sofagent/audit readme         # 期望: 有内容
-npm view @sofagent/mcp readme           # 期望: 有内容
 
 # 本地安装
 bash sofagent/scripts/verify.sh --quiet # 期望: 41/41
@@ -233,16 +244,16 @@ bash tools/check-version.sh             # 期望: 30/30
 bash tools/check-docs.sh                # 期望: 全部通过
 ```
 
-> 💡 **OIDC Trusted Publishing**：release.yml 使用 `id-token: write`，通过 GitHub OIDC 认证 npm。无需配置 NPM_TOKEN。如果 npm 发布失败，检查 npm 侧的 Trusted Publishing 设置是否匹配仓库 + workflow 路径。
+> 💡 **NPM_TOKEN 认证**：release.yml 使用 `NODE_AUTH_TOKEN: secrets.NPM_TOKEN` 发布到 npm。NPM_TOKEN 需要在 GitHub 仓库 Secrets 中配置（Automation Access Token，已配置 2FA bypass）。如果 npm 发布失败，检查 NPM_TOKEN 是否过期或权限不足。CI 会自动检查版本是否已发布，已发布则跳过（不会因 E403 失败）。
 
 ### 7.4 常见发布故障
 
 | 故障 | 现象 | 解决 |
 |------|------|------|
-| mcp 版本落后 | `npm view @sofagent/mcp version` 显示旧版本 | mcp job 依赖 audit job（`needs: publish-audit`），如果 audit 失败则 mcp 不触发。手动 `gh workflow run release.yml` |
+| mcp 版本落后 | `npm view @sofagent/mcp version` 显示旧版本 | mcp job 独立于 audit job（不依赖 needs），版本号需手动同步。手动 `gh workflow run release.yml` |
 | .js.map 泄露 | `npm pack --dry-run` 显示 .js.map | 检查 package.json `files` 是否包含排除模式，`.npmignore` 模式是否与 audit 对齐 |
 | README 空白 | npm 页面无 README | 检查 package.json `files` 是否引用了不存在的 README.md |
-| OIDC 认证失败 | `npm publish` 403 | 检查 npm 包设置中 Trusted Publishing 是否指向正确的 GitHub repo + workflow |
+| npm publish 403 | `npm publish` E403 | ① 版本号已存在——CI 会自动跳过，本地手动发需先 `npm view @sofagent/audit@版本` 确认；② NPM_TOKEN 过期——在 npm 前往 Access Tokens 重新生成 |
 
 ---
 
@@ -250,7 +261,7 @@ bash tools/check-docs.sh                # 期望: 全部通过
 
 | # | 步骤 |
 |:--:|------|
-| 15 | 🔴 **npm 双包验证**：`npm view @sofagent/audit version` + `npm view @sofagent/mcp version` 必须都是最新版本号。**不要信任 OIDC 自动化——必须亲自确认** |
+| 15 | 🔴 **npm 双包验证**：`npm view @sofagent/audit version` + `npm view @sofagent/mcp version` 必须都是最新版本号。**不要信任自动化——必须亲自确认** |
 | 16 | npm README 验证：`npm view @sofagent/audit readme` + `npm view @sofagent/mcp readme` 均有内容 |
 | 17 | 更新 `.workbuddy/memory/` 日志，记录版本完成 |
 | 18 | 如果本次迭代暴露了新的流程漏洞，沉淀到 MEMORY.md 或本 SOP |
@@ -272,7 +283,7 @@ bash tools/check-docs.sh                # 期望: 全部通过
 
 | 问题 | 根因 | 规则 |
 |------|------|------|
-| @sofagent/mcp 发布后 npm 上仍为 0.99.4 | OIDC 自动化链路未端到端验证——audit 成功、mcp 断裂。信任自动化但没亲自核实 | 🔴 **发布后必须 `npm view` 两个包确认版本号**（见阶段八新增步骤 15-16） |
+| @sofagent/mcp 发布后 npm 上仍为 0.99.4 | 自动化链路未端到端验证——audit 成功、mcp 断裂。信任自动化但没亲自核实 | 🔴 **发布后必须 `npm view` 两个包确认版本号**（见阶段八新增步骤 15-16） |
 | mcp 包 .npmignore 模式与 audit 不一致（`**/*.js.map` vs `dist/*.js.map`） | 两个包独立维护，没有对齐检查 | 🔴 两个 npm 包的 `.npmignore` 和 `package.json` files 字段必须对齐。files 字段加 `"!dist/**/*.js.map"` 作为双重保险（比 .npmignore 更可靠——不依赖 prepublishOnly） |
 | `npm pack --dry-run` 显示 mcp 有 .js.map，但实际 publish 干净 | prepublishOnly 在 dry-run 时不触发，造成假阳性 | ⚠️ 验证 npm 打包洁净度不能只看 dry-run，必须以 `files` 字段排除为准 |
 | npm README（audit 包）写"5 个命令"实际 8 个 bin | 改了 bin 没同步改 README | 🔴 bin 数量变动必须在 README 中同步更新。不在 README 中写死数字——写「安装后获得以下命令」 |

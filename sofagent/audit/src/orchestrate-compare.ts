@@ -72,7 +72,7 @@ export function scanLogFiles(dir: string): string[] {
 }
 
 // extractMetrics 用关键词匹配计算首次通过率
-// 优先匹配文字关键词（中/英文），回退到 emoji 作为 fallback。
+// 同时匹配文字关键词（中/英文）和 emoji，取并集（OR），两者出现任一即计入
 export function extractMetrics(dir: string): Metric {
   const files = scanLogFiles(dir);
   let fails = 0, steps = 0, pass = 0, fail = 0;

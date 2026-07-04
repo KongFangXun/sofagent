@@ -300,14 +300,23 @@ else
 fi
 echo ""
 
-# ── 10. 检查 sofagent/mcp 依赖 @sofagent/audit 版本与 SSOT 一致 ─
+# ── 10. 检查 sofagent/mcp 依赖 @sofagent/audit 版本（支持 ^ 范围） ─
 MCP_PKG="${PROJECT_ROOT}/sofagent/mcp/package.json"
 if [[ -f "${MCP_PKG}" ]]; then
-  dep_ver=$(grep '"@sofagent/audit":' "${MCP_PKG}" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
-  if [[ "${dep_ver}" != "${SSOT_VERSION}" ]]; then
-    report_error "${MCP_PKG}" "@sofagent/audit: ${dep_ver}" "@sofagent/audit: ${SSOT_VERSION}"
+  dep_line=$(grep '"@sofagent/audit":' "${MCP_PKG}")
+  dep_ver=$(echo "${dep_line}" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
+  # v0.99.7 起 mcp 用 ^ 范围版本（如 ^0.99.6），不再要求精确匹配 SSOT
+  # 规则：major.minor 必须一致，patch 可以 ≤ SSOT
+  dep_major_minor=$(echo "${dep_ver}" | cut -d. -f1,2)
+  ssot_major_minor=$(echo "${SSOT_VERSION}" | cut -d. -f1,2)
+  dep_patch=$(echo "${dep_ver}" | cut -d. -f3)
+  ssot_patch=$(echo "${SSOT_VERSION}" | cut -d. -f3)
+  if [[ "${dep_major_minor}" != "${ssot_major_minor}" ]]; then
+    report_error "${MCP_PKG}" "@sofagent/audit: ${dep_ver}" "major.minor = ${ssot_major_minor}.x"
+  elif [[ "${dep_patch}" -gt "${ssot_patch}" ]]; then
+    report_error "${MCP_PKG}" "@sofagent/audit: ${dep_ver}" "≤ ${SSOT_VERSION}"
   else
-    report_ok "${MCP_PKG#"${PROJECT_ROOT}"/}" "${dep_ver}"
+    report_ok "${MCP_PKG#"${PROJECT_ROOT}"/}" "@sofagent/audit: ${dep_line#*: }"
   fi
 fi
 echo ""

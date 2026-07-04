@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v0.99.6 · 2026-07-04 · 孔放勋
+> v0.99.7 · 2026-07-04 · 孔放勋
 
 ---
 
@@ -61,6 +61,32 @@ sofagent 的 `scoring/` + `think.md` 自进化处于**第一阶段：经验记�
 ### 🐚 B1 数据初始化依赖 bash
 
 SKILL.md B1 步用 bash heredoc 创建 `.sofagent/` 数据目录。Windows 或受限沙盒环境可能没有 bash。降级路径已内置：bash 不可用时 Agent 降级为逐条 `mkdir` + Write 工具创建。
+
+---
+
+<a id="windows-支持是实验性的"></a>
+
+### 🪟 Windows 支持是实验性的
+
+**macOS / Linux = 全功能。Windows = 实验性。**
+
+PowerShell 脚本（`.ps1`）作为 bash 脚本的平行实现存在，但**功能覆盖不全**：
+
+| 脚本 | .sh 行数 | .ps1 行数 | 覆盖度 |
+|------|:---:|:---:|------|
+| verify | 942 | 230 | ~25%，缺 §4 Hook 检查、§8 断路器配置、§10 企业合规验证、§11 daemon 状态 |
+| install | 193 | 555 | ps1 更详细（含 Windows 注册表逻辑），但实现路径完全不同 |
+| daemon | 233 | 131 | ~55% |
+| audit | 109 | 77 | ~70% |
+
+**核心审计引擎（@sofagent/audit npm 包）跨平台**——纯 TypeScript，Node.js ≥18 即可运行，不依赖 bash。
+
+**受影响的 Windows 功能**：
+- `verify.ps1` 只跑约 25% 的检查项，大量合规/Hook/daemon 检查缺失
+- `install.ps1` 和 `install.sh` 实现路径不同，行为可能不一致
+- daemon 注册逻辑在 Windows 上用 schtasks，行为未经充分验证
+
+**建议**：Windows 用户优先用 `npx @sofagent/audit`（npm 包，全功能），bash 脚本用 Git Bash / WSL 运行。PowerShell 脚本作为后备，不作为主路径。
 
 ---
 

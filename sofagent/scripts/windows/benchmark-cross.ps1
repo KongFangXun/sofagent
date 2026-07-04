@@ -27,7 +27,7 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
-$VERSION_STR = "0.99.6"
+$VERSION_STR = "0.99.7"
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
 
 function _Ts      { (Get-Date -Format "HH:mm:ss") }
