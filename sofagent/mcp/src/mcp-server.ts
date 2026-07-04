@@ -347,7 +347,7 @@ class McpServer {
     }
 
     // 7. 格式化输出
-    const triggeredRules = results.rules.filter((r) => r.status !== 'PASS');
+    const triggeredRules = results.rules.filter((r: AuditResult['rules'][number]) => r.status !== 'PASS');
     const verdict = results.exitCode === 0 ? 'PASS' : results.exitCode === 1 ? 'WARN' : 'FAIL';
 
     const lines: string[] = [];
@@ -374,12 +374,12 @@ class McpServer {
         exitCode: results.exitCode,
         verdict,
         fileCount: diffFiles.length,
-        triggeredRules: triggeredRules.map((r) => ({
+        triggeredRules: triggeredRules.map((r: AuditResult['rules'][number]) => ({
           name: r.name,
           status: r.status,
           ruleClass: r.ruleClass,
         })),
-        allRules: results.rules.map((r) => ({
+        allRules: results.rules.map((r: AuditResult['rules'][number]) => ({
           name: r.name,
           status: r.status,
         })),

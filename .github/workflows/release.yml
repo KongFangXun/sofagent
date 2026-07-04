@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write   # Trusted Publishing OIDC
+      id-token: write
     defaults:
       run:
         working-directory: sofagent/audit
@@ -26,26 +26,29 @@ jobs:
         # (https://github.com/npm/cli/issues/4828)
       - run: npm test
       - run: npm publish --access public
-        # 认证走 OIDC Trusted Publishing，无需 NPM_TOKEN
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-mcp:
     # 不依赖 publish-audit——两个包独立发布，audit 失败不应阻塞 mcp
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write   # Trusted Publishing OIDC
-    defaults:
-      run:
-        working-directory: sofagent/mcp
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+      # 从根目录安装——workspace 模式让 mcp 链接到本地 @sofagent/audit
       - run: npm ci
+        working-directory: .
       - run: npm run check
-        # 类型检查——确保 tsc --noEmit 通过再 build
+        working-directory: sofagent/mcp
       - run: npm run build
+        working-directory: sofagent/mcp
       - run: npm publish --access public
-        # 认证走 OIDC Trusted Publishing，无需 NPM_TOKEN
+        working-directory: sofagent/mcp
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
