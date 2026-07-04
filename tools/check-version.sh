@@ -381,6 +381,25 @@ if [[ -f "${ROADMAP}" ]]; then
 fi
 echo ""
 
+# ── 10c-2. 检查 package-lock.json 中双包版本与 SSOT 一致 ─
+LOCK_FILE="${PROJECT_ROOT}/package-lock.json"
+if [[ -f "${LOCK_FILE}" ]]; then
+  # audit 和 mcp 在 lock 的 packages 段里有 version 字段
+  audit_lock_ver=$(grep -A3 '"sofagent/audit":' "${LOCK_FILE}" | grep '"version"' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  mcp_lock_ver=$(grep -A3 '"sofagent/mcp":' "${LOCK_FILE}" | grep '"version"' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  if [[ -n "${audit_lock_ver}" ]] && [[ "${audit_lock_ver}" != "${SSOT_VERSION}" ]]; then
+    report_error "${LOCK_FILE}" "audit lock: ${audit_lock_ver}" "${SSOT_VERSION}"
+  elif [[ -n "${audit_lock_ver}" ]]; then
+    report_ok "package-lock.json" "audit: ${audit_lock_ver}"
+  fi
+  if [[ -n "${mcp_lock_ver}" ]] && [[ "${mcp_lock_ver}" != "${SSOT_VERSION}" ]]; then
+    report_error "${LOCK_FILE}" "mcp lock: ${mcp_lock_ver}" "${SSOT_VERSION}"
+  elif [[ -n "${mcp_lock_ver}" ]]; then
+    report_ok "package-lock.json" "mcp: ${mcp_lock_ver}"
+  fi
+fi
+echo ""
+
 # ── 10d. 检查 .ts 文件头注释中的 vX.Y.Z 残留 ─
 echo -e "${BOLD}── [11/12] TS 文件头注释版本号 ──${NC}"
 ts_header_errors=0

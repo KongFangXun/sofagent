@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.99.7 · 2026-07-04 · 孔放勋
+> v0.99.7 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
 
 > 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE = Forward Deployed Engineer，企业里的 AI 部署工程师。详见 [FDE/FDE.md](./FDE/FDE.md) 和项目记忆中的 [FDE 认知框架](./.workbuddy/memory/MEMORY.md#fde-认知框架2026-07-01-rolling-ai-播客笔记)。
 
@@ -306,7 +306,7 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 
 ## 八、提交时审计
 
-sofagent-audit（v0.92）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对审计规则（A1-A11）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 运行时配合，但审计 A7/A8 的日志检查依赖 Agent 写入的任务日志。
+sofagent-audit（v0.99.7）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对审计规则（A1-A11）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 运行时配合，但审计 A7/A8 的日志检查依赖 Agent 写入的任务日志。
 
 ### 绿灯路径检测
 
