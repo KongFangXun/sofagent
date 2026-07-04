@@ -178,7 +178,23 @@ else
     else
       report_ok "$(basename "${sh}")" "${found_ver}"
     fi
+    # 额外检查：文件头注释中的 · vX.Y 格式（daemon 脚本等用此格式）
+    header_ver=$(head -5 "${sh}" | grep -oE '· v[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
+    if [[ -n "${header_ver}" ]] && [[ "${header_ver}" != "${SSOT_VERSION}" ]]; then
+      report_error "${sh}" "注释头 v${header_ver}" "v${SSOT_VERSION}"
+    fi
   done
+fi
+
+# 检查 FDE/fde-install.sh 注释头版本号
+FDE_SH="${PROJECT_ROOT}/FDE/fde-install.sh"
+if [[ -f "${FDE_SH}" ]]; then
+  header_ver=$(head -5 "${FDE_SH}" | grep -oE '· v[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
+  if [[ -n "${header_ver}" ]] && [[ "${header_ver}" != "${SSOT_VERSION}" ]]; then
+    report_error "${FDE_SH}" "注释头 v${header_ver}" "v${SSOT_VERSION}"
+  else
+    report_ok "fde-install.sh" "v${header_ver:-N/A}"
+  fi
 fi
 echo ""
 
