@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent daemon-status.sh · daemon 状态查询 · v0.92
+# sofagent daemon-status.sh · daemon 状态查询 · v0.99.7
 # ============================================================
 # 默认：运行状态 + PID + 时长 + mode + detected_platforms
 # --detect：仅进程检测，输出平台列表

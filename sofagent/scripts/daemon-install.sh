@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent daemon-install.sh · daemon 安装脚本 · v0.92
+# sofagent daemon-install.sh · daemon 安装脚本 · v0.99.7
 # ============================================================
 # 部署 daemon.sh + daemon-lib.sh，注册系统服务（launchd/systemd）。
 # macOS: launchd plist → ~/Library/LaunchAgents/
