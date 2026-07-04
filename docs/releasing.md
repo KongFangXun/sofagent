@@ -122,7 +122,9 @@
 > 🔴 **npm 发布走 OIDC Trusted Publishing**（release.yml `id-token: write`），gh release create 后自动触发。不要信任自动化——发布后必须亲自验证（见下方步骤 f）。
 
 - [ ] `git tag vX.YY && git push origin vX.YY`
-- [ ] `gh release create vX.YY`（自动触发 OIDC npm 双包发布）
+- [ ] 🔴 **gh release create vX.YY**（自动触发 OIDC npm 双包发布）
+  - 📝 **Release body 必须包含**：`📖 [详细开发日志](./docs/changelog/vX.YY.md)` 链接（GitHub 自动生成的 "Full Changelog" 只到 diff 页，不会到开发文档）
+  - `gh release create vX.YY --notes "..."` 或用 `--notes-file` 从文件读
 - [ ] `clawhub skill publish ./skill --slug sofagent --version X.YY.0`
 - [ ] `clawhub skill publish ./FDE --slug sofagent-fde --version X.YY.0`
 - [ ] cp -r skill/ → `~/.workbuddy/skills/sofagent/`
