@@ -305,10 +305,19 @@ echo ""
 # 4. .sh 文件: VERSION="OLD"
 echo -e "${BOLD}[6/13] Shell 脚本${NC}"
 SH_DIR="$PROJECT_ROOT/sofagent/scripts"
-if [[ -d "$SH_DIR" ]]; then
+FDE_SH="$PROJECT_ROOT/FDE/fde-install.sh"
+if [[ -d "$SH_DIR" ]] || [[ -f "$FDE_SH" ]]; then
   sh_count=0
-  for sh in "$SH_DIR"/*.sh; do
-    [[ -f "$sh" ]] || continue
+  # 收集 scripts/*.sh + FDE/fde-install.sh
+  sh_files=()
+  if [[ -d "$SH_DIR" ]]; then
+    for sh in "$SH_DIR"/*.sh; do
+      [[ -f "$sh" ]] && sh_files+=("$sh")
+    done
+  fi
+  [[ -f "$FDE_SH" ]] && sh_files+=("$FDE_SH")
+
+  for sh in "${sh_files[@]}"; do
     sh_content=$(cat "$sh")
     if $PATCH_ONLY; then
       sh_new=$(sed "s/VERSION=\"$OLD_3SEG\"/VERSION=\"$NEW_3SEG\"/g" "$sh")
@@ -319,10 +328,14 @@ if [[ -d "$SH_DIR" ]]; then
         sh_new=$(sed "s/VERSION=\"$OLD_3SEG\"/VERSION=\"$NEW_3SEG\"/g" "$sh")
       fi
     fi
-    # 额外：替换文件头注释中的 （vX.Y.Z） 格式
+    # 额外：替换文件头注释中的版本号格式
+    # 格式 1: （vX.Y.Z）全角括号
+    # 格式 2: · vX.Y.Z 中圆点（daemon 脚本等用此格式）
     sh_new=$(echo "$sh_new" | sed \
       -e "s/（v${OLD_3SEG}）/（v${NEW_3SEG}）/g" \
-      -e "s/（v${OLD_2SEG}）/（v${NEW_2SEG}）/g")
+      -e "s/（v${OLD_2SEG}）/（v${NEW_2SEG}）/g" \
+      -e "s/· v${OLD_3SEG}/· v${NEW_3SEG}/g" \
+      -e "s/· v${OLD_2SEG}\([^0-9.]\)/· v${NEW_2SEG}\1/g")
     if [[ "$sh_new" != "$sh_content" ]]; then
       if [[ $sh_count -eq 0 ]]; then
         echo -e "  ${GREEN}✓${NC} VERSION=\"$OLD_2SEG\" → VERSION=\"$NEW_2SEG\""
