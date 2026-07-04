@@ -8,7 +8,7 @@
 
 > 2026-07-04（UTC）· 北京时间 07-05
 
-v0.99.6 三轮独立审查（GLM-5.2 + DeepSeek × 2）发现 11 项发布基础设施问题，本版全部修复。核心：CI E403 根治（加版本存在性检查）+ OIDC 文档谎言清零（12+ 处改 NPM_TOKEN）+ mcp 依赖解锁（精确改范围）+ 回滚文档补全 + shellcheck SC2034 清零 + Windows 实验性标注 + logo 压缩 84%。**首次采用「npm 先行」发布策略。**
+v0.99.6 三轮独立审查（GLM-5.2 + DeepSeek × 2）共发现 13 项问题，本版修复其中 11 项（另外 2 项已在 v0.99.6 修复）。核心：CI E403 根治（加版本存在性检查）+ OIDC 文档谎言清零（12+ 处改 NPM_TOKEN）+ mcp 依赖解锁（精确改范围）+ 回滚文档补全 + shellcheck SC2034 清零 + Windows 实验性标注 + logo 压缩 84%。**首次采用「npm 先行」发布策略。**
 
 **npm 发布状态**：@sofagent/audit ✅ 0.99.7 · @sofagent/mcp ✅ 0.99.7（npm 先行手动发布，CI 自动 skip）
 

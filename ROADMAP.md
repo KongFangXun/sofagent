@@ -10,7 +10,7 @@
 
 ## 现在在哪：v0.99.7 ✅
 
-> 发布基础设施修复版——v0.99.6 三轮独立审查发现 11 项问题（CI E403 + OIDC 文档谎言 + mcp 依赖锁定 + shellcheck 残留 + Windows 未标注），本版全部修复。首次采用「npm 先行」发布策略。v1.0 准入 3/10 ✅ + 7/10 ⚠️。
+> 发布基础设施修复版——v0.99.6 三轮独立审查共发现 13 项问题（本版修复 11 项，另外 2 项已在 v0.99.6 修复）。首次采用「npm 先行」发布策略。v1.0 准入 1/10 ✅ + 9/10 ⚠️（v0.99.8 审查修正：#8 首次任务通过率从未独立验证、#9a Windows 仅 CI 通过功能覆盖 24%）。
 >
 > 📖 [开发日志](./docs/changelog/v0.99.7.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
@@ -80,13 +80,13 @@
 |:--:|------|------|
 | 1 | 审计引擎检出率验证 | ✅ v0.99.2 首次实测——5/5 100% 检出（Case 015）。局限：靶向构造、未测误报率、非盲测 |
 | 2 | 审计工具实现完整六步闭环 | ⚠️ 步骤 1-3 生产可用，步骤 4-6 实验性/技术预览（见 LIMITATIONS） |
-| 3 | Harness 层上下文成本 ≤ 窗口 5% | ⚠️ ~2.5%（自报，无独立验证。「500 字原则」未达——SKILL.md≈2000+字，fde.md=1679 字符） |
+| 3 | Harness 层上下文成本 ≤ 窗口 5% | ⚠️ ~2.5%（自报，无独立验证。SKILL.md≈2000+字，fde.md=3051 字符） |
 | 4 | OpenClaw + AO compose 全链路跑通 | ⚠️ ao 0.7.5 compose 生成有效 workflow（v0.99.2 实测，216 角色可用，输出完整 YAML）。全链路运行（ao run）需 OpenClaw 会话 |
 | 5 | MCP server + webhook 跑通 | ⚠️ MCP Server 本地通过（initialize/tools/list/tools/call）。Webhook 推送代码完整（`pushAuditResult` 支持 dingtalk/feishu/wecom，fire-and-forget），需真实 webhook URL 完成端到端 |
 | 6 | daemon 核心功能通过自动化测试 | ⚠️ 手动验证通过（Case 014），无独立自动化测试（见 LIMITATIONS） |
 | 7 | ≥ 1 外部用户 + 5 个一次性测试 | ⚠️ 关联企业已在试用，测试数据收集整理中 |
-| 8 | install → verify → 首次任务通过率 ≥ 90% | ✅ v0.99.2 验证通过——verify.sh exit 0，检查全绿 |
-| 9a | 三操作系统核心功能（build + tsc + smoke test） | ✅ macOS——Case 014。Linux——`daemon-linux-ci`。Windows——`windows-ci` |
+| 8 | install → verify → 首次任务通过率 ≥ 90% | ⚠️ verify.sh 48 项全绿（安装环境正确性 ✅），但「首次任务通过率」从未独立验证——verify 测的是环境不是任务 |
+| 9a | 三操作系统核心功能（build + tsc + smoke test） | ⚠️ macOS + Linux 全功能。Windows CI 通过但功能覆盖仅 24%（verify.ps1 230 行 vs verify.sh 942 行，见 LIMITATIONS） |
 | 9b | vitest 在 Windows 上全量通过 | ⚠️ rollup 原生模块兼容问题，单元测试待解决 |
 **硬性截止日期**：2026-09-30。如果 #7 不达标 → v1.0 降为「审计工具技术预览版」。
 
@@ -99,7 +99,7 @@
 | age 加密 / 多用户隔离 | think.md + task/logs 加密；同机权限隔离 |
 | 多企业平台 webhook | 飞书 + 企微 + 自定义 webhook |
 | 记忆架构升级 | Ledger-Views-Policy 三层模型 |
-| Windows 支持 | PowerShell 平行实现（待需求验证） |
+| **Windows 完整支持** | PowerShell 对齐——verify.ps1 从 230 行扩到 ~700 行（对齐 verify.sh 48 项检查）。当前覆盖率 24%，v0.99.7 起诚实标注为实验性。目标：覆盖率 ≥80%，去掉实验性标注 |
 | 分布式反思同步 | Gossip 协议 + 信任加权投票 |
 | bash 代码债清理 | ~450 行重复代码 bash→TS 迁移完成 |
 | 英文文档扩展 | HANDBOOK/DEVELOPMENT/ARCHITECTURE 英文翻译 |
