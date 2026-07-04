@@ -8,7 +8,7 @@ ERRORS=0
 
 echo "=== 1. 死链检查 ==="
 # 检查所有 .md 中的 rules.md 死链（不检查 changelog 历史、workbuddy 记忆、sofagent 运行时数据）
-RULES_DEAD=$(grep -rn "rules\.md" --include="*.md" . 2>/dev/null | grep -v "docs/changelog/" | grep -v "CHANGELOG.md" | grep -v "node_modules" | grep -v ".workbuddy/" | grep -v ".sofagent/" | wc -l | tr -d '[:space:]' || echo "0")
+RULES_DEAD=$(grep -rn "rules\.md" --include="*.md" . 2>/dev/null | grep -v "docs/changelog/" | grep -v "CHANGELOG.md" | grep -v "node_modules" | grep -v ".workbuddy/" | grep -v ".sofagent/" | grep -c "" || echo "0")
 if [ "$RULES_DEAD" -gt 0 ]; then
   echo "❌ rules.md 死链: ${RULES_DEAD} 处"
   ERRORS=$((ERRORS + 1))

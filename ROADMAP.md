@@ -1,86 +1,18 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.99.5 · 2026-07-04 · CI 自动化 + 审查修复版——OIDC Trusted Publishing + P0×6/P1×10 修复
+> v0.99.6 · 2026-07-04 · 审查修复版——补全 v0.99.5 遗留的 mcp npm 发布 + 修正文档一致性（双审 25 项修复）
 >
 
 > 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（FDE 部署用）为实验性附带。
 
 ---
 
-## 现在在哪：v0.99.5
+## 现在在哪：v0.99.6 ✅
 
-> v0.99.5 是 CI 自动化版本（OIDC Trusted Publishing）+ 2026-07-04 审查修复（P0×6 + P1×10 + 工具增强）。以下 v0.99.4 的交付描述仍然有效。
+> 审查修复版——v0.99.5 发版后双审发现 25 项问题（P0×4 + P1×7），本版补全 @sofagent/mcp npm 发布 + 修正全仓文档一致性。v1.0 准入 3/10 ✅ + 7/10 ⚠️。
 >
-> v0.99.4 是 **审查修复版**——41 项全面修复（P0×7 + P1×15 + P2×19），基于 DeepSeek V4 Pro + GLM-5.2 双模型独立审查 + 齐活林交叉查漏。准入条件从 6✅/4⚠️ 诚实化为 3✅/7⚠️，全仓 doc-vs-reality 清零。
-
-| 级别 | 交付 | 状态 |
-|------|------|:----:|
-| P0 | evidence「4家→1家」诚信修复 + ROADMAP 准入 3✅→⚠️ + npm pack .js.map→0 + verify 50→41项 + mcp VERSION TODO + mcp 零测试声明 + FDE case 原始数据声明 | ✅ |
-| P1 | README/HANDBOOK 定位收敛 + CHANGELOG 数字对齐 + FDE 成熟度声明 + bin 构成注明 + orchestrate TODO 标注 + 连续胜出文档诚实化 + check-version/bump-version 修复 + verify ⚠ 标注 + 集成测试声明 + 闭环→多维 | ✅ |
-| P2 | ARCHITECTURE 人设移除 + AI 工程段精简 + README 精简 + Rolling AI 因果 + 人称一致性 + ROADMAP v1.x 规划（A12/A13/规则模板/测试工具） | ✅ |
-
-> 📖 [详细开发日志](./docs/changelog/v0.99.4.md) · v1.0 准入条件进度：3/10 ✅ + 7/10 ⚠️
-
-### v0.99.3 — 文档校准版
-
-| 级别 | 交付 | 状态 |
-|------|------|:----:|
-| P0 | benchmark.sh 幽灵引用清零——7 处文档引用改为 verify.sh | ✅ |
-| P0 | ROADMAP v1.0 准入条件三处口径统一（经独立审查修正为 6/10 ✅ + 4/10 ⚠️，v0.99.4 重新评定为 3/10 ✅ + 7/10 ⚠️） | ✅ |
-| P0 | bump-version.sh Unicode 编码 bug 修复 | ✅ |
-| P1 | 全量外部链接验证 + windows-ci.yml vitest 跳过注释 + CI workflow 合并（audit.yml→sofagent-audit.yml） | ✅ |
-| P1 | CONTRIBUTING 版本号修正 + CoC 去重 | ✅ |
-| P2 | 术语全线清零：CHANGELOG 7 处纪律层/纪律底座→约束底座 + THINK.md 术语注 | ✅ |
-| P2 | evidence 量化锚点更新 + benchmark 段落状态声明 + team-deploy 部署流程修正 | ✅ |
-| P2 | mcp-server-design 日期修正 + daemon-design 版本号 | ✅ |
-| P2 | mcp-server.ts + mcp-push-poc.ts 归档至 _archive/ + mcp/package.json files 字段 | ✅ |
-| P2 | ROADMAP 放弃条件节删除 | ✅ |
-| P2 | CHANGELOG v0.99 条目 398→406 注记 | ✅ |
-
-> 📖 [详细开发日志](./docs/changelog/v0.99.3.md) · v1.0 准入条件进度：3/10 ✅ + 7/10 ⚠️
-
-### v0.99.2 — 审查驱动质量修复版
-
-> 两份独立十维审查，三轮修复 25+ 问题。v1.0 前的最后一次质量加固。
-
-| 级别 | 交付 | 状态 |
-|------|------|:----:|
-| P0 | evidence 测试数 398 vs 406 不一致 + DEVELOPMENT/SECURITY 过期引用 task-orchestrate 修复 | ✅ |
-| P0 | ROADMAP daemon 准入条件 `❌ 移除` → `✅`（根治 LLM 误读） | ✅ |
-| P1 | HANDBOOK 死链 + 中英文 README 不对等 + daemon 6 文件描述统一 | ✅ |
-| P1 | dist/ 僵尸编译产物（prepublishOnly 清 dist）+ Skill 计数统一 + 作者背景三处矛盾 | ✅ |
-| P1 | 术语中英文对齐（ARCHITECTURE 术语对照表）+ bin 命名统一 + 贡献者阶梯引用 | ✅ |
-| P2 | orchestrate-compare 时间窗口/连续胜出/Windows 兼容 + audit-history 并发安全 | ✅ |
-
-> 📖 [详细开发日志](./docs/changelog/v0.99.2.md) · 6/6 测试用例全绿 · 3 项 v1.0 准入条件 ⏳→✅、3 项 ⏳→⚠️ · 审计引擎检出率首次实测 5/5 100% · 406 tests ✅
-
-### v0.99.1 — 审查跟进版
-
-| 级别 | 交付 | 状态 |
-|------|------|:----:|
-| P0 | OpenClaw 叙事重写（README/ARCHITECTURE/LIMITATIONS 中英文 + 术语统一） | ✅ |
-| P0 | 手写 YAML 解析器 → js-yaml（config-loader.ts -102行） | ✅ |
-| P0 | MCP Server 独立包拆分（@sofagent/mcp，npm workspaces） | ✅ |
-| P0 | FDE 验证状态修正 + 编排引擎/模型依赖局限声明新增 | ✅ |
-| P1 | Case study 模板 + 审计引擎边界修复 + 叙事降调 | ✅ |
-| P2 | CI/CD 扩展（release workflow）+ CONTRIBUTING 链接更新 | ✅ |
-
-> 📖 [详细开发日志](./docs/changelog/v0.99.1.md)
-
-### v0.99 — v1.0 前收尾版
-
-| 级别 | 交付 | 状态 |
-|------|------|:----:|
-| P0 | 文档信任修复（entry-gate / SECURITY / DEVELOPMENT ≤90行 / README 格式） | ✅ |
-| P0 | 放弃条件正式写入 ROADMAP | ✅ |
-| P0 | v1.0 准入条件 9 条核查（含截止日期 2026-09-30） | ✅ |
-| P0 | Skill 全部 ≤90 行 | ✅ |
-| P1 | docs/evidence/ 死链清零 + 中英文 README 对齐 + 成熟度声明 | ✅ |
-| P1 | 内容去重 + bus factor + 模型依赖声明 + GitHub Action 模板 | ✅ |
-| P2 | preferences.md 删除 + ARCHITECTURE 引用密度减半 + check-docs.sh | ✅ |
-
-> 📖 [详细开发日志](./docs/changelog/v0.99.md)
+> 📖 [开发日志](./docs/changelog/v0.99.6.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -90,6 +22,7 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
+| **v0.99.6** | 审查修复：mcp npm 同步发布 + 文档一致性（25 项，双审驱动） | [📖](./docs/changelog/v0.99.6.md) |
 | **v0.99.5** | CI 自动化 + 审查修复：OIDC Trusted Publishing + P0×6/P1×10 修复 + 工具增强 | [📖](./docs/changelog/v0.99.5.md) |
 | **v0.99.4** | 审查修复：41 项全面修复，准入 6✅→3✅ 诚实化，doc-vs-reality 清零，闭环→多维 | [📖](./docs/changelog/v0.99.4.md) |
 | **v0.99.3** | 文档校准：16 项一致性清零（术语/幽灵引用/ROADMAP/CI/归档）+ bump-version 修复 | [📖](./docs/changelog/v0.99.3.md) |
@@ -128,12 +61,6 @@
 两条路径：**FDE 驻场部署**（传统中小企业，FDE 进场→十步流程→交付→撤离）和 **开发者自部署**（开源社区，git clone→install.sh→审计→CI 集成）。
 
 设备端形态：安装时自动带 OpenClaw，审计结果通过 MCP server 推到企业协同平台。**数据主权在设备**——所有记忆、日志、决策记录永不离开本地。
-
-### v0.98-v0.99：架构重组 + v1.0 前收尾
-
-**v0.98**：产品架构重组（lite 删除 + think.md 自动生成 + FDE 从 Skill 改为根目录文档）+ OpenClaw 重定义为必装引擎 + 审计闭环六步 + GitHub Action 模板 + install.sh 模块化。v0.98 交付明细已合并到下方 v0.99 交付表中。
-**v0.99**：两份独立审查全面修复 + Skill 全部 ≤90 行 + 文档预算 4849≤5000 + 放弃条件引入 + bus factor 声明 + GitHub Action 模板 + MCP Server 实现 + verify.sh → TS 重构（sofagent-verify 第 6 个 bin）。FDE 端到端验证推迟 v1.0。
-**v0.99.1**：审查跟进——OpenClaw 叙事重写（两层架构 / 审计层平台无关 / 编排层 FDE 工具包）+ P0 代码清理（手写 YAML→js-yaml、MCP Server 拆分为 @sofagent/mcp）+ 局限声明修正 + 案例模板
 
 ### v1.0 — 正式版：Agent 审计工具（+ FDE 编排引擎实验性附带）
 

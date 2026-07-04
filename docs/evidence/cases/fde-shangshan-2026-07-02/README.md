@@ -90,3 +90,37 @@ BMS 告警 → 降误报筛选 → 确认真实设备 → 写入钉钉 AI 表格
 > 📋 完整验证记录见 [v1.0 准入验证方案](../../../../Desktop/sofagent测试/上善能及/v1.0-准入条件-验证方案_已填写.md)
 
 > ⚠️ 原始部署产物（workflow.yaml / 部署日志 / 验证截图）存放在部署企业内网。联系仓库维护者获取脱敏版本。
+
+---
+
+## 脱敏节点列表（从公开信息提取）
+
+以下节点信息从部署方案摘要中提取，用于外部验证工作流结构完整性。
+
+### 已有产线 Agent（2 个，稳定运行数月）
+
+| Agent | 类型 | 说明 |
+|------|:--:|------|
+| 售后诊断 | 🔄 | BMS 告警 → 降误报筛选 → 确认真实设备 → 钉钉 AI 表格 → OA 审批待办 |
+| BMS 告警降误报 | 🔄 | 告警误报率已大幅降低 |
+
+### 本次 FDE 新规划（1 个）
+
+| Agent | 说明 |
+|------|------|
+| Enterprise 知识库 | knowledge_ingest.py + doc_search_mcp.py，从 10-20min 检索 → 秒回 |
+
+### Phase 1 交付物清单
+
+| 文件 | 类型 |
+|------|------|
+| enterprise-profile.md | 企业画像 |
+| tech-env.md | 技术环境评估 |
+| workflow-nodes.md | 工作流节点分析 |
+| node-classification.md | AI 节点分类 |
+| deployment-plan.md | 部署方案书 |
+| business-model.md | 商业模式 + ROI |
+| exit-check.md | 离场确认 |
+| knowledge_ingest.py | 文档入库脚本 |
+| doc_search_mcp.py | 知识库搜索脚本 |
+| codex-prompt-config.md | Codex prompt 配置 |

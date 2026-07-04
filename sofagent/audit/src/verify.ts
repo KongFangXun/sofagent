@@ -2,6 +2,7 @@
 // ============================================================
 // sofagent-verify · 装后验证脚本（TypeScript 版）
 // ============================================================
+// NOTE: 本文件 1256 行，v1.1 考虑按检查类别拆分（file/hook/platform/daemon）
 // 验证 sofagent 安装完整性（9 个检查类别，41 项）。
 // 由 verify.sh (942 行 bash) + windows/verify.ps1 合并而来，
 // 注册为 npm 包 bin。最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
@@ -1182,7 +1183,7 @@ function main(): void {
           v.checkWarn('daemon PID 文件存在但进程未运行（可能已崩溃）');
         }
       } else {
-        v.checkWarn('daemon 未运行（可选功能，不影响约束层）——运行 daemon.sh start 启动');
+        v.checkWarn('[INFO] daemon 未运行（可选功能，不影响约束层）——运行 daemon.sh start 启动');
       }
 
       // daemon.json 可读

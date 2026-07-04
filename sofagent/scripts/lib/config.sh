@@ -41,7 +41,7 @@ _sofa_find_data_dir() {
     "${HOME}/.workbuddy/skills/sofagent/.sofagent-data-path"; do
     if [ -f "$marker" ]; then
       local data_path
-      data_path=$(cat "$marker" 2>/dev/null | tr -d '[:space:]')
+      data_path=$(tr -d '[:space:]' < "$marker" 2>/dev/null)
       if [ -n "$data_path" ] && [ -d "$data_path" ]; then
         echo "$data_path"
         return 0

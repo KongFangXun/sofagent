@@ -4,13 +4,36 @@
 
 ---
 
+## [v0.99.6] — 审查修复版 ✅
+
+> 2026-07-04
+
+v0.99.5 发版后双审（齐活林 + GLM-5.2）发现 25 项问题（P0×4 + P1×7 + P2×11 + P3×3），本版全部修复。核心：@sofagent/mcp npm 同步发布 + README 创建 + .npmignore/files 双重保险 + 全仓文档一致性修正 + 新增 mcp 单元测试 13 tests + bump-version 工具增强。
+
+**npm 发布状态**：@sofagent/audit ⏳ 待发布 0.99.6 · @sofagent/mcp ⏳ 待同步发布 0.99.6（npm 当前仍 0.99.4，gh release 后自动 OIDC 发布）
+
+- P0-1：release.yml 去掉 mcp 对 audit 的 `needs` 依赖——两个包独立发布
+- P0-2：创建 @sofagent/mcp README.md（之前 npm 页面无 README）
+- P0-3：mcp package.json files 字段排除模式 + .npmignore 对齐 audit（双重保险）
+- P0-4：evidence 目录残留「零运行时依赖」→「最小运行时依赖（仅 js-yaml）」
+- P1-1：audit README bin 表格修正（不写死数字 + 移除跨包命令 + 标注别名）
+- P1-2：changelog v0.99.5.md mcp 文件数修正为准确描述
+- P1-3：Case 018 蔓嘉电商时间线统一为「~3 周（截至 2026-07-04）」
+- P1-4：SOFAGENT_VERSION_SOP.md 拷入 docs/ 目录（之前只在 workspace 外层）
+- P1-5：release.yml mcp job 加 `npm run check`（类型检查）
+- P1-6：CHANGELOG v0.99.6 索引条目 + npm 发布状态标注
+- P1-7：bump-version.sh 分母统一为 13 步 + hero badge 注释说明
+- P2×11 + P3×3：详见开发日志（FDE case 脱敏/evidence 注释优化/shellcheck CI/mcp 单元测试 13 tests/verify.ts daemon 输出/emoji 替换 等）
+
+> 📖 [开发日志](./docs/changelog/v0.99.6.md)
+
 ## [v0.99.5] — CI 自动化 + 审查修复版 ✅
 
 > 2026-07-03 初版 / 2026-07-04 修复
 
 OIDC Trusted Publishing + 文案对齐（07-03）。审查驱动修复：P0×6（badge版本号、ROADMAP节标题、mcp版本、.js.map、零依赖假话、env-check残留）+ P1×10 + bump-version/check-version 增强，全仓版本号/日期一致性清零（07-04）。
 
-> ⚠️ **发版后审查**：6 个 P0 + 10 个 P1 + 10 个 P2。详见 [开发日志](./docs/changelog/v0.99.5.md)。
+> ⚠️ **发版后审查**：发现 25 项新问题（P0×4 + P1×7 + P2×11 + P3×3），已在 [v0.99.6](#v0996---审查修复版-) 全部修复。
 >
 > 📖 [开发日志](./docs/changelog/v0.99.5.md)
 

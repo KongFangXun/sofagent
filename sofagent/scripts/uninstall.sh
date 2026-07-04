@@ -11,7 +11,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="0.99.5"
+VERSION="0.99.6"
 
 # ── 确定脚本目录 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -88,7 +88,7 @@ case "$PLATFORM" in
     # 兼容旧 constitution/ 路径
     old_path="$HOME/.workbuddy/skills/sofagent/constitution/$f"
     if [ -f "$old_path" ]; then
-      if [ "$LIST_ONLY" = true ]; then info "  $old_path（v0.72 前残留）"; else rm -f "$old_path" && rmdir "$(dirname "$old_path")" 2>/dev/null || true; ok "已删除旧版残留: constitution/$f"; fi
+      if [ "$LIST_ONLY" = true ]; then info "  $old_path（v0.72 前残留）"; else rm -f "$old_path"; rmdir "$(dirname "$old_path")" 2>/dev/null || true; ok "已删除旧版残留: constitution/$f"; fi
     fi
     ((removed++)) || true
 
