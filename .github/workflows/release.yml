@@ -29,7 +29,7 @@ jobs:
         # 认证走 OIDC Trusted Publishing，无需 NPM_TOKEN
 
   publish-mcp:
-    needs: publish-audit
+    # 不依赖 publish-audit——两个包独立发布，audit 失败不应阻塞 mcp
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -44,6 +44,8 @@ jobs:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci
+      - run: npm run check
+        # 类型检查——确保 tsc --noEmit 通过再 build
       - run: npm run build
       - run: npm publish --access public
         # 认证走 OIDC Trusted Publishing，无需 NPM_TOKEN

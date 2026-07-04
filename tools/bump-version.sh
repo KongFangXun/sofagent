@@ -161,7 +161,7 @@ echo -e "${BOLD}── 将要修改的文件 ──${NC}"
 echo ""
 
 # 1. package.json version 字段（SSOT，3 段格式）
-echo -e "${BOLD}[1/12] package.json（SSOT）${NC}"
+echo -e "${BOLD}[1/13] package.json（SSOT）${NC}"
 PJ="$PROJECT_ROOT/sofagent/audit/package.json"
 if [[ -f "$PJ" ]]; then
   pj_content=$(cat "$PJ")
@@ -186,7 +186,7 @@ fi
 echo ""
 
 # 1b. mcp/package.json version 字段
-echo -e "${BOLD}[2/12] mcp/package.json${NC}"
+echo -e "${BOLD}[2/13] mcp/package.json${NC}"
 MCP_PJ="$PROJECT_ROOT/sofagent/mcp/package.json"
 if [[ -f "$MCP_PJ" ]]; then
   mcp_content=$(cat "$MCP_PJ")
@@ -206,7 +206,7 @@ fi
 echo ""
 
 # 2. .ts 文件: const VERSION = 'OLD'（动态扫描，不硬编码文件列表）
-echo -e "${BOLD}[3/12] TypeScript 常量${NC}"
+echo -e "${BOLD}[3/13] TypeScript 常量${NC}"
 ts_count=0
 while IFS= read -r ts; do
   [[ -f "$ts" ]] || continue
@@ -240,25 +240,26 @@ if [[ $ts_count -eq 0 ]]; then
 fi
 echo ""
 
-# 2b. .ts 文件头注释中的 — vX.Y.Z 格式
-echo -e "${BOLD}[4/12] TS 文件头注释版本号${NC}"
+# 2b. .ts 文件头注释中的 vX.Y.Z（匹配注释行，与 check-version [11/12] 检测范围对齐）
+echo -e "${BOLD}[4/13] TS 文件头注释版本号${NC}"
 ts_header_count=0
 while IFS= read -r ts; do
   [[ -f "$ts" ]] || continue
   [[ "$ts" == */_archive/* ]] && continue
   [[ "$ts" == *.test.ts ]] && continue
   [[ "$ts" == */dist/* ]] && continue
-  ts_content=$(cat "$ts")
-  ts_new=$(echo "$ts_content" | sed \
-    -e "s/— v${OLD_3SEG}/— v${NEW_3SEG}/g" \
-    -e "s/— v${OLD_2SEG}/— v${NEW_2SEG}/g" \
-    -e "s/· v${OLD_3SEG}/· v${NEW_3SEG}/g" \
-    -e "s/· v${OLD_2SEG}/· v${NEW_2SEG}/g")
-  if [[ "$ts_new" != "$ts_content" ]]; then
+  # 只处理文件头前 10 行的注释（文件头版本号声明区域）
+  ts_head=$(head -10 "$ts")
+  ts_rest=$(tail -n +11 "$ts")
+  ts_head_new=$(echo "$ts_head" | sed \
+    -e "s/v${OLD_3SEG}/v${NEW_3SEG}/g" \
+    -e "s/v${OLD_2SEG}\([^0-9.]\)/v${NEW_2SEG}\1/g")
+  if [[ "$ts_head_new" != "$ts_head" ]]; then
     echo -e "  ${GREEN}✓${NC} 文件头注释: v$OLD_3SEG → v$NEW_3SEG"
     echo -e "    ${CYAN}$ts${NC}"
     if ! $DRY_RUN; then
-      printf '%s\n' "$ts_new" > "$ts"
+      printf '%s\n' "$ts_head_new" > "$ts"
+      printf '%s\n' "$ts_rest" >> "$ts"
     fi
     ts_header_count=$((ts_header_count + 1))
     TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
@@ -276,7 +277,7 @@ fi
 echo ""
 
 # 3. index.ts: vOLD → vNEW（仅 index.ts 这一个文件）
-echo -e "${BOLD}[5/12] index.ts 版本引用${NC}"
+echo -e "${BOLD}[5/13] index.ts 版本引用${NC}"
 INDEX_TS="$PROJECT_ROOT/sofagent/audit/src/index.ts"
 if [[ -f "$INDEX_TS" ]]; then
   idx_content=$(cat "$INDEX_TS")
@@ -302,7 +303,7 @@ fi
 echo ""
 
 # 4. .sh 文件: VERSION="OLD"
-echo -e "${BOLD}[6/12] Shell 脚本${NC}"
+echo -e "${BOLD}[6/13] Shell 脚本${NC}"
 SH_DIR="$PROJECT_ROOT/sofagent/scripts"
 if [[ -d "$SH_DIR" ]]; then
   sh_count=0
@@ -338,7 +339,7 @@ fi
 echo ""
 
 # 5. .ps1 文件: $VERSION 或 $VERSION_STR = "OLD"
-echo -e "${BOLD}[7/12] PowerShell 脚本${NC}"
+echo -e "${BOLD}[7/13] PowerShell 脚本${NC}"
 PS1_DIR="$PROJECT_ROOT/sofagent/scripts/windows"
 if [[ -d "$PS1_DIR" ]]; then
   ps1_count=0
@@ -370,7 +371,7 @@ fi
 echo ""
 
 # 6. MD 文件头: > vOLD · → > vNEW ·（排除 docs/changelog/）
-echo -e "${BOLD}[8/12] Markdown 文件头（排除 docs/changelog/）${NC}"
+echo -e "${BOLD}[8/13] Markdown 文件头（排除 docs/changelog/）${NC}"
 md_count=0
 # 收集所有 MD 文件（排除 docs/changelog/, node_modules/, .git/, dist/）
 while IFS= read -r md; do
@@ -417,7 +418,7 @@ echo -e "  ${YELLOW}已扫描 $md_count 个 MD 文件有匹配${NC}"
 echo ""
 
 # 7. README badge: version-OLD → version-NEW（兼容 v 前缀有无）
-echo -e "${BOLD}[9/12] README badge${NC}"
+echo -e "${BOLD}[9/13] README badge${NC}"
 for readme in \
   "$PROJECT_ROOT/README.md" \
   "$PROJECT_ROOT/README.en.md"; do
@@ -443,12 +444,16 @@ echo ""
 
 # 8. index/index.html hero badge version
 echo -e "${BOLD}[10/13] index/index.html hero badge${NC}"
+# index/index.html 是 landing page，不含版本号标签——此步骤为设计预期的无匹配
+# 如果未来 index.html 加了版本号标签，此步骤会自动替换
 index_html="$PROJECT_ROOT/index/index.html"
 if [[ -f "$index_html" ]]; then
   html_content=$(cat "$index_html")
-  html_new=$(sed "s/>v$OLD_2SEG</>v$NEW_2SEG</g" "$index_html")
-  # also try 3-segment
-  html_new=$(sed "s/>v$OLD_3SEG</>v$NEW_3SEG</g" <<< "$html_new")
+  search_2=">v$OLD_2SEG<" replace_2=">v$NEW_2SEG<"
+  search_3=">v$OLD_3SEG<" replace_3=">v$NEW_3SEG<"
+  html_new=$(cat "$index_html")
+  html_new="${html_new//$search_2/$replace_2}"
+  html_new="${html_new//$search_3/$replace_3}"
   if [[ "$html_new" != "$html_content" ]]; then
     echo -e "  ${GREEN}✓${NC} hero badge: v$OLD_2SEG → v$NEW_2SEG"
     echo -e "    ${CYAN}$index_html${NC}"

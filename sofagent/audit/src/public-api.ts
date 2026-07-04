@@ -1,13 +1,12 @@
 // ============================================================
 // public-api.ts · @sofagent/audit 公共 API（barrel export）
-// v0.99.5: 供 @sofagent/mcp 等外部包使用的稳定接口
+// v0.99.6: 供 @sofagent/mcp 等外部包使用的稳定接口
 // ============================================================
 // 注意：此文件只导出已经稳定且被外部消费的符号。
 // 内部实现细节不要加到这里——避免泄露实现导致耦合。
 
 export { parseDiff, isInGitRepo } from './diff-parser';
 export type { DiffFile } from './diff-parser';
-
 export { checkLogs } from './log-checker';
 export type { LogEntry } from './log-checker';
 

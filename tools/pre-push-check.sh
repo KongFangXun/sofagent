@@ -66,6 +66,7 @@ check_pass() { echo -e "  ${GREEN}✓${NC} $1"; ((PASS++)) || true; }
 check_fail() { echo -e "  ${RED}✗${NC} $1"; ((FAIL++)) || true; }
 check_warn() { echo -e "  ${YELLOW}⚠${NC} $1"; ((WARN++)) || true; }
 
+# shellcheck disable=SC2317  # 辅助函数，按步骤名调用，保留供未来扩展
 run_step() {
   local name="$1" cmd="$2"
   echo -e "\n${BOLD}── ${name} ──${NC}"
@@ -84,9 +85,10 @@ if command -v shellcheck &>/dev/null; then
   SHELL_FILES=$(find sofagent/scripts tools FDE -name "*.sh" -not -path "*/node_modules/*" 2>/dev/null)
   SC_FAIL=0
   for f in $SHELL_FILES; do
-    if ! shellcheck -s bash -e SC2086 -e SC2155 -e SC2034 -e SC1090 -e SC1091 "$f" >/dev/null 2>&1; then
+    # severity=warning 只报 warning+error，忽略 style/info（SC2015/SC2002 等代码风格建议）
+    if ! shellcheck -s bash --severity=warning -e SC2086 -e SC2155 -e SC2034 -e SC1090 -e SC1091 "$f" >/dev/null 2>&1; then
       echo -e "  ${RED}✗${NC} shellcheck: $f"
-      shellcheck -s bash -e SC2086 -e SC2155 -e SC2034 -e SC1090 -e SC1091 "$f" 2>&1 | head -5
+      shellcheck -s bash --severity=warning -e SC2086 -e SC2155 -e SC2034 -e SC1090 -e SC1091 "$f" 2>&1 | head -5
       SC_FAIL=$((SC_FAIL + 1))
     fi
   done
@@ -151,7 +153,7 @@ fi
 # ════════════════════════════════════════
 echo -e "\n${BOLD}── 5. sofagent-audit ──${NC}"
 if [ -f sofagent/audit/dist/index.js ]; then
-  AUDIT_OUT=$(cd sofagent/audit && npx sofagent-audit --silent --diff HEAD~1..HEAD --ci 2>&1 || true)
+  AUDIT_OUT=$(cd sofagent/audit && npx sofagent-audit --silent --diff HEAD~1..HEAD --ci 2>&1)
   AUDIT_EXIT=$?
   if [ "$AUDIT_EXIT" -eq 0 ]; then
     check_pass "sofagent-audit PASS"

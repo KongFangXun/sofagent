@@ -1,6 +1,6 @@
 # @sofagent/audit
 
-> v0.99.5 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
+> v0.99.6 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
 >
 > 最小运行时依赖（仅 js-yaml）。TypeScript 实现。Node.js 18+。
 
@@ -19,16 +19,18 @@ npm install --save-dev @sofagent/audit
 npx @sofagent/audit --diff HEAD~1..HEAD
 ```
 
-安装后获得 5 个命令：
+安装后获得以下命令：
 
 | 命令 | 说明 |
 |------|------|
 | `sofagent-audit` | 审计 CLI 主入口 |
-| `sofagent-mcp` | MCP Server（独立进程） |
-| `verify-evidence` | 证据验证工具 |
-| `skill-safety-check` | Skill 文件安全检查 |
+| `sofagent-verify` | 安装后完整性验证（41 项检查） |
 | `sofagent-orchestrate-compare` | 编排 A/B 对比 + promote + compose |
 | `sofagent-env-check` | FDE 环境验证 |
+| `verify-evidence` | 证据验证工具（别名：`sofagent-verify-evidence`） |
+| `skill-safety-check` | Skill 文件安全检查（别名：`sofagent-skill-safety-check`） |
+
+> 💡 `sofagent-mcp` 是独立包 `@sofagent/mcp` 的命令。`@sofagent/audit` 内置 MCP Server（通过 `sofagent-audit --mcp` 启动），无需单独安装 mcp 包。
 
 ---
 

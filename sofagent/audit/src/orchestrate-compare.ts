@@ -71,9 +71,8 @@ export function scanLogFiles(dir: string): string[] {
   return files.sort();
 }
 
-// ⚠️ extractMetrics 用 emoji 计数（✅/🔴）计算首次通过率
-// 此方法受日志输出格式影响，格式变更时需同步更新计数逻辑。
-// TODO(v1.1): emoji 计数脆弱——依赖日志输出格式，应改用结构化 metric 字段。
+// extractMetrics 用关键词匹配计算首次通过率
+// 优先匹配文字关键词（中/英文），回退到 emoji 作为 fallback。
 export function extractMetrics(dir: string): Metric {
   const files = scanLogFiles(dir);
   let fails = 0, steps = 0, pass = 0, fail = 0;
@@ -82,8 +81,8 @@ export function extractMetrics(dir: string): Metric {
       const c = readFileSync(file, 'utf-8');
       fails += (c.match(/FAIL/g) ?? []).length;
       steps += (c.match(/Step\s+\d+/gi) ?? []).length;
-      pass += (c.match(/✅/g) ?? []).length;
-      fail += (c.match(/🔴/g) ?? []).length;
+      pass += (c.match(/(?:✅|状态[：:]\s*成功|PASS|通过)/g) ?? []).length;
+      fail += (c.match(/(?:🔴|状态[：:]\s*失败|未通过)/g) ?? []).length;
     } catch { /* skip unreadable */ }
   }
   const n = files.length;
