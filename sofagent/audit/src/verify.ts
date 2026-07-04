@@ -581,9 +581,9 @@ function main(): void {
         v.checkWarn(`${f} 权限过于宽松 (${perms})，建议 chmod 644`);
       }
 
-      // 字符上限（宪法层 fde.md 是 FDE 部署模板，含完整配置项 + 示例注释，行数上限 90 行约对应 1800 字符）
-      if (chars > 1800) {
-        v.checkWarn(`${f} 超过 1800 字符（${chars}），fde.md 行数上限 90 行，建议精简示例注释`);
+      // 字符上限（宪法层 fde.md 是 FDE 部署模板，含完整配置项 + 示例注释，90 行可承载大量注释行——合理上限 3200 字符）
+      if (chars > 3200) {
+        v.checkWarn(`${f} 超过 3200 字符（${chars}），fde.md 行数上限 90 行，建议精简示例注释`);
       }
     } else {
       v.checkFail(`${f} — 缺失或为空`);

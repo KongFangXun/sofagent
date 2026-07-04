@@ -34,6 +34,11 @@
 #   - .ts/.sh/.ps1 源码常量用 3 段格式（0.94.0）——check 时与 SSOT 完整 3 段比对
 #   - MD 版本头 / SKILL.md frontmatter 用 2 段格式（0.94）——check 时取 SSOT 前 2 段比对
 #   - README badge 用 2 段格式
+#
+# 退出码:
+#   0 = 全部通过（可能有 warning，但不阻断）
+#   1 = 有 error（版本号不一致）
+#   2 = --strict 模式下有 warning（CI 严格模式用）
 # ============================================================
 
 set -uo pipefail
@@ -52,6 +57,21 @@ PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 ERRORS=0
 CHECKS=0
+WARNINGS=0
+STRICT=false
+
+# ── 参数解析 ──
+for arg in "$@"; do
+  case "$arg" in
+    --strict) STRICT=true ;;
+    --help|-h)
+      echo "check-version.sh — 版本号一致性校验"
+      echo "  --strict   warning 也返回 exit 2（CI 严格模式）"
+      echo "  --help     显示此帮助"
+      exit 0
+      ;;
+  esac
+done
 
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 echo -e "${BOLD}${CYAN}  check-version${NC}"
@@ -104,6 +124,7 @@ report_warn() {
   echo -e "  ${YELLOW}⚠${NC} ${file}"
   echo -e "    ${YELLOW}${msg}${NC}"
   CHECKS=$((CHECKS + 1))
+  WARNINGS=$((WARNINGS + 1))
 }
 
 # 从匹配行中提取版本号（纯数字+点号）
@@ -457,7 +478,13 @@ if [[ ${ERRORS} -eq 0 ]]; then
   TOTAL=$((CHECKS + ERRORS))
   echo -e "${GREEN}${BOLD}  ✓ 全部一致！版本号 = ${SSOT_VERSION}${NC}"
   echo -e "  检查通过: ${CHECKS}/${TOTAL} 项"
+  if [[ ${WARNINGS} -gt 0 ]]; then
+    echo -e "  ${YELLOW}⚠ ${WARNINGS} 项警告${NC}（--strict 模式会阻断）"
+  fi
   echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
+  if [[ "$STRICT" = true ]] && [[ ${WARNINGS} -gt 0 ]]; then
+    exit 2
+  fi
   exit 0
 else
   echo -e "${RED}${BOLD}  ✗ 发现 ${ERRORS} 处不一致！${NC}"

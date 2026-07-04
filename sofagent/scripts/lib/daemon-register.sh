@@ -87,7 +87,9 @@ N
   else warn "loopDetection 注入失败"; warn "请手动将以下配置写入 $CONFIG_FILE："; warn "  https://docs.openclaw.ai/zh-CN/gateway/config-tools"; fi
 }
 install_daemon() {  # Step 6b: daemon 可选安装
-  local OS_TYPE="$(uname -s)" DAEMON_INSTALL_SCRIPT="${SCRIPT_DIR}/daemon-install.sh"
+  local OS_TYPE
+  OS_TYPE="$(uname -s)"
+  local DAEMON_INSTALL_SCRIPT="${SCRIPT_DIR}/daemon-install.sh"
   [ "${REMOTE_MODE:-0}" = "1" ] && DAEMON_INSTALL_SCRIPT="${REMOTE_TMP}/sofagent/scripts/daemon-install.sh"
   if [ -f "$DAEMON_INSTALL_SCRIPT" ] && [ -x "$DAEMON_INSTALL_SCRIPT" ]; then
     case "$OS_TYPE" in

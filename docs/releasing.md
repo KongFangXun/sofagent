@@ -13,7 +13,7 @@
 1. 构建自测   → npm test && tsc --noEmit (audit + mcp 双包) && shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh && bash tools/check-docs.sh
 2. 审核       → 独立审查逐项核对 changelog，FAIL 项修完二次复核
 3. 版本号升级 → ./tools/bump-version.sh <旧> <新>（13 类位置全自动覆盖；手动改 index/index.html hero badge）
-4. 版本号校验 → ./tools/check-version.sh（必须 30/30 全绿）
+4. 版本号校验 → ./tools/check-version.sh（必须 33/33 全绿）
 5. 索引文档   → CHANGELOG 新增条目 + 链接到 changelog；ROADMAP 三步更新（文件头 / 现在在哪 / 未来去哪删已完成版本）
 6. npm 打包   → audit + mcp 双包 npm pack --dry-run，确认 .js.map=0
 7. 内容新鲜度 → 核对 7 项（效果证据 / 局限标注 / FDE 完成度 / 依赖表 / 英文同步 / COMMUNITY / evidence 零依赖表述）
@@ -64,7 +64,7 @@
 ./tools/check-version.sh
 ```
 
-从 package.json 读 SSOT 版本号，逐项比对 13 类位置。任何不一致 → 红字报错 + exit 1。应为 30/30 全绿。
+从 package.json 读 SSOT 版本号，逐项比对 13 类位置。任何不一致 → 红字报错 + exit 1。应为 33/33 全绿。
 
 ---
 
@@ -82,7 +82,7 @@
 - [ ] `./tools/bump-version.sh <旧> <新> --dry-run` → 确认 13 步全有效
 - [ ] `./tools/bump-version.sh <旧> <新>` → 实际替换
 - [ ] `index/index.html` hero badge → 手动更新版本号
-- [ ] `./tools/check-version.sh` → 30/30 全绿
+- [ ] `./tools/check-version.sh` → 33/33 全绿
 
 ### npm 打包洁净度（🔴 v0.99.5 教训）
 

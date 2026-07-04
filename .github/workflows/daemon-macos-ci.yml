@@ -18,7 +18,7 @@ jobs:
   daemon-test:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install daemon
         run: bash sofagent/scripts/daemon-install.sh

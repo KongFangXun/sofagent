@@ -86,9 +86,10 @@ if command -v shellcheck &>/dev/null; then
   SC_FAIL=0
   for f in $SHELL_FILES; do
     # severity=warning 只报 warning+error，忽略 style/info（SC2015/SC2002 等代码风格建议）
-    if ! shellcheck -s bash --severity=warning -e SC2086 -e SC2155 -e SC2034 -e SC1090 -e SC1091 "$f" >/dev/null 2>&1; then
+    # v0.99.8: SC2086/SC2155 收窄——全仓库已修复，不再全局排除
+    if ! shellcheck -s bash --severity=warning -e SC2034 -e SC1090 -e SC1091 "$f" >/dev/null 2>&1; then
       echo -e "  ${RED}✗${NC} shellcheck: $f"
-      shellcheck -s bash --severity=warning -e SC2086 -e SC2155 -e SC2034 -e SC1090 -e SC1091 "$f" 2>&1 | head -5
+      shellcheck -s bash --severity=warning -e SC2034 -e SC1090 -e SC1091 "$f" 2>&1 | head -5
       SC_FAIL=$((SC_FAIL + 1))
     fi
   done

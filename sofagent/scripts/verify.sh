@@ -2,7 +2,7 @@
 # ============================================================
 # sofagent verify.sh · 装后验证脚本
 # ============================================================
-# 验证 sofagent 安装完整性（9 个检查类别，24+ 项）
+# 验证 sofagent 安装完整性（9 个检查类别，48 项）
 # 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
 #
 # 用法：
@@ -34,7 +34,7 @@ while [[ $# -gt 0 ]]; do
     --quiet) QUIET_MODE=true; shift ;;
     --quick) QUICK_MODE=true; shift ;;
     --list)
-      echo "sofagent verify v${VERSION} — 检查清单（共 41 项）："
+      echo "sofagent verify v${VERSION} — 检查清单（共 48 项）："
       echo ""
       echo "  1. SKILL.md 存在性"
       echo "  2. think.md 可写性"
@@ -44,7 +44,7 @@ while [[ $# -gt 0 ]]; do
       echo "  6. MCP server 可执行"
       echo "  7. daemon 配置文件"
       echo "  8. 安装版本一致性"
-      echo "  ... (共 41 项，完整列表见 verify.sh 源码)"
+      echo "  ... (共 48 项，完整列表见 verify.sh 源码)"
       echo ""
       echo "部分检查因平台或环境跳过属正常现象（如 Windows 无 launchd）。"
       echo "运行 verify.sh（无 --list）执行全量检查。"
@@ -321,9 +321,9 @@ if [ -f "$path" ] && [ -s "$path" ]; then
   if [ "${perms: -1}" = "7" ] || [ "${perms: -1}" = "6" ] || [ "${perms: -1}" = "3" ] || [ "${perms: -1}" = "2" ]; then
     check_warn "$f 权限过于宽松 (${perms})，建议 chmod 644"
   fi
-  # 字符上限（fde.md 是 FDE 部署模板，行数上限 90 行约对应 1800 字符）
-  if [ "$chars" -gt 1800 ]; then
-    check_warn "$f 超过 1800 字符（${chars}），fde.md 行数上限 90 行，建议精简示例注释"
+  # 字符上限（fde.md 是 FDE 部署模板，90 行可承载大量注释行——合理上限 3200 字符）
+  if [ "$chars" -gt 3200 ]; then
+    check_warn "$f 超过 3200 字符（${chars}），fde.md 行数上限 90 行，建议精简示例注释"
   fi
 else
   check_fail "$f — 缺失或为空"
@@ -914,26 +914,32 @@ if [ "$FAILED" -eq 0 ]; then
     echo "  ✅ sofagent 安装验证通过！"
     echo "  📋 本次环境实际执行 ${pass} 项通过 / ${warn_count} 项警告 / ${FAILED} 项失败（共检查 ${total} 项）"
     echo ""
+    echo "  🚀 装完第一步做什么？"
+    echo "     1. 跑一个简单任务试试——比如让 Agent 帮你写个工具脚本"
+    echo "     2. 任务完成后检查 .sofagent/task/logs/ 有没有记录"
+    echo "     3. 跑 2-3 个任务后翻 .sofagent/think.md 看 Agent 的反思"
+    echo "     4. 如果是企业部署——激活 sofagent-fde Skill 走十步流程"
+    echo ""
     case "$PLATFORM" in
       openclaw)
-        echo "  下一步:"
-        echo "    1. 注册 before_prompt_build Hook（见 install.sh 输出）"
-        echo "    2. 启动 OpenClaw，检查 system prompt 是否包含 sofagent 底线规则"
-        echo "    3. 运行 ao compose 测试编排是否正常"
+        echo "  平台特定（OpenClaw）:"
+        echo "     · 注册 before_prompt_build Hook（见 install.sh 输出）"
+        echo "     · 启动 OpenClaw，检查 system prompt 是否包含 sofagent 底线规则"
+        echo "     · 运行 ao compose 测试编排是否正常"
         ;;
       workbuddy)
-        echo "  下一步:"
-        echo "    1. 确认 sofagent Skill 已加载（下次对话应出现初始化提示）"
-        echo "    2. 试用 /goal 命令开始第一个任务"
+        echo "  平台特定（WorkBuddy）:"
+        echo "     · 确认 sofagent Skill 已加载（下次对话应出现初始化提示）"
+        echo "     · 试用 /goal 命令开始第一个任务"
         ;;
       claude|codex|hermes)
-        echo "  下一步:"
-        echo "    1. 将种子指令粘贴到配置文件（见 install.sh 输出）"
-        echo "    2. 在下一轮对话中回复「sofagent」验证加载"
+        echo "  平台特定（${PLATFORM}）:"
+        echo "     · 将种子指令粘贴到配置文件（见 install.sh 输出）"
+        echo "     · 在下一轮对话中回复「sofagent」验证加载"
         ;;
     esac
   }
-  [ "$QUIET_MODE" = true ] && [ "$pass" -gt 0 ] && echo "  ✅ ${pass} 项全部通过"
+  [ "$QUIET_MODE" = true ] && [ "$pass" -gt 0 ] && echo "  ✅ 全部通过（${total} 项：${pass} pass / ${warn_count} warn / ${FAILED} fail）"
   [ "$JSON_MODE" = true ] && true  # exit 0 implicitly
 else
   [ "$JSON_MODE" = false ] && echo "  ❌ 发现 ${FAILED} 项失败。请先运行 install.sh 修复。"

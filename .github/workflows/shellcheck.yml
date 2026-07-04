@@ -24,7 +24,7 @@ jobs:
   shellcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install ShellCheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
@@ -34,4 +34,5 @@ jobs:
         with:
           severity: warning
         env:
-          SHELLCHECK_OPTS: -s bash -e SC2086 -e SC2155 -e SC2034 -e SC1090 -e SC1091
+          # v0.99.8: SC2086/SC2155 收窄——全仓库已修复，不再全局排除
+          SHELLCHECK_OPTS: -s bash -e SC2034 -e SC1090 -e SC1091

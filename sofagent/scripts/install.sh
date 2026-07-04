@@ -66,7 +66,7 @@ if [ "${REMOTE_MODE}" = "1" ]; then
     ok "仓库已克隆到: $REMOTE_TMP"; cd "$REMOTE_TMP"
     REMAINING_ARGS=""
     for _arg in "${ORIGINAL_ARGS[@]}"; do [ "$_arg" = "--remote" ] && continue; REMAINING_ARGS="$REMAINING_ARGS $_arg"; done
-    exec bash sofagent/scripts/install.sh $REMAINING_ARGS
+    exec bash sofagent/scripts/install.sh "${REMAINING_ARGS# }"
   else
     err "git 不可用——远程安装需要 git。请先安装 git 或使用完整安装方式："
     err "  git clone https://github.com/KongFangXun/sofagent.git && cd sofagent && bash sofagent/scripts/install.sh"
