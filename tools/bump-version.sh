@@ -441,8 +441,31 @@ for readme in \
 done
 echo ""
 
-# 8. SKILL.md frontmatter: version: OLD → version: NEW（含 3 段格式）+ 正文标题
-echo -e "${BOLD}[10/12] SKILL.md frontmatter + 正文标题${NC}"
+# 8. index/index.html hero badge version
+echo -e "${BOLD}[10/13] index/index.html hero badge${NC}"
+index_html="$PROJECT_ROOT/index/index.html"
+if [[ -f "$index_html" ]]; then
+  html_content=$(cat "$index_html")
+  html_new=$(sed "s/>v$OLD_2SEG</>v$NEW_2SEG</g" "$index_html")
+  # also try 3-segment
+  html_new=$(sed "s/>v$OLD_3SEG</>v$NEW_3SEG</g" <<< "$html_new")
+  if [[ "$html_new" != "$html_content" ]]; then
+    echo -e "  ${GREEN}✓${NC} hero badge: v$OLD_2SEG → v$NEW_2SEG"
+    echo -e "    ${CYAN}$index_html${NC}"
+    if ! $DRY_RUN; then
+      printf '%s\n' "$html_new" > "$index_html"
+    fi
+    TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
+  else
+    echo -e "  ${YELLOW}没有匹配到 v$OLD_2SEG 或 v$OLD_3SEG${NC}"
+  fi
+else
+  echo -e "  ${YELLOW}跳过（文件不存在）${NC}"
+fi
+echo ""
+
+# 9. SKILL.md frontmatter: version: OLD → version: NEW（含 3 段格式）+ 正文标题
+echo -e "${BOLD}[11/13] SKILL.md frontmatter + 正文标题${NC}"
 skill_count=0
 while IFS= read -r skill; do
   skill_content=$(cat "$skill")
@@ -472,7 +495,7 @@ done < <(find "$PROJECT_ROOT" \
 echo ""
 
 # 9. MD tail signature: > *vOLD,date* -> > *vNEW,date* (blockquote italic)
-echo -e "${BOLD}[11/12] MD tail signature (> *vOLD...*)${NC}"
+echo -e "${BOLD}[12/13] MD tail signature (> *vOLD...*)${NC}"
 sig_count=0
 while IFS= read -r md; do
   md_content=$(cat "$md")
@@ -503,7 +526,7 @@ fi
 echo ""
 
 # 10. 汇总
-echo -e "${BOLD}[12/12] 完成${NC}"
+echo -e "${BOLD}[13/13] 完成${NC}"
 echo ""
 
 # ── 汇总 ──────────────────────────────────────────────────────
