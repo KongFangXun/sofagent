@@ -2,7 +2,7 @@
 
 > v0.99.5 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
 >
-> 零运行时依赖。TypeScript 实现。Node.js 18+。
+> 最小运行时依赖（仅 js-yaml）。TypeScript 实现。Node.js 18+。
 
 ---
 
@@ -164,7 +164,7 @@ sofagent-audit --mcp
 sofagent-mcp
 ```
 
-MCP Server 通过 stdio 通信（JSON-RPC 2.0），零运行时依赖。
+MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 
 ### MCP Client 配置
 
@@ -227,7 +227,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），零运行时依赖。
 - **协议版本**：`2024-11-05`
 - **传输层**：stdio（stdin 读 JSON-RPC，stdout 写 JSON-RPC，stderr 写日志）
 - **必须先 `initialize`** 才能调用 tools/resources
-- **零运行时依赖**：只用 Node.js 内置模块
+- **最小运行时依赖**：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块
 
 ---
 
@@ -301,7 +301,7 @@ historyRetentionDays: 90
 
 ## 设计原则
 
-- **零运行时依赖**——只用 Node.js 内置模块（fs / child_process / readline / http）
+- **最小运行时依赖**：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块（fs / child_process / readline / http）
 - **焊死的门**——审计规则独立只读，Agent 不可篡改审计逻辑
 - **不依赖 Agent 运行时配合**——看的是 git diff（已发生的历史记录）。A7/A8 日志检查依赖 Agent 写入的 `.sofagent/task/logs/` 文件
 - **安全第一**——range 参数正则校验防注入，execFileSync 数组传参不 spawn shell

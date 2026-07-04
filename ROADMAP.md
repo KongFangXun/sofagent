@@ -1,15 +1,17 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.99.5 · 2026-07-03 · CI 自动化发布版——OIDC Trusted Publishing 替代手动 npm auth，release.yml + npm 双端配置完成。
+> v0.99.5 · 2026-07-04 · CI 自动化 + 审查修复版——OIDC Trusted Publishing + P0×6/P1×10 修复
 >
 
 > 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（FDE 部署用）为实验性附带。
 
 ---
 
-## 现在在哪：v0.99.4
+## 现在在哪：v0.99.5
 
+> v0.99.5 是 CI 自动化版本（OIDC Trusted Publishing）+ 2026-07-04 审查修复（P0×6 + P1×10 + 工具增强）。以下 v0.99.4 的交付描述仍然有效。
+>
 > v0.99.4 是 **审查修复版**——41 项全面修复（P0×7 + P1×15 + P2×19），基于 DeepSeek V4 Pro + GLM-5.2 双模型独立审查 + 齐活林交叉查漏。准入条件从 6✅/4⚠️ 诚实化为 3✅/7⚠️，全仓 doc-vs-reality 清零。
 
 | 级别 | 交付 | 状态 |
@@ -88,12 +90,13 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
-| **v0.99.5** | CI 自动化：OIDC Trusted Publishing + rollup 原生模块修复 + SOP 同步更新 | [📖](./docs/changelog/v0.99.5.md) |
+| **v0.99.5** | CI 自动化 + 审查修复：OIDC Trusted Publishing + P0×6/P1×10 修复 + 工具增强 | [📖](./docs/changelog/v0.99.5.md) |
 | **v0.99.4** | 审查修复：41 项全面修复，准入 6✅→3✅ 诚实化，doc-vs-reality 清零，闭环→多维 | [📖](./docs/changelog/v0.99.4.md) |
 | **v0.99.3** | 文档校准：16 项一致性清零（术语/幽灵引用/ROADMAP/CI/归档）+ bump-version 修复 | [📖](./docs/changelog/v0.99.3.md) |
 | **v0.99.2** | 审查修复：daemon 歧义根治 + 死链清零 + 文档一致性 + P2 清零 | [📖](./docs/changelog/v0.99.2.md) |
 | **v0.99.1** | 审查跟进：OpenClaw 叙事重写 + YAML→js-yaml + MCP 独立包 + 局限声明修正 | [📖](./docs/changelog/v0.99.1.md) |
 | **v0.99** | v1.0 前收尾：两份审查修复 + Skill≤90行 + 放弃条件 + MCP Server + verify→TS | [📖](./docs/changelog/v0.99.md) |
+| **v0.98** | 架构重组：产品核心转为事后审计 + FDE 企业部署 + OpenClaw 必装 | [📖](./docs/changelog/v0.98.md) |
 | **v0.97** | 审计 A9/A10/A11 + 编排引擎重构（砍四级深度→两档拆解 + engage.md）+ bash→TS 第二波 + 概念精简 | [📖](./docs/changelog/v0.97.md) |
 | **v0.96** | README 六段式重构（373→166行）+ bash→TS 第一波 + 铁律重排 + 编排定位澄清 | [📖](./docs/changelog/v0.96.md) |
 | **v0.95** | 铁律精简 10→6（4 条移审计层）+ 目录改名 + 三源收敛 + FDE 商业模式 | [📖](./docs/changelog/v0.95.md) |

@@ -2,9 +2,9 @@
 // ============================================================
 // sofagent-verify · 装后验证脚本（TypeScript 版）
 // ============================================================
-// 验证 sofagent 安装完整性（9 个检查类别，50 项）。
-// 由 verify.sh (923 行 bash) + windows/verify.ps1 合并而来，
-// 注册为 npm 包 bin。零运行时依赖——只用 Node.js 内置模块。
+// 验证 sofagent 安装完整性（9 个检查类别，41 项）。
+// 由 verify.sh (942 行 bash) + windows/verify.ps1 合并而来，
+// 注册为 npm 包 bin。最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
 //
 // 用法：
 //   sofagent-verify              彩色终端输出，显示所有检查项

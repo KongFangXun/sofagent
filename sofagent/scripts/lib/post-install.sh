@@ -73,6 +73,14 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
       echo "  └──────────────────────────────────────────┘" ;;
   esac
   echo ""
+  echo "  ┌──────────────────────────────────────────┐"
+  echo "  │  下一步                                   │"
+  echo "  └──────────────────────────────────────────┘"
+  echo ""
+  echo "  1. 验证安装：bash sofagent/scripts/verify.sh"
+  echo "  2. 体验审计：cd 你的 git 项目 && git commit（pre-commit hook 自动触发）"
+  echo "  3. 了解更多：cat README.md 或 cat HANDBOOK.md"
+  echo ""
   [ "$PLATFORM" = "openclaw" ] || return 0
   # API Key 提醒 + Hook 状态提示（仅 OpenClaw）
   [ "${NO_CONFIG_INJECT:-0}" = "1" ] && echo "  ⚠️  --no-config-inject 已启用：未注入断路器配置，需手动配置 tools.loopDetection"

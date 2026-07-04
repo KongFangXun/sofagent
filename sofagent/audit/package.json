@@ -43,14 +43,14 @@
     "typescript": "^5.4.0",
     "vitest": "^1.6.0"
   },
-  "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.62.2"
-  },
   "engines": {
     "node": ">=18"
   },
   "files": [
     "dist/",
+    "!dist/**/*.js.map",
+    "!dist/**/*.d.ts.map",
+    "!dist/**/*.test.*",
     "hooks/",
     "README.md"
   ],

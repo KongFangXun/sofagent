@@ -3,5 +3,9 @@
   "workspaces": [
     "sofagent/audit",
     "sofagent/mcp"
-  ]
+  ],
+  "scripts": {
+    "test": "npm test --workspace=sofagent/audit",
+    "build": "npm run build --workspace=sofagent/audit && npm run build --workspace=sofagent/mcp"
+  }
 }

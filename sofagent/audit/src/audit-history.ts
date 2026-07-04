@@ -12,7 +12,7 @@
 // 用于根因分析（audit-root-cause）和回归验证（audit-regression）。
 //
 // JSONL 格式：每行一个 JSON 对象，\n 分隔。
-// 零外部依赖——只用 Node.js 内置模块。
+// 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
 // ============================================================
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
