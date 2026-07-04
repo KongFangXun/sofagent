@@ -1,6 +1,6 @@
 # @sofagent/audit
 
-> v0.99.7 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
+> v0.99.8 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
 >
 > 最小运行时依赖（仅 js-yaml）。TypeScript 实现。Node.js 18+。
 

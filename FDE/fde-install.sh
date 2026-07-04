@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# fde-install.sh · FDE 一键部署 · v0.99.7
+# fde-install.sh · FDE 一键部署 · v0.99.8
 # ============================================================
 # 用法: bash fde-install.sh [--platform openclaw|workbuddy|codex|hermes|claude]
 #       默认 --platform openclaw（编排引擎需要 OpenClaw 后台，其他平台核心约束可用）

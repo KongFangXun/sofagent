@@ -1,6 +1,6 @@
 # sofagent Release Process
 
-> v0.99.7 · 2026-07-04。推前预检 → 跑命令 → 对清单 → 打 tag。
+> v0.99.8 · 2026-07-04。推前预检 → 跑命令 → 对清单 → 打 tag。
 >
 > 完整流程见 `~/Workbuddy/SOFAGENT_VERSION_SOP.md`，本文件是快速核对清单。
 
