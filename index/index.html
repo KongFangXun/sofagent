@@ -150,7 +150,7 @@ body {
 /* ===== Top Bar ===== */
 .topbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 150;
-  height: 62px;
+  min-height: 62px;
   background: var(--nav-bg); backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
@@ -301,6 +301,18 @@ html[lang="en"] .step-desc { font-size: 11px; }
 html[lang="en"] .step-title { font-size: 13px; }
 html[lang="en"] .ofi-step { font-size: 11px; padding: 5px 9px; }
 html[lang="en"] .orch-flow-inline { gap: 6px; }
+/* English responsive: prevent squeeze on narrow screens */
+@media (max-width: 768px) {
+  html[lang="en"] .deliver-card-desc { font-size: 11px; line-height: 1.55; }
+  html[lang="en"] .kb-item { font-size: 11px; }
+  html[lang="en"] .fde-pill { font-size: 10px; padding: 5px 8px; min-width: auto; }
+  html[lang="en"] .kb-col-note { font-size: 10px; }
+}
+@media (max-width: 480px) {
+  html[lang="en"] .section-desc { font-size: 13px; }
+  html[lang="en"] .fde-pill { font-size: 9px; padding: 4px 6px; }
+  html[lang="en"] .deliver-card-desc { font-size: 10px; }
+}
 
 .drawer-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -324,7 +336,8 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
 
 .drawer-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  min-height: 62px;
+  padding: 12px 20px; border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 .drawer-logo {
@@ -607,7 +620,7 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
 
 /* Footer */
 .footer { padding: 0; border-top: 1px solid var(--border); }
-.footer .ctn { display: flex; align-items: center; justify-content: center; padding: 12px 0; }
+.footer .ctn { display: flex; align-items: center; justify-content: center; min-height: 62px; padding: 12px 24px; }
 .footer-inner { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: center; row-gap: 6px; }
 .footer-grid { display: flex; justify-content: center; gap: 80px; margin-bottom: 0; flex-wrap: wrap; }
 .footer-brand { text-align: center; }
@@ -668,6 +681,8 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
   .footer-grid { flex-direction: column; align-items: center; text-align: center; gap: 16px; }
   .footer-brand { text-align: center !important; }
   .footer div[style*="flex"] { justify-content: center !important; }
+  .footer .ctn { min-height: auto; padding: 16px 12px; }
+  .footer-inner { flex-direction: column; gap: 8px; }
 }
 
 @media (max-width: 480px) {
@@ -685,6 +700,7 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
   .ofi-step { padding: 5px 8px; font-size: 11px; }
   .ofi-arr { font-size: 10px; }
   .mcp-pill { padding: 3px 8px; font-size: 10px; }
+  .deliver-card-desc { font-size: 12px; line-height: 1.55; }
 }
 
 /* ===== Scroll Reveal Animation ===== */
@@ -1053,8 +1069,39 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
   </div>
 </section>
 
+<!-- ===== COMPATIBILITY ===== -->
+<section class="section section-alt" id="agent">
+  <div class="ctn">
+    <h2 class="section-title" data-i18n="platforms.title">平台支持</h2>
+    <p class="section-desc" data-i18n="platforms.desc">OpenClaw 全支持，约束与审计其他平台均可用</p>
+    <div class="compat-grid">
+      <div class="compat-card reveal reveal-delay-1">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+          <div class="compat-card-icon"><i class="bi bi-shield-check" aria-hidden="true"></i></div>
+          <div class="compat-card-title" data-i18n="platforms.constraint">约束底座</div>
+        </div>
+        <div class="compat-card-desc" data-i18n="platforms.constraintDesc">全平台可用 · OpenClaw 优先</div>
+      </div>
+      <div class="compat-card reveal reveal-delay-2">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+          <div class="compat-card-icon"><i class="bi bi-clipboard-check" aria-hidden="true"></i></div>
+          <div class="compat-card-title" data-i18n="platforms.audit">审计引擎</div>
+        </div>
+        <div class="compat-card-desc" data-i18n="platforms.auditDesc">独立 CLI，全平台可用</div>
+      </div>
+      <div class="compat-card reveal reveal-delay-3">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+          <div class="compat-card-icon"><i class="bi bi-diagram-3" aria-hidden="true"></i></div>
+          <div class="compat-card-title" data-i18n="platforms.orch">编排引擎</div>
+        </div>
+        <div class="compat-card-desc" data-i18n="platforms.orchDesc">仅限 OpenClaw</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ===== VALUE ===== -->
-<section class="section section-alt" id="value">
+<section class="section" id="value">
   <div class="ctn">
     <h2 class="section-title" data-i18n="value.title">成果可量化</h2>
     <p class="section-desc" data-i18n="value.desc">算清楚每个 AI 节点到底能省多少钱</p>
@@ -1077,76 +1124,8 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
   </div>
 </section>
 
-<!-- ===== DELIVERABLES ===== -->
-<section class="section" id="deliver">
-  <div class="ctn">
-    <h2 class="section-title" data-i18n="deliver.title">三项重要产物</h2>
-    <p class="section-desc" data-i18n="deliver.desc">一份谁都能看懂的部署方案、一套在跑的 AI 节点集群、一个会自己生长的知识库</p>
-    <div class="deliver-grid">
-      <div class="deliver-card d1 reveal reveal-delay-1">
-        <div class="head-row">
-          <div class="deliver-card-emoji"><i class="bi bi-file-earmark-text" aria-hidden="true"></i></div>
-          <div class="deliver-card-title" data-i18n="deliver.plan.title">部署方案</div>
-        </div>
-        <div class="deliver-card-desc" data-i18n="deliver.plan.desc">一份五章文档，从现状到如何部署<br>任何人翻一遍都能懂</div>
-      </div>
-      <div class="deliver-card d3 reveal reveal-delay-2">
-        <div class="head-row">
-          <div class="deliver-card-emoji"><i class="bi bi-play-circle" aria-hidden="true"></i></div>
-          <div class="deliver-card-title" data-i18n="deliver.nodes.title">AI 节点</div>
-        </div>
-        <div class="deliver-card-desc" data-i18n="deliver.nodes.desc">自动执行 + 辅助岗位的所有节点都在跑<br>按要求定时出审计报告</div>
-      </div>
-      <div class="deliver-card d2 reveal reveal-delay-3">
-        <div class="head-row">
-          <div class="deliver-card-emoji"><i class="bi bi-journals" aria-hidden="true"></i></div>
-          <div class="deliver-card-title" data-i18n="deliver.kb.title">知识库</div>
-        </div>
-        <div class="deliver-card-desc" data-i18n="deliver.kb.desc">不用人来维护的 AI 知识库<br>AI 干的活自己记录自己查</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== KNOWLEDGE BASE ===== -->
-<section class="section section-alt" id="knowledge">
-  <div class="ctn">
-    <h2 class="section-title" data-i18n="kb.title">知识库：AI 工作记忆</h2>
-    <p class="section-desc" data-i18n="kb.desc">不是扔下一堆文档——静态部分是地基，动态部分是 AI 自己写进去的工作记录</p>
-    <div class="kb-split">
-      <div class="kb-col reveal reveal-delay-1">
-        <div class="kb-col-header">
-          <div class="kb-col-icon"><i class="bi bi-building" aria-hidden="true"></i></div>
-          <span class="kb-col-title" data-i18n="kb.static.title">部署时创建</span>
-        </div>
-        <div class="kb-items">
-          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.static.i1">企业工作流全景图</span></div>
-          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.static.i2">工作流节点手册</span></div>
-          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.static.i3">AI 节点运维手册</span></div>
-          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.static.i4">新员工上手文档</span></div>
-          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.static.i5">常见问题与故障排查</span></div>
-        </div>
-        <div class="kb-col-note" data-i18n="kb.static.note">五个 .md 文档，所有岗位按需查阅</div>
-      </div>
-      <div class="kb-col reveal reveal-delay-2">
-        <div class="kb-col-header">
-          <div class="kb-col-icon" style="color:#2ECC71;"><i class="bi bi-tree" style="color:#2ECC71;" aria-hidden="true"></i></div>
-          <span class="kb-col-title" data-i18n="kb.dynamic.title">AI 自主生成</span>
-        </div>
-        <div class="kb-items">
-          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.dynamic.i1">自动执行节点的产出</span></div>
-          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.dynamic.i2">强化岗位的 AI 辅助记录</span></div>
-          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.dynamic.i3">审计周报</span></div>
-          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.dynamic.i4">异常事件与处理记录</span></div>
-        </div>
-        <div class="kb-col-note" data-i18n="kb.dynamic.note">无需专人维护，每个在跑的 AI 节点自动更新<br>新的 AI 节点启动时自动检索学习经验</div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ===== FDE FLOW ===== -->
-<section class="section" id="fde-flow">
+<section class="section section-alt" id="fde-flow">
   <div class="ctn">
     <h2 class="section-title" data-i18n="fde.title">装好 sofagent</h2>
     <p class="section-desc" data-i18n="fde.desc">自己就能快速开始做 FDE</p>
@@ -1200,32 +1179,68 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
   </div>
 </section>
 
-<!-- ===== COMPATIBILITY ===== -->
-<section class="section section-alt" id="agent">
+<!-- ===== DELIVERABLES ===== -->
+<section class="section" id="deliver">
   <div class="ctn">
-    <h2 class="section-title" data-i18n="platforms.title">平台支持</h2>
-    <p class="section-desc" data-i18n="platforms.desc">OpenClaw 全支持，约束与审计其他平台均可用</p>
-    <div class="compat-grid">
-      <div class="compat-card reveal reveal-delay-1">
-        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
-          <div class="compat-card-icon"><i class="bi bi-shield-check" aria-hidden="true"></i></div>
-          <div class="compat-card-title" data-i18n="platforms.constraint">约束底座</div>
+    <h2 class="section-title" data-i18n="deliver.title">三项重要产物</h2>
+    <p class="section-desc" data-i18n="deliver.desc">一份谁都能看懂的交付手册、一套在跑的 AI 节点集群、一个会自己生长的知识库</p>
+    <div class="deliver-grid">
+      <div class="deliver-card d1 reveal reveal-delay-1">
+        <div class="head-row">
+          <div class="deliver-card-emoji"><i class="bi bi-file-earmark-text" aria-hidden="true"></i></div>
+          <div class="deliver-card-title" data-i18n="deliver.plan.title">交付手册</div>
         </div>
-        <div class="compat-card-desc" data-i18n="platforms.constraintDesc">全平台可用 · OpenClaw 优先</div>
+        <div class="deliver-card-desc" data-i18n="deliver.plan.desc">四份文档：企业画像、部署方案、运行规范、上手文档<br>FDE 离场前打包，企业留存</div>
       </div>
-      <div class="compat-card reveal reveal-delay-2">
-        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
-          <div class="compat-card-icon"><i class="bi bi-clipboard-check" aria-hidden="true"></i></div>
-          <div class="compat-card-title" data-i18n="platforms.audit">审计引擎</div>
+      <div class="deliver-card d3 reveal reveal-delay-2">
+        <div class="head-row">
+          <div class="deliver-card-emoji"><i class="bi bi-play-circle" aria-hidden="true"></i></div>
+          <div class="deliver-card-title" data-i18n="deliver.nodes.title">AI 节点</div>
         </div>
-        <div class="compat-card-desc" data-i18n="platforms.auditDesc">独立 CLI，全平台可用</div>
+        <div class="deliver-card-desc" data-i18n="deliver.nodes.desc">专属 SKILL 注入 AI 节点跑 session<br>自动执行 + 辅助岗位按时出审计报告</div>
       </div>
-      <div class="compat-card reveal reveal-delay-3">
-        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
-          <div class="compat-card-icon"><i class="bi bi-diagram-3" aria-hidden="true"></i></div>
-          <div class="compat-card-title" data-i18n="platforms.orch">编排引擎</div>
+      <div class="deliver-card d2 reveal reveal-delay-3">
+        <div class="head-row">
+          <div class="deliver-card-emoji"><i class="bi bi-journals" aria-hidden="true"></i></div>
+          <div class="deliver-card-title" data-i18n="deliver.kb.title">知识库</div>
         </div>
-        <div class="compat-card-desc" data-i18n="platforms.orchDesc">仅限 OpenClaw</div>
+        <div class="deliver-card-desc" data-i18n="deliver.kb.desc">不用人来维护的 AI 知识库<br>AI 干的活自己记录自己查</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== KNOWLEDGE BASE ===== -->
+<section class="section section-alt" id="knowledge">
+  <div class="ctn">
+    <h2 class="section-title" data-i18n="kb.title">知识库：AI 工作记忆</h2>
+    <p class="section-desc" data-i18n="kb.desc">不是扔下一堆文档——静态部分是地基，动态部分是 AI 自己写进去的工作记录</p>
+    <div class="kb-split">
+      <div class="kb-col reveal reveal-delay-1">
+        <div class="kb-col-header">
+          <div class="kb-col-icon"><i class="bi bi-building" aria-hidden="true"></i></div>
+          <span class="kb-col-title" data-i18n="kb.static.title">交付手册</span>
+        </div>
+        <div class="kb-items">
+          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.static.i1">企业画像</span></div>
+          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.static.i2">部署方案</span></div>
+          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.static.i3">运行规范（fde.md）</span></div>
+          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.static.i4">上手文档（quick-start.md）</span></div>
+        </div>
+        <div class="kb-col-note" data-i18n="kb.static.note">四份文档，FDE 部署时打包交付</div>
+      </div>
+      <div class="kb-col reveal reveal-delay-2">
+        <div class="kb-col-header">
+          <div class="kb-col-icon" style="color:#2ECC71;"><i class="bi bi-tree" style="color:#2ECC71;" aria-hidden="true"></i></div>
+          <span class="kb-col-title" data-i18n="kb.dynamic.title">AI 自主生成</span>
+        </div>
+        <div class="kb-items">
+          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.dynamic.i1">自动执行节点的产出</span></div>
+          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.dynamic.i2">强化岗位的 AI 辅助记录</span></div>
+          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.dynamic.i3">审计周报</span></div>
+          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.dynamic.i4">异常事件与处理记录</span></div>
+        </div>
+        <div class="kb-col-note" data-i18n="kb.dynamic.note">无需专人维护，每个在跑的 AI 节点自动更新<br>新的 AI 节点启动时自动检索学习经验</div>
       </div>
     </div>
   </div>
@@ -1235,10 +1250,10 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
 <section class="final-cta" id="cta">
   <div class="ctn">
     <h2 class="final-cta-title" data-i18n="cta.title">一条命令，快速安装</h2>
-    <p class="final-cta-desc" data-i18n="cta.desc">完整安装包含：约束底座 + 审计引擎 + 编排引擎</p>
+    <p class="final-cta-desc" data-i18n="cta.desc">FDE 工具包一键安装——约束底座 + 审计引擎 + 编排引擎 + FDE 工作台</p>
     <div class="code-block">
       <span class="prompt">$</span> git clone https://github.com/KongFangXun/sofagent.git<br>
-      <span class="prompt">$</span> cd sofagent && bash sofagent/scripts/install.sh
+      <span class="prompt">$</span> cd sofagent && bash FDE/fde-install.sh
     </div>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
       <a href="https://github.com/KongFangXun/sofagent" class="btn btn-primary" target="_blank" style="padding:13px 32px;font-size:15px;min-width:140px;justify-content:center;">
@@ -1511,22 +1526,21 @@ var I18n = (function() {
       'value.upgrade.title': '升级成本',
       'value.upgrade.desc': '该岗位升级到「高效完成此节点」要多少成本？<br>招一个这样的岗位年薪多少？差值多少？',
       'deliver.title': '三项重要产物',
-      'deliver.desc': '一份谁都能看懂的部署方案、一套在跑的 AI 节点集群、一个会自己生长的知识库',
-      'deliver.plan.title': '部署方案',
-      'deliver.plan.desc': '一份五章文档，从现状到如何部署<br>任何人翻一遍都能懂',
+      'deliver.desc': '一份谁都能看懂的交付手册、一套在跑的 AI 节点集群、一个会自己生长的知识库',
+      'deliver.plan.title': '交付手册',
+      'deliver.plan.desc': '四份文档：企业画像、部署方案、运行规范、上手文档<br>FDE 离场前打包，企业留存',
       'deliver.nodes.title': 'AI 节点',
-      'deliver.nodes.desc': '自动执行 + 辅助岗位的所有节点都在跑<br>按要求定时出审计报告',
+      'deliver.nodes.desc': '专属 SKILL 注入 AI 节点跑 session<br>自动执行 + 辅助岗位按时出审计报告',
       'deliver.kb.title': '知识库',
       'deliver.kb.desc': '不用人来维护的 AI 知识库<br>AI 干的活自己记录自己查',
       'kb.title': '知识库：AI 工作记忆',
       'kb.desc': '不是扔下一堆文档——静态部分是地基，动态部分是 AI 自己写进去的工作记录',
-      'kb.static.title': '部署时创建',
-      'kb.static.i1': '企业工作流全景图',
-      'kb.static.i2': '工作流节点手册',
-      'kb.static.i3': 'AI 节点运维手册',
-      'kb.static.i4': '新员工上手文档',
-      'kb.static.i5': '常见问题与故障排查',
-      'kb.static.note': '五个 .md 文档，所有岗位按需查阅',
+      'kb.static.title': '交付手册',
+      'kb.static.i1': '企业画像',
+      'kb.static.i2': '部署方案',
+      'kb.static.i3': '运行规范（fde.md）',
+      'kb.static.i4': '上手文档（quick-start.md）',
+      'kb.static.note': '四份文档，FDE 部署时打包交付',
       'kb.dynamic.title': 'AI 自主生成',
       'kb.dynamic.i1': '自动执行节点的产出',
       'kb.dynamic.i2': '强化岗位的 AI 辅助记录',
@@ -1560,7 +1574,7 @@ var I18n = (function() {
       'platforms.orch': '编排引擎',
       'platforms.orchDesc': '仅限 OpenClaw',
       'cta.title': '一条命令，快速安装',
-      'cta.desc': '完整安装包含：约束底座 + 审计引擎 + 编排引擎',
+      'cta.desc': 'FDE 工具包一键安装——约束底座 + 审计引擎 + 编排引擎 + FDE 工作台',
       'cta.star': 'Star',
       'footer.author': '作者：孔放勋',
       // Theme labels (used in drawer)
@@ -1660,22 +1674,21 @@ var I18n = (function() {
       'value.upgrade.title': 'Upgrade Cost',
       'value.upgrade.desc': 'How much to upgrade this role to "efficiently complete this node"?<br>What\'s the annual salary gap?',
       'deliver.title': 'Three Key Deliverables',
-      'deliver.desc': 'An easy-to-understand deployment plan, a running AI node cluster, a self-growing knowledge base',
-      'deliver.plan.title': 'Deployment Plan',
-      'deliver.plan.desc': 'A five-chapter document from current state to deployment<br>Anyone can understand it in one read',
+      'deliver.desc': 'An easy-to-understand delivery manual, a running AI node cluster, a self-growing knowledge base',
+      'deliver.plan.title': 'Delivery Manual',
+      'deliver.plan.desc': 'Four docs: Enterprise Profile, Deployment Plan, Ops Spec, Quick Start<br>Packed by FDE before handover, kept by enterprise',
       'deliver.nodes.title': 'AI Nodes',
-      'deliver.nodes.desc': 'All auto-execute and assist nodes running<br>Scheduled audit reports on demand',
+      'deliver.nodes.desc': 'Dedicated SKILLs injected into AI nodes running sessions<br>Auto-execute + assist roles deliver audit reports on schedule',
       'deliver.kb.title': 'Knowledge Base',
       'deliver.kb.desc': 'AI knowledge base that maintains itself<br>AI records and queries its own work',
       'kb.title': 'Knowledge Base: AI Working Memory',
       'kb.desc': 'Not just dumped documents — static part is foundation, dynamic part is AI-written work records',
-      'kb.static.title': 'Created at Deployment',
-      'kb.static.i1': 'Enterprise workflow map',
-      'kb.static.i2': 'Workflow node handbook',
-      'kb.static.i3': 'AI node ops manual',
-      'kb.static.i4': 'New employee onboarding docs',
-      'kb.static.i5': 'FAQ and troubleshooting',
-      'kb.static.note': 'Five .md files, all roles can reference on demand',
+      'kb.static.title': 'Delivery Manual',
+      'kb.static.i1': 'Enterprise Profile',
+      'kb.static.i2': 'Deployment Plan',
+      'kb.static.i3': 'Ops Spec (fde.md)',
+      'kb.static.i4': 'Quick Start (quick-start.md)',
+      'kb.static.note': 'Four docs, packed and delivered by FDE at deployment',
       'kb.dynamic.title': 'AI Auto-generated',
       'kb.dynamic.i1': 'Auto-execute node outputs',
       'kb.dynamic.i2': 'Enhanced role AI assist records',
@@ -1709,7 +1722,7 @@ var I18n = (function() {
       'platforms.orch': 'Orchestration Engine',
       'platforms.orchDesc': 'OpenClaw only',
       'cta.title': 'One Command, Quick Install',
-      'cta.desc': 'Full install includes: Harness + Audit Engine + Orchestration Engine',
+      'cta.desc': 'One-command FDE Toolkit install: Harness + Audit + Orchestration + FDE Workbench',
       'cta.star': 'Star',
       'footer.author': 'Author: Kong Fangxun',
       // Theme labels
