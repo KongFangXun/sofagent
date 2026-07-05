@@ -331,6 +331,7 @@ done < <(find "${PROJECT_ROOT}" \
   -not -path '*/node_modules/*' \
   -not -path '*/.git/*' \
   -not -path '*/dist/*' \
+  -not -path '*/templates/*' \
   -type f)
 echo ""
 

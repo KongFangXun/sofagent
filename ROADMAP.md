@@ -60,14 +60,14 @@
 
 **终局**：FDE 用 Agent 对话 → sofagent 引导梳理 workflow → OpenClaw 执行 AI 节点 → 审计结果推送到协作平台。
 
-两条路径：**FDE 驻场部署**（传统中小企业，FDE 进场→十步流程→交付→撤离）和 **开发者自部署**（开源社区，git clone→install.sh→审计→CI 集成）。
+两条路径：**FDE 驻场部署**（传统中小企业，FDE 进场→四阶段十二步流程→交付→撤离）和 **开发者自部署**（开源社区，git clone→install.sh→审计→CI 集成）。
 
 设备端形态：安装时自动带 OpenClaw，审计结果通过 MCP server 推到企业协同平台。**数据主权在设备**——所有记忆、日志、决策记录永不离开本地。
 
 ### v1.0 — 正式版：Agent 审计工具（+ FDE 编排引擎实验性附带）
 
 三条主线：
-1. FDE 引导逻辑 → 自动产出 workflow.yaml + 部署方案
+1. FDE 引导逻辑 → 自动产出节点文档（nodes/*.md）+ 交付手册
 2. 部署方案装到任意设备 → OpenClaw 跑 workflow AI 节点
 3. 审计结果通过 MCP webhook 推送到协作平台
 
@@ -95,6 +95,7 @@
 
 | 想法 | 说明 |
 |------|------|
+| **企业 Skill 自进化** | FDE 部署时给每个 AI 节点定制专属 Skill（注入行业术语/业务规则/历史案例）。节点跑起来后，基于 scoring.md 评分 + task/logs 记录 + think.md 反思，Skill 自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本，candidate 胜出 promote 替换 current。这是 sofagent 的核心服务：**Skill 不只是部署时写好，运行时持续进化** |
 | **Skill 自进化闭环** | 部署→运行→检查→进化 四步闭环 |
 | 质量抽检仪表盘 | 抽检合格率、skillopt 迭代记录可视化 |
 | age 加密 / 多用户隔离 | think.md + task/logs 加密；同机权限隔离 |

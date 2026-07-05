@@ -238,22 +238,31 @@ Agent 先判断任务复杂度：
 
 > ⚠️ **成熟度**：FDE 部署流程我们自己公司里在用，但还没有打磨到「装完就能跑」的程度。审计引擎是稳定的，编排和部署这块如果你试了遇到问题，开 Issue 告诉我们。
 >
-> **为什么要自己做 FDE**：中小企业没有预算请外部顾问，也不需要。装上工具包，Agent 带你走完四阶段十二步流程（进场→挖掘→交付→检查离场），梳理 workflow、识别 AI 节点，然后找一台闲置设备装 sofagent——从头到尾自己搞定，不用请人。
+> **FDE 工具包本身就是 sofagent 产品的一部分。** sofagent 的核心是底座，FDE 是底座落地进企业的场景。FDE 用这个工具包帮企业梳理 workflow、识别 AI 节点、装上底座——**自己人办事用自己产品，给别人办完让别人用自己产品。**
 
 > FDE = Forward Deployed Engineer（前向部署工程师）。完整四阶段十二步流程见 [FDE/FDE.md](./FDE/FDE.md)。建议装 [sofagent-fde Skill](./FDE/SKILL.md)——Agent 自动加载 FDE 工作台。
 
-> 💡 FDE 部署后的「陪跑期」机制详见 [FDE.md](FDE/FDE.md)。
+### 部署的核心是装上 sofagent
 
-编排引擎（`engage.md`）是 FDE 部署的核心——🔴 复杂任务 + FDE 场景才点火：
+没有 sofagent，前面梳理的 workflow 就是一份漂亮的 PPT。三层引擎装到设备上，AI 节点才有了纪律和审计：
 
-```
-任务到达 → SKILL.md 判级 → 🔴 + FDE 场景 → 点火 engage.md
-  → ao compose 拆任务 → 匹配 Agent 模板 → 子 Agent 并行执行
-  → loop-check 检查点 → loop-evaluate 多维评分
-  → think.md 沉淀反思 → orchestrator/ 记录最优拆法
-```
+| 层 | 做什么 | 怎么跑 |
+|----|--------|--------|
+| 约束底座 | fde.md 规则注入 Agent 上下文 | install.sh 装完自动加载 |
+| 审计引擎 | git diff → 11 条规则 → exit code | git pre-commit hook |
+| 编排引擎（实验性）| ao compose 拆任务生成编排方案 | 跑在 OpenClaw 上 |
 
-> 编排引擎是可选增强（~800 token 附加开销）。个人开发者不需要——只需要约束规则就够了。
+### 离场后企业留下什么
+
+| 产物 | 说明 |
+|------|------|
+| **交付手册** | 企业画像 + 部署方案 + `fde.md` + `quick-start.md`（后两章安装包自带） |
+| **AI 节点（三层实体）** | 每个节点：文档层（.md，人读+编排引擎读）+ Skill 层（企业专属 Skill）+ 运行层（在跑的 session） |
+| **知识库** | AI 节点跑起来后自动积累（think.md / task/logs / scoring.md / orchestrator/） |
+
+> 企业专属 Skill 会基于 scoring.md 评分自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本。详见 [ROADMAP](./ROADMAP.md) 企业 Skill 自进化。
+
+> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。
 
 ---
 
