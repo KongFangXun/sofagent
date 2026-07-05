@@ -1,7 +1,7 @@
 # Evidence.md — Does sofagent actually work?
 
-> ⚠️ **English version is a full snapshot (up to Case 020, July 5).**
-> For the complete 20 cases (Case 001–020), see [中文版](./evidence.md).
+> ⚠️ **English version is a full snapshot (up to Case 022, July 5).**
+> For the complete 22 cases (Case 001–022), see [中文版](./evidence.md).
 
 > We don't answer for you. Below is what people who installed sofagent have reported.
 
@@ -62,6 +62,8 @@
 | 2026-07-02 | Xiao Jia (Manjia) | OpenClaw (macOS, v0.99.4) | ~3 weeks (as of Jul 4) | 2 🔄 nodes running daily | ✅ Yes | E-commerce operations: 2 🔄 nodes live (weekly report + reconciliation), ~440-590h/year freed. Running ~3 weeks as of 2026-07-04 | — | Platform anti-crawl limits data access; needs offline install docs | **Case 018: E-commerce FDE deployment — first continuous-use external case. See [Case 018](./cases/fde-manjia-2026-07-02/).** |
 | 2026-07-02 | Yao Xuchen (Shangshan) | OpenClaw (macOS, v0.99.4) | FDE deployment | 2 production agents + 1 KB agent planned | ✅ Yes | 2 production agents running for months, FDE deploys new Enterprise KB agent. 10+ docs + Phase 1 code delivered | — | Webhook bot one-way only | **Case 019: Energy tech FDE deployment — extending AI infra with new agent. See [Case 019](./cases/fde-shangshan-2026-07-02/).** |
 | 2026-07-05 | KongFangXun | OpenClaw 0.7.5 + WorkBuddy (v0.99.7) | One-off test | 8 scenarios full chain | ✅ Yes | **5/7 core ✅ + 2/7 env-limited**: install 0.39s 48 checks / audit A1+A2 dual detection / loading chain 3 layers / orchestration 74.8s 5 steps / MCP 3 tools+3 resources | — | daemon sandbox blocks pid write; webhook needs real URL; A2 misses sk-proj- new format | **Case 020: v0.99.7 full-chain test — 5 core capabilities (install/audit/loading/orchestration/MCP) all passed. verify.sh expanded to 48 checks. See [Case 020](./cases/v0997-fullchain-test-2026-07-05/).** |
+| 2026-07-05 | OpenClaw (for Cedric) | Windows 10 (v0.99.8) | One-off test | 5 extreme scenarios | ✅ Yes | **Audit engine extreme capability verification**: 100 files 8.76s zero false positives / 200KB single-line detection / 4 secret types all caught / 5 modes all passed | — | pre-commit hook hardcoded local path (P1); JSON PowerShell encoding (P2); base64 secret undetected (P3) | **Case 021: Audit engine technical capability verification (Windows extreme test). Not a Gate #7 deliverable — platform/tester/scenario mismatch with external user validation plan. High value as audit detection precision evidence. See [Case 021](./cases/v0998-extreme-audit-test-2026-07-05/).** |
+| 2026-07-05 | OpenClaw (for Cedric) | Windows 10 (v0.99.8) | One-off test | 7 comparison groups | ✅ Yes | **With vs without sofagent**: no audit = 5 secrets all committed to git history; with audit = 5/5 all blocked. 100 files 8.76s precise location | — | — | **Case 022: Audit engine value comparison — "without sofagent, secret leakage is not a matter of if, but when it gets discovered". See [Case 022](./cases/v0998-audit-comparison-2026-07-05/).** |
 
 > Duration categories: **One-off test** (installed, verified, stopped) / **Continuous use N days** (daily work use) / **Abandoned** (installed but stopped using — **please tell us why, this is the most valuable data**)
 
