@@ -150,7 +150,7 @@ body {
 /* ===== Top Bar ===== */
 .topbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 150;
-  min-height: 62px;
+  min-height: 64px;
   background: var(--nav-bg); backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
@@ -336,7 +336,7 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
 
 .drawer-header {
   display: flex; align-items: center; justify-content: space-between;
-  min-height: 62px;
+  min-height: 64px;
   padding: 12px 20px; border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -620,7 +620,7 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
 
 /* Footer */
 .footer { padding: 0; border-top: 1px solid var(--border); }
-.footer .ctn { display: flex; align-items: center; justify-content: center; min-height: 62px; padding: 12px 24px; }
+.footer .ctn { display: flex; align-items: center; justify-content: center; min-height: 64px; padding: 12px 24px; }
 .footer-inner { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: center; row-gap: 6px; }
 .footer-grid { display: flex; justify-content: center; gap: 80px; margin-bottom: 0; flex-wrap: wrap; }
 .footer-brand { text-align: center; }
@@ -1022,6 +1022,37 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
   </div>
 </section>
 
+<!-- ===== COMPATIBILITY ===== -->
+<section class="section section-alt" id="agent">
+  <div class="ctn">
+    <h2 class="section-title" data-i18n="platforms.title">平台支持</h2>
+    <p class="section-desc" data-i18n="platforms.desc">OpenClaw 全支持，约束与审计其他平台均可用</p>
+    <div class="compat-grid">
+      <div class="compat-card reveal reveal-delay-1">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+          <div class="compat-card-icon"><i class="bi bi-shield-check" aria-hidden="true"></i></div>
+          <div class="compat-card-title" data-i18n="platforms.constraint">约束底座</div>
+        </div>
+        <div class="compat-card-desc" data-i18n="platforms.constraintDesc">全平台可用 · OpenClaw 优先</div>
+      </div>
+      <div class="compat-card reveal reveal-delay-2">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+          <div class="compat-card-icon"><i class="bi bi-clipboard-check" aria-hidden="true"></i></div>
+          <div class="compat-card-title" data-i18n="platforms.audit">审计引擎</div>
+        </div>
+        <div class="compat-card-desc" data-i18n="platforms.auditDesc">独立 CLI，全平台可用</div>
+      </div>
+      <div class="compat-card reveal reveal-delay-3">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+          <div class="compat-card-icon"><i class="bi bi-diagram-3" aria-hidden="true"></i></div>
+          <div class="compat-card-title" data-i18n="platforms.orch">编排引擎</div>
+        </div>
+        <div class="compat-card-desc" data-i18n="platforms.orchDesc">仅限 OpenClaw</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ===== ARCHITECTURE ===== -->
 <section class="section" id="architecture">
   <div class="ctn">
@@ -1064,37 +1095,6 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
       <div class="de-con-card">
         <div class="de-con-card-icon"><i class="bi bi-journal-text" aria-hidden="true"></i></div>
         <span data-i18n="arch.thinkmd">think.md —— 审计写入反思 · 编排读取优化 · A/B 结果归档</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== COMPATIBILITY ===== -->
-<section class="section section-alt" id="agent">
-  <div class="ctn">
-    <h2 class="section-title" data-i18n="platforms.title">平台支持</h2>
-    <p class="section-desc" data-i18n="platforms.desc">OpenClaw 全支持，约束与审计其他平台均可用</p>
-    <div class="compat-grid">
-      <div class="compat-card reveal reveal-delay-1">
-        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
-          <div class="compat-card-icon"><i class="bi bi-shield-check" aria-hidden="true"></i></div>
-          <div class="compat-card-title" data-i18n="platforms.constraint">约束底座</div>
-        </div>
-        <div class="compat-card-desc" data-i18n="platforms.constraintDesc">全平台可用 · OpenClaw 优先</div>
-      </div>
-      <div class="compat-card reveal reveal-delay-2">
-        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
-          <div class="compat-card-icon"><i class="bi bi-clipboard-check" aria-hidden="true"></i></div>
-          <div class="compat-card-title" data-i18n="platforms.audit">审计引擎</div>
-        </div>
-        <div class="compat-card-desc" data-i18n="platforms.auditDesc">独立 CLI，全平台可用</div>
-      </div>
-      <div class="compat-card reveal reveal-delay-3">
-        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
-          <div class="compat-card-icon"><i class="bi bi-diagram-3" aria-hidden="true"></i></div>
-          <div class="compat-card-title" data-i18n="platforms.orch">编排引擎</div>
-        </div>
-        <div class="compat-card-desc" data-i18n="platforms.orchDesc">仅限 OpenClaw</div>
       </div>
     </div>
   </div>
