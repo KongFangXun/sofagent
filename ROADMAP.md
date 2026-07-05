@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.99.8 · 2026-07-05（UTC）· 审查修复收尾版——v0.99.7 双审查 20 项遗留全部修复 + GitHub Actions v5 + PR check + shellcheck 收窄 + v1.0 准入诚实化
+> v0.99.8 · 2026-07-05（UTC）· 审查修复收尾版——v0.99.7 双审查 20 项遗留全修 + FDE 架构重构（四层→三层实体）+ Skill 精简（925→742 行）+ GitHub Actions v5 + PR check + shellcheck 收窄 + v1.0 准入诚实化
 >
 
 > 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（FDE 部署用）为实验性附带。
@@ -10,7 +10,7 @@
 
 ## 现在在哪：v0.99.8 ✅
 
-> 审查修复收尾版——v0.99.7 发版后双审查（GLM-5.2 48 维度 + DeepSeek V4 Pro 48 维度）发现 20 项遗留问题，本版全部修复。核心：文档数字对齐 + CI 升级 + shellcheck 收窄 + v1.0 准入诚实化（3/10 ✅ → 1/10 ✅）+ FDE 非开发者入门。
+> 审查修复收尾版——v0.99.7 发版后双审查（GLM-5.2 48 维度 + DeepSeek V4 Pro 48 维度）发现 20 项遗留问题，本版全部修复。核心：文档数字对齐 + CI 升级 + shellcheck 收窄 + v1.0 准入诚实化（3/10 ✅ → 1/10 ✅）+ **FDE 架构重构**（四层→三层实体、templates 镜像产出）+ FDE 非开发者入门。
 >
 > 📖 [开发日志](./docs/changelog/v0.99.8.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
@@ -22,7 +22,7 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
-| **v0.99.8** | 审查修复收尾：v0.99.7 双审查 20 项遗留全修 + GitHub Actions v5 + PR check + shellcheck 收窄 + v1.0 准入诚实化（3✅→1✅） | [📖](./docs/changelog/v0.99.8.md) |
+| **v0.99.8** | 审查修复收尾 + FDE 架构重构：双审查 20 项遗留全修 + FDE 四层→三层实体 + templates 镜像产出 + Skill 精简（925→742 行）+ GitHub Actions v5 + PR check + v1.0 准入诚实化（3✅→1✅） | [📖](./docs/changelog/v0.99.8.md) |
 | **v0.99.7** | 发布基础设施修复：CI E403 根治 + OIDC 清零 + mcp 依赖解锁 + shellcheck 清零 + Windows 标注（11 项，三轮审查驱动） | [📖](./docs/changelog/v0.99.7.md) |
 | **v0.99.6** | 审查修复：mcp npm 同步发布 + 文档一致性（25 项，双审驱动） | [📖](./docs/changelog/v0.99.6.md) |
 | **v0.99.5** | CI 自动化 + 审查修复：NPM_TOKEN 自动发布 + P0×6/P1×10 修复 + 工具增强 | [📖](./docs/changelog/v0.99.5.md) |
