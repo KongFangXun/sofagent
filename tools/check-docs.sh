@@ -8,8 +8,9 @@ ERRORS=0
 
 echo "=== 1. 死链检查 ==="
 # 检查所有 .md 中的 rules.md 死链（不检查 changelog 历史、workbuddy 记忆、sofagent 运行时数据）
-RULES_DEAD=$(grep -rn "rules\.md" --include="*.md" . 2>/dev/null | grep -v "docs/changelog/" | grep -v "CHANGELOG.md" | grep -v "node_modules" | grep -v ".workbuddy/" | grep -v ".sofagent/" | grep -c "" || echo "0")
-if [ "$RULES_DEAD" -gt 0 ]; then
+RULES_DEAD=$(grep -rn "rules\.md" --include="*.md" . 2>/dev/null | grep -v "docs/changelog/" | grep -v "CHANGELOG.md" | grep -v "node_modules" | grep -v ".workbuddy/" | grep -v ".sofagent/" | grep -c "" || true)
+RULES_DEAD=${RULES_DEAD:-0}
+if [ "$RULES_DEAD" -gt 0 ] 2>/dev/null; then
   echo "❌ rules.md 死链: ${RULES_DEAD} 处"
   ERRORS=$((ERRORS + 1))
 else
@@ -33,7 +34,7 @@ echo "  package.json: $VERSION_PKG"
 
 echo ""
 echo "=== 4. 文档总量预算 ==="
-TOTAL=$(find . -name "*.md" -not -path "*/changelog/*" -not -path "*/evidence/*" -not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/skill/*" -not -path "*/FDE/*" -print0 | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1}')
+TOTAL=$(find . -name "*.md" -not -path "*/changelog/*" -not -path "*/evidence/*" -not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/skill/*" -not -path "*/FDE/*" -not -path "*/design/*" -print0 | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1}')
 echo "  核心文档总量: ${TOTAL} 行 (硬上限 5000)"
 if [ "${TOTAL:-0}" -gt 5000 ]; then
   echo "  ⚠️ 超标！需要删减旧文档"

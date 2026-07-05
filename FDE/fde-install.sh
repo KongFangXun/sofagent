@@ -1,15 +1,24 @@
 #!/usr/bin/env bash
 # ============================================================
-# fde-install.sh · FDE 一键部署 · v0.99.8
+# fde-install.sh · FDE 工具包一键部署 · v0.99.8
 # ============================================================
 # 用法: bash fde-install.sh [--platform openclaw|workbuddy|codex|hermes|claude]
-#       默认 --platform openclaw（编排引擎需要 OpenClaw 后台，其他平台核心约束可用）
+#       默认 --platform openclaw（编排引擎需要 OpenClaw 后台）
 #
-# 做的事:
-#   1. 装 sofagent（按平台部署 Skill + 约束层）
-#   2. 写入 fde.md（加载链第三层）
-#   3. 拉取 workflow/agent 模板
-#   4. 验证安装
+# 这个脚本装什么:
+#   1. 装 sofagent 底座（三层引擎：约束底座 + 审计引擎 + 编排引擎）
+#      → 内部会自动安装 agency-orchestrator（ao compose 命令的来源）
+#      → 非 openclaw 平台可用 --no-ao 跳过编排引擎
+#   2. 写入 fde.md（harness 层第三层——企业专属约束）
+#   3. 验证安装
+#
+# 这个脚本不装什么:
+#   - 不装 templates/（那是给 FDE 读的案例参考，不是部署目标）
+#   - 不装 workflow/ agents/（已删除，FDE.md 是唯一知识源）
+#   - 不装 nodes/ 和 skills/（那是 FDE 走完 12 步后基于模板填出来的）
+#
+# 装完之后:
+#   你的电脑就是一个 FDE 节点了——打开 Agent 就能开始帮企业做部署。
 # ============================================================
 
 set -euo pipefail
@@ -38,18 +47,21 @@ echo -e "${BOLD}${CYAN}═══════════════════
 echo -e "  平台: ${BOLD}${PLATFORM}${NC}"
 echo ""
 
-# ── 1. 装 sofagent ──
-echo -e "${BOLD}[1/4] 安装 sofagent...${NC}"
+# ── 1. 装 sofagent 底座 ──
+echo -e "${BOLD}[1/3] 安装 sofagent 底座（三层引擎）...${NC}"
+echo -e "  ${CYAN}约束底座 + 审计引擎 + 编排引擎（agency-orchestrator）${NC}"
 bash "$PROJECT_ROOT/sofagent/scripts/install.sh" --platform "$PLATFORM"
-echo -e "${GREEN}✅ sofagent 安装完成${NC}"
+echo -e "${GREEN}✅ sofagent 底座安装完成${NC}"
 
-if [ "$PLATFORM" != "openclaw" ]; then
-  echo -e "  ${YELLOW}⚠️ 非 OpenClaw：编排引擎不可用，核心约束（4 底线 + 6 铁律）生效${NC}"
+if [ "$PLATFORM" = "openclaw" ]; then
+  echo -e "  ${GREEN}编排引擎已就绪（ao compose 可用）${NC}"
+else
+  echo -e "  ${YELLOW}⚠️ 非 OpenClaw：编排引擎不可用，核心约束（约束底座 + 审计引擎）生效${NC}"
 fi
 echo ""
 
 # ── 2. 写入 fde.md ──
-echo -e "${BOLD}[2/4] 写入 FDE 运行规范...${NC}"
+echo -e "${BOLD}[2/3] 写入 FDE 运行规范（harness 层第三层）...${NC}"
 FDE_MD_TEMPLATE="$PROJECT_ROOT/sofagent/skill/data/fde.md"
 
 case "$PLATFORM" in
@@ -71,30 +83,25 @@ else
 fi
 echo ""
 
-# ── 3. 拉取模板 ──
-echo -e "${BOLD}[3/4] 部署 workflow + agent 模板...${NC}"
-TEMPLATE_DST="$HOME/.sofagent/fde"
-
-mkdir -p "$TEMPLATE_DST/workflow" "$TEMPLATE_DST/agents"
-cp "$PROJECT_ROOT/FDE/workflow/template.yaml" "$TEMPLATE_DST/workflow/" 2>/dev/null || true
-cp "$PROJECT_ROOT/FDE/agents/templates.md" "$TEMPLATE_DST/agents/" 2>/dev/null || true
-echo -e "${GREEN}✅ 模板已部署到 ${TEMPLATE_DST}${NC}"
-echo ""
-
-# ── 4. 验证 ──
-echo -e "${BOLD}[4/4] 验证安装...${NC}"
+# ── 3. 验证 ──
+echo -e "${BOLD}[3/3] 验证安装...${NC}"
 bash "$PROJECT_ROOT/sofagent/scripts/verify.sh" --quick 2>&1 | tail -3
 echo ""
 
 echo -e "${BOLD}${GREEN}═══════════════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}${GREEN}  FDE 工具包部署完成${NC}"
+echo -e "${BOLD}${GREEN}  ✅ 你的电脑现在是一个 FDE 节点了${NC}"
 echo -e "${BOLD}${GREEN}═══════════════════════════════════════════════════════════${NC}"
 echo ""
+echo -e "  ${BOLD}下一步：${NC}"
 if [ "$PLATFORM" = "openclaw" ]; then
-  echo -e "  打开你的 Agent，它会说「我已就绪」"
+  echo -e "  1. 打开你的 Agent——它会检测到 FDE 场景，自动加载工作台"
+  echo -e "  2. 告诉 Agent 企业基本信息（名称/行业/规模），开始 §1 确定场景"
+  echo -e "  3. 走完 12 步后，找台闲置设备装上 sofagent 底座给客户"
 else
-  echo -e "  ${YELLOW}非 OpenClaw：复制 ${BOLD}FDE/README.md${NC}${YELLOW} 里的种子指令，粘贴到你的 Agent${NC}"
+  echo -e "  1. 复制 ${BOLD}FDE/README.md${NC} 里的种子指令，粘贴到你的 Agent"
+  echo -e "  2. Agent 读完后按 §1 引导你开始部署"
 fi
-echo -e "  详细指南见 ${CYAN}FDE/README.md${NC}"
-echo -e "  ${YELLOW}💡 别忘了配 Webhook（README 最下面）${NC}"
+echo ""
+echo -e "  ${CYAN}详细指南见 FDE/README.md${NC}"
+echo -e "  ${YELLOW}💡 别忘了配 Webhook（README 最下面）——审计结果自动推送到公司群${NC}"
 echo ""

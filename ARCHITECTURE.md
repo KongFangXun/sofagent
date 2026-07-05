@@ -38,7 +38,7 @@ sofagent 分两层——地基轻、引擎重：
 | 层 | 是什么 | 何时激活 | 占用 |
 |:--:|------|:--:|:--:|
 | 地基 | 三层加载链（宪法+反思+fde）| 每个会话启动，永远在线 | 上下文预算的 2-3% |
-| 引擎 | FDE 进场一次性生成 workflow + 定期 A/B 重优化 | FDE 部署时 / 定时触发 | ~800 token |
+| 引擎 | FDE 部署时生成节点定义 + 定期 A/B 重优化 | FDE 部署时 / 定时触发 | ~800 token |
 
 如果加载链只在复杂任务时才激活：think.md 反思区不在上下文 → Agent 重复犯错；fde.md 不在上下文 → 简单任务时用户偏好全部失效。三层加载链必须永远在线。
 
@@ -114,7 +114,7 @@ sofagent-audit 是一个 TypeScript CLI。它的输入是 git diff，输出是 e
 
 #### 编排层为什么需要 OpenClaw
 
-编排引擎要做三件事，目前只有 OpenClaw 的 Hook + session 机制能做到：
+编排引擎调用的工具是 ao compose（agency-orchestrator），ao compose 跑在 OpenClaw 上。需要 OpenClaw 的原因：
 
 1. **自动加载约束**——OpenClaw 的 `sofagent-load-chain` hook 在 Agent 启动时注入约束文件，不依赖 Agent "自觉去读"
 2. **session 隔离**——OpenClaw 的 `session.spawn` 创建独立子 Agent 跑 workflow 节点，主 Agent 不受污染
@@ -125,6 +125,22 @@ sofagent-audit 是一个 TypeScript CLI。它的输入是 git diff，输出是 e
 但注意：编排层是给 FDE workflow 节点用的，不是给企业员工的日常 Agent 用的。企业员工不需要感知 OpenClaw——它只在后台跑 FDE 部署的 workflow 节点。
 
 #### 两种使用模式
+
+**核心认知：FDE 工具包本身就是 sofagent 产品的一部分。自己人办事用自己产品，给别人办完让别人用自己产品。**
+
+```
+我们公司 = 做 FDE 的公司
+    │
+    │  FDE 本身也是一个 workflow（12 步）
+    │
+    ├── FDE（⚡ 强化节点）
+    │   └── 工具 = sofagent 约束底座 + FDE Skill 工具包
+    │       └── 用自己的 Agent（WorkBuddy / Codex）走 12 步
+    │
+    └── 给客户部署
+        ├── 找台闲置设备装 sofagent 底座 ← 核心产品落地
+        └── 上面跑客户的 AI 节点（客户自己的 workflow）
+```
 
 - **模式 A（FDE 自己用）**：FDE 用自己顺手的 Agent（WorkBuddy / Codex / Cursor）对话。当需要跑 FDE workflow 节点时，Agent 后台调用 OpenClaw 节点。OpenClaw 跑完后把结果返回给 FDE 的 Agent——FDE 全程看不到 OpenClaw 的 UI，它是一个后台 AI 节点。
 
@@ -218,7 +234,7 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 
 ### A/B 测试为什么不是一次性评估
 
-编排引擎在 FDE 进场时生成第一版 workflow（current）。运行一段时间后，定期触发重新编排生成 candidate，用 `sofagent-orchestrate-compare` 做确定性对比——从 task/logs 中提取运行次数、违规率、步数、通过率四项客观指标，不由 Agent 主观判断。单次对比后标记胜出方，连续两次胜出目前需手动二次运行确认。⚠️ 连续胜出判断为 TODO(v1.1)——当前只做单次对比，需手动执行两次后人工决策。v1.1 计划实现自动连续胜出计数器，旧方案归档进 history/。
+编排引擎在 FDE 部署时生成第一版编排方案（current）。运行一段时间后，定期触发重新编排生成 candidate，用 `sofagent-orchestrate-compare` 做确定性对比——从 task/logs 中提取运行次数、违规率、步数、通过率四项客观指标，不由 Agent 主观判断。单次对比后标记胜出方，连续两次胜出目前需手动二次运行确认。⚠️ 连续胜出判断为 TODO(v1.1)——当前只做单次对比，需手动执行两次后人工决策。v1.1 计划实现自动连续胜出计数器，旧方案归档进 history/。
 
 保守是因为 LLM 复盘有偏差——一次高分可能是运气，连续高分才可能是规律。CLI 工具的确定性对比消除了 Agent 自我评估的偏差。
 

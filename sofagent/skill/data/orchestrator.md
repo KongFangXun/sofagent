@@ -13,6 +13,8 @@
 
 ### 编排方案结构（FDE 部署后）
 
+> ⚠️ 注意：这里的 `workflow.yaml` 是 ao compose 内部生成的临时编排 DAG 产物，**不是 FDE 要维护的节点配置文件**。FDE 不写 .yaml——节点定义在 `nodes/[节点名].md` 里（三层实体之文档层）。Agent 读 node .md 后注入给 ao compose，ao compose 内部生成这些 YAML 做执行计划。
+
 当前编排方案分三层：
 
 ```

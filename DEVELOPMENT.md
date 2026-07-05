@@ -6,7 +6,7 @@
 >
 > v0.99.8 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
 
-> 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE = Forward Deployed Engineer，企业里的 AI 部署工程师。详见 [FDE/FDE.md](./FDE/FDE.md) 和项目记忆中的 [FDE 认知框架](./.workbuddy/memory/MEMORY.md#fde-认知框架2026-07-01-rolling-ai-播客笔记)。
+> 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE 工具包本身就是 sofagent 产品的一部分——自己人办事用自己产品，给别人办完让别人用自己产品。详见 [FDE/FDE.md](./FDE/FDE.md) 和 [README § FDE](./README.md#fde从工作流到-ai-节点)。
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 
@@ -26,6 +26,8 @@
 | 入境/每任务/离境闸门 | `sofagent/skill/entry-gate.md` / `task-aware.md` / `task-closure.md` |
 | 循环检查/评估/退出 | `sofagent/skill/loop-check.md` / `loop-evaluate.md` / `loop-exit.md` |
 | 数据模板 / 部署脚本 | `sofagent/skill/data/` / `sofagent/scripts/` |
+| FDE 交付物模板 | `FDE/templates/` |
+| FDE 部署知识文档 | `FDE/FDE.md`（含角色定义 + 步骤详解，唯一知识源） |
 | 加载链 Hook | `sofagent/hooks/sofagent-load-chain/` |
 
 ---
@@ -53,9 +55,9 @@
 sofagent 有**两个引擎**，数据流分离但在 think.md 交汇：
 
 ```
-审计引擎（每次提交）                  编排引擎（FDE 进场 + 定期重测）
+审计引擎（每次提交）                  编排引擎（FDE 部署 + 定期重测）
     │                                       │
-    ├─ git diff                             ├─ FDE 进场：一次性生成 workflow.yaml
+    ├─ git diff                             ├─ FDE 部署：生成节点文档（nodes/*.md）
     ├─ 规则检查 A1-A11                      │       └─ ao compose 拆任务 → 写入 orchestrator/current/
     ├─ think-generator.ts                   │
     │   └→ 写 think.md ─────┐              ├─ 生产运行：AI 节点按 workflow 执行
@@ -72,7 +74,7 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇：
          （审计引擎写 / 编排引擎读 / A/B 结果写入 orchestrator/）
 ```
 
-**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 FDE 进场时一次性生成 workflow，之后 AI 节点按固定流程执行，定期用 `sofagent-orchestrate-compare` 做 A/B 重优化。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
+**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 FDE 部署时生成节点定义（nodes/*.md），之后 Agent 读节点 .md 注入给 ao compose 执行，定期用 `sofagent-orchestrate-compare` 做 A/B 重优化。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
 
 主 Agent 的日常：接活 → 看 `scoring.md` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#skill-runtime)。
 
@@ -293,7 +295,7 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 2. `bash sofagent/scripts/verify.sh --quiet`——确认输出数字与文档中引用一致
 3. `cd sofagent/audit && npm test 2>&1 | grep "Tests"`——确认通过数
 4. `wc -m sofagent/skill/SKILL.md sofagent/skill/fde.md`——确认 Skill 字数旁注准确
-5. 全文件类型术语扫描：`grep -rn "纪律层\|纪律底座\|工具箱\|FDE 工程师\|部署底座\|AI 控制节点" --include="*.md" --include="*.sh" --include="*.ps1" . | grep -v docs/changelog/ | grep -v docs/evidence/`
+5. 全文件类型术语扫描：`grep -rn "纪律层\|纪律底座\|工具箱\|FDE 工程师\|部署底座\|AI 控制节点" --include="*.md" --include="*.sh" --include="*.ps1" . | grep -v docs/changelog/ | grep -v docs/evidence/`（其中"FDE 工程师"是禁用词——FDE 的 E 已经是 Engineer，不叠叫）
 6. `./tools/check-version.sh > /dev/null 2>&1; echo $?`——必须为 0
 
 **铁律**：不是跑完看绿色就过。把实际输出数字逐字抄进 CHANGELOG。

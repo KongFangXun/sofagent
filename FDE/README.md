@@ -1,10 +1,12 @@
 # FDE 工具包
 
-> **中小企业自己做 FDE。** 装上工具包，Agent 带你 12 步走完 workflow 梳理和 AI 节点识别，找台闲置设备装 sofagent——上面跑的 harness 层管着所有 AI 节点。不需要请顾问，不需要技术背景，能跟着流程走就行。
+> **FDE 工具包本身就是 sofagent 产品的一部分。**
 >
-> 你的电脑就是 FDE 工作台——sofagent 在后台帮你拆任务、记反思、沉淀经验。你负责聊业务，Agent 负责出方案。
+> sofagent 的核心是底座——约束底座管 Agent 行为，审计引擎盯每次变更。但底座需要一个落地场景才能进企业，FDE 就是那个场景。FDE 用这个工具包帮企业梳理 workflow、识别 AI 节点、装上底座。**自己人办事用自己产品，给别人办完让别人用自己产品。**
 >
-> > 💡 FDE 是什么、为什么重要：[FDE.md](./FDE.md) 开头有完整说明——工头带 AI 员工上岗的比喻、三件工具定位、Rolling AI 等行业实践参考。这里只讲怎么装、怎么用。
+> 整个逻辑是嵌套的：FDE 本身也是一个 workflow（12 步），FDE 走这 12 步时用的就是 sofagent。走完之后，帮企业在闲置设备上装上同一个 sofagent——底座跑起来，客户的 AI 节点在上面干活。
+>
+> > 💡 FDE 是什么、12 步流程详解：[FDE.md](./FDE.md)。这里只讲怎么装、怎么用。
 
 ---
 
@@ -22,14 +24,14 @@ ClawHub / SkillHub 用户：`clawhub skill install KongFangXun/sofagent-fde` 或
 
 1. **激活 Skill** → 按上表对应平台的方法让 Agent 加载 FDE 工作台
 2. **Agent 引导** → Agent 会按 [FDE.md](./FDE.md) §1 开始，引导你描述企业基本信息，然后一步步走完 12 步部署
-3. **部署到设备** → 流程走完后，找一台闲置设备（服务器/旧电脑），`bash sofagent/scripts/install.sh` 把 sofagent 装上去——上面开始跑你的 workflow AI 节点
+3. **部署 sofagent 到设备**（核心步骤）→ 流程走完后，找一台闲置设备（服务器/旧电脑），`bash sofagent/scripts/install.sh` 把 sofagent 三层引擎装上去——约束底座 + 审计引擎 + 编排引擎就绪，上面开始跑你的 workflow AI 节点
 
 ### 种子指令（备选，非 OpenClaw/WorkBuddy 用户使用）
 
 把下面这段粘贴给你的 Agent：
 
 ```
-请完整阅读 FDE/SKILL.md、FDE/FDE.md、FDE/workflow/template.yaml、FDE/agents/templates.md。
+请完整阅读 FDE/SKILL.md、FDE/FDE.md。
 读完后按 FDE.md §1 开始引导我完成 FDE 部署。
 ```
 
@@ -39,11 +41,10 @@ ClawHub / SkillHub 用户：`clawhub skill install KongFangXun/sofagent-fde` 或
 
 | 文件 | 干什么 |
 |------|------|
-| `SKILL.md` | Skill 入口（Agent 激活后自动加载 3 个文件，第一个说话引导你） |
-| `FDE.md` | 12 步部署知识文档（4 阶段：进场→挖掘→交付→检查离场） |
-| `workflow/template.yaml` | 流程模板（Agent 可解析，按步骤拆任务） |
-| `agents/templates.md` | 3 个角色（分析师 §1-6 / 规划师 §7-9 / 部署工程师 §10-12） |
-| `fde-install.sh` | 一键装 sofagent + 部署模板 |
+| `SKILL.md` | Skill 入口（Agent 激活后自动加载，第一个说话引导你） |
+| `FDE.md` | 12 步部署知识文档（4 阶段：进场→挖掘→交付→检查离场）+ 角色定义 + 步骤详解 |
+| `templates/` | 交付物模板（企业画像 + 部署方案 + 工作流节点文档 + 企业 Skill），以 FDE 自身为案例 |
+| `fde-install.sh` | 一键装 sofagent + 写入 fde.md |
 
 ---
 

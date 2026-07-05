@@ -9,7 +9,7 @@
 
 只点火当以下**全部**满足：
 1. 当前会话是 FDE 部署场景（FDE 场景已激活，参见 engage-fde.md 检测逻辑）
-2. 当前操作是 workflow 中的 🔄/⚡ 节点（已由 FDE §四 识别）
+2. 当前操作是 workflow 中的 🔄/⚡ 节点（已由 FDE §5 识别）
 3. 节点尚未执行过（`task/logs` 无该节点成功记录）
 
 不点火：非 FDE 场景 / 节点已执行过（幂等跳过，复用缓存） / 简单节点（📋 文档生成、💬 信息检索等直接走 Agent）。
@@ -29,7 +29,9 @@
 
 ## AO Compose 拆解
 
-`ao compose` 的完整说明见 **DEVELOPMENT.md §二**。核心流程：`ao compose "任务描述" --model flash` 输出 YAML DAG 结构，再由 `ao run workflow.yaml` 执行。
+`ao compose` 的完整说明见 **DEVELOPMENT.md §二**。核心流程：Agent 读 `nodes/[节点名].md`（三层实体之文档层）→ 把节点定义注入给 `ao compose "节点描述"` → 输出 YAML DAG 结构 → 逐步执行。
+
+> ao compose 接受自然语言描述（不是读 .yaml 配置文件）。Agent 读节点 .md 后，把内容揉成一句话描述传给 ao compose。ao compose 内部会生成临时 YAML DAG 做执行计划，但那是它自己的内部产物，不是我们需要维护的配置文件。
 
 ## Agent 模板匹配
 
@@ -49,26 +51,17 @@ AO Compose 自带角色模板库，直接引用不自定义：
 
 ## think.md 反馈回路
 
-每次编排执行后更新 `{SOFAGENT_DATA}/think.md` 反思区：
-
-```markdown
-## YYYY-MM-DD 节点: [节点名]
-- #拆解策略: 拆/不拆，结果 [成功/失败]
-- #拆解粒度: N步→实际M步 [偏粗/刚好/偏细]
-- #角色匹配: 用 X+Y [匹配正确/应换 Z]
-```
-
-下次同节点点火时 Read think.md 查历史 → 自动调整策略。**第一次拆最细，越跑越精准。**
+每次编排执行后更新 think.md 反思区：拆解策略（拆/不拆 + 结果）、拆解粒度（N步→实际M步）、角色匹配（用 X+Y 是否正确）。下次同节点点火时 Read think.md 查历史 → 自动调整。**第一次拆最细，越跑越精准。**
 
 ---
 
 ## 闭环验收
 
-节点执行完成后：① 产出验收（对照 §三 五要素预期格式）② 存入 task/logs（成功/失败+耗时+策略）③ 更新 think.md（反馈回路）④ 检查点过（如配置了工作流检查点，等待质检员确认）。四步全过 → ✅ 释放到下一节点。
+节点执行完成后：① 产出验收（对照 §4 五要素预期格式）② 存入 task/logs（成功/失败+耗时+策略）③ 更新 think.md（反馈回路）④ 检查点过（如配置了工作流检查点，等待质检员确认）。四步全过 → ✅ 释放到下一节点。
 
 ## 缓存复用
 
-同一 workflow 节点已有缓存时，直接复用 `orchestrator/workflows/<hash>.yaml` 拆解结果，不重走 AO compose。仅当 think.md 反馈回路建议调整策略时重新拆解。
+同一 workflow 节点已有缓存时，直接复用 `orchestrator/workflows/<hash>.yaml` 拆解结果。仅当 think.md 反馈建议调整时重新拆解。
 
 ---
 
