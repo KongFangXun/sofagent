@@ -371,8 +371,10 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
 .drawer-link i { font-size: 16px; width: 20px; text-align: center; }
 
 .drawer-footer {
-  padding: 16px 6px; border-top: 1px solid var(--border);
+  min-height: 64px;
+  padding: 10px 12px; border-top: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-evenly; flex-shrink: 0;
+  box-sizing: border-box;
 }
 .drawer-footer > button {
   display: flex; align-items: center; gap: 5px;
