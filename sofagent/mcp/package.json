@@ -27,7 +27,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@sofagent/audit": "^0.99.6"
+    "@sofagent/audit": "^0.99.8"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

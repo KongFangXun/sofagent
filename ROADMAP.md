@@ -82,11 +82,11 @@
 | 1 | 审计引擎检出率验证 | ✅ v0.99.2 首次实测——5/5 100% 检出（Case 015）。局限：靶向构造、未测误报率、非盲测 |
 | 2 | 审计工具实现完整六步闭环 | ⚠️ 步骤 1-3 生产可用，步骤 4-6 实验性/技术预览（见 LIMITATIONS） |
 | 3 | Harness 层上下文成本 ≤ 窗口 5% | ⚠️ ~2.5%（自报，无独立验证。SKILL.md≈2000+字，fde.md=1596 字符） |
-| 4 | OpenClaw + AO compose 全链路跑通 | ⚠️ ao 0.7.5 compose 生成有效 workflow（v0.99.2 实测，216 角色可用，输出完整 YAML）。全链路运行（ao run）需 OpenClaw 会话 |
-| 5 | MCP server + webhook 跑通 | ⚠️ MCP Server 本地通过（initialize/tools/list/tools/call）。Webhook 推送代码完整（`pushAuditResult` 支持 dingtalk/feishu/wecom，fire-and-forget），需真实 webhook URL 完成端到端 |
+| 4 | OpenClaw + AO compose 全链路跑通 | ⚠️ ao compose→validate→plan→run 全链路实测通过（Case 023，免 API Key 2 角色协作 5s 完成）。局限：全链路运行需 OpenClaw 会话环境，非 OpenClaw 平台不可用 |
+| 5 | MCP server + webhook 跑通 | ⚠️ MCP Server 全链路实测通过（Case 023/024，9 种 JSON-RPC 含错误场景优雅处理）。局限：webhook 推送代码完整（支持 dingtalk/feishu/wecom），需真实 webhook URL 完成端到端 |
 | 6 | daemon 核心功能通过自动化测试 | ⚠️ 手动验证通过（Case 014），无独立自动化测试（见 LIMITATIONS） |
 | 7 | ≥ 1 外部用户 + 5 个一次性测试 | ✅ 3 名外部用户 macOS 8/8 场景全通（Case 023-025），综合评分 8.0-8.5/10 |
-| 8 | install → verify → 首次任务通过率 ≥ 90% | ⚠️ verify.sh 48 项全绿（安装环境正确性 ✅），但「首次任务通过率」从未独立验证——verify 测的是环境不是任务 |
+| 8 | install → verify → 首次任务通过率 ≥ 90% | ⚠️ 安装环境验证：verify.sh 48 项全绿 ✅，外部用户实测 install ~3-15s（Case 023-025）。局限：「首次任务通过率」无独立验证——verify 测环境正确性，不测 Agent 首次任务执行 |
 | 9a | 三操作系统核心功能（build + tsc + smoke test） | ⚠️ macOS + Linux 全功能。Windows CI 通过但功能覆盖仅 24%（verify.ps1 230 行 vs verify.sh 942 行，见 LIMITATIONS） |
 | 9b | vitest 在 Windows 上全量通过 | ⚠️ rollup 原生模块兼容问题，单元测试待解决 |
 **硬性截止日期**：2026-09-30。如果 #7 不达标 → v1.0 降为「审计工具技术预览版」。
