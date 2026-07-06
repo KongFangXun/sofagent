@@ -8,7 +8,17 @@ if [ -z "$DIFF" ]; then
   exit 0
 fi
 
-node sofagent/audit/dist/index.js --diff HEAD --silent --ci --task "$(cat .git/COMMIT_EDITMSG 2>/dev/null || echo 'pre-commit audit')"
+# 优先使用全局安装的 sofagent-audit，fallback 到项目内路径
+if command -v sofagent-audit &>/dev/null; then
+  AUDIT_CMD="sofagent-audit"
+elif [ -f "sofagent/audit/dist/index.js" ]; then
+  AUDIT_CMD="node sofagent/audit/dist/index.js"
+else
+  echo "⚠️  sofagent audit 未找到：请先 npm install -g @sofagent/audit"
+  exit 0
+fi
+
+$AUDIT_CMD --diff HEAD --silent --ci --task "$(cat .git/COMMIT_EDITMSG 2>/dev/null || echo 'pre-commit audit')"
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -eq 2 ]; then
