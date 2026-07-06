@@ -4,11 +4,11 @@ slug: sofagent-fde
 displayName: sofagent-fde
 description: >
   FDE 专属——装上之后 Agent 帮你走完四阶段十二步部署流程（进场→挖掘→交付→检查离场），
-  识别 AI 节点、出部署方案、搭节点。你负责聊业务，Agent 负责出方案。
+  识别 AI 节点、出交付手册、搭节点。你负责聊业务，Agent 负责出方案。
 version: 0.99.8
 tags: [fde, workflow, deployment, enterprise, ai-agent]
 image: index/sofagent.png
-triggers: [FDE部署, 企业AI化, 梳理工作流, 识别AI节点, 出部署方案, 建知识库, 企业工作流改造]
+triggers: [FDE部署, 企业AI化, 梳理工作流, 识别AI节点, 出交付手册, 建知识库, 企业工作流改造]
 scenarios: [企业要做AI化但不知道从哪开始, 梳理完工作流不知道怎么识别AI节点, 部署后不知道怎么管Agent行为, 想让Agent自动出交付手册]
 not_when: [纯技术讨论, 代码bug修复, 写业务代码]
 ---
@@ -62,9 +62,10 @@ cp -r FDE/ ~/.openclaw/skills/sofagent-fde/
 
 ## 交付物（详见 FDE.md §9）
 
+> 以下产物运行在 **sofagent 三层引擎**（约束底座 + 审计引擎 + 编排引擎）上，已在「前置依赖」安装。
+
 | 产物 | 是什么 |
 |------|------|
-| **sofagent 三层引擎** | 装到设备上的核心平台（约束底座 + 审计引擎 + 编排引擎） |
 | **交付手册** | 企业画像 + 部署方案 + `fde.md` + `quick-start.md`（后两章安装包自带） |
 | **AI 节点（三层实体）** | 文档层（`nodes/*.md`，人读+编排引擎读）+ Skill 层 + 运行层 |
 | **知识库** | AI 节点跑起来后自动积累（think.md / task/logs / scoring.md / orchestrator/） |
