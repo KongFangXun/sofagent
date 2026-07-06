@@ -81,7 +81,7 @@
 |:--:|------|------|
 | 1 | 审计引擎检出率验证 | ✅ v0.99.2 首次实测——5/5 100% 检出（Case 015）。局限：靶向构造、未测误报率、非盲测 |
 | 2 | 审计工具实现完整六步闭环 | ⚠️ 步骤 1-3 生产可用，步骤 4-6 实验性/技术预览（见 LIMITATIONS） |
-| 3 | Harness 层上下文成本 ≤ 窗口 5% | ⚠️ ~2.5%（自报，无独立验证。SKILL.md≈2000+字，fde.md=3051 字符） |
+| 3 | Harness 层上下文成本 ≤ 窗口 5% | ⚠️ ~2.5%（自报，无独立验证。SKILL.md≈2000+字，fde.md=1596 字符） |
 | 4 | OpenClaw + AO compose 全链路跑通 | ⚠️ ao 0.7.5 compose 生成有效 workflow（v0.99.2 实测，216 角色可用，输出完整 YAML）。全链路运行（ao run）需 OpenClaw 会话 |
 | 5 | MCP server + webhook 跑通 | ⚠️ MCP Server 本地通过（initialize/tools/list/tools/call）。Webhook 推送代码完整（`pushAuditResult` 支持 dingtalk/feishu/wecom，fire-and-forget），需真实 webhook URL 完成端到端 |
 | 6 | daemon 核心功能通过自动化测试 | ⚠️ 手动验证通过（Case 014），无独立自动化测试（见 LIMITATIONS） |
