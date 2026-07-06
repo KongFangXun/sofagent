@@ -220,7 +220,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
 | install.sh | 无独立测试 | 跨平台行为变化无法自动捕获 |
-| daemon 脚本 | 测试覆盖不足 | launchd/systemd 注册失败无早期预警；计划 v1.x 补充核心功能测试 |
+| daemon 脚本 | 测试覆盖不足 | launchd/systemd 注册失败无早期预警；计划 v1.x 补充核心功能测试。**行为边界**：daemon 监控 think.md/fde.md 文件 hash 变化 → 写 daemon-notice.md，不直接审计 git commit。commit 审计由 pre-commit hook（`sofagent-audit --install-hook` 安装）负责 |
 | MCP Server | 仅手动验证 | JSON-RPC 协议边界情况未覆盖。无自动测试。核心逻辑（run_audit/get_think/write_think）调用 audit 包已测方法。 |
 | verify.sh/verify.ts | 部分覆盖 | 50 项检查的逻辑分支未穷举 |
 
