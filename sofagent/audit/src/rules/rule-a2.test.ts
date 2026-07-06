@@ -34,6 +34,13 @@ describe('A2 不泄密钥', () => {
     expect(result.status).toBe('FAIL');
   });
 
+  it('新增行含 OpenAI Project Key (sk-proj-) → FAIL', () => {
+    const projKey = 'sk-proj-' + 'a'.repeat(48);
+    const ctx = makeCtx([makeDiffFile('src/ai.ts', [`+const apiKey = "${projKey}"`])]);
+    const result = checkRuleA2(ctx);
+    expect(result.status).toBe('FAIL');
+  });
+
   it('无密钥 → PASS', () => {
     const ctx = makeCtx([makeDiffFile('src/index.ts', ['+const x = 1;'])]);
     const result = checkRuleA2(ctx);

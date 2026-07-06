@@ -85,7 +85,7 @@
 | 4 | OpenClaw + AO compose 全链路跑通 | ⚠️ ao 0.7.5 compose 生成有效 workflow（v0.99.2 实测，216 角色可用，输出完整 YAML）。全链路运行（ao run）需 OpenClaw 会话 |
 | 5 | MCP server + webhook 跑通 | ⚠️ MCP Server 本地通过（initialize/tools/list/tools/call）。Webhook 推送代码完整（`pushAuditResult` 支持 dingtalk/feishu/wecom，fire-and-forget），需真实 webhook URL 完成端到端 |
 | 6 | daemon 核心功能通过自动化测试 | ⚠️ 手动验证通过（Case 014），无独立自动化测试（见 LIMITATIONS） |
-| 7 | ≥ 1 外部用户 + 5 个一次性测试 | ⚠️ 关联企业已在试用，测试数据收集整理中 |
+| 7 | ≥ 1 外部用户 + 5 个一次性测试 | ✅ 3 名外部用户 macOS 8/8 场景全通（Case 023-025），综合评分 8.0-8.5/10 |
 | 8 | install → verify → 首次任务通过率 ≥ 90% | ⚠️ verify.sh 48 项全绿（安装环境正确性 ✅），但「首次任务通过率」从未独立验证——verify 测的是环境不是任务 |
 | 9a | 三操作系统核心功能（build + tsc + smoke test） | ⚠️ macOS + Linux 全功能。Windows CI 通过但功能覆盖仅 24%（verify.ps1 230 行 vs verify.sh 942 行，见 LIMITATIONS） |
 | 9b | vitest 在 Windows 上全量通过 | ⚠️ rollup 原生模块兼容问题，单元测试待解决 |
@@ -104,6 +104,7 @@
 | 多企业平台 webhook | 飞书 + 企微 + 自定义 webhook |
 | 记忆架构升级 | Ledger-Views-Policy 三层模型 |
 | **Windows 完整支持** | PowerShell 对齐——verify.ps1 从 230 行扩到 ~700 行（对齐 verify.sh 48 项检查）。当前覆盖率 24%，v0.99.7 起诚实标注为实验性。目标：覆盖率 ≥80%，去掉实验性标注 |
+| **daemon 文档校准** | 外部用户反馈（Case 025）：daemon 实际监控 think.md/fde.md hash 变化，非直接监听 git commit 审计。需更新文档 + 评估是否在 daemon 主循环加 `sofagent-audit --diff HEAD` 定时触发 |
 | 分布式反思同步 | Gossip 协议 + 信任加权投票 |
 | bash 代码债清理 | ~450 行重复代码 bash→TS 迁移完成 |
 | 英文文档扩展 | HANDBOOK/DEVELOPMENT/ARCHITECTURE 英文翻译 |
