@@ -58,6 +58,28 @@ bash sofagent/scripts/install.sh && bash sofagent/scripts/verify.sh
 
 **提 PR**：Fork → `git checkout -b fix/xxx` → 提交 → 推送 → GitHub 提 PR。参照 [PR 模板](./.github/PULL_REQUEST_TEMPLATE.md)。
 
+**Commit Message 规范**（Conventional Commits）：
+
+```
+<type>(<scope>): <subject>
+```
+
+| type | 用于 |
+|------|------|
+| `feat` | 新功能 |
+| `fix` | Bug 修复 |
+| `docs` | 文档变更 |
+| `refactor` | 重构（不改功能不修 Bug） |
+| `test` | 测试相关 |
+| `chore` | 构建/工具/依赖 |
+| `style` | 格式调整（不改逻辑） |
+| `ci` | CI 配置 |
+| `perf` | 性能优化 |
+
+> 自定义前缀（如 `evidence:` `index:`）不强制禁止，但推荐用标准 type。**纯描述性 commit（无前缀）不可接受。**
+> 
+> 示例：`docs: evidence Case 023-025 外部用户验证归档` ✅ / `evidence 归档` ❌
+
 **改 Skill 文件**：先改 `sofagent/skill/`（唯一权威），再 `bash sofagent/scripts/install.sh` 同步。
 
 **文档修改**：改 HANDBOOK 必须同步更新 `sofagent/skill/` 下模板。详见 [DEVELOPER §七](./DEVELOPMENT.md#七数据文件架构)。

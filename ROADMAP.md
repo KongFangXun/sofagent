@@ -1,16 +1,16 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.99.8 · 2026-07-05（UTC）· 审查修复收尾版——v0.99.7 双审查 20 项遗留全修 + FDE 架构重构（四层→三层实体）+ Skill 精简（925→742 行）+ GitHub Actions v5 + PR check + shellcheck 收窄 + v1.0 准入诚实化
+> v0.99.9 · 2026-07-05（UTC）· 审查修复收尾版——v0.99.7 双审查 20 项遗留全修 + FDE 架构重构（四层→三层实体）+ Skill 精简（925→742 行）+ GitHub Actions v5 + PR check + shellcheck 收窄 + v1.0 准入诚实化
 >
 
 > 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（FDE 部署用）为实验性附带。
 
 ---
 
-## 现在在哪：v0.99.8 ✅
+## 现在在哪：v0.99.9 ✅
 
-> 审查修复收尾版——v0.99.7 发版后双审查（GLM-5.2 48 维度 + DeepSeek V4 Pro 48 维度）发现 20 项遗留问题，本版全部修复。核心：文档数字对齐 + CI 升级 + shellcheck 收窄 + v1.0 准入诚实化（3/10 ✅ → 1/10 ✅）+ **FDE 架构重构**（四层→三层实体、templates 镜像产出）+ FDE 非开发者入门。
+> 审查修复收尾版——v0.99.7 发版后双审查（GLM-5.2 48 维度 + DeepSeek V4 Pro 48 维度）发现 20 项遗留问题，本版全部修复。核心：文档数字对齐 + CI 升级 + shellcheck 收窄 + v1.0 准入诚实化（3/10 ✅ → 2/10 ✅）+ **FDE 架构重构**（四层→三层实体、templates 镜像产出）+ FDE 非开发者入门。
 >
 > 📖 [开发日志](./docs/changelog/v0.99.8.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
@@ -22,7 +22,7 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
-| **v0.99.8** | 审查修复收尾 + FDE 架构重构：双审查 20 项遗留全修 + FDE 四层→三层实体 + templates 镜像产出 + Skill 精简（925→742 行）+ GitHub Actions v5 + PR check + v1.0 准入诚实化（3✅→1✅） | [📖](./docs/changelog/v0.99.8.md) |
+| **v0.99.8** | 审查修复收尾 + FDE 架构重构：双审查 20 项遗留全修 + FDE 四层→三层实体 + templates 镜像产出 + Skill 精简（925→742 行）+ GitHub Actions v5 + PR check + v1.0 准入诚实化（3✅→2✅） | [📖](./docs/changelog/v0.99.8.md) |
 | **v0.99.7** | 发布基础设施修复：CI E403 根治 + OIDC 清零 + mcp 依赖解锁 + shellcheck 清零 + Windows 标注（11 项，三轮审查驱动） | [📖](./docs/changelog/v0.99.7.md) |
 | **v0.99.6** | 审查修复：mcp npm 同步发布 + 文档一致性（25 项，双审驱动） | [📖](./docs/changelog/v0.99.6.md) |
 | **v0.99.5** | CI 自动化 + 审查修复：NPM_TOKEN 自动发布 + P0×6/P1×10 修复 + 工具增强 | [📖](./docs/changelog/v0.99.5.md) |
@@ -86,7 +86,7 @@
 | 5 | MCP server + webhook 跑通 | ⚠️ MCP Server 全链路实测通过（Case 023/024，9 种 JSON-RPC 含错误场景优雅处理）。局限：webhook 推送代码完整（支持 dingtalk/feishu/wecom），需真实 webhook URL 完成端到端 |
 | 6 | daemon 核心功能通过自动化测试 | ⚠️ 手动验证通过（Case 014），无独立自动化测试（见 LIMITATIONS） |
 | 7 | ≥ 1 外部用户 + 5 个一次性测试 | ✅ 3 名外部用户 macOS 8/8 场景全通（Case 023-025），综合评分 8.0-8.5/10 |
-| 8 | install → verify → 首次任务通过率 ≥ 90% | ⚠️ 安装环境验证：verify.sh 48 项全绿 ✅，外部用户实测 install ~3-15s（Case 023-025）。局限：「首次任务通过率」无独立验证——verify 测环境正确性，不测 Agent 首次任务执行 |
+| 8 | install → verify → 首次任务通过率 ≥ 90% | ⚠️ 安装环境验证：verify.sh ~48 项动态全绿 ✅（实际项数因环境条件变化），外部用户实测 install ~3-15s（Case 023-025）。局限：「首次任务通过率」无独立验证——verify 测环境正确性，不测 Agent 首次任务执行 |
 | 9a | 三操作系统核心功能（build + tsc + smoke test） | ⚠️ macOS + Linux 全功能。Windows CI 通过但功能覆盖仅 24%（verify.ps1 230 行 vs verify.sh 942 行，见 LIMITATIONS） |
 | 9b | vitest 在 Windows 上全量通过 | ⚠️ rollup 原生模块兼容问题，单元测试待解决 |
 **硬性截止日期**：2026-09-30。如果 #7 不达标 → v1.0 降为「审计工具技术预览版」。
@@ -98,15 +98,19 @@
 | 想法 | 说明 |
 |------|------|
 | **企业 Skill 自进化** | FDE 部署时给每个 AI 节点定制专属 Skill（注入行业术语/业务规则/历史案例）。节点跑起来后，基于 scoring.md 评分 + task/logs 记录 + think.md 反思，Skill 自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本，candidate 胜出 promote 替换 current。这是 sofagent 的核心服务：**Skill 不只是部署时写好，运行时持续进化** |
+| **AI 知识库（v1.1）** | FDE 交付的第三样东西从散文件升级为结构化知识系统。`.sofagent/knowledge/` 目录：entities/（实体页）+ concepts/（概念页）+ comparisons/（对比页）。daemon 检测 task/logs 变化触发 Ingest，loop-evaluate 顺带跑 Lint，加载链启动时被动注入 top-N 相关页。think.md 不动（职责不重叠）。详见 [v1.1 开发日志](./docs/changelog/v1.1.md) |
+| **think.md 模板强制** | think.md 目前可选——Agent 想写就写。v1.1 升级：如果写，必须按模板（做了什么 / 踩了什么坑 / 下次怎么办）。不强制写，审计引擎检测「本次任务无 think.md」标 ⚠️ 但不阻断。**不做 gate 前置检查**——强制 gate 会导致 Agent 用垃圾内容填模板 |
+| **后置测验（可选维度）** | loop-check 新维度：任务结束时 AI 出题反问人类「我做了 X，你理解了吗？」从 Agent 自检到人机对齐。默认关闭，高风险任务才开启。成本高（每次任务需人答题），v2.x 探索 |
+| **Lingua Word 短词锚定** | 给每条铁律一个短词别名（如 A1 最小变更 → @A1），Skill 里只注入短词代替展开全文。风险：短词太短 Agent 遗忘含义。v1.0 前在 fde.md 跑 A/B 对比 token + 服从率 |
 | **Skill 自进化闭环** | 部署→运行→检查→进化 四步闭环 |
 | 质量抽检仪表盘 | 抽检合格率、skillopt 迭代记录可视化 |
 | age 加密 / 多用户隔离 | think.md + task/logs 加密；同机权限隔离 |
 | 多企业平台 webhook | 飞书 + 企微 + 自定义 webhook |
 | 记忆架构升级 | Ledger-Views-Policy 三层模型 |
-| **Windows 完整支持** | PowerShell 对齐——verify.ps1 从 230 行扩到 ~700 行（对齐 verify.sh 48 项检查）。当前覆盖率 24%，v0.99.7 起诚实标注为实验性。目标：覆盖率 ≥80%，去掉实验性标注 |
+| **Windows 完整支持** | PowerShell 对齐——verify.ps1 从 230 行扩到 ~700 行（对齐 verify.sh ~48 项动态检查）。当前覆盖率 24%，v0.99.7 起诚实标注为实验性。目标：覆盖率 ≥80%，去掉实验性标注 |
 | **daemon 文档校准** | 外部用户反馈（Case 025）：daemon 实际监控 think.md/fde.md hash 变化，非直接监听 git commit 审计。需更新文档 + 评估是否在 daemon 主循环加 `sofagent-audit --diff HEAD` 定时触发 |
 | 分布式反思同步 | Gossip 协议 + 信任加权投票 |
-| bash 代码债清理 | ~450 行重复代码 bash→TS 迁移完成 |
+| bash 代码债清理 | ~450 行重复代码（颜色常量/日志函数/平台探测），方向：bash → TypeScript 迁移，不新建 bash 基础设施 |
 | 英文文档扩展 | HANDBOOK/DEVELOPMENT/ARCHITECTURE 英文翻译 |
 | ARCHITECTURE 可读性 | 降低外部引用密度，让新人 10 分钟能看懂
 | 恢复路径结构化 | think.md 记录失败但没有结构化恢复机制，等 JSONL 落地
@@ -116,7 +120,8 @@
 | A13 文件权限 | chmod 操作检测
 | MCP/Plugin/Skill/Hook 四组件扩展 | 在现有 MCP+Skill 基础上架构 Plugin+Hook 层
 | 双闸验证：执行前 + 副作用写回前 | 审计从事后 diff 扩展到事前拦截
-| **entry-gate 风险分级审批** | 当前权限清单是二分（能做/不能做）。升级为三级：🟢 低风险自动放行 / 🟡 中风险需确认 / 🔴 高风险必须人工审批。让低风险更快通过，把人工注意力精准投放到高风险节点
+| **entry-gate 风险分级审批** | 当前权限清单是二分（能做/不能做）。升级为三级：🟢 低风险自动放行 / 🟡 中风险需确认 / 🔴 高风险（DB/外部 API/文件删除）必须人工审批。让低风险更快通过，把人工注意力精准投放到高风险节点。**不做**超时降级和防橡皮图章——那是企业级 BPM 的功能，不是 Agent harness 层的职责（v2.x 再探索） |
+| **7-Entry Checklist 结构化** | 当前 entry-gate 只落地了 7-Entry 中的 recovery（LIMITATIONS + daemon 边界说明）和 loop（loop-check/evaluate）。完整 7 项：contact / assembly / model / loop / gate / executor / transcript。v1.x 在 entry-gate 注释埋占位结构 |
 | **编排引擎收敛保护** | Loop 工程核心是收敛——不具备收敛性的目标会无限烧 Token。加硬约束：同一任务跑超过 N 轮未收敛 → 强制停下问人，写 think.md 标记「收敛失败」。当前 think.md 是被动记录，缺主动叫停机制
 | loop-check 三元统一出口 | pass/fail/warn 收敛，对齐审计引擎 exit code 0/1/2
 | 记忆产权三维框架 | 对象归属 / 锁定策略 / 边界定义补充到记忆层
@@ -135,6 +140,29 @@
 > 🧠 **技术底座参考 — A2A 协议**：Google A2A（Agent-to-Agent）协议为多智能体协作定义了三个关键层级：① 动态服务发现（Agent 版 DNS——Agent 广播能力，匹配条件者自动响应）、② 能力契约对齐（入参/输出 Schema 握手，消除自然语言歧义）、③ 全状态接力（任务交接时同时移交执行目标 + 前置共识 + 专属记忆）。MCP 解决「脑和手」的工具调用，A2A 解决「脑和脑」的协作分工。
 >
 > 同时也需防御 A2A 的三大工程雷区：**语义漂移**（多 Agent 链路中每层推理偏差累积导致末端动作与原始需求南辕北辙）、**死循环雪崩**（Agent 互等形成逻辑闭环，数秒内耗尽 Token 预算）、**权限穿透**（低权限 Agent 构造恶意 A2A 请求诱骗高权限 Agent 执行危险操作）。防御方案三板斧：协调者中枢监控 + 强类型 Schema 前置拦截 + 零信任动态令牌——这三条将纳入 sofagent v2.x 的审计规则体系。
+
+**多 Agent 共享记忆三模式对比**（未做决策，先让讨论可见）：
+
+| 模式 | 机制 | 优势 | 劣势 | 适用场景 |
+|------|------|------|------|---------|
+| **黑板模式** | 中央共享文件，所有 Agent 读写同一区域 | 简单直观，一致性容易保证 | 单点瓶颈，并发写冲突 | 设备数少、信任度高 |
+| **Gossip 协议** | P2P 传播，Agent 间互相同步增量 | 去中心化，容错强 | 最终一致，同步延迟 | 设备多、网络不稳定 |
+| **上下文路由** | 按需注入，协调者根据任务匹配相关记忆 | 精准，不浪费上下文 | 需要智能匹配引擎 | 任务边界清晰、记忆量大 |
+
+**双层循环（Loop Engineering）**：
+
+> 来源：Karpathy [AutoResearch](https://github.com/karpathy/autoresearch) + Bilevel Autoresearch 论文。与 ARCHITECTURE 的三层循环（Andrew Ng 框架）视角不同——Karpathy 的双层循环关注自动化迭代的深度，Ng 的三层循环关注产品反馈的广度。
+
+当前 sofagent 实现了**内层循环**（Agent 执行→审计→反思→自动纠偏）。v2.x 将实现**外层循环**——loop-evaluate 评分驱动 Skill 自动优化，打破 Agent 的先验认知，强制探索本能回避的优化方向。
+
+| 循环层 | 时间尺度 | 职责 | sofagent 对应 | 当前状态 |
+|--------|:--:|------|------|:--:|
+| 内层 | 秒-分钟 | Agent 执行 + 反思 + 自动纠偏 | entry-gate → task-aware → loop-check → think.md → loop-exit | ✅ v0.99+ |
+| 外层 | 天-周 | Skill 优化 + 知识库沉淀 | loop-evaluate → scoring.md → AI 知识库 → Skill 自进化 | v2.x |
+
+> 当前 ROADMAP 已有「分布式反思同步」（Gossip 方向）。三模式不是互斥的——实践中可能黑板打底 + 上下文路由按需补充。决策留到 v2.x 需求分析时做。
+
+**审批通道分层（探索方向）**：entry-gate 风险分级（v1.x）之上，可探索超时降级（审批 30 分钟无响应 → 自动降级为只读模式还是阻塞？）和防橡皮图章（连续秒批 → 系统警告）。**这是企业级 BPM 功能，不是 Agent harness 层的职责**——v2.x 如果企业用户强烈需求才考虑。
 
 **演化路径**：
 

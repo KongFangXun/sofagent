@@ -6,7 +6,7 @@
 
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-v0.99.8-16B8F3)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-v0.99.9-16B8F3)](./CHANGELOG.md)
 [![What: Agent Audit Tool](https://img.shields.io/badge/What-Agent_Audit_Tool-16B8F3)](#what-is-this)
 [![Core: Audit Engine](https://img.shields.io/badge/Core-Audit_Engine-16B8F3)](#what-is-this)
 [![OpenClaw](https://img.shields.io/badge/Platform-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
@@ -23,6 +23,8 @@ My name is KongFangXun. I'm a product manager who doesn't write code. All design
 ## What is this?
 
 A commit-time auditor for AI agents — doesn't trust what the agent says, only what git diff shows. 11 audit rules scan every code change, automatically flag violations, generate reflections, and push results to collaboration platforms. SMBs can install and run on their own — no consultants, no prompt engineering required.
+
+> 🔬 **External validation**: A Hugging Face legal-agent benchmark proved that optimizing only the outer harness (no model weight changes) boosted the same model from 3.5%→80.1% (matching Claude Sonnet at 1/7 the cost). sofagent does exactly that outer harness layer — audit + constraint. → [See ARCHITECTURE](./ARCHITECTURE.md#理论基础与外部验证)
 
 > **The 90/10 rule**: Don't compete with AI models on the 90% they already do well (code generation). The real value is in the 10% nobody dares skip — verification, audit trails, accountability. sofagent owns that 10%.
 

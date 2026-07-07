@@ -1,6 +1,6 @@
 # Loop Evaluate
 
-> closure 模式专用——复盘、评分、沉淀。由 `loop-check.md` closure 模式触发。全平台通用。
+> closure 模式专用——由 `loop-check.md` closure 模式触发。全平台通用。
 > ⛔ **评分/诊断结果严禁输出给用户**——仅 loop-check.md 输出规则中规定的信号可见。
 
 ## 平台分级评审与模型选择

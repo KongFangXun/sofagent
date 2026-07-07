@@ -3,9 +3,8 @@ name: sofagent-fde
 slug: sofagent-fde
 displayName: sofagent-fde
 description: >
-  FDE 专属——装上之后 Agent 帮你走完四阶段十二步部署流程（进场→挖掘→交付→检查离场），
-  识别 AI 节点、出交付手册、搭节点。你负责聊业务，Agent 负责出方案。
-version: 0.99.8
+  FDE 专属——需要帮企业部署 AI 节点但不知道从哪入手。装上后 Agent 带你完成企业 AI 化全流程。
+version: 0.99.9
 tags: [fde, workflow, deployment, enterprise, ai-agent]
 image: index/sofagent.png
 triggers: [FDE部署, 企业AI化, 梳理工作流, 识别AI节点, 出交付手册, 建知识库, 企业工作流改造]
@@ -13,7 +12,7 @@ scenarios: [企业要做AI化但不知道从哪开始, 梳理完工作流不知�
 not_when: [纯技术讨论, 代码bug修复, 写业务代码]
 ---
 
-# sofagent-fde · SKILL.md · v0.99.8
+# sofagent-fde · SKILL.md · v0.99.9
 
 > FDE 专属 Skill。激活后加载四阶段十二步部署流程（进场→挖掘→交付→检查离场），
 > 按 FDE.md §1-12 引导你完成企业 AI 部署。你负责聊业务，Agent 负责出方案、搭节点。

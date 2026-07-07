@@ -1,7 +1,7 @@
 # Evidence.md — Does sofagent actually work?
 
 > ⚠️ **English version is a full snapshot (up to Case 025, July 6).**
-> For the complete 22 cases (Case 001–022), see [中文版](./evidence.md).
+> For the latest cases, see [中文版](./evidence.md).
 
 > We don't answer for you. Below is what people who installed sofagent have reported.
 
