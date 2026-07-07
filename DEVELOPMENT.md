@@ -57,9 +57,9 @@
 sofagent 有**两个引擎**，数据流分离但在 think.md 交汇：
 
 ```
-审计引擎（每次提交）                  编排引擎（FDE 部署 + 定期重测）
+审计引擎（每次提交）                  编排引擎（FDE 工作 + 定期重测）
     │                                       │
-    ├─ git diff                             ├─ FDE 部署：生成节点文档（nodes/*.md）
+    ├─ git diff                             ├─ FDE 工作：生成节点文档（nodes/*.md）
     ├─ 规则检查 A1-A11                      │       └─ ao compose 拆任务 → 写入 orchestrator/current/
     ├─ think-generator.ts                   │
     │   └→ 写 think.md ─────┐              ├─ 生产运行：AI 节点按 workflow 执行
