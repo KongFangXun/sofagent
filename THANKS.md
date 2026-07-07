@@ -2,7 +2,7 @@
 
 > sofagent 站在巨人肩膀上。以下每一个项目、文章和作者，都在 sofagent 的某个设计决策里留下了痕迹。
 >
-> v0.99.8 · 2026-07-04（UTC）· 北京时间 07-05
+> v0.99.9 · 2026-07-04（UTC）· 北京时间 07-05
 
 ---
 
@@ -71,5 +71,28 @@ sofagent 在这些社区里传播和生长。
 
 - **[ClawHub](https://clawhub.ai)** — 全球 Skills 社区，Skills 体系的外部来源
 - **[/goal 命令](https://docs.anthropic.com/en/docs/claude-code/goal)** — Claude Code 的自主执行循环，启发了我加用户确认的设计
+
+---
+
+## 外部研究与参考
+
+以下工作为 sofagent 的架构设计提供了关键理论支撑和外部验证：
+
+- **[Hugging Face — Don't Train the Model, Evolve the Harness](https://huggingface.co/spaces/joelniklaus/harness-optimization)** · Joel Niklaus (2026)
+  实验证明：不改模型权重、仅优化外层 Harness，让 DeepSeek-v4-pro 在法律 Agent 基准中从 3.5% 提升至 80.1%，追平 Claude Sonnet 4.6，成本仅 1/7。这是 sofagent 存在理由的最强外部证据。
+
+- **[Karpathy AutoResearch](https://github.com/karpathy/autoresearch)** · Andrej Karpathy (2026) · 9 万 GitHub Star
+  630 行 Python 脚本让 AI Agent 在单 GPU 上跑 700 次自动实验，找出 20 项连 Karpathy 本人都忽略的代码改进。其 Loop Engineering 方法——约束文档 + 锁定评估脚本 + 自动循环——与 sofagent 的 fde.md + sofagent-audit + loop-check 高度对应。
+
+- **Codila — Loop Engineering 五步法** · AI 研究员 Codila
+  将 AutoResearch 浓缩为五步方法论，提出自动验证器、状态文件、停止条件三要素。X 平台超 200 万阅读。🔗 [原帖](https://x.com/0xCodila/status/2072329149520232639)
+
+- **[Bilevel Autoresearch 论文](https://arxiv.org/abs/2603.23420)** · 《Bilevel Autoresearch: Meta-Autoresearching Itself》
+  在 Karpathy 内层循环之上新增外层循环优化搜索逻辑，强制模型探索本能回避的优化方向，同一模型实现 5 倍性能提升。
+
+- **[Akshay Pachaar — The Anatomy of an Agent Harness](https://x.com/i/article/2040732084843782144)** · 前 Lightning AI 工程师
+  将 Agent Harness 类比为 LLM 的操作系统，提出 12 个核心组件。sofagent 五层架构映射其中 8 个。详见 [ARCHITECTURE](./ARCHITECTURE.md#理论基础与外部验证)。
+
+> 📖 以上研究成果的整理与分析，见 AI 前线 2026-07-07 文章《AI Agent 性能新范式：跳出"堆模型"误区》（作者：四月，36氪授权发布）。
 
 ---

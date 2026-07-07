@@ -4,11 +4,21 @@
 
 ---
 
+## [v0.99.9] — 审查修复 + AI 知识库概念 + verify.ts 拆分 + 行业笔记 + 理论基础 🔧
+
+> 2026-07-07（UTC）
+
+v0.99.8 双审查（GLM-5.2 67 维度 + DeepSeek V4 Pro 48 维度）发现 4 个 P0 + 7 个 P1 + 3 个 P2，本版全部修复。同时完成 AI 知识库 6 文档概念先行（架构定位+边界划分）+ verify.ts 1257 行代码拆分（→ 4 模块）+ 7 项行业笔记写入 ROADMAP/ARCHITECTURE + Skill 摘要信息架构优化（去掉步骤性描述，只留触发条件）+ Hugging Face/AutoResearch/Akshay 理论基础引证（ARCHITECTURE 新增「理论基础与外部验证」节）。**v0.99.x 修复线最终版。**
+
+> 📖 [开发日志](./docs/changelog/v0.99.9.md)
+
+---
+
 ## [v0.99.8] — 审查修复收尾版 ✅
 
 > 2026-07-05（UTC）
 
-v0.99.7 发版后双审查（GLM-5.2 48 维度 + DeepSeek V4 Pro 48 维度）发现 20 项遗留问题，本版全部修复。核心：文档数字全面对齐（30/30→33/33，41/41→48）+ GitHub Actions 升级 v5 + PR check workflow 新建 + shellcheck SC2086/SC2155 排除项收窄 + check-version 新增 --strict 模式 + v1.0 准入诚实化（3/10 ✅→1/10 ✅）+ **FDE 架构重构**（四层→三层实体、删 workflow/agents、templates 镜像产出结构、Skill 精简 925→742 行）+ FDE 非开发者快速入门。**v0.99.x 修复线收尾版。**
+v0.99.7 发版后双审查（GLM-5.2 48 维度 + DeepSeek V4 Pro 48 维度）发现 20 项遗留问题，本版全部修复。核心：文档数字全面对齐（30/30→33/33，41/41→48）+ GitHub Actions 升级 v5 + PR check workflow 新建 + shellcheck SC2086/SC2155 排除项收窄 + check-version 新增 --strict 模式 + v1.0 准入诚实化（3/10 ✅→2/10 ✅）+ **FDE 架构重构**（四层→三层实体、删 workflow/agents、templates 镜像产出结构、Skill 精简 925→742 行）+ FDE 非开发者快速入门。**v0.99.x 修复线收尾版。**
 
 > 📖 [开发日志](./docs/changelog/v0.99.8.md)
 

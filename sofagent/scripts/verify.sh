@@ -2,7 +2,7 @@
 # ============================================================
 # sofagent verify.sh · 装后验证脚本
 # ============================================================
-# 验证 sofagent 安装完整性（9 个检查类别，48 项）
+# 验证 sofagent 安装完整性（9 个检查类别，~48 项动态检查）
 # 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
 #
 # 用法：
@@ -16,7 +16,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="0.99.8"
+VERSION="0.99.9"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -34,7 +34,7 @@ while [[ $# -gt 0 ]]; do
     --quiet) QUIET_MODE=true; shift ;;
     --quick) QUICK_MODE=true; shift ;;
     --list)
-      echo "sofagent verify v${VERSION} — 检查清单（共 48 项）："
+      echo "sofagent verify v${VERSION} — 检查清单（~48 项，因环境动态变化）："
       echo ""
       echo "  1. SKILL.md 存在性"
       echo "  2. think.md 可写性"
@@ -44,7 +44,7 @@ while [[ $# -gt 0 ]]; do
       echo "  6. MCP server 可执行"
       echo "  7. daemon 配置文件"
       echo "  8. 安装版本一致性"
-      echo "  ... (共 48 项，完整列表见 verify.sh 源码)"
+      echo "  ... (完整列表见 verify.sh 源码；实际项数因环境条件检查动态变化)"
       echo ""
       echo "部分检查因平台或环境跳过属正常现象（如 Windows 无 launchd）。"
       echo "运行 verify.sh（无 --list）执行全量检查。"

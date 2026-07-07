@@ -170,6 +170,50 @@ else
 fi
 
 # ════════════════════════════════════════
+# 6. install.sh 关键路径检查（fde.md 迁移断裂防护）
+# ════════════════════════════════════════
+echo -e "\n${BOLD}── 6. install.sh 关键路径 ──${NC}"
+# v0.99.8 教训：fde.md 从 skill/ 迁到 skill/data/，8 处引用需要同步。
+# pre-push-check 之前不覆盖 install.sh，路径断裂检测不到。此步补盲。
+INSTALL_CRITICAL_FILES=(
+  "sofagent/skill/data/fde.md"
+  "sofagent/skill/SKILL.md"
+  "sofagent/skill/entry-gate.md"
+  "sofagent/skill/task-aware.md"
+  "sofagent/skill/task-closure.md"
+  "sofagent/skill/loop-check.md"
+  "sofagent/skill/engage.md"
+  "sofagent/skill/engage-fde.md"
+  "sofagent/skill/loop-evaluate.md"
+  "sofagent/skill/loop-exit.md"
+)
+PATH_FAIL=0
+for f in "${INSTALL_CRITICAL_FILES[@]}"; do
+  if [ ! -f "$f" ]; then
+    echo -e "  ${RED}✗${NC} 缺失: $f"
+    PATH_FAIL=$((PATH_FAIL + 1))
+  fi
+done
+
+# 检查 install.sh 引用的路径和实际文件是否一致
+# RULES_SRC 格式: "${SCRIPT_DIR}/../skill/data/fde.md" → 提取 ../skill/data/fde.md
+# SCRIPT_DIR = sofagent/scripts 的绝对路径，所以从 sofagent/scripts/ 解析相对路径
+INSTALL_RULES_SRC=$(grep 'RULES_SRC=' sofagent/scripts/install.sh 2>/dev/null | head -1 | sed 's/.*="\${SCRIPT_DIR}\///;s/".*//')
+if [ -n "$INSTALL_RULES_SRC" ]; then
+  # 用 subshell cd 验证路径是否存在（兼容 macOS/Linux，不依赖 realpath）
+  if ! (cd sofagent/scripts 2>/dev/null && [ -f "${INSTALL_RULES_SRC}" ]); then
+    echo -e "  ${RED}✗${NC} install.sh RULES_SRC 路径断裂: ${INSTALL_RULES_SRC}"
+    PATH_FAIL=$((PATH_FAIL + 1))
+  fi
+fi
+
+if [ "$PATH_FAIL" -eq 0 ]; then
+  check_pass "install.sh 关键路径完整（${#INSTALL_CRITICAL_FILES[@]} 个源文件 + RULES_SRC）"
+else
+  check_fail "install.sh 关键路径断裂（${PATH_FAIL} 个问题）"
+fi
+
+# ════════════════════════════════════════
 # 总结
 # ════════════════════════════════════════
 TOTAL=$((PASS + FAIL + WARN))

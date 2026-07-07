@@ -6,7 +6,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 > sofagent 的设计决策记录——从 Harness 层的工程约束到五层架构的取舍。
 >
-> > v0.99.8 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
+> > v0.99.9 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 
@@ -31,6 +31,34 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 > 💡 **从 SOP 到 Harness 层**：传统 SOP 保底 60 分，代价抹平一线差异。AI 时代每个节点自带个性化上下文——sofagent 不是给 AI 写 SOP，是装缰绳，让它在个性化上下文里跑出 85-90 分而不越界。（Rolling AI 服务 100+ 企业的观察，详见 FDE 认知框架。）
 >
 > sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。Agent 的记忆长在文件系统（git diff / task/logs / SKILL.md），不长在 Agent 内部。审计层优先信任 git diff（硬证据），不信任 Agent 日志（软证据）。通用 Agent 平台解决「会不会做」的能力问题，sofagent 解决「能不能每次都按规则稳定做对」的执行控制问题——二者是上下层关系，不替代。
+
+### 理论基础与外部验证
+
+> 2026 年 Hugging Face 实验《Don't Train the Model, Evolve the Harness》证明：同一个 DeepSeek-v4-pro 模型，**不改任何权重**，仅优化外层执行机制（Harness），在法律 Agent 基准测试中综合得分从 3.5% 提升至 80.1%——76 分差全部来自外层机制，追平 Claude Sonnet 4.6，运行成本仅为后者的 1/7。且优化后的 Harness 迁移到同族小模型仍带来 14.4 分提升。🔗 [实验详情](https://huggingface.co/spaces/joelniklaus/harness-optimization)
+>
+> ——这就是 sofagent 存在的理由。Benchmark 测到的从来不是裸模型，而是「模型 + Harness」的组合能力。
+
+sofagent 的五层架构可以映射到 Akshay Pachaar（前 Lightning AI 工程师）提出的「生产级 Harness 12 组件」框架（以下为 sofagent 的映射解读，非 Akshay 原文）：
+
+| Harness 组件 | sofagent 对应 | 成熟度 |
+|-------------|-------------|:--:|
+| 流程编排 | entry-gate + task-aware | ✅ |
+| 工具调用 | MCP server + webhook | ✅ |
+| 分层存储 | think.md + task/logs + AI 知识库（v1.1 规划） | ⚠️ |
+| 上下文管理 | 加载链（三层注入） | ✅ |
+| 错误处理 | loop-check + loop-exit | ✅ |
+| 自动验证 | sofagent-audit（外置审计，Agent 不可绕过） | ✅ |
+| 状态文件 | task/logs + think.md | ✅ |
+| 停止条件 | loop-exit（达标/超时/卡死 三条件） | ✅ |
+| 安全沙箱 | — | ❌ v2.x |
+| 监控告警 | daemon 监控文件 hash 变化 | ⚠️ 实验性 |
+| 日志系统 | daemon 写 daemon-notice.md | ⚠️ 实验性 |
+| 版本管理 | git + pre-commit hook | ✅ |
+
+在此基础上，sofagent 参考 Karpathy [AutoResearch](https://github.com/karpathy/autoresearch)（9 万 GitHub Star）的 **Loop Engineering 框架**。AutoResearch 在单 GPU 上跑 700 次自动实验，找出 20 项连 Karpathy 本人都忽略的代码改进。其核心方法——约束文档 + 锁定评估脚本 + 自动循环——与 sofagent 的 fde.md + sofagent-audit + loop-check/evaluate 高度对应。
+
+> ⚠️ **诚实差距**：AutoResearch 能跑 700 次无人值守自动迭代。sofagent 当前是**单任务内**的检查点循环（子任务完成→loop-check→任务结束→loop-evaluate），不是无人值守批量自动迭代。自动循环需要 daemon 持续监控 + 自动触发 loop，这是 v1.x 的方向。
+
 ### 两层架构：地基 vs 引擎
 
 sofagent 分两层——地基轻、引擎重：
@@ -49,7 +77,7 @@ sofagent 分两层——地基轻、引擎重：
 | **Harness 层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ 已可用 |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ v0.81 |
 | **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff | ✅ v0.92 |
-| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v0.99.8），推送待端到端验证 | ✅ v0.99.5 |
+| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v0.99.9），推送待端到端验证 | ✅ v0.99.5 |
 | **协同层** | 多设备 + 云端 | 组织级 Agent Harness——Agent 以独立身份进入协作现场，共享上下文 + 组织记忆 + 主动参与 | v2.x 规划 |
 
 每层跑通再加下一层——不推翻已验证的东西。
@@ -195,6 +223,33 @@ sofagent 自身的开发过程本身就是这一循环的活体验证——两�
 
 加载顺序受 Lost in the Middle 约束：SKILL.md 放最前面（开头注意力最高），fde.md 放最后面（末尾注意力最高）。
 
+### 数据层：AI 知识库（v1.1 规划）
+
+五层架构是**功能引擎层**——每层有输入、处理、输出。AI 知识库是**数据层**——它是五层引擎运转过程中沉淀的知识目录，本身不做处理。硬塞进五层维度不匹配，就像把「数据库」当成微服务架构里的一个「服务」。
+
+| | think.md（反思层） | AI 知识库（沉淀层） |
+|:--|:--|:--|
+| 注入机制 | 加载链被动注入 | 加载链被动注入（top-N 相关页） |
+| 内容 | 单次任务的反思教训 | 跨任务的模式、最佳实践、对比 |
+| 结构 | 扁平时间线 | Wiki 页面 + 双向链接 |
+| 生命周期 | 旧了压缩 | 持续积累，越用越值钱 |
+
+AI 知识库不替代 think.md——两者职责不重叠。think.md 是「上次踩了什么坑」，AI 知识库是「这个领域我们积累了什么最佳实践」。详见 [v1.1 开发日志](./docs/changelog/v1.1.md)。
+
+### 三层时间尺度循环（Andrew Ng 框架）
+
+> 来源：Andrew Ng 的 AI 产品进化框架。真正的产品进化不只来自内层循环（Agent 跑任务），更来自中层和外层。
+
+| 层 | 时间尺度 | sofagent 当前覆盖 | 对应组件 |
+|:--:|:--:|:--:|------|
+| **内层** Agent Loop | 秒-分钟 | ✅ 已覆盖 | think.md + loop-check + 审计引擎 |
+| **中层** 开发者反馈 | 天-周 | ⚠️ 部分 | loop-evaluate 跑完写 scoring.md，但评分→Skill 优化闭环未打通。v1.1 AI 知识库 Lint 驱动 Skill 自动迭代 |
+| **外层** 用户反馈 | 周-月 | ❌ 未覆盖 | 企业用了一个月后，AI 节点变聪明了还是变笨了？v2.x 组织级共享记忆 + 知识库矛盾检测 |
+
+**当前短板**：sofagent 目前只关注内层循环（Agent 跑任务→审计→反思）。中层的「审计结果怎么反馈给 Skill 优化」和外层的「企业用了一个月后怎么知道效果」是缺失环节。v1.1 的 AI 知识库 + Skill 自进化闭环补中层，v2.x 的组织级共享记忆补外层。
+
+> ⚠️ **诚实声明**：上表列的是终局目标，不是当前能力。sofagent 当前实际只覆盖内层。中层 v1.1 开始做，外层 v2.x 才涉及。
+
 ### 铁律为什么是 6 则
 
 每一条对应日常使用中反复遇到的 Agent 失控行为——不是理论推演，是痛点积累：
@@ -292,6 +347,7 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 - **v1.0 定位**：Agent 工作验收工具（正式）+ Harness 层（实验）+ FDE 部署框架（实验性）。审计层跨平台、零 Agent 依赖——是 v1.0 的主产品
 - **v1.x**：Skill 自进化验证门控（A/B 对比 + 外部评估器）
 - **v2.x**：组织级 Agent Harness——Agent 独立身份 + 组织共享记忆 + 主动协作参与 → FDE 完整形态
+  - **多 Agent 共享记忆三模式**（未做决策）：黑板（中央共享，简单但单点瓶颈）/ Gossip（P2P 传播，容错但最终一致）/ 上下文路由（按需注入，精准但需匹配引擎）。实践中可能黑板打底 + 路由补充。详见 ROADMAP v2.x
 
 **两个原则性警告**：①「不要让智能体自我验证」——根治需 v1.x 外部评估器；②「Agent 越强，闸门越重要」。
 
@@ -316,6 +372,12 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 | **Google Cloud Code 论文** | Agent 运行时 7 组件架构 |
 | **Hirom 定律 + Lima 演化定律** | 「先读再用」「验证再干」「谨慎修改」的理论根基 |
 | **Superpowers**（GitHub 23.9 万星） | 纯 Markdown 纪律约束验证——措辞心理学让 AI 服从率 33%→72%（2.8 万次对话实测） |
+| **Andrew Ng** | AI 产品三层时间尺度循环——Agent Loop / 开发者反馈 / 用户反馈。sofagent 当前只覆盖内层 |
+| **Joel Niklaus**（Hugging Face） | 「Don't Train the Model, Evolve the Harness」实验——同一模型仅优化 Harness 从 3.5%→80.1%，76 分差全来自外层机制 |
+| **Karpathy AutoResearch** | Loop Engineering 循环框架——锁定评估脚本 + 自动循环 + 停止条件三要素 |
+| **Codila** | 将 AutoResearch 浓缩为五步方法论——自动验证器 + 状态文件 + 停止条件。🔗 [原帖](https://x.com/0xCodila/status/2072329149520232639) |
+| **Bilevel Autoresearch** | [双层循环论文](https://arxiv.org/abs/2603.23420)——外循环元优化内循环，强制探索模型回避的方向 |
+| **[Akshay Pachaar](https://x.com/i/article/2040732084843782144)**（前 Lightning AI） | 生产级 Harness 12 组件框架——sofagent 五层架构的映射参照 |
 
 ---
 

@@ -2,7 +2,7 @@
 
 > **企业上 AI，先上缰绳再上路——装上审计引擎，每次 Agent 提交代码时自动检查变更。配合约束底座管 Agent 行为，编排引擎拆解任务（FDE 部署用）。**
 >
-> v0.99.8 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
+> v0.99.9 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 
@@ -38,6 +38,7 @@
 | 这是什么 | 给 Agent 加行为约束——4 底线 + 6 则铁律 | 场景二 |
 | 怎么装 | `bash sofagent/scripts/install.sh` | 场景一 |
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | 场景二 |
+| AI 知识库 | `.sofagent/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [v1.1 日志](./docs/changelog/v1.1.md) |
 | 已知局限 | 核心效果见 [evidence.md](./docs/evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](./LIMITATIONS.md) |
 
 ---
@@ -258,7 +259,7 @@ Agent 先判断任务复杂度：
 |------|------|
 | **交付手册** | 企业画像 + 部署方案 + `fde.md` + `quick-start.md`（后两章安装包自带） |
 | **AI 节点（三层实体）** | 每个节点：文档层（.md，人读+编排引擎读）+ Skill 层（企业专属 Skill）+ 运行层（在跑的 session） |
-| **知识库** | AI 节点跑起来后自动积累（think.md / task/logs / scoring.md / orchestrator/） |
+| **AI 知识库** | `.sofagent/knowledge/` 目录——跨任务积累的结构化知识（entities/ + concepts/ + comparisons/）。daemon 自动 Ingest，加载链被动注入。v1.1 实现，当前为散文件（think.md / task/logs / scoring.md） |
 
 > 企业专属 Skill 会基于 scoring.md 评分自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本。详见 [ROADMAP](./ROADMAP.md) 企业 Skill 自进化。
 
@@ -291,4 +292,4 @@ sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 > 大半年 OpenClaw 实战笔记。如有更好的用法，欢迎开 Issue。
 >
-> *v0.99.8，2026 年 7 月 4 日*
+> *v0.99.9，2026 年 7 月 4 日*

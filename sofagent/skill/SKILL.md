@@ -4,7 +4,7 @@ slug: sofagent
 version: 0.99
 displayName: sofagent
 description: >
-  当你的 Agent 反复偏离目标、任务越做越复杂、刚踩过的坑下次还踩 —— sofagent 能约束其行为、拆解复杂任务、从错误中沉淀教训。
+  当你的 Agent 反复偏离目标、任务越做越复杂、刚踩过的坑下次还踩。装上后 Agent 自带行为约束和反思能力。
 image: index/sofagent.png
 triggers: [Agent行为失控, 任务复杂需要拆解, 多文件修改, 文件操作有风险, 上次任务出过问题, 需要确认任务已完成, 高风险任务前加约束]
 scenarios: [Agent开始自由发挥偏离目标, 任务包含不可逆操作需要守门员, 连续多个子任务需要编排协调, 刚踩过坑想避免重蹈覆辙, 想让Agent更守规矩]

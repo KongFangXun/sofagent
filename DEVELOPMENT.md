@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.99.8 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
+> v0.99.9 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
 
 > 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE 工具包本身就是 sofagent 产品的一部分——自己人办事用自己产品，给别人办完让别人用自己产品。详见 [FDE/FDE.md](./FDE/FDE.md) 和 [README § FDE](./README.md#fde从工作流到-ai-节点)。
 
@@ -282,6 +282,7 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 | `orchestrator/` | **编排引擎核心数据** | 最优拆法决策树 | 树形 |
 | `scoring.md` | **编排引擎辅助数据** | Skill 评分记录，闭环时更新 | 树形 |
 | `IDENTITY.md` | **编排引擎辅助** | 岗位匹配（agency-agents-zh） | 全文 |
+| `knowledge/` | **数据层（v1.1）** | AI 知识库：entities/（实体页）+ concepts/（概念页）+ comparisons/（对比页）+ log.md（变更日志）+ index.md（索引） | 按需注入 top-N |
 
 ### 数据流向总结
 

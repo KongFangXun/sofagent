@@ -281,6 +281,7 @@ body {
 html[lang="en"] .hero-subtitle { font-size: 14px; }
 html[lang="en"] .hero-tagline { font-size: 13px; }
 html[lang="en"] .section-desc { font-size: 14px; }
+html[lang="en"] .final-cta-desc { font-size: 14px; }
 html[lang="en"] .pain-card-desc { font-size: 12px; }
 html[lang="en"] .pain-card-title { font-size: 14px; }
 html[lang="en"] .engine-card-desc { font-size: 12px; }
@@ -310,6 +311,7 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
 }
 @media (max-width: 480px) {
   html[lang="en"] .section-desc { font-size: 13px; }
+  html[lang="en"] .final-cta-desc { font-size: 13px; }
   html[lang="en"] .fde-pill { font-size: 9px; padding: 4px 6px; }
   html[lang="en"] .deliver-card-desc { font-size: 10px; }
 }
@@ -832,7 +834,7 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
     <a class="drawer-link" href="#architecture" data-drawer-close><i class="bi bi-diagram-2" aria-hidden="true"></i> <span data-i18n="nav.architecture">工作原理</span></a>
     <a class="drawer-link" href="#value" data-drawer-close><i class="bi bi-graph-up-arrow" aria-hidden="true"></i> <span data-i18n="nav.value">成果量化</span></a>
     <a class="drawer-link" href="#deliver" data-drawer-close><i class="bi bi-box-seam" aria-hidden="true"></i> <span data-i18n="nav.deliverables">产物</span></a>
-    <a class="drawer-link" href="#knowledge" data-drawer-close><i class="bi bi-journals" aria-hidden="true"></i> <span data-i18n="nav.knowledge">知识库</span></a>
+    <a class="drawer-link" href="#knowledge" data-drawer-close><i class="bi bi-journals" aria-hidden="true"></i> <span data-i18n="nav.knowledge">AI 知识库</span></a>
     <a class="drawer-link" href="#fde-flow" data-drawer-close><i class="bi bi-list-check" aria-hidden="true"></i> <span data-i18n="nav.fde">FDE 流程</span></a>
     <a class="drawer-link" href="#agent" data-drawer-close><i class="bi bi-cpu" aria-hidden="true"></i> <span data-i18n="nav.platforms">平台</span></a>
     <a class="drawer-link" href="#cta" data-drawer-close><i class="bi bi-download" aria-hidden="true"></i> <span data-i18n="nav.install">安装</span></a>
@@ -860,9 +862,9 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
   <div class="ctn">
     <img src="sofagent.png" alt="sofagent FDE 工具包 logo" class="hero-logo" fetchpriority="high">
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">
-      <span class="hero-badge" style="margin-bottom:0">FDE 工具包</span>
-      <span class="hero-badge" style="margin-bottom:0;background:var(--card-bg);color:var(--text-muted);border-color:var(--border)">MIT 开源</span>
-      <span class="hero-badge" style="margin-bottom:0;background:var(--card-bg);color:var(--text-muted);border-color:var(--border)">Harness 层</span>
+      <span class="hero-badge" style="margin-bottom:0" data-i18n="hero.badge1">FDE 工具包</span>
+      <span class="hero-badge" style="margin-bottom:0;background:var(--card-bg);color:var(--text-muted);border-color:var(--border)" data-i18n="hero.badge2">MIT 开源</span>
+      <span class="hero-badge" style="margin-bottom:0;background:var(--card-bg);color:var(--text-muted);border-color:var(--border)" data-i18n="hero.badge3">Harness 层</span>
     </div>
     <h1 class="hero-title" data-i18n="hero.title">企业上 AI，<em>先上缰绳再上路</em></h1>
     <p class="hero-subtitle" data-i18n="hero.subtitle">
@@ -947,7 +949,7 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
 <!-- ===== ENGINES ===== -->
 <section class="section section-alt" id="engines">
   <div class="ctn">
-    <h2 class="section-title" data-i18n="engines.title">FDE 工具包架构</h2>
+    <h2 class="section-title" data-i18n="engines.title">sofagent 架构</h2>
     <p class="section-desc" data-i18n="engines.desc">约束 AI 行为 + 审计产出质量 + 编排任务干活</p>
     <div class="engine-grid">
       <div class="card engine-card reveal reveal-delay-1">
@@ -1185,14 +1187,14 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
 <section class="section" id="deliver">
   <div class="ctn">
     <h2 class="section-title" data-i18n="deliver.title">三项重要产物</h2>
-    <p class="section-desc" data-i18n="deliver.desc">一份谁都能看懂的交付手册、一套在跑的 AI 节点集群、一个会自己生长的知识库</p>
+    <p class="section-desc" data-i18n="deliver.desc">一份谁都能看懂的交付手册、一套在跑的 AI 节点集群、一个会自己生长的 AI 知识库</p>
     <div class="deliver-grid">
       <div class="deliver-card d1 reveal reveal-delay-1">
         <div class="head-row">
           <div class="deliver-card-emoji"><i class="bi bi-file-earmark-text" aria-hidden="true"></i></div>
           <div class="deliver-card-title" data-i18n="deliver.plan.title">交付手册</div>
         </div>
-        <div class="deliver-card-desc" data-i18n="deliver.plan.desc">四份文档：企业画像、部署方案、运行规范、上手文档<br>FDE 离场前打包，企业留存</div>
+        <div class="deliver-card-desc" data-i18n="deliver.plan.desc">企业画像、部署方案、运行规范、上手文档<br>四份文档 FDE 离场前交付，企业留存</div>
       </div>
       <div class="deliver-card d3 reveal reveal-delay-2">
         <div class="head-row">
@@ -1204,7 +1206,7 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
       <div class="deliver-card d2 reveal reveal-delay-3">
         <div class="head-row">
           <div class="deliver-card-emoji"><i class="bi bi-journals" aria-hidden="true"></i></div>
-          <div class="deliver-card-title" data-i18n="deliver.kb.title">知识库</div>
+          <div class="deliver-card-title" data-i18n="deliver.kb.title">AI 知识库</div>
         </div>
         <div class="deliver-card-desc" data-i18n="deliver.kb.desc">不用人来维护的 AI 知识库<br>AI 干的活自己记录自己查</div>
       </div>
@@ -1215,34 +1217,34 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
 <!-- ===== KNOWLEDGE BASE ===== -->
 <section class="section section-alt" id="knowledge">
   <div class="ctn">
-    <h2 class="section-title" data-i18n="kb.title">知识库：AI 工作记忆</h2>
-    <p class="section-desc" data-i18n="kb.desc">不是扔下一堆文档——静态部分是地基，动态部分是 AI 自己写进去的工作记录</p>
+    <h2 class="section-title" data-i18n="kb.title">AI 知识库</h2>
+    <p class="section-desc" data-i18n="kb.desc">AI 节点自己长出来的知识——不是堆日志，是自动织成网</p>
     <div class="kb-split">
       <div class="kb-col reveal reveal-delay-1">
         <div class="kb-col-header">
-          <div class="kb-col-icon"><i class="bi bi-building" aria-hidden="true"></i></div>
-          <span class="kb-col-title" data-i18n="kb.static.title">交付手册</span>
+          <div class="kb-col-icon"><i class="bi bi-diagram-3" aria-hidden="true"></i></div>
+          <span class="kb-col-title" data-i18n="kb.structure.title">知识怎么组织</span>
         </div>
         <div class="kb-items">
-          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.static.i1">企业画像</span></div>
-          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.static.i2">部署方案</span></div>
-          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.static.i3">运行规范</span></div>
-          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.static.i4">上手文档</span></div>
+          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.structure.i1">index.md · 目录页，一分钟定位到相关页面</span></div>
+          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.structure.i2">实体页 · 人、岗位、节点、外部系统</span></div>
+          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.structure.i3">概念页 · 最佳实践、常见问题、经验教训</span></div>
+          <div class="kb-item"><span class="kb-dot"></span><span data-i18n="kb.structure.i4">对比页 · 方案 A vs 方案 B，直接存成新页面</span></div>
         </div>
-        <div class="kb-col-note" data-i18n="kb.static.note">四份文档，FDE 部署时打包交付</div>
+        <div class="kb-col-note" data-i18n="kb.structure.note">Wiki 结构，页面之间自动关联</div>
       </div>
       <div class="kb-col reveal reveal-delay-2">
         <div class="kb-col-header">
           <div class="kb-col-icon" style="color:#2ECC71;"><i class="bi bi-tree" style="color:#2ECC71;" aria-hidden="true"></i></div>
-          <span class="kb-col-title" data-i18n="kb.dynamic.title">AI 自主生成</span>
+          <span class="kb-col-title" data-i18n="kb.workflow.title">知识怎么生长</span>
         </div>
         <div class="kb-items">
-          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.dynamic.i1">反思日志</span></div>
-          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.dynamic.i2">任务记录</span></div>
-          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.dynamic.i3">Skill 评分</span></div>
-          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.dynamic.i4">编排决策</span></div>
+          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.workflow.i1">摄取 · session 结束时 AI 自动提取新模式</span></div>
+          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.workflow.i2">查询 · Agent 干活前先翻 index 找相关经验</span></div>
+          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.workflow.i3">审查 · 定期扫描矛盾、过期、孤立的页面</span></div>
+          <div class="kb-item"><span class="kb-dot grow"></span><span data-i18n="kb.workflow.i4">沉淀 · 好答案自动存成 Wiki 页，不再丢进聊天记录</span></div>
         </div>
-        <div class="kb-col-note" data-i18n="kb.dynamic.note">无需专人维护，每个在跑的 AI 节点自动更新</div>
+        <div class="kb-col-note" data-i18n="kb.workflow.note">无需专人维护，AI 节点自动运转</div>
       </div>
     </div>
   </div>
@@ -1252,7 +1254,7 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
 <section class="final-cta" id="cta">
   <div class="ctn">
     <h2 class="final-cta-title" data-i18n="cta.title">一条命令，快速安装</h2>
-    <p class="final-cta-desc" data-i18n="cta.desc">FDE 工具包一键安装——约束底座 + 审计引擎 + 编排引擎 + FDE 工作台</p>
+    <p class="final-cta-desc" data-i18n="cta.desc">三层引擎一次装好——约束、审计、编排，开箱即用</p>
     <div class="code-block">
       <span class="prompt">$</span> git clone https://github.com/KongFangXun/sofagent.git<br>
       <span class="prompt">$</span> cd sofagent && bash FDE/fde-install.sh
@@ -1445,7 +1447,7 @@ var I18n = (function() {
       'nav.architecture': '工作原理',
       'nav.value': '成果量化',
       'nav.deliverables': '产物',
-      'nav.knowledge': '知识库',
+      'nav.knowledge': 'AI 知识库',
       'nav.fde': 'FDE 流程',
       'nav.platforms': '平台',
       'nav.install': '安装',
@@ -1454,6 +1456,9 @@ var I18n = (function() {
       'hero.subtitle': '中小企业和 OPC 的 FDE 工具包——<br class="mobile-br">约束底座管行为，审计引擎盯结果<br>不用请昂贵顾问，不用养 AI 团队，自己就能搭建 AI 节点，让你的企业在 AI 时代先人一步',
       'hero.tagline': 'sofagent 做的不是帮企业"接上 AI"，<br class="mobile-br">是帮企业"用对 AI"<br>FDE 就像一个工头，带着一群 AI 工人为企业干活',
       'hero.installBtn': '开始安装',
+      'hero.badge1': 'FDE 工具包',
+      'hero.badge2': 'MIT 开源',
+      'hero.badge3': 'Harness 层',
       'pain.title': 'AI 落地难',
       'pain.desc': '95%+ 的中小企业与 OPC 卡在这三道坎',
       'pain.card1.title': '预期太高',
@@ -1472,7 +1477,7 @@ var I18n = (function() {
       'how.step3.desc': '闲置设备装 sofagent',
       'how.step4.title': '自动跑业务',
       'how.step4.desc': 'AI 自己干活、汇报、复盘',
-      'engines.title': 'FDE 工具包架构',
+      'engines.title': 'sofagent 架构',
       'engines.desc': '约束 AI 行为 + 审计产出质量 + 编排任务干活',
       'engines.constraint.title': '约束底座',
       'engines.constraint.desc': '宪法层 + 反思层 + 规范层自动注入，AI 跑偏自动纠正<br>兼容 WorkBuddy / Claude Code / Codex',
@@ -1528,27 +1533,27 @@ var I18n = (function() {
       'value.upgrade.title': '升级成本',
       'value.upgrade.desc': '该岗位升级到「高效完成此节点」要多少成本？<br>招一个这样的岗位年薪多少？差值多少？',
       'deliver.title': '三项重要产物',
-      'deliver.desc': '一份谁都能看懂的交付手册、一套在跑的 AI 节点集群、一个会自己生长的知识库',
+      'deliver.desc': '一份谁都能看懂的交付手册、一套在跑的 AI 节点集群、一个会自己生长的 AI 知识库',
       'deliver.plan.title': '交付手册',
-      'deliver.plan.desc': '四份文档：企业画像、部署方案、运行规范、上手文档<br>FDE 离场前打包，企业留存',
+      'deliver.plan.desc': '企业画像、部署方案、运行规范、上手文档<br>四份文档 FDE 离场前交付，企业留存',
       'deliver.nodes.title': 'AI 节点',
       'deliver.nodes.desc': '专属 SKILL 注入 AI 节点跑 session<br>自动执行 + 辅助岗位按时出审计报告',
-      'deliver.kb.title': '知识库',
+      'deliver.kb.title': 'AI 知识库',
       'deliver.kb.desc': '不用人来维护的 AI 知识库<br>AI 干的活自己记录自己查',
-      'kb.title': '知识库：AI 工作记忆',
-      'kb.desc': '不是扔下一堆文档——静态部分是地基，动态部分是 AI 自己写进去的工作记录',
-      'kb.static.title': '交付手册',
-      'kb.static.i1': '企业画像',
-      'kb.static.i2': '部署方案',
-      'kb.static.i3': '运行规范',
-      'kb.static.i4': '上手文档',
-      'kb.static.note': '四份文档，FDE 部署时打包交付',
-      'kb.dynamic.title': 'AI 自主生成',
-      'kb.dynamic.i1': '反思日志',
-      'kb.dynamic.i2': '任务记录',
-      'kb.dynamic.i3': 'Skill 评分',
-      'kb.dynamic.i4': '编排决策',
-      'kb.dynamic.note': '无需专人维护，每个在跑的 AI 节点自动更新',
+      'kb.title': 'AI 知识库',
+      'kb.desc': 'AI 节点自己长出来的知识——不是堆日志，是自动织成网',
+      'kb.structure.title': '知识怎么组织',
+      'kb.structure.i1': 'index.md · 目录页，一分钟定位到相关页面',
+      'kb.structure.i2': '实体页 · 人、岗位、节点、外部系统',
+      'kb.structure.i3': '概念页 · 最佳实践、常见问题、经验教训',
+      'kb.structure.i4': '对比页 · 方案 A vs 方案 B，直接存成新页面',
+      'kb.structure.note': 'Wiki 结构，页面之间自动关联',
+      'kb.workflow.title': '知识怎么生长',
+      'kb.workflow.i1': '摄取 · session 结束时 AI 自动提取新模式',
+      'kb.workflow.i2': '查询 · Agent 干活前先翻 index 找相关经验',
+      'kb.workflow.i3': '审查 · 定期扫描矛盾、过期、孤立的页面',
+      'kb.workflow.i4': '沉淀 · 好答案自动存成 Wiki 页，不再丢进聊天记录',
+      'kb.workflow.note': '无需专人维护，AI 节点自动运转',
       'fde.title': '装好 sofagent',
       'fde.desc': '自己就能快速开始做 FDE',
       'fde.phase1': '进场阶段',
@@ -1576,7 +1581,7 @@ var I18n = (function() {
       'platforms.orch': '编排引擎',
       'platforms.orchDesc': '仅限 OpenClaw',
       'cta.title': '一条命令，快速安装',
-      'cta.desc': 'FDE 工具包一键安装——约束底座 + 审计引擎 + 编排引擎 + FDE 工作台',
+      'cta.desc': '三层引擎一次装好——约束、审计、编排，开箱即用',
       'cta.star': 'Star',
       'footer.author': '作者：孔放勋',
       // Theme labels (used in drawer)
@@ -1593,7 +1598,7 @@ var I18n = (function() {
       'nav.architecture': 'How It Works',
       'nav.value': 'ROI',
       'nav.deliverables': 'Deliverables',
-      'nav.knowledge': 'Knowledge Base',
+      'nav.knowledge': 'Knowledge',
       'nav.fde': 'FDE Flow',
       'nav.platforms': 'Platforms',
       'nav.install': 'Install',
@@ -1602,6 +1607,9 @@ var I18n = (function() {
       'hero.subtitle': 'The FDE Toolkit for SMEs and OPCs —<br class="mobile-br">a harness for your AI, an audit trail for every result<br>No expensive consultants, no AI team needed.<br class="mobile-br">Build your own AI nodes and stay ahead in the AI era.',
       'hero.tagline': 'sofagent doesn\'t just "connect AI" —<br class="mobile-br">it helps businesses "use AI right"<br>FDE is like a foreman leading a team of AI workers for your enterprise.',
       'hero.installBtn': 'Get Started',
+      'hero.badge1': 'FDE Toolkit',
+      'hero.badge2': 'MIT Open Source',
+      'hero.badge3': 'Harness Layer',
       'pain.title': 'AI Adoption is Hard',
       'pain.desc': '95%+ of SMEs and OPCs are stuck on these three barriers',
       'pain.card1.title': 'Overhyped Expectations',
@@ -1620,12 +1628,12 @@ var I18n = (function() {
       'how.step3.desc': 'Install sofagent on idle devices',
       'how.step4.title': 'Run Automatically',
       'how.step4.desc': 'AI works, reports, and reviews itself',
-      'engines.title': 'FDE Toolkit Architecture',
+      'engines.title': 'sofagent Architecture',
       'engines.desc': 'Harness AI behavior + Audit output quality + Orchestrate tasks',
       'engines.constraint.title': 'Harness',
       'engines.constraint.desc': 'Constitution + Reflection + Rules auto-injected, AI self-corrects when off-track<br>Compatible with WorkBuddy / Claude Code / Codex',
-      'engines.constraint.f1': '3-layer chain: Constitution → Reflection → Rules, always online',
-      'engines.constraint.f2': 'Complexity detection: simple tasks direct, complex tasks decomposed',
+      'engines.constraint.f1': '3-layer chain always on: Constitution → Reflection → Rules',
+      'engines.constraint.f2': 'Auto-detects complexity, decomposes large tasks',
       'engines.constraint.f3': 'Auto-summary after work, past mistakes auto-avoided',
       'engines.constraint.l1': 'Constitution',
       'engines.constraint.l1d': '4 bottom lines + 6 iron rules',
@@ -1645,7 +1653,7 @@ var I18n = (function() {
       'engines.orchestrator.s1': 'Task Decomposition',
       'engines.orchestrator.s2': 'Template Matching',
       'engines.orchestrator.s3': 'Parallel Execution',
-      'engines.orchestrator.s4': 'Multi-dimensional Scoring',
+      'engines.orchestrator.s4': 'Multi-dim Scoring',
       'engines.orchestrator.s5': 'A/B Optimization',
       'engines.orchestrator.f1': 'Auto-generates plan on entry',
       'engines.orchestrator.f2': 'Big tasks broken down, multiple tasks parallel',
@@ -1674,29 +1682,29 @@ var I18n = (function() {
       'value.replace.title': 'Replacement Cost',
       'value.replace.desc': 'Who is doing this node now? What level, estimated salary?<br>Calculate the "value" of human resources freed by AI.',
       'value.upgrade.title': 'Upgrade Cost',
-      'value.upgrade.desc': 'How much to upgrade this role to "efficiently complete this node"?<br>What\'s the annual salary gap?',
+      'value.upgrade.desc': 'Cost to make this role AI-capable?<br>Vs. hiring — what\'s the gap?',
       'deliver.title': 'Three Key Deliverables',
-      'deliver.desc': 'An easy-to-understand delivery manual, a running AI node cluster, a self-growing knowledge base',
+      'deliver.desc': 'An easy-to-understand delivery manual, a running AI node cluster, a self-growing Knowledge',
       'deliver.plan.title': 'Delivery Manual',
-      'deliver.plan.desc': 'Four docs: Enterprise Profile, Deployment Plan, Ops Spec, Quick Start<br>Packed by FDE before handover, kept by enterprise',
+      'deliver.plan.desc': 'Enterprise Profile, Deployment Plan, Ops Spec, Quick Start<br>Packed by FDE before handover',
       'deliver.nodes.title': 'AI Nodes',
-      'deliver.nodes.desc': 'Dedicated SKILLs injected into AI nodes running sessions<br>Auto-execute + assist roles deliver audit reports on schedule',
-      'deliver.kb.title': 'Knowledge Base',
+      'deliver.nodes.desc': 'Dedicated SKILLs power AI node sessions<br>Auto-execute with audit reports on schedule',
+      'deliver.kb.title': 'Knowledge',
       'deliver.kb.desc': 'AI knowledge base that maintains itself<br>AI records and queries its own work',
-      'kb.title': 'Knowledge Base: AI Working Memory',
-      'kb.desc': 'Not just dumped documents — static part is foundation, dynamic part is AI-written work records',
-      'kb.static.title': 'Delivery Manual',
-      'kb.static.i1': 'Enterprise Profile',
-      'kb.static.i2': 'Deployment Plan',
-      'kb.static.i3': 'Ops Spec',
-      'kb.static.i4': 'Quick Start',
-      'kb.static.note': 'Four docs, packed and delivered by FDE at deployment',
-      'kb.dynamic.title': 'AI Auto-generated',
-      'kb.dynamic.i1': 'Reflection logs',
-      'kb.dynamic.i2': 'Task records',
-      'kb.dynamic.i3': 'Skill scores',
-      'kb.dynamic.i4': 'Orchestration decisions',
-      'kb.dynamic.note': 'No dedicated maintenance needed, each running AI node auto-updates',
+      'kb.title': 'Knowledge',
+      'kb.desc': 'AI nodes grow knowledge organically — not log dumps, an auto-woven web',
+      'kb.structure.title': 'How it\'s organized',
+      'kb.structure.i1': 'index.md · Catalog page, find what you need in a minute',
+      'kb.structure.i2': 'Entities · People, roles, nodes, external systems',
+      'kb.structure.i3': 'Concepts · Best practices, FAQs, lessons learned',
+      'kb.structure.i4': 'Comparisons · Plan A vs Plan B, saved as new pages',
+      'kb.structure.note': 'Wiki structure, pages auto-linked',
+      'kb.workflow.title': 'How it grows',
+      'kb.workflow.i1': 'Ingest · AI auto-extracts new patterns after each session',
+      'kb.workflow.i2': 'Query · Agent checks the index before starting work',
+      'kb.workflow.i3': 'Lint · Periodic scan for contradictions, staleness, orphans',
+      'kb.workflow.i4': 'Keep · Good answers saved as Wiki pages, not lost in chat',
+      'kb.workflow.note': 'No maintenance needed, AI nodes run autonomously',
       'fde.title': 'Install sofagent',
       'fde.desc': 'Start doing FDE quickly on your own',
       'fde.phase1': 'Onboarding',
@@ -1724,7 +1732,7 @@ var I18n = (function() {
       'platforms.orch': 'Orchestration Engine',
       'platforms.orchDesc': 'OpenClaw only',
       'cta.title': 'One Command, Quick Install',
-      'cta.desc': 'One-command FDE Toolkit install: Harness + Audit + Orchestration + FDE Workbench',
+      'cta.desc': 'Three engines in one install — Harness, Audit, Orchestration. Ready out of the box.',
       'cta.star': 'Star',
       'footer.author': 'Author: Kong Fangxun',
       // Theme labels

@@ -239,7 +239,7 @@ npm view @sofagent/audit version        # 期望: 0.XX.X
 npm view @sofagent/mcp version          # 期望: 0.XX.X
 
 # 本地安装
-bash sofagent/scripts/verify.sh --quiet # 期望: 48 项（41 pass / 7 warn / 0 fail）
+bash sofagent/scripts/verify.sh --quiet # 期望: ~48 项（动态，因环境条件变化）
 bash tools/check-version.sh             # 期望: 33/33
 bash tools/check-docs.sh                # 期望: 全部通过
 ```

@@ -4,7 +4,7 @@
 
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-v0.99.8-16B8F3)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-v0.99.9-16B8F3)](./CHANGELOG.md)
 [![定位：Agent 审计工具](https://img.shields.io/badge/定位-Agent_审计工具-16B8F3)](#一句话定位)
 [![核心：审计引擎](https://img.shields.io/badge/核心-审计引擎-16B8F3)](#一句话定位)
 [![OpenClaw](https://img.shields.io/badge/🦞_引擎-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
@@ -22,6 +22,8 @@
 ## 一句话定位
 
 给 AI Agent 装一个提交时审计官——不看 Agent 怎么说，只看 git diff 怎么变。11 条审计规则扫描每次代码变更，自动判定违规、生成反思。中小企业装完就能用，不用请顾问、不用写 prompt。
+
+> 🔬 **外部验证**：Hugging Face 法律 Agent 基准实验证明，同一模型不改权重，仅优化外层执行机制，性能从 3.5%→80.1%（追平 Claude Sonnet，成本仅 1/7）。sofagent 做的就是外层机制中的审计和约束。→ [详见 ARCHITECTURE](./ARCHITECTURE.md#理论基础与外部验证)
 
 > **成熟度说明**：作者自用一个多月，审计引擎日常稳定（407 tests 全绿，5/5 靶向违规全部检出）。编排引擎能跑但未到「装上就能用」。如果你试了，告诉我什么场景、什么问题。
 
@@ -182,7 +184,7 @@ Forward Deployed Engineer（前向部署工程师）进驻企业后，做三件�
 |------|------|
 | **一份交付手册** | 企业画像 + 部署方案 + `fde.md` + `quick-start.md`（后两章安装包自带） |
 | **一套 AI 节点（三层实体）** | 每个节点：文档层（.md，人读+编排引擎读）+ Skill 层（企业专属 Skill）+ 运行层（在跑的 session） |
-| **一个会自己生长的知识库** | AI 跑着跑着自动积累（think.md / task/logs / scoring.md / orchestrator/） |
+| **一个会自己生长的 AI 知识库** | AI 跑着跑着自动积累——think.md / task/logs / scoring.md / orchestrator/（v1.1 升级为结构化 Wiki，见 [ROADMAP](./ROADMAP.md)） |
 
 > sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。
 
@@ -230,6 +232,4 @@ sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 > 我叫孔放勋，一个只懂点前端代码的产品经理。
 >
-> **项目维护模型声明**：sofagent 的代码由 AI 模型（DeepSeek V4 Pro / GLM-5.2）生成，作者做产品决策和终审。这意味着 bug 修复依赖 AI 模型可用性——如果模型停止服务，项目失去修复能力。这是比单人维护更深层的结构性风险。
->
-> 每个版本经独立模型评审，详见 [CHANGELOG](./CHANGELOG.md)。我们在寻找 Co-maintainer。
+> **项目维护模型声明**：sofagent 的代码由 AI 模型（DeepSeek V4 Pro / GLM-5.2）编写，作者做产品决策和终审。每个版本经独立模型评审。我们在寻找 Co-maintainer——详情见 [CHANGELOG](./CHANGELOG.md)。
