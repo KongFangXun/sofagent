@@ -4,7 +4,7 @@
 > v0.99.9 · 2026-07-05（UTC）· 审查修复收尾版——v0.99.7 双审查 20 项遗留全修 + FDE 架构重构（四层→三层实体）+ Skill 精简（925→742 行）+ GitHub Actions v5 + PR check + shellcheck 收窄 + v1.0 准入诚实化
 >
 
-> 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（FDE 工作用）为实验性附带。
+> 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（Workflow 梳理用）为实验性附带。
 
 ---
 
