@@ -230,7 +230,8 @@ if ($copied -gt 0) {
 }
 
 # fde.md 同步到 skills/sofagent/（AGENTS.md 注入优先查此路径，高于 $TARGET/fde.md）
-$_rulesSrc2 = Join-Path $SKILL_SRC_DIR "fde.md"
+$_rulesSrc2 = Join-Path $SKILL_SRC_DIR "data\fde.md"
+if (-not (Test-Path $_rulesSrc2)) { $_rulesSrc2 = Join-Path $SKILL_SRC_DIR "fde.md" }
 if (-not (Test-Path $_rulesSrc2)) { $_rulesSrc2 = Join-Path $SKILL_SRC_DIR "constitution\fde.md" }
 $_rulesDst2 = Join-Path $SKILL_DST "fde.md"
 if (Test-Path $_rulesSrc2) {

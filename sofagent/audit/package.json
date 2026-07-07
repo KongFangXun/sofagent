@@ -37,6 +37,15 @@
     "model-context-protocol"
   ],
   "license": "MIT",
+  "author": "KongFangXun",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KongFangXun/sofagent"
+  },
+  "bugs": {
+    "url": "https://github.com/KongFangXun/sofagent/issues"
+  },
+  "homepage": "https://github.com/KongFangXun/sofagent#readme",
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.0.0",

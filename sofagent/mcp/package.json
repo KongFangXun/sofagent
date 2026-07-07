@@ -3,6 +3,7 @@
   "version": "0.99.8",
   "description": "sofagent MCP Server — 暴露审计能力给 MCP Client（JSON-RPC 2.0 over stdio）",
   "main": "dist/mcp-server.js",
+  "types": "dist/mcp-server.d.ts",
   "files": [
     "dist/",
     "!dist/**/*.js.map",
@@ -26,6 +27,15 @@
     "audit"
   ],
   "license": "MIT",
+  "author": "KongFangXun",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KongFangXun/sofagent"
+  },
+  "bugs": {
+    "url": "https://github.com/KongFangXun/sofagent/issues"
+  },
+  "homepage": "https://github.com/KongFangXun/sofagent#readme",
   "dependencies": {
     "@sofagent/audit": "^0.99.8"
   },

@@ -215,7 +215,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前 406 个测试全绿，但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前 407 个测试全绿，但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|

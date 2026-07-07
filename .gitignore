@@ -18,5 +18,5 @@ Thumbs.db
 
 # agency-orchestrator local config
 .env
-skills/
+/skills/
 ._DS_Store

@@ -26,7 +26,7 @@ A commit-time auditor for AI agents — doesn't trust what the agent says, only 
 
 > **The 90/10 rule**: Don't compete with AI models on the 90% they already do well (code generation). The real value is in the 10% nobody dares skip — verification, audit trails, accountability. sofagent owns that 10%.
 
-> **Maturity**: I built sofagent and it's been open source from day one. I switch to each new version immediately and use it in my own company — this has been going for over a month. The FDE deployment flow is already running in companies I've invested in — the audit engine (sofagent-audit) is stable in daily use with 406 automated tests all passing, and the orchestration engine works too — but the toolkit as a whole isn't polished to "install and go" yet. If you try it, I'd love to hear what you're using it for and what breaks.
+> **Maturity**: I built sofagent and it's been open source from day one. I switch to each new version immediately and use it in my own company — this has been going for over a month. The FDE deployment flow is already running in companies I've invested in — the audit engine (sofagent-audit) is stable in daily use with 407 automated tests all passing, and the orchestration engine works too — but the toolkit as a whole isn't polished to "install and go" yet. If you try it, I'd love to hear what you're using it for and what breaks.
 
 | Component | How it works |
 |------|------|
