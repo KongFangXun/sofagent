@@ -57,9 +57,9 @@
 sofagent 有**两个引擎**，数据流分离但在 think.md 交汇：
 
 ```
-审计引擎（每次提交）                  编排引擎（FDE 工作 + 定期重测）
+审计引擎（每次提交）                  编排引擎（Workflow 梳理 + 定期重测）
     │                                       │
-    ├─ git diff                             ├─ FDE 工作：生成节点文档（nodes/*.md）
+    ├─ git diff                             ├─ Workflow 梳理：生成节点文档（nodes/*.md）
     ├─ 规则检查 A1-A11                      │       └─ ao compose 拆任务 → 写入 orchestrator/current/
     ├─ think-generator.ts                   │
     │   └→ 写 think.md ─────┐              ├─ 生产运行：AI 节点按 workflow 执行
@@ -76,7 +76,7 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇：
          （审计引擎写 / 编排引擎读 / A/B 结果写入 orchestrator/）
 ```
 
-**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 FDE 部署时生成节点定义（nodes/*.md），之后 Agent 读节点 .md 注入给 ao compose 执行，定期用 `sofagent-orchestrate-compare` 做 A/B 重优化。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
+**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义（nodes/*.md），之后 Agent 读节点 .md 注入给 ao compose 执行，定期用 `sofagent-orchestrate-compare` 做 A/B 重优化。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
 
 主 Agent 的日常：接活 → 看 `scoring.md` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#skill-runtime)。
 
