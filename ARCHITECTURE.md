@@ -156,14 +156,14 @@ sofagent-audit 是一个 TypeScript CLI。它的输入是 git diff，输出是 e
 
 #### 两种使用模式
 
-**核心认知：FDE 工具包本身就是 sofagent 产品的一部分。自己人办事用自己产品，给别人办完让别人用自己产品。**
+**核心认知：FDE 工具包本身就是 sofagent 产品的一部分。FDE 办事用自己产品，给别人部署完让别人也用自己产品。**
 
 ```
-我们公司 = 做 FDE 的公司
+FDE = Forward Deployed Engineer
     │
     │  FDE 本身也是一个 workflow（12 步）
     │
-    ├── FDE（⚡ 强化节点）
+    ├── FDE 办事（⚡ 强化节点）
     │   └── 工具 = sofagent 约束底座 + FDE Skill 工具包
     │       └── 用自己的 Agent（WorkBuddy / Codex）走 12 步
     │
