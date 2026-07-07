@@ -6,7 +6,7 @@
 >
 > v0.99.9 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
 
-> 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE 工具包本身就是 sofagent 产品的一部分——FDE 部署用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](./FDE/FDE.md) 和 [README § FDE](./README.md#fde从工作流到-ai-节点)。
+> 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](./FDE/FDE.md) 和 [README § FDE](./README.md#fde从工作流到-ai-节点)。
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 
