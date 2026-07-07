@@ -144,7 +144,7 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
 
 ## FDE：从工作流到 AI 节点
 
-### 一个嵌套关系：FDE 办事用 sofagent，客户部署后也用 sofagent
+### 一个嵌套关系：FDE 部署用 sofagent，客户部署后也用 sofagent
 
 FDE 工具包本身就是 sofagent 产品的一部分。整个逻辑是嵌套的：
 
@@ -153,7 +153,7 @@ FDE = Forward Deployed Engineer
     │
     │  FDE 本身也是一个 workflow（12 步）
     │
-    ├── FDE 办事（⚡ 强化节点）
+    ├── FDE 部署（⚡ 强化节点）
     │   └── 工具 = sofagent 约束底座 + FDE Skill 工具包
     │       └── 用自己的 Agent（WorkBuddy / Codex）走 12 步
     │
@@ -162,7 +162,7 @@ FDE = Forward Deployed Engineer
         └── 上面跑客户的 AI 节点（客户自己的 workflow）
 ```
 
-**一句话：FDE 办事用自己产品，给别人部署完让别人也用自己产品。产品的核心是底座。**
+**一句话：FDE 部署用自己产品，给别人部署完让别人也用自己产品。产品的核心是底座。**
 
 ### 什么是 FDE
 
