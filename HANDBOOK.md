@@ -239,7 +239,7 @@ Agent 先判断任务复杂度：
 
 > ⚠️ **成熟度**：审计引擎是稳定的（跨平台、零 Agent 依赖）。FDE 部署流程已有完整的四阶段十二步 + 五份模板 + quick-start，核心流程可用。编排引擎仍为实验性（依赖 OpenClaw，非 OpenClaw 平台仅约束+审计可用）。遇到问题开 Issue。
 >
-> **FDE 工具包本身就是 sofagent 产品的一部分。** sofagent 的核心是底座，FDE 是底座落地进企业的场景。FDE 用这个工具包帮企业梳理 workflow、识别 AI 节点、装上底座——**自己人办事用自己产品，给别人办完让别人用自己产品。**
+> **FDE 工具包本身就是 sofagent 产品的一部分。** sofagent 的核心是底座，FDE 是底座落地进企业的场景。FDE 用这个工具包帮企业梳理 workflow、识别 AI 节点、装上底座——**FDE 办事用自己产品，给别人部署完让别人也用自己产品。**
 
 > FDE = Forward Deployed Engineer（前向部署工程师）。完整四阶段十二步流程见 [FDE/FDE.md](./FDE/FDE.md)。建议装 [sofagent-fde Skill](./FDE/SKILL.md)——Agent 自动加载 FDE 工作台。
 
