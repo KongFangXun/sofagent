@@ -10,6 +10,15 @@
 
 ---
 
+## 前提条件
+
+- **Node.js** >= 18（`node --version` 确认）
+- **git**（`git --version` 确认）
+- **npm**（`npm --version` 确认）
+- **bash**（macOS/Linux 自带，Windows 用 Git Bash）
+
+---
+
 ## 装上就能用
 
 | 平台 | 怎么装 | 怎么激活 |

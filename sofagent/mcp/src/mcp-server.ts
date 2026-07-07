@@ -330,7 +330,7 @@ class McpServer {
     try {
       commitMsg = execFileSync('git', ['log', '-1', '--pretty=%B'], { encoding: 'utf-8' }).trim();
     } catch {
-      // 非 git 仓库
+      // 非 git 仓库或无提交记录——正常情况，不报错
     }
 
     // 4. 加载审计配置
@@ -344,6 +344,7 @@ class McpServer {
       generateThinkEntry(diffFiles, results, task);
     } catch {
       // think 生成失败不影响审计结果
+      process.stderr.write(`[${SERVER_NAME}] 警告: think.md 反思生成失败，跳过\n`);
     }
 
     // 7. 格式化输出

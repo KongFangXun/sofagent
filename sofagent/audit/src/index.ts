@@ -116,6 +116,13 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === '--version') {
       console.log(`sofagent-audit v${VERSION}`);
       process.exit(0);
+    } else {
+      const arg = argv[i];
+      if (arg && arg.startsWith('--')) {
+        console.error(`❌ 未知参数: ${arg}`);
+        console.error('   使用 --help 查看可用参数');
+        process.exit(1);
+      }
     }
   }
   return args;
@@ -385,6 +392,7 @@ async function main(): Promise<void> {
     appendHistory(historyEntry);
   } catch {
     // 历史写入失败不影响审计结果
+    process.stderr.write('[sofagent-audit] 警告: 审计历史写入失败，跳过（不影响审计结果）\n');
   }
 
   // 9. 自动生成 think.md（方案 A：基于 git diff 硬证据）
@@ -393,6 +401,7 @@ async function main(): Promise<void> {
       generateThinkEntry(diffFiles, results, args.task);
     } catch {
       // think 生成失败不影响审计结果
+      process.stderr.write('[sofagent-audit] 警告: think.md 反思生成失败，跳过（不影响审计结果）\n');
     }
   }
 

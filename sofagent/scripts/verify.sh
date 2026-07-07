@@ -806,7 +806,7 @@ fi
 # 兼容 fallback：工作目录（开发态）/ 旧部署路径（老安装）
 RULES_FILE=""
 for candidate in \
-  "${PWD}/sofagent/skill/fde.md" \
+  "${PWD}/sofagent/skill/data/fde.md" \
   "$HOME/.openclaw/skills/sofagent/fde.md" \
   "$HOME/.workbuddy/skills/sofagent/fde.md" \
   "${PWD}/sofagent/skill/constitution/fde.md" \

@@ -76,7 +76,7 @@
 
 **冷启动**（前 5 次）：输出九维基线报告。**A/B**：同类 ≥3 次 → 沉淀最优拆法。
 
-> 💡 运行 `bash sofagent/scripts/verify-evidence.sh` 检查评分证据。
+> 💡 运行 `sofagent-verify-evidence` 检查评分证据。
 
 ---
 

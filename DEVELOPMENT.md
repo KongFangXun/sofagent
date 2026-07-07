@@ -298,7 +298,7 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 1. `./tools/check-version.sh`——把输出的「N 项」数字抄进 CHANGELOG，确认无 FAIL
 2. `bash sofagent/scripts/verify.sh --quiet`——确认输出数字与文档中引用一致
 3. `cd sofagent/audit && npm test 2>&1 | grep "Tests"`——确认通过数
-4. `wc -m sofagent/skill/SKILL.md sofagent/skill/fde.md`——确认 Skill 字数旁注准确
+4. `wc -m sofagent/skill/SKILL.md sofagent/skill/data/fde.md`——确认 Skill 字数旁注准确
 5. 全文件类型术语扫描：`grep -rn "纪律层\|纪律底座\|工具箱\|FDE 工程师\|部署底座\|AI 控制节点" --include="*.md" --include="*.sh" --include="*.ps1" . | grep -v docs/changelog/ | grep -v docs/evidence/`（其中"FDE 工程师"是禁用词——FDE 的 E 已经是 Engineer，不叠叫）
 6. `./tools/check-version.sh > /dev/null 2>&1; echo $?`——必须为 0
 
