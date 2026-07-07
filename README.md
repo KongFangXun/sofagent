@@ -114,9 +114,9 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
 ### 节点内部怎么跑
 
 ```
-    审计引擎（每次提交）                 编排引擎（FDE 部署 + 定期重测）
+    审计引擎（每次提交）                 编排引擎（FDE 工作 + 定期重测）
          │                                       │
-         ├─ git diff 扫描                        ├─ FDE 部署：生成节点文档（nodes/*.md）
+         ├─ git diff 扫描                        ├─ FDE 工作：生成节点文档（nodes/*.md）
          ├─ 规则检查 A1-A11                      │       └─ Agent 读 .md → 注入 ao compose 拆任务
          │                                       │
          │                                       ├─ 生产运行：AI 节点按编排方案执行
