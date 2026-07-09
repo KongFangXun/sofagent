@@ -30,7 +30,7 @@ templates/ 不是装到本地的——是给 FDE 读的案例参考。与其留�
 |--------|---------------|
 | `fde.md`（运行规范） | sofagent 安装包自带，在 `sofagent/skill/data/fde.md`，直接复用 |
 | `quick-start.md`（上手文档） | sofagent 安装包自带，在 `FDE/quick-start.md`，直接复用 |
-| 知识库（think.md / task/logs / scoring.md / orchestrator/） | AI 节点跑起来后自动积累，模板在 `sofagent/skill/data/` 下 |
+| AI 知识库（think.md / task/logs / scoring.md / orchestrator/） | AI 节点跑起来后自动积累，模板在 `sofagent/skill/data/` 下 |
 
 ## 交付物分两类
 

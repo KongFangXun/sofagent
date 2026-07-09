@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v0.99.9 · 2026-07-05（UTC）· 审查修复收尾版——v0.99.7 双审查 20 项遗留全修 + FDE 架构重构（四层→三层实体）+ Skill 精简（925→742 行）+ GitHub Actions v5 + PR check + shellcheck 收窄 + v1.0 准入诚实化
+> v0.99.9 · 2026-07-07（UTC）· AI 知识库概念先行版——审查修复收尾 + verify.ts 代码拆分 + 行业笔记落地 + 理论基础引证
 >
 
 > 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（Workflow 梳理用）为实验性附带。
@@ -10,9 +10,9 @@
 
 ## 现在在哪：v0.99.9 ✅
 
-> 审查修复收尾版——v0.99.7 发版后双审查（GLM-5.2 48 维度 + DeepSeek V4 Pro 48 维度）发现 20 项遗留问题，本版全部修复。核心：文档数字对齐 + CI 升级 + shellcheck 收窄 + v1.0 准入诚实化（3/10 ✅ → 2/10 ✅）+ **FDE 架构重构**（四层→三层实体、templates 镜像产出）+ FDE 非开发者入门。
+> AI 知识库概念先行版——v0.99.8 经双审查（GLM-5.2 67 维度 + DeepSeek V4 Pro 48 维度）发现 4 P0 + 7 P1 + 3 P2，本版全部修复。同时完成 AI 知识库 6 文档概念先行（架构定位+边界划分）+ verify.ts 1257 行代码拆分（→ 4 模块）+ 7 项行业笔记写入 ROADMAP/ARCHITECTURE + Hugging Face/AutoResearch/Akshay 理论基础引证。
 >
-> 📖 [开发日志](./docs/changelog/v0.99.8.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [开发日志](./docs/changelog/v0.99.9.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -22,6 +22,7 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
+| **v0.99.9** | AI 知识库概念先行 + 审查修复收尾 + verify.ts 拆分（1257→4模块）+ 行业笔记落地 + 理论引证（Hugging Face/AutoResearch/Akshay） | [📖](./docs/changelog/v0.99.9.md) |
 | **v0.99.8** | 审查修复收尾 + FDE 架构重构：双审查 20 项遗留全修 + FDE 四层→三层实体 + templates 镜像产出 + Skill 精简（925→742 行）+ GitHub Actions v5 + PR check + v1.0 准入诚实化（3✅→2✅） | [📖](./docs/changelog/v0.99.8.md) |
 | **v0.99.7** | 发布基础设施修复：CI E403 根治 + OIDC 清零 + mcp 依赖解锁 + shellcheck 清零 + Windows 标注（11 项，三轮审查驱动） | [📖](./docs/changelog/v0.99.7.md) |
 | **v0.99.6** | 审查修复：mcp npm 同步发布 + 文档一致性（25 项，双审驱动） | [📖](./docs/changelog/v0.99.6.md) |
@@ -161,6 +162,8 @@
 | 外层 | 天-周 | Skill 优化 + 知识库沉淀 | loop-evaluate → scoring.md → AI 知识库 → Skill 自进化 | v2.x |
 
 > 当前 ROADMAP 已有「分布式反思同步」（Gossip 方向）。三模式不是互斥的——实践中可能黑板打底 + 上下文路由按需补充。决策留到 v2.x 需求分析时做。
+
+**Dream Sandbox 沙盒审计（探索方向）**：参照 Palantir AIP 的 Dream Sandbox——Agent 操作先在平行空间模拟运行，人类审批后点「合并」才生效，相当于「对现实做版本控制」。当前 sofagent 只能事后 git diff 审计，沙盒审计将约束从事后升级为事前。v2.x 如果企业用户对 Agent 自主操作有安全需求时探索。（来源：Palantir AIP 架构分析，详见 THANKS.md）
 
 **审批通道分层（探索方向）**：entry-gate 风险分级（v1.x）之上，可探索超时降级（审批 30 分钟无响应 → 自动降级为只读模式还是阻塞？）和防橡皮图章（连续秒批 → 系统警告）。**这是企业级 BPM 功能，不是 Agent harness 层的职责**——v2.x 如果企业用户强烈需求才考虑。
 

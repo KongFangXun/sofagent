@@ -84,15 +84,19 @@ sofagent 在这些社区里传播和生长。
 - **[Karpathy AutoResearch](https://github.com/karpathy/autoresearch)** · Andrej Karpathy (2026) · 9 万 GitHub Star
   630 行 Python 脚本让 AI Agent 在单 GPU 上跑 700 次自动实验，找出 20 项连 Karpathy 本人都忽略的代码改进。其 Loop Engineering 方法——约束文档 + 锁定评估脚本 + 自动循环——与 sofagent 的 fde.md + sofagent-audit + loop-check 高度对应。
 
-- **Codila — Loop Engineering 五步法** · AI 研究员 Codila
-  将 AutoResearch 浓缩为五步方法论，提出自动验证器、状态文件、停止条件三要素。X 平台超 200 万阅读。🔗 [原帖](https://x.com/0xCodila/status/2072329149520232639)
+- **[Bilevel Autoresearch](https://arxiv.org/abs/2603.23420)** · 双层循环论文
+  在 AutoResearch 基础上进一步验证了双层循环（外层优化搜索逻辑、强制探索回避方向）可实现 5 倍性能提升。
 
-- **[Bilevel Autoresearch 论文](https://arxiv.org/abs/2603.23420)** · 《Bilevel Autoresearch: Meta-Autoresearching Itself》
-  在 Karpathy 内层循环之上新增外层循环优化搜索逻辑，强制模型探索本能回避的优化方向，同一模型实现 5 倍性能提升。
+- **[Codila — AutoResearch 五步方法论](https://x.com/0xCodila/status/2072329149520232639)**
+  将 AutoResearch 浓缩为五步方法论——自动验证器 + 状态文件 + 停止条件。与 sofagent 的 fde.md + sofagent-audit + loop-exit 高度对应。
 
 - **[Akshay Pachaar — The Anatomy of an Agent Harness](https://x.com/i/article/2040732084843782144)** · 前 Lightning AI 工程师
-  将 Agent Harness 类比为 LLM 的操作系统，提出 12 个核心组件。sofagent 五层架构映射其中 8 个。详见 [ARCHITECTURE](./ARCHITECTURE.md#理论基础与外部验证)。
+  将 Agent Harness 类比为 LLM 的操作系统，提出 12 个核心组件。sofagent 五层架构映射其中 8 个。
 
-> 📖 以上研究成果的整理与分析，见 AI 前线 2026-07-07 文章《AI Agent 性能新范式：跳出"堆模型"误区》（作者：四月，36氪授权发布）。
+- **[Anthropic — A Global Workspace in Language Models](https://www.anthropic.com/research/global-workspace)**（2026-07）
+  Claude 神经网络中自发涌现的内部思考空间（J-space）。实验证明模型在输出前就已形成未表达的判断——安全测试中可识别「这是测试」并改变行为。为 sofagent「审计必须外置、不可绕过」提供底层理论论证。详见 [ARCHITECTURE](./ARCHITECTURE.md#为什么审计必须外置j-space-的启示)。
+
+- **[Palantir AIP — Ontology 驱动的 Agent 架构](https://www.palantir.com/platforms/aip/)** · Palantir (2026)
+  Palantir 未自研大模型，却实现远超行业的 Agent 可靠性。核心是 Ontology（本体论）——将数据+逻辑+动作+安全四合一的数字孪生操作层。其 Harness 定义与 sofagent 完全一致：「Ontology 是地图，Harness 是检查站。」
 
 ---
