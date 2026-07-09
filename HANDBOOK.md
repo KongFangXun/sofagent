@@ -39,6 +39,7 @@
 | 怎么装 | `bash sofagent/scripts/install.sh` | 场景一 |
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | 场景二 |
 | AI 知识库 | `.sofagent/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [v1.1 日志](./docs/changelog/v1.1.md) |
+| AI 成熟度 | 三级台阶（替换→增强→重构），FDE 帮企业从第二级跨到第三级——不只装 AI，还装上责任机制 | [FDE/FDE.md](./FDE/FDE.md#附录企业-ai-成熟度三级台阶) |
 | 已知局限 | 核心效果见 [evidence.md](./docs/evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](./LIMITATIONS.md) |
 
 ---

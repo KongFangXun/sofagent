@@ -25,6 +25,8 @@ My name is KongFangXun. I'm a product manager who doesn't write code. All design
 A commit-time auditor for AI agents — doesn't trust what the agent says, only what git diff shows. 11 audit rules scan every code change, automatically flag violations, generate reflections, and push results to collaboration platforms. SMBs can install and run on their own — no consultants, no prompt engineering required.
 
 > 🔬 **External validation**: A Hugging Face legal-agent benchmark proved that optimizing only the outer harness (no model weight changes) boosted the same model from 3.5%→80.1% (matching Claude Sonnet at 1/7 the cost). sofagent does exactly that outer harness layer — audit + constraint. → [See ARCHITECTURE](./ARCHITECTURE.md#理论基础与外部验证)
+>
+> ⚠️ **Klarna's lesson**: The Swedish fintech replaced 700 staff with AI, then recalled them a year later — not because AI couldn't do the work, but because accountability went missing. sofagent exists so accountability doesn't. → [See FDE](./FDE/FDE.md#附录企业-ai-成熟度三级台阶)
 
 > **The 90/10 rule**: Don't compete with AI models on the 90% they already do well (code generation). The real value is in the 10% nobody dares skip — verification, audit trails, accountability. sofagent owns that 10%.
 

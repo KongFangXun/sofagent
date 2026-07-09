@@ -8,7 +8,7 @@
 
 > 2026-07-07（UTC）
 
-v0.99.8 双审查（GLM-5.2 67 维度 + DeepSeek V4 Pro 48 维度）发现 4 个 P0 + 7 个 P1 + 3 个 P2，本版全部修复。同时完成 AI 知识库 6 文档概念先行（架构定位+边界划分）+ verify.ts 1257 行代码拆分（→ 4 模块）+ 7 项行业笔记写入 ROADMAP/ARCHITECTURE + Skill 摘要信息架构优化（去掉步骤性描述，只留触发条件）+ Hugging Face/AutoResearch/Akshay 理论基础引证（ARCHITECTURE 新增「理论基础与外部验证」节）。**v0.99.x 修复线最终版。**
+v0.99.8 经双审查（GLM-5.2 67 维度 + DeepSeek V4 Pro 48 维度）发现 4 个 P0 + 7 个 P1 + 3 个 P2，本版全部修复。同时完成 AI 知识库 6 文档概念先行（架构定位+边界划分）+ verify.ts 1257 行代码拆分（→ 4 模块）+ 7 项行业笔记写入 ROADMAP/ARCHITECTURE + Skill 摘要信息架构优化（去掉步骤性描述，只留触发条件）+ Hugging Face/AutoResearch/Akshay 理论基础引证（ARCHITECTURE 新增「理论基础与外部验证」节）。**v0.99.x 修复线最终版。**
 
 > 📖 [开发日志](./docs/changelog/v0.99.9.md)
 
