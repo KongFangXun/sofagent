@@ -2,7 +2,9 @@
 
 > v1.0.0 · 2026-07-04。推前预检 → 跑命令 → 对清单 → 打 tag。
 >
-> 完整流程见 `~/Workbuddy/SOFAGENT_VERSION_SOP.md`，本文件是快速核对清单。
+> ⚠️ 本文中的 `~/Workbuddy/` 路径是维护者本地文件（审查 prompt、验收测试等），其他贡献者可忽略对应步骤。
+>
+> 完整发版 SOP 见 `~/Workbuddy/SOFAGENT_VERSION_SOP.md`（维护者本地），本文件是快速核对清单。
 
 ---
 
@@ -13,8 +15,8 @@
 1. 构建自测   → npm test && tsc --noEmit (audit + mcp 双包) && shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh && bash tools/check-docs.sh
 2. 审核       → 独立审查逐项核对 changelog，FAIL 项修完二次复核
 2.3 CLI 验收  → bash tools/acceptance-test.sh（9 场景 CLI 端到端：install-hook / --init / --doctor / 正常 commit / 违规拦截 / --json / --ci / 首次提交 / 坏环境诊断。全绿才继续）
-2.5 Agent 验收 → 通过 OpenClaw Agent 跑端到端验收测试（见下方「发版前 OpenClaw 验收测试」章节，测试用例文件 ~/Workbuddy/openclaw-acceptance-test.md）
-2.7 回归检查 → 用 ~/Workbuddy/sofagent-regression-checklist.md（106 维度回归清单）逐项核对，确认之前修过的问题没回退
+2.5 Agent 验收 → 通过 OpenClaw Agent 跑端到端验收测试（见下方「发版前 OpenClaw 验收测试」章节，测试用例文件 ~/Workbuddy/openclaw-acceptance-test.md，维护者本地）
+2.7 回归检查 → 用 ~/Workbuddy/sofagent-regression-checklist.md（维护者本地，106 维度回归清单）逐项核对，确认之前修过的问题没回退
 3. 版本号升级 → ./tools/bump-version.sh <旧> <新>（13 类位置全自动覆盖；手动改 index/index.html hero badge）
 4. 版本号校验 → ./tools/check-version.sh（必须 33/33 全绿）
 5. 索引文档   → CHANGELOG 新增条目 + 链接到 changelog；ROADMAP 三步更新（文件头 / 现在在哪 / 未来去哪删已完成版本）
