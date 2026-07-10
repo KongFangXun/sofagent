@@ -22,7 +22,7 @@ echo "=== 2. 术语一致性检查 ==="
 # 检查三处关键文件的铁律编号
 for file in sofagent/skill/SKILL.md HANDBOOK.md DEVELOPMENT.md; do
   if [ -f "$file" ]; then
-    COUNT=$(grep -c "4 底线\|6 铁律\|A1-A11" "$file" 2>/dev/null || echo "0")
+    COUNT=$(grep -c "4 底线\|7 铁律\|A1-A14\|A1-A11" "$file" 2>/dev/null || echo "0")
     echo "  $file: 术语出现 $COUNT 处"
   fi
 done

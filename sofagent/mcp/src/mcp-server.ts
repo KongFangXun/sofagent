@@ -213,7 +213,7 @@ class McpServer {
       tools: [
         {
           name: 'run_audit',
-          description: '对 git diff 范围运行 sofagent 全量审计规则（A1-A11 + E1-E4）。返回结构化审计报告。',
+          description: '对 git diff 范围运行 sofagent 全量审计规则（A1-A14 + E1-E4）。返回结构化审计报告。',
           inputSchema: {
             type: 'object' as const,
             properties: {

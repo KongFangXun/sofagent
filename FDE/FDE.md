@@ -167,7 +167,7 @@
 | 层 | 做什么 | 怎么跑 |
 |----|--------|--------|
 | **约束底座** | fde.md 规则注入 Agent 上下文 | install.sh 装完自动加载 |
-| **审计引擎** | git diff → 11 条规则 → exit code | git pre-commit hook，不挑 Agent |
+| **审计引擎** | git diff → A1-A14 规则 → exit code | git pre-commit hook，不挑 Agent |
 | **编排引擎**（实验性）| 拆任务 → 编排 → 执行 | ao compose（跑在 OpenClaw 上） |
 
 找一台闲置设备（旧电脑、服务器、Nas 都行），装好 sofagent——这台设备就跑着 harness 层，上面是你梳理出来的 AI 节点。

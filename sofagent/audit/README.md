@@ -197,7 +197,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 
 | Tool | 说明 | 参数 |
 |------|------|------|
-| `run_audit` | 对 git diff 跑全量审计规则（A1-A11 + E1-E4），返回结构化报告 | `diff`（git range）、`task`（任务描述）、`strict`（布尔）、`silent`（布尔） |
+| `run_audit` | 对 git diff 跑全量审计规则（A1-A14 + E1-E4），返回结构化报告 | `diff`（git range）、`task`（任务描述）、`strict`（布尔）、`silent`（布尔） |
 | `get_think` | 读取 think.md 最近 N 条反思条目 | `count`（默认 1） |
 | `write_think` | 向 think.md 追加一条反思记录 | `lesson`（必填）、`task`（可选） |
 
@@ -237,7 +237,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 
 ## 审计规则
 
-### 默认规则（A1-A11，11 条）
+### 默认规则（A1-A11，11 条默认；A14 为扩展）
 
 | 规则 | 判定 | 严重度 | 说明 |
 |------|------|:--:|------|

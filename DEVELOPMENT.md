@@ -101,7 +101,7 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇：
 审计引擎（每次提交）                  编排引擎（Workflow 梳理 + 定期重测）
     │                                       │
     ├─ git diff                             ├─ Workflow 梳理：生成节点文档（nodes/*.md）
-    ├─ 规则检查 A1-A11                      │       └─ ao compose 拆任务 → 写入 orchestrator/current/
+    ├─ 规则检查 A1-A14                      │       └─ ao compose 拆任务 → 写入 orchestrator/current/
     ├─ think-generator.ts                   │
     │   └→ 写 think.md ─────┐              ├─ 生产运行：AI 节点按 workflow 执行
     │                       │              │       ├─ 🔄 自动执行
@@ -125,7 +125,7 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇：
 
 **目录结构**：
 - `sofagent/skill/`：纯 MD 规则（平台无关，所有 Agent 平台共用）
-  - `SKILL.md`：主入口（宪法内联——4 底线 + 6 则铁律）
+  - `SKILL.md`：主入口（宪法内联——4 底线 + 7 则铁律）
   - 子 Skill（8 个 .md）：`entry-gate.md` / `task-aware.md` / `task-closure.md` / `loop-check.md` / `loop-evaluate.md` / `loop-exit.md` / `engage.md` / `engage-fde.md`
   - `fde.md`：宪法文件（企业运行规范，部署时复制到目标项目）
   - `data/`（6 个模板）：`think.md` / `orchestrator.md` / `task.md` / `scoring.md` / `fde.md` / `IDENTITY.md`
@@ -354,7 +354,7 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 
 ## 八、提交时审计
 
-sofagent-audit（v0.99.7）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对审计规则（A1-A11）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 运行时配合，但审计 A7/A8 的日志检查依赖 Agent 写入的任务日志。
+sofagent-audit（v0.99.7）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对审计规则（A1-A14）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 运行时配合，但审计 A7/A8 的日志检查依赖 Agent 写入的任务日志。
 
 ### 绿灯路径检测
 

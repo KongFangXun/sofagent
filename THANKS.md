@@ -44,7 +44,7 @@
 影响了 sofagent "为什么这么设计" 的思考。
 
 - **[Ralph Loop](https://ghuntley.com/loop/)** by Geoffrey Huntley —「Agent 失忆，文件不失忆」是 sofagent 的哲学基因。一行 bash 循环 + Stop Hook + 新鲜上下文每轮刷新，启发了审计方向：git diff 是无状态地面真相
-- **[Andrej Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills)** — 4 条编码原则是 6 则铁律的根基。感谢 Karpathy
+- **[Andrej Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills)** — 4 条编码原则是 7 则铁律的根基。感谢 Karpathy
 - **[Anthropic Skills](https://github.com/anthropics/skills)** — 官方 SKILL.md 格式规范，描述-实现分离和 Skill 索引卡片参考了它
 - **[Loop Engineering](https://addyo.substack.com/p/loop-engineering)** by Addy Osmani — 帮我理清了 Context → Harness → Loop 三层框架的关系
 - **[OpenAI Harness Engineering](https://openai.com/index/harness-engineering/)** — Harness 概念的系统化参考

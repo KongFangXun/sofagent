@@ -75,7 +75,7 @@ OpenClaw is not something you "use" — it runs on the device, handling FDE work
      Audit engine (every commit)               Orchestration engine (FDE onboarding + periodic)
             │                                           │
             ├─ git diff scan                            ├─ FDE onboarding: one-time workflow.yaml generation
-            ├─ Rule checks A1-A11                       │       └─ Smart decomposition → orchestration plan
+            ├─ Rule checks A1-A14                       │       └─ Smart decomposition → orchestration plan
             │                                           │
             │                                           ├─ Production: AI nodes run per workflow
             │                                           │       ├─ 🔄 Auto-execute
