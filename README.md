@@ -25,7 +25,7 @@
 
 给 AI Agent 装一个提交时审计官——不看 Agent 怎么说，只看 git diff 怎么变。11 条审计规则扫描每次代码变更，自动判定违规、生成反思。中小企业装完就能用，不用请顾问、不用写 prompt。
 
-> 🔬 **外部验证**：Hugging Face 法律 Agent 基准实验证明，同一模型不改权重，仅优化外层执行机制，性能从 3.5%→80.1%（追平 Claude Sonnet，成本仅 1/7）。sofagent 做的就是外层机制中的审计和约束。→ [详见 ARCHITECTURE](./ARCHITECTURE.md#理论基础与外部验证)
+> 🔬 **外部验证**：Hugging Face 法律 Agent 基准实验——同一模型不改权重，仅优化外层 Harness，性能从 3.5%→80.1%，追平 Claude Sonnet、成本仅 1/7。行业实践（2026）进一步验证：**反思架构**（生成→自评审→多轮打磨）是投入产出比最高的 Agent 优化手段，无需改模型即可大幅提升输出质量。sofagent 的 loop-evaluate + think.md 正是这一架构的落地——任务结束自动复盘、评分、沉淀教训。→ [详见 ARCHITECTURE](./ARCHITECTURE.md#理论基础与外部验证)
 >
 > ⚠️ **Klarna 教训**：瑞典金融科技公司 Klarna 裁掉 700 人用 AI 替代，一年后被迫召回——不是因为 AI 不能干活，是因为责任悬空了。sofagent 做的就是「让责任不悬空」。→ [详见 FDE](./FDE/FDE.md#附录企业-ai-成熟度三级台阶)
 
