@@ -10,7 +10,6 @@
 
 ## 企业信息（FDE 填写）
 
-<!-- 示例：企业名称：XX公司 / 行业：外贸 / 规模：SMB（15人）。去掉 # 生效。 -->
 # 企业名称：
 # 所属行业：
 # 企业规模：SMB / OPC
@@ -19,28 +18,22 @@
 
 ## 模型策略（FDE 配置）
 
-<!-- 示例：主模型：deepseek-v4 / 子 Agent 模型：deepseek-flash。去掉 # 生效。 -->
 # 主模型：
 # 子 Agent 模型：
 
 ## 行为约束（FDE 制定）
 
-<!-- 示例：- 所有对外输出必须经过人工审核 / - 客户数据不得离开本地环境。去掉 # 生效。 -->
 # - 
 # - 
 
 ## 阈值配置（高级，FDE 可选）
 
-<!-- 详见 Handbook 场景四（自定义）。编排机制详见 DEVELOPMENT.md。去掉 # 生效。 -->
 # 失败率回滚阈值（默认 > 0.2）：
 # 编排级回滚阈值：
-# 反思首次置信度：
-# 反思两次置信度：
-# 反思三次置信度：
+# 反思置信度（首次/两次/三次）：
 
 ## 修改纪律（FDE 制定）
 
-<!-- FDE 可设定哪些修改需要先确认 -->
 # - 涉及客户数据的修改，先给方案预览，确认后执行。
 
 ---
@@ -56,28 +49,27 @@
 
 > **「企业要求一直这样」→ fde.md；「这个任务这样最优」→ orchestrator/。**
 
-## 离线模式（企业环境可选）
+## 离线模式（企业可选）
 
-# 取消下面这行的注释启用离线模式——跳过 ClawHub API 调用
+# 取消下面这行的注释启用——跳过 ClawHub API 调用
 # offline: true
 
 ---
 
 ## 企业合规（FDE 配置）
 
-<!-- 去掉对应行 # 启用。所有功能默认关闭，不影响现有用户。 -->
 # 日志脱敏：写入 task/logs 前自动打码 API Key / token / 密码
 # log_sanitize: true
 # log_sanitize_ips: false
-# 数据保留：超过保留天数或条数上限自动清理（清理前先 tar.gz 归档）
+# 数据保留：超过保留天数或条数上限自动清理（先归档）
 # data_retention_days: 90
 # data_retention_max_entries: 500
 # data_cleanup_on_record: true
 # data_cleanup_frequency: 10
-# 审计日志：记录关键操作（install / uninstall / orchestrate / cleanup）
+# 审计日志：记录关键操作
 # audit_enabled: true
 
-<!-- 常见错误：① 忘了去掉 # 注释 = 配置不生效 ② 行为约束文字只是声明，实际隔离靠基础设施 -->
+<!-- 忘了去掉 # = 配置不生效 -->
 
 ---
 
@@ -85,3 +77,25 @@
 
 - **fde.md 是模板不是文档**：部署时复制到 `.sofagent/fde.md`，去掉 `#` 才生效。
 - **阈值配置要先测再上**：默认 0.2，先在非关键节点试跑 3 次再调。
+
+---
+
+## AI 知识库维护规则（v1.0.1+）
+
+> `.sofagent/knowledge/` 是 AI 自动积累的经验库。以下规则约束 Agent 如何写入和引用。
+
+### 页面格式
+- frontmatter 必填：`title` / `category` / `created` / `updated` / `sources`
+- 双向链接 `[[页面名]]`，目标不存在则标 TODO 不创建死链
+- 来源标注：`[来源: task/logs 2026-07-11]`
+
+### Ingest 触发
+- daemon 检测 task/logs 新增 → 等待 30 分钟无新变化 → 触发知识提取 session
+- 新模式 → 新建页面；已有模式 → 更新页面；矛盾 → 标注告警不覆盖
+
+### 注入规则
+- session 启动时读 `knowledge/index.md` → 与上次 task/logs 关键词匹配 → 注入 top-3 页摘要
+- 注入不超过 500 token；index.md 为空时跳过
+
+### Lint 体检（loop-evaluate 顺带执行）
+- 断链检测 / 矛盾标注 / 孤立页面 / 缺失概念 / 过期标注 → 写入 log.md

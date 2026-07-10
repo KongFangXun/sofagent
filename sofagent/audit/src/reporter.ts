@@ -47,7 +47,18 @@ export function runRules(
     ? rules
     : defaultRules;
 
-  for (const rule of rulesToRun) {
+  // 根据 config.rules 按规则名禁用（key 为 a1~a14/e1~e4，value false 时跳过）
+  // E 系列编号 201+，A 系列 1-14
+  const rulesConfig = config?.rules;
+  const activeRules = rulesConfig
+    ? rulesToRun.filter((r) => {
+        const key = r.number >= 200 ? `e${r.number - 200}` : `a${r.number}`;
+        const enabled = rulesConfig[key];
+        return enabled !== false; // 显式 false 才禁用
+      })
+    : rulesToRun;
+
+  for (const rule of activeRules) {
     results.push(rule.check(ctx));
   }
 

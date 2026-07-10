@@ -42,6 +42,8 @@ bash sofagent/scripts/install.sh && bash sofagent/scripts/verify.sh
 # 或 TS 版：cd sofagent/audit && npm run build && node dist/verify.js
 ```
 
+> ⚠️ **本地测试用 `node dist/index.js` 而非全局二进制**——全局 `sofagent-audit` 可能是旧版本（npm publish 后才更新）。改代码后先 `npm run build`，再用 `node sofagent/audit/dist/index.js --diff HEAD~1..HEAD` 测试。
+
 ### 微任务清单（5-15 分钟）
 
 | # | 任务 | 文件 | 难度 | 时间 |

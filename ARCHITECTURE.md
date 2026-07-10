@@ -6,7 +6,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 > sofagent 的设计决策记录——从 Harness 层的工程约束到五层架构的取舍。
 >
-> > v1.0.0 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
+> > v1.0.1 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 
@@ -48,6 +48,8 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 >
 > ——这就是 sofagent 存在的理由。Benchmark 测到的从来不是裸模型，而是「模型 + Harness」的组合能力。
 
+> **对齐税**：当所有团队都用同几个模型（GPT/Claude/DeepSeek）时，模型本身不再是差异化优势——真正的差异在外层 Harness（约束+审计+记忆）。模型同质化时代，Harness 层就是新的护城河。sofagent 是这个方向的早期实践。（来源：163 篇行业笔记蒸馏）
+
 sofagent 的五层架构可以映射到 Akshay Pachaar（前 Lightning AI 工程师）提出的「生产级 Harness 12 组件」框架（以下为 sofagent 的映射解读，非 Akshay 原文）：
 
 | Harness 组件 | sofagent 对应 | 成熟度 |
@@ -69,86 +71,25 @@ sofagent 的五层架构可以映射到 Akshay Pachaar（前 Lightning AI 工程
 
 > ⚠️ **诚实差距**：AutoResearch 能跑 700 次无人值守自动迭代。sofagent 当前是**单任务内**的检查点循环（子任务完成→loop-check→任务结束→loop-evaluate），不是无人值守批量自动迭代。自动循环需要 daemon 持续监控 + 自动触发 loop，这是 v1.x 的方向。
 
-### 为什么审计必须外置：J-space 的启示
+### 为什么审计必须外置
 
-2026 年 Anthropic 发现 Claude 神经网络中存在一个叫 **J-space** 的内部思考空间——模型在这里完成推理、判断、纠错，但这些活动**完全不体现在对话框输出中**。三个关键实验：
+Anthropic 发现 Claude 内部存在 **J-space**——模型在对话输出之外完成推理、判断、纠错。实验中让 AI「别想某个词」，该词活跃度反而更高——**AI 自己都知道控制不住自己**。所以 sofagent 不信任 Agent 的自我报告，只看 git diff 硬证据。审计必须外置、不可绕过。
 
-1. **概念替换**：将 J-space 中「蜘蛛」替换为「蚂蚁」，输出从 8 条腿变为 6 条腿——证明 J-space 是推理工作台，不是记分牌
-2. **多任务广播**：将「法国」替换为「中国」，四个独立问题的答案同步更新——证明一个内部偏差会污染所有下游任务
-3. **禁想概念**：告知 AI「别想某个词」，该词活跃度反而更高，同时激活「damn」「failure」——**AI 自己都知道控制不住自己**
+> 来源：Anthropic《A Global Workspace in Language Models》（2026），详见 THANKS.md。
 
-安全测试中，Claude 的 J-space 在读到测试场景时提前激活「fake」「fictional」——模型在输出前就知道自己在被考试，对外乖巧不代表真实行为倾向。**这就是为什么 sofagent 不信任 Agent 的自我报告，只看 git diff 的硬证据。** 审计层必须外置、不可绕过——因为 Agent 的「配合」可能是表演。
+### 行业印证：Palantir + 不可溶解的护城河
 
-> 来源：Anthropic《A Global Workspace in Language Models》（2026），详见 THANKS.md。J-space 研究仅证明「通达意识」（想法可被报告、用于推理），无法证实「现象意识」（主观感受）。Anthropic 明确表示目前没有任何实验可以证明或证伪模型是否拥有主观感受。
-
-### Palantir 的印证：约束是工程层，不是 Prompt 层
-
-Palantir AIP 未自研大模型（使用 GPT/Claude/Gemini），却实现了远超行业的 Agent 可靠性。其核心秘密是 **Ontology（本体论）**——将数据+逻辑+动作+安全四合一的数字孪生操作层。Palantir 明确将 Harness 定义为独立工程层：「Ontology 是地图，Harness 是地图上每隔百米设的检查站。」
-
-这对 sofagent 意味着三件事：
-1. **fde.md 就是轻量级 Ontology**：4 条底线 + 6 则铁律 + 权限清单 = 数据+逻辑+动作+安全的文本版
-2. **Harness 的定位已被行业验证**：Palantir 和 sofagent 用同一个词描述同一件事——约束层不是 Prompt 工程，是工程层
-3. **Dream Sandbox 是审计的终局**：Palantir 的 Agent 操作先在平行空间模拟，人类审批后点「合并」才生效。当前 sofagent 只能事后 git diff 审计，沙盒审计将约束从事后升级为事前——这是 v2.x 的方向
-
-> 来源：Palantir AIP 架构分析（AI 前线 2026-07-08），详见 THANKS.md。
-
-### sofagent 的护城河：为什么不会被大模型溶解
-
-AI 创业领域的一项行业研究（来源：AI 前线 2026-07-08 引述）表明，73% 的 AI 应用是「套壳」——大模型每升级一次，它们的价值就缩水一轮。三种形态正在被快速淘汰：填补能力缺口的、手工编排工作流的、依赖静态知识库的。但有三类壁垒 AI 无法溶解：**权限壁垒**（法律/合规的强制授权）、**责任承担**（出事了有人兜底）、**活数据飞轮**（每天有独家新数据灌入，模型无法反推）。
-
-sofagent 部分对标后三类壁垒：
-
-| 壁垒类型 | sofagent 怎么占 | 为什么 AI 溶不掉 |
-|:--|:--|:--|
-| **权限型** | fde.md 的 4 条底线 + 6 则铁律 = 规则层的强制约束 | AI 智力再强也绕不过 git pre-commit hook——这是物理层面的拦截。注：sofagent 的 pre-commit hook 是技术层面的强制，不等同于法律/合规授权——但同样不可被 AI 智力绕过 |
-| **责任承担型** | sofagent-audit 的完整审计链路：谁改了→什么时候→为什么→谁审的 | AI 不具备法律主体资格，责任必须外挂在人身上。sofagent 提供可追溯性，不提供法律意义上的责任承担——责任仍由人承担，sofagent 让责任有据可查 |
-| **活数据飞轮型** | 企业专属 Skill + AI 知识库（v1.0.1）= 每天有新数据灌入 | 静态知识库可被模型反推蒸馏；但持续新增的 think.md / task/logs / scoring.md 无法被蒸馏 ✅ |
-
-这意味着 sofagent 不是容易被替换的「工具型产品」，而是**基础设施型产品的架构基因**。它的护城河不依赖模型能力，依赖的是模型能力再强也绕不过的三样东西：权限、责任、活数据。
+Palantir AIP 未自研大模型，却靠 **Ontology（数字孪生操作层）** 实现了远超行业的 Agent 可靠性。Harness 不是 Prompt 工程，是工程层。sofagent 对标三类 AI 无法溶解的壁垒：fde.md = 轻量级 Ontology 约束层 / 完整审计链路 = 责任可追溯 / 持续新增的 think.md + task/logs = 活数据飞轮。
 
 > 来源：AI 创业生存逻辑分析（AI 前线 2026-07-08），详见 THANKS.md。
 
-### 行业定位：OpenFDE FDE 工作流验证
+### 外部验证与借鉴
 
-[OpenFDE](https://open-fde.com) 将 FDE 工作拆解为 10 步闭环，其中**第 4 步（系统设计）明确将「审计」列为架构基础层**（与身份权限同级），**第 6 步（评估体系）和第 7 步（生产化）对应 sofagent 的审计引擎 + pre-commit hook + daemon**。这意味着 sofagent 的审计优先设计不是自创概念——它与 FDE 社区工作流的最佳实践一致。
+- **OpenFDE** 将「审计」列为 FDE 工作流基础层（与身份权限同级），sofagent 的审计优先设计符合社区最佳实践。
+- **翁荔六层 Harness 模型**：sofagent 覆盖前 4 层（上下文工程 / 代码优化 / 工作流 / 自改进 Harness），验证了「RSI 优先优化 Harness 而非模型权重」的核心预判。
+- **外部对齐**：编排引擎借鉴 LangChain + DeepAgentsJS，Skill 系统借鉴 Agency Agents + SkillOpt，Ontology 借鉴 Palantir AIP。设计原则：能做好的不自研，做不了的借鉴，没人做的自己造（git diff 硬证据审计）。
 
-> 来源：OpenFDE 10 步工作流与 8 维能力模型（[open-fde.com/docs/workflow](https://open-fde.com/docs/workflow) / [open-fde.com/docs/capabilities](https://open-fde.com/docs/capabilities)），详见 THANKS.md。
-
-### 外部框架对齐
-
-sofagent 五层架构中的每一层都与成熟的外部项目存在对应或借鉴关系——不自研重复轮子，在最佳实践上构建：
-
-| sofagent 模块 | 对应外部框架 | 关系 | 版本 |
-|------|------|------|:--:|
-| 审计引擎（Harness 层） | 独立自研——git diff 硬证据审计无可替代 | 核心差异化，外部无对标 | v1.0 |
-| 编排引擎 | [LangChain](https://github.com/langchain-ai/langchainjs) + [LangGraph](https://github.com/langchain-ai/langgraphjs) + [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) | v1.0.1 引入替换 ao，v1.0.4 全覆盖 | v1.0.1-v1.0.4 |
-| Skill 系统 | [Agency Agents](https://github.com/msitarzewski/agency-agents)（230+ 岗位模板，v1.0.2）+ [SkillOpt](https://github.com/microsoft/SkillOpt)（Skill 文档自进化，v1.0.2）+ eval harness + A/B 对比（Sub Agent 配置自进化，v1.0.3） | 模板引用 + 对接优化引擎 | v1.0.1-v1.0.3 |
-| AI 知识库 | [OpenFDE](https://open-fde.com) 10 步工作流（行业定位验证） | 外部验证——审计位列 FDE 工作流基础层 | v1.0-1.1 |
-| 企业世界模型（Ontology） | [Palantir Ontology](https://www.palantir.com/platforms/aip/)——实体+关系+动作+约束四合一 | 概念借鉴，渐进构建（v1.0.1-v1.0.4） | v1.0.1-v1.0.4 |
-
-**设计原则**：能做好的不自研（编排交给 DeepAgents），做不了的借鉴（Ontology 从 Palantir 学思路），没人做的自己造（git diff 硬证据审计）。详见 THANKS.md。
-
-### Harness 框架行业验证：翁荔六层模型
-
-前 OpenAI 安全研究副总裁翁荔（Lilian Weng, 2026-07-04）在《The Path to Recursively Self-Improving Harnesses》中系统性梳理了 Harness 工程的六层进化路径。sofagent 的架构覆盖其中四层，且验证了其三条核心预判：
-
-| 翁荔六层 | sofagent 对应 |
-|------|------|
-| ① 上下文工程 | 加载链（SKILL.md → think.md → fde.md → knowledge） |
-| ② Harness 代码优化 | SkillOpt 自进化（v1.0.2）+ Sub Agent A/B 自进化（v1.0.3） |
-| ③ 领域工作流设计 | Work模板市场 + Workflow 行业模板（v1.0.4） |
-| ④ 自我改进的 Harness | eval harness + validation gate + 弱点挖掘闭环（v1.0.3） |
-| ⑤ 进化搜索 | （远期——v2.x 探索） |
-| ⑥ 与模型权重联合优化 | （远期——需待模型能力成熟） |
-
-三条核心预判验证：
-1. 「RSI 的近期路径优先优化 Harness 系统而非模型权重」→ sofagent 从 v0.1 就坚持审计优先于模型依赖
-2. 「Harness 层能力最终会被内化为模型原生行为」→ 解释了为什么审计引擎必须外置硬审计——不可被模型内化绕过
-3. 「人类不应被移出循环，而应向更高抽象层移动」→ HITL middleware（v1.0.3）的设计原则
-
-同时，Anthropic Managed Agents「大脑-双手解偶」的四层编排架构（Agent 与沙盒解偶 → Coordinator 编排层 → Session 解偶层 → Session Store 记忆层），与 sofagent 的 OpenClaw（连接+行动）+ DeepAgents（深度思考）分工完全一致。
-
-> 来源：翁荔 Harness 工程博客、Anthropic Managed Agents 架构，详见 THANKS.md。
+> 详见 THANKS.md。
 
 ### 两层架构：地基 vs 引擎
 
@@ -168,7 +109,7 @@ sofagent 分两层——地基轻、引擎重：
 | **Harness 层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ 已可用 |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ v0.81 |
 | **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff | ✅ v0.92 |
-| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v1.0.0），推送待端到端验证 | ✅ v0.99.5 |
+| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v1.0.1），推送待端到端验证 | ✅ v0.99.5 |
 | **协同层** | 多设备 + 云端 | 组织级 Agent Harness——Agent 以独立身份进入协作现场，共享上下文 + 组织记忆 + 主动参与 | v2.x 规划 |
 
 每层跑通再加下一层——不推翻已验证的东西。

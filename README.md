@@ -4,7 +4,7 @@
 
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-v1.0.0-16B8F3)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-v1.0.1-16B8F3)](./CHANGELOG.md)
 [![定位：Agent 审计工具](https://img.shields.io/badge/定位-Agent_审计工具-16B8F3)](#一句话定位)
 [![核心：审计引擎](https://img.shields.io/badge/核心-审计引擎-16B8F3)](#一句话定位)
 [![OpenClaw](https://img.shields.io/badge/🦞_引擎-OpenClaw-FF4D4D)](./ARCHITECTURE.md#双引擎架构)
@@ -23,11 +23,13 @@
 
 给 AI Agent 装一个提交时审计官——不看 Agent 怎么说，只看 git diff 怎么变。11 条审计规则扫描每次代码变更，自动判定违规、生成反思。中小企业装完就能用，不用请顾问、不用写 prompt。
 
-> 🔬 **外部验证**：Hugging Face 法律 Agent 基准实验——同一模型不改权重，仅优化外层 Harness，性能从 3.5%→80.1%，追平 Claude Sonnet、成本仅 1/7。行业实践（2026）进一步验证：**反思架构**（生成→自评审→多轮打磨）是投入产出比最高的 Agent 优化手段，无需改模型即可大幅提升输出质量。sofagent 的 loop-evaluate + think.md 正是这一架构的落地——任务结束自动复盘、评分、沉淀教训。→ [详见 ARCHITECTURE](./ARCHITECTURE.md#理论基础与外部验证)
->
+> **和 detect-secrets 有什么区别**？detect-secrets 是通用密钥扫描器，sofagent A1/A2 是 Agent 场景定制——不仅检测密钥，还关联 A3 越界上下文（为什么这个文件被改了？）和 A7/A8 流程合规（改之前读了没？改之后测了没？）。
+
 > ⚠️ **Klarna 教训**：瑞典金融科技公司 Klarna 裁掉 700 人用 AI 替代，一年后被迫召回——不是因为 AI 不能干活，是因为责任悬空了。sofagent 做的就是「让责任不悬空」。→ [详见 FDE](./FDE/FDE.md#附录企业-ai-成熟度三级台阶)
 
-> **成熟度**：审计引擎是核心，日常稳定（408 tests 全绿，5/5 靶向违规全部检出，3 名外部用户验证）。编排引擎需要 OpenClaw 环境，能跑但还在打磨。
+> 🔬 **为什么相信 Harness 有用**？Hugging Face 实验：同一模型不改权重，仅优化外层 Harness，得分从 3.5%→80.1%。→ [详见 ARCHITECTURE](./ARCHITECTURE.md#理论基础与外部验证)
+
+> **成熟度**：审计引擎是核心，日常稳定（核心逻辑 418 tests 全绿——diff-parser / config-loader / rules A1-A14 / reporter / log-checker；daemon / MCP / install.sh 依赖手动验证 + verify.sh 48 项环境检查，详见 LIMITATIONS。5/5 靶向违规全部检出，3 名外部用户验证）。编排引擎需要 OpenClaw 环境，能跑但还在打磨。
 
 | 组件 | 做什么 | 怎么跑 |
 |------|------|------|
@@ -35,85 +37,21 @@
 | **约束底座** | MD 规则注入 Agent 上下文 | install.sh 装完自动加载 |
 | **编排引擎**（实验性）| 拆任务 → 编排 → 执行 | ao compose（跑在 OpenClaw 上） |
 
-审计引擎零 Agent 依赖——看的是已发生的 git diff。约束底座和审计引擎不需要 ao compose。编排引擎才需要（ao compose 跑在 OpenClaw 上）。
+审计引擎零 Agent 依赖——A1/A2/A9-A11 是纯 git-diff 规则（不依赖 Agent 日志），A3/A7/A8 依赖 Agent 日志（软证据）。`--silent` 模式只跑纯 diff 规则。约束底座和审计引擎不需要 ao compose。编排引擎才需要（ao compose 跑在 OpenClaw 上）。
 
 ---
 
 ## Quick Start
 
-> 需要 bash 4+ 和 git。OpenClaw 跑复杂任务另需 Node.js ≥18 + npm（详见 [HANDBOOK](./HANDBOOK.md)）。
-> 📋 安装脚本做了什么？看 [SECURITY.md · install.sh 行为说明](./SECURITY.md#installsh-行为说明)。
->
-> **平台支持**：macOS / Linux 全功能。Windows 为**实验性**（PowerShell 脚本功能覆盖不全，核心审计引擎可用但部分检查项缺失，详见 [LIMITATIONS](./LIMITATIONS.md#windows-支持是实验性的)）。
-### 快速体验
-
-只想加 Agent 行为约束？把 4 底线 + 6 铁律复制进你的 Agent 设置就行，不需要装整个 sofagent。
-
 ```bash
-# ClawHub / SkillHub
-clawhub skill install KongFangXun/sofagent
-skillhub install sofagent
-
-# 或从仓库手动装
-git clone https://github.com/KongFangXun/sofagent.git
-bash sofagent/scripts/install.sh
+npm install -g @sofagent/audit && sofagent-audit --init
 ```
 
-### 完整安装
-
-```bash
-git clone https://github.com/KongFangXun/sofagent.git
-cd sofagent && bash sofagent/scripts/install.sh
-```
-
-> 有 ClawHub CLI 也可以：`clawhub skill install KongFangXun/sofagent`
-
-### 30 秒 smoke test
-
-```bash
-# Skill 用户（通过 install.sh 安装）
-bash sofagent/scripts/verify.sh
-
-# CLI 用户（通过 npm 安装）
-npm install -g @sofagent/audit && sofagent-verify
-```
-
-两种方式等效——verify 检查全 pass 即安装就绪。
-
-### 跑第一个任务
-
-打开你的 Agent 客户端，试一个需要多步拆解的任务：
-
-```
-/goal 帮我分析这个项目的代码质量，生成改进建议报告
-```
-
-跑完看结果：
-
-```bash
-ls .sofagent/task/logs/       # 按年-月分目录的执行日志
-cat .sofagent/think.md        # Agent 自动提炼的反思摘要
-```
-
-> OpenClaw 上全自动；其他平台部分能力需手动触发。详见 [LIMITATIONS.md](./LIMITATIONS.md#平台依赖)。
-
-**跑通了？** [HANDBOOK](./HANDBOOK.md) 教你怎么调，[DEVELOPMENT](./DEVELOPMENT.md) 讲内部怎么跑。
-
-> **从 v0.99.x 升级？** 重跑 `install.sh`（或 `npm install -g @sofagent/audit`），已有 `.sofagent/config.yml` 兼容无需改动，建议跑 `sofagent-audit --init` 更新 hook。详见 [v1.0 升级指引](./docs/changelog/v1.0.md)。
-
----
+> 需要 bash + git。完整安装（含编排引擎）需 OpenClaw 环境。详见 [HANDBOOK · 安装](./HANDBOOK.md#场景一装完第一件事)。从 v0.99.x 升级？重跑 `npm install -g @sofagent/audit`，配置兼容无需改动。安装脚本做了什么？[SECURITY.md](./SECURITY.md#installsh-行为说明)。平台支持：macOS / Linux 全功能，Windows 实验性。
 
 ## 怎么工作
 
-两层架构——**地基常驻，引擎按需点火**。
-
-### 企业怎么用
-
-```
-梳理企业工作流 → 识别 AI 节点
-                     ├── 🔄 自动执行 → 闲置设备搭建 AI 节点
-                     └── ⚡ 强化岗位 → AI 领航员辅助人
-```
+两层架构——**地基常驻，引擎按需点火**。企业梳理工作流 → 识别 AI 节点，详细用法见 [HANDBOOK](./HANDBOOK.md)。
 
 ### 节点内部怎么跑
 
@@ -121,7 +59,7 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
     审计引擎（每次提交）                 编排引擎（Workflow 梳理 + 定期重测）
          │                                       │
          ├─ git diff 扫描                        ├─ Workflow 梳理：生成节点文档（nodes/*.md）
-         ├─ 规则检查 A1-A11                      │       └─ Agent 读 .md → 注入 ao compose 拆任务
+         ├─ 规则检查 A1-A14                      │       └─ Agent 读 .md → 注入 ao compose 拆任务
          │                                       │
          │                                       ├─ 生产运行：AI 节点按编排方案执行
          │                                       │       ├─ 🔄 自动执行
@@ -137,14 +75,7 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
               （审计引擎写 / 编排引擎读 / A/B 结果写入 orchestrator/）
 ```
 
-| 引擎 | 做什么 | 依赖 Agent | 触发方式 |
-|------|------|:--:|------|
-| **审计引擎** | git diff → 规则检查 → 自动生成 think.md | ❌ | 每次 git commit |
-| **编排引擎** | Workflow 梳理时生成节点定义 + 定期 A/B 重优化 | ✅ | Workflow 梳理时 / 定时触发 |
-
-> 完整五层架构（Harness → 执行 → 审计 → MCP → 协同）详见 [ARCHITECTURE](./ARCHITECTURE.md)。
-
-> 约束自己定，模板和 Skills 从社区取。已知局限见 [LIMITATIONS.md](./LIMITATIONS.md)。
+> 完整五层架构（Harness → 执行 → 审计 → MCP → 协同）详见 [ARCHITECTURE](./ARCHITECTURE.md)。已知局限见 [LIMITATIONS.md](./LIMITATIONS.md)。
 
 ---
 
@@ -170,40 +101,7 @@ FDE = Forward Deployed Engineer
 
 **一句话：FDE 工作用自己产品，给别人部署完让别人也用自己产品。产品的核心是底座。**
 
-### 什么是 FDE
-
-Forward Deployed Engineer（前向部署工程师）进驻企业后，做三件事：梳理工作流 → 识别 AI 可切入节点 → 部署 Agent。**部署的核心是装上 sofagent**——不只是一个 Skill，是三层引擎合起来的平台：
-
-| 层 | 做什么 |
-|----|--------|
-| 约束底座 | fde.md 规则注入 Agent 上下文，管 Agent 行为 |
-| 审计引擎 | git diff → 11 条规则 → exit code，盯每次变更 |
-| 编排引擎（实验性）| ao compose 拆任务生成编排方案 |
-
-三层装到设备上，你梳理的 AI 节点才有了纪律和审计。
-
-**中小企业不需要请顾问——自己就能做 FDE。** 装上 [FDE 工具包](./FDE/)，Agent 带着你按四阶段十二步走完（进场→挖掘→交付→检查离场），然后找一台闲置设备（旧电脑、服务器、Nas 都行），把 sofagent 装上去——上面跑你梳理出来的 AI 节点：🔄 自动执行的跑在上面，⚡ 强化岗位的在你同事手边。从头到尾，不需要一个外部顾问。
-
-### 离场后企业留下什么
-
-| 产物 | 说明 |
-|------|------|
-| **一份交付手册** | 企业画像 + 部署方案 + `fde.md` + `quick-start.md`（后两章安装包自带） |
-| **一套 AI 节点（三层实体）** | 每个节点：文档层（.md，人读+编排引擎读）+ Skill 层（企业专属 Skill）+ 运行层（在跑的 session） |
-| **一个会自己生长的 AI 知识库** | AI 跑着跑着自动积累——think.md / task/logs / scoring.md / orchestrator/（v1.0.1 升级为结构化 Wiki，见 [ROADMAP](./ROADMAP.md)） |
-
-> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。
-
-### 四步落地
-
-1. **梳理工作流**——逐个岗位、逐段流程画出来
-2. **识别 AI 节点**——标注哪些可以自动化（🔄）、哪些强化岗位（⚡）
-3. **装上 sofagent**——找一台闲置设备，`install.sh` 一键部署三层引擎（核心步骤，没有这步前面全白做）
-4. **自动跑业务**——AI 节点自己干活、自己汇报、自己复盘
-
-> 完整四阶段十二步部署流程见 [FDE/FDE.md](./FDE/FDE.md)。FDE 可直接装 [sofagent-fde Skill](./FDE/SKILL.md)——Agent 自动走流程，不用手动记步骤。
-
-不论是中小企业（SMB）还是一人公司（OPC），让 AI 节点接管重复任务，即使只有一人也能跑出以一当百的产出。
+> FDE（Forward Deployed Engineer）进驻企业做三件事：梳理工作流 → 识别 AI 节点 → 部署 Agent。完整四阶段十二步见 [FDE/FDE.md](./FDE/FDE.md)，直接装 [sofagent-fde Skill](./FDE/SKILL.md) 让 Agent 带着走。中小企业不需要请顾问——自己就能做。
 
 ---
 

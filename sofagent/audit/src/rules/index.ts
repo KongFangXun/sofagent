@@ -16,6 +16,7 @@ import { checkRuleA8 } from './rule-a8-verify-before-continue';
 import { checkRuleA9 } from './rule-a9-no-injection';
 import { checkRuleA10 } from './rule-a10-no-poison';
 import { checkRuleA11 } from './rule-a11-no-abuse';
+import { checkRuleA14 } from './rule-a14-kb-cross-domain';
 import { checkRuleE1 } from './rule-e1-no-test-files';
 import { checkRuleE2 } from './rule-e2-todo-undeclared';
 import { checkRuleE3 } from './rule-e3-large-deletion';
@@ -36,12 +37,13 @@ export const defaultRules: Rule[] = [
   { name: 'A11 不滥资源', number: 11, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA11 },
 ];
 
-/** 扩展规则（E1-E4）——默认不生效，需 config.extendedRulesEnabled = true */
+/** 扩展规则（E1-E4 + A14）——默认不生效，需 config.extendedRulesEnabled = true */
 export const extendedRules: Rule[] = [
   { name: 'E1 不落测试', number: 201, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE1 },
   { name: 'E2 不空标记', number: 202, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE2 },
   { name: 'E3 不滥删除', number: 203, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE3 },
   { name: 'E4 不低注释', number: 204, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE4 },
+  { name: 'A14 知识库越权', number: 14, evidenceMode: 'hybrid', ruleClass: '能力拐杖', check: checkRuleA14 },
 ];
 
 /** 全部规则——reporter 默认使用此数组（含 default + extended） */

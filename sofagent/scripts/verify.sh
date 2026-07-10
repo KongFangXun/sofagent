@@ -16,7 +16,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="1.0.0"
+VERSION="1.0.1"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -564,7 +564,7 @@ _section "数据目录"
 if [ -d "$SOFAGENT_DATA" ]; then
   check_pass ".sofagent/ 数据目录存在"
   # 检查子目录
-  for sub in task/logs orchestrator; do
+  for sub in task/logs orchestrator knowledge/entities knowledge/concepts; do
     if [ -d "${SOFAGENT_DATA}/${sub}" ]; then
       check_pass "  .sofagent/${sub}/ 就绪"
     else

@@ -38,7 +38,7 @@ deploy_skill_files() {
   info "Step 5/7 · 部署 Skill 文件 → $TARGET/skills/sofagent"
   local SKILL_SRC="${SCRIPT_DIR}/../skill"
   local SKILL_DST="${TARGET}/skills/sofagent"; mkdir -p "$SKILL_DST"; local copied=0 f src dst
-  for f in SKILL.md entry-gate.md task-aware.md task-closure.md loop-check.md engage.md engage-fde.md loop-evaluate.md loop-exit.md; do  # 核心 Skill 文件
+  for f in SKILL.md entry-gate.md task-aware.md task-closure.md loop-check.md engage.md engage-fde.md loop-evaluate.md loop-exit.md knowledge-maintain.md; do  # 核心 Skill 文件
     src="${SKILL_SRC}/${f}"; dst="${SKILL_DST}/${f}"
     if [ -f "$src" ]; then
       [ -f "$dst" ] && cmp -s "$src" "$dst" 2>/dev/null && continue
@@ -107,4 +107,41 @@ deploy_scripts() {
     mkdir -p "$SOFAGENT_DATA/task/logs" "$SOFAGENT_DATA/orchestrator/workflows"
     chmod 700 "$SOFAGENT_DATA" 2>/dev/null || true; ok "数据目录已创建: $SOFAGENT_DATA"
   else ok "数据目录已存在: $SOFAGENT_DATA"; fi
+  # v1.0.1: 创建 knowledge/ 目录骨架
+  _deploy_knowledge_skeleton
+}
+
+# v1.0.1: 创建 .sofagent/knowledge/ 目录结构 + 初始模板
+_deploy_knowledge_skeleton() {
+  local KB_DIR="${SOFAGENT_DATA}/knowledge"
+  mkdir -p "${KB_DIR}/entities" "${KB_DIR}/concepts" "${KB_DIR}/comparisons" "${KB_DIR}/summaries"
+
+  # index.md——AI 自动维护的目录页
+  if [ ! -f "${KB_DIR}/index.md" ]; then
+    cat > "${KB_DIR}/index.md" << 'IDX'
+# 知识库目录
+
+> 此页面由 AI 自动维护——新增知识页面时同步更新。
+> daemon Ingest 和 knowledge-maintain Skill 负责写入。
+
+| 页面 | 域 | 可访问节点 |
+|------|-----|------------|
+IDX
+    ok "knowledge/index.md 已创建"
+  fi
+
+  # log.md——操作日志
+  if [ ! -f "${KB_DIR}/log.md" ]; then
+    cat > "${KB_DIR}/log.md" << 'LOG'
+# 知识库操作日志
+
+> 自动追加——Ingest / Query / Lint 操作的时间戳记录。
+
+| 时间 | 操作 | 影响页面 | 详情 |
+|------|------|---------|------|
+LOG
+    ok "knowledge/log.md 已创建"
+  fi
+
+  ok "knowledge/ 目录骨架就绪: ${KB_DIR}"
 }

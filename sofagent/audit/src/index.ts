@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.0.0 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.0.1 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
 // 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
@@ -22,10 +22,10 @@
 import { execFileSync } from 'child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
-import { parseDiff, isInGitRepo, type DiffFile } from './diff-parser';
+import { parseDiff, parseStagedDiff, isInGitRepo, type DiffFile } from './diff-parser';
 import { checkLogs } from './log-checker';
 import { runRules, type AuditResult } from './reporter';
-import { loadConfig } from './config-loader';
+import { loadConfig, ConfigLoadError } from './config-loader';
 import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-history';
 import { analyzeRootCause } from './audit-root-cause';
 import { formatSuggestions } from './config-suggestion';
@@ -52,15 +52,20 @@ interface Args {
   mcp: boolean;
   init: boolean;
   doctor: boolean;
+  /** staged 模式（首次提交场景）——diffRange 值为 --cached */
+  cached: boolean;
 }
 
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, doctor: false };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, doctor: false, cached: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff' && argv[i + 1]) {
       i++;
       args.diffRange = argv[i] as string;
+      if (args.diffRange === '--cached') {
+        args.cached = true;
+      }
     } else if (argv[i] === '--task' && argv[i + 1]) {
       i++;
       args.task = argv[i] as string;
@@ -102,6 +107,9 @@ function parseArgs(argv: string[]): Args {
       args.doctor = true;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       console.log(`sofagent-audit v${VERSION} · 审计闭环六步\n`);
+      console.log('快速开始: sofagent-audit --init');
+      console.log('主命令: sofagent-audit（安装 hook + 审计引擎）');
+      console.log('辅助工具: sofagent-verify（验证）/ sofagent-verify-evidence（证据检查）/ sofagent-skill-safety-check\n');
       console.log('用法: sofagent-audit --diff <range> [--task <description>] [--strict] [--silent] [--ci] [--json] [--install-hook]');
       console.log('      sofagent-audit --root-cause');
       console.log('      sofagent-audit --regression <dir>');
@@ -353,8 +361,8 @@ async function main(): Promise<void> {
     process.exit(2);
   }
 
-  // 2. 解析 git diff
-  const diffFiles = parseDiff(args.diffRange);
+  // 2. 解析 git diff（--cached 模式用于首次提交场景）
+  const diffFiles = args.cached ? parseStagedDiff() : parseDiff(args.diffRange);
 
   if (diffFiles.length === 0) {
     if (args.json) {
@@ -376,8 +384,23 @@ async function main(): Promise<void> {
     // 非 git 仓库或无 commit，留空
   }
 
-  // 4. 加载审计配置（三级 fallback）
-  const config = loadConfig();
+  // 4. 加载审计配置（三级 fallback）——YAML 语法错误时按模式处理
+  let config;
+  try {
+    config = loadConfig();
+  } catch (err) {
+    if (err instanceof ConfigLoadError) {
+      const msg = `config.yml 解析错误: ${err.message}`;
+      if (args.json) {
+        console.log(JSON.stringify({ exitCode: args.strict ? 2 : 1, rules: [], error: 'CONFIG_PARSE_ERROR', detail: msg }, null, 2));
+        process.exit(args.strict ? 2 : 1);
+      }
+      console.error(`❌ ${msg}`);
+      // --strict / --ci 模式下阻断（exit 2），默认模式 WARN（exit 1）
+      process.exit(args.strict ? 2 : 1);
+    }
+    throw err;
+  }
 
   // 5. 运行规则
   const results = runRules(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg, config);
@@ -519,7 +542,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
     return;
   }
 
-  // ===== v1.0.0 可视化输出 =====
+  // ===== v1.0.1 可视化输出 =====
 
   const exitCode = results.exitCode;
   const totalRules = results.rules.length;
@@ -548,7 +571,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
       const classTag = rule.ruleClass === '业务底线' ? '[底线]' : rule.ruleClass === '能力拐杖' ? '[拐杖]' : '';
       for (const detail of rule.details) {
         console.log(`  ${icon} ${rule.name} ${classTag}: ${detail}`);
-        // 修复建议（v1.0.0 新增）
+        // 修复建议（v1.0.1 新增）
         const suggestion = getFixSuggestion(rule.name);
         if (suggestion) {
           console.log(`     怎么修: ${suggestion}`);
@@ -560,7 +583,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
   // 规则网格——一行展示全部规则状态
   console.log('');
   const gridParts = results.rules.map((r) => {
-    const num = r.number <= 11 ? `A${r.number}` : `E${r.number - 200}`;
+    const num = r.number >= 200 ? `E${r.number - 200}` : `A${r.number}`;
     const icon = r.status === 'PASS' ? '✅' : r.status === 'WARN' ? '⚠️' : '❌';
     return `${num} ${icon}`;
   });
