@@ -54,7 +54,7 @@ sofagent 的五层架构可以映射到 Akshay Pachaar（前 Lightning AI 工程
 |-------------|-------------|:--:|
 | 流程编排 | entry-gate + task-aware | ✅ |
 | 工具调用 | MCP server + webhook | ✅ |
-| 分层存储 | think.md + task/logs + AI 知识库（v1.1 规划） | ⚠️ |
+| 分层存储 | think.md + task/logs + AI 知识库（v1.0.1 规划） | ⚠️ |
 | 上下文管理 | 加载链（三层注入） | ✅ |
 | 错误处理 | loop-check + loop-exit | ✅ |
 | 自动验证 | sofagent-audit（外置审计，Agent 不可绕过） | ✅ |
@@ -102,7 +102,7 @@ sofagent 部分对标后三类壁垒：
 |:--|:--|:--|
 | **权限型** | fde.md 的 4 条底线 + 6 则铁律 = 规则层的强制约束 | AI 智力再强也绕不过 git pre-commit hook——这是物理层面的拦截。注：sofagent 的 pre-commit hook 是技术层面的强制，不等同于法律/合规授权——但同样不可被 AI 智力绕过 |
 | **责任承担型** | sofagent-audit 的完整审计链路：谁改了→什么时候→为什么→谁审的 | AI 不具备法律主体资格，责任必须外挂在人身上。sofagent 提供可追溯性，不提供法律意义上的责任承担——责任仍由人承担，sofagent 让责任有据可查 |
-| **活数据飞轮型** | 企业专属 Skill + AI 知识库（v1.1）= 每天有新数据灌入 | 静态知识库可被模型反推蒸馏；但持续新增的 think.md / task/logs / scoring.md 无法被蒸馏 ✅ |
+| **活数据飞轮型** | 企业专属 Skill + AI 知识库（v1.0.1）= 每天有新数据灌入 | 静态知识库可被模型反推蒸馏；但持续新增的 think.md / task/logs / scoring.md 无法被蒸馏 ✅ |
 
 这意味着 sofagent 不是容易被替换的「工具型产品」，而是**基础设施型产品的架构基因**。它的护城河不依赖模型能力，依赖的是模型能力再强也绕不过的三样东西：权限、责任、活数据。
 
@@ -121,10 +121,10 @@ sofagent 五层架构中的每一层都与成熟的外部项目存在对应或�
 | sofagent 模块 | 对应外部框架 | 关系 | 版本 |
 |------|------|------|:--:|
 | 审计引擎（Harness 层） | 独立自研——git diff 硬证据审计无可替代 | 核心差异化，外部无对标 | v1.0 |
-| 编排引擎 | [LangChain](https://github.com/langchain-ai/langchainjs) + [LangGraph](https://github.com/langchain-ai/langgraphjs) + [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) | v1.1 引入替换 ao，v1.4 全覆盖 | v1.1-1.4 |
-| Skill 系统 | [Agency Agents](https://github.com/msitarzewski/agency-agents)（230+ 岗位模板，v1.2）+ [SkillOpt](https://github.com/microsoft/SkillOpt)（Skill 文档自进化，v1.2）+ eval harness + A/B 对比（Sub Agent 配置自进化，v1.3） | 模板引用 + 对接优化引擎 | v1.1-1.3 |
+| 编排引擎 | [LangChain](https://github.com/langchain-ai/langchainjs) + [LangGraph](https://github.com/langchain-ai/langgraphjs) + [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) | v1.0.1 引入替换 ao，v1.0.4 全覆盖 | v1.0.1-v1.0.4 |
+| Skill 系统 | [Agency Agents](https://github.com/msitarzewski/agency-agents)（230+ 岗位模板，v1.0.2）+ [SkillOpt](https://github.com/microsoft/SkillOpt)（Skill 文档自进化，v1.0.2）+ eval harness + A/B 对比（Sub Agent 配置自进化，v1.0.3） | 模板引用 + 对接优化引擎 | v1.0.1-v1.0.3 |
 | AI 知识库 | [OpenFDE](https://open-fde.com) 10 步工作流（行业定位验证） | 外部验证——审计位列 FDE 工作流基础层 | v1.0-1.1 |
-| 企业世界模型（Ontology） | [Palantir Ontology](https://www.palantir.com/platforms/aip/)——实体+关系+动作+约束四合一 | 概念借鉴，渐进构建（v1.1-1.4） | v1.1-1.4 |
+| 企业世界模型（Ontology） | [Palantir Ontology](https://www.palantir.com/platforms/aip/)——实体+关系+动作+约束四合一 | 概念借鉴，渐进构建（v1.0.1-v1.0.4） | v1.0.1-v1.0.4 |
 
 **设计原则**：能做好的不自研（编排交给 DeepAgents），做不了的借鉴（Ontology 从 Palantir 学思路），没人做的自己造（git diff 硬证据审计）。详见 THANKS.md。
 
@@ -135,16 +135,16 @@ sofagent 五层架构中的每一层都与成熟的外部项目存在对应或�
 | 翁荔六层 | sofagent 对应 |
 |------|------|
 | ① 上下文工程 | 加载链（SKILL.md → think.md → fde.md → knowledge） |
-| ② Harness 代码优化 | SkillOpt 自进化（v1.2）+ Sub Agent A/B 自进化（v1.3） |
-| ③ 领域工作流设计 | Work模板市场 + Workflow 行业模板（v1.4） |
-| ④ 自我改进的 Harness | eval harness + validation gate + 弱点挖掘闭环（v1.3） |
+| ② Harness 代码优化 | SkillOpt 自进化（v1.0.2）+ Sub Agent A/B 自进化（v1.0.3） |
+| ③ 领域工作流设计 | Work模板市场 + Workflow 行业模板（v1.0.4） |
+| ④ 自我改进的 Harness | eval harness + validation gate + 弱点挖掘闭环（v1.0.3） |
 | ⑤ 进化搜索 | （远期——v2.x 探索） |
 | ⑥ 与模型权重联合优化 | （远期——需待模型能力成熟） |
 
 三条核心预判验证：
 1. 「RSI 的近期路径优先优化 Harness 系统而非模型权重」→ sofagent 从 v0.1 就坚持审计优先于模型依赖
 2. 「Harness 层能力最终会被内化为模型原生行为」→ 解释了为什么审计引擎必须外置硬审计——不可被模型内化绕过
-3. 「人类不应被移出循环，而应向更高抽象层移动」→ HITL middleware（v1.3）的设计原则
+3. 「人类不应被移出循环，而应向更高抽象层移动」→ HITL middleware（v1.0.3）的设计原则
 
 同时，Anthropic Managed Agents「大脑-双手解偶」的四层编排架构（Agent 与沙盒解偶 → Coordinator 编排层 → Session 解偶层 → Session Store 记忆层），与 sofagent 的 OpenClaw（连接+行动）+ DeepAgents（深度思考）分工完全一致。
 
@@ -184,7 +184,7 @@ sofagent 分两层——地基轻、引擎重：
 
 **设计后果**：`--silent` 模式只跑纯 git-diff 规则（零依赖 Agent 配合）；完整模式交叉对比两种证据；新规则优先加 git-diff 规则。底线：**审计工具在零 Agent 配合下仍然有判定能力。**
 
-> 🔮 **v1.1 方向：事后→事前（双闸验证）**。当前审计是事后 diff（Agent 改完了再查）。自然的进化是在执行前加一道闸——**执行前验证**（Agent 计划改什么→规则预判是否允许）+ **副作用写回前再验证**（改完没提交→再扫一遍）。双闸不是替代事后审计，是和事后审计互补——事后审计永远是最硬的证据，双闸让违规在发生前就被拦住。
+> 🔮 **v1.0.1 方向：事后→事前（双闸验证）**。当前审计是事后 diff（Agent 改完了再查）。自然的进化是在执行前加一道闸——**执行前验证**（Agent 计划改什么→规则预判是否允许）+ **副作用写回前再验证**（改完没提交→再扫一遍）。双闸不是替代事后审计，是和事后审计互补——事后审计永远是最硬的证据，双闸让违规在发生前就被拦住。
 
 > 🔮 **v1.x 方向：权限风险分级**。当前 entry-gate.md 是单层权限清单（能做/不能做二分）。Human-in-the-Loop 审批工程的进化方向是按风险分三级：🟢 低风险（文件读写/查询）自动放行 / 🟡 中风险（git 操作/安装包）需确认 / 🔴 高风险（删数据/部署/外部 API）必须人工审批。风险分级不是增加审批摩擦，是让低风险操作更快通过的同时，把人工注意力精准投放到高风险节点。
 
@@ -314,7 +314,7 @@ sofagent 自身的开发过程本身就是这一循环的活体验证——两�
 
 加载顺序受 Lost in the Middle 约束：SKILL.md 放最前面（开头注意力最高），fde.md 放最后面（末尾注意力最高）。
 
-### 数据层：AI 知识库（v1.1 规划）
+### 数据层：AI 知识库（v1.0.1 规划）
 
 五层架构是**功能引擎层**——每层有输入、处理、输出。AI 知识库是**数据层**——它是五层引擎运转过程中沉淀的知识目录，本身不做处理。硬塞进五层维度不匹配，就像把「数据库」当成微服务架构里的一个「服务」。
 
@@ -327,7 +327,7 @@ sofagent 自身的开发过程本身就是这一循环的活体验证——两�
 | 结构 | 扁平时间线 | AI 知识库页面（双向链接） |
 | 生命周期 | 旧了压缩 | 持续积累，越用越值钱 |
 
-AI 知识库不替代 think.md——两者职责不重叠。think.md 是「上次踩了什么坑」，AI 知识库是「这个领域我们积累了什么最佳实践」。详见 [v1.1 开发日志](./docs/changelog/v1.1.md)。
+AI 知识库不替代 think.md——两者职责不重叠。think.md 是「上次踩了什么坑」，AI 知识库是「这个领域我们积累了什么最佳实践」。详见 [v1.0.1 开发日志](./docs/changelog/v1.0.1.md)。
 
 > 💡 **设计对齐**：knowledge/ 的 entities（实体页）→ relations（frontmatter 关联字段）→ concepts（概念页）→ comparisons（对比页）四层结构，本质是**轻量级 GraphRAG**（Microsoft 2024）。区别在于用 Agent 遍历关联代替图数据库查询，用 .md 文件代替向量索引——零外部依赖，完全可审计，人类可以直接打开看。
 
@@ -338,12 +338,12 @@ AI 知识库不替代 think.md——两者职责不重叠。think.md 是「上�
 | 层 | 时间尺度 | sofagent 当前覆盖 | 对应组件 |
 |:--:|:--:|:--:|------|
 | **内层** Agent Loop | 秒-分钟 | ✅ 已覆盖 | think.md + loop-check + 审计引擎 |
-| **中层** 开发者反馈 | 天-周 | ⚠️ 部分 | loop-evaluate 跑完写 scoring.md，但评分→Skill 优化闭环未打通。v1.1 AI 知识库 Lint 驱动 Skill 自动迭代 |
+| **中层** 开发者反馈 | 天-周 | ⚠️ 部分 | loop-evaluate 跑完写 scoring.md，但评分→Skill 优化闭环未打通。v1.0.1 AI 知识库 Lint 驱动 Skill 自动迭代 |
 | **外层** 用户反馈 | 周-月 | ❌ 未覆盖 | 企业用了一个月后，AI 节点变聪明了还是变笨了？v2.x 组织级共享记忆 + 知识库矛盾检测 |
 
-**当前短板**：sofagent 目前只关注内层循环（Agent 跑任务→审计→反思）。中层的「审计结果怎么反馈给 Skill 优化」和外层的「企业用了一个月后怎么知道效果」是缺失环节。v1.1 的 AI 知识库 + Skill 自进化闭环补中层，v2.x 的组织级共享记忆补外层。
+**当前短板**：sofagent 目前只关注内层循环（Agent 跑任务→审计→反思）。中层的「审计结果怎么反馈给 Skill 优化」和外层的「企业用了一个月后怎么知道效果」是缺失环节。v1.0.1 的 AI 知识库 + Skill 自进化闭环补中层，v2.x 的组织级共享记忆补外层。
 
-> ⚠️ **诚实声明**：上表列的是终局目标，不是当前能力。sofagent 当前实际只覆盖内层。中层 v1.1 开始做，外层 v2.x 才涉及。
+> ⚠️ **诚实声明**：上表列的是终局目标，不是当前能力。sofagent 当前实际只覆盖内层。中层 v1.0.1 开始做，外层 v2.x 才涉及。
 
 ### 铁律为什么是 6 则
 
@@ -405,7 +405,7 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 
 ### A/B 测试为什么不是一次性评估
 
-编排引擎在 Workflow 梳理时生成第一版编排方案（current）。运行一段时间后，定期触发重新编排生成 candidate，用 `sofagent-orchestrate-compare` 做确定性对比——从 task/logs 中提取运行次数、违规率、步数、通过率四项客观指标，不由 Agent 主观判断。单次对比后标记胜出方，连续两次胜出目前需手动二次运行确认。⚠️ 连续胜出判断为 TODO(v1.1)——当前只做单次对比，需手动执行两次后人工决策。v1.1 计划实现自动连续胜出计数器，旧方案归档进 history/。
+编排引擎在 Workflow 梳理时生成第一版编排方案（current）。运行一段时间后，定期触发重新编排生成 candidate，用 `sofagent-orchestrate-compare` 做确定性对比——从 task/logs 中提取运行次数、违规率、步数、通过率四项客观指标，不由 Agent 主观判断。单次对比后标记胜出方，连续两次胜出目前需手动二次运行确认。⚠️ 连续胜出判断为 TODO(v1.0.1)——当前只做单次对比，需手动执行两次后人工决策。v1.0.1 计划实现自动连续胜出计数器，旧方案归档进 history/。
 
 保守是因为 LLM 复盘有偏差——一次高分可能是运气，连续高分才可能是规律。CLI 工具的确定性对比消除了 Agent 自我评估的偏差。
 

@@ -222,7 +222,7 @@ FDE 离场前打包交付给企业的一份文档。模板见 `FDE/templates/`�
 
 AI 知识库不是 FDE 写出来的——是 AI 节点跑起来后自己长出来的。FDE 的职责是搭好底座、让节点跑起来，AI 知识库自然就会积累。
 
-v1.1 起升级为**结构化 AI 知识库**（`.sofagent/knowledge/` 目录：entities/ 实体页 + concepts/ 概念页 + comparisons/ 对比页）。daemon 自动 Ingest task/logs 变化，loop-evaluate 顺带 Lint，加载链启动时被动注入 top-N 相关页。详见 [v1.1 开发日志](../docs/changelog/v1.1.md)。
+v1.0.1 起升级为**结构化 AI 知识库**（`.sofagent/knowledge/` 目录：entities/ 实体页 + concepts/ 概念页 + comparisons/ 对比页）。daemon 自动 Ingest task/logs 变化，loop-evaluate 顺带 Lint，加载链启动时被动注入 top-N 相关页。详见 [v1.0.1 开发日志](../docs/changelog/v1.0.1.md)。
 
 当前版本（v0.99.x）AI 知识库为散文件形态：
 

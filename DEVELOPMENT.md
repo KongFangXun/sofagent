@@ -28,9 +28,9 @@
 | 依赖 | 用途 | 版本 |
 |------|------|:--:|
 | Node.js + TypeScript | 审计引擎、CLI、MCP Server | v1.0 |
-| [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) | 编排引擎 + Sub Agent 系统 | v1.1+ |
-| [LangGraph.js](https://github.com/langchain-ai/langgraphjs) | 状态图、条件路由、HITL | v1.1+ |
-| Python 3 + `pip install skillopt` | Skill 自进化引擎（通过 CLI subprocess 调用，可选） | v1.2+ |
+| [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) | 编排引擎 + Sub Agent 系统 | v1.0.1+ |
+| [LangGraph.js](https://github.com/langchain-ai/langgraphjs) | 状态图、条件路由、HITL | v1.0.1+ |
+| Python 3 + `pip install skillopt` | Skill 自进化引擎（通过 CLI subprocess 调用，可选） | v1.0.2+ |
 | 无其他外部运行时依赖 | — | — |
 
 #### Windows 开发踩坑（PowerShell 移植必读）
@@ -230,7 +230,7 @@ ao compose 拆完任务
 
 ### A/B 测试
 
-`sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排引擎定期重出 candidate 方案后与 current 对比——单次对比后标记胜出方，连续两次胜出目前需手动二次运行确认（v1.1 计划实现自动计数器）。旧方案归档到 history/。⚠️ 连续胜出判断为 TODO(v1.1)——当前只做单次对比，需手动执行两次后人工决策。
+`sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排引擎定期重出 candidate 方案后与 current 对比——单次对比后标记胜出方，连续两次胜出目前需手动二次运行确认（v1.0.1 计划实现自动计数器）。旧方案归档到 history/。⚠️ 连续胜出判断为 TODO(v1.0.1)——当前只做单次对比，需手动执行两次后人工决策。
 
 规则：不主动创造对照组、同类型才比、单次胜出标记候选（连续 2 次需手动二次确认）、再跑 2 次稳定才沉淀、模板可被替换。局限：样本量小（最少 7 次）、LLM 有随机性。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#a-b-test)。
 
@@ -323,7 +323,7 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 | `orchestrator/` | **编排引擎核心数据** | 最优拆法决策树 | 树形 |
 | `scoring.md` | **编排引擎辅助数据** | Skill 评分记录，闭环时更新 | 树形 |
 | `IDENTITY.md` | **编排引擎辅助** | 岗位匹配（agency-agents-zh） | 全文 |
-| `knowledge/` | **数据层（v1.1）** | AI 知识库：entities/（实体页）+ concepts/（概念页）+ comparisons/（对比页）+ log.md（变更日志）+ index.md（索引） | 按需注入 top-N |
+| `knowledge/` | **数据层（v1.0.1）** | AI 知识库：entities/（实体页）+ concepts/（概念页）+ comparisons/（对比页）+ log.md（变更日志）+ index.md（索引） | 按需注入 top-N |
 
 ### 数据流向总结
 

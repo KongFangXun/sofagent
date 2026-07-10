@@ -288,7 +288,7 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](./FDE/FDE.md)）已在�
 
 ### 组件间集成测试
 
-**状态：无集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排引擎 ao compose 通过——但 daemon → MCP → webhook → 编排四组件串联行为未验证。v1.1 计划补全链路 smoke test。
+**状态：无集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排引擎 ao compose 通过——但 daemon → MCP → webhook → 编排四组件串联行为未验证。v1.0.1 计划补全链路 smoke test。
 
 ---
 
@@ -301,7 +301,7 @@ v1.0 新增 `tools/acceptance-test.sh`（9 个场景），但覆盖范围有限�
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
 
-v1.1 计划将 acceptance-test.sh 纳入 CI 自动执行（当前为发版前手动），并补全组件串联 smoke test。
+v1.0.1 计划将 acceptance-test.sh 纳入 CI 自动执行（当前为发版前手动），并补全组件串联 smoke test。
 
 ---
 
