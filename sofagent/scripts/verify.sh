@@ -169,7 +169,7 @@ if [ "$QUICK_MODE" = true ]; then
   [ "$JSON_MODE" = false ] && [ "$QUIET_MODE" = false ] && echo "  ⚡ 快速模式 — 4 项核心检查"
   [ "$JSON_MODE" = false ] && _hr
 
-  # 1. SKILL.md 存在且含 4 底线 + 6 则铁律关键词
+  # 1. SKILL.md 存在且含 4 底线 + 7 则铁律关键词
   SKILL_QUICK="${OPENCLAW_DIR:-$HOME/.openclaw}/skills/sofagent/SKILL.md"
   if [ -f "$SKILL_QUICK" ] && grep -q "4.*底线\|6.*铁律" "$SKILL_QUICK" 2>/dev/null; then
     check_pass "SKILL.md 存在且含宪法（4底线+6则铁律）"
@@ -241,7 +241,7 @@ if [ "$PLATFORM" = "workbuddy" ]; then
 
   # WorkBuddy 专属检查（v0.62：宪法内联在 SKILL.md，检查 SKILL.md 而非 sofagent.md）
   if [ -f "$HOME/.workbuddy/skills/sofagent/SKILL.md" ] && [ -s "$HOME/.workbuddy/skills/sofagent/SKILL.md" ]; then
-    if grep -q "4 底线\|6 则铁律" "$HOME/.workbuddy/skills/sofagent/SKILL.md" 2>/dev/null; then
+    if grep -q "4 底线\|7 则铁律" "$HOME/.workbuddy/skills/sofagent/SKILL.md" 2>/dev/null; then
       check_pass "SKILL.md 已部署且含宪法（4底线+6则铁律内联）"
     else
       check_warn "SKILL.md 已部署但宪法内容缺失"

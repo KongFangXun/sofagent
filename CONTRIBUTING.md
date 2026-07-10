@@ -23,7 +23,7 @@
 
 | 顺序 | 文件 | 看什么 | 约几分钟 |
 |:--:|------|------|:--:|
-| 1 | [SKILL.md](./sofagent/skill/SKILL.md) | 4 底线 + 6 则铁律 | 3 min |
+| 1 | [SKILL.md](./sofagent/skill/SKILL.md) | 4 底线 + 7 则铁律 | 3 min |
 | 2 | [CHANGELOG.md](./CHANGELOG.md) | 最新版本的变更 | 5 min |
 | 3 | [LIMITATIONS.md](./LIMITATIONS.md) | 已知局限 | 2 min |
 

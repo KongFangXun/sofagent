@@ -88,7 +88,7 @@ export function runWorkBuddyChecks(
   const wbSkill = join(HOME, '.workbuddy', 'skills', 'sofagent', 'SKILL.md');
   if (existsSync(wbSkill) && statSync(wbSkill).size > 0) {
     const content = readFileContent(wbSkill);
-    if (/4 底线|6 则铁律/.test(content)) {
+    if (/4 底线|7 则铁律/.test(content)) {
       v.checkPass('SKILL.md 已部署且含宪法（4底线+6则铁律内联）');
     } else {
       v.checkWarn('SKILL.md 已部署但宪法内容缺失');
