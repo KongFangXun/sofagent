@@ -1,2 +1,4 @@
 dist/*.js.map
 dist/*.d.ts.map
+src/*.test.ts
+src/*.fixture

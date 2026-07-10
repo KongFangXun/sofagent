@@ -6,7 +6,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 > sofagent 的设计决策记录——从 Harness 层的工程约束到五层架构的取舍。
 >
-> > v0.99.9 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
+> > v1.0.0 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 
@@ -98,6 +98,48 @@ sofagent 部分对标后三类壁垒：
 
 > 来源：AI 创业生存逻辑分析（AI 前线 2026-07-08），详见 THANKS.md。
 
+### 行业定位：OpenFDE FDE 工作流验证
+
+[OpenFDE](https://open-fde.com) 将 FDE 工作拆解为 10 步闭环，其中**第 4 步（系统设计）明确将「审计」列为架构基础层**（与身份权限同级），**第 6 步（评估体系）和第 7 步（生产化）对应 sofagent 的审计引擎 + pre-commit hook + daemon**。这意味着 sofagent 的审计优先设计不是自创概念——它与 FDE 社区工作流的最佳实践一致。
+
+> 来源：OpenFDE 10 步工作流与 8 维能力模型（[open-fde.com/docs/workflow](https://open-fde.com/docs/workflow) / [open-fde.com/docs/capabilities](https://open-fde.com/docs/capabilities)），详见 THANKS.md。
+
+### 外部框架对齐
+
+sofagent 五层架构中的每一层都与成熟的外部项目存在对应或借鉴关系——不自研重复轮子，在最佳实践上构建：
+
+| sofagent 模块 | 对应外部框架 | 关系 | 版本 |
+|------|------|------|:--:|
+| 审计引擎（Harness 层） | 独立自研——git diff 硬证据审计无可替代 | 核心差异化，外部无对标 | v1.0 |
+| 编排引擎 | [LangChain](https://github.com/langchain-ai/langchainjs) + [LangGraph](https://github.com/langchain-ai/langgraphjs) + [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) | v1.1 引入替换 ao，v1.4 全覆盖 | v1.1-1.4 |
+| Skill 系统 | [Agency Agents](https://github.com/msitarzewski/agency-agents)（230+ 岗位模板，v1.2）+ [SkillOpt](https://github.com/microsoft/SkillOpt)（Skill 文档自进化，v1.2）+ eval harness + A/B 对比（Sub Agent 配置自进化，v1.3） | 模板引用 + 对接优化引擎 | v1.1-1.3 |
+| AI 知识库 | [OpenFDE](https://open-fde.com) 10 步工作流（行业定位验证） | 外部验证——审计位列 FDE 工作流基础层 | v1.0-1.1 |
+| 企业世界模型（Ontology） | [Palantir Ontology](https://www.palantir.com/platforms/aip/)——实体+关系+动作+约束四合一 | 概念借鉴，渐进构建（v1.1-1.4） | v1.1-1.4 |
+
+**设计原则**：能做好的不自研（编排交给 DeepAgents），做不了的借鉴（Ontology 从 Palantir 学思路），没人做的自己造（git diff 硬证据审计）。详见 THANKS.md。
+
+### Harness 框架行业验证：翁荔六层模型
+
+前 OpenAI 安全研究副总裁翁荔（Lilian Weng, 2026-07-04）在《The Path to Recursively Self-Improving Harnesses》中系统性梳理了 Harness 工程的六层进化路径。sofagent 的架构覆盖其中四层，且验证了其三条核心预判：
+
+| 翁荔六层 | sofagent 对应 |
+|------|------|
+| ① 上下文工程 | 加载链（SKILL.md → think.md → fde.md → knowledge） |
+| ② Harness 代码优化 | SkillOpt 自进化（v1.2）+ Sub Agent A/B 自进化（v1.3） |
+| ③ 领域工作流设计 | Work模板市场 + Workflow 行业模板（v1.4） |
+| ④ 自我改进的 Harness | eval harness + validation gate + 弱点挖掘闭环（v1.3） |
+| ⑤ 进化搜索 | （远期——v2.x 探索） |
+| ⑥ 与模型权重联合优化 | （远期——需待模型能力成熟） |
+
+三条核心预判验证：
+1. 「RSI 的近期路径优先优化 Harness 系统而非模型权重」→ sofagent 从 v0.1 就坚持审计优先于模型依赖
+2. 「Harness 层能力最终会被内化为模型原生行为」→ 解释了为什么审计引擎必须外置硬审计——不可被模型内化绕过
+3. 「人类不应被移出循环，而应向更高抽象层移动」→ HITL middleware（v1.3）的设计原则
+
+同时，Anthropic Managed Agents「大脑-双手解偶」的四层编排架构（Agent 与沙盒解偶 → Coordinator 编排层 → Session 解偶层 → Session Store 记忆层），与 sofagent 的 OpenClaw（连接+行动）+ DeepAgents（深度思考）分工完全一致。
+
+> 来源：翁荔 Harness 工程博客、Anthropic Managed Agents 架构，详见 THANKS.md。
+
 ### 两层架构：地基 vs 引擎
 
 sofagent 分两层——地基轻、引擎重：
@@ -116,7 +158,7 @@ sofagent 分两层——地基轻、引擎重：
 | **Harness 层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ 已可用 |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ v0.81 |
 | **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff | ✅ v0.92 |
-| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v0.99.9），推送待端到端验证 | ✅ v0.99.5 |
+| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v1.0.0），推送待端到端验证 | ✅ v0.99.5 |
 | **协同层** | 多设备 + 云端 | 组织级 Agent Harness——Agent 以独立身份进入协作现场，共享上下文 + 组织记忆 + 主动参与 | v2.x 规划 |
 
 每层跑通再加下一层——不推翻已验证的东西。
@@ -266,7 +308,9 @@ sofagent 自身的开发过程本身就是这一循环的活体验证——两�
 
 五层架构是**功能引擎层**——每层有输入、处理、输出。AI 知识库是**数据层**——它是五层引擎运转过程中沉淀的知识目录，本身不做处理。硬塞进五层维度不匹配，就像把「数据库」当成微服务架构里的一个「服务」。
 
-| | think.md（反思层） | AI 知识库（沉淀层） |
+#### think.md vs AI 知识库对比
+
+| 维度 | think.md（反思层） | AI 知识库（沉淀层） |
 |:--|:--|:--|
 | 注入机制 | 加载链被动注入 | 加载链被动注入（top-N 相关页） |
 | 内容 | 单次任务的反思教训 | 跨任务的模式、最佳实践、对比 |

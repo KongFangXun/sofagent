@@ -193,25 +193,9 @@ v0.94 要补上这个缺口：**同一任务、同一模型，在三种条件下
 
 ---
 
-## 7. 自动化脚本骨架
+## 7. 自动化脚本（已移除）
 
-配套脚本在 `docs/benchmark/scripts/` 下（见下方）。作者执行时：
-
-```bash
-cd docs/benchmark/scripts
-# 1. 准备测试套件
-./prepare-fixture.sh
-# 2. 跑条件 A（裸 Agent）——需手动在 OpenClaw 中操作
-./run-trial.sh --condition A --trial 1
-# 3. 跑条件 B（prompt 注入）——需手动粘贴注入版 prompt
-./run-trial.sh --condition B --trial 1
-# 4. 跑条件 C（加载链）——需在 WorkBuddy 中操作
-./run-trial.sh --condition C --trial 1
-# 5. 评分（自动 grep 变量名误伤）
-./score-trial.sh --trial-dir ../trials/A-1
-```
-
-⚠️ **脚本只自动化"评分"和"还原"，不自动化"跑 Agent"**——因为 A/B/C 三条件的 Agent 操作必须在不同环境（OpenClaw --local / WorkBuddy）中手动进行，脚本无法跨环境调度 Agent。
+> 实验脚本（prepare-fixture / run-trial / aggregate）随 experiments/ 目录一并清理。脚本只自动化「评分」和「还原」，不自动化「跑 Agent」——A/B/C 三条件的 Agent 操作必须在不同环境（OpenClaw --local / WorkBuddy）中手动进行。如需复现，手动跑 git diff 对比变量名误伤即可。
 
 ---
 

@@ -1,6 +1,6 @@
 # @sofagent/audit
 
-> v0.99.9 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
+> v1.0.0 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
 >
 > 最小运行时依赖（仅 js-yaml）。TypeScript 实现。Node.js 18+。
 
@@ -318,7 +318,7 @@ cd sofagent/sofagent/audit
 
 npm ci           # 安装依赖
 npm run build    # 编译 TypeScript
-npm test         # 运行测试（407 tests）
+npm test         # 运行测试（408 tests）
 npm run check    # 类型检查（tsc --noEmit）
 ```
 

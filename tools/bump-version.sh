@@ -561,3 +561,14 @@ else
   fi
 fi
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
+
+# ── 手动检查提醒（v1.0 新增，bump-version 盲区防护）────────
+if ! $DRY_RUN; then
+  echo ""
+  echo -e "  ${YELLOW}⚠️  手动检查提醒（bump-version.sh 只改版本号，不碰正文叙事）：${NC}"
+  echo "    1. ROADMAP.md「现在在哪」段落的叙事内容是否已更新为新版本？"
+  echo "    2. ROADMAP.md「现在在哪」的开发日志链接是否指向新版本？"
+  echo "    3. CHANGELOG.md 是否已新增新版本的索引条目？"
+  echo "    4. ROADMAP.md 迭代历程表是否已新增新版本行？"
+  echo ""
+fi

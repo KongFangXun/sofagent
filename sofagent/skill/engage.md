@@ -1,4 +1,4 @@
-# engage.md · 编排引擎（精简版）· v0.99
+# engage.md · 编排引擎（精简版）· v1.0
 
 > FDE 部署场景专用——workflow 节点触发时点火。个人开发者不需要。
 
@@ -60,7 +60,7 @@ AO Compose 自带角色模板库，直接引用不自定义：
 
 ## 缓存复用
 
-同一 workflow 节点已有缓存时，直接复用 `orchestrator/workflows/<hash>.yaml` 拆解结果。仅当 think.md 反馈建议调整时重新拆解。
+同一 workflow 节点已有缓存时，直接复用 `orchestrator/workflows/<hash>.yaml` 拆解结果。仅当 think.md 反馈要求调整时重新拆解。
 
 ---
 

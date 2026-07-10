@@ -78,8 +78,12 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
   echo "  └──────────────────────────────────────────┘"
   echo ""
   echo "  1. 验证安装：bash sofagent/scripts/verify.sh"
-  echo "  2. 体验审计：cd 你的 git 项目 && git commit（pre-commit hook 自动触发）"
-  echo "  3. 了解更多：cat README.md 或 cat HANDBOOK.md"
+  echo "  2. 在你的 git 项目初始化审计：sofagent-audit --init"
+  echo "  3. 体验效果：cd 你的 git 项目 && git commit（hook 自动触发）"
+  echo "  4. 5 分钟入门：cat HANDBOOK.md"
+  echo ""
+  echo "  如需卸载：./uninstall.sh（保留你的 .sofagent/ 数据）"
+  echo "  历史拦截：全新安装，审计历史将从第一次提交开始记录。"
   echo ""
   [ "$PLATFORM" = "openclaw" ] || return 0
   # API Key 提醒 + Hook 状态提示（仅 OpenClaw）

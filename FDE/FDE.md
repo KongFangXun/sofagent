@@ -1,8 +1,10 @@
 # FDE.md · Forward Deployed Engineer 部署手册
 
-> ⚠️ **成熟度声明**：FDE 四阶段十二步流程已在作者自有企业中实际部署使用（2026-07）。审计引擎（独立产品）成熟度更高——407 tests 全绿、跨平台 CI 覆盖。详见 [LIMITATIONS.md](../LIMITATIONS.md)。
+> ⚠️ **成熟度声明**：FDE 四阶段十二步流程已在作者自有企业中实际部署使用（2026-07）。审计引擎（独立产品）成熟度更高——408 tests 全绿、跨平台 CI 覆盖。详见 [LIMITATIONS.md](../LIMITATIONS.md)。
 
 > **这是什么**：FDE（或企业 CIO/网管）的操作手册。读它 → 帮企业梳理 workflow → 识别 AI 节点 → 生成交付手册。Agent 全程辅助——你负责和人聊，Agent 负责记录、分析、出方案。安装、使用说明见 [README.md](./README.md)。
+
+> **在 FDE 工作流中的位置**：OpenFDE 将 FDE 工作拆解为 10 步闭环——sofagent 覆盖其中第 6 步（评估体系）和第 7 步（生产化），提供 git diff 硬证据审计、pre-commit hook、daemon 监控。详见 [OpenFDE 10 步工作流](https://open-fde.com/docs/workflow)。
 
 **离场后，企业留下三样东西：一份谁都能看懂的交付手册、一套在跑的 AI 节点、一个会自己生长的 AI 知识库。**
 
@@ -183,7 +185,7 @@ bash sofagent/scripts/install.sh
 4. **检查点配置**：每个 🔄/⚡ 输出端设检查点，默认抽检 10%。不合格 → 标记任务 → 反馈主人 → 记录异常 → 触发 Skill 优化分析
 5. **教会一个人**：每个 AI 节点指定企业方主人，退出信号为连续两天无人问「怎么用」
 
-> 知识库不用你搭——AI 节点跑起来后自动积累：think.md（反思日志）、task/logs（任务记录）、scoring.md（评分记录）、orchestrator/（编排决策）。FDE 的职责是装好底座、让节点跑起来，知识库自然就有了。
+> AI 知识库不用你搭——AI 节点跑起来后自动积累：think.md（反思日志）、task/logs（任务记录）、scoring.md（评分记录）、orchestrator/（编排决策）。FDE 的职责是装好底座、让节点跑起来，AI 知识库自然就有了。
 
 ---
 
@@ -218,7 +220,7 @@ FDE 离场前打包交付给企业的一份文档。模板见 `FDE/templates/`�
 
 #### 📚 AI 知识库（AI 节点运行后自动积累）
 
-知识库不是 FDE 写出来的——是 AI 节点跑起来后自己长出来的。FDE 的职责是搭好底座、让节点跑起来，知识库自然就会积累。
+AI 知识库不是 FDE 写出来的——是 AI 节点跑起来后自己长出来的。FDE 的职责是搭好底座、让节点跑起来，AI 知识库自然就会积累。
 
 v1.1 起升级为**结构化 AI 知识库**（`.sofagent/knowledge/` 目录：entities/ 实体页 + concepts/ 概念页 + comparisons/ 对比页）。daemon 自动 Ingest task/logs 变化，loop-evaluate 顺带 Lint，加载链启动时被动注入 top-N 相关页。详见 [v1.1 开发日志](../docs/changelog/v1.1.md)。
 
@@ -258,6 +260,17 @@ v1.1 起升级为**结构化 AI 知识库**（`.sofagent/knowledge/` 目录：en
 - [ ] 企业负责人确认可以离场
 
 > 你不是在盖章——你是在帮部署专家确认「走之后不会出事」。
+
+---
+
+## 隐性代价
+
+| 代价 | 说明 |
+|------|------|
+| 理解债 | 企业员工需要理解 sofagent 的约束模型——为什么 Agent 不能直接改代码、为什么要过审计。学习曲线 1-2 周 |
+| 认知让渡 | FDE 把 workflow 设计权部分让渡给 sofagent 框架——企业不再完全自由定义 Agent 行为，需在框架约束内运作 |
+
+> 以上为客观陈述，帮助 FDE 做出知情决策。sofagent 的价值在于用约束换取可追溯性——代价是短期摩擦，收益是长期可控。
 
 ---
 

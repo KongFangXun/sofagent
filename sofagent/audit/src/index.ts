@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v0.99.9 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.0.0 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
 // 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
@@ -11,7 +11,7 @@
 //   node sofagent/audit/dist/index.js --diff HEAD~1..HEAD --silent --task "test"
 //   node sofagent/audit/dist/index.js --diff HEAD~1..HEAD --ci --task "test"
 //   node sofagent/audit/dist/index.js --root-cause
-//   node sofagent/audit/dist/index.js --regression ./test-fixtures
+//   node sofagent/audit/dist/index.js --regression ./src
 //
 // 退出码：
 //   0 = 全通过
@@ -35,6 +35,7 @@ import type { RuleCheck } from './rules/types';
 import { pushAuditResult, type WebhookPlatform } from './webhook';
 import { generateThinkEntry } from './think-generator';
 import { VERSION } from './shared/constants.js';
+import { getFixSuggestion } from './fix-suggestions';
 
 interface Args {
   diffRange: string;
@@ -49,11 +50,13 @@ interface Args {
   webhook?: WebhookPlatform;
   webhookUrl?: string;
   mcp: boolean;
+  init: boolean;
+  doctor: boolean;
 }
 
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, doctor: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff' && argv[i + 1]) {
       i++;
@@ -93,11 +96,17 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === '--mcp') {
       // MCP Server 模式：启动 JSON-RPC 2.0 over stdio
       args.mcp = true;
+    } else if (argv[i] === '--init') {
+      args.init = true;
+    } else if (argv[i] === '--doctor') {
+      args.doctor = true;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       console.log(`sofagent-audit v${VERSION} · 审计闭环六步\n`);
       console.log('用法: sofagent-audit --diff <range> [--task <description>] [--strict] [--silent] [--ci] [--json] [--install-hook]');
       console.log('      sofagent-audit --root-cause');
       console.log('      sofagent-audit --regression <dir>');
+      console.log('      sofagent-audit --init');
+      console.log('      sofagent-audit --doctor');
       console.log('      sofagent-audit --mcp');
       console.log('  --diff          git diff 范围（默认 HEAD~1..HEAD）');
       console.log('  --task          任务描述（用于 A3 不改越界检查）');
@@ -108,6 +117,8 @@ function parseArgs(argv: string[]): Args {
       console.log('  --install-hook  安装 git pre-commit hook 到当前仓库的 .git/hooks/');
       console.log('  --root-cause    分析审计历史，输出根因报告 + 配置建议');
       console.log('  --regression <dir>  对指定目录下的历史快照跑回归验证');
+      console.log('  --init          一键初始化：生成 config.yml + 安装 hook + 冒烟测试');
+      console.log('  --doctor        健康诊断：7 项检查 + 修复建议');
       console.log('  --webhook <platform>  webhook 推送平台（dingtalk / feishu / wecom），有 WARN/FAIL 时推送');
       console.log('  --webhook-url <url>   webhook URL（也可通过 SOFAGENT_WEBHOOK_URL 环境变量设置）');
       console.log('  --mcp           启动 MCP Server（JSON-RPC 2.0 over stdio），暴露审计能力给 MCP Client');
@@ -300,6 +311,20 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
+  // --init 模式：一键初始化 config + hook + 冒烟测试
+  if (args.init) {
+    const { runInit } = await import('./commands/init');
+    runInit();
+    return;
+  }
+
+  // --doctor 模式：健康诊断
+  if (args.doctor) {
+    const { runDoctor } = await import('./commands/doctor');
+    runDoctor();
+    return;
+  }
+
   // --install-hook 在开头处理，完成后退出
   if (args.installHook) {
     installHook();
@@ -408,6 +433,69 @@ async function main(): Promise<void> {
   process.exit(results.exitCode);
 }
 
+// ============================================================
+// CJK 宽度计算——终端中文字符占 2 列，ASCII 占 1 列
+// padEnd 按字符数 pad，会导致 banner 右边框错位
+// ============================================================
+
+function isCJK(code: number): boolean {
+  return (
+    (code >= 0x4e00 && code <= 0x9fff) ||  // CJK Unified Ideographs
+    (code >= 0x3000 && code <= 0x303f) ||  // CJK Symbols and Punctuation
+    (code >= 0xff00 && code <= 0xffef)     // Fullwidth Forms
+  );
+}
+
+function visualWidth(str: string): number {
+  let w = 0;
+  for (const ch of str) {
+    w += isCJK(ch.codePointAt(0) ?? 0) ? 2 : 1;
+  }
+  return w;
+}
+
+function padVisual(str: string, width: number): string {
+  const pad = width - visualWidth(str);
+  return pad > 0 ? str + ' '.repeat(pad) : str;
+}
+
+// ============================================================
+// banner 辅助——生成带左右边框的行
+// ============================================================
+
+const BANNER_WIDTH = 44; // ╔══ ... ══╗ 内部宽度
+
+function bannerTop(): string {
+  return '╔' + '═'.repeat(BANNER_WIDTH) + '╗';
+}
+
+function bannerBottom(): string {
+  return '╚' + '═'.repeat(BANNER_WIDTH) + '╝';
+}
+
+function bannerLine(text: string): string {
+  return '║ ' + padVisual(text, BANNER_WIDTH - 2) + ' ║';
+}
+
+// ============================================================
+// 历史拦截统计
+// ============================================================
+
+function getHistoryStats(): { total: number; thisMonth: number } | null {
+  try {
+    const history = loadHistory(500);
+    if (history.length === 0) return null;
+
+    const now = new Date();
+    const yearMonth = now.toISOString().slice(0, 7); // YYYY-MM
+    const thisMonth = history.filter((e) => e.timestamp.startsWith(yearMonth)).length;
+
+    return { total: history.length, thisMonth };
+  } catch {
+    return null;
+  }
+}
+
 function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean, ci: boolean): void {
   // JSON 输出模式——输出结构化 JSON，适合 CI 系统解析
   if (json) {
@@ -415,33 +503,97 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
     return;
   }
 
-  console.log(`\n[sofagent-audit] 扫描 ${diffFiles.length} 个变更文件\n`);
-  let hasAnyOutput = false;
+  // CI 静默模式——只在有 WARN/FAIL 时输出简短结果
+  if (ci) {
+    const problems = results.rules.filter((r) => r.status !== 'PASS');
+    if (problems.length === 0) return;
 
-  for (const rule of results.rules) {
-    const status = rule.status;
-    const icon = status === 'PASS' ? '✅' : status === 'WARN' ? '⚠️ ' : '❌';
-    if (status === 'PASS') continue; // 跳过的规则不显示
-    hasAnyOutput = true;
+    for (const rule of problems) {
+      const icon = rule.status === 'FAIL' ? '❌' : '⚠️';
+      const classTag = rule.ruleClass === '业务底线' ? '[底线]' : rule.ruleClass === '能力拐杖' ? '[拐杖]' : '';
+      for (const detail of rule.details) {
+        console.log(`${icon} ${rule.name} ${classTag}: ${detail}`);
+      }
+    }
+    console.log(`\n判定: ${results.exitCode === 1 ? '⚠️  WARN' : '❌ FAIL'} (exit ${results.exitCode})`);
+    return;
+  }
 
-    const evidenceTag = rule.evidenceMode ? `[evidenceMode: ${rule.evidenceMode}]` : '';
-    const classTag = rule.ruleClass === '业务底线' ? '[底线]' : rule.ruleClass === '能力拐杖' ? '[拐杖]' : '';
-    for (const detail of rule.details) {
-      console.log(`${icon} ${rule.name} ${classTag} ${evidenceTag}: ${detail}`);
+  // ===== v1.0.0 可视化输出 =====
+
+  const exitCode = results.exitCode;
+  const totalRules = results.rules.length;
+  const failCount = results.rules.filter((r) => r.status === 'FAIL').length;
+  const warnCount = results.rules.filter((r) => r.status === 'WARN').length;
+  const passCount = totalRules - failCount - warnCount;
+
+  // banner 状态
+  const statusLabel = exitCode === 0 ? '✅ 审计通过' : exitCode === 1 ? '⚠️  有警告' : '❌ 审计拦截';
+  const actionLabel = exitCode === 0 ? '可以放心提交' : exitCode === 1 ? '建议修复后再提交' : '提交已被阻止';
+  const issueWord = failCount > 0 ? `${failCount} 违规` : warnCount > 0 ? `${warnCount} 警告` : '0 违规';
+
+  console.log('');
+  console.log(bannerTop());
+  console.log(bannerLine(`sofagent-audit · v${VERSION}`));
+  console.log(bannerLine(`扫描 ${diffFiles.length} 文件 · ${totalRules} 项检查 · ${issueWord}`));
+  console.log(bannerLine(`${statusLabel}  ·  ${actionLabel}`));
+  console.log(bannerBottom());
+
+  // 违规/警告详情
+  const problems = results.rules.filter((r) => r.status !== 'PASS');
+  if (problems.length > 0) {
+    console.log('');
+    for (const rule of problems) {
+      const icon = rule.status === 'FAIL' ? '❌' : '⚠️';
+      const classTag = rule.ruleClass === '业务底线' ? '[底线]' : rule.ruleClass === '能力拐杖' ? '[拐杖]' : '';
+      for (const detail of rule.details) {
+        console.log(`  ${icon} ${rule.name} ${classTag}: ${detail}`);
+        // 修复建议（v1.0.0 新增）
+        const suggestion = getFixSuggestion(rule.name);
+        if (suggestion) {
+          console.log(`     怎么修: ${suggestion}`);
+        }
+      }
     }
   }
 
-  if (!hasAnyOutput) {
-    console.log('✅ 全部审计规则通过。');
+  // 规则网格——一行展示全部规则状态
+  console.log('');
+  const gridParts = results.rules.map((r) => {
+    const num = r.number <= 11 ? `A${r.number}` : `E${r.number - 200}`;
+    const icon = r.status === 'PASS' ? '✅' : r.status === 'WARN' ? '⚠️' : '❌';
+    return `${num} ${icon}`;
+  });
+  // 分两行避免太长
+  const half = Math.ceil(gridParts.length / 2);
+  console.log(`  审计规则   ${gridParts.slice(0, half).join('  ')}`);
+  if (gridParts.length > half) {
+    console.log(`             ${gridParts.slice(half).join('  ')}`);
+  }
+
+  // 扩展规则状态
+  if (!results.rules.some((r) => r.number > 11)) {
+    console.log('  扩展规则   未启用（E1 E2 E3 E4，config 中开启）');
+  }
+
+  // 历史拦截统计
+  const stats = getHistoryStats();
+  if (stats) {
+    console.log('');
+    console.log(`  历史拦截：${stats.total} 次审计记录（本月 ${stats.thisMonth} 次）`);
+  }
+
+  // 判定行
+  console.log('');
+  const judgeIcon = exitCode === 0 ? '✅ PASS' : exitCode === 1 ? '⚠️  WARN (有警告)' : '❌ FAIL (有违规)';
+  console.log(`  判定: ${judgeIcon} · exit code ${exitCode}`);
+
+  // CI 模式提醒
+  if (ci) {
+    console.log('  💡 CI 模式仅检查 git diff 硬证据，完整审计需配合 Agent 日志（A7/A8）。');
   }
 
   console.log('');
-  console.log(`判定: ${results.exitCode === 0 ? '✅ PASS' : results.exitCode === 1 ? '⚠️  WARN (有警告)' : '❌ FAIL (有违规)'}`);
-
-  // CI 模式提醒——CI 仅检查 git diff 硬证据，完整审计需配合 Agent 日志
-  if (ci) {
-    console.log('💡 提示：CI 模式仅检查 git diff（硬证据）。完整审计需配合 Agent 日志（A7/A8）。');
-  }
 }
 
 main().catch((err) => {
