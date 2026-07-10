@@ -18,41 +18,41 @@
 
 ## 迭代历程
 
-> 倒叙排列，每个版本有独立开发日志。
+> 倒叙排列，每个版本有独立开发日志。v0.x 为实验/测试版，v1.0.0 起为正式版。
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
-| **v1.0.0** | 正式版：Agent 审计工具——18 件事 + 408 测试全绿 + 106 维度审查 | [📖](./docs/changelog/v1.0.md) |
-| **v0.99.9** | AI 知识库概念先行 + 审查修复收尾 + verify.ts 拆分（1257→4模块）+ 行业笔记落地 + 理论引证（Hugging Face/AutoResearch/Akshay） | [📖](./docs/changelog/v0.99.9.md) |
-| **v0.99.8** | 审查修复收尾 + FDE 架构重构：双审查 20 项遗留全修 + FDE 四层→三层实体 + templates 镜像产出 + Skill 精简（925→742 行）+ GitHub Actions v5 + PR check + v1.0 准入诚实化（3✅→2✅） | [📖](./docs/changelog/v0.99.8.md) |
-| **v0.99.7** | 发布基础设施修复：CI E403 根治 + OIDC 清零 + mcp 依赖解锁 + shellcheck 清零 + Windows 标注（11 项，三轮审查驱动） | [📖](./docs/changelog/v0.99.7.md) |
-| **v0.99.6** | 审查修复：mcp npm 同步发布 + 文档一致性（25 项，双审驱动） | [📖](./docs/changelog/v0.99.6.md) |
-| **v0.99.5** | CI 自动化 + 审查修复：NPM_TOKEN 自动发布 + P0×6/P1×10 修复 + 工具增强 | [📖](./docs/changelog/v0.99.5.md) |
-| **v0.99.4** | 审查修复：41 项全面修复，准入 6✅→3✅ 诚实化，doc-vs-reality 清零，闭环→多维 | [📖](./docs/changelog/v0.99.4.md) |
-| **v0.99.3** | 文档校准：16 项一致性清零（术语/幽灵引用/ROADMAP/CI/归档）+ bump-version 修复 | [📖](./docs/changelog/v0.99.3.md) |
-| **v0.99.2** | 审查修复：daemon 歧义根治 + 死链清零 + 文档一致性 + P2 清零 | [📖](./docs/changelog/v0.99.2.md) |
-| **v0.99.1** | 审查跟进：OpenClaw 叙事重写 + YAML→js-yaml + MCP 独立包 + 局限声明修正 | [📖](./docs/changelog/v0.99.1.md) |
-| **v0.99** | v1.0 前收尾：两份审查修复 + Skill≤90行 + 放弃条件 + MCP Server + verify→TS | [📖](./docs/changelog/v0.99.md) |
-| **v0.98** | 架构重组：产品核心转为事后审计 + FDE 企业部署 + OpenClaw 必装 | [📖](./docs/changelog/v0.98.md) |
-| **v0.97** | 审计 A9/A10/A11 + 编排引擎重构（砍四级深度→两档拆解 + engage.md）+ bash→TS 第二波 + 概念精简 | [📖](./docs/changelog/v0.97.md) |
-| **v0.96** | README 六段式重构（373→166行）+ bash→TS 第一波 + 铁律重排 + 编排定位澄清 | [📖](./docs/changelog/v0.96.md) |
-| **v0.95** | 铁律精简 10→6（4 条移审计层）+ 目录改名 + 三源收敛 + FDE 商业模式 | [📖](./docs/changelog/v0.95.md) |
-| **v0.94** | 6 项代码止血 + --silent 模式 + LogFormat 可插拔 + FDE Skill 部署者优先 | [📖](./docs/changelog/v0.94.md) |
-| **v0.93** | 4 项 FP 修复 + bash→TS 迁移 + 27 cases FP=0% FN=0% + 10 组对照实验 | [📖](./docs/changelog/v0.93.md) |
-| **v0.92** | 安全加固 + 信任模型声明 + 审计 A7 检测加固 + 工程欠债清算 + OpenClaw 对照实验 | [📖](./docs/changelog/v0.92.md) |
-| **v0.91** | sofagent-audit MVP + ARCHITECTURE 瘦身（710→378行）+ COMMUNITY.md | [📖](./docs/changelog/v0.91.md) |
-| **v0.86** | 读写型分流 + Loop 成熟度四问 + 19 项学习笔记约束 + 8 项评审反馈 | [📖](./docs/changelog/v0.86.md) |
-| **v0.85** | 定位校准（「治理」→「纪律」）+ ROADMAP 砍削 + 45 组验证实验设计 + sofagent-audit 方向确立 | [📖](./docs/changelog/v0.85.md) |
-| **v0.82** | 五平台实测 + 步数闸/熔断闸/幂等检查/评判器隔离在非 OpenClaw 平台均不生效确认 | [📖](./docs/changelog/v0.82.md) |
-| **v0.81** | daemon 核心骨架 + 5 项治理加固 + macOS launchd + Linux systemd | [📖](./docs/changelog/v0.81.md) |
-| **v0.75** | 降低试用门槛 + benchmark.sh + 英文 README + Co-maintainer 招募 | [📖](./docs/changelog/v0.75.md) |
-| **v0.74** | 文档拆分去重 + verify.sh --quick + Scoring 基准线 | [📖](./docs/changelog/v0.74.md) |
-| **v0.73** | 三道闸门体系 + 编排加固 + 记忆最小闭环 + scoring 第九维 | [📖](./docs/changelog/v0.73.md) |
-| **v0.72** | README 平台能力表重构 + benchmark.sh + anti-cases | [📖](./docs/changelog/v0.72.md) |
-| **v0.7x** | 企业合规：数据保留 + task/logs 脱敏 + 审计日志 | [📖](./docs/changelog/v0.75.md) |
-| **v0.6x** | 质量加固：端到端测试 + 闭环验证 + WorkBuddy 专家团共存 | — |
-| **v0.5x** | 企业级能力：install.sh/uninstall.sh + 离线模式 + 编排 fallback | — |
-| **v0.1~v0.4** | 核心约束：4 底线 + 6 铁律 + Loop Agent + 三层闸门 + 渐进减薄 + 反思区 + scoring | — |
+| **v1.0.0** 🎉 | 正式版：Agent 审计工具——18 件事 + 408 测试全绿 + 106 维度审查 | [📖](./docs/changelog/v1.0.md) |
+| **v0.99.9** | 实验版——实验版——AI 知识库概念先行 + 审查修复收尾 + verify.ts 拆分（1257→4模块）+ 行业笔记落地 + 理论引证 | [📖](./docs/changelog/experimental/v0.99.9.md) |
+| **v0.99.8** | 实验版——实验版——审查修复收尾 + FDE 架构重构：双审查 20 项遗留全修 + FDE 四层→三层实体 + templates 镜像产出 + Skill 精简 | [📖](./docs/changelog/experimental/v0.99.8.md) |
+| **v0.99.7** | 实验版——实验版——发布基础设施修复：CI E403 根治 + OIDC 清零 + mcp 依赖解锁 + shellcheck 清零 + Windows 标注 | [📖](./docs/changelog/experimental/v0.99.7.md) |
+| **v0.99.6** | 实验版——审查修复：mcp npm 同步发布 + 文档一致性（25 项，双审驱动） | [📖](./docs/changelog/experimental/v0.99.6.md) |
+| **v0.99.5** | 实验版——CI 自动化 + 审查修复：NPM_TOKEN 自动发布 + P0×6/P1×10 修复 + 工具增强 | [📖](./docs/changelog/experimental/v0.99.5.md) |
+| **v0.99.4** | 实验版——审查修复：41 项全面修复，准入 6✅→3✅ 诚实化，doc-vs-reality 清零，闭环→多维 | [📖](./docs/changelog/experimental/v0.99.4.md) |
+| **v0.99.3** | 实验版——文档校准：16 项一致性清零（术语/幽灵引用/ROADMAP/CI/归档）+ bump-version 修复 | [📖](./docs/changelog/experimental/v0.99.3.md) |
+| **v0.99.2** | 实验版——审查修复：daemon 歧义根治 + 死链清零 + 文档一致性 + P2 清零 | [📖](./docs/changelog/experimental/v0.99.2.md) |
+| **v0.99.1** | 实验版——审查跟进：OpenClaw 叙事重写 + YAML→js-yaml + MCP 独立包 + 局限声明修正 | [📖](./docs/changelog/experimental/v0.99.1.md) |
+| **v0.99** | 实验版——v1.0 前收尾：两份审查修复 + Skill≤90行 + 放弃条件 + MCP Server + verify→TS | [📖](./docs/changelog/experimental/v0.99.md) |
+| **v0.98** | 实验版——架构重组：产品核心转为事后审计 + FDE 企业部署 + OpenClaw 必装 | [📖](./docs/changelog/experimental/v0.98.md) |
+| **v0.97** | 实验版——审计 A9/A10/A11 + 编排引擎重构（砍四级深度→两档拆解 + engage.md）+ bash→TS 第二波 + 概念精简 | [📖](./docs/changelog/experimental/v0.97.md) |
+| **v0.96** | 实验版——README 六段式重构（373→166行）+ bash→TS 第一波 + 铁律重排 + 编排定位澄清 | [📖](./docs/changelog/experimental/v0.96.md) |
+| **v0.95** | 实验版——铁律精简 10→6（4 条移审计层）+ 目录改名 + 三源收敛 + FDE 商业模式 | [📖](./docs/changelog/experimental/v0.95.md) |
+| **v0.94** | 实验版——6 项代码止血 + --silent 模式 + LogFormat 可插拔 + FDE Skill 部署者优先 | [📖](./docs/changelog/experimental/v0.94.md) |
+| **v0.93** | 实验版——4 项 FP 修复 + bash→TS 迁移 + 27 cases FP=0% FN=0% + 10 组对照实验 | [📖](./docs/changelog/experimental/v0.93.md) |
+| **v0.92** | 实验版——安全加固 + 信任模型声明 + 审计 A7 检测加固 + 工程欠债清算 + OpenClaw 对照实验 | [📖](./docs/changelog/experimental/v0.92.md) |
+| **v0.91** | 实验版——sofagent-audit MVP + ARCHITECTURE 瘦身（710→378行）+ COMMUNITY.md | [📖](./docs/changelog/experimental/v0.91.md) |
+| **v0.86** | 实验版——读写型分流 + Loop 成熟度四问 + 19 项学习笔记约束 + 8 项评审反馈 | [📖](./docs/changelog/experimental/v0.86.md) |
+| **v0.85** | 实验版——定位校准（「治理」→「纪律」）+ ROADMAP 砍削 + 45 组验证实验设计 + sofagent-audit 方向确立 | [📖](./docs/changelog/experimental/v0.85.md) |
+| **v0.82** | 实验版——五平台实测 + 步数闸/熔断闸/幂等检查/评判器隔离在非 OpenClaw 平台均不生效确认 | [📖](./docs/changelog/experimental/v0.82.md) |
+| **v0.81** | 实验版——daemon 核心骨架 + 5 项治理加固 + macOS launchd + Linux systemd | [📖](./docs/changelog/experimental/v0.81.md) |
+| **v0.75** | 实验版——降低试用门槛 + benchmark.sh + 英文 README + Co-maintainer 招募 | [📖](./docs/changelog/experimental/v0.75.md) |
+| **v0.74** | 实验版——文档拆分去重 + verify.sh --quick + Scoring 基准线 | [📖](./docs/changelog/experimental/v0.74.md) |
+| **v0.73** | 实验版——三道闸门体系 + 编排加固 + 记忆最小闭环 + scoring 第九维 | [📖](./docs/changelog/experimental/v0.73.md) |
+| **v0.72** | 实验版——README 平台能力表重构 + benchmark.sh + anti-cases | [📖](./docs/changelog/experimental/v0.72.md) |
+| **v0.7x** | 实验版——企业合规：数据保留 + task/logs 脱敏 + 审计日志 | [📖](./docs/changelog/experimental/v0.75.md) |
+| **v0.6x** | 实验版——质量加固：端到端测试 + 闭环验证 + WorkBuddy 专家团共存 | — |
+| **v0.5x** | 实验版——企业级能力：install.sh/uninstall.sh + 离线模式 + 编排 fallback | — |
+| **v0.1~v0.4** | 实验版——核心约束：4 底线 + 6 铁律 + Loop Agent + 三层闸门 + 渐进减薄 + 反思区 + scoring | — |
 
 ## 未来去哪
 

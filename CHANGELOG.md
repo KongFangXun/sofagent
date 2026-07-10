@@ -1,10 +1,12 @@
 # Changelog
 
-每个版本的详细开发日志在 [docs/changelog/](./docs/changelog/) 下。本文件是目录索引——一句话知道改了什么，点链接看完整故事。
+每个版本的详细开发日志在 docs/changelog/ 下。v1.0.0+ 为正式版，v0.x 实验版日志在 [docs/changelog/experimental/](./docs/changelog/experimental/)。本文件是目录索引。
 
 ---
 
-## [v1.0.0] — 正式版：Agent 审计工具 🎉
+## 正式版
+
+### [v1.0.0] — 正式版：Agent 审计工具 🎉
 
 > 2026-07-10（UTC）
 
@@ -14,27 +16,31 @@
 
 ---
 
-## [v0.99.9] — 审查修复 + AI 知识库概念 + verify.ts 拆分 + 行业笔记 + 理论基础 🔧
+## 实验版
+
+> ⚠️ 以下版本号为实验/测试版，产品形态和技术方案在此期间经历多次重大调整。正式版从 v1.0.0 开始。
+
+### [v0.99.9] — 审查修复 + AI 知识库概念 + verify.ts 拆分 + 行业笔记 + 理论基础 🔧
 
 > 2026-07-07（UTC）
 
 v0.99.8 经双审查（GLM-5.2 67 维度 + DeepSeek V4 Pro 48 维度）发现 4 个 P0 + 7 个 P1 + 3 个 P2，本版全部修复。同时完成 AI 知识库 6 文档概念先行（架构定位+边界划分）+ verify.ts 1257 行代码拆分（→ 4 模块）+ 7 项行业笔记写入 ROADMAP/ARCHITECTURE + Skill 摘要信息架构优化（去掉步骤性描述，只留触发条件）+ Hugging Face/AutoResearch/Akshay 理论基础引证（ARCHITECTURE 新增「理论基础与外部验证」节）。**v0.99.x 修复线最终版。**
 
-> 📖 [开发日志](./docs/changelog/v0.99.9.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.99.9.md)
 
 ---
 
-## [v0.99.8] — 审查修复收尾版 ✅
+### [v0.99.8] — 审查修复收尾版 ✅
 
 > 2026-07-05（UTC）
 
 v0.99.7 发版后双审查（GLM-5.2 48 维度 + DeepSeek V4 Pro 48 维度）发现 20 项遗留问题，本版全部修复。核心：文档数字全面对齐（30/30→33/33，41/41→48）+ GitHub Actions 升级 v5 + PR check workflow 新建 + shellcheck SC2086/SC2155 排除项收窄 + check-version 新增 --strict 模式 + v1.0 准入诚实化（3/10 ✅→2/10 ✅）+ **FDE 架构重构**（四层→三层实体、删 workflow/agents、templates 镜像产出结构、Skill 精简 925→742 行）+ FDE 非开发者快速入门。**v0.99.x 修复线收尾版。**
 
-> 📖 [开发日志](./docs/changelog/v0.99.8.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.99.8.md)
 
 ---
 
-## [v0.99.7] — 发布基础设施修复版 ✅
+### [v0.99.7] — 发布基础设施修复版 ✅
 
 > 2026-07-04（UTC）· 北京时间 07-05
 
@@ -54,9 +60,9 @@ v0.99.6 三轮独立审查（GLM-5.2 + DeepSeek × 2）共发现 13 项问题，
 - P2-3：logo 压缩 84%（334KB → 52KB，400×400px 保留 alpha）
 - P2-4：orchestrate-compare.ts 注释修正（回退→并集 OR）
 
-> 📖 [开发日志](./docs/changelog/v0.99.7.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.99.7.md)
 
-## [v0.99.6] — 审查修复版 ✅
+### [v0.99.6] — 审查修复版 ✅
 
 > 2026-07-04
 
@@ -77,9 +83,9 @@ v0.99.5 发版后双审（齐活林 + GLM-5.2）发现 25 项问题（P0×4 + P1
 - P1-7：bump-version.sh 分母统一为 13 步 + hero badge 注释说明
 - P2×11 + P3×3：详见开发日志（FDE case 脱敏/evidence 注释优化/shellcheck CI/mcp 单元测试 13 tests/verify.ts daemon 输出/emoji 替换 等）
 
-> 📖 [开发日志](./docs/changelog/v0.99.6.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.99.6.md)
 
-## [v0.99.5] — CI 自动化 + 审查修复版 ✅
+### [v0.99.5] — CI 自动化 + 审查修复版 ✅
 
 > 2026-07-03 初版 / 2026-07-04 修复
 
@@ -87,167 +93,167 @@ NPM_TOKEN 自动发布 + 文案对齐（07-03）。审查驱动修复：P0×6（
 
 > ⚠️ **发版后审查**：发现 25 项新问题（P0×4 + P1×7 + P2×11 + P3×3），已在 [v0.99.6](#v0996---审查修复版-) 全部修复。
 >
-> 📖 [开发日志](./docs/changelog/v0.99.5.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.99.5.md)
 
-## [v0.99.4] — 审查修复版 ✅
+### [v0.99.4] — 审查修复版 ✅
 
 > 2026-07-02
 
 41 项全面修复（P0×7 + P1×15 + P2×19），基于双模型独立审查。准入条件从 6✅ 诚实化为 3✅，全仓 doc-vs-reality 清零。
 
-> 📖 [开发日志](./docs/changelog/v0.99.4.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.99.4.md)
 
-## [v0.99.3] — 文档校准版 ✅
+### [v0.99.3] — 文档校准版 ✅
 
 > 2026-06-29
 
 16 项一致性清零（check-version 30/30）。benchmark 幽灵引用修复，bump-version.sh Unicode bug 修复。v1.0 前的一轮文档收尾。
 
-> 📖 [开发日志](./docs/changelog/v0.99.3.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.99.3.md)
 
-## [v0.99.2] — 质量加固版 ✅
+### [v0.99.2] — 质量加固版 ✅
 
 > 2026-07-01
 
 v1.0 前最后一次质量加固。两份独立十维审查驱动修复 18 个问题（3 P0 + 9 P1 + 6 P2）。daemon 歧义根治，死链清零。
 
-> 📖 [开发日志](./docs/changelog/v0.99.2.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.99.2.md)
 
-## [v0.99.1] — 审查跟进版 ✅
+### [v0.99.1] — 审查跟进版 ✅
 
 > 2026-06-28
 
 OpenClaw 叙事重写（术语统一为「FDE 的工具包」）。手写 YAML→js-yaml，MCP Server 拆分为 @sofagent/mcp 独立包。局限声明修正。
 
-> 📖 [开发日志](./docs/changelog/v0.99.1.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.99.1.md)
 
-## [v0.99] — v1.0 前收尾版 ✅
+### [v0.99] — v1.0 前收尾版 ✅
 
 > 2026-06-26（当时 398 tests，v0.99.1 增至 406）
 
 两份独立深度审查全部修复。Skill 全部 ≤90 行。44 处死链清零。放弃条件正式写入 ROADMAP。bus factor + 模型依赖声明。FDE 工具包（/FDE + sofagent-fde Skill）首次交付。文档预算 ≤5,000。
 
-> 📖 [开发日志](./docs/changelog/v0.99.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.99.md)
 
-## [v0.98] — 架构重组版
+### [v0.98] — 架构重组版
 
 > 2026-06-24
 
 产品核心从事前约束转向事后审计 + FDE 企业部署。100 次对照实验结论作废。OpenClaw 重定义为必装引擎。v1.0 定位从「Agent 工作验收工具」转向「FDE 工具包」。
 
-> 📖 [开发日志](./docs/changelog/v0.98.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.98.md)
 
-## [v0.97] — 证据版本 ✅
+### [v0.97] — 证据版本 ✅
 
 > 2026-06-22
 
 审计 A9/A10/A11 + 编排引擎重构 + bash→TS 第二波。约束底座 100 次对照实验因方法缺陷结果作废。
 
-> 📖 [开发日志](./docs/changelog/v0.97.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.97.md)
 
-## [v0.96] — 诚实收缩
+### [v0.96] — 诚实收缩
 
 > 2026-06-20
 
 README 373→166 行六段式重构。AI 中台叙事贯通。bash→TS 第一波（3 个僵尸脚本 + task-orchestrate）。铁律重排 + 审计 A9/A10/A11 草案。
 
-> 📖 [开发日志](./docs/changelog/v0.96.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.96.md)
 
-## [v0.95] — 审计体系重构
+### [v0.95] — 审计体系重构
 
 > 2026-06-18
 
 审计体系重构（4·6·8·4）+ 铁律 10→6。目录改名 sofagent-audit/ → sofagent/audit/。ARCHITECTURE 三源收敛（Ralph Loop + MiroFish + 卡普二分法）。MCP/Agency 推 v1.0。
 
-> 📖 [开发日志](./docs/changelog/v0.95.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.95.md)
 
-## [v0.94] — 工程硬伤止血
+### [v0.94] — 工程硬伤止血
 
 > 2026-06-16
 
 工程硬伤止血 + 审计独立化（沉默模式 + 7 条纯 diff 规则）+ FDE 部署者优先。双轮评审后重排。
 
-> 📖 [开发日志](./docs/changelog/v0.94.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.94.md)
 
-## [v0.93] — 工程迁移
+### [v0.93] — 工程迁移
 
 > 2026-06-14
 
 v0.92 审查 17 项中 11 项落地（4 项 FP 修复 + 审计规则扩展）。bash→TS 起步。10 组对照实验：约束底座增量 = f(陷阱难度)。
 
-> 📖 [开发日志](./docs/changelog/v0.93.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.93.md)
 
-## [v0.92] — 审查修复
+### [v0.92] — 审查修复
 
 > 2026-06-13
 
 v0.91 审查修复——3 个 P0 安全硬伤 + 6 个 P1 工程欠债 + 5 个 P2 改进。综合评分 5.7/10 → 目标 7.0/10。
 
-> 📖 [开发日志](./docs/changelog/v0.92.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.92.md)
 
-## [v0.91] — 评审落地
+### [v0.91] — 评审落地
 
 > 2026-06-12
 
 两份独立评审共识项落地。sofagent-audit MVP 核心实现（4 条规则，bash 实现，v0.92 起逐步 TS 化）。文档瘦身 47%。
 
-> 📖 [开发日志](./docs/changelog/v0.91.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.91.md)
 
-## [v0.90] — 安全审查
+### [v0.90] — 安全审查
 
 > 2026-06-10
 
 skill-safety-check（22 条正则 + LLM 双门）。三个 P0 安装断裂修复。7 个 SOP 中间产物清理。
 
-> 📖 [开发日志](./docs/changelog/v0.90.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.90.md)
 
-## [v0.86] — 运行时加固
+### [v0.86] — 运行时加固
 
 > 2026-06-09
 
 读写型任务分流 + Loop 成熟度四问 + 管道闸门——Agent 拆任务更聪明，不容易跑偏。
 
-> 📖 [开发日志](./docs/changelog/v0.86.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.86.md)
 
-## [v0.85] — 定位重构
+### [v0.85] — 定位重构
 
 > 2026-06-08
 
 定位重构（治理层→约束底座）+ ROADMAP 砍削（20+→6 项）——基于 GLM-5.2 + DeepSeek V4 Pro 双评审的战略校准。
 
-> 📖 [开发日志](./docs/changelog/v0.85.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.85.md)
 
-## [v0.84] — 证据打磨
+### [v0.84] — 证据打磨
 
 > 2026-06-07
 
 A/B benchmark 五组数据 + 4 底线优化 + Hook 归因修正。核心发现：差异化在约束底座不在约束层。
 
-> 📖 [开发日志](./docs/changelog/v0.84.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.84.md)
 
-## [v0.83] — 安装修复
+### [v0.83] — 安装修复
 
 > 2026-06-05
 
 安装断裂修复 + 代码加固 + 文档诚实度修正（P0×4 + P1×3 + P2×3）。纯 bugfix。
 
-> 📖 [开发日志](./docs/changelog/v0.83.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.83.md)
 
-## [v0.82] — 五平台实测
+### [v0.82] — 五平台实测
 
 > 2026-06-03
 
 评审问题修复 + 五平台实测 5/5 + ROADMAP 重构 + License MIT。核心结论：Hook 级治理加固仅在 OpenClaw 生效。
 
-> 📖 [开发日志](./docs/changelog/v0.82.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.82.md)
 
-## [v0.81] — daemon 骨架
+### [v0.81] — daemon 骨架
 
 > 2026-06-01
 
 daemon 核心骨架（纯 bash：launchd/systemd + 文件 hash 监控）+ 5 项治理加固（幂等/步数闸/熔断闸/评判器隔离/怀疑论提示）。
 
-> 📖 [开发日志](./docs/changelog/v0.81.md)
+> 📖 [开发日志](./docs/changelog/experimental/v0.81.md)
 
 ## v0.47–v0.80 — 早期开发期（摘要）
 
