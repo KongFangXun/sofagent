@@ -11,8 +11,6 @@
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 
-> Agent 提交时审计工具——git diff 硬证据，11 条规则，pre-commit hook，不依赖 Agent 配合。
->
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
 >
 > **企业上 AI，先上缰绳再上路。** 中小企业和 OPC 的 FDE 工具包——约束底座管行为，审计引擎盯结果。不用请昂贵顾问，不用养 AI 团队，自己就能搭建 AI 节点。
