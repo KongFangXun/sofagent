@@ -11,7 +11,7 @@
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 
-> Agent 提交时审计工具——git diff 硬证据，11 条规则，pre-commit hook，不依赖 Agent 配合。构建于 LangGraph + DeepAgents 编排之上，借鉴 Palantir Ontology 与微软 SkillOpt。
+> Agent 提交时审计工具——git diff 硬证据，11 条规则，pre-commit hook，不依赖 Agent 配合。
 >
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
 >
