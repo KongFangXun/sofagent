@@ -14,6 +14,8 @@
 2. 审核       → 独立审查逐项核对 changelog，FAIL 项修完二次复核
 2.3 CLI 验收  → bash tools/acceptance-test.sh（9 场景 CLI 端到端：install-hook / --init / --doctor / 正常 commit / 违规拦截 / --json / --ci / 首次提交 / 坏环境诊断。全绿才继续）
 2.5 Agent 验收 → 通过 OpenClaw Agent 跑端到端验收测试（见下方「发版前 OpenClaw 验收测试」章节，测试用例文件 ~/Workbuddy/openclaw-acceptance-test.md）
+2.7 回归检查 → 用 ~/Desktop/sofagent-v1-全方面审查-prompt.md（106 维度回归清单）逐项核对，确认之前修过的问题没回退
+2.8 陌生视角审查 → 用 ~/Desktop/sofagent-v1-陌生视角审查-prompt.md（7 视角）从全新角度审查，发现回归检查覆盖不到的新问题
 3. 版本号升级 → ./tools/bump-version.sh <旧> <新>（13 类位置全自动覆盖；手动改 index/index.html hero badge）
 4. 版本号校验 → ./tools/check-version.sh（必须 33/33 全绿）
 5. 索引文档   → CHANGELOG 新增条目 + 链接到 changelog；ROADMAP 三步更新（文件头 / 现在在哪 / 未来去哪删已完成版本）
@@ -84,6 +86,13 @@
 - [ ] 通过 OpenClaw Agent 跑 5 个端到端场景（正常修复 PASS / 敏感文件 FAIL / secret 泄露 FAIL / 越界改动 FAIL / 配置删除 FAIL）
 - [ ] pre-commit hook 正确触发（PASS 的任务通过，FAIL 的任务被拦截）
 - [ ] 审计输出可视化正确（banner 显示 + 修复建议显示）
+
+### 发版前审查（回归 + 陌生视角）
+
+- [ ] **回归检查**（`~/Desktop/sofagent-v1-全方面审查-prompt.md`）：106 维度逐项核对，全 PASS。发现回退 → 修复后重跑
+- [ ] **陌生视角审查**（`~/Desktop/sofagent-v1-陌生视角审查-prompt.md`）：7 视角审查，记录发现的新问题。P0/P1 必须修复后才能发版，P2 可记录到 changelog 后续修复
+- [ ] 回归检查发现新问题 → 修复后往清单追加检查项（从 107 开始编号）
+- [ ] changelog 记录"回归检查 N/N 全通过 + 陌生视角审查 N 项发现"
 
 ### 版本号（🔴 用脚本，不用手动 grep）
 
