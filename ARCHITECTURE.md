@@ -453,27 +453,20 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 
 ## 五、参考与致谢
 
+sofagent 的设计受以下项目和思想启发。完整致谢（含链接、背景、详细说明）见 [THANKS.md](./THANKS.md)。
+
 | 来源 | 启发 |
 |------|------|
 | **OpenClaw** | 运行平台——加载链、Hook、Skill 系统、session 隔离 |
 | **DeepSeek + GLM** | 模型引擎——所有文件由二者配合生成 |
-| **Addy Osmani** | Loop Engineering 五大件架构 |
-| **Anthropic** | Managed Agents 四层架构——核心设计哲学源头 |
-| **agency-orchestrator** | `ao compose` 意图识别→任务图生成→模板匹配→分配 |
-| **Andrej Karpathy** | 思考先行、简约至上——铁律在此基础上扩展 |
+| **Andrej Karpathy** | 思考先行、简约至上 |
 | **Geoffrey Huntley** | Ralph Loop——「Agent 失忆，文件不失忆」哲学 |
-| **MiroFish** | 「工具调用与最终答案严格分离」模式 |
-| **Nelson F. Liu et al.** | *Lost in the Middle*——500 字原则和加载链顺序的科学依据 |
-| **AI 代码审查实验（146 PR × 4 AI Reviewer）** | 93.4% 问题仅被单一 AI 识别——多视角评估不是 nice to have |
-| **Google Cloud Code 论文** | Agent 运行时 7 组件架构 |
-| **Hirom 定律 + Lima 演化定律** | 「先读再用」「验证再干」「谨慎修改」的理论根基 |
-| **Superpowers**（GitHub 23.9 万星） | 纯 Markdown 纪律约束验证——措辞心理学让 AI 服从率 33%→72%（2.8 万次对话实测） |
-| **Andrew Ng** | AI 产品三层时间尺度循环——Agent Loop / 开发者反馈 / 用户反馈。sofagent 当前只覆盖内层 |
-| **Joel Niklaus**（Hugging Face） | 「Don't Train the Model, Evolve the Harness」实验——同一模型仅优化 Harness 从 3.5%→80.1%，76 分差全来自外层机制 |
-| **Karpathy AutoResearch** | Loop Engineering 循环框架——锁定评估脚本 + 自动循环 + 停止条件三要素 |
-| **Codila** | 将 AutoResearch 浓缩为五步方法论——自动验证器 + 状态文件 + 停止条件。🔗 [原帖](https://x.com/0xCodila/status/2072329149520232639) |
-| **Bilevel Autoresearch** | [双层循环论文](https://arxiv.org/abs/2603.23420)——外循环元优化内循环，强制探索模型回避的方向 |
-| **[Akshay Pachaar](https://x.com/i/article/2040732084843782144)**（前 Lightning AI） | 生产级 Harness 12 组件框架——sofagent 五层架构的映射参照 |
+| **Joel Niklaus**（Hugging Face） | 同一模型仅优化 Harness 从 3.5%→80.1% |
+| **Akshay Pachaar**（前 Lightning AI） | 生产级 Harness 12 组件框架 |
+| **Andrew Ng** | AI 产品三层时间尺度循环 |
+| **Superpowers**（GitHub 23.9 万星） | 措辞心理学——强措辞让 AI 服从率 33%→72% |
+
+> 完整名单、链接和背景故事见 [THANKS.md](./THANKS.md)。
 
 ---
 
