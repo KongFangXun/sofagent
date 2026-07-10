@@ -199,11 +199,9 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
    📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)
 
 ── Step 3: Skill 分发 ──
-7. clawhub skill publish ./skill
-8. clawhub skill publish ./FDE
-9. cp -r skill/ → ~/.workbuddy/skills/sofagent/
-10. cp -r skill/ → ~/.openclaw/skills/sofagent/
-11. cp -r FDE/ → ~/.workbuddy/skills/sofagent-fde/
+7. openclaw skills publish ./skill
+8. openclaw skills publish ./FDE
+9. 本地安装（用你 Agent 平台的安装命令，如 `skill install` / `openclaw skills install` / 直接 cp 到 skills 目录）
 ```
 
 ### 7.3 发布后验证
