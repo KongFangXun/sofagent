@@ -190,7 +190,7 @@ Forward Deployed Engineer（前向部署工程师）进驻企业后，做三件�
 |------|------|
 | **一份交付手册** | 企业画像 + 部署方案 + `fde.md` + `quick-start.md`（后两章安装包自带） |
 | **一套 AI 节点（三层实体）** | 每个节点：文档层（.md，人读+编排引擎读）+ Skill 层（企业专属 Skill）+ 运行层（在跑的 session） |
-| **一个会自己生长的 AI 知识库** | AI 跑着跑着自动积累——think.md / task/logs / scoring.md / orchestrator/（v1.1 升级为结构化 Wiki，见 [ROADMAP](./ROADMAP.md)） |
+| **一个会自己生长的 AI 知识库** | AI 跑着跑着自动积累——think.md / task/logs / scoring.md / orchestrator/（v1.0.1 升级为结构化 Wiki，见 [ROADMAP](./ROADMAP.md)） |
 
 > sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。
 

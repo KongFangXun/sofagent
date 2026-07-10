@@ -28,14 +28,14 @@ v1.0 发布后的技术调研（LLM 能力边界、Agent 核心循环机制、7 
 
 这与我们已经在做的事高度吻合——但不能靠自研的 AO 去做。AO 的 loop-check/evaluate/exit 逻辑是对的，但它缺的是生产级基础设施：持久化状态图、Sub Agent 生命周期管理、HITL middleware。
 
-所以 v1.1-1.4 的路线是明确的：
+所以 v1.0.1-v1.0.4 的路线是明确的：
 
 | 版本 | 动作 |
 |------|------|
-| v1.1 | `npm install deepagents`——用 LangGraph 状态图包装 AO 的决策逻辑，AO 仍然做决策但编排层切到 LangGraph |
-| v1.2 | 基于 Agency Agents 模板定义 FDE Sub Agent + Audit Sub Agent，接入 SkillOpt 自进化 |
-| v1.3 | eval harness + Sub Agent A/B 自进化 + HITL |
-| v1.4 | Ontology 统一层 + AO 退役 |
+| v1.0.1 | `npm install deepagents`——用 LangGraph 状态图包装 AO 的决策逻辑，AO 仍然做决策但编排层切到 LangGraph |
+| v1.0.2 | 基于 Agency Agents 模板定义 FDE Sub Agent + Audit Sub Agent，接入 SkillOpt 自进化 |
+| v1.0.3 | eval harness + Sub Agent A/B 自进化 + HITL |
+| v1.0.4 | Ontology 统一层 + AO 退役 |
 
 这不是"推翻 AO"，是 AO 完成了它的使命——证明了编排层有价值。现在把自研实验引擎换成社区生态的生产级引擎。
 
@@ -43,7 +43,7 @@ v1.0 发布后的技术调研（LLM 能力边界、Agent 核心循环机制、7 
 
 | 教训 | 细节 |
 |------|------|
-| **正式版不是终点是起点** | 18 件事做完只是把技术债清了，真正的挑战在 v1.1+ 的架构升级——AO 替换、知识库落地、Skill 自进化 |
+| **正式版不是终点是起点** | 18 件事做完只是把技术债清了，真正的挑战在 v1.0.1+ 的架构升级——AO 替换、知识库落地、Skill 自进化 |
 | **自研引擎的退出时机** | AO 从 v0.73 开始跑，到 v1.0 证明了编排层需求。但"自研"的拐点是：当你发现基础设施（持久化、分布式、安全）比业务逻辑更耗时的时候，就该换社区方案了 |
 | **外部校准不能省** | v1.0 后的技术调研不是学新东西，是确认方向没走偏——DeepAgents 不是跟风，是 AO 已经撞到了自然天花板 |
 | **审查体系本身在进化** | 从 v0.99.6 的 CI 全部失败，到 v0.99.9 的 88 维度，到 v1.0 的 106 维度双审查——审查 prompt 的质量决定了正式版的质量 |
