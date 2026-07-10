@@ -23,10 +23,6 @@
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
 | **v1.0.0** | 正式版：Agent 审计工具——18 件事 + 408 测试全绿 + 106 维度审查 | [📖](./docs/changelog/v1.0.md) |
-| **v1.1.0** | AI 知识库 + 访问控制 + entities 实体关联 + deepagentsjs 引入 | [📖](./docs/changelog/v1.1.md) |
-| **v1.2.0** | FDE Sub Agent + Audit Sub Agent（含成本） + SkillOpt 自进化 | [📖](./docs/changelog/v1.2.md) |
-| **v1.3.0** | eval harness + Sub Agent A/B 自进化 + HITL + A15 约束验证 | [📖](./docs/changelog/v1.3.md) |
-| **v1.4.0** | Ontology 统一层 + ao 退役 + Workflow Hub 独立项目（git submodule）+ 首个行业模板 | [📖](./docs/changelog/v1.4.md) |
 | **v0.99.9** | AI 知识库概念先行 + 审查修复收尾 + verify.ts 拆分（1257→4模块）+ 行业笔记落地 + 理论引证（Hugging Face/AutoResearch/Akshay） | [📖](./docs/changelog/v0.99.9.md) |
 | **v0.99.8** | 审查修复收尾 + FDE 架构重构：双审查 20 项遗留全修 + FDE 四层→三层实体 + templates 镜像产出 + Skill 精简（925→742 行）+ GitHub Actions v5 + PR check + v1.0 准入诚实化（3✅→2✅） | [📖](./docs/changelog/v0.99.8.md) |
 | **v0.99.7** | 发布基础设施修复：CI E403 根治 + OIDC 清零 + mcp 依赖解锁 + shellcheck 清零 + Windows 标注（11 项，三轮审查驱动） | [📖](./docs/changelog/v0.99.7.md) |
@@ -60,17 +56,9 @@
 
 ---
 
-## 未来去哪
+### v1.0 准入条件（历史记录）
 
-> 以下是**方向**，不是承诺。没实测过的事标「不知道」。
-
-**终局**：FDE 用 Agent 对话 → sofagent 引导梳理 workflow → OpenClaw 执行 AI 节点 → 审计结果推送到协作平台。
-
-两条路径：**FDE 驻场部署**（传统中小企业，FDE 进场→四阶段十二步流程→交付→撤离）和 **开发者自部署**（开源社区，git clone→install.sh→审计→CI 集成）。
-
-设备端形态：安装时自动带 OpenClaw，审计结果通过 MCP server 推到企业协同平台。**数据主权在设备**——所有记忆、日志、决策记录永不离开本地。
-
-### v1.0 准入条件（已发布 ✅）——历史记录，供 v1.1+ 版本参考
+> v1.0 发布时通过以下 10 项准入审查。保留作为 v1.1+ 版本规划的参考基线。
 
 三条主线：
 1. FDE 引导逻辑 → 自动产出节点文档（nodes/*.md）+ 交付手册
@@ -98,6 +86,27 @@
 **硬性截止日期**：2026-09-30。如果 #7 不达标 → v1.0 降为「审计工具技术预览版」。
 
 > 📝 **v1.0 发版前文案审查**：10 个 Skill 文件的铁律措辞过一遍，把「建议/应该/尽量」升级为「必须/绝无例外/违反即失败」。Superpowers（GitHub 23.9 万星）2.8 万次对话实测：强措辞让 AI 服从率 33%→72%，翻倍。规则内容不变，仅措辞强度提升。
+
+---
+
+## 未来去哪
+
+> 以下是**方向**，不是承诺。没实测过的事标「不知道」。
+
+**终局**：企业不再需要 FDE。AI 节点部署后自主运行，审计引擎持续盯变更，编排引擎自动纠偏，知识库自我积累——人只需要偶尔看一眼 dashboard 确认一切正常。我们做的不是给企业装 AI，是让企业忘了我们的存在。
+
+两条路径：**FDE 驻场部署**（传统中小企业，FDE 进场→四阶段十二步流程→交付→撤离）和 **开发者自部署**（开源社区，git clone→install.sh→审计→CI 集成）。
+
+设备端形态：安装时自动带 OpenClaw，审计结果通过 MCP server 推到企业协同平台。**数据主权在设备**——所有记忆、日志、决策记录永不离开本地。
+
+### 规划版本
+
+| 版本 | 状态 | 核心交付 | 日志 |
+|------|:--:|------|:--:|
+| **v1.1.0** | 🚧 规划中 | AI 知识库 + 访问控制 + entities 实体关联 + deepagentsjs 引入 + think.md 模板 + loop-check 轮次上限 | [📖](./docs/changelog/v1.1.md) |
+| **v1.2.0** | ⏳ 待启动 | FDE Sub Agent + Audit Sub Agent（含成本） + SkillOpt 自进化 | [📖](./docs/changelog/v1.2.md) |
+| **v1.3.0** | ⏳ 待启动 | eval harness + Sub Agent A/B 自进化 + HITL + A15 约束验证 | [📖](./docs/changelog/v1.3.md) |
+| **v1.4.0** | ⏳ 待启动 | Ontology 统一层 + ao 退役 + Workflow Hub 独立项目 + 首个行业模板 | [📖](./docs/changelog/v1.4.md) |
 
 ### v1.x — 发布后
 
