@@ -7,7 +7,7 @@
 [![Version](https://img.shields.io/badge/Version-v1.0.0-16B8F3)](./CHANGELOG.md)
 [![定位：Agent 审计工具](https://img.shields.io/badge/定位-Agent_审计工具-16B8F3)](#一句话定位)
 [![核心：审计引擎](https://img.shields.io/badge/核心-审计引擎-16B8F3)](#一句话定位)
-[![OpenClaw](https://img.shields.io/badge/🦞_引擎-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
+[![OpenClaw](https://img.shields.io/badge/🦞_引擎-OpenClaw-FF4D4D)](./ARCHITECTURE.md#双引擎架构)
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 
@@ -29,7 +29,7 @@
 >
 > ⚠️ **Klarna 教训**：瑞典金融科技公司 Klarna 裁掉 700 人用 AI 替代，一年后被迫召回——不是因为 AI 不能干活，是因为责任悬空了。sofagent 做的就是「让责任不悬空」。→ [详见 FDE](./FDE/FDE.md#附录企业-ai-成熟度三级台阶)
 
-> **成熟度说明**：作者自用一个多月，审计引擎日常稳定（408 tests 全绿，5/5 靶向违规全部检出）。编排引擎为实验性附带——能跑，但需要 OpenClaw 环境。如果你试了，告诉我什么场景、什么问题。
+> **成熟度**：审计引擎是核心，日常稳定（408 tests 全绿，5/5 靶向违规全部检出，3 名外部用户验证）。编排引擎需要 OpenClaw 环境，能跑但还在打磨。
 
 | 组件 | 做什么 | 怎么跑 |
 |------|------|------|
