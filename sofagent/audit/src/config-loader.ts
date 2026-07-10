@@ -1,8 +1,8 @@
 // ============================================================
 // config-loader.ts · .sofagent/config.yml 配置加载器
-// v0.95 新增：三级 fallback（v1.0.0，js-yaml 替代手写 YAML 解析器）
+// v0.95 新增：三级 fallback（v1.0.1，js-yaml 替代手写 YAML 解析器）
 // v0.97 扩展：环境变量配置（从 lib/config.sh 合并）
-// v1.0.0 重构：用 js-yaml 替代手写 YAML 解析器
+// v1.0.1 重构：用 js-yaml 替代手写 YAML 解析器
 // ============================================================
 //
 // 三级 fallback：
@@ -14,7 +14,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
-import { load as yamlLoad } from 'js-yaml';
+import { load as yamlLoad, YAMLException } from 'js-yaml';
 
 /**
  * 审计配置——由 .sofagent/config.yml 加载
@@ -26,8 +26,12 @@ export interface AuditConfig {
   testPatterns: string[];
   /** 「不改越界」阈值——不相关文件占比超过此比例时 WARN */
   carefulModifyThreshold: number;
-  /** 是否启用扩展规则（E1-E4） */
+  /** 是否启用扩展规则（E1-E4 + A14） */
   extendedRulesEnabled: boolean;
+  /** 按规则名禁用——key 为 a1~a14/e1~e4，value 为 false 时禁用 */
+  rules?: Record<string, boolean>;
+  /** loop-check 绝对轮次上限（v1.0.1），默认 20 */
+  loopCheckMaxRounds?: number;
 }
 
 /**
@@ -40,10 +44,26 @@ export const DEFAULT_CONFIG: AuditConfig = {
   extendedRulesEnabled: false,
 };
 
+/** 配置加载错误——YAML 语法错误时抛出 */
+export class ConfigLoadError extends Error {
+  filePath: string;
+  line: number | string;
+  column: number | string;
+  constructor(message: string, filePath: string, line: number | string, column: number | string) {
+    super(message);
+    this.name = 'ConfigLoadError';
+    this.filePath = filePath;
+    this.line = line;
+    this.column = column;
+  }
+}
+
 /**
  * 加载审计配置（三级 fallback）
+ * YAML 语法错误时抛出 ConfigLoadError（不静默回退）
  * @param cwd 工作目录（默认 process.cwd()）
  * @returns 合并后的 AuditConfig
+ * @throws ConfigLoadError 当配置文件存在但 YAML 语法错误时
  */
 export function loadConfig(cwd?: string): AuditConfig {
   const baseDir = cwd || process.cwd();
@@ -71,7 +91,8 @@ export function loadConfig(cwd?: string): AuditConfig {
 // ============================================================
 
 /**
- * 尝试从 YAML 文件加载配置，文件不存在或解析失败时返回 null
+ * 尝试从 YAML 文件加载配置，文件不存在返回 null
+ * YAML 语法错误时抛出 ConfigLoadError（含行号列号），不静默回退
  * 配置结构：
  *   audit:
  *     lowRiskPatterns:
@@ -102,8 +123,19 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
       return null;
     }
     return audit as Partial<AuditConfig>;
-  } catch {
-    return null;
+  } catch (err) {
+    // YAML 语法错误——抛出自定义异常，含行号列号
+    if (err instanceof YAMLException) {
+      const line = err.mark?.line != null ? err.mark.line + 1 : '?';
+      const col = err.mark?.column != null ? err.mark.column + 1 : '?';
+      throw new ConfigLoadError(
+        `${filePath} 第 ${line} 行第 ${col} 列: ${err.reason}`,
+        filePath,
+        line,
+        col
+      );
+    }
+    throw new ConfigLoadError(`${filePath}: ${(err as Error).message}`, filePath, '?', '?');
   }
 }
 
@@ -116,6 +148,8 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     testPatterns: partial.testPatterns ?? DEFAULT_CONFIG.testPatterns,
     carefulModifyThreshold: partial.carefulModifyThreshold ?? DEFAULT_CONFIG.carefulModifyThreshold,
     extendedRulesEnabled: partial.extendedRulesEnabled ?? DEFAULT_CONFIG.extendedRulesEnabled,
+    rules: partial.rules,
+    loopCheckMaxRounds: partial.loopCheckMaxRounds ?? 20,
   };
 }
 

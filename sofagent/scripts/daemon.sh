@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent daemon.sh · daemon 主进程 · v1.0.0
+# sofagent daemon.sh · daemon 主进程 · v1.0.1
 # ============================================================
 # 命令行接口：start / stop / status / --foreground
 # 主循环每 30 秒：检测平台进程 + 文件 hash 变化 → 更新 daemon.json
@@ -13,7 +13,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.0.0"
+VERSION="1.0.1"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." 2>/dev/null && pwd || echo "$PWD")"
@@ -56,6 +56,8 @@ _init_json() {
   "detected_platforms": "",
   "think_hash": "",
   "rules_hash": "",
+  "tasklogs_pending": 0,
+  "tasklogs_last_ingest": "",
   "last_check": "${now}",
   "last_evidence_score": "unknown"
 }
@@ -131,6 +133,35 @@ _main_loop() {
       evidence_score=$(node "$AUDIT_DIST" --verify-evidence 2>/dev/null && echo "verified" || echo "unverified")
     fi
     set_json_field "last_evidence_score" "$evidence_score"
+
+    # 6. task/logs 变化检测 + Ingest 触发（v1.0.1）
+    local logs_dir="${SOFAGENT_DATA}/task/logs"
+    local pending_count=0
+    if [ -d "$logs_dir" ]; then
+      # 统计最近 30 分钟内新增的日志文件
+      pending_count=$(find "$logs_dir" -name "*.md" -mmin -30 2>/dev/null | wc -l | tr -d ' ')
+    fi
+    local old_pending
+    old_pending=$(get_json_field "tasklogs_pending" 2>/dev/null || echo "0")
+
+    if [ "$pending_count" -gt 0 ]; then
+      # 有新日志——标记待提取
+      if [ "${old_pending:-0}" = "0" ]; then
+        daemon_log "task/logs 检测到 ${pending_count} 个新文件——标记待提取"
+      fi
+      set_json_field "tasklogs_pending" "$pending_count"
+      # 写通知文件
+      echo "[daemon] $(date -u +"%Y-%m-%dT%H:%M:%SZ") task/logs 有 ${pending_count} 个新文件待知识提取（30 分钟无新变化后触发 Ingest）" \
+        > "${SOFAGENT_DATA}/daemon-notice.md"
+    elif [ "${old_pending:-0}" != "0" ]; then
+      # 之前有待提取，现在没有新文件了（防抖结束）——触发 Ingest
+      daemon_log "task/logs 防抖结束——触发知识提取 session"
+      set_json_field "tasklogs_pending" "0"
+      set_json_field "tasklogs_last_ingest" "$now"
+      # 写 Ingest 触发通知（编排引擎下次启动时读取）
+      echo "[daemon] $(date -u +"%Y-%m-%dT%H:%M:%SZ") Ingest 触发——请运行 knowledge-maintain 提取最新 task/logs 中的知识" \
+        > "${SOFAGENT_DATA}/daemon-notice.md"
+    fi
 
     sleep 30
   done

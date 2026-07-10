@@ -6,6 +6,14 @@
 
 ## 正式版
 
+### [v1.0.1] — AI 知识库实现版 🔧
+
+> 2026-07-11（UTC）
+
+v1.0.0 经双视角审查修复（3 P0 + 15 P1 + 12 P2）后，本轮完成 AI 知识库代码实现——7 件事：目录骨架（6 子目录 + index.md/log.md）+ fde.md 维护规则章节（4 子规则，≤3200 字符）+ knowledge-maintain.md 新 Skill（71 行）+ 加载链三层→四层（knowledge 被动注入）+ daemon Ingest 触发（task/logs 变化检测 + 30 分钟防抖）+ loop-evaluate 5 项 Lint + loop-check 20 轮硬上限。附带 A14 知识库越权审计规则（hybrid 模式）+ deepagents 可选依赖（不阻断安装）+ Ontology relations（entities/ frontmatter 含 has_many/belongs_to）+ doctor 第 9 项知识库访问矩阵。418 测试全绿，37 test files。138 维度回归检查清单全覆盖。
+
+> 📖 [开发日志](./docs/changelog/v1.0.1.md)
+
 ### [v1.0.0] — 正式版：Agent 审计工具 🎉
 
 > 2026-07-10（UTC）

@@ -1,15 +1,17 @@
 // ============================================================
 // doctor.ts · sofagent-audit --doctor 健康诊断
 // v1.0 新增：一键诊断 7 项健康度
+// v1.0.1 新增：第 9 项——知识库访问矩阵
 // 只读诊断，不做任何写操作
 // 退出码：全部通过 → 0；有失败 → 1
 // ============================================================
 
-import { existsSync, writeFileSync as _writeFileSync, accessSync, constants } from 'fs';
+import { existsSync, accessSync, constants, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { execFileSync } from 'child_process';
-import { getHistoryFilePath } from '../audit-history';
-import { loadConfig } from '../config-loader';
+import { loadHistory } from '../audit-history';
+import { loadConfig, loadEnvConfig } from '../config-loader';
+import { load as yamlLoad } from 'js-yaml';
 
 interface CheckResult {
   ok: boolean;       // true = ✅, false = ❌/⚠️
@@ -141,9 +143,22 @@ export function runDoctor(): void {
     }
   }
 
-  // 5. history.jsonl 可写
+  // 5. history.jsonl 可写（路径锚定在 git 仓库根目录下，不向上递归）
   {
-    const historyPath = getHistoryFilePath();
+    // 获取 git 仓库根目录——锚定 history.jsonl 路径
+    let repoRoot = cwd;
+    if (inGitRepo) {
+      try {
+        repoRoot = execFileSync('git', ['rev-parse', '--show-toplevel'], {
+          encoding: 'utf-8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+        }).trim();
+      } catch {
+        // fallback 到 cwd
+      }
+    }
+
+    const historyPath = join(repoRoot, '.sofagent', 'audit', 'history.jsonl');
     const dir = dirname(historyPath);
 
     if (!existsSync(dir)) {
@@ -201,6 +216,112 @@ export function runDoctor(): void {
     }
   }
 
+  // 8. --no-verify 绕过检测（对比 git log 与 audit history）
+  if (inGitRepo) {
+    try {
+      // 取最近 5 条 commit SHA
+      const logOutput = execFileSync('git', ['log', '--format=%H', '-5'], {
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      }).trim();
+      const recentShas = logOutput.split('\n').filter(Boolean);
+
+      if (recentShas.length === 0) {
+        results.push({ ok: true, warning: false, label: 'commit 审计追溯', detail: '无历史提交' });
+      } else {
+        // 从 history.jsonl 加载最近审计记录，提取 diffRange 中包含的 SHA
+        const history = loadHistory(20);
+        const auditedShas = new Set<string>();
+        for (const entry of history) {
+          // diffRange 格式如 "HEAD~1..HEAD" 或包含 SHA 的变体
+          const range = entry.diffRange || '';
+          // 提取 40 位 hex SHA
+          const shaMatches = range.match(/[0-9a-f]{7,40}/gi);
+          if (shaMatches) {
+            for (const sha of shaMatches) {
+              auditedShas.add(sha);
+            }
+          }
+        }
+
+        // 检查最近 commit 是否在审计历史中
+        const unauditedShas: string[] = [];
+        for (const sha of recentShas) {
+          // 精确匹配或前缀匹配
+          const fullMatch = auditedShas.has(sha);
+          const prefixMatch = [...auditedShas].some((s) => sha.startsWith(s) || s.startsWith(sha));
+          if (!fullMatch && !prefixMatch) {
+            unauditedShas.push(sha.substring(0, 7));
+          }
+        }
+
+        if (unauditedShas.length === 0) {
+          results.push({ ok: true, warning: false, label: 'commit 审计追溯', detail: `最近 ${recentShas.length} 条 commit 均有审计记录` });
+        } else {
+          results.push({
+            ok: false, warning: true, label: 'commit 审计追溯',
+            detail: `${unauditedShas.length} 条 commit 未经审计: ${unauditedShas.join(', ')}`,
+            fixHint: '可能使用了 git commit --no-verify 绕过审计，或审计历史已清理',
+          });
+        }
+      }
+    } catch {
+      results.push({ ok: true, warning: true, label: 'commit 审计追溯', detail: '无法读取 git log，跳过' });
+    }
+  } else {
+    results.push({ ok: true, warning: true, label: 'commit 审计追溯', detail: '跳过（非 git 仓库）' });
+  }
+
+  // 9. 知识库访问矩阵（读取 workflow.yml 展示各节点的 knowledge-domain）
+  {
+    try {
+      const dataDir = loadEnvConfig().dataDir;
+      const workflowPath = join(dataDir, 'orchestrator', 'workflows', 'workflow.yml');
+
+      if (!existsSync(workflowPath)) {
+        results.push({ ok: true, warning: true, label: '知识库访问矩阵', detail: '未找到 workflow.yml，跳过' });
+      } else {
+        const content = readFileSync(workflowPath, 'utf-8');
+        const parsed = yamlLoad(content) as Record<string, unknown> | null;
+        const nodesArr = parsed?.['nodes'] as Array<Record<string, unknown>> | undefined;
+
+        if (!Array.isArray(nodesArr) || nodesArr.length === 0) {
+          results.push({ ok: true, warning: true, label: '知识库访问矩阵', detail: 'workflow.yml 无 nodes 配置' });
+        } else {
+          // 收集有 knowledgeDomain 的节点
+          const matrixLines: string[] = [];
+          let hasDomain = false;
+          for (const node of nodesArr) {
+            const nodeId = String(node['id'] ?? '?');
+            const domain = node['knowledgeDomain'] as { include?: string[]; exclude?: string[] } | undefined;
+            if (!domain) {
+              matrixLines.push(`${nodeId}: 无限制（全量访问）`);
+            } else {
+              hasDomain = true;
+              const inc = domain.include?.length ? domain.include.join(', ') : '*';
+              const exc = domain.exclude?.length ? domain.exclude.join(', ') : '无';
+              matrixLines.push(`${nodeId}: include=[${inc}] exclude=[${exc}]`);
+            }
+          }
+
+          if (!hasDomain) {
+            results.push({
+              ok: true, warning: true, label: '知识库访问矩阵',
+              detail: `${nodesArr.length} 个节点，均无 knowledgeDomain 配置`,
+            });
+          } else {
+            results.push({
+              ok: true, warning: false, label: '知识库访问矩阵',
+              detail: `\n${matrixLines.map((l) => `    ${l}`).join('\n')}`,
+            });
+          }
+        }
+      }
+    } catch {
+      results.push({ ok: true, warning: true, label: '知识库访问矩阵', detail: '读取 workflow.yml 失败，跳过' });
+    }
+  }
+
   // 输出结果
   for (let i = 0; i < results.length; i++) {
     const r = results[i]!;
@@ -219,6 +340,11 @@ export function runDoctor(): void {
   console.log('');
   console.log(`  ${passed}/${results.length} 项通过${warned > 0 ? ` · ${warned} 项提示` : ''}${failed > 0 ? ` · ${failed} 项失败` : ''}`);
 
+  // 全绿时给下一步引导
+  if (failed === 0 && warned === 0) {
+    console.log('');
+    console.log('  下一步: sofagent-audit --diff HEAD~1..HEAD  ← 试试审计最近一次变更');
+  }
   // 提示
   if (warned > 0 && failed === 0) {
     const hints = results.filter((r) => r.warning && r.fixHint).map((r) => r.fixHint!);

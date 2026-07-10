@@ -27,8 +27,18 @@ audit:
   # A3「不改越界」阈值——不相关文件占比超过此值时 WARN
   carefulModifyThreshold: 0.2
 
-  # 扩展规则（E1-E4），默认关闭，按需启用
+  # 扩展规则（E1-E4 + A14），默认关闭，按需启用
   extendedRulesEnabled: false
+
+  # loop-check 绝对轮次上限——超过自动 closure 交还人类（默认 20）
+  # loopCheckMaxRounds: 20
+
+  # 按规则名禁用——取消注释即可关闭指定规则
+  # 可用 key: a1-a14, e1-e4
+  # 显式 false 禁用，未列或 true 表示启用
+  # rules:
+  #   a3: false  # 禁用「不改越界」检查
+  #   e1: true   # 显式启用 E1（需同时设 extendedRulesEnabled: true）
 `;
 
 /**
@@ -36,7 +46,7 @@ audit:
  * 与 hooks/pre-commit 保持一致（含 v1.0 无声失败保护）
  */
 export const HOOK_TEMPLATE = `#!/bin/bash
-# sofagent pre-commit hook v1.0
+# sofagent pre-commit hook v1.0.1
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 
 DIFF=$(git diff --cached --name-only)
@@ -62,14 +72,21 @@ else
   exit 1
 fi
 
-# 3. 正常运行审计
-$AUDIT_CMD --diff HEAD --silent --ci --task "$(cat .git/COMMIT_EDITMSG 2>/dev/null || echo 'pre-commit audit')"
+# 3. 检测是否首次提交——无 HEAD 时用 --cached 模式扫描 staged 文件
+if git rev-parse --verify HEAD &>/dev/null; then
+  AUDIT_DIFF_ARG="HEAD"
+else
+  AUDIT_DIFF_ARG="--cached"
+fi
+
+# 4. 正常运行审计
+$AUDIT_CMD --diff "$AUDIT_DIFF_ARG" --silent --ci --task "$(cat .git/COMMIT_EDITMSG 2>/dev/null || echo 'pre-commit audit')"
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -eq 2 ]; then
   echo ""
   echo "❌ sofagent audit: 检测到违规（A1/A2），commit 已阻止。"
-  echo "   如需跳过，使用 git commit --no-verify（不推荐）。"
+  echo "   请修复违规项后重新提交。"
   exit 1
 fi
 

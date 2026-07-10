@@ -166,6 +166,87 @@ export function parseDiff(range: string): DiffFile[] {
 }
 
 /**
+ * 解析 git staged 文件变更（--cached 模式，用于首次提交场景）
+ * 与 parseDiff 不同，不依赖 HEAD~1..HEAD 范围，而是直接扫描 staged 文件
+ */
+export function parseStagedDiff(): DiffFile[] {
+  const files: DiffFile[] = [];
+
+  if (!isInGitRepo()) {
+    console.error('错误：当前目录不在 git 仓库内。sofagent-audit 需要 git 仓库才能运行。');
+    return files;
+  }
+
+  try {
+    // 获取 staged 文件列表
+    const output = execFileSync('git', ['diff', '--cached', '--name-status'], {
+      encoding: 'utf-8',
+      maxBuffer: 10 * 1024 * 1024,
+    });
+
+    const trimmedOutput = output.trim();
+    if (trimmedOutput.length === 0) {
+      return files;
+    }
+
+    const lines = trimmedOutput.split('\n').filter(Boolean);
+
+    for (const line of lines) {
+      const parts = line.split('\t');
+      const statusCode = parts[0];
+      if (!statusCode) continue;
+
+      let status: DiffFile['status'] = 'modified';
+      let path: string;
+      let oldPath: string | undefined;
+
+      if (statusCode.startsWith('R')) {
+        status = 'renamed';
+        const p1 = parts[1];
+        const p2 = parts[2];
+        if (!p1 || !p2) continue;
+        oldPath = p1;
+        path = p2;
+      } else if (statusCode === 'A') {
+        status = 'added';
+        const p = parts[1];
+        if (!p) continue;
+        path = p;
+      } else if (statusCode === 'D') {
+        status = 'deleted';
+        const p = parts[1];
+        if (!p) continue;
+        path = p;
+      } else {
+        const p = parts[1];
+        if (!p) continue;
+        path = p;
+      }
+
+      if (path) {
+        // 读取 staged diff 内容
+        let diffLines: string[] = [];
+        try {
+          const diffContent = execFileSync('git', ['diff', '--cached', '--', path], {
+            encoding: 'utf-8',
+            maxBuffer: 5 * 1024 * 1024,
+          });
+          diffLines = diffContent.split('\n');
+        } catch {
+          // 文件可能无法读取差异
+        }
+
+        files.push({ path, status, oldPath, lines: diffLines });
+      }
+    }
+  } catch (err) {
+    console.error('无法执行 git diff --cached:', (err as Error).message);
+  }
+
+  return files;
+}
+
+/**
  * 获取 diff 中新增的行（以 + 开头）
  */
 export function getAddedLines(diffFile: DiffFile): string[] {

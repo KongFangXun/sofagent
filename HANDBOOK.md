@@ -2,7 +2,7 @@
 
 > **企业上 AI，先上缰绳再上路——装上审计引擎，每次 Agent 提交代码时自动检查变更。配合约束底座管 Agent 行为，编排引擎拆解任务（FDE 部署用）。**
 >
-> v1.0.0 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
+> v1.0.1 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 
@@ -121,17 +121,45 @@ exit code：0 = 通过 / 1 = 有警告 / 2 = 有违规。零 Agent 依赖——�
 
 ## 场景二：日常使用
 
-### 三层加载链（地基）
+### 四层加载链（v1.0.1）
 
-每次对话启动时先加载 3 层常驻地基：
+每次对话启动时先加载 4 层常驻地基：
 
 | 层 | 文件 | 干什么 | 能改吗 |
 |:--:|------|------|:--:|
 | 1 | `SKILL.md`（宪法内联） | 4 底线 + 6 铁律 | ❌ |
 | 2 | `think.md` | 反思摘要（≤2K token） | ⚠️ 改了没用 |
 | 3 | `fde.md` | 你的运行规范，优先级最高 | ✅ 随便改 |
+| 4 | `knowledge/index.md` | AI 知识库目录，被动注入 top-3 页摘要 | ⚠️ daemon 自动维护 |
 
-> 地基约 3,000 token，不到 128K 窗口的 2.5%。OpenClaw 平台 Hook 自动注入 2-3 层，其他平台 Agent 主动 Read。详细推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#why-resident)。
+> 地基约 3,500 token，不到 128K 窗口的 3%。OpenClaw 平台 Hook 自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#why-resident)。
+
+### 双引擎怎么跑
+
+```
+    审计引擎（每次提交）                 编排引擎（Workflow 梳理 + 定期重测）
+         │                                       │
+         ├─ git diff 扫描                        ├─ Workflow 梳理：生成节点文档（nodes/*.md）
+         ├─ 规则检查 A1-A14                      │       └─ Agent 读 .md → 注入 ao compose 拆任务
+         │                                       │
+         │                                       ├─ 生产运行：AI 节点按编排方案执行
+         │                                       │       ├─ 🔄 自动执行
+         │                                       │       └─ ⚡ AI 领航员辅助
+         │                                       │
+         │                                       ├─ 定期 A/B 重测（每 N 个 session）
+         │                                       │       ├─ 编排引擎重出一版新方案
+         │                                       │       └─ sofagent-orchestrate-compare 对比
+         │                                       │              ├─ 新方案胜出 → promote
+         │                                       │              └─ 旧方案更好 → 保留
+         │                                       │
+         └────────────── think.md ─────────────────────┘
+              （审计引擎写 / 编排引擎读 / A/B 结果写入 orchestrator/）
+```
+
+| 引擎 | 做什么 | 依赖 Agent | 触发方式 |
+|------|------|:--:|------|
+| **审计引擎** | git diff → A1-A14 规则检查 → 自动生成 think.md | ❌ | 每次 git commit |
+| **编排引擎**（实验性）| Workflow 梳理时生成节点定义 + 定期 A/B 重优化 | ✅ | Workflow 梳理时 / 定时触发 |
 
 ### 4 条底线 + 6 则行为铁律
 
@@ -340,4 +368,4 @@ sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 > 大半年 OpenClaw 实战笔记。如有更好的用法，欢迎开 Issue。
 >
-> *v1.0.0，2026 年 7 月 4 日*
+> *v1.0.1，2026 年 7 月 4 日*

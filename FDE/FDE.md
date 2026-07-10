@@ -1,6 +1,6 @@
 # FDE.md · Forward Deployed Engineer 部署手册
 
-> ⚠️ **成熟度声明**：FDE 四阶段十二步流程已在作者自有企业中实际部署使用（2026-07）。审计引擎（独立产品）成熟度更高——408 tests 全绿、跨平台 CI 覆盖。详见 [LIMITATIONS.md](../LIMITATIONS.md)。
+> ⚠️ **成熟度声明**：FDE 四阶段十二步流程已在作者自有企业中实际部署使用（2026-07）。审计引擎（独立产品）成熟度更高——418 tests 全绿、跨平台 CI 覆盖。详见 [LIMITATIONS.md](../LIMITATIONS.md)。
 
 > **这是什么**：FDE（或企业 CIO/网管）的操作手册。读它 → 帮企业梳理 workflow → 识别 AI 节点 → 生成交付手册。Agent 全程辅助——你负责和人聊，Agent 负责记录、分析、出方案。安装、使用说明见 [README.md](./README.md)。
 

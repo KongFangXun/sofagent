@@ -11,7 +11,7 @@ sofagent 是纯本地 Harness 层，**数据不出本机**——但以下数据�
 | `scoring/` | `.sofagent/scoring/` | Skill 使用记录 |
 | `orchestrator/` | `.sofagent/orchestrator/` | 编排决策历史 |
 
-**当前状态（v1.0.0）**：
+**当前状态（v1.0.1）**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
@@ -79,6 +79,10 @@ install.sh 拆分为以下模块，便于逐模块审查：
 ## 适用范围
 
 本安全策略适用于 sofagent 项目仓库内的所有文件。第三方依赖（如 agency-orchestrator、OpenClaw）的安全问题请向对应项目报告。
+
+## 免责声明
+
+sofagent 基于 MIT 许可证发布，按「现状」（AS IS）提供，不附带任何明示或暗示的担保。作者不对因使用本软件而产生的任何直接、间接、附带或后果性损害承担责任。sofagent 是审计工具而非安全防线——它能检测常见的 Agent 违规模式，但不能保证拦截所有攻击向量。
 
 ---
 

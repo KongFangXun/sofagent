@@ -1,18 +1,18 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.0.0 · 2026-07-10（UTC）· 正式版：Agent 审计工具——18 件事全部完成，从技术预览到可生产使用
+> v1.0.1 · 2026-07-11（UTC）· AI 知识库实现版：知识库骨架 + Ingest 自动生长 + 被动注入 + Lint 体检 + A14 越权审计
 >
 
 > 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（Workflow 梳理用）为实验性附带。
 
 ---
 
-## 现在在哪：v1.0.0 ✅
+## 现在在哪：v1.0.1 ✅
 
-> 正式版——v0.99.9 经 88 维度双审查全部修复后，v1.0 完成 18 件事：铁律措辞强化 + 上线前验收测试 + daemon 文档校准 + FDE 隐性代价 + 准入条件推进 + 工具链加固 + 审计可视化 + 违规修复建议 + 安装仪式感 + 无声失败保护 + 首次提交噪音消除 + --init 一键初始化 + --doctor 健康诊断 + 审查 prompt 106 维度升级 + README 定位 + 升级迁移指引。408 测试全绿，3 名外部用户验证通过。
+> 知识库实现版——v1.0.0 经双视角审查修复（3 P0 + 15 P1 + 12 P2）后，v1.0.1 完成 AI 知识库代码实现：知识库目录骨架（6 个子目录 + index.md/log.md）+ fde.md 维护规则章节（4 子规则，≤3200 字符）+ knowledge-maintain.md 新 Skill（71 行）+ 加载链三层→四层（knowledge 被动注入）+ daemon Ingest 触发（task/logs 变化检测 + 30 分钟防抖）+ loop-evaluate 5 项 Lint + loop-check 20 轮硬上限 + A14 知识库越权审计（hybrid 模式）+ deepagents 可选依赖（不阻断安装）+ Ontology relations（entities/ frontmatter 含 has_many/belongs_to）。418 测试全绿，37 test files。138 维度回归检查清单全覆盖。
 >
-> 📖 [开发日志](./docs/changelog/v1.0.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [开发日志](./docs/changelog/v1.0.1.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -22,6 +22,7 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
+| **v1.0.1** 🔧 | AI 知识库实现版：7 件事（目录骨架/fde 规则/Skill/四层加载链/daemon Ingest/Lint/轮次上限）+ A14 越权审计 + 137 维度审查 | [📖](./docs/changelog/v1.0.1.md) |
 | **v1.0.0** 🎉 | 正式版：Agent 审计工具——18 件事 + 408 测试全绿 + 106 维度审查 | [📖](./docs/changelog/v1.0.md) |
 | *(实验/测试版)* | | |
 | **v0.99.9** | AI 知识库概念先行 + 审查修复收尾 + verify.ts 拆分（1257→4模块）+ 行业笔记落地 + 理论引证 | [📖](./docs/changelog/experimental/v0.99.9.md) |
@@ -98,7 +99,7 @@ OpenClaw 总管（TS）
 |:--:|------|------|------|
 | 🔵 引入 | v1.0.1 | `npm install deepagents` → 用 `createDeepAgent` 包装 ao 的 loop-check/evaluate/exit，ao 仍然做决策但编排层切到 LangGraph 状态图 | deepagentsjs + langgraph |
 | 🟡 替换 | v1.0.2 | 基于 Agency Agents 模板定义 FDE Sub Agent 岗位（role/workflow/rules/deliverables）→ 对接 OpenClaw sub-agent 机制；同步定义 Audit Sub Agent（语义级审查、跨 repo Workflow 巡检） | agency-agents 模板 + OpenClaw sub-agent API |
-| 🟢 增强 | v1.0.3 | 集成 deepagentsjs 的 eval harness（golden set/offline eval/online eval）+ HITL middleware（高风险操作人工审批）→ 对齐 OpenFDE 第 6/7 步 | deepagents evals + HITL middleware |
+| 🟢 增强 | v1.0.3 | 集成 deepagentsjs 的 eval harness（golden set/offline eval/online eval）+ HITL middleware（高风险操作人工审批）→ 对齐 OpenFDE 第 6/7 步。**HITL 置信度标注**（不自动审批）：>99% 自动放行 + 标 🟢；80-99% 标 🟡 待人工确认；<80% 标 🔒 强制人工确认。**仅标注不审批**——不做审批超时降级/防橡皮图章（企业级 BPM 功能，非 Agent harness 职责）。四类强制人工确认场景：删除操作 / 外部 API 调用 / 权限变更 / 数据迁移 | deepagents evals + HITL middleware |
 | ✅ 退役 | v1.0.4 | ao 的 loop-check/evaluate/exit 全部由 DeepAgents + LangGraph 接管。ao 目录保留为实验性 archive，标注「已被 DeepAgents 替代」 | 全量功能对齐 |
 
 #### Ontology 渐进构建（企业数字孪生操作层）
@@ -111,6 +112,7 @@ OpenClaw 总管（TS）
 | 🏗️ 动作定义 | v1.0.2 | Workflow 节点的 YML 加 `actions` 声明——每个节点能对什么对象做什么操作、有什么约束 | Agent 不只是能看什么（knowledge-domain），还能做什么（actions） |
 | 🔍 约束验证 | v1.0.3 | 新增 A15 审计规则——Agent 执行的 action 是否在节点声明的 actions 范围内、是否满足 constraints | 事后审计扩展到事前约束检查 |
 | 🌐 统一 Ontology 层 | v1.0.4 | `.sofagent/ontology/` 目录——自动从 entities + workflow actions 合并生成，Agent 加载时获得完整世界模型 | FDE 交付的不是文档，是企业数字孪生的操作接口 |
+| 🛡️ 防幻觉四方案 | v1.0.4 | Schema Guided（ontology 约束 Action 输出）+ HTRO（High Trust Read Only，只读可信源）+ RAG+溯源（引用必须可追溯到 knowledge/ 页面）+ Action Type 终审（审计层验证 action 类型合规） | 与 A 系列「硬证据」哲学一致 |
 
 #### 外部框架对齐（v1.x 全版本基线）
 
@@ -123,6 +125,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | Skill 系统 | Agency Agents（岗位模板，v1.0.2）+ SkillOpt（Skill 文档自进化，v1.0.2）+ eval harness + A/B 对比（Sub Agent 配置自进化，v1.0.3） | 模板引用 + 对接优化引擎 | v1.0.1-v1.0.3 |
 | AI 知识库 | OpenFDE 10 步工作流（行业定位验证） | 外部验证 | v1.0-1.1 |
 | 企业世界模型 | Palantir Ontology（实体+关系+动作+约束） | 概念借鉴，渐进构建 | v1.0.1-v1.0.4 |
+| 任务路由 + Skill 组合 | Router+Skill 架构（行业评估为性价比最高方案） | task-aware 路由与 sofagent 方向一致 | v1.x 基线 |
 
 
 | 想法 | 说明 |
@@ -142,6 +145,9 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | 分布式反思同步 | Gossip 协议 + 信任加权投票 |
 | bash 代码债清理 | ~450 行重复代码（颜色常量/日志函数/平台探测），方向：bash → TypeScript 迁移，不新建 bash 基础设施 |
 | 英文文档扩展 | HANDBOOK/DEVELOPMENT/ARCHITECTURE 英文翻译 |
+| **失败案例库** | 收集 Agent 审计拦截的真实案例（去敏后），用于回归测试 + 训练。已有 audit history 数据源 |
+| **held-out 测试集** | 预留一批不参与日常迭代的测试样本，版本发版前验证（翁荔提出的三项短板之一） |
+| **长期健康度监控** | 追踪 Agent 约束服从率随时间变化的趋势（是否衰减、是否需刷新约束措辞） |
 | ARCHITECTURE 可读性 | 降低外部引用密度，让新人 10 分钟能看懂
 | 恢复路径结构化 | think.md 记录失败但没有结构化恢复机制，等 JSONL 落地
 | 审计规则模板消除重复 | RuleFunction 类型工厂 + Runner 注册模式（15 个 rule-*.ts 减少 30% 重复代码）
@@ -221,6 +227,8 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | 异步长任务自治 | daemon 从文件监控升级为长任务自主运行 |
 | PE/VC 多企业审计仪表盘 | 投后管理场景——所有被投企业的 AI 审计数据汇总到一个面板，投后团队统一监控 |
 | FDE 陪跑期机制 | 部署后前 2 周 AI 节点 daily review，人类反馈和 AI 反思双向写入 think.md |
+| 国标 Agent 审计对位 | 关注国家 AI 智能体互联标准草案进展（截至 2026-07 仍为征求意见稿阶段），标准正式发布后评估 sofagent 审计规则的合规对齐 |
+| **Agent 身份码（v1.1.0）** | 国标草案中唯一明确「后续转强制」的方向。v1.1.0 预研——标准仍在制定中，落地取决于国标正式发布 |
 
 ---
 

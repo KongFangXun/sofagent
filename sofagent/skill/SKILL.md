@@ -1,7 +1,7 @@
 ---
 name: sofagent
 slug: sofagent
-version: 1.0.0
+version: 1.0.1
 displayName: sofagent
 description: >
   当你的 Agent 反复偏离目标、任务越做越复杂、刚踩过的坑下次还踩。装上后 Agent 自带行为约束和反思能力。
@@ -20,18 +20,17 @@ metadata:
 
 ---
 
-## ⛓️ 加载链（三层）
+## ⛓️ 加载链（四层）
 
 > 🟢🟡🔴 都一样，不读完不回复。加载链属于整个会话，不属于某个任务。
-
 | 层 | 文件 | 加载方式 | 读什么 | 不存在时 |
 |:--:|------|---------|------|------|
 | 1 | **本文件** | skill 调用自动注入 | 4 底线 + 6 则铁律 | — |
 | 2 | `{SOFAGENT_DATA}/think.md` | Agent 主动 Read | 反思区（上次踩了什么坑）| 任务完成后创建 |
 | 3 | `~/.openclaw/skills/sofagent/fde.md` | Agent 主动 Read | 企业规范（FDE 制定，最高优先级）| 跳过（未配置）|
+| 4 | `{SOFAGENT_DATA}/knowledge/index.md` | Agent 主动 Read | AI 知识库目录（top-3 相关页摘要）| 跳过（空知识库）|
 
-> 💡 `{SOFAGENT_DATA}` = `${PWD}/.sofagent`
-> 💡 `{OPENCLAW_SCRIPTS}` = `${HOME}/.openclaw/scripts/`
+> 💡 第 4 层：index.md → 与上次 task/logs 关键词匹配 → 注入 top-3 页摘要（≤500 token，匹配度=0 则跳过）。详见 `knowledge-maintain.md`。`{SOFAGENT_DATA}` = `${PWD}/.sofagent`
 
 ---
 
@@ -56,31 +55,36 @@ metadata:
 
 ---
 
-### 加载链自检
+每次对话开始确认 L2/L3/L4 已加载，未加载时提醒用户。
 
-每次对话开始时，确认 L2（think.md）和 L3（fde.md）都已读到。未加载时提醒用户。
+### think.md 模板（v1.0.1+）
+必填「做了什么」+「验证了什么」，缺任一 → ⚠️：
+
+```
+## [日期] 任务名
+### 做了什么
+### 改了什么
+### 验证了什么
+### 踩了什么坑
+### 还剩什么
+```
 
 ---
 
-## A0. 复杂度预判（加载链完成后执行）
+## A0. 复杂度预判（仅看消息文字，加载链完成后）
 
-仅看消息文字判断，不读任何文件：
-- 🟢🟡 → Read `task-aware.md` → 输出简复
-- 闲聊 → 不激活编排
-- 🔴 复杂任务 → 按需激活编排引擎（见 `engage.md`）
+- 🟢🟡 → Read `task-aware.md` → 简复 · 闲聊 → 跳过 · 🔴 → 激活 `engage.md`
 
 ---
 
-## ⚠️ 回复前闸门（内部执行，不输出给用户）
+## ⚠️ 回复前闸门（内部执行，不输出）
 
-① 自检：回复中是否含内部标记（C步/入境闸门/能力注册/每任务闸门/Loop checkpoint/八维评分/think反思/编排决策/task-aware 1./task-closure）？命中 → 删除
-② 闭合：最小成果 + 用户确认 → task/logs → Read `task-closure.md` → 调 Loop Check → 打勾
-③ 执行中：子任务间 / 60%预算 / 重大操作前 / 失败 → Read `loop-check.md` → 调起对应模式
+① 回复含内部标记（C步/入境闸门/闸门/Loop checkpoint/八维/think/编排/task-aware） → 删除
+② 闭合：最小成果 + 用户确认 → task/logs → Read `task-closure.md` → Loop Check
+③ 执行中子任务间/60%预算/重大操作前/失败 → Read `loop-check.md`
 ④ 兜底：当日 task/logs 不存在 → 口头告警
-
----
 
 ## Gotcha
 
-- **回复前闸门静默修正**——发现内部标记泄漏到回复里，悄悄删掉不汇报。后果：用户不知道闸门在起作用，下次闸门失效时无法感知。
-- **加载链提醒吓到用户**——「⚠️ 第 X 层未加载」输出太技术化。后果：用户以为出故障了，实际只是 think.md 还没创建。
+- **闸门静默修正**——发现内部标记泄漏到回复里，悄悄删掉不汇报。后果：用户不知道闸门在起作用，下次失效时无法感知。
+- **加载链提醒吓到用户**——「⚠️ 第 X 层未加载」太技术化。后果：用户以为出故障，实际只是 think.md 没创建。

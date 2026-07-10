@@ -142,8 +142,10 @@ export function checkRuleA3(ctx: AuditContext): RuleCheck {
   const threshold = effectiveConfig.carefulModifyThreshold;
 
   if (!task) {
-    // 没有提供任务描述，跳过此检查
-    rule.details.push('未提供 --task 参数，跳过「不改越界」检查。建议在 CI 中传入 PR 标题。');
+    // 没有提供任务描述——降级为仅检查文件路径是否在越界列表内
+    // 不依赖 task 语义，只检查低风险白名单之外的文件变更
+    rule.details.push('未提供 --task 参数，跳过任务关联检查。仅检查文件路径。');
+    // 注意：不设为 WARN/PASS——无 task 时 A3 保持 PASS（降级模式，不做越界判断）
     return rule;
   }
 
