@@ -4,13 +4,15 @@
 
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-v0.99.9-16B8F3)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-v1.0.0-16B8F3)](./CHANGELOG.md)
 [![定位：Agent 审计工具](https://img.shields.io/badge/定位-Agent_审计工具-16B8F3)](#一句话定位)
 [![核心：审计引擎](https://img.shields.io/badge/核心-审计引擎-16B8F3)](#一句话定位)
 [![OpenClaw](https://img.shields.io/badge/🦞_引擎-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 
+> Agent 提交时审计工具——git diff 硬证据，11 条规则，pre-commit hook，不依赖 Agent 配合。构建于 LangGraph + DeepAgents 编排之上，借鉴 Palantir Ontology 与微软 SkillOpt。
+>
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
 >
 > **企业上 AI，先上缰绳再上路。** 中小企业和 OPC 的 FDE 工具包——约束底座管行为，审计引擎盯结果。不用请昂贵顾问，不用养 AI 团队，自己就能搭建 AI 节点。
@@ -27,7 +29,7 @@
 >
 > ⚠️ **Klarna 教训**：瑞典金融科技公司 Klarna 裁掉 700 人用 AI 替代，一年后被迫召回——不是因为 AI 不能干活，是因为责任悬空了。sofagent 做的就是「让责任不悬空」。→ [详见 FDE](./FDE/FDE.md#附录企业-ai-成熟度三级台阶)
 
-> **成熟度说明**：作者自用一个多月，审计引擎日常稳定（407 tests 全绿，5/5 靶向违规全部检出）。编排引擎为实验性附带——能跑，但需要 OpenClaw 环境。如果你试了，告诉我什么场景、什么问题。
+> **成熟度说明**：作者自用一个多月，审计引擎日常稳定（408 tests 全绿，5/5 靶向违规全部检出）。编排引擎为实验性附带——能跑，但需要 OpenClaw 环境。如果你试了，告诉我什么场景、什么问题。
 
 | 组件 | 做什么 | 怎么跑 |
 |------|------|------|
@@ -99,6 +101,8 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
 
 **跑通了？** [HANDBOOK](./HANDBOOK.md) 教你怎么调，[DEVELOPMENT](./DEVELOPMENT.md) 讲内部怎么跑。
 
+> **从 v0.99.x 升级？** 重跑 `install.sh`（或 `npm install -g @sofagent/audit`），已有 `.sofagent/config.yml` 兼容无需改动，建议跑 `sofagent-audit --init` 更新 hook。详见 [v1.0 升级指引](./docs/changelog/v1.0.md)。
+
 ---
 
 ## 怎么工作
@@ -139,6 +143,8 @@ cat .sofagent/think.md        # Agent 自动提炼的反思摘要
 |------|------|:--:|------|
 | **审计引擎** | git diff → 规则检查 → 自动生成 think.md | ❌ | 每次 git commit |
 | **编排引擎** | Workflow 梳理时生成节点定义 + 定期 A/B 重优化 | ✅ | Workflow 梳理时 / 定时触发 |
+
+> 完整五层架构（Harness → 执行 → 审计 → MCP → 协同）详见 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 > 约束自己定，模板和 Skills 从社区取。已知局限见 [LIMITATIONS.md](./LIMITATIONS.md)。
 

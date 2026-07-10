@@ -60,7 +60,7 @@ function makeCtxFromFiles(diffFiles: DiffFile[]): AuditContext {
   return { diffFiles, logEntries: [] };
 }
 
-const FIXTURES_DIR = join(__dirname, '..', 'test-fixtures');
+const FIXTURES_DIR = __dirname;
 
 describe('集成测试', () => {
   it('add-mod-del fixture → 解析文件状态正确', () => {

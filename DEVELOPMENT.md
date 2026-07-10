@@ -4,9 +4,35 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v0.99.9 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
+> v1.0.0 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
 
 > 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](./FDE/FDE.md) 和 [README § FDE](./README.md#fde从工作流到-ai-节点)。
+
+### 开发环境
+
+| 依赖 | 用途 | 版本 |
+|------|------|:--:|
+| Node.js + TypeScript | 审计引擎、CLI、MCP Server | v1.0 |
+| [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) | 编排引擎 + Sub Agent 系统 | v1.1+ |
+| [LangGraph.js](https://github.com/langchain-ai/langgraphjs) | 状态图、条件路由、HITL | v1.1+ |
+| Python 3 + `pip install skillopt` | Skill 自进化引擎（通过 CLI subprocess 调用，可选） | v1.2+ |
+| 无其他外部运行时依赖 | — | — |
+
+#### Windows 开发踩坑（PowerShell 移植必读）
+
+> 来源：Windows 11 + PowerShell 5.1 实地勘察（2026-06）。v1.x Windows 完整支持开发参考。
+
+| # | 坑 | 现象 | 解法 |
+|---|-----|------|------|
+| 1 | `.ps1` 必须 UTF-8 **带 BOM** | PS 5.1 读无 BOM 的 UTF-8 按 GBK 解析 → 中文乱码、字符串截断、解析报错 | 含中文的 `.ps1` 一律存 UTF-8 with BOM（`EF BB BF`） |
+| 2 | 加 BOM 时读取**必须 `-Encoding UTF8`** | `Get-Content -Raw`（不带 `-Encoding`）读无 BOM 文件按 GBK 误读 → mojibake，再写回直接读坏 | `Get-Content -Raw -Encoding UTF8 $p` |
+| 3 | 控制台输出编码 | 脚本不设 OutputEncoding → 按 OEM/GBK 输出，UTF-8 消费方读到乱码 | 顶部加 `[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false` |
+| 4 | `.gitattributes` 锁换行 | `core.autocrlf=true` 无 `.gitattributes` → checkout 把 `*.sh` 变 CRLF → Linux 跑不了 | `*.sh text eol=lf` + `*.ps1 text eol=crlf` |
+| 5 | `if` 表达式不能直接做函数参数 | `f (if(){}else{})` 运行时崩 | 先 `$x = if...` 再传 |
+| 6 | `switch` 无 `break` 执行所有匹配 case | 兜底 `^-` 误伤每个 flag | 用 if/elseif 链替代 |
+| 7 | 单元素嵌套数组 `@(@(...))` 被摊平 | `foreach` 遍历到字符、`$x[0]` 取首字符 | 确保多元素或用 `,` 强制数组 |
+| 8 | `WSLENV` 判 WSL 误判 | `WSLENV`（如 `WT_SESSION:`）在装了 WSL 的 Windows 上本就有 → 脚本误判为 WSL 拒跑 | 只认 `WSL_DISTRO_NAME` |
+| 9 | BSD sed 词边界 `[[:<:]]` 在 GNU 报错 | `task-record.sh` 的 `sanitize()` 在 Linux 上脱敏失效 | 用 `\b` 替代 |
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 

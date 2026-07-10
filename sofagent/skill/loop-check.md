@@ -69,7 +69,7 @@ Log：`Loop checkpoint|{节点}|{结果}|{依据}|{动作}` / `Loop failure|{根
 
 ---
 
-> Loop Check = 顾问。读数据、做判断、给建议——主 Agent 自己决定怎么做。脚本数数，Agent 判断。
+> Loop Check = 顾问。读数据、做判断、给判断意见——主 Agent 自己决定怎么做。脚本数数，Agent 判断。
 
 ## Gotcha
 

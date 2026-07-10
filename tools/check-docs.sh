@@ -56,6 +56,26 @@ for f in sofagent/skill/*.md; do
 done
 
 echo ""
+echo "=== 6. 铁律措辞检查 ==="
+IRON_FAIL=0
+for f in sofagent/skill/*.md FDE/SKILL.md; do
+  if [ -f "$f" ]; then
+    WEAK=$(grep -n '建议\|应该\|尽量' "$f" 2>/dev/null | grep -v 'not_when\|Gotcha\|场景\|如果\|注\|说明\|这不是' || true)
+    if [ -n "$WEAK" ]; then
+      echo "  ❌ $(basename "$f") 有弱措辞残留:"
+      echo "$WEAK" | sed 's/^/     /'
+      IRON_FAIL=$((IRON_FAIL + 1))
+    fi
+  fi
+done
+if [ "$IRON_FAIL" -gt 0 ]; then
+  echo "  ❌ 共 ${IRON_FAIL} 个文件有弱措辞残留"
+  ERRORS=$((ERRORS + IRON_FAIL))
+else
+  echo "  ✅ 全部 Skill 文件铁律措辞合格"
+fi
+
+echo ""
 if [ "$ERRORS" -gt 0 ]; then
   echo "❌ 发现 ${ERRORS} 个问题"
   exit 1

@@ -2,7 +2,7 @@
 
 > **企业上 AI，先上缰绳再上路——装上审计引擎，每次 Agent 提交代码时自动检查变更。配合约束底座管 Agent 行为，编排引擎拆解任务（FDE 部署用）。**
 >
-> v0.99.9 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
+> v1.0.0 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 
@@ -11,6 +11,7 @@
 - [场景一：装完第一件事](#场景一装完第一件事)
 - [场景二：日常使用](#场景二日常使用)
 - [场景三：排查问题](#场景三排查问题)
+- [安装与运行常见问题](#安装与运行常见问题)
 - [场景四：自定义](#场景四自定义)
 - [场景五：FDE 部署](#场景五fde-部署)
 - [致谢](#致谢)
@@ -110,6 +111,12 @@ node dist/index.js --diff HEAD~1..HEAD --task "修复登录页 bug"
 
 exit code：0 = 通过 / 1 = 有警告 / 2 = 有违规。零 Agent 依赖——看的是已发生的 git diff。
 
+### daemon 后台进程
+
+安装时可选择安装 daemon（轻量后台进程，macOS launchd / Linux systemd）。daemon 每 30 秒检查 `think.md` 和 `fde.md` 的文件 hash 变化——如果变了，写入 `daemon-notice.md` 通知。**不直接审计 git commit**（commit 审计由 pre-commit hook 负责，见上方）。
+
+> daemon 是可选组件——即使不装，宪法层约束和 pre-commit hook 审计照样生效。
+
 ---
 
 ## 场景二：日常使用
@@ -201,6 +208,17 @@ Agent 先判断任务复杂度：
 
 > 更多见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
 
+### 安装与运行常见问题
+
+| 问题 | 原因 | 解决 |
+|------|------|------|
+| `sofagent-audit: Node.js 未找到` | Node.js 未安装或版本过低 | 安装 Node.js ≥18：`node --version` 确认 |
+| commit 时没有审计输出 | pre-commit hook 未安装 | `sofagent-audit --init` 或 `sofagent-audit --install-hook` |
+| 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
+| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计引擎可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](./LIMITATIONS.md#windows-支持是实验性的) |
+| hook 装了但静默跳过 | Node.js 或 sofagent-audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
+| `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（11 条规则全启用） |
+
 ### Osmani 三盆冷水
 
 | 冷水 | 意思 | sofagent 的应对 |
@@ -231,6 +249,20 @@ Agent 先判断任务复杂度：
 当前 A1-A11 共 11 条审计规则，源码在 `sofagent/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计)。
 
 ### 概念速查
+
+| 术语 | 一句话解释 |
+|------|------|
+| **Harness 层** | 管 Agent 行为的「缰绳」——不改模型，改模型外围的执行机制 |
+| **审计引擎** | 看 git diff 硬证据判定违规，提交时触发，不依赖 Agent 配合 |
+| **编排引擎**（实验性）| 拆任务→编排→执行，跑在 OpenClaw 上，Workflow 梳理用 |
+| **铁律** | Agent 行为约束规则（4 底线 + 6 铁律），写在 MD 文件里注入上下文 |
+| **审计规则** | 代码变更检查规则（A1-A11），审计引擎按此判定 exit code |
+| **Skill** | Agent 行为模板——一组 .md 文件，定义 Agent 在什么场景做什么 |
+| **think.md** | Agent 任务结束后的反思记录——踩了什么坑、下次怎么办 |
+| **daemon** | 轻量后台进程，每 30 秒检查 think.md/fde.md 文件 hash 变化并通知 |
+| **OpenClaw** | 开源 Agent 平台，sofagent 的编排引擎跑在上面 |
+| **三层加载链** | SKILL.md（契约层）→ think.md（反思层）→ fde.md（执行层）注入顺序 |
+| **FDE** | Forward Deployed Engineer，帮企业梳理工作流→识别 AI 节点→部署 Agent |
 
 核心 = **4 底线 + 6 铁律 + 三层加载链**（所有平台生效）。增强 = 编排引擎 + 断路器 + Hook 注入（仅 OpenClaw）。完整概念分层见 [README](./README.md)。
 
@@ -268,6 +300,21 @@ Agent 先判断任务复杂度：
 
 ---
 
+---
+
+## 相关技术栈
+
+sofagent 不是孤立的——它构建于以下成熟项目之上，各司其职：
+
+| 技术 | 在 sofagent 中的角色 | 引入版本 |
+|------|------|:--:|
+| [LangChain](https://github.com/langchain-ai/langchainjs) + [LangGraph](https://github.com/langchain-ai/langgraphjs) | 编排引擎——状态图、条件路由、HITL、持久化 | v1.1 |
+| [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) | Sub Agent 系统——FDE Sub Agent + Audit Sub Agent | v1.1 |
+| [Agency Agents](https://github.com/msitarzewski/agency-agents) | 230+ 岗位模板——Sub Agent 角色定义 | v1.2 |
+| [微软 SkillOpt](https://github.com/microsoft/SkillOpt) | Skill 自进化引擎——训练→验证→替换 | v1.2 |
+| [OpenFDE](https://open-fde.com) | 行业定位验证——10 步工作流 + 8 维能力模型 | v1.0 |
+| [Palantir Ontology](https://www.palantir.com/platforms/aip/) | 企业世界模型——实体+关系+动作+约束 | v1.1-1.4 |
+
 ## 致谢
 
 sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完整致谢](./THANKS.md)
@@ -293,4 +340,4 @@ sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 > 大半年 OpenClaw 实战笔记。如有更好的用法，欢迎开 Issue。
 >
-> *v0.99.9，2026 年 7 月 4 日*
+> *v1.0.0，2026 年 7 月 4 日*

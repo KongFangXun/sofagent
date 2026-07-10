@@ -1,6 +1,6 @@
 # COMMUNITY.md · sofagent 社区
 
-> v0.99.9 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
+> v1.0.0 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
 
 ## 📌 当前状态
 
@@ -43,7 +43,7 @@ sofagent 的约束效果的增量数据需要独立验证，不能只靠作者�
 **最小复现路径**（30 分钟）：
 1. 克隆 [sofagent-test-suite](https://github.com/cedric123123/sofagent-test-suite)（baseline `56160e1`）
 2. 跑 Task 1（camelCase → snake_case）——A 裸 Agent vs B sofagent 约束
-3. 用 `docs/evidence/benchmark/scripts/run-trial.sh` 自动评分（变量名误伤率）
+3. 手动评分：变量名误伤率（改了几个不该改的变量名 / 总变量数）
 4. 把结果发到 [GitHub Discussions](https://github.com/KongFangXun/sofagent/discussions)
 
 > 你的复现数据（无论正反）都有价值。数据和作者的结论不一致？更好——说明有值得调查的差异。

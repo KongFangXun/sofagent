@@ -2,7 +2,7 @@
 
 > sofagent 站在巨人肩膀上。以下每一个项目、文章和作者，都在 sofagent 的某个设计决策里留下了痕迹。
 >
-> v0.99.9 · 2026-07-04（UTC）· 北京时间 07-05
+> v1.0.0 · 2026-07-04（UTC）· 北京时间 07-05
 
 ---
 
@@ -98,5 +98,23 @@ sofagent 在这些社区里传播和生长。
 
 - **[Palantir AIP — Ontology 驱动的 Agent 架构](https://www.palantir.com/platforms/aip/)** · Palantir (2026)
   Palantir 未自研大模型，却实现远超行业的 Agent 可靠性。核心是 Ontology（本体论）——将数据+逻辑+动作+安全四合一的数字孪生操作层。其 Harness 定义与 sofagent 完全一致：「Ontology 是地图，Harness 是检查站。」
+
+- **[OpenFDE — FDE 知识库与社区](https://open-fde.com)**（2026-07）
+  FDE 10 步工作流（[workflow](https://open-fde.com/docs/workflow)）与 8 维能力模型（[capabilities](https://open-fde.com/docs/capabilities)），为 sofagent 提供行业定位外部验证：第 4 步将审计列为架构基础层，第 6/7 步直接对应 sofagent 审计引擎与生产化工具链。
+
+- **[微软 SkillOpt — Skill 自进化引擎](https://github.com/microsoft/SkillOpt)**（2026-07）
+  使用类似神经网络训练的范式（Rollout→Reflect→Aggregate→Select→Update→Evaluate）自动优化 Agent Skill 文档。在 52 个评估单元中全部达到最佳，平均提升 20+ 分。为 sofagent v1.2 的 Skill 自进化闭环提供核心引擎。
+
+- **[翁荔（Lilian Weng）— The Path to Recursively Self-Improving Harnesses](https://lilianweng.github.io/posts/2026-07-04-harness-rsl/)**（2026-07-04）
+  前 OpenAI 安全研究副总裁。六层 Harness 优化框架（上下文工程 → Harness 代码优化 → 领域工作流设计 → 自我改进 → 进化搜索 → 与模型权重联合优化），为 sofagent 的 Harness 层定位提供行业理论验证。详见 [ARCHITECTURE](./ARCHITECTURE.md#harness-框架行业验证翁荔六层模型)。
+
+- **[Anthropic — Managed Agents：解偶脑与手](https://www.anthropic.com/engineering/managed-agents)**（2026-04-08）
+  四层编排架构（Agent 与沙盒解偶 → Coordinator 编排层 → Session 解偶层 → Session Store 记忆层）。核心论断：「Agent 领域为模型写的修补代码注定过时，模型的进化速度快于代码重构速度」。验证 sofagent 的 OpenClaw（连接+行动）+ DeepAgents（深度思考）分工。
+
+- **[Deep Agent — LangChain 官方高级 Agent 框架](https://github.com/langchain-ai/deepagentsjs)**（2026）
+  LangGraph 状态底座 + Harness Engineering 范式 + 子 Agent 委派 + 受控沙箱 + 长上下文管理 + HITL 四大特性，验证 sofagent v1.x 的技术选型。
+
+- **[人工审核对 AI 系统可靠性与责任边界的提升机制](https://get笔记/ai-hitl-reliability)**（2026-07-10）
+  三层审核维度（语义与逻辑 / 合规与安全 / 质量与价值）+ 四类必须人工介入的高风险场景 + 置信度分级机制，为 v1.3 HITL middleware 的设计提供理论和数据依据。
 
 ---

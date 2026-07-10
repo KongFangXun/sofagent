@@ -1,33 +1,49 @@
 #!/bin/bash
-# sofagent pre-commit hook
-# 安装：cp sofagent/audit/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
-# 或：sofagent audit --install-hook
+# sofagent pre-commit hook v1.0
+# 安装：sofagent-audit --install-hook 或 sofagent-audit --init
+#
+# v1.0 变更：无声失败保护——Node.js 缺失或 sofagent-audit 未安装时
+# 必须 exit 1 + 明确提示，不允许静默跳过让用户以为被保护着
 
 DIFF=$(git diff --cached --name-only)
 if [ -z "$DIFF" ]; then
   exit 0
 fi
 
-# 优先使用全局安装的 sofagent-audit，fallback 到项目内路径
+# 1. Node.js 检测——没有 Node.js 审计根本跑不了
+if ! command -v node &>/dev/null; then
+  echo "❌ sofagent-audit: Node.js 未找到，审计未运行"
+  echo "   请安装 Node.js >= 18: https://nodejs.org"
+  echo "   如需跳过审计提交（不推荐）：git commit --no-verify"
+  exit 1
+fi
+
+# 2. sofagent-audit 检测——优先全局，fallback 项目内
 if command -v sofagent-audit &>/dev/null; then
   AUDIT_CMD="sofagent-audit"
 elif [ -f "sofagent/audit/dist/index.js" ]; then
   AUDIT_CMD="node sofagent/audit/dist/index.js"
 else
-  echo "⚠️  sofagent audit 未找到：请先 npm install -g @sofagent/audit"
-  exit 0
+  echo "❌ sofagent-audit 未安装，审计未运行"
+  echo "   请运行: npm install -g @sofagent/audit"
+  echo "   或在项目内安装: npm install @sofagent/audit"
+  echo "   如需跳过审计提交（不推荐）：git commit --no-verify"
+  exit 1
 fi
 
+# 3. 正常运行审计
 $AUDIT_CMD --diff HEAD --silent --ci --task "$(cat .git/COMMIT_EDITMSG 2>/dev/null || echo 'pre-commit audit')"
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -eq 2 ]; then
+  echo ""
   echo "❌ sofagent audit: 检测到违规（A1/A2），commit 已阻止。"
   echo "   如需跳过，使用 git commit --no-verify（不推荐）。"
   exit 1
 fi
 
 if [ $EXIT_CODE -eq 1 ]; then
+  echo ""
   echo "⚠️  sofagent audit: 检测到警告，但允许 commit。"
 fi
 

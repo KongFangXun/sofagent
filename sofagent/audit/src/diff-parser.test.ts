@@ -21,9 +21,12 @@ describe('parseDiff', () => {
   });
 
   // 辅助函数：预置 isInGitRepo() mock（返回 'true'）
-  // 用法： mockGitRepo().mockReturnValueOnce(nameStatus).mockReturnValueOnce(diff)
+  // v1.0 新增：range 含 HEAD~1 时，parseDiff 先跑 git rev-parse --verify HEAD~1 检测首次提交
+  // 所以 mock 链条是：isInGitRepo → rev-parse(HEAD~1) → diff --name-status → diff <range> -- <path>
   function mockGitRepo() {
-    return mockExecFileSync.mockReturnValueOnce('true\n');
+    return mockExecFileSync
+      .mockReturnValueOnce('true\n')      // isInGitRepo()
+      .mockReturnValueOnce('abc123def\n'); // git rev-parse --verify HEAD~1（非首次提交）
   }
 
   // 辅助函数：模拟非 git 仓库（isInGitRepo 抛异常）
@@ -132,6 +135,16 @@ index 1234567..abcdefg 100644
     mockGitRepo().mockReturnValueOnce('');
     const result = parseDiff('HEAD~3..HEAD~1');
     expect(result).toEqual([]);
+  });
+
+  it('首次提交（HEAD~1 不存在）→ 返回空数组 + 友好提示', () => {
+    // isInGitRepo 成功，但 rev-parse --verify HEAD~1 抛异常 = 首次提交
+    mockExecFileSync
+      .mockReturnValueOnce('true\n')    // isInGitRepo
+      .mockImplementationOnce(() => { throw new Error('fatal: ambiguous argument'); }); // rev-parse HEAD~1
+
+    const result = parseDiff('HEAD~1..HEAD');
+    expect(result).toHaveLength(0);
   });
 
   it('git diff 失败 → 返回空数组', () => {

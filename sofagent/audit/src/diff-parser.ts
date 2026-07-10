@@ -76,6 +76,21 @@ export function parseDiff(range: string): DiffFile[] {
   }
 
   try {
+    // 检测首次提交——HEAD 或 HEAD~1 在全新仓库首次 commit 时不存在
+    // pre-commit hook 传 --diff HEAD，命令行传 --diff HEAD~1..HEAD，两种都要覆盖
+    if (range.includes('HEAD')) {
+      const refToVerify = range.includes('HEAD~1') ? 'HEAD~1' : 'HEAD';
+      try {
+        execFileSync('git', ['rev-parse', '--verify', refToVerify], {
+          encoding: 'utf-8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+      } catch {
+        console.log('首次提交，无需审计（没有前一个版本可对比）。审计引擎已就绪，下次提交生效。');
+        return files;
+      }
+    }
+
     // 获取变更文件列表——execFileSync 不 spawn shell，参数作为数组传递，避免命令注入
     const output = execFileSync('git', ['diff', '--name-status', range], {
       encoding: 'utf-8',
