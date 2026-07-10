@@ -19,7 +19,6 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 - [二、核心设计决策](#二核心设计决策)
 - [三、诚实坦白：已知局限](#三诚实坦白已知局限)
 - [四、未来方向](#四未来方向)
-- [五、参考与致谢](#五参考与致谢)
 
 ---
 
@@ -448,26 +447,3 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 **两个原则性警告**：①「不要让智能体自我验证」——根治需 v1.x 外部评估器；②「Agent 越强，闸门越重要」。
 
 > **范围声明**：sofagent 覆盖 Agent 质量层（代码纪律 + 审计 + 经验沉淀），不覆盖运维层（监控/告警/重启/日志轮转）。
-
----
-
-## 五、参考与致谢
-
-sofagent 的设计受以下项目和思想启发。完整致谢（含链接、背景、详细说明）见 [THANKS.md](./THANKS.md)。
-
-| 来源 | 启发 |
-|------|------|
-| **OpenClaw** | 运行平台——加载链、Hook、Skill 系统、session 隔离 |
-| **DeepSeek + GLM** | 模型引擎——所有文件由二者配合生成 |
-| **Andrej Karpathy** | 思考先行、简约至上 |
-| **Geoffrey Huntley** | Ralph Loop——「Agent 失忆，文件不失忆」哲学 |
-| **Joel Niklaus**（Hugging Face） | 同一模型仅优化 Harness 从 3.5%→80.1% |
-| **Akshay Pachaar**（前 Lightning AI） | 生产级 Harness 12 组件框架 |
-| **Andrew Ng** | AI 产品三层时间尺度循环 |
-| **Superpowers**（GitHub 23.9 万星） | 措辞心理学——强措辞让 AI 服从率 33%→72% |
-
-> 完整名单、链接和背景故事见 [THANKS.md](./THANKS.md)。
-
----
-
-> 这份设计文档是开放的。如果你觉得哪个设计决策有问题——开 Issue，直接说。
