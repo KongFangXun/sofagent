@@ -100,10 +100,7 @@ sofagent 在这些社区里传播和生长。
   Palantir 未自研大模型，却实现远超行业的 Agent 可靠性。核心是 Ontology（本体论）——将数据+逻辑+动作+安全四合一的数字孪生操作层。其 Harness 定义与 sofagent 完全一致：「Ontology 是地图，Harness 是检查站。」
 
 - **[OpenFDE — FDE 知识库与社区](https://open-fde.com)**（2026-07）
-  FDE 10 步工作流（[workflow](https://open-fde.com/docs/workflow)）与 8 维能力模型（[capabilities](https://open-fde.com/docs/capabilities)），为 sofagent 提供行业定位外部验证：第 4 步将审计列为架构基础层，第 6/7 步直接对应 sofagent 审计引擎与生产化工具链。
-
-- **[OpenFDE Agent v0.1 — 原位学徒循环](https://github.com/Open-FDE/FDEAgent)**（2026-07-10）
-  Apprentice Loop（OBSERVE → ELICIT → INDUCE → ACT → EVOLVE）+ Judgment Unit（判断单元）核心原语——WHEN/SIGNALS/DO/WHY/REVERSE + 渐进自主度（suggest → approve → auto）+ DEPLOY/ATTRIBUTION 双面架构。为 sofagent 的 think.md 结构化、HITL 渐进自主度、插件位开源基线设计提供参考。
+  FDE 10 步工作流、8 维能力模型、白皮书、工具地图——开源社区为 FDE 行业提供了系统化的知识框架和方法论参考。
 
 - **[微软 SkillOpt — Skill 自进化引擎](https://github.com/microsoft/SkillOpt)**（2026-07）
   使用类似神经网络训练的范式（Rollout→Reflect→Aggregate→Select→Update→Evaluate）自动优化 Agent Skill 文档。在 52 个评估单元中全部达到最佳，平均提升 20+ 分。为 sofagent v1.0.3 的 Skill 自进化闭环提供核心引擎。
