@@ -74,3 +74,16 @@ Agent 接收任务后快速预判：
 ```
 
 执行路径：🟢🟡 → Read `task-aware.md` → 执行 / 🔴+FDE → Read `engage.md` → 编排 → 执行 / 🔴+非FDE → 手动拆解 + Read `task-aware.md` → 执行。
+
+<!-- 
+  7-Entry Pre-Flight Checklist 参照（Google Cloud Code）:
+  ✅ recovery — 失败回退方案（已补入 LIMITATIONS + daemon 边界说明）
+  ✅ loop — loop-check/evaluate/exit（已落地）
+  ⬜ contact — 上下文信息确认
+  ⬜ assembly — 上下文组装
+  ⬜ model — 模型选择确认
+  ⬜ gate — permission gate 验证
+  ⬜ executor — 执行器确认
+  ⬜ transcript — 状态转录（每步记录：看到什么/改了什么/验证了什么/还剩什么）
+  注：当前 think.md 的 task/logs 模板已部分覆盖 transcript，但未结构化。
+-->
