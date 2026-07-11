@@ -73,8 +73,8 @@
 |------|:--:|------|:--:|
 | **v1.0.1** | ✅ 已完成 | AI 知识库 + 访问控制 + entities 实体关联 + deepagentsjs 引入 + think.md 模板 + loop-check 轮次上限 | [📖](./docs/changelog/v1.0.1.md) |
 | **v1.0.2** | ✅ 已完成 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（144 维度 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
-| **v1.0.3** | ⏳ 待启动 | FDE Sub Agent + Audit Sub Agent（含成本） + SkillOpt 自进化 | [📖](./docs/changelog/v1.0.3.md) |
-| **v1.0.4** | ⏳ 待启动 | eval harness + Sub Agent A/B 自进化 + HITL + A15 约束验证 | [📖](./docs/changelog/v1.0.4.md) |
+| **v1.0.3** | ⏳ 待启动 | FDE Sub Agent + Audit Sub Agent（含成本） + SkillOpt 自进化 + think.md 判断单元结构（参考 OpenFDE Agent Judgment Unit） | [📖](./docs/changelog/v1.0.3.md) |
+| **v1.0.4** | ⏳ 待启动 | eval harness + Sub Agent A/B 自进化 + HITL 渐进自主度（suggest → approve → auto，参考 OpenFDE Agent） + A15 约束验证 | [📖](./docs/changelog/v1.0.4.md) |
 | **v1.0.5** | ⏳ 待启动 | Ontology 统一层 + ao 退役 + Workflow Hub 独立项目 + 首个行业模板 | [📖](./docs/changelog/v1.0.5.md) |
 
 ### v1.x — 发布后
@@ -174,6 +174,8 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 > 💡 **多 Agent 协同已在 v1.x 完成**：v1.0.3 FDE Sub Agent + Audit Sub Agent 并存 → v1.0.4 A/B 自进化双 Agent 对比 → v1.0.5 Agent Dashboard 探索原型。v2.x 不需要再做多 Agent 协同——它已经是 v1.x 的自然产物（Dashboard 是否进核心取决于 v1.0.5 企业用户反馈）。
 >
 > v2.x 的核心是两件事：**多设备协同**（不同机器上的 sofagent 实例共享知识/记忆/审计数据，每个 AI 节点拥有独立身份主动进入协作者现场）和 **Workflow Hub 前端**（Web catalog + 社区贡献仪表盘 + 模板 marketplace）。
+
+**ATTRIBUTION 归因引擎（v2.x 探索）**：参考 [OpenFDE Agent](https://github.com/Open-FDE/FDEAgent) 的 ATTRIBUTION 面——"到底哪一次审计干预推动了真实业务结果"。当前 sofagent 审计能告诉你 Agent 违规了，但不能告诉你哪次正确的审计干预带来了业务价值。ATTRIBUTION 需要在多设备、多客户、长时间尺度上追踪审计决策→业务指标的因果链，依赖真实企业数据和 v2.x 的多设备协同基础设施。
 
 四阶段渐进：协同编排协议（Markdown 优先）→ Agent 发现与注册 → 跨设备任务分发 → 企业 Agent 知识库（多设备蒸馏记忆聚合到企业自有 NAS/云盘，底层用 [Graphify](https://github.com/safishamsi/graphify) 轻量知识图谱）
 
