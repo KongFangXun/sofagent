@@ -1,18 +1,18 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.0.2 · 2026-07-11（UTC）· 审查修复版：15 项 P1-P3 修复 + 审查体系更新（144 维度回归清单 + 陌生视角 prompt 泛化）
+> v1.0.3 · 2026-07-11（UTC）· 编排引擎重构 + LOOP 自迭代 + 审查修复
 >
 
 > 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（Workflow 梳理用）为实验性附带。
 
 ---
 
-## 现在在哪：v1.0.2 ✅
+## 现在在哪：v1.0.3 ✅
 
-> 审查修复版——v1.0.1 经双视角审查（GLM-5.2 + DeepSeek V4 Pro）发现 15 项 P1-P3 问题全部修复 + 审查体系更新（回归清单 138→144 维度 + 陌生视角 prompt 泛化 v1.0.1 特定内容）。修复覆盖：文档死链、安全报告渠道、规则数量不一致、A14 全放开检测、config 未知规则校验、doctor 输出友好度、CI 修复指引、hook 错误标签、knowledge 目录自动创建、ROADMAP 状态矛盾。418 测试全绿，144 维度回归检查清单。
+> 编排引擎重构版——FDE Sub Agent 成型（DeepAgentsJS + LangGraph + Agency Agents 岗位模板 + SkillOpt 自进化引擎）+ LOOP 自迭代架构落地（4 Agent + 内外层循环 + 4 验证文件自进化）+ v1.0.2 两轮独立审查 30 项修复（2 P0 + 11 P1 + 17 P2）。releasing.md 八阶段发版 SOP + SOP 自我进化机制。430 测试全绿，pre-push 7/7。
 >
-> 📖 [开发日志](./docs/changelog/v1.0.2.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [开发日志](./docs/changelog/v1.0.3.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -22,9 +22,10 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
-| **v1.0.2** 🔧 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（144 维度 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
-| **v1.0.1** 🔧 | AI 知识库实现版：7 件事（目录骨架/fde 规则/Skill/四层加载链/daemon Ingest/Lint/轮次上限）+ A14 越权审计 + 137 维度审查 | [📖](./docs/changelog/v1.0.1.md) |
-| **v1.0.0** 🎉 | 正式版：Agent 审计工具——18 件事 + 408 测试全绿 + 106 维度审查 | [📖](./docs/changelog/v1.0.md) |
+| **v1.0.3** 🔧 | 编排引擎重构 + LOOP 自迭代：FDE Sub Agent（DeepAgentsJS+LangGraph+Agency Agents+SkillOpt）+ 4 Agent 定义 + 内外层循环 + 4 验证文件自进化 + 30 项审查修复 | [📖](./docs/changelog/v1.0.3.md) |
+| **v1.0.2** 🔧 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（回归检查清单 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
+| **v1.0.1** 🔧 | AI 知识库实现版：7 件事（目录骨架/fde 规则/Skill/四层加载链/daemon Ingest/Lint/轮次上限）+ A14 越权审计 + 回归检查清单 | [📖](./docs/changelog/v1.0.1.md) |
+| **v1.0.0** 🎉 | 正式版：Agent 审计工具——18 件事 + 408 测试全绿 + 回归检查清单 | [📖](./docs/changelog/v1.0.md) |
 | *(实验/测试版)* | | |
 | **v0.99.9** | AI 知识库概念先行 + 审查修复收尾 + verify.ts 拆分（1257→4模块）+ 行业笔记落地 + 理论引证 | [📖](./docs/changelog/experimental/v0.99.9.md) |
 | **v0.99.8** | 审查修复收尾 + FDE 架构重构：双审查 20 项遗留全修 + FDE 四层→三层实体 + templates 镜像产出 + Skill 精简 | [📖](./docs/changelog/experimental/v0.99.8.md) |
@@ -72,10 +73,10 @@
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
 | **v1.0.1** | ✅ 已完成 | AI 知识库 + 访问控制 + entities 实体关联 + deepagentsjs 引入 + think.md 模板 + loop-check 轮次上限 | [📖](./docs/changelog/v1.0.1.md) |
-| **v1.0.2** | ✅ 已完成 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（144 维度 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
-| **v1.0.3** | ⏳ 待启动 | FDE Sub Agent + Audit Sub Agent（含成本） + SkillOpt 自进化 + think.md 判断单元结构化 | [📖](./docs/changelog/v1.0.3.md) |
-| **v1.0.4** | ⏳ 待启动 | eval harness + Sub Agent A/B 自进化 + HITL 渐进自主度（suggest → approve → auto） + A15 约束验证 | [📖](./docs/changelog/v1.0.4.md) |
-| **v1.0.5** | ⏳ 待启动 | Ontology 统一层 + ao 退役 + Workflow Hub 独立项目 + 首个行业模板 | [📖](./docs/changelog/v1.0.5.md) |
+| **v1.0.2** | ✅ 已完成 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（回归检查清单 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
+| **v1.0.3** | ✅ 已完成 | LOOP 自迭代架构（4 Agent + 内外层循环） + SkillOpt 自进化 + Audit Sub Agent（含成本） + think.md 判断单元结构化 + 文档分层预算 | [📖](./docs/changelog/v1.0.3.md) |
+| **v1.0.4** | ⏳ 待启动 | eval harness（类似 OpenAI Evals，用标准化测试集衡量 Agent 表现） + Sub Agent A/B 自进化 + HITL 渐进自主度（suggest → approve → auto） + A15 约束验证 | [📖](./docs/changelog/v1.0.4.md) |
+| **v1.0.5** | ⏳ 待启动 | Ontology 统一层（类似 Palantir 的 Ontology，给每个代码实体打标签和约束） + ao 退役 + Workflow Hub 独立项目 + 首个行业模板 | [📖](./docs/changelog/v1.0.5.md) |
 
 ### v1.x — 发布后
 

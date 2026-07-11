@@ -1,8 +1,8 @@
 // ============================================================
 // config-loader.ts · .sofagent/config.yml 配置加载器
-// v0.95 新增：三级 fallback（v1.0.2，js-yaml 替代手写 YAML 解析器）
+// v0.95 新增：三级 fallback（v1.0.3，js-yaml 替代手写 YAML 解析器）
 // v0.97 扩展：环境变量配置（从 lib/config.sh 合并）
-// v1.0.2 重构：用 js-yaml 替代手写 YAML 解析器
+// v1.0.3 重构：用 js-yaml 替代手写 YAML 解析器
 // ============================================================
 //
 // 三级 fallback：
@@ -83,6 +83,7 @@ export function loadConfig(cwd?: string): AuditConfig {
   }
 
   // 3. 使用默认配置
+  console.warn('⚠️ 未找到 .sofagent/config.yml，使用默认配置。运行 sofagent-audit --init 生成配置。');
   return { ...DEFAULT_CONFIG };
 }
 

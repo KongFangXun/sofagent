@@ -40,7 +40,7 @@ export function runInit(): void {
     }
     writeFileSync(configPath, CONFIG_TEMPLATE, 'utf-8');
     console.log(`  → .sofagent/config.yml 已生成（11 条规则默认全部启用）`);
-    console.log('  → 想自定义？编辑 .sofagent/config.yml 后重新跑 --init');
+    console.log('  → 这个配置控制哪些审计规则启用，直接编辑 .sofagent/config.yml 即可自定义');
     stepOk++;
   }
 
@@ -92,11 +92,12 @@ export function runInit(): void {
       chmodSync(hookPath, 0o755);
       console.log(`  → 检测到 git 仓库: ${gitDir.replace('/.git', '')}`);
       console.log('  → .git/hooks/pre-commit 已安装（可执行，含无声失败保护）');
+      console.log('  → hook 会在每次 git commit 时自动运行审计');
       stepOk++;
     }
   }
 
-  // [3/4] 创建知识库目录骨架（v1.0.2）
+  // [3/4] 创建知识库目录骨架（v1.0.1 新增）
   console.log('');
   console.log('[3/4] 创建知识库目录...');
   const knowledgeDir = join(configDir, 'knowledge');
@@ -121,6 +122,7 @@ export function runInit(): void {
       'utf-8'
     );
     console.log('  → .sofagent/knowledge/ 已创建（4 子目录 + index.md + log.md）');
+    console.log('  → 知识库用于沉淀 Agent 的跨任务经验，由 daemon 自动维护');
     stepOk++;
   }
 

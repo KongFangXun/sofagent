@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v1.0.2 · 2026-07-11（UTC）· 孔放勋
+> v1.0.3 · 2026-07-11（UTC）· 孔放勋
 
 > 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](./FDE/FDE.md) 和 [README § FDE](./README.md#fde从工作流到-ai-节点)。
 
@@ -49,7 +49,7 @@
 | 8 | `WSLENV` 判 WSL 误判 | `WSLENV`（如 `WT_SESSION:`）在装了 WSL 的 Windows 上本就有 → 脚本误判为 WSL 拒跑 | 只认 `WSL_DISTRO_NAME` |
 | 9 | BSD sed 词边界 `[[:<:]]` 在 GNU 报错 | `task-record.sh` 的 `sanitize()` 在 Linux 上脱敏失效 | 用 `\b` 替代 |
 
-<img src="index/sofagent.png" alt="sofagent" width="300" />
+<img src="sofagent.png" alt="sofagent" width="300" />
 
 ---
 

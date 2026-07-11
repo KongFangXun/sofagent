@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/audit",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "sofagent 提交时审计——扫描 git diff，检查 Agent 是否遵守工作纪律",
   "main": "dist/index.js",
   "types": "dist/public-api.d.ts",
@@ -12,6 +12,7 @@
   },
   "bin": {
     "sofagent-audit": "dist/index.js",
+    "@sofagent/audit": "dist/index.js",
     "sofagent-verify": "dist/verify.js",
     "sofagent-verify-evidence": "dist/verify-evidence.js",
     "sofagent-skill-safety-check": "dist/skill-safety-check.js",
@@ -67,6 +68,6 @@
     "js-yaml": "^5.2.0"
   },
   "optionalDependencies": {
-    "deepagents": "^0.1.0"
+    "deepagents": "^1.10.7"
   }
 }

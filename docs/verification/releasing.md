@@ -2,6 +2,7 @@
 
 > v0.95 实践沉淀。八阶段：审查→开发→自测→审核→文档收尾→确认关口→发布→发布后。
 > 🔴 v0.95 起，版本号操作用 `bump-version.sh` + `check-version.sh`，禁止手动 grep/sed。
+> 🔴 v1.0.3 起，文档预算分层检查（A 用户文档 / B 开发者参考 / C 审查体系 / D 设计 / E 指南），见 `check-docs.sh`。
 
 ---
 
@@ -23,6 +24,7 @@
 | 3 | P0 安全硬伤 | 工程师 | 必须修，阻塞发布。**每修完一个 P0/P1，顺手在回归清单追加检查项——趁记忆新鲜，不要等到发版前才回忆。** |
 | 4 | P1 工程欠债 | 工程师 | 应该修 |
 | 5 | P2 改进 | 工程师 | 不阻塞发布 |
+| 5.5 | 审查体系更新 | 工程师 | 随修复同步更新：① 回归清单追加检查项（编号递增）② 陌生视角 prompt 补充新盲区视角/任务。**不要等到阶段四才做——开发时记忆最新，随修随记** |
 
 ---
 
@@ -46,8 +48,8 @@
 | 9 | 独立审核者逐项核对 changelog 每一项 | 审核者 | 逐文件读源码 |
 | 9 | FAIL 项修复 | 工程师 | build + test 全绿 |
 | 10 | 二次复核确认全部到位 | 审核者 | changelog 所有项 PASS |
-| 10.5 | 回归检查：用 137 维度回归清单逐项核对<br>🔴 **必须开全新 session**——老 session 有上下文记忆，审查者知道"这东西是我修的"，会跳过怀疑。全新 session = 空白认知 | 审核者 | 全 PASS。发现回退→修复后重跑。新问题→追加检查项（从 138 开始编号） |
-| 10.6 | **审查体系维护**（本步骤在开发 session 中执行，不需要新 session——这是在更新文档，不是在审查）——基于本版本整个迭代的开发经验，更新两套审查体系：<br>① **回归清单**：把本版本修过的 P0/P1 抽象为检查项追加到清单（编号从 138 递增）。开发过程中已随修随记，本步骤做最后核对——有没有遗漏？<br>② **陌生视角 prompt**：本版本暴露了哪些新盲区？把新视角/任务/攻击面补进 prompt。更新后的 prompt 下版本发布后用于独立审查 | 审核者/作者 | 回归清单检查项数 ≥ 上一版；陌生视角 prompt 新增任务/视角见于文件 diff |
+| 10.5 | 回归检查：用回归清单逐项核对（当前 176 维度）<br>🔴 **必须开全新 session**——老 session 有上下文记忆，审查者知道"这东西是我修的"，会跳过怀疑。全新 session = 空白认知 | 审核者 | 全 PASS。发现回退→修复后重跑。新问题→追加检查项（从 177 开始编号） |
+| 10.6 | **审查体系维护**（本步骤在开发 session 中执行，不需要新 session——这是在更新文档，不是在审查）——基于本版本整个迭代的开发经验，更新两套审查体系：<br>① **回归清单**：把本版本修过的 P0/P1 抽象为检查项追加到清单（编号从 177 递增）。开发过程中已随修随记，本步骤做最后核对——有没有遗漏？<br>② **陌生视角 prompt**：本版本暴露了哪些新盲区？把新视角/任务/攻击面补进 prompt。更新后的 prompt 下版本发布后用于独立审查 | 审核者/作者 | 回归清单检查项数 ≥ 上一版；陌生视角 prompt 新增任务/视角见于文件 diff |
 
 ---
 
@@ -95,7 +97,19 @@
 
 从 `package.json` 读 SSOT 版本号，逐项比对全项目 13 类位置。任何不一致 → 红字报错 + exit 1。
 
-#### 手动排查（脚本未覆盖的边缘情况）
+#### Step 2.5: 同步 package-lock.json（🔴 v1.0.3 教训）
+
+bump-version.sh 改了 `package.json` 但不会自动同步 `package-lock.json`。必须手动执行：
+
+```bash
+npm install --package-lock-only
+# 验证
+grep -A3 '"sofagent/audit":' package-lock.json | grep '"version"'
+grep -A3 '"sofagent/mcp":' package-lock.json | grep '"version"'
+# 两个都应该是新版本号
+```
+
+#### Step 2.6: 手动排查（脚本未覆盖的边缘情况）
 
 ```bash
 # 全项目搜旧版本号（排除 changelog 历史 + node_modules）
@@ -111,7 +125,19 @@ grep -rn "v0\.旧版本" --include="*.md" --include="*.ts" --include="*.sh" . \
 |------|------|------|
 | `CHANGELOG.md` 条目 | 内容性更新，不是纯版本号替换 | 每次发版手动写摘要 + 版本说明 |
 | `ROADMAP.md` 三步更新 | 结构性改动（删节/迁移），不是纯替换 | 每次发版手动做三步 |
+| `ARCHITECTURE.md` 正文"当前 vX.Y" | 正文引用，不是版本头格式 | bump 后 grep `当前 v` 检查并手动更新 |
+| `package-lock.json` | bump-version.sh 不覆盖 | Step 2.5 用 `npm install --package-lock-only` 同步 |
 | 正文中的历史引用 | "v0.94 新增"是溯源标记，不改 | 永远不改 |
+
+#### Step 2.7: 新增 SKILL.md 覆盖检查（🔴 v1.0.3 教训）
+
+新增 SKILL.md 文件（如 `LOOP/SKILL.md`）时，确认 check-version.sh 能检测到它。check-version.sh 用 `find -name 'SKILL.md'` 动态扫描，理论上自动覆盖——但 SKILL.md 的 version 字段必须用 3 段格式（如 `1.0.3`），否则 2 段比对会漏检 patch 差异。
+
+```bash
+# 验证所有 SKILL.md 被 check-version 覆盖
+bash tools/check-version.sh 2>&1 | grep 'SKILL.md'
+# 期望：所有 SKILL.md 文件都出现在列表中
+```
 
 #### 内容新鲜度检查
 
@@ -125,10 +151,29 @@ grep -rn "v0\.旧版本" --include="*.md" --include="*.ts" --include="*.sh" . \
 - [ ] 英文版（README.en / EVIDENCE.en）内容是否与中文版同步？
 - [ ] COMMUNITY.md 实验状态、contributor 数是否为当前实际状态？
 
+#### 5.2.1 文档日期检查（🔴 v1.0.2 教训）
+
+bump-version.sh 只改版本号**不改日期**。每次 bump 后必须手动检查：
+
+```bash
+# 检查所有 MD 文件头日期是否与当前发版日期一致
+grep -rn '2026-07-' *.md docs/design/*.md | grep -v "docs/changelog/" | grep -v "docs/evidence/"
+# 排除 changelog 历史（里面记的是发版当天日期，不该改）和 evidence 案例日期
+```
+
+重点检查（bump-version.sh 不覆盖的）：
+- `LIMITATIONS.md` 文件头日期
+- `docs/design/audit-design.md` 文件头日期
+- `docs/design/daemon-design.md` 文件头日期
+- `HANDBOOK.md` 依赖表日期
+- `DEVELOPMENT.md` 依赖表日期
+- `THANKS.md` 致谢日期
+
 ### 5.3 CHANGELOG 两步
 
 - [ ] 新增版本条目（摘要一句话 + 链接到 `docs/changelog/vX.Y.md`）
 - [ ] 索引列表按时间倒序排列，版本号与日期正确
+- [ ] 🔴 **只写产品变更**——不含审查元信息（维度编号、模型名、轮次、视角数等）。这些属于内部过程，外部用户不关心
 
 ### 5.4 ROADMAP 三步
 
@@ -166,9 +211,13 @@ grep -rn "v0\.旧版本" --include="*.md" --include="*.ts" --include="*.sh" . \
 
 ## 阶段七：发布
 
-### 7.1 发布前检查（npm 包洁净度）
+### 7.1 发布前检查（npm 包洁净度 + 推前预检）
 
 ```bash
+# 🔴 v0.99.1 起铁律：推前预检必须全绿
+bash tools/pre-push-check.sh            # 7/7 全绿（--quick 跳过 npm test/build，--audit-only 只跑审计）
+bash tools/check-docs.sh                # 文档死链 + 预算 + Skill 行数
+
 # audit 包检查
 cd sofagent/audit && npm pack --dry-run 2>&1 | grep '\.js\.map' | wc -l    # 期望: 0
 npm pack --dry-run 2>&1 | grep 'total files'
@@ -188,8 +237,10 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
 
 ```
 ── Step 1: 手动发布 npm 双包 ──
+🔴 publish 前必须 build——npm publish 上传的是 dist/ 目录，如果不 build 直接 publish，npm 上是旧 dist
+
 1. cd sofagent/audit && npm run build && npm publish --access public
-2. cd ../mcp && npm publish --access public
+2. cd ../mcp && npm publish --access public（mcp 依赖 audit，audit 已 publish 到 registry）
 3. npm view @sofagent/audit version   # 验证：必须是新版本号
 4. npm view @sofagent/mcp version     # 验证：必须是新版本号
 
@@ -202,7 +253,14 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
 ── Step 3: Skill 分发 ──
 7. openclaw skills publish ./skill
 8. openclaw skills publish ./FDE
-9. 本地安装（用你 Agent 平台的安装命令，如 `skill install` / `openclaw skills install` / 直接 cp 到 skills 目录）
+9. openclaw skills publish ./LOOP（如果 LOOP/ 有变更）
+10. clawhub skill publish ./skill && clawhub skill publish ./FDE
+11. 本地安装：
+    cp skill/* ~/.workbuddy/skills/sofagent/
+    cp skill/* ~/.openclaw/skills/sofagent/
+    cp FDE/SKILL.md ~/.workbuddy/skills/sofagent-fde/
+    cp LOOP/SKILL.md ~/.workbuddy/skills/sofagent-loop/（如果 LOOP/ 有变更）
+12. iCloud 同步（可选）：cp FDE/* ~/Library/Mobile\ Documents/com~apple~CloudDocs/FDE工具包/
 ```
 
 ### 7.3 发布后验证
@@ -221,7 +279,7 @@ npm view @sofagent/mcp version
 # 且测试时拿到的是旧功能（如 doctor 少检查项、A14 不存在等）
 npm install -g @sofagent/audit@latest
 sofagent-audit --version                    # 期望：vX.Y.Z（与 SSOT 一致）
-sofagent-audit --doctor                     # 期望：9 项检查（v1.0.1+）
+sofagent-audit --doctor                     # 期望：与当前版本 doctor 项数一致
 
 # 本地安装验证
 bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二进制版本检查）
@@ -247,6 +305,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 16 | npm README 验证：`npm view @sofagent/audit readme` + `npm view @sofagent/mcp readme` 均有内容 |
 | 17 | 如果本次迭代暴露了新的流程漏洞，沉淀到本 SOP 的「历史教训」区 |
 | 18 | **审查闭环**：① 发版后在**全新 session**（无任何开发上下文记忆）中用陌生视角 prompt 对已发布版本做独立审查 → 产出报告。🔴 **必须全新 session**——有开发记忆的审查者不是"陌生人"，zero-knowledge 是整个 prompt 的前提 ② 审查发现的新问题 → 下版本修复 → 修复后回到步骤 10.6 更新审查体系 ③ 审查体系持续自我进化——每版积累"下次审查会更锋利"的视角和检查项 |
+| 19 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 沉淀到「历史教训」区<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 LOOP.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
 
 ---
 
@@ -271,3 +330,22 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | ROADMAP「未来去哪」残留已发布版本 | 「现在在哪」更新了但「未来去哪」没同步删 | ROADMAP 三步更新第 3 步必须做 |
 | ROADMAP「现在在哪」堆积多个版本的详细表 | 版本历史细节放错了位置 | 版本历史归 CHANGELOG，迭代历程表保留（一行一版本） |
 | 已打 tag 后发现需修改源码 | 不能 amend 已发布版本 | 涉及源码修改必须出新版本号 |
+
+## v1.0.2 教训（日期 + 重编号 + CHANGELOG 纯度）
+
+| 问题 | 根因 | 规则 |
+|------|------|------|
+| 4 份文档日期仍为 v1.0.1 的 07-04 | bump-version.sh 只改版本号不改日期 | 5.2.1 文档日期检查——bump 后手动检查所有文档头日期 |
+| ROADMAP 3 个详情表 12 处 + HANDBOOK/DEVELOPMENT/THANKS 6 处版本引用未跟随重编号 | 版本重编号时只改了规划版本表，漏了详情表 | 版本重编号需全局 grep 所有 vX.Y.x 引用，区分"历史引用"（不改）和"未来规划引用"（必须改） |
+| CHANGELOG 索引条目含"回归清单 138→143 维度"等审查元信息 | 发版时把审查体系更新混入了 CHANGELOG | 5.3 CHANGELOG 只写产品变更，不含审查元信息 |
+| npx @sofagent/audit 不可用 | bin 名与包名不匹配 | bin 字段增加与包名同名的别名，或 README 给 npx -p 备选路径 |
+
+## v1.0.3 教训（package-lock + check-version 范围对齐 + 文档分层）
+
+| 问题 | 根因 | 规则 |
+|------|------|------|
+| package-lock.json 版本号未同步 | bump-version.sh 改 package.json 但不碰 lock 文件 | Step 2.5：bump 后 `npm install --package-lock-only` 同步 |
+| check-version.sh 检测 LOOP/SKILL.md 用 2 段比对漏检 patch 差异 | SKILL.md 的 `found_2seg vs SSOT_2SEG` 在 v1.0.x 系列无法区分 patch 号 | check-version.sh SKILL.md 改为 3 段精确比对 |
+| check-version.sh TS 文件头注释扫全文件，误报代码中的历史标注 | `grep -m2` 扫全文件，而 bump-version 只改前 10 行 | check-version 的 TS 头注释检测改为 `head -10 \| grep`，与 bump-version 范围对齐 |
+| 文档总量 4922 行接近 5000 上限，一刀切预算无法区分用户文档和开发者文档 | check-docs.sh 用单一 TOTAL 统计所有未排除的 .md | 文档分层预算：A 用户文档(3600) + B 开发者参考(1500) + C 审查体系(3500) + D 设计(500) + E 指南(500)，A+B ≤ 5000 |
+| LOOP/SKILL.md 版本号写 1.0.3 但 SSOT 还是 1.0.2 | DeepSeek 开发时写了目标版本号而非当前 SSOT | 开发 prompt 明确："不要 bump 版本号——开发完后再 bump" |

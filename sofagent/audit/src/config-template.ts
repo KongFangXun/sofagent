@@ -8,6 +8,10 @@
 export const CONFIG_TEMPLATE = `# sofagent 审计配置
 # 文档: https://github.com/KongFangXun/sofagent#配置
 # 生成方式: sofagent-audit --init
+#
+# sofagent 审计只检查进入 staging 的文件。
+# .gitignore 排除的文件不会被审计——这是 git 设计，不是审计缺陷。
+# 如果 Agent 用 git add -f 强制添加被忽略的文件，审计仍然会检测到。
 
 audit:
   # 低风险文件模式（不计入 A3「不改越界」检查）

@@ -6,12 +6,12 @@
 
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-v1.0.2-16B8F3)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-v1.0.3-16B8F3)](./CHANGELOG.md)
 [![What: Agent Audit Tool](https://img.shields.io/badge/What-Agent_Audit_Tool-16B8F3)](#what-is-this)
 [![Core: Audit Engine](https://img.shields.io/badge/Core-Audit_Engine-16B8F3)](#what-is-this)
 [![OpenClaw](https://img.shields.io/badge/Platform-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
 
-<img src="index/sofagent.png" alt="sofagent" width="300" />
+<img src="sofagent.png" alt="sofagent" width="300" />
 
 > sofa + agent — because one day, we want to lie on the couch while agents do the work.
 > 📄 **License**: MIT.

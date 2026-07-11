@@ -2,7 +2,7 @@
 
 > sofagent 站在巨人肩膀上。以下每一个项目、文章和作者，都在 sofagent 的某个设计决策里留下了痕迹。
 >
-> v1.0.2 · 2026-07-11（UTC）
+> v1.0.3 · 2026-07-11（UTC）
 
 ---
 
@@ -62,6 +62,7 @@ sofagent 直接使用或借鉴了它们的能力。
 - **[MiroFish](https://github.com/666ghj/MiroFish)** —「工具调用与最终答案严格分离」模式，启发了 sofagent 审计层的证据分层设计
 - **[superpowers](https://github.com/obra/superpowers)** — Skill 作为 Harness 杠杆的思路，启发了 Skills 体系的设计
 - **[best-of-agent-harnesses](https://github.com/RyanAlberts/best-of-agent-harnesses)** — 101+ 个 Harness 项目索引，让我了解这个领域已经有什么人在做什么事
+- **[agent-skills](https://github.com/addyosmani/agent-skills)** by Addy Osmani — 24 个生产级工程 Skill，反合理化表（Anti-rationalization）设计——预判 Agent 跳过步骤的借口并逐一驳回——启发了 sofagent fde.md 的铁律反合理化表
 
 ---
 

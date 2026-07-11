@@ -1,7 +1,8 @@
 // ============================================================
 // doctor.ts · sofagent-audit --doctor 健康诊断
 // v1.0 新增：一键诊断 7 项健康度
-// v1.0.2 新增：第 9 项——知识库访问矩阵
+// v1.0.3 新增：第 9 项——知识库访问矩阵
+// v1.0.3 新增：第 10 项——Skill 自进化状态 + 第 11 项——成本报告（共 11 项）
 // 只读诊断，不做任何写操作
 // 退出码：全部通过 → 0；有失败 → 1
 // ============================================================
@@ -12,6 +13,8 @@ import { execFileSync } from 'child_process';
 import { loadHistory } from '../audit-history';
 import { loadConfig, loadEnvConfig } from '../config-loader';
 import { load as yamlLoad } from 'js-yaml';
+import { calculateBaseline, isAnomaly, isColdStart } from '../cost-baseline';
+import { isSkillOptAvailable } from '../skillopt-integration';
 
 interface CheckResult {
   ok: boolean;       // true = ✅, false = ❌/⚠️
@@ -260,8 +263,8 @@ export function runDoctor(): void {
         } else {
           results.push({
             ok: false, warning: true, label: 'commit 审计追溯',
-            detail: `${unauditedShas.length} 条 commit 未经审计: ${unauditedShas.join(', ')}`,
-            fixHint: '可能使用了 git commit --no-verify 绕过审计，或审计历史已清理',
+            detail: `⚠️ 安全提示：检测到 ${unauditedShas.length} 条 commit 未经审计（可能使用了 --no-verify 绕过）: ${unauditedShas.join(', ')}`,
+            fixHint: '建议运行 sofagent-audit --diff HEAD 事后审计这些 commit',
           });
         }
       }
@@ -279,7 +282,7 @@ export function runDoctor(): void {
       const workflowPath = join(dataDir, 'orchestrator', 'workflows', 'workflow.yml');
 
       if (!existsSync(workflowPath)) {
-        results.push({ ok: true, warning: true, label: '知识库访问矩阵', detail: '未找到 workflow.yml，跳过（FDE 部署配置，普通用户可忽略）' });
+        // P2-11: 无 workflow.yml 时静默跳过，不输出第 9 项
       } else {
         const content = readFileSync(workflowPath, 'utf-8');
         const parsed = yamlLoad(content) as Record<string, unknown> | null;
@@ -322,6 +325,60 @@ export function runDoctor(): void {
     }
   }
 
+  // 10. Skill 自进化状态（v1.0.3 新增）
+  {
+    const envConfig = loadEnvConfig();
+    const scoringDir = join(envConfig.dataDir, 'scoring');
+    const scoringIndex = join(scoringDir, '_index.md');
+
+    if (existsSync(scoringIndex)) {
+      try {
+        const content = readFileSync(scoringIndex, 'utf-8');
+        // 提取最近更新时间
+        const dateMatch = content.match(/最近更新[:\s]+(\S+)/);
+        const detail = dateMatch ? `scoring/_index.md 存在，最近更新: ${dateMatch[1]}` : 'scoring/_index.md 存在';
+        results.push({
+          ok: true, warning: true, label: 'Skill 自进化状态',
+          detail: `${detail}。SkillOpt: ${isSkillOptAvailable() ? '✅ 可用' : '❌ 未安装（pip install skillopt）'}`,
+        });
+      } catch {
+        results.push({
+          ok: true, warning: true, label: 'Skill 自进化状态',
+          detail: 'scoring/_index.md 读取失败',
+        });
+      }
+    } else {
+      results.push({
+        ok: true, warning: true, label: 'Skill 自进化状态',
+        detail: '暂无 scoring 数据（任务运行后会生成）',
+      });
+    }
+  }
+
+  // 11. 成本报告（v1.0.3 新增）
+  {
+    try {
+      const dataDir = loadEnvConfig().dataDir;
+      const baseline = calculateBaseline('default', dataDir);
+      if (!baseline || isColdStart(baseline.sampleCount)) {
+        results.push({
+          ok: true, warning: true, label: '成本报告',
+          detail: `冷启动期（${baseline?.sampleCount ?? 0} 样本），运行更多任务后自动生成基线和异常检测`,
+        });
+      } else {
+        results.push({
+          ok: true, warning: false, label: '成本报告',
+          detail: `基线: ${baseline.mean.toFixed(0)} ± ${baseline.stddev.toFixed(0)} tokens（${baseline.sampleCount} 样本）`,
+        });
+      }
+    } catch {
+      results.push({
+        ok: true, warning: true, label: '成本报告',
+        detail: '暂不可用（task/logs 为空或数据目录不存在）',
+      });
+    }
+  }
+
   // 输出结果
   for (let i = 0; i < results.length; i++) {
     const r = results[i]!;
@@ -334,7 +391,7 @@ export function runDoctor(): void {
 
   // 汇总
   const passed = results.filter((r) => r.ok && !r.warning).length;
-  const warned = results.filter((r) => r.warning).length;
+  const warned = results.filter((r) => r.ok && r.warning).length;
   const failed = results.filter((r) => !r.ok).length;
 
   console.log('');

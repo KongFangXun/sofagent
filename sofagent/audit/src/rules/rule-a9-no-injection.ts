@@ -33,6 +33,7 @@ export function checkRuleA9(ctx: AuditContext): RuleCheck {
   for (const file of diffFiles) {
     // 跳过文档目录——changelog/设计文档等会合法引用注入模式作为案例
     if (file.path.startsWith('docs/')) continue;
+    if (file.path.startsWith('.sofagent/')) continue;
     const addedLines = getAddedLines(file);
     for (const line of addedLines) {
       for (const { pattern, name } of INJECTION_PATTERNS) {

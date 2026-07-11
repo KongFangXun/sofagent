@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // sofagent-orchestrate-compare · 编排方案 A/B 对比 + 任务编排 CLI
 //
+// @deprecated 自 v1.0.3 起，请迁移到 deepagentsjs。v1.0.5 将移除此文件。
+//
 // TODO(v1.next): 实现连续胜出计数器（CONSECUTIVE_WINS_REQUIRED = 2）
 // 当前只做单次对比。连续胜出判断需手动执行两次 compare 后人工决策。
 // 参见 ARCHITECTURE.md §A/B 测试
@@ -190,6 +192,7 @@ function shouldSkipAoCompose(cachedYaml: string): boolean {
 }
 
 function composeTask(args: string[]): void {
+  console.warn('⚠️ ao 已进入退役倒计时（v1.0.2 起），请迁移到 deepagentsjs。v1.0.5 移除。');
   let taskDesc = '';
   let dryRun = false;
   let useWorktree = false;

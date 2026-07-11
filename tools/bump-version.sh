@@ -205,6 +205,27 @@ if [[ -f "$MCP_PJ" ]]; then
 fi
 echo ""
 
+# 1c. FDE/package.json + LOOP/package.json version 字段
+echo -e "${BOLD}[2b/13] FDE/package.json + LOOP/package.json${NC}"
+for pkg_file in "$PROJECT_ROOT/FDE/package.json" "$PROJECT_ROOT/LOOP/package.json"; do
+  if [[ -f "$pkg_file" ]]; then
+    pkg_content=$(cat "$pkg_file")
+    pkg_new=$(sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g" "$pkg_file")
+    if [[ "$pkg_new" == "$pkg_content" ]]; then
+      pkg_new=$(sed "s/\"version\": \"$OLD_2SEG\"/\"version\": \"$NEW_2SEG\"/g" "$pkg_file")
+    fi
+    if [[ "$pkg_new" != "$pkg_content" ]]; then
+      echo -e "  ${GREEN}✓${NC} $(basename "$(dirname "$pkg_file")") version: $OLD_3SEG → $NEW_3SEG"
+      echo -e "    ${CYAN}$pkg_file${NC}"
+      if ! $DRY_RUN; then
+        printf '%s\n' "$pkg_new" > "$pkg_file"
+      fi
+      TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
+    fi
+  fi
+done
+echo ""
+
 # 2. .ts 文件: const VERSION = 'OLD'（动态扫描，不硬编码文件列表）
 echo -e "${BOLD}[3/13] TypeScript 常量${NC}"
 ts_count=0
@@ -455,11 +476,11 @@ for readme in \
 done
 echo ""
 
-# 8. index/index.html hero badge version
-echo -e "${BOLD}[10/13] index/index.html hero badge${NC}"
-# index/index.html 是 landing page，不含版本号标签——此步骤为设计预期的无匹配
+# 8. index.html hero badge version
+echo -e "${BOLD}[10/13] index.html hero badge${NC}"
+# index.html 是 landing page，不含版本号标签——此步骤为设计预期的无匹配
 # 如果未来 index.html 加了版本号标签，此步骤会自动替换
-index_html="$PROJECT_ROOT/index/index.html"
+index_html="$PROJECT_ROOT/index.html"
 if [[ -f "$index_html" ]]; then
   html_content=$(cat "$index_html")
   search_2=">v$OLD_2SEG<" replace_2=">v$NEW_2SEG<"
