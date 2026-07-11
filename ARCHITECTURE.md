@@ -286,6 +286,8 @@ AI 知识库不替代 think.md——两者职责不重叠。think.md 是「上�
 
 > **核心原则——不可追溯即不可信任**：企业知识库最怕 AI 说了一句没人知道从哪来的话。只要不可追溯，业务就不信任。`.md` 文件 + git diff 审计确保每条知识都有来源、每次变更都有记录。
 
+> **独立验证——Google OKF 同构**：Google Cloud Platform 的 Open Knowledge Format (OKF) 采用完全相同的架构：Markdown + YAML Frontmatter + Git 版本控制 + 人机可读 + 渐进式 index.md 导航。OKF 从 Google 内部验证了「知识即文件系统」这条路——不是 sofagent 独有的想法，是大型平台也在走的方向。
+
 ### 三层时间尺度循环（Andrew Ng 框架）
 
 > 来源：Andrew Ng 的 AI 产品进化框架。真正的产品进化不只来自内层循环（Agent 跑任务），更来自中层和外层。

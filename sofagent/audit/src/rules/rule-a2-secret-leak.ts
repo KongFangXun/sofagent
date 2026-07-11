@@ -13,6 +13,8 @@ const SECRET_PATTERNS: { pattern: RegExp; label: string }[] = [
   { pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/, label: 'Private Key' },
   { pattern: /sk-[a-zA-Z0-9]{48}/, label: 'OpenAI API Key' },
   { pattern: /sk-proj-[a-zA-Z0-9_]{40,}/, label: 'OpenAI Project Key' },
+  { pattern: /sk-svcacct-[a-zA-Z0-9_]{40,}/, label: 'OpenAI Service Account Key' },
+  { pattern: /sk-admin-[a-zA-Z0-9_]{40,}/, label: 'OpenAI Admin Key' },
   { pattern: /gh[ps]_[A-Za-z0-9]{36}/, label: 'GitHub Token' },
 ];
 

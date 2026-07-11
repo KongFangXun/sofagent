@@ -63,6 +63,7 @@ sofagent 直接使用或借鉴了它们的能力。
 - **[superpowers](https://github.com/obra/superpowers)** — Skill 作为 Harness 杠杆的思路，启发了 Skills 体系的设计
 - **[best-of-agent-harnesses](https://github.com/RyanAlberts/best-of-agent-harnesses)** — 101+ 个 Harness 项目索引，让我了解这个领域已经有什么人在做什么事
 - **[agent-skills](https://github.com/addyosmani/agent-skills)** by Addy Osmani — 24 个生产级工程 Skill，反合理化表（Anti-rationalization）设计——预判 Agent 跳过步骤的借口并逐一驳回——启发了 sofagent fde.md 的铁律反合理化表
+- **[gstack](https://github.com/garrytan/gstack)** by Garry Tan (YC CEO) — 23 个有主见的工具组成的 AI 辅助软件开发系统。六层安全栈（分类器级 prompt injection 检测 / 密钥格式持续更新 / fail-closed 默认不信任）、原子文件写入模式、角色分解架构——为 sofagent 的 A2 密钥格式更新和多角色 agents/ 架构提供了实践参照
 
 ---
 
@@ -112,5 +113,8 @@ sofagent 直接使用或借鉴了它们的能力。
 
 - **[Deep Agent — LangChain 官方高级 Agent 框架](https://github.com/langchain-ai/deepagentsjs)**（2026）
   LangGraph 状态底座 + Harness Engineering 范式 + 子 Agent 委派 + 受控沙箱 + 长上下文管理 + HITL 四大特性，验证 sofagent v1.x 的技术选型。
+
+- **[Google OKF — Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)** · Google Cloud Platform (2026)
+  Markdown + YAML Frontmatter + Git 版本控制 + 人机可读的通用知识表示格式。生产者-消费者解耦、渐进式 index.md 导航、recipe+bundle 可复现模式——从 Google 内部独立验证了 sofagent knowledge/ 的「知识即文件系统」架构方向。
 
 ---

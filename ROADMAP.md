@@ -77,7 +77,7 @@
 | **v1.0.2** | ✅ 已完成 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（回归检查清单 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
 | **v1.0.3** | ✅ 已完成 | LOOP 自迭代架构（4 Agent + 内外层循环） + SkillOpt 自进化 + Audit Sub Agent（含成本） + think.md 判断单元结构化 + 文档分层预算 | [📖](./docs/changelog/v1.0.3.md) |
 | **v1.0.4** | ✅ 已完成 | 自进化 + 约束验证版——eval harness + Sub Agent A/B 自进化 + HITL 渐进自主度 + A15 约束验证。多项审查修复 | [📖](./docs/changelog/v1.0.4.md) |
-| **v1.0.5** | ⏳ 待启动 | Ontology 统一层（类似 Palantir 的 Ontology，给每个代码实体打标签和约束） + ao 退役 + Workflow Hub 独立项目 + 首个行业模板 | [📖](./docs/changelog/v1.0.5.md) |
+| **v1.0.5** | ⏳ 待启动 | Ontology 统一层 + ao 退役 + Workflow Hub + 首个行业模板 + dstack/OKF 工程学习落地 | [📖](./docs/changelog/v1.0.5.md) |
 
 ### v1.x — 发布后
 
@@ -129,13 +129,15 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | 审计引擎（Harness 层） | 独立自研——外部无可替代 | 核心差异化 | v1.0 |
 | 编排引擎 | LangChain + LangGraph + DeepAgentsJS | 借鉴后替换 ao | v1.0.1-v1.0.5 |
 | Skill 系统 | Agency Agents（岗位模板，v1.0.3）+ SkillOpt（Skill 文档自进化，v1.0.3）+ eval harness + A/B 对比（Sub Agent 配置自进化，v1.0.4） | 模板引用 + 对接优化引擎 | v1.0.1-v1.0.4 |
-| AI 知识库 | OpenFDE 10 步工作流（行业定位验证） | 外部验证 | v1.0-1.1 |
+| AI 知识库 | OpenFDE 10 步工作流（行业定位验证）+ Google OKF（同构独立验证） | 外部验证 | v1.0-v1.1 |
+| 安全设计哲学 | gstack 六层安全栈（分类器 / fail-closed / 原子写 / 密钥格式持续更新） | 实践参照 | v1.0.4-v1.0.5 |
 | 企业世界模型 | Palantir Ontology（实体+关系+动作+约束） | 概念借鉴，渐进构建 | v1.0.1-v1.0.5 |
 | 任务路由 + Skill 组合 | Router+Skill 架构（行业评估为性价比最高方案） | task-aware 路由与 sofagent 方向一致 | v1.x 基线 |
 
 
 | 想法 | 说明 |
 |------|------|
+| **gstack/OKF 工程学习**（v1.0.5） | 从 gstack（YC Garry Tan）和 Google OKF 借鉴的工程改进：① **原子文件写入**——task/logs 和 think.md 改用 PID+随机字节的临时文件模式防并发写入冲突（gstack 的 `tmpStatePath` 模式）。② **首次运行分类器**——`--init` 根据仓库状态（greenfield/有代码/脏状态）给出不同引导（gstack 的 `first-task-detect`）。③ **fail-closed 默认安全**——config 参数格式错误时回退到安全默认值而非静默启用默认配置（gstack 的 `classifier_score > 0` 门控哲学）。④ **生产者-消费者架构文档化**——knowledge/ 的数据流（daemon Ingest = 生产者 / 加载链注入 = 消费者）显式文档化（OKF 的格式-实现分离思想）。⑤ **A9 分级安全**——从二元正则可疑度评分过渡，低 confidence 时升级告警而非静默 PASS（gstack L1-L3 分类器）。详见 [THANKS](./docs/THANKS.md) |
 | **企业 Skill 自进化** | FDE 部署时给每个 AI 节点定制专属 Skill（注入行业术语/业务规则/历史案例）。节点跑起来后，基于 scoring.md 评分 + task/logs 记录 + think.md 反思，Skill 自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本，candidate 胜出 promote 替换 current。这是 sofagent 的核心服务：**Skill 不只是部署时写好，运行时持续进化** |
 | **AI 知识库（v1.0.1）** | FDE 交付的第三样东西从散文件升级为结构化知识系统。`.sofagent/knowledge/` 目录：entities/（实体页）+ concepts/（概念页）+ comparisons/（对比页）。daemon 检测 task/logs 变化触发 Ingest，loop-evaluate 顺带跑 Lint，加载链启动时被动注入 top-N 相关页。think.md 不动（职责不重叠）。**新增 Workflow 节点数据契约**（每个 Agent 只看自己职责范围内的知识）+ **entities 实体关联**（frontmatter `relations` 字段——知识库从独立页面变成关联图，Ontology 第 1 步）。详见 [v1.0.1 开发日志](./docs/changelog/v1.0.1.md) |
 | **think.md 模板强制** | think.md 目前可选——Agent 想写就写。v1.0.1 升级：如果写，必须按模板（做了什么 / 踩了什么坑 / 下次怎么办）。不强制写，审计引擎检测「本次任务无 think.md」标 ⚠️ 但不阻断。**不做 gate 前置检查**——强制 gate 会导致 Agent 用垃圾内容填模板 |
@@ -146,7 +148,9 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | age 加密 / 多用户隔离 | think.md + task/logs 加密；同机权限隔离 |
 | 多企业平台 webhook | 飞书 + 企微 + 自定义 webhook |
 | 记忆架构升级 | Ledger-Views-Policy 三层模型 |
-| **Windows 完整支持** | PowerShell 对齐——verify.ps1 从 230 行扩到 ~700 行（对齐 verify.sh ~48 项动态检查）。当前覆盖率 24%，v0.99.7 起诚实标注为实验性。目标：覆盖率 ≥80%，去掉实验性标注 |
+| **Windows 完整支持** | PowerShell 对齐——verify.ps1 从 230 行扩到 ~700 行（对齐 verify.sh ~48 项动态检查）。当前覆盖率 24%，v0.99.7 起诚实标注为实验性。目标：覆盖率 ≥80%，去掉实验性标注。**v1.x 增量**：借鉴 gstack 的 Windows NTFS ACL 加固（icacls 翻译 POSIX 权限）和 `Bun.which` 跨平台路径处理 |
+| **--doctor --html 自包含报告**（v1.x） | 借鉴 OKF 的自包含 HTML 交付物模式——`--doctor` 支持 `--html` 输出单文件报告（无需后端、无需安装、浏览器直接打开）。降低知识传播门槛 |
+| **recipe + bundle 知识复现**（v2.x） | 借鉴 OKF 的 recipe+bundle 模式——FDE 部署时生成 recipe 文件记录 knowledge/ 的生成参数和来源，确保企业知识 build 可复现、可审查 |
 | **daemon 文档校准** | 外部用户反馈（Case 025）：daemon 实际监控 think.md/fde.md hash 变化，非直接监听 git commit 审计。需更新文档 + 评估是否在 daemon 主循环加 `sofagent-audit --diff HEAD` 定时触发 |
 | 分布式反思同步 | Gossip 协议 + 信任加权投票 |
 | bash 代码债清理 | ~450 行重复代码（颜色常量/日志函数/平台探测），方向：bash → TypeScript 迁移，不新建 bash 基础设施 |
