@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.0.2 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.0.3 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
 // 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
@@ -106,31 +106,44 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === '--doctor') {
       args.doctor = true;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
-      console.log(`sofagent-audit v${VERSION} · 审计闭环六步\n`);
-      console.log('快速开始: sofagent-audit --init');
-      console.log('主命令: sofagent-audit（安装 hook + 审计引擎）');
-      console.log('辅助工具: sofagent-verify（验证）/ sofagent-verify-evidence（证据检查）/ sofagent-skill-safety-check\n');
-      console.log('用法: sofagent-audit --diff <range> [--task <description>] [--strict] [--silent] [--ci] [--json] [--install-hook]');
-      console.log('      sofagent-audit --root-cause');
-      console.log('      sofagent-audit --regression <dir>');
-      console.log('      sofagent-audit --init');
-      console.log('      sofagent-audit --doctor');
-      console.log('      sofagent-audit --mcp');
-      console.log('  --diff          git diff 范围（默认 HEAD~1..HEAD）');
-      console.log('  --task          任务描述（用于 A3 不改越界检查）');
-      console.log('  --strict        严格模式：无日志时 A7 返回 FAIL 而非 WARN');
-      console.log('  --silent        沉默模式：跳过日志依赖规则，走 diff 启发式回退');
-      console.log('  --ci            CI 模式 = strict + silent（适合无 Agent 日志的 CI 环境）');
-      console.log('  --json          JSON 输出模式：输出 { exitCode, rules } JSON，适合 CI 解析');
-      console.log('  --install-hook  安装 git pre-commit hook 到当前仓库的 .git/hooks/');
-  console.log('  --root-cause    分析审计历史，输出根因报告 + 配置建议（发版前或定期排查用）');
-  console.log('  --regression <dir>  对指定目录下的历史快照跑回归验证（版本升级后确认无回退）');
-      console.log('  --init          一键初始化：生成 config.yml + 安装 hook + 冒烟测试');
-      console.log('  --doctor        健康诊断：9 项检查 + 修复建议');
-      console.log('  --webhook <platform>  webhook 推送平台（dingtalk / feishu / wecom），有 WARN/FAIL 时推送');
-      console.log('  --webhook-url <url>   webhook URL（也可通过 SOFAGENT_WEBHOOK_URL 环境变量设置）');
-      console.log('  --mcp           启动 MCP Server（JSON-RPC 2.0 over stdio），暴露审计能力给 MCP Client');
-      console.log('退出码: 0=全通过 / 1=有警告 / 2=有违规');
+      const verbose = argv.includes('--verbose');
+      console.log(`sofagent-audit v${VERSION} · Agent 提交时审计\n`);
+      console.log('快速开始:');
+      console.log('  安装    npm install -g @sofagent/audit && sofagent-audit --init');
+      console.log('  试用    sofagent-audit --diff HEAD~1..HEAD');
+      console.log('  npx     npx -p @sofagent/audit sofagent-audit --init');
+      console.log('命令:');
+      console.log('  sofagent-audit --diff <range> [--task <desc>]   审计 git diff');
+      console.log('  sofagent-audit --init                           一键初始化（配置+hook+冒烟）');
+      console.log('  sofagent-audit --doctor                         健康诊断');
+      console.log('  sofagent-audit --root-cause                     根因分析');
+      console.log('  sofagent-audit --regression <dir>               回归验证');
+      console.log('  sofagent-audit --install-hook                   安装 pre-commit hook');
+      console.log('模式对照表:');
+      console.log('  默认模式    全部规则（含 Agent 日志）   exit 0/1/2');
+      console.log('  --silent    只跑 git-diff 规则          exit 0/1/2');
+      console.log('  --strict    任何警告都 exit 2            exit 0/2');
+      console.log('  --ci        = --silent + --strict        exit 0/2');
+      if (verbose) {
+        console.log('\n完整参数列表:');
+        console.log('  --diff <range>     git diff 范围（默认 HEAD~1..HEAD）');
+        console.log('  --task <desc>      任务描述');
+        console.log('  --strict           严格模式');
+        console.log('  --silent           静默模式');
+        console.log('  --ci               CI 模式（= --silent + --strict）');
+        console.log('  --json             JSON 输出');
+        console.log('  --install-hook     安装 pre-commit hook');
+        console.log('  --root-cause       根因分析');
+        console.log('  --regression <dir> 回归验证');
+        console.log('  --init             一键初始化');
+        console.log('  --doctor           健康诊断');
+        console.log('  --webhook <p>      webhook 推送（dingtalk/feishu/wecom）');
+        console.log('  --webhook-url <u>  webhook URL');
+        console.log('  --mcp              MCP Server（已拆分为 @sofagent/mcp）');
+        console.log('\n退出码: 0=全通过 / 1=有警告 / 2=有违规');
+      } else {
+        console.log('\n完整参数列表: sofagent-audit --help --verbose');
+      }
       process.exit(0);
     } else if (argv[i] === '--version') {
       console.log(`sofagent-audit v${VERSION}`);
@@ -376,12 +389,26 @@ async function main(): Promise<void> {
   // 2. 读取任务日志
   const logEntries = checkLogs();
 
-  // 3. 读取 commit message（用于 E2/A5 规则回退）
+  // 3. 读取 commit message（优先读 COMMIT_EDITMSG，用于 pre-commit 阶段获取当前消息）
   let commitMsg = '';
   try {
-    commitMsg = execFileSync('git', ['log', '-1', '--pretty=%B'], { encoding: 'utf-8' }).trim();
+    const gitDirResult = execFileSync('git', ['rev-parse', '--git-dir'], { encoding: 'utf-8' }).trim();
+    const gitDir = gitDirResult.startsWith('/') ? gitDirResult : join(process.cwd(), gitDirResult);
+    const editMsgPath = join(gitDir, 'COMMIT_EDITMSG');
+    if (existsSync(editMsgPath)) {
+      commitMsg = readFileSync(editMsgPath, 'utf-8').trim();
+    }
   } catch {
-    // 非 git 仓库或无 commit，留空
+    // git rev-parse 失败（非 git 仓库），留空
+  }
+
+  // fallback：COMMIT_EDITMSG 不可用时，尝试 git log → args.task
+  if (!commitMsg) {
+    try {
+      commitMsg = execFileSync('git', ['log', '-1', '--pretty=%B'], { encoding: 'utf-8' }).trim();
+    } catch {
+      commitMsg = args.task || '';
+    }
   }
 
   // 4. 加载审计配置（三级 fallback）——YAML 语法错误时按模式处理
@@ -403,7 +430,7 @@ async function main(): Promise<void> {
   }
 
   // 5. 运行规则
-  const results = runRules(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg, config);
+  const results = runRules(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config);
 
   // 6. 输出结果
   printResults(results, diffFiles, args.json, args.ci);
@@ -547,7 +574,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
     return;
   }
 
-  // ===== v1.0.2 可视化输出 =====
+  // ===== v1.0.3 可视化输出 =====
 
   const exitCode = results.exitCode;
   const totalRules = results.rules.length;
@@ -576,7 +603,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
       const classTag = rule.ruleClass === '业务底线' ? '[底线]' : rule.ruleClass === '能力拐杖' ? '[拐杖]' : '';
       for (const detail of rule.details) {
         console.log(`  ${icon} ${rule.name} ${classTag}: ${detail}`);
-        // 修复建议（v1.0.2 新增）
+        // 修复建议（v1.0.3 新增）
         const suggestion = getFixSuggestion(rule.name);
         if (suggestion) {
           console.log(`     怎么修: ${suggestion}`);
@@ -615,6 +642,16 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
   console.log('');
   const judgeIcon = exitCode === 0 ? '✅ PASS' : exitCode === 1 ? '⚠️  WARN (有警告)' : '❌ FAIL (有违规)';
   console.log(`  判定: ${judgeIcon} · exit code ${exitCode}`);
+
+  // 失败时输出"下一步"指引
+  if (exitCode > 0) {
+    console.log('');
+    console.log('  ┌─ 下一步 ─────────────────────────────────────────────┐');
+    console.log('  │ 1. 修复上述问题后重新 git add + git commit            │');
+    console.log('  │ 2. 如需临时跳过（不推荐）：git commit --no-verify     │');
+    console.log('  │ 3. 查看完整文档：sofagent-audit --help                │');
+    console.log('  └──────────────────────────────────────────────────────┘');
+  }
 
   // CI 模式提醒
   if (ci) {

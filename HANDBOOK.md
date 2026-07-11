@@ -2,9 +2,9 @@
 
 > **企业上 AI，先上缰绳再上路——装上审计引擎，每次 Agent 提交代码时自动检查变更。配合约束底座管 Agent 行为，编排引擎拆解任务（FDE 部署用）。**
 >
-> v1.0.2 · 2026-07-11（UTC）· 孔放勋
+> v1.0.3 · 2026-07-11（UTC）· 孔放勋
 
-<img src="index/sofagent.png" alt="sofagent" width="300" />
+<img src="sofagent.png" alt="sofagent" width="300" />
 
 - [阅读指南](#阅读指南)
 - [5 分钟速览](#5-分钟速览)
@@ -116,6 +116,39 @@ exit code：0 = 通过 / 1 = 有警告 / 2 = 有违规。零 Agent 依赖——�
 安装时可选择安装 daemon（轻量后台进程，macOS launchd / Linux systemd）。daemon 每 30 秒检查 `think.md` 和 `fde.md` 的文件 hash 变化——如果变了，写入 `daemon-notice.md` 通知。**不直接审计 git commit**（commit 审计由 pre-commit hook 负责，见上方）。
 
 > daemon 是可选组件——即使不装，宪法层约束和 pre-commit hook 审计照样生效。
+
+### CI 集成
+
+在 GitHub Actions 中自动运行审计（静默模式 + CI 严格模式）：
+
+```yaml
+# .github/workflows/sofagent-audit.yml
+name: sofagent-audit
+on: [push, pull_request]
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - run: npm install -g @sofagent/audit
+      - run: sofagent-audit --diff HEAD --silent --ci
+```
+
+#### 模式对照表
+
+| 模式 | 标志 | 说明 | 退出码 |
+|------|------|------|:--:|
+| 默认 | *(无)* | 全部规则（含 Agent 日志） | 0/1/2 |
+| 静默 | `--silent` | 只跑 git-diff 规则（零 Agent 依赖） | 0/1/2 |
+| 严格 | `--strict` | 任何警告都 exit 2 | 0/2 |
+| CI | `--ci` | = `--silent` + `--strict` | 0/2 |
+
+模式可叠加——例如 `--diff HEAD --silent --strict` 等价于 `--diff HEAD --ci`。
 
 ---
 
@@ -371,4 +404,4 @@ sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 > 大半年 OpenClaw 实战笔记。如有更好的用法，欢迎开 Issue。
 >
-> *v1.0.2，2026 年 7 月 11 日*
+> *v1.0.3，2026 年 7 月 11 日*

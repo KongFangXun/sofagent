@@ -222,6 +222,18 @@ if [[ -f "${FDE_SH}" ]]; then
     report_ok "fde-install.sh" "v${header_ver:-N/A}"
   fi
 fi
+
+# 检查 FDE/package.json + LOOP/package.json version 字段
+for pkg_file in "${PROJECT_ROOT}/FDE/package.json" "${PROJECT_ROOT}/LOOP/package.json"; do
+  if [[ -f "${pkg_file}" ]]; then
+    pkg_ver=$(grep -oE '"version": "[0-9]+\.[0-9]+\.[0-9]+"' "${pkg_file}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    if [[ -n "${pkg_ver}" ]] && [[ "${pkg_ver}" != "${SSOT_VERSION}" ]]; then
+      report_error "${pkg_file}" "version: ${pkg_ver}" "version: ${SSOT_VERSION}"
+    else
+      report_ok "$(basename "$(dirname "${pkg_file}")")/package.json" "${pkg_ver:-N/A}"
+    fi
+  fi
+done
 echo ""
 
 # ── 5. 检查 .ps1 文件 $VERSION / $VERSION_STR = "X.Y" ──────────
@@ -324,12 +336,22 @@ while IFS= read -r skill; do
     continue
   fi
   found_ver=$(extract_version "${match}")
-  # SKILL.md 可能用 2 段或 3 段，取前 2 段比对
-  found_2seg=$(echo "${found_ver}" | cut -d. -f1-2)
-  if [[ "${found_2seg}" != "${SSOT_2SEG}" ]]; then
-    report_error "${skill}" "version: ${found_ver}" "version: ${SSOT_2SEG}"
+  # SKILL.md 用 3 段精确比对（v1.0.x 系列 patch 号不同也要检测）
+  if [[ "${found_ver}" == *.*.* ]]; then
+    # 3 段格式：精确比对
+    if [[ "${found_ver}" != "${SSOT_VERSION}" ]]; then
+      report_error "${skill}" "version: ${found_ver}" "version: ${SSOT_VERSION}"
+    else
+      report_ok "${skill#"${PROJECT_ROOT}"/}" "${found_ver}"
+    fi
   else
-    report_ok "${skill#"${PROJECT_ROOT}"/}" "${found_ver}"
+    # 2 段格式：取前 2 段比对
+    found_2seg=$(echo "${found_ver}" | cut -d. -f1-2)
+    if [[ "${found_2seg}" != "${SSOT_2SEG}" ]]; then
+      report_error "${skill}" "version: ${found_ver}" "version: ${SSOT_2SEG}"
+    else
+      report_ok "${skill#"${PROJECT_ROOT}"/}" "${found_ver}"
+    fi
   fi
 done < <(find "${PROJECT_ROOT}" \
   -name 'SKILL.md' \
@@ -435,7 +457,8 @@ while IFS= read -r ts; do
   [[ "${ts}" == */_archive/* ]] && continue
   [[ "${ts}" == *.test.ts ]] && continue
   [[ "${ts}" == */dist/* ]] && continue
-  match=$(grep -m2 -nE '// .*v[0-9]+\.[0-9]+\.[0-9]+' "${ts}" | head -1)
+  # 只检查文件头前 10 行的注释（与 bump-version.sh [4/13] 对齐）
+  match=$(head -10 "${ts}" | grep -m2 -nE '// .*v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
   [[ -z "${match}" ]] && continue
   found_ver=$(echo "${match}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
   if [[ "${found_ver}" != "${SSOT_VERSION}" ]]; then

@@ -4,12 +4,12 @@
 
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-v1.0.2-16B8F3)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-v1.0.3-16B8F3)](./CHANGELOG.md)
 [![定位：Agent 审计工具](https://img.shields.io/badge/定位-Agent_审计工具-16B8F3)](#一句话定位)
 [![核心：审计引擎](https://img.shields.io/badge/核心-审计引擎-16B8F3)](#一句话定位)
 [![OpenClaw](https://img.shields.io/badge/🦞_引擎-OpenClaw-FF4D4D)](./ARCHITECTURE.md#两层架构地基-vs-引擎)
 
-<img src="index/sofagent.png" alt="sofagent" width="300" />
+<img src="sofagent.png" alt="sofagent" width="300" />
 
 > sofa + agent = 沙发特工——希望有一天，我们能躺在沙发上，Agent 就把活干完了。
 >
@@ -21,7 +21,7 @@
 
 ## 一句话定位
 
-给 AI Agent 装一个提交时审计官——看 git diff 硬证据判定违规，不依赖 Agent 自我报告。16 条审计规则（11 默认 + 5 扩展）扫描每次代码变更，自动判定违规、生成反思。中小企业装完就能用，不用请顾问、不用写 prompt。
+给 AI Agent 装一个提交时审计官——看 git diff 硬证据判定违规，不依赖 Agent 自我报告。16 条审计规则（11 条纯 git-diff + 5 条扩展）不依赖 Agent 配合——扫描每次代码变更，自动判定违规、生成反思。中小企业装完就能用，不用请顾问、不用写 prompt。
 
 > **和 detect-secrets 有什么区别**？detect-secrets 是通用密钥扫描器，sofagent A1/A2 是 Agent 场景定制——不仅检测密钥，还关联 A3 越界上下文（为什么这个文件被改了？）和 A7/A8 流程合规（改之前读了没？改之后测了没？）。
 
@@ -44,7 +44,10 @@
 ## Quick Start
 
 ```bash
+# 方式一：全局安装（推荐）
 npm install -g @sofagent/audit && sofagent-audit --init
+# 方式二：一次性运行
+npx -p @sofagent/audit sofagent-audit --init
 ```
 
 > 需要 bash + git。完整安装（含编排引擎）需 OpenClaw 环境。详见 [HANDBOOK · 安装](./HANDBOOK.md#场景一装完第一件事)。从 v0.99.x 升级？重跑 `npm install -g @sofagent/audit`，配置兼容无需改动。安装脚本做了什么？[SECURITY.md](./SECURITY.md#installsh-行为说明)。平台支持：macOS / Linux 全功能，Windows 实验性。
@@ -107,16 +110,23 @@ FDE = Forward Deployed Engineer
 
 ## 延伸阅读
 
+### 快速上手
+
 | 你想了解 | 看哪里 |
 |---------|--------|
-| 怎么装、怎么用、什么是铁律 | [HANDBOOK.md](./HANDBOOK.md) |
+| 怎么装、怎么用、常见问题 | [HANDBOOK.md](./HANDBOOK.md) |
 | 为什么这么设计、已知局限 | [ARCHITECTURE.md](./ARCHITECTURE.md) |
-| 铁律为什么是 7 则 + 知行合一 | [ARCHITECTURE.md](./ARCHITECTURE.md#行业印证palantir--不可溶解的护城河) |
-| AI 知识库怎么工作 | [ARCHITECTURE.md](./ARCHITECTURE.md#数据层ai-知识库v101-实现) |
-| Skill 怎么协同、编排怎么跑 | [DEVELOPMENT.md](./DEVELOPMENT.md) |
-| 企业落地三阶段指南 | [docs/guides/team-deploy.md](./docs/guides/team-deploy.md) |
-| 企业部署安全指南 | [docs/guides/enterprise-deploy.md](./docs/guides/enterprise-deploy.md) |
-| 实际效果数据 | [evidence.md](./docs/evidence/evidence.md) |
+| 安全声明 | [SECURITY.md](./SECURITY.md) |
+
+<details>
+<summary>深入了解（点击展开）</summary>
+
+| 你想了解 | 看哪里 |
+|---------|--------|
+| 开发指南 | [DEVELOPMENT.md](./DEVELOPMENT.md) |
+| 企业落地指南 | [docs/guides/team-deploy.md](./docs/guides/team-deploy.md) |
+| 企业部署安全 | [docs/guides/enterprise-deploy.md](./docs/guides/enterprise-deploy.md) |
+| 实际效果数据 | [docs/evidence/evidence.md](./docs/evidence/evidence.md) |
 | 平台能力与已知局限 | [LIMITATIONS.md](./LIMITATIONS.md) |
 | 版本路线图 | [ROADMAP.md](./ROADMAP.md) |
 | 版本历史 | [CHANGELOG.md](./CHANGELOG.md) |
@@ -124,10 +134,11 @@ FDE = Forward Deployed Engineer
 | 贡献指南 | [CONTRIBUTING.md](./CONTRIBUTING.md) |
 | GitHub Action 审计集成 | [docs/guides/github-action.md](./docs/guides/github-action.md) |
 | FDE 工具包 | [FDE/](./FDE/) |
-| 安全声明 | [SECURITY.md](./SECURITY.md) |
 | 社区与数据 | [COMMUNITY.md](./COMMUNITY.md) |
 | 行为准则 | [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) |
 | 致谢 | [THANKS.md](./THANKS.md) |
+
+</details> |
 
 ---
 

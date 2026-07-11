@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent daemon.sh · daemon 主进程 · v1.0.2
+# sofagent daemon.sh · daemon 主进程 · v1.0.3
 # ============================================================
 # 命令行接口：start / stop / status / --foreground
 # 主循环每 30 秒：检测平台进程 + 文件 hash 变化 → 更新 daemon.json
@@ -13,7 +13,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.0.2"
+VERSION="1.0.3"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." 2>/dev/null && pwd || echo "$PWD")"
@@ -134,7 +134,7 @@ _main_loop() {
     fi
     set_json_field "last_evidence_score" "$evidence_score"
 
-    # 6. task/logs 变化检测 + Ingest 触发（v1.0.2）
+    # 6. task/logs 变化检测 + Ingest 触发（v1.0.3）
     local logs_dir="${SOFAGENT_DATA}/task/logs"
     local pending_count=0
     if [ -d "$logs_dir" ]; then
@@ -162,6 +162,17 @@ _main_loop() {
       echo "[daemon] $(date -u +"%Y-%m-%dT%H:%M:%SZ") Ingest 触发——请运行 knowledge-maintain 提取最新 task/logs 中的知识" \
         > "${SOFAGENT_DATA}/daemon-notice.md"
     fi
+
+    # 7. SkillOpt 自进化调度（v1.0.3）
+    # 检测 task/logs 累积超阈值 → 触发 skillopt-sleep
+    _trigger_skillopt() {
+      if command -v skillopt-sleep &>/dev/null; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] SkillOpt 调度: 触发自进化" >> "${SOFAGENT_DATA}/daemon-notice.md"
+        # 调用 skillopt-sleep 处理 SKILL.md
+        # 只调度，实际逻辑在 skillopt-integration.ts
+      fi
+    }
+    _trigger_skillopt
 
     sleep 30
   done

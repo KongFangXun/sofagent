@@ -21,6 +21,27 @@ import { loadEnvConfig } from './config-loader';
 import type { RuleCheck } from './rules/types';
 
 /**
+ * 对 ruleResult 做脱敏处理——避免审计工具自身成为第二泄漏点。
+ * A2（密钥泄漏，number=2）和 A9（prompt injection，number=9）的 details
+ * 移除命中行原文，替换为脱敏占位文本。
+ */
+function sanitizeRuleResult(rule: RuleCheck): RuleCheck {
+  if (rule.number === 2) {
+    return {
+      ...rule,
+      details: [`检测到密钥泄漏（命中行已脱敏）`],
+    };
+  }
+  if (rule.number === 9) {
+    return {
+      ...rule,
+      details: rule.details.map(() => `检测到 prompt injection 模式（命中行已脱敏）`),
+    };
+  }
+  return rule;
+}
+
+/**
  * 单条审计历史记录
  */
 export interface AuditHistoryEntry {
@@ -64,7 +85,12 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     mkdirSync(dir, { recursive: true });
   }
 
-  const line = JSON.stringify(entry) + '\n';
+  // P0-1: 写入前脱敏——避免 A2/A9 拦截结果中存密钥明文
+  const sanitizedEntry = {
+    ...entry,
+    ruleResults: entry.ruleResults.map(sanitizeRuleResult),
+  };
+  const line = JSON.stringify(sanitizedEntry) + '\n';
   appendFileSync(filePath, line, 'utf-8');
 }
 
