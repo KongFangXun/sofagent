@@ -19,7 +19,7 @@ async function loadDeepAgents(): Promise<((config: Record<string, unknown>) => P
   try {
     // @ts-ignore - deepagents is an optional dependency, may not be installed
     const { createDeepAgent } = await import('deepagents');
-    return createDeepAgent as (config: Record<string, unknown>) => Promise<unknown>;
+    return createDeepAgent as unknown as (config: Record<string, unknown>) => Promise<unknown>;
   } catch {
     console.warn('deepagents 未安装，Sub Agent 功能不可用。npm install deepagents 启用。');
     return null;
