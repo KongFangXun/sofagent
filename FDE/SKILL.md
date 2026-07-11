@@ -23,7 +23,7 @@ not_when: [纯技术讨论, 代码bug修复, 写业务代码]
 
 ## 适用场景
 
-你是一名 FDE（Forward Deployed Engineer），进驻企业帮助 AI 化。你的工作是按四阶段梳理 workflow → 识别 AI 节点 → 部署 Agent。这个 Skill 就是你的工作台。
+你是一名 FDE（Forward Deployed Engineer），进驻企业帮助 AI 化。你的工作是按四阶段十二步：梳理工作流 → 构建本体模型 → 识别节点与量化 → 部署方案 → 部署落地 → 检查离场。这个 Skill 就是你的工作台。
 
 ## 前置依赖
 

@@ -56,7 +56,7 @@ sofagent 的五层架构可以映射到 Akshay Pachaar（前 Lightning AI 工程
 |-------------|-------------|:--:|
 | 流程编排 | entry-gate + task-aware | ✅ |
 | 工具调用 | MCP server + webhook | ✅ |
-| 分层存储 | think.md + task/logs + AI 知识库（v1.0.1 规划） | ⚠️ |
+| 分层存储 | think.md + task/logs + AI 知识库（v1.0.1 实现） | ⚠️ |
 | 上下文管理 | 加载链（三层注入） | ✅ |
 | 错误处理 | loop-check + loop-exit | ✅ |
 | 自动验证 | sofagent-audit（外置审计，Agent 不可绕过） | ✅ |
@@ -79,9 +79,11 @@ Anthropic 发现 Claude 内部存在 **J-space**——模型在对话输出之�
 
 ### 行业印证：Palantir + 不可溶解的护城河
 
-Palantir AIP 未自研大模型，却靠 **Ontology（数字孪生操作层）** 实现了远超行业的 Agent 可靠性。Harness 不是 Prompt 工程，是工程层。sofagent 对标三类 AI 无法溶解的壁垒：fde.md = 轻量级 Ontology 约束层 / 完整审计链路 = 责任可追溯 / 持续新增的 think.md + task/logs = 活数据飞轮。
+Palantir AIP 未自研大模型，却靠 **Ontology（本体）** 实现了远超行业的 Agent 可靠性。Ontology 的本质不是加工数据，而是翻译业务——把数据库里的表和字段还原成立体的商业世界。Palantir 的 FDE 用三步完成这件事：**定义实体→编织关联→赋予行动闭环**。
 
-> 来源：AI 创业生存逻辑分析（AI 前线 2026-07-08），详见 THANKS.md。
+sofagent 完全对等：**fde.md 定义实体**（4 底线 + 7 铁律 = 约束层本体）、**节点文档 frontmatter 编织关联**（relations: has_many/belongs_to + knowledge-domain）、**审计引擎写 think.md 赋予闭环**（检测→反思→下次改进）。Harness 不是 Prompt 工程，是工程层——Palantir 和 sofagent 用同一个词描述同一件事。
+
+⚠️ 诚实差距：Palantir 的 Write-back 能直接操作 ERP 改库存，sofagent 的闭环目前只能影响 Agent 上下文注入。v2.x 目标是对接外部系统实现 Write-back 级闭环——审计发现不只是写进 think.md，而是能触发实际业务动作。
 
 ### 外部验证与借鉴
 
@@ -255,7 +257,7 @@ sofagent 自身的开发过程本身就是这一循环的活体验证——两�
 
 加载顺序受 Lost in the Middle 约束：SKILL.md 放最前面（开头注意力最高），fde.md 放最后面（末尾注意力最高）。
 
-### 数据层：AI 知识库（v1.0.1 规划）
+### 数据层：AI 知识库（v1.0.1 实现）
 
 五层架构是**功能引擎层**——每层有输入、处理、输出。AI 知识库是**数据层**——它是五层引擎运转过程中沉淀的知识目录，本身不做处理。硬塞进五层维度不匹配，就像把「数据库」当成微服务架构里的一个「服务」。
 

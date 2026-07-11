@@ -101,7 +101,7 @@ FDE = Forward Deployed Engineer
 
 **一句话：FDE 工作用自己产品，给别人部署完让别人也用自己产品。产品的核心是底座。**
 
-> FDE（Forward Deployed Engineer）进驻企业做三件事：梳理工作流 → 识别 AI 节点 → 部署 Agent。完整四阶段十二步见 [FDE/FDE.md](./FDE/FDE.md)，直接装 [sofagent-fde Skill](./FDE/SKILL.md) 让 Agent 带着走。中小企业不需要请顾问——自己就能做。
+> FDE（Forward Deployed Engineer）进驻企业走四阶段十二步：梳理工作流 → 构建本体模型 → 识别节点与量化 → 部署落地。完整流程见 [FDE/FDE.md](./FDE/FDE.md)，直接装 [sofagent-fde Skill](./FDE/SKILL.md) 让 Agent 带着走。中小企业不需要请顾问——自己就能做。
 
 ---
 
@@ -111,6 +111,8 @@ FDE = Forward Deployed Engineer
 |---------|--------|
 | 怎么装、怎么用、什么是铁律 | [HANDBOOK.md](./HANDBOOK.md) |
 | 为什么这么设计、已知局限 | [ARCHITECTURE.md](./ARCHITECTURE.md) |
+| 铁律为什么是 7 则 + 知行合一 | [ARCHITECTURE.md](./ARCHITECTURE.md#行业印证palantir--不可溶解的护城河) |
+| AI 知识库怎么工作 | [ARCHITECTURE.md](./ARCHITECTURE.md#数据层ai-知识库v101-实现) |
 | Skill 怎么协同、编排怎么跑 | [DEVELOPMENT.md](./DEVELOPMENT.md) |
 | 企业落地三阶段指南 | [docs/guides/team-deploy.md](./docs/guides/team-deploy.md) |
 | 实际效果数据 | [evidence.md](./docs/evidence/evidence.md) |
