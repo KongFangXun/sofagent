@@ -7,6 +7,8 @@
 > **在 FDE 工作流中的位置**：OpenFDE 将 FDE 工作拆解为 10 步闭环——sofagent 覆盖其中第 6 步（评估体系）和第 7 步（生产化），提供 git diff 硬证据审计、pre-commit hook、daemon 监控。详见 [OpenFDE 10 步工作流](https://open-fde.com/docs/workflow)。
 >
 > **为什么 Agent 让 FDE 更重要**：前 Palantir 二号员工、前 OpenAI 首席研究官 Bob McGrew 指出——AI agent 没有现成的产品，是 FDE 兴起的最重要原因。Agent 是非确定性系统：同样的输入可能产生不同输出，必须配套 eval、observability、trace、guardrail 和人工复核——而这正是 sofagent 审计引擎做的事。详见 [OpenFDE · Agent 时代](https://open-fde.com/zh/docs/agent-era)。
+>
+> **sofagent 与 OpenFDE Agent 的分工**：[OpenFDE Agent](https://github.com/Open-FDE/FDEAgent) 管"学到判断"（Apprentice Loop：OBSERVE → INDUCE → ACT），sofagent 管"执行不越界"（审计引擎：git diff → A1-A14 → exit code）。两者互补——一个负责搬运专家判断力，一个负责确保 Agent 不跑偏。
 
 **离场后，企业留下三样东西：一份谁都能看懂的交付手册、一套在跑的 AI 节点、一个会自己生长的 AI 知识库。**
 

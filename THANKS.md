@@ -102,6 +102,9 @@ sofagent 在这些社区里传播和生长。
 - **[OpenFDE — FDE 知识库与社区](https://open-fde.com)**（2026-07）
   FDE 10 步工作流（[workflow](https://open-fde.com/docs/workflow)）与 8 维能力模型（[capabilities](https://open-fde.com/docs/capabilities)），为 sofagent 提供行业定位外部验证：第 4 步将审计列为架构基础层，第 6/7 步直接对应 sofagent 审计引擎与生产化工具链。
 
+- **[OpenFDE Agent v0.1 — 原位学徒循环](https://github.com/Open-FDE/FDEAgent)**（2026-07-10）
+  Apprentice Loop（OBSERVE → ELICIT → INDUCE → ACT → EVOLVE）+ Judgment Unit（判断单元）核心原语——WHEN/SIGNALS/DO/WHY/REVERSE + 渐进自主度（suggest → approve → auto）+ DEPLOY/ATTRIBUTION 双面架构。为 sofagent 的 think.md 结构化、HITL 渐进自主度、插件位开源基线设计提供参考。
+
 - **[微软 SkillOpt — Skill 自进化引擎](https://github.com/microsoft/SkillOpt)**（2026-07）
   使用类似神经网络训练的范式（Rollout→Reflect→Aggregate→Select→Update→Evaluate）自动优化 Agent Skill 文档。在 52 个评估单元中全部达到最佳，平均提升 20+ 分。为 sofagent v1.0.3 的 Skill 自进化闭环提供核心引擎。
 
