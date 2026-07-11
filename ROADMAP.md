@@ -1,18 +1,18 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.0.1 · 2026-07-11（UTC）· AI 知识库实现版：知识库骨架 + Ingest 自动生长 + 被动注入 + Lint 体检 + A14 越权审计
+> v1.0.2 · 2026-07-11（UTC）· 审查修复版：15 项 P1-P3 修复 + 审查体系更新（143 维度回归清单 + 陌生视角 prompt 泛化）
 >
 
 > 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（Workflow 梳理用）为实验性附带。
 
 ---
 
-## 现在在哪：v1.0.1 ✅
+## 现在在哪：v1.0.2 ✅
 
-> 知识库实现版——v1.0.0 经双视角审查修复（3 P0 + 15 P1 + 12 P2）后，v1.0.1 完成 AI 知识库代码实现：知识库目录骨架（6 个子目录 + index.md/log.md）+ fde.md 维护规则章节（4 子规则，≤3200 字符）+ knowledge-maintain.md 新 Skill（71 行）+ 加载链三层→四层（knowledge 被动注入）+ daemon Ingest 触发（task/logs 变化检测 + 30 分钟防抖）+ loop-evaluate 5 项 Lint + loop-check 20 轮硬上限 + A14 知识库越权审计（hybrid 模式）+ deepagents 可选依赖（不阻断安装）+ Ontology relations（entities/ frontmatter 含 has_many/belongs_to）。418 测试全绿，37 test files。138 维度回归检查清单全覆盖。
+> 审查修复版——v1.0.1 经双视角审查（GLM-5.2 + DeepSeek V4 Pro）发现 15 项 P1-P3 问题全部修复 + 审查体系更新（回归清单 138→143 维度 + 陌生视角 prompt 泛化 v1.0.1 特定内容）。修复覆盖：文档死链、安全报告渠道、规则数量不一致、A14 全放开检测、config 未知规则校验、doctor 输出友好度、CI 修复指引、hook 错误标签、knowledge 目录自动创建、ROADMAP 状态矛盾。418 测试全绿，143 维度回归检查清单。
 >
-> 📖 [开发日志](./docs/changelog/v1.0.1.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [开发日志](./docs/changelog/v1.0.2.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -22,6 +22,7 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
+| **v1.0.2** 🔧 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（143 维度 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
 | **v1.0.1** 🔧 | AI 知识库实现版：7 件事（目录骨架/fde 规则/Skill/四层加载链/daemon Ingest/Lint/轮次上限）+ A14 越权审计 + 137 维度审查 | [📖](./docs/changelog/v1.0.1.md) |
 | **v1.0.0** 🎉 | 正式版：Agent 审计工具——18 件事 + 408 测试全绿 + 106 维度审查 | [📖](./docs/changelog/v1.0.md) |
 | *(实验/测试版)* | | |
@@ -71,13 +72,14 @@
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
 | **v1.0.1** | ✅ 已完成 | AI 知识库 + 访问控制 + entities 实体关联 + deepagentsjs 引入 + think.md 模板 + loop-check 轮次上限 | [📖](./docs/changelog/v1.0.1.md) |
-| **v1.0.2** | ⏳ 待启动 | FDE Sub Agent + Audit Sub Agent（含成本） + SkillOpt 自进化 | [📖](./docs/changelog/v1.0.2.md) |
-| **v1.0.3** | ⏳ 待启动 | eval harness + Sub Agent A/B 自进化 + HITL + A15 约束验证 | [📖](./docs/changelog/v1.0.3.md) |
-| **v1.0.4** | ⏳ 待启动 | Ontology 统一层 + ao 退役 + Work模板市场 独立项目 + 首个行业模板 | [📖](./docs/changelog/v1.0.4.md) |
+| **v1.0.2** | ✅ 已完成 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（143 维度 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
+| **v1.0.3** | ⏳ 待启动 | FDE Sub Agent + Audit Sub Agent（含成本） + SkillOpt 自进化 | [📖](./docs/changelog/v1.0.3.md) |
+| **v1.0.4** | ⏳ 待启动 | eval harness + Sub Agent A/B 自进化 + HITL + A15 约束验证 | [📖](./docs/changelog/v1.0.4.md) |
+| **v1.0.5** | ⏳ 待启动 | Ontology 统一层 + ao 退役 + Work模板市场 独立项目 + 首个行业模板 | [📖](./docs/changelog/v1.0.5.md) |
 
 ### v1.x — 发布后
 
-> **v1.0.1-v1.0.4 开发日志**：[v1.0.1](./docs/changelog/v1.0.1.md) → [v1.0.2](./docs/changelog/v1.0.2.md) → [v1.0.3](./docs/changelog/v1.0.3.md) → [v1.0.4](./docs/changelog/v1.0.4.md)
+> **v1.0.1-v1.0.5 开发日志**：[v1.0.1](./docs/changelog/v1.0.1.md) → [v1.0.2](./docs/changelog/v1.0.2.md) → [v1.0.3](./docs/changelog/v1.0.3.md) → [v1.0.4](./docs/changelog/v1.0.4.md) → [v1.0.5](./docs/changelog/v1.0.5.md)
 
 #### 编排引擎升级：ao → DeepAgents + Agency Agents
 
