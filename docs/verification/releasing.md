@@ -39,6 +39,7 @@
 | 8 | `shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh` | 零 error |
 | 8.5 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
 | 8.6 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
+| 8.7 | `bash tools/acceptance-test.sh` — 11 个端到端场景：Fresh install → --init → --doctor → 正常 commit → 违规拦截 → --json → --ci → 首次提交 → hook 破坏 → --no-verify 检测 → config rules 过滤 | 全部 PASS |
 
 ---
 
@@ -172,8 +173,10 @@ bash tools/check-version.sh 2>&1 | grep 'SKILL.md'
 bump-version.sh 只改版本号**不改日期**。每次 bump 后必须手动检查：
 
 ```bash
-# 检查所有 MD 文件头日期是否与当前发版日期一致
-grep -rn '2026-07-' *.md docs/design/*.md | grep -v "docs/changelog/" | grep -v "docs/evidence/"
+# 检查所有 MD 文件头日期——把 DATE 替换为实际发版日期（如 2026-07-11）
+DATE="$(date +%Y-%m-%d)"  # 或手动指定
+grep -rn "$DATE" *.md docs/design/*.md | grep -v "docs/changelog/" | grep -v "docs/evidence/"
+# 期望：主要文档都匹配到当天日期
 # 排除 changelog 历史（里面记的是发版当天日期，不该改）和 evidence 案例日期
 ```
 
@@ -292,7 +295,7 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
     cp skill/* ~/.openclaw/skills/sofagent/
     cp FDE/SKILL.md ~/.workbuddy/skills/sofagent-fde/
     cp LOOP/SKILL.md ~/.workbuddy/skills/sofagent-loop/（如果 LOOP/ 有变更）
-12. iCloud 同步（可选）：cp FDE/* ~/Library/Mobile\ Documents/com~apple~CloudDocs/FDE工具包/
+12. iCloud 同步（可选）：cp -r FDE/* ~/Library/Mobile\ Documents/com~apple~CloudDocs/WorkBuddy/FDE工具包/
 ```
 
 ### 7.3 发布后验证
