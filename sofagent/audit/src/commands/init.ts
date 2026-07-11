@@ -96,7 +96,7 @@ export function runInit(): void {
     }
   }
 
-  // [3/4] 创建知识库目录骨架（v1.0.1）
+  // [3/4] 创建知识库目录骨架（v1.0.2）
   console.log('');
   console.log('[3/4] 创建知识库目录...');
   const knowledgeDir = join(configDir, 'knowledge');

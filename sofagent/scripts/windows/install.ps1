@@ -29,7 +29,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$VERSION = "1.0.1"
+$VERSION = "1.0.2"
 
 # v0.85: Lite = Quick + NoAO + NoDaemon + NoConfigInject
 if ($Lite) { $Quick = $true; $NoAO = $true; $NoDaemon = $true; $NoConfigInject = $true }

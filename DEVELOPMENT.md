@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v1.0.1 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
+> v1.0.2 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
 
 > 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](./FDE/FDE.md) 和 [README § FDE](./README.md#fde从工作流到-ai-节点)。
 

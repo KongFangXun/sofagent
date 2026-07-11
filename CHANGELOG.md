@@ -6,6 +6,14 @@
 
 ## 正式版
 
+### [v1.0.2] — 审查修复版 🔧
+
+> 2026-07-11（UTC）
+
+v1.0.1 经双视角审查（GLM-5.2 + DeepSeek V4 Pro）发现 15 项 P1-P3 问题全部修复。修复覆盖：文档死链（README/HANDBOOK/DEVELOPMENT 6 处锚点）、SECURITY.md 安全报告渠道（Issue→Security Advisory）、规则数量不一致（11→16）、A14 include='*' 全放开检测、config 未知规则名校验、doctor 输出友好度、CI 修复指引、hook 错误标签、knowledge 目录自动创建、ROADMAP 状态矛盾。审查体系更新：回归清单 138→143 维度（+5 项多入口一致性/消息准确性/状态一致性/模板格式/prompt 版本相关性），陌生视角 prompt 泛化 v1.0.1 特定任务。418 测试全绿。
+
+> 📖 [开发日志](./docs/changelog/v1.0.2.md)
+
 ### [v1.0.1] — AI 知识库实现版 🔧
 
 > 2026-07-11（UTC）
