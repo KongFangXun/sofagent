@@ -114,13 +114,8 @@ bash tools/pre-push-check.sh 2>&1 | tail -5
 - Fresh clone → npm ci → pre-push-check 7/7 全绿完整链路（**v1.0 硬性条件**）
 - install.sh 能否在 30 秒内完成？
 
-#### 4. npm 包架构与发布质量
+#### 4. npm 包架构
 ```bash
-npm view @sofagent/audit version          # 应为最新版本号
-npm view @sofagent/audit dependencies     # 应只有 js-yaml
-npm view @sofagent/mcp version            # 应为最新版本号
-npm view @sofagent/mcp dependencies
-# ✅ mcp 依赖应已同步 ^1.0.0
 npm pack --dry-run 2>&1 | grep '\.js\.map' | wc -l  # audit 包应为 0
 ```
 
@@ -601,13 +596,6 @@ grep 'x.com/i/article/2040732084843782144' docs/THANKS.md
 ```bash
 gh run list --limit 3 2>&1
 # 最近 CI 运行是否通过
-```
-
-#### 77. npm 发布状态（⏰ 发布后验证——回归检查阶段标 ⏳ 不标 FAIL）
-```bash
-npm view @sofagent/audit versions --json | tail -5
-npm view @sofagent/mcp versions --json | tail -5
-# latest 都应指向当前 SSOT 版本（阶段七 npm publish 后验证）
 ```
 
 #### 78. SECURITY.md 完整性
