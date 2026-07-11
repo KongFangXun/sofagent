@@ -83,7 +83,7 @@ Palantir AIP 未自研大模型，却靠 **Ontology（本体）** 实现了远�
 
 sofagent 完全对等：**fde.md 定义实体**（4 底线 + 7 铁律 = 约束层本体）、**节点文档 frontmatter 编织关联**（relations: has_many/belongs_to + knowledge-domain）、**审计引擎写 think.md 赋予闭环**（检测→反思→下次改进）。Harness 不是 Prompt 工程，是工程层——Palantir 和 sofagent 用同一个词描述同一件事。
 
-⚠️ 诚实差距：Palantir 的 Write-back 能直接操作 ERP 改库存，sofagent 的闭环目前只能影响 Agent 上下文注入。v2.x 目标是对接外部系统实现 Write-back 级闭环——审计发现不只是写进 think.md，而是能触发实际业务动作。
+⚠️ 诚实差距：Palantir 的 Write-back 能直接操作 ERP 改库存，sofagent 的闭环目前只能影响 Agent 上下文注入。v2.x 目标是对接外部系统实现 Write-back 级闭环——审计发现不只是写进 think.md，而是能触发实际业务动作。实战落地见 [FDE/FDE.md](./FDE/FDE.md)，日常使用见 [HANDBOOK](./HANDBOOK.md)。
 
 ### 外部验证与借鉴
 
