@@ -71,6 +71,7 @@ sofagent 在这些社区里传播和生长。
 
 - **[ClawHub](https://clawhub.ai)** — 全球 Skills 社区，Skills 体系的外部来源
 - **[/goal 命令](https://docs.anthropic.com/en/docs/claude-code/goal)** — Claude Code 的自主执行循环，启发了我加用户确认的设计
+- **[OpenFDE](https://open-fde.com)**（2026-07）— FDE 开源社区，10 步工作流、8 维能力模型、白皮书、工具地图
 
 ---
 
@@ -99,9 +100,6 @@ sofagent 在这些社区里传播和生长。
 - **[Palantir AIP — Ontology 驱动的 Agent 架构](https://www.palantir.com/platforms/aip/)** · Palantir (2026)
   Palantir 未自研大模型，却实现远超行业的 Agent 可靠性。核心是 Ontology（本体论）——将数据+逻辑+动作+安全四合一的数字孪生操作层。其 Harness 定义与 sofagent 完全一致：「Ontology 是地图，Harness 是检查站。」
 
-- **[OpenFDE — FDE 知识库与社区](https://open-fde.com)**（2026-07）
-  FDE 10 步工作流、8 维能力模型、白皮书、工具地图——开源社区为 FDE 行业提供了系统化的知识框架和方法论参考。
-
 - **[微软 SkillOpt — Skill 自进化引擎](https://github.com/microsoft/SkillOpt)**（2026-07）
   使用类似神经网络训练的范式（Rollout→Reflect→Aggregate→Select→Update→Evaluate）自动优化 Agent Skill 文档。在 52 个评估单元中全部达到最佳，平均提升 20+ 分。为 sofagent v1.0.3 的 Skill 自进化闭环提供核心引擎。
 
@@ -113,8 +111,5 @@ sofagent 在这些社区里传播和生长。
 
 - **[Deep Agent — LangChain 官方高级 Agent 框架](https://github.com/langchain-ai/deepagentsjs)**（2026）
   LangGraph 状态底座 + Harness Engineering 范式 + 子 Agent 委派 + 受控沙箱 + 长上下文管理 + HITL 四大特性，验证 sofagent v1.x 的技术选型。
-
-- **[人工审核对 AI 系统可靠性与责任边界的提升机制](https://get笔记/ai-hitl-reliability)**（2026-07-10）
-  三层审核维度（语义与逻辑 / 合规与安全 / 质量与价值）+ 四类必须人工介入的高风险场景 + 置信度分级机制，为 v1.0.4 HITL middleware 的设计提供理论和数据依据。
 
 ---
