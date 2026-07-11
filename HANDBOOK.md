@@ -2,7 +2,7 @@
 
 > **企业上 AI，先上缰绳再上路——装上审计引擎，每次 Agent 提交代码时自动检查变更。配合约束底座管 Agent 行为，编排引擎拆解任务（FDE 部署用）。**
 >
-> v1.0.2 · 2026-07-04（UTC）· 北京时间 07-05 · 孔放勋
+> v1.0.2 · 2026-07-11（UTC）· 孔放勋
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 
@@ -339,10 +339,10 @@ sofagent 不是孤立的——它构建于以下成熟项目之上，各司其�
 |------|------|:--:|
 | [LangChain](https://github.com/langchain-ai/langchainjs) + [LangGraph](https://github.com/langchain-ai/langgraphjs) | 编排引擎——状态图、条件路由、HITL、持久化 | v1.0.1 |
 | [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) | Sub Agent 系统——FDE Sub Agent + Audit Sub Agent | v1.0.1 |
-| [Agency Agents](https://github.com/msitarzewski/agency-agents) | 230+ 岗位模板——Sub Agent 角色定义 | v1.0.2 |
-| [微软 SkillOpt](https://github.com/microsoft/SkillOpt) | Skill 自进化引擎——训练→验证→替换 | v1.0.2 |
+| [Agency Agents](https://github.com/msitarzewski/agency-agents) | 230+ 岗位模板——Sub Agent 角色定义 | v1.0.3 |
+| [微软 SkillOpt](https://github.com/microsoft/SkillOpt) | Skill 自进化引擎——训练→验证→替换 | v1.0.3 |
 | [OpenFDE](https://open-fde.com) | 行业定位验证——10 步工作流 + 8 维能力模型 | v1.0 |
-| [Palantir Ontology](https://www.palantir.com/platforms/aip/) | 企业世界模型——实体+关系+动作+约束 | v1.0.1-v1.0.4 |
+| [Palantir Ontology](https://www.palantir.com/platforms/aip/) | 企业世界模型——实体+关系+动作+约束 | v1.0.1-v1.0.5 |
 
 ## 致谢
 
@@ -369,4 +369,4 @@ sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 > 大半年 OpenClaw 实战笔记。如有更好的用法，欢迎开 Issue。
 >
-> *v1.0.2，2026 年 7 月 4 日*
+> *v1.0.2，2026 年 7 月 11 日*
