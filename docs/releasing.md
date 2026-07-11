@@ -216,9 +216,15 @@ gh release view vX.Y.Z
 npm view @sofagent/audit version
 npm view @sofagent/mcp version
 
-# 本地安装
-bash tools/check-version.sh             # 期望: 33/33
-bash tools/check-docs.sh                # 期望: 全部通过
+# 🔴 关键：更新全局安装——npm publish 成功后 npm registry 已更新，
+# 但开发者本地二进制仍是旧版本。不更新会导致 --version 输出旧版本号，
+# 且测试时拿到的是旧功能（如 doctor 少检查项、A14 不存在等）
+npm install -g @sofagent/audit@latest
+sofagent-audit --version                    # 期望：vX.Y.Z（与 SSOT 一致）
+sofagent-audit --doctor                     # 期望：9 项检查（v1.0.1+）
+
+# 本地安装验证
+bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二进制版本检查）
 ```
 
 ### 7.4 常见发布故障
@@ -229,6 +235,7 @@ bash tools/check-docs.sh                # 期望: 全部通过
 | .js.map 泄露 | `npm pack --dry-run` 显示 .js.map | 检查 package.json `files` 是否包含排除模式 |
 | README 空白 | npm 页面无 README | 检查 package.json `files` 是否引用了不存在的 README.md |
 | npm publish 403 | `npm publish` E403 | 版本号已存在或 NPM_TOKEN 过期 |
+| 全局二进制版本落后 | `sofagent-audit --version` 显示旧版本号 | npm registry 已更新但本地未重装。`npm install -g @sofagent/audit@latest` |
 
 ---
 

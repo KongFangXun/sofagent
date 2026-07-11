@@ -123,10 +123,10 @@ function parseArgs(argv: string[]): Args {
       console.log('  --ci            CI 模式 = strict + silent（适合无 Agent 日志的 CI 环境）');
       console.log('  --json          JSON 输出模式：输出 { exitCode, rules } JSON，适合 CI 解析');
       console.log('  --install-hook  安装 git pre-commit hook 到当前仓库的 .git/hooks/');
-      console.log('  --root-cause    分析审计历史，输出根因报告 + 配置建议');
-      console.log('  --regression <dir>  对指定目录下的历史快照跑回归验证');
+  console.log('  --root-cause    分析审计历史，输出根因报告 + 配置建议（发版前或定期排查用）');
+  console.log('  --regression <dir>  对指定目录下的历史快照跑回归验证（版本升级后确认无回退）');
       console.log('  --init          一键初始化：生成 config.yml + 安装 hook + 冒烟测试');
-      console.log('  --doctor        健康诊断：7 项检查 + 修复建议');
+      console.log('  --doctor        健康诊断：9 项检查 + 修复建议');
       console.log('  --webhook <platform>  webhook 推送平台（dingtalk / feishu / wecom），有 WARN/FAIL 时推送');
       console.log('  --webhook-url <url>   webhook URL（也可通过 SOFAGENT_WEBHOOK_URL 环境变量设置）');
       console.log('  --mcp           启动 MCP Server（JSON-RPC 2.0 over stdio），暴露审计能力给 MCP Client');
@@ -536,6 +536,11 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
       const classTag = rule.ruleClass === '业务底线' ? '[底线]' : rule.ruleClass === '能力拐杖' ? '[拐杖]' : '';
       for (const detail of rule.details) {
         console.log(`${icon} ${rule.name} ${classTag}: ${detail}`);
+      }
+      // 修复建议
+      const suggestion = getFixSuggestion(rule.name);
+      if (suggestion) {
+        console.log(`   怎么修: ${suggestion}`);
       }
     }
     console.log(`\n判定: ${results.exitCode === 1 ? '⚠️  WARN' : '❌ FAIL'} (exit ${results.exitCode})`);

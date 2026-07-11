@@ -70,7 +70,7 @@
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.0.1** | 🚧 规划中 | AI 知识库 + 访问控制 + entities 实体关联 + deepagentsjs 引入 + think.md 模板 + loop-check 轮次上限 | [📖](./docs/changelog/v1.0.1.md) |
+| **v1.0.1** | ✅ 已完成 | AI 知识库 + 访问控制 + entities 实体关联 + deepagentsjs 引入 + think.md 模板 + loop-check 轮次上限 | [📖](./docs/changelog/v1.0.1.md) |
 | **v1.0.2** | ⏳ 待启动 | FDE Sub Agent + Audit Sub Agent（含成本） + SkillOpt 自进化 | [📖](./docs/changelog/v1.0.2.md) |
 | **v1.0.3** | ⏳ 待启动 | eval harness + Sub Agent A/B 自进化 + HITL + A15 约束验证 | [📖](./docs/changelog/v1.0.3.md) |
 | **v1.0.4** | ⏳ 待启动 | Ontology 统一层 + ao 退役 + Work模板市场 独立项目 + 首个行业模板 | [📖](./docs/changelog/v1.0.4.md) |

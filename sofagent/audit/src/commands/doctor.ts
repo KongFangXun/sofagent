@@ -279,14 +279,14 @@ export function runDoctor(): void {
       const workflowPath = join(dataDir, 'orchestrator', 'workflows', 'workflow.yml');
 
       if (!existsSync(workflowPath)) {
-        results.push({ ok: true, warning: true, label: '知识库访问矩阵', detail: '未找到 workflow.yml，跳过' });
+        results.push({ ok: true, warning: true, label: '知识库访问矩阵', detail: '未找到 workflow.yml，跳过（FDE 部署配置，普通用户可忽略）' });
       } else {
         const content = readFileSync(workflowPath, 'utf-8');
         const parsed = yamlLoad(content) as Record<string, unknown> | null;
         const nodesArr = parsed?.['nodes'] as Array<Record<string, unknown>> | undefined;
 
         if (!Array.isArray(nodesArr) || nodesArr.length === 0) {
-          results.push({ ok: true, warning: true, label: '知识库访问矩阵', detail: 'workflow.yml 无 nodes 配置' });
+          results.push({ ok: true, warning: true, label: '知识库访问矩阵', detail: 'workflow.yml 无 nodes 配置（FDE 部署时生成）' });
         } else {
           // 收集有 knowledgeDomain 的节点
           const matrixLines: string[] = [];
@@ -318,7 +318,7 @@ export function runDoctor(): void {
         }
       }
     } catch {
-      results.push({ ok: true, warning: true, label: '知识库访问矩阵', detail: '读取 workflow.yml 失败，跳过' });
+      results.push({ ok: true, warning: true, label: '知识库访问矩阵', detail: '读取 workflow.yml 失败，跳过（FDE 部署配置）' });
     }
   }
 

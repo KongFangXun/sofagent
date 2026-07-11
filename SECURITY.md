@@ -65,8 +65,8 @@ install.sh 拆分为以下模块，便于逐模块审查：
 
 如果你发现安全问题（不是普通 Bug），请通过以下方式私密报告：
 
+- **GitHub Security Advisory**：[私密报告漏洞](https://github.com/KongFangXun/sofagent/security/advisories/new)（推荐）
 - **邮件**：kong.yao@evfrey.com
-- **GitHub 私密 Issue**：[新建 Issue](https://github.com/KongFangXun/sofagent/issues) 时选 "Security" 标签
 
 **请不要在公开 Issue 中披露安全漏洞细节。**
 
