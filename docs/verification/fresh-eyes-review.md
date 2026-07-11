@@ -350,3 +350,7 @@
 ### 视角七（红队）任务 14 新增
 
 增加「审计工具自身文件测试」：修改 history.jsonl 看 A9 是否误报、破坏 config.yml 看报错信息是否含行号列号、删除 history.jsonl 看是否正常恢复、检查 history.jsonl 是否有密钥明文（脱敏验证）。
+
+### 视角二（企业 IT）任务 8 新增
+
+增加「optional dependency 类型安全」维度：「打开 `sofagent/audit/src/subagents/launcher.ts`，检查对 optional dependency（deepagents）的 import 是否用了 `as unknown as` 双重转换。CI 环境 TS 类型检查比本地严格——直接 `as` 可能本地通过但 CI 失败。」

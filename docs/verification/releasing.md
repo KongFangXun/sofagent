@@ -48,8 +48,8 @@
 | 9 | 独立审核者逐项核对 changelog 每一项 | 审核者 | 逐文件读源码 |
 | 9 | FAIL 项修复 | 工程师 | build + test 全绿 |
 | 10 | 二次复核确认全部到位 | 审核者 | changelog 所有项 PASS |
-| 10.5 | 回归检查：用回归清单逐项核对（当前 176 维度）<br>🔴 **必须开全新 session**——老 session 有上下文记忆，审查者知道"这东西是我修的"，会跳过怀疑。全新 session = 空白认知 | 审核者 | 全 PASS。发现回退→修复后重跑。新问题→追加检查项（从 177 开始编号） |
-| 10.6 | **审查体系维护**（本步骤在开发 session 中执行，不需要新 session——这是在更新文档，不是在审查）——基于本版本整个迭代的开发经验，更新两套审查体系：<br>① **回归清单**：把本版本修过的 P0/P1 抽象为检查项追加到清单（编号从 177 递增）。开发过程中已随修随记，本步骤做最后核对——有没有遗漏？<br>② **陌生视角 prompt**：本版本暴露了哪些新盲区？把新视角/任务/攻击面补进 prompt。更新后的 prompt 下版本发布后用于独立审查 | 审核者/作者 | 回归清单检查项数 ≥ 上一版；陌生视角 prompt 新增任务/视角见于文件 diff |
+| 10.5 | 回归检查：用回归清单逐项核对（当前 144 维度）<br>🔴 **必须开全新 session**——老 session 有上下文记忆，审查者知道"这东西是我修的"，会跳过怀疑。全新 session = 空白认知 | 审核者 | 全 PASS。发现回退→修复后重跑。新问题→追加检查项（从 145 开始编号） |
+| 10.6 | **审查体系维护**（本步骤在开发 session 中执行，不需要新 session——这是在更新文档，不是在审查）——基于本版本整个迭代的开发经验，更新两套审查体系：<br>① **回归清单**：把本版本修过的 P0/P1 抽象为检查项追加到清单（编号从 145 递增）。开发过程中已随修随记，本步骤做最后核对——有没有遗漏？<br>② **陌生视角 prompt**：本版本暴露了哪些新盲区？把新视角/任务/攻击面补进 prompt。更新后的 prompt 下版本发布后用于独立审查 | 审核者/作者 | 回归清单检查项数 ≥ 上一版；陌生视角 prompt 新增任务/视角见于文件 diff |
 
 ---
 
@@ -349,3 +349,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | check-version.sh TS 文件头注释扫全文件，误报代码中的历史标注 | `grep -m2` 扫全文件，而 bump-version 只改前 10 行 | check-version 的 TS 头注释检测改为 `head -10 \| grep`，与 bump-version 范围对齐 |
 | 文档总量 4922 行接近 5000 上限，一刀切预算无法区分用户文档和开发者文档 | check-docs.sh 用单一 TOTAL 统计所有未排除的 .md | 文档分层预算：A 用户文档(3600) + B 开发者参考(1500) + C 审查体系(3500) + D 设计(500) + E 指南(500)，A+B ≤ 5000 |
 | LOOP/SKILL.md 版本号写 1.0.3 但 SSOT 还是 1.0.2 | DeepSeek 开发时写了目标版本号而非当前 SSOT | 开发 prompt 明确："不要 bump 版本号——开发完后再 bump" |
+| launcher.ts 的 `as` 类型断言本地编译通过但 CI 失败 | CI 环境（Windows/Ubuntu）TS 类型检查比本地严格，`createDeepAgent` 的泛型无法直接 `as` 转换 | 对 optional dependency 的类型断言统一用 `as unknown as` 双重转换；本地 build 通过不代表 CI 通过，推前需在干净环境验证 |
+| 发版后发现 CI 失败，tag 指向修复前的 commit | tag 在代码修复前就打了，Release workflow checkout 的是旧代码 | 修 CI 后必须移 tag 到修复 commit：`git tag -d vX.Y && git tag vX.Y <fix-commit> && git push origin :refs/tags/vX.Y && git push origin vX.Y` |
+| FDE/package.json 版本号没被 bump-version.sh 覆盖 | bump-version.sh 只处理 audit/mcp 两个 package.json，漏了 FDE/LOOP | bump-version.sh 新增 [2b/13] 步骤处理 FDE/LOOP package.json；check-version.sh 新增对应检查项 |
+| 回归检查清单维度 77 在发版前误报 npm latest != SSOT | 维度 77 检查 npm latest = SSOT，但发版前 npm 还没 publish，必然不等 | 维度 77 标注为「发布后验证」项；回归清单加时序说明节，明确发版前 npm latest = 旧版本是正常的 |
