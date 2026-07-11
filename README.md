@@ -115,6 +115,7 @@ FDE = Forward Deployed Engineer
 | AI 知识库怎么工作 | [ARCHITECTURE.md](./ARCHITECTURE.md#数据层ai-知识库v101-实现) |
 | Skill 怎么协同、编排怎么跑 | [DEVELOPMENT.md](./DEVELOPMENT.md) |
 | 企业落地三阶段指南 | [docs/guides/team-deploy.md](./docs/guides/team-deploy.md) |
+| 企业部署安全指南 | [docs/guides/enterprise-deploy.md](./docs/guides/enterprise-deploy.md) |
 | 实际效果数据 | [evidence.md](./docs/evidence/evidence.md) |
 | 平台能力与已知局限 | [LIMITATIONS.md](./LIMITATIONS.md) |
 | 版本路线图 | [ROADMAP.md](./ROADMAP.md) |

@@ -12,7 +12,7 @@
  * value = 修复建议字符串
  */
 const FIX_SUGGESTIONS: Record<string, string> = {
-  'A1 不碰敏感': '.env 不应提交。如确认无敏感数据，在 commit message 中说明原因',
+  'A1 不碰敏感': '.env 不应提交。将敏感文件加入 .gitignore，或在 config.yml 的 lowRiskPatterns 中添加文件路径',
   'A2 不泄密钥': '将密钥写入 .env -> .gitignore 加 .env -> 重新提交',
   'A3 不改越界': '拆分提交，只提交与当前任务相关的文件，无关改动单独提交',
   'A4 不删配置': '确认是否为有意删除。如是，在 commit message 中说明原因',
