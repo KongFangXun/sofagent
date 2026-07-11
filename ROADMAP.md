@@ -100,9 +100,9 @@ OpenClaw 总管（TS）
 | 阶段 | 版本 | 动作 | 关键依赖 |
 |:--:|------|------|------|
 | 🔵 引入 | v1.0.1 | `npm install deepagents` → 用 `createDeepAgent` 包装 ao 的 loop-check/evaluate/exit，ao 仍然做决策但编排层切到 LangGraph 状态图 | deepagentsjs + langgraph |
-| 🟡 替换 | v1.0.2 | 基于 Agency Agents 模板定义 FDE Sub Agent 岗位（role/workflow/rules/deliverables）→ 对接 OpenClaw sub-agent 机制；同步定义 Audit Sub Agent（语义级审查、跨 repo Workflow 巡检） | agency-agents 模板 + OpenClaw sub-agent API |
-| 🟢 增强 | v1.0.3 | 集成 deepagentsjs 的 eval harness（golden set/offline eval/online eval）+ HITL middleware（高风险操作人工审批）→ 对齐 OpenFDE 第 6/7 步。**HITL 置信度标注**（不自动审批）：>99% 自动放行 + 标 🟢；80-99% 标 🟡 待人工确认；<80% 标 🔒 强制人工确认。**仅标注不审批**——不做审批超时降级/防橡皮图章（企业级 BPM 功能，非 Agent harness 职责）。四类强制人工确认场景：删除操作 / 外部 API 调用 / 权限变更 / 数据迁移 | deepagents evals + HITL middleware |
-| ✅ 退役 | v1.0.4 | ao 的 loop-check/evaluate/exit 全部由 DeepAgents + LangGraph 接管。ao 目录保留为实验性 archive，标注「已被 DeepAgents 替代」 | 全量功能对齐 |
+| 🟡 替换 | v1.0.3 | 基于 Agency Agents 模板定义 FDE Sub Agent 岗位（role/workflow/rules/deliverables）→ 对接 OpenClaw sub-agent 机制；同步定义 Audit Sub Agent（语义级审查、跨 repo Workflow 巡检） | agency-agents 模板 + OpenClaw sub-agent API |
+| 🟢 增强 | v1.0.4 | 集成 deepagentsjs 的 eval harness（golden set/offline eval/online eval）+ HITL middleware（高风险操作人工审批）→ 对齐 OpenFDE 第 6/7 步。**HITL 置信度标注**（不自动审批）：>99% 自动放行 + 标 🟢；80-99% 标 🟡 待人工确认；<80% 标 🔒 强制人工确认。**仅标注不审批**——不做审批超时降级/防橡皮图章（企业级 BPM 功能，非 Agent harness 职责）。四类强制人工确认场景：删除操作 / 外部 API 调用 / 权限变更 / 数据迁移 | deepagents evals + HITL middleware |
+| ✅ 退役 | v1.0.5 | ao 的 loop-check/evaluate/exit 全部由 DeepAgents + LangGraph 接管。ao 目录保留为实验性 archive，标注「已被 DeepAgents 替代」 | 全量功能对齐 |
 
 #### Ontology 渐进构建（企业数字孪生操作层）
 
@@ -111,10 +111,10 @@ OpenClaw 总管（TS）
 | 阶段 | 版本 | 动作 | 说明 |
 |:--:|------|------|------|
 | 🌱 实体关联 | v1.0.1 | entities/ 页面的 frontmatter 加 `relations` 字段（`has_many`/`belongs_to`/`references`） | 知识库从独立页面变成关联图 |
-| 🏗️ 动作定义 | v1.0.2 | Workflow 节点的 YML 加 `actions` 声明——每个节点能对什么对象做什么操作、有什么约束 | Agent 不只是能看什么（knowledge-domain），还能做什么（actions） |
-| 🔍 约束验证 | v1.0.3 | 新增 A15 审计规则——Agent 执行的 action 是否在节点声明的 actions 范围内、是否满足 constraints | 事后审计扩展到事前约束检查 |
-| 🌐 统一 Ontology 层 | v1.0.4 | `.sofagent/ontology/` 目录——自动从 entities + workflow actions 合并生成，Agent 加载时获得完整世界模型 | FDE 交付的不是文档，是企业数字孪生的操作接口 |
-| 🛡️ 防幻觉四方案 | v1.0.4 | Schema Guided（ontology 约束 Action 输出）+ HTRO（High Trust Read Only，只读可信源）+ RAG+溯源（引用必须可追溯到 knowledge/ 页面）+ Action Type 终审（审计层验证 action 类型合规） | 与 A 系列「硬证据」哲学一致 |
+| 🏗️ 动作定义 | v1.0.3 | Workflow 节点的 YML 加 `actions` 声明——每个节点能对什么对象做什么操作、有什么约束 | Agent 不只是能看什么（knowledge-domain），还能做什么（actions） |
+| 🔍 约束验证 | v1.0.4 | 新增 A15 审计规则——Agent 执行的 action 是否在节点声明的 actions 范围内、是否满足 constraints | 事后审计扩展到事前约束检查 |
+| 🌐 统一 Ontology 层 | v1.0.5 | `.sofagent/ontology/` 目录——自动从 entities + workflow actions 合并生成，Agent 加载时获得完整世界模型 | FDE 交付的不是文档，是企业数字孪生的操作接口 |
+| 🛡️ 防幻觉四方案 | v1.0.5 | Schema Guided（ontology 约束 Action 输出）+ HTRO（High Trust Read Only，只读可信源）+ RAG+溯源（引用必须可追溯到 knowledge/ 页面）+ Action Type 终审（审计层验证 action 类型合规） | 与 A 系列「硬证据」哲学一致 |
 
 #### 外部框架对齐（v1.x 全版本基线）
 
@@ -123,10 +123,10 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | sofagent 模块 | 对应外部框架 | 关系 | 版本 |
 |------|------|------|:--:|
 | 审计引擎（Harness 层） | 独立自研——外部无可替代 | 核心差异化 | v1.0 |
-| 编排引擎 | LangChain + LangGraph + DeepAgentsJS | 借鉴后替换 ao | v1.0.1-v1.0.4 |
-| Skill 系统 | Agency Agents（岗位模板，v1.0.2）+ SkillOpt（Skill 文档自进化，v1.0.2）+ eval harness + A/B 对比（Sub Agent 配置自进化，v1.0.3） | 模板引用 + 对接优化引擎 | v1.0.1-v1.0.3 |
+| 编排引擎 | LangChain + LangGraph + DeepAgentsJS | 借鉴后替换 ao | v1.0.1-v1.0.5 |
+| Skill 系统 | Agency Agents（岗位模板，v1.0.3）+ SkillOpt（Skill 文档自进化，v1.0.3）+ eval harness + A/B 对比（Sub Agent 配置自进化，v1.0.4） | 模板引用 + 对接优化引擎 | v1.0.1-v1.0.4 |
 | AI 知识库 | OpenFDE 10 步工作流（行业定位验证） | 外部验证 | v1.0-1.1 |
-| 企业世界模型 | Palantir Ontology（实体+关系+动作+约束） | 概念借鉴，渐进构建 | v1.0.1-v1.0.4 |
+| 企业世界模型 | Palantir Ontology（实体+关系+动作+约束） | 概念借鉴，渐进构建 | v1.0.1-v1.0.5 |
 | 任务路由 + Skill 组合 | Router+Skill 架构（行业评估为性价比最高方案） | task-aware 路由与 sofagent 方向一致 | v1.x 基线 |
 
 
@@ -137,7 +137,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | **think.md 模板强制** | think.md 目前可选——Agent 想写就写。v1.0.1 升级：如果写，必须按模板（做了什么 / 踩了什么坑 / 下次怎么办）。不强制写，审计引擎检测「本次任务无 think.md」标 ⚠️ 但不阻断。**不做 gate 前置检查**——强制 gate 会导致 Agent 用垃圾内容填模板 |
 | **loop-check 轮次上限** | 当前 loop-check 只有步数比例检查点（60%），无绝对轮次上限。v1.0.1 加硬性兜底：超过 N 轮自动 closure → 交还人类。防止工具持续报错导致 Agent 无限循环消耗 Token |
 | **后置测验（可选维度）** | loop-check 新维度：任务结束时 AI 出题反问人类「我做了 X，你理解了吗？」从 Agent 自检到人机对齐。默认关闭，高风险任务才开启。成本高（每次任务需人答题），v2.x 探索 |
-| **Skill 自进化闭环（v1.0.2）** | FDE 离场时生成的定制 Skill 不是一次性写完就固定的——接入 [微软 SkillOpt](https://github.com/microsoft/SkillOpt) 自进化引擎：Agent 跑任务 → scoring + task/logs 收集轨迹 → `skillopt-sleep` 夜间训练（Rollout→Reflect→Aggregate→Select→Update→Evaluate）→ validation gate 严格验证 → 只升不降替换 Skill。MIT 免费，本地 pip 安装，通过 CLI subprocess 调用。详见 [v1.0.2 开发日志](./docs/changelog/v1.0.2.md) |
+| **Skill 自进化闭环（v1.0.3）** | FDE 离场时生成的定制 Skill 不是一次性写完就固定的——接入 [微软 SkillOpt](https://github.com/microsoft/SkillOpt) 自进化引擎：Agent 跑任务 → scoring + task/logs 收集轨迹 → `skillopt-sleep` 夜间训练（Rollout→Reflect→Aggregate→Select→Update→Evaluate）→ validation gate 严格验证 → 只升不降替换 Skill。MIT 免费，本地 pip 安装，通过 CLI subprocess 调用。详见 [v1.0.3 开发日志](./docs/changelog/v1.0.3.md) |
 | 质量抽检仪表盘 | 抽检合格率、skillopt 迭代记录可视化 |
 | age 加密 / 多用户隔离 | think.md + task/logs 加密；同机权限隔离 |
 | 多企业平台 webhook | 飞书 + 企微 + 自定义 webhook |
@@ -171,7 +171,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 
 ### v2.x — 多设备协同 + Workflow Hub 前端（规划中）
 
-> 💡 **多 Agent 协同已在 v1.x 完成**：v1.0.2 FDE Sub Agent + Audit Sub Agent 并存 → v1.0.3 A/B 自进化双 Agent 对比 → v1.0.4 Agent Dashboard 探索原型。v2.x 不需要再做多 Agent 协同——它已经是 v1.x 的自然产物（Dashboard 是否进核心取决于 v1.0.4 企业用户反馈）。
+> 💡 **多 Agent 协同已在 v1.x 完成**：v1.0.3 FDE Sub Agent + Audit Sub Agent 并存 → v1.0.4 A/B 自进化双 Agent 对比 → v1.0.5 Agent Dashboard 探索原型。v2.x 不需要再做多 Agent 协同——它已经是 v1.x 的自然产物（Dashboard 是否进核心取决于 v1.0.5 企业用户反馈）。
 >
 > v2.x 的核心是两件事：**多设备协同**（不同机器上的 sofagent 实例共享知识/记忆/审计数据，每个 AI 节点拥有独立身份主动进入协作者现场）和 **Workflow Hub 前端**（Web catalog + 社区贡献仪表盘 + 模板 marketplace）。
 
