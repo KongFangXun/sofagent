@@ -38,7 +38,7 @@ audit:
   # loopCheckMaxRounds: 20
 
   # 按规则名禁用——取消注释即可关闭指定规则
-  # 可用 key: a1-a14, e1-e4
+  # 可用 key: a1-a15, e1-e4
   # 显式 false 禁用，未列或 true 表示启用
   # rules:
   #   a3: false  # 禁用「不改越界」检查
@@ -84,7 +84,9 @@ else
 fi
 
 # 4. 正常运行审计
-$AUDIT_CMD --diff "$AUDIT_DIFF_ARG" --silent --ci --task "$(cat .git/COMMIT_EDITMSG 2>/dev/null || echo 'pre-commit audit')"
+# pre-commit 阶段无法获取当前 commit message（COMMIT_EDITMSG 存的是上一次的）
+# 不传 --task，A3 走降级模式（跳过越界检查，不影响 A1/A2 密钥拦截）
+$AUDIT_CMD --diff "$AUDIT_DIFF_ARG" --silent --ci
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -eq 2 ]; then

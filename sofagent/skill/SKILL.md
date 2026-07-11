@@ -1,7 +1,7 @@
 ---
 name: sofagent
 slug: sofagent
-version: 1.0.3
+version: 1.0.4
 displayName: sofagent
 description: >
   当你的 Agent 反复偏离目标、任务越做越复杂、刚踩过的坑下次还踩。装上后 Agent 自带行为约束和反思能力。

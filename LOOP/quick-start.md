@@ -8,7 +8,7 @@
 
 ```bash
 # 确认 sofagent 底座已装
-sofagent-audit --version   # 应输出 v1.0.3 或更高
+sofagent-audit --version   # 应输出 v1.0.4 或更高
 
 # 确认 LOOP Skill 已装（OpenClaw）
 ls ~/.openclaw/skills/sofagent-loop/SKILL.md

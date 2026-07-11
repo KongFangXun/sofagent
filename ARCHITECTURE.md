@@ -6,7 +6,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 > sofagent 的设计决策记录——从 Harness 层的工程约束到五层架构的取舍。
 >
-> > v1.0.3 · 2026-07-11（UTC）· 孔放勋
+> > v1.0.4 · 2026-07-11（UTC）· 孔放勋
 
 <img src="sofagent.png" alt="sofagent" width="300" />
 
@@ -49,6 +49,8 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 > 2026 年 Hugging Face 实验《Don't Train the Model, Evolve the Harness》证明：同一个 DeepSeek-v4-pro 模型，**不改任何权重**，仅优化外层执行机制（Harness），在法律 Agent 基准测试中综合得分从 3.5% 提升至 80.1%——76 分差全部来自外层机制，追平 Claude Sonnet 4.6，运行成本仅为后者的 1/7。且优化后的 Harness 迁移到同族小模型仍带来 14.4 分提升。🔗 [实验详情](https://huggingface.co/spaces/joelniklaus/harness-optimization)
 >
 > ——这就是 sofagent 存在的理由。Benchmark 测到的从来不是裸模型，而是「模型 + Harness」的组合能力。
+>
+> > ICML 2025 论文进一步验证：同一模型搭载精心设计的 Harness 后任务胜率显著更高——更强的模型 + 烂 Harness < 较弱模型 + 精心设计的 Harness。如果把 AI 比作一台计算机：**模型 = CPU，上下文 = 内存，Harness = 操作系统**。
 
 > **对齐税**：当所有团队都用同几个模型（GPT/Claude/DeepSeek）时，模型本身不再是差异化优势——真正的差异在外层 Harness（约束+审计+记忆）。模型同质化时代，Harness 层就是新的护城河。sofagent 是这个方向的早期实践。（来源：163 篇行业笔记蒸馏）
 
@@ -77,7 +79,7 @@ sofagent 的五层架构可以映射到 Akshay Pachaar（前 Lightning AI 工程
 
 Anthropic 发现 Claude 内部存在 **J-space**——模型在对话输出之外完成推理、判断、纠错。实验中让 AI「别想某个词」，该词活跃度反而更高——**AI 自己都知道控制不住自己**。所以 sofagent 不信任 Agent 的自我报告，只看 git diff 硬证据。审计必须外置、不可绕过。
 
-> 来源：Anthropic《A Global Workspace in Language Models》（2026），详见 THANKS.md。
+> 来源：Anthropic《A Global Workspace in Language Models》（2026），详见 [THANKS.md](./docs/THANKS.md)。
 
 ### 行业印证：Palantir + 不可溶解的护城河
 
@@ -87,13 +89,17 @@ sofagent 完全对等：**fde.md 定义实体**（4 底线 + 7 铁律 = 约束�
 
 ⚠️ 诚实差距：Palantir 的 Write-back 能直接操作 ERP 改库存，sofagent 的闭环目前只能影响 Agent 上下文注入。v2.x 目标是对接外部系统实现 Write-back 级闭环——审计发现不只是写进 think.md，而是能触发实际业务动作。实战落地见 [FDE/FDE.md](./FDE/FDE.md)，日常使用见 [HANDBOOK](./HANDBOOK.md)。
 
+> **根本接触不到 > 被告知不能说**：Palantir Ontology 的防幻觉机制不是"告诉 Agent 不要越权"，而是未配置 Context → Agent 根本看不到、无 Object Type → 根本无法检索、未授权 → 根本调不到。sofagent 的 A15 约束验证 + 审计外置遵循同一原则——不是在 Agent 内部劝它守规矩，是在外部让它碰不到越权的路径。
+
+**产品镜像——Palantir AI FDE 的五维同构**：Ontology 之外，Palantir 的 AI FDE 作为**产品角色**与 sofagent 同构——(1) FDE 全程参与任务闭环 = entry-gate → task-aware → loop-check → think.md；(2) Ontology 注入业务上下文 = 三层加载链注入约束+反思；(3) Action 权限绑定 Ontology 实体 = 4 底线 + 7 铁律 + entry-gate 权限清单；(4) AI 输出在分支中接受审查 = git pre-commit 审计引擎；(5) 按场景定制 Tool Stack = Sub Agent registry + SkillOpt。五个维度不是牵强类比，而是同一套工程问题（闭环、上下文、权限、审查、工具）的两个独立解——Palantir 在企业级 Ontology 侧解决，sofagent 在 Agent 上下文侧解决。
+
 ### 外部验证与借鉴
 
 - **OpenFDE** 将「审计」列为 FDE 工作流基础层（与身份权限同级），sofagent 的审计优先设计符合社区最佳实践。
 - **翁荔六层 Harness 模型**：sofagent 覆盖前 4 层（上下文工程 / 代码优化 / 工作流 / 自改进 Harness），验证了「RSI 优先优化 Harness 而非模型权重」的核心预判。
 - **外部对齐**：编排引擎借鉴 LangChain + DeepAgentsJS，Skill 系统借鉴 Agency Agents + SkillOpt，Ontology 借鉴 Palantir AIP。设计原则：能做好的不自研，做不了的借鉴，没人做的自己造（git diff 硬证据审计）。
 
-> 详见 THANKS.md。
+> 详见 [THANKS.md](./docs/THANKS.md)。
 
 ### 两层架构：地基 vs 引擎
 
@@ -113,7 +119,7 @@ sofagent 分两层——地基轻、引擎重：
 | **Harness 层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ 已可用 |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ v0.81 |
 | **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff | ✅ v0.92 |
-| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v1.0.3），推送待端到端验证 | ✅ v0.99.5 |
+| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v1.0.4），推送待端到端验证 | ✅ v0.99.5 |
 | **协同层** | 多设备 + 云端 | 组织级 Agent Harness——Agent 以独立身份进入协作现场，共享上下文 + 组织记忆 + 主动参与 | v2.x 规划 |
 
 每层跑通再加下一层——不推翻已验证的东西。
@@ -237,7 +243,7 @@ sofagent 自身的开发过程本身就是这一循环的活体验证——两�
 
 ### 500 字原则
 
-加载链的理想设计是每份文件 ≤500 字（Agent 压缩后可读的最低保证）。当前 SKILL.md ~2,000 字、fde.md ~1,600 字——远超目标，是 v1.x 计划解决的技术债。超过 500 字 Agent 遵守率明显下降——规则在长文本里会被淹没。500 字不只是「让 Agent 好好读」，更是「让 Agent 在被压缩后还能读到」。
+加载链的理想设计是每份文件 ≤500 字（Agent 压缩后可读的最低保证）。当前 SKILL.md ~2,000 字、fde.md ~1,600 字——远超目标，是 v1.x 计划解决的技术债。超过 500 字 Agent 遵守率明显下降——规则在长文本里会被淹没。500 字不只是「让 Agent 好好读」，更是「让 Agent 在被压缩后还能读到」。行业数据：上下文占用达窗口 60% 时模型性能开始衰减（Croco 51 万行代码泄露分析）——500 字原则的本质是在腐烂阈值之下运行。
 
 > **污染理论**：agents.md 的每个字节在每次 Loop 中被反复消耗——一份臃肿的 agents.md 会污染未来每一轮的上下文。500 字原则不仅省 token，更是「降低所有未来 Loop 的持续污染成本」。
 
@@ -278,6 +284,8 @@ AI 知识库不替代 think.md——两者职责不重叠。think.md 是「上�
 
 > 💡 **设计对齐**：knowledge/ 的 entities（实体页）→ relations（frontmatter 关联字段）→ concepts（概念页）→ comparisons（对比页）四层结构，本质是**轻量级 GraphRAG**（Microsoft 2024）。区别在于用 Agent 遍历关联代替图数据库查询，用 .md 文件代替向量索引——零外部依赖，完全可审计，人类可以直接打开看。
 
+> **核心原则——不可追溯即不可信任**：企业知识库最怕 AI 说了一句没人知道从哪来的话。只要不可追溯，业务就不信任。`.md` 文件 + git diff 审计确保每条知识都有来源、每次变更都有记录。
+
 ### 三层时间尺度循环（Andrew Ng 框架）
 
 > 来源：Andrew Ng 的 AI 产品进化框架。真正的产品进化不只来自内层循环（Agent 跑任务），更来自中层和外层。
@@ -307,6 +315,8 @@ AI 知识库不替代 think.md——两者职责不重叠。think.md 是「上�
 | 编造数据 | 审计 A5 不瞒真相 |
 
 前 4 条源于 Karpathy 的 4 条编码原则，后 2 条是实战翻车经历的工程沉淀。
+
+> **设计限制**：A14（知识库越权访问）是事后审计提醒（WARN 级），不是强制访问控制。它依赖 Agent 自行记录的 task/logs 来检测越权访问——如果 Agent 不写日志，A14 无法检测。企业级场景需要配合文件系统权限（如 OS 级别的目录隔离）实现真正的隔离。
 
 ### Loop Agent：三节点顾问模式
 
@@ -347,6 +357,8 @@ Flash 和 Pro 差约 4 倍价，但简单任务 Flash 质量并不明显逊色�
 | **模型可自主价值判断** | 目标可通过 LLM 自带规则校验（字数限制、必须包含关键词），逐步聚拢到目标 | think.md 沉淀的规则 |
 
 > 反面案例：设「优化页面美观度」这类模糊目标——Loop 会跑十几小时仍无法收敛判定。编排引擎的两轮澄清机制（第一轮目标确认→第二轮编排方案）正是为了避免不收敛目标进入 Loop。
+
+> **Maker-Checker 分离是收敛的前提**：同一 Agent 自验的验证覆盖率仅 7-33%，但分离为独立审查 Agent 后提升至 73%。这不是 Agent 能力问题——是「裁判和运动员不能是同一个人」。sofagent 的审计引擎与编排引擎分离正是基于同一原则。
 
 ### 编排开销的经济学
 

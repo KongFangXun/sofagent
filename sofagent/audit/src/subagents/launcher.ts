@@ -1,6 +1,6 @@
 // ============================================================
 // launcher.ts · Sub Agent 启动器
-// v1.0.3 新增：动态 import deepagents，启动/关闭 Agent 实例
+// v1.0.4 新增：动态 import deepagents，启动/关闭 Agent 实例
 // deepagents 是 optionalDependency——未安装时 graceful fallback
 // ============================================================
 

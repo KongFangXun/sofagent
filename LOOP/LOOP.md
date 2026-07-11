@@ -241,7 +241,7 @@ sofagent 的版本发布遵循 [`docs/verification/releasing.md`](../docs/verifi
 
 ### 未来：DeepAgentsJS + LangGraph 实现
 
-v1.0.3 当前是**文档定义阶段**——Agent 定义在 `agents/` 下，流程定义在 `LOOP/` 下。等 Agent 各自通过 OpenClaw 跑通后，下一步是用 DeepAgentsJS + LangGraph 把流程**代码化**：
+v1.0.4 当前是**文档定义阶段**——Agent 定义在 `agents/` 下，流程定义在 `LOOP/` 下。等 Agent 各自通过 OpenClaw 跑通后，下一步是用 DeepAgentsJS + LangGraph 把流程**代码化**：
 
 - `agents/` 下的 Agent 定义 → `createDeepAgent()` 的 `systemPrompt` 参数
 - `LOOP/loop.md` 中的 Mermaid 流程图 → LangGraph `StateGraph` 的节点和边

@@ -36,11 +36,37 @@ export function checkRuleA9(ctx: AuditContext): RuleCheck {
     if (file.path.startsWith('.sofagent/')) continue;
     const addedLines = getAddedLines(file);
     for (const line of addedLines) {
+      // P1-6: NFKC normalization——全角字符转半角后再匹配
+      let normalized = line.normalize('NFKC');
+      // P1-7: leet speak 反转
+      normalized = normalized
+        .replace(/1/gi, 'i')
+        .replace(/0/g, 'o')
+        .replace(/3/g, 'e')
+        .replace(/4/g, 'a')
+        .replace(/5/g, 's')
+        .replace(/7/g, 't')
+        .replace(/\$/g, 's')
+        .replace(/@/g, 'a');
       for (const { pattern, name } of INJECTION_PATTERNS) {
-        if (pattern.test(line)) {
+        if (pattern.test(normalized)) {
           hits.push({ file: file.path, line: line.trim(), pattern: name });
           break; // 一行只报告一次
         }
+      }
+    }
+  }
+
+  // P1-8: 扫描 commit message 中的 prompt injection
+  if (ctx.commitMsg) {
+    const normalizedMsg = ctx.commitMsg
+      .normalize('NFKC')
+      .replace(/1/gi, 'i').replace(/0/g, 'o').replace(/3/g, 'e')
+      .replace(/4/g, 'a').replace(/5/g, 's').replace(/7/g, 't');
+    for (const { pattern, name } of INJECTION_PATTERNS) {
+      if (pattern.test(normalizedMsg)) {
+        hits.push({ file: '(commit message)', line: ctx.commitMsg.trim(), pattern: name });
+        break;
       }
     }
   }

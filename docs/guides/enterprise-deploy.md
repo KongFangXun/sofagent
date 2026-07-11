@@ -1,4 +1,4 @@
-# sofagent v0.94 · 企业部署指南
+# sofagent v1.0.4 · 企业部署指南
 
 # 企业级部署指南
 
@@ -45,7 +45,8 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对�
 | 检查项 | 状态 | 说明 |
 |------|:--:|------|
 | 数据存储位置 | ✅ 本地 | 不上云，不调外部 API（离线模式） |
-| 数据加密 | ✅ 已完成 | v0.71 落地 sanitize() 脱敏管道，支持 API Key / 密码 / 手机号扫描 |
+| 数据脱敏 | ✅ A2/A9 命中行脱敏后存储 |
+| 数据加密 | ❌ 本地存储为明文（如需加密，用 OS 级全盘加密） |
 | 权限控制 | ✅ 700 | install.sh 自动设置 |
 | 数据保留策略 | ✅ 已完成 | v0.71 落地 cleanup.sh 自动清理，支持 --purge --before |
 | 审计日志 | ✅ 已完成 | v0.71 落地 task-record.sh 独立审计日志 + task/logs 追溯双通道 |
@@ -62,3 +63,22 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对�
 > think.md gpg 加密自动化仍待规划。
 
 详见 [ROADMAP.md](../../ROADMAP.md)。
+
+## 批量部署
+
+当前是 per-repo 安装（每个仓库单独跑 `--init`）。企业场景的批量部署方案：
+
+### 方案一：dotfiles 管理（推荐）
+将 `.sofagent/config.yml` 加入 dotfiles 仓库（如 stow/chezmoi），通过 symlink 统一管理。
+
+### 方案二：shell 脚本批量安装
+```bash
+for repo in /path/to/repos/*/; do
+  cd "$repo"
+  npm install -g @sofagent/audit
+  sofagent-audit --init
+done
+```
+
+### 方案三：全局配置（未来版本）
+计划支持 `~/.sofagent/config.yml` 全局配置覆盖，减少 per-repo 初始化成本。

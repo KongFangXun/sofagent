@@ -1,8 +1,8 @@
 // ============================================================
 // config-loader.ts · .sofagent/config.yml 配置加载器
-// v0.95 新增：三级 fallback（v1.0.3，js-yaml 替代手写 YAML 解析器）
+// v0.95 新增：三级 fallback（v1.0.4，js-yaml 替代手写 YAML 解析器）
 // v0.97 扩展：环境变量配置（从 lib/config.sh 合并）
-// v1.0.3 重构：用 js-yaml 替代手写 YAML 解析器
+// v1.0.4 重构：用 js-yaml 替代手写 YAML 解析器
 // ============================================================
 //
 // 三级 fallback：
@@ -121,6 +121,8 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
     }
     const audit = parsed['audit'];
     if (!audit || typeof audit !== 'object') {
+      // P2-3: 配置文件缺少 audit 段时提示
+      console.warn('⚠️ 配置文件缺少 audit 段，使用默认配置');
       return null;
     }
     return audit as Partial<AuditConfig>;
@@ -156,12 +158,20 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
   // 校验 rules key——未知规则名输出警告
   if (merged.rules) {
     const knownKeys = new Set([
-      'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11', 'a14',
+      'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11', 'a14', 'a15',
       'e1', 'e2', 'e3', 'e4',
     ]);
     for (const key of Object.keys(merged.rules)) {
       if (!knownKeys.has(key.toLowerCase())) {
-        console.warn(`⚠️ config.yml: 未知规则名 "${key}"（已知: a1-a11, a14, e1-e4）`);
+        console.warn(`⚠️ config.yml: 未知规则名 "${key}"（已知: a1-a11, a14-a15, e1-e4）`);
+      }
+    }
+
+    // P1-16: 安全规则被禁用时告警
+    const securityRules = ['a1', 'a2'];
+    for (const key of securityRules) {
+      if (merged.rules[key] === false) {
+        console.warn(`⚠️ 安全规则 ${key.toUpperCase()} 已被禁用——审计将不拦截${key === 'a1' ? '敏感文件' : '密钥泄漏'}`);
       }
     }
   }

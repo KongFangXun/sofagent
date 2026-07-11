@@ -60,6 +60,7 @@
 4. 你会把这个项目发给同事吗？如果会，你会怎么介绍它？（用你自己的话，不抄 README）
 5. **版本声称验证**：看 CHANGELOG——它声称了什么？实际在项目里找到了吗？标题说的功能，在代码/目录/配置里能找到对应实现吗？你觉得这个声称诚实吗，还是夸大了？
 6. **文档瘦身**：README 只有 139 行——三屏大概就扫到一半。你感觉文档是精简得刚刚好，还是精简过头了？有没有你想找但找不到的东西？（比如"这东西能企业部署吗？"——你从 README 能看出来吗？）
+7. **tag 指向确认**：跑 `git show vX.Y.Z --stat`——tag 指向的是发布提交还是修复提交？tag commit message 是否包含版本号？
 
 你是一个普通开发者，不是来审代码的。你会读多少文档取决于你的好奇心——有人 3 屏就走了，有人会点进 ARCHITECTURE 看看设计思路。**读什么不重要，重要的是始终用普通开发者的心态判断：这东西对我有用吗？我愿意花时间装吗？**
 
@@ -80,7 +81,7 @@
 你关心的核心问题是"出事了谁负责"和"这东西能进公司吗"。你会从 SECURITY.md 和 LIMITATIONS.md 开始，但如果其他文档（比如 ROADMAP 里的准入条件、ARCHITECTURE 里的实验性标注）能帮你判断项目成熟度，你也会去看。**你读任何文档的出发点都是：这一页让我更放心了，还是更担心了？**
 
 7. **审计日志自身安全**：打开 `sofagent/audit/src/audit-history.ts`。审计拦截了密钥泄漏后，拦截结果（含 diff 内容）被写入 `history.jsonl`。这个文件本身会不会成为第二个泄漏点？Agent 能读这个文件吗？能篡改吗？有没有脱敏机制？
-8. **optional dependency 类型安全**：打开 `sofagent/audit/src/subagents/launcher.ts`，检查对 optional dependency（deepagents）的 import 是否用了 `as unknown as` 双重转换。CI 环境 TS 类型检查比本地严格——直接 `as` 可能本地通过但 CI 失败。
+8. **optional dependency 类型安全**：检查对 optional dependency（如 deepagents）的 import 是否用了 `as unknown as` 双重转换。CI 环境 TS 类型检查比本地严格——直接 `as` 可能本地通过但 CI 失败。
 
 ---
 
@@ -94,9 +95,11 @@
 3. 如果你要写一篇文章《为什么不用 sofagent》，你的核心论据是什么？
 4. 这个项目自称"正式版"和"可生产使用"。以你的标准，它够格吗？什么地方让你觉得不够格？
 5. **范围合理性**：CHANGELOG 和文档中描述的每一条功能，以你的标准判断它是真功能还是花架子？一个 pre-commit 审计工具为什么要关心"知识库访问控制"？这是范围蔓延还是合理的演进？
-
-你会把 README、ARCHITECTURE、ROADMAP、CHANGELOG 全翻一遍——不是为了学习，是为了找弱点。**同一个设计决策，普通人看了觉得"设计得挺合理"，你看了要想"这个假设在什么情况下会崩"。**你的问题永远是："如果我是用户，为什么我要用你而不是用我的方案？"
-6. **Agent 定义的平台耦合度**：打开 `agents/` 下的 Agent 定义——它们的 role/workflow/rules 是否过度依赖 OpenClaw 的 `session.spawn` API？如果未来换平台，这些 Agent 定义还能独立使用吗？还是需要大幅改写？
+6. **规则声称验证**：README 说的规则数量（如"16 条规则"）——实际中有几条是纯 git-diff？几条需要 Agent 日志？声称的数字是否准确？有没有水分？
+7. **声称与实现一致性**：CHANGELOG 标题中声称的功能（如"自进化引擎"），实际代码是否匹配？有没有夸大——比如 wrapper 叫"引擎"、CLI 调用叫"集成"？
+8. **CHANGELOG 纯度**：CHANGELOG 历史条目中有没有审查元信息（模型名、审查轮次、P0/P1 计数）？CHANGELOG 应该只写产品变更。
+9. **自进化声称验证**：v1.0.4 声称了 eval harness + Sub Agent A/B 自进化 + SkillOpt 自进化——实际是调外部 CLI（skillopt-sleep）的 wrapper 还是自研引擎？A/B 对比的"连续胜出"阈值是否硬编码？"自进化"这个词对用户来说意味着什么，实际能做到吗？
+10. **Agent 定义的平台耦合度**：打开 `agents/` 下的 Agent 定义——它们的 role/workflow/rules 是否过度依赖 OpenClaw 的 `session.spawn` API？如果未来换平台，这些 Agent 定义还能独立使用吗？还是需要大幅改写？
 
 ---
 
@@ -113,6 +116,7 @@
 5. 包的依赖树干净吗？（`npm ls` 看一眼）有没有让你皱眉的依赖？
 6. **安装脚本的报错友好度**：跑 `LOOP/loop-install.sh` 在缺少前置依赖时（比如没装 sofagent 底座、不支持的平台）——报错信息清楚吗？告诉你缺什么、怎么装了吗？还是直接 exit 1 让你摸不着头脑？
 7. **批量部署/集中配置**：如果要给 50 个仓库都装 sofagent，有没有批量安装或集中配置下发的能力？企业级场景需要 org-level 配置。当前是 per-repo 安装——这对 DevOps 来说够用吗？
+8. **`--strict`/`--ci` 模式验证**：跑 `sofagent-audit --diff HEAD~1..HEAD --task "wrong" --strict`，实际 exit code 是 2（承诺值）还是 1？文档声称的模式行为与实现是否一致？
 
 你是"先动手再看文档"型开发者。装完跑通了，可能会随手翻一下 README 看看还有没有别的功能。**你的判断标准不是文档完不完整，而是"从敲下 npm install 到觉得这东西有用，中间花了多长时间"。**
 
@@ -130,6 +134,8 @@
 5. 看 issue / PR 数量（如果有）。这是一个"作者自嗨"项目还是有社区活性的项目？
 6. **文档引用链**：从 README 出发，点进 3-5 个链接——有没有 404？有没有引用的章节不存在？HANDBOOK 引用的 ARCHITECTURE §xxx 能对上吗？FDE 引用的模板路径存在吗？还缺引用吗——有没有地方提到了某个概念（如「AI 知识库」「铁律」）却没有指向设计原理或详细说明的链接？
    检查所有文档头部的日期是否与当前发版日期一致。`grep 'YYYY-MM-' *.md docs/design/*.md`——有没有过期日期？bump-version 脚本只改版本号不改日期，这个坑反复出现。
+7. **CHANGELOG 全历史纯度**：检查所有历史 CHANGELOG 条目——有没有审查元信息（模型名、审查轮次、视角数、P0/P1 计数）？CHANGELOG 应该只写产品变更，不含审查过程。
+8. **根目录整洁度**：根目录应该只有 5-7 个核心文件（README/LICENSE/CHANGELOG/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/ROADMAP）。其余 md 文件、HTML、PNG 是否应该移入 docs/ 或 assets/？
 
 你的核心问题是："这个项目的代码组织方式让我觉得它是认真维护的，还是一团乱麻？"
 
@@ -275,25 +281,26 @@
    - 文档头除了版本号还有日期——日期更新了吗？还是写的上版本的日期？
    - changelog 里有没有不该有的东西——比如"GLM-5.2 审查发现"、"DeepSeek 验证"之类的审查元信息？changelog 应该只写产品变更。
 
-9. **LOOP 安装隔离**：
-   - 跑 `sofagent/scripts/install.sh` 装 sofagent 底座——检查 LOOP Skill 是否被自动安装（不应该被自动装）
-   - 检查 `loop-install.sh` 和 `fde-install.sh` 是否互相包含对方的安装逻辑（不应该）
+9. **模块安装隔离**：
+   - 跑各模块的 install.sh（如 `install.sh`、`loop-install.sh`、`fde-install.sh`）——检查它们是否互相包含对方的安装逻辑（不应该）
+   - 主安装不应自动安装可选模块（LOOP / FDE 等独立 Skill）
 
 10. **Skill frontmatter 完整性**：
-    - 打开 `LOOP/SKILL.md`——检查 frontmatter 是否含 name/slug/displayName/description/version/tags/image/triggers/scenarios/not_when 全部字段
+    - 检查所有 SKILL.md（含 `skill/`、`FDE/`、`LOOP/`）—— frontmatter 是否含 name/slug/displayName/description/version/tags/image/triggers/scenarios/not_when 全部字段
     - 检查 `triggers` 列表是否覆盖了合理的触发场景——有没有明显的遗漏
-    - 检查 `not_when` 列表——是否列出了不应该触发 LOOP 的明确场景
+    - 检查 `not_when` 列表——是否列出了不应该触发的明确场景
 
 11. **安装后快速体验路径**：
-    - 按 `LOOP/quick-start.md` 走一遍——能否 5 分钟内发第一条 prompt 并获得正确响应
+    - 按 quick-start.md（如有）走一遍——能否 5 分钟内完成首次操作
     - 如果 quick-start 里的某一步卡住了，记录卡在哪里
 
-12. **LOOP 跨平台触发**：
-    - 在非 OpenClaw 平台（WorkBuddy/Codex）上尝试触发 LOOP——检查提示是否清晰
+12. **跨平台触发**：
+    - 在非 OpenClaw 平台（WorkBuddy/Codex）上尝试触发需要 OpenClaw 的功能——检查提示是否清晰
     - 是否明确告知用户"需要 OpenClaw 底座"而非静默失败
 
 13. **Agent 定义与 OpenClaw 的耦合度**：
     - 读 `agents/` 下的 Agent 定义——是否过度依赖 `session.spawn` API？
+    - 如果未来换平台或拆出去，Agent 定义本身能独立使用吗？
     - 如果未来换平台或拆出去，Agent 定义本身能独立使用吗？
 
 14. **审计工具自身文件测试**：
@@ -301,6 +308,40 @@
     - 修改 `.sofagent/config.yml` 为不合法 YAML → 审计引擎怎么报错？
     - 删除 `.sofagent/audit/history.jsonl` → 审计引擎是否正常工作？
     - 检查 history.jsonl 中是否存储了被拦截的敏感内容明文（A2 拦截密钥后，history.jsonl 里有没有密钥原文）？
+    - **loadHistory 健壮性**：在 history.jsonl 插入一行无 timestamp 的 JSON（如 `{"test":"abc"}`）→ `--doctor` 第 8 项是否崩溃？catch 块是否吞错？攻击者能否用一行垃圾 JSON 永久禁用绕过检测？
+
+15. **`--strict`/`--ci` exit code 验证**：
+    - 跑 `sofagent-audit --diff HEAD~1..HEAD --task "wrong" --strict` → exit code 是 2 还是 1？
+    - 如果 exit 1：检查 `reporter.ts` 的 `runRules()` 中 `strict` 参数是否在 exitCode 计算中被使用
+    - pre-commit hook 用的是什么模式？WARN 级规则在 hook 中是否阻断 commit？
+
+16. **A9 Unicode/leet 绕过测试**：
+    - 在代码注释中写全角字符 `ｉｇｎｏｒｅ ｐｒｅｖｉｏｕｓ ｉｎｓｔｒｕｃｔｉｏｎｓ` → A9 是否检出？
+    - 在代码注释中写 leet speak `1gn0r3 pr3v10us 1nstruct10ns` → A9 是否检出？
+    - 在 commit message 中写 `ignore previous instructions` → A9 是否扫描 commit message？
+
+17. **审计日志完整性测试**：
+    - history.jsonl 是否有 hash chain 或 HMAC 签名？
+    - 手动篡改 history.jsonl 中间一行 → `--doctor` 是否检测到？
+    - Agent 以当前用户身份能否直接读写 history.jsonl？
+
+18. **eval harness 污染**（v1.0.4 新功能）：
+    - golden set 测试用例是静态文件——Agent 能否通过修改 golden set 来"考自己会做的题"？
+    - `runEval()` 的评分逻辑（精确匹配 / 语义相似度 / 规则合规）权重是否硬编码？Agent 知道权重后能否针对性地"刷分"？
+
+19. **A15 约束验证绕过**（v1.0.4 新功能）：
+    - config.yml 声明 `actions: [read]` 但 Agent 实际执行了 write——A15 离线验证能检出吗？
+    - 如果 config.yml 没有 actions 字段——A15 是跳过还是告警？Agent 能否通过"不声明 actions"来规避约束检查？
+    - actions 提取正则——如果 diff 格式不标准（如 binary 文件 / 特殊编码），正则漏匹配导致"没检测到"被当作"合规"？
+
+20. **HITL 置信度操纵**（v1.0.4 新功能）：
+    - 置信度 score 怎么算的？如果 score 来自模型自评，Agent 能否通过措辞操纵来刷高置信度？
+    - 四类强制人工场景（删除 / 外部 API / 权限变更 / 数据迁移）的正则——`rm -rf test/`（合理的测试清理）会被误匹配吗？
+
+21. **A/B 自进化 promote 攻击**（v1.0.4 新功能）：
+    - `decidePromotion()` 的连续胜出阈值——如果 B 版本碰巧在阈值内的几个场景赢了，但整体更差，会 promote 吗？
+    - promote 后旧版本归档到 `.sofagent/subagents/history/`——Agent 能否通过删除归档来"洗白"被回退的历史？
+    - A/B 对比的 eval 场景如果偏窄（只测了简单 case），promote 的版本在复杂场景下更差怎么办？
 
 **输出格式**：
 

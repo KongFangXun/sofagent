@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.0.3 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.0.4 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
 // 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
@@ -20,7 +20,7 @@
 // ============================================================
 
 import { execFileSync } from 'child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync, copyFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { parseDiff, parseStagedDiff, isInGitRepo, type DiffFile } from './diff-parser';
 import { checkLogs } from './log-checker';
@@ -54,6 +54,10 @@ interface Args {
   doctor: boolean;
   /** staged 模式（首次提交场景）——diffRange 值为 --cached */
   cached: boolean;
+  /** v1.0.4: eval harness */
+  eval?: string;
+  /** v1.0.4: A/B 测试 */
+  abTest?: string;
 }
 
 
@@ -105,6 +109,12 @@ function parseArgs(argv: string[]): Args {
       args.init = true;
     } else if (argv[i] === '--doctor') {
       args.doctor = true;
+    } else if (argv[i] === '--eval' && argv[i + 1]) {
+      i++;
+      args.eval = argv[i] as string;
+    } else if (argv[i] === '--ab-test' && argv[i + 1]) {
+      i++;
+      args.abTest = argv[i] as string;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       const verbose = argv.includes('--verbose');
       console.log(`sofagent-audit v${VERSION} · Agent 提交时审计\n`);
@@ -119,6 +129,9 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit --root-cause                     根因分析');
       console.log('  sofagent-audit --regression <dir>               回归验证');
       console.log('  sofagent-audit --install-hook                   安装 pre-commit hook');
+      console.log('  sofagent-audit --eval <golden-set.yml>          eval harness 评测');
+      console.log('  sofagent-audit --ab-test <config.yml>           Sub Agent A/B 测试');
+      console.log('  sofagent-audit skillopt-run --input <path>       SkillOpt 自进化（需 skillopt-sleep）');
       console.log('模式对照表:');
       console.log('  默认模式    全部规则（含 Agent 日志）   exit 0/1/2');
       console.log('  --silent    只跑 git-diff 规则          exit 0/1/2');
@@ -137,6 +150,9 @@ function parseArgs(argv: string[]): Args {
         console.log('  --regression <dir> 回归验证');
         console.log('  --init             一键初始化');
         console.log('  --doctor           健康诊断');
+        console.log('  --eval <path>      eval harness 评测');
+        console.log('  --ab-test <path>   Sub Agent A/B 测试');
+        console.log('  skillopt-run       SkillOpt 自进化（--input <path> [--output <path>]）');
         console.log('  --webhook <p>      webhook 推送（dingtalk/feishu/wecom）');
         console.log('  --webhook-url <u>  webhook URL');
         console.log('  --mcp              MCP Server（已拆分为 @sofagent/mcp）');
@@ -312,6 +328,47 @@ function loadSnapshotsFromDir(dir: string): DiffSnapshot[] {
 async function main(): Promise<void> {
   const args = parseArgs(process.argv);
 
+  // --skillopt-run 模式：SkillOpt 自进化管道（P0-7）
+  if (process.argv[2] === 'skillopt-run') {
+    const { runSkillOpt, validateCandidate } = await import('./skillopt-integration');
+    const argsArr = process.argv.slice(3);
+    const inputIdx = argsArr.indexOf('--input');
+    const outputIdx = argsArr.indexOf('--output');
+    const inputPath: string | undefined = inputIdx >= 0 ? argsArr[inputIdx + 1] : undefined;
+    let outputPath = '/tmp/skillopt-candidate.md';
+    if (outputIdx >= 0 && argsArr[outputIdx + 1]) {
+      outputPath = argsArr[outputIdx + 1] as string;
+    }
+    const scoringIdx = argsArr.indexOf('--scoring');
+    const scoringPath: string | undefined = scoringIdx >= 0 ? argsArr[scoringIdx + 1] : undefined;
+
+    if (!inputPath) {
+      console.error('用法: sofagent-audit skillopt-run --input <SKILL.md路径> [--output <输出路径>] [--scoring <scoring.md路径>]');
+      process.exit(1);
+    }
+
+    // 1. 调 runSkillOpt
+    const result = runSkillOpt(inputPath!, outputPath, scoringPath);
+    if (!result.success) {
+      console.error(`❌ SkillOpt 运行失败: ${result.error}`);
+      process.exit(1);
+    }
+
+    // 2. 验证 candidate
+    const validation = validateCandidate(result.candidatePath!, inputPath!);
+    if (!validation.canReplace) {
+      console.log(`⚠️ 候选 Skill 未通过验证: ${validation.reason}。不替换。`);
+      process.exit(0);
+    }
+
+    // 3. 替换（先备份）
+    const backupPath = inputPath! + '.bak.' + Date.now();
+    copyFileSync(inputPath!, backupPath);
+    copyFileSync(result.candidatePath!, inputPath!);
+    console.log(`✅ Skill 自进化完成: ${inputPath!}（备份: ${backupPath}，提升: ${validation.scoreDiff?.toFixed(1) || 'N/A'} 分）`);
+    process.exit(0);
+  }
+
   // --mcp 模式：MCP Server 已拆分为独立包 @sofagent/mcp
   if (args.mcp) {
     console.log('MCP Server 已拆分为独立包 @sofagent/mcp。');
@@ -361,6 +418,75 @@ async function main(): Promise<void> {
   // --regression 模式：对指定目录下的历史快照跑回归验证
   if (args.regressionDir) {
     runRegressionMode(args.regressionDir);
+    return;
+  }
+
+  // --eval 模式：eval harness 评测
+  if (args.eval) {
+    const { runEval } = await import('./eval/eval-runner');
+    const { printEvalReport } = await import('./eval/eval-reporter');
+    try {
+      const result = await runEval({ goldenSetPath: args.eval, verbose: true });
+      printEvalReport(result);
+    } catch (err) {
+      console.error(`❌ eval 运行失败: ${(err as Error).message}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  // --ab-test 模式：Sub Agent A/B 测试
+  if (args.abTest) {
+    const { runABTest } = await import('./ab-testing/ab-runner');
+    const { decidePromotion } = await import('./ab-testing/ab-promoter');
+    const { DEFAULT_SCORE_WEIGHTS } = await import('./ab-testing/types');
+    const yl = await import('js-yaml');
+    const fsMod = await import('fs');
+
+    try {
+      // 加载 A/B 配置
+      if (!fsMod.existsSync(args.abTest)) {
+        console.error(`❌ A/B 配置文件不存在: ${args.abTest}`);
+        process.exit(1);
+      }
+      const abConfigRaw = yl.load(fsMod.readFileSync(args.abTest, 'utf-8')) as Record<string, unknown>;
+      const config = {
+        current: String(abConfigRaw['current'] ?? ''),
+        candidate: String(abConfigRaw['candidate'] ?? ''),
+        evalSet: String(abConfigRaw['evalSet'] ?? ''),
+        promoteThreshold: Number(abConfigRaw['promoteThreshold'] ?? 2),
+        minSampleSize: Number(abConfigRaw['minSampleSize'] ?? 10),
+        scoreWeights: {
+          exactMatch: Number((abConfigRaw['scoreWeights'] as Record<string, number>)?.exactMatch ?? 0.5),
+          semanticSimilarity: Number((abConfigRaw['scoreWeights'] as Record<string, number>)?.semanticSimilarity ?? 0.2),
+          ruleCompliance: Number((abConfigRaw['scoreWeights'] as Record<string, number>)?.ruleCompliance ?? 0.3),
+        },
+      };
+
+      // 加载 test cases
+      const testCasesRaw = yl.load(fsMod.readFileSync(config.evalSet, 'utf-8')) as Array<Record<string, unknown>>;
+      const typedCases = testCasesRaw.map((tc) => ({
+        id: String(tc['id'] ?? ''),
+        description: String(tc['description'] ?? ''),
+        input: tc['input'] as Record<string, unknown>,
+        expected: tc['expected'] as Record<string, unknown>,
+        tags: tc['tags'] as string[] | undefined,
+      }));
+
+      const result = await runABTest(config, typedCases);
+      console.log(`A/B 测试结果:`);
+      console.log(`  current:  ${(result.currentScore.overall * 100).toFixed(1)}%`);
+      console.log(`  candidate: ${(result.candidateScore.overall * 100).toFixed(1)}%`);
+      console.log(`  胜出方: ${result.winner}`);
+      console.log(`  连续胜出: ${result.consecutiveWins}`);
+      console.log(`  分差: ${(result.margin * 100).toFixed(1)}%`);
+
+      const decision = decidePromotion(result, [], config);
+      console.log(`  晋升: ${decision.shouldPromote ? '✅ 是' : '❌ 否'} — ${decision.reason}`);
+    } catch (err) {
+      console.error(`❌ A/B 测试运行失败: ${(err as Error).message}`);
+      process.exit(1);
+    }
     return;
   }
 
@@ -455,6 +581,12 @@ async function main(): Promise<void> {
 
   // 8. 写入审计历史（JSONL 持久化，用于根因分析和回归验证）
   try {
+    // P1-15: 获取当前 HEAD SHA
+    let commitSha: string | undefined;
+    try {
+      commitSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+    } catch { /* 非 git 环境 */ }
+
     const historyEntry: AuditHistoryEntry = {
       timestamp: new Date().toISOString(),
       diffRange: args.diffRange,
@@ -463,6 +595,7 @@ async function main(): Promise<void> {
       ruleResults: results.rules,
       diffFileCount: diffFiles.length,
       commitMsg: commitMsg || undefined,
+      commitSha,
     };
     appendHistory(historyEntry);
   } catch {
@@ -574,7 +707,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
     return;
   }
 
-  // ===== v1.0.3 可视化输出 =====
+  // ===== v1.0.4 可视化输出 =====
 
   const exitCode = results.exitCode;
   const totalRules = results.rules.length;
@@ -603,7 +736,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
       const classTag = rule.ruleClass === '业务底线' ? '[底线]' : rule.ruleClass === '能力拐杖' ? '[拐杖]' : '';
       for (const detail of rule.details) {
         console.log(`  ${icon} ${rule.name} ${classTag}: ${detail}`);
-        // 修复建议（v1.0.3 新增）
+        // 修复建议（v1.0.4 新增）
         const suggestion = getFixSuggestion(rule.name);
         if (suggestion) {
           console.log(`     怎么修: ${suggestion}`);

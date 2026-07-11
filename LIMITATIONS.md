@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v1.0.3 · 2026-07-11（UTC）· 孔放勋
+> v1.0.4 · 2026-07-11（UTC）· 孔放勋
 
 ---
 
@@ -53,6 +53,8 @@ v1.0.1 新增 daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动
 | **多轨迹归纳**（TRACE2SKILL） | 并行分析大量轨迹 → 提出补丁 → 合并去重 | ❌ 缺：前 5 次冷启动保护仅缓冲，未真正归因 |
 | **自验证闭环**（Evil Skill） | 多子 Agent 生成候选 Skill → A/B 对比 → 留更优 | ❌ 缺：loop-check 是单次自评 |
 | **可训练参数**（Skill Opt） | 学习率约束/验证门控/负反馈缓冲/动量 | ❌ 缺：scoring 只是简单计数 |
+
+**SkillOpt 集成状态（v1.0.4）**：管道已接通——daemon 检测 scoring.md 阈值（20 条）→ 24h 防抖 → 调用 `sofagent-audit skillopt-run` CLI → `runSkillOpt()` 调 skillopt-sleep → `validateCandidate()` 验证（行数 + 内容变化）→ 备份+替换 SKILL.md。`--doctor` 展示管道状态。前置条件：需手动 clone github.com/microsoft/SkillOpt + `pip install -e .`（`pip install skillopt` 不含 skillopt-sleep CLI）。skillopt-sleep 未安装时管道优雅降级——daemon 写提示到 daemon-notice.md，不 crash。
 
 **风险**：单次失败 → 降分 → 下次不用该 Skill。但失败可能只是模型波动——长期会把噪声写成规则。**现有防御**：冷启动保护（前 5 次只记录不判断）+ LLM 自评权重 ×0.3。根治需要独立验证环（见 ROADMAP v1.x）。
 
@@ -138,39 +140,9 @@ scoring.md + think.md 在循环中持续自我修订，会引入**经验漂移**
 
 #### OpenClaw 的两种角色
 
-OpenClaw 不是用户的 Agent。它在两种场景下出现：
+> 完整设计描述见 [ARCHITECTURE § 两层架构](./ARCHITECTURE.md#两层架构地基-vs-引擎)。此处只记录与局限相关的点。
 
-**模式 A：FDE 后台节点（sofagent 做 sub-agent）**
-
-FDE 日常用自己顺手的 Agent（WorkBuddy / Codex / Cursor）。当需要跑 FDE workflow 节点（编排任务、审计分析）时，Agent 后台调用 OpenClaw 节点。OpenClaw 跑完后把结果返回，FDE 的 Agent 继续和人沟通。FDE 全程看不到 OpenClaw 的 UI——它是一个后台 AI 节点。
-
-```
-FDE ↔ 自己的 Agent（任意）→ 调用 → OpenClaw 节点（装了 sofagent）
-                                              ↓
-                                    拆任务、记反思、审计变更
-```
-
-**模式 B：企业设备上的 FDE 工具包（企业 Agent 做租户）**
-
-FDE 帮企业部署完后，企业闲置设备上装 OpenClaw + sofagent。这台设备上跑着 sofagent 的 harness 层：
-- OpenClaw 跑 FDE 部署的 workflow 节点（🔄 自动执行 + ⚡ 强化岗位）
-- 企业自己采购的 Agent 也装在这台设备上
-- sofagent-audit 通过 pre-commit hook 审计这台设备上所有 git 仓库的提交
-
-关键：企业 Agent 不跑在 OpenClaw session 里。它们各自独立运行，各自用自己的 git 仓库。sofagent-audit 通过文件系统层的 pre-commit hook 审计它们的产出——Agent 完全不感知 OpenClaw 的存在，就像 App 不感知操作系统的安全模块一样。
-
-```
-设备（无头盒子 / 服务器 / 老旧电脑）
-  ├─ OpenClaw（编排层 — 跑 workflow 节点，FDE 部署的）
-  │     └─ sofagent 编排引擎 + think.md 反思
-  ├─ sofagent-audit（审计层 — pre-commit hook，对设备上所有 git 仓库生效）
-  └─ 企业 Agent（任意 — WorkBuddy / Codex / Cursor，各自独立运行）
-        └─ git commit → hook 触发 → sofagent-audit 审计
-```
-
-OpenClaw 是地基，企业 Agent 是住在上面的租户，sofagent 是物业管理。租户爱干嘛干嘛，物业管的是楼的安全。
-
-**模式 B 的技术路径**：企业 Agent 不跑在 OpenClaw session 里。OpenClaw 不拦截 Agent 的 API 调用。不提供 Docker。sofagent 对企业 Agent 的审计走的是**文件系统层 + git hook**——Agent 在设备上正常安装、正常运行，代码仓库在设备文件系统上，`git commit` 时 pre-commit hook 自动触发 sofagent-audit。不需要"控制"Agent，不需要 Agent 配合，只需要 hook 它们的 git 仓库。
+**模式 B 的关键约束**：企业 Agent 不跑在 OpenClaw session 里。OpenClaw 不拦截 Agent 的 API 调用、不提供 Docker。sofagent 对企业 Agent 的审计走的是**文件系统层 + git hook**——Agent 在设备上正常安装、正常运行，代码仓库在设备文件系统上，`git commit` 时 pre-commit hook 自动触发 sofagent-audit。不需要"控制"Agent，不需要 Agent 配合，只需要 hook 它们的 git 仓库。
 
 > 以下表格说的是"哪些能力在哪个层生效"——不是"哪些 Agent 被支持"。审计层对所有 Agent 一视同仁（只看 git diff），编排层只在 OpenClaw 上生效。
 
@@ -217,7 +189,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 | 步骤 | 成熟度 | 说明 |
 |------|:--:|------|
 | 1. git diff 扫描 | ✅ 生产可用 | 纯 git 操作，确定性输出 |
-| 2. 规则检查 A1-A14 | ✅ 生产可用 | 16 条规则（11 默认 + 5 扩展）全部有测试覆盖 |
+| 2. 规则检查 A1-A15 | ✅ 生产可用 | 17 条规则（11 默认 + 6 扩展）全部有测试覆盖 |
 | 3. 审计报告生成 | ✅ 生产可用 | JSON/text/table 三种格式 |
 | 4. think.md 自动更新 | ⚠️ 实验性 | LLM 生成，质量依赖模型 |
 | 5. MCP 推送 | ⚠️ 实验性 | MCP Server 已实现，端到端链路未验证 |

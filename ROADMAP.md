@@ -1,18 +1,18 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.0.3 · 2026-07-11（UTC）· 编排引擎重构 + LOOP 自迭代 + 审查修复
+> v1.0.4 · 2026-07-11（UTC）· 自进化 + 约束验证 + 审查修复
 >
 
 > 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（Workflow 梳理用）为实验性附带。
 
 ---
 
-## 现在在哪：v1.0.3 ✅
+## 现在在哪：v1.0.4 ✅
 
-> 编排引擎重构版——FDE Sub Agent 成型（DeepAgentsJS + LangGraph + Agency Agents 岗位模板 + SkillOpt 自进化引擎）+ LOOP 自迭代架构落地（4 Agent + 内外层循环 + 4 验证文件自进化）+ v1.0.2 两轮独立审查 30 项修复（2 P0 + 11 P1 + 17 P2）。releasing.md 八阶段发版 SOP + SOP 自我进化机制。430 测试全绿，pre-push 7/7。
+> 自进化 + 约束验证版——eval harness 评分体系 + Sub Agent A/B 自进化 + HITL 渐进自主度 + A15 离线约束验证。附带多项审查修复。465 测试全绿，pre-push 7/7。
 >
-> 📖 [开发日志](./docs/changelog/v1.0.3.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [开发日志](./docs/changelog/v1.0.4.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -22,6 +22,7 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
+| **v1.0.4** 🔧 | 自进化 + 约束验证：eval harness + Sub Agent A/B 自进化 + HITL 渐进自主度 + A15 约束验证 + 审查修复 | [📖](./docs/changelog/v1.0.4.md) |
 | **v1.0.3** 🔧 | 编排引擎重构 + LOOP 自迭代：FDE Sub Agent（DeepAgentsJS+LangGraph+Agency Agents+SkillOpt）+ 4 Agent 定义 + 内外层循环 + 4 验证文件自进化 + 30 项审查修复 | [📖](./docs/changelog/v1.0.3.md) |
 | **v1.0.2** 🔧 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（回归检查清单 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
 | **v1.0.1** 🔧 | AI 知识库实现版：7 件事（目录骨架/fde 规则/Skill/四层加载链/daemon Ingest/Lint/轮次上限）+ A14 越权审计 + 回归检查清单 | [📖](./docs/changelog/v1.0.1.md) |
@@ -75,7 +76,7 @@
 | **v1.0.1** | ✅ 已完成 | AI 知识库 + 访问控制 + entities 实体关联 + deepagentsjs 引入 + think.md 模板 + loop-check 轮次上限 | [📖](./docs/changelog/v1.0.1.md) |
 | **v1.0.2** | ✅ 已完成 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（回归检查清单 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
 | **v1.0.3** | ✅ 已完成 | LOOP 自迭代架构（4 Agent + 内外层循环） + SkillOpt 自进化 + Audit Sub Agent（含成本） + think.md 判断单元结构化 + 文档分层预算 | [📖](./docs/changelog/v1.0.3.md) |
-| **v1.0.4** | ⏳ 待启动 | eval harness（类似 OpenAI Evals，用标准化测试集衡量 Agent 表现） + Sub Agent A/B 自进化 + HITL 渐进自主度（suggest → approve → auto） + A15 约束验证 | [📖](./docs/changelog/v1.0.4.md) |
+| **v1.0.4** | ✅ 已完成 | 自进化 + 约束验证版——eval harness + Sub Agent A/B 自进化 + HITL 渐进自主度 + A15 约束验证。多项审查修复 | [📖](./docs/changelog/v1.0.4.md) |
 | **v1.0.5** | ⏳ 待启动 | Ontology 统一层（类似 Palantir 的 Ontology，给每个代码实体打标签和约束） + ao 退役 + Workflow Hub 独立项目 + 首个行业模板 | [📖](./docs/changelog/v1.0.5.md) |
 
 ### v1.x — 发布后
@@ -116,6 +117,8 @@ OpenClaw 总管（TS）
 | 🔍 约束验证 | v1.0.4 | 新增 A15 审计规则——Agent 执行的 action 是否在节点声明的 actions 范围内、是否满足 constraints | 事后审计扩展到事前约束检查 |
 | 🌐 统一 Ontology 层 | v1.0.5 | `.sofagent/ontology/` 目录——自动从 entities + workflow actions 合并生成，Agent 加载时获得完整世界模型 | FDE 交付的不是文档，是企业数字孪生的操作接口 |
 | 🛡️ 防幻觉四方案 | v1.0.5 | Schema Guided（ontology 约束 Action 输出）+ HTRO（High Trust Read Only，只读可信源）+ RAG+溯源（引用必须可追溯到 knowledge/ 页面）+ Action Type 终审（审计层验证 action 类型合规） | 与 A 系列「硬证据」哲学一致 |
+
+> 💡 反常识：不到 1000 个高质量 Token 即可构建有效知识图谱——关键不是数据量，是数据质量和约束规则。Ontology 的门槛远比看起来低。
 
 #### 外部框架对齐（v1.x 全版本基线）
 
@@ -205,7 +208,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 
 > 当前 ROADMAP 已有「分布式反思同步」（Gossip 方向）。三模式不是互斥的——实践中可能黑板打底 + 上下文路由按需补充。决策留到 v2.x 需求分析时做。
 
-**Dream Sandbox 沙盒审计（探索方向）**：参照 Palantir AIP 的 Dream Sandbox——Agent 操作先在平行空间模拟运行，人类审批后点「合并」才生效，相当于「对现实做版本控制」。当前 sofagent 只能事后 git diff 审计，沙盒审计将约束从事后升级为事前。v2.x 如果企业用户对 Agent 自主操作有安全需求时探索。（来源：Palantir AIP 架构分析，详见 THANKS.md）
+**Dream Sandbox 沙盒审计（探索方向）**：参照 Palantir AIP 的 Dream Sandbox——Agent 操作先在平行空间模拟运行，人类审批后点「合并」才生效，相当于「对现实做版本控制」。当前 sofagent 只能事后 git diff 审计，沙盒审计将约束从事后升级为事前。v2.x 如果企业用户对 Agent 自主操作有安全需求时探索。（来源：Palantir AIP 架构分析，详见 [THANKS.md](./docs/THANKS.md)）
 
 **审批通道分层（探索方向）**：entry-gate 风险分级（v1.x）之上，可探索超时降级（审批 30 分钟无响应 → 自动降级为只读模式还是阻塞？）和防橡皮图章（连续秒批 → 系统警告）。**这是企业级 BPM 功能，不是 Agent harness 层的职责**——v2.x 如果企业用户强烈需求才考虑。
 
