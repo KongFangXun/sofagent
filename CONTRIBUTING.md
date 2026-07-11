@@ -1,8 +1,8 @@
 # 贡献指南
 
-> 📖 新贡献者？先看 [COMMUNITY.md](./COMMUNITY.md) 了解社区现状和贡献路径。
+> 📖 新贡献者？先看 [COMMUNITY.md](./docs/COMMUNITY.md) 了解社区现状和贡献路径。
 
-欢迎参与 sofagent！这个项目的代码由 DeepSeek V4 Pro 和 GLM-5.2 生成（详见 [致谢](./THANKS.md#生成伙伴)），作者做产品决策和终审。你看到的任何技术问题，请直接指出来，不必客气。
+欢迎参与 sofagent！这个项目的代码由 DeepSeek V4 Pro 和 GLM-5.2 生成（详见 [致谢](./docs/THANKS.md#生成伙伴)），作者做产品决策和终审。你看到的任何技术问题，请直接指出来，不必客气。
 
 ---
 

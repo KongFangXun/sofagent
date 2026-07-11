@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent install.sh · 多平台一键安装脚本（v1.0.3）
+# sofagent install.sh · 多平台一键安装脚本（v1.0.4）
 # ============================================================
 # 将 sofagent 约束层部署到目标平台，让 Agent 获得治理能力。
 # v0.98: 从 941 行拆分为 4 个 lib 模块 + 纯组装入口
@@ -10,7 +10,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.0.3"
+VERSION="1.0.4"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
@@ -190,12 +190,12 @@ print_completion_summary
 install_daemon
 log_install_audit
 
-# SkillOpt 自进化引擎（可选——Python 包）
-if command -v pip3 &>/dev/null || command -v pip &>/dev/null; then
-  echo "  💡 SkillOpt 自进化引擎（可选）: pip install skillopt"
-else
-  echo "  ⚠️ Python/pip 未安装，SkillOpt 自进化引擎不可用。pip install skillopt 安装。"
-fi
+# SkillOpt 自进化引擎（可选）
+# 注意：pip install skillopt 不包含 skillopt-sleep CLI
+# 需要完整安装：
+#   git clone https://github.com/microsoft/SkillOpt.git ~/SkillOpt
+#   cd ~/SkillOpt && pip install -e .
+echo "ℹ️ SkillOpt 自进化引擎（可选）：clone github.com/microsoft/SkillOpt + pip install -e ."
 
 # deepagents Sub Agent 引擎（可选——npm 包）
 echo "  💡 Sub Agent 引擎（可选）: npm install deepagents@^1.10.7"

@@ -37,7 +37,8 @@
 | 6 | `npm run build` | exit 0 |
 | 7 | `npm test` | 全部通过 |
 | 8 | `shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh` | 零 error |
-| 9 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
+| 8.5 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
+| 8.6 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
 
 ---
 
@@ -46,10 +47,10 @@
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
 | 9 | 独立审核者逐项核对 changelog 每一项 | 审核者 | 逐文件读源码 |
-| 9 | FAIL 项修复 | 工程师 | build + test 全绿 |
+| 9.5 | FAIL 项修复 | 工程师 | build + test 全绿 |
 | 10 | 二次复核确认全部到位 | 审核者 | changelog 所有项 PASS |
-| 10.5 | 回归检查：用回归清单逐项核对（当前 144 维度）<br>🔴 **必须开全新 session**——老 session 有上下文记忆，审查者知道"这东西是我修的"，会跳过怀疑。全新 session = 空白认知 | 审核者 | 全 PASS。发现回退→修复后重跑。新问题→追加检查项（从 145 开始编号） |
-| 10.6 | **审查体系维护**（本步骤在开发 session 中执行，不需要新 session——这是在更新文档，不是在审查）——基于本版本整个迭代的开发经验，更新两套审查体系：<br>① **回归清单**：把本版本修过的 P0/P1 抽象为检查项追加到清单（编号从 145 递增）。开发过程中已随修随记，本步骤做最后核对——有没有遗漏？<br>② **陌生视角 prompt**：本版本暴露了哪些新盲区？把新视角/任务/攻击面补进 prompt。更新后的 prompt 下版本发布后用于独立审查 | 审核者/作者 | 回归清单检查项数 ≥ 上一版；陌生视角 prompt 新增任务/视角见于文件 diff |
+| 10.5 | 回归检查：用回归清单逐项核对（当前维度数见清单文件头）<br>🔴 **必须开全新 session**——老 session 有上下文记忆，审查者知道"这东西是我修的"，会跳过怀疑。全新 session = 空白认知 | 审核者 | 全 PASS。发现回退→修复后重跑。新问题→追加检查项 |
+| 10.6 | **审查体系维护**（本步骤在开发 session 中执行，不需要新 session——这是在更新文档，不是在审查）——基于本版本整个迭代的开发经验，更新两套审查体系：<br>① **回归清单**：把本版本修过的 P0/P1 抽象为检查项追加到清单。开发过程中已随修随记，本步骤做最后核对——有没有遗漏？<br>② **陌生视角 prompt**：本版本暴露了哪些新盲区？把新视角/任务/攻击面补进 prompt。更新后的 prompt 下版本发布后用于独立审查 | 审核者/作者 | 回归清单检查项数 ≥ 上一版；陌生视角 prompt 新增任务/视角见于文件 diff |
 
 ---
 
@@ -60,6 +61,21 @@
 - 「质量验证」节补上本轮 `npm test` / `check-version` / `verify` / `npm pack` 的实际跑分结果（不要留占位符）
 - 开发日志是活文档，代码改完立刻回写，不要等
 - 独立审核的「发布检查清单」（`[x]` 格式）可放在 changelog 末尾，也可用「质量验证」命令输出替代——二者功能等价，不必重复
+
+### 5.1.1 测试数字一致性（v1.0.4 教训）
+
+CHANGELOG/ROADMAP 中声称的测试数必须与实际 `npm test` 输出一致。v1.0.4 曾写 455 但实际 465。
+
+```bash
+# 获取实际测试数
+actual=$(npm test 2>&1 | grep 'Tests' | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+')
+echo "实际测试数: $actual"
+
+# 检查 CHANGELOG/ROADMAP 中写的数字
+grep "$actual" CHANGELOG.md
+grep "$actual" ROADMAP.md
+# 如果 grep 不到 = 文档写错了
+```
 
 ### 5.2 全项目版本号扫描（🔴 v0.95 起用脚本，禁止手动 grep）
 
@@ -270,6 +286,7 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
 8. openclaw skills publish ./FDE
 9. openclaw skills publish ./LOOP（如果 LOOP/ 有变更）
 10. clawhub skill publish ./skill && clawhub skill publish ./FDE
+    # ClawHub 和 SkillHub 共享命名空间，推 ClawHub 即可，不需要额外推 SkillHub
 11. 本地安装：
     cp skill/* ~/.workbuddy/skills/sofagent/
     cp skill/* ~/.openclaw/skills/sofagent/
@@ -377,3 +394,12 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 回归检查清单维度 77 在发版前误报 npm latest != SSOT | 维度 77 检查 npm latest = SSOT，但发版前 npm 还没 publish，必然不等 | 维度 77 标注为「发布后验证」项；回归清单加时序说明节，明确发版前 npm latest = 旧版本是正常的 |
 | v1.0.3 Release Notes 缺少开发日志链接、内容简略，与 v1.0.2 质量标准不一致 | `gh release create` 时 notes 写得仓促，SOP 7.2 Step 6 只写了「必须包含开发日志链接」但没有发布后验证检查 | 7.3 发布后验证新增 Release Notes 完整性检查项（见下文） |
 | changelog 文件命名 `v1.0.md` 与其他版本 `v1.0.X.md` 不一致 | v1.0.0 发布时文件名只写了 `v1.0.md`（两段式），后续版本统一为 `v1.0.X.md`（三段式） | changelog 文件命名统一为 `vX.Y.Z.md`（三段式），禁止两段式 `vX.Y.md`；5.2.6 新增命名一致性检查 |
+
+## v1.0.4 教训（测试数字一致性 + dist 同步 + 跨模块路径）
+
+| 问题 | 根因 | 规则 |
+|------|------|------|
+| CHANGELOG/ROADMAP 写"455 测试全绿"但实际 465 | 文档写测试数时凭记忆而非实际 npm test 输出 | 5.1.1 测试数字一致性——发版前 grep 文档中的测试数 vs npm test 实际输出 |
+| dist 与 src 不同步——新增 CLI 命令在 dist 中不存在 | 开发后忘了 npm run build，dist 仍是旧编译结果 | 阶段三 Step 8.6 新增 dist 同步验证步骤 |
+| daemon.sh 读 `${SOFAGENT_DATA}/../skill/data/scoring.md` 与 doctor.ts 读 `join(dataDir, 'scoring.md')` 路径不一致 | shell 脚本和 TS 代码用不同方式拼接路径，没有交叉验证 | 回归维度 196：跨模块路径引用一致性——shell `${SOFAGENT_DATA}` 与 TS `dataDir` 拼接的路径必须一致 |
+| 审查体系三份文档自身有死路径/数字不一致/编号重复 | 审查文档和被审查代码同步演化，但没有对审查文档自身的维护流程 | SOP 步骤 19 审查体系闭环——每次发版后审视审查 prompt 自身的数字、路径、视角是否过时 |

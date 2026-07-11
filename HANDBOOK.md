@@ -2,7 +2,7 @@
 
 > **企业上 AI，先上缰绳再上路——装上审计引擎，每次 Agent 提交代码时自动检查变更。配合约束底座管 Agent 行为，编排引擎拆解任务（FDE 部署用）。**
 >
-> v1.0.3 · 2026-07-11（UTC）· 孔放勋
+> v1.0.4 · 2026-07-11（UTC）· 孔放勋
 
 <img src="sofagent.png" alt="sofagent" width="300" />
 
@@ -102,7 +102,7 @@ OpenClaw 完整能力（Hook 自动注入 + 断路器 + 编排引擎）。其他
 
 ### 提交后审计
 
-Agent 改完代码 commit 了——`sofagent-audit` 扫描 git diff 对照 A1-A14 审计规则逐条判定：
+Agent 改完代码 commit 了——`sofagent-audit` 扫描 git diff 对照 A1-A15 审计规则逐条判定：
 
 ```bash
 cd sofagent/audit && npm ci && npm run build
@@ -169,29 +169,11 @@ jobs:
 
 ### 双引擎怎么跑
 
-```
-    审计引擎（每次提交）                 编排引擎（Workflow 梳理 + 定期重测）
-         │                                       │
-         ├─ git diff 扫描                        ├─ Workflow 梳理：生成节点文档（nodes/*.md）
-         ├─ 规则检查 A1-A14                      │       └─ Agent 读 .md → 注入 ao compose 拆任务
-         │                                       │
-         │                                       ├─ 生产运行：AI 节点按编排方案执行
-         │                                       │       ├─ 🔄 自动执行
-         │                                       │       └─ ⚡ AI 领航员辅助
-         │                                       │
-         │                                       ├─ 定期 A/B 重测（每 N 个 session）
-         │                                       │       ├─ 编排引擎重出一版新方案
-         │                                       │       └─ sofagent-orchestrate-compare 对比
-         │                                       │              ├─ 新方案胜出 → promote
-         │                                       │              └─ 旧方案更好 → 保留
-         │                                       │
-         └────────────── think.md ─────────────────────┘
-              （审计引擎写 / 编排引擎读 / A/B 结果写入 orchestrator/）
-```
+> 审计引擎（git diff → A1-A15）和编排引擎（Workflow 梳理 + A/B 重测）通过 think.md 交汇。完整架构图和流程详见 [README § 怎么工作](./README.md#怎么工作) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 | 引擎 | 做什么 | 依赖 Agent | 触发方式 |
 |------|------|:--:|------|
-| **审计引擎** | git diff → A1-A14 规则检查 → 自动生成 think.md | ❌ | 每次 git commit |
+| **审计引擎** | git diff → A1-A15 规则检查 → 自动生成 think.md | ❌ | 每次 git commit |
 | **编排引擎**（实验性）| Workflow 梳理时生成节点定义 + 定期 A/B 重优化 | ✅ | Workflow 梳理时 / 定时触发 |
 
 ### 4 条底线 + 7 则行为铁律
@@ -291,6 +273,8 @@ Agent 先判断任务复杂度：
 
 > 💡 **反认知投降的三道护栏**：fde.md 规则覆盖（保留人类话语权）、编排可回滚（保留人类否决权）、审计引擎独立于 Agent（保留人类验收权）。这不是技术特性，是制度设计——确保人类永远是最终决策者，不是 AI 产出的被动接收者。详见 [ARCHITECTURE 设计原则](./ARCHITECTURE.md#设计原则的理论支撑)。
 
+> > "Build a Loop, but build it like an engineer who plans to keep being one." — Ozzmani。Loop 不是造完就不用管的自动化流水线，是工程师持续维护的工程系统。
+
 > 💡 **模型越强，纪律层越值钱**。模型能完成 90% 任务，但剩余 10% 不可预测失误 = 只能做助手不能做自主系统。模型越强 → 90% 常规范围越广 → 但 10% 高风险场景价值反升。sofagent 占据的正是那 10%——审计、验证、复盘、兜底、为结果负责。
 
 ---
@@ -310,7 +294,7 @@ Agent 先判断任务复杂度：
 
 ### 审计规则
 
-当前 A1-A14 共 16 条（11 默认 + 5 扩展）审计规则，源码在 `sofagent/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计)。
+当前 A1-A15 共 17 条（11 默认 + 6 扩展）审计规则，源码在 `sofagent/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计)。
 
 ### 概念速查
 
@@ -320,7 +304,7 @@ Agent 先判断任务复杂度：
 | **审计引擎** | 看 git diff 硬证据判定违规，提交时触发，不依赖 Agent 配合 |
 | **编排引擎**（实验性）| 拆任务→编排→执行，跑在 OpenClaw 上，Workflow 梳理用 |
 | **铁律** | Agent 行为约束规则（4 底线 + 7 铁律），写在 MD 文件里注入上下文 |
-| **审计规则** | 代码变更检查规则（A1-A14），审计引擎按此判定 exit code |
+| **审计规则** | 代码变更检查规则（A1-A15），审计引擎按此判定 exit code |
 | **Skill** | Agent 行为模板——一组 .md 文件，定义 Agent 在什么场景做什么 |
 | **think.md** | Agent 任务结束后的反思记录——踩了什么坑、下次怎么办 |
 | **daemon** | 轻量后台进程，每 30 秒检查 think.md/fde.md 文件 hash 变化并通知 |
@@ -347,7 +331,7 @@ Agent 先判断任务复杂度：
 | 层 | 做什么 | 怎么跑 |
 |----|--------|--------|
 | 约束底座 | fde.md 规则注入 Agent 上下文 | install.sh 装完自动加载 |
-| 审计引擎 | git diff → A1-A14 规则 → exit code | git pre-commit hook |
+| 审计引擎 | git diff → A1-A15 规则 → exit code | git pre-commit hook |
 | 编排引擎（实验性）| ao compose 拆任务生成编排方案 | 跑在 OpenClaw 上 |
 
 ### 离场后企业留下什么
@@ -381,7 +365,7 @@ sofagent 不是孤立的——它构建于以下成熟项目之上，各司其�
 
 ## 致谢
 
-sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完整致谢](./THANKS.md)
+sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完整致谢](./docs/THANKS.md)
 
 ## 彩蛋
 
@@ -404,4 +388,4 @@ sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 > 大半年 OpenClaw 实战笔记。如有更好的用法，欢迎开 Issue。
 >
-> *v1.0.3，2026 年 7 月 11 日*
+> *v1.0.4，2026 年 7 月 11 日*

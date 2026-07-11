@@ -6,7 +6,7 @@
 
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-v1.0.3-16B8F3)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-v1.0.4-16B8F3)](./CHANGELOG.md)
 [![What: Agent Audit Tool](https://img.shields.io/badge/What-Agent_Audit_Tool-16B8F3)](#what-is-this)
 [![Core: Audit Engine](https://img.shields.io/badge/Core-Audit_Engine-16B8F3)](#what-is-this)
 [![OpenClaw](https://img.shields.io/badge/Platform-OpenClaw-FF4D4D)](./LIMITATIONS.md#平台依赖)
@@ -22,7 +22,7 @@ My name is KongFangXun. I'm a product manager who doesn't write code. All design
 
 ## What is this?
 
-A commit-time auditor for AI agents — doesn't trust what the agent says, only what git diff shows. 11 audit rules scan every code change, automatically flag violations, generate reflections, and push results to collaboration platforms. SMBs can install and run on their own — no consultants, no prompt engineering required.
+A commit-time auditor for AI agents — doesn't trust what the agent says, only what git diff shows. 17 audit rules (13 pure git-diff + 4 requiring agent logs) scan every code change, automatically flag violations, generate reflections, and push results to collaboration platforms. SMBs can install and run on their own — no consultants, no prompt engineering required.
 
 > 🔬 **External validation**: A Hugging Face legal-agent benchmark proved that optimizing only the outer harness (no model weight changes) boosted the same model from 3.5%→80.1% (matching Claude Sonnet at 1/7 the cost). sofagent does exactly that outer harness layer — audit + constraint. → [See ARCHITECTURE](./ARCHITECTURE.md#理论基础与外部验证)
 >
@@ -30,7 +30,7 @@ A commit-time auditor for AI agents — doesn't trust what the agent says, only 
 
 > **The 90/10 rule**: Don't compete with AI models on the 90% they already do well (code generation). The real value is in the 10% nobody dares skip — verification, audit trails, accountability. sofagent owns that 10%.
 
-> **Maturity**: I built sofagent and it's been open source from day one. I switch to each new version immediately and use it in my own company — this has been going for over a month. The FDE deployment flow is already running in companies I've invested in — the audit engine (sofagent-audit) is stable in daily use with 407 automated tests all passing, and the orchestration engine works too — but the toolkit as a whole isn't polished to "install and go" yet. If you try it, I'd love to hear what you're using it for and what breaks.
+> **Maturity**: I built sofagent and it's been open source from day one. I switch to each new version immediately and use it in my own company — this has been going for over a month. The FDE deployment flow is already running in companies I've invested in — the audit engine (sofagent-audit) is stable in daily use with 465 automated tests all passing, and the orchestration engine works too — but the toolkit as a whole isn't polished to "install and go" yet. If you try it, I'd love to hear what you're using it for and what breaks.
 
 | Component | How it works |
 |------|------|
@@ -75,7 +75,7 @@ OpenClaw is not something you "use" — it runs on the device, handling FDE work
      Audit engine (every commit)               Orchestration engine (FDE onboarding + periodic)
             │                                           │
             ├─ git diff scan                            ├─ FDE onboarding: one-time workflow.yaml generation
-            ├─ Rule checks A1-A14                       │       └─ Smart decomposition → orchestration plan
+            ├─ Rule checks A1-A15                       │       └─ Smart decomposition → orchestration plan
             │                                           │
             │                                           ├─ Production: AI nodes run per workflow
             │                                           │       ├─ 🔄 Auto-execute
@@ -212,4 +212,4 @@ Issues and PRs welcome — especially the critical kind. See [CONTRIBUTING.md](.
 
 ## Acknowledgements
 
-sofagent stands on the shoulders of 8 open-source projects and 7 articles/communities. → [Full credits](./THANKS.md)
+sofagent stands on the shoulders of 8 open-source projects and 7 articles/communities. → [Full credits](./docs/THANKS.md)

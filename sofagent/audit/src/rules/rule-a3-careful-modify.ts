@@ -152,10 +152,19 @@ export function checkRuleA3(ctx: AuditContext): RuleCheck {
   // 提取任务描述中的文件名、路径模式、关键词
   const taskFileNames = extractFileNamesFromTask(task);
   const taskPathPatterns = extractPathPatternsFromTask(task);
+  // P1-13: 停用词表——常见英文词不作为关键词
+  const STOP_WORDS = new Set([
+    'the', 'for', 'and', 'are', 'but', 'not', 'you', 'all', 'any', 'can',
+    'had', 'her', 'was', 'one', 'our', 'out', 'has', 'have', 'from',
+    'this', 'that', 'with', 'will', 'your', 'add', 'fix', 'set', 'get',
+    'use', 'new', 'old', 'see', 'way', 'say', 'she', 'how', 'its', 'now',
+    'did', 'let', 'put', 'run', 'try', 'two', 'men', 'day', 'own',
+    '到', '的', '了', '在', '是', '和', '与', '或', '一个', '可以',
+  ]);
   const taskKeywords = task
     .toLowerCase()
     .split(/[\s,，。、；;:：()（）]+/)
-    .filter((w) => w.length > 1);
+    .filter((w) => w.length >= 3 && !STOP_WORDS.has(w));
 
   const unexpectedFiles: string[] = [];
 

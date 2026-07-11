@@ -6,11 +6,19 @@
 
 ## 正式版
 
+### [v1.0.4] — 自进化 + 约束验证 🔧
+
+> 2026-07-11（UTC）
+
+Sub Agent 会自己变好了：eval harness 评分体系 + Sub Agent A/B 自进化 + HITL 渐进自主度 + A15 约束验证。附带多项审查修复。465 测试全绿，pre-push 全绿。
+
+> 📖 [开发日志](./docs/changelog/v1.0.4.md)
+
 ### [v1.0.3] — 编排引擎重构 + LOOP 自迭代 🔧
 
 > 2026-07-11（UTC）
 
-三件事重合：FDE Sub Agent 成型（DeepAgentsJS + LangGraph 编排 + Agency Agents 岗位模板 + SkillOpt 自进化引擎）+ LOOP 自迭代架构落地（4 Agent 定义 + 内外层循环设计 + 4 验证文件自进化机制）+ v1.0.2 两轮独立审查 30 项修复（2 P0 + 11 P1 + 17 P2）。附带 releasing.md 八阶段发版 SOP + SOP 自我进化（FDE 提议→作者确认）+ check-docs 文档分层预算（5 层独立检查）。430 测试全绿，pre-push 全绿。
+三件事重合：FDE Sub Agent 成型（DeepAgentsJS + LangGraph 编排 + Agency Agents 岗位模板 + SkillOpt CLI 集成）+ LOOP 自迭代架构落地（4 Agent 定义 + 内外层循环设计 + 4 验证文件自进化机制）+ 30 项修复。附带 releasing.md 八阶段发版 SOP + SOP 自我进化（FDE 提议→作者确认）+ check-docs 文档分层预算（5 层独立检查）。430 测试全绿，pre-push 全绿。
 
 > 📖 [开发日志](./docs/changelog/v1.0.3.md)
 
@@ -18,7 +26,7 @@
 
 > 2026-07-11（UTC）
 
-v1.0.1 经双视角审查（GLM-5.2 + DeepSeek V4 Pro）发现 15 项 P1-P3 问题全部修复。修复覆盖：文档死链（README/HANDBOOK/DEVELOPMENT 6 处锚点）、SECURITY.md 安全报告渠道（Issue→Security Advisory）、规则数量不一致（11→16）、A14 include='*' 全放开检测、config 未知规则名校验、doctor 输出友好度、CI 修复指引、hook 错误标签、knowledge 目录自动创建、ROADMAP 状态矛盾。418 测试全绿。
+v1.0.1 经独立审查发现 15 项问题全部修复。修复覆盖：文档死链（README/HANDBOOK/DEVELOPMENT 6 处锚点）、SECURITY.md 安全报告渠道（Issue→Security Advisory）、规则数量不一致（11→16）、A14 include='*' 全放开检测、config 未知规则名校验、doctor 输出友好度、CI 修复指引、hook 错误标签、knowledge 目录自动创建、ROADMAP 状态矛盾。418 测试全绿。
 
 > 📖 [开发日志](./docs/changelog/v1.0.2.md)
 
@@ -26,7 +34,7 @@ v1.0.1 经双视角审查（GLM-5.2 + DeepSeek V4 Pro）发现 15 项 P1-P3 问�
 
 > 2026-07-11（UTC）
 
-v1.0.0 经双视角审查修复（3 P0 + 15 P1 + 12 P2）后，本轮完成 AI 知识库代码实现——7 件事：目录骨架（6 子目录 + index.md/log.md）+ fde.md 维护规则章节（4 子规则，≤3200 字符）+ knowledge-maintain.md 新 Skill（71 行）+ 加载链三层→四层（knowledge 被动注入）+ daemon Ingest 触发（task/logs 变化检测 + 30 分钟防抖）+ loop-evaluate 5 项 Lint + loop-check 20 轮硬上限。附带 A14 知识库越权审计规则（hybrid 模式）+ deepagents 可选依赖（不阻断安装）+ Ontology relations（entities/ frontmatter 含 has_many/belongs_to）+ doctor 第 9 项知识库访问矩阵。418 测试全绿，37 test files。回归检查清单全覆盖。
+v1.0.0 经独立审查修复后，本轮完成 AI 知识库代码实现——7 件事：目录骨架（6 子目录 + index.md/log.md）+ fde.md 维护规则章节（4 子规则，≤3200 字符）+ knowledge-maintain.md 新 Skill（71 行）+ 加载链三层→四层（knowledge 被动注入）+ daemon Ingest 触发（task/logs 变化检测 + 30 分钟防抖）+ loop-evaluate 5 项 Lint + loop-check 20 轮硬上限。附带 A14 知识库越权审计规则（hybrid 模式）+ deepagents 可选依赖（不阻断安装）+ Ontology relations（entities/ frontmatter 含 has_many/belongs_to）+ doctor 第 9 项知识库访问矩阵。418 测试全绿，37 test files。回归检查清单全覆盖。
 
 > 📖 [开发日志](./docs/changelog/v1.0.1.md)
 
@@ -48,7 +56,7 @@ v1.0.0 经双视角审查修复（3 P0 + 15 P1 + 12 P2）后，本轮完成 AI �
 
 > 2026-07-07（UTC）
 
-v0.99.8 经双视角审查发现 4 个 P0 + 7 个 P1 + 3 个 P2，本版全部修复。同时完成 AI 知识库 6 文档概念先行（架构定位+边界划分）+ verify.ts 1257 行代码拆分（→ 4 模块）+ 7 项行业笔记写入 ROADMAP/ARCHITECTURE + Skill 摘要信息架构优化（去掉步骤性描述，只留触发条件）+ Hugging Face/AutoResearch/Akshay 理论基础引证（ARCHITECTURE 新增「理论基础与外部验证」节）。**v0.99.x 修复线最终版。**
+v0.99.8 经独立审查发现 14 项问题，本版全部修复。同时完成 AI 知识库 6 文档概念先行（架构定位+边界划分）+ verify.ts 1257 行代码拆分（→ 4 模块）+ 7 项行业笔记写入 ROADMAP/ARCHITECTURE + Skill 摘要信息架构优化（去掉步骤性描述，只留触发条件）+ Hugging Face/AutoResearch/Akshay 理论基础引证（ARCHITECTURE 新增「理论基础与外部验证」节）。**v0.99.x 修复线最终版。**
 
 > 📖 [开发日志](./docs/changelog/experimental/v0.99.9.md)
 
@@ -58,7 +66,7 @@ v0.99.8 经双视角审查发现 4 个 P0 + 7 个 P1 + 3 个 P2，本版全部�
 
 > 2026-07-05（UTC）
 
-v0.99.7 发版后双视角审查发现 20 项遗留问题，本版全部修复。核心：文档数字全面对齐（30/30→33/33，41/41→48）+ GitHub Actions 升级 v5 + PR check workflow 新建 + shellcheck SC2086/SC2155 排除项收窄 + check-version 新增 --strict 模式 + v1.0 准入诚实化（3/10 ✅→2/10 ✅）+ **FDE 架构重构**（四层→三层实体、删 workflow/agents、templates 镜像产出结构、Skill 精简 925→742 行）+ FDE 非开发者快速入门。**v0.99.x 修复线收尾版。**
+v0.99.7 发版后独立审查发现 20 项遗留问题，本版全部修复。核心：文档数字全面对齐（30/30→33/33，41/41→48）+ GitHub Actions 升级 v5 + PR check workflow 新建 + shellcheck SC2086/SC2155 排除项收窄 + check-version 新增 --strict 模式 + v1.0 准入诚实化（3/10 ✅→2/10 ✅）+ **FDE 架构重构**（四层→三层实体、删 workflow/agents、templates 镜像产出结构、Skill 精简 925→742 行）+ FDE 非开发者快速入门。**v0.99.x 修复线收尾版。**
 
 > 📖 [开发日志](./docs/changelog/experimental/v0.99.8.md)
 
@@ -68,7 +76,7 @@ v0.99.7 发版后双视角审查发现 20 项遗留问题，本版全部修复�
 
 > 2026-07-04（UTC）· 北京时间 07-05
 
-v0.99.6 三轮独立审查（GLM-5.2 + DeepSeek × 2）共发现 13 项问题，本版修复其中 11 项（另外 2 项已在 v0.99.6 修复）。核心：CI E403 根治（加版本存在性检查）+ OIDC 文档谎言清零（12+ 处改 NPM_TOKEN）+ mcp 依赖解锁（精确改范围）+ 回滚文档补全 + shellcheck SC2034 清零 + Windows 实验性标注 + logo 压缩 84%。**首次采用「npm 先行」发布策略。**
+v0.99.6 三轮独立审查共发现 13 项问题，本版修复其中 11 项。核心：CI E403 根治（加版本存在性检查）+ OIDC 文档谎言清零（12+ 处改 NPM_TOKEN）+ mcp 依赖解锁（精确改范围）+ 回滚文档补全 + shellcheck SC2034 清零 + Windows 实验性标注 + logo 压缩 84%。**首次采用「npm 先行」发布策略。**
 
 **npm 发布状态**：@sofagent/audit ✅ 0.99.7 · @sofagent/mcp ✅ 0.99.7（npm 先行手动发布，CI 自动 skip）
 
@@ -90,7 +98,7 @@ v0.99.6 三轮独立审查（GLM-5.2 + DeepSeek × 2）共发现 13 项问题，
 
 > 2026-07-04
 
-v0.99.5 发版后双审（齐活林 + GLM-5.2）发现 25 项问题（P0×4 + P1×7 + P2×11 + P3×3），本版全部修复。核心：@sofagent/mcp npm 同步发布 + README 创建 + .npmignore/files 双重保险 + 全仓文档一致性修正 + 新增 mcp 单元测试 13 tests + bump-version 工具增强。
+v0.99.5 发版后独立审查发现 25 项问题，本版全部修复。核心：@sofagent/mcp npm 同步发布 + README 创建 + .npmignore/files 双重保险 + 全仓文档一致性修正 + 新增 mcp 单元测试 13 tests + bump-version 工具增强。
 
 **npm 发布状态**：@sofagent/audit ✅ 已发布 0.99.6 · @sofagent/mcp ✅ 已同步发布 0.99.6（手动发布，CI 加版本存在性检查后续版本自动跳过）
 
@@ -113,9 +121,9 @@ v0.99.5 发版后双审（齐活林 + GLM-5.2）发现 25 项问题（P0×4 + P1
 
 > 2026-07-03 初版 / 2026-07-04 修复
 
-NPM_TOKEN 自动发布 + 文案对齐（07-03）。审查驱动修复：P0×6（badge版本号、ROADMAP节标题、mcp版本、.js.map、零依赖假话、env-check残留）+ P1×10 + bump-version/check-version 增强，全仓版本号/日期一致性清零（07-04）。
+NPM_TOKEN 自动发布 + 文案对齐（07-03）。审查驱动修复 + bump-version/check-version 增强，全仓版本号/日期一致性清零（07-04）。
 
-> ⚠️ **发版后审查**：发现 25 项新问题（P0×4 + P1×7 + P2×11 + P3×3），已在 [v0.99.6](#v0996---审查修复版-) 全部修复。
+> ⚠️ **发版后审查**：发现 25 项新问题，已在 [v0.99.6](#v0996---审查修复版-) 全部修复。
 >
 > 📖 [开发日志](./docs/changelog/experimental/v0.99.5.md)
 
@@ -123,7 +131,7 @@ NPM_TOKEN 自动发布 + 文案对齐（07-03）。审查驱动修复：P0×6（
 
 > 2026-07-02
 
-41 项全面修复（P0×7 + P1×15 + P2×19），基于双模型独立审查。准入条件从 6✅ 诚实化为 3✅，全仓 doc-vs-reality 清零。
+41 项全面修复，准入条件从 6✅ 诚实化为 3✅，全仓 doc-vs-reality 清零。
 
 > 📖 [开发日志](./docs/changelog/experimental/v0.99.4.md)
 
@@ -139,7 +147,7 @@ NPM_TOKEN 自动发布 + 文案对齐（07-03）。审查驱动修复：P0×6（
 
 > 2026-07-01
 
-v1.0 前最后一次质量加固。两份独立十维审查驱动修复 18 个问题（3 P0 + 9 P1 + 6 P2）。daemon 歧义根治，死链清零。
+v1.0 前最后一次质量加固。两份独立十维审查驱动修复 18 个问题。daemon 歧义根治，死链清零。
 
 > 📖 [开发日志](./docs/changelog/experimental/v0.99.2.md)
 
@@ -243,7 +251,7 @@ skill-safety-check（22 条正则 + LLM 双门）。三个 P0 安装断裂修复
 
 > 2026-06-08
 
-定位重构（治理层→约束底座）+ ROADMAP 砍削（20+→6 项）——基于 GLM-5.2 + DeepSeek V4 Pro 双评审的战略校准。
+定位重构（治理层→约束底座）+ ROADMAP 砍削（20+→6 项）——基于独立评审的战略校准。
 
 > 📖 [开发日志](./docs/changelog/experimental/v0.85.md)
 
@@ -259,7 +267,7 @@ A/B benchmark 五组数据 + 4 底线优化 + Hook 归因修正。核心发现�
 
 > 2026-06-05
 
-安装断裂修复 + 代码加固 + 文档诚实度修正（P0×4 + P1×3 + P2×3）。纯 bugfix。
+安装断裂修复 + 代码加固 + 文档诚实度修正。纯 bugfix。
 
 > 📖 [开发日志](./docs/changelog/experimental/v0.83.md)
 

@@ -42,6 +42,8 @@ echo -e "${BOLD}[0/3] 检查前置条件...${NC}"
 if ! command -v sofagent-audit &> /dev/null && ! command -v node &> /dev/null; then
   echo -e "${YELLOW}⚠️  sofagent-audit 未安装。请先装 sofagent 底座：${NC}"
   echo -e "  ${CYAN}bash sofagent/scripts/install.sh${NC}"
+  echo -e "  或: ${CYAN}npm install -g @sofagent/audit${NC}"
+  echo -e "  全局安装路径: ${CYAN}$(npm root -g 2>/dev/null || echo '$NODE_PATH')/@sofagent/audit${NC}"
   echo ""
   echo -e "${YELLOW}LOOP 需要 sofagent 底座。安装后重跑 loop-install.sh。${NC}"
   exit 1

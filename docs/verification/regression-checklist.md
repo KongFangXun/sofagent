@@ -1,129 +1,48 @@
-# sofagent 回归检查清单（176 维度）
+# sofagent 回归检查清单（196 维度）
 
-> **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。这不是"发现新问题"的工具——发现新问题用[陌生视角审查](./sofagent-fresh-eyes-review.md)。
+> **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。这不是"发现新问题"的工具——发现新问题用[陌生视角审查](./fresh-eyes-review.md)。
 >
 > **维护规则**：
 > - 每次发版修复新问题后，把对应的检查项加到本清单
-> - 检查项编号从 177 开始递增，不重排已有编号
+> - 检查项编号递增，不重排已有编号
 > - 删掉的检查项标注 `[已移除]` 并注明原因，不直接删除
 > - 发版时在 `docs/changelog/vX.Y.md` 记录"回归检查 N/N 全通过"
 > - **审查体系闭环**（发版后做，见 SOP 步骤 19）：
 >   - ① 本次修复的新增检查项是否已经加到本清单？
->   - ② 有没有反复出现的同类问题——要不要抽象成通用维度加到[陌生视角审查](./sofagent-fresh-eyes-review.md)里？
->   - ③ [陌生视角审查](./sofagent-fresh-eyes-review.md)本身有没有过时的角色或问题需要删改？
+>   - ② 有没有反复出现的同类问题——要不要抽象成通用维度加到[陌生视角审查](./fresh-eyes-review.md)里？
+>   - ③ [陌生视角审查](./fresh-eyes-review.md)本身有没有过时的角色或问题需要删改？
 >
 > **审查对象**：sofagent 仓库（main 分支）+ npm 包
-> **审查范围**：全仓库状态检查（不是只看增量）——所有 176 维度逐项核对
+> **审查范围**：全仓库状态检查（不是只看增量）——所有维度逐项核对
 
 ---
 
 ## 你的身份
 
-你是一名**回归测试工程师**。你的任务不是发现新问题，而是**确认已知的修复没有回退**。你有一份 176 项的检查清单，每一项对应历史上发现并修复过的问题。逐项核对，全部 PASS 就是通过。
+你是一名**回归测试工程师**。你的任务不是发现新问题，而是**确认已知的修复没有回退**。你有一份 196 项的检查清单，每一项对应历史上发现并修复过的问题。逐项核对，全部 PASS 就是通过。
 
 **与陌生视角审查的区别**：陌生视角审查是"假装不知道项目是什么，凭直觉找新问题"；回归检查是"知道之前修了什么，确认没退回去"。两者互补，发版前都要跑。
+
+### ⏰ 时序说明（CRITICAL — 避免误判）
+
+回归检查在 **releasing.md 阶段四（审核）** 跑——此时代码已改完但**还没 commit、还没 tag、还没 npm publish**。以下检查项在回归检查阶段必然"不满足"，它们是**发布后验证项**，不是 FAIL：
+
+| 检查项 | 回归检查时状态 | 什么时候满足 |
+|--------|:----:|------|
+| git tag vX.Y.Z 存在 | ❌ 正常 | 阶段七 Step 5 打 tag 后 |
+| npm registry 版本 = SSOT | ❌ 正常 | 阶段七 Step 1 npm publish 后 |
+| 全局二进制版本 = SSOT | ❌ 正常 | 阶段七 Step 3 npm i -g 后 |
+| 工作目录零未提交修改 | ❌ 正常 | 阶段七 commit 后 |
+
+**遇到以上检查项时标 ⏳（待发版），不标 FAIL。**
 
 ---
 
 ## 🔄 本次审查背景
 
-### 二十件事
-
-**第一件：铁律措辞强化（11 个 Skill 文件）**
-
-把 10 个 Skill 文件 + FDE/SKILL.md 中的「建议/应该/尽量」升级为「必须/绝无例外/违反即失败」。
-
-依据：Superpowers（GitHub 23.9 万星）2.8 万次对话实测——强措辞让 AI 服从率 33%→72%，翻倍。规则内容不变，仅措辞强度提升。
-
-**第二件：上线前验收测试（Pre-Release Acceptance Test）**
-
-新增 `tools/acceptance-test.sh`（9 个场景），用真实 git 仓库走完整用户旅程：Fresh install → --init → --doctor → 正常 commit → 违规拦截 → --json / --ci → 首次提交 → --doctor 诊断坏环境。确保"装得上、跑得通、拦得住、修得了"。
-
-**第三件：daemon 文档校准**
-
-外部用户反馈（Case 025）：daemon 实际监控 think.md/fde.md hash 变化，非直接监听 git commit。三处文档（HANDBOOK + ARCHITECTURE + LIMITATIONS）对齐实际行为。
-
-**第四件：FDE 隐性代价文档**
-
-FDE/FDE.md 新增「隐性代价」节：理解债 + 认知让渡。≤200 字，客观不自贬。
-
-**第五件：准入条件 A 类推进**
-
-6 条 A 类准入条件从 ⚠️ 推进到可声称状态或诚实标注。2 条 B 类继续诚实标注为实验性。
-
-**第六件：工具链加固**
-
-- check-docs.sh 新增铁律措辞检查
-- bump-version.sh 新增盲区提醒（ROADMAP 正文叙事需手动更新）
-- 审查 prompt 从 88 维度升级到 106 维度（#6 做到 97，#15 补到 101，语言风格板块加到 105，OpenClaw 验收加到 106）
-
-**第七件：审计结果可视化升级**
-
-审计通过/警告/违规三种场景的输出从一行字升级为 banner + 规则网格 + 历史拦截统计。让用户每次 commit 都感知到「有个东西在帮我看门」。
-
-**第八件：审计违规修复建议**
-
-每条违规输出带「怎么修」建议——用户不需要查文档就知道下一步怎么做。11 条规则各加 1 行建议。
-
-**第九件：安装完成仪式感**
-
-install.sh 安装完毕后输出 banner + 下一步指引，而不是一堆配置列表。
-
-**第十件：pre-commit hook 无声失败保护**
-
-hook 在 Node.js 缺失或 sofagent-audit 未安装时必须 exit 1 + 明确提示，而不是静默跳过让用户以为被保护着。
-
-**第十一件：首次提交噪音消除**
-
-全新仓库首次 commit 时 `HEAD~1` 不存在的 git fatal 错误，改为友好提示「首次提交，无需审计」。
-
-**第十二件：npm 包 README 版本号验证**
-
-确认 bump-version.sh 覆盖 `sofagent/audit/README.md` 的版本号，npm 页面显示 v1.0.0。
-
-**第十三件：`sofagent-audit --init` 一键初始化**
-
-一条命令完成 3 步：生成 `.sofagent/config.yml` 配置模板 → 安装 git pre-commit hook → 跑冒烟测试。降低首次使用门槛。
-
-**第十四件：`sofagent-audit --doctor` 健康诊断**
-
-一键诊断 7 项健康度（Node.js / git 仓库 / hook / config / history / 规则加载 / 冒烟测试），每项 ✅/❌ + 修复建议。
-
-**第十五件：审查 prompt 覆盖新增事项**
-
-审查 prompt 从 97 维度升级到 101 维度，新增 4 个维度覆盖 §15-18（审计可视化 / 修复建议 / prompt 覆盖+README+CHANGELOG / 升级指引）。再新增 4 个维度（102-105）覆盖语言风格与文字质量，1 个维度（106）覆盖 OpenClaw 发版验收。确保 106 维度审查覆盖全部 18 件事 + 文字质量 + Agent 端到端验收。
-
-**第十六件：README.md 头部 v1.0 定位**
-
-README 头部加一句话定位：「Agent 提交时审计工具——git diff 硬证据，11 条规则，pre-commit hook，不依赖 Agent 配合」。版本号 badge 从 v0.99.9 → v1.0.0。
-
-**第十七件：CHANGELOG.md v1.0.0 索引条目**
-
-CHANGELOG.md 顶部新增 v1.0.0 索引条目，包含 18 件事摘要 + 开发日志链接。
-
-**第十八件：升级迁移指引**
-
-v0.99.x → v1.0.0 升级说明：重跑 install.sh（或 npm install -g），已有 `.sofagent/config.yml` 兼容无需改动，建议跑 `sofagent-audit --init` 更新 hook（v1.0 加了无声失败保护）。
-
----
-
-## 🔴 本轮审查核心原则
-
-v0.99.6 教训：**配置写了不代表能跑通**。
-v0.99.7 教训：**修好了不代表没引入新问题**。
-v0.99.8 教训：**「收尾版」不是免责声明 + 文件迁移是 P0 高危 + pre-push-check 有盲区**。
-v0.99.9 教训：
-1. **拆分 ≠ 等价**——1257 行拆成 5 个文件，行为是否真等价？408 tests 全绿 ≠ 无回归
-2. **概念先行 ≠ 概念自洽**——AI 知识库定位在所有文档是否一致？
-3. **理论引证 ≠ 过度声称**——Hugging Face 数据是特定领域实验，不能声称通用
-4. **v0.99.8 老问题不能回归**——数字一致性、CI 稳定性、fde.md 路径、install.sh 健壮性
-5. **行业笔记写入 ≠ 正确写入**——ROADMAP/ARCHITECTURE 新增的条目是否有逻辑矛盾？
-
-v1.0 新增教训：
-6. **措辞强化 ≠ 改全了**——grep 不到「建议/应该/尽量」才算改完，不能凭感觉
-7. **正式版 ≠ 没有实验性**——编排引擎、daemon、Windows 仍然是实验性的，不能因为 v1.0 就去掉实验性标注
-8. **准入推进 ≠ 全部 ✅**——A 类推进到「可声称」或「诚实标注」，不为追 ✅ 造假数据
-9. **bump 0.99→1.0 ≠ 自动完成**——ROADMAP 正文叙事、CHANGELOG 索引、迭代历程表都要手动更新
+> 本清单是**累积式**的——每个维度对应一个历史修复。审查前不需要了解每件事的背景，只需要逐项核对当前代码状态。
+>
+> 维度来源：v0.99.9 初始 88 维度 → v1.0 新增 18 → v1.0.1 追加 32 → v1.0.2 追加 26 → v1.0.3 追加 12 → v1.0.4 追加 8 = 196 总计。
 
 ---
 
@@ -139,7 +58,8 @@ bash tools/pre-push-check.sh
 
 # 1.2 单元测试
 cd sofagent/audit && npm test && cd ../..
-# 期望：408+ passed
+# 期望：与上次发版数一致或增加
+cd sofagent/audit && npm test 2>&1 | tail -5  # 全部 passed
 
 # 1.3 verify --list
 node sofagent/audit/dist/verify.js --list 2>&1 | head -5
@@ -151,7 +71,7 @@ bash tools/check-docs.sh 2>&1 | tail -3
 
 # 1.5 版本号一致性
 bash tools/check-version.sh 2>&1 | tail -3
-# 期望：全部通过，版本号 = 1.0.0
+# 期望：全部通过，版本号与 SSOT（package.json）一致
 
 # 1.6 铁律措辞检查（v1.0 新增）
 grep -rn '建议\|应该\|尽量' sofagent/skill/*.md FDE/SKILL.md | grep -v 'not_when\|Gotcha\|场景\|如果\|注\|说明'
@@ -174,9 +94,9 @@ bash tools/pre-push-check.sh 2>&1 | tail -5
 
 ---
 
-## 审查维度（176 个维度）
+## 审查维度（196 个维度）
 
-> v0.99.9 原有 88 维度（维度 1-88，全仓库状态）+ v1.0 新增 18 维度（维度 89-101 正式版特有检查 + 维度 102-105 语言风格与文字质量 + 维度 106 OpenClaw 发版验收）+ v1.0.0/v1.0.1 审查修复 27 维度（维度 107-114 审计引擎加固 + 维度 115-127 v1.0.1 功能迭代回归 + 维度 128-133 文档与复审反馈修复）+ v1.0.1 复审补充 5 维度（维度 134-137 规则一致性/测试覆盖/访问矩阵/npm引导 + 维度 138 审查流程优化）+ v1.0.1 优化更新 5 维度（维度 139-143 多入口一致性/消息准确性/ROADMAP状态/模板格式/prompt版本相关性）+ v1.0.2 审查修复 7 维度（维度 144-148 发版流程/重编号/changelog/日期/工作树）+ v1.0.3 文档结构 9 维度（维度 149-157 LOOP/agents 目录结构）+ v1.0.2 第四+五轮审查 19 维度（维度 158-176 审计日志安全/A5时机/术语/changelog/日期/失败指引/init解释/GHA/help精简/模式对照/npx/维度数字/事后审计/doctor安全提示/README分层）
+> v0.99.9 初始 88 维度（1-88）→ v1.0 新增 18 维度（89-106）→ v1.0.1 追加 32 维度（107-143）→ v1.0.2 追加 26 维度（144-176）→ v1.0.3 追加 12 维度（177-188）→ v1.0.4 追加 8 维度（189-196）= 196 总计
 
 ---
 
@@ -196,10 +116,10 @@ bash tools/pre-push-check.sh 2>&1 | tail -5
 
 #### 4. npm 包架构与发布质量
 ```bash
-npm view @sofagent/audit@1.0.0 version
-npm view @sofagent/audit@1.0.0 dependencies  # 应只有 js-yaml
-npm view @sofagent/mcp@1.0.0 version
-npm view @sofagent/mcp@1.0.0 dependencies
+npm view @sofagent/audit version          # 应为最新版本号
+npm view @sofagent/audit dependencies     # 应只有 js-yaml
+npm view @sofagent/mcp version            # 应为最新版本号
+npm view @sofagent/mcp dependencies
 # ✅ mcp 依赖应已同步 ^1.0.0
 npm pack --dry-run 2>&1 | grep '\.js\.map' | wc -l  # audit 包应为 0
 ```
@@ -224,7 +144,7 @@ bash tools/pre-push-check.sh 2>&1
 #### 7. check-version.sh
 ```bash
 bash tools/check-version.sh 2>&1 | tail -3
-# 期望：版本号 = 1.0.0，33+ 项全部一致
+# 期望：版本号与 SSOT 一致，doctor 项数全部一致
 ```
 
 #### 8. check-docs.sh（v1.0 含铁律措辞检查）
@@ -292,7 +212,7 @@ cd sofagent/audit && npx tsc --noEmit 2>&1 | head -5  # exit 0
 
 #### 18. 测试等价性
 ```bash
-cd sofagent/audit && npm test 2>&1 | tail -5  # 408+ passed
+cd sofagent/audit && npm test 2>&1 | tail -5  # 全部 passed（数字与 CHANGELOG 一致）
 ```
 
 #### 19. bin 入口 + build
@@ -347,7 +267,9 @@ grep -n 'total\|48' sofagent/scripts/verify.sh
 
 #### 26. evidence.md 测试数
 ```bash
-grep '408' docs/evidence/evidence.md  # 应为 408
+# grep 实际测试数
+actual=$(cd sofagent/audit && npm test 2>&1 | grep 'Tests' | grep -o '[0-9]*' | head -1)
+grep "$actual" docs/evidence/evidence.md 2>/dev/null  # 证据表应含当前测试数
 # 不应有 421（过时数字）
 ```
 
@@ -619,7 +541,7 @@ grep 'External validation' README.en.md
 
 #### 71. THANKS.md 外部研究参考
 ```bash
-grep -A3 'Hugging Face\|AutoResearch\|Codila\|Bilevel\|Akshay' THANKS.md
+grep -A3 'Hugging Face\|AutoResearch\|Codila\|Bilevel\|Akshay' docs/THANKS.md
 # 6 项引用（含 Codila X 链接 + Bilevel arxiv 链接 + Akshay 全名 + 文章链接）
 ```
 
@@ -661,13 +583,13 @@ done
 
 #### 75. 原文链接完整性
 ```bash
-grep 'arxiv.org/abs/2603.23420' THANKS.md ARCHITECTURE.md
+grep 'arxiv.org/abs/2603.23420' docs/THANKS.md ARCHITECTURE.md
 # 两处都应有此链接
 
-grep 'Akshay Pachaar' THANKS.md ARCHITECTURE.md
+grep 'Akshay Pachaar' docs/THANKS.md ARCHITECTURE.md
 # 应为全名
 
-grep 'x.com/i/article/2040732084843782144' THANKS.md
+grep 'x.com/i/article/2040732084843782144' docs/THANKS.md
 # THANKS.md 应有文章链接
 ```
 
@@ -681,11 +603,11 @@ gh run list --limit 3 2>&1
 # 最近 CI 运行是否通过
 ```
 
-#### 77. npm 发布状态
+#### 77. npm 发布状态（⏰ 发布后验证——回归检查阶段标 ⏳ 不标 FAIL）
 ```bash
 npm view @sofagent/audit versions --json | tail -5
 npm view @sofagent/mcp versions --json | tail -5
-# latest 都应指向 1.0.0
+# latest 都应指向当前 SSOT 版本（阶段七 npm publish 后验证）
 ```
 
 #### 78. SECURITY.md 完整性
@@ -696,7 +618,7 @@ cat SECURITY.md | head -20
 
 #### 79. COMMUNITY.md 状态
 ```bash
-head -10 COMMUNITY.md
+head -10 docs/COMMUNITY.md
 # 版本号应为 v1.0
 ```
 
@@ -973,9 +895,9 @@ awk '/FIX_SUGGESTIONS/,/^};/' sofagent/audit/src/fix-suggestions.ts | grep "'" |
 ```bash
 # v1.0 第 15-17 件事：审查 prompt 覆盖 + README 定位 + CHANGELOG 索引
 
-# 1. 审查 prompt 维度数 = 176
-grep -c '####' ~/Workbuddy/sofagent-regression-checklist.md 2>/dev/null || grep -c '####' docs/verification/regression-checklist.md
-# 应有 176 个维度（1-176）
+# 1. 审查 prompt 维度数 = 文件头维度数
+grep -c '####' docs/verification/regression-checklist.md
+# 应与本文件头标注的维度数一致
 
 # 2. README 头部定位
 head -5 README.md
@@ -1011,7 +933,7 @@ grep 'install-hook' docs/changelog/v1.0.0.md
 
 # 1. 谦虚低调——不浮夸、不吹嘘
 # 扫描「过度营销」措辞：声称「最强」「唯一」「革命性」「颠覆」「碾压」等绝对化表述
-grep -rn '最强\|唯一\|革命性\|颠覆\|碾压\|无敌\|吊打\|秒杀\|业界第一' README.md README.en.md HANDBOOK.md ARCHITECTURE.md ROADMAP.md CHANGELOG.md FDE/README.md FDE/FDE.md LIMITATIONS.md DEVELOPMENT.md SECURITY.md CONTRIBUTING.md COMMUNITY.md 2>/dev/null
+grep -rn '最强\|唯一\|革命性\|颠覆\|碾压\|无敌\|吊打\|秒杀\|业界第一' README.md README.en.md HANDBOOK.md ARCHITECTURE.md ROADMAP.md CHANGELOG.md FDE/README.md FDE/FDE.md LIMITATIONS.md DEVELOPMENT.md SECURITY.md CONTRIBUTING.md docs/COMMUNITY.md 2>/dev/null
 # 期望：无输出（正式版应该用客观描述，不用营销话术）
 
 # 2. 幽默分寸——有但不喧宾夺主
@@ -1129,24 +1051,24 @@ grep -n '术语\|名词\|glossary\|对照' HANDBOOK.md DEVELOPMENT.md ARCHITECTU
 #### 106. OpenClaw 端到端验收 🆕
 ```bash
 # v1.0 发版前必须通过 OpenClaw Agent 驱动的端到端验收测试
-# 标准测试用例文件：~/Workbuddy/openclaw-acceptance-test.md（不放项目 docs/，放在 workbuddy 根目录）
+# 标准测试用例文件：docs/verification/openclaw-acceptance-test.md
 # 与 acceptance-test.sh（CLI 端到端）互补——本测试是 Agent 真实写代码时审计能否拦住
 
 # 1. 测试用例文件存在
-ls ~/Workbuddy/openclaw-acceptance-test.md 2>/dev/null
+ls docs/verification/openclaw-acceptance-test.md 2>/dev/null
 # 不存在 = P0（发版前必须完成 OpenClaw 验收）
 
 # 2. 测试用例文件完整性——5 个场景
-grep -c '场景 [0-5]' ~/Workbuddy/openclaw-acceptance-test.md 2>/dev/null
+grep -c '场景 [0-5]' docs/verification/openclaw-acceptance-test.md 2>/dev/null
 # 应 ≥ 5（正常 PASS / 敏感文件 / Secret / 越界 / 配置删除）
 
 # 3. 测试结果记录
 # 发版前必须手动执行并记录结果（PASS/FAIL），不能只看文件存在就标 ✅
-grep -i 'PASS\|FAIL\|通过\|拦截' ~/Workbuddy/openclaw-acceptance-test.md 2>/dev/null | head -5
+grep -i 'PASS\|FAIL\|通过\|拦截' docs/verification/openclaw-acceptance-test.md 2>/dev/null | head -5
 # 人工判断：5 个场景是否都有执行结果记录
 
 # 4. 验证检查项覆盖
-grep -c '\[ \]' ~/Workbuddy/openclaw-acceptance-test.md 2>/dev/null
+grep -c '\[ \]' docs/verification/openclaw-acceptance-test.md 2>/dev/null
 # 应 ≥ 6（pre-commit 触发 / banner 可视化 / 修复建议 / PASS commit / FAIL 拦截 / history 写入）
 
 # 5. releasing.md 步骤 2.5 引用
@@ -1466,8 +1388,8 @@ grep 'sofagent-audit' README.md
 # 命令示例应为 bash 格式（$ 前缀或代码块）
 
 # 3. tests 精确化
-grep '408\|测试' README.md | head -3
-# 测试数应精确（408+），不是模糊的「大量测试」
+grep '测试' README.md | head -3  # README 中测试数应与实际一致
+# 测试数应与 CHANGELOG 声称的数字一致（grep CHANGELOG 中的测试数 vs npm test 实际数）
 ```
 
 #### 129. SECURITY.md 免责声明（P2 修复） 🆕
@@ -1734,16 +1656,16 @@ grep 'index' sofagent/skill/knowledge-maintain.md
 # 下版本审查前必须泛化，否则过时任务会产生过时审查结果
 
 # 1. 检查 prompt 中是否有版本特定的任务描述
-grep 'v1\.0\.1' ~/Workbuddy/sofagent-fresh-eyes-review.md
+grep 'v1\.0\.1' docs/verification/fresh-eyes-review.md
 # 如果有 v1.0.x 特定任务（如"看 CHANGELOG 说 AI 知识库实现版"），
 # 下版本发版前应泛化为通用描述
 
 # 2. 检查 prompt 中的"新增"标记是否仍适用于当前版本
-grep 'v1.0.1 新增' ~/Workbuddy/sofagent-fresh-eyes-review.md
+grep 'v1.0.1 新增' docs/verification/fresh-eyes-review.md
 # 上版本的"新增"在下版本不再是新增——应去掉版本标记或删除已不适用的任务
 ```
 
-#### 144. 发版前 git status 零未提交修改 🆕
+#### 144. 发版前 git status 零未提交修改（⏰ 发布前最后步骤——回归检查阶段标 ⏳ 不标 FAIL）
 ```bash
 # v1.0.1 教训：15 个文件修改全部在工作树但未 commit，
 # 导致 GitHub 访问者和 npm 用户拿不到修复。
@@ -1761,19 +1683,151 @@ git diff --stat HEAD | wc -l  # 期望: 0（或仅有预期内的文件）
 
 ---
 
-## 审查输出格式
+### 第二十二部分：v1.0.3 陌生视角审查修复（维度 177-188）🆕
+
+> 来源：GLM-5.2 独立 7 视角审查（3 轮 × 独立 subagent）+ DeepSeek V4 Pro 独立审查。去重后 12 个关键维度。
+
+#### 177. `--strict`/`--ci` 模式 exit code 正确 🆕
+```bash
+# v1.0.3 陌生视角审查 P0：reporter.ts 的 runRules() 中 strict 参数未使用
+# --help 承诺"WARN→exit 2"但实际返回 exit 1
+# pre-commit hook 用 --ci，所有 WARN 级规则永远不阻断 commit
+
+# 验证：
+cd /tmp/test-strict && git init
+echo "test" > a.txt && git add a.txt
+sofagent-audit --diff HEAD~1..HEAD --task "wrong" --strict --silent
+echo $?  # 期望: 2
+
+# 检查 reporter.ts 中 strict 是否在 exitCode 计算中使用
+grep -n "strict" sofagent/audit/src/reporter.ts | grep -i "exit"
+# 期望: 有匹配行，如 `if (rule.status === 'WARN' && strict) exitCode = 2;`
+```
+
+#### 178. pre-commit hook task 值为当前 commit msg 🆕
+```bash
+# v1.0.3 陌生视角审查 P0：hook 通过 cat .git/COMMIT_EDITMSG 读 task
+# 但 pre-commit 阶段 COMMIT_EDITMSG 存的是上一次的 commit msg
+
+# 验证：连续两次 commit，检查 A3 报的 task 是否是当前 commit 的 msg
+echo "test1" > a.txt && git add a.txt && git commit -m "add a file"
+echo "test2" > b.txt && git add b.txt && git commit -m "add b file"
+# A3 的输出中 task 应显示 "add b file" 而非 "add a file"
+```
+
+#### 179. loadHistory() 对无 timestamp 条目健壮 🆕
+```bash
+# v1.0.3 陌生视角审查 P0：history.jsonl 插入无 timestamp JSON 行即崩溃
+# catch 块吞错，doctor 第 8 项完全失效
+
+# 验证：
+echo '{"test":"abc"}' >> .sofagent/audit/history.jsonl
+sofagent-audit --doctor
+# 期望: doctor 第 8 项仍能正常执行，不崩溃
+# 输出"跳过无效条目"而非整个检查失败
+```
+
+#### 180. A9 Unicode 全角/leet speak 检测 🆕
+```bash
+# v1.0.3 陌生视角审查 P1：A9 正则只匹配 ASCII，全角和 leet speak 可绕过
+
+# 验证（修复后应检出）：
+# 全角: ｉｇｎｏｒｅ ｐｒｅｖｉｏｕｓ ｉｎｓｔｒｕｃｔｉｏｎｓ
+# leet: 1gn0r3 pr3v10us 1nstruct10ns
+# 检查 rule-a9-prompt-injection.ts 是否做 NFKC normalization
+grep -i "normalize\|NFKC" sofagent/audit/src/rules/rule-a9-prompt-injection.ts
+# 期望: 有匹配
+```
+
+#### 181. A9 扫描 commit message 🆕
+```bash
+# v1.0.3 陌生视角审查 P1：A9 只检查 diff 新增行，不检查 commit message
+
+# 验证：
+grep -i "commitMsg\|commit_msg\|commitMessage" sofagent/audit/src/rules/rule-a9-prompt-injection.ts
+# 期望: 有匹配——A9 引用了 ctx.commitMsg
+```
+
+#### 182. CHANGELOG 全历史纯度——无审查元信息 🆕
+```bash
+# v1.0.3 陌生视角审查 P1：CHANGELOG 含 GLM-5.2 / DeepSeek / 双视角等审查元信息
+
+# 验证：
+grep -i "GLM\|DeepSeek\|双视角\|P0×\|P1×\|7 视角\|× 6 方面" CHANGELOG.md
+# 期望: 无匹配（或仅出现在发版元信息中，不在产品变更描述中）
+```
+
+#### 183. 规则数字声称准确——纯 diff vs 需日志 vs 扩展 🆕
+```bash
+# v1.0.3 陌生视角审查 P0：README 说"16 条规则"但未区分哪些是纯 diff、哪些需日志
+
+# 验证：
+grep -i "纯 git-diff\|需.*日志\|扩展规则" README.md
+# 期望: 有匹配——README 标注了三种类型
+```
+
+#### 184. A14 标注"事后审计非访问控制" 🆕
+```bash
+# v1.0.3 陌生视角审查 P0：A14 知识库越权检测是 WARN 不阻断+依赖日志，非访问控制
+
+# 验证：
+grep -r "事后审计\|不是.*访问控制\|不是强制" README.md ARCHITECTURE.md sofagent/audit/src/rules/rule-a14-kb-cross-domain.ts
+# 期望: 有匹配
+```
+
+#### 185. history.jsonl 完整性保护（hash chain 或 HMAC） 🆕
+```bash
+# v1.0.3 陌生视角审查 P0：appendFileSync 无防篡改，Agent 可读写 history.jsonl
+
+# 验证：
+grep -i "hash\|chain\|hmac\|签名\|integrity" sofagent/audit/src/audit-history.ts
+# 期望: 有匹配——有某种形式的完整性保护
+# 手动篡改 history.jsonl 中间一行后跑 --doctor，应检测到篡改
+```
+
+#### 186. config 安全规则全禁用时告警 🆕
+```bash
+# v1.0.3 陌生视角审查 P1：config.yml 中 A1/A2 设为 false 时无告警
+
+# 验证：
+# 在 config.yml 中设 rules: {a1: false, a2: false}
+# 跑 sofagent-audit --diff HEAD~1..HEAD
+# 期望: 输出 WARN "安全规则 A1/A2 已被禁用"
+```
+
+#### 187. git tag 指向发布提交 🆕
+```bash
+# DeepSeek 审查 P0：v1.0.3 tag 指向 e088756（修复提交）而非 1bc496c（发布提交）
+
+# 验证：
+git show v1.0.3 --stat | head -5
+# tag commit message 应包含版本号
+# git show 应展示完整发布内容（非单个文件修复）
+```
+
+#### 188. CHANGELOG 声称与实现一致——"引擎" vs "wrapper" 🆕
+```bash
+# DeepSeek 审查 P1：SkillOpt 声称"自进化引擎"但实际是 CLI wrapper
+
+# 验证：
+# CHANGELOG 标题中声称的功能名是否与实际代码匹配？
+grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
+# 如果实际是 wrapper，不应叫"引擎"
+```
+
+---
 
 请按以下结构输出审查报告：
 
 ```markdown
-# sofagent v1.0 全方面审查报告（157 维度）
+# sofagent 回归检查报告
 
 ## 总览
 - 审查日期：YYYY-MM-DD
-- 审查范围：157 维度 / 全量改动
+- 审查范围：全维度 / 全量改动
 - 环境验证：pre-push-check [✅/❌] / npm test [✅/❌] / check-docs [✅/❌] / check-version [✅/❌]
-- Fresh clone：[✅/❌]（v1.0 硬性条件）
-- npm 发布：@sofagent/audit@1.0.0 [✅] / @sofagent/mcp@1.0.0 [✅]
+- Fresh clone：[✅/❌]
+- npm 发布：@sofagent/audit@<最新版> [✅] / @sofagent/mcp@<最新版> [✅]
 - 整体结论：[已发布无遗留 / 需修复后补发 / 阻塞]
 
 ## 问题清单
@@ -1790,7 +1844,7 @@ git diff --stat HEAD | wc -l  # 期望: 0（或仅有预期内的文件）
 |---|------|---------|------|------|
 
 ## 维度通过统计
-- 总维度数：176
+- 总维度数：188
 - 通过：X
 - ⚠️ 有条件通过：X
 - ❌ 未通过：X
@@ -1864,7 +1918,7 @@ git diff --stat HEAD | wc -l  # 期望: 0（或仅有预期内的文件）
 | 141 | ROADMAP 状态一致性——同一版本在不同位置的标记不能矛盾 | v1.0.1 审查发现同时标 ✅ 和 🚧 规划中 |
 | 142 | knowledge/ index.md 模板格式一致性——两个创建入口的模板表头列必须相同 | v1.0.1 审查发现 init.ts 和 file-deploy.sh 表头列不同 |
 | 143 | 陌生视角 prompt 版本相关性——v1.0.x 特定任务在下版本审查前必须泛化 | 审查体系闭环 |
-| **144** | **发版前 git status 零未提交修改——工作树干净是发版前置条件** | **v1.0.1 教训：15 个文件修改未 commit，npm 包落后** |
+| **144** | **发版前 git status 零未提交修改——⏰ 发布前最后步骤（commit 后验证），回归检查阶段标 ⏳** | **v1.0.1 教训：15 个文件修改未 commit，npm 包落后** |
 | **145** | **版本重编号全局一致性——bump-version 后详情表中的未来版本引用是否全部跟随重编号** | **v1.0.2 教训：ROADMAP 3 个详情表 12 处+ HANDBOOK/DEVELOPMENT/THANKS 6 处遗漏** |
 | **146** | **changelog 格式一致性——只描述产品变更，不含审查元信息（模型名/轮次/视角数）** | **v1.0.2 教训：changelog 含 GLM-5.2 + DeepSeek + 7 视角 × 6 方面等元信息** |
 | **147** | **文档日期与版本号同步——bump-version 后 MD 文档头日期应为发版日期** | **v1.0.2 教训：4 份文档日期仍为 v1.0.1 的 2026-07-04** |
@@ -1897,6 +1951,26 @@ git diff --stat HEAD | wc -l  # 期望: 0（或仅有预期内的文件）
 | **174** | **`--no-verify` 绕过后事后审计对密钥检测——`--diff HEAD` 模式下 A1/A2 正确检出** | **v1.0.2 第五轮审查 P2（DeepSeek）** |
 | **175** | **`--doctor` 绕过检测含"安全提示"标注** | **v1.0.2 第五轮审查 P2（DeepSeek）** |
 | **176** | **README 延伸阅读表分层（"必读"和"进阶"分开）** | **v1.0.2 第五轮审查 P2（DeepSeek）** |
+| **177** | **`--strict`/`--ci` 模式 exit code 正确——WARN→exit 2** | **v1.0.3 陌生视角审查 P0** |
+| **178** | **pre-commit hook task 值为当前 commit msg** | **v1.0.3 陌生视角审查 P0** |
+| **179** | **loadHistory() 对无 timestamp 条目健壮** | **v1.0.3 陌生视角审查 P0** |
+| **180** | **A9 Unicode 全角/leet speak 检测** | **v1.0.3 陌生视角审查 P1** |
+| **181** | **A9 扫描 commit message** | **v1.0.3 陌生视角审查 P1** |
+| **182** | **CHANGELOG 全历史纯度——无审查元信息** | **v1.0.3 陌生视角审查 P1** |
+| **183** | **规则数字声称准确——纯 diff vs 需日志 vs 扩展** | **v1.0.3 陌生视角审查 P0** |
+| **184** | **A14 标注"事后审计非访问控制"** | **v1.0.3 陌生视角审查 P0** |
+| **185** | **history.jsonl 完整性保护（hash chain 或 HMAC）** | **v1.0.3 陌生视角审查 P0** |
+| **186** | **config 安全规则（A1/A2）被禁用时输出告警——config-loader.ts:170 已实现 `console.warn`** | **v1.0.3 陌生视角审查 P1** |
+| **187** | **git tag 指向发布提交——⏰ 发布后验证项，回归检查阶段标 ⏳ 不标 FAIL** | **v1.0.3 DeepSeek 审查 P0** |
+| **188** | **CHANGELOG 声称与实现一致——"引擎" vs "wrapper"** | **v1.0.3 DeepSeek 审查 P1** |
+| **189** | **eval harness——golden set 格式与 runEval API 一致** | **v1.0.4 新功能** |
+| **190** | **A15 规则注册 + evidenceMode + actions 提取正则可靠** | **v1.0.4 新功能** |
+| **191** | **HITL 四类强制人工场景（risk-assessor.ts）+ 置信度计算非硬编码（confidence-tagger.ts）——注意 HITL 是独立模块（hitl/），不是 E 系列规则** | **v1.0.4 新功能** |
+| **192** | **A/B decidePromotion 连续胜出阈值可配置 + promote 归档路径存在** | **v1.0.4 新功能** |
+| **193** | **SkillOpt——daemon.sh 与 doctor.ts 的 scoring.md 路径一致** | **v1.0.4 P0：跨模块路径引用** |
+| **194** | **dist 与 src 同步——新增 CLI 命令在 dist 中存在** | **v1.0.4 遗漏补完** |
+| **195** | **CHANGELOG/ROADMAP 测试数字与实际 npm test 输出一致** | **v1.0.4 教训：写 455 实际 465** |
+| **196** | **跨模块路径引用一致性——shell 脚本 `${SOFAGENT_DATA}` 与 TS `dataDir` 拼接的路径一致** | **v1.0.4 P0：路径拼接方式不同导致不一致** |
 
 ### 建议补充到陌生视角审查的内容
 > 如果某些问题类别反复出现，或某个盲区根本未被现有 7 个视角覆盖，建议补充到[陌生视角审查](./sofagent-fresh-eyes-review.md)。
@@ -1912,7 +1986,7 @@ git diff --stat HEAD | wc -l  # 期望: 0（或仅有预期内的文件）
 ## 审查约束
 
 - **v1.0 是正式版**——从「技术预览」到「可生产使用」的跨越，你的审查质量直接决定正式版能否发布
-- **176 维度全部检查**——不是只看增量，是全仓库全面检查
+- **196 维度全部检查**——不是只看增量，是全仓库全面检查
 - **v0.99.9 老问题不能回归**——ROADMAP 版本叙事、GLM 维度数一致性、中英文文件对称、术语统一
 - **铁律措辞强化必须用 grep 验证**——不能凭感觉说「改完了」，grep 不到才算数
 - **准入条件 A 类不能造假**——⚠️→✅ 必须有新 evidence 支持，不能因为正式版就改 ✅
@@ -1965,9 +2039,16 @@ git diff --stat HEAD | wc -l  # 期望: 0（或仅有预期内的文件）
 - **事后审计审「密钥检测不遗漏」**——--no-verify 绕过后 --diff HEAD 仍能检出 A1/A2
 - **doctor 安全提示审「绕过有 WARN」**——检测到 --no-verify 时输出"安全提示"
 - **README 分层审「延伸阅读分必读+进阶」**——不让新用户面对 26 行链接表
+- **strict 生效审「WARN→exit 2」**——--strict/--ci 模式下 WARN 返回 exit 2（v1.0.3 审查 P0）
+- **task 时序审「当前 msg」**——pre-commit hook 中 A3 读取的是当前 commit msg 非上一次（v1.0.3 审查 P0）
+- **loadHistory 健壮审「垃圾数据不崩」**——history.jsonl 插入无 timestamp JSON 时 doctor 不崩溃（v1.0.3 审查 P0）
+- **A9 加固审「全角+leet+commitMsg」**——Unicode normalization + leet 映射 + commit message 扫描（v1.0.3 审查 P1）
+- **history 完整性审「hash chain」**——history.jsonl 有防篡改机制（v1.0.3 审查 P0）
+- **tag 指向审「发布提交」**——git tag 指向发布提交而非修复提交（v1.0.3 审查 P0）
+- **声称准确审「引擎 vs wrapper」**——CHANGELOG 中的功能名与实际代码交付一致（v1.0.3 审查 P1）
 - **不要建议新功能**——v1.0 是正式版，不是功能版
 - **发现的问题请给出文件路径 + 行号 + 具体建议**，不要泛泛而谈
 
 ---
 
-> **审查者**：请严格验证每一项声称，不放过任何矛盾。v1.0 是 sofagent 的第一个正式版——这是从「技术预览」到「可生产使用」的跨越，最后一道防线。
+> **审查者**：请严格验证每一项声称，不放过任何矛盾。全维度逐项核对。

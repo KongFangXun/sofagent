@@ -4,7 +4,7 @@
 
 ![Verify](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-v1.0.3-16B8F3)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-v1.0.4-16B8F3)](./CHANGELOG.md)
 [![定位：Agent 审计工具](https://img.shields.io/badge/定位-Agent_审计工具-16B8F3)](#一句话定位)
 [![核心：审计引擎](https://img.shields.io/badge/核心-审计引擎-16B8F3)](#一句话定位)
 [![OpenClaw](https://img.shields.io/badge/🦞_引擎-OpenClaw-FF4D4D)](./ARCHITECTURE.md#两层架构地基-vs-引擎)
@@ -21,7 +21,9 @@
 
 ## 一句话定位
 
-给 AI Agent 装一个提交时审计官——看 git diff 硬证据判定违规，不依赖 Agent 自我报告。16 条审计规则（11 条纯 git-diff + 5 条扩展）不依赖 Agent 配合——扫描每次代码变更，自动判定违规、生成反思。中小企业装完就能用，不用请顾问、不用写 prompt。
+给 AI Agent 装一个提交时审计官——看 git diff 硬证据判定违规，不依赖 Agent 自我报告。17 条审计规则（13 条纯 git-diff + 4 条需 Agent 日志）不依赖 Agent 配合——扫描每次代码变更，自动判定违规、生成反思。中小企业装完就能用，不用请顾问、不用写 prompt。
+
+> 注：A3（不改越界）、A5（改前读）、A7（不盲改）、A8（不逃验证）需要 Agent 配合记录 task/logs 才能完整运行。`--silent` 模式下这 4 条规则走降级逻辑或跳过。
 
 > **和 detect-secrets 有什么区别**？detect-secrets 是通用密钥扫描器，sofagent A1/A2 是 Agent 场景定制——不仅检测密钥，还关联 A3 越界上下文（为什么这个文件被改了？）和 A7/A8 流程合规（改之前读了没？改之后测了没？）。
 
@@ -29,15 +31,25 @@
 
 > 🔬 **为什么相信 Harness 有用**？Hugging Face 实验：同一模型不改权重，仅优化外层 Harness，得分从 3.5%→80.1%。→ [详见 ARCHITECTURE](./ARCHITECTURE.md#理论基础与外部验证)
 
-> **成熟度**：审计引擎是核心，日常稳定（核心逻辑 418 tests 全绿——diff-parser / config-loader / rules A1-A14 / reporter / log-checker；daemon / MCP / install.sh 依赖手动验证 + verify.sh 48 项环境检查，详见 LIMITATIONS。5/5 靶向违规全部检出（作者自测，非独立验证），3 名外部用户验证）。编排引擎需要 OpenClaw 环境，能跑但还在打磨。
+> **成熟度**：审计引擎是核心，日常稳定（核心逻辑 465 tests 全绿——diff-parser / config-loader / rules A1-A15 / reporter / log-checker；daemon / MCP / install.sh 依赖手动验证 + verify.sh 48 项环境检查，详见 LIMITATIONS。5/5 靶向违规全部检出（作者自测，非独立验证），3 名外部用户验证）。编排引擎需要 OpenClaw 环境，能跑但还在打磨。
 
 | 组件 | 做什么 | 怎么跑 |
 |------|------|------|
-| **审计引擎** | git diff → 16 条规则（11 默认 + 5 扩展）→ exit code | git pre-commit hook，不挑 Agent、不挑平台 |
+| **审计引擎** | git diff → 17 条规则（13 条纯 git-diff + 4 条需 Agent 日志，默认启用前 11 条）→ exit code | git pre-commit hook，不挑 Agent、不挑平台 |
 | **约束底座** | MD 规则注入 Agent 上下文 | install.sh 装完自动加载 |
 | **编排引擎**（实验性）| 拆任务 → 编排 → 执行 | ao compose（跑在 OpenClaw 上） |
 
 审计引擎零 Agent 依赖——A1/A2/A9-A11 是纯 git-diff 规则（不依赖 Agent 日志），A3/A7/A8 依赖 Agent 日志（软证据）。`--silent` 模式只跑纯 diff 规则。约束底座和审计引擎不需要 ao compose。编排引擎才需要（ao compose 跑在 OpenClaw 上）。
+
+---
+
+## 你需要哪个？
+
+| 你的场景 | 用什么 |
+|---------|--------|
+| 只想拦截密钥泄漏 | 审计引擎（Quick Start 2 行命令即可） |
+| 想管住 Agent 全流程行为 | 审计引擎 + 约束底座 |
+| 想自动编排 Agent 任务 | 编排引擎（实验性，需要 OpenClaw） |
 
 ---
 
@@ -62,7 +74,7 @@ npx -p @sofagent/audit sofagent-audit --init
     审计引擎（每次提交）                 编排引擎（Workflow 梳理 + 定期重测）
          │                                       │
          ├─ git diff 扫描                        ├─ Workflow 梳理：生成节点文档（nodes/*.md）
-         ├─ 规则检查 A1-A14                      │       └─ Agent 读 .md → 注入 ao compose 拆任务
+         ├─ 规则检查 A1-A15                      │       └─ Agent 读 .md → 注入 ao compose 拆任务
          │                                       │
          │                                       ├─ 生产运行：AI 节点按编排方案执行
          │                                       │       ├─ 🔄 自动执行
@@ -82,29 +94,18 @@ npx -p @sofagent/audit sofagent-audit --init
 
 ---
 
+<details>
+<summary>FDE 部署（企业用户展开）</summary>
+
 ## FDE：从工作流到 AI 节点
 
 ### 一个嵌套关系：FDE 工作用 sofagent，客户部署后也用 sofagent
 
-FDE 工具包本身就是 sofagent 产品的一部分。整个逻辑是嵌套的：
-
-```
-FDE = Forward Deployed Engineer
-    │
-    │  FDE 本身也是一个 workflow（12 步）
-    │
-    ├── FDE 工作（⚡ 强化节点）
-    │   └── 工具 = sofagent 约束底座 + FDE Skill 工具包
-    │       └── 用自己的 Agent（WorkBuddy / Codex）走 12 步
-    │
-    └── 给客户部署
-        ├── 找台闲置设备装 sofagent 底座 ← 核心产品落地
-        └── 上面跑客户的 AI 节点（客户自己的 workflow）
-```
-
-**一句话：FDE 工作用自己产品，给别人部署完让别人也用自己产品。产品的核心是底座。**
+FDE 工具包本身就是 sofagent 产品的一部分——FDE 用自己产品工作，给别人部署完让别人也用自己产品。完整嵌套关系和部署架构详见 [ARCHITECTURE § 两层架构](./ARCHITECTURE.md#两层架构地基-vs-引擎)。
 
 > FDE（Forward Deployed Engineer）进驻企业走四阶段十二步：梳理工作流 → 构建本体模型 → 识别节点与量化 → 部署落地。完整流程见 [FDE/FDE.md](./FDE/FDE.md)，直接装 [sofagent-fde Skill](./FDE/SKILL.md) 让 Agent 带着走。中小企业不需要请顾问——自己就能做。
+
+</details>
 
 ---
 
@@ -130,13 +131,13 @@ FDE = Forward Deployed Engineer
 | 平台能力与已知局限 | [LIMITATIONS.md](./LIMITATIONS.md) |
 | 版本路线图 | [ROADMAP.md](./ROADMAP.md) |
 | 版本历史 | [CHANGELOG.md](./CHANGELOG.md) |
-| 项目反思 | [THINK.md](./THINK.md) |
+| 项目反思 | [THINK.md](./docs/THINK.md) |
 | 贡献指南 | [CONTRIBUTING.md](./CONTRIBUTING.md) |
 | GitHub Action 审计集成 | [docs/guides/github-action.md](./docs/guides/github-action.md) |
 | FDE 工具包 | [FDE/](./FDE/) |
-| 社区与数据 | [COMMUNITY.md](./COMMUNITY.md) |
+| 社区与数据 | [COMMUNITY.md](./docs/COMMUNITY.md) |
 | 行为准则 | [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) |
-| 致谢 | [THANKS.md](./THANKS.md) |
+| 致谢 | [THANKS.md](./docs/THANKS.md) |
 
 </details> |
 
@@ -146,7 +147,7 @@ FDE = Forward Deployed Engineer
 
 欢迎提 Issue 和 PR，尤其挑刺的那种。详见 [CONTRIBUTING.md](./CONTRIBUTING.md)。我们在寻找 Co-maintainer——熟悉 bash 兼容性、OpenClaw hook、安全审计或英文文档的人。
 
-sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完整致谢](./THANKS.md)
+sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完整致谢](./docs/THANKS.md)
 
 > 我叫孔放勋，一个只懂点前端代码的产品经理。
 >

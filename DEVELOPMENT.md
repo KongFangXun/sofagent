@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v1.0.3 · 2026-07-11（UTC）· 孔放勋
+> v1.0.4 · 2026-07-11（UTC）· 孔放勋
 
 > 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](./FDE/FDE.md) 和 [README § FDE](./README.md#fde从工作流到-ai-节点)。
 
@@ -97,27 +97,9 @@
 
 > 三层闸门 + 一条回环：入境 → 每任务 → Loop → 离境。四个全走才能保证 `.sofagent/` 数据层被激活。
 
-sofagent 有**两个引擎**，数据流分离但在 think.md 交汇：
+sofagent 有**两个引擎**，数据流分离但在 think.md 交汇。
 
-```
-审计引擎（每次提交）                  编排引擎（Workflow 梳理 + 定期重测）
-    │                                       │
-    ├─ git diff                             ├─ Workflow 梳理：生成节点文档（nodes/*.md）
-    ├─ 规则检查 A1-A14                      │       └─ ao compose 拆任务 → 写入 orchestrator/current/
-    ├─ think-generator.ts                   │
-    │   └→ 写 think.md ─────┐              ├─ 生产运行：AI 节点按 workflow 执行
-    │                       │              │       ├─ 🔄 自动执行
-    │                       │              │       └─ ⚡ AI 领航员辅助
-    │                       │              │
-    │                       │              ├─ 定期 A/B 重测
-    │                       │              │       ├─ 编排引擎重出 candidate 方案
-    │                       │              │       ├─ orchestrate-compare 确定性对比
-    │                       │              │       └─ Candidate 胜出 → promote
-    │                       │              │
-    └───────────────────────┴──────────────┘
-                  think.md 是交汇点
-         （审计引擎写 / 编排引擎读 / A/B 结果写入 orchestrator/）
-```
+> 完整架构图详见 [README § 怎么工作](./README.md#怎么工作) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 **审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义（nodes/*.md），之后 Agent 读节点 .md 注入给 ao compose 执行，定期用 `sofagent-orchestrate-compare` 做 A/B 重优化。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
 
@@ -155,6 +137,8 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇：
 任务到达 → 两轮澄清 → 目标定稿 → [ao compose](https://github.com/jnMetaCode/agency-orchestrator) 拆任务 → 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 `orchestrate-compare.ts` 执行前注入。
 
 > **收敛是 Loop 的生命线**。Loop 工程核心是收敛——目标必须满足两个条件才能进入循环：① 可验证（测试覆盖率、AC 验收标准等明确量化标准）；② 模型可自主价值判断（字数限制、关键词检查等 LLM 自带规则）。不具备收敛性的目标（如「优化美观度」）会无限烧 Token——两轮澄清机制就是为了拦截不收敛目标。
+
+> 📋 **Loop 落地前置条件**：不是所有任务都适合 Loop 编排——① Token 预算（任务消耗可预估且值得花）；② 任务明确（有清晰输入/输出边界）；③ 验证精准（可量化检查标准，且验证 Agent 独立于执行 Agent）；④ 重复性（至少跑 5-10 次才有优化价值）；⑤ 项目基建（git / test / CI 已就绪）。
 
 > 📋 **任务澄清四类未知**（Anthropic zeric 方法论）：用户给 Agent 下任务时有四种未知状态——**已知熟知**（已写入 prompt 的显性需求，正常执行）、**已知未知**（用户意识到没想清楚，task-aware 两轮澄清）、**未知熟知**（用户默认"大家都懂"但 AI 完全不了解，需反向采访探测隐性规则）、**未知未知**（双方都没考虑到的盲点/bug，需 think.md 强制结构化 + 盲点审查）。当前 task-aware 覆盖前两类，后两类是扩展方向。
 
@@ -358,7 +342,9 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 
 ## 八、提交时审计
 
-sofagent-audit（v0.99.7）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对审计规则（A1-A14）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 运行时配合，但审计 A7/A8 的日志检查依赖 Agent 写入的任务日志。
+sofagent-audit（v0.99.7）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对审计规则（A1-A15）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 运行时配合，但审计 A7/A8 的日志检查依赖 Agent 写入的任务日志。
+
+> 📐 **最小 Harness 参照**：MicroHoneys 仅 400 行代码实现了完整的 Agent Harness（配置/提示词/工具调度/安全守卫/生命周期/长期记忆），证明 Harness 层不需要庞大的基础设施——核心是边界清晰的分层设计，不是代码量。sofagent 的审计引擎同样追求极简：核心规则 < 2000 行，零外部 API 依赖。
 
 ### 绿灯路径检测
 

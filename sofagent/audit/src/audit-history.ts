@@ -17,6 +17,7 @@
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
+import { createHash } from 'crypto';
 import { loadEnvConfig } from './config-loader';
 import type { RuleCheck } from './rules/types';
 
@@ -59,6 +60,10 @@ export interface AuditHistoryEntry {
   diffFileCount: number;
   /** commit message */
   commitMsg?: string;
+  /** P0-5: 前一条记录的 hash，用于链完整性验证 */
+  prevHash?: string;
+  /** P1-15: 本次审计对应的 commit SHA（doctor #8 追溯用） */
+  commitSha?: string;
 }
 
 /**
@@ -85,9 +90,27 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     mkdirSync(dir, { recursive: true });
   }
 
+  // P0-5: 计算 prevHash（上一行的 hash）
+  let prevHash = 'genesis';
+  if (existsSync(filePath)) {
+    const lines = readFileSync(filePath, 'utf-8').trim().split('\n').filter(Boolean);
+    if (lines.length > 0) {
+      const lastLine = lines[lines.length - 1]!;
+      try {
+        const lastEntry = JSON.parse(lastLine);
+        // hash = SHA-256(record without hash fields + prevHash)
+        const lastRecordForHash = { ...lastEntry, prevHash: undefined };
+        prevHash = createHash('sha256').update(JSON.stringify(lastRecordForHash)).digest('hex').slice(0, 16);
+      } catch {
+        prevHash = 'unknown';
+      }
+    }
+  }
+
   // P0-1: 写入前脱敏——避免 A2/A9 拦截结果中存密钥明文
   const sanitizedEntry = {
     ...entry,
+    prevHash,
     ruleResults: entry.ruleResults.map(sanitizeRuleResult),
   };
   const line = JSON.stringify(sanitizedEntry) + '\n';
@@ -130,11 +153,66 @@ export function loadHistory(limit?: number, dataDir?: string): AuditHistoryEntry
     }
   }
 
-  entries.sort((a, b) => {
+  // P0-3 修复：过滤无 timestamp 的条目后再排序
+  const validEntries = entries.filter(
+    (e) => e && typeof e.timestamp === 'string' && e.timestamp.length > 0
+  );
+  validEntries.sort((a, b) => {
     return b.timestamp.localeCompare(a.timestamp);
   });
 
-  return entries.slice(0, maxLimit);
+  return validEntries.slice(0, maxLimit);
+}
+
+/**
+ * P0-5: 验证 history.jsonl 的 hash chain 完整性
+ * 检测中间条目是否被篡改
+ * @param dataDir 可选的数据目录覆盖
+ * @returns true = 链完整，false = 链断裂
+ */
+export function checkHistoryChainIntegrity(dataDir?: string): boolean {
+  const filePath = getHistoryFilePath(dataDir);
+
+  if (!existsSync(filePath)) {
+    return true; // 无历史文件 = 未受损
+  }
+
+  let content: string;
+  try {
+    content = readFileSync(filePath, 'utf-8');
+  } catch {
+    return false;
+  }
+
+  const entries: AuditHistoryEntry[] = [];
+  const lines = content.split('\n');
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed === '') continue;
+
+    try {
+      const parsed = JSON.parse(trimmed) as AuditHistoryEntry;
+      entries.push(parsed);
+    } catch {
+      // 跳过解析失败的行
+    }
+  }
+
+  if (entries.length <= 1) return true; // 0 或 1 条记录无需验证
+
+  for (let i = 1; i < entries.length; i++) {
+    const prev = entries[i - 1]!;
+    const curr = entries[i]!;
+    const expectedPrevHash = createHash('sha256')
+      .update(JSON.stringify({ ...prev, prevHash: undefined }))
+      .digest('hex').slice(0, 16);
+    if (curr.prevHash !== expectedPrevHash && curr.prevHash !== 'unknown') {
+      return false; // 链断裂
+    }
+  }
+
+  return true;
 }
 
 /**

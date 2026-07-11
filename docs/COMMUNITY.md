@@ -1,6 +1,6 @@
 # COMMUNITY.md · sofagent 社区
 
-> v1.0.3 · 2026-07-11（UTC）· 孔放勋
+> v1.0.4 · 2026-07-11（UTC）· 孔放勋
 
 ## 📌 当前状态
 
@@ -38,7 +38,7 @@
 
 sofagent 的约束效果的增量数据需要独立验证，不能只靠作者自己跑的数据。
 
-**复现指南**：[docs/evidence/benchmark/reproduction-guide.md](./docs/evidence/benchmark/reproduction-guide.md)
+**复现指南**：[docs/evidence/benchmark/reproduction-guide.md](./evidence/benchmark/reproduction-guide.md)
 
 **最小复现路径**（30 分钟）：
 1. 克隆 [sofagent-test-suite](https://github.com/cedric123123/sofagent-test-suite)（baseline `56160e1`）

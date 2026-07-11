@@ -1,8 +1,8 @@
 // ============================================================
 // doctor.ts · sofagent-audit --doctor 健康诊断
 // v1.0 新增：一键诊断 7 项健康度
-// v1.0.3 新增：第 9 项——知识库访问矩阵
-// v1.0.3 新增：第 10 项——Skill 自进化状态 + 第 11 项——成本报告（共 11 项）
+// v1.0.4 新增：第 9 项——知识库访问矩阵
+// v1.0.4 新增：第 10 项——Skill 自进化状态 + 第 11 项——成本报告（共 11 项）
 // 只读诊断，不做任何写操作
 // 退出码：全部通过 → 0；有失败 → 1
 // ============================================================
@@ -10,7 +10,7 @@
 import { existsSync, accessSync, constants, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { execFileSync } from 'child_process';
-import { loadHistory } from '../audit-history';
+import { loadHistory, checkHistoryChainIntegrity } from '../audit-history';
 import { loadConfig, loadEnvConfig } from '../config-loader';
 import { load as yamlLoad } from 'js-yaml';
 import { calculateBaseline, isAnomaly, isColdStart } from '../cost-baseline';
@@ -234,17 +234,10 @@ export function runDoctor(): void {
       } else {
         // 从 history.jsonl 加载最近审计记录，提取 diffRange 中包含的 SHA
         const history = loadHistory(20);
+        // P1-15: 从 history 中直接读取 commitSha 字段
         const auditedShas = new Set<string>();
         for (const entry of history) {
-          // diffRange 格式如 "HEAD~1..HEAD" 或包含 SHA 的变体
-          const range = entry.diffRange || '';
-          // 提取 40 位 hex SHA
-          const shaMatches = range.match(/[0-9a-f]{7,40}/gi);
-          if (shaMatches) {
-            for (const sha of shaMatches) {
-              auditedShas.add(sha);
-            }
-          }
+          if (entry.commitSha) auditedShas.add(entry.commitSha);
         }
 
         // 检查最近 commit 是否在审计历史中
@@ -261,10 +254,16 @@ export function runDoctor(): void {
         if (unauditedShas.length === 0) {
           results.push({ ok: true, warning: false, label: 'commit 审计追溯', detail: `最近 ${recentShas.length} 条 commit 均有审计记录` });
         } else {
+          // P1-5: 区分"安装前已有 commit"和"真正绕过"
+          const hasHistory = history.length > 0;
           results.push({
-            ok: false, warning: true, label: 'commit 审计追溯',
-            detail: `⚠️ 安全提示：检测到 ${unauditedShas.length} 条 commit 未经审计（可能使用了 --no-verify 绕过）: ${unauditedShas.join(', ')}`,
-            fixHint: '建议运行 sofagent-audit --diff HEAD 事后审计这些 commit',
+            ok: hasHistory ? false : true,  // 无历史 = 首次安装，不报失败
+            warning: true,
+            label: 'commit 审计追溯',
+            detail: hasHistory
+              ? `⚠️ 检测到 ${unauditedShas.length} 条 commit 未经审计（可能使用了 --no-verify）: ${unauditedShas.join(', ')}`
+              : `ℹ️ 检测到 ${unauditedShas.length} 条历史 commit（安装 sofagent 前的提交，无需担心）: ${unauditedShas.join(', ')}`,
+            fixHint: hasHistory ? '建议运行 sofagent-audit --diff HEAD 事后审计' : undefined,
           });
         }
       }
@@ -273,6 +272,27 @@ export function runDoctor(): void {
     }
   } else {
     results.push({ ok: true, warning: true, label: 'commit 审计追溯', detail: '跳过（非 git 仓库）' });
+  }
+
+  // P0-5: history.jsonl 链完整性检测
+  if (inGitRepo) {
+    try {
+      const chainOk = checkHistoryChainIntegrity();
+      if (chainOk) {
+        // 静默通过——不额外输出，避免噪音
+      } else {
+        results.push({
+          ok: false, warning: true, label: '审计历史链完整性',
+          detail: '审计历史链完整性异常——history.jsonl 可能被篡改',
+          fixHint: '建议检查 .sofagent/audit/history.jsonl 是否被非正常修改',
+        });
+      }
+    } catch {
+      results.push({
+        ok: true, warning: true, label: '审计历史链完整性',
+        detail: '无法验证链完整性，跳过',
+      });
+    }
   }
 
   // 9. 知识库访问矩阵（读取 workflow.yml 展示各节点的 knowledge-domain）
@@ -325,34 +345,31 @@ export function runDoctor(): void {
     }
   }
 
-  // 10. Skill 自进化状态（v1.0.3 新增）
+  // 10. Skill 自进化状态（v1.0.3 → P0-7 管道状态检测）
   {
     const envConfig = loadEnvConfig();
-    const scoringDir = join(envConfig.dataDir, 'scoring');
-    const scoringIndex = join(scoringDir, '_index.md');
-
-    if (existsSync(scoringIndex)) {
+    const dataDir = envConfig.dataDir;
+    const skilloptAvailable = isSkillOptAvailable();
+    // scoring.md 在 skill/data/ 下（与 daemon.sh 的 ${SOFAGENT_DATA}/../skill/data/scoring.md 一致）
+    const scoringPath = join(dataDir, '..', 'skill', 'data', 'scoring.md');
+    const hasScoring = existsSync(scoringPath);
+    let scoreCount = 0;
+    if (hasScoring) {
       try {
-        const content = readFileSync(scoringIndex, 'utf-8');
-        // 提取最近更新时间
-        const dateMatch = content.match(/最近更新[:\s]+(\S+)/);
-        const detail = dateMatch ? `scoring/_index.md 存在，最近更新: ${dateMatch[1]}` : 'scoring/_index.md 存在';
-        results.push({
-          ok: true, warning: true, label: 'Skill 自进化状态',
-          detail: `${detail}。SkillOpt: ${isSkillOptAvailable() ? '✅ 可用' : '❌ 未安装（pip install skillopt）'}`,
-        });
+        const content = readFileSync(scoringPath, 'utf-8');
+        scoreCount = content.split('\n').filter((l) => l.startsWith('|')).length;
       } catch {
-        results.push({
-          ok: true, warning: true, label: 'Skill 自进化状态',
-          detail: 'scoring/_index.md 读取失败',
-        });
+        // scoring.md 读取失败，scoreCount 保持 0
       }
-    } else {
-      results.push({
-        ok: true, warning: true, label: 'Skill 自进化状态',
-        detail: '暂无 scoring 数据（任务运行后会生成）',
-      });
     }
+    results.push({
+      ok: true,
+      warning: !skilloptAvailable && scoreCount >= 20,
+      label: 'SkillOpt 管道',
+      detail: skilloptAvailable
+        ? `✅ skillopt-sleep 可用 | scoring.md ${scoreCount} 条（阈值 20）`
+        : `⚠️ skillopt-sleep 未安装 | scoring.md ${scoreCount} 条${scoreCount >= 20 ? '（已达触发阈值，安装 skillopt-sleep 后自动触发）' : ''}`,
+    });
   }
 
   // 11. 成本报告（v1.0.3 新增）
@@ -375,6 +392,89 @@ export function runDoctor(): void {
       results.push({
         ok: true, warning: true, label: '成本报告',
         detail: '暂不可用（task/logs 为空或数据目录不存在）',
+        fixHint: '首次使用可忽略——运行更多任务后自动生成',
+      });
+    }
+  }
+
+  // 12. eval harness 状态（v1.0.4 新增）
+  {
+    const envConfig = loadEnvConfig();
+    const evalDir = join(envConfig.dataDir, 'eval');
+    const goldenSet = join(evalDir, 'golden-set.yml');
+
+    if (existsSync(goldenSet)) {
+      try {
+        const content = readFileSync(goldenSet, 'utf-8');
+        const caseCount = (content.match(/^  - id:/gm) || []).length;
+        results.push({
+          ok: true, warning: false, label: 'eval harness',
+          detail: `golden set 存在（${caseCount} 条用例）`,
+        });
+      } catch {
+        results.push({
+          ok: true, warning: true, label: 'eval harness',
+          detail: 'golden-set.yml 读取失败',
+        });
+      }
+    } else {
+      results.push({
+        ok: true, warning: true, label: 'eval harness',
+        detail: '暂无 golden set（FDE 部署时生成）',
+        fixHint: '首次使用可忽略',
+      });
+    }
+  }
+
+  // 13. Sub Agent A/B 自进化状态（v1.0.4 新增）
+  {
+    const envConfig = loadEnvConfig();
+    const abConfigPath = join(envConfig.dataDir, 'ab-config.yml');
+    const subagentsHistoryDir = join(envConfig.dataDir, 'subagents', 'history');
+
+    if (existsSync(abConfigPath)) {
+      results.push({
+        ok: true, warning: false, label: 'Sub Agent A/B 自进化',
+        detail: 'ab-config.yml 存在，A/B 测试已配置',
+      });
+    } else if (existsSync(subagentsHistoryDir)) {
+      results.push({
+        ok: true, warning: true, label: 'Sub Agent A/B 自进化',
+        detail: '有历史记录但无当前 A/B 配置',
+      });
+    } else {
+      results.push({
+        ok: true, warning: true, label: 'Sub Agent A/B 自进化',
+        detail: '暂无 A/B 配置（运行 sofagent-audit --ab-test 启动）',
+        fixHint: '首次使用可忽略',
+      });
+    }
+  }
+
+  // 14. HITL 统计（v1.0.4 新增）
+  {
+    const envConfig = loadEnvConfig();
+    const hitlLogPath = join(envConfig.dataDir, 'hitl', 'log.jsonl');
+
+    if (existsSync(hitlLogPath)) {
+      try {
+        const content = readFileSync(hitlLogPath, 'utf-8');
+        const lines = content.trim().split('\n').filter(Boolean);
+        results.push({
+          ok: true, warning: false, label: 'HITL 统计',
+          detail: `${lines.length} 条操作记录`,
+        });
+      } catch {
+        results.push({
+          ok: true, warning: true, label: 'HITL 统计',
+          detail: 'hitl log 读取失败',
+        });
+      }
+    } else {
+      results.push({
+        ok: true, warning: true, label: 'HITL 统计',
+        detail: '暂无 HITL 数据（高风险操作时自动记录）',
+        fixHint: '首次使用可忽略',
       });
     }
   }

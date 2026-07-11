@@ -17,6 +17,7 @@ import { checkRuleA9 } from './rule-a9-no-injection';
 import { checkRuleA10 } from './rule-a10-no-poison';
 import { checkRuleA11 } from './rule-a11-no-abuse';
 import { checkRuleA14 } from './rule-a14-kb-cross-domain';
+import { checkRuleA15 } from './rule-a15-action-constraint';
 import { checkRuleE1 } from './rule-e1-no-test-files';
 import { checkRuleE2 } from './rule-e2-todo-undeclared';
 import { checkRuleE3 } from './rule-e3-large-deletion';
@@ -44,6 +45,7 @@ export const extendedRules: Rule[] = [
   { name: 'E3 不滥删除', number: 203, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE3 },
   { name: 'E4 不低注释', number: 204, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE4 },
   { name: 'A14 知识库越权', number: 14, evidenceMode: 'hybrid', ruleClass: '能力拐杖', check: checkRuleA14 },
+  { name: 'A15 不越约束', number: 15, evidenceMode: 'hybrid', ruleClass: '能力拐杖', check: checkRuleA15 },
 ];
 
 /** 全部规则——reporter 默认使用此数组（含 default + extended） */

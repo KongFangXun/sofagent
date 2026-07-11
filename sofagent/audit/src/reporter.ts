@@ -63,10 +63,14 @@ export function runRules(
   }
 
   // 汇总判定
+  // strict 模式下 WARN 升级为 exit 2（阻断 commit）
   let exitCode = 0;
   for (const rule of results) {
     if (rule.status === 'FAIL') exitCode = 2;
-    else if (rule.status === 'WARN' && exitCode === 0) exitCode = 1;
+    else if (rule.status === 'WARN') {
+      if (strict) exitCode = 2;        // strict: WARN → exit 2
+      else if (exitCode === 0) exitCode = 1;  // 默认: WARN → exit 1
+    }
   }
 
   return { rules: results, exitCode };
