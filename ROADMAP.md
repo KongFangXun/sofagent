@@ -25,7 +25,7 @@
 | **v1.0.3** 🔧 | 编排引擎重构 + LOOP 自迭代：FDE Sub Agent（DeepAgentsJS+LangGraph+Agency Agents+SkillOpt）+ 4 Agent 定义 + 内外层循环 + 4 验证文件自进化 + 30 项审查修复 | [📖](./docs/changelog/v1.0.3.md) |
 | **v1.0.2** 🔧 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（回归检查清单 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
 | **v1.0.1** 🔧 | AI 知识库实现版：7 件事（目录骨架/fde 规则/Skill/四层加载链/daemon Ingest/Lint/轮次上限）+ A14 越权审计 + 回归检查清单 | [📖](./docs/changelog/v1.0.1.md) |
-| **v1.0.0** 🎉 | 正式版：Agent 审计工具——18 件事 + 408 测试全绿 + 回归检查清单 | [📖](./docs/changelog/v1.0.md) |
+| **v1.0.0** 🎉 | 正式版：Agent 审计工具——18 件事 + 408 测试全绿 + 回归检查清单 | [📖](./docs/changelog/v1.0.0.md) |
 | *(实验/测试版)* | | |
 | **v0.99.9** | AI 知识库概念先行 + 审查修复收尾 + verify.ts 拆分（1257→4模块）+ 行业笔记落地 + 理论引证 | [📖](./docs/changelog/experimental/v0.99.9.md) |
 | **v0.99.8** | 审查修复收尾 + FDE 架构重构：双审查 20 项遗留全修 + FDE 四层→三层实体 + templates 镜像产出 + Skill 精简 | [📖](./docs/changelog/experimental/v0.99.8.md) |
