@@ -169,9 +169,19 @@ grep -rn '2026-07-' *.md docs/design/*.md | grep -v "docs/changelog/" | grep -v 
 - `DEVELOPMENT.md` 依赖表日期
 - `THANKS.md` 致谢日期
 
+#### 5.2.2 changelog 文件命名一致性（🔴 v1.0.3 教训）
+
+changelog 文件命名统一为 `vX.Y.Z.md`（三段式）。曾经 `v1.0.md` 是两段式，其他版本都是三段式，导致引用混乱。
+
+```bash
+# 检查 docs/changelog/ 下所有文件名都是三段式 vX.Y.Z.md
+ls docs/changelog/*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
+# 期望：无输出（所有文件都是三段式）
+```
+
 ### 5.3 CHANGELOG 两步
 
-- [ ] 新增版本条目（摘要一句话 + 链接到 `docs/changelog/vX.Y.md`）
+- [ ] 新增版本条目（摘要一句话 + 链接到 `docs/changelog/vX.Y.Z.md`）
 - [ ] 索引列表按时间倒序排列，版本号与日期正确
 - [ ] 🔴 **只写产品变更**——不含审查元信息（维度编号、模型名、轮次、视角数等）。这些属于内部过程，外部用户不关心
 
@@ -247,8 +257,13 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
 ── Step 2: git tag + push ──
 5. git tag vX.Y.Z + git push origin vX.Y.Z
 6. gh release create vX.Y.Z
-   Release body 必须包含开发日志链接：
+   🔴 Release body **必须**包含开发日志链接：
    📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)
+   🔴 Release body 结构（参考上一版 Release，保持一致性）：
+   - 一句话摘要（核心变更）
+   - 分节：架构新增 / 审查修复 / 工具链 / 质量验证（视版本内容调整）
+   - 质量验证用表格（检查项 + 结果）
+   - 末尾开发日志链接
 
 ── Step 3: Skill 分发 ──
 7. openclaw skills publish ./skill
@@ -269,6 +284,13 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
 # Git
 git tag -l | grep vX.Y.Z
 gh release view vX.Y.Z
+
+# 🔴 Release Notes 完整性检查（v1.0.3 教训）
+# 1. body 不为空
+# 2. 包含 📖 [详细开发日志](./docs/changelog/vX.Y.Z.md) 链接
+# 3. 不是 Draft 状态
+gh release view vX.Y.Z --json isDraft,body -q '.body | length'  # 期望 > 100
+gh release view vX.Y.Z --json body -q '.body | contains("详细开发日志")'  # 期望: true
 
 # npm
 npm view @sofagent/audit version
@@ -353,3 +375,5 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 发版后发现 CI 失败，tag 指向修复前的 commit | tag 在代码修复前就打了，Release workflow checkout 的是旧代码 | 修 CI 后必须移 tag 到修复 commit：`git tag -d vX.Y && git tag vX.Y <fix-commit> && git push origin :refs/tags/vX.Y && git push origin vX.Y` |
 | FDE/package.json 版本号没被 bump-version.sh 覆盖 | bump-version.sh 只处理 audit/mcp 两个 package.json，漏了 FDE/LOOP | bump-version.sh 新增 [2b/13] 步骤处理 FDE/LOOP package.json；check-version.sh 新增对应检查项 |
 | 回归检查清单维度 77 在发版前误报 npm latest != SSOT | 维度 77 检查 npm latest = SSOT，但发版前 npm 还没 publish，必然不等 | 维度 77 标注为「发布后验证」项；回归清单加时序说明节，明确发版前 npm latest = 旧版本是正常的 |
+| v1.0.3 Release Notes 缺少开发日志链接、内容简略，与 v1.0.2 质量标准不一致 | `gh release create` 时 notes 写得仓促，SOP 7.2 Step 6 只写了「必须包含开发日志链接」但没有发布后验证检查 | 7.3 发布后验证新增 Release Notes 完整性检查项（见下文） |
+| changelog 文件命名 `v1.0.md` 与其他版本 `v1.0.X.md` 不一致 | v1.0.0 发布时文件名只写了 `v1.0.md`（两段式），后续版本统一为 `v1.0.X.md`（三段式） | changelog 文件命名统一为 `vX.Y.Z.md`（三段式），禁止两段式 `vX.Y.md`；5.2.6 新增命名一致性检查 |

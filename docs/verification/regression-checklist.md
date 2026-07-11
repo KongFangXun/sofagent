@@ -322,7 +322,7 @@ grep -n 'v0\.99' ROADMAP.md | head -3  # 不应在 v1.0 叙事段出现 v0.99.x 
 #### 22. ROADMAP「现在在哪」devlog 链接
 ```bash
 grep '开发日志' ROADMAP.md | head -1
-# 链接应指向 v1.0.md，不是 v0.99.9.md 或 v0.99.8.md
+# 链接应指向 v1.0.0.md，不是 v0.99.9.md 或 v0.99.8.md
 # v0.99.9 教训：devlog 链接没跟着版本号更新
 ```
 
@@ -990,14 +990,14 @@ head -15 CHANGELOG.md
 ```bash
 # v1.0 第十八件事：v0.99.x → v1.0.0 升级说明
 
-grep -r '升级\|migration\|v0\.99\.x' README.md CHANGELOG.md docs/changelog/v1.0.md | head -5
+grep -r '升级\|migration\|v0\.99\.x' README.md CHANGELOG.md docs/changelog/v1.0.0.md | head -5
 # 应有升级迁移指引，推荐 --init 而非 --install-hook
 
-grep 'sofagent-audit --init' README.md docs/changelog/v1.0.md
+grep 'sofagent-audit --init' README.md docs/changelog/v1.0.0.md
 # 升级指引中应提到 --init（幂等更新 hook）
 
 # 确认没有推荐 --install-hook 作为升级方式
-grep 'install-hook' docs/changelog/v1.0.md
+grep 'install-hook' docs/changelog/v1.0.0.md
 # --install-hook 可作为命令文档存在，但升级指引应推荐 --init
 ```
 
@@ -1073,7 +1073,7 @@ grep -rn '强大的\|完善的\|丰富的\|全面的\|优秀的\|卓越的\|出�
 # 期望：极少或无（技术文档用具体数字/事实，不用空洞形容词）
 
 # 3. CHANGELOG 废话——开发日志应该是「做了什么 + 为什么 + 怎么验证」，不是流水账
-head -30 docs/changelog/v1.0.md
+head -30 docs/changelog/v1.0.0.md
 # 人工判断：每条是否有信息增量，还是「修复了一些问题」「优化了体验」这类万能句式
 
 # 4. README 冗余——README 应该精简，细节留给 HANDBOOK/ARCHITECTURE
@@ -1109,7 +1109,7 @@ grep -n 'install\|安装\|quick\|快速\|开始' README.md | head -5
 # 3. 升级路径是否清楚
 # v0.99.x → v1.0.0 的升级说明是否放在容易找到的位置
 grep -n '升级\|migration\|从 v0' README.md CHANGELOG.md | head -5
-# 如只在 docs/changelog/v1.0.md 有但 README 没有链接 = P2（建议在 README 加链接）
+# 如只在 docs/changelog/v1.0.0.md 有但 README 没有链接 = P2（建议在 README 加链接）
 
 # 4. 错误场景是否有说明
 # 常见问题（Node.js 版本不够 / hook 没装上 / 首次提交报错 / Windows 不支持等）是否有对应说明
