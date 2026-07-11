@@ -80,6 +80,7 @@
 你关心的核心问题是"出事了谁负责"和"这东西能进公司吗"。你会从 SECURITY.md 和 LIMITATIONS.md 开始，但如果其他文档（比如 ROADMAP 里的准入条件、ARCHITECTURE 里的实验性标注）能帮你判断项目成熟度，你也会去看。**你读任何文档的出发点都是：这一页让我更放心了，还是更担心了？**
 
 7. **审计日志自身安全**：打开 `sofagent/audit/src/audit-history.ts`。审计拦截了密钥泄漏后，拦截结果（含 diff 内容）被写入 `history.jsonl`。这个文件本身会不会成为第二个泄漏点？Agent 能读这个文件吗？能篡改吗？有没有脱敏机制？
+8. **optional dependency 类型安全**：打开 `sofagent/audit/src/subagents/launcher.ts`，检查对 optional dependency（deepagents）的 import 是否用了 `as unknown as` 双重转换。CI 环境 TS 类型检查比本地严格——直接 `as` 可能本地通过但 CI 失败。
 
 ---
 
@@ -105,7 +106,7 @@
 
 **你的任务**：
 1. `--help` 输出清晰吗？你马上知道怎么用还是要再查文档？
-   **追加**：先试 `npx @sofagent/audit --help`——能跑吗？如果不能，报什么错？README 有没有告诉你该怎么办？
+   先试 `npx @sofagent/audit --help`——能跑吗？如果不能，报什么错？README 有没有告诉你该怎么办？
 2. 在随便一个 git 项目里跑 `sofagent-audit --init`，然后 commit 一个改动。这个体验顺滑吗？有没有让你困惑的输出？
 3. 跑 `sofagent-audit --doctor`。输出有用吗？每一项检查都合理还是有的凑数？有没有你看到"跳过"或"未找到"但不明白什么意思的检查项？你会查文档还是忽略？
 4. 如果你装完后跑不通，你会投诉什么？（模拟一次失败的场景，比如 Node 版本不够、没在 git 仓库里跑）
@@ -128,7 +129,7 @@
 4. 看 `CONTRIBUTING.md` ——你能找到怎么提交 PR 吗？能找到怎么跑测试吗？
 5. 看 issue / PR 数量（如果有）。这是一个"作者自嗨"项目还是有社区活性的项目？
 6. **文档引用链**：从 README 出发，点进 3-5 个链接——有没有 404？有没有引用的章节不存在？HANDBOOK 引用的 ARCHITECTURE §xxx 能对上吗？FDE 引用的模板路径存在吗？还缺引用吗——有没有地方提到了某个概念（如「AI 知识库」「铁律」）却没有指向设计原理或详细说明的链接？
-   **追加**：检查所有文档头部的日期是否与当前发版日期一致。`grep '2026-07-' *.md docs/design/*.md`——有没有过期日期？bump-version 脚本只改版本号不改日期，这个坑反复出现。
+   检查所有文档头部的日期是否与当前发版日期一致。`grep 'YYYY-MM-' *.md docs/design/*.md`——有没有过期日期？bump-version 脚本只改版本号不改日期，这个坑反复出现。
 
 你的核心问题是："这个项目的代码组织方式让我觉得它是认真维护的，还是一团乱麻？"
 
@@ -153,7 +154,7 @@
 ### 安全与诚实
 [该视角下的信任度判断]
 
-### 文档精简度 🆕
+### 文档精简度
 [有没有读到重复内容？有没有段落感觉"留着也行删了也行"？有没有一段话读完什么信息也没拿到？]
 
 ### 生命力
@@ -326,31 +327,3 @@
 > **审查者**：这是 sofagent 发布后的陌生视角审查。当前版本开发完成、发版前审查通过（pre-push-check / acceptance-test / OpenClaw / 回归清单 全绿）。这轮是"你完全不知道我是谁——你第一眼看到我，心里在想什么"。你的直觉比 grep 命令更有价值。发现的问题不阻塞本版本，将在下版本中修复，修复后更新回归清单和本 prompt（步骤 10.6）。
 >
 > 第一轮（视角 1-5）凭直觉，第二轮（视角 6）走路径，第三轮（视角 7）搞破坏。三轮合起来，覆盖"印象、体验、韧性"三个维度。
-
----
-
-## v1.0.3 审查体系更新（追加 5 项）
-
-### 视角二（企业 IT）任务 7 调整
-
-增加「审计日志自身安全」维度：打开 `sofagent/audit/src/audit-history.ts`，检查审计拦截密钥后 history.jsonl 是否存明文、Agent 能否读/篡改、有无脱敏机制（sanitizeRuleResult 函数）。
-
-### 视角四（npm 用户）任务 1 调整
-
-追加 npx 测试：「先试 `npx @sofagent/audit --help`，能跑吗？不能的话 README 有没有告诉你怎么做？」
-
-### 视角五（开源审查员）任务 6 调整
-
-追加日期一致性检查：「`grep '2026-07-' *.md docs/design/*.md` 有没有过期日期？」
-
-### 视角五（开源审查员）任务 7 新增
-
-增加「批量部署」维度：「如果要给 50 个仓库都装 sofagent，有没有批量安装或集中配置能力？」——检查 install.sh 是否支持批量模式、`--init` 是否可在 CI 中自动化。
-
-### 视角七（红队）任务 14 新增
-
-增加「审计工具自身文件测试」：修改 history.jsonl 看 A9 是否误报、破坏 config.yml 看报错信息是否含行号列号、删除 history.jsonl 看是否正常恢复、检查 history.jsonl 是否有密钥明文（脱敏验证）。
-
-### 视角二（企业 IT）任务 8 新增
-
-增加「optional dependency 类型安全」维度：「打开 `sofagent/audit/src/subagents/launcher.ts`，检查对 optional dependency（deepagents）的 import 是否用了 `as unknown as` 双重转换。CI 环境 TS 类型检查比本地严格——直接 `as` 可能本地通过但 CI 失败。」
