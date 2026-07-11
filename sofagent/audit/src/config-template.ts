@@ -85,7 +85,7 @@ EXIT_CODE=$?
 
 if [ $EXIT_CODE -eq 2 ]; then
   echo ""
-  echo "❌ sofagent audit: 检测到违规（A1/A2），commit 已阻止。"
+  echo "❌ sofagent audit: 检测到违规，commit 已阻止。"
   echo "   请修复违规项后重新提交。"
   exit 1
 fi

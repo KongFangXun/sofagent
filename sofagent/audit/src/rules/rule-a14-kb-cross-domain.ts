@@ -95,13 +95,7 @@ export function checkRuleA14(ctx: AuditContext): RuleCheck {
 
   const { logEntries, config } = ctx;
 
-  // 无日志时跳过（hybrid 模式降级）
-  if (!logEntries || logEntries.length === 0) {
-    rule.details.push('无 Agent 日志，跳过知识库越权检查。');
-    return rule;
-  }
-
-  // 尝试定位 workflow.yml
+  // 尝试定位 workflow.yml（配置检查不依赖日志）
   const dataDir = loadEnvConfig().dataDir;
   const workflowPath = join(dataDir, 'orchestrator', 'workflows', 'workflow.yml');
   const workflowNodes = loadWorkflowDomains(workflowPath);
@@ -116,6 +110,31 @@ export function checkRuleA14(ctx: AuditContext): RuleCheck {
   const hasDomainConfig = [...workflowNodes.values()].some((n) => n.knowledgeDomain);
   if (!hasDomainConfig) {
     rule.details.push('workflow.yml 无 knowledge-domain 配置，跳过。');
+    return rule;
+  }
+
+  // 检测 include: ['*'] 全放开配置——等同于关闭知识库隔离（配置问题，不依赖日志）
+  const wideOpenNodes: string[] = [];
+  for (const [nodeId, node] of workflowNodes) {
+    if (node.knowledgeDomain?.include) {
+      const include = node.knowledgeDomain.include;
+      // include 只有 '*' 或 '**' 等通配符 = 全放开
+      if (include.length === 1 && (include[0] === '*' || include[0] === '**')) {
+        wideOpenNodes.push(nodeId);
+      }
+    }
+  }
+  if (wideOpenNodes.length > 0) {
+    rule.status = 'WARN';
+    rule.details.push(
+      `知识库隔离未生效: 节点 ${wideOpenNodes.join(', ')} 的 knowledge-domain include 设为 '*'（全放开），等同于关闭隔离。建议按最小权限原则配置 include 列表。`
+    );
+    return rule;
+  }
+
+  // 无日志时跳过越权检查（hybrid 模式降级）——配置检查已在上方完成
+  if (!logEntries || logEntries.length === 0) {
+    rule.details.push('无 Agent 日志，跳过知识库越权检查。');
     return rule;
   }
 

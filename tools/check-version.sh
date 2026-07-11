@@ -20,6 +20,11 @@
 #   6. MD 文件头: > vX.Y · 日期/描述（带 · 分隔符的才是版本头）
 #   7. README badge: version-(v?)X.Y
 #   8. SKILL.md frontmatter: version: X.Y
+#   9. mcp package.json version
+#  10. ROADMAP 「现在在哪」节标题
+#  11. package-lock.json 双包版本
+#  12. .ts 文件头注释版本号
+#  13. 全局 npm 二进制版本（sofagent-audit --version）
 #
 # 排除目录: docs/changelog/, node_modules/, .git/, dist/
 #
@@ -450,7 +455,7 @@ fi
 echo ""
 
 # ── 11. 检查正文中"当前 vX.Y"是否与项目版本一致 ─
-echo -e "${BOLD}── [12/12] 正文版本号引用 ──${NC}"
+echo -e "${BOLD}── [12/13] 正文版本号引用 ──${NC}"
 inline_checked=0
 inline_errors=0
 while IFS=: read -r file line_num rest; do
@@ -470,6 +475,22 @@ if [[ $inline_checked -eq 0 ]]; then
   echo -e "  ${YELLOW}⚠${NC} 未找到"当前 vX.Y"版本引用"
 elif [[ $inline_errors -eq 0 ]]; then
   echo -e "  ${GREEN}✓${NC} ${inline_checked} 处正文版本号引用一致"
+fi
+echo ""
+
+# ── 12. 检查全局 npm 二进制版本与 SSOT 是否一致 ─────────
+echo -e "${BOLD}── [13/13] 全局 npm 二进制版本 ──${NC}"
+if command -v sofagent-audit >/dev/null 2>&1; then
+  bin_ver=$(sofagent-audit --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  if [[ -z "${bin_ver}" ]]; then
+    report_warn "sofagent-audit" "无法解析二进制版本号（输出格式异常）"
+  elif [[ "${bin_ver}" != "${SSOT_VERSION}" ]]; then
+    report_warn "sofagent-audit" "全局安装: v${bin_ver}，SSOT: v${SSOT_VERSION} —— 请运行 npm install -g @sofagent/audit@latest"
+  else
+    report_ok "sofagent-audit" "v${bin_ver}"
+  fi
+else
+  report_warn "sofagent-audit" "未找到全局安装的 sofagent-audit 二进制"
 fi
 echo ""
 

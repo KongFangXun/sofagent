@@ -143,7 +143,7 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
  * 将部分配置与默认配置合并（缺失字段用默认值填充）
  */
 function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
-  return {
+  const merged = {
     lowRiskPatterns: partial.lowRiskPatterns ?? DEFAULT_CONFIG.lowRiskPatterns,
     testPatterns: partial.testPatterns ?? DEFAULT_CONFIG.testPatterns,
     carefulModifyThreshold: partial.carefulModifyThreshold ?? DEFAULT_CONFIG.carefulModifyThreshold,
@@ -151,6 +151,21 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     rules: partial.rules,
     loopCheckMaxRounds: partial.loopCheckMaxRounds ?? 20,
   };
+
+  // 校验 rules key——未知规则名输出警告
+  if (merged.rules) {
+    const knownKeys = new Set([
+      'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11', 'a14',
+      'e1', 'e2', 'e3', 'e4',
+    ]);
+    for (const key of Object.keys(merged.rules)) {
+      if (!knownKeys.has(key.toLowerCase())) {
+        console.warn(`⚠️ config.yml: 未知规则名 "${key}"（已知: a1-a11, a14, e1-e4）`);
+      }
+    }
+  }
+
+  return merged;
 }
 
 // ============================================================

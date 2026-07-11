@@ -25,8 +25,8 @@ export function runInit(): void {
   let stepOk = 0;
   let stepSkipped = 0;
 
-  // [1/3] 创建配置文件
-  console.log('[1/3] 创建配置文件...');
+  // [1/4] 创建配置文件
+  console.log('[1/4] 创建配置文件...');
   const configDir = join(cwd, '.sofagent');
   const configPath = join(configDir, 'config.yml');
 
@@ -44,9 +44,9 @@ export function runInit(): void {
     stepOk++;
   }
 
-  // [2/3] 安装 git pre-commit hook
+  // [2/4] 安装 git pre-commit hook
   console.log('');
-  console.log('[2/3] 安装 git pre-commit hook...');
+  console.log('[2/4] 安装 git pre-commit hook...');
 
   // 检测 git 仓库
   let gitDir: string | null = null;
@@ -96,9 +96,37 @@ export function runInit(): void {
     }
   }
 
-  // [3/3] 冒烟测试
+  // [3/4] 创建知识库目录骨架（v1.0.1）
   console.log('');
-  console.log('[3/3] 冒烟测试...');
+  console.log('[3/4] 创建知识库目录...');
+  const knowledgeDir = join(configDir, 'knowledge');
+  if (existsSync(knowledgeDir)) {
+    console.log('  → .sofagent/knowledge/ 已存在，跳过');
+    stepSkipped++;
+  } else {
+    const subDirs = ['entities', 'concepts', 'comparisons', 'summaries'];
+    for (const sub of subDirs) {
+      mkdirSync(join(knowledgeDir, sub), { recursive: true });
+    }
+    // index.md 初始模板——与 file-deploy.sh _deploy_knowledge_skeleton 保持一致
+    writeFileSync(
+      join(knowledgeDir, 'index.md'),
+      '# 知识库目录\n\n> 此页面由 AI 自动维护——新增知识页面时同步更新。\n> daemon Ingest 和 knowledge-maintain Skill 负责写入。\n\n| 页面 | 域 | 可访问节点 |\n|------|-----|------------|\n',
+      'utf-8'
+    );
+    // log.md 初始模板——与 file-deploy.sh _deploy_knowledge_skeleton 保持一致
+    writeFileSync(
+      join(knowledgeDir, 'log.md'),
+      '# 知识库操作日志\n\n> 自动追加——Ingest / Query / Lint 操作的时间戳记录。\n\n| 时间 | 操作 | 影响页面 | 详情 |\n|------|------|---------|------|\n',
+      'utf-8'
+    );
+    console.log('  → .sofagent/knowledge/ 已创建（4 子目录 + index.md + log.md）');
+    stepOk++;
+  }
+
+  // [4/4] 冒烟测试
+  console.log('');
+  console.log('[4/4] 冒烟测试...');
 
   let smokeOk = true;
 

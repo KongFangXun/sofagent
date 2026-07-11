@@ -7,7 +7,7 @@
 [![Version](https://img.shields.io/badge/Version-v1.0.1-16B8F3)](./CHANGELOG.md)
 [![定位：Agent 审计工具](https://img.shields.io/badge/定位-Agent_审计工具-16B8F3)](#一句话定位)
 [![核心：审计引擎](https://img.shields.io/badge/核心-审计引擎-16B8F3)](#一句话定位)
-[![OpenClaw](https://img.shields.io/badge/🦞_引擎-OpenClaw-FF4D4D)](./ARCHITECTURE.md#双引擎架构)
+[![OpenClaw](https://img.shields.io/badge/🦞_引擎-OpenClaw-FF4D4D)](./ARCHITECTURE.md#两层架构地基-vs-引擎)
 
 <img src="index/sofagent.png" alt="sofagent" width="300" />
 
@@ -21,7 +21,7 @@
 
 ## 一句话定位
 
-给 AI Agent 装一个提交时审计官——不看 Agent 怎么说，只看 git diff 怎么变。11 条审计规则扫描每次代码变更，自动判定违规、生成反思。中小企业装完就能用，不用请顾问、不用写 prompt。
+给 AI Agent 装一个提交时审计官——看 git diff 硬证据判定违规，不依赖 Agent 自我报告。16 条审计规则（11 默认 + 5 扩展）扫描每次代码变更，自动判定违规、生成反思。中小企业装完就能用，不用请顾问、不用写 prompt。
 
 > **和 detect-secrets 有什么区别**？detect-secrets 是通用密钥扫描器，sofagent A1/A2 是 Agent 场景定制——不仅检测密钥，还关联 A3 越界上下文（为什么这个文件被改了？）和 A7/A8 流程合规（改之前读了没？改之后测了没？）。
 
@@ -29,11 +29,11 @@
 
 > 🔬 **为什么相信 Harness 有用**？Hugging Face 实验：同一模型不改权重，仅优化外层 Harness，得分从 3.5%→80.1%。→ [详见 ARCHITECTURE](./ARCHITECTURE.md#理论基础与外部验证)
 
-> **成熟度**：审计引擎是核心，日常稳定（核心逻辑 418 tests 全绿——diff-parser / config-loader / rules A1-A14 / reporter / log-checker；daemon / MCP / install.sh 依赖手动验证 + verify.sh 48 项环境检查，详见 LIMITATIONS。5/5 靶向违规全部检出，3 名外部用户验证）。编排引擎需要 OpenClaw 环境，能跑但还在打磨。
+> **成熟度**：审计引擎是核心，日常稳定（核心逻辑 418 tests 全绿——diff-parser / config-loader / rules A1-A14 / reporter / log-checker；daemon / MCP / install.sh 依赖手动验证 + verify.sh 48 项环境检查，详见 LIMITATIONS。5/5 靶向违规全部检出（作者自测，非独立验证），3 名外部用户验证）。编排引擎需要 OpenClaw 环境，能跑但还在打磨。
 
 | 组件 | 做什么 | 怎么跑 |
 |------|------|------|
-| **审计引擎** | git diff → 11 条规则 → exit code | git pre-commit hook，不挑 Agent、不挑平台 |
+| **审计引擎** | git diff → 16 条规则（11 默认 + 5 扩展）→ exit code | git pre-commit hook，不挑 Agent、不挑平台 |
 | **约束底座** | MD 规则注入 Agent 上下文 | install.sh 装完自动加载 |
 | **编排引擎**（实验性）| 拆任务 → 编排 → 执行 | ao compose（跑在 OpenClaw 上） |
 

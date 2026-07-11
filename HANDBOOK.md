@@ -132,7 +132,7 @@ exit code：0 = 通过 / 1 = 有警告 / 2 = 有违规。零 Agent 依赖——�
 | 3 | `fde.md` | 你的运行规范，优先级最高 | ✅ 随便改 |
 | 4 | `knowledge/index.md` | AI 知识库目录，被动注入 top-3 页摘要 | ⚠️ daemon 自动维护 |
 
-> 地基约 3,500 token，不到 128K 窗口的 3%。OpenClaw 平台 Hook 自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#why-resident)。
+> 地基约 3,500 token，不到 128K 窗口的 3%。OpenClaw 平台 Hook 自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#两层架构地基-vs-引擎)。
 
 ### 双引擎怎么跑
 
@@ -235,7 +235,7 @@ Agent 先判断任务复杂度：
 | 评分越来越不准 | 翻 task/logs 对照 think.md，清理低置信度旧条目 |
 | 什么不该让 Agent 做 | 确定性操作（去重/格式校验/文件清理）用脚本 |
 
-> 更多见 [LIMITATIONS.md](./LIMITATIONS.md#known-limits)。
+> 更多见 [LIMITATIONS.md](./LIMITATIONS.md)。
 
 ### 安装与运行常见问题
 
