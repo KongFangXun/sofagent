@@ -71,7 +71,7 @@ sofagent 在这些社区里传播和生长。
 
 - **[ClawHub](https://clawhub.ai)** — 全球 Skills 社区，Skills 体系的外部来源
 - **[/goal 命令](https://docs.anthropic.com/en/docs/claude-code/goal)** — Claude Code 的自主执行循环，启发了我加用户确认的设计
-- **[OpenFDE](https://open-fde.com)**（2026-07）— FDE 开源社区，10 步工作流、8 维能力模型、白皮书、工具地图
+- **[OpenFDE](https://open-fde.com)**（2026-07）— FDE 开源社区，行业的系统化知识框架
 
 ---
 
