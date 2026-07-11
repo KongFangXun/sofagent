@@ -92,7 +92,7 @@ export function parseDiff(range: string): DiffFile[] {
     }
 
     // 获取变更文件列表——execFileSync 不 spawn shell，参数作为数组传递，避免命令注入
-    const output = execFileSync('git', ['diff', '--name-status', range], {
+    const output = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', '--name-status', range], {
       encoding: 'utf-8',
       maxBuffer: 10 * 1024 * 1024,
     });
@@ -145,7 +145,7 @@ export function parseDiff(range: string): DiffFile[] {
         // 读取具体 diff 内容
         let diffLines: string[] = [];
         try {
-          const diffContent = execFileSync('git', ['diff', range, '--', path], {
+          const diffContent = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', range, '--', path], {
             encoding: 'utf-8',
             maxBuffer: 5 * 1024 * 1024,
           });
@@ -179,7 +179,7 @@ export function parseStagedDiff(): DiffFile[] {
 
   try {
     // 获取 staged 文件列表
-    const output = execFileSync('git', ['diff', '--cached', '--name-status'], {
+    const output = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', '--cached', '--name-status'], {
       encoding: 'utf-8',
       maxBuffer: 10 * 1024 * 1024,
     });
@@ -227,7 +227,7 @@ export function parseStagedDiff(): DiffFile[] {
         // 读取 staged diff 内容
         let diffLines: string[] = [];
         try {
-          const diffContent = execFileSync('git', ['diff', '--cached', '--', path], {
+          const diffContent = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', '--cached', '--', path], {
             encoding: 'utf-8',
             maxBuffer: 5 * 1024 * 1024,
           });
