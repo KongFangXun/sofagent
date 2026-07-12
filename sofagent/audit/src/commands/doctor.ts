@@ -7,7 +7,7 @@
 // 退出码：全部通过 → 0；有失败 → 1
 // ============================================================
 
-import { existsSync, accessSync, constants, readFileSync } from 'fs';
+import { existsSync, accessSync, constants, readFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { execFileSync } from 'child_process';
 import { loadHistory, checkHistoryChainIntegrity } from '../audit-history';

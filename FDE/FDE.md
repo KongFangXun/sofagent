@@ -1,6 +1,6 @@
 # FDE.md · Forward Deployed Engineer 部署手册
 
-> ⚠️ **成熟度声明**：FDE 四阶段十二步流程已在作者自有企业中实际部署使用（2026-07）。审计引擎（独立产品）成熟度更高——418 tests 全绿、跨平台 CI 覆盖。详见 [LIMITATIONS.md](../LIMITATIONS.md)。
+> ⚠️ **成熟度声明**：FDE 四阶段十二步流程已在作者自有企业中实际部署使用（2026-07）。审计引擎（独立产品）成熟度更高——418 tests 全绿、跨平台 CI 覆盖。详见 [LIMITATIONS.md](../docs/LIMITATIONS.md)。
 
 > **这是什么**：FDE（或企业 CIO/网管）的操作手册。读它 → 帮企业梳理 workflow → 识别 AI 节点 → 生成交付手册。Agent 全程辅助——你负责和人聊，Agent 负责记录、分析、出方案。安装、使用说明见 [README.md](./README.md)。
 
@@ -132,7 +132,7 @@ FDE 有巨大前期成本，只在三种情况成立：
 - `include`：哪些节点 Agent 有权读这个节点的知识库页面？
 - `exclude`：哪些明确不能读？（财务节点排除人事域是典型场景）
 
-> 模板见 `FDE/templates/nodes/node-template.md`（frontmatter 段）。第一个节点搞清楚「上下游是谁」「谁能看什么」可能需要半天——因为要翻 §4 的所有节点、逐一确认关联。第十个节点 30 分钟：关联图已经在前面搭好了。设计原理见 [ARCHITECTURE](../ARCHITECTURE.md#行业印证palantir--不可溶解的护城河)。
+> 模板见 `FDE/templates/nodes/node-template.md`（frontmatter 段）。第一个节点搞清楚「上下游是谁」「谁能看什么」可能需要半天——因为要翻 §4 的所有节点、逐一确认关联。第十个节点 30 分钟：关联图已经在前面搭好了。设计原理见 [ARCHITECTURE](../docs/ARCHITECTURE.md#行业印证palantir--不可溶解的护城河)。
 
 产出：富本体信息的节点文档集（frontmatter + 正文）+ `workflow.yml`（汇总所有节点的 knowledge-domain + relations）。
 
@@ -215,7 +215,7 @@ bash sofagent/scripts/install.sh
 
 ### 9. 交接清单
 
-离场前逐条确认三样东西：
+离场前逐条确认四样东西：
 
 #### 📄 交付手册（一份 .md 文件）
 
@@ -260,6 +260,17 @@ v1.0.1 起为**结构化 AI 知识库**（`.sofagent/knowledge/` 目录）：dae
 详见 [v1.0.1 开发日志](../docs/changelog/v1.0.1.md)。
 
 企业画像是唯一需要 FDE 持续维护的活文档——每次回访、每次调整都同步进去。其余的，AI 跑着跑着就有了。
+
+#### 9.4 私有化评估体系
+
+离场前确认企业 AI 节点的评估闭环可用：
+
+- [ ] `scoring.md` 存在且有初始基线（至少 5 条手动评分记录）
+- [ ] Skill 迭代历史可见（`skill-iterations/` 或 SkillOpt 日志）
+- [ ] 知识库演变可追溯（knowledge/changelog/ 或 index.md 更新记录）
+- [ ] 企业关键业务指标与 scoring 挂钩（如「审批准确率 ≥ 95%」）
+
+> 微软 CEO Nadella：未来企业最重要的知识产权是 private evals。工具可复制，差异化反馈无法复制。FDE 离场时留下的不是配置文件，是企业持续培养 Agent 的评估闭环。
 
 ---
 

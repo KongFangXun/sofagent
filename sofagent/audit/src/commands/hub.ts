@@ -7,7 +7,7 @@
 // --with-hub 安装是可选 submodule clone
 // ============================================================
 
-import { existsSync, readFileSync, readdirSync, mkdirSync, copyFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, mkdirSync, copyFileSync, type Dirent } from 'fs';
 import { join } from 'path';
 import { execFileSync } from 'child_process';
 
@@ -73,7 +73,7 @@ export function listHubTemplates(): string[] {
   // 递归列出模板
   const templates: string[] = [];
   function scanDir(dir: string, prefix: string): void {
-    let entries: string[];
+    let entries: Dirent[];
     try {
       entries = readdirSync(dir, { withFileTypes: true });
     } catch {
@@ -145,7 +145,7 @@ export async function hubDeploy(templateName: string, options: HubDeployOptions)
       mkdirSync(dest, { recursive: true });
     }
 
-    let entries: string[];
+    let entries: Dirent[];
     try {
       entries = readdirSync(src, { withFileTypes: true });
     } catch {

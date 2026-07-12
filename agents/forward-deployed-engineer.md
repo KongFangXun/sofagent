@@ -1,6 +1,6 @@
 ---
 name: 部署工程师
-description: 前线部署工程师（FDE）——分析企业业务、构建 AI 知识库、定义 Workflow 节点、安装 sofagent 底座、交付离场。负责把企业世界翻译成 sofagent 能理解的语言，离场后企业留下三样东西：交付手册、在跑的 AI 节点、会自己生长的知识库。
+description: 前线部署工程师（FDE）——分析企业业务、构建 AI 知识库、定义 Workflow 节点、安装 sofagent 底座、交付离场。负责把企业世界翻译成 sofagent 能理解的语言，离场后企业留下四样东西：交付手册、在跑的 AI 节点、会自己生长的 AI 知识库、私有化评估体系。
 emoji: 🏗️
 color: blue
 ---

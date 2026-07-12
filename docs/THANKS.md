@@ -46,7 +46,7 @@
 - **[Ralph Loop](https://ghuntley.com/loop/)** by Geoffrey Huntley —「Agent 失忆，文件不失忆」是 sofagent 的哲学基因。一行 bash 循环 + Stop Hook + 新鲜上下文每轮刷新，启发了审计方向：git diff 是无状态地面真相
 - **[Andrej Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills)** — 4 条编码原则是 7 则铁律的根基。感谢 Karpathy
 - **[Anthropic Skills](https://github.com/anthropics/skills)** — 官方 SKILL.md 格式规范，描述-实现分离和 Skill 索引卡片参考了它
-- **[Loop Engineering](https://addyo.substack.com/p/loop-engineering)** by Addy Osmani — 帮我理清了 Context → Harness → Loop 三层框架的关系
+- **[Loop Engineering](https://addyo.substack.com/p/loop-engineering)** by Addy Osmani — 1962 年 Peter Steinberger 的「prompts are out, loops are in」引爆 650 万次浏览，Osmani 正式命名。帮我理清了 Context → Harness → Loop 三层框架的关系。详见 §外部研究与参考
 - **[OpenAI Harness Engineering](https://openai.com/index/harness-engineering/)** — Harness 概念的系统化参考
 - **[Anthropic Effective Harnesses](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)** — 长时间运行 Agent 的有效治理思路
 - **[Lost in the Middle](https://arxiv.org/abs/2307.03172)** — 模型对长文档中段注意力衰减的研究，500 字原则的理论源头
@@ -63,7 +63,7 @@ sofagent 直接使用或借鉴了它们的能力。
 - **[superpowers](https://github.com/obra/superpowers)** — Skill 作为 Harness 杠杆的思路，启发了 Skills 体系的设计
 - **[best-of-agent-harnesses](https://github.com/RyanAlberts/best-of-agent-harnesses)** — 101+ 个 Harness 项目索引，让我了解这个领域已经有什么人在做什么事
 - **[agent-skills](https://github.com/addyosmani/agent-skills)** by Addy Osmani — 24 个生产级工程 Skill，反合理化表（Anti-rationalization）设计——预判 Agent 跳过步骤的借口并逐一驳回——启发了 sofagent fde.md 的铁律反合理化表
-- **[gstack](https://github.com/garrytan/gstack)** by Garry Tan (YC CEO) — 23 个有主见的工具组成的 AI 辅助软件开发系统。六层安全栈（分类器级 prompt injection 检测 / 密钥格式持续更新 / fail-closed 默认不信任）、原子文件写入模式、角色分解架构——为 sofagent 的 A2 密钥格式更新和多角色 agents/ 架构提供了实践参照
+- **[gstack](https://github.com/garrytan/gstack)** by Garry Tan (YC CEO) — 28 个 Skill + 7 个 Agent 角色的 AI 辅助软件开发系统。六层安全栈（分类器级 prompt injection 检测 / 密钥格式持续更新 / fail-closed 默认不信任）、原子文件写入模式、角色分解架构——为 sofagent 的 A2 密钥格式更新和多角色 agents/ 架构提供了实践参照
 
 ---
 
@@ -116,9 +116,6 @@ sofagent 直接使用或借鉴了它们的能力。
 
 - **[Google OKF — Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)** · Google Cloud Platform (2026)
   Markdown + YAML Frontmatter + Git 版本控制 + 人机可读的通用知识表示格式。生产者-消费者解耦、渐进式 index.md 导航、recipe+bundle 可复现模式——从 Google 内部独立验证了 sofagent knowledge/ 的「知识即文件系统」架构方向。
-
-- **[Loop Engineering](https://addyo.substack.com/p/loop-engineering)** · Addy Osmani / Google Chrome (2026-06)
-  2026 年 6 月 Peter Steinberger 的「prompts are out, loops are in」引爆 650 万次浏览，Addy Osmani 正式命名 Loop Engineering。Maker-Checker 机制 + 四年演进时间线（ReAct 2022→AutoGPT 2023→MCP 2024→Claude Agent SDK 2025）——验证了 sofagent 审计与编排分离的设计，以及 Loop 闭环的必需前置条件。
 
 - **[Claude Code Agent Loop](https://docs.anthropic.com/en/docs/claude-code/how-claude-code-works)** · Anthropic (2026)
   三阶段循环（收集上下文→采取行动→验证结果）+ 三档工具权限 + 上下文自动压缩。三档权限与 sofagent 的 HITL 🟢🟡🔴 同构，循环机制与 sofagent 的编排引擎对应。Anthropic 官方表述："Claude Code serves as the agentic harness around Claude"——Harness 不是 sofagent 独创的概念，是行业共识。
