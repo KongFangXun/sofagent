@@ -117,4 +117,22 @@ sofagent 直接使用或借鉴了它们的能力。
 - **[Google OKF — Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)** · Google Cloud Platform (2026)
   Markdown + YAML Frontmatter + Git 版本控制 + 人机可读的通用知识表示格式。生产者-消费者解耦、渐进式 index.md 导航、recipe+bundle 可复现模式——从 Google 内部独立验证了 sofagent knowledge/ 的「知识即文件系统」架构方向。
 
+- **[Harness Engineering 技术全景研报](https://get笔记)** · 九天团队 (2026-07)
+  三代 AI 交互演进（Prompt→Context→Harness）+ 四大基础理论（声明式知识/自动化约束/多层反馈/系统管理）+ 工业验证数据（LangChain benchmark 30→top5 / Codex 3-7人100万行 / gstack 28 Skill 60万行）——为 sofagent 的 Harness 定位提供完整的理论框架和工业级案例支撑。
+
+- **[Loop Engineering 深度解析](https://get笔记)** (2026-07)
+  四年演进时间线（ReAct 2022→AutoGPT 2023→MCP 2024→Claude Agent SDK 2025→Loop 2026）+ Maker-Checker 机制验证——验证了 sofagent 审计与编排分离的设计，以及 Loop 闭环的必需前置条件。
+
+- **[Cloud Code Agent Loop 机制](https://get笔记)** (2026-07)
+  5 步执行循环（Receive→Prompt→Evaluate→Execute→Repeat）+ 三档工具权限（自动/确认/禁止）+ 上下文自动压缩——三档权限与 sofagent 的 HITL 🟢🟡🔴 同构，循环机制与 sofagent 的编排引擎对应。
+
+- **[Glean/Gbrain AI 第二大脑](https://get笔记)** · Gary Tan / YC (2026-07)
+  Karpathy LLM Wiki 思路的首个工业级落地——1.7 万页 Markdown、前 5 条召回 ~100%、比传统 RAG 提升 30%。夜间维护机制（日间实时/夜间批量）验证 sofagent daemon + knowledge/ 的「日/夜分离」架构方向。
+
+- **[AI 原生 ERP Cloud](https://get笔记)** (2026-07)
+  六层降维底座 + 18 条宪法级校验规则 + 153 项自动化测试（风险拦截率 100%）+ 多模型分层路由——为 sofagent 的 A 系列审计规则和 FDE 企业部署提供了工业级的参照标杆。
+
+- **[RAG 技术全栈落地指南](https://get笔记)** (2026-07)
+  RAG 7 代演进（Naive→Advanced→Graph→Agentic→Multimodal→CAG）。第 7 代 CAG 的「按主题整合→Markdown→全量输入 LLM」与 sofagent knowledge/ 完全同构——独立验证了「知识管理不需要向量数据库，干净 Markdown 就够了」的架构选择。
+
 ---
