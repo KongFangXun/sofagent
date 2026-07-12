@@ -77,11 +77,13 @@
 | **v1.0.2** | ✅ 已完成 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（回归检查清单 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
 | **v1.0.3** | ✅ 已完成 | LOOP 自迭代架构（4 Agent + 内外层循环） + SkillOpt 自动优化 + Audit Sub Agent（含成本） + think.md 判断单元结构化 + 文档分层预算 | [📖](./docs/changelog/v1.0.3.md) |
 | **v1.0.4** | ✅ 已完成 | 自动优化 + 约束验证版——eval harness + Sub Agent A/B 自动优化 + HITL 渐进自主度 + A15 约束验证。多项审查修复 | [📖](./docs/changelog/v1.0.4.md) |
-| **v1.0.5** | ⏳ 待启动 | Ontology 统一层 + ao 过渡 + Workflow Hub + 首个行业模板 + dstack/OKF 工程学习落地 | [📖](./docs/changelog/v1.0.5.md) |
+| **v1.0.5** | ⏳ 待启动 | Ontology 统一层 + ao 过渡 + Workflow Hub + 首个行业模板 + gstack/OKF 工程学习落地 | [📖](./docs/changelog/v1.0.5.md) |
+| **v1.0.6** | 📋 规划中 | 编排引擎迁移：DeepAgents compose + Sub Agent 状态管理 | [📖](./docs/changelog/v1.0.6.md) |
+| **v1.0.7** | 📋 规划中 | A/B 自动切换 + ao 完全退役 | [📖](./docs/changelog/v1.0.7.md) |
 
 ### v1.x — 发布后
 
-> **v1.0.1-v1.0.5 开发日志**：[v1.0.1](./docs/changelog/v1.0.1.md) → [v1.0.2](./docs/changelog/v1.0.2.md) → [v1.0.3](./docs/changelog/v1.0.3.md) → [v1.0.4](./docs/changelog/v1.0.4.md) → [v1.0.5](./docs/changelog/v1.0.5.md)
+> **v1.0.1-v1.0.7 开发日志**：[v1.0.1](./docs/changelog/v1.0.1.md) → [v1.0.2](./docs/changelog/v1.0.2.md) → [v1.0.3](./docs/changelog/v1.0.3.md) → [v1.0.4](./docs/changelog/v1.0.4.md) → [v1.0.5](./docs/changelog/v1.0.5.md) → [v1.0.6](./docs/changelog/v1.0.6.md) → [v1.0.7](./docs/changelog/v1.0.7.md)
 
 #### 编排引擎升级：ao → DeepAgents + Agency Agents
 
@@ -101,10 +103,12 @@ OpenClaw 总管（TS）
 
 | 阶段 | 版本 | 动作 | 关键依赖 |
 |:--:|------|------|------|
-| 🔵 引入 | v1.0.1 | `npm install deepagents` → 用 `createDeepAgent` 包装 ao 的 loop-check/evaluate/exit，ao 仍然做决策但编排层切到 LangGraph 状态图 | deepagentsjs + langgraph |
-| 🟡 替换 | v1.0.3 | 基于 Agency Agents 模板定义 FDE Sub Agent 岗位（role/workflow/rules/deliverables）→ 对接 OpenClaw sub-agent 机制；同步定义 Audit Sub Agent（语义级审查、跨 repo Workflow 巡检） | agency-agents 模板 + OpenClaw sub-agent API |
-| 🟢 增强 | v1.0.4 | 集成 deepagentsjs 的 eval harness（golden set/offline eval/online eval）+ HITL middleware（高风险操作人工审批）→ 对齐 OpenFDE 第 6/7 步。**HITL 置信度标注**（不自动审批）：>99% 自动放行 + 标 🟢；80-99% 标 🟡 待人工确认；<80% 标 🔒 强制人工确认。**仅标注不审批**——不做审批超时降级/防橡皮图章（企业级 BPM 功能，非 Agent harness 职责）。四类强制人工确认场景：删除操作 / 外部 API 调用 / 权限变更 / 数据迁移 | deepagents evals + HITL middleware |
-| ✅ 退役 | v1.0.5 | ao 的 loop-check/evaluate/exit 全部由 DeepAgents + LangGraph 接管。ao 目录保留为实验性 archive，标注「已被 DeepAgents 替代」 | 全量功能对齐 |
+| 🔵 引入 | v1.0.1 | `npm install deepagents`（optional）→ launcher.ts 作为 thin wrapper 接入 `createDeepAgent()` | deepagentsjs |
+| 🟡 替换 | v1.0.3 | 基于 Agency Agents 模板定义 FDE Sub Agent 岗位（role/workflow/rules/deliverables）→ 定义层完成（registry.ts + YML），编排仍走 ao CLI | agency-agents 模板 |
+| 🟢 增强 | v1.0.4 | eval harness + HITL middleware + A/B 对比（单次手动） + A15 约束验证。独立于 DeepAgents | — |
+| ⚠️ 过渡 | v1.0.5 | Ontology 统一层 + launcher wrapper 保留，编排仍走 ao CLI。文档诚实降级——不再声称 DeepAgents 全覆盖 | — |
+| 🔧 迁移 | v1.0.6 | compose 编排逻辑从 ao CLI 迁到 DeepAgents，ao 降为 fallback。Sub Agent 运行状态基础跟踪 | deepagentsjs |
+| ✅ 退役 | v1.0.7 | ao 依赖正式移除。deepagents 提升为正式依赖。A/B 自动切换（连续计数器 + auto promote） | deepagentsjs → required dep |
 
 #### Ontology 渐进构建（企业数字孪生操作层）
 
@@ -127,7 +131,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | sofagent 模块 | 对应外部框架 | 关系 | 版本 |
 |------|------|------|:--:|
 | 审计引擎（Harness 层） | 独立自研——外部无可替代 | 核心差异化 | v1.0 |
-| 编排引擎 | LangChain + LangGraph + DeepAgentsJS | 借鉴后替换 ao | v1.0.1-v1.0.5 |
+| 编排引擎 | LangChain + LangGraph + DeepAgentsJS | 借鉴后替换 ao | v1.0.1-v1.0.7 |
 | Skill 系统 | Agency Agents（岗位模板，v1.0.3）+ SkillOpt（Skill 文档自动优化，v1.0.3）+ eval harness + A/B 对比（Sub Agent 配置自动优化，v1.0.4） | 模板引用 + 对接优化引擎 | v1.0.1-v1.0.4 |
 | AI 知识库 | OpenFDE 10 步工作流（行业定位验证）+ Google OKF（同构独立验证）+ CAG 第 7 代 RAG（同构验证）+ Glean 工业数据（1.7万页/召回~100%） | 外部验证 | v1.0-v1.1 |
 | 安全设计哲学 | gstack 六层安全栈（分类器 / fail-closed / 原子写 / 密钥格式持续更新） | 实践参照 | v1.0.4-v1.0.5 |
@@ -172,6 +176,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | **编排引擎收敛保护** | Loop 工程核心是收敛——不具备收敛性的目标会无限烧 Token。加硬约束：同一任务跑超过 N 轮未收敛 → 强制停下问人，写 think.md 标记「收敛失败」。当前 think.md 是被动记录，缺主动叫停机制
 | loop-check 三元统一出口 | pass/fail/warn 收敛，对齐审计引擎 exit code 0/1/2
 | 记忆产权三维框架 | 对象归属 / 锁定策略 / 边界定义补充到记忆层
+| **记忆分层金字塔（L0-L3）**（v1.x-v2.x） | 借鉴 TencentDB Agent Memory 的 4 层记忆架构：L0 原始对话（think.md）→ L1 原子事实（自动提取 entities）→ L2 场景聚合（自动生成 concepts）→ L3 用户画像（新增 persona.md）。当前仅有手工 knowledge/，缺自动化提炼流水线和 L3 用户画像。v1.x 加 L1→L2 自动聚合，v2.x 加 L3 用户画像 + SQLite 双轨存储。详见 [TencentDB Agent Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory) |
 | **OKF 知识互操作**（v2.x 探索） | Google OKF（LMVKI 知识沉淀 + OKF 互操作两代分化）。当前 knowledge/ 已实现知识沉淀（等同于 LMVKI），未来方向：① 导出为 OKF 标准格式（统一元数据：标题/类型/标签/更新时间/来源）② 让外部 AI 系统（Cloud/Gemini/Cursor）零适配直接读取 sofagent 的知识库。把企业知识库从"sofagent 专属"变成"所有 AI 通用"
 | **私有化评估体系**（v1.x） | 微软 Nadella：未来企业最重要 IP 是 private evals。FDE 交付的 scoring 反馈 + Skill 迭代历史 + 知识库演变 = 企业的私有化评估闭环。当前已实现 scoring.md + A/B 对比 + SkillOpt，v1.x 强化为 FDE 离场时的核心交付物描述
 | 入口契约三门槛 | 审计引擎扩展：检查提交含 decision log / PR 大小 / 测试证据，把「重建意图」成本推回提交者 |

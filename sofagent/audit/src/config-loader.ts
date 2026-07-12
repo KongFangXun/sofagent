@@ -213,13 +213,14 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
  */
 export function safeDefaults(): AuditConfig {
   return {
-    lowRiskPatterns: [],
+    lowRiskPatterns: ['package-lock.json', 'yarn.lock'],
     testPatterns: ['npm test', 'npm run test', 'pytest', 'go test'],
     carefulModifyThreshold: 0.1,       // 更严格的越界阈值
-    extendedRulesEnabled: false,        // 不信任配置，扩展规则全部关闭
+    extendedRulesEnabled: true,         // A14/A15 是安全相关扩展规则，fail-closed 时必须启用
     rules: {
       a1: true, a2: true, a3: true, a4: true, a5: true,
       a6: true, a7: true, a8: true, a9: true, a10: true, a11: true,
+      a14: true, a15: true,
     },
     loopCheckMaxRounds: 20,
   };

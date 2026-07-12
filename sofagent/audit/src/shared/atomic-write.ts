@@ -10,7 +10,7 @@
 // ${stateFile}.tmp.${pid}.${randomBytes(4).toString('hex')} 防并发冲突。
 // ============================================================
 
-import { writeFileSync, renameSync, existsSync, readFileSync } from 'fs';
+import { writeFileSync, renameSync, existsSync, readFileSync, copyFileSync, unlinkSync } from 'fs';
 import { randomBytes } from 'crypto';
 
 /**
@@ -31,7 +31,16 @@ function tmpPath(filePath: string): string {
 export function atomicWriteSync(filePath: string, content: string): void {
   const tmp = tmpPath(filePath);
   writeFileSync(tmp, content, 'utf-8');
-  renameSync(tmp, filePath);
+  try {
+    renameSync(tmp, filePath);
+  } catch (err: any) {
+    if (err.code === 'EXDEV') {
+      copyFileSync(tmp, filePath);
+      unlinkSync(tmp);
+    } else {
+      throw err;
+    }
+  }
 }
 
 /**
@@ -63,5 +72,14 @@ export function atomicAppendSync(filePath: string, line: string): void {
 
   const tmp = tmpPath(filePath);
   writeFileSync(tmp, existing + line + '\n', 'utf-8');
-  renameSync(tmp, filePath);
+  try {
+    renameSync(tmp, filePath);
+  } catch (err: any) {
+    if (err.code === 'EXDEV') {
+      copyFileSync(tmp, filePath);
+      unlinkSync(tmp);
+    } else {
+      throw err;
+    }
+  }
 }

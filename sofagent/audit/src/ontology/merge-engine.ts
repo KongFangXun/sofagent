@@ -219,12 +219,14 @@ function extractConstraints(configDir: string): OntologyConstraint[] {
 // ============================================================
 
 /**
- * 将对象/动作/约束序列化为 YAML 字符串
+ * 将对象/动作/约束序列化为 YAML 列表字符串。
+ * 使用 JSON.stringify —— JSON 是 YAML 1.2 的有效子集，自动处理特殊字符转义。
  */
 function toYamlList<T extends Record<string, unknown>>(items: T[]): string {
   if (items.length === 0) return '# (empty)\n';
   const lines: string[] = [];
   for (const item of items) {
+    // JSON.stringify 自动转义 "、\n、: 等 YAML 特殊字符，输出始终是合法 YAML
     lines.push(`- ${JSON.stringify(item)}`);
   }
   return lines.join('\n') + '\n';

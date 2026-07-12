@@ -302,23 +302,23 @@ Agent 先判断任务复杂度：
 |------|------|
 | **Harness 层** | 管 Agent 行为的「缰绳」——不改模型，改模型外围的执行机制。→ [设计原理](./ARCHITECTURE.md#两层架构地基-vs-引擎) |
 | **审计引擎** | 看 git diff 硬证据判定违规，提交时触发，不依赖 Agent 配合。→ [为什么外置](./ARCHITECTURE.md#为什么审计必须外置) |
-| **编排引擎**（实验性）| 拆任务→编排→执行，跑在 OpenClaw 上。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
+| **编排引擎**（实验性）| 拆任务→编排→执行，基于 DeepAgents Sub Agent。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
 | **铁律** | Agent 行为约束规则（4 底线 + 7 铁律），写在 MD 文件里注入上下文 |
 | **审计规则** | 代码变更检查规则（A1-A15），审计引擎按此判定 exit code |
 | **Skill** | Agent 行为模板——一组 .md 文件，定义 Agent 在什么场景做什么 |
 | **think.md** | Agent 任务结束后的反思记录——踩了什么坑、下次怎么办 |
 | **daemon** | 轻量后台进程，每 30 秒检查 think.md/fde.md 文件 hash 变化并通知 |
-| **OpenClaw** | 开源 Agent 平台，sofagent 的编排引擎跑在上面 |
+| **OpenClaw** | 开源 Agent 平台，sofagent 的约束底座和加载链 Hook 跑在上面 |
 | **四层加载链** | SKILL.md（宪法层）→ think.md（反思层）→ fde.md（执行层）→ knowledge/index.md（知识层）注入顺序 |
 | **FDE** | Forward Deployed Engineer，四阶段十二步：梳理工作流→构建本体模型→识别节点与量化→部署→离场 |
 
-核心 = **4 底线 + 7 铁律 + 四层加载链**（所有平台生效）。增强 = 编排引擎 + 断路器 + Hook 注入（仅 OpenClaw）。完整概念分层见 [README](../README.md)。
+核心 = **4 底线 + 7 铁律 + 四层加载链**（所有平台生效）。增强 = 编排引擎 + 断路器 + Hook 注入（OpenClaw 全功能，其他平台核心可用）。完整概念分层见 [README](../README.md)。
 
 ---
 
 ## 场景五：FDE 部署
 
-> ⚠️ **成熟度**：审计引擎是稳定的（跨平台、零 Agent 依赖）。FDE 部署流程已有完整的四阶段十二步 + 五份模板 + quick-start，核心流程可用。编排引擎仍为实验性（依赖 OpenClaw，非 OpenClaw 平台仅约束+审计可用）。遇到问题开 Issue。
+> ⚠️ **成熟度**：审计引擎是稳定的（跨平台、零 Agent 依赖）。FDE 部署流程已有完整的四阶段十二步 + 五份模板 + quick-start，核心流程可用。编排引擎仍为实验性（基于 DeepAgents Sub Agent，所有平台可用）。遇到问题开 Issue。
 >
 > **FDE 工具包本身就是 sofagent 产品的一部分。** sofagent 的核心是底座，FDE 是底座落地进企业的场景。FDE 用这个工具包帮企业梳理工作流、构建本体模型、识别节点与量化、装上底座——**FDE 工作用自己产品，给别人部署完让别人也用自己产品。**
 
@@ -332,7 +332,7 @@ Agent 先判断任务复杂度：
 |----|--------|--------|
 | 约束底座 | fde.md 规则注入 Agent 上下文 | install.sh 装完自动加载 |
 | 审计引擎 | git diff → A1-A15 规则 → exit code | git pre-commit hook |
-| 编排引擎（实验性）| ao compose 拆任务生成编排方案 | 跑在 OpenClaw 上 |
+| 编排引擎（实验性）| DeepAgents 拆任务生成编排方案，Sub Agent 并行执行 | 全平台可用 |
 
 ### 离场后企业留下什么
 

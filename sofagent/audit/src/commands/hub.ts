@@ -71,6 +71,7 @@ export function listHubTemplates(): string[] {
   }
 
   // 递归列出模板
+  // TODO: v1.x 与 copyDir() 的递归遍历逻辑重复，可提取公共 walkDir() 函数
   const templates: string[] = [];
   function scanDir(dir: string, prefix: string): void {
     let entries: Dirent[];
@@ -102,6 +103,12 @@ export function listHubTemplates(): string[] {
  * @param options 部署选项
  */
 export async function hubDeploy(templateName: string, options: HubDeployOptions): Promise<void> {
+  // v1.0.5 fix: 路径穿越防护——拒绝含 .. 的模板名
+  if (templateName.includes('..')) {
+    console.error(`❌ 非法模板路径: ${templateName}`);
+    process.exit(1);
+  }
+
   const hubDir = findHubDir();
   if (!hubDir) {
     console.error('❌ 未找到 Workflow Hub 模板目录。请先安装：');
@@ -140,6 +147,7 @@ export async function hubDeploy(templateName: string, options: HubDeployOptions)
   console.log(`  目标: ${targetDir}`);
 
   // 递归复制模板文件
+  // TODO: v1.x 与 scanDir() 的递归遍历逻辑重复，可提取公共 walkDir() 函数
   function copyDir(src: string, dest: string): void {
     if (!existsSync(dest)) {
       mkdirSync(dest, { recursive: true });
@@ -171,5 +179,5 @@ export async function hubDeploy(templateName: string, options: HubDeployOptions)
   console.log('下一步：');
   console.log('  1. 编辑 .sofagent/workflows/' + templateName + '/knowledge/ 下的配置文件');
   console.log('  2. 运行 sofagent-audit --doctor 验证部署');
-  console.log('  3. 提交: git add .sofagent/workflows/ && git commit -m "部署工作流: ' + templateName + '"');
+  console.log('  3. 提交: git add .sofagent/workflows/ && git commit -m "部署工作流"');
 }

@@ -123,13 +123,15 @@ history.jsonl 存储审计拦截记录（含被拦截的 diff 摘要）。以下
 
 ## 第三方依赖供应链
 
-**agency-orchestrator (ao)** 是 sofagent 编排引擎的运行时依赖（npm 包 `agency-orchestrator@0.7.5`，Apache-2.0 许可）。install.sh 已将版本号 pin 到具体版本。
+**agency-orchestrator (ao)** 是 sofagent 编排引擎当前的运行时依赖（npm 包 `agency-orchestrator@0.7.5`，Apache-2.0 许可）。install.sh 已将版本号 pin 到具体版本。v1.0.6 起将迁移到 DeepAgents，v1.0.7 正式移除 ao 依赖。
+
+**deepagents** 是 v1.0.1 起的 optional dependency（`deepagents@^1.10.7`）。当前仅 launcher.ts（68 行）作为接入层使用——编排逻辑仍走 ao CLI。v1.0.7 提升为正式依赖。
 
 **降级路径**：
 - `install.sh --no-ao` 是 v0.85 起推荐的默认路径（非 OpenClaw 平台）。编排能力退化为手工拆解，约束层不受影响
-- `orchestrate-compare.ts`（task-orchestrate 已合并至此，从 bash 迁移至 TypeScript）在 ao 不可用时自动切到默认编排模式
+- `orchestrate-compare.ts` 在 ao 不可用时自动切到默认编排模式
 
 **供应链安全建议**：
 - 每次 `npm install` 后运行 `npm audit`
-- 定期检查 [agency-orchestrator 仓库](https://github.com/jnMetaCode/agency-orchestrator) 的 CHANGELOG
-- 内网环境建议预装 ao 并验证 `ao compose --version` 通过后再部署
+- 定期检查 [agency-orchestrator 仓库](https://github.com/jnMetaCode/agency-orchestrator) 的 CHANGELOG（ao 退役前）
+- 内网环境建议预装 ao 并验证 `ao compose --version` 通过后再部署（ao 退役前）

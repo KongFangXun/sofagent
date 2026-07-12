@@ -2,7 +2,8 @@
 // doctor.ts · sofagent-audit --doctor 健康诊断
 // v1.0 新增：一键诊断 7 项健康度
 // v1.0.4 新增：第 9 项——知识库访问矩阵
-// v1.0.4 新增：第 10 项——SkillOpt 管道状态 + 第 11 项——成本报告（共 11 项）
+// v1.0.4 新增：第 10 项——SkillOpt 管道状态 + 第 11 项——成本报告
+// v1.0.4 新增：第 12-14 项——eval harness / A/B 优化 / HITL 统计（11 项核心检查 + 3 项扩展检查）
 // 只读诊断，不做任何写操作
 // 退出码：全部通过 → 0；有失败 → 1
 // ============================================================
@@ -15,6 +16,11 @@ import { loadConfig, loadEnvConfig } from '../config-loader';
 import { load as yamlLoad } from 'js-yaml';
 import { calculateBaseline, isAnomaly, isColdStart } from '../cost-baseline';
 import { isSkillOptAvailable } from '../skillopt-integration';
+
+/** 转义正则表达式特殊字符，防止 regex 注入 */
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 interface CheckResult {
   ok: boolean;       // true = ✅, false = ❌/⚠️
@@ -86,7 +92,7 @@ export function runDoctor(): void {
       try {
         const content = require('fs').readFileSync(hookPath, 'utf-8');
         isSofagent = content.includes('sofagent');
-      } catch { /* */ }
+      } catch { console.debug('doctor: 读取 pre-commit hook 失败'); }
 
       // 检查可执行
       try {
@@ -571,7 +577,7 @@ function readAgentStatuses(): AgentStatus[] {
               const stat = require('fs').statSync(join(agentDir, lastFile));
               const ageMinutes = Math.round((Date.now() - stat.mtimeMs) / (1000 * 60));
               lastActive = ageMinutes < 1 ? '刚刚' : ageMinutes < 60 ? `${ageMinutes} 分钟前` : `${Math.round(ageMinutes / 60)} 小时前`;
-            } catch { /* */ }
+            } catch { console.debug('doctor: 读取 Agent 日志文件 mtime 失败'); }
           }
 
           agents.push({
@@ -580,7 +586,7 @@ function readAgentStatuses(): AgentStatus[] {
             lastActive,
           });
         }
-      } catch { /* */ }
+      } catch { console.debug('doctor: 读取 task/logs 目录失败'); }
     }
 
     // 读取 daemon-notice.md 获取心跳信息
@@ -594,11 +600,11 @@ function readAgentStatuses(): AgentStatus[] {
           for (const agent of agents) {
             if (content.includes(agent.name)) {
               agent.status = 'error';
-              agent.errorCount = (content.match(new RegExp(agent.name, 'g')) || []).length;
+              agent.errorCount = (content.match(new RegExp(escapeRegex(agent.name), 'g')) || []).length;
             }
           }
         }
-      } catch { /* */ }
+      } catch { console.debug('doctor: 读取 daemon-notice.md 失败'); }
     }
 
     // 读取 Sub Agent 注册表
@@ -622,15 +628,15 @@ function readAgentStatuses(): AgentStatus[] {
             }
           }
         }
-      } catch { /* */ }
+      } catch { console.debug('doctor: 读取 Sub Agent 注册表失败'); }
     }
-  } catch { /* */ }
+  } catch { console.debug('doctor: readAgentStatuses 整体执行失败'); }
 
   // 确保至少有默认 Agent
   if (agents.length === 0) {
     agents.push(
-      { name: 'FDE Sub Agent', status: 'resident', lastActive: '最后一次活跃 3 分钟前' },
-      { name: 'Audit Sub Agent', status: 'idle', lastActive: '下次巡检 2026-07-11 03:00' },
+      { name: 'FDE Sub Agent（示例）', status: 'resident', lastActive: '最后一次活跃 3 分钟前' },
+      { name: 'Audit Sub Agent（示例）', status: 'idle', lastActive: '下次巡检 2026-07-11 03:00' },
     );
   }
 
