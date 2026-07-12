@@ -172,6 +172,8 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | **编排引擎收敛保护** | Loop 工程核心是收敛——不具备收敛性的目标会无限烧 Token。加硬约束：同一任务跑超过 N 轮未收敛 → 强制停下问人，写 think.md 标记「收敛失败」。当前 think.md 是被动记录，缺主动叫停机制
 | loop-check 三元统一出口 | pass/fail/warn 收敛，对齐审计引擎 exit code 0/1/2
 | 记忆产权三维框架 | 对象归属 / 锁定策略 / 边界定义补充到记忆层
+| **OKF 知识互操作**（v2.x 探索） | Google OKF（LMVKI 知识沉淀 + OKF 互操作两代分化）。当前 knowledge/ 已实现知识沉淀（等同于 LMVKI），未来方向：① 导出为 OKF 标准格式（统一元数据：标题/类型/标签/更新时间/来源）② 让外部 AI 系统（Cloud/Gemini/Cursor）零适配直接读取 sofagent 的知识库。把企业知识库从"sofagent 专属"变成"所有 AI 通用"
+| **私有化评估体系**（v1.x） | 微软 Nadella：未来企业最重要 IP 是 private evals。FDE 交付的 scoring 反馈 + Skill 迭代历史 + 知识库演变 = 企业的私有化评估闭环。当前已实现 scoring.md + A/B 对比 + SkillOpt，v1.x 强化为 FDE 离场时的核心交付物描述
 | 入口契约三门槛 | 审计引擎扩展：检查提交含 decision log / PR 大小 / 测试证据，把「重建意图」成本推回提交者 |
 | 记忆冲突检测三步法 | think.md 从追加模式升级：检测矛盾→智能融合→重心明确，不简单覆盖 |
 | 审计工具健康度运维 | 规则失效检测 + baseline 增长告警——审计工具也需要被审计 |

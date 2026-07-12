@@ -157,6 +157,8 @@ Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与
 
 子 Agent 销毁后 → ② 反思→think.md ③ 评分→scoring.md ④ A/B→orchestrator/ ⑤ 口头汇报。外部 Skill 从 [ClawHub](https://clawhub.ai) 获取，岗位模板来自 [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh)。
 
+> **gstack 七步对照**：YC CEO Garry Tan 的 gstack 项目（28 Skill + 7 Agent 角色）采用 Think→Plan→Build→Reveal→Test→Ship→Reflect 七步工作流，与 sofagent 的编排循环高度对应：「Reveal = 审计引擎外置审查」「Ship = loop-exit closure」「Reflect = think.md 反思」。gstack 的三大设计哲学——① 角色即约束（Agent 严格在权责范围内行动）② 造之前先搜（优先检索外部信息）③ 把壶烧开（用算力覆盖全场景）——为 sofagent 的 agents/ 多角色架构和 task-aware 路由提供了工业级参照。
+
 ---
 
 ## 三、模型最优选择
