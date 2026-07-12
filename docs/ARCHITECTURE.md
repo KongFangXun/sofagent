@@ -272,7 +272,7 @@ knowledge/ 的数据流遵循生产者-消费者解耦模式（与 Google OKF �
 > - **CAG（第 7 代 RAG，WWW '25）**：同方法——按主题整合→去重去冲突→规整 Markdown→全量输入 LLM
 > - **Glean（Gary Tan / YC）**：工业数据——1.7 万页 Markdown、前 5 条召回 ~100%、比传统 RAG 提升 30%
 
-> **进化方向——记忆分层金字塔（L0-L3）**：腾讯云开源的 TencentDB Agent Memory 提出了 4 层渐进蒸馏架构——L0 原始对话 → L1 原子事实 → L2 场景聚合 → L3 用户画像。每层向上压缩、向下可追溯。与 sofagent 的 think.md（L0）→ knowledge/entities（L1）→ knowledge/concepts（L2）→ 缺 L3 用户画像完全对应。未来方向：自动化 L1→L2→L3 提炼流水线 + SQLite 双轨存储（百万级事实用 DB 检索、千级结构用 MD 文件）。详见 [THANKS](./THANKS.md)。
+> **进化方向——记忆分层金字塔（L0-L3）**：腾讯云 TencentDB Agent Memory（MIT，OpenClaw 原生插件）提供了可直接引用的 4 层记忆架构：L0 原始对话 → L1 原子事实（SQLite+vector 检索）→ L2 场景聚合（Markdown）→ L3 用户画像（persona.md）。sofagent 已有 L0（think.md）→ L1（entities）→ L2（concepts），缺 L3 用户画像 + 自动化 L1→L2 提炼流水线。未来可直接集成作为记忆后端——百万级事实用 DB 检索、千级结构用 MD 文件。
 
 ### 三层时间尺度循环（Andrew Ng 框架）
 

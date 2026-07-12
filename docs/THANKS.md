@@ -64,6 +64,7 @@ sofagent 直接使用或借鉴了它们的能力。
 - **[best-of-agent-harnesses](https://github.com/RyanAlberts/best-of-agent-harnesses)** — 101+ 个 Harness 项目索引，让我了解这个领域已经有什么人在做什么事
 - **[agent-skills](https://github.com/addyosmani/agent-skills)** by Addy Osmani — 24 个生产级工程 Skill，反合理化表（Anti-rationalization）设计——预判 Agent 跳过步骤的借口并逐一驳回——启发了 sofagent fde.md 的铁律反合理化表
 - **[gstack](https://github.com/garrytan/gstack)** by Garry Tan (YC CEO) — 28 个 Skill + 7 个 Agent 角色的 AI 辅助软件开发系统。六层安全栈（分类器级 prompt injection 检测 / 密钥格式持续更新 / fail-closed 默认不信任）、原子文件写入模式、角色分解架构——为 sofagent 的 A2 密钥格式更新和多角色 agents/ 架构提供了实践参照
+- **[TencentDB Agent Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory)** · Tencent Cloud (2026-06) · MIT —— OpenClaw 原生记忆插件，零配置、开箱即用。4 层分层记忆（L0 对话→L1 事实→L2 场景→L3 画像）+ 双轨存储（SQLite+sqlite-vec 存事实、Markdown 存结构）+ 符号化压缩（Mermaid 图替冗长日志，Token 降 61%）。可直接作为 sofagent AI 知识库的记忆后端——百万级事实用 DB 检索、千级结构用 MD 文件
 
 ---
 
@@ -125,9 +126,6 @@ sofagent 直接使用或借鉴了它们的能力。
 
 - **["Don't Do RAG" — Cache-Augmented Generation](https://arxiv.org/abs/2412.15605)** · WWW '25 (2025)
   CAG（编译式 RAG）的核心——按主题整合文档→去重去冲突→生成规整 Markdown→全量输入 LLM——与 sofagent knowledge/ 的「entities/concepts/comparisons 页面自动生成」完全同构。独立验证了「知识管理不需要向量数据库，干净 Markdown 就够了」的架构选择。
-
-- **[TencentDB Agent Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory)** · Tencent Cloud (2026-06) · MIT
-  4 层渐进蒸馏记忆架构（L0 原始对话→L1 原子事实→L2 场景聚合→L3 用户画像）+ 双轨存储（SQLite+sqlite-vec 存事实、Markdown 存结构）+ 符号化压缩（Mermaid 图替代冗长日志，Token 消耗降 61%）。OpenClaw 原生插件，零配置启用。为 sofagent knowledge/ 的记忆分层进化提供了完整的架构蓝图和工业级参照。
 
 - **[Satya Nadella — No Priors x Latent Space at Microsoft Build](https://pod.wave.co/podcast/latent-space-the-ai-engineer-podcast/satya-nadella-no-priors-x-latent-space-crossover-special-at-microsoft-build)**（2026-06）
   微软 CEO Nadella 提出："Every company will have its own private eval. That may be the most important IP." 私有化评估体系 = 企业持续训练 Agent 过程中积累的反馈数据、评分标准、迭代轨迹。与 sofagent 的 FDE 交付物（Skill 定制 + scoring 反馈 + 知识库演变）完全对应——FDE 交付的不是工具，是企业培养 Agent 的评估闭环。
