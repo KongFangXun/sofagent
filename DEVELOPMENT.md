@@ -157,7 +157,9 @@ Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与
 
 子 Agent 销毁后 → ② 反思→think.md ③ 评分→scoring.md ④ A/B→orchestrator/ ⑤ 口头汇报。外部 Skill 从 [ClawHub](https://clawhub.ai) 获取，岗位模板来自 [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh)。
 
-> **gstack 七步对照**：YC CEO Garry Tan 的 gstack 项目（28 Skill + 7 Agent 角色）采用 Think→Plan→Build→Reveal→Test→Ship→Reflect 七步工作流，与 sofagent 的编排循环高度对应：「Reveal = 审计引擎外置审查」「Ship = loop-exit closure」「Reflect = think.md 反思」。gstack 的三大设计哲学——① 角色即约束（Agent 严格在权责范围内行动）② 造之前先搜（优先检索外部信息）③ 把壶烧开（用算力覆盖全场景）——为 sofagent 的 agents/ 多角色架构和 task-aware 路由提供了工业级参照。
+> **Loop Engineering 五组件对照**：行业共识将 Loop 系统拆为五个核心组件：Goals（持续目标绑定）/ Automations（定时触发）/ Skills（技能沉淀）/ Sub Agents（子代理分工）/ Worktraces（并行任务隔离）。sofagent 对应：Goals = fde.md 铁律，Automations = daemon + cron，Skills = sofagent/skill/，Sub Agents = agents/，Worktraces = task/logs + think.md。gstack 的七步工作流（Think→Plan→Build→Reveal→Test→Ship→Reflect）进一步验证了 sofagent「审计外置（Reveal）+ 反思闭环（Reflect）」的设计。
+
+> **Loop 落地前置条件**：① 任务是否重复发生 ② 是否支持自动化核验 ③ Token 预算是否覆盖循环消耗 ④ AI 是否具备适配任务的可用工具。核心原则——**自己不能当自己的裁判**：生成代码的模型与核验结果的模型必须完全独立，这与 sofagent「审计引擎与编排引擎分离」是同一设计思想。
 
 ---
 
