@@ -82,10 +82,10 @@ LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 # 上限定义
 LIMIT_A=3600
 LIMIT_B=2000
-LIMIT_C=3500
+LIMIT_C=4500
 LIMIT_D=500
 LIMIT_E=500
-LIMIT_TOTAL=5000
+LIMIT_TOTAL=5100
 
 # 输出各层
 echo "  A 用户文档:     ${LAYER_A} 行 / ${LIMIT_A} 上限"

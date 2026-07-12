@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // sofagent-orchestrate-compare · 编排方案 A/B 对比 + 任务编排 CLI
 //
-// @deprecated 自 v1.0.5 起标记迁移。compose 仍走 ao CLI，v1.0.6 迁到 DeepAgents，v1.0.7 移除 ao 依赖。
+// @deprecated v1.0.6 迁移核心逻辑到 DeepAgents，ao 降为 fallback。v1.0.7 完全移除 ao 依赖。
 //
 // TODO(v1.0.7): 实现连续胜出计数器（CONSECUTIVE_WINS_REQUIRED = 2）
 // 当前只做单次对比。连续胜出判断需手动执行两次 compare 后人工决策。
@@ -17,6 +17,7 @@ import { existsSync, readdirSync, readFileSync, statSync, mkdirSync, writeFileSy
 import { join, resolve } from 'path';
 import { createHash } from 'crypto';
 import { VERSION } from './shared/constants.js';
+import { composeWithDeepAgents } from './subagents/composer.js';
 
 export interface Metric { runCount: number; auditViolations: number; avgSteps: number; firstPassRate: number; }
 interface Args { current: string; candidate: string; output: string; }
@@ -191,8 +192,7 @@ function shouldSkipAoCompose(cachedYaml: string): boolean {
   return existsSync(cachedYaml);
 }
 
-function composeTask(args: string[]): void {
-  console.warn('⚠️ ao 已进入退役倒计时（v1.0.2 起），请迁移到 deepagentsjs。v1.0.5 移除。');
+async function composeTask(args: string[]): Promise<void> {
   let taskDesc = '';
   let dryRun = false;
   let useWorktree = false;
@@ -214,11 +214,10 @@ function composeTask(args: string[]): void {
 
   if (!taskDesc) { err('缺少任务描述。用法: sofagent-orchestrate-compare compose "你的任务"'); process.exit(1); }
 
-  if (!cmdExists('ao')) {
-    warn('agency-orchestrator (ao) 未安装——编排引擎不可用');
-    warn('降级方案：手动拆任务 → 逐条手动记录 → 手动闭环');
-    defaultOrchestrate(taskDesc);
-    process.exit(0);
+  // v1.0.6: 优先尝试 DeepAgents compose，ao 降为 fallback
+  const aoAvailable = cmdExists('ao');
+  if (!aoAvailable) {
+    warn('agency-orchestrator (ao) 未安装——编排引擎降级');
   }
 
   console.log('');
@@ -271,30 +270,52 @@ function composeTask(args: string[]): void {
   }
 
   let workflowFile = '';
+  let deepAgentsComposed = false;
   if (skipAoCompose) {
     workflowFile = cachedYaml;
     info('Step 1/3 · 使用缓存模板');
   } else {
-    info('Step 1/3 · AO 编排分析（一次性拆解）...');
-    if (aoModel) info(`  模型: ${aoModel}`);
+    info('Step 1/3 · 编排分析（一次性拆解）...');
     workflowFile = join(process.env.TMPDIR || '/tmp', `sofagent-workflow-${process.pid}.yaml`);
-    try {
-      const aoArgs = aoModel ? ['compose', '--model', aoModel, taskDesc] : ['compose', taskDesc];
-      const output = execFileSync('ao', aoArgs, { encoding: 'utf-8', timeout: AO_TIMEOUT });
-      writeFileSync(workflowFile, output);
-    } catch {
-      warn('ao compose 未生成 YAML，尝试直接执行...');
+
+    // v1.0.6: 优先尝试 DeepAgents compose
+    info('  尝试 DeepAgents compose...');
+    const deepAgentsYaml = await composeWithDeepAgents(taskDesc);
+    if (deepAgentsYaml) {
+      writeFileSync(workflowFile, deepAgentsYaml);
+      deepAgentsComposed = true;
+      ok('DeepAgents compose 成功');
+    } else if (aoAvailable) {
+      // DeepAgents 不可用，降级到 ao
+      warn('DeepAgents compose 不可用，降级到 ao...');
+      if (aoModel) info(`  模型: ${aoModel}`);
       try {
-        execFileSync('ao', ['compose', taskDesc, '--run'], { stdio: 'inherit', timeout: AO_TIMEOUT });
-        process.exit(0);
-      } catch { process.exit(1); }
+        const aoArgs = aoModel ? ['compose', '--model', aoModel, taskDesc] : ['compose', taskDesc];
+        const output = execFileSync('ao', aoArgs, { encoding: 'utf-8', timeout: AO_TIMEOUT });
+        writeFileSync(workflowFile, output);
+      } catch {
+        warn('ao compose 未生成 YAML，尝试直接执行...');
+        try {
+          execFileSync('ao', ['compose', taskDesc, '--run'], { stdio: 'inherit', timeout: AO_TIMEOUT });
+          process.exit(0);
+        } catch { process.exit(1); }
+      }
+    } else {
+      // 两个编排引擎都不可用
+      warn('DeepAgents 和 ao 均不可用，使用降级方案');
+      defaultOrchestrate(taskDesc);
+      process.exit(0);
     }
 
     if (existsSync(workflowFile)) {
       ok('编排计划已生成');
       try {
         info('编排预览:');
-        execFileSync('ao', ['explain', workflowFile], { stdio: 'inherit', timeout: AO_UTIL_TIMEOUT });
+        if (aoAvailable) {
+          execFileSync('ao', ['explain', workflowFile], { stdio: 'inherit', timeout: AO_UTIL_TIMEOUT });
+        } else {
+          console.log(readFileSync(workflowFile, 'utf-8').split('\n').slice(0, 20).join('\n'));
+        }
       } catch {
         console.log(readFileSync(workflowFile, 'utf-8').split('\n').slice(0, 20).join('\n'));
       }

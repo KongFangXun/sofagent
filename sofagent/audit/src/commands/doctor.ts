@@ -1,9 +1,9 @@
 // ============================================================
 // doctor.ts · sofagent-audit --doctor 健康诊断
 // v1.0 新增：一键诊断 7 项健康度
-// v1.0.5 新增：第 9 项——知识库访问矩阵
-// v1.0.5 新增：第 10 项——SkillOpt 管道状态 + 第 11 项——成本报告
-// v1.0.5 新增：第 12-14 项——eval harness / A/B 优化 / HITL 统计（11 项核心检查 + 3 项扩展检查）
+// v1.0.6 新增：第 9 项——知识库访问矩阵
+// v1.0.6 新增：第 10 项——SkillOpt 管道状态 + 第 11 项——成本报告
+// v1.0.6 新增：第 12-14 项——eval harness / A/B 优化 / HITL 统计（11 项核心检查 + 3 项扩展检查）
 // 只读诊断，不做任何写操作
 // 退出码：全部通过 → 0；有失败 → 1
 // ============================================================
@@ -15,6 +15,7 @@ import { loadConfig, loadEnvConfig } from '../config-loader';
 import { load as yamlLoad } from 'js-yaml';
 import { calculateBaseline, isAnomaly, isColdStart } from '../cost-baseline';
 import { isSkillOptAvailable } from '../skillopt-integration';
+import { readRuntimeState } from '../subagents/launcher';
 
 /** 转义正则表达式特殊字符，防止 regex 注入 */
 function escapeRegex(s: string): string {
@@ -137,6 +138,45 @@ export function runDoctor(): void {
     }
   } else {
     results.push({ ok: false, warning: true, label: 'commit-msg hook', detail: '跳过（非 git 仓库）' });
+  }
+
+  // 3b. post-commit hook（v1.0.6 新增：--no-verify 绕过检测）
+  // post-commit 缺失只报 WARN——旧用户升级时不会有，不应该阻断
+  if (inGitRepo) {
+    let postCommitPath = '';
+    try {
+      const gitCommonDir2 = execFileSync('git', ['rev-parse', '--git-path', 'hooks'], {
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      }).trim();
+      postCommitPath = join(cwd, gitCommonDir2, 'post-commit');
+    } catch { /* */ }
+
+    if (postCommitPath && existsSync(postCommitPath)) {
+      let isSofagent = false;
+      try {
+        const pcContent = require('fs').readFileSync(postCommitPath, 'utf-8');
+        isSofagent = pcContent.includes('sofagent');
+      } catch { /* */ }
+      if (isSofagent) {
+        results.push({
+          ok: true, warning: false,
+          label: 'post-commit hook', detail: '已安装（--no-verify 绕过检测）',
+        });
+      } else {
+        results.push({
+          ok: false, warning: true,
+          label: 'post-commit hook', detail: '已存在但非 sofagent hook',
+          fixHint: '运行 sofagent-audit --init 安装',
+        });
+      }
+    } else {
+      results.push({
+        ok: false, warning: true,
+        label: 'post-commit hook', detail: '未安装（--no-verify 绕过不会自动检测）',
+        fixHint: '运行 sofagent-audit --init 安装',
+      });
+    }
   }
 
   // 4. config.yml
@@ -547,10 +587,11 @@ interface AgentStatus {
   lastActive: string;
   currentTask?: string;
   errorCount?: number;
+  pid?: number;
 }
 
 /**
- * 读取 Agent 状态——从 .sofagent/task/logs/ + daemon 心跳 + Sub Agent 注册表
+ * 读取 Agent 状态——从 runtime.json（launcher 写入的真实数据）+ 其他来源
  */
 function readAgentStatuses(): AgentStatus[] {
   const agents: AgentStatus[] = [];
@@ -558,6 +599,24 @@ function readAgentStatuses(): AgentStatus[] {
   try {
     const envConfig = loadEnvConfig();
     const dataDir = envConfig.dataDir;
+
+    // v1.0.6: 优先从 runtime.json 读取真实数据
+    const runtimeState = readRuntimeState();
+    for (const entry of runtimeState.agents) {
+      agents.push({
+        name: entry.name,
+        status: entry.status === 'active' ? 'running' : entry.status === 'stopped' ? 'idle' : 'idle',
+        lastActive: formatLastActive(entry.lastActive),
+        pid: entry.pid,
+      });
+    }
+
+    // runtime.json 有数据就不再用旧的推断方式
+    if (agents.length > 0) {
+      return agents;
+    }
+
+    // 以下为兼容旧版本（v1.0.5 及以前）的降级读取逻辑
     const logsDir = join(dataDir, 'task', 'logs');
 
     // 从 task/logs 目录推断活跃 Agent
@@ -570,37 +629,41 @@ function readAgentStatuses(): AgentStatus[] {
           if (entry.isDirectory()) {
             // 检查目录下是否有最近的 md 文件
             const agentDir = join(logsDir, entry.name);
-            const files = readdirSync(agentDir).filter((f) => f.endsWith('.md'));
-            if (files.length > 0) {
-              agentNames.add(entry.name);
-            }
+            try {
+              const files = readdirSync(agentDir).filter((f) => f.endsWith('.md'));
+              if (files.length > 0) {
+                agentNames.add(entry.name);
+              }
+            } catch { /* skip */ }
           }
         }
 
         for (const name of agentNames) {
           const agentDir = join(logsDir, name);
-          const files = readdirSync(agentDir)
-            .filter((f) => f.endsWith('.md'))
-            .sort()
-            .reverse();
+          try {
+            const files = readdirSync(agentDir)
+              .filter((f) => f.endsWith('.md'))
+              .sort()
+              .reverse();
 
-          const lastFile = files[0];
-          let lastActive = '未知';
-          if (lastFile) {
-            try {
-              const stat = require('fs').statSync(join(agentDir, lastFile));
-              const ageMinutes = Math.round((Date.now() - stat.mtimeMs) / (1000 * 60));
-              lastActive = ageMinutes < 1 ? '刚刚' : ageMinutes < 60 ? `${ageMinutes} 分钟前` : `${Math.round(ageMinutes / 60)} 小时前`;
-            } catch { console.debug('doctor: 读取 Agent 日志文件 mtime 失败'); }
-          }
+            const lastFile = files[0];
+            let lastActive = '未知';
+            if (lastFile) {
+              try {
+                const stat = require('fs').statSync(join(agentDir, lastFile));
+                const ageMinutes = Math.round((Date.now() - stat.mtimeMs) / (1000 * 60));
+                lastActive = ageMinutes < 1 ? '刚刚' : ageMinutes < 60 ? `${ageMinutes} 分钟前` : `${Math.round(ageMinutes / 60)} 小时前`;
+              } catch { /* */ }
+            }
 
-          agents.push({
-            name,
-            status: 'idle',
-            lastActive,
-          });
+            agents.push({
+              name,
+              status: 'idle',
+              lastActive,
+            });
+          } catch { /* */ }
         }
-      } catch { console.debug('doctor: 读取 task/logs 目录失败'); }
+      } catch { /* */ }
     }
 
     // 读取 daemon-notice.md 获取心跳信息
@@ -610,7 +673,6 @@ function readAgentStatuses(): AgentStatus[] {
         const content = readFileSync(noticePath, 'utf-8');
         const hasError = content.includes('error') || content.includes('异常') || content.includes('失败');
         if (hasError) {
-          // 标记可能异常的 Agent
           for (const agent of agents) {
             if (content.includes(agent.name)) {
               agent.status = 'error';
@@ -618,10 +680,10 @@ function readAgentStatuses(): AgentStatus[] {
             }
           }
         }
-      } catch { console.debug('doctor: 读取 daemon-notice.md 失败'); }
+      } catch { /* */ }
     }
 
-    // 读取 Sub Agent 注册表
+    // 读取 Sub Agent 注册表（兼容旧版 registry.json）
     const registryPath = join(dataDir, 'subagents', 'registry.json');
     if (existsSync(registryPath)) {
       try {
@@ -642,9 +704,9 @@ function readAgentStatuses(): AgentStatus[] {
             }
           }
         }
-      } catch { console.debug('doctor: 读取 Sub Agent 注册表失败'); }
+      } catch { /* */ }
     }
-  } catch { console.debug('doctor: readAgentStatuses 整体执行失败'); }
+  } catch { /* */ }
 
   // 确保至少有默认 Agent
   if (agents.length === 0) {
@@ -655,6 +717,21 @@ function readAgentStatuses(): AgentStatus[] {
   }
 
   return agents;
+}
+
+/**
+ * 格式化 lastActive 为可读字符串
+ */
+function formatLastActive(iso: string): string {
+  if (!iso) return '未知';
+  try {
+    const ageMinutes = Math.round((Date.now() - new Date(iso).getTime()) / (1000 * 60));
+    if (ageMinutes < 1) return '刚刚';
+    if (ageMinutes < 60) return `${ageMinutes} 分钟前`;
+    return `${Math.round(ageMinutes / 60)} 小时前`;
+  } catch {
+    return iso;
+  }
 }
 
 /**

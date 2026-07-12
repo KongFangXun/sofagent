@@ -11,6 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 18
+
       - name: Setup minimal sofagent environment
         run: |
           bash sofagent/scripts/install.sh --platform openclaw --no-ao --quick 2>/dev/null || {

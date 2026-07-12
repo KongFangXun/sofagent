@@ -1,12 +1,15 @@
 # sofagent 版本开发 SOP
 
-> v0.95 实践沉淀。八阶段：审查→开发→自测→审核→文档收尾→确认关口→发布→发布后。
+> v0.95 实践沉淀。十阶段：审查→开发→自测→代码审核→**回归检查**→审查体系维护→文档收尾→确认关口→发布→发布后。
 > 🔴 v0.95 起，版本号操作用 `bump-version.sh` + `check-version.sh`，禁止手动 grep/sed。
 > 🔴 v1.0.3 起，文档预算分层检查（A 用户文档 / B 开发者参考 / C 审查体系 / D 设计 / E 指南），见 `check-docs.sh`。
+> 🔴 v1.0.6 起，回归检查升格为**独立阶段**（阶段五）——需要全新 session，不再作为"审核"的子步骤。
 
 ---
 
 ## 阶段一：审查 → 开发日志
+
+上一版本发布后，由陌生视角审查（fresh-eyes-review.md）驱动新版本的开发方向。
 
 | # | 步骤 | 谁做 | 产物 |
 |:--:|------|:--:|------|
@@ -24,7 +27,11 @@
 | 3 | P0 安全硬伤 | 工程师 | 必须修，阻塞发布。**每修完一个 P0/P1，顺手在回归清单追加检查项——趁记忆新鲜，不要等到发版前才回忆。** |
 | 4 | P1 工程欠债 | 工程师 | 应该修 |
 | 5 | P2 改进 | 工程师 | 不阻塞发布 |
-| 5.5 | 审查体系更新 | 工程师 | 随修复同步更新：① 回归清单追加检查项（编号递增）② 陌生视角 prompt 补充新盲区视角/任务。**不要等到阶段四才做——开发时记忆最新，随修随记** |
+| 5.5 | 审查体系更新 | 工程师 | 随修复同步更新：① 回归清单追加检查项（编号递增）② 陌生视角 prompt 补充新盲区视角/任务。**不要等到阶段六才做——开发时记忆最新，随修随记** |
+
+**🔴 开发铁律（v1.0.3 教训）**：
+- **开发完后再 bump 版本号**——不要在开发过程中提前 bump。工程师可能写了目标版本号而非当前 SSOT
+- 对 optional dependency（如 deepagents）的类型断言统一用 `as unknown as` 双重转换——本地编译通过不代表 CI 通过
 
 ---
 
@@ -39,37 +46,93 @@
 | 8 | `shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh` | 零 error |
 | 8.5 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
 | 8.6 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
-| 8.7 | `bash tools/acceptance-test.sh` — 11 个端到端场景：Fresh install → --init → --doctor → 正常 commit → 违规拦截 → --json → --ci → 首次提交 → hook 破坏 → --no-verify 检测 → config rules 过滤 | 全部 PASS |
+| 8.7 | `bash tools/acceptance-test.sh` — 28 个端到端场景：Fresh install → --init → --doctor → 正常 commit → 违规拦截 → --json → --ci → 首次提交 → hook 破坏 → --no-verify 检测 → config rules 过滤 → A2/A3/A4/A5/A6/A9/A10/A11 → E1-E4 扩展规则 → --strict exit code=2 → hook 迁移 → post-commit → hashVersion 混合格式 → history.jsonl 写入 → --json 违规输出 → post-commit 安装+丢失检测 | 全部 PASS |
+| 8.8 | **OpenClaw 综合验证**（v1.0.6 起）：在全新 session 中执行 `docs/verification/openclaw-acceptance-test.md`（28 场景：审计管道全规则 + hook 机制 + hashVersion 混合格式 + SkillOpt 自净化 + DeepAgents Sub Agent + optional 依赖降级 + config rules 过滤） | 全部通过 |
 
 ---
 
-## 阶段四：审核
+## 阶段四：代码审核
+
+由独立审核者逐项核对 changelog 中的每一项改动。审核者可以是外部审查员，也可以是作者用另一个模型跑。
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 9 | 独立审核者逐项核对 changelog 每一项 | 审核者 | 逐文件读源码 |
+| 9 | 独立审核者逐项核对 changelog 每一项 | 审核者 | 逐文件读源码，逐项确认改动存在且正确 |
 | 9.5 | FAIL 项修复 | 工程师 | build + test 全绿 |
 | 10 | 二次复核确认全部到位 | 审核者 | changelog 所有项 PASS |
-| 10.5 | 回归检查：用回归清单逐项核对（当前维度数见清单文件头）<br>🔴 **必须开全新 session**——老 session 有上下文记忆，审查者知道"这东西是我修的"，会跳过怀疑。全新 session = 空白认知 | 审核者 | 全 PASS。发现回退→修复后重跑。新问题→追加检查项 |
-| 10.6 | **审查体系维护**（本步骤在开发 session 中执行，不需要新 session——这是在更新文档，不是在审查）——基于本版本整个迭代的开发经验，更新两套审查体系：<br>① **回归清单**：把本版本修过的 P0/P1 抽象为检查项追加到清单。开发过程中已随修随记，本步骤做最后核对——有没有遗漏？<br>② **陌生视角 prompt**：本版本暴露了哪些新盲区？把新视角/任务/攻击面补进 prompt。更新后的 prompt 下版本发布后用于独立审查 | 审核者/作者 | 回归清单检查项数 ≥ 上一版；陌生视角 prompt 新增任务/视角见于文件 diff |
 
 ---
 
-## 阶段五：文档收尾（🔴 v0.92 踩坑最密集）
+## 🔴 阶段五：回归检查（独立阶段，必须全新 session）
 
-### 5.1 开发日志自更新
+> ⚠️ **v1.0.6 起升格为独立阶段**——之前是"审核"的子步骤 10.5，容易被跳过。回归检查的"全新 session"要求与开发 session 天然矛盾，不应放在同一个阶段里。
 
-- 「质量验证」节补上本轮 `npm test` / `check-version` / `verify` / `npm pack` 的实际跑分结果（不要留占位符）
+**为什么必须独立**：
+- 回归检查用 `docs/verification/regression-checklist.md`（当前维度数见文件头）
+- 🔴 **必须开全新 session**——老 session 有上下文记忆，审查者知道"这东西是我修的"，会跳过怀疑。全新 session = 空白认知
+- 和阶段一（陌生视角审查）不同：回归检查是"确认已知修复没回退"，不是"发现新问题"
+
+| # | 步骤 | 谁做 | 验证方式 |
+|:--:|------|:--:|------|
+| 10.5a | **回归清单**：在**全新 session** 中用 `docs/verification/regression-checklist.md` 逐项核对 | 审核者（不能是开发者本人） | 全 PASS |
+| 10.5b | **OpenClaw 验收**：在同一个全新 session 中用 `docs/verification/openclaw-acceptance-test.md` 跑全场景验证 | 审核者 | 所有场景 PASS |
+
+> 🔴 两项**都必须**通过才能进阶段六。任何一项 FAIL → 回开发 session 修复 → 重跑阶段三自测 → 再开新 session 重跑阶段五。
+
+**操作方式**：
+
+1. 开一个全新的 WorkBuddy/CodeBuddy session（不要从开发 session 继续）
+2. **先跑回归清单**：
+   ```
+   请读取 docs/verification/regression-checklist.md，
+   按照里面的审查约束和逐项检查清单，
+   对当前 workspace 的 sofagent 项目执行回归检查。
+   输出每项的 PASS/FAIL 结果。
+   ```
+3. **再跑 OpenClaw 验收**：
+   ```
+   请读取 docs/verification/openclaw-acceptance-test.md，
+   按照里面的场景逐一执行验证。
+   输出每个场景的 PASS/FAIL 结果。
+   ```
+4. 如果有 FAIL：回到开发 session 修复 → 重新跑阶段三自测 → 再开新 session 重跑阶段五（两项都要重跑）
+
+**时序注意**：
+- 回归清单中标注「发布后验证」的检查项（如 npm latest 版本号），在回归检查阶段必然不满足——这是正常的，不要标 FAIL
+- OpenClaw 验收需要 OpenClaw 环境——如果当前 session 不在 OpenClaw 中，部分场景可跳过（prompt 中有降级说明）
+
+---
+
+## 阶段六：审查体系维护
+
+> 本阶段在**开发 session** 中执行——这是在更新文档，不是在审查，不需要新 session。
+
+基于本版本整个迭代的开发经验，更新两套审查体系：
+
+| # | 步骤 | 验证方式 |
+|:--:|------|------|
+| 10.6a | **回归清单**：开发过程中已随修随记（步骤 5.5），本步骤做最后核对——有没有遗漏的 P0/P1 修复没抽象为检查项？ | 回归清单检查项数 ≥ 上一版 |
+| 10.6b | **陌生视角 prompt**（`docs/verification/fresh-eyes-review.md`）：本版本暴露了哪些新盲区？把新视角/任务/攻击面补进 prompt。更新后的 prompt 下版本发布后用于阶段一的独立审查 | 陌生视角 prompt 新增任务/视角见于文件 diff |
+
+**审查体系闭环**（v1.0.4 教训）：审查文档自身也会过时——每次发版后审视审查 prompt 的数字、路径、视角是否还有效。
+
+---
+
+## 阶段七：文档收尾（🔴 v0.92 踩坑最密集）
+
+### 7.1 开发日志自更新
+
+- 补上本轮 `npm test` / `acceptance-test` / `shellcheck` / `check-version` 的实际结果（不要留占位符）
 - 开发日志是活文档，代码改完立刻回写，不要等
-- 独立审核的「发布检查清单」（`[x]` 格式）可放在 changelog 末尾，也可用「质量验证」命令输出替代——二者功能等价，不必重复
+- 发布检查清单全部打 `[x]`（在阶段八确认关口之后）
 
-### 5.1.1 测试数字一致性（v1.0.4 教训）
+### 7.1.1 测试数字一致性（v1.0.4 教训）
 
 CHANGELOG/ROADMAP 中声称的测试数必须与实际 `npm test` 输出一致。v1.0.4 曾写 455 但实际 465。
 
 ```bash
 # 获取实际测试数
-actual=$(npm test 2>&1 | grep 'Tests' | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+')
+actual=$(cd sofagent/audit && npm test 2>&1 | grep 'Tests' | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+')
 echo "实际测试数: $actual"
 
 # 检查 CHANGELOG/ROADMAP 中写的数字
@@ -78,7 +141,7 @@ grep "$actual" ROADMAP.md
 # 如果 grep 不到 = 文档写错了
 ```
 
-### 5.2 全项目版本号扫描（🔴 v0.95 起用脚本，禁止手动 grep）
+### 7.2 全项目版本号扫描（🔴 v0.95 起用脚本，禁止手动 grep）
 
 #### Step 1: 一键升级
 
@@ -103,6 +166,7 @@ grep "$actual" ROADMAP.md
 10. SKILL.md frontmatter `version: x.y`（含 `skill/` 和 `FDE/` 两个 SKILL.md）
 11. MD tail signature `> *vX.Y*`
 12. SECURITY.md 状态标注 `**当前状态（vX.Y）**`
+13. FDE/package.json + LOOP/package.json（v1.0.3 起）
 
 **不碰**：正文中的历史引用（如 "v0.94 新增"）。这是正确设计。
 
@@ -146,6 +210,16 @@ grep -rn "v0\.旧版本" --include="*.md" --include="*.ts" --include="*.sh" . \
 | `package-lock.json` | bump-version.sh 不覆盖 | Step 2.5 用 `npm install --package-lock-only` 同步 |
 | 正文中的历史引用 | "v0.94 新增"是溯源标记，不改 | 永远不改 |
 
+#### 🔴 版本重编号全局 grep（v1.0.2 教训）
+
+版本重编号时（如 v1.0.x 系列内部跳号），只改规划版本表是不够的——ROADMAP 的详情表、HANDBOOK、DEVELOPMENT、THANKS 中的版本引用也要跟着改。必须全局 grep 所有 `vX.Y.x` 引用，区分"历史引用"（不改）和"未来规划引用"（必须改）。
+
+```bash
+# 搜所有含版本号的引用
+grep -rn "v1\.0\.[0-9]" --include="*.md" . | grep -v "docs/changelog/" | grep -v "node_modules"
+# 逐一判断哪些是"未来规划引用"（要改），哪些是"历史引用"（不改）
+```
+
 #### Step 2.7: 新增 SKILL.md 覆盖检查（🔴 v1.0.3 教训）
 
 新增 SKILL.md 文件（如 `LOOP/SKILL.md`）时，确认 check-version.sh 能检测到它。check-version.sh 用 `find -name 'SKILL.md'` 动态扫描，理论上自动覆盖——但 SKILL.md 的 version 字段必须用 3 段格式（如 `1.0.3`），否则 2 段比对会漏检 patch 差异。
@@ -168,12 +242,12 @@ bash tools/check-version.sh 2>&1 | grep 'SKILL.md'
 - [ ] 英文版（README.en / EVIDENCE.en）内容是否与中文版同步？
 - [ ] COMMUNITY.md 实验状态、contributor 数是否为当前实际状态？
 
-#### 5.2.1 文档日期检查（🔴 v1.0.2 教训）
+#### 7.2.1 文档日期检查（🔴 v1.0.2 教训）
 
 bump-version.sh 只改版本号**不改日期**。每次 bump 后必须手动检查：
 
 ```bash
-# 检查所有 MD 文件头日期——把 DATE 替换为实际发版日期（如 2026-07-11）
+# 检查所有 MD 文件头日期——把 DATE 替换为实际发版日期
 DATE="$(date +%Y-%m-%d)"  # 或手动指定
 grep -rn "$DATE" *.md docs/design/*.md | grep -v "docs/changelog/" | grep -v "docs/evidence/"
 # 期望：主要文档都匹配到当天日期
@@ -188,7 +262,7 @@ grep -rn "$DATE" *.md docs/design/*.md | grep -v "docs/changelog/" | grep -v "do
 - `DEVELOPMENT.md` 依赖表日期
 - `THANKS.md` 致谢日期
 
-#### 5.2.2 changelog 文件命名一致性（🔴 v1.0.3 教训）
+#### 7.2.2 changelog 文件命名一致性（🔴 v1.0.3 教训）
 
 changelog 文件命名统一为 `vX.Y.Z.md`（三段式）。曾经 `v1.0.md` 是两段式，其他版本都是三段式，导致引用混乱。
 
@@ -198,19 +272,19 @@ ls docs/changelog/*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
 # 期望：无输出（所有文件都是三段式）
 ```
 
-### 5.3 CHANGELOG 两步
+### 7.3 CHANGELOG 两步
 
 - [ ] 新增版本条目（摘要一句话 + 链接到 `docs/changelog/vX.Y.Z.md`）
 - [ ] 索引列表按时间倒序排列，版本号与日期正确
 - [ ] 🔴 **只写产品变更**——不含审查元信息（维度编号、模型名、轮次、视角数等）。这些属于内部过程，外部用户不关心
 
-### 5.4 ROADMAP 三步
+### 7.4 ROADMAP 三步
 
-- [ ] 文件头版本号更新
+- [ ] 文件头版本号更新（keep 当前已发布版本，不是目标版本）
 - [ ] 「现在在哪」替换为当前版本简表，旧内容迁移到「迭代历程」
 - [ ] 「未来去哪」删掉已完成版本，TOC 同步
 
-### 5.5 按需文档
+### 7.5 按需文档
 
 | 文档 | 什么时候更新 |
 |------|------|
@@ -226,21 +300,24 @@ ls docs/changelog/*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
 
 ---
 
-## 阶段六：确认关口
+## 阶段八：确认关口
 
-文档全部收尾后，**必须**让作者过一遍改动，确认没问题再进发布。
+文档全部收尾后，**必须**让作者过一遍改动，确认没问题再交接给项目负责人发版。v0.92 的教训：文档收尾完直接发布，没人确认，导致遗留问题。
 
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
 | 12 | 展示全部改动清单 | `git diff --stat` |
 | 13 | 作者逐项确认 | 重点看版本号、ROADMAP、CHANGELOG |
-| 14 | 确认通过后，开发日志「发布检查清单」才打 `[x]` | 不在文档收尾前打勾 |
+| 14 | 确认通过后，开发日志「发布检查清单」打 `[x]` | 不在文档收尾前打勾 |
+| 15 | **AI 生成发布 prompt，交接给项目负责人**——发版命令由 AI 准备但绝不执行 | AI 输出完整的发布 prompt（含 npm publish / git tag / gh release / Skill 分发 / 发布后验证），项目负责人亲手跑 |
 
 ---
 
-## 阶段七：发布
+## 阶段九：发布（🔴 项目负责人根据 AI 生成的发布 prompt 亲手执行）
 
-### 7.1 发布前检查（npm 包洁净度 + 推前预检）
+> AI 在阶段八确认关口生成一份完整的发布 prompt（含所有命令），项目负责人（孔放勋）拿到后亲手逐条执行。npm publish、git tag、gh release create 涉及凭证和权限，AI 绝不代劳。
+
+### 9.1 发布前检查（npm 包洁净度 + 推前预检）
 
 ```bash
 # 🔴 v0.99.1 起铁律：推前预检必须全绿
@@ -260,7 +337,7 @@ cd ../audit && npx tsc --noEmit && echo "audit tsc: OK"
 cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
 ```
 
-### 7.2 执行发布
+### 9.2 执行发布
 
 **npm 先行策略**（v0.99.7 起推荐）：先手动发布 npm 双包，再 git tag + push。即使 CI 失败，npm 包已就位。
 
@@ -295,7 +372,7 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
 10. iCloud 同步（可选）：cp -r FDE/* ~/Library/Mobile\ Documents/com~apple~CloudDocs/WorkBuddy/FDE工具包/
 ```
 
-### 7.3 发布后验证
+### 9.3 发布后验证
 
 ```bash
 # Git
@@ -324,7 +401,7 @@ sofagent-audit --doctor                     # 期望：与当前版本 doctor �
 bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二进制版本检查）
 ```
 
-### 7.4 常见发布故障
+### 9.4 常见发布故障
 
 | 故障 | 现象 | 解决 |
 |------|------|------|
@@ -336,79 +413,32 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 
 ---
 
-## 阶段八：发布后
+## 阶段十：发布后
 
 | # | 步骤 |
 |:--:|------|
 | 15 | **npm 双包验证**：`npm view @sofagent/audit version` + `npm view @sofagent/mcp version` 必须都是最新版本号。不信任自动化 |
 | 16 | npm README 验证：`npm view @sofagent/audit readme` + `npm view @sofagent/mcp readme` 均有内容 |
-| 17 | 如果本次迭代暴露了新的流程漏洞，沉淀到本 SOP 的「历史教训」区 |
-| 18 | **审查闭环**：① 发版后在**全新 session**（无任何开发上下文记忆）中用陌生视角 prompt 对已发布版本做独立审查 → 产出报告。🔴 **必须全新 session**——有开发记忆的审查者不是"陌生人"，zero-knowledge 是整个 prompt 的前提 ② 审查发现的新问题 → 下版本修复 → 修复后回到步骤 10.6 更新审查体系 ③ 审查体系持续自我进化——每版积累"下次审查会更锋利"的视角和检查项 |
-| 19 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 沉淀到「历史教训」区<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 LOOP.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
+| 17 | 如果本次迭代暴露了新的流程漏洞，**直接吸收进本 SOP 对应阶段**——不要存到单独章节。每条新规则标注版本号（如 `vX.Y 教训`）以便追溯 |
+| 18 | **审查闭环**：① 发版后在**全新 session**中用陌生视角 prompt 对已发布版本做独立审查 → 产出报告（这就是下版本的阶段一输入）② 审查发现的新问题 → 下版本修复 ③ 审查体系持续自我进化——每版积累"下次审查会更锋利"的视角和检查项 |
+| 19 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 直接吸收进对应阶段，标注版本号<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 LOOP.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
 
 ---
 
-## v0.92 教训（本 SOP 的由来）
+## 阶段速查表
 
-| 问题 | 根因 | 规则 |
-|------|------|------|
-| CHANGELOG 版本说明停在 v0.81，后面 8 个版本无人续写 | 没有明确责任 | v0.99.5 起压缩为索引（详细在 docs/changelog/） |
-| ROADMAP 「现在在哪」标题内容是旧版本的 | 改了标题没换内容 | 版本完成时三步更新 |
-| 8 个 MD + 15 个脚本残留旧版本号 | 没有全量扫描 | 发布前 grep 全项目版本号 |
-| 开发日志说「5 项没打勾」但实际已干完 | 代码改完没回头更新日志 | 开发日志是活文档，随改随写 |
-| 开发直交审核，没自测 | 跳了一步 | 工程师必须自测 build+test 后再交审核 |
-| 文档收尾完直接发布，没人确认 | 缺一个关口 | 发布前作者必须确认改动清单 |
+| 阶段 | 名称 | 谁做 | 需要新 session？ | 产出 |
+|:--:|------|:--:|:--:|------|
+| 一 | 审查 → 开发日志 | 作者 | 是（陌生视角审查） | 审查报告 + 开发日志 |
+| 二 | 开发 | 工程师 | 否 | 代码 + 随修随记的回归维度 |
+| 三 | 自测 | 工程师 | 否 | build/test/shellcheck/acceptance 全绿 |
+| 四 | 代码审核 | 审核者 | 否 | 逐项 PASS 或 FAIL→修复 |
+| **五** | **回归检查 + OpenClaw 验收** | **审核者** | **🔴 是（独立 session）** | **回归清单全 PASS + OpenClaw 全场景通过** |
+| 六 | 审查体系维护 | 作者 | 否 | 回归清单 + 陌生视角 prompt 更新 |
+| 七 | 文档收尾 | 作者 | 否 | CHANGELOG/ROADMAP/版本号/日期对齐 |
+| 八 | 确认关口 | AI → **生成发布 prompt 交接** | 否 | git diff 确认 → 检查清单打勾 → 生成发布 prompt 交给负责人 |
+| 九 | 发布 | **🔴 项目负责人亲手执行** | 否 | 按 AI 生成的发布 prompt 逐条执行：npm 双包 + git tag + gh release + Skill 分发 |
+| 十 | 发布后 | 作者 | 是（步骤 18） | npm 验证 + 陌生视角审查 → 下版本阶段一输入 |
 
-## v0.99.5 教训（npm 发布链路 + 文档分工）
+---
 
-| 问题 | 根因 | 规则 |
-|------|------|------|
-| @sofagent/mcp 发布后 npm 上仍为旧版本 | 自动化链路未端到端验证 | 发布后必须 `npm view` 两个包确认版本号 |
-| mcp 包 .npmignore 模式与 audit 不一致 | 两个包独立维护，没有对齐检查 | 两个包的 `.npmignore` 和 `files` 字段必须对齐 |
-| `npm pack --dry-run` 显示 mcp 有 .js.map，但实际发布干净 | prepublishOnly 在 dry-run 时不触发 | 验证 npm 打包洁净度不能只看 dry-run |
-| ROADMAP「未来去哪」残留已发布版本 | 「现在在哪」更新了但「未来去哪」没同步删 | ROADMAP 三步更新第 3 步必须做 |
-| ROADMAP「现在在哪」堆积多个版本的详细表 | 版本历史细节放错了位置 | 版本历史归 CHANGELOG，迭代历程表保留（一行一版本） |
-| 已打 tag 后发现需修改源码 | 不能 amend 已发布版本 | 涉及源码修改必须出新版本号 |
-
-## v1.0.2 教训（日期 + 重编号 + CHANGELOG 纯度）
-
-| 问题 | 根因 | 规则 |
-|------|------|------|
-| 4 份文档日期仍为 v1.0.1 的 07-04 | bump-version.sh 只改版本号不改日期 | 5.2.1 文档日期检查——bump 后手动检查所有文档头日期 |
-| ROADMAP 3 个详情表 12 处 + HANDBOOK/DEVELOPMENT/THANKS 6 处版本引用未跟随重编号 | 版本重编号时只改了规划版本表，漏了详情表 | 版本重编号需全局 grep 所有 vX.Y.x 引用，区分"历史引用"（不改）和"未来规划引用"（必须改） |
-| CHANGELOG 索引条目含"回归清单 138→143 维度"等审查元信息 | 发版时把审查体系更新混入了 CHANGELOG | 5.3 CHANGELOG 只写产品变更，不含审查元信息 |
-| npx @sofagent/audit 不可用 | bin 名与包名不匹配 | bin 字段增加与包名同名的别名，或 README 给 npx -p 备选路径 |
-
-## v1.0.3 教训（package-lock + check-version 范围对齐 + 文档分层）
-
-| 问题 | 根因 | 规则 |
-|------|------|------|
-| package-lock.json 版本号未同步 | bump-version.sh 改 package.json 但不碰 lock 文件 | Step 2.5：bump 后 `npm install --package-lock-only` 同步 |
-| check-version.sh 检测 LOOP/SKILL.md 用 2 段比对漏检 patch 差异 | SKILL.md 的 `found_2seg vs SSOT_2SEG` 在 v1.0.x 系列无法区分 patch 号 | check-version.sh SKILL.md 改为 3 段精确比对 |
-| check-version.sh TS 文件头注释扫全文件，误报代码中的历史标注 | `grep -m2` 扫全文件，而 bump-version 只改前 10 行 | check-version 的 TS 头注释检测改为 `head -10 \| grep`，与 bump-version 范围对齐 |
-| 文档总量 4922 行接近 5000 上限，一刀切预算无法区分用户文档和开发者文档 | check-docs.sh 用单一 TOTAL 统计所有未排除的 .md | 文档分层预算：A 用户文档(3600) + B 开发者参考(1500) + C 审查体系(3500) + D 设计(500) + E 指南(500)，A+B ≤ 5000 |
-| LOOP/SKILL.md 版本号写 1.0.3 但 SSOT 还是 1.0.2 | DeepSeek 开发时写了目标版本号而非当前 SSOT | 开发 prompt 明确："不要 bump 版本号——开发完后再 bump" |
-| launcher.ts 的 `as` 类型断言本地编译通过但 CI 失败 | CI 环境（Windows/Ubuntu）TS 类型检查比本地严格，`createDeepAgent` 的泛型无法直接 `as` 转换 | 对 optional dependency 的类型断言统一用 `as unknown as` 双重转换；本地 build 通过不代表 CI 通过，推前需在干净环境验证 |
-| 发版后发现 CI 失败，tag 指向修复前的 commit | tag 在代码修复前就打了，Release workflow checkout 的是旧代码 | 修 CI 后必须移 tag 到修复 commit：`git tag -d vX.Y && git tag vX.Y <fix-commit> && git push origin :refs/tags/vX.Y && git push origin vX.Y` |
-| FDE/package.json 版本号没被 bump-version.sh 覆盖 | bump-version.sh 只处理 audit/mcp 两个 package.json，漏了 FDE/LOOP | bump-version.sh 新增 [2b/13] 步骤处理 FDE/LOOP package.json；check-version.sh 新增对应检查项 |
-| 回归检查清单维度 77 在发版前误报 npm latest != SSOT | 维度 77 检查 npm latest = SSOT，但发版前 npm 还没 publish，必然不等 | 维度 77 标注为「发布后验证」项；回归清单加时序说明节，明确发版前 npm latest = 旧版本是正常的 |
-| v1.0.3 Release Notes 缺少开发日志链接、内容简略，与 v1.0.2 质量标准不一致 | `gh release create` 时 notes 写得仓促，SOP 7.2 Step 6 只写了「必须包含开发日志链接」但没有发布后验证检查 | 7.3 发布后验证新增 Release Notes 完整性检查项（见下文） |
-| changelog 文件命名 `v1.0.md` 与其他版本 `v1.0.X.md` 不一致 | v1.0.0 发布时文件名只写了 `v1.0.md`（两段式），后续版本统一为 `v1.0.X.md`（三段式） | changelog 文件命名统一为 `vX.Y.Z.md`（三段式），禁止两段式 `vX.Y.md`；5.2.6 新增命名一致性检查 |
-
-## v1.0.4 教训（测试数字一致性 + dist 同步 + 跨模块路径）
-
-| 问题 | 根因 | 规则 |
-|------|------|------|
-| CHANGELOG/ROADMAP 写"455 测试全绿"但实际 465 | 文档写测试数时凭记忆而非实际 npm test 输出 | 5.1.1 测试数字一致性——发版前 grep 文档中的测试数 vs npm test 实际输出 |
-| dist 与 src 不同步——新增 CLI 命令在 dist 中不存在 | 开发后忘了 npm run build，dist 仍是旧编译结果 | 阶段三 Step 8.6 新增 dist 同步验证步骤 |
-| daemon.sh 读 `${SOFAGENT_DATA}/../skill/data/scoring.md` 与 doctor.ts 读 `join(dataDir, 'scoring.md')` 路径不一致 | shell 脚本和 TS 代码用不同方式拼接路径，没有交叉验证 | 回归维度 196：跨模块路径引用一致性——shell `${SOFAGENT_DATA}` 与 TS `dataDir` 拼接的路径必须一致 |
-| 审查体系三份文档自身有死路径/数字不一致/编号重复 | 审查文档和被审查代码同步演化，但没有对审查文档自身的维护流程 | SOP 步骤 19 审查体系闭环——每次发版后审视审查 prompt 自身的数字、路径、视角是否过时 |
-
-## v1.0.5 教训（hook 迁移 + 测试自噬 + clawhub 语法）
-
-| 问题 | 根因 | 规则 |
-|------|------|------|
-| `--ci` 隐含 `--strict`，A4 WARN 在 pre-commit hook 中被升级为 exit 2 | `--ci`（紧凑输出）和 `--strict`（零容忍）是两个正交概念被错误耦合 | `--ci` 不再设 `strict = true`，仅设 `silent = true`。CI 零容忍场景显式使用 `--ci --strict` |
-| pre-commit 阶段拿不到 commit message，A3 越界检查永远跳过 | `COMMIT_EDITMSG` 在 pre-commit 时存的是上一次的 commit | hook 从 `pre-commit` 迁移到 `commit-msg`，通过 `$1` 读取 commit message 文件，传给 `--task`。附带旧版 hook 自动清理逻辑 |
-| acceptance-test.sh 场景 12 的假 GitHub Token 被 A2 拦截 | 测试需要真实格式的假 token 来验证 A2 检测能力，但 commit 测试脚本时自身触发 A2 | 修改 acceptance-test.sh 时使用 `git commit --no-verify`。这是可接受的例外——假 token 在测试文件内，不是真正的密钥泄露 |
-| clawhub skill publish 语法与 releasing.md 记载不符 | releasing.md 写的是 `openclaw skills publish ./skill`，实际 clawhub 语法是 `--slug --owner`，且 skill 路径在 `sofagent/skill/` | 更新 releasing.md Step 3 为实际可用的 clawhub 命令 + 正确路径。去掉 LOOP 分发步骤 |

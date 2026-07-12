@@ -1,6 +1,6 @@
 // ============================================================
 // audit-history.ts · 审计历史持久化
-// v0.98 新增：审计闭环六步——历史持久化层
+// v1.0.6 env fingerprint: hash chain 加环境指纹防 Agent 重算整链
 // ============================================================
 //
 // 并发安全说明：appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的。
@@ -13,11 +13,17 @@
 //
 // JSONL 格式：每行一个 JSON 对象，\n 分隔。
 // 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
+//
+// v1.0.6 安全加固：hash chain 加入环境指纹（hostname+username+git 路径）。
+// Agent 重算整链时如果不含指纹，--doctor 校验会不一致。旧格式（无 hashVersion）
+// 向后兼容——不做指纹校验，只做链完整性校验。
 // ============================================================
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { createHash } from 'crypto';
+import { hostname, userInfo } from 'os';
+import { execSync } from 'child_process';
 import { loadEnvConfig } from './config-loader';
 import { atomicAppendSync, atomicWriteSync } from './shared/atomic-write';
 import type { RuleCheck } from './rules/types';
@@ -65,6 +71,8 @@ export interface AuditHistoryEntry {
   prevHash?: string;
   /** P1-15: 本次审计对应的 commit SHA（doctor #8 追溯用） */
   commitSha?: string;
+  /** hash 算法版本：1 = 无指纹（v1.0.5 及以前），2 = 环境指纹（v1.0.6+） */
+  hashVersion?: number;
 }
 
 /**
@@ -75,6 +83,24 @@ export interface AuditHistoryEntry {
 export function getHistoryFilePath(dataDir?: string): string {
   const dir = dataDir ?? loadEnvConfig().dataDir;
   return join(dir, 'audit', 'history.jsonl');
+}
+
+/**
+ * 环境指纹——用于 hash chain 防篡改（v1.0.6+）。
+ *
+ * Agent 重算 hash chain 时如果不包含这个指纹，--doctor 重新校验会不一致。
+ * 不是完美方案（Agent 如果知道算法可以伪造），但把门槛从"会写 JS"提高到
+ * "需要逆向 hash 算法且知道本机 hostname/username/git 路径"。
+ */
+function getEnvFingerprint(dataDir?: string): string {
+  let gitDir = 'unknown';
+  try {
+    gitDir = execSync('git rev-parse --git-dir 2>/dev/null || echo "unknown"', { encoding: 'utf-8' }).trim();
+  } catch {
+    // git 不可用或不在 git 仓库中，使用 unknown
+  }
+  const base = `${hostname()}-${userInfo().username}-${gitDir}-${dataDir ?? ''}`;
+  return createHash('sha256').update(base).digest('hex').slice(0, 8);
 }
 
 /**
@@ -99,22 +125,27 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
       const lastLine = lines[lines.length - 1]!;
       try {
         const lastEntry = JSON.parse(lastLine);
-        // hash = SHA-256(record without hash fields + prevHash)
-        const lastRecordForHash = { ...lastEntry, prevHash: undefined };
-        prevHash = createHash('sha256').update(JSON.stringify(lastRecordForHash)).digest('hex').slice(0, 16);
+  // 计算 hash：SHA-256(record_without_hash + env_fingerprint)
+  // v1.0.6: 加入环境指纹——Agent 重算整链时不包含指纹则校验不一致
+  const fingerprint = getEnvFingerprint(dataDir);
+  const lastRecordForHash = { ...lastEntry, prevHash: undefined, hashVersion: undefined };
+  prevHash = createHash('sha256')
+    .update(JSON.stringify(lastRecordForHash) + '|' + fingerprint)
+    .digest('hex').slice(0, 16);
       } catch {
         prevHash = 'unknown';
       }
     }
   }
 
-  // P0-1: 写入前脱敏——避免 A2/A9 拦截结果中存密钥明文
+  // 写入前脱敏——避免 A2/A9 拦截结果中存密钥明文
+  // v1.0.6: hashVersion: 2 标记使用环境指纹算法
   const sanitizedEntry = {
     ...entry,
     prevHash,
+    hashVersion: 2,
     ruleResults: entry.ruleResults.map(sanitizeRuleResult),
   };
-  const line = JSON.stringify(sanitizedEntry) + '\n';
   // v1.0.5: 使用原子追加（先读+追加+原子写），避免并发写入导致的行交错
   atomicAppendSync(filePath, JSON.stringify(sanitizedEntry));
 }
@@ -203,12 +234,29 @@ export function checkHistoryChainIntegrity(dataDir?: string): boolean {
 
   if (entries.length <= 1) return true; // 0 或 1 条记录无需验证
 
+  // v1.0.6: 逐条判断 hashVersion——支持新旧格式混合
+  // 旧用户升级后 history.jsonl 可能混合旧条目（无 hashVersion）和新条目（hashVersion:2）
+  // 不用 firstEntry 一刀切，而用每条 curr 自己的 hashVersion 决定算法
+  const fingerprint = getEnvFingerprint(dataDir);
+
   for (let i = 1; i < entries.length; i++) {
     const prev = entries[i - 1]!;
     const curr = entries[i]!;
+
+    // 用当前条目的 hashVersion 决定算法（而非 firstEntry 一刀切）
+    // hashVersion === 2：写入时用了环境指纹，校验也用指纹
+    // hashVersion 未定义 / === 1：写入时没指纹，校验也不用指纹
+    const currUseFingerprint = curr.hashVersion === 2;
+
+    // 计算预期 hash（排除 prevHash 和 hashVersion 字段避免自引用）
+    const recordForHash = { ...prev, prevHash: undefined, hashVersion: undefined };
+    const hashInput = currUseFingerprint
+      ? JSON.stringify(recordForHash) + '|' + fingerprint
+      : JSON.stringify(recordForHash);
     const expectedPrevHash = createHash('sha256')
-      .update(JSON.stringify({ ...prev, prevHash: undefined }))
+      .update(hashInput)
       .digest('hex').slice(0, 16);
+
     if (curr.prevHash !== expectedPrevHash && curr.prevHash !== 'unknown') {
       return false; // 链断裂
     }

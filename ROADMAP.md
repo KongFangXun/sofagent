@@ -1,18 +1,18 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.0.5 · 2026-07-11（UTC）· 自动优化 + 约束验证 + 审查修复
+> v1.0.6 · 2026-07-13（UTC）· 编排迁移 + A/B 真实运行器 + 陌生视角审查修复
 >
 
 > 🎯 **v1.0 定位**：**Agent Harness 中间件**——不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他什么 Agent 平台，sofagent 是独立的审计标准层：约束行为、审计变更、沉淀经验。v1.0 聚焦单设备，v1.1.x 加轻量多设备（经验共享），v1.2.x 做完整多设备（独立身份+跨设备审计聚合）。
 
 ---
 
-## 现在在哪：v1.0.5 ✅
+## 现在在哪：v1.0.6 ✅
 
-> Ontology 统一层 + Work模板市场 版——三路合并引擎 + Work模板市场 行业模板 + A9 分级安全 + fail-closed + 原子写入 + 安全加固。472 测试全绿，pre-push 7/7。
+> 编排迁移 + A/B 真实运行器 + 陌生视角审查修复——DeepAgents compose + Sub Agent 状态 + A/B 模型 API 直跑 + history.jsonl 环境指纹 + post-commit hook + 文档一致性修复。473 测试全绿，pre-push 7/7。
 >
-> 📖 [开发日志](./docs/changelog/v1.0.5.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [开发日志](./docs/changelog/v1.0.6.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -22,22 +22,22 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
-| **v1.0.4** 🔧 | 自动优化 + 约束验证：eval harness + Sub Agent A/B 自动优化 + HITL 渐进自主度 + A15 约束验证 + 审查修复 | [📖](./docs/changelog/v1.0.4.md) |
-| **v1.0.3** 🔧 | 编排引擎重构 + LOOP 自迭代：FDE Sub Agent（DeepAgentsJS+LangGraph+Agency Agents+SkillOpt）+ 4 Agent 定义 + 内外层循环 + 4 验证文件自动优化 + 30 项审查修复 | [📖](./docs/changelog/v1.0.3.md) |
-| **v1.0.2** 🔧 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（回归检查清单 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
+| **v1.0.4** 🔧 | 自动优化 + 约束验证：eval harness + Sub Agent A/B 自动优化 + HITL 渐进自主度 + A15 约束验证 | [📖](./docs/changelog/v1.0.4.md) |
+| **v1.0.3** 🔧 | 编排引擎重构 + LOOP 自迭代：FDE Sub Agent（DeepAgentsJS+LangGraph+Agency Agents+SkillOpt）+ 4 Agent 定义 + 内外层循环 + 4 验证文件自动优化 + 30 项修复 | [📖](./docs/changelog/v1.0.3.md) |
+| **v1.0.2** 🔧 | 文档修正 + 规则对齐：15 项修复 | [📖](./docs/changelog/v1.0.2.md) |
 | **v1.0.1** 🔧 | AI 知识库实现版：7 件事（目录骨架/fde 规则/Skill/四层加载链/daemon Ingest/Lint/轮次上限）+ A14 越权审计 + 回归检查清单 | [📖](./docs/changelog/v1.0.1.md) |
 | **v1.0.0** 🎉 | 正式版：Agent 审计工具——18 件事 + 408 测试全绿 + 回归检查清单 | [📖](./docs/changelog/v1.0.0.md) |
 | *(实验/测试版)* | | |
-| **v0.99.9** | AI 知识库概念先行 + 审查修复收尾 + verify.ts 拆分（1257→4模块）+ 行业笔记落地 + 理论引证 | [📖](./docs/changelog/experimental/v0.99.9.md) |
-| **v0.99.8** | 审查修复收尾 + FDE 架构重构：双审查 20 项遗留全修 + FDE 四层→三层实体 + templates 镜像产出 + Skill 精简 | [📖](./docs/changelog/experimental/v0.99.8.md) |
+| **v0.99.9** | AI 知识库概念先行 + verify.ts 拆分（1257→4模块）+ 行业笔记落地 + 理论引证 | [📖](./docs/changelog/experimental/v0.99.9.md) |
+| **v0.99.8** | 文档收尾 + FDE 架构重构：FDE 四层→三层实体 + templates 镜像产出 + Skill 精简 | [📖](./docs/changelog/experimental/v0.99.8.md) |
 | **v0.99.7** | 发布基础设施修复：CI E403 根治 + OIDC 清零 + mcp 依赖解锁 + shellcheck 清零 + Windows 标注 | [📖](./docs/changelog/experimental/v0.99.7.md) |
-| **v0.99.6** | 审查修复：mcp npm 同步发布 + 文档一致性（25 项，双审驱动） | [📖](./docs/changelog/experimental/v0.99.6.md) |
-| **v0.99.5** | CI 自动化 + 审查修复：NPM_TOKEN 自动发布 + P0×6/P1×10 修复 + 工具增强 | [📖](./docs/changelog/experimental/v0.99.5.md) |
-| **v0.99.4** | 审查修复：41 项全面修复，准入 6✅→3✅ 诚实化，doc-vs-reality 清零，闭环→多维 | [📖](./docs/changelog/experimental/v0.99.4.md) |
+| **v0.99.6** | npm 双包发布 + 25 项修复 | [📖](./docs/changelog/experimental/v0.99.6.md) |
+| **v0.99.5** | CI 自动化 + npm 发布：NPM_TOKEN 自动发布 + 工具增强 | [📖](./docs/changelog/experimental/v0.99.5.md) |
+| **v0.99.4** | 准入诚实化：41 项全面修复，准入 6✅→3✅ 诚实化，doc-vs-reality 清零，闭环→多维 | [📖](./docs/changelog/experimental/v0.99.4.md) |
 | **v0.99.3** | 文档校准：16 项一致性清零（术语/幽灵引用/ROADMAP/CI/归档）+ bump-version 修复 | [📖](./docs/changelog/experimental/v0.99.3.md) |
-| **v0.99.2** | 审查修复：daemon 歧义根治 + 死链清零 + 文档一致性 + P2 清零 | [📖](./docs/changelog/experimental/v0.99.2.md) |
-| **v0.99.1** | 审查跟进：OpenClaw 叙事重写 + YAML→js-yaml + MCP 独立包 + 局限声明修正 | [📖](./docs/changelog/experimental/v0.99.1.md) |
-| **v0.99** | v1.0 前收尾：两份审查修复 + Skill≤90行 + 放弃条件 + MCP Server + verify→TS | [📖](./docs/changelog/experimental/v0.99.md) |
+| **v0.99.2** | 18 项修复：daemon 歧义根治 + 死链清零 | [📖](./docs/changelog/experimental/v0.99.2.md) |
+| **v0.99.1** | OpenClaw 叙事重写 + YAML→js-yaml + MCP 独立包 + 局限声明修正 | [📖](./docs/changelog/experimental/v0.99.1.md) |
+| **v0.99** | v1.0 前收尾：Skill≤90行 + 放弃条件 + MCP Server + verify→TS | [📖](./docs/changelog/experimental/v0.99.md) |
 | **v0.98** | 架构重组：产品核心转为事后审计 + FDE 企业部署 + OpenClaw 必装 | [📖](./docs/changelog/experimental/v0.98.md) |
 | **v0.97** | 审计 A9/A10/A11 + 编排引擎重构（砍四级深度→两档拆解 + engage.md）+ bash→TS 第二波 + 概念精简 | [📖](./docs/changelog/experimental/v0.97.md) |
 | **v0.96** | README 六段式重构（373→166行）+ bash→TS 第一波 + 铁律重排 + 编排定位澄清 | [📖](./docs/changelog/experimental/v0.96.md) |
@@ -65,6 +65,8 @@
 
 **终局**：企业不再需要 FDE。AI 节点部署后自主运行，审计引擎持续盯变更，编排引擎自动纠偏，知识库自我积累——人只需要偶尔看一眼 dashboard 确认一切正常。我们做的不是给企业装 AI，是让企业忘了我们的存在。
 
+> DeepMind 创始人 Demis Hassabis 在 2026 年 Guardian 采访中坦言："**现在发生的一切，并不是我当初希望 AI 发展的方式。**"这位一手推动了 AlphaFold 和 AlphaGo 的人，在 AI 走向商业化失控的转折点上，公开表达了不安。sofagent 的终局不是"更多的 AI"，而是"AI 可以被管住"——如果连创造 AI 的人都觉得方向失控了，那 Harness 中间件就不是选配，是刚需。
+
 两条路径：**FDE 驻场部署**（传统中小企业，FDE 进场→四阶段十二步流程→交付→撤离）和 **开发者自部署**（开源社区，git clone→install.sh→审计→CI 集成）。
 
 设备端形态：安装时自动带 OpenClaw，审计结果通过 MCP server 推到企业协同平台。**数据主权在设备**——所有记忆、日志、决策记录永不离开本地。
@@ -74,11 +76,11 @@
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
 | **v1.0.1** | ✅ 已完成 | AI 知识库 + 访问控制 + entities 实体关联 + deepagentsjs 引入 + think.md 模板 + loop-check 轮次上限 | [📖](./docs/changelog/v1.0.1.md) |
-| **v1.0.2** | ✅ 已完成 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（回归检查清单 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
+| **v1.0.2** | ✅ 已完成 | 文档修正 + 规则对齐：15 项修复 | [📖](./docs/changelog/v1.0.2.md) |
 | **v1.0.3** | ✅ 已完成 | LOOP 自迭代架构（4 Agent + 内外层循环） + SkillOpt 自动优化 + Audit Sub Agent（含成本） + think.md 判断单元结构化 + 文档分层预算 | [📖](./docs/changelog/v1.0.3.md) |
-| **v1.0.4** | ✅ 已完成 | 自动优化 + 约束验证版——eval harness + Sub Agent A/B 自动优化 + HITL 渐进自主度 + A15 约束验证。多项审查修复 | [📖](./docs/changelog/v1.0.4.md) |
-| **v1.0.5** | ⏳ 待启动 | Ontology 统一层 + ao 过渡 + Work模板市场 + 首个行业模板 + gstack/OKF 工程学习落地 | [📖](./docs/changelog/v1.0.5.md) |
-| **v1.0.6** | 📋 规划中 | 编排引擎迁移：DeepAgents compose + Sub Agent 状态管理 + A/B 真实运行器（模型 API 直跑，自迭代闭环打通） | [📖](./docs/changelog/v1.0.6.md) |
+| **v1.0.4** | ✅ 已完成 | 自动优化 + 约束验证版——eval harness + Sub Agent A/B 自动优化 + HITL 渐进自主度 + A15 约束验证 | [📖](./docs/changelog/v1.0.4.md) |
+| **v1.0.5** | ✅ 已完成 | Ontology 统一层 + Work模板市场 + A9 分级安全 + A15 绕过修复 + fail-closed 默认安全 + 安全加固 | [📖](./docs/changelog/v1.0.5.md) |
+| **v1.0.6** | ✅ 已完成 | 编排迁移 + A/B 真实运行器 + 陌生视角审查修复：DeepAgents compose + Sub Agent 状态 + A/B 模型 API 直跑 + history.jsonl 环境指纹 + post-commit hook + 文档一致性修复 | [📖](./docs/changelog/v1.0.6.md) |
 | **v1.0.7** | 📋 规划中 | A/B 自动切换 + A/B 运行器升级 DeepAgents（方案 C）+ ao 完全退役 | [📖](./docs/changelog/v1.0.7.md) |
 | **v1.0.8** | 📋 规划中 | TencentDB Agent Memory 集成：L3 用户画像自动注入（daemon Ingest + 加载链 + --with-memory） | [📖](./docs/changelog/v1.0.8.md) |
 | **v1.1.0** | 📋 规划中 | 轻量多设备：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md 生成 lessons-missteps.md）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检 | — |
@@ -98,9 +100,20 @@ v1.x 的核心架构升级——将编排引擎从自研实验性的 ao，渐进
 OpenClaw 总管（TS）
  ├── sofagent-audit（TS · git diff 硬审计）
  ├── FDE Sub Agent（DeepAgents · 常驻 · 读代码/跑测试/生成手册）
- ├── Audit Sub Agent（DeepAgents · 按需 · 语义审查/跨 repo 审计/Workflow 巡检）
- └── LangGraph（编排状态图 · 条件路由 · HITL · 持久化）
+ └── Audit Sub Agent（DeepAgents · 按需 · 语义审查/跨 repo 审计/Workflow 巡检）
+
+依赖链：sofagent → deepagents (npm) → LangGraph.js (内部状态图引擎)
+当前状态：sofagent 只 import deepagents，不直接 import LangGraph
 ```
+
+> ⚠️ **LangGraph 能力标注**（诚实声明）：sofagent v1.0.x **不直接使用** LangGraph。LangGraph.js 是 DeepAgentsJS 的内部依赖——提供 StateGraph（状态图）、条件路由、checkpoint（持久化）、HITL 中断恢复等能力。sofagent 通过 DeepAgents 的 `createDeepAgent()` 间接获得这些能力，但不直接调用 LangGraph API。
+>
+> **v1.1 计划直接使用 LangGraph 的能力**（需安装 `@langchain/langgraph`）：
+> - **StateGraph**：自定义 Sub Agent 的多步骤状态流转（当前 DeepAgents 内部已用，sofagent 未直接控制）
+> - **Checkpoint 持久化**：长任务中断后恢复执行状态（当前 launcher.ts 只做心跳检测，不做状态恢复）
+> - **条件路由**：根据审计结果动态路由——PASS → 自动合并、WARN → HITL 审批、FAIL → 阻断+回滚（当前硬编码在 reporter.ts）
+>
+> v1.1 之前，sofagent 对 LangGraph 的"使用"仅限于 DeepAgents 内部封装——sofagent 代码中没有 `import` LangGraph 的任何模块。
 
 **分阶段落地：**
 
@@ -112,6 +125,7 @@ OpenClaw 总管（TS）
 | ⚠️ 过渡 | v1.0.5 | Ontology 统一层 + launcher wrapper 保留，编排仍走 ao CLI。文档诚实降级——不再声称 DeepAgents 全覆盖 | — |
 | 🔧 迁移 | v1.0.6 | compose 编排逻辑从 ao CLI 迁到 DeepAgents，ao 降为 fallback。Sub Agent 运行状态基础跟踪 | deepagentsjs |
 | ✅ 退役 | v1.0.7 | ao 依赖正式移除。deepagents 提升为正式依赖。A/B 自动切换（连续计数器 + auto promote） | deepagentsjs → required dep |
+| 🔮 直接使用 | v1.1.0 | 直接 import `@langchain/langgraph`——用 StateGraph 自定义 Sub Agent 状态流转 + Checkpoint 做长任务中断恢复 + 条件路由动态决策（PASS/WARN/FAIL → 不同后续动作） | @langchain/langgraph → 直接依赖 |
 
 #### Ontology 渐进构建（企业数字孪生操作层）
 
@@ -126,6 +140,8 @@ OpenClaw 总管（TS）
 | 🛡️ 防幻觉四方案 | v1.0.5 | Schema Guided（ontology 约束 Action 输出）+ HTRO（High Trust Read Only，只读可信源）+ RAG+溯源（引用必须可追溯到 knowledge/ 页面）+ Action Type 终审（审计层验证 action 类型合规） | 与 A 系列「硬证据」哲学一致 |
 
 > 💡 反常识：不到 1000 个高质量 Token 即可构建有效知识图谱——关键不是数据量，是数据质量和约束规则。Ontology 的门槛远比看起来低。
+>
+> **本体 vs 知识**：AI 业务理解偏差领域有一个精辟定义——"**知识记录业务中发生过什么，本体描述这些事实应该如何被理解和关联**"。sofagent 的 knowledge/ 目录（entities + concepts）记录"发生过什么"，Ontology 统一层（entities→relations→actions→constraints 三路合并）描述"如何被理解和关联"。知识和本体不是一回事，但必须一起工作——这正是 v1.0.1-v1.0.5 渐进构建 Ontology 的设计逻辑。
 
 #### 记忆分层金字塔集成（v1.0.8）
 
@@ -151,7 +167,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | sofagent 模块 | 对应外部框架 | 关系 | 版本 |
 |------|------|------|:--:|
 | 审计引擎（Harness 中间件核心） | 独立自研——外部无可替代 | 核心差异化 | v1.0 |
-| 编排引擎 | LangChain + LangGraph + DeepAgentsJS | 借鉴后替换 ao | v1.0.1-v1.0.7 |
+| 编排引擎 | [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs)（v1.0.x 间接使用）+ [LangGraph.js](https://github.com/langchain-ai/langgraphjs)（v1.1 起直接使用 StateGraph + Checkpoint + 条件路由） | 借鉴后替换 ao | v1.0.1-v1.1 |
 | Skill 系统 | Agency Agents（岗位模板，v1.0.3）+ SkillOpt（Skill 文档自动优化，v1.0.3）+ eval harness + A/B 对比（Sub Agent 配置自动优化，v1.0.4） | 模板引用 + 对接优化引擎 | v1.0.1-v1.0.4 |
 | AI 知识库 | OpenFDE 10 步工作流（行业定位验证）+ Google OKF（同构独立验证）+ CAG 第 7 代 RAG（同构验证）+ Glean 工业数据（1.7万页/召回~100%） | 外部验证 | v1.0-v1.1 |
 | 安全设计哲学 | gstack 六层安全栈（分类器 / fail-closed / 原子写 / 密钥格式持续更新） | 实践参照 | v1.0.4-v1.0.5 |
@@ -234,6 +250,8 @@ v1.x 的多设备 = **经验共享 + 审计可见**，不碰身份/权限/协同
 > 🧠 **技术底座参考 — A2A 协议**：Google A2A（Agent-to-Agent）协议为多智能体协作定义了三个关键层级：① 动态服务发现（Agent 版 DNS——Agent 广播能力，匹配条件者自动响应）、② 能力契约对齐（入参/输出 Schema 握手，消除自然语言歧义）、③ 全状态接力（任务交接时同时移交执行目标 + 前置共识 + 专属记忆）。MCP 解决「脑和手」的工具调用，A2A 解决「脑和脑」的协作分工。
 >
 > 同时也需防御 A2A 的三大工程雷区：**语义漂移**（多 Agent 链路中每层推理偏差累积导致末端动作与原始需求南辕北辙）、**死循环雪崩**（Agent 互等形成逻辑闭环，数秒内耗尽 Token 预算）、**权限穿透**（低权限 Agent 构造恶意 A2A 请求诱骗高权限 Agent 执行危险操作）。防御方案三板斧：协调者中枢监控 + 强类型 Schema 前置拦截 + 零信任动态令牌——这三条将纳入 sofagent v2.x 的审计规则体系。
+
+> 🛠️ **工程参考 — Multica**：[Multica](https://github.com/multica-ai/multica)（4000+ commits）在 Agent 团队协作的工程实现上有三个可直接参考的模式：① **Polymorphic Actor**——用 `(type, id)` 二元组统一建模人类和 Agent，不区分「人做的」还是「AI 做的」，只关心「谁做了、做到哪了」；② **Session Resumption**——Agent 跨会话恢复工作目录和上下文，不仅反思（think.md），还保留执行环境；③ **Claim-then-Execute**——daemon 用 PostgreSQL `SELECT ... FOR UPDATE SKIP LOCKED` 抢锁认领任务，保证多设备并发下不重复执行。这三个模式为 sofagent v1.2.x 的 Agent 独立身份码 + 跨设备审计聚合提供了可落地的工程参考。
 
 **多 Agent 共享记忆三模式对比**（未做决策，先让讨论可见）：
 

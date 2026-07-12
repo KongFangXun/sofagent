@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.0.5 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.0.6 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
 // 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
@@ -20,7 +20,7 @@
 // ============================================================
 
 import { execFileSync } from 'child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync, copyFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync, copyFileSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 import { parseDiff, parseStagedDiff, isInGitRepo, type DiffFile } from './diff-parser';
 import { checkLogs } from './log-checker';
@@ -54,13 +54,13 @@ interface Args {
   doctor: boolean;
   /** staged 模式（首次提交场景）——diffRange 值为 --cached */
   cached: boolean;
-  /** v1.0.5: eval harness */
+  /** v1.0.6: eval harness */
   eval?: string;
-  /** v1.0.5: A/B 测试 */
+  /** v1.0.6: A/B 测试 */
   abTest?: string;
-  /** v1.0.5: Agent Dashboard */
+  /** v1.0.6: Agent Dashboard */
   agents?: boolean;
-  /** v1.0.5: hub 子命令 */
+  /** v1.0.6: hub 子命令 */
   hubCommand?: string;
   hubTemplate?: string;
 }
@@ -168,7 +168,7 @@ function parseArgs(argv: string[]): Args {
         console.log('  --doctor           健康诊断');
         console.log('  --eval <path>      eval harness 评测');
         console.log('  --ab-test <path>   Sub Agent A/B 测试');
-        console.log('  skillopt-run       SkillOpt 自动优化（--input <path> [--output <path>]）');
+        console.log('  skillopt-run       SkillOpt 自动优化（--input <path> [--scoring <path>]，就地演化 --target-skill-path）');
         console.log('  --webhook <p>      webhook 推送（dingtalk/feishu/wecom）');
         console.log('  --webhook-url <u>  webhook URL');
         console.log('  --mcp              MCP Server（已拆分为 @sofagent/mcp）');
@@ -183,6 +183,11 @@ function parseArgs(argv: string[]): Args {
     } else {
       const arg = argv[i];
       if (arg && arg.startsWith('--')) {
+        // skillopt-run 子命令使用独立参数解析（--input/--output/--scoring），
+        // 由 main() 中专门的 skillopt-run 块从 process.argv 解析，这里跳过误报。
+        if (process.argv[2] === 'skillopt-run') {
+          continue;
+        }
         console.error(`❌ 未知参数: ${arg}`);
         console.error('   使用 --help 查看可用参数');
         process.exit(1);
@@ -358,12 +363,15 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv);
 
   // --skillopt-run 模式：SkillOpt 自动优化管道（P0-7）
+  // 就地演化模型：runSkillOpt 内部调用 `skillopt-sleep run --target-skill-path <input> --auto-adopt`，
+  // 演化后文件即 input 本身；编排层先备份、再演化、再对比备份验证、不达标则回滚。
   if (process.argv[2] === 'skillopt-run') {
     const { runSkillOpt, validateCandidate } = await import('./skillopt-integration');
     const argsArr = process.argv.slice(3);
     const inputIdx = argsArr.indexOf('--input');
     const outputIdx = argsArr.indexOf('--output');
     const inputPath: string | undefined = inputIdx >= 0 ? argsArr[inputIdx + 1] : undefined;
+    // --output 在早期 flat 契约中用于指定候选输出路径；就地演化模型下已废弃（runSkillOpt 忽略）。
     let outputPath = '/tmp/skillopt-candidate.md';
     if (outputIdx >= 0 && argsArr[outputIdx + 1]) {
       outputPath = argsArr[outputIdx + 1] as string;
@@ -372,29 +380,39 @@ async function main(): Promise<void> {
     const scoringPath: string | undefined = scoringIdx >= 0 ? argsArr[scoringIdx + 1] : undefined;
 
     if (!inputPath) {
-      console.error('用法: sofagent-audit skillopt-run --input <SKILL.md路径> [--output <输出路径>] [--scoring <scoring.md路径>]');
+      console.error('用法: sofagent-audit skillopt-run --input <SKILL.md路径> [--scoring <scoring.md路径>]');
       process.exit(1);
     }
 
-    // 1. 调 runSkillOpt
-    const result = runSkillOpt(inputPath!, outputPath, scoringPath);
+    if (!existsSync(inputPath)) {
+      console.error(`❌ 输入文件不存在: ${inputPath}`);
+      process.exit(1);
+    }
+
+    // 1. 演化前先备份原始文件（用于回滚 / 对比基线）
+    const backupPath = inputPath + '.bak.' + Date.now();
+    copyFileSync(inputPath, backupPath);
+
+    // 2. 就地演化（runSkillOpt 内部用 --auto-adopt 把候选写回 inputPath）
+    const result = runSkillOpt(inputPath, outputPath, scoringPath);
     if (!result.success) {
+      // 运行失败：inputPath 未被修改，删除无用备份，退出非零。
+      try { unlinkSync(backupPath); } catch { /* 忽略 */ }
       console.error(`❌ SkillOpt 运行失败: ${result.error}`);
       process.exit(1);
     }
 
-    // 2. 验证 candidate
-    const validation = validateCandidate(result.candidatePath!, inputPath!);
+    // 3. 验证演化后文件 vs 原始备份
+    const validation = validateCandidate(inputPath, backupPath);
     if (!validation.canReplace) {
-      console.log(`⚠️ 候选 Skill 未通过验证: ${validation.reason}。不替换。`);
+      // 回滚：用备份覆盖（inputPath 即演化后文件），保留备份供人工检视。
+      copyFileSync(backupPath, inputPath);
+      console.log(`⚠️ 候选 Skill 未通过验证: ${validation.reason}。已回滚至原始版本（备份: ${backupPath}）。`);
       process.exit(0);
     }
 
-    // 3. 替换（先备份）
-    const backupPath = inputPath! + '.bak.' + Date.now();
-    copyFileSync(inputPath!, backupPath);
-    copyFileSync(result.candidatePath!, inputPath!);
-    console.log(`✅ Skill 自动优化完成: ${inputPath!}（备份: ${backupPath}，提升: ${validation.scoreDiff?.toFixed(1) || 'N/A'} 分）`);
+    // 4. 通过验证：保留就地演化结果（runSkillOpt 已写回 inputPath，无需再 copyFileSync）
+    console.log(`✅ Skill 自动优化完成: ${inputPath}（备份: ${backupPath}，提升: ${validation.scoreDiff?.toFixed(1) || 'N/A'} 分）`);
     process.exit(0);
   }
 
@@ -428,7 +446,7 @@ async function main(): Promise<void> {
   // --doctor 模式：健康诊断
   if (args.doctor) {
     if (args.agents) {
-      // v1.0.5: Agent Dashboard 原型
+      // v1.0.6: Agent Dashboard 原型
       const { runAgentDashboard } = await import('./commands/doctor');
       runAgentDashboard();
       return;
@@ -761,7 +779,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
     return;
   }
 
-  // ===== v1.0.5 可视化输出 =====
+  // ===== v1.0.6 可视化输出 =====
 
   const exitCode = results.exitCode;
   const totalRules = results.rules.length;
@@ -790,7 +808,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
       const classTag = rule.ruleClass === '业务底线' ? '[底线]' : rule.ruleClass === '能力拐杖' ? '[拐杖]' : '';
       for (const detail of rule.details) {
         console.log(`  ${icon} ${rule.name} ${classTag}: ${detail}`);
-        // 修复建议（v1.0.5 新增）
+        // 修复建议（v1.0.6 新增）
         const suggestion = getFixSuggestion(rule.name);
         if (suggestion) {
           console.log(`     怎么修: ${suggestion}`);
