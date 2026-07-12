@@ -366,6 +366,8 @@ Flash 和 Pro 差约 4 倍价，但简单任务 Flash 质量并不明显逊色�
 
 > **Maker-Checker 分离是收敛的前提**：同一 Agent 自验的验证覆盖率仅 7-33%，但分离为独立审查 Agent 后提升至 73%。这不是 Agent 能力问题——是「裁判和运动员不能是同一个人」。sofagent 的审计引擎与编排引擎分离正是基于同一原则。
 
+> **gstack 七步验证**：YC CEO Garry Tan 的 gstack（28 Skill + 7 Agent 角色）采用 Think→Plan→Build→Reveal→Test→Ship→Reflect 七步工作流，Reveal（独立审查 Agent 脱离原上下文校验）和 Reflect（经验沉淀到永久记忆库）与 sofagent 的审计外置 + think.md 反思完全对应。gstack 内置 `cloud.md` + `isos.md` 两份"宪法级"文件所有 Skill 运行前强制加载——等同于 sofagent 的 fde.md + 三层加载链。
+
 ### 编排开销的经济学
 
 Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。值得花——跑一次多花的 token，后面十次省回来了。token 价格长期往下，每降一个数量级，编排开销占比就缩一个数量级。
