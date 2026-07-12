@@ -6,7 +6,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 > sofagent 的设计决策记录——从 Harness 中间件的行为约束到五层架构的取舍。
 >
-> > v1.0.5 · 2026-07-11（UTC）· 孔放勋
+> > v1.0.6 · 2026-07-11（UTC）· 孔放勋
 
 <img src="sofagent.png" alt="sofagent" width="300" />
 
@@ -57,6 +57,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 Anthropic 发现 Claude 内部存在 **J-space**——AI 自己知道控制不住自己。所以 sofagent 不信任 Agent 自我报告，只看 git diff 硬证据。审计必须外置、不可绕过。
 
 > **瓶颈转移**：[Anthropic《When AI builds itself》](https://www.anthropic.com/institute/recursive-self-improvement)（2026-06）报告指出——工程师人均代码产出达 2024 年的 8 倍后，代码生成不再是瓶颈，**人工代码审查成了新的堵点**（Amdahl 定律）。sofagent 的审计引擎把审查外置到 git diff 自动化——正是解这个瓶颈的方向。
+> <small>注：以上「瓶颈转移」方法论解读为本项目基于 Anthropic 原文的延伸分析，非 Anthropic 原文表述。</small>
 
 ### 行业印证：Palantir 同构
 
@@ -64,11 +65,15 @@ Palantir AIP 未自研大模型，靠 **Ontology（本体）** 实现远超行�
 
 > **根本接触不到 > 被告知不能说**：Palantir 的防幻觉不是"告诉 Agent 守规矩"，而是未配置的 Agent 根本看不到。sofagent 的 A15 约束验证 + 审计外置遵循同一原则。
 
+**Palantir AI FDE 五大操作特征完全对等**：Palantir AI FDE 官方文档列出的五个核心特征——闭环操作（Agent 执行→验证→纠偏）、控量上下文（不一次性给全量数据）、权限约束（最小权限原则）、分支评审（多方案对比后择优）、工具定制（按场景配工具集）——sofagent 每条都有对应实现：loop-check/evaluate/exit 闭环、task-aware 步数闸+轮次上限、entry-gate 能力注册+A15 约束验证、A/B 对比+promote、Skill 系统。两个项目独立出发，在同一个问题上得出了几乎相同的答案。
+
 ### 外部借鉴与生态对齐
 
 - 编排引擎借鉴 LangChain + DeepAgentsJS，Skill 借鉴 Agency Agents + SkillOpt，Ontology 借鉴 Palantir AIP
 - OpenFDE 将「审计」列为 FDE 基础层，sofagent 的审计优先设计符合社区最佳实践
+- OpenFDE Agent v0.1 的 **Judgment Unit**（决策+为什么+反转条件+渐进自主度+结果归因）与 sofagent v1.0.3 think.md 判断单元（做了什么+踩了什么坑+下次怎么办）结构高度同构——独立验证了「Agent 需要结构化反思」这个方向
 - gstack（YC CEO）的七步工作流（Think→Reflect）与 sofagent 审计外置 + 反思闭环对应
+- [Multica](https://github.com/multica-ai/multica)（4000+ commits）— 独立验证了 sofagent 的平台无关策略：自己不调 LLM，全推给下游 14 种 Agent CLI 子进程，Harness 中间件的「不绑定任何 Agent 平台」在工程上是可行的
 
 ### 两层架构：地基 vs 引擎
 
@@ -88,7 +93,7 @@ sofagent 分两层——地基轻、引擎重：
 | **Harness 层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ 已可用 |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ v0.81 |
 | **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff | ✅ v0.92 |
-| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v1.0.5），推送待端到端验证 | ✅ v0.99.5 |
+| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v1.0.6），推送待端到端验证 | ✅ v0.99.5 |
 | **协同层** | 多设备 + 云端 | 组织级 Agent Harness——Agent 以独立身份进入协作现场，共享上下文 + 组织记忆 + 主动参与 | v2.x 规划 |
 
 每层跑通再加下一层——不推翻已验证的东西。
@@ -134,6 +139,8 @@ sofagent 分两层——地基轻、引擎重：
 | 审计引擎独立于 Agent | AI 自己验收自己 | git diff 硬证据，Agent 无法篡改 |
 
 **90%/10% 价值分层**。模型能完成 90% 任务，但剩余 10% 不可预测失误 = 只能做助手，不能做自主系统。关键规律：**模型越强，90% 常规任务范围越广，但剩余 10% 高风险场景价值反升**。约束底座（审计 + 验证 + 复盘）占据的正是那 10% 高价值环节——模型越强，约束底座越值钱。
+
+**四方对齐——AI 不是只有你和它**。DeepMind Iason Gabriel（2020）指出 AI 对齐不是"AI-人类"的二元关系，而是四元动态：**AI 系统、直接用户、开发者、全社会（indirect stakeholders）**——每个角都有不同的利益、不同的脆弱性、不同的对齐要求。sofagent 的三道制度护栏恰好覆盖了这四个角：fde.md 让开发者掌控规则（开发者→AI）、entry-gate 能力注册让用户清楚 AI 能做什么不能做什么（用户→AI）、审计引擎独立于 Agent 确保社会层面的合规约束不被绕过（社会→AI）。对齐不是"管好 AI"，是设计一个四方都能信任的制度框架。详见 [Gabriel 2020](https://arxiv.org/abs/2006.16667)。
 
 **理解债务与意图债对称**。意图债是输入端反复交代项目背景的成本（SKILL.md + fde.md 在还这笔债）。理解债务是输出端的对称概念——AI 产出后，人类需要理解 AI 做了什么、为什么这样做、哪里可能出问题的认知成本。Go Mode 下 Agent 一次性交付大量产出，理解债务爆发式增长；Loop 模式下 Agent 逐步展示迭代过程，理解债务被分摊到每一轮。think.md 的任务反思区（每步记录：看到什么/改了什么/验证了什么/还剩什么）是偿还理解债务的工程机制。工程定量参照：Anthropic 数据显示 AI 带来 4 倍代码量但仅 12% 价值增量，差值部分即理解债务的隐性成本。
 

@@ -4,7 +4,7 @@
 //   1. 生成 .sofagent/config.yml 配置模板
 //   2. 安装 git commit-msg hook
 //   3. 冒烟测试——验证审计引擎可用
-// v1.0.5: 新增仓库状态分类器（gstack 首次运行引导）
+// v1.0.6: 新增仓库状态分类器（gstack 首次运行引导）
 // ============================================================
 
 import { existsSync, writeFileSync, mkdirSync, chmodSync, readFileSync } from 'fs';
@@ -158,6 +158,57 @@ export function runInit(): void {
       console.log('  → .git/hooks/commit-msg 已安装（可执行，含无声失败保护）');
       console.log('  → hook 会在每次 git commit 时自动运行审计');
       stepOk++;
+    }
+
+    // v1.0.6: 安装 post-commit hook（--no-verify 跳过 commit-msg 但不跳过 post-commit）
+    const postCommitPath = join(hooksDir, 'post-commit');
+    const POST_COMMIT_TEMPLATE = `#!/bin/bash
+# sofagent post-commit hook v1.0.6
+# --no-verify 跳过 commit-msg，但不跳过 post-commit
+# post-commit 永远 exit 0——任何时候都不能阻断 commit
+
+if ! command -v node &>/dev/null; then exit 0; fi
+
+if command -v sofagent-audit &>/dev/null; then
+  AUDIT_CMD="sofagent-audit"
+elif [ -f "sofagent/audit/dist/index.js" ]; then
+  AUDIT_CMD="node sofagent/audit/dist/index.js"
+else
+  exit 0
+fi
+
+CURRENT_SHA=$(git rev-parse HEAD 2>/dev/null)
+[ -z "$CURRENT_SHA" ] && exit 0
+
+HISTORY_FILE=".sofagent/audit/history.jsonl"
+if [ -f "$HISTORY_FILE" ]; then
+  if ! grep -q "$CURRENT_SHA" "$HISTORY_FILE" 2>/dev/null; then
+    echo ""
+    echo "  sofagent: 当前 commit ($CURRENT_SHA) 未在审计记录中找到。"
+    echo "  可能使用了 --no-verify 绕过审计 hook。"
+    echo "  运行 sofagent-audit --doctor 查看详情。"
+  fi
+fi
+
+exit 0
+`;
+
+    let hasPostCommitHook = false;
+    if (existsSync(postCommitPath)) {
+      try {
+        const pcContent = readFileSync(postCommitPath, 'utf-8');
+        hasPostCommitHook = pcContent.includes('sofagent');
+      } catch {
+        // 读不了就当不存在
+      }
+    }
+
+    if (hasPostCommitHook) {
+      console.log('  → post-commit hook 已安装（检测到 sofagent 标识），跳过');
+    } else {
+      writeFileSync(postCommitPath, POST_COMMIT_TEMPLATE, 'utf-8');
+      chmodSync(postCommitPath, 0o755);
+      console.log('  → .git/hooks/post-commit 已安装（--no-verify 绕过检测）');
     }
   }
 

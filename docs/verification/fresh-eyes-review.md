@@ -59,7 +59,7 @@
 2. 如果要装，你第一步做什么？这一步有没有障碍？
 3. 用 npm 装完 `@sofagent/audit`，跑 `sofagent-audit --help` 或者 `sofagent-audit --doctor`。输出让你觉得这东西能用吗？还是想卸载？
 4. 你会把这个项目发给同事吗？如果会，你会怎么介绍它？（用你自己的话，不抄 README）
-5. **版本声称验证**：看 CHANGELOG——它声称了什么？实际在项目里找到了吗？标题说的功能，在代码/目录/配置里能找到对应实现吗？你觉得这个声称诚实吗，还是夸大了？
+5. **版本声称验证**：看 CHANGELOG——它声称了什么？实际在项目里找到了吗？标题说的功能，在代码/目录/配置里能找到对应实现吗？你觉得这个声称诚实吗，还是夸大了？**特别检查 README 规则分类**：README 把规则分成"纯 git-diff"和"需 Agent 日志"两类并标注规则 ID——打开 `sofagent/audit/src/rules/index.ts`，分类里提到的每个 ID 是否真实存在？有没有"幽灵规则"（README 写了但代码里根本没注册的 ID）？
 6. **文档瘦身**：README 行数——你能在一屏内搞清楚这东西是干什么的吗？有没有你想找但找不到的东西？（比如"这东西能企业部署吗？"——你从 README 能看出来吗？）
 7. **tag 指向确认**：跑 `git show vX.Y.Z --stat`——tag 指向的是发布提交还是修复提交？tag commit message 是否包含版本号？
 
@@ -96,10 +96,10 @@
 3. 如果你要写一篇文章《为什么不用 sofagent》，你的核心论据是什么？
 4. 这个项目自称"正式版"和"可生产使用"。以你的标准，它够格吗？什么地方让你觉得不够格？
 5. **范围合理性**：CHANGELOG 和文档中描述的每一条功能，以你的标准判断它是真功能还是花架子？一个 commit-msg 审计工具为什么要关心"知识库访问控制"？这是范围蔓延还是合理的演进？
-6. **规则声称验证**：README 说的规则数量（如"16 条规则"）——打开 `sofagent/audit/src/rules/index.ts`，数 `defaultRules` + `extendedRules` 的实际注册数量。一致吗？每条规则的 `evidenceMode`（`git-diff` vs `hybrid`）与 README 的分类描述是否匹配？有没有声称了但代码里没注册的规则（如 A12/A13 在 ROADMAP 里但没实现）？
+6. **规则声称验证**：README 说的规则数量（如"16 条规则"）——打开 `sofagent/audit/src/rules/index.ts`，数 `defaultRules` + `extendedRules` 的实际注册数量。一致吗？每条规则的 `evidenceMode`（`git-diff` vs `hybrid`）与 README 的分类描述是否匹配？有没有声称了但代码里没注册的规则（如 A12/A13 在 ROADMAP 里但没实现）？**特别检查规则 ID 是否真实存在**：README 分类描述中提到的每个规则 ID（如"A1-A6, A9-A11"），逐个确认在 index.ts 的 `name:` 字段中确实有注册——之前版本曾出现 README 声称"A12/A13"但代码中根本不存在这两个规则的文档漂移问题。
 7. **声称与实现一致性**：CHANGELOG 标题中声称的功能（如"自进化引擎"），实际代码是否匹配？有没有夸大——比如 wrapper 叫"引擎"、CLI 调用叫"集成"？
 8. **CHANGELOG 纯度**：CHANGELOG 历史条目中有没有审查元信息（模型名、审查轮次、P0/P1 计数）？CHANGELOG 应该只写产品变更。
-9. **自进化声称验证**：v1.0.4 声称了 eval harness + Sub Agent A/B 自进化 + SkillOpt 自进化——实际是调外部 CLI（skillopt-sleep）的 wrapper 还是自研引擎？A/B 对比的"连续胜出"阈值是否硬编码？"自进化"这个词对用户来说意味着什么，实际能做到吗？
+9. **SkillOpt 集成 CLI 契约验证**（v1.0.6 修复后）：打开 `skillopt-integration.ts`——`isSkillOptAvailable()` 和 `runSkillOpt()` 调用的 CLI 参数形式与真实安装的 `skillopt-sleep --help` 声明的子命令/参数一致吗？**特别检查**：`isSkillOptAvailable()` 探针是否用 `status` 子命令（而非被 CLI 拒绝的 `--version`）；`runSkillOpt()` 是否用 `run --target-skill-path <input> --auto-adopt` 子命令形式（而非 flat positional + `--output`）。v1.0.6 曾发现集成代码照着不存在的 CLI 契约写了整整一个版本。
 10. **Agent 定义的平台耦合度**：打开 `agents/` 下的 Agent 定义——它们的 role/workflow/rules 是否过度依赖 OpenClaw 的 `session.spawn` API？如果未来换平台，这些 Agent 定义还能独立使用吗？还是需要大幅改写？
 
 ---
@@ -345,6 +345,25 @@
     - promote 后旧版本归档到 `.sofagent/subagents/history/`——Agent 能否通过删除归档来"洗白"被回退的历史？
     - A/B 对比的 eval 场景如果偏窄（只测了简单 case），promote 的版本在复杂场景下更差怎么办？
 
+22. **post-commit hook 绕过验证**（v1.0.6 新增）：
+    - Agent 删掉 `.git/hooks/post-commit`——`--doctor` 能发现 hook 丢失吗？有没有自愈机制？
+    - `git commit --no-verify` 绕过了 commit-msg hook——post-commit hook 是否仍然触发？（设计意图：post-commit 不受 --no-verify 影响）
+    - post-commit hook 的输出是否为 UTF-8 中文？有没有乱码风险？（v1.0.6 修过一次中文乱码）
+    - post-commit 的 exit code 是否始终为 0？（设计意图：提醒而非阻断）
+    - 如果 Agent 同时删掉 commit-msg 和 post-commit——`--doctor` 能发现两个 hook 都丢失吗？
+
+23. **hashVersion 混合格式篡改测试**（v1.0.6 新增）：
+    - 构造 history.jsonl：前 N 条为旧格式（无 hashVersion 字段），后 M 条为新格式（hashVersion: 2）——`checkHistoryChainIntegrity()` 是否正确返回 true（不误报链断裂）？
+    - 篡改中间一条 v2 格式条目的 prevHash——`--doctor` 是否检测到链断裂？
+    - 篡改中间一条 v1 格式条目的内容——`--doctor` 是否检测到（v1 用旧算法计算 hash，不含 fingerprint）？
+    - 在 history.jsonl 尾部追加一条 hashVersion: 3 的条目——代码会怎么处理未知版本号？
+
+24. **集成代码 CLI 契约对抗**（v1.0.6 教训）：
+    - 打开 `skillopt-integration.ts`——`isSkillOptAvailable()` 和 `runSkillOpt()` 调用的 CLI 参数形式与真实 `skillopt-sleep --help` 声明的子命令/参数是否一致？
+    - v1.0.6 曾发现集成代码用 `--version` 探活（真实 CLI exit 2）、用 flat positional + `--output` 调用（真实 CLI 只认子命令 `run --target-skill-path`）——照着不存在的 CLI 契约写了整整一个版本
+    - 跑 `skillopt-sleep --help` 看真实子命令列表，逐一对比集成代码的调用形式
+    - 同理检查其他外部 CLI 集成（如 `loadDeepAgents` 调用的 deepagents API）是否也有契约漂移
+
 **输出格式**：
 
 ```markdown
@@ -381,6 +400,7 @@
    - README 声称"X 条规则"——打开 `sofagent/audit/src/rules/index.ts`，数 `defaultRules` + `extendedRules` 的 `name:` 字段数。一致吗？
    - README 声称"Y 条纯 git-diff + Z 条需 Agent 日志"——逐条检查每条规则的 `evidenceMode` 字段，数 `git-diff` 和 `hybrid` 的数量。一致吗？
    - CHANGELOG 历史条目中提到的规则数量——与当前 index.ts 一致吗？有没有"历史声称 > 实际注册"的情况？
+   - **规则 ID 分类交叉验证**：README 分类描述里的每个规则 ID 逐个在 index.ts 中确认存在。之前版本反复出现"幽灵规则"问题——README 写"A12/A13"但代码中无对应 `name:` 注册。不仅看数量，还要看 ID 是否一一对应。
 
 2. **测试数量一致性**：
    - CHANGELOG / README / evidence.md 中声称的测试数量——实际跑 `cd sofagent/audit && npm test 2>&1 | grep 'Tests'`。一致吗？
@@ -418,6 +438,11 @@
 10. **编排引擎声称诚实度**（v1.0.5 教训）：
    - README 说编排引擎"全平台可用，不再绑定 OpenClaw"——实际实现：DeepAgents 是 optional dependency，68 行 `launcher.ts` wrapper，A/B 对比需手动执行。
    - 检查：README 对编排引擎的描述是否诚实标注了"实验性"和当前限制？
+
+11. **SkillOpt 可用性返回值实测**（v1.0.6 教训）：
+   - 跑 `node -e "console.log(require('./sofagent/audit/dist/skillopt-integration').isSkillOptAvailable())"` 在已安装 skillopt-sleep 的环境下返回 `true`？
+   - 如果返回 `false`——检查探针形式是否匹配真实 CLI（`status` 子命令 exit 0 vs `--version` exit 2）。v1.0.6 曾因探针形式错误导致已安装也返回 false，SkillOpt 能力被静默禁用
+   - 跑 `node -e "console.log(typeof require('./sofagent/audit/dist/skillopt-integration').isSkillOptAvailable())"` 确认返回 `boolean`（不是 Promise）
 
 **输出格式**：
 

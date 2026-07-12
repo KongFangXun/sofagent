@@ -4,14 +4,15 @@
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { existsSync, readFileSync, rmSync, mkdirSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, rmSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import {
   appendHistory,
   loadHistory,
   clearHistory,
+  checkHistoryChainIntegrity,
   getHistoryFilePath,
   type AuditHistoryEntry,
 } from './audit-history';
@@ -155,5 +156,57 @@ describe('audit-history', () => {
     const content = readFileSync(filePath, 'utf-8');
     expect(content).toBe('');
     expect(loadHistory(undefined, testDir)).toEqual([]);
+  });
+
+  it('v1.0.6: 混合格式不误报链断裂（旧条目无 hashVersion + 新条目 hashVersion:2）', () => {
+    // 场景：用户从 v1.0.5 升级到 v1.0.6
+    // history.jsonl 前两条是旧格式（无 hashVersion，旧算法 hash 不含指纹）
+    // 第三条是新格式（hashVersion:2，新算法 hash 含环境指纹）
+    // checkHistoryChainIntegrity 应返回 true（逐条判断，不误报）
+
+    mkdirSync(join(testDir, 'audit'), { recursive: true });
+    const histPath = getHistoryFilePath(testDir);
+
+    // 旧格式条目 1（无 hashVersion）
+    const e1 = {
+      timestamp: '2026-07-01T00:00:00Z',
+      diffRange: 'HEAD~1..HEAD',
+      exitCode: 0,
+      ruleResults: [],
+      diffFileCount: 1,
+      prevHash: 'genesis',
+    };
+
+    // 旧格式条目 2（无 hashVersion，prevHash 用旧算法 = SHA-256(e1 without prevHash/hashVersion)）
+    const e1ForHash = { ...e1, prevHash: undefined, hashVersion: undefined };
+    const hash1 = createHash('sha256').update(JSON.stringify(e1ForHash)).digest('hex').slice(0, 16);
+    const e2 = {
+      timestamp: '2026-07-02T00:00:00Z',
+      diffRange: 'HEAD~2..HEAD~1',
+      exitCode: 0,
+      ruleResults: [],
+      diffFileCount: 1,
+      prevHash: hash1,
+    };
+
+    // 写两条旧格式到文件
+    writeFileSync(histPath, JSON.stringify(e1) + '\n' + JSON.stringify(e2) + '\n');
+
+    // 验证纯旧格式时链完整
+    expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+
+    // 追加一条新格式（appendHistory 自动用 hashVersion:2 + 环境指纹）
+    appendHistory({
+      timestamp: '2026-07-03T00:00:00Z',
+      diffRange: 'HEAD~3..HEAD~2',
+      exitCode: 0,
+      ruleResults: [],
+      diffFileCount: 1,
+    } as AuditHistoryEntry, testDir);
+
+    // 混合格式——不应误报链断裂
+    // 关键：e2→e3 这一步用 curr(e3).hashVersion === 2 决定算法（含指纹）
+    //      e1→e2 这一步用 curr(e2).hashVersion === undefined 决定算法（不含指纹）
+    expect(checkHistoryChainIntegrity(testDir)).toBe(true);
   });
 });

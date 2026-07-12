@@ -2,7 +2,7 @@
 
 > sofagent 站在巨人肩膀上。以下每一个项目、文章和作者，都在 sofagent 的某个设计决策里留下了痕迹。
 >
-> v1.0.5 · 2026-07-11（UTC）
+> v1.0.6 · 2026-07-11（UTC）
 
 ---
 
@@ -70,6 +70,7 @@ sofagent 直接使用或借鉴了它们的能力。
 - **[best-of-agent-harnesses](https://github.com/RyanAlberts/best-of-agent-harnesses)** — 101+ 个 Harness 项目索引，让我了解这个领域已经有什么人在做什么事
 - **[agent-skills](https://github.com/addyosmani/agent-skills)** by Addy Osmani — 24 个生产级工程 Skill，反合理化表（Anti-rationalization）设计——预判 Agent 跳过步骤的借口并逐一驳回——启发了 sofagent fde.md 的铁律反合理化表
 - **[gstack](https://github.com/garrytan/gstack)** by Garry Tan (YC CEO) — 28 个 Skill + 7 个 Agent 角色的 AI 辅助软件开发系统。六层安全栈（分类器级 prompt injection 检测 / 密钥格式持续更新 / fail-closed 默认不信任）、原子文件写入模式、角色分解架构——为 sofagent 的 A2 密钥格式更新和多角色 agents/ 架构提供了实践参照
+- **[Multica](https://github.com/multica-ai/multica)**（Source Available，4000+ commits）— 开源 Agent 团队协作平台，支持 14 种 Agent CLI。「自己不调 LLM，全推给下游子进程」的架构哲学与 sofagent 平台无关策略一致。Polymorphic Actor 模型和会话恢复机制为 v1.2.x 提供工程参考。详见 [ROADMAP v1.2.x](./ROADMAP.md#v12x--完整多设备协同规划中)
 
 ---
 

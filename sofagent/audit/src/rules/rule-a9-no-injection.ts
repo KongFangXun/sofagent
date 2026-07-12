@@ -2,12 +2,11 @@
 // A9 不纳注入（安全层 · 业务底线）
 // 检测 git diff 新增行中是否含 prompt injection 模式
 // evidenceMode: git-diff（纯正则检测，--silent 可跑）
-// v1.0.5: score-based 分级安全——可疑度评分替代二元判断
+// v1.0.6: score-based 分级安全——可疑度评分替代二元判断
 // ============================================================
 
 import { getAddedLines } from '../diff-parser';
 import type { AuditContext, RuleCheck } from './types';
-
 /** 高置信度注入模式——精确匹配 → score += 1.0 */
 const HIGH_CONFIDENCE_PATTERNS: { pattern: RegExp; name: string }[] = [
   { pattern: /ignore (all )?previous (instructions|prompts)/i, name: 'ignore previous instructions/prompts' },
