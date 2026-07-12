@@ -355,11 +355,43 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
 6. gh release create vX.Y.Z
    🔴 Release body **必须**包含开发日志链接：
    📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)
-   🔴 Release body 结构（参考上一版 Release，保持一致性）：
-   - 一句话摘要（核心变更）
-   - 分节：架构新增 / 审查修复 / 工具链 / 质量验证（视版本内容调整）
-   - 质量验证用表格（检查项 + 结果）
-   - 末尾开发日志链接
+
+   🔴 Release Notes 标准格式（v1.0.6 起规范化）：
+
+   **Title**: `vX.Y.Z — {核心变更摘要}（≤60 字，逗号分隔 2-4 个要点）`
+
+   **Body 结构**（分节制，每节用 `##` 标题）：
+
+   ```markdown
+   ## 核心变更
+
+   ### {功能领域 1}（如"编排引擎"/"安全加固"/"审计规则"）
+   - {一句话描述变更}（如"DeepAgents compose 迁移（ao 降为 fallback）"）
+
+   ### {功能领域 2}
+   - ...
+
+   ## 质量验证
+
+   | 检查项 | 结果 |
+   |------|:--:|
+   | npm test | {N} tests 全绿 |
+   | acceptance-test | {N}/{N} 全绿 |
+   | OpenClaw 验收 | {N}/{N} 全绿 |
+   | shellcheck | 零 error |
+   | pre-push-check | {N}/{N} 全绿 |
+   | 回归检查 | {N}/{N} 全绿 |
+
+   📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)
+   ```
+
+   **规范细则**：
+   - 功能领域按变更重要性降序排列，安全修复优先于文档修复
+   - 每个变更点用 `-` 列表，一句话说清楚做了什么（不写"为什么"——那在开发日志里）
+   - 质量验证表格**固定 6 项**：npm test / acceptance-test / OpenClaw 验收 / shellcheck / pre-push-check / 回归检查
+   - 测试数字写**实际值**（从 `npm test 2>&1 | tail -5` 获取），不写约数
+   - 末尾**必须有**开发日志链接
+   - **不含**审查元信息（模型名、审查轮次、P0/P1 标签）——那是内部过程
 
 ── Step 3: Skill 分发 ──
 7. clawhub skill publish ./sofagent/skill --slug sofagent --owner KongFangXun
