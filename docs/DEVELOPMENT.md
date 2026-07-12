@@ -6,7 +6,7 @@
 >
 > v1.0.4 · 2026-07-11（UTC）· 孔放勋
 
-> 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](../FDE/FDE.md) 和 [README § FDE](../README.md#fde从工作流到-ai-节点)。
+> 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](../FDE/FDE.md) 和 [README § FDE](../README.md#fde-怎么工作)。
 
 ---
 
@@ -101,11 +101,11 @@
 
 sofagent 有**两个引擎**，数据流分离但在 think.md 交汇。
 
-> 完整架构图详见 [README § 怎么工作](../README.md#怎么工作) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
+> 完整架构图详见 [README § 怎么工作](../README.md#fde-怎么工作) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 **审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义（nodes/*.md），之后 Agent 读节点 .md 注入给 ao compose 执行，定期用 `sofagent-orchestrate-compare` 做 A/B 重优化。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
 
-主 Agent 的日常：接活 → 看 `scoring.md` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#skill-runtime)。
+主 Agent 的日常：接活 → 看 `scoring.md` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#为什么是-skill--脚本--runtime)。
 
 ### 脚本与文件结构速查
 
@@ -153,7 +153,7 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇。
 | 主 Agent | 拆任务、派活、收尾 |
 | 子 Agent | 干具体活，干完销毁，无状态无包袱 |
 
-子 Agent 脏数据隔离销毁，有价值信息销毁前反思转移。多 Agent 并行用 git worktree 隔离。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#worktree-isolation)。
+子 Agent 脏数据隔离销毁，有价值信息销毁前反思转移。多 Agent 并行用 git worktree 隔离。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#session-boundary)。
 
 Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#session-boundary)。
 
@@ -171,7 +171,7 @@ Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与
 
 ### 为什么选 DeepSeek
 
-默认用 DeepSeek（Flash/Pro 两档，API 模式数据不经过第三方）。完整选型分析见 [ARCHITECTURE.md](./ARCHITECTURE.md#deepseek-choice)。
+默认用 DeepSeek（Flash/Pro 两档，API 模式数据不经过第三方）。完整选型分析见 [ARCHITECTURE.md](./ARCHITECTURE.md#为什么选-deepseek)。
 
 ### Flash vs Pro 分配
 
@@ -203,7 +203,7 @@ ao compose 拆完任务
 
 简单方式：在 `fde.md` 里写一行模型偏好。精细方式：改 `orchestrator/` 叶子文件里的「最优模型」字段——按任务类型分模型。两种方式都不需要改代码。
 
-编排开销经济学（一次多花 3%，十次省回来）见 [ARCHITECTURE.md](./ARCHITECTURE.md#token-economics)。
+编排开销经济学（一次多花 3%，十次省回来）见 [ARCHITECTURE.md](./ARCHITECTURE.md#编排开销的经济学)。
 
 ---
 
@@ -230,7 +230,7 @@ ao compose 拆完任务
 
 `sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排引擎定期重出 candidate 方案后与 current 对比——单次对比后标记胜出方，连续两次胜出目前需手动二次运行确认（v1.0.1 计划实现自动计数器）。旧方案归档到 history/。⚠️ 连续胜出判断为 TODO(v1.0.1)——当前只做单次对比，需手动执行两次后人工决策。
 
-规则：不主动创造对照组、同类型才比、单次胜出标记候选（连续 2 次需手动二次确认）、再跑 2 次稳定才沉淀、模板可被替换。局限：样本量小（最少 7 次）、LLM 有随机性。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#a-b-test)。
+规则：不主动创造对照组、同类型才比、单次胜出标记候选（连续 2 次需手动二次确认）、再跑 2 次稳定才沉淀、模板可被替换。局限：样本量小（最少 7 次）、LLM 有随机性。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#ab-测试为什么不是一次性评估)。
 
 ---
 
@@ -271,7 +271,7 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 
 ### 冷启动
 
-新 Skill 装上、新任务类型出现——前 5 次只记录不做判断，第 6 次起进入看趋势模式。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#cold-start)。
+新 Skill 装上、新任务类型出现——前 5 次只记录不做判断，第 6 次起进入看趋势模式。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#渐进初始化--复盘体系--反思区--权重门禁)。
 
 ### 评审者与执行者分离
 
@@ -302,11 +302,11 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 
 ### 反思区 / 归档区 + 智能权重
 
-反思写入后只把权重 ≥0.5 的摘要放进反思区（≤2K token），其余丢进归档区。权重由三个信号估算（新鲜度 + 反思关联 + 引用热度）。≤2K token 硬上限是真正的安全阀。算法细节见 [ARCHITECTURE.md](./ARCHITECTURE.md#weight-gate)。
+反思写入后只把权重 ≥0.5 的摘要放进反思区（≤2K token），其余丢进归档区。权重由三个信号估算（新鲜度 + 反思关联 + 引用热度）。≤2K token 硬上限是真正的安全阀。算法细节见 [ARCHITECTURE.md](./ARCHITECTURE.md#渐进初始化--复盘体系--反思区--权重门禁)。
 
 ### think.md 自我纠正
 
-三道防线：只存经验不存指令 → 反思区 2K token 硬上限 → 人工可清除。写入前扫指令性关键词 ≥3 处提醒拆到 fde.md。防线详解见 [ARCHITECTURE.md](./ARCHITECTURE.md#self-correct)。
+三道防线：只存经验不存指令 → 反思区 2K token 硬上限 → 人工可清除。写入前扫指令性关键词 ≥3 处提醒拆到 fde.md。防线详解见 [ARCHITECTURE.md](./ARCHITECTURE.md#渐进初始化--复盘体系--反思区--权重门禁)。
 
 ---
 
