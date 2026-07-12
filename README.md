@@ -13,7 +13,7 @@
 
 <p align="center" style="color:#64748B;font-size:14px;">
   中小企业和 OPC 的 FDE 工具包<br/>
-  约束底座管行为，[审计引擎](./docs/ARCHITECTURE.md#为什么审计必须外置)盯结果，[编排引擎](./docs/HANDBOOK.md#双引擎怎么跑)自动干活
+  约束底座管行为，审计引擎盯结果，编排引擎自动干
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 
 ## 为什么需要 sofagent？
 
-95%+ 的中小企业卡在这三道坎：
+87% 的中小企业 AI 项目在半年内停摆。不是技术不行——是这三道坎：
 
 | 🚫 预期太高 | 🔧 技术主导 | 👻 装了没人管 |
 |:--|:--|:--|
@@ -55,20 +55,33 @@ echo "API_KEY=sk-123456" > .env && git add .env && git commit -m "test"
 
 ## FDE 怎么工作？
 
-FDE（Forward Deployed Engineer）进驻企业走四步：
+FDE（Forward Deployed Engineer）进驻企业走四步——[完整指南 → FDE/FDE.md](./FDE/FDE.md)
 
 ```mermaid
 graph LR
-    A["1️⃣ 梳理工作流<br/>把企业流程画出来"] --> B["2️⃣ 识别 AI 节点<br/>哪些适合 AI 做"]
+    subgraph identify[" "]
+        direction TB
+        A["1️⃣ 梳理工作流<br/>把企业流程画出来"]
+        B["2️⃣ 识别 AI 节点<br/>哪些适合 AI 做"]
+    end
+
+    A --> B
     B --> C["3️⃣ 装上工具包<br/>闲置设备装 sofagent"]
     C --> D["4️⃣ 自动跑业务<br/>AI 自己干活、汇报、复盘"]
 
     C -.-> E["🧭 约束底座<br/>红线前置注入"]
     C -.-> F["🔍 审计引擎<br/>每次提交自动扫描"]
-    D -.-> G["⚙️ 编排引擎<br/>拆任务·并行·A/B 优化"]
 
-    G --> H["⚡ 强化岗位<br/>AI 做领航员，人拍板"]
-    G --> I["🔄 自动执行<br/>AI 全权跑，人看审计"]
+    subgraph output[" "]
+        direction TB
+        G["⚙️ 编排引擎<br/>拆任务·并行·A/B 优化"]
+        H["⚡ 强化岗位<br/>AI 做领航员，人拍板"]
+        I["🔄 自动执行<br/>AI 全权跑，人看审计"]
+    end
+
+    D -.-> G
+    G --> H
+    G --> I
 ```
 
 第二步是关键——不是所有环节都适合 AI 全自动。FDE 把节点分成两类：
@@ -80,7 +93,25 @@ graph LR
 
 不用请顾问、不用养 AI 团队——FDE 走完四步就撤离，AI 节点留在企业自己跑。
 
-### 审计引擎怎么盯？
+### 三个引擎
+
+#### 🧭 约束底座
+
+开工前把规则注入 Agent 上下文——让它知道红线在哪。
+
+```mermaid
+graph LR
+    A[Agent 启动] --> B[SKILL.md<br/>宪法层·4 底线 + 7 铁律]
+    B --> C[fde.md<br/>规范层·企业专属规则]
+    C --> D[think.md<br/>反思层·历史踩坑]
+    D --> E[knowledge/<br/>知识库·自动积累]
+```
+
+四层加载链自动注入，Agent 会话一开始就带着约束。全平台可用——OpenClaw 通过 Hook 强制注入，其他平台 Agent 主动 Read。
+
+#### 🔍 审计引擎
+
+每次 git commit 自动扫描——改了什么就是什么，赖不掉。
 
 ```mermaid
 graph LR
@@ -94,16 +125,23 @@ graph LR
     G --> A
 ```
 
-审计引擎不依赖 AI 自觉——它看的是 git diff 硬证据。AI 改了什么就是什么，赖不掉。
+不依赖 AI 自觉——看的是 git diff 硬证据。全平台可用，装 pre-commit hook 即可。
 
-### 三个引擎
+#### ⚙️ 编排引擎（实验性）
 
-| | 🧭 约束底座 | 🔍 审计引擎 | ⚙️ 编排引擎 |
-|------|------|------|------|
-| **做什么** | 把规则注入 Agent 上下文 | git diff → 17 条规则 → exit code | 拆任务 → 匹配模板 → 并行 → A/B 优化 |
-| **怎么跑** | 宪法层 + 反思层 + 规范层，自动加载 | git pre-commit hook，每次提交触发 | FDE 进场时生成方案，之后定期重测 |
-| **平台** | 全平台 | 全平台 | 仅 OpenClaw |
-| **一句话** | 开工前就知道红线 | 改了什么都赖不掉 | 越跑越好的自动流水线 |
+把大任务拆小、多 Sub Agent 并行执行、A/B 对比找更优方案。FDE 进场时生成编排方案，之后节点自己跑。
+
+```mermaid
+graph LR
+    A[接收任务] --> B[编排引擎<br/>拆解 + 匹配模板]
+    B --> C[Sub Agent 并行执行]
+    C --> D[多维评分]
+    D --> E{A/B 对比}
+    E -->|新版更好| F[手动 promote]
+    E -->|旧版更好| G[保留]
+```
+
+编排引擎当前走 ao compose（agency-orchestrator），DeepAgents 接入层已就绪。迁移路线：v1.0.6 compose 迁到 DeepAgents → v1.0.7 ao 退役 + A/B 自动切换。详见 [ROADMAP](./ROADMAP.md)。
 
 > 🆕 **v1.0.5**：[Ontology](./docs/ARCHITECTURE.md#行业印证palantir-同构) 统一层 + Work模板市场 行业模板 + Agent Dashboard + 原子写入 + fail-closed 安全 + A9 分级安全 + 首次运行分类器
 
@@ -131,7 +169,7 @@ graph LR
 - 17 条审计规则（11 默认 + 6 扩展），覆盖密钥泄漏、越界修改、注入攻击、知识库越权等
 - MIT 许可证，代码、文档、模板随便用
 
-> ⚠️ 编排引擎需要 OpenClaw，能跑但还在打磨。[已知局限](./docs/LIMITATIONS.md)
+> ⚠️ 编排引擎需要 DeepAgents 环境，能跑但还在打磨。[已知局限](./docs/LIMITATIONS.md)
 
 ---
 
@@ -141,7 +179,7 @@ graph LR
 |---------|--------|
 | 只想拦截密钥泄漏 | `npm install -g @sofagent/audit` 就够了 |
 | 想管住 Agent 全流程 | 审计引擎 + 约束底座（install.sh） |
-| 想自动编排 Agent 任务 | + 编排引擎（需要 OpenClaw） |
+| 想自动编排 Agent 任务 | + 编排引擎（DeepAgents Sub Agent） |
 
 ---
 

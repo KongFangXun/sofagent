@@ -153,17 +153,17 @@ sofagent-audit 是一个 TypeScript CLI。它的输入是 git diff，输出是 e
 
 这意味着：即使不装 OpenClaw，审计层照样能工作。企业团队今天就能 `npm install -g @sofagent/audit`，配 pre-commit hook，让所有 Agent（不管什么平台）的提交都经过审计。
 
-#### 编排层为什么需要 OpenClaw
+#### 编排层当前状态
 
-编排引擎调用的工具是 ao compose（agency-orchestrator），ao compose 跑在 OpenClaw 上。需要 OpenClaw 的原因：
+编排引擎当前依赖 `ao compose`（agency-orchestrator）做任务拆解。`launcher.ts`（v1.0.4）作为 DeepAgents 的接入层已就绪——但当前仅是 optional wrapper（68 行），编排逻辑仍走 ao CLI。
 
-1. **自动加载约束**——OpenClaw 的 `sofagent-load-chain` hook 在 Agent 启动时注入约束文件，不依赖 Agent "自觉去读"
-2. **session 隔离**——OpenClaw 的 `session.spawn` 创建独立子 Agent 跑 workflow 节点，主 Agent 不受污染
-3. **断路器**——OpenClaw 的 `tools.loopDetection` 在 Agent 死循环时硬停止
+**正在迁移**（[ROADMAP](./ROADMAP.md) v1.0.6-v1.0.7）：
+1. v1.0.6：compose 从 ao CLI 迁到 DeepAgents，ao 降为 fallback
+2. v1.0.7：ao 依赖移除，deepagents 提升为正式依赖，A/B 自动切换
 
-实测过 WorkBuddy / Codex / Claude Code——Hook 注入不可控、session 无法外部隔离、sub-agent 不能外部管理。不是「选择独占 OpenClaw」，是其他平台不开源到这个程度。
+迁移完成后，编排引擎不再绑定 OpenClaw——任何人用自己的 Agent 都能调用编排引擎。
 
-但注意：编排层是给 FDE workflow 节点用的，不是给企业员工的日常 Agent 用的。企业员工不需要感知 OpenClaw——它只在后台跑 FDE 部署的 workflow 节点。
+> ⚠️ 之前的"v1.0.5 起 DeepAgents 原生解决"表述已在审查中修正——文档不跑在代码前面。
 
 #### 两种使用模式
 
@@ -271,6 +271,8 @@ knowledge/ 的数据流遵循生产者-消费者解耦模式（与 Google OKF �
 > - **Google OKF**：同架构（Markdown + YAML Frontmatter + Git）+ 同数据流（生产者-消费者解耦）
 > - **CAG（第 7 代 RAG，WWW '25）**：同方法——按主题整合→去重去冲突→规整 Markdown→全量输入 LLM
 > - **Glean（Gary Tan / YC）**：工业数据——1.7 万页 Markdown、前 5 条召回 ~100%、比传统 RAG 提升 30%
+
+> **进化方向——记忆分层金字塔（L0-L3）**：腾讯云开源的 TencentDB Agent Memory 提出了 4 层渐进蒸馏架构——L0 原始对话 → L1 原子事实 → L2 场景聚合 → L3 用户画像。每层向上压缩、向下可追溯。与 sofagent 的 think.md（L0）→ knowledge/entities（L1）→ knowledge/concepts（L2）→ 缺 L3 用户画像完全对应。未来方向：自动化 L1→L2→L3 提炼流水线 + SQLite 双轨存储（百万级事实用 DB 检索、千级结构用 MD 文件）。详见 [THANKS](./THANKS.md)。
 
 ### 三层时间尺度循环（Andrew Ng 框架）
 

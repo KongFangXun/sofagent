@@ -28,7 +28,7 @@
 
 ## Why sofagent?
 
-95%+ of SMBs hit the same three walls:
+87% of SME AI projects stall within 6 months. It's not a tech problem — it's these three walls:
 
 | 🚫 Expectations too high | 🔧 Tech-led, not biz-led | 👻 Deploy and forget |
 |:--|:--|:--|
@@ -57,20 +57,33 @@ echo "API_KEY=sk-123456" > .env && git add .env && git commit -m "test"
 
 ## How FDE works
 
-FDE (Forward Deployed Engineer) follows four steps:
+FDE (Forward Deployed Engineer) follows four steps — [full guide → FDE/FDE.md](./FDE/FDE.md)
 
 ```mermaid
 graph LR
-    A["1️⃣ Map workflows<br/>Diagram the business"] --> B["2️⃣ Identify AI nodes<br/>Where AI can help"]
+    subgraph identify[" "]
+        direction TB
+        A["1️⃣ Map workflows<br/>Diagram the business"]
+        B["2️⃣ Identify AI nodes<br/>Where AI can help"]
+    end
+
+    A --> B
     B --> C["3️⃣ Install toolkit<br/>sofagent on spare device"]
     C --> D["4️⃣ AI runs itself<br/>Work, report, reflect"]
 
     C -.-> E["🧭 Harness base<br/>Rules injected upfront"]
     C -.-> F["🔍 Audit engine<br/>Scans every commit"]
-    D -.-> G["⚙️ Orchestration<br/>Decompose · Parallel · A/B"]
 
-    G --> H["⚡ Augmented role<br/>AI navigates, human decides"]
-    G --> I["🔄 Auto-execute<br/>AI runs, human audits"]
+    subgraph output[" "]
+        direction TB
+        G["⚙️ Orchestration<br/>Decompose · Parallel · A/B"]
+        H["⚡ Augmented role<br/>AI navigates, human decides"]
+        I["🔄 Auto-execute<br/>AI runs, human audits"]
+    end
+
+    D -.-> G
+    G --> H
+    G --> I
 ```
 
 Step 2 is the key — not every step should be fully automated:
@@ -82,7 +95,25 @@ Step 2 is the key — not every step should be fully automated:
 
 No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep running.
 
-### How the audit engine watches
+### Three engines
+
+#### 🧭 Harness base
+
+Rules injected into agent context before work starts — so it knows the red lines.
+
+```mermaid
+graph LR
+    A[Agent starts] --> B[SKILL.md<br/>Constitution · 4 rules + 7 principles]
+    B --> C[fde.md<br/>Norms · enterprise rules]
+    C --> D[think.md<br/>Reflection · past lessons]
+    D --> E[knowledge/<br/>Knowledge base · auto-built]
+```
+
+Four-layer loading chain auto-injects on session start. Any platform — OpenClaw via Hook enforcement, other platforms via Agent Read.
+
+#### 🔍 Audit engine
+
+Every git commit gets scanned — what the agent changed can't be denied.
 
 ```mermaid
 graph LR
@@ -96,16 +127,24 @@ graph LR
     G --> A
 ```
 
-The audit engine doesn't trust the agent — it trusts git diff.
+Doesn't trust the agent — trusts git diff. Any platform, just install a pre-commit hook.
 
-### Three engines
+#### ⚙️ Orchestration engine (experimental)
 
-| | 🧭 Harness | 🔍 Audit | ⚙️ Orchestration |
-|------|------|------|------|
-| **Does** | Injects rules into agent context | git diff → 17 rules → exit code | Decompose → template → parallel → A/B |
-| **Runs on** | Constitution + reflection + norms layers | git pre-commit hook, every commit | FDE generates workflow; periodic re-optimization |
-| **Platform** | Any platform | Any platform | OpenClaw only |
-| **TL;DR** | Know red lines before starting | Can't deny what was changed | Self-improving pipeline |
+Decomposes large tasks, runs Sub Agents in parallel, compares A/B results for better approaches. FDE generates the workflow on onboarding; nodes run autonomously after that.
+
+```mermaid
+graph LR
+    A[Task received] --> B[DeepAgents<br/>Decompose + match template]
+    B --> C[Sub Agents<br/>parallel execution]
+    C --> D[Multi-dimension scoring]
+    D --> E{A/B compare}
+    E -->|New better| F[Auto-switch]
+    E -->|Old better| G[Keep]
+```
+
+Powered by DeepAgents (optional dependency), runs on any platform — no longer tied to OpenClaw. A/B comparison is currently manual; auto-promotion is on the v1.x roadmap.
+
 
 > 🆕 **v1.0.5**: Ontology Layer · Work模板市场 · Agent Dashboard · Atomic writes · Fail-closed · A9 scored safety
 
@@ -133,7 +172,7 @@ The audit engine doesn't trust the agent — it trusts git diff.
 - 15 audit rules (11 default + 4 extended + 2 experimental)
 - MIT license — use code, docs, and templates freely
 
-> ⚠️ Orchestration engine requires OpenClaw. [Known limitations](./docs/LIMITATIONS.md)
+> ⚠️ Orchestration engine requires DeepAgents. [Known limitations](./docs/LIMITATIONS.md)
 
 ---
 
@@ -143,7 +182,7 @@ The audit engine doesn't trust the agent — it trusts git diff.
 |---------|------|
 | Just block secret leaks | `npm install -g @sofagent/audit` is enough |
 | Full agent behavior management | Audit engine + harness base (install.sh) |
-| Automatic task orchestration | + orchestration engine (needs OpenClaw) |
+| Automatic task orchestration | + orchestration engine (DeepAgents Sub Agent) |
 
 ---
 

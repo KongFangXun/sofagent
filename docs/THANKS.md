@@ -126,6 +126,9 @@ sofagent 直接使用或借鉴了它们的能力。
 - **["Don't Do RAG" — Cache-Augmented Generation](https://arxiv.org/abs/2412.15605)** · WWW '25 (2025)
   CAG（编译式 RAG）的核心——按主题整合文档→去重去冲突→生成规整 Markdown→全量输入 LLM——与 sofagent knowledge/ 的「entities/concepts/comparisons 页面自动生成」完全同构。独立验证了「知识管理不需要向量数据库，干净 Markdown 就够了」的架构选择。
 
+- **[TencentDB Agent Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory)** · Tencent Cloud (2026-06) · MIT
+  4 层渐进蒸馏记忆架构（L0 原始对话→L1 原子事实→L2 场景聚合→L3 用户画像）+ 双轨存储（SQLite+sqlite-vec 存事实、Markdown 存结构）+ 符号化压缩（Mermaid 图替代冗长日志，Token 消耗降 61%）。OpenClaw 原生插件，零配置启用。为 sofagent knowledge/ 的记忆分层进化提供了完整的架构蓝图和工业级参照。
+
 - **[Satya Nadella — No Priors x Latent Space at Microsoft Build](https://pod.wave.co/podcast/latent-space-the-ai-engineer-podcast/satya-nadella-no-priors-x-latent-space-crossover-special-at-microsoft-build)**（2026-06）
   微软 CEO Nadella 提出："Every company will have its own private eval. That may be the most important IP." 私有化评估体系 = 企业持续训练 Agent 过程中积累的反馈数据、评分标准、迭代轨迹。与 sofagent 的 FDE 交付物（Skill 定制 + scoring 反馈 + 知识库演变）完全对应——FDE 交付的不是工具，是企业培养 Agent 的评估闭环。
 
