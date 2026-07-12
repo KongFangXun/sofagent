@@ -8,7 +8,7 @@
 >
 > **为什么 Agent 让 FDE 更重要**：前 Palantir 二号员工、前 OpenAI 首席研究官 Bob McGrew 指出——AI agent 没有现成的产品，是 FDE 兴起的最重要原因。Agent 是非确定性系统：同样的输入可能产生不同输出，必须配套 eval、observability、trace、guardrail 和人工复核——而这正是 sofagent 审计引擎做的事。详见 [OpenFDE · Agent 时代](https://open-fde.com/zh/docs/agent-era)。
 
-**离场后，企业留下三样东西：一份谁都能看懂的交付手册、一套在跑的 AI 节点、一个会自己生长的 AI 知识库。**
+**离场后，企业留下三样东西：一份谁都能看懂的交付手册、一套在跑的 AI 节点、一个会自己生长的 AI 知识库。** 还有第四样——**私有化评估体系**（private evals）：企业的 scoring 反馈 + Skill 迭代历史 + 知识库演变轨迹。微软 CEO Nadella 指出：未来企业最重要的知识产权是 private evals——工具可以被复制，但差异化反馈数据无法被复制。FDE 交付的不仅是可运行的 Agent，更是企业持续培养 Agent 的评估闭环。
 
 > **范围声明**：sofagent 覆盖 Agent 质量层（代码纪律 + 审计 + 经验沉淀）。不覆盖运维层（监控 / 告警 / 重启 / 日志轮转）。
 
