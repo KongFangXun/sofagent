@@ -9,6 +9,12 @@
 > 2026-07-12（UTC）
 Ontology 三路合并引擎（entities + workflow actions + A15 constraints → `.sofagent/ontology/`）+ Work模板市场 独立项目（git submodule + 行业模板）+ A9 分级安全（score-based）+ A15 绕过修复 + fail-closed 默认安全 + 原子文件写入 + 安全加固（路径穿越/shell 注入/regex 注入修复）。DeepAgents 接入层保留为 optional wrapper，编排迁移推到 v1.0.6-v1.0.7。472 测试全绿，pre-push 全绿。
 > 📖 [开发日志](./docs/changelog/v1.0.5.md)
+
+### 规划中
+- **v1.0.6** — DeepAgents compose 迁移 + Sub Agent 状态管理 → [开发日志](./docs/changelog/v1.0.6.md)
+- **v1.0.7** — A/B 自动切换 + ao 完全退役 → [开发日志](./docs/changelog/v1.0.7.md)
+- **v1.0.8** — TencentDB Agent Memory 集成：L3 用户画像自动注入 → [开发日志](./docs/changelog/v1.0.8.md)
+
 ### [v1.0.4] — 自动优化 + 约束验证 🔧
 > 2026-07-11（UTC）
 Sub Agent 会自己变好了：eval harness 评分体系 + Sub Agent A/B 自动优化（SkillOpt 集成） + HITL 渐进自主度 + A15 约束验证。附带多项审查修复。465 测试全绿，pre-push 全绿。

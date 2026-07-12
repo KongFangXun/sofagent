@@ -1,4 +1,4 @@
-# sofagent 回归检查清单（204 维度）
+# sofagent 回归检查清单（210 维度）
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。这不是"发现新问题"的工具——发现新问题用[陌生视角审查](./fresh-eyes-review.md)。
 >
@@ -2147,12 +2147,52 @@ sofagent-audit --doctor 2>&1 | head -5
 # 期望：第 1 项（git 检测）报 ❌ + 修复建议
 ```
 
-### 建议补充到陌生视角审查的内容
-> 如果某些问题类别反复出现，或某个盲区根本未被现有 8 个视角覆盖，建议补充到[陌生视角审查](./fresh-eyes-review.md)。
+---
+### 第二十四部分：v1.0.5 审查追加（维度 205-210）🆕
 
-| 建议类型 | 具体内容 | 原因 |
-|---------|---------|------|
-| 新增视角 / 新增方面 / 新增场景 / 删除过时内容 | | |
+#### 205. hub.ts templateName 路径穿越校验 🆕
+```bash
+# v1.0.5 DeepSeek 审查 P0：hub.ts 第119行 templateName 直接拼入路径无 ../ 校验
+grep -A2 "const templatePath = join" sofagent/audit/src/commands/hub.ts
+# 期望：前面有 if (templateName.includes('..')) 校验
+```
+
+#### 206. README Mermaid 图与正文一致性 🆕
+```bash
+# v1.0.5 审查发现：编排引擎 Mermaid 图写"自动切换"，正文写"手动"
+grep -A5 '编排引擎' README.md | grep '手动\|自动切换'
+# 期望：图和文一致
+```
+
+#### 207. safeDefaults() 包含 a14/a15 规则 🆕
+```bash
+# v1.0.5 审查 P2：safeDefaults() 的 rules 对象只含 a1-a11，缺 a14/a15
+grep -A10 'export function safeDefaults' sofagent/audit/src/config-loader.ts | grep 'a14\|a15'
+# 期望：a14 和 a15 出现在 rules 中（安全相关应默认启用）
+```
+
+#### 208. safeDefaults() lowRiskPatterns 不为空 🆕
+```bash
+# v1.0.5 审查 P2：safeDefaults() 的 lowRiskPatterns 为空，新用户首次用可能被 WARN 淹没
+grep -A10 'export function safeDefaults' sofagent/audit/src/config-loader.ts | grep 'lowRiskPatterns'
+# 期望：至少包含 ['package-lock.json', 'yarn.lock'] 等基本豁免
+```
+
+#### 209. Agent Dashboard 无硬编码时间戳 🆕
+```bash
+# v1.0.5 审查 P2：doctor.ts 假 Agent 数据硬编码时间戳会过期
+grep -n '2026-07-11\|示例' sofagent/audit/src/commands/doctor.ts
+# 期望：含「示例」标注，时间戳为动态生成
+```
+
+#### 210. toYamlList() 使用 YAML 序列化 🆕
+```bash
+# v1.0.5 审查 P2：merge-engine.ts 的 toYamlList() 用 JSON.stringify 而非 YAML
+grep -A3 'function toYamlList' sofagent/audit/src/ontology/merge-engine.ts
+# 期望：用 yaml.dump 或手动转义特殊字符
+```
+
+
 
 ```
 
@@ -2161,7 +2201,7 @@ sofagent-audit --doctor 2>&1 | head -5
 ## 审查约束
 
 - **v1.0 是正式版**——从「技术预览」到「可生产使用」的跨越，你的审查质量直接决定正式版能否发布
-- **204 维度全部检查**——不是只看增量，是全仓库全面检查
+- **210 维度全部检查**——不是只看增量，是全仓库全面检查
 - **v0.99.9 老问题不能回归**——ROADMAP 版本叙事、GLM 维度数一致性、中英文文件对称、术语统一
 - **铁律措辞强化必须用 grep 验证**——不能凭感觉说「改完了」，grep 不到才算数
 - **准入条件 A 类不能造假**——⚠️→✅ 必须有新 evidence 支持，不能因为正式版就改 ✅

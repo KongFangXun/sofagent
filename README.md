@@ -166,7 +166,8 @@ graph LR
 > 🔬 Hugging Face 实验：同一模型不改权重，仅优化外层 Harness，在法律 Agent 基准中从 3.5% 跃升至 80.1%（76 分差全部来自外层机制）。[详情](./docs/ARCHITECTURE.md)
 
 - 核心逻辑 **470+ tests 全绿**（diff-parser / config-loader / rules A1-A15 / reporter）
-- 17 条审计规则（11 默认 + 6 扩展），覆盖密钥泄漏、越界修改、注入攻击、知识库越权等
+- **17 条审计规则**：11 纯 git-diff（A1-A6,A9-A11）+ 4 需 Agent 日志（A7-A8,A12-A13）+ 2 扩展（A14 知识库越权·事后审计提醒、A15 约束验证），覆盖密钥泄漏、越界修改、注入攻击、知识库越权等
+- ⚠️ A14 是**事后审计提醒**而非运行时访问控制——Agent commit 前仍可能访问受限数据，A14 让管理员能在审计中发现越权行为
 - MIT 许可证，代码、文档、模板随便用
 
 > ⚠️ 编排引擎需要 DeepAgents 环境，能跑但还在打磨。[已知局限](./docs/LIMITATIONS.md)

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.0.4 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.0.5 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
 // 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
@@ -54,9 +54,9 @@ interface Args {
   doctor: boolean;
   /** staged 模式（首次提交场景）——diffRange 值为 --cached */
   cached: boolean;
-  /** v1.0.4: eval harness */
+  /** v1.0.5: eval harness */
   eval?: string;
-  /** v1.0.4: A/B 测试 */
+  /** v1.0.5: A/B 测试 */
   abTest?: string;
   /** v1.0.5: Agent Dashboard */
   agents?: boolean;
@@ -554,25 +554,28 @@ async function main(): Promise<void> {
   // 2. 读取任务日志
   const logEntries = checkLogs();
 
-  // 3. 读取 commit message（优先读 COMMIT_EDITMSG，用于 pre-commit 阶段获取当前消息）
-  let commitMsg = '';
-  try {
-    const gitDirResult = execFileSync('git', ['rev-parse', '--git-dir'], { encoding: 'utf-8' }).trim();
-    const gitDir = gitDirResult.startsWith('/') ? gitDirResult : join(process.cwd(), gitDirResult);
-    const editMsgPath = join(gitDir, 'COMMIT_EDITMSG');
-    if (existsSync(editMsgPath)) {
-      commitMsg = readFileSync(editMsgPath, 'utf-8').trim();
+  // 3. 读取 commit message（优先级：--task 参数 > COMMIT_EDITMSG > git log > 空）
+  let commitMsg = args.task || '';
+  
+  if (!commitMsg) {
+    try {
+      const gitDirResult = execFileSync('git', ['rev-parse', '--git-dir'], { encoding: 'utf-8' }).trim();
+      const gitDir = gitDirResult.startsWith('/') ? gitDirResult : join(process.cwd(), gitDirResult);
+      const editMsgPath = join(gitDir, 'COMMIT_EDITMSG');
+      if (existsSync(editMsgPath)) {
+        commitMsg = readFileSync(editMsgPath, 'utf-8').trim();
+      }
+    } catch {
+      // git rev-parse 失败（非 git 仓库），留空
     }
-  } catch {
-    // git rev-parse 失败（非 git 仓库），留空
   }
 
-  // fallback：COMMIT_EDITMSG 不可用时，尝试 git log → args.task
+  // 最终 fallback：git log
   if (!commitMsg) {
     try {
       commitMsg = execFileSync('git', ['log', '-1', '--pretty=%B'], { encoding: 'utf-8' }).trim();
     } catch {
-      commitMsg = args.task || '';
+      // 完全无法获取，保持空
     }
   }
 
@@ -746,7 +749,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
     return;
   }
 
-  // ===== v1.0.4 可视化输出 =====
+  // ===== v1.0.5 可视化输出 =====
 
   const exitCode = results.exitCode;
   const totalRules = results.rules.length;
@@ -775,7 +778,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
       const classTag = rule.ruleClass === '业务底线' ? '[底线]' : rule.ruleClass === '能力拐杖' ? '[拐杖]' : '';
       for (const detail of rule.details) {
         console.log(`  ${icon} ${rule.name} ${classTag}: ${detail}`);
-        // 修复建议（v1.0.4 新增）
+        // 修复建议（v1.0.5 新增）
         const suggestion = getFixSuggestion(rule.name);
         if (suggestion) {
           console.log(`     怎么修: ${suggestion}`);

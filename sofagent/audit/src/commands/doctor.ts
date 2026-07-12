@@ -1,13 +1,12 @@
 // ============================================================
 // doctor.ts · sofagent-audit --doctor 健康诊断
 // v1.0 新增：一键诊断 7 项健康度
-// v1.0.4 新增：第 9 项——知识库访问矩阵
-// v1.0.4 新增：第 10 项——SkillOpt 管道状态 + 第 11 项——成本报告
-// v1.0.4 新增：第 12-14 项——eval harness / A/B 优化 / HITL 统计（11 项核心检查 + 3 项扩展检查）
+// v1.0.5 新增：第 9 项——知识库访问矩阵
+// v1.0.5 新增：第 10 项——SkillOpt 管道状态 + 第 11 项——成本报告
+// v1.0.5 新增：第 12-14 项——eval harness / A/B 优化 / HITL 统计（11 项核心检查 + 3 项扩展检查）
 // 只读诊断，不做任何写操作
 // 退出码：全部通过 → 0；有失败 → 1
 // ============================================================
-
 import { existsSync, accessSync, constants, readFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { execFileSync } from 'child_process';

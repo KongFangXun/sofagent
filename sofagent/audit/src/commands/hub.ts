@@ -8,8 +8,7 @@
 // ============================================================
 
 import { existsSync, readFileSync, readdirSync, mkdirSync, copyFileSync, type Dirent } from 'fs';
-import { join } from 'path';
-import { execFileSync } from 'child_process';
+import { join, resolve, sep } from 'path';
 
 export interface HubDeployOptions {
   interactive: boolean;
@@ -103,12 +102,6 @@ export function listHubTemplates(): string[] {
  * @param options 部署选项
  */
 export async function hubDeploy(templateName: string, options: HubDeployOptions): Promise<void> {
-  // v1.0.5 fix: 路径穿越防护——拒绝含 .. 的模板名
-  if (templateName.includes('..')) {
-    console.error(`❌ 非法模板路径: ${templateName}`);
-    process.exit(1);
-  }
-
   const hubDir = findHubDir();
   if (!hubDir) {
     console.error('❌ 未找到 Work模板市场 模板目录。请先安装：');
@@ -116,7 +109,15 @@ export async function hubDeploy(templateName: string, options: HubDeployOptions)
     process.exit(1);
   }
 
-  const templatePath = join(hubDir, 'templates', templateName);
+  // v1.0.5 fix: 路径穿越防护——用 resolve 归一化后校验是否仍在 templates/ 目录内
+  // 比 templateName.includes('..') 更严谨：拦住绝对路径、编码绕过、Windows 反斜杠等变体
+  const templatesRoot = resolve(hubDir, 'templates');
+  const templatePath = resolve(templatesRoot, templateName);
+  if (!templatePath.startsWith(templatesRoot + sep) && templatePath !== templatesRoot) {
+    console.error(`❌ 非法模板路径（越界）: ${templateName}`);
+    process.exit(1);
+  }
+
   if (!existsSync(templatePath)) {
     console.error(`❌ 模板不存在: ${templateName}`);
     console.error('   可用模板列表: sofagent hub list');

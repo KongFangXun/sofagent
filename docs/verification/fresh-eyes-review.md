@@ -411,6 +411,14 @@
 8. **evidenceMode 与 README 分类匹配**：
    - README 把规则分为"纯 git-diff"和"需 Agent 日志"——逐条对照 index.ts 的 `evidenceMode` 字段。有没有标了 `hybrid` 但 README 归到"纯 git-diff"的规则？反之有没有？
 
+9. **README Mermaid 图与正文一致性**（v1.0.5 教训）：
+   - 编排引擎 Mermaid 图写"自动切换"，正文写"A/B 对比为手动"——图与文矛盾。检查所有 Mermaid 图中的标签是否与紧接的正文描述一致。
+   - 约束底座 Mermaid 写"4 底线 + 7 铁律"——与 SKILL.md 实际内容一致吗？
+
+10. **编排引擎声称诚实度**（v1.0.5 教训）：
+   - README 说编排引擎"全平台可用，不再绑定 OpenClaw"——实际实现：DeepAgents 是 optional dependency，68 行 `launcher.ts` wrapper，A/B 对比需手动执行。
+   - 检查：README 对编排引擎的描述是否诚实标注了"实验性"和当前限制？
+
 **输出格式**：
 
 ```markdown

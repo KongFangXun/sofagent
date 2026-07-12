@@ -1,13 +1,12 @@
 // ============================================================
 // ab-testing/ab-runner.ts · A/B 测试运行器
-// v1.0.4 新增
+// v1.0.5 新增
 // current vs candidate 并行对比评测
 // ============================================================
 
 import type { ABConfig, ABTestResult } from './types';
 import type { ScoreBreakdown, TestCase } from '../eval/types';
 import { scoreCase } from '../eval/eval-scorer';
-
 /**
  * 模拟 Agent 运行（生产环境替换为实际 launcher 调用）
  */

@@ -6,7 +6,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 > sofagent 的设计决策记录——从 Harness 层的工程约束到五层架构的取舍。
 >
-> > v1.0.4 · 2026-07-11（UTC）· 孔放勋
+> > v1.0.5 · 2026-07-11（UTC）· 孔放勋
 
 <img src="sofagent.png" alt="sofagent" width="300" />
 
@@ -86,7 +86,7 @@ sofagent 分两层——地基轻、引擎重：
 | **Harness 层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ 已可用 |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ v0.81 |
 | **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff | ✅ v0.92 |
-| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v1.0.4），推送待端到端验证 | ✅ v0.99.5 |
+| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v1.0.5），推送待端到端验证 | ✅ v0.99.5 |
 | **协同层** | 多设备 + 云端 | 组织级 Agent Harness——Agent 以独立身份进入协作现场，共享上下文 + 组织记忆 + 主动参与 | v2.x 规划 |
 
 每层跑通再加下一层——不推翻已验证的东西。
@@ -273,6 +273,10 @@ knowledge/ 的数据流遵循生产者-消费者解耦模式（与 Google OKF �
 > - **Glean（Gary Tan / YC）**：工业数据——1.7 万页 Markdown、前 5 条召回 ~100%、比传统 RAG 提升 30%
 
 > **进化方向——记忆分层金字塔（L0-L3）**：腾讯云 TencentDB Agent Memory（MIT，OpenClaw 原生插件）提供了可直接引用的 4 层记忆架构：L0 原始对话 → L1 原子事实（SQLite+vector 检索）→ L2 场景聚合（Markdown）→ L3 用户画像（persona.md）。sofagent 已有 L0（think.md）→ L1（entities）→ L2（concepts），缺 L3 用户画像 + 自动化 L1→L2 提炼流水线。未来可直接集成作为记忆后端——百万级事实用 DB 检索、千级结构用 MD 文件。
+
+#### TencentDB 集成边界
+
+TencentDB Agent Memory 是 OpenClaw 原生插件，依赖 `api.on` / `api.registerTool` / `api.registerContextEngine` 运行，无法直接安装到 DeepAgents（两套 plugin API 不兼容）。sofagent 以**路径 C（只读 Markdown）**集成：daemon 定期同步 persona.md → 加载链注入，不碰 SQLite、不调 HTTP API。TencentDB 卸了 sofagent 照样跑。详见 [v1.0.8 开发日志](./changelog/v1.0.8.md)。
 
 ### 三层时间尺度循环（Andrew Ng 框架）
 

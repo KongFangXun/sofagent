@@ -1,6 +1,6 @@
 // ============================================================
 // skillopt-integration.ts · SkillOpt 自进化引擎集成
-// v1.0.4 新增：通过 CLI subprocess 调用 skillopt-sleep，验证 candidate skill
+// v1.0.5 新增：通过 CLI subprocess 调用 skillopt-sleep，验证 candidate skill
 // ============================================================
 
 import { execFileSync } from 'child_process';
