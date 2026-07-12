@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.0.4 · 2026-07-11（UTC）· 自进化 + 约束验证 + 审查修复
+> v1.0.4 · 2026-07-11（UTC）· 自动优化 + 约束验证 + 审查修复
 >
 
 > 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（Workflow 梳理用）为实验性附带。
@@ -10,7 +10,7 @@
 
 ## 现在在哪：v1.0.4 ✅
 
-> 自进化 + 约束验证版——eval harness 评分体系 + Sub Agent A/B 自进化 + HITL 渐进自主度 + A15 离线约束验证。附带多项审查修复。465 测试全绿，pre-push 7/7。
+> 自动优化 + 约束验证版——eval harness 评分体系 + Sub Agent A/B 自动优化 + HITL 渐进自主度 + A15 离线约束验证。附带多项审查修复。465 测试全绿，pre-push 7/7。
 >
 > 📖 [开发日志](./docs/changelog/v1.0.4.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
@@ -22,8 +22,8 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
-| **v1.0.4** 🔧 | 自进化 + 约束验证：eval harness + Sub Agent A/B 自进化 + HITL 渐进自主度 + A15 约束验证 + 审查修复 | [📖](./docs/changelog/v1.0.4.md) |
-| **v1.0.3** 🔧 | 编排引擎重构 + LOOP 自迭代：FDE Sub Agent（DeepAgentsJS+LangGraph+Agency Agents+SkillOpt）+ 4 Agent 定义 + 内外层循环 + 4 验证文件自进化 + 30 项审查修复 | [📖](./docs/changelog/v1.0.3.md) |
+| **v1.0.4** 🔧 | 自动优化 + 约束验证：eval harness + Sub Agent A/B 自动优化 + HITL 渐进自主度 + A15 约束验证 + 审查修复 | [📖](./docs/changelog/v1.0.4.md) |
+| **v1.0.3** 🔧 | 编排引擎重构 + LOOP 自迭代：FDE Sub Agent（DeepAgentsJS+LangGraph+Agency Agents+SkillOpt）+ 4 Agent 定义 + 内外层循环 + 4 验证文件自动优化 + 30 项审查修复 | [📖](./docs/changelog/v1.0.3.md) |
 | **v1.0.2** 🔧 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（回归检查清单 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
 | **v1.0.1** 🔧 | AI 知识库实现版：7 件事（目录骨架/fde 规则/Skill/四层加载链/daemon Ingest/Lint/轮次上限）+ A14 越权审计 + 回归检查清单 | [📖](./docs/changelog/v1.0.1.md) |
 | **v1.0.0** 🎉 | 正式版：Agent 审计工具——18 件事 + 408 测试全绿 + 回归检查清单 | [📖](./docs/changelog/v1.0.0.md) |
@@ -75,8 +75,8 @@
 |------|:--:|------|:--:|
 | **v1.0.1** | ✅ 已完成 | AI 知识库 + 访问控制 + entities 实体关联 + deepagentsjs 引入 + think.md 模板 + loop-check 轮次上限 | [📖](./docs/changelog/v1.0.1.md) |
 | **v1.0.2** | ✅ 已完成 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（回归检查清单 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
-| **v1.0.3** | ✅ 已完成 | LOOP 自迭代架构（4 Agent + 内外层循环） + SkillOpt 自进化 + Audit Sub Agent（含成本） + think.md 判断单元结构化 + 文档分层预算 | [📖](./docs/changelog/v1.0.3.md) |
-| **v1.0.4** | ✅ 已完成 | 自进化 + 约束验证版——eval harness + Sub Agent A/B 自进化 + HITL 渐进自主度 + A15 约束验证。多项审查修复 | [📖](./docs/changelog/v1.0.4.md) |
+| **v1.0.3** | ✅ 已完成 | LOOP 自迭代架构（4 Agent + 内外层循环） + SkillOpt 自动优化 + Audit Sub Agent（含成本） + think.md 判断单元结构化 + 文档分层预算 | [📖](./docs/changelog/v1.0.3.md) |
+| **v1.0.4** | ✅ 已完成 | 自动优化 + 约束验证版——eval harness + Sub Agent A/B 自动优化 + HITL 渐进自主度 + A15 约束验证。多项审查修复 | [📖](./docs/changelog/v1.0.4.md) |
 | **v1.0.5** | ⏳ 待启动 | Ontology 统一层 + ao 退役 + Workflow Hub + 首个行业模板 + dstack/OKF 工程学习落地 | [📖](./docs/changelog/v1.0.5.md) |
 
 ### v1.x — 发布后
@@ -128,7 +128,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 |------|------|------|:--:|
 | 审计引擎（Harness 层） | 独立自研——外部无可替代 | 核心差异化 | v1.0 |
 | 编排引擎 | LangChain + LangGraph + DeepAgentsJS | 借鉴后替换 ao | v1.0.1-v1.0.5 |
-| Skill 系统 | Agency Agents（岗位模板，v1.0.3）+ SkillOpt（Skill 文档自进化，v1.0.3）+ eval harness + A/B 对比（Sub Agent 配置自进化，v1.0.4） | 模板引用 + 对接优化引擎 | v1.0.1-v1.0.4 |
+| Skill 系统 | Agency Agents（岗位模板，v1.0.3）+ SkillOpt（Skill 文档自动优化，v1.0.3）+ eval harness + A/B 对比（Sub Agent 配置自动优化，v1.0.4） | 模板引用 + 对接优化引擎 | v1.0.1-v1.0.4 |
 | AI 知识库 | OpenFDE 10 步工作流（行业定位验证）+ Google OKF（同构独立验证）+ CAG 第 7 代 RAG（同构验证）+ Glean 工业数据（1.7万页/召回~100%） | 外部验证 | v1.0-v1.1 |
 | 安全设计哲学 | gstack 六层安全栈（分类器 / fail-closed / 原子写 / 密钥格式持续更新） | 实践参照 | v1.0.4-v1.0.5 |
 | 企业世界模型 | Palantir Ontology（实体+关系+动作+约束） | 概念借鉴，渐进构建 | v1.0.1-v1.0.5 |
@@ -139,12 +139,12 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | 想法 | 说明 |
 |------|------|
 | **gstack/OKF 工程学习**（v1.0.5） | 从 gstack（YC Garry Tan）和 Google OKF 借鉴的工程改进：① **原子文件写入**——task/logs 和 think.md 改用 PID+随机字节的临时文件模式防并发写入冲突（gstack 的 `tmpStatePath` 模式）。② **首次运行分类器**——`--init` 根据仓库状态（greenfield/有代码/脏状态）给出不同引导（gstack 的 `first-task-detect`）。③ **fail-closed 默认安全**——config 参数格式错误时回退到安全默认值而非静默启用默认配置（gstack 的 `classifier_score > 0` 门控哲学）。④ **生产者-消费者架构文档化**——knowledge/ 的数据流（daemon Ingest = 生产者 / 加载链注入 = 消费者）显式文档化（OKF 的格式-实现分离思想）。⑤ **A9 分级安全**——从二元正则可疑度评分过渡，低 confidence 时升级告警而非静默 PASS（gstack L1-L3 分类器）。详见 [THANKS](./docs/THANKS.md) |
-| **企业 Skill 自进化** | FDE 部署时给每个 AI 节点定制专属 Skill（注入行业术语/业务规则/历史案例）。节点跑起来后，基于 scoring.md 评分 + task/logs 记录 + think.md 反思，Skill 自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本，candidate 胜出 promote 替换 current。这是 sofagent 的核心服务：**Skill 不只是部署时写好，运行时持续进化** |
+| **企业 Skill 自动优化** | FDE 部署时给每个 AI 节点定制专属 Skill（注入行业术语/业务规则/历史案例）。节点跑起来后，基于 scoring.md 评分 + task/logs 记录 + think.md 反思，Skill 自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本，candidate 胜出 promote 替换 current。这是 sofagent 的核心服务：**Skill 不只是部署时写好，运行时持续进化** |
 | **AI 知识库（v1.0.1）** | FDE 交付的第三样东西从散文件升级为结构化知识系统。`.sofagent/knowledge/` 目录：entities/（实体页）+ concepts/（概念页）+ comparisons/（对比页）。daemon 检测 task/logs 变化触发 Ingest，loop-evaluate 顺带跑 Lint，加载链启动时被动注入 top-N 相关页。think.md 不动（职责不重叠）。**新增 Workflow 节点数据契约**（每个 Agent 只看自己职责范围内的知识）+ **entities 实体关联**（frontmatter `relations` 字段——知识库从独立页面变成关联图，Ontology 第 1 步）。详见 [v1.0.1 开发日志](./docs/changelog/v1.0.1.md) |
 | **think.md 模板强制** | think.md 目前可选——Agent 想写就写。v1.0.1 升级：如果写，必须按模板（做了什么 / 踩了什么坑 / 下次怎么办）。不强制写，审计引擎检测「本次任务无 think.md」标 ⚠️ 但不阻断。**不做 gate 前置检查**——强制 gate 会导致 Agent 用垃圾内容填模板 |
 | **loop-check 轮次上限** | 当前 loop-check 只有步数比例检查点（60%），无绝对轮次上限。v1.0.1 加硬性兜底：超过 N 轮自动 closure → 交还人类。防止工具持续报错导致 Agent 无限循环消耗 Token |
 | **后置测验（可选维度）** | loop-check 新维度：任务结束时 AI 出题反问人类「我做了 X，你理解了吗？」从 Agent 自检到人机对齐。默认关闭，高风险任务才开启。成本高（每次任务需人答题），v2.x 探索 |
-| **Skill 自进化闭环（v1.0.3）** | FDE 离场时生成的定制 Skill 不是一次性写完就固定的——接入 [微软 SkillOpt](https://github.com/microsoft/SkillOpt) 自进化引擎：Agent 跑任务 → scoring + task/logs 收集轨迹 → `skillopt-sleep` 夜间训练（Rollout→Reflect→Aggregate→Select→Update→Evaluate）→ validation gate 严格验证 → 只升不降替换 Skill。MIT 免费，本地 pip 安装，通过 CLI subprocess 调用。详见 [v1.0.3 开发日志](./docs/changelog/v1.0.3.md) |
+| **Skill 自动优化闭环（v1.0.3）** | FDE 离场时生成的定制 Skill 不是一次性写完就固定的——接入 [微软 SkillOpt](https://github.com/microsoft/SkillOpt) 自动优化引擎（SkillOpt）：Agent 跑任务 → scoring + task/logs 收集轨迹 → `skillopt-sleep` 夜间训练（Rollout→Reflect→Aggregate→Select→Update→Evaluate）→ validation gate 严格验证 → 只升不降替换 Skill。MIT 免费，本地 pip 安装，通过 CLI subprocess 调用。详见 [v1.0.3 开发日志](./docs/changelog/v1.0.3.md) |
 | 质量抽检仪表盘 | 抽检合格率、skillopt 迭代记录可视化 |
 | age 加密 / 多用户隔离 | think.md + task/logs 加密；同机权限隔离 |
 | 多企业平台 webhook | 飞书 + 企微 + 自定义 webhook |
@@ -182,7 +182,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 
 ### v2.x — 多设备协同 + Workflow Hub 前端（规划中）
 
-> 💡 **多 Agent 协同已在 v1.x 完成**：v1.0.3 FDE Sub Agent + Audit Sub Agent 并存 → v1.0.4 A/B 自进化双 Agent 对比 → v1.0.5 Agent Dashboard 探索原型。v2.x 不需要再做多 Agent 协同——它已经是 v1.x 的自然产物（Dashboard 是否进核心取决于 v1.0.5 企业用户反馈）。
+> 💡 **多 Agent 协同已在 v1.x 完成**：v1.0.3 FDE Sub Agent + Audit Sub Agent 并存 → v1.0.4 A/B 自动优化双 Agent 对比 → v1.0.5 Agent Dashboard 探索原型。v2.x 不需要再做多 Agent 协同——它已经是 v1.x 的自然产物（Dashboard 是否进核心取决于 v1.0.5 企业用户反馈）。
 >
 > v2.x 的核心是两件事：**多设备协同**（不同机器上的 sofagent 实例共享知识/记忆/审计数据，每个 AI 节点拥有独立身份主动进入协作者现场）和 **Workflow Hub 前端**（Web catalog + 社区贡献仪表盘 + 模板 marketplace）。
 
@@ -211,7 +211,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | 循环层 | 时间尺度 | 职责 | sofagent 对应 | 当前状态 |
 |--------|:--:|------|------|:--:|
 | 内层 | 秒-分钟 | Agent 执行 + 反思 + 自动纠偏 | entry-gate → task-aware → loop-check → think.md → loop-exit | ✅ v0.99+ |
-| 外层 | 天-周 | Skill 优化 + 知识库沉淀 | loop-evaluate → scoring.md → AI 知识库 → Skill 自进化 | v2.x |
+| 外层 | 天-周 | Skill 优化 + 知识库沉淀 | loop-evaluate → scoring.md → AI 知识库 → Skill 自动优化 | v2.x |
 
 > 当前 ROADMAP 已有「分布式反思同步」（Gossip 方向）。三模式不是互斥的——实践中可能黑板打底 + 上下文路由按需补充。决策留到 v2.x 需求分析时做。
 

@@ -92,7 +92,8 @@ export function parseDiff(range: string): DiffFile[] {
     }
 
     // 获取变更文件列表——execFileSync 不 spawn shell，参数作为数组传递，避免命令注入
-    const output = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', '--name-status', range], {
+    // v1.0.5: 加 --find-renames 避免重命名+修改文件漏检
+    const output = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', '--find-renames', '--name-status', range], {
       encoding: 'utf-8',
       maxBuffer: 10 * 1024 * 1024,
     });

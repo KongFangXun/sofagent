@@ -1,0 +1,111 @@
+# 制造业 · 应付账款审批
+
+meta:
+  name: "应付账款审批"
+  industry: "制造业"
+  version: "1.0"
+  description: "供应商发票 → 三单匹配 → 审批 → 付款的标准化审批流程"
+  tags: ["制造业", "财务", "审批", "应付账款"]
+
+nodes:
+  - id: "invoice-receive"
+    name: "发票接收"
+    description: "接收供应商发票并进行 OCR 解析"
+    prompt: |
+      你是应付账款处理专员。你收到了一张供应商发票。
+      请使用 scan_invoice skill 进行 OCR 解析，提取以下字段：
+      - 供应商名称
+      - 发票号码
+      - 发票日期
+      - 金额
+      - 行项目明细
+      将提取结果写入 task/logs/。
+    actions:
+      - "scan_invoice"
+      - "validate_format"
+    knowledgeDomain:
+      include:
+        - "suppliers"
+        - "finance/invoice-templates"
+    constraints:
+      maxRetries: 3
+    nextNodes:
+      - "three-way-match"
+
+  - id: "three-way-match"
+    name: "三单匹配"
+    description: "比对采购订单、入库单和发票的一致性"
+    prompt: |
+      你负责三单匹配验证。请比对以下三份单据：
+      1. 采购订单（PO）
+      2. 入库单（Goods Received Note）
+      3. 发票（Invoice）
+      使用 three_way_match skill 检查：
+      - 数量一致性
+      - 单价一致性
+      - 总金额一致性
+      - 供应商名称一致性
+      差异 > 5% 标记为异常并升级审批。
+    actions:
+      - "three_way_match"
+      - "flag_discrepancy"
+    knowledgeDomain:
+      include:
+        - "finance/po-templates"
+        - "suppliers"
+    constraints:
+      maxRetries: 2
+      threshold: 0.05
+    nextNodes:
+      - "approval-route"
+
+  - id: "approval-route"
+    name: "审批路由"
+    description: "根据金额和类型路由到对应的审批人"
+    prompt: |
+      你是审批路由器。根据以下规则确定审批路径：
+      - 金额 < 10,000：自动审批
+      - 金额 10,000 - 100,000：部门经理审批
+      - 金额 > 100,000：财务总监审批
+      - 三单匹配异常：升级到财务总监
+      使用 approval_route skill 决定审批路径并通知对应审批人。
+    actions:
+      - "approve"
+      - "reject"
+      - "escalate"
+      - "notify_approver"
+    knowledgeDomain:
+      include:
+        - "approvals/approver-list"
+      exclude:
+        - "hr"
+    constraints:
+      maxRetries: 1
+    nextNodes:
+      - "payment-execute"
+
+  - id: "payment-execute"
+    name: "付款执行"
+    description: "审批通过后执行付款并记录"
+    prompt: |
+      审批已通过。你负责执行付款。
+      使用 execute_payment skill 完成以下操作：
+      1. 确认付款账户和收款账户
+      2. 生成付款指令
+      3. 记录付款到 history/
+      4. 更新供应商余额
+      注意：付款前再次确认金额和账户信息，防止重复支付。
+    actions:
+      - "execute_payment"
+      - "record_payment"
+      - "update_balance"
+    knowledgeDomain:
+      include:
+        - "finance/payment-accounts"
+        - "suppliers"
+    constraints:
+      maxRetries: 1
+
+config:
+  loopCheckMaxRounds: 20
+  carefulModifyThreshold: 0.2

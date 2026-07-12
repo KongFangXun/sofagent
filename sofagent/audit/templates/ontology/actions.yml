@@ -1,0 +1,9 @@
+# Ontology Actions —— 初始模板
+# v1.0.5 自动生成
+# 运行时由 mergeOntology() 覆盖
+#
+# 数据源: Workflow 节点的 actions 声明
+# 格式: YAML 动作列表
+# 每个动作包含 name（动作名）、nodeId（所属节点）、description（描述）
+
+[]

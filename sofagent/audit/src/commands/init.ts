@@ -4,12 +4,59 @@
 //   1. 生成 .sofagent/config.yml 配置模板
 //   2. 安装 git pre-commit hook
 //   3. 冒烟测试——验证审计引擎可用
+// v1.0.5: 新增仓库状态分类器（gstack 首次运行引导）
 // ============================================================
 
 import { existsSync, writeFileSync, mkdirSync, chmodSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { execFileSync } from 'child_process';
 import { CONFIG_TEMPLATE, HOOK_TEMPLATE } from '../config-template';
+import { writeConfig } from '../config-loader';
+
+/**
+ * 仓库状态分类（v1.0.5 新增）
+ * 来源：gstack 的 bin/gstack-first-task-detect
+ */
+type RepoState = 'greenfield' | 'has_code' | 'has_uncommitted' | 'dirty' | 'clean';
+
+function classifyRepo(): { state: RepoState; hint: string } {
+  // 1. 检测是否有 commit 历史
+  let hasCommits = true;
+  try { execFileSync('git', ['rev-parse', 'HEAD'], { stdio: 'pipe' }); } catch { hasCommits = false; }
+  if (!hasCommits) {
+    return {
+      state: 'greenfield',
+      hint: '📋 新仓库——sofagent 会从第一次 commit 开始审计。建议先跑 acceptance-test.sh 验证安装。',
+    };
+  }
+
+  // 2. 检测是否有未提交更改
+  try {
+    const status = execFileSync('git', ['status', '--porcelain'], { encoding: 'utf-8', stdio: 'pipe' });
+    if (status.trim().length > 0) {
+      return {
+        state: 'dirty',
+        hint: '⚠️ 有未提交更改——请先 git commit 或 git stash 后再跑 --init，否则 pre-commit hook 可能误报。',
+      };
+    }
+  } catch { /* 非 git 仓库，已在前面处理 */ }
+
+  // 3. 检测是否有代码文件
+  try {
+    const files = execFileSync('git', ['ls-files'], { encoding: 'utf-8', stdio: 'pipe' });
+    if (files.trim().length === 0) {
+      return {
+        state: 'greenfield',
+        hint: '📋 新仓库——sofagent 会从第一次 commit 开始审计。建议先跑 acceptance-test.sh 验证安装。',
+      };
+    }
+  } catch { /* */ }
+
+  return {
+    state: 'has_code',
+    hint: '📋 已有代码仓库——sofagent 会审计未来的 commit。历史 commit 不会追溯（除非手动跑 --diff）。',
+  };
+}
 
 /**
  * 运行初始化
@@ -21,6 +68,10 @@ export function runInit(): void {
   console.log('');
   console.log('sofagent-audit · 初始化');
   console.log('');
+
+  // v1.0.5: 仓库状态分类（gstack 首次运行引导）
+  const repoState = classifyRepo();
+  console.log(`  ${repoState.hint}`);
 
   let stepOk = 0;
   let stepSkipped = 0;
@@ -38,7 +89,7 @@ export function runInit(): void {
     if (!existsSync(configDir)) {
       mkdirSync(configDir, { recursive: true });
     }
-    writeFileSync(configPath, CONFIG_TEMPLATE, 'utf-8');
+    writeConfig(configPath, CONFIG_TEMPLATE);
     console.log(`  → .sofagent/config.yml 已生成（11 条规则默认全部启用）`);
     console.log('  → 这个配置控制哪些审计规则启用，直接编辑 .sofagent/config.yml 即可自定义');
     stepOk++;
@@ -177,6 +228,10 @@ export function runInit(): void {
   console.log('║  下次 git commit 时审计自动生效           ║');
   console.log('╚══════════════════════════════════════════╝');
   console.log('');
-  console.log('  下一步：git commit -m "test" 看效果');
+  console.log('  下一步：');
+  console.log('    1. 改个文件，试试 git commit——你会看到审计引擎在提交前自动扫描');
+  console.log('    2. 想测试拦截？echo "API_KEY=test" > .env && git add .env && git commit -m "test"');
+  console.log('    3. 想看全部命令？sofagent-audit --help');
+  console.log('    4. 想管住 Agent 全流程？看 HANDBOOK → 场景一');
   console.log('');
 }

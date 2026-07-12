@@ -58,6 +58,11 @@ interface Args {
   eval?: string;
   /** v1.0.4: A/B 测试 */
   abTest?: string;
+  /** v1.0.5: Agent Dashboard */
+  agents?: boolean;
+  /** v1.0.5: hub 子命令 */
+  hubCommand?: string;
+  hubTemplate?: string;
 }
 
 
@@ -115,6 +120,15 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === '--ab-test' && argv[i + 1]) {
       i++;
       args.abTest = argv[i] as string;
+    } else if (argv[i] === '--agents') {
+      args.agents = true;
+    } else if (argv[i] === 'hub' && argv[i + 1]) {
+      i++;
+      args.hubCommand = argv[i] as string;
+      if ((args.hubCommand === 'deploy' || args.hubCommand === 'list') && argv[i + 1] && !argv[i + 1]!.startsWith('--')) {
+        i++;
+        args.hubTemplate = argv[i] as string;
+      }
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       const verbose = argv.includes('--verbose');
       console.log(`sofagent-audit v${VERSION} · Agent 提交时审计\n`);
@@ -126,12 +140,15 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit --diff <range> [--task <desc>]   审计 git diff');
       console.log('  sofagent-audit --init                           一键初始化（配置+hook+冒烟）');
       console.log('  sofagent-audit --doctor                         健康诊断');
+      console.log('  sofagent-audit --doctor --agents                Agent 协同状态');
+      console.log('  sofagent-audit hub list                         列出 Workflow Hub 模板');
+      console.log('  sofagent-audit hub deploy <模板名>               部署 Workflow Hub 模板');
       console.log('  sofagent-audit --root-cause                     根因分析');
       console.log('  sofagent-audit --regression <dir>               回归验证');
       console.log('  sofagent-audit --install-hook                   安装 pre-commit hook');
       console.log('  sofagent-audit --eval <golden-set.yml>          eval harness 评测');
       console.log('  sofagent-audit --ab-test <config.yml>           Sub Agent A/B 测试');
-      console.log('  sofagent-audit skillopt-run --input <path>       SkillOpt 自进化（需 skillopt-sleep）');
+      console.log('  sofagent-audit skillopt-run --input <path>       SkillOpt 自动优化（需 skillopt-sleep）');
       console.log('模式对照表:');
       console.log('  默认模式    全部规则（含 Agent 日志）   exit 0/1/2');
       console.log('  --silent    只跑 git-diff 规则          exit 0/1/2');
@@ -152,7 +169,7 @@ function parseArgs(argv: string[]): Args {
         console.log('  --doctor           健康诊断');
         console.log('  --eval <path>      eval harness 评测');
         console.log('  --ab-test <path>   Sub Agent A/B 测试');
-        console.log('  skillopt-run       SkillOpt 自进化（--input <path> [--output <path>]）');
+        console.log('  skillopt-run       SkillOpt 自动优化（--input <path> [--output <path>]）');
         console.log('  --webhook <p>      webhook 推送（dingtalk/feishu/wecom）');
         console.log('  --webhook-url <u>  webhook URL');
         console.log('  --mcp              MCP Server（已拆分为 @sofagent/mcp）');
@@ -328,7 +345,7 @@ function loadSnapshotsFromDir(dir: string): DiffSnapshot[] {
 async function main(): Promise<void> {
   const args = parseArgs(process.argv);
 
-  // --skillopt-run 模式：SkillOpt 自进化管道（P0-7）
+  // --skillopt-run 模式：SkillOpt 自动优化管道（P0-7）
   if (process.argv[2] === 'skillopt-run') {
     const { runSkillOpt, validateCandidate } = await import('./skillopt-integration');
     const argsArr = process.argv.slice(3);
@@ -365,7 +382,7 @@ async function main(): Promise<void> {
     const backupPath = inputPath! + '.bak.' + Date.now();
     copyFileSync(inputPath!, backupPath);
     copyFileSync(result.candidatePath!, inputPath!);
-    console.log(`✅ Skill 自进化完成: ${inputPath!}（备份: ${backupPath}，提升: ${validation.scoreDiff?.toFixed(1) || 'N/A'} 分）`);
+    console.log(`✅ Skill 自动优化完成: ${inputPath!}（备份: ${backupPath}，提升: ${validation.scoreDiff?.toFixed(1) || 'N/A'} 分）`);
     process.exit(0);
   }
 
@@ -398,9 +415,31 @@ async function main(): Promise<void> {
 
   // --doctor 模式：健康诊断
   if (args.doctor) {
+    if (args.agents) {
+      // v1.0.5: Agent Dashboard 原型
+      const { runAgentDashboard } = await import('./commands/doctor');
+      runAgentDashboard();
+      return;
+    }
     const { runDoctor } = await import('./commands/doctor');
     runDoctor();
     return;
+  }
+
+  // hub 子命令
+  if (args.hubCommand) {
+    if (args.hubCommand === 'list') {
+      const { listHubTemplates } = await import('./commands/hub');
+      listHubTemplates();
+      return;
+    }
+    if (args.hubCommand === 'deploy' && args.hubTemplate) {
+      const { hubDeploy } = await import('./commands/hub');
+      await hubDeploy(args.hubTemplate, { interactive: true });
+      return;
+    }
+    console.error(`❌ hub 命令用法: sofagent hub list | sofagent hub deploy <模板名>`);
+    process.exit(1);
   }
 
   // --install-hook 在开头处理，完成后退出
@@ -540,7 +579,7 @@ async function main(): Promise<void> {
   // 4. 加载审计配置（三级 fallback）——YAML 语法错误时按模式处理
   let config;
   try {
-    config = loadConfig();
+    config = loadConfig(undefined, args.strict);
   } catch (err) {
     if (err instanceof ConfigLoadError) {
       const msg = `config.yml 解析错误: ${err.message}`;
