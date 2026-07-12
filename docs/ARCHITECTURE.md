@@ -4,7 +4,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 # sofagent Architecture
 
-> sofagent 的设计决策记录——从 Harness 层的工程约束到五层架构的取舍。
+> sofagent 的设计决策记录——从 Harness 中间件的行为约束到五层架构的取舍。
 >
 > > v1.0.5 · 2026-07-11（UTC）· 孔放勋
 
@@ -55,6 +55,8 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 ### 为什么审计必须外置
 
 Anthropic 发现 Claude 内部存在 **J-space**——AI 自己知道控制不住自己。所以 sofagent 不信任 Agent 自我报告，只看 git diff 硬证据。审计必须外置、不可绕过。
+
+> **瓶颈转移**：[Anthropic《When AI builds itself》](https://www.anthropic.com/institute/recursive-self-improvement)（2026-06）报告指出——工程师人均代码产出达 2024 年的 8 倍后，代码生成不再是瓶颈，**人工代码审查成了新的堵点**（Amdahl 定律）。sofagent 的审计引擎把审查外置到 git diff 自动化——正是解这个瓶颈的方向。
 
 ### 行业印证：Palantir 同构
 
@@ -263,9 +265,11 @@ knowledge/ 的数据流遵循生产者-消费者解耦模式（与 Google OKF �
 
 生产者和消费者只通过 knowledge/ 目录交互——生产者不知道谁会读，消费者不知道谁写的。
 
-> 💡 **设计对齐**：knowledge/ 的 entities（实体页）→ relations（frontmatter 关联字段）→ concepts（概念页）→ comparisons（对比页）四层结构，本质是**轻量级 GraphRAG**（Microsoft 2024）。区别在于用 Agent 遍历关联代替图数据库查询，用 .md 文件代替向量索引——零外部依赖，完全可审计，人类可以直接打开看。
+> 💡 **设计对齐**：knowledge/ 的 entities（实体页）→ relations（frontmatter 关联字段）→ concepts（概念页）→ comparisons（对比页）四层结构，本质是**轻量级 GraphRAG**（Microsoft 2024）。区别在于用 Agent 遍历关联代替图数据库查询，用 .md 文件代替向量索引——零外部依赖，完全可审计，人类可以直接打开看。混合路由：简单事实直接 grep，关联查询走 entities→relations→concepts 遍历。
 
 > **核心原则——不可追溯即不可信任**：企业知识库最怕 AI 说了一句没人知道从哪来的话。只要不可追溯，业务就不信任。`.md` 文件 + git diff 审计确保每条知识都有来源、每次变更都有记录。
+
+> 📋 **Ledger-Views-Policy 三层映射**（生产级 Agent Memory = 状态管理系统，不是向量库）：`task/logs/` = Ledger（只追加不修改）→ `knowledge/` + `think.md` = Views（派生视图）→ `fde.md` 铁律 = Policy（读写忘规则）。
 
 > **多重独立验证**：
 > - **Google OKF**：同架构（Markdown + YAML Frontmatter + Git）+ 同数据流（生产者-消费者解耦）
@@ -280,7 +284,7 @@ TencentDB Agent Memory 是 OpenClaw 原生插件，依赖 `api.on` / `api.regist
 
 ### 三层时间尺度循环（Andrew Ng 框架）
 
-> 来源：Andrew Ng 的 AI 产品进化框架。真正的产品进化不只来自内层循环（Agent 跑任务），更来自中层和外层。
+> 来源：[Andrew Ng — Three Key Loops for Building Great Software](https://www.deeplearning.ai/the-batch/three-key-loops-for-building-great-software)（The Batch, 2026-06-30）。真正的产品进化不只来自内层循环（Agent 跑任务），更来自中层和外层。
 
 | 层 | 时间尺度 | sofagent 当前覆盖 | 对应组件 |
 |:--:|:--:|:--:|------|
@@ -290,7 +294,7 @@ TencentDB Agent Memory 是 OpenClaw 原生插件，依赖 `api.on` / `api.regist
 
 **当前短板**：sofagent 目前只关注内层循环（Agent 跑任务→审计→反思）。中层的「审计结果怎么反馈给 Skill 优化」和外层的「企业用了一个月后怎么知道效果」是缺失环节。v1.0.1 的 AI 知识库 + Skill 自进化闭环补中层，v2.x 的组织级共享记忆补外层。
 
-> 💡 **核心洞察**：Andrew Ng 提出「产品品味本质是上下文优势」——用户画像、业务边界、资源约束、竞品动态目前仍存储在人类认知中，AI 无法自主获取。因此开发者必须留在中层循环为系统补全关键上下文，而非试图跳过中层让 AI 直连用户。
+> 💡 **核心洞察**：Andrew Ng 在[同一篇文章](https://www.deeplearning.ai/the-batch/three-key-loops-for-building-great-software)中提出「产品品味本质是上下文优势（context advantage, not taste）」——用户画像、业务边界、资源约束、竞品动态目前仍存储在人类认知中，AI 无法自主获取。因此开发者必须留在中层循环为系统补全关键上下文，而非试图跳过中层让 AI 直连用户。
 
 > ⚠️ **诚实声明**：上表列的是终局目标，不是当前能力。sofagent 当前实际只覆盖内层。中层 v1.0.1 开始做，外层 v2.x 才涉及。
 
@@ -394,11 +398,12 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 
 - **v0.9x**：安全审查 ✅ → 审计层（sofagent-audit）
 - **v1.x**：daemon TypeScript 化
-- **v1.0 定位**：Agent 工作验收工具（正式）+ Harness 层（实验）+ FDE 部署框架（实验性）。审计层跨平台、零 Agent 依赖——是 v1.0 的主产品
+- **v1.0 定位**：Agent Harness 中间件——约束行为、审计变更、沉淀经验。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立审计标准层。当前聚焦单设备
+- **v1.1.0 起**：轻量多设备——经验共享（knowledge/ + think.md 跨设备同步）+ 权限作用域化（项目级 override）+ 自迭代周报 + daemon 主动巡检
 - **v1.x**：Skill 自进化验证门控（A/B 对比 + 外部评估器）
-- **v2.x**：组织级 Agent Harness——Agent 独立身份 + 组织共享记忆 + 主动协作参与 → FDE 完整形态
-  - **多 Agent 共享记忆三模式**（未做决策）：黑板（中央共享，简单但单点瓶颈）/ Gossip（P2P 传播，容错但最终一致）/ 上下文路由（按需注入，精准但需匹配引擎）。实践中可能黑板打底 + 路由补充。详见 ROADMAP v2.x
+- **v1.2.x**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界 → Harness 中间件完整形态
+  - **多 Agent 共享记忆三模式**（未做决策）：黑板（中央共享，简单但单点瓶颈）/ Gossip（P2P 传播，容错但最终一致）/ 上下文路由（按需注入，精准但需匹配引擎）。实践中可能黑板打底 + 路由补充。详见 ROADMAP v1.2.x
 
 **两个原则性警告**：①「不要让智能体自我验证」——根治需 v1.x 外部评估器；②「Agent 越强，闸门越重要」。
 
-> **范围声明**：sofagent 覆盖 Agent 质量层（代码纪律 + 审计 + 经验沉淀），不覆盖运维层（监控/告警/重启/日志轮转）。
+> **范围声明**：sofagent 是 Harness 中间件——覆盖行为约束 + 变更审计 + 经验沉淀。不覆盖 Agent 平台本身（IM 渠道/沙箱/工具调用——这些是 OpenClaw/DeepAgents 的事），也不覆盖运维层（监控/告警/重启/日志轮转）。Cloudtag 类全栈企业 Agent 产品管的是从 Agent 到权限到审计的全部层，sofagent 管的是其中可独立标准化的约束+审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立审计。

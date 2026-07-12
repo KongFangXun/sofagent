@@ -300,7 +300,7 @@ Agent 先判断任务复杂度：
 
 | 术语 | 一句话解释 |
 |------|------|
-| **Harness 层** | 管 Agent 行为的「缰绳」——不改模型，改模型外围的执行机制。→ [设计原理](./ARCHITECTURE.md#两层架构地基-vs-引擎) |
+| **Harness 中间件** | 管 Agent 行为的「缰绳」——不改模型，改模型外围的执行机制。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他平台，sofagent 是独立审计标准层。→ [设计原理](./ARCHITECTURE.md#两层架构地基-vs-引擎) |
 | **审计引擎** | 看 git diff 硬证据判定违规，提交时触发，不依赖 Agent 配合。→ [为什么外置](./ARCHITECTURE.md#为什么审计必须外置) |
 | **编排引擎**（实验性）| 拆任务→编排→执行，基于 DeepAgents Sub Agent。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
 | **铁律** | Agent 行为约束规则（4 底线 + 7 铁律），写在 MD 文件里注入上下文 |
@@ -312,7 +312,7 @@ Agent 先判断任务复杂度：
 | **四层加载链** | SKILL.md（宪法层）→ think.md（反思层）→ fde.md（执行层）→ knowledge/index.md（知识层）注入顺序 |
 | **FDE** | Forward Deployed Engineer，四阶段十二步：梳理工作流→构建本体模型→识别节点与量化→部署→离场 |
 
-核心 = **4 底线 + 7 铁律 + 四层加载链**（所有平台生效）。增强 = 编排引擎 + 断路器 + Hook 注入（OpenClaw 全功能，其他平台核心可用）。完整概念分层见 [README](../README.md)。
+核心 = **4 底线 + 7 铁律 + 四层加载链**（所有平台生效）。增强 = 编排引擎 + 断路器 + Hook 注入（OpenClaw 全功能，其他平台核心可用）。**定位**：不管企业用什么 Agent 平台，sofagent 是 Harness 中间件——约束行为、审计变更、沉淀经验。完整概念分层见 [README](../README.md)。
 
 ---
 

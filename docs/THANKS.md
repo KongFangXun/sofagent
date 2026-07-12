@@ -50,6 +50,10 @@
 - **[OpenAI Harness Engineering](https://openai.com/index/harness-engineering/)** — Harness 概念的系统化参考
 - **[Anthropic Effective Harnesses](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)** — 长时间运行 Agent 的有效治理思路
 - **[Lost in the Middle](https://arxiv.org/abs/2307.03172)** — 模型对长文档中段注意力衰减的研究，500 字原则的理论源头
+- **[Andrew Ng — Three Key Loops for Building Great Software](https://www.deeplearning.ai/the-batch/three-key-loops-for-building-great-software)** · DeepLearning.AI The Batch（2026-06-30）
+  三层嵌套循环：Agentic Coding（分钟级）→ Developer Feedback（小时级）→ External Feedback（天-周级）。Ng 强调开发者留在中层循环的理由不是"品味（taste）"而是"上下文优势（context advantage）"——人脑中存储的用户画像、业务边界、竞品动态是 AI 短期无法获取的。sofagent 目前覆盖内层，中层 v1.0.1+，外层 v2.x。
+- **[Thariq Shihipar — A Field Guide to Fable: Finding Your Unknowns](https://x.com/trq212/article/2073100352921215386)** · Anthropic Claude Code 团队（2026-07）
+  四类未知框架（Known Knowns / Known Unknowns / Unknown Knowns / Unknown Unknowns）：用户给 Agent 下任务时的信息差。task-aware 两轮澄清覆盖前两类（显性需求 + 意识到的模糊），后两类（隐性默认 + 盲点）是扩展方向。核心洞察——模型够强时，瓶颈从"模型能不能做"变成"你能不能说清楚要什么"。
 
 ---
 
@@ -58,6 +62,7 @@
 sofagent 直接使用或借鉴了它们的能力。
 
 - **[TencentDB Agent Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory)** · Tencent Cloud (2026-06) · MIT — OpenClaw 原生记忆插件，零配置、开箱即用。4 层分层记忆（L0 对话→L1 事实→L2 场景→L3 画像）+ 双轨存储（SQLite+sqlite-vec 存事实、Markdown 存结构）+ 符号化压缩（Mermaid 图替冗长日志，Token 降 61%）。sofagent 以**弱依赖方式**集成——只读 persona.md 和 scene_blocks/ 的 Markdown 产物，不碰 SQLite、不调 HTTP API。TencentDB 卸了 sofagent 照样跑，只是少了用户画像来源
+- **[Microsoft GraphRAG](https://github.com/microsoft/graphrag)** — knowledge/ 的 entities→relations→concepts→comparisons 四层结构本质是轻量级 GraphRAG。GraphRAG 四类必须场景（多维关联 / 全局总结 / 隐性关系 / 分散串联）验证了 sofagent 用 .md 文件当图节点、Agent 遍历替代图数据库查询的方向。混合路由最佳实践：简单事实用 grep，关联查询走遍历
 - **[agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator)**（Apache-2.0）— `ao compose` 一行命令搞定编排：意图识别 → 任务图生成 → 模板匹配 → 分配
 - **[agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh)** — 215 个中文岗位模板，IDENTITY 层素材来源
 - **[MiroFish](https://github.com/666ghj/MiroFish)** —「工具调用与最终答案严格分离」模式，启发了 sofagent 审计层的证据分层设计
@@ -111,6 +116,9 @@ sofagent 直接使用或借鉴了它们的能力。
 
 - **[Anthropic — Managed Agents：解偶脑与手](https://www.anthropic.com/engineering/managed-agents)**（2026-04-08）
   四层编排架构（Agent 与沙盒解偶 → Coordinator 编排层 → Session 解偶层 → Session Store 记忆层）。核心论断：「Agent 领域为模型写的修补代码注定过时，模型的进化速度快于代码重构速度」。验证 sofagent 的 OpenClaw（连接+行动）+ DeepAgents（深度思考）分工。
+
+- **[Anthropic — When AI builds itself](https://www.anthropic.com/institute/recursive-self-improvement)**（2026-06）
+  内部数据披露：工程师人均代码产出达 2024 年 8 倍后，代码生成不再是瓶颈——**人工代码审查成为新堵点**（Amdahl 定律）。sofagent 把审查外置到 git diff 自动化，正是解这个瓶颈的方向。
 
 - **[Deep Agent — LangChain 官方高级 Agent 框架](https://github.com/langchain-ai/deepagentsjs)**（2026）
   LangGraph 状态底座 + Harness Engineering 范式 + 子 Agent 委派 + 受控沙箱 + 长上下文管理 + HITL 四大特性，验证 sofagent v1.x 的技术选型。

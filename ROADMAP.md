@@ -4,7 +4,7 @@
 > v1.0.5 · 2026-07-11（UTC）· 自动优化 + 约束验证 + 审查修复
 >
 
-> 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（Workflow 梳理用）为实验性附带。
+> 🎯 **v1.0 定位**：**Agent Harness 中间件**——不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他什么 Agent 平台，sofagent 是独立的审计标准层：约束行为、审计变更、沉淀经验。v1.0 聚焦单设备，v1.1.x 加轻量多设备（经验共享），v1.2.x 做完整多设备（独立身份+跨设备审计聚合）。
 
 ---
 
@@ -81,6 +81,8 @@
 | **v1.0.6** | 📋 规划中 | 编排引擎迁移：DeepAgents compose + Sub Agent 状态管理 | [📖](./docs/changelog/v1.0.6.md) |
 | **v1.0.7** | 📋 规划中 | A/B 自动切换 + ao 完全退役 | [📖](./docs/changelog/v1.0.7.md) |
 | **v1.0.8** | 📋 规划中 | TencentDB Agent Memory 集成：L3 用户画像自动注入（daemon Ingest + 加载链 + --with-memory） | [📖](./docs/changelog/v1.0.8.md) |
+| **v1.1.0** | 📋 规划中 | 轻量多设备：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md 生成 lessons-missteps.md）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检 | — |
+| **v1.2.x** | 📋 规划中 | 完整多设备协同：Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界 | — |
 
 ### v1.x — 发布后
 
@@ -148,7 +150,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 
 | sofagent 模块 | 对应外部框架 | 关系 | 版本 |
 |------|------|------|:--:|
-| 审计引擎（Harness 层） | 独立自研——外部无可替代 | 核心差异化 | v1.0 |
+| 审计引擎（Harness 中间件核心） | 独立自研——外部无可替代 | 核心差异化 | v1.0 |
 | 编排引擎 | LangChain + LangGraph + DeepAgentsJS | 借鉴后替换 ao | v1.0.1-v1.0.7 |
 | Skill 系统 | Agency Agents（岗位模板，v1.0.3）+ SkillOpt（Skill 文档自动优化，v1.0.3）+ eval harness + A/B 对比（Sub Agent 配置自动优化，v1.0.4） | 模板引用 + 对接优化引擎 | v1.0.1-v1.0.4 |
 | AI 知识库 | OpenFDE 10 步工作流（行业定位验证）+ Google OKF（同构独立验证）+ CAG 第 7 代 RAG（同构验证）+ Glean 工业数据（1.7万页/召回~100%） | 外部验证 | v1.0-v1.1 |
@@ -204,13 +206,28 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | Skill 四维评估体系 | scoring 从「结果目标」扩展到「结果+过程+风格+效率」+ 反控样本测试 |
 | Conway/Coase 双重反转叙事 | Agent 架构反向塑造组织形态——选择 sofagent 是组织治理模式的选择 |
 
-### v2.x — 多设备协同 + Workflow Hub 前端（规划中）
+#### 轻量多设备（v1.1.0 起）
 
-> 💡 **多 Agent 协同已在 v1.x 完成**：v1.0.3 FDE Sub Agent + Audit Sub Agent 并存 → v1.0.4 A/B 自动优化双 Agent 对比 → v1.0.5 Agent Dashboard 探索原型。v2.x 不需要再做多 Agent 协同——它已经是 v1.x 的自然产物（Dashboard 是否进核心取决于 v1.0.5 企业用户反馈）。
+> 💡 **为什么提前到 v1.x**：Cloudtag / Sierra / Shopify 三家企业不约而同验证了"Agent 从工具变数字员工"的趋势。sofagent 定位从"约束工具"升级为"Harness 中间件"——多设备是中间件的必修课。v1.1.x 做轻量版（不碰身份/权限/协同协议），v1.2.x 做完整版。
+
+v1.x 的多设备 = **经验共享 + 审计可见**，不碰身份/权限/协同协议：
+
+| 能力 | 说明 | 实现路径 |
+|------|------|------|
+| **经验共享** | A 设备上 Agent 学到的经验（knowledge/ + think.md），B 设备能用 | 文件同步层（git submodule / NAS / 云盘挂载），不搞 P2P 协议 |
+| **自迭代周报** | daemon 定期汇总 think.md 生成 `lessons-missteps.md`——"上周 Agent 反复犯什么错" | daemon 扩展：定时扫描 think.md → LLM 汇总 → 写入 knowledge/ |
+| **权限作用域化** | 借鉴 Cloudtag 三层能力叠加——组织默认层（基线 permission.json）→ 工作区级（项目 .sofagent/permissions.local.json 覆盖）→ 频道级（当前不实现，v1.2.x） | permission.json 支持项目级 override，优先级覆盖无降级 |
+| **daemon 主动巡检** | 从被动监工升级为主动告警——定期跑 doctor + 审计历史，发现 Agent 反复犯的同类错误 | daemon 扩展：定时执行 audit history 分析 → 生成告警 |
+
+**不做的**（v1.2.x 再说）：Agent 独立身份码、跨设备实时任务分发、多人协同线程、场景驱动权限的频道级、代理网关。
+
+### v1.2.x — 完整多设备协同（规划中）
+
+> 💡 **多 Agent 协同已在 v1.x 完成**：v1.0.3 FDE Sub Agent + Audit Sub Agent 并存 → v1.0.4 A/B 自动优化双 Agent 对比 → v1.0.5 Agent Dashboard 探索原型。**轻量多设备在 v1.1.0 起步**（经验共享 + 权限作用域化 + daemon 主动巡检）。v1.2.x 做完整版。
 >
-> v2.x 的核心是两件事：**多设备协同**（不同机器上的 sofagent 实例共享知识/记忆/审计数据，每个 AI 节点拥有独立身份主动进入协作者现场）和 **Workflow Hub 前端**（Web catalog + 社区贡献仪表盘 + 模板 marketplace）。
+> v1.2.x 的核心是两件事：**完整多设备协同**（每个 AI 节点拥有独立身份、跨设备审计轨迹可追溯、场景驱动权限体系、代理网关硬边界）和 **Workflow Hub 前端**（Web catalog + 社区贡献仪表盘 + 模板 marketplace）。
 
-**ATTRIBUTION 归因引擎（v2.x 探索）**：当前 sofagent 审计能告诉你 Agent 违规了，但不能告诉你哪次正确的审计干预带来了业务价值。ATTRIBUTION 需要在多设备、多客户、长时间尺度上追踪审计决策→业务指标的因果链——"到底哪一次审计干预推动了真实业务结果"。依赖真实企业数据和 v2.x 的多设备协同基础设施。
+**ATTRIBUTION 归因引擎（v1.2.x 探索）**：当前 sofagent 审计能告诉你 Agent 违规了，但不能告诉你哪次正确的审计干预带来了业务价值。ATTRIBUTION 需要在多设备、多客户、长时间尺度上追踪审计决策→业务指标的因果链——"到底哪一次审计干预推动了真实业务结果"。依赖真实企业数据和 v1.2.x 的多设备协同基础设施。
 
 四阶段渐进：协同编排协议（Markdown 优先）→ Agent 发现与注册 → 跨设备任务分发 → 企业 Agent 知识库（多设备蒸馏记忆聚合到企业自有 NAS/云盘，底层用 [Graphify](https://github.com/safishamsi/graphify) 轻量知识图谱）
 
@@ -228,16 +245,16 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 
 **双层循环（Loop Engineering）**：
 
-> 来源：Karpathy [AutoResearch](https://github.com/karpathy/autoresearch) + Bilevel Autoresearch 论文。与 ARCHITECTURE 的三层循环（Andrew Ng 框架）视角不同——Karpathy 的双层循环关注自动化迭代的深度，Ng 的三层循环关注产品反馈的广度。
+> 来源：Karpathy [AutoResearch](https://github.com/karpathy/autoresearch) + Bilevel Autoresearch 论文。与 ARCHITECTURE 的[三层循环（Andrew Ng 框架）](https://www.deeplearning.ai/the-batch/three-key-loops-for-building-great-software)视角不同——Karpathy 的双层循环关注自动化迭代的深度，Ng 的三层循环关注产品反馈的广度。
 
-当前 sofagent 实现了**内层循环**（Agent 执行→审计→反思→自动纠偏）。v2.x 将实现**外层循环**——loop-evaluate 评分驱动 Skill 自动优化，打破 Agent 的先验认知，强制探索本能回避的优化方向。
+当前 sofagent 实现了**内层循环**（Agent 执行→审计→反思→自动纠偏）。v1.2.x 将实现**外层循环**——loop-evaluate 评分驱动 Skill 自动优化，打破 Agent 的先验认知，强制探索本能回避的优化方向。
 
 | 循环层 | 时间尺度 | 职责 | sofagent 对应 | 当前状态 |
 |--------|:--:|------|------|:--:|
 | 内层 | 秒-分钟 | Agent 执行 + 反思 + 自动纠偏 | entry-gate → task-aware → loop-check → think.md → loop-exit | ✅ v0.99+ |
-| 外层 | 天-周 | Skill 优化 + 知识库沉淀 | loop-evaluate → scoring.md → AI 知识库 → Skill 自动优化 | v2.x |
+| 外层 | 天-周 | Skill 优化 + 知识库沉淀 | loop-evaluate → scoring.md → AI 知识库 → Skill 自动优化 | v1.2.x |
 
-> 当前 ROADMAP 已有「分布式反思同步」（Gossip 方向）。三模式不是互斥的——实践中可能黑板打底 + 上下文路由按需补充。决策留到 v2.x 需求分析时做。
+> 当前 ROADMAP 已有「分布式反思同步」（Gossip 方向）。三模式不是互斥的——实践中可能黑板打底 + 上下文路由按需补充。决策留到 v1.2.x 需求分析时做。
 
 **Dream Sandbox 沙盒审计（探索方向）**：参照 Palantir AIP 的 Dream Sandbox——Agent 操作先在平行空间模拟运行，人类审批后点「合并」才生效，相当于「对现实做版本控制」。当前 sofagent 只能事后 git diff 审计，沙盒审计将约束从事后升级为事前。v2.x 如果企业用户对 Agent 自主操作有安全需求时探索。（来源：Palantir AIP 架构分析，详见 [THANKS.md](./docs/THANKS.md)）
 
@@ -247,8 +264,9 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 
 | 阶段 | 形态 | 对应版本 |
 |------|------|:--:|
-| Ralph 循环（真菌） | 状态外化到文件，Agent 本体无状态 | v0.x-v1.x |
-| Ralph 工厂 | 自治循环进化产品 | v2.x 规划 |
+| Ralph 循环（真菌） | 状态外化到文件，Agent 本体无状态 | v0.x-v1.0.x |
+| Ralph 工厂（轻量多设备） | 自治循环进化——经验共享 + 审计可见 + 权限作用域化 | v1.1.x |
+| 有身份 Agent（多设备完整） | 每个 AI 节点有独立身份，跨设备审计聚合，场景驱动权限 | v1.2.x 规划 |
 | 无身份 Agent（细菌） | 用完即焚，全新生成，零状态 | v3.x 远景 |
 
 ---
@@ -280,14 +298,14 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | 自研行为验证器 | OpenClaw 原生 `tools.loopDetection` 已覆盖 |
 | 定时触发（cron） | 所有 Agent 平台都不支持 cron 级定时 |
 | 动态 Skill Hook | OpenClaw 不支持 Skill 级动态 Hook |
-| Connector | sofagent 是 Harness 层 + 审计引擎，不是自动化流水线 |
+| Connector | sofagent 是 Harness 中间件 + 审计引擎，不是自动化流水线 |
 | 记忆压缩自动化 | 每个 Agent 有自己的记忆 |
 | sofagent-lite 独立产品 | OpenClaw 自带约束机制，独立宪法 skill 多余 |
 | 平台能力矩阵五平台 | 后台统一 OpenClaw |
 | 三层加载链叙事 | 三层拆分为独立产品 |
 | sofagent-fde 独立 Skill | 改为 FDE/FDE.md，FDE 自己装 |
 | Harness 层实验第三次重跑 | 两次各 100 次都因任务设计无法结论 |
-| 全栈组织级 Harness 产品 | sofagent 只做约束规范 + 审计工具 |
+| 全栈企业 Agent 平台 | sofagent 不做 Cloudtag 竞品（全栈 Agent + 平台 + 应用）。sofagent 是 Harness 中间件——不管企业用什么 Agent 平台，sofagent 是独立审计标准层 |
 
 ---
 

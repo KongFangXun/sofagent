@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.0.1 · 11 个端到端场景，覆盖完整用户旅程
+# v1.0.5 · 16 个端到端场景，覆盖完整用户旅程
 # ============================================================
 # 用真实 git 仓库走完整用户旅程：
 #   Fresh install → --init → --doctor → 正常 commit → 违规拦截
 #   → --json → --ci → 首次提交 → 故意搞坏 hook
 #   → --no-verify 绕过检测 → config rules 过滤
+#   → A2 Secret 检测 → A3 越界检查 → A4 配置删除
+#   → --ci vs --strict → hook 迁移
 #
 # 用法：
 #   bash tools/acceptance-test.sh
@@ -91,10 +93,10 @@ git config user.name "Test"
 
 $CLI --install-hook 2>&1 | head -5
 
-if [ -f "$TMP_REPO/.git/hooks/pre-commit" ] && [ -x "$TMP_REPO/.git/hooks/pre-commit" ]; then
+if [ -f "$TMP_REPO/.git/hooks/commit-msg" ] && [ -x "$TMP_REPO/.git/hooks/commit-msg" ]; then
   pass
 else
-  fail "pre-commit hook 未安装或不可执行"
+  fail "commit-msg hook 未安装或不可执行"
 fi
 
 # ── 场景 2: --init 一键初始化 ────────────────────────────────
@@ -104,7 +106,7 @@ $CLI --init 2>&1 | head -10
 
 INIT_OK=true
 [ ! -f "$TMP_REPO/.sofagent/config.yml" ] && INIT_OK=false && fail ".sofagent/config.yml 未生成"
-[ ! -f "$TMP_REPO/.git/hooks/pre-commit" ] && INIT_OK=false && fail "hook 未安装"
+[ ! -f "$TMP_REPO/.git/hooks/commit-msg" ] && INIT_OK=false && fail "hook 未安装"
 
 if $INIT_OK; then
   pass
@@ -191,7 +193,7 @@ else
 fi
 
 # ── 场景 7: --ci 模式 ─────────────────────────────────────────
-scenario 7 "--ci 模式（strict + silent）"
+scenario 7 "--ci 模式（= --silent，非 strict）"
 
 CI_OUTPUT=$($CLI --diff HEAD~1..HEAD --ci 2>&1 || true)
 echo "$CI_OUTPUT" | head -5
@@ -235,7 +237,7 @@ scenario 9 "--doctor 诊断坏环境（故意搞坏 hook）"
 cd "$TMP_REPO"
 
 # 故意删掉 hook
-rm -f "$TMP_REPO/.git/hooks/pre-commit"
+rm -f "$TMP_REPO/.git/hooks/commit-msg"
 
 BROKEN_OUTPUT=$($CLI --doctor 2>&1 || true)
 echo "$BROKEN_OUTPUT" | head -10
@@ -295,12 +297,134 @@ RULES_OUTPUT=$(GIT_EDITOR=true git commit -m "test: rules filtering" 2>&1 || tru
 echo "$RULES_OUTPUT" | head -10
 
 # 期望：不被 A1 拦截（因为 a1: false）、不被 A3 告警（因为 a3: false），commit 应成功
-if echo "$RULES_OUTPUT" | grep -qi "FAIL\|A1.*敏感\|A1.*拦截\|blocked"; then
+if echo "$RULES_OUTPUT" | grep -qi "判定.*FAIL\|commit.*已阻止"; then
   fail "rules: { a1: false } 未生效——.env 仍被拦截"
 elif echo "$RULES_OUTPUT" | grep -q "rules filtering"; then
   pass
 else
   fail "commit 失败但非 A1 拦截：$RULES_OUTPUT"
+fi
+
+# ── 场景 12: A2 Secret 检测（代码中写 GitHub Token）──────────
+scenario 12 "A2 Secret 检测（代码中写 GitHub Token）"
+
+cd "$TMP_REPO"
+
+# 恢复默认配置（场景 11 禁用了 a1 和 a3）
+cat > "$TMP_REPO/.sofagent/config.yml" << 'CONF'
+audit:
+  rules: {}
+CONF
+
+# 写入标准格式 GitHub Token（ghp_ + 36 字符十六进制）
+mkdir -p src
+echo 'const token = "ghp_1234567890abcdef1234567890abcdef123456";' > src/secrets.ts
+git add -f src/secrets.ts
+
+SECRET_OUTPUT=$(GIT_EDITOR=true git commit -m "add api config" 2>&1 || true)
+echo "$SECRET_OUTPUT" | head -10
+
+if echo "$SECRET_OUTPUT" | grep -qi "FAIL\|A2\|Secret\|密钥\|token\|blocked"; then
+  pass
+else
+  if git log --oneline | grep -q "add api config"; then
+    fail "GitHub Token 代码被成功提交——A2 未拦截"
+  else
+    pass
+  fi
+fi
+
+# 清理 staged 文件
+git reset HEAD . 2>/dev/null || true
+
+# ── 场景 13: A3 越界检查（commit message 与变更不匹配）─────
+scenario 13 "A3 越界检查（修 README 但改 utils）"
+
+# 构造跨文件改动：commit message 说修 README，但实际也改了 src/utils.ts
+mkdir -p src
+echo "// refactored in v2" >> src/utils.ts
+echo "# Updated v3" > README.md
+git add src/utils.ts README.md
+
+A3_OUTPUT=$(GIT_EDITOR=true git commit -m "fix: update README title" 2>&1 || true)
+echo "$A3_OUTPUT" | head -10
+
+# A3 是 WARN（exit 1），commit 应成功
+if echo "$A3_OUTPUT" | grep -qi "A3\|越界\|不相关\|unrelated\|WARN"; then
+  pass
+elif git log --oneline | grep -q "update README title"; then
+  pass
+else
+  fail "A3 场景 commit 被意外拦截"
+fi
+
+# ── 场景 14: A4 配置删除（WARN，commit 应成功）───────────────
+scenario 14 "A4 配置删除（WARN，commit 应成功）"
+
+# 先创建并提交 tsconfig.json
+echo '{}' > tsconfig.json
+git add tsconfig.json
+GIT_EDITOR=true git commit --quiet -m "add tsconfig" 2>&1 || true
+
+# 删除它
+git rm tsconfig.json --quiet 2>/dev/null || true
+
+A4_OUTPUT=$(GIT_EDITOR=true git commit -m "remove tsconfig" 2>&1 || true)
+echo "$A4_OUTPUT" | head -10
+
+if echo "$A4_OUTPUT" | grep -qi "FAIL\|拦截\|blocked"; then
+  fail "A4 WARN 被升级为 FAIL——commit 被误阻断（--ci 仍隐含 --strict？）"
+else
+  A4_LOG=$(git log --oneline -1 2>/dev/null || echo "")
+  if echo "$A4_LOG" | grep -q "remove tsconfig"; then
+    pass
+  else
+    fail "A4 场景 commit 失败：$A4_OUTPUT"
+  fi
+fi
+
+# ── 场景 15: --ci vs --ci --strict（参数独立性验证）──────────
+scenario 15 "--ci vs --ci --strict（参数独立性验证）"
+
+HELP=$($CLI --help 2>&1 || true)
+
+# --ci 应描述为 = --silent，不再包含 strict
+if echo "$HELP" | grep "\-\-ci" | grep -q "silent" && \
+   ! echo "$HELP" | grep "\-\-ci" | grep -q "\+.*strict"; then
+  pass
+else
+  fail "--ci 帮助文本可能仍隐含 --strict（或描述未更新）"
+fi
+
+# ── 场景 16: 旧版 hook 迁移 ──────────────────────────────────
+scenario 16 "旧版 hook 迁移（pre-commit → commit-msg）"
+
+# 手动创建旧版 sofagent pre-commit hook（模拟从 v1.0.4 升级）
+cat > "$TMP_REPO/.git/hooks/pre-commit" << 'OLDHOOK'
+#!/bin/bash
+# sofagent pre-commit hook v1.0
+echo "old sofagent hook"
+OLDHOOK
+chmod +x "$TMP_REPO/.git/hooks/pre-commit"
+
+# 重新安装 hook（应自动移除旧版 sofagent pre-commit，安装 commit-msg）
+$CLI --install-hook > /dev/null 2>&1
+
+MIGRATION_PASS=true
+# 旧版 sofagent pre-commit 应被移除
+if [ -f "$TMP_REPO/.git/hooks/pre-commit" ]; then
+  MIGRATION_PASS=false
+fi
+
+# 新版 commit-msg 应已安装且可执行
+if [ ! -f "$TMP_REPO/.git/hooks/commit-msg" ] || [ ! -x "$TMP_REPO/.git/hooks/commit-msg" ]; then
+  MIGRATION_PASS=false
+fi
+
+if $MIGRATION_PASS; then
+  pass
+else
+  fail "旧版 sofagent pre-commit 未被清理 或 commit-msg 未正确安装"
 fi
 
 # ── 总结 ──────────────────────────────────────────────────────

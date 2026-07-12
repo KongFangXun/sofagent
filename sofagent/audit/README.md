@@ -65,13 +65,13 @@ sofagent-audit --diff HEAD~1..HEAD --ci --json
 | `--task <desc>` | 任务描述（A3 越界检测） | — |
 | `--strict` | 严格模式：无日志时 A7 返回 FAIL 而非 WARN | off |
 | `--silent` | 沉默模式：跳过日志依赖规则，走 diff 启发式 | off |
-| `--ci` | CI 模式（= strict + silent） | off |
+| `--ci` | CI 模式（= silent，紧凑输出） | off |
 | `--json` | JSON 输出：`{ exitCode, rules }` | off |
 | `--webhook <platform>` | 推送平台：`dingtalk` / `feishu` / `wecom` | — |
 | `--webhook-url <url>` | Webhook URL（或用 `SOFAGENT_WEBHOOK_URL` 环境变量） | — |
 | `--root-cause` | 分析审计历史，输出根因报告 | — |
 | `--regression <dir>` | 对指定目录跑回归验证 | — |
-| `--install-hook` | 安装 git pre-commit hook | — |
+| `--install-hook` | 安装 git commit-msg hook | — |
 | `--mcp` | 启动 MCP Server 模式 | — |
 | `--version` | 版本号 | — |
 | `--help` | 帮助 | — |
@@ -113,7 +113,7 @@ sofagent-verify --platform workbuddy
 ### Git Hook 集成
 
 ```bash
-# 自动安装 pre-commit hook
+# 自动安装 commit-msg hook
 sofagent-audit --install-hook
 
 # hook 会拦截违规提交（exit code 2 时阻止）

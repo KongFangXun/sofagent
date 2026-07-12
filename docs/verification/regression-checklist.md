@@ -1119,9 +1119,9 @@ grep 'class ConfigLoadError' sofagent/audit/src/config-loader.ts
 grep 'filePath\|line\|column' sofagent/audit/src/config-loader.ts | head -5
 # 应有 filePath/line/column 属性
 
-# 3. strict/ci 模式 exit 2
+# 3. strict 模式 exit 2（ci 模式 exit 1，v1.0.5 解耦）
 grep 'exit.*2\|exitCode.*2' sofagent/audit/src/index.ts
-# strict/ci 模式配置加载失败应 exit 2
+# strict 模式配置加载失败应 exit 2
 
 # 4. 实际测试：写一个 YAML 语法错误的 config，看报错是否含行号
 ```
@@ -1675,32 +1675,42 @@ git diff --stat HEAD | wc -l  # 期望: 0（或仅有预期内的文件）
 
 > 来源：GLM-5.2 独立 7 视角审查（3 轮 × 独立 subagent）+ DeepSeek V4 Pro 独立审查。去重后 12 个关键维度。
 
-#### 177. `--strict`/`--ci` 模式 exit code 正确 🆕
+#### 177. `--strict` 模式 exit code 正确（`--ci` 已解耦）🆕
 ```bash
-# v1.0.3 陌生视角审查 P0：reporter.ts 的 runRules() 中 strict 参数未使用
-# --help 承诺"WARN→exit 2"但实际返回 exit 1
-# pre-commit hook 用 --ci，所有 WARN 级规则永远不阻断 commit
+# v1.0.5 修复：--ci 不再隐含 --strict（两个正交概念被错误耦合）
+# --strict 单独使用时 WARN → exit 2（不变）
+# --ci 单独使用时 WARN → exit 1（变更！pre-commit/commit-msg hook 中 WARN 放行）
+# --ci --strict 组合时 WARN → exit 2（CI 流水线零容忍场景）
 
-# 验证：
+# 验证 --strict 单独：
 cd /tmp/test-strict && git init
 echo "test" > a.txt && git add a.txt
 sofagent-audit --diff HEAD~1..HEAD --task "wrong" --strict --silent
 echo $?  # 期望: 2
 
-# 检查 reporter.ts 中 strict 是否在 exitCode 计算中使用
-grep -n "strict" sofagent/audit/src/reporter.ts | grep -i "exit"
-# 期望: 有匹配行，如 `if (rule.status === 'WARN' && strict) exitCode = 2;`
+# 验证 --ci 单独（WARN 不阻断）：
+sofagent-audit --diff HEAD~1..HEAD --task "wrong" --ci
+echo $?  # 期望: 1（非 2）
+
+# 检查 index.ts 中 --ci 不再设 strict = true
+grep -A2 "'--ci'" sofagent/audit/src/index.ts | grep "strict"
+# 期望: 无匹配（--ci 不设 strict）
 ```
 
-#### 178. pre-commit hook task 值为当前 commit msg 🆕
+#### 178. commit-msg hook task 值为当前 commit msg 🆕
 ```bash
-# v1.0.3 陌生视角审查 P0：hook 通过 cat .git/COMMIT_EDITMSG 读 task
-# 但 pre-commit 阶段 COMMIT_EDITMSG 存的是上一次的 commit msg
+# v1.0.5 修复：hook 从 pre-commit 迁移到 commit-msg
+# commit-msg hook 接收 $1 = commit message 文件路径，读取第一行传给 --task
+# A3 越界检查现在在 hook 中生效
 
 # 验证：连续两次 commit，检查 A3 报的 task 是否是当前 commit 的 msg
 echo "test1" > a.txt && git add a.txt && git commit -m "add a file"
 echo "test2" > b.txt && git add b.txt && git commit -m "add b file"
 # A3 的输出中 task 应显示 "add b file" 而非 "add a file"
+
+# 检查 hook 文件读取 $1
+grep 'COMMIT_MSG_FILE.*\$1' sofagent/audit/hooks/commit-msg
+# 期望: 有匹配行
 ```
 
 #### 179. loadHistory() 对无 timestamp 条目健壮 🆕
@@ -1940,8 +1950,8 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 | **174** | **`--no-verify` 绕过后事后审计对密钥检测——`--diff HEAD` 模式下 A1/A2 正确检出** | **v1.0.2 第五轮审查 P2（DeepSeek）** |
 | **175** | **`--doctor` 绕过检测含"安全提示"标注** | **v1.0.2 第五轮审查 P2（DeepSeek）** |
 | **176** | **README 延伸阅读表分层（"必读"和"进阶"分开）** | **v1.0.2 第五轮审查 P2（DeepSeek）** |
-| **177** | **`--strict`/`--ci` 模式 exit code 正确——WARN→exit 2** | **v1.0.3 陌生视角审查 P0** |
-| **178** | **pre-commit hook task 值为当前 commit msg** | **v1.0.3 陌生视角审查 P0** |
+| **177** | **`--strict` 模式 exit code 正确——WARN→exit 2（`--ci` 已解耦）** | **v1.0.3 审查 P0 / v1.0.5 修复** |
+| **178** | **commit-msg hook task 值为当前 commit msg** | **v1.0.3 审查 P0 / v1.0.5 修复** |
 | **179** | **loadHistory() 对无 timestamp 条目健壮** | **v1.0.3 陌生视角审查 P0** |
 | **180** | **A9 Unicode 全角/leet speak 检测** | **v1.0.3 陌生视角审查 P1** |
 | **181** | **A9 扫描 commit message** | **v1.0.3 陌生视角审查 P1** |
@@ -1968,6 +1978,8 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 | **202** | **"自进化引擎"命名与代码能力匹配——wrapper 不叫引擎** | **v1.0.4 陌生视角审查 P1 + 茶园调整视角** |
 | **203** | **git diff --find-renames 边缘 case——重命名+修改同时发生的解析** | **v1.0.4 陌生视角审查红队发现** |
 | **204** | **非 git 目录运行时报错友好——不是 git 原始 fatal** | **v1.0.4 陌生视角审查红队发现** |
+| **211** | **`--ci` 不隐含 `--strict`——A4 WARN 不被误阻断** | **v1.0.5 OpenClaw 验收 P0** |
+| **212** | **commit-msg hook 迁移 + 旧版 pre-commit 清理** | **v1.0.5 OpenClaw 验收 P1** |
 
 ---
 
@@ -2192,6 +2204,40 @@ grep -A3 'function toYamlList' sofagent/audit/src/ontology/merge-engine.ts
 # 期望：用 yaml.dump 或手动转义特殊字符
 ```
 
+#### 211. `--ci` 不隐含 `--strict`（P0 解耦）🆕
+```bash
+# v1.0.5 OpenClaw 验收 P0：--ci 隐含 --strict 导致 A4 WARN 被误阻断
+# 修复后 --ci 只管紧凑输出（= --silent），WARN 保持 exit 1 放行
+
+# 验证 --ci 不设 strict：
+grep -A3 "'--ci'" sofagent/audit/src/index.ts | grep "strict"
+# 期望: 无匹配行
+
+# 验证 --help 文本不写 "= --silent + --strict"：
+sofagent-audit --help 2>&1 | grep "ci"
+# 期望: "--ci = --silent (紧凑输出) exit 0/1/2"，不含 "+ --strict"
+```
+
+#### 212. commit-msg hook 迁移 + 旧版清理 🆕
+```bash
+# v1.0.5 OpenClaw 验收 P1：hook 从 pre-commit 迁移到 commit-msg
+# commit-msg hook 读取 $1（commit message 文件），传 --task 使 A3 生效
+
+# 验证 hook 文件存在且读取 $1：
+test -f sofagent/audit/hooks/commit-msg && echo "OK"
+grep 'COMMIT_MSG_FILE.*\$1' sofagent/audit/hooks/commit-msg
+# 期望: 有匹配
+
+# 验证旧 pre-commit hook 文件已删除：
+test ! -f sofagent/audit/hooks/pre-commit && echo "OK"
+
+# 验证 --init 自动清理旧 hook：
+# 手动创建 .git/hooks/pre-commit 含 "sofagent" → 跑 --init → 应被删除
+# 验证 --doctor 检测旧 hook 并提示迁移
+sofagent-audit --doctor | grep "旧版 pre-commit"
+# 期望: 有旧 hook 时输出迁移提示
+```
+
 
 
 ```
@@ -2254,8 +2300,8 @@ grep -A3 'function toYamlList' sofagent/audit/src/ontology/merge-engine.ts
 - **事后审计审「密钥检测不遗漏」**——--no-verify 绕过后 --diff HEAD 仍能检出 A1/A2
 - **doctor 安全提示审「绕过有 WARN」**——检测到 --no-verify 时输出"安全提示"
 - **README 分层审「延伸阅读分必读+进阶」**——不让新用户面对 26 行链接表
-- **strict 生效审「WARN→exit 2」**——--strict/--ci 模式下 WARN 返回 exit 2（v1.0.3 审查 P0）
-- **task 时序审「当前 msg」**——pre-commit hook 中 A3 读取的是当前 commit msg 非上一次（v1.0.3 审查 P0）
+- **strict 生效审「WARN→exit 2」**——--strict 模式下 WARN 返回 exit 2；--ci 已解耦不隐含 strict（v1.0.5 修复）
+- **task 时序审「当前 msg」**——commit-msg hook 中 A3 读取 $1 文件获取当前 commit msg（v1.0.5 迁移修复）
 - **loadHistory 健壮审「垃圾数据不崩」**——history.jsonl 插入无 timestamp JSON 时 doctor 不崩溃（v1.0.3 审查 P0）
 - **A9 加固审「全角+leet+commitMsg」**——Unicode normalization + leet 映射 + commit message 扫描（v1.0.3 审查 P1）
 - **history 完整性审「hash chain」**——history.jsonl 有防篡改机制（v1.0.3 审查 P0）

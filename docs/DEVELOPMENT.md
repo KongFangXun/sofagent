@@ -6,7 +6,7 @@
 >
 > v1.0.5 · 2026-07-11（UTC）· 孔放勋
 
-> 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](../FDE/FDE.md) 和 [README § FDE](../README.md#fde-怎么工作)。
+> 💡 **行业背景**：sofagent 是 Agent Harness 中间件——不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立审计标准层：约束行为、审计变更、沉淀经验。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](../FDE/FDE.md) 和 [README § FDE](../README.md#fde-怎么工作)。
 
 ---
 
@@ -132,7 +132,9 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇。
 
 > 📋 **Loop 落地前置条件**：不是所有任务都适合 Loop 编排——① Token 预算（任务消耗可预估且值得花）；② 任务明确（有清晰输入/输出边界）；③ 验证精准（可量化检查标准，且验证 Agent 独立于执行 Agent）；④ 重复性（至少跑 5-10 次才有优化价值）；⑤ 项目基建（git / test / CI 已就绪）。
 
-> 📋 **任务澄清四类未知**（Anthropic zeric 方法论）：用户给 Agent 下任务时有四种未知状态——**已知熟知**（已写入 prompt 的显性需求，正常执行）、**已知未知**（用户意识到没想清楚，task-aware 两轮澄清）、**未知熟知**（用户默认"大家都懂"但 AI 完全不了解，需反向采访探测隐性规则）、**未知未知**（双方都没考虑到的盲点/bug，需 think.md 强制结构化 + 盲点审查）。当前 task-aware 覆盖前两类，后两类是扩展方向。
+> 📋 **任务澄清四类未知**（[Thariq — Finding Your Unknowns](https://x.com/trq212/article/2073100352921215386)）：用户给 Agent 下任务时有四种未知状态——**已知熟知**（已写入 prompt 的显性需求，正常执行）、**已知未知**（用户意识到没想清楚，task-aware 两轮澄清）、**未知熟知**（用户默认"大家都懂"但 AI 完全不了解，需反向采访探测隐性规则）、**未知未知**（双方都没考虑到的盲点/bug，需 think.md 强制结构化 + 盲点审查）。当前 task-aware 覆盖前两类，后两类是扩展方向。
+
+> 📋 **内层启动前置清单**（[Andrew Ng 三层循环](https://www.deeplearning.ai/the-batch/three-key-loops-for-building-great-software)内层操作细节）：Agent 进入内层循环前必须明确三件事——①做什么（目标边界清晰，拒绝"优化美观度"这类不可收敛任务）②做到什么程度算对（可量化验收标准：测试覆盖 / 关键词检查 / AC 条目）③测试验证什么（验证 Agent 独立于执行 Agent，sofagent 的审计引擎就是这个独立验证者）。这三条对应 sofagent 的两轮澄清 + loop-check 闭环。
 
 ### 主 Agent / 子 Agent
 
