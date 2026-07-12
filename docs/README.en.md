@@ -61,14 +61,24 @@ FDE (Forward Deployed Engineer) follows four steps:
 
 ```mermaid
 graph LR
-    A["1️⃣ Map workflows<br/>Diagram the business"] --> B["2️⃣ Identify AI nodes<br/>Auto or assisted"]
+    A["1️⃣ Map workflows<br/>Diagram the business"] --> B["2️⃣ Identify AI nodes<br/>Two types"]
     B --> C["3️⃣ Install toolkit<br/>sofagent on spare device"]
     C --> D["4️⃣ AI runs itself<br/>Work, report, reflect"]
+
+    B -.-> H["👤 Human-augmented<br/>AI assists, human decides"]
+    B -.-> I["🤖 AI autonomous<br/>AI runs, human audits"]
 
     C -.-> E["🧭 Harness base<br/>Rules injected upfront"]
     C -.-> F["🔍 Audit engine<br/>Scans every commit"]
     D -.-> G["⚙️ Orchestration<br/>Decompose · Parallel · A/B"]
 ```
+
+Step 2 is the key — not every step should be fully automated:
+
+| Node type | How it runs | Human's role | sofagent's role |
+|------|------|------|------|
+| 👤 **Human-augmented** | AI drafts, human approves | Decide, judge, sign off | Harness keeps AI in bounds, audit logs every suggestion |
+| 🤖 **AI autonomous** | AI runs end-to-end independently | Review audit reports, spot-check | All three engines: constrain → execute → audit → reflect |
 
 No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep running.
 
