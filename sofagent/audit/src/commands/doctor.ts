@@ -82,9 +82,7 @@ export function runDoctor(): void {
         stdio: ['pipe', 'pipe', 'pipe'],
       }).trim();
       hookPath = join(cwd, gitCommonDir, 'pre-commit');
-    } catch {
-      // fallback
-    }
+    } catch { console.debug('doctor: 获取 git hooks 路径失败'); }
 
     if (hookPath && existsSync(hookPath)) {
       // 检查是否 sofagent hook
@@ -162,9 +160,7 @@ export function runDoctor(): void {
           encoding: 'utf-8',
           stdio: ['pipe', 'pipe', 'pipe'],
         }).trim();
-      } catch {
-        // fallback 到 cwd
-      }
+      } catch { console.debug('doctor: 获取 git 仓库根目录失败，fallback 到 cwd'); }
     }
 
     const historyPath = join(repoRoot, '.sofagent', 'audit', 'history.jsonl');
@@ -364,9 +360,7 @@ export function runDoctor(): void {
       try {
         const content = readFileSync(scoringPath, 'utf-8');
         scoreCount = content.split('\n').filter((l) => l.startsWith('|')).length;
-      } catch {
-        // scoring.md 读取失败，scoreCount 保持 0
-      }
+      } catch { console.debug('doctor: scoring.md 读取失败，scoreCount 保持 0'); }
     }
     results.push({
       ok: true,
@@ -636,7 +630,7 @@ function readAgentStatuses(): AgentStatus[] {
   if (agents.length === 0) {
     agents.push(
       { name: 'FDE Sub Agent（示例）', status: 'resident', lastActive: '最后一次活跃 3 分钟前' },
-      { name: 'Audit Sub Agent（示例）', status: 'idle', lastActive: '下次巡检 2026-07-11 03:00' },
+      { name: 'Audit Sub Agent（示例）', status: 'idle', lastActive: `下次巡检 ${new Date(Date.now() + 3600_000).toLocaleString('zh-CN', { hour12: false })}` },
     );
   }
 

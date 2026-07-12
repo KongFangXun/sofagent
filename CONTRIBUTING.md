@@ -79,7 +79,7 @@ bash sofagent/scripts/install.sh && bash sofagent/scripts/verify.sh
 | `perf` | 性能优化 |
 
 > 自定义前缀（如 `evidence:` `index:`）不强制禁止，但推荐用标准 type。**纯描述性 commit（无前缀）不可接受。**
-> 
+>
 > 示例：`docs: evidence Case 023-025 外部用户验证归档` ✅ / `evidence 归档` ❌
 
 **改 Skill 文件**：先改 `sofagent/skill/`（唯一权威），再 `bash sofagent/scripts/install.sh` 同步。
