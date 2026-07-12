@@ -6,7 +6,7 @@
 >
 > v1.0.4 · 2026-07-11（UTC）· 孔放勋
 
-> 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](./FDE/FDE.md) 和 [README § FDE](./README.md#fde从工作流到-ai-节点)。
+> 💡 **行业背景**：sofagent 是 FDE（Forward Deployed Engineer）的工具包。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](../FDE/FDE.md) 和 [README § FDE](../README.md#fde从工作流到-ai-节点)。
 
 ---
 
@@ -99,7 +99,7 @@
 
 sofagent 有**两个引擎**，数据流分离但在 think.md 交汇。
 
-> 完整架构图详见 [README § 怎么工作](./README.md#怎么工作) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
+> 完整架构图详见 [README § 怎么工作](../README.md#怎么工作) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 **审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义（nodes/*.md），之后 Agent 读节点 .md 注入给 ao compose 执行，定期用 `sofagent-orchestrate-compare` 做 A/B 重优化。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
 
@@ -157,9 +157,9 @@ Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与
 
 子 Agent 销毁后 → ② 反思→think.md ③ 评分→scoring.md ④ A/B→orchestrator/ ⑤ 口头汇报。外部 Skill 从 [ClawHub](https://clawhub.ai) 获取，岗位模板来自 [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh)。
 
-> **Loop Engineering 五组件对照**：行业共识将 Loop 系统拆为五个核心组件：Goals（持续目标绑定）/ Automations（定时触发）/ Skills（技能沉淀）/ Sub Agents（子代理分工）/ Worktraces（并行任务隔离）。sofagent 对应：Goals = fde.md 铁律，Automations = daemon + cron，Skills = sofagent/skill/，Sub Agents = agents/，Worktraces = task/logs + think.md。gstack 的七步工作流（Think→Plan→Build→Reveal→Test→Ship→Reflect）进一步验证了 sofagent「审计外置（Reveal）+ 反思闭环（Reflect）」的设计。
+> **Loop 五组件对照**：行业共识 Loop = Goals / Automations / Skills / Sub Agents / Worktraces。sofagent 对应：Goals = fde.md，Automations = daemon，Skills = skill/，Sub Agents = agents/，Worktraces = task/logs + think.md。gstack 的七步工作流进一步验证了这个结构。
 
-> **Loop 落地前置条件**：① 任务是否重复发生 ② 是否支持自动化核验 ③ Token 预算是否覆盖循环消耗 ④ AI 是否具备适配任务的可用工具。核心原则——**自己不能当自己的裁判**：生成代码的模型与核验结果的模型必须完全独立，这与 sofagent「审计引擎与编排引擎分离」是同一设计思想。
+> **Loop 落地前置条件**：① 任务重复发生 ② 支持自动化核验 ③ Token 预算覆盖 ④ AI 具备适配工具。核心原则——**自己不能当自己裁判**：生成与核验的模型必须独立，与 sofagent「审计与编排分离」同源。
 
 ---
 
@@ -368,6 +368,6 @@ sofagent-audit（v0.99.7）是 TypeScript CLI，扫描 git diff + `.sofagent/tas
 | 验证了 | 跑了什么命令，结果 |
 | 还剩 | 接下来要做什么 |
 
-`task/logs` 模板参照这个四字段结构。状态外化到文件——Agent 失忆，文件不失忆。设计文档见 [audit-design.md](./docs/design/audit-design.md)。
+`task/logs` 模板参照这个四字段结构。状态外化到文件——Agent 失忆，文件不失忆。设计文档见 [audit-design.md](./design/audit-design.md)。
 
 ---

@@ -103,4 +103,4 @@ Your data. Any format, just be real.
 
 > 💡 Why 11%? Karpathy's figure is the floor after human review. sofagent's proposition: **can machine auditing replace human review and approach the same floor?** Whether it can is a question for v1.0 to answer — v0.95 just sets up the measurement framework.
 
-> 📌 Industry trend (Loop Engineering) — see [ARCHITECTURE.md](../../ARCHITECTURE.md): Ralph Loop is cited as a foundational precursor to Loop Engineering, confirming sofagent's design direction aligns with the emerging industry consensus.
+> 📌 Industry trend (Loop Engineering) — see [ARCHITECTURE.md](../ARCHITECTURE.md): Ralph Loop is cited as a foundational precursor to Loop Engineering, confirming sofagent's design direction aligns with the emerging industry consensus.

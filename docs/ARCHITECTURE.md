@@ -44,64 +44,29 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 ### 理论基础与外部验证
 
-> 💡 以下为设计原理的理论支撑，初次使用可跳过，需要深入理解时参考。
+> 💡 以下为核心理论支撑，完整引证列表见 [THANKS.md](./THANKS.md)。
 
-> 2026 年 Hugging Face 实验《Don't Train the Model, Evolve the Harness》证明：同一个 DeepSeek-v4-pro 模型，**不改任何权重**，仅优化外层执行机制（Harness），在法律 Agent 基准测试中综合得分从 3.5% 提升至 80.1%——76 分差全部来自外层机制，追平 Claude Sonnet 4.6，运行成本仅为后者的 1/7。且优化后的 Harness 迁移到同族小模型仍带来 14.4 分提升。🔗 [实验详情](https://huggingface.co/spaces/joelniklaus/harness-optimization)
->
-> ——这就是 sofagent 存在的理由。Benchmark 测到的从来不是裸模型，而是「模型 + Harness」的组合能力。
->
-> > ICML 2025 论文进一步验证：同一模型搭载精心设计的 Harness 后任务胜率显著更高——更强的模型 + 烂 Harness < 较弱模型 + 精心设计的 Harness。如果把 AI 比作一台计算机：**模型 = CPU，上下文 = 内存，Harness = 操作系统**。
+> **Harness 的实验验证**：2026 年 Hugging Face 实验——同一 DeepSeek-v4-pro 不改权重，仅优化外层 Harness，法律 Agent 基准从 3.5%→80.1%，追平 Claude Sonnet 4.6，成本仅 1/7。Benchmark 测的从来不是裸模型，是「模型 + Harness」的组合能力。**对齐税**：模型同质化时代，Harness 层就是新的护城河。
 
-> **三代演进——Harness 是 AI 交互的终点**：行业共识将 AI 应用技术划分为三代：提示工程（Prompt Engineering，管「说什么」）→ 上下文工程（Context Engineering，管「知道什么」）→ 驾驭工程（Harness Engineering，管「跑在哪」）。2026 年工业界验证——LangChain DeepAgents 不改模型权重，benchmark 从 30 名外跃升至前 5；OpenAI Codex 团队 3-7 人 5 个月产出 100 万行生产级代码；gstack 28 个 Skill + 7 个 Agent 角色 60 天产出 60 万行代码。Harness 不是理论推演，是工业界正在大规模落地的事实。
+> **三代演进——行业共识**：AI 应用技术分三代：提示工程（Prompt，管「说什么」）→ 上下文工程（Context，管「知道什么」）→ 驾驭工程（Harness，管「跑在哪」）。2026 年工业落地：LangChain benchmark 30→top5、Codex 7 人 100 万行、gstack 60 天 60 万行——不改模型权重、靠 Harness 层实现。Harness 不是理论推演，是工业界正在大规模落地的事实。
 
-> **对齐税**：当所有团队都用同几个模型（GPT/Claude/DeepSeek）时，模型本身不再是差异化优势——真正的差异在外层 Harness（约束+审计+记忆）。模型同质化时代，Harness 层就是新的护城河。sofagent 是这个方向的早期实践。（来源：163 篇行业笔记蒸馏）
-
-sofagent 的五层架构可以映射到 Akshay Pachaar（前 Lightning AI 工程师）提出的「生产级 Harness 12 组件」框架（以下为 sofagent 的映射解读，非 Akshay 原文）：
-
-| Harness 组件 | sofagent 对应 | 成熟度 |
-|-------------|-------------|:--:|
-| 流程编排 | entry-gate + task-aware | ✅ |
-| 工具调用 | MCP server + webhook | ✅ |
-| 分层存储 | think.md + task/logs + AI 知识库（v1.0.1 实现） | ⚠️ |
-| 上下文管理 | 加载链（三层注入） | ✅ |
-| 错误处理 | loop-check + loop-exit | ✅ |
-| 自动验证 | sofagent-audit（外置审计，Agent 不可绕过） | ✅ |
-| 状态文件 | task/logs + think.md | ✅ |
-| 停止条件 | loop-exit（达标/超时/卡死 三条件） | ✅ |
-| 安全沙箱 | — | ❌ v2.x |
-| 监控告警 | daemon 监控文件 hash 变化 | ⚠️ 实验性 |
-| 日志系统 | daemon 写 daemon-notice.md | ⚠️ 实验性 |
-| 版本管理 | git + pre-commit hook | ✅ |
-
-在此基础上，sofagent 参考 Karpathy [AutoResearch](https://github.com/karpathy/autoresearch)（9 万 GitHub Star）的 **Loop Engineering 框架**。AutoResearch 在单 GPU 上跑 700 次自动实验，找出 20 项连 Karpathy 本人都忽略的代码改进。其核心方法——约束文档 + 锁定评估脚本 + 自动循环——与 sofagent 的 fde.md + sofagent-audit + loop-check/evaluate 高度对应。
-
-> ⚠️ **诚实差距**：AutoResearch 能跑 700 次无人值守自动迭代。sofagent 当前是**单任务内**的检查点循环（子任务完成→loop-check→任务结束→loop-evaluate），不是无人值守批量自动迭代。自动循环需要 daemon 持续监控 + 自动触发 loop，这是 v1.x 的方向。
+> **Loop Engineering 的方法论验证**：Karpathy AutoResearch（9 万 Star）的约束文档 + 锁定评估脚本 + 自动循环——与 sofagent 的 fde.md + sofagent-audit + loop-check 对应。⚠️ AutoResearch 跑 700 次无人值守迭代，sofagent 当前是单任务内检查点循环。
 
 ### 为什么审计必须外置
 
-Anthropic 发现 Claude 内部存在 **J-space**——模型在对话输出之外完成推理、判断、纠错。实验中让 AI「别想某个词」，该词活跃度反而更高——**AI 自己都知道控制不住自己**。所以 sofagent 不信任 Agent 的自我报告，只看 git diff 硬证据。审计必须外置、不可绕过。
+Anthropic 发现 Claude 内部存在 **J-space**——AI 自己知道控制不住自己。所以 sofagent 不信任 Agent 自我报告，只看 git diff 硬证据。审计必须外置、不可绕过。
 
-> 来源：Anthropic《A Global Workspace in Language Models》（2026），详见 [THANKS.md](./docs/THANKS.md)。
+### 行业印证：Palantir 同构
 
-### 行业印证：Palantir + 不可溶解的护城河
+Palantir AIP 未自研大模型，靠 **Ontology（本体）** 实现远超行业的 Agent 可靠性——定义实体→编织关联→赋予行动闭环。sofagent 完全对等：fde.md 定义实体，节点文档 frontmatter 编织关联，审计引擎写 think.md 赋予闭环。差别在于：Palantir 能直接操作 ERP 改库存（Write-back），sofagent 目前只能影响 Agent 上下文注入——v2.x 方向。详见 [FDE/FDE.md](../FDE/FDE.md)。
 
-Palantir AIP 未自研大模型，却靠 **Ontology（本体）** 实现了远超行业的 Agent 可靠性。Ontology 的本质不是加工数据，而是翻译业务——把数据库里的表和字段还原成立体的商业世界。Palantir 的 FDE 用三步完成这件事：**定义实体→编织关联→赋予行动闭环**。
+> **根本接触不到 > 被告知不能说**：Palantir 的防幻觉不是"告诉 Agent 守规矩"，而是未配置的 Agent 根本看不到。sofagent 的 A15 约束验证 + 审计外置遵循同一原则。
 
-sofagent 完全对等：**fde.md 定义实体**（4 底线 + 7 铁律 = 约束层本体）、**节点文档 frontmatter 编织关联**（relations: has_many/belongs_to + knowledge-domain）、**审计引擎写 think.md 赋予闭环**（检测→反思→下次改进）。Harness 不是 Prompt 工程，是工程层——Palantir 和 sofagent 用同一个词描述同一件事。
+### 外部借鉴与生态对齐
 
-⚠️ 诚实差距：Palantir 的 Write-back 能直接操作 ERP 改库存，sofagent 的闭环目前只能影响 Agent 上下文注入。v2.x 目标是对接外部系统实现 Write-back 级闭环——审计发现不只是写进 think.md，而是能触发实际业务动作。实战落地见 [FDE/FDE.md](./FDE/FDE.md)，日常使用见 [HANDBOOK](./HANDBOOK.md)。
-
-> **根本接触不到 > 被告知不能说**：Palantir Ontology 的防幻觉机制不是"告诉 Agent 不要越权"，而是未配置 Context → Agent 根本看不到、无 Object Type → 根本无法检索、未授权 → 根本调不到。sofagent 的 A15 约束验证 + 审计外置遵循同一原则——不是在 Agent 内部劝它守规矩，是在外部让它碰不到越权的路径。
-
-**产品镜像——Palantir AI FDE 的五维同构**：Ontology 之外，Palantir 的 AI FDE 作为**产品角色**与 sofagent 同构——(1) FDE 全程参与任务闭环 = entry-gate → task-aware → loop-check → think.md；(2) Ontology 注入业务上下文 = 三层加载链注入约束+反思；(3) Action 权限绑定 Ontology 实体 = 4 底线 + 7 铁律 + entry-gate 权限清单；(4) AI 输出在分支中接受审查 = git pre-commit 审计引擎；(5) 按场景定制 Tool Stack = Sub Agent registry + SkillOpt。五个维度不是牵强类比，而是同一套工程问题（闭环、上下文、权限、审查、工具）的两个独立解——Palantir 在企业级 Ontology 侧解决，sofagent 在 Agent 上下文侧解决。
-
-### 外部验证与借鉴
-
-- **OpenFDE** 将「审计」列为 FDE 工作流基础层（与身份权限同级），sofagent 的审计优先设计符合社区最佳实践。
-- **翁荔六层 Harness 模型**：sofagent 覆盖前 4 层（上下文工程 / 代码优化 / 工作流 / 自改进 Harness），验证了「RSI 优先优化 Harness 而非模型权重」的核心预判。
-- **外部对齐**：编排引擎借鉴 LangChain + DeepAgentsJS，Skill 系统借鉴 Agency Agents + SkillOpt，Ontology 借鉴 Palantir AIP。设计原则：能做好的不自研，做不了的借鉴，没人做的自己造（git diff 硬证据审计）。
-
-> 详见 [THANKS.md](./docs/THANKS.md)。
+- 编排引擎借鉴 LangChain + DeepAgentsJS，Skill 借鉴 Agency Agents + SkillOpt，Ontology 借鉴 Palantir AIP
+- OpenFDE 将「审计」列为 FDE 基础层，sofagent 的审计优先设计符合社区最佳实践
+- gstack（YC CEO）的七步工作流（Think→Reflect）与 sofagent 审计外置 + 反思闭环对应
 
 ### 两层架构：地基 vs 引擎
 
@@ -282,7 +247,7 @@ Claude Code 的 `/goal` 是纯黑盒——目标给出去 Agent 闷头跑，方�
 | 结构 | 扁平时间线 | AI 知识库页面（双向链接） |
 | 生命周期 | 旧了压缩 | 持续积累，越用越值钱 |
 
-AI 知识库不替代 think.md——两者职责不重叠。think.md 是「上次踩了什么坑」，AI 知识库是「这个领域我们积累了什么最佳实践」。详见 [v1.0.1 开发日志](./docs/changelog/v1.0.1.md)。
+AI 知识库不替代 think.md——两者职责不重叠。think.md 是「上次踩了什么坑」，AI 知识库是「这个领域我们积累了什么最佳实践」。详见 [v1.0.1 开发日志](./changelog/v1.0.1.md)。
 
 ### 生产者-消费者架构（v1.0.5 文档化）
 
@@ -419,7 +384,7 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 
 ## 四、未来方向
 
-> 路线图详见 [ROADMAP.md](./ROADMAP.md)。
+> 路线图详见 [ROADMAP.md](../ROADMAP.md)。
 
 - **v0.9x**：安全审查 ✅ → 审计层（sofagent-audit）
 - **v1.x**：daemon TypeScript 化

@@ -68,17 +68,55 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对�
 
 当前是 per-repo 安装（每个仓库单独跑 `--init`）。企业场景的批量部署方案：
 
-### 方案一：dotfiles 管理（推荐）
-将 `.sofagent/config.yml` 加入 dotfiles 仓库（如 stow/chezmoi），通过 symlink 统一管理。
+### 方案一：全局安装 + per-repo --init（推荐）
 
-### 方案二：shell 脚本批量安装
 ```bash
+# 1. 全局安装审计工具（只需一次）
+npm install -g @sofagent/audit
+
+# 2. 批量 init 所有仓库
 for repo in /path/to/repos/*/; do
   cd "$repo"
-  npm install -g @sofagent/audit
   sofagent-audit --init
 done
 ```
 
-### 方案三：全局配置（未来版本）
-计划支持 `~/.sofagent/config.yml` 全局配置覆盖，减少 per-repo 初始化成本。
+### 方案二：集中配置模板化
+
+创建一个标准 `config.yml` 模板，通过 CI 下发到各 repo：
+
+```bash
+# 1. 维护一个中央模板
+cat > /etc/sofagent/template-config.yml << 'EOF'
+audit:
+  extendedRulesEnabled: true
+  carefulModifyThreshold: 0.2
+  rules:
+    a1: true
+    a2: true
+    # ... 按企业策略配置
+EOF
+
+# 2. 通过 Ansible/CI 下发
+ansible all -m copy -a "src=/etc/sofagent/template-config.yml dest={{ item }}/.sofagent/config.yml" \
+  --args "item={{ repos }}"
+```
+
+### 方案三：Git submodule 共享配置
+
+50+ 仓库场景下，将 Shared Config 作为 git submodule：
+
+```bash
+git submodule add git@github.com:your-org/sofagent-shared-config.git .sofagent/shared
+# 在 config.yml 中引用共享配置
+```
+
+### 方案四：dotfiles 管理
+
+将 `.sofagent/config.yml` 加入 dotfiles 仓库（如 stow/chezmoi），通过 symlink 统一管理。
+
+### 当前局限
+
+- 没有 org-level 配置推送机制（`sofagent push-config` 等），每个 repo 需独立 `--init`
+- 企业版支持（集中管控面板、合规报告、SAML SSO）规划在 v2.x
+- 50 仓库以上建议方案二（集中配置）+ 方案三（submodule 共享）组合使用

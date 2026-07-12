@@ -14,7 +14,7 @@
 | 不知道怎么用 | → [Discussions 去问](https://github.com/KongFangXun/sofagent/discussions) |
 | 不知道怎么测 | → 看 [testing.md](./docs/guides/testing.md) 的 5 个标准化用例 |
 | 想直接改代码 | → 看下面「贡献者 10 分钟速览」 |
-| 想理解概念 | → 看 [ARCHITECTURE.md](./ARCHITECTURE.md) |
+| 想理解概念 | → 看 [ARCHITECTURE.md](./docs/ARCHITECTURE.md) |
 | 想跑实验 | → 看 docs/evidence/benchmark/ 的实验记录模板 |
 
 ### 贡献者 10 分钟速览
@@ -25,7 +25,7 @@
 |:--:|------|------|:--:|
 | 1 | [SKILL.md](./sofagent/skill/SKILL.md) | 4 底线 + 7 则铁律 | 3 min |
 | 2 | [CHANGELOG.md](./CHANGELOG.md) | 最新版本的变更 | 5 min |
-| 3 | [LIMITATIONS.md](./LIMITATIONS.md) | 已知局限 | 2 min |
+| 3 | [LIMITATIONS.md](./docs/LIMITATIONS.md) | 已知局限 | 2 min |
 
 **先改 2 个脚本（最低门槛）**：
 
@@ -84,7 +84,7 @@ bash sofagent/scripts/install.sh && bash sofagent/scripts/verify.sh
 
 **改 Skill 文件**：先改 `sofagent/skill/`（唯一权威），再 `bash sofagent/scripts/install.sh` 同步。
 
-**文档修改**：改 HANDBOOK 必须同步更新 `sofagent/skill/` 下模板。详见 [DEVELOPER §七](./DEVELOPMENT.md#七数据文件架构)。
+**文档修改**：改 HANDBOOK 必须同步更新 `sofagent/skill/` 下模板。详见 [DEVELOPER §七](./docs/DEVELOPMENT.md#七数据文件架构)。
 
 ## 项目维护模型
 

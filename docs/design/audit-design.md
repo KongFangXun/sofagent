@@ -26,7 +26,7 @@ TypeScript，最小运行时依赖：仅 js-yaml（YAML 配置解析），其余
 
 检查规则独立只读——审计扫的是 git diff（已发生的历史记录），Agent 不可篡改。监控四种篡改：改断言匹配错误、删失败测试、加 lint-ignore、降覆盖率阈值。
 
-> ⚠️ 日志检查（A7/A8）依赖 Agent 自我报告的 task/logs，Agent 可伪造。审计上限 = 日志真实性。详见 [LIMITATIONS.md](../../LIMITATIONS.md)。
+> ⚠️ 日志检查（A7/A8）依赖 Agent 自我报告的 task/logs，Agent 可伪造。审计上限 = 日志真实性。详见 [LIMITATIONS.md](../LIMITATIONS.md)。
 
 ## 已实现 / 未实现
 

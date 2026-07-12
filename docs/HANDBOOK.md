@@ -39,9 +39,9 @@
 | 这是什么 | 给 Agent 加行为约束——4 底线 + 7 则铁律 | 场景二 |
 | 怎么装 | `bash sofagent/scripts/install.sh` | 场景一 |
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | 场景二 |
-| AI 知识库 | `.sofagent/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [v1.0.1 日志](./docs/changelog/v1.0.1.md) · [设计原理](./ARCHITECTURE.md#数据层ai-知识库v101-实现) |
-| AI 成熟度 | 三级台阶（替换→增强→重构），FDE 帮企业从第二级跨到第三级——不只装 AI，还装上责任机制 | [FDE/FDE.md](./FDE/FDE.md#附录企业-ai-成熟度三级台阶) |
-| 已知局限 | 核心效果见 [evidence.md](./docs/evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](./LIMITATIONS.md) |
+| AI 知识库 | `.sofagent/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [v1.0.1 日志](./changelog/v1.0.1.md) · [设计原理](./ARCHITECTURE.md#数据层ai-知识库v101-实现) |
+| AI 成熟度 | 三级台阶（替换→增强→重构），FDE 帮企业从第二级跨到第三级——不只装 AI，还装上责任机制 | [FDE/FDE.md](../FDE/FDE.md#附录企业-ai-成熟度三级台阶) |
+| 已知局限 | 核心效果见 [evidence.md](./evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](./LIMITATIONS.md) |
 
 ---
 
@@ -54,7 +54,7 @@ git clone https://github.com/KongFangXun/sofagent.git
 cd sofagent && bash sofagent/scripts/install.sh
 ```
 
-> 只想加 Agent 行为约束？不需要装整个 sofagent——把 4 底线 + 7 铁律复制进你的 Agent 设置就行，详见 [README](./README.md)。
+> 只想加 Agent 行为约束？不需要装整个 sofagent——把 4 底线 + 7 铁律复制进你的 Agent 设置就行，详见 [README](../README.md)。
 
 **前置依赖**：
 
@@ -169,7 +169,7 @@ jobs:
 
 ### 双引擎怎么跑
 
-> 审计引擎（git diff → A1-A15）和编排引擎（Workflow 梳理 + A/B 重测）通过 think.md 交汇。完整架构图和流程详见 [README § 怎么工作](./README.md#怎么工作) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
+> 审计引擎（git diff → A1-A15）和编排引擎（Workflow 梳理 + A/B 重测）通过 think.md 交汇。完整架构图和流程详见 [README § 怎么工作](../README.md#怎么工作) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 | 引擎 | 做什么 | 依赖 Agent | 触发方式 |
 |------|------|:--:|------|
@@ -312,7 +312,7 @@ Agent 先判断任务复杂度：
 | **四层加载链** | SKILL.md（宪法层）→ think.md（反思层）→ fde.md（执行层）→ knowledge/index.md（知识层）注入顺序 |
 | **FDE** | Forward Deployed Engineer，四阶段十二步：梳理工作流→构建本体模型→识别节点与量化→部署→离场 |
 
-核心 = **4 底线 + 7 铁律 + 四层加载链**（所有平台生效）。增强 = 编排引擎 + 断路器 + Hook 注入（仅 OpenClaw）。完整概念分层见 [README](./README.md)。
+核心 = **4 底线 + 7 铁律 + 四层加载链**（所有平台生效）。增强 = 编排引擎 + 断路器 + Hook 注入（仅 OpenClaw）。完整概念分层见 [README](../README.md)。
 
 ---
 
@@ -322,7 +322,7 @@ Agent 先判断任务复杂度：
 >
 > **FDE 工具包本身就是 sofagent 产品的一部分。** sofagent 的核心是底座，FDE 是底座落地进企业的场景。FDE 用这个工具包帮企业梳理工作流、构建本体模型、识别节点与量化、装上底座——**FDE 工作用自己产品，给别人部署完让别人也用自己产品。**
 
-> FDE = Forward Deployed Engineer（前向部署工程师）。完整四阶段十二步流程见 [FDE/FDE.md](./FDE/FDE.md)。建议装 [sofagent-fde Skill](./FDE/SKILL.md)——Agent 自动加载 FDE 工作台。
+> FDE = Forward Deployed Engineer（前向部署工程师）。完整四阶段十二步流程见 [FDE/FDE.md](../FDE/FDE.md)。建议装 [sofagent-fde Skill](./FDE/SKILL.md)——Agent 自动加载 FDE 工作台。
 
 ### 部署的核心是装上 sofagent
 
@@ -340,9 +340,10 @@ Agent 先判断任务复杂度：
 |------|------|
 | **交付手册** | 企业画像 + 部署方案 + `fde.md` + `quick-start.md`（后两章安装包自带） |
 | **AI 节点（三层实体）** | 每个节点：文档层（.md，人读+编排引擎读）+ Skill 层（企业专属 Skill）+ 运行层（在跑的 session） |
-| **AI 知识库** | `.sofagent/knowledge/` 目录——结构化知识系统（entities/ + concepts/ + comparisons/）。daemon 自动 Ingest，加载链被动注入。think.md / task/logs / scoring.md 由 AI 节点自动生成。见 [设计原理](./ARCHITECTURE.md#数据层ai-知识库v101-实现) |
+| **AI 知识库** | `.sofagent/knowledge/` 目录——结构化知识系统（entities/ → relations → concepts/ → comparisons/，轻量级 GraphRAG）。daemon 自动 Ingest，加载链被动注入。think.md / task/logs / scoring.md 由 AI 节点自动生成。见 [设计原理](./ARCHITECTURE.md#数据层ai-知识库v101-实现) |
+| **私有化评估体系** | scoring.md + Skill 迭代历史 + 知识库演变轨迹。工具可复制，差异化反馈无法复制——企业的长期竞争壁垒。见 [FDE/FDE.md](../FDE/FDE.md) |
 
-> 企业专属 Skill 会基于 scoring.md 评分自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本。详见 [ROADMAP](./ROADMAP.md) 企业 Skill 自进化。
+> 企业专属 Skill 会基于 scoring.md 评分自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本。详见 [ROADMAP](../ROADMAP.md) 企业 Skill 自进化。
 
 > sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。
 
@@ -365,7 +366,7 @@ sofagent 不是孤立的——它构建于以下成熟项目之上，各司其�
 
 ## 致谢
 
-sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完整致谢](./docs/THANKS.md)
+sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完整致谢](./THANKS.md)
 
 ## 彩蛋
 
