@@ -19,7 +19,7 @@
 
 ## 你的身份
 
-你是一名**回归测试工程师**。你的任务不是发现新问题，而是**确认已知的修复没有回退**。你有一份 196 项的检查清单，每一项对应历史上发现并修复过的问题。逐项核对，全部 PASS 就是通过。
+你是一名**回归测试工程师**。你的任务不是发现新问题，而是**确认已知的修复没有回退**。你有一份 204 项的检查清单，每一项对应历史上发现并修复过的问题。逐项核对，全部 PASS 就是通过。
 
 **与陌生视角审查的区别**：陌生视角审查是"假装不知道项目是什么，凭直觉找新问题"；回归检查是"知道之前修了什么，确认没退回去"。两者互补，发版前都要跑。
 
@@ -42,7 +42,7 @@
 
 > 本清单是**累积式**的——每个维度对应一个历史修复。审查前不需要了解每件事的背景，只需要逐项核对当前代码状态。
 >
-> 维度来源：v0.99.9 初始 88 维度 → v1.0 新增 18 → v1.0.1 追加 32 → v1.0.2 追加 26 → v1.0.3 追加 12 → v1.0.4 追加 8 = 196 总计。
+> 维度来源：v0.99.9 初始 88 维度 → v1.0 新增 18 → v1.0.1 追加 32 → v1.0.2 追加 26 → v1.0.3 追加 12 → v1.0.4 追加 8 → v1.0.4 审查追加 8 = 204 总计。
 
 ---
 
@@ -94,9 +94,9 @@ bash tools/pre-push-check.sh 2>&1 | tail -5
 
 ---
 
-## 审查维度（196 个维度）
+## 审查维度（204 个维度）
 
-> v0.99.9 初始 88 维度（1-88）→ v1.0 新增 18 维度（89-106）→ v1.0.1 追加 32 维度（107-143）→ v1.0.2 追加 26 维度（144-176）→ v1.0.3 追加 12 维度（177-188）→ v1.0.4 追加 8 维度（189-196）= 196 总计
+> v0.99.9 初始 88 维度（1-88）→ v1.0 新增 18 维度（89-106）→ v1.0.1 追加 32 维度（107-143）→ v1.0.2 追加 26 维度（144-176）→ v1.0.3 追加 12 维度（177-188）→ v1.0.4 追加 8 维度（189-196）→ v1.0.4 审查追加 8 维度（197-204）= 204 总计
 
 ---
 
@@ -1832,7 +1832,7 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 |---|------|---------|------|------|
 
 ## 维度通过统计
-- 总维度数：188
+- 总维度数：204
 - 通过：X
 - ⚠️ 有条件通过：X
 - ❌ 未通过：X
@@ -1871,6 +1871,7 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 | 扩展规则 key 一致性 + 测试覆盖 + 访问矩阵 + npm 引导（v1.0.1 复审新增） | | |
 | Skill 增量淘汰平衡 + pre-push-check 闸门（v1.0.1 审查流程优化） | | |
 | 可发布性 | | |
+| CI/自动化一致性——文档数字 vs 代码实际（v1.0.4 审查新增） | | |
 
 ## 最终建议
 - [ ] 可以发版
@@ -1886,13 +1887,13 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 
 | 建议编号 | 维度描述 | 为什么加（关联的 P0/P1/P2） |
 |---------|---------|--------------------------|
-| 138+ | （留给下轮审查） | |
+| 205+ | （留给下轮审查） | |
 
 ---
 
 ### 已追加的维度（本轮审查闭环输出）
 
-以下维度已写入清单第十九部分（134-137）或第二十部分（138），本次审查发现的问题不应在下轮回归。
+以下维度已写入清单（含本轮新增 197-204），本次审查发现的问题不应在下轮回归。
 
 | 编号 | 维度描述 | 来源 |
 |:--:|------|------|
@@ -1959,9 +1960,195 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 | **194** | **dist 与 src 同步——新增 CLI 命令在 dist 中存在** | **v1.0.4 遗漏补完** |
 | **195** | **CHANGELOG/ROADMAP 测试数字与实际 npm test 输出一致** | **v1.0.4 教训：写 455 实际 465** |
 | **196** | **跨模块路径引用一致性——shell 脚本 `${SOFAGENT_DATA}` 与 TS `dataDir` 拼接的路径一致** | **v1.0.4 P0：路径拼接方式不同导致不一致** |
+| **197** | **CHANGELOG 纯度——无审查元信息（模型名/轮次/P0×P1×P2 标签）** | **v1.0.4 陌生视角审查 + 茶园调整视角** |
+| **198** | **根目录文件数 ≤7——多余 .md/.html/.png 移入 docs/ 或 assets/** | **v1.0.4 陌生视角审查 + 茶园调整视角** |
+| **199** | **README 测试数 vs 实际 npm test 一致** | **v1.0.4 陌生视角审查 + 茶园调整视角** |
+| **200** | **index.ts evidenceMode 与 README 规则分类一致——声称数 = 注册数** | **v1.0.4 陌生视角审查 P1 + 茶园调整视角** |
+| **201** | **--no-verify 绕过在 SECURITY.md 有说明** | **v1.0.4 陌生视角审查 + 茶园调整视角** |
+| **202** | **"自进化引擎"命名与代码能力匹配——wrapper 不叫引擎** | **v1.0.4 陌生视角审查 P1 + 茶园调整视角** |
+| **203** | **git diff --find-renames 边缘 case——重命名+修改同时发生的解析** | **v1.0.4 陌生视角审查红队发现** |
+| **204** | **非 git 目录运行时报错友好——不是 git 原始 fatal** | **v1.0.4 陌生视角审查红队发现** |
+
+---
+
+### 第二十三部分：v1.0.4 陌生视角审查追加（维度 197-204）🆕
+
+> 来源：v1.0.4 发布后陌生视角审查（8 视角 × 6 方面）+ 茶园调整视角建议。8 个维度覆盖 CHANGELOG 纯度、根目录整洁度、数字一致性、evidenceMode 对照、--no-verify 文档、命名准确性、git diff 边缘 case、非 git 目录健壮性。
+
+#### 197. CHANGELOG 纯度——无审查元信息 🆕
+```bash
+# v1.0.4 审查发现：CHANGELOG 和 changelog 子文件中仍可能有审查元信息
+# CHANGELOG 应该只写产品变更，不含审查过程（模型名、轮次、P0/P1/P2 标签等）
+
+# 1. 主 CHANGELOG
+grep -i "GLM\|DeepSeek\|双视角\|P0×\|P1×\|P2×\|7 视角\|8 视角\|× 6 方面" CHANGELOG.md
+# 期望：无匹配
+
+# 2. changelog 子文件
+grep -ri "GLM\|DeepSeek\|审查轮次\|P0×\|P1×\|P2×" docs/changelog/*.md
+# 期望：无匹配
+
+# 3. P0/P1/P2 标签——changelog 中不应出现严重度标签
+grep -rE 'P[012][×:：]' docs/changelog/*.md
+# 期望：无匹配
+```
+
+#### 198. 根目录文件数 ≤7 🆕
+```bash
+# v1.0.4 审查发现：根目录有多余文件（favicon.png、index.html、sofagent.png 等）
+# 根目录应只有 5-7 个核心文件
+
+# 1. 根目录 .md 文件数
+ls *.md | wc -l
+# 期望：≤7（README/CHANGELOG/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/ROADMAP/LIMITATIONS）
+
+# 2. 根目录非核心文件
+ls *.html *.png 2>/dev/null
+# 如有 → 应移入 docs/ 或 assets/
+
+# 3. HANDBOOK.md / ARCHITECTURE.md / DEVELOPMENT.md 是否在根目录
+ls HANDBOOK.md ARCHITECTURE.md DEVELOPMENT.md 2>/dev/null
+# 这些大文档是否应移入 docs/（视项目惯例决定，但需有明确理由）
+```
+
+#### 199. README 测试数 vs 实际 npm test 一致 🆕
+```bash
+# v1.0.4 审查发现：README 中声称的测试数可能与实际不一致
+# v1.0.4 教训：changelog 写 455 但实际 465
+
+# 1. 实际测试数
+actual=$(cd sofagent/audit && npm test 2>&1 | grep 'Tests' | grep -o '[0-9]*' | head -1)
+echo "实际: $actual"
+
+# 2. README 中的数字
+grep -o '[0-9]*' README.md | head -20  # 人工找出测试数声称
+
+# 3. evidence.md 中的数字
+grep "$actual" docs/evidence/evidence.md 2>/dev/null
+# 应包含当前实际测试数
+
+# 4. CHANGELOG 最新条目中的数字
+head -20 CHANGELOG.md | grep -o '[0-9]*'  # 人工找出测试数声称
+# 应与实际一致
+```
+
+#### 200. index.ts evidenceMode 与 README 规则分类一致 🆕
+```bash
+# v1.0.4 审查发现 P1：README 声称"17 条规则（13 条纯 git-diff + 4 条需 Agent 日志）"
+# 但 index.ts 实际注册 15 条（A1-A11 + E1-E4 + A14 + A15），不是 17 条
+# 且 evidenceMode 分布与 README 的"13+4"分类不匹配
+
+# 1. index.ts 实际注册数
+grep -c 'name:' sofagent/audit/src/rules/index.ts
+# 应为实际注册的规则数
+
+# 2. evidenceMode 分布
+grep 'evidenceMode' sofagent/audit/src/rules/index.ts | sort | uniq -c
+# 数 git-diff 和 hybrid 各多少条
+
+# 3. README 中的声称
+grep '纯 git-diff\|需.*日志\|条规则\|条审计' README.md
+# 声称的数字必须与 index.ts 一致
+
+# 4. CHANGELOG 历史条目中的声称
+grep '条规则\|条审计\|纯.*diff\|需.*日志' CHANGELOG.md
+# 历史声称也不应与当前实际矛盾
+
+# 5. 交叉验证：声称数 = defaultRules + extendedRules
+default=$(grep -A1 'defaultRules' sofagent/audit/src/rules/index.ts | head -1)
+extended=$(grep -A1 'extendedRules' sofagent/audit/src/rules/index.ts | head -1)
+# 数组内 name: 字段数 = 声称数
+```
+
+#### 201. --no-verify 绕过在 SECURITY.md 有说明 🆕
+```bash
+# v1.0.4 审查发现：--no-verify 绕过是已知设计限制，但 SECURITY.md 可能未明确说明
+
+# 1. SECURITY.md 提到 --no-verify
+grep -i 'no.verify\|bypass\|绕过' SECURITY.md
+# 期望：有匹配——说明 --no-verify 可绕过 pre-commit hook
+
+# 2. 说明内容应包含：
+#   - --no-verify 可以绕过 pre-commit hook（git 的设计如此）
+#   - sofagent 的应对：--doctor 第 8 项事后检测（git log SHA vs history.jsonl）
+#   - 局限：事后检测只能发现不能阻止
+
+# 3. LIMITATIONS.md 也应有对应说明
+grep -i 'no.verify\|绕过\|bypass' LIMITATIONS.md
+# 期望：有匹配
+```
+
+#### 202. "自进化引擎"命名与代码能力匹配 🆕
+```bash
+# v1.0.4 审查发现 P1：CHANGELOG 声称"自进化引擎"但实际是调外部 CLI 的 wrapper
+# 命名应与实际能力匹配——wrapper 不能叫"引擎"
+
+# 1. CHANGELOG 中的声称
+grep -i '自进化\|self-evolv\|引擎\|engine' CHANGELOG.md docs/changelog/v1.0.4.md
+# 如果实际是 CLI wrapper，不应叫"引擎"
+
+# 2. 实际实现——是自研还是调外部 CLI
+grep -r 'skillopt\|spawn\|exec\|child_process' sofagent/audit/src/ 2>/dev/null | grep -v node_modules | grep -v '.test.'
+# 如果核心逻辑是 spawn('skillopt-sleep', ...) → 是 wrapper 不是引擎
+
+# 3. A/B promote 阈值是否硬编码
+grep -r 'promote\|threshold\|阈值\|连续胜出' sofagent/audit/src/ 2>/dev/null | grep -v node_modules | grep -v '.test.'
+# 如果阈值是硬编码常量 → 不应声称"可配置"
+
+# 4. README 中的对应声称
+grep -i '自进化\|self-evolv\|引擎' README.md
+# 命名应与实际匹配——如实际是 wrapper，应叫"自进化工具"或"SkillOpt 集成"
+```
+
+#### 203. git diff --find-renames 边缘 case 🆕
+```bash
+# v1.0.4 审查发现：diff-parser 对重命名+修改同时发生的 diff 解析可能不正确
+# git diff 默认不加 --find-renames，但 Agent 可能通过 git mv 制造重命名场景
+
+# 1. diff-parser.ts 是否处理 rename
+grep -i 'rename\|renamed\|R100\|R0[0-9]' sofagent/audit/src/diff-parser.ts
+# 期望：有处理 rename 的逻辑
+
+# 2. 实际测试：重命名 + 修改
+cd /tmp/test-rename && git init
+echo "old content" > old-name.txt && git add old-name.txt && git commit -m "add"
+git mv old-name.txt new-name.txt
+echo "new content" >> new-name.txt
+git add new-name.txt
+sofagent-audit --diff HEAD~1..HEAD 2>&1 | head -20
+# 期望：正确解析为 rename + modify，不丢失内容检查
+
+# 3. 纯重命名（无内容修改）
+cd /tmp/test-rename-only && git init
+echo "content" > a.txt && git add a.txt && git commit -m "add"
+git mv a.txt b.txt
+git add b.txt
+sofagent-audit --diff HEAD~1..HEAD 2>&1 | head -10
+# 期望：不误报内容问题
+```
+
+#### 204. 非 git 目录运行时报错友好 🆕
+```bash
+# v1.0.4 审查发现：在非 git 目录跑 sofagent-audit 时，错误信息可能不友好
+# Agent 或用户可能误在非 git 目录执行审计
+
+# 1. 非 git 目录测试
+cd /tmp && mkdir test-no-git && cd test-no-git
+sofagent-audit --diff HEAD~1..HEAD 2>&1 | head -5
+# 期望：明确提示"当前目录不是 git 仓库" + 建议运行 git init 或 cd 到正确目录
+# 不应是 git 的原始 fatal 错误
+
+# 2. --init 在非 git 目录
+sofagent-audit --init 2>&1 | head -5
+# 期望：提示需要先 git init，或自动初始化 git 仓库后再装 hook
+
+# 3. --doctor 在非 git 目录
+sofagent-audit --doctor 2>&1 | head -5
+# 期望：第 1 项（git 检测）报 ❌ + 修复建议
+```
 
 ### 建议补充到陌生视角审查的内容
-> 如果某些问题类别反复出现，或某个盲区根本未被现有 7 个视角覆盖，建议补充到[陌生视角审查](./sofagent-fresh-eyes-review.md)。
+> 如果某些问题类别反复出现，或某个盲区根本未被现有 8 个视角覆盖，建议补充到[陌生视角审查](./fresh-eyes-review.md)。
 
 | 建议类型 | 具体内容 | 原因 |
 |---------|---------|------|
@@ -1974,7 +2161,7 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 ## 审查约束
 
 - **v1.0 是正式版**——从「技术预览」到「可生产使用」的跨越，你的审查质量直接决定正式版能否发布
-- **196 维度全部检查**——不是只看增量，是全仓库全面检查
+- **204 维度全部检查**——不是只看增量，是全仓库全面检查
 - **v0.99.9 老问题不能回归**——ROADMAP 版本叙事、GLM 维度数一致性、中英文文件对称、术语统一
 - **铁律措辞强化必须用 grep 验证**——不能凭感觉说「改完了」，grep 不到才算数
 - **准入条件 A 类不能造假**——⚠️→✅ 必须有新 evidence 支持，不能因为正式版就改 ✅
