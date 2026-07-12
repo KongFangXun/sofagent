@@ -129,9 +129,10 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | 审计引擎（Harness 层） | 独立自研——外部无可替代 | 核心差异化 | v1.0 |
 | 编排引擎 | LangChain + LangGraph + DeepAgentsJS | 借鉴后替换 ao | v1.0.1-v1.0.5 |
 | Skill 系统 | Agency Agents（岗位模板，v1.0.3）+ SkillOpt（Skill 文档自进化，v1.0.3）+ eval harness + A/B 对比（Sub Agent 配置自进化，v1.0.4） | 模板引用 + 对接优化引擎 | v1.0.1-v1.0.4 |
-| AI 知识库 | OpenFDE 10 步工作流（行业定位验证）+ Google OKF（同构独立验证） | 外部验证 | v1.0-v1.1 |
+| AI 知识库 | OpenFDE 10 步工作流（行业定位验证）+ Google OKF（同构独立验证）+ CAG 第 7 代 RAG（同构验证）+ Glean 工业数据（1.7万页/召回~100%） | 外部验证 | v1.0-v1.1 |
 | 安全设计哲学 | gstack 六层安全栈（分类器 / fail-closed / 原子写 / 密钥格式持续更新） | 实践参照 | v1.0.4-v1.0.5 |
 | 企业世界模型 | Palantir Ontology（实体+关系+动作+约束） | 概念借鉴，渐进构建 | v1.0.1-v1.0.5 |
+| Harness 理论基础 | Hugging Face 实验 + ICML 2025 + Harness Engineering 三代演进（Prompt→Context→Harness）+ LangChain/Codex/gstack 工业验证 | 多重验证 | v1.0 基线 |
 | 任务路由 + Skill 组合 | Router+Skill 架构（行业评估为性价比最高方案） | task-aware 路由与 sofagent 方向一致 | v1.x 基线 |
 
 

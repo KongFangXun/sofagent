@@ -52,6 +52,8 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 >
 > > ICML 2025 论文进一步验证：同一模型搭载精心设计的 Harness 后任务胜率显著更高——更强的模型 + 烂 Harness < 较弱模型 + 精心设计的 Harness。如果把 AI 比作一台计算机：**模型 = CPU，上下文 = 内存，Harness = 操作系统**。
 
+> **三代演进——Harness 是 AI 交互的终点**：行业共识将 AI 应用技术划分为三代：提示工程（Prompt Engineering，管「说什么」）→ 上下文工程（Context Engineering，管「知道什么」）→ 驾驭工程（Harness Engineering，管「跑在哪」）。2026 年工业界验证——LangChain DeepAgents 不改模型权重，benchmark 从 30 名外跃升至前 5；OpenAI Codex 团队 3-7 人 5 个月产出 100 万行生产级代码；gstack 28 个 Skill + 7 个 Agent 角色 60 天产出 60 万行代码。Harness 不是理论推演，是工业界正在大规模落地的事实。
+
 > **对齐税**：当所有团队都用同几个模型（GPT/Claude/DeepSeek）时，模型本身不再是差异化优势——真正的差异在外层 Harness（约束+审计+记忆）。模型同质化时代，Harness 层就是新的护城河。sofagent 是这个方向的早期实践。（来源：163 篇行业笔记蒸馏）
 
 sofagent 的五层架构可以映射到 Akshay Pachaar（前 Lightning AI 工程师）提出的「生产级 Harness 12 组件」框架（以下为 sofagent 的映射解读，非 Akshay 原文）：
@@ -287,6 +289,8 @@ AI 知识库不替代 think.md——两者职责不重叠。think.md 是「上�
 > **核心原则——不可追溯即不可信任**：企业知识库最怕 AI 说了一句没人知道从哪来的话。只要不可追溯，业务就不信任。`.md` 文件 + git diff 审计确保每条知识都有来源、每次变更都有记录。
 
 > **独立验证——Google OKF 同构**：Google Cloud Platform 的 Open Knowledge Format (OKF) 采用完全相同的架构：Markdown + YAML Frontmatter + Git 版本控制 + 人机可读 + 渐进式 index.md 导航。OKF 从 Google 内部验证了「知识即文件系统」这条路——不是 sofagent 独有的想法，是大型平台也在走的方向。
+
+> **独立验证——CAG（编译式 RAG）同构**：RAG 技术第 7 代 CAG（Cache-Augmented Generation）的核心理念——按主题整合文档→去重去冲突→生成规整 Markdown→全量输入 LLM——与 sofagent knowledge/ 的「entities/concepts/comparisons 页面自动生成」完全同构。Glean（YC CEO Gary Tan 的工业级知识库）进一步验证：1.7 万页 Markdown、前 5 条召回 ~100%、比传统 RAG 提升 30%。方向正确，差距在执行细节。
 
 ### 三层时间尺度循环（Andrew Ng 框架）
 
