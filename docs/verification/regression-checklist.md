@@ -800,7 +800,7 @@ grep -i 'already exists\|已存在\|skip\|跳过' sofagent/audit/src/commands/in
 
 # 5. hook 模板一致性
 # init.ts 生成的 hook 内容应与第十件事的无声失败保护一致
-grep -A5 'pre-commit' sofagent/audit/src/commands/init.ts
+grep -A5 'commit-msg' sofagent/audit/src/commands/init.ts
 # hook 内容应包含 Node.js 检测 + sofagent-audit 检测
 ```
 
@@ -1057,7 +1057,7 @@ grep -i 'PASS\|FAIL\|通过\|拦截' docs/verification/openclaw-acceptance-test.
 
 # 4. 验证检查项覆盖
 grep -c '\[ \]' docs/verification/openclaw-acceptance-test.md 2>/dev/null
-# 应 ≥ 6（pre-commit 触发 / banner 可视化 / 修复建议 / PASS commit / FAIL 拦截 / history 写入）
+# 应 ≥ 7（commit-msg 触发 / banner 可视化 / 修复建议 / PASS commit / FAIL 拦截 / WARN 放行 / history 写入）
 
 # 5. releasing.md 步骤 2.5 引用
 grep 'openclaw-acceptance\|OpenClaw.*验收' docs/verification/releasing.md 2>/dev/null
@@ -1933,7 +1933,7 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 | **157** | **FDE 和 LOOP 的 install.sh 不互相依赖** | **v1.0.3 三层安装隔离** |
 | **158** | **history.jsonl 脱敏——A2/A9 拦截结果不存储敏感内容明文** | **v1.0.2 第四轮审查 P0** |
 | **159** | **A9 规则排除 `.sofagent/` 路径——不对自身审计日志误报** | **v1.0.2 第四轮审查 P1** |
-| **160** | **A5 在 pre-commit 阶段读取当前 commit message（COMMIT_EDITMSG 优先）** | **v1.0.2 第四轮审查 P1** |
+| **160** | **A5 通过 --task 参数获取当前 commit message（commit-msg hook 从 $1 传递）** | **v1.0.2 第四轮审查 P1 / v1.0.5 迁移** |
 | **161** | **首次提交（空仓库）时 A5 不误报 message 为空** | **v1.0.2 第四轮审查 P1** |
 | **162** | **ARCHITECTURE.md 无旧术语残留（"纪律层"→"约束底座"）** | **v1.0.2 第四轮审查 P1** |
 | **163** | **CHANGELOG 不含审查元信息（维度编号、模型名、轮次等）** | **v1.0.2 第四轮审查 P1** |
@@ -2285,7 +2285,7 @@ sofagent-audit --doctor | grep "旧版 pre-commit"
 - **pre-push-check 审「审查的最后一步」**——7/7 全绿才算 IS_PASS: YES
 - **history.jsonl 脱敏审「A2/A9 不存明文」**——拦截密钥/injection 后 history 不含敏感原文
 - **A9 自身排除审「.sofagent/ 跳过」**——A9 不对自身审计日志误报
-- **A5 时机审「COMMIT_EDITMSG 优先」**——pre-commit 阶段读当前 message 不是上一次
+- **A5 时机审「--task 传 commit subject」**——commit-msg hook 通过 --task 传递当前 commit message
 - **术语统一审「无纪律层」**——ARCHITECTURE 全文无旧术语残留
 - **CHANGELOG 纯度审「无审查元信息」**——changelog 只写产品变更
 - **日期同步审「全部一致」**——所有文档头日期统一

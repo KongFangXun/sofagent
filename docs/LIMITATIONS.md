@@ -49,12 +49,14 @@ v1.0.1 新增 daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动
 
 | 阶段 | 机制 | sofagent 现状 |
 |------|------|------|
-| **经验记录** | 记录单次成功/失败，调整评分 | ✅ 当前阶段 |
+| **经验记录** | 记录单次成功/失败，调整评分 | ✅ v1.0.1 起 |
 | **多轨迹归纳**（TRACE2SKILL） | 并行分析大量轨迹 → 提出补丁 → 合并去重 | ❌ 缺：前 5 次冷启动保护仅缓冲，未真正归因 |
-| **自验证闭环**（Evil Skill） | 多子 Agent 生成候选 Skill → A/B 对比 → 留更优 | ❌ 缺：loop-check 是单次自评 |
-| **可训练参数**（Skill Opt） | 学习率约束/验证门控/负反馈缓冲/动量 | ❌ 缺：scoring 只是简单计数 |
+| **自验证闭环**（Evil Skill） | 多子 Agent 生成候选 Skill → A/B 对比 → 留更优 | ⏳ v1.0.6 起（方案 B：模型 API 直跑）。v1.0.7 升级为方案 C（DeepAgents 完整 Agent） |
+| **可训练参数**（Skill Opt） | 学习率约束/验证门控/负反馈缓冲/动量 | ✅ v1.0.4 起（SkillOpt 管道接通） |
 
 **SkillOpt 集成状态（v1.0.4）**：管道已接通——daemon 检测 scoring.md 阈值（20 条）→ 24h 防抖 → 调用 `sofagent-audit skillopt-run` CLI → `runSkillOpt()` 调 skillopt-sleep → `validateCandidate()` 验证（行数 + 内容变化）→ 备份+替换 SKILL.md。`--doctor` 展示管道状态。前置条件：需手动 clone github.com/microsoft/SkillOpt + `pip install -e .`（`pip install skillopt` 不含 skillopt-sleep CLI）。skillopt-sleep 未安装时管道优雅降级——daemon 写提示到 daemon-notice.md，不 crash。
+
+**A/B 运行器状态（v1.0.5 → v1.0.6 → v1.0.7）**：v1.0.5 `simulateAgentRun()` 是 mock（直接返回 expected，A/B 永远打平）。v1.0.6 替换为模型 API 直跑（方案 B）——自迭代闭环打通。v1.0.7 升级为 DeepAgents 完整 Agent（方案 C），支持工具调用验证。
 
 **风险**：单次失败 → 降分 → 下次不用该 Skill。但失败可能只是模型波动——长期会把噪声写成规则。**现有防御**：冷启动保护（前 5 次只记录不判断）+ LLM 自评权重 ×0.3。根治需要独立验证环（见 ROADMAP v1.x）。
 
