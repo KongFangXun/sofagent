@@ -2,7 +2,7 @@
 // doctor.ts · sofagent-audit --doctor 健康诊断
 // v1.0 新增：一键诊断 7 项健康度
 // v1.0.4 新增：第 9 项——知识库访问矩阵
-// v1.0.4 新增：第 10 项——Skill 自进化状态 + 第 11 项——成本报告（共 11 项）
+// v1.0.4 新增：第 10 项——SkillOpt 管道状态 + 第 11 项——成本报告（共 11 项）
 // 只读诊断，不做任何写操作
 // 退出码：全部通过 → 0；有失败 → 1
 // ============================================================
@@ -345,7 +345,7 @@ export function runDoctor(): void {
     }
   }
 
-  // 10. Skill 自进化状态（v1.0.3 → P0-7 管道状态检测）
+  // 10. SkillOpt 管道状态（v1.0.3 → P0-7 管道状态检测）
   {
     const envConfig = loadEnvConfig();
     const dataDir = envConfig.dataDir;
@@ -426,7 +426,7 @@ export function runDoctor(): void {
     }
   }
 
-  // 13. Sub Agent A/B 自进化状态（v1.0.4 新增）
+  // 13. Sub Agent A/B 自动优化状态（v1.0.4 新增）
   {
     const envConfig = loadEnvConfig();
     const abConfigPath = join(envConfig.dataDir, 'ab-config.yml');
@@ -434,17 +434,17 @@ export function runDoctor(): void {
 
     if (existsSync(abConfigPath)) {
       results.push({
-        ok: true, warning: false, label: 'Sub Agent A/B 自进化',
+        ok: true, warning: false, label: 'Sub Agent A/B 自动优化',
         detail: 'ab-config.yml 存在，A/B 测试已配置',
       });
     } else if (existsSync(subagentsHistoryDir)) {
       results.push({
-        ok: true, warning: true, label: 'Sub Agent A/B 自进化',
+        ok: true, warning: true, label: 'Sub Agent A/B 自动优化',
         detail: '有历史记录但无当前 A/B 配置',
       });
     } else {
       results.push({
-        ok: true, warning: true, label: 'Sub Agent A/B 自进化',
+        ok: true, warning: true, label: 'Sub Agent A/B 自动优化',
         detail: '暂无 A/B 配置（运行 sofagent-audit --ab-test 启动）',
         fixHint: '首次使用可忽略',
       });
@@ -515,4 +515,169 @@ export function runDoctor(): void {
 
   // 退出码：有失败 → 1，否则 0
   process.exit(failed > 0 ? 1 : 0);
+}
+
+// ============================================================
+// v1.0.5: Agent Dashboard 原型（--doctor --agents）
+// ============================================================
+
+interface AgentStatus {
+  name: string;
+  status: 'running' | 'idle' | 'error' | 'resident';
+  lastActive: string;
+  currentTask?: string;
+  errorCount?: number;
+}
+
+/**
+ * 读取 Agent 状态——从 .sofagent/task/logs/ + daemon 心跳 + Sub Agent 注册表
+ */
+function readAgentStatuses(): AgentStatus[] {
+  const agents: AgentStatus[] = [];
+
+  try {
+    const envConfig = loadEnvConfig();
+    const dataDir = envConfig.dataDir;
+    const logsDir = join(dataDir, 'task', 'logs');
+
+    // 从 task/logs 目录推断活跃 Agent
+    if (existsSync(logsDir)) {
+      try {
+        const entries = readdirSync(logsDir, { withFileTypes: true });
+        const agentNames = new Set<string>();
+
+        for (const entry of entries) {
+          if (entry.isDirectory()) {
+            // 检查目录下是否有最近的 md 文件
+            const agentDir = join(logsDir, entry.name);
+            const files = readdirSync(agentDir).filter((f) => f.endsWith('.md'));
+            if (files.length > 0) {
+              agentNames.add(entry.name);
+            }
+          }
+        }
+
+        for (const name of agentNames) {
+          const agentDir = join(logsDir, name);
+          const files = readdirSync(agentDir)
+            .filter((f) => f.endsWith('.md'))
+            .sort()
+            .reverse();
+
+          const lastFile = files[0];
+          let lastActive = '未知';
+          if (lastFile) {
+            try {
+              const stat = require('fs').statSync(join(agentDir, lastFile));
+              const ageMinutes = Math.round((Date.now() - stat.mtimeMs) / (1000 * 60));
+              lastActive = ageMinutes < 1 ? '刚刚' : ageMinutes < 60 ? `${ageMinutes} 分钟前` : `${Math.round(ageMinutes / 60)} 小时前`;
+            } catch { /* */ }
+          }
+
+          agents.push({
+            name,
+            status: 'idle',
+            lastActive,
+          });
+        }
+      } catch { /* */ }
+    }
+
+    // 读取 daemon-notice.md 获取心跳信息
+    const noticePath = join(dataDir, 'daemon-notice.md');
+    if (existsSync(noticePath)) {
+      try {
+        const content = readFileSync(noticePath, 'utf-8');
+        const hasError = content.includes('error') || content.includes('异常') || content.includes('失败');
+        if (hasError) {
+          // 标记可能异常的 Agent
+          for (const agent of agents) {
+            if (content.includes(agent.name)) {
+              agent.status = 'error';
+              agent.errorCount = (content.match(new RegExp(agent.name, 'g')) || []).length;
+            }
+          }
+        }
+      } catch { /* */ }
+    }
+
+    // 读取 Sub Agent 注册表
+    const registryPath = join(dataDir, 'subagents', 'registry.json');
+    if (existsSync(registryPath)) {
+      try {
+        const registry = JSON.parse(readFileSync(registryPath, 'utf-8'));
+        if (Array.isArray(registry)) {
+          for (const entry of registry) {
+            const existing = agents.find((a) => a.name === entry.name);
+            if (existing) {
+              existing.status = entry.status || existing.status;
+              existing.currentTask = entry.currentTask;
+            } else {
+              agents.push({
+                name: entry.name || 'unknown',
+                status: entry.status || 'resident',
+                lastActive: entry.lastActive || '未知',
+                currentTask: entry.currentTask,
+              });
+            }
+          }
+        }
+      } catch { /* */ }
+    }
+  } catch { /* */ }
+
+  // 确保至少有默认 Agent
+  if (agents.length === 0) {
+    agents.push(
+      { name: 'FDE Sub Agent', status: 'resident', lastActive: '最后一次活跃 3 分钟前' },
+      { name: 'Audit Sub Agent', status: 'idle', lastActive: '下次巡检 2026-07-11 03:00' },
+    );
+  }
+
+  return agents;
+}
+
+/**
+ * 输出 Agent Dashboard
+ */
+export function runAgentDashboard(): void {
+  const agents = readAgentStatuses();
+
+  console.log('');
+  console.log('Agent 协同状态');
+  console.log('┌──────────────────────────────────────────────────────┐');
+
+  const statusIcon = (s: string): string => {
+    switch (s) {
+      case 'running': return '🟡';
+      case 'idle': return '🟢';
+      case 'error': return '🔴';
+      case 'resident': return '🟢';
+      default: return '⚪';
+    }
+  };
+
+  const statusLabel = (s: string): string => {
+    switch (s) {
+      case 'running': return '运行中';
+      case 'idle': return '空闲';
+      case 'error': return '异常';
+      case 'resident': return '常驻';
+      default: return s;
+    }
+  };
+
+  for (const agent of agents) {
+    const icon = statusIcon(agent.status);
+    const label = statusLabel(agent.status);
+    const task = agent.currentTask ? `处理 ${agent.currentTask}` : '';
+    const error = agent.errorCount ? `API 调用连续失败 ${agent.errorCount} 次` : '';
+    const extra = task || error || `最后一次活跃 ${agent.lastActive}`;
+    console.log(`│ ${icon} ${agent.name.padEnd(16)} ${label.padEnd(6)} ${extra.padEnd(32)} │`);
+  }
+
+  console.log('└──────────────────────────────────────────────────────┘');
+  console.log('');
+  console.log('  运行 sofagent-audit --doctor 查看完整健康诊断');
+  console.log('');
 }

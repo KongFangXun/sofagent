@@ -15,10 +15,11 @@
 // 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
 // ============================================================
 
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { createHash } from 'crypto';
 import { loadEnvConfig } from './config-loader';
+import { atomicAppendSync, atomicWriteSync } from './shared/atomic-write';
 import type { RuleCheck } from './rules/types';
 
 /**
@@ -114,7 +115,8 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     ruleResults: entry.ruleResults.map(sanitizeRuleResult),
   };
   const line = JSON.stringify(sanitizedEntry) + '\n';
-  appendFileSync(filePath, line, 'utf-8');
+  // v1.0.5: 使用原子追加（先读+追加+原子写），避免并发写入导致的行交错
+  atomicAppendSync(filePath, JSON.stringify(sanitizedEntry));
 }
 
 /**

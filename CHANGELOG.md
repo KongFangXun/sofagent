@@ -6,11 +6,11 @@
 
 ## 正式版
 
-### [v1.0.4] — 自进化 + 约束验证 🔧
+### [v1.0.4] — 自动优化 + 约束验证 🔧
 
 > 2026-07-11（UTC）
 
-Sub Agent 会自己变好了：eval harness 评分体系 + Sub Agent A/B 自进化 + HITL 渐进自主度 + A15 约束验证。附带多项审查修复。465 测试全绿，pre-push 全绿。
+Sub Agent 会自己变好了：eval harness 评分体系 + Sub Agent A/B 自动优化（SkillOpt 集成） + HITL 渐进自主度 + A15 约束验证。附带多项审查修复。465 测试全绿，pre-push 全绿。
 
 > 📖 [开发日志](./docs/changelog/v1.0.4.md)
 
@@ -18,7 +18,7 @@ Sub Agent 会自己变好了：eval harness 评分体系 + Sub Agent A/B 自进�
 
 > 2026-07-11（UTC）
 
-三件事重合：FDE Sub Agent 成型（DeepAgentsJS + LangGraph 编排 + Agency Agents 岗位模板 + SkillOpt CLI 集成）+ LOOP 自迭代架构落地（4 Agent 定义 + 内外层循环设计 + 4 验证文件自进化机制）+ 30 项修复。附带 releasing.md 八阶段发版 SOP + SOP 自我进化（FDE 提议→作者确认）+ check-docs 文档分层预算（5 层独立检查）。430 测试全绿，pre-push 全绿。
+三件事重合：FDE Sub Agent 成型（DeepAgentsJS + LangGraph 编排 + Agency Agents 岗位模板 + SkillOpt CLI 集成）+ LOOP 自迭代架构落地（4 Agent 定义 + 内外层循环设计 + 4 验证文件自动优化机制）+ 30 项修复。附带 releasing.md 八阶段发版 SOP + SOP 自我进化（FDE 提议→作者确认）+ check-docs 文档分层预算（5 层独立检查）。430 测试全绿，pre-push 全绿。
 
 > 📖 [开发日志](./docs/changelog/v1.0.3.md)
 
@@ -26,7 +26,7 @@ Sub Agent 会自己变好了：eval harness 评分体系 + Sub Agent A/B 自进�
 
 > 2026-07-11（UTC）
 
-v1.0.1 经独立审查发现 15 项问题全部修复。修复覆盖：文档死链（README/HANDBOOK/DEVELOPMENT 6 处锚点）、SECURITY.md 安全报告渠道（Issue→Security Advisory）、规则数量不一致（11→16）、A14 include='*' 全放开检测、config 未知规则名校验、doctor 输出友好度、CI 修复指引、hook 错误标签、knowledge 目录自动创建、ROADMAP 状态矛盾。418 测试全绿。
+v1.0.1 本版修复 15 项问题。修复覆盖：文档死链（README/HANDBOOK/DEVELOPMENT 6 处锚点）、SECURITY.md 安全报告渠道（Issue→Security Advisory）、规则数量不一致（11→16）、A14 include='*' 全放开检测、config 未知规则名校验、doctor 输出友好度、CI 修复指引、hook 错误标签、knowledge 目录自动创建、ROADMAP 状态矛盾。418 测试全绿。
 
 > 📖 [开发日志](./docs/changelog/v1.0.2.md)
 
@@ -80,17 +80,17 @@ v0.99.6 三轮独立审查共发现 13 项问题，本版修复其中 11 项。�
 
 **npm 发布状态**：@sofagent/audit ✅ 0.99.7 · @sofagent/mcp ✅ 0.99.7（npm 先行手动发布，CI 自动 skip）
 
-- P0-1：release.yml 加版本存在性检查（`npm view` 检查已发布则跳过），删除 `id-token: write` 死代码
-- P0-2：OIDC 文档谎言清零——12+ 处 OIDC/Trusted Publishing 统一改为 NPM_TOKEN
-- P0-3：releasing.md 新增「回滚与降级」章节（npm deprecate + dist-tag + git revert + ClawHub 四通道）
-- P1-1：mcp 依赖从精确 `"0.99.6"` 改为范围 `"^0.99.6"`
-- P1-2：package-lock.json 同步（npm install --package-lock-only）
-- P1-3：releasing.md 悬空引用修复（「见下方步骤 f」→「见 npm 双包验证步骤」）
-- P1-4：Tag 卫生——v0.7.0/v0.7.1 改名为 v0.70.0/v0.70.1（semver 一致）
-- P2-1：Windows 实验性诚实标注（README + LIMITATIONS，含 .sh vs .ps1 行数对比）
-- P2-2：shellcheck SC2034 全部清除（7 个脚本，CI 等价扫描 0 警告）
-- P2-3：logo 压缩 84%（334KB → 52KB，400×400px 保留 alpha）
-- P2-4：orchestrate-compare.ts 注释修正（回退→并集 OR）
+- release.yml 加版本存在性检查（`npm view` 检查已发布则跳过），删除 `id-token: write` 死代码
+- OIDC 文档谎言清零——12+ 处 OIDC/Trusted Publishing 统一改为 NPM_TOKEN
+- releasing.md 新增「回滚与降级」章节（npm deprecate + dist-tag + git revert + ClawHub 四通道）
+- mcp 依赖从精确 `"0.99.6"` 改为范围 `"^0.99.6"`
+- package-lock.json 同步（npm install --package-lock-only）
+- releasing.md 悬空引用修复（「见下方步骤 f」→「见 npm 双包验证步骤」）
+- Tag 卫生——v0.7.0/v0.7.1 改名为 v0.70.0/v0.70.1（semver 一致）
+- Windows 实验性诚实标注（README + LIMITATIONS，含 .sh vs .ps1 行数对比）
+- shellcheck SC2034 全部清除（7 个脚本，CI 等价扫描 0 警告）
+- logo 压缩 84%（334KB → 52KB，400×400px 保留 alpha）
+- orchestrate-compare.ts 注释修正（回退→并集 OR）
 
 > 📖 [开发日志](./docs/changelog/experimental/v0.99.7.md)
 
@@ -98,22 +98,22 @@ v0.99.6 三轮独立审查共发现 13 项问题，本版修复其中 11 项。�
 
 > 2026-07-04
 
-v0.99.5 发版后独立审查发现 25 项问题，本版全部修复。核心：@sofagent/mcp npm 同步发布 + README 创建 + .npmignore/files 双重保险 + 全仓文档一致性修正 + 新增 mcp 单元测试 13 tests + bump-version 工具增强。
+v0.99.5 发版后本版修复 25 项问题。核心：@sofagent/mcp npm 同步发布 + README 创建 + .npmignore/files 双重保险 + 全仓文档一致性修正 + 新增 mcp 单元测试 13 tests + bump-version 工具增强。
 
 **npm 发布状态**：@sofagent/audit ✅ 已发布 0.99.6 · @sofagent/mcp ✅ 已同步发布 0.99.6（手动发布，CI 加版本存在性检查后续版本自动跳过）
 
-- P0-1：release.yml 去掉 mcp 对 audit 的 `needs` 依赖——两个包独立发布
-- P0-2：创建 @sofagent/mcp README.md（之前 npm 页面无 README）
-- P0-3：mcp package.json files 字段排除模式 + .npmignore 对齐 audit（双重保险）
-- P0-4：evidence 目录残留「零运行时依赖」→「最小运行时依赖（仅 js-yaml）」
-- P1-1：audit README bin 表格修正（不写死数字 + 移除跨包命令 + 标注别名）
-- P1-2：changelog v0.99.5.md mcp 文件数修正为准确描述
-- P1-3：Case 018 蔓嘉电商时间线统一为「~3 周（截至 2026-07-04）」
-- P1-4：SOFAGENT_VERSION_SOP.md 拷入 docs/ 目录（之前只在 workspace 外层）
-- P1-5：release.yml mcp job 加 `npm run check`（类型检查）
-- P1-6：CHANGELOG v0.99.6 索引条目 + npm 发布状态标注
-- P1-7：bump-version.sh 分母统一为 13 步 + hero badge 注释说明
-- P2×11 + P3×3：详见开发日志（FDE case 脱敏/evidence 注释优化/shellcheck CI/mcp 单元测试 13 tests/verify.ts daemon 输出/emoji 替换 等）
+- release.yml 去掉 mcp 对 audit 的 `needs` 依赖——两个包独立发布
+- 创建 @sofagent/mcp README.md（之前 npm 页面无 README）
+- mcp package.json files 字段排除模式 + .npmignore 对齐 audit（双重保险）
+- evidence 目录残留「零运行时依赖」→「最小运行时依赖（仅 js-yaml）」
+- audit README bin 表格修正（不写死数字 + 移除跨包命令 + 标注别名）
+- changelog v0.99.5.md mcp 文件数修正为准确描述
+- Case 018 蔓嘉电商时间线统一为「~3 周（截至 2026-07-04）」
+- SOFAGENT_VERSION_SOP.md 拷入 docs/ 目录（之前只在 workspace 外层）
+- release.yml mcp job 加 `npm run check`（类型检查）
+- CHANGELOG v0.99.6 索引条目 + npm 发布状态标注
+- bump-version.sh 分母统一为 13 步 + hero badge 注释说明
+- 11 项文档/构建修复：详见开发日志（FDE case 脱敏/evidence 注释优化/shellcheck CI/mcp 单元测试 13 tests/verify.ts daemon 输出/emoji 替换 等）
 
 > 📖 [开发日志](./docs/changelog/experimental/v0.99.6.md)
 

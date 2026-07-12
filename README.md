@@ -31,11 +31,11 @@
 
 > 🔬 **为什么相信 Harness 有用**？Hugging Face 实验：同一模型不改权重，仅优化外层 Harness，得分从 3.5%→80.1%。→ [详见 ARCHITECTURE](./ARCHITECTURE.md#理论基础与外部验证)
 
-> **成熟度**：审计引擎是核心，日常稳定（核心逻辑 465 tests 全绿——diff-parser / config-loader / rules A1-A15 / reporter / log-checker；daemon / MCP / install.sh 依赖手动验证 + verify.sh 48 项环境检查，详见 LIMITATIONS。5/5 靶向违规全部检出（作者自测，非独立验证），3 名外部用户验证）。编排引擎需要 OpenClaw 环境，能跑但还在打磨。
+> **成熟度**：审计引擎是核心，日常稳定（核心逻辑 470+ tests 全绿——diff-parser / config-loader / rules A1-A15 / reporter / log-checker；daemon / MCP / install.sh 依赖手动验证 + verify.sh 48 项环境检查，详见 LIMITATIONS。5/5 靶向违规全部检出（作者自测），欢迎社区用户提交真实使用反馈）。编排引擎需要 OpenClaw 环境，能跑但还在打磨。
 
 | 组件 | 做什么 | 怎么跑 |
 |------|------|------|
-| **审计引擎** | git diff → 17 条规则（13 条纯 git-diff + 4 条需 Agent 日志，默认启用前 11 条）→ exit code | git pre-commit hook，不挑 Agent、不挑平台 |
+| **审计引擎** | git diff → 15 条规则（11 条纯 git-diff + 4 条需 Agent 日志，默认启用前 11 条）→ exit code | git pre-commit hook，不挑 Agent、不挑平台 |
 | **约束底座** | MD 规则注入 Agent 上下文 | install.sh 装完自动加载 |
 | **编排引擎**（实验性）| 拆任务 → 编排 → 执行 | ao compose（跑在 OpenClaw 上） |
 
@@ -62,7 +62,9 @@ npm install -g @sofagent/audit && sofagent-audit --init
 npx -p @sofagent/audit sofagent-audit --init
 ```
 
-> 需要 bash + git。完整安装（含编排引擎）需 OpenClaw 环境。详见 [HANDBOOK · 安装](./HANDBOOK.md#场景一装完第一件事)。从 v0.99.x 升级？重跑 `npm install -g @sofagent/audit`，配置兼容无需改动。安装脚本做了什么？[SECURITY.md](./SECURITY.md#installsh-行为说明)。平台支持：macOS / Linux 全功能，Windows 实验性。
+装完后改个文件提交试试——pre-commit hook 会先跑审计再放行。
+
+> 需要 bash + git。从 v0.99.x 升级？重跑 `npm install -g @sofagent/audit`，配置兼容无需改动。安装脚本做了什么？[SECURITY.md](./SECURITY.md#installsh-行为说明)。平台支持：macOS / Linux 全功能，Windows 实验性。完整安装（含编排引擎）详见 [HANDBOOK · 安装](./HANDBOOK.md#场景一装完第一件事)。
 
 ## 怎么工作
 

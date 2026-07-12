@@ -100,7 +100,8 @@ export function checkRuleA15(ctx: AuditContext): RuleCheck {
   // 检查哪些节点有声明的 actions
   const nodesWithActions = [...workflowNodes.values()].filter((n) => n.actions && n.actions.length > 0);
   if (nodesWithActions.length === 0) {
-    rule.details.push('workflow.yml 各节点均未声明 actions，跳过。');
+    rule.status = 'WARN';
+    rule.details.push('workflow.yml 各节点均未声明 actions。建议为每个节点声明 allowed actions，否则 A15 无法验证约束合规性。');
     return rule;
   }
 

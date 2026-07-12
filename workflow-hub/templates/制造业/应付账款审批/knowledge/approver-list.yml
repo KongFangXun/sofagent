@@ -1,0 +1,19 @@
+# 审批人列表
+
+> 替换为你公司的实际审批人
+
+approvers:
+  dept_manager:
+    name: "张三"
+    email: "zhangsan@yourcompany.com"
+    department: "财务部"
+  finance_director:
+    name: "李四"
+    email: "lisi@yourcompany.com"
+    department: "财务部"
+
+# 备用审批人（主审批人不可用时）
+backup:
+  - name: "王五"
+    email: "wangwu@yourcompany.com"
+    department: "财务部"

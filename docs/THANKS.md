@@ -82,7 +82,7 @@ sofagent 直接使用或借鉴了它们的能力。
 以下工作为 sofagent 的架构设计提供了关键理论支撑和外部验证：
 
 - **[Hugging Face — Don't Train the Model, Evolve the Harness](https://huggingface.co/spaces/joelniklaus/harness-optimization)** · Joel Niklaus (2026)
-  实验证明：不改模型权重、仅优化外层 Harness，让 DeepSeek-v4-pro 在法律 Agent 基准中从 3.5% 提升至 80.1%，追平 Claude Sonnet 4.6，成本仅 1/7。这是 sofagent 存在理由的最强外部证据。
+  实验证明：不改模型权重、仅优化外层 Harness，让 DeepSeek-v4-pro 在法律 Agent 基准中从 3.5% 提升至 80.1%，追平 Claude Sonnet 4.6，成本仅 1/7。这是 sofagent 存在理由的关键外部证据。
 
 - **[Karpathy AutoResearch](https://github.com/karpathy/autoresearch)** · Andrej Karpathy (2026) · 9 万 GitHub Star
   630 行 Python 脚本让 AI Agent 在单 GPU 上跑 700 次自动实验，找出 20 项连 Karpathy 本人都忽略的代码改进。其 Loop Engineering 方法——约束文档 + 锁定评估脚本 + 自动循环——与 sofagent 的 fde.md + sofagent-audit + loop-check 高度对应。

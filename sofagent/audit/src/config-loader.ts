@@ -3,18 +3,24 @@
 // v0.95 新增：三级 fallback（v1.0.4，js-yaml 替代手写 YAML 解析器）
 // v0.97 扩展：环境变量配置（从 lib/config.sh 合并）
 // v1.0.4 重构：用 js-yaml 替代手写 YAML 解析器
+// v1.0.5 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
 // ============================================================
 //
 // 三级 fallback：
 //   1. ${cwd}/.sofagent/config.yml
 //   2. ~/.sofagent/config.yml
 //   3. DEFAULT_CONFIG
+//
+// fail-closed 原则（v1.0.5）：
+//   YAML 解析失败时，不再静默用默认配置——改为回退到最严格的安全默认值
+//   （所有安全规则全部启用、silent=false），确保"坏了也是安全的"。
 // ============================================================
 
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readFileSync, mkdirSync } from 'fs';
+import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { load as yamlLoad, YAMLException } from 'js-yaml';
+import { atomicWriteSync } from './shared/atomic-write';
 
 /**
  * 审计配置——由 .sofagent/config.yml 加载
@@ -60,31 +66,47 @@ export class ConfigLoadError extends Error {
 
 /**
  * 加载审计配置（三级 fallback）
- * YAML 语法错误时抛出 ConfigLoadError（不静默回退）
+ * YAML 语法错误时：
+ *   - strict 模式：抛出 ConfigLoadError（由 CLI 入口 exit 2）
+ *   - 非 strict 模式：输出 WARN + 回退到安全默认值（所有规则启用）
  * @param cwd 工作目录（默认 process.cwd()）
+ * @param strict 是否严格模式（YAML 语法错误时抛出异常 vs 回退安全默认值）
  * @returns 合并后的 AuditConfig
- * @throws ConfigLoadError 当配置文件存在但 YAML 语法错误时
+ * @throws ConfigLoadError 当 strict=true 且配置文件存在但 YAML 语法错误时
  */
-export function loadConfig(cwd?: string): AuditConfig {
+export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
   const baseDir = cwd || process.cwd();
 
-  // 1. 尝试 ${cwd}/.sofagent/config.yml
-  const projectConfigPath = join(baseDir, '.sofagent', 'config.yml');
-  const projectConfig = tryLoadYaml(projectConfigPath);
-  if (projectConfig) {
-    return mergeWithDefaults(projectConfig);
-  }
+  try {
+    // 1. 尝试 ${cwd}/.sofagent/config.yml
+    const projectConfigPath = join(baseDir, '.sofagent', 'config.yml');
+    const projectConfig = tryLoadYaml(projectConfigPath);
+    if (projectConfig) {
+      return mergeWithDefaults(projectConfig);
+    }
 
-  // 2. 尝试 ~/.sofagent/config.yml
-  const homeConfigPath = join(homedir(), '.sofagent', 'config.yml');
-  const homeConfig = tryLoadYaml(homeConfigPath);
-  if (homeConfig) {
-    return mergeWithDefaults(homeConfig);
-  }
+    // 2. 尝试 ~/.sofagent/config.yml
+    const homeConfigPath = join(homedir(), '.sofagent', 'config.yml');
+    const homeConfig = tryLoadYaml(homeConfigPath);
+    if (homeConfig) {
+      return mergeWithDefaults(homeConfig);
+    }
 
-  // 3. 使用默认配置
-  console.warn('⚠️ 未找到 .sofagent/config.yml，使用默认配置。运行 sofagent-audit --init 生成配置。');
-  return { ...DEFAULT_CONFIG };
+    // 3. 使用默认配置
+    console.warn('⚠️ 未找到 .sofagent/config.yml，使用默认配置。运行 sofagent-audit --init 生成配置。');
+    return { ...DEFAULT_CONFIG };
+  } catch (err) {
+    if (err instanceof ConfigLoadError) {
+      if (strict) {
+        throw err; // strict 模式：向上抛，由 CLI 入口 exit 2
+      }
+      // 非 strict 模式：WARN + 回退到安全默认值
+      console.warn(`⚠️ ${err.message}`);
+      console.warn('⚠️ 配置解析失败，回退到安全默认值（所有安全规则已启用）。建议修复配置文件后重试。');
+      return safeDefaults();
+    }
+    throw err;
+  }
 }
 
 // ============================================================
@@ -177,6 +199,44 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
   }
 
   return merged;
+}
+
+// ============================================================
+// v1.0.5: fail-closed 默认安全
+// ============================================================
+
+/**
+ * 安全默认值——在无法信任用户配置时（YAML 解析失败等），
+ * 返回最严格的默认值：所有安全规则启用、不允许静默。
+ * 遵循 gstack 的 classifier_score > 0 门控哲学——
+ * 默认不信任，参数格式错误时回退到安全默认值而非默认配置。
+ */
+export function safeDefaults(): AuditConfig {
+  return {
+    lowRiskPatterns: [],
+    testPatterns: ['npm test', 'npm run test', 'pytest', 'go test'],
+    carefulModifyThreshold: 0.1,       // 更严格的越界阈值
+    extendedRulesEnabled: false,        // 不信任配置，扩展规则全部关闭
+    rules: {
+      a1: true, a2: true, a3: true, a4: true, a5: true,
+      a6: true, a7: true, a8: true, a9: true, a10: true, a11: true,
+    },
+    loopCheckMaxRounds: 20,
+  };
+}
+
+/**
+ * 写入配置文件（原子写入）
+ * v1.0.5 新增：使用原子写入防止并发写导致的配置损坏
+ * @param filePath 配置文件路径
+ * @param config 要写入的配置内容（YAML 字符串）
+ */
+export function writeConfig(filePath: string, config: string): void {
+  const dir = dirname(filePath);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+  atomicWriteSync(filePath, config);
 }
 
 // ============================================================
