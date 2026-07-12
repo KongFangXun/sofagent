@@ -25,6 +25,8 @@
 
 ### 开发环境
 
+> 开发前先确认标准安装通过——[HANDBOOK §装完第一件事](./HANDBOOK.md#场景一装完第一件事)。
+
 | 依赖 | 用途 | 版本 |
 |------|------|:--:|
 | Node.js + TypeScript | 审计引擎、CLI、MCP Server | v1.0 |
@@ -132,6 +134,8 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇。
 
 ## 二、编排哲学
 
+> 编排引擎怎么保证任务跑对方向。日常使用参考 [HANDBOOK §双引擎](./HANDBOOK.md#双引擎怎么跑)。
+
 编排流程
 
 任务到达 → 两轮澄清 → 目标定稿 → [ao compose](https://github.com/jnMetaCode/agency-orchestrator) 拆任务 → 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 `orchestrate-compare.ts` 执行前注入。
@@ -222,6 +226,8 @@ ao compose 拆完任务
 
 ### A/B 测试
 
+> A/B 结果异常时的用户侧处理方法见 [HANDBOOK §排查](./HANDBOOK.md#场景三排查问题)。
+
 `sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排引擎定期重出 candidate 方案后与 current 对比——单次对比后标记胜出方，连续两次胜出目前需手动二次运行确认（v1.0.1 计划实现自动计数器）。旧方案归档到 history/。⚠️ 连续胜出判断为 TODO(v1.0.1)——当前只做单次对比，需手动执行两次后人工决策。
 
 规则：不主动创造对照组、同类型才比、单次胜出标记候选（连续 2 次需手动二次确认）、再跑 2 次稳定才沉淀、模板可被替换。局限：样本量小（最少 7 次）、LLM 有随机性。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#a-b-test)。
@@ -274,6 +280,8 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 ---
 
 ## 六、反思工程
+
+> think.md 的写入规则和压缩机制。排查使用问题见 [HANDBOOK §排查](./HANDBOOK.md#场景三排查问题)。
 
 ### 每次任务结束，自问一句
 
@@ -348,6 +356,8 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 ---
 
 ## 八、提交时审计
+
+> 审计引擎的 CLI 使用和 exit code 约定。CI 集成例子见 [HANDBOOK §装完第一件事](./HANDBOOK.md#场景一装完第一件事)。
 
 sofagent-audit（v0.99.7）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对审计规则（A1-A15）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 运行时配合，但审计 A7/A8 的日志检查依赖 Agent 写入的任务日志。
 
