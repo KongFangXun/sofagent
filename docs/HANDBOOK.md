@@ -169,7 +169,7 @@ jobs:
 
 ### 双引擎怎么跑
 
-> 审计引擎（git diff → A1-A15）和编排引擎（Workflow 梳理 + A/B 重测）通过 think.md 交汇。完整架构图和流程详见 [README § 怎么工作](../README.md#怎么工作) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
+> 审计引擎（git diff → A1-A15）和编排引擎（Workflow 梳理 + A/B 重测）通过 think.md 交汇。完整架构图和流程详见 [README § 怎么工作](../README.md#fde-怎么工作) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 | 引擎 | 做什么 | 依赖 Agent | 触发方式 |
 |------|------|:--:|------|
@@ -300,9 +300,9 @@ Agent 先判断任务复杂度：
 
 | 术语 | 一句话解释 |
 |------|------|
-| **Harness 层** | 管 Agent 行为的「缰绳」——不改模型，改模型外围的执行机制 |
-| **审计引擎** | 看 git diff 硬证据判定违规，提交时触发，不依赖 Agent 配合 |
-| **编排引擎**（实验性）| 拆任务→编排→执行，跑在 OpenClaw 上，Workflow 梳理用 |
+| **Harness 层** | 管 Agent 行为的「缰绳」——不改模型，改模型外围的执行机制。→ [设计原理](./ARCHITECTURE.md#两层架构地基-vs-引擎) |
+| **审计引擎** | 看 git diff 硬证据判定违规，提交时触发，不依赖 Agent 配合。→ [为什么外置](./ARCHITECTURE.md#为什么审计必须外置) |
+| **编排引擎**（实验性）| 拆任务→编排→执行，跑在 OpenClaw 上。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
 | **铁律** | Agent 行为约束规则（4 底线 + 7 铁律），写在 MD 文件里注入上下文 |
 | **审计规则** | 代码变更检查规则（A1-A15），审计引擎按此判定 exit code |
 | **Skill** | Agent 行为模板——一组 .md 文件，定义 Agent 在什么场景做什么 |
@@ -322,7 +322,7 @@ Agent 先判断任务复杂度：
 >
 > **FDE 工具包本身就是 sofagent 产品的一部分。** sofagent 的核心是底座，FDE 是底座落地进企业的场景。FDE 用这个工具包帮企业梳理工作流、构建本体模型、识别节点与量化、装上底座——**FDE 工作用自己产品，给别人部署完让别人也用自己产品。**
 
-> FDE = Forward Deployed Engineer（前向部署工程师）。完整四阶段十二步流程见 [FDE/FDE.md](../FDE/FDE.md)。建议装 [sofagent-fde Skill](./FDE/SKILL.md)——Agent 自动加载 FDE 工作台。
+> FDE = Forward Deployed Engineer（前向部署工程师）。完整四阶段十二步流程见 [FDE/FDE.md](../FDE/FDE.md)。建议装 [sofagent-fde Skill](../FDE/SKILL.md)——Agent 自动加载 FDE 工作台。
 
 ### 部署的核心是装上 sofagent
 

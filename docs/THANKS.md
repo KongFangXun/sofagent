@@ -97,7 +97,7 @@ sofagent 直接使用或借鉴了它们的能力。
   将 Agent Harness 类比为 LLM 的操作系统，提出 12 个核心组件。sofagent 五层架构映射其中 8 个。
 
 - **[Anthropic — A Global Workspace in Language Models](https://www.anthropic.com/research/global-workspace)**（2026-07）
-  Claude 神经网络中自发涌现的内部思考空间（J-space）。实验证明模型在输出前就已形成未表达的判断——安全测试中可识别「这是测试」并改变行为。为 sofagent「审计必须外置、不可绕过」提供底层理论论证。详见 [ARCHITECTURE](./ARCHITECTURE.md#为什么审计必须外置j-space-的启示)。
+  Claude 神经网络中自发涌现的内部思考空间（J-space）。实验证明模型在输出前就已形成未表达的判断——安全测试中可识别「这是测试」并改变行为。为 sofagent「审计必须外置、不可绕过」提供底层理论论证。详见 [ARCHITECTURE](./ARCHITECTURE.md#为什么审计必须外置)。
 
 - **[Palantir AIP — Ontology 驱动的 Agent 架构](https://www.palantir.com/platforms/aip/)** · Palantir (2026)
   Palantir 未自研大模型，却实现远超行业的 Agent 可靠性。核心是 Ontology（本体论）——将数据+逻辑+动作+安全四合一的数字孪生操作层。其 Harness 定义与 sofagent 完全一致：「Ontology 是地图，Harness 是检查站。」
@@ -106,7 +106,7 @@ sofagent 直接使用或借鉴了它们的能力。
   使用类似神经网络训练的范式（Rollout→Reflect→Aggregate→Select→Update→Evaluate）自动优化 Agent Skill 文档。在 52 个评估单元中全部达到最佳，平均提升 20+ 分。为 sofagent v1.0.3 的 Skill 自进化闭环提供核心引擎。
 
 - **[翁荔（Lilian Weng）— The Path to Recursively Self-Improving Harnesses](https://lilianweng.github.io/posts/2026-07-04-harness-rsl/)**（2026-07-04）
-  前 OpenAI 安全研究副总裁。六层 Harness 优化框架（上下文工程 → Harness 代码优化 → 领域工作流设计 → 自我改进 → 进化搜索 → 与模型权重联合优化），为 sofagent 的 Harness 层定位提供行业理论验证。详见 [ARCHITECTURE](./ARCHITECTURE.md#harness-框架行业验证翁荔六层模型)。
+  前 OpenAI 安全研究副总裁。六层 Harness 优化框架（上下文工程 → Harness 代码优化 → 领域工作流设计 → 自我改进 → 进化搜索 → 与模型权重联合优化），为 sofagent 的 Harness 层定位提供行业理论验证。详见 [ARCHITECTURE](./ARCHITECTURE.md#理论基础与外部验证)。
 
 - **[Anthropic — Managed Agents：解偶脑与手](https://www.anthropic.com/engineering/managed-agents)**（2026-04-08）
   四层编排架构（Agent 与沙盒解偶 → Coordinator 编排层 → Session 解偶层 → Session Store 记忆层）。核心论断：「Agent 领域为模型写的修补代码注定过时，模型的进化速度快于代码重构速度」。验证 sofagent 的 OpenClaw（连接+行动）+ DeepAgents（深度思考）分工。

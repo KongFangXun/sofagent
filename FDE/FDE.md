@@ -132,7 +132,7 @@ FDE 有巨大前期成本，只在三种情况成立：
 - `include`：哪些节点 Agent 有权读这个节点的知识库页面？
 - `exclude`：哪些明确不能读？（财务节点排除人事域是典型场景）
 
-> 模板见 `FDE/templates/nodes/node-template.md`（frontmatter 段）。第一个节点搞清楚「上下游是谁」「谁能看什么」可能需要半天——因为要翻 §4 的所有节点、逐一确认关联。第十个节点 30 分钟：关联图已经在前面搭好了。设计原理见 [ARCHITECTURE](../docs/ARCHITECTURE.md#行业印证palantir--不可溶解的护城河)。
+> 模板见 `FDE/templates/nodes/node-template.md`（frontmatter 段）。第一个节点搞清楚「上下游是谁」「谁能看什么」可能需要半天——因为要翻 §4 的所有节点、逐一确认关联。第十个节点 30 分钟：关联图已经在前面搭好了。设计原理见 [ARCHITECTURE](../docs/ARCHITECTURE.md#行业印证palantir-同构)。
 
 产出：富本体信息的节点文档集（frontmatter + 正文）+ `workflow.yml`（汇总所有节点的 knowledge-domain + relations）。
 

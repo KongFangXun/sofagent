@@ -245,12 +245,12 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `.sofagent/task/logs/
 
 ### FDE 端到端验证状态
 
-FDE 完整四阶段十二步部署流程（[FDE/FDE.md](./FDE/FDE.md)）已在作者自有企业（投资/科技/电商等公司）中实际部署使用。
+FDE 完整四阶段十二步部署流程（[FDE/FDE.md](../FDE/FDE.md)）已在作者自有企业（投资/科技/电商等公司）中实际部署使用。
 
 但以下两点影响外部信任：
 
 1. **缺乏第三方独立验证**：所有部署案例均为作者自有企业，没有外部用户或客户的独立验证数据。外部审查者只能看到「作者说它工作了」，看不到「别人验证过它工作了」。
-2. **缺乏公开案例**：没有可公开引用的 case study 文档——包括部署规模、使用的具体功能、遇到的问题、量化效果。已有 [case study 模板](./docs/evidence/case-study-template.md)，等待真实用户填写。
+2. **缺乏公开案例**：没有可公开引用的 case study 文档——包括部署规模、使用的具体功能、遇到的问题、量化效果。已有 [case study 模板](./evidence/case-study-template.md)，等待真实用户填写。
 
 缓解：如果你在真实环境中使用了 sofagent，欢迎提交 case study——这比任何内部测试都更有说服力。模板在 `docs/evidence/case-study-template.md`。
 

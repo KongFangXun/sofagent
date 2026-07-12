@@ -5,7 +5,7 @@
 > This is an abridged version. See [中文版](./README.md) for full documentation.
 
 <p align="center">
-  <img src="../sofagent.png" alt="sofagent" width="160" />
+  <img src="./sofagent.png" alt="sofagent" width="160" />
 </p>
 
 <p align="center">
@@ -20,8 +20,8 @@
 
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
-  <a href="../LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="../CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.0.5-16B8F3" alt="Version" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.0.5-16B8F3" alt="Version" /></a>
 </p>
 
 ---
@@ -51,7 +51,7 @@ echo "API_KEY=sk-123456" > .env && git add .env && git commit -m "test"
 # → ⛔ A1 sensitive files: .env contains key pattern, commit blocked
 ```
 
-> Requires Node.js ≥ 18 + bash + git. Full macOS/Linux support, Windows experimental. [Full install guide](./HANDBOOK.md)
+> Requires Node.js ≥ 18 + bash + git. Full macOS/Linux support, Windows experimental. [Full install guide](./docs/HANDBOOK.md)
 
 ---
 
@@ -61,24 +61,24 @@ FDE (Forward Deployed Engineer) follows four steps:
 
 ```mermaid
 graph LR
-    A["1️⃣ Map workflows<br/>Diagram the business"] --> B["2️⃣ Identify AI nodes<br/>Two types"]
+    A["1️⃣ Map workflows<br/>Diagram the business"] --> B["2️⃣ Identify AI nodes<br/>Where AI can help"]
     B --> C["3️⃣ Install toolkit<br/>sofagent on spare device"]
     C --> D["4️⃣ AI runs itself<br/>Work, report, reflect"]
-
-    B -.-> H["👤 Human-augmented<br/>AI assists, human decides"]
-    B -.-> I["🤖 AI autonomous<br/>AI runs, human audits"]
 
     C -.-> E["🧭 Harness base<br/>Rules injected upfront"]
     C -.-> F["🔍 Audit engine<br/>Scans every commit"]
     D -.-> G["⚙️ Orchestration<br/>Decompose · Parallel · A/B"]
+
+    G --> H["⚡ Augmented role<br/>AI navigates, human decides"]
+    G --> I["🔄 Auto-execute<br/>AI runs, human audits"]
 ```
 
 Step 2 is the key — not every step should be fully automated:
 
 | Node type | How it runs | Human's role | sofagent's role |
 |------|------|------|------|
-| 👤 **Human-augmented** | AI drafts, human approves | Decide, judge, sign off | Harness keeps AI in bounds, audit logs every suggestion |
-| 🤖 **AI autonomous** | AI runs end-to-end independently | Review audit reports, spot-check | All three engines: constrain → execute → audit → reflect |
+| ⚡ **Augmented role** | AI navigates, suggests — rules describable | Decide, approve, sign off | Harness keeps AI in bounds, audit logs every suggestion |
+| 🔄 **Auto-execute** | AI runs end-to-end autonomously | Review audit reports, spot-check | All three engines: constrain → execute → audit → reflect |
 
 No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep running.
 
@@ -127,13 +127,13 @@ The audit engine doesn't trust the agent — it trusts git diff.
 
 ## Does it work?
 
-> 🔬 Hugging Face legal-agent benchmark: same model, harness-only optimization — score jumped from 3.5% to 80.1% (76-point gain, matching Claude Sonnet at 1/7 the cost). [Details](./ARCHITECTURE.md)
+> 🔬 Hugging Face legal-agent benchmark: same model, harness-only optimization — score jumped from 3.5% to 80.1% (76-point gain, matching Claude Sonnet at 1/7 the cost). [Details](./docs/ARCHITECTURE.md)
 
 - Core logic: **470+ tests all green** (diff-parser / config-loader / rules A1-A15 / reporter)
 - 15 audit rules (11 default + 4 extended + 2 experimental)
 - MIT license — use code, docs, and templates freely
 
-> ⚠️ Orchestration engine requires OpenClaw. [Known limitations](./LIMITATIONS.md)
+> ⚠️ Orchestration engine requires OpenClaw. [Known limitations](./docs/LIMITATIONS.md)
 
 ---
 
@@ -151,18 +151,18 @@ The audit engine doesn't trust the agent — it trusts git diff.
 
 | You want | Read |
 |---------|------|
-| Install, use, FAQ | [HANDBOOK](./HANDBOOK.md) |
-| Design rationale | [ARCHITECTURE](./ARCHITECTURE.md) |
-| Security | [SECURITY](../SECURITY.md) |
-| Known limitations | [LIMITATIONS](./LIMITATIONS.md) |
-| Roadmap | [ROADMAP](../ROADMAP.md) |
-| Contributing | [CONTRIBUTING](../CONTRIBUTING.md) |
-| Enterprise deploy (FDE + Work模板市场) | [FDE/](../FDE/) \| [Work模板市场](../work模板市场/) |
+| Install, use, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
+| Design rationale | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
+| Security | [SECURITY](./SECURITY.md) |
+| Known limitations | [LIMITATIONS](./docs/LIMITATIONS.md) |
+| Roadmap | [ROADMAP](./ROADMAP.md) |
+| Contributing | [CONTRIBUTING](./CONTRIBUTING.md) |
+| Enterprise deploy (FDE + Work模板市场) | [FDE/](./FDE/) \| [Work模板市场](./work模板市场/) |
 
 ---
 
 ## Contributing
 
-Issues and PRs welcome — especially the critical kind. [CONTRIBUTING.md](../CONTRIBUTING.md) · [Credits](./THANKS.md)
+Issues and PRs welcome — especially the critical kind. [CONTRIBUTING.md](./CONTRIBUTING.md) · [Credits](./docs/THANKS.md)
 
 > My name is KongFangXun, a product manager who knows just enough frontend to be dangerous. sofagent's code is written by AI models; I make product decisions and do the final review. Every release is reviewed by an independent model.
