@@ -7,7 +7,7 @@ description: >
 version: 1.0.4
 tags: [fde, workflow, deployment, enterprise, ai-agent]
 image: sofagent.png
-triggers: [FDE部署, 企业AI化, 梳理工作流, 识别AI节点, 出交付手册, 建知识库, 企业工作流改造]
+triggers: [FDE部署, 企业AI化, 梳理工作流, 识别AI节点, 出交付手册, 建知识库, 企业工作流改造, AI评估体系, Agent调教, 私有化评估]
 scenarios: [企业要做AI化但不知道从哪开始, 梳理完工作流不知道怎么识别AI节点, 部署后不知道怎么管Agent行为, 想让Agent自动出交付手册]
 not_when: [纯技术讨论, 代码bug修复, 写业务代码]
 ---
@@ -19,7 +19,7 @@ not_when: [纯技术讨论, 代码bug修复, 写业务代码]
 
 ## 为什么要用
 
-装上之后，Agent 就像一个工头，带着 AI 工人进企业干活：适配上下文、搭建工作台、做业务融合，确认每个 AI 节点都能独立产出价值后才离场。**离场后企业留下三样东西：一份谁都能看懂的交付手册、一套在跑的 AI 节点、一个会自己生长的 AI 知识库。**
+装上之后，Agent 就像一个工头，带着 AI 工人进企业干活：适配上下文、搭建工作台、做业务融合，确认每个 AI 节点都能独立产出价值后才离场。**离场后企业留下四样东西：一份交付手册、一套在跑的 AI 节点、一个会自己生长的 AI 知识库、一套私有化评估体系（private evals）——微软 CEO Nadella 指出这是企业未来最重要的知识产权。**
 
 ## 适用场景
 
@@ -68,6 +68,7 @@ cp -r FDE/ ~/.openclaw/skills/sofagent-fde/
 | **交付手册** | 企业画像 + 部署方案 + `fde.md` + `quick-start.md`（后两章安装包自带） |
 | **AI 节点（三层实体）** | 文档层（`nodes/*.md`，人读+编排引擎读）+ Skill 层 + 运行层 |
 | **AI 知识库** | AI 节点跑起来后自动积累（think.md / task/logs / scoring.md / orchestrator/） |
+| **私有化评估体系** | 企业的 scoring 反馈 + Skill 迭代历史 + 知识库演变轨迹——工具可复制，差异化反馈无法复制。详见 FDE.md §9 |
 
 ## Gotcha
 
