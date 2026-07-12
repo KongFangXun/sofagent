@@ -46,12 +46,20 @@ audit:
 `;
 
 /**
- * pre-commit hook 模板内容
- * 与 hooks/pre-commit 保持一致（含 v1.0 无声失败保护）
+ * commit-msg hook 模板内容
+ * 与 hooks/commit-msg 保持一致（含 v1.0 无声失败保护）
  */
 export const HOOK_TEMPLATE = `#!/bin/bash
-# sofagent pre-commit hook v1.0.1
+# sofagent commit-msg hook v1.0.5
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
+# commit-msg hook 接收 $1 = commit message 文件路径
+
+# 0. 读取 commit message（commit-msg hook 独有优势——A3 越界检查依赖此参数）
+COMMIT_MSG_FILE="$1"
+COMMIT_SUBJECT=""
+if [ -f "$COMMIT_MSG_FILE" ]; then
+  COMMIT_SUBJECT=$(head -1 "$COMMIT_MSG_FILE")
+fi
 
 DIFF=$(git diff --cached --name-only)
 if [ -z "$DIFF" ]; then
@@ -84,9 +92,12 @@ else
 fi
 
 # 4. 正常运行审计
-# pre-commit 阶段无法获取当前 commit message（COMMIT_EDITMSG 存的是上一次的）
-# 不传 --task，A3 走降级模式（跳过越界检查，不影响 A1/A2 密钥拦截）
-$AUDIT_CMD --diff "$AUDIT_DIFF_ARG" --silent --ci
+# commit-msg hook 可读取 commit message，传 --task 使 A3 越界检查生效
+if [ -n "$COMMIT_SUBJECT" ]; then
+  $AUDIT_CMD --diff "$AUDIT_DIFF_ARG" --silent --ci --task "$COMMIT_SUBJECT"
+else
+  $AUDIT_CMD --diff "$AUDIT_DIFF_ARG" --silent --ci
+fi
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -eq 2 ]; then

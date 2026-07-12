@@ -12,8 +12,8 @@
 </p>
 
 <p align="center" style="color:#64748B;font-size:14px;">
-  中小企业和 OPC 的 FDE 工具包<br/>
-  约束底座管行为，审计引擎盯结果，编排引擎自动干
+  Agent Harness 中间件<br/>
+  约束行为管得住，审计变更有硬证据，经验沉淀可跨设备共享
 </p>
 
 <p align="center">

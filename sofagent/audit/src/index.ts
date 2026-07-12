@@ -84,8 +84,7 @@ function parseArgs(argv: string[]): Args {
       args.silent = true;
     } else if (argv[i] === '--ci') {
       args.ci = true;
-      args.strict = true;   // --ci 隐含 --strict
-      args.silent = true;   // --ci 隐含 --silent
+      args.silent = true;   // --ci 隐含 --silent（紧凑输出），不隐含 --strict
     } else if (argv[i] === '--install-hook') {
       args.installHook = true;
     } else if (argv[i] === '--json') {
@@ -145,7 +144,7 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit hub deploy <模板名>               部署 Work模板市场 模板');
       console.log('  sofagent-audit --root-cause                     根因分析');
       console.log('  sofagent-audit --regression <dir>               回归验证');
-      console.log('  sofagent-audit --install-hook                   安装 pre-commit hook');
+      console.log('  sofagent-audit --install-hook                   安装 commit-msg hook');
       console.log('  sofagent-audit --eval <golden-set.yml>          eval harness 评测');
       console.log('  sofagent-audit --ab-test <config.yml>           Sub Agent A/B 测试');
       console.log('  sofagent-audit skillopt-run --input <path>       SkillOpt 自动优化（需 skillopt-sleep）');
@@ -153,16 +152,16 @@ function parseArgs(argv: string[]): Args {
       console.log('  默认模式    全部规则（含 Agent 日志）   exit 0/1/2');
       console.log('  --silent    只跑 git-diff 规则          exit 0/1/2');
       console.log('  --strict    任何警告都 exit 2            exit 0/2');
-      console.log('  --ci        = --silent + --strict        exit 0/2');
+      console.log('  --ci        = --silent (紧凑输出)     exit 0/1/2');
       if (verbose) {
         console.log('\n完整参数列表:');
         console.log('  --diff <range>     git diff 范围（默认 HEAD~1..HEAD）');
         console.log('  --task <desc>      任务描述');
         console.log('  --strict           严格模式');
         console.log('  --silent           静默模式');
-        console.log('  --ci               CI 模式（= --silent + --strict）');
+        console.log('  --ci               CI 模式（= --silent，紧凑输出）');
         console.log('  --json             JSON 输出');
-        console.log('  --install-hook     安装 pre-commit hook');
+        console.log('  --install-hook     安装 commit-msg hook');
         console.log('  --root-cause       根因分析');
         console.log('  --regression <dir> 回归验证');
         console.log('  --init             一键初始化');
@@ -194,8 +193,9 @@ function parseArgs(argv: string[]): Args {
 }
 
 /**
- * 安装 git pre-commit hook
- * 从 cwd 往上查找 .git 目录，将 hooks/pre-commit 模板复制到 .git/hooks/
+ * 安装 git commit-msg hook
+ * 从 cwd 往上查找 .git 目录，将 hooks/commit-msg 模板复制到 .git/hooks/
+ * 迁移：如果 .git/hooks/pre-commit 含 sofagent 标识，自动移除旧 hook
  */
 function installHook(): void {
   // 从 cwd 往上查找 .git 目录
@@ -221,12 +221,12 @@ function installHook(): void {
     process.exit(1);
   }
 
-  // 定位 pre-commit 模板
-  // dist/index.js 编译后，模板在 ../../hooks/pre-commit（相对于 dist/）
-  const hookTemplate = join(__dirname, '..', 'hooks', 'pre-commit');
+  // 定位 commit-msg 模板
+  // dist/index.js 编译后，模板在 ../../hooks/commit-msg（相对于 dist/）
+  const hookTemplate = join(__dirname, '..', 'hooks', 'commit-msg');
 
   if (!existsSync(hookTemplate)) {
-    console.error(`❌ 未找到 pre-commit 模板: ${hookTemplate}`);
+    console.error(`❌ 未找到 commit-msg 模板: ${hookTemplate}`);
     process.exit(1);
   }
 
@@ -236,15 +236,27 @@ function installHook(): void {
     mkdirSync(hooksDir, { recursive: true });
   }
 
-  const destPath = join(hooksDir, 'pre-commit');
+  // 迁移：移除旧版 pre-commit hook（含 sofagent 标识的）
+  const legacyPath = join(hooksDir, 'pre-commit');
+  if (existsSync(legacyPath)) {
+    try {
+      const legacyContent = readFileSync(legacyPath, 'utf-8');
+      if (legacyContent.includes('sofagent')) {
+        require('fs').unlinkSync(legacyPath);
+        console.log('  → 已移除旧版 pre-commit hook（迁移到 commit-msg）');
+      }
+    } catch { /* 读不了就跳过 */ }
+  }
+
+  const destPath = join(hooksDir, 'commit-msg');
 
   // 读取模板并写入
   const templateContent = readFileSync(hookTemplate, 'utf-8');
   writeFileSync(destPath, templateContent);
   chmodSync(destPath, 0o755);
 
-  console.log(`✅ pre-commit hook 已安装到 ${destPath}`);
-  console.log('   每次 git commit 前会自动运行 sofagent-audit 检查。');
+  console.log(`✅ commit-msg hook 已安装到 ${destPath}`);
+  console.log('   每次 git commit 时会自动运行 sofagent-audit 检查。');
   process.exit(0);
 }
 

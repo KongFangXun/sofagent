@@ -72,7 +72,7 @@ export function runDoctor(): void {
     }
   }
 
-  // 3. pre-commit hook
+  // 3. commit-msg hook
   if (inGitRepo) {
     let hookPath = '';
     try {
@@ -80,7 +80,7 @@ export function runDoctor(): void {
         encoding: 'utf-8',
         stdio: ['pipe', 'pipe', 'pipe'],
       }).trim();
-      hookPath = join(cwd, gitCommonDir, 'pre-commit');
+      hookPath = join(cwd, gitCommonDir, 'commit-msg');
     } catch { console.debug('doctor: 获取 git hooks 路径失败'); }
 
     if (hookPath && existsSync(hookPath)) {
@@ -89,33 +89,54 @@ export function runDoctor(): void {
       try {
         const content = require('fs').readFileSync(hookPath, 'utf-8');
         isSofagent = content.includes('sofagent');
-      } catch { console.debug('doctor: 读取 pre-commit hook 失败'); }
+      } catch { console.debug('doctor: 读取 commit-msg hook 失败'); }
 
       // 检查可执行
       try {
         accessSync(hookPath, constants.X_OK);
         if (isSofagent) {
-          results.push({ ok: true, warning: false, label: 'pre-commit hook', detail: '已安装（可执行，含 sofagent 审计）' });
+          results.push({ ok: true, warning: false, label: 'commit-msg hook', detail: '已安装（可执行，含 sofagent 审计）' });
         } else {
           results.push({
-            ok: false, warning: true, label: 'pre-commit hook', detail: '已存在但非 sofagent hook',
+            ok: false, warning: true, label: 'commit-msg hook', detail: '已存在但非 sofagent hook',
             fixHint: '运行 sofagent-audit --init 安装 sofagent hook',
           });
         }
       } catch {
         results.push({
-          ok: false, warning: false, label: 'pre-commit hook', detail: '存在但不可执行',
-          fixHint: 'chmod +x .git/hooks/pre-commit',
+          ok: false, warning: false, label: 'commit-msg hook', detail: '存在但不可执行',
+          fixHint: 'chmod +x .git/hooks/commit-msg',
         });
       }
     } else {
       results.push({
-        ok: false, warning: true, label: 'pre-commit hook', detail: '未找到',
+        ok: false, warning: true, label: 'commit-msg hook', detail: '未找到',
         fixHint: '运行 sofagent-audit --init 安装 hook',
       });
     }
+
+    // 检查旧版 pre-commit hook（迁移提示）
+    let legacyPath = '';
+    try {
+      const gitCommonDir = execFileSync('git', ['rev-parse', '--git-path', 'hooks'], {
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      }).trim();
+      legacyPath = join(cwd, gitCommonDir, 'pre-commit');
+    } catch { /* */ }
+    if (legacyPath && existsSync(legacyPath)) {
+      try {
+        const content = require('fs').readFileSync(legacyPath, 'utf-8');
+        if (content.includes('sofagent')) {
+          results.push({
+            ok: true, warning: true, label: '旧版 pre-commit', detail: '检测到旧版 pre-commit hook（已迁移到 commit-msg，建议移除）',
+            fixHint: 'rm .git/hooks/pre-commit 或重新运行 sofagent-audit --init 自动清理',
+          });
+        }
+      } catch { /* */ }
+    }
   } else {
-    results.push({ ok: false, warning: true, label: 'pre-commit hook', detail: '跳过（非 git 仓库）' });
+    results.push({ ok: false, warning: true, label: 'commit-msg hook', detail: '跳过（非 git 仓库）' });
   }
 
   // 4. config.yml

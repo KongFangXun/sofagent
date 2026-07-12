@@ -14,8 +14,8 @@
 </p>
 
 <p align="center" style="color:#64748B;font-size:14px;">
-  FDE toolkit for SMBs and OPCs<br/>
-  Harness base manages behavior, audit engine watches results, orchestration engine gets work done
+  Agent Harness Middleware<br/>
+  Constrain behavior, audit changes with hard evidence, share experience across devices
 </p>
 
 <p align="center">

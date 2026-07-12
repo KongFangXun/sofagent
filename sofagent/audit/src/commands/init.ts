@@ -2,7 +2,7 @@
 // init.ts · sofagent-audit --init 一键初始化
 // v1.0 新增：一条命令完成 3 步
 //   1. 生成 .sofagent/config.yml 配置模板
-//   2. 安装 git pre-commit hook
+//   2. 安装 git commit-msg hook
 //   3. 冒烟测试——验证审计引擎可用
 // v1.0.5: 新增仓库状态分类器（gstack 首次运行引导）
 // ============================================================
@@ -36,7 +36,7 @@ function classifyRepo(): { state: RepoState; hint: string } {
     if (status.trim().length > 0) {
       return {
         state: 'dirty',
-        hint: '⚠️ 有未提交更改——请先 git commit 或 git stash 后再跑 --init，否则 pre-commit hook 可能误报。',
+        hint: '⚠️ 有未提交更改——请先 git commit 或 git stash 后再跑 --init，否则 commit-msg hook 可能误报。',
       };
     }
   } catch { /* 非 git 仓库，已在前面处理 */ }
@@ -95,9 +95,9 @@ export function runInit(): void {
     stepOk++;
   }
 
-  // [2/4] 安装 git pre-commit hook
+  // [2/4] 安装 git commit-msg hook
   console.log('');
-  console.log('[2/4] 安装 git pre-commit hook...');
+  console.log('[2/4] 安装 git commit-msg hook...');
 
   // 检测 git 仓库
   let gitDir: string | null = null;
@@ -122,7 +122,20 @@ export function runInit(): void {
     if (!existsSync(hooksDir)) {
       mkdirSync(hooksDir, { recursive: true });
     }
-    const hookPath = join(hooksDir, 'pre-commit');
+
+    // 迁移：移除旧版 pre-commit hook（含 sofagent 标识的）
+    const legacyPath = join(hooksDir, 'pre-commit');
+    if (existsSync(legacyPath)) {
+      try {
+        const legacyContent = readFileSync(legacyPath, 'utf-8');
+        if (legacyContent.includes('sofagent')) {
+          require('fs').unlinkSync(legacyPath);
+          console.log('  → 已移除旧版 pre-commit hook（迁移到 commit-msg）');
+        }
+      } catch { /* 读不了就跳过 */ }
+    }
+
+    const hookPath = join(hooksDir, 'commit-msg');
 
     // 幂等检查：已有 sofagent hook 则跳过
     let hasSofagentHook = false;
@@ -136,13 +149,13 @@ export function runInit(): void {
     }
 
     if (hasSofagentHook) {
-      console.log(`  → pre-commit hook 已安装（检测到 sofagent 标识），跳过`);
+      console.log(`  → commit-msg hook 已安装（检测到 sofagent 标识），跳过`);
       stepSkipped++;
     } else {
       writeFileSync(hookPath, HOOK_TEMPLATE, 'utf-8');
       chmodSync(hookPath, 0o755);
       console.log(`  → 检测到 git 仓库: ${gitDir.replace('/.git', '')}`);
-      console.log('  → .git/hooks/pre-commit 已安装（可执行，含无声失败保护）');
+      console.log('  → .git/hooks/commit-msg 已安装（可执行，含无声失败保护）');
       console.log('  → hook 会在每次 git commit 时自动运行审计');
       stepOk++;
     }

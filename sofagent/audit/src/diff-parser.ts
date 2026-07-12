@@ -77,7 +77,7 @@ export function parseDiff(range: string): DiffFile[] {
 
   try {
     // 检测首次提交——HEAD 或 HEAD~1 在全新仓库首次 commit 时不存在
-    // pre-commit hook 传 --diff HEAD，命令行传 --diff HEAD~1..HEAD，两种都要覆盖
+    // commit-msg hook 传 --diff HEAD，命令行传 --diff HEAD~1..HEAD，两种都要覆盖
     if (range.includes('HEAD')) {
       const refToVerify = range.includes('HEAD~1') ? 'HEAD~1' : 'HEAD';
       try {
