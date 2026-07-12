@@ -285,17 +285,14 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
    - 末尾开发日志链接
 
 ── Step 3: Skill 分发 ──
-7. openclaw skills publish ./skill
-8. openclaw skills publish ./FDE
-9. openclaw skills publish ./LOOP（如果 LOOP/ 有变更）
-10. clawhub skill publish ./skill && clawhub skill publish ./FDE
+7. clawhub skill publish ./sofagent/skill --slug sofagent --owner KongFangXun
+8. clawhub skill publish ./FDE --owner KongFangXun
     # ClawHub 和 SkillHub 共享命名空间，推 ClawHub 即可，不需要额外推 SkillHub
-11. 本地安装：
-    cp skill/* ~/.workbuddy/skills/sofagent/
-    cp skill/* ~/.openclaw/skills/sofagent/
+9. 本地安装：
+    cp -r sofagent/skill/* ~/.workbuddy/skills/sofagent/
+    cp -r sofagent/skill/* ~/.openclaw/skills/sofagent/
     cp FDE/SKILL.md ~/.workbuddy/skills/sofagent-fde/
-    cp LOOP/SKILL.md ~/.workbuddy/skills/sofagent-loop/（如果 LOOP/ 有变更）
-12. iCloud 同步（可选）：cp -r FDE/* ~/Library/Mobile\ Documents/com~apple~CloudDocs/WorkBuddy/FDE工具包/
+10. iCloud 同步（可选）：cp -r FDE/* ~/Library/Mobile\ Documents/com~apple~CloudDocs/WorkBuddy/FDE工具包/
 ```
 
 ### 7.3 发布后验证

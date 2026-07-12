@@ -78,8 +78,8 @@
 | **v1.0.3** | ✅ 已完成 | LOOP 自迭代架构（4 Agent + 内外层循环） + SkillOpt 自动优化 + Audit Sub Agent（含成本） + think.md 判断单元结构化 + 文档分层预算 | [📖](./docs/changelog/v1.0.3.md) |
 | **v1.0.4** | ✅ 已完成 | 自动优化 + 约束验证版——eval harness + Sub Agent A/B 自动优化 + HITL 渐进自主度 + A15 约束验证。多项审查修复 | [📖](./docs/changelog/v1.0.4.md) |
 | **v1.0.5** | ⏳ 待启动 | Ontology 统一层 + ao 过渡 + Work模板市场 + 首个行业模板 + gstack/OKF 工程学习落地 | [📖](./docs/changelog/v1.0.5.md) |
-| **v1.0.6** | 📋 规划中 | 编排引擎迁移：DeepAgents compose + Sub Agent 状态管理 | [📖](./docs/changelog/v1.0.6.md) |
-| **v1.0.7** | 📋 规划中 | A/B 自动切换 + ao 完全退役 | [📖](./docs/changelog/v1.0.7.md) |
+| **v1.0.6** | 📋 规划中 | 编排引擎迁移：DeepAgents compose + Sub Agent 状态管理 + A/B 真实运行器（模型 API 直跑，自迭代闭环打通） | [📖](./docs/changelog/v1.0.6.md) |
+| **v1.0.7** | 📋 规划中 | A/B 自动切换 + A/B 运行器升级 DeepAgents（方案 C）+ ao 完全退役 | [📖](./docs/changelog/v1.0.7.md) |
 | **v1.0.8** | 📋 规划中 | TencentDB Agent Memory 集成：L3 用户画像自动注入（daemon Ingest + 加载链 + --with-memory） | [📖](./docs/changelog/v1.0.8.md) |
 | **v1.1.0** | 📋 规划中 | 轻量多设备：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md 生成 lessons-missteps.md）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检 | — |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同：Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界 | — |

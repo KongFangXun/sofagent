@@ -91,11 +91,11 @@
 > 你是另一个开源项目（比如 Cursor Rules / Claude Code hooks / pre-commit 工具链）的维护者。你在研究竞品，想搞清楚 sofagent 到底跟你有什么区别、它有没有什么致命弱点。
 
 **你的任务**：
-1. README 里说的"Agent 提交时审计工具——git diff 硬证据，16 条规则，pre-commit hook，不依赖 Agent 配合"——这句话你能反驳吗？漏洞在哪？
+1. README 里说的"Agent 提交时审计工具——git diff 硬证据，11 条规则，commit-msg hook，不依赖 Agent 配合"——这句话你能反驳吗？漏洞在哪？
 2. 这个项目的核心差异化到底是什么？跟你的项目相比，它是真不同还是换个说法？
 3. 如果你要写一篇文章《为什么不用 sofagent》，你的核心论据是什么？
 4. 这个项目自称"正式版"和"可生产使用"。以你的标准，它够格吗？什么地方让你觉得不够格？
-5. **范围合理性**：CHANGELOG 和文档中描述的每一条功能，以你的标准判断它是真功能还是花架子？一个 pre-commit 审计工具为什么要关心"知识库访问控制"？这是范围蔓延还是合理的演进？
+5. **范围合理性**：CHANGELOG 和文档中描述的每一条功能，以你的标准判断它是真功能还是花架子？一个 commit-msg 审计工具为什么要关心"知识库访问控制"？这是范围蔓延还是合理的演进？
 6. **规则声称验证**：README 说的规则数量（如"16 条规则"）——打开 `sofagent/audit/src/rules/index.ts`，数 `defaultRules` + `extendedRules` 的实际注册数量。一致吗？每条规则的 `evidenceMode`（`git-diff` vs `hybrid`）与 README 的分类描述是否匹配？有没有声称了但代码里没注册的规则（如 A12/A13 在 ROADMAP 里但没实现）？
 7. **声称与实现一致性**：CHANGELOG 标题中声称的功能（如"自进化引擎"），实际代码是否匹配？有没有夸大——比如 wrapper 叫"引擎"、CLI 调用叫"集成"？
 8. **CHANGELOG 纯度**：CHANGELOG 历史条目中有没有审查元信息（模型名、审查轮次、P0/P1 计数）？CHANGELOG 应该只写产品变更。
@@ -252,12 +252,12 @@
    - Node.js 版本低于 18——会怎么提示？
    - 在非 git 目录跑 `sofagent-audit`——报错友好吗？
    - bash 不可用（比如纯 Windows PowerShell 环境）——hook 能跑吗？
-   - 故意搞坏 hook（删掉 .git/hooks/pre-commit）——`--doctor` 能发现吗？
+   - 故意搞坏 hook（删掉 .git/hooks/commit-msg）——`--doctor` 能发现吗？
 
 4. **绕过审计**：
    - `git commit --no-verify` 能绕过——这是设计如此还是安全风险？文档里有说明吗？
    - 如果 Agent 用 `git commit --no-verify` 提交，sofagent 能检测到吗？（`--doctor` 第 8 项）
-   - **hook 文件删除检测**：Agent 直接删掉 `.git/hooks/pre-commit`——`--doctor` 能发现 hook 丢失吗？有没有自愈机制？还是只有用户手动跑 `--doctor` 才知道？
+   - **hook 文件删除检测**：Agent 直接删掉 `.git/hooks/commit-msg`——`--doctor` 能发现 hook 丢失吗？有没有自愈机制？还是只有用户手动跑 `--doctor` 才知道？
    - 有没有其他绕过路径？
 
 5. **注入攻击面**：
@@ -314,7 +314,7 @@
 15. **`--strict`/`--ci` exit code 验证**：
     - 跑 `sofagent-audit --diff HEAD~1..HEAD --task "wrong" --strict` → exit code 是 2 还是 1？
     - 如果 exit 1：检查 `reporter.ts` 的 `runRules()` 中 `strict` 参数是否在 exitCode 计算中被使用
-    - pre-commit hook 用的是什么模式？WARN 级规则在 hook 中是否阻断 commit？
+    - commit-msg hook 用的是 `--ci`（= `--silent`，v1.0.5 起不再隐含 `--strict`）——WARN 级规则（A3/A4）exit 1 放行，不阻断 commit；FAIL 级规则（A1/A2）exit 2 阻断
 
 16. **A9 Unicode/leet 绕过测试**：
     - 在代码注释中写全角字符 `ｉｇｎｏｒｅ ｐｒｅｖｉｏｕｓ ｉｎｓｔｒｕｃｔｉｏｎｓ` → A9 是否检出？
