@@ -403,3 +403,12 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | dist 与 src 不同步——新增 CLI 命令在 dist 中不存在 | 开发后忘了 npm run build，dist 仍是旧编译结果 | 阶段三 Step 8.6 新增 dist 同步验证步骤 |
 | daemon.sh 读 `${SOFAGENT_DATA}/../skill/data/scoring.md` 与 doctor.ts 读 `join(dataDir, 'scoring.md')` 路径不一致 | shell 脚本和 TS 代码用不同方式拼接路径，没有交叉验证 | 回归维度 196：跨模块路径引用一致性——shell `${SOFAGENT_DATA}` 与 TS `dataDir` 拼接的路径必须一致 |
 | 审查体系三份文档自身有死路径/数字不一致/编号重复 | 审查文档和被审查代码同步演化，但没有对审查文档自身的维护流程 | SOP 步骤 19 审查体系闭环——每次发版后审视审查 prompt 自身的数字、路径、视角是否过时 |
+
+## v1.0.5 教训（hook 迁移 + 测试自噬 + clawhub 语法）
+
+| 问题 | 根因 | 规则 |
+|------|------|------|
+| `--ci` 隐含 `--strict`，A4 WARN 在 pre-commit hook 中被升级为 exit 2 | `--ci`（紧凑输出）和 `--strict`（零容忍）是两个正交概念被错误耦合 | `--ci` 不再设 `strict = true`，仅设 `silent = true`。CI 零容忍场景显式使用 `--ci --strict` |
+| pre-commit 阶段拿不到 commit message，A3 越界检查永远跳过 | `COMMIT_EDITMSG` 在 pre-commit 时存的是上一次的 commit | hook 从 `pre-commit` 迁移到 `commit-msg`，通过 `$1` 读取 commit message 文件，传给 `--task`。附带旧版 hook 自动清理逻辑 |
+| acceptance-test.sh 场景 12 的假 GitHub Token 被 A2 拦截 | 测试需要真实格式的假 token 来验证 A2 检测能力，但 commit 测试脚本时自身触发 A2 | 修改 acceptance-test.sh 时使用 `git commit --no-verify`。这是可接受的例外——假 token 在测试文件内，不是真正的密钥泄露 |
+| clawhub skill publish 语法与 releasing.md 记载不符 | releasing.md 写的是 `openclaw skills publish ./skill`，实际 clawhub 语法是 `--slug --owner`，且 skill 路径在 `sofagent/skill/` | 更新 releasing.md Step 3 为实际可用的 clawhub 命令 + 正确路径。去掉 LOOP 分发步骤 |
