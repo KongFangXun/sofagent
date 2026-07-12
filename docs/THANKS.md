@@ -117,7 +117,7 @@ sofagent 直接使用或借鉴了它们的能力。
 - **[Google OKF — Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)** · Google Cloud Platform (2026)
   Markdown + YAML Frontmatter + Git 版本控制 + 人机可读的通用知识表示格式。生产者-消费者解耦、渐进式 index.md 导航、recipe+bundle 可复现模式——从 Google 内部独立验证了 sofagent knowledge/ 的「知识即文件系统」架构方向。
 
-- **[Loop Engineering](https://news.qq.com/rain/a/20260616A0A2CU00)** · Addy Osmani / Google Chrome (2026-06)
+- **[Loop Engineering](https://addyo.substack.com/p/loop-engineering)** · Addy Osmani / Google Chrome (2026-06)
   2026 年 6 月 Peter Steinberger 的「prompts are out, loops are in」引爆 650 万次浏览，Addy Osmani 正式命名 Loop Engineering。Maker-Checker 机制 + 四年演进时间线（ReAct 2022→AutoGPT 2023→MCP 2024→Claude Agent SDK 2025）——验证了 sofagent 审计与编排分离的设计，以及 Loop 闭环的必需前置条件。
 
 - **[Claude Code Agent Loop](https://docs.anthropic.com/en/docs/claude-code/how-claude-code-works)** · Anthropic (2026)
