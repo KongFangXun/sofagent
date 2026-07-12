@@ -5,9 +5,9 @@
 ---
 
 ## 正式版
-### [v1.0.6] — 编排迁移 + A/B 真实运行器 + 陌生视角审查修复 🔧
+### [v1.0.6] — 编排迁移 + A/B 真实运行器 + 安全加固 + SkillOpt CLI 修复 🔧
 > 2026-07-13（UTC）
-DeepAgents compose 迁移（ao 降为 fallback）+ Sub Agent 状态管理（runtime.json 心跳）+ A/B 真实运行器（模型 API 直跑，自迭代闭环打通）+ history.jsonl 环境指纹防篡改 + post-commit hook 绕过检测 + 陌生视角审查修复（README 规则分类修正、CHANGELOG 审查元信息清理、ROADMAP 日期对齐）。473 测试全绿，pre-push 全绿。
+DeepAgents compose 迁移（ao 降为 fallback）+ Sub Agent 状态管理（runtime.json 心跳）+ A/B 真实运行器（模型 API 直跑，自迭代闭环打通）+ history.jsonl 环境指纹防篡改（hashVersion: 2）+ post-commit hook 绕过检测 + SkillOpt CLI 契约修复（status 探针 + run 子命令 + parseArgs 误判）+ 陌生视角审查修复。480 测试全绿，28/28 OpenClaw 验收，pre-push 7/7 全绿。
 > 📖 [开发日志](./docs/changelog/v1.0.6.md)
 ### [v1.0.5] — Ontology 统一层 + Workflow Hub 🔧
 > 2026-07-12（UTC）
