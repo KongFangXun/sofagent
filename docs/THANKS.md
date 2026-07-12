@@ -2,7 +2,7 @@
 
 > sofagent 站在巨人肩膀上。以下每一个项目、文章和作者，都在 sofagent 的某个设计决策里留下了痕迹。
 >
-> v1.0.4 · 2026-07-11（UTC）
+> v1.0.5 · 2026-07-11（UTC）
 
 ---
 
@@ -57,6 +57,7 @@
 
 sofagent 直接使用或借鉴了它们的能力。
 
+- **[TencentDB Agent Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory)** · Tencent Cloud (2026-06) · MIT — OpenClaw 原生记忆插件，零配置、开箱即用。4 层分层记忆（L0 对话→L1 事实→L2 场景→L3 画像）+ 双轨存储（SQLite+sqlite-vec 存事实、Markdown 存结构）+ 符号化压缩（Mermaid 图替冗长日志，Token 降 61%）。sofagent 以**弱依赖方式**集成——只读 persona.md 和 scene_blocks/ 的 Markdown 产物，不碰 SQLite、不调 HTTP API。TencentDB 卸了 sofagent 照样跑，只是少了用户画像来源
 - **[agency-orchestrator](https://github.com/jnMetaCode/agency-orchestrator)**（Apache-2.0）— `ao compose` 一行命令搞定编排：意图识别 → 任务图生成 → 模板匹配 → 分配
 - **[agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh)** — 215 个中文岗位模板，IDENTITY 层素材来源
 - **[MiroFish](https://github.com/666ghj/MiroFish)** —「工具调用与最终答案严格分离」模式，启发了 sofagent 审计层的证据分层设计
@@ -64,7 +65,6 @@ sofagent 直接使用或借鉴了它们的能力。
 - **[best-of-agent-harnesses](https://github.com/RyanAlberts/best-of-agent-harnesses)** — 101+ 个 Harness 项目索引，让我了解这个领域已经有什么人在做什么事
 - **[agent-skills](https://github.com/addyosmani/agent-skills)** by Addy Osmani — 24 个生产级工程 Skill，反合理化表（Anti-rationalization）设计——预判 Agent 跳过步骤的借口并逐一驳回——启发了 sofagent fde.md 的铁律反合理化表
 - **[gstack](https://github.com/garrytan/gstack)** by Garry Tan (YC CEO) — 28 个 Skill + 7 个 Agent 角色的 AI 辅助软件开发系统。六层安全栈（分类器级 prompt injection 检测 / 密钥格式持续更新 / fail-closed 默认不信任）、原子文件写入模式、角色分解架构——为 sofagent 的 A2 密钥格式更新和多角色 agents/ 架构提供了实践参照
-- **[TencentDB Agent Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory)** · Tencent Cloud (2026-06) · MIT —— OpenClaw 原生记忆插件，零配置、开箱即用。4 层分层记忆（L0 对话→L1 事实→L2 场景→L3 画像）+ 双轨存储（SQLite+sqlite-vec 存事实、Markdown 存结构）+ 符号化压缩（Mermaid 图替冗长日志，Token 降 61%）。可直接作为 sofagent AI 知识库的记忆后端——百万级事实用 DB 检索、千级结构用 MD 文件
 
 ---
 

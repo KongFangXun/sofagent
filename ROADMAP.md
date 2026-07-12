@@ -1,18 +1,18 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.0.4 · 2026-07-11（UTC）· 自动优化 + 约束验证 + 审查修复
+> v1.0.5 · 2026-07-11（UTC）· 自动优化 + 约束验证 + 审查修复
 >
 
 > 🎯 **v1.0 定位**：**Agent 审计工具**——git diff 硬证据审计，装 pre-commit hook，每次 Agent 提交自动扫描代码变更。编排引擎（Workflow 梳理用）为实验性附带。
 
 ---
 
-## 现在在哪：v1.0.4 ✅
+## 现在在哪：v1.0.5 ✅
 
-> 自动优化 + 约束验证版——eval harness 评分体系 + Sub Agent A/B 自动优化 + HITL 渐进自主度 + A15 离线约束验证。附带多项审查修复。465 测试全绿，pre-push 7/7。
+> Ontology 统一层 + Workflow Hub 版——三路合并引擎 + Workflow Hub 行业模板 + A9 分级安全 + fail-closed + 原子写入 + 安全加固。472 测试全绿，pre-push 7/7。
 >
-> 📖 [开发日志](./docs/changelog/v1.0.4.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [开发日志](./docs/changelog/v1.0.5.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -80,10 +80,11 @@
 | **v1.0.5** | ⏳ 待启动 | Ontology 统一层 + ao 过渡 + Workflow Hub + 首个行业模板 + gstack/OKF 工程学习落地 | [📖](./docs/changelog/v1.0.5.md) |
 | **v1.0.6** | 📋 规划中 | 编排引擎迁移：DeepAgents compose + Sub Agent 状态管理 | [📖](./docs/changelog/v1.0.6.md) |
 | **v1.0.7** | 📋 规划中 | A/B 自动切换 + ao 完全退役 | [📖](./docs/changelog/v1.0.7.md) |
+| **v1.0.8** | 📋 规划中 | TencentDB Agent Memory 集成：L3 用户画像自动注入（daemon Ingest + 加载链 + --with-memory） | [📖](./docs/changelog/v1.0.8.md) |
 
 ### v1.x — 发布后
 
-> **v1.0.1-v1.0.7 开发日志**：[v1.0.1](./docs/changelog/v1.0.1.md) → [v1.0.2](./docs/changelog/v1.0.2.md) → [v1.0.3](./docs/changelog/v1.0.3.md) → [v1.0.4](./docs/changelog/v1.0.4.md) → [v1.0.5](./docs/changelog/v1.0.5.md) → [v1.0.6](./docs/changelog/v1.0.6.md) → [v1.0.7](./docs/changelog/v1.0.7.md)
+> **v1.0.1-v1.0.8 开发日志**：[v1.0.1](./docs/changelog/v1.0.1.md) → [v1.0.2](./docs/changelog/v1.0.2.md) → [v1.0.3](./docs/changelog/v1.0.3.md) → [v1.0.4](./docs/changelog/v1.0.4.md) → [v1.0.5](./docs/changelog/v1.0.5.md) → [v1.0.6](./docs/changelog/v1.0.6.md) → [v1.0.7](./docs/changelog/v1.0.7.md) → [v1.0.8](./docs/changelog/v1.0.8.md)
 
 #### 编排引擎升级：ao → DeepAgents + Agency Agents
 
@@ -124,6 +125,23 @@ OpenClaw 总管（TS）
 
 > 💡 反常识：不到 1000 个高质量 Token 即可构建有效知识图谱——关键不是数据量，是数据质量和约束规则。Ontology 的门槛远比看起来低。
 
+#### 记忆分层金字塔集成（v1.0.8）
+
+sofagent 知识库 L0-L2 已有（think.md → entities → concepts），缺 L3 用户画像。TencentDB Agent Memory 补齐这块：
+
+| 层 | sofagent 现状 | TencentDB 对应 | v1.0.8 动作 |
+|:--:|------|------|------|
+| L0 原始对话 | ✅ think.md | conversations/*.jsonl | 不碰（各管各的） |
+| L1 原子事实 | ✅ entities/ | records/*.jsonl + vectors.db | 不碰（sofagent 不依赖外部 DB） |
+| L2 场景归纳 | ✅ concepts/ | scene_blocks/*.md | 可选同步到 knowledge/concepts/ |
+| **L3 用户画像** | ❌ 缺失 | **persona.md** | **✅ daemon Ingest 同步 + 加载链注入** |
+
+**设计原则**：sofagent 只读 Markdown 产物（persona.md + scene_blocks/），不碰 TencentDB 的 SQLite、不调 HTTP API。单向同步：`~/.openclaw/memory-tdai/` → `.sofagent/knowledge/`。
+
+#### TencentDB 深度集成（v1.x 探索，不实现也没关系）
+
+v1.0.8 只读 Markdown 足够用。如果未来 sub agent 需要实时搜索记忆，可选路径 A（OpenClaw 中间人——launcher.ts 注册 `memory_search` tool）或路径 B（`memory-sdk-ts` 直连远端 Gateway）。不急着做——弱依赖够用的话，这节永远停留在探索阶段。
+
 #### 外部框架对齐（v1.x 全版本基线）
 
 sofagent 不是孤立的——五层架构与以下成熟项目有明确的对应/借鉴关系：
@@ -136,6 +154,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | AI 知识库 | OpenFDE 10 步工作流（行业定位验证）+ Google OKF（同构独立验证）+ CAG 第 7 代 RAG（同构验证）+ Glean 工业数据（1.7万页/召回~100%） | 外部验证 | v1.0-v1.1 |
 | 安全设计哲学 | gstack 六层安全栈（分类器 / fail-closed / 原子写 / 密钥格式持续更新） | 实践参照 | v1.0.4-v1.0.5 |
 | 企业世界模型 | Palantir Ontology（实体+关系+动作+约束） | 概念借鉴，渐进构建 | v1.0.1-v1.0.5 |
+| 记忆分层金字塔 | TencentDB Agent Memory（L0-L3 四层 + 双轨存储 + 符号化压缩） | 只读 Markdown 产物集成 | v1.0.8 |
 | Harness 理论基础 | Hugging Face 实验 + ICML 2025 + Harness Engineering 三代演进（Prompt→Context→Harness）+ LangChain/Codex/gstack 工业验证 | 多重验证 | v1.0 基线 |
 | 任务路由 + Skill 组合 | Router+Skill 架构（行业评估为性价比最高方案） | task-aware 路由与 sofagent 方向一致 | v1.x 基线 |
 
