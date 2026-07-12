@@ -77,7 +77,7 @@
 | **v1.0.2** | ✅ 已完成 | 审查修复版：15 项 P1-P3 修复 + 审查体系更新（回归检查清单 + prompt 泛化） | [📖](./docs/changelog/v1.0.2.md) |
 | **v1.0.3** | ✅ 已完成 | LOOP 自迭代架构（4 Agent + 内外层循环） + SkillOpt 自动优化 + Audit Sub Agent（含成本） + think.md 判断单元结构化 + 文档分层预算 | [📖](./docs/changelog/v1.0.3.md) |
 | **v1.0.4** | ✅ 已完成 | 自动优化 + 约束验证版——eval harness + Sub Agent A/B 自动优化 + HITL 渐进自主度 + A15 约束验证。多项审查修复 | [📖](./docs/changelog/v1.0.4.md) |
-| **v1.0.5** | ⏳ 待启动 | Ontology 统一层 + ao 退役 + Work模板市场 + 首个行业模板 + dstack/OKF 工程学习落地 | [📖](./docs/changelog/v1.0.5.md) |
+| **v1.0.5** | ⏳ 待启动 | Ontology 统一层 + ao 过渡 + Work模板市场 + 首个行业模板 + dstack/OKF 工程学习落地 | [📖](./docs/changelog/v1.0.5.md) |
 
 ### v1.x — 发布后
 

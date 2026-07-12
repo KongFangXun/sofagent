@@ -48,7 +48,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 > **Harness 的实验验证**：2026 年 Hugging Face 实验——同一 DeepSeek-v4-pro 不改权重，仅优化外层 Harness，法律 Agent 基准从 3.5%→80.1%，追平 Claude Sonnet 4.6，成本仅 1/7。Benchmark 测的从来不是裸模型，是「模型 + Harness」的组合能力。**对齐税**：模型同质化时代，Harness 层就是新的护城河。
 
-> **三代演进——行业共识**：AI 应用技术分三代：提示工程（Prompt，管「说什么」）→ 上下文工程（Context，管「知道什么」）→ 驾驭工程（Harness，管「跑在哪」）。2026 年工业落地：LangChain benchmark 30→top5、Codex 7 人 100 万行、gstack 60 天 60 万行——不改模型权重、靠 Harness 层实现。Harness 不是理论推演，是工业界正在大规模落地的事实。
+> **三代演进——行业共识**：AI 应用技术分三代：提示工程（管「说什么」）→ 上下文工程（管「知道什么」）→ 驾驭工程（Harness，管「跑在哪」）。2026 年工业落地证据：LangChain benchmark 30→top5、Codex 7 人 100 万行——不改模型权重、靠 Harness 层实现。
 
 > **Loop Engineering 的方法论验证**：Karpathy AutoResearch（9 万 Star）的约束文档 + 锁定评估脚本 + 自动循环——与 sofagent 的 fde.md + sofagent-audit + loop-check 对应。⚠️ AutoResearch 跑 700 次无人值守迭代，sofagent 当前是单任务内检查点循环。
 

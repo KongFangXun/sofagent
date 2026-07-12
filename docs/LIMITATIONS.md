@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v1.0.4 · 2026-07-11（UTC）· 孔放勋
+> v1.0.5 · 2026-07-12（UTC）· 孔放勋
 
 ---
 
@@ -43,9 +43,9 @@
 
 ---
 
-### 🌱 Skill 自进化：从经验记录走向结构化知识库
+### 🌱 Skill 自动优化：从经验记录走向结构化知识库
 
-v1.0.1 新增 daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）将自进化从「纯经验记录」推进一步。但仍处于**记录 + 整理**阶段——尚未到「自动改进」（多轨迹归纳）阶段：
+v1.0.1 新增 daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）将自动优化从「纯经验记录」推进一步。但仍处于**记录 + 整理**阶段——尚未到「自动改进」（多轨迹归纳）阶段：
 
 | 阶段 | 机制 | sofagent 现状 |
 |------|------|------|
@@ -201,7 +201,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前 407 个测试全绿，但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前 472 个测试全绿，但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -266,7 +266,7 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](./FDE/FDE.md)）已在�
 
 v1.0 新增 `tools/acceptance-test.sh`（9 个场景），但覆盖范围有限：
 
-- **CI 已覆盖**：单元测试 408 个（函数级）、verify.sh 48 项（环境级）
+- **CI 已覆盖**：单元测试 472 个（函数级）、verify.sh 48 项（环境级）
 - **发版前手动覆盖**：acceptance-test.sh 9 场景（CLI 端到端，步骤 2.3）、OpenClaw 验收 5 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
@@ -283,3 +283,19 @@ v1.0 新增 `tools/acceptance-test.sh`（9 个场景），但覆盖范围有限�
 ---
 
 > 这份局限文档是开放的。如果你发现了我们没列出来的局限——开 Issue，直接说。
+
+---
+
+## 六、v1.0.5 新增局限
+
+### Ontology 合并准确性依赖 frontmatter 质量
+
+Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown frontmatter 提取实体关联。如果 frontmatter 格式不规范（缺少 `---` 分隔符、YAML 语法错误、relations 字段拼写错误），该实体会被静默跳过——不会报错，但 Ontology 中会缺失这个对象。`--doctor` 目前不检查 Ontology 完整性，用户无法自动发现遗漏。
+
+### Work模板市场 模板适配仍需人工介入
+
+`sofagent hub deploy` 只做文件复制 + README 展示——不会自动改供应商列表、审批阈值、知识库初始数据。FDE 需要手动编辑部署后的 `.sofagent/workflows/` 目录下的配置文件。模板的 `README.md` 适配指南是人工编写的，不保证覆盖所有企业差异。
+
+### Agent Dashboard 是原型而非生产功能
+
+`--doctor --agents` 读取 `task/logs/` 目录推断 Agent 状态——当目录为空时展示默认假数据（2 个虚拟 Agent）。这不是实时监控，只是时间点快照。daemon-notice.md 的异常检测是关键词匹配（"error"/"异常"/"失败"），不是结构化状态报告。当前 2 个 Sub Agent 的规模下 Dashboard 价值有限，验证企业需求后再决定是否进 v2.x 前端。

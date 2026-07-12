@@ -32,9 +32,9 @@ export interface AuditConfig {
   testPatterns: string[];
   /** 「不改越界」阈值——不相关文件占比超过此比例时 WARN */
   carefulModifyThreshold: number;
-  /** 是否启用扩展规则（E1-E4 + A14） */
+  /** 是否启用扩展规则（E1-E4 + A14 + A15） */
   extendedRulesEnabled: boolean;
-  /** 按规则名禁用——key 为 a1~a14/e1~e4，value 为 false 时禁用 */
+  /** 按规则名禁用——key 为 a1~a15/e1~e4，value 为 false 时禁用 */
   rules?: Record<string, boolean>;
   /** loop-check 绝对轮次上限（v1.0.1），默认 20 */
   loopCheckMaxRounds?: number;
