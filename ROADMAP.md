@@ -138,7 +138,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 
 | 想法 | 说明 |
 |------|------|
-| **gstack/OKF 工程学习**（v1.0.5） | 从 gstack（YC Garry Tan）和 Google OKF 借鉴的工程改进：① **原子文件写入**——task/logs 和 think.md 改用 PID+随机字节的临时文件模式防并发写入冲突（gstack 的 `tmpStatePath` 模式）。② **首次运行分类器**——`--init` 根据仓库状态（greenfield/有代码/脏状态）给出不同引导（gstack 的 `first-task-detect`）。③ **fail-closed 默认安全**——config 参数格式错误时回退到安全默认值而非静默启用默认配置（gstack 的 `classifier_score > 0` 门控哲学）。④ **生产者-消费者架构文档化**——knowledge/ 的数据流（daemon Ingest = 生产者 / 加载链注入 = 消费者）显式文档化（OKF 的格式-实现分离思想）。⑤ **A9 分级安全**——从二元正则可疑度评分过渡，低 confidence 时升级告警而非静默 PASS（gstack L1-L3 分类器）。详见 [THANKS](./docs/THANKS.md) |
+| **gstack/OKF 工程学习**（v1.0.5） | 从 gstack 和 Google OKF 借鉴 5 项工程改进：原子文件写入 / 首次运行分类器 / fail-closed 默认安全 / 生产者-消费者架构文档化 / A9 分级安全。详见 [THANKS](./docs/THANKS.md) |
 | **企业 Skill 自动优化** | FDE 部署时给每个 AI 节点定制专属 Skill（注入行业术语/业务规则/历史案例）。节点跑起来后，基于 scoring.md 评分 + task/logs 记录 + think.md 反思，Skill 自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本，candidate 胜出 promote 替换 current。这是 sofagent 的核心服务：**Skill 不只是部署时写好，运行时持续进化** |
 | **AI 知识库（v1.0.1）** | FDE 交付的第三样东西从散文件升级为结构化知识系统。`.sofagent/knowledge/` 目录：entities/（实体页）+ concepts/（概念页）+ comparisons/（对比页）。daemon 检测 task/logs 变化触发 Ingest，loop-evaluate 顺带跑 Lint，加载链启动时被动注入 top-N 相关页。think.md 不动（职责不重叠）。**新增 Workflow 节点数据契约**（每个 Agent 只看自己职责范围内的知识）+ **entities 实体关联**（frontmatter `relations` 字段——知识库从独立页面变成关联图，Ontology 第 1 步）。详见 [v1.0.1 开发日志](./docs/changelog/v1.0.1.md) |
 | **think.md 模板强制** | think.md 目前可选——Agent 想写就写。v1.0.1 升级：如果写，必须按模板（做了什么 / 踩了什么坑 / 下次怎么办）。不强制写，审计引擎检测「本次任务无 think.md」标 ⚠️ 但不阻断。**不做 gate 前置检查**——强制 gate 会导致 Agent 用垃圾内容填模板 |
