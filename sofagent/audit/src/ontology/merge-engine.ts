@@ -34,7 +34,9 @@ import {
  * 解析 Markdown 文件的 YAML frontmatter
  */
 function parseFrontmatter(content: string): Record<string, unknown> | null {
-  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  // 去除 BOM + 统一 CRLF → LF，防止 Windows 创建的文件解析失败
+  const normalized = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
+  const match = normalized.match(/^---\n([\s\S]*?)\n---/);
   if (!match || !match[1]) return null;
 
   try {
