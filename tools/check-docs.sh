@@ -60,10 +60,12 @@ LAYER_A=$(find . -name "*.md" \
   -not -path "*/agents/*" \
   -not -path "*/.github/*" \
   -not -path "*/sofagent/hooks/*" \
+  -not -path "*/workflow-hub/*" \
+  -not -path "*/docs/DEVELOPMENT.md" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 
-# B 层：开发者参考（LOOP/ + agents/ + .github/ + hooks/HOOK.md）
-LAYER_B=$(find ./LOOP ./agents ./.github ./sofagent/hooks \
+# B 层：开发者参考（LOOP/ + agents/ + .github/ + hooks/HOOK.md + DEVELOPMENT.md）
+LAYER_B=$(find ./LOOP ./agents ./.github ./sofagent/hooks ./docs/DEVELOPMENT.md \
   -name "*.md" \
   -not -path "*/node_modules/*" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
@@ -79,7 +81,7 @@ LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 
 # 上限定义
 LIMIT_A=3600
-LIMIT_B=1500
+LIMIT_B=2000
 LIMIT_C=3500
 LIMIT_D=500
 LIMIT_E=500

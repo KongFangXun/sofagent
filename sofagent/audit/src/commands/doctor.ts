@@ -140,7 +140,7 @@ export function runDoctor(): void {
       }
     } else {
       results.push({
-        ok: true, warning: true, label: 'config.yml', detail: '未找到，使用默认配置（11 条规则全启用）',
+        ok: true, warning: true, label: 'config.yml', detail: '未找到，使用默认配置（11 条默认规则全启用，扩展规则需 config 开启）',
         fixHint: '想自定义？运行: sofagent-audit --init',
       });
     }

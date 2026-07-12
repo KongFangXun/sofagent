@@ -6,6 +6,14 @@
 
 ## 正式版
 
+### [v1.0.5] — Ontology 统一层 + Workflow Hub 🔧
+
+> 2026-07-12（UTC）
+
+Ontology 三路合并引擎（entities + workflow actions + A15 constraints → `.sofagent/ontology/`）+ Workflow Hub 独立项目（git submodule + 行业模板）+ A9 分级安全（score-based）+ A15 绕过修复 + fail-closed 默认安全 + 原子文件写入 + ao 过渡期。472 测试全绿，pre-push 全绿。
+
+> 📖 [开发日志](./docs/changelog/v1.0.5.md)
+
 ### [v1.0.4] — 自动优化 + 约束验证 🔧
 
 > 2026-07-11（UTC）
