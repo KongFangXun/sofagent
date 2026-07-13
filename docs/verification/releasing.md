@@ -97,8 +97,8 @@
 2. 读取 docs/verification/regression-checklist.md（重点看本版本新增维度）
 3. 读取 docs/verification/openclaw-acceptance-test.md（端到端验收场景）
 4. 控制 OpenClaw 一次性执行两份报告：
-   【报告一：回归检查】读 regression-checklist.md，用 Bash 跑全部维度验证命令，输出每项 PASS/FAIL/SKIP。保存 ~/Desktop/vX.Y-regression-report.md
-   【报告二：OpenClaw 验收】读 openclaw-acceptance-test.md，按场景逐一验证，输出每场景 PASS/FAIL/SKIP。保存 ~/Desktop/vX.Y-openclaw-acceptance-report.md
+   【报告一：回归检查】读 regression-checklist.md，用 Bash 跑全部维度验证命令，逐项输出 PASS/FAIL/SKIP。**报告直接在对话中输出，不落盘桌面文件**
+   【报告二：OpenClaw 验收】读 openclaw-acceptance-test.md，按场景逐一验证，逐项输出 PASS/FAIL/SKIP。**报告直接在对话中输出，不落盘桌面文件**
 5. 时序注意：
    - 标注「发布后验证」的项（如 npm latest 版本号）必然不满足 → 标 SKIP，不标 FAIL
    - 不在 OpenClaw 环境时，按验收文件降级说明跳过相应场景 → 标 SKIP，不标 FAIL
@@ -108,7 +108,7 @@
 ## 纪律
 - 不创建/不修改任何代码或文档，只验证 + 生成报告
 - 任何模糊、跑不通、对不上的维度如实标 FAIL 或写疑问，绝不因"应该没问题"放行
-- 报告严格命名：~/Desktop/vX.Y-regression-report.md 和 ~/Desktop/vX.Y-openclaw-acceptance-report.md
+- 报告严格以对话形式输出：每项 / 每场景 PASS/FAIL/SKIP 直接写在 session 回复里，**不得保存为桌面文件**——项目负责人在 session 会话中直接读报告
 ```
 
 ### 判定与循环
@@ -523,7 +523,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 2. 读取 docs/verification/fresh-eyes-review.md（陌生视角审查体系，已在本版本阶段七更新）
 3. 按 prompt 中的视角 / 任务 / 攻击面，对已发布版本做独立审查，不依赖任何开发记忆
 4. 产出审查报告：P0/P1/P2 问题清单，每个问题含「现象 + 复现 + 期望 vs 实际」
-5. 报告保存到 ~/Desktop/next-version-fresh-eyes-report.md
+5. 报告直接在对话中输出：P0/P1/P2 问题清单逐项写在 session 回复里，**不落盘桌面文件**——项目负责人在 session 中直接读取
 
 ## 纪律
 - 不修改任何代码 / 文档，只审查 + 生成报告
