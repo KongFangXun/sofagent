@@ -1,11 +1,12 @@
 // ============================================================
 // registry.ts · Sub Agent 注册机制
-// v1.0.6 新增：从 YML 文件加载 Sub Agent 定义
+// v1.0.7 新增：从 YML 文件加载 Sub Agent 定义
 // ============================================================
 
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { load as yamlLoad } from 'js-yaml';
+import { BUILTIN_AGENTS } from './builtin-agents';
 
 export interface SubAgentDefinition {
   /** 唯一标识名称 */
@@ -64,10 +65,10 @@ export function loadDefinition(ymlPath: string): SubAgentDefinition | null {
  * @returns SubAgentDefinition 数组
  */
 export function listAgents(dataDir: string): SubAgentDefinition[] {
-  const subagentsDir = join(dataDir, 'subagents');
-  if (!existsSync(subagentsDir)) return [];
+  const definitions: SubAgentDefinition[] = [...BUILTIN_AGENTS]; // v1.0.7: 预装 FDE + Audit
 
-  const definitions: SubAgentDefinition[] = [];
+  const subagentsDir = join(dataDir, 'subagents');
+  if (!existsSync(subagentsDir)) return definitions;
 
   try {
     const files = readdirSync(subagentsDir);

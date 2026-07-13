@@ -1,18 +1,18 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.0.6 · 2026-07-13（UTC）· 编排迁移 + A/B 真实运行器 + 双节点架构规划
+> v1.0.7 · 2026-07-13（UTC）· 双节点架构 + Sub Agent 约束自加载 + 预装 Agent + ao 完全退役
 >
 
 > 🎯 **v1.0 定位**：**Agent Harness 中间件**——不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他什么 Agent 平台，sofagent 是独立的审计标准层：约束行为、审计变更、沉淀经验。v1.0 聚焦单设备，v1.1.x 加轻量多设备（经验共享），v1.2.x 做完整多设备（独立身份+跨设备审计聚合）。
 
 ---
 
-## 现在在哪：v1.0.6 ✅
+## 现在在哪：v1.0.7 ✅
 
-> 编排迁移 + A/B 真实运行器 + 陌生视角审查修复——DeepAgents compose + Sub Agent 状态 + A/B 模型 API 直跑 + history.jsonl 环境指纹 + post-commit hook + 文档一致性修复。473 测试全绿，pre-push 7/7。
+> 双节点架构（自动运行 + 个人增强）+ Sub Agent 约束自加载（buildConstrainedSystemPrompt，平台无关）+ CLI 编排入口（sofagent-audit compose）+ ao 完全退役 + 审计 fast-fail + A/B 自动切换 + **预装 FDE 部署工程师 + 合规审计员两个内置 Agent**。493 测试全绿，pre-push 全绿。
 >
-> 📖 [开发日志](./docs/changelog/v1.0.6.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [开发日志](./docs/changelog/v1.0.7.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -80,9 +80,9 @@
 | **v1.0.3** | ✅ 已完成 | LOOP 自迭代架构（4 Agent + 内外层循环） + SkillOpt 自动优化 + Audit Sub Agent（含成本） + think.md 判断单元结构化 + 文档分层预算 | [📖](./docs/changelog/v1.0.3.md) |
 | **v1.0.4** | ✅ 已完成 | 自动优化 + 约束验证版——eval harness + Sub Agent A/B 自动优化 + HITL 渐进自主度 + A15 约束验证 | [📖](./docs/changelog/v1.0.4.md) |
 | **v1.0.5** | ✅ 已完成 | Ontology 统一层 + Work模板市场 + A9 分级安全 + A15 绕过修复 + fail-closed 默认安全 + 安全加固 | [📖](./docs/changelog/v1.0.5.md) |
-| **v1.0.6** | ✅ 已完成 | 编排迁移 + A/B 真实运行器 + 陌生视角审查修复：DeepAgents compose + Sub Agent 状态 + A/B 模型 API 直跑 + history.jsonl 环境指纹 + post-commit hook + 文档一致性修复 | [📖](./docs/changelog/v1.0.6.md) |
-| **v1.0.7** | 📋 规划中 | 双节点架构 + Sub Agent 约束自加载 + CLI 编排入口 + ao 完全退役 + A/B 自动切换 | [📖](./docs/changelog/v1.0.7.md) |
-| **v1.0.8** | 📋 规划中 | 文件系统审计 + 内嵌 isomorphic-git + Agent 定义去 OpenClaw 耦合 + TencentDB Memory 集成 | [📖](./docs/changelog/v1.0.8.md) |
+| **v1.0.6** | ✅ 已完成 | 编排迁移 + A/B 真实运行器 + 文档一致性修复：DeepAgents compose + Sub Agent 状态 + A/B 模型 API 直跑 + history.jsonl 环境指纹 + post-commit hook + 文档一致性修复 | [📖](./docs/changelog/v1.0.6.md) |
+| **v1.0.7** | ✅ 已完成 | 双节点架构 + Sub Agent 约束自加载 + CLI 编排入口 + ao 完全退役 + A/B 自动切换 + **预装 FDE 部署工程师 + 合规审计员两个内置 Agent** | [📖](./docs/changelog/v1.0.7.md) |
+| **v1.0.8** | 📋 规划中 | **⭐ FDE Agent 自进化（部署 + 持续优化双模式）**→ 一管底线（Audit）一管上限（FDE）+ 文件系统审计 + 内嵌 isomorphic-git + Agent 定义去耦合 + TencentDB Memory 集成 | [📖](./docs/changelog/v1.0.8.md) |
 | **v1.0.9** | 📋 规划中 | 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool + knowledge 智能选择 | [📖](./docs/changelog/v1.0.9.md) |
 | **v1.1.0** | 📋 规划中 | 轻量多设备：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md 生成 lessons-missteps.md）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检 | — |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同：Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界 | — |
@@ -143,6 +143,8 @@ OpenClaw 总管（TS）
 | 🔍 约束验证 | v1.0.4 | 新增 A15 审计规则——Agent 执行的 action 是否在节点声明的 actions 范围内、是否满足 constraints | 事后审计扩展到事前约束检查 |
 | 🌐 统一 Ontology 层 | v1.0.5 | `.sofagent/ontology/` 目录——自动从 entities + workflow actions 合并生成，Agent 加载时获得完整世界模型 | FDE 交付的不是文档，是企业数字孪生的操作接口 |
 | 🛡️ 防幻觉四方案 | v1.0.5 | Schema Guided（ontology 约束 Action 输出）+ HTRO（High Trust Read Only，只读可信源）+ RAG+溯源（引用必须可追溯到 knowledge/ 页面）+ Action Type 终审（审计层验证 action 类型合规） | 与 A 系列「硬证据」哲学一致 |
+| 📄 人类可读 Ontology | v1.0.8 | `sofagent-audit ontology view`——从三个 YAML（objects.yml / actions.yml / constraints.yml）生成人类可读的 MD 摘要 | FDE 离场时交给客户的"企业数字孪生说明书" |
+| 🖥️ Dashboard | v1.x | MCP push 三个 YAML → 服务器渲染为 HTML 仪表盘。两个模块——**Ontology 模块**（实体关系图 + 动作矩阵 + 约束拓扑）和 **River 模块**（多个 Workflow 的关联拓扑——River 是 Workflow 的集合，展示如何互联、数据如何回流、如何汇入统一入口） | 从"离场交付一份文档"升级为"离场交付一个可运行的治理仪表盘" |
 
 > 💡 反常识：不到 1000 个高质量 Token 即可构建有效知识图谱——关键不是数据量，是数据质量和约束规则。Ontology 的门槛远比看起来低。
 >

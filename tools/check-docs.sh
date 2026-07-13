@@ -82,7 +82,7 @@ LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 # 上限定义
 LIMIT_A=3600
 LIMIT_B=2000
-LIMIT_C=4500
+LIMIT_C=4600  # v1.0.7 重新标定：C 层随回归维度(219→247)与发版 SOP 扩充已稳定突破 4500，上调至 4600 留缓冲
 LIMIT_D=500
 LIMIT_E=500
 LIMIT_TOTAL=5500

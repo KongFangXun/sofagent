@@ -48,12 +48,11 @@ export function runQuickChecks(
     v.checkWarn('.sofagent/ 数据目录不存在（首次使用会自动创建）');
   }
 
-  // 3. ao compose 可用
-  if (commandAvailable('ao')) {
-    const aoVer = tryExec('ao', ['--version']) || 'unknown';
-    v.checkPass(`ao compose 可用 — v${aoVer}`);
+  // 3. DeepAgents compose 可用
+  if (commandAvailable('node')) {
+    v.checkPass('Node.js 可用——编排引擎就绪（DeepAgents）');
   } else {
-    v.checkWarn('ao compose 不可用——编排引擎降级为默认编排');
+    v.checkWarn('Node.js 不可用——编排引擎降级');
   }
 
   // 4. fde.md 可读
@@ -315,47 +314,10 @@ export function runAllChecks(
   // ════════════════════════════════════════
   v.section('外部依赖');
 
-  if (commandAvailable('ao')) {
-    const aoVer = tryExec('ao', ['--version']) || 'unknown';
-    v.checkPass(`agency-orchestrator (ao) 可用 — v${aoVer}`);
-
-    // ao compose 健康检查
-    const aoComposeOut = tryExec('ao', ['compose', '--version']);
-    if (aoComposeOut) {
-      v.checkPass('ao compose 健康检查通过');
-    } else {
-      v.checkWarn('ao compose --version 失败——编排引擎可能不可用（约束层不受影响）');
-    }
-
-    // ao 版本下限检查（install.sh pin agency-orchestrator@0.7.5）
-    const aoClean = aoVer.replace(/^v/, '');
-    const aoParts = aoClean.split('.');
-    const aoMajor = parseInt(aoParts[0] || '0', 10) || 0;
-    const aoMinor = parseInt(aoParts[1] || '0', 10) || 0;
-    const aoPatch = parseInt(aoParts[2] || '0', 10) || 0;
-    if (aoMajor === 0 && (aoMinor < 7 || (aoMinor === 7 && aoPatch < 5))) {
-      v.checkWarn(`ao 版本低于 0.7.5（当前 ${aoVer}），建议升级：npm install -g agency-orchestrator@0.7.5`);
-    }
-
-    // 烟雾测试：ao 能否列出角色
-    const rolesOut = tryExec('ao', ['roles']);
-    if (rolesOut) {
-      const roleLines = rolesOut.split('\n').filter(line => line.includes('|')).length;
-      if (roleLines > 10) {
-        v.checkPass(`ao 角色库正常 (${roleLines}+ 角色)`);
-      } else {
-        v.checkPass('ao 角色库可用（输出格式可能已变化，无法精确计数）');
-      }
-    } else {
-      v.checkWarn('ao 角色库异常或未初始化，运行 ao init 初始化');
-    }
-  } else {
-    v.checkWarn('ao 命令不可用 — 编排功能将不可用');
-  }
-
+  // v1.0.7: DeepAgents 为正式依赖（ao 已退役）
   if (commandAvailable('node')) {
     const nodeVer = tryExec('node', ['--version']) || '?';
-    v.checkPass(`Node.js ${nodeVer}`);
+    v.checkPass(`Node.js ${nodeVer}（编排引擎: DeepAgents）`);
   } else {
     v.checkFail('Node.js 不可用');
   }

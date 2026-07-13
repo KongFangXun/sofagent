@@ -1,6 +1,6 @@
 // ============================================================
 // audit-history.ts · 审计历史持久化
-// v1.0.6 env fingerprint: hash chain 加环境指纹防 Agent 重算整链
+// v1.0.7 env fingerprint: hash chain 加环境指纹防 Agent 重算整链
 // ============================================================
 //
 // 并发安全说明：appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的。

@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
 # ============================================================
-# fde-install.sh · FDE 工具包一键部署 · v1.0.6
+# fde-install.sh · FDE 工具包一键部署 · v1.0.7
 # ============================================================
 # 用法: bash fde-install.sh [--platform openclaw|workbuddy|codex|hermes|claude]
 #       默认 --platform openclaw（编排引擎需要 OpenClaw 后台）
 #
 # 这个脚本装什么:
 #   1. 装 sofagent 底座（三层引擎：约束底座 + 审计引擎 + 编排引擎）
-#      → 内部会自动安装 agency-orchestrator（ao compose 命令的来源）
-#      → 非 openclaw 平台可用 --no-ao 跳过编排引擎
 #   2. 写入 fde.md（harness 层第三层——企业专属约束）
-#   3. 验证安装
+#   3. 安装内置 Agent Skill（@sofagent-fde + @sofagent-audit，v1.0.7 新增）
+#   4. 验证安装
 #
 # 这个脚本不装什么:
 #   - 不装 templates/（那是给 FDE 读的案例参考，不是部署目标）
@@ -78,6 +77,18 @@ if [ -n "$FDE_MD_TARGET" ] && [ -f "$FDE_MD_TEMPLATE" ]; then
   cp "$FDE_MD_TEMPLATE" "$FDE_MD_TARGET"
   echo -e "${GREEN}✅ fde.md 已写入 ${FDE_MD_TARGET}${NC}"
   echo -e "  ${CYAN}请编辑此文件，填写你的工作规则${NC}"
+
+  # v1.0.7: 同时安装 FDE + Audit 两个内置 Agent 的 Skill
+  SKILL_SRC="$PROJECT_ROOT/agents/SKILL"
+  SKILL_DIR="$(dirname "$FDE_MD_TARGET")"
+  if [ -d "$SKILL_SRC/sofagent-fde" ]; then
+    cp -r "$SKILL_SRC/sofagent-fde" "$SKILL_DIR/sofagent-fde"
+    echo -e "${GREEN}✅ FDE Agent Skill 已安装（@sofagent-fde 可用）${NC}"
+  fi
+  if [ -d "$SKILL_SRC/sofagent-audit" ]; then
+    cp -r "$SKILL_SRC/sofagent-audit" "$SKILL_DIR/sofagent-audit"
+    echo -e "${GREEN}✅ Audit Agent Skill 已安装（@sofagent-audit 可用）${NC}"
+  fi
 else
   echo -e "${CYAN}⚠️ 跳过 fde.md（模板或目标路径不存在）${NC}"
 fi
@@ -96,12 +107,12 @@ echo -e "  ${BOLD}下一步：${NC}"
 if [ "$PLATFORM" = "openclaw" ]; then
   echo -e "  1. 打开你的 Agent——它会检测到 FDE 场景，自动加载工作台"
   echo -e "  2. 告诉 Agent 企业基本信息（名称/行业/规模），开始 §1 确定场景"
-  echo -e "  3. 走完 12 步后，找台闲置设备装上 sofagent 底座给客户"
+  echo -e "  3. 走完 11 步后，找台闲置设备装上 sofagent 底座给客户"
 else
-  echo -e "  1. 复制 ${BOLD}FDE/README.md${NC} 里的种子指令，粘贴到你的 Agent"
-  echo -e "  2. Agent 读完后按 §1 引导你开始部署"
+  echo -e "  1. 在你的 Agent 中输入 ${BOLD}@sofagent-fde${NC} 开始部署"
+  echo -e "  2. Agent 读完后按 FDE 流程引导你梳理工作流"
 fi
 echo ""
+echo -e "  ${CYAN}内置 Agent：${NC}@sofagent-fde（部署工程师）+ @sofagent-audit（合规审计员）"
 echo -e "  ${CYAN}详细指南见 FDE/README.md${NC}"
-echo -e "  ${YELLOW}💡 别忘了配 Webhook（README 最下面）——审计结果自动推送到公司群${NC}"
 echo ""

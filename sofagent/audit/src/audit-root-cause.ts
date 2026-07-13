@@ -98,7 +98,7 @@ function extractFilePaths(details: string[]): string[] {
  * >10% 差异 = up/down，其余 stable
  * @param statuses 该规则的所有历史状态（按时间正序）
  */
-function calculateTrend(statuses: ('PASS' | 'WARN' | 'FAIL')[]): 'up' | 'down' | 'stable' {
+function calculateTrend(statuses: ('PASS' | 'WARN' | 'FAIL' | 'SKIPPED')[]): 'up' | 'down' | 'stable' {
   if (statuses.length < 2) {
     return 'stable';
   }
@@ -142,7 +142,7 @@ export function analyzeRootCause(history: AuditHistoryEntry[]): RootCauseReport 
     triggerCount: number;
     failCount: number;
     warnCount: number;
-    statuses: ('PASS' | 'WARN' | 'FAIL')[];
+    statuses: ('PASS' | 'WARN' | 'FAIL' | 'SKIPPED')[];
   }>();
 
   // 维度 2：按文件聚合

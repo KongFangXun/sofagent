@@ -1,4 +1,4 @@
-# sofagent 回归检查清单（219 维度）
+# sofagent 回归检查清单（247 维度）
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。这不是"发现新问题"的工具——发现新问题用[陌生视角审查](./fresh-eyes-review.md)。
 >
@@ -7,7 +7,7 @@
 > - 检查项编号递增，不重排已有编号
 > - 删掉的检查项标注 `[已移除]` 并注明原因，不直接删除
 > - 发版时在 `docs/changelog/vX.Y.md` 记录"回归检查 N/N 全通过"
-> - **审查体系闭环**（发版后做，见 SOP 步骤 19）：
+> - **审查体系闭环**（发版时做，见 releasing.md 阶段五「合并更新两份审查文档」）：
 >   - ① 本次修复的新增检查项是否已经加到本清单？
 >   - ② 有没有反复出现的同类问题——要不要抽象成通用维度加到[陌生视角审查](./fresh-eyes-review.md)里？
 >   - ③ [陌生视角审查](./fresh-eyes-review.md)本身有没有过时的角色或问题需要删改？
@@ -19,7 +19,7 @@
 
 ## 你的身份
 
-你是一名**回归测试工程师**。你的任务不是发现新问题，而是**确认已知的修复没有回退**。你有一份 219 项的检查清单，每一项对应历史上发现并修复过的问题。逐项核对，全部 PASS 就是通过。
+你是一名**回归测试工程师**。你的任务不是发现新问题，而是**确认已知的修复没有回退**。你有一份 247 项的检查清单，每一项对应历史上发现并修复过的问题。逐项核对，全部 PASS 就是通过。
 
 **与陌生视角审查的区别**：陌生视角审查是"假装不知道项目是什么，凭直觉找新问题"；回归检查是"知道之前修了什么，确认没退回去"。两者互补，发版前都要跑。
 
@@ -42,7 +42,7 @@
 
 > 本清单是**累积式**的——每个维度对应一个历史修复。审查前不需要了解每件事的背景，只需要逐项核对当前代码状态。
 >
-> 维度来源：v0.99.9 初始 88 维度 → v1.0 新增 18 → v1.0.1 追加 32 → v1.0.2 追加 26 → v1.0.3 追加 12 → v1.0.4 追加 8 → v1.0.4 审查追加 8 = 204 → v1.0.5 追加 8（205-212）→ v1.0.6 追加 5（213-217）→ v1.0.6 SkillOpt 修复追加 2（218-219）= 219 总计。
+> 维度来源：v0.99.9 初始 88 维度 → v1.0 新增 18 → v1.0.1 追加 32 → v1.0.2 追加 26 → v1.0.3 追加 12 → v1.0.4 追加 8 → v1.0.4 审查追加 8 = 204 → v1.0.5 追加 8（205-212）→ v1.0.6 追加 5（213-217）→ v1.0.6 SkillOpt 修复追加 2（218-219）→ v1.0.7 追加 28 维度（220-247）= 247 总计。
 
 ---
 
@@ -94,9 +94,9 @@ bash tools/pre-push-check.sh 2>&1 | tail -5
 
 ---
 
-## 审查维度（219 个维度）
+## 审查维度（247 个维度）
 
-> v0.99.9 初始 88 维度（1-88）→ v1.0 新增 18 维度（89-106）→ v1.0.1 追加 32 维度（107-143）→ v1.0.2 追加 26 维度（144-176）→ v1.0.3 追加 12 维度（177-188）→ v1.0.4 追加 8 维度（189-196）→ v1.0.4 审查追加 8 维度（197-204）→ v1.0.5 追加 8 维度（205-212）→ v1.0.6 追加 5 维度（213-217）= 219 总计
+> v0.99.9 初始 88 维度（1-88）→ v1.0 新增 18 维度（89-106）→ v1.0.1 追加 32 维度（107-143）→ v1.0.2 追加 26 维度（144-176）→ v1.0.3 追加 12 维度（177-188）→ v1.0.4 追加 8 维度（189-196）→ v1.0.4 审查追加 8 维度（197-204）→ v1.0.5 追加 8 维度（205-212）→ v1.0.6 追加 5 维度（213-217）→ v1.0.7 追加 28 维度（220-247）= 247 总计
 
 ---
 
@@ -1847,7 +1847,7 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 |---|------|---------|------|------|
 
 ## 维度通过统计
-- 总维度数：219
+- 总维度数：247
 - 通过：X
 - ⚠️ 有条件通过：X
 - ❌ 未通过：X
@@ -2554,6 +2554,218 @@ grep -A5 'skillopt-run' sofagent/audit/src/index.ts | grep 'parseArgs\|argv\[2\]
 # 期望：skillopt-run 分支在 parseArgs 之前拦截，或 parseArgs 跳过 skillopt-run 专属参数
 
 rm -f /tmp/regression-skill-test.md
+```
+
+---
+
+#### 220. post-commit hook 用 timestamp 近邻匹配（60s），不用 SHA 精确匹配 🆕
+```bash
+# v1.0.7 P0-1：post-commit 改用 timestamp 近邻匹配，不再依赖 commitSha（父 commit SHA 永远 ≠ 新 HEAD SHA）
+# 1. hook 模板含 60 秒窗口逻辑
+grep -q "60000" sofagent/audit/src/commands/init.ts && echo "OK: 含 60s 窗口逻辑" || echo "FAIL: 缺 60s 窗口"
+# 2. 旧 SHA 精确匹配误报文案已移除
+if grep -q "未在审计记录中找到" sofagent/audit/src/commands/init.ts; then echo "FAIL: 仍含旧 SHA 误报文案"; else echo "OK: 旧文案已移除"; fi
+```
+
+#### 221. init.ts hook skip 用版本号正则判断 🆕
+```bash
+# v1.0.7 补充修复#2：init.ts 用版本号正则判断 hook 是否覆盖（v1.0.6→覆盖, v1.0.7+→保留）
+# 回归风险：若改回 includes('sofagent') 模糊判断，存量升级用户会跳过重装 hook，P0-1 修复对他们失效
+grep -n "v(\\\\d+)\\\\.(\\\\d+)\\\\.(\\\\d+)" sofagent/audit/src/commands/init.ts | head
+# 期望：有匹配（版本号正则）
+grep -n "major < 1\|patch < 7\|hasPostCommitHook" sofagent/audit/src/commands/init.ts | head
+# 期望：有匹配（阈值判断）
+grep -n "includes('sofagent')\|includes(\"sofagent\")" sofagent/audit/src/commands/init.ts && echo "FAIL: 仍用模糊 includes" || echo "OK: 已改版本号判断"
+```
+
+#### 222. --init 创建 .gitignore 排除 .sofagent/ 🆕
+```bash
+# v1.0.7 P1-1：--init 确保 .gitignore 排除 .sofagent/，否则首次 commit 触发 A3 越界
+grep -n "ensureGitignore" sofagent/audit/src/commands/init.ts | head
+# 期望：有匹配（ensureGitignore 函数被调用）
+```
+
+#### 223. ao 完全退役（无 execFileSync('ao')，deepagents 在 dependencies） 🆕
+```bash
+# v1.0.7 任务3：ao 作为编排 fallback 路径正式移除
+grep -rn "execFileSync('ao'\|execFileSync(\"ao\"\|agency-orchestrator" sofagent/audit/src/ && echo "FAIL: 仍有 ao 残留" || echo "OK: 无 ao 残留"
+grep -A3 '"dependencies"' sofagent/audit/package.json | grep -q "deepagents" && echo "OK: deepagents 在 dependencies" || echo "FAIL: deepagents 不在 dependencies"
+grep -A3 '"optionalDependencies"' sofagent/audit/package.json | grep -q "deepagents" && echo "FAIL: deepagents 仍在 optionalDependencies" || echo "OK: deepagents 不在 optionalDependencies"
+```
+
+#### 224. Sub Agent 约束自加载（buildConstrainedSystemPrompt + 缺失静默） 🆕
+```bash
+# v1.0.7 任务1：Sub Agent 启动时自己读 .sofagent/ 约束，不依赖宿主平台 Skill 注入
+grep -rn "buildConstrainedSystemPrompt" sofagent/audit/src/ | head
+# 期望：launcher.ts 定义 + 被 ab-runner 等调用
+grep -n "tryRead\|静默\|return null" sofagent/audit/src/subagents/launcher.ts | head
+# 期望：有匹配（缺失文件不报错，静默跳过）
+```
+
+#### 225. compose CLI 入口实现 + 未知子命令报错 🆕
+```bash
+# v1.0.7 任务2 / P2-2：compose 子命令实现，未知子命令不再静默跑全量 diff
+grep -n "compose" sofagent/audit/src/index.ts | head
+# 期望：有匹配（compose 子命令处理）
+grep -n "未知子命令\|SUBCOMMANDS" sofagent/audit/src/index.ts | head
+# 期望：有匹配（未知子命令报错逻辑）
+```
+
+#### 226. A/B 连续胜出计数器 + auto promote + ab-state.json 持久化 🆕
+```bash
+# v1.0.7 任务4：连续胜出计数器触发自动 promote，状态持久化
+grep -n "CONSECUTIVE_WINS_REQUIRED\|consecutiveWins\|ab-state.json\|atomicWrite" sofagent/audit/src/ab-testing/ab-runner.ts | head
+# 期望：有匹配
+```
+
+#### 227. A/B 运行器升级 DeepAgents + 方案B fallback 🆕
+```bash
+# v1.0.7 任务5：方案C（DeepAgents 完整 Agent，可工具调用）+ 方案B（runMinimalAgent 超时降级）
+grep -n "runDeepAgent\|runMinimalAgent" sofagent/audit/src/ab-testing/ab-runner.ts | head
+# 期望：两者都有（runMinimalAgent 作为 timeout/异常 fallback）
+```
+
+#### 228. 审计 fast-fail（critical→warning→crutch，SKIPPED 写入 history） 🆕
+```bash
+# v1.0.7 任务7：审计规则按严重度分级，FAIL 命中即停，跳过规则标 SKIPPED
+grep -n "AUDIT_PRIORITY\|critical\|crutch" sofagent/audit/src/rules/runner.ts | head
+# 期望：有匹配（分级执行顺序）
+grep -n "SKIPPED" sofagent/audit/src/rules/runner.ts | head
+# 期望：有匹配（跳过的规则标 SKIPPED 写入 history.jsonl）
+```
+
+#### 229. 预装 FDE + Audit Agent（listAgents + subagent run CLI） 🆕
+```bash
+# v1.0.7 任务8：内置两个 Agent 随 npm 包分发
+ls sofagent/audit/src/subagents/builtin-agents.ts 2>/dev/null && echo "OK: builtin-agents.ts 存在" || echo "FAIL: 缺 builtin-agents.ts"
+grep -n "listAgents" sofagent/audit/src/subagents/registry.ts | head
+# 期望：有匹配（自动合并内置 Agent）
+grep -n "subagent run" sofagent/audit/src/index.ts | head
+# 期望：有匹配（CLI 入口）
+```
+
+#### 230. --doctor 第10项链异常友好输出 🆕
+```bash
+# v1.0.7 P2-13：第10项不只说"异常"，还要说明可能原因 + --verbose
+grep -rn "可能原因\|环境变化\|--verbose" sofagent/audit/src/verify.ts sofagent/audit/src/commands/doctor.ts 2>/dev/null | head
+# 期望：有匹配（友好输出）
+```
+
+#### 231. --doctor 第9项 timestamp 窗口对齐 🆕
+```bash
+# v1.0.7 P3-3：第9项 commit 审计追溯与 post-commit 60s 策略对齐，不再依赖 SHA 精确匹配
+grep -rn "60.*秒\|timestamp\|窗口" sofagent/audit/src/commands/doctor.ts sofagent/audit/src/verify.ts 2>/dev/null | head
+# 期望：有匹配（timestamp 窗口逻辑）
+```
+
+#### 232. README 测试数与实际 npm test 一致 🆕
+```bash
+# v1.0.7 P1-2
+ACTUAL=$(cd sofagent/audit && npm test 2>&1 | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+')
+grep -qE "$ACTUAL tests 全绿|$ACTUAL\+ tests" README.md && echo "OK: README 测试数=$ACTUAL" || echo "FAIL: README 测试数不一致(实际 $ACTUAL)"
+```
+
+#### 233. ROADMAP 测试数与实际 npm test 一致 🆕
+```bash
+# v1.0.7 P1-3
+ACTUAL=$(cd sofagent/audit && npm test 2>&1 | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+')
+grep -qE "$ACTUAL|测试全绿" ROADMAP.md && echo "OK" || echo "FAIL: ROADMAP 测试数不一致(实际 $ACTUAL)"
+```
+
+#### 234. evidence.md 测试数与实际 npm test 一致 🆕
+```bash
+# v1.0.7 P1-4
+ACTUAL=$(cd sofagent/audit && npm test 2>&1 | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+')
+grep -q "$ACTUAL" docs/evidence/evidence.md && echo "OK" || echo "FAIL: evidence.md 测试数不一致(实际 $ACTUAL)"
+```
+
+#### 235. CHANGELOG/ROADMAP 不含审查元信息 🆕
+```bash
+# v1.0.7 P1-5：删除"陌生视角审查修复"等审查过程元信息
+grep -rn "陌生视角审查修复" CHANGELOG.md ROADMAP.md && echo "FAIL: 含审查元信息" || echo "OK: 无审查元信息"
+```
+
+#### 236. CONTRIBUTING.md 不含具体模型名 🆕
+```bash
+# v1.0.7 P2-4
+grep -n "DeepSeek V4 Pro\|GLM-5.2" CONTRIBUTING.md && echo "FAIL: 含具体模型名" || echo "OK: 无具体模型名"
+```
+
+#### 237. README/README.en 不含无来源 "87%" 🆕
+```bash
+# v1.0.7 P2-6：中英文都改为定性描述
+grep -n "87%" README.md README.en.md && echo "FAIL: 含无来源 87%" || echo "OK: 无 87%"
+```
+
+#### 238. README 企业覆盖范围标注 v1.0.7 🆕
+```bash
+# v1.0.7 P2-10：版本号与当前版本一致（曾误写 v1.0.6）
+grep -n "当前版本（v1.0.7）覆盖范围" README.md && echo "OK" || echo "FAIL: 版本号未对齐 v1.0.7"
+```
+
+#### 239. README 编排引擎"全平台可用"标注 v1.0.7 🆕
+```bash
+# v1.0.7 P2-12
+grep -n "全平台\|v1.0.7" README.md | grep -i "编排\|平台" | head
+# 期望：有匹配（编排引擎全平台开放标注）
+```
+
+#### 240. 根目录无 index.html/favicon/sofagent.png 🆕
+```bash
+# v1.0.7 P2-1：前端文件归位 docs/ 或 docs/assets/
+ls *.html *.png 2>/dev/null && echo "FAIL: 根目录仍有前端文件" || echo "OK: 根目录干净"
+```
+
+#### 241. README 补充 index.html 用途说明 🆕
+```bash
+# v1.0.7 P3-5
+grep -n "index.html\|落地页\|GitHub Pages" README.md | head
+# 期望：有匹配（说明 docs/index.html 是官网落地页）
+```
+
+#### 242. CHANGELOG 含 v1.0.7 条目 + ao 退役 Breaking Change 🆕
+```bash
+# v1.0.7 补充修复#3/#5
+grep -n "v1.0.7" CHANGELOG.md | head -3
+# 期望：有匹配（v1.0.7 索引条目）
+grep -rn "Breaking Change\|agency-orchestrator" CHANGELOG.md SECURITY.md | head
+# 期望：有匹配（ao 退役 Breaking Change 标注）
+```
+
+#### 243. ROADMAP "现在在哪"对齐 v1.0.7 🆕
+```bash
+# v1.0.7 补充修复#4
+grep -n "现在在哪" ROADMAP.md | head
+grep -n "v1.0.7" ROADMAP.md | head -3
+# 期望：有匹配（现在在哪对齐 v1.0.7）
+```
+
+#### 244. docs/changelog 未发版文件有状态标记 🆕
+```bash
+# v1.0.7 P3-4：未发版 changelog 必须标"开发中"或类似状态，避免被误认已发布
+ls docs/changelog/*.md 2>/dev/null | xargs grep -L "已正式发版\|状态：开发中\|⚠️" 2>/dev/null | grep -v "draft/" && echo "FAIL: 有未发版文件缺状态标记" || echo "OK: 所有 changelog 均有状态标记"
+```
+
+#### 245. "自迭代闭环"措辞在 README/CHANGELOG 已软化 🆕
+```bash
+# v1.0.7 P3-2：promote 仍需手动，不写"自迭代闭环打通"
+grep -rn "自迭代闭环" README.md CHANGELOG.md && echo "FAIL: README/CHANGELOG 仍含自迭代闭环" || echo "OK: 已软化（LIMITATIONS 历史描述可接受）"
+```
+
+#### 246. 文档头部日期一致性（bump-version 后手动同步） 🆕
+```bash
+# v1.0.7 P2-11：bump-version.sh 只改版本号不改日期，需手动同步
+# 检查主要文档头日期非陈旧（发版后应为实际发版日）
+DATE=$(date +%Y-%m-%d)
+grep -rn "2026-07-1[0-9]" README.md ROADMAP.md CHANGELOG.md docs/changelog/v1.0.7.md 2>/dev/null | head
+# 期望：有匹配（发版日期一致）
+```
+
+#### 247. README 编排引擎诚实标注实现规模 🆕
+```bash
+# v1.0.7 P2-3：保留"编排引擎"名称但标注实现规模（~70 行 DeepAgents 接入层）
+grep -n "DeepAgents 接入层\|launcher.ts\|~70 行\|实验性" README.md | head
+# 期望：有匹配（诚实标注，不夸大）
 ```
 
 ---

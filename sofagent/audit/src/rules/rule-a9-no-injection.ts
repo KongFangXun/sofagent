@@ -2,7 +2,7 @@
 // A9 不纳注入（安全层 · 业务底线）
 // 检测 git diff 新增行中是否含 prompt injection 模式
 // evidenceMode: git-diff（纯正则检测，--silent 可跑）
-// v1.0.6: score-based 分级安全——可疑度评分替代二元判断
+// v1.0.7: score-based 分级安全——可疑度评分替代二元判断
 // ============================================================
 
 import { getAddedLines } from '../diff-parser';

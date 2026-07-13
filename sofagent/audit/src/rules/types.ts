@@ -29,7 +29,7 @@ export type RuleClass = '业务底线' | '能力拐杖';
 export interface RuleCheck {
   name: string;
   number: number;
-  status: 'PASS' | 'WARN' | 'FAIL';
+  status: 'PASS' | 'WARN' | 'FAIL' | 'SKIPPED';
   details: string[];
   /** 证据模式标注（用于输出显示） */
   evidenceMode?: EvidenceMode;

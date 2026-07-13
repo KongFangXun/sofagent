@@ -1,15 +1,22 @@
 // ============================================================
 // ab-testing/ab-runner.ts · A/B 测试运行器
-// v1.0.6 新增 · v1.0.6 替换 simulateAgentRun → runMinimalAgent
+// v1.0.7 新增 · v1.0.7 替换 simulateAgentRun → runMinimalAgent
+// v1.0.7 新增 runDeepAgent（方案 C），保留 runMinimalAgent fallback
 // current vs candidate 并行对比评测
 // ============================================================
 
 import { readFileSync } from 'fs';
+import { dirname } from 'path';
 import type { ABConfig, ABTestResult } from './types';
 import type { ScoreBreakdown, TestCase } from '../eval/types';
 import { scoreCase } from '../eval/eval-scorer';
 import { callModelAPI } from '../model-client';
 import type { ModelMessage } from '../model-client';
+
+/** Agent 运行结果 */
+interface AgentResult {
+  output: Record<string, unknown>;
+}
 
 /**
  * 解析模型输出为结构化结果
@@ -46,7 +53,20 @@ function parseAgentOutput(rawOutput: string): Record<string, unknown> {
 }
 
 /**
- * 最小化 Agent 运行——真实模型 API 调用
+ * 带超时的 Promise（接收工厂函数，延迟执行）
+ */
+function withTimeout<T>(factory: () => Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`timeout after ${ms}ms`)), ms);
+    factory().then(
+      (val) => { clearTimeout(timer); resolve(val); },
+      (err) => { clearTimeout(timer); reject(err); }
+    );
+  });
+}
+
+/**
+ * 方案 B：最小化 Agent 运行——真实模型 API 调用
  *
  * 工作流程：
  * 1. 读取 Skill 文件内容作为 system prompt
@@ -92,6 +112,101 @@ async function runMinimalAgent(
 }
 
 /**
+ * 方案 C：DeepAgents 运行器（v1.0.7 新增）
+ *
+ * 使用 DeepAgents createDeepAgent() + buildConstrainedSystemPrompt() 四层加载链。
+ * 启动真实 Agent，注入宪法约束 + 企业规则 + 历史经验 + 知识库。
+ *
+ * @param testCase  测试用例
+ * @param skillPath Skill 文件路径
+ * @returns Agent 输出的结构化结果
+ */
+async function runDeepAgent(
+  testCase: TestCase,
+  skillPath: string
+): Promise<Record<string, unknown>> {
+  const { createDeepAgent } = await import('deepagents');
+
+  // 从 launcher 导入约束构建函数（避免循环依赖）
+  const { buildConstrainedSystemPrompt } = await import('../subagents/launcher');
+
+  const skillDir = dirname(skillPath);
+  const systemPrompt = buildConstrainedSystemPrompt(skillDir);
+
+  const userContent: string =
+    typeof testCase.input === 'string'
+      ? testCase.input
+      : testCase.input?.task
+        ? String(testCase.input.task)
+        : JSON.stringify(testCase.input);
+
+  const agentConfig: Record<string, unknown> = {
+    systemPrompt,
+  };
+  if (testCase.allowedTools && testCase.allowedTools.length > 0) {
+    agentConfig.tools = testCase.allowedTools;
+  }
+
+  const agent = await (createDeepAgent as any)(agentConfig);
+
+  const result = await (agent as any).invoke?.({
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const text = extractResultText(result);
+  return parseAgentOutput(text);
+}
+
+/**
+ * 从 Agent 结果中提取文本
+ */
+function extractResultText(result: unknown): string {
+  if (typeof result === 'string') return result;
+  if (result && typeof result === 'object') {
+    const obj = result as Record<string, unknown>;
+    if (typeof obj.content === 'string') return obj.content;
+    if (typeof obj.text === 'string') return obj.text;
+    if (Array.isArray(obj.messages)) {
+      for (let i = obj.messages.length - 1; i >= 0; i--) {
+        const msg = obj.messages[i] as Record<string, unknown>;
+        if ((msg.role === 'assistant' || msg.type === 'ai') && typeof msg.content === 'string') {
+          return msg.content;
+        }
+      }
+    }
+  }
+  return String(result ?? '');
+}
+
+/**
+ * 带降级的运行器：方案 C → 方案 B fallback
+ *
+ * 先尝试 DeepAgents（方案 C），超时/异常时降级到模型 API 直跑（方案 B）。
+ * 降级信息仅在 verbose 模式下输出。
+ *
+ * @param testCase  测试用例
+ * @param skillPath Skill 文件路径
+ * @param verbose   是否输出降级信息
+ */
+async function runTestCase(
+  testCase: TestCase,
+  skillPath: string,
+  verbose: boolean = false
+): Promise<Record<string, unknown>> {
+  try {
+    return await withTimeout(
+      () => runDeepAgent(testCase, skillPath),
+      5 * 60 * 1000 // 5 分钟超时
+    );
+  } catch (e) {
+    if (verbose) {
+      console.warn(`DeepAgents 运行超时或异常，降级到方案 B（模型 API 直跑）: ${(e as Error).message}`);
+    }
+    return await runMinimalAgent(testCase, skillPath);
+  }
+}
+
+/**
  * 运行单次 A/B 测试对比
  * @param config A/B 配置
  * @param testCases 测试用例集
@@ -117,9 +232,9 @@ export async function runABTest(
   let candidateTotal: ScoreBreakdown = { exactMatch: 0, semanticSimilarity: 0, ruleCompliance: 0, overall: 0 };
 
   for (const testCase of testCases) {
-    // 公平性：同一 testCase 先跑 current 再跑 candidate（相同调用顺序）
-    const currentOutput = await runMinimalAgent(testCase, config.current);
-    const candidateOutput = await runMinimalAgent(testCase, config.candidate);
+    // v1.0.7: 使用方案 C（DeepAgents）+ 方案 B fallback
+    const currentOutput = await runTestCase(testCase, config.current);
+    const candidateOutput = await runTestCase(testCase, config.candidate);
 
     const currentScore = scoreCase(currentOutput, testCase.expected);
     const candidateScore = scoreCase(candidateOutput, testCase.expected);

@@ -6,7 +6,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 > sofagent 的设计决策记录——从 Harness 中间件的行为约束到五层架构的取舍。
 >
-> > v1.0.6 · 2026-07-11（UTC）· 孔放勋
+> > v1.0.7 · 2026-07-11（UTC）· 孔放勋
 
 <img src="../sofagent.png" alt="sofagent" width="300" />
 
@@ -93,7 +93,7 @@ sofagent 分两层——地基轻、引擎重：
 | **Harness 层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ 已可用 |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ v0.81 |
 | **审计层** | git 仓库 + 文件系统 | sofagent-audit——提交时审计 git diff（v1.0.7）+ 文件变更时审计 diff（v1.0.8） | ✅ v0.92 / v1.0.8 扩展 |
-| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v1.0.6），推送待端到端验证 | ✅ v0.99.5 |
+| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v1.0.7），推送待端到端验证 | ✅ v0.99.5 |
 | **协同层** | 多设备 + 云端 | 组织级 Agent Harness——Agent 以独立身份进入协作现场，共享上下文 + 组织记忆 + 主动参与 | v2.x 规划 |
 
 每层跑通再加下一层——不推翻已验证的东西。
@@ -114,6 +114,108 @@ sofagent v1.0.7 起正式区分两种部署节点类型。核心变化：Sub Age
 **Sub Agent 约束自加载**（v1.0.7 新增）：launcher.ts 的 `buildConstrainedSystemPrompt()` 在 Sub Agent 启动时读取 `.sofagent/` 下的约束文件（SKILL.md + fde.md + think.md + knowledge/ top-N），拼装为 system prompt。纯文件系统操作，不依赖任何 Agent 平台的 Skill 系统。这让 Sub Agent 换平台时约束不丢——OpenClaw 节点切到 WorkBuddy，约束行为一致。
 
 **CLI 编排入口**（v1.0.7 新增）：`sofagent-audit compose --task <描述>` 让第三方 Agent 通过 Bash tool 调用编排引擎。输出 YAML 编排方案到 stdout，加 `--run` 直接执行。不依赖 OpenClaw 的任何 API。
+
+### River — Workflow — Subagent 三层架构
+
+sofagent 的编排体系按三层抽象组织。三者不是竞争关系——是**不同抽象层**。**River 是多个 Workflow 的集合**：每个 Workflow 是一条小溪，多条小溪的关联关系组成了大河——用户只看到一个入口，背后是 Workflow 之间的调度和回流。
+
+```mermaid
+flowchart LR
+    User["用户：帮查清退款率上涨原因"] --> WF_A["Workflow A<br/>数据分析 + 客服工单"]
+    WF_A -->|关键数据回流| WF_B["Workflow B<br/>代码审查 + 测试运行"]
+    WF_B -->|结果回流| WF_C["Workflow C<br/>修复 + audit + 提交 PR"]
+    WF_C --> Return["River 汇总<br/>原因是 X，已提交 PR #456"]
+    
+    subgraph sofagent["sofagent 在各层"]
+        direction TB
+        River_L["River 层：约束底座 + Dashboard"]
+        WF_L["Workflow 层：A15 约束验证"]
+        Sub_L["Subagent 层：审计引擎"]
+        Global["全局：knowledge/ + think.md"]
+    end
+```
+
+| 层 | 是什么 | 对用户可见？ | 类比 |
+|------|------|:--:|------|
+| **River** | 统一 Agent 身份 + 连续上下文 | ✅ 可见 | 大河——只有一个入口 |
+| **Workflow** | 任务编排方案（YAML 模板） | ❌ 不可见 | 河道——决定水流走向 |
+| **Subagent** | 执行具体能力的 Agent | ❌ 不可见 | 水滴——干完活就消失 |
+
+用户只看到 River。Workflow 和 Subagent 是 River 内部的调度机制。多条小溪（Workflow）并行或串行执行，最终汇入同一条大河（River）——**从头到尾同一个身份、同一段上下文。**
+
+这与 Shopify River 的设计逻辑一致：全公司共用一个 Agent 身份，背后是 Work模板市场 模板 + Sub Agent 编排。sofagent 不做 River 本身（那是企业的统一 Agent），而是提供 River 背后运作所需的 Harness 基础设施——约束底座、审计引擎、Ontology 世界模型、知识库自动积累。
+
+#### River 的实现机制
+
+**River 不是一段代码——是一个架构模式。** 它的实现载体是 OpenClaw + sofagent + Channel 集成，三者合在一起构成企业的统一 Agent 入口。
+
+```
+企业员工（多渠道）
+    │
+    ├─ Slack @River
+    ├─ 钉钉 @River
+    ├─ 飞书 @River
+    └─ 企微 @River
+        │
+        ▼
+
+```mermaid
+flowchart TB
+    subgraph OpenClaw["OpenClaw（River 引擎）"]
+        Channel["Channel 接入层<br/>多平台收消息 → 读上下文 → 返回结果"]
+        subgraph Engine["编排引擎（DeepAgents）"]
+            direction LR
+            A["拆解任务"] --> B["匹配 Work模板市场 模板"]
+            B --> C["session.spawn subagent"]
+            C --> D["汇总结果"]
+        end
+        subgraph Harness["sofagent Harness 层"]
+            direction LR
+            H1["约束底座<br/>注入 Ontology"]
+            H2["审计引擎<br/>每次操作扫描"]
+            H3["knowledge/<br/>自动积累"]
+        end
+    end
+    Channel --> Engine
+    Engine --> Harness
+```
+
+### 四层架构：Agent 基础设施层（v1.0.7+）
+
+v1.0.7 起，sofagent 预装两个内置 Agent，v1.0.8 将它们升级为**基础设施 Agent**——所有 workflow 节点必须引用：
+
+```mermaid
+flowchart TD
+    subgraph Infra["Agent 基础设施层"]
+        direction LR
+        Audit["Audit Agent<br/>合规审计员<br/>管底线 · P0/P1 分级<br/>每次 commit 自动"]
+        FDE["FDE Agent<br/>部署 + 持续优化<br/>管上限 · deploy/sustain<br/>每周 auto 巡检"]
+    end
+    Nodes["所有 workflow 节点<br/>完成任务后强制调用"] --> Audit
+    Nodes --> FDE
+```
+
+**Agent 存储与加载**：
+- 定义在 `agents/SKILL/{name}/SKILL.md`，一个文件 = 一个 Agent
+- `builtin-agents.ts` 的 `parseSkillMd()` 读 SKILL.md，front matter → 身份标签，body → role prompt 注入 DeepAgents
+- `registry.ts` 的 `listAgents()` 自动合并内置 + `~/.sofagent/subagents/` 自定义 Agent
+- 第三方调用：Skill（@Agent 名）或 CLI（`sofagent-audit subagent run <name>`）```
+
+**并发设计**：当 200 人同时 @River 时，不靠砸 OpenClaw 解决，靠分层调度：
+
+| 层 | 怎么扛并发 | 当前状态 |
+|------|------|:--:|
+| **入口层** | IM 平台自带 webhook 队列（钉钉/飞书/Slack 都有），消息天然排队 | ✅ 已有 |
+| **OpenClaw** | 小规模（<50 人）单实例够用；中大规模（50-500 人）按任务类型分实例池——轻任务一个实例、重任务（涉及多 Sub Agent）独立实例 | ⚠️ 实例池是 v2.x 的事 |
+| **Sub Agent** | `session.spawn` 本身就是并行隔离的——N 个任务 = N 个独立 session，互不干扰 | ✅ v1.0.7 已具备 |
+| **审计层** | `sofagent-audit` 是独立 CLI 进程，每次 commit 独立运行，天然无锁、无竞态 | ✅ v1.0.7 已具备 |
+
+**River 与 LOOP 架构的对应**：
+
+- **内层循环** = 单次任务的 River 行为：人下任务 → minimal-change-engineer → audit → review → 人类确认
+- **外层循环** = River 的持续进化：FDE 监督 → 分析 think.md 趋势 → 优化 Agent 定义 → 内层循环自动升级
+
+River 不需要"开发一个新东西"——它是 OpenClaw + sofagent + Channel 集成的自然产物。当这三个组件都就绪时，企业自然就有了一个统一 Agent 入口。sofagent 不做 River 本身，而是确保这条大河里的每一滴水（Sub Agent）都有纪律、可追溯、会反思。
 
 ### 文件系统审计（v1.0.8+）
 

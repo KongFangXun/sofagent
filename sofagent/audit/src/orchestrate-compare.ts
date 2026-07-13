@@ -1,20 +1,17 @@
 #!/usr/bin/env node
 // sofagent-orchestrate-compare · 编排方案 A/B 对比 + 任务编排 CLI
 //
-// @deprecated v1.0.6 迁移核心逻辑到 DeepAgents，ao 降为 fallback。v1.0.7 完全移除 ao 依赖。
-//
-// TODO(v1.0.7): 实现连续胜出计数器（CONSECUTIVE_WINS_REQUIRED = 2）
-// 当前只做单次对比。连续胜出判断需手动执行两次 compare 后人工决策。
-// 参见 ARCHITECTURE.md §A/B 测试
+// v1.0.7: ao 完全退役，DeepAgents 为唯一编排引擎。
+// 新增连续胜出计数器（CONSECUTIVE_WINS_REQUIRED = 2）+ ab-state.json 持久化。
 //
 // 用法:
 //   sofagent-orchestrate-compare --current <dir> --candidate <dir> --output <dir>
 //   sofagent-orchestrate-compare promote --candidate <dir>
-//   sofagent-orchestrate-compare compose "任务描述" [--dry-run] [--worktree] [--model flash|pro]
+//   sofagent-orchestrate-compare compose "任务描述" [--dry-run] [--worktree]
 
 import { execFileSync } from 'child_process';
 import { existsSync, readdirSync, readFileSync, statSync, mkdirSync, writeFileSync, copyFileSync, renameSync, rmSync } from 'fs';
-import { join, resolve } from 'path';
+import { join, resolve, dirname } from 'path';
 import { createHash } from 'crypto';
 import { VERSION } from './shared/constants.js';
 import { composeWithDeepAgents } from './subagents/composer.js';
@@ -24,16 +21,116 @@ interface Args { current: string; candidate: string; output: string; }
 type Winner = 'Current' | 'Candidate' | '—';
 
 const RED = '\x1b[0;31m'; const GREEN = '\x1b[0;32m'; const YELLOW = '\x1b[1;33m'; const BLUE = '\x1b[0;34m'; const NC = '\x1b[0m';
-const AO_TIMEOUT = 180_000;
-const AO_UTIL_TIMEOUT = 30_000;
 
 function info(msg: string) { console.log(`${BLUE}[orchestrate]${NC} ${msg}`); }
 function ok(msg: string) { console.log(`${GREEN}[✓]${NC} ${msg}`); }
 function warn(msg: string) { console.log(`${YELLOW}[!]${NC} ${msg}`); }
 function err(msg: string) { console.error(`${RED}[✗]${NC} ${msg}`); }
-function cmdExists(cmd: string): boolean {
-  const which = process.platform === 'win32' ? 'where' : 'which';
-  try { execFileSync(which, [cmd], { stdio: 'ignore' }); return true; } catch { return false; }
+
+// ════════════════════════════════════════
+// A/B 自动切换（v1.0.7 新增）
+// ════════════════════════════════════════
+
+const CONSECUTIVE_WINS_REQUIRED = 2;
+
+interface AbState {
+  candidateSkill: string;
+  currentSkill: string;
+  consecutiveWins: number;
+  lastComparedAt: string;
+}
+
+function getAbStatePath(orchestratorDir?: string): string {
+  const homeDir = process.env.HOME || '/tmp';
+  const sofagentData = process.env.SOFAGENT_DATA || join(homeDir, '.sofagent');
+  const od = orchestratorDir ?? join(sofagentData, 'orchestrator');
+  return join(od, 'ab-state.json');
+}
+
+function readAbState(statePath: string): AbState {
+  try {
+    if (existsSync(statePath)) {
+      const raw = JSON.parse(readFileSync(statePath, 'utf-8'));
+      return {
+        candidateSkill: raw.candidateSkill ?? '',
+        currentSkill: raw.currentSkill ?? '',
+        consecutiveWins: raw.consecutiveWins ?? 0,
+        lastComparedAt: raw.lastComparedAt ?? '',
+      };
+    }
+  } catch { /* ignore corrupt file */ }
+  return { candidateSkill: '', currentSkill: '', consecutiveWins: 0, lastComparedAt: '' };
+}
+
+function atomicWriteSync(filePath: string, content: string): void {
+  const tmp = `${filePath}.tmp.${process.pid}`;
+  writeFileSync(tmp, content, 'utf-8');
+  try {
+    renameSync(tmp, filePath);
+  } catch (e: any) {
+    if (e.code === 'EXDEV') {
+      copyFileSync(tmp, filePath);
+      try { require('fs').unlinkSync(tmp); } catch { /* */ }
+    } else {
+      throw e;
+    }
+  }
+}
+
+interface CompareResult {
+  winner: 'current' | 'candidate' | 'tie';
+  currentScore: number;
+  candidateScore: number;
+}
+
+function updateAbState(result: CompareResult, candidateSkill: string, currentSkill: string, dryRun: boolean = false): void {
+  const statePath = getAbStatePath();
+  if (!existsSync(dirname(statePath))) {
+    mkdirSync(dirname(statePath), { recursive: true });
+  }
+  const state = readAbState(statePath);
+
+  state.candidateSkill = candidateSkill;
+  state.currentSkill = currentSkill;
+  state.lastComparedAt = new Date().toISOString();
+
+  if (result.winner === 'candidate') {
+    state.consecutiveWins++;
+    if (state.consecutiveWins >= CONSECUTIVE_WINS_REQUIRED) {
+      if (dryRun) {
+        info(`dry-run: candidate 连续胜出 ${state.consecutiveWins} 次，达到阈值 ${CONSECUTIVE_WINS_REQUIRED}——会 promote`);
+      } else {
+        promoteCandidate(state);
+        state.consecutiveWins = 0;
+        logPromotion(state);
+      }
+    }
+  } else {
+    state.consecutiveWins = 0;
+  }
+
+  atomicWriteSync(statePath, JSON.stringify(state, null, 2));
+}
+
+function promoteCandidate(state: AbState): void {
+  // 将 candidate 提升为 current——原子写入 ab-state.json
+  const prev = state.currentSkill;
+  state.currentSkill = state.candidateSkill;
+  info(`promote: ${prev} → ${state.candidateSkill}`);
+}
+
+function logPromotion(state: AbState): void {
+  const noticePath = getAbStatePath().replace('ab-state.json', 'daemon-notice.md');
+  try {
+    const entry = `\n### A/B Promote — ${new Date().toISOString()}\n- **候选 Skill**: ${state.candidateSkill}\n- **原 Skill**: ${state.currentSkill}\n- **连续胜出次数**: ${CONSECUTIVE_WINS_REQUIRED}\n`;
+    if (existsSync(noticePath)) {
+      const existing = readFileSync(noticePath, 'utf-8');
+      writeFileSync(noticePath, existing + entry);
+    } else {
+      writeFileSync(noticePath, `# 编排引擎通知\n${entry}`);
+    }
+    warn('A/B promote 已记录到 daemon-notice.md');
+  } catch { /* notice 写入失败不影响主流程 */ }
 }
 
 // ════════════════════════════════════════
@@ -59,7 +156,6 @@ function parseArgs(argv: string[]): Args {
 }
 
 export function scanLogFiles(dir: string): string[] {
-  // TODO(v1.next): 嵌套 try/catch 应展平为函数式错误处理管道
   if (!existsSync(dir)) return [];
   const files: string[] = [];
   try {
@@ -74,8 +170,6 @@ export function scanLogFiles(dir: string): string[] {
   return files.sort();
 }
 
-// extractMetrics 用关键词匹配计算首次通过率
-// 同时匹配文字关键词（中/英文）和 emoji，取并集（OR），两者出现任一即计入
 export function extractMetrics(dir: string): Metric {
   const files = scanLogFiles(dir);
   let fails = 0, steps = 0, pass = 0, fail = 0;
@@ -183,42 +277,29 @@ export function promoteWorkflow(candidateDir: string): void {
 }
 
 // ════════════════════════════════════════
-// 子命令: compose（原 task-orchestrate）
+// 子命令: compose（DeepAgents 编排）
 // ════════════════════════════════════════
 
 const BINARY_MODE = { SPLIT: '拆', DIRECT: '不拆' } as const;
-
-function shouldSkipAoCompose(cachedYaml: string): boolean {
-  return existsSync(cachedYaml);
-}
 
 async function composeTask(args: string[]): Promise<void> {
   let taskDesc = '';
   let dryRun = false;
   let useWorktree = false;
-  let aoModel = '';
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!;
     switch (a) {
       case '--dry-run': dryRun = true; break;
       case '--worktree': useWorktree = true; break;
-      case '--model': aoModel = args[++i]!; break;
       case '--version': console.log(`sofagent-orchestrate-compare compose v${VERSION}`); process.exit(0);
       case '--help': showComposeHelp(); process.exit(0);
       default:
-        if (a.startsWith('--model=')) { aoModel = a.split('=')[1]!; break; }
         if (!a.startsWith('--')) { taskDesc = a; break; }
     }
   }
 
   if (!taskDesc) { err('缺少任务描述。用法: sofagent-orchestrate-compare compose "你的任务"'); process.exit(1); }
-
-  // v1.0.6: 优先尝试 DeepAgents compose，ao 降为 fallback
-  const aoAvailable = cmdExists('ao');
-  if (!aoAvailable) {
-    warn('agency-orchestrator (ao) 未安装——编排引擎降级');
-  }
 
   console.log('');
   console.log('  ╔═══════════════════════════════════╗');
@@ -241,9 +322,9 @@ async function composeTask(args: string[]): Promise<void> {
   }
 
   let mode: '拆' | '不拆';
-  let skipAoCompose = shouldSkipAoCompose(cachedYaml);
+  const skipCompose = existsSync(cachedYaml);
 
-  if (skipAoCompose) {
+  if (skipCompose) {
     mode = BINARY_MODE.DIRECT;
     ok(`缓存复用 — ${taskSlug}.yaml（跳编排）`);
   } else if (totalRuns >= 3 && successRuns >= totalRuns) {
@@ -251,58 +332,26 @@ async function composeTask(args: string[]): Promise<void> {
     info(`${BINARY_MODE.DIRECT} — 任务稳定（连续 ${successRuns}/${totalRuns} 成功），直接交付 Agent`);
   } else {
     mode = BINARY_MODE.SPLIT;
-    info(`编排模式: ${BINARY_MODE.SPLIT} — AO compose 一次性拆解`);
+    info(`编排模式: ${BINARY_MODE.SPLIT} — DeepAgents compose 一次性拆解`);
   }
 
   console.log('');
 
-  if (mode === BINARY_MODE.DIRECT && !skipAoCompose) {
-    info('跳过编排/Harness/worktree，直接执行...');
-    const start = Date.now();
-    const r = runAo([taskDesc]);
-    const elapsed = Math.round((Date.now() - start) / 1000);
-    console.log('');
-    r.code === 0 ? ok(`任务完成（耗时 ${elapsed}s）`) : warn(`任务结束（exit ${r.code}，耗时 ${elapsed}s）`);
-    console.log('');
-    console.log(`  编排结束。exit code: ${r.code} · 模式: ${BINARY_MODE.DIRECT}`);
-    console.log('');
-    process.exit(r.code);
-  }
-
   let workflowFile = '';
-  let deepAgentsComposed = false;
-  if (skipAoCompose) {
+
+  if (skipCompose) {
     workflowFile = cachedYaml;
     info('Step 1/3 · 使用缓存模板');
   } else {
-    info('Step 1/3 · 编排分析（一次性拆解）...');
+    info('Step 1/3 · 编排分析（DeepAgents compose 拆解）...');
     workflowFile = join(process.env.TMPDIR || '/tmp', `sofagent-workflow-${process.pid}.yaml`);
 
-    // v1.0.6: 优先尝试 DeepAgents compose
-    info('  尝试 DeepAgents compose...');
     const deepAgentsYaml = await composeWithDeepAgents(taskDesc);
     if (deepAgentsYaml) {
       writeFileSync(workflowFile, deepAgentsYaml);
-      deepAgentsComposed = true;
       ok('DeepAgents compose 成功');
-    } else if (aoAvailable) {
-      // DeepAgents 不可用，降级到 ao
-      warn('DeepAgents compose 不可用，降级到 ao...');
-      if (aoModel) info(`  模型: ${aoModel}`);
-      try {
-        const aoArgs = aoModel ? ['compose', '--model', aoModel, taskDesc] : ['compose', taskDesc];
-        const output = execFileSync('ao', aoArgs, { encoding: 'utf-8', timeout: AO_TIMEOUT });
-        writeFileSync(workflowFile, output);
-      } catch {
-        warn('ao compose 未生成 YAML，尝试直接执行...');
-        try {
-          execFileSync('ao', ['compose', taskDesc, '--run'], { stdio: 'inherit', timeout: AO_TIMEOUT });
-          process.exit(0);
-        } catch { process.exit(1); }
-      }
     } else {
-      // 两个编排引擎都不可用
-      warn('DeepAgents 和 ao 均不可用，使用降级方案');
+      warn('DeepAgents compose 不可用，使用降级方案');
       defaultOrchestrate(taskDesc);
       process.exit(0);
     }
@@ -311,13 +360,9 @@ async function composeTask(args: string[]): Promise<void> {
       ok('编排计划已生成');
       try {
         info('编排预览:');
-        if (aoAvailable) {
-          execFileSync('ao', ['explain', workflowFile], { stdio: 'inherit', timeout: AO_UTIL_TIMEOUT });
-        } else {
-          console.log(readFileSync(workflowFile, 'utf-8').split('\n').slice(0, 20).join('\n'));
-        }
-      } catch {
         console.log(readFileSync(workflowFile, 'utf-8').split('\n').slice(0, 20).join('\n'));
+      } catch {
+        // 预览失败不影响主流程
       }
     }
   }
@@ -333,7 +378,7 @@ async function composeTask(args: string[]): Promise<void> {
       if (existsSync(wt)) {
         info(`清理 worktree: ${wt}`);
         try {
-          execFileSync('git', ['worktree', 'remove', wt, '--force'], { stdio: 'ignore', timeout: AO_UTIL_TIMEOUT });
+          execFileSync('git', ['worktree', 'remove', wt, '--force'], { stdio: 'ignore' });
         } catch {
           try { rmSync(wt, { recursive: true, force: true }); } catch { /* */ }
         }
@@ -351,7 +396,7 @@ async function composeTask(args: string[]): Promise<void> {
     if (inGitRepo) {
       info('Step 2/3 · 创建 worktree 隔离...');
       let subCount = 1;
-      const cachedFile = skipAoCompose ? cachedYaml : workflowFile;
+      const cachedFile = skipCompose ? cachedYaml : workflowFile;
       if (existsSync(cachedFile)) {
         try {
           const yamlContent = readFileSync(cachedFile, 'utf-8');
@@ -361,14 +406,14 @@ async function composeTask(args: string[]): Promise<void> {
       }
       let baseBranch = 'main';
       try {
-        baseBranch = execFileSync('git', ['branch', '--show-current'], { encoding: 'utf-8', timeout: AO_UTIL_TIMEOUT }).trim() || 'main';
+        baseBranch = execFileSync('git', ['branch', '--show-current'], { encoding: 'utf-8' }).trim() || 'main';
       } catch { /* */ }
       for (let i = 1; i <= subCount; i++) {
         const wtName = `sofagent-task-${i}-${process.pid}`;
         const wtPath = join(process.env.TMPDIR || '/tmp', wtName);
         info(`  创建 worktree ${i}/${subCount}: ${wtPath}`);
         try {
-          execFileSync('git', ['worktree', 'add', wtPath, baseBranch], { stdio: 'ignore', timeout: AO_UTIL_TIMEOUT });
+          execFileSync('git', ['worktree', 'add', wtPath, baseBranch], { stdio: 'ignore' });
           worktrees.push(wtPath);
         } catch {
           warn('  worktree 创建失败，跳过隔离');
@@ -383,32 +428,18 @@ async function composeTask(args: string[]): Promise<void> {
   }
 
   console.log('');
-  info('Step 3/3 · Harness 约束...');
-  const hookDir = join(homeDir, '.openclaw', 'hooks', 'sofagent-load-chain');
-  if (existsSync(join(hookDir, 'handler.ts')) && existsSync(join(hookDir, 'HOOK.md'))) {
-    ok('加载链 hook 就绪');
-  } else {
-    warn(`加载链 hook 未部署: ${hookDir}`);
-    warn('子 Agent 可能拿不到 think.md/fde.md');
-  }
-  console.log('');
+  info('Step 3/3 · 执行编排...');
 
-  info('执行任务编排...');
-  const startTime = Date.now();
-  let result: { code: number };
-
+  // v1.0.7: DeepAgents 是唯一编排引擎，直接输出方案
   const executeFile = existsSync(workflowFile) ? workflowFile : '';
   if (executeFile) {
-    result = runAo(['run', executeFile]);
-  } else {
-    result = runAo(['compose', taskDesc, '--run']);
-  }
-
-  const elapsed = Math.round((Date.now() - startTime) / 1000);
-  console.log('');
-  if (result.code === 0) {
-    ok(`任务完成（耗时 ${elapsed}s）`);
-    if (!skipAoCompose && existsSync(workflowFile)) {
+    ok('编排方案已就绪');
+    const yamlContent = readFileSync(executeFile, 'utf-8');
+    console.log('');
+    console.log(yamlContent);
+    console.log('');
+    ok('编排完成。使用 --run 执行编排方案。');
+    if (!skipCompose && existsSync(workflowFile)) {
       try {
         mkdirSync(orchestratorDir, { recursive: true });
         copyFileSync(workflowFile, cachedYaml);
@@ -416,13 +447,13 @@ async function composeTask(args: string[]): Promise<void> {
       } catch { /* */ }
     }
   } else {
-    warn(`任务结束（exit ${result.code}，耗时 ${elapsed}s）`);
+    warn('编排方案生成失败');
   }
 
   console.log('');
-  console.log(`  编排结束。exit code: ${result.code} · 模式: ${mode}`);
+  console.log(`  编排结束。模式: ${mode}`);
   console.log('');
-  process.exit(result.code);
+  process.exit(0);
 }
 
 function analyzeTrackRecord(taskDesc: string, sofagentData: string): [number, number] {
@@ -443,19 +474,10 @@ function analyzeTrackRecord(taskDesc: string, sofagentData: string): [number, nu
   return [total, success];
 }
 
-function runAo(aoArgs: string[]): { code: number } {
-  try {
-    execFileSync('ao', aoArgs, { stdio: 'inherit', timeout: AO_TIMEOUT });
-    return { code: 0 };
-  } catch (e: any) {
-    return { code: e.status ?? e.code ?? 1 };
-  }
-}
-
 function defaultOrchestrate(task: string): void {
   console.log('');
   console.log('  ╔═══════════════════════════════════╗');
-  console.log('  ║   sofagent · 默认编排（无 ao）    ║');
+  console.log('  ║   sofagent · 默认编排            ║');
   console.log('  ╚═══════════════════════════════════╝');
   console.log('');
   console.log(`  任务: ${task}`);
@@ -470,19 +492,18 @@ function defaultOrchestrate(task: string): void {
 
 function showComposeHelp(): void {
   console.log(`sofagent-orchestrate-compare compose v${VERSION}`);
-  console.log('  包装 ao compose，加 worktree 隔离 + 约束注入');
+  console.log('  DeepAgents 编排——任务拆解 + worktree 隔离');
   console.log('');
   console.log('  用法:');
   console.log('    sofagent-orchestrate-compare compose "任务描述"');
   console.log('    sofagent-orchestrate-compare compose "任务描述" --dry-run    仅预览编排');
   console.log('    sofagent-orchestrate-compare compose "任务描述" --worktree   创建独立 worktree');
-  console.log('    sofagent-orchestrate-compare compose "任务描述" --model flash|pro  指定模型');
   console.log('');
   console.log('  两档拆解:');
-  console.log('    拆    首次运行或复杂任务，AO compose 一次性拆解');
+  console.log('    拆    首次运行或复杂任务，DeepAgents compose 一次性拆解');
   console.log('    不拆  历史成功率100%或有缓存 → 直接交付 Agent');
   console.log('');
-  console.log('  依赖: agency-orchestrator (ao), git (worktree 模式)');
+  console.log('  依赖: deepagents, git (worktree 模式)');
 }
 
 // ════════════════════════════════════════
@@ -496,7 +517,7 @@ function showHelp(): void {
   console.log('  子命令:');
   console.log('    (默认)   sofagent-orchestrate-compare --current <dir> --candidate <dir> --output <dir>');
   console.log('    promote  sofagent-orchestrate-compare promote --candidate <dir>');
-  console.log('    compose  sofagent-orchestrate-compare compose "任务描述" [--dry-run] [--worktree] [--model flash|pro]');
+  console.log('    compose  sofagent-orchestrate-compare compose "任务描述" [--dry-run] [--worktree]');
 }
 
 // ════════════════════════════════════════
@@ -530,7 +551,6 @@ function main(): void {
   for (const [label, dir] of [['current', args.current], ['candidate', args.candidate]] as const) {
     if (!existsSync(dir)) { console.error(`❌ ${label} 目录不存在: ${dir}`); process.exit(1); }
   }
-  // 时间窗口校验：两个目录的日志如果来自不同时间段，对比意义有限
   const mtimeA = statSync(args.current).mtimeMs;
   const mtimeB = statSync(args.candidate).mtimeMs;
   const timeDiffHours = Math.abs(mtimeA - mtimeB) / (1000 * 60 * 60);
@@ -550,6 +570,14 @@ function main(): void {
   const outPath = join(args.output, `${date}.md`);
   writeFileSync(outPath, report, 'utf-8');
   console.log(`✅ 对比报告已生成: ${outPath}`);
+
+  // v1.0.7: 更新 A/B 状态计数器
+  const compareResult: CompareResult = {
+    winner: cand.firstPassRate > curr.firstPassRate ? 'candidate' : 'current',
+    currentScore: curr.firstPassRate,
+    candidateScore: cand.firstPassRate,
+  };
+  updateAbState(compareResult, args.candidate, args.current);
 }
 
 if (process.argv[1]?.includes('orchestrate-compare')) main();

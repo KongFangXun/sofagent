@@ -1,17 +1,16 @@
 // ============================================================
 // composer.ts · DeepAgents 任务编排
-// v1.0.6 新增：用 createDeepAgent() 做任务拆解，输出 YAML 工作流
-// deepagents 是 optionalDependency——未安装时返回 null
+// v1.0.7 新增：用 createDeepAgent() 做任务拆解，输出 YAML 工作流
+// v1.0.7：deepagents 提升为正式依赖，移除 as unknown as 类型转换
 // ============================================================
 
 /**
- * 动态加载 deepagents——未安装时返回 null
+ * 动态加载 deepagents（v1.0.7：正式依赖）
  */
-async function loadDeepAgentsCreate(): Promise<((config: Record<string, unknown>) => Promise<unknown>) | null> {
+async function loadDeepAgentsCreate(): Promise<Function | null> {
   try {
-    // @ts-ignore - deepagents is an optional dependency, may not be installed
     const { createDeepAgent } = await import('deepagents');
-    return createDeepAgent as unknown as (config: Record<string, unknown>) => Promise<unknown>;
+    return createDeepAgent as Function;
   } catch {
     return null;
   }
@@ -37,7 +36,7 @@ export async function composeWithDeepAgents(
   try {
     const systemPrompt = buildComposeSystemPrompt(workflowYml);
 
-    const agent = await createDeepAgent({
+    const agent = await (createDeepAgent as any)({
       name: 'sofagent-composer',
       systemPrompt,
       tools: [], // compose 阶段不需要工具——纯文本生成

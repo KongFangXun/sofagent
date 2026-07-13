@@ -4,10 +4,10 @@
 //   1. 生成 .sofagent/config.yml 配置模板
 //   2. 安装 git commit-msg hook
 //   3. 冒烟测试——验证审计引擎可用
-// v1.0.6: 新增仓库状态分类器（gstack 首次运行引导）
+// v1.0.7: 新增仓库状态分类器（gstack 首次运行引导）
 // ============================================================
 
-import { existsSync, writeFileSync, mkdirSync, chmodSync, readFileSync } from 'fs';
+import { existsSync, writeFileSync, mkdirSync, chmodSync, readFileSync, appendFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { execFileSync } from 'child_process';
 import { CONFIG_TEMPLATE, HOOK_TEMPLATE } from '../config-template';
@@ -18,6 +18,31 @@ import { writeConfig } from '../config-loader';
  * 来源：gstack 的 bin/gstack-first-task-detect
  */
 type RepoState = 'greenfield' | 'has_code' | 'has_uncommitted' | 'dirty' | 'clean';
+
+/**
+ * P1-1: 确保 .sofagent/ 被 .gitignore 排除
+ * v1.0.7 新增——防止首次 commit 时 A3 越界告警
+ */
+export function ensureGitignore(cwd: string): void {
+  const gitignorePath = join(cwd, '.gitignore');
+  const entry = '.sofagent/';
+
+  let content = '';
+  if (existsSync(gitignorePath)) {
+    content = readFileSync(gitignorePath, 'utf-8');
+  }
+
+  // 检查是否已包含
+  if (content.includes('.sofagent/')) return;
+
+  // 追加（带注释）
+  const addition = content.endsWith('\n') || content === ''
+    ? `\n# sofagent 审计数据（本地配置 + 知识库 + 审计历史）\n${entry}\n`
+    : `\n\n# sofagent 审计数据（本地配置 + 知识库 + 审计历史）\n${entry}\n`;
+
+  appendFileSync(gitignorePath, addition);
+  console.log('  → .gitignore 已更新（排除 .sofagent/）');
+}
 
 function classifyRepo(): { state: RepoState; hint: string } {
   // 1. 检测是否有 commit 历史
@@ -95,6 +120,9 @@ export function runInit(): void {
     stepOk++;
   }
 
+  // P1-1: 确保 .sofagent/ 被 gitignore
+  ensureGitignore(cwd);
+
   // [2/4] 安装 git commit-msg hook
   console.log('');
   console.log('[2/4] 安装 git commit-msg hook...');
@@ -160,12 +188,12 @@ export function runInit(): void {
       stepOk++;
     }
 
-    // v1.0.6: 安装 post-commit hook（--no-verify 跳过 commit-msg 但不跳过 post-commit）
+    // v1.0.7: 安装 post-commit hook（timestamp 近邻匹配替代 SHA 精确匹配）
     const postCommitPath = join(hooksDir, 'post-commit');
     const POST_COMMIT_TEMPLATE = `#!/bin/bash
-# sofagent post-commit hook v1.0.6
-# --no-verify 跳过 commit-msg，但不跳过 post-commit
-# post-commit 永远 exit 0——任何时候都不能阻断 commit
+# sofagent post-commit hook v1.0.7
+# 检测策略：检查 history.jsonl 最后一条记录的 timestamp 是否在 60 秒内
+# 如果 60 秒内有审计记录，认为 commit 通过了审计；否则可能是 --no-verify 绕过
 
 if ! command -v node &>/dev/null; then exit 0; fi
 
@@ -177,18 +205,26 @@ else
   exit 0
 fi
 
-CURRENT_SHA=$(git rev-parse HEAD 2>/dev/null)
-[ -z "$CURRENT_SHA" ] && exit 0
-
 HISTORY_FILE=".sofagent/audit/history.jsonl"
-if [ -f "$HISTORY_FILE" ]; then
-  if ! grep -q "$CURRENT_SHA" "$HISTORY_FILE" 2>/dev/null; then
-    echo ""
-    echo "  sofagent: 当前 commit ($CURRENT_SHA) 未在审计记录中找到。"
-    echo "  可能使用了 --no-verify 绕过审计 hook。"
-    echo "  运行 sofagent-audit --doctor 查看详情。"
-  fi
-fi
+if [ ! -f "$HISTORY_FILE" ]; then exit 0; fi
+
+# 读取 history.jsonl 最后一条的 timestamp，检查是否在 60 秒内
+node -e "
+const fs = require('fs');
+const lines = fs.readFileSync('$HISTORY_FILE', 'utf-8').trim().split('\\\\n').filter(Boolean);
+if (lines.length === 0) process.exit(0);
+try {
+  const last = JSON.parse(lines[lines.length - 1]);
+  if (!last.timestamp) process.exit(0);
+  const age = Date.now() - new Date(last.timestamp).getTime();
+  if (age > 60000) {
+    console.log('');
+    console.log('  sofagent: 最近一次审计记录在 ' + Math.round(age/1000) + ' 秒前，当前 commit 可能未经过审计。');
+    console.log('  可能使用了 --no-verify 绕过审计 hook。');
+    console.log('  运行 sofagent-audit --doctor 查看详情。');
+  }
+} catch { process.exit(0); }
+" 2>/dev/null
 
 exit 0
 `;
@@ -197,7 +233,23 @@ exit 0
     if (existsSync(postCommitPath)) {
       try {
         const pcContent = readFileSync(postCommitPath, 'utf-8');
-        hasPostCommitHook = pcContent.includes('sofagent');
+        // v1.0.7 修复：不再用模糊匹配 `includes('sofagent')`——v1.0.6 旧 hook 也会命中，导致存量用户无法升级
+        // 改为检查版本号：v1.0.6 及以下 → 覆盖为当前版本；v1.0.7 及以上 → 跳过
+        const versionMatch = pcContent.match(/v(\d+)\.(\d+)\.(\d+)/);
+        if (versionMatch) {
+          const major = parseInt(versionMatch[1]!, 10);
+          const minor = parseInt(versionMatch[2]!, 10);
+          const patch = parseInt(versionMatch[3]!, 10);
+          // v1.0.7 以下版本强制覆盖（修复 P0-1 post-commit 误报）
+          if (major < 1 || (major === 1 && minor === 0 && patch < 7)) {
+            hasPostCommitHook = false;  // 旧版本 → 覆盖
+          } else {
+            hasPostCommitHook = true;   // 当前版本或更新 → 保留
+          }
+        } else {
+          // 没有版本号标记的 hook → 覆盖（非 sofagent hook 或太旧无法识别）
+          hasPostCommitHook = false;
+        }
       } catch {
         // 读不了就当不存在
       }

@@ -5,9 +5,15 @@
 ---
 
 ## 正式版
+### [v1.0.7] — 双节点架构 + Sub Agent 约束自加载 + ao 完全退役 🔧
+> 2026-07-13（UTC）
+> 🔴 **Breaking Change**：ao（agency-orchestrator）已完全退役。v1.0.6 用户升级到 v1.0.7 后需手动卸载：`npm uninstall -g agency-orchestrator`。编排引擎已全面迁移到 DeepAgents。
+
+Sub Agent 约束自加载（buildConstrainedSystemPrompt，平台无关）+ CLI 编排入口（sofagent-audit compose）+ ao 代码全部清除（deepagents 提升为正式依赖）+ 审计 fast-fail（critical 层 FAIL 即停）+ A/B 自动切换（连续胜出计数器）+ 方案C运行器升级 + 双节点架构文档。**v1.0.6 陌生视角审查 25 项修复**（P0-1 post-commit 误报修复 / P1-1 --init 自动创建 .gitignore / 测试数对齐 / CHANGELOG 纯度 / 根目录归位 / 文档一致性等）。493 测试全绿，pre-push 全绿。
+> 📖 [开发日志](./docs/changelog/v1.0.7.md)
 ### [v1.0.6] — 编排迁移 + A/B 真实运行器 + 安全加固 + SkillOpt CLI 修复 🔧
 > 2026-07-13（UTC）
-DeepAgents compose 迁移（ao 降为 fallback）+ Sub Agent 状态管理（runtime.json 心跳）+ A/B 真实运行器（模型 API 直跑，自迭代闭环打通）+ history.jsonl 环境指纹防篡改（hashVersion: 2）+ post-commit hook 绕过检测 + SkillOpt CLI 契约修复（status 探针 + run 子命令 + parseArgs 误判）+ 陌生视角审查修复。480 测试全绿，28/28 OpenClaw 验收，pre-push 7/7 全绿。
+DeepAgents compose 迁移（ao 降为 fallback）+ Sub Agent 状态管理（runtime.json 心跳）+ A/B 真实运行器（模型 API 直跑，自动评估 + 手动 promote）+ history.jsonl 环境指纹防篡改（hashVersion: 2）+ post-commit hook 绕过检测 + SkillOpt CLI 契约修复（status 探针 + run 子命令 + parseArgs 误判）+ 文档一致性修复（README 规则分类 / CHANGELOG 纯度 / ROADMAP 日期对齐）。480 测试全绿，28/28 OpenClaw 验收，pre-push 7/7 全绿。
 > 📖 [开发日志](./docs/changelog/v1.0.6.md)
 ### [v1.0.5] — Ontology 统一层 + Work模板市场 🔧
 > 2026-07-12（UTC）
@@ -15,7 +21,6 @@ Ontology 三路合并引擎 + Work模板市场 独立项目 + A9 分级安全 + 
 > 📖 [开发日志](./docs/changelog/v1.0.5.md)
 
 ### 规划中
-- **v1.0.7** — 双节点架构 + Sub Agent 约束自加载 + CLI 编排入口 + ao 完全退役 → [开发日志](./docs/changelog/v1.0.7.md)
 - **v1.0.8** — 文件系统审计 + 内嵌 isomorphic-git + Agent 定义去 OpenClaw 耦合 + TencentDB Memory 集成 → [开发日志](./docs/changelog/v1.0.8.md)
 - **v1.0.9** — 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool + knowledge 智能选择 → [开发日志](./docs/changelog/v1.0.9.md)
 

@@ -21,14 +21,14 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.0.6-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.0.7-16B8F3" alt="Version" /></a>
 </p>
 
 ---
 
 ## Why sofagent?
 
-87% of SME AI projects stall within 6 months. It's not a tech problem — it's these three walls:
+Most SME AI projects collect dust within 6 months. It's not a tech problem — it's these three walls:
 
 | 🚫 Expectations too high | 🔧 Tech-led, not biz-led | 👻 Deploy and forget |
 |:--|:--|:--|
@@ -168,7 +168,7 @@ Powered by DeepAgents (optional dependency, becomes required in v1.0.7), runs on
 
 > 🔬 Hugging Face legal-agent benchmark: same model, harness-only optimization — score jumped from 3.5% to 80.1% (76-point gain, matching Claude Sonnet at 1/7 the cost). [Details](./docs/ARCHITECTURE.md)
 
-- Core logic: **480+ tests all green** (diff-parser / config-loader / rules A1-A17 / reporter)
+- Core logic: **493+ tests all green** (diff-parser / config-loader / rules A1-A17 / reporter)
 - **17 audit rules** (expanding to 19 in v1.0.9): 11 default (A1-A11) + 6 extended (E1-E4 + A14 + A15), v1.0.9 adds A16 unauthorized file change + A17 abnormal bulk change
 - 📁 v1.0.8+ filesystem audit (no git required) — embedded isomorphic-git + daemon file monitoring
 - MIT license — use code, docs, and templates freely

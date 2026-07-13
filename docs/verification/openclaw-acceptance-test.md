@@ -1,12 +1,14 @@
-# OpenClaw 发版验收测试
+# OpenClaw 发版验收测试（版本无关）
 
-> v1.0.6 · 2026-07-13
+> **版本无关设计**：本文件不写死任何版本号。待测版本以 `sofagent-audit --version` 实际输出为准（见第一部分 `EXPECTED_VERSION` 动态解析）。发版前**无需**逐处替换版本号——只需在全新 session 中粘贴本文件执行即可。
+>
+> 最后复核：2026-07-13
 >
 > **每次发版前，在全新 session 中粘贴本文件执行。** 覆盖审计管道全规则 + hook 机制 + SkillOpt 自净化 + DeepAgents Sub Agent + optional 依赖降级。
 >
 > 与 `acceptance-test.sh`（CLI 自动化）互补——本文件是 Agent 驱动的端到端验收，包含更多场景类型。
 >
-> **v1.0.6 修正说明**：本文件中的 13 个原「问题」场景已全部核实为**测试文档自身的 API/配置/预期错误**，产品代码健康（0 代码 bug）。下文每个场景均按**真实代码行为**重写，并标注修正点。
+> **历史修正说明（v1.0.6）**：本文件中的 13 个原「问题」场景已全部核实为**测试文档自身的 API/配置/预期错误**，产品代码健康（0 代码 bug）。下文每个场景均按**真实代码行为**重写，并标注修正点。文内出现的 `v1.0.x`（如「post-commit 是 v1.0.6 引入」）均为**功能引入/修复的历史示例（溯源标记）**，发版时**无需更新**。
 
 ---
 
@@ -19,7 +21,7 @@
 | 函数级 | 单元测试（vitest） | CI 自动，每次 push |
 | CLI 端到端 | `acceptance-test.sh`（28 场景） | 手动，发版前 |
 | **Agent 端到端** | **本文件**（全场景） | **手动，发版前** |
-| 文档级 | 回归检查清单（219 维度） | 手动，发版前 |
+| 文档级 | 回归检查清单（维度总数随版本增长，见 regression-checklist.md 头部当前值） | 手动，发版前 |
 | 陌生人视角 | fresh-eyes-review.md | 手动，发布后 |
 
 ## 前置条件
@@ -37,7 +39,7 @@
 
 > ⚠️ **路径说明**：本测试中的命令使用**绝对路径**引用各工具，避免 PATH 环境差异导致 command not found。如果你的安装路径不同，请替换为实际路径。
 >
-> ⚠️ **全局 vs 本地 sofagent-audit**：`npm install -g @sofagent/audit` 安装的全局版本可能落后于本地 build（如全局是 1.0.5，本地测的是 1.0.6）。本测试统一用 `$AUDIT_CLI`（本地 `dist/index.js`）确保测试的是最新代码；hook 中调用的 `sofagent-audit` 命令通过 wrapper 覆盖为本地版本（见第一部分）。
+> ⚠️ **全局 vs 本地 sofagent-audit**：`npm install -g @sofagent/audit` 安装的全局版本可能落后于本地 build（如全局版本落后，本地测的是当前 build 版本 $EXPECTED_VERSION）。本测试统一用 `$AUDIT_CLI`（本地 `dist/index.js`）确保测试的是最新代码；hook 中调用的 `sofagent-audit` 命令通过 wrapper 覆盖为本地版本（见第一部分）。
 
 ---
 
@@ -50,8 +52,12 @@ AUDIT_CLI="node $SOFAGENT_DIR/sofagent/audit/dist/index.js"        # 本地 buil
 SKILLOPT_VENV="/Users/kongfangxun/.workbuddy/binaries/python/envs/skillopt/bin"
 DEEPAGENTS_MODULES="/Users/kongfangxun/.workbuddy/binaries/node/workspace/node_modules"
 
+# ── 动态解析当前版本（不写死，兼容任意版本）──
+EXPECTED_VERSION=$($AUDIT_CLI --version | sed 's/^sofagent-audit //')
+echo "当前待测版本：$EXPECTED_VERSION"
+
 # ── 工具可用性检查 ──
-$AUDIT_CLI --version                                # 期望：sofagent-audit v1.0.6（本地 build 版本，不是全局 npm 版本）
+$AUDIT_CLI --version                                # 期望：sofagent-audit $EXPECTED_VERSION（本地 build 版本，不是全局 npm 版本）
 $SKILLOPT_VENV/skillopt-sleep --help 2>&1 | head -3 # 期望：usage: skillopt_sleep ...（exit 0，CLI 可调用）
 NODE_PATH="$DEEPAGENTS_MODULES" node -e "console.log(require.resolve('deepagents'))"  # 期望：打印 deepagents 的绝对路径（OK）
 
@@ -74,7 +80,7 @@ echo "# Test" > README.md && mkdir -p src && git add . && git commit -m "init"
 $AUDIT_CLI --init
 ```
 
-> ⚠️ **--init 安装的 hook 会引用 `sofagent-audit` 命令**。如果全局 npm 版本和本地 build 版本不一致（比如全局是 1.0.5 但测试的是 1.0.6），hook 调用的是全局旧版本。
+> ⚠️ **--init 安装的 hook 会引用 `sofagent-audit` 命令**。如果全局 npm 版本和本地 build 版本不一致（比如全局版本落后但测试的是当前 build 版本 $EXPECTED_VERSION），hook 调用的是全局旧版本。
 >
 > **解法**：创建临时 wrapper 覆盖全局命令（和 acceptance-test.sh 里的做法一致）：
 > ```bash
@@ -682,4 +688,4 @@ unset PATH NODE_PATH
 | DeepAgents Sub Agent 变更 | 第六部分 |
 | optional 依赖策略变更 | 第七部分 |
 | config rules 过滤逻辑变更 | 第八部分 |
-| 发版前 | 全部 |
+| 发版前 | 仅当审计规则 / hook / SkillOpt / DeepAgents 等**场景逻辑**变更时需同步对应部分；版本号已动态解析，**无需逐处替换** |
