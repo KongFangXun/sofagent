@@ -78,6 +78,8 @@ interface Args {
   revertSha?: string;
   /** v1.0.8: ontology 子命令 */
   ontologyCommand?: string;
+  /** v1.0.8: daemon 子命令 */
+  daemonCommand?: string;
 }
 
 
@@ -188,6 +190,9 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === 'ontology' && argv[i + 1]) {
       i++;
       args.ontologyCommand = argv[i] as string;
+    } else if (argv[i] === '--daemon' && argv[i + 1]) {
+      i++;
+      args.daemonCommand = argv[i] as string;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       const verbose = argv.includes('--verbose');
       console.log(`sofagent-audit v${VERSION} · Agent 提交时审计\n`);
@@ -213,6 +218,7 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit subagent run fde --mode sustain --task <desc> FDE 持续优化模式（v1.0.8）');
       console.log('  sofagent-audit --revert <snapshot-sha>              恢复到指定快照（v1.0.8）');
       console.log('  sofagent-audit ontology view                        本体人类可读视图（v1.0.8）');
+      console.log('  sofagent-audit --daemon start                       启动文件系统监控 daemon（v1.0.8）');
       console.log('模式对照表:');
       console.log('  默认模式    全部规则（含 Agent 日志）   exit 0/1/2');
       console.log('  --silent    只跑 git-diff 规则          exit 0/1/2');
@@ -614,6 +620,36 @@ async function main(): Promise<void> {
       process.stderr.write(`❌ ontology view 失败: ${(err as Error).message}\n`);
       process.exit(1);
     }
+  }
+
+  // --daemon start：启动文件系统监控 daemon（v1.0.8 新增）
+  if (args.daemonCommand === 'start') {
+    const { startWatching } = await import('./daemon/fs-watch');
+    const { loadWatchConfig } = await import('./config/watch-config');
+    const projectDir = process.cwd();
+    const config = loadWatchConfig(projectDir);
+    console.log('sofagent daemon · 文件系统监控');
+    console.log(`  监控路径: ${config.paths.join(', ') || '(默认: 当前目录)'}`);
+    console.log(`  防抖: ${config.debounceMs ?? 5000}ms`);
+    console.log('');
+    console.log('  Daemon 已启动。按 Ctrl+C 停止。');
+    const fs = await import('fs');
+    const noticePath = join(projectDir, '.sofagent', 'daemon-notice.md');
+    startWatching(projectDir, async (changedFiles) => {
+      const time = new Date().toISOString();
+      const lines = [
+        `- [${time}] 检测到文件变更`,
+        ...changedFiles.map(f => `  - ${f}`),
+      ];
+      console.log(lines.join('\n'));
+      // 写入 daemon-notice.md 供审计引擎后续检查
+      try {
+        fs.appendFileSync(noticePath, lines.join('\n') + '\n', 'utf-8');
+      } catch {
+        // 写入失败不崩溃
+      }
+    });
+    return;
   }
 
   // --install-hook 在开头处理，完成后退出
