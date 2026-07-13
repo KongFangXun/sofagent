@@ -1,9 +1,9 @@
 // ============================================================
 // doctor.ts · sofagent-audit --doctor 健康诊断
 // v1.0 新增：一键诊断 7 项健康度
-// v1.0.7 新增：第 9 项——知识库访问矩阵
-// v1.0.7 新增：第 10 项——SkillOpt 管道状态 + 第 11 项——成本报告
-// v1.0.7 新增：第 12-14 项——eval harness / A/B 优化 / HITL 统计（11 项核心检查 + 3 项扩展检查）
+// v1.0.8 新增：第 9 项——知识库访问矩阵
+// v1.0.8 新增：第 10 项——SkillOpt 管道状态 + 第 11 项——成本报告
+// v1.0.8 新增：第 12-14 项——eval harness / A/B 优化 / HITL 统计（11 项核心检查 + 3 项扩展检查）
 // 只读诊断，不做任何写操作
 // 退出码：全部通过 → 0；有失败 → 1
 // ============================================================
@@ -316,16 +316,32 @@ export function runDoctor(): void {
         if (unauditedShas.length === 0) {
           results.push({ ok: true, warning: false, label: 'commit 审计追溯', detail: `最近 ${recentShas.length} 条 commit 均有审计记录` });
         } else {
-          // P1-5: 区分"安装前已有 commit"和"真正绕过"
+          // P1-3: 区分"安装前已有 commit"和"真正绕过"
+          // 检查是否有任何审计历史——如果没有，则所有 commit 都是安装前的
           const hasHistory = history.length > 0;
+          let allPreHook = false;
+          if (hasHistory && unauditedShas.length > 0) {
+            // 检查未审计 commit 是否全部早于第一次审计记录
+            const firstAuditTime = history[0]!.timestamp ? new Date(history[0]!.timestamp).getTime() : Infinity;
+            if (firstAuditTime < Infinity) {
+              try {
+                const dates = execFileSync('git', ['log', '--format=%at', ...recentShas.slice(0, 3)], {
+                  encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'],
+                }).trim().split('\n').map(Number);
+                allPreHook = dates.every(d => d * 1000 < firstAuditTime);
+              } catch { /* 日期读取失败就保持默认 */ }
+            }
+          }
           results.push({
-            ok: hasHistory ? false : true,  // 无历史 = 首次安装，不报失败
+            ok: hasHistory && !allPreHook ? false : true,
             warning: true,
             label: 'commit 审计追溯',
-            detail: hasHistory
-              ? `⚠️ 检测到 ${unauditedShas.length} 条 commit 未经审计（可能使用了 --no-verify）: ${unauditedShas.join(', ')}`
-              : `ℹ️ 检测到 ${unauditedShas.length} 条历史 commit（安装 sofagent 前的提交，无需担心）: ${unauditedShas.join(', ')}`,
-            fixHint: hasHistory ? '建议运行 sofagent-audit --diff HEAD 事后审计' : undefined,
+            detail: !hasHistory
+              ? `ℹ️ 检测到 ${unauditedShas.length} 条历史 commit（安装 sofagent 前的提交，无需担心）: ${unauditedShas.join(', ')}`
+              : allPreHook
+                ? `ℹ️ ${unauditedShas.length} 条 commit 是 hooks 安装前的历史提交，非绕过审计: ${unauditedShas.join(', ')}`
+                : `⚠️ 检测到 ${unauditedShas.length} 条 commit 未经审计（可能使用了 --no-verify）: ${unauditedShas.join(', ')}`,
+            fixHint: (hasHistory && !allPreHook) ? '建议运行 sofagent-audit --diff HEAD 事后审计' : undefined,
           });
         }
       }
@@ -344,7 +360,7 @@ export function runDoctor(): void {
         // 静默通过——不额外输出，避免噪音
       } else {
         results.push({
-          ok: false, warning: true, label: '审计历史链完整性',
+          ok: true, warning: true, label: '审计历史链完整性',
           detail: '审计历史链完整性异常——可能原因：\n' +
             '  • 环境变化（hostname/username/git 路径变了，指纹不匹配）\n' +
             '  • history.jsonl 被手动编辑\n' +

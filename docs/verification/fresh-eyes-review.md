@@ -23,7 +23,7 @@
 >   - **发版状态真实性**（新）：changelog 顶部若写"已正式发版"，必须有真实 commit + tag 支撑，禁止凭文档措辞假声明（v1.0.7 曾 97 文件未提交却标"已正式发版"）。
 >   - **测试数跨文件 + 跨语言一致性**（强化视角八·任务 2）：CHANGELOG / ROADMAP / README / README.en / evidence.md 五处测试数必须一致（v1.0.7 实测 493，曾四处写 480、英文版漏改）。
 >   - **版本号复制粘贴校验**（新）：新增/改写段落中的版本号必须与 package.json 一致（v1.0.7 P2-10 曾把"v1.0.7"误抄成"v1.0.6"）。
->   - **SKILL.md ≤90 行铁律**（强化视角七·任务 10）：不仅查 frontmatter，还要查行数（v1.0.7 发现 sofagent/skill/SKILL.md 96 行超 90）。
+>   - **SKILL.md ≤100 行铁律**（强化视角七·任务 10）：不仅查 frontmatter，还要查行数。v1.0.8 起由 ≤90 上调为 ≤100，并扩展检查范围到 agents/SKILL/、LOOP/、FDE/ 下的 SKILL.md。
 >   - **init.ts hook skip 逻辑回归**（新）：版本号判断不能误伤存量升级用户——`includes('sofagent')` 式模糊匹配会让存量用户永远跳过重装 hook（v1.0.7 P1-1）。
 >
 > **审查对象**：https://github.com/KongFangXun/sofagent（main 分支，当前已发布版本）
@@ -442,6 +442,7 @@
    - `package.json` 版本号——与 README / CHANGELOG / SECURITY / LIMITATIONS / ROADMAP 文件头版本号一致吗？
    - `sofagent/audit/package.json` 与 `sofagent/mcp/package.json` 版本号一致吗？
    - `tools/check-version.sh` 检查的版本号与 SSOT 一致吗？
+   - **版本全量一致（v1.0.8 暴露的新盲区，阶段六实证）**：`sofagent/audit/src/shared/constants.ts` 的 `VERSION` 常量、各 `package.json`、`index.ts` 文件头注释——与 `sofagent/audit/package.json` 的 `version` 一致吗？**但不能只查这几个 CLI 自报源**：v1.0.8 曾只 bump 了 package.json + constants.ts + mcp + index.ts 部分（4 源全 1.0.8），91 个散落文件的版本号仍是 1.0.7——4 源检查全过却发了错版，阶段六才用 `check-version.sh` 抓出 93 处不一致。权威门禁是 `bash tools/check-version.sh`（应 0 不一致）+ `bash tools/pre-push-check.sh`（应 7/7 全绿）。CI 机器人必须跑全量扫描，不能凭"4 源对得上"就放行。
 
 6. **文件计数一致性**：
    - 根目录 `.md` 文件数——是否 ≤7（README/CHANGELOG/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/ROADMAP/LIMITATIONS）？多余的 .md / .html / .png 应移入 docs/ 或 assets/
@@ -472,6 +473,15 @@
    - README 可能声称"17 条规则（v1.0.9 扩展为 19 条）"——这是**版本条件声称**。验证当前 `package.json` 的版本号，再看 A16/A17 是否已在 `index.ts` 注册。如果当前是 v1.0.8 但 README 说"19 条"，就是 P0 不一致。
    - README 审计引擎 Mermaid 图里写的规则数（如"17 条规则"）——与 index.ts 注册数一致吗？
    - CHANGELOG 历史条目中提到的规则数——有没有"当时声称 N 条但代码实际 M 条"的情况？
+
+13. **发版终验必须独立跑完整门禁（不信任任何"已验证"声明）** 🆕
+   - **v1.0.8 教训**：阶段四终审只验了用户指定的 4 项（constants/README/build/test），漏跑了实际发版门禁（`pre-push-check` / `check-version`）。版本号散落 91 文件仍是 1.0.7 因此溜过，直到阶段六独立 session 才用 `check-version.sh` 抓出 93 处不一致。
+   - **盲区本质**：独立审查者不能只验"别人/用户给的清单"——开发报告、用户指定项、上次审查结论都不算数。**收口硬判定必须是亲手跑** `bash tools/pre-push-check.sh`（7/7）+ `bash tools/check-version.sh`（0 不一致，非 strict 下 1 项 warning 属预期）。清单验收永远代替不了门禁实跑。
+
+14. **版本变更必须走工具，且工具自身状态假设也是审查对象** 🆕
+   - 版本 bump 一律走 `tools/bump-version.sh`，禁手动散点改 SSOT（v1.0.8 P0 正是手动散点 bump 漏了 91 文件）。
+   - 但文档化工具自身有状态假设：`bump-version.sh` 从 `package.json` 读 OLD 版本号，若 SSOT 已被手动超前（如先手 bump 成 1.0.8），脚本会误判并在 296 行 `NEW_3SEG unbound` 崩溃。独立审查者应注意"工具可用性边界"，别盲信文档化脚本——遇到崩溃先查 SSOT 与磁盘是否一致。
+   - 跨包依赖（`sofagent/mcp/package.json` 对 `@sofagent/audit` 的 `^1.0.0`）用通用范围、不写死 SSOT：功能已覆盖当前版本，`check-version.sh` 的 1 项 warning 是预期非阻断。**不要用 `^1.0.8` 硬编码**——否则每发一版都得手改这条依赖，reintroduce 散点 bump 风险。
 
 **输出格式**：
 

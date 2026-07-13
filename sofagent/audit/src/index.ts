@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.0.7 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
-// v1.0.7 新增：compose 子命令 + 未知子命令报错 + audit fast-fail
+// v1.0.8 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.0.8 新增：compose 子命令 + 未知子命令报错 + audit fast-fail
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
 // 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
@@ -56,22 +56,28 @@ interface Args {
   doctor: boolean;
   /** staged 模式（首次提交场景）——diffRange 值为 --cached */
   cached: boolean;
-  /** v1.0.7: eval harness */
+  /** v1.0.8: eval harness */
   eval?: string;
-  /** v1.0.7: A/B 测试 */
+  /** v1.0.8: A/B 测试 */
   abTest?: string;
-  /** v1.0.7: Agent Dashboard */
+  /** v1.0.8: Agent Dashboard */
   agents?: boolean;
-  /** v1.0.7: hub 子命令 */
+  /** v1.0.8: hub 子命令 */
   hubCommand?: string;
   hubTemplate?: string;
-  /** v1.0.7: compose 子命令 */
+  /** v1.0.8: compose 子命令 */
   composeTask?: string;
   composeAgent?: string;
   composeRun?: boolean;
-  /** v1.0.7: subagent 子命令 */
+  /** v1.0.8: subagent 子命令 */
   subagentName?: string;
   subagentTask?: string;
+  /** v1.0.8: subagent 运行模式 */
+  subagentMode?: 'deploy' | 'sustain';
+  /** v1.0.8: 恢复到指定快照 SHA */
+  revertSha?: string;
+  /** v1.0.8: ontology 子命令 */
+  ontologyCommand?: string;
 }
 
 
@@ -103,6 +109,9 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === '--regression' && argv[i + 1]) {
       i++;
       args.regressionDir = argv[i] as string;
+    } else if (argv[i] === '--revert' && argv[i + 1]) {
+      i++;
+      args.revertSha = argv[i] as string;
     } else if (argv[i] === '--webhook' && argv[i + 1]) {
       i++;
       const platform = argv[i] as string;
@@ -131,7 +140,7 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === '--agents') {
       args.agents = true;
     } else if (argv[i] === 'compose') {
-      // v1.0.7: compose 子命令
+      // v1.0.8: compose 子命令
       args.composeTask = '';
       for (let j = i + 1; j < argv.length; j++) {
         if (argv[j] === '--task' && argv[j + 1]) {
@@ -149,13 +158,23 @@ function parseArgs(argv: string[]): Args {
       }
       i = argv.length; // consume remaining args
     } else if (argv[i] === 'subagent' && argv[i + 1] === 'run') {
-      // v1.0.7: subagent run 子命令
+      // v1.0.8: subagent run 子命令
       i += 2;
       args.subagentName = argv[i] as string;
+      args.subagentMode = 'deploy'; // v1.0.8: 默认 deploy 模式
       for (let j = i + 1; j < argv.length; j++) {
         if (argv[j] === '--task' && argv[j + 1]) {
           j++;
           args.subagentTask = argv[j] as string;
+        } else if (argv[j] === '--mode' && argv[j + 1]) {
+          j++;
+          const mode = argv[j] as string;
+          if (mode === 'deploy' || mode === 'sustain') {
+            args.subagentMode = mode;
+          } else {
+            console.error(`❌ 无效的 mode: ${mode}（支持: deploy / sustain）`);
+            process.exit(1);
+          }
         }
       }
       i = argv.length;
@@ -166,6 +185,9 @@ function parseArgs(argv: string[]): Args {
         i++;
         args.hubTemplate = argv[i] as string;
       }
+    } else if (argv[i] === 'ontology' && argv[i + 1]) {
+      i++;
+      args.ontologyCommand = argv[i] as string;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       const verbose = argv.includes('--verbose');
       console.log(`sofagent-audit v${VERSION} · Agent 提交时审计\n`);
@@ -188,6 +210,9 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit skillopt-run --input <path>       SkillOpt 自动优化（需 skillopt-sleep）');
       console.log('  sofagent-audit compose --task <desc>             编排方案生成（DeepAgents）');
       console.log('  sofagent-audit subagent run <name> --task <desc> 运行预装 Sub Agent（fde / audit）');
+      console.log('  sofagent-audit subagent run fde --mode sustain --task <desc> FDE 持续优化模式（v1.0.8）');
+      console.log('  sofagent-audit --revert <snapshot-sha>              恢复到指定快照（v1.0.8）');
+      console.log('  sofagent-audit ontology view                        本体人类可读视图（v1.0.8）');
       console.log('模式对照表:');
       console.log('  默认模式    全部规则（含 Agent 日志）   exit 0/1/2');
       console.log('  --silent    只跑 git-diff 规则          exit 0/1/2');
@@ -232,12 +257,12 @@ function parseArgs(argv: string[]): Args {
         console.error('   使用 --help 查看可用参数');
         process.exit(1);
       } else if (arg && !arg.startsWith('-')) {
-        // v1.0.7: 未知子命令报错
+        // v1.0.8: 未知子命令报错
         // skillopt-run 子命令的 positional args（如文件路径）不在这里处理
         if (process.argv[2] === 'skillopt-run') {
           continue;
         }
-        const SUBCOMMANDS = ['hub', 'skillopt-run', 'compose', 'subagent'];
+        const SUBCOMMANDS = ['hub', 'skillopt-run', 'compose', 'subagent', 'ontology'];
         if (!SUBCOMMANDS.includes(arg)) {
           console.error(`未知子命令: ${arg}`);
           console.error(`可用子命令: ${SUBCOMMANDS.join(', ')}`);
@@ -498,7 +523,7 @@ async function main(): Promise<void> {
   // --doctor 模式：健康诊断
   if (args.doctor) {
     if (args.agents) {
-      // v1.0.7: Agent Dashboard 原型
+      // v1.0.8: Agent Dashboard 原型
       const { runAgentDashboard } = await import('./commands/doctor');
       runAgentDashboard();
       return;
@@ -508,7 +533,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  // compose 子命令（v1.0.7 新增）
+  // compose 子命令（v1.0.8 新增）
   if (args.composeTask !== undefined) {
     if (!args.composeTask) {
       console.error('用法: sofagent-audit compose --task "任务描述" [--agent <agent>] [--run]');
@@ -532,10 +557,10 @@ async function main(): Promise<void> {
     return;
   }
 
-  // subagent 子命令（v1.0.7 新增）
+  // subagent 子命令（v1.0.8 新增）
   if (args.subagentName) {
     if (!args.subagentTask) {
-      console.error('用法: sofagent-audit subagent run <name> --task "任务描述"');
+      console.error('用法: sofagent-audit subagent run <name> --task "任务描述" [--mode deploy|sustain]');
       console.error('预装 Sub Agent: fde, audit');
       process.exit(1);
     }
@@ -548,8 +573,9 @@ async function main(): Promise<void> {
         console.error(`可用: ${agents.map(a => a.name).join(', ')}`);
         process.exit(1);
       }
+      // v1.0.8: 传入 mode 参数
       const { spawnSubAgent } = await import('./subagents/launcher');
-      const result = await spawnSubAgent(agent, args.subagentTask!);
+      const result = await spawnSubAgent(agent, args.subagentTask!, args.subagentMode);
       process.stdout.write(result);
       process.stdout.write('\n');
       process.exit(0);
@@ -576,6 +602,20 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  // ontology 子命令（v1.0.8 新增）
+  if (args.ontologyCommand === 'view') {
+    const { generateOntologyView } = await import('./ontology/ontology-view');
+    try {
+      const output = generateOntologyView(process.cwd());
+      process.stdout.write(output);
+      process.stdout.write('\n');
+      process.exit(0);
+    } catch (err) {
+      process.stderr.write(`❌ ontology view 失败: ${(err as Error).message}\n`);
+      process.exit(1);
+    }
+  }
+
   // --install-hook 在开头处理，完成后退出
   if (args.installHook) {
     installHook();
@@ -591,6 +631,56 @@ async function main(): Promise<void> {
   // --regression 模式：对指定目录下的历史快照跑回归验证
   if (args.regressionDir) {
     runRegressionMode(args.regressionDir);
+    return;
+  }
+
+  // --revert 模式：恢复到指定快照（v1.0.8 新增）
+  if (args.revertSha) {
+    try {
+      const { restoreSnapshot, listAllSnapshots } = await import('./daemon/snapshot');
+      const projectDir = process.cwd();
+
+      // 列出可用快照供用户参考
+      const snapshots = listAllSnapshots(projectDir);
+      if (snapshots.length === 0) {
+        console.error('❌ 没有可用的快照。请先运行审计以创建快照。');
+        process.exit(1);
+      }
+
+      console.log('可用快照:');
+      for (const s of snapshots) {
+        console.log(`  ${s.shortSha}  ${s.timestamp}  (${s.fileCount} 个文件)`);
+      }
+      console.log('');
+
+      // 显式确认（交互式）
+      const readline = await import('readline');
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+
+      const answer = await new Promise<string>((resolve) => {
+        rl.question(`⚠️  即将恢复到快照 ${args.revertSha}。此操作将覆盖当前文件。确认？[y/N] `, resolve);
+      });
+      rl.close();
+
+      if (answer.toLowerCase() !== 'y' && answer.toLowerCase() !== 'yes') {
+        console.log('已取消恢复操作。');
+        process.exit(0);
+      }
+
+      const restored = restoreSnapshot(projectDir, args.revertSha);
+      console.log(`✅ 已恢复 ${restored.length} 个文件:`);
+      for (const f of restored) {
+        console.log(`  → ${f}`);
+      }
+      console.log('');
+      console.log('💡 建议运行 npm run build && npm test 验证恢复结果。');
+    } catch (err) {
+      console.error(`❌ 恢复失败: ${(err as Error).message}`);
+      process.exit(1);
+    }
     return;
   }
 
@@ -883,7 +973,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
     return;
   }
 
-  // ===== v1.0.7 可视化输出 =====
+  // ===== v1.0.8 可视化输出 =====
 
   const exitCode = results.exitCode;
   const totalRules = results.rules.length;
@@ -913,7 +1003,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
       const classTag = rule.ruleClass === '业务底线' ? '[底线]' : rule.ruleClass === '能力拐杖' ? '[拐杖]' : '';
       for (const detail of rule.details) {
         console.log(`  ${icon} ${rule.name} ${classTag}: ${detail}`);
-        // 修复建议（v1.0.7 新增）
+        // 修复建议（v1.0.8 新增）
         const suggestion = getFixSuggestion(rule.name);
         if (suggestion) {
           console.log(`     怎么修: ${suggestion}`);

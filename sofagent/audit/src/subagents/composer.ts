@@ -1,11 +1,11 @@
 // ============================================================
 // composer.ts · DeepAgents 任务编排
-// v1.0.7 新增：用 createDeepAgent() 做任务拆解，输出 YAML 工作流
-// v1.0.7：deepagents 提升为正式依赖，移除 as unknown as 类型转换
+// v1.0.8 新增：用 createDeepAgent() 做任务拆解，输出 YAML 工作流
+// v1.0.8：deepagents 提升为正式依赖，移除 as unknown as 类型转换
 // ============================================================
 
 /**
- * 动态加载 deepagents（v1.0.7：正式依赖）
+ * 动态加载 deepagents（v1.0.8：正式依赖）
  */
 async function loadDeepAgentsCreate(): Promise<Function | null> {
   try {

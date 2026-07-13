@@ -1,4 +1,4 @@
-# sofagent 回归检查清单（247 维度）
+# sofagent 回归检查清单（256 维度）
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。这不是"发现新问题"的工具——发现新问题用[陌生视角审查](./fresh-eyes-review.md)。
 >
@@ -42,7 +42,7 @@
 
 > 本清单是**累积式**的——每个维度对应一个历史修复。审查前不需要了解每件事的背景，只需要逐项核对当前代码状态。
 >
-> 维度来源：v0.99.9 初始 88 维度 → v1.0 新增 18 → v1.0.1 追加 32 → v1.0.2 追加 26 → v1.0.3 追加 12 → v1.0.4 追加 8 → v1.0.4 审查追加 8 = 204 → v1.0.5 追加 8（205-212）→ v1.0.6 追加 5（213-217）→ v1.0.6 SkillOpt 修复追加 2（218-219）→ v1.0.7 追加 28 维度（220-247）= 247 总计。
+> 维度来源：v0.99.9 初始 88 维度 → v1.0 新增 18 → v1.0.1 追加 32 → v1.0.2 追加 26 → v1.0.3 追加 12 → v1.0.4 追加 8 → v1.0.4 审查追加 8 = 204 → v1.0.5 追加 8（205-212）→ v1.0.6 追加 5（213-217）→ v1.0.6 SkillOpt 修复追加 2（218-219）→ v1.0.7 追加 28 维度（220-247）→ v1.0.8 追加 5 维度（248-252）→ v1.0.9 追加 3 维度（253-255）→ v1.0.8 补 1 维度（256）= 256 总计。
 
 ---
 
@@ -2766,6 +2766,96 @@ grep -rn "2026-07-1[0-9]" README.md ROADMAP.md CHANGELOG.md docs/changelog/v1.0.
 # v1.0.7 P2-3：保留"编排引擎"名称但标注实现规模（~70 行 DeepAgents 接入层）
 grep -n "DeepAgents 接入层\|launcher.ts\|~70 行\|实验性" README.md | head
 # 期望：有匹配（诚实标注，不夸大）
+```
+
+#### 248. 版本号全量一致（check-version.sh 0 不一致）🆕
+```bash
+# v1.0.8 新维度（阶段六暴露真问题）：版本一致性不能只查 CLI 自报的少数源——
+# 曾只 bump 了 package.json + constants.ts + mcp + index.ts 部分（4 源全 1.0.8），
+# 但 91 个文件版本号仍是 1.0.7，4 源检查全过却发了错版。check-version.sh 才是权威门禁。
+bash tools/check-version.sh        # 期望：0 不一致（exit 0，39/39 全通过）
+bash tools/pre-push-check.sh       # 期望：7/7 全绿（check-version 项是其中一项）
+# 快速 sanity（4 源，必要但不充分，不能单独作为 PASS 依据）：
+grep '"version"' sofagent/audit/package.json | head -1   # 1.0.8
+grep '"version"' sofagent/mcp/package.json | head -1     # 1.0.8
+grep "VERSION" sofagent/audit/src/shared/constants.ts     # '1.0.8'
+node sofagent/audit/dist/index.js --version              # v1.0.8（需先 npm run build）
+```
+> ⚠️ **bump-version.sh 工具陷阱（v1.0.8 踩坑）**：脚本从 SSOT（package.json）读取 OLD 版本号。
+> 若先手动 bump 了 package.json 却没跑脚本，脚本会误以为"旧版已是目标版"→ 找不到待替换项、空集或崩溃（NEW_3SEG unbound）。
+> **正确做法**：版本变更一律用 `bash tools/bump-version.sh <旧> <新>`，禁止手动 grep/sed 部分 bump。
+> 若已部分手动 bump，先回退 SSOT 到旧版再跑脚本（见 releasing.md 阶段八）。
+
+#### 249. README 文件系统审计段不再 stale 🆕
+```bash
+# v1.0.8 已交付文件系统审计（isomorphic-git + fs-watch + 快照回溯）
+# 不得再写"v1.0.8+ 规划中 / 当前版本需 git / 当前版本（v1.0.7）覆盖"
+grep -n "v1.0.8+ 规划\|当前版本（v1.0.7）\|当前版本需 git" README.md
+# 期望：零命中（v1.0.8 实际已含文件系统审计，stale 描述会误导用户以为还没交付）
+```
+
+#### 250. FDE SKILL 铁律措辞合格（check-docs 全绿） 🆕
+```bash
+# v1.0.8 新增 FDE sustain 模式措辞曾触发弱措辞检查
+bash tools/check-docs.sh 2>&1 | grep -A20 "Skill 文件行数"
+# 期望：10 个 Skill 文件全 OK，铁律措辞"全部合格"，无"超标"
+```
+
+#### 251. 文件系统审计新增命令可跑 🆕
+```bash
+node sofagent/audit/dist/index.js --help 2>&1 | grep -E "compose|subagent|ontology|--revert"
+# 期望：含 compose / subagent run / --revert / ontology view
+node sofagent/audit/dist/index.js ontology view   # 期望不报错（"not yet initialized" 属正常）
+# 期望均成功返回（需先 npm run build）
+```
+
+#### 252. agents/ 去耦合不回潮（session.spawn 零命中） 🆕
+```bash
+# v1.0.8 让 Sub Agent 约束自加载，不依赖 OpenClaw session.spawn
+grep -rn "session\.spawn" agents/
+# 期望：零命中（出现即回潮，说明又耦合回 OpenClaw）
+```
+
+#### 253. 发版终验门禁强制（阶段四/终验不能只验散点项） 🆕
+```bash
+# v1.0.8 教训：阶段四终审只验了用户指定的 4 项（constants/README/build/test），
+# 漏跑了实际发版门禁，版本号散落 91 文件仍是 1.0.7 溜过，阶段六才抓出。
+# 以下两条必须实跑通过，作为阶段四/终验的收口硬判定——不能只验"用户指定的几项"。
+bash tools/pre-push-check.sh    # 期望 7/7 全绿（非 strict 模式）
+bash tools/check-version.sh     # 期望 0 不一致（非 strict 下 1 项 warning 属预期，见 #255）
+```
+
+#### 254. 版本变更走工具、禁手动散点 + bump 脚本陷阱 🆕
+```bash
+# v1.0.8 P0 根因：开发员手动散点 bump（只改 4 源），91 文件漏改。
+# 正确做法：版本变更一律走 tools/bump-version.sh，禁止手动改 SSOT。
+# 陷阱：若 package.json 已被手动 bump 成新版本，脚本从 SSOT 读 OLD 会误判，
+#       296 行 NEW_3SEG unbound 崩溃——需先回退 SSOT 到旧版再跑。
+bash tools/bump-version.sh 1.0.7 1.0.8   # 标准用法（SSOT 须为 1.0.7）
+bash tools/check-version.sh              # 应 0 不一致
+bash tools/pre-push-check.sh             # 应 7/7
+```
+
+#### 255. 跨包依赖 semver 范围是预期 warning（非版本不一致 FAIL） 🆕
+```bash
+# sofagent/mcp/package.json 对 @sofagent/audit 的依赖声明为 "^1.0.0"
+# （覆盖 >=1.0.0 <2.0.0，已含 1.0.8）——这是 monorepo 同仓两包一起发版的
+# "通用范围"写法，故意不写死 SSOT，否则每发一版都得手改这条依赖。
+# check-version.sh 会因"下限 1.0.0 < SSOT 1.0.8"报 1 项 warning：
+#   - 功能上 ^1.0.0 已覆盖 1.0.8，不影响发版
+#   - 不要用 ^1.0.8 硬编码（每版本都得手改 = reintroduce 散点 bump 风险）
+#   - 发版门禁以 pre-push-check 7/7 为权威；该 warning 仅 --strict 下阻断
+grep '"@sofagent/audit"' sofagent/mcp/package.json   # 期望 ^1.0.0（通用范围，不随版本改）
+```
+
+#### 256. verify.js 脚本目录解析兼容 monorepo 嵌套 🆕
+```bash
+# v1.0.8 修复：verify/checks.ts 的 verifyScriptDir 曾用 join(__dirname,'..','..')，
+# 因 checks.ts 编译在 dist/verify/，两个 .. 只到 audit 包目录（少一级），
+# 源码直跑 verify 时 scripts/cleanup.sh/audit.sh 解析错误 → 自检误报 2 项缺失。
+# 修复为：部署锚点(~/.openclaw/scripts)优先 + 从 __dirname 向上遍历查找含标记脚本的 scripts/ 父目录。
+node sofagent/audit/dist/verify.js   # 期望 §10 企业合规段：cleanup.sh/audit.sh 均"存在且可执行"（无 false failure）
+# 验证：源码态从仓库直跑 dist/verify.js，cleanup.sh/audit.sh 应 PASS（不再误报缺失）
 ```
 
 ---

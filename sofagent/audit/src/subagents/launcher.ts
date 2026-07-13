@@ -1,15 +1,16 @@
 // ============================================================
 // launcher.ts · Sub Agent 启动器
-// v1.0.7 新增：动态 import deepagents，启动/关闭 Agent 实例
-// v1.0.7 新增：runtime.json 状态管理（name/status/startedAt/lastActive/pid）
-// v1.0.7：deepagents 提升为正式依赖，移除 as unknown as 类型转换
-// v1.0.7 新增：buildConstrainedSystemPrompt() 四层约束加载链
+// v1.0.8 新增：动态 import deepagents，启动/关闭 Agent 实例
+// v1.0.8 新增：runtime.json 状态管理（name/status/startedAt/lastActive/pid）
+// v1.0.8：deepagents 提升为正式依赖，移除 as unknown as 类型转换
+// v1.0.8 新增：buildConstrainedSystemPrompt() 四层约束加载链
 // ============================================================
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, copyFileSync, unlinkSync, readdirSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { randomBytes } from 'crypto';
 import { loadEnvConfig } from '../config-loader';
+import { getPersonaContent } from '../filesystem/memory-sync';
 import type { SubAgentDefinition } from './registry';
 
 /** Agent 实例接口 */
@@ -201,6 +202,7 @@ function listKnowledgeTopN(dir: string, n: number): string[] {
  * 2. 规范层：fde.md（企业专属规则）
  * 3. 反思层：think.md（历史踩坑）
  * 4. 知识库：knowledge/ top-N（按 mtime 排序，每篇截取前 2000 字符）
+ * 5. v1.0.8: persona.md（TencentDB Agent 记忆，前 500 字符）
  *
  * @param skillDir 约束文件目录（如 .sofagent/）
  * @returns 拼接后的 system prompt 字符串
@@ -224,6 +226,16 @@ export function buildConstrainedSystemPrompt(skillDir: string): string {
   const knowledgeFiles = listKnowledgeTopN(join(skillDir, 'knowledge'), 5);
   for (const file of knowledgeFiles) {
     parts.push(file);
+  }
+
+  // 5. v1.0.8: persona.md（TencentDB Agent 记忆，前 500 字符）
+  try {
+    const personaContent = getPersonaContent(skillDir, 500);
+    if (personaContent) {
+      parts.push(`# 用户画像 (persona)\n${personaContent}`);
+    }
+  } catch {
+    // persona 注入失败不影响主流程
   }
 
   return parts.join('\n\n---\n\n');
@@ -321,11 +333,32 @@ export async function shutdown(instance: AgentInstance | null, agentName?: strin
 // ============================================================
 // spawnSubAgent — v1.0.7 CLI 入口
 // 从 CLI `subagent run <name> --task "..."` 调用
+// v1.0.8: 支持 --mode sustain（持续优化模式）
 // ============================================================
 export async function spawnSubAgent(
   agent: SubAgentDefinition,
-  task: string
+  task: string,
+  mode?: 'deploy' | 'sustain'
 ): Promise<string> {
+  // v1.0.8: 根据 mode 调整 system prompt
+  const effectiveMode = mode ?? agent.mode ?? 'deploy';
+  let systemPrompt = agent.systemPrompt ?? '';
+
+  if (effectiveMode === 'sustain') {
+    // sustain 模式：附加审计报告趋势分析指令
+    const sustainBlock = [
+      '',
+      '## 持续优化模式（sustain）',
+      '当前处于 sustain 模式。你必须：',
+      '1. 读取 audit 报告趋势（权重最高）——分析历史审计记录的违规模式、频率变化、规则命中趋势',
+      '2. 读取 think.md 反思趋势——从反思记录中提取重复踩坑模式和改进建议',
+      '3. 分析 scoring 数据——评估各节点/规则的得分变化',
+      '4. 生成周度/月度优化建议——包含 knowledge-domain 漏洞、节点效率、规则盲区',
+      '5. 双 Agent 闭环：Audit 问"合规吗？"（底线）+ FDE sustain 问"能更好吗？"（上限）',
+    ].join('\n');
+    systemPrompt = systemPrompt + sustainBlock;
+  }
+
   // 生成编排 prompt：将任务 + agent 定义拼装
   const prompt = [
     `# 任务`,
@@ -334,7 +367,8 @@ export async function spawnSubAgent(
     '# Agent 角色',
     `名称: ${agent.name}`,
     `类型: ${agent.type}`,
-    agent.systemPrompt ? `\n${agent.systemPrompt}` : '',
+    `模式: ${effectiveMode}`,
+    systemPrompt ? `\n${systemPrompt}` : '',
     '# 指令',
     '请使用可用工具完成上述任务，完成后输出结果摘要。',
   ].filter(Boolean).join('\n');

@@ -1,5 +1,5 @@
 // ============================================================
-// builtin-agents.ts · 预装 Agent 定义（v1.0.7）
+// builtin-agents.ts · 预装 Agent 定义（v1.0.8）
 //
 // 每个 Agent 的 systemPrompt 来自 agents/SKILL/<name>/ 下的
 // Agency Agents 格式 .md 文件。DeepAgents 启动时读取文件、
@@ -7,7 +7,6 @@
 //
 // 如果文件找不到（如 npm 全局安装路径不同），回退到硬编码精简版。
 // ============================================================
-
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import type { SubAgentDefinition } from './registry';
@@ -88,6 +87,7 @@ const FDE_AGENT: SubAgentDefinition = {
   type: 'development',
   description: '前线部署工程师——梳理企业工作流、识别 AI 节点、构建知识库、交付离场',
   tools: ['read', 'write', 'bash', 'grep', 'glob'],
+  mode: 'deploy', // v1.0.8: 默认部署模式，可通过 CLI -mode sustain 切换
   systemPrompt: loadAgentMd(
     'sofagent-fde',
     // fallback: 精简版（文件找不到时使用）

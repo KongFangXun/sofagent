@@ -1,13 +1,12 @@
 // ============================================================
 // registry.ts · Sub Agent 注册机制
-// v1.0.7 新增：从 YML 文件加载 Sub Agent 定义
+// v1.0.8 新增：从 YML 文件加载 Sub Agent 定义
 // ============================================================
 
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { load as yamlLoad } from 'js-yaml';
 import { BUILTIN_AGENTS } from './builtin-agents';
-
 export interface SubAgentDefinition {
   /** 唯一标识名称 */
   name: string;
@@ -25,6 +24,8 @@ export interface SubAgentDefinition {
   triggerOn?: string[];
   /** YML 文件路径 */
   _sourcePath?: string;
+  /** v1.0.8: FDE Agent 运行模式 */
+  mode?: 'deploy' | 'sustain';
 }
 
 /**

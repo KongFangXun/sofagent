@@ -4,7 +4,7 @@
 >
 > 最后复核：2026-07-13
 >
-> **每次发版前，在全新 session 中粘贴本文件执行。** 覆盖审计管道全规则 + hook 机制 + SkillOpt 自净化 + DeepAgents Sub Agent + optional 依赖降级。
+> **每次发版前，在全新 session 中粘贴本文件执行。** 覆盖审计管道全规则 + hook 机制 + SkillOpt 自净化 + DeepAgents Sub Agent + 内置 Agent 验证（FDE + Audit）+ optional 依赖降级。
 >
 > 与 `acceptance-test.sh`（CLI 自动化）互补——本文件是 Agent 驱动的端到端验收，包含更多场景类型。
 >
@@ -19,7 +19,7 @@
 | 层级 | 工具 | 覆盖范围 |
 |------|------|---------|
 | 函数级 | 单元测试（vitest） | CI 自动，每次 push |
-| CLI 端到端 | `acceptance-test.sh`（28 场景） | 手动，发版前 |
+| CLI 端到端 | `acceptance-test.sh`（30 场景） | 手动，发版前 |
 | **Agent 端到端** | **本文件**（全场景） | **手动，发版前** |
 | 文档级 | 回归检查清单（维度总数随版本增长，见 regression-checklist.md 头部当前值） | 手动，发版前 |
 | 陌生人视角 | fresh-eyes-review.md | 手动，发布后 |
@@ -562,7 +562,51 @@ composeWithDeepAgents({
 
 ---
 
-## 第七部分：deepagents Optional 依赖降级
+### 场景 26b：内置 Sub Agent 注册与 CLI 调用（FDE + Audit · v1.0.8）
+
+> v1.0.8 新增：验证 `sofagent-fde` 和 `sofagent-audit` 两个内置 Agent 可从 CLI 正常调用。
+
+```bash
+cd "$SOFAGENT_DIR"
+
+# 验证 --help 列出内置 Agent
+echo "=== 内置 Agent 注册 ==="
+$AUDIT_CLI --help 2>&1 | grep "subagent run"
+# ✅ 期望：输出包含 subagent run 命令
+
+$AUDIT_CLI --help 2>&1 | grep "fde"
+# ✅ 期望：输出包含 fde 关键字
+
+$AUDIT_CLI --help 2>&1 | grep "audit"
+# ✅ 期望：输出包含 audit 关键字
+
+$AUDIT_CLI --help 2>&1 | grep "mode sustain"
+# ✅ 期望：输出包含 --mode sustain
+
+# 验证 Agent SKILL 文件存在
+echo "=== Agent SKILL 文件 ==="
+wc -l agents/SKILL/sofagent-fde/SKILL.md
+# ✅ 期望：输出行数（≤100）
+wc -l agents/SKILL/sofagent-audit/SKILL.md
+# ✅ 期望：输出行数（≤100）
+
+# 验证 FDE subagent CLI 调用不崩溃（deepagents 未装时优雅降级）
+echo "=== FDE subagent 调用 ==="
+$AUDIT_CLI subagent run fde --task "echo hello" 2>&1 || true
+# ✅ 期望：输出有意义的响应或优雅降级提示，不抛 uncaught 异常
+
+# 验证 Audit subagent CLI 调用不崩溃
+echo "=== Audit subagent 调用 ==="
+$AUDIT_CLI subagent run audit --task "echo hello" 2>&1 || true
+# ✅ 期望：输出有意义的响应或优雅降级提示
+
+# 验证 FDE sustain mode
+echo "=== FDE sustain mode ==="
+$AUDIT_CLI subagent run fde --mode sustain --task "echo hello" 2>&1 || true
+# ✅ 期望：接受 --mode sustain 参数，不报参数错误
+```
+
+**判定标准**：所有命令不报 uncaught error，deepagents 未安装时返回优雅降级提示而非 crash。SKILL 文件 ≤100 行。
 
 ### 场景 27：未安装时核心功能不受影响
 
@@ -686,6 +730,7 @@ unset PATH NODE_PATH
 | hashVersion 算法变更 | 第四部分 |
 | SkillOpt 集成逻辑变更 | 第五部分 |
 | DeepAgents Sub Agent 变更 | 第六部分 |
+| 内置 Agent（FDE / Audit）变更 | 第六部分（场景 26b） |
 | optional 依赖策略变更 | 第七部分 |
 | config rules 过滤逻辑变更 | 第八部分 |
 | 发版前 | 仅当审计规则 / hook / SkillOpt / DeepAgents 等**场景逻辑**变更时需同步对应部分；版本号已动态解析，**无需逐处替换** |
