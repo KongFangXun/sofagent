@@ -9,7 +9,8 @@
 
 import { existsSync, writeFileSync, mkdirSync, chmodSync, readFileSync, appendFileSync } from 'fs';
 import { join, dirname } from 'path';
-import { execFileSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
+import { homedir, platform } from 'os';
 import { CONFIG_TEMPLATE, HOOK_TEMPLATE } from '../config-template';
 import { writeConfig } from '../config-loader';
 
@@ -349,11 +350,92 @@ exit 0
 
   if (smokeOk) stepOk++;
 
+  // [5/5] 注册 daemon 文件系统监控（v1.0.8 新增）
+  console.log('');
+  console.log('[5/5] 注册 daemon 文件系统监控...');
+
+  const isMacOS = platform() === 'darwin';
+  if (isMacOS) {
+    try {
+      const launchAgentsDir = join(homedir(), 'Library', 'LaunchAgents');
+      if (!existsSync(launchAgentsDir)) {
+        mkdirSync(launchAgentsDir, { recursive: true });
+      }
+
+      // 获取 sofagent-audit 的绝对路径
+      let cliPath = 'sofagent-audit';
+      try {
+        cliPath = execSync('which sofagent-audit', { encoding: 'utf-8' }).trim();
+      } catch {
+        // fallback 到 PATH 中的 sofagent-audit
+      }
+
+      const plistPath = join(launchAgentsDir, 'com.sofagent.daemon.plist');
+
+      if (existsSync(plistPath)) {
+        console.log('  → LaunchAgent 已存在，先卸载旧版本...');
+        try {
+          execSync(`launchctl unload "${plistPath}"`, { stdio: 'pipe' });
+        } catch {
+          // 可能没有在运行，忽略
+        }
+      }
+
+      const plistContent = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.sofagent.daemon</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>${cliPath}</string>
+        <string>--daemon</string>
+        <string>start</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>${homedir()}</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>${join(homedir(), '.sofagent', 'daemon.log')}</string>
+    <key>StandardErrorPath</key>
+    <string>${join(homedir(), '.sofagent', 'daemon.log')}</string>
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+</dict>
+</plist>
+`;
+
+      writeFileSync(plistPath, plistContent, 'utf-8');
+      chmodSync(plistPath, 0o644);
+
+      // 加载 LaunchAgent
+      try {
+        execSync(`launchctl load "${plistPath}"`, { stdio: 'pipe' });
+        console.log('  ✅ daemon 已注册并启动（下次开机自动运行）');
+        console.log(`  → 日志: ~/.sofagent/daemon.log`);
+        stepOk++;
+      } catch (err) {
+        console.log(`  ⚠️ daemon 注册文件已创建，但启动失败: ${(err as Error).message}`);
+        console.log('  → 手动启动: launchctl load ~/Library/LaunchAgents/com.sofagent.daemon.plist');
+      }
+    } catch (err) {
+      console.log(`  ⚠️ daemon 注册失败: ${(err as Error).message}`);
+      console.log('  → 手动安装: sofagent-audit --install-hook（git hooks 仍可用）');
+    }
+  } else {
+    console.log('  ⓘ 非 macOS 系统，跳过 LaunchAgent 注册');
+    console.log('  → 请手动配置 daemon 自启动（systemd / Windows Service）');
+  }
+
   // 完成 banner
   console.log('');
   console.log('╔══════════════════════════════════════════╗');
   console.log('║  sofagent-audit 初始化完成               ║');
-  console.log('║  下次 git commit 时审计自动生效           ║');
+  console.log('║  git commit 审计 + daemon 文件监控已就绪   ║');
   console.log('╚══════════════════════════════════════════╝');
   console.log('');
   console.log('  下一步：');
