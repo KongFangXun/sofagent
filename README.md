@@ -107,7 +107,7 @@ graph LR
     D --> E[knowledge/<br/>知识库·自动积累]
 ```
 
-四层加载链自动注入，Agent 会话一开始就带着约束。全平台可用——OpenClaw 通过 Hook 强制注入，其他平台 Agent 主动 Read。
+四层加载链自动注入，Agent 会话一开始就带着约束。全平台可用——OpenClaw 通过 Hook 精确注入，其他平台 Agent 主动 Read，v1.0.7+ Sub Agent 启动时自加载（`buildConstrainedSystemPrompt`）。
 
 #### 🔍 审计引擎
 
@@ -125,7 +125,21 @@ graph LR
     G --> A
 ```
 
-不依赖 AI 自觉——看的是 git diff 硬证据。全平台可用，装 pre-commit hook 即可。
+不依赖 AI 自觉——看的是 git diff 硬证据。开发者装 pre-commit hook 即可审计代码提交；v1.0.8+ 内嵌 isomorphic-git + daemon 文件监控，**非开发者也能用**——AI 改任何文件都自动审计，不需要装 git、不需要 commit。
+
+审计引擎是 sofagent 的立身之本——不需要任何 Agent 平台配合，只要文件在磁盘上就能工作。
+
+#### 🔄 回溯引擎（v1.0.8+）
+
+审计后自动快照存档，违规时推送通知 + 建议回滚：
+
+| 结果 | 用户看到什么 | 自动动作 |
+|------|------------|---------|
+| ✅ PASS | 静默 | 自动快照存档 |
+| ⚠️ WARN | daemon-notice.md 告警 + 可选 Webhook | 存档 + 标记 |
+| ❌ FAIL | Webhook 推送 + 终端标红 | 存档 + 建议回滚 |
+
+sofagent 是**行车记录仪**，不是安检——不管什么 Agent、什么平台，事后审计 + 回溯恢复，不依赖任何平台。
 
 #### ⚙️ 编排引擎（实验性）
 
@@ -141,23 +155,21 @@ graph LR
     E -->|旧版更好| G[保留]
 ```
 
-编排引擎当前走 ao compose（agency-orchestrator），DeepAgents 接入层已就绪。迁移路线：v1.0.6 compose 迁到 DeepAgents → v1.0.7 ao 退役 + A/B 自动切换。详见 [ROADMAP](./ROADMAP.md)。
+编排引擎当前走 DeepAgents（v1.0.6 compose 迁移完成），ao CLI 将在 v1.0.7 完全退役。v1.0.7 新增 CLI 编排入口——**任何 Agent 平台都能用编排引擎**，不装 OpenClaw 也能跑 Sub Agent 编排。详见 [ROADMAP](./ROADMAP.md)。
 
 > 🆕 **v1.0.5**：[Ontology](./docs/ARCHITECTURE.md#行业印证palantir-同构) 统一层 + Workflow Hub 行业模板 + Agent Dashboard + 原子写入 + fail-closed 安全 + A9 分级安全 + 首次运行分类器
 
 ---
 
-## 和现有工具有什么区别？
+## 企业为什么需要？
 
-| | sofagent | detect-secrets | pre-commit hooks |
-|------|:--:|:--:|:--:|
-| 密钥检测 | ✅ | ✅ | ❌ |
-| Agent 越界检测 | ✅ | ❌ | ❌ |
-| 注入攻击检测 | ✅ | ❌ | ❌ |
-| 流程合规（改前读/改后测） | ✅ | ❌ | ❌ |
-| 知识库越权 | ✅ | ❌ | ❌ |
-| 配置删除检测 | ✅ | ❌ | ❌ |
-| 安装复杂度 | 一行命令 | 一行命令 | 需手写规则 |
+| 企业恐惧 | sofagent 怎么治 |
+|---------|---------------|
+| 「Agent 改坏了生产代码」 | 审计规则检测违规 + `--revert` 一键回滚 |
+| 「Agent 做了什么我不知道」 | 完整 diff 时间线 + 快照历史，有据可查 |
+| 「出了事合规追责」 | 审计日志——谁、什么时候、改了什么、违规了吗 |
+
+与 AgentLoop 的区别：它观测 Agent 怎么想（运行时轨迹、SaaS），sofagent 审计 Agent **改了什么**（文件 diff、本地、MIT 开源）。改了什么直接影响生产环境。
 
 ---
 
@@ -166,8 +178,9 @@ graph LR
 > 🔬 Hugging Face 实验：同一模型不改权重，仅优化外层 Harness，在法律 Agent 基准中从 3.5% 跃升至 80.1%（76 分差全部来自外层机制）。[详情](./docs/ARCHITECTURE.md)
 
 - 核心逻辑 **473 tests 全绿**（diff-parser / config-loader / rules A1-A15 / reporter）
-- **17 条审计规则**：11 条默认（A1-A11）+ 6 条扩展（E1-E4 工程规范 + A14 知识库越权 + A15 约束验证）。其中 13 条纯 git-diff（A1-A6,A9-A11,E1-E4），4 条需 Agent 日志（A7,A8,A14,A15），覆盖密钥泄漏、越界修改、注入攻击、知识库越权、工程规范等
+- **17 条审计规则**（v1.0.9 扩展为 19 条）：11 条默认（A1-A11）+ 6 条扩展（E1-E4 工程规范 + A14 知识库越权 + A15 约束验证），v1.0.9 新增 A16 非授权文件变更 + A17 异常批量变更。覆盖密钥泄漏、越界修改、注入攻击、知识库越权、工程规范等
 - ⚠️ A14 是**事后审计提醒**而非运行时访问控制——Agent commit 前仍可能访问受限数据，A14 让管理员能在审计中发现越权行为
+- 📁 v1.0.8+ 支持文件系统审计（不需 git）——内嵌 isomorphic-git，daemon 监控文件变更自动审计
 - MIT 许可证，代码、文档、模板随便用
 
 > ⚠️ 编排引擎需要 DeepAgents 环境，能跑但还在打磨。[已知局限](./docs/LIMITATIONS.md)
@@ -181,6 +194,17 @@ graph LR
 | 只想拦截密钥泄漏 | `npm install -g @sofagent/audit` 就够了 |
 | 想管住 Agent 全流程 | 审计引擎 + 约束底座（install.sh） |
 | 想自动编排 Agent 任务 | + 编排引擎（DeepAgents Sub Agent） |
+
+### 两种部署节点（v1.0.7+）
+
+sofagent 支持两种节点类型，按需选择：
+
+| 节点类型 | 适合谁 | 需要 OpenClaw | 编排引擎怎么用 | 约束怎么注入 |
+|---------|--------|:--:|------|------|
+| **自动运行节点** | 企业无人值守设备 | ✅ 必须 | OpenClaw Channel + DeepAgents 内部 API | OpenClaw Hook 精确注入 |
+| **个人增强节点** | 个人开发者用 WorkBuddy/Codex/Claude Code | ❌ 不需要 | `sofagent-audit compose --task` CLI | Sub Agent 启动时自加载 |
+
+> v1.0.7 的 Sub Agent 约束自加载（`buildConstrainedSystemPrompt`）让约束不依赖任何 Agent 平台的 Skill 系统——Sub Agent 启动时直接读 `.sofagent/` 文件，平台换了约束不丢。
 
 ---
 

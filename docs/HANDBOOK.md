@@ -4,7 +4,7 @@
 >
 > v1.0.6 · 2026-07-11（UTC）· 孔放勋
 
-<img src="sofagent.png" alt="sofagent" width="300" />
+<img src="../sofagent.png" alt="sofagent" width="300" />
 
 - [阅读指南](#阅读指南)
 - [5 分钟速览](#5-分钟速览)
@@ -39,6 +39,7 @@
 | 这是什么 | 给 Agent 加行为约束——4 底线 + 7 则铁律 | 场景二 |
 | 怎么装 | `bash sofagent/scripts/install.sh` | 场景一 |
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | 场景二 |
+| 审计怎么跑 | 开发者：git commit 自动审计。非开发者：v1.0.8+ daemon 监控文件变更自动审计 | 场景一 |
 | AI 知识库 | `.sofagent/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [v1.0.1 日志](./changelog/v1.0.1.md) · [设计原理](./ARCHITECTURE.md#数据层ai-知识库v101-实现) |
 | AI 成熟度 | 三级台阶（替换→增强→重构），FDE 帮企业从第二级跨到第三级——不只装 AI，还装上责任机制 | [FDE/FDE.md](../FDE/FDE.md#附录企业-ai-成熟度三级台阶) |
 | 已知局限 | 核心效果见 [evidence.md](./evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](./LIMITATIONS.md) |
@@ -63,7 +64,7 @@ cd sofagent && bash sofagent/scripts/install.sh
 | bash | ≥4 | install.sh / task-record.sh | `bash --version` |
 | git | 任意 | clone + task/logs 追溯 | `git --version` |
 | node | ≥18 | 编排引擎 + 审计 CLI | `node --version` |
-| npm | ≥9 | 安装 agency-orchestrator | `npm --version` |
+| npm | ≥9 | 安装 deepagents（编排引擎） | `npm --version` |
 
 > 只用宪法层约束（不跑编排引擎/审计）可不带 node/npm。
 
@@ -113,9 +114,22 @@ exit code：0 = 通过 / 1 = 有警告 / 2 = 有违规。零 Agent 依赖——�
 
 ### daemon 后台进程
 
-安装时可选择安装 daemon（轻量后台进程，macOS launchd / Linux systemd）。daemon 每 30 秒检查 `think.md` 和 `fde.md` 的文件 hash 变化——如果变了，写入 `daemon-notice.md` 通知。**不直接审计 git commit**（commit 审计由 pre-commit hook 负责，见上方）。
+安装时可选择安装 daemon（轻量后台进程，macOS launchd / Linux systemd）。daemon 做两件事：① 每 30 秒检查 `think.md`/`fde.md` hash 变化写入 `daemon-notice.md`；② v1.0.8+ 监控文件变更自动跑审计。commit 审计由 pre-commit hook 负责（见上方）。
 
-> daemon 是可选组件——即使不装，宪法层约束和 pre-commit hook 审计照样生效。
+审计结果按严重级别处理：
+
+| 结果 | 用户看到什么 | 自动动作 |
+|------|------------|---------|
+| ✅ PASS | 静默 | 自动快照存档 |
+| ⚠️ WARN | daemon-notice.md 告警 + 可选 Webhook | 存档 + 标记 |
+| ❌ FAIL | Webhook 推送 + 终端标红 | 存档 + 建议回滚 |
+
+```bash
+sofagent-audit --history              # 查看审计快照
+sofagent-audit --revert <sha>         # 回滚到某次审计前
+```
+
+Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 告警链路](./ARCHITECTURE.md#告警链路)。
 
 ### CI 集成
 
@@ -167,14 +181,13 @@ jobs:
 
 > 地基约 3,500 token，不到 128K 窗口的 3%。OpenClaw 平台 Hook 自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#两层架构地基-vs-引擎)。
 
-### 双引擎怎么跑
-
-> 审计引擎（git diff → A1-A15）和编排引擎（Workflow 梳理 + A/B 重测）通过 think.md 交汇。完整架构图和流程详见 [README § 怎么工作](../README.md#fde-怎么工作) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
+### 三个引擎怎么跑
 
 | 引擎 | 做什么 | 依赖 Agent | 触发方式 |
 |------|------|:--:|------|
-| **审计引擎** | git diff → A1-A15 规则检查 → 自动生成 think.md | ❌ | 每次 git commit |
-| **编排引擎**（实验性）| Workflow 梳理时生成节点定义 + 定期 A/B 重优化 | ✅ | Workflow 梳理时 / 定时触发。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
+| **审计引擎** | git diff → A1-A15 规则检查 → think.md | ❌ | git commit（v1.0.8+ daemon 监控文件变更） |
+| **回溯引擎**（v1.0.8+） | 审计后自动 snapshot，违规时建议回滚 | ❌ | 审计完成后自动 |
+| **编排引擎**（实验性）| Workflow 梳理 + A/B 重优化 | ✅ | Workflow 梳理时 / 定时触发。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
 
 ### 4 条底线 + 7 则行为铁律
 
@@ -218,7 +231,7 @@ Agent 先判断任务复杂度：
   → 用户回答
 
 第二轮 · 编排方案
-  Agent 跑 ao compose → 输出方案：「拆成 N 个子任务、预估 token/成本。可行？」
+  Agent 跑 DeepAgents compose → 输出方案：「拆成 N 个子任务、预估 token/成本。可行？」
   → 用户确认 → 执行
   → 用户不认可 → 指哪改哪，重生成方案
   → 说不清楚 → 回到第一轮
@@ -301,13 +314,14 @@ Agent 先判断任务复杂度：
 | 术语 | 一句话解释 |
 |------|------|
 | **Harness 中间件** | 管 Agent 行为的「缰绳」——不改模型，改模型外围的执行机制。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他平台，sofagent 是独立审计标准层。→ [设计原理](./ARCHITECTURE.md#两层架构地基-vs-引擎) |
-| **审计引擎** | 看 git diff 硬证据判定违规，提交时触发，不依赖 Agent 配合。→ [为什么外置](./ARCHITECTURE.md#为什么审计必须外置) |
+| **审计引擎** | 看 git diff 硬证据判定违规，不依赖 Agent 配合。v1.0.8+ daemon 监控文件变更，**非开发者也能用**。→ [为什么外置](./ARCHITECTURE.md#为什么审计必须外置) |
+| **回溯引擎**（v1.0.8+） | 审计后自动快照存档，违规时建议回滚——不只是告诉你违规了，还存了快照、推了通知 |
 | **编排引擎**（实验性）| 拆任务→编排→执行，基于 DeepAgents Sub Agent。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
 | **铁律** | Agent 行为约束规则（4 底线 + 7 铁律），写在 MD 文件里注入上下文 |
 | **审计规则** | 代码变更检查规则（A1-A15），审计引擎按此判定 exit code |
 | **Skill** | Agent 行为模板——一组 .md 文件，定义 Agent 在什么场景做什么 |
 | **think.md** | Agent 任务结束后的反思记录——踩了什么坑、下次怎么办 |
-| **daemon** | 轻量后台进程，每 30 秒检查 think.md/fde.md 文件 hash 变化并通知 |
+| **daemon** | 轻量后台进程，检查 think.md/fde.md 文件 hash 变化并通知；v1.0.8+ 扩展为文件变更审计（fs.watch + isomorphic-git） |
 | **OpenClaw** | 开源 Agent 平台，sofagent 的约束底座和加载链 Hook 跑在上面 |
 | **四层加载链** | SKILL.md（宪法层）→ think.md（反思层）→ fde.md（执行层）→ knowledge/index.md（知识层）注入顺序 |
 | **FDE** | Forward Deployed Engineer，四阶段十二步：梳理工作流→构建本体模型→识别节点与量化→部署→离场 |
@@ -326,13 +340,27 @@ Agent 先判断任务复杂度：
 
 ### 部署的核心是装上 sofagent
 
-没有 sofagent，前面梳理的 workflow 就是一份漂亮的 PPT。三层引擎装到设备上，AI 节点才有了纪律和审计：
+没有 sofagent，前面梳理的 workflow 就是一份漂亮的 PPT。引擎装到设备上，AI 节点才有了纪律和审计：
 
-| 层 | 做什么 | 怎么跑 |
+| 引擎 | 做什么 | 怎么跑 |
 |----|--------|--------|
-| 约束底座 | fde.md 规则注入 Agent 上下文 | install.sh 装完自动加载 |
-| 审计引擎 | git diff → A1-A15 规则 → exit code | git pre-commit hook |
-| 编排引擎（实验性）| DeepAgents 拆任务生成编排方案，Sub Agent 并行执行 | 全平台可用 |
+| 约束底座 | fde.md 规则注入 Agent 上下文 | install.sh 自动加载（v1.0.7+ Sub Agent 自加载） |
+| 审计引擎 | git diff → A1-A15 规则 → exit code | pre-commit hook（v1.0.8+ daemon 监控文件变更） |
+| 回溯引擎（v1.0.8+） | 自动快照 + 违规时建议回滚 | 审计后自动触发 |
+| 编排引擎（实验性）| DeepAgents 拆任务，Sub Agent 并行 | 全平台可用 |
+
+### 节点类型选择（v1.0.7+）
+
+FDE 进场后要决定每个 AI 节点跑哪种模式：
+
+| | 自动运行节点 | 个人增强节点 |
+|---|---|---|
+| **装什么** | OpenClaw + sofagent 全栈 | sofagent + 预定义 Sub Agent |
+| **Agent 平台** | OpenClaw 内置 | 用户自己的（WorkBuddy/Codex/Claude Code） |
+| **编排引擎怎么调** | OpenClaw 内部 API | `sofagent-audit compose --task` CLI |
+| **约束注入** | OpenClaw Hook 精确注入 | Sub Agent 启动时自加载 |
+| **审计引擎** | 完全一致（git hook） | 完全一致 |
+| **适合** | 7×24 无人值守设备 | 个人开发工位 |
 
 ### 离场后企业留下什么
 

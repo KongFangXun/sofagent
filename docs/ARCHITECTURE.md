@@ -8,7 +8,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 >
 > > v1.0.6 · 2026-07-11（UTC）· 孔放勋
 
-<img src="sofagent.png" alt="sofagent" width="300" />
+<img src="../sofagent.png" alt="sofagent" width="300" />
 
 ---
 
@@ -30,7 +30,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 | FDE 工具包 | FDE toolkit | FDE 随身的工具包 |
 | 审计引擎 | audit engine | git diff 硬证据审计 |
 | 编排引擎 | orchestration engine | 任务拆解 + workflow 生成 |
-| 加载链 | load chain | Agent 启动时注入的三层约束文件 |
+| 加载链 | load chain | Agent 启动时注入的三层约束文件（v1.0.7+ Sub Agent 可自加载，不依赖宿主平台） |
 
 ---
 
@@ -92,11 +92,65 @@ sofagent 分两层——地基轻、引擎重：
 |:--:|------|------|:--:|
 | **Harness 层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ 已可用 |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ v0.81 |
-| **审计层** | git 仓库 | sofagent-audit——提交时审计 git diff | ✅ v0.92 |
+| **审计层** | git 仓库 + 文件系统 | sofagent-audit——提交时审计 git diff（v1.0.7）+ 文件变更时审计 diff（v1.0.8） | ✅ v0.92 / v1.0.8 扩展 |
 | **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v1.0.6），推送待端到端验证 | ✅ v0.99.5 |
 | **协同层** | 多设备 + 云端 | 组织级 Agent Harness——Agent 以独立身份进入协作现场，共享上下文 + 组织记忆 + 主动参与 | v2.x 规划 |
 
 每层跑通再加下一层——不推翻已验证的东西。
+
+### 双节点架构（v1.0.7+）
+
+sofagent v1.0.7 起正式区分两种部署节点类型。核心变化：Sub Agent 不再只服务 OpenClaw 节点——**约束自加载**让任何 Agent 平台都能用编排引擎。
+
+| 维度 | 自动运行节点 | 个人增强节点 |
+|------|------|------|
+| **典型场景** | 企业无人值守设备 | 个人开发者用 WorkBuddy/Codex/Claude Code |
+| **OpenClaw** | ✅ 必须（Channel/control/orchestration/Webhook） | ❌ 不需要 |
+| **编排引擎调用** | OpenClaw 内部 API（性能优先） | `sofagent-audit compose --task` CLI |
+| **约束注入** | OpenClaw Hook 精确注入（运行时动态） | Sub Agent 自加载（`buildConstrainedSystemPrompt`，启动时一次性） |
+| **审计引擎** | git commit-msg + post-commit hook | 同左（完全一致） |
+| **DeepAgents** | ✅ 正式依赖（v1.0.7 从 optional 提升） | 同左 |
+
+**Sub Agent 约束自加载**（v1.0.7 新增）：launcher.ts 的 `buildConstrainedSystemPrompt()` 在 Sub Agent 启动时读取 `.sofagent/` 下的约束文件（SKILL.md + fde.md + think.md + knowledge/ top-N），拼装为 system prompt。纯文件系统操作，不依赖任何 Agent 平台的 Skill 系统。这让 Sub Agent 换平台时约束不丢——OpenClaw 节点切到 WorkBuddy，约束行为一致。
+
+**CLI 编排入口**（v1.0.7 新增）：`sofagent-audit compose --task <描述>` 让第三方 Agent 通过 Bash tool 调用编排引擎。输出 YAML 编排方案到 stdout，加 `--run` 直接执行。不依赖 OpenClaw 的任何 API。
+
+### 文件系统审计（v1.0.8+）
+
+v1.0.7 及以前，审计引擎只在 `git commit` 时触发——只有开发者能用。v1.0.8 扩展为**文件系统变更审计**，覆盖非开发者场景（客服、运营、数据分析人员用 AI 改文件）。
+
+| 维度 | git commit 审计（v1.0.7） | 文件系统审计（v1.0.8） |
+|------|------|------|
+| 触发方式 | 用户主动 `git commit` | daemon 监控文件变更，自动触发 |
+| 拦截能力 | ✅ 阻断 commit | ❌ 事后告警（文件已改完） |
+| 证据 | git diff（硬证据） | isomorphic-git diff（硬证据） |
+| 需要 git | ✅ 系统装 git | ❌ 内嵌 isomorphic-git（~2MB 纯 JS） |
+| 适用人群 | 开发者 | 开发者 + 非开发者 |
+| 文件类型 | 文本文件 | 文本文件（A1-A15）+ 二进制文件（v1.0.9 加 A16-A17） |
+
+**核心组件**：`isomorphic-git`（内嵌，~2MB）+ daemon fs-watch（`chokidar`，5 秒防抖）+ 快照回溯（`sofagent-audit --revert <sha>`）。
+
+**审计语义**：文件系统审计是**事后告警 + 回溯**，不是事前拦截——这是平台无关性的前提。sofagent 做的是**行车记录仪**，不是安检：实时拦截需要深度集成平台，一旦集成丧失第三方独立性。
+
+| 方案 | 代价 |
+|------|------|
+| 实时约束（拦截） | 需深度集成平台 → 只能服务单一平台 |
+| 事后审计（diff） | 慢半拍，但**平台无关** |
+| 回溯恢复（snapshot） | 改错了能回滚 |
+
+v1.0.8 daemon 让事后审计达到准实时：`fs.watch` → 防抖 2 秒 → 立即审计，几秒出结果。演进：v1.0.x 被动等 commit → v1.0.8 准实时 → v2.x Webhook 实时告警。
+
+> 💡 **与 AgentLoop 的区别**：阿里云 AgentLoop 做运行时 Trajectory 观测（Agent 怎么想），sofagent 做文件 diff 审计（Agent 改了什么）。AgentLoop 数据发阿里云，sofagent 数据留本地。对企业来说"改了什么"比"怎么想的"更重要。
+
+#### 告警链路
+
+| 级别 | 用户看到什么 | 自动动作 |
+|------|------------|---------|
+| ✅ PASS | 静默 | snapshot 存档 `.sofagent/.git-shadow/` |
+| ⚠️ WARN | daemon-notice.md + 可选 Webhook | 存档 + 标记 |
+| ❌ FAIL | Webhook + 终端标红 | 存档 + 建议回滚 |
+
+回溯：`--history` 查看快照，`--revert <sha>` 回滚。daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml`。
 
 ### 审计层的证据分层：信任产出，不信任过程
 
@@ -109,7 +163,7 @@ sofagent 分两层——地基轻、引擎重：
 
 **设计后果**：`--silent` 模式只跑纯 git-diff 规则（零依赖 Agent 配合）；完整模式交叉对比两种证据；新规则优先加 git-diff 规则。底线：**审计工具在零 Agent 配合下仍然有判定能力。**
 
-> 🔮 **v1.0.1 方向：事后→事前（双闸验证）**。当前审计是事后 diff（Agent 改完了再查）。自然的进化是在执行前加一道闸——**执行前验证**（Agent 计划改什么→规则预判是否允许）+ **副作用写回前再验证**（改完没提交→再扫一遍）。双闸不是替代事后审计，是和事后审计互补——事后审计永远是最硬的证据，双闸让违规在发生前就被拦住。
+> 🔮 **探索方向（非核心路线）：双闸验证**——执行前预判 + 副作用写回前再扫。需深度集成平台 tool call 拦截，与"平台无关"核心定位有张力。sofagent 立身之本是事后审计 + 回溯恢复，不依赖任何平台。
 
 > 🔮 **v1.x 方向：权限风险分级**。当前 entry-gate.md 是单层权限清单（能做/不能做二分）。Human-in-the-Loop 审批工程的进化方向是按风险分三级：🟢 低风险（文件读写/查询）自动放行 / 🟡 中风险（git 操作/安装包）需确认 / 🔴 高风险（删数据/部署/外部 API）必须人工审批。风险分级不是增加审批摩擦，是让低风险操作更快通过的同时，把人工注意力精准投放到高风险节点。
 

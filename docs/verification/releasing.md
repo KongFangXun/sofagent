@@ -3,7 +3,7 @@
 > v0.95 实践沉淀。十阶段：审查→开发→自测→代码审核→**回归检查**→审查体系维护→文档收尾→确认关口→发布→发布后。
 > 🔴 v0.95 起，版本号操作用 `bump-version.sh` + `check-version.sh`，禁止手动 grep/sed。
 > 🔴 v1.0.3 起，文档预算分层检查（A 用户文档 / B 开发者参考 / C 审查体系 / D 设计 / E 指南），见 `check-docs.sh`。
-> 🔴 v1.0.6 起，回归检查升格为**独立阶段**（阶段五）——需要全新 session，不再作为"审核"的子步骤。
+> 🔴 回归检查已升格为**独立阶段**（阶段五）——需要全新 session，不再作为"审核"的子步骤。
 
 ---
 
@@ -47,7 +47,7 @@
 | 8.5 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
 | 8.6 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
 | 8.7 | `bash tools/acceptance-test.sh` — 28 个端到端场景：Fresh install → --init → --doctor → 正常 commit → 违规拦截 → --json → --ci → 首次提交 → hook 破坏 → --no-verify 检测 → config rules 过滤 → A2/A3/A4/A5/A6/A9/A10/A11 → E1-E4 扩展规则 → --strict exit code=2 → hook 迁移 → post-commit → hashVersion 混合格式 → history.jsonl 写入 → --json 违规输出 → post-commit 安装+丢失检测 | 全部 PASS |
-| 8.8 | **OpenClaw 综合验证**（v1.0.6 起）：在全新 session 中执行 `docs/verification/openclaw-acceptance-test.md`（28 场景：审计管道全规则 + hook 机制 + hashVersion 混合格式 + SkillOpt 自净化 + DeepAgents Sub Agent + optional 依赖降级 + config rules 过滤） | 全部通过 |
+| 8.8 | **OpenClaw 综合验证**：执行 `docs/verification/openclaw-acceptance-test.md`（28 场景：审计管道全规则 + hook 机制 + hashVersion 混合格式 + SkillOpt 自净化 + DeepAgents Sub Agent + optional 依赖降级 + config rules 过滤） | 全部通过 |
 
 ---
 
@@ -63,39 +63,35 @@
 
 ---
 
-## 🔴 阶段五：回归检查（独立阶段，必须全新 session）
+## 🔴 阶段五：回归检查 + OpenClaw 验收（合并执行，一次控制两份报告）
 
-> ⚠️ **v1.0.6 起升格为独立阶段**——之前是"审核"的子步骤 10.5，容易被跳过。回归检查的"全新 session"要求与开发 session 天然矛盾，不应放在同一个阶段里。
+> ⚠️ 回归检查已升格为独立阶段，回归清单和 OpenClaw 验收已合并为一次操作——不再需要分别跑两个 session。
 
-**为什么必须独立**：
-- 回归检查用 `docs/verification/regression-checklist.md`（当前维度数见文件头）
-- 🔴 **必须开全新 session**——老 session 有上下文记忆，审查者知道"这东西是我修的"，会跳过怀疑。全新 session = 空白认知
-- 和阶段一（陌生视角审查）不同：回归检查是"确认已知修复没回退"，不是"发现新问题"
+**操作模式**：在你当前的 Agent session（WorkBuddy/CodeBuddy）中，**控制 OpenClaw** 去执行检查任务。OpenClaw 有 Bash tool 可以跑回归清单的 grep/shellcheck/npm test 命令，也有审计环境可以跑验收场景。
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 10.5a | **回归清单**：在**全新 session** 中用 `docs/verification/regression-checklist.md` 逐项核对 | 审核者（不能是开发者本人） | 全 PASS |
-| 10.5b | **OpenClaw 验收**：在同一个全新 session 中用 `docs/verification/openclaw-acceptance-test.md` 跑全场景验证 | 审核者 | 所有场景 PASS |
+| 10.5 | 在当前 Agent session 中，让 OpenClaw 一次性执行：先回归清单 → 再验收测试。生成两份报告放桌面 | 审核者控制 OpenClaw | 两份报告均全 PASS |
 
-> 🔴 两项**都必须**通过才能进阶段六。任何一项 FAIL → 回开发 session 修复 → 重跑阶段三自测 → 再开新 session 重跑阶段五。
+> 🔴 任何一项 FAIL → 回开发 session 修复 → 重跑阶段三自测 → 再控制 OpenClaw 重跑。
 
 **操作方式**：
 
-1. 开一个全新的 WorkBuddy/CodeBuddy session（不要从开发 session 继续）
-2. **先跑回归清单**：
+1. 在你的 Agent session 中（不要从开发 session 继续），对 OpenClaw 下达以下指令：
    ```
-   请读取 docs/verification/regression-checklist.md，
-   按照里面的审查约束和逐项检查清单，
-   对当前 workspace 的 sofagent 项目执行回归检查。
-   输出每项的 PASS/FAIL 结果。
+   请读取 workspace 中 docs/verification/ 下的两份文件，依次执行：
+
+   【报告一：回归检查】
+   读取 regression-checklist.md，按照逐项检查清单，
+   用你的 Bash tool 跑全部维度验证命令，输出每项 PASS/FAIL。
+   保存到 ~/Desktop/vX.Y-regression-report.md
+
+   【报告二：OpenClaw 验收】
+   读取 openclaw-acceptance-test.md，按场景逐一执行验证，
+   输出每个场景 PASS/FAIL。
+   保存到 ~/Desktop/vX.Y-openclaw-acceptance-report.md
    ```
-3. **再跑 OpenClaw 验收**：
-   ```
-   请读取 docs/verification/openclaw-acceptance-test.md，
-   按照里面的场景逐一执行验证。
-   输出每个场景的 PASS/FAIL 结果。
-   ```
-4. 如果有 FAIL：回到开发 session 修复 → 重新跑阶段三自测 → 再开新 session 重跑阶段五（两项都要重跑）
+2. 两份报告全 PASS → 进阶段六。任何 FAIL → 修复 → 重跑
 
 **时序注意**：
 - 回归清单中标注「发布后验证」的检查项（如 npm latest 版本号），在回归检查阶段必然不满足——这是正常的，不要标 FAIL
@@ -356,7 +352,7 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
    🔴 Release body **必须**包含开发日志链接：
    📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)
 
-   🔴 Release Notes 标准格式（v1.0.6 起规范化）：
+   🔴 Release Notes 标准格式：
 
    **Title**: `vX.Y.Z — {核心变更摘要} 🔧`（≤60 字，逗号分隔 2-4 个要点；末尾固定 🔧 表示工具更新，正式版里程碑用 🎉）
 
@@ -407,6 +403,8 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
     cp FDE/SKILL.md ~/.workbuddy/skills/sofagent-fde/
 10. iCloud 同步（可选）：cp -r FDE/* ~/Library/Mobile\ Documents/com~apple~CloudDocs/WorkBuddy/FDE工具包/
 ```
+
+> **💡 WorkBuddy Skill 自动同步说明**：作者的 WorkBuddy 已安装 sofagent skill。每次 sofagent skill 文件更新并 cp 到 `~/.workbuddy/skills/sofagent/` 后，WorkBuddy 客户端会自动同步本地 skill 内容——这是作者自己开发环境内的同步，**不影响 ClawHub/SkillHub 发布流程**。ClawHub（`clawhub skill publish`）和 SkillHub 仍然是每次发版必须执行的发布渠道，一个都不能少。
 
 ### 9.3 发布后验证
 
@@ -469,7 +467,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 二 | 开发 | 工程师 | 否 | 代码 + 随修随记的回归维度 |
 | 三 | 自测 | 工程师 | 否 | build/test/shellcheck/acceptance 全绿 |
 | 四 | 代码审核 | 审核者 | 否 | 逐项 PASS 或 FAIL→修复 |
-| **五** | **回归检查 + OpenClaw 验收** | **审核者** | **🔴 是（独立 session）** | **回归清单全 PASS + OpenClaw 全场景通过** |
+| **五** | **回归检查 + OpenClaw 验收（合并）** | **审核者控制 OpenClaw** | **🔴 是（全新认知，一次操作两份报告）** | **两份报告均全 PASS** |
 | 六 | 审查体系维护 | 作者 | 否 | 回归清单 + 陌生视角 prompt 更新 |
 | 七 | 文档收尾 | 作者 | 否 | CHANGELOG/ROADMAP/版本号/日期对齐 |
 | 八 | 确认关口 | AI → **生成发布 prompt 交接** | 否 | git diff 确认 → 检查清单打勾 → 生成发布 prompt 交给负责人 |
