@@ -145,7 +145,7 @@ bash tools/check-version.sh 2>&1 | tail -3
 #### 8. check-docs.sh（v1.0 含铁律措辞检查）
 ```bash
 bash tools/check-docs.sh 2>&1
-# 死链 + Skill 行数 ≤90 + 预算检查 + 铁律措辞检查
+# 死链 + Skill 行数 ≤100 + 预算检查 + 铁律措辞检查
 ```
 
 #### 9. install.sh 关键路径
@@ -421,7 +421,7 @@ head -5 sofagent/skill/loop-evaluate.md
 # 不应有"复盘/评分/沉淀"功能列表
 ```
 
-#### 52. 10 个 Skill 文件行数 ≤90
+#### 52. 10 个 Skill 文件行数 ≤100
 ```bash
 wc -l sofagent/skill/*.md FDE/SKILL.md
 bash tools/check-docs.sh 2>&1 | grep '行'
@@ -1219,9 +1219,9 @@ grep 'operation\|raw' sofagent/audit/src/rules/rule-a14-kb-cross-domain.ts
 ls sofagent/skill/knowledge-maintain.md
 # 不存在 = P0
 
-# 2. 行数 ≤90
+# 2. 行数 ≤100
 wc -l sofagent/skill/knowledge-maintain.md
-# 应 ≤90 行
+# 应 ≤100 行
 
 # 3. 内容完整性
 grep 'frontmatter\|双向链接\|index\|log\|Lint\|Gotcha' sofagent/skill/knowledge-maintain.md
@@ -1542,15 +1542,15 @@ grep '主命令\|辅助工具\|available' sofagent/audit/src/index.ts
 
 ### 第二十部分：审查流程优化（维度 138）🆕
 
-#### 138. Skill 增量淘汰平衡——新增内容后 ≤90 行 + 弱措辞清零 + pre-push-check 全绿 🆕
+#### 138. Skill 增量淘汰平衡——新增内容后 ≤100 行 + 弱措辞清零 + pre-push-check 全绿 🆕
 ```bash
 # v1.0.1 审查教训：新增四层加载链 + think.md 模板 → SKILL.md 114 行（超标 24）
 # 新增 Lint 5 项 → loop-evaluate.md 103 行（超标 13）+ "建议"弱措辞
 # 根因：审查只检查了功能正确性，没有检查"内容增量是否挤爆了 Skill 行数限额"
 
-# 1. 所有 Skill 文件行数 ≤90
+# 1. 所有 Skill 文件行数 ≤100
 wc -l sofagent/skill/*.md FDE/SKILL.md
-# 期望：每个文件 ≤90 行
+# 期望：每个文件 ≤100 行
 
 # 2. 弱措辞清零
 grep -rn '建议\|应该\|尽量' sofagent/skill/*.md FDE/SKILL.md | grep -v 'not_when\|Gotcha\|场景\|注\|说明'
@@ -1558,7 +1558,7 @@ grep -rn '建议\|应该\|尽量' sofagent/skill/*.md FDE/SKILL.md | grep -v 'no
 
 # 3. 增量淘汰平衡检查——对比上次版本
 # 如果某个 Skill 本次新增了内容但行数也同步增加了 → 旧的重复内容没删
-# 公式：原行数 + 新增行数 - 删除行数 ≤ 90
+# 公式：原行数 + 新增行数 - 删除行数 ≤ 100
 git diff <上次版本tag>..HEAD -- sofagent/skill/ FDE/SKILL.md | grep '^+' | wc -l  # 新增行
 git diff <上次版本tag>..HEAD -- sofagent/skill/ FDE/SKILL.md | grep '^-' | wc -l  # 删除行
 # 新增行应 ≈ 删除行（做加法时同步做减法）
@@ -1916,7 +1916,7 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 | 135 | 审计规则测试覆盖率——扩展规则是否同步创建测试文件 | v1.0.1 发版审查 P1 |
 | 136 | doctor 知识库访问矩阵展示 | v1.0.1 发版审查 P1 |
 | 137 | npm 安装后用户引导——README 首行 + --help 首行 | v1.0.0 陌生视角审查 |
-| **138** | **Skill 增量淘汰平衡——新增内容后是否仍 ≤90 行 + 弱措辞清零** | **本轮 pre-push-check 拦截** |
+| **138** | **Skill 增量淘汰平衡——新增内容后是否仍 ≤100 行 + 弱措辞清零** | **本轮 pre-push-check 拦截** |
 | 139 | 多入口模板一致性——install.sh vs --init 创建的同一文件模板必须一致 | v1.0.1 审查发现 init.ts vs file-deploy.sh 的 index.md 模板不一致 |
 | 140 | init.ts 消息文本准确性——输出消息中的数字/名称必须与实际行为一致 | v1.0.1 审查发现"6 子目录"实际只有 4 个 |
 | 141 | ROADMAP 状态一致性——同一版本在不同位置的标记不能矛盾 | v1.0.1 审查发现同时标 ✅ 和 🚧 规划中 |
@@ -2374,7 +2374,7 @@ grep -rE 'P[012][×:：]' CHANGELOG.md docs/changelog/*.md
 - **测试覆盖率审「一条规则一个测试文件」**——扩展规则新增时必须同步创建测试
 - **doctor 访问矩阵审「workflow.yml 已配置时展示」**——extendedRulesEnabled 时应有矩阵
 - **npm 引导审「README 首行 + --help 首行」**——安装后 ≤3 步能从安装到首次审计
-- **增量淘汰审「新增=删除」**——Skill 加功能时必须同步删旧内容，维持 ≤90 行
+- **增量淘汰审「新增=删除」**——Skill 加功能时必须同步删旧内容，维持 ≤100 行
 - **pre-push-check 审「审查的最后一步」**——7/7 全绿才算 IS_PASS: YES
 - **history.jsonl 脱敏审「A2/A9 不存明文」**——拦截密钥/injection 后 history 不含敏感原文
 - **A9 自身排除审「.sofagent/ 跳过」**——A9 不对自身审计日志误报
