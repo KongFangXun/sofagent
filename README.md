@@ -3,8 +3,10 @@
 > 🌐 [English abridged version →](README.en.md) | 🇨🇳 中文完整版
 
 <p align="center">
-  <img src="sofagent.png" alt="sofagent" width="160" />
+  <img src="docs/assets/sofagent.png" alt="sofagent" width="160" />
 </p>
+
+> 📄 `docs/index.html` 是项目官网落地页（GitHub Pages 入口，[在线预览](https://kongfangxun.github.io/sofagent/)），非 npm 包运行所需，已归位到 `docs/` 下避免污染根目录。
 
 <p align="center">
   <strong>sofa + agent = sofagent / 沙发特工</strong><br/>
@@ -19,14 +21,18 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.0.6-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.0.7-16B8F3" alt="Version" /></a>
 </p>
+
+---
+
+**sofagent-audit 在 git commit 时自动扫描 17 条规则，拦截密钥泄漏、越界修改、注入攻击。不依赖 AI 配合，看的是 git diff 硬证据。纯 TypeScript 正则引擎，0 token 消耗。装一行命令，改完文件提交就知道效果。**
 
 ---
 
 ## 为什么需要 sofagent？
 
-87% 的中小企业 AI 项目在半年内停摆。不是技术不行——是这三道坎：
+很多中小企业上了 AI 工具，半年后就吃灰了。不是技术不行——是这三道坎：
 
 | 🚫 预期太高 | 🔧 技术主导 | 👻 装了没人管 |
 |:--|:--|:--|
@@ -91,7 +97,7 @@ graph LR
 | ⚡ **强化岗位** | AI 做领航员辅助出方案，规则可描述 | 决策、审批、签字 | 约束底座确保 AI 不越界，审计引擎记录每一次建议 |
 | 🔄 **自动执行** | AI 全权执行，自动跑完整个流程 | 看审计报告、定期抽查 | 三引擎全开：约束→执行→审计→反思循环 |
 
-不用请顾问、不用养 AI 团队——FDE 走完四步就撤离，AI 节点留在企业自己跑。
+FDE 走完四步就撤离，AI 节点留在企业自己跑。
 
 ### 三个引擎
 
@@ -125,7 +131,11 @@ graph LR
     G --> A
 ```
 
-不依赖 AI 自觉——看的是 git diff 硬证据。开发者装 pre-commit hook 即可审计代码提交；v1.0.8+ 内嵌 isomorphic-git + daemon 文件监控，**非开发者也能用**——AI 改任何文件都自动审计，不需要装 git、不需要 commit。
+不依赖 AI 自觉——看的是 git diff 硬证据。开发者装 pre-commit hook 即可审计代码提交。**0 token 消耗——纯正则引擎，不调 LLM。**
+
+> 审计引擎的核心规则（A1-A6, A9-A11）纯看 git diff，不需要 Agent 配合。
+> A7（不存盲改）/A8（不逃验证）/A14（知识库越权）/A15（约束验证）需要 Agent 日志辅助——用 `--silent` 模式可跳过这 4 条，只跑纯 git-diff 规则。
+> 📋 **规划中（v1.0.8+）**：内嵌 isomorphic-git + daemon 文件监控，非开发者也能用——AI 改任何文件都自动审计
 
 审计引擎是 sofagent 的立身之本——不需要任何 Agent 平台配合，只要文件在磁盘上就能工作。
 
@@ -141,9 +151,12 @@ graph LR
 
 sofagent 是**行车记录仪**，不是安检——不管什么 Agent、什么平台，事后审计 + 回溯恢复，不依赖任何平台。
 
-#### ⚙️ 编排引擎（实验性）
+#### ⚙️ 编排引擎（实验性 · v1.0.7 全平台开放）
 
-把大任务拆小、多 Sub Agent 并行执行、A/B 对比找更优方案。FDE 进场时生成编排方案，之后节点自己跑。
+把大任务拆小、多 Sub Agent 并行执行、A/B 对比找更优方案。
+当前实现为 DeepAgents 接入层（launcher.ts ~70 行），compose + run 已跑通，A/B 对比需手动 promote。
+
+> 当前 v1.0.7：`sofagent-audit compose --task` CLI 入口已上线，不装 OpenClaw 也能用编排引擎
 
 ```mermaid
 graph LR
@@ -155,7 +168,7 @@ graph LR
     E -->|旧版更好| G[保留]
 ```
 
-编排引擎当前走 DeepAgents（v1.0.6 compose 迁移完成），ao CLI 将在 v1.0.7 完全退役。v1.0.7 新增 CLI 编排入口——**任何 Agent 平台都能用编排引擎**，不装 OpenClaw 也能跑 Sub Agent 编排。详见 [ROADMAP](./ROADMAP.md)。
+编排引擎当前走 DeepAgents（v1.0.7 ao 完全退役）。`sofagent-audit compose --task` CLI 入口——**任何 Agent 平台都能用编排引擎**，不装 OpenClaw 也能跑 Sub Agent 编排。详见 [ROADMAP](./ROADMAP.md)。
 
 > 🆕 **v1.0.5**：[Ontology](./docs/ARCHITECTURE.md#行业印证palantir-同构) 统一层 + Workflow Hub 行业模板 + Agent Dashboard + 原子写入 + fail-closed 安全 + A9 分级安全 + 首次运行分类器
 
@@ -177,13 +190,37 @@ graph LR
 
 > 🔬 Hugging Face 实验：同一模型不改权重，仅优化外层 Harness，在法律 Agent 基准中从 3.5% 跃升至 80.1%（76 分差全部来自外层机制）。[详情](./docs/ARCHITECTURE.md)
 
-- 核心逻辑 **473 tests 全绿**（diff-parser / config-loader / rules A1-A15 / reporter）
+- 核心逻辑 **493 tests 全绿**（diff-parser / config-loader / rules A1-A15 / reporter / init）
 - **17 条审计规则**（v1.0.9 扩展为 19 条）：11 条默认（A1-A11）+ 6 条扩展（E1-E4 工程规范 + A14 知识库越权 + A15 约束验证），v1.0.9 新增 A16 非授权文件变更 + A17 异常批量变更。覆盖密钥泄漏、越界修改、注入攻击、知识库越权、工程规范等
+  > 编号说明：A12/A13 为永久跳号（早期废弃的规则编号，非规划中）
 - ⚠️ A14 是**事后审计提醒**而非运行时访问控制——Agent commit 前仍可能访问受限数据，A14 让管理员能在审计中发现越权行为
-- 📁 v1.0.8+ 支持文件系统审计（不需 git）——内嵌 isomorphic-git，daemon 监控文件变更自动审计
+- 📁 🔜 v1.0.8+ 规划：文件系统审计（不需 git）——当前版本需 git
 - MIT 许可证，代码、文档、模板随便用
 
 > ⚠️ 编排引擎需要 DeepAgents 环境，能跑但还在打磨。[已知局限](./docs/LIMITATIONS.md)
+
+---
+
+## 内置 Agent（v1.0.7）
+
+sofagent 预装两个 Agent，安装后立即可用。在 WorkBuddy/OpenClaw 中 `@Agent名` 即可调用：
+
+| Agent | 怎么用 | 干什么 |
+|------|------|------|
+| **FDE 部署工程师** | `@sofagent-fde` | 梳理工作流、识别 AI 节点、构建知识库、交付离场 |
+| **合规审计员** | `@sofagent-audit` | Workflow 巡检、铁律覆盖验证、知识库健康度检查 |
+
+### 为什么审计员会被所有 Agent 自动调用？
+
+agent-audit 不是一个"可选工具"——它是 sofagent 的**合规闸门**。所有 Agent（FDE、LOOP 工程师、未来的任何 Agent）在完成变更后都必须调用审计员执行合规检查。
+
+| 调用时机 | 谁来调 | 检查什么 |
+|------|------|------|
+| FDE 部署完成 | FDE agent 自动提醒 | Workflow 节点完整性、knowledge-domain 隔离、铁律覆盖 |
+| 每次 git commit | pre-commit hook | A1-A15 规则（密钥泄漏、越界修改、盲改等） |
+| LOOP 工程师完成一个任务 | engineer agent 调用 | 变更是否合规、铁律是否覆盖新操作 |
+
+**这对你意味着什么**：你不需要记住"该审计了"——每次部署、每次 commit、每次变更，审计自动跑。你看到的不是一堆 yes/no，而是"哪里坏了、为什么坏、怎么修"的完整报告。
 
 ---
 
@@ -194,6 +231,8 @@ graph LR
 | 只想拦截密钥泄漏 | `npm install -g @sofagent/audit` 就够了 |
 | 想管住 Agent 全流程 | 审计引擎 + 约束底座（install.sh） |
 | 想自动编排 Agent 任务 | + 编排引擎（DeepAgents Sub Agent） |
+
+> ⚠️ **当前版本（v1.0.7）覆盖范围**：开发者岗位（git commit 审计）全覆盖。非开发岗位（不用 git 的人）的文件审计需 v1.0.8+。
 
 ### 两种部署节点（v1.0.7+）
 

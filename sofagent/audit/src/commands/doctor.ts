@@ -1,9 +1,9 @@
 // ============================================================
 // doctor.ts · sofagent-audit --doctor 健康诊断
 // v1.0 新增：一键诊断 7 项健康度
-// v1.0.6 新增：第 9 项——知识库访问矩阵
-// v1.0.6 新增：第 10 项——SkillOpt 管道状态 + 第 11 项——成本报告
-// v1.0.6 新增：第 12-14 项——eval harness / A/B 优化 / HITL 统计（11 项核心检查 + 3 项扩展检查）
+// v1.0.7 新增：第 9 项——知识库访问矩阵
+// v1.0.7 新增：第 10 项——SkillOpt 管道状态 + 第 11 项——成本报告
+// v1.0.7 新增：第 12-14 项——eval harness / A/B 优化 / HITL 统计（11 项核心检查 + 3 项扩展检查）
 // 只读诊断，不做任何写操作
 // 退出码：全部通过 → 0；有失败 → 1
 // ============================================================
@@ -345,8 +345,12 @@ export function runDoctor(): void {
       } else {
         results.push({
           ok: false, warning: true, label: '审计历史链完整性',
-          detail: '审计历史链完整性异常——history.jsonl 可能被篡改',
-          fixHint: '建议检查 .sofagent/audit/history.jsonl 是否被非正常修改',
+          detail: '审计历史链完整性异常——可能原因：\n' +
+            '  • 环境变化（hostname/username/git 路径变了，指纹不匹配）\n' +
+            '  • history.jsonl 被手动编辑\n' +
+            '  • 跨设备复制了 .sofagent/ 目录\n' +
+            '  运行 sofagent-audit --doctor --verbose 查看详情',
+          fixHint: '建议检查 .sofagent/audit/history.jsonl 是否被非正常修改。如确认是环境变化导致，可删除 history.jsonl 重建审计历史链。',
         });
       }
     } catch {

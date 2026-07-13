@@ -1,12 +1,13 @@
 // ============================================================
 // launcher.ts · Sub Agent 启动器
-// v1.0.6 新增：动态 import deepagents，启动/关闭 Agent 实例
-// v1.0.6 新增：runtime.json 状态管理（name/status/startedAt/lastActive/pid）
-// deepagents 是 optionalDependency——未安装时 graceful fallback
+// v1.0.7 新增：动态 import deepagents，启动/关闭 Agent 实例
+// v1.0.7 新增：runtime.json 状态管理（name/status/startedAt/lastActive/pid）
+// v1.0.7：deepagents 提升为正式依赖，移除 as unknown as 类型转换
+// v1.0.7 新增：buildConstrainedSystemPrompt() 四层约束加载链
 // ============================================================
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, copyFileSync, unlinkSync } from 'fs';
-import { join } from 'path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, copyFileSync, unlinkSync, readdirSync, statSync } from 'fs';
+import { join, dirname } from 'path';
 import { randomBytes } from 'crypto';
 import { loadEnvConfig } from '../config-loader';
 import type { SubAgentDefinition } from './registry';
@@ -111,7 +112,6 @@ function upsertRuntimeEntry(entry: RuntimeEntry): void {
  * 启动心跳——每 30s 更新 lastActive
  */
 function startHeartbeat(agentName: string): void {
-  // 清理已有心跳（防止重复启动）
   stopHeartbeat(agentName);
 
   const interval = setInterval(() => {
@@ -137,14 +137,109 @@ function stopHeartbeat(agentName: string): void {
   }
 }
 
+// ════════════════════════════════════════
+// 四层约束自加载链（v1.0.7 新增）
+// ════════════════════════════════════════
+
 /**
- * 动态加载 deepagents——未安装时返回 null
+ * 尝试读取文件——文件不存在时返回 null（静默跳过）
  */
-async function loadDeepAgents(): Promise<((config: Record<string, unknown>) => Promise<unknown>) | null> {
+function tryRead(filePath: string): string | null {
   try {
-    // @ts-ignore - deepagents is an optional dependency, may not be installed
+    if (existsSync(filePath)) {
+      return readFileSync(filePath, 'utf-8');
+    }
+  } catch {
+    // 读取失败静默跳过
+  }
+  return null;
+}
+
+/**
+ * 扫描知识库目录，按 mtime 降序取前 N 个 .md 文件
+ * 每篇截取前 2000 字符
+ */
+function listKnowledgeTopN(dir: string, n: number): string[] {
+  const results: string[] = [];
+  try {
+    if (!existsSync(dir)) return results;
+
+    const files = readdirSync(dir)
+      .filter(f => f.endsWith('.md'))
+      .map(f => join(dir, f))
+      .filter(f => {
+        try { return statSync(f).isFile(); } catch { return false; }
+      })
+      .sort((a, b) => {
+        try {
+          return statSync(b).mtimeMs - statSync(a).mtimeMs;
+        } catch {
+          return 0;
+        }
+      });
+
+    for (let i = 0; i < Math.min(files.length, n); i++) {
+      const content = tryRead(files[i]!);
+      if (content) {
+        results.push(content.slice(0, 2000));
+      }
+    }
+  } catch {
+    // 目录不存在等异常静默跳过
+  }
+  return results;
+}
+
+/**
+ * 构建带约束的 system prompt（四层加载链）
+ *
+ * 纯文件系统读取，不依赖任何 Agent 平台的 Skill 注入机制。
+ * 总注入量控制在 ~4000 token 以内。
+ *
+ * 加载顺序：
+ * 1. 宪法层：SKILL.md（4 底线 + 7 铁律）
+ * 2. 规范层：fde.md（企业专属规则）
+ * 3. 反思层：think.md（历史踩坑）
+ * 4. 知识库：knowledge/ top-N（按 mtime 排序，每篇截取前 2000 字符）
+ *
+ * @param skillDir 约束文件目录（如 .sofagent/）
+ * @returns 拼接后的 system prompt 字符串
+ */
+export function buildConstrainedSystemPrompt(skillDir: string): string {
+  const parts: string[] = [];
+
+  // 1. 宪法层：SKILL.md
+  const skillContent = tryRead(join(skillDir, 'SKILL.md'));
+  if (skillContent) parts.push(`# 宪法约束\n${skillContent}`);
+
+  // 2. 规范层：fde.md
+  const fdeContent = tryRead(join(skillDir, 'fde.md'));
+  if (fdeContent) parts.push(`# 企业规则\n${fdeContent}`);
+
+  // 3. 反思层：think.md
+  const thinkContent = tryRead(join(skillDir, 'think.md'));
+  if (thinkContent) parts.push(`# 历史经验\n${thinkContent}`);
+
+  // 4. 知识库：knowledge/ top-N（按 mtime 排序）
+  const knowledgeFiles = listKnowledgeTopN(join(skillDir, 'knowledge'), 5);
+  for (const file of knowledgeFiles) {
+    parts.push(file);
+  }
+
+  return parts.join('\n\n---\n\n');
+}
+
+// ════════════════════════════════════════
+// DeepAgents 启动/关闭（v1.0.7：正式依赖）
+// ════════════════════════════════════════
+
+/**
+ * 动态加载 deepagents（v1.0.7：正式依赖）
+ */
+async function loadDeepAgents(): Promise<Function | null> {
+  try {
     const { createDeepAgent } = await import('deepagents');
-    return createDeepAgent as unknown as (config: Record<string, unknown>) => Promise<unknown>;
+    return createDeepAgent as Function;
   } catch {
     console.warn('deepagents 未安装，Sub Agent 功能不可用。npm install deepagents 启用。');
     return null;
@@ -161,7 +256,7 @@ export async function launch(definition: SubAgentDefinition): Promise<AgentInsta
   if (!createDeepAgent) return null;
 
   try {
-    const instance = await createDeepAgent({
+    const instance = await (createDeepAgent as any)({
       name: definition.name,
       systemPrompt: definition.systemPrompt,
       tools: definition.tools,
@@ -211,13 +306,6 @@ export async function shutdown(instance: AgentInstance | null, agentName?: strin
   if (agentName) {
     stopHeartbeat(agentName);
     const now = new Date().toISOString();
-    upsertRuntimeEntry({
-      name: agentName,
-      status: 'stopped',
-      startedAt: now, // 保持不变（upsertRuntimeEntry 会覆盖，需要保留原始 startedAt）
-      lastActive: now,
-      pid: process.pid,
-    });
 
     // 保留原始 startedAt：重新读取并只更新 status 和 lastActive
     const state = readRuntimeState();
@@ -227,5 +315,49 @@ export async function shutdown(instance: AgentInstance | null, agentName?: strin
       agent.lastActive = now;
       writeRuntimeState(state);
     }
+  }
+}
+
+// ============================================================
+// spawnSubAgent — v1.0.7 CLI 入口
+// 从 CLI `subagent run <name> --task "..."` 调用
+// ============================================================
+export async function spawnSubAgent(
+  agent: SubAgentDefinition,
+  task: string
+): Promise<string> {
+  // 生成编排 prompt：将任务 + agent 定义拼装
+  const prompt = [
+    `# 任务`,
+    task,
+    '',
+    '# Agent 角色',
+    `名称: ${agent.name}`,
+    `类型: ${agent.type}`,
+    agent.systemPrompt ? `\n${agent.systemPrompt}` : '',
+    '# 指令',
+    '请使用可用工具完成上述任务，完成后输出结果摘要。',
+  ].filter(Boolean).join('\n');
+
+  try {
+    // 尝试通过 compose 编排执行（DeepAgents 内部分发到对应 agent）
+    const { composeWithDeepAgents } = await import('./composer');
+    // composeTask 自带 agent 名称信息
+    const result = await composeWithDeepAgents(prompt);
+    return result ?? `Agent "${agent.name}" 已接收任务，但编排引擎未返回结果。`;
+  } catch (err) {
+    // DeepAgents 不可用时返回提示
+    return [
+      `⚠️ DeepAgents 不可用——Agent "${agent.name}" 的 prompt 已生成，可手动执行：`,
+      '',
+      '```yaml',
+      `agent: ${agent.name}`,
+      `type: ${agent.type}`,
+      `task: ${task}`,
+      `tools: [${agent.tools.join(', ')}]`,
+      '```',
+      '',
+      agent.systemPrompt ? `\n${agent.systemPrompt}\n` : '',
+    ].join('\n');
   }
 }

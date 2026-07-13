@@ -11,7 +11,7 @@ sofagent 是纯本地 Harness 中间件，**数据不出本机**——但以下�
 | `scoring/` | `.sofagent/scoring/` | Skill 使用记录 |
 | `orchestrator/` | `.sofagent/orchestrator/` | 编排决策历史 |
 
-**当前状态（v1.0.6）**：
+**当前状态（v1.0.7）**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
@@ -36,14 +36,14 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 | 复制文件 | 宪法(fde.md) + 6 核心 Skill + 数据模板 + 配套脚本 | 从仓库 `sofagent/skill/` 和 `sofagent/scripts/` 复制到目标目录 |
 | 写入配置 | `~/.openclaw/openclaw.json`（仅 OpenClaw） | 注册加载链 Hook |
 | 写入配置 | `~/.openclaw/config.json`（仅 OpenClaw） | 注入 loopDetection 断路器 |
-| npm install | `agency-orchestrator`（仅 OpenClaw + 有 npm） | 编排引擎依赖 |
+| npm install | `deepagents`（编排引擎依赖） | Sub Agent 编排引擎 |
 | 安装服务 | launchd(macOS) / systemd(Linux) | daemon 后台进程（交互确认后。daemon 当前为 bash 实现，正常运行中） |
 
 ### 脚本不会做的事
 
 - ❌ 不会 `sudo`——所有操作在用户权限范围内
 - ❌ 不会改系统文件——不碰 `/etc`、`/usr`、`/System`
-- ❌ 不会联网下载额外内容（除了 npm install ao，且可 `--no-ao` 跳过）
+- ❌ 不会联网下载额外内容
 - ❌ 不会执行远程脚本（`--remote` 模式只做 git clone 官方仓库）
 - ❌ 不会收集或上传任何用户数据
 
@@ -78,7 +78,7 @@ install.sh 拆分为以下模块，便于逐模块审查：
 
 ## 适用范围
 
-本安全策略适用于 sofagent 项目仓库内的所有文件。第三方依赖（如 agency-orchestrator、OpenClaw）的安全问题请向对应项目报告。
+本安全策略适用于 sofagent 项目仓库内的所有文件。第三方依赖（如 deepagents、OpenClaw）的安全问题请向对应项目报告。
 
 ## 免责声明
 
@@ -123,15 +123,10 @@ history.jsonl 存储审计拦截记录（含被拦截的 diff 摘要）。以下
 
 ## 第三方依赖供应链
 
-**agency-orchestrator (ao)** 是 sofagent 编排引擎当前的运行时依赖（npm 包 `agency-orchestrator@0.7.5`，Apache-2.0 许可）。install.sh 已将版本号 pin 到具体版本。v1.0.6 起将迁移到 DeepAgents，v1.0.7 正式移除 ao 依赖。
+**deepagents** 是 sofagent 编排引擎的正式依赖（`deepagents@^1.10.7`，npm 包）。v1.0.7 起从 optionalDependency 提升为正式依赖。
 
-**deepagents** 是 v1.0.1 起的 optional dependency（`deepagents@^1.10.7`）。当前仅 launcher.ts（68 行）作为接入层使用——编排逻辑仍走 ao CLI。v1.0.7 提升为正式依赖。
-
-**降级路径**：
-- `install.sh --no-ao` 是 v0.85 起推荐的默认路径（非 OpenClaw 平台）。编排能力退化为手工拆解，约束层不受影响
-- `orchestrate-compare.ts` 在 ao 不可用时自动切到默认编排模式
+> 🔴 **Breaking Change（v1.0.7）**：ao（agency-orchestrator）已完全退役。v1.0.6 用户升级到 v1.0.7 后需手动卸载：`npm uninstall -g agency-orchestrator`。编排引擎已全面迁移到 DeepAgents，ao 代码路径全部移除。
 
 **供应链安全建议**：
 - 每次 `npm install` 后运行 `npm audit`
-- 定期检查 [agency-orchestrator 仓库](https://github.com/jnMetaCode/agency-orchestrator) 的 CHANGELOG（ao 退役前）
-- 内网环境建议预装 ao 并验证 `ao compose --version` 通过后再部署（ao 退役前）
+- 内网环境建议预装 deepagents 并验证安装通过后再部署

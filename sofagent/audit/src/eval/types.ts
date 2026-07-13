@@ -1,6 +1,6 @@
 // ============================================================
 // eval/types.ts · eval harness 类型定义
-// v1.0.6 新增
+// v1.0.7 新增
 // ============================================================
 
 /**
@@ -17,6 +17,8 @@ export interface TestCase {
   expected: Record<string, unknown>;
   /** 标签（分类用） */
   tags?: string[];
+  /** v1.0.7: 允许的工具列表（方案 C DeepAgents 才生效） */
+  allowedTools?: string[];
 }
 
 /**

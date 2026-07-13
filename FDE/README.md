@@ -23,11 +23,11 @@
 
 | 平台 | 怎么装 | 怎么激活 |
 |------|------|------|
-| **OpenClaw** | 终端 `cd` 到仓库目录，`bash fde-install.sh` | 装完直接打开 Agent，自动就绪 |
-| **WorkBuddy** | `cp -r FDE/ ~/.workbuddy/skills/sofagent-fde/` | 在 Agent 中输入 `@skill:sofagent-fde` |
-| **其他平台** | 复制下方种子指令，粘贴到你的 Agent | Agent 读完后按 §1 引导你部署 |
+| **OpenClaw** | `bash fde-install.sh` | 装完直接打开 Agent，自动就绪 |
+| **WorkBuddy** | `bash fde-install.sh --platform workbuddy` 或手动 `cp -r agents/SKILL/sofagent-fde/ ~/.workbuddy/skills/sofagent-fde/` | 在对话中输入 `@sofagent-fde` |
+| **其他平台** | 装 sofagent + 复制 SKILL.md 内容到 system prompt | Agent 读完后自动调用 CLI |
 
-ClawHub / SkillHub 用户：`clawhub skill install KongFangXun/sofagent-fde` 或 `skillhub install sofagent-fde`。
+`fde-install.sh` 安装完成后，同时安装了两个内置 Agent Skill：`@sofagent-fde`（FDE 部署工程师）和 `@sofagent-audit`（合规审计员）。
 
 ### 装完之后做什么
 

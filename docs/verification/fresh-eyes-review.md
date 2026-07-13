@@ -2,11 +2,11 @@
 
 > ⚠️ **使用时机**：当前版本发版后，在全新 session 中跑本 prompt 对已发布版本做独立审查。审查发现的问题不阻塞当前版本——它们进入下版本的开发计划。
 >
-> ⚠️ **审查体系自进化**：每版本发版前（releasing.md 步骤 10.6），基于本版本的开发经验审视并更新本 prompt——新增任务描述、更新过时视角、补充红队攻击面。更新后的 prompt 在下版本的发布后审查中生效：
+> ⚠️ **审查体系自进化**：每版本发版前（releasing.md 阶段五「合并更新两份审查文档」），基于本版本的开发经验审视并更新本 prompt——新增任务描述、更新过时视角、补充红队攻击面。更新后的 prompt 在下版本的发布后审查中生效：
 > ```
 > 版本 A 发版 → 跑陌生视角审查 → 发现问题
 >   → 版本 B 开发时修复
->   → 版本 B 发版前更新审查体系（步骤 10.6）
+>   → 版本 B 发版前更新审查体系（releasing.md 阶段五「合并更新两份审查文档」）
 >   → 版本 B 发版 → 用更新后的 prompt 审查版本 B
 > ```
 >
@@ -16,6 +16,15 @@
 > - 有没有上一轮回归检查发现的"反复出现的同类问题"需要抽象成新视角？
 >
 > 审视完再跑，不要让过时的 prompt 产生过时的审查结果。
+>
+> 📋 **审视变更记录**：
+> - **v1.0.6 发版后审视**（2026-07-13）：清理全部版本号锚定（"v1.0.X 修复后/新增/教训" → 中性描述）；修正 A12/A13 引用（永久跳号，非"规划中"）；新增视角一·任务 8（双节点架构验证）、视角二·任务 9（文件系统审计企业适用性）、视角七·任务 25-26（daemon 防抖 + Sub Agent 自加载对抗）、视角八·任务 12（版本敏感规则数声称）；强化 exit code 验证措辞；扩充 CHANGELOG 纯度 grep 模式；加路径约定说明 + 用户旅程放弃阈值。
+> - **v1.0.7 发版前审视**（2026-07-13）：基于 v1.0.7 审查中暴露的盲区，补充以下检查：
+>   - **发版状态真实性**（新）：changelog 顶部若写"已正式发版"，必须有真实 commit + tag 支撑，禁止凭文档措辞假声明（v1.0.7 曾 97 文件未提交却标"已正式发版"）。
+>   - **测试数跨文件 + 跨语言一致性**（强化视角八·任务 2）：CHANGELOG / ROADMAP / README / README.en / evidence.md 五处测试数必须一致（v1.0.7 实测 493，曾四处写 480、英文版漏改）。
+>   - **版本号复制粘贴校验**（新）：新增/改写段落中的版本号必须与 package.json 一致（v1.0.7 P2-10 曾把"v1.0.7"误抄成"v1.0.6"）。
+>   - **SKILL.md ≤90 行铁律**（强化视角七·任务 10）：不仅查 frontmatter，还要查行数（v1.0.7 发现 sofagent/skill/SKILL.md 96 行超 90）。
+>   - **init.ts hook skip 逻辑回归**（新）：版本号判断不能误伤存量升级用户——`includes('sofagent')` 式模糊匹配会让存量用户永远跳过重装 hook（v1.0.7 P1-1）。
 >
 > **审查对象**：https://github.com/KongFangXun/sofagent（main 分支，当前已发布版本）
 >
@@ -62,6 +71,7 @@
 5. **版本声称验证**：看 CHANGELOG——它声称了什么？实际在项目里找到了吗？标题说的功能，在代码/目录/配置里能找到对应实现吗？你觉得这个声称诚实吗，还是夸大了？**特别检查 README 规则分类**：README 把规则分成"纯 git-diff"和"需 Agent 日志"两类并标注规则 ID——打开 `sofagent/audit/src/rules/index.ts`，分类里提到的每个 ID 是否真实存在？有没有"幽灵规则"（README 写了但代码里根本没注册的 ID）？
 6. **文档瘦身**：README 行数——你能在一屏内搞清楚这东西是干什么的吗？有没有你想找但找不到的东西？（比如"这东西能企业部署吗？"——你从 README 能看出来吗？）
 7. **tag 指向确认**：跑 `git show vX.Y.Z --stat`——tag 指向的是发布提交还是修复提交？tag commit message 是否包含版本号？
+8. **双节点架构验证**：README 说 sofagent 支持两种部署节点——"自动运行节点"（需 OpenClaw）和"个人增强节点"（WorkBuddy/Codex/Claude Code，不需 OpenClaw）。你用的是哪个？如果你用的不是 OpenClaw（比如 WorkBuddy），能跑通吗？README 里"个人增强节点"的说明清楚吗？`sofagent-audit compose --task` 这个 CLI 入口你找得到吗？**这个声称是 v1.0.7+ 的核心卖点——如果不装 OpenClaw 就能跑，文档要让你相信这一点；如果其实跑不通，就是夸大宣传。**
 
 你是一个普通开发者，不是来审代码的。你会读多少文档取决于你的好奇心——有人 3 屏就走了，有人会点进 ARCHITECTURE 看看设计思路。**读什么不重要，重要的是始终用普通开发者的心态判断：这东西对我有用吗？我愿意花时间装吗？**
 
@@ -83,6 +93,7 @@
 
 7. **审计日志自身安全**：打开 `sofagent/audit/src/audit-history.ts`。审计拦截了密钥泄漏后，拦截结果（含 diff 内容）被写入 `history.jsonl`。这个文件本身会不会成为第二个泄漏点？Agent 能读这个文件吗？能篡改吗？有没有脱敏机制？
 8. **optional dependency 类型安全**：检查对 optional dependency（如 deepagents）的 import 是否用了 `as unknown as` 双重转换。CI 环境 TS 类型检查比本地严格——直接 `as` 可能本地通过但 CI 失败。
+9. **文件系统审计的企业适用性**：README 声称"v1.0.8+ 支持文件系统审计——内嵌 isomorphic-git，daemon 监控文件变更自动审计，非开发者也能用，不需要装 git、不需要 commit"。你管理的是 200 人公司，大部分岗位不是开发者——这个声称对你有吸引力吗？从文档里你能搞清楚怎么配置 daemon 监控哪些目录吗？审计结果推到哪里（企业协同平台 / Webhook）？如果非开发岗的 AI 改了文件但没人 commit，审计日志在哪看？**这是 sofagent 从"开发者工具"向"企业全员 AI 治理"扩展的关键声称——对企业 IT 来说，非开发岗才是真正的痛点。**
 
 ---
 
@@ -96,10 +107,10 @@
 3. 如果你要写一篇文章《为什么不用 sofagent》，你的核心论据是什么？
 4. 这个项目自称"正式版"和"可生产使用"。以你的标准，它够格吗？什么地方让你觉得不够格？
 5. **范围合理性**：CHANGELOG 和文档中描述的每一条功能，以你的标准判断它是真功能还是花架子？一个 commit-msg 审计工具为什么要关心"知识库访问控制"？这是范围蔓延还是合理的演进？
-6. **规则声称验证**：README 说的规则数量（如"16 条规则"）——打开 `sofagent/audit/src/rules/index.ts`，数 `defaultRules` + `extendedRules` 的实际注册数量。一致吗？每条规则的 `evidenceMode`（`git-diff` vs `hybrid`）与 README 的分类描述是否匹配？有没有声称了但代码里没注册的规则（如 A12/A13 在 ROADMAP 里但没实现）？**特别检查规则 ID 是否真实存在**：README 分类描述中提到的每个规则 ID（如"A1-A6, A9-A11"），逐个确认在 index.ts 的 `name:` 字段中确实有注册——之前版本曾出现 README 声称"A12/A13"但代码中根本不存在这两个规则的文档漂移问题。
+6. **规则声称验证**：README 说的规则数量（如"17 条规则"）——打开 `sofagent/audit/src/rules/index.ts`，数 `defaultRules` + `extendedRules` 的实际注册数量。一致吗？每条规则的 `evidenceMode`（`git-diff` vs `hybrid`）与 README 的分类描述是否匹配？有没有声称了但代码里没注册的规则？**特别检查规则 ID 是否真实存在**：README 分类描述中提到的每个规则 ID（如"A1-A6, A9-A11"），逐个确认在 index.ts 的 `name:` 字段中确实有注册。**注意跳号**：规则编号不是连续的——A1-A11 后跳到 A14/A15（A12/A13 是永久跳号，不是"规划中"），不要把跳号当作遗漏。历史教训：曾出现 README 声称了代码中根本不存在的规则 ID（文档漂移问题）。
 7. **声称与实现一致性**：CHANGELOG 标题中声称的功能（如"自进化引擎"），实际代码是否匹配？有没有夸大——比如 wrapper 叫"引擎"、CLI 调用叫"集成"？
 8. **CHANGELOG 纯度**：CHANGELOG 历史条目中有没有审查元信息（模型名、审查轮次、P0/P1 计数）？CHANGELOG 应该只写产品变更。
-9. **SkillOpt 集成 CLI 契约验证**（v1.0.6 修复后）：打开 `skillopt-integration.ts`——`isSkillOptAvailable()` 和 `runSkillOpt()` 调用的 CLI 参数形式与真实安装的 `skillopt-sleep --help` 声明的子命令/参数一致吗？**特别检查**：`isSkillOptAvailable()` 探针是否用 `status` 子命令（而非被 CLI 拒绝的 `--version`）；`runSkillOpt()` 是否用 `run --target-skill-path <input> --auto-adopt` 子命令形式（而非 flat positional + `--output`）。v1.0.6 曾发现集成代码照着不存在的 CLI 契约写了整整一个版本。
+9. **SkillOpt 集成 CLI 契约验证**：打开 `skillopt-integration.ts`——`isSkillOptAvailable()` 和 `runSkillOpt()` 调用的 CLI 参数形式与真实安装的 `skillopt-sleep --help` 声明的子命令/参数一致吗？**特别检查**：`isSkillOptAvailable()` 探针是否用 `status` 子命令（而非被 CLI 拒绝的 `--version`）；`runSkillOpt()` 是否用 `run --target-skill-path <input> --auto-adopt` 子命令形式（而非 flat positional + `--output`）。历史教训：曾发现集成代码照着不存在的 CLI 契约写了整整一个版本——探针用 `--version`（真实 CLI exit 2）、调用用 flat positional + `--output`（真实 CLI 只认子命令）。
 10. **Agent 定义的平台耦合度**：打开 `agents/` 下的 Agent 定义——它们的 role/workflow/rules 是否过度依赖 OpenClaw 的 `session.spawn` API？如果未来换平台，这些 Agent 定义还能独立使用吗？还是需要大幅改写？
 
 ---
@@ -117,7 +128,7 @@
 5. 包的依赖树干净吗？（`npm ls` 看一眼）有没有让你皱眉的依赖？
 6. **安装脚本的报错友好度**：跑 `LOOP/loop-install.sh` 在缺少前置依赖时（比如没装 sofagent 底座、不支持的平台）——报错信息清楚吗？告诉你缺什么、怎么装了吗？还是直接 exit 1 让你摸不着头脑？
 7. **批量部署/集中配置**：如果要给 50 个仓库都装 sofagent，有没有批量安装或集中配置下发的能力？企业级场景需要 org-level 配置。当前是 per-repo 安装——这对 DevOps 来说够用吗？
-8. **`--strict`/`--ci` 模式验证**：跑 `sofagent-audit --diff HEAD~1..HEAD --task "wrong" --strict`，实际 exit code 是 2（承诺值）还是 1？文档声称的模式行为与实现是否一致？
+8. **`--strict`/`--ci` 模式验证**：跑 `sofagent-audit --diff HEAD~1..HEAD --task "wrong" --strict`，实际 exit code 是 2（承诺值）还是 1？文档声称的模式行为与实现是否一致？**如果 exit code 不是 2，这就是 P0——文档声称与实现不符。**
 
 你是"先动手再看文档"型开发者。装完跑通了，可能会随手翻一下 README 看看还有没有别的功能。**你的判断标准不是文档完不完整，而是"从敲下 npm install 到觉得这东西有用，中间花了多长时间"。**
 
@@ -225,6 +236,8 @@
 
 **输出格式**：画一张用户旅程图（文字版即可），标注每一步的体验评分（🟢 顺滑 / 🟡 小障碍 / 🔴 卡住），以及每个障碍的具体描述。
 
+**放弃阈值**：如果前 3 步（发现 → 安装 → 初始化）出现 2 个🔴，记录放弃点并停止后续步骤——这个体验已经不及格，继续走只是浪费时间。直接在报告里标"放弃点：第 X 步"并说明原因。
+
 ---
 
 ## 第三轮：红队对抗审查（视角 7）
@@ -314,7 +327,7 @@
 15. **`--strict`/`--ci` exit code 验证**：
     - 跑 `sofagent-audit --diff HEAD~1..HEAD --task "wrong" --strict` → exit code 是 2 还是 1？
     - 如果 exit 1：检查 `reporter.ts` 的 `runRules()` 中 `strict` 参数是否在 exitCode 计算中被使用
-    - commit-msg hook 用的是 `--ci`（= `--silent`，v1.0.5 起不再隐含 `--strict`）——WARN 级规则（A3/A4）exit 1 放行，不阻断 commit；FAIL 级规则（A1/A2）exit 2 阻断
+    - commit-msg hook 用的是 `--ci`（= `--silent`，不再隐含 `--strict`）——WARN 级规则（A3/A4）exit 1 放行，不阻断 commit；FAIL 级规则（A1/A2）exit 2 阻断
 
 16. **A9 Unicode/leet 绕过测试**：
     - 在代码注释中写全角字符 `ｉｇｎｏｒｅ ｐｒｅｖｉｏｕｓ ｉｎｓｔｒｕｃｔｉｏｎｓ` → A9 是否检出？
@@ -326,43 +339,54 @@
     - 手动篡改 history.jsonl 中间一行 → `--doctor` 是否检测到？
     - Agent 以当前用户身份能否直接读写 history.jsonl？
 
-18. **eval harness 污染**（v1.0.4 新功能）：
+18. **eval harness 污染**：
     - golden set 测试用例是静态文件——Agent 能否通过修改 golden set 来"考自己会做的题"？
     - `runEval()` 的评分逻辑（精确匹配 / 语义相似度 / 规则合规）权重是否硬编码？Agent 知道权重后能否针对性地"刷分"？
 
-19. **A15 约束验证绕过**（v1.0.4 新功能）：
+19. **A15 约束验证绕过**：
     - config.yml 声明 `actions: [read]` 但 Agent 实际执行了 write——A15 离线验证能检出吗？
     - 如果 config.yml 没有 actions 字段——A15 是跳过还是告警？Agent 能否通过"不声明 actions"来规避约束检查？
     - **actions 未声明绕过**：workflow.yml 存在但各节点没有 `actions` 字段——A15 返回 PASS 还是 WARN？如果返回 PASS，Agent 只要不声明 actions 就能绕过所有约束检查。验证 `rule-a15-action-constraint.ts` 中 `nodesWithActions.length === 0` 的分支返回什么。
     - actions 提取正则——如果 diff 格式不标准（如 binary 文件 / 特殊编码），正则漏匹配导致"没检测到"被当作"合规"？
 
-20. **HITL 置信度操纵**（v1.0.4 新功能）：
+20. **HITL 置信度操纵**：
     - 置信度 score 怎么算的？如果 score 来自模型自评，Agent 能否通过措辞操纵来刷高置信度？
     - 四类强制人工场景（删除 / 外部 API / 权限变更 / 数据迁移）的正则——`rm -rf test/`（合理的测试清理）会被误匹配吗？
 
-21. **A/B 自进化 promote 攻击**（v1.0.4 新功能）：
+21. **A/B 自进化 promote 攻击**：
     - `decidePromotion()` 的连续胜出阈值——如果 B 版本碰巧在阈值内的几个场景赢了，但整体更差，会 promote 吗？
     - promote 后旧版本归档到 `.sofagent/subagents/history/`——Agent 能否通过删除归档来"洗白"被回退的历史？
     - A/B 对比的 eval 场景如果偏窄（只测了简单 case），promote 的版本在复杂场景下更差怎么办？
 
-22. **post-commit hook 绕过验证**（v1.0.6 新增）：
+22. **post-commit hook 绕过验证**：
     - Agent 删掉 `.git/hooks/post-commit`——`--doctor` 能发现 hook 丢失吗？有没有自愈机制？
     - `git commit --no-verify` 绕过了 commit-msg hook——post-commit hook 是否仍然触发？（设计意图：post-commit 不受 --no-verify 影响）
-    - post-commit hook 的输出是否为 UTF-8 中文？有没有乱码风险？（v1.0.6 修过一次中文乱码）
+    - post-commit hook 的输出是否为 UTF-8 中文？有没有乱码风险？（历史教训：曾出现中文乱码）
     - post-commit 的 exit code 是否始终为 0？（设计意图：提醒而非阻断）
     - 如果 Agent 同时删掉 commit-msg 和 post-commit——`--doctor` 能发现两个 hook 都丢失吗？
 
-23. **hashVersion 混合格式篡改测试**（v1.0.6 新增）：
+23. **hashVersion 混合格式篡改测试**：
     - 构造 history.jsonl：前 N 条为旧格式（无 hashVersion 字段），后 M 条为新格式（hashVersion: 2）——`checkHistoryChainIntegrity()` 是否正确返回 true（不误报链断裂）？
     - 篡改中间一条 v2 格式条目的 prevHash——`--doctor` 是否检测到链断裂？
     - 篡改中间一条 v1 格式条目的内容——`--doctor` 是否检测到（v1 用旧算法计算 hash，不含 fingerprint）？
     - 在 history.jsonl 尾部追加一条 hashVersion: 3 的条目——代码会怎么处理未知版本号？
 
-24. **集成代码 CLI 契约对抗**（v1.0.6 教训）：
+24. **集成代码 CLI 契约对抗**：
     - 打开 `skillopt-integration.ts`——`isSkillOptAvailable()` 和 `runSkillOpt()` 调用的 CLI 参数形式与真实 `skillopt-sleep --help` 声明的子命令/参数是否一致？
-    - v1.0.6 曾发现集成代码用 `--version` 探活（真实 CLI exit 2）、用 flat positional + `--output` 调用（真实 CLI 只认子命令 `run --target-skill-path`）——照着不存在的 CLI 契约写了整整一个版本
+    - 历史教训：曾发现集成代码用 `--version` 探活（真实 CLI exit 2）、用 flat positional + `--output` 调用（真实 CLI 只认子命令 `run --target-skill-path`）——照着不存在的 CLI 契约写了整整一个版本
     - 跑 `skillopt-sleep --help` 看真实子命令列表，逐一对比集成代码的调用形式
     - 同理检查其他外部 CLI 集成（如 `loadDeepAgents` 调用的 deepagents API）是否也有契约漂移
+
+25. **daemon 文件监控防抖与吞审计**：
+    - 如果当前版本已实现文件系统审计（daemon + isomorphic-git）：短时间内制造大量文件变更（脚本批量创建 100+ 文件），daemon 的防抖机制会怎样？是等 30 分钟统一审计一次，还是逐个审计？会不会因为防抖窗口太长而漏掉"创建后立即删除"的中间态违规？
+    - daemon 监控的目录列表——用户能配置吗？如果 Agent 把文件写到一个不被监控的目录，审计引擎完全无感知？
+    - 文件系统审计不依赖 git commit——那如果 Agent 直接用系统 API 写文件（绕过 bash/git），daemon 的 `fs.watch` 能捕获到吗？
+    - 审计结果推送——如果 Webhook URL 配错了或目标服务挂了，daemon 会重试还是静默丢弃告警？
+
+26. **Sub Agent 约束自加载对抗**：
+    - 如果当前版本已实现 Sub Agent 自加载（`buildConstrainedSystemPrompt`）：Agent 在启动时读 `.sofagent/` 下的约束文件——如果 Agent 在读之前先把 SKILL.md 的内容换成空字符串，约束就没了。有校验机制吗？
+    - 约束文件被 Agent 自己删除后重新创建（内容不同）——自加载能检测到篡改吗？还是直接信任磁盘上的内容？
+    - CLI 编排入口 `sofagent-audit compose --task`——如果 Agent 调用时传入一个超长的 task 描述（prompt injection），编排引擎会原样传给 Sub Agent 吗？
 
 **输出格式**：
 
@@ -400,7 +424,7 @@
    - README 声称"X 条规则"——打开 `sofagent/audit/src/rules/index.ts`，数 `defaultRules` + `extendedRules` 的 `name:` 字段数。一致吗？
    - README 声称"Y 条纯 git-diff + Z 条需 Agent 日志"——逐条检查每条规则的 `evidenceMode` 字段，数 `git-diff` 和 `hybrid` 的数量。一致吗？
    - CHANGELOG 历史条目中提到的规则数量——与当前 index.ts 一致吗？有没有"历史声称 > 实际注册"的情况？
-   - **规则 ID 分类交叉验证**：README 分类描述里的每个规则 ID 逐个在 index.ts 中确认存在。之前版本反复出现"幽灵规则"问题——README 写"A12/A13"但代码中无对应 `name:` 注册。不仅看数量，还要看 ID 是否一一对应。
+   - **规则 ID 分类交叉验证**：README 分类描述里的每个规则 ID 逐个在 index.ts 中确认存在。历史教训：曾反复出现"幽灵规则"问题——README 声称了代码中无对应 `name:` 注册的规则 ID。不仅看数量，还要看 ID 是否一一对应。**注意跳号**：A1-A11 后直接跳到 A14（A12/A13 永久跳号），这不是遗漏——但如果 README 声称了 A12 或 A13，那才是幽灵规则。
 
 2. **测试数量一致性**：
    - CHANGELOG / README / evidence.md 中声称的测试数量——实际跑 `cd sofagent/audit && npm test 2>&1 | grep 'Tests'`。一致吗？
@@ -425,24 +449,29 @@
    - Agent 定义文件数——README/LOOP 文档声称的 Agent 数——实际 `ls agents/*.md | wc -l`（减去 README.md）一致吗？
 
 7. **CHANGELOG 纯度**：
-   - CHANGELOG 全历史——有没有审查元信息？`grep -i "GLM\|DeepSeek\|双视角\|P0×\|P1×\|7 视角\|8 视角\|× 6 方面" CHANGELOG.md`。CHANGELOG 应该只写产品变更，不含审查过程。
+   - CHANGELOG 全历史——有没有审查元信息？`grep -iE "GLM|DeepSeek|双视角|P[012]×|7 视角|8 视角|× 6 方面|审查修复|陌生视角|fresh-eyes|× [0-9]+ 视角|审查轮次|审查×" CHANGELOG.md`。CHANGELOG 应该只写产品变更，不含审查过程。历史教训：多个版本标题含"审查修复""陌生视角审查修复"等元信息。
    - changelog 子文件（`docs/changelog/v*.md`）同理——有没有模型名、审查轮次、P0/P1/P2 标签等元信息？
 
 8. **evidenceMode 与 README 分类匹配**：
    - README 把规则分为"纯 git-diff"和"需 Agent 日志"——逐条对照 index.ts 的 `evidenceMode` 字段。有没有标了 `hybrid` 但 README 归到"纯 git-diff"的规则？反之有没有？
 
-9. **README Mermaid 图与正文一致性**（v1.0.5 教训）：
+9. **README Mermaid 图与正文一致性**：
    - 编排引擎 Mermaid 图写"自动切换"，正文写"A/B 对比为手动"——图与文矛盾。检查所有 Mermaid 图中的标签是否与紧接的正文描述一致。
    - 约束底座 Mermaid 写"4 底线 + 7 铁律"——与 SKILL.md 实际内容一致吗？
 
-10. **编排引擎声称诚实度**（v1.0.5 教训）：
+10. **编排引擎声称诚实度**：
    - README 说编排引擎"全平台可用，不再绑定 OpenClaw"——实际实现：DeepAgents 是 optional dependency，68 行 `launcher.ts` wrapper，A/B 对比需手动执行。
    - 检查：README 对编排引擎的描述是否诚实标注了"实验性"和当前限制？
 
-11. **SkillOpt 可用性返回值实测**（v1.0.6 教训）：
+11. **SkillOpt 可用性返回值实测**：
    - 跑 `node -e "console.log(require('./sofagent/audit/dist/skillopt-integration').isSkillOptAvailable())"` 在已安装 skillopt-sleep 的环境下返回 `true`？
-   - 如果返回 `false`——检查探针形式是否匹配真实 CLI（`status` 子命令 exit 0 vs `--version` exit 2）。v1.0.6 曾因探针形式错误导致已安装也返回 false，SkillOpt 能力被静默禁用
+   - 如果返回 `false`——检查探针形式是否匹配真实 CLI（`status` 子命令 exit 0 vs `--version` exit 2）。历史教训：曾因探针形式错误导致已安装也返回 false，SkillOpt 能力被静默禁用
    - 跑 `node -e "console.log(typeof require('./sofagent/audit/dist/skillopt-integration').isSkillOptAvailable())"` 确认返回 `boolean`（不是 Promise）
+
+12. **版本敏感的规则数声称**：
+   - README 可能声称"17 条规则（v1.0.9 扩展为 19 条）"——这是**版本条件声称**。验证当前 `package.json` 的版本号，再看 A16/A17 是否已在 `index.ts` 注册。如果当前是 v1.0.8 但 README 说"19 条"，就是 P0 不一致。
+   - README 审计引擎 Mermaid 图里写的规则数（如"17 条规则"）——与 index.ts 注册数一致吗？
+   - CHANGELOG 历史条目中提到的规则数——有没有"当时声称 N 条但代码实际 M 条"的情况？
 
 **输出格式**：
 
@@ -465,6 +494,8 @@
 
 ---
 
-> **审查者**：这是 sofagent 发布后的陌生视角审查。当前版本开发完成、发版前审查通过（pre-push-check / acceptance-test / OpenClaw / 回归清单 全绿）。这轮是"你完全不知道我是谁——你第一眼看到我，心里在想什么"。你的直觉比 grep 命令更有价值。发现的问题不阻塞本版本，将在下版本中修复，修复后更新回归清单和本 prompt（步骤 10.6）。
+> **路径约定**：本 prompt 中所有文件路径（如 `sofagent/audit/src/rules/index.ts`）均相对于**项目根目录**——即 `git clone` 后的仓库顶层。跑 `ls sofagent/audit/src/rules/index.ts` 能找到文件说明你站对了位置。
+>
+> **审查者**：这是 sofagent 发布后的陌生视角审查。当前版本开发完成、发版前审查通过（pre-push-check / acceptance-test / OpenClaw / 回归清单 全绿）。这轮是"你完全不知道我是谁——你第一眼看到我，心里在想什么"。你的直觉比 grep 命令更有价值。发现的问题不阻塞本版本，将在下版本中修复，修复后更新回归清单和本 prompt（releasing.md 阶段五「合并更新两份审查文档」）。
 >
 > 第一轮（视角 1-5）凭直觉，第二轮（视角 6）走路径，第三轮（视角 7）搞破坏，第四轮（视角 8）对数字。四轮合起来，覆盖"印象、体验、韧性、精确"四个维度。

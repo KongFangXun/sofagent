@@ -4,7 +4,7 @@ slug: sofagent-loop
 displayName: sofagent-loop
 description: >
   自迭代开发循环——让 sofagent 用自己的 Agent 和审计引擎开发自己。装上后，一条 prompt 触发整套 LOOP：coding → audit → review → human。
-version: 1.0.6
+version: 1.0.7
 tags: [loop, agent, workflow, self-iteration, development, orchestration]
 image: sofagent.png
 triggers: [自迭代, 自动开发, 自动审查, LOOP, 自动化代码审查, 启动开发循环, 让Agent自己写代码]
@@ -12,7 +12,7 @@ scenarios: [想让 Agent 自动写代码并审查, 想让开发流程自动化, 
 not_when: [纯技术讨论, 不需要代码审查的任务, 单次简单查询]
 ---
 
-# sofagent-loop · SKILL.md · v1.0.6
+# sofagent-loop · SKILL.md · v1.0.7
 
 > 自迭代开发循环 Skill。装上后，一条 prompt 触发整套 LOOP：minimal-change-engineer 写代码 → sofagent-audit 审计 → code-reviewer 审查 → 人类确认 → 下一轮。
 >

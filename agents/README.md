@@ -1,23 +1,87 @@
 # sofagent Agent 库
 
-> 标准化 Agent 定义，遵循 [Agency Agents](https://github.com/jnMetaCode/agency-agents-zh) 格式规范（frontmatter + 结构化章节）和命名惯例（`{部门}-{角色}.md`）。
->
-> 每个 Agent 是单个 `.md` 文件，可直接被 OpenAI/Anthropic/OpenClaw 等平台加载。转换为 OpenClaw 格式：`agency-agents-zh/scripts/convert.sh --tool openclaw`。
+> v1.0.7 起，预装 Agent 为 Skill 格式。Skill 是调用入口——第三方 Agent 平台（WorkBuddy/Codex/OpenClaw 等）加载 Skill 后，通过 CLI 命令把任务交给 DeepAgents 编排引擎执行。
 
 ## Agent 列表
 
-| Agent | 文件 | 模板来源 | 职责 |
-|-------|------|------|------|
-| 部署工程师 | `forward-deployed-engineer.md` | ⚠️ 自创（无对应模板） | FDE 部署 + LOOP 外层监督：监控健康度、优化 Agent 定义 |
-| 合规审计员 | `security-compliance-auditor.md` | `security/security-compliance-auditor.md` + sofagent 定制 | Workflow 巡检 + LOOP 外层巡检：定期合规审计 |
-| 最小变更工程师 | `engineering-minimal-change-engineer.md` | `engineering/engineering-minimal-change-engineer.md` + sofagent 约束层 | LOOP 执行者：读代码 + 写代码 + 跑测试 + git commit |
-| 代码审查员 | `engineering-code-reviewer.md` | `engineering/engineering-code-reviewer.md` + sofagent 分工说明 | LOOP 审查者：语义审查 + 影响分析 + 铁律合规 |
+| Agent | Skill | CLI 命令 | 职责 |
+|------|------|------|------|
+| 部署工程师 | `@sofagent-fde` · `SKILL/sofagent-fde/SKILL.md` | `sofagent-audit subagent run fde --task "..."` | 梳理工作流、识别 AI 节点、构建知识库、交付离场 |
+| 合规审计员 | `@sofagent-audit` · `SKILL/sofagent-audit/SKILL.md` | `sofagent-audit subagent run audit --task "..."` | Workflow 巡检、铁律覆盖验证、知识库健康度检查 |
+| 最小变更工程师 | `engineering-minimal-change-engineer.md` | LOOP 内层循环自动调用 | 读代码 + 写代码 + 跑测试 + git commit |
+| 代码审查员 | `engineering-code-reviewer.md` | LOOP 内层循环自动调用 | 语义审查 + 影响分析 + 铁律合规 |
 
-> **设计原则**：能引用的不重写。三个 Agent 直接引用 Agency Agents 标准模板，只在文件中叠加 sofagent 专属约束。部署工程师是 sofagent 独有概念，无对应模板，需自创。
+---
 
-## 格式标准
+## 如何使用（第三方 Agent 调用）
 
-遵循 Agency Agents 的前端格式：
+| 方式 | 场景 | 操作 |
+|------|------|------|
+| 装 Skill → @ | WorkBuddy/OpenClaw | `bash fde-install.sh`（自动装），然后 `@sofagent-fde` |
+| 复制 prompt | 不支持 Skill 的平台 | 把 SKILL.md 内容贴进 system prompt |
+| CLI 直跑 | 任何终端 | `sofagent-audit subagent run fde --task "..."` |
+
+---
+
+## 合规审计员的价值
+
+审计员**不是后台常驻进程**——调用一次，执行一次，报告结果后就停止。
+
+### 为什么它是必调 Agent？
+
+所有 sofagent Agent 在完成任务后都会自动调用审计员。这不是"建议检查"——是**合规闸门**：
+
+```
+FDE agent 部署完成   ──→ 自动调用 @sofagent-audit  → 验证部署合规
+LOOP engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更合规
+每次 git commit      ──→ pre-commit hook          → A1-A15 规则检查（0 token，纯正则引擎）
+未来任何新 Agent      ──→ SKILL.md 内置审计引用    → 合规检查
+```
+
+**为什么不是让你手动想起来才跑**：你部署了 10 个 AI 节点，不会记得每个节点都跑一次审计。但每次部署如果不审计，一个 knowledge-domain 配置错误的节点可能让财务数据泄漏到全公司。审计员的价值不在"跑一次"——在于"每次变更自动跑，不给遗忘留空间"。
+
+### 它给你什么？
+
+| 场景 | 什么时候 @ 它 | 它给你什么 |
+|------|------|------|
+| **发版前** | 准备发布新版本时 | 全量合规扫描——铁律是否覆盖所有 AI 节点、Workflow 有没有漏洞、版本号对齐没有 |
+| **事故后** | Agent 操作出了问题 | 根因分析——是约束没覆盖到，还是 Agent 绕过了审计，还是配置有漏洞 |
+| **定期巡检** | 每周一次 | 知识库健康度报告——哪些 entity 死链了、think.md 反思质量趋势 |
+| **新节点上线** | 新增 AI 节点后 | 检查新节点的 actions 声明是否完整、knowledge-domain 是否合理 |
+
+**和 `sofagent-audit --doctor` 的区别**：doctor 告诉你"哪里坏了"（二进制 yes/no），审计员告诉你"为什么坏了 + 怎么修"（LLM 解释 + 修复建议）。
+
+每次运行产生的报告写入 `.sofagent/` 下，FDE 定期读报告趋势做优化决策。
+
+---
+
+## Agent 格式
+
+每个预装 Agent 目录下有**两个文件**，分工明确：
+
+| 文件 | 格式 | 作用 | 谁读 |
+|------|------|------|------|
+| `SKILL.md` | Skill 格式（frontmatter + 调用指令） | **调用入口**——告诉第三方 Agent 用 Bash 跑 `sofagent-audit subagent run <name>` | 第三方 Agent 平台（WorkBuddy/Codex） |
+| `{role}.md` | Agency Agents 格式（frontmatter + 结构化章节） | **角色定义**——Agent 的完整行为规范、工作流、原则 | DeepAgents 编排引擎 + 人类参考 |
+
+**两者不是替代关系——是调用层和定义层分离。**
+- SKILL.md = "怎么调这个 Agent"（一句话：跑 CLI 命令）
+- {role}.md = "这个 Agent 是什么"（完整的角色说明书，100+ 行）
+
+### Skill 格式（调用入口）
+
+```yaml
+---
+name: sofagent-fde
+slug: sofagent-fde
+version: 1.0.7
+displayName: FDE 部署工程师
+description: >
+  前线部署工程师...
+---
+```
+
+### Agency Agents 格式（角色定义）
 
 ```yaml
 ---
@@ -28,15 +92,12 @@ color: blue
 ---
 ```
 
-文件名遵循 `{部门}-{角色}.md` 惯例。如有基座模板，在文件头部标注引用关系 + sofagent 差异部分。
+文件名遵循 `{部门}-{角色}.md` 惯例。用于 LOOP 内层循环自动调度。
 
-## 未来方向
-
-- **Workflow Hub**：集中管理的 Workflow 目录，从 Agent 库调用标准化 Agent
-- **DeepAgentsJS 集成**：通过 `createDeepAgent()` API 将 Agent 作为 LangGraph 节点运行（见 `LOOP/loop.md`）
+---
 
 ## 参考
 
 - [LOOP/](../LOOP/) — 自迭代循环的实验编排
 - [Agency Agents（中文版）](https://github.com/jnMetaCode/agency-agents-zh) — 230+ 岗位模板
-- [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) — LangGraph Agent harness（v1.10.7）
+- [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) — LangGraph Agent harness

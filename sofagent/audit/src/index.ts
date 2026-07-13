@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.0.6 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.0.7 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.0.7 新增：compose 子命令 + 未知子命令报错 + audit fast-fail
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
 // 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
@@ -12,6 +13,7 @@
 //   node sofagent/audit/dist/index.js --diff HEAD~1..HEAD --ci --task "test"
 //   node sofagent/audit/dist/index.js --root-cause
 //   node sofagent/audit/dist/index.js --regression ./src
+//   node sofagent/audit/dist/index.js compose --task "审计最近 5 次提交"
 //
 // 退出码：
 //   0 = 全通过
@@ -54,15 +56,22 @@ interface Args {
   doctor: boolean;
   /** staged 模式（首次提交场景）——diffRange 值为 --cached */
   cached: boolean;
-  /** v1.0.6: eval harness */
+  /** v1.0.7: eval harness */
   eval?: string;
-  /** v1.0.6: A/B 测试 */
+  /** v1.0.7: A/B 测试 */
   abTest?: string;
-  /** v1.0.6: Agent Dashboard */
+  /** v1.0.7: Agent Dashboard */
   agents?: boolean;
-  /** v1.0.6: hub 子命令 */
+  /** v1.0.7: hub 子命令 */
   hubCommand?: string;
   hubTemplate?: string;
+  /** v1.0.7: compose 子命令 */
+  composeTask?: string;
+  composeAgent?: string;
+  composeRun?: boolean;
+  /** v1.0.7: subagent 子命令 */
+  subagentName?: string;
+  subagentTask?: string;
 }
 
 
@@ -121,6 +130,35 @@ function parseArgs(argv: string[]): Args {
       args.abTest = argv[i] as string;
     } else if (argv[i] === '--agents') {
       args.agents = true;
+    } else if (argv[i] === 'compose') {
+      // v1.0.7: compose 子命令
+      args.composeTask = '';
+      for (let j = i + 1; j < argv.length; j++) {
+        if (argv[j] === '--task' && argv[j + 1]) {
+          j++;
+          args.composeTask = argv[j] as string;
+        } else if (argv[j] === '--agent' && argv[j + 1]) {
+          j++;
+          args.composeAgent = argv[j] as string;
+        } else if (argv[j] === '--run') {
+          args.composeRun = true;
+        } else if (!argv[j]!.startsWith('--')) {
+          // positional arg after compose
+          if (!args.composeTask) args.composeTask = argv[j] as string;
+        }
+      }
+      i = argv.length; // consume remaining args
+    } else if (argv[i] === 'subagent' && argv[i + 1] === 'run') {
+      // v1.0.7: subagent run 子命令
+      i += 2;
+      args.subagentName = argv[i] as string;
+      for (let j = i + 1; j < argv.length; j++) {
+        if (argv[j] === '--task' && argv[j + 1]) {
+          j++;
+          args.subagentTask = argv[j] as string;
+        }
+      }
+      i = argv.length;
     } else if (argv[i] === 'hub' && argv[i + 1]) {
       i++;
       args.hubCommand = argv[i] as string;
@@ -148,6 +186,8 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit --eval <golden-set.yml>          eval harness 评测');
       console.log('  sofagent-audit --ab-test <config.yml>           Sub Agent A/B 测试');
       console.log('  sofagent-audit skillopt-run --input <path>       SkillOpt 自动优化（需 skillopt-sleep）');
+      console.log('  sofagent-audit compose --task <desc>             编排方案生成（DeepAgents）');
+      console.log('  sofagent-audit subagent run <name> --task <desc> 运行预装 Sub Agent（fde / audit）');
       console.log('模式对照表:');
       console.log('  默认模式    全部规则（含 Agent 日志）   exit 0/1/2');
       console.log('  --silent    只跑 git-diff 规则          exit 0/1/2');
@@ -191,6 +231,18 @@ function parseArgs(argv: string[]): Args {
         console.error(`❌ 未知参数: ${arg}`);
         console.error('   使用 --help 查看可用参数');
         process.exit(1);
+      } else if (arg && !arg.startsWith('-')) {
+        // v1.0.7: 未知子命令报错
+        // skillopt-run 子命令的 positional args（如文件路径）不在这里处理
+        if (process.argv[2] === 'skillopt-run') {
+          continue;
+        }
+        const SUBCOMMANDS = ['hub', 'skillopt-run', 'compose', 'subagent'];
+        if (!SUBCOMMANDS.includes(arg)) {
+          console.error(`未知子命令: ${arg}`);
+          console.error(`可用子命令: ${SUBCOMMANDS.join(', ')}`);
+          process.exit(1);
+        }
       }
     }
   }
@@ -446,13 +498,65 @@ async function main(): Promise<void> {
   // --doctor 模式：健康诊断
   if (args.doctor) {
     if (args.agents) {
-      // v1.0.6: Agent Dashboard 原型
+      // v1.0.7: Agent Dashboard 原型
       const { runAgentDashboard } = await import('./commands/doctor');
       runAgentDashboard();
       return;
     }
     const { runDoctor } = await import('./commands/doctor');
     runDoctor();
+    return;
+  }
+
+  // compose 子命令（v1.0.7 新增）
+  if (args.composeTask !== undefined) {
+    if (!args.composeTask) {
+      console.error('用法: sofagent-audit compose --task "任务描述" [--agent <agent>] [--run]');
+      process.exit(1);
+    }
+    try {
+      const { composeWithDeepAgents } = await import('./subagents/composer');
+      const yaml = await composeWithDeepAgents(args.composeTask);
+      if (yaml) {
+        process.stdout.write(yaml);
+        process.stdout.write('\n');
+        process.exit(0);
+      } else {
+        process.stderr.write('❌ 编排方案生成失败——DeepAgents 不可用。\n');
+        process.exit(2);
+      }
+    } catch (err) {
+      process.stderr.write(`❌ compose 执行失败: ${(err as Error).message}\n`);
+      process.exit(2);
+    }
+    return;
+  }
+
+  // subagent 子命令（v1.0.7 新增）
+  if (args.subagentName) {
+    if (!args.subagentTask) {
+      console.error('用法: sofagent-audit subagent run <name> --task "任务描述"');
+      console.error('预装 Sub Agent: fde, audit');
+      process.exit(1);
+    }
+    try {
+      const { listAgents } = await import('./subagents/registry');
+      const agents = listAgents('.sofagent');
+      const agent = agents.find(a => a.name === args.subagentName);
+      if (!agent) {
+        console.error(`未找到 Sub Agent: ${args.subagentName}`);
+        console.error(`可用: ${agents.map(a => a.name).join(', ')}`);
+        process.exit(1);
+      }
+      const { spawnSubAgent } = await import('./subagents/launcher');
+      const result = await spawnSubAgent(agent, args.subagentTask!);
+      process.stdout.write(result);
+      process.stdout.write('\n');
+      process.exit(0);
+    } catch (err) {
+      process.stderr.write(`❌ subagent 执行失败: ${(err as Error).message}\n`);
+      process.exit(2);
+    }
     return;
   }
 
@@ -760,7 +864,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
 
   // CI 静默模式——只在有 WARN/FAIL 时输出简短结果
   if (ci) {
-    const problems = results.rules.filter((r) => r.status !== 'PASS');
+    const problems = results.rules.filter((r) => r.status !== 'PASS' && r.status !== 'SKIPPED');
     if (problems.length === 0) return;
 
     for (const rule of problems) {
@@ -779,13 +883,14 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
     return;
   }
 
-  // ===== v1.0.6 可视化输出 =====
+  // ===== v1.0.7 可视化输出 =====
 
   const exitCode = results.exitCode;
   const totalRules = results.rules.length;
   const failCount = results.rules.filter((r) => r.status === 'FAIL').length;
   const warnCount = results.rules.filter((r) => r.status === 'WARN').length;
-  const passCount = totalRules - failCount - warnCount;
+  const skipCount = results.rules.filter((r) => r.status === 'SKIPPED').length;
+  const passCount = totalRules - failCount - warnCount - skipCount;
 
   // banner 状态
   const statusLabel = exitCode === 0 ? '✅ 审计通过' : exitCode === 1 ? '⚠️  有警告' : '❌ 审计拦截';
@@ -808,7 +913,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
       const classTag = rule.ruleClass === '业务底线' ? '[底线]' : rule.ruleClass === '能力拐杖' ? '[拐杖]' : '';
       for (const detail of rule.details) {
         console.log(`  ${icon} ${rule.name} ${classTag}: ${detail}`);
-        // 修复建议（v1.0.6 新增）
+        // 修复建议（v1.0.7 新增）
         const suggestion = getFixSuggestion(rule.name);
         if (suggestion) {
           console.log(`     怎么修: ${suggestion}`);
@@ -821,7 +926,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
   console.log('');
   const gridParts = results.rules.map((r) => {
     const num = r.number >= 200 ? `E${r.number - 200}` : `A${r.number}`;
-    const icon = r.status === 'PASS' ? '✅' : r.status === 'WARN' ? '⚠️' : '❌';
+    const icon = r.status === 'PASS' ? '✅' : r.status === 'WARN' ? '⚠️' : r.status === 'SKIPPED' ? '⏭️' : '❌';
     return `${num} ${icon}`;
   });
   // 分两行避免太长

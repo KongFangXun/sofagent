@@ -26,49 +26,21 @@
 
 ## 一个迭代周期
 
-```
-  人类
-   │
-   │  "修复登录页 token 过期问题"
-   ▼
-┌─────────────────────────────────────────────┐
-│              engineering-minimal-change-engineer                    │
-│        (agents/engineering-minimal-change-engineer.md)             │
-│                                              │
-│  1. Read 相关文件                            │
-│  2. 规划变更（只改任务范围内的文件）          │
-│  3. Write/Edit 代码（最小变更原则）          │
-│  4. npm run build（失败→停止，修复后重试）    │
-│  5. npm test（失败→停止，修复后重试）         │
-│  6. git commit                               │
-│     └→ sofagent-audit hook 触发              │
-│        ├─ A1/A2 拦截 → 返回修复               │
-│        └─ PASS → commit 成功                  │
-│  7. 写 think.md（反思记录）                   │
-│                                              │
-└─────────────────────────────────────────────┘
-   │
-   │  提交的 diff
-   ▼
-┌─────────────────────────────────────────────┐
-│              engineering-code-reviewer                    │
-│        (agents/engineering-code-reviewer.md)             │
-│                                              │
-│  1. 读 git diff + commit message             │
-│  2. 语义正确性审查（逻辑/边界/bug）           │
-│  3. 影响范围审查（调用方/类型兼容性）         │
-│  4. 铁律合规审查（A1-A11 语义层面）           │
-│  5. 代码质量审查（命名/结构/重复）            │
-│  6. 输出审查报告（🔴/🟡/💭 + IS_PASS）        │
-│                                              │
-└─────────────────────────────────────────────┘
-   │
-   │  审查报告（🔴 阻断 / 🟡 建议 / 💭 小改进）
-   ▼
-  人类确认
-   │
-   ├─ IS_PASS: YES → git push → 下一轮任务
-   └─ IS_PASS: NO  → 反馈给 engineering-minimal-change-engineer 修复
+```mermaid
+flowchart TB
+    Human["👤 人类<br/>输入任务"] --> Engineer
+    subgraph Inner["内层循环：coding→audit→review→human"]
+        Engineer["engineering-minimal-change-engineer<br/>1. Read 相关文件<br/>2. 规划变更<br/>3. Write/Edit 代码<br/>4. build + test<br/>5. git commit → sofagent-audit hook<br/>6. 写 think.md"]
+    end
+    Engineer --> Diff["提交的 diff"]
+    Diff --> Reviewer
+    subgraph Outer["审查 + 反馈"]
+        Reviewer["engineering-code-reviewer<br/>1. 读 git diff<br/>2. 语义审查<br/>3. 影响范围审查<br/>4. 铁律合规审查<br/>5. 代码质量审查<br/>6. 输出审查报告"]
+    end
+    Reviewer --> Report["审查报告<br/>🔴 阻断 / 🟡 建议 / 💭 小改进"]
+    Report --> HumanConfirm["👤 人类确认"]
+    HumanConfirm -->|IS_PASS: YES| Push["git push → 下一轮任务"]
+    HumanConfirm -->|IS_PASS: NO| Engineer
 ```
 
 ## 为什么 engineering-minimal-change-engineer 不审查自己的代码
@@ -211,21 +183,22 @@ async function postReleaseEvolution(version: string) {
 
 ## LOOP 与发版流程的对应
 
-sofagent 的版本发布遵循 [`docs/verification/releasing.md`](../docs/verification/releasing.md) 的 8 阶段 SOP。LOOP 将其中可由 Agent 自动化的步骤映射到对应的 Agent：
+sofagent 的版本发布遵循 [`docs/verification/releasing.md`](../docs/verification/releasing.md) 的 11 阶段 SOP。LOOP 将其中可由 Agent 自动化的步骤映射到对应的 Agent：
 
 | releasing.md 阶段 | 当前（人类做） | LOOP 映射 |
 |---|---|---|
 | 阶段一：审查 | 陌生视角审查（`docs/verification/fresh-eyes-review.md`） | review-agent + 全新 session |
-| 阶段一：审查 | 回归检查（`docs/verification/regression-checklist.md`，176 维度） | FDE 触发 compliance-auditor |
 | 阶段二：开发 | 修复 P0/P1/P2 | minimal-change-engineer（7 步开发流程） |
-| 阶段三：自测 | `npm run build` + `npm test` + `acceptance-test.sh`（11 场景） | minimal-change-engineer 自检 |
+| 阶段三：自测 | `npm run build` + `npm test` + `acceptance-test.sh` | minimal-change-engineer 自检 |
 | 阶段四：审核 | 独立审核者逐项核对 | review-agent（全新 session） |
-| 阶段五：文档收尾 | bump-version + CHANGELOG/ROADMAP 更新 + 内容新鲜度检查 | FDE |
-| 阶段六：确认关口 | 作者确认改动清单 | 人类确认（不可自动化） |
-| 阶段七：发布 | OpenClaw 验收测试（`docs/verification/openclaw-acceptance-test.md`，5 场景） | review-agent 执行验收 |
-| 阶段七：发布 | npm publish + git tag + Skill 分发 | 人类操作（不可自动化） |
-| 阶段八：发布后 | 陌生视角审查 + npm 验证 | review-agent（全新 session）|
-| 阶段八：发布后 | SOP 自我进化——沉淀教训 + 更新过期数字 + 纳入新工具 | FDE 提议 → 作者确认 |
+| **阶段五：回归清单验证** | **全新 session 独立验证更新后的 checklist** | **review-agent（全新 session）** |
+| 阶段六：回归检查 + OpenClaw 验收 | 全量回归检查（regression-checklist.md）+ OpenClaw 验收测试 | FDE 触发 compliance-auditor + review-agent 执行验收 |
+| 阶段七：审查体系维护 | 更新 fresh-eyes-review.md（新增盲区/视角/攻击面） | FDE（前三份验证文件直接做，releasing.md 提议→确认） |
+| 阶段八：文档收尾 | bump-version + CHANGELOG/ROADMAP 更新 + 内容新鲜度检查 | FDE |
+| 阶段九：确认关口 | 作者确认改动清单 | 人类确认（不可自动化） |
+| 阶段十：发布 | npm publish + git tag + Skill 分发 | 人类操作（不可自动化） |
+| 阶段十一：发布后 | 陌生视角审查 → 发现问题 → 自动回流阶段一 | review-agent（全新 session）|
+| 阶段十一：发布后 | SOP 自我进化——沉淀教训 + 更新过期数字 + 纳入新工具 | FDE 提议 → 作者确认 |
 
 ### LOOP 中的验证文档
 
@@ -275,41 +248,16 @@ OpenClaw（sofagent 底座，随 sofagent 安装）
 
 内层循环跑的是每一次任务。但需要一个外层循环来监督这个流程本身是否健康。
 
-```
-                ┌──────────────────────────────────────┐
-                │         forward-deployed-engineer      │
-                │        (agents/forward-deployed-engineer.md)     │
-                │                                        │
-                │  定期执行：                              │
-                │  1. 分析 think.md 反思趋势              │
-                │     → minimal-change-engineer 在重复犯同类错误？  │
-                │     → 如果是，优化它的 Agent 定义文件    │
-                │                                        │
-                │  2. 审查 code-reviewer 的报告质量        │
-                │     → 审查在变"橡皮图章"吗？             │
-                │     → 如果是，调整审查维度或标准         │
-                │                                        │
-                │  3. 分析 sofagent-audit 拦截统计         │
-                │     → 哪种违规在增加？                   │
-                │     → 需要新增审计规则吗？               │
-                │                                        │
-                │  4. 触发 compliance-auditor 巡检         │
-                │     → Workflow 节点定义是否完整？         │
-                │     → 审计配置是否一致？                 │
-                │     → 知识库是否有死链？                 │
-                │                                        │
-                │  5. 根据发现优化 Agent 定义               │
-                │     → 改 agents/*.md 的 rules/workflow  │
-                │     → 内层循环自动升级                   │
-                │                                        │
-                │  6. 发版后 SOP 自我进化（提议→确认）       │
-                │     → 读 think.md + changelog 提取流程漏洞 │
-                │     → grep 检查 releasing.md 数字过期     │
-                │     → 对比 tools/ 和 releasing.md 新工具遗漏 │
-                │     → 生成 diff 格式更新建议             │
-                │     → 交给作者确认后 apply               │
-                │                                        │
-                └──────────────────────────────────────┘
+```mermaid
+flowchart TD
+    FDE["forward-deployed-engineer<br/>定期执行"]
+    FDE --> T1["1. 分析 think.md 反思趋势<br/>engineer 在重复犯错？→ 优化 Agent 定义"]
+    FDE --> T2["2. 审查 reviewer 报告质量<br/>审查变橡皮图章？→ 调整审查标准"]
+    FDE --> T3["3. 分析 audit 拦截统计<br/>哪种违规增加？→ 新增审计规则？"]
+    FDE --> T4["4. 触发 @sofagent-audit 巡检<br/>Workflow 完整性 + 配置一致性 + 死链"]
+    FDE --> T5["5. 优化 Agent 定义<br/>改 agents/*.md，内层循环自动升级"]
+    FDE --> T6["6. 发版后 SOP 自我进化<br/>读 think.md + changelog → 提出流程改进建议"]
+    T6 --> Human_Confirm["👤 作者确认后 apply"]
 ```
 
 ### 外层循环的触发节奏

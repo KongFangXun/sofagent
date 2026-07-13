@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v1.0.6 · 2026-07-11（UTC）· 孔放勋
+> v1.0.7 · 2026-07-11（UTC）· 孔放勋
 
 > 💡 **行业背景**：sofagent 是 Agent Harness 中间件——不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立审计标准层：约束行为、审计变更、沉淀经验。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](../FDE/FDE.md) 和 [README § FDE](../README.md#fde-怎么工作)。
 
@@ -266,6 +266,29 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 ### 评审者与执行者分离
 
 多维评分按平台分级——OpenClaw 用 `session.spawn` 工程隔离；非 OpenClaw 是 prompt 级约束（无机制保障）。详见 `loop-check.md` closure 模式。
+
+### Agent 基础设施：双 Agent 自进化（v1.0.8+）
+
+v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Agent**——所有 workflow 节点完成任务后强制调用：
+
+```
+每个节点完成任务：
+  → Audit Agent    "你做得合规吗？"
+  → FDE Agent sustain  "你能做得更好吗？"
+```
+
+**不是"又一个检查清单"——是两个 Agent 形成自进化闭环**：
+
+| | Audit Agent | FDE Agent (sustain) |
+|------|------|------|
+| 方向 | 向下看——防退化 | 向上看——促进化 |
+| 数据源 | git diff + A1-A15 | audit 报告 + think.md + scoring |
+| 频率 | 每次 commit | 每周自动 |
+| 输出 | 🔴 P0 / 🟡 P1 | 优化建议 + 趋势分析 |
+
+**开发 Agent 的方式**：新增 Agent 只需在 `agents/SKILL/{name}/SKILL.md` 创建文件——front matter（身份标签）+ 调用方式（CLI 指令）+ Agent 角色定义（Agency Agents 格式）。`builtin-agents.ts` 的 `parseSkillMd()` 自动加载，`registry.ts` 自动合并。
+
+**SKILL.md 的强制约定**（v1.0.8）：所有 Agent 的 SKILL.md 必须引用 `@sofagent-audit` 和 `@sofagent-fde` 作为基础设施 Agent。缺少引用的 Agent 视为未完成。
 
 ---
 

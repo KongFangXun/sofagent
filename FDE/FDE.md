@@ -203,8 +203,15 @@ FDE 有巨大前期成本，只在三种情况成立：
 | 层 | 做什么 | 怎么跑 |
 |----|--------|--------|
 | **约束底座** | fde.md 规则注入 Agent 上下文 | install.sh 装完自动加载 |
-| **审计引擎** | git diff → A1-A14 规则 → exit code | git pre-commit hook，不挑 Agent |
-| **编排引擎**（实验性）| 拆任务 → 编排 → 执行 | ao compose（跑在 OpenClaw 上） |
+| **审计引擎** | git diff → A1-A15 规则 → exit code | git pre-commit hook，不挑 Agent，**0 token（纯正则引擎）** |
+| **编排引擎**（实验性）| 拆任务 → 编排 → 执行 | DeepAgents compose（CLI 入口或 OpenClaw 内部 API） |
+| **内置 Agent**（v1.0.7）| FDE 部署工程师 + 合规审计员 | `sofagent-audit subagent run fde --task "..."`、`@sofagent-fde` |
+
+**内置 Agent（v1.0.7 新增）**：sofagent 预装了两个 Agent，安装后立即可用——
+- **FDE 部署工程师**（`@sofagent-fde`）：梳理工作流、识别 AI 节点、构建知识库、交付离场。在 WorkBuddy 中 `@sofagent-fde 梳理采购流程` 即可调用，或 CLI `sofagent-audit subagent run fde --task "..."`。
+- **合规审计员**（`@sofagent-audit`）：Workflow 巡检、铁律覆盖验证、知识库健康度检查。发版前跑一次全量合规扫描。
+
+两个 Agent 的定义在 `agents/SKILL/` 下，`fde-install.sh` 会自动安装。详细用法见 `agents/README.md`。
 
 找一台闲置设备（旧电脑、服务器、Nas 都行），装好 sofagent——这台设备就跑着 harness 层，上面是你梳理出来的 AI 节点。
 
@@ -212,6 +219,17 @@ FDE 有巨大前期成本，只在三种情况成立：
 # 设备上装 sofagent（核心）
 bash sofagent/scripts/install.sh
 ```
+
+#### 节点类型决策（v1.0.7+）
+
+部署 sofagent 后，根据企业场景选择节点类型：
+
+| 节点类型 | 适用场景 | 需要 OpenClaw | 编排方式 |
+|---------|---------|:--:|------|
+| **自动运行节点** | 企业无人值守设备（AI 全自动执行） | ✅ 必须 | OpenClaw Channel + DeepAgents 内部 API |
+| **个人增强节点** | 个人开发者用 WorkBuddy/Codex/Claude Code | ❌ 不需要 | `sofagent-audit compose --task` CLI |
+
+> 两种模式的核心约束体系完全一致——都是宪法层 SKILL.md + 规范层 fde.md + 反思层 think.md + 知识库 knowledge/。区别只在编排触达方式：自动运行节点走 OpenClaw 内部 API（更快），个人增强节点走 CLI 编排入口（不装 OpenClaw 也能用）。
 
 #### 逐节点部署
 
@@ -283,6 +301,52 @@ v1.0.1 起为**结构化 AI 知识库**（`.sofagent/knowledge/` 目录）：dae
 - [ ] 企业关键业务指标与 scoring 挂钩（如「审批准确率 ≥ 95%」）
 
 > 微软 CEO Nadella：未来企业最重要的知识产权是 private evals。工具可复制，差异化反馈无法复制。FDE 离场时留下的不是配置文件，是企业持续培养 Agent 的评估闭环。
+
+#### 9.5 Ontology 说明书（v1.0.8+）
+
+离场前用 `sofagent-audit ontology view` 生成一份人类可读的 MD 文档——
+
+```bash
+sofagent-audit ontology view > 企业数字孪生说明书.md
+```
+
+这份说明书是三个 YAML 文件（objects.yml + actions.yml + constraints.yml）的**人类可读摘要**：
+
+| 章节 | 来源 | 内容 |
+|------|------|------|
+| 实体关系图 | `objects.yml` | 企业的部门/岗位/系统之间的关联（has_many / belongs_to / depends_on） |
+| 动作矩阵 | `actions.yml` | 每个 AI 节点被允许执行什么操作、对什么对象 |
+| 约束拓扑 | `constraints.yml` | 知识库访问域（谁能看什么）+ 速率限制 + 权限边界 |
+
+Ontology 说明书是 FDE 离场交付物之一——不是一次性文档。企业新增 workflow 或修改 entity 后，daemon 自动触发 `mergeOntology()` 更新三个 YAML，重新跑 `ontology view` 就能拿到最新版。说明书跟着企业一起演化。
+
+> v1.x 升级路径：从 MD 文件升级为 HTML Dashboard。通过 MCP 将三个 YAML 推送到服务器，渲染为可视化仪表盘——实体关系网 + 动作矩阵热力图 + 约束拓扑图。但 MD 文件永远保留：它是机器可读的数据源，也是人类离线阅读的保底方案。
+
+#### 9.6 River——企业统一 Agent 入口
+
+FDE 交付的本质不只是一个个独立的 AI 节点——而是把这些节点之间的**关联关系**梳理清楚，让它们组成一条大河。
+
+**River = 多个 Workflow 的关联集合。** 如果把每个 Workflow 看作一条小溪，River 就是这些小溪的汇合——数据在 Workflow 之间回流、上下文在节点之间传递、最终从统一入口流回用户。
+
+```
+FDE 进场 → 梳理 Workflow A、B、C（每条小溪）
+         → 定义它们之间的数据回流关系（A 的产出是 B 的输入）
+         → 部署 sofagent 底座（约束 + 审计 + 编排）
+         → 企业得到一个统一入口：@River
+              ↓
+         员工只需要 @River 提任务
+         River 内部按 Workflow 拓扑自动调度
+         结果从同一个入口返回
+```
+
+| FDE 交付了什么 | 对应的 River 组件 |
+|------|------|
+| §4-5 梳理的 Workflow 节点 + 关联关系 | River 的拓扑结构（小溪怎么汇成大河） |
+| §7-8 部署的 sofagent 底座 | River 的引擎（约束 + 审计 + 编排） |
+| Ontology 说明书（9.5） | River 的地图（实体关系 + 动作矩阵 + 约束拓扑） |
+| AI 知识库（9.3） | River 的记忆（跑起来后自动积累） |
+
+> Dashboard 的 River 模块（v1.x）展示的就是这张拓扑图——哪些 Workflow 在互联、数据怎么回流、任务怎么从入口分发到各条小溪再汇总回来。不是聊天窗口，是河流的流向图。
 
 ---
 
