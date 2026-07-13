@@ -67,7 +67,7 @@
 
 ### Skill 文件结构
 
-**1 主 Skill（`SKILL.md`）+ 9 子 Skill = 10 个 .md（含 fde.md，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤90 行（v0.99.5 全部达标）。
+**1 主 Skill（`SKILL.md`）+ 9 子 Skill = 10 个 .md（含 fde.md，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤100 行（v1.0.8 起，由 v0.99.5 的 ≤90 行上调）。
 
 > 💡 **措辞心理学**：铁律不只是「写对规则」，更是「写到 AI 真的听」。Superpowers（GitHub 23.9 万星 Skill 项目）2.8 万次对话实测——强措辞（必须/绝无例外）让 AI 服从率从 33% 提升到 72%。LLM 对强语气的注意力权重高于弱语气。写 Skill 时，关键铁律用最强可用措辞。详见 [ARCHITECTURE 措辞心理学](./ARCHITECTURE.md#措辞心理学长度之外还有强度)。
 
