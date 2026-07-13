@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v1.0.7 · 2026-07-13（UTC）· 孔放勋
+> v1.0.8 · 2026-07-13（UTC）· 孔放勋
 
 ---
 
@@ -213,16 +213,16 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前 472 个测试全绿，但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前 493 个测试全绿，但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
 | install.sh | 无独立测试 | 跨平台行为变化无法自动捕获 |
 | daemon 脚本 | 测试覆盖不足 | launchd/systemd 注册失败无早期预警；计划 v1.x 补充核心功能测试。**行为边界**：daemon 监控 think.md/fde.md 文件 hash 变化 → 写 daemon-notice.md，不直接审计 git commit。commit 审计由 pre-commit hook（`sofagent-audit --install-hook` 安装）负责 |
 | MCP Server | 仅手动验证 | JSON-RPC 协议边界情况未覆盖。无自动测试。核心逻辑（run_audit/get_think/write_think）调用 audit 包已测方法。 |
-| verify.sh/verify.ts | 部分覆盖 | ~48 项检查（动态，因环境条件变化）的逻辑分支未穷举 |
+| verify.sh/verify.ts | 部分覆盖 | ~44 项检查（动态，因环境条件变化）的逻辑分支未穷举 |
 
-缓解：install.sh 和 verify.sh 有 ~48 项动态检查作为 smoke test，审计引擎核心逻辑已有全面测试。上述模块的测试缺口不会影响审计结果的可靠性。
+缓解：install.sh 和 verify.sh 有 ~44 项动态检查作为 smoke test，审计引擎核心逻辑已有全面测试。上述模块的测试缺口不会影响审计结果的可靠性。
 
 ---
 
@@ -249,7 +249,7 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `.sofagent/task/logs/
 
 ### 编排引擎稳定性
 
-编排引擎依赖 `engage.md` + `ao compose`（agency-orchestrator）做任务拆解——本质上是 prompt 驱动，没有确定性 fallback。编排效果完全依赖模型质量：模型换了或者降级了，任务拆解和 Loop 检查就可能失效。Agent 变弱，编排跟着变弱；如果 agency-orchestrator 停止维护或模型 API 不可用，编排层直接不可用。
+编排引擎依赖 DeepAgents（deepagents@^1.10.7，npm 包）做任务拆解——本质上是 prompt 驱动，没有确定性 fallback。编排效果完全依赖模型质量：模型换了或者降级了，任务拆解和 Loop 检查就可能失效。Agent 变弱，编排跟着变弱；如果 deepagents 停更或 API break，编排层直接不可用。方案 C（DeepAgents 完整 Agent）超时 5min/次，复杂任务可能超时；multi-step Agent loop 消耗更多 token。
 
 缓解：审计层（git diff）不依赖编排层，独立工作。编排层是可选增强——即使编排不可用，核心约束和审计仍然生效。最终解决方案是 v2.x 协同层的确定性编排引擎。
 
@@ -270,7 +270,7 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](../FDE/FDE.md)）已在�
 
 ### 组件间集成测试
 
-**状态：无集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排引擎 ao compose 通过——但 daemon → MCP → webhook → 编排四组件串联行为未验证。未来版本计划补全链路 smoke test。
+**状态：无集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排引擎 DeepAgents compose 通过——但 daemon → MCP → webhook → 编排四组件串联行为未验证。未来版本计划补全链路 smoke test。
 
 ---
 
@@ -278,7 +278,7 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](../FDE/FDE.md)）已在�
 
 v1.0 新增 `tools/acceptance-test.sh`（9 个场景），但覆盖范围有限：
 
-- **CI 已覆盖**：单元测试 472 个（函数级）、verify.sh 48 项（环境级）
+- **CI 已覆盖**：单元测试 493 个（函数级）、verify.sh 48 项（环境级）
 - **发版前手动覆盖**：acceptance-test.sh 9 场景（CLI 端到端，步骤 2.3）、OpenClaw 验收 5 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）

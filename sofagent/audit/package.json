@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/audit",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "sofagent 提交时审计——扫描 git diff，检查 Agent 是否遵守工作纪律",
   "main": "dist/index.js",
   "types": "dist/public-api.d.ts",
@@ -66,6 +66,7 @@
   ],
   "dependencies": {
     "deepagents": "^1.10.7",
+    "isomorphic-git": "^1.25.0",
     "js-yaml": "^5.2.0"
   }
 }

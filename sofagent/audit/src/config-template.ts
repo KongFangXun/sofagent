@@ -50,7 +50,7 @@ audit:
  * 与 hooks/commit-msg 保持一致（含 v1.0 无声失败保护）
  */
 export const HOOK_TEMPLATE = `#!/bin/bash
-# sofagent commit-msg hook v1.0.7
+# sofagent commit-msg hook v1.0.8
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # commit-msg hook 接收 $1 = commit message 文件路径
 

@@ -80,9 +80,9 @@ LAYER_D=$(find ./docs/design -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 
 # 上限定义
-LIMIT_A=3600
+LIMIT_A=4000  # 用户文档随版本演进自然增长，给足缓冲（v1.0.8 Ontology 国标对齐 + 外部验证矩阵扩充）
 LIMIT_B=2000
-LIMIT_C=4600  # v1.0.7 重新标定：C 层随回归维度(219→247)与发版 SOP 扩充已稳定突破 4500，上调至 4600 留缓冲
+LIMIT_C=5000  # 审查体系随回归维度(219→247)与发版 SOP 扩充，给足缓冲
 LIMIT_D=500
 LIMIT_E=500
 LIMIT_TOTAL=5500

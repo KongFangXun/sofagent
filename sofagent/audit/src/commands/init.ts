@@ -4,7 +4,7 @@
 //   1. 生成 .sofagent/config.yml 配置模板
 //   2. 安装 git commit-msg hook
 //   3. 冒烟测试——验证审计引擎可用
-// v1.0.7: 新增仓库状态分类器（gstack 首次运行引导）
+// v1.0.8: 新增仓库状态分类器（gstack 首次运行引导）
 // ============================================================
 
 import { existsSync, writeFileSync, mkdirSync, chmodSync, readFileSync, appendFileSync } from 'fs';
@@ -165,12 +165,24 @@ export function runInit(): void {
 
     const hookPath = join(hooksDir, 'commit-msg');
 
-    // 幂等检查：已有 sofagent hook 则跳过
+    // 幂等检查：版本号比较——v1.0.8 以下覆盖，≥v1.0.8 保留
     let hasSofagentHook = false;
     if (existsSync(hookPath)) {
       try {
         const content = readFileSync(hookPath, 'utf-8');
-        hasSofagentHook = content.includes('sofagent');
+        const versionMatch = content.match(/v(\d+)\.(\d+)\.(\d+)/);
+        if (versionMatch) {
+          const major = parseInt(versionMatch[1]!, 10);
+          const minor = parseInt(versionMatch[2]!, 10);
+          const patch = parseInt(versionMatch[3]!, 10);
+          if (major < 1 || (major === 1 && minor === 0 && patch < 8)) {
+            hasSofagentHook = false;  // 旧版本 → 覆盖
+          } else {
+            hasSofagentHook = true;   // 当前版本或更新 → 保留
+          }
+        } else {
+          hasSofagentHook = false;  // 无版本号 → 覆盖
+        }
       } catch {
         // 读不了就当不存在
       }
@@ -191,7 +203,7 @@ export function runInit(): void {
     // v1.0.7: 安装 post-commit hook（timestamp 近邻匹配替代 SHA 精确匹配）
     const postCommitPath = join(hooksDir, 'post-commit');
     const POST_COMMIT_TEMPLATE = `#!/bin/bash
-# sofagent post-commit hook v1.0.7
+# sofagent post-commit hook v1.0.8
 # 检测策略：检查 history.jsonl 最后一条记录的 timestamp 是否在 60 秒内
 # 如果 60 秒内有审计记录，认为 commit 通过了审计；否则可能是 --no-verify 绕过
 
@@ -233,15 +245,15 @@ exit 0
     if (existsSync(postCommitPath)) {
       try {
         const pcContent = readFileSync(postCommitPath, 'utf-8');
-        // v1.0.7 修复：不再用模糊匹配 `includes('sofagent')`——v1.0.6 旧 hook 也会命中，导致存量用户无法升级
-        // 改为检查版本号：v1.0.6 及以下 → 覆盖为当前版本；v1.0.7 及以上 → 跳过
+        // v1.0.8 修复：不再用模糊匹配 `includes('sofagent')`——旧 hook 也会命中，导致存量用户无法升级
+        // 改为检查版本号：v1.0.7 及以下 → 覆盖为当前版本；v1.0.8 及以上 → 跳过
         const versionMatch = pcContent.match(/v(\d+)\.(\d+)\.(\d+)/);
         if (versionMatch) {
           const major = parseInt(versionMatch[1]!, 10);
           const minor = parseInt(versionMatch[2]!, 10);
           const patch = parseInt(versionMatch[3]!, 10);
-          // v1.0.7 以下版本强制覆盖（修复 P0-1 post-commit 误报）
-          if (major < 1 || (major === 1 && minor === 0 && patch < 7)) {
+          // v1.0.8 以下版本强制覆盖
+          if (major < 1 || (major === 1 && minor === 0 && patch < 8)) {
             hasPostCommitHook = false;  // 旧版本 → 覆盖
           } else {
             hasPostCommitHook = true;   // 当前版本或更新 → 保留

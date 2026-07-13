@@ -19,7 +19,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$VERSION_STR = "1.0.7"
+$VERSION_STR = "1.0.8"
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
 
 if ($Version) { Write-Host "sofagent-audit v$VERSION_STR"; exit 0 }

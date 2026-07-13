@@ -5,7 +5,7 @@
 // 每个函数接收 Verifier 实例和上下文参数，调用 v.checkPass/Fail/Warn。
 
 import { existsSync, readFileSync, statSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { VERSION } from '../shared/constants.js';
 import { Verifier } from './verifier.js';
 import type { Args } from './types.js';
@@ -518,7 +518,27 @@ export function runAllChecks(
   v.printBoldYellow('企业合规');
 
   // 确定脚本目录（verify.sh 里的 VERIFY_SCRIPT_DIR）
-  const verifyScriptDir = join(__dirname, '..', '..'); // dist/ → repo root → scripts parent
+  // 兼容两种布局：仓库源码态 scripts/ 在 repo root 下；部署态在 ~/.openclaw/scripts/。
+  // 旧逻辑 join(__dirname,'..','..') 假设 dist 仅一层，实际 checks.ts 编译在 dist/verify/，
+  // 两个 '..' 只到 audit 包目录，少一级 → 源码直跑时 scripts 解析错误（verify 自检误报缺失）。
+  // 改为：部署锚点优先 + 从 __dirname 向上遍历查找含 cleanup.sh/audit.sh 的 scripts/ 父目录。
+  const verifyScriptDir = (() => {
+    const deployedScripts = join(HOME, '.openclaw', 'scripts');
+    if (existsSync(join(deployedScripts, 'cleanup.sh')) || existsSync(join(deployedScripts, 'audit.sh'))) {
+      return dirname(deployedScripts); // 部署态：scripts 父目录 = ~/.openclaw
+    }
+    let dir = __dirname;
+    for (let i = 0; i < 6; i++) {
+      const cand = join(dir, 'scripts');
+      if (existsSync(join(cand, 'cleanup.sh')) || existsSync(join(cand, 'audit.sh'))) {
+        return dir; // 找到 scripts/ 的父目录
+      }
+      const parent = dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+    return join(__dirname, '..', '..', '..'); // 兜底：源码态正确深度（dist/verify → repo root）
+  })();
   const scriptsLibDir = join(verifyScriptDir, 'scripts', 'lib');
 
   // 10.1 config.sh 共享配置加载器存在

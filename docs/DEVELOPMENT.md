@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v1.0.7 · 2026-07-11（UTC）· 孔放勋
+> v1.0.8 · 2026-07-13（UTC）· 孔放勋
 
 > 💡 **行业背景**：sofagent 是 Agent Harness 中间件——不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立审计标准层：约束行为、审计变更、沉淀经验。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](../FDE/FDE.md) 和 [README § FDE](../README.md#fde-怎么工作)。
 

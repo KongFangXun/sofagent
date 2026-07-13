@@ -5,11 +5,15 @@
 ---
 
 ## 正式版
+### [v1.0.8] — FDE Agent 自进化 + 文件系统审计 + 内嵌 isomorphic-git + Agent 定义去耦合 🔧
+> 2026-07-13（UTC）
+FDE Agent 双模式（部署 deploy + 持续优化 sustain）构成自进化闭环（Audit 管底线、FDE sustain 管上限）+ 文件系统审计（isomorphic-git 隐藏 repo + fs-watch daemon + 5s 防抖 + 快照回溯 `--revert`）+ Agent 定义去 OpenClaw 耦合（`session.spawn` 零命中，Sub Agent 可在个人节点直跑）+ TencentDB Memory 集成（persona.md 注入加载链）+ Ontology 人类可读视图（`ontology view`）。审计语义从"git commit 拦截"扩展为"文件变更告警 + 回溯"，覆盖非开发者。发版审查后修复：版本号全量 bump（91 文件一致）+ verify.js 脚本目录解析兼容 monorepo 嵌套。493 测试全绿，pre-push 7/7 全绿，OpenClaw 28/28 验收全绿，回归检查清单（256 维度）独立审查全 PASS。
+> 📖 [开发日志](./docs/changelog/v1.0.8.md)
 ### [v1.0.7] — 双节点架构 + Sub Agent 约束自加载 + ao 完全退役 🔧
 > 2026-07-13（UTC）
 > 🔴 **Breaking Change**：ao（agency-orchestrator）已完全退役。v1.0.6 用户升级到 v1.0.7 后需手动卸载：`npm uninstall -g agency-orchestrator`。编排引擎已全面迁移到 DeepAgents。
 
-Sub Agent 约束自加载（buildConstrainedSystemPrompt，平台无关）+ CLI 编排入口（sofagent-audit compose）+ ao 代码全部清除（deepagents 提升为正式依赖）+ 审计 fast-fail（critical 层 FAIL 即停）+ A/B 自动切换（连续胜出计数器）+ 方案C运行器升级 + 双节点架构文档。**v1.0.6 陌生视角审查 25 项修复**（P0-1 post-commit 误报修复 / P1-1 --init 自动创建 .gitignore / 测试数对齐 / CHANGELOG 纯度 / 根目录归位 / 文档一致性等）。493 测试全绿，pre-push 全绿。
+Sub Agent 约束自加载（buildConstrainedSystemPrompt，平台无关）+ CLI 编排入口（sofagent-audit compose）+ ao 代码全部清除（deepagents 提升为正式依赖）+ 审计 fast-fail（critical 层 FAIL 即停）+ A/B 自动切换（连续胜出计数器）+ 方案C运行器升级 + 双节点架构文档。v1.0.6 补丁修复（post-commit hook 误报修复 / --init 自动创建 .gitignore / 测试数对齐 / CHANGELOG 纯度 / 根目录归位 / 文档一致性等）。493 测试全绿，pre-push 全绿。
 > 📖 [开发日志](./docs/changelog/v1.0.7.md)
 ### [v1.0.6] — 编排迁移 + A/B 真实运行器 + 安全加固 + SkillOpt CLI 修复 🔧
 > 2026-07-13（UTC）
@@ -21,7 +25,6 @@ Ontology 三路合并引擎 + Work模板市场 独立项目 + A9 分级安全 + 
 > 📖 [开发日志](./docs/changelog/v1.0.5.md)
 
 ### 规划中
-- **v1.0.8** — 文件系统审计 + 内嵌 isomorphic-git + Agent 定义去 OpenClaw 耦合 + TencentDB Memory 集成 → [开发日志](./docs/changelog/v1.0.8.md)
 - **v1.0.9** — 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool + knowledge 智能选择 → [开发日志](./docs/changelog/v1.0.9.md)
 
 ### [v1.0.4] — 自动优化 + 约束验证 🔧

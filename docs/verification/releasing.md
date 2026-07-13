@@ -96,9 +96,10 @@
 1. 工作目录：/Users/kongfangxun/Workbuddy/sofagent（后续相对路径均基于此）
 2. 读取 docs/verification/regression-checklist.md（重点看本版本新增维度）
 3. 读取 docs/verification/openclaw-acceptance-test.md（端到端验收场景）
+3.5 【v1.0.8 优化】构建审计包：在跑任何依赖 dist/ 的检查前，先 `cd sofagent/audit && npm run build`。否则 --version / --help banner / `ontology view` / `compose` 等基于 dist 的回归维度（#248 #251）与验收场景会命中 stale dist 误报 FAIL
 4. 控制 OpenClaw 一次性执行两份报告：
-   【报告一：回归检查】读 regression-checklist.md，用 Bash 跑全部维度验证命令，逐项输出 PASS/FAIL/SKIP。**报告直接在对话中输出，不落盘桌面文件**
-   【报告二：OpenClaw 验收】读 openclaw-acceptance-test.md，按场景逐一验证，逐项输出 PASS/FAIL/SKIP。**报告直接在对话中输出，不落盘桌面文件**
+   【报告一：回归检查】读 regression-checklist.md，用 Bash 跑全部维度验证命令，逐项输出 PASS/FAIL/SKIP。完成后将完整报告保存为 `~/Desktop/vX.Y-regression-report.md`
+   【报告二：OpenClaw 验收】读 openclaw-acceptance-test.md，按场景逐一验证，逐项输出 PASS/FAIL/SKIP。完成后将完整报告保存为 `~/Desktop/vX.Y-acceptance-report.md`
 5. 时序注意：
    - 标注「发布后验证」的项（如 npm latest 版本号）必然不满足 → 标 SKIP，不标 FAIL
    - 不在 OpenClaw 环境时，按验收文件降级说明跳过相应场景 → 标 SKIP，不标 FAIL
@@ -108,7 +109,7 @@
 ## 纪律
 - 不创建/不修改任何代码或文档，只验证 + 生成报告
 - 任何模糊、跑不通、对不上的维度如实标 FAIL 或写疑问，绝不因"应该没问题"放行
-- 报告严格以对话形式输出：每项 / 每场景 PASS/FAIL/SKIP 直接写在 session 回复里，**不得保存为桌面文件**——项目负责人在 session 会话中直接读报告
+- 报告严格以对话形式执行验证，但最终报告必须保存到桌面文件——项目负责人在桌面上直接查看两份报告
 ```
 
 ### 判定与循环

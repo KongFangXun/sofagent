@@ -11,7 +11,7 @@ sofagent 是纯本地 Harness 中间件，**数据不出本机**——但以下�
 | `scoring/` | `.sofagent/scoring/` | Skill 使用记录 |
 | `orchestrator/` | `.sofagent/orchestrator/` | 编排决策历史 |
 
-**当前状态（v1.0.7）**：
+**当前状态（v1.0.8）**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
@@ -53,7 +53,7 @@ install.sh 拆分为以下模块，便于逐模块审查：
 
 | 模块 | 行数 | 职责 |
 |------|------|------|
-| `install.sh` | 193 | 主入口（组装 + 参数解析） |
+| `install.sh` | 160 | 主入口（组装 + 参数解析） |
 | `lib/config.sh` | 143 | 配置加载 + 常量定义 |
 | `lib/daemon-lib.sh` | 142 | daemon 公共函数库 |
 | `lib/daemon-register.sh` | 115 | Hook + daemon 注册 |

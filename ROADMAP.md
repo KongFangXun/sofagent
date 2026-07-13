@@ -1,18 +1,18 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.0.7 · 2026-07-13（UTC）· 双节点架构 + Sub Agent 约束自加载 + 预装 Agent + ao 完全退役
+> v1.0.8 · 2026-07-13（UTC）· 文件系统审计 + FDE 持续优化 + 快照回溯 + Ontology 视图
 >
 
 > 🎯 **v1.0 定位**：**Agent Harness 中间件**——不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他什么 Agent 平台，sofagent 是独立的审计标准层：约束行为、审计变更、沉淀经验。v1.0 聚焦单设备，v1.1.x 加轻量多设备（经验共享），v1.2.x 做完整多设备（独立身份+跨设备审计聚合）。
 
 ---
 
-## 现在在哪：v1.0.7 ✅
+## 现在在哪：v1.0.8 ✅
 
-> 双节点架构（自动运行 + 个人增强）+ Sub Agent 约束自加载（buildConstrainedSystemPrompt，平台无关）+ CLI 编排入口（sofagent-audit compose）+ ao 完全退役 + 审计 fast-fail + A/B 自动切换 + **预装 FDE 部署工程师 + 合规审计员两个内置 Agent**。493 测试全绿，pre-push 全绿。
+> 文件系统审计（isomorphic-git + fs-watch）+ FDE 持续优化模式（sustain）+ 快照回溯 + Agent 去 OpenClaw 耦合 + TencentDB Memory 集成 + Ontology 人类可读视图。493 测试全绿，pre-push 全绿。
 >
-> 📖 [开发日志](./docs/changelog/v1.0.7.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [开发日志](./docs/changelog/v1.0.8.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -82,10 +82,11 @@
 | **v1.0.5** | ✅ 已完成 | Ontology 统一层 + Work模板市场 + A9 分级安全 + A15 绕过修复 + fail-closed 默认安全 + 安全加固 | [📖](./docs/changelog/v1.0.5.md) |
 | **v1.0.6** | ✅ 已完成 | 编排迁移 + A/B 真实运行器 + 文档一致性修复：DeepAgents compose + Sub Agent 状态 + A/B 模型 API 直跑 + history.jsonl 环境指纹 + post-commit hook + 文档一致性修复 | [📖](./docs/changelog/v1.0.6.md) |
 | **v1.0.7** | ✅ 已完成 | 双节点架构 + Sub Agent 约束自加载 + CLI 编排入口 + ao 完全退役 + A/B 自动切换 + **预装 FDE 部署工程师 + 合规审计员两个内置 Agent** | [📖](./docs/changelog/v1.0.7.md) |
-| **v1.0.8** | 📋 规划中 | **⭐ FDE Agent 自进化（部署 + 持续优化双模式）**→ 一管底线（Audit）一管上限（FDE）+ 文件系统审计 + 内嵌 isomorphic-git + Agent 定义去耦合 + TencentDB Memory 集成 | [📖](./docs/changelog/v1.0.8.md) |
+| **v1.0.8** | ✅ 已完成 | **⭐ FDE Agent 自进化（部署 + 持续优化双模式）**→ 一管底线（Audit）一管上限（FDE）+ 文件系统审计（isomorphic-git + fs-watch）+ 快照回溯 + Agent 定义去耦合 + TencentDB Memory 集成 + Ontology 人类可读视图 | [📖](./docs/changelog/v1.0.8.md) |
 | **v1.0.9** | 📋 规划中 | 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool + knowledge 智能选择 | [📖](./docs/changelog/v1.0.9.md) |
-| **v1.1.0** | 📋 规划中 | 轻量多设备：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md 生成 lessons-missteps.md）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检 | — |
+| **v1.1.0** | 📋 规划中 | 轻量多设备：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md 生成 lessons-missteps.md）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检 + **架构整理（审计引擎 / 编排 / 独立模块边界划分，解决 @sofagent/audit 单体膨胀问题）** | — |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同：Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界 | — |
+| **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A17 + 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线 | — |
 
 ### v1.x — 发布后
 
@@ -150,6 +151,50 @@ OpenClaw 总管（TS）
 >
 > **本体 vs 知识**：AI 业务理解偏差领域有一个精辟定义——"**知识记录业务中发生过什么，本体描述这些事实应该如何被理解和关联**"。sofagent 的 knowledge/ 目录（entities + concepts）记录"发生过什么"，Ontology 统一层（entities→relations→actions→constraints 三路合并）描述"如何被理解和关联"。知识和本体不是一回事，但必须一起工作——这正是 v1.0.1-v1.0.5 渐进构建 Ontology 的设计逻辑。
 
+> **意图债清零收口（v1.0.8 Ontology 收口）**：意图债是输入端反复交代背景的成本（SKILL.md + fde.md 在还这笔债）。v1.0.8 在 Ontology 渐进构建语境下显式闭合三者联动——**SKILL.md 固化规则（意图债清零）↔ fde.md 业务四问（FDE 入场梳理客户业务）↔ Ontology 统一层（客户 workflow 关联）**。FDE 用业务四问建立客户本体，SKILL.md 把规则固化进交付物，Ontology 把关联沉淀为企业数字孪生——意图债在交付闭环中彻底清零。
+
+#### Ontology 认知底座与国标对齐（v1.3.0 规划）
+
+> 来源：GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》（2026-01-28 发布，2026-08-01 实施）+ 企业 AI Ontology 基石方法论。
+
+**⬜1 本体即认知底座（非静态知识库）**：当前 sofagent 的认知核心是「LLM + Harness 规则(A1-A17) + 记忆(Ledger-Views-Policy)」，Ontology 统一层是「事实如何被理解」的显式层。v1.3.0 将其从"描述层"升级为"可运行推理底座"——本体参与编排决策（Action Type 定级、Domain/Range 约束直接驱动 entry-gate 与 loop 出口），而非仅作文档摘要。sofagent 已非纯静态 KB，此方向是强化而非 pivot。（原拟 v2.x，调整为 v1.3.0——本体推理化是近期可落地的渐进增强。）
+
+**⬜2 三层落地法 + 国标对齐**：
+
+| 层 | 动作 | 说明 |
+|------|------|------|
+| ① 统一元模型 | 对齐 GB/T 五组件（实体类型/数据属性/对象属性/公理/规则） | 补 ontology/README.md 的数据属性与公理 GAP |
+| ② 企业通用 Ontology 规范 | 命名 / 版本 / 验证约定 | 让 FDE 交付的企业本体可跨客户复用、可审计 |
+| ③ 与 Agent 平台打通 | Ontology 作为编排引擎的世界模型输入 | 不绑定任何平台（Harness 中间件定位） |
+
+**国标对齐操作方式**：不追求把 sofagent 变成"企业本体平台"——定位是**审计标准参考**。具体：① 审计引擎新增"国标条款对位"维度（A 系列规则可追溯到 GB/T 48000.3 相应要求）；② Ontology 统一层输出增加"国标合规摘要"段（哪些组件已建模、哪些 GAP）。标准 2026-08-01 实施后评估落地节奏。
+
+#### 行业信号校准与已验证方向（第二批 6 篇行业笔记 · 2026-07-13）
+
+> 来源：翁荔《AI 安全里的 Harness》(六层模型/价值二分)、执行边界五组件、AI 控制 3 年演进、FDE 中国落地困境、DeepMind 四方对齐、Loop Engineering 全栈。均为**外部验证 sofagent 已选主航道**，非架构转向。
+
+**已验证方向（外部背书矩阵）**：
+- **执行边界五组件** ↔ 审计引擎（刹车=entry-gate 拒绝/放弃条件；黑匣子=审计引擎 git+文件系统双源；护栏=审计闭环+放弃条件；隔离带=双节点架构）。**缺口：限速器（频率/规模/额度）维度无显式设计 → 见下 v1.x 设计注记。**
+- **Harness 价值二分**（补短板型 vs 现实世界接入型）：sofagent 属"现实世界接入型"——模型越强价值越大，不补模型短板。最强外部背书（翁荔原文同句）。
+- **Loop Engineering 全栈**：发现/派活/验证/持久化/调度 五动作 + 六组件 + 六成本，sofagent 近乎 1:1 覆盖（见上方「已实现能力自证」表）。
+- **四方对齐**（AI/用户/开发者/社会）：审计引擎证据链已支撑四方问责（见 ARCHITECTURE 四方对齐章节）。
+
+**🟡 设计注记（需立项，非本轮实现）**：
+- **限速器（v1.x）**：entry-gate 新增"频率/规模/额度/对象"前置校验——动作级策略（额度/频率/时间窗/风险等级）。执行边界五组件唯一真缺口。挂 v1.x 设计，实现后续做。
+- **跨系统隔离带（v2.x 边界注记）**：双节点架构解决"节点间"隔离；但 CRM→财务→云控制台之间的**权限扩散边界**未解——一个系统权限不应无边界扩散到另一个系统。v2.x「场景驱动权限体系 + 代理网关硬边界」设计时一并考虑。
+
+**⬜ 长期项（叙事/定位，非工程）**：
+- **AI 控制赛道 2026-2029**：外部信号一致指向"AI 控制将在 3 年内成为安全核心"。sofagent 提前卡位"执行控制"方向正确，作为对外叙事时间窗锚点（2026-2029）。
+- **FDE 中国落地困境**：笔记列 5 大障碍（不为探索付费/难盈利/SaaS 渗透仅 15.8%/人才缺失/甲方不信任 95% 失败）。sofagent 用"固定 AI 节点生成企业专有 skill"规避人力 FDE 陷阱——验证 AI-Native FDE 路线正确性。商业化策略参考，非工程任务。（注：项目暂无独立商业笔记文件，此条记入 ROADMAP。）
+- **拟人化风险**：叙事护栏——"AI 数字员工进组织架构"需设边界，避免过度承诺自主。与 HANDBOOK 叙事护栏并一处。
+- **Self-Improvement 诚实化**：LOOP 自迭代架构（4 Agent）**有效奖励信号必须外生**（环境/人工校验），不暗示自主自我提升。诚实标注于 LOOP 架构处。
+
+#### V2.0 规划（远期架构探索）
+
+> 来源：Agent-to-Agent（A2A）协议设计范式权衡——静态「拓扑」（谁连谁、节点与边的连接关系）vs 动态「循环」（plan→build→deploy→evaluate 反馈闭环）。当前 sofagent 由单一编排引擎管理一条闭环，尚未进入「多 Agent 互相组网的拓扑编排」阶段。
+
+- **拓扑 vs 循环 / 信号密度 > 通讯密度（V2.0 探索项）**：多 Agent 协作时，靠预先画好的静态拓扑路由任务，还是靠动态循环让 Agent 自组织？这是 V2.0 的编排范式决策点。与 v2.x「场景驱动权限体系 + 代理网关硬边界」「Dream Sandbox 沙盒审计」同属远期架构探索，V2.0 立项评估。
+
 #### 记忆分层金字塔集成（v1.0.8）
 
 sofagent 知识库 L0-L2 已有（think.md → entities → concepts），缺 L3 用户画像。TencentDB Agent Memory 补齐这块：
@@ -183,6 +228,42 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | Harness 理论基础 | Hugging Face 实验 + ICML 2025 + Harness Engineering 三代演进（Prompt→Context→Harness）+ LangChain/Codex/gstack 工业验证 | 多重验证 | v1.0 基线 |
 | 任务路由 + Skill 组合 | Router+Skill 架构（行业评估为性价比最高方案） | task-aware 路由与 sofagent 方向一致 | v1.x 基线 |
 
+#### Loop Engineering 全栈对照（已实现能力自证）
+
+> 来源：Loop Engineering 方法论（5 动作 / 6 组件 / 6 成本）。sofagent 近乎 1:1 覆盖——对外可讲"sofagent 就是一套产品化的 Loop Engineering 系统"，与 Karpathy AutoResearch、Andrew Ng 三层循环、Addy Osmani agent-skills 相互印证。
+
+| Loop Engineering 维度 | sofagent 对应 | 状态 |
+|------|------|:--:|
+| **5 动作** · 发现 | loop-check（违规检测）| ✅ |
+| 派活 | git worktree + Sub Agent 调度 | ✅ |
+| 验证 | 独立审查 Agent + 双审（Maker-Checker）| ✅ |
+| 持久化 | think.md + 记忆金字塔 L0-L3 | ✅ |
+| 调度 | CLI 编排入口（sofagent-audit compose）| ✅ |
+| **6 组件** · 自动化 | daemon 常驻 + 自动触发 | ✅ |
+| 工作树 | git worktree 隔离 | ✅ |
+| Skills | Skill 系统 + SkillOpt | ✅ |
+| MCP | @sofagent/mcp 独立包 | ✅ |
+| 子 Agent | DeepAgents Sub Agent | ✅ |
+| 外部记忆 | AI 知识库 + TencentDB 只读集成 | ✅ |
+| **6 成本** · 意图债 | SKILL.md 固化规则 | ✅ |
+| 验证债 | 双审 + 独立审查 Agent | ✅ |
+| 理解债 | entry-gate 理解成本检查 | ⚠️ 部分 |
+| 认知投降 | HANDBOOK 场景三（反合理化表）| ✅ |
+| 编排税 | 审查带宽（A/B 对比确定性）| ⚠️ 部分 |
+| Token 失控 | 预算表 + 轮次上限 | ✅ |
+
+> **理论框架对照（通用 Loop Engineering 6 隐性成本 → sofagent 落地命名）**：下方通用框架命名源自外部 Loop Engineering 方法论，与上方 sofagent 特化命名是**同一组隐性成本的两种表述**——对外沟通可按受众选用。sofagent 将通用框架的细分项合并为 6 个自沉淀命名，并额外显式化了「意图债 / Token 失控」两个通用框架未单列的成本。
+
+| 通用框架隐性成本 | sofagent 对应（上表） | 映射说明 |
+|------|------|------|
+| 上下文污染 | 理解债 | 上下文质量劣化，需反复交代背景（与意图债同源） |
+| 状态漂移 | 验证债 | Agent 状态偏离预期，靠双审 / 独立审查拉回 |
+| 验证缺失 | 验证债 | 同上——验证机制兜底；sofagent 将「状态漂移 + 验证缺失」合并为「验证债」 |
+| 返工 | 编排税 | 协调与重做开销 |
+| 协调 | 编排税 | 多 Agent 编排税负（A/B 对比确定性） |
+| 认知负债 | 认知投降 | AI 放弃独立判断、顺人类偏好的代价（HANDBOOK 场景三） |
+| —（未单列） | 意图债 | sofagent 特化：SKILL.md 固化规则清零输入端背景重述成本 |
+| —（未单列） | Token 失控 | sofagent 特化：预算表 + 轮次上限兜底 |
 
 | 想法 | 说明 |
 |------|------|

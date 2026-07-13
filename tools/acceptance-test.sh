@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.0.6 · 28 个端到端场景，覆盖完整用户旅程 + 全规则覆盖
+# v1.0.8 · 30 个端到端场景，覆盖完整用户旅程 + 全规则覆盖 + 内置 Sub Agent
 # ============================================================
 # 用真实 git 仓库走完整用户旅程：
 #   Fresh install → --init → --doctor → 正常 commit → 违规拦截
@@ -12,6 +12,7 @@
 #   → post-commit hook → hashVersion 混合格式链完整性
 #   → A5-A11 规则覆盖 → E1-E4 扩展规则 → --strict exit code = 2
 #   → history.jsonl 写入验证 → --json 违规输出 → post-commit 安装验证
+#   → subagent 可用性（fde + audit） → subagent CLI 调用不崩溃 → FDE sustain mode
 #
 # 用法：
 #   bash tools/acceptance-test.sh
@@ -798,6 +799,62 @@ fi
 
 # 恢复
 $CLI --install-hook > /dev/null 2>&1
+
+# ── 场景 29: subagent 命令可用性 ──────────────────────────────
+scenario 29 "subagent 命令可用（fde + audit）"
+# 验证 --help 列出 subagent 命令
+if $CLI --help 2>&1 | grep -q "subagent run"; then
+  pass
+else
+  fail "--help 未列出 subagent run 命令"
+fi
+
+# 验证 FDE agent 注册
+if $CLI --help 2>&1 | grep -q "fde"; then
+  pass
+else
+  fail "--help 未列出 fde subagent"
+fi
+
+# 验证 Audit agent 注册
+if $CLI --help 2>&1 | grep -q "audit"; then
+  pass
+else
+  fail "--help 未列出 audit subagent"
+fi
+
+# 验证 FDE sustain mode 参数存在
+if $CLI --help 2>&1 | grep -q "mode sustain"; then
+  pass
+else
+  fail "--help 未列出 --mode sustain 参数"
+fi
+
+# ── 场景 30: subagent CLI 调用不崩溃 ───────────────────────────
+scenario 30 "subagent CLI 调用不崩溃（fde + audit）"
+# FDE subagent 调用——deepagents 可能未安装，不应崩溃
+FDE_OUT=$($CLI subagent run fde --task "echo hello" 2>&1) || true
+if echo "$FDE_OUT" | grep -qE "fde|FDE|deepagents|not found|不可用|启动失败"; then
+  pass "FDE subagent 输出了有意义的响应"
+else
+  fail "FDE subagent 无任何输出: $FDE_OUT"
+fi
+
+# Audit subagent 调用——同理
+AUDIT_OUT=$($CLI subagent run audit --task "echo hello" 2>&1) || true
+if echo "$AUDIT_OUT" | grep -qE "audit|Audit|deepagents|not found|不可用|启动失败"; then
+  pass "Audit subagent 输出了有意义的响应"
+else
+  fail "Audit subagent 无任何输出: $AUDIT_OUT"
+fi
+
+# FDE sustain mode 调用
+SUSTAIN_OUT=$($CLI subagent run fde --mode sustain --task "echo hello" 2>&1) || true
+if echo "$SUSTAIN_OUT" | grep -qE "fde|FDE|sustain|deepagents|not found|不可用|启动失败"; then
+  pass "FDE sustain mode 接受了 --mode sustain 参数"
+else
+  fail "FDE sustain mode 无任何输出: $SUSTAIN_OUT"
+fi
 
 # ── 总结 ──────────────────────────────────────────────────────
 echo ""

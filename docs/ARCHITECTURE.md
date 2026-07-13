@@ -6,7 +6,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 > sofagent 的设计决策记录——从 Harness 中间件的行为约束到五层架构的取舍。
 >
-> > v1.0.7 · 2026-07-11（UTC）· 孔放勋
+> > v1.0.8 · 2026-07-13（UTC）· 孔放勋
 
 <img src="../sofagent.png" alt="sofagent" width="300" />
 
@@ -49,6 +49,8 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 > **Harness 的实验验证**：2026 年 Hugging Face 实验——同一 DeepSeek-v4-pro 不改权重，仅优化外层 Harness，法律 Agent 基准从 3.5%→80.1%，追平 Claude Sonnet 4.6，成本仅 1/7。Benchmark 测的从来不是裸模型，是「模型 + Harness」的组合能力。**对齐税**：模型同质化时代，Harness 层就是新的护城河。
 
 > **三代演进——行业共识**：AI 应用技术分三代：提示工程（管「说什么」）→ 上下文工程（管「知道什么」）→ 驾驭工程（Harness，管「跑在哪」）。2026 年工业落地证据：LangChain benchmark 30→top5、Codex 7 人 100 万行——不改模型权重、靠 Harness 层实现。
+
+> **Harness 价值二分法（翁荔）**：Harness 工作分「补模型短板型」（价值随模型升级而消失）vs「现实世界接入型」（模型越强、价值越大）。判断标准："若模型能力 ×10，你的产品更没用还是更能干活？"sofagent 属后者——审计 / 约束 / 记忆是模型永远外包给外部的部分，模型越强，执行控制的杠杆价值越高。这正印证本节立场："通用 Agent 平台解决会不会做，sofagent 解决能不能每次都按规则稳定做对。"
 
 > **Loop Engineering 的方法论验证**：Karpathy AutoResearch（9 万 Star）的约束文档 + 锁定评估脚本 + 自动循环——与 sofagent 的 fde.md + sofagent-audit + loop-check 对应。⚠️ AutoResearch 跑 700 次无人值守迭代，sofagent 当前是单任务内检查点循环。
 
@@ -93,7 +95,7 @@ sofagent 分两层——地基轻、引擎重：
 | **Harness 层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ 已可用 |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ v0.81 |
 | **审计层** | git 仓库 + 文件系统 | sofagent-audit——提交时审计 git diff（v1.0.7）+ 文件变更时审计 diff（v1.0.8） | ✅ v0.92 / v1.0.8 扩展 |
-| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v1.0.7），推送待端到端验证 | ✅ v0.99.5 |
+| **MCP 推送层** | 设备 MCP server | MCP Server 已拆分为独立包 @sofagent/mcp（v0.99.1，当前 v1.0.8），推送待端到端验证 | ✅ v0.99.5 |
 | **协同层** | 多设备 + 云端 | 组织级 Agent Harness——Agent 以独立身份进入协作现场，共享上下文 + 组织记忆 + 主动参与 | v2.x 规划 |
 
 每层跑通再加下一层——不推翻已验证的东西。
@@ -114,6 +116,8 @@ sofagent v1.0.7 起正式区分两种部署节点类型。核心变化：Sub Age
 **Sub Agent 约束自加载**（v1.0.7 新增）：launcher.ts 的 `buildConstrainedSystemPrompt()` 在 Sub Agent 启动时读取 `.sofagent/` 下的约束文件（SKILL.md + fde.md + think.md + knowledge/ top-N），拼装为 system prompt。纯文件系统操作，不依赖任何 Agent 平台的 Skill 系统。这让 Sub Agent 换平台时约束不丢——OpenClaw 节点切到 WorkBuddy，约束行为一致。
 
 **CLI 编排入口**（v1.0.7 新增）：`sofagent-audit compose --task <描述>` 让第三方 Agent 通过 Bash tool 调用编排引擎。输出 YAML 编排方案到 stdout，加 `--run` 直接执行。不依赖 OpenClaw 的任何 API。
+
+> **跨系统隔离带（v2.x 边界注记）**：双节点架构解决「节点间」隔离（自动运行节点 vs 个人增强节点）。但客户侧 **CRM→财务→云控制台之间的权限扩散边界**尚未建模——一个系统的权限不应无边界扩散到另一个系统。v2.x「场景驱动权限体系 + 代理网关硬边界」设计时一并考虑（见 ROADMAP 行业信号校准章节）。
 
 ### River — Workflow — Subagent 三层架构
 
@@ -265,6 +269,20 @@ v1.0.8 daemon 让事后审计达到准实时：`fs.watch` → 防抖 2 秒 → �
 
 **设计后果**：`--silent` 模式只跑纯 git-diff 规则（零依赖 Agent 配合）；完整模式交叉对比两种证据；新规则优先加 git-diff 规则。底线：**审计工具在零 Agent 配合下仍然有判定能力。**
 
+> **执行边界五组件 ↔ sofagent 模块映射**（外部验证：执行边界 = 刹车 / 限速器 / 黑匣子 / 护栏 / 隔离带，且"必须独立于业务系统"）：
+>
+> | 组件 | 含义 | sofagent 对应 | 状态 |
+> |------|------|------|:--:|
+> | 刹车 | 拒绝 / 放弃条件 | entry-gate 拒绝 + 放弃条件 5 条 | ✅ |
+> | 黑匣子 | 行为记录不可篡改 | 审计引擎（git diff + 文件系统双源）| ✅ |
+> | 护栏 | 合规闭环 | 审计闭环 + 放弃条件 | ✅ |
+> | 隔离带 | 系统间隔离 | 双节点架构（git worktree / OpenClaw 隔离）| ✅ |
+> | 限速器 | 频率 / 规模 / 额度限制 | entry-gate 前置校验（额度 / 频率 / 风险等级）| 🔮 v1.x 探索 |
+>
+> 五组件中前四项已有能力，唯一缺口是**限速器**——执行"多少 / 多快"的前置限制（详见 🟡 设计项与 ROADMAP v1.x）。
+
+> **四方责任追溯：证据链即问责底座**。§一 已建立 AI / 用户 / 开发者 / 社会 四方对齐框架。审计引擎在此框架上的具体交付是**不可篡改的证据链**——git diff（提交时）+ 文件系统 diff + 快照回溯（v1.0.8），每条变更都有"谁在何时改了什么"的硬记录。这条证据链同时支撑四方问责：开发者→commit 可回溯、用户→操作可追溯、社会→合规约束不可绕过、AI 系统→自身行为留痕。sofagent 不替任何一方做判断，只确保事实可查。
+
 > 🔮 **探索方向（非核心路线）：双闸验证**——执行前预判 + 副作用写回前再扫。需深度集成平台 tool call 拦截，与"平台无关"核心定位有张力。sofagent 立身之本是事后审计 + 回溯恢复，不依赖任何平台。
 
 > 🔮 **v1.x 方向：权限风险分级**。当前 entry-gate.md 是单层权限清单（能做/不能做二分）。Human-in-the-Loop 审批工程的进化方向是按风险分三级：🟢 低风险（文件读写/查询）自动放行 / 🟡 中风险（git 操作/安装包）需确认 / 🔴 高风险（删数据/部署/外部 API）必须人工审批。风险分级不是增加审批摩擦，是让低风险操作更快通过的同时，把人工注意力精准投放到高风险节点。
@@ -293,6 +311,7 @@ v1.0.8 daemon 让事后审计达到准实时：`fs.watch` → 防抖 2 秒 → �
 | fde.md 规则可随时覆盖 | AI 的判断替代人类意志 | 人类写一条规则，AI 必须遵守 |
 | 编排方案可回滚 | AI 的方案先斩后奏 | 人类不确认，编排不执行 |
 | 审计引擎独立于 Agent | AI 自己验收自己 | git diff 硬证据，Agent 无法篡改 |
+| 反谄媚（反社会奖励劫持） | AI 为获认可而顺人类偏好、回避指出风险 | 审计/反思显式检查点——鼓励指出问题而非附和，禁止为取悦而弱化风险表述 |
 
 **90%/10% 价值分层**。模型能完成 90% 任务，但剩余 10% 不可预测失误 = 只能做助手，不能做自主系统。关键规律：**模型越强，90% 常规任务范围越广，但剩余 10% 高风险场景价值反升**。约束底座（审计 + 验证 + 复盘）占据的正是那 10% 高价值环节——模型越强，约束底座越值钱。
 
@@ -570,3 +589,22 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 **两个原则性警告**：①「不要让智能体自我验证」——根治需 v1.x 外部评估器；②「Agent 越强，闸门越重要」。
 
 > **范围声明**：sofagent 是 Harness 中间件——覆盖行为约束 + 变更审计 + 经验沉淀。不覆盖 Agent 平台本身（IM 渠道/沙箱/工具调用——这些是 OpenClaw/DeepAgents 的事），也不覆盖运维层（监控/告警/重启/日志轮转）。Cloudtag 类全栈企业 Agent 产品管的是从 Agent 到权限到审计的全部层，sofagent 管的是其中可独立标准化的约束+审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立审计。
+
+---
+
+## 五、外部参照：Hellyeah 同构验证
+
+> 来源：hellyeahai.com 公开架构描述（AIMA / Forge / Mutation / Deja Vu 四层 + compounding loop）。sofagent 开源 MIT + 本地优先；Hellyeah 闭源 AI-Native 增长引擎。以下仅作**独立收敛 / 范式验证**参照，非模仿闭源竞品——同构只在 Loop 结构层。
+
+Hellyeah 的四层架构与 sofagent 高度同构：
+
+| Hellyeah 层 | 职责 | sofagent 对应 | 同构点 |
+|------|------|------|------|
+| AIMA（Agent 层） | 接受增长目标、编排全链路 | 编排引擎（DeepAgents compose）+ River 统一入口 | 目标驱动编排 |
+| Forge（执行层） | 跨渠道自动执行、持续运行 | Sub Agent 执行 + 审计引擎 | 自主执行闭环 |
+| Mutation（智能层） | 实时信号归因、检测意图变化 | AI 知识库（think.md / entities / scoring）+ loop-evaluate | 信号→评估→迭代 |
+| Deja Vu（实验层） | 持续 A/B 实验、结果回写智能层 | SkillOpt A/B 自动优化 + scoring 闭环 | 实验复利 |
+
+**循环结构同构**：Hellyeah 的 Research → Create → Launch → Learn 复合循环，与 sofagent 的 plan（FDE 梳理）→ build（编排执行）→ deploy（部署节点）→ evaluate（审计 / loop-evaluate）对应。两者独立出发，在「Agent 工作流必须是可验收闭环」这一点上收敛。
+
+> ⚠️ **框架边界**：同构仅验证 "Loop Engineering 是 2026 年 Agent 系统的主流范式"这一外部信号（与 Karpathy AutoResearch、Andrew Ng 三层循环、Addy Osmani agent-skills 相互印证）。sofagent 的差异化仍在：审计引擎外置（git diff 硬证据）、数据主权本地、开源 MIT——这些 Hellyeah 不具备。

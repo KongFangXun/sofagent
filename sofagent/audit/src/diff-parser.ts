@@ -1,5 +1,6 @@
 // ============================================================
 // diff-parser.ts · git diff 解析器
+// v1.0.8: 添加 isomorphic-git fallback（当系统 git 不可用时）
 // ============================================================
 
 import { execFileSync } from 'child_process';
@@ -296,4 +297,77 @@ export function parseNumstat(numstatOutput: string): NumstatEntry[] {
   }
 
   return entries;
+}
+
+// ============================================================
+// v1.0.8: isomorphic-git fallback
+// 当系统 git 不可用时，使用 isomorphic-git shadow repo 生成 diff
+// ============================================================
+
+/**
+ * 使用 isomorphic-git shadow repo 生成 diff（无需系统 git）
+ *
+ * 适用于 CI 环境中没有安装 git 或 git 版本过旧的场景。
+ * 依赖 isomorphic-git npm 包（纯 JS 实现，无原生依赖）。
+ *
+ * @param dir 项目根目录
+ * @returns DiffFile 数组
+ */
+export async function parseDiffWithIsomorphicGit(dir: string): Promise<DiffFile[]> {
+  try {
+    const { generateDiff } = await import('./filesystem/isomorphic-git');
+    const isoDiffs = generateDiff(dir);
+
+    return isoDiffs.map((d) => ({
+      path: d.path,
+      status: d.status,
+      lines: generateLineDiff(d.oldContent, d.newContent),
+    }));
+  } catch (err) {
+    console.error('[diff-parser] isomorphic-git fallback 失败:', (err as Error).message);
+    return [];
+  }
+}
+
+/**
+ * 生成类 unified diff 行（用于兼容现有规则引擎）
+ */
+function generateLineDiff(oldContent: string | null, newContent: string | null): string[] {
+  const lines: string[] = [];
+
+  if (oldContent === null && newContent !== null) {
+    // 新增文件
+    lines.push(`+++ b/file`);
+    for (const line of newContent.split('\n')) {
+      lines.push(`+${line}`);
+    }
+  } else if (newContent === null && oldContent !== null) {
+    // 删除文件
+    lines.push(`--- a/file`);
+    for (const line of oldContent.split('\n')) {
+      lines.push(`-${line}`);
+    }
+  } else if (oldContent !== null && newContent !== null) {
+    // 修改文件
+    lines.push(`--- a/file`);
+    lines.push(`+++ b/file`);
+    const oldLines = oldContent.split('\n');
+    const newLines = newContent.split('\n');
+    const maxLen = Math.max(oldLines.length, newLines.length);
+
+    for (let i = 0; i < maxLen; i++) {
+      const oldLine = oldLines[i];
+      const newLine = newLines[i];
+      if (oldLine === undefined && newLine !== undefined) {
+        lines.push(`+${newLine}`);
+      } else if (newLine === undefined && oldLine !== undefined) {
+        lines.push(`-${oldLine}`);
+      } else if (oldLine !== newLine) {
+        lines.push(`-${oldLine}`);
+        lines.push(`+${newLine}`);
+      }
+    }
+  }
+
+  return lines;
 }
