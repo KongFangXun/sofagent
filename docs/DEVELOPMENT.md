@@ -19,7 +19,7 @@
 - [五、自进化机制](#五自进化机制)
 - [六、反思工程](#六反思工程)
 - [七、数据文件架构](#七数据文件架构)
-- [八、提交时审计](#八提交时审计)
+- [八、提交时审计 + 文件系统审计](#八提交时审计--文件系统审计)
 
 ---
 
@@ -39,7 +39,7 @@
 
 > 来源：Windows 11 + PowerShell 5.1 实地勘察（2026-06）。核心 9 坑：UTF-8 BOM / 控制台编码 / .gitattributes 换行 / if-表达式 / switch-break / 数组摊平 / WSLENV / BSD sed。详见 [PS5兼容踩坑清单](https://github.com/KongFangXun/sofagent/issues?q=label%3Awindows)。
 
-<img src="sofagent.png" alt="sofagent" width="300" />
+<img src="../sofagent.png" alt="sofagent" width="300" />
 
 ---
 
@@ -91,7 +91,7 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇。
 
 > 完整架构图详见 [README § 怎么工作](../README.md#fde-怎么工作) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
-**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义（nodes/*.md），之后 Agent 读节点 .md 注入给 ao compose 执行，定期用 `sofagent-orchestrate-compare` 做 A/B 重优化。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
+**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义（nodes/*.md），之后 Sub Agent 读节点 .md 并自加载约束执行（v1.0.7+ `buildConstrainedSystemPrompt`），定期用 `sofagent-orchestrate-compare` 做 A/B 重优化。两种调用路径：OpenClaw 节点走内部 API，非 OpenClaw 节点走 `sofagent-audit compose --task` CLI。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
 
 主 Agent 的日常：接活 → 看 `scoring.md` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#为什么是-skill--脚本--runtime)。
 
@@ -126,7 +126,7 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇。
 
 编排流程
 
-任务到达 → 两轮澄清 → 目标定稿 → [ao compose](https://github.com/jnMetaCode/agency-orchestrator) 拆任务 → 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 `orchestrate-compare.ts` 执行前注入。
+任务到达 → 两轮澄清 → 目标定稿 → DeepAgents compose 拆任务（v1.0.6 从 ao 迁移，v1.0.7 ao 完全退役） → 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 Sub Agent 启动时自加载（v1.0.7+ `buildConstrainedSystemPrompt`）或 OpenClaw Hook 注入。
 
 > **收敛是 Loop 的生命线**。Loop 工程核心是收敛——目标必须满足两个条件才能进入循环：① 可验证（测试覆盖率、AC 验收标准等明确量化标准）；② 模型可自主价值判断（字数限制、关键词检查等 LLM 自带规则）。不具备收敛性的目标（如「优化美观度」）会无限烧 Token——两轮澄清机制就是为了拦截不收敛目标。
 
@@ -178,7 +178,7 @@ Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与
 模型选择靠 OpenClaw 的 `sessions_spawn.model` 参数——API 级别的硬约束：
 
 ```
-ao compose 拆完任务
+DeepAgents compose 拆完任务
   → 先查 fde.md：有没有写模型偏好？
   → 有 → 按你写的来（fde.md 优先级最高）
   → 没有 → 查 orchestrator/：有没有最优模型？
@@ -212,13 +212,13 @@ ao compose 拆完任务
 | `orchestrator/{任务}.md` | loop-check closure 模式 | A/B 对比 → 胜出模板写入 |
 | `scoring/{skill}.md` | loop-check closure 模式 | 闭环时评分 → 写入叶子 |
 | `task/logs/` | 主 Agent | 每次执行自动生成，只追加不修改 |
-| `IDENTITY.md` | 来自 agency-agents-zh | ao compose 按角色自动分配 |
+| `IDENTITY.md` | 来自 agency-agents-zh | DeepAgents compose 按角色自动分配 |
 
 ### A/B 测试
 
 > A/B 结果异常时的用户侧处理方法见 [HANDBOOK §排查](./HANDBOOK.md#场景三排查问题)。
 
-`sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排引擎定期重出 candidate 方案后与 current 对比——单次对比后标记胜出方，连续两次胜出目前需手动二次运行确认（v1.0.1 计划实现自动计数器）。旧方案归档到 history/。⚠️ 连续胜出判断为 TODO(v1.0.1)——当前只做单次对比，需手动执行两次后人工决策。
+`sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排引擎定期重出 candidate 方案后与 current 对比——v1.0.7 实现连续胜出自动计数器（连续 2 次胜出 → auto promote + 原子写入），旧方案归档到 history/。
 
 规则：不主动创造对照组、同类型才比、单次胜出标记候选（连续 2 次需手动二次确认）、再跑 2 次稳定才沉淀、模板可被替换。局限：样本量小（最少 7 次）、LLM 有随机性。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#ab-测试为什么不是一次性评估)。
 
@@ -251,7 +251,7 @@ ao compose 拆完任务
 ```
 任务来了 → 主 Agent 先查 orchestrator/
   → 有同类最优配置？直接用
-  → 没记录？ao compose 生成新方案
+  → 没记录？DeepAgents compose 生成新方案
   → 任务结束 → 对比本次和最优
     → 本次更好 → 覆盖
     → 本次更差 → 不动
@@ -345,11 +345,20 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 
 ---
 
-## 八、提交时审计
+## 八、提交时审计 + 文件系统审计
 
 > 审计引擎的 CLI 使用和 exit code 约定。CI 集成例子见 [HANDBOOK §装完第一件事](./HANDBOOK.md#场景一装完第一件事)。
 
-sofagent-audit（v0.99.7）是 TypeScript CLI，扫描 git diff + `.sofagent/task/logs/` 对审计规则（A1-A15）做确定性判定。exit code：0=PASS / 1=WARN / 2=FAIL。不依赖 Agent 运行时配合，但审计 A7/A8 的日志检查依赖 Agent 写入的任务日志。
+sofagent-audit（v1.0.8）是 TypeScript CLI，支持两种审计触发模式：
+
+| 模式 | 版本 | 触发 | 适用 | 需要 git |
+|------|:--:|------|------|:--:|
+| git commit 审计 | v0.92+ | `git commit` → commit-msg hook | 开发者 | ✅ |
+| 文件系统审计 | v1.0.8+ | daemon 监控文件变更 | 开发者 + 非开发者 | ❌（内嵌 isomorphic-git） |
+
+两种模式共用同一套审计规则（A1-A17）和 exit code（0=PASS / 1=WARN / 2=FAIL）。差异在于触发时机和拦截能力：git commit 审计能阻断 commit，文件系统审计只能事后告警 + 快照回溯。
+
+v1.0.8 内嵌 `isomorphic-git`（纯 JS Git，~2MB）作为 diff 引擎——非 git 目录也能做行级 diff。daemon 用 `chokidar` 监控文件变更，5 秒防抖后触发审计。每次审计后自动做 git 快照，用户可 `sofagent-audit --revert <sha>` 回滚。
 
 > 📐 **最小 Harness 参照**：MicroHoneys 仅 400 行代码实现了完整的 Agent Harness（配置/提示词/工具调度/安全守卫/生命周期/长期记忆），证明 Harness 层不需要庞大的基础设施——核心是边界清晰的分层设计，不是代码量。sofagent 的审计引擎同样追求极简：核心规则 < 2000 行，零外部 API 依赖。
 

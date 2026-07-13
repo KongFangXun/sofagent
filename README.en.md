@@ -109,7 +109,7 @@ graph LR
     D --> E[knowledge/<br/>Knowledge base · auto-built]
 ```
 
-Four-layer loading chain auto-injects on session start. Any platform — OpenClaw via Hook enforcement, other platforms via Agent Read.
+Four-layer loading chain auto-injects on session start. Any platform — OpenClaw via Hook enforcement, other platforms via Agent Read. v1.0.7+ Sub Agents self-load constraints at startup (`buildConstrainedSystemPrompt`).
 
 #### 🔍 Audit engine
 
@@ -127,7 +127,7 @@ graph LR
     G --> A
 ```
 
-Doesn't trust the agent — trusts git diff. Any platform, just install a pre-commit hook.
+Doesn't trust the agent — trusts git diff hard evidence. Developers install a pre-commit hook for code audits. **v1.0.8+ adds filesystem audit** — embedded isomorphic-git + daemon file monitoring means non-developers get audited too: any AI file change triggers automatic audit, no git or commit required.
 
 #### ⚙️ Orchestration engine (experimental)
 
@@ -143,7 +143,7 @@ graph LR
     E -->|Old better| G[Keep]
 ```
 
-Powered by DeepAgents (optional dependency), runs on any platform — no longer tied to OpenClaw. A/B comparison is currently manual; auto-promotion is on the v1.x roadmap.
+Powered by DeepAgents (optional dependency, becomes required in v1.0.7), runs on any platform — no longer tied to OpenClaw. v1.0.7 adds CLI entry (`sofagent-audit compose --task`), A/B auto-switch, and dual-node architecture (auto-running vs. personal enhancement).
 
 
 > 🆕 **v1.0.5**: Ontology Layer · Work模板市场 · Agent Dashboard · Atomic writes · Fail-closed · A9 scored safety
@@ -168,8 +168,9 @@ Powered by DeepAgents (optional dependency), runs on any platform — no longer 
 
 > 🔬 Hugging Face legal-agent benchmark: same model, harness-only optimization — score jumped from 3.5% to 80.1% (76-point gain, matching Claude Sonnet at 1/7 the cost). [Details](./docs/ARCHITECTURE.md)
 
-- Core logic: **470+ tests all green** (diff-parser / config-loader / rules A1-A15 / reporter)
-- 15 audit rules (11 default + 4 extended + 2 experimental)
+- Core logic: **480+ tests all green** (diff-parser / config-loader / rules A1-A17 / reporter)
+- **17 audit rules** (expanding to 19 in v1.0.9): 11 default (A1-A11) + 6 extended (E1-E4 + A14 + A15), v1.0.9 adds A16 unauthorized file change + A17 abnormal bulk change
+- 📁 v1.0.8+ filesystem audit (no git required) — embedded isomorphic-git + daemon file monitoring
 - MIT license — use code, docs, and templates freely
 
 > ⚠️ Orchestration engine requires DeepAgents. [Known limitations](./docs/LIMITATIONS.md)
@@ -183,6 +184,15 @@ Powered by DeepAgents (optional dependency), runs on any platform — no longer 
 | Just block secret leaks | `npm install -g @sofagent/audit` is enough |
 | Full agent behavior management | Audit engine + harness base (install.sh) |
 | Automatic task orchestration | + orchestration engine (DeepAgents Sub Agent) |
+
+### Dual-node deployment (v1.0.7+)
+
+sofagent supports two node types:
+
+| Node type | For whom | OpenClaw | Orchestration | Constraints |
+|---------|--------|:--:|------|------|
+| **Auto-running node** | Enterprise unattended devices | ✅ Required | OpenClaw API | Hook injection |
+| **Personal enhancement node** | Individual developers (WorkBuddy/Codex/Claude Code) | ❌ Not needed | `sofagent-audit compose --task` CLI | Sub Agent self-load |
 
 ---
 

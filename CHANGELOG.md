@@ -15,8 +15,9 @@ Ontology 三路合并引擎 + Work模板市场 独立项目 + A9 分级安全 + 
 > 📖 [开发日志](./docs/changelog/v1.0.5.md)
 
 ### 规划中
-- **v1.0.7** — A/B 自动切换 + ao 完全退役 → [开发日志](./docs/changelog/v1.0.7.md)
-- **v1.0.8** — TencentDB Agent Memory 集成：L3 用户画像自动注入 → [开发日志](./docs/changelog/v1.0.8.md)
+- **v1.0.7** — 双节点架构 + Sub Agent 约束自加载 + CLI 编排入口 + ao 完全退役 → [开发日志](./docs/changelog/v1.0.7.md)
+- **v1.0.8** — 文件系统审计 + 内嵌 isomorphic-git + Agent 定义去 OpenClaw 耦合 + TencentDB Memory 集成 → [开发日志](./docs/changelog/v1.0.8.md)
+- **v1.0.9** — 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool + knowledge 智能选择 → [开发日志](./docs/changelog/v1.0.9.md)
 
 ### [v1.0.4] — 自动优化 + 约束验证 🔧
 > 2026-07-11（UTC）

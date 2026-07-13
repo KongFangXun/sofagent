@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.0.6 · 2026-07-13（UTC）· 编排迁移 + A/B 真实运行器 + 陌生视角审查修复
+> v1.0.6 · 2026-07-13（UTC）· 编排迁移 + A/B 真实运行器 + 双节点架构规划
 >
 
 > 🎯 **v1.0 定位**：**Agent Harness 中间件**——不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他什么 Agent 平台，sofagent 是独立的审计标准层：约束行为、审计变更、沉淀经验。v1.0 聚焦单设备，v1.1.x 加轻量多设备（经验共享），v1.2.x 做完整多设备（独立身份+跨设备审计聚合）。
@@ -81,14 +81,19 @@
 | **v1.0.4** | ✅ 已完成 | 自动优化 + 约束验证版——eval harness + Sub Agent A/B 自动优化 + HITL 渐进自主度 + A15 约束验证 | [📖](./docs/changelog/v1.0.4.md) |
 | **v1.0.5** | ✅ 已完成 | Ontology 统一层 + Work模板市场 + A9 分级安全 + A15 绕过修复 + fail-closed 默认安全 + 安全加固 | [📖](./docs/changelog/v1.0.5.md) |
 | **v1.0.6** | ✅ 已完成 | 编排迁移 + A/B 真实运行器 + 陌生视角审查修复：DeepAgents compose + Sub Agent 状态 + A/B 模型 API 直跑 + history.jsonl 环境指纹 + post-commit hook + 文档一致性修复 | [📖](./docs/changelog/v1.0.6.md) |
-| **v1.0.7** | 📋 规划中 | A/B 自动切换 + A/B 运行器升级 DeepAgents（方案 C）+ ao 完全退役 | [📖](./docs/changelog/v1.0.7.md) |
-| **v1.0.8** | 📋 规划中 | TencentDB Agent Memory 集成：L3 用户画像自动注入（daemon Ingest + 加载链 + --with-memory） | [📖](./docs/changelog/v1.0.8.md) |
+| **v1.0.7** | 📋 规划中 | 双节点架构 + Sub Agent 约束自加载 + CLI 编排入口 + ao 完全退役 + A/B 自动切换 | [📖](./docs/changelog/v1.0.7.md) |
+| **v1.0.8** | 📋 规划中 | 文件系统审计 + 内嵌 isomorphic-git + Agent 定义去 OpenClaw 耦合 + TencentDB Memory 集成 | [📖](./docs/changelog/v1.0.8.md) |
+| **v1.0.9** | 📋 规划中 | 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool + knowledge 智能选择 | [📖](./docs/changelog/v1.0.9.md) |
 | **v1.1.0** | 📋 规划中 | 轻量多设备：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md 生成 lessons-missteps.md）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检 | — |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同：Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界 | — |
 
 ### v1.x — 发布后
 
-> **v1.0.1-v1.0.8 开发日志**：[v1.0.1](./docs/changelog/v1.0.1.md) → [v1.0.2](./docs/changelog/v1.0.2.md) → [v1.0.3](./docs/changelog/v1.0.3.md) → [v1.0.4](./docs/changelog/v1.0.4.md) → [v1.0.5](./docs/changelog/v1.0.5.md) → [v1.0.6](./docs/changelog/v1.0.6.md) → [v1.0.7](./docs/changelog/v1.0.7.md) → [v1.0.8](./docs/changelog/v1.0.8.md)
+> **v1.0.1-v1.0.9 开发日志**：[v1.0.1](./docs/changelog/v1.0.1.md) → [v1.0.2](./docs/changelog/v1.0.2.md) → [v1.0.3](./docs/changelog/v1.0.3.md) → [v1.0.4](./docs/changelog/v1.0.4.md) → [v1.0.5](./docs/changelog/v1.0.5.md) → [v1.0.6](./docs/changelog/v1.0.6.md) → [v1.0.7](./docs/changelog/v1.0.7.md) → [v1.0.8](./docs/changelog/v1.0.8.md) → [v1.0.9](./docs/changelog/v1.0.9.md)
+>
+> **v1.0.7 双节点架构**：v1.0.7 起 sofagent 分两种部署节点——**自动运行节点**（OpenClaw 全栈）和**个人增强节点**（第三方 Agent + sofagent，不需 OpenClaw）。Sub Agent 启动时自加载约束（`buildConstrainedSystemPrompt`），不依赖宿主平台 Skill 系统。编排引擎通过 CLI 入口（`sofagent-audit compose --task`）对任意 Agent 平台开放。
+>
+> **v1.0.8 文件系统审计**：审计引擎从"只有 git commit 才触发"扩展为"任何文件变更都触发"。内嵌 `isomorphic-git`（纯 JS Git，~2MB），daemon 监控文件变更直接跑审计——不需要装 git、不需要 commit。这让审计引擎成为**平台无关的核心能力**，非开发者的 AI 文件变更也能审计。v1.0.9 加二进制文件审计（A16-A17）+ 快照时间线。
 
 #### 编排引擎升级：ao → DeepAgents + Agency Agents
 
@@ -124,7 +129,7 @@ OpenClaw 总管（TS）
 | 🟢 增强 | v1.0.4 | eval harness + HITL middleware + A/B 对比（单次手动） + A15 约束验证。独立于 DeepAgents | — |
 | ⚠️ 过渡 | v1.0.5 | Ontology 统一层 + launcher wrapper 保留，编排仍走 ao CLI。文档诚实降级——不再声称 DeepAgents 全覆盖 | — |
 | 🔧 迁移 | v1.0.6 | compose 编排逻辑从 ao CLI 迁到 DeepAgents，ao 降为 fallback。Sub Agent 运行状态基础跟踪 | deepagentsjs |
-| ✅ 退役 | v1.0.7 | ao 依赖正式移除。deepagents 提升为正式依赖。A/B 自动切换（连续计数器 + auto promote） | deepagentsjs → required dep |
+| ✅ 退役 | v1.0.7 | ao 依赖正式移除。deepagents 提升为正式依赖。A/B 自动切换（连续计数器 + auto promote）。**双节点架构**——Sub Agent 约束自加载（`buildConstrainedSystemPrompt`），CLI 编排入口（`sofagent-audit compose --task`），第三方 Agent 平台无需 OpenClaw 即可用编排引擎 | deepagentsjs → required dep |
 | 🔮 直接使用 | v1.1.0 | 直接 import `@langchain/langgraph`——用 StateGraph 自定义 Sub Agent 状态流转 + Checkpoint 做长任务中断恢复 + 条件路由动态决策（PASS/WARN/FAIL → 不同后续动作） | @langchain/langgraph → 直接依赖 |
 
 #### Ontology 渐进构建（企业数字孪生操作层）
