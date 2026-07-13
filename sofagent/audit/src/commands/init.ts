@@ -362,10 +362,12 @@ exit 0
         mkdirSync(launchAgentsDir, { recursive: true });
       }
 
-      // 获取 sofagent-audit 的绝对路径
+      // 获取 sofagent-audit 的绝对路径和 node 的 bin 目录
       let cliPath = 'sofagent-audit';
+      let nodeBinDir = '';
       try {
         cliPath = execSync('which sofagent-audit', { encoding: 'utf-8' }).trim();
+        nodeBinDir = execSync('dirname $(which node)', { encoding: 'utf-8' }).trim();
       } catch {
         // fallback 到 PATH 中的 sofagent-audit
       }
@@ -403,6 +405,11 @@ exit 0
     <string>${join(homedir(), '.sofagent', 'daemon.log')}</string>
     <key>StandardErrorPath</key>
     <string>${join(homedir(), '.sofagent', 'daemon.log')}</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>${nodeBinDir}:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
     <key>ThrottleInterval</key>
     <integer>5</integer>
 </dict>
