@@ -26,7 +26,11 @@
 
 ---
 
-**sofagent-audit 在 git commit 时自动扫描 17 条规则，拦截密钥泄漏、越界修改、注入攻击。不依赖 AI 配合，看的是 git diff 硬证据。纯 TypeScript 正则引擎，0 token 消耗。装一行命令，改完文件提交就知道效果。**
+**git commit 时自动扫描 17 条规则，拦截密钥泄漏、越界修改、注入攻击。**
+
+- 信任的是 **git diff**，不是 AI 自觉
+- 纯 TypeScript 正则引擎，**0 token 消耗**
+- 一行命令装完，改完文件提交就知道效果
 
 ---
 
