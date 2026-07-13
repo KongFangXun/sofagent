@@ -3,10 +3,10 @@
 > 🌐 [English abridged version →](README.en.md) | 🇨🇳 中文完整版
 
 <p align="center">
-  <img src="docs/assets/sofagent.png" alt="sofagent" width="160" />
+  <a href="https://sofagent.ai">
+    <img src="docs/assets/sofagent.png" alt="sofagent" width="160" />
+  </a>
 </p>
-
-> 📄 `docs/index.html` 是项目官网落地页（GitHub Pages 入口，[在线预览](https://kongfangxun.github.io/sofagent/)），非 npm 包运行所需，已归位到 `docs/` 下避免污染根目录。
 
 <p align="center">
   <strong>sofa + agent = sofagent / 沙发特工</strong><br/>
