@@ -87,13 +87,23 @@
 
 > 三层闸门 + 一条回环：入境 → 每任务 → Loop → 离境。四个全走才能保证 `.sofagent/` 数据层被激活。
 
-sofagent 有**两个引擎**，数据流分离但在 think.md 交汇。
-
-> 完整架构图详见 [README § 怎么工作](../README.md#fde-怎么工作) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
-
-**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义（nodes/*.md），之后 Sub Agent 读节点 .md 并自加载约束执行（v1.0.7+ `buildConstrainedSystemPrompt`），定期用 `sofagent-orchestrate-compare` 做 A/B 重优化。两种调用路径：OpenClaw 节点走内部 API，非 OpenClaw 节点走 `sofagent-audit compose --task` CLI。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
+sofagent 五个引擎各有分工。**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义，之后 Sub Agent 自加载约束执行。两种调用路径：OpenClaw 节点走内部 API，非 OpenClaw 节点走 CLI。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
 
 主 Agent 的日常：接活 → 看 `eval.md` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE 编排引擎](./ARCHITECTURE.md#⚙️-编排引擎)。
+
+### Skill 设计哲学
+
+Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 Skill 回答三个问题：
+
+| 问题 | 写法 | 反例 |
+|------|------|------|
+| 什么时候启动 | 纯触发条件（场景/关键词/前置状态） | 把执行步骤写进 description——AI 会偷懒不读正文 |
+| 什么时候绝对不能调用 | 硬排除条件——依赖未就绪/数据过期/权限不足 | "建议不调用"——弱语气 AI 会忽视 |
+| 怎样算完成 | 显式 exit 条件——产出物/验证标准/交付动作 | "任务完成"——太模糊，AI 不知道什么时候停 |
+
+**事实约束三原则**：① 标注哪些内部数据存在过期风险、② 哪些业务动作必须实时核验、③ 查不到确切凭证必须拒答而非脑补。审计引擎的 A9 中文注入检测部分覆盖此方向。
+
+**工具集检查清单**：每个 Skill 的工具集应零重叠、无歧义——两个工具的功能描述不能模糊交叉。当工具数上百时，瓶颈不在模型推理而在工具描述歧义。v1.1.0 daemon 工具注册将做静态重叠检测。
 
 ### 脚本与文件结构速查
 
