@@ -3,12 +3,39 @@
 // v1.0.9 新增：审计子代理的工具实现
 // 检测到 A1/A2 违规时自动启动，或 daemon 定时调度
 // v1.1.0：迁移至 @sofagent/orchestrator
+// v1.1.0 fix：移除 @sofagent/audit 编译期依赖（orchestrator → harness 单向铁律）
+//           audit 的 loadHistory 通过运行时动态 require + try-catch 调用，
+//           类型用本地最小声明，不在 package.json 声明依赖。
 // ============================================================
 
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
-import { loadHistory, type AuditHistoryEntry } from '@sofagent/audit';
 import { calculateBaseline, isAnomaly, isColdStart } from '@sofagent/core';
+
+/**
+ * 审计历史条目（本地最小类型声明，与 @sofagent/audit 的 AuditHistoryEntry 结构兼容）
+ * orchestrator 不依赖 audit 包，这里只声明用到的字段。
+ */
+interface AuditHistoryEntry {
+  timestamp: string;
+  diffRange: string;
+  task?: string;
+  exitCode: number;
+  ruleResults: Array<{ name: string; number: number; status: string; details: string[] }>;
+  diffFileCount: number;
+  commitMsg?: string;
+}
+
+/**
+ * 运行时动态加载 @sofagent/audit 的 loadHistory（可选依赖）
+ * audit 包未安装时返回空数组（降级处理）
+ */
+function loadHistoryRuntime(limit: number = 50, dataDir?: string): AuditHistoryEntry[] {
+  try {
+    const audit = require('@sofagent/audit');
+    return audit.loadHistory(limit, dataDir) as AuditHistoryEntry[];
+  } catch {
+    return [];
+  }
+}
 
 /**
  * 工具：read_audit_history
@@ -18,7 +45,7 @@ import { calculateBaseline, isAnomaly, isColdStart } from '@sofagent/core';
  * @returns 审计历史条目数组
  */
 export function readAuditHistory(limit: number = 50, dataDir?: string): AuditHistoryEntry[] {
-  return loadHistory(limit, dataDir);
+  return loadHistoryRuntime(limit, dataDir);
 }
 
 /**
@@ -69,7 +96,7 @@ export function analyzeCostBaseline(
  * @returns 格式化报告文本
  */
 export function generateAuditReport(dataDir: string): string {
-  const history = loadHistory(50, dataDir);
+  const history = loadHistoryRuntime(50, dataDir);
 
   if (history.length === 0) {
     return '无审计历史数据。运行 sofagent-audit --diff <range> 后自动记录。';

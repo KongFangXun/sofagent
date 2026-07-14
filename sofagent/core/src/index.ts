@@ -114,3 +114,6 @@ export type {
   VerifyResult,
   Args,
 } from './verify/types';
+
+// ── 文件系统 / 记忆层 ──
+export { getPersonaContent } from './filesystem/memory-sync';
