@@ -3069,6 +3069,67 @@ done
 ```
 
 ---
+
+#### 278. workspace 构建顺序一致性 🆕
+```bash
+# v1.1.0 CI 教训：npm --workspaces 按 package.json 数组顺序构建，不按依赖拓扑排序
+# think 必须排在 mcp 前面（mcp 依赖 @sofagent/think），否则 CI 报 TS2307
+# 回归检查：验证 workspace 数组中每个消费方排在所有被依赖方之后
+# 关键对：audit 在 think 之前？think 在 mcp 之前？orchestrator 在 ab-test 之前？
+grep -A12 '"workspaces"' package.json | head -14
+# 人工检查：think 的索引 < mcp 的索引？audit 的索引 < think 的索引？
+```
+
+#### 279. 12 包 npm publish 依赖层验证 🆕
+```bash
+# v1.1.0 教训：12 包按依赖层分 5 批发布，publish 顺序错误会导致 npm install 失败
+# 发布后验证所有包的 npm registry 版本一致
+for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test work模板市场 skillopt; do
+  ver=$(npm view "@sofagent/$pkg" version 2>/dev/null || echo "MISSING")
+  echo "@sofagent/$pkg: $ver"
+done
+# 期望：全部 = 新版本号，无 "MISSING"
+```
+
+#### 280. 新包 vitest 退出码正确性 🆕
+```bash
+# v1.1.0 CI 教训：work模板市场 零测试文件时 vitest exit 1，导致 pre-push 假失败
+# 解决方案：补测试文件，或 vitest 配置 allowEmpty: true
+# 回归检查：所有 12 包运行 npm test 后 exit 0
+for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test work模板市场 think skillopt; do
+  (cd sofagent/$pkg && npm test >/dev/null 2>&1)
+  [ $? -eq 0 ] && echo "✅ $pkg" || echo "🔴 $pkg test exit != 0"
+done
+# 期望：全部 ✅
+```
+
+#### 281. acceptance-test 全场景不死锁 🆕
+```bash
+# v1.1.0 教训：acceptance-test 场景 10 起在 git tmp 仓库中卡死（.env 文件残留污染）
+# 回归检查：每个场景后清理 git 状态 + .env 文件，确保下一场景不污染
+grep -c 'git reset --hard\|rm -f .env\|git clean' tools/acceptance-test.sh
+# 期望：≥ 5（每个场景间有清理逻辑）
+```
+
+#### 282. check-version.sh 注释过滤精度 🆕
+```bash
+# v1.1.0 教训：check-version.sh 的 grep -v 过滤可能误杀真实版本声明
+# 或漏放历史注释行（/** */、// 等）
+# 回归检查：确认以下两类都不会出现
+# 1. 真实非注释版本声明被误过滤（如 const VERSION = '1.1.0' 不在 // 或 /* 行内）
+# 2. 纯注释行仍被标记为不一致（如 "// v1.0.9 新增"）
+./tools/check-version.sh 2>&1 | grep "✗" | grep -v "发现\|npm 二进制" | wc -l
+# 期望：0（仅全局 npm 二进制版本警告可忽略）
+```
+
+#### 283. shellcheck 零 info 级 🆕
+```bash
+# v1.1.0 教训：shellcheck info 级（SC1090/SC2034）虽不阻断但应逐步清零
+shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh 2>&1 | grep -c "SC1090\|SC1091\|SC2016"
+# 期望：0
+```
+
+---
 - **不要建议新功能**——v1.0 是正式版，不是功能版
 - **发现的问题请给出文件路径 + 行号 + 具体建议**，不要泛泛而谈
 
