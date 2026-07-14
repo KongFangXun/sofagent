@@ -42,7 +42,7 @@ openclaw session spawn --agent engineering-minimal-change-engineer --task "修�
   │   3. npm run build ✅
   │   4. npm test ✅
   │   5. git commit -m "fix: 修复 README 中的 typo"
-  │       └→ sofagent-audit pre-commit hook 触发
+  │       └→ sofagent-audit commit-msg hook 触发
   │          → PASS ✅（无敏感文件/密钥）
   │   6. 写 think.md 反思记录
   │

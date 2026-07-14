@@ -1,6 +1,6 @@
 // ============================================================
 // fs-watch.ts · 文件系统监控守护进程
-// v1.0.9 新增：基于 Node.js 内置 fs.watch 的文件变更监控
+// v1.1.0 新增：基于 Node.js 内置 fs.watch 的文件变更监控
 // v1.1.0：迁移至 @sofagent/daemon
 //
 // 设计原则：
@@ -14,7 +14,7 @@
 //     console.log('检测到文件变更:', changedFiles);
 //   });
 //   // 停止监控: watcher.stop();
-// v1.0.9: 递归监控——遍历子目录建多 watcher
+// v1.1.0: 递归监控——遍历子目录建多 watcher
 
 import { watch, FSWatcher } from 'fs';
 import { readdirSync, statSync } from 'fs';
@@ -156,7 +156,7 @@ export function startWatching(projectDir: string, onChange: ChangeCallback): Fil
     }
   }
 
-  // v1.0.9: 递归遍历所有子目录，为每个目录建独立 watcher
+  // v1.1.0: 递归遍历所有子目录，为每个目录建独立 watcher
   const watchedDirs = new Set<string>();
 
   function collectSubdirs(root: string): string[] {

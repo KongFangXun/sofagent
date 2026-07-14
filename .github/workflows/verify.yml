@@ -17,7 +17,7 @@ jobs:
 
       - name: Setup minimal sofagent environment
         run: |
-          bash sofagent/scripts/install.sh --platform openclaw --no-ao --quick 2>/dev/null || {
+          bash sofagent/scripts/install.sh --platform openclaw --quick 2>/dev/null || {
             # install.sh fallback 到手动部署
             echo "[CI] install.sh failed, fallback to manual setup"
             mkdir -p ~/.openclaw/skills/sofagent

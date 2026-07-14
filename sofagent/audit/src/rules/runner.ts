@@ -1,6 +1,6 @@
 // ============================================================
 // runner.ts · 审计规则运行器（fast-fail 优化）
-// v1.0.9 新增：按严重度分四优先级，critical 层 FAIL 即停
+// v1.1.0 新增：按严重度分四优先级，critical 层 FAIL 即停
 // ============================================================
 
 import type { DiffFile } from '@sofagent/core';
@@ -72,7 +72,7 @@ export function runRules(
   config?: AuditConfig,
   history?: AuditHistoryEntry[]
 ): AuditResult {
-  // v1.0.9 修复(F2)：ctx.history 此前从未赋值，导致 A17 跨审计聚合（基于窗口内历史累计文件数）
+  // v1.1.0 修复(F2)：ctx.history 此前从未赋值，导致 A17 跨审计聚合（基于窗口内历史累计文件数）
   // 成为死代码。调用方显式传入 history 则优先；否则自动从审计历史加载。
   const auditHistory = history ?? loadHistory();
   const ctx: AuditContext = { diffFiles, logEntries, task, strict, silent, commitMsg, config, history: auditHistory };
@@ -131,10 +131,20 @@ export function runRules(
 
   // 汇总判定
   // strict 模式下 WARN 升级为 exit 2
+  // v1.1.0 P0 fix: '能力拐杖' rules (E1-E4, A4, A6-A8, A14, A15) should never
+  // produce FAIL exit code. Even if a crutch rule returns FAIL, we demote it
+  // to WARN level — extended/crutch rules are advisory, not blocking.
   let exitCode = 0;
   for (const rule of results) {
-    if (rule.status === 'FAIL') exitCode = 2;
-    else if (rule.status === 'WARN') {
+    if (rule.status === 'FAIL') {
+      if (rule.ruleClass === '能力拐杖') {
+        // Crutch rules: FAIL → WARN (advisory only, never block commit)
+        if (strict) exitCode = 2;
+        else if (exitCode === 0) exitCode = 1;
+      } else {
+        exitCode = 2;
+      }
+    } else if (rule.status === 'WARN') {
       if (strict) exitCode = 2;
       else if (exitCode === 0) exitCode = 1;
     }

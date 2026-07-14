@@ -2,7 +2,7 @@
 // A9 不纳注入（安全层 · 业务底线）
 // 检测 git diff 新增行中是否含 prompt injection 模式
 // evidenceMode: git-diff（纯正则检测，--silent 可跑）
-// v1.0.9: 追加中文注入检测正则（T01）
+// v1.1.0: 追加中文注入检测正则（T01）
 // ============================================================
 
 import { getAddedLines } from '@sofagent/core';
@@ -14,7 +14,7 @@ const HIGH_CONFIDENCE_PATTERNS: { pattern: RegExp; name: string }[] = [
   { pattern: /do not follow (the |your )?(rules|guidelines|instructions)/i, name: 'do not follow rules/guidelines/instructions' },
   { pattern: /(ignore|forget) (everything|all) (above|before)/i, name: 'ignore/forget everything/all above/before' },
   { pattern: /<\|im_start\|>/i, name: 'im_start 标记注入' },
-  // v1.0.9: 中文注入检测
+  // v1.1.0: 中文注入检测
   { pattern: /忽略(以上|之前|先前|所有|上面).{0,6}(指令|约束|限制|规则|设定|系统提示)/i, name: '中文：忽略+指令/约束/限制' },
   { pattern: /无视(以上|之前|先前|所有|上面).{0,6}(规则|约束|限制|要求|指令)/i, name: '中文：无视+规则/约束/限制' },
   { pattern: /忘记(之前|以上|先前|所有|上面).{0,6}(指令|约束|要求|设定|规则)/i, name: '中文：忘记+指令/约束/要求' },
@@ -29,7 +29,7 @@ const MEDIUM_CONFIDENCE_PATTERNS: { pattern: RegExp; name: string }[] = [
   { pattern: /ignore.*(instruction|prompt|rule)/i, name: 'ignore + instruction/prompt/rule（模糊）' },
   { pattern: /(bypass|override|disable).*(audit|check|rule)/i, name: 'bypass/override/disable audit/check/rule' },
   { pattern: /system\s*(prompt|message|instruction)\s*[:=]/i, name: 'system prompt/message/instruction 赋值' },
-  // v1.0.9: 中文注入检测（中等置信度）
+  // v1.1.0: 中文注入检测（中等置信度）
   { pattern: /越狱|jailbreak|开发者模式|developer mode/i, name: '越狱/开发者模式关键词' },
   { pattern: /(绕过|跳过|关闭|禁用).{0,4}(审计|检查|规则|限制|安全)/i, name: '中文：绕过审计/检查' },
 ];

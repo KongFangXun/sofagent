@@ -1,9 +1,9 @@
 // ============================================================
 // config-loader.ts · .sofagent/config.yml 配置加载器
-// v0.95 新增：三级 fallback（v1.0.9，js-yaml 替代手写 YAML 解析器）
+// v0.95 新增：三级 fallback（v1.1.0，js-yaml 替代手写 YAML 解析器）
 // v0.97 扩展：环境变量配置（从 lib/config.sh 合并）
-// v1.0.9 重构：用 js-yaml 替代手写 YAML 解析器
-// v1.0.9 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
+// v1.1.0 重构：用 js-yaml 替代手写 YAML 解析器
+// v1.1.0 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
 // ============================================================
 //
 // 三级 fallback：
@@ -38,13 +38,13 @@ export interface AuditConfig {
   rules?: Record<string, boolean>;
   /** loop-check 绝对轮次上限（v1.0.1），默认 20 */
   loopCheckMaxRounds?: number;
-  /** v1.0.9: A16 非授权文件变更配置 */
+  /** v1.1.0: A16 非授权文件变更配置 */
   A16?: {
     enabled: boolean;
     protected_dirs?: string[];
     sensitive_types?: string[];
   };
-  /** v1.0.9: A17 异常批量变更配置 */
+  /** v1.1.0: A17 异常批量变更配置 */
   A17?: {
     enabled: boolean;
     bulk_threshold?: number;

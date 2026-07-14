@@ -21,13 +21,12 @@ parse_args() {
       --platform=*)    PLATFORM="${1#*=}"; shift ;;
       --project-dir)   PROJECT_DIR="$2"; shift 2 ;;
       --project-dir=*) PROJECT_DIR="${1#*=}"; shift ;;
-      --no-ao)          NO_AO=1; shift ;;
       --no-config-inject) NO_CONFIG_INJECT=1; shift ;;
       --quick)          QUICK_MODE=1; shift ;;
       --ci)             QUICK_MODE=1; shift ;;                    # --ci = --quick 别名
       --no-daemon)      NO_DAEMON=1; shift ;;
       --skip-daemon)    NO_DAEMON=1; shift ;;                     # 别名
-      --lite)           LITE_MODE=1; QUICK_MODE=1; NO_AO=1; NO_DAEMON=1; NO_CONFIG_INJECT=1; shift ;;
+      --lite)           LITE_MODE=1; QUICK_MODE=1; NO_DAEMON=1; NO_CONFIG_INJECT=1; shift ;;
       --remote)         REMOTE_MODE=1; shift ;;
       --with-memory)    WITH_MEMORY=1; shift ;;
       -h|--help)
@@ -41,10 +40,9 @@ parse_args() {
   codex     部署宪法 → ~/.codex/ + 输出种子指令（需手动粘贴到 AGENTS.md）
   hermes    部署宪法 → ~/.hermes/ + 输出种子指令（需手动粘贴到 SOUL.md）
   --project-dir DIR   指定项目工作目录（.sofagent/ 数据目录会创建在这里，默认当前目录）
-  --no-ao             跳过 agency-orchestrator 全局安装（企业环境用）
   --no-config-inject  跳过自动注入 OpenClaw config.json（企业环境用）
   --quick             快速模式——跳过交互确认和验证等待，直接完整安装
-  --lite              精简模式——仅部署核心约束文件，跳过 AO/daemon/配置注入（= --quick + --no-ao + --no-daemon + --no-config-inject）
+  --lite              精简模式——仅部署核心约束文件，跳过 daemon/配置注入（= --quick + --no-daemon + --no-config-inject）
   --remote            远程安装模式——自动 git clone 仓库后安装（配合 curl pipe bash 使用）
 HELP
         exit 0 ;;

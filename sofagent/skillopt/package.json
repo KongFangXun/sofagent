@@ -4,8 +4,12 @@
   "description": "sofagent Skill 优化 — Skill 质量分析 / 优化建议 / 自动重构",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "sofagent-skillopt": "dist/cli.js"
+  },
   "scripts": {
-    "build": "tsc",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
     "test": "vitest run",
     "check": "tsc --noEmit"
   },

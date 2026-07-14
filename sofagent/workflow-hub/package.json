@@ -4,8 +4,12 @@
   "description": "sofagent 工作流中心 — 工作流注册 / 模板管理 / 执行历史",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "sofagent-workflow-hub": "dist/cli.js"
+  },
   "scripts": {
-    "build": "tsc",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
     "test": "vitest run",
     "check": "tsc --noEmit"
   },

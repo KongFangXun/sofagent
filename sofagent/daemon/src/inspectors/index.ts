@@ -1,0 +1,40 @@
+// ============================================================
+// inspectors/index.ts · 巡检器统一入口
+// v1.1.0 新增
+// ============================================================
+
+import type { InspectorConfig, InspectorResult } from './types';
+import { analyzeAuditHistory } from './audit-history-analyzer';
+import { checkDoctorHealth } from './doctor-checker';
+import { checkKnowledgeFreshness } from './knowledge-freshness';
+import { checkSkillStaleness } from './skill-staleness';
+
+export { analyzeAuditHistory, checkDoctorHealth, checkKnowledgeFreshness, checkSkillStaleness };
+export type { InspectorConfig, InspectorResult } from './types';
+
+/** 默认巡检器配置 */
+export const DEFAULT_INSPECTOR_CONFIG: Record<string, InspectorConfig> = {
+  'audit-history': { enabled: true, schedule: '@daily' },
+  'doctor-health': { enabled: true, schedule: '@daily' },
+  'knowledge-freshness': { enabled: true, schedule: '@weekly' },
+  'skill-staleness': { enabled: false, schedule: '@weekly' },
+};
+
+/**
+ * 运行所有启用的巡检器
+ *
+ * @param projectDir 项目根目录
+ * @param _config 可选巡检器配置覆盖（暂未实现按配置过滤）
+ * @returns 巡检结果数组
+ */
+export function runInspectors(
+  projectDir: string,
+  _config?: Partial<Record<string, InspectorConfig>>,
+): InspectorResult[] {
+  return [
+    analyzeAuditHistory(projectDir),
+    checkDoctorHealth(projectDir),
+    checkKnowledgeFreshness(projectDir),
+    checkSkillStaleness(projectDir),
+  ];
+}

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent install.sh · 多平台一键安装脚本（v1.0.9）
+# sofagent install.sh · 多平台一键安装脚本（v1.1.0）
 # ============================================================
 # 将 sofagent 约束层部署到目标平台，让 Agent 获得治理能力。
 # v0.98: 从 941 行拆分为 4 个 lib 模块 + 纯组装入口
@@ -11,7 +11,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.0.9"
+VERSION="1.1.0"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
@@ -154,10 +154,18 @@ log_install_audit
 #   cd ~/SkillOpt && pip install -e .
 echo "ℹ️ SkillOpt 自进化引擎（可选）：clone github.com/microsoft/SkillOpt + pip install -e ."
 
+# ── v1.1.0: 可选包提示 ──
+echo ""
+echo "可选包（按需安装）："
+echo "  npm install -g @sofagent/orchestrator   # 编排引擎"
+echo "  npm install -g @sofagent/daemon          # 守护进程"
+echo "  npm install -g @sofagent/core            # 基础设施（doctor/verify）"
+echo "  npm install -g @sofagent/ontology        # 本体模型"
+
 # deepagents Sub Agent 引擎（正式依赖——npm install @sofagent/audit 自动安装）
 echo "  💡 Sub Agent 引擎: deepagents（@sofagent/audit 正式依赖，npm install 自动安装）"
 
-# ── v1.0.9: TencentDB Memory 集成（--with-memory flag）──
+# ── v1.1.0: TencentDB Memory 集成（--with-memory flag）──
 if [[ "${WITH_MEMORY:-0}" == "1" ]]; then
   MEMORY_DIR="$HOME/.openclaw/memory-tdai"
   CONFIG_PATH="${TARGET}/.sofagent/config.yml"

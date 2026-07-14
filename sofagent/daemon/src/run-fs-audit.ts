@@ -1,6 +1,6 @@
 // ============================================================
 // run-fs-audit.ts · 文件系统审计执行器（daemon 复用）
-// v1.0.9 修复(F1)：把 "文件变更 → 跑审计规则 → 写历史" 抽成独立函数，
+// v1.1.0 修复(F1)：把 "文件变更 → 跑审计规则 → 写历史" 抽成独立函数，
 // 供 index.ts 的 --daemon start 回调调用，使 A16/A17 在文件系统模式下真正生效。
 // v1.1.0：迁移至 @sofagent/daemon
 //
@@ -18,7 +18,7 @@
 import type { DiffFile } from '@sofagent/core';
 import type { AuditHistoryEntry } from '@sofagent/audit';
 import { runRules, type AuditResult } from '@sofagent/audit';
-import { loadHistory, appendHistory } from '@sofagent/audit';
+import { appendHistory } from '@sofagent/audit';
 import { loadConfig, DEFAULT_CONFIG, type AuditConfig } from '@sofagent/core';
 
 /**
@@ -58,9 +58,9 @@ export function runFilesystemAudit(changedFiles: string[], projectDir: string): 
   };
 
   // 3. 真正跑审计（关键修复：原 daemon 回调漏了这步）。
-  //    显式传入 loadHistory()，使 A17 能跨审计聚合历史变更。
+  //    runRules 内部自动加载审计历史，使 A17 能跨审计聚合历史变更。
   const results = runRules(
-    diffFiles, [], undefined, false, false, undefined, config, loadHistory()
+    diffFiles, [], undefined, false, false, undefined, config
   );
 
   // 4. 写入审计历史（供下次 A17 窗口聚合 + 根因分析）

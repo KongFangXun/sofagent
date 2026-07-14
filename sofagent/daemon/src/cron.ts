@@ -1,6 +1,6 @@
 // ============================================================
 // daemon/cron.ts — 定时任务调度
-// v1.0.9: 支持 @weekly / @daily / @hourly 触发 Sub Agent 巡检
+// v1.1.0: 支持 @weekly / @daily / @hourly 触发 Sub Agent 巡检
 // v1.1.0：迁移至 @sofagent/daemon
 //
 // 从 .sofagent/watch.yml 读取 cron 配置段，按周期调度 Sub Agent。
@@ -24,7 +24,7 @@ export interface CronJob {
 }
 
 /** 从 watch.yml 读取 cron 配置 */
-function loadCronConfig(projectDir: string): CronJob[] {
+export function loadCronConfig(projectDir: string): CronJob[] {
   const watchYml = join(projectDir, '.sofagent', 'watch.yml');
   if (!existsSync(watchYml)) return [];
   try {

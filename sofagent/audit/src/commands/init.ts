@@ -1,10 +1,10 @@
 // ============================================================
 // init.ts · sofagent-audit --init 一键初始化
-// v1.0 新增：一条命令完成 3 步
+// v1.1 新增：一条命令完成 3 步
 //   1. 生成 .sofagent/config.yml 配置模板
 //   2. 安装 git commit-msg hook
 //   3. 冒烟测试——验证审计引擎可用
-// v1.0.9: 新增仓库状态分类器（gstack 首次运行引导）
+// v1.1.0: 新增仓库状态分类器（gstack 首次运行引导）
 // ============================================================
 
 import { existsSync, writeFileSync, mkdirSync, chmodSync, readFileSync, appendFileSync } from 'fs';

@@ -18,3 +18,21 @@ export { runFilesystemAudit } from './run-fs-audit';
 // Snapshot
 export { createPostAuditSnapshot, listAllSnapshots, restoreSnapshot } from './snapshot';
 export type { SnapshotInfo } from './snapshot';
+
+// Lessons Extract
+export { extractLessons } from './lessons-extract';
+
+// Weekly Report
+export { generateWeeklyReport } from './weekly-report';
+export type { WeeklyReportResult } from './weekly-report';
+
+// Inspectors
+export {
+  analyzeAuditHistory,
+  checkDoctorHealth,
+  checkKnowledgeFreshness,
+  checkSkillStaleness,
+  runInspectors,
+  DEFAULT_INSPECTOR_CONFIG,
+} from './inspectors';
+export type { InspectorConfig, InspectorResult } from './inspectors';

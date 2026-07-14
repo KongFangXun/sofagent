@@ -34,7 +34,7 @@
 ```
 FDE agent 部署完成   ──→ 自动调用 @sofagent-audit  → 验证部署合规
 LOOP engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更合规
-每次 git commit      ──→ pre-commit hook          → A1-A11、A14-A17 规则检查（0 token，纯正则引擎）
+每次 git commit      ──→ commit-msg hook          → A1-A11、A14-A17 规则检查（0 token，纯正则引擎）
 未来任何新 Agent      ──→ SKILL.md 内置审计引用    → 合规检查
 ```
 

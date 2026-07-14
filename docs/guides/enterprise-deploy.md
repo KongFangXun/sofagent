@@ -1,4 +1,4 @@
-# sofagent v1.0.4 · 企业部署指南
+# sofagent · 企业部署指南
 
 # 企业级部署指南
 
@@ -10,9 +10,7 @@
 
 ```bash
 bash sofagent/scripts/install.sh --platform openclaw \
-  --no-ao \
   --no-config-inject
-# --no-ao              跳过 agency-orchestrator 全局安装
 # --no-config-inject   跳过自动改 OpenClaw config.json
 ```
 
@@ -23,7 +21,7 @@ Agent 检测到后跳过 ClawHub 搜索，Skills 手动放入 `~/.openclaw/skill
 
 ### 3. 编排降级
 
-没装 ao 时，orchestrate-compare.ts（原 task-orchestrate，v0.99.1 已合并） 会提示降级方案：
+编排引擎基于 DeepAgents（v1.0.7 起 ao 已完全退役，无 ao fallback）。DeepAgents 不可用时手动降级：
 - 手动拆任务
 - 用 task-record.sh 逐条记录
 - 手动闭环

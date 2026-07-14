@@ -1,6 +1,6 @@
 // ============================================================
 // audit-sub-agent.ts · Audit Sub Agent 工具定义
-// v1.0.9 新增：审计子代理的工具实现
+// v1.1.0 新增：审计子代理的工具实现
 // 检测到 A1/A2 违规时自动启动，或 daemon 定时调度
 // v1.1.0：迁移至 @sofagent/orchestrator
 // v1.1.0 fix：移除 @sofagent/audit 编译期依赖（orchestrator → harness 单向铁律）

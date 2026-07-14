@@ -1,6 +1,6 @@
 // ============================================================
 // diff-ref.test.ts · resolveDiffEndpoint 单元测试
-// v1.0.9 新增（T02 回归测试：--diff range 取终点 commit）
+// v1.1.0 新增（T02 回归测试：--diff range 取终点 commit）
 // ============================================================
 
 import { describe, it, expect } from 'vitest';

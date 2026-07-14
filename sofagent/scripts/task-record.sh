@@ -18,13 +18,13 @@
 #   task-record.sh --task "写单元测试" --model deepseek-v4 --tokens 4500
 #   task-record.sh --budget --task "数据分析报表" --steps 48 --limit 80
 #   task-record.sh --closure-check --task "数据分析报表"
-#   ao compose "..." | task-record.sh --from-stdin
+#   sofagent-orchestrator compose "..." | task-record.sh --from-stdin
 #   task-record.sh --help
 # ============================================================
 
 set -euo pipefail
 
-VERSION="1.0.9"
+VERSION="1.1.0"
 
 # ── 加载合规配置 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

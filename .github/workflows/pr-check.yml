@@ -1,6 +1,6 @@
 name: pr-check
 
-# PR 提交时跑版本号一致性 + 文档检查 + 双包构建测试。
+# PR 提交时跑版本号一致性 + 文档检查 + workspace 全量构建测试。
 # 与本地 pre-push-check.sh 保持等价，确保推前和推后检查一致。
 
 on:
@@ -30,13 +30,7 @@ jobs:
         run: npm ci
       - name: Install rollup native module (Linux)
         run: npm install --no-save @rollup/rollup-linux-x64-gnu
-      - name: Build audit
-        run: cd sofagent/audit && npm run build
-      - name: Test audit
-        run: cd sofagent/audit && npm test
-      - name: Type-check mcp
-        run: cd sofagent/mcp && npm run check
-      - name: Build mcp
-        run: cd sofagent/mcp && npm run build
-      - name: Test mcp
-        run: cd sofagent/mcp && npm test
+      - name: Build (workspace 全量)
+        run: npm run build --workspaces --if-present
+      - name: Test (workspace 全量)
+        run: npm test --workspaces --if-present

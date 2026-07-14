@@ -84,9 +84,9 @@ echo -e "${BOLD}${CYAN}═══════════════════
 echo ""
 
 # ── 1. 从 package.json 读 SSOT ────────────────────────────────
-PACKAGE_JSON="${PROJECT_ROOT}/sofagent/audit/package.json"
+PACKAGE_JSON="${PROJECT_ROOT}/package.json"
 if [[ ! -f "${PACKAGE_JSON}" ]]; then
-  echo -e "${RED}✗ 找不到 SSOT: ${PACKAGE_JSON}${NC}"
+  echo -e "${RED}✗ 找不到 SSOT (根 package.json): ${PACKAGE_JSON}${NC}"
   exit 1
 fi
 
@@ -138,7 +138,15 @@ extract_version() {
 }
 
 # ── 2. 检查 .ts 文件 const VERSION = 'X.Y'（动态扫描，不硬编码文件列表）
-echo -e "${BOLD}── [1/12] TypeScript 常量 ──${NC}"
+echo -e "${BOLD}── [1/13] TypeScript 常量 ──${NC}"
+# 动态扫描 12 个子包目录（v1.1.0 多包结构）
+SCAN_DIRS=()
+for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test workflow-hub think skillopt; do
+  PKG_SRC="${PROJECT_ROOT}/sofagent/${pkg}/src"
+  if [[ -d "${PKG_SRC}" ]]; then
+    SCAN_DIRS+=("${PKG_SRC}")
+  fi
+done
 while IFS= read -r ts; do
   [[ -f "${ts}" ]] || continue
   # 跳过 _archive
@@ -156,17 +164,17 @@ while IFS= read -r ts; do
   fi
 done < <(grep -rl "const [A-Z_]*VERSION = '" \
   --include='*.ts' \
-  "${PROJECT_ROOT}/sofagent/audit/src/" \
-  "${PROJECT_ROOT}/sofagent/mcp/src/" \
+  "${SCAN_DIRS[@]}" \
   2>/dev/null || true)
 echo ""
 
-# ── 3. 检查 index.ts vOLD 引用 ────────────────────────────────
-echo -e "${BOLD}── [2/12] index.ts 版本引用 ──${NC}"
-INDEX_TS="${PROJECT_ROOT}/sofagent/audit/src/index.ts"
-if [[ ! -f "${INDEX_TS}" ]]; then
-  echo -e "  ${YELLOW}⚠${NC} 文件不存在: ${INDEX_TS}"
-else
+# ── 3. 检查 index.ts vOLD 引用（12 子包遍历）────────────────
+echo -e "${BOLD}── [2/13] index.ts 版本引用 ──${NC}"
+for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test workflow-hub think skillopt; do
+  INDEX_TS="${PROJECT_ROOT}/sofagent/${pkg}/src/index.ts"
+  if [[ ! -f "${INDEX_TS}" ]]; then
+    continue
+  fi
   index_ok=true
   while IFS= read -r line; do
     found_ver=$(extract_version "${line}")
@@ -174,15 +182,16 @@ else
       report_error "${INDEX_TS}" "v${found_ver}" "v${SSOT_VERSION}"
       index_ok=false
     fi
-  done < <(grep -nE 'v[0-9]+\.[0-9]+' "${INDEX_TS}")
+  # v1.1.0: 过滤注释行（//、/*、* 开头的 JSDoc），避免历史版本号误报
+  done < <(grep -nE 'v[0-9]+\.[0-9]+' "${INDEX_TS}" | grep -vE '^[0-9]+:[[:space:]]*(//|/\*\*?|\*)')
   if ${index_ok}; then
     report_ok "${INDEX_TS}" "v${SSOT_2SEG}"
   fi
-fi
+done
 echo ""
 
 # ── 4. 检查 .sh 文件 VERSION="X.Y" ────────────────────────────
-echo -e "${BOLD}── [3/12] Shell 脚本 ──${NC}"
+echo -e "${BOLD}── [3/13] Shell 脚本 ──${NC}"
 SH_DIR="${PROJECT_ROOT}/sofagent/scripts"
 if [[ ! -d "${SH_DIR}" ]]; then
   echo -e "  ${YELLOW}⚠${NC} 目录不存在: ${SH_DIR}"
@@ -237,7 +246,7 @@ done
 echo ""
 
 # ── 5. 检查 .ps1 文件 $VERSION / $VERSION_STR = "X.Y" ──────────
-echo -e "${BOLD}── [4/12] PowerShell 脚本 ──${NC}"
+echo -e "${BOLD}── [4/13] PowerShell 脚本 ──${NC}"
 PS1_DIR="${PROJECT_ROOT}/sofagent/scripts/windows"
 if [[ ! -d "${PS1_DIR}" ]]; then
   echo -e "  ${YELLOW}⚠${NC} 目录不存在: ${PS1_DIR}"
@@ -268,7 +277,7 @@ echo ""
 # ── 6. 检查 MD 文件头 > vX.Y · date（版本头格式）──────────────
 # 只匹配 "> vX.Y · " 格式（带 · 分隔符），这是版本头标记。
 # 正文中引用旧版本的 "> v0.84 只记录..." 不带 · 分隔符，自然被过滤。
-echo -e "${BOLD}── [5/12] Markdown 版本头 (> vX.Y · 日期/描述) ──${NC}"
+echo -e "${BOLD}── [5/13] Markdown 版本头 (> vX.Y · 日期/描述) ──${NC}"
 md_checked=0
 md_mismatch=0
 while IFS= read -r md; do
@@ -296,7 +305,7 @@ echo -e "  ${GREEN}✓${NC} ${md_checked} 个 MD 版本头一致（共检查 $((
 echo ""
 
 # ── 7. 检查 README badge version-vX.Y ─────────────────────────
-echo -e "${BOLD}── [6/12] README badge ──${NC}"
+echo -e "${BOLD}── [6/13] README badge ──${NC}"
 for readme in \
   "${PROJECT_ROOT}/README.md" \
   "${PROJECT_ROOT}/README.en.md"; do
@@ -328,7 +337,7 @@ done
 echo ""
 
 # ── 8. 检查 SKILL.md frontmatter version: X.Y ─────────────────
-echo -e "${BOLD}── [7/12] SKILL.md frontmatter ──${NC}"
+echo -e "${BOLD}── [7/13] SKILL.md frontmatter ──${NC}"
 while IFS= read -r skill; do
   match=$(grep -m5 -nE '^version: [0-9]+\.[0-9]+' "${skill}" | head -1)
   if [[ -z "${match}" ]]; then
@@ -363,7 +372,7 @@ done < <(find "${PROJECT_ROOT}" \
 echo ""
 
 # ── 9. 检查 package.json SSOT 格式（必须 3 段）─────────────────
-echo -e "${BOLD}── [8/12] package.json SSOT 格式 ──${NC}"
+echo -e "${BOLD}── [8/13] package.json SSOT 格式 ──${NC}"
 seg_count=$(echo "${SSOT_VERSION}" | tr -cd '.' | wc -c | tr -d ' ')
 if [[ "${seg_count}" -ne 2 ]]; then
   echo -e "  ${RED}✗${NC} package.json version 应为 3 段格式（如 0.94.0），当前: ${SSOT_VERSION}"
@@ -371,6 +380,25 @@ if [[ "${seg_count}" -ne 2 ]]; then
 else
   echo -e "  ${GREEN}✓${NC} package.json version = ${SSOT_VERSION} (3 段格式正确)"
 fi
+echo ""
+
+# ── 9b. 检查 12 个子包 package.json version 与 SSOT 一致 ─
+echo -e "${BOLD}── [9/13] 子包版本号一致性 ──${NC}"
+for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test workflow-hub think skillopt; do
+  PKG_JSON="${PROJECT_ROOT}/sofagent/${pkg}/package.json"
+  if [[ ! -f "${PKG_JSON}" ]]; then
+    continue
+  fi
+  pkg_ver=$(grep -o '"version": "[^"]*"' "${PKG_JSON}" | head -1 | sed 's/"version": "//;s/"//')
+  if [[ -z "${pkg_ver}" ]]; then
+    continue
+  fi
+  if [[ "${pkg_ver}" != "${SSOT_VERSION}" ]]; then
+    report_error "sofagent/${pkg}/package.json" "version: ${pkg_ver}" "version: ${SSOT_VERSION}"
+  else
+    report_ok "sofagent/${pkg}/package.json" "${pkg_ver}"
+  fi
+done
 echo ""
 
 # ── 10. 检查 sofagent/mcp 依赖 @sofagent/audit 版本（支持 ^ 范围） ─
@@ -399,7 +427,7 @@ fi
 echo ""
 
 # ── 10b. 检查 sofagent/mcp 自身 version 字段与 SSOT 一致 ─
-echo -e "${BOLD}── [9/12] mcp 包版本号 ──${NC}"
+echo -e "${BOLD}── [10/13] mcp 包版本号 ──${NC}"
 if [[ -f "${MCP_PKG}" ]]; then
   mcp_ver=$(grep '"version":' "${MCP_PKG}" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
   if [[ -z "${mcp_ver}" ]]; then
@@ -413,7 +441,7 @@ fi
 echo ""
 
 # ── 10c. 检查 ROADMAP「现在在哪」节标题版本号 ─
-echo -e "${BOLD}── [10/12] ROADMAP 节标题 ──${NC}"
+echo -e "${BOLD}── [11/13] ROADMAP 节标题 ──${NC}"
 ROADMAP="${PROJECT_ROOT}/ROADMAP.md"
 if [[ -f "${ROADMAP}" ]]; then
   roadmap_ver=$(grep '^## 现在在哪：v' "${ROADMAP}" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
@@ -450,7 +478,7 @@ fi
 echo ""
 
 # ── 10d. 检查 .ts 文件头注释中的 vX.Y.Z 残留 ─
-echo -e "${BOLD}── [11/12] TS 文件头注释版本号 ──${NC}"
+echo -e "${BOLD}── [12/13] TS 文件头注释版本号 ──${NC}"
 ts_header_errors=0
 while IFS= read -r ts; do
   [[ -f "${ts}" ]] || continue
@@ -478,7 +506,7 @@ fi
 echo ""
 
 # ── 11. 检查正文中"当前 vX.Y"是否与项目版本一致 ─
-echo -e "${BOLD}── [12/13] 正文版本号引用 ──${NC}"
+echo -e "${BOLD}── [13/14] 正文版本号引用 ──${NC}"
 inline_checked=0
 inline_errors=0
 while IFS=: read -r file line_num rest; do
@@ -502,7 +530,7 @@ fi
 echo ""
 
 # ── 12. 检查全局 npm 二进制版本与 SSOT 是否一致 ─────────
-echo -e "${BOLD}── [13/13] 全局 npm 二进制版本 ──${NC}"
+echo -e "${BOLD}── [14/14] 全局 npm 二进制版本 ──${NC}"
 if command -v sofagent-audit >/dev/null 2>&1; then
   bin_ver=$(sofagent-audit --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
   if [[ -z "${bin_ver}" ]]; then

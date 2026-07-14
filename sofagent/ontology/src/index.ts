@@ -11,4 +11,5 @@ export type {
 } from './types';
 
 export { mergeOntology, checkOntologyStatus } from './merge-engine';
+export { mergeSharedOntology } from './shared-merge';
 export { generateOntologyView } from './ontology-view';

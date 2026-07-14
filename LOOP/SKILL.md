@@ -84,6 +84,6 @@ bash LOOP/loop-install.sh --platform workbuddy
 
 ## Gotcha
 
-- **不要跳过 sofagent-audit**——pre-commit hook 是硬证据审计，`--no-verify` 绕过会被检测到
+- **不要跳过 sofagent-audit**——commit-msg hook 是硬证据审计，`--no-verify` 绕过会被检测到
 - **不要把"顺便"写进代码**——minimal-change-engineer 必须遵守最小变更原则，范围外的改动记录到 think.md
 - **审查报告要逐项处理**——🔴 阻断项不修复就继续下一轮 = 浪费

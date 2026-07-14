@@ -26,7 +26,7 @@
 
 ## 前置条件
 
-- OpenClaw 已安装（`ao` 命令可用）
+- OpenClaw 已安装并可用
 - sofagent 仓库已 clone 到本地（假设路径 `$SOFAGENT_DIR`，下文用 `/Users/kongfangxun/Workbuddy/sofagent` 演示）
 - sofagent-audit 已 build（`cd $SOFAGENT_DIR/sofagent/audit && npm run build`）
 - 全新临时 git 仓库

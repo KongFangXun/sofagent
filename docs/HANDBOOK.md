@@ -82,7 +82,7 @@ cd sofagent && bash sofagent/scripts/install.sh
 | 问题 | 原因 | 解决 |
 |------|------|------|
 | `sofagent-audit: Node.js 未找到` | Node.js 未安装或版本过低 | 安装 Node.js ≥18：`node --version` 确认 |
-| commit 时没有审计输出 | pre-commit hook 未安装 | `sofagent-audit --init` 或 `sofagent-audit --install-hook` |
+| commit 时没有审计输出 | commit-msg hook 未安装 | `sofagent-audit --init` 或 `sofagent-audit --install-hook` |
 | 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
 | Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计引擎可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](./LIMITATIONS.md#windows-支持是实验性的) |
 | hook 装了但静默跳过 | Node.js 或 sofagent-audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
@@ -126,7 +126,7 @@ exit code：0 = 通过 / 1 = 有警告 / 2 = 有违规。零 Agent 依赖——�
 
 ### daemon 后台进程
 
-安装时可选择安装 daemon（轻量后台进程，macOS launchd / Linux systemd）。daemon 做两件事：① 每 30 秒检查 `think.md`/`fde.md` hash 变化写入 `daemon-notice.md`；② v1.0.8+ 监控文件变更自动跑审计。commit 审计由 pre-commit hook 负责（见上方）。
+安装时可选择安装 daemon（轻量后台进程，macOS launchd / Linux systemd）。daemon 做两件事：① 每 30 秒检查 `think.md`/`fde.md` hash 变化写入 `daemon-notice.md`；② v1.0.8+ 监控文件变更自动跑审计。commit 审计由 commit-msg hook 负责（见上方）。
 
 审计结果按严重级别处理：
 
