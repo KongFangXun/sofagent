@@ -31,7 +31,7 @@ import { parseDiff, parseStagedDiff, isInGitRepo, type DiffFile } from '@sofagen
 import { loadConfig, ConfigLoadError } from '@sofagent/core';
 import { VERSION } from '@sofagent/core';
 import { resolveDiffEndpoint } from './diff-ref';
-import { checkLogs } from './log-checker';
+import { checkLogs } from '@sofagent/core';
 import { runRules, type AuditResult } from './reporter';
 import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-history';
 import { analyzeRootCause } from './audit-root-cause';
@@ -402,11 +402,13 @@ function printTimeline(limit: number, json: boolean): void {
   }
 }
 
-// 同步加载 snapshot 模块（避免在 parseArgs 阶段异步 import）
-let _snapshotModule: typeof import('./daemon/snapshot') | null = null;
-function awaitLoadSnapshot(): typeof import('./daemon/snapshot') {
-  // 使用 require 同步加载（tsc 编译后可用）
-  return require('./daemon/snapshot');
+// 同步加载 snapshot 模块（v1.1.0 迁移到 @sofagent/daemon）
+function awaitLoadSnapshot(): any {
+  try {
+    return require('@sofagent/daemon');
+  } catch {
+    throw new Error('sofagent daemon 模块未安装。请安装 @sofagent/daemon 包。');
+  }
 }
 
 // v1.0.9: confirm 辅助函数（非 TTY 自动确认，不挂起）
@@ -517,7 +519,7 @@ async function main(): Promise<void> {
   // --revert 模式：恢复到指定快照（v1.0.9 新增，v1.0.9 确认交互改进）
   if (args.revertSha) {
     try {
-      const { restoreSnapshot, listAllSnapshots } = await import('./daemon/snapshot');
+      const { restoreSnapshot, listAllSnapshots } = await import('@sofagent/daemon');
       const projectDir = process.cwd();
 
       // 列出可用快照供用户参考

@@ -278,7 +278,7 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](../FDE/FDE.md)）已在�
 
 v1.0 新增 `tools/acceptance-test.sh`（9 个场景），但覆盖范围有限：
 
-- **CI 已覆盖**：单元测试 519 个（函数级）、verify.sh 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试 531 个（函数级）、verify.sh 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 9 场景（CLI 端到端，步骤 2.3）、OpenClaw 验收 5 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）

@@ -6,7 +6,7 @@
 >
 > v1.0.9 · 2026-07-13（UTC）· 孔放勋
 
-> 💡 **行业背景**：sofagent 是 Agent Harness 中间件——Gateway 管路由调度，sofagent 管审计约束。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立的底线守卫层：约束行为、审计变更、沉淀经验、持续优化。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](../FDE/FDE.md) 和 [README § FDE](../README.md#fde-怎么工作)。
+> 💡 **行业背景**：sofagent 是 Agent Harness 中间件——五个引擎覆盖约束·审计·回溯·编排·进化全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立的底线守卫层。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](../FDE/FDE.md)。
 
 ---
 
@@ -69,7 +69,7 @@
 
 **1 主 Skill（`SKILL.md`）+ 9 子 Skill = 10 个 .md（含 fde.md，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤100 行（v1.0.8 起，由 v0.99.5 的 ≤90 行上调）。
 
-> 💡 **措辞心理学**：铁律不只是「写对规则」，更是「写到 AI 真的听」。Superpowers（GitHub 23.9 万星 Skill 项目）2.8 万次对话实测——强措辞（必须/绝无例外）让 AI 服从率从 33% 提升到 72%。LLM 对强语气的注意力权重高于弱语气。写 Skill 时，关键铁律用最强可用措辞。详见 [ARCHITECTURE 措辞心理学](./ARCHITECTURE.md#措辞心理学长度之外还有强度)。
+> 💡 **措辞心理学**：铁律不只是「写对规则」，更是「写到 AI 真的听」。Superpowers（GitHub 23.9 万星 Skill 项目）2.8 万次对话实测——强措辞（必须/绝无例外）让 AI 服从率从 33% 提升到 72%。LLM 对强语气的注意力权重高于弱语气。写 Skill 时，关键铁律用最强可用措辞。
 
 > 💡 **信息架构设计**：Skill 的 `description` 字段只写触发场景（"何时用这个 Skill"），绝不写执行步骤。实测发现如果步骤写进描述，AI 会照着摘要偷懒跳过正文——改为纯触发条件后，AI 才老老实实读完全文。措辞心理学管"强度"，信息架构管"结构"——两者是对称维度。（来源：Superpowers 2.8 万次对话实测）
 
@@ -93,7 +93,7 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇。
 
 **审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义（nodes/*.md），之后 Sub Agent 读节点 .md 并自加载约束执行（v1.0.7+ `buildConstrainedSystemPrompt`），定期用 `sofagent-orchestrate-compare` 做 A/B 重优化。两种调用路径：OpenClaw 节点走内部 API，非 OpenClaw 节点走 `sofagent-audit compose --task` CLI。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
 
-主 Agent 的日常：接活 → 看 `eval.md` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#为什么是-skill--脚本--runtime)。
+主 Agent 的日常：接活 → 看 `eval.md` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE 编排引擎](./ARCHITECTURE.md#⚙️-编排引擎)。
 
 ### 脚本与文件结构速查
 
@@ -143,9 +143,9 @@ sofagent 有**两个引擎**，数据流分离但在 think.md 交汇。
 | 主 Agent | 拆任务、派活、收尾 |
 | 子 Agent | 干具体活，干完销毁，无状态无包袱 |
 
-子 Agent 脏数据隔离销毁，有价值信息销毁前反思转移。多 Agent 并行用 git worktree 隔离。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#session-boundary)。
+子 Agent 脏数据隔离销毁，有价值信息销毁前反思转移。多 Agent 并行用 git worktree 隔离。
 
-Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#session-boundary)。
+Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与。
 
 ### 任务闭环
 
@@ -161,7 +161,7 @@ Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与
 
 ### 为什么选 DeepSeek
 
-默认用 DeepSeek（Flash/Pro 两档，API 模式数据不经过第三方）。完整选型分析见 [ARCHITECTURE.md](./ARCHITECTURE.md#为什么选-deepseek)。
+默认用 DeepSeek（Flash/Pro 两档，API 模式数据不经过第三方）。完整选型分析见 [ARCHITECTURE 模型选择](./ARCHITECTURE.md#模型选择)。
 
 ### Flash vs Pro 分配
 
@@ -193,7 +193,7 @@ DeepAgents compose 拆完任务
 
 简单方式：在 `fde.md` 里写一行模型偏好。精细方式：改 `orchestrator/` 叶子文件里的「最优模型」字段——按任务类型分模型。两种方式都不需要改代码。
 
-编排开销经济学（一次多花 3%，十次省回来）见 [ARCHITECTURE.md](./ARCHITECTURE.md#编排开销的经济学)。
+编排开销经济学见 [ARCHITECTURE 编排收敛](./ARCHITECTURE.md#编排收敛与-ab-测试)。
 
 ---
 
@@ -220,7 +220,7 @@ DeepAgents compose 拆完任务
 
 `sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排引擎定期重出 candidate 方案后与 current 对比——v1.0.7 实现连续胜出自动计数器（连续 2 次胜出 → auto promote + 原子写入），旧方案归档到 history/。
 
-规则：不主动创造对照组、同类型才比、单次胜出标记候选（连续 2 次需手动二次确认）、再跑 2 次稳定才沉淀、模板可被替换。局限：样本量小（最少 7 次）、LLM 有随机性。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#ab-测试为什么不是一次性评估)。
+规则：不主动创造对照组、同类型才比、单次胜出标记候选（连续 2 次需手动二次确认）、再跑 2 次稳定才沉淀、模板可被替换。局限：样本量小（最少 7 次）、LLM 有随机性。完整推理见 [ARCHITECTURE 编排收敛](./ARCHITECTURE.md#编排收敛与-ab-测试)。
 
 ---
 
@@ -261,7 +261,7 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 
 ### 冷启动
 
-新 Skill 装上、新任务类型出现——前 5 次只记录不做判断，第 6 次起进入看趋势模式。完整推理见 [ARCHITECTURE.md](./ARCHITECTURE.md#渐进初始化--复盘体系--反思区--权重门禁)。
+新 Skill 装上、新任务类型出现——前 5 次只记录不做判断，第 6 次起进入看趋势模式。
 
 ### 评审者与执行者分离
 
@@ -315,11 +315,11 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 ### 反思区 / 归档区 + 智能权重
 
-反思写入后只把权重 ≥0.5 的摘要放进反思区（≤2K token），其余丢进归档区。权重由三个信号估算（新鲜度 + 反思关联 + 引用热度）。≤2K token 硬上限是真正的安全阀。算法细节见 [ARCHITECTURE.md](./ARCHITECTURE.md#渐进初始化--复盘体系--反思区--权重门禁)。
+反思写入后只把权重 ≥0.5 的摘要放进反思区（≤2K token），其余丢进归档区。权重由三个信号估算（新鲜度 + 反思关联 + 引用热度）。≤2K token 硬上限是真正的安全阀。
 
 ### think.md 自我纠正
 
-三道防线：只存经验不存指令 → 反思区 2K token 硬上限 → 人工可清除。写入前扫指令性关键词 ≥3 处提醒拆到 fde.md。防线详解见 [ARCHITECTURE.md](./ARCHITECTURE.md#渐进初始化--复盘体系--反思区--权重门禁)。
+三道防线：只存经验不存指令 → 反思区 2K token 硬上限 → 人工可清除。写入前扫指令性关键词 ≥3 处提醒拆到 fde.md。
 
 ---
 

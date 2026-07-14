@@ -91,6 +91,9 @@ export {
 } from './cost-baseline';
 export type { Baseline, TaskLogEntry } from './cost-baseline';
 
+// ── 审计结果类型 ──
+export type { AuditResult, RuleCheck } from './reporter';
+
 // ── 装后验证 ──
 export { verifyEvidence } from './verify-evidence';
 
