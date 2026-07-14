@@ -7,12 +7,12 @@
     "sofagent/eval",
     "sofagent/core",
     "sofagent/audit",
+    "sofagent/think",
     "sofagent/mcp",
     "sofagent/orchestrator",
     "sofagent/daemon",
     "sofagent/ab-test",
     "sofagent/workflow-hub",
-    "sofagent/think",
     "sofagent/skillopt"
   ],
   "scripts": {
