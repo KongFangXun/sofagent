@@ -26,9 +26,9 @@
 
 ---
 
-**The Gateway routes, sofagent governs — five engines, one system.**
+**The Gateway routes, sofagent governs — 1 base + 4 engines, one system.**
 
-🧭 Constraint Base · 🔍 Audit Engine · 🔄 Restore Engine · ⚙️ Orchestration · 🧬 Evolution
+🧭 Constraint Base · ⚙️ Orchestration · 🔍 Audit · 🔄 Restore · 🧬 Evolution
 
 ---
 
@@ -90,7 +90,7 @@ Step 2 is the key — not every step should be fully automated:
 
 No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep running.
 
-### Five engines
+### 1 base + 4 engines
 
 > 💡 **sofagent and Gateway**: Enterprise AI can't ship without a Gateway (unified entry/routing/orchestration/sessions).
 > OpenClaw/DeepAgents IS your Gateway. sofagent doesn't replace it — it layers on top for governance.
