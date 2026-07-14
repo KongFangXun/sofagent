@@ -36,6 +36,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # ── 加载配置 ──
 if [ -f "${SCRIPT_DIR}/lib/config.sh" ]; then
+  # shellcheck disable=SC1091
   source "${SCRIPT_DIR}/lib/config.sh"
 fi
 

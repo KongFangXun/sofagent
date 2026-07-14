@@ -188,6 +188,7 @@ done
 # 检查 install.sh 引用的路径和实际文件是否一致
 # RULES_SRC 格式: "${SCRIPT_DIR}/../skill/data/fde.md" → 提取 ../skill/data/fde.md
 # SCRIPT_DIR = sofagent/scripts 的绝对路径，所以从 sofagent/scripts/ 解析相对路径
+# shellcheck disable=SC2016  # sed pattern matches literal ${SCRIPT_DIR} in install.sh
 INSTALL_RULES_SRC=$(grep 'RULES_SRC=' sofagent/scripts/install.sh 2>/dev/null | head -1 | sed 's/.*="\${SCRIPT_DIR}\///;s/".*//')
 if [ -n "$INSTALL_RULES_SRC" ]; then
   # 用 subshell cd 验证路径是否存在（兼容 macOS/Linux，不依赖 realpath）

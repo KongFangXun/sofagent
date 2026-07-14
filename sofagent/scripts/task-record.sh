@@ -29,6 +29,7 @@ VERSION="1.1.0"
 # ── 加载合规配置 ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -f "${SCRIPT_DIR}/lib/config.sh" ]; then
+  # shellcheck disable=SC1091
   source "${SCRIPT_DIR}/lib/config.sh"
 fi
 

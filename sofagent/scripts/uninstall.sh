@@ -18,6 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # v0.90 P0-3 修复：加载统一数据目录配置
 if [ -f "${SCRIPT_DIR}/lib/config.sh" ]; then
+  # shellcheck disable=SC1091
   source "${SCRIPT_DIR}/lib/config.sh"
 fi
 
