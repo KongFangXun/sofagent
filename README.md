@@ -26,9 +26,9 @@
 
 ---
 
-**Gateway 管怎么跑，sofagent 管跑没跑对——五个引擎，一套搞定。**
+**Gateway 管怎么跑，sofagent 管跑没跑对——一底座四引擎，一套搞定。**
 
-🧭 约束底座 · 🔍 审计引擎 · 🔄 回溯引擎 · ⚙️ 编排引擎 · 🧬 进化引擎
+🧭 约束底座 · ⚙️ 编排引擎 · 🔍 审计引擎 · 🔄 回溯引擎 · 🧬 进化引擎
 
 ---
 
@@ -90,7 +90,7 @@ graph LR
 
 FDE 交付完就撤离，AI 节点留在企业自己跑。
 
-### 五个引擎
+### 一底座四引擎
 
 > 💡 **sofagent 和 Gateway 的关系**：企业级 AI 绕不开 Gateway（统一入口/路由/编排/会话）。
 > OpenClaw/DeepAgents 就是你的 Gateway。sofagent 不替代 Gateway——它挂在 Gateway 里面，管 Agent 行为治理：
@@ -111,6 +111,22 @@ graph LR
 ```
 
 四层加载链自动注入，Agent 会话一开始就带着约束。全平台可用——OpenClaw 通过 Hook 精确注入，其他平台 Agent 主动 Read，v1.0.7+ Sub Agent 启动时自加载（`buildConstrainedSystemPrompt`）。
+
+#### ⚙️ 编排引擎
+
+把大任务拆小、多 Sub Agent 并行执行、A/B 对比找更优方案。
+
+```mermaid
+graph LR
+    A[接收任务] --> B[编排引擎<br/>拆解 + 匹配模板]
+    B --> C[Sub Agent 并行执行]
+    C --> D[多维评分]
+    D --> E{A/B 对比}
+    E -->|新版更好| F[自动 promote<br/>连续胜出2次]
+    E -->|旧版更好| G[保留]
+```
+
+当前走 DeepAgents（v1.0.7 ao 完全退役）。`sofagent-audit compose --task` CLI 入口——**任何 Agent 平台都能用编排引擎**。详见 [ROADMAP](./ROADMAP.md)。
 
 #### 🔍 审计引擎
 
@@ -148,22 +164,6 @@ sofagent-audit --revert <SHA>      # 回滚到任意快照
 
 sofagent 是**行车记录仪**，不是安检——不管什么 Agent、什么平台，事后审计 + 回溯恢复，不依赖任何平台。
 
-#### ⚙️ 编排引擎
-
-把大任务拆小、多 Sub Agent 并行执行、A/B 对比找更优方案。
-
-```mermaid
-graph LR
-    A[接收任务] --> B[编排引擎<br/>拆解 + 匹配模板]
-    B --> C[Sub Agent 并行执行]
-    C --> D[多维评分]
-    D --> E{A/B 对比}
-    E -->|新版更好| F[自动 promote<br/>连续胜出2次]
-    E -->|旧版更好| G[保留]
-```
-
-当前走 DeepAgents（v1.0.7 ao 完全退役）。`sofagent-audit compose --task` CLI 入口——**任何 Agent 平台都能用编排引擎**。详见 [ROADMAP](./ROADMAP.md)。
-
 #### 🧬 进化引擎（v1.0.8+）
 
 FDE Agent 不只部署一次——部署完成后转为**持续优化角色**。每周自动巡检审计趋势 + 反思记录，发现退化就优化。
@@ -189,7 +189,7 @@ graph LR
 sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 ```
 
-五个引擎形成闭环：**约束定红线 → 编排拆任务 → 审计验结果 → 回溯保安全 → 进化越用越好**。
+一底座四引擎形成闭环：**约束定红线 → 编排拆任务 → 审计盯变更 → 回溯保回滚 → 进化越用越好**。
 
 ---
 
