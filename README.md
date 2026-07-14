@@ -235,12 +235,14 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 > 🔬 Hugging Face 实验：同一模型不改权重，仅优化外层 Harness，法律 Agent 基准 3.5%→80.1%（76 分差全部来自外层机制）。[详情](./docs/ARCHITECTURE.md)
 
-- **531 tests 全绿**（`cd sofagent/audit && npm test`）— diff-parser / config-loader / A1-A17 / reporter / init
-- **19 条审计规则** — 11 条默认（A1-A11）+ 8 条扩展（E1-E4 + A14-A17），A12/A13 永久跳号
-- 📁 v1.0.8+ 文件系统审计（不需 git）— [使用指南](./docs/guides/filesystem-audit.md)
-- MIT 许可证
+装上就跑通，不靠 Agent 自觉：
 
-> ⚠️ 编排引擎需要 DeepAgents 环境。[已知局限](./LIMITATIONS.md)
+| 维度 | 数据 | 什么意思 |
+|------|------|------|
+| 审计引擎稳定性 | `npm test` 全绿 — diff-parser / A1-A17 / reporter / init 全覆盖 | 改了代码就能查，不会被绕过 |
+| 审计覆盖率 | 19 条规则，覆盖密钥泄漏、越界修改、注入攻击、盲改、知识库越权 | 最常见的 Agent 翻车模式都拦住了 |
+| 平台覆盖 | git commit 审计（开发者）+ daemon 文件审计（非开发者） | 不管谁改的文件，都能审计 |
+| 开源协议 | MIT | 随便用，代码、文档、模板都行 |
 
 ---
 

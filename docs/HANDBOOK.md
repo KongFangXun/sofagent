@@ -13,7 +13,7 @@
 - [场景三：排查问题](#场景三排查问题)
 - [安装与运行常见问题](#安装与运行常见问题)
 - [场景四：自定义](#场景四自定义)
-- [场景五：FDE 部署](#场景五fde-部署)
+- [场景五：FDE 部署与持续优化](#场景五fde-部署与持续优化)
 - [致谢](#致谢)
 - [彩蛋](#彩蛋)
 
@@ -332,91 +332,58 @@ Agent 先判断任务复杂度：
 
 ---
 
-## 场景五：FDE 部署
+## 场景五：FDE 部署与持续优化
 
-> ⚠️ **成熟度**：审计引擎是稳定的（跨平台、零 Agent 依赖）。FDE 部署流程已有完整的四阶段十二步 + 五份模板 + quick-start，核心流程可用。编排引擎仍为实验性（基于 DeepAgents Sub Agent，所有平台可用）。遇到问题开 Issue。
->
-> **FDE 工具包本身就是 sofagent 产品的一部分。** FDE 用 sofagent 五个引擎帮企业梳理工作流、构建本体模型、识别节点与量化、装上底座——**FDE 工作用自己产品，给别人部署完让别人也用自己产品。**
+> ⚠️ **成熟度**：审计引擎稳定。FDE 部署四阶段十二步 + 五份模板 + quick-start，核心流程可用。编排引擎实验性（DeepAgents Sub Agent，全平台可用）。
 
-> FDE = Forward Deployed Engineer（前向部署工程师）。完整四阶段十二步流程见 [FDE/FDE.md](../FDE/FDE.md)。建议装 [sofagent-fde Skill](../FDE/SKILL.md)——Agent 自动加载 FDE 工作台。
+FDE = Forward Deployed Engineer。完整流程见 [FDE/FDE.md](../FDE/FDE.md)。建议装 [sofagent-fde Skill](../FDE/SKILL.md) 让 Agent 自动加载 FDE 工作台。
 
-### 部署的核心是装上 sofagent
+### 部署：装上 sofagent
 
-没有 sofagent，前面梳理的 workflow 就是一份漂亮的 PPT。引擎装到设备上，AI 节点才有了纪律和审计：
+没有 sofagent，梳理的 workflow 就是一份 PPT。引擎装到设备上，AI 节点才有纪律和审计：
 
 | 引擎 | 做什么 | 怎么跑 |
 |----|--------|--------|
-| 约束底座 | fde.md 规则注入 Agent 上下文 | install.sh 自动加载（v1.0.7+ Sub Agent 自加载） |
-| 审计引擎 | git diff → A1-A17 规则 → exit code | pre-commit hook（v1.0.8+ daemon 监控文件变更） |
-| 回溯引擎（v1.0.8+） | 自动快照 + 违规时建议回滚 | 审计后自动触发 |
-| 编排引擎（实验性）| DeepAgents 拆任务，Sub Agent 并行 | 全平台可用 |
+| 约束底座 | fde.md 规则注入 Agent 上下文 | install.sh 自动加载 |
+| 审计引擎 | git diff → A1-A17 规则 → exit code | pre-commit hook / daemon 监控 |
+| 回溯引擎 | 自动快照 + 违规建议回滚 | 审计后自动触发 |
+| 编排引擎 | DeepAgents 拆任务，Sub Agent 并行 | 全平台可用 |
 
-### 节点类型选择（v1.0.7+）
-
-FDE 进场后要决定每个 AI 节点跑哪种模式：
+**节点类型选择**：
 
 | | 自动运行节点 | 个人增强节点 |
 |---|---|---|
-| **装什么** | OpenClaw + sofagent 全栈 | sofagent + 预定义 Sub Agent |
-| **Agent 平台** | OpenClaw 内置 | 用户自己的（WorkBuddy/Codex/Claude Code） |
-| **编排引擎怎么调** | OpenClaw 内部 API | `sofagent-audit compose --task` CLI |
-| **约束注入** | OpenClaw Hook 精确注入 | Sub Agent 启动时自加载 |
-| **审计引擎** | 完全一致（git hook） | 完全一致 |
-| **适合** | 7×24 无人值守设备 | 个人开发工位 |
+| 装什么 | OpenClaw + sofagent 全栈 | sofagent + 预定义 Sub Agent |
+| 编排调用 | OpenClaw 内部 API | `sofagent-audit compose --task` CLI |
+| 约束注入 | OpenClaw Hook 精确注入 | Sub Agent 启动时自加载 |
+| 适合 | 7×24 无人值守设备 | 个人开发工位 |
 
-### 离场后企业留下什么
+### 离场后：企业留下什么 + 谁来管
 
 | 产物 | 说明 |
 |------|------|
-| **交付手册** | 企业画像 + 部署方案 + `fde.md` + `quick-start.md`（后两章安装包自带） |
-| **AI 节点（三层实体）** | 每个节点：文档层（.md，人读+编排引擎读）+ Skill 层（企业专属 Skill）+ 运行层（在跑的 session） |
-| **AI 知识库** | `.sofagent/knowledge/` 目录——结构化知识系统（entities/ → relations → concepts/ → comparisons/，轻量级 GraphRAG）。daemon 自动 Ingest，加载链被动注入。think.md / task/logs / eval.md 由 AI 节点自动生成 |
-| **私有化评估体系** | eval.md + Skill 迭代历史 + 知识库演变轨迹。工具可复制，差异化反馈无法复制——企业的长期竞争壁垒。见 [FDE/FDE.md](../FDE/FDE.md) |
+| **交付手册** | 企业画像 + 部署方案 + fde.md + quick-start.md |
+| **AI 节点** | 文档层（.md）+ Skill 层（企业专属）+ 运行层（在跑的 session） |
+| **AI 知识库** | `.sofagent/knowledge/` — daemon 自动 Ingest，加载链被动注入 |
+| **私有化评估体系** | eval.md + Skill 迭代历史 + 知识库演变轨迹 |
 
-> 企业专属 Skill 会基于 eval.md 评分自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本。详见 [ROADMAP](../ROADMAP.md) 企业 Skill 自进化。
-
-> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。
-
----
-
-## 场景六：Agent 自进化（v1.0.8+）
-
-v1.0.7 预装了 FDE 部署工程师和合规审计员两个内置 Agent。v1.0.8 将它们升级为**基础设施 Agent**——企业的 AI 节点部署后持续运行，自动优化。
-
-### 双 Agent 闭环
-
-每个 AI 节点完成任务后，自动调用两个基础设施 Agent：Audit 管底线（每次 commit），FDE 管上限（每周优化）。详见 `agents/README.md`。
-
-### FDE Agent 两个模式
-
-| 模式 | 什么时候用 | 做什么 |
-|------|------|------|
-| **部署** (`deploy`) | FDE 进场时 | 四阶段十一��：梳理工作流、识别 AI 节点、构建知识库、交付离场 |
-| **持续优化** (`sustain`) | FDE 离场后 | 自动读 audit 报告趋势 + think.md 反思趋势 + scoring 数据，生成优化建议 |
-
-### 怎么用
-
-```bash
-# 部署模式（FDE 进场用）
-sofagent-audit subagent run fde --task "梳理采购部门工作流"
-
-# 持续优化模式（FDE 离场后自动跑）
-sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
-
-# 在 WorkBuddy 中直接 @
-@sofagent-fde sustain    # 运行周度优化巡检
-```
-
-### 为什么需要两个
+FDE 离场后，两个内置 Agent 接手持续运维：
 
 | | 审计 Agent | FDE Agent |
 |------|------|------|
-| **方向** | 向下看——防止退化 | 向上看——推动进化 |
-| **数据源** | git diff + A1-A17 规则 | audit 报告 + think.md + scoring |
-| **输出** | "哪里坏了 + 怎么修" | "怎么做得更好 + 趋势分析" |
-| **频率** | 每次 commit 自动 | 每周自动巡检 |
+| 方向 | 向下看——防止退化 | 向上看——推动进化 |
+| 数据源 | git diff + A1-A17 规则 | audit 报告 + think.md + scoring |
+| 输出 | "哪里坏了 + 怎么修" | "怎么做得更好 + 趋势分析" |
+| 频率 | 每次 commit 自动 | 每周自动巡检 |
 
-审计 Agent 告诉你"刹车是不是还在"，FDE Agent 告诉你"能不能换更好的轮胎"。两者合在一起，企业的 AI 节点不需要人盯着——Audit 盯底线，FDE 推上限，自进化。
+```bash
+sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
+@sofagent-fde sustain     # WorkBuddy 中直接 @
+```
+
+审计 Agent 管"刹车是不是还在"，FDE Agent 管"能不能换更好的轮胎"。两者合在一起，企业的 AI 节点不需要人盯着。
+
+> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。
 
 ---
 
