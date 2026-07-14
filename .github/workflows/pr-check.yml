@@ -30,7 +30,7 @@ jobs:
         run: npm ci
       - name: Install rollup native module (Linux)
         run: npm install --no-save @rollup/rollup-linux-x64-gnu
-      - name: Build (workspace 全量)
-        run: npm run build --workspaces --if-present
+      - name: Build (workspace 拓扑序)
+        run: npm run build
       - name: Test (workspace 全量)
-        run: npm test --workspaces --if-present
+        run: npm run test

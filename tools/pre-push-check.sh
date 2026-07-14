@@ -134,17 +134,17 @@ fi
 if [ "$AUDIT_ONLY" = false ] && [ "$QUICK" = false ]; then
   echo -e "\n${BOLD}── 4. 审计引擎构建+测试 ──${NC}"
   echo "  构建中..."
-  if (npm run build --workspaces --if-present >/dev/null 2>&1); then
-    check_pass "npm run build (workspace 全量)"
+  if (npm run build >/dev/null 2>&1); then
+    check_pass "npm run build (workspace 拓扑序)"
   else
     check_fail "npm run build 失败"
   fi
 
   echo "  测试中..."
-  if (npm test --workspaces --if-present >/dev/null 2>&1); then
-    check_pass "npm test (workspace 全量)"
+  if (npm run test >/dev/null 2>&1); then
+    check_pass "npm run test (workspace 全量)"
   else
-    check_fail "npm test 有失败"
+    check_fail "npm run test 有失败"
   fi
 fi
 

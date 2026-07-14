@@ -19,7 +19,7 @@ jobs:
           node-version: '22'
       - name: Install dependencies
         run: npm ci
-      - name: Build (workspace 全量)
-        run: npm run build --workspaces --if-present
+      - name: Build (workspace 拓扑序)
+        run: npm run build
       - name: Smoke test (audit CLI)
         run: node sofagent/audit/dist/index.js --help

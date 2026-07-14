@@ -57,8 +57,8 @@ jobs:
         working-directory: .
       - run: npm install --no-save @rollup/rollup-linux-x64-gnu
         working-directory: .
-      # workspace 全量构建（含 audit + mcp）
-      - run: npm run build --workspaces --if-present
+      # workspace 拓扑序构建（含 audit + mcp）
+      - run: npm run build
         working-directory: .
       - name: Check if version already published
         id: version-check

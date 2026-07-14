@@ -3013,7 +3013,7 @@ done
 ```bash
 # v1.1.0 核心教训：AI 工程师的 IS_PASS 声明不可采信
 # 每波开发完成后必须实跑以下三条，以实跑结果为准，不以声明为准：
-npm run build --workspaces 2>&1 | grep -c "error TS"   # 期望: 0
+npm run build 2>&1 | grep -c "error TS"   # 期望: 0（根 package.json 拓扑序链式构建）
 cd sofagent/audit && npm test 2>&1 | grep "Tests"      # 期望: N passed, 0 failed
 for pkg in core orchestrator audit; do (cd "sofagent/$pkg" && npx tsc --noEmit); done
 # 三条全绿才算通过

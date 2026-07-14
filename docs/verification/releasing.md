@@ -361,40 +361,62 @@ bash tools/acceptance-test.sh                                      # 期望：�
 
 ```bash
 # 🔴 v0.99.1 起铁律：推前预检必须全绿
-bash tools/pre-push-check.sh            # 7/7 全绿（--quick 跳过 npm test/build，--audit-only 只跑审计）
+bash tools/pre-push-check.sh            # 14/14 全绿（v1.1.0 起全量 workspace）
 bash tools/check-docs.sh                # 文档死链 + 预算 + Skill 行数
 
-# audit 包检查
-cd sofagent/audit && npm pack --dry-run 2>&1 | grep '\.js\.map' | wc -l    # 期望: 0
-npm pack --dry-run 2>&1 | grep 'total files'
-
-# mcp 包检查
-cd ../mcp && npm pack --dry-run 2>&1 | grep '\.js\.map' | wc -l             # 期望: 0
-npm pack --dry-run 2>&1 | grep 'total files'
-
-# 类型检查（两个包）
-cd ../audit && npx tsc --noEmit && echo "audit tsc: OK"
-cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
+# 全部 12 包 .js.map 泄露检查 + 类型检查
+for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test workflow-hub skillopt; do
+  echo "=== $pkg ==="
+  (cd sofagent/$pkg && npm pack --dry-run 2>&1 | grep -c '\.js\.map')  # 期望: 0
+  (cd sofagent/$pkg && npx tsc --noEmit && echo "✅ tsc")
+done
 ```
 
 ### 执行发布
 
-**npm 先行策略**（v0.99.7 起推荐）：先手动发布 npm 双包，再 git tag + push。即使 CI 失败，npm 包已就位。
+**npm 先行策略**（v0.99.7 起推荐）：先手动发布 npm 全部包（按依赖顺序），再 git tag + push。即使 CI 失败，npm 包已就位。
+
+> 🔴 v1.1.0 教训：12 包按依赖层分批发布——叶子包先发，消费方后发，npm workspace symlink 在 publish 时不生效，必须在 npm registry 上有真实包。
 
 ```
-── Step 1: 手动发布 npm 双包 ──
-🔴 publish 前必须 build——npm publish 上传的是 dist/ 目录，如果不 build 直接 publish，npm 上是旧 dist
-🔴 v1.0.9 教训：npm install -g 可能因残留临时目录（`.audit-XXXXXX`）报 ENOTEMPTY。
-   遇到时：rm -rf 全局 node_modules/@sofagent/.audit-* 残留目录后重试
+── Step 1: 全量 workspace build（拓扑序） ──
+npm run build
+# 根 package.json 按拓扑序链式构建，不用 --workspaces（不保证顺序）
 
-1. cd sofagent/audit && npm run build && npm publish --access public
-2. cd ../mcp && npm publish --access public（mcp 依赖 audit，audit 已 publish 到 registry）
-3. npm view @sofagent/audit version   # 验证：必须是新版本号
-4. npm view @sofagent/mcp version     # 验证：必须是新版本号
+── Step 2: 按依赖层分批 publish ──
 
-── Step 2: git tag + push ──
-5. git tag vX.Y.Z + git push origin vX.Y.Z
-6. gh release create vX.Y.Z
+🔴 第一层·叶子包（零 @sofagent 依赖，可并行）：
+1. cd sofagent/harness   && npm publish --access public
+2. cd ../ontology        && npm publish --access public
+3. cd ../eval            && npm publish --access public
+4. cd ../core            && npm publish --access public
+
+🔴 第二层·依赖第一层（audit/orchestrator/skillopt 可并行）：
+5. cd ../audit           && npm publish --access public
+6. cd ../orchestrator    && npm publish --access public
+7. cd ../skillopt        && npm publish --access public
+
+🔴 第三层·依赖第二层（think/daemon 可并行）：
+8. cd ../think           && npm publish --access public
+9. cd ../daemon          && npm publish --access public
+
+🔴 第四层·依赖第二+三层（ab-test/workflow-hub 可并行）：
+10. cd ../ab-test        && npm publish --access public
+11. cd ../workflow-hub   && npm publish --access public
+
+🔴 第五层·收官（mcp 依赖 audit+orchestrator+think）：
+12. cd ../mcp            && npm publish --access public
+
+── Step 3: 验证全部 12 包 ──
+for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test workflow-hub skillopt; do
+  ver=$(npm view "@sofagent/$pkg" version 2>/dev/null)
+  echo "@sofagent/$pkg: $ver"
+done
+# 期望：全部 = 新版本号
+
+── Step 4: git tag + push ──
+13. git tag vX.Y.Z + git push origin vX.Y.Z
+14. gh release create vX.Y.Z
    🔴 Release body **必须**包含开发日志链接：
    📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)
 
@@ -439,19 +461,19 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
    - 末尾**必须有**开发日志链接
    - **不含**审查元信息（模型名、审查轮次、P0/P1 标签）——那是内部过程
 
-── Step 3: Skill 分发 + 本机升级 ──
+── Step 5: Skill 分发 + 本机升级 ──
 🔴 v1.0.9 教训：skillhub CLI 语法与 clawhub 不同——`skillhub publish <path> --version X`（无 `skill` 子命令，无 --slug/--owner）
 🔴 v1.0.9 教训：FDE 发布到 ClawHub 时 slug "fde" 冲突——必须用 --slug sofagent-fde
 
-7. clawhub skill publish ./sofagent/skill --slug sofagent --owner KongFangXun
-8. skillhub publish ./sofagent/skill --version vX.Y.Z
-9. clawhub skill publish ./FDE --slug sofagent-fde --owner KongFangXun
-10. skillhub publish ./FDE --version vX.Y.Z
-11. **🔴 本机全局升级**（v1.0.7 教训——忘了更新本机安装，导致 QA 测试时跑的是旧版本）：
+15. clawhub skill publish ./sofagent/skill --slug sofagent --owner KongFangXun
+16. skillhub publish ./sofagent/skill --version vX.Y.Z
+17. clawhub skill publish ./FDE --slug sofagent-fde --owner KongFangXun
+18. skillhub publish ./FDE --version vX.Y.Z
+19. **🔴 本机全局升级**（v1.0.7 教训——忘了更新本机安装，导致 QA 测试时跑的是旧版本）：
     npm install -g @sofagent/audit@latest
     sofagent-audit --version                    # 验证版本号
     sofagent-audit --doctor                     # 验证功能正常
-12. 本地 Skill 同步：
+20. 本地 Skill 同步：
     cp -r sofagent/skill/* ~/.workbuddy/skills/sofagent/
     cp -r sofagent/skill/* ~/.openclaw/skills/sofagent/
     cp FDE/SKILL.md ~/.workbuddy/skills/sofagent-fde/
