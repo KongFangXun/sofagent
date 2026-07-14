@@ -6,8 +6,8 @@
 
 | Agent | Skill | CLI 命令 | 职责 |
 |------|------|------|------|
-| 部署工程师 | `@sofagent-fde` · `SKILL/sofagent-fde/SKILL.md` | `sofagent-audit subagent run fde --task "..."` | 梳理工作流、识别 AI 节点、构建知识库、交付离场 |
-| 合规审计员 | `@sofagent-audit` · `SKILL/sofagent-audit/SKILL.md` | `sofagent-audit subagent run audit --task "..."` | Workflow 巡检、铁律覆盖验证、知识库健康度检查 |
+| 部署工程师 | `@sofagent-fde` · `SKILL/sofagent-fde/SKILL.md` | `sofagent-orchestrator subagent run fde --task "..."` | 梳理工作流、识别 AI 节点、构建知识库、交付离场 |
+| 合规审计员 | `@sofagent-audit` · `SKILL/sofagent-audit/SKILL.md` | `sofagent-orchestrator subagent run audit --task "..."` | Workflow 巡检、铁律覆盖验证、知识库健康度检查 |
 | 最小变更工程师 | `engineering-minimal-change-engineer.md` | LOOP 内层循环自动调用 | 读代码 + 写代码 + 跑测试 + git commit |
 | 代码审查员 | `engineering-code-reviewer.md` | LOOP 内层循环自动调用 | 语义审查 + 影响分析 + 铁律合规 |
 
@@ -19,7 +19,7 @@
 |------|------|------|
 | 装 Skill → @ | WorkBuddy/OpenClaw | `bash fde-install.sh`（自动装），然后 `@sofagent-fde` |
 | 复制 prompt | 不支持 Skill 的平台 | 把 SKILL.md 内容贴进 system prompt |
-| CLI 直跑 | 任何终端 | `sofagent-audit subagent run fde --task "..."` |
+| CLI 直跑 | 任何终端 | `sofagent-orchestrator subagent run fde --task "..."` |
 
 ---
 
@@ -34,7 +34,7 @@
 ```
 FDE agent 部署完成   ──→ 自动调用 @sofagent-audit  → 验证部署合规
 LOOP engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更合规
-每次 git commit      ──→ pre-commit hook          → A1-A17 规则检查（0 token，纯正则引擎）
+每次 git commit      ──→ pre-commit hook          → A1-A11、A14-A17 规则检查（0 token，纯正则引擎）
 未来任何新 Agent      ──→ SKILL.md 内置审计引用    → 合规检查
 ```
 
@@ -49,7 +49,7 @@ LOOP engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更合
 | **定期巡检** | 每周一次 | 知识库健康度报告——哪些 entity 死链了、think.md 反思质量趋势 |
 | **新节点上线** | 新增 AI 节点后 | 检查新节点的 actions 声明是否完整、knowledge-domain 是否合理 |
 
-**和 `sofagent-audit --doctor` 的区别**：doctor 告诉你"哪里坏了"（二进制 yes/no），审计员告诉你"为什么坏了 + 怎么修"（LLM 解释 + 修复建议）。
+**和 `sofagent-core doctor` 的区别**：doctor 告诉你"哪里坏了"（二进制 yes/no），审计员告诉你"为什么坏了 + 怎么修"（LLM 解释 + 修复建议）。
 
 每次运行产生的报告写入 `.sofagent/` 下，FDE 定期读报告趋势做优化决策。
 
@@ -61,7 +61,7 @@ LOOP engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更合
 
 | 文件 | 格式 | 作用 | 谁读 |
 |------|------|------|------|
-| `SKILL.md` | Skill 格式（frontmatter + 调用指令） | **调用入口**——告诉第三方 Agent 用 Bash 跑 `sofagent-audit subagent run <name>` | 第三方 Agent 平台（WorkBuddy/Codex） |
+| `SKILL.md` | Skill 格式（frontmatter + 调用指令） | **调用入口**——告诉第三方 Agent 用 Bash 跑 `sofagent-orchestrator subagent run <name>` | 第三方 Agent 平台（WorkBuddy/Codex） |
 | `{role}.md` | Agency Agents 格式（frontmatter + 结构化章节） | **角色定义**——Agent 的完整行为规范、工作流、原则 | DeepAgents 编排引擎 + 人类参考 |
 
 **两者不是替代关系——是调用层和定义层分离。**

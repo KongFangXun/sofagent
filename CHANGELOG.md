@@ -5,6 +5,11 @@
 ---
 
 ## 正式版
+### [v1.1.0] — 包结构纯度重构（12 包独立）+ 轻量多设备 🎉
+> 2026-07-14（UTC）· 已发版
+**核心变更**：`@sofagent/audit` 拆分为 12 个独立 npm 包，按基础层/运行层/协议层/纯审计四层清晰分层。**新功能**：权限作用域化（permission.local.json 项目级 override）+ 经验共享（跨设备 knowledge/shared/ + think.md 语义合并）+ 自迭代周报（daemon 从 think.md 自动提取踩坑经验）+ 主动巡检（daemon 4 项定时巡检）。**继承修复**：v1.0.9 发布后陌生视角审查驱动的 19 项文档/代码修复。**破坏性变更**：CLI 子命令迁移到新包二进制（`sofagent-audit compose` → `sofagent-orchestrator compose` 等）。
+**文档维护**：审计规则编号口径收敛——全仓库统一为「A1-A11、A14-A17 + E1-E4（共 19 条）」写法，修复 FDE/ARCHITECTURE/DEVELOPMENT/HANDBOOK 断链、加载链「三层→四层」矛盾与版本滞后（v1.0.x→v1.1.0）。
+> 📖 [开发日志](./docs/changelog/v1.1.0.md)
 ### [v1.0.9] — 二进制文件审计 + 快照时间线 + MCP compose tool + 安全加固 + 遗留补齐 🔧
 > 2026-07-14（UTC）· 已发版（tag v1.0.9 @ 366eb54，2026-07-14）
 **核心新功能**：A16 非授权文件变更 + A17 异常批量变更（二进制文件行为级审计）+ `--timeline` 快照时间线可视化 + `--revert` 回滚 + MCP compose tool（编排引擎通过标准 MCP 协议对 Agent 平台暴露）。EvidenceMode 类型扩展 `'filesystem'` 模式。daemon 审计闭环（文件变更→diff→runRules→快照→binary_history 全链路打通）+ daemon cron @weekly/@daily/@hourly 定时 FDE 巡检 + `--doctor` fs-watch 运行状态检测 + `install.sh --with-memory` TencentDB Memory 集成。
@@ -31,7 +36,6 @@ Ontology 三路合并引擎 + Workflow Hub 独立项目 + A9 分级安全 + A15 
 > 📖 [开发日志](./docs/changelog/v1.0.5.md)
 
 ### 规划中
-- **v1.1.0** — 包结构纯度重构（audit 只做 audit）：`@sofagent/audit` 上帝包拆为 11 独立包（harness / ontology / eval / core / orchestrator / daemon / ab-test / workflow-hub / think / skillopt / 纯审计 audit）+ 轻量多设备四件事（经验共享 / 权限作用域化 / 自迭代周报 / daemon 主动巡检）→ [开发日志](./docs/changelog/v1.1.0.md)
 
 ### [v1.0.4] — 自动优化 + 约束验证 🔧
 > 2026-07-11（UTC）

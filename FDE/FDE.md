@@ -12,6 +12,7 @@
 > - [挖掘阶段](#挖掘阶段)
 > - [交付阶段](#交付阶段)
 > - [检查离场](#检查离场)
+> - [交接清单（私有化评估 / Ontology 说明书 / River）](#9-交接清单)
 > - [隐性代价](#隐性代价)
 > - [产品化护栏](#产品化护栏)
 > - [附录：企业 AI 成熟度](#附录企业-ai-成熟度三级台阶)
@@ -46,7 +47,7 @@ FDE（或企业 CIO/网管）的操作手册。**读它 → 帮企业梳理 work
 | 交付手册 | 谁都能看懂，企业 IT 可独立维护 |
 | AI 节点 | 在跑的 Agent，自动执行日常任务 |
 | AI 知识库 | 持续积累的实体、概念、对比页 |
-| 私有化评估体系 | scoring 反馈 + Skill 迭代历史——无法复制的企业 IP |
+| 私有化评估体系 | eval 反馈 + Skill 迭代历史——无法复制的企业 IP |
 
 > 🔑 微软 CEO Nadella：「未来企业最重要的知识产权是 private evals——工具可以被复制，但差异化反馈数据无法被复制。」
 
@@ -57,7 +58,7 @@ FDE（或企业 CIO/网管）的操作手册。**读它 → 帮企业梳理 work
 | 维度 | 状态 |
 |------|------|
 | FDE 四阶段流程 | ✅ 已在作者自有企业中实际部署（2026-07） |
-| 审计引擎 | ✅ 独立产品，417 tests 全绿、跨平台 CI 覆盖 |
+| 审计引擎 | ✅ 独立产品，342 tests 全绿、跨平台 CI 覆盖 |
 | 覆盖范围 | Agent 质量层（代码纪律 + 审计 + 经验沉淀） |
 | 不覆盖 | 运维层（监控 / 告警 / 重启 / 日志轮转） |
 
@@ -72,6 +73,8 @@ FDE（或企业 CIO/网管）的操作手册。**读它 → 帮企业梳理 work
 **碎石路到高速公路**：FDE 先铺碎石路（快速定制），核心产品团队提炼共同模式为标准功能。每一笔定制转化为产品积累，而非一次性咨询。
 
 **Agent 让 FDE 更重要**：Bob McGrew（前 Palantir/OpenAI）指出 AI agent 没有现成的产品，是 FDE 兴起的核心原因。Agent 是非确定性系统，必须配套 eval、guardrail 和人工复核——这正是审计引擎做的事。
+
+前 Partnership 副总裁、FDE 模式创始人之一 Bob Mycroft 进一步点明：Agent OS 这类产品的核心服务对象**不是终端客户，而是 FDE**——它把原本难以规模化的「沙石路」铺成高速公路，让单个 FDE 服务更多客户、沉淀领域知识。这与上文「碎石路到高速公路」同源，也印证了 sofagent 只做 FDE 工具包、不做 Agent 运行时的定位。
 
 > 详见：[fde.academy](https://fde.academy/blog/how-palantir-invented-the-forward-deployed-engineer-model) · [OpenFDE](https://open-fde.com/zh/docs/agent-era) · [OpenFDE 工作流](https://open-fde.com/docs/workflow)
 
@@ -202,6 +205,12 @@ FDE 有巨大前期成本，只在三种情况成立：
 
 ### 5. 构建企业本体模型
 
+> 📌 **本体 ≠ 知识图谱数据库**：本体的核心是**业务刻画**——完整呈现业务领域的客观事实与关联关系（如「客户下单 → 订单含哪些产品 → 产品由哪些零部件构成 → 零部件从哪些供应商采购」）。知识图谱只是它的一种技术实现。sofagent 的 ontology 包（objects.yml / actions.yml / constraints.yml 三层 YAML）正是这一业务刻画的**机器可读层**，让 Agent 基于真实业务关系做决策，而非通用回答。
+
+> ⚠️ **本体建设适配性判断**：多数中小企业**不必**建全量本体——本体搭建 + 配套 Agent 开发的投入高，且中小企业流程相对简单，全链路本体建设的投入产出比严重失衡。动手前先判两件事：① 是否需要**业务域级 Agent Runtime**（深度提效、规避人为干预损耗）；② 是否作为**一号位工程**推进。若两者皆否，用**轻量 Agent + 企业 Skill**（个人增强节点 / harness 层）即可满足需求，无需本体建设。
+>
+> 💡 sofagent 的 ontology 是**轻量业务刻画层**（三层 YAML，由 daemon 自动 `mergeOntology()` 从节点 frontmatter 生长），并非重型 KG 工程——正因如此中小企业也能落地，无需传统本体工程的重投入。
+
 对 §4 的每个节点，补三个字段到节点文档的 frontmatter。人和机器都从这份 frontmatter 理解「谁依赖谁」「谁能看什么」。
 
 **域归属（domain）**：这个节点属于哪个业务域？追问：「这个节点的产出，最终服务哪个部门？」
@@ -266,11 +275,11 @@ FDE 有巨大前期成本，只在三种情况成立：
 
 | 层 | 文件 | 给谁读 | 模板 |
 |----|------|--------|------|
-| 📄 文档层 | `nodes/[节点名].md` | 人读 + 编排引擎读（注入给 ao compose 拆任务） | `templates/nodes/node-template.md` |
+| 📄 文档层 | `nodes/[节点名].md` | 人读 + 编排引擎读（注入给 sofagent-orchestrator compose 拆任务） | `templates/nodes/node-template.md` |
 | 🧠 Skill 层 | `skills/[节点名]/SKILL.md` | AI 读（节点的大脑） | `templates/skills/skill-template/SKILL.md` |
 | 🔴 运行层 | 设备上的 session | 活的（sub-agent / AI 领航员） | 文档里 checklist 确认 |
 
-> 节点文档（.md）同时服务两个消费者：企业方人读（看懂这个节点是什么）+ 编排引擎读（Agent 把文档注入给 ao compose 拆任务）。配置信息用表格写在 .md 里，不再单独一个 .yaml。
+> 节点文档（.md）同时服务两个消费者：企业方人读（看懂这个节点是什么）+ 编排引擎读（Agent 把文档注入给 sofagent-orchestrator compose 拆任务）。配置信息用表格写在 .md 里，不再单独一个 .yaml。
 
 
 ---
@@ -284,15 +293,15 @@ FDE 有巨大前期成本，只在三种情况成立：
 | 层 | 做什么 | 怎么跑 |
 |----|--------|--------|
 | **约束底座** | fde.md 规则注入 Agent 上下文 | install.sh 装完自动加载 |
-| **审计引擎** | git diff → A1-A17 规则 → exit code | git pre-commit hook，不挑 Agent，**0 token（纯正则引擎）** |
+| **审计引擎** | git diff → A1-A11、A14-A17 规则 → exit code | git pre-commit hook，不挑 Agent，**0 token（纯正则引擎）** |
 | **编排引擎**（实验性）| 拆任务 → 编排 → 执行 | DeepAgents compose（CLI 入口或 OpenClaw 内部 API） |
-| **内置 Agent**（v1.0.7）| FDE 部署工程师 + 合规审计员 | `sofagent-audit subagent run fde --task "..."`、`@sofagent-fde` |
+| **内置 Agent**（v1.0.7 引入，v1.0.8 起为基础设施 Agent）| FDE 部署工程师 + 合规审计员 | `sofagent-orchestrator subagent run fde --task "..."`、`@sofagent-fde` |
 
-**内置 Agent（v1.0.7 新增）**：sofagent 预装了两个 Agent，安装后立即可用——
-- **FDE 部署工程师**（`@sofagent-fde`）：梳理工作流、识别 AI 节点、构建知识库、交付离场。在 WorkBuddy 中 `@sofagent-fde 梳理采购流程` 即可调用，或 CLI `sofagent-audit subagent run fde --task "..."`。
+**内置 Agent（v1.0.7 引入，v1.0.8 起升级为基础设施 Agent）**：sofagent 预装了两个 Agent，安装后立即可用——
+- **FDE 部署工程师**（`@sofagent-fde`）：梳理工作流、识别 AI 节点、构建知识库、交付离场。在 WorkBuddy 中 `@sofagent-fde 梳理采购流程` 即可调用，或 CLI `sofagent-orchestrator subagent run fde --task "..."`。
 - **合规审计员**（`@sofagent-audit`）：Workflow 巡检、铁律覆盖验证、知识库健康度检查。发版前跑一次全量合规扫描。
 
-两个 Agent 的定义在 `agents/SKILL/` 下，`fde-install.sh` 会自动安装。详细用法见 `agents/README.md`。
+两个 Agent 的定义在 `agents/SKILL/` 下，`fde-install.sh` 会自动安装。详细用法见 `../agents/README.md`。
 
 找一台闲置设备（旧电脑、服务器、Nas 都行），装好 sofagent——这台设备就跑着 harness 层，上面是你梳理出来的 AI 节点。
 
@@ -308,7 +317,7 @@ bash sofagent/scripts/install.sh
 | 节点类型 | 适用场景 | 需要 OpenClaw | 编排方式 |
 |---------|---------|:--:|------|
 | **自动运行节点** | 企业无人值守设备（AI 全自动执行） | ✅ 必须 | OpenClaw Channel + DeepAgents 内部 API |
-| **个人增强节点** | 个人开发者用 WorkBuddy/Codex/Claude Code | ❌ 不需要 | `sofagent-audit compose --task` CLI |
+| **个人增强节点** | 个人开发者用 WorkBuddy/Codex/Claude Code | ❌ 不需要 | `sofagent-orchestrator compose --task` CLI |
 
 > 两种模式的核心约束体系完全一致——都是宪法层 SKILL.md + 规范层 fde.md + 反思层 think.md + 知识库 knowledge/。区别只在编排触达方式：自动运行节点走 OpenClaw 内部 API（更快），个人增强节点走 CLI 编排入口（不装 OpenClaw 也能用）。
 
@@ -330,7 +339,7 @@ bash sofagent/scripts/install.sh
 
 #### 📄 交付手册（一份 .md 文件）
 
-FDE 离场前打包交付给企业的一份文档。模板见 `FDE/templates/`。只含两章需要 FDE 写的 + 两章安装包自带的：
+FDE 离场前打包交付给企业的一份文档。模板见 `templates/`。只含两章需要 FDE 写的 + 两章安装包自带的：
 
 | 章节 | 来源 | 内容 |
 |------|------|------|
@@ -345,7 +354,7 @@ FDE 离场前打包交付给企业的一份文档。模板见 `FDE/templates/`�
 
 | 层 | 形式 | 模板 | 说明 |
 |----|------|------|------|
-| 📄 文档层 | `nodes/[节点名].md` | `templates/nodes/node-template.md` | 人读（五要素 + 价值 + 配置 + 状态）+ 编排引擎读（注入给 ao compose 拆任务） |
+| 📄 文档层 | `nodes/[节点名].md` | `templates/nodes/node-template.md` | 人读（五要素 + 价值 + 配置 + 状态）+ 编排引擎读（注入给 sofagent-orchestrator compose 拆任务） |
 | 🧠 Skill 层 | `skills/[节点名]/SKILL.md` | `templates/skills/skill-template/SKILL.md` | AI 读——节点的大脑，注入了行业术语 / 业务规则 / 历史案例 |
 | 🔴 运行层 | 设备上的 session | — | 活的——sub-agent session（🔄）/ AI 领航员（⚡），实际在跑 |
 
@@ -379,16 +388,16 @@ v1.0.1 起为**结构化 AI 知识库**（`.sofagent/knowledge/` 目录）：dae
 - [ ] `eval.md` 存在且有初始基线（至少 5 条手动评分记录）
 - [ ] Skill 迭代历史可见（`skill-iterations/` 或 SkillOpt 日志）
 - [ ] 知识库演变可追溯（knowledge/changelog/ 或 index.md 更新记录）
-- [ ] 企业关键业务指标与 scoring 挂钩（如「审批准确率 ≥ 95%」）
+- [ ] 企业关键业务指标与 eval 挂钩（如「审批准确率 ≥ 95%」）
 
 > 微软 CEO Nadella：未来企业最重要的知识产权是 private evals。工具可复制，差异化反馈无法复制。FDE 离场时留下的不是配置文件，是企业持续培养 Agent 的评估闭环。
 
 #### 9.5 Ontology 说明书（v1.0.8+）
 
-离场前用 `sofagent-audit ontology view` 生成一份人类可读的 MD 文档——
+离场前用 `sofagent-ontology view` 生成一份人类可读的 MD 文档——
 
 ```bash
-sofagent-audit ontology view > 企业数字孪生说明书.md
+sofagent-ontology view > 企业数字孪生说明书.md
 ```
 
 这份说明书是三个 YAML 文件（objects.yml + actions.yml + constraints.yml）的**人类可读摘要**：
@@ -401,7 +410,7 @@ sofagent-audit ontology view > 企业数字孪生说明书.md
 
 Ontology 说明书是 FDE 离场交付物之一——不是一次性文档。企业新增 workflow 或修改 entity 后，daemon 自动触发 `mergeOntology()` 更新三个 YAML，重新跑 `ontology view` 就能拿到最新版。说明书跟着企业一起演化。
 
-> v1.x 升级路径：从 MD 文件升级为 HTML Dashboard。通过 MCP 将三个 YAML 推送到服务器，渲染为可视化仪表盘——实体关系网 + 动作矩阵热力图 + 约束拓扑图。但 MD 文件永远保留：它是机器可读的数据源，也是人类离线阅读的保底方案。
+> v1.1.0+ 升级路径：从 MD 文件升级为 HTML Dashboard。通过 MCP 将三个 YAML 推送到服务器，渲染为可视化仪表盘——实体关系网 + 动作矩阵热力图 + 约束拓扑图。但 MD 文件永远保留：它是机器可读的数据源，也是人类离线阅读的保底方案。
 
 #### 9.6 River——企业统一 Agent 入口
 
@@ -410,7 +419,7 @@ FDE 交付的本质不只是一个个独立的 AI 节点——而是把这些节
 **River = 多个 Workflow 的关联集合。** 如果把每个 Workflow 看作一条小溪，River 就是这些小溪的汇合——数据在 Workflow 之间回流、上下文在节点之间传递、最终从统一入口流回用户。
 
 ```
-FDE 进场 → 梳理 Workflow A、B、C（每条小溪）
+FDE 进场 → 梳理 Workflow A、B、C（每条小溪）——梳理结果可直接沉淀为企业 Workflow 模板，见 [Workflow Hub](../workflow-hub/)。
          → 定义它们之间的数据回流关系（A 的产出是 B 的输入）
          → 部署 sofagent 底座（约束 + 编排 + 审计 + 回溯 + 进化）
          → 企业得到一个统一入口：@River
@@ -427,7 +436,7 @@ FDE 进场 → 梳理 Workflow A、B、C（每条小溪）
 | Ontology 说明书（9.5） | River 的地图（实体关系 + 动作矩阵 + 约束拓扑） |
 | AI 知识库（9.3） | River 的记忆（跑起来后自动积累） |
 
-> Dashboard 的 River 模块（v1.x）展示的就是这张拓扑图——哪些 Workflow 在互联、数据怎么回流、任务怎么从入口分发到各条小溪再汇总回来。不是聊天窗口，是河流的流向图。
+> Dashboard 的 River 模块（v1.1.0+）展示的就是这张拓扑图——哪些 Workflow 在互联、数据怎么回流、任务怎么从入口分发到各条小溪再汇总回来。不是聊天窗口，是河流的流向图。
 
 ---
 
@@ -530,7 +539,7 @@ FDE 离场后，企业不是「装完就完了」——AI 落地是一个渐进�
 |------|------|------|
 | Discovery | FunASR / whisper.cpp | 现场访谈录音转文字，中文场景优先 FunASR |
 | 需求结构化 | GitHub Spec Kit | 将模糊需求转为 Spec → Plan → Tasks |
-| 知识图谱 | Graphiti / LinkML | 构建企业本体模型（对应 §5） |
+| 知识图谱 | Graphiti / LinkML / **Ontoflow · OntoEK**（通用构建）/ **FIBO**（金融本体）· **BIAN**（银行业架构网络） | 构建企业本体模型（对应 §5） |
 | Agent 编码 | Claude Code / OpenHands | 主力编码 agent（内网用 OpenHands，MIT） |
 | RAG | Onyx（权限感知检索）/ RAGFlow | 企业知识库搭建 |
 | Eval | promptfoo / Ragas | AI 系统的正确率、幻觉率评估 |
@@ -560,13 +569,13 @@ FDE 离场后，企业不是「装完就完了」——AI 落地是一个渐进�
 |--------|--------|---------|
 | `.sofagent/history.jsonl` | 审计趋势——哪条规则反复 FAIL | "A3 越界修改连续 3 周触发，建议收紧 knowledge-domain.include" |
 | `.sofagent/think.md` | Agent 反思趋势——反复出错的操作 | "最近 5 次任务提到'不熟悉 API 格式'，建议补 entity" |
-| scoring 数据 | 节点评分趋势——哪个节点在退化 | "销售节点评分从 85 降到 72，检查 knowledge 质量" |
+| eval 数据 | 节点评分趋势——哪个节点在退化 | "销售节点评分从 85 降到 72，检查 knowledge 质量" |
 
 ### 怎么触发
 
 ```bash
 # 手动触发一次巡检
-sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
+sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点"
 
 # 自动周度巡检（在 watch.yml 配 cron）
 # .sofagent/watch.yml:

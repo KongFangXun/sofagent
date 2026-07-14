@@ -2958,6 +2958,117 @@ grep -c "A16\|A17" sofagent/audit/src/rules/index.ts     # 期望: ≥ 2（注�
 
 ---
 
+#### 268. 包拆分后 audit/src/ 收敛完整性 🆕
+```bash
+# v1.1.0 教训：工程师"复制"后忘记"移动"——新包有源码，audit/src/ 也留着副本
+# 导致 audit 编译时 import 已删文件时报 TS2307。回归检查：
+for d in subagents ontology eval daemon ab-testing; do
+  [ -e "sofagent/audit/src/$d" ] && echo "🔴 $d/ 残留" || echo "✅ $d/ 已删"
+done
+for f in think-generator.ts skill-safety-check.ts skillopt-integration.ts \
+         orchestrate-compare.ts diff-parser.ts log-checker.ts config-loader.ts \
+         model-client.ts cost-baseline.ts env-check.ts run-envs.ts log-reader.ts \
+         compress-memory.ts verify-evidence.ts; do
+  [ -f "sofagent/audit/src/$f" ] && echo "🔴 $f 残留" || echo "✅ $f 已删"
+done
+for d in verify hitl config shared; do
+  [ -d "sofagent/audit/src/$d" ] && echo "🔴 $d/ 残留" || echo "✅ $d/ 已删"
+done
+# 期望：全部"已删"
+```
+
+#### 269. 跨包 import 改写完整性 🆕
+```bash
+# v1.1.0 教训：audit/src/index.ts 中残留 `./log-checker` 等已迁出模块的 import
+# 编译不报错（因为文件还在），但实际应该从 @sofagent/core 引用
+grep -n "from '\./\(diff-parser\|log-checker\|config-loader\|model-client\|cost-baseline\|env-check\|run-envs\|log-reader\)" sofagent/audit/src/index.ts 2>/dev/null
+# 期望：零输出
+grep -rn "from '\.\.\/subagents\|from '\.\.\/eval\|from '\.\.\/daemon" sofagent/audit/src/ 2>/dev/null
+# 期望：零输出
+```
+
+#### 270. 基础层叶子包零依赖验证 🆕
+```bash
+# v1.1.0 架构铁律：harness/ontology/eval/core 为零依赖叶子包
+for pkg in harness ontology eval core; do
+  result=$(grep -rn "from '@sofagent/" "sofagent/$pkg/src/" 2>/dev/null)
+  [ -z "$result" ] && echo "✅ $pkg 零 @sofagent/* import" || echo "🔴 $pkg: $result"
+done
+# 期望：四个包全部 ✅
+```
+
+#### 271. 多包独立构建验证 🆕
+```bash
+# v1.1.0 教训：audit 构建通过不代表 core/orchestrator 也能独立构建
+# core 曾因缺少 filesystem/ 目录报 TS2307。每个包必须独立 tsc --noEmit
+for pkg in core orchestrator audit; do
+  echo "=== $pkg ==="
+  (cd "sofagent/$pkg" && npx tsc --noEmit 2>&1 | head -5)
+  [ ${PIPESTATUS[0]} -eq 0 ] && echo "✅ $pkg build OK" || echo "🔴 $pkg build FAIL"
+done
+# 期望：全部 ✅
+```
+
+#### 272. AI 工程师输出验证门禁 🆕
+```bash
+# v1.1.0 核心教训：AI 工程师的 IS_PASS 声明不可采信
+# 每波开发完成后必须实跑以下三条，以实跑结果为准，不以声明为准：
+npm run build --workspaces 2>&1 | grep -c "error TS"   # 期望: 0
+cd sofagent/audit && npm test 2>&1 | grep "Tests"      # 期望: N passed, 0 failed
+for pkg in core orchestrator audit; do (cd "sofagent/$pkg" && npx tsc --noEmit); done
+# 三条全绿才算通过
+```
+
+#### 273. 测试工厂函数迁移兼容性 🆕
+```bash
+# v1.1.0 教训：makeCtx/makeDiffFile 从 audit 内联 helper 改为 test-utils.ts 后，
+# 参数签名不兼容——makeCtx 只有 2 参数但调用方传 3 个、makeDiffFile 缺 status 参数。
+# 回归检查：确认 test-utils.ts 的 makeCtx 支持智能参数检测（数组→logEntries，对象→overrides）
+grep -A15 "export function makeCtx" sofagent/audit/src/test-utils.ts | grep -c "Array.isArray"
+# 期望: ≥ 1（智能检测数组 vs 对象）
+grep "status" sofagent/audit/src/test-utils.ts | grep "makeDiffFile" -A5 | grep -c "status"
+# 期望: ≥ 1（makeDiffFile 接受 status 参数）
+```
+
+#### 274. 测试数迁移后文档全量同步 🆕
+```bash
+# v1.1.0 教训：测试数从 531→417（孤儿测试文件随被测模块迁出），
+# 但文档只改了部分地方，ROADMAP/FDE/evidence/LIMITATIONS 仍写 531
+ACTUAL=$(cd sofagent/audit && npm test 2>&1 | grep "Tests" | sed 's/.*Tests *\([0-9]*\) passed.*/\1/')
+for file in ROADMAP.md FDE/FDE.md docs/evidence/evidence.md LIMITATIONS.md; do
+  grep -q "$ACTUAL" "$file" && echo "✅ $file" || echo "🔴 $file: 测试数不是 $ACTUAL"
+done
+# 期望：全部 ✅
+```
+
+#### 275. orphan 测试文件清理 🆕
+```bash
+# v1.1.0 教训：被测模块迁出后，audit/src/__tests__/ 中对应测试文件未被迁移或删除
+# 导致 vitest 因 import 已删模块而失败（module resolution 在 hoisting 之前失败）
+# 回归检查：确认 audit/src/__tests__/ 中无引用已迁出模块的测试文件
+grep -rn "from '\(\.\./\)*\(subagents\|\.\./eval\|\.\./daemon\|\.\./ab-test\)" sofagent/audit/src/__tests__/ 2>/dev/null
+# 期望：零输出（所有测试文件只引用 audit 内部模块或 @sofagent/core）
+```
+
+#### 276. audit/package.json bin 字段清理 🆕
+```bash
+# v1.1.0 教训：子命令迁出后 audit/bin 仍含 sofagent-verify 等已迁出二进制
+grep -A10 '"bin"' sofagent/audit/package.json | grep -v "sofagent-audit\|@sofagent/audit"
+# 期望：零输出（仅含 sofagent-audit + @sofagent/audit）
+```
+
+#### 277. npm workspace 12 包无循环依赖 🆕
+```bash
+# v1.1.0 要求：12 包依赖方向严格单向，无循环
+npm ls --depth=0 2>&1 | grep "UNMET\|ERR\|cycle"
+# 期望：零输出
+for pkg in harness ontology eval core; do
+  grep "from '@sofagent/" "sofagent/$pkg/src/" -rn 2>/dev/null && echo "🔴 $pkg 不应有 @sofagent/* import"
+done
+# 期望：四个包全部无输出
+```
+
+---
 - **不要建议新功能**——v1.0 是正式版，不是功能版
 - **发现的问题请给出文件路径 + 行号 + 具体建议**，不要泛泛而谈
 

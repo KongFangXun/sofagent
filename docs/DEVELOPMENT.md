@@ -4,7 +4,7 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v1.0.9 · 2026-07-13（UTC）· 孔放勋
+> v1.1.0 · 2026-07-13（UTC）· 孔放勋
 
 > 💡 **行业背景**：sofagent 是 Agent Harness 中间件——一底座四引擎覆盖约束·编排·审计·回溯·进化全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立的底线守卫层。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](../FDE/FDE.md)。
 
@@ -29,7 +29,7 @@
 
 | 依赖 | 用途 | 版本 |
 |------|------|:--:|
-| Node.js + TypeScript | 审计引擎、CLI、MCP Server | v1.0 |
+| Node.js + TypeScript | 审计引擎、CLI、MCP Server | v1.1.0 |
 | [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) | 编排引擎 + Sub Agent 系统 | v1.0.1+ |
 | [LangGraph.js](https://github.com/langchain-ai/langgraphjs) | 状态图、条件路由、HITL | v1.0.1+ |
 | Python 3 + `pip install skillopt` | Skill 自进化引擎（通过 CLI subprocess 调用，可选） | v1.0.3+ |
@@ -116,7 +116,7 @@ Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 
 - `sofagent/scripts/`（核心 4 个）：`install.sh` / `verify.sh` / `uninstall.sh` / `task-record.sh`
 - `sofagent/hooks/sofagent-load-chain/`：`HOOK.md` + `handler.ts`（OpenClaw 内部 hook）
 
-> npm 包 @sofagent/audit 含 8 个 bin 条目：6 个独立 CLI（sofagent-audit / sofagent-verify / sofagent-verify-evidence / sofagent-skill-safety-check / sofagent-orchestrate-compare / sofagent-env-check）+ 2 个别名（verify-evidence → sofagent-verify-evidence、skill-safety-check → sofagent-skill-safety-check）
+> npm 包 @sofagent/audit 当前仅暴露 `sofagent-audit` 一个 bin（v1.1.0 拆包后 verify / orchestrate-compare / env-check / skill-safety-check 等已迁至对应独立包，实际 bin 以各包 `package.json` 为准）。
 
 | 脚本 | 干什么 | 什么时候跑 |
 |------|------|------|
@@ -292,7 +292,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 | | Audit Agent | FDE Agent (sustain) |
 |------|------|------|
 | 方向 | 向下看——防退化 | 向上看——促进化 |
-| 数据源 | git diff + A1-A17 | audit 报告 + think.md + scoring |
+| 数据源 | git diff + A1-A11、A14-A17 | audit 报告 + think.md + eval |
 | 频率 | 每次 commit | 每周自动 |
 | 输出 | 🔴 P0 / 🟡 P1 | 优化建议 + 趋势分析 |
 
@@ -389,7 +389,7 @@ sofagent-audit（v1.0.8）是 TypeScript CLI，支持两种审计触发模式：
 | git commit 审计 | v0.92+ | `git commit` → commit-msg hook | 开发者 | ✅ |
 | 文件系统审计 | v1.0.8+ | daemon 监控文件变更 | 开发者 + 非开发者 | ❌（内嵌 isomorphic-git） |
 
-两种模式共用同一套审计规则（A1-A17）和 exit code（0=PASS / 1=WARN / 2=FAIL）。差异在于触发时机和拦截能力：git commit 审计能阻断 commit，文件系统审计只能事后告警 + 快照回溯。
+两种模式共用同一套审计规则（A1-A11、A14-A17 + E1-E4，共 19 条）和 exit code（0=PASS / 1=WARN / 2=FAIL）。差异在于触发时机和拦截能力：git commit 审计能阻断 commit，文件系统审计只能事后告警 + 快照回溯。
 
 v1.0.8 内嵌 `isomorphic-git`（纯 JS Git，~2MB）作为 diff 引擎——非 git 目录也能做行级 diff。daemon 用 `chokidar` 监控文件变更，5 秒防抖后触发审计。每次审计后自动做 git 快照，用户可 `sofagent-audit --revert <sha>` 回滚。
 

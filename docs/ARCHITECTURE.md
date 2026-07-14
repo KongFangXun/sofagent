@@ -5,7 +5,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 # sofagent Architecture
 
 > 设计决策记录——从为什么存在、五个引擎如何协作，到每个关键决策的工程理由。
-> v1.0.9 · 2026-07-14（UTC）· 孔放勋
+> v1.1.0 · 2026-07-14（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="300" />
 
@@ -132,7 +132,7 @@ graph LR
 
 > [Anthropic《When AI builds itself》](https://www.anthropic.com/institute/recursive-self-improvement)（2026-06）：工程师代码产出达 2024 年 8 倍后，人工代码审查成为新堵点。sofagent 的审计引擎把审查外置到 git diff 自动化——正是解这个瓶颈的方向。
 
-**行业印证**：Palantir AIP 靠 Ontology 实现 Agent 可靠性——「根本接触不到 > 被告知不能说」与 sofagent 的 A15 约束验证 + 审计外置遵循同一原则。五个操作特征（闭环操作、控量上下文、权限约束、分支评审、工具定制）与 sofagent 的 loop/evaluate/exit、task-aware、A15、A/B 对比、Skill 系统一一对应。
+**行业印证**：Palantir AIP 靠 Ontology 实现 Agent 可靠性——「根本接触不到 > 被告知不能说」与 sofagent 的 A15 约束验证 + 审计外置遵循同一原则（不依赖 Agent 自我报告，只看 git diff 硬证据）。
 
 ### 🔄 回溯引擎
 
@@ -153,7 +153,7 @@ daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml
 
 ### ⚙️ 编排引擎
 
-大任务拆小、多 Sub Agent 并行、A/B 对比找更优方案。基于 DeepAgents，`sofagent-audit compose --task` CLI 入口——任何 Agent 平台都能用。
+大任务拆小、多 Sub Agent 并行、A/B 对比找更优方案。基于 DeepAgents，`sofagent-orchestrator compose --task` CLI 入口——任何 Agent 平台都能用。
 
 **为什么是 Skill + 脚本 + Runtime**：
 | 什么事 | 谁来做 | 为什么 |
@@ -193,7 +193,7 @@ sofagent 支持两种节点类型：
 |------|------|------|
 | **场景** | 企业无人值守设备 | 个人开发者（WorkBuddy/Codex 等） |
 | **OpenClaw** | ✅ 必须 | ❌ 不需要 |
-| **编排调用** | OpenClaw 内部 API | `sofagent-audit compose --task` CLI |
+| **编排调用** | OpenClaw 内部 API | `sofagent-orchestrator compose --task` CLI |
 | **约束注入** | OpenClaw Hook 精确注入 | Sub Agent 自加载（`buildConstrainedSystemPrompt`） |
 
 > Sub Agent 约束自加载：启动时读 `.sofagent/` 下的约束文件，拼装为 system prompt。纯文件系统操作，不依赖任何 Agent 平台的 Skill 系统。换平台约束不丢。
@@ -201,6 +201,8 @@ sofagent 支持两种节点类型：
 ### River — Workflow — Subagent 三层架构
 
 **River = 多个 Workflow 的集合**——每条小溪（Workflow）并行/串行执行，汇入同一条大河（River），从头到尾同一个身份、同一段上下文。
+
+Workflow Hub 的实现规范见 [workflow-hub/SPEC.md](../workflow-hub/SPEC.md)（混合架构：外层 `workflow.yml` Graph 骨架锁步骤 + 内层 ReAct 节点）。
 
 ```
 用户 → River（统一入口）→ Workflow A/B/C（任务拆解）→ Subagent（执行）
@@ -214,6 +216,8 @@ sofagent 支持两种节点类型：
 | **Subagent** | 执行具体能力的 Agent | 水滴——干完活消失 |
 
 River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 本身，而是确保 River 里的每一个 Sub Agent 都有纪律、可追溯、会反思。
+
+> **Workflow 的混合架构**：每条 Workflow 采用「外层 Graph 骨架 + 内层 ReAct 节点」——`workflow.yml` 的 `nextNodes` 锁定全链路步骤、保证可追溯（对应行业笔记中的「Graph 实现全局流程骨架」），单个节点的 `prompt` 保留模型自主规划能力（对应「内层 ReAct Agent」）。这一设计兼顾全局稳定性与局部灵活性：低容错业务靠 Graph 锁死流程，复杂节点靠 ReAct 保灵活。详见 [workflow-hub/SPEC.md](../workflow-hub/SPEC.md)。
 
 ### Agent 基础设施层（v1.0.8+）
 
@@ -261,7 +265,7 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 
 > **历史转折（v0.98）**：sofagent 最初走「事前约束」路线——在 Agent 干活前注入规则，指望它自律。两次 200 次对照实验后放弃：不是约束无效，是实验室测不出来。转向「事后审计」路线——git diff 是客观证据，不依赖实验设计。这次转向定义了 sofagent 的立身之本：**不信任 Agent 自我报告，只看文件 diff 硬证据。**
 
-### 三层加载链：为什么是这个顺序
+### 四层加载链：为什么是这个顺序
 
 | 层 | 文件 | 权限 | 位置原因 |
 |:--:|------|:--:|------|

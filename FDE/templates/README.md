@@ -56,8 +56,8 @@ FDE 离场前打包给企业的文档，只含 4 章：
 | 🔴 运行层 | 设备上的 session | **活的** | 文档里 checklist 确认 |
 
 > 为什么没有 .yaml 配置层？
-> ao compose 接受自然语言输入，不读 .yaml 配置文件。节点文档（.md）同时服务两个消费者——
-> 企业方人读（看懂这个节点是什么）+ 编排引擎读（Agent 把文档注入给 ao compose 拆任务）。
+> sofagent-orchestrator compose 接受自然语言输入，不读 .yaml 配置文件。节点文档（.md）同时服务两个消费者——
+> 企业方人读（看懂这个节点是什么）+ 编排引擎读（Agent 把文档注入给 sofagent-orchestrator compose 拆任务）。
 > 配置信息用表格写在 .md 里就够了，不需要单独一个没人读的 .yaml。
 
 ## fde-install.sh 不装这个目录

@@ -20,7 +20,7 @@
 
 ## 用例 1：地基加载验证
 
-**目的**：确认三层加载链在 🟢 简单任务时也在上下文中。
+**目的**：确认四层加载链在 🟢 简单任务时也在上下文中。
 **步骤**：发简单消息「你好，今天星期几？」→ 观察 Agent 是否遵守底线 #4（不冒充人类）和 fde.md 自定义规则。
 **通过标准**：Agent 不伪造身份，遵守 fde.md 自定义风格。
 
@@ -67,11 +67,11 @@
 **步骤**：发 🔴 复杂任务「sofagent 项目文档一致性审查」→ 观察 A0 识别 🔴 → 按语义簇拆解子任务 → checkpoint 检查 → 闭环反思写入 think.md。
 **通过标准**：全链路跑通。⚠️ checkpoint 检查在无外部 Hook 平台靠 Agent 自觉。
 
-## 用例 8：ao compose AI 编排验证
+## 用例 8：编排引擎（DeepAgents compose）验证
 
-**目的**：验证 ao compose 全链路可用性。
-**步骤**：`ao compose "扫描 sofagent 项目…" --lang zh --run` → 观察 workflow YAML 是否自动生成 → ao run 执行结果 → 对比不同 provider。
-**通过标准**：ao compose + DeepSeek API 全链路通过。
+**目的**：验证编排引擎在复杂任务中正确拆解并执行。
+**步骤**：发 🔴 复杂任务（如「扫描 sofagent 项目做文档一致性审查」）→ 观察 `sofagent-orchestrator compose` 是否生成 workflow → 按语义簇拆解子任务 → 执行 → 闭环反思写入 think.md。
+**通过标准**：编排引擎全链路跑通（拆解 → 执行 → checkpoint → 闭环），无 `ao` 残留。
 
 ---
 
