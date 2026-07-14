@@ -8,7 +8,7 @@
 
 ---
 
-## 现在在哪：v1.0.9 🔧（开发完成，待发版）
+## 现在在哪：v1.0.9 ✅（已发版）
 
 > 二进制文件审计（A16 非授权变更 + A17 异常批量变更）+ `--timeline` 快照时间线 + `--revert` 回滚 + MCP compose tool + daemon 审计闭环 + cron 定时 FDE 巡检 + A9 中文注入检测 + EvidenceMode `'filesystem'` 扩展。528 测试全绿，acceptance-test 35/35 全绿，pre-push 7/7 全绿。
 >
@@ -84,7 +84,7 @@
 | **v1.0.7** | ✅ 已完成 | 双节点架构 + Sub Agent 约束自加载 + CLI 编排入口 + ao 完全退役 + A/B 自动切换 + **预装 FDE 部署工程师 + 合规审计员两个内置 Agent** | [📖](./docs/changelog/v1.0.7.md) |
 | **v1.0.8** | ✅ 已完成 | **⭐ FDE Agent 自进化（部署 + 持续优化双模式）**→ 一管底线（Audit）一管上限（FDE）+ 文件系统审计（isomorphic-git + fs-watch）+ 快照回溯 + Agent 定义去耦合 + TencentDB Memory 集成 + Ontology 人类可读视图 | [📖](./docs/changelog/v1.0.8.md) |
 | **v1.0.9** | ✅ 已完成 | 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool | [📖](./docs/changelog/v1.0.9.md) |
-| **v1.1.0** | 📋 规划中 | **包结构纯度重构（audit 只做 audit）**：把 `@sofagent/audit` 上帝包拆为 11 个独立包——基础层 `@sofagent/{harness,ontology,scoring,core}` + 运行层 `@sofagent/{orchestrator,daemon,ab-testing,work模板市场,think,skillopt}` + 纯审计 `@sofagent/audit`（收敛为 rules/webhook/filesystem/audit-*/permission），依赖单向无循环；+ **轻量多设备四件事**：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md → lessons-missteps）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检。一次性抽干净 | [📖](./docs/changelog/v1.1.0.md) |
+| **v1.1.0** | 📋 规划中 | **包结构纯度重构（audit 只做 audit）**：把 `@sofagent/audit` 上帝包拆为 11 个独立包——基础层 `@sofagent/{harness,ontology,eval,core}` + 运行层 `@sofagent/{orchestrator,daemon,ab-test,work模板市场,think,skillopt}` + 纯审计 `@sofagent/audit`（收敛为 rules/webhook/filesystem/audit-*/permission），依赖单向无循环；+ **轻量多设备四件事**：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md → lessons-missteps）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检。一次性抽干净 | [📖](./docs/changelog/v1.1.0.md) |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同：Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界 | — |
 | **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A17 + 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线 | — |
 
@@ -268,12 +268,12 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | 想法 | 说明 |
 |------|------|
 | **gstack/OKF 工程学习**（v1.0.5） | 从 gstack 和 Google OKF 借鉴 5 项工程改进：原子文件写入 / 首次运行分类器 / fail-closed 默认安全 / 生产者-消费者架构文档化 / A9 分级安全。详见 [THANKS](./docs/THANKS.md) |
-| **企业 Skill 自动优化** | FDE 部署时给每个 AI 节点定制专属 Skill（注入行业术语/业务规则/历史案例）。节点跑起来后，基于 scoring.md 评分 + task/logs 记录 + think.md 反思，Skill 自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本，candidate 胜出 promote 替换 current。这是 sofagent 的核心服务：**Skill 不只是部署时写好，运行时持续进化** |
+| **企业 Skill 自动优化** | FDE 部署时给每个 AI 节点定制专属 Skill（注入行业术语/业务规则/历史案例）。节点跑起来后，基于 eval.md 评分 + task/logs 记录 + think.md 反思，Skill 自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本，candidate 胜出 promote 替换 current。这是 sofagent 的核心服务：**Skill 不只是部署时写好，运行时持续进化** |
 | **AI 知识库（v1.0.1）** | FDE 交付的第三样东西从散文件升级为结构化知识系统。`.sofagent/knowledge/` 目录：entities/（实体页）+ concepts/（概念页）+ comparisons/（对比页）。daemon 检测 task/logs 变化触发 Ingest，loop-evaluate 顺带跑 Lint，加载链启动时被动注入 top-N 相关页。think.md 不动（职责不重叠）。**新增 Workflow 节点数据契约**（每个 Agent 只看自己职责范围内的知识）+ **entities 实体关联**（frontmatter `relations` 字段——知识库从独立页面变成关联图，Ontology 第 1 步）。详见 [v1.0.1 开发日志](./docs/changelog/v1.0.1.md) |
 | **think.md 模板强制** | think.md 目前可选——Agent 想写就写。v1.0.1 升级：如果写，必须按模板（做了什么 / 踩了什么坑 / 下次怎么办）。不强制写，审计引擎检测「本次任务无 think.md」标 ⚠️ 但不阻断。**不做 gate 前置检查**——强制 gate 会导致 Agent 用垃圾内容填模板 |
 | **loop-check 轮次上限** | 当前 loop-check 只有步数比例检查点（60%），无绝对轮次上限。v1.0.1 加硬性兜底：超过 N 轮自动 closure → 交还人类。防止工具持续报错导致 Agent 无限循环消耗 Token |
 | **后置测验（可选维度）** | loop-check 新维度：任务结束时 AI 出题反问人类「我做了 X，你理解了吗？」从 Agent 自检到人机对齐。默认关闭，高风险任务才开启。成本高（每次任务需人答题），v2.x 探索 |
-| **Skill 自动优化闭环（v1.0.3）** | FDE 离场时生成的定制 Skill 不是一次性写完就固定的——接入 [微软 SkillOpt](https://github.com/microsoft/SkillOpt) 自动优化引擎（SkillOpt）：Agent 跑任务 → scoring + task/logs 收集轨迹 → `skillopt-sleep` 夜间训练（Rollout→Reflect→Aggregate→Select→Update→Evaluate）→ validation gate 严格验证 → 只升不降替换 Skill。MIT 免费，本地 pip 安装，通过 CLI subprocess 调用。详见 [v1.0.3 开发日志](./docs/changelog/v1.0.3.md) |
+| **Skill 自动优化闭环（v1.0.3）** | FDE 离场时生成的定制 Skill 不是一次性写完就固定的——接入 [微软 SkillOpt](https://github.com/microsoft/SkillOpt) 自动优化引擎（SkillOpt）：Agent 跑任务 → eval + task/logs 收集轨迹 → `skillopt-sleep` 夜间训练（Rollout→Reflect→Aggregate→Select→Update→Evaluate）→ validation gate 严格验证 → 只升不降替换 Skill。MIT 免费，本地 pip 安装，通过 CLI subprocess 调用。详见 [v1.0.3 开发日志](./docs/changelog/v1.0.3.md) |
 | 质量抽检仪表盘 | 抽检合格率、skillopt 迭代记录可视化 |
 | age 加密 / 多用户隔离 | think.md + task/logs 加密；同机权限隔离 |
 | 多企业平台 webhook | 飞书 + 企微 + 自定义 webhook |
@@ -303,7 +303,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | 记忆产权三维框架 | 对象归属 / 锁定策略 / 边界定义补充到记忆层
 | **记忆分层金字塔（L0-L3）**（v1.x-v2.x） | 借鉴 TencentDB Agent Memory 的 4 层记忆架构：L0 原始对话（think.md）→ L1 原子事实（自动提取 entities）→ L2 场景聚合（自动生成 concepts）→ L3 用户画像（新增 persona.md）。当前仅有手工 knowledge/，缺自动化提炼流水线和 L3 用户画像。v1.x 加 L1→L2 自动聚合，v2.x 加 L3 用户画像 + SQLite 双轨存储。详见 [TencentDB Agent Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory) |
 | **OKF 知识互操作**（v2.x 探索） | Google OKF（LMVKI 知识沉淀 + OKF 互操作两代分化）。当前 knowledge/ 已实现知识沉淀（等同于 LMVKI），未来方向：① 导出为 OKF 标准格式（统一元数据：标题/类型/标签/更新时间/来源）② 让外部 AI 系统（Cloud/Gemini/Cursor）零适配直接读取 sofagent 的知识库。把企业知识库从"sofagent 专属"变成"所有 AI 通用"
-| **私有化评估体系**（v1.x） | 微软 Nadella：未来企业最重要 IP 是 private evals。FDE 交付的 scoring 反馈 + Skill 迭代历史 + 知识库演变 = 企业的私有化评估闭环。当前已实现 scoring.md + A/B 对比 + SkillOpt，v1.x 强化为 FDE 离场时的核心交付物描述
+| **私有化评估体系**（v1.x） | 微软 Nadella：未来企业最重要 IP 是 private evals。FDE 交付的 scoring 反馈 + Skill 迭代历史 + 知识库演变 = 企业的私有化评估闭环。当前已实现 eval.md + A/B 对比 + SkillOpt，v1.x 强化为 FDE 离场时的核心交付物描述
 | 入口契约三门槛 | 审计引擎扩展：检查提交含 decision log / PR 大小 / 测试证据，把「重建意图」成本推回提交者 |
 | 记忆冲突检测三步法 | think.md 从追加模式升级：检测矛盾→智能融合→重心明确，不简单覆盖 |
 | 审计工具健康度运维 | 规则失效检测 + baseline 增长告警——审计工具也需要被审计 |
@@ -358,7 +358,7 @@ v1.x 的多设备 = **经验共享 + 审计可见**，不碰身份/权限/协同
 | 循环层 | 时间尺度 | 职责 | sofagent 对应 | 当前状态 |
 |--------|:--:|------|------|:--:|
 | 内层 | 秒-分钟 | Agent 执行 + 反思 + 自动纠偏 | entry-gate → task-aware → loop-check → think.md → loop-exit | ✅ v0.99+ |
-| 外层 | 天-周 | Skill 优化 + 知识库沉淀 | loop-evaluate → scoring.md → AI 知识库 → Skill 自动优化 | v1.2.x |
+| 外层 | 天-周 | Skill 优化 + 知识库沉淀 | loop-evaluate → eval.md → AI 知识库 → Skill 自动优化 | v1.2.x |
 
 > 当前 ROADMAP 已有「分布式反思同步」（Gossip 方向）。三模式不是互斥的——实践中可能黑板打底 + 上下文路由按需补充。决策留到 v1.2.x 需求分析时做。
 
