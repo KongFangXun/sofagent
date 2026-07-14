@@ -38,11 +38,34 @@ audit:
   # loopCheckMaxRounds: 20
 
   # 按规则名禁用——取消注释即可关闭指定规则
-  # 可用 key: a1-a15, e1-e4
+  # 可用 key: a1-a17, e1-e4
   # 显式 false 禁用，未列或 true 表示启用
   # rules:
   #   a3: false  # 禁用「不改越界」检查
   #   e1: true   # 显式启用 E1（需同时设 extendedRulesEnabled: true）
+
+# v1.0.9: A16 非授权文件变更
+A16:
+  enabled: true
+  protected_dirs:
+    - "config/"
+    - ".env"
+    - "secrets/"
+    - ".sofagent/config.yml"
+  sensitive_types:
+    - ".xlsx"
+    - ".docx"
+    - ".pdf"
+    - ".db"
+    - ".sqlite"
+    - ".pem"
+    - ".key"
+
+# v1.0.9: A17 异常批量变更
+A17:
+  enabled: true
+  bulk_threshold: 50
+  bulk_window_ms: 300000
 `;
 
 /**

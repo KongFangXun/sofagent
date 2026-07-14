@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // mcp-server.ts · MCP Server (Model Context Protocol)
-// v1.0.8: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
+// v1.0.9: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
 //
 // 协议：https://spec.modelcontextprotocol.io/
 // 传输：stdio（stdin/stdout，每行一个 JSON-RPC 消息）
@@ -271,6 +271,28 @@ class McpServer {
             required: ['lesson'],
           },
         },
+        {
+          name: 'sofagent_compose',
+          description: '编排引擎——传入任务描述，返回 Sub Agent 编排方案（YAML）',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              task: {
+                type: 'string',
+                description: '任务描述',
+              },
+              agent: {
+                type: 'string',
+                description: '指定 Sub Agent（可选）',
+              },
+              run: {
+                type: 'boolean',
+                description: '是否执行（默认 false = dry-run）',
+              },
+            },
+            required: ['task'],
+          },
+        },
       ],
     });
   }
@@ -295,6 +317,9 @@ class McpServer {
         break;
       case 'write_think':
         this.toolWriteThink(id, args);
+        break;
+      case 'sofagent_compose':
+        await this.toolCompose(id, args);
         break;
       default:
         this.sendError(id, -32602, `Unknown tool: ${toolName}`);
@@ -463,6 +488,42 @@ class McpServer {
       text: `已追加反思到 think.md: "${lesson}"`,
       data: { timestamp, task, lesson },
     });
+  }
+
+  /**
+   * Tool: sofagent_compose (v1.0.9)
+   * 调用 CLI compose 逻辑，返回 YAML 编排方案
+   */
+  private async toolCompose(id: number | string | null, args: Record<string, unknown>): Promise<void> {
+    if (typeof args.task !== 'string' || !args.task) {
+      this.sendError(id, -32602, 'Missing or invalid required argument: task');
+      return;
+    }
+
+    const cmd = ['compose', '--task', args.task];
+    if (typeof args.agent === 'string' && args.agent) {
+      cmd.push('--agent', args.agent);
+    }
+    if (args.run === true) {
+      cmd.push('--run');
+    }
+
+    try {
+      const result = execFileSync('sofagent-audit', cmd, { encoding: 'utf-8', timeout: 30000 });
+      this.sendToolResult(id, {
+        type: 'text',
+        text: result,
+        data: { yaml: result },
+      });
+    } catch (err) {
+      const msg = (err as Error).message;
+      // 退出码非 0 也返回 stderr 内容（compose 可能通过 stderr 返回错误）
+      this.sendToolResult(id, {
+        type: 'text',
+        text: `❌ compose 执行失败: ${msg}`,
+        data: { error: msg },
+      });
+    }
   }
 
   // ============================================================

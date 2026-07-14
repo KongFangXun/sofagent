@@ -1,18 +1,18 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.0.8 · 2026-07-13（UTC）· 文件系统审计 + FDE 持续优化 + 快照回溯 + Ontology 视图
+> v1.0.9 · 2026-07-13（UTC）· 文件系统审计 + FDE 持续优化 + 快照回溯 + Ontology 视图
 >
 
 > 🎯 **v1.0 定位**：**Agent Harness 中间件**——不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他什么 Agent 平台，sofagent 是独立的审计标准层：约束行为、审计变更、沉淀经验。v1.0 聚焦单设备，v1.1.x 加轻量多设备（经验共享），v1.2.x 做完整多设备（独立身份+跨设备审计聚合）。
 
 ---
 
-## 现在在哪：v1.0.8 ✅
+## 现在在哪：v1.0.9 🔧（开发完成，待发版）
 
-> 文件系统审计（isomorphic-git + fs-watch）+ FDE 持续优化模式（sustain）+ 快照回溯 + Agent 去 OpenClaw 耦合 + TencentDB Memory 集成 + Ontology 人类可读视图。493 测试全绿，pre-push 全绿。
+> 二进制文件审计（A16 非授权变更 + A17 异常批量变更）+ `--timeline` 快照时间线 + `--revert` 回滚 + MCP compose tool + daemon 审计闭环 + cron 定时 FDE 巡检 + A9 中文注入检测 + EvidenceMode `'filesystem'` 扩展。528 测试全绿，acceptance-test 35/35 全绿，pre-push 7/7 全绿。
 >
-> 📖 [开发日志](./docs/changelog/v1.0.8.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [开发日志](./docs/changelog/v1.0.9.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -83,8 +83,8 @@
 | **v1.0.6** | ✅ 已完成 | 编排迁移 + A/B 真实运行器 + 文档一致性修复：DeepAgents compose + Sub Agent 状态 + A/B 模型 API 直跑 + history.jsonl 环境指纹 + post-commit hook + 文档一致性修复 | [📖](./docs/changelog/v1.0.6.md) |
 | **v1.0.7** | ✅ 已完成 | 双节点架构 + Sub Agent 约束自加载 + CLI 编排入口 + ao 完全退役 + A/B 自动切换 + **预装 FDE 部署工程师 + 合规审计员两个内置 Agent** | [📖](./docs/changelog/v1.0.7.md) |
 | **v1.0.8** | ✅ 已完成 | **⭐ FDE Agent 自进化（部署 + 持续优化双模式）**→ 一管底线（Audit）一管上限（FDE）+ 文件系统审计（isomorphic-git + fs-watch）+ 快照回溯 + Agent 定义去耦合 + TencentDB Memory 集成 + Ontology 人类可读视图 | [📖](./docs/changelog/v1.0.8.md) |
-| **v1.0.9** | 📋 规划中 | 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool + knowledge 智能选择 | [📖](./docs/changelog/v1.0.9.md) |
-| **v1.1.0** | 📋 规划中 | 轻量多设备：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md 生成 lessons-missteps.md）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检 + **架构整理（审计引擎 / 编排 / 独立模块边界划分，解决 @sofagent/audit 单体膨胀问题）** | — |
+| **v1.0.9** | ✅ 已完成 | 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool | [📖](./docs/changelog/v1.0.9.md) |
+| **v1.1.0** | 📋 规划中 | **包结构纯度重构（audit 只做 audit）**：把 `@sofagent/audit` 上帝包拆为 11 个独立包——基础层 `@sofagent/{harness,ontology,scoring,core}` + 运行层 `@sofagent/{orchestrator,daemon,ab-testing,work模板市场,think,skillopt}` + 纯审计 `@sofagent/audit`（收敛为 rules/webhook/filesystem/audit-*/permission），依赖单向无循环；+ **轻量多设备四件事**：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md → lessons-missteps）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检。一次性抽干净 | [📖](./docs/changelog/v1.1.0.md) |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同：Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界 | — |
 | **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A17 + 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线 | — |
 

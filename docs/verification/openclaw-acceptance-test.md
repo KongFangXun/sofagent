@@ -562,7 +562,7 @@ composeWithDeepAgents({
 
 ---
 
-### 场景 26b：内置 Sub Agent 注册与 CLI 调用（FDE + Audit · v1.0.8）
+### 场景 26b：内置 Sub Agent 注册与 CLI 调用（FDE + Audit · v1.0.9）
 
 > v1.0.8 新增：验证 `sofagent-fde` 和 `sofagent-audit` 两个内置 Agent 可从 CLI 正常调用。
 
@@ -657,6 +657,161 @@ git reset HEAD . 2>/dev/null
 
 ---
 
+## 第九部分：v1.0.9 新增规则与命令
+
+### 场景 29：A16 非授权文件变更（保护目录下敏感文件修改 → WARN）
+
+```bash
+cd /tmp/sofagent-openclaw-test
+
+# 恢复默认配置
+echo 'audit:
+  rules: {}' > .sofagent/config.yml
+
+# A16 规则需要 A16 配置——在 config.yml 启用
+cat >> .sofagent/config.yml << 'CFG16'
+  A16:
+    protected_dirs:
+      - "config/"
+      - "secrets/"
+      - ".env*"
+    sensitive_types:
+      - ".xlsx"
+      - ".docx"
+      - ".pdf"
+      - ".db"
+      - ".sqlite"
+CFG16
+
+# 在保护目录下新增敏感文件
+mkdir -p config
+echo "modified" > config/settings.db
+git add config/settings.db
+
+A16_OUT=$($AUDIT_CLI --diff --cached --task "add config file" 2>&1 || true)
+echo "$A16_OUT" | grep -i "A16\|非授权\|sensitive\|WARN" && echo "A16 ✅" || echo "A16 ❌"
+# ✅ 期望：A16 检测到 .db 文件在 config/ 保护目录下 → WARN
+
+git reset HEAD config/settings.db 2>/dev/null || true
+rm -rf config
+```
+
+### 场景 30：A17 异常批量变更（规则注册验证）
+
+```bash
+cd /tmp/sofagent-openclaw-test
+
+# A17 需要 filesystem evidence——通过 daemon 场景触发
+# 这里验证 A17 规则注册且配置可读
+$AUDIT_CLI --diff --cached --json 2>&1 | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    rules = d.get('rules', [])
+    a17 = [r for r in rules if r.get('number') == 17]
+    if a17:
+        print('A17 ✅ 已注册')
+    else:
+        print('A17 ❌ 未注册')
+except:
+    print('A17 ⚠️ JSON 解析失败')
+"
+# ✅ 期望：A17 在 rules 列表中（status PASS = 没有触发批量变更，但规则已加载）
+```
+
+### 场景 31：--timeline 快照时间线命令
+
+```bash
+cd /tmp/sofagent-openclaw-test
+
+# 确保 history.jsonl 有内容（前面的场景已产生审计记录）
+TIMELINE_OUT=$($AUDIT_CLI --timeline 2>&1 || true)
+echo "$TIMELINE_OUT" | head -10
+
+# ✅ 期望：输出含"时间线"标题 + 至少一条快照记录（含时间 + SHA + PASS/WARN）
+echo "$TIMELINE_OUT" | grep -q "时间线\|timeline\|PASS\|WARN\|✅\|⚠️" && echo "timeline ✅" || echo "timeline ❌"
+```
+
+### 场景 32：--revert 回滚命令
+
+```bash
+cd /tmp/sofagent-openclaw-test
+
+# --revert 无参数应报错
+REVERT_NO_ARG=$($AUDIT_CLI --revert 2>&1 || true)
+echo "$REVERT_NO_ARG" | grep -q "缺少\|SHA\|参数\|usage" && echo "revert no-arg ✅" || echo "revert no-arg ❌"
+
+# --timeline --json 拿第一个 SHA，验证 --revert <SHA> 能调到函数
+SHA=$($AUDIT_CLI --timeline --json 2>&1 | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    entries = d.get('entries', d.get('snapshots', []))
+    if entries:
+        print(entries[0].get('sha', entries[0].get('hash', '')))
+except:
+    pass
+" 2>/dev/null)
+
+if [ -n "$SHA" ]; then
+  REVERT_OUT=$($AUDIT_CLI --revert "$SHA" 2>&1 || true)
+  echo "$REVERT_OUT" | grep -qi "回滚\|revert\|恢复\|snapshot" && echo "revert ✅" || echo "revert ⚠️ 输出格式异常"
+else
+  echo "revert ⚠️ 无可用快照 SHA"
+fi
+```
+
+### 场景 33：daemon 审计闭环（runFilesystemAudit 函数）
+
+```bash
+cd $SOFAGENT_DIR
+
+# daemon 闭环验证：run-fs-audit.ts 的 runFilesystemAudit 函数是否存在且可调用
+RESULT=$(node -e "
+const mod = require('./sofagent/audit/dist/daemon/run-fs-audit');
+console.log(typeof mod.runFilesystemAudit);
+" 2>&1)
+echo "$RESULT" | grep -q "function" && echo "runFilesystemAudit ✅ 已导出" || echo "runFilesystemAudit ❌ $RESULT"
+```
+
+### 场景 34：cron 定时巡检（startCron 函数）
+
+```bash
+cd $SOFAGENT_DIR
+
+RESULT=$(node -e "
+const mod = require('./sofagent/audit/dist/daemon/cron');
+console.log(typeof mod.startCron);
+" 2>&1)
+echo "$RESULT" | grep -q "function" && echo "startCron ✅ 已导出" || echo "startCron ❌ $RESULT"
+
+# startCron 传不存在的路径不应崩溃
+RESULT2=$(node -e "
+const mod = require('./sofagent/audit/dist/daemon/cron');
+try {
+  mod.startCron('/nonexistent/path');
+  setTimeout(() => process.exit(0), 100);
+} catch(e) {
+  console.log('startCron error:', e.message);
+}
+" 2>&1)
+echo "$RESULT2" | grep -q "error" && echo "cron ⚠️ $RESULT2" || echo "cron ✅ 不崩溃"
+```
+
+### 场景 35：EvidenceMode filesystem 类型验证
+
+```bash
+cd $SOFAGENT_DIR
+
+# 验证 types.ts 的 EvidenceMode 包含 'filesystem'
+grep "filesystem" sofagent/audit/src/rules/types.ts && echo "filesystem type ✅" || echo "filesystem type ❌"
+
+# 验证 A17 使用了 filesystem evidenceMode
+grep "evidenceMode.*filesystem" sofagent/audit/src/rules/rule-a17-bulk-change.ts && echo "A17 filesystem ✅" || echo "A17 filesystem ❌"
+```
+
+---
+
 ## 验证检查清单
 
 每个场景需确认：
@@ -698,6 +853,15 @@ git reset HEAD . 2>/dev/null
 - [ ] 场景 27：deepagents 未安装时核心功能不受影响
 - [ ] 场景 28：config rules 过滤生效（audit: 段下禁用 A1 后不拦截 .env）
 
+### v1.0.9 新增（场景 29-35）
+- [ ] 场景 29：A16 保护目录下敏感文件 → WARN
+- [ ] 场景 30：A17 规则注册（JSON 输出含 number=17）
+- [ ] 场景 31：--timeline 输出时间线
+- [ ] 场景 32：--revert 无参报错 + 有参可调用
+- [ ] 场景 33：runFilesystemAudit 函数已导出
+- [ ] 场景 34：startCron 函数已导出且不崩溃
+- [ ] 场景 35：EvidenceMode 含 'filesystem'，A17 使用该模式
+
 ## 清理
 
 ```bash
@@ -733,4 +897,8 @@ unset PATH NODE_PATH
 | 内置 Agent（FDE / Audit）变更 | 第六部分（场景 26b） |
 | optional 依赖策略变更 | 第七部分 |
 | config rules 过滤逻辑变更 | 第八部分 |
+| 新增审计规则（A16/A17 等） | 第九部分（新增对应场景） |
+| CLI 命令变更（--timeline/--revert 等） | 第九部分 |
+| daemon / cron 架构变更 | 第九部分（场景 33/34） |
+| EvidenceMode 类型变更 | 第九部分（场景 35） |
 | 发版前 | 仅当审计规则 / hook / SkillOpt / DeepAgents 等**场景逻辑**变更时需同步对应部分；版本号已动态解析，**无需逐处替换** |

@@ -1,6 +1,6 @@
 // ============================================================
 // fs-watch.ts · 文件系统监控守护进程
-// v1.0.8 新增：基于 Node.js 内置 fs.watch 的文件变更监控
+// v1.0.9 新增：基于 Node.js 内置 fs.watch 的文件变更监控
 //
 // 设计原则：
 //   - 零外部依赖（不依赖 chokidar）——使用 Node.js 内置 fs.watch
@@ -13,9 +13,10 @@
 //     console.log('检测到文件变更:', changedFiles);
 //   });
 //   // 停止监控: watcher.stop();
-// ============================================================
+// v1.0.9: 递归监控——遍历子目录建多 watcher
 
 import { watch, FSWatcher } from 'fs';
+import { readdirSync, statSync } from 'fs';
 import { join, relative, basename } from 'path';
 import { loadWatchConfig, type WatchConfig } from '../config/watch-config';
 
@@ -154,12 +155,36 @@ export function startWatching(projectDir: string, onChange: ChangeCallback): Fil
     }
   }
 
-  // 启动所有配置路径的监控
-  for (const wp of config.paths) {
-    watchPath(wp);
+  // v1.0.9: 递归遍历所有子目录，为每个目录建独立 watcher
+  const watchedDirs = new Set<string>();
+
+  function collectSubdirs(root: string): string[] {
+    const dirs: string[] = [root];
+    try {
+      const entries = readdirSync(root, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+          dirs.push(...collectSubdirs(join(root, entry.name)));
+        }
+      }
+    } catch { /* 权限/不存在，跳过 */ }
+    return dirs;
   }
 
-  console.log(`[fs-watch] 监控已启动（${watchers.length} 个路径，防抖 ${config.debounceMs}ms）`);
+  // 启动所有配置路径的递归监控
+  for (const wp of config.paths) {
+    const basePath = join(projectDir, wp);
+    const allDirs = collectSubdirs(basePath);
+    for (const dir of allDirs) {
+      if (watchedDirs.has(dir)) continue;
+      watchedDirs.add(dir);
+      // 计算相对于 projectDir 的路径用于 watchPath
+      const relDir = relative(projectDir, dir) || '.';
+      watchPath(relDir);
+    }
+  }
+
+  console.log(`[fs-watch] 监控已启动（${watchers.length} 个目录，防抖 ${config.debounceMs}ms）`);
 
   return {
     config,

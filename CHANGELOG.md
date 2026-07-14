@@ -5,9 +5,15 @@
 ---
 
 ## 正式版
+### [v1.0.9] — 二进制文件审计 + 快照时间线 + MCP compose tool + 安全加固 + 遗留补齐 🔧
+> 2026-07-14（UTC）· 开发中（未发版，暂无 git tag）
+**核心新功能**：A16 非授权文件变更 + A17 异常批量变更（二进制文件行为级审计）+ `--timeline` 快照时间线可视化 + `--revert` 回滚 + MCP compose tool（编排引擎通过标准 MCP 协议对 Agent 平台暴露）。EvidenceMode 类型扩展 `'filesystem'` 模式。daemon 审计闭环（文件变更→diff→runRules→快照→binary_history 全链路打通）+ daemon cron @weekly/@daily/@hourly 定时 FDE 巡检 + `--doctor` fs-watch 运行状态检测 + `install.sh --with-memory` TencentDB Memory 集成。
+**P0 安全修复**：A9 中文注入检测（追加 9 条中文正则，`忽略以上所有指令` 等模式正确拦截）+ `--diff` 模式 commitMsg 从区间终点取而非 HEAD。
+**P1 修复**：fs-watch 递归监控（子目录文件变更不再遗漏）+ config-loader knownKeys 补 a16/a17 + rules/index.ts 注释同步 A14-A17 + acceptance-test pipefail 全面保护（`git_log_has()` 函数统一封装）+ diff-ref 语义修正（非范围 ref 原样返回）+ 文档预算上限调整（5500→5600）。528 tests 全绿，acceptance-test 35/35 全绿，pre-push 7/7 全绿，check-version 39/39。
+> 📖 [开发日志](./docs/changelog/v1.0.9.md)
 ### [v1.0.8] — FDE Agent 自进化 + 文件系统审计 + 内嵌 isomorphic-git + Agent 定义去耦合 🔧
 > 2026-07-13（UTC）
-FDE Agent 双模式（部署 deploy + 持续优化 sustain）构成自进化闭环（Audit 管底线、FDE sustain 管上限）+ 文件系统审计（isomorphic-git 隐藏 repo + fs-watch daemon + 5s 防抖 + 快照回溯 `--revert`）+ Agent 定义去 OpenClaw 耦合（`session.spawn` 零命中，Sub Agent 可在个人节点直跑）+ TencentDB Memory 集成（persona.md 注入加载链）+ Ontology 人类可读视图（`ontology view`）。审计语义从"git commit 拦截"扩展为"文件变更告警 + 回溯"，覆盖非开发者。发版审查后修复：版本号全量 bump（91 文件一致）+ verify.js 脚本目录解析兼容 monorepo 嵌套。493 测试全绿，pre-push 7/7 全绿，OpenClaw 28/28 验收全绿，回归检查清单（256 维度）独立审查全 PASS。
+FDE Agent 双模式（部署 deploy + 持续优化 sustain）构成自进化闭环（Audit 管底线、FDE sustain 管上限）+ 文件系统审计（isomorphic-git 隐藏 repo + fs-watch daemon + 5s 防抖 + 快照回溯 `--revert`）+ Agent 定义去 OpenClaw 耦合（`session.spawn` 零命中，Sub Agent 可在个人节点直跑）+ TencentDB Memory 集成（persona.md 注入加载链）+ Ontology 人类可读视图（`ontology view`）。审计语义从"git commit 拦截"扩展为"文件变更告警 + 回溯"，覆盖非开发者。发版审查后修复：版本号全量 bump（91 文件一致）+ verify.js 脚本目录解析兼容 monorepo 嵌套。493 测试全绿，pre-push 7/7 全绿，OpenClaw 28/28 验收全绿，回归检查清单（256 维度）质量验证全通过。
 > 📖 [开发日志](./docs/changelog/v1.0.8.md)
 ### [v1.0.7] — 双节点架构 + Sub Agent 约束自加载 + ao 完全退役 🔧
 > 2026-07-13（UTC）
@@ -26,6 +32,7 @@ Ontology 三路合并引擎 + Work模板市场 独立项目 + A9 分级安全 + 
 
 ### 规划中
 - **v1.0.9** — 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool + knowledge 智能选择 → [开发日志](./docs/changelog/v1.0.9.md)
+- **v1.1.0** — 包结构纯度重构（audit 只做 audit）：`@sofagent/audit` 上帝包拆为 11 独立包（harness / ontology / scoring / core / orchestrator / daemon / ab-testing / work模板市场 / think / skillopt / 纯审计 audit）+ 轻量多设备四件事（经验共享 / 权限作用域化 / 自迭代周报 / daemon 主动巡检）→ [开发日志](./docs/changelog/v1.1.0.md) · [重构规格](./docs/changelog/v1.1.0-dev-prompt.md)
 
 ### [v1.0.4] — 自动优化 + 约束验证 🔧
 > 2026-07-11（UTC）

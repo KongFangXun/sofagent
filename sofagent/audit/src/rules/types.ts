@@ -14,14 +14,14 @@ import type { AuditConfig } from '../config-loader';
  * - logs: 纯日志判定（预留）
  * - hybrid: 有日志走精确检查，无日志走 diff 启发式回退
  */
-export type EvidenceMode = 'git-diff' | 'logs' | 'hybrid';
+export type EvidenceMode = 'git-diff' | 'logs' | 'hybrid' | 'filesystem';
 
 /**
  * 规则分级标签
  * - 业务底线：违反即破坏交付完整性（安全 / 边界 / 追溯）
  * - 能力拐杖：帮助 Agent 走完正确流程，违反不一定是事故
  */
-export type RuleClass = '业务底线' | '能力拐杖';
+export type RuleClass = '业务底线' | '能力拐杖' | '工程规范';
 
 /**
  * 单条规则的检查结果
@@ -56,6 +56,8 @@ export interface AuditContext {
   commitMsg?: string;
   /** .sofagent/config.yml 加载的审计配置（三级 fallback） */
   config?: AuditConfig;
+  /** v1.0.9: 窗口内历史审计记录（A17 跨审计聚合用） */
+  history?: { timestamp: string; diffFileCount: number }[];
 }
 
 /**
@@ -69,5 +71,7 @@ export interface Rule {
   evidenceMode: EvidenceMode;
   /** 规则分级标签 */
   ruleClass?: RuleClass;
+  /** 规则描述（v1.0.9） */
+  description?: string;
   check(ctx: AuditContext): RuleCheck;
 }

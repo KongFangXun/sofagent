@@ -540,3 +540,63 @@ FDE 离场后，企业不是「装完就完了」——AI 落地是一个渐进�
 | 状态页 | Uptime Kuma | 客户可见的系统健康页面 |
 
 > 这些工具是 sofagent 的"队友"——sofagent 管 Agent 的纪律和审计，它们管业务流程和基础设施。
+
+## 持续优化模式（Sustain）
+
+> v1.0.8 新增。FDE Agent 不只是部署工具——部署完成后，它转为**持续优化角色**。
+
+### 什么时候用
+
+| 模式 | 时机 | 谁触发 |
+|------|------|--------|
+| deploy | 首次部署 / 业务大变更 | FDE 进场或人工 |
+| **sustain** | 周度巡检 / 手动触发 | daemon cron 或人工 |
+
+### sustain 模式读什么
+
+| 数据源 | 读什么 | 产出示例 |
+|--------|--------|---------|
+| `.sofagent/history.jsonl` | 审计趋势——哪条规则反复 FAIL | "A3 越界修改连续 3 周触发，建议收紧 knowledge-domain.include" |
+| `.sofagent/think.md` | Agent 反思趋势——反复出错的操作 | "最近 5 次任务提到'不熟悉 API 格式'，建议补 entity" |
+| scoring 数据 | 节点评分趋势——哪个节点在退化 | "销售节点评分从 85 降到 72，检查 knowledge 质量" |
+
+### 怎么触发
+
+```bash
+# 手动触发一次巡检
+sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
+
+# 自动周度巡检（在 watch.yml 配 cron）
+# .sofagent/watch.yml:
+#   cron:
+#     - schedule: "@weekly"
+#       agent: "fde"
+#       mode: "sustain"
+#       task: "周度巡检"
+```
+
+### sustain 输出格式
+
+```
+## FDE 巡检报告 · 2026-07-14
+
+### 优先级排序
+1. 🔴 销售节点 knowledge 缺失（影响 5 次任务）
+   - 修复：补充 entity "customer-profile"
+2. 🟡 客服节点 A3 越界频次上升（3→7 次/周）
+   - 修复：收紧 include 白名单
+3. 🟢 数据分析节点评分稳定（85+）
+
+### 趋势
+- 整体审计 FAIL 率：下降 12%（上周修复生效）
+- 新增风险：无
+```
+
+### sustain vs deploy 对比
+
+| 维度 | deploy 模式 | sustain 模式 |
+|------|------------|-------------|
+| 时机 | 首次 / 大变更后 | 周度 / 手动 |
+| 产出 | 工作流全景图 + 节点方案 | 优化建议（优先级排序） |
+| 改动 | 结构性（新建 knowledge/constraints） | 调整性（微调 include/exclude） |
+| 执行者 | FDE 进场 | daemon cron 或人工 |

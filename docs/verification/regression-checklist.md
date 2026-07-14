@@ -1,4 +1,4 @@
-# sofagent 回归检查清单（256 维度）
+# sofagent 回归检查清单（225 维度 · 编号 1–267）
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。这不是"发现新问题"的工具——发现新问题用[陌生视角审查](./fresh-eyes-review.md)。
 >
@@ -19,7 +19,7 @@
 
 ## 你的身份
 
-你是一名**回归测试工程师**。你的任务不是发现新问题，而是**确认已知的修复没有回退**。你有一份 247 项的检查清单，每一项对应历史上发现并修复过的问题。逐项核对，全部 PASS 就是通过。
+你是一名**回归测试工程师**。你的任务不是发现新问题，而是**确认已知的修复没有回退**。你有一份 223 项的检查清单，每一项对应历史上发现并修复过的问题。逐项核对，全部 PASS 就是通过。
 
 **与陌生视角审查的区别**：陌生视角审查是"假装不知道项目是什么，凭直觉找新问题"；回归检查是"知道之前修了什么，确认没退回去"。两者互补，发版前都要跑。
 
@@ -42,7 +42,7 @@
 
 > 本清单是**累积式**的——每个维度对应一个历史修复。审查前不需要了解每件事的背景，只需要逐项核对当前代码状态。
 >
-> 维度来源：v0.99.9 初始 88 维度 → v1.0 新增 18 → v1.0.1 追加 32 → v1.0.2 追加 26 → v1.0.3 追加 12 → v1.0.4 追加 8 → v1.0.4 审查追加 8 = 204 → v1.0.5 追加 8（205-212）→ v1.0.6 追加 5（213-217）→ v1.0.6 SkillOpt 修复追加 2（218-219）→ v1.0.7 追加 28 维度（220-247）→ v1.0.8 追加 5 维度（248-252）→ v1.0.9 追加 3 维度（253-255）→ v1.0.8 补 1 维度（256）= 256 总计。
+> 维度来源：v0.99.9 初始 88 维度 → v1.0 新增 18 → v1.0.1 追加 32 → v1.0.2 追加 26 → v1.0.3 追加 12 → v1.0.4 追加 8 → v1.0.4 审查追加 8 = 204 → v1.0.5 追加 8（205-212）→ v1.0.6 追加 5（213-217）→ v1.0.6 SkillOpt 修复追加 2（218-219）→ v1.0.7 追加 28 维度（220-247）→ v1.0.8 追加 5 维度（248-252）→ v1.0.9 追加 3 维度（253-255）→ v1.0.8 补 1 维度（256）→ 编号至 265；实际 `#### N.` 标题 223 个（历史合并/移除产生跳号）。
 
 ---
 
@@ -94,7 +94,7 @@ bash tools/pre-push-check.sh 2>&1 | tail -5
 
 ---
 
-## 审查维度（247 个维度）
+## 审查维度（223 个维度 · 编号 1–265）
 
 > v0.99.9 初始 88 维度（1-88）→ v1.0 新增 18 维度（89-106）→ v1.0.1 追加 32 维度（107-143）→ v1.0.2 追加 26 维度（144-176）→ v1.0.3 追加 12 维度（177-188）→ v1.0.4 追加 8 维度（189-196）→ v1.0.4 审查追加 8 维度（197-204）→ v1.0.5 追加 8 维度（205-212）→ v1.0.6 追加 5 维度（213-217）→ v1.0.7 追加 28 维度（220-247）= 247 总计
 
@@ -2856,6 +2856,104 @@ grep '"@sofagent/audit"' sofagent/mcp/package.json   # 期望 ^1.0.0（通用范
 # 修复为：部署锚点(~/.openclaw/scripts)优先 + 从 __dirname 向上遍历查找含标记脚本的 scripts/ 父目录。
 node sofagent/audit/dist/verify.js   # 期望 §10 企业合规段：cleanup.sh/audit.sh 均"存在且可执行"（无 false failure）
 # 验证：源码态从仓库直跑 dist/verify.js，cleanup.sh/audit.sh 应 PASS（不再误报缺失）
+```
+
+---
+
+#### 257. CLI 无参报错须是「缺少参数」非「未知参数」 🆕
+```bash
+# v1.0.9 T07：--revert 无参时不再报"未知参数"，而是给出明确的缺失提示
+sofagent-audit --revert              # 期望: "❌ 缺少快照 SHA 参数，格式：sofagent-audit --revert <snapshot-sha>" + exit 2
+sofagent-audit --revert --help       # 期望: 同上（不以 --help 开头判定为有效 SHA）
+```
+
+#### 258. 根目录信任文件齐全（SECURITY + LIMITATIONS 并列） 🆕
+```bash
+# v1.0.9 T11：LIMITATIONS.md 迁到根目录，与 SECURITY.md 并列
+ls LIMITATIONS.md                    # 期望: 存在
+ls docs/LIMITATIONS.md               # 期望: 不存在（或仅为重定向）
+grep -c "44-48" LIMITATIONS.md       # 期望: ≥ 1（动态范围，非固定值）
+```
+
+#### 259. 所有 SKILL.md frontmatter 完整性 🆕
+```bash
+# v1.0.9 T13：6 处 SKILL.md 全部含 name/slug/version/displayName/description/tags/image/triggers
+find . -name SKILL.md ! -path "*/node_modules/*" ! -path "*/experimental/*" -exec grep -L "tags:" {} \;
+# 期望: 空输出（全部有 tags 字段）
+find . -name SKILL.md ! -path "*/node_modules/*" ! -path "*/experimental/*" -exec wc -l {} \;
+# 期望: 全部 ≤ 90 行
+```
+
+#### 260. README「非开发者」声称有上手路径 🆕
+```bash
+# v1.0.9 T15：docs/filesystem-audit.md 提供完整的 daemon 配置→启动→告警→时间线闭环
+grep -c "filesystem-audit" README.md   # 期望: ≥ 1（README 引用了文件系统审计指南）
+ls docs/filesystem-audit.md            # 期望: 存在
+```
+
+#### 261. acceptance-test 不被 set -euo pipefail 误杀 🆕
+```bash
+# v1.0.9 自测发现：set -euo pipefail 下 git log --oneline | grep -q "xxx" 会因
+# SIGPIPE 误判（grep -q 匹配后退出，git log 收到 SIGPIPE 返回非零，pipefail 管道整体非零）
+# 检查 acceptance-test.sh 中所有 git log | grep -q / long_output | grep -q 模式
+grep -n 'git log.*| grep -q' tools/acceptance-test.sh   # 期望: 每处前后有 set +o pipefail / set -o pipefail 保护
+grep -n 'set +o pipefail' tools/acceptance-test.sh       # 期望: ≥ 1
+```
+
+#### 262. --install-hook 只装 commit-msg，--init 才装 post-commit 🆕
+```bash
+# v1.0.9 自测发现：--install-hook 不装 post-commit（只做核心审计拦截），
+# --init 才装完整三件套（config + commit-msg + post-commit）。
+# 回归测试必须验证两种入口的 hook 差异，而非笼统检查"hook 已安装"
+TMP=$(mktemp -d) && cd "$TMP" && git init --quiet
+node sofagent/audit/dist/index.js --install-hook > /dev/null 2>&1
+test -f .git/hooks/commit-msg && ! test -f .git/hooks/post-commit && echo "CORRECT" || echo "WRONG"
+# 期望: CORRECT
+rm -rf "$TMP"
+```
+
+#### 263. A10 规则只检查依赖文件，不检查源码 URL 🆕
+```bash
+# v1.0.9 自测发现：A10 "不引毒源" 检查 package.json/requirements.txt 等依赖文件中的可疑 URL，
+# 不检查源代码中的 fetch() 调用——这是设计行为，不是 bug。
+# 回归测试构造 A10 场景时必须在 package.json 写非官方源，不能在 .ts 文件里写 fetch()
+grep -c "DEPENDENCY_FILES" sofagent/audit/src/rules/rule-a10-no-poison.ts   # 期望: ≥ 1
+```
+
+#### 264. acceptance-test 中 $CLI 调用必须 || true 防 set -e 中断 🆕
+```bash
+# v1.0.9 自测发现：set -euo pipefail 下 $CLI --doctor / $CLI --diff 返回非零时
+# 直接杀掉整个脚本。所有 $CLI 调用必须 $(... 2>&1 || true) 包装
+grep -n 'CLI --doctor 2>&1[^|]' tools/acceptance-test.sh | grep -v '|| true'   # 期望: 空输出
+grep -n 'CLI --diff.*2>&1[^|]' tools/acceptance-test.sh | grep -v '|| true'     # 期望: 空输出
+```
+
+#### 265. commit-msg hook 拦截后 HEAD 不变，测试 --diff 需绕过 🆕
+```bash
+# v1.0.9 自测发现：违规 commit 被 commit-msg hook 拦截后 git HEAD 不变，
+# 后续 --diff HEAD~1..HEAD 拿不到违规 diff。测试需用 git commit --no-verify 绕过提交，
+# 然后再 --diff 手动审计。这是审计引擎的正常工作流（拦截 = 阻止提交）。
+grep -c 'no-verify' tools/acceptance-test.sh   # 期望: ≥ 3（场景 10/17/26 各一处）
+```
+
+#### 266. 新增函数的代码与测试语义一致性 🆕
+```bash
+# v1.0.9 阶段六发现：resolveDiffEndpoint 代码把非范围 ref（如 'main'）静默换成 HEAD，
+# 但测试期望原样返回——代码 vs 测试语义矛盾。根因：写代码时只考虑了"默认场景"，
+# 忘了非范围 ref 也是合法输入。npm test 跑出 1 failed 才暴露。
+# 回归检查：每次新增纯函数 + 对应测试，必须验证"所有分支的语义在代码和测试中一致"
+cd sofagent/audit && npm test 2>&1 | grep "failed"
+# 期望: 空输出（0 failed）
+```
+
+#### 267. knownKeys 硬编码列表与注册规则同步 🆕
+```bash
+# v1.0.9 阶段六发现：新增 A16/A17 规则后，config-loader.ts 的 knownKeys 集合
+# 仍停留在 a1-a11/a14-a15，导致用户在 config.yml 写 a16:true 时误报"未知规则名"。
+# 回归检查：每次新增规则编号，必须同步 knownKeys + 警告文案
+grep -c "a16\|a17" sofagent/audit/src/config-loader.ts   # 期望: ≥ 2
+grep -c "A16\|A17" sofagent/audit/src/rules/index.ts     # 期望: ≥ 2（注册列表）
+# 两个数字必须一致——knownKeys 里有几条，rules/index.ts 注册表就有几条
 ```
 
 ---

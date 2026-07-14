@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v1.0.8 · 2026-07-13（UTC）· 孔放勋
+> v1.0.9 · 2026-07-13（UTC）· 孔放勋
 
 ---
 
@@ -220,9 +220,9 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 | install.sh | 无独立测试 | 跨平台行为变化无法自动捕获 |
 | daemon 脚本 | 测试覆盖不足 | launchd/systemd 注册失败无早期预警；计划 v1.x 补充核心功能测试。**行为边界**：daemon 监控 think.md/fde.md 文件 hash 变化 → 写 daemon-notice.md，不直接审计 git commit。commit 审计由 pre-commit hook（`sofagent-audit --install-hook` 安装）负责 |
 | MCP Server | 仅手动验证 | JSON-RPC 协议边界情况未覆盖。无自动测试。核心逻辑（run_audit/get_think/write_think）调用 audit 包已测方法。 |
-| verify.sh/verify.ts | 部分覆盖 | ~44 项检查（动态，因环境条件变化）的逻辑分支未穷举 |
+| verify.sh/verify.ts | 部分覆盖 | 约 44-48 项（动态，因环境条件变化）的逻辑分支未穷举 |
 
-缓解：install.sh 和 verify.sh 有 ~44 项动态检查作为 smoke test，审计引擎核心逻辑已有全面测试。上述模块的测试缺口不会影响审计结果的可靠性。
+缓解：install.sh 和 verify.sh 有约 44-48 项动态检查作为 smoke test，审计引擎核心逻辑已有全面测试。上述模块的测试缺口不会影响审计结果的可靠性。
 
 ---
 
@@ -278,7 +278,7 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](../FDE/FDE.md)）已在�
 
 v1.0 新增 `tools/acceptance-test.sh`（9 个场景），但覆盖范围有限：
 
-- **CI 已覆盖**：单元测试 493 个（函数级）、verify.sh 48 项（环境级）
+- **CI 已覆盖**：单元测试 493 个（函数级）、verify.sh 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 9 场景（CLI 端到端，步骤 2.3）、OpenClaw 验收 5 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
@@ -297,6 +297,17 @@ v1.0 新增 `tools/acceptance-test.sh`（9 个场景），但覆盖范围有限�
 > 这份局限文档是开放的。如果你发现了我们没列出来的局限——开 Issue，直接说。
 
 ---
+
+## 六、v1.0.9 新增局限
+
+### A16/A17 文件系统审计是行为级检测
+
+v1.0.9 新增的 A16（非授权文件变更）和 A17（异常批量变更）是**行为级**检测——只看文件路径、扩展名、变更数量，不解析文件内容。Excel 单元格、PDF 文字、数据库内容不在审计范围内。内容级审计（OCR / 内容解析）不在 v1.0.9 范围，是 AgentLoop 或未来版本的事。
+
+A16 的 `evidenceMode: git-diff` 依赖 git diff 获取变更文件列表；daemon 模式下需 daemon 主动填充 `ctx.diffFiles`。A17 的跨审计聚合依赖 `ctx.history` 窗口数据，daemon 模式下若未传入历史数据则只能检测单次批量变更。
+
+---
+
 
 ## 六、v1.0.5 新增局限
 

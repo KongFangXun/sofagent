@@ -1,12 +1,14 @@
 // ============================================================
 // runner.ts · 审计规则运行器（fast-fail 优化）
-// v1.0.8 新增：按严重度分四优先级，critical 层 FAIL 即停
+// v1.0.9 新增：按严重度分四优先级，critical 层 FAIL 即停
 // ============================================================
 
 import type { DiffFile } from '../diff-parser';
 import type { LogEntry } from '../log-checker';
 import type { AuditConfig } from '../config-loader';
 import type { AuditContext, RuleCheck, Rule } from './types';
+import { loadHistory } from '../audit-history';
+import type { AuditHistoryEntry } from '../audit-history';
 import { defaultRules, rules } from './index';
 
 export interface AuditResult {
@@ -25,7 +27,7 @@ export const AUDIT_PRIORITY = {
   critical: ['A1', 'A2', 'A9', 'A4'],
   warning:  ['A3', 'A5', 'A6', 'A10', 'A11'],
   crutch:   ['A7', 'A8'],
-  extended: ['E3', 'E1', 'E2', 'E4', 'A15', 'A14'],
+  extended: ['E3', 'E1', 'E2', 'E4', 'A15', 'A14', 'A16', 'A17'],
 } as const;
 
 /**
@@ -67,9 +69,13 @@ export function runRules(
   strict?: boolean,
   silent?: boolean,
   commitMsg?: string,
-  config?: AuditConfig
+  config?: AuditConfig,
+  history?: AuditHistoryEntry[]
 ): AuditResult {
-  const ctx: AuditContext = { diffFiles, logEntries, task, strict, silent, commitMsg, config };
+  // v1.0.9 修复(F2)：ctx.history 此前从未赋值，导致 A17 跨审计聚合（基于窗口内历史累计文件数）
+  // 成为死代码。调用方显式传入 history 则优先；否则自动从审计历史加载。
+  const auditHistory = history ?? loadHistory();
+  const ctx: AuditContext = { diffFiles, logEntries, task, strict, silent, commitMsg, config, history: auditHistory };
   const results: RuleCheck[] = [];
 
   // 根据 config.extendedRulesEnabled 决定运行哪些规则

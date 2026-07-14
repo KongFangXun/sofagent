@@ -1,9 +1,9 @@
 // ============================================================
 // doctor.ts · sofagent-audit --doctor 健康诊断
 // v1.0 新增：一键诊断 7 项健康度
-// v1.0.8 新增：第 9 项——知识库访问矩阵
-// v1.0.8 新增：第 10 项——SkillOpt 管道状态 + 第 11 项——成本报告
-// v1.0.8 新增：第 12-14 项——eval harness / A/B 优化 / HITL 统计（11 项核心检查 + 3 项扩展检查）
+// v1.0.9 新增：第 9 项——知识库访问矩阵
+// v1.0.9 新增：第 10 项——SkillOpt 管道状态 + 第 11 项——成本报告
+// v1.0.9 新增：第 12-14 项——eval harness / A/B 优化 / HITL 统计（11 项核心检查 + 3 项扩展检查）
 // 只读诊断，不做任何写操作
 // 退出码：全部通过 → 0；有失败 → 1
 // ============================================================
@@ -28,6 +28,51 @@ interface CheckResult {
   label: string;     // 显示标签
   detail: string;    // 详细信息
   fixHint?: string;  // 修复建议
+}
+
+// v1.0.9: fs-watch 状态检查（daemon 心跳 + 配置验证）
+function checkFsWatch(dataDir: string): CheckResult {
+  const watchYmlPath = join(dataDir, '.sofagent', 'watch.yml');
+  const noticePath = join(dataDir, '.sofagent', 'daemon-notice.md');
+
+  // 1. watch.yml 是否存在
+  if (!existsSync(watchYmlPath)) {
+    return {
+      ok: false, warning: true,
+      label: 'fs-watch 配置',
+      detail: 'watch.yml 不存在——daemon 未配置文件系统监控',
+      fixHint: '运行 sofagent-audit --daemon start 启动文件监控',
+    };
+  }
+
+  // 2. daemon-notice.md 是否存在（daemon 启动过才有）
+  if (!existsSync(noticePath)) {
+    return {
+      ok: false, warning: true,
+      label: 'fs-watch 运行',
+      detail: 'daemon-notice.md 不存在——daemon 从未启动或从未检测到文件变更',
+      fixHint: '运行 sofagent-audit --daemon start 启动 daemon',
+    };
+  }
+
+  // 3. notice 最后修改时间（心跳判断）
+  const noticeStat = require('fs').statSync(noticePath);
+  const ageMin = (Date.now() - noticeStat.mtimeMs) / 60000;
+
+  if (ageMin > 60) {
+    return {
+      ok: false, warning: false,
+      label: 'fs-watch 运行',
+      detail: `daemon 可能已停止——最后活动在 ${ageMin.toFixed(0)} 分钟前`,
+      fixHint: '重新运行 sofagent-audit --daemon start',
+    };
+  }
+
+  return {
+    ok: true, warning: false,
+    label: 'fs-watch 运行',
+    detail: `daemon 活跃（最近活动 ${ageMin.toFixed(0)} 分钟前）`,
+  };
 }
 
 /**
@@ -557,6 +602,12 @@ export function runDoctor(): void {
         fixHint: '首次使用可忽略',
       });
     }
+  }
+
+  // 15. fs-watch 状态（v1.0.9 新增：daemon 心跳检测）
+  {
+    const fsWatchResult = checkFsWatch(cwd);
+    results.push(fsWatchResult);
   }
 
   // 输出结果

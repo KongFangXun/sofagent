@@ -1,6 +1,7 @@
 // ============================================================
 // watch-config.ts · 文件监控配置解析器
-// v1.0.8 新增：从 .sofagent/watch.yml 加载配置
+// v1.0.9 新增：从 .sofagent/watch.yml 加载配置
+// v1.0.9: 追加 cron 配置段 + CronJob 类型
 //
 // 配置结构（watch.yml）：
 //   watch:
@@ -8,11 +9,24 @@
 //     ignore: []         # 忽略模式（glob）
 //     debounce_ms: 5000  # 防抖间隔（毫秒）
 //     mode: all          # all | changed_only
+//   cron:
+//     - schedule: "@weekly"
+//       agent: "fde"
+//       mode: "sustain"
+//       task: "周度巡检"
 // ============================================================
 
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { load as yamlLoad, YAMLException } from 'js-yaml';
+
+/** 定时任务配置（v1.0.9 新增） */
+export interface CronJob {
+  schedule: '@weekly' | '@daily' | '@hourly';
+  agent?: string;
+  mode?: string;
+  task: string;
+}
 
 /** watch.yml 配置结构 */
 export interface WatchConfig {
@@ -24,6 +38,8 @@ export interface WatchConfig {
   debounceMs: number;
   /** 监控模式：all（全部）或 changed_only（仅变更文件） */
   mode: 'all' | 'changed_only';
+  /** 定时任务配置（v1.0.9 新增） */
+  cron?: CronJob[];
 }
 
 /** 默认 watch 配置 */
@@ -69,10 +85,16 @@ export function loadWatchConfig(cwd?: string): WatchConfig {
   return { ...DEFAULT_WATCH_CONFIG };
 }
 
+/** tryLoadWatchYml 的返回类型——包含 watch 段和顶层 cron 段 */
+interface WatchYmlResult {
+  watchConfig: Partial<WatchConfig> | null;
+  cronJobs: CronJob[] | undefined;
+}
+
 /**
- * 尝试从 YAML 文件加载 watch 配置
+ * 尝试从 YAML 文件加载 watch + cron 配置
  */
-function tryLoadWatchYml(filePath: string): Partial<WatchConfig> | null {
+function tryLoadWatchYml(filePath: string): Partial<WatchConfig> & { cron?: CronJob[] } | null {
   if (!existsSync(filePath)) {
     return null;
   }
@@ -93,7 +115,15 @@ function tryLoadWatchYml(filePath: string): Partial<WatchConfig> | null {
     if (!watch || typeof watch !== 'object') {
       return null;
     }
-    return watch as Partial<WatchConfig>;
+    const result: Partial<WatchConfig> & { cron?: CronJob[] } = watch as Partial<WatchConfig>;
+
+    // 解析顶层 cron 配置段
+    const cronRaw = parsed['cron'];
+    if (Array.isArray(cronRaw)) {
+      result.cron = cronRaw as CronJob[];
+    }
+
+    return result;
   } catch (err) {
     if (err instanceof YAMLException) {
       console.warn(`⚠️ watch.yml 解析错误: ${err.message}`);
@@ -105,12 +135,13 @@ function tryLoadWatchYml(filePath: string): Partial<WatchConfig> | null {
 /**
  * 合并部分配置与默认值
  */
-function mergeWatchDefaults(partial: Partial<WatchConfig>): WatchConfig {
+function mergeWatchDefaults(partial: Partial<WatchConfig> & { cron?: CronJob[] }): WatchConfig {
   return {
     paths: partial.paths ?? DEFAULT_WATCH_CONFIG.paths,
     ignore: partial.ignore ?? DEFAULT_WATCH_CONFIG.ignore,
     debounceMs: typeof partial.debounceMs === 'number' ? partial.debounceMs : DEFAULT_WATCH_CONFIG.debounceMs,
     mode: partial.mode === 'changed_only' ? 'changed_only' : DEFAULT_WATCH_CONFIG.mode,
+    cron: partial.cron,
   };
 }
 
@@ -142,6 +173,13 @@ export function generateWatchTemplate(): string {
     '',
     '  # 监控模式：all（全部文件） / changed_only（仅变更文件）',
     '  mode: all',
+    '',
+    '# 定时任务（v1.0.9 新增）：daemon 启动后自动按周期触发 Sub Agent 巡检',
+    '# cron:',
+    '#   - schedule: "@weekly"',
+    '#     agent: "fde"',
+    '#     mode: "sustain"',
+    '#     task: "周度巡检"',
     '',
   ].join('\n');
 }

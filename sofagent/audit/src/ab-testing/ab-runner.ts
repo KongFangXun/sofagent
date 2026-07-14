@@ -1,7 +1,7 @@
 // ============================================================
 // ab-testing/ab-runner.ts · A/B 测试运行器
-// v1.0.8 新增 · v1.0.8 替换 simulateAgentRun → runMinimalAgent
-// v1.0.8 新增 runDeepAgent（方案 C），保留 runMinimalAgent fallback
+// v1.0.9 新增 · v1.0.9 替换 simulateAgentRun → runMinimalAgent
+// v1.0.9 新增 runDeepAgent（方案 C），保留 runMinimalAgent fallback
 // current vs candidate 并行对比评测
 // ============================================================
 

@@ -1,10 +1,15 @@
 ---
 name: sofagent-audit
 slug: sofagent-audit
-version: 1.0.8
+version: 1.0.9
 displayName: 合规审计员
 description: >
   系统级合规审计——巡检 Workflow、验证铁律覆盖、检查知识库健康度。不审查代码逻辑，审查的是部署层面的合规性。
+tags:
+  - audit
+  - compliance
+  - workflow
+image: sofagent-audit.png
 triggers: [合规检查, 审计, 巡检, Workflow检查, 知识库健康度, 铁律覆盖验证]
 scenarios: [需要检查Agent操作是否合规, 需要巡检Workflow节点, 需要验证铁律是否覆盖所有AI节点, 需要检查知识库健康度]
 not_when: [简单闲聊, 代码逻辑审查, 单个文件检查]

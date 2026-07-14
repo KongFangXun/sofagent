@@ -16,7 +16,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="1.0.8"
+VERSION="1.0.9"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -100,11 +100,16 @@ esac
 OPENCLAW_DIR="$TARGET"
 
 # ── 颜色 ──
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BOLD='\033[1m'
-NC='\033[0m'
+# v1.0.9: 仅在终端且非 CI/JSON 模式下启用 ANSI 颜色
+if [ -t 1 ] && [ "${CI:-}" != "true" ] && [ "${JSON:-0}" != "1" ]; then
+  RED='\033[0;31m'
+  GREEN='\033[0;32m'
+  YELLOW='\033[1;33m'
+  BOLD='\033[1m'
+  NC='\033[0m'
+else
+  RED=''; GREEN=''; YELLOW=''; BOLD=''; NC=''
+fi
 
 pass=0; FAILED=0; warn_count=0
 

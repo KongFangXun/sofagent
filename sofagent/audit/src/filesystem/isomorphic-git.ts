@@ -1,6 +1,6 @@
 // ============================================================
 // isomorphic-git.ts · 同构 Git 集成
-// v1.0.8 新增：纯 JS 实现的 git diff / shadow repo
+// v1.0.9 新增：纯 JS 实现的 git diff / shadow repo
 //
 // 用途：
 //   - 在非 git 目录中创建 shadow repo，实现文件快照和差异追踪
@@ -323,4 +323,61 @@ export function listSnapshots(dir: string): SnapshotEntry[] {
  */
 export function hasShadowRepo(dir: string): boolean {
   return existsSync(join(dir, '.sofagent', '.git-shadow'));
+}
+
+/**
+ * 为指定文件列表生成文件系统差异
+ *
+ * 与 generateDiff() 不同，此函数仅对传入的 filePaths 列表生成 diff，
+ * 不做全目录扫描。适用于 daemon fs-watch 回调场景——只对变更文件做审计。
+ *
+ * 将每个文件当前内容与 shadow repo 最近快照对比，未在快照中的文件视为 'added'。
+ *
+ * @param dir 项目根目录
+ * @param filePaths 要生成差异的文件路径列表（相对于 dir）
+ * @returns IsoDiff 数组
+ */
+export function generateFilesystemDiff(dir: string, filePaths: string[]): IsoDiff[] {
+  const diffs: IsoDiff[] = [];
+  const shadowDir = join(dir, '.sofagent', '.git-shadow');
+
+  // 加载最近一次快照
+  let latestMap: Map<string, string> | null = null;
+  if (existsSync(shadowDir)) {
+    const snapshots = loadSnapshots(shadowDir);
+    if (snapshots.length > 0) {
+      const latest = snapshots[snapshots.length - 1]!;
+      latestMap = new Map<string, string>(Object.entries(latest.files));
+    }
+  }
+
+  for (const relativePath of filePaths) {
+    const fullPath = join(dir, relativePath);
+
+    // 读取当前文件内容
+    let currentContent: string | null = null;
+    try {
+      currentContent = readFileSync(fullPath, 'utf-8');
+    } catch {
+      // 文件可能已被删除
+    }
+
+    const oldContent = latestMap?.get(relativePath) ?? null;
+
+    if (currentContent === null && oldContent === null) {
+      // 文件既不在当前目录也不在快照中——跳过
+      continue;
+    }
+
+    if (currentContent === null && oldContent !== null) {
+      diffs.push({ path: relativePath, status: 'deleted', oldContent, newContent: null });
+    } else if (oldContent === null && currentContent !== null) {
+      diffs.push({ path: relativePath, status: 'added', oldContent: null, newContent: currentContent });
+    } else if (currentContent !== null && oldContent !== null && currentContent !== oldContent) {
+      diffs.push({ path: relativePath, status: 'modified', oldContent, newContent: currentContent });
+    }
+    // 内容相同 → 不生成 diff
+  }
+
+  return diffs;
 }
