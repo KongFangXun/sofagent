@@ -1,4 +1,4 @@
-# engage-fde.md · FDE 场景引导 · v1.0
+# engage-fde.md · FDE 场景引导 · v1.1
 
 > FDE 部署场景的主动引导逻辑。检测到 FDE 场景时自动激活。
 > 与 FDE/FDE.md 互补——FDE.md 是知识文档（被动），本文件是引导逻辑（主动）。
@@ -35,7 +35,7 @@
 
 | 层 | 形式 | 给谁读 | 创建时机 |
 |----|------|--------|---------|
-| 📄 文档层 | `nodes/[节点名].md` | 人读 + 编排引擎读（注入 ao compose 拆任务） | §7 |
+| 📄 文档层 | `nodes/[节点名].md` | 人读 + 编排引擎读（注入 sofagent-orchestrator compose 拆任务） | §7 |
 | 🧠 Skill 层 | `skills/[节点名]/SKILL.md` | AI 读（节点的大脑） | §7-§8 |
 | 🔴 运行层 | 设备上的 session | 活的（sub-agent / AI 领航员） | §8 |
 
@@ -58,7 +58,7 @@
 
 ```
 engage-fde.md 引导 §7 → 产出 nodes/[节点名].md
-    ↓ engage.md 点火 → Agent 读 .md → 注入 ao compose 拆任务 → 逐节点执行
+    ↓ engage.md 点火 → Agent 读 .md → 注入 sofagent-orchestrator compose 拆任务 → 逐节点执行
     ↓ 审计引擎 → think.md 反馈 → 编排引擎下次优化
 ```
 

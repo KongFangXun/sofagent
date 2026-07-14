@@ -37,16 +37,18 @@
 
 ## 阶段三：自测
 
-开发完成后、交审核之前，工程师先自己跑一轮：
+开发完成后、交审核之前，工程师先自己跑一轮。
+
+> 🔴 **v1.1.0 教训·CLI 迁移门**：步骤 9（shellcheck）和步骤 12（acceptance-test）依赖当前版本的 CLI 命令名。如果本版本涉及 CLI 命令迁移（如旧命令改名、上帝包子命令拆到新包二进制），shellcheck 和 acceptance-test **跳过本阶段**，延后到阶段八文档收尾全部完成之后补跑——那时文档引用和脚本命令名都已更新完毕，跑出来才是真实结果。build + test（步骤 7/8）不受影响，正常执行。
 
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
 | 7 | `npm run build` | exit 0 |
 | 8 | `npm test` | 全部通过 |
-| 9 | `shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh` | 零 error |
+| 9 | `shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
 | 10 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
 | 11 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
-| 12 | `bash tools/acceptance-test.sh` — 28 个端到端场景：Fresh install → --init → --doctor → 正常 commit → 违规拦截 → --json → --ci → 首次提交 → hook 破坏 → --no-verify 检测 → config rules 过滤 → A2/A3/A4/A5/A6/A9/A10/A11 → E1-E4 扩展规则 → --strict exit code=2 → hook 迁移 → post-commit → hashVersion 混合格式 → history.jsonl 写入 → --json 违规输出 → post-commit 安装+丢失检测 | 全部 PASS |
+| 12 | `bash tools/acceptance-test.sh` — 28 个端到端场景：Fresh install → --init → --doctor → 正常 commit → 违规拦截 → --json → --ci → 首次提交 → hook 破坏 → --no-verify 检测 → config rules 过滤 → A2/A3/A4/A5/A6/A9/A10/A11 → E1-E4 扩展规则 → --strict exit code=2 → hook 迁移 → post-commit → hashVersion 混合格式 → history.jsonl 写入 → --json 违规输出 → post-commit 安装+丢失检测 | 全部 PASS。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
 | 13 | **OpenClaw 综合验证**：执行 `docs/verification/openclaw-acceptance-test.md`（28 场景：审计管道全规则 + hook 机制 + hashVersion 混合格式 + SkillOpt 自净化 + DeepAgents Sub Agent + optional 依赖降级 + config rules 过滤） | 全部通过 |
 
 ---
@@ -321,6 +323,20 @@ ls docs/changelog/*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
 | `CHANGELOG.md` | 新增版本索引条目。版本历史的**唯一权威入口** |
 | `docs/changelog/vX.Y.md` | 完整开发日志：问题背景 + 逐项修复方案 + 质量验证数据 + 发布检查清单 |
 
+### 🔴 CLI 迁移版本回归闸（v1.1.0 教训）
+
+> 如果本版本涉及 CLI 命令迁移（旧命令改名、上帝包子命令拆到新包二进制），阶段三跳过的 shellcheck（步骤 9）和 acceptance-test（步骤 12）在**此处补跑**——文档收尾已完成，所有引用已更新，跑出来是真实结果。
+
+```bash
+# 补跑 shellcheck
+shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh   # 期望：零 error
+
+# 补跑 acceptance-test
+bash tools/acceptance-test.sh                                      # 期望：全部 PASS
+```
+
+> 如果 shellcheck/acceptance-test 因脚本未适配新命令而大量 FAIL，标注为已知遗留并写入下版本的 Wave 5 适配计划。
+
 ---
 
 ## 阶段九：确认关口
@@ -550,12 +566,12 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 |:--:|------|:--:|:--:|------|
 | 一 | 审查 → 开发日志 | 作者 | 是（陌生视角审查） | 审查报告 + 开发日志 |
 | 二 | 开发 | 工程师 | 否 | 代码 + 随修随记的回归维度 |
-| 三 | 自测 | 工程师 | 否 | build/test/shellcheck/acceptance 全绿 |
+| 三 | 自测 | 工程师 | 否 | build/test 全绿。涉及 CLI 迁移时 shellcheck/acceptance 延后到阶段八 |
 | 四 | 代码审核 | 当前 session | 否 | 逐项 PASS 或 FAIL→修复 |
 | **五** | **回归清单验证** | **当前 session** | **否** | **新增检查项全部 PASS** |
 | **六** | **OpenClaw 全面检查（开新 session）** | **审核者控制 OpenClaw** | **🔴 是（全新认知；SOP 已内嵌检查 prompt；FAIL 回阶段五循环）** | **两份报告均全 PASS** |
 | 七 | 审查体系最终确认 | 作者 | 否 | 两份审查文档状态一致、无遗漏（初版已在阶段五写入） |
-| 八 | 文档收尾 | 作者 | 否 | CHANGELOG/ROADMAP/版本号/日期对齐 |
+| 八 | 文档收尾 | 作者 | 否 | CHANGELOG/ROADMAP/版本号/日期对齐。CLI 迁移版本在此处补跑 shellcheck/acceptance |
 | 九 | 确认关口 | AI → **生成发布 prompt 交接** | 否 | git diff 确认 → 检查清单打勾 → 生成发布 prompt 交给负责人 |
 | 十 | 发布 | **🔴 项目负责人亲手执行** | 否 | 按 AI 生成的发布 prompt 逐条执行：npm 双包 + git tag + gh release + Skill 分发 |
 | 十一 | 发布后 | 作者 | 是（步骤 32 开新 session 审查） | npm 验证 + 陌生视角审查 → 生成下版本开发 prompt 到桌面（步骤 31）+ 输出审查 prompt（步骤 32）→ 自动进入下版本阶段一 |

@@ -25,6 +25,13 @@
 >   - **版本号复制粘贴校验**（新）：新增/改写段落中的版本号必须与 package.json 一致（v1.0.7 P2-10 曾把"v1.0.7"误抄成"v1.0.6"）。
 >   - **SKILL.md ≤100 行铁律**（强化视角七·任务 10）：不仅查 frontmatter，还要查行数。v1.0.8 起由 ≤90 上调为 ≤100，并扩展检查范围到 agents/SKILL/、LOOP/、FDE/ 下的 SKILL.md。
 >   - **init.ts hook skip 逻辑回归**（新）：版本号判断不能误伤存量升级用户——`includes('sofagent')` 式模糊匹配会让存量用户永远跳过重装 hook（v1.0.7 P1-1）。
+> - **v1.1.0 发版前审视**（2026-07-14）：基于 v1.1.0 11 包拆分开发的实战教训，补充以下盲区：
+>   - **包拆分后独立构建验证**（视角七·任务 18）：每包独立 `tsc --noEmit`，一个包过不代表全体过（v1.1.0 core 曾缺 filesystem/ 报 TS2307）。
+>   - **"复制≠移动"——文件迁移完整性**（视角七·任务 19）：AI 工程师做源码迁移时只创建副本不删源文件，导致 audit 成为重复文件仓库。陌生审查者必须反向验证 audit/src/ 里不该有啥。
+>   - **测试工厂函数迁移签名兼容性**（视角七·任务 20）：shared test-utils 提取后参数签名与调用方不兼容，74 个测试静默失败。npm test 是唯一兜底。
+>   - **audit/src/ 收敛验证**（视角一·任务 9）：9 个目录迁出后 audit 残留副本 + 残留 import + 残留测试形成三重污染。
+>   - **测试计数漂移的文档联动**（视角八·任务 13）：测试迁移后 5 处文档测试数未同步更新，陌生审查者的数字对账能力是关键防线。
+>   - **基础层叶子包反向依赖**（视角八·任务 14）：检查 harness/ontology/eval/core 四个叶子包是否真有零 `@sofagent/*` import。
 >
 > **审查对象**：https://github.com/KongFangXun/sofagent（main 分支，当前已发布版本）
 >
@@ -497,6 +504,36 @@
    - **v1.0.9 阶段六教训**：新增 A16/A17 规则后，`config-loader.ts` 的 `knownKeys` 硬编码集合忘记同步更新（仍停留在 a1-a11/a14-a15），导致用户在 config.yml 写 `a16: true` 时误报"未知规则名"。同类问题：`resolveDiffEndpoint` 新增函数的代码实现与测试用例语义矛盾（代码把非范围 ref 换成 HEAD，测试期望原样返回），`npm test` 才抓出来。
    - **盲区本质**：每新增一个功能（规则/函数/命令），需要同步更新的地方不止一处——注册表（rules/index.ts）、配置校验器（config-loader.ts knownKeys）、帮助文本、注释。开发者只改了"核心实现"，忘了"外围感知"。陌生审查者必须**沿着功能注册链走一遍**：规则号在 index.ts 注册了吗？knownKeys 里有吗？注释和警告文案更新了吗？测试的所有分支和代码行为一致吗？
    - **检查手法**：`grep -c "a16\|a17" config-loader.ts` 与 `grep -c "A16\|A17" rules/index.ts` 的数字必须一致。每个新增纯函数跑 `npm test` 确认 0 failed。
+
+18. **包拆分后的独立构建验证（新攻击面）** 🆕
+   - **v1.1.0 教训**：11 包拆分后，audit 构建通过不代表 core/orchestrator 也能独立构建。core 曾因缺少 `filesystem/` 目录报 TS2307，orchestrator 可能因依赖缺失而失败。陌生审查者必须对每个包独立跑 `tsc --noEmit`——不要假设"主包过了其他包也能过"。
+   - **盲区本质**：开发者在 audit 包内开发、测试，习惯性只跑 audit 的 build。拆包后每个包的 tsconfig 独立、依赖独立，一个包的构建成功不传递到其他包。
+   - **检查手法**：对 core/orchestrator/daemon/ab-test 等新包逐一 `npx tsc --noEmit`，报任何 TS2307/TS2305 都是 P0。
+
+19. **"复制≠移动"——文件迁移完整性检测（新攻击面）** 🆕
+   - **v1.1.0 教训**：AI 工程师做源码迁移时，在新包创建了文件副本，但忘了删除 audit/src/ 中的原文件。导致 audit 成为"重复文件仓库"——同一份代码在 audit 和新包各有一份，后续修改不同步产生行为差异。
+   - **盲区本质**：人类审查"文件迁移"时会自然检查源是否已删，但 AI 工程师的"完成报告"只说"已创建 N 个文件"，不会主动报告"未删除 M 个源文件"。陌生审查者必须反向验证——不是确认新包有啥，而是确认 audit/src/ 里**不该有啥**。
+   - **检查手法**：对照架构设计文档中的迁移清单，逐项确认 audit/src/ 中不应存在的目录/文件是否已删除。`grep -rn "from '\.\.\/subagents\|from '\.\.\/eval" sofagent/audit/src/` 查残留 import。
+
+20. **测试工厂函数迁移后的签名兼容性（新盲区）** 🆕
+   - **v1.1.0 教训**：测试辅助函数（`makeCtx`/`makeDiffFile`）从各测试文件内联实现提取为共享 `test-utils.ts` 后，参数签名与原始调用方不兼容——`makeCtx` 缺少 `commitMsg`/`task`/`strict` 字段透传导致所有规则测试返回 PASS；`makeDiffFile` 缺少 `status` 参数导致删除类规则测试失效。
+   - **盲区本质**：提取共享 helper 时，开发者只看了"最常见调用方式"，没覆盖所有调用方的参数组合。陌生审查者应实际运行测试——74 个测试因这个盲区静默失败，但 npm test 的 exit code 仍然是 1（有 failure），只是被 IS_PASS 声明掩盖了。
+   - **检查手法**：`npm test` 后检查是否有 `expected 'PASS' to be 'WARN'` 模式的断言失败（所有规则都返回 PASS），这是工厂函数不兼容的典型信号。
+
+21. **audit/src/ 收敛验证（v1.0.9 文件迁移后联动）** 🆕
+   - **v1.0.9 教训**：LIMITATIONS.md 从 `docs/` 迁到根目录后，8 处跨文件引用未同步更新，形成死链。v1.1.0 教训放大：不仅文档会迁移，源码也会——subagents/ontology/eval/daemon/ 等 9 个目录从 audit 迁到新包后，audit/src/ 中残留副本 + 残留 import + 残留测试文件形成三重污染。
+   - **盲区本质**：文件迁移不是"复制过去"就完了——是"移动过去 + 删除源 + 更新所有引用 + 迁移测试"。四个动作缺一不可。陌生审查者必须逐一验证这四个动作都已完成。
+   - **检查手法**：`for d in subagents ontology eval daemon; do ls sofagent/audit/src/$d 2>&1; done` 全部应报 No such file。同样检查散文件。
+
+22. **测试计数漂移的文档联动检测（新盲区）** 🆕
+   - **v1.1.0 教训**：77 个测试随被测模块迁出后，npm test 从 531→417。但 CHANGELOG/ROADMAP/FDE/evidence/LIMITATIONS 等 5 处文档仍写 531。陌生视角审查者的任务八"测试数一致性"被触发——发现文档数字与实跑数字不符。
+   - **盲区本质**：测试数是一个"分布式声称"——8 个文档各自维护，没有单一事实源自动同步。每次测试迁移必须全量 grep 更新。
+   - **检查手法**：`ACTUAL=$(cd sofagent/audit && npm test 2>&1 | grep Tests | grep -oE '[0-9]+(?= passed)'); grep -rn "$ACTUAL" ROADMAP.md FDE/FDE.md docs/evidence/evidence.md LIMITATIONS.md` 期望 4 处全部命中。
+
+23. **基础层叶子包的反向依赖验证（新视角）** 🆕
+   - **v1.1.0 架构铁律**：harness/ontology/eval/core 为基础层叶子，**绝不** import 任何 `@sofagent/*` 包。陌生审查者应逐一检查四个包的 src/ 目录是否真的零跨包引用。
+   - **盲区本质**：开发者可能在"最后一刻"加了一个 import 来解决编译问题（如 core 想 import ontology 的某个类型），但违反架构铁律。这类 import 在 monorepo symlink 环境下编译能过（npm workspace 自动 resolve），但破坏了分层。
+   - **检查手法**：`for pkg in harness ontology eval core; do grep -rn "from '@sofagent/" "sofagent/$pkg/src/"; done` 期望四个包全部零输出。
 
 **输出格式**：
 

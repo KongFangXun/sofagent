@@ -32,7 +32,7 @@
 先查 orchestrator/_index.md 有无同类模板。参考 think.md 活跃反思。
 
 **第一轮 · 目标确认**：开放式追问——对象/产出/受众/约束。苏格拉底原则：不问「是不是」，问「你想分析哪个方向？」
-**第二轮 · 编排方案**：跑 ao compose → 子任务拆分+Skill匹配+成本预估 → 写 `task/plans/` 标 `#pending` → 用户确认→执行。两轮封顶。
+**第二轮 · 编排方案**：跑 sofagent-orchestrator compose → 子任务拆分+Skill匹配+成本预估 → 写 `task/plans/` 标 `#pending` → 用户确认→执行。两轮封顶。
 
 **定稿后**：子任务间/60%预算 → 先跑 `{OPENCLAW_SCRIPTS}/task-record.sh --closure-check` / `--budget`（`{OPENCLAW_SCRIPTS}` 优先 `~/.openclaw/scripts/`，不存在则搜 `sofagent/scripts/`）→ 再调 Loop Check（checkpoint）。失败调 failure，闭环调 closure。快速模式仅重大操作前生效。详见 `loop-check.md`。
 

@@ -21,7 +21,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.0.9-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.0-16B8F3" alt="Version" /></a>
 </p>
 
 ---
@@ -98,7 +98,7 @@ FDE 交付完就撤离，AI 节点留在企业自己跑。
 > OpenClaw/DeepAgents 就是你的 Gateway。sofagent 不替代 Gateway——它挂在 Gateway 里面，管 Agent 行为治理：
 > **Gateway 是高速公路，sofagent 是交规 + 测速摄像头 + 驾校教练。**
 
-> 🔮 **v1.1.0 预告**：包结构纯度重构——audit 只做审计，其余 10 个包独立。现有 `npm install -g @sofagent/audit` 用户无感知迁移。
+> 🔮 **v1.1.0 已发布**：包结构纯度重构——audit 只做审计，12 个独立包 + 轻量多设备四件事。详见 [开发日志](./docs/changelog/v1.1.0.md)。
 
 #### 🧭 约束底座
 
@@ -128,7 +128,7 @@ graph LR
     E -->|旧版更好| G[保留]
 ```
 
-当前走 DeepAgents（v1.0.7 ao 完全退役）。`sofagent-audit compose --task` CLI 入口——**任何 Agent 平台都能用编排引擎**。详见 [ROADMAP](./ROADMAP.md)。
+当前走 DeepAgents（v1.0.7 ao 完全退役）。`sofagent-orchestrator compose --task` CLI 入口——**任何 Agent 平台都能用编排引擎**。详见 [ROADMAP](./ROADMAP.md)。
 
 #### 🔍 审计引擎
 
@@ -188,7 +188,7 @@ graph LR
 
 ```bash
 # 手动触发
-sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
+sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点"
 ```
 
 一底座四引擎形成闭环：**约束定红线 → 编排拆任务 → 审计盯变更 → 回溯保回滚 → 进化越用越好**。
@@ -203,8 +203,8 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 | 维度 | 数据 | 什么意思 |
 |------|------|------|
-| 审计引擎稳定性 | `npm test` 全绿 — diff-parser / A1-A17 / reporter / init 全覆盖 | 改了代码就能查，不会被绕过 |
-| 审计覆盖率 | 19 条规则，覆盖密钥泄漏、越界修改、注入攻击、盲改、知识库越权 | 最常见的 Agent 翻车模式都拦住了 |
+| 审计引擎稳定性 | `npm test` 全绿 — diff-parser / A1-A11、A14-A17 / reporter / init 全覆盖 | 改了代码就能查，不会被绕过 |
+| 审计覆盖率 | 19 条规则（A1-A11、A14-A17 + E1-E4），覆盖密钥泄漏、越界修改、注入攻击、盲改、知识库越权 | 最常见的 Agent 翻车模式都拦住了 |
 | 平台覆盖 | git commit 审计（开发者）+ daemon 文件审计（非开发者） | 不管谁改的文件，都能审计 |
 | 开源协议 | MIT | 随便用，代码、文档、模板都行 |
 
@@ -236,9 +236,17 @@ sofagent 支持两种节点类型，按需选择：
 | 节点类型 | 适合谁 | 需要 OpenClaw | 编排引擎怎么用 | 约束怎么注入 |
 |---------|--------|:--:|------|------|
 | **自动运行节点** | 企业无人值守设备 | ✅ 必须 | OpenClaw Channel + DeepAgents 内部 API | OpenClaw Hook 精确注入 |
-| **个人增强节点** | 个人开发者用 WorkBuddy/Codex/Claude Code | ❌ 不需要 | `sofagent-audit compose --task` CLI | Sub Agent 启动时自加载 |
+| **个人增强节点** | 个人开发者用 WorkBuddy/Codex/Claude Code | ❌ 不需要 | `sofagent-orchestrator compose --task` CLI | Sub Agent 启动时自加载 |
 
 > v1.0.7 的 Sub Agent 约束自加载（`buildConstrainedSystemPrompt`）让约束不依赖任何 Agent 平台的 Skill 系统——Sub Agent 启动时直接读 `.sofagent/` 文件，平台换了约束不丢。
+
+---
+
+## Work模板市场：企业落地的可靠底座
+
+纯自主 Agent 灵活但不可控——随机跳步、幻觉、全链路难追溯，在金融信贷审核、应付账款这类**低容错业务**上是致命风险。而 **80% 的企业级落地场景，Workflow（预先编排好分支、工具调用顺序、数据库/第三方接口调用）反而更靠谱**：全流程轨迹固定、节点独立监控、可并行提效、几乎无幻觉。
+
+sofagent 的 [Work模板市场](./work模板市场/) 采用**混合架构**：外层用 `workflow.yml` 的 Graph 骨架（`nextNodes`）锁定全链路步骤、保证可追溯；内层单个节点保留模型自主规划（节点 `prompt` 即 ReAct Agent）。既拿到 Workflow 的可控性，又保留局部灵活性。FDE 进场梳理出的工作流，直接沉淀为可复用的企业模板。
 
 ---
 
@@ -253,6 +261,7 @@ sofagent 支持两种节点类型，按需选择：
 | 版本路线图 | [ROADMAP](./ROADMAP.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
 | 企业部署（FDE 工具包 + Workflow 模板） | [FDE/](./FDE/) \| [Work模板市场](./work模板市场/) |
+| 12 包架构（v1.1.0） | [ARCHITECTURE](./docs/ARCHITECTURE.md) · [v1.1.0 日志](./docs/changelog/v1.1.0.md) |
 
 ---
 

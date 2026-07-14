@@ -21,7 +21,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.0.9-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.0-16B8F3" alt="Version" /></a>
 </p>
 
 ---
@@ -98,7 +98,7 @@ No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep 
 > OpenClaw/DeepAgents IS your Gateway. sofagent doesn't replace it — it layers on top for governance.
 > **The Gateway is the highway. sofagent is the traffic rules + speed cameras + driving coach.**
 
-> 🔮 **v1.1.0 preview**: Package purity refactor — audit just audits, 10 other packages go independent. Existing `npm install -g @sofagent/audit` users migrate seamlessly.
+> 🔮 **v1.1.0 released**: Package purity refactor — audit just audits, 12 independent packages + lightweight multi-device. See [changelog](./docs/changelog/v1.1.0.md).
 
 #### 🧭 Constraint Base
 
@@ -128,7 +128,7 @@ graph LR
     E -->|Old better| G[Keep]
 ```
 
-Powered by DeepAgents (v1.0.7, ao fully retired). `sofagent-audit compose --task` CLI entry — **any Agent platform can use the orchestration engine**. See [ROADMAP](./ROADMAP.md).
+Powered by DeepAgents (v1.0.7, ao fully retired). `sofagent-orchestrator compose --task` CLI entry — **any Agent platform can use the orchestration engine**. See [ROADMAP](./ROADMAP.md).
 
 #### 🔍 Audit engine
 
@@ -189,7 +189,7 @@ graph LR
 | **sustain** | Weekly auto / manual trigger | Read audit trends → Analyze think.md → Generate optimization report → Update rules |
 
 ```bash
-sofagent-audit subagent run fde --mode sustain --task "Inspect all nodes"
+sofagent-orchestrator subagent run fde --mode sustain --task "Inspect all nodes"
 ```
 
 Five engines, one loop: **Constrain → Orchestrate → Audit → Restore → Evolve**.
@@ -218,8 +218,8 @@ Install and run — no dependency on agent compliance:
 
 | Dimension | Data | What it means |
 |------|------|------|
-| Audit stability | `npm test` all green — diff-parser / A1-A17 / reporter / init | Every code change is audit-checked, cannot be bypassed |
-| Audit coverage | 19 rules: secret leaks, boundary violations, injection, blind edits, knowledge-base access | Most common agent failure modes are caught |
+| Audit stability | `npm test` all green — diff-parser / A1-A11, A14-A17 / reporter / init | Every code change is audit-checked, cannot be bypassed |
+| Audit coverage | 19 rules (A1-A11, A14-A17 + E1-E4): secret leaks, boundary violations, injection, blind edits, knowledge-base access | Most common agent failure modes are caught |
 | Platform coverage | git commit audit (developers) + daemon filesystem audit (non-developers) | Anyone's file changes get audited |
 | License | MIT | Code, docs, templates — use freely |
 
@@ -250,9 +250,17 @@ sofagent supports two node types:
 | Node type | For whom | OpenClaw | Orchestration | Constraints |
 |---------|--------|:--:|------|------|
 | **Auto-running node** | Enterprise unattended devices | ✅ Required | OpenClaw API | Hook injection |
-| **Personal enhancement node** | Individual developers (WorkBuddy/Codex/Claude Code) | ❌ Not needed | `sofagent-audit compose --task` CLI | Sub Agent self-load |
+| **Personal enhancement node** | Individual developers (WorkBuddy/Codex/Claude Code) | ❌ Not needed | `sofagent-orchestrator compose --task` CLI | Sub Agent self-load |
 
 > v1.0.7 Sub Agent constraint self-loading (`buildConstrainedSystemPrompt`) makes constraints platform-independent — Sub Agents read `.sofagent/` files at startup. Change your Agent platform, constraints stay.
+
+---
+
+## Work模板市场: the reliable foundation for enterprise landing
+
+Pure autonomous Agents are flexible but uncontrolled — random step-skipping, hallucination, and hard-to-trace end-to-end flows are fatal risks in low-tolerance business like credit-risk audit or accounts-payable approval. Yet **80% of enterprise landing scenarios are better served by Workflow** (predefined branches, tool-call order, DB/3rd-party calls): fixed execution trace, per-node monitoring, parallel speedup, near-zero hallucination.
+
+sofagent's [Work模板市场](./work模板市场/) uses a **hybrid architecture**: an outer Graph skeleton (`nextNodes` in `workflow.yml`) locks the end-to-end steps and keeps them traceable; inner nodes keep model autonomy (the node `prompt` is a ReAct Agent). You get Workflow's controllability plus local flexibility. Workflows mapped during FDE onboarding become reusable enterprise templates.
 
 ---
 

@@ -1,4 +1,4 @@
-# engage.md · 编排引擎（精简版）· v1.0
+# engage.md · 编排引擎（精简版）· v1.1
 
 > FDE 部署场景专用——workflow 节点触发时点火。个人开发者不需要。
 
@@ -28,9 +28,9 @@
 
 ## AO Compose 拆解
 
-`ao compose` 的完整说明见 **DEVELOPMENT.md §二**。核心流程：Agent 读 `nodes/[节点名].md`（三层实体之文档层）→ 把节点定义注入给 `ao compose "节点描述"` → 输出 YAML DAG 结构 → 逐步执行。
+`sofagent-orchestrator compose` 的完整说明见 **DEVELOPMENT.md §二**。核心流程：Agent 读 `nodes/[节点名].md`（三层实体之文档层）→ 把节点定义注入给 `sofagent-orchestrator compose "节点描述"` → 输出 YAML DAG 结构 → 逐步执行。
 
-> ao compose 接受自然语言描述（不是读 .yaml 配置文件）。Agent 读节点 .md 后，把内容揉成一句话描述传给 ao compose。ao compose 内部会生成临时 YAML DAG 做执行计划，但那是它自己的内部产物，不是我们需要维护的配置文件。
+> sofagent-orchestrator compose 接受自然语言描述（不是读 .yaml 配置文件）。Agent 读节点 .md 后，把内容揉成一句话描述传给 sofagent-orchestrator compose。sofagent-orchestrator compose 内部会生成临时 YAML DAG 做执行计划，但那是它自己的内部产物，不是我们需要维护的配置文件。
 
 ## Agent 模板匹配
 
@@ -66,6 +66,6 @@ AO Compose 自带角色模板库，直接引用不自定义：
 
 ## Gotcha
 
-- **ao compose 跨 provider 兼容性差**：OpenClaw CLI provider 输出的 YAML 与 ao compose 期望的 schema 不完全兼容。优先配 DeepSeek API Key 直连，fallback CLI provider 成功率低。
+- **sofagent-orchestrator compose 跨 provider 兼容性差**：OpenClaw CLI provider 输出的 YAML 与 sofagent-orchestrator compose 期望的 schema 不完全兼容。优先配 DeepSeek API Key 直连，fallback CLI provider 成功率低。
 - **拆解粒度宁细不粗**：首次执行不确定时选「拆」。多拆一步的代价远小于拆少了导致 Agent 迷路。
 - **缓存哈希不含模型版本**：换了模型后旧缓存仍可能命中。手动删除 `orchestrator/workflows/<hash>.yaml` 强制重走 compose。

@@ -8,7 +8,7 @@ sofagent 是纯本地 Harness 中间件，**数据不出本机**——但以下�
 |------|------|------|
 | `task/logs/` | `.sofagent/task/logs/YYYY-MM/YYYY-MM-DD.md` | 任务摘要、代码片段、API 响应摘要、对话摘要 |
 | `think.md` | `.sofagent/think.md` | 反思记录，可能含踩坑细节、失败模式、决策推理 |
-| `scoring/` | `.sofagent/scoring/` | Skill 使用记录 |
+| `knowledge/` | `.sofagent/knowledge/` | 知识库 / 评估反馈（eval 体系；旧 `scoring/` 已废弃） |
 | `orchestrator/` | `.sofagent/orchestrator/` | 编排决策历史 |
 
 **当前状态（v1.0.9）**：
