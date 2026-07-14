@@ -72,20 +72,13 @@ sofagent-audit --timeline
 
 ## How FDE works
 
-FDE does two things — map + identify, then the engines take over.
+FDE does two things — map + identify, splits into two node types, then five engines take over.
 
 ```mermaid
 graph LR
     1["1️⃣ Map workflows"] --> 2["2️⃣ Identify AI nodes"]
-    2 --> H["⚙️ Orchestration"]
-    H --> J["⚡ Augmented role<br/>AI assists, human decides"]
-    H --> K["🔄 Auto-execute<br/>AI runs, human audits"]
-
-    E["🧭 Constraint Base"] --> F["🔍 Audit Engine"] --> G["🔄 Restore Engine"] --> I["🧬 Evolution"]
-    E --> H
-    F --> J
-    F --> K
-    G -.-> |rollback| E
+    2 --> J["⚡ Augmented role<br/>AI assists, human decides"]
+    2 --> K["🔄 Auto-execute<br/>AI runs, human audits"]
 ```
 
 Step 2 is the key — not every step should be fully automated:
