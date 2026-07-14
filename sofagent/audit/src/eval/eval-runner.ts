@@ -7,7 +7,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { load as yamlLoad } from 'js-yaml';
 import type { TestCase, TestCaseResult, EvalResult, EvalConfig } from './types';
-import { scoreCase } from './eval-scorer';
+import { evalCase } from './eval-scorer';
 
 /**
  * 加载 golden set YAML 文件
@@ -55,7 +55,7 @@ async function runTestCase(
 
   try {
     const actual = await runFunction(testCase.input);
-    const score = scoreCase(actual, testCase.expected);
+    const score = evalCase(actual, testCase.expected);
     const passed = score.overall >= 0.8; // 综合分 >= 0.8 算通过
 
     return {

@@ -370,10 +370,10 @@ FDE 进场后要决定每个 AI 节点跑哪种模式：
 |------|------|
 | **交付手册** | 企业画像 + 部署方案 + `fde.md` + `quick-start.md`（后两章安装包自带） |
 | **AI 节点（三层实体）** | 每个节点：文档层（.md，人读+编排引擎读）+ Skill 层（企业专属 Skill）+ 运行层（在跑的 session） |
-| **AI 知识库** | `.sofagent/knowledge/` 目录——结构化知识系统（entities/ → relations → concepts/ → comparisons/，轻量级 GraphRAG）。daemon 自动 Ingest，加载链被动注入。think.md / task/logs / scoring.md 由 AI 节点自动生成。见 [设计原理](./ARCHITECTURE.md#数据层ai-知识库v101-实现) |
-| **私有化评估体系** | scoring.md + Skill 迭代历史 + 知识库演变轨迹。工具可复制，差异化反馈无法复制——企业的长期竞争壁垒。见 [FDE/FDE.md](../FDE/FDE.md) |
+| **AI 知识库** | `.sofagent/knowledge/` 目录——结构化知识系统（entities/ → relations → concepts/ → comparisons/，轻量级 GraphRAG）。daemon 自动 Ingest，加载链被动注入。think.md / task/logs / eval.md 由 AI 节点自动生成。见 [设计原理](./ARCHITECTURE.md#数据层ai-知识库v101-实现) |
+| **私有化评估体系** | eval.md + Skill 迭代历史 + 知识库演变轨迹。工具可复制，差异化反馈无法复制——企业的长期竞争壁垒。见 [FDE/FDE.md](../FDE/FDE.md) |
 
-> 企业专属 Skill 会基于 scoring.md 评分自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本。详见 [ROADMAP](../ROADMAP.md) 企业 Skill 自进化。
+> 企业专属 Skill 会基于 eval.md 评分自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本。详见 [ROADMAP](../ROADMAP.md) 企业 Skill 自进化。
 
 > sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。
 

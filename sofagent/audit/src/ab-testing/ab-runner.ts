@@ -8,8 +8,8 @@
 import { readFileSync } from 'fs';
 import { dirname } from 'path';
 import type { ABConfig, ABTestResult } from './types';
-import type { ScoreBreakdown, TestCase } from '../eval/types';
-import { scoreCase } from '../eval/eval-scorer';
+import type { EvalBreakdown, TestCase } from '../eval/types';
+import { evalCase } from '../eval/eval-scorer';
 import { callModelAPI } from '../model-client';
 import type { ModelMessage } from '../model-client';
 
@@ -228,25 +228,25 @@ export async function runABTest(
     };
   }
 
-  let currentTotal: ScoreBreakdown = { exactMatch: 0, semanticSimilarity: 0, ruleCompliance: 0, overall: 0 };
-  let candidateTotal: ScoreBreakdown = { exactMatch: 0, semanticSimilarity: 0, ruleCompliance: 0, overall: 0 };
+  let currentTotal: EvalBreakdown = { exactMatch: 0, semanticSimilarity: 0, ruleCompliance: 0, overall: 0 };
+  let candidateTotal: EvalBreakdown = { exactMatch: 0, semanticSimilarity: 0, ruleCompliance: 0, overall: 0 };
 
   for (const testCase of testCases) {
     // v1.0.7: 使用方案 C（DeepAgents）+ 方案 B fallback
     const currentOutput = await runTestCase(testCase, config.current);
     const candidateOutput = await runTestCase(testCase, config.candidate);
 
-    const currentScore = scoreCase(currentOutput, testCase.expected);
-    const candidateScore = scoreCase(candidateOutput, testCase.expected);
+    const currentScore = evalCase(currentOutput, testCase.expected);
+    const candidateScore = evalCase(candidateOutput, testCase.expected);
 
-    currentTotal = addScores(currentTotal, currentScore);
-    candidateTotal = addScores(candidateTotal, candidateScore);
+    currentTotal = addEvalBreakdowns(currentTotal, currentScore);
+    candidateTotal = addEvalBreakdowns(candidateTotal, candidateScore);
   }
 
   // 平均分
   const n = testCases.length;
-  const avgCurrent = divideScore(currentTotal, n);
-  const avgCandidate = divideScore(candidateTotal, n);
+  const avgCurrent = divideEvalBreakdown(currentTotal, n);
+  const avgCandidate = divideEvalBreakdown(candidateTotal, n);
 
   const weights = config.scoreWeights;
   const currentWeighted = avgCurrent.exactMatch * weights.exactMatch
@@ -285,7 +285,7 @@ export async function runABTest(
 /**
  * 评分加法
  */
-function addScores(a: ScoreBreakdown, b: ScoreBreakdown): ScoreBreakdown {
+function addEvalBreakdowns(a: EvalBreakdown, b: EvalBreakdown): EvalBreakdown {
   return {
     exactMatch: a.exactMatch + b.exactMatch,
     semanticSimilarity: a.semanticSimilarity + b.semanticSimilarity,
@@ -297,7 +297,7 @@ function addScores(a: ScoreBreakdown, b: ScoreBreakdown): ScoreBreakdown {
 /**
  * 评分除法
  */
-function divideScore(s: ScoreBreakdown, n: number): ScoreBreakdown {
+function divideEvalBreakdown(s: EvalBreakdown, n: number): EvalBreakdown {
   return {
     exactMatch: s.exactMatch / n,
     semanticSimilarity: s.semanticSimilarity / n,

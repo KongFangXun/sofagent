@@ -117,10 +117,10 @@ describe('SkillOpt 管道 - runSkillOpt（新 CLI 契约）', () => {
   it('scoringFilePath 可选参数通过 SKILLOPT_SCORING_FILE 传递，不崩溃', () => {
     clearArgvLog();
     process.env.SKILLOPT_FAKE_MODE = 'evolve';
-    const tmpFile = join(tmpdir(), 'skillopt-pipe-scoring.md');
+    const tmpFile = join(tmpdir(), 'skillopt-pipe-eval.md');
     writeFileSync(tmpFile, '# Test SKILL\n', 'utf-8');
     // 传一个不存在的 scoring 文件：runSkillOpt 应忽略它（不设置 env），CLI 仍跑通
-    const result = runSkillOpt(tmpFile, '/tmp/out.md', '/tmp/nonexistent-scoring.md');
+    const result = runSkillOpt(tmpFile, '/tmp/out.md', '/tmp/nonexistent-eval.md');
     expect(result.success).toBe(true);
   });
 });

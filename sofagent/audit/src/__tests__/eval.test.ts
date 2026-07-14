@@ -4,15 +4,15 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { scoreCase } from '../eval/eval-scorer';
+import { evalCase } from '../eval/eval-scorer';
 import { generateEvalReport } from '../eval/eval-reporter';
-import type { ScoreBreakdown, EvalResult, TestCase, TestCaseResult } from '../eval/types';
+import type { EvalBreakdown, EvalResult, TestCase, TestCaseResult } from '../eval/types';
 
 describe('eval-scorer', () => {
   it('精确匹配：完全一致应得满分', () => {
     const actual = { result: 'PASS', rules_triggered: [] };
     const expected = { result: 'PASS', rules_triggered: [] };
-    const score = scoreCase(actual, expected);
+    const score = evalCase(actual, expected);
     expect(score.exactMatch).toBe(1);
     expect(score.ruleCompliance).toBe(1);
     expect(score.overall).toBeGreaterThanOrEqual(0.9);
@@ -21,28 +21,28 @@ describe('eval-scorer', () => {
   it('精确匹配：结果不同应得低分', () => {
     const actual = { result: 'FAIL', rules_triggered: [] };
     const expected = { result: 'PASS', rules_triggered: [] };
-    const score = scoreCase(actual, expected);
+    const score = evalCase(actual, expected);
     expect(score.exactMatch).toBeLessThan(1);
   });
 
   it('规则合规：违规规则命中应正确计分', () => {
     const actual = { result: 'FAIL', rules_triggered: ['A2'] };
     const expected = { result: 'FAIL', rules_triggered: ['A2'] };
-    const score = scoreCase(actual, expected);
+    const score = evalCase(actual, expected);
     expect(score.ruleCompliance).toBe(1);
   });
 
   it('规则合规：漏报违规规则应扣分', () => {
     const actual = { result: 'FAIL', rules_triggered: ['A2'] };
     const expected = { result: 'FAIL', rules_triggered: ['A1', 'A2'] };
-    const score = scoreCase(actual, expected);
+    const score = evalCase(actual, expected);
     expect(score.ruleCompliance).toBeLessThan(1);
   });
 
   it('语义相似度：相近文本应得较高分', () => {
     const actual = { description: 'fix login page bug' };
     const expected = { description: 'fix login page issue' };
-    const score = scoreCase(actual, expected);
+    const score = evalCase(actual, expected);
     expect(score.semanticSimilarity).toBeGreaterThan(0);
   });
 });

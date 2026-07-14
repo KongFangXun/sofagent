@@ -3,7 +3,7 @@
 // v1.0.9 新增
 // ============================================================
 
-import type { ScoreBreakdown } from '../eval/types';
+import type { EvalBreakdown } from '../eval/types';
 
 /**
  * A/B 测试配置
@@ -37,9 +37,9 @@ export interface ScoreWeights {
  */
 export interface ABTestResult {
   /** 当前版本评分 */
-  currentScore: ScoreBreakdown;
+  currentScore: EvalBreakdown;
   /** 候选版本评分 */
-  candidateScore: ScoreBreakdown;
+  candidateScore: EvalBreakdown;
   /** 胜出方 */
   winner: 'current' | 'candidate' | 'tie';
   /** 分差（candidate - current） */

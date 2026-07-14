@@ -1971,7 +1971,7 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 | **190** | **A15 规则注册 + evidenceMode + actions 提取正则可靠** | **v1.0.4 新功能** |
 | **191** | **HITL 四类强制人工场景（risk-assessor.ts）+ 置信度计算非硬编码（confidence-tagger.ts）——注意 HITL 是独立模块（hitl/），不是 E 系列规则** | **v1.0.4 新功能** |
 | **192** | **A/B decidePromotion 连续胜出阈值可配置 + promote 归档路径存在** | **v1.0.4 新功能** |
-| **193** | **SkillOpt——daemon.sh 与 doctor.ts 的 scoring.md 路径一致** | **v1.0.4 P0：跨模块路径引用** |
+| **193** | **SkillOpt——daemon.sh 与 doctor.ts 的 eval.md 路径一致** | **v1.0.4 P0：跨模块路径引用** |
 | **194** | **dist 与 src 同步——新增 CLI 命令在 dist 中存在** | **v1.0.4 遗漏补完** |
 | **195** | **CHANGELOG/ROADMAP 测试数字与实际 npm test 输出一致** | **v1.0.4 教训：写 455 实际 465** |
 | **196** | **跨模块路径引用一致性——shell 脚本 `${SOFAGENT_DATA}` 与 TS `dataDir` 拼接的路径一致** | **v1.0.4 P0：路径拼接方式不同导致不一致** |

@@ -32,7 +32,7 @@ Ontology 三路合并引擎 + Workflow Hub 独立项目 + A9 分级安全 + A15 
 
 ### 规划中
 - **v1.0.9** — 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool + knowledge 智能选择 → [开发日志](./docs/changelog/v1.0.9.md)
-- **v1.1.0** — 包结构纯度重构（audit 只做 audit）：`@sofagent/audit` 上帝包拆为 11 独立包（harness / ontology / scoring / core / orchestrator / daemon / ab-testing / workflow-hub / think / skillopt / 纯审计 audit）+ 轻量多设备四件事（经验共享 / 权限作用域化 / 自迭代周报 / daemon 主动巡检）→ [开发日志](./docs/changelog/v1.1.0.md) · [重构规格](./docs/changelog/v1.1.0-dev-prompt.md)
+- **v1.1.0** — 包结构纯度重构（audit 只做 audit）：`@sofagent/audit` 上帝包拆为 11 独立包（harness / ontology / eval / core / orchestrator / daemon / ab-test / workflow-hub / think / skillopt / 纯审计 audit）+ 轻量多设备四件事（经验共享 / 权限作用域化 / 自迭代周报 / daemon 主动巡检）→ [开发日志](./docs/changelog/v1.1.0.md) · [重构规格](./docs/changelog/v1.1.0-dev-prompt.md)
 
 ### [v1.0.4] — 自动优化 + 约束验证 🔧
 > 2026-07-11（UTC）

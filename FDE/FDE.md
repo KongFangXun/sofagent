@@ -318,7 +318,7 @@ bash sofagent/scripts/install.sh
 4. **检查点配置**：每个 🔄/⚡ 输出端设检查点，默认抽检 10%。不合格 → 标记任务 → 反馈主人 → 记录异常 → 触发 Skill 优化分析
 5. **教会一个人**：每个 AI 节点指定企业方主人，退出信号为连续两天无人问「怎么用」
 
-> AI 知识库不用你搭——AI 节点跑起来后自动积累：think.md（反思日志）、task/logs（任务记录）、scoring.md（评分记录）、orchestrator/（编排决策）。FDE 的职责是装好底座、让节点跑起来，AI 知识库自然就有了。
+> AI 知识库不用你搭——AI 节点跑起来后自动积累：think.md（反思日志）、task/logs（任务记录）、eval.md（评分记录）、orchestrator/（编排决策）。FDE 的职责是装好底座、让节点跑起来，AI 知识库自然就有了。
 
 ---
 
@@ -349,7 +349,7 @@ FDE 离场前打包交付给企业的一份文档。模板见 `FDE/templates/`�
 
 每个节点的三层确认打勾，这个节点才算交付完成。
 
-> **企业 Skill 是 AI 节点的大脑。** FDE 在 §7 为每个节点定制专属 Skill——注入企业的行业术语、业务规则、历史案例。节点跑起来后，Skill 会基于 scoring.md 的评分和 task/logs 的记录**自动迭代优化**（检查点不合格时触发），不需要 FDE 人工调。详见 ROADMAP「企业 Skill 自进化」。
+> **企业 Skill 是 AI 节点的大脑。** FDE 在 §7 为每个节点定制专属 Skill——注入企业的行业术语、业务规则、历史案例。节点跑起来后，Skill 会基于 eval.md 的评分和 task/logs 的记录**自动迭代优化**（检查点不合格时触发），不需要 FDE 人工调。详见 ROADMAP「企业 Skill 自进化」。
 
 #### 📚 AI 知识库（AI 节点运行后自动积累）
 
@@ -363,7 +363,7 @@ v1.0.1 起为**结构化 AI 知识库**（`.sofagent/knowledge/` 目录）：dae
 |------|--------|--------|
 | think.md | 反思日志——每次任务后的经验沉淀 | AI 节点 |
 | task/logs/ | 任务记录——每次编排决策、执行过程 | AI 节点 |
-| scoring.md | Skill 评分——哪些 Skill 好用、哪些要优化 | AI 节点 |
+| eval.md | Skill 评分——哪些 Skill 好用、哪些要优化 | AI 节点 |
 | orchestrator/ | 编排决策——AO Compose 拆任务的过程记录 | AI 节点 |
 
 详见 [v1.0.1 开发日志](../docs/changelog/v1.0.1.md)。
@@ -374,7 +374,7 @@ v1.0.1 起为**结构化 AI 知识库**（`.sofagent/knowledge/` 目录）：dae
 
 离场前确认企业 AI 节点的评估闭环可用：
 
-- [ ] `scoring.md` 存在且有初始基线（至少 5 条手动评分记录）
+- [ ] `eval.md` 存在且有初始基线（至少 5 条手动评分记录）
 - [ ] Skill 迭代历史可见（`skill-iterations/` 或 SkillOpt 日志）
 - [ ] 知识库演变可追溯（knowledge/changelog/ 或 index.md 更新记录）
 - [ ] 企业关键业务指标与 scoring 挂钩（如「审批准确率 ≥ 95%」）
@@ -438,7 +438,7 @@ FDE 进场 → 梳理 Workflow A、B、C（每条小溪）
 - [ ] 每个 AI 节点有明确的主人
 - [ ] 工作流检查点已配置（抽检率、质检员、不合格处理流程）
 - [ ] 交付手册（企业画像 + 部署方案 + `fde.md` + `quick-start.md`）已打包并落地到企业自有平台
-- [ ] AI 节点运行记忆（think.md / task/logs / scoring.md / orchestrator/）开始积累
+- [ ] AI 节点运行记忆（think.md / task/logs / eval.md / orchestrator/）开始积累
 - [ ] 审计周报推送已配置并收到第一期
 - [ ] **对抗性测试已跑过**——prompt 注入模拟 / 权限越界 / 异常输入（大部分企业只测功能不测攻击）
 

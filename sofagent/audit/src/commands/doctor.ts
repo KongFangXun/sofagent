@@ -477,23 +477,23 @@ export function runDoctor(): void {
     const envConfig = loadEnvConfig();
     const dataDir = envConfig.dataDir;
     const skilloptAvailable = isSkillOptAvailable();
-    // scoring.md 在 skill/data/ 下（与 daemon.sh 的 ${SOFAGENT_DATA}/../skill/data/scoring.md 一致）
-    const scoringPath = join(dataDir, '..', 'skill', 'data', 'scoring.md');
+    // eval.md 在 skill/data/ 下（与 daemon.sh 的 ${SOFAGENT_DATA}/../skill/data/eval.md 一致）
+    const scoringPath = join(dataDir, '..', 'skill', 'data', 'eval.md');
     const hasScoring = existsSync(scoringPath);
     let scoreCount = 0;
     if (hasScoring) {
       try {
         const content = readFileSync(scoringPath, 'utf-8');
         scoreCount = content.split('\n').filter((l) => l.startsWith('|')).length;
-      } catch { console.debug('doctor: scoring.md 读取失败，scoreCount 保持 0'); }
+      } catch { console.debug('doctor: eval.md 读取失败，scoreCount 保持 0'); }
     }
     results.push({
       ok: true,
       warning: !skilloptAvailable && scoreCount >= 20,
       label: 'SkillOpt 管道',
       detail: skilloptAvailable
-        ? `✅ skillopt-sleep 可用 | scoring.md ${scoreCount} 条（阈值 20）`
-        : `⚠️ skillopt-sleep 未安装 | scoring.md ${scoreCount} 条${scoreCount >= 20 ? '（已达触发阈值，安装 skillopt-sleep 后自动触发）' : ''}`,
+        ? `✅ skillopt-sleep 可用 | eval.md ${scoreCount} 条（阈值 20）`
+        : `⚠️ skillopt-sleep 未安装 | eval.md ${scoreCount} 条${scoreCount >= 20 ? '（已达触发阈值，安装 skillopt-sleep 后自动触发）' : ''}`,
     });
   }
 

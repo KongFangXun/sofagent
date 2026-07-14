@@ -6,14 +6,14 @@
 
 评审者与执行者分离——Agent 自评收敛于「让验证变容易」而非「让结果变好」，分离评审后通过率+14-21%（上海 AI Lab Self Harness 实验）。
 
-- **OpenClaw**：`session.spawn` 创建独立子 Agent（flash），只读 task/logs，写 think.md + scoring/_index.md（追加，不覆盖）。
+- **OpenClaw**：`session.spawn` 创建独立子 Agent（flash），只读 task/logs，写 think.md + eval/_index.md（追加，不覆盖）。
 - **非 OpenClaw**：重新 Read task/logs 证据驱动。已知局限：Agent 可能凭记忆补充评审。
 - **模型选择**（优先级递减）：异构模型验证 → session.spawn 工程隔离 → 同模型+重新 Read。⛔ 禁止同模型凭记忆评审。
 - **怀疑论提示**（零成本，全平台必做）：「这是别人执行的产出，找问题」+ 逐项对照验收标准 +「列出 ≥2 个潜在风险」。模型分离解「视角污染」，怀疑论提示解「指令污染」——互补。
 
 ## 输入区分
 
-- `task/logs/`：本次执行痕迹 → **评审主依据** | `scoring/_index.md` / `orchestrator/`：历史沉淀 → **仅参考**（对齐基线）
+- `task/logs/`：本次执行痕迹 → **评审主依据** | `eval/_index.md` / `orchestrator/`：历史沉淀 → **仅参考**（对齐基线）
 - ⚠️ scoring 追加写入：`## YYYY-MM-DD · 任务简述` 下接九维表，不覆盖历史。
 
 ## 5 项结构化 checklist
