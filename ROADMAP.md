@@ -91,6 +91,8 @@
 | **v1.0.8** | ✅ 已完成 | **⭐ FDE Agent 自进化（部署 + 持续优化双模式）**→ 一管底线（Audit）一管上限（FDE）+ 文件系统审计（isomorphic-git + fs-watch）+ 快照回溯 + Agent 定义去耦合 + TencentDB Memory 集成 + Ontology 人类可读视图 | [📖](./docs/changelog/v1.0.8.md) |
 | **v1.0.9** | ✅ 已完成 | 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool | [📖](./docs/changelog/v1.0.9.md) |
 | **v1.1.0** | ✅ 已完成 | **包结构纯度重构（audit 只做 audit）**：把 `@sofagent/audit` 上帝包拆为 12 个独立包——基础层 `@sofagent/{harness,ontology,eval,core}` + 运行层 `@sofagent/{orchestrator,daemon,ab-test,work模板市场,think,skillopt}` + 协议层 `@sofagent/mcp` + 纯审计 `@sofagent/audit`（收敛为 rules/webhook/filesystem/audit-*/permission），依赖单向无循环；+ **轻量多设备四件事**：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md → lessons-missteps）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检。一次性抽干净 | [📖](./docs/changelog/v1.1.0.md) |
+| **v1.1.1** | 📋 规划中 | **质量加固**：acceptance-test 31 场景全量验证 + experience sharing 端到端实测 + lessons-missteps 周报验证 + shellcheck 清零 + workspace 模式 CI 验证 + 新包功能测试补齐 | [📖](./docs/changelog/v1.1.1.md) |
+| **v1.2.0** | 📋 规划中 | **记忆/知识层升级（认知底座铺垫）**：daemon 分散脚本升级为 6 阶段 Dream Cycle 精简 pipeline（extract_facts→extract_atoms→cluster_patterns→synthesize_concepts→skillopt_backfill→embed）+ LM Wiki 3 层显式分层（Ledger/Views/Policy）+ 知识库冲突巡检（conflict-check）+ gbrain/LM Wiki 行业对标。v1.2.x 完整多设备协同的第一刀 | [📖](./docs/changelog/v1.2.0.md) |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同——**L2 团队协作协议**：共享态/意图广播/触发反应/冲突消解/反馈放大五大机制，从单人约束到团队协作；**L3 组织能力市场**：Skill/Agent/流程在企业内发布→发现→调用→评价，高频高价值自然胜出。+ Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界 | — |
 | **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A17 + 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线 | — |
 
@@ -98,7 +100,7 @@
 
 > **v1.0.1-v1.0.9 开发日志**：[v1.0.1](./docs/changelog/v1.0.1.md) → [v1.0.2](./docs/changelog/v1.0.2.md) → [v1.0.3](./docs/changelog/v1.0.3.md) → [v1.0.4](./docs/changelog/v1.0.4.md) → [v1.0.5](./docs/changelog/v1.0.5.md) → [v1.0.6](./docs/changelog/v1.0.6.md) → [v1.0.7](./docs/changelog/v1.0.7.md) → [v1.0.8](./docs/changelog/v1.0.8.md) → [v1.0.9](./docs/changelog/v1.0.9.md)
 >
-> **v1.0.7 双节点架构**：v1.0.7 起 sofagent 分两种部署节点——**自动运行节点**（OpenClaw 全栈）和**个人增强节点**（第三方 Agent + sofagent，不需 OpenClaw）。Sub Agent 启动时自加载约束（`buildConstrainedSystemPrompt`），不依赖宿主平台 Skill 系统。编排引擎通过 CLI 入口（`sofagent-audit compose --task`）对任意 Agent 平台开放。
+> **v1.0.7 双节点架构**：v1.0.7 起 sofagent 分两种部署节点——**自动运行节点**（OpenClaw 全栈）和**个人增强节点**（第三方 Agent + sofagent，不需 OpenClaw）。Sub Agent 启动时自加载约束（`buildConstrainedSystemPrompt`），不依赖宿主平台 Skill 系统。编排引擎通过 CLI 入口（`sofagent-orchestrator compose --task`）对任意 Agent 平台开放。
 >
 > **v1.0.8 文件系统审计**：审计引擎从"只有 git commit 才触发"扩展为"任何文件变更都触发"。内嵌 `isomorphic-git`（纯 JS Git，~2MB），daemon 监控文件变更直接跑审计——不需要装 git、不需要 commit。这让审计引擎成为**平台无关的核心能力**，非开发者的 AI 文件变更也能审计。v1.0.9 加二进制文件审计（A16-A17）+ 快照时间线。
 
@@ -136,7 +138,7 @@ OpenClaw 总管（TS）
 | 🟢 增强 | v1.0.4 | eval harness + HITL middleware + A/B 对比（单次手动） + A15 约束验证。独立于 DeepAgents | — |
 | ⚠️ 过渡 | v1.0.5 | Ontology 统一层 + launcher wrapper 保留，编排仍走 ao CLI。文档诚实降级——不再声称 DeepAgents 全覆盖 | — |
 | 🔧 迁移 | v1.0.6 | compose 编排逻辑从 ao CLI 迁到 DeepAgents，ao 降为 fallback。Sub Agent 运行状态基础跟踪 | deepagentsjs |
-| ✅ 退役 | v1.0.7 | ao 依赖正式移除。deepagents 提升为正式依赖。A/B 自动切换（连续计数器 + auto promote）。**双节点架构**——Sub Agent 约束自加载（`buildConstrainedSystemPrompt`），CLI 编排入口（`sofagent-audit compose --task`），第三方 Agent 平台无需 OpenClaw 即可用编排引擎 | deepagentsjs → required dep |
+| ✅ 退役 | v1.0.7 | ao 依赖正式移除。deepagents 提升为正式依赖。A/B 自动切换（连续计数器 + auto promote）。**双节点架构**——Sub Agent 约束自加载（`buildConstrainedSystemPrompt`），CLI 编排入口（`sofagent-orchestrator compose --task`），第三方 Agent 平台无需 OpenClaw 即可用编排引擎 | deepagentsjs → required dep |
 | 🔮 直接使用 | v1.1.0 | 直接 import `@langchain/langgraph`——用 StateGraph 自定义 Sub Agent 状态流转 + Checkpoint 做长任务中断恢复 + 条件路由动态决策（PASS/WARN/FAIL → 不同后续动作） | @langchain/langgraph → 直接依赖 |
 
 #### Ontology 渐进构建（企业数字孪生操作层）
@@ -244,7 +246,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | 派活 | git worktree + Sub Agent 调度 | ✅ |
 | 验证 | 独立审查 Agent + 双审（Maker-Checker）| ✅ |
 | 持久化 | think.md + 记忆金字塔 L0-L3 | ✅ |
-| 调度 | CLI 编排入口（sofagent-audit compose）| ✅ |
+| 调度 | CLI 编排入口（sofagent-orchestrator compose）| ✅ |
 | **6 组件** · 自动化 | daemon 常驻 + 自动触发 | ✅ |
 | 工作树 | git worktree 隔离 | ✅ |
 | Skills | Skill 系统 + SkillOpt | ✅ |
@@ -298,8 +300,8 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | 恢复路径结构化 | think.md 记录失败但没有结构化恢复机制，等 JSONL 落地
 | 审计规则模板消除重复 | RuleFunction 类型工厂 + Runner 注册模式（15 个 rule-*.ts 减少 30% 重复代码）
 | 测试工具函数提取 | makeDiffFile / runDiffParse 等重复定义收敛到 test-utils.ts
-| A12 供应链安全 | 依赖变更审计
-| A13 文件权限 | chmod 操作检测
+| A18 供应链安全 | 依赖变更审计
+| A19 文件权限 | chmod 操作检测
 | MCP/Plugin/Skill/Hook 四组件扩展 | 在现有 MCP+Skill 基础上架构 Plugin+Hook 层
 | 双闸验证：执行前 + 副作用写回前 | 审计从事后 diff 扩展到事前拦截
 | **entry-gate 风险分级审批** | 当前权限清单是二分（能做/不能做）。升级为三级：🟢 低风险自动放行 / 🟡 中风险需确认 / 🔴 高风险（DB/外部 API/文件删除）必须人工审批。让低风险更快通过，把人工注意力精准投放到高风险节点。**不做**超时降级和防橡皮图章——那是企业级 BPM 的功能，不是 Agent harness 层的职责（v2.x 再探索） |
@@ -330,6 +332,12 @@ v1.x 的多设备 = **经验共享 + 审计可见**，不碰身份/权限/协同
 | **daemon 主动巡检** | 从被动监工升级为主动告警——定期跑 doctor + 审计历史，发现 Agent 反复犯的同类错误 | daemon 扩展：定时执行 audit history 分析 → 生成告警 |
 
 **不做的**（v1.2.x 再说）：Agent 独立身份码、跨设备实时任务分发、多人协同线程、场景驱动权限的频道级、代理网关。
+
+### v1.2.0 — 记忆/知识层升级（认知底座铺垫）
+
+> 💡 **v1.2.0 是 v1.2.x 主题线的第一刀**：把 gbrain / LM Wiki 的外部验证吸收为「方法」（分阶段记忆整合、分层巡检），不吸收其「定位」（不变成 agent runtime）。详细 scope / 交付拆分（P0/P1/P2）/ 边界见 [v1.2.0 开发日志](./docs/changelog/v1.2.0.md)。
+
+🛡️ **差异化铁律（对标时必守）**：gbrain 是「agent 自己的脑」，sofagent 是「约束中间件」（数据主权 + 第三方独立 + MIT 可审计）。吸收方法，不吸收定位；不建自动化 diff 任务，发版前由架构评审顺带 diff 一次 gbrain 的 dream-cycle / skillopt，结论进当版 changelog「行业对标」小节。
 
 ### v1.2.x — 完整多设备协同（规划中）
 

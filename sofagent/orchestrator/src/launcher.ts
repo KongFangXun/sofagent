@@ -1,9 +1,9 @@
 // ============================================================
 // launcher.ts · Sub Agent 启动器
-// v1.0.9 新增：动态 import deepagents，启动/关闭 Agent 实例
-// v1.0.9 新增：runtime.json 状态管理（name/status/startedAt/lastActive/pid）
-// v1.0.9：deepagents 提升为正式依赖，移除 as unknown as 类型转换
-// v1.0.9 新增：buildConstrainedSystemPrompt() 四层约束加载链
+// v1.1.0 新增：动态 import deepagents，启动/关闭 Agent 实例
+// v1.1.0 新增：runtime.json 状态管理（name/status/startedAt/lastActive/pid）
+// v1.1.0：deepagents 提升为正式依赖，移除 as unknown as 类型转换
+// v1.1.0 新增：buildConstrainedSystemPrompt() 四层约束加载链
 // v1.1.0：迁移至 @sofagent/orchestrator，buildConstrainedSystemPrompt → @sofagent/harness
 // ============================================================
 

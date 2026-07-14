@@ -1,6 +1,6 @@
 // ============================================================
 // snapshot.ts · 快照与恢复
-// v1.0.9 新增：审计通过后自动快照 + 按 SHA 恢复
+// v1.1.0 新增：审计通过后自动快照 + 按 SHA 恢复
 // v1.1.0：迁移至 @sofagent/daemon
 //
 // 设计原则：
@@ -18,7 +18,8 @@ import {
   listSnapshots,
   createShadowRepo,
   hasShadowRepo,
-} from '@sofagent/core';
+} from '@sofagent/audit';
+import type { SnapshotEntry } from '@sofagent/audit';
 
 /** 快照条目（人类可读） */
 export interface SnapshotInfo {
@@ -66,7 +67,7 @@ export function listAllSnapshots(projectDir: string): SnapshotInfo[] {
 
   try {
     const snapshots = listSnapshots(projectDir);
-    return snapshots.map((s) => ({
+    return snapshots.map((s: SnapshotEntry) => ({
       sha: s.sha,
       shortSha: s.sha.slice(0, 8),
       timestamp: s.timestamp,
@@ -98,13 +99,13 @@ export function restoreSnapshot(projectDir: string, sha: string): string[] {
   let fullSha = sha;
 
   if (sha.length < 40) {
-    const matching = snapshots.filter((s) => s.sha.startsWith(sha));
+    const matching = snapshots.filter((s: SnapshotEntry) => s.sha.startsWith(sha));
     if (matching.length === 0) {
       throw new Error(`未找到匹配的快照: ${sha}`);
     }
     if (matching.length > 1) {
       throw new Error(
-        `多个快照匹配 "${sha}": ${matching.map((m) => m.sha.slice(0, 8)).join(', ')}。请使用完整 SHA。`
+        `多个快照匹配 "${sha}": ${matching.map((m: SnapshotEntry) => m.sha.slice(0, 8)).join(', ')}。请使用完整 SHA。`
       );
     }
     fullSha = matching[0]!.sha;

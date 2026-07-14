@@ -1,7 +1,7 @@
 // ============================================================
 // composer.ts · DeepAgents 任务编排
-// v1.0.9 新增：用 createDeepAgent() 做任务拆解，输出 YAML 工作流
-// v1.0.9：deepagents 提升为正式依赖，移除 as unknown as 类型转换
+// v1.1.0 新增：用 createDeepAgent() 做任务拆解，输出 YAML 工作流
+// v1.1.0：deepagents 提升为正式依赖，移除 as unknown as 类型转换
 // v1.1.0：迁移至 @sofagent/orchestrator
 // ============================================================
 

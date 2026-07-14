@@ -122,7 +122,7 @@ Decomposes large tasks, runs Sub Agents in parallel, compares A/B results for be
 graph LR
     A[Task received] --> B[DeepAgents<br/>Decompose + match template]
     B --> C[Sub Agents<br/>parallel execution]
-    C --> D[Multi-dimension scoring]
+    C --> D[Multi-dimension eval]
     D --> E{A/B compare}
     E -->|New better| F[Auto-switch]
     E -->|Old better| G[Keep]
@@ -176,7 +176,7 @@ FDE Agent doesn't just deploy once — after deployment, it shifts into **contin
 graph LR
     A[FDE Weekly Inspection] --> B[Read audit trends<br/>history.jsonl]
     B --> C[Analyze think.md<br/>recurring mistakes]
-    C --> D[Check scoring<br/>which node is degrading]
+    C --> D[Check eval<br/>which node is degrading]
     D --> E{Issue found?}
     E -->|Yes| F[Generate optimization report<br/>Update rules / supplement knowledge]
     E -->|No| G[Mark "stable"]
@@ -226,7 +226,7 @@ Install and run — no dependency on agent compliance:
 ---
 
 ---
-## Built-in Agents (v1.0.8)
+## Built-in Agents (v1.0.7 introduced · infra Agent since v1.0.8)
 
 | Agent | How to invoke | When it auto-triggers |
 |------|------|------|
@@ -241,7 +241,7 @@ Install and run — no dependency on agent compliance:
 | Full agent behavior management | Audit engine + harness base (install.sh) |
 | Automatic task orchestration | + orchestration engine (DeepAgents Sub Agent) |
 
-> ⚠️ **Current version (v1.0.9) coverage**: Developer roles (git commit audit) + non-developer roles (filesystem audit) — full coverage.
+> ⚠️ **Current version (v1.1.0) coverage**: Developer roles (git commit audit) + non-developer roles (filesystem audit) — full coverage.
 
 ### Dual-node deployment (v1.0.7+)
 

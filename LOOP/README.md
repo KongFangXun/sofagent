@@ -88,7 +88,7 @@ sofagent 安装后自带 OpenClaw 底座。你可以在任何 Agent 平台（Wor
   → 发送指令给 OpenClaw（sofagent 底座）
     → OpenClaw 按 LOOP/LOOP.md 定义的流程自动调度：
       → engineering-minimal-change-engineer（写代码 + 跑测试 + 提交）
-      → sofagent-audit（pre-commit hook 硬证据审计）
+      → sofagent-audit（commit-msg hook 硬证据审计）
       → engineering-code-reviewer（代码审查）
       → 审查报告返回给你确认
     → 你确认 → git push → 下一轮

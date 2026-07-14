@@ -101,6 +101,10 @@ export {
 // ── 审计结果类型 ──
 export type { AuditResult, RuleCheck } from './reporter';
 
+// ── 健康检查（doctor） ──
+export { runDoctor } from './doctor';
+export type { DoctorReport } from './doctor';
+
 // ── 装后验证 ──
 export { verifyEvidence } from './verify-evidence';
 export { Verifier } from './verify/verifier';

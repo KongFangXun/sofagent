@@ -263,6 +263,7 @@ bash tools/check-version.sh 2>&1 | grep 'SKILL.md'
 - [ ] 「vX.Y 不修 / 待修」的局限标注——是否已经修了但标注没动？
 - [ ] 「尚无第三方实测数据」「尚无 ≥1 周样本」等事实断言——是否已经变了？
 - [ ] README FDE 完成度——是否与交付层数匹配？
+- [ ] 🔴 README「当前版本」= 本次 git tag（文档版本号不得领先未打 tag 的版本；v1.1.0 起固化此核对项）
 - [ ] 前置依赖表——新增工具是否需要新依赖？
 - [ ] 英文版（README.en / EVIDENCE.en）内容是否与中文版同步？
 - [ ] COMMUNITY.md 实验状态、contributor 数是否为当前实际状态？

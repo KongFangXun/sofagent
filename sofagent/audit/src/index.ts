@@ -41,6 +41,7 @@ import { defaultRules } from './rules';
 import type { RuleCheck } from './rules/types';
 import { pushAuditResult, type WebhookPlatform } from './webhook';
 import { getFixSuggestion } from './fix-suggestions';
+import { loadPermission, checkPermission } from './permission';
 
 interface Args {
   diffRange: string;
@@ -435,11 +436,12 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  // doctor → sofagent-core
+  // doctor → sofagent-core (v1.1.0 P0 fix: use direct import instead of execFileSync)
   if (rawArgs.includes('--doctor')) {
     console.error('⚠️  "sofagent-audit --doctor" 已迁移到 "sofagent-core --doctor"（v1.1.0）。将在 v1.2.0 移除此兼容入口。');
-    execFileSync('sofagent-core', process.argv.slice(2).map(a => a === '--doctor' ? 'doctor' : a), { stdio: 'inherit' });
-    process.exit(0);
+    const { runDoctor } = await import('@sofagent/core');
+    const report = runDoctor(process.cwd());
+    process.exit(report.allOk ? 0 : 1);
   }
 
   // verify → sofagent-core
@@ -627,10 +629,23 @@ async function main(): Promise<void> {
     throw err;
   }
 
+  // 4.5 权限检查（v1.1.0：权限作用域化）
+  const permission = loadPermission(process.cwd());
+  const permissionDenials: string[] = [];
+  for (const file of diffFiles) {
+    const check = checkPermission(permission, file.path, 'write');
+    if (!check.allowed) {
+      permissionDenials.push(`${file.path}: ${check.matchedRule || 'denied'}`);
+    }
+  }
+
   // 5. 运行规则
   const results = runRules(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config);
 
   // 6. 输出结果
+  if (permissionDenials.length > 0) {
+    results.permissionDenials = permissionDenials;
+  }
   printResults(results, diffFiles, args.json, args.ci);
 
   // 7. webhook 推送（fire-and-forget，有 WARN/FAIL 且配置了 webhook 时推送）

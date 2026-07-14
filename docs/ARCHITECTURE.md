@@ -174,7 +174,7 @@ FDE 部署完成后转为**持续优化角色**。daemon cron @weekly 自动巡�
 graph LR
     A[FDE 周度巡检] --> B[读 audit 趋势<br/>history.jsonl]
     B --> C[分析 think.md<br/>反复出错的操作]
-    C --> D[读 scoring<br/>哪个节点在退化]
+    C --> D[读 eval<br/>哪个节点在退化]
     D --> E{发现问题?}
     E -->|是| F[生成优化报告<br/>更新规则/补充 knowledge]
     E -->|否| G[标记「稳定」]
@@ -232,7 +232,7 @@ Agent 定义在 `agents/SKILL/{name}/SKILL.md`，`parseSkillMd()` 读 front matt
 
 ### OpenClaw 在架构中的角色
 
-**审计层不需要 OpenClaw**——sofagent-audit 是独立 TypeScript CLI，输入 git diff，输出 exit code。即使不装 OpenClaw，`npm install -g @sofagent/audit` 配 pre-commit hook 就能让任何 Agent 平台的提交经过审计。
+**审计层不需要 OpenClaw**——sofagent-audit 是独立 TypeScript CLI，输入 git diff，输出 exit code。即使不装 OpenClaw，`npm install -g @sofagent/audit` 配 commit-msg hook 就能让任何 Agent 平台的提交经过审计。
 
 **编排层当前走 DeepAgents**——`compose --task` CLI 入口，任何 Agent 平台都能用。迁移路径：ao → DeepAgents（v1.0.7 完成，ao 已退役）。
 

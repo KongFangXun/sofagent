@@ -192,7 +192,7 @@ sofagent-audit: [PASS ✅ / FAIL ❌（列出违规项）]
 IS_PASS: [YES/NO]
 ```
 
-> 🔧 **sofagent 叠加**：审查报告格式中的 "CLI 审计结果" 段是 sofagent 专属的——它明确标注了 pre-commit hook 的审计结果。如果 CLI 已经拦截了 A1/A2，审查报告不必重复相同的问题。
+> 🔧 **sofagent 叠加**：审查报告格式中的 "CLI 审计结果" 段是 sofagent 专属的——它明确标注了 commit-msg hook 的审计结果。如果 CLI 已经拦截了 A1/A2，审查报告不必重复相同的问题。
 
 ---
 

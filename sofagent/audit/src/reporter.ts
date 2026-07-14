@@ -4,7 +4,7 @@
 // 循环调用 rule.check(ctx)，不再硬编码 import 4 条规则
 // v0.94：runRules 签名扩展，支持 silent/commitMsg 参数
 // v0.95：支持 config 注入 AuditContext + extendedRules 开关
-// v1.0.9：fast-fail 优化——委托到 rules/runner.ts
+// v1.1.0：fast-fail 优化——委托到 rules/runner.ts
 // ============================================================
 
 import type { DiffFile } from '@sofagent/core';
@@ -19,6 +19,8 @@ export type { RuleCheck } from './rules/types';
 export interface AuditResult {
   rules: RuleCheck[];
   exitCode: number;
+  /** v1.1.0：权限拒绝列表（permission 集成审计） */
+  permissionDenials?: string[];
 }
 
 /**

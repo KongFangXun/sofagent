@@ -4,8 +4,12 @@
   "description": "sofagent 领域本体定义 — 场景类型 / 约束类型 / 审计规则注册表",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "sofagent-ontology": "dist/cli.js"
+  },
   "scripts": {
-    "build": "tsc",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
     "test": "vitest run",
     "check": "tsc --noEmit"
   },

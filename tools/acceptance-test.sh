@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.0.8 · 30 个端到端场景，覆盖完整用户旅程 + 全规则覆盖 + 内置 Sub Agent
+# v1.1.0 · 31 个端到端场景，覆盖完整用户旅程 + 全规则覆盖 + 内置 Sub Agent + 新包 CLI 烟测
 # ============================================================
 # 用真实 git 仓库走完整用户旅程：
 #   Fresh install → --init → --doctor → 正常 commit → 违规拦截
@@ -502,7 +502,7 @@ try {
     console.log('');
     console.log('  sofagent: 最近一次审计记录在 ' + Math.round(age/1000) + ' 秒前，当前 commit 可能未经过审计。');
     console.log('  可能使用了 --no-verify 绕过审计 hook。');
-    console.log('  运行 sofagent-audit --doctor 查看详情。');
+    console.log('  运行 sofagent-core doctor 查看详情。');
   }
 } catch { process.exit(0); }
 " 2>/dev/null
@@ -931,6 +931,31 @@ if echo "$SUSTAIN_OUT" | grep -qE "fde|FDE|sustain|deepagents|not found|不可�
   pass "FDE sustain mode 接受了 --mode sustain 参数"
 else
   fail "FDE sustain mode 无任何输出: $SUSTAIN_OUT"
+fi
+
+# ── 场景 31: 新包 CLI 烟测（v1.1.0）────────────────────────
+scenario 31 "新包 CLI 烟测（orchestrator/daemon/core/ontology/...）"
+
+echo "测试新包 CLI..."
+NEW_PKG_OK=true
+for pkg in orchestrator daemon core ontology work模板市场 ab-test think skillopt; do
+  CLI_JS="sofagent/$pkg/dist/cli.js"
+  if [ -f "$PROJECT_ROOT/$CLI_JS" ]; then
+    if node "$PROJECT_ROOT/$CLI_JS" --help >/dev/null 2>&1; then
+      echo "  ✅ sofagent-$pkg --help"
+    else
+      echo "  ❌ sofagent-$pkg --help"
+      NEW_PKG_OK=false
+    fi
+  else
+    echo "  ⚠️ sofagent-$pkg CLI 未构建（dist/cli.js 不存在），跳过"
+  fi
+done
+
+if $NEW_PKG_OK; then
+  pass
+else
+  fail "部分新包 CLI --help 失败"
 fi
 
 # ── 总结 ──────────────────────────────────────────────────────

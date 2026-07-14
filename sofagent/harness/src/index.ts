@@ -95,10 +95,23 @@ export function buildConstrainedSystemPrompt(
   const thinkContent = tryRead(path.join(skillDir, 'think.md'));
   if (thinkContent) parts.push(`# 历史经验\n${thinkContent}`);
 
-  // 4. 知识库：knowledge/ top-N（按 mtime 排序）
-  const knowledgeFiles = listKnowledgeTopN(path.join(skillDir, 'knowledge'), 5);
-  for (const file of knowledgeFiles) {
-    parts.push(file);
+  // 4a. knowledge/shared/ top-3（跨设备共享经验，优先注入）
+  const sharedDir = path.join(skillDir, 'knowledge', 'shared');
+  const sharedKnowledge = listKnowledgeTopN(sharedDir, 3);
+
+  // 4b. knowledge/ top-5（本机知识）
+  const knowledgeDir = path.join(skillDir, 'knowledge');
+  const localKnowledge = listKnowledgeTopN(knowledgeDir, 5);
+
+  // 合并去重（按内容前 100 字符），shared 排在前
+  const MAX_PARTS = 20;
+  const seen = new Set<string>();
+  for (const file of [...sharedKnowledge, ...localKnowledge]) {
+    const key = file.slice(0, 100);
+    if (!seen.has(key) && parts.length < MAX_PARTS) {
+      parts.push(file);
+      seen.add(key);
+    }
   }
 
   // 5. v1.0.8: persona.md（Agent 记忆，前 500 字符）

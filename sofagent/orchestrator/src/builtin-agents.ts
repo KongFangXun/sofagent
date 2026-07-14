@@ -1,5 +1,5 @@
 // ============================================================
-// builtin-agents.ts · 预装 Agent 定义（v1.0.9）
+// builtin-agents.ts · 预装 Agent 定义（v1.1.0）
 //
 // 每个 Agent 的 systemPrompt 来自 agents/SKILL/<name>/ 下的
 // Agency Agents 格式 .md 文件。DeepAgents 启动时读取文件、

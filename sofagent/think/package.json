@@ -4,8 +4,12 @@
   "description": "sofagent 思考链分析 — 推理路径追踪 / 决策可视化 / 思维审计",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "sofagent-think": "dist/cli.js"
+  },
   "scripts": {
-    "build": "tsc",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
     "test": "vitest run",
     "check": "tsc --noEmit"
   },

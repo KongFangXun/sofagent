@@ -57,13 +57,9 @@ jobs:
         working-directory: .
       - run: npm install --no-save @rollup/rollup-linux-x64-gnu
         working-directory: .
-      # 先 build audit——mcp 的 tsc 需要它的 .d.ts 类型声明
-      - run: npm run build
-        working-directory: sofagent/audit
-      - run: npm run check
-        working-directory: sofagent/mcp
-      - run: npm run build
-        working-directory: sofagent/mcp
+      # workspace 全量构建（含 audit + mcp）
+      - run: npm run build --workspaces --if-present
+        working-directory: .
       - name: Check if version already published
         id: version-check
         working-directory: sofagent/mcp

@@ -49,7 +49,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 ## 持续优化模式（sustain · v1.1.0）
 
 `sustain` 模式下 FDE 作为基础设施 Agent 与 Audit 平级：
-- 读取 audit 报告趋势（权重最高）→ think.md 反思趋势 → scoring 数据
+- 读取 audit 报告趋势（权重最高）→ think.md 反思趋势 → eval 数据
 - 输出周度/月度优化报告：knowledge-domain 漏洞、节点效率、规则盲区
 - 双 Agent 闭环：Audit 问"合规吗？"（底线）+ FDE sustain 问"能更好吗？"（上限）
 

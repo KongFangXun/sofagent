@@ -293,7 +293,7 @@ FDE 有巨大前期成本，只在三种情况成立：
 | 层 | 做什么 | 怎么跑 |
 |----|--------|--------|
 | **约束底座** | fde.md 规则注入 Agent 上下文 | install.sh 装完自动加载 |
-| **审计引擎** | git diff → A1-A11、A14-A17 规则 → exit code | git pre-commit hook，不挑 Agent，**0 token（纯正则引擎）** |
+| **审计引擎** | git diff → A1-A11、A14-A17 规则 → exit code | git commit-msg hook，不挑 Agent，**0 token（纯正则引擎）** |
 | **编排引擎**（实验性）| 拆任务 → 编排 → 执行 | DeepAgents compose（CLI 入口或 OpenClaw 内部 API） |
 | **内置 Agent**（v1.0.7 引入，v1.0.8 起为基础设施 Agent）| FDE 部署工程师 + 合规审计员 | `sofagent-orchestrator subagent run fde --task "..."`、`@sofagent-fde` |
 

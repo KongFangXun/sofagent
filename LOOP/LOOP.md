@@ -8,7 +8,7 @@
 
 ```
 人类下任务 → engineering-minimal-change-engineer 写代码 → git commit
-    → sofagent-audit (pre-commit hook) 硬证据审计
+    → sofagent-audit (commit-msg hook) 硬证据审计
     → engineering-code-reviewer 代码审查
     → 审查报告交给人类确认
     → 通过 → git push → 下一轮
@@ -20,7 +20,7 @@
 | # | 防线 | 谁做 | 看什么 | 可绕过？ |
 |---|------|------|------|:--:|
 | 1 | 构建验证 | engineering-minimal-change-engineer | build + test 必须通过才提交 | 不可——规则写死在 Agent 定义里 |
-| 2 | 硬证据审计 | sofagent-audit (TS CLI) | git diff → A1-A11 模式匹配 | 不可——pre-commit hook |
+| 2 | 硬证据审计 | sofagent-audit (TS CLI) | git diff → A1-A11 模式匹配 | 不可——commit-msg hook |
 | 3 | 代码审查 | engineering-code-reviewer (LLM) | 代码变更 → 语义/影响/质量 | 可配置——改 `agents/engineering-code-reviewer.md` |
 | 4 | 人类确认 | 你 | 审查报告 → 直觉判断 | 最终决定权 |
 
@@ -237,7 +237,7 @@ OpenClaw（sofagent 底座，随 sofagent 安装）
   │
   │  按 LOOP/loop.md 的 StateGraph 自动调度：
   ├→ session.spawn engineering-minimal-change-engineer
-  ├→ run sofagent-audit (pre-commit hook)
+  ├→ run sofagent-audit (commit-msg hook)
   ├→ session.spawn engineering-code-reviewer
   └→ 审查报告返回给用户 Agent
 ```

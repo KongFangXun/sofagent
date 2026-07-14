@@ -4,8 +4,13 @@
   "description": "sofagent 编排引擎 — 多 Agent 协作 / 工作流调度 / prompt 模板",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "sofagent-orchestrator": "dist/cli.js",
+    "sofagent-orchestrator-compare": "dist/orchestrator-compare.js"
+  },
   "scripts": {
-    "build": "tsc",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
     "test": "vitest run",
     "check": "tsc --noEmit"
   },

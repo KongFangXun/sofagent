@@ -174,7 +174,7 @@ FDE Agent 不只部署一次——部署完成后转为**持续优化角色**。
 graph LR
     A[FDE 周度巡检] --> B[读 audit 趋势<br/>history.jsonl]
     B --> C[分析 think.md<br/>反复出错的操作]
-    C --> D[读 scoring<br/>哪个节点在退化]
+    C --> D[读 eval<br/>哪个节点在退化]
     D --> E{发现问题?}
     E -->|是| F[生成优化报告<br/>更新规则/补充 knowledge]
     E -->|否| G[标记「稳定」]
@@ -210,7 +210,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 ---
 
-## 内置 Agent（v1.0.8）
+## 内置 Agent（v1.0.7 引入 · v1.0.8 起为基础设施 Agent）
 
 | Agent | 调用方式 | 什么时候自动触发 |
 |------|------|------|
@@ -227,7 +227,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 | 管住 Agent 全流程 | 审计引擎 + 约束底座（install.sh） |
 | 自动编排 Agent 任务 | + 编排引擎（DeepAgents Sub Agent） |
 
-> ⚠️ **当前版本（v1.0.9）覆盖范围**：开发者岗位（git commit 审计）+ 非开发岗位（文件系统审计）全覆盖。
+> ⚠️ **当前版本（v1.1.0）覆盖范围**：开发者岗位（git commit 审计）+ 非开发岗位（文件系统审计）全覆盖。
 
 ### 两种部署节点（v1.0.7+）
 

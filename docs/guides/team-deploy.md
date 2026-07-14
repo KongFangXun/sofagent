@@ -8,7 +8,7 @@
 - [ ] `bash sofagent/scripts/install.sh --platform 你的平台`
 - [ ] `bash sofagent/scripts/verify.sh` 确认 0 fail
 - [ ] 跑一个简单任务（「帮我查一下今天的日程」），确认 Agent 正常回复
-- [ ] 企业内网：加 `--no-ao --no-config-inject`，编辑 fde.md 取消 `offline: true` 注释
+- [ ] 企业内网：加 `--no-config-inject`，编辑 fde.md 取消 `offline: true` 注释
 
 > 如果遇到安装问题，请开 Issue 告知你的平台和环境信息。
 

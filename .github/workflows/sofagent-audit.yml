@@ -20,9 +20,9 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: cd sofagent/audit && npm ci
-      - name: Build
-        run: cd sofagent/audit && npm run build
+        run: npm ci
+      - name: Build (workspace 全量)
+        run: npm run build --workspaces --if-present
       - name: Run audit
         # exit 0=PASS / 1=WARN / 2=FAIL
         # CI 只阻断 FAIL（exit 2），WARN（exit 1）只提醒不阻断

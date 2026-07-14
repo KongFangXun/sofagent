@@ -134,40 +134,30 @@ fi
 if [ "$AUDIT_ONLY" = false ] && [ "$QUICK" = false ]; then
   echo -e "\n${BOLD}── 4. 审计引擎构建+测试 ──${NC}"
   echo "  构建中..."
-  if (cd sofagent/audit && npm run build >/dev/null 2>&1); then
-    check_pass "npm run build"
+  if (npm run build --workspaces --if-present >/dev/null 2>&1); then
+    check_pass "npm run build (workspace 全量)"
   else
     check_fail "npm run build 失败"
   fi
 
   echo "  测试中..."
-  if (cd sofagent/audit && npm test >/dev/null 2>&1); then
-    check_pass "npm test"
+  if (npm test --workspaces --if-present >/dev/null 2>&1); then
+    check_pass "npm test (workspace 全量)"
   else
     check_fail "npm test 有失败"
-    (cd sofagent/audit && npm test 2>&1 | tail -20)
   fi
 fi
 
 # ════════════════════════════════════════
 # 5. sofagent-audit（对应 sofagent-audit.yml）
 # ════════════════════════════════════════
-echo -e "\n${BOLD}── 5. sofagent-audit ──${NC}"
-if [ -f sofagent/audit/dist/index.js ]; then
-  AUDIT_OUT=$(cd sofagent/audit && npx sofagent-audit --silent --diff HEAD~1..HEAD --ci 2>&1)
-  AUDIT_EXIT=$?
-  if [ "$AUDIT_EXIT" -eq 0 ]; then
-    check_pass "sofagent-audit PASS"
-  elif [ "$AUDIT_EXIT" -eq 1 ]; then
-    echo "$AUDIT_OUT" | grep "⚠️" | head -5
-    check_warn "sofagent-audit WARN（不阻断，但请确认）"
-  else
-    echo "$AUDIT_OUT" | grep "❌" | head -5
-    check_fail "sofagent-audit FAIL（有违规）"
+echo -e "\n${BOLD}── 5. CLI 二进制验证 ──${NC}"
+for bin_name in sofagent-audit sofagent-orchestrator sofagent-daemon sofagent-ontology sofagent-work模板市场 sofagent-ab-test sofagent-think sofagent-skillopt sofagent-core; do
+  pkg=$(echo "$bin_name" | sed 's/sofagent-//')
+  if [ -f "sofagent/$pkg/dist/cli.js" ]; then
+    node "sofagent/$pkg/dist/cli.js" --help >/dev/null 2>&1 && check_pass "$bin_name --help" || check_fail "$bin_name --help"
   fi
-else
-  check_warn "sofagent-audit 未构建（dist/ 不存在），跳过"
-fi
+done
 
 # ════════════════════════════════════════
 # 6. install.sh 关键路径检查（fde.md 迁移断裂防护）

@@ -16,7 +16,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="1.0.9"
+VERSION="1.1.0"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -57,7 +57,7 @@ while [[ $# -gt 0 ]]; do
       echo "  正常模式 彩色终端，显示所有检查项"
       echo "  --json   JSON 机器可读输出（CI/CD 用）"
       echo "  --quiet  只输出失败和警告，全通过时静默"
-      echo "  --quick  快速模式——仅 4 项核心检查（SKILL.md / .sofagent/ / ao compose / fde.md）"
+      echo "  --quick  快速模式——仅 4 项核心检查（SKILL.md / .sofagent/ / 新包二进制 / fde.md）"
       echo "  --help   显示此帮助"
       echo "  --list   打印所有检查项清单（不执行检查）"
       echo "退出码: 0=全部通过 1=存在失败项"
@@ -100,7 +100,7 @@ esac
 OPENCLAW_DIR="$TARGET"
 
 # ── 颜色 ──
-# v1.0.9: 仅在终端且非 CI/JSON 模式下启用 ANSI 颜色
+# v1.1.0: 仅在终端且非 CI/JSON 模式下启用 ANSI 颜色
 if [ -t 1 ] && [ "${CI:-}" != "true" ] && [ "${JSON:-0}" != "1" ]; then
   RED='\033[0;31m'
   GREEN='\033[0;32m'
@@ -189,13 +189,13 @@ if [ "$QUICK_MODE" = true ]; then
     check_warn ".sofagent/ 数据目录不存在（首次使用会自动创建）"
   fi
 
-  # 3. ao compose 可用（或标注降级）
-  if command -v ao &>/dev/null; then
-    AO_VER=$(ao --version 2>/dev/null || echo "unknown")
-    check_pass "ao compose 可用 — v${AO_VER}"
-  else
-    check_warn "⚠ 环境警告（非接口断裂）：ao compose 不可用——编排引擎降级为默认编排"
-  fi
+  # 3. 新包二进制检查
+  echo "  检查新包二进制..."
+  for pkg in orchestrator daemon core ontology; do
+    if [ -f "sofagent/$pkg/dist/cli.js" ]; then
+      check_pass "sofagent-$pkg 可用（本地构建）"
+    fi
+  done
 
   # 4. fde.md 可读
   RULES_QUICK=""
@@ -471,43 +471,13 @@ fi
 _hr
 _section "外部依赖"
 
-if command -v ao &>/dev/null; then
-  AO_VER=$(ao --version 2>/dev/null || echo "unknown")
-  check_pass "agency-orchestrator (ao) 可用 — v${AO_VER}"
-  # ao compose 健康检查：确认 ao compose 可正常调用（失败时 warn，不阻断）
-  AO_COMPOSE_OUT=$(ao compose --version 2>/dev/null || true)
-  if [ -n "$AO_COMPOSE_OUT" ]; then
-    check_pass "ao compose 健康检查通过"
-  else
-    check_warn "⚠ 环境警告（非接口断裂）：ao compose --version 失败——编排引擎可能不可用（约束层不受影响）"
+# v1.1.0: 新包二进制检查（替代 ao compose）
+echo "  检查新包二进制..."
+for pkg in orchestrator daemon core ontology; do
+  if [ -f "sofagent/$pkg/dist/cli.js" ]; then
+    check_pass "sofagent-$pkg 可用（本地构建）"
   fi
-  # ao 版本下限检查（install.sh pin agency-orchestrator@0.7.5）
-  # 解析版本号，低于 0.7.5 时 warn（不 fail，--no-ao 降级可用）
-  _ao_clean="${AO_VER##v}"
-  _ao_major="${_ao_clean%%.*}"
-  _ao_minor_patch="${_ao_clean#*.}"
-  _ao_minor="${_ao_minor_patch%%.*}"
-  if [ "${_ao_major:-0}" -eq 0 ] && [ "${_ao_minor:-0}" -lt 7 ]; then
-    check_warn "⚠ 环境警告（非接口断裂）：ao 版本低于 0.7.5（当前 ${AO_VER}），建议升级：npm install -g agency-orchestrator@0.7.5"
-  elif [ "${_ao_major:-0}" -eq 0 ] && [ "${_ao_minor:-0}" -eq 7 ]; then
-    _ao_patch="${_ao_minor_patch#*.}"
-    if [ "${_ao_patch:-0}" -lt 5 ]; then
-      check_warn "⚠ 环境警告（非接口断裂）：ao 版本低于 0.7.5（当前 ${AO_VER}），建议升级：npm install -g agency-orchestrator@0.7.5"
-    fi
-  fi
-  # 烟雾测试：ao 能否列出角色（用表格行数），
-  # 若输出格式变化导致计数异常，降级为检查非空输出
-  ROLE_COUNT=$(ao roles 2>/dev/null | grep -c '|' | tr -d '\n' || echo "0")
-  if [ "${ROLE_COUNT:-0}" -gt 10 ]; then
-    check_pass "ao 角色库正常 (${ROLE_COUNT}+ 角色)"
-  elif [ -n "$(ao roles 2>/dev/null)" ]; then
-    check_pass "ao 角色库可用（输出格式可能已变化，无法精确计数）"
-  else
-    check_warn "⚠ 环境警告（非接口断裂）：ao 角色库异常或未初始化，运行 ao init 初始化"
-  fi
-else
-  check_warn "⚠ 环境警告（非接口断裂）：ao 命令不可用 — 编排功能将不可用"
-fi
+done
 
 if command -v node &>/dev/null; then
   check_pass "Node.js $(node --version)"
@@ -930,7 +900,7 @@ if [ "$FAILED" -eq 0 ]; then
         echo "  平台特定（OpenClaw）:"
         echo "     · 注册 before_prompt_build Hook（见 install.sh 输出）"
         echo "     · 启动 OpenClaw，检查 system prompt 是否包含 sofagent 底线规则"
-        echo "     · 运行 ao compose 测试编排是否正常"
+        echo "     · 运行 sofagent-core doctor 检查基础设施状态"
         ;;
       workbuddy)
         echo "  平台特定（WorkBuddy）:"

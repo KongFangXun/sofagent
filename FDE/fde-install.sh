@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# fde-install.sh · FDE 工具包一键部署 · v1.0.9
+# fde-install.sh · FDE 工具包一键部署 · v1.1.0
 # ============================================================
 # 用法: bash fde-install.sh [--platform openclaw|workbuddy|codex|hermes|claude]
 #       默认 --platform openclaw（编排引擎需要 OpenClaw 后台）
@@ -48,12 +48,12 @@ echo ""
 
 # ── 1. 装 sofagent 底座 ──
 echo -e "${BOLD}[1/3] 安装 sofagent 底座（三层引擎）...${NC}"
-echo -e "  ${CYAN}约束底座 + 审计引擎 + 编排引擎（agency-orchestrator）${NC}"
+echo -e "  ${CYAN}约束底座 + 审计引擎 + 编排引擎（sofagent-orchestrator）${NC}"
 bash "$PROJECT_ROOT/sofagent/scripts/install.sh" --platform "$PLATFORM"
 echo -e "${GREEN}✅ sofagent 底座安装完成${NC}"
 
 if [ "$PLATFORM" = "openclaw" ]; then
-  echo -e "  ${GREEN}编排引擎已就绪（ao compose 可用）${NC}"
+  echo -e "  ${GREEN}编排引擎已就绪（sofagent-orchestrator compose 可用）${NC}"
 else
   echo -e "  ${YELLOW}⚠️ 非 OpenClaw：编排引擎不可用，核心约束（约束底座 + 审计引擎）生效${NC}"
 fi

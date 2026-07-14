@@ -10,6 +10,10 @@
 **核心变更**：`@sofagent/audit` 拆分为 12 个独立 npm 包，按基础层/运行层/协议层/纯审计四层清晰分层。**新功能**：权限作用域化（permission.local.json 项目级 override）+ 经验共享（跨设备 knowledge/shared/ + think.md 语义合并）+ 自迭代周报（daemon 从 think.md 自动提取踩坑经验）+ 主动巡检（daemon 4 项定时巡检）。**继承修复**：v1.0.9 发布后陌生视角审查驱动的 19 项文档/代码修复。**破坏性变更**：CLI 子命令迁移到新包二进制（`sofagent-audit compose` → `sofagent-orchestrator compose` 等）。
 **文档维护**：审计规则编号口径收敛——全仓库统一为「A1-A11、A14-A17 + E1-E4（共 19 条）」写法，修复 FDE/ARCHITECTURE/DEVELOPMENT/HANDBOOK 断链、加载链「三层→四层」矛盾与版本滞后（v1.0.x→v1.1.0）。
 > 📖 [开发日志](./docs/changelog/v1.1.0.md)
+### [v1.2.0] — 记忆/知识层升级：Dream Cycle 结构化整合 + LM Wiki 3 层分层 + gbrain 行业对标 📋
+> 规划中（v1.2.x 完整多设备协同主题的第一刀 · 认知底座铺垫）
+**核心变更**：daemon 分散脚本升级为 6 阶段 Dream Cycle 精简 pipeline（extract_facts→extract_atoms→cluster_patterns→synthesize_concepts→skillopt_backfill→embed）+ LM Wiki 3 层显式分层（Ledger/Views/Policy）+ 知识库冲突巡检（conflict-check）+ gbrain / LM Wiki 行业对标写入 ROADMAP。**P2 条件项**：混合检索架构仅记录默认约束，不实现。
+> 📖 [开发日志](./docs/changelog/v1.2.0.md)
 ### [v1.0.9] — 二进制文件审计 + 快照时间线 + MCP compose tool + 安全加固 + 遗留补齐 🔧
 > 2026-07-14（UTC）· 已发版（tag v1.0.9 @ 366eb54，2026-07-14）
 **核心新功能**：A16 非授权文件变更 + A17 异常批量变更（二进制文件行为级审计）+ `--timeline` 快照时间线可视化 + `--revert` 回滚 + MCP compose tool（编排引擎通过标准 MCP 协议对 Agent 平台暴露）。EvidenceMode 类型扩展 `'filesystem'` 模式。daemon 审计闭环（文件变更→diff→runRules→快照→binary_history 全链路打通）+ daemon cron @weekly/@daily/@hourly 定时 FDE 巡检 + `--doctor` fs-watch 运行状态检测 + `install.sh --with-memory` TencentDB Memory 集成。

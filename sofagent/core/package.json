@@ -4,8 +4,12 @@
   "description": "sofagent 核心运行时 — doctor / 配置解析 / 通用类型（不含审计逻辑）",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "sofagent-core": "dist/cli.js"
+  },
   "scripts": {
-    "build": "tsc",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
     "test": "vitest run",
     "check": "tsc --noEmit"
   },
