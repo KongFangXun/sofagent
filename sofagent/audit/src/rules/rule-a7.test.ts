@@ -5,8 +5,8 @@
 import { describe, it, expect } from 'vitest';
 import { checkRuleA7 } from './rule-a7-read-before-write';
 import type { AuditContext } from './types';
-import type { DiffFile } from '../diff-parser';
-import type { LogEntry } from '../log-checker';
+import type { DiffFile } from '@sofagent/core';
+import type { LogEntry } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 function makeReadEntry(file: string): LogEntry {

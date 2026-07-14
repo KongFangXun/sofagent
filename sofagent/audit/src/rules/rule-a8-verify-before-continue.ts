@@ -5,7 +5,7 @@
 // v0.94：新增 --silent 双路径——无日志 + silent 走 diff 启发式，只 WARN 不 FAIL
 // ============================================================
 
-import { hasTestOrBuildExecution } from '../log-checker';
+import { hasTestOrBuildExecution } from '@sofagent/core';
 import type { AuditContext, RuleCheck } from './types';
 
 const BUILD_FILES = ['package.json', 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'build.gradle', 'build.gradle.kts', 'Cargo.toml', 'Cargo.lock', 'requirements.txt', 'Pipfile', 'pyproject.toml', 'go.mod', 'go.sum', 'Gemfile', 'composer.json', 'Dockerfile', 'docker-compose.yml', 'Makefile', '.env.example', 'tsconfig.json', 'next.config.js', 'vite.config.ts'];

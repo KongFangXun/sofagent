@@ -236,13 +236,14 @@ Five engines, one loop: **Constrain → Orchestrate → Audit → Restore → Ev
 
 > 🔬 Hugging Face legal-agent benchmark: same model, harness-only optimization — score jumped from 3.5% to 80.1% (76-point gain, matching Claude Sonnet at 1/7 the cost). [Details](./docs/ARCHITECTURE.md)
 
-- Core logic: **531 tests all green** (diff-parser / config-loader / rules A1-A17 / reporter / init)
-  > Verify: `cd sofagent/audit && npm test` (v1.0.9 baseline: 531 passing)
-- **19 audit rules**: 11 default (A1-A11) + 8 extended (E1-E4 + A14 + A15 + A16 unauthorized file change + A17 abnormal bulk change)
-- 📁 v1.0.8+ filesystem audit (no git required) — embedded isomorphic-git + daemon file monitoring
-- MIT license — use code, docs, and templates freely
+Install and run — no dependency on agent compliance:
 
-> ⚠️ Orchestration engine requires DeepAgents. [Known limitations](./LIMITATIONS.md)
+| Dimension | Data | What it means |
+|------|------|------|
+| Audit stability | `npm test` all green — diff-parser / A1-A17 / reporter / init | Every code change is audit-checked, cannot be bypassed |
+| Audit coverage | 19 rules: secret leaks, boundary violations, injection, blind edits, knowledge-base access | Most common agent failure modes are caught |
+| Platform coverage | git commit audit (developers) + daemon filesystem audit (non-developers) | Anyone's file changes get audited |
+| License | MIT | Code, docs, templates — use freely |
 
 ---
 

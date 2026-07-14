@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { checkLogs, getReadAccessMap, hasTestOrBuildExecution, type LogEntry } from './log-checker';
+import { checkLogs, getReadAccessMap, hasTestOrBuildExecution, type LogEntry } from '@sofagent/core';
 
 let tempDir: string;
 

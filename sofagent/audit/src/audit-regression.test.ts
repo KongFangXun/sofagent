@@ -6,8 +6,8 @@
 import { describe, it, expect } from 'vitest';
 import { runRegression, type DiffSnapshot } from './audit-regression';
 import type { Rule, RuleCheck, AuditContext } from './rules/types';
-import type { DiffFile } from './diff-parser';
-import type { LogEntry } from './log-checker';
+import type { DiffFile } from '@sofagent/core';
+import type { LogEntry } from '@sofagent/core';
 
 /** 构造一个模拟规则 */
 function makeMockRule(

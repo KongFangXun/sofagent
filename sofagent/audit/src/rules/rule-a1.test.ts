@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { checkRuleA1 } from './rule-a1-sensitive-files';
 import type { AuditContext } from './types';
-import type { DiffFile } from '../diff-parser';
+import type { DiffFile } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('A1 不碰敏感', () => {

@@ -12,7 +12,7 @@ import { join, dirname } from 'path';
 import { execFileSync, execSync } from 'child_process';
 import { homedir, platform } from 'os';
 import { CONFIG_TEMPLATE, HOOK_TEMPLATE } from '../config-template';
-import { writeConfig } from '../config-loader';
+import { writeConfig } from '@sofagent/core';
 
 /**
  * 仓库状态分类（v1.0.5 新增）

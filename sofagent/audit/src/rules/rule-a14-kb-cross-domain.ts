@@ -9,8 +9,8 @@ import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { load as yamlLoad } from 'js-yaml';
 import type { AuditContext, RuleCheck } from './types';
-import type { AuditConfig } from '../config-loader';
-import { loadEnvConfig } from '../config-loader';
+import type { AuditConfig } from '@sofagent/core';
+import { loadEnvConfig } from '@sofagent/core';
 
 /**
  * Workflow 节点的 knowledge-domain 配置

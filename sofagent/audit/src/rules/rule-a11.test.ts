@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { checkRuleA11 } from './rule-a11-no-abuse';
 import { makeDiffFile, makeCtx } from '../test-utils';
-import type { DiffFile } from '../diff-parser';
+import type { DiffFile } from '@sofagent/core';
 
 describe('A11 不滥资源', () => {
   it('新增文件 > 50 → WARN', () => {

@@ -4,9 +4,9 @@
 // v0.95：铁律与审计分离；新增 ruleClass 分级 + AuditContext.config
 // ============================================================
 
-import type { DiffFile } from '../diff-parser';
-import type { LogEntry } from '../log-checker';
-import type { AuditConfig } from '../config-loader';
+import type { DiffFile } from '@sofagent/core';
+import type { LogEntry } from '@sofagent/core';
+import type { AuditConfig } from '@sofagent/core';
 
 /**
  * 证据模式——规则依赖的输入来源

@@ -11,7 +11,7 @@
 // ============================================================
 
 import type { RootCauseReport, ConfigSuggestion } from './audit-root-cause';
-import type { AuditConfig } from './config-loader';
+import type { AuditConfig } from '@sofagent/core';
 
 /**
  * 把 suggestions 格式化为人类可读的终端输出

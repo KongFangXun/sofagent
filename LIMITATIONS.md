@@ -142,7 +142,7 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 #### OpenClaw 的两种角色
 
-> 完整设计描述见 [ARCHITECTURE § 两层架构](./ARCHITECTURE.md#两层架构地基-vs-引擎)。此处只记录与局限相关的点。
+> 完整设计描述见 [ARCHITECTURE § 地基与引擎](./ARCHITECTURE.md#地基与引擎)。此处只记录与局限相关的点。
 
 **模式 B 的关键约束**：企业 Agent 不跑在 OpenClaw session 里。OpenClaw 不拦截 Agent 的 API 调用、不提供 Docker。sofagent 对企业 Agent 的审计走的是**文件系统层 + git hook**——Agent 在设备上正常安装、正常运行，代码仓库在设备文件系统上，`git commit` 时 pre-commit hook 自动触发 sofagent-audit。不需要"控制"Agent，不需要 Agent 配合，只需要 hook 它们的 git 仓库。
 

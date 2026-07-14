@@ -8,8 +8,8 @@
 
 import { basename } from 'path';
 import type { AuditContext, RuleCheck } from './types';
-import type { AuditConfig } from '../config-loader';
-import { DEFAULT_CONFIG } from '../config-loader';
+import type { AuditConfig } from '@sofagent/core';
+import { DEFAULT_CONFIG } from '@sofagent/core';
 
 /** 默认低风险模式（当 ctx.config 不存在时使用） */
 const DEFAULT_LOW_RISK_PATTERNS = [

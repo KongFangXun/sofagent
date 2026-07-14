@@ -6,8 +6,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { checkRuleA14 } from './rule-a14-kb-cross-domain';
 import type { AuditContext } from './types';
-import type { DiffFile } from '../diff-parser';
-import type { LogEntry } from '../log-checker';
+import type { DiffFile } from '@sofagent/core';
+import type { LogEntry } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from '../test-utils';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'fs';
 import { join } from 'path';

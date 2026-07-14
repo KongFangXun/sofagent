@@ -24,8 +24,8 @@ import { join, dirname } from 'path';
 import { createHash } from 'crypto';
 import { hostname, userInfo } from 'os';
 import { execSync } from 'child_process';
-import { loadEnvConfig } from './config-loader';
-import { atomicAppendSync, atomicWriteSync } from './shared/atomic-write';
+import { loadEnvConfig } from '@sofagent/core';
+import { atomicAppendSync, atomicWriteSync } from '@sofagent/core';
 import type { RuleCheck } from './rules/types';
 
 /**

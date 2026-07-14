@@ -6,7 +6,7 @@
 // ============================================================
 
 import { basename } from 'path';
-import { getReadAccessMap } from '../log-checker';
+import { getReadAccessMap } from '@sofagent/core';
 import type { AuditContext, RuleCheck } from './types';
 
 export function checkRuleA7(ctx: AuditContext): RuleCheck {

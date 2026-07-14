@@ -5,7 +5,7 @@
 // v1.0.9: 追加中文注入检测正则（T01）
 // ============================================================
 
-import { getAddedLines } from '../diff-parser';
+import { getAddedLines } from '@sofagent/core';
 import type { AuditContext, RuleCheck } from './types';
 /** 高置信度注入模式——精确匹配 → score += 1.0 */
 const HIGH_CONFIDENCE_PATTERNS: { pattern: RegExp; name: string }[] = [
