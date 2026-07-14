@@ -85,21 +85,15 @@ sofagent-audit --timeline
 FDE (Forward Deployed Engineer) follows four steps — [full guide → FDE/FDE.md](./FDE/FDE.md)
 
 ```mermaid
-graph TB
-    1["1️⃣ Map workflows"] --> 2["2️⃣ Identify AI nodes"]
-    2 --> 3["3️⃣ Install toolkit"]
-    3 --> 4["4️⃣ AI runs"]
+graph LR
+    1["1️⃣ Map workflows"] --> 2["2️⃣ Identify AI nodes"] --> 3["3️⃣ Install toolkit"] --> 4["4️⃣ AI runs"]
 
     2 --> E["🧭 Constraint Base"]
-    E --> F["🔍 Audit Engine"]
-    F --> G["🔄 Restore Engine"]
-    G --> I["🧬 Evolution"]
+    E --> F["🔍 Audit Engine"] --> G["🔄 Restore Engine"] --> H["⚙️ Orchestration"] --> I["🧬 Evolution"]
+    4 --> H
 
-    4 --> H["⚙️ Orchestration"]
-    H --> I
     H --> J["⚡ Augmented role<br/>AI assists, human decides"]
     H --> K["🔄 Auto-execute<br/>AI runs, human audits"]
-
     G -.-> |rollback| 3
 ```
 
