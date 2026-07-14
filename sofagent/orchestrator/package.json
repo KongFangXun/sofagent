@@ -1,0 +1,22 @@
+{
+  "name": "@sofagent/orchestrator",
+  "version": "1.1.0",
+  "description": "sofagent 编排引擎 — 多 Agent 协作 / 工作流调度 / prompt 模板",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "check": "tsc --noEmit"
+  },
+  "keywords": ["sofagent", "orchestrator", "workflow", "agent"],
+  "license": "MIT",
+  "author": "KongFangXun",
+  "dependencies": {
+    "deepagents": "^1.10.7",
+    "js-yaml": "^5.2.0",
+    "@sofagent/harness": "1.1.0",
+    "@sofagent/core": "1.1.0",
+    "@sofagent/audit": "1.1.0"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@sofagent/work模板市场",
+  "version": "1.1.0",
+  "description": "sofagent 工作流中心 — 工作流注册 / 模板管理 / 执行历史",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "check": "tsc --noEmit"
+  },
+  "keywords": ["sofagent", "workflow", "hub", "template"],
+  "license": "MIT",
+  "author": "KongFangXun",
+  "dependencies": {
+    "@sofagent/orchestrator": "1.1.0",
+    "@sofagent/ontology": "1.1.0",
+    "@sofagent/eval": "1.1.0"
+  }
+}

@@ -282,7 +282,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 | | Audit Agent | FDE Agent (sustain) |
 |------|------|------|
 | 方向 | 向下看——防退化 | 向上看——促进化 |
-| 数据源 | git diff + A1-A15 | audit 报告 + think.md + scoring |
+| 数据源 | git diff + A1-A17 | audit 报告 + think.md + scoring |
 | 频率 | 每次 commit | 每周自动 |
 | 输出 | 🔴 P0 / 🟡 P1 | 优化建议 + 趋势分析 |
 

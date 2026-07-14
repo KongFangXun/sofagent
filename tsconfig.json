@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@sofagent/harness": ["sofagent/harness/src"],
+      "@sofagent/ontology": ["sofagent/ontology/src"],
+      "@sofagent/eval": ["sofagent/eval/src"],
+      "@sofagent/core": ["sofagent/core/src"],
+      "@sofagent/audit": ["sofagent/audit/src"],
+      "@sofagent/mcp": ["sofagent/mcp/src"],
+      "@sofagent/orchestrator": ["sofagent/orchestrator/src"],
+      "@sofagent/daemon": ["sofagent/daemon/src"],
+      "@sofagent/ab-test": ["sofagent/ab-test/src"],
+      "@sofagent/work模板市场": ["sofagent/work模板市场/src"],
+      "@sofagent/think": ["sofagent/think/src"],
+      "@sofagent/skillopt": ["sofagent/skillopt/src"]
+    }
+  },
+  "include": ["sofagent/*/src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -18,7 +18,7 @@
 |:--:|------|:--:|:--:|------|
 | 1 | 安装验证 | ✅ | 0.39s | 48 项检查（41 pass / 7 warn / 0 fail）。fde.md 1641 字符（< 1800 阈值，无 warn）。7/7 安装步骤全绿 |
 | 2 | 审计引擎 | ✅ | 0.10-0.20s | A1 检出 .env 提交，A2 检出标准 OpenAI key（sk-+48 字符）。11 条规则 0 误报 |
-| 3 | 加载链 | ✅ | — | 3 层完整注入：L1 SKILL.md 自动注入（4 底线+6 铁律），L2 think.md 惰性生成，L3 fde.md 加载正常。Hook 已注册 + handler.ts 生效 |
+| 3 | 加载链 | ✅ | — | 3 层完整注入：L1 SKILL.md 自动注入（4 底线+7 铁律），L2 think.md 惰性生成，L3 fde.md 加载正常。Hook 已注册 + handler.ts 生效 |
 | 4 | 编排引擎 | ✅ | 74.8s | ao compose --run 成功编排 5 步工作流（28836 tokens），5 角色协作 |
 | 5 | MCP Server | ✅ | — | JSON-RPC 2.0 初始化成功。3 工具（run_audit / get_think / write_think）+ 3 资源（think/latest / logs/today / audit/last-report）完整可用 |
 | 6 | daemon | ⚠️ | — | daemon 逻辑正常（历史日志显示检测到 think.md/fde.md 等文件变更），sandbox 环境阻止 pid 文件写入。非 sandbox 已验证 |

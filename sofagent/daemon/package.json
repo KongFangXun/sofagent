@@ -1,0 +1,21 @@
+{
+  "name": "@sofagent/daemon",
+  "version": "1.1.0",
+  "description": "sofagent 守护进程 — 持续审计 / 文件监听 / 自动修复循环",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "check": "tsc --noEmit"
+  },
+  "keywords": ["sofagent", "daemon", "watcher", "continuous"],
+  "license": "MIT",
+  "author": "KongFangXun",
+  "dependencies": {
+    "@sofagent/audit": "1.1.0",
+    "@sofagent/harness": "1.1.0",
+    "@sofagent/ontology": "1.1.0",
+    "@sofagent/core": "1.1.0"
+  }
+}

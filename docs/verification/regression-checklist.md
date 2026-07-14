@@ -2871,7 +2871,7 @@ sofagent-audit --revert --help       # 期望: 同上（不以 --help 开头判�
 ```bash
 # v1.0.9 T11：LIMITATIONS.md 迁到根目录，与 SECURITY.md 并列
 ls LIMITATIONS.md                    # 期望: 存在
-ls docs/LIMITATIONS.md               # 期望: 不存在（或仅为重定向）
+ls ../LIMITATIONS.md               # 期望: 不存在（或仅为重定向）
 grep -c "44-48" LIMITATIONS.md       # 期望: ≥ 1（动态范围，非固定值）
 ```
 

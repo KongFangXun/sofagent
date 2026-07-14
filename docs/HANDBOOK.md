@@ -30,6 +30,8 @@
 | 想理解内部机制 | [开发文档](./DEVELOPMENT.md) |
 | 想理解设计哲学 | [设计文档](./ARCHITECTURE.md) |
 
+> 📁 **项目文件导航**：根目录 8 个 .md 文件各司其职——[README.md](../README.md)（项目概览）、[README.en.md](../README.en.md)（英文概览）、[CHANGELOG.md](../CHANGELOG.md)（版本索引）、[ROADMAP.md](../ROADMAP.md)（路线图）、[LIMITATIONS.md](../LIMITATIONS.md)（已知局限）、[SECURITY.md](../SECURITY.md)（安全策略）、[CONTRIBUTING.md](../CONTRIBUTING.md)（贡献指南）、[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)（行为准则）。其余文档在 `docs/` 子目录下。
+
 ---
 
 ## 5 分钟速览
@@ -103,7 +105,7 @@ OpenClaw 完整能力（Hook 自动注入 + 断路器 + 编排引擎）。其他
 
 ### 提交后审计
 
-Agent 改完代码 commit 了——`sofagent-audit` 扫描 git diff 对照 A1-A15 审计规则逐条判定：
+Agent 改完代码 commit 了——`sofagent-audit` 扫描 git diff 对照 A1-A17 审计规则逐条判定：
 
 ```bash
 cd sofagent/audit && npm ci && npm run build
@@ -311,7 +313,7 @@ Agent 先判断任务复杂度：
 
 ### 审计规则
 
-当前 A1-A15 共 17 条（11 默认 + 6 扩展）审计规则，源码在 `sofagent/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计)。
+当前 A1-A17 共 19 条（A1-A17 + E1-E4）审计规则，源码在 `sofagent/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计)。
 
 ### 概念速查
 
@@ -322,7 +324,7 @@ Agent 先判断任务复杂度：
 | **回溯引擎**（v1.0.8+） | 审计后自动快照存档，违规时建议回滚——不只是告诉你违规了，还存了快照、推了通知 |
 | **编排引擎**（实验性）| 拆任务→编排→执行，基于 DeepAgents Sub Agent。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
 | **铁律** | Agent 行为约束规则（4 底线 + 7 铁律），写在 MD 文件里注入上下文 |
-| **审计规则** | 代码变更检查规则（A1-A15），审计引擎按此判定 exit code |
+| **审计规则** | 代码变更检查规则（A1-A17），审计引擎按此判定 exit code |
 | **Skill** | Agent 行为模板——一组 .md 文件，定义 Agent 在什么场景做什么 |
 | **think.md** | Agent 任务结束后的反思记录——踩了什么坑、下次怎么办 |
 | **daemon** | 轻量后台进程，检查 think.md/fde.md 文件 hash 变化并通知；v1.0.8+ 扩展为文件变更审计（fs.watch + isomorphic-git） |
@@ -349,7 +351,7 @@ Agent 先判断任务复杂度：
 | 引擎 | 做什么 | 怎么跑 |
 |----|--------|--------|
 | 约束底座 | fde.md 规则注入 Agent 上下文 | install.sh 自动加载（v1.0.7+ Sub Agent 自加载） |
-| 审计引擎 | git diff → A1-A15 规则 → exit code | pre-commit hook（v1.0.8+ daemon 监控文件变更） |
+| 审计引擎 | git diff → A1-A17 规则 → exit code | pre-commit hook（v1.0.8+ daemon 监控文件变更） |
 | 回溯引擎（v1.0.8+） | 自动快照 + 违规时建议回滚 | 审计后自动触发 |
 | 编排引擎（实验性）| DeepAgents 拆任务，Sub Agent 并行 | 全平台可用 |
 
@@ -416,7 +418,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 | | 审计 Agent | FDE Agent |
 |------|------|------|
 | **方向** | 向下看——防止退化 | 向上看——推动进化 |
-| **数据源** | git diff + A1-A15 规则 | audit 报告 + think.md + scoring |
+| **数据源** | git diff + A1-A17 规则 | audit 报告 + think.md + scoring |
 | **输出** | "哪里坏了 + 怎么修" | "怎么做得更好 + 趋势分析" |
 | **频率** | 每次 commit 自动 | 每周自动巡检 |
 

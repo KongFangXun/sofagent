@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant User
+    participant AuditCLI as sofagent-audit CLI
+    participant DiffParser as @sofagent/core: diff-parser
+    participant LogChecker as @sofagent/core: log-checker
+    participant ConfigLoader as @sofagent/core: config-loader
+    participant RuleRunner as @sofagent/core: rules/runner
+    participant AuditHistory as @sofagent/core: audit-history
+    participant ThinkGen as @sofagent/think: think-generator
+    participant Webhook as @sofagent/audit: webhook
+
+    User->>AuditCLI: sofagent-audit --diff HEAD~1..HEAD --task "fix bug"
+    AuditCLI->>DiffParser: parseDiff("HEAD~1..HEAD")
+    DiffParser-->>AuditCLI: DiffFile[]
+    AuditCLI->>LogChecker: checkLogs()
+    LogChecker-->>AuditCLI: LogEntry[]
+    AuditCLI->>ConfigLoader: loadConfig()
+    ConfigLoader-->>AuditCLI: AuditConfig
+    AuditCLI->>RuleRunner: runRules(diffFiles, logEntries, task, strict, silent, commitMsg, config, history)
+    RuleRunner-->>AuditCLI: AuditResult { rules, exitCode }
+    AuditCLI->>AuditHistory: appendHistory(entry)
+    AuditCLI->>ThinkGen: generateThinkEntry(diffFiles, results, task)
+    opt exitCode > 0 and webhook configured
+        AuditCLI->>Webhook: pushAuditResult(...)
+    end
+    AuditCLI-->>User: printResults + exit(exitCode)

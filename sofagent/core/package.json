@@ -1,0 +1,16 @@
+{
+  "name": "@sofagent/core",
+  "version": "1.1.0",
+  "description": "sofagent 核心运行时 — doctor / 配置解析 / 通用类型（不含审计逻辑）",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "check": "tsc --noEmit"
+  },
+  "keywords": ["sofagent", "core", "runtime", "doctor"],
+  "license": "MIT",
+  "author": "KongFangXun",
+  "dependencies": {}
+}
