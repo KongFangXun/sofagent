@@ -15,7 +15,7 @@
 
 <p align="center" style="color:#64748B;font-size:14px;">
   Agent Harness Middleware<br/>
-  Constrain behavior, audit changes with hard evidence, share experience across devices
+  Constrain · Audit · Restore · Orchestrate · Evolve — full Agent lifecycle governance
 </p>
 
 <p align="center">
@@ -23,6 +23,16 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.0.9-16B8F3" alt="Version" /></a>
 </p>
+
+---
+
+**The Gateway routes, sofagent governs — five engines, one system.**
+
+- 🧭 **Constraint Base**: Set rules before agents run — what's allowed, what's forbidden
+- 🔍 **Audit Engine**: 19 rules, git diff hard evidence, 0 token cost
+- 🔄 **Restore Engine**: Auto-snapshot after every audit, one-click rollback
+- ⚙️ **Orchestration Engine**: Decompose tasks, parallel Sub Agents, A/B auto-optimize
+- 🧬 **Evolution Engine**: FDE weekly inspection → detect degradation → auto-optimize
 
 ---
 
@@ -34,7 +44,15 @@ Most SME AI projects collect dust within 6 months. It's not a tech problem — i
 |:--|:--|:--|
 | Bought a pile of AI tools, expected magic. AI is capable — but no one mapped the workflows first | Engineers can't see business nodes. AI adoption isn't an IT project — it's business transformation | No one knows if AI is doing a good job. Behavior unconstrained, results unaudited — accountability evaporates |
 
-**What sofagent does**: FDE is like a foreman leading AI workers — onboard, map workflows, identify AI nodes, install the toolkit, and let AI run. No consultants, no dedicated AI team.
+**What sofagent does**: Won't connect AI for you — will govern the AI you've already connected.
+
+| Wall | Problem | sofagent solution |
+|:--|------|------|
+| 🚫 No workflow mapping | FDE onboards, diagrams the business, identifies AI-ready nodes, deploys and leaves | 🧭 Constraint + 🧬 Evolution |
+| 🔧 Tech-led, not biz-led | Constraints written in business language ("don't touch customer data", "large transfers need approval"), no code | 🧭 Constraint |
+| 👻 Deploy and forget | Every change auto-audited, violations blocked + snapshotted + rollback-ready; weekly inspection catches degradation | 🔍 Audit + 🔄 Restore + 🧬 Evolution |
+
+No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep running.
 
 ---
 
@@ -44,11 +62,18 @@ Most SME AI projects collect dust within 6 months. It's not a tech problem — i
 npm install -g @sofagent/audit && sofagent-audit --init
 ```
 
-Edit a file, commit, and watch the audit hook fire:
+Three-step first experience:
 
 ```bash
+# 1. See constraints — agents carry these rules
+sofagent-audit --help | head -5
+
+# 2. Run audit — change a file and see
 echo "API_KEY=sk-123456" > .env && git add .env && git commit -m "test"
 # → ⛔ A1 sensitive files: .env contains key pattern, commit blocked
+
+# 3. Check snapshots — auto-saved after every audit
+sofagent-audit --timeline
 ```
 
 > Requires Node.js ≥ 18 + bash + git. Full macOS/Linux support, Windows experimental. [Full install guide](./docs/HANDBOOK.md)
@@ -60,30 +85,26 @@ echo "API_KEY=sk-123456" > .env && git add .env && git commit -m "test"
 FDE (Forward Deployed Engineer) follows four steps — [full guide → FDE/FDE.md](./FDE/FDE.md)
 
 ```mermaid
-graph LR
-    subgraph identify[" "]
-        direction TB
-        A["1️⃣ Map workflows<br/>Diagram the business"]
-        B["2️⃣ Identify AI nodes<br/>Where AI can help"]
-    end
-
-    A --> B
+graph TB
+    A["1️⃣ Map workflows<br/>Diagram the business"] --> B["2️⃣ Identify AI nodes<br/>Where AI can help"]
     B --> C["3️⃣ Install toolkit<br/>sofagent on spare device"]
     C --> D["4️⃣ AI runs itself<br/>Work, report, reflect"]
 
-    C -.-> E["🧭 Harness base<br/>Rules injected upfront"]
-    C -.-> F["🔍 Audit engine<br/>Scans every commit"]
-
-    subgraph output[" "]
-        direction TB
-        G["⚙️ Orchestration<br/>Decompose · Parallel · A/B"]
-        H["⚡ Augmented role<br/>AI navigates, human decides"]
-        I["🔄 Auto-execute<br/>AI runs, human audits"]
+    subgraph engines["sofagent five engines"]
+        direction LR
+        E["🧭 Constraint Base<br/>Rules injected upfront"]
+        F["🔍 Audit Engine<br/>Scans every change"]
+        G["🔄 Restore Engine<br/>Snapshots · Rollback"]
+        H["⚙️ Orchestration<br/>Decompose · Parallel · A/B"]
+        I["🧬 Evolution<br/>Weekly inspect · Auto-optimize"]
     end
 
-    D -.-> G
-    G --> H
+    C -.-> E
+    D --> F
+    F --> G
+    D --> H
     G --> I
+    H --> I
 ```
 
 Step 2 is the key — not every step should be fully automated:
@@ -91,13 +112,27 @@ Step 2 is the key — not every step should be fully automated:
 | Node type | How it runs | Human's role | sofagent's role |
 |------|------|------|------|
 | ⚡ **Augmented role** | AI navigates, suggests — rules describable | Decide, approve, sign off | Harness keeps AI in bounds, audit logs every suggestion |
-| 🔄 **Auto-execute** | AI runs end-to-end autonomously | Review audit reports, spot-check | All three engines: constrain → execute → audit → reflect |
+| 🔄 **Auto-execute** | AI runs end-to-end autonomously | Review audit reports, spot-check | All five engines: constrain → orchestrate → audit → restore → evolve |
 
 No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep running.
 
-### Three engines
+### Five engines
 
-#### 🧭 Harness base
+> 💡 **sofagent and Gateway**: Enterprise AI can't ship without a Gateway (unified entry/routing/orchestration/sessions).
+> OpenClaw/DeepAgents IS your Gateway. sofagent doesn't replace it — it layers on top for governance.
+> **The Gateway is the highway. sofagent is the traffic rules + speed cameras + driving coach.**
+
+| Engine | When | What |
+|------|------|------|
+| 🧭 **Constraint Base** | Before agents run | Four-layer loading chain injects red lines into context |
+| 🔍 **Audit Engine** | While agents work | 19 rules, git diff + filesystem auto-scan, 0 token cost |
+| 🔄 **Restore Engine** | After things go wrong | Auto-snapshot on every audit, one-click rollback |
+| ⚙️ **Orchestration Engine** | Task decomposition | Break down tasks, parallel Sub Agents, A/B auto-optimize |
+| 🧬 **Evolution Engine** | Continuous improvement | FDE weekly inspect audit trends + reflections, auto-optimize |
+
+> 🔮 **v1.1.0 preview**: Audit engine splits into standalone `@sofagent/audit` npm package. Existing `npm install -g @sofagent/audit` users zero-migration.
+
+#### 🧭 Constraint Base
 
 Rules injected into agent context before work starts — so it knows the red lines.
 
@@ -127,9 +162,29 @@ graph LR
     G --> A
 ```
 
-Doesn't trust the agent — trusts git diff hard evidence. Developers install a commit-msg hook for code audits. **v1.0.8+ adds filesystem audit** — embedded isomorphic-git + daemon file monitoring means non-developers get audited too: any AI file change triggers automatic audit, no git or commit required.
+Doesn't trust the agent — trusts git diff hard evidence. Developers install a commit-msg hook for code audits. **v1.0.8+ adds filesystem audit** — embedded isomorphic-git + daemon file monitoring means non-developers get audited too.
 
-#### ⚙️ Orchestration engine (experimental)
+> v1.1.0 splits audit into standalone `@sofagent/audit` package.
+
+#### 🔄 Restore engine
+
+Auto-snapshot after every audit — violations trigger notifications + rollback suggestions. When things go wrong, go back:
+
+| Result | Auto action | What you see |
+|------|---------|------------|
+| ✅ PASS | Auto-snapshot saved | Silent |
+| ⚠️ WARN | Saved + flagged | daemon-notice.md alert + optional Webhook |
+| ❌ FAIL | Saved + rollback suggested | Webhook push + terminal red |
+
+```bash
+sofagent-audit --timeline          # Snapshot timeline
+sofagent-audit --timeline --json   # JSON output
+sofagent-audit --revert <SHA>      # Rollback to any snapshot
+```
+
+sofagent is a **dashcam**, not a security checkpoint — post-hoc audit + restore, platform-agnostic.
+
+#### ⚙️ Orchestration engine
 
 Decomposes large tasks, runs Sub Agents in parallel, compares A/B results for better approaches. FDE generates the workflow on onboarding; nodes run autonomously after that.
 
@@ -143,10 +198,33 @@ graph LR
     E -->|Old better| G[Keep]
 ```
 
-Powered by DeepAgents (optional dependency, becomes required in v1.0.7), runs on any platform — no longer tied to OpenClaw. v1.0.7 adds CLI entry (`sofagent-audit compose --task`), A/B auto-switch, and dual-node architecture (auto-running vs. personal enhancement).
+Powered by DeepAgents (v1.0.7, ao fully retired). `sofagent-audit compose --task` CLI entry — **any Agent platform can use the orchestration engine**. See [ROADMAP](./ROADMAP.md).
 
+#### 🧬 Evolution engine (v1.0.8+)
 
-> 🆕 **v1.0.5**: Ontology Layer · Workflow Hub · Agent Dashboard · Atomic writes · Fail-closed · A9 scored safety
+FDE Agent doesn't just deploy once — after deployment, it shifts into **continuous optimization**. Weekly automatic inspection of audit trends + reflections, catching degradation before it impacts production.
+
+```mermaid
+graph LR
+    A[FDE Weekly Inspection] --> B[Read audit trends<br/>history.jsonl]
+    B --> C[Analyze think.md<br/>recurring mistakes]
+    C --> D[Check scoring<br/>which node is degrading]
+    D --> E{Issue found?}
+    E -->|Yes| F[Generate optimization report<br/>Update rules / supplement knowledge]
+    E -->|No| G[Mark "stable"]
+    F --> A
+```
+
+| Mode | When | What |
+|------|------|------|
+| **deploy** | First install / major change | Map workflows → Identify AI nodes → Build knowledge base → Install toolkit |
+| **sustain** | Weekly auto / manual trigger | Read audit trends → Analyze think.md → Generate optimization report → Update rules |
+
+```bash
+sofagent-audit subagent run fde --mode sustain --task "Inspect all nodes"
+```
+
+Five engines, one loop: **Constrain → Orchestrate → Audit → Restore → Evolve**.
 
 ---
 
@@ -168,8 +246,9 @@ Powered by DeepAgents (optional dependency, becomes required in v1.0.7), runs on
 
 > 🔬 Hugging Face legal-agent benchmark: same model, harness-only optimization — score jumped from 3.5% to 80.1% (76-point gain, matching Claude Sonnet at 1/7 the cost). [Details](./docs/ARCHITECTURE.md)
 
-- Core logic: **493 tests all green** (diff-parser / config-loader / rules A1-A15 / reporter)
-- **17 audit rules** (expanding to 19 in v1.0.9): 11 default (A1-A11) + 6 extended (E1-E4 + A14 + A15), v1.0.9 adds A16 unauthorized file change + A17 abnormal bulk change
+- Core logic: **519 tests all green** (diff-parser / config-loader / rules A1-A17 / reporter / init)
+  > Verify: `cd sofagent/audit && npm test` (v1.0.9 baseline: 519 passing)
+- **19 audit rules**: 11 default (A1-A11) + 8 extended (E1-E4 + A14 + A15 + A16 unauthorized file change + A17 abnormal bulk change)
 - 📁 v1.0.8+ filesystem audit (no git required) — embedded isomorphic-git + daemon file monitoring
 - MIT license — use code, docs, and templates freely
 
@@ -214,4 +293,4 @@ sofagent supports two node types:
 
 Issues and PRs welcome — especially the critical kind. [CONTRIBUTING.md](./CONTRIBUTING.md) · [Credits](./docs/THANKS.md)
 
-> My name is KongFangXun, a product manager who knows just enough frontend to be dangerous. sofagent's code is written by AI models; I make product decisions and do the final review. Every release is reviewed by an independent model.
+> sofagent is designed by KongFangXun. Code written by AI models, product decisions and final review by the author. Every release reviewed by an independent model.

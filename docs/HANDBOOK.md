@@ -1,10 +1,10 @@
 # sofagent Handbook
 
-> **企业上 AI，先上缰绳再上路——装上审计引擎，每次 Agent 提交代码时自动检查变更。配合约束底座管 Agent 行为，编排引擎拆解任务（FDE 部署用）。**
+> **Gateway 管怎么跑，sofagent 管跑没跑对。** 约束底座给 Agent 定规矩，审计引擎验结果，编排引擎拆任务，回溯引擎保安全，进化引擎越用越好。下面从装到用到查问题，全流程走一遍。
 >
 > v1.0.9 · 2026-07-13（UTC）· 孔放勋
 
-<img src="../sofagent.png" alt="sofagent" width="300" />
+<img src="assets/sofagent.png" alt="sofagent" width="300" />
 
 - [阅读指南](#阅读指南)
 - [5 分钟速览](#5-分钟速览)
@@ -181,13 +181,15 @@ jobs:
 
 > 地基约 3,500 token，不到 128K 窗口的 3%。OpenClaw 平台 Hook 自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#两层架构地基-vs-引擎)。
 
-### 三个引擎怎么跑
+### 引擎怎么跑
 
 | 引擎 | 做什么 | 依赖 Agent | 触发方式 |
 |------|------|:--:|------|
-| **审计引擎** | git diff → A1-A15 规则检查 → think.md | ❌ | git commit（v1.0.8+ daemon 监控文件变更） |
-| **回溯引擎**（v1.0.8+） | 审计后自动 snapshot，违规时建议回滚 | ❌ | 审计完成后自动 |
-| **编排引擎**（实验性）| Workflow 梳理 + A/B 重优化 | ✅ | Workflow 梳理时 / 定时触发。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
+| 🧭 **约束底座** | 四层加载链注入规则——开工前定红线 | ❌ | Agent 启动时自动（OpenClaw Hook / Sub Agent 自加载） |
+| 🔍 **审计引擎** | git diff → A1-A17 规则检查 → think.md | ❌ | git commit / daemon 文件变更 |
+| 🔄 **回溯引擎** | 审计后自动 snapshot，违规时建议回滚 | ❌ | 审计完成后自动 |
+| ⚙️ **编排引擎** | 拆解任务 + Sub Agent 并行 + A/B 优化 | ✅ | CLI / MCP compose tool |
+| 🧬 **进化引擎**（v1.0.8+） | FDE 周度巡检审计趋势 + 反思，自动优化 | ✅ | daemon cron @weekly / 手动触发 |
 
 ### 4 条底线 + 7 则行为铁律
 
@@ -315,7 +317,7 @@ Agent 先判断任务复杂度：
 
 | 术语 | 一句话解释 |
 |------|------|
-| **Harness 中间件** | 管 Agent 行为的「缰绳」——不改模型，改模型外围的执行机制。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他平台，sofagent 是独立审计标准层。→ [设计原理](./ARCHITECTURE.md#两层架构地基-vs-引擎) |
+| **Harness 中间件** | Agent 治理——五个引擎覆盖全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他平台，sofagent 是独立的底线守卫层。→ [设计原理](./ARCHITECTURE.md#五引擎治理架构v109) |
 | **审计引擎** | 看 git diff 硬证据判定违规，不依赖 Agent 配合。v1.0.8+ daemon 监控文件变更，**非开发者也能用**。→ [为什么外置](./ARCHITECTURE.md#为什么审计必须外置) |
 | **回溯引擎**（v1.0.8+） | 审计后自动快照存档，违规时建议回滚——不只是告诉你违规了，还存了快照、推了通知 |
 | **编排引擎**（实验性）| 拆任务→编排→执行，基于 DeepAgents Sub Agent。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |

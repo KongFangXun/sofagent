@@ -1,16 +1,16 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.0.9 · 2026-07-13（UTC）· 文件系统审计 + FDE 持续优化 + 快照回溯 + Ontology 视图
+> v1.0.9 · 2026-07-13（UTC）· 五个引擎全线交付：二进制审计 + 快照时间线 + MCP compose + daemon 闭环 + cron 巡检
 >
 
-> 🎯 **v1.0 定位**：**Agent Harness 中间件**——不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他什么 Agent 平台，sofagent 是独立的审计标准层：约束行为、审计变更、沉淀经验。v1.0 聚焦单设备，v1.1.x 加轻量多设备（经验共享），v1.2.x 做完整多设备（独立身份+跨设备审计聚合）。
+> 🎯 **v1.0 定位**：**Agent Harness 中间件**——五个引擎（约束·审计·回溯·编排·进化）覆盖 Agent 全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立的底线守卫层：约束行为、审计变更、沉淀经验、持续优化。v1.0 聚焦单设备，v1.1.x 加轻量多设备（经验共享），v1.2.x 做完整多设备（独立身份+跨设备审计聚合）。
 
 ---
 
 ## 现在在哪：v1.0.9 ✅（已发版）
 
-> 二进制文件审计（A16 非授权变更 + A17 异常批量变更）+ `--timeline` 快照时间线 + `--revert` 回滚 + MCP compose tool + daemon 审计闭环 + cron 定时 FDE 巡检 + A9 中文注入检测 + EvidenceMode `'filesystem'` 扩展。528 测试全绿，acceptance-test 35/35 全绿，pre-push 7/7 全绿。
+> 二进制文件审计（A16 非授权变更 + A17 异常批量变更）+ `--timeline` 快照时间线 + `--revert` 回滚 + MCP compose tool + daemon 审计闭环 + cron 定时 FDE 巡检 + A9 中文注入检测 + EvidenceMode `'filesystem'` 扩展。519 测试全绿，acceptance-test 35/35 全绿，pre-push 7/7 全绿。
 >
 > 📖 [开发日志](./docs/changelog/v1.0.9.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
@@ -218,7 +218,7 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 
 | sofagent 模块 | 对应外部框架 | 关系 | 版本 |
 |------|------|------|:--:|
-| 审计引擎（Harness 中间件核心） | 独立自研——外部无可替代 | 核心差异化 | v1.0 |
+| 审计引擎 | 独立自研——外部无可替代 | 核心差异化 | v1.0 |
 | 编排引擎 | [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs)（v1.0.x 间接使用）+ [LangGraph.js](https://github.com/langchain-ai/langgraphjs)（v1.1 起直接使用 StateGraph + Checkpoint + 条件路由） | 借鉴后替换 ao | v1.0.1-v1.1 |
 | Skill 系统 | Agency Agents（岗位模板，v1.0.3）+ SkillOpt（Skill 文档自动优化，v1.0.3）+ eval harness + A/B 对比（Sub Agent 配置自动优化，v1.0.4） | 模板引用 + 对接优化引擎 | v1.0.1-v1.0.4 |
 | AI 知识库 | OpenFDE 10 步工作流（行业定位验证）+ Google OKF（同构独立验证）+ CAG 第 7 代 RAG（同构验证）+ Glean 工业数据（1.7万页/召回~100%） | 外部验证 | v1.0-v1.1 |
@@ -411,7 +411,7 @@ v1.x 的多设备 = **经验共享 + 审计可见**，不碰身份/权限/协同
 | 三层加载链叙事 | 三层拆分为独立产品 |
 | sofagent-fde 独立 Skill | 改为 FDE/FDE.md，FDE 自己装 |
 | Harness 层实验第三次重跑 | 两次各 100 次都因任务设计无法结论 |
-| 全栈企业 Agent 平台 | sofagent 不做 Cloudtag 竞品（全栈 Agent + 平台 + 应用）。sofagent 是 Harness 中间件——不管企业用什么 Agent 平台，sofagent 是独立审计标准层 |
+| 全栈企业 Agent 平台 | sofagent 不做 Cloudtag 竞品（全栈 Agent + 平台 + 应用）。sofagent 是 Harness 中间件——不管企业用什么 Agent 平台，sofagent 是独立的底线守卫层 |
 
 ---
 
