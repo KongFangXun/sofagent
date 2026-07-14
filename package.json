@@ -1,8 +1,18 @@
 {
   "private": true,
   "workspaces": [
+    "sofagent/harness",
+    "sofagent/ontology",
+    "sofagent/eval",
+    "sofagent/core",
     "sofagent/audit",
-    "sofagent/mcp"
+    "sofagent/mcp",
+    "sofagent/orchestrator",
+    "sofagent/daemon",
+    "sofagent/ab-test",
+    "sofagent/workflow-hub",
+    "sofagent/think",
+    "sofagent/skillopt"
   ],
   "scripts": {
     "test": "npm test --workspace=sofagent/audit",

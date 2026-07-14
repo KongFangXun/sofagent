@@ -10,7 +10,7 @@
 
 ## 现在在哪：v1.0.9 ✅（已发版）
 
-> 二进制文件审计（A16 非授权变更 + A17 异常批量变更）+ `--timeline` 快照时间线 + `--revert` 回滚 + MCP compose tool + daemon 审计闭环 + cron 定时 FDE 巡检 + A9 中文注入检测 + EvidenceMode `'filesystem'` 扩展。519 测试全绿，acceptance-test 35/35 全绿，pre-push 7/7 全绿。
+> 二进制文件审计（A16 非授权变更 + A17 异常批量变更）+ `--timeline` 快照时间线 + `--revert` 回滚 + MCP compose tool + daemon 审计闭环 + cron 定时 FDE 巡检 + A9 中文注入检测 + EvidenceMode `'filesystem'` 扩展。531 测试全绿，acceptance-test 35/35 全绿，pre-push 7/7 全绿。
 >
 > 📖 [开发日志](./docs/changelog/v1.0.9.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
@@ -22,6 +22,11 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
+| **v1.0.9** 🔧 | 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool + daemon 闭环 + cron 巡检 + A9 中文注入 | [📖](./docs/changelog/v1.0.9.md) |
+| **v1.0.8** 🔧 | FDE Agent 自进化（deploy + sustain 双模式）+ 文件系统审计（isomorphic-git + fs-watch）+ 快照回溯 + Agent 定义去耦合 + TencentDB Memory | [📖](./docs/changelog/v1.0.8.md) |
+| **v1.0.7** 🔧 | 双节点架构 + Sub Agent 约束自加载 + CLI 编排入口 + ao 完全退役 + A/B 自动切换 | [📖](./docs/changelog/v1.0.7.md) |
+| **v1.0.6** 🔧 | 编排迁移 + A/B 真实运行器 + 安全加固 + SkillOpt CLI 修复 | [📖](./docs/changelog/v1.0.6.md) |
+| **v1.0.5** 🔧 | Ontology 统一层 + Workflow Hub + A9 分级安全 + A15 绕过修复 + fail-closed 默认安全 | [📖](./docs/changelog/v1.0.5.md) |
 | **v1.0.4** 🔧 | 自动优化 + 约束验证：eval harness + Sub Agent A/B 自动优化 + HITL 渐进自主度 + A15 约束验证 | [📖](./docs/changelog/v1.0.4.md) |
 | **v1.0.3** 🔧 | 编排引擎重构 + LOOP 自迭代：FDE Sub Agent（DeepAgentsJS+LangGraph+Agency Agents+SkillOpt）+ 4 Agent 定义 + 内外层循环 + 4 验证文件自动优化 + 30 项修复 | [📖](./docs/changelog/v1.0.3.md) |
 | **v1.0.2** 🔧 | 文档修正 + 规则对齐：15 项修复 | [📖](./docs/changelog/v1.0.2.md) |

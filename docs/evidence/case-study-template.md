@@ -23,7 +23,7 @@
 
 ### 你在用 sofagent 的哪些能力？
 
-- [ ] 核心约束层（4 底线 + 6 铁律）——约束 Agent 行为
+- [ ] 核心约束层（4 底线 + 7 铁律）——约束 Agent 行为
 - [ ] 审计引擎（sofagent-audit）——git diff 审计
 - [ ] 编排引擎（engage.md + ao compose）——复杂任务拆解
 - [ ] daemon 持续监控

@@ -1,0 +1,19 @@
+{
+  "name": "@sofagent/think",
+  "version": "1.1.0",
+  "description": "sofagent 思考链分析 — 推理路径追踪 / 决策可视化 / 思维审计",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "check": "tsc --noEmit"
+  },
+  "keywords": ["sofagent", "think", "reasoning", "trace"],
+  "license": "MIT",
+  "author": "KongFangXun",
+  "dependencies": {
+    "@sofagent/audit": "1.1.0",
+    "@sofagent/core": "1.1.0"
+  }
+}

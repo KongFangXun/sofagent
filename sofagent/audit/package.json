@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/audit",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "sofagent 提交时审计——扫描 git diff，检查 Agent 是否遵守工作纪律",
   "main": "dist/index.js",
   "types": "dist/public-api.d.ts",
@@ -15,11 +15,8 @@
     "@sofagent/audit": "dist/index.js",
     "sofagent-verify": "dist/verify.js",
     "sofagent-verify-evidence": "dist/verify-evidence.js",
-    "sofagent-skill-safety-check": "dist/skill-safety-check.js",
-    "sofagent-orchestrate-compare": "dist/orchestrate-compare.js",
-    "sofagent-env-check": "dist/env-check.js",
     "verify-evidence": "dist/verify-evidence.js",
-    "skill-safety-check": "dist/skill-safety-check.js"
+    "sofagent-env-check": "dist/env-check.js"
   },
   "scripts": {
     "build": "tsc",
@@ -67,6 +64,8 @@
   "dependencies": {
     "deepagents": "^1.10.7",
     "isomorphic-git": "^1.25.0",
-    "js-yaml": "^5.2.0"
+    "js-yaml": "^5.2.0",
+    "@sofagent/ontology": "1.1.0",
+    "@sofagent/core": "1.1.0"
   }
 }

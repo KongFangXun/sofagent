@@ -57,11 +57,11 @@ FDE（或企业 CIO/网管）的操作手册。**读它 → 帮企业梳理 work
 | 维度 | 状态 |
 |------|------|
 | FDE 四阶段流程 | ✅ 已在作者自有企业中实际部署（2026-07） |
-| 审计引擎 | ✅ 独立产品，493 tests 全绿、跨平台 CI 覆盖 |
+| 审计引擎 | ✅ 独立产品，531 tests 全绿、跨平台 CI 覆盖 |
 | 覆盖范围 | Agent 质量层（代码纪律 + 审计 + 经验沉淀） |
 | 不覆盖 | 运维层（监控 / 告警 / 重启 / 日志轮转） |
 
-> 详见 [LIMITATIONS.md](../docs/LIMITATIONS.md)
+> 详见 [LIMITATIONS.md](../LIMITATIONS.md)
 
 ---
 
@@ -282,7 +282,7 @@ FDE 有巨大前期成本，只在三种情况成立：
 | 层 | 做什么 | 怎么跑 |
 |----|--------|--------|
 | **约束底座** | fde.md 规则注入 Agent 上下文 | install.sh 装完自动加载 |
-| **审计引擎** | git diff → A1-A15 规则 → exit code | git pre-commit hook，不挑 Agent，**0 token（纯正则引擎）** |
+| **审计引擎** | git diff → A1-A17 规则 → exit code | git pre-commit hook，不挑 Agent，**0 token（纯正则引擎）** |
 | **编排引擎**（实验性）| 拆任务 → 编排 → 执行 | DeepAgents compose（CLI 入口或 OpenClaw 内部 API） |
 | **内置 Agent**（v1.0.7）| FDE 部署工程师 + 合规审计员 | `sofagent-audit subagent run fde --task "..."`、`@sofagent-fde` |
 

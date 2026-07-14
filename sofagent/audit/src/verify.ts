@@ -59,7 +59,7 @@ function parseArgs(argv: string[]): Args {
       console.log('  正常模式  彩色终端，显示所有检查项');
       console.log('  --json    JSON 机器可读输出（CI/CD 用）');
       console.log('  --quiet   只输出失败和警告，全通过时静默');
-      console.log('  --quick   快速模式——仅 4 项核心检查（SKILL.md / .sofagent/ / ao compose / fde.md）');
+      console.log('  --quick   快速模式——仅 4 项核心检查（SKILL.md / .sofagent/ / sofagent-audit compose / fde.md）');
       console.log('  --platform <name>  手动指定平台（openclaw/workbuddy/claude/codex/hermes）');
       console.log('  --help    显示此帮助');
       console.log('退出码: 0=全部通过 1=存在失败项');
@@ -192,7 +192,7 @@ function main(): void {
             console.log('  下一步:');
             console.log('    1. 注册 before_prompt_build Hook（见 install.sh 输出）');
             console.log('    2. 启动 OpenClaw，检查 system prompt 是否包含 sofagent 底线规则');
-            console.log('    3. 运行 ao compose 测试编排是否正常');
+            console.log('    3. 运行 sofagent-audit compose 测试编排是否正常');
             break;
           case 'workbuddy':
             console.log('  下一步:');

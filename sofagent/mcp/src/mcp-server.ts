@@ -491,8 +491,8 @@ class McpServer {
   }
 
   /**
-   * Tool: sofagent_compose (v1.0.9)
-   * 调用 CLI compose 逻辑，返回 YAML 编排方案
+   * Tool: sofagent_compose (v1.1.0)
+   * 调用 sofagent-orchestrator compose 逻辑，返回 YAML 编排方案
    */
   private async toolCompose(id: number | string | null, args: Record<string, unknown>): Promise<void> {
     if (typeof args.task !== 'string' || !args.task) {
@@ -509,7 +509,7 @@ class McpServer {
     }
 
     try {
-      const result = execFileSync('sofagent-audit', cmd, { encoding: 'utf-8', timeout: 30000 });
+      const result = execFileSync('sofagent-orchestrator', cmd, { encoding: 'utf-8', timeout: 30000 });
       this.sendToolResult(id, {
         type: 'text',
         text: result,

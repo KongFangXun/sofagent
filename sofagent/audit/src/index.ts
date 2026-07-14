@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.0.9 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
-// v1.0.9 新增：compose 子命令 + 未知子命令报错 + audit fast-fail
+// v1.1.0 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.1.0 精简：compose→orchestrator, subagent→orchestrator,
+//          hub→workflow-hub, skillopt-run→skillopt, ab-test→ab-test,
+//          daemon→daemon, doctor/verify→core (deprecation shim)
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
 // 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
@@ -13,7 +15,7 @@
 //   node sofagent/audit/dist/index.js --diff HEAD~1..HEAD --ci --task "test"
 //   node sofagent/audit/dist/index.js --root-cause
 //   node sofagent/audit/dist/index.js --regression ./src
-//   node sofagent/audit/dist/index.js compose --task "审计最近 5 次提交"
+//   node sofagent/audit/dist/index.js ontology view
 //
 // 退出码：
 //   0 = 全通过
@@ -22,14 +24,15 @@
 // ============================================================
 
 import { execFileSync } from 'child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync, copyFileSync, unlinkSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { createInterface } from 'readline';
-import { parseDiff, parseStagedDiff, isInGitRepo, type DiffFile } from './diff-parser';
+import { parseDiff, parseStagedDiff, isInGitRepo, type DiffFile } from '@sofagent/core';
+import { loadConfig, ConfigLoadError } from '@sofagent/core';
+import { VERSION } from '@sofagent/core';
 import { resolveDiffEndpoint } from './diff-ref';
 import { checkLogs } from './log-checker';
 import { runRules, type AuditResult } from './reporter';
-import { loadConfig, ConfigLoadError } from './config-loader';
 import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-history';
 import { analyzeRootCause } from './audit-root-cause';
 import { formatSuggestions } from './config-suggestion';
@@ -37,9 +40,6 @@ import { runRegression, type DiffSnapshot } from './audit-regression';
 import { defaultRules } from './rules';
 import type { RuleCheck } from './rules/types';
 import { pushAuditResult, type WebhookPlatform } from './webhook';
-import { generateThinkEntry } from './think-generator';
-import { runFilesystemAudit } from './daemon/run-fs-audit';
-import { VERSION } from './shared/constants.js';
 import { getFixSuggestion } from './fix-suggestions';
 
 interface Args {
@@ -56,27 +56,8 @@ interface Args {
   webhookUrl?: string;
   mcp: boolean;
   init: boolean;
-  doctor: boolean;
   /** staged 模式（首次提交场景）——diffRange 值为 --cached */
   cached: boolean;
-  /** v1.0.9: eval harness */
-  eval?: string;
-  /** v1.0.9: A/B 测试 */
-  abTest?: string;
-  /** v1.0.9: Agent Dashboard */
-  agents?: boolean;
-  /** v1.0.9: hub 子命令 */
-  hubCommand?: string;
-  hubTemplate?: string;
-  /** v1.0.9: compose 子命令 */
-  composeTask?: string;
-  composeAgent?: string;
-  composeRun?: boolean;
-  /** v1.0.9: subagent 子命令 */
-  subagentName?: string;
-  subagentTask?: string;
-  /** v1.0.9: subagent 运行模式 */
-  subagentMode?: 'deploy' | 'sustain';
   /** v1.0.9: 恢复到指定快照 SHA */
   revertSha?: string;
   /** v1.0.9: --timeline 查看快照时间线 */
@@ -85,13 +66,11 @@ interface Args {
   timelineJson?: boolean;
   /** v1.0.9: ontology 子命令 */
   ontologyCommand?: string;
-  /** v1.0.9: daemon 子命令 */
-  daemonCommand?: string;
 }
 
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, doctor: false, cached: false };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, cached: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff' && argv[i + 1]) {
       i++;
@@ -119,7 +98,7 @@ function parseArgs(argv: string[]): Args {
       i++;
       args.regressionDir = argv[i] as string;
     } else if (argv[i] === '--revert') {
-      // v1.0.9: 无参报错修复
+      // v1.1.0: 无参报错修复
       if (!argv[i + 1] || argv[i + 1]!.startsWith('--')) {
         console.error('❌ 缺少快照 SHA 参数，格式：sofagent-audit --revert <snapshot-sha>');
         console.error('   查看可用快照：sofagent-audit --timeline');
@@ -128,7 +107,7 @@ function parseArgs(argv: string[]): Args {
       i++;
       args.revertSha = argv[i] as string;
     } else if (argv[i] === '--timeline') {
-      // v1.0.9: 快照时间线
+      // v1.1.0: 快照时间线
       args.timeline = true;
       args.timelineJson = argv.includes('--json');
       // 下一个参数如果是数字则为 limit
@@ -153,68 +132,9 @@ function parseArgs(argv: string[]): Args {
       args.mcp = true;
     } else if (argv[i] === '--init') {
       args.init = true;
-    } else if (argv[i] === '--doctor') {
-      args.doctor = true;
-    } else if (argv[i] === '--eval' && argv[i + 1]) {
-      i++;
-      args.eval = argv[i] as string;
-    } else if (argv[i] === '--ab-test' && argv[i + 1]) {
-      i++;
-      args.abTest = argv[i] as string;
-    } else if (argv[i] === '--agents') {
-      args.agents = true;
-    } else if (argv[i] === 'compose') {
-      // v1.0.9: compose 子命令
-      args.composeTask = '';
-      for (let j = i + 1; j < argv.length; j++) {
-        if (argv[j] === '--task' && argv[j + 1]) {
-          j++;
-          args.composeTask = argv[j] as string;
-        } else if (argv[j] === '--agent' && argv[j + 1]) {
-          j++;
-          args.composeAgent = argv[j] as string;
-        } else if (argv[j] === '--run') {
-          args.composeRun = true;
-        } else if (!argv[j]!.startsWith('--')) {
-          // positional arg after compose
-          if (!args.composeTask) args.composeTask = argv[j] as string;
-        }
-      }
-      i = argv.length; // consume remaining args
-    } else if (argv[i] === 'subagent' && argv[i + 1] === 'run') {
-      // v1.0.9: subagent run 子命令
-      i += 2;
-      args.subagentName = argv[i] as string;
-      args.subagentMode = 'deploy'; // v1.0.9: 默认 deploy 模式
-      for (let j = i + 1; j < argv.length; j++) {
-        if (argv[j] === '--task' && argv[j + 1]) {
-          j++;
-          args.subagentTask = argv[j] as string;
-        } else if (argv[j] === '--mode' && argv[j + 1]) {
-          j++;
-          const mode = argv[j] as string;
-          if (mode === 'deploy' || mode === 'sustain') {
-            args.subagentMode = mode;
-          } else {
-            console.error(`❌ 无效的 mode: ${mode}（支持: deploy / sustain）`);
-            process.exit(1);
-          }
-        }
-      }
-      i = argv.length;
-    } else if (argv[i] === 'hub' && argv[i + 1]) {
-      i++;
-      args.hubCommand = argv[i] as string;
-      if ((args.hubCommand === 'deploy' || args.hubCommand === 'list') && argv[i + 1] && !argv[i + 1]!.startsWith('--')) {
-        i++;
-        args.hubTemplate = argv[i] as string;
-      }
     } else if (argv[i] === 'ontology' && argv[i + 1]) {
       i++;
       args.ontologyCommand = argv[i] as string;
-    } else if (argv[i] === '--daemon' && argv[i + 1]) {
-      i++;
-      args.daemonCommand = argv[i] as string;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       const verbose = argv.includes('--verbose');
       console.log(`sofagent-audit v${VERSION} · Agent 提交时审计\n`);
@@ -225,23 +145,21 @@ function parseArgs(argv: string[]): Args {
       console.log('命令:');
       console.log('  sofagent-audit --diff <range> [--task <desc>]   审计 git diff');
       console.log('  sofagent-audit --init                           一键初始化（配置+hook+冒烟）');
-      console.log('  sofagent-audit --doctor                         健康诊断');
-      console.log('  sofagent-audit --doctor --agents                Agent 协同状态');
-      console.log('  sofagent-audit hub list                         列出 Workflow Hub 模板');
-      console.log('  sofagent-audit hub deploy <模板名>               部署 Workflow Hub 模板');
       console.log('  sofagent-audit --root-cause                     根因分析');
       console.log('  sofagent-audit --regression <dir>               回归验证');
       console.log('  sofagent-audit --install-hook                   安装 commit-msg hook');
-      console.log('  sofagent-audit --eval <golden-set.yml>          eval harness 评测');
-      console.log('  sofagent-audit --ab-test <config.yml>           Sub Agent A/B 测试');
-      console.log('  sofagent-audit skillopt-run --input <path>       SkillOpt 自动优化（需 skillopt-sleep）');
-      console.log('  sofagent-audit compose --task <desc>             编排方案生成（DeepAgents）');
-      console.log('  sofagent-audit subagent run <name> --task <desc> 运行预装 Sub Agent（fde / audit）');
-      console.log('  sofagent-audit subagent run fde --mode sustain --task <desc> FDE 持续优化模式（v1.0.9）');
-      console.log('  sofagent-audit --revert <snapshot-sha>              恢复到指定快照（v1.0.9）');
-      console.log('  sofagent-audit --timeline [N]                      查看快照时间线（v1.0.9）');
-      console.log('  sofagent-audit ontology view                        本体人类可读视图（v1.0.9）');
-      console.log('  sofagent-audit --daemon start                       启动文件系统监控 daemon（v1.0.9）');
+      console.log('  sofagent-audit --revert <snapshot-sha>              恢复到指定快照');
+      console.log('  sofagent-audit --timeline [N]                      查看快照时间线');
+      console.log('  sofagent-audit ontology view                        本体人类可读视图');
+      console.log('');
+      console.log('v1.1.0 已迁移的子命令:');
+      console.log('  compose      → sofagent-orchestrator compose');
+      console.log('  subagent run → sofagent-orchestrator subagent run');
+      console.log('  hub          → sofagent-workflow-hub');
+      console.log('  skillopt-run → sofagent-skillopt');
+      console.log('  ab-test      → sofagent-ab-test');
+      console.log('  daemon       → sofagent-daemon');
+      console.log('  doctor/verify → sofagent-core');
       console.log('模式对照表:');
       console.log('  默认模式    全部规则（含 Agent 日志）   exit 0/1/2');
       console.log('  --silent    只跑 git-diff 规则          exit 0/1/2');
@@ -259,10 +177,6 @@ function parseArgs(argv: string[]): Args {
         console.log('  --root-cause       根因分析');
         console.log('  --regression <dir> 回归验证');
         console.log('  --init             一键初始化');
-        console.log('  --doctor           健康诊断');
-        console.log('  --eval <path>      eval harness 评测');
-        console.log('  --ab-test <path>   Sub Agent A/B 测试');
-        console.log('  skillopt-run       SkillOpt 自动优化（--input <path> [--scoring <path>]，就地演化 --target-skill-path）');
         console.log('  --webhook <p>      webhook 推送（dingtalk/feishu/wecom）');
         console.log('  --webhook-url <u>  webhook URL');
         console.log('  --mcp              MCP Server（已拆分为 @sofagent/mcp）');
@@ -277,21 +191,12 @@ function parseArgs(argv: string[]): Args {
     } else {
       const arg = argv[i];
       if (arg && arg.startsWith('--')) {
-        // skillopt-run 子命令使用独立参数解析（--input/--output/--scoring），
-        // 由 main() 中专门的 skillopt-run 块从 process.argv 解析，这里跳过误报。
-        if (process.argv[2] === 'skillopt-run') {
-          continue;
-        }
         console.error(`❌ 未知参数: ${arg}`);
         console.error('   使用 --help 查看可用参数');
         process.exit(1);
       } else if (arg && !arg.startsWith('-')) {
-        // v1.0.9: 未知子命令报错
-        // skillopt-run 子命令的 positional args（如文件路径）不在这里处理
-        if (process.argv[2] === 'skillopt-run') {
-          continue;
-        }
-        const SUBCOMMANDS = ['hub', 'skillopt-run', 'compose', 'subagent', 'ontology'];
+        // v1.1.0: 未知子命令报错
+        const SUBCOMMANDS = ['ontology'];
         if (!SUBCOMMANDS.includes(arg)) {
           console.error(`未知子命令: ${arg}`);
           console.error(`可用子命令: ${SUBCOMMANDS.join(', ')}`);
@@ -504,20 +409,6 @@ function awaitLoadSnapshot(): typeof import('./daemon/snapshot') {
   return require('./daemon/snapshot');
 }
 
-// v1.0.9: 文本文件扩展名判定——用于 daemon fs-watch 审计时分流
-const TEXT_EXTENSIONS = new Set([
-  '.md', '.ts', '.tsx', '.js', '.jsx', '.json', '.yaml', '.yml',
-  '.csv', '.txt', '.html', '.htm', '.css', '.scss', '.less',
-  '.xml', '.svg', '.sh', '.bash', '.zsh', '.py', '.rb', '.go',
-  '.rs', '.java', '.kt', '.swift', '.c', '.cpp', '.h', '.hpp',
-  '.toml', '.ini', '.cfg', '.conf', '.env', '.gitignore',
-]);
-
-function isTextFile(filePath: string): boolean {
-  const ext = filePath.slice(filePath.lastIndexOf('.')).toLowerCase();
-  return TEXT_EXTENSIONS.has(ext);
-}
-
 // v1.0.9: confirm 辅助函数（非 TTY 自动确认，不挂起）
 function confirm(question: string): Promise<boolean> {
   if (!process.stdin.isTTY) return Promise.resolve(true);
@@ -531,61 +422,32 @@ function confirm(question: string): Promise<boolean> {
 }
 
 async function main(): Promise<void> {
-  const args = parseArgs(process.argv);
+  // === v1.1.0 deprecation shim ===
+  // 在 args 解析之后、主 switch 分支之前，拦截已迁移的子命令
+  const rawArgs = process.argv.slice(2);
 
-  // --skillopt-run 模式：SkillOpt 自动优化管道（P0-7）
-  // 就地演化模型：runSkillOpt 内部调用 `skillopt-sleep run --target-skill-path <input> --auto-adopt`，
-  // 演化后文件即 input 本身；编排层先备份、再演化、再对比备份验证、不达标则回滚。
-  if (process.argv[2] === 'skillopt-run') {
-    const { runSkillOpt, validateCandidate } = await import('./skillopt-integration');
-    const argsArr = process.argv.slice(3);
-    const inputIdx = argsArr.indexOf('--input');
-    const outputIdx = argsArr.indexOf('--output');
-    const inputPath: string | undefined = inputIdx >= 0 ? argsArr[inputIdx + 1] : undefined;
-    // --output 在早期 flat 契约中用于指定候选输出路径；就地演化模型下已废弃（runSkillOpt 忽略）。
-    let outputPath = '/tmp/skillopt-candidate.md';
-    if (outputIdx >= 0 && argsArr[outputIdx + 1]) {
-      outputPath = argsArr[outputIdx + 1] as string;
-    }
-    const scoringIdx = argsArr.indexOf('--scoring');
-    const scoringPath: string | undefined = scoringIdx >= 0 ? argsArr[scoringIdx + 1] : undefined;
-
-    if (!inputPath) {
-      console.error('用法: sofagent-audit skillopt-run --input <SKILL.md路径> [--scoring <eval.md路径>]');
-      process.exit(1);
-    }
-
-    if (!existsSync(inputPath)) {
-      console.error(`❌ 输入文件不存在: ${inputPath}`);
-      process.exit(1);
-    }
-
-    // 1. 演化前先备份原始文件（用于回滚 / 对比基线）
-    const backupPath = inputPath + '.bak.' + Date.now();
-    copyFileSync(inputPath, backupPath);
-
-    // 2. 就地演化（runSkillOpt 内部用 --auto-adopt 把候选写回 inputPath）
-    const result = runSkillOpt(inputPath, outputPath, scoringPath);
-    if (!result.success) {
-      // 运行失败：inputPath 未被修改，删除无用备份，退出非零。
-      try { unlinkSync(backupPath); } catch { /* 忽略 */ }
-      console.error(`❌ SkillOpt 运行失败: ${result.error}`);
-      process.exit(1);
-    }
-
-    // 3. 验证演化后文件 vs 原始备份
-    const validation = validateCandidate(inputPath, backupPath);
-    if (!validation.canReplace) {
-      // 回滚：用备份覆盖（inputPath 即演化后文件），保留备份供人工检视。
-      copyFileSync(backupPath, inputPath);
-      console.log(`⚠️ 候选 Skill 未通过验证: ${validation.reason}。已回滚至原始版本（备份: ${backupPath}）。`);
-      process.exit(0);
-    }
-
-    // 4. 通过验证：保留就地演化结果（runSkillOpt 已写回 inputPath，无需再 copyFileSync）
-    console.log(`✅ Skill 自动优化完成: ${inputPath}（备份: ${backupPath}，提升: ${validation.scoreDiff?.toFixed(1) || 'N/A'} 分）`);
+  // compose → sofagent-orchestrator
+  if (rawArgs.includes('compose')) {
+    console.error('⚠️  "sofagent-audit compose" 已迁移到 "sofagent-orchestrator compose"（v1.1.0）。将在 v1.2.0 移除此兼容入口。');
+    execFileSync('sofagent-orchestrator', process.argv.slice(3), { stdio: 'inherit' });
     process.exit(0);
   }
+
+  // doctor → sofagent-core
+  if (rawArgs.includes('--doctor')) {
+    console.error('⚠️  "sofagent-audit --doctor" 已迁移到 "sofagent-core --doctor"（v1.1.0）。将在 v1.2.0 移除此兼容入口。');
+    execFileSync('sofagent-core', process.argv.slice(2).map(a => a === '--doctor' ? 'doctor' : a), { stdio: 'inherit' });
+    process.exit(0);
+  }
+
+  // verify → sofagent-core
+  if (rawArgs.includes('verify')) {
+    console.error('⚠️  "sofagent-audit verify" 已迁移到 "sofagent-core verify"（v1.1.0）。将在 v1.2.0 移除此兼容入口。');
+    execFileSync('sofagent-core', process.argv.slice(2), { stdio: 'inherit' });
+    process.exit(0);
+  }
+
+  const args = parseArgs(process.argv);
 
   // --mcp 模式：MCP Server 已拆分为独立包 @sofagent/mcp
   if (args.mcp) {
@@ -614,91 +476,9 @@ async function main(): Promise<void> {
     return;
   }
 
-  // --doctor 模式：健康诊断
-  if (args.doctor) {
-    if (args.agents) {
-      // v1.0.9: Agent Dashboard 原型
-      const { runAgentDashboard } = await import('./commands/doctor');
-      runAgentDashboard();
-      return;
-    }
-    const { runDoctor } = await import('./commands/doctor');
-    runDoctor();
-    return;
-  }
-
-  // compose 子命令（v1.0.9 新增）
-  if (args.composeTask !== undefined) {
-    if (!args.composeTask) {
-      console.error('用法: sofagent-audit compose --task "任务描述" [--agent <agent>] [--run]');
-      process.exit(1);
-    }
-    try {
-      const { composeWithDeepAgents } = await import('./subagents/composer');
-      const yaml = await composeWithDeepAgents(args.composeTask);
-      if (yaml) {
-        process.stdout.write(yaml);
-        process.stdout.write('\n');
-        process.exit(0);
-      } else {
-        process.stderr.write('❌ 编排方案生成失败——DeepAgents 不可用。\n');
-        process.exit(2);
-      }
-    } catch (err) {
-      process.stderr.write(`❌ compose 执行失败: ${(err as Error).message}\n`);
-      process.exit(2);
-    }
-    return;
-  }
-
-  // subagent 子命令（v1.0.9 新增）
-  if (args.subagentName) {
-    if (!args.subagentTask) {
-      console.error('用法: sofagent-audit subagent run <name> --task "任务描述" [--mode deploy|sustain]');
-      console.error('预装 Sub Agent: fde, audit');
-      process.exit(1);
-    }
-    try {
-      const { listAgents } = await import('./subagents/registry');
-      const agents = listAgents('.sofagent');
-      const agent = agents.find(a => a.name === args.subagentName);
-      if (!agent) {
-        console.error(`未找到 Sub Agent: ${args.subagentName}`);
-        console.error(`可用: ${agents.map(a => a.name).join(', ')}`);
-        process.exit(1);
-      }
-      // v1.0.9: 传入 mode 参数
-      const { spawnSubAgent } = await import('./subagents/launcher');
-      const result = await spawnSubAgent(agent, args.subagentTask!, args.subagentMode);
-      process.stdout.write(result);
-      process.stdout.write('\n');
-      process.exit(0);
-    } catch (err) {
-      process.stderr.write(`❌ subagent 执行失败: ${(err as Error).message}\n`);
-      process.exit(2);
-    }
-    return;
-  }
-
-  // hub 子命令
-  if (args.hubCommand) {
-    if (args.hubCommand === 'list') {
-      const { listHubTemplates } = await import('./commands/hub');
-      listHubTemplates();
-      return;
-    }
-    if (args.hubCommand === 'deploy' && args.hubTemplate) {
-      const { hubDeploy } = await import('./commands/hub');
-      await hubDeploy(args.hubTemplate, { interactive: true });
-      return;
-    }
-    console.error(`❌ hub 命令用法: sofagent hub list | sofagent hub deploy <模板名>`);
-    process.exit(1);
-  }
-
-  // ontology 子命令（v1.0.9 新增）
+  // ontology 子命令（v1.0.9 新增，v1.1.0 改用 @sofagent/ontology）
   if (args.ontologyCommand === 'view') {
-    const { generateOntologyView } = await import('./ontology/ontology-view');
+    const { generateOntologyView } = await import('@sofagent/ontology');
     try {
       const output = generateOntologyView(process.cwd());
       process.stdout.write(output);
@@ -713,60 +493,6 @@ async function main(): Promise<void> {
   // --timeline 模式：快照时间线（v1.0.9 新增）
   if (args.timeline) {
     printTimeline(args.timelineLimit || 20, args.timelineJson || false);
-    return;
-  }
-
-  // --daemon start：启动文件系统监控 daemon（v1.0.9 新增）
-  if (args.daemonCommand === 'start') {
-    const { startWatching } = await import('./daemon/fs-watch');
-    const { loadWatchConfig } = await import('./config/watch-config');
-    const projectDir = process.cwd();
-    const watchConfig = loadWatchConfig(projectDir);
-    console.log('sofagent daemon · 文件系统监控');
-    console.log(`  监控路径: ${watchConfig.paths.join(', ') || '(默认: 当前目录)'}`);
-    console.log(`  防抖: ${watchConfig.debounceMs ?? 5000}ms`);
-    console.log('');
-    console.log('  Daemon 已启动。按 Ctrl+C 停止。');
-
-    // 启动定时任务（v1.0.9：cron 调度 Sub Agent 巡检）
-    const { startCron } = await import('./daemon/cron');
-    startCron(projectDir);
-
-    const fs = await import('fs');
-    const noticePath = join(projectDir, '.sofagent', 'daemon-notice.md');
-    startWatching(projectDir, async (changedFiles) => {
-      const time = new Date().toISOString();
-      const lines = [
-        `- [${time}] 检测到文件变更`,
-        ...changedFiles.map(f => `  - ${f}`),
-      ];
-      console.log(lines.join('\n'));
-
-      // v1.0.9 修复(F1)：此前回调只打印日志 + 写 notice，从不调用审计规则，
-      // 导致 A16/A17 在文件系统模式下完全不生效。现在真正跑审计并写历史。
-      try {
-        const diffFilesForPrint: DiffFile[] = changedFiles.map((p) => ({ path: p, status: 'modified', lines: [] }));
-        const results = runFilesystemAudit(changedFiles, projectDir);
-        // 输出审计结果（printResults 定义在 index.ts 内，同模块可直接调用）
-        printResults(results, diffFilesForPrint, false, false);
-        // 写入 daemon-notice.md 作心跳（已审计结论）
-        try {
-          fs.appendFileSync(noticePath,
-            `- [${time}] ${changedFiles.length} 个文件变更，审计完成（exit ${results.exitCode}）\n`, 'utf-8');
-        } catch {
-          // 写入失败不影响监控
-        }
-      } catch (err) {
-        console.error('[daemon] 审计执行失败:', (err as Error).message);
-        // 心跳仍记录失败，不丢变更信号
-        try {
-          fs.appendFileSync(noticePath,
-            `- [${time}] 审计执行失败: ${(err as Error).message}\n`, 'utf-8');
-        } catch {
-          // ignore
-        }
-      }
-    });
     return;
   }
 
@@ -828,75 +554,6 @@ async function main(): Promise<void> {
     return;
   }
 
-  // --eval 模式：eval harness 评测
-  if (args.eval) {
-    const { runEval } = await import('./eval/eval-runner');
-    const { printEvalReport } = await import('./eval/eval-reporter');
-    try {
-      const result = await runEval({ goldenSetPath: args.eval, verbose: true });
-      printEvalReport(result);
-    } catch (err) {
-      console.error(`❌ eval 运行失败: ${(err as Error).message}`);
-      process.exit(1);
-    }
-    return;
-  }
-
-  // --ab-test 模式：Sub Agent A/B 测试
-  if (args.abTest) {
-    const { runABTest } = await import('./ab-testing/ab-runner');
-    const { decidePromotion } = await import('./ab-testing/ab-promoter');
-    const { DEFAULT_SCORE_WEIGHTS } = await import('./ab-testing/types');
-    const yl = await import('js-yaml');
-    const fsMod = await import('fs');
-
-    try {
-      // 加载 A/B 配置
-      if (!fsMod.existsSync(args.abTest)) {
-        console.error(`❌ A/B 配置文件不存在: ${args.abTest}`);
-        process.exit(1);
-      }
-      const abConfigRaw = yl.load(fsMod.readFileSync(args.abTest, 'utf-8')) as Record<string, unknown>;
-      const config = {
-        current: String(abConfigRaw['current'] ?? ''),
-        candidate: String(abConfigRaw['candidate'] ?? ''),
-        evalSet: String(abConfigRaw['evalSet'] ?? ''),
-        promoteThreshold: Number(abConfigRaw['promoteThreshold'] ?? 2),
-        minSampleSize: Number(abConfigRaw['minSampleSize'] ?? 10),
-        scoreWeights: {
-          exactMatch: Number((abConfigRaw['scoreWeights'] as Record<string, number>)?.exactMatch ?? 0.5),
-          semanticSimilarity: Number((abConfigRaw['scoreWeights'] as Record<string, number>)?.semanticSimilarity ?? 0.2),
-          ruleCompliance: Number((abConfigRaw['scoreWeights'] as Record<string, number>)?.ruleCompliance ?? 0.3),
-        },
-      };
-
-      // 加载 test cases
-      const testCasesRaw = yl.load(fsMod.readFileSync(config.evalSet, 'utf-8')) as Array<Record<string, unknown>>;
-      const typedCases = testCasesRaw.map((tc) => ({
-        id: String(tc['id'] ?? ''),
-        description: String(tc['description'] ?? ''),
-        input: tc['input'] as Record<string, unknown>,
-        expected: tc['expected'] as Record<string, unknown>,
-        tags: tc['tags'] as string[] | undefined,
-      }));
-
-      const result = await runABTest(config, typedCases);
-      console.log(`A/B 测试结果:`);
-      console.log(`  current:  ${(result.currentScore.overall * 100).toFixed(1)}%`);
-      console.log(`  candidate: ${(result.candidateScore.overall * 100).toFixed(1)}%`);
-      console.log(`  胜出方: ${result.winner}`);
-      console.log(`  连续胜出: ${result.consecutiveWins}`);
-      console.log(`  分差: ${(result.margin * 100).toFixed(1)}%`);
-
-      const decision = decidePromotion(result, [], config);
-      console.log(`  晋升: ${decision.shouldPromote ? '✅ 是' : '❌ 否'} — ${decision.reason}`);
-    } catch (err) {
-      console.error(`❌ A/B 测试运行失败: ${(err as Error).message}`);
-      process.exit(1);
-    }
-    return;
-  }
-
   // 1. 检查 git 仓库
   if (!isInGitRepo()) {
     if (args.json) {
@@ -924,7 +581,7 @@ async function main(): Promise<void> {
 
   // 3. 读取 commit message（优先级：--task 参数 > COMMIT_EDITMSG > git log > 空）
   let commitMsg = args.task || '';
-  
+
   if (!commitMsg) {
     try {
       const gitDirResult = execFileSync('git', ['rev-parse', '--git-dir'], { encoding: 'utf-8' }).trim();
@@ -1016,15 +673,8 @@ async function main(): Promise<void> {
     process.stderr.write('[sofagent-audit] 警告: 审计历史写入失败，跳过（不影响审计结果）\n');
   }
 
-  // 9. 自动生成 think.md（方案 A：基于 git diff 硬证据）
-  if (diffFiles.length > 0) {
-    try {
-      generateThinkEntry(diffFiles, results, args.task);
-    } catch {
-      // think 生成失败不影响审计结果
-      process.stderr.write('[sofagent-audit] 警告: think.md 反思生成失败，跳过（不影响审计结果）\n');
-    }
-  }
+  // v1.1.0: generateThinkEntry 已迁移到 @sofagent/core，think.md 生成由 core 包负责
+  // 此处不再生成 think.md
 
   process.exit(results.exitCode);
 }
