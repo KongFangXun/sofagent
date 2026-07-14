@@ -62,7 +62,7 @@ describe('parseDiff', () => {
   it('有变更时返回 DiffFile 数组', () => {
     fs.writeFileSync(path.join(tmpDir, 'src.ts'), 'const x = 1;\n');
     execSync('git add src.ts && git commit -m "add src"', { cwd: tmpDir });
-    const files = parseDiff('HEAD~1..HEAD');
+    const files = parseDiff('HEAD~1..HEAD', tmpDir);
     expect(files.length).toBeGreaterThan(0);
     const file = files[0]!;
     expect(file.path).toBeTruthy();
@@ -74,7 +74,7 @@ describe('parseDiff', () => {
     fs.writeFileSync(path.join(tmpDir, 'a.ts'), 'a');
     fs.writeFileSync(path.join(tmpDir, 'b.ts'), 'b');
     execSync('git add . && git commit -m "add files"', { cwd: tmpDir });
-    const files = parseDiff('HEAD~1..HEAD');
+    const files = parseDiff('HEAD~1..HEAD', tmpDir);
     expect(files.length).toBeGreaterThanOrEqual(1);
     // 所有返回的 file 都有有效 path
     for (const f of files) {

@@ -25,10 +25,11 @@ export interface NumstatEntry {
 /**
  * 判断当前工作目录是否在 git 仓库内
  */
-export function isInGitRepo(): boolean {
+export function isInGitRepo(cwd?: string): boolean {
   try {
     execFileSync('git', ['rev-parse', '--is-inside-work-tree'], {
       encoding: 'utf-8',
+      cwd,
       stdio: ['pipe', 'pipe', 'pipe'], // 静默 stderr
     });
     return true;
@@ -59,7 +60,7 @@ function isGitHelpText(output: string): boolean {
 /**
  * 解析 git diff 指定范围的文件变更
  */
-export function parseDiff(range: string): DiffFile[] {
+export function parseDiff(range: string, cwd?: string): DiffFile[] {
   const files: DiffFile[] = [];
 
   // 参数格式校验：range 只允许 [a-zA-Z0-9~^.\-] 字符，防止命令注入和 git flag 注入
@@ -71,7 +72,7 @@ export function parseDiff(range: string): DiffFile[] {
   }
 
   // 非 git 仓库检测——给用户明确的错误提示
-  if (!isInGitRepo()) {
+  if (!isInGitRepo(cwd)) {
     console.error('错误：当前目录不在 git 仓库内。sofagent-audit 需要 git 仓库才能运行。');
     return files;
   }
@@ -84,6 +85,7 @@ export function parseDiff(range: string): DiffFile[] {
       try {
         execFileSync('git', ['rev-parse', '--verify', refToVerify], {
           encoding: 'utf-8',
+          cwd,
           stdio: ['pipe', 'pipe', 'pipe'],
         });
       } catch {
@@ -96,6 +98,7 @@ export function parseDiff(range: string): DiffFile[] {
     // v1.0.5: 加 --find-renames 避免重命名+修改文件漏检
     const output = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', '--find-renames', '--name-status', range], {
       encoding: 'utf-8',
+      cwd,
       maxBuffer: 10 * 1024 * 1024,
     });
 
@@ -149,6 +152,7 @@ export function parseDiff(range: string): DiffFile[] {
         try {
           const diffContent = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', range, '--', path], {
             encoding: 'utf-8',
+            cwd,
             maxBuffer: 5 * 1024 * 1024,
           });
           diffLines = diffContent.split('\n');
