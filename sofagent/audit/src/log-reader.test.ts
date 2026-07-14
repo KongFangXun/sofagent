@@ -4,7 +4,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { MarkdownLogReader, JSONLLogReader, pickLogReader } from './log-reader';
+import { MarkdownLogReader, JSONLLogReader, pickLogReader } from '@sofagent/core';
 
 describe('LogFormat 可插拔', () => {
   describe('pickLogReader', () => {

@@ -6,7 +6,7 @@
 >
 > v1.0.9 · 2026-07-13（UTC）· 孔放勋
 
-> 💡 **行业背景**：sofagent 是 Agent Harness 中间件——五个引擎覆盖约束·审计·回溯·编排·进化全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立的底线守卫层。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](../FDE/FDE.md)。
+> 💡 **行业背景**：sofagent 是 Agent Harness 中间件——一底座四引擎覆盖约束·编排·审计·回溯·进化全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立的底线守卫层。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](../FDE/FDE.md)。
 
 ---
 

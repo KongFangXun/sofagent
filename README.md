@@ -15,7 +15,7 @@
 
 <p align="center" style="color:#64748B;font-size:14px;">
   Agent Harness 中间件<br/>
-  约束 · 审计 · 回溯 · 编排 · 进化：管住 Agent 从部署到持续优化的全生命周期
+  约束 · 编排 · 审计 · 回溯 · 进化：管住 Agent 从部署到持续优化的全生命周期
 </p>
 
 <p align="center">

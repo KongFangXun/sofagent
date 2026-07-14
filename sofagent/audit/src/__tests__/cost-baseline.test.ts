@@ -4,7 +4,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { calculateBaseline, isAnomaly, isColdStart, type Baseline } from '../cost-baseline';
+import { calculateBaseline, isAnomaly, isColdStart, type Baseline } from '@sofagent/core';
 
 describe('isAnomaly', () => {
   const baseline: Baseline = { mean: 1000, stddev: 200, sampleCount: 20 };
