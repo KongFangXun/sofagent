@@ -46,7 +46,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 约束层配置：改写 fde.md（企业专属规则）→ 配置 config.yml → knowledge-domain include/exclude
 
-## 持续优化模式（sustain · v1.1.9）
+## 持续优化模式（sustain · v1.1.0）
 
 `sustain` 模式下 FDE 作为基础设施 Agent 与 Audit 平级：
 - 读取 audit 报告趋势（权重最高）→ think.md 反思趋势 → scoring 数据
