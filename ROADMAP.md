@@ -10,7 +10,7 @@
 
 ## 现在在哪：v1.0.9 ✅（已发版）
 
-> 二进制文件审计（A16 非授权变更 + A17 异常批量变更）+ `--timeline` 快照时间线 + `--revert` 回滚 + MCP compose tool + daemon 审计闭环 + cron 定时 FDE 巡检 + A9 中文注入检测 + EvidenceMode `'filesystem'` 扩展。531 测试全绿，acceptance-test 35/35 全绿，pre-push 7/7 全绿。
+> 二进制文件审计（A16 非授权变更 + A17 异常批量变更）+ `--timeline` 快照时间线 + `--revert` 回滚 + MCP compose tool + daemon 审计闭环 + cron 定时 FDE 巡检 + A9 中文注入检测 + EvidenceMode `'filesystem'` 扩展。417 测试全绿，acceptance-test 35/35 全绿，pre-push 7/7 全绿。
 >
 > 📖 [开发日志](./docs/changelog/v1.0.9.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 

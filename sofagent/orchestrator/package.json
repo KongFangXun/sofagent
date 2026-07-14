@@ -16,7 +16,6 @@
     "deepagents": "^1.10.7",
     "js-yaml": "^5.2.0",
     "@sofagent/harness": "1.1.0",
-    "@sofagent/core": "1.1.0",
-    "@sofagent/audit": "1.1.0"
+    "@sofagent/core": "1.1.0"
   }
 }
