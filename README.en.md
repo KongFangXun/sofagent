@@ -28,11 +28,7 @@
 
 **The Gateway routes, sofagent governs — five engines, one system.**
 
-- 🧭 **Constraint Base**: Set rules before agents run — what's allowed, what's forbidden
-- 🔍 **Audit Engine**: 19 rules, git diff hard evidence, 0 token cost
-- 🔄 **Restore Engine**: Auto-snapshot after every audit, one-click rollback
-- ⚙️ **Orchestration Engine**: Decompose tasks, parallel Sub Agents, A/B auto-optimize
-- 🧬 **Evolution Engine**: FDE weekly inspection → detect degradation → auto-optimize
+🧭 Constraint Base · 🔍 Audit Engine · 🔄 Restore Engine · ⚙️ Orchestration · 🧬 Evolution
 
 ---
 
