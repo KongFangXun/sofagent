@@ -10,7 +10,7 @@
 
 <p align="center">
   <strong>sofa + agent = sofagent / 沙发特工</strong><br/>
-  <em>做的不是帮企业「接上 AI」——是帮企业「用对 AI」。</em>
+  <em>不是帮企业「接上 AI」，是帮企业「用对 AI」。</em>
 </p>
 
 <p align="center" style="color:#64748B;font-size:14px;">
@@ -89,6 +89,8 @@ graph LR
 | 🔄 **自动执行** | AI 全权执行，自动跑完整个流程 | 看审计报告、定期抽查 | 五引擎全开：约束定红线→编排拆任务→审计盯变更→回溯保回滚→进化周度优化 |
 
 FDE 交付完就撤离，AI 节点留在企业自己跑。
+
+> 📖 完整 FDE 工作流程见 [FDE/FDE.md](./FDE/FDE.md)
 
 ### 一底座四引擎
 
@@ -250,7 +252,7 @@ sofagent 支持两种节点类型，按需选择：
 | 已知局限 | [LIMITATIONS](./LIMITATIONS.md) |
 | 版本路线图 | [ROADMAP](./ROADMAP.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
-| 企业部署（FDE 工具包 + Workflow Hub 模板） | [FDE/](./FDE/) \| [Workflow Hub](./workflow-hub/) |
+| 企业部署（FDE 工具包 + Workflow 模板） | [FDE/](./FDE/) \| [Workflow Hub](./workflow-hub/) |
 
 ---
 

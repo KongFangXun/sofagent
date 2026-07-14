@@ -10,12 +10,12 @@
 
 <p align="center">
   <strong>sofa + agent = sofagent / 沙发特工</strong><br/>
-  <em>We don't just "connect AI" — we help businesses "use AI right."</em>
+  <em>It's not about connecting businesses to AI — it's about helping them use AI right.</em>
 </p>
 
 <p align="center" style="color:#64748B;font-size:14px;">
   Agent Harness Middleware<br/>
-  Constrain · Audit · Restore · Orchestrate · Evolve — full Agent lifecycle governance
+  FDE toolkit for SMEs and OPCs
 </p>
 
 <p align="center">
@@ -90,13 +90,15 @@ Step 2 is the key — not every step should be fully automated:
 
 No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep running.
 
+> 📖 Full FDE workflow: [FDE/FDE.md](./FDE/FDE.md)
+
 ### 1 base + 4 engines
 
 > 💡 **sofagent and Gateway**: Enterprise AI can't ship without a Gateway (unified entry/routing/orchestration/sessions).
 > OpenClaw/DeepAgents IS your Gateway. sofagent doesn't replace it — it layers on top for governance.
 > **The Gateway is the highway. sofagent is the traffic rules + speed cameras + driving coach.**
 
-> 🔮 **v1.1.0 preview**: Package purity refactor — audit just audits, 10 other packages go independent.
+> 🔮 **v1.1.0 preview**: Package purity refactor — audit just audits, 10 other packages go independent. Existing `npm install -g @sofagent/audit` users migrate seamlessly.
 
 #### 🧭 Constraint Base
 
@@ -111,6 +113,22 @@ graph LR
 ```
 
 Four-layer loading chain auto-injects on session start. Any platform — OpenClaw via Hook enforcement, other platforms via Agent Read. v1.0.7+ Sub Agents self-load constraints at startup (`buildConstrainedSystemPrompt`).
+
+#### ⚙️ Orchestration engine
+
+Decomposes large tasks, runs Sub Agents in parallel, compares A/B results for better approaches. FDE generates the workflow on onboarding; nodes run autonomously after that.
+
+```mermaid
+graph LR
+    A[Task received] --> B[DeepAgents<br/>Decompose + match template]
+    B --> C[Sub Agents<br/>parallel execution]
+    C --> D[Multi-dimension scoring]
+    D --> E{A/B compare}
+    E -->|New better| F[Auto-switch]
+    E -->|Old better| G[Keep]
+```
+
+Powered by DeepAgents (v1.0.7, ao fully retired). `sofagent-audit compose --task` CLI entry — **any Agent platform can use the orchestration engine**. See [ROADMAP](./ROADMAP.md).
 
 #### 🔍 Audit engine
 
@@ -128,9 +146,9 @@ graph LR
     G --> A
 ```
 
-Doesn't trust the agent — trusts git diff hard evidence. Developers install a commit-msg hook for code audits. **v1.0.8+ adds filesystem audit** — embedded isomorphic-git + daemon file monitoring means non-developers get audited too.
+Doesn't trust the agent — trusts git diff hard evidence. **0 token cost — pure regex engine, no LLM calls.** Core rules inspect git diff only, no agent cooperation needed. v1.0.8+ adds filesystem audit via embedded isomorphic-git + daemon, covering non-developers too.
 
-> v1.1.0 splits audit into standalone `@sofagent/audit` package.
+> v1.1.0 splits audit into standalone `@sofagent/audit` package. v1.0.8+ embeds isomorphic-git + daemon file monitoring — no git commit needed for non-developers.
 
 #### 🔄 Restore engine
 
@@ -149,22 +167,6 @@ sofagent-audit --revert <SHA>      # Rollback to any snapshot
 ```
 
 sofagent is a **dashcam**, not a security checkpoint — post-hoc audit + restore, platform-agnostic.
-
-#### ⚙️ Orchestration engine
-
-Decomposes large tasks, runs Sub Agents in parallel, compares A/B results for better approaches. FDE generates the workflow on onboarding; nodes run autonomously after that.
-
-```mermaid
-graph LR
-    A[Task received] --> B[DeepAgents<br/>Decompose + match template]
-    B --> C[Sub Agents<br/>parallel execution]
-    C --> D[Multi-dimension scoring]
-    D --> E{A/B compare}
-    E -->|New better| F[Auto-switch]
-    E -->|Old better| G[Keep]
-```
-
-Powered by DeepAgents (v1.0.7, ao fully retired). `sofagent-audit compose --task` CLI entry — **any Agent platform can use the orchestration engine**. See [ROADMAP](./ROADMAP.md).
 
 #### 🧬 Evolution engine (v1.0.8+)
 
@@ -223,6 +225,14 @@ Install and run — no dependency on agent compliance:
 
 ---
 
+---
+## Built-in Agents (v1.0.8)
+
+| Agent | How to invoke | When it auto-triggers |
+|------|------|------|
+| **FDE Deployment Engineer** | `@sofagent-fde` | Suggests follow-up inspection after deployment |
+| **Compliance Auditor** | `@sofagent-audit` | Every commit / FDE deployment / LOOP task completion |
+
 ## Which do you need?
 
 | Your scenario | Use |
@@ -230,6 +240,8 @@ Install and run — no dependency on agent compliance:
 | Just block secret leaks | `npm install -g @sofagent/audit` is enough |
 | Full agent behavior management | Audit engine + harness base (install.sh) |
 | Automatic task orchestration | + orchestration engine (DeepAgents Sub Agent) |
+
+> ⚠️ **Current version (v1.0.9) coverage**: Developer roles (git commit audit) + non-developer roles (filesystem audit) — full coverage.
 
 ### Dual-node deployment (v1.0.7+)
 
@@ -239,6 +251,8 @@ sofagent supports two node types:
 |---------|--------|:--:|------|------|
 | **Auto-running node** | Enterprise unattended devices | ✅ Required | OpenClaw API | Hook injection |
 | **Personal enhancement node** | Individual developers (WorkBuddy/Codex/Claude Code) | ❌ Not needed | `sofagent-audit compose --task` CLI | Sub Agent self-load |
+
+> v1.0.7 Sub Agent constraint self-loading (`buildConstrainedSystemPrompt`) makes constraints platform-independent — Sub Agents read `.sofagent/` files at startup. Change your Agent platform, constraints stay.
 
 ---
 
@@ -252,7 +266,7 @@ sofagent supports two node types:
 | Known limitations | [LIMITATIONS](./LIMITATIONS.md) |
 | Roadmap | [ROADMAP](./ROADMAP.md) |
 | Contributing | [CONTRIBUTING](./CONTRIBUTING.md) |
-| Enterprise deploy (FDE + Workflow Hub) | [FDE/](./FDE/) \| [Workflow Hub](./workflow-hub/) |
+| Enterprise deploy (FDE + Workflow) | [FDE/](./FDE/) \| [Workflow Hub](./workflow-hub/) |
 
 ---
 
