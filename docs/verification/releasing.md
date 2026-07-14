@@ -367,6 +367,8 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
 ```
 ── Step 1: 手动发布 npm 双包 ──
 🔴 publish 前必须 build——npm publish 上传的是 dist/ 目录，如果不 build 直接 publish，npm 上是旧 dist
+🔴 v1.0.9 教训：npm install -g 可能因残留临时目录（`.audit-XXXXXX`）报 ENOTEMPTY。
+   遇到时：rm -rf 全局 node_modules/@sofagent/.audit-* 残留目录后重试
 
 1. cd sofagent/audit && npm run build && npm publish --access public
 2. cd ../mcp && npm publish --access public（mcp 依赖 audit，audit 已 publish 到 registry）
@@ -421,10 +423,13 @@ cd ../mcp && npx tsc --noEmit && echo "mcp tsc: OK"
    - **不含**审查元信息（模型名、审查轮次、P0/P1 标签）——那是内部过程
 
 ── Step 3: Skill 分发 + 本机升级 ──
+🔴 v1.0.9 教训：skillhub CLI 语法与 clawhub 不同——`skillhub publish <path> --version X`（无 `skill` 子命令，无 --slug/--owner）
+🔴 v1.0.9 教训：FDE 发布到 ClawHub 时 slug "fde" 冲突——必须用 --slug sofagent-fde
+
 7. clawhub skill publish ./sofagent/skill --slug sofagent --owner KongFangXun
-8. skillhub skill publish ./sofagent/skill --slug sofagent --owner KongFangXun
-9. clawhub skill publish ./FDE --owner KongFangXun
-10. skillhub skill publish ./FDE --owner KongFangXun
+8. skillhub publish ./sofagent/skill --version vX.Y.Z
+9. clawhub skill publish ./FDE --slug sofagent-fde --owner KongFangXun
+10. skillhub publish ./FDE --version vX.Y.Z
 11. **🔴 本机全局升级**（v1.0.7 教训——忘了更新本机安装，导致 QA 测试时跑的是旧版本）：
     npm install -g @sofagent/audit@latest
     sofagent-audit --version                    # 验证版本号
@@ -479,6 +484,11 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | .js.map 泄露 | `npm pack --dry-run` 显示 .js.map | 检查 package.json `files` 是否包含排除模式 |
 | README 空白 | npm 页面无 README | 检查 package.json `files` 是否引用了不存在的 README.md |
 | npm publish 403 | `npm publish` E403 | 版本号已存在或 NPM_TOKEN 过期 |
+| npm ENOTEMPTY（v1.0.9） | `npm install -g` 报 ENOTEMPTY rename 失败 | 清理全局 `node_modules/@sofagent/.audit-*` 残留目录后重试 |
+| gh release TLS timeout（v1.0.9） | `gh release create` 报 TLS handshake timeout | 加 `--repo KongFangXun/sofagent` flag 重试 |
+| ClawHub slug 冲突（v1.0.9） | `clawhub skill publish ./FDE` 报 Ambiguous slug | 加 `--slug sofagent-fde` |
+| skillhub 语法错误（v1.0.9） | `skillhub skill publish` 报 invalid choice | skillhub 无 `skill` 子命令，直接 `skillhub publish <path> --version X` |
+| A9 测试文件误报（v1.0.9） | commit-msg hook 拦截：测试文件中的注入向量被误报 | A9 已在 v1.0.9+post-release 跳过 `.test.`/`__tests__/`/`.fixture`；旧版本用 `--no-verify` |
 | 全局二进制版本落后 | `sofagent-audit --version` 显示旧版本号 | npm registry 已更新但本地未重装。`npm install -g @sofagent/audit@latest` |
 
 ---
