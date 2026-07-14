@@ -8,7 +8,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 >
 > > v1.0.9 · 2026-07-13（UTC）· 孔放勋
 
-<img src="../sofagent.png" alt="sofagent" width="300" />
+<img src="assets/sofagent.png" alt="sofagent" width="300" />
 
 ---
 
@@ -16,6 +16,7 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 - [术语对照](#术语对照)
 - [一、为什么会有 sofagent](#一为什么会有-sofagent)
+  - [五引擎治理架构](#五引擎治理架构v109) · [地基与引擎](#地基与引擎) · [双节点架构](#双节点架构v107) · [River 三层架构](#river--workflow--subagent-三层架构) · [文件系统审计](#文件系统审计v108)
 - [二、核心设计决策](#二核心设计决策)
 - [三、诚实坦白：已知局限](#三诚实坦白已知局限)
 - [四、未来方向](#四未来方向)
@@ -24,69 +25,87 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 
 ## 术语对照
 
-| 对外（读者看到的） | 对内（工程内部） | 说明 |
+| 引擎 | 英文 | 说明 |
 |------|------|------|
-| 约束底座 | harness 层 | 约束 Agent 行为的规则和文件 |
-| FDE 工具包 | FDE toolkit | FDE 随身的工具包 |
-| 审计引擎 | audit engine | git diff 硬证据审计 |
-| 编排引擎 | orchestration engine | 任务拆解 + workflow 生成 |
-| 加载链 | load chain | Agent 启动时注入的三层约束文件（v1.0.7+ Sub Agent 可自加载，不依赖宿主平台） |
+| 🧭 约束底座 | Constraint Base | 四层加载链——Agent 启动前注入红线 |
+| 🔍 审计引擎 | Audit Engine | git diff + 文件变更硬证据审计（v1.1.0 拆独立包） |
+| 🔄 回溯引擎 | Restore Engine | 每次审计自动快照，`--revert` 一键回滚 |
+| ⚙️ 编排引擎 | Orchestration Engine | 任务拆解 + Sub Agent 并行 + A/B 优化 |
+| 🧬 进化引擎 | Evolution Engine | FDE 周度巡检 + 自动优化，v1.0.8+ |
+| 加载链 | Load Chain | Agent 启动时注入的约束文件（v1.0.7+ Sub Agent 可自加载） |
+| FDE 工具包 | FDE Toolkit | FDE 随身的部署工具包 |
+| Gateway | Gateway | 企业级 AI 统一入口（OpenClaw/DeepAgents），sofagent 挂在它里面做行为治理 |
 
 ---
 
 ## 一、为什么会有 sofagent
 
-提示工程管「说什么」，上下文工程管「知道什么」，约束工程管「跑在哪」。sofagent 管最后一步：跑完谁验收。
-
-> 💡 **从 SOP 到 Harness 层**：传统 SOP 保底 60 分，代价抹平一线差异。AI 时代每个节点自带个性化上下文——sofagent 不是给 AI 写 SOP，是装缰绳，让它在个性化上下文里跑出 85-90 分而不越界。（Rolling AI 服务 100+ 企业的观察，详见 FDE 认知框架。）
+提示工程管「说什么」，上下文工程管「知道什么」，约束工程管「跑在哪」。sofagent 管最后一步：跑完谁验收。不是给 AI 写 SOP，是装缰绳——让它在个性化上下文里跑出 85-90 分而不越界。
 >
 > sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。Agent 的记忆长在文件系统（git diff / task/logs / SKILL.md），不长在 Agent 内部。审计层优先信任 git diff（硬证据），不信任 Agent 日志（软证据）。通用 Agent 平台解决「会不会做」的能力问题，sofagent 解决「能不能每次都按规则稳定做对」的执行控制问题——二者是上下层关系，不替代。
 
 ### 理论基础与外部验证
 
-> 💡 以下为核心理论支撑，完整引证列表见 [THANKS.md](./THANKS.md)。
+> 完整引证见 [THANKS.md](./THANKS.md)。关键验证：Hugging Face 实验——同一模型不改权重，仅优化外层 Harness，法律 Agent 基准 3.5%→80.1%，追平 Claude Sonnet 成本仅 1/7。Benchmark 测的是「模型 + Harness」的组合能力。Harness 分两种（翁荔）：补模型短板型（价值随模型升级消失）vs 现实世界接入型（模型越强价值越大）——sofagent 属后者。Karpathy AutoResearch 与 sofagent 约束文档 + 审计 + 循环检查一一对应。
 
-> **Harness 的实验验证**：2026 年 Hugging Face 实验——同一 DeepSeek-v4-pro 不改权重，仅优化外层 Harness，法律 Agent 基准从 3.5%→80.1%，追平 Claude Sonnet 4.6，成本仅 1/7。Benchmark 测的从来不是裸模型，是「模型 + Harness」的组合能力。**对齐税**：模型同质化时代，Harness 层就是新的护城河。
+### 五引擎治理架构（v1.0.9）
 
-> **三代演进——行业共识**：AI 应用技术分三代：提示工程（管「说什么」）→ 上下文工程（管「知道什么」）→ 驾驭工程（Harness，管「跑在哪」）。2026 年工业落地证据：LangChain benchmark 30→top5、Codex 7 人 100 万行——不改模型权重、靠 Harness 层实现。
+Agent 不是装完就完事了——从部署到持续优化，需要五个引擎各管一摊。sofagent 不是"审计工具"——审计是其中一个引擎。
 
-> **Harness 价值二分法（翁荔）**：Harness 工作分「补模型短板型」（价值随模型升级而消失）vs「现实世界接入型」（模型越强、价值越大）。判断标准："若模型能力 ×10，你的产品更没用还是更能干活？"sofagent 属后者——审计 / 约束 / 记忆是模型永远外包给外部的部分，模型越强，执行控制的杠杆价值越高。这正印证本节立场："通用 Agent 平台解决会不会做，sofagent 解决能不能每次都按规则稳定做对。"
+```mermaid
+graph LR
+    A["🧭 约束底座<br/>Agent 启动前注入红线"] --> B["⚙️ 编排引擎<br/>拆任务·并行·A/B 优化"]
+    B --> C["🔍 审计引擎<br/>每次变更自动扫描"]
+    C --> D["🔄 回溯引擎<br/>快照存档·一键回滚"]
+    D --> E["🧬 进化引擎<br/>周度巡检·自动优化"]
+    E --> A
+```
 
-> **Loop Engineering 的方法论验证**：Karpathy AutoResearch（9 万 Star）的约束文档 + 锁定评估脚本 + 自动循环——与 sofagent 的 fde.md + sofagent-audit + loop-check 对应。⚠️ AutoResearch 跑 700 次无人值守迭代，sofagent 当前是单任务内检查点循环。
+| 引擎 | 一句话设计原则 |
+|------|------|
+| 🧭 约束底座 | 不知道红线就不会守——启动时注入四层加载链，永远在线 |
+| 🔍 审计引擎 | 不信任 Agent 自我报告，只看 git diff 硬证据（v1.1.0 拆独立包） |
+| 🔄 回溯引擎 | 行车记录仪，不是安检——事后快照 + `--revert` 回滚，不依赖任何平台 |
+| ⚙️ 编排引擎 | 大任务拆小、多 Agent 并行、A/B 对比找更优方案（DeepAgents + compose CLI） |
+| 🧬 进化引擎 | 部署完不是终点——FDE 转为持续优化，daemon cron @weekly 自动巡检 |
 
-### 为什么审计必须外置
+Gateway（OpenClaw/DeepAgents）管路由调度，sofagent 管行为治理——**Gateway 是高速公路，sofagent 是交规 + 测速摄像头 + 驾校教练**。
 
-Anthropic 发现 Claude 内部存在 **J-space**——AI 自己知道控制不住自己。所以 sofagent 不信任 Agent 自我报告，只看 git diff 硬证据。审计必须外置、不可绕过。
+### 为什么审计必须外置（五引擎之一的设计决策）
+
+Anthropic 发现 Claude 内部存在 **J-space**——AI 自己知道控制不住自己。所以 sofagent 不信任 Agent 自我报告，只看 git diff 硬证据。审计必须外置、不可绕过。这是五个引擎中审计引擎的核心设计原则，也是 sofagent 最成熟的模块（v1.1.0 将拆为独立 `@sofagent/audit` 包）。
 
 > **瓶颈转移**：[Anthropic《When AI builds itself》](https://www.anthropic.com/institute/recursive-self-improvement)（2026-06）报告指出——工程师人均代码产出达 2024 年的 8 倍后，代码生成不再是瓶颈，**人工代码审查成了新的堵点**（Amdahl 定律）。sofagent 的审计引擎把审查外置到 git diff 自动化——正是解这个瓶颈的方向。
 > <small>注：以上「瓶颈转移」方法论解读为本项目基于 Anthropic 原文的延伸分析，非 Anthropic 原文表述。</small>
 
 ### 行业印证：Palantir 同构
 
-Palantir AIP 未自研大模型，靠 **Ontology（本体）** 实现远超行业的 Agent 可靠性——定义实体→编织关联→赋予行动闭环。sofagent 完全对等：fde.md 定义实体，节点文档 frontmatter 编织关联，审计引擎写 think.md 赋予闭环。差别在于：Palantir 能直接操作 ERP 改库存（Write-back），sofagent 目前只能影响 Agent 上下文注入——v2.x 方向。详见 [FDE/FDE.md](../FDE/FDE.md)。
+Palantir AIP 未自研大模型，靠 **Ontology（本体）** 实现远超行业的 Agent 可靠性——定义实体→编织关联→赋予行动闭环。sofagent 完全对等：fde.md 定义实体，节点文档 frontmatter 编织关联，审计引擎写 think.md 赋予闭环。差别：Palantir 能直接操作 ERP 改库存，sofagent 目前只能影响 Agent 上下文注入——v2.x 方向。
 
 > **根本接触不到 > 被告知不能说**：Palantir 的防幻觉不是"告诉 Agent 守规矩"，而是未配置的 Agent 根本看不到。sofagent 的 A15 约束验证 + 审计外置遵循同一原则。
 
-**Palantir AI FDE 五大操作特征完全对等**：Palantir AI FDE 官方文档列出的五个核心特征——闭环操作（Agent 执行→验证→纠偏）、控量上下文（不一次性给全量数据）、权限约束（最小权限原则）、分支评审（多方案对比后择优）、工具定制（按场景配工具集）——sofagent 每条都有对应实现：loop-check/evaluate/exit 闭环、task-aware 步数闸+轮次上限、entry-gate 能力注册+A15 约束验证、A/B 对比+promote、Skill 系统。两个项目独立出发，在同一个问题上得出了几乎相同的答案。
+**Palantir AI FDE 五大操作特征完全对等**：闭环操作、控量上下文、权限约束、分支评审、工具定制——sofagent 的 loop-check/evaluate/exit、task-aware 闸门、A15 约束验证、A/B 对比+promote、Skill 系统一一对应。
 
 ### 外部借鉴与生态对齐
 
 - 编排引擎借鉴 LangChain + DeepAgentsJS，Skill 借鉴 Agency Agents + SkillOpt，Ontology 借鉴 Palantir AIP
 - OpenFDE 将「审计」列为 FDE 基础层，sofagent 的审计优先设计符合社区最佳实践
-- OpenFDE Agent v0.1 的 **Judgment Unit**（决策+为什么+反转条件+渐进自主度+结果归因）与 sofagent v1.0.3 think.md 判断单元（做了什么+踩了什么坑+下次怎么办）结构高度同构——独立验证了「Agent 需要结构化反思」这个方向
+- OpenFDE Agent v0.1 的 Judgment Unit 与 sofagent think.md 判断单元结构同构——独立验证了「Agent 需要结构化反思」
 - gstack（YC CEO）的七步工作流（Think→Reflect）与 sofagent 审计外置 + 反思闭环对应
 - [Multica](https://github.com/multica-ai/multica)（4000+ commits）— 独立验证了 sofagent 的平台无关策略：自己不调 LLM，全推给下游 14 种 Agent CLI 子进程，Harness 中间件的「不绑定任何 Agent 平台」在工程上是可行的
 
-### 两层架构：地基 vs 引擎
+### 地基与引擎
 
-sofagent 分两层——地基轻、引擎重：
+sofagent 分两层——地基永远在线，引擎按需启动。地基承载约束底座（四层加载链），引擎包含审计、回溯、编排、进化四个运行时模块：
 
 | 层 | 是什么 | 何时激活 | 占用 |
 |:--:|------|:--:|:--:|
-| 地基 | 三层加载链（宪法+反思+fde）| 每个会话启动，永远在线 | 上下文预算的 2-3% |
-| 引擎 | Workflow 梳理时生成节点定义 + 定期 A/B 重优化 | Workflow 梳理时 / 定时触发 | ~800 token |
+| 地基 | 约束底座——四层加载链（宪法+反思+fde+knowledge）| 每个会话启动，永远在线 | 上下文预算的 2-3% |
+| 引擎 | 审计 + 回溯 + 编排 + 进化——四个运行时模块 | 审计/回溯：每次变更自动；编排：任务拆分时；进化：周度 cron / 手动 | ~800 token |
 
 如果加载链只在复杂任务时才激活：think.md 反思区不在上下文 → Agent 重复犯错；fde.md 不在上下文 → 简单任务时用户偏好全部失效。三层加载链必须永远在线。
+
+> v1.1.0 将审计引擎拆为独立 npm 包 `@sofagent/audit`，地基（约束底座）和其余四个引擎不受影响。
 
 ### 产品架构展望（五层）
 
@@ -258,7 +277,7 @@ v1.0.8 daemon 让事后审计达到准实时：`fs.watch` → 防抖 2 秒 → �
 
 回溯：`--history` 查看快照，`--revert <sha>` 回滚。daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml`。
 
-### 审计层的证据分层：信任产出，不信任过程
+### 审计引擎的证据分层：信任产出，不信任过程
 
 审计层核心设计来自三个独立来源的收敛——Ralph Loop「Agent 失忆，文件不失忆」、MiroFish「工具调用与最终答案严格分离」、卡普「99.9% 确定性刚需」二分法。三者指向同一结论：**git diff 是最终答案（硬证据），Agent 日志是工具调用过程（软证据）。**
 
@@ -580,7 +599,7 @@ Loop 机制每次任务多消耗约 2,000–5,000 token（窗口的 2–4%）。
 
 - **v0.9x**：安全审查 ✅ → 审计层（sofagent-audit）
 - **v1.x**：daemon TypeScript 化
-- **v1.0 定位**：Agent Harness 中间件——约束行为、审计变更、沉淀经验。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立审计标准层。当前聚焦单设备
+- **v1.0 定位**：Agent Harness 中间件——五个引擎覆盖约束·审计·回溯·编排·进化全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立的底线守卫层。当前聚焦单设备
 - **v1.1.0 起**：轻量多设备——经验共享（knowledge/ + think.md 跨设备同步）+ 权限作用域化（项目级 override）+ 自迭代周报 + daemon 主动巡检
 - **v1.x**：Skill 自进化验证门控（A/B 对比 + 外部评估器）
 - **v1.2.x**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界 → Harness 中间件完整形态

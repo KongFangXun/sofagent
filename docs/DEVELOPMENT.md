@@ -6,7 +6,7 @@
 >
 > v1.0.9 · 2026-07-13（UTC）· 孔放勋
 
-> 💡 **行业背景**：sofagent 是 Agent Harness 中间件——不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立审计标准层：约束行为、审计变更、沉淀经验。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](../FDE/FDE.md) 和 [README § FDE](../README.md#fde-怎么工作)。
+> 💡 **行业背景**：sofagent 是 Agent Harness 中间件——Gateway 管路由调度，sofagent 管审计约束。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立的底线守卫层：约束行为、审计变更、沉淀经验、持续优化。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](../FDE/FDE.md) 和 [README § FDE](../README.md#fde-怎么工作)。
 
 ---
 
@@ -39,7 +39,7 @@
 
 > 来源：Windows 11 + PowerShell 5.1 实地勘察（2026-06）。核心 9 坑：UTF-8 BOM / 控制台编码 / .gitattributes 换行 / if-表达式 / switch-break / 数组摊平 / WSLENV / BSD sed。详见 [PS5兼容踩坑清单](https://github.com/KongFangXun/sofagent/issues?q=label%3Awindows)。
 
-<img src="../sofagent.png" alt="sofagent" width="300" />
+<img src="../docs/assets/sofagent.png" alt="sofagent" width="300" />
 
 ---
 

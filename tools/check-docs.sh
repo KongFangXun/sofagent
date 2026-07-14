@@ -85,7 +85,7 @@ LIMIT_B=2000
 LIMIT_C=5000  # 审查体系随回归维度(219→247)与发版 SOP 扩充，给足缓冲
 LIMIT_D=500
 LIMIT_E=500
-LIMIT_TOTAL=5600  # v1.0.9: A16/A17 规则 + daemon 审计 + --timeline/--revert 命令文档自然增长
+LIMIT_TOTAL=6000  # v1.0.9: 五个引擎重构 + Gateway 定位 + A+B 预算扩容
 
 # 输出各层
 echo "  A 用户文档:     ${LAYER_A} 行 / ${LIMIT_A} 上限"
