@@ -80,12 +80,12 @@ LAYER_D=$(find ./docs/design -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 
 # 上限定义
-LIMIT_A=4000  # 用户文档随版本演进自然增长，给足缓冲（v1.0.8 Ontology 国标对齐 + 外部验证矩阵扩充）
+LIMIT_A=4500  # v1.1.0: 五个引擎重构 + ARCHITECTURE 叙事升级 + README 内容增长
 LIMIT_B=2000
 LIMIT_C=5000  # 审查体系随回归维度(219→247)与发版 SOP 扩充，给足缓冲
 LIMIT_D=500
 LIMIT_E=500
-LIMIT_TOTAL=6000  # v1.0.9: 五个引擎重构 + Gateway 定位 + A+B 预算扩容
+LIMIT_TOTAL=6200  # v1.1.0: A 层文档五个引擎重构导致自然增长
 
 # 输出各层
 echo "  A 用户文档:     ${LAYER_A} 行 / ${LIMIT_A} 上限"
