@@ -77,12 +77,11 @@ FDE does two things — map + identify, then the engines take over.
 ```mermaid
 graph LR
     1["1️⃣ Map workflows"] --> 2["2️⃣ Identify AI nodes"]
-
-    2 --> E["🧭 Constraint Base"]
-    E --> F["🔍 Audit Engine"] --> G["🔄 Restore Engine"] --> H["⚙️ Orchestration"] --> I["🧬 Evolution"]
-
+    2 --> H["⚙️ Orchestration"]
     H --> J["⚡ Augmented role<br/>AI assists, human decides"]
     H --> K["🔄 Auto-execute<br/>AI runs, human audits"]
+
+    2 --> E["🧭 Constraint Base"] --> F["🔍 Audit Engine"] --> G["🔄 Restore Engine"] --> I["🧬 Evolution"]
     G -.-> |rollback| E
 ```
 
