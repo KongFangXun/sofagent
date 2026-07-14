@@ -562,7 +562,7 @@ composeWithDeepAgents({
 
 ---
 
-### 场景 26b：内置 Sub Agent 注册与 CLI 调用（FDE + Audit · v1.1.9）
+### 场景 26b：内置 Sub Agent 注册与 CLI 调用（FDE + Audit · v1.1.0）
 
 > v1.0.8 新增：验证 `sofagent-fde` 和 `sofagent-audit` 两个内置 Agent 可从 CLI 正常调用。
 

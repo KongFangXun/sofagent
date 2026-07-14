@@ -12,7 +12,7 @@ scenarios: [想让 Agent 自动写代码并审查, 想让开发流程自动化, 
 not_when: [纯技术讨论, 不需要代码审查的任务, 单次简单查询]
 ---
 
-# sofagent-loop · SKILL.md · v1.1.9
+# sofagent-loop · SKILL.md · v1.1.0
 
 > 自迭代开发循环 Skill。装上后，一条 prompt 触发整套 LOOP：minimal-change-engineer 写代码 → sofagent-audit 审计 → code-reviewer 审查 → 人类确认 → 下一轮。Agent 定义在 `agents/`，编排文档在 `LOOP/LOOP.md`，审查文档在 `docs/verification/`。
 
