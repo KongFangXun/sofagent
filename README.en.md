@@ -38,21 +38,15 @@
 
 ## Why sofagent?
 
-Most SME AI projects collect dust within 6 months. It's not a tech problem — it's these three walls:
+Most SME AI projects collect dust within 6 months. It's not a tech problem — it's these three walls, each with a solution:
 
-| 🚫 Expectations too high | 🔧 Tech-led, not biz-led | 👻 Deploy and forget |
-|:--|:--|:--|
-| Bought a pile of AI tools, expected magic. AI is capable — but no one mapped the workflows first | Engineers can't see business nodes. AI adoption isn't an IT project — it's business transformation | No one knows if AI is doing a good job. Behavior unconstrained, results unaudited — accountability evaporates |
+| Wall | The real fear | sofagent solution | Engine |
+|:--|------|------|------|
+| 🚫 **Expectations** | Bought a pile of tools, don't know where to start | FDE onboards, diagrams the business, identifies AI nodes, leaves | 🧭 Constraint + 🧬 Evolution |
+| 🔧 **Tech-led** | Engineers can't see business nodes, constraints written in code | fde.md uses business language ("don't touch customer data", "large transfers need approval") | 🧭 Constraint |
+| 👻 **Deploy & forget** | Broke things unnoticed, stagnant after 6 months, no one accountable | Every change auto-audited + snapshotted + rollback; weekly inspection catches degradation | 🔍 Audit + 🔄 Restore + 🧬 Evolution |
 
-**What sofagent does**: Won't connect AI for you — will govern the AI you've already connected.
-
-| Wall | Problem | sofagent solution |
-|:--|------|------|
-| 🚫 No workflow mapping | FDE onboards, diagrams the business, identifies AI-ready nodes, deploys and leaves | 🧭 Constraint + 🧬 Evolution |
-| 🔧 Tech-led, not biz-led | Constraints written in business language ("don't touch customer data", "large transfers need approval"), no code | 🧭 Constraint |
-| 👻 Deploy and forget | Every change auto-audited, violations blocked + snapshotted + rollback-ready; weekly inspection catches degradation | 🔍 Audit + 🔄 Restore + 🧬 Evolution |
-
-No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep running.
+No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep running. Unlike AgentLoop (SaaS, runtime trajectory), sofagent audits **what changed** (file diff, local, MIT open source).
 
 ---
 
@@ -112,15 +106,7 @@ No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep 
 > OpenClaw/DeepAgents IS your Gateway. sofagent doesn't replace it — it layers on top for governance.
 > **The Gateway is the highway. sofagent is the traffic rules + speed cameras + driving coach.**
 
-| Engine | When | What |
-|------|------|------|
-| 🧭 **Constraint Base** | Before agents run | Four-layer loading chain injects red lines into context |
-| 🔍 **Audit Engine** | While agents work | 19 rules, git diff + filesystem auto-scan, 0 token cost |
-| 🔄 **Restore Engine** | After things go wrong | Auto-snapshot on every audit, one-click rollback |
-| ⚙️ **Orchestration Engine** | Task decomposition | Break down tasks, parallel Sub Agents, A/B auto-optimize |
-| 🧬 **Evolution Engine** | Continuous improvement | FDE weekly inspect audit trends + reflections, auto-optimize |
-
-> 🔮 **v1.1.0 preview**: Audit engine splits into standalone `@sofagent/audit` npm package. Existing `npm install -g @sofagent/audit` users zero-migration.
+> 🔮 **v1.1.0 preview**: Package purity refactor — audit just audits, 10 other packages go independent.
 
 #### 🧭 Constraint Base
 
