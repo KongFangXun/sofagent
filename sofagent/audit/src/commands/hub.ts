@@ -1,6 +1,6 @@
 // ============================================================
 // commands/hub.ts · Workflow Hub CLI
-// v1.0.8 新增：hub deploy / hub list 命令
+// v1.0.9 新增：hub deploy / hub list 命令
 // ============================================================
 // 依赖方向：sofagent 主项目 → Hub（单向依赖）
 // Hub 模板不执行任何 sofagent CLI 命令

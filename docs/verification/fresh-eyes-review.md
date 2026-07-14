@@ -483,6 +483,21 @@
    - 但文档化工具自身有状态假设：`bump-version.sh` 从 `package.json` 读 OLD 版本号，若 SSOT 已被手动超前（如先手 bump 成 1.0.8），脚本会误判并在 296 行 `NEW_3SEG unbound` 崩溃。独立审查者应注意"工具可用性边界"，别盲信文档化脚本——遇到崩溃先查 SSOT 与磁盘是否一致。
    - 跨包依赖（`sofagent/mcp/package.json` 对 `@sofagent/audit` 的 `^1.0.0`）用通用范围、不写死 SSOT：功能已覆盖当前版本，`check-version.sh` 的 1 项 warning 是预期非阻断。**不要用 `^1.0.8` 硬编码**——否则每发一版都得手改这条依赖，reintroduce 散点 bump 风险。
 
+15. **验收测试脚本自身的 shell 安全性** 🆕
+   - **v1.0.9 教训**：acceptance-test.sh 全局 `set -euo pipefail`，但多处 `git log --oneline | grep -q "xxx"` 模式在 commit 数量大时被 SIGPIPE 误杀（grep -q 匹配后退出 → git log 收到 SIGPIPE 返回 141 → pipefail 判管道失败 → if ! 判 true → 误报 FAIL）。同类模式还包括 `$CLI --doctor 2>&1` 返回非零时 set -e 直接终止脚本，跳过后续场景。
+   - **盲区本质**：开发者写测试脚本时，默认"set -e 保护我"——但 `pipefail` 和"长管道匹配"组合后，保护变成炸弹。陌生审查者应把 `grep -n 'git log.*| grep -q' tools/acceptance-test.sh` 当第一件事跑。
+   - **同类风险扩散**：所有 `... | grep -q` 模式（不只 git log）、所有 `$(... )` 子shell 中返回非零的 $CLI 调用——都需检查是否有 `|| true` 保护。
+
+16. **hook 安装入口的语义差异（--install-hook vs --init）** 🆕
+   - **v1.0.9 教训**：`--install-hook` 只装 `commit-msg`（快速入口），`--init` 装 `commit-msg` + `post-commit` + `config.yml`（完整初始化）。两者都是"安装"但产物不同，验收测试场景 1 混用了 `--install-hook` 却检查两个 hook。
+   - **盲区本质**：CLI 有多个"看起来做同一件事"的入口（install-hook / init / 手动 cp），但它们的产品语义不同。陌生审查者不能假设"安装了就全套"——必须验证每个入口安装的具体产物清单。
+   - **延伸检查**：`--init` 在 v1.0.9 还加了"dirty 状态检测"——有未提交更改时会拒绝安装 hook（只创建 config）。这意味着 acceptance-test 在连续场景中，前一个场景的脏状态会阻断后续场景的 `--init`。
+
+17. **新增功能的注册同步盲区** 🆕
+   - **v1.0.9 阶段六教训**：新增 A16/A17 规则后，`config-loader.ts` 的 `knownKeys` 硬编码集合忘记同步更新（仍停留在 a1-a11/a14-a15），导致用户在 config.yml 写 `a16: true` 时误报"未知规则名"。同类问题：`resolveDiffEndpoint` 新增函数的代码实现与测试用例语义矛盾（代码把非范围 ref 换成 HEAD，测试期望原样返回），`npm test` 才抓出来。
+   - **盲区本质**：每新增一个功能（规则/函数/命令），需要同步更新的地方不止一处——注册表（rules/index.ts）、配置校验器（config-loader.ts knownKeys）、帮助文本、注释。开发者只改了"核心实现"，忘了"外围感知"。陌生审查者必须**沿着功能注册链走一遍**：规则号在 index.ts 注册了吗？knownKeys 里有吗？注释和警告文案更新了吗？测试的所有分支和代码行为一致吗？
+   - **检查手法**：`grep -c "a16\|a17" config-loader.ts` 与 `grep -c "A16\|A17" rules/index.ts` 的数字必须一致。每个新增纯函数跑 `npm test` 确认 0 failed。
+
 **输出格式**：
 
 ```markdown

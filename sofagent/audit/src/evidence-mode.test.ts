@@ -147,7 +147,7 @@ describe('evidenceMode 双路径切换', () => {
     it('每条规则注册时带 evidenceMode 字段', () => {
       for (const rule of rules) {
         expect(rule.evidenceMode).toBeDefined();
-        expect(['git-diff', 'logs', 'hybrid']).toContain(rule.evidenceMode);
+        expect(['git-diff', 'logs', 'hybrid', 'filesystem']).toContain(rule.evidenceMode);
       }
     });
 

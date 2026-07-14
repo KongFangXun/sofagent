@@ -5,8 +5,9 @@ description: >
   当 FDE 需要对工作流节点做 AI 分类判定时用这个 Skill——
   不是"它是干什么的"，是"什么时候用"。
   写错 description = Skill 永远不会被触发。
-version: 1.0
+version: 1.0.9
 tags: [企业专属, FDE, 节点判定]
+image: skill-template.png
 note: >
   ⚠️ 这是给客户企业 AI 节点用的 Skill 模板（以 sofagent 自身为案例），
   不是 FDE 工具包自己的 Skill。FDE 自己的 Skill 在 FDE/SKILL.md。

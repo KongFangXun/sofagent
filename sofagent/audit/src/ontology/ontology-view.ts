@@ -1,6 +1,6 @@
 // ============================================================
 // ontology-view.ts · Ontology 人类可读视图生成器
-// v1.0.8 新增：将 ontology YAML 文件转为 Markdown 输出
+// v1.0.9 新增：将 ontology YAML 文件转为 Markdown 输出
 //
 // 用法：
 //   sofagent-audit ontology view

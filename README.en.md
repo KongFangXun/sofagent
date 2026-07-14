@@ -21,7 +21,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.0.8-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.0.9-16B8F3" alt="Version" /></a>
 </p>
 
 ---
@@ -119,7 +119,7 @@ Every git commit gets scanned — what the agent changed can't be denied.
 graph LR
     A[AI Agent<br/>writes code] --> B[git commit]
     B --> C{sofagent<br/>audit engine}
-    C -->|git diff scan| D[17 rule checks]
+    C -->|git diff scan| D[19 rule checks]
     D -->|violation| E[⛔ Block + log]
     D -->|clean| F[✅ Pass]
     E --> G[think.md<br/>auto-reflect]

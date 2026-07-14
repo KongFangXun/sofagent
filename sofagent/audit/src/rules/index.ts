@@ -18,6 +18,8 @@ import { checkRuleA10 } from './rule-a10-no-poison';
 import { checkRuleA11 } from './rule-a11-no-abuse';
 import { checkRuleA14 } from './rule-a14-kb-cross-domain';
 import { checkRuleA15 } from './rule-a15-action-constraint';
+import { checkRuleA16 } from './rule-a16-unauthorized-change';
+import { checkRuleA17 } from './rule-a17-bulk-change';
 import { checkRuleE1 } from './rule-e1-no-test-files';
 import { checkRuleE2 } from './rule-e2-todo-undeclared';
 import { checkRuleE3 } from './rule-e3-large-deletion';
@@ -38,7 +40,7 @@ export const defaultRules: Rule[] = [
   { name: 'A11 不滥资源', number: 11, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA11 },
 ];
 
-/** 扩展规则（E1-E4 + A14）——默认不生效，需 config.extendedRulesEnabled = true */
+/** 扩展规则（E1-E4 + A14-A17）——默认不生效，需 config.extendedRulesEnabled = true */
 export const extendedRules: Rule[] = [
   { name: 'E1 不落测试', number: 201, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE1 },
   { name: 'E2 不空标记', number: 202, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE2 },
@@ -46,6 +48,8 @@ export const extendedRules: Rule[] = [
   { name: 'E4 不低注释', number: 204, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE4 },
   { name: 'A14 知识库越权', number: 14, evidenceMode: 'hybrid', ruleClass: '能力拐杖', check: checkRuleA14 },
   { name: 'A15 不越约束', number: 15, evidenceMode: 'hybrid', ruleClass: '能力拐杖', check: checkRuleA15 },
+  { name: 'A16 非授权文件变更', number: 16, evidenceMode: 'git-diff', ruleClass: '工程规范', check: checkRuleA16, description: '检测敏感目录/文件类型的非授权变更' },
+  { name: 'A17 异常批量变更', number: 17, evidenceMode: 'filesystem', ruleClass: '工程规范', check: checkRuleA17, description: '检测短时间内大量文件变更' },
 ];
 
 /** 全部规则——reporter 默认使用此数组（含 default + extended） */

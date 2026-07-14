@@ -14,7 +14,7 @@ detect_env() {
   echo "$n"
 }
 parse_args() {
-  PLATFORM=""; QUICK_MODE=0; NO_DAEMON=0; LITE_MODE=0  # REMOTE_MODE/ORIGINAL_ARGS 已提前初始化
+  PLATFORM=""; QUICK_MODE=0; NO_DAEMON=0; LITE_MODE=0; WITH_MEMORY=0  # REMOTE_MODE/ORIGINAL_ARGS 已提前初始化
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --platform)      PLATFORM="$2"; shift 2 ;;
@@ -29,6 +29,7 @@ parse_args() {
       --skip-daemon)    NO_DAEMON=1; shift ;;                     # 别名
       --lite)           LITE_MODE=1; QUICK_MODE=1; NO_AO=1; NO_DAEMON=1; NO_CONFIG_INJECT=1; shift ;;
       --remote)         REMOTE_MODE=1; shift ;;
+      --with-memory)    WITH_MEMORY=1; shift ;;
       -h|--help)
         cat << 'HELP'
 用法: install.sh [--platform openclaw|workbuddy|claude|codex|hermes] [--project-dir DIR]

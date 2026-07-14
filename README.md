@@ -21,12 +21,12 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.0.8-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.0.9-16B8F3" alt="Version" /></a>
 </p>
 
 ---
 
-**git commit 时自动扫描 17 条规则，拦截密钥泄漏、越界修改、注入攻击。**
+**git commit 时自动扫描 19 条规则，拦截密钥泄漏、越界修改、注入攻击。**
 
 - 信任的是 **git diff**，不是 AI 自觉
 - 纯 TypeScript 正则引擎，**0 token 消耗**
@@ -127,7 +127,7 @@ graph LR
 graph LR
     A[AI Agent<br/>写代码/改配置] --> B[git commit]
     B --> C{sofagent<br/>审计引擎}
-    C -->|git diff 扫描| D[17 条规则判定]
+    C -->|git diff 扫描| D[19 条规则判定]
     D -->|违规| E[⛔ 拦截 + 记录]
     D -->|合规| F[✅ 放行]
     E --> G[think.md<br/>自动反思]
@@ -155,12 +155,21 @@ graph LR
 
 sofagent 是**行车记录仪**，不是安检——不管什么 Agent、什么平台，事后审计 + 回溯恢复，不依赖任何平台。
 
-#### ⚙️ 编排引擎（实验性 · v1.0.8 全平台开放）
+查看快照历史与回滚：
+
+```bash
+sofagent-audit --timeline          # 快照时间线（默认最近 20 条）
+sofagent-audit --timeline 50       # 自定义条数
+sofagent-audit --timeline --json   # JSON 输出，供其他程序消费
+sofagent-audit --revert <SHA>      # 回滚到任意快照
+```
+
+#### ⚙️ 编排引擎（实验性 · v1.0.9 全平台开放）
 
 把大任务拆小、多 Sub Agent 并行执行、A/B 对比找更优方案。
 当前实现为 DeepAgents 接入层（launcher.ts ~70 行），compose + run 已跑通，A/B 对比连续胜出 2 次自动 promote。
 
-> 当前 v1.0.8：`sofagent-audit compose --task` CLI 入口已上线，不装 OpenClaw 也能用编排引擎
+> 当前 v1.0.9：`sofagent-audit compose --task` CLI 入口已上线，不装 OpenClaw 也能用编排引擎
 
 ```mermaid
 graph LR
@@ -194,14 +203,16 @@ graph LR
 
 > 🔬 Hugging Face 实验：同一模型不改权重，仅优化外层 Harness，在法律 Agent 基准中从 3.5% 跃升至 80.1%（76 分差全部来自外层机制）。[详情](./docs/ARCHITECTURE.md)
 
-- 核心逻辑 **493 tests 全绿**（diff-parser / config-loader / rules A1-A15 / reporter / init）
-- **17 条审计规则**（v1.0.9 扩展为 19 条）：11 条默认（A1-A11）+ 6 条扩展（E1-E4 工程规范 + A14 知识库越权 + A15 约束验证），v1.0.9 新增 A16 非授权文件变更 + A17 异常批量变更。覆盖密钥泄漏、越界修改、注入攻击、知识库越权、工程规范等
+- 核心逻辑 **528 tests 全绿**（diff-parser / config-loader / rules A1-A17 / reporter / init）
+  > 验证方式：`cd sofagent/audit && npm test`（v1.0.9 基线 528 通过）
+- **19 条审计规则**（A1-A17 + E1-E4）：11 条默认（A1-A11）+ 8 条扩展（E1-E4 工程规范 + A14 知识库越权 + A15 约束验证 + A16 非授权文件变更 + A17 异常批量变更）
   > 编号说明：A12/A13 为永久跳号（早期废弃的规则编号，非规划中）
 - ⚠️ A14 是**事后审计提醒**而非运行时访问控制——Agent commit 前仍可能访问受限数据，A14 让管理员能在审计中发现越权行为
-- ✅ **v1.0.8**：文件系统审计（不需 git）——内嵌 isomorphic-git + daemon 监控已交付，非开发者也���用
+- ✅ **v1.0.8**：文件系统审计（不需 git）——内嵌 isomorphic-git + daemon 监控已交付，非开发者也能用
+  > 📖 [文件系统审计使用指南](./docs/filesystem-audit.md)（管理员配置 → 非开发者透明使用）
 - MIT 许可证，代码、文档、模板随便用
 
-> ⚠️ 编排引擎需要 DeepAgents 环境，能跑但还在打磨。[已知局限](./docs/LIMITATIONS.md)
+> ⚠️ 编排引擎需要 DeepAgents 环境，能跑但还在打磨。[已知局限](./LIMITATIONS.md)
 
 ---
 

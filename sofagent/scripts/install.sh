@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent install.sh · 多平台一键安装脚本（v1.0.8）
+# sofagent install.sh · 多平台一键安装脚本（v1.0.9）
 # ============================================================
 # 将 sofagent 约束层部署到目标平台，让 Agent 获得治理能力。
 # v0.98: 从 941 行拆分为 4 个 lib 模块 + 纯组装入口
@@ -11,7 +11,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.0.8"
+VERSION="1.0.9"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
@@ -156,5 +156,33 @@ echo "ℹ️ SkillOpt 自进化引擎（可选）：clone github.com/microsoft/S
 
 # deepagents Sub Agent 引擎（正式依赖——npm install @sofagent/audit 自动安装）
 echo "  💡 Sub Agent 引擎: deepagents（@sofagent/audit 正式依赖，npm install 自动安装）"
+
+# ── v1.0.9: TencentDB Memory 集成（--with-memory flag）──
+if [[ "${WITH_MEMORY:-0}" == "1" ]]; then
+  MEMORY_DIR="$HOME/.openclaw/memory-tdai"
+  CONFIG_PATH="${TARGET}/.sofagent/config.yml"
+
+  echo ""
+  echo "  📝 配置 TencentDB Memory 集成..."
+
+  if [[ ! -d "$MEMORY_DIR" ]]; then
+    echo "  ⚠️  $MEMORY_DIR 不存在"
+    echo "     先在 OpenClaw 上跑 3-5 天对话产生记忆数据，memory-sync 会自动处理"
+    echo "     安装继续——memory 集成在目录出现后自动生效（防断裂机制）"
+  else
+    echo "  ✅ TencentDB Memory 集成已启用"
+    echo "     persona.md 将从 $MEMORY_DIR 自动同步"
+  fi
+
+  # 写入 config.yml 开启 memory_sync
+  if [[ -f "$CONFIG_PATH" ]]; then
+    if [[ "$(uname)" == "Darwin" ]]; then
+      sed -e 's/memory_sync: false/memory_sync: true/g' "$CONFIG_PATH" > "${CONFIG_PATH}.tmp" && mv "${CONFIG_PATH}.tmp" "$CONFIG_PATH"
+    else
+      sed -i 's/memory_sync: false/memory_sync: true/g' "$CONFIG_PATH"
+    fi
+    echo "  ✅ config.yml memory_sync 已开启"
+  fi
+fi
 
 echo ""
