@@ -1,6 +1,5 @@
 // ============================================================
 // diff-parser.ts · git diff 解析器
-// v1.1.0 从 sofagent/audit/src/diff-parser.ts 迁出
 // v1.0.9: 添加 isomorphic-git fallback（当系统 git 不可用时）
 // ============================================================
 
@@ -303,8 +302,6 @@ export function parseNumstat(numstatOutput: string): NumstatEntry[] {
 // ============================================================
 // v1.0.8: isomorphic-git fallback
 // 当系统 git 不可用时，使用 isomorphic-git shadow repo 生成 diff
-// v1.1.0: filesystem/isomorphic-git 保留在 audit 包中，
-// 核心包的动态 import 会在编译后优雅降级。
 // ============================================================
 
 /**
@@ -312,9 +309,6 @@ export function parseNumstat(numstatOutput: string): NumstatEntry[] {
  *
  * 适用于 CI 环境中没有安装 git 或 git 版本过旧的场景。
  * 依赖 isomorphic-git npm 包（纯 JS 实现，无原生依赖）。
- *
- * v1.1.0: 此函数依赖 audit 包中的 filesystem/isomorphic-git 模块，
- * 在 @sofagent/core 中作为动态 import，编译后若模块不存在则优雅降级返回空数组。
  *
  * @param dir 项目根目录
  * @returns DiffFile 数组

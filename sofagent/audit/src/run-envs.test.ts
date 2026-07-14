@@ -11,7 +11,7 @@ import {
   collectPaths,
   getSystemInfo,
   probeEnvironment,
-} from './run-envs';
+} from '@sofagent/core';
 
 describe('run-envs', () => {
   describe('detectRuntimeEnv', () => {

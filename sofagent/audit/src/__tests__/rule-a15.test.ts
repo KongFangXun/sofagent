@@ -8,7 +8,7 @@ import { existsSync, mkdirSync, writeFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { checkRuleA15 } from '../rules/rule-a15-action-constraint';
 import type { AuditContext } from '../rules/types';
-import type { DiffFile } from '../diff-parser';
+import type { DiffFile } from '@sofagent/core';
 
 const testDir = join(__dirname, '..', '__test_a15_tmp__');
 

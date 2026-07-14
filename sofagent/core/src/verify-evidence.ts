@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 // ============================================================
-// verify-evidence.ts · 最小可信验证器
-// v1.1.0 从 sofagent/audit/src/verify-evidence.ts 迁出
-// v0.94
+// verify-evidence.ts · 最小可信验证器 · v0.94
 // ============================================================
 // 扫描 .sofagent/task/logs/ 下今日记录，检查有无客观证据
 // （测试 exit code / lint 结果），有标 [已验证]，无标 [未验证]。

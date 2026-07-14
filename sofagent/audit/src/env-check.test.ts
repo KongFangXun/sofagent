@@ -1,7 +1,7 @@
 // env-check.test.ts · FDE 环境验证测试
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { checkEnv, EnvResult } from '../src/env-check';
+import { checkEnv, type EnvResult } from '@sofagent/core';
 
 describe('env-check', () => {
   describe('checkEnv', () => {

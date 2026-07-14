@@ -1,6 +1,5 @@
 // ============================================================
 // model-client.ts · 模型 API 客户端
-// v1.1.0 从 sofagent/audit/src/model-client.ts 迁出
 // v1.0.9 新增
 // 用 Node.js 原生 fetch（Node 18+ 内置）调模型 API
 // API 配置从环境变量读取，支持 OpenAI 兼容接口

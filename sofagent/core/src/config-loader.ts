@@ -1,6 +1,5 @@
 // ============================================================
 // config-loader.ts · .sofagent/config.yml 配置加载器
-// v1.1.0 从 sofagent/audit/src/config-loader.ts 迁出
 // v0.95 新增：三级 fallback（v1.0.9，js-yaml 替代手写 YAML 解析器）
 // v0.97 扩展：环境变量配置（从 lib/config.sh 合并）
 // v1.0.9 重构：用 js-yaml 替代手写 YAML 解析器

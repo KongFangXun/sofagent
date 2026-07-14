@@ -8,7 +8,7 @@ import { existsSync, writeFileSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
-import { archiveOldEntries, rotateBackups, extractSummary } from './compress-memory';
+import { archiveOldEntries, rotateBackups, extractSummary } from '@sofagent/core';
 
 function tmpDir(): string {
   const dir = join(tmpdir(), `sofagent-test-${Date.now()}-${randomBytes(4).toString('hex')}`);

@@ -1,6 +1,6 @@
 # sofagent Handbook
 
-> **Gateway 管怎么跑，sofagent 管跑没跑对。** 约束底座给 Agent 定规矩，审计引擎验结果，编排引擎拆任务，回溯引擎保安全，进化引擎越用越好。下面从装到用到查问题，全流程走一遍。
+> **Gateway 管怎么跑，sofagent 管跑没跑对。** 约束底座→编排引擎→审计引擎→回溯引擎→进化引擎，一底座四引擎覆盖全生命周期。下面从装到用到查问题，全流程走一遍。
 >
 > v1.0.9 · 2026-07-13（UTC）· 孔放勋
 
@@ -327,7 +327,7 @@ Agent 先判断任务复杂度：
 | **四层加载链** | SKILL.md（宪法层）→ think.md（反思层）→ fde.md（执行层）→ knowledge/index.md（知识层）注入顺序 |
 | **FDE** | Forward Deployed Engineer，四阶段十二步：梳理工作流→构建本体模型→识别节点与量化→部署→离场 |
 
-核心 = **五个引擎覆盖全生命周期**（约束·审计·回溯·编排·进化），三个维度管住 Agent 行为：四层加载链（所有平台生效）、审计引擎 + daemon（开发者 + 非开发者）、编排引擎 + 进化引擎（增强，OpenClaw 全功能）。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
+核心 = **一底座四引擎覆盖全生命周期**（约束·编排·审计·回溯·进化），三个维度管住 Agent 行为：四层加载链（所有平台生效）、审计引擎 + daemon（开发者 + 非开发者）、编排引擎 + 进化引擎（增强，OpenClaw 全功能）。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 ---
 

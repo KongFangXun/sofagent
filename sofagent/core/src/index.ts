@@ -91,6 +91,13 @@ export {
 } from './cost-baseline';
 export type { Baseline, TaskLogEntry } from './cost-baseline';
 
+// ── 内存压缩 ──
+export {
+  archiveOldEntries,
+  rotateBackups,
+  extractSummary,
+} from './compress-memory';
+
 // ── 审计结果类型 ──
 export type { AuditResult, RuleCheck } from './reporter';
 
