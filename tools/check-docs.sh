@@ -82,7 +82,7 @@ LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 # 上限定义
 LIMIT_A=4500  # v1.1.0: 五个引擎重构 + ARCHITECTURE 叙事升级 + README 内容增长
 LIMIT_B=2000
-LIMIT_C=5200  # 审查体系随回归维度(219→247)与发版 SOP 扩充，给足缓冲
+LIMIT_C=5400  # v1.1.0 发版后回归清单增长 + releasing.md 补充拓扑序发布流程
 LIMIT_D=500
 LIMIT_E=600
 LIMIT_TOTAL=6200  # v1.1.0: A 层文档五个引擎重构导致自然增长

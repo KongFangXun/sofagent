@@ -536,7 +536,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 
 | # | 步骤 |
 |:--:|------|
-| 26 | **npm 双包验证**：`npm view @sofagent/audit version` + `npm view @sofagent/mcp version` 必须都是最新版本号。不信任自动化 |
+| 26 | **npm 12 包验证**：全部 12 包版本一致，无 MISSING |
 | 27 | npm README 验证：`npm view @sofagent/audit readme` + `npm view @sofagent/mcp readme` 均有内容 |
 | 28 | 如果本次迭代暴露了新的流程漏洞，**直接吸收进本 SOP 对应阶段**——不要存到单独章节。每条新规则标注版本号（如 `vX.Y 教训`）以便追溯 |
 | 29 | **🔴 审查闭环——发布后陌生视角审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `docs/verification/fresh-eyes-review.md`（已在本版本阶段七中更新），对已发布版本做独立审查<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，作为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的视角和检查项 |
@@ -596,7 +596,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 七 | 审查体系最终确认 | 作者 | 否 | 两份审查文档状态一致、无遗漏（初版已在阶段五写入） |
 | 八 | 文档收尾 | 作者 | 否 | CHANGELOG/ROADMAP/版本号/日期对齐。CLI 迁移版本在此处补跑 shellcheck/acceptance |
 | 九 | 确认关口 | AI → **生成发布 prompt 交接** | 否 | git diff 确认 → 检查清单打勾 → 生成发布 prompt 交给负责人 |
-| 十 | 发布 | **🔴 项目负责人亲手执行** | 否 | 按 AI 生成的发布 prompt 逐条执行：npm 双包 + git tag + gh release + Skill 分发 |
+| 十 | 发布 | **🔴 项目负责人亲手执行** | 否 | 按 AI 生成的发布 prompt 逐条执行：npm 12 包按依赖层分批 + git tag + gh release + Skill 分发 |
 | 十一 | 发布后 | 作者 | 是（步骤 32 开新 session 审查） | npm 验证 + 陌生视角审查 → 生成下版本开发 prompt 到桌面（步骤 31）+ 输出审查 prompt（步骤 32）→ 自动进入下版本阶段一 |
 
 ---
