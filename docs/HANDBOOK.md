@@ -11,7 +11,6 @@
 - [场景一：装完第一件事](#场景一装完第一件事)
 - [场景二：日常使用](#场景二日常使用)
 - [场景三：排查问题](#场景三排查问题)
-- [安装与运行常见问题](#安装与运行常见问题)
 - [场景四：自定义](#场景四自定义)
 - [场景五：FDE 部署与持续优化](#场景五fde-部署与持续优化)
 - [致谢](#致谢)
@@ -77,6 +76,17 @@ cd sofagent && bash sofagent/scripts/install.sh
 | `claude` | 部署宪法 + 输出种子指令（手动粘贴到 CLAUDE.md）|
 | `codex` | 部署宪法 + 输出种子指令（手动粘贴到 AGENTS.md）|
 | `hermes` | 部署宪法 + 输出种子指令（手动粘贴到 SOUL.md）|
+
+#### 安装常见问题
+
+| 问题 | 原因 | 解决 |
+|------|------|------|
+| `sofagent-audit: Node.js 未找到` | Node.js 未安装或版本过低 | 安装 Node.js ≥18：`node --version` 确认 |
+| commit 时没有审计输出 | pre-commit hook 未安装 | `sofagent-audit --init` 或 `sofagent-audit --install-hook` |
+| 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
+| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计引擎可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](./LIMITATIONS.md#windows-支持是实验性的) |
+| hook 装了但静默跳过 | Node.js 或 sofagent-audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
+| `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（11 条规则全启用） |
 
 ### 验证装好了
 
@@ -268,17 +278,6 @@ Agent 先判断任务复杂度：
 | 什么不该让 Agent 做 | 确定性操作（去重/格式校验/文件清理）用脚本 |
 
 > 更多见 [LIMITATIONS.md](./LIMITATIONS.md)。
-
-### 安装与运行常见问题
-
-| 问题 | 原因 | 解决 |
-|------|------|------|
-| `sofagent-audit: Node.js 未找到` | Node.js 未安装或版本过低 | 安装 Node.js ≥18：`node --version` 确认 |
-| commit 时没有审计输出 | pre-commit hook 未安装 | `sofagent-audit --init` 或 `sofagent-audit --install-hook` |
-| 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
-| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计引擎可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](./LIMITATIONS.md#windows-支持是实验性的) |
-| hook 装了但静默跳过 | Node.js 或 sofagent-audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
-| `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（11 条规则全启用） |
 
 ### Osmani 三盆冷水
 
