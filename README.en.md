@@ -89,8 +89,8 @@ Step 2 is the key — not every step should be fully automated:
 
 | Node type | How it runs | Human's role | sofagent's role |
 |------|------|------|------|
-| ⚡ **Augmented role** | AI navigates, suggests — rules describable | Decide, approve, sign off | Harness keeps AI in bounds, audit logs every suggestion |
-| 🔄 **Auto-execute** | AI runs end-to-end autonomously | Review audit reports, spot-check | All five engines: constrain → orchestrate → audit → restore → evolve |
+| ⚡ **Augmented role** | AI navigates, suggests — rules describable | Decide, approve, sign off | Constraint keeps AI in bounds, audit logs every suggestion, restore enables rollback, evolution refines skills |
+| 🔄 **Auto-execute** | AI runs end-to-end autonomously | Review audit reports, spot-check | All five: constrain → orchestrate → audit → restore → evolve weekly |
 
 No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep running.
 
