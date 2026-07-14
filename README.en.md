@@ -26,7 +26,7 @@
 
 ---
 
-**The Gateway routes, sofagent governs — 1 base + 4 engines, one system.**
+**Agents can work. Did they do it right? sofagent governs — 1 base + 4 engines, one system.**
 
 🧭 Constraint Base · ⚙️ Orchestration · 🔍 Audit · 🔄 Restore · 🧬 Evolution
 
