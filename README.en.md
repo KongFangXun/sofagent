@@ -90,13 +90,26 @@ graph LR
     B --> C["3️⃣ Install toolkit"]
     C --> D["4️⃣ AI runs itself"]
 
-    C -.-> E["🧭 Constraint Base"]
-    D --> E
-    E --> F["🔍 Audit Engine"]
-    F --> G["🔄 Restore Engine"]
-    D --> H["⚙️ Orchestration"]
-    G --> I["🧬 Evolution"]
-    H --> I
+    subgraph engines["Five engines"]
+        direction LR
+        E["🧭 Constraint Base"]
+        F["🔍 Audit Engine"]
+        G["🔄 Restore Engine"]
+        H["⚙️ Orchestration"]
+        I["🧬 Evolution"]
+    end
+
+    subgraph output["Business runs"]
+        direction LR
+        J["⚡ Augmented role<br/>AI assists, human decides"]
+        K["🔄 Auto-execute<br/>AI runs, human audits"]
+    end
+
+    C --> E
+    D --> F --> G --> I
+    D --> H --> J
+    E --> F
+    G -->|rollback| C
 ```
 
 Step 2 is the key — not every step should be fully automated:
