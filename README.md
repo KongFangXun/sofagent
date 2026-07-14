@@ -99,17 +99,16 @@ FDE（Forward Deployed Engineer）进驻企业走四步——[完整指南 → F
 
 ```mermaid
 graph LR
-    A["1️⃣ 梳理工作流"] --> B["2️⃣ 识别 AI 节点"]
-    B --> C["3️⃣ 装 sofagent"] --> D["4️⃣ AI 干活"]
+    1["1️⃣ 梳理工作流"] --> 2["2️⃣ 识别 AI 节点"] --> 3["3️⃣ 装 sofagent"] --> 4["4️⃣ AI 干活"]
 
-    B --> E["🧭 约束底座"] --> F["🔍 审计引擎"] --> G["🔄 回溯引擎"]
-    C --> E
-    D --> H["⚙️ 编排引擎"] --> I["🧬 进化引擎"]
-    F --> H
-    G --> I
+    2 --> E["🧭 约束底座"]
+    E --> F["🔍 审计引擎"] --> H["⚙️ 编排引擎"] --> I["🧬 进化引擎"]
+    4 --> H
+
+    F --> G["🔄 回溯引擎"] --> I
     H --> J["⚡ 强化岗位<br/>AI 辅助·人拍板"]
     H --> K["🔄 自动执行<br/>AI 全权·人看审计"]
-    G -.-> |回滚| C
+    G -.-> |回滚| 3
 ```
 
 第二步是关键——不是所有环节都适合 AI 全自动。FDE 把节点分成两类：
@@ -135,7 +134,7 @@ FDE 走完四步就撤离，AI 节点留在企业自己跑。
 | ⚙️ **编排引擎** | 任务拆解 + 并行 | 大任务拆小、多 Sub Agent 并行、A/B 对比自动选优 |
 | 🧬 **进化引擎** | Agent 越用越好 | FDE 周度巡检审计趋势 + 反思记录，发现退化自动优化 |
 
-> 🔮 **v1.1.0 预告**：审计引擎将拆分为独立 npm 包 `@sofagent/audit`，可单独安装使用。
+> 🔮 **v1.1.0 预告**：`@sofagent/audit` 已是独立 npm 包。v1.1.0 将做包结构纯度重构——audit 只做审计，其余 10 个领域（harness / ontology / eval / core / orchestrator / daemon / ab-test / workflow-hub / think / skillopt）拆成独立包。
 > 现有 `npm install -g @sofagent/audit` 用户无感知迁移。
 
 #### 🧭 约束底座
@@ -237,7 +236,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 > 🔬 Hugging Face 实验：同一模型不改权重，仅优化外层 Harness，法律 Agent 基准 3.5%→80.1%（76 分差全部来自外层机制）。[详情](./docs/ARCHITECTURE.md)
 
-- **519 tests 全绿**（`cd sofagent/audit && npm test`）— diff-parser / config-loader / A1-A17 / reporter / init
+- **531 tests 全绿**（`cd sofagent/audit && npm test`）— diff-parser / config-loader / A1-A17 / reporter / init
 - **19 条审计规则** — 11 条默认（A1-A11）+ 8 条扩展（E1-E4 + A14-A17），A12/A13 永久跳号
 - 📁 v1.0.8+ 文件系统审计（不需 git）— [使用指南](./docs/filesystem-audit.md)
 - MIT 许可证
@@ -285,7 +284,7 @@ sofagent 支持两种节点类型，按需选择：
 | 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
 | 为什么这么设计 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | 安全声明 | [SECURITY](./SECURITY.md) |
-| 已知局限 | [LIMITATIONS](./docs/LIMITATIONS.md) |
+| 已知局限 | [LIMITATIONS](./LIMITATIONS.md) |
 | 版本路线图 | [ROADMAP](./ROADMAP.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
 | 企业部署（FDE 工具包 + Workflow Hub 模板） | [FDE/](./FDE/) \| [Workflow Hub](./workflow-hub/) |

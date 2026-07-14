@@ -86,17 +86,16 @@ FDE (Forward Deployed Engineer) follows four steps — [full guide → FDE/FDE.m
 
 ```mermaid
 graph LR
-    A["1️⃣ Map workflows"] --> B["2️⃣ Identify AI nodes"]
-    B --> C["3️⃣ Install toolkit"] --> D["4️⃣ AI runs"]
+    1["1️⃣ Map workflows"] --> 2["2️⃣ Identify AI nodes"] --> 3["3️⃣ Install toolkit"] --> 4["4️⃣ AI runs"]
 
-    B --> E["🧭 Constraint Base"] --> F["🔍 Audit Engine"] --> G["🔄 Restore Engine"]
-    C --> E
-    D --> H["⚙️ Orchestration"] --> I["🧬 Evolution"]
-    F --> H
-    G --> I
+    2 --> E["🧭 Constraint Base"]
+    E --> F["🔍 Audit Engine"] --> H["⚙️ Orchestration"] --> I["🧬 Evolution"]
+    4 --> H
+
+    F --> G["🔄 Restore Engine"] --> I
     H --> J["⚡ Augmented role<br/>AI assists, human decides"]
     H --> K["🔄 Auto-execute<br/>AI runs, human audits"]
-    G -.-> |rollback| C
+    G -.-> |rollback| 3
 ```
 
 Step 2 is the key — not every step should be fully automated:
@@ -238,13 +237,13 @@ Five engines, one loop: **Constrain → Orchestrate → Audit → Restore → Ev
 
 > 🔬 Hugging Face legal-agent benchmark: same model, harness-only optimization — score jumped from 3.5% to 80.1% (76-point gain, matching Claude Sonnet at 1/7 the cost). [Details](./docs/ARCHITECTURE.md)
 
-- Core logic: **519 tests all green** (diff-parser / config-loader / rules A1-A17 / reporter / init)
-  > Verify: `cd sofagent/audit && npm test` (v1.0.9 baseline: 519 passing)
+- Core logic: **531 tests all green** (diff-parser / config-loader / rules A1-A17 / reporter / init)
+  > Verify: `cd sofagent/audit && npm test` (v1.0.9 baseline: 531 passing)
 - **19 audit rules**: 11 default (A1-A11) + 8 extended (E1-E4 + A14 + A15 + A16 unauthorized file change + A17 abnormal bulk change)
 - 📁 v1.0.8+ filesystem audit (no git required) — embedded isomorphic-git + daemon file monitoring
 - MIT license — use code, docs, and templates freely
 
-> ⚠️ Orchestration engine requires DeepAgents. [Known limitations](./docs/LIMITATIONS.md)
+> ⚠️ Orchestration engine requires DeepAgents. [Known limitations](./LIMITATIONS.md)
 
 ---
 
@@ -274,7 +273,7 @@ sofagent supports two node types:
 | Install, use, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
 | Design rationale | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | Security | [SECURITY](./SECURITY.md) |
-| Known limitations | [LIMITATIONS](./docs/LIMITATIONS.md) |
+| Known limitations | [LIMITATIONS](./LIMITATIONS.md) |
 | Roadmap | [ROADMAP](./ROADMAP.md) |
 | Contributing | [CONTRIBUTING](./CONTRIBUTING.md) |
 | Enterprise deploy (FDE + Workflow Hub) | [FDE/](./FDE/) \| [Workflow Hub](./workflow-hub/) |
