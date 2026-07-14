@@ -87,18 +87,13 @@ FDE (Forward Deployed Engineer) follows four steps — [full guide → FDE/FDE.m
 ```mermaid
 graph LR
     A["1️⃣ Map workflows"] --> B["2️⃣ Identify AI nodes"]
-    B --> C["3️⃣ Install toolkit"]
-    C --> D["4️⃣ AI runs itself"]
+    B --> C["3️⃣ Install toolkit"] --> D["4️⃣ AI runs"]
 
-    C --> E["🧭 Constraint Base"]
-    E --> F["🔍 Audit Engine"]
-    F --> G["🔄 Restore Engine"]
-    D --> F
-
-    D --> H["⚙️ Orchestration"]
-    H --> I["🧬 Evolution"]
+    B --> E["🧭 Constraint Base"] --> F["🔍 Audit Engine"] --> G["🔄 Restore Engine"]
+    C --> E
+    D --> H["⚙️ Orchestration"] --> I["🧬 Evolution"]
+    F --> H
     G --> I
-
     H --> J["⚡ Augmented role<br/>AI assists, human decides"]
     H --> K["🔄 Auto-execute<br/>AI runs, human audits"]
     G -.-> |rollback| C
