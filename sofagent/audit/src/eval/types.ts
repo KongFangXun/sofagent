@@ -34,7 +34,7 @@ export interface TestCaseResult {
   /** 期望输出 */
   expected: Record<string, unknown>;
   /** 评分详情 */
-  score: ScoreBreakdown;
+  score: EvalBreakdown;
   /** 错误信息（如果失败） */
   error?: string;
   /** 执行耗时（ms） */
@@ -44,7 +44,7 @@ export interface TestCaseResult {
 /**
  * 评分维度分解
  */
-export interface ScoreBreakdown {
+export interface EvalBreakdown {
   /** 精确匹配得分（0-1） */
   exactMatch: number;
   /** 语义相似度得分（0-1） */

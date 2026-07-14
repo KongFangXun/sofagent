@@ -4,7 +4,7 @@
 // 三维度评分：精确匹配 / 语义相似度 / 规则合规
 // ============================================================
 
-import type { ScoreBreakdown } from './types';
+import type { EvalBreakdown } from './types';
 
 /**
  * 计算精确匹配得分
@@ -111,9 +111,9 @@ function scoreRuleCompliance(actual: Record<string, unknown>, expected: Record<s
  * 三维度综合评分
  * @param actual Agent 实际输出
  * @param expected 期望输出
- * @returns ScoreBreakdown 评分分解
+ * @returns EvalBreakdown 评分分解
  */
-export function scoreCase(actual: Record<string, unknown>, expected: Record<string, unknown>): ScoreBreakdown {
+export function evalCase(actual: Record<string, unknown>, expected: Record<string, unknown>): EvalBreakdown {
   const exactMatch = scoreExactMatch(actual, expected);
   const semanticSimilarity = scoreSemanticSimilarity(actual, expected);
   const ruleCompliance = scoreRuleCompliance(actual, expected);

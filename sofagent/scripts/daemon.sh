@@ -186,10 +186,10 @@ _main_loop() {
     fi
 
     # 7. SkillOpt 自进化调度（v1.0.4 → P0-7 管道接通）
-    # 读 scoring.md → 阈值检测 → 24h 防抖 → 调 skillopt-run
+    # 读 eval.md → 阈值检测 → 24h 防抖 → 调 skillopt-run
     _trigger_skillopt() {
-      # 读取 scoring.md，检查累积评分条目数是否到阈值
-      local scoring_file="${SOFAGENT_DATA}/../skill/data/scoring.md"
+      # 读取 eval.md，检查累积评分条目数是否到阈值
+      local scoring_file="${SOFAGENT_DATA}/../skill/data/eval.md"
       local threshold=20  # 累积 20 条评分后触发
       if [ ! -f "$scoring_file" ]; then
         return
@@ -215,12 +215,12 @@ _main_loop() {
 
       # 检测 skillopt-sleep 是否可用
       if ! command -v skillopt-sleep &>/dev/null; then
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] SkillOpt: skillopt-sleep 未安装（需 clone github.com/microsoft/SkillOpt + pip install -e .）。scoring.md 已积累 ${score_count} 条，触发条件已满足但引擎不可用。" >> "${SOFAGENT_DATA}/daemon-notice.md"
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] SkillOpt: skillopt-sleep 未安装（需 clone github.com/microsoft/SkillOpt + pip install -e .）。eval.md 已积累 ${score_count} 条，触发条件已满足但引擎不可用。" >> "${SOFAGENT_DATA}/daemon-notice.md"
         return
       fi
 
       # 真正调用——通过 npx @sofagent/audit skillopt-run
-      echo "[$(date '+%Y-%m-%d %H:%M:%S')] SkillOpt: scoring.md 累积 ${score_count} 条，触发自进化" >> "${SOFAGENT_DATA}/daemon-notice.md"
+      echo "[$(date '+%Y-%m-%d %H:%M:%S')] SkillOpt: eval.md 累积 ${score_count} 条，触发自进化" >> "${SOFAGENT_DATA}/daemon-notice.md"
       npx @sofagent/audit skillopt-run --input "${SOFAGENT_DATA}/../skill/SKILL.md" --output "${SOFAGENT_DATA}/skill-candidate.md" --scoring "$scoring_file" 2>>"${SOFAGENT_DATA}/daemon-notice.md"
       date +%s > "$last_trigger"
     }

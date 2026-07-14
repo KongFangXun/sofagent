@@ -53,7 +53,7 @@
 ## closure 模式（三问：③ 需要用户介入吗）
 
 > closure 模式的详细复盘、评分、checklist 规则见 **`loop-evaluate.md`**。
-> closure 触发后按 loop-evaluate.md 执行：复盘 → 评分 → 写入 scoring/ + think.md → 交还人类（如需）。
+> closure 触发后按 loop-evaluate.md 执行：复盘 → 评分 → 写入 eval/ + think.md → 交还人类（如需）。
 
 closure 核心三问由 loop-evaluate.md 的九维评估体系驱动：进展对齐（完整/流畅/合规）→ 继续希望（编排/匹配/经济/Loop）→ 用户介入（判断力/弃权率）。
 

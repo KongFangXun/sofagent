@@ -551,7 +551,7 @@ async function main(): Promise<void> {
     const scoringPath: string | undefined = scoringIdx >= 0 ? argsArr[scoringIdx + 1] : undefined;
 
     if (!inputPath) {
-      console.error('用法: sofagent-audit skillopt-run --input <SKILL.md路径> [--scoring <scoring.md路径>]');
+      console.error('用法: sofagent-audit skillopt-run --input <SKILL.md路径> [--scoring <eval.md路径>]');
       process.exit(1);
     }
 
