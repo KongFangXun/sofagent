@@ -98,18 +98,18 @@ sofagent-audit --timeline
 FDE（Forward Deployed Engineer）进驻企业走四步——[完整指南 → FDE/FDE.md](./FDE/FDE.md)
 
 ```mermaid
-graph TB
+graph LR
     A["1️⃣ 梳理工作流"] --> B["2️⃣ 识别 AI 节点"]
     B --> C["3️⃣ 装上 sofagent"]
     C --> D["4️⃣ AI 自己干活"]
 
-    E["🧭 约束底座"] --> F["🔍 审计引擎"]
+    C -.-> E["🧭 约束底座"]
+    D --> E
+    E --> F["🔍 审计引擎"]
     F --> G["🔄 回溯引擎"]
     D --> H["⚙️ 编排引擎"]
     G --> I["🧬 进化引擎"]
     H --> I
-    C -.-> E
-    D --> F
 ```
 
 第二步是关键——不是所有环节都适合 AI 全自动。FDE 把节点分成两类：
