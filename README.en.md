@@ -81,7 +81,10 @@ graph LR
     H --> J["⚡ Augmented role<br/>AI assists, human decides"]
     H --> K["🔄 Auto-execute<br/>AI runs, human audits"]
 
-    2 --> E["🧭 Constraint Base"] --> F["🔍 Audit Engine"] --> G["🔄 Restore Engine"] --> I["🧬 Evolution"]
+    E["🧭 Constraint Base"] --> F["🔍 Audit Engine"] --> G["🔄 Restore Engine"] --> I["🧬 Evolution"]
+    E --> H
+    F --> J
+    F --> K
     G -.-> |rollback| E
 ```
 
