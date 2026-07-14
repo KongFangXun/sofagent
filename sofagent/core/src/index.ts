@@ -96,6 +96,9 @@ export type { AuditResult, RuleCheck } from './reporter';
 
 // ── 装后验证 ──
 export { verifyEvidence } from './verify-evidence';
+export { Verifier } from './verify/verifier';
+export { runQuickChecks, runWorkBuddyChecks, runAllChecks } from './verify/checks';
+export { HOME, resolveSofagentData } from './verify/utils';
 
 // ── 验证模块类型 ──
 export type {

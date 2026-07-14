@@ -16,8 +16,8 @@
 // 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
 // ============================================================
 
-import type { DiffFile } from './diff-parser';
-import type { LogEntry } from './log-checker';
+import type { DiffFile } from '@sofagent/core';
+import type { LogEntry } from '@sofagent/core';
 import type { Rule } from './rules/types';
 import { runRules } from './reporter';
 import type { RuleCheck } from './rules/types';

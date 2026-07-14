@@ -3,8 +3,8 @@
 // ============================================================
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { parseDiff, getAddedLines, getRemovedLines, parseNumstat, isInGitRepo } from './diff-parser';
-import type { DiffFile, NumstatEntry } from './diff-parser';
+import { parseDiff, getAddedLines, getRemovedLines, parseNumstat, isInGitRepo } from '@sofagent/core';
+import type { DiffFile, NumstatEntry } from '@sofagent/core';
 
 // Mock execFileSync 以避免依赖真实 git 仓库
 vi.mock('child_process', () => ({

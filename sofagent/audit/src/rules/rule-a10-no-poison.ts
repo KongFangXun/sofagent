@@ -6,7 +6,7 @@
 // evidenceMode: git-diff
 // ============================================================
 
-import { getAddedLines } from '../diff-parser';
+import { getAddedLines } from '@sofagent/core';
 import type { AuditContext, RuleCheck } from './types';
 
 /** 需要扫描的依赖文件名 */

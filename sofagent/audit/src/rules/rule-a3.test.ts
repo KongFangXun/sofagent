@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { checkRuleA3 } from './rule-a3-careful-modify';
 import type { AuditContext } from './types';
-import type { DiffFile } from '../diff-parser';
+import type { DiffFile } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('A3 不改越界', () => {

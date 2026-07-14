@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { checkRuleA1 } from './rules/rule-a1-sensitive-files';
-import type { DiffFile } from './diff-parser';
+import type { DiffFile } from '@sofagent/core';
 import type { AuditContext } from './rules/types';
 
 /** 从 fixture 文件解析 --name-status 格式为 DiffFile[]（不含 diff 内容行） */

@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { checkRuleA5 } from './rule-a5-honest-report';
 import type { AuditContext } from './types';
-import type { DiffFile } from '../diff-parser';
+import type { DiffFile } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('A5 不瞒真相', () => {

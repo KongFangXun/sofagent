@@ -9,7 +9,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, appendFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
-import { VERSION } from './shared/constants.js';
+import { VERSION } from '@sofagent/core';
 
 export interface AuditEntry {
   operation: string;

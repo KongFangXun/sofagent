@@ -4,7 +4,7 @@
 // ============================================================
 
 import { describe, it, expect, afterAll } from 'vitest';
-import { loadEnvConfig, ENV_DEFAULTS, DEFAULT_CONFIG, loadConfig } from './config-loader';
+import { loadEnvConfig, ENV_DEFAULTS, DEFAULT_CONFIG, loadConfig } from '@sofagent/core';
 
 const originalEnv = { ...process.env };
 

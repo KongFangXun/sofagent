@@ -225,7 +225,7 @@ FDE 有巨大前期成本，只在三种情况成立：
 
 > 这四问不是一次性表格——贯穿 §3 企业画像 → §5 本体建模 → §7 交付方案。画像越准，后面 Ontology 说明书越真。
 
-> 模板见 `FDE/templates/nodes/node-template.md`（frontmatter 段）。第一个节点搞清楚「上下游是谁」「谁能看什么」可能需要半天——因为要翻 §4 的所有节点、逐一确认关联。第十个节点 30 分钟：关联图已经在前面搭好了。设计原理见 [ARCHITECTURE](../docs/ARCHITECTURE.md#行业印证palantir-同构)。
+> 模板见 `FDE/templates/nodes/node-template.md`（frontmatter 段）。第一个节点搞清楚「上下游是谁」「谁能看什么」可能需要半天——因为要翻 §4 的所有节点、逐一确认关联。第十个节点 30 分钟：关联图已经在前面搭好了。设计原理见 [ARCHITECTURE 审计引擎](../docs/ARCHITECTURE.md#🔍-审计引擎)。
 
 产出：富本体信息的节点文档集（frontmatter + 正文）+ `workflow.yml`（汇总所有节点的 knowledge-domain + relations）。
 

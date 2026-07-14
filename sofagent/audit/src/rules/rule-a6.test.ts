@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { checkRuleA6 } from './rule-a6-build-broken';
 import type { AuditContext } from './types';
-import type { DiffFile } from '../diff-parser';
+import type { DiffFile } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('A6 不坏构建', () => {

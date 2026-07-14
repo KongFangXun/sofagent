@@ -10,8 +10,8 @@ import { checkRuleA3 } from './rules/rule-a3-careful-modify';
 import { checkRuleA1 } from './rules/rule-a1-sensitive-files';
 import { rules } from './rules';
 import type { AuditContext } from './rules/types';
-import type { DiffFile } from './diff-parser';
-import type { LogEntry } from './log-checker';
+import type { DiffFile } from '@sofagent/core';
+import type { LogEntry } from '@sofagent/core';
 import { makeDiffFile } from './test-utils';
 
 function makeReadEntry(file: string): LogEntry {

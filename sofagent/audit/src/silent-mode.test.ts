@@ -12,7 +12,7 @@ import { checkRuleA5 } from './rules/rule-a5-honest-report';
 import { checkRuleA1 } from './rules/rule-a1-sensitive-files';
 import { checkRuleE4 } from './rules/rule-e4-low-comment-ratio';
 import type { AuditContext } from './rules/types';
-import type { DiffFile } from './diff-parser';
+import type { DiffFile } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from './test-utils';
 
 describe('沉默审计模式 · 7 条纯 diff 规则', () => {

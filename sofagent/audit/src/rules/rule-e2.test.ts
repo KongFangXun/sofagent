@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { checkRuleE2 } from './rule-e2-todo-undeclared';
 import type { AuditContext } from './types';
-import type { DiffFile } from '../diff-parser';
+import type { DiffFile } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('E2 不空标记', () => {

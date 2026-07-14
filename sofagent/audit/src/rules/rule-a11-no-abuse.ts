@@ -7,7 +7,7 @@
 // evidenceMode: git-diff
 // ============================================================
 
-import { getAddedLines } from '../diff-parser';
+import { getAddedLines } from '@sofagent/core';
 import type { AuditContext, RuleCheck } from './types';
 
 /** 新增文件数阈值 */

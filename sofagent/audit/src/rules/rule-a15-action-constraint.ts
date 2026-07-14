@@ -9,8 +9,8 @@ import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { load as yamlLoad } from 'js-yaml';
 import type { AuditContext, RuleCheck } from './types';
-import { loadEnvConfig } from '../config-loader';
-import { getAddedLines } from '../diff-parser';
+import { loadEnvConfig } from '@sofagent/core';
+import { getAddedLines } from '@sofagent/core';
 
 /**
  * Workflow 节点的 action 声明

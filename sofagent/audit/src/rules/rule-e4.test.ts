@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { checkRuleE4 } from './rule-e4-low-comment-ratio';
 import type { AuditContext } from './types';
-import type { DiffFile } from '../diff-parser';
+import type { DiffFile } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('E4 不低注释', () => {

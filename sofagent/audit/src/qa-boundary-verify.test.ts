@@ -9,7 +9,7 @@ import { checkRuleA3 } from './rules/rule-a3-careful-modify';
 import { checkRuleA5 } from './rules/rule-a5-honest-report';
 import { rules } from './rules';
 import type { AuditContext } from './rules/types';
-import type { DiffFile } from './diff-parser';
+import type { DiffFile } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from './test-utils';
 
 describe('QA 边界验证 · R11 敏感文件', () => {

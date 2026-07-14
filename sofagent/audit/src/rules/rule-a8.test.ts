@@ -4,10 +4,10 @@
 
 import { describe, it, expect } from 'vitest';
 import { checkRuleA8 } from './rule-a8-verify-before-continue';
-import { hasTestOrBuildExecution } from '../log-checker';
+import { hasTestOrBuildExecution } from '@sofagent/core';
 import type { AuditContext } from './types';
-import type { DiffFile } from '../diff-parser';
-import type { LogEntry } from '../log-checker';
+import type { DiffFile } from '@sofagent/core';
+import type { LogEntry } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('A8 不逃验证', () => {

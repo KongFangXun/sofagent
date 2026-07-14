@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { formatSuggestions, applySuggestion } from './config-suggestion';
 import type { RootCauseReport, ConfigSuggestion } from './audit-root-cause';
-import { DEFAULT_CONFIG, type AuditConfig } from './config-loader';
+import { DEFAULT_CONFIG, type AuditConfig } from '@sofagent/core';
 
 describe('config-suggestion', () => {
   it('formatSuggestions 输出人类可读的根因报告', () => {

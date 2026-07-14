@@ -21,11 +21,11 @@
 
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { VERSION } from './shared/constants.js';
-import type { Args } from './verify/types.js';
-import { HOME, resolveSofagentData } from './verify/utils.js';
-import { Verifier } from './verify/verifier.js';
-import { runQuickChecks, runWorkBuddyChecks, runAllChecks } from './verify/checks.js';
+import { VERSION } from '@sofagent/core';
+import type { Args } from '@sofagent/core';
+import { HOME, resolveSofagentData } from '@sofagent/core';
+import { Verifier } from '@sofagent/core';
+import { runQuickChecks, runWorkBuddyChecks, runAllChecks } from '@sofagent/core';
 
 // ── 参数解析 ──
 function parseArgs(argv: string[]): Args {

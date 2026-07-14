@@ -3,9 +3,9 @@
 // v1.0.9 新增：按严重度分四优先级，critical 层 FAIL 即停
 // ============================================================
 
-import type { DiffFile } from '../diff-parser';
-import type { LogEntry } from '../log-checker';
-import type { AuditConfig } from '../config-loader';
+import type { DiffFile } from '@sofagent/core';
+import type { LogEntry } from '@sofagent/core';
+import type { AuditConfig } from '@sofagent/core';
 import type { AuditContext, RuleCheck, Rule } from './types';
 import { loadHistory } from '../audit-history';
 import type { AuditHistoryEntry } from '../audit-history';
