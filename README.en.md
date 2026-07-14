@@ -34,13 +34,13 @@
 
 ## Why sofagent?
 
-Most SME AI projects collect dust within 6 months. It's not a tech problem — it's these three walls, each with a solution:
+Most SME AI projects collect dust within 6 months. It's not a tech problem — it's three patterns:
 
-| Wall | The real fear | sofagent solution | Engine |
-|:--|------|------|------|
-| 🚫 **Expectations** | Bought a pile of tools, don't know where to start | FDE onboards, diagrams the business, identifies AI nodes, leaves | 🧭 Constraint + 🧬 Evolution |
-| 🔧 **Tech-led** | Engineers can't see business nodes, constraints written in code | fde.md uses business language ("don't touch customer data", "large transfers need approval") | 🧭 Constraint |
-| 👻 **Deploy & forget** | Broke things unnoticed, stagnant after 6 months, no one accountable | Every change auto-audited + snapshotted + rollback; orchestration decomposes and parallelizes; weekly inspection catches degradation | 🔍 Audit + 🔄 Restore + ⚙️ Orchestration + 🧬 Evolution |
+| Problem | What sofagent does |
+|------|------|
+| 🚫 Bought a pile of tools, don't know where to start | FDE onboards, maps workflows, identifies AI nodes, leaves |
+| 🔧 Tech-led, business rules can't be written in code | fde.md uses business language ("don't touch customer data", "large transfers need approval") |
+| 👻 Deploy and forget — things break unnoticed, stagnation, no accountability | Every change auto-audited + snapshotted + orchestrated + weekly inspection |
 
 No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep running. Unlike AgentLoop (SaaS, runtime trajectory), sofagent audits **what changed** (file diff, local, MIT open source).
 
