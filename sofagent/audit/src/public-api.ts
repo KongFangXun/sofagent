@@ -5,21 +5,18 @@
 // 注意：此文件只导出已经稳定且被外部消费的符号。
 // 内部实现细节不要加到这里——避免泄露实现导致耦合。
 
-export { parseDiff, isInGitRepo } from './diff-parser';
-export type { DiffFile } from './diff-parser';
-export { checkLogs } from './log-checker';
-export type { LogEntry } from './log-checker';
+export { parseDiff, isInGitRepo } from '@sofagent/core';
+export type { DiffFile } from '@sofagent/core';
+export { checkLogs } from '@sofagent/core';
+export type { LogEntry } from '@sofagent/core';
 
 export { runRules } from './reporter';
 export type { AuditResult } from './reporter';
 
-export { loadConfig } from './config-loader';
-export type { AuditConfig } from './config-loader';
-
-export { generateThinkEntry } from './think-generator';
-export type { ThinkEntryOptions } from './think-generator';
+export { loadConfig } from '@sofagent/core';
+export type { AuditConfig } from '@sofagent/core';
 
 export { loadHistory, appendHistory, clearHistory } from './audit-history';
 export type { AuditHistoryEntry } from './audit-history';
 
-export { VERSION } from './shared/constants';
+export { VERSION } from '@sofagent/core';
