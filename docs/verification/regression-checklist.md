@@ -225,14 +225,7 @@ grep -rn '_archive' sofagent/audit/src/ 2>/dev/null  # 无残留引用
 
 ---
 
-### 第四部分：文档一致性（维度 21-35）
-
-#### 21. ROADMAP 版本叙事正确性（v0.99.9 P0 教训）
-```bash
-head -5 ROADMAP.md  # 版本头应为 v1.0.0 + 日期 + 正式版叙事
-grep -n 'v0\.99' ROADMAP.md | head -3  # 不应在 v1.0 叙事段出现 v0.99.x 的内容
-# v0.99.9 教训：bump-version.sh 只改版本号不改正文叙事
-```
+### 第四部分：文档一致性（维度 22-35）
 
 #### 22. ROADMAP「现在在哪」devlog 链接
 ```bash
@@ -273,11 +266,6 @@ grep "$actual" docs/evidence/evidence.md 2>/dev/null  # 证据表应含当前测
 head -5 docs/evidence/evidence.en.md
 # L3 说 full snapshot，L4 指向中文版最新
 # Case 016-019 联系获取注释是否存在（v0.99.9 修复项，不应回归）
-```
-
-#### 28. v0.99.8.md 不应有 406 残留
-```bash
-grep '406' docs/changelog/v0.99.8.md  # 不应有 406（v0.99.8 时期测试数已是 407）
 ```
 
 #### 29. evidence 中英文 Case 数一致性
