@@ -31,6 +31,7 @@ _ensure_data_dir() {
 # ── 加载函数库 ──
 LIB_FILE="${SCRIPT_DIR}/lib/daemon-lib.sh"
 if [ -f "$LIB_FILE" ]; then
+  # shellcheck disable=SC1090
   source "$LIB_FILE"
 fi
 

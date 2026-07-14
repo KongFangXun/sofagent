@@ -72,6 +72,12 @@ cleanup() {
 
 # ── 辅助函数 ──────────────────────────────────────────────────
 scenario() {
+  # 场景间清理：防止 .env 残留、staged 文件污染下一场景
+  if [ -n "$TMP_REPO" ] && [ -d "$TMP_REPO" ]; then
+    cd "$TMP_REPO" 2>/dev/null || true
+    git reset --hard HEAD 2>/dev/null || true
+    rm -f .env 2>/dev/null || true
+  fi
   echo ""
   echo -e "${CYAN}━━━ 场景 $1: $2 ━━━${NC}"
 }

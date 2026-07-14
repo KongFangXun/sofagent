@@ -20,6 +20,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # v0.90 P0-3 修复：先 source config.sh 统一解析数据目录
 if [ -f "$SCRIPT_DIR/lib/config.sh" ]; then
+  # shellcheck disable=SC1091
   source "$SCRIPT_DIR/lib/config.sh" 2>/dev/null || true
 fi
 
@@ -28,6 +29,7 @@ DAEMON_JSON="${SOFAGENT_DATA}/daemon.json"
 DAEMON_PID_FILE="${SOFAGENT_DATA}/daemon.pid"
 
 if [ -f "$SCRIPT_DIR/lib/daemon-lib.sh" ]; then
+  # shellcheck disable=SC1091
   source "$SCRIPT_DIR/lib/daemon-lib.sh" 2>/dev/null || true
 fi
 
@@ -149,6 +151,7 @@ output_default() {
 case "${1:-}" in
   --detect)
     if [ -f "$SCRIPT_DIR/lib/daemon-lib.sh" ]; then
+      # shellcheck disable=SC1091
       source "$SCRIPT_DIR/lib/daemon-lib.sh" 2>/dev/null
       detect_platforms 2>/dev/null || echo ""
     else

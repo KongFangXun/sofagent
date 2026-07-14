@@ -73,6 +73,7 @@ PLATFORM="$(echo "$PLATFORM" | tr '[:upper:]' '[:lower:]')"
 # v0.90 P0-3 修复：提前 source config.sh 统一数据目录
 _VERIFY_SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -f "${_VERIFY_SCRIPT_DIR}/lib/config.sh" ]; then
+  # shellcheck disable=SC1091
   source "${_VERIFY_SCRIPT_DIR}/lib/config.sh" 2>/dev/null || true
 fi
 
@@ -760,6 +761,7 @@ fi
 
 # 10.4 默认关闭确认
 if [ -f "${VERIFY_SCRIPT_DIR}/lib/config.sh" ]; then
+  # shellcheck disable=SC1091
   source "${VERIFY_SCRIPT_DIR}/lib/config.sh" 2>/dev/null || true
 fi
 if [ "${SOFA_SANITIZE:-}" != "true" ] && [ "${SOFA_AUDIT_ENABLED:-}" != "true" ] && [ "${SOFA_CLEANUP_ON_RECORD:-}" != "true" ]; then

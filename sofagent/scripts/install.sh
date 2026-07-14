@@ -31,9 +31,13 @@ _log() { echo "[$(date '+%H:%M:%S')] $1" >> "${INSTALL_LOG:-/dev/null}"; }
 QUICK_MODE="${QUICK_MODE:-0}"; REMOTE_MODE="${REMOTE_MODE:-0}"
 
 # ── source 模块 ──
+# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/lib/platform-detect.sh"
+# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/lib/file-deploy.sh"
+# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/lib/daemon-register.sh"
+# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/lib/post-install.sh"
 
 # ── 环境检测 ──
