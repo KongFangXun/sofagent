@@ -237,7 +237,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 - **531 tests 全绿**（`cd sofagent/audit && npm test`）— diff-parser / config-loader / A1-A17 / reporter / init
 - **19 条审计规则** — 11 条默认（A1-A11）+ 8 条扩展（E1-E4 + A14-A17），A12/A13 永久跳号
-- 📁 v1.0.8+ 文件系统审计（不需 git）— [使用指南](./docs/filesystem-audit.md)
+- 📁 v1.0.8+ 文件系统审计（不需 git）— [使用指南](./docs/guides/filesystem-audit.md)
 - MIT 许可证
 
 > ⚠️ 编排引擎需要 DeepAgents 环境。[已知局限](./LIMITATIONS.md)

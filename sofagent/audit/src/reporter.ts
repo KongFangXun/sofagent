@@ -7,9 +7,9 @@
 // v1.0.9：fast-fail 优化——委托到 rules/runner.ts
 // ============================================================
 
-import type { DiffFile } from './diff-parser';
-import type { LogEntry } from './log-checker';
-import type { AuditConfig } from './config-loader';
+import type { DiffFile } from '@sofagent/core';
+import type { LogEntry } from '@sofagent/core';
+import type { AuditConfig } from '@sofagent/core';
 import type { AuditContext, RuleCheck } from './rules/types';
 import { runRules as runRulesWithFastFail } from './rules/runner';
 

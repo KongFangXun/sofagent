@@ -2886,9 +2886,9 @@ find . -name SKILL.md ! -path "*/node_modules/*" ! -path "*/experimental/*" -exe
 
 #### 260. README「非开发者」声称有上手路径 🆕
 ```bash
-# v1.0.9 T15：docs/filesystem-audit.md 提供完整的 daemon 配置→启动→告警→时间线闭环
+# v1.0.9 T15：docs/guides/filesystem-audit.md 提供完整的 daemon 配置→启动→告警→时间线闭环
 grep -c "filesystem-audit" README.md   # 期望: ≥ 1（README 引用了文件系统审计指南）
-ls docs/filesystem-audit.md            # 期望: 存在
+ls docs/guides/filesystem-audit.md     # 期望: 存在
 ```
 
 #### 261. acceptance-test 不被 set -euo pipefail 误杀 🆕

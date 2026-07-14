@@ -42,7 +42,7 @@
 | 怎么装 | `bash sofagent/scripts/install.sh` | 场景一 |
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | 场景二 |
 | 审计怎么跑 | 开发者：git commit 自动审计。非开发者：v1.0.8+ daemon 监控文件变更自动审计 | 场景一 |
-| AI 知识库 | `.sofagent/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [v1.0.1 日志](./changelog/v1.0.1.md) · [设计原理](./ARCHITECTURE.md#数据层ai-知识库v101-实现) |
+| AI 知识库 | `.sofagent/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [v1.0.1 日志](./changelog/v1.0.1.md) |
 | AI 成熟度 | 三级台阶（替换→增强→重构），FDE 帮企业从第二级跨到第三级——不只装 AI，还装上责任机制 | [FDE/FDE.md](../FDE/FDE.md#附录企业-ai-成熟度三级台阶) |
 | 已知局限 | 核心效果见 [evidence.md](./evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](./LIMITATIONS.md) |
 
@@ -131,7 +131,7 @@ sofagent-audit --history              # 查看审计快照
 sofagent-audit --revert <sha>         # 回滚到某次审计前
 ```
 
-Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 告警链路](./ARCHITECTURE.md#告警链路)。
+Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯引擎](./ARCHITECTURE.md#🔄-回溯引擎)。
 
 ### CI 集成
 
@@ -181,7 +181,7 @@ jobs:
 | 3 | `fde.md` | 你的运行规范，优先级最高 | ✅ 随便改 |
 | 4 | `knowledge/index.md` | AI 知识库目录，被动注入 top-3 页摘要 | ⚠️ daemon 自动维护 |
 
-> 地基约 3,500 token，不到 128K 窗口的 3%。OpenClaw 平台 Hook 自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE.md](./ARCHITECTURE.md#两层架构地基-vs-引擎)。
+> 地基约 3,500 token，不到 128K 窗口的 3%。OpenClaw 平台 Hook 自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE 地基与引擎](./ARCHITECTURE.md#地基与引擎)。
 
 ### 引擎怎么跑
 
@@ -288,13 +288,9 @@ Agent 先判断任务复杂度：
 | 理解债 | Loop 交付你没写过的代码越快，理解鸿沟越大 | task/logs 只追加不修改，永远可回溯；think.md 每步记录决策日志 |
 | 认知投降 | 最舒服的状态是不再有自己观点 | fde.md 随时加规则覆盖；编排可回滚；审计独立于 Agent |
 
-> 💡 **反认知投降的三道护栏**：fde.md 规则覆盖（保留人类话语权）、编排可回滚（保留人类否决权）、审计引擎独立于 Agent（保留人类验收权）。这不是技术特性，是制度设计——确保人类永远是最终决策者，不是 AI 产出的被动接收者。详见 [ARCHITECTURE 设计原则](./ARCHITECTURE.md#设计原则的理论支撑)。
+> 💡 **反认知投降的三道护栏**：fde.md 规则覆盖（保留人类话语权）、编排可回滚（保留人类否决权）、审计引擎独立于 Agent（保留人类验收权）。这不是技术特性，是制度设计——确保人类永远是最终决策者。详见 [ARCHITECTURE 设计原则](./ARCHITECTURE.md#设计原则) 和 [反认知投降](./ARCHITECTURE.md#反认知投降的制度设计)。
 
-> 💡 **反拟人化与反谄媚的叙事护栏**：sofagent 的边界是「管住 Agent 行为」，不是「替代人」。叙事上避免「AI 数字员工进组织架构」式过度承诺自主——AI 是 7×24 自动执行任务的劳动力，不是独立编制的员工。**反谄媚**（反社会奖励劫持）是反认知投降的同构变体：AI 为获认可而顺人类偏好、回避指出风险，本质是认知投降的温和形态。审计与反思须设显式检查点——鼓励指出问题而非附和，禁止为取悦而弱化风险表述。详见 [ARCHITECTURE 反认知投降](./ARCHITECTURE.md#设计原则的理论支撑)。
-
-> > "Build a Loop, but build it like an engineer who plans to keep being one." — Ozzmani。Loop 不是造完就不用管的自动化流水线，是工程师持续维护的工程系统。
-
-> 💡 **模型越强，纪律层越值钱**。模型能完成 90% 任务，但剩余 10% 不可预测失误 = 只能做助手不能做自主系统。模型越强 → 90% 常规范围越广 → 但 10% 高风险场景价值反升。sofagent 占据的正是那 10%——审计、验证、复盘、兜底、为结果负责。
+> "Build a Loop, but build it like an engineer who plans to keep being one." — Osmani。Loop 不是造完就不用管的自动化流水线，是工程师持续维护的工程系统。
 
 ---
 
@@ -319,8 +315,8 @@ Agent 先判断任务复杂度：
 
 | 术语 | 一句话解释 |
 |------|------|
-| **Harness 中间件** | Agent 治理——五个引擎覆盖全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他平台，sofagent 是独立的底线守卫层。→ [设计原理](./ARCHITECTURE.md#五引擎治理架构v109) |
-| **审计引擎** | 看 git diff 硬证据判定违规，不依赖 Agent 配合。v1.0.8+ daemon 监控文件变更，**非开发者也能用**。→ [为什么外置](./ARCHITECTURE.md#为什么审计必须外置) |
+| **Harness 中间件** | Agent 治理——五个引擎覆盖全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他平台，sofagent 是独立的底线守卫层。→ [设计原理](./ARCHITECTURE.md#五引擎治理架构) |
+| **审计引擎** | 看 git diff 硬证据判定违规，不依赖 Agent 配合。v1.0.8+ daemon 监控文件变更，**非开发者也能用**。→ [审计引擎设计](./ARCHITECTURE.md#🔍-审计引擎) |
 | **回溯引擎**（v1.0.8+） | 审计后自动快照存档，违规时建议回滚——不只是告诉你违规了，还存了快照、推了通知 |
 | **编排引擎**（实验性）| 拆任务→编排→执行，基于 DeepAgents Sub Agent。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
 | **铁律** | Agent 行为约束规则（4 底线 + 7 铁律），写在 MD 文件里注入上下文 |
@@ -332,7 +328,7 @@ Agent 先判断任务复杂度：
 | **四层加载链** | SKILL.md（宪法层）→ think.md（反思层）→ fde.md（执行层）→ knowledge/index.md（知识层）注入顺序 |
 | **FDE** | Forward Deployed Engineer，四阶段十二步：梳理工作流→构建本体模型→识别节点与量化→部署→离场 |
 
-核心 = **4 底线 + 7 铁律 + 四层加载链**（所有平台生效）。增强 = 编排引擎 + 断路器 + Hook 注入（OpenClaw 全功能，其他平台核心可用）。**定位**：不管企业用什么 Agent 平台，sofagent 是 Harness 中间件——约束行为、审计变更、沉淀经验。完整概念分层见 [README](../README.md)。
+核心 = **五个引擎覆盖全生命周期**（约束·审计·回溯·编排·进化），三个维度管住 Agent 行为：四层加载链（所有平台生效）、审计引擎 + daemon（开发者 + 非开发者）、编排引擎 + 进化引擎（增强，OpenClaw 全功能）。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 ---
 
@@ -340,7 +336,7 @@ Agent 先判断任务复杂度：
 
 > ⚠️ **成熟度**：审计引擎是稳定的（跨平台、零 Agent 依赖）。FDE 部署流程已有完整的四阶段十二步 + 五份模板 + quick-start，核心流程可用。编排引擎仍为实验性（基于 DeepAgents Sub Agent，所有平台可用）。遇到问题开 Issue。
 >
-> **FDE 工具包本身就是 sofagent 产品的一部分。** sofagent 的核心是底座，FDE 是底座落地进企业的场景。FDE 用这个工具包帮企业梳理工作流、构建本体模型、识别节点与量化、装上底座——**FDE 工作用自己产品，给别人部署完让别人也用自己产品。**
+> **FDE 工具包本身就是 sofagent 产品的一部分。** FDE 用 sofagent 五个引擎帮企业梳理工作流、构建本体模型、识别节点与量化、装上底座——**FDE 工作用自己产品，给别人部署完让别人也用自己产品。**
 
 > FDE = Forward Deployed Engineer（前向部署工程师）。完整四阶段十二步流程见 [FDE/FDE.md](../FDE/FDE.md)。建议装 [sofagent-fde Skill](../FDE/SKILL.md)——Agent 自动加载 FDE 工作台。
 
@@ -374,14 +370,12 @@ FDE 进场后要决定每个 AI 节点跑哪种模式：
 |------|------|
 | **交付手册** | 企业画像 + 部署方案 + `fde.md` + `quick-start.md`（后两章安装包自带） |
 | **AI 节点（三层实体）** | 每个节点：文档层（.md，人读+编排引擎读）+ Skill 层（企业专属 Skill）+ 运行层（在跑的 session） |
-| **AI 知识库** | `.sofagent/knowledge/` 目录——结构化知识系统（entities/ → relations → concepts/ → comparisons/，轻量级 GraphRAG）。daemon 自动 Ingest，加载链被动注入。think.md / task/logs / eval.md 由 AI 节点自动生成。见 [设计原理](./ARCHITECTURE.md#数据层ai-知识库v101-实现) |
+| **AI 知识库** | `.sofagent/knowledge/` 目录——结构化知识系统（entities/ → relations → concepts/ → comparisons/，轻量级 GraphRAG）。daemon 自动 Ingest，加载链被动注入。think.md / task/logs / eval.md 由 AI 节点自动生成 |
 | **私有化评估体系** | eval.md + Skill 迭代历史 + 知识库演变轨迹。工具可复制，差异化反馈无法复制——企业的长期竞争壁垒。见 [FDE/FDE.md](../FDE/FDE.md) |
 
 > 企业专属 Skill 会基于 eval.md 评分自动迭代优化——检查点不合格时触发优化分析，A/B 测试新版本。详见 [ROADMAP](../ROADMAP.md) 企业 Skill 自进化。
 
 > sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。
-
----
 
 ---
 

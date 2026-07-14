@@ -1,13 +1,12 @@
 // ============================================================
 // think-generator.ts · 基于 git diff 自动生成 think.md 条目
 // v0.98 方案 A：审计引擎基于 diff 硬证据自动生成反思记录
-// 不依赖 Agent 配合——diff 是客观证据
+// v1.1.0 迁移到 @sofagent/think
 // ============================================================
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync } from 'fs';
 import { join } from 'path';
-import type { DiffFile } from './diff-parser';
-import type { AuditResult } from './reporter';
+import type { DiffFile, AuditResult } from '@sofagent/core';
 
 /**
  * think.md 条目生成选项
@@ -208,4 +207,3 @@ function readThinkForCache(thinkPath: string): string {
     return '';
   }
 }
-
