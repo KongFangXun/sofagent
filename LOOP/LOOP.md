@@ -185,6 +185,19 @@ async function postReleaseEvolution(version: string) {
 - **不是无人值守**：人类确认还在循环里
 - **未验证端到端**：Agent 定义有了（Agency Agents 格式），但实际运行尚未测试
 
+### Loop 成熟度自检
+
+每次 LOOP 迭代完成后，用这四个问题评估当前循环的成熟度：
+
+| # | 问题 | 当前状态 | 目标 |
+|:--:|------|------|------|
+| 1 | **如何停止？** | 人类确认后停止 | LOOP 内建通过/不通过判定，无需人类"叫停" |
+| 2 | **谁判通过？** | 人类看审查报告判定 | 审查员 Agent 独立给出 IS_PASS，人类仅复核异常 |
+| 3 | **失败如何反馈？** | 审查不通过 → 返回工程师修复 | 失败原因 + 修复建议自动注入 engineer 的下次任务上下文 |
+| 4 | **何时交还人类？** | 每次迭代都交还 | 仅 IS_PASS: NO 或高置信度判定失败时交还；PASS 自动推进 |
+
+> 当前阶段（human-in-the-loop）四个问题都在人类这一侧。v1.2.x LangGraph 编排后会逐步将判定权从人类移向系统，但四个问题的存在本身不变——它们定义 LOOP 是不是真的"在跑"。
+
 ## LOOP 与发版流程的对应
 
 sofagent 的版本发布遵循 [`docs/verification/releasing.md`](../docs/verification/releasing.md) 的 11 阶段 SOP。LOOP 将其中可由 Agent 自动化的步骤映射到对应的 Agent：
