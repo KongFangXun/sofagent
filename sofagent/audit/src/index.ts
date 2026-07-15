@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.1.0 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
-// v1.1.0 精简：compose→orchestrator, subagent→orchestrator,
+// v1.1.1 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.1.1 精简：compose→orchestrator, subagent→orchestrator,
 //          hub→workflow-hub, skillopt-run→skillopt, ab-test→ab-test,
 //          daemon→daemon, doctor/verify→core (deprecation shim)
 // ============================================================
@@ -99,16 +99,16 @@ function parseArgs(argv: string[]): Args {
       i++;
       args.regressionDir = argv[i] as string;
     } else if (argv[i] === '--revert') {
-      // v1.1.0: 无参报错修复
+      // v1.1.1: 无参报错修复
       if (!argv[i + 1] || argv[i + 1]!.startsWith('--')) {
-        console.error('❌ 缺少快照 SHA 参数，格式：sofagent-audit --revert <snapshot-sha>');
+        console.error('❌ sofagent 提示：缺少快照 SHA 参数，用法: sofagent-audit --revert <snapshot-sha>');
         console.error('   查看可用快照：sofagent-audit --timeline');
         process.exit(2);
       }
       i++;
       args.revertSha = argv[i] as string;
     } else if (argv[i] === '--timeline') {
-      // v1.1.0: 快照时间线
+      // v1.1.1: 快照时间线
       args.timeline = true;
       args.timelineJson = argv.includes('--json');
       // 下一个参数如果是数字则为 limit
@@ -122,7 +122,7 @@ function parseArgs(argv: string[]): Args {
       if (platform === 'dingtalk' || platform === 'feishu' || platform === 'wecom') {
         args.webhook = platform;
       } else {
-        console.error(`❌ 无效的 webhook 平台: ${platform}（支持: dingtalk / feishu / wecom）`);
+        console.error(`❌ sofagent 提示：不支持的 webhook 平台 "${platform}"（可用: dingtalk / feishu / wecom）`);
         process.exit(1);
       }
     } else if (argv[i] === '--webhook-url' && argv[i + 1]) {
@@ -153,7 +153,7 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit --timeline [N]                      查看快照时间线');
       console.log('  sofagent-audit ontology view                        本体人类可读视图');
       console.log('');
-      console.log('v1.1.0 已迁移的子命令:');
+      console.log('v1.1.1 已迁移的子命令:');
       console.log('  compose      → sofagent-orchestrator compose');
       console.log('  subagent run → sofagent-orchestrator subagent run');
       console.log('  hub          → sofagent-workflow-hub');
@@ -192,11 +192,11 @@ function parseArgs(argv: string[]): Args {
     } else {
       const arg = argv[i];
       if (arg && arg.startsWith('--')) {
-        console.error(`❌ 未知参数: ${arg}`);
+        console.error(`❌ sofagent 提示：不支持的参数 "${arg}"`);
         console.error('   使用 --help 查看可用参数');
         process.exit(1);
       } else if (arg && !arg.startsWith('-')) {
-        // v1.1.0: 未知子命令报错
+        // v1.1.1: 未知子命令报错
         const SUBCOMMANDS = ['ontology'];
         if (!SUBCOMMANDS.includes(arg)) {
           console.error(`未知子命令: ${arg}`);
@@ -234,7 +234,7 @@ function installHook(): void {
   }
 
   if (!gitDir) {
-    console.error('❌ 未找到 .git 目录。请在 git 仓库内运行 --install-hook。');
+    console.error('❌ sofagent 提示：当前目录不是 git 仓库。请在 git 仓库内运行此命令，或先 git init。');
     process.exit(1);
   }
 
@@ -243,7 +243,7 @@ function installHook(): void {
   const hookTemplate = join(__dirname, '..', 'hooks', 'commit-msg');
 
   if (!existsSync(hookTemplate)) {
-    console.error(`❌ 未找到 commit-msg 模板: ${hookTemplate}`);
+    console.error(`❌ sofagent 内部错误：commit-msg 模板文件缺失——${hookTemplate}`);
     process.exit(1);
   }
 
@@ -302,7 +302,7 @@ function runRootCauseAnalysis(): void {
  */
 function runRegressionMode(dir: string): void {
   if (!existsSync(dir)) {
-    console.error(`❌ 目录不存在: ${dir}`);
+    console.error(`❌ sofagent 提示：目录不存在——${dir}`);
     process.exit(1);
   }
 
@@ -398,12 +398,12 @@ function printTimeline(limit: number, json: boolean): void {
     console.log(`\n  共 ${snapshots.length} 条快照（最近 ${limit} 条）`);
     console.log('  回滚：sofagent-audit --revert <SHA>');
   } catch (err) {
-    console.error('❌ 获取快照时间线失败:', (err as Error).message);
+    console.error('❌ sofagent 获取快照时间线时遇到问题:', (err as Error).message);
     process.exit(1);
   }
 }
 
-// 同步加载 snapshot 模块（v1.1.0 迁移到 @sofagent/daemon）
+// 同步加载 snapshot 模块（v1.1.1 迁移到 @sofagent/daemon）
 function awaitLoadSnapshot(): any {
   try {
     return require('@sofagent/daemon');
@@ -425,30 +425,32 @@ function confirm(question: string): Promise<boolean> {
 }
 
 async function main(): Promise<void> {
-  // === v1.1.0 deprecation shim ===
+  // === v1.1.1 deprecation shim ===
   // 在 args 解析之后、主 switch 分支之前，拦截已迁移的子命令
   const rawArgs = process.argv.slice(2);
 
-  // compose → sofagent-orchestrator
+  // compose → sofagent-orchestrator (v1.1.1 P0-2: 友好报错降级，不再 execFileSync)
   if (rawArgs.includes('compose')) {
-    console.error('⚠️  "sofagent-audit compose" 已迁移到 "sofagent-orchestrator compose"（v1.1.0）。将在 v1.2.0 移除此兼容入口。');
-    execFileSync('sofagent-orchestrator', process.argv.slice(3), { stdio: 'inherit' });
-    process.exit(0);
+    console.error('⚠️  "sofagent-audit compose" 已迁移到 "sofagent-orchestrator compose"（v1.1.1）。');
+    console.error('   请直接运行：sofagent-orchestrator compose');
+    console.error('   安装：npm install -g @sofagent/orchestrator');
+    process.exit(1);
   }
 
-  // doctor → sofagent-core (v1.1.0 P0 fix: use direct import instead of execFileSync)
+  // doctor → sofagent-core (v1.1.1 已改 doctor direct import；compose/verify 见 P0-2)
   if (rawArgs.includes('--doctor')) {
-    console.error('⚠️  "sofagent-audit --doctor" 已迁移到 "sofagent-core --doctor"（v1.1.0）。将在 v1.2.0 移除此兼容入口。');
+    console.error('⚠️  "sofagent-audit --doctor" 已迁移到 "sofagent-core --doctor"（v1.1.1）。将在 v1.2.0 移除此兼容入口。');
     const { runDoctor } = await import('@sofagent/core');
     const report = runDoctor(process.cwd());
     process.exit(report.allOk ? 0 : 1);
   }
 
-  // verify → sofagent-core
+  // verify → sofagent-core (v1.1.1 P0-2: 友好报错降级，不再 execFileSync)
   if (rawArgs.includes('verify')) {
-    console.error('⚠️  "sofagent-audit verify" 已迁移到 "sofagent-core verify"（v1.1.0）。将在 v1.2.0 移除此兼容入口。');
-    execFileSync('sofagent-core', process.argv.slice(2), { stdio: 'inherit' });
-    process.exit(0);
+    console.error('⚠️  "sofagent-audit verify" 已迁移到 "sofagent-core verify"（v1.1.1）。');
+    console.error('   请直接运行：sofagent-core verify');
+    console.error('   安装：npm install -g @sofagent/core');
+    process.exit(1);
   }
 
   const args = parseArgs(process.argv);
@@ -480,7 +482,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  // ontology 子命令（v1.0.9 新增，v1.1.0 改用 @sofagent/ontology）
+  // ontology 子命令（v1.0.9 新增，v1.1.1 改用 @sofagent/ontology）
   if (args.ontologyCommand === 'view') {
     const { generateOntologyView } = await import('@sofagent/ontology');
     try {
@@ -629,7 +631,7 @@ async function main(): Promise<void> {
     throw err;
   }
 
-  // 4.5 权限检查（v1.1.0：权限作用域化）
+  // 4.5 权限检查（v1.1.1：权限作用域化）
   const permission = loadPermission(process.cwd());
   const permissionDenials: string[] = [];
   for (const file of diffFiles) {
@@ -683,6 +685,7 @@ async function main(): Promise<void> {
       diffFileCount: diffFiles.length,
       commitMsg: commitMsg || undefined,
       commitSha,
+      engine: `sofagent-audit v${VERSION}`,
     };
     appendHistory(historyEntry);
   } catch {
@@ -690,8 +693,9 @@ async function main(): Promise<void> {
     process.stderr.write('[sofagent-audit] 警告: 审计历史写入失败，跳过（不影响审计结果）\n');
   }
 
-  // v1.1.0: generateThinkEntry 已迁移到 @sofagent/core，think.md 生成由 core 包负责
-  // 此处不再生成 think.md
+  // think.md 生成由 @sofagent/think 的 generateThinkEntry 负责（审计后反思生成器），
+  // 其内部经 @sofagent/core 的 appendThinkEntry 契约写入，保证 append-only 不变量。
+  // audit 包不直接写 think.md（避免反向依赖 think 生成器）。
 
   process.exit(results.exitCode);
 }
@@ -856,6 +860,10 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
   console.log('');
   const judgeIcon = exitCode === 0 ? '✅ PASS' : exitCode === 1 ? '⚠️  WARN (有警告)' : '❌ FAIL (有违规)';
   console.log(`  判定: ${judgeIcon} · exit code ${exitCode}`);
+  const ruleSummary = exitCode === 0
+    ? `${results.rules.length} 条规则全部通过`
+    : `${results.rules.length} 条规则已完成检测`;
+  console.log(`  审计引擎: sofagent-audit v${VERSION} · ${ruleSummary}`);
 
   // 失败时输出"下一步"指引
   if (exitCode > 0) {

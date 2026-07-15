@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v1.1.0 · 2026-07-14（UTC）· 孔放勋
+> v1.1.1 · 2026-07-14（UTC）· 孔放勋
 
 ---
 
@@ -142,7 +142,7 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 #### OpenClaw 的两种角色
 
-> 完整设计描述见 [ARCHITECTURE § 地基与引擎](./ARCHITECTURE.md#地基与引擎)。此处只记录与局限相关的点。
+> 完整设计描述见 [ARCHITECTURE § 地基与引擎](docs/ARCHITECTURE.md#地基与引擎)。此处只记录与局限相关的点。
 
 **模式 B 的关键约束**：企业 Agent 不跑在 OpenClaw session 里。OpenClaw 不拦截 Agent 的 API 调用、不提供 Docker。sofagent 对企业 Agent 的审计走的是**文件系统层 + git hook**——Agent 在设备上正常安装、正常运行，代码仓库在设备文件系统上，`git commit` 时 commit-msg hook 自动触发 sofagent-audit。不需要"控制"Agent，不需要 Agent 配合，只需要 hook 它们的 git 仓库。
 
@@ -196,7 +196,7 @@ A14 规则在 commit 时检查 Agent 是否访问了超出工作流声明范围�
 
 ### 审计闭环成熟度
 
-sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARCHITECTURE.md](./ARCHITECTURE.md)），但各步骤的成熟度不同：
+sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARCHITECTURE.md](docs/ARCHITECTURE.md)），但各步骤的成熟度不同：
 
 | 步骤 | 成熟度 | 说明 |
 |------|:--:|------|
@@ -213,7 +213,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前 342 个测试全绿，但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前 342 个测试全绿（审计核心；全 workspace 518），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -257,12 +257,12 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `.sofagent/task/logs/
 
 ### FDE 端到端验证状态
 
-FDE 完整四阶段十二步部署流程（[FDE/FDE.md](../FDE/FDE.md)）已在作者自有企业（投资/科技/电商等公司）中实际部署使用。
+FDE 完整四阶段十二步部署流程（[FDE/FDE.md](FDE/FDE.md)）已在作者自有企业（投资/科技/电商等公司）中实际部署使用。
 
 但以下两点影响外部信任：
 
 1. **缺乏第三方独立验证**：所有部署案例均为作者自有企业，没有外部用户或客户的独立验证数据。外部审查者只能看到「作者说它工作了」，看不到「别人验证过它工作了」。
-2. **缺乏公开案例**：没有可公开引用的 case study 文档——包括部署规模、使用的具体功能、遇到的问题、量化效果。已有 [case study 模板](./evidence/case-study-template.md)，等待真实用户填写。
+2. **缺乏公开案例**：没有可公开引用的 case study 文档——包括部署规模、使用的具体功能、遇到的问题、量化效果。已有 [case study 模板](docs/evidence/case-study-template.md)，等待真实用户填写。
 
 缓解：如果你在真实环境中使用了 sofagent，欢迎提交 case study——这比任何内部测试都更有说服力。模板在 `docs/evidence/case-study-template.md`。
 
@@ -278,7 +278,7 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](../FDE/FDE.md)）已在�
 
 v1.0 新增 `tools/acceptance-test.sh`（9 个场景），但覆盖范围有限：
 
-- **CI 已覆盖**：单元测试 342 个（函数级）、verify.sh 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试 342 个（函数级，审计核心；全 workspace 518）、verify.sh 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 9 场景（CLI 端到端，步骤 2.3）、OpenClaw 验收 5 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
@@ -322,3 +322,19 @@ Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown fr
 ### Agent Dashboard 是原型而非生产功能
 
 `--doctor --agents` 读取 `task/logs/` 目录推断 Agent 状态——当目录为空时展示默认假数据（2 个虚拟 Agent）。这不是实时监控，只是时间点快照。daemon-notice.md 的异常检测是关键词匹配（"error"/"异常"/"失败"），不是结构化状态报告。当前 2 个 Sub Agent 的规模下 Dashboard 价值有限，验证企业需求后再决定是否进 v2.x 前端。
+
+---
+
+## 八、v1.1.1 新增局限
+
+### audit ↔ daemon 循环依赖
+
+`@sofagent/audit` 的 `optionalDependencies` 包含 `@sofagent/daemon`，而 `@sofagent/daemon` 的 `dependencies` 包含 `@sofagent/audit`，形成逻辑上的循环依赖。虽然 optional dependency 不会强制安装，但分层架构上存在张力：daemon（运行层）依赖 audit（纯审计层），违反了"四层单向依赖"的架构原则。
+
+**影响**：npm install 不阻塞（optional 不强制），但逻辑上两个包互相引用，单独修改一方时需验证另一方不受影响。
+
+**计划**：v1.2.x 评估解耦方案——将 daemon 对 audit 的直接依赖改为事件驱动或共享接口。
+
+### daemon 通知机制为轻量版
+
+v1.1.1 新增 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的统一通知接口，但当前 daemon 的 cron 巡检和文件监听结果仍通过 stdout 输出（非 Webhook/IM 推送）。完整的 daemon 通知机制（Webhook 推送、IM 集成）计划在 v1.2.x 实现。

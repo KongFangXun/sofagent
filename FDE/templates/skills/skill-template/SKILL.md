@@ -5,7 +5,7 @@ description: >
   当 FDE 需要对工作流节点做 AI 分类判定时用这个 Skill——
   不是"它是干什么的"，是"什么时候用"。
   写错 description = Skill 永远不会被触发。
-version: 1.1.0
+version: 1.1.1
 tags: [企业专属, FDE, 节点判定]
 image: skill-template.png
 note: >

@@ -1,13 +1,9 @@
----
-tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 双引擎, 审计引擎]
----
-
 # sofagent Architecture
 
 > 设计决策记录——从为什么存在、五个引擎如何协作，到每个关键决策的工程理由。
-> v1.1.0 · 2026-07-14（UTC）· 孔放勋
+> v1.1.1 · 2026-07-15（UTC）· 孔放勋
 
-<img src="assets/sofagent.png" alt="sofagent" width="300" />
+<img src="assets/sofagent.png" alt="sofagent" width="160" />
 
 ## 目录
 
@@ -33,57 +29,78 @@ tags: [架构, Ralph循环, git-diff, 审计, OODA, 状态外化, prompt工程, 
 | FDE | Forward Deployed Engineer | 前线部署工程师——梳理工作流、部署 sofagent、交付离场 |
 | Gateway | Gateway | 企业级 AI 统一入口（OpenClaw/DeepAgents） |
 
+> 💬 **交互范式**：sofagent 没有图形界面。所有能力通过 MCP 协议暴露，用户通过 Agent 对话（LUI）操作——说一句话，它做完告诉你结果在哪。这是架构的根本设计约束：不存在「仅 CLI 可用」或「需要打开页面」的能力。详见 [设计哲学](./PHILOSOPHY.md)。
+
 ---
 
 ## 一、核心理念与架构全景
 
-### 定位：Harness 中间件
+> 📖 **「为什么这么做」**见 [PHILOSOPHY](./PHILOSOPHY.md)。这里只讲架构设计——**怎么做的。**
 
-提示工程管「说什么」，上下文工程管「知道什么」，约束工程管「跑在哪」。sofagent 管最后一步：**跑完谁验收。** 不是给 AI 写 SOP，是装缰绳——让 AI 在个性化上下文里跑出 85-90 分而不越界。
-
-sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。Agent 的记忆长在文件系统（git diff / task/logs / SKILL.md），不长在 Agent 内部。**不信任 Agent 自我报告，只看 git diff 硬证据。**
+sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。**不信任 Agent 自我报告，只看 git diff 硬证据。**
 
 | 维度 | 通用 Agent 平台（OpenClaw/DeepAgents） | sofagent |
 |------|------|------|
 | 管什么 | 「会不会做」——能力问题 | 「能不能每次都做对」——执行控制问题 |
-| 怎么管 | 路由、调度、工具调用、会话管理 | 约束注入、变更审计、快照回溯、持续进化 |
 | 关系 | Gateway 高速公路 | 交规 + 测速摄像头 + 驾校教练 |
 
-### 理论基础
+> 理论基础及行业验证见 [THANKS.md](./THANKS.md) 和 [PHILOSOPHY §四 信任模型](./PHILOSOPHY.md#四怎么管信任模型)。
 
-> 完整引证见 [THANKS.md](./THANKS.md)。关键验证：Hugging Face 实验——同一模型不改权重，仅优化外层 Harness，法律 Agent 基准 3.5%→80.1%，追平 Claude Sonnet 成本仅 1/7。Harness 分两种（翁荔）：补模型短板型（价值随模型升级消失）vs 现实世界接入型（模型越强价值越大）——sofagent 属后者。Karpathy AutoResearch、Palantir AIP、OpenFDE、gstack 等多方独立验证了「Agent 需要外置审计 + 结构化反思」这个方向。
-
-### 五引擎治理架构
-
-Agent 不是装完就完事了——从部署到持续优化，需要五个引擎各管一摊。sofagent 不是"审计工具"——审计是其中一个引擎。
+### 五引擎治理架构（一底座四引擎）
 
 ```mermaid
 graph LR
-    A["🧭 约束底座<br/>Agent 启动前注入红线"] --> B["⚙️ 编排引擎<br/>拆任务·并行·A/B 优化"]
+    A["🧭 约束底座<br/>启动前注入红线"] --> B["⚙️ 编排引擎<br/>拆任务·并行·A/B"]
     B --> C["🔍 审计引擎<br/>每次变更自动扫描"]
     C --> D["🔄 回溯引擎<br/>快照存档·一键回滚"]
     D --> E["🧬 进化引擎<br/>周度巡检·自动优化"]
     E --> A
 ```
 
-| 引擎 | 一句话设计原则 |
-|------|------|
-| 🧭 约束底座 | 不知道红线就不会守——启动时注入四层加载链，永远在线 |
-| 🔍 审计引擎 | 不信任 Agent 自我报告，只看 git diff 硬证据（v1.1.0 拆独立包） |
-| 🔄 回溯引擎 | 行车记录仪，不是安检——事后快照 + `--revert` 回滚，不依赖任何平台 |
-| ⚙️ 编排引擎 | 大任务拆小、多 Agent 并行、A/B 对比找更优方案（DeepAgents + compose CLI） |
-| 🧬 进化引擎 | 部署完不是终点——FDE 转为持续优化，daemon cron @weekly 自动巡检 |
+| 引擎 | 设计原则 | 独立包 |
+|------|------|:--:|
+| 🧭 约束底座 | 四层加载链永远在线 | @sofagent/harness |
+| 🔍 审计引擎 | 只看 git diff 硬证据 | @sofagent/audit |
+| 🔄 回溯引擎 | 事后快照 + `--revert` | @sofagent/core |
+| ⚙️ 编排引擎 | DeepAgents + compose CLI | @sofagent/orchestrator |
+| 🧬 进化引擎 | daemon cron @weekly | @sofagent/daemon + @sofagent/skillopt |
 
-Gateway（OpenClaw/DeepAgents）管路由调度，sofagent 管行为治理——**Gateway 是高速公路，sofagent 是交规 + 测速摄像头 + 驾校教练**。
+> 五引擎的完整设计哲学见 [PHILOSOPHY §三 架构全景](./PHILOSOPHY.md#三怎么跑架构全景)。
+
+### 输出签名机制（v1.1.1）
+
+Harness 中间件最大的挑战是存在感——引擎在正常工作，但用户看到好结果时不知道是 harness 层在起作用。v1.1.1 引入三层签名：
+
+| 层级 | 机制 | 用户如何感知 |
+|------|------|------------|
+| 审计输出 | CLI / Webhook / MCP 所有返回值以 `[sofagent]` 开头 | 看到 `✅ sofagent 审计通过` 而非 `✅ PASS` |
+| 能力清单 | `list_capabilities` description 标注引擎来源 | Agent 转述能力时附带"谁在做、怎么做的" |
+| 审查报告 | LOOP 审查报告顶部签名段 | 报告第一行就是 `🔍 本报告由 sofagent 审计引擎 + 代码审查员 Agent 联合生成` |
+
+签名不修改审计逻辑、不加速度开关——harness 层不允许关掉自己的存在感。
+
+### 跨引擎关注点：持续感知层
+
+签名解决的是"当下这一条结果是谁做的"。但 FDE 离场后，还有一个更长周期的问题：**客户 3-6 个月后是否还记得 FDE 部署了什么。**
+
+这是 sofagent 的**持续感知层**——审计引擎产出证据，进化引擎生成报表，MCP 层负责推送，三者共同构成：
+
+| 频率 | 推送内容 | 由哪个引擎驱动 |
+|------|---------|:--:|
+| 每周 | 审计守护报告——拦截了多少次违规 | 审计引擎 |
+| 每月 | 知识库增长报告——AI 掌握了多少实体 | 进化引擎 |
+| 每季度 | 无 FDE 对照报告——裸模型 vs sofagent 回答对比 | 进化引擎 + MCP |
+| 每季度 | 本体健康度报告——实体数/关联数/约束规则数 | 进化引擎 + ontology |
+| 条件触发 | 扩容预警——节点数/知识量接近上限 | daemon |
+
+**FDE 的成功悖论是结构性的**：系统跑得越稳，客户感知越弱。持续感知层是产品的必修课，不是营销策略。
 
 ### 地基与引擎
 
-sofagent 分两层——地基永远在线，引擎按需启动：
-
-| 层 | 是什么 | 何时激活 |
+| 层 | 是什么 | 成本 |
 |:--:|------|:--:|
-| 地基 | 约束底座——四层加载链（SKILL.md + fde.md + think.md + knowledge/）| 每个会话启动，永远在线 |
-| 引擎 | 编排 + 审计 + 回溯 + 进化——四个运行时模块 | 编排：任务拆分时；审计/回溯：每次变更自动；进化：周度 cron |
+| 地基 | 四层加载链（纯 MD 文件，Agent 读即生效） | ~3,500 token |
+| 引擎 | 编排 + 审计 + 回溯 + 进化 + 约束底座（daemon + CLI） | 按需启动 |
 
 > v1.1.0 将审计引擎拆为独立 npm 包 `@sofagent/audit`，地基（约束底座）和其余四个引擎不受影响。
 
@@ -96,6 +113,8 @@ sofagent 分两层——地基永远在线，引擎按需启动：
 | **审计层** | git 仓库 + 文件系统 | sofagent-audit——提交时审计 + 文件变更审计 | ✅ |
 | **MCP 推送层** | 设备 MCP server | @sofagent/mcp 独立包 | ✅ |
 | **协同层** | 多设备 + 云端 | Agent 独立身份、共享上下文、组织记忆 | v2.x |
+
+> 📖 MCP resource 完整列表与 push target 配置见 [MCP 使用指南](./guides/mcp-usage.md)。
 
 ---
 
@@ -133,6 +152,17 @@ graph LR
 > [Anthropic《When AI builds itself》](https://www.anthropic.com/institute/recursive-self-improvement)（2026-06）：工程师代码产出达 2024 年 8 倍后，人工代码审查成为新堵点。sofagent 的审计引擎把审查外置到 git diff 自动化——正是解这个瓶颈的方向。
 
 **行业印证**：Palantir AIP 靠 Ontology 实现 Agent 可靠性——「根本接触不到 > 被告知不能说」与 sofagent 的 A15 约束验证 + 审计外置遵循同一原则（不依赖 Agent 自我报告，只看 git diff 硬证据）。
+
+**审计引擎的双重定位**：
+
+| 层级 | 做什么 | 行业对标 |
+|------|--------|---------|
+| 工程层 | 约束行为 + 变更审计 + 责任归属 | 事后护栏——每次变更都可追溯 |
+| 叙事层 | Agent 责任确权底座 | **轻量级 KYA（Know Your Agent）**——Agent 的每一次行动都有加密签名凭证 + 不可伪造的硬证据链 |
+
+在 agent-wrapping-agent 多层嵌套的架构趋势下（a16z 2026 研判），审计引擎不仅是「事后护栏」——它是 Agent 嵌套体系中的**一等架构评估层**：外层 Agent 在运行时评估子 Agent 的方法论质量，层层筛选合成高价值结论。审计引擎是这个评估层的基础设施。
+
+> a16z 研判：智能体经济瓶颈从「智力」转向「身份」——非人类身份:人类 = 96:1，急需 KYA。审计引擎 + 约束底座 = 企业内部轻量版 KYA。v1.2.x 评估引入签名凭证做 Agent 行动的可审计绑定。
 
 ### 🔄 回溯引擎
 
@@ -287,7 +317,9 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 
 ### 文件系统架构
 
-理由：`cat task/logs/` 就能拿到记录，不需要 SQL/连接串/权限管理。天然可审计、可传输、支持 Git。Ledger-Views-Policy 三层映射：task/logs = Ledger（只追加）→ knowledge/ + think.md = Views（派生视图）→ fde.md = Policy（读写规则）。
+理由：`cat task/logs/` 就能拿到记录，不需要 SQL/连接串/权限管理。天然可审计、可传输、支持 Git。Ledger-Views-Policy 三层映射：task/logs + think.md = Ledger（原始数据，只追加）→ knowledge/ = Views（派生视图）→ fde.md = Policy（读写规则）。
+
+> 记忆模型的完整契约（追加不变量、多写入方、派生方向单向）以 `docs/PHILOSOPHY.md` §五 为唯一权威文字定义，并以 `@sofagent/core` 的 `memory-contract.ts` 在代码层强制（路径 `getThinkPath()`、只追加写入点 `appendThinkEntry()`）。本文件仅描述架构映射，不重复定义契约。
 
 ### 模型选择
 
@@ -307,10 +339,10 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 
 ## 五、已知局限与未来方向
 
-**已知局限**：18 条详见 [LIMITATIONS.md](./LIMITATIONS.md)。核心：Harness 层自身在上下文里、加载链步进脆弱性、Skill 自进化处于经验记录阶段。
+**已知局限**：18 条详见 [LIMITATIONS.md](../LIMITATIONS.md)。核心：Harness 层自身在上下文里、加载链步进脆弱性、Skill 自进化处于经验记录阶段。
 
 **未来方向**：
-- **v1.1.0**：审计引擎拆独立包 `@sofagent/audit` + 轻量多设备经验共享 + daemon 主动巡检
+- **v1.1.0**：审计引擎拆独立包 `@sofagent/audit` + 轻量多设备经验共享（[同步指南](./guides/multi-device-sync.md)）+ daemon 主动巡检
 - **v1.2.x**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界
 - **v2.x**：组织级共享记忆 + 协同层
 

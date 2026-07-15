@@ -54,10 +54,12 @@ describe('listAgents', () => {
 });
 
 describe('BUILTIN_AGENTS', () => {
-  it('包含 fde 和 audit', () => {
+  it('包含 fde、audit、engineer 和 reviewer', () => {
     const names = BUILTIN_AGENTS.map((a) => a.name);
     expect(names).toContain('fde');
     expect(names).toContain('audit');
+    expect(names).toContain('engineer');
+    expect(names).toContain('reviewer');
   });
 
   it('所有内置 Agent 有 name 和 description', () => {

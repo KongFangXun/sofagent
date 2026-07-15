@@ -1,10 +1,13 @@
 // ============================================================
 // weekly-report.ts · 生成 lessons-missteps 周报
-// v1.1.0 新增
+// v1.1.1 新增
 // ============================================================
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { getThinkPath } from '@sofagent/core';
+
+const VERSION = '1.1.1';
 
 /** 周报生成结果 */
 export interface WeeklyReportResult {
@@ -25,7 +28,7 @@ export function generateWeeklyReport(
   projectDir: string,
   opts?: { week?: Date; llm?: boolean },
 ): WeeklyReportResult {
-  const thinkPath = path.join(projectDir, '.sofagent', 'think.md');
+  const thinkPath = getThinkPath(path.join(projectDir, '.sofagent'));
   if (!fs.existsSync(thinkPath)) {
     return { generated: false, error: 'think.md not found' };
   }
@@ -57,7 +60,8 @@ export function generateWeeklyReport(
   const summary =
     `# Weekly Missteps — ${weekStr}\n\n` +
     `本周踩坑总结（${missteps.length} 条）：\n\n` +
-    `${missteps.map((m, i) => `${i + 1}. ${m}`).join('\n')}\n`;
+    `${missteps.map((m, i) => `${i + 1}. ${m}`).join('\n')}\n` +
+    `\n> 由 sofagent daemon v${VERSION} 生成\n`;
 
   fs.writeFileSync(targetPath, summary, 'utf-8');
   return { generated: true, target: targetPath };

@@ -14,14 +14,14 @@
 </p>
 
 <p align="center" style="color:#64748B;font-size:14px;">
-  Agent Harness Middleware<br/>
-  FDE toolkit for SMEs and OPCs
+  Agent Harness Middleware + FDE Toolkit<br/>
+  <strong>Giving everyone FDE capabilities</strong>
 </p>
 
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.0-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.1-16B8F3" alt="Version" /></a>
 </p>
 
 ---
@@ -98,7 +98,9 @@ No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep 
 > OpenClaw/DeepAgents IS your Gateway. sofagent doesn't replace it — it layers on top for governance.
 > **The Gateway is the highway. sofagent is the traffic rules + speed cameras + driving coach.**
 
-> 🔮 **v1.1.0 released**: Package purity refactor — audit just audits, 12 independent packages + lightweight multi-device. See [changelog](./docs/changelog/v1.1.0.md).
+> 💬 **sofagent has no UI. You talk to it, and it tells you where the result is.** Language is the interface. MCP is the entry point. See [Philosophy](./docs/PHILOSOPHY.md). Full MCP reference: [MCP Usage Guide](./docs/guides/mcp-usage.md).
+
+> 🔮 **v1.1.0 released**: Package purity refactor — audit just audits, 12 independent packages + lightweight multi-device. See [changelog](./docs/changelog/v1.1.0.md). 4 sync methods: [Multi-Device Sync Guide](./docs/guides/multi-device-sync.md).
 
 #### 🧭 Constraint Base
 

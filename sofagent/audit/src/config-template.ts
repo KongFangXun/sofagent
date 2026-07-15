@@ -91,7 +91,7 @@ fi
 
 # 1. Node.js 检测
 if ! command -v node &>/dev/null; then
-  echo "❌ sofagent-audit: Node.js 未找到，审计未运行"
+  echo "❌ sofagent 提示：你的环境中未找到 Node.js，审计无法运行"
   echo "   请安装 Node.js >= 18: https://nodejs.org"
   exit 1
 fi
@@ -102,7 +102,7 @@ if command -v sofagent-audit &>/dev/null; then
 elif [ -f "sofagent/audit/dist/index.js" ]; then
   AUDIT_CMD="node sofagent/audit/dist/index.js"
 else
-  echo "❌ sofagent-audit 未安装，审计未运行"
+  echo "❌ sofagent 提示：未找到 sofagent-audit 命令，审计无法运行"
   echo "   请运行: npm install -g @sofagent/audit"
   exit 1
 fi
@@ -125,14 +125,14 @@ EXIT_CODE=$?
 
 if [ $EXIT_CODE -eq 2 ]; then
   echo ""
-  echo "❌ sofagent audit: 检测到违规，commit 已阻止。"
-  echo "   请修复违规项后重新提交。"
+  echo "❌ sofagent 发现违规，commit 已阻止。"
+  echo "   请修复下列问题后重新提交。"
   exit 1
 fi
 
 if [ $EXIT_CODE -eq 1 ]; then
   echo ""
-  echo "⚠️  sofagent audit: 检测到警告，但允许 commit。"
+  echo "⚠️  sofagent 发现警告（不阻止 commit）。"
 fi
 
 exit 0

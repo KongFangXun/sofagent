@@ -2,7 +2,11 @@
 
 > sofagent 怎么用自己的工具开发自己。
 >
-> Agent 定义见 [`agents/`](../agents/)——遵循 [Agency Agents](https://github.com/jnMetaCode/agency-agents-zh) 格式标准。编排层通过 [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) `createDeepAgent()` 接入 LangGraph StateGraph。
+> v1.1.1 · 2026-07-13（UTC）· 孔放勋
+
+<img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
+
+> 📖 LOOP 自迭代的设计哲学见 [PHILOSOPHY §七](../docs/PHILOSOPHY.md#七怎么进化loop-自迭代)。Agent 定义见 [`agents/`](../agents/)——遵循 [Agency Agents](https://github.com/jnMetaCode/agency-agents-zh) 格式标准。编排层通过 [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) `createDeepAgent()` 接入 LangGraph StateGraph。
 
 ## 整体流程
 
@@ -270,6 +274,9 @@ flowchart TD
 | 发版前 | 跨仓库一致性审计 + 知识库健康度 | compliance-auditor |
 | 发版后 | 四份验证文件自进化（fresh-eyes / regression / acceptance / releasing） | FDE（前三份直接做，releasing.md 提议→作者确认） |
 | 发现模式时 | 优化 Agent 定义文件 | forward-deployed-engineer |
+| 每周 | **生成审计守护周报 → 推送到客户 IM** | **进化引擎（自动）** |
+| 每月 | **生成知识库增长月报 → 推送到客户 IM** | **进化引擎（自动）** |
+| 每季度 | **生成无 FDE 对照报告 + 本体健康度 → 推送到客户 IM** | **进化引擎 + MCP** |
 
 ### 外层循环的产物
 
@@ -277,6 +284,7 @@ flowchart TD
 - **审计规则调整**：`.sofagent/config.yml` 的新增或修改
 - **合规审计报告**：compliance-auditor 产出的周期性报告
 - **优化记录**：think.md 中记录"本次优化了什么、为什么、预期效果"
+- **感知报告**：审计守护周报 / 知识增长月报 / 无 FDE 对照季报——自动推送客户 IM，维持 FDE 持续存在感
 
 ### 四个验证文件的自进化
 

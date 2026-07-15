@@ -1,6 +1,6 @@
 # 文件系统审计 — 非开发者使用指南
 
-> v1.1.0 · 让非开发者也能被 sofagent 审计覆盖
+> v1.1.1 · 让非开发者也能被 sofagent 审计覆盖
 
 ## 概述
 
@@ -62,4 +62,4 @@ sofagent-audit --revert <SHA>     # 回滚到指定快照
 
 - 不解析二进制文件内容（Excel、PDF 等）
 - daemon 重启后 A17 窗口内历史不保留
-- 详见 [LIMITATIONS.md](../LIMITATIONS.md)
+- 详见 [LIMITATIONS.md](../../LIMITATIONS.md)

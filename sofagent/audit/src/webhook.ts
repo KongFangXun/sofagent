@@ -18,9 +18,21 @@ export interface WebhookPayload {
 
 /**
  * 构建消息文本内容
- * 只包含 FAIL 和 WARN 的规则，PASS 不推
+ * v1.1.1: PASS 也推送；所有消息以 sofagent 开头
  */
-function buildContent(payload: WebhookPayload, failedRules: RuleCheck[]): string {
+function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass: boolean): string {
+  const version = '1.1.1'; // 与 @sofagent/audit 版本同步
+
+  if (isPass) {
+    const lines: string[] = ['✅ sofagent 审计通过'];
+    if (payload.task) {
+      lines.push(`任务：${payload.task}`);
+    }
+    lines.push(`扫描 ${payload.rules.length} 条规则 · 全部通过`);
+    lines.push(`审计引擎：sofagent-audit v${version}`);
+    return lines.join('\n');
+  }
+
   const lines: string[] = ['⚠️ sofagent 审计警告'];
   if (payload.task) {
     lines.push(`任务：${payload.task}`);
@@ -29,6 +41,7 @@ function buildContent(payload: WebhookPayload, failedRules: RuleCheck[]): string
     lines.push(`A${rule.number} ${rule.name}：${rule.details.join('；')}`);
   }
   lines.push(`详情：exit code ${payload.exitCode}`);
+  lines.push(`审计引擎：sofagent-audit v${version}`);
   return lines.join('\n');
 }
 
@@ -48,20 +61,18 @@ function buildRequestBody(platform: WebhookPlatform, content: string): Record<st
 
 /**
  * 推送审计结果到 webhook
- * 只在有 FAIL 或 WARN 时推送
+ * v1.1.1: PASS 也推送（之前只在 WARN/FAIL 时推送）
  * 超时 5 秒，超时/失败 silently return false
- * @returns true 推送成功, false 推送失败或无需推送
+ * @returns true 推送成功, false 推送失败
  */
 export async function pushAuditResult(payload: WebhookPayload): Promise<boolean> {
-  // 过滤出 FAIL 和 WARN 的规则
+  // v1.1.1: 过滤 FAIL/WARN 规则用于消息构建，但 PASS 也推送
   const failedRules = payload.rules.filter(
     (r) => r.status === 'FAIL' || r.status === 'WARN'
   );
-  if (failedRules.length === 0) {
-    return false;
-  }
+  const isPass = failedRules.length === 0;
 
-  const content = buildContent(payload, failedRules);
+  const content = buildContent(payload, failedRules, isPass);
   const body = buildRequestBody(payload.platform, content);
 
   try {

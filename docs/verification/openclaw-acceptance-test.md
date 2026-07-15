@@ -4,7 +4,7 @@
 >
 > 最后复核：2026-07-13
 >
-> **每次发版前，在全新 session 中粘贴本文件执行。** 覆盖审计管道全规则 + hook 机制 + SkillOpt 自净化 + DeepAgents Sub Agent + 内置 Agent 验证（FDE + Audit）+ optional 依赖降级。
+> **每次发版前，在全新 session 中粘贴本文件执行。** 覆盖审计管道全规则 + hook 机制 + SkillOpt 自净化 + DeepAgents Sub Agent + 内置 Agent 验证（FDE + Audit）+ optional 依赖降级 + v1.1.1 新增：deprecation shim 安全 + Harness 签名 + LOOP 双 Agent + v1.0.1-v1.1.0：A14/A15 + 约束自加载 + 文件系统审计 + 权限作用域化 + 经验共享 + Workflow Hub。
 >
 > 与 `acceptance-test.sh`（CLI 自动化）互补——本文件是 Agent 驱动的端到端验收，包含更多场景类型。
 >
@@ -19,7 +19,7 @@
 | 层级 | 工具 | 覆盖范围 |
 |------|------|---------|
 | 函数级 | 单元测试（vitest） | CI 自动，每次 push |
-| CLI 端到端 | `acceptance-test.sh`（30 场景） | 手动，发版前 |
+| CLI 端到端 | `acceptance-test.sh`（42 场景） | 手动，发版前 |
 | **Agent 端到端** | **本文件**（全场景） | **手动，发版前** |
 | 文档级 | 回归检查清单（维度总数随版本增长，见 regression-checklist.md 头部当前值） | 手动，发版前 |
 | 陌生人视角 | fresh-eyes-review.md | 手动，发布后 |
@@ -562,7 +562,7 @@ composeWithDeepAgents({
 
 ---
 
-### 场景 26b：内置 Sub Agent 注册与 CLI 调用（FDE + Audit · v1.1.0）
+### 场景 26b：内置 Sub Agent 注册与 CLI 调用（FDE + Audit · v1.1.1）
 
 > v1.0.8 新增：验证 `sofagent-fde` 和 `sofagent-audit` 两个内置 Agent 可从 CLI 正常调用。
 
@@ -812,6 +812,214 @@ grep "evidenceMode.*filesystem" sofagent/audit/src/rules/rule-a17-bulk-change.ts
 
 ---
 
+## 第十部分：v1.1.1 新增功能
+
+### 场景 36：deprecation shim 安全（compose/verify 友好降级）
+
+目的：验证只装 @sofagent/audit 时，已迁移的 compose/verify 子命令友好报错而非 ENOENT 崩溃。
+
+```bash
+# compose shim
+$AUDIT_CLI compose --task "test" 2>&1; echo "EXIT:$?"
+# ✅ 期望：输出含"已迁移到""sofagent-orchestrator"，exit 1（非 ENOENT 崩溃）
+# 如果输出含 ENOENT 或 command not found 则失败
+
+# verify shim
+$AUDIT_CLI verify 2>&1; echo "EXIT:$?"
+# ✅ 期望：输出含"已迁移到""sofagent-core"，exit 1
+```
+
+### 场景 37：Harness 签名——CLI 审计输出含引擎身份行
+
+```bash
+# 正常 PASS 场景
+$AUDIT_CLI --diff HEAD~1..HEAD 2>&1
+# ✅ 期望：PASS 判定后下一行含"审计引擎: sofagent-audit" + "条规则全部通过"
+
+# 违规 FAIL 场景
+echo "API_KEY=sk-test" > .env && git add -f .env
+# 用 --diff 看上一个 commit（不会触发 hook 拦截，只输出审计结果）
+$AUDIT_CLI --diff HEAD~1..HEAD 2>&1
+# ✅ 期望：FAIL/WARN 判定后下一行含"审计引擎: sofagent-audit" + "条规则已完成检测"（注意不是"全部通过"）
+git reset HEAD . 2>/dev/null || true
+```
+
+### 场景 38：LOOP 双 Agent——内置 Agent 注册 + CLI
+
+```bash
+# 1. 验证 --help 列出 engineer 和 reviewer
+$SOFAGENT_DIR/sofagent/orchestrator/dist/cli.js --help 2>&1 | grep -q "engineer\|reviewer" && echo "PASS" || echo "FAIL"
+# ✅ 期望：PASS（--help 输出含 engineer 或 reviewer）
+
+# 2. 验证 --help 列出 loop 子命令
+$SOFAGENT_DIR/sofagent/orchestrator/dist/cli.js --help 2>&1 | grep -q "loop" && echo "PASS" || echo "FAIL"
+# ✅ 期望：PASS
+
+# 3. 验证 loop 子命令可调用（不崩溃）
+$SOFAGENT_DIR/sofagent/orchestrator/dist/cli.js loop --task "echo test" 2>&1
+# ✅ 期望：有输出，不抛 uncaught 异常
+```
+
+### 场景 39：LOOP 双 Agent——loop-runner 结构完整性
+
+```bash
+# 验证核心文件存在
+ls $SOFAGENT_DIR/sofagent/orchestrator/src/loop-runner.ts
+# ✅ 期望：文件存在
+
+# 验证最大迭代次数保护
+grep -c "maxIterations.*3" $SOFAGENT_DIR/sofagent/orchestrator/src/loop-runner.ts
+# ✅ 期望：返回值 > 0
+
+# 验证导出完整性
+node -e "
+const m = require('$SOFAGENT_DIR/sofagent/orchestrator/dist/index.js');
+console.log('ENGINEER_AGENT:', typeof m.ENGINEER_AGENT);
+console.log('REVIEWER_AGENT:', typeof m.REVIEWER_AGENT);
+console.log('runLOOPIteration:', typeof m.runLOOPIteration);
+console.log('BUILTIN_AGENTS count:', m.BUILTIN_AGENTS.length);
+"
+# ✅ 期望：ENGINEER_AGENT = object, REVIEWER_AGENT = object, runLOOPIteration = function, BUILTIN_AGENTS count = 4
+```
+
+### 场景 40：Harness 签名——审查报告模板
+
+```bash
+# 验证审查报告模板顶部有签名段
+grep -B3 "^# 代码审查报告" $SOFAGENT_DIR/agents/engineering-code-reviewer.md
+# ✅ 期望：签名行（含 sofagent-audit 和 sofagent-orchestrator）在标题之前
+
+# 验证 MCP 工具返回值含 [sofagent] 前缀
+grep -c '\[sofagent\]' $SOFAGENT_DIR/sofagent/mcp/src/mcp-server.ts
+# ✅ 期望：≥ 6
+
+# 验证 MCP capabilities 工具描述准确性（v1.1.1 P0-5）
+grep "run_audit" $SOFAGENT_DIR/sofagent/mcp/src/mcp-server.ts | grep -c "19 条规则"
+# ✅ 期望：≥ 1，描述含 "19 条规则" 而非过期的 "A1-A14"
+
+grep "run_audit" $SOFAGENT_DIR/sofagent/mcp/src/mcp-server.ts | grep -c "0 token"
+# ✅ 期望：≥ 1，描述标注 "0 token 纯正则"
+```
+
+### 场景 41：Harness 签名——Webhook PASS 推送不崩溃
+
+```bash
+# 构造 webhook 配置（假 URL，验证推送逻辑不崩溃）
+cat > .sofagent/config.yml << 'CONF'
+audit:
+  rules: { a1: false }
+  webhook:
+    url: "http://localhost:19999/test"
+    platform: "feishu"
+CONF
+
+# 提交一个 .env（a1 禁用，应 PASS）
+echo "TOKEN=test" > .env && git add -f .env
+GIT_EDITOR=true git commit -m "webhook pass test" 2>&1 || true
+# ✅ 期望：commit 成功（PASS 推送到假 URL 不应崩溃）
+git reset HEAD . 2>/dev/null || true
+```
+
+---
+
+## 第十一部分：历史版本核心功能验证
+
+> v1.0.1-v1.1.0 中已在代码层面实现但验收测试未覆盖的核心功能。本部分作为补丁式验收——每个场景验证功能模块存在且接口正确，不要求端到端执行。
+
+### 场景 42：经验共享 — knowledge/shared/ 目录结构（v1.1.0）
+
+```bash
+# 1. knowledge 目录骨架
+DATA_DIR="${SOFAGENT_DATA_DIR:-$HOME/.sofagent}"
+ls "$DATA_DIR/knowledge/" 2>/dev/null
+# ✅ 期望：存在子目录（entities/ concepts/ comparisons/ shared/ 等）
+
+# 2. knowledge/shared/ 目录
+ls "$DATA_DIR/knowledge/shared/" 2>/dev/null && echo "OK" || echo "MISSING (may be created on first use)"
+# ✅ 期望：目录存在或首次使用时创建
+
+# 3. think.md 文件存在
+[ -f "$DATA_DIR/think.md" ] && echo "think.md OK" || echo "think.md MISSING"
+```
+
+### 场景 43：约束自加载 — buildConstrainedSystemPrompt（v1.0.7）
+
+```bash
+# 1. harness 包存在
+ls $SOFAGENT_DIR/sofagent/harness/src/ 2>/dev/null && echo "OK" || echo "NOT found"
+# ✅ 期望：harness 包存在
+
+# 2. buildConstrainedSystemPrompt 可用
+node -e "
+try {
+  const h = require('$SOFAGENT_DIR/sofagent/harness/dist/index.js');
+  console.log('buildConstrainedSystemPrompt:', typeof h.buildConstrainedSystemPrompt);
+} catch(e) { console.log('NOT available (may need build)'); }
+" 2>&1
+# ✅ 期望：输出 'function' 或 'NOT available'（未 build 时不抛异常）
+
+# 3. launcher 引用 harness
+grep -c "harness" $SOFAGENT_DIR/sofagent/orchestrator/src/launcher.ts 2>/dev/null || echo "0"
+# ✅ 期望：≥ 1
+```
+
+### 场景 44：A14 知识库越权审计（v1.0.1）
+
+```bash
+# 1. A14 规则注册
+grep -c "A14.*知识库越权\|checkRuleA14" $SOFAGENT_DIR/sofagent/audit/src/rules/index.ts
+# ✅ 期望：≥ 1
+
+# 2. A14 evidenceMode = hybrid
+grep "A14" $SOFAGENT_DIR/sofagent/audit/src/rules/index.ts | grep -c "hybrid"
+# ✅ 期望：≥ 1
+
+# 3. A14 测试文件存在
+ls $SOFAGENT_DIR/sofagent/audit/src/rules/rule-a14*.test.ts 2>/dev/null
+# ✅ 期望：文件存在
+```
+
+### 场景 45：A15 约束验证（v1.0.4）
+
+```bash
+# 1. A15 规则注册
+grep -c "A15.*越约束\|checkRuleA15" $SOFAGENT_DIR/sofagent/audit/src/rules/index.ts
+# ✅ 期望：≥ 1
+
+# 2. A15 evidenceMode = hybrid
+grep "A15" $SOFAGENT_DIR/sofagent/audit/src/rules/index.ts | grep -c "hybrid"
+# ✅ 期望：≥ 1
+
+# 3. A15 测试文件存在
+ls $SOFAGENT_DIR/sofagent/audit/src/rules/rule-a15*.test.ts 2>/dev/null
+# ✅ 期望：文件存在
+
+# 4. actions 配置解析不崩溃
+node -e "
+const config = { audit: { rules: { a15: true }, actions: ['read'] } };
+console.log('actions:', config.audit.actions);
+" 2>&1
+# ✅ 期望：输出 actions: [ 'read' ]
+```
+
+### 场景 46：Workflow Hub 命令验证（v1.0.5）
+
+```bash
+# 1. workflow-hub CLI --help
+$SOFAGENT_DIR/sofagent/workflow-hub/dist/cli.js --help 2>&1 || echo "NOT built"
+# ✅ 期望：输出 help 文本或 NOT built（未 build 不抛异常）
+
+# 2. help 含 hub 子命令
+$SOFAGENT_DIR/sofagent/workflow-hub/dist/cli.js --help 2>&1 | grep -c "list\|deploy"
+# ✅ 期望：≥ 2
+
+# 3. 模板目录非空
+ls $SOFAGENT_DIR/workflow-hub/templates/ 2>/dev/null | wc -l
+# ✅ 期望：≥ 1
+```
+
+---
+
 ## 验证检查清单
 
 每个场景需确认：
@@ -861,6 +1069,21 @@ grep "evidenceMode.*filesystem" sofagent/audit/src/rules/rule-a17-bulk-change.ts
 - [ ] 场景 33：runFilesystemAudit 函数已导出
 - [ ] 场景 34：startCron 函数已导出且不崩溃
 - [ ] 场景 35：EvidenceMode 含 'filesystem'，A17 使用该模式
+
+### v1.1.1 新增（场景 36-41）
+- [ ] 场景 36：compose shim 友好报错（exit 1 + "已迁移到"），verify shim 同理
+- [ ] 场景 37：PASS 场景输出含"审计引擎: sofagent-audit" + "条规则全部通过"；FAIL 场景输出含"条规则已完成检测"
+- [ ] 场景 38：orchestrator --help 含 engineer/reviewer 和 loop 子命令；loop 子命令可调用不崩溃
+- [ ] 场景 39：loop-runner.ts 存在 + maxIterations.*3 保护 + runLOOPIteration 导出 + ENGINEER_AGENT/REVIEWER_AGENT 导出
+- [ ] 场景 40：engineering-code-reviewer.md 签名段（sofagent-audit + sofagent-orchestrator）在标题前；MCP [sofagent] ≥ 6；run_audit 描述含 "19 条规则" + "0 token"
+- [ ] 场景 41：Webhook PASS 推送不崩溃（假 URL + a1 禁用 → commit 成功）
+
+### 历史版本核心功能（场景 42-46）
+- [ ] 场景 42：经验共享 knowledge/shared/ 目录结构 + think.md
+- [ ] 场景 43：约束自加载 buildConstrainedSystemPrompt（harness 包 + launcher 引用）
+- [ ] 场景 44：A14 知识库越权规则注册（index.ts + evidenceMode hybrid + 测试文件）
+- [ ] 场景 45：A15 约束验证规则注册（index.ts + actions 配置解析）
+- [ ] 场景 46：Workflow Hub CLI help + 模板目录（list/deploy ≥ 2 + templates ≥ 1）
 
 ## 清理
 

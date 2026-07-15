@@ -1,8 +1,8 @@
 // ============================================================
 // composer.ts · DeepAgents 任务编排
-// v1.1.0 新增：用 createDeepAgent() 做任务拆解，输出 YAML 工作流
-// v1.1.0：deepagents 提升为正式依赖，移除 as unknown as 类型转换
-// v1.1.0：迁移至 @sofagent/orchestrator
+// v1.1.1 新增：用 createDeepAgent() 做任务拆解，输出 YAML 工作流
+// v1.1.1：deepagents 提升为正式依赖，移除 as unknown as 类型转换
+// v1.1.1：迁移至 @sofagent/orchestrator
 // ============================================================
 
 /**
@@ -21,7 +21,7 @@ async function loadDeepAgentsCreate(): Promise<Function | null> {
  * 使用 DeepAgents 编排任务
  *
  * 创建一个编排 Agent，systemPrompt 基于 workflow.yml 节点定义，
- * Agent 输出格式与 ao compose 一致（YAML 工作流定义）。
+ * Agent 输出格式为 YAML 工作流定义。
  *
  * @param taskDesc    任务描述
  * @param workflowYml 可选——现有 workflow.yml 内容，用于指导编排风格
@@ -60,7 +60,7 @@ export async function composeWithDeepAgents(
     return output;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.warn(`DeepAgents compose 失败: ${msg}`);
+    console.warn(`⚠️ sofagent 提示：compose 未完成——${msg}`);
     return null;
   }
 }

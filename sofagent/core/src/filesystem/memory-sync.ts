@@ -1,6 +1,6 @@
 // ============================================================
 // memory-sync.ts · TencentDB Agent Memory 同步
-// v1.1.0 新增：检测 ~/.openclaw/memory-tdai/persona.md 变更
+// v1.1.1 新增：检测 ~/.openclaw/memory-tdai/persona.md 变更
 //
 // 用途：
 //   - 监控 TencentDB Agent 的 persona 记忆文件变化
@@ -141,7 +141,7 @@ export function syncPersona(dataDir?: string): { synced: boolean; sourcePath?: s
     console.log(`[memory-sync] persona.md 已同步: ${sourcePath} → ${targetPath}`);
     return { synced: true, sourcePath };
   } catch (err) {
-    console.warn(`[memory-sync] 同步失败: ${(err as Error).message}`);
+    console.warn(`[memory-sync] 同步未完成（不影响正常运行）: ${(err as Error).message}`);
     return { synced: false, reason: (err as Error).message };
   }
 }

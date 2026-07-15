@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/workflow-hub",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "sofagent 工作流中心 — 工作流注册 / 模板管理 / 执行历史",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

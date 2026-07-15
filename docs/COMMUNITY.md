@@ -1,6 +1,6 @@
 # COMMUNITY.md · sofagent 社区
 
-> v1.1.0 · 2026-07-13（UTC）· 孔放勋
+> v1.1.1 · 2026-07-13（UTC）· 孔放勋
 
 ## 📌 当前状态
 
@@ -13,7 +13,7 @@
 
 ## 🪜 贡献者阶梯
 
-详见 [CONTRIBUTING.md §贡献者阶梯](./CONTRIBUTING.md)。
+详见 [CONTRIBUTING.md §贡献者阶梯](../CONTRIBUTING.md)。
 
 ## 🎯 从哪开始
 

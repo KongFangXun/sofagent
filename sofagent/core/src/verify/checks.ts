@@ -1,6 +1,6 @@
 // ============================================================
 // verify/checks.ts · 验证检查逻辑（§1-§11 + quick + WorkBuddy）
-// v1.1.0 从 sofagent/audit/src/verify/checks.ts 迁出
+// v1.1.1 从 sofagent/audit/src/verify/checks.ts 迁出
 // ============================================================
 // 从 verify.ts main() 函数中提取的检查逻辑。
 // 每个函数接收 Verifier 实例和上下文参数，调用 v.checkPass/Fail/Warn。
@@ -8,6 +8,7 @@
 import { existsSync, readFileSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { VERSION } from '../shared/constants.js';
+import { getThinkPath } from '../memory-contract.js';
 import { Verifier } from './verifier.js';
 import type { Args } from './types.js';
 import {
@@ -261,7 +262,7 @@ export function runAllChecks(
     }
 
     // think.md 检查
-    const thinkFile = join(sofagentData, 'think.md');
+    const thinkFile = getThinkPath(sofagentData);
     if (existsSync(thinkFile)) {
       v.checkPass(`think.md 存在（${countChars(thinkFile)} 字符）`);
     } else {
@@ -490,7 +491,7 @@ export function runAllChecks(
 
   // 9.3 反思更新频率
   {
-    const thinkFile = join(sofagentData, 'think.md');
+    const thinkFile = getThinkPath(sofagentData);
     if (existsSync(thinkFile)) {
       try {
         const stat = statSync(thinkFile);

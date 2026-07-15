@@ -1,10 +1,10 @@
 # sofagent Handbook
 
-> **Gateway 管怎么跑，sofagent 管跑没跑对。** 约束底座→编排引擎→审计引擎→回溯引擎→进化引擎，一底座四引擎覆盖全生命周期。下面从装到用到查问题，全流程走一遍。
+> **Gateway 管怎么跑，sofagent 管跑没跑对。** 约束底座→编排引擎→审计引擎→回溯引擎→进化引擎，一底座四引擎覆盖全生命周期。装完 sofagent 之后，你不再需要依赖别人来部署 AI——**你自己就具备了 FDE 的能力：掌握完整上下文、打破岗位边界、对结果负责。** 下面从装到用到查问题，全流程走一遍。
 >
-> v1.1.0 · 2026-07-13（UTC）· 孔放勋
+> v1.1.1 · 2026-07-15（UTC）· 孔放勋
 
-<img src="assets/sofagent.png" alt="sofagent" width="300" />
+<img src="assets/sofagent.png" alt="sofagent" width="160" />
 
 - [阅读指南](#阅读指南)
 - [5 分钟速览](#5-分钟速览)
@@ -28,6 +28,8 @@
 | FDE | 场景一 → 场景五（部署与持续优化） |
 | 想理解内部机制 | [开发文档](./DEVELOPMENT.md) |
 | 想理解设计哲学 | [设计文档](./ARCHITECTURE.md) |
+| 想理解为什么这么做 | [设计哲学](./PHILOSOPHY.md)（**强烈推荐，读 5 分钟**） |
+| 想配置 MCP 推送 | [MCP 使用指南](./guides/mcp-usage.md) |
 
 > 📁 **项目文件导航**：根目录 8 个 .md 文件各司其职——[README.md](../README.md)（项目概览）、[README.en.md](../README.en.md)（英文概览）、[CHANGELOG.md](../CHANGELOG.md)（版本索引）、[ROADMAP.md](../ROADMAP.md)（路线图）、[LIMITATIONS.md](../LIMITATIONS.md)（已知局限）、[SECURITY.md](../SECURITY.md)（安全策略）、[CONTRIBUTING.md](../CONTRIBUTING.md)（贡献指南）、[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)（行为准则）。其余文档在 `docs/` 子目录下。
 
@@ -43,11 +45,15 @@
 | 审计怎么跑 | 开发者：git commit 自动审计。非开发者：v1.0.8+ daemon 监控文件变更自动审计 | 场景一 |
 | AI 知识库 | `.sofagent/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [v1.0.1 日志](./changelog/v1.0.1.md) |
 | AI 成熟度 | 三级台阶（替换→增强→重构），FDE 帮企业从第二级跨到第三级——不只装 AI，还装上责任机制 | [FDE/FDE.md](../FDE/FDE.md#附录企业-ai-成熟度三级台阶) |
-| 已知局限 | 核心效果见 [evidence.md](./evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](./LIMITATIONS.md) |
+| 已知局限 | 核心效果见 [evidence.md](./evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](../LIMITATIONS.md) |
 
 ---
 
 ## 场景一：装完第一件事
+
+> 💬 **sofagent 没有界面。** 装完之后，你不会看到任何窗口或网页。你通过你的 Agent（WorkBuddy / Codex / Claude Code）和 sofagent 对话——说一句话，它做完了告诉你结果在哪。这就是 sofagent 的运行方式：语言就是界面，MCP 就是入口。详见 [设计哲学](./PHILOSOPHY.md)。
+
+> 📊 **部署后你会自动收到这些**：每周审计守护报告（拦截了多少次违规）、每月知识库增长报告（AI 掌握了多少实体）、每季度无 FDE 对照报告（裸模型 vs sofagent 回答对比）、扩容预警。这些是 FDE 持续存在感的证明——由 sofagent 引擎自动生成推送，不需要人工干预。详见 [FDE §13 持续存在感机制](../FDE/FDE.md#13-竣工后持续存在感机制)。
 
 ### 安装
 
@@ -84,7 +90,7 @@ cd sofagent && bash sofagent/scripts/install.sh
 | `sofagent-audit: Node.js 未找到` | Node.js 未安装或版本过低 | 安装 Node.js ≥18：`node --version` 确认 |
 | commit 时没有审计输出 | commit-msg hook 未安装 | `sofagent-audit --init` 或 `sofagent-audit --install-hook` |
 | 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
-| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计引擎可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](./LIMITATIONS.md#windows-支持是实验性的) |
+| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计引擎可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](../LIMITATIONS.md#windows-支持是实验性的) |
 | hook 装了但静默跳过 | Node.js 或 sofagent-audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
 | `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（11 条规则全启用） |
 
@@ -187,21 +193,25 @@ jobs:
 | 层 | 文件 | 干什么 | 能改吗 |
 |:--:|------|------|:--:|
 | 1 | `SKILL.md`（宪法内联） | 4 底线 + 7 铁律 | ❌ |
-| 2 | `think.md` | 反思摘要（≤2K token） | ⚠️ 改了没用。→ [反思工程](./DEVELOPMENT.md#六反思工程) |
-| 3 | `fde.md` | 你的运行规范，优先级最高 | ✅ 随便改 |
+| 2 | `fde.md` | 你的运行规范，优先级最高 | ✅ 随便改 |
+| 3 | `think.md` | 反思摘要（≤2K token） | ⚠️ 改了没用。→ [反思工程](./DEVELOPMENT.md#六反思工程) |
 | 4 | `knowledge/index.md` | AI 知识库目录，被动注入 top-3 页摘要 | ⚠️ daemon 自动维护 |
 
 > 地基约 3,500 token，不到 128K 窗口的 3%。OpenClaw 平台 Hook 自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE 地基与引擎](./ARCHITECTURE.md#地基与引擎)。
 
 ### 引擎怎么跑
 
-| 引擎 | 做什么 | 依赖 Agent | 触发方式 |
-|------|------|:--:|------|
-| 🧭 **约束底座** | 四层加载链注入规则——开工前定红线 | ❌ | Agent 启动时自动（OpenClaw Hook / Sub Agent 自加载） |
-| 🔍 **审计引擎** | git diff → A1-A11、A14-A17 规则检查 → think.md | ❌ | git commit / daemon 文件变更 |
-| 🔄 **回溯引擎** | 审计后自动 snapshot，违规时建议回滚 | ❌ | 审计完成后自动 |
-| ⚙️ **编排引擎** | 拆解任务 + Sub Agent 并行 + A/B 优化 | ✅ | CLI / MCP compose tool |
-| 🧬 **进化引擎**（v1.0.8+） | FDE 周度巡检审计趋势 + 反思，自动优化 | ✅ | daemon cron @weekly / 手动触发 |
+> 💡 五引擎的完整设计哲学见 [PHILOSOPHY](./PHILOSOPHY.md#三怎么跑架构全景)。这里只讲使用。
+
+| 引擎 | 做什么 | 触发方式 |
+|------|------|------|
+| 🧭 **约束底座** | 四层加载链注入规则 | Agent 启动时自动（OpenClaw Hook / Sub Agent 自加载） |
+| 🔍 **审计引擎** | git diff → A1-A11、A14-A17 规则检查 | git commit / daemon 文件变更 |
+| 🔄 **回溯引擎** | 审计后自动 snapshot，违规时建议回滚 | 审计完成后自动 |
+| ⚙️ **编排引擎** | 拆解任务 + Sub Agent 并行 + A/B 优化 | CLI / MCP compose tool |
+| 🧬 **进化引擎**（v1.0.8+） | FDE 周度巡检审计趋势 + 反思，自动优化 | daemon cron @weekly / 手动触发 |
+
+> 📖 **多设备同步**：v1.1.0 起支持轻量多设备——经验共享（knowledge/ + think.md）跨设备同步。4 种方案（iCloud / NAS / Dropbox / git submodule）见 [多设备同步指南](./guides/multi-device-sync.md)。
 
 ### 4 条底线 + 7 则行为铁律
 
@@ -277,7 +287,7 @@ Agent 先判断任务复杂度：
 | 评分越来越不准 | 翻 task/logs 对照 think.md，清理低置信度旧条目 |
 | 什么不该让 Agent 做 | 确定性操作（去重/格式校验/文件清理）用脚本 |
 
-> 更多见 [LIMITATIONS.md](./LIMITATIONS.md)。
+> 更多见 [LIMITATIONS.md](../LIMITATIONS.md)。
 
 ### Osmani 三盆冷水
 
@@ -417,4 +427,4 @@ sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 > 大半年 OpenClaw 实战笔记。如有更好的用法，欢迎开 Issue。
 >
-> *v1.1.0，2026 年 7 月 11 日*
+> *v1.1.1，2026 年 7 月 13 日*

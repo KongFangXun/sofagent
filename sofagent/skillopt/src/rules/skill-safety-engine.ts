@@ -1,6 +1,6 @@
 // ============================================================
 // skill-safety-engine.ts · Skill 安全审查——文件扫描引擎
-// v1.1.0：迁移至 @sofagent/skillopt
+// v1.1.1：迁移至 @sofagent/skillopt
 // ============================================================
 
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';

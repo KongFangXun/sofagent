@@ -10,6 +10,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
+import { appendThinkEntry } from '@sofagent/core';
 
 // ── Mock fs module ──
 vi.mock('fs', () => ({
@@ -36,6 +37,13 @@ vi.mock('@sofagent/audit', () => ({
   generateThinkEntry: vi.fn(),
   loadHistory: vi.fn(() => []),
   VERSION: '0.99.5',
+}));
+
+// ── Mock @sofagent/core（记忆契约：getThinkPath / appendThinkEntry）──
+// write_think 现在经 core 的 appendThinkEntry 写入，测试应 mock 契约函数而非底层 fs。
+vi.mock('@sofagent/core', () => ({
+  getThinkPath: vi.fn(() => '/tmp/test-think.md'),
+  appendThinkEntry: vi.fn(() => 0),
 }));
 
 // ── Mock readline to prevent auto-start ──
@@ -289,7 +297,7 @@ describe('McpServer', () => {
       });
 
       (existsSync as any).mockReturnValue(true); // data dir exists
-      (appendFileSync as any).mockImplementation(() => {});
+      (appendThinkEntry as any).mockImplementation(() => {});
 
       await import('./mcp-server');
 
@@ -316,7 +324,7 @@ describe('McpServer', () => {
       // Should succeed — newlines are stripped
       expect(resp.result).toBeDefined();
       // Verify the appended content has no newlines within the lesson body
-      const appendCalls = (appendFileSync as any).mock.calls;
+      const appendCalls = (appendThinkEntry as any).mock.calls;
       expect(appendCalls.length).toBeGreaterThan(0);
       const appendedContent = appendCalls[0]?.[1] as string;
       // The entry template starts with \n## — that's expected.
@@ -339,7 +347,7 @@ describe('McpServer', () => {
       });
 
       (existsSync as any).mockReturnValue(true);
-      (appendFileSync as any).mockImplementation(() => {});
+      (appendThinkEntry as any).mockImplementation(() => {});
 
       await import('./mcp-server');
 
@@ -359,7 +367,7 @@ describe('McpServer', () => {
         }));
       }
 
-      const appendCalls = (appendFileSync as any).mock.calls;
+      const appendCalls = (appendThinkEntry as any).mock.calls;
       expect(appendCalls.length).toBeGreaterThan(0);
       const appendedContent = appendCalls[0]?.[1] as string;
       expect(appendedContent).not.toMatch(/\r/);
@@ -376,7 +384,7 @@ describe('McpServer', () => {
       });
 
       (existsSync as any).mockReturnValue(true);
-      (appendFileSync as any).mockImplementation(() => {});
+      (appendThinkEntry as any).mockImplementation(() => {});
 
       await import('./mcp-server');
 
@@ -395,7 +403,7 @@ describe('McpServer', () => {
         }));
       }
 
-      const appendCalls = (appendFileSync as any).mock.calls;
+      const appendCalls = (appendThinkEntry as any).mock.calls;
       expect(appendCalls.length).toBeGreaterThan(0);
       const appendedContent = appendCalls[0]?.[1] as string;
       // Content should be truncated to 10000 chars max

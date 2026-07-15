@@ -1,12 +1,12 @@
 // ============================================================
-// builtin-agents.ts · 预装 Agent 定义（v1.1.0）
+// builtin-agents.ts · 预装 Agent 定义（v1.1.1）
 //
 // 每个 Agent 的 systemPrompt 来自 agents/SKILL/<name>/ 下的
 // Agency Agents 格式 .md 文件。DeepAgents 启动时读取文件、
 // 剥离 frontmatter、注入为 system prompt。
 //
 // 如果文件找不到（如 npm 全局安装路径不同），回退到硬编码精简版。
-// v1.1.0：迁移至 @sofagent/orchestrator
+// v1.1.1：迁移至 @sofagent/orchestrator
 // ============================================================
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
@@ -60,12 +60,34 @@ function parseSkillMd(content: string): string {
 }
 
 function loadAgentMd(skillName: string, fallback: string): string {
+  // 路径 1: cwd/agents/SKILL/<skillName>/SKILL.md
   const cwdPath = join(process.cwd(), 'agents', 'SKILL', skillName, 'SKILL.md');
   if (existsSync(cwdPath)) {
     return parseSkillMd(readFileSync(cwdPath, 'utf-8'));
   }
 
+  // 路径 2: 包相对路径/agents/SKILL/<skillName>/SKILL.md
   const pkgPath = join(__dirname, '..', '..', '..', '..', 'agents', 'SKILL', skillName, 'SKILL.md');
+  if (existsSync(pkgPath)) {
+    return parseSkillMd(readFileSync(pkgPath, 'utf-8'));
+  }
+
+  return fallback;
+}
+
+/**
+ * v1.1.1: 加载 agents/<name>.md 格式的 Agent 定义
+ * 用于不遵循 SKILL/<name>/SKILL.md 目录结构的独立 Agent 文件
+ */
+function loadAgentMdFile(name: string, fallback: string): string {
+  // 路径 3: cwd/agents/<name>.md
+  const cwdPath = join(process.cwd(), 'agents', `${name}.md`);
+  if (existsSync(cwdPath)) {
+    return parseSkillMd(readFileSync(cwdPath, 'utf-8'));
+  }
+
+  // 路径 4: 包相对路径/agents/<name>.md
+  const pkgPath = join(__dirname, '..', '..', '..', '..', 'agents', `${name}.md`);
   if (existsSync(pkgPath)) {
     return parseSkillMd(readFileSync(pkgPath, 'utf-8'));
   }
@@ -144,5 +166,72 @@ const AUDIT_AGENT: SubAgentDefinition = {
   modelName: null,
 };
 
+// ============================================================
+// v1.1.1: LOOP 双 Agent（工程师 + 审查员）
+// ============================================================
+
+/**
+ * 最小变更工程师（LOOP 代码执行者）
+ *
+ * systemPrompt 优先加载 agents/engineering-minimal-change-engineer.md
+ */
+export const ENGINEER_AGENT: SubAgentDefinition = {
+  name: 'engineer',
+  type: 'development',
+  description: '最小变更工程师——只修复被要求的内容，拒绝范围蔓延，逐行自证差异',
+  tools: ['read', 'write', 'bash', 'grep', 'glob'],
+  systemPrompt: loadAgentMdFile(
+    'engineering-minimal-change-engineer',
+    // fallback: 精简版
+    `你是最小变更工程师，LOOP 自迭代循环中的代码执行者。
+核心原则：只做被要求的事，不多做。价值以"没写的代码行数"来衡量。
+
+## 关键规则
+1. 最小可行差异——只修改任务明确要求的内容
+2. 拒绝范围蔓延——不改"顺便"看到的问题
+3. 宁可三行相似代码，不做过早抽象
+4. 逐行自证差异——每次变更都能精确对应到任务要求
+5. 先读再改——修改前必须 Read 目标文件`
+  ),
+  modelName: null,
+};
+
+/**
+ * 代码审查员（LOOP 审查者）
+ *
+ * systemPrompt 优先加载 agents/engineering-code-reviewer.md
+ */
+export const REVIEWER_AGENT: SubAgentDefinition = {
+  name: 'reviewer',
+  type: 'audit',
+  description: '代码审查员——提供建设性、可操作的反馈，聚焦正确性、可维护性、安全性和性能',
+  tools: ['read', 'bash', 'grep', 'glob'],
+  triggerOn: ['on-commit', 'on-review'],
+  systemPrompt: loadAgentMdFile(
+    'engineering-code-reviewer',
+    // fallback: 精简版
+    `你是代码审查员，LOOP 自迭代循环中的审查者。
+你不写代码，但你的判定直接影响代码能不能合并。
+
+## 审查维度
+1. 正确性——代码是否实现了预期功能？
+2. 安全性——是否存在漏洞？输入校验？权限检查？
+3. 可维护性——六个月后还能看懂吗？
+4. 性能——是否有明显的瓶颈？
+5. 测试——关键路径是否有测试覆盖？
+
+## 审查格式
+- 🔴 阻塞项（必须修复）——安全漏洞、数据丢失风险、API 契约破坏
+- 🟡 建议项（应该修复）——缺少校验、命名不清、重复代码
+- 💭 小改进（锦上添花）——风格、文档、替代方案
+
+## 关键规则
+- 具体明确——说"第 42 行可能存在 SQL 注入"，而不是"有安全问题"
+- 区分意见和事实——标注清楚
+- 输出格式：IS_PASS: YES/NO`
+  ),
+  modelName: null,
+};
+
 /** 全部预装 Agent */
-export const BUILTIN_AGENTS: SubAgentDefinition[] = [FDE_AGENT, AUDIT_AGENT];
+export const BUILTIN_AGENTS: SubAgentDefinition[] = [FDE_AGENT, AUDIT_AGENT, ENGINEER_AGENT, REVIEWER_AGENT];

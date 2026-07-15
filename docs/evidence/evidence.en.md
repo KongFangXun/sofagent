@@ -1,5 +1,7 @@
 # Evidence.md — Does sofagent actually work?
 
+> ⚠️ `ao compose` was a pre-v1.0.7 command and is now retired. Use `sofagent-orchestrator compose` for orchestration.
+
 > ⚠️ **English version is a full snapshot (up to Case 025, July 6).**
 > For the latest cases, see [中文版](./evidence.md).
 

@@ -1,8 +1,8 @@
 // ============================================================
 // watch-config.ts · 文件监控配置解析器
-// v1.1.0 从 sofagent/audit/src/config/watch-config.ts 迁出
-// v1.1.0 新增：从 .sofagent/watch.yml 加载配置
-// v1.1.0: 追加 cron 配置段 + CronJob 类型
+// v1.1.1 从 sofagent/audit/src/config/watch-config.ts 迁出
+// v1.1.1 新增：从 .sofagent/watch.yml 加载配置
+// v1.1.1: 追加 cron 配置段 + CronJob 类型
 //
 // 配置结构（watch.yml）：
 //   watch:
@@ -127,7 +127,7 @@ function tryLoadWatchYml(filePath: string): Partial<WatchConfig> & { cron?: Cron
     return result;
   } catch (err) {
     if (err instanceof YAMLException) {
-      console.warn(`⚠️ watch.yml 解析错误: ${err.message}`);
+      console.warn(`⚠️ watch.yml 文件格式有问题: ${err.message}`);
     }
     return null;
   }

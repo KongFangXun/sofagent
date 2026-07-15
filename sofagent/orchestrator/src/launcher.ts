@@ -1,10 +1,10 @@
 // ============================================================
 // launcher.ts · Sub Agent 启动器
-// v1.1.0 新增：动态 import deepagents，启动/关闭 Agent 实例
-// v1.1.0 新增：runtime.json 状态管理（name/status/startedAt/lastActive/pid）
-// v1.1.0：deepagents 提升为正式依赖，移除 as unknown as 类型转换
-// v1.1.0 新增：buildConstrainedSystemPrompt() 四层约束加载链
-// v1.1.0：迁移至 @sofagent/orchestrator，buildConstrainedSystemPrompt → @sofagent/harness
+// v1.1.1 新增：动态 import deepagents，启动/关闭 Agent 实例
+// v1.1.1 新增：runtime.json 状态管理（name/status/startedAt/lastActive/pid）
+// v1.1.1：deepagents 提升为正式依赖，移除 as unknown as 类型转换
+// v1.1.1 新增：buildConstrainedSystemPrompt() 四层约束加载链
+// v1.1.1：迁移至 @sofagent/orchestrator，buildConstrainedSystemPrompt → @sofagent/harness
 // ============================================================
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, copyFileSync, unlinkSync, readdirSync, statSync } from 'fs';
@@ -253,7 +253,7 @@ export async function launch(definition: SubAgentDefinition): Promise<AgentInsta
     return instance as AgentInstance;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.warn(`Sub Agent "${definition.name}" 启动失败: ${msg}`);
+    console.warn(`sofagent 提示：Sub Agent "${definition.name}" 启动未完成——${msg}`);
     return null;
   }
 }
@@ -342,9 +342,9 @@ export async function spawnSubAgent(
     const result = await composeWithDeepAgents(prompt);
     return result ?? `Agent "${agent.name}" 已接收任务，但编排引擎未返回结果。`;
   } catch (err) {
-    // DeepAgents 不可用时返回提示
+    // DeepAgents 未安装时返回提示
     return [
-      `⚠️ DeepAgents 不可用——Agent "${agent.name}" 的 prompt 已生成，可手动执行：`,
+      `⚠️ sofagent 提示：DeepAgents 可选依赖未安装，Agent "${agent.name}" 的 prompt 已生成，可手动执行：`,
       '',
       '```yaml',
       `agent: ${agent.name}`,

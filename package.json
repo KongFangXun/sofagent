@@ -1,19 +1,19 @@
 {
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "workspaces": [
     "sofagent/harness",
     "sofagent/ontology",
     "sofagent/eval",
     "sofagent/core",
-    "sofagent/audit",
     "sofagent/think",
-    "sofagent/mcp",
+    "sofagent/audit",
     "sofagent/orchestrator",
     "sofagent/daemon",
     "sofagent/ab-test",
     "sofagent/workflow-hub",
-    "sofagent/skillopt"
+    "sofagent/skillopt",
+    "sofagent/mcp"
   ],
   "scripts": {
     "test": "npm test --workspaces --if-present",

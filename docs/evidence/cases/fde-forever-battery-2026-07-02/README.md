@@ -67,8 +67,8 @@
 | #7 | 外部用户 + 5 测试 | ⚠️ 4/5 类型完成，审计链未触发 |
 | #4 | AO compose 全链路 | ⚠️ 环境就绪，编排引擎未点火 |
 
-> 📋 完整验证记录见 [v1.0 准入验证方案填写版](../../../../Desktop/sofagent测试/福瑞士/v1.0-准入条件-验证方案_填写版.md)
-> 📋 完整 Case Study 见 [福瑞士电池_CaseStudy.md](../../../../Desktop/sofagent测试/福瑞士/福瑞士电池_CaseStudy.md)
+> 📋 完整验证记录见 v1.0 准入验证方案填写版（见 Desktop/sofagent测试/福瑞士/v1.0-准入条件-验证方案_填写版.md）
+> 📋 完整 Case Study 见 福瑞士电池_CaseStudy.md（见 Desktop/sofagent测试/福瑞士/福瑞士电池_CaseStudy.md）
 
 > ⚠️ 原始部署产物（workflow.yaml / 部署日志 / 验证截图）存放在部署企业内网。联系仓库维护者获取脱敏版本。
 
