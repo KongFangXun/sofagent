@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/orchestrator",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "sofagent 编排引擎 — 多 Agent 协作 / 工作流调度 / prompt 模板",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -25,8 +25,8 @@
   "dependencies": {
     "deepagents": "^1.10.7",
     "js-yaml": "^5.2.0",
-    "@sofagent/harness": "1.1.0",
-    "@sofagent/core": "1.1.0"
+    "@sofagent/harness": "1.1.2",
+    "@sofagent/core": "1.1.2"
   },
   "exports": {
     ".": {

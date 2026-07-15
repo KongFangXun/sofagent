@@ -545,6 +545,39 @@ else
 fi
 echo ""
 
+# ── 12b. v1.1.2: 检查全部 @sofagent/* 包内部依赖版本一致性 ─
+echo -e "${BOLD}── 检查子包内部依赖版本 ──${NC}"
+INTERNAL_DEPS_OK=true
+while IFS= read -r -d '' pkg_json; do
+  node -e "
+    const fs = require('fs');
+    const pkg = JSON.parse(fs.readFileSync('$pkg_json', 'utf-8'));
+    const pkgName = pkg.name;
+    for (const field of ['dependencies', 'optionalDependencies']) {
+      if (pkg[field]) {
+        for (const [name, ver] of Object.entries(pkg[field])) {
+          if (name.startsWith('@sofagent/')) {
+            const verClean = ver.replace(/^[~^>=<]+/, '');
+            if (verClean !== '$SSOT_VERSION') {
+              console.log('MISMATCH ' + pkgName + ' → ' + name + ': ' + ver + ' (期望: ' + '$SSOT_VERSION' + ')');
+            }
+          }
+        }
+      }
+    }
+  " 2>/dev/null
+done < <(find "$PROJECT_ROOT/sofagent" -maxdepth 3 -name "package.json" -not -path "*/node_modules/*" -print0 2>/dev/null) | while read -r line; do
+  echo "  ❌ $line"
+  INTERNAL_DEPS_OK=false
+  ERRORS=$((ERRORS + 1))
+  CHECKS=$((CHECKS + 1))
+done
+if $INTERNAL_DEPS_OK; then
+  echo -e "  ${GREEN}✓${NC} 所有内部 @sofagent/* 依赖版本一致"
+  CHECKS=$((CHECKS + 1))
+fi
+echo ""
+
 # ── 汇总 ──────────────────────────────────────────────────────
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then

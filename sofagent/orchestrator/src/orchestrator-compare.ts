@@ -16,7 +16,7 @@ import { join, resolve, dirname } from 'path';
 import { createHash } from 'crypto';
 import { composeWithDeepAgents } from './composer';
 
-const VERSION = '1.1.1';
+const VERSION = '1.1.2';
 
 export interface Metric { runCount: number; auditViolations: number; avgSteps: number; firstPassRate: number; }
 interface Args { current: string; candidate: string; output: string; }
