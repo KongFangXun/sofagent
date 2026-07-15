@@ -5,6 +5,7 @@
 // ============================================================
 
 import type { RuleCheck } from './rules/types';
+import { VERSION } from '@sofagent/core';
 
 export type WebhookPlatform = 'dingtalk' | 'feishu' | 'wecom';
 
@@ -21,7 +22,7 @@ export interface WebhookPayload {
  * v1.1.2: PASS 也推送；所有消息以 sofagent 开头
  */
 function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass: boolean): string {
-  const version = '1.1.2'; // 与 @sofagent/audit 版本同步
+  const version = VERSION;
 
   if (isPass) {
     const lines: string[] = ['✅ sofagent 审计通过'];
