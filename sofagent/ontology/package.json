@@ -13,8 +13,21 @@
     "test": "vitest run",
     "check": "tsc --noEmit"
   },
-  "keywords": ["sofagent", "ontology", "domain", "types"],
+  "keywords": [
+    "sofagent",
+    "ontology",
+    "domain",
+    "types"
+  ],
   "license": "MIT",
   "author": "KongFangXun",
-  "dependencies": {}
+  "dependencies": {},
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  }
 }

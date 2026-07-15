@@ -10,8 +10,21 @@
     "test": "vitest run",
     "check": "tsc --noEmit"
   },
-  "keywords": ["sofagent", "eval", "quality", "scoring"],
+  "keywords": [
+    "sofagent",
+    "eval",
+    "quality",
+    "scoring"
+  ],
   "license": "MIT",
   "author": "KongFangXun",
-  "dependencies": {}
+  "dependencies": {},
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  }
 }

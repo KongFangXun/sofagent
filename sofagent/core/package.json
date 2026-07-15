@@ -4,6 +4,14 @@
   "description": "sofagent 核心运行时 — doctor / 配置解析 / 通用类型（不含审计逻辑）",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "bin": {
     "sofagent-core": "dist/cli.js"
   },

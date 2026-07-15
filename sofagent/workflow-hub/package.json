@@ -13,12 +13,25 @@
     "test": "vitest run",
     "check": "tsc --noEmit"
   },
-  "keywords": ["sofagent", "workflow", "hub", "template"],
+  "keywords": [
+    "sofagent",
+    "workflow",
+    "hub",
+    "template"
+  ],
   "license": "MIT",
   "author": "KongFangXun",
   "dependencies": {
     "@sofagent/orchestrator": "1.1.0",
     "@sofagent/ontology": "1.1.0",
     "@sofagent/eval": "1.1.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
   }
 }
