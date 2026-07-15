@@ -1,9 +1,12 @@
 // ============================================================
-// reporter.ts · 审计结果类型定义（v1.1.1 从 audit 迁出）
+// reporter.ts · 审计结果类型定义（v1.1.2 从 audit 迁出）
 //
 // 仅包含纯类型定义，不依赖 audit 的 rules/ 模块。
 // runRules 实现在 audit/src/reporter.ts 中，因为依赖 rules/runner。
 // ============================================================
+
+/** 规则分级标签 */
+export type RuleClass = '业务底线' | '能力拐杖' | '工程规范';
 
 /**
  * 单条规则的检查结果（core 侧最小定义）
@@ -15,7 +18,7 @@ export interface RuleCheck {
   status: 'PASS' | 'WARN' | 'FAIL' | 'SKIPPED';
   details: string[];
   /** 规则分级标签（用于 reporter 输出 [底线]/[拐杖] 前缀） */
-  ruleClass?: string;
+  ruleClass?: RuleClass;
 }
 
 /**

@@ -1,6 +1,6 @@
 /**
  * smoke.test.ts — @sofagent/mcp smoke 测试
- * v1.1.1 P1-4: 覆盖 MCP 工具调用主链路（run_audit / get_think / write_think）
+ * v1.1.2 P1-4: 覆盖 MCP 工具调用主链路（run_audit / get_think / write_think）
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

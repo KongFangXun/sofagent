@@ -2,7 +2,7 @@
 // A9 不纳注入（安全层 · 业务底线）
 // 检测 git diff 新增行中是否含 prompt injection 模式
 // evidenceMode: git-diff（纯正则检测，--silent 可跑）
-// v1.1.1: 追加中文注入检测正则（T01）
+// v1.1.2: 追加中文注入检测正则（T01）
 // ============================================================
 
 import { getAddedLines } from '@sofagent/core';

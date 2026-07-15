@@ -4,7 +4,7 @@
 >
 > 最后复核：2026-07-13
 >
-> **每次发版前，在全新 session 中粘贴本文件执行。** 覆盖审计管道全规则 + hook 机制 + SkillOpt 自净化 + DeepAgents Sub Agent + 内置 Agent 验证（FDE + Audit）+ optional 依赖降级 + v1.1.1 新增：deprecation shim 安全 + Harness 签名 + LOOP 双 Agent + v1.0.1-v1.1.0：A14/A15 + 约束自加载 + 文件系统审计 + 权限作用域化 + 经验共享 + Work模板市场。
+> **每次发版前，在全新 session 中粘贴本文件执行。** 覆盖审计管道全规则 + hook 机制 + SkillOpt 自净化 + DeepAgents Sub Agent + 内置 Agent 验证（FDE + Audit）+ optional 依赖降级 + v1.1.2 新增：deprecation shim 安全 + Harness 签名 + LOOP 双 Agent + v1.0.1-v1.1.0：A14/A15 + 约束自加载 + 文件系统审计 + 权限作用域化 + 经验共享 + Work模板市场。
 >
 > 与 `acceptance-test.sh`（CLI 自动化）互补——本文件是 Agent 驱动的端到端验收，包含更多场景类型。
 >
@@ -562,7 +562,7 @@ composeWithDeepAgents({
 
 ---
 
-### 场景 26b：内置 Sub Agent 注册与 CLI 调用（FDE + Audit · v1.1.1）
+### 场景 26b：内置 Sub Agent 注册与 CLI 调用（FDE + Audit · v1.1.2）
 
 > v1.0.8 新增：验证 `sofagent-fde` 和 `sofagent-audit` 两个内置 Agent 可从 CLI 正常调用。
 
@@ -812,7 +812,7 @@ grep "evidenceMode.*filesystem" sofagent/audit/src/rules/rule-a17-bulk-change.ts
 
 ---
 
-## 第十部分：v1.1.1 新增功能
+## 第十部分：v1.1.2 新增功能
 
 ### 场景 36：deprecation shim 安全（compose/verify 友好降级）
 
@@ -893,7 +893,7 @@ grep -B3 "^# 代码审查报告" $SOFAGENT_DIR/agents/engineering-code-reviewer.
 grep -c '\[sofagent\]' $SOFAGENT_DIR/sofagent/mcp/src/mcp-server.ts
 # ✅ 期望：≥ 6
 
-# 验证 MCP capabilities 工具描述准确性（v1.1.1 P0-5）
+# 验证 MCP capabilities 工具描述准确性（v1.1.2 P0-5）
 grep "run_audit" $SOFAGENT_DIR/sofagent/mcp/src/mcp-server.ts | grep -c "19 条规则"
 # ✅ 期望：≥ 1，描述含 "19 条规则" 而非过期的 "A1-A14"
 
@@ -1070,7 +1070,7 @@ ls $SOFAGENT_DIR/work模板市场/templates/ 2>/dev/null | wc -l
 - [ ] 场景 34：startCron 函数已导出且不崩溃
 - [ ] 场景 35：EvidenceMode 含 'filesystem'，A17 使用该模式
 
-### v1.1.1 新增（场景 36-41）
+### v1.1.2 新增（场景 36-41）
 - [ ] 场景 36：compose shim 友好报错（exit 1 + "已迁移到"），verify shim 同理
 - [ ] 场景 37：PASS 场景输出含"审计引擎: sofagent-audit" + "条规则全部通过"；FAIL 场景输出含"条规则已完成检测"
 - [ ] 场景 38：orchestrator --help 含 engineer/reviewer 和 loop 子命令；loop 子命令可调用不崩溃

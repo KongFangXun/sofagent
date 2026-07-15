@@ -1,6 +1,6 @@
 // ============================================================
 // skill-safety-reporter.ts · Skill 安全审查——输出格式化
-// v1.1.1：迁移至 @sofagent/skillopt
+// v1.1.2：迁移至 @sofagent/skillopt
 // ============================================================
 
 import { type SafetyHit, type SafetyResult } from './skill-safety-rules';

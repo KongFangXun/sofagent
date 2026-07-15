@@ -1,6 +1,6 @@
 // ============================================================
 // verify/checks.ts · 验证检查逻辑（§1-§11 + quick + WorkBuddy）
-// v1.1.1 从 sofagent/audit/src/verify/checks.ts 迁出
+// v1.1.2 从 sofagent/audit/src/verify/checks.ts 迁出
 // ============================================================
 // 从 verify.ts main() 函数中提取的检查逻辑。
 // 每个函数接收 Verifier 实例和上下文参数，调用 v.checkPass/Fail/Warn。

@@ -1,10 +1,10 @@
 // ============================================================
 // launcher.ts · Sub Agent 启动器
-// v1.1.1 新增：动态 import deepagents，启动/关闭 Agent 实例
-// v1.1.1 新增：runtime.json 状态管理（name/status/startedAt/lastActive/pid）
-// v1.1.1：deepagents 提升为正式依赖，移除 as unknown as 类型转换
-// v1.1.1 新增：buildConstrainedSystemPrompt() 四层约束加载链
-// v1.1.1：迁移至 @sofagent/orchestrator，buildConstrainedSystemPrompt → @sofagent/harness
+// v1.1.2 新增：动态 import deepagents，启动/关闭 Agent 实例
+// v1.1.2 新增：runtime.json 状态管理（name/status/startedAt/lastActive/pid）
+// v1.1.2：deepagents 提升为正式依赖，移除 as unknown as 类型转换
+// v1.1.2 新增：buildConstrainedSystemPrompt() 四层约束加载链
+// v1.1.2：迁移至 @sofagent/orchestrator，buildConstrainedSystemPrompt → @sofagent/harness
 // ============================================================
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, copyFileSync, unlinkSync, readdirSync, statSync } from 'fs';

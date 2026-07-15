@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// work模板市场 CLI · v1.1.1
+// work模板市场 CLI · v1.1.2
 
 import { listTemplates } from './hub-list';
 import { deployTemplate } from './hub-deploy';

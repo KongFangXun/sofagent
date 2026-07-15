@@ -1,12 +1,12 @@
 // ============================================================
-// builtin-agents.ts · 预装 Agent 定义（v1.1.1）
+// builtin-agents.ts · 预装 Agent 定义（v1.1.2）
 //
 // 每个 Agent 的 systemPrompt 来自 agents/SKILL/<name>/ 下的
 // Agency Agents 格式 .md 文件。DeepAgents 启动时读取文件、
 // 剥离 frontmatter、注入为 system prompt。
 //
 // 如果文件找不到（如 npm 全局安装路径不同），回退到硬编码精简版。
-// v1.1.1：迁移至 @sofagent/orchestrator
+// v1.1.2：迁移至 @sofagent/orchestrator
 // ============================================================
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
@@ -76,7 +76,7 @@ function loadAgentMd(skillName: string, fallback: string): string {
 }
 
 /**
- * v1.1.1: 加载 agents/<name>.md 格式的 Agent 定义
+ * v1.1.2: 加载 agents/<name>.md 格式的 Agent 定义
  * 用于不遵循 SKILL/<name>/SKILL.md 目录结构的独立 Agent 文件
  */
 function loadAgentMdFile(name: string, fallback: string): string {
@@ -167,7 +167,7 @@ const AUDIT_AGENT: SubAgentDefinition = {
 };
 
 // ============================================================
-// v1.1.1: LOOP 双 Agent（工程师 + 审查员）
+// v1.1.2: LOOP 双 Agent（工程师 + 审查员）
 // ============================================================
 
 /**

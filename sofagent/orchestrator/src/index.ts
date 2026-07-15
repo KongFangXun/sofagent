@@ -20,7 +20,7 @@ export { launch, shutdown, readRuntimeState, writeRuntimeState, spawnSubAgent } 
 // Audit Sub Agent
 export { readAuditHistory, analyzeCostBaseline, generateAuditReport } from './audit-sub-agent';
 
-// LOOP Runner (v1.1.1)
+// LOOP Runner (v1.1.2)
 export { runLOOPIteration } from './loop-runner';
 export type { LOOPResult, LOOPOptions } from './loop-runner';
 

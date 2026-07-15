@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // doctor.ts · sofagent 健康检查
-// v1.1.1 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
+// v1.1.2 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
 //
 // 检查项：
 //   1. 环境检查（Node / git / npm / disk / bash）
