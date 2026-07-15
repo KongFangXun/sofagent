@@ -564,6 +564,43 @@ if [[ $sig_count -eq 0 ]]; then
 fi
 echo ""
 
+# 9b. v1.1.2: bump 子包 package.json 中 @sofagent/* 依赖版本
+# 各包的 dependencies/optionalDependencies 中对其他 @sofagent/* 包的引用也需要同步
+BUMP_INTERNAL_DEPS_COUNT=0
+while IFS= read -r -d '' pkg_json; do
+  CHANGED=false
+  NEW_CONTENT=$(node -e "
+    const fs = require('fs');
+    const pkg = JSON.parse(fs.readFileSync('$pkg_json', 'utf-8'));
+    let changed = false;
+    for (const field of ['dependencies', 'optionalDependencies']) {
+      if (pkg[field]) {
+        for (const [name, ver] of Object.entries(pkg[field])) {
+          if (name.startsWith('@sofagent/')) {
+            // 检查版本是否匹配旧版本（精确匹配或 3 段匹配）
+            const ver_2seg = ver.replace(/\.[^.]+$/, '');  // 去掉 patch
+            if (ver_2seg === '$OLD_2SEG' || ver === '$OLD_2SEG.0' || ver === '$OLD_VERSION') {
+              // 保持原有的语义（如果有 ^ 前缀就保留）
+              const prefix = ver.match(/^[~^>=<]+/) || '';
+              pkg[field][name] = prefix ? prefix[0] + '$NEW_2SEG.0' : '$NEW_VERSION';
+              changed = true;
+            }
+          }
+        }
+      }
+    }
+    if (changed) {
+      fs.writeFileSync('$pkg_json', JSON.stringify(pkg, null, 2) + '\n');
+      console.log('CHANGED');
+    }
+  ")
+  if [ "$NEW_CONTENT" = "CHANGED" ]; then
+    BUMP_INTERNAL_DEPS_COUNT=$((BUMP_INTERNAL_DEPS_COUNT + 1))
+    echo -e "  ${GREEN}✓${NC} $pkg_json (内部依赖已同步)"
+  fi
+done < <(find "$SCRIPT_DIR/../sofagent" -maxdepth 3 -name "package.json" -not -path "*/node_modules/*" -print0 2>/dev/null)
+TOTAL_CHANGED=$((TOTAL_CHANGED + BUMP_INTERNAL_DEPS_COUNT))
+
 # 10. 汇总
 echo -e "${BOLD}[13/13] 完成${NC}"
 echo ""

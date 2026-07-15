@@ -206,7 +206,7 @@ grep "$actual" ROADMAP.md
 
 从 `package.json` 读 SSOT 版本号，逐项比对全项目 13 类位置。任何不一致 → 红字报错 + exit 1。
 
-#### 同步 package-lock.json（🔴 v1.0.3 教训）
+#### 同步 package-lock.json（🔴 v1.0.3 + v1.1.1 教训）
 
 bump-version.sh 改了 `package.json` 但不会自动同步 `package-lock.json`。必须手动执行：
 
@@ -217,6 +217,8 @@ grep -A3 '"sofagent/audit":' package-lock.json | grep '"version"'
 grep -A3 '"sofagent/mcp":' package-lock.json | grep '"version"'
 # 两个都应该是新版本号
 ```
+
+**🔴 v1.1.1 铁律**：**禁止用 `sed` 直接改 `package-lock.json`**——全局替换 `1.1.0→1.1.1` 会把外部包（如 `reusify@1.1.0`）也污染为不存在的版本（`reusify@1.1.1`），导致 CI 全平台 `npm ci` 崩溃。只能用 `npm install --package-lock-only` 重新生成锁文件。
 
 #### 手动排查（脚本未覆盖的边缘情况）
 

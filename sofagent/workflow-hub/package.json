@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/workflow-hub",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "sofagent 工作流中心 — 工作流注册 / 模板管理 / 执行历史",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,9 +22,9 @@
   "license": "MIT",
   "author": "KongFangXun",
   "dependencies": {
-    "@sofagent/orchestrator": "1.1.0",
-    "@sofagent/ontology": "1.1.0",
-    "@sofagent/eval": "1.1.0"
+    "@sofagent/orchestrator": "1.1.2",
+    "@sofagent/ontology": "1.1.2",
+    "@sofagent/eval": "1.1.2"
   },
   "exports": {
     ".": {
