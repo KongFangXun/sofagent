@@ -246,12 +246,12 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 | A3 不改越界 | 修改文件路径与任务描述不匹配 | WARN | 业务底线 |
 | A4 不删配置 | 配置文件被删除 | FAIL | 业务底线 |
 | A5 不瞒真相 | commit message 质量检查 | WARN | 业务底线 |
-| A6 不坏构建 | 构建配置文件异常改动 | WARN | 业务底线 |
+| A6 不坏构建 | 构建配置文件异常改动 | WARN | 能力拐杖 |
 | A7 不存盲改 | 被修改文件无读取记录（依赖 `.sofagent/task/logs/`） | FAIL/WARN | 能力拐杖 |
 | A8 不逃验证 | 构建文件变更后无测试记录 | FAIL/WARN | 能力拐杖 |
 | A9 不纳注入 | 代码中存在命令注入风险模式 | FAIL | 业务底线 |
 | A10 不引毒源 | 依赖包黑名单检测 | WARN | 业务底线 |
-| A11 不滥资源 | 资源滥用检测（超大文件等） | WARN | 能力拐杖 |
+| A11 不滥资源 | 资源滥用检测（超大文件等） | WARN | 业务底线 |
 
 ### 扩展规则（E1-E4，4 条）
 
@@ -320,7 +320,7 @@ cd sofagent/sofagent/audit
 
 npm ci           # 安装依赖
 npm run build    # 编译 TypeScript
-npm test         # 运行测试（418 tests）
+npm test         # 运行测试（342 tests）
 npm run check    # 类型检查（tsc --noEmit）
 ```
 

@@ -897,7 +897,7 @@ rm -f "$TMP_REPO/.git/hooks/post-commit"
 
 # v1.1.2: doctor 已迁移到 sofagent-core，直接调用 core 二进制
 DOCTOR_NO_POST=$($CORE_CLI --doctor 2>&1 || true)
-echo "$DOCTOR_NO_POST" | grep -i "post" | head -3
+echo "$DOCTOR_NO_POST" | grep -i "post" | head -3 || true
 
 if echo "$DOCTOR_NO_POST" | grep -qi "post-commit\|post_commit\|post commit"; then
   pass
