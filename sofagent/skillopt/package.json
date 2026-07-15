@@ -13,11 +13,24 @@
     "test": "vitest run",
     "check": "tsc --noEmit"
   },
-  "keywords": ["sofagent", "skill", "optimization", "refactor"],
+  "keywords": [
+    "sofagent",
+    "skill",
+    "optimization",
+    "refactor"
+  ],
   "license": "MIT",
   "author": "KongFangXun",
   "dependencies": {
     "@sofagent/ontology": "1.1.0",
     "@sofagent/core": "1.1.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
   }
 }
