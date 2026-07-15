@@ -10,50 +10,14 @@
 **核心变更**：`@sofagent/audit` 拆分为 12 个独立 npm 包，按基础层/运行层/协议层/纯审计四层清晰分层。**新功能**：权限作用域化（permission.local.json 项目级 override）+ 经验共享（跨设备 knowledge/shared/ + think.md 语义合并）+ 自迭代周报（daemon 从 think.md 自动提取踩坑经验）+ 主动巡检（daemon 4 项定时巡检）。**继承修复**：v1.0.9 发布后修复的 19 项文档/代码问题。**破坏性变更**：CLI 子命令迁移到新包二进制（`sofagent-audit compose` → `sofagent-orchestrator compose` 等）。
 **文档维护**：审计规则编号口径收敛——全仓库统一为「A1-A11、A14-A17 + E1-E4（共 19 条）」写法，修复 FDE/ARCHITECTURE/DEVELOPMENT/HANDBOOK 断链、加载链「三层→四层」矛盾与版本滞后（v1.0.x→v1.1.0）。
 > 📖 [开发日志](./docs/changelog/v1.1.0.md)
-### [v1.1.1] — LOOP 双 Agent 串联 + Harness 可见性 + 审查修复 🔧
+### [v1.1.2] — LOOP 双 Agent 串联 + Harness 可见性
 > 2026-07-15（UTC）· 已发版
-**核心变更**：LOOP 双 Agent 自迭代（engineer → audit → reviewer）+ Harness 可见性三层签名机制（CLI/Webhook/MCP/审查报告输出带 sofagent 身份）+ v1.1.0 发布后 16 项文档/代码问题修复。新增 orchestrator/mcp 实质 smoke 测试，全量测试 518 passed。
-> 📖 [开发日志](./docs/changelog/v1.1.1.md)
+**核心变更**：LOOP 双 Agent 自迭代（engineer → audit → reviewer）+ Harness 可见性三层签名机制（CLI/Webhook/MCP/审查报告输出带 sofagent 身份）+ orchestrator/mcp 实质 smoke 测试。
+> 📖 [开发日志](./docs/changelog/v1.1.2.md)
 ### [v1.2.0] — 多设备知识联邦收口 🎉
-> 规划中（v1.1.1~v1.1.7 子能力收口）
+> 规划中（v1.1.3~v1.1.9 子能力收口）
 **核心变更**：LOOP 双 Agent 自循环 + LangGraph 编排 + OpenClaw MCP 知识联邦 + Dream Cycle 知识管道 + LLM Wiki 3 层分层 + AES-256-GCM 加密 + USB key 物理身份。7 个子版本 → 1 个联邦。v1.2.x 完整多设备协同的起点。
 > 📖 [开发日志](./docs/changelog/v1.2.0.md)
-### [v1.1.8] — USB 完整运行时 📋
-> 规划中
-**核心变更**：Node.js 单文件打包 + OpenClaw 便携化 + 跨平台启动脚本。U 盘插入 → 双击 start → 联邦在线 → 拔掉零残留。
-> 📖 [开发日志](./docs/changelog/v1.1.8.md)
-### [v1.1.9] — [预留 buffer] 📋
-> 规划中
-**核心变更**：收尾期质量缓冲：跨平台回归 + 端到端全功能验证。如 v1.1.8 稳定可跳过。
-> 📖 [开发日志](./docs/changelog/v1.1.9.md)
-### [v1.1.7] — 安全层 + 联邦查询 📋
-> 规划中
-**核心变更**：AES-256-GCM 加密 + ECDH 密钥交换 + 三条配对路径 + OpenClaw channel 联邦知识查询。
-> 📖 [开发日志](./docs/changelog/v1.1.7.md)
-### [v1.1.6] — Dream Cycle 6 阶段 + sensitivity 📋
-> 规划中
-**核心变更**：gbrain Dream Cycle 精简 pipeline（fact→atom→cluster→synthesize→skillopt→embed）+ knowledge sensitivity 分级。
-> 📖 [开发日志](./docs/changelog/v1.1.6.md)
-### [v1.1.5] — LLM Wiki 3 层分层 + conflict-check 📋
-> 规划中
-**核心变更**：Ledger-Views-Policy 显式映射 + daemon conflict-check（矛盾/孤儿/死链）。
-> 📖 [开发日志](./docs/changelog/v1.1.5.md)
-### [v1.1.4] — releasing.md SOP 集成 + MCP knowledge resource 📋
-> 规划中
-**核心变更**：Agent 按 releasing.md 十一阶段 SOP 全流程自动发版 + 7 个 MCP knowledge resource。
-> 📖 [开发日志](./docs/changelog/v1.1.4.md)
-### [v1.1.3] — 条件路由 + USB federation 📋
-> 规划中
-**核心变更**：LangGraph 条件路由（PASS→push / FAIL→fix / WARN→human）+ daemon USB 检测自动配置。
-> 📖 [开发日志](./docs/changelog/v1.1.3.md)
-### [v1.1.2] — LangGraph StateGraph + Checkpoint + HITL 📋
-> 规划中
-**核心变更**：StateGraph 自动流转 engineer→audit→reviewer + Checkpoint 持久化 + HITL 确认节点。
-> 📖 [开发日志](./docs/changelog/v1.1.2.md)
-### [v1.1.1] — LOOP 双 Agent 串联 + 多设备同步指南 📋
-> 规划中
-**核心变更**：engineering-minimal-change-engineer + engineering-code-reviewer DeepAgents compose 自循环 + 4 种多设备同步方案指南。
-> 📖 [开发日志](./docs/changelog/v1.1.1.md)
 ### [v1.0.9] — 二进制文件审计 + 快照时间线 + MCP compose tool + 安全加固 + 遗留补齐 🔧
 > 2026-07-14（UTC）· 已发版（tag v1.0.9 @ 366eb54，2026-07-14）
 **核心新功能**：A16 非授权文件变更 + A17 异常批量变更（二进制文件行为级审计）+ `--timeline` 快照时间线可视化 + `--revert` 回滚 + MCP compose tool（编排引擎通过标准 MCP 协议对 Agent 平台暴露）。EvidenceMode 类型扩展 `'filesystem'` 模式。daemon 审计闭环（文件变更→diff→runRules→快照→binary_history 全链路打通）+ daemon cron @weekly/@daily/@hourly 定时 FDE 巡检 + `--doctor` fs-watch 运行状态检测 + `install.sh --with-memory` TencentDB Memory 集成。
@@ -81,7 +45,38 @@ Ontology 三路合并引擎 + Workflow Hub 独立项目 + A9 分级安全 + A15 
 
 ### 规划中
 
-### [v1.0.4] — 自动优化 + 约束验证 🔧
+### [v1.1.2] — 测试体系修复 + 文档一致性 🔧
+> 规划中
+**核心变更**：修复 acceptance-test 测试污染（12 场景被 A1 误拦截 + 场景 28 失败 14 场景未执行）+ workspace 测试失败（verify.test.ts）+ CHANGELOG 纯度清理 + 回归清单维度数漂移（274≠268）+ deprecation shim 注释一致性 + safeDefaults 补全 A16/A17 + 跨包代码重复消除 + 文档注释更新。
+> 📖 [开发日志](./docs/changelog/v1.1.2.md)
+### [v1.1.3] — LangGraph StateGraph + Checkpoint + HITL 📋
+> 规划中
+**核心变更**：StateGraph 自动流转 engineer→audit→reviewer + Checkpoint 持久化 + HITL 确认节点 + SKILL.md LUI-first 约束。
+> 📖 [开发日志](./docs/changelog/v1.1.3.md)
+### [v1.1.4] — 条件路由 + USB federation 📋
+> 规划中
+**核心变更**：LangGraph 条件路由（PASS→push / FAIL→fix / WARN→human）+ daemon USB 检测自动配置。
+> 📖 [开发日志](./docs/changelog/v1.1.4.md)
+### [v1.1.5] — releasing.md SOP 集成 + MCP knowledge resource 📋
+> 规划中
+**核心变更**：Agent 按 releasing.md 十一阶段 SOP 全流程自动发版 + 7 个 MCP knowledge resource。
+> 📖 [开发日志](./docs/changelog/v1.1.5.md)
+### [v1.1.6] — LLM Wiki 3 层分层 + conflict-check 📋
+> 规划中
+**核心变更**：Ledger-Views-Policy 显式映射 + daemon conflict-check（矛盾/孤儿/死链）。
+> 📖 [开发日志](./docs/changelog/v1.1.6.md)
+### [v1.1.7] — Dream Cycle 6 阶段 + sensitivity 📋
+> 规划中
+**核心变更**：gbrain Dream Cycle 精简 pipeline（fact→atom→cluster→synthesize→skillopt→embed）+ knowledge sensitivity 分级。
+> 📖 [开发日志](./docs/changelog/v1.1.7.md)
+### [v1.1.8] — 安全层 + 联邦查询 📋
+> 规划中
+**核心变更**：AES-256-GCM 加密 + ECDH 密钥交换 + 三条配对路径 + OpenClaw channel 联邦知识查询。
+> 📖 [开发日志](./docs/changelog/v1.1.8.md)
+### [v1.1.9] — USB 完整运行时 📋
+> 规划中
+**核心变更**：Node.js 单文件打包 + OpenClaw 便携化 + 跨平台启动脚本。U 盘插入 → 双击 start → 联邦在线 → 拔掉零残留。
+> 📖 [开发日志](./docs/changelog/v1.1.9.md)
 > 2026-07-11（UTC）
 Sub Agent 会自己变好了：eval harness 评分体系 + Sub Agent A/B 自动优化（SkillOpt 集成） + HITL 渐进自主度 + A15 约束验证。465 测试全绿，pre-push 全绿。
 > 📖 [开发日志](./docs/changelog/v1.0.4.md)

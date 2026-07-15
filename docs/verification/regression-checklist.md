@@ -1,4 +1,4 @@
-# sofagent 回归检查清单（274 维度 · 编号 1–306）
+# sofagent 回归检查清单（268 维度 · 编号 1–306）
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。这不是"发现新问题"的工具——发现新问题用[陌生视角审查](./fresh-eyes-review.md)。
 >
@@ -94,7 +94,7 @@ bash tools/pre-push-check.sh 2>&1 | tail -5
 
 ---
 
-## 审查维度（235 个维度 · 编号 1–306）
+## 审查维度（268 个维度 · 编号 1–306）
 
 > v0.99.9 初始 88 维度（1-88）→ v1.0 新增 18 维度（89-106）→ v1.0.1 追加 32 维度（107-143）→ v1.0.2 追加 26 维度（144-176）→ v1.0.3 追加 12 维度（177-188）→ v1.0.4 追加 8 维度（189-196）→ v1.0.4 审查追加 8 维度（197-204）→ v1.0.5 追加 8 维度（205-212）→ v1.0.6 追加 5 维度（213-217）→ v1.0.7 追加 28 维度（220-247）= 247 总计
 
@@ -1808,13 +1808,13 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 
 ---
 
-### 第二十四部分：v1.1.1 全仓质量审计修复（维度 301-306）🆕
+### 第二十四部分：v1.1.2 全仓质量审计修复（维度 301-306）🆕
 
-> 来源：v1.1.1 开发期全仓质量审计（代码冗余 + 文档错误 + 跨文档死链 + 文档冗余 四维度）。6 个维度覆盖：死链全量扫描、跨包代码重复、Ledger-Views 归属、文档规范源/DRY、文件迁移四动作、check-docs.sh 死链范围扩展。
+> 来源：v1.1.2 开发期全仓质量审计（代码冗余 + 文档错误 + 跨文档死链 + 文档冗余 四维度）。6 个维度覆盖：死链全量扫描、跨包代码重复、Ledger-Views 归属、文档规范源/DRY、文件迁移四动作、check-docs.sh 死链范围扩展。
 
 #### 301. 跨文档相对路径死链全量扫描 🆕
 ```bash
-# v1.1.1 审计发现：23 处死链。根因=文件/目录迁移后相对路径未修正 + 审查只查 rules.md 死链(check-docs.sh 第 1 项)。
+# v1.1.2 审计发现：23 处死链。根因=文件/目录迁移后相对路径未修正 + 审查只查 rules.md 死链(check-docs.sh 第 1 项)。
 # 自动化全量扫描（在 check-docs.sh 落地，见维度 223）：
 #   遍历所有 .md → 解析 ]((...)) 相对链接 → 解析目标文件是否存在；
 #   排除 node_modules/.workbuddy/.sofagent/docs/changelog/docs/evidence + 代码围栏内示例链接 + 外部 http(s)/纯锚点。
@@ -1825,7 +1825,7 @@ bash tools/check-docs.sh 2>&1 | grep -i 'dead\|死链'
 
 #### 302. 跨包代码重复检测（复制≠移动） 🆕
 ```bash
-# v1.1.1 发现：audit/src/filesystem/isomorphic-git.ts(383行) 与 core/src/filesystem/isomorphic-git.ts(383行) 仅 4 行差异
+# v1.1.2 发现：audit/src/filesystem/isomorphic-git.ts(383行) 与 core/src/filesystem/isomorphic-git.ts(383行) 仅 4 行差异
 # audit 应 import @sofagent/core，不应复制。
 # 回归：同名源文件不得在两个 @sofagent/* 包各存一份（测试 fixtures / __tests__ 除外）
 dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path '*/__tests__/*' -not -path '*/test*/*' \
@@ -1836,7 +1836,7 @@ dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path 
 
 #### 303. Ledger-Views 归属一致性（think.md 始终为 Ledger/source） 🆕
 ```bash
-# v1.1.1 发现：ARCHITECTURE.md:320 将 think.md 错标为 Views(派生视图)，PHILOSOPHY.md:132 正确标为 Ledger(原始数据)
+# v1.1.2 发现：ARCHITECTURE.md:320 将 think.md 错标为 Views(派生视图)，PHILOSOPHY.md:132 正确标为 Ledger(原始数据)
 # Dream Cycle 从 think.md 抽取事实进 knowledge/(派生) —— think.md 是 source 不是 derived
 # 回归：任何文档不得把 think.md 标为 Views/派生/derived
 grep -rn "think.md.*Views\|think.md.*派生视图" ARCHITECTURE.md PHILOSOPHY.md DEVELOPMENT.md FDE/FDE.md
@@ -1847,7 +1847,7 @@ grep -n "Ledger-Views-Policy\|task/logs.*Ledger\|knowledge.*Views" PHILOSOPHY.md
 
 #### 304. 文档规范源与冗余（DRY：概念只定义一次） 🆕
 ```bash
-# v1.1.1 发现：同概念(Ledger-Views-Policy、五层架构、版本规则)在多个文档重复定义且偶有冲突(如 think.md 归属)
+# v1.1.2 发现：同概念(Ledger-Views-Policy、五层架构、版本规则)在多个文档重复定义且偶有冲突(如 think.md 归属)
 # canonical source：架构=ARCHITECTURE、记忆模型=PHILOSOPHY、发版流程=releasing、局限=LIMITATIONS
 # 其余文档引用链接，不重复定义
 # 回归：同一术语在 ≥2 处定义时，表述须一致且指向同一规范源
@@ -1857,7 +1857,7 @@ grep -rn "Ledger-Views-Policy" ARCHITECTURE.md PHILOSOPHY.md DEVELOPMENT.md | he
 
 #### 305. 文件/目录迁移四动作完整性（含死链修复） 🆕
 ```bash
-# v1.1.1 教训：LIMITATIONS.md 从 docs/ 迁到根、docs/ 子目录重排，但迁入文件相对路径引用未同步 → 死链
+# v1.1.2 教训：LIMITATIONS.md 从 docs/ 迁到根、docs/ 子目录重排，但迁入文件相对路径引用未同步 → 死链
 # 迁移必须是"移动 + 删除源 + 更新所有 inbound 引用 + 修复相对路径死链"四动作齐全
 # 回归：任何文件/目录迁移后
 git grep -n "OLD_RELATIVE_PATH" -- '*.md'   # 旧路径应 0 命中
@@ -1867,11 +1867,11 @@ git grep -n "OLD_RELATIVE_PATH" -- '*.md'   # 旧路径应 0 命中
 
 #### 306. check-docs.sh 死链检查范围扩展 🆕
 ```bash
-# v1.1.1 发现：check-docs.sh 第 1 项死链检查仅扫 rules.md，漏掉通用相对路径死链（维度 218 根因）
+# v1.1.2 发现：check-docs.sh 第 1 项死链检查仅扫 rules.md，漏掉通用相对路径死链（维度 218 根因）
 # 回归：check-docs.sh 应包含全量相对路径死链扫描（复用维度 218 的自动化逻辑），EXIT=1 若有死链
 bash tools/check-docs.sh 2>&1 | grep '死链'
 # 期望：除已知白名单外，不报通用相对路径死链
-# ✅ 已落地（v1.1.1）：tools/check-docs.sh 第 1b 节实现全仓相对路径死链扫描
+# ✅ 已落地（v1.1.2）：tools/check-docs.sh 第 1b 节实现全仓相对路径死链扫描
 #   （围栏感知、跳过 http/https/mailto/纯锚点、相对路径解析后校验存在性，死链则 EXIT=1）。
 #   原第 1 节 rules.md 专项收敛为「仅匹配真正 markdown 链接」，不再误判散文里的 rules.md 字样。
 ```
@@ -2048,12 +2048,12 @@ bash tools/check-docs.sh 2>&1 | grep '死链'
 | **215** | **audit-history.ts 无死代码残留（`const line = JSON.stringify` 已删除）** | **v1.0.6 Fix 2: 死代码清理** |
 | **216** | **LIMITATIONS.md A14 事后审计说明完整（能做什么/不能做什么/企业建议三要素）** | **v1.0.6 Fix 4: A14 文档完善** |
 | **217** | **post-commit hook 不受 `--no-verify` 影响——commit-msg 被绕过但 post-commit 仍触发** | **v1.0.6 post-commit 设计意图验证** |
-| **301** | **跨文档相对路径死链全量扫描（自动化，非人工点击）** | **v1.1.1 全仓质量审计：23 处死链，根因=文件迁移未修正相对路径 + 审查仅查 rules.md** |
-| **302** | **跨包代码重复检测（复制≠移动，重复→提升为 import）** | **v1.1.1 发现 audit/core 各存一份 isomorphic-git.ts(383行,差4行)** |
-| **303** | **Ledger-Views 归属一致性（think.md 永远为 Ledger/source，不得标 Views）** | **v1.1.1 发现 ARCHITECTURE.md:320 错标 think.md=Views** |
-| **304** | **文档规范源与冗余（DRY：概念只在 canonical source 定义）** | **v1.1.1 发现同概念多文档重复定义且偶有冲突** |
-| **305** | **文件/目录迁移四动作完整性（移动+删源+更新引用+修死链）** | **v1.1.1 教训：LIMITATIONS.md 迁根后相对路径未同步** |
-| **306** | **check-docs.sh 死链检查从 rules.md 扩展为全量相对路径** | **v1.1.1 发现：check-docs.sh 第1项仅扫 rules.md，漏通用死链** |
+| **301** | **跨文档相对路径死链全量扫描（自动化，非人工点击）** | **v1.1.2 全仓质量审计：23 处死链，根因=文件迁移未修正相对路径 + 审查仅查 rules.md** |
+| **302** | **跨包代码重复检测（复制≠移动，重复→提升为 import）** | **v1.1.2 发现 audit/core 各存一份 isomorphic-git.ts(383行,差4行)** |
+| **303** | **Ledger-Views 归属一致性（think.md 永远为 Ledger/source，不得标 Views）** | **v1.1.2 发现 ARCHITECTURE.md:320 错标 think.md=Views** |
+| **304** | **文档规范源与冗余（DRY：概念只在 canonical source 定义）** | **v1.1.2 发现同概念多文档重复定义且偶有冲突** |
+| **305** | **文件/目录迁移四动作完整性（移动+删源+更新引用+修死链）** | **v1.1.2 教训：LIMITATIONS.md 迁根后相对路径未同步** |
+| **306** | **check-docs.sh 死链检查从 rules.md 扩展为全量相对路径** | **v1.1.2 发现：check-docs.sh 第1项仅扫 rules.md，漏通用死链** |
 
 ---
 
@@ -3213,7 +3213,7 @@ grep -l 'sofagent.png.*width="160"' README.md README.en.md ROADMAP.md docs/HANDB
 grep -c '\^| \\\`' docs/guides/mcp-usage.md
 # 期望：≥25
 
-# v1.1.1-v1.1.9 changelog 全部存在
+# v1.1.2-v1.1.9 changelog 全部存在
 ls docs/changelog/v1.1.{1,2,3,4,5,6,7,8,9}.md | wc -l
 # 期望：9
 
@@ -3234,7 +3234,7 @@ ACTUAL=$(grep -c "^#### " docs/verification/regression-checklist.md)
 #### 285. CHANGELOG 纯度 grep 扩展词汇 🆕
 
 ```bash
-# v1.1.1 新增「驱动」等审查过程措辞
+# v1.1.2 新增「驱动」等审查过程措辞
 grep -niE "陌生视角|审查驱动|审查发现|审查驱动修复|驱动.*修复|审查吸收|P[0-9]×" CHANGELOG.md docs/changelog/v*.md
 # 期望：零命中（除非是合法技术内容如 LLM 接入表）
 ```
@@ -3276,7 +3276,7 @@ grep -n "execFileSync" sofagent/audit/src/index.ts
 #### 288. 输出签名一致性——CLI / Webhook / MCP / 审查报告 🆕
 
 ```bash
-# v1.1.1 引入 Harness 可见性：所有输出渠道必须具备 sofagent 签名
+# v1.1.2 引入 Harness 可见性：所有输出渠道必须具备 sofagent 签名
 # CLI 审计输出含引擎签名行
 grep -n "审计引擎: sofagent-audit" sofagent/audit/src/index.ts
 # 期望：PASS/WARN/FAIL 三个分支均含
@@ -3423,7 +3423,7 @@ grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "0 token"
 
 # 反向验证：不应再出现过期规则描述
 grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "A1-A14"
-# 应 = 0，「A1-A14」为过期描述（v1.1.1 P0-5 修复），当前正确写法是「19 条规则」
+# 应 = 0，「A1-A14」为过期描述（v1.1.2 P0-5 修复），当前正确写法是「19 条规则」
 ```
 
 #### 298. 回归清单头维度数自动校验 🆕
@@ -3439,7 +3439,7 @@ ACTUAL=$(grep -c "^#### " docs/verification/regression-checklist.md)
 #### 299. CHANGELOG 纯度自动化检查加入 pre-push 🆕
 
 ```bash
-# 阶段六发现：changelog v1.1.1.md 含 "陌生视角审查" 和 "P0×4"
+# 阶段六发现：changelog v1.1.2.md 含 "陌生视角审查" 和 "P0×4"
 # 所有 changelog 文件不得含审查过程元信息
 grep -rniE "陌生视角|审查驱动|P[0-9]×" docs/changelog/ CHANGELOG.md
 # 期望：零命中

@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v1.1.1 · 2026-07-14（UTC）· 孔放勋
+> v1.1.2 · 2026-07-14（UTC）· 孔放勋
 
 ---
 
@@ -325,7 +325,7 @@ Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown fr
 
 ---
 
-## 八、v1.1.1 新增局限
+## 八、v1.1.2 新增局限
 
 ### audit ↔ daemon 循环依赖
 
@@ -337,4 +337,4 @@ Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown fr
 
 ### daemon 通知机制为轻量版
 
-v1.1.1 新增 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的统一通知接口，但当前 daemon 的 cron 巡检和文件监听结果仍通过 stdout 输出（非 Webhook/IM 推送）。完整的 daemon 通知机制（Webhook 推送、IM 集成）计划在 v1.2.x 实现。
+v1.1.2 新增 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的统一通知接口，但当前 daemon 的 cron 巡检和文件监听结果仍通过 stdout 输出（非 Webhook/IM 推送）。完整的 daemon 通知机制（Webhook 推送、IM 集成）计划在 v1.2.x 实现。

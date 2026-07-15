@@ -2,7 +2,7 @@
 
 > **本文档是 sofagent 的 MCP 能力全目录。** 告诉你：Agent 能调什么、能生成什么、结果推到哪、什么时候推。
 >
-> v1.1.1 · 2026-07-15（UTC）· 孔放勋
+> v1.1.2 · 2026-07-15（UTC）· 孔放勋
 
 <img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -29,7 +29,7 @@ Agent 连上 sofagent MCP server 后，第一件事就是 `list_capabilities`。
 
 ## 二、所有 MCP resource（完整列表）
 
-### LOOP 自迭代（v1.1.1-v1.1.5）
+### LOOP 自迭代（v1.1.2-v1.1.5）
 
 | resource | 用法 | 返回 |
 |------|------|------|
@@ -194,7 +194,7 @@ nodes:
 | **每季度对照** | **裸模型 vs sofagent 回答对比** | **IM Webhook** | **进化引擎** |
 | **扩容预警** | **节点数/知识量接近上限** | **IM Webhook** | **daemon 条件触发** |
 
-### 感知报告推送模板（v1.1.1+）
+### 感知报告推送模板（v1.1.2+）
 
 持续感知层的所有推送遵循统一格式——以 FDE 签名为开头，确保客户每次看到结果都知道来源：
 

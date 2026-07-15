@@ -1,6 +1,6 @@
 # FDE.md · FDE 能力模型
 
-> v1.1.1 · 2026-07-15（UTC）· 孔放勋
+> v1.1.2 · 2026-07-15（UTC）· 孔放勋
 >
 > 今天你看到这个文件名还是 "Forward Deployed Engineer"。我们正在把这个词从岗位 title 升级为能力模型。**FDE 不一定是你的 job title，但它应该是你的底层能力。**
 

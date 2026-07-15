@@ -41,7 +41,7 @@
 
 > 🔴 **v1.0.9 教训**：步骤 9（shellcheck）和步骤 13（acceptance-test）依赖当前版本的 CLI 命令名。如果本版本涉及 CLI 命令迁移（如旧命令改名、上帝包子命令拆到新包二进制），shellcheck 和 acceptance-test **跳过本阶段**，延后到阶段八文档收尾全部完成之后补跑——那时文档引用和脚本命令名都已更新完毕，跑出来才是真实结果。build + test（步骤 7/8）不受影响，正常执行。
 
-> 🔴 **v1.1.1 教训**：每版本发版后，验收测试文件自身的功能也会过时——**场景数落后于代码实现、新增功能零覆盖**。在跑验收测试之前，必须先审查并更新两个验收测试文件，确保本版本新增的每条功能都有对应的验收场景。
+> 🔴 **v1.1.2 教训**：每版本发版后，验收测试文件自身的功能也会过时——**场景数落后于代码实现、新增功能零覆盖**。在跑验收测试之前，必须先审查并更新两个验收测试文件，确保本版本新增的每条功能都有对应的验收场景。
 
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
@@ -50,9 +50,9 @@
 | 9 | `shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
 | 10 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
 | 11 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
-| 12 | **🔴 更新 `tools/acceptance-test.sh` + `docs/verification/openclaw-acceptance-test.md`**（v1.1.1 教训——验收测试文件自身的功能会过时，场景数落后于代码实现、新增功能零覆盖）<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `tools/acceptance-test.sh` 和 `docs/verification/openclaw-acceptance-test.md`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `tools/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述（如 `38 个` → `42 个`、描述追加新功能关键词）<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n tools/acceptance-test.sh` 确认语法<br><br>**Step C — 更新 `docs/verification/openclaw-acceptance-test.md`**：<br>① 在文件末尾追加新部分（如 `## 第N部分：xxx`），包含场景描述 + 命令 + 期望<br>② 更新顶部「覆盖范围」描述行，追加本版本新增功能关键词<br>③ 在验证检查清单末尾追加新场景的核对项<br>④ 更新测试目的表中 `acceptance-test.sh` 的场景数引用<br><br>**Step D — 同步 `docs/verification/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增） | 三个文件 git diff 显示均有新增；`bash -n tools/acceptance-test.sh` 通过 |
+| 12 | **🔴 更新 `tools/acceptance-test.sh` + `docs/verification/openclaw-acceptance-test.md`**（v1.1.2 教训——验收测试文件自身的功能会过时，场景数落后于代码实现、新增功能零覆盖）<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `tools/acceptance-test.sh` 和 `docs/verification/openclaw-acceptance-test.md`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `tools/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述（如 `38 个` → `42 个`、描述追加新功能关键词）<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n tools/acceptance-test.sh` 确认语法<br><br>**Step C — 更新 `docs/verification/openclaw-acceptance-test.md`**：<br>① 在文件末尾追加新部分（如 `## 第N部分：xxx`），包含场景描述 + 命令 + 期望<br>② 更新顶部「覆盖范围」描述行，追加本版本新增功能关键词<br>③ 在验证检查清单末尾追加新场景的核对项<br>④ 更新测试目的表中 `acceptance-test.sh` 的场景数引用<br><br>**Step D — 同步 `docs/verification/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增） | 三个文件 git diff 显示均有新增；`bash -n tools/acceptance-test.sh` 通过 |
 | 13 | `bash tools/acceptance-test.sh` — 端到端场景：Fresh install → --init → --doctor → 正常 commit → 违规拦截 → --json → --ci → 首次提交 → hook 破坏 → --no-verify 检测 → config rules 过滤 → A1-A11 → E1-E4 扩展规则 → --strict exit code=2 → hook 迁移 → post-commit → hashVersion 混合格式 → history.jsonl 写入 → --json 违规输出 → post-commit 安装+丢失检测 → subagent + 新包 CLI → shim 安全 → Harness 签名 → LOOP Agent → MCP 烟测 → 文件系统审计 → 权限作用域化 → fast-fail → MCP compose | 全部 PASS。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
-| 14 | **OpenClaw 综合验证**：执行 `docs/verification/openclaw-acceptance-test.md`（全场景：审计管道全规则 + hook 机制 + hashVersion 混合格式 + SkillOpt 自净化 + DeepAgents Sub Agent + optional 依赖降级 + config rules 过滤 + v1.1.1 shim/签名/LOOP + 历史核心功能 A14/A15/约束自加载/文件系统审计/权限/经验共享/Workflow Hub） | 全部通过 |
+| 14 | **OpenClaw 综合验证**：执行 `docs/verification/openclaw-acceptance-test.md`（全场景：审计管道全规则 + hook 机制 + hashVersion 混合格式 + SkillOpt 自净化 + DeepAgents Sub Agent + optional 依赖降级 + config rules 过滤 + v1.1.2 shim/签名/LOOP + 历史核心功能 A14/A15/约束自加载/文件系统审计/权限/经验共享/Workflow Hub） | 全部通过 |
 
 ---
 
@@ -206,7 +206,7 @@ grep "$actual" ROADMAP.md
 
 从 `package.json` 读 SSOT 版本号，逐项比对全项目 13 类位置。任何不一致 → 红字报错 + exit 1。
 
-#### 同步 package-lock.json（🔴 v1.0.3 + v1.1.1 教训）
+#### 同步 package-lock.json（🔴 v1.0.3 + v1.1.2 教训）
 
 bump-version.sh 改了 `package.json` 但不会自动同步 `package-lock.json`。必须手动执行：
 
@@ -218,7 +218,27 @@ grep -A3 '"sofagent/mcp":' package-lock.json | grep '"version"'
 # 两个都应该是新版本号
 ```
 
-**🔴 v1.1.1 铁律**：**禁止用 `sed` 直接改 `package-lock.json`**——全局替换 `1.1.0→1.1.1` 会把外部包（如 `reusify@1.1.0`）也污染为不存在的版本（`reusify@1.1.1`），导致 CI 全平台 `npm ci` 崩溃。只能用 `npm install --package-lock-only` 重新生成锁文件。
+**🔴 v1.1.2 铁律**：**禁止用 `sed` 直接改 `package-lock.json`**——全局替换 `1.1.0→1.1.2` 会把外部包（如 `reusify@1.1.0`）也污染为不存在的版本（`reusify@1.1.2`），导致 CI 全平台 `npm ci` 崩溃。只能用 `npm install --package-lock-only` 重新生成锁文件。
+
+#### 🔴 v1.1.2 npm 发布铁律：版本号永久锁死
+
+npm 版本号一旦 publish 就**永久封存**——即便 `npm unpublish --force` 成功删除了表象，后台数据库里那个版本号仍然被占用，`npm publish` 会报 `E400 Cannot publish over previously published version`。
+
+**教训**：
+1. **不在发布前做任何实验性 `npm publish`**——哪怕只发了一个叶子包，那个版本号就锁死了
+2. **发布前必须跑完整的 script/bump/publish 流水线**——不能边修边发
+3. **发错了版本号 = 永久浪费**——npm support 也不会帮你解封（除非重大安全事故）
+4. **unpublish 只能用来"隐藏"，不能用来"复写"**
+
+```bash
+# ❌ 永远不要这样：
+npm publish # 发了一个包，发现有问题
+npm unpublish --force  # 删掉
+npm publish # 重新发 → 400 Cannot publish over previously published version
+
+# ✅ 正确流程：
+# 发之前确认一切就绪 → 一次性批量发布 → 发完即锁定
+```
 
 #### 手动排查（脚本未覆盖的边缘情况）
 
@@ -420,7 +440,7 @@ done
 # 期望：全部 = 新版本号
 
 ── Step 4: git tag + push ──
-12.5 🔴 tag 完整性门禁（v1.1.1 起）：打 tag 前确认 `git log --oneline <last-tag>..HEAD` 无 fix 漏网——确保所有改动都已纳入本次 tag
+12.5 🔴 tag 完整性门禁（v1.1.2 起）：打 tag 前确认 `git log --oneline <last-tag>..HEAD` 无 fix 漏网——确保所有改动都已纳入本次 tag
 13. git tag vX.Y.Z + git push origin vX.Y.Z
 14. gh release create vX.Y.Z
    🔴 Release body **必须**包含开发日志链接：

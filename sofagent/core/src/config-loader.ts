@@ -1,9 +1,9 @@
 // ============================================================
 // config-loader.ts · .sofagent/config.yml 配置加载器
-// v0.95 新增：三级 fallback（v1.1.1，js-yaml 替代手写 YAML 解析器）
+// v0.95 新增：三级 fallback（v1.1.2，js-yaml 替代手写 YAML 解析器）
 // v0.97 扩展：环境变量配置（从 lib/config.sh 合并）
-// v1.1.1 重构：用 js-yaml 替代手写 YAML 解析器
-// v1.1.1 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
+// v1.1.2 重构：用 js-yaml 替代手写 YAML 解析器
+// v1.1.2 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
 // ============================================================
 //
 // 三级 fallback：
@@ -32,7 +32,7 @@ export interface AuditConfig {
   testPatterns: string[];
   /** 「不改越界」阈值——不相关文件占比超过此比例时 WARN */
   carefulModifyThreshold: number;
-  /** 是否启用扩展规则（E1-E4 + A14 + A15） */
+  /** 是否启用扩展规则（E1-E4 + A14-A17） */
   extendedRulesEnabled: boolean;
   /** 按规则名禁用——key 为 a1~a15/e1~e4，value 为 false 时禁用 */
   rules?: Record<string, boolean>;
@@ -232,7 +232,7 @@ export function safeDefaults(): AuditConfig {
     rules: {
       a1: true, a2: true, a3: true, a4: true, a5: true,
       a6: true, a7: true, a8: true, a9: true, a10: true, a11: true,
-      a14: true, a15: true,
+      a14: true, a15: true, a16: true, a17: true,
     },
     loopCheckMaxRounds: 20,
   };

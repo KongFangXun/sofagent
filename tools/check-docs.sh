@@ -133,9 +133,9 @@ LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 # 上限定义
 LIMIT_A=4500  # v1.1.0: 五个引擎重构 + ARCHITECTURE 叙事升级 + README 内容增长
 LIMIT_B=2000
-LIMIT_C=6000  # v1.1.1: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6000 留余量
+LIMIT_C=6000  # v1.1.2: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6000 留余量
 LIMIT_D=500
-LIMIT_E=1000  # v1.1.1 P0-1: 从 600 上调到 1000，多设备同步指南等 E 层文档扩展导致自然增长
+LIMIT_E=1000  # v1.1.2 P0-1: 从 600 上调到 1000，多设备同步指南等 E 层文档扩展导致自然增长
 LIMIT_TOTAL=6200  # v1.1.0: A 层文档五个引擎重构导致自然增长
 
 # 输出各层

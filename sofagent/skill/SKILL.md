@@ -1,7 +1,7 @@
 ---
 name: sofagent
 slug: sofagent
-version: 1.1.1
+version: 1.1.2
 displayName: sofagent
 description: >
   当你的 Agent 反复偏离目标、任务越做越复杂、刚踩过的坑下次还踩。装上后 Agent 自带行为约束和反思能力。
@@ -18,7 +18,7 @@ metadata:
     requires: {}
 ---
 
-# SKILL.md · v1.1.1
+# SKILL.md · v1.1.2
 
 > ⚠️ **反向锚点**：本文件随 skill 调用自动注入——你无需 Read 就已有宪法。但 think.md 和 fde.md 需你主动 Read。如果你没读就回复用户，你的输出可能偏离历史教训和企业规范。预装 Agent：`@sofagent-fde`（部署）+ `@sofagent-audit`（合规，必调）。
 
