@@ -1,6 +1,6 @@
 // ============================================================
 // skill-safety-rules.ts · Skill 安全审查——规则定义
-// v1.1.0：迁移至 @sofagent/skillopt
+// v1.1.1：迁移至 @sofagent/skillopt
 // ============================================================
 // SafetyRule.pattern = 原始正则（用于 COMPILED_RULES 预编译和 SafetyHit.pattern 展示）
 // SafetyRule.regex  = 编译后无 g flag 的版本（scanFile 实际使用，避免 lastIndex 状态问题）

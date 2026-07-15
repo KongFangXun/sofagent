@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // sofagent-orchestrate-compare · 编排方案 A/B 对比 + 任务编排 CLI
 //
-// v1.1.0: ao 完全退役，DeepAgents 为唯一编排引擎。
+// v1.1.1: ao 完全退役，DeepAgents 为唯一编排引擎。
 // 新增连续胜出计数器（CONSECUTIVE_WINS_REQUIRED = 2）+ ab-state.json 持久化。
-// v1.1.0：迁移至 @sofagent/orchestrator，import → 同包内 composer
+// v1.1.1：迁移至 @sofagent/orchestrator，import → 同包内 composer
 //
 // 用法:
 //   sofagent-orchestrate-compare --current <dir> --candidate <dir> --output <dir>
@@ -16,7 +16,7 @@ import { join, resolve, dirname } from 'path';
 import { createHash } from 'crypto';
 import { composeWithDeepAgents } from './composer';
 
-const VERSION = '1.1.0';
+const VERSION = '1.1.1';
 
 export interface Metric { runCount: number; auditViolations: number; avgSteps: number; firstPassRate: number; }
 interface Args { current: string; candidate: string; output: string; }
@@ -449,7 +449,7 @@ async function composeTask(args: string[]): Promise<void> {
       } catch { /* */ }
     }
   } else {
-    warn('编排方案生成失败');
+    warn('sofagent 提示：编排方案未生成');
   }
 
   console.log('');
@@ -562,7 +562,7 @@ function main(): void {
   const curr = extractMetrics(args.current);
   const cand = extractMetrics(args.candidate);
   if (curr.runCount === 0 && cand.runCount === 0) {
-    console.error('❌ 两个目录下都没有日志文件。'); process.exit(1);
+    console.error('❌ sofagent 提示：两个目录下都没有日志文件，无法对比。'); process.exit(1);
   }
   try { mkdirSync(args.output, { recursive: true }); } catch {
     console.error(`❌ 无法创建输出目录: ${args.output}`); process.exit(1);

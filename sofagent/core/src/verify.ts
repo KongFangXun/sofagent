@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-verify · 装后验证脚本（TypeScript 版）——入口文件
-// v1.1.0 从 sofagent/audit/src/verify.ts 迁出
+// v1.1.1 从 sofagent/audit/src/verify.ts 迁出
 // ============================================================
 // 验证 sofagent 安装完整性（9 个检查类别，~48 项动态）。
 // 由 verify.sh (942 行 bash) + windows/verify.ps1 合并而来，
@@ -139,7 +139,7 @@ function main(): void {
       if (v.failTotal === 0) {
         console.log('  ✅ quick 模式通过！运行 sofagent-verify（无 --quick）获取完整检查。');
       } else {
-        console.log(`  ❌ 发现 ${v.failTotal} 项失败。请先运行 install.sh 修复。`);
+        console.log(`  ❌ sofagent 验证：${v.failTotal} 项未通过。请运行 install.sh 修复后重试。`);
       }
       console.log('');
     }
@@ -164,7 +164,7 @@ function main(): void {
         console.log('    1. 确认 sofagent Skill 已加载（下次对话应出现初始化提示）');
         console.log('    2. 试用 /goal 命令开始第一个任务');
       } else {
-        console.log(`  ❌ 发现 ${v.failTotal} 项失败。请先运行 install.sh 修复。`);
+        console.log(`  ❌ sofagent 验证：${v.failTotal} 项未通过。请运行 install.sh 修复后重试。`);
       }
       console.log('');
     }

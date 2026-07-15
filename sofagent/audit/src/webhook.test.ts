@@ -93,7 +93,7 @@ describe('webhook', () => {
     expect(body.text.content).toContain('⚠️ sofagent 审计警告');
   });
 
-  it('全部 PASS 时不推送（返回 false）', async () => {
+  it('全部 PASS 时也推送（v1.1.1 起 PASS 推送）', async () => {
     const mockFetch = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
     const payload: WebhookPayload = {
       platform: 'dingtalk',
@@ -104,8 +104,10 @@ describe('webhook', () => {
 
     const result = await pushAuditResult(payload);
 
-    expect(result).toBe(false);
-    expect(mockFetch).not.toHaveBeenCalled();
+    expect(result).toBe(true);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const body = JSON.parse((mockFetch.mock.calls[0]![1] as RequestInit).body as string);
+    expect(body.text.content).toContain('✅ sofagent 审计通过');
   });
 
   it('有 FAIL 时推送并验证 URL 和 body', async () => {

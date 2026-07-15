@@ -1,5 +1,5 @@
 // ============================================================
-// reporter.ts · 审计结果类型定义（v1.1.0 从 audit 迁出）
+// reporter.ts · 审计结果类型定义（v1.1.1 从 audit 迁出）
 //
 // 仅包含纯类型定义，不依赖 audit 的 rules/ 模块。
 // runRules 实现在 audit/src/reporter.ts 中，因为依赖 rules/runner。

@@ -113,4 +113,4 @@ ao compose 在 **10 秒内**生成 5 步编排流水线：
 ## 后续
 
 - `ao compose` 可复用的编排能力在 v0.8 做进一步验证
-- `engine.md` 安装提示缺失已记录在 [docs/changelog/v0.71.md](../../../changelog/v0.71.md)
+- `engine.md` 安装提示缺失已记录在 [docs/changelog/v0.71.md](../../../changelog/experimental/v0.71.md)

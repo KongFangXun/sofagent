@@ -1,6 +1,6 @@
 # sofagent-audit 设计文档
 
-> v1.1.0 · 2026-07-13 · 提交时审计
+> v1.1.1 · 2026-07-13 · 提交时审计
 > v0.95 铁律从 10→6 条，原 #1/#3/#7/#10 迁移为审计 A3/A5/A7/A8。
 
 v0.90 的约束 Agent 不理——干脆不看它，直接 audit git diff。
@@ -26,7 +26,7 @@ TypeScript，最小运行时依赖：仅 js-yaml（YAML 配置解析），其余
 
 检查规则独立只读——审计扫的是 git diff（已发生的历史记录），Agent 不可篡改。监控四种篡改：改断言匹配错误、删失败测试、加 lint-ignore、降覆盖率阈值。
 
-> ⚠️ 日志检查（A7/A8）依赖 Agent 自我报告的 task/logs，Agent 可伪造。审计上限 = 日志真实性。详见 [LIMITATIONS.md](../LIMITATIONS.md)。
+> ⚠️ 日志检查（A7/A8）依赖 Agent 自我报告的 task/logs，Agent 可伪造。审计上限 = 日志真实性。详见 [LIMITATIONS.md](../../LIMITATIONS.md)。
 
 ## 已实现 / 未实现
 

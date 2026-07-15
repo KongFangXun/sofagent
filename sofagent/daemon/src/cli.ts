@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// daemon CLI · v1.1.0
-
+// daemon CLI · v1.1.1
 const args = process.argv.slice(2);
 const subcommand = args[0];
+const VERSION = '1.1.1';
 
 async function main() {
   if (!subcommand || subcommand === '--help') {
@@ -23,7 +23,7 @@ async function main() {
       const { startWatching } = await import('./fs-watch');
       const { runFilesystemAudit } = await import('./run-fs-audit');
 
-      console.log(`sofagent-daemon v1.1.0 — 启动守护进程`);
+      console.log(`sofagent-daemon v${VERSION} — 启动守护进程`);
       console.log(`  监控目录: ${projectDir}`);
       console.log('');
 

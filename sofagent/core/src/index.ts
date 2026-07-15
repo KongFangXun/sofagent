@@ -1,6 +1,6 @@
 /**
  * @sofagent/core — 基础设施层
- * v1.1.0 从 sofagent/audit/src/ 迁出
+ * v1.1.1 从 sofagent/audit/src/ 迁出
  *
  * 包含：常量、原子写入、git diff 解析、配置加载、模板、
  * 监控配置、模型客户端、日志读取、环境探测、成本基线、
@@ -98,6 +98,17 @@ export {
   extractSummary,
 } from './compress-memory';
 
+// ── 记忆契约（think.md · Ledger-Views-Policy）──
+// think.md 路径 / 层级归属 / 只追加写入点的单一事实来源
+export {
+  THINK_MD_FILENAME,
+  THINK_MD_LAYER,
+  KNOWLEDGE_DIR_LAYER,
+  getThinkPath,
+  appendThinkEntry,
+} from './memory-contract';
+export type { MemoryLayer } from './memory-contract';
+
 // ── 审计结果类型 ──
 export type { AuditResult, RuleCheck } from './reporter';
 
@@ -121,3 +132,13 @@ export type {
 
 // ── 文件系统 / 记忆层 ──
 export { getPersonaContent } from './filesystem/memory-sync';
+
+// ── 文件系统 / Shadow Repo（同构 Git 快照） ──
+export {
+  createShadowRepo,
+  commitSnapshot,
+  revertToSnapshot,
+  listSnapshots,
+  hasShadowRepo,
+} from './filesystem/isomorphic-git';
+export type { SnapshotEntry, IsoDiff } from './filesystem/isomorphic-git';

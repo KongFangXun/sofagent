@@ -1,6 +1,6 @@
 // ============================================================
 // eval/eval-runner.ts · eval 核心运行器
-// v1.1.0 从 sofagent/audit/src/eval/eval-runner.ts 迁出
+// v1.1.1 从 sofagent/audit/src/eval/eval-runner.ts 迁出
 // 加载 golden set → 逐条跑 → 收集输出 → 评分
 // ============================================================
 

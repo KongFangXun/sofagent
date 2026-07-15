@@ -14,14 +14,14 @@
 </p>
 
 <p align="center" style="color:#64748B;font-size:14px;">
-  Agent Harness 中间件<br/>
-  中小企业和 OPC 的 FDE 工具包
+  Agent Harness 中间件 + FDE 工具包<br/>
+  <strong>让每个人都具备 FDE 的能力</strong>
 </p>
 
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.0-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.1-16B8F3" alt="Version" /></a>
 </p>
 
 ---
@@ -68,6 +68,19 @@ sofagent-audit --timeline
 
 > 需要 Node.js ≥ 18 + bash + git。macOS / Linux 全功能，Windows 实验性。[完整安装说明](./docs/HANDBOOK.md)
 
+### 按需安装独立包
+
+`@sofagent/audit` 为纯审计引擎（核心功能）。如需完整能力，可按需安装独立包：
+
+| 包 | 用途 | 安装命令 |
+|------|------|------|
+| `@sofagent/audit` | 纯审计引擎（19 条规则，git diff 硬证据） | `npm install -g @sofagent/audit` |
+| `@sofagent/orchestrator` | 编排引擎（多 Agent 协作 / 工作流调度） | `npm install -g @sofagent/orchestrator` |
+| `@sofagent/daemon` | 主动巡检守护进程（定时审计/健康度/新鲜度检测） | `npm install -g @sofagent/daemon` |
+| `@sofagent/mcp` | MCP Server（JSON-RPC 2.0，暴露审计能力给 MCP Client） | `npm install -g @sofagent/mcp` |
+
+> 以上包均可独立使用，互不强制依赖。`@sofagent/audit` 为最简入口，其他包按需叠加。
+
 ---
 
 ## FDE 怎么工作？
@@ -98,7 +111,9 @@ FDE 交付完就撤离，AI 节点留在企业自己跑。
 > OpenClaw/DeepAgents 就是你的 Gateway。sofagent 不替代 Gateway——它挂在 Gateway 里面，管 Agent 行为治理：
 > **Gateway 是高速公路，sofagent 是交规 + 测速摄像头 + 驾校教练。**
 
-> 🔮 **v1.1.0 已发布**：包结构纯度重构——audit 只做审计，12 个独立包 + 轻量多设备四件事。详见 [开发日志](./docs/changelog/v1.1.0.md)。
+> 💬 **sofagent 没有界面。你和它对话，它做完了告诉你结果在哪。** 语言就是界面，MCP 就是入口。详见 [设计哲学](./docs/PHILOSOPHY.md)。MCP 完整调用方式见 [MCP 使用指南](./docs/guides/mcp-usage.md)。
+
+> 🔮 **v1.1.0 已发布**：包结构纯度重构——audit 只做审计，12 个独立包 + 轻量多设备四件事。详见 [开发日志](./docs/changelog/v1.1.0.md)。4 种同步方案见 [多设备同步指南](./docs/guides/multi-device-sync.md)。
 
 #### 🧭 约束底座
 
@@ -146,7 +161,7 @@ graph LR
 
 不依赖 AI 自觉——看的是 git diff 硬证据。**0 token 消耗——纯正则引擎，不调 LLM。** 核心规则纯看 git diff，不需要 Agent 配合。
 
-> v1.1.0 将拆为独立 `@sofagent/audit` 包。v1.0.8+ 内嵌 isomorphic-git + daemon 文件监控，不需 git commit。
+> v1.1.0 已拆为独立 `@sofagent/audit` 包。v1.0.8+ 内嵌 isomorphic-git + daemon 文件监控，不需 git commit。
 
 #### 🔄 回溯引擎
 
@@ -227,7 +242,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 | 管住 Agent 全流程 | 审计引擎 + 约束底座（install.sh） |
 | 自动编排 Agent 任务 | + 编排引擎（DeepAgents Sub Agent） |
 
-> ⚠️ **当前版本（v1.1.0）覆盖范围**：开发者岗位（git commit 审计）+ 非开发岗位（文件系统审计）全覆盖。
+> ⚠️ **当前版本（v1.1.1）覆盖范围**：开发者岗位（git commit 审计）+ 非开发岗位（文件系统审计）全覆盖。
 
 ### 两种部署节点（v1.0.7+）
 

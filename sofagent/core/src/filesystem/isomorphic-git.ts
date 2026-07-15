@@ -1,6 +1,6 @@
 // ============================================================
 // isomorphic-git.ts · 同构 Git 集成
-// v1.1.0 新增：纯 JS 实现的 git diff / shadow repo
+// v1.1.1 新增：纯 JS 实现的 git diff / shadow repo
 //
 // 用途：
 //   - 在非 git 目录中创建 shadow repo，实现文件快照和差异追踪
@@ -29,7 +29,7 @@ export interface IsoDiff {
 }
 
 /** 快照记录 */
-interface SnapshotEntry {
+export interface SnapshotEntry {
   sha: string;
   timestamp: string;
   files: Record<string, string>; // path → content
@@ -299,7 +299,7 @@ export function revertToSnapshot(dir: string, sha: string): string[] {
       writeFileSync(fullPath, content, 'utf-8');
       restored.push(relativePath);
     } catch (err) {
-      console.error(`恢复文件失败: ${fullPath}`, (err as Error).message);
+      console.error(`sofagent 恢复文件时遇到问题: ${fullPath}`, (err as Error).message);
     }
   }
 

@@ -1,6 +1,6 @@
 # sofagent 版本开发 SOP
 
-> v0.95 实践沉淀。**十一阶段**：审查→开发→自测→代码审核→**回归清单验证**→回归检查→审查体系维护→文档收尾→确认关口→发布→发布后。
+> v0.95 实践沉淀。**十一阶段 + 验收测试自更新（阶段三·步骤 12）**：审查→开发→自测（含验收测试文件进化）→代码审核→**回归清单验证**→回归检查→审查体系维护→文档收尾→确认关口→发布→发布后。
 > 🔴 v0.95 起，版本号操作用 `bump-version.sh` + `check-version.sh`，禁止手动 grep/sed。
 > 🔴 v1.0.3 起，文档预算分层检查（A 用户文档 / B 开发者参考 / C 审查体系 / D 设计 / E 指南），见 `check-docs.sh`。
 > 🔴 回归检查已升格为**独立阶段**（阶段六）——需要全新 session，不再作为"审核"的子步骤。
@@ -39,7 +39,9 @@
 
 开发完成后、交审核之前，工程师先自己跑一轮。
 
-> 🔴 **v1.1.0 教训·CLI 迁移门**：步骤 9（shellcheck）和步骤 12（acceptance-test）依赖当前版本的 CLI 命令名。如果本版本涉及 CLI 命令迁移（如旧命令改名、上帝包子命令拆到新包二进制），shellcheck 和 acceptance-test **跳过本阶段**，延后到阶段八文档收尾全部完成之后补跑——那时文档引用和脚本命令名都已更新完毕，跑出来才是真实结果。build + test（步骤 7/8）不受影响，正常执行。
+> 🔴 **v1.0.9 教训**：步骤 9（shellcheck）和步骤 13（acceptance-test）依赖当前版本的 CLI 命令名。如果本版本涉及 CLI 命令迁移（如旧命令改名、上帝包子命令拆到新包二进制），shellcheck 和 acceptance-test **跳过本阶段**，延后到阶段八文档收尾全部完成之后补跑——那时文档引用和脚本命令名都已更新完毕，跑出来才是真实结果。build + test（步骤 7/8）不受影响，正常执行。
+
+> 🔴 **v1.1.1 教训**：每版本发版后，验收测试文件自身的功能也会过时——**场景数落后于代码实现、新增功能零覆盖**。在跑验收测试之前，必须先审查并更新两个验收测试文件，确保本版本新增的每条功能都有对应的验收场景。
 
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
@@ -48,8 +50,9 @@
 | 9 | `shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
 | 10 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
 | 11 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
-| 12 | `bash tools/acceptance-test.sh` — 28 个端到端场景：Fresh install → --init → --doctor → 正常 commit → 违规拦截 → --json → --ci → 首次提交 → hook 破坏 → --no-verify 检测 → config rules 过滤 → A2/A3/A4/A5/A6/A9/A10/A11 → E1-E4 扩展规则 → --strict exit code=2 → hook 迁移 → post-commit → hashVersion 混合格式 → history.jsonl 写入 → --json 违规输出 → post-commit 安装+丢失检测 | 全部 PASS。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
-| 13 | **OpenClaw 综合验证**：执行 `docs/verification/openclaw-acceptance-test.md`（28 场景：审计管道全规则 + hook 机制 + hashVersion 混合格式 + SkillOpt 自净化 + DeepAgents Sub Agent + optional 依赖降级 + config rules 过滤） | 全部通过 |
+| 12 | **🔴 更新 `tools/acceptance-test.sh` + `docs/verification/openclaw-acceptance-test.md`**（v1.1.1 教训——验收测试文件自身的功能会过时，场景数落后于代码实现、新增功能零覆盖）<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `tools/acceptance-test.sh` 和 `docs/verification/openclaw-acceptance-test.md`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `tools/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述（如 `38 个` → `42 个`、描述追加新功能关键词）<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n tools/acceptance-test.sh` 确认语法<br><br>**Step C — 更新 `docs/verification/openclaw-acceptance-test.md`**：<br>① 在文件末尾追加新部分（如 `## 第N部分：xxx`），包含场景描述 + 命令 + 期望<br>② 更新顶部「覆盖范围」描述行，追加本版本新增功能关键词<br>③ 在验证检查清单末尾追加新场景的核对项<br>④ 更新测试目的表中 `acceptance-test.sh` 的场景数引用<br><br>**Step D — 同步 `docs/verification/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增） | 三个文件 git diff 显示均有新增；`bash -n tools/acceptance-test.sh` 通过 |
+| 13 | `bash tools/acceptance-test.sh` — 端到端场景：Fresh install → --init → --doctor → 正常 commit → 违规拦截 → --json → --ci → 首次提交 → hook 破坏 → --no-verify 检测 → config rules 过滤 → A1-A11 → E1-E4 扩展规则 → --strict exit code=2 → hook 迁移 → post-commit → hashVersion 混合格式 → history.jsonl 写入 → --json 违规输出 → post-commit 安装+丢失检测 → subagent + 新包 CLI → shim 安全 → Harness 签名 → LOOP Agent → MCP 烟测 → 文件系统审计 → 权限作用域化 → fast-fail → MCP compose | 全部 PASS。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
+| 14 | **OpenClaw 综合验证**：执行 `docs/verification/openclaw-acceptance-test.md`（全场景：审计管道全规则 + hook 机制 + hashVersion 混合格式 + SkillOpt 自净化 + DeepAgents Sub Agent + optional 依赖降级 + config rules 过滤 + v1.1.1 shim/签名/LOOP + 历史核心功能 A14/A15/约束自加载/文件系统审计/权限/经验共享/Work模板市场） | 全部通过 |
 
 ---
 
@@ -59,9 +62,9 @@
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 14 | 逐项核对 changelog 每一项 | 当前 session | 逐文件读源码/diff，逐项确认改动存在且正确，标记 PASS/FAIL |
-| 15 | FAIL 项修复 | 当前 session（切回开发者角色） | build + test 全绿 |
-| 16 | 二次复核确认全部到位 | 当前 session | changelog 所有项 PASS |
+| 15 | 逐项核对 changelog 每一项 | 当前 session | 逐文件读源码/diff，逐项确认改动存在且正确，标记 PASS/FAIL |
+| 16 | FAIL 项修复 | 当前 session（切回开发者角色） | build + test 全绿 |
+| 17 | 二次复核确认全部到位 | 当前 session | changelog 所有项 PASS |
 
 ---
 
@@ -73,10 +76,10 @@
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 17 | **合并更新两份审查文档**：① 汇总本版本所有修复项，抽象为回归检查维度（编号递增）写入 `regression-checklist.md`；② 同步把本版本暴露的新盲区 / 新视角 / 新攻击面写入 `fresh-eyes-review.md`。两项一并完成，不要留到后面 | 当前 session | `git diff` 显示两份文档均有新增；新增维度 ≥ 本版本修复数 |
-| 18 | **当前 session 逐项验证**：每条新增回归维度跑一遍命令确认可执行；确认 `fresh-eyes-review.md` 新视角与回归维度互相印证、无矛盾 | 当前 session | 所有新增维度可执行 + 两份文档互相印证 |
+| 18 | **合并更新两份审查文档**：① 汇总本版本所有修复项，抽象为回归检查维度（编号递增）写入 `regression-checklist.md`；② 同步把本版本暴露的新盲区 / 新视角 / 新攻击面写入 `fresh-eyes-review.md`。两项一并完成，不要留到后面 | 当前 session | `git diff` 显示两份文档均有新增；新增维度 ≥ 本版本修复数 |
+| 19 | **当前 session 逐项验证**：每条新增回归维度跑一遍命令确认可执行；确认 `fresh-eyes-review.md` 新视角与回归维度互相印证、无矛盾 | 当前 session | 所有新增维度可执行 + 两份文档互相印证 |
 
-> ✅ 完成 步骤 17 → 18 后，**开发 session 的文档工作已一气呵成**——回归清单 + 陌生视角审查全部在当前 session 更新完。接下来只有**阶段六需要开新 session 控制 OpenClaw**，到那时才停。
+> ✅ 完成 步骤 18 → 19 后，**开发 session 的文档工作已一气呵成**——回归清单 + 陌生视角审查全部在当前 session 更新完。接下来只有**阶段六需要开新 session 控制 OpenClaw**，到那时才停。
 
 ---
 
@@ -137,7 +140,7 @@
 
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
-| 21 | **最终确认两份审查文档**：regression 维度与 fresh-eyes 视角互相印证，循环修复中暴露的新盲区已补入 | 两份文档最终状态见于文件 diff |
+| 22 | **最终确认两份审查文档**：regression 维度与 fresh-eyes 视角互相印证，循环修复中暴露的新盲区已补入 | 两份文档最终状态见于文件 diff |
 
 **审查体系闭环**（v1.0.4 教训）：审查文档自身也会过时——每次发版后审视审查 prompt 的数字、路径、视角是否还有效。
 
@@ -326,7 +329,7 @@ ls docs/changelog/*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
 
 ### 🔴 CLI 迁移版本回归闸（v1.1.0 教训）
 
-> 如果本版本涉及 CLI 命令迁移（旧命令改名、上帝包子命令拆到新包二进制），阶段三跳过的 shellcheck（步骤 9）和 acceptance-test（步骤 12）在**此处补跑**——文档收尾已完成，所有引用已更新，跑出来是真实结果。
+> 如果本版本涉及 CLI 命令迁移（旧命令改名、上帝包子命令拆到新包二进制），阶段三跳过的 shellcheck（步骤 9）和 acceptance-test（步骤 13）在**此处补跑**——文档收尾已完成，所有引用已更新，跑出来是真实结果。
 
 ```bash
 # 补跑 shellcheck
@@ -346,10 +349,10 @@ bash tools/acceptance-test.sh                                      # 期望：�
 
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
-| 22 | 展示全部改动清单 | `git diff --stat` |
-| 23 | 作者逐项确认 | 重点看版本号、ROADMAP、CHANGELOG |
-| 24 | 确认通过后，开发日志「发布检查清单」打 `[x]` | 不在文档收尾前打勾 |
-| 25 | **AI 生成发布 prompt，交接给项目负责人**——发版命令由 AI 准备但绝不执行 | AI 输出完整的发布 prompt（含 npm publish / git tag / gh release / Skill 分发 / 发布后验证），项目负责人亲手跑 |
+| 23 | 展示全部改动清单 | `git diff --stat` |
+| 24 | 作者逐项确认 | 重点看版本号、ROADMAP、CHANGELOG |
+| 25 | 确认通过后，开发日志「发布检查清单」打 `[x]` | 不在文档收尾前打勾 |
+| 26 | **AI 生成发布 prompt，交接给项目负责人**——发版命令由 AI 准备但绝不执行 | AI 输出完整的发布 prompt（含 npm publish / git tag / gh release / Skill 分发 / 发布后验证），项目负责人亲手跑 |
 
 ---
 
@@ -415,10 +418,11 @@ done
 # 期望：全部 = 新版本号
 
 ── Step 4: git tag + push ──
+12.5 🔴 tag 完整性门禁（v1.1.1 起）：打 tag 前确认 `git log --oneline <last-tag>..HEAD` 无 fix 漏网——确保所有改动都已纳入本次 tag
 13. git tag vX.Y.Z + git push origin vX.Y.Z
 14. gh release create vX.Y.Z
    🔴 Release body **必须**包含开发日志链接：
-   📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)
+   📖 详细开发日志：`docs/changelog/vX.Y.Z.md`
 
    🔴 Release Notes 标准格式：
 
@@ -443,7 +447,7 @@ done
    | pre-push-check | {N}/{N} 全绿 ✅ |
    | 回归检查 | {N}/{N} 全绿 ✅ |
 
-   📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)
+   📖 详细开发日志：`docs/changelog/vX.Y.Z.md`
    ```
 
    **Emoji 规范**：
@@ -495,7 +499,7 @@ gh release view vX.Y.Z
 
 # 🔴 Release Notes 完整性检查（v1.0.3 教训）
 # 1. body 不为空
-# 2. 包含 📖 [详细开发日志](./docs/changelog/vX.Y.Z.md) 链接
+# 2. 包含 📖 详细开发日志：`docs/changelog/vX.Y.Z.md` 链接
 # 3. 不是 Draft 状态
 gh release view vX.Y.Z --json isDraft,body -q '.body | length'  # 期望 > 100
 gh release view vX.Y.Z --json body -q '.body | contains("详细开发日志")'  # 期望: true
@@ -536,15 +540,15 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 
 | # | 步骤 |
 |:--:|------|
-| 26 | **npm 12 包验证**：全部 12 包版本一致，无 MISSING |
-| 27 | npm README 验证：`npm view @sofagent/audit readme` + `npm view @sofagent/mcp readme` 均有内容 |
-| 28 | 如果本次迭代暴露了新的流程漏洞，**直接吸收进本 SOP 对应阶段**——不要存到单独章节。每条新规则标注版本号（如 `vX.Y 教训`）以便追溯 |
-| 29 | **🔴 审查闭环——发布后陌生视角审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `docs/verification/fresh-eyes-review.md`（已在本版本阶段七中更新），对已发布版本做独立审查<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，作为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的视角和检查项 |
-| 30 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 直接吸收进对应阶段，标注版本号<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 LOOP.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
-| 31 | **生成「下一版本开发 Prompt」到桌面**：综合 `ROADMAP.md`（未来规划）+ `CHANGELOG.md` + 下一版本 `docs/changelog/vX.Y.md`（若存在），生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`。<br>**若下一版本 changelog 尚未创建**：先 ① 写新版本需求并产出 `docs/changelog/vX.Y.md`；再 ② 生成桌面开发 prompt |
-| 32 | **🔴 输出「下一版本陌生视角审查 Prompt」**：本阶段结束前，必须输出一份可直接粘贴到**新 session** 的审查 prompt（模板见下方「下一版本审查 Prompt 模板」）。因为本版本已全部提交，需开新 session 运行该 prompt → 读 `fresh-eyes-review.md` → 对已发布版本做全新审查 → 产出驱动下一版本的 P0/P1/P2 清单，从而开启下一个版本的迭代 |
+| 27 | **npm 12 包验证**：全部 12 包版本一致，无 MISSING |
+| 28 | npm README 验证：`npm view @sofagent/audit readme` + `npm view @sofagent/mcp readme` 均有内容 |
+| 29 | 如果本次迭代暴露了新的流程漏洞，**直接吸收进本 SOP 对应阶段**——不要存到单独章节。每条新规则标注版本号（如 `vX.Y 教训`）以便追溯 |
+| 30 | **🔴 审查闭环——发布后陌生视角审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `docs/verification/fresh-eyes-review.md`（已在本版本阶段七中更新），对已发布版本做独立审查<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，作为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的视角和检查项 |
+| 31 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 直接吸收进对应阶段，标注版本号<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 LOOP.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
+| 32 | **生成「下一版本开发 Prompt」到桌面**：综合 `ROADMAP.md`（未来规划）+ `CHANGELOG.md` + 下一版本 `docs/changelog/vX.Y.md`（若存在），生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`。<br>**若下一版本 changelog 尚未创建**：先 ① 写新版本需求并产出 `docs/changelog/vX.Y.md`；再 ② 生成桌面开发 prompt |
+| 33 | **🔴 输出「下一版本陌生视角审查 Prompt」**：本阶段结束前，必须输出一份可直接粘贴到**新 session** 的审查 prompt（模板见下方「下一版本审查 Prompt 模板」）。因为本版本已全部提交，需开新 session 运行该 prompt → 读 `fresh-eyes-review.md` → 对已发布版本做全新审查 → 产出驱动下一版本的 P0/P1/P2 清单，从而开启下一个版本的迭代 |
 
-### 下一版本开发 Prompt 生成说明（步骤 31）
+### 下一版本开发 Prompt 生成说明（步骤 32）
 
 > 来源：下一版本的「开发日志」——在 `docs/changelog/` 中查找（若不存在则先按下方流程补建）。辅助输入：`ROADMAP.md`（未来去哪 / 规划）+ `CHANGELOG.md`（版本索引）。
 
@@ -558,7 +562,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 1. 先写新版本需求，产出 `docs/changelog/vX.Y.md`（含问题描述 → 修复方案 → 验证方式 → 发布检查清单）
 2. 再执行上方「生成流程」生成桌面开发 prompt
 
-### 下一版本审查 Prompt 模板（步骤 32 输出，直接复制给新 session）
+### 下一版本审查 Prompt 模板（步骤 33 输出，直接复制给新 session）
 
 > 这份 prompt 已内嵌在 SOP 中，开新 session 时直接整段复制粘贴即可，无需重新生成。
 
@@ -589,7 +593,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 |:--:|------|:--:|:--:|------|
 | 一 | 审查 → 开发日志 | 作者 | 是（陌生视角审查） | 审查报告 + 开发日志 |
 | 二 | 开发 | 工程师 | 否 | 代码 + 随修随记的回归维度 |
-| 三 | 自测 | 工程师 | 否 | build/test 全绿。涉及 CLI 迁移时 shellcheck/acceptance 延后到阶段八 |
+| 三 | 自测 | 工程师 | 否 | build/test 全绿 + 更新 `tools/acceptance-test.sh` / `docs/verification/openclaw-acceptance-test.md` / `docs/verification/regression-checklist.md`。涉及 CLI 迁移时 shellcheck/acceptance 延后到阶段八 |
 | 四 | 代码审核 | 当前 session | 否 | 逐项 PASS 或 FAIL→修复 |
 | **五** | **回归清单验证** | **当前 session** | **否** | **新增检查项全部 PASS** |
 | **六** | **OpenClaw 全面检查（开新 session）** | **审核者控制 OpenClaw** | **🔴 是（全新认知；SOP 已内嵌检查 prompt；FAIL 回阶段五循环）** | **两份报告均全 PASS** |
@@ -597,7 +601,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 八 | 文档收尾 | 作者 | 否 | CHANGELOG/ROADMAP/版本号/日期对齐。CLI 迁移版本在此处补跑 shellcheck/acceptance |
 | 九 | 确认关口 | AI → **生成发布 prompt 交接** | 否 | git diff 确认 → 检查清单打勾 → 生成发布 prompt 交给负责人 |
 | 十 | 发布 | **🔴 项目负责人亲手执行** | 否 | 按 AI 生成的发布 prompt 逐条执行：npm 12 包按依赖层分批 + git tag + gh release + Skill 分发 |
-| 十一 | 发布后 | 作者 | 是（步骤 32 开新 session 审查） | npm 验证 + 陌生视角审查 → 生成下版本开发 prompt 到桌面（步骤 31）+ 输出审查 prompt（步骤 32）→ 自动进入下版本阶段一 |
+| 十一 | 发布后 | 作者 | 是（步骤 33 开新 session 审查） | npm 验证 + 陌生视角审查 → 生成下版本开发 prompt 到桌面（步骤 32）+ 输出审查 prompt（步骤 33）→ 自动进入下版本阶段一 |
 
 ---
 

@@ -168,6 +168,8 @@ async function fetchData() {
 ## 📝 审查报告格式
 
 ```markdown
+> **审计引擎**: sofagent-audit v1.1.1 · 19 条规则 | **审查引擎**: sofagent-orchestrator v1.1.1 · engineering-code-reviewer
+
 # 代码审查报告
 
 **审查 commit**：[SHA]

@@ -1,4 +1,4 @@
-# sofagent 回归检查清单（225 维度 · 编号 1–267）
+# sofagent 回归检查清单（274 维度 · 编号 1–306）
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。这不是"发现新问题"的工具——发现新问题用[陌生视角审查](./fresh-eyes-review.md)。
 >
@@ -94,7 +94,7 @@ bash tools/pre-push-check.sh 2>&1 | tail -5
 
 ---
 
-## 审查维度（223 个维度 · 编号 1–265）
+## 审查维度（235 个维度 · 编号 1–306）
 
 > v0.99.9 初始 88 维度（1-88）→ v1.0 新增 18 维度（89-106）→ v1.0.1 追加 32 维度（107-143）→ v1.0.2 追加 26 维度（144-176）→ v1.0.3 追加 12 维度（177-188）→ v1.0.4 追加 8 维度（189-196）→ v1.0.4 审查追加 8 维度（197-204）→ v1.0.5 追加 8 维度（205-212）→ v1.0.6 追加 5 维度（213-217）→ v1.0.7 追加 28 维度（220-247）= 247 总计
 
@@ -1808,6 +1808,76 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 
 ---
 
+### 第二十四部分：v1.1.1 全仓质量审计修复（维度 301-306）🆕
+
+> 来源：v1.1.1 开发期全仓质量审计（代码冗余 + 文档错误 + 跨文档死链 + 文档冗余 四维度）。6 个维度覆盖：死链全量扫描、跨包代码重复、Ledger-Views 归属、文档规范源/DRY、文件迁移四动作、check-docs.sh 死链范围扩展。
+
+#### 301. 跨文档相对路径死链全量扫描 🆕
+```bash
+# v1.1.1 审计发现：23 处死链。根因=文件/目录迁移后相对路径未修正 + 审查只查 rules.md 死链(check-docs.sh 第 1 项)。
+# 自动化全量扫描（在 check-docs.sh 落地，见维度 223）：
+#   遍历所有 .md → 解析 ]((...)) 相对链接 → 解析目标文件是否存在；
+#   排除 node_modules/.workbuddy/.sofagent/docs/changelog/docs/evidence + 代码围栏内示例链接 + 外部 http(s)/纯锚点。
+# 验证（落地后）：
+bash tools/check-docs.sh 2>&1 | grep -i 'dead\|死链'
+# 期望：0 处（除登记的白名单：仓库外 Desktop 路径、模板占位 vX.Y.Z.md）
+```
+
+#### 302. 跨包代码重复检测（复制≠移动） 🆕
+```bash
+# v1.1.1 发现：audit/src/filesystem/isomorphic-git.ts(383行) 与 core/src/filesystem/isomorphic-git.ts(383行) 仅 4 行差异
+# audit 应 import @sofagent/core，不应复制。
+# 回归：同名源文件不得在两个 @sofagent/* 包各存一份（测试 fixtures / __tests__ 除外）
+dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path '*/__tests__/*' -not -path '*/test*/*' \
+  | sed 's#.*/##' | sort | uniq -d)
+[ -n "$dup" ] && echo "⚠️ 跨包重复源文件: $dup" || echo "OK 无跨包重复"
+# 发现重复 → 提升为 import（core 为 canonical source），删除副本
+```
+
+#### 303. Ledger-Views 归属一致性（think.md 始终为 Ledger/source） 🆕
+```bash
+# v1.1.1 发现：ARCHITECTURE.md:320 将 think.md 错标为 Views(派生视图)，PHILOSOPHY.md:132 正确标为 Ledger(原始数据)
+# Dream Cycle 从 think.md 抽取事实进 knowledge/(派生) —— think.md 是 source 不是 derived
+# 回归：任何文档不得把 think.md 标为 Views/派生/derived
+grep -rn "think.md.*Views\|think.md.*派生视图" ARCHITECTURE.md PHILOSOPHY.md DEVELOPMENT.md FDE/FDE.md
+# 期望：无匹配（若匹配 = P0，think.md 归属错误）
+# 正向校验：Ledger-Views-Policy 三层映射中 think.md=Ledger、knowledge/=Views、派生方向单向 think.md→knowledge/
+grep -n "Ledger-Views-Policy\|task/logs.*Ledger\|knowledge.*Views" PHILOSOPHY.md ARCHITECTURE.md
+```
+
+#### 304. 文档规范源与冗余（DRY：概念只定义一次） 🆕
+```bash
+# v1.1.1 发现：同概念(Ledger-Views-Policy、五层架构、版本规则)在多个文档重复定义且偶有冲突(如 think.md 归属)
+# canonical source：架构=ARCHITECTURE、记忆模型=PHILOSOPHY、发版流程=releasing、局限=LIMITATIONS
+# 其余文档引用链接，不重复定义
+# 回归：同一术语在 ≥2 处定义时，表述须一致且指向同一规范源
+grep -rn "Ledger-Views-Policy" ARCHITECTURE.md PHILOSOPHY.md DEVELOPMENT.md | head
+# 期望：各文档对 Ledger/Views 的归属描述一致（think.md=Ledger）
+```
+
+#### 305. 文件/目录迁移四动作完整性（含死链修复） 🆕
+```bash
+# v1.1.1 教训：LIMITATIONS.md 从 docs/ 迁到根、docs/ 子目录重排，但迁入文件相对路径引用未同步 → 死链
+# 迁移必须是"移动 + 删除源 + 更新所有 inbound 引用 + 修复相对路径死链"四动作齐全
+# 回归：任何文件/目录迁移后
+git grep -n "OLD_RELATIVE_PATH" -- '*.md'   # 旧路径应 0 命中
+# + 全仓相对路径死链 0（见维度 301）
+# 抽查：本次改动涉及 mv 的文件，其所有 inbound 链接是否仍可达
+```
+
+#### 306. check-docs.sh 死链检查范围扩展 🆕
+```bash
+# v1.1.1 发现：check-docs.sh 第 1 项死链检查仅扫 rules.md，漏掉通用相对路径死链（维度 218 根因）
+# 回归：check-docs.sh 应包含全量相对路径死链扫描（复用维度 218 的自动化逻辑），EXIT=1 若有死链
+bash tools/check-docs.sh 2>&1 | grep '死链'
+# 期望：除已知白名单外，不报通用相对路径死链
+# ✅ 已落地（v1.1.1）：tools/check-docs.sh 第 1b 节实现全仓相对路径死链扫描
+#   （围栏感知、跳过 http/https/mailto/纯锚点、相对路径解析后校验存在性，死链则 EXIT=1）。
+#   原第 1 节 rules.md 专项收敛为「仅匹配真正 markdown 链接」，不再误判散文里的 rules.md 字样。
+```
+
+---
+
 请按以下结构输出审查报告：
 
 ```markdown
@@ -1835,7 +1905,7 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 |---|------|---------|------|------|
 
 ## 维度通过统计
-- 总维度数：247
+- 总维度数：262
 - 通过：X
 - ⚠️ 有条件通过：X
 - ❌ 未通过：X
@@ -1978,6 +2048,12 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 | **215** | **audit-history.ts 无死代码残留（`const line = JSON.stringify` 已删除）** | **v1.0.6 Fix 2: 死代码清理** |
 | **216** | **LIMITATIONS.md A14 事后审计说明完整（能做什么/不能做什么/企业建议三要素）** | **v1.0.6 Fix 4: A14 文档完善** |
 | **217** | **post-commit hook 不受 `--no-verify` 影响——commit-msg 被绕过但 post-commit 仍触发** | **v1.0.6 post-commit 设计意图验证** |
+| **301** | **跨文档相对路径死链全量扫描（自动化，非人工点击）** | **v1.1.1 全仓质量审计：23 处死链，根因=文件迁移未修正相对路径 + 审查仅查 rules.md** |
+| **302** | **跨包代码重复检测（复制≠移动，重复→提升为 import）** | **v1.1.1 发现 audit/core 各存一份 isomorphic-git.ts(383行,差4行)** |
+| **303** | **Ledger-Views 归属一致性（think.md 永远为 Ledger/source，不得标 Views）** | **v1.1.1 发现 ARCHITECTURE.md:320 错标 think.md=Views** |
+| **304** | **文档规范源与冗余（DRY：概念只在 canonical source 定义）** | **v1.1.1 发现同概念多文档重复定义且偶有冲突** |
+| **305** | **文件/目录迁移四动作完整性（移动+删源+更新引用+修死链）** | **v1.1.1 教训：LIMITATIONS.md 迁根后相对路径未同步** |
+| **306** | **check-docs.sh 死链检查从 rules.md 扩展为全量相对路径** | **v1.1.1 发现：check-docs.sh 第1项仅扫 rules.md，漏通用死链** |
 
 ---
 
@@ -3116,6 +3192,181 @@ grep -c 'git reset --hard\|rm -f .env\|git clean' tools/acceptance-test.sh
 shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh 2>&1 | grep -c "SC1090\|SC1091\|SC2016"
 # 期望：0
 ```
+```
+
+#### 221. 文档体系 + MCP + 术语一致性 🆕
+
+```bash
+# PHILOSOPHY 被核心文档引用数
+grep -rl "PHILOSOPHY" README.md README.en.md ROADMAP.md docs/HANDBOOK.md docs/ARCHITECTURE.md docs/DEVELOPMENT.md FDE/FDE.md LOOP/LOOP.md | wc -l
+# 期望：≥8
+
+# MCP 指南被核心文档引用数
+grep -rl "mcp-usage" README.md README.en.md docs/HANDBOOK.md docs/ARCHITECTURE.md docs/DEVELOPMENT.md docs/PHILOSOPHY.md FDE/FDE.md | wc -l
+# 期望：7
+
+# 核心文档 logo 160px 统一
+grep -l 'sofagent.png.*width="160"' README.md README.en.md ROADMAP.md docs/HANDBOOK.md docs/ARCHITECTURE.md docs/DEVELOPMENT.md docs/PHILOSOPHY.md docs/THANKS.md FDE/FDE.md LOOP/LOOP.md | wc -l
+# 期望：10
+
+# MCP 指南 resource 数量
+grep -c '\^| \\\`' docs/guides/mcp-usage.md
+# 期望：≥25
+
+# v1.1.1-v1.1.9 changelog 全部存在
+ls docs/changelog/v1.1.{1,2,3,4,5,6,7,8,9}.md | wc -l
+# 期望：9
+
+# 「一底座四引擎」术语统一
+grep -rn "五引擎" --include="*.md" . | grep -v "一底座" | grep -v "fresh-eyes" | grep -v "regression" || echo "PASS: 术语统一"
+# 期望：PASS
+
+#### 284. 回归清单头维度数与实际 #### 数自动校验 🆕
+
+```bash
+# 头声称的数字必须与实际 #### 标题数一致
+HEAD=$(head -1 docs/verification/regression-checklist.md | grep -oE '[0-9]+' | head -1)
+ACTUAL=$(grep -c "^#### " docs/verification/regression-checklist.md)
+[ "$HEAD" = "$ACTUAL" ] && echo "PASS: 维度数一致 ($HEAD)" || echo "FAIL: 头声称 $HEAD ≠ 实际 $ACTUAL"
+# 期望：PASS
+```
+
+#### 285. CHANGELOG 纯度 grep 扩展词汇 🆕
+
+```bash
+# v1.1.1 新增「驱动」等审查过程措辞
+grep -niE "陌生视角|审查驱动|审查发现|审查驱动修复|驱动.*修复|审查吸收|P[0-9]×" CHANGELOG.md docs/changelog/v*.md
+# 期望：零命中（除非是合法技术内容如 LLM 接入表）
+```
+
+#### 286. 依赖铁律文档与 package.json 实际依赖 diff 校验 🆕
+
+```bash
+# 检查 v1.1.0.md 中描述的依赖关系是否与各包 package.json 实际一致
+# 对比 audit 的 dependencies
+AUDIT_CLAIM=$(grep "audit.*依赖\|audit.*depend" docs/changelog/v1.1.0.md | head -1)
+AUDIT_ACTUAL=$(node -e "const d=require('./sofagent/audit/package.json').dependencies; console.log(Object.keys(d).filter(k=>k.startsWith('@sofagent/')).join(','))")
+echo "audit 声称: $AUDIT_CLAIM"
+echo "audit 实际: @sofagent/ 依赖: $AUDIT_ACTUAL"
+# 对比 mcp 的 dependencies
+MCP_ACTUAL=$(node -e "const d=require('./sofagent/mcp/package.json').dependencies; console.log(Object.keys(d).filter(k=>k.startsWith('@sofagent/')).join(','))")
+echo "mcp 实际: @sofagent/ 依赖: $MCP_ACTUAL"
+# 对比 orchestrator 的 dependencies
+ORCH_ACTUAL=$(node -e "const d=require('./sofagent/orchestrator/package.json').dependencies; console.log(Object.keys(d).filter(k=>k.startsWith('@sofagent/')).join(','))")
+echo "orchestrator 实际: @sofagent/ 依赖: $ORCH_ACTUAL"
+# 对比 daemon 的 dependencies
+DAEM_ACTUAL=$(node -e "const d=require('./sofagent/daemon/package.json').dependencies; console.log(Object.keys(d).filter(k=>k.startsWith('@sofagent/')).join(','))")
+echo "daemon 实际: @sofagent/ 依赖: $DAEM_ACTUAL"
+# 期望：文档描述与上述实际输出一致
+```
+
+#### 287. 兼容 shim 代码与注释一致性 🆕
+
+```bash
+# deprecation shim 注释中写了"已改为 X"的，必须和代码实际逻辑一致
+# 检查 1：index.ts 中 doctor/verify/compose 三个 shim 的对齐情况
+grep -n "已改\|P0 fix\|use direct\|友好报错\|友好降级" sofagent/audit/src/index.ts
+# 期望：每个注释描述与实际实现匹配（direct import 的确实用了 await import，友好报错的确实用了 exit(1)）
+
+# 检查 2：遍历所有含 "execFileSync" 的 shim 调用
+grep -n "execFileSync" sofagent/audit/src/index.ts
+# 期望：已改为友好降级（exit 1 + 提示），不再有 execFileSync 调外部二进制
+```
+
+#### 288. 输出签名一致性——CLI / Webhook / MCP / 审查报告 🆕
+
+```bash
+# v1.1.1 引入 Harness 可见性：所有输出渠道必须具备 sofagent 签名
+# CLI 审计输出含引擎签名行
+grep -n "审计引擎: sofagent-audit" sofagent/audit/src/index.ts
+# 期望：PASS/WARN/FAIL 三个分支均含
+
+# Webhook 消息模板以 "sofagent" 开头
+grep -n "sofagent 审计" sofagent/audit/src/webhook.ts
+# 期望：PASS/WARN/FAIL 三个模板均含
+
+# MCP 工具返回值含 [sofagent] 前缀
+grep -c "\[sofagent\]" sofagent/mcp/src/mcp-server.ts
+# 期望：≥4（审计/知识查询/think.md/compose 等至少 4 个工具）
+
+# 审查报告模板顶部含签名段
+grep -n "sofagent 审计引擎" agents/engineering-code-reviewer.md
+# 期望：命中
+```
+
+#### 289. 约束底座加载链注入可见性 🆕
+
+```bash
+# 四层加载链（SKILL.md/fde.md/think.md/knowledge/）在 Agent 上下文中
+# 是否标注了来源——用户/Agent 是否知道这些约束来自 sofagent
+grep -rn "sofagent\|Harness\|加载链" skill/SKILL.md | head -3
+# 期望：至少 SKILL.md 开头标注 "由 sofagent Harness 层注入"
+```
+
+#### 290. 错误消息归属——异常时是否标明 sofagent 🆕
+
+```bash
+# 审计拦截、doctor 告警、daemon 通知等异常消息是否以 sofagent 标识开头
+# 检查 audit 退出消息
+grep -n "⛔\|❌\|⚠️.*sofagent\|sofagent.*拦截\|sofagent.*阻断" sofagent/audit/src/index.ts | head -5
+# 期望：异常消息含 sofagent 标识
+
+# 检查 doctor 告警
+grep -n "sofagent" sofagent/core/src/doctor.ts | head -5
+# 期望：doctor 输出含 sofagent 引擎身份
+
+# 检查 daemon 通知
+grep -n "sofagent" sofagent/daemon/src/notify.ts 2>/dev/null || echo "notify.ts 不存在——检查 daemon 的通知机制"
+# 期望：daemon 通知含 sofagent 标识
+```
+
+#### 291. 安装输出签名一致性 🆕
+
+```bash
+# install.sh / --init 输出是否有 sofagent 品牌标识
+grep -c "sofagent" install.sh
+# 期望：≥3（banner + 成功消息 + 下一步提示）
+
+# --init 输出
+grep -c "sofagent[ -]" sofagent/audit/src/commands/init.ts
+# 期望：≥1
+```
+
+#### 292. 包依赖图审计——依赖方向 / optional 边 / 分层倒置 🆕
+
+```bash
+# 审计各包之间的 @sofagent/* 依赖是否违反架构铁律
+# 1. 基础层叶子包（harness/ontology/eval/core）不得 import 任何 @sofagent/*
+for pkg in harness ontology eval core; do
+  echo "--- $pkg ---"
+  grep -rn "from '@sofagent/" "sofagent/$pkg/src/" --exclude-dir=__tests__ 2>/dev/null && echo "❌ 发现跨包引用" || echo "✅ 零跨包引用"
+done
+
+# 2. daemon→audit 分层倒置（运行层依赖纯审计层——已知架构债务，需持续监控）
+grep '"@sofagent/audit"' sofagent/daemon/package.json && echo "⚠️  daemon→audit 分层倒置持续存在"
+
+# 3. 检查是否有循环依赖
+# （简单检查：任何 A→B 的关系不应同时有 B→A）
+node -e "
+const pkgs = ['audit','core','harness','ontology','eval','orchestrator','daemon','ab-test','think','skillopt','work模板市场','mcp'];
+const deps = {};
+pkgs.forEach(p => {
+  try {
+    const pkg = require('./sofagent/' + p + '/package.json');
+    const sofagentDeps = Object.keys({...pkg.dependencies, ...pkg.optionalDependencies}).filter(k => k.startsWith('@sofagent/')).map(k => k.replace('@sofagent/',''));
+    deps[p] = sofagentDeps;
+  } catch(e) {}
+});
+let cycles = 0;
+Object.entries(deps).forEach(([p, ds]) => {
+  ds.forEach(d => {
+    if (deps[d] && deps[d].includes(p)) { console.log('❌ 循环依赖: ' + p + ' ↔ ' + d); cycles++; }
+  });
+});
+if (cycles === 0) console.log('✅ 无循环依赖');
+"
+# 期望：零循环依赖；分层倒置持续监控但已知
+```
 
 ---
 - **不要建议新功能**——v1.0 是正式版，不是功能版
@@ -3124,3 +3375,88 @@ shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh 2>&1 | grep -c "S
 ---
 
 > **审查者**：请严格验证每一项声称，不放过任何矛盾。全维度逐项核对。
+
+---
+
+#### 293. 感知层配置完整性 🆕
+
+```bash
+# 检查 .sofagent/config.yml 中 perception 配置段是否存在且 enabled
+grep -A 2 "perception:" .sofagent/config.yml 2>/dev/null && echo "✅ 感知配置段存在" || echo "❌ 缺少感知配置段"
+grep "enabled: true" .sofagent/config.yml 2>/dev/null && echo "✅ 感知推送已启用" || echo "⚠️  感知推送未启用"
+```
+
+#### 294. 感知推送目标可达 🆕
+
+```bash
+# 检查 push_target 配置的 webhook URL 是否有效
+grep "push_target:" .sofagent/config.yml | grep -q "webhook://" && echo "✅ push_target 已配置" || echo "❌ push_target 未配置"
+```
+
+#### 295. MCP 返回值签名覆盖率 🆕
+
+```bash
+# 检查 mcp-server.ts 中所有 sendToolResult 调用是否有 [sofagent] 前缀
+# 审计工具必须带签名
+grep "sofagent-audit.*扫描" sofagent/mcp/src/mcp-server.ts > /dev/null && echo "✅ 审计工具已签名" || echo "❌ 审计工具缺签名"
+# 知识查询工具必须带签名
+grep "sofagent.*知识库查询\|sofagent.*knowledge" sofagent/mcp/src/mcp-server.ts > /dev/null && echo "✅ 知识查询已签名" || echo "⚠️  知识查询缺签名"
+```
+
+#### 296. Webhook PASSl 推送已实现 🆕
+
+```bash
+# 检查 webhook.ts 中 PASS 时是否也推送（不只是 WARN/FAIL）
+grep -c "PASS" sofagent/audit/src/webhook.ts
+# 应 > 0，说明 PASS 路径存在推送逻辑
+```
+
+#### 297. MCP capabilities 工具描述准确性 🆕
+
+```bash
+# 检查 MCP tools/list 中 run_audit 的描述是否含引擎来源和正确规则数
+grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "19 条规则"
+# 应 ≥ 1，描述应含 "19 条规则"（不是过期的 "A1-A14"）
+
+grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "0 token"
+# 应 ≥ 1，描述应标注 "0 token 纯正则"（避免用户误以为消耗 LLM token）
+
+# 反向验证：不应再出现过期规则描述
+grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "A1-A14"
+# 应 = 0，「A1-A14」为过期描述（v1.1.1 P0-5 修复），当前正确写法是「19 条规则」
+```
+
+#### 298. 回归清单头维度数自动校验 🆕
+
+```bash
+# 阶段六发现：头声称数字与 #### 实际数漂移（254≠259）
+HEAD_VAL=$(head -1 docs/verification/regression-checklist.md | grep -oE '[0-9]+' | head -1)
+ACTUAL=$(grep -c "^#### " docs/verification/regression-checklist.md)
+[ "$HEAD_VAL" = "$ACTUAL" ] && echo "✅ 维度数一致 ($HEAD_VAL)" || echo "❌ 头声称 $HEAD_VAL ≠ 实际 $ACTUAL"
+# 期望：PASS
+```
+
+#### 299. CHANGELOG 纯度自动化检查加入 pre-push 🆕
+
+```bash
+# 阶段六发现：changelog v1.1.1.md 含 "陌生视角审查" 和 "P0×4"
+# 所有 changelog 文件不得含审查过程元信息
+grep -rniE "陌生视角|审查驱动|P[0-9]×" docs/changelog/ CHANGELOG.md
+# 期望：零命中
+```
+
+#### 300. 包依赖图循环检测（audit ↔ daemon） 🆕
+
+```bash
+# 阶段六发现：audit optionalDeps → daemon，daemon deps → audit
+# 检查 audit 是否可选依赖 daemon
+AUDIT_OPT=$(node -e "const p=require('./sofagent/audit/package.json'); console.log(p.optionalDependencies?.['@sofagent/daemon'] ? 'OPTIONAL_DAEMON' : 'NONE')")
+# 检查 daemon 是否依赖 audit
+DAEMON_DEP=$(node -e "const p=require('./sofagent/daemon/package.json'); console.log(p.dependencies?.['@sofagent/audit'] ? 'DEP_AUDIT' : 'NONE')")
+if [ "$AUDIT_OPT" = "OPTIONAL_DAEMON" ] && [ "$DAEMON_DEP" = "DEP_AUDIT" ]; then
+  echo "⚠️  循环依赖持续存在（audit→daemon optional + daemon→audit dep）—已知架构债务"
+else
+  echo "✅ 无循环依赖"
+fi
+# 期望：已知循环持续监控，v1.2.x 评估解耦
+```

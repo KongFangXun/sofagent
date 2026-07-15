@@ -1,13 +1,12 @@
 // ============================================================
 // audit-sub-agent.ts · Audit Sub Agent 工具定义
-// v1.1.0 新增：审计子代理的工具实现
+// v1.1.1 新增：审计子代理的工具实现
 // 检测到 A1/A2 违规时自动启动，或 daemon 定时调度
-// v1.1.0：迁移至 @sofagent/orchestrator
-// v1.1.0 fix：移除 @sofagent/audit 编译期依赖（orchestrator → harness 单向铁律）
+// v1.1.1：迁移至 @sofagent/orchestrator
+// v1.1.1 fix：移除 @sofagent/audit 编译期依赖（orchestrator → harness 单向铁律）
 //           audit 的 loadHistory 通过运行时动态 require + try-catch 调用，
 //           类型用本地最小声明，不在 package.json 声明依赖。
 // ============================================================
-
 import { calculateBaseline, isAnomaly, isColdStart } from '@sofagent/core';
 
 /**

@@ -87,7 +87,7 @@ BMS 告警 → 降误报筛选 → 确认真实设备 → 写入钉钉 AI 表格
 | #5 | MCP webhook | ⚠️ DingTalk webhook 通，sofagent MCP webhook 未测 |
 | #9 | 三操作系统 | ⚠️ macOS ✅，Linux/Windows 待补 |
 
-> 📋 完整验证记录见 [v1.0 准入验证方案](../../../../Desktop/sofagent测试/上善能及/v1.0-准入条件-验证方案_已填写.md)
+> 📋 完整验证记录见 v1.0 准入验证方案（见 Desktop/sofagent测试/上善能及/v1.0-准入条件-验证方案_已填写.md）
 
 > ⚠️ 原始部署产物（workflow.yaml / 部署日志 / 验证截图）存放在部署企业内网。联系仓库维护者获取脱敏版本。
 

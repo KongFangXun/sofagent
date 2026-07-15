@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// orchestrator CLI · v1.1.0
+// orchestrator CLI · v1.1.1
 
 const args = process.argv.slice(2);
 const subcommand = args[0];
@@ -12,6 +12,7 @@ async function main() {
     console.log('Subcommands:');
     console.log('  compose --task <desc>        使用 DeepAgents 编排任务，输出 YAML 工作流');
     console.log('  subagent run <name> --task <desc>  启动 Sub Agent 执行任务');
+    console.log('  loop --task <desc>           LOOP 双 Agent 自迭代（Engineer → Reviewer 串联）');
     console.log('  compare                       编排方案 A/B 对比');
     process.exit(0);
   }
@@ -29,7 +30,8 @@ async function main() {
       if (result) {
         console.log(result);
       } else {
-        console.error('❌ 编排失败：deepagents 不可用或编排过程出错');
+        console.error('❌ sofagent 提示：deepagents 可选依赖未安装，编排功能暂不可用');
+        console.error('   如需使用编排，请安装 deepagents（详见 ARCHITECTURE.md）');
         process.exit(1);
       }
       break;
@@ -37,7 +39,7 @@ async function main() {
     case 'subagent': {
       const action = args[1];
       if (action !== 'run') {
-        console.error('❌ 未知子命令: subagent ' + (action || ''));
+        console.error(`❌ sofagent 提示：不支持的子命令 "${action || ''}"`);
         console.error('   用法: sofagent-orchestrator subagent run <name> --task <desc>');
         process.exit(1);
       }
@@ -58,13 +60,27 @@ async function main() {
       const agents = listAgents(dataDir);
       const definition = agents.find((a) => a.name === agentName);
       if (!definition) {
-        console.error(`❌ 未找到 Sub Agent: ${agentName}`);
-        console.error('   可用 Agent:', agents.map((a) => a.name).join(', '));
+        console.error(`❌ sofagent 提示：未找到名为 "${agentName}" 的 Sub Agent`);
+        console.error('   已注册的 Agent:', agents.map((a) => a.name).join(', '));
         process.exit(1);
       }
       const output = await spawnSubAgent(definition, taskDesc);
       console.log(output);
       break;
+    }
+    case 'loop': {
+      const taskIdx = args.indexOf('--task');
+      const taskDesc = taskIdx !== -1 ? args[taskIdx + 1] : undefined;
+      if (!taskDesc) {
+        console.error('❌ loop 需要 --task <描述> 参数');
+        process.exit(1);
+      }
+      const { runLOOPIteration } = await import('./loop-runner');
+      const result = await runLOOPIteration(taskDesc);
+      console.log('');
+      console.log(`判定: ${result.verdict === 'PASS' ? '✅ PASS' : '❌ FAIL'}`);
+      console.log(`迭代次数: ${result.iterations}`);
+      process.exit(result.verdict === 'PASS' ? 0 : 1);
     }
     case 'compare': {
       const { extractMetrics, generateReport, promoteWorkflow } = await import('./orchestrator-compare');
@@ -98,8 +114,8 @@ async function main() {
       break;
     }
     default:
-      console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Usage: sofagent-orchestrator <compose|subagent|compare> [options]');
+      console.error(`❌ sofagent 提示：不支持的子命令 "${subcommand}"`);
+      console.error('   可用子命令: compose | subagent | loop | compare');
       process.exit(1);
   }
 }

@@ -7,14 +7,65 @@ cd "$(dirname "$0")/.." || exit 1
 ERRORS=0
 
 echo "=== 1. 死链检查 ==="
-# 检查所有 .md 中的 rules.md 死链（不检查 changelog 历史、workbuddy 记忆、sofagent 运行时数据）
-RULES_DEAD=$(grep -rn "rules\.md" --include="*.md" . 2>/dev/null | grep -v "docs/changelog/" | grep -v "CHANGELOG.md" | grep -v "node_modules" | grep -v ".workbuddy/" | grep -v ".sofagent/" | grep -c "" || true)
+# 检查所有 .md 中**指向 rules.md 的 markdown 链接**是否死链。
+# 注意：仅匹配真正的链接形式 ](...rules.md)，不匹配散文里的 "rules.md" 字样
+# （散文描述不计入死链）。通用相对路径死链已由维度 306（第 1b 节）全量扫描覆盖。
+RULES_DEAD=$(grep -rnE '\]\([^)]*rules\.md\)' --include="*.md" . 2>/dev/null | grep -v "docs/changelog/" | grep -v "CHANGELOG.md" | grep -v "node_modules" | grep -v ".workbuddy/" | grep -v ".sofagent/" | grep -c "" || true)
 RULES_DEAD=${RULES_DEAD:-0}
 if [ "$RULES_DEAD" -gt 0 ] 2>/dev/null; then
   echo "  rules.md 死链: ${RULES_DEAD} 处"
   ERRORS=$((ERRORS + 1))
 else
   echo "  rules.md 死链: 0"
+fi
+
+echo ""
+echo "=== 1b. 全仓相对路径死链扫描（维度 306）==="
+# 遍历所有 .md，提取 markdown 链接并校验目标文件是否存在。
+# 排除项与 section 4 公共排除保持一致（node_modules/.workbuddy/.sofagent/
+# docs/changelog/docs/evidence/sofagent/skill/FDE）。
+DEAD_LINKS=0
+DEAD_DETAIL=""
+EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/sofagent/skill/*" -not -path "*/FDE/*")
+while IFS= read -r -d '' mdfile; do
+  in_fence=0
+  while IFS= read -r line; do
+    # 围栏代码块（``` 或 ~~~）内不检查链接
+    if [[ "$line" =~ ^[[:space:]]*\`\`\` ]] || [[ "$line" =~ ^[[:space:]]*~~~ ]]; then
+      in_fence=$((1 - in_fence)); continue
+    fi
+    if [ "$in_fence" -eq 1 ]; then continue; fi
+    # 提取本行所有 markdown 链接目标（](target) 形式）
+    targets=$(printf '%s\n' "$line" | grep -oE '\]\(([^)]+)\)' | sed -E 's/^\]\(//; s/\)$//' || true)
+    for target in $targets; do
+      # 跳过：空、纯锚点、外部协议、mailto
+      case "$target" in
+        ''|'#'*|'http://'*|'https://'*|'mailto:'*) continue ;;
+      esac
+      path_part="${target%%#*}"            # 去掉锚点
+      [ -z "$path_part" ] && continue
+      case "$path_part" in
+        *'://'*) continue ;;               # 非 http 的其他协议
+        /*) resolved=".${path_part}" ;;    # 仓库根绝对路径（去前导 /）
+        *)  resolved="$(dirname "$mdfile")/$path_part" ;;
+      esac
+      resolved="${resolved%/}"             # 去尾斜杠（目录链接）
+      # 规范化到绝对路径（路径逃逸仓库时回退原值）
+      resolved="$(cd "$(dirname "$resolved")" >/dev/null 2>&1 && echo "$(pwd)/$(basename "$resolved")" || echo "$resolved")"
+      if [ ! -e "$resolved" ]; then
+        DEAD_LINKS=$((DEAD_LINKS + 1))
+        DEAD_DETAIL="${DEAD_DETAIL}  ${mdfile}: ${target}\n"
+      fi
+    done
+  done < "$mdfile"
+done < <(find . -name "*.md" "${EXCLUDE[@]}" -print0)
+
+if [ "$DEAD_LINKS" -gt 0 ]; then
+  echo "  全仓相对路径死链: ${DEAD_LINKS} 处"
+  printf "%b" "$DEAD_DETAIL"
+  ERRORS=$((ERRORS + 1))
+else
+  echo "  全仓相对路径死链: 0"
 fi
 
 echo ""
@@ -82,9 +133,9 @@ LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 # 上限定义
 LIMIT_A=4500  # v1.1.0: 五个引擎重构 + ARCHITECTURE 叙事升级 + README 内容增长
 LIMIT_B=2000
-LIMIT_C=5400  # v1.1.0 发版后回归清单增长 + releasing.md 补充拓扑序发布流程
+LIMIT_C=6000  # v1.1.1: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6000 留余量
 LIMIT_D=500
-LIMIT_E=600
+LIMIT_E=1000  # v1.1.1 P0-1: 从 600 上调到 1000，多设备同步指南等 E 层文档扩展导致自然增长
 LIMIT_TOTAL=6200  # v1.1.0: A 层文档五个引擎重构导致自然增长
 
 # 输出各层

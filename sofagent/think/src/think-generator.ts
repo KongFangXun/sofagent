@@ -1,13 +1,13 @@
 // ============================================================
 // think-generator.ts · 基于 git diff 自动生成 think.md 条目
 // v0.98 方案 A：审计引擎基于 diff 硬证据自动生成反思记录
-// v1.1.0 迁移到 @sofagent/think
+// v1.1.1 迁移到 @sofagent/think
 // ============================================================
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync } from 'fs';
+import { existsSync, readFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import type { DiffFile, AuditResult } from '@sofagent/core';
-
+import { VERSION, getThinkPath, appendThinkEntry } from '@sofagent/core';
 /**
  * think.md 条目生成选项
  */
@@ -38,7 +38,7 @@ export function generateThinkEntry(
 
   const now = opts?.now ?? new Date();
   const dataDir = opts?.dataDir ?? getSofagentDataDir();
-  const thinkPath = join(dataDir, 'think.md');
+  const thinkPath = getThinkPath(dataDir);
 
   // 幂等检查：如果 think.md 最后一节是同一 task + 同一分钟，不重复写入
   if (existsSync(thinkPath) && isDuplicateEntry(thinkPath, task, now)) {
@@ -55,8 +55,8 @@ export function generateThinkEntry(
     mkdirSync(dataDir, { recursive: true });
   }
 
-  // 追加不覆盖
-  appendFileSync(thinkPath, entry, 'utf-8');
+  // 追加不覆盖（经 @sofagent/core 契约，强制 append-only 不变量）
+  appendThinkEntry(thinkPath, entry);
 }
 
 /**
@@ -88,7 +88,7 @@ function formatThinkEntry(
   const repeatPattern = detectRepeatPattern(existingContent, lessons);
 
   let entry = `\n## ${timestamp} 任务: ${taskName}\n\n`;
-  entry += `- #审计结果: ${auditVerdict} — ${ruleCount} 条规则触发\n`;
+  entry += `- #审计结果(sofagent-audit v${VERSION}): ${auditVerdict} — ${ruleCount} 条规则触发\n`;
   entry += `- #改动范围: 改了 ${diffFiles.length} 个文件（${fileList}${fileListSuffix}）\n`;
   entry += `- #教训: ${lessons}\n`;
   if (repeatPattern) {

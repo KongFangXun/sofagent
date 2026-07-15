@@ -2,7 +2,17 @@
 
 > sofagent 站在巨人肩膀上。以下每一个项目、文章和作者，都在 sofagent 的某个设计决策里留下了痕迹。
 >
-> v1.1.0 · 2026-07-13（UTC）
+> v1.1.1 · 2026-07-13（UTC）· 孔放勋
+
+<img src="assets/sofagent.png" alt="sofagent" width="160" />
+
+- [基石](#基石)
+- [生成伙伴](#生成伙伴)
+- [关于作者](#关于作者)
+- [哲学与理念](#哲学与理念)
+- [工具与实现](#工具与实现)
+- [社区与平台](#社区与平台)
+- [外部研究与参考](#外部研究与参考)
 
 ---
 
@@ -70,7 +80,7 @@ sofagent 直接使用或借鉴了它们的能力。
 - **[best-of-agent-harnesses](https://github.com/RyanAlberts/best-of-agent-harnesses)** — 101+ 个 Harness 项目索引，让我了解这个领域已经有什么人在做什么事
 - **[agent-skills](https://github.com/addyosmani/agent-skills)** by Addy Osmani — 24 个生产级工程 Skill，反合理化表（Anti-rationalization）设计——预判 Agent 跳过步骤的借口并逐一驳回——启发了 sofagent fde.md 的铁律反合理化表
 - **[gstack](https://github.com/garrytan/gstack)** by Garry Tan (YC CEO) — 28 个 Skill + 7 个 Agent 角色的 AI 辅助软件开发系统。六层安全栈（分类器级 prompt injection 检测 / 密钥格式持续更新 / fail-closed 默认不信任）、原子文件写入模式、角色分解架构——为 sofagent 的 A2 密钥格式更新和多角色 agents/ 架构提供了实践参照
-- **[Multica](https://github.com/multica-ai/multica)**（Source Available，4000+ commits）— 开源 Agent 团队协作平台，支持 14 种 Agent CLI。「自己不调 LLM，全推给下游子进程」的架构哲学与 sofagent 平台无关策略一致。Polymorphic Actor 模型和会话恢复机制为 v1.2.x 提供工程参考。详见 [ROADMAP v1.2.x](./ROADMAP.md#v12x--完整多设备协同规划中)
+- **[Multica](https://github.com/multica-ai/multica)**（Source Available，4000+ commits）— 开源 Agent 团队协作平台，支持 14 种 Agent CLI。「自己不调 LLM，全推给下游子进程」的架构哲学与 sofagent 平台无关策略一致。Polymorphic Actor 模型和会话恢复机制为 v1.2.x 提供工程参考。详见 [ROADMAP v1.2.x](../ROADMAP.md#v12x--完整多设备协同规划中)
 
 ---
 
@@ -104,7 +114,7 @@ sofagent 直接使用或借鉴了它们的能力。
   将 Agent Harness 类比为 LLM 的操作系统，提出 12 个核心组件。sofagent 五层架构映射其中 8 个。
 
 - **[Anthropic — A Global Workspace in Language Models](https://www.anthropic.com/research/global-workspace)**（2026-07）
-  Claude 神经网络中自发涌现的内部思考空间（J-space）。实验证明模型在输出前就已形成未表达的判断——安全测试中可识别「这是测试」并改变行为。为 sofagent「审计必须外置、不可绕过」提供底层理论论证。详见 [ARCHITECTURE](./ARCHITECTURE.md#为什么审计必须外置)。
+  Claude 神经网络中自发涌现的内部思考空间（J-space）。实验证明模型在输出前就已形成未表达的判断——安全测试中可识别「这是测试」并改变行为。为 sofagent「审计必须外置、不可绕过」提供底层理论论证。详见 [ARCHITECTURE](./ARCHITECTURE.md#审计引擎)。
 
 - **[Palantir AIP — Ontology 驱动的 Agent 架构](https://www.palantir.com/platforms/aip/)** · Palantir (2026)
   Palantir 未自研大模型，却实现远超行业的 Agent 可靠性。核心是 Ontology（本体论）——将数据+逻辑+动作+安全四合一的数字孪生操作层。其 Harness 定义与 sofagent 完全一致：「Ontology 是地图，Harness 是检查站。」
@@ -113,7 +123,7 @@ sofagent 直接使用或借鉴了它们的能力。
   使用类似神经网络训练的范式（Rollout→Reflect→Aggregate→Select→Update→Evaluate）自动优化 Agent Skill 文档。在 52 个评估单元中全部达到最佳，平均提升 20+ 分。为 sofagent v1.0.3 的 Skill 自进化闭环提供核心引擎。
 
 - **[翁荔（Lilian Weng）— The Path to Recursively Self-Improving Harnesses](https://lilianweng.github.io/posts/2026-07-04-harness-rsl/)**（2026-07-04）
-  前 OpenAI 安全研究副总裁。六层 Harness 优化框架（上下文工程 → Harness 代码优化 → 领域工作流设计 → 自我改进 → 进化搜索 → 与模型权重联合优化），为 sofagent 的 Harness 层定位提供行业理论验证。详见 [ARCHITECTURE](./ARCHITECTURE.md#理论基础与外部验证)。
+  前 OpenAI 安全研究副总裁。六层 Harness 优化框架（上下文工程 → Harness 代码优化 → 领域工作流设计 → 自我改进 → 进化搜索 → 与模型权重联合优化），为 sofagent 的 Harness 层定位提供行业理论验证。详见 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 - **[Anthropic — Managed Agents：解偶脑与手](https://www.anthropic.com/engineering/managed-agents)**（2026-04-08）
   四层编排架构（Agent 与沙盒解偶 → Coordinator 编排层 → Session 解偶层 → Session Store 记忆层）。核心论断：「Agent 领域为模型写的修补代码注定过时，模型的进化速度快于代码重构速度」。验证 sofagent 的 OpenClaw（连接+行动）+ DeepAgents（深度思考）分工。

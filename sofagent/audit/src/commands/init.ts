@@ -4,7 +4,7 @@
 //   1. 生成 .sofagent/config.yml 配置模板
 //   2. 安装 git commit-msg hook
 //   3. 冒烟测试——验证审计引擎可用
-// v1.1.0: 新增仓库状态分类器（gstack 首次运行引导）
+// v1.1.1: 新增仓库状态分类器（gstack 首次运行引导）
 // ============================================================
 
 import { existsSync, writeFileSync, mkdirSync, chmodSync, readFileSync, appendFileSync } from 'fs';
@@ -42,7 +42,7 @@ export function ensureGitignore(cwd: string): void {
     : `\n\n# sofagent 审计数据（本地配置 + 知识库 + 审计历史）\n${entry}\n`;
 
   appendFileSync(gitignorePath, addition);
-  console.log('  → .gitignore 已更新（排除 .sofagent/）');
+  console.log('  sofagent: .gitignore 已更新（排除 .sofagent/）');
 }
 
 function classifyRepo(): { state: RepoState; hint: string } {

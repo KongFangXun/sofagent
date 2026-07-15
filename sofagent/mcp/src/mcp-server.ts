@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // mcp-server.ts · MCP Server (Model Context Protocol)
-// v1.1.0: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
+// v1.1.1: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
 //
 // 协议：https://spec.modelcontextprotocol.io/
 // 传输：stdio（stdin/stdout，每行一个 JSON-RPC 消息）
@@ -31,7 +31,7 @@
 // ============================================================
 
 import * as readline from 'readline';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, readdirSync, statSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 import { execFileSync } from 'child_process';
 
@@ -44,6 +44,7 @@ import {
   VERSION,
 } from '@sofagent/audit';
 import { generateThinkEntry } from '@sofagent/think';
+import { getThinkPath, appendThinkEntry } from '@sofagent/core';
 import type { AuditResult } from '@sofagent/audit';
 
 // ============================================================
@@ -213,7 +214,7 @@ class McpServer {
       tools: [
         {
           name: 'run_audit',
-          description: '对 git diff 范围运行 sofagent 全量审计规则（A1-A14 + E1-E4）。返回结构化审计报告。',
+          description: '对 git diff 运行全量审计规则（sofagent 审计引擎 · 19 条规则 · 0 token 纯正则）。返回结构化审计报告。',
           inputSchema: {
             type: 'object' as const,
             properties: {
@@ -341,7 +342,7 @@ class McpServer {
     if (diffFiles.length === 0) {
       this.sendToolResult(id, {
         type: 'text',
-        text: '没有文件变更，无需审计。',
+        text: '[sofagent] 没有文件变更，无需审计。',
         data: { exitCode: 0, rules: [], fileCount: 0 },
       });
       return;
@@ -377,7 +378,7 @@ class McpServer {
     const verdict = results.exitCode === 0 ? 'PASS' : results.exitCode === 1 ? 'WARN' : 'FAIL';
 
     const lines: string[] = [];
-    lines.push(`[sofagent-audit] 扫描 ${diffFiles.length} 个变更文件`);
+    lines.push(`[sofagent] 扫描 ${diffFiles.length} 个变更文件`);
     lines.push(`判定: ${verdict}（exit code ${results.exitCode}）`);
     lines.push('');
 
@@ -420,12 +421,12 @@ class McpServer {
   private toolGetThink(id: number | string | null, args: Record<string, unknown>): void {
     const count = (args.count as number) ?? 1;
     const dataDir = getSofagentDataDir();
-    const thinkPath = join(dataDir, 'think.md');
+    const thinkPath = getThinkPath(dataDir);
 
     if (!existsSync(thinkPath)) {
       this.sendToolResult(id, {
         type: 'text',
-        text: 'think.md 不存在。运行审计后会自动生成反思条目。',
+        text: '[sofagent] think.md 不存在。运行审计后会自动生成反思条目。',
         data: { entries: [] },
       });
       return;
@@ -470,7 +471,7 @@ class McpServer {
 
     const task = (args.task as string) || '(手动记录)';
     const dataDir = getSofagentDataDir();
-    const thinkPath = join(dataDir, 'think.md');
+    const thinkPath = getThinkPath(dataDir);
 
     const now = new Date();
     const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -481,11 +482,11 @@ class McpServer {
       mkdirSync(dataDir, { recursive: true });
     }
 
-    appendFileSync(thinkPath, entry, 'utf-8');
+    appendThinkEntry(thinkPath, entry);
 
     this.sendToolResult(id, {
       type: 'text',
-      text: `已追加反思到 think.md: "${lesson}"`,
+      text: `[sofagent] 已追加反思到 think.md: "${lesson}"`,
       data: { timestamp, task, lesson },
     });
   }
@@ -512,7 +513,7 @@ class McpServer {
       const result = execFileSync('sofagent-orchestrator', cmd, { encoding: 'utf-8', timeout: 30000 });
       this.sendToolResult(id, {
         type: 'text',
-        text: result,
+        text: `[sofagent] compose 结果:\n${result}`,
         data: { yaml: result },
       });
     } catch (err) {
@@ -520,7 +521,7 @@ class McpServer {
       // 退出码非 0 也返回 stderr 内容（compose 可能通过 stderr 返回错误）
       this.sendToolResult(id, {
         type: 'text',
-        text: `❌ compose 执行失败: ${msg}`,
+        text: `❌ [sofagent] 提示：compose 未完成——底层编排工具报告了问题: ${msg}`,
         data: { error: msg },
       });
     }
@@ -593,7 +594,7 @@ class McpServer {
    */
   private resourceReadThinkLatest(id: number | string | null): void {
     const dataDir = getSofagentDataDir();
-    const thinkPath = join(dataDir, 'think.md');
+    const thinkPath = getThinkPath(dataDir);
 
     if (!existsSync(thinkPath)) {
       this.sendResult(id, {

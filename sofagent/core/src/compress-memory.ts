@@ -12,12 +12,11 @@ import { existsSync, readFileSync, writeFileSync, copyFileSync, mkdirSync, readd
 import { join } from 'path';
 import { homedir } from 'os';
 import { VERSION } from './shared/constants.js';
+import { getThinkPath } from './memory-contract.js';
 
-/** think.md 路径 */
-function getThinkPath(dataBase?: string): string {
-  const base = dataBase || process.env.SOFAGENT_DATA || join(homedir(), '.sofagent');
-  return join(base, 'think.md');
-}
+// ⚠️ think.md 是 Ledger（原始数据层，append-only）。本文件的归档 / 备份 / 摘要
+// 是**授权的生命周期运维操作**，不改变"反思只追加"的契约——它管理 Ledger 的留存，
+// 绝不就地改写反思条目。写入反思请用 core 的 appendThinkEntry()。
 
 /** think.archive.md 路径 */
 function getArchivePath(dataBase?: string): string {

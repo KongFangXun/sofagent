@@ -4,9 +4,13 @@
 >
 > 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。
 >
-> v1.1.0 · 2026-07-13（UTC）· 孔放勋
+> v1.1.1 · 2026-07-15（UTC）· 孔放勋
+
+<img src="assets/sofagent.png" alt="sofagent" width="160" />
 
 > 💡 **行业背景**：sofagent 是 Agent Harness 中间件——一底座四引擎覆盖约束·编排·审计·回溯·进化全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立的底线守卫层。FDE 工具包本身就是 sofagent 产品的一部分——FDE 工作用自己产品，给别人部署完让别人也用自己产品。详见 [FDE/FDE.md](../FDE/FDE.md)。
+
+> 💬 **开发铁律**：sofagent 不建图形界面。所有能力必须通过 MCP 协议暴露。Agent 首次连接时主动推送 `list_capabilities`。开发任何新功能前，先回答三个问题：（1）用户怎么通过对话发现这个能力？（2）结果推到哪？（3）用户怎么知道这个结果是 sofagent 做的，不是模型做的？——任何面向用户的输出必须带 `[sofagent]` 签名标注来源。详见 [设计哲学](./PHILOSOPHY.md)。MCP 完整 resource 清单见 [MCP 使用指南](./guides/mcp-usage.md)。
 
 ---
 
@@ -38,8 +42,6 @@
 #### Windows 开发踩坑（PowerShell 移植必读）
 
 > 来源：Windows 11 + PowerShell 5.1 实地勘察（2026-06）。核心 9 坑：UTF-8 BOM / 控制台编码 / .gitattributes 换行 / if-表达式 / switch-break / 数组摊平 / WSLENV / BSD sed。详见 [PS5兼容踩坑清单](https://github.com/KongFangXun/sofagent/issues?q=label%3Awindows)。
-
-<img src="../docs/assets/sofagent.png" alt="sofagent" width="300" />
 
 ---
 
@@ -132,19 +134,15 @@ Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 
 
 ## 二、编排哲学
 
-> 编排引擎怎么保证任务跑对方向。日常使用参考 [HANDBOOK §双引擎](./HANDBOOK.md#双引擎怎么跑)。
+> 📖 LOOP 自迭代的设计哲学见 [PHILOSOPHY §七](./PHILOSOPHY.md#七怎么进化loop-自迭代)。本章只讲技术实现。
 
-编排流程
+### 编排流程
 
 任务到达 → 两轮澄清 → 目标定稿 → DeepAgents compose 拆任务（v1.0.6 从 ao 迁移，v1.0.7 ao 完全退役） → 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 Sub Agent 启动时自加载（v1.0.7+ `buildConstrainedSystemPrompt`）或 OpenClaw Hook 注入。
 
-> **收敛是 Loop 的生命线**。Loop 工程核心是收敛——目标必须满足两个条件才能进入循环：① 可验证（测试覆盖率、AC 验收标准等明确量化标准）；② 模型可自主价值判断（字数限制、关键词检查等 LLM 自带规则）。不具备收敛性的目标（如「优化美观度」）会无限烧 Token——两轮澄清机制就是为了拦截不收敛目标。
+### 收敛约束
 
-> 📋 **Loop 落地前置条件**：不是所有任务都适合 Loop 编排——① Token 预算（任务消耗可预估且值得花）；② 任务明确（有清晰输入/输出边界）；③ 验证精准（可量化检查标准，且验证 Agent 独立于执行 Agent）；④ 重复性（至少跑 5-10 次才有优化价值）；⑤ 项目基建（git / test / CI 已就绪）。
-
-> 📋 **任务澄清四类未知**（[Thariq — Finding Your Unknowns](https://x.com/trq212/article/2073100352921215386)）：用户给 Agent 下任务时有四种未知状态——**已知熟知**（已写入 prompt 的显性需求，正常执行）、**已知未知**（用户意识到没想清楚，task-aware 两轮澄清）、**未知熟知**（用户默认"大家都懂"但 AI 完全不了解，需反向采访探测隐性规则）、**未知未知**（双方都没考虑到的盲点/bug，需 think.md 强制结构化 + 盲点审查）。当前 task-aware 覆盖前两类，后两类是扩展方向。
-
-> 📋 **内层启动前置清单**（[Andrew Ng 三层循环](https://www.deeplearning.ai/the-batch/three-key-loops-for-building-great-software)内层操作细节）：Agent 进入内层循环前必须明确三件事——①做什么（目标边界清晰，拒绝"优化美观度"这类不可收敛任务）②做到什么程度算对（可量化验收标准：测试覆盖 / 关键词检查 / AC 条目）③测试验证什么（验证 Agent 独立于执行 Agent，sofagent 的审计引擎就是这个独立验证者）。这三条对应 sofagent 的两轮澄清 + loop-check 闭环。
+Loop 工程核心是收敛——目标必须满足：① 可验证（测试覆盖率/AC 标准）② 模型可自主价值判断。不具备收敛性的目标（如「优化美观度」）会无限烧 Token——两轮澄清机制就是为了拦截不收敛目标。
 
 ### 主 Agent / 子 Agent
 
@@ -246,7 +244,7 @@ DeepAgents compose 拆完任务
 
 主 Agent 切换到 Loop Agent 视角，从九维评估（编排准确性、Skill 匹配度、模型经济性、执行流畅度、结果完整性、复用潜力、流程合规、Loop 有效性，外加判断力独立计分）：
 
-> ⚠️ 工程边界：Loop Agent 不是独立进程，是主 Agent 切换 prompt 以顾问身份输出建议。评分是 LLM 自评，无客观基准，仅供横向对比参考。详见 [LIMITATIONS.md](./LIMITATIONS.md#复盘评分是-llm-自评评审者与执行者不分离)。
+> ⚠️ 工程边界：Loop Agent 不是独立进程，是主 Agent 切换 prompt 以顾问身份输出建议。评分是 LLM 自评，无客观基准，仅供横向对比参考。详见 [LIMITATIONS.md](../LIMITATIONS.md#复盘评分是-llm-自评评审者与执行者不分离)。
 
 复盘加权算出总分，分比上次高 → 覆盖 orchestrator/ 为最优配置。分比上次低 → 不动，标「待验证」。每次闭环只需回答三问：**用对了吗？更好了吗？Loop 起作用了吗？**
 
@@ -304,7 +302,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 ## 六、反思工程
 
-> think.md 的写入规则和压缩机制。排查使用问题见 [HANDBOOK §排查](./HANDBOOK.md#场景三排查问题)。
+> 📖 知识观与反思机制的设计哲学见 [PHILOSOPHY §五](./PHILOSOPHY.md#五怎么记知识观)。本章只讲技术规格。
 
 ### 每次任务结束，自问一句
 
@@ -339,7 +337,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 | 文件 | 归属引擎 | 干什么 | 加载 |
 |------|---------|------|:--:|
-| `think.md` | **审计引擎写 / 编排引擎读** | 反思摘要。审计引擎基于 git diff 自动生成，编排引擎点火时读取 | 全文 |
+| `think.md` | **多写入方 / 只追加（Ledger）** | 反思摘要（Ledger 原始数据）。写入方：①审计引擎 git diff 自动反思 ②主 Agent 按模板手动 write_think ③FDE/loop 陪跑期写入；读取方：编排引擎、daemon(Dream Cycle/lessons-extract)、harness 加载链、人类。**只追加，绝不整体覆写/截断**。代码契约见 `@sofagent/core` 的 `getThinkPath()` / `appendThinkEntry()` | 全文 |
 | `task/logs/` | **审计引擎读 / 编排引擎写** | 执行日志。审计 A7/A8 读它；编排引擎闭环时写入 | 日期目录树 |
 | `fde.md` | **编排引擎读** | 企业运行规范，含项目目标、验收标准、风险边界 | 全文 |
 | `task/plans/` | **编排引擎写** | 任务计划，第二轮澄清时生成 | 日期文件名 |
@@ -392,6 +390,8 @@ sofagent-audit（v1.0.8）是 TypeScript CLI，支持两种审计触发模式：
 两种模式共用同一套审计规则（A1-A11、A14-A17 + E1-E4，共 19 条）和 exit code（0=PASS / 1=WARN / 2=FAIL）。差异在于触发时机和拦截能力：git commit 审计能阻断 commit，文件系统审计只能事后告警 + 快照回溯。
 
 v1.0.8 内嵌 `isomorphic-git`（纯 JS Git，~2MB）作为 diff 引擎——非 git 目录也能做行级 diff。daemon 用 `chokidar` 监控文件变更，5 秒防抖后触发审计。每次审计后自动做 git 快照，用户可 `sofagent-audit --revert <sha>` 回滚。
+
+> 📖 **多设备同步**：daemon 的经验产出（knowledge/ + think.md）可跨设备共享——4 种方案见 [多设备同步指南](./guides/multi-device-sync.md)。
 
 > 📐 **最小 Harness 参照**：MicroHoneys 仅 400 行代码实现了完整的 Agent Harness（配置/提示词/工具调度/安全守卫/生命周期/长期记忆），证明 Harness 层不需要庞大的基础设施——核心是边界清晰的分层设计，不是代码量。sofagent 的审计引擎同样追求极简：核心规则 < 2000 行，零外部 API 依赖。
 
