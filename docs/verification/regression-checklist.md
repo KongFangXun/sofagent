@@ -3439,10 +3439,11 @@ ACTUAL=$(grep -c "^#### " docs/verification/regression-checklist.md)
 #### 299. CHANGELOG 纯度自动化检查加入 pre-push 🆕
 
 ```bash
-# 阶段六发现：changelog v1.1.2.md 含 "陌生视角审查" 和 "P0×4"
-# 所有 changelog 文件不得含审查过程元信息
-grep -rniE "陌生视角|审查驱动|P[0-9]×" docs/changelog/ CHANGELOG.md
-# 期望：零命中
+# 阶段六发现：changelog v1.1.2.md 含审查过程措辞
+# 所有 changelog 文件 + ROADMAP 不得含审查过程元信息
+# 注意：v1.1.5.md:18 的 "Agent 跑独立审查" 是 FDE 工作流描述，属正常功能文档
+grep -rniE "审查修复|审查驱动|P[0-9]×|审查问题.*项修复" docs/changelog/ CHANGELOG.md ROADMAP.md
+# 期望：零命中（工作流正当描述如 "独立审查 + 写 changelog" 不在此列）
 ```
 
 #### 300. 包依赖图循环检测（audit ↔ daemon） 🆕
