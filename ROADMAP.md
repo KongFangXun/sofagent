@@ -23,9 +23,9 @@
 
 ---
 
-## 现在在哪：v1.1.2 ✅（已发版）→ v1.1.2 🔧（规划中）
+## 现在在哪：v1.1.2 ✅（已发版 + 维护完成）
 
-> 当前发版 LOOP 双 Agent 串联 + Harness 可见性签名机制。下一步：测试体系修复 + 文档一致性——修复 acceptance-test 测试污染（12 场景被误拦截 + 场景 28 失败 14 场景未执行）+ workspace 测试失败（verify.test.ts）+ CHANGELOG 纯度清理 + 回归清单维度数漂移（274≠268）+ deprecation shim + safeDefaults + 跨包代码重复消除 + 文档注释更新。共 11 项问题。
+> LOOP 双 Agent 串联 + Harness 可见性签名机制 + 多设备同步指南。v1.1.2 维护已完成——修复 acceptance-test 测试污染、workspace 测试稳定性、CHANGELOG 纯度、回归清单维度漂移、跨包代码重复消除等 14 项问题。全门禁绿。
 >
 > 📖 [v1.1.2 开发日志](./docs/changelog/v1.1.2.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
@@ -106,8 +106,7 @@
 | **v1.0.8** | ✅ 已完成 | **⭐ FDE Agent 自进化（部署 + 持续优化双模式）**→ 一管底线（Audit）一管上限（FDE）+ 文件系统审计（isomorphic-git + fs-watch）+ 快照回溯 + Agent 定义去耦合 + TencentDB Memory 集成 + Ontology 人类可读视图 | [📖](./docs/changelog/v1.0.8.md) |
 | **v1.0.9** | ✅ 已完成 | 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool | [📖](./docs/changelog/v1.0.9.md) |
 | **v1.1.0** | ✅ 已完成 | **包结构纯度重构（audit 只做 audit）**：把 `@sofagent/audit` 上帝包拆为 12 个独立包——基础层 `@sofagent/{harness,ontology,eval,core}` + 运行层 `@sofagent/{orchestrator,daemon,ab-test,work模板市场,think,skillopt}` + 协议层 `@sofagent/mcp` + 纯审计 `@sofagent/audit`（收敛为 rules/webhook/filesystem/audit-*/permission），依赖单向无循环；+ **轻量多设备四件事**：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md → lessons-missteps）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检。一次性抽干净 | [📖](./docs/changelog/v1.1.0.md) |
-| **v1.1.2** | ✅ 已完成 | **LOOP 双 Agent 串联**：engineering-minimal-change-engineer + engineering-code-reviewer 通过 DeepAgents compose 自循环 + 多设备同步指南 + **Harness 可见性（签名机制）**：三层签名（CLI/Webhook/MCP/审查报告）让用户感知 sofagent 的存在 + v1.1.0 审查问题 16 项修复 | [📖](./docs/changelog/v1.1.2.md) |
-| **v1.1.2** | 📋 规划中 | **测试体系修复 + 文档一致性**：修复 acceptance-test 测试污染（12 场景被误拦截 + 场景 28 失败 14 场景未执行）+ workspace 测试失败（verify.test.ts）+ CHANGELOG 纯度清理 + 回归清单维度数漂移（274≠268）+ deprecation shim 注释一致性 + safeDefaults 补全 A16/A17 + 跨包代码重复消除 + 文档注释更新 | [📖](./docs/changelog/v1.1.2.md) |
+| **v1.1.2** | ✅ 已完成 | **LOOP 双 Agent 串联 + 维护**：engineering-minimal-change-engineer + engineering-code-reviewer 通过 DeepAgents compose 自循环 + 多设备同步指南 + Harness 可见性（签名机制）+ v1.1.0 遗留问题修复 + 测试体系修复与文档一致性 | [📖](./docs/changelog/v1.1.2.md) |
 | **v1.1.3** | 📋 规划中 | **LangGraph StateGraph + Checkpoint + HITL**：自动流转 engineer→audit→reviewer→human + 长任务中断恢复 | [📖](./docs/changelog/v1.1.3.md) |
 | **v1.1.4** | 📋 规划中 | **条件路由 + USB federation**：audit PASS→push / FAIL→fix / WARN→human + daemon USB 检测自动配置 | [📖](./docs/changelog/v1.1.4.md) |
 | **v1.1.5** | 📋 规划中 | **releasing.md SOP 集成 + MCP knowledge resource**：Agent 按十一阶段 SOP 全流程自动发版 + 7 个 knowledge MCP resource | [📖](./docs/changelog/v1.1.5.md) |

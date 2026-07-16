@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 // doctor.ts · sofagent 健康检查
 // v1.1.2 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
+// v1.1.2 维护：新增 post-commit hook 存在性检查
 //
 // 检查项：
 //   1. 环境检查（Node / git / npm / disk / bash）
 //   2. 配置检查（.sofagent/config.yml 是否存在且有效）
 //   3. 数据目录结构（.sofagent/ 子目录完整性）
-//   4. Hook 状态（.git/hooks/commit-msg 是否安装）
+//   4. Hook 状态（commit-msg 是否安装含 sofagent 标识 + post-commit 是否存在）
 //   5. 包完整性（node_modules 依赖）
+//
+// 注意：post-commit 仅检查存在性——不检查内容是否引用 sofagent
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
@@ -122,6 +125,14 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
       }
     } else {
       info('commit-msg hook 未安装（运行 sofagent-audit --install-hook 安装）');
+    }
+
+    // post-commit：仅检查存在性，不检查内容
+    const postCommitPath = join(gitDir, 'hooks', 'post-commit');
+    if (existsSync(postCommitPath)) {
+      ok('post-commit hook 已安装');
+    } else {
+      info('post-commit hook 未安装（运行 sofagent-audit --init 自动安装）');
     }
   } catch {
     info('非 git 仓库，跳过 hook 检查');

@@ -45,10 +45,6 @@ Ontology 三路合并引擎 + Work模板市场 独立项目 + A9 分级安全 + 
 
 ### 规划中
 
-### [v1.1.2] — 测试体系修复 + 文档一致性 🔧
-> 规划中
-**核心变更**：修复 acceptance-test 测试污染（12 场景被 A1 误拦截 + 场景 28 失败 14 场景未执行）+ workspace 测试失败（verify.test.ts）+ CHANGELOG 纯度清理 + 回归清单维度数漂移（274≠268）+ deprecation shim 注释一致性 + safeDefaults 补全 A16/A17 + 跨包代码重复消除 + 文档注释更新。
-> 📖 [开发日志](./docs/changelog/v1.1.2.md)
 ### [v1.1.3] — LangGraph StateGraph + Checkpoint + HITL 📋
 > 规划中
 **核心变更**：StateGraph 自动流转 engineer→audit→reviewer + Checkpoint 持久化 + HITL 确认节点 + SKILL.md LUI-first 约束。
