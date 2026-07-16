@@ -1,6 +1,6 @@
 # sofagent Agent 库
 
-> v1.0.7 起，预装 Agent 为 Skill 格式。Skill 是调用入口——第三方 Agent 平台（WorkBuddy/Codex/OpenClaw 等）加载 Skill 后，通过 CLI 命令把任务交给 DeepAgents 编排引擎执行。
+> v1.0.7 起（当前 v1.1.2），预装 Agent 为 Skill 格式。Skill 是调用入口——第三方 Agent 平台（WorkBuddy/Codex/OpenClaw 等）加载 Skill 后，通过 CLI 命令把任务交给 DeepAgents 编排引擎执行。
 
 ## Agent 列表
 
@@ -57,7 +57,9 @@ LOOP engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更合
 
 ## Agent 格式
 
-每个预装 Agent 目录下有**两个文件**，分工明确：
+预装 Agent 分两类格式，目录结构不同：
+
+**类型 A — Skill 格式（第三方平台调用入口）**：`SKILL/sofagent-fde/` 与 `SKILL/sofagent-audit/`，每个目录下有**两个文件**，分工明确：
 
 | 文件 | 格式 | 作用 | 谁读 |
 |------|------|------|------|
@@ -68,13 +70,15 @@ LOOP engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更合
 - SKILL.md = "怎么调这个 Agent"（一句话：跑 CLI 命令）
 - {role}.md = "这个 Agent 是什么"（完整的角色说明书，100+ 行）
 
+**类型 B — LOOP 内层角色（非 Skill）**：`engineering-minimal-change-engineer.md`、`engineering-code-reviewer.md` 直接由 LOOP 内层循环调度，单文件即完整角色定义，不对外暴露 Skill 入口、也没有对应 SKILL 目录。
+
 ### Skill 格式（调用入口）
 
 ```yaml
 ---
 name: sofagent-fde
 slug: sofagent-fde
-version: 1.0.7
+version: 1.1.2
 displayName: FDE 部署工程师
 description: >
   前线部署工程师...
