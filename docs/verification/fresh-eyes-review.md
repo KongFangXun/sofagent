@@ -651,3 +651,41 @@
    - PHILOSOPHY.md 是否将"持续存在感"列为设计原则？
 
 4. **如果用户看到的结果没有 sofagent 签名**：从用户的角度，你怎么区分"模型自己生成的结果"和"经过 sofagent 审计引擎验证的结果"？如果无法区分，这就是废墟功能——做了但用户感知不到，等于没做。
+
+---
+
+## v1.1.2 审查追补——本版新暴露的盲区
+
+> 以下盲区来自 v1.1.2 BugFix 版的开发经验，追加到审查体系中供下版本使用。
+
+### 盲区 1：acceptance-test.sh 管道 pipefail 导致虚假绿色
+
+**现象**：`set -euo pipefail` 下 `echo "$OUTPUT" | grep -i "pattern" | head -3` 在 grep 无匹配时，head -3 关闭管道 → grep 收 SIGPIPE → pipefail 判管道失败 → set -e 直接退出脚本。exit code 可能是 0，表面看不出问题，但后续场景全部跳过。
+
+**教训**：bash 脚本中所有 `... | grep ... | head/tail/wc` 展示管道必须在末尾补 `|| true`。CI 机器人应扫描 acceptance-test.sh 中所有此类管道，确认有保护。
+
+**关联回归维度**：301
+
+### 盲区 2：跨文档 ruleClass 不一致（README vs 代码）
+
+**现象**：`sofagent/audit/README.md` 写 A6=业务底线（代码=能力拐杖）、A11=能力拐杖（代码=业务底线）。单看任何一篇都"像对的"，只有交叉对照才暴露矛盾。
+
+**教训**：规则分级（ruleClass）不是只定义一次就完事了——README 表格是手动维护的，代码是 SSOT。每次新增/调整规则时必须同时更新 README 表格。
+
+**关联回归维度**：302
+
+### 盲区 3：webhook.ts 硬编码版本号散落
+
+**现象**：`sofagent/audit/src/webhook.ts:24` 写 `const version = '1.1.2'`，check-version.sh 不会扫描到这种局部变量。版本号散落点不止 package.json + constants.ts + index.ts 自报——任何 `const version = 'X.Y.Z'` 模式都是散落点。
+
+**教训**：全局搜索 `version\s*=\s*'[0-9]` 匹配所有硬编码版本号，将其改为 `import { VERSION } from '@sofagent/core'`。
+
+**关联回归维度**：304
+
+### 盲区 4：scenario() 场景间清理不彻底（git index vs 工作区）
+
+**现象**：`scenario()` 函数的 `rm -f .env` 只清工作区文件，但 git index 中的 .env 仍然存在。后续场景 `git reset --hard` 回到含 .env 的 commit 时，工作区 .env 被重新还原。
+
+**教训**：场景间清理必须是"git index + 工作区"双重清除：`git rm --cached -f .env 2>/dev/null || true` + `rm -f .env`。
+
+**关联回归维度**：305
