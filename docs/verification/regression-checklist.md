@@ -1,4 +1,4 @@
-# sofagent 回归检查清单（268 维度 · 编号 1–306）
+# sofagent 回归检查清单（273 维度 · 编号 1–305）
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。这不是"发现新问题"的工具——发现新问题用[陌生视角审查](./fresh-eyes-review.md)。
 >
@@ -3459,4 +3459,50 @@ else
   echo "✅ 无循环依赖"
 fi
 # 期望：已知循环持续监控，v1.2.x 评估解耦
+```
+
+#### 301. acceptance-test.sh 管道 pipefail 保护 🆕
+
+```bash
+# v1.1.2 BugFix：场景28 echo | grep | head 在 grep 无匹配时 pipefail 触发 set -e
+# 所有展示管道必须 || true
+grep -n 'grep.*|.*head\|grep.*|.*wc' tools/acceptance-test.sh | grep -v '|| true'
+# 期望：零命中
+```
+
+#### 302. audit README 规则分级与代码一致性 🆕
+
+```bash
+# v1.1.2 BugFix：README A6=业务底线（代码=能力拐杖）、A11=能力拐杖（代码=业务底线）
+# 以 rules/index.ts 的 ruleClass 为 SSOT
+grep "不坏构建" sofagent/audit/src/rules/index.ts | grep -o "能力拐杖" && echo "A6=能力拐杖 ✅"
+grep "不滥资源" sofagent/audit/src/rules/index.ts | grep -o "业务底线" && echo "A11=业务底线 ✅"
+grep "A6.*能力拐杖\|A11.*业务底线" sofagent/audit/README.md | wc -l
+# 期望：2（README 与代码一致）
+```
+
+#### 303. audit README 测试数时效性 🆕
+
+```bash
+# v1.1.2 BugFix：README 写 418 tests，实际 vitest = 342
+README_NUM=$(grep -oP '[0-9]+(?= tests)' sofagent/audit/README.md)
+ACTUAL_NUM=$(cd sofagent/audit && npx vitest run 2>&1 | grep Tests | grep -oP '[0-9]+(?= passed)')
+[ "$README_NUM" = "$ACTUAL_NUM" ] && echo "✅ $README_NUM" || echo "❌ README $README_NUM ≠ 实际 $ACTUAL_NUM"
+# 期望：✅
+```
+
+#### 304. webhook.ts 版本号硬编码检测 🆕
+
+```bash
+# v1.1.2 BugFix：webhook.ts 硬编码 '1.1.2'，应 import VERSION from @sofagent/core
+grep -rn "version\s*=\s*'[0-9]" sofagent/*/src/*.ts | grep -v __tests__ | grep -v shared/constants | grep -v node_modules
+# 期望：零命中（所有版本号来自 @sofagent/core 或 shared/constants.ts）
+```
+
+#### 305. acceptance-test.sh scenario() 场景间清理完整性 🆕
+
+```bash
+# v1.1.2 BugFix：scenario() 清理函数只删工作区 .env，不删 git index 中的 .env
+grep -c "git rm --cached -f .env" tools/acceptance-test.sh
+# 期望：≥ 2（scenario() 函数内 + 场景11后各一处）
 ```
