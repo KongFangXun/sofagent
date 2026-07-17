@@ -85,6 +85,7 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
   echo "  如需卸载：./uninstall.sh（保留你的 .sofagent/ 数据）"
   echo "  历史拦截：全新安装，审计历史将从第一次提交开始记录。"
   echo ""
+  echo "  ✅ sofagent 已就绪，下次 git commit 自动生效"
   [ "$PLATFORM" = "openclaw" ] || return 0
   # API Key 提醒 + Hook 状态提示（仅 OpenClaw）
   [ "${NO_CONFIG_INJECT:-0}" = "1" ] && echo "  ⚠️  --no-config-inject 已启用：未注入断路器配置，需手动配置 tools.loopDetection"

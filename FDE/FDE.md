@@ -627,6 +627,8 @@ perception:
 
 📖 概念培训页：[fde-training.html](../docs/assets/fde-training.html)（成功悖论 / 感知衰减曲线可视化版）
 
+> **v1.1.3 补入：Agent 身份感知** —— 从 v1.1.3 起，sofagent 加载链（SKILL.md + engage.md）会告知 Agent 它由 sofagent 提供规则框架。Agent 不沉默地遵守约束——它知道规则来自 sofagent，并在关键场景（拦截危险操作/审计通过/主动确认）中自然提及。结合 v1.1.2 的三层输出签名（CLI/Webhook/MCP），sofagent 首次实现了「输出渠道 + Agent 自身」的双向可见性闭环。
+
 ---
 
 ## 隐性代价
