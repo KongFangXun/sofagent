@@ -1,6 +1,6 @@
 # sofagent 版本开发 SOP
 
-> v0.95 实践沉淀。**十一阶段 + 验收测试自更新（阶段三·步骤 12）**：审查→开发→自测（含验收测试文件进化）→代码审核→**回归清单验证**→回归检查→审查体系维护→文档收尾→确认关口→发布→发布后。
+> v0.95 实践沉淀。**十二阶段 + 验收测试自更新（阶段三·步骤 12）**：审查→开发→**本地安装**→自测（含验收测试文件进化）→代码审核→**回归清单验证**→回归检查→审查体系维护→文档收尾→确认关口→发布→发布后。
 > 🔴 v0.95 起，版本号操作用 `bump-version.sh` + `check-version.sh`，禁止手动 grep/sed。
 > 🔴 v1.0.3 起，文档预算分层检查（A 用户文档 / B 开发者参考 / C 审查体系 / D 设计 / E 指南），见 `check-docs.sh`。
 > 🔴 回归检查已升格为**独立阶段**（阶段六）——需要全新 session，不再作为"审核"的子步骤。
@@ -32,6 +32,38 @@
 **🔴 开发铁律（v1.0.3 教训）**：
 - **开发完后再 bump 版本号**——不要在开发过程中提前 bump。工程师可能写了目标版本号而非当前 SSOT
 - 对 optional dependency（如 deepagents）的类型断言统一用 `as unknown as` 双重转换——本地编译通过不代表 CI 通过
+
+---
+
+### 🔴 阶段 2.5：本地开发安装（自己吃自己的狗粮）
+
+> v1.1.3 教训：发版后才想起本机装的还是旧版本。**commit 之后就装，不要再等到阶段十。**
+
+开发完成并 commit 后，立刻把最新版本装到本机——全局 npm 和本地 Skill 同步。这样后续的自测、验收测试、QA 验证都跑的是你自己的最新代码，而不是上次发布的旧版本。
+
+```bash
+# 1. 全局安装最新 audit 包（从本地源码构建安装，不需要等 npm publish）
+cd sofagent/audit
+npm run build && npm install -g .
+cd ../..
+
+# 2. 验证版本号
+sofagent-audit --version  # 应显示当前开发版本号
+
+# 3. 本地 Skill 同步（WorkBuddy + OpenClaw 双平台）
+cp -r sofagent/skill/* ~/.workbuddy/skills/sofagent/
+cp -r sofagent/skill/* ~/.openclaw/skills/sofagent/
+cp FDE/SKILL.md ~/.workbuddy/skills/sofagent-fde/
+cp -r agents/SKILL/sofagent-fde/ ~/.workbuddy/skills/sofagent-fde/
+cp -r agents/SKILL/sofagent-audit/ ~/.workbuddy/skills/sofagent-audit/
+cp -r agents/SKILL/sofagent-fde/ ~/.openclaw/skills/sofagent-fde/
+cp -r agents/SKILL/sofagent-audit/ ~/.openclaw/skills/sofagent-audit/
+
+# 4. dogfood 验证（在当前 workspace 跑最新的 --doctor）
+sofagent-audit --doctor
+```
+
+> ⚠️ `npm install -g .` 从本地源码安装，不会走 npm registry。**发版时的 `npm install -g @sofagent/audit@latest`（阶段十·步骤 19）仍然必须做**——那是验证发布的 npm 包。这里是开发阶段的自用安装。
 
 ---
 
@@ -624,6 +656,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 |:--:|------|:--:|:--:|------|
 | 一 | 审查 → 开发日志 | 作者 | 是（发布后审查） | 审查报告 + 开发日志 |
 | 二 | 开发 | 工程师 | 否 | 代码 + 随修随记的回归维度 |
+| 2.5 | 本地安装 | 工程师 | 否 | `npm install -g .` 从本地源码安装 + Skill 文件同步到 `~/.workbuddy/skills/`。commit 后立刻做，不要再等到阶段十 |
 | 三 | 自测 | 工程师 | 否 | build/test 全绿 + 更新 `tools/acceptance-test.sh` / `docs/verification/openclaw-acceptance-test.md` / `docs/verification/regression-checklist.md`。涉及 CLI 迁移时 shellcheck/acceptance 延后到阶段八 |
 | 四 | 代码审核 | 当前 session | 否 | 逐项 PASS 或 FAIL→修复 |
 | **五** | **回归清单验证** | **当前 session** | **否** | **新增检查项全部 PASS** |
