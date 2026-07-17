@@ -205,6 +205,76 @@ else
 fi
 
 # ════════════════════════════════════════
+# 7. Tag message 校验
+# ════════════════════════════════════════
+echo -e "\n${BOLD}── 7. Tag message 校验 ──${NC}"
+SSOT_VERSION=$(node -e "console.log(require('./package.json').version)" 2>/dev/null) || true
+if [ -n "$SSOT_VERSION" ] && git tag -l "v${SSOT_VERSION}" | grep -q "v${SSOT_VERSION}" 2>/dev/null; then
+  TAG_MSG=$(git tag -l "v${SSOT_VERSION}" --format='%(subject)' 2>/dev/null || true)
+  if echo "$TAG_MSG" | grep -q "${SSOT_VERSION}"; then
+    check_pass "Tag v${SSOT_VERSION} message 含版本号"
+  else
+    check_fail "Tag v${SSOT_VERSION} message 与版本号不一致（message: \"${TAG_MSG}\"）"
+  fi
+else
+  check_warn "Tag v${SSOT_VERSION} 不存在（发版前正常）"
+fi
+
+# ════════════════════════════════════════
+# 8. 依赖图循环检测
+# ════════════════════════════════════════
+echo -e "\n${BOLD}── 8. 依赖图循环检测 ──${NC}"
+CYCLE_CHECK=$(node -e '
+const fs = require("fs");
+const path = require("path");
+const dirs = fs.readdirSync("sofagent").filter(d => {
+  try { return fs.statSync(path.join("sofagent", d)).isDirectory(); } catch(e) { return false; }
+});
+const edges = {}; // pkgName -> Set of depPkgNames
+for (const d of dirs) {
+  const pjPath = path.join("sofagent", d, "package.json");
+  if (!fs.existsSync(pjPath)) continue;
+  const pj = JSON.parse(fs.readFileSync(pjPath, "utf8"));
+  const name = pj.name;
+  const deps = new Set();
+  for (const field of ["dependencies", "optionalDependencies"]) {
+    if (pj[field]) {
+      for (const dep of Object.keys(pj[field])) {
+        if (dep.startsWith("@sofagent/")) deps.add(dep);
+      }
+    }
+  }
+  if (deps.size > 0) edges[name] = deps;
+}
+let newCycles = [];
+for (const [a, depsA] of Object.entries(edges)) {
+  for (const b of depsA) {
+    if (edges[b] && edges[b].has(a)) {
+      const key = [a.replace("@sofagent/",""), b.replace("@sofagent/","")].sort().join("↔");
+      if (key === "audit↔daemon") {
+        // known cycle, warn only
+      } else {
+        newCycles.push(key);
+      }
+    }
+  }
+}
+if (newCycles.length > 0) {
+  console.log("NEW_CYCLE:" + newCycles.join(","));
+} else {
+  console.log("OK");
+}
+' 2>&1)
+if echo "$CYCLE_CHECK" | grep -q "^OK$"; then
+  check_pass "依赖图无新增循环（已知 audit↔daemon 豁免）"
+  echo -e "  ${YELLOW}⚠${NC} 已知循环：audit↔daemon（解耦计划 v1.2.x）"
+elif echo "$CYCLE_CHECK" | grep -q "^NEW_CYCLE:"; then
+  check_fail "依赖图发现新增循环：$(echo "$CYCLE_CHECK" | sed 's/NEW_CYCLE://')"
+else
+  check_warn "依赖图循环检测执行异常（跳过）"
+fi
+
+# ════════════════════════════════════════
 # 总结
 # ════════════════════════════════════════
 TOTAL=$((PASS + FAIL + WARN))

@@ -1,90 +1,96 @@
-# sofagent 陌生视角审查 Prompt（8 视角 × 6 方面）
+# sofagent 发布后审查 Prompt（8 维度 × 6 方面）
 
 > ⚠️ **使用时机**：当前版本发版后，在全新 session 中跑本 prompt 对已发布版本做独立审查。审查发现的问题不阻塞当前版本——它们进入下版本的开发计划。
 >
-> ⚠️ **审查体系自进化**：每版本发版前（releasing.md 阶段五「合并更新两份审查文档」），基于本版本的开发经验审视并更新本 prompt——新增任务描述、更新过时视角、补充红队攻击面。更新后的 prompt 在下版本的发布后审查中生效：
+> ⚠️ **审查体系自进化**：每版本发版前（releasing.md 阶段五「合并更新两份审查文档」），基于本版本的开发经验审视并更新本 prompt——新增任务描述、更新过时维度、补充红队攻击面。更新后的 prompt 在下版本的发布后审查中生效：
 > ```
-> 版本 A 发版 → 跑陌生视角审查 → 发现问题
+> 版本 A 发版 → 跑发布后审查 → 发现问题
 >   → 版本 B 开发时修复
 >   → 版本 B 发版前更新审查体系（releasing.md 阶段五「合并更新两份审查文档」）
 >   → 版本 B 发版 → 用更新后的 prompt 审查版本 B
 > ```
 >
 > ⚠️ **使用前审视**：每次在新版本发布后跑本 prompt 前，先花 1 分钟审视一下：
-> - 有没有视角需要增删？（比如项目多了企业用户，加"企业运维"视角）
+> - 有没有维度需要增删？（比如项目多了企业用户，加"企业运维"维度）
 > - 有没有任务描述需要更新？（比如新增了 CLI 命令，用户旅程要加一步）
-> - 有没有上一轮回归检查发现的"反复出现的同类问题"需要抽象成新视角？
+> - 有没有上一轮回归检查发现的"反复出现的同类问题"需要抽象成新维度？
 >
 > 审视完再跑，不要让过时的 prompt 产生过时的审查结果。
 >
 > 📋 **审视变更记录**：
-> - **v1.0.6 发版后审视**（2026-07-13）：清理全部版本号锚定（"v1.0.X 修复后/新增/教训" → 中性描述）；修正 A12/A13 引用（永久跳号，非"规划中"）；新增视角一·任务 8（双节点架构验证）、视角二·任务 9（文件系统审计企业适用性）、视角七·任务 25-26（daemon 防抖 + Sub Agent 自加载对抗）、视角八·任务 12（版本敏感规则数声称）；强化 exit code 验证措辞；扩充 CHANGELOG 纯度 grep 模式；加路径约定说明 + 用户旅程放弃阈值。
+> - **v1.0.6 发版后审视**（2026-07-13）：清理全部版本号锚定（"v1.0.X 修复后/新增/教训" → 中性描述）；修正 A12/A13 引用（永久跳号，非"规划中"）；新增维度一·任务 8（双节点架构验证）、维度二·任务 9（文件系统审计企业适用性）、维度七·任务 25-26（daemon 防抖 + Sub Agent 自加载对抗）、维度八·任务 12（版本敏感规则数声称）；强化 exit code 验证措辞；扩充 CHANGELOG 纯度 grep 模式；加路径约定说明 + 用户旅程放弃阈值。
 > - **v1.0.7 发版前审视**（2026-07-13）：基于 v1.0.7 审查中暴露的盲区，补充以下检查：
 >   - **发版状态真实性**（新）：changelog 顶部若写"已正式发版"，必须有真实 commit + tag 支撑，禁止凭文档措辞假声明（v1.0.7 曾 97 文件未提交却标"已正式发版"）。
->   - **测试数跨文件 + 跨语言一致性**（强化视角八·任务 2）：CHANGELOG / ROADMAP / README / README.en / evidence.md 五处测试数必须一致（v1.0.7 实测 493，曾四处写 480、英文版漏改）。
+>   - **测试数跨文件 + 跨语言一致性**（强化维度八·任务 2）：CHANGELOG / ROADMAP / README / README.en / evidence.md 五处测试数必须一致（v1.0.7 实测 493，曾四处写 480、英文版漏改）。
 >   - **版本号复制粘贴校验**（新）：新增/改写段落中的版本号必须与 package.json 一致（v1.0.7 P2-10 曾把"v1.0.7"误抄成"v1.0.6"）。
->   - **SKILL.md ≤100 行铁律**（强化视角七·任务 10）：不仅查 frontmatter，还要查行数。v1.0.8 起由 ≤90 上调为 ≤100，并扩展检查范围到 agents/SKILL/、LOOP/、FDE/ 下的 SKILL.md。
+>   - **SKILL.md ≤100 行铁律**（强化维度七·任务 10）：不仅查 frontmatter，还要查行数。v1.0.8 起由 ≤90 上调为 ≤100，并扩展检查范围到 agents/SKILL/、LOOP/、FDE/ 下的 SKILL.md。
 >   - **init.ts hook skip 逻辑回归**（新）：版本号判断不能误伤存量升级用户——`includes('sofagent')` 式模糊匹配会让存量用户永远跳过重装 hook（v1.0.7 P1-1）。
 > - **v1.1.0 发版后审视**（2026-07-15）：基于 v1.1.0 发布流程暴露的盲区，补充以下检查：
->   - **workspace 构建顺序依赖**（视角八·任务 15）：`--workspaces` 按数组顺序构建，不按依赖拓扑排序。think 排在 mcp 后会导致 CI 报 TS2307。陌生审查者应检查 workspace 数组顺序与 dependency 声明是否一致。
->   - **12 包发布复杂度**（视角二·任务 10）：从"双包发布"变成"12 包按依赖层分批发布"，发布顺序错误会导致 npm install 失败。陌生审查者应验证各包的 npm registry 版本是否一致、依赖层是否正确。
->   - **新包测试覆盖率鸿沟**（视角八·任务 16）：v1.1.0 拆分后，新包（workflow-hub 1 个测试、harness 0 个、eval 0 个）与 audit（342 个）之间的覆盖率鸿沟巨大。陌生审查者应检查 `npm test --workspaces --if-present` 中哪些包有测试、哪些没有。
->   - **deprecation shim 可用性**（视角七·任务 27）：`--doctor` 的 deprecation shim 使用 `execFileSync('sofagent-core')`，但 core 不是必装包。未装 core 时 doctor 崩溃→篡改检测不可用→安全功能降级。陌生审查者应在不装其他包的环境下跑 `--doctor`，验证不崩溃。
->   - **README 安装路径过期**（视角一·任务 10）：v1.1.0 拆分后 README 中的安装命令是否还准确？（只装 audit 够用吗？需不需要提示其他包？）陌生审查者应按 README 走一遍从零安装。
+>   - **workspace 构建顺序依赖**（维度八·任务 15）：`--workspaces` 按数组顺序构建，不按依赖拓扑排序。think 排在 mcp 后会导致 CI 报 TS2307。陌生审查者应检查 workspace 数组顺序与 dependency 声明是否一致。
+>   - **12 包发布复杂度**（维度二·任务 10）：从"双包发布"变成"12 包按依赖层分批发布"，发布顺序错误会导致 npm install 失败。陌生审查者应验证各包的 npm registry 版本是否一致、依赖层是否正确。
+>   - **新包测试覆盖率鸿沟**（维度八·任务 16）：v1.1.0 拆分后，新包（workflow-hub 1 个测试、harness 0 个、eval 0 个）与 audit（342 个）之间的覆盖率鸿沟巨大。陌生审查者应检查 `npm test --workspaces --if-present` 中哪些包有测试、哪些没有。
+>   - **deprecation shim 可用性**（维度七·任务 27）：`--doctor` 的 deprecation shim 使用 `execFileSync('sofagent-core')`，但 core 不是必装包。未装 core 时 doctor 崩溃→篡改检测不可用→安全功能降级。陌生审查者应在不装其他包的环境下跑 `--doctor`，验证不崩溃。
+>   - **README 安装路径过期**（维度一·任务 10）：v1.1.0 拆分后 README 中的安装命令是否还准确？（只装 audit 够用吗？需不需要提示其他包？）陌生审查者应按 README 走一遍从零安装。
 
 
->   - **包拆分后独立构建验证**（视角七·任务 18）：每包独立 `tsc --noEmit`，一个包过不代表全体过（v1.1.0 core 曾缺 filesystem/ 报 TS2307）。
->   - **"复制≠移动"——文件迁移完整性**（视角七·任务 19）：AI 工程师做源码迁移时只创建副本不删源文件，导致 audit 成为重复文件仓库。陌生审查者必须反向验证 audit/src/ 里不该有啥。
->   - **测试工厂函数迁移签名兼容性**（视角七·任务 20）：shared test-utils 提取后参数签名与调用方不兼容，74 个测试静默失败。npm test 是唯一兜底。
->   - **audit/src/ 收敛验证**（视角一·任务 9）：9 个目录迁出后 audit 残留副本 + 残留 import + 残留测试形成三重污染。
->   - **测试计数漂移的文档联动**（视角八·任务 13）：测试迁移后 5 处文档测试数未同步更新，陌生审查者的数字对账能力是关键防线。
->   - **基础层叶子包反向依赖**（视角八·任务 14）：检查 harness/ontology/eval/core 四个叶子包是否真有零 `@sofagent/*` import。
->   - **文档哲学化与交叉引用一致性**（视角五·任务 12）：是否有独立的设计哲学文档？如果有，核心文档（README / HANDBOOK / ARCHITECTURE / DEVELOPMENT / ROADMAP / FDE / LOOP）是否都引用了它？术语（如「一底座四引擎」vs 其他说法）是否跨文档统一？
->   - **MCP 能力目录完整性**（视角五·任务 13）：是否存在 MCP 使用指南文档？如果有，能否被 5 个以上核心文档从不同路径找到？指南中列出的 resource 数量是否与项目声称的能力总数一致？
->   - **LUI-first 设计一致性**（视角五·任务 14）：跨文档中关于「交互方式」（有无图形界面、如何操作）的说法是否一致？每个能力描述是否有对应的「用户如何感知这个能力」的说明？
->   - **部署方式多样性**（视角二·任务 11）：项目声称了几种部署方式？是否在部署手册和 roadmap 中都能找到对应描述？USB 类物理载体的安全宣称（防篡改、加密）是否完整？
->   - **changelog 结构一致性**（视角八·任务 17）：所有规划中的 changelog 文件是否都遵循相同的结构模板？每个版本是否有用户感知描述段？版本之间的依赖关系是否清晰标注？
->   - **指南性文档可发现性**（视角一·任务 12）：是否存在面向特定任务的指南（如同步、MCP 使用）？这些指南是否被 3 个以上的入口文档引用？
->   - **文档内部链接健康度**（视角五·任务 15，v1.1.2 全仓审计强化）：不再靠人工遍历点击——**必须用自动化脚本全量扫描所有 `.md` 的相对路径链接**（排除 node_modules/.workbuddy/.sofagent/docs/changelog/docs/evidence + 代码围栏内示例 + 外部 http/纯锚点）。**重点警惕"文件/目录迁移后 `../` 层数未修正"类死链**（v1.1.2 发现 23 处：LIMITATIONS.md 迁根后 `../FDE/FDE.md` 层数错、docs/ 子目录重排后 `./ARCHITECTURE.md` 应为 `../ARCHITECTURE.md`、changelog 子文件 `../../CHANGELOG.md` 应为 `../../../CHANGELOG.md`）。发现死链 → 追查是否本次/历史文件迁移遗漏，并补全四动作（见回归维度 305）。
->   - **未来探索项一致性**（视角八·任务 18）：ROADMAP 中的「探索」类项目是否与实际 changelog 中的标注一致？是否有探索项已经在 changelog 中变为正式交付但 ROADMAP 未同步？
->   - **品牌视觉一致性**（视角一·任务 13）：核心文档是否有统一的视觉标识（如 logo）？同一个视觉元素在不同文档中的配置（尺寸、路径）是否一致？
-> - **v1.1.2 发版后审视**（2026-07-15）：基于 v1.1.0 发布后审查暴露的盲区 + v1.1.2 Harness 可见性需求，补充以下检查：
->   - **Harness 层输出可见性**（新视角——全视角覆盖）：sofagent 的引擎在正常工作，但用户看到好结果时是否知道是 harness 层在起作用？审查者应检查**所有输出渠道**（CLI 审计输出、Webhook 推送、MCP 工具返回、LOOP 审查报告）是否明确标注了 sofagent 的来源标识。核心问题：「证据可见」做了，但证据有没有「签名」？**特别关注 MCP capabilities 描述是否过时**（v1.1.2 曾出现 run_audit 描述写「A1-A14 + E1-E4」，漏了 A15/A16/A17，应随规则数同步更新为「19 条规则」）。具体检查点见视角一·任务 14、视角二·任务 12、视角四·任务 9、视角七·任务 28。
->   - **约束底座可见性**（视角一·任务 15）：四层加载链（SKILL.md/fde.md/think.md/knowledge/）注入 Agent 上下文时，Agent 或用户是否知道这些约束来自 sofagent？还是看起来像模型自带的规则？审查者应检查 SKILL.md 等加载链文件是否在开头标注"由 sofagent Harness 层注入"。
->   - **deprecation shim 一致性**（视角八·任务 19）：兼容代码的注释写"已改为 X"的，代码是否真的改了？检查 `index.ts` 中 doctor/verify/compose 三个 shim 的注释与实际实现是否一致（v1.1.0 曾注释说"已改 direct import"，实际只 doctor 改了）。
->   - **依赖铁律文档 vs 代码一致性**（视角八·任务 20）：v1.1.0.md 中描述的包依赖关系与各 package.json 实际 dependencies 是否一致？特别检查 audit 是否漏提了 deepagents/isomorphic-git/js-yaml 等外部依赖。
->   - **回归清单头维度数自动校验**（视角八·任务 21）：回归清单头声称的「N 维度」与实际 `####` 标题数是否一致？v1.1.0 曾 225→245 漂移，应每次发版自动校验。
->   - **CHANGELOG 纯度 grep 扩展**（视角八·任务 13 扩展）：在原有 grep 模式基础上增加「驱动」「审查吸收」等审查过程措辞（v1.1.2 发现 changelog 标题含「陌生视角审查驱动的修复」）。
->   - **包依赖图审计**（视角八·任务 22，来自深度审查 perspective 18-23 沉淀）：检查各包之间的依赖方向是否单向无循环、基础层叶子包是否零跨包引用、运行层→纯审计层的倒置依赖是否标注为已知债务。
-> - **v1.1.2 阶段六审视**（2026-07-15）：阶段六回归检查暴露了审查体系自身的两个盲区，进一步追加：
->   - **审查体系自完整性**（视角八·任务 22 扩展）：回归清单头声称的维度数、输出模板中的维度数，与实际的 `####` 标题数必须一致——三处数字必须对齐，v1.1.2 曾 254≠259。不但要每次手动校验，还要加入自动化检查（维度 298）。
->   - **CHANGELOG 纯度不应依赖人工记忆**（视角八·任务 13 再次扩展）：开发者写 changelog 时可能不自觉地带入审查过程措辞（"P0×4""陌生视角审查"），每次发版前必须自动 grep，而不依赖记忆。建议将纯度检查加入 pre-push-check（维度 299）。
->   - **包依赖循环应持续监控**（视角八·任务 22 再次扩展）：audit↔daemon 循环依赖（optionalDep）在阶段六首次被独立审查者检出——说明平时开发者在关联上下文里维护时容易忽略。应加入 CI 固定维度持续监控（维度 300）。
-   - **v1.1.2 全仓质量审计（开发期，2026-07-15）**：基于专家视角对全仓代码+文档做四维度审计，暴露出此前 review 体系的结构性盲区——这类「全仓文档卫生 + 跨包代码重复 + 层归属」从未被编入任何门禁（fresh-eyes 只在发版后跑已发布版本，而这些问题是开发期产物；check-docs.sh 死链检查仅扫 rules.md）。补充检查（固化进回归维度 301-306）：
-     - **跨文档相对路径死链全量扫描**（视角五·任务 15 强化 + 回归维度 301）：从人工遍历升级为自动化全量扫描，重点查「文件迁移后 `../` 层数未修正」。
-     - **跨包代码重复检测**（视角八·任务 24 新增 + 回归维度 302）：同名源文件不得两包各存一份。
-     - **Ledger-Views 归属一致性**（视角八·任务 25 新增 + 回归维度 303）：think.md 永远为 Ledger/source，不得标 Views。
+>   - **包拆分后独立构建验证**（维度七·任务 18）：每包独立 `tsc --noEmit`，一个包过不代表全体过（v1.1.0 core 曾缺 filesystem/ 报 TS2307）。
+>   - **"复制≠移动"——文件迁移完整性**（维度七·任务 19）：AI 工程师做源码迁移时只创建副本不删源文件，导致 audit 成为重复文件仓库。陌生审查者必须反向验证 audit/src/ 里不该有啥。
+>   - **测试工厂函数迁移签名兼容性**（维度七·任务 20）：shared test-utils 提取后参数签名与调用方不兼容，74 个测试静默失败。npm test 是唯一兜底。
+>   - **audit/src/ 收敛验证**（维度一·任务 9）：9 个目录迁出后 audit 残留副本 + 残留 import + 残留测试形成三重污染。
+>   - **测试计数漂移的文档联动**（维度八·任务 13）：测试迁移后 5 处文档测试数未同步更新，陌生审查者的数字对账能力是关键防线。
+>   - **基础层叶子包反向依赖**（维度八·任务 14）：检查 harness/ontology/eval/core 四个叶子包是否真有零 `@sofagent/*` import。
+>   - **文档哲学化与交叉引用一致性**（维度五·任务 12）：是否有独立的设计哲学文档？如果有，核心文档（README / HANDBOOK / ARCHITECTURE / DEVELOPMENT / ROADMAP / FDE / LOOP）是否都引用了它？术语（如「一底座四引擎」vs 其他说法）是否跨文档统一？
+>   - **MCP 能力目录完整性**（维度五·任务 13）：是否存在 MCP 使用指南文档？如果有，能否被 5 个以上核心文档从不同路径找到？指南中列出的 resource 数量是否与项目声称的能力总数一致？
+>   - **LUI-first 设计一致性**（维度五·任务 14）：跨文档中关于「交互方式」（有无图形界面、如何操作）的说法是否一致？每个能力描述是否有对应的「用户如何感知这个能力」的说明？
+>   - **部署方式多样性**（维度二·任务 11）：项目声称了几种部署方式？是否在部署手册和 roadmap 中都能找到对应描述？USB 类物理载体的安全宣称（防篡改、加密）是否完整？
+>   - **changelog 结构一致性**（维度八·任务 17）：所有规划中的 changelog 文件是否都遵循相同的结构模板？每个版本是否有用户感知描述段？版本之间的依赖关系是否清晰标注？
+>   - **指南性文档可发现性**（维度一·任务 12）：是否存在面向特定任务的指南（如同步、MCP 使用）？这些指南是否被 3 个以上的入口文档引用？
+>   - **文档内部链接健康度**（维度五·任务 15，v1.1.3 全仓审计强化）：不再靠人工遍历点击——**必须用自动化脚本全量扫描所有 `.md` 的相对路径链接**（排除 node_modules/.workbuddy/.sofagent/docs/changelog/docs/evidence + 代码围栏内示例 + 外部 http/纯锚点）。**重点警惕"文件/目录迁移后 `../` 层数未修正"类死链**（v1.1.3 发现 23 处：LIMITATIONS.md 迁根后 `../FDE/FDE.md` 层数错、docs/ 子目录重排后 `./ARCHITECTURE.md` 应为 `../ARCHITECTURE.md`、changelog 子文件 `../../CHANGELOG.md` 应为 `../../../CHANGELOG.md`）。发现死链 → 追查是否本次/历史文件迁移遗漏，并补全四动作（见回归维度 305）。
+>   - **未来探索项一致性**（维度八·任务 18）：ROADMAP 中的「探索」类项目是否与实际 changelog 中的标注一致？是否有探索项已经在 changelog 中变为正式交付但 ROADMAP 未同步？
+>   - **品牌视觉一致性**（维度一·任务 13）：核心文档是否有统一的视觉标识（如 logo）？同一个视觉元素在不同文档中的配置（尺寸、路径）是否一致？
+> - **v1.1.3 发版后审视**（2026-07-15）：基于 v1.1.0 发布后审查暴露的盲区 + v1.1.3 Harness 可见性需求，补充以下检查：
+>   - **Harness 层输出可见性**（新维度——全维度覆盖）：sofagent 的引擎在正常工作，但用户看到好结果时是否知道是 harness 层在起作用？审查者应检查**所有输出渠道**（CLI 审计输出、Webhook 推送、MCP 工具返回、LOOP 审查报告）是否明确标注了 sofagent 的来源标识。核心问题：「证据可见」做了，但证据有没有「签名」？**特别关注 MCP capabilities 描述是否过时**（v1.1.3 曾出现 run_audit 描述写「A1-A14 + E1-E4」，漏了 A15/A16/A17，应随规则数同步更新为「19 条规则」）。具体检查点见维度一·任务 14、维度二·任务 12、维度四·任务 9、维度七·任务 28。
+>   - **约束底座可见性**（维度一·任务 15）：四层加载链（SKILL.md/fde.md/think.md/knowledge/）注入 Agent 上下文时，Agent 或用户是否知道这些约束来自 sofagent？还是看起来像模型自带的规则？审查者应检查 SKILL.md 等加载链文件是否在开头标注"由 sofagent Harness 层注入"。
+>   - **deprecation shim 一致性**（维度八·任务 19）：兼容代码的注释写"已改为 X"的，代码是否真的改了？检查 `index.ts` 中 doctor/verify/compose 三个 shim 的注释与实际实现是否一致（v1.1.0 曾注释说"已改 direct import"，实际只 doctor 改了）。
+>   - **依赖铁律文档 vs 代码一致性**（维度八·任务 20）：v1.1.0.md 中描述的包依赖关系与各 package.json 实际 dependencies 是否一致？特别检查 audit 是否漏提了 deepagents/isomorphic-git/js-yaml 等外部依赖。
+>   - **回归清单头维度数自动校验**（维度八·任务 21）：回归清单头声称的「N 维度」与实际 `####` 标题数是否一致？v1.1.0 曾 225→245 漂移，应每次发版自动校验。
+>   - **CHANGELOG 纯度 grep 扩展**（维度八·任务 13 扩展）：在原有 grep 模式基础上增加「驱动」「审查吸收」等审查过程措辞（v1.1.3 发现 changelog 标题含「发布后审查驱动的修复」）。
+>   - **包依赖图审计**（维度八·任务 22，来自深度审查 perspective 18-23 沉淀）：检查各包之间的依赖方向是否单向无循环、基础层叶子包是否零跨包引用、运行层→纯审计层的倒置依赖是否标注为已知债务。
+> - **v1.1.3 阶段六审视**（2026-07-15）：阶段六回归检查暴露了审查体系自身的两个盲区，进一步追加：
+>   - **审查体系自完整性**（维度八·任务 22 扩展）：回归清单头声称的维度数、输出模板中的维度数，与实际的 `####` 标题数必须一致——三处数字必须对齐，v1.1.3 曾 254≠259。不但要每次手动校验，还要加入自动化检查（维度 298）。
+>   - **CHANGELOG 纯度不应依赖人工记忆**（维度八·任务 13 再次扩展）：开发者写 changelog 时可能不自觉地带入审查过程措辞（"P0×4""发布后审查"），每次发版前必须自动 grep，而不依赖记忆。建议将纯度检查加入 pre-push-check（维度 299）。
+>   - **包依赖循环应持续监控**（维度八·任务 22 再次扩展）：audit↔daemon 循环依赖（optionalDep）在阶段六首次被独立审查者检出——说明平时开发者在关联上下文里维护时容易忽略。应加入 CI 固定维度持续监控（维度 300）。
+   - **v1.1.3 全仓质量审计（开发期，2026-07-15）**：基于专家视角对全仓代码+文档做四维度审计，暴露出此前 review 体系的结构性盲区——这类「全仓文档卫生 + 跨包代码重复 + 层归属」从未被编入任何门禁（fresh-eyes 只在发版后跑已发布版本，而这些问题是开发期产物；check-docs.sh 死链检查仅扫 rules.md）。补充检查（固化进回归维度 301-306）：
+     - **跨文档相对路径死链全量扫描**（维度五·任务 15 强化 + 回归维度 301）：从人工遍历升级为自动化全量扫描，重点查「文件迁移后 `../` 层数未修正」。
+     - **跨包代码重复检测**（维度八·任务 24 新增 + 回归维度 302）：同名源文件不得两包各存一份。
+     - **Ledger-Views 归属一致性**（维度八·任务 25 新增 + 回归维度 303）：think.md 永远为 Ledger/source，不得标 Views。
      - **文档规范源与冗余 DRY**（回归维度 304）：同概念只在 canonical source 定义。
      - **文件迁移四动作完整性**（回归维度 305）：移动+删源+更新引用+修死链。
      - **check-docs.sh 死链范围扩展**（回归维度 306）：第 1 项从仅 rules.md 扩展为全量相对路径。
+> - **v1.1.3 发版后审视（第二次补充 · 2026-07-17）**：基于独立审查员反馈 + 本人 fresh-eyes 审查，补充以下检查：
+>   - **维度八·任务17 路径过期修复**（修改）：config-loader.ts 已迁至 core/src/，knownKeys 检查路径失效。改为核验 `runner.ts` 的 `a{number}`/`e{number}` 动态规则禁用逻辑——修改 config.yml 中 `a16: false` 后跑审计，确认该规则真的被跳过。
+>   - **维度八·任务5 tag message 一致性**（强化）：`git show vX.Y.Z --stat` 不仅验证 tag 存在，还要验证 tag commit message 是否含版本号。v1.1.3 曾 tag 指向 commit message 为 "v1.1.3: …"——tag 版本号与 commit message 版本号不一致。
+>   - **维度八·任务7 CHANGELOG 纯度 grep 范围扩展**（扩展）：原仅扫描 `CHANGELOG.md`，现扩展到 `docs/changelog/v*.md` 全量子文件。历史 experimental changelog 可能含遗留的审查元信息。
+>   - **维度八 新增任务 26：孤儿 changelog 检测**：`docs/changelog/` 下无对应 git tag 的 `.md` 文件（如 v1.1.3.md）必须标注「规划中」且不被门禁误读为已发布版本。反向检查：有 git tag 的版本是否在 CHANGELOG.md 索引中有条目（v1.1.3 审查发现 v1.1.1 tag 存在但索引遗漏）。
+>   - **维度三 新增任务 11：ruleClass 跨文档漂移检测**：提取 `rules/index.ts` 的 `name` + `ruleClass`，与 `audit/README.md` 规则表逐行 diff。ruleClass 漂移已反复出现（A6/A11），单文档审查永远发现不了，必须交叉对照。建议对此建自动化脚本加入 pre-push-check。
 >
 > **审查对象**：https://github.com/KongFangXun/sofagent（main 分支，当前已发布版本）
 >
 > **本次审查原则**：回归检查 + pre-push-check + acceptance-test + OpenClaw 验收已经全部通过。本轮换个思路：**假装你完全不知道 sofagent 是什么**，用陌生人的眼睛重新看一遍。不设固定检查项，不指定具体文件，不跑 grep。凭第一印象和直觉判断。
 >
-> **四轮审查法**：本 prompt 包含 8 个视角，分为四轮：
-> - **第一轮：角色扮演**（视角 1-5）—— 5 个陌生人各自独立看一遍
-> - **第二轮：用户旅程**（视角 6）—— 从安装到跑通，走完整路径找断点
-> - **第三轮：红队对抗**（视角 7）—— 故意搞破坏，找边缘 case
-> - **第四轮：CI/自动化**（视角 8）—— 文档声称 vs 代码实际，找数字不一致
+> **四轮审查法**：本 prompt 包含 8 个维度，分为四轮：
+> - **第一轮：角色扮演**（维度 1-5）—— 5 个陌生人各自独立看一遍
+> - **第二轮：用户旅程**（维度 6）—— 从安装到跑通，走完整路径找断点
+> - **第三轮：红队对抗**（维度 7）—— 故意搞破坏，找边缘 case
+> - **第四轮：CI/自动化**（维度 8）—— 文档声称 vs 代码实际，找数字不一致
 >
-> 四轮可以分四次跑（每次一个或几个视角），也可以一次性全跑。轮次之间清空认知，从空白开始。
+> 四轮可以分四次跑（每次一个或几个维度），也可以一次性全跑。轮次之间清空认知，从空白开始。
 
 ---
 
 ## 你的身份（第一轮：5 角色切换）
 
-> 第一轮你将**连续切换 5 个身份**，每轮只能从当前身份的视角出发，不能借用其他身份的知识。每轮完成后再切换到下一个。第二、三、四轮有独立的身份设定。
+> 第一轮你将**连续切换 5 个身份**，每轮只能从当前身份出发，不能借用其他身份的知识。每轮完成后再切换到下一个。第二、三、四轮有独立的身份设定。
 
 ---
 
@@ -101,7 +107,7 @@
 
 ---
 
-## 视角一：🧑‍💻 陌生人首次体验
+## 维度一：🧑‍💻 陌生人首次体验
 
 > 你是一个普通开发者，在 GitHub Explore 或者某个技术群里看到了 sofagent。你没听过这个项目，不知道作者是谁，不知道它经历了 10 个版本的审查。你只是好奇——点进去了。
 
@@ -114,13 +120,13 @@
 6. **文档瘦身**：README 行数——你能在一屏内搞清楚这东西是干什么的吗？有没有你想找但找不到的东西？（比如"这东西能企业部署吗？"——你从 README 能看出来吗？）
 7. **tag 指向确认**：跑 `git show vX.Y.Z --stat`——tag 指向的是发布提交还是修复提交？tag commit message 是否包含版本号？
 8. **双节点架构验证**：README 说 sofagent 支持两种部署节点——"自动运行节点"（需 OpenClaw）和"个人增强节点"（WorkBuddy/Codex/Claude Code，不需 OpenClaw）。你用的是哪个？如果你用的不是 OpenClaw（比如 WorkBuddy），能跑通吗？README 里"个人增强节点"的说明清楚吗？`sofagent-orchestrator compose --task` 这个 CLI 入口你找得到吗？**这个声称是 v1.0.7+ 的核心卖点——如果不装 OpenClaw 就能跑，文档要让你相信这一点；如果其实跑不通，就是夸大宣传。**
-9. **输出归属感（v1.1.2 新增）**：跑 `sofagent-audit --help`、`--init`、`--doctor` 后，你知道这些功能是谁提供的吗？输出里有没有 sofagent 的名字？还是你看到的只是通用工具输出（"PASS""FAIL""检测完成"），不知道背后是哪个引擎在跑？作为一个刚装上的开发者，你能感知到"这是 sofagent 在做的事"吗，还是觉得"这不就是普通的 git hook 吗"？**Harness 中间件最大的挑战是存在感——如果用户用了三周还不知道自己装了 sofagent，这个产品就是失败的。**
+9. **输出归属感（v1.1.3 新增）**：跑 `sofagent-audit --help`、`--init`、`--doctor` 后，你知道这些功能是谁提供的吗？输出里有没有 sofagent 的名字？还是你看到的只是通用工具输出（"PASS""FAIL""检测完成"），不知道背后是哪个引擎在跑？作为一个刚装上的开发者，你能感知到"这是 sofagent 在做的事"吗，还是觉得"这不就是普通的 git hook 吗"？**Harness 中间件最大的挑战是存在感——如果用户用了三周还不知道自己装了 sofagent，这个产品就是失败的。**
 
 你是一个普通开发者，不是来审代码的。你会读多少文档取决于你的好奇心——有人 3 屏就走了，有人会点进 ARCHITECTURE 看看设计思路。**读什么不重要，重要的是始终用普通开发者的心态判断：这东西对我有用吗？我愿意花时间装吗？**
 
 ---
 
-## 视角二：👔 企业 IT 负责人
+## 维度二：👔 企业 IT 负责人
 
 > 你管理着一家 200 人公司的 IT 基础设施。你们的开发团队在用 AI 写代码（Cursor / Copilot / Claude Code），你担心安全和合规问题。你在找工具，看到 sofagent。你的上级问：这东西能进我们公司吗？
 
@@ -137,11 +143,11 @@
 7. **审计日志自身安全**：打开 `sofagent/audit/src/audit-history.ts`。审计拦截了密钥泄漏后，拦截结果（含 diff 内容）被写入 `history.jsonl`。这个文件本身会不会成为第二个泄漏点？Agent 能读这个文件吗？能篡改吗？有没有脱敏机制？
 8. **optional dependency 类型安全**：检查对 optional dependency（如 deepagents）的 import 是否用了 `as unknown as` 双重转换。CI 环境 TS 类型检查比本地严格——直接 `as` 可能本地通过但 CI 失败。
 9. **文件系统审计的企业适用性**：README 声称"v1.0.8+ 支持文件系统审计——内嵌 isomorphic-git，daemon 监控文件变更自动审计，非开发者也能用，不需要装 git、不需要 commit"。你管理的是 200 人公司，大部分岗位不是开发者——这个声称对你有吸引力吗？从文档里你能搞清楚怎么配置 daemon 监控哪些目录吗？审计结果推到哪里（企业协同平台 / Webhook）？如果非开发岗的 AI 改了文件但没人 commit，审计日志在哪看？**这是 sofagent 从"开发者工具"向"企业全员 AI 治理"扩展的关键声称——对企业 IT 来说，非开发岗才是真正的痛点。**
-10. **合规审计可追溯性（v1.1.2 新增）**：企业 IT 做合规审计时，审计记录里能追溯到"这是 sofagent 审计引擎做的"吗？Webhook 推送的消息、history.jsonl 的审计记录、daemon 的巡检报告——每一条是否能清晰地归因到 sofagent？如果你们的合规审查员翻审计日志，看到"PASS"却不知道是谁判的 PASS，这对企业来说是不可接受的——就像财务报表没有审计师签名一样。
+10. **合规审计可追溯性（v1.1.3 新增）**：企业 IT 做合规审计时，审计记录里能追溯到"这是 sofagent 审计引擎做的"吗？Webhook 推送的消息、history.jsonl 的审计记录、daemon 的巡检报告——每一条是否能清晰地归因到 sofagent？如果你们的合规审查员翻审计日志，看到"PASS"却不知道是谁判的 PASS，这对企业来说是不可接受的——就像财务报表没有审计师签名一样。
 
 ---
 
-## 视角三：🏗️ 竞品分析
+## 维度三：🏗️ 竞品分析
 
 > 你是另一个开源项目（比如 Cursor Rules / Claude Code hooks / pre-commit 工具链）的维护者。你在研究竞品，想搞清楚 sofagent 到底跟你有什么区别、它有没有什么致命弱点。
 
@@ -156,10 +162,11 @@
 8. **CHANGELOG 纯度**：CHANGELOG 历史条目中有没有审查元信息（模型名、审查轮次、P0/P1 计数）？CHANGELOG 应该只写产品变更。
 9. **SkillOpt 集成 CLI 契约验证**：打开 `skillopt-integration.ts`——`isSkillOptAvailable()` 和 `runSkillOpt()` 调用的 CLI 参数形式与真实安装的 `skillopt-sleep --help` 声明的子命令/参数一致吗？**特别检查**：`isSkillOptAvailable()` 探针是否用 `status` 子命令（而非被 CLI 拒绝的 `--version`）；`runSkillOpt()` 是否用 `run --target-skill-path <input> --auto-adopt` 子命令形式（而非 flat positional + `--output`）。历史教训：曾发现集成代码照着不存在的 CLI 契约写了整整一个版本——探针用 `--version`（真实 CLI exit 2）、调用用 flat positional + `--output`（真实 CLI 只认子命令）。
 10. **Agent 定义的平台耦合度**：打开 `agents/` 下的 Agent 定义——它们的 role/workflow/rules 是否过度依赖 OpenClaw 的 `session.spawn` API？如果未来换平台，这些 Agent 定义还能独立使用吗？还是需要大幅改写？
+11. **ruleClass 跨文档漂移检测（v1.1.3 追加）**：提取 `sofagent/audit/src/rules/index.ts` 的 `name` + `ruleClass`，与 `sofagent/audit/README.md` 规则表逐行 diff。ruleClass 漂移已反复出现（A6 曾从「业务底线」漂移到「能力拐杖」、A11 反向漂移），单文档审查永远发现不了——只有跨文档交叉对照才暴露矛盾。**检查手法**：`diff <(grep "name:\|ruleClass:" sofagent/audit/src/rules/index.ts | paste - -) <(提取 audit/README.md 规则表的名称+分级列)`。建议对此建自动化脚本加入 pre-push-check。
 
 ---
 
-## 视角四：📦 npm 用户视角
+## 维度四：📦 npm 用户
 
 > 你是一名前端/全栈开发者。你不需要读 README（太长不看），你只做一件事：`npm install -g @sofagent/audit && sofagent-audit --help`。
 
@@ -178,7 +185,7 @@
 
 ---
 
-## 视角五：🔍 开源审查员
+## 维度五：🔍 开源审查员
 
 > 你是一个在 GitHub 上 review 过 500+ 个开源项目的人。你有一套快速判断方法：先看目录结构和 git log，几分钟内形成第一印象。但如果目录结构让你困惑，README 就是帮你解谜的工具；如果结构一目了然，README 只是验证你的判断。
 
@@ -190,8 +197,8 @@
 5. 看 issue / PR 数量（如果有）。这是一个"作者自嗨"项目还是有社区活性的项目？
 6. **文档引用链**：从 README 出发，点进 3-5 个链接——有没有 404？有没有引用的章节不存在？HANDBOOK 引用的 ARCHITECTURE §xxx 能对上吗？FDE 引用的模板路径存在吗？还缺引用吗——有没有地方提到了某个概念（如「AI 知识库」「铁律」）却没有指向设计原理或详细说明的链接？
    检查所有文档头部的日期是否与当前发版日期一致。`grep 'YYYY-MM-' *.md docs/design/*.md`——有没有过期日期？bump-version 脚本只改版本号不改日期，这个坑反复出现。
-7. **CHANGELOG 全历史纯度**：检查所有历史 CHANGELOG 条目——有没有审查元信息（模型名、审查轮次、视角数、P0/P1 计数）？CHANGELOG 应该只写产品变更，不含审查过程。
-8. **根目录整洁度**：根目录应该只有 5-7 个核心文件（README/LICENSE/CHANGELOG/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/ROADMAP）。其余 md 文件、HTML、PNG 是否应该移入 docs/ 或 assets/？
+7. **CHANGELOG 全历史纯度**：检查所有历史 CHANGELOG 条目——有没有审查元信息（模型名、审查轮次、维度数、P0/P1 计数）？CHANGELOG 应该只写产品变更，不含审查过程。
+8. **根目录整洁度**：根目录应该只有 5-7 个核心文件（README/LICENSE/CHANGELOG/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/ROADMAP）。其余 md 文件、HTML、PNG 是否应该移入 docs/ 或 assets/？国际化翻译版 README.xx.md（如 README.en.md）不计入此计数。
 
 你的核心问题是："这个项目的代码组织方式让我觉得它是认真维护的，还是一团乱麻？"
 
@@ -199,28 +206,28 @@
 
 ## 审查输出格式
 
-每轮视角输出一份不超过 1 页的报告：
+每轮维度输出一份不超过 1 页的报告：
 
 ```markdown
-## 视角 N：[视角名称]
+## 维度 N：[维度名称]
 
 ### 产品定位
-[这个视角下对产品定位的判断]
+[这个维度下对产品定位的判断]
 
 ### 工程质量
-[这个视角下的工程质量印象]
+[这个维度下的工程质量印象]
 
 ### 文档与上手
 [上手体验]
 
 ### 安全与诚实
-[该视角下的信任度判断]
+[该维度下的信任度判断]
 
 ### 文档精简度
 [有没有读到重复内容？有没有段落感觉"留着也行删了也行"？有没有一段话读完什么信息也没拿到？]
 
 ### 生命力
-[该视角下的存续判断]
+[该维度下的存续判断]
 
 ### 总体印象（1-10 分）
 [分数 + 一句话理由]
@@ -230,18 +237,18 @@
 |--------|------|------|
 ```
 
-### 审查体系更新建议（最后输出，汇总所有视角）
+### 审查体系更新建议（最后输出，汇总所有维度）
 
-> 以下两项在完成全部 8 个视角后输出一次。不填视为审查未完成。
+> 以下两项在完成全部 8 个维度后输出一次。不填视为审查未完成。
 
-#### 建议调整的视角
-> 有没有视角需要增删改？有没有角色已经过时了？有没有任务描述跟不上项目变化？
+#### 建议调整的维度
+> 有没有维度需要增删改？有没有角色已经过时了？有没有任务描述跟不上项目变化？
 
-| 操作 | 视角/角色 | 当前问题 | 建议改法 |
+| 操作 | 维度/角色 | 当前问题 | 建议改法 |
 |------|----------|---------|---------|
-| 修改 | 视角一·任务 9 | 新增输出归属感检查——用户装完后是否知道这些功能来自 sofagent | v1.1.2 起常驻：`--help`/`--init`/`--doctor` 输出是否含 sofagent 品牌标识 |
-| 修改 | 视角二·任务 10 | 新增合规审计可追溯性——审计记录是否能归因到 sofagent 引擎 | v1.1.2 起常驻：Webhook/审计日志/巡检报告每条是否标注引擎来源 |
-| 修改 | 视角八·任务 19-22 | 新增 deprecation shim 一致性、依赖文档一致性、维度数校验、包依赖图审计 | 来自 v1.1.0 审查 perspective 18-23 沉淀，固化为固定维度 |
+| 修改 | 维度一·任务 9 | 新增输出归属感检查——用户装完后是否知道这些功能来自 sofagent | v1.1.3 起常驻：`--help`/`--init`/`--doctor` 输出是否含 sofagent 品牌标识 |
+| 修改 | 维度二·任务 10 | 新增合规审计可追溯性——审计记录是否能归因到 sofagent 引擎 | v1.1.3 起常驻：Webhook/审计日志/巡检报告每条是否标注引擎来源 |
+| 修改 | 维度八·任务 19-22 | 新增 deprecation shim 一致性、依赖文档一致性、维度数校验、包依赖图审计 | 来自 v1.1.0 审查 perspective 18-23 沉淀，固化为固定维度 |
 
 #### 建议追加到回归检查的内容
 > 有没有发现的具体检查点，应该变成回归检查清单里的固定维度？
@@ -249,7 +256,7 @@
 | 建议编号 | 维度描述 | 关联的问题 |
 |---------|---------|-----------|
 | 284 | 回归清单头「N 维度」与 #### 实际数自动校验 | P2-5（头声称 225 ≠ 实际 245） |
-| 285 | CHANGELOG 纯度 grep 增加「驱动」「审查吸收」等词 | P2-1（changelog 含「陌生视角审查驱动的修复」） |
+| 285 | CHANGELOG 纯度 grep 增加「驱动」「审查吸收」等词 | P2-1（changelog 含「发布后审查驱动的修复」） |
 | 286 | 依赖铁律文档（v1.1.0.md）与 package.json 实际依赖 diff 校验 | P2-6/7/8（文档描述与实际依赖不符） |
 | 287 | 兼容 shim 代码与注释一致性（「已改为 X」必须真改） | P2-2（注释说全局已改，实际只 doctor 改了） |
 | 288 | 输出签名一致性——CLI/Webhook/MCP/审查报告是否都有 sofagent 签名 | Harness 可见性——所有输出渠道必须有归属标识 |
@@ -257,15 +264,15 @@
 | 290 | 错误消息归属——异常时是否标明 sofagent | 审计拦截/doctor 告警/daemon 通知是否含引擎标识 |
 | 291 | 安装输出签名一致性——install.sh/--init 输出是否有 sofagent 标识 | 安装是最早的用户触点，必须有品牌感知 |
 | 292 | 包依赖图审计——依赖方向 / optional 边 / 分层倒置 | v1.1.0 审查 perspective 18-23 沉淀为固定维度 |
-| 298 | 回归清单头维度数自动校验（每次新增维度后 HEAD/TEMPLATE/ACTUAL 三处对齐） | v1.1.2 阶段六发现 254≠259 漂移 |
-| 299 | CHANGELOG 纯度自动化加入 pre-push（grep 审查过程措辞） | v1.1.2 阶段六发现 changelog 含 "P0×4" |
-| 300 | 包依赖图循环检测加入 CI（audit↔daemon 持续监控） | v1.1.2 阶段六首次独立检出循环依赖 |
-| 301 | 跨文档相对路径死链全量自动化扫描（替代人工遍历） | v1.1.2 全仓审计 23 处死链 |
-| 302 | 跨包代码重复检测（同名 .ts 两包各一份） | v1.1.2 发现 audit/core 各存 isomorphic-git.ts |
-| 303 | Ledger-Views 归属一致性（think.md 永为 Ledger） | v1.1.2 发现 ARCHITECTURE.md:320 错标 Views |
-| 304 | 文档规范源/冗余 DRY（概念只定义一次） | v1.1.2 发现同概念多文档重复定义冲突 |
-| 305 | 文件迁移四动作完整性（含死链修复） | v1.1.2 教训 LIMITATIONS.md 迁根漏修路径 |
-| 306 | check-docs.sh 死链检查从 rules.md 扩展为全量 | v1.1.2 发现第 1 项仅扫 rules.md |
+| 298 | 回归清单头维度数自动校验（每次新增维度后 HEAD/TEMPLATE/ACTUAL 三处对齐） | v1.1.3 阶段六发现 254≠259 漂移 |
+| 299 | CHANGELOG 纯度自动化加入 pre-push（grep 审查过程措辞） | v1.1.3 阶段六发现 changelog 含 "P0×4" |
+| 300 | 包依赖图循环检测加入 CI（audit↔daemon 持续监控） | v1.1.3 阶段六首次独立检出循环依赖 |
+| 301 | 跨文档相对路径死链全量自动化扫描（替代人工遍历） | v1.1.3 全仓审计 23 处死链 |
+| 302 | 跨包代码重复检测（同名 .ts 两包各一份） | v1.1.3 发现 audit/core 各存 isomorphic-git.ts |
+| 303 | Ledger-Views 归属一致性（think.md 永为 Ledger） | v1.1.3 发现 ARCHITECTURE.md:320 错标 Views |
+| 304 | 文档规范源/冗余 DRY（概念只定义一次） | v1.1.3 发现同概念多文档重复定义冲突 |
+| 305 | 文件迁移四动作完整性（含死链修复） | v1.1.3 教训 LIMITATIONS.md 迁根漏修路径 |
+| 306 | check-docs.sh 死链检查从 rules.md 扩展为全量 | v1.1.3 发现第 1 项仅扫 rules.md |
 
 ---
 
@@ -279,11 +286,11 @@
 
 ---
 
-## 第二轮：用户旅程审查（视角 6）
+## 第二轮：用户旅程审查（维度 6）
 
-> 前面 5 个角色是"各自站在一个角度看"，这一轮换个方法：**不走视角，走路径**。你假装是一个真实用户，从零开始完整走一遍使用流程。每一步都问自己：卡住了吗？困惑吗？报错信息能看懂吗？哪里让你想放弃？
+> 前面 5 个角色是"各自站在一个角度看"，这一轮换个方法：**不走维度，走路径**。你假装是一个真实用户，从零开始完整走一遍使用流程。每一步都问自己：卡住了吗？困惑吗？报错信息能看懂吗？哪里让你想放弃？
 
-## 视角六：🛤️ 完整用户旅程
+## 维度六：🛤️ 完整用户旅程
 
 > 你是一个想用 sofagent 的开发者。你不用读完所有文档——你直接动手装，遇到问题再查。你的目标是：装上 sofagent，在一个真实 git 项目里让它跑起来，体验一次审计拦截。
 
@@ -303,11 +310,11 @@
 
 ---
 
-## 第三轮：红队对抗审查（视角 7）
+## 第三轮：红队对抗审查（维度 7）
 
 > 前两轮都是"正常使用"——你扮演各种角色走正常路径。这一轮反过来：**你是来搞破坏的**。你的目标是找出 sofagent 在极端、边缘、恶意场景下的弱点。不要测正常路径，只测不正常的。
 
-## 视角七：🐛 红队对抗
+## 维度七：🐛 红队对抗
 
 > 你是一个安全测试工程师，任务是找出 sofagent 审计引擎的盲区和弱点。你不是来夸的——你是来找洞的。
 
@@ -473,11 +480,11 @@
 
 ---
 
-## 第四轮：CI/自动化一致性审查（视角 8）
+## 第四轮：CI/自动化一致性审查（维度 8）
 
 > 前面三轮都是人在看——凭直觉、走路径、搞破坏。这一轮换个方法：**你是 CI 机器人，只做一件事——把文档里的数字和代码里的数字对一遍**。人类审查容易跳过"数字对不上"这种枯燥检查，但这是最容易暴露问题的地方。
 
-## 视角八：🤖 CI/自动化一致性
+## 维度八：🤖 CI/自动化一致性
 
 > 你是一个没有感情的 CI 机器人。你不读叙事、不感受语气、不判断定位——你只做一件事：**把文档中出现的每一个数字声称，与代码中的实际数字交叉验证**。数字对不上就是 P0，没有商量。
 
@@ -501,20 +508,22 @@
    - regression-checklist.md 文件头声称"N 维度"——实际数 `####` 标题数。一致吗？
    - 输出模板中的"总维度数：N"——与文件头一致吗？
 
-5. **版本号全局一致**：
+5. **版本号全局一致（含 tag commit message）**：
    - `package.json` 版本号——与 README / CHANGELOG / SECURITY / LIMITATIONS / ROADMAP 文件头版本号一致吗？
    - `sofagent/audit/package.json` 与 `sofagent/mcp/package.json` 版本号一致吗？
    - `tools/check-version.sh` 检查的版本号与 SSOT 一致吗？
    - **版本全量一致（v1.0.8 暴露的新盲区，阶段六实证）**：`sofagent/audit/src/shared/constants.ts` 的 `VERSION` 常量、各 `package.json`、`index.ts` 文件头注释——与 `sofagent/audit/package.json` 的 `version` 一致吗？**但不能只查这几个 CLI 自报源**：v1.0.8 曾只 bump 了 package.json + constants.ts + mcp + index.ts 部分（4 源全 1.0.8），91 个散落文件的版本号仍是 1.0.7——4 源检查全过却发了错版，阶段六才用 `check-version.sh` 抓出 93 处不一致。权威门禁是 `bash tools/check-version.sh`（应 0 不一致）+ `bash tools/pre-push-check.sh`（应 7/7 全绿）。CI 机器人必须跑全量扫描，不能凭"4 源对得上"就放行。
+   - **tag commit message 一致性（v1.1.3 追加）**：跑 `git show vX.Y.Z --format=%s -s`——tag 指向的 commit message 必须含版本号。历史教训：v1.1.3 tag 指向 commit message 为 "v1.1.3: …"——tag 版本与 commit message 不一致。检查手法：`git tag -l "v*" | while read t; do v=$(echo $t | sed 's/^v//'); msg=$(git log -1 --format=%s $t); echo "$t → $msg" | grep -q "$v" || echo "❌ $t: commit message 不含 $v"; done`
 
 6. **文件计数一致性**：
-   - 根目录 `.md` 文件数——是否 ≤7（README/CHANGELOG/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/ROADMAP/LIMITATIONS）？多余的 .md / .html / .png 应移入 docs/ 或 assets/
+   - 根目录 `.md` 文件数——是否 ≤7（README/CHANGELOG/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/ROADMAP/LIMITATIONS）？多余的 .md / .html / .png 应移入 docs/ 或 assets/。国际化翻译版 README.xx.md（如 README.en.md）不计入此计数。
    - Skill 文件数——README 声称"10 个 Skill 文件"——实际 `ls sofagent/skill/*.md | wc -l` 一致吗？
    - Agent 定义文件数——README/LOOP 文档声称的 Agent 数——实际 `ls agents/*.md | wc -l`（减去 README.md）一致吗？
 
 7. **CHANGELOG 纯度**：
    - CHANGELOG 全历史——有没有审查元信息？`grep -iE "GLM|DeepSeek|双视角|P[012]×|7 视角|8 视角|× 6 方面|审查修复|陌生视角|fresh-eyes|× [0-9]+ 视角|审查轮次|审查×" CHANGELOG.md`。CHANGELOG 应该只写产品变更，不含审查过程。历史教训：多个版本标题含"审查修复""陌生视角审查修复"等元信息。
-   - changelog 子文件（`docs/changelog/v*.md`）同理——有没有模型名、审查轮次、P0/P1/P2 标签等元信息？
+   - changelog 子文件（`docs/changelog/v*.md`）同理——有没有模型名、审查轮次、P0/P1/P2 标签等元信息？**v1.1.3 起扩展 grep 范围到 `docs/changelog/*.md` 全量**，因为历史 experimental changelog 可能含遗留审查元信息。
+   - **检查手法（v1.1.3 扩展）**：`grep -rniE "GLM|DeepSeek|双视角|P[012]×|审查修复|陌生视角|fresh-eyes|审查轮次|审查×|审查驱动|审查吸收" CHANGELOG.md docs/changelog/*.md`，期望零命中。注意：工作流正当描述如「独立审查 + 写 changelog」「FDE 审查报告」不在此列。
 
 8. **evidenceMode 与 README 分类匹配**：
    - README 把规则分为"纯 git-diff"和"需 Agent 日志"——逐条对照 index.ts 的 `evidenceMode` 字段。有没有标了 `hybrid` 但 README 归到"纯 git-diff"的规则？反之有没有？
@@ -556,10 +565,10 @@
    - **盲区本质**：CLI 有多个"看起来做同一件事"的入口（install-hook / init / 手动 cp），但它们的产品语义不同。陌生审查者不能假设"安装了就全套"——必须验证每个入口安装的具体产物清单。
    - **延伸检查**：`--init` 在 v1.0.9 还加了"dirty 状态检测"——有未提交更改时会拒绝安装 hook（只创建 config）。这意味着 acceptance-test 在连续场景中，前一个场景的脏状态会阻断后续场景的 `--init`。
 
-17. **新增功能的注册同步盲区** 🆕
-   - **v1.0.9 阶段六教训**：新增 A16/A17 规则后，`config-loader.ts` 的 `knownKeys` 硬编码集合忘记同步更新（仍停留在 a1-a11/a14-a15），导致用户在 config.yml 写 `a16: true` 时误报"未知规则名"。同类问题：`resolveDiffEndpoint` 新增函数的代码实现与测试用例语义矛盾（代码把非范围 ref 换成 HEAD，测试期望原样返回），`npm test` 才抓出来。
-   - **盲区本质**：每新增一个功能（规则/函数/命令），需要同步更新的地方不止一处——注册表（rules/index.ts）、配置校验器（config-loader.ts knownKeys）、帮助文本、注释。开发者只改了"核心实现"，忘了"外围感知"。陌生审查者必须**沿着功能注册链走一遍**：规则号在 index.ts 注册了吗？knownKeys 里有吗？注释和警告文案更新了吗？测试的所有分支和代码行为一致吗？
-   - **检查手法**：`grep -c "a16\|a17" config-loader.ts` 与 `grep -c "A16\|A17" rules/index.ts` 的数字必须一致。每个新增纯函数跑 `npm test` 确认 0 failed。
+17. **新增功能的注册同步盲区与规则禁用逻辑验证（v1.1.3 路径修正）** 🆕
+   - **v1.0.9 阶段六教训**：新增 A16/A17 规则后，规则校验器的已知键集合忘记同步更新，导致用户在 config.yml 写 `a16: true` 时误报"未知规则名"。v1.1.0 包拆分后，`config-loader.ts` 已迁至 `core/src/`，规则动态禁用逻辑改为 `runner.ts` 的 `a{number}`/`e{number}` 动态键生成。
+   - **盲区本质**：每新增一个功能（规则/函数/命令），需要同步更新的地方不止一处——注册表（rules/index.ts）、规则禁用校验器、帮助文本、注释。开发者只改了"核心实现"，忘了"外围感知"。陌生审查者必须**沿着功能注册链走一遍**：规则号在 index.ts 注册了吗？动态禁用逻辑覆盖了吗？注释和警告文案更新了吗？测试的所有分支和代码行为一致吗？
+   - **检查手法（v1.1.3 更新）**：在 config.yml 中设 `rules: { a16: false }`，跑审计提交一个触发 A16 的变更。确认 A16 真的被跳过（不再出现 A16 判定行）。同理验证 `a17: false`、`a1: false`、多条同时禁用。每个新增纯函数跑 `npm test` 确认 0 failed。
 
 18. **包拆分后的独立构建验证（新攻击面）** 🆕
    - **v1.1.0 教训**：11 包拆分后，audit 构建通过不代表 core/orchestrator 也能独立构建。core 曾因缺少 `filesystem/` 目录报 TS2307，orchestrator 可能因依赖缺失而失败。陌生审查者必须对每个包独立跑 `tsc --noEmit`——不要假设"主包过了其他包也能过"。
@@ -582,24 +591,35 @@
    - **检查手法**：`for d in subagents ontology eval daemon; do ls sofagent/audit/src/$d 2>&1; done` 全部应报 No such file。同样检查散文件。
 
 22. **测试计数漂移的文档联动检测（新盲区）** 🆕
-   - **v1.1.0 教训**：77 个测试随被测模块迁出后，npm test 从 531→417。但 CHANGELOG/ROADMAP/FDE/evidence/LIMITATIONS 等 5 处文档仍写 531。陌生视角审查者的任务八"测试数一致性"被触发——发现文档数字与实跑数字不符。
+   - **v1.1.0 教训**：77 个测试随被测模块迁出后，npm test 从 531→417。但 CHANGELOG/ROADMAP/FDE/evidence/LIMITATIONS 等 5 处文档仍写 531。发布后审查者的任务八"测试数一致性"被触发——发现文档数字与实跑数字不符。
    - **盲区本质**：测试数是一个"分布式声称"——8 个文档各自维护，没有单一事实源自动同步。每次测试迁移必须全量 grep 更新。
    - **检查手法**：`ACTUAL=$(cd sofagent/audit && npm test 2>&1 | grep Tests | grep -oE '[0-9]+(?= passed)'); grep -rn "$ACTUAL" ROADMAP.md FDE/FDE.md docs/evidence/evidence.md LIMITATIONS.md` 期望 4 处全部命中。
 
-23. **基础层叶子包的反向依赖验证（新视角）** 🆕
+23. **基础层叶子包的反向依赖验证（新维度）** 🆕
    - **v1.1.0 架构铁律**：harness/ontology/eval/core 为基础层叶子，**绝不** import 任何 `@sofagent/*` 包。陌生审查者应逐一检查四个包的 src/ 目录是否真的零跨包引用。
    - **盲区本质**：开发者可能在"最后一刻"加了一个 import 来解决编译问题（如 core 想 import ontology 的某个类型），但违反架构铁律。这类 import 在 monorepo symlink 环境下编译能过（npm workspace 自动 resolve），但破坏了分层。
    - **检查手法**：`for pkg in harness ontology eval core; do grep -rn "from '@sofagent/" "sofagent/$pkg/src/"; done` 期望四个包全部零输出。
 
 #### 24. **跨包代码重复检测（复制≠移动）** 🆕
-   - **v1.1.2 全仓审计发现**：audit/src/filesystem/isomorphic-git.ts(383行) 与 core/src/filesystem/isomorphic-git.ts(383行) 仅 4 行差异——audit 应 import @sofagent/core，却复制了一份。跨包复制在 monorepo 下编译能过、功能正常，所以永远不进功能回归——只有「跨包 diff」才发现得了。
+   - **v1.1.3 全仓审计发现**：audit/src/filesystem/isomorphic-git.ts(383行) 与 core/src/filesystem/isomorphic-git.ts(383行) 仅 4 行差异——audit 应 import @sofagent/core，却复制了一份。跨包复制在 monorepo 下编译能过、功能正常，所以永远不进功能回归——只有「跨包 diff」才发现得了。
    - **盲区本质**：单包审查（「我只在 audit 包改」）看不到别的包有同名文件；它「能用」所以没症状。陌生审查者必须跨包比对同名源文件。
    - **检查手法**：`find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path '*/__tests__/*' | sed 's#.*/##' | sort | uniq -d` —— 有输出 = 跨包重复 → 提升为 import（core 为 canonical source），删除副本。
 
 #### 25. **Ledger-Views 归属一致性（think.md 永远为 Ledger/source）** 🆕
-   - **v1.1.2 全仓审计发现**：ARCHITECTURE.md:320 将 think.md 错标为 Views(派生视图)，PHILOSOPHY.md:132 正确标为 Ledger(原始数据)。Dream Cycle 从 think.md **抽取** 事实进 knowledge/(派生)——think.md 是 source 不是 derived。单篇阅读发现不了，必须两篇对照 + 推理数据流。
+   - **v1.1.3 全仓审计发现**：ARCHITECTURE.md:320 将 think.md 错标为 Views(派生视图)，PHILOSOPHY.md:132 正确标为 Ledger(原始数据)。Dream Cycle 从 think.md **抽取** 事实进 knowledge/(派生)——think.md 是 source 不是 derived。单篇阅读发现不了，必须两篇对照 + 推理数据流。
    - **盲区本质**：记忆模型三层(Ledger-Views-Policy)的归属描述散落在多文档，任何一篇单独看都「像对的」，只有跨文档对照 + 确认派生方向才暴露矛盾。
    - **检查手法**：`grep -rn "think.md.*Views\|think.md.*派生视图" ARCHITECTURE.md PHILOSOPHY.md DEVELOPMENT.md FDE/FDE.md` 期望零匹配；且 Ledger-Views-Policy 映射中 think.md=Ledger、knowledge/=Views、方向严格 think.md→knowledge/。
+
+#### 26. **孤儿 changelog 与 CHANGELOG 索引完整性（v1.1.3 追加）** 🆕
+   - **盲区**：`docs/changelog/` 下存在无对应 git tag 的 .md 文件（如 v1.1.3.md/v1.1.4.md 等规划中文件），可能被自动化门禁误读为已发布版本。反向也存在：git tag 存在但 CHANGELOG.md 索引中无条目（v1.1.3 审查发现 v1.1.1 tag 存在但索引遗漏）。
+   - **检查手法**：
+     - 正向：`for f in docs/changelog/v*.md; do v=$(basename $f .md); git rev-parse $v >/dev/null 2>&1 || echo "⚠️ $v: changelog 存在但无对应 tag（应为规划中）"; done`
+     - 反向：`git tag -l "v*" | while read t; do grep -q "$t" CHANGELOG.md || echo "❌ $t: tag 存在但 CHANGELOG.md 索引遗漏"; done`
+
+#### 27. **ruleClass 跨文档漂移检测（v1.1.3 追加）** 🆕
+   - **v1.1.3 审查发现**：A6 和 A11 的 ruleClass 在 `rules/index.ts`（SSOT）和 `audit/README.md` 规则表之间反复漂移。单文档审查永远发现不了——ruleClass 不是"错"，是"不一致"。
+   - **盲区本质**：规则分级定义在两处——代码（SSOT）和文档（README 规则表）手工维护。每次调整 ruleClass 时，README 表格容易遗漏更新。
+   - **检查手法**：提取 index.ts 的 `name` + `ruleClass` → 与 audit/README.md 规则表的名称+分级列逐行 diff。建议对此建自动化脚本加入 pre-push-check（参考回归维度 308 的 A6/A11 人工 grep，扩展为全量逐行 diff）。
 
 **输出格式**：
 
@@ -624,13 +644,13 @@
 
 > **路径约定**：本 prompt 中所有文件路径（如 `sofagent/audit/src/rules/index.ts`）均相对于**项目根目录**——即 `git clone` 后的仓库顶层。跑 `ls sofagent/audit/src/rules/index.ts` 能找到文件说明你站对了位置。
 >
-> **审查者**：这是 sofagent 发布后的陌生视角审查。当前版本开发完成、发版前审查通过（pre-push-check / acceptance-test / OpenClaw / 回归清单 全绿）。这轮是"你完全不知道我是谁——你第一眼看到我，心里在想什么"。你的直觉比 grep 命令更有价值。发现的问题不阻塞本版本，将在下版本中修复，修复后更新回归清单和本 prompt（releasing.md 阶段五「合并更新两份审查文档」）。
+> **审查者**：这是 sofagent 发布后的发布后审查。当前版本开发完成、发版前审查通过（pre-push-check / acceptance-test / OpenClaw / 回归清单 全绿）。这轮是"你完全不知道我是谁——你第一眼看到我，心里在想什么"。你的直觉比 grep 命令更有价值。发现的问题不阻塞本版本，将在下版本中修复，修复后更新回归清单和本 prompt（releasing.md 阶段五「合并更新两份审查文档」）。
 >
-> 第一轮（视角 1-5）凭直觉，第二轮（视角 6）走路径，第三轮（视角 7）搞破坏，第四轮（视角 8）对数字。四轮合起来，覆盖"印象、体验、韧性、精确"四个维度。
+> 第一轮（维度 1-5）凭直觉，第二轮（维度 6）走路径，第三轮（维度 7）搞破坏，第四轮（维度 8）对数字。四轮合起来，覆盖"印象、体验、韧性、精确"四个维度。
 
 ---
 
-## 视角九：👁️ 感知层健全性
+## 维度九：👁️ 感知层健全性
 
 > 你做完了前面八轮审查，确认了文档和代码的一致性。但还有一个维度是前八轮都没覆盖的：**用户能不能感知到 sofagent 的存在？** Harness 中间件最大的挑战是——所有引擎都在正常工作，但用户看不到"是谁让这一切发生的"。
 
@@ -654,9 +674,9 @@
 
 ---
 
-## v1.1.2 审查追补——本版新暴露的盲区
+## v1.1.3 审查追补——本版新暴露的盲区
 
-> 以下盲区来自 v1.1.2 BugFix 版的开发经验，追加到审查体系中供下版本使用。
+> 以下盲区来自 v1.1.3 BugFix 版的开发经验，追加到审查体系中供下版本使用。
 
 ### 盲区 1：acceptance-test.sh 管道 pipefail 导致虚假绿色
 
@@ -676,7 +696,7 @@
 
 ### 盲区 3：webhook.ts 硬编码版本号散落
 
-**现象**：`sofagent/audit/src/webhook.ts:24` 写 `const version = '1.1.2'`，check-version.sh 不会扫描到这种局部变量。版本号散落点不止 package.json + constants.ts + index.ts 自报——任何 `const version = 'X.Y.Z'` 模式都是散落点。
+**现象**：`sofagent/audit/src/webhook.ts:24` 写 `const version = '1.1.3'`，check-version.sh 不会扫描到这种局部变量。版本号散落点不止 package.json + constants.ts + index.ts 自报——任何 `const version = 'X.Y.Z'` 模式都是散落点。
 
 **教训**：全局搜索 `version\s*=\s*'[0-9]` 匹配所有硬编码版本号，将其改为 `import { VERSION } from '@sofagent/core'`。
 

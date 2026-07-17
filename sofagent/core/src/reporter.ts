@@ -1,8 +1,14 @@
 // ============================================================
-// reporter.ts · 审计结果类型定义（v1.1.2 从 audit 迁出）
+// reporter.ts · 审计结果类型定义（v1.1.3 从 audit 迁出）
 //
-// 仅包含纯类型定义，不依赖 audit 的 rules/ 模块。
-// runRules 实现在 audit/src/reporter.ts 中，因为依赖 rules/runner。
+// 本文件专用于 @sofagent/core，仅包含纯类型定义（AuditResult, RuleCheck）。
+// 不依赖 audit 的 rules/ 模块，供所有包跨包使用。
+// runRules 实现在 audit/src/reporter.ts 中（因为依赖 rules/runner）。
+//
+// 与 audit/src/reporter.ts 的关系：
+//   - core/reporter.ts: 类型契约（跨包共享的类型定义）
+//   - audit/reporter.ts: 运行时实现（runRules 函数，依赖 rules/runner）
+//   两者故意分置：类型归 core（无运行时依赖），实现归 audit（有规则引擎依赖）。
 // ============================================================
 
 /** 规则分级标签 */

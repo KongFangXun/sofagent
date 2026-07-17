@@ -152,7 +152,8 @@ while IFS= read -r ts; do
   # 跳过 _archive
   [[ "${ts}" == */_archive/* ]] && continue
   # mcp-server.ts 已改为从 @sofagent/audit 导入 VERSION，不再跳过
-  match=$(grep -n "const [A-Z_]*VERSION = '" "${ts}" | grep -v 'PROTOCOL_VERSION' | head -1)
+  # v1.1.3: SCHEMA_VERSION 是数据结构 schema 版本（如 checkpoint 'v1'），非产品版本，豁免
+  match=$(grep -n "const [A-Z_]*VERSION = '" "${ts}" | grep -v 'PROTOCOL_VERSION' | grep -v 'SCHEMA_VERSION' | head -1)
   if [[ -z "${match}" ]]; then
     continue
   fi
@@ -183,7 +184,8 @@ for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test work
       index_ok=false
     fi
   # v1.1.0: 过滤注释行（//、/*、* 开头的 JSDoc），避免历史版本号误报
-  done < <(grep -nE 'v[0-9]+\.[0-9]+' "${INDEX_TS}" | grep -vE '^[0-9]+:[[:space:]]*(//|/\*\*?|\*)')
+  # v1.1.3: 过滤 deprecation 提示行（「将在 vX.Y.Z 移除」「已弃用」是未来目标版本，非当前版本引用）
+  done < <(grep -nE 'v[0-9]+\.[0-9]+' "${INDEX_TS}" | grep -vE '^[0-9]+:[[:space:]]*(//|/\*\*?|\*)' | grep -v '将在 v[0-9.]*\.[0-9]* 移除' | grep -v '已弃用')
   if ${index_ok}; then
     report_ok "${INDEX_TS}" "v${SSOT_2SEG}"
   fi
@@ -545,7 +547,7 @@ else
 fi
 echo ""
 
-# ── 12b. v1.1.2: 检查全部 @sofagent/* 包内部依赖版本一致性 ─
+# ── 12b. v1.1.3: 检查全部 @sofagent/* 包内部依赖版本一致性 ─
 echo -e "${BOLD}── 检查子包内部依赖版本 ──${NC}"
 INTERNAL_DEPS_OK=true
 while IFS= read -r -d '' pkg_json; do

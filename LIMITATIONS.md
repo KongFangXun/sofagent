@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v1.1.2 · 2026-07-14（UTC）· 孔放勋
+> v1.1.3 · 2026-07-14（UTC）· 孔放勋
 
 ---
 
@@ -13,6 +13,20 @@
 - [三、安全与信任模型局限](#三安全与信任模型局限)
 - [四、成熟度与测试局限](#四成熟度与测试局限)
 - [五、审计与工程局限](#五审计与工程局限)
+
+---
+
+## Key Limitations
+
+> 最关键 5 条局限，快速了解 sofagent 的边界：
+
+| # | 局限 | 详见 |
+|:--:|------|------|
+| 1 | **audit ↔ daemon 循环依赖**——两个包互相引用（`optionalDependencies` + `dependencies`），违反四层单向依赖原则。npm install 不阻塞，但逻辑上存在张力。 | [八、v1.1.3 新增局限 → audit ↔ daemon 循环依赖](#八v112-新增局限) |
+| 2 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
+| 3 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
+| 4 | **编排能力依赖 orchestrator 包 + 模型质量**——DeepAgents 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排引擎稳定性](#五审计与工程局限) |
+| 5 | **数据明文存储无加密**——`.sofagent/` 下所有数据为明文 Markdown，无传输加密、无静态加密。age 加密推到 v1.2.x。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
 
 ---
 
@@ -325,7 +339,7 @@ Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown fr
 
 ---
 
-## 八、v1.1.2 新增局限
+## 八、v1.1.3 新增局限
 
 ### audit ↔ daemon 循环依赖
 
@@ -337,4 +351,4 @@ Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown fr
 
 ### daemon 通知机制为轻量版
 
-v1.1.2 新增 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的统一通知接口，但当前 daemon 的 cron 巡检和文件监听结果仍通过 stdout 输出（非 Webhook/IM 推送）。完整的 daemon 通知机制（Webhook 推送、IM 集成）计划在 v1.2.x 实现。
+v1.1.3 新增 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的统一通知接口，但当前 daemon 的 cron 巡检和文件监听结果仍通过 stdout 输出（非 Webhook/IM 推送）。完整的 daemon 通知机制（Webhook 推送、IM 集成）计划在 v1.2.x 实现。

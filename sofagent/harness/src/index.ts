@@ -1,7 +1,7 @@
 /**
  * @sofagent/harness — 四层约束加载链
  * 生成 Sub Agent 启动时的 context prompt：SKILL.md → fde.md → think.md → knowledge/
- * v1.1.2 从 sofagent/audit/src/subagents/launcher.ts 迁出
+ * v1.1.3 从 sofagent/audit/src/subagents/launcher.ts 迁出
  */
 import * as fs from 'fs';
 import * as path from 'path';

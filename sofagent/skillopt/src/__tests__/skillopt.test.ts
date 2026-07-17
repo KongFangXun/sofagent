@@ -8,7 +8,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { scanSkillSafety } from '../skill-safety-check';
-import { findFiles } from '../rules/skill-safety-engine';
+import { findFiles } from '@sofagent/audit';
 import { isSkillOptAvailable } from '../skillopt-integration';
 
 describe('scanSkillSafety', () => {

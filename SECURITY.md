@@ -11,17 +11,30 @@ sofagent 是纯本地 Harness 中间件，**数据不出本机**——但以下�
 | `knowledge/` | `.sofagent/knowledge/` | 知识库 / 评估反馈（eval 体系；旧 `scoring/` 已废弃） |
 | `orchestrator/` | `.sofagent/orchestrator/` | 编排决策历史 |
 
-**当前状态（v1.0.9）**：
+**当前状态（v1.1.3）**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
 - ⚠️ 明文存储：`.sofagent/` 下文件仍为 Markdown 明文，未做加密
-- ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密推到 v1.x+ 待评估（v0.85 砍削决策：先验证核心价值再谈企业级）
+- ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密推到 v1.2.x（与 LIMITATIONS「v1.2.x 评估解耦」口径一致；v0.85 砍削决策：先验证核心价值再谈企业级）
 - `.sofagent/` 目录权限为 700（仅当前用户可访问），但同一服务器其他用户若有 root 权限可读
 
 **企业环境建议**：
 - 对 `.sofagent/` 目录做 gpg 加密或放在加密卷上
 - 脱敏/保留/审计能力已在 v0.71 落地，详见 [企业部署指南](./docs/guides/enterprise-deploy.md)
+
+### Daemon 监控边界
+
+sofagent daemon 是本地文件系统监控守护进程，其行为边界如下：
+
+| 维度 | 说明 |
+|------|------|
+| **监控范围** | 仅 `.sofagent/` 工作目录 + 用户显式配置的路径（`config.yml` 中的 `daemon.watchPaths`）。不扫描用户其他文件。 |
+| **数据去向** | 所有数据本地存储（`.sofagent/` 目录下），不上传云端，不向外发送网络请求——除非用户显式配置 TencentDB Memory 集成（`install.sh --with-memory`，opt-in）。 |
+| **权限** | 只读监听文件事件（hash 变化检测 + cron 定时巡检）。**不修改用户文件、不删除文件、不外传数据**。审计发现写入 `daemon-notice.md` 和 `history.jsonl`。 |
+| **history.jsonl 存储** | 审计拦截记录以 JSONL 明文存储在 `.sofagent/audit/history.jsonl`，仅追加写入（`appendFileSync`），不覆盖、不删除。历史记录供编排引擎和进化引擎本地读取。 |
+
+> daemon 源码见 `sofagent/daemon/src/`：`fs-watch.ts`（文件监听）、`cron.ts`（定时巡检）、`snapshot.ts`（快照）、`weekly-report.ts`（周报生成）、`lessons-extract.ts`（经验提取）。
 
 ## install.sh 行为说明
 
@@ -107,6 +120,18 @@ history.jsonl 存储审计拦截记录（含被拦截的 diff 摘要）。以下
 | 检测篡改 | ⚠️ --doctor 第 8 项检查 | 通过 hash chain 验证——但 Agent 可以在篡改后重新计算整条链 |
 
 **缓解**：sanitize() 管道在写入前对密钥/密码/手机号打码。但这不是加密——Agent 可以从原始 git diff 中直接读到敏感内容。根治方案（age 加密 + 独立审计存储）推到 v2.x。
+
+#### 审计日志脱敏与访问控制
+
+sanitize() 管道在写入 history.jsonl、think.md、task/logs 等文件前自动执行：
+
+- **密钥打码**：匹配 `sk-`/`Bearer`/`api_key`/`password=` 等模式 → 替换为 `***REDACTED***`
+- **手机号打码**：匹配 11 位手机号格式 → `138****1234`
+- **密码字段打码**：匹配 `password[:=]\s*\S+` → `password=***`
+
+> 以上为**掩码（masking）非加密**——原始数据仍在 git diff 中可读。sanitize() 只保护写入 `.sofagent/` 的副本，不保护源头。
+
+**文件权限**：`.sofagent/` 目录权限为 700（仅当前用户可读写），`install.sh` 和 `--init` 自动设置。同一服务器其他非 root 用户无法读取。root 用户可读——如需防 root，建议将 `.sofagent/` 放在加密卷上。
 
 ### 已知绕过路径
 

@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.1.2 · 2026-07-16（UTC）· LOOP 双 Agent 串联 + Harness 可见性 + 多设备同步 · 规划：v1.1.2-v1.1.9 → v1.2.0 收口
+> v1.1.3 · 2026-07-18（UTC）· LangGraph StateGraph 直接编排 + Checkpoint + HITL · 规划：v1.1.3-v1.1.9 → v1.2.0 收口
 
 <img src="docs/assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -23,11 +23,11 @@
 
 ---
 
-## 现在在哪：v1.1.2 ✅（已发版 + 维护完成）
+## 现在在哪：v1.1.3 🚧（开发完成 · 待发版）
 
-> LOOP 双 Agent 串联 + Harness 可见性签名机制 + 多设备同步指南。v1.1.2 维护已完成——修复 acceptance-test 测试污染、workspace 测试稳定性、CHANGELOG 纯度、回归清单维度漂移、跨包代码重复消除等 14 项问题。全门禁绿。
+> LangGraph StateGraph 四节点自动流转（engineer → audit → reviewer → human_confirm）+ Checkpoint 持久化 + HITL 确认节点，编排控制从 DeepAgents compose 上提为 sofagent 直接掌握。同时吸收四路发布后审查 39 项问题——跨包代码重复清零、silent exit code 修正、PASS 品牌签名、CHANGELOG 补 v1.1.1 索引、「回溯引擎」更名「回溯能力」。557 tests / acceptance 55/55 / pre-push 13 通过，全门禁绿。
 >
-> 📖 [v1.1.2 开发日志](./docs/changelog/v1.1.2.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [v1.1.3 开发日志](./docs/changelog/v1.1.3.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -107,7 +107,7 @@
 | **v1.0.9** | ✅ 已完成 | 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool | [📖](./docs/changelog/v1.0.9.md) |
 | **v1.1.0** | ✅ 已完成 | **包结构纯度重构（audit 只做 audit）**：把 `@sofagent/audit` 上帝包拆为 12 个独立包——基础层 `@sofagent/{harness,ontology,eval,core}` + 运行层 `@sofagent/{orchestrator,daemon,ab-test,workflow-hub,think,skillopt}` + 协议层 `@sofagent/mcp` + 纯审计 `@sofagent/audit`（收敛为 rules/webhook/filesystem/audit-*/permission），依赖单向无循环；+ **轻量多设备四件事**：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md → lessons-missteps）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检。一次性抽干净 | [📖](./docs/changelog/v1.1.0.md) |
 | **v1.1.2** | ✅ 已完成 | **LOOP 双 Agent 串联 + 维护**：engineering-minimal-change-engineer + engineering-code-reviewer 通过 DeepAgents compose 自循环 + 多设备同步指南 + Harness 可见性（签名机制）+ v1.1.0 遗留问题修复 + 测试体系修复与文档一致性 | [📖](./docs/changelog/v1.1.2.md) |
-| **v1.1.3** | 📋 规划中 | **LangGraph StateGraph + Checkpoint + HITL**：自动流转 engineer→audit→reviewer→human + 长任务中断恢复 | [📖](./docs/changelog/v1.1.3.md) |
+| **v1.1.3** | ✅ 已完成 | **LangGraph StateGraph 直接编排**：StateGraph 四节点自动流转 + Checkpoint 持久化 + HITL 确认节点，编排控制从 DeepAgents compose 上提为 sofagent 直接掌握 | [📖](./docs/changelog/v1.1.3.md) |
 | **v1.1.4** | 📋 规划中 | **条件路由 + USB federation**：audit PASS→push / FAIL→fix / WARN→human + daemon USB 检测自动配置 | [📖](./docs/changelog/v1.1.4.md) |
 | **v1.1.5** | 📋 规划中 | **releasing.md SOP 集成 + MCP knowledge resource**：Agent 按十一阶段 SOP 全流程自动发版 + 7 个 knowledge MCP resource | [📖](./docs/changelog/v1.1.5.md) |
 | **v1.1.6** | 📋 规划中 | **LLM Wiki 3 层分层 + conflict-check**：Ledger-Views-Policy 显式化 + daemon 知识健康巡检 | [📖](./docs/changelog/v1.1.6.md) |
@@ -139,10 +139,10 @@ OpenClaw 总管（TS）
  └── Audit Sub Agent（DeepAgents · 按需 · 语义审查/跨 repo 审计/Workflow 巡检）
 
 依赖链：sofagent → deepagents (npm) → LangGraph.js (内部状态图引擎)
-当前状态：sofagent 只 import deepagents，不直接 import LangGraph
+当前状态：v1.1.3 起 sofagent 直接 import @langchain/langgraph（orchestrator 包），DeepAgents 仍间接提供
 ```
 
-> ⚠️ **LangGraph 能力标注**（诚实声明）：sofagent v1.0.x **不直接使用** LangGraph。LangGraph.js 是 DeepAgentsJS 的内部依赖——提供 StateGraph（状态图）、条件路由、checkpoint（持久化）、HITL 中断恢复等能力。sofagent 通过 DeepAgents 的 `createDeepAgent()` 间接获得这些能力，但不直接调用 LangGraph API。
+> ⚠️ **LangGraph 能力标注**（诚实声明）：v1.1.3 前 sofagent 不直接使用 LangGraph。v1.1.3 起 orchestrator 直接 import @langchain/langgraph 控制 StateGraph。LangGraph.js 是 DeepAgentsJS 的内部依赖——提供 StateGraph（状态图）、条件路由、checkpoint（持久化）、HITL 中断恢复等能力。sofagent 通过 DeepAgents 的 `createDeepAgent()` 间接获得这些能力，v1.1.3 起同时直接调用 LangGraph API。
 >
 > **v1.1 计划直接使用 LangGraph 的能力**（需安装 `@langchain/langgraph`）：
 > - **StateGraph**：自定义 Sub Agent 的多步骤状态流转（当前 DeepAgents 内部已用，sofagent 未直接控制）
@@ -161,7 +161,7 @@ OpenClaw 总管（TS）
 | ⚠️ 过渡 | v1.0.5 | Ontology 统一层 + launcher wrapper 保留，编排仍走 ao CLI。文档诚实降级——不再声称 DeepAgents 全覆盖 | — |
 | 🔧 迁移 | v1.0.6 | compose 编排逻辑从 ao CLI 迁到 DeepAgents，ao 降为 fallback。Sub Agent 运行状态基础跟踪 | deepagentsjs |
 | ✅ 退役 | v1.0.7 | ao 依赖正式移除。deepagents 提升为正式依赖。A/B 自动切换（连续计数器 + auto promote）。**双节点架构**——Sub Agent 约束自加载（`buildConstrainedSystemPrompt`），CLI 编排入口（`sofagent-orchestrator compose --task`），第三方 Agent 平台无需 OpenClaw 即可用编排引擎 | deepagentsjs → required dep |
-| 🔮 直接使用 | v1.1.0 | 直接 import `@langchain/langgraph`——用 StateGraph 自定义 Sub Agent 状态流转 + Checkpoint 做长任务中断恢复 + 条件路由动态决策（PASS/WARN/FAIL → 不同后续动作） | @langchain/langgraph → 直接依赖 |
+| ✅ 直接使用 | v1.1.3 | 直接 import `@langchain/langgraph`——用 StateGraph 自定义 Sub Agent 状态流转 + Checkpoint 做长任务中断恢复 + 条件路由动态决策（PASS/WARN/FAIL → 不同后续动作） | @langchain/langgraph → 直接依赖 |
 
 #### Ontology 渐进构建（企业数字孪生操作层）
 
@@ -188,6 +188,10 @@ OpenClaw 总管（TS）
 > 来源：GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》（2026-01-28 发布，2026-08-01 实施）+ 企业 AI Ontology 基石方法论。
 
 **⬜1 本体即认知底座（非静态知识库）**：当前 sofagent 的认知核心是「LLM + Harness 规则(A1-A17) + 记忆(Ledger-Views-Policy)」，Ontology 统一层是「事实如何被理解」的显式层。v1.3.0 将其从"描述层"升级为"可运行推理底座"——本体参与编排决策（Action Type 定级、Domain/Range 约束直接驱动 entry-gate 与 loop 出口），而非仅作文档摘要。sofagent 已非纯静态 KB，此方向是强化而非 pivot。（原拟 v2.x，调整为 v1.3.0——本体推理化是近期可落地的渐进增强。）
+
+**本体论护城河（战略维度）**：Ontology-first 不只是技术正确，更是商业护城河。行业 scale 落地把套路沉淀为固化文档，而大模型厂商可快速将其蒸馏进基础模型瞬间替代——通用 Skill / 模板会被吞噬，企业本体论却因绑定创始人风格与真实业务基因而不可迁移。这是一道"阳谋"：模型越强，越证明企业需要标准化本体，而 sofagent 已占位 Ontology 渐进构建路线。v1.3.0 的对外叙事卖的是"企业专属认知底座"，不是可被吞噬的通用能力。
+
+**Matia 海外验证**：Matia 已在海外跑通企业本体论的落地路径，证明"本体论作为企业 AI 落地核心方案"具备可行性（非纯理论）。作为第三方便捷印证，与 Palantir Foundry（Ontology 驱动企业 OS）、YC FDE Playbook（Ontology 作为最早约束工程）并列，支撑 sofagent Ontology 定位的对外叙事（海外已商业化跑通）。
 
 **⬜2 三层落地法 + 国标对齐**：
 

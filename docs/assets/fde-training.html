@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>FDE 与 sofagent · 概念培训</title>
+<style>
+:root{--brand:#16B8F3;--brand-dark:#0E9AD4;--brand-light:#E8F8FE;--bg:#FFF;--bg-alt:#F9F9FB;--text:#0F172A;--text-sec:#475569;--text-muted:#76767A;--border:#E7E7EA;--radius:12px;--radius-sm:8px;--card-bg:#FFF;--code-bg:#F1F5F9;--code-text:#334155}
+@media(prefers-color-scheme:dark){:root{--bg:#0F172A;--bg-alt:#1E293B;--text:#F1F5F9;--text-sec:#CBD5E1;--text-muted:#94A3B8;--border:#334155;--brand-light:#0C4A6E;--card-bg:#1E293B;--code-bg:#0F172A;--code-text:#CBD5E1}}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-snap-type:y mandatory}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased;font-size:17px;line-height:1.8}
+.slides{width:100vw;height:100vh;position:relative}
+.slide{width:100vw;height:100vh;scroll-snap-align:start;display:flex;align-items:center;justify-content:center;padding:40px 52px}
+.slide:nth-child(even){background:var(--bg-alt)}
+.slide-inner{max-width:960px;width:100%;margin:0 auto}
+h1{font-size:clamp(30px,5vw,48px);font-weight:900;line-height:1.1;letter-spacing:-.03em;margin-bottom:10px}
+h1 em,.hl{font-style:normal;color:var(--brand)}
+h2{font-size:clamp(24px,3.5vw,34px);font-weight:800;margin-bottom:8px;line-height:1.25}
+h3{font-size:19px;font-weight:700;color:var(--brand);margin:14px 0 6px}h3:first-child{margin-top:0}
+.subtitle{font-size:18px;color:var(--text-sec);margin-bottom:14px}
+p{color:var(--text-sec);margin-bottom:8px}p strong{color:var(--text)}
+.section-label{font-size:14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+
+.card-grid{display:grid;gap:12px}.c2{grid-template-columns:repeat(2,1fr)}.c3{grid-template-columns:repeat(3,1fr)}.c4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;transition:border-color .2s;font-size:16px}
+.card:hover{border-color:var(--brand)}
+.card-icon{font-size:26px;margin-bottom:4px}.card-title{font-size:17px;font-weight:700;margin-bottom:4px}.card-desc{color:var(--text-sec);line-height:1.75}.card-desc p{margin-bottom:4px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}@media(max-width:768px){.split{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;font-size:16px;margin:6px 0}
+th,td{padding:7px 12px;text-align:left;border-bottom:1px solid var(--border)}
+th{font-weight:700;color:var(--brand)}td{color:var(--text-sec);line-height:1.6}
+.bq{border-left:3px solid var(--brand);padding:12px 20px;font-size:16px;background:var(--brand-light);border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin:10px 0;color:var(--text-sec);line-height:1.75}.bq strong{color:var(--text)}
+.code{background:var(--code-bg);color:var(--code-text);border-radius:var(--radius-sm);padding:14px 20px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:15px;line-height:1.8;white-space:pre;overflow-x:auto;margin:8px 0}
+.chart{font-family:'JetBrains Mono','Fira Code',monospace;font-size:14px;line-height:1.4;white-space:pre;background:var(--code-bg);padding:12px 18px;border-radius:var(--radius-sm);margin:8px 0}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;justify-content:center;margin:10px 0;font-size:15px;font-weight:600}
+.flow-node{padding:7px 12px;border-radius:var(--radius-sm);background:var(--brand-light);color:var(--brand-dark)}
+.flow-arrow{color:var(--brand);font-size:18px}
+.tag{display:inline-block;padding:2px 10px;border-radius:100px;font-size:13px;font-weight:600;margin:2px 4px;background:var(--brand-light);color:var(--brand-dark)}
+.nav-dots{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:7px}
+.nav-dot{width:8px;height:8px;border-radius:50%;background:var(--border);cursor:pointer;transition:all .2s}
+.nav-dot:hover,.nav-dot.active{background:var(--brand);transform:scale(1.5)}
+.nav-hint{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);font-size:13px;color:var(--text-muted);z-index:100}
+.page-num{position:fixed;bottom:16px;right:20px;font-size:13px;color:var(--text-muted);z-index:100}
+@media(max-width:768px){.slide{padding:20px 14px}.slide-inner{max-width:100%}.c2,.c3,.c4{grid-template-columns:1fr;gap:8px}body{font-size:14px}h1{font-size:clamp(20px,5vw,28px)!important}h2{font-size:clamp(17px,4vw,22px)!important}h3{font-size:15px!important}.subtitle{font-size:14px!important;line-height:1.5}.card{padding:12px 14px!important;font-size:14px!important}.card-title{font-size:15px!important}.card-desc{font-size:13px!important}.card-icon{font-size:22px!important}.bq{padding:10px 14px!important;font-size:13px!important}.code{font-size:13px!important;padding:10px 14px!important}table{font-size:13px!important;display:block;overflow-x:auto;white-space:nowrap}table td,table th{padding:6px 8px!important}.tag{font-size:11px!important;padding:2px 8px!important}.flow{flex-wrap:wrap;gap:2px;font-size:13px}.flow-node{padding:6px 12px!important}.flow-arrow{font-size:13px!important}.nav-dots{right:6px;gap:5px}.nav-dot{width:6px;height:6px}.page-num{font-size:11px;right:10px;bottom:8px}.section-label{font-size:11px!important;padding:2px 10px!important}.chart-wrap{height:120px!important;padding-left:32px!important}.chart-wrap .bar{width:28px!important}img[src="sofagent.png"]{width:28px!important;height:28px!important}img[src="sofagent.png"][style*="width:92px"]{width:56px!important;height:56px!important}}
+</style>
+</head>
+<body>
+<div class="nav-dots" id="dots"></div>
+<div class="nav-hint" id="hint">← → 或滚轮翻页</div>
+<div class="page-num" id="pgnum"></div>
+<div class="slides" id="slides">
+
+<!-- 1.开篇：问题钩子 -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <img src="sofagent.png" alt="sofagent" style="width:92px;height:92px;margin-bottom:16px;border-radius:20px;">
+  <h2 style="font-size:clamp(24px,3.5vw,36px);margin-bottom:16px;">你们公司买过的 AI 工具，<br>现在还在用的有几个？</h2>
+  <p style="font-size:20px;max-width:960px;margin:0 auto 20px;"><strong>39% 的企业因 AI 部署裁员，55% 事后承认裁错了。</strong><br>不是 AI 不行——是没人负责把 AI <strong>真正装到业务里去</strong>。</p>
+  <p style="max-width:960px;margin:0 auto;font-size:18px;">这个人就是 <span class="hl" style="font-weight:900;">FDE</span>（Forward Deployed Engineer）。<br>今天讲两件事：① FDE 是什么 ② sofagent 怎么让它规模化。</p>
+</div></div>
+
+<!-- 2.GUI→LUI -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <div class="section-label">第一章 · 交互变了</div>
+  <h1>AI 时代，交互的<span class="hl">主体变了</span></h1>
+  <p class="subtitle" style="max-width:960px;margin-left:auto;margin-right:auto;">过去 40 年，人和软件交互靠 GUI——打开界面、找按钮、填表单。<br>AI 改变了底层逻辑：<strong>交互主体从人变成了 Agent。</strong></p>
+  <div class="card-grid c2" style="max-width:960px;margin:14px auto 0;">
+    <div class="card" style="text-align:left;"><div class="card-title">GUI 时代</div><table style="margin-top:4px;"><tr><td>交互</td><td>人点按钮</td></tr><tr><td>发现</td><td>找菜单、看说明书</td></tr><tr><td>结果</td><td>打开页面自己看</td></tr><tr><td>形态</td><td>一个有界面的应用</td></tr></table></div>
+    <div class="card" style="text-align:left;border-color:var(--brand);border-width:2px;"><div class="card-title" style="color:var(--brand);">LUI 时代</div><table style="margin-top:4px;"><tr><td>交互</td><td style="color:var(--brand);">Agent 理解人的话</td></tr><tr><td>发现</td><td style="color:var(--brand);">Agent 自己知道能做什么</td></tr><tr><td>结果</td><td style="color:var(--brand);">结果推到你面前</td></tr><tr><td>形态</td><td style="color:var(--brand);">对话就能调用的能力</td></tr></table></div>
+  </div>
+</div></div>
+
+<!-- 3.对产品的理解也要变 -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <h1>软件不再是<span class="hl">"能看到的东西"</span></h1>
+  <p class="subtitle" style="max-width:960px;margin:0 auto 16px;">传统软件价值在<strong>界面</strong>：仪表盘越好看，用户越离不开你。<br>LUI 时代价值在<strong>能力层</strong>：用户感知的是 Agent 帮他做的事情多可靠。</p>
+  <p style="max-width:960px;margin:0 auto;font-size:20px;"><strong>软件 = 一套"能被调用的能力"。</strong></p>
+  <div class="bq" style="max-width:960px;margin:18px auto 0;">sofagent 没有图形界面——这不是缺陷，是设计决策。在 LUI 时代，建界面是走回头路。</div>
+</div></div>
+
+<!-- 4.FDE 定义+三种能力 -->
+<div class="slide"><div class="slide-inner">
+  <div class="section-label">第二章 · FDE</div>
+  <h1>FDE 不只是一个岗位</h1>
+  <p>来自 Palantir——工程师去客户现场，把产品装起来、调通、跑顺，然后离场。<strong>它是一种底层能力模型。</strong>未来所有人都在变成 FDE：</p>
+  <div class="card-grid c3" style="margin-top:10px;">
+    <div class="card"><div class="card-icon">🧭</div><div class="card-title">掌握完整上下文</div><div class="card-desc">理解全部业务关联，不靠别人传话。AI 让单人也能拿到全量世界模型。</div></div>
+    <div class="card"><div class="card-icon">🔧</div><div class="card-title">打破岗位边界</div><div class="card-desc">不按岗位分工做事，按交付结果调资源。AI 淘汰的是「这不归我管」。</div></div>
+    <div class="card"><div class="card-icon">✅</div><div class="card-title">对结果负责</div><div class="card-desc">可追溯、可验证、可问责。Agent 是非确定性系统——必须看证据链。</div></div>
+  </div>
+  <div class="bq" style="margin-top:14px;">sofagent 的目标不是培养更多 FDE 工程师，而是<strong>让每个用户都具备 FDE 的工作方式</strong>。</div>
+</div></div>
+
+<!-- 5.FDE 工作法+价值 -->
+<div class="slide"><div class="slide-inner">
+  <h1>FDE 怎么工作，<span class="hl">价值在哪</span></h1>
+  <div style="text-align:center;font-size:20px;font-weight:700;color:var(--brand);margin-bottom:12px;">进场 → 装好 → 教会 → 撤离</div>
+  <p style="text-align:center;margin-bottom:16px;">FDE 不是常驻外包——人走了，系统继续跑，知识继续长。</p>
+  <div class="card-grid c3">
+    <div class="card"><div class="card-title">对客户</div><div class="card-desc">从"买了工具"到<strong>"真正在用"</strong>。解决 AI 最后一公里。</div></div>
+    <div class="card"><div class="card-title">对企业自身</div><div class="card-desc">经验变<strong>可复制资产</strong>。workflow 文档、Skill 配置、knowledge 知识库——下个客户不从零开始。</div></div>
+    <div class="card"><div class="card-title">对行业</div><div class="card-desc"><strong>39% 企业因 AI 裁员，55% 裁错。</strong>不是 AI 不行，是缺乏评估 AI 能力的机制。</div></div>
+  </div>
+</div></div>
+
+<!-- 6.Workflow 五问 -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <div class="section-label">第三章 · 落地</div>
+  <h1>梳理 Workflow：<span class="hl">问五个问题</span></h1>
+  <p class="subtitle">不是画流程图，是拆解业务动作。逐个岗位、逐段流程地问——因为答案决定能不能交给 AI：</p>
+  <table style="max-width:960px;margin:10px auto;">
+    <tr><td style="font-weight:700;">输入是什么</td><td>能不能自动取到 → 数据源头</td></tr>
+    <tr><td style="font-weight:700;">输出是什么</td><td>能不能自动推 → 交付闭环</td></tr>
+    <tr><td style="font-weight:700;">谁在做</td><td>这个人最痛在哪 → 替换价值</td></tr>
+    <tr><td style="font-weight:700;">花多长时间</td><td>瓶颈在哪个环节 → ROI</td></tr>
+    <tr><td style="font-weight:700;">最痛在哪</td><td>规则能不能写清楚 → 能否交 AI</td></tr>
+  </table>
+  <p style="margin-top:8px;">三条件全满足 = <strong>自动执行节点</strong>。满足两个 = <strong>AI 辅助岗</strong>。</p>
+  <div class="bq" style="max-width:960px;margin:10px auto 0;">workflow 梳理本身就是管理动作——不是"为了上 AI"，是"梳理清楚才知道 AI 能帮什么"。</div>
+</div></div>
+
+<!-- 7.本体模型 -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <h1>构建本体模型：<span class="hl">AI 要理解业务</span></h1>
+  <p class="subtitle" style="max-width:960px;margin:0 auto 14px;">AI 不理解业务结构 → 只能给通用回答。理解了 → 给业务级精准指令。</p>
+  <p style="margin-bottom:6px;">举个例子——零售客户：</p>
+  <div class="card-grid c3" style="max-width:960px;margin:0 auto;">
+    <div class="card" style="text-align:left;"><strong style="color:var(--brand);">对象层</strong><br>供应商 → 订单 → 仓库 → 门店<br><span style="color:var(--text-sec);font-size:15px;">AI 知道了"谁跟谁有关"</span></div>
+    <div class="card" style="text-align:left;"><strong style="color:var(--brand);">动作层</strong><br>补货→仓库，退货→供应商<br><span style="color:var(--text-sec);font-size:15px;">AI 知道了"我能干什么"</span></div>
+    <div class="card" style="text-align:left;"><strong style="color:var(--brand);">约束层</strong><br>单价超 5000 须总监审批<br><span style="color:var(--text-sec);font-size:15px;">AI 知道了"什么不能干"</span></div>
+  </div>
+  <p style="margin-top:14px;font-size:18px;"><strong>没有三层 → 通用回答。有了三层 → 业务级指令。</strong></p>
+  <p style="color:var(--text-muted);font-size:15px;">sofagent 本体轻量——daemon 自动合并，不是重 KG 工程（专职团队+图数据库+数月工期）。</p>
+</div></div>
+
+<!-- 8.90/10 价值分层 -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <div class="section-label">第三章 · 核心概念</div>
+  <h1>为什么模型越强，<span class="hl">纪律层越值钱</span></h1>
+  <p class="subtitle" style="max-width:960px;margin:0 auto 14px;">AI 模型提供 <strong style="font-size:28px;">90%</strong> 的智力输出——写代码、做分析、生成报告。<br>但企业敢不敢让 Agent 自主执行，取决于最后 <strong style="font-size:28px;color:var(--brand);">10%</strong></p>
+  <div class="card-grid c3" style="max-width:960px;margin:14px auto;">
+    <div class="card"><div class="card-title">可靠性</div><p>Agent 说"做完了"——是声明还是证明？</p></div>
+    <div class="card"><div class="card-title">可追溯性</div><p>出问题了——谁改的、什么时候改的？</p></div>
+    <div class="card" style="border-color:var(--brand);border-width:2px;"><div class="card-title">可问责性</div><p style="color:var(--brand);">不是"模型错了"，是"系统验证过了"</p></div>
+  </div>
+  <div class="bq" style="max-width:960px;margin:14px auto 0;">模型越强，Agent 能做更多事——但"做错了怎么办"的代价也更大。<br><strong>sofagent 在最后 10% 里：约束行为、审计变更、沉淀经验。</strong></div>
+</div></div>
+
+<!-- 9.能力边界 -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <h1>AI Agent 能做什么，<span class="hl">不能做什么</span></h1>
+  <div class="card-grid c2" style="max-width:960px;margin:16px auto;">
+    <div class="card" style="text-align:left;"><div class="card-title" style="color:var(--brand);">✅ 能做</div><table style="margin-top:4px;"><tr><td>数据分析、报表、图表</td></tr><tr><td>文字撰写、翻译、校对</td></tr><tr><td>代码生成、审查、测试</td></tr><tr><td>信息检索、搜集、对比</td></tr></table></div>
+    <div class="card" style="text-align:left;"><div class="card-title" style="color:#ef4444;">❌ 做不了</div><table style="margin-top:4px;"><tr><td>物理世界动手操作</td></tr><tr><td>图像视频剪辑特效</td></tr><tr><td>面对面人际沟通</td></tr><tr><td>系统 GUI 鼠标点击</td></tr></table></div>
+  </div>
+  <p style="margin-top:14px;">超出边界直接说「做不了」，但给替代方向。<br><strong>确定性操作（去重/格式校验/文件清理）用脚本，不要让 Agent 做。</strong></p>
+</div></div>
+
+<!-- 10.sofagent 是什么 -->
+<div class="slide"><div class="slide-inner">
+  <div class="section-label">第四章 · sofagent 产品</div>
+  <h1 style="text-align:center;">sofagent <span class="hl">是什么</span></h1>
+  <div style="text-align:center;margin-bottom:10px;"><span class="tag">不是 Agent 运行平台</span> <span class="tag">不是 IM</span> <span class="tag">不是 RAG</span> <span class="tag">不是低代码</span></div>
+  <p class="subtitle" style="text-align:center;">= <span class="hl" style="font-size:22px;">AI Agent 的纪律层</span></p>
+  <p style="text-align:center;max-width:960px;margin:0 auto 14px;">Agent 会越界、会编造、会改不该改的。sofagent 管的是：<strong>约束行为、审计变更、沉淀经验。</strong></p>
+  <div class="card-grid c2" style="margin-top:10px;">
+    <div class="card"><div class="card-title" style="font-size:18px;">通用 Agent 平台</div><p>管「<strong>会不会做</strong>」——能力问题</p></div>
+    <div class="card" style="border-color:var(--brand);border-width:2px;"><div class="card-title" style="font-size:18px;color:var(--brand);">sofagent</div><p>管「<strong style="color:var(--brand);">能不能每次都做对</strong>」——执行控制</p></div>
+  </div>
+  <div class="bq" style="text-align:center;">OpenClaw = <strong>高速公路</strong>（路由调度）。sofagent = <strong>交规+测速摄像头+驾校教练</strong>。</div>
+</div></div>
+
+<!-- 11.五引擎 -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <h1>五引擎<span class="hl">治理闭环</span></h1>
+  <p class="subtitle">一条流水线上的五道工序——一圈走完，下一圈更锋利</p>
+  <div class="flow"><div class="flow-node">🧭约束</div><div class="flow-arrow">→</div><div class="flow-node">⚙️编排</div><div class="flow-arrow">→</div><div class="flow-node">🔍审计</div><div class="flow-arrow">→</div><div class="flow-node">🔄回溯</div><div class="flow-arrow">→</div><div class="flow-node">🧬进化</div><div class="flow-arrow">↩</div></div>
+  <table style="max-width:960px;margin:8px auto;">
+    <tr><th>引擎</th><th>做什么</th><th>哲学</th></tr>
+    <tr><td>🧭 约束底座</td><td>Agent 启动前就知道不能碰什么</td><td>不知道红线就不会守</td></tr>
+    <tr><td>⚙️ 编排引擎</td><td>大任务自动拆给对的 Agent</td><td>专业的 Agent 干专业的事</td></tr>
+    <tr><td>🔍 审计引擎</td><td>每次改动自动扫描、留证据</td><td>不信任自我报告，看硬证据</td></tr>
+    <tr><td>🔄 回溯引擎</td><td>出问题回到上一个正常版本</td><td>行车记录仪，不是安检门</td></tr>
+    <tr><td>🧬 进化引擎</td><td>定期巡检，自动优化约束规则</td><td>约束本身也在进化</td></tr>
+  </table>
+  <p style="margin-top:10px;">五个引擎 = <strong>配置 + 安装</strong>：fde.md 写规则、git hook 自动挂、daemon 常驻快照、CLI 编排入口、cron 周度进化。全部 MD 文件和自动脚本，不是重型工程。</p>
+</div></div>
+
+<!-- 12.加载链 + Ralph循环 -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <h1>Agent 的<span class="hl">记忆</span>长在哪</h1>
+  <p class="subtitle" style="max-width:960px;margin:0 auto 12px;">传统 Agent：记忆在自己脑子里——关了没了，换一个从头来。<br>sofagent：每次启动是白纸，但读到的文件是上次运行的<strong>完整经验</strong>。</p>
+  <div class="bq" style="max-width:960px;margin:12px auto 0;text-align:center;">
+    启动时<strong>四层加载链</strong>按序注入：<br>
+    ❶ SKILL.md（宪法）→ ❷ fde.md（规范）→ ❸ think.md（反思）→ ❹ knowledge/（知识）<br><br>
+    Agent 做任何事之前，已经知道红线在哪、上次踩了什么坑、最佳实践是什么。<br>
+    <strong>审计看 git diff，不看 Agent 自我报告——Agent 会自我辩护，文件不会说谎。</strong>
+  </div>
+</div></div>
+
+<!-- 13.知识库 -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <h1>知识库<span class="hl">不需要你搭</span></h1>
+  <p class="subtitle">传统：组织人力写文章、维护目录、定期清理——费时费力没人看。<br><strong>sofagent：AI 节点跑起来，知识库自动生长。</strong></p>
+  <div class="card-grid c4" style="max-width:960px;margin:14px auto;">
+    <div class="card" style="text-align:center;"><span style="color:var(--brand);font-weight:700;font-size:18px;">think.md</span><br><span style="font-size:14px;color:var(--text-sec);">踩坑反思</span></div>
+    <div class="card" style="text-align:center;"><span style="color:var(--brand);font-weight:700;font-size:18px;">task/logs</span><br><span style="font-size:14px;color:var(--text-sec);">操作记录</span></div>
+    <div class="card" style="text-align:center;"><span style="color:var(--brand);font-weight:700;font-size:18px;">eval.md</span><br><span style="font-size:14px;color:var(--text-sec);">评分记录</span></div>
+    <div class="card" style="text-align:center;"><span style="color:var(--brand);font-weight:700;font-size:18px;">knowledge/</span><br><span style="font-size:14px;color:var(--text-sec);">结构化知识</span></div>
+  </div>
+  <p style="margin-top:8px;">FDE：<strong>装底座、让节点跑起来</strong>——不用写文章。<br>🔒 跨设备协同：A 踩过的坑 B 不重踩。AES-256-GCM 加密。</p>
+</div></div>
+
+<!-- 14.LOOP -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <h1>LOOP：Agent 用<span class="hl">自己的工具</span>开发自己</h1>
+  <div class="code" style="max-width:960px;margin:12px auto;text-align:left;">
+人类下任务 → Agent A（工程师）写代码+commit
+→ 审计引擎自动扫 git diff
+→ Agent B（审查员）读 diff + 出审查报告
+→ 人看报告做判断 → 通过/不通过→A 修复
+  </div>
+  <p style="max-width:960px;margin:10px auto;"><strong>为什么不让 A 自己审自己？</strong>银行转账——录入和复核是两个人。<strong>Agent 自我说服不是审查。</strong></p>
+  <p style="max-width:960px;margin:0 auto;"><strong>当前 human-in-the-loop。</strong>人的角色不是读代码——Agent 提炼了"该担心什么"，人只需确认。</p>
+</div></div>
+
+<!-- 15.OpenClaw -->
+<div class="slide"><div class="slide-inner">
+  <h1 style="text-align:center;">🌐 <span class="hl">OpenClaw</span> · 后台引擎</h1>
+  <p class="subtitle" style="max-width:960px;margin:0 auto 10px;">OpenClaw 是后台引擎，不是用户界面。用户爱用什么 Agent 用什么，OpenClaw 在底层管住所有 Agent 的行为。</p>
+  <div class="card-grid c2" style="max-width:960px;margin:10px auto;">
+    <div class="card"><div class="card-title">🔁 自动运行模式</div><div class="card-desc">企业设备上 7×24 跑。<br>需要 OpenClaw + sofagent 全栈。<br>Channel / control / orchestration / Webhook 全链路。</div></div>
+    <div class="card"><div class="card-title">🧑‍💻 个人增强模式</div><div class="card-desc">第三方 Agent（WorkBuddy/Codex）+ sofagent。<br>不需要 OpenClaw。<br>Sub Agent 约束自加载，平台无关。</div></div>
+  </div>
+  <div class="bq" style="text-align:center;max-width:960px;margin:8px auto;">OpenClaw = <strong>高速公路</strong>（路由调度）。sofagent = <strong>交规+测速摄像头+驾校教练</strong>。</div>
+</div></div>
+
+<!-- 16.River -->
+<div class="slide"><div class="slide-inner">
+  <h1 style="text-align:center;">🏞️ <span class="hl">River</span> · 统一入口</h1>
+  <p class="subtitle" style="max-width:960px;margin:0 auto 10px;">每一条 Workflow 是一条小溪，River 把多条小溪汇成一条大河。<br>员工提任务 → 拓扑调度 → 同一入口返回——从头到尾同一个身份、同一段上下文。</p>
+  <table style="max-width:960px;margin:8px auto;">
+    <tr><th>层级</th><th>定义</th><th>比喻</th><th>谁负责</th></tr>
+    <tr><td><strong>River</strong></td><td>统一 Agent 入口</td><td>大河——只有一个入口</td><td>OpenClaw + sofagent + Channel</td></tr>
+    <tr><td><strong>Workflow</strong></td><td>任务拆解与编排</td><td>小溪——多条并行/串行</td><td>sofagent 编排引擎</td></tr>
+    <tr><td><strong>Subagent</strong></td><td>具体执行单元</td><td>水滴——干活的人</td><td>sofagent Sub Agent 定义</td></tr>
+  </table>
+  <div class="card-grid c3" style="max-width:960px;margin:8px auto;">
+    <div class="card" style="text-align:center;"><div class="card-title">不是技术架构</div><div class="card-desc">River 不是一套微服务或 API 网关。<br>它是<strong>业务关系可视化</strong>。</div></div>
+    <div class="card" style="text-align:center;"><div class="card-title">统一身份</div><div class="card-desc">同一个 Agent 身份贯穿所有 Workflow。<br>不会"换一条小溪就换一个人"。</div></div>
+    <div class="card" style="text-align:center;"><div class="card-title">FDE 交付什么</div><div class="card-desc">节点之间怎么协作的<strong>完整地图</strong>。<br>小溪怎么汇成大河——可视化。</div></div>
+  </div>
+  <div class="bq" style="text-align:center;max-width:960px;margin:6px auto;">sofagent 不做 River 本身——但确保 River 里的每一个 Sub Agent 都有纪律、可追溯、会反思。</div>
+</div></div>
+
+<!-- 17.成功悖论 -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <div class="section-label">第五章 · 深层逻辑</div>
+  <h1>FDE 的<span class="hl">成功悖论</span></h1>
+  <p class="subtitle">产品看完了——但 FDE 最大的敌人不是技术，是<strong>被遗忘</strong>。<br>做得越好，越没人记得你。</p>
+  <div style="max-width:960px;margin:0 auto;position:relative;padding:10px 0 30px 50px;border-bottom:2px solid var(--border);text-align:left;">
+    <div style="position:absolute;left:0;top:50%;transform:translateY(-50%) rotate(-90deg);font-size:14px;color:var(--text-muted);white-space:nowrap;">感知强度</div>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;height:160px;">
+      <div style="text-align:center;flex:1;"><div style="background:var(--brand);margin:0 auto;width:36px;height:140px;border-radius:4px 4px 0 0;"></div><div style="font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.5;">部署前<br>面对面</div></div>
+      <div style="text-align:center;flex:1;"><div style="background:var(--brand);margin:0 auto;width:36px;height:108px;border-radius:4px 4px 0 0;"></div><div style="font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.5;">服务中<br>在一起</div></div>
+      <div style="text-align:center;flex:1;"><div style="background:var(--brand);margin:0 auto;width:36px;height:72px;border-radius:4px 4px 0 0;"></div><div style="font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.5;">撤出 2 周<br>还在习惯</div></div>
+      <div style="text-align:center;flex:1;"><div style="background:var(--text-muted);margin:0 auto;width:36px;height:50px;border-radius:4px 4px 0 0;opacity:.5;"></div><div style="font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.5;">撤出 3 月<br>"也没那么复杂"</div></div>
+      <div style="text-align:center;flex:1;"><div style="background:var(--text-muted);margin:0 auto;width:36px;height:34px;border-radius:4px 4px 0 0;opacity:.3;"></div><div style="font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.5;">撤出 6 月<br>"没有你我也行"</div></div>
+    </div>
+    <div style="text-align:right;font-size:13px;color:var(--text-muted);margin-top:6px;">→ 时间</div>
+  </div>
+  <p style="max-width:960px;margin:12px auto;">客户不会感谢你挡了 127 次越界——他只知道"Agent 用着挺好的"。<br><strong>你做的所有工作都在看不见的地方。</strong></p>
+  <h3>所以——怎么能让客户知道？</h3>
+</div></div>
+
+<!-- 18.结果可见性——为什么 -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <h1>🔍 为什么需要<span class="hl">结果可见性</span></h1>
+  <p class="subtitle" style="max-width:960px;margin:0 auto 10px;">Harness 中间件最大的挑战不是技术——是<strong>存在感</strong>。</p>
+  <div class="card-grid c2" style="max-width:960px;margin:10px auto;">
+    <div class="card" style="text-align:left;">
+      <div class="card-title" style="color:var(--brand);">问题</div>
+      <div class="card-desc">引擎在正常工作——但用户看到好结果时，<strong>不知道是 harness 层在起作用</strong>。看到 <code>✅ PASS</code> 以为是模型自己做的。</div>
+    </div>
+    <div class="card" style="text-align:left;">
+      <div class="card-title" style="color:var(--brand);">后果</div>
+      <div class="card-desc">没人知道你在工作 → 没人觉得你值钱 → 没人付钱。<br>这就是<strong style="color:var(--brand);">废墟功能</strong>：做了，但用户感知不到，等于没做。</div>
+    </div>
+  </div>
+  <p class="subtitle" style="max-width:960px;margin:0 auto;">更致命的是——sofagent 故意没有图形界面。<br>LUI 时代建界面是走回头路，<strong>所有存在感必须靠文本输出来建立。</strong></p>
+  <div class="bq" style="max-width:960px;margin:14px auto 0;">签名就是 sofagent 唯一的存在形式。没有签名 = 没做。</div>
+</div></div>
+
+<!-- 19.结果可见性——怎么做 -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <h1><span class="hl">三层签名</span>——所有输出带 sofagent 名字</h1>
+  <p class="subtitle" style="max-width:960px;margin:0 auto 10px;">回答成功悖论：怎么让客户知道 sofagent 在工作？</p>
+  <table style="max-width:960px;margin:8px auto;">
+    <tr><th style="width:12%;">层级</th><th style="width:28%;">实现</th><th>之前</th><th>之后</th></tr>
+    <tr><td><strong>CLI</strong></td><td>审计输出以 <code>sofagent-audit</code> 开头<br>提示以 <code>sofagent 提示：</code> 前缀</td><td style="color:var(--text-muted);"><code>✅ PASS</code></td><td style="color:var(--brand);"><code>✅ sofagent 审计通过</code></td></tr>
+    <tr><td><strong>Webhook</strong></td><td>PASS/WARN/FAIL 全部推 IM<br>含 <code>审计引擎：sofagent-audit</code></td><td style="color:var(--text-muted);">PASS 不推送</td><td style="color:var(--brand);">PASS 也推，且带来源</td></tr>
+    <tr><td><strong>MCP</strong></td><td>所有 tool result 以 <code>[sofagent]</code> 开头</td><td style="color:var(--text-muted);">无标识</td><td style="color:var(--brand);">每次 MCP 调用可见</td></tr>
+  </table>
+  <div class="card-grid c3" style="max-width:960px;margin:8px auto;">
+    <div class="card" style="text-align:center;padding:14px;"><div style="font-size:24px;font-weight:900;color:var(--brand);">1</div><div class="card-desc" style="font-size:15px;">用户怎么<strong>发现</strong>这个能力？</div></div>
+    <div class="card" style="text-align:center;padding:14px;"><div style="font-size:24px;font-weight:900;color:var(--brand);">2</div><div class="card-desc" style="font-size:15px;">结果<strong>推到哪</strong>？IM？报告？日志？</div></div>
+    <div class="card" style="text-align:center;padding:14px;border-color:var(--brand);border-width:2px;"><div style="font-size:24px;font-weight:900;color:var(--brand);">3</div><div class="card-desc" style="font-size:15px;">用户知道结果是<strong> sofagent 做的</strong>，不是模型做的？</div></div>
+  </div>
+  <div class="bq" style="text-align:center;max-width:960px;margin:8px auto;">开发任何新功能前必问这三个问题。<br>任何面向用户的输出必须带 <code>[sofagent]</code> 签名。没有签名 = 没做。</div>
+</div></div>
+
+<!-- 20.三层持续感知 -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <h1>三层<span class="hl">持续存在感</span>机制</h1>
+  <p class="subtitle" style="max-width:960px;margin:0 auto 12px;">前面讲的"三层签名"是即时可见性——每次提交/推送都能看到 sofagent。<br>这一页讲的是<strong>长期感知</strong>——人走了之后，怎么让客户持续感知到价值。</p>
+  <div class="card-grid c3" style="margin-top:8px;">
+    <div class="card"><div class="card-icon">📊</div><div class="card-title">定期价值证明</div><div class="card-desc"><strong>每周</strong>审计守护报告 / <strong>每月</strong>知识库增长 / <strong>每季</strong>无可比对照。<br>每条推送以 FDE 签名开头。</div></div>
+    <div class="card"><div class="card-icon">🔬</div><div class="card-title">系统自曝复杂度</div><div class="card-desc">系统越稳客户越觉得简单——<strong>主动展示内部复杂度。</strong><br>本体健康度 / 规则进化记录 / 扩容建议。</div></div>
+    <div class="card" style="border-color:var(--brand);border-width:2px;"><div class="card-icon">🏷️</div><div class="card-title">不可替代性标记</div><div class="card-desc">每次结果标注来源："审计依据 fde.md"<br>"Skill 优化依据 FDE 四问框架"<br><strong>不是品牌展示——是核心价值的可见性。</strong></div></div>
+  </div>
+  <div class="card-grid c2" style="max-width:960px;margin:14px auto 0;">
+    <div class="card"><div style="color:var(--text-muted);">部署前</div>Agent 偶尔好用，不知道为什么</div>
+    <div class="card" style="border-color:var(--brand);"><div style="color:var(--brand);">部署后</div>每次结果<strong style="color:var(--brand);">带证据、带签名、推到面前</strong></div>
+  </div>
+</div></div>
+
+<!-- 21.反认知投降 -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <h1>人类<span class="hl">永远在回路中</span></h1>
+  <p class="subtitle" style="max-width:960px;margin:0 auto 14px;">成功悖论说"你做了但没人知道"——那人类是不是该退场？<br>答案是<strong>正好相反</strong>。Agent 越强，人类越不能放弃思考。</p>
+  <div class="card-grid c3" style="max-width:960px;margin:12px auto;">
+    <div class="card" style="text-align:left;"><div class="card-title">验证责任不可替代</div><div class="card-desc">Agent 说"做完了"是声明不是证明。<br>审计 A8：要求可观测证据。</div></div>
+    <div class="card" style="text-align:left;"><div class="card-title">理解债</div><div class="card-desc">Agent 交付越快，理解鸿沟越大。<br>task/logs 只追加不修改，永远可回溯。</div></div>
+    <div class="card" style="text-align:left;border-color:var(--brand);border-width:2px;"><div class="card-title">认知投降</div><div class="card-desc">最舒服的状态是不再有自己观点。<br><strong style="color:var(--brand);">三道护栏保底。</strong></div></div>
+  </div>
+  <div class="bq" style="max-width:960px;margin:12px auto 0;"><strong>三道护栏</strong>：fde.md 规则覆盖（保留人类话语权）· 编排可回滚（保留人类否决权）· 审计独立于 Agent（保留人类验收权）。<br>不是技术特性——是<strong>制度设计</strong>，确保人类永远是最终决策者。</div>
+</div></div>
+
+<!-- 22.离场后内置Agent -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <h1>FDE 走了之后，<span class="hl">谁在管</span></h1>
+  <p class="subtitle" style="max-width:960px;margin:0 auto 14px;">概念、产品都讲完了。FDE 进场、装好、教会、撤离之后呢？<br>sofagent 内建两个 Agent 持续接管运维——不需要人每天盯着。</p>
+  <div class="card-grid c2" style="max-width:960px;margin:14px auto;">
+    <div class="card" style="text-align:left;"><div class="card-icon">🛡️</div><div class="card-title">FDE 合规审计员</div><div class="card-desc">每周巡检 Audit 日志，检测规则漂移（红线被悄悄放宽），出合规周报。发现异常 → 推送告警到 IM 群。</div></div>
+    <div class="card" style="text-align:left;"><div class="card-icon">🚀</div><div class="card-title">FDE 部署工程师</div><div class="card-desc">新设备接入时自动生成配置，校验联邦同步状态，扩容建议。fde.md 过期 → 提醒联系 FDE 更新企业红线。</div></div>
+  </div>
+  <div class="bq" style="max-width:960px;margin:14px auto 0;text-align:center;">FDE 离场交付的不是一次部署——是<strong>两个 AI Agent 持续运行的自治系统</strong>。<br>人走了，审计不停、规则不腐、知识照长。</div>
+</div></div>
+
+<!-- 23.三认知 -->
+<div class="slide"><div class="slide-inner" style="text-align:center;">
+  <h1 style="margin-bottom:16px;">三个<span class="hl">核心认知</span></h1>
+  <div class="card-grid c3" style="gap:16px;max-width:960px;margin:0 auto;">
+    <div class="card" style="padding:16px 14px;"><div style="font-size:28px;font-weight:900;color:var(--brand);margin-bottom:2px;">1</div><h3 style="font-size:17px;margin:2px 0;">AI 时代的交互已经变了</h3><p style="font-size:15px;">不是人找按钮，是 Agent 理解人的话。软件价值不在界面，在<strong>能力层</strong>。</p></div>
+    <div class="card" style="padding:16px 14px;"><div style="font-size:28px;font-weight:900;color:var(--brand);margin-bottom:2px;">2</div><h3 style="font-size:17px;margin:2px 0;">FDE 是让软件真正跑起来的人</h3><p style="font-size:15px;">传统靠人肉和经验，sofagent 把经验变工具链。<br><strong>人走了，工具还在跑，知识还在长。</strong></p></div>
+    <div class="card" style="padding:16px 14px;border-color:var(--brand);border-width:2px;"><div style="font-size:28px;font-weight:900;color:var(--brand);margin-bottom:2px;">3</div><h3 style="font-size:17px;margin:2px 0;">客户感知到的不是 FDE，是痕迹</h3><p style="font-size:15px;">审计签名、推送来源、证据链条。<br>做得越好越容易消失。<strong style="color:var(--brand);">没有痕迹，等于没做。</strong></p></div>
+  </div>
+  <div class="bq" style="max-width:960px;margin:16px auto 0;font-size:15px;">想看完整 workflow 怎么梳理到部署？<strong>找我要 demo。</strong> 在管团队，想知道 FDE 怎么嵌入流程？<strong>会后聊。</strong></div>
+  <img src="sofagent.png" alt="sofagent" style="width:36px;height:36px;margin-top:12px;border-radius:8px;opacity:.6;">
+</div></div>
+
+</div>
+
+<script>
+(function(){
+  var s=document.querySelectorAll('.slide'),d=document.getElementById('dots'),h=document.getElementById('hint'),p=document.getElementById('pgnum'),c=0;
+  function u(){p.textContent=(c+1)+' / '+s.length}
+  s.forEach(function(_,i){var x=document.createElement('div');x.className='nav-dot'+(i===0?' active':'');x.addEventListener('click',function(){g(i)});d.appendChild(x);});u();
+  function g(i){if(i<0||i>=s.length)return;c=i;s[c].scrollIntoView({behavior:'smooth'});Array.from(d.children).forEach(function(e,j){e.classList.toggle('active',j===c)});h.style.display='none';u();}
+  document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key==='ArrowDown')g(c+1);if(e.key==='ArrowLeft'||e.key==='ArrowUp')g(c-1);});
+  var o=new IntersectionObserver(function(e){e.forEach(function(r){if(r.isIntersecting){var i=Array.from(s).indexOf(r.target);if(i>=0){c=i;Array.from(d.children).forEach(function(e,j){e.classList.toggle('active',j===c)});h.style.display='none';u();}}});},{threshold:0.6});
+  s.forEach(function(e){o.observe(e);});
+  document.querySelector('.slides').addEventListener('click',function(e){if(e.target===document.querySelector('.slides')){g(e.clientX>window.innerWidth/2?c+1:c-1);}});
+})();
+</script>
+</body>
+</html>

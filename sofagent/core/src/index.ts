@@ -1,6 +1,6 @@
 /**
  * @sofagent/core — 基础设施层
- * v1.1.2 从 sofagent/audit/src/ 迁出
+ * v1.1.3 从 sofagent/audit/src/ 迁出
  *
  * 包含：常量、原子写入、git diff 解析、配置加载、模板、
  * 监控配置、模型客户端、日志读取、环境探测、成本基线、
@@ -34,6 +34,7 @@ export {
   DEFAULT_CONFIG,
   ENV_DEFAULTS,
   ConfigLoadError,
+  ConfigParseError,
 } from './config-loader';
 export type { AuditConfig, SofaEnvConfig } from './config-loader';
 

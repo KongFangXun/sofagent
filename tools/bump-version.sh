@@ -564,7 +564,7 @@ if [[ $sig_count -eq 0 ]]; then
 fi
 echo ""
 
-# 9b. v1.1.2: bump 子包 package.json 中 @sofagent/* 依赖版本
+# 9b. v1.1.3: bump 子包 package.json 中 @sofagent/* 依赖版本
 # 各包的 dependencies/optionalDependencies 中对其他 @sofagent/* 包的引用也需要同步
 BUMP_INTERNAL_DEPS_COUNT=0
 while IFS= read -r -d '' pkg_json; do

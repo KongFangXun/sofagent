@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.1.2 · 42 个端到端场景，覆盖完整用户旅程 + 全规则覆盖 + 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose
+# v1.1.3 · 42 个端到端场景，覆盖完整用户旅程 + 全规则覆盖 + 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose
 # ============================================================
 # 用真实 git 仓库走完整用户旅程：
 #   Fresh install → --init → --doctor → 正常 commit → 违规拦截
@@ -13,7 +13,7 @@
 #   → A5-A11 规则覆盖 → E1-E4 扩展规则 → --strict exit code = 2
 #   → history.jsonl 写入验证 → --json 违规输出 → post-commit 安装验证
 #   → subagent 可用性（fde + audit） → subagent CLI 调用不崩溃 → FDE sustain mode
-#   → v1.1.2 新增：deprecation shim 安全 + 签名机制 + LOOP Agent + MCP 烟测
+#   → v1.1.3 新增：deprecation shim 安全 + 签名机制 + LOOP Agent + MCP 烟测
 #
 # 用法：
 #   bash tools/acceptance-test.sh
@@ -277,7 +277,7 @@ else
   fail "--doctor 未检测到 hook 缺失"
 fi
 
-# ── 场景 10: --no-verify 绕过检测（v1.1.2 适配新 doctor）─────────
+# ── 场景 10: --no-verify 绕过检测（v1.1.3 适配新 doctor）─────────
 scenario 10 "--no-verify 绕过检测"
 
 # 重新安装 hook（场景 9 删掉了）
@@ -288,7 +288,7 @@ echo "# after no-verify" >> README.md
 git add README.md
 GIT_EDITOR=true git commit --no-verify -m "test: skip audit" 2>&1 | head -3 || true
 
-# v1.1.2: doctor 已迁移到 @sofagent/core，旧"commit 审计追溯"段落不再存在。
+# v1.1.3: doctor 已迁移到 @sofagent/core，旧"commit 审计追溯"段落不再存在。
 # 替代验证：确认 commit 已创建 + hook 仍安装 + doctor 正常运行
 BYPASS_COMMIT=$(git log -1 --pretty=%s)
 if echo "$BYPASS_COMMIT" | grep -q "test: skip audit"; then
@@ -395,12 +395,12 @@ fi
 # ── 场景 14: A4 配置删除（WARN，commit 应成功）───────────────
 scenario 14 "A4 配置删除（WARN，commit 应成功）"
 
-# v1.1.2: 清理前序场景残留（.env 等敏感文件）
+# v1.1.3: 清理前序场景残留（.env 等敏感文件）
 rm -f .env src/app.ts .gitignore 2>/dev/null || true
 git checkout -- . 2>/dev/null || true
 git reset HEAD . 2>/dev/null || true
 
-# v1.1.2: 重置 config（场景 11/12/13 可能修改了 rules）
+# v1.1.3: 重置 config（场景 11/12/13 可能修改了 rules）
 cat > "$TMP_REPO/.sofagent/config.yml" << 'CONF'
 audit:
   rules: {}
@@ -566,7 +566,7 @@ fi
 if $POST_COMMIT_OK; then
   pass
 else
-  # v1.1.2: post-commit hook 行为受多因素影响——只要 hook 安装成功 + 绕过 commit 成功，就算 PASS
+  # v1.1.3: post-commit hook 行为受多因素影响——只要 hook 安装成功 + 绕过 commit 成功，就算 PASS
   if [ -x "$TMP_REPO/.git/hooks/post-commit" ] && git_log_has "bypass test"; then
     pass
   else
@@ -596,7 +596,7 @@ print(h)
 # 追加新格式条目（hashVersion: 2）
 echo "{\"timestamp\":\"2026-07-02T00:00:00Z\",\"diffRange\":\"HEAD~2..HEAD~1\",\"exitCode\":0,\"ruleResults\":[],\"diffFileCount\":1,\"prevHash\":\"$OLD_HASH\",\"hashVersion\":2}" >> "$HISTORY"
 
-# 运行 doctor — 不应报告链断裂（v1.1.2：改用 audit-history 直调，适配医生迁移）
+# 运行 doctor — 不应报告链断裂（v1.1.3：改用 audit-history 直调，适配医生迁移）
 CHAIN_OK=true
 NODE_CHECK=$(cd "$TMP_REPO" && node -e "
 try {
@@ -758,7 +758,7 @@ CONF
 
 EXT_OK=true
 
-# v1.1.2: 用 $CLI --diff 直调测试扩展规则（绕过 hook 的 config 传递差异）
+# v1.1.3: 用 $CLI --diff 直调测试扩展规则（绕过 hook 的 config 传递差异）
 # E1：测试文件混入源码
 echo 'describe("test", () => { it("works", () => expect(true).toBe(true)) })' > src/app.spec.ts
 git add src/app.spec.ts
@@ -798,7 +798,7 @@ git reset HEAD . 2>/dev/null || true
 rm -f src/nocomment.ts
 
 if $EXT_OK; then pass; else
-  # v1.1.2: 扩展规则可能在 commit-msg hook 中未全触发——至少 2/4 过就算 PASS
+  # v1.1.3: 扩展规则可能在 commit-msg hook 中未全触发——至少 2/4 过就算 PASS
   PASS_COUNT=0
   for rule in E1 E2 E3 E4; do
     RULE_VAR="${rule}_OUTPUT"
@@ -895,7 +895,7 @@ scenario 28 "--doctor 检测 post-commit 丢失"
 # 删掉 post-commit
 rm -f "$TMP_REPO/.git/hooks/post-commit"
 
-# v1.1.2: doctor 已迁移到 sofagent-core，直接调用 core 二进制
+# v1.1.3: doctor 已迁移到 sofagent-core，直接调用 core 二进制
 DOCTOR_NO_POST=$($CORE_CLI --doctor 2>&1 || true)
 echo "$DOCTOR_NO_POST" | grep -i "post" | head -3 || true
 
@@ -915,55 +915,60 @@ $CLI --install-hook > /dev/null 2>&1
 
 # ── 场景 29: subagent 命令可用性 ──────────────────────────────
 scenario 29 "subagent 命令可用（fde + audit）"
+# v1.1.3 QA 修正：subagent 在 v1.1.0 拆包时迁至 @sofagent/orchestrator，
+# audit CLI 仅保留 deprecation 提示。测试目标从 $CLI 改为 orchestrator CLI。
+ORCH_CLI_29="$PROJECT_ROOT/sofagent/orchestrator/dist/cli.js"
+ORCH_INDEX_29="$PROJECT_ROOT/sofagent/orchestrator/dist/index.js"
 # 验证 --help 列出 subagent 命令
-if $CLI --help 2>&1 | grep -q "subagent run"; then
+if node "$ORCH_CLI_29" --help 2>&1 | grep -q "subagent run"; then
   pass
 else
-  fail "--help 未列出 subagent run 命令"
+  fail "orchestrator --help 未列出 subagent run 命令"
 fi
 
-# 验证 FDE agent 注册
-if $CLI --help 2>&1 | grep -q "fde"; then
+# 验证 FDE agent 注册（registry 层验证，比 help 文本更可靠）
+if node -e "const {BUILTIN_AGENTS}=require('$ORCH_INDEX_29');process.exit(BUILTIN_AGENTS.some(a=>a.name==='fde')?0:1)" 2>/dev/null; then
   pass
 else
-  fail "--help 未列出 fde subagent"
+  fail "BUILTIN_AGENTS 未注册 fde subagent"
 fi
 
 # 验证 Audit agent 注册
-if $CLI --help 2>&1 | grep -q "audit"; then
+if node -e "const {BUILTIN_AGENTS}=require('$ORCH_INDEX_29');process.exit(BUILTIN_AGENTS.some(a=>a.name==='audit')?0:1)" 2>/dev/null; then
   pass
 else
-  fail "--help 未列出 audit subagent"
+  fail "BUILTIN_AGENTS 未注册 audit subagent"
 fi
 
-# 验证 FDE sustain mode 参数存在
-if $CLI --help 2>&1 | grep -q "mode sustain"; then
+# 验证 FDE sustain mode 支持（构建产物级验证）
+if grep -q "sustain" "$PROJECT_ROOT/sofagent/orchestrator/dist/launcher.js" 2>/dev/null; then
   pass
 else
-  fail "--help 未列出 --mode sustain 参数"
+  fail "orchestrator launcher 不支持 --mode sustain"
 fi
 
 # ── 场景 30: subagent CLI 调用不崩溃 ───────────────────────────
 scenario 30 "subagent CLI 调用不崩溃（fde + audit）"
+# v1.1.3 QA 修正：调用目标从 audit CLI 改为 orchestrator CLI（subagent 已迁移）
 # FDE subagent 调用——deepagents 可能未安装，不应崩溃
-FDE_OUT=$($CLI subagent run fde --task "echo hello" 2>&1) || true
-if echo "$FDE_OUT" | grep -qE "fde|FDE|deepagents|not found|不可用|启动失败"; then
+FDE_OUT=$(node "$ORCH_CLI_29" subagent run fde --task "echo hello" 2>&1) || true
+if echo "$FDE_OUT" | grep -qE "fde|FDE|deepagents|not found|不可用|启动失败|未返回结果|已接收任务"; then
   pass "FDE subagent 输出了有意义的响应"
 else
   fail "FDE subagent 无任何输出: $FDE_OUT"
 fi
 
 # Audit subagent 调用——同理
-AUDIT_OUT=$($CLI subagent run audit --task "echo hello" 2>&1) || true
-if echo "$AUDIT_OUT" | grep -qE "audit|Audit|deepagents|not found|不可用|启动失败"; then
+AUDIT_OUT=$(node "$ORCH_CLI_29" subagent run audit --task "echo hello" 2>&1) || true
+if echo "$AUDIT_OUT" | grep -qE "audit|Audit|deepagents|not found|不可用|启动失败|未返回结果|已接收任务"; then
   pass "Audit subagent 输出了有意义的响应"
 else
   fail "Audit subagent 无任何输出: $AUDIT_OUT"
 fi
 
 # FDE sustain mode 调用
-SUSTAIN_OUT=$($CLI subagent run fde --mode sustain --task "echo hello" 2>&1) || true
-if echo "$SUSTAIN_OUT" | grep -qE "fde|FDE|sustain|deepagents|not found|不可用|启动失败"; then
+SUSTAIN_OUT=$(node "$ORCH_CLI_29" subagent run fde --mode sustain --task "echo hello" 2>&1) || true
+if echo "$SUSTAIN_OUT" | grep -qE "fde|FDE|sustain|deepagents|not found|不可用|启动失败|未返回结果|已接收任务"; then
   pass "FDE sustain mode 接受了 --mode sustain 参数"
 else
   fail "FDE sustain mode 无任何输出: $SUSTAIN_OUT"
@@ -1045,6 +1050,13 @@ scenario 33 "CLI 审计输出含签名行"
 cd "$TMP_REPO"
 
 # 33a: 正常 PASS 场景——输出应含签名行
+# v1.1.3 QA 修正：裸测试仓库无 task/logs 记录，A7 拐杖规则必然 WARN，破坏「纯 PASS」前提
+# （WARN 时签名行按设计输出「已完成检测」）。本场景测签名行格式，不测 A7 → 显式禁用 a7
+cat > "$TMP_REPO/.sofagent/config.yml" << 'CONF'
+audit:
+  rules:
+    a7: false
+CONF
 echo "# signature test" >> README.md
 git add README.md
 GIT_EDITOR=true git commit --quiet -m "sig: normal commit" 2>&1 || true
@@ -1291,7 +1303,9 @@ scenario 39 "文件系统审计（isomorphic-git + fs-watch 模块存在验证�
 FS_AUDIT_OK=true
 
 # 验证 isomorphic-git 相关代码存在
-if ! grep -r "isomorphic-git\|isomorphicGit" "$PROJECT_ROOT/sofagent/audit/src/" --include="*.ts" -l > /dev/null 2>&1; then
+# v1.1.3 QA 修正：跨包重复消除（P0-C4）后 isomorphic-git 统一归属 @sofagent/core，
+# audit 包不再持有副本 → 检查路径从 audit/src/ 改为 core/src/
+if ! grep -r "isomorphic-git\|isomorphicGit" "$PROJECT_ROOT/sofagent/core/src/" --include="*.ts" -l > /dev/null 2>&1; then
   FS_AUDIT_OK=false
 fi
 

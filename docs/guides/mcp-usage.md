@@ -2,7 +2,7 @@
 
 > **本文档是 sofagent 的 MCP 能力全目录。** 告诉你：Agent 能调什么、能生成什么、结果推到哪、什么时候推。
 >
-> v1.1.2 · 2026-07-15（UTC）· 孔放勋
+> v1.1.3 · 2026-07-15（UTC）· 孔放勋
 
 <img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -29,7 +29,7 @@ Agent 连上 sofagent MCP server 后，第一件事就是 `list_capabilities`。
 
 ## 二、所有 MCP resource（完整列表）
 
-### LOOP 自迭代（v1.1.2-v1.1.5）
+### LOOP 自迭代（v1.1.3-v1.1.5）
 
 | resource | 用法 | 返回 |
 |------|------|------|
@@ -87,7 +87,7 @@ Agent 连上 sofagent MCP server 后，第一件事就是 `list_capabilities`。
 | `release_start(version)` | 启动发版 SOP | 任务 ID + 阶段预览 |
 | `release_status(id)` | 查看发版进度 | 当前阶段: 审查/开发/自测/审阅/发版 |
 | `release_result(id)` | 取发版结果 | 版本号 + git tag + release URL + release notes |
-| `fresh_eyes_review()` | 跑陌生视角审查 | P0/P1/P2 问题清单 |
+| `fresh_eyes_review()` | 跑发布后审查 | P0/P1/P2 问题清单 |
 
 ### 能力感知 + 健康（跨版本）
 
@@ -105,7 +105,7 @@ Agent 连上 sofagent MCP server 后，第一件事就是 `list_capabilities`。
 | 输出内容 | 触发者 | 格式 | 示例 |
 |------|------|------|------|
 | 代码审查报告 | `loop_result(id)` | Markdown | 🔴阻断×2 / 🟡建议×3 / 💭小改进×5 |
-| 陌生视角审查 | `fresh_eyes_review()` | Markdown 清单 | P0 安全硬伤×1 / P1 工程欠债×4 / P2 改进×8 |
+| 发布后审查 | `fresh_eyes_review()` | Markdown 清单 | P0 安全硬伤×1 / P1 工程欠债×4 / P2 改进×8 |
 | 审计结果 | `loop_status(id)` 阶段 2 | JSON + Markdown | PASS: 0 violations / WARN: A2 low-coverage / FAIL: A1 secret-leak |
 | 知识库健康报告 | `conflict_check()` | Markdown 表格 | 矛盾 3 处 / 孤儿 5 个 / 死链 2 个 |
 
@@ -194,7 +194,7 @@ nodes:
 | **每季度对照** | **裸模型 vs sofagent 回答对比** | **IM Webhook** | **进化引擎** |
 | **扩容预警** | **节点数/知识量接近上限** | **IM Webhook** | **daemon 条件触发** |
 
-### 感知报告推送模板（v1.1.2+）
+### 感知报告推送模板（v1.1.3+）
 
 持续感知层的所有推送遵循统一格式——以 FDE 签名为开头，确保客户每次看到结果都知道来源：
 

@@ -5,98 +5,131 @@
 ---
 
 ## 正式版
-### [v1.1.0] — 包结构纯度重构（12 包独立）+ 轻量多设备 🎉
-> 2026-07-14（UTC）· 已发版
-**核心变更**：`@sofagent/audit` 拆分为 12 个独立 npm 包，按基础层/运行层/协议层/纯审计四层清晰分层。**新功能**：权限作用域化（permission.local.json 项目级 override）+ 经验共享（跨设备 knowledge/shared/ + think.md 语义合并）+ 自迭代周报（daemon 从 think.md 自动提取踩坑经验）+ 主动巡检（daemon 4 项定时巡检）。**继承修复**：v1.0.9 发布后修复的 19 项文档/代码问题。**破坏性变更**：CLI 子命令迁移到新包二进制（`sofagent-audit compose` → `sofagent-orchestrator compose` 等）。
-**文档维护**：审计规则编号口径收敛——全仓库统一为「A1-A11、A14-A17 + E1-E4（共 19 条）」写法，修复 FDE/ARCHITECTURE/DEVELOPMENT/HANDBOOK 断链、加载链「三层→四层」矛盾与版本滞后（v1.0.x→v1.1.0）。
-> 📖 [开发日志](./docs/changelog/v1.1.0.md)
+
+### [v1.1.3] — LangGraph StateGraph 直接编排 + Checkpoint + HITL
+> 2026-07-18（UTC）· 开发完成 · 待发版
+**核心变更**：编排控制从 DeepAgents compose（一次性生成 YAML）上提为 sofagent 直接掌握的 LangGraph StateGraph 节点级流转——四节点（engineer → audit → reviewer → human_confirm）自动流转 + 条件路由（FAIL 回 engineer，3 轮重试上限 + blocked 终态）+ Checkpoint 持久化（并发安全：原子写/文件锁/schemaVersion/latest 指针）+ HITL 确认节点（y/n + --resume 断点续跑）。`@langchain/langgraph@^1.4.7` 首次成为直接依赖。daemon 集成顺延 v1.1.4。
+**缺陷修复**：跨包代码重复清零、silent 模式 exit code 修正、PASS 输出品牌签名、CHANGELOG 补 v1.1.1 索引、「回溯引擎」更名「回溯能力」、pre-push 新增 tag message 校验与依赖循环检测。
+**质量验证**：557 tests across 12 packages 全绿 · acceptance-test 55/55 · check-version 67/67 · pre-push-check 13 通过/0 失败。
+> 📖 [开发日志](./docs/changelog/v1.1.3.md)
+
 ### [v1.1.2] — LOOP 双 Agent 串联 + Harness 可见性
 > 2026-07-15（UTC）· 已发版
 **核心变更**：LOOP 双 Agent 自迭代（engineer → audit → reviewer）+ Harness 可见性三层签名机制（CLI/Webhook/MCP/审查报告输出带 sofagent 身份）+ orchestrator/mcp 实质 smoke 测试。
 > 📖 [开发日志](./docs/changelog/v1.1.2.md)
-### [v1.2.0] — 多设备知识联邦收口 🎉
-> 规划中（v1.1.3~v1.1.9 子能力收口）
-**核心变更**：LOOP 双 Agent 自循环 + LangGraph 编排 + OpenClaw MCP 知识联邦 + Dream Cycle 知识管道 + LLM Wiki 3 层分层 + AES-256-GCM 加密 + USB key 物理身份。7 个子版本 → 1 个联邦。v1.2.x 完整多设备协同的起点。
-> 📖 [开发日志](./docs/changelog/v1.2.0.md)
+
+### [v1.1.1] — 双 Agent 串联验证 + 记忆契约代码化 + 多设备同步
+> 2026-07-16（UTC+8）· 已发版
+**核心变更**：LOOP 双 Agent 端到端串联（engineer → audit → reviewer）+ Harness 可见性签名机制（CLI/Webhook/MCP/审查报告）+ 多设备同步指南（4 种方案）+ think.md 记忆契约代码级单一事实来源（core/memory-contract.ts）+ 全仓质量审计 6 类问题收口。V1.1.0 发布后 16 项修复收敛。
+> 📖 [开发日志](./docs/changelog/v1.1.1.md)
+
+### [v1.1.0] — 包结构纯度重构（12 包独立）+ 轻量多设备 🎉
+> 2026-07-14（UTC）· 已发版
+**核心变更**：`@sofagent/audit` 拆分为 12 个独立 npm 包，按基础层/运行层/协议层/纯审计四层清晰分层。**新功能**：权限作用域化（permission.local.json 项目级 override）+ 经验共享（跨设备 knowledge/shared/ + think.md 语义合并）+ 自迭代周报（daemon 从 think.md 自动提取踩坑经验）+ 主动巡检（daemon 4 项定时巡检）。**继承修复**：v1.0.9 发布后修复的 19 项文档/代码问题。**破坏性变更**：CLI 子命令迁移到新包二进制（`sofagent-audit compose` → `sofagent-orchestrator compose` 等）。
+**文档维护**：审计规则编号口径收敛——全仓库统一为「A1-A11、A14-A17 + E1-E4（共 19 条）」写法，修复 FDE/ARCHITECTURE/DEVELOPMENT/HANDBOOK 断链、加载链「三层→四层」矛盾与版本滞后（v1.0.x→v1.1.0）。
+> 本次为 12 包 monorepo 拆分，单提交含 387 文件，属架构重组非功能变更。
+> 📖 [开发日志](./docs/changelog/v1.1.0.md)
+
 ### [v1.0.9] — 二进制文件审计 + 快照时间线 + MCP compose tool + 安全加固 + 遗留补齐 🔧
 > 2026-07-14（UTC）· 已发版（tag v1.0.9 @ 366eb54，2026-07-14）
 **核心新功能**：A16 非授权文件变更 + A17 异常批量变更（二进制文件行为级审计）+ `--timeline` 快照时间线可视化 + `--revert` 回滚 + MCP compose tool（编排引擎通过标准 MCP 协议对 Agent 平台暴露）。EvidenceMode 类型扩展 `'filesystem'` 模式。daemon 审计闭环（文件变更→diff→runRules→快照→binary_history 全链路打通）+ daemon cron @weekly/@daily/@hourly 定时 FDE 巡检 + `--doctor` fs-watch 运行状态检测 + `install.sh --with-memory` TencentDB Memory 集成。
 **安全修复**：A9 中文注入检测（追加 9 条中文正则，`忽略以上所有指令` 等模式正确拦截）+ `--diff` 模式 commitMsg 从区间终点取而非 HEAD。
-**缺陷修复**：fs-watch 递归监控（子目录文件变更不再遗漏）+ config-loader knownKeys 补 a16/a17 + rules/index.ts 注释同步 A14-A17 + acceptance-test pipefail 全面保护（`git_log_has()` 函数统一封装）+ diff-ref 语义修正（非范围 ref 原样返回）+ 文档预算上限调整（5500→5600）。531 tests 全绿，acceptance-test 35/35 全绿，pre-push 7/7 全绿，check-version 39/39。
+**缺陷修复**：fs-watch 递归监控（子目录文件变更不再遗漏）+ config-loader knownKeys 补 a16/a17 + rules/index.ts 注释同步 A14-A17 + acceptance-test pipefail 全面保护（`git_log_has()` 函数统一封装）+ diff-ref 语义修正（非范围 ref 原样返回）+ 文档预算上限调整（5500→5600）。531 tests across 12 packages（workspace 汇总口径），acceptance-test 35/35 全绿，pre-push 7/7 全绿，check-version 39/39。
 > 📖 [开发日志](./docs/changelog/v1.0.9.md)
+
 ### [v1.0.8] — FDE Agent 自进化 + 文件系统审计 + 内嵌 isomorphic-git + Agent 定义去耦合 🔧
 > 2026-07-13（UTC）
-FDE Agent 双模式（部署 deploy + 持续优化 sustain）构成自进化闭环（Audit 管底线、FDE sustain 管上限）+ 文件系统审计（isomorphic-git 隐藏 repo + fs-watch daemon + 5s 防抖 + 快照回溯 `--revert`）+ Agent 定义去 OpenClaw 耦合（`session.spawn` 零命中，Sub Agent 可在个人节点直跑）+ TencentDB Memory 集成（persona.md 注入加载链）+ Ontology 人类可读视图（`ontology view`）。审计语义从"git commit 拦截"扩展为"文件变更告警 + 回溯"，覆盖非开发者。发版审查后修复：版本号全量 bump（91 文件一致）+ verify.js 脚本目录解析兼容 monorepo 嵌套。493 测试全绿，pre-push 7/7 全绿，OpenClaw 28/28 验收全绿，回归检查清单（256 维度）质量验证全通过。
+FDE Agent 双模式（部署 deploy + 持续优化 sustain）构成自进化闭环（Audit 管底线、FDE sustain 管上限）+ 文件系统审计（isomorphic-git 隐藏 repo + fs-watch daemon + 5s 防抖 + 快照回溯 `--revert`）+ Agent 定义去 OpenClaw 耦合（`session.spawn` 零命中，Sub Agent 可在个人节点直跑）+ TencentDB Memory 集成（persona.md 注入加载链）+ Ontology 人类可读视图（`ontology view`）。审计语义从"git commit 拦截"扩展为"文件变更告警 + 回溯"，覆盖非开发者。
+
+**发版后修复**：版本号全量 bump（91 文件一致）+ verify.js 脚本目录解析兼容 monorepo 嵌套。493 tests across 12 packages（workspace 汇总口径），pre-push 7/7 全绿，OpenClaw 28/28 验收全绿，回归检查清单（256 维度）质量验证全通过。
 > 📖 [开发日志](./docs/changelog/v1.0.8.md)
+
 ### [v1.0.7] — 双节点架构 + Sub Agent 约束自加载 + ao 完全退役 🔧
 > 2026-07-13（UTC）
 > 🔴 **Breaking Change**：ao（agency-orchestrator）已完全退役。v1.0.6 用户升级到 v1.0.7 后需手动卸载：`npm uninstall -g agency-orchestrator`。编排引擎已全面迁移到 DeepAgents。
 
-Sub Agent 约束自加载（buildConstrainedSystemPrompt，平台无关）+ CLI 编排入口（sofagent-audit compose）+ ao 代码全部清除（deepagents 提升为正式依赖）+ 审计 fast-fail（critical 层 FAIL 即停）+ A/B 自动切换（连续胜出计数器）+ 方案C运行器升级 + 双节点架构文档。v1.0.6 补丁修复（post-commit hook 误报修复 / --init 自动创建 .gitignore / 测试数对齐 / CHANGELOG 纯度 / 根目录归位 / 文档一致性等）。493 测试全绿，pre-push 全绿。
+Sub Agent 约束自加载（buildConstrainedSystemPrompt，平台无关）+ CLI 编排入口（sofagent-audit compose）+ ao 代码全部清除（deepagents 提升为正式依赖）+ 审计 fast-fail（critical 层 FAIL 即停）+ A/B 自动切换（连续胜出计数器）+ 方案C运行器升级 + 双节点架构文档。v1.0.6 补丁修复（post-commit hook 误报修复 / --init 自动创建 .gitignore / 测试数对齐 / CHANGELOG 纯度 / 根目录归位 / 文档一致性等）。493 tests across 12 packages（workspace 汇总口径），pre-push 全绿。
 > 📖 [开发日志](./docs/changelog/v1.0.7.md)
+
 ### [v1.0.6] — 编排迁移 + A/B 真实运行器 + 安全加固 + SkillOpt CLI 修复 🔧
 > 2026-07-13（UTC）
-DeepAgents compose 迁移（ao 降为 fallback）+ Sub Agent 状态管理（runtime.json 心跳）+ A/B 真实运行器（模型 API 直跑，自动评估 + 手动 promote）+ history.jsonl 环境指纹防篡改（hashVersion: 2）+ post-commit hook 绕过检测 + SkillOpt CLI 契约修复（status 探针 + run 子命令 + parseArgs 误判）+ 文档一致性修复（README 规则分类 / CHANGELOG 纯度 / ROADMAP 日期对齐）。480 测试全绿，28/28 OpenClaw 验收，pre-push 7/7 全绿。
+DeepAgents compose 迁移（ao 降为 fallback）+ Sub Agent 状态管理（runtime.json 心跳）+ A/B 真实运行器（模型 API 直跑，自动评估 + 手动 promote）+ history.jsonl 环境指纹防篡改（hashVersion: 2）+ post-commit hook 绕过检测 + SkillOpt CLI 契约修复（status 探针 + run 子命令 + parseArgs 误判）+ 文档一致性修复（README 规则分类 / CHANGELOG 纯度 / ROADMAP 日期对齐）。480 tests across 12 packages（workspace 汇总口径），28/28 OpenClaw 验收，pre-push 7/7 全绿。
 > 📖 [开发日志](./docs/changelog/v1.0.6.md)
+
 ### [v1.0.5] — Ontology 统一层 + Workflow Hub 🔧
 > 2026-07-12（UTC）
-Ontology 三路合并引擎 + Workflow Hub 独立项目 + A9 分级安全 + A15 绕过修复 + fail-closed 默认安全 + 原子文件写入 + 安全加固。DeepAgents 接入层保留为 optional wrapper，编排迁移推到 v1.0.6-v1.0.7。472 测试全绿，pre-push 全绿。
+Ontology 三路合并引擎 + Workflow Hub 独立项目 + A9 分级安全 + A15 绕过修复 + fail-closed 默认安全 + 原子文件写入 + 安全加固。DeepAgents 接入层保留为 optional wrapper，编排迁移推到 v1.0.6-v1.0.7。472 tests across 12 packages（workspace 汇总口径），pre-push 全绿。
 > 📖 [开发日志](./docs/changelog/v1.0.5.md)
 
-### 规划中
+### [v1.0.4] — Sub Agent 自进化 🔧
+> 2026-07-11（UTC）
+Sub Agent 会自己变好了：eval harness 评分体系 + Sub Agent A/B 自动优化（SkillOpt 集成） + HITL 渐进自主度 + A15 约束验证。465 tests across 12 packages（workspace 汇总口径），pre-push 全绿。
+> 📖 [开发日志](./docs/changelog/v1.0.4.md)
 
-### [v1.1.3] — LangGraph StateGraph + Checkpoint + HITL 📋
-> 规划中
-**核心变更**：StateGraph 自动流转 engineer→audit→reviewer + Checkpoint 持久化 + HITL 确认节点 + SKILL.md LUI-first 约束。
-> 📖 [开发日志](./docs/changelog/v1.1.3.md)
+### [v1.0.3] — 编排引擎重构 + LOOP 自迭代 🔧
+> 2026-07-11（UTC）
+三件事重合：FDE Sub Agent 成型（DeepAgentsJS + LangGraph 编排 + Agency Agents 岗位模板 + SkillOpt CLI 集成）+ LOOP 自迭代架构落地（4 Agent 定义 + 内外层循环设计 + 4 验证文件自动优化机制）+ 30 项修复。附带 releasing.md 八阶段发版 SOP + SOP 自我进化（FDE 提议→作者确认）+ check-docs 文档分层预算（5 层独立检查）。430 tests across 12 packages（workspace 汇总口径），pre-push 全绿。
+> 📖 [开发日志](./docs/changelog/v1.0.3.md)
+
+### [v1.0.2] — 文档修正 + 规则对齐 🔧
+> 2026-07-11（UTC）
+v1.0.1 本版修复 15 项问题。修复覆盖：文档死链（README/HANDBOOK/DEVELOPMENT 6 处锚点）、SECURITY.md 安全报告渠道（Issue→Security Advisory）、规则数量不一致（11→16）、A14 include='*' 全放开检测、config 未知规则名校验、doctor 输出友好度、CI 修复指引、hook 错误标签、knowledge 目录自动创建、ROADMAP 状态矛盾。418 tests across 12 packages（workspace 汇总口径）。
+> 📖 [开发日志](./docs/changelog/v1.0.2.md)
+
+### [v1.0.1] — AI 知识库实现版 🔧
+> 2026-07-11（UTC）
+v1.0.0 本轮完成 AI 知识库代码实现——7 件事：目录骨架（6 子目录 + index.md/log.md）+ fde.md 维护规则章节（4 子规则，≤3200 字符）+ knowledge-maintain.md 新 Skill（71 行）+ 加载链三层→四层（knowledge 被动注入）+ daemon Ingest 触发（task/logs 变化检测 + 30 分钟防抖）+ loop-evaluate 5 项 Lint + loop-check 20 轮硬上限。附带 A14 知识库越权审计规则（hybrid 模式）+ deepagents 可选依赖（不阻断安装）+ Ontology relations（entities/ frontmatter 含 has_many/belongs_to）+ doctor 第 9 项知识库访问矩阵。418 tests across 12 packages（workspace 汇总口径），37 test files。回归检查清单全覆盖。
+> 📖 [开发日志](./docs/changelog/v1.0.1.md)
+
+### [v1.0.0] — 正式版：Agent 审计工具 🎉
+> 2026-07-10（UTC）
+从技术预览到可生产使用。18 件事全部完成：铁律措辞强化 + 上线前验收测试 + daemon 文档校准 + FDE 隐性代价 + 准入条件推进 + 工具链加固 + 审计可视化升级 + 违规修复建议 + 安装仪式感 + 无声失败保护 + 首次提交噪音消除 + --init 一键初始化 + --doctor 健康诊断 + 审查 prompt 回归检查清单升级 + README 定位 + 升级迁移指引。408 tests across 12 packages（workspace 汇总口径），3 名外部用户验证通过。
+> 📖 [开发日志](./docs/changelog/v1.0.0.md)
+
+---
+
+## 规划中
+
+### [v1.2.0] — 多设备知识联邦收口 🎉
+> 规划中（v1.1.3~v1.1.9 子能力收口）
+**核心变更**：LOOP 双 Agent 自循环 + LangGraph 编排 + OpenClaw MCP 知识联邦 + Dream Cycle 知识管道 + LLM Wiki 3 层分层 + AES-256-GCM 加密 + USB key 物理身份。7 个子版本 → 1 个联邦。v1.2.x 完整多设备协同的起点。
+> 📖 [开发日志](./docs/changelog/v1.2.0.md)
+
 ### [v1.1.4] — 条件路由 + USB federation 📋
 > 规划中
 **核心变更**：LangGraph 条件路由（PASS→push / FAIL→fix / WARN→human）+ daemon USB 检测自动配置。
 > 📖 [开发日志](./docs/changelog/v1.1.4.md)
+
 ### [v1.1.5] — releasing.md SOP 集成 + MCP knowledge resource 📋
 > 规划中
 **核心变更**：Agent 按 releasing.md 十一阶段 SOP 全流程自动发版 + 7 个 MCP knowledge resource。
 > 📖 [开发日志](./docs/changelog/v1.1.5.md)
+
 ### [v1.1.6] — LLM Wiki 3 层分层 + conflict-check 📋
 > 规划中
 **核心变更**：Ledger-Views-Policy 显式映射 + daemon conflict-check（矛盾/孤儿/死链）。
 > 📖 [开发日志](./docs/changelog/v1.1.6.md)
+
 ### [v1.1.7] — Dream Cycle 6 阶段 + sensitivity 📋
 > 规划中
 **核心变更**：gbrain Dream Cycle 精简 pipeline（fact→atom→cluster→synthesize→skillopt→embed）+ knowledge sensitivity 分级。
 > 📖 [开发日志](./docs/changelog/v1.1.7.md)
+
 ### [v1.1.8] — 安全层 + 联邦查询 📋
 > 规划中
 **核心变更**：AES-256-GCM 加密 + ECDH 密钥交换 + 三条配对路径 + OpenClaw channel 联邦知识查询。
 > 📖 [开发日志](./docs/changelog/v1.1.8.md)
+
 ### [v1.1.9] — USB 完整运行时 📋
 > 规划中
 **核心变更**：Node.js 单文件打包 + OpenClaw 便携化 + 跨平台启动脚本。U 盘插入 → 双击 start → 联邦在线 → 拔掉零残留。
 > 📖 [开发日志](./docs/changelog/v1.1.9.md)
-> 2026-07-11（UTC）
-Sub Agent 会自己变好了：eval harness 评分体系 + Sub Agent A/B 自动优化（SkillOpt 集成） + HITL 渐进自主度 + A15 约束验证。465 测试全绿，pre-push 全绿。
-> 📖 [开发日志](./docs/changelog/v1.0.4.md)
-### [v1.0.3] — 编排引擎重构 + LOOP 自迭代 🔧
-> 2026-07-11（UTC）
-三件事重合：FDE Sub Agent 成型（DeepAgentsJS + LangGraph 编排 + Agency Agents 岗位模板 + SkillOpt CLI 集成）+ LOOP 自迭代架构落地（4 Agent 定义 + 内外层循环设计 + 4 验证文件自动优化机制）+ 30 项修复。附带 releasing.md 八阶段发版 SOP + SOP 自我进化（FDE 提议→作者确认）+ check-docs 文档分层预算（5 层独立检查）。430 测试全绿，pre-push 全绿。
-> 📖 [开发日志](./docs/changelog/v1.0.3.md)
-### [v1.0.2] — 文档修正 + 规则对齐 🔧
-> 2026-07-11（UTC）
-v1.0.1 本版修复 15 项问题。修复覆盖：文档死链（README/HANDBOOK/DEVELOPMENT 6 处锚点）、SECURITY.md 安全报告渠道（Issue→Security Advisory）、规则数量不一致（11→16）、A14 include='*' 全放开检测、config 未知规则名校验、doctor 输出友好度、CI 修复指引、hook 错误标签、knowledge 目录自动创建、ROADMAP 状态矛盾。418 测试全绿。
-> 📖 [开发日志](./docs/changelog/v1.0.2.md)
-### [v1.0.1] — AI 知识库实现版 🔧
-> 2026-07-11（UTC）
-v1.0.0 本轮完成 AI 知识库代码实现——7 件事：目录骨架（6 子目录 + index.md/log.md）+ fde.md 维护规则章节（4 子规则，≤3200 字符）+ knowledge-maintain.md 新 Skill（71 行）+ 加载链三层→四层（knowledge 被动注入）+ daemon Ingest 触发（task/logs 变化检测 + 30 分钟防抖）+ loop-evaluate 5 项 Lint + loop-check 20 轮硬上限。附带 A14 知识库越权审计规则（hybrid 模式）+ deepagents 可选依赖（不阻断安装）+ Ontology relations（entities/ frontmatter 含 has_many/belongs_to）+ doctor 第 9 项知识库访问矩阵。418 测试全绿，37 test files。回归检查清单全覆盖。
-> 📖 [开发日志](./docs/changelog/v1.0.1.md)
-### [v1.0.0] — 正式版：Agent 审计工具 🎉
-> 2026-07-10（UTC）
-从技术预览到可生产使用。18 件事全部完成：铁律措辞强化 + 上线前验收测试 + daemon 文档校准 + FDE 隐性代价 + 准入条件推进 + 工具链加固 + 审计可视化升级 + 违规修复建议 + 安装仪式感 + 无声失败保护 + 首次提交噪音消除 + --init 一键初始化 + --doctor 健康诊断 + 审查 prompt 回归检查清单升级 + README 定位 + 升级迁移指引。408 测试全绿，3 名外部用户验证通过。
-> 📖 [开发日志](./docs/changelog/v1.0.0.md)
 
 ---
 
 ## 实验版
 > ⚠️ 以下版本号为实验/测试版，产品形态和技术方案在此期间经历多次重大调整。正式版从 v1.0.0 开始。
+
 ### [v0.99.9] — AI 知识库概念 + verify.ts 拆分 + 行业笔记 + 理论基础 🔧
 > 2026-07-07（UTC）
 AI 知识库 6 文档概念先行（架构定位+边界划分）+ verify.ts 1257 行代码拆分（→ 4 模块）+ 7 项行业笔记写入 ROADMAP/ARCHITECTURE + Skill 摘要信息架构优化（去掉步骤性描述，只留触发条件）+ Hugging Face/AutoResearch/Akshay 理论基础引证（ARCHITECTURE 新增「理论基础与外部验证」节）。**v0.99.x 修复线最终版。**

@@ -2,7 +2,7 @@
 
 > sofagent 怎么用自己的工具开发自己。
 >
-> v1.1.2 · 2026-07-13（UTC）· 孔放勋
+> v1.1.3 · 2026-07-13（UTC）· 孔放勋
 
 <img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -204,17 +204,17 @@ sofagent 的版本发布遵循 [`docs/verification/releasing.md`](../docs/verifi
 
 | releasing.md 阶段 | 当前（人类做） | LOOP 映射 |
 |---|---|---|
-| 阶段一：审查 | 陌生视角审查（`docs/verification/fresh-eyes-review.md`） | review-agent + 全新 session |
+| 阶段一：审查 | 发布后审查（`docs/verification/fresh-eyes-review.md`） | review-agent + 全新 session |
 | 阶段二：开发 | 修复 P0/P1/P2 | minimal-change-engineer（7 步开发流程） |
 | 阶段三：自测 | `npm run build` + `npm test` + `acceptance-test.sh` | minimal-change-engineer 自检 |
 | 阶段四：审核 | 独立审核者逐项核对 | review-agent（全新 session） |
 | **阶段五：回归清单验证** | **全新 session 独立验证更新后的 checklist** | **review-agent（全新 session）** |
 | 阶段六：回归检查 + OpenClaw 验收 | 全量回归检查（regression-checklist.md）+ OpenClaw 验收测试 | FDE 触发 compliance-auditor + review-agent 执行验收 |
-| 阶段七：审查体系维护 | 更新 fresh-eyes-review.md（新增盲区/视角/攻击面） | FDE（前三份验证文件直接做，releasing.md 提议→确认） |
+| 阶段七：审查体系维护 | 更新 fresh-eyes-review.md（新增盲区/维度/攻击面） | FDE（前三份验证文件直接做，releasing.md 提议→确认） |
 | 阶段八：文档收尾 | bump-version + CHANGELOG/ROADMAP 更新 + 内容新鲜度检查 | FDE |
 | 阶段九：确认关口 | 作者确认改动清单 | 人类确认（不可自动化） |
 | 阶段十：发布 | npm publish + git tag + Skill 分发 | 人类操作（不可自动化） |
-| 阶段十一：发布后 | 陌生视角审查 → 发现问题 → 自动回流阶段一 | review-agent（全新 session）|
+| 阶段十一：发布后 | 发布后审查 → 发现问题 → 自动回流阶段一 | review-agent（全新 session）|
 | 阶段十一：发布后 | SOP 自我进化——沉淀教训 + 更新过期数字 + 纳入新工具 | FDE 提议 → 作者确认 |
 
 ### LOOP 中的验证文档
@@ -223,7 +223,7 @@ sofagent 的版本发布遵循 [`docs/verification/releasing.md`](../docs/verifi
 
 | 文档 | 在 LOOP 中的角色 | 谁执行 |
 |------|------|------|
-| `docs/verification/fresh-eyes-review.md` | 发版前/后陌生视角审查（7 视角 × 3 轮） | review-agent（全新 session） |
+| `docs/verification/fresh-eyes-review.md` | 发版前/后发布后审查（7 维度 × 3 轮） | review-agent（全新 session） |
 | `docs/verification/regression-checklist.md` | 发版前全局回归检查（176 维度） | FDE 触发 compliance-auditor |
 | `docs/verification/openclaw-acceptance-test.md` | 发版前 Agent 端到端验收（5 场景） | review-agent |
 | `tools/acceptance-test.sh` | 发版前 CLI 端到端验收（11 场景） | minimal-change-engineer 自检 |
@@ -305,14 +305,14 @@ flowchart TD
 
 | 文件 | 当前位置 | 每次发版后做什么 | 谁做 |
 |------|------|------|------|
-| `fresh-eyes-review.md` | `docs/verification/` | ① 审视上轮审查发现的盲区 → 新增视角/任务 ② 过时的角色/问题 → 删除或更新 ③ 本轮新发现的"反复出现的同类问题" → 抽象为新的通用视角 | FDE |
+| `fresh-eyes-review.md` | `docs/verification/` | ① 审视上轮审查发现的盲区 → 新增维度/任务 ② 过时的角色/问题 → 删除或更新 ③ 本轮新发现的"反复出现的同类问题" → 抽象为新的通用维度 | FDE |
 | `regression-checklist.md` | `docs/verification/` | ① 本轮修复的 P0/P1 → 抽象为新的检查项（从 177 开始编号）② 审查体系更新建议中"建议追加到回归检查"的条目 → 正式写入 | FDE |
 | `openclaw-acceptance-test.md` | `docs/verification/` | ① 新增的审计规则 → 新增对应测试场景 ② 新功能（如 SkillOpt）→ 新增验收场景 ③ 上一版本被绕过的边缘 case → 新增为测试场景 | FDE |
 | `releasing.md` | `docs/verification/` | ① 本版本发布过程中遇到的流程漏洞 → 沉淀到「历史教训」区 ② 检查 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）③ 新增的工具/脚本是否已纳入对应阶段 ④ 把更新后的 releasing.md 同步到 LOOP.md 的映射表 | FDE 提议 → 作者确认 |
 
 **这不是可选操作——是 LOOP 外层循环的核心职责。** 如果发版后这四份文件没有更新，外层循环就是失败的。这四份文件是 LOOP 的"经验存储器"——每次发版的经验必须变成下次审查更锋利的武器。
 
-前三份是**纯增量**操作（追加检查项/视角/场景），FDE 直接做。第四份 `releasing.md` 包含**修改**操作（更新数字、改步骤）——FDE 生成更新建议（diff 格式），作者确认后 apply。这和内层循环的"code-reviewer 生成审查报告 → 人类确认"是同构的。
+前三份是**纯增量**操作（追加检查项/维度/场景），FDE 直接做。第四份 `releasing.md` 包含**修改**操作（更新数字、改步骤）——FDE 生成更新建议（diff 格式），作者确认后 apply。这和内层循环的"code-reviewer 生成审查报告 → 人类确认"是同构的。
 
 ### 文件位置的说明
 

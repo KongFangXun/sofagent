@@ -1,9 +1,10 @@
 // ============================================================
 // config-loader.ts · .sofagent/config.yml 配置加载器
-// v0.95 新增：三级 fallback（v1.1.2，js-yaml 替代手写 YAML 解析器）
+// v0.95 新增：三级 fallback（v1.1.3，js-yaml 替代手写 YAML 解析器）
 // v0.97 扩展：环境变量配置（从 lib/config.sh 合并）
-// v1.1.2 重构：用 js-yaml 替代手写 YAML 解析器
-// v1.1.2 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
+// v1.1.3 重构：用 js-yaml 替代手写 YAML 解析器
+// v1.1.3 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
+// v1.1.3：新增 ConfigParseError（含 cause 链），audit.strict fail-closed 选项
 // ============================================================
 //
 // 三级 fallback：
@@ -38,6 +39,8 @@ export interface AuditConfig {
   rules?: Record<string, boolean>;
   /** loop-check 绝对轮次上限（v1.0.1），默认 20 */
   loopCheckMaxRounds?: number;
+  /** v1.1.3: audit.strict fail-closed——strict 时规则缺失/解析失败直接 FAIL */
+  strict?: boolean;
   /** v1.1.0: A16 非授权文件变更配置 */
   A16?: {
     enabled: boolean;
@@ -62,7 +65,7 @@ export const DEFAULT_CONFIG: AuditConfig = {
   extendedRulesEnabled: false,
 };
 
-/** 配置加载错误——YAML 语法错误时抛出 */
+/** 配置加载错误——YAML 语法错误时抛出（v1.1.3: 保留向后兼容） */
 export class ConfigLoadError extends Error {
   filePath: string;
   line: number | string;
@@ -77,14 +80,31 @@ export class ConfigLoadError extends Error {
 }
 
 /**
+ * 配置解析错误——非法 YAML 不再静默（v1.1.3 新增）
+ * 含 cause 链，便于调用方访问原始错误。
+ */
+export class ConfigParseError extends Error {
+  filePath: string;
+  line: number | string;
+  column: number | string;
+  constructor(message: string, filePath: string, line: number | string, column: number | string, cause?: Error) {
+    super(message, cause ? { cause } : undefined);
+    this.name = 'ConfigParseError';
+    this.filePath = filePath;
+    this.line = line;
+    this.column = column;
+  }
+}
+
+/**
  * 加载审计配置（三级 fallback）
  * YAML 语法错误时：
- *   - strict 模式：抛出 ConfigLoadError（由 CLI 入口 exit 2）
+ *   - strict 模式 / audit.strict=true：抛出 ConfigParseError（由 CLI 入口 exit 2）
  *   - 非 strict 模式：输出 WARN + 回退到安全默认值（所有规则启用）
  * @param cwd 工作目录（默认 process.cwd()）
  * @param strict 是否严格模式（YAML 语法错误时抛出异常 vs 回退安全默认值）
  * @returns 合并后的 AuditConfig
- * @throws ConfigLoadError 当 strict=true 且配置文件存在但 YAML 语法错误时
+ * @throws ConfigParseError 当 strict=true / audit.strict=true 且配置文件存在但 YAML 语法错误时
  */
 export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
   const baseDir = cwd || process.cwd();
@@ -94,27 +114,37 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
     const projectConfigPath = join(baseDir, '.sofagent', 'config.yml');
     const projectConfig = tryLoadYaml(projectConfigPath);
     if (projectConfig) {
-      return mergeWithDefaults(projectConfig);
+      const merged = mergeWithDefaults(projectConfig);
+      // v1.1.3: config 内 audit.strict 与 CLI --strict 任一为 true 则 fail-closed
+      if (strict || merged.strict) {
+        merged.strict = true;
+      }
+      return merged;
     }
 
     // 2. 尝试 ~/.sofagent/config.yml
     const homeConfigPath = join(homedir(), '.sofagent', 'config.yml');
     const homeConfig = tryLoadYaml(homeConfigPath);
     if (homeConfig) {
-      return mergeWithDefaults(homeConfig);
+      const merged = mergeWithDefaults(homeConfig);
+      if (strict || merged.strict) {
+        merged.strict = true;
+      }
+      return merged;
     }
 
     // 3. 使用默认配置
     console.warn('⚠️ 未找到 .sofagent/config.yml，使用默认配置。运行 sofagent-audit --init 生成配置。');
     return { ...DEFAULT_CONFIG };
   } catch (err) {
-    if (err instanceof ConfigLoadError) {
+    // v1.1.3: 统一处理 ConfigParseError 和旧版 ConfigLoadError
+    if (err instanceof ConfigParseError || err instanceof ConfigLoadError) {
       if (strict) {
-        throw err; // strict 模式：向上抛，由 CLI 入口 exit 2
+        throw err; // CLI --strict 模式：向上抛，由 CLI 入口 exit 2
       }
       // 非 strict 模式：WARN + 回退到安全默认值
       console.warn(`⚠️ ${err.message}`);
-      console.warn('⚠️ 配置解析失败，回退到安全默认值（所有安全规则已启用）。建议修复配置文件后重试。');
+      console.warn('⚠️ config.yml 格式错误，已回退默认配置。运行 sofagent-core doctor 诊断');
       return safeDefaults();
     }
     throw err;
@@ -127,7 +157,7 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
 
 /**
  * 尝试从 YAML 文件加载配置，文件不存在返回 null
- * YAML 语法错误时抛出 ConfigLoadError（含行号列号），不静默回退
+ * YAML 语法错误时抛出 ConfigParseError（含行号列号 + cause），不静默回退
  * 配置结构：
  *   audit:
  *     lowRiskPatterns:
@@ -148,31 +178,35 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
     return null;
   }
 
+  // v1.1.3: 先尝试浅层解析以提取 audit.strict（用于 fail-closed 判定）
+  let configStrict = false;
   try {
     const parsed = yamlLoad(content) as Record<string, unknown> | null;
-    if (!parsed || typeof parsed !== 'object') {
-      return null;
-    }
-    const audit = parsed['audit'];
-    if (!audit || typeof audit !== 'object') {
+    if (parsed && typeof parsed === 'object') {
+      const audit = parsed['audit'];
+      if (audit && typeof audit === 'object') {
+        configStrict = !!(audit as Record<string, unknown>)['strict'];
+        return audit as Partial<AuditConfig>;
+      }
       // P2-3: 配置文件缺少 audit 段时提示
       console.warn('⚠️ 配置文件缺少 audit 段，使用默认配置');
       return null;
     }
-    return audit as Partial<AuditConfig>;
+    return null;
   } catch (err) {
-    // YAML 语法错误——抛出自定义异常，含行号列号
+    // YAML 语法错误——抛出 ConfigParseError（含 cause 链）
     if (err instanceof YAMLException) {
       const line = err.mark?.line != null ? err.mark.line + 1 : '?';
       const col = err.mark?.column != null ? err.mark.column + 1 : '?';
-      throw new ConfigLoadError(
+      throw new ConfigParseError(
         `${filePath} 第 ${line} 行第 ${col} 列: ${err.reason}`,
         filePath,
         line,
-        col
+        col,
+        err
       );
     }
-    throw new ConfigLoadError(`${filePath}: ${(err as Error).message}`, filePath, '?', '?');
+    throw new ConfigParseError(`${filePath}: ${(err as Error).message}`, filePath, '?', '?', err as Error);
   }
 }
 
@@ -180,13 +214,17 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
  * 将部分配置与默认配置合并（缺失字段用默认值填充）
  */
 function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
-  const merged = {
+  const merged: AuditConfig = {
     lowRiskPatterns: partial.lowRiskPatterns ?? DEFAULT_CONFIG.lowRiskPatterns,
     testPatterns: partial.testPatterns ?? DEFAULT_CONFIG.testPatterns,
     carefulModifyThreshold: partial.carefulModifyThreshold ?? DEFAULT_CONFIG.carefulModifyThreshold,
     extendedRulesEnabled: partial.extendedRulesEnabled ?? DEFAULT_CONFIG.extendedRulesEnabled,
     rules: partial.rules,
     loopCheckMaxRounds: partial.loopCheckMaxRounds ?? 20,
+    // v1.1.3: 透传 audit.strict（默认 false）
+    strict: partial.strict ?? false,
+    A16: partial.A16,
+    A17: partial.A17,
   };
 
   // 校验 rules key——未知规则名输出警告
@@ -222,6 +260,10 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
  * 返回最严格的默认值：所有安全规则启用、不允许静默。
  * 遵循 gstack 的 classifier_score > 0 门控哲学——
  * 默认不信任，参数格式错误时回退到安全默认值而非默认配置。
+ *
+ * 注意：DEFAULT_CONFIG.extendedRulesEnabled=false 和
+ * safeDefaults 强制 extendedRulesEnabled=true 是故意的 fail-closed 保护设计，
+ * 不可改变。
  */
 export function safeDefaults(): AuditConfig {
   return {
@@ -235,6 +277,7 @@ export function safeDefaults(): AuditConfig {
       a14: true, a15: true, a16: true, a17: true,
     },
     loopCheckMaxRounds: 20,
+    strict: false,
   };
 }
 

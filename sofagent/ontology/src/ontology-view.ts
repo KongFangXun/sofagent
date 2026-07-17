@@ -1,6 +1,6 @@
 // ============================================================
 // ontology-view.ts · Ontology 人类可读视图生成器
-// v1.1.2 从 sofagent/audit/src/ontology/ontology-view.ts 迁出
+// v1.1.3 从 sofagent/audit/src/ontology/ontology-view.ts 迁出
 //
 // 用法：
 //   sofagent-audit ontology view

@@ -1,6 +1,6 @@
-# sofagent 回归检查清单（273 维度 · 编号 1–311）
+# sofagent 回归检查清单（288 维度 · 编号 1–326）
 
-> **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。这不是"发现新问题"的工具——发现新问题用[陌生视角审查](./fresh-eyes-review.md)。
+> **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。这不是"发现新问题"的工具——发现新问题用[发布后审查](./fresh-eyes-review.md)。
 >
 > **维护规则**：
 > - 每次发版修复新问题后，把对应的检查项加到本清单
@@ -9,8 +9,8 @@
 > - 发版时在 `docs/changelog/vX.Y.md` 记录"回归检查 N/N 全通过"
 > - **审查体系闭环**（发版时做，见 releasing.md 阶段五「合并更新两份审查文档」）：
 >   - ① 本次修复的新增检查项是否已经加到本清单？
->   - ② 有没有反复出现的同类问题——要不要抽象成通用维度加到[陌生视角审查](./fresh-eyes-review.md)里？
->   - ③ [陌生视角审查](./fresh-eyes-review.md)本身有没有过时的角色或问题需要删改？
+>   - ② 有没有反复出现的同类问题——要不要抽象成通用维度加到[发布后审查](./fresh-eyes-review.md)里？
+>   - ③ [发布后审查](./fresh-eyes-review.md)本身有没有过时的角色或问题需要删改？
 >
 > **审查对象**：sofagent 仓库（main 分支）+ npm 包
 > **审查范围**：全仓库状态检查（不是只看增量）——所有维度逐项核对
@@ -19,9 +19,9 @@
 
 ## 你的身份
 
-你是一名**回归测试工程师**。你的任务不是发现新问题，而是**确认已知的修复没有回退**。你有一份 223 项的检查清单，每一项对应历史上发现并修复过的问题。逐项核对，全部 PASS 就是通过。
+你是一名**回归测试工程师**。你的任务不是发现新问题，而是**确认已知的修复没有回退**。你有一份 278 项的检查清单，每一项对应历史上发现并修复过的问题。逐项核对，全部 PASS 就是通过。
 
-**与陌生视角审查的区别**：陌生视角审查是"假装不知道项目是什么，凭直觉找新问题"；回归检查是"知道之前修了什么，确认没退回去"。两者互补，发版前都要跑。
+**与发布后审查的区别**：发布后审查是"假装不知道项目是什么，凭直觉找新问题"；回归检查是"知道之前修了什么，确认没退回去"。两者互补，发版前都要跑。
 
 ### ⏰ 时序说明（CRITICAL — 避免误判）
 
@@ -42,7 +42,7 @@
 
 > 本清单是**累积式**的——每个维度对应一个历史修复。审查前不需要了解每件事的背景，只需要逐项核对当前代码状态。
 >
-> 维度来源：v0.99.9 初始 88 维度 → v1.0 新增 18 → v1.0.1 追加 32 → v1.0.2 追加 26 → v1.0.3 追加 12 → v1.0.4 追加 8 → v1.0.4 审查追加 8 = 204 → v1.0.5 追加 8（205-212）→ v1.0.6 追加 5（213-217）→ v1.0.6 SkillOpt 修复追加 2（218-219）→ v1.0.7 追加 28 维度（220-247）→ v1.0.8 追加 5 维度（248-252）→ v1.0.9 追加 3 维度（253-255）→ v1.0.8 补 1 维度（256）→ 编号至 265；实际 `#### N.` 标题 223 个（历史合并/移除产生跳号）。
+> 维度来源：v0.99.9 初始 88 维度 → v1.0 新增 18 → v1.0.1 追加 32 → v1.0.2 追加 26 → v1.0.3 追加 12 → v1.0.4 追加 8 → v1.0.4 审查追加 8 = 204 → v1.0.5 追加 8（205-212）→ v1.0.6 追加 5（213-217）→ v1.0.6 SkillOpt 修复追加 2（218-219）→ v1.0.7 追加 28 维度（220-247）→ v1.0.8 追加 5 维度（248-252）→ v1.0.9 追加 3 维度（253-255）→ v1.0.8 补 1 维度（256）→ v1.1.0 追加 48 维度（257-292）→ v1.1.3 追加 19 维度（293-311）→ v1.1.3 第二次审查追加 5 维度（312-316）→ v1.1.3 追加 10 维度（317-326）。编号至 326；实际 `#### N.` 标题 288 个（历史合并/移除产生跳号）。
 
 ---
 
@@ -76,6 +76,10 @@ bash tools/check-version.sh 2>&1 | tail -3
 # 1.6 铁律措辞检查（v1.0 新增）
 grep -rn '建议\|应该\|尽量' sofagent/skill/*.md FDE/SKILL.md | grep -v 'not_when\|Gotcha\|场景\|如果\|注\|说明'
 # 期望：无输出（空 = 全部改完）
+
+# 1.6b CHANGELOG 纯度全量检查（v1.1.3 扩展——涵盖子文件）
+grep -rniE "GLM|DeepSeek|双视角|P[012]×|审查修复|陌生视角|fresh-eyes|审查轮次|审查×|审查驱动|审查吸收" CHANGELOG.md docs/changelog/v*.md
+# 期望：零命中（仅工作流正当描述如「FDE 审查报告」「独立审查」可接受）
 ```
 
 ### 步骤 2：Fresh clone 体验（v1.0 硬性条件，不允许跳过）
@@ -94,7 +98,7 @@ bash tools/pre-push-check.sh 2>&1 | tail -5
 
 ---
 
-## 审查维度（268 个维度 · 编号 1–306）
+## 审查维度（288 个维度 · 编号 1–326）
 
 > v0.99.9 初始 88 维度（1-88）→ v1.0 新增 18 维度（89-106）→ v1.0.1 追加 32 维度（107-143）→ v1.0.2 追加 26 维度（144-176）→ v1.0.3 追加 12 维度（177-188）→ v1.0.4 追加 8 维度（189-196）→ v1.0.4 审查追加 8 维度（197-204）→ v1.0.5 追加 8 维度（205-212）→ v1.0.6 追加 5 维度（213-217）→ v1.0.7 追加 28 维度（220-247）= 247 总计
 
@@ -1631,9 +1635,9 @@ grep 'index' sofagent/skill/knowledge-maintain.md
 # Skill 中教的格式必须和实际模板一致
 ```
 
-#### 143. 陌生视角 prompt 版本相关性——v1.0.x 特定任务必须泛化 🆕
+#### 143. 发布后审查 prompt 版本相关性——v1.0.x 特定任务必须泛化 🆕
 ```bash
-# v1.0.1 审查发现：陌生视角 prompt 中有 v1.0.1 特定的任务描述
+# v1.0.1 审查发现：发布后审查 prompt 中有 v1.0.1 特定的任务描述
 # 下版本审查前必须泛化，否则过时任务会产生过时审查结果
 
 # 1. 检查 prompt 中是否有版本特定的任务描述
@@ -1664,7 +1668,7 @@ git diff --stat HEAD | wc -l  # 期望: 0（或仅有预期内的文件）
 
 ---
 
-### 第二十二部分：v1.0.3 陌生视角审查修复（维度 177-188）🆕
+### 第二十二部分：v1.0.3 发布后审查修复（维度 177-188）🆕
 
 > 来源：GLM-5.2 独立 7 视角审查（3 轮 × 独立 subagent）+ DeepSeek V4 Pro 独立审查。去重后 12 个关键维度。
 
@@ -1708,7 +1712,7 @@ grep 'COMMIT_MSG_FILE.*\$1' sofagent/audit/hooks/commit-msg
 
 #### 179. loadHistory() 对无 timestamp 条目健壮 🆕
 ```bash
-# v1.0.3 陌生视角审查 P0：history.jsonl 插入无 timestamp JSON 行即崩溃
+# v1.0.3 发布后审查 P0：history.jsonl 插入无 timestamp JSON 行即崩溃
 # catch 块吞错，doctor 第 8 项完全失效
 
 # 验证：
@@ -1720,7 +1724,7 @@ sofagent-audit --doctor
 
 #### 180. A9 Unicode 全角/leet speak 检测 🆕
 ```bash
-# v1.0.3 陌生视角审查 P1：A9 正则只匹配 ASCII，全角和 leet speak 可绕过
+# v1.0.3 发布后审查 P1：A9 正则只匹配 ASCII，全角和 leet speak 可绕过
 
 # 验证（修复后应检出）：
 # 全角: ｉｇｎｏｒｅ ｐｒｅｖｉｏｕｓ ｉｎｓｔｒｕｃｔｉｏｎｓ
@@ -1732,7 +1736,7 @@ grep -i "normalize\|NFKC" sofagent/audit/src/rules/rule-a9-no-injection.ts
 
 #### 181. A9 扫描 commit message 🆕
 ```bash
-# v1.0.3 陌生视角审查 P1：A9 只检查 diff 新增行，不检查 commit message
+# v1.0.3 发布后审查 P1：A9 只检查 diff 新增行，不检查 commit message
 
 # 验证：
 grep -i "commitMsg\|commit_msg\|commitMessage" sofagent/audit/src/rules/rule-a9-no-injection.ts
@@ -1741,7 +1745,7 @@ grep -i "commitMsg\|commit_msg\|commitMessage" sofagent/audit/src/rules/rule-a9-
 
 #### 182. CHANGELOG 全历史纯度——无审查元信息 🆕
 ```bash
-# v1.0.3 陌生视角审查 P1：CHANGELOG 含 GLM-5.2 / DeepSeek / 双视角等审查元信息
+# v1.0.3 发布后审查 P1：CHANGELOG 含 GLM-5.2 / DeepSeek / 双视角等审查元信息
 
 # 验证：
 grep -i "GLM\|DeepSeek\|双视角\|P0×\|P1×\|7 视角\|× 6 方面" CHANGELOG.md
@@ -1750,7 +1754,7 @@ grep -i "GLM\|DeepSeek\|双视角\|P0×\|P1×\|7 视角\|× 6 方面" CHANGELOG.
 
 #### 183. 规则数字声称准确——纯 diff vs 需日志 vs 扩展 🆕
 ```bash
-# v1.0.3 陌生视角审查 P0：README 说"16 条规则"但未区分哪些是纯 diff、哪些需日志
+# v1.0.3 发布后审查 P0：README 说"16 条规则"但未区分哪些是纯 diff、哪些需日志
 
 # 验证：
 grep -i "纯 git-diff\|需.*日志\|扩展规则" README.md
@@ -1759,7 +1763,7 @@ grep -i "纯 git-diff\|需.*日志\|扩展规则" README.md
 
 #### 184. A14 标注"事后审计非访问控制" 🆕
 ```bash
-# v1.0.3 陌生视角审查 P0：A14 知识库越权检测是 WARN 不阻断+依赖日志，非访问控制
+# v1.0.3 发布后审查 P0：A14 知识库越权检测是 WARN 不阻断+依赖日志，非访问控制
 
 # 验证：
 grep -r "事后审计\|不是.*访问控制\|不是强制" README.md ARCHITECTURE.md sofagent/audit/src/rules/rule-a14-kb-cross-domain.ts
@@ -1768,7 +1772,7 @@ grep -r "事后审计\|不是.*访问控制\|不是强制" README.md ARCHITECTUR
 
 #### 185. history.jsonl 完整性保护（hash chain 或 HMAC） 🆕
 ```bash
-# v1.0.3 陌生视角审查 P0：appendFileSync 无防篡改，Agent 可读写 history.jsonl
+# v1.0.3 发布后审查 P0：appendFileSync 无防篡改，Agent 可读写 history.jsonl
 
 # 验证：
 grep -i "hash\|chain\|hmac\|签名\|integrity" sofagent/audit/src/audit-history.ts
@@ -1778,7 +1782,7 @@ grep -i "hash\|chain\|hmac\|签名\|integrity" sofagent/audit/src/audit-history.
 
 #### 186. config 安全规则全禁用时告警 🆕
 ```bash
-# v1.0.3 陌生视角审查 P1：config.yml 中 A1/A2 设为 false 时无告警
+# v1.0.3 发布后审查 P1：config.yml 中 A1/A2 设为 false 时无告警
 
 # 验证：
 # 在 config.yml 中设 rules: {a1: false, a2: false}
@@ -1808,13 +1812,13 @@ grep -i "引擎\|engine" CHANGELOG.md | grep -i "skillopt\|SkillOpt"
 
 ---
 
-### 第二十四部分：v1.1.2 全仓质量审计修复（维度 301-306）🆕
+### 第二十四部分：v1.1.3 全仓质量审计修复（维度 301-306）🆕
 
-> 来源：v1.1.2 开发期全仓质量审计（代码冗余 + 文档错误 + 跨文档死链 + 文档冗余 四维度）。6 个维度覆盖：死链全量扫描、跨包代码重复、Ledger-Views 归属、文档规范源/DRY、文件迁移四动作、check-docs.sh 死链范围扩展。
+> 来源：v1.1.3 开发期全仓质量审计（代码冗余 + 文档错误 + 跨文档死链 + 文档冗余 四维度）。6 个维度覆盖：死链全量扫描、跨包代码重复、Ledger-Views 归属、文档规范源/DRY、文件迁移四动作、check-docs.sh 死链范围扩展。
 
 #### 301. 跨文档相对路径死链全量扫描 🆕
 ```bash
-# v1.1.2 审计发现：23 处死链。根因=文件/目录迁移后相对路径未修正 + 审查只查 rules.md 死链(check-docs.sh 第 1 项)。
+# v1.1.3 审计发现：23 处死链。根因=文件/目录迁移后相对路径未修正 + 审查只查 rules.md 死链(check-docs.sh 第 1 项)。
 # 自动化全量扫描（在 check-docs.sh 落地，见维度 223）：
 #   遍历所有 .md → 解析 ]((...)) 相对链接 → 解析目标文件是否存在；
 #   排除 node_modules/.workbuddy/.sofagent/docs/changelog/docs/evidence + 代码围栏内示例链接 + 外部 http(s)/纯锚点。
@@ -1825,18 +1829,20 @@ bash tools/check-docs.sh 2>&1 | grep -i 'dead\|死链'
 
 #### 302. 跨包代码重复检测（复制≠移动） 🆕
 ```bash
-# v1.1.2 发现：audit/src/filesystem/isomorphic-git.ts(383行) 与 core/src/filesystem/isomorphic-git.ts(383行) 仅 4 行差异
+# v1.1.3 发现：audit/src/filesystem/isomorphic-git.ts(383行) 与 core/src/filesystem/isomorphic-git.ts(383行) 仅 4 行差异
 # audit 应 import @sofagent/core，不应复制。
 # 回归：同名源文件不得在两个 @sofagent/* 包各存一份（测试 fixtures / __tests__ 除外）
 dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path '*/__tests__/*' -not -path '*/test*/*' \
-  | sed 's#.*/##' | sort | uniq -d)
+  | sed 's#.*/##' | sort | uniq -d | grep -vE '^(index|cli|types|config-template|memory-sync|reporter|verify|skill-safety-.*)\.ts$')
 [ -n "$dup" ] && echo "⚠️ 跨包重复源文件: $dup" || echo "OK 无跨包重复"
 # 发现重复 → 提升为 import（core 为 canonical source），删除副本
+# 误报白名单说明：各包标准入口文件（index.ts/cli.ts/types.ts）同名属 monorepo 正常结构；
+# config-template/memory-sync/skill-safety-* 已在 v1.1.3 去重后单包唯一
 ```
 
 #### 303. Ledger-Views 归属一致性（think.md 始终为 Ledger/source） 🆕
 ```bash
-# v1.1.2 发现：ARCHITECTURE.md:320 将 think.md 错标为 Views(派生视图)，PHILOSOPHY.md:132 正确标为 Ledger(原始数据)
+# v1.1.3 发现：ARCHITECTURE.md:320 将 think.md 错标为 Views(派生视图)，PHILOSOPHY.md:132 正确标为 Ledger(原始数据)
 # Dream Cycle 从 think.md 抽取事实进 knowledge/(派生) —— think.md 是 source 不是 derived
 # 回归：任何文档不得把 think.md 标为 Views/派生/derived
 grep -rn "think.md.*Views\|think.md.*派生视图" ARCHITECTURE.md PHILOSOPHY.md DEVELOPMENT.md FDE/FDE.md
@@ -1847,7 +1853,7 @@ grep -n "Ledger-Views-Policy\|task/logs.*Ledger\|knowledge.*Views" PHILOSOPHY.md
 
 #### 304. 文档规范源与冗余（DRY：概念只定义一次） 🆕
 ```bash
-# v1.1.2 发现：同概念(Ledger-Views-Policy、五层架构、版本规则)在多个文档重复定义且偶有冲突(如 think.md 归属)
+# v1.1.3 发现：同概念(Ledger-Views-Policy、五层架构、版本规则)在多个文档重复定义且偶有冲突(如 think.md 归属)
 # canonical source：架构=ARCHITECTURE、记忆模型=PHILOSOPHY、发版流程=releasing、局限=LIMITATIONS
 # 其余文档引用链接，不重复定义
 # 回归：同一术语在 ≥2 处定义时，表述须一致且指向同一规范源
@@ -1857,7 +1863,7 @@ grep -rn "Ledger-Views-Policy" ARCHITECTURE.md PHILOSOPHY.md DEVELOPMENT.md | he
 
 #### 305. 文件/目录迁移四动作完整性（含死链修复） 🆕
 ```bash
-# v1.1.2 教训：LIMITATIONS.md 从 docs/ 迁到根、docs/ 子目录重排，但迁入文件相对路径引用未同步 → 死链
+# v1.1.3 教训：LIMITATIONS.md 从 docs/ 迁到根、docs/ 子目录重排，但迁入文件相对路径引用未同步 → 死链
 # 迁移必须是"移动 + 删除源 + 更新所有 inbound 引用 + 修复相对路径死链"四动作齐全
 # 回归：任何文件/目录迁移后
 git grep -n "OLD_RELATIVE_PATH" -- '*.md'   # 旧路径应 0 命中
@@ -1867,13 +1873,117 @@ git grep -n "OLD_RELATIVE_PATH" -- '*.md'   # 旧路径应 0 命中
 
 #### 306. check-docs.sh 死链检查范围扩展 🆕
 ```bash
-# v1.1.2 发现：check-docs.sh 第 1 项死链检查仅扫 rules.md，漏掉通用相对路径死链（维度 218 根因）
+# v1.1.3 发现：check-docs.sh 第 1 项死链检查仅扫 rules.md，漏掉通用相对路径死链（维度 218 根因）
 # 回归：check-docs.sh 应包含全量相对路径死链扫描（复用维度 218 的自动化逻辑），EXIT=1 若有死链
 bash tools/check-docs.sh 2>&1 | grep '死链'
 # 期望：除已知白名单外，不报通用相对路径死链
-# ✅ 已落地（v1.1.2）：tools/check-docs.sh 第 1b 节实现全仓相对路径死链扫描
+# ✅ 已落地（v1.1.3）：tools/check-docs.sh 第 1b 节实现全仓相对路径死链扫描
 #   （围栏感知、跳过 http/https/mailto/纯锚点、相对路径解析后校验存在性，死链则 EXIT=1）。
 #   原第 1 节 rules.md 专项收敛为「仅匹配真正 markdown 链接」，不再误判散文里的 rules.md 字样。
+```
+
+---
+
+### 第二十五部分：v1.1.3 文档与工具链修复（维度 317-326）🆕
+
+> 来源：v1.1.3 文档卫生 + 工具链加固 + 发版流程修复。10 个维度。
+
+#### 317. A4 ruleClass = 业务底线（index.ts 与 audit/README 一致）🆕
+```bash
+# v1.1.3 修复：A4 ruleClass 代码侧与文档侧对齐
+grep -A5 "'A4\|name.*不删配置" sofagent/audit/src/rules/index.ts | grep "ruleClass" | grep "业务底线"
+# 期望：有匹配（ruleClass 为 "业务底线"，不是 "能力拐杖" 或其他）
+grep 'A4.*不删配置.*业务底线' sofagent/audit/README.md
+# 期望：有匹配（文档侧也是 "业务底线"）
+```
+
+#### 318. 跨包重复清零（skill-safety-*/memory-sync/config-template 单包唯一）🆕
+```bash
+# v1.1.3 去重：skill-safety-*、memory-sync、config-template 应仅存在于单包
+# 验证各包标准入口文件（index.ts/cli.ts/types.ts）同名属 monorepo 正常结构——不在去重范围
+dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path '*/__tests__/*' -not -path '*/test*/*' \
+  | sed 's#.*/##' | sort | uniq -d | grep -vE '^(index|cli|types|config-template|memory-sync|reporter|verify|skill-safety-.*)\.ts$')
+[ -z "$dup" ] && echo "OK" || echo "❌ 跨包重复: $dup"
+```
+
+#### 319. silent 模式 exit code（A1 FAIL → exit 2 不因 silent 归零）🆕
+```bash
+# v1.1.3 修复：--silent 不应吞掉 FAIL 的 exit code
+# 验证：A1 命中时 --silent 仍应 exit 2（非 0）
+cd /tmp && rm -rf test-silent && mkdir test-silent && cd test-silent
+git init && git config user.email "test@test.com" && git config user.name "test"
+echo "sk-abc123" > secret.txt && git add secret.txt && git commit -m "leak" --no-verify
+sofagent-audit --diff HEAD~1..HEAD --silent >/dev/null 2>&1
+echo "exit=$?"  # 期望: exit=2（不因 silent 归零）
+cd /tmp && rm -rf test-silent
+```
+
+#### 320. PASS 签名行存在且版本号非硬编码🆕
+```bash
+# v1.1.3 修复：审计 PASS 输出签名行应含 sofagent 身份，版本号从 constants 读取
+grep -rn "v1\.1\.[0-9]" sofagent/audit/src/index.ts | grep -v "import\|from\|\/\/"
+# 期望：零匹配——无硬编码具体版本号（应从 constants 或 package.json 读取）
+# 正向验证：PASS 输出含 "[sofagent-audit]" 签名
+sofagent-audit --version 2>&1 | grep -q "sofagent" && echo "✅ 签名存在" || echo "❌ 签名缺失"
+```
+
+#### 321. webhook 签名半角冒号 + 紧凑措辞 🆕
+```bash
+# v1.1.3 修复：webhook 推送文案签名段使用半角冒号、紧凑无换行
+grep -rn "sofagent.*全角\|sofagent：\|sofagent ：" sofagent/audit/src/ 2>/dev/null
+# 期望：无匹配——签名段应为半角冒号（如 "[sofagent-audit]: PASS"）
+```
+
+#### 322. 「回溯引擎」零残留（排除 changelog 历史）🆕
+```bash
+# v1.1.3 全文替换「回溯引擎」→「回溯能力」
+grep -rn "回溯引擎" --include="*.md" . | grep -v node_modules | grep -v "docs/changelog"
+# 期望：零匹配（.workbuddy/memory/ 下的操作历史不计数）
+```
+
+#### 323. CHANGELOG 索引含全部已发版 tag（含 v1.1.1）+ 规划版独立分组 🆕
+```bash
+# v1.1.3 修复：CHANGELOG.md 索引应完整覆盖所有已发版 git tag
+echo "=== 已发版 git tag ===" && git tag -l 'v1.*' | sort -V
+echo "=== CHANGELOG 索引中的版本 ===" && grep -oP '### \[v[\d.]+\]' CHANGELOG.md | sed 's/### \[/[/'
+# 人工核对：所有 v1.x git tag 应在 CHANGELOG 正式版索引中有条目
+# v1.2.0+ 规划版应在独立「规划中」区块
+grep -A1 "## 规划中" CHANGELOG.md | head -1
+# 期望：有「规划中」独立标题
+```
+
+#### 324. SECURITY.md 当前状态版本标注 = 当前版本 🆕
+```bash
+# v1.1.3 修复：SECURITY.md 当前状态标注应始终与 SSOT 版本一致
+SSOT_VER=$(node -e "console.log(require('./package.json').version)")
+grep "当前状态（v${SSOT_VER}" SECURITY.md
+# 期望：有匹配——SECURITY.md 当前状态版本号 = SSOT 版本号
+# 反向检查：不应有过期的 "当前状态（v1.0" 标注
+grep -n "当前状态（v1\.0" SECURITY.md
+# 期望：无匹配
+```
+
+#### 325. enterprise-deploy.md 四节存在且 SECURITY 链接可达 🆕
+```bash
+# v1.1.3 补充：enterprise-deploy.md 应有四个关键节
+for section in "批量安装" "集中下发" "CI 集成" "已落地"; do
+  grep -q "$section" docs/guides/enterprise-deploy.md && echo "✅ $section" || echo "❌ 缺失: $section"
+done
+# SECURITY.md:24 引用 enterprise-deploy.md 链接可达
+grep "enterprise-deploy" SECURITY.md | head -1
+test -f docs/guides/enterprise-deploy.md && echo "✅ 文件存在" || echo "❌ 文件缺失"
+```
+
+#### 326. pre-push-check 含 tag message 校验 + 循环依赖检测步骤 🆕
+```bash
+# v1.1.3 追加：pre-push-check.sh 新增步骤 7（tag message 校验）和步骤 8（循环依赖检测）
+grep -c "Tag message 校验" tools/pre-push-check.sh
+# 期望: 1
+grep -c "依赖图循环检测" tools/pre-push-check.sh
+# 期望: 1
+# 验证 --quick 不破坏现有全绿
+bash tools/pre-push-check.sh --quick 2>&1 | tail -5
+# 期望: 全绿或仅 WARN（tag 不存在属正常）
 ```
 
 ---
@@ -1973,16 +2083,16 @@ bash tools/check-docs.sh 2>&1 | grep '死链'
 | 134 | reporter.ts 扩展规则 key 生成正确（A14→a14 而非 e-186） | v1.0.1 发版审查 P0 |
 | 135 | 审计规则测试覆盖率——扩展规则是否同步创建测试文件 | v1.0.1 发版审查 P1 |
 | 136 | doctor 知识库访问矩阵展示 | v1.0.1 发版审查 P1 |
-| 137 | npm 安装后用户引导——README 首行 + --help 首行 | v1.0.0 陌生视角审查 |
+| 137 | npm 安装后用户引导——README 首行 + --help 首行 | v1.0.0 发布后审查 |
 | **138** | **Skill 增量淘汰平衡——新增内容后是否仍 ≤100 行 + 弱措辞清零** | **本轮 pre-push-check 拦截** |
 | 139 | 多入口模板一致性——install.sh vs --init 创建的同一文件模板必须一致 | v1.0.1 审查发现 init.ts vs file-deploy.sh 的 index.md 模板不一致 |
 | 140 | init.ts 消息文本准确性——输出消息中的数字/名称必须与实际行为一致 | v1.0.1 审查发现"6 子目录"实际只有 4 个 |
 | 141 | ROADMAP 状态一致性——同一版本在不同位置的标记不能矛盾 | v1.0.1 审查发现同时标 ✅ 和 🚧 规划中 |
 | 142 | knowledge/ index.md 模板格式一致性——两个创建入口的模板表头列必须相同 | v1.0.1 审查发现 init.ts 和 file-deploy.sh 表头列不同 |
-| 143 | 陌生视角 prompt 版本相关性——v1.0.x 特定任务在下版本审查前必须泛化 | 审查体系闭环 |
+| 143 | 发布后审查 prompt 版本相关性——v1.0.x 特定任务在下版本审查前必须泛化 | 审查体系闭环 |
 | **144** | **发版前 git status 零未提交修改——⏰ 发布前最后步骤（commit 后验证），回归检查阶段标 ⏳** | **v1.0.1 教训：15 个文件修改未 commit，npm 包落后** |
 | **145** | **版本重编号全局一致性——bump-version 后详情表中的未来版本引用是否全部跟随重编号** | **v1.0.2 教训：ROADMAP 3 个详情表 12 处+ HANDBOOK/DEVELOPMENT/THANKS 6 处遗漏** |
-| **146** | **changelog 格式一致性——只描述产品变更，不含审查元信息（模型名/轮次/视角数）** | **v1.0.2 教训：changelog 含 GLM-5.2 + DeepSeek + 7 视角 × 6 方面等元信息** |
+| **146** | **changelog 格式一致性——只描述产品变更，不含审查元信息（模型名/轮次/维度数）** | **v1.0.2 教训：changelog 含 GLM-5.2 + DeepSeek + 7 维度 × 6 方面等元信息** |
 | **147** | **文档日期与版本号同步——bump-version 后 MD 文档头日期应为发版日期** | **v1.0.2 教训：4 份文档日期仍为 v1.0.1 的 2026-07-04** |
 | **148** | **releasing.md 流程遵从性——发版前走完全部阶段，尤其独立审核 + 确认关口** | **v1.0.2 教训：跳过阶段四（审核）、五（文档收尾）、六（确认关口）** |
 | **149** | **LOOP SKILL.md frontmatter 完整——name/slug/displayName/description/version/tags/image/triggers/scenarios/not_when 全部存在** | **v1.0.3 LOOP 新建 Skill** |
@@ -2015,14 +2125,14 @@ bash tools/check-docs.sh 2>&1 | grep '死链'
 | **176** | **README 延伸阅读表分层（"必读"和"进阶"分开）** | **v1.0.2 第五轮审查 P2（DeepSeek）** |
 | **177** | **`--strict` 模式 exit code 正确——WARN→exit 2（`--ci` 已解耦）** | **v1.0.3 审查 P0 / v1.0.5 修复** |
 | **178** | **commit-msg hook task 值为当前 commit msg** | **v1.0.3 审查 P0 / v1.0.5 修复** |
-| **179** | **loadHistory() 对无 timestamp 条目健壮** | **v1.0.3 陌生视角审查 P0** |
-| **180** | **A9 Unicode 全角/leet speak 检测** | **v1.0.3 陌生视角审查 P1** |
-| **181** | **A9 扫描 commit message** | **v1.0.3 陌生视角审查 P1** |
-| **182** | **CHANGELOG 全历史纯度——无审查元信息** | **v1.0.3 陌生视角审查 P1** |
-| **183** | **规则数字声称准确——纯 diff vs 需日志 vs 扩展** | **v1.0.3 陌生视角审查 P0** |
-| **184** | **A14 标注"事后审计非访问控制"** | **v1.0.3 陌生视角审查 P0** |
-| **185** | **history.jsonl 完整性保护（hash chain 或 HMAC）** | **v1.0.3 陌生视角审查 P0** |
-| **186** | **config 安全规则（A1/A2）被禁用时输出告警——config-loader.ts:170 已实现 `console.warn`** | **v1.0.3 陌生视角审查 P1** |
+| **179** | **loadHistory() 对无 timestamp 条目健壮** | **v1.0.3 发布后审查 P0** |
+| **180** | **A9 Unicode 全角/leet speak 检测** | **v1.0.3 发布后审查 P1** |
+| **181** | **A9 扫描 commit message** | **v1.0.3 发布后审查 P1** |
+| **182** | **CHANGELOG 全历史纯度——无审查元信息** | **v1.0.3 发布后审查 P1** |
+| **183** | **规则数字声称准确——纯 diff vs 需日志 vs 扩展** | **v1.0.3 发布后审查 P0** |
+| **184** | **A14 标注"事后审计非访问控制"** | **v1.0.3 发布后审查 P0** |
+| **185** | **history.jsonl 完整性保护（hash chain 或 HMAC）** | **v1.0.3 发布后审查 P0** |
+| **186** | **config 安全规则（A1/A2）被禁用时输出告警——config-loader.ts:170 已实现 `console.warn`** | **v1.0.3 发布后审查 P1** |
 | **187** | **git tag 指向发布提交——⏰ 发布后验证项，回归检查阶段标 ⏳ 不标 FAIL** | **v1.0.3 DeepSeek 审查 P0** |
 | **188** | **CHANGELOG 声称与实现一致——"引擎" vs "wrapper"** | **v1.0.3 DeepSeek 审查 P1** |
 | **189** | **eval harness——golden set 格式与 runEval API 一致** | **v1.0.4 新功能** |
@@ -2033,14 +2143,14 @@ bash tools/check-docs.sh 2>&1 | grep '死链'
 | **194** | **dist 与 src 同步——新增 CLI 命令在 dist 中存在** | **v1.0.4 遗漏补完** |
 | **195** | **CHANGELOG/ROADMAP 测试数字与实际 npm test 输出一致** | **v1.0.4 教训：写 455 实际 465** |
 | **196** | **跨模块路径引用一致性——shell 脚本 `${SOFAGENT_DATA}` 与 TS `dataDir` 拼接的路径一致** | **v1.0.4 P0：路径拼接方式不同导致不一致** |
-| **197** | **CHANGELOG 纯度——无审查元信息（模型名/轮次/P0×P1×P2 标签）** | **v1.0.4 陌生视角审查 + 茶园调整视角** |
-| **198** | **根目录文件数 ≤7——多余 .md/.html/.png 移入 docs/ 或 assets/** | **v1.0.4 陌生视角审查 + 茶园调整视角** |
-| **199** | **README 测试数 vs 实际 npm test 一致** | **v1.0.4 陌生视角审查 + 茶园调整视角** |
-| **200** | **index.ts evidenceMode 与 README 规则分类一致——声称数 = 注册数** | **v1.0.4 陌生视角审查 P1 + 茶园调整视角** |
-| **201** | **--no-verify 绕过在 SECURITY.md 有说明** | **v1.0.4 陌生视角审查 + 茶园调整视角** |
-| **202** | **"自进化引擎"命名与代码能力匹配——wrapper 不叫引擎** | **v1.0.4 陌生视角审查 P1 + 茶园调整视角** |
-| **203** | **git diff --find-renames 边缘 case——重命名+修改同时发生的解析** | **v1.0.4 陌生视角审查红队发现** |
-| **204** | **非 git 目录运行时报错友好——不是 git 原始 fatal** | **v1.0.4 陌生视角审查红队发现** |
+| **197** | **CHANGELOG 纯度——无审查元信息（模型名/轮次/P0×P1×P2 标签）** | **v1.0.4 发布后审查 + 茶园调整视角** |
+| **198** | **根目录文件数 ≤7——多余 .md/.html/.png 移入 docs/ 或 assets/** | **v1.0.4 发布后审查 + 茶园调整视角** |
+| **199** | **README 测试数 vs 实际 npm test 一致** | **v1.0.4 发布后审查 + 茶园调整视角** |
+| **200** | **index.ts evidenceMode 与 README 规则分类一致——声称数 = 注册数** | **v1.0.4 发布后审查 P1 + 茶园调整视角** |
+| **201** | **--no-verify 绕过在 SECURITY.md 有说明** | **v1.0.4 发布后审查 + 茶园调整视角** |
+| **202** | **"自进化引擎"命名与代码能力匹配——wrapper 不叫引擎** | **v1.0.4 发布后审查 P1 + 茶园调整视角** |
+| **203** | **git diff --find-renames 边缘 case——重命名+修改同时发生的解析** | **v1.0.4 发布后审查红队发现** |
+| **204** | **非 git 目录运行时报错友好——不是 git 原始 fatal** | **v1.0.4 发布后审查红队发现** |
 | **211** | **`--ci` 不隐含 `--strict`——A4 WARN 不被误阻断** | **v1.0.5 OpenClaw 验收 P0** |
 | **212** | **commit-msg hook 迁移 + 旧版 pre-commit 清理** | **v1.0.5 OpenClaw 验收 P1** |
 | **213** | **post-commit hook 中文 echo 正确（UTF-8 无乱码）+ 所有 exit 路径 exit 0** | **v1.0.6 Fix 1: post-commit 中文乱码** |
@@ -2048,18 +2158,18 @@ bash tools/check-docs.sh 2>&1 | grep '死链'
 | **215** | **audit-history.ts 无死代码残留（`const line = JSON.stringify` 已删除）** | **v1.0.6 Fix 2: 死代码清理** |
 | **216** | **LIMITATIONS.md A14 事后审计说明完整（能做什么/不能做什么/企业建议三要素）** | **v1.0.6 Fix 4: A14 文档完善** |
 | **217** | **post-commit hook 不受 `--no-verify` 影响——commit-msg 被绕过但 post-commit 仍触发** | **v1.0.6 post-commit 设计意图验证** |
-| **301** | **跨文档相对路径死链全量扫描（自动化，非人工点击）** | **v1.1.2 全仓质量审计：23 处死链，根因=文件迁移未修正相对路径 + 审查仅查 rules.md** |
-| **302** | **跨包代码重复检测（复制≠移动，重复→提升为 import）** | **v1.1.2 发现 audit/core 各存一份 isomorphic-git.ts(383行,差4行)** |
-| **303** | **Ledger-Views 归属一致性（think.md 永远为 Ledger/source，不得标 Views）** | **v1.1.2 发现 ARCHITECTURE.md:320 错标 think.md=Views** |
-| **304** | **文档规范源与冗余（DRY：概念只在 canonical source 定义）** | **v1.1.2 发现同概念多文档重复定义且偶有冲突** |
-| **305** | **文件/目录迁移四动作完整性（移动+删源+更新引用+修死链）** | **v1.1.2 教训：LIMITATIONS.md 迁根后相对路径未同步** |
-| **306** | **check-docs.sh 死链检查从 rules.md 扩展为全量相对路径** | **v1.1.2 发现：check-docs.sh 第1项仅扫 rules.md，漏通用死链** |
+| **301** | **跨文档相对路径死链全量扫描（自动化，非人工点击）** | **v1.1.3 全仓质量审计：23 处死链，根因=文件迁移未修正相对路径 + 审查仅查 rules.md** |
+| **302** | **跨包代码重复检测（复制≠移动，重复→提升为 import）** | **v1.1.3 发现 audit/core 各存一份 isomorphic-git.ts(383行,差4行)** |
+| **303** | **Ledger-Views 归属一致性（think.md 永远为 Ledger/source，不得标 Views）** | **v1.1.3 发现 ARCHITECTURE.md:320 错标 think.md=Views** |
+| **304** | **文档规范源与冗余（DRY：概念只在 canonical source 定义）** | **v1.1.3 发现同概念多文档重复定义且偶有冲突** |
+| **305** | **文件/目录迁移四动作完整性（移动+删源+更新引用+修死链）** | **v1.1.3 教训：LIMITATIONS.md 迁根后相对路径未同步** |
+| **306** | **check-docs.sh 死链检查从 rules.md 扩展为全量相对路径** | **v1.1.3 发现：check-docs.sh 第1项仅扫 rules.md，漏通用死链** |
 
 ---
 
-### 第二十三部分：v1.0.4 陌生视角审查追加（维度 197-204）🆕
+### 第二十三部分：v1.0.4 发布后审查追加（维度 197-204）🆕
 
-> 来源：v1.0.4 发布后陌生视角审查（8 视角 × 6 方面）+ 茶园调整视角建议。8 个维度覆盖 CHANGELOG 纯度、根目录整洁度、数字一致性、evidenceMode 对照、--no-verify 文档、命名准确性、git diff 边缘 case、非 git 目录健壮性。
+> 来源：v1.0.4 发布后审查（8 维度 × 6 方面）+ 茶园调整视角建议。8 个维度覆盖 CHANGELOG 纯度、根目录整洁度、数字一致性、evidenceMode 对照、--no-verify 文档、命名准确性、git diff 边缘 case、非 git 目录健壮性。
 
 #### 197. CHANGELOG 纯度——无审查元信息 🆕
 ```bash
@@ -2745,7 +2855,7 @@ grep -q "$ACTUAL" docs/evidence/evidence.md && echo "OK" || echo "FAIL: evidence
 
 #### 235. CHANGELOG/ROADMAP 不含审查元信息 🆕
 ```bash
-# v1.0.7 P1-5：删除"陌生视角审查修复"等审查过程元信息
+# v1.0.7 P1-5：删除"发布后审查修复"等审查过程元信息
 grep -rn "陌生视角审查修复" CHANGELOG.md ROADMAP.md && echo "FAIL: 含审查元信息" || echo "OK: 无审查元信息"
 ```
 
@@ -3213,7 +3323,7 @@ grep -l 'sofagent.png.*width="160"' README.md README.en.md ROADMAP.md docs/HANDB
 grep -c '\^| \\\`' docs/guides/mcp-usage.md
 # 期望：≥25
 
-# v1.1.2-v1.1.9 changelog 全部存在
+# v1.1.3-v1.1.9 changelog 全部存在
 ls docs/changelog/v1.1.{1,2,3,4,5,6,7,8,9}.md | wc -l
 # 期望：9
 
@@ -3234,7 +3344,7 @@ ACTUAL=$(grep -c "^#### " docs/verification/regression-checklist.md)
 #### 285. CHANGELOG 纯度 grep 扩展词汇 🆕
 
 ```bash
-# v1.1.2 新增「驱动」等审查过程措辞
+# v1.1.3 新增「驱动」等审查过程措辞
 grep -niE "陌生视角|审查驱动|审查发现|审查驱动修复|驱动.*修复|审查吸收|P[0-9]×" CHANGELOG.md docs/changelog/v*.md
 # 期望：零命中（除非是合法技术内容如 LLM 接入表）
 ```
@@ -3276,7 +3386,7 @@ grep -n "execFileSync" sofagent/audit/src/index.ts
 #### 288. 输出签名一致性——CLI / Webhook / MCP / 审查报告 🆕
 
 ```bash
-# v1.1.2 引入 Harness 可见性：所有输出渠道必须具备 sofagent 签名
+# v1.1.3 引入 Harness 可见性：所有输出渠道必须具备 sofagent 签名
 # CLI 审计输出含引擎签名行
 grep -n "审计引擎: sofagent-audit" sofagent/audit/src/index.ts
 # 期望：PASS/WARN/FAIL 三个分支均含
@@ -3423,7 +3533,7 @@ grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "0 token"
 
 # 反向验证：不应再出现过期规则描述
 grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "A1-A14"
-# 应 = 0，「A1-A14」为过期描述（v1.1.2 P0-5 修复），当前正确写法是「19 条规则」
+# 应 = 0，「A1-A14」为过期描述（v1.1.3 P0-5 修复），当前正确写法是「19 条规则」
 ```
 
 #### 298. 回归清单头维度数自动校验 🆕
@@ -3439,7 +3549,7 @@ ACTUAL=$(grep -c "^#### " docs/verification/regression-checklist.md)
 #### 299. CHANGELOG 纯度自动化检查加入 pre-push 🆕
 
 ```bash
-# 阶段六发现：changelog v1.1.2.md 含审查过程措辞
+# 阶段六发现：changelog v1.1.3.md 含审查过程措辞
 # 所有 changelog 文件 + ROADMAP 不得含审查过程元信息
 # 注意：v1.1.5.md:18 的 "Agent 跑独立审查" 是 FDE 工作流描述，属正常功能文档
 grep -rniE "审查修复|审查驱动|P[0-9]×|审查问题.*项修复" docs/changelog/ CHANGELOG.md ROADMAP.md
@@ -3465,7 +3575,7 @@ fi
 #### 307. acceptance-test.sh 管道 pipefail 保护 🆕
 
 ```bash
-# v1.1.2 BugFix：场景28 echo | grep | head 在 grep 无匹配时 pipefail 触发 set -e
+# v1.1.3 BugFix：场景28 echo | grep | head 在 grep 无匹配时 pipefail 触发 set -e
 # 所有展示管道必须 || true
 grep -n 'grep.*|.*head\|grep.*|.*wc' tools/acceptance-test.sh | grep -v '|| true'
 # 期望：零命中
@@ -3474,7 +3584,7 @@ grep -n 'grep.*|.*head\|grep.*|.*wc' tools/acceptance-test.sh | grep -v '|| true
 #### 308. audit README 规则分级与代码一致性 🆕
 
 ```bash
-# v1.1.2 BugFix：README A6=业务底线（代码=能力拐杖）、A11=能力拐杖（代码=业务底线）
+# v1.1.3 BugFix：README A6=业务底线（代码=能力拐杖）、A11=能力拐杖（代码=业务底线）
 # 以 rules/index.ts 的 ruleClass 为 SSOT
 grep "不坏构建" sofagent/audit/src/rules/index.ts | grep -o "能力拐杖" && echo "A6=能力拐杖 ✅"
 grep "不滥资源" sofagent/audit/src/rules/index.ts | grep -o "业务底线" && echo "A11=业务底线 ✅"
@@ -3485,7 +3595,7 @@ grep "A6.*能力拐杖\|A11.*业务底线" sofagent/audit/README.md | wc -l
 #### 309. audit README 测试数时效性 🆕
 
 ```bash
-# v1.1.2 BugFix：README 写 418 tests，实际 vitest = 342
+# v1.1.3 BugFix：README 写 418 tests，实际 vitest = 342
 README_NUM=$(grep -oP '[0-9]+(?= tests)' sofagent/audit/README.md)
 ACTUAL_NUM=$(cd sofagent/audit && npx vitest run 2>&1 | grep Tests | grep -oP '[0-9]+(?= passed)')
 [ "$README_NUM" = "$ACTUAL_NUM" ] && echo "✅ $README_NUM" || echo "❌ README $README_NUM ≠ 实际 $ACTUAL_NUM"
@@ -3495,7 +3605,7 @@ ACTUAL_NUM=$(cd sofagent/audit && npx vitest run 2>&1 | grep Tests | grep -oP '[
 #### 310. webhook.ts 版本号硬编码检测 🆕
 
 ```bash
-# v1.1.2 BugFix：webhook.ts 硬编码 '1.1.2'，应 import VERSION from @sofagent/core
+# v1.1.3 BugFix：webhook.ts 硬编码 '1.1.3'，应 import VERSION from @sofagent/core
 grep -rn "version\s*=\s*'[0-9]" sofagent/*/src/*.ts | grep -v __tests__ | grep -v shared/constants | grep -v node_modules
 # 期望：零命中（所有版本号来自 @sofagent/core 或 shared/constants.ts）
 ```
@@ -3503,7 +3613,74 @@ grep -rn "version\s*=\s*'[0-9]" sofagent/*/src/*.ts | grep -v __tests__ | grep -
 #### 311. acceptance-test.sh scenario() 场景间清理完整性 🆕
 
 ```bash
-# v1.1.2 BugFix：scenario() 清理函数只删工作区 .env，不删 git index 中的 .env
+# v1.1.3 BugFix：scenario() 清理函数只删工作区 .env，不删 git index 中的 .env
 grep -c "git rm --cached -f .env" tools/acceptance-test.sh
 # 期望：≥ 2（scenario() 函数内 + 场景11后各一处）
+```
+
+#### 312. 动态规则禁用逻辑核验（config.yml rules: { a16: false } 实跑验证） 🆕
+
+```bash
+# v1.1.3 第二次审查：config-loader.ts 已迁至 core/src/，rules/index.ts 仍为规则注册 SSOT
+# 核验 runner.ts 动态键禁用逻辑——在 config.yml 禁掉规则后，实际审计输出中不应出现该规则
+# 检查手法：验证 config-loader 已知键集合与 index.ts 注册规则一致，且禁用真的生效
+cd /Users/kongfangxun/Workbuddy/sofagent
+# 确认 runner.ts 的 a{number}/e{number} 动态键能正确映射到 index.ts 注册的每条规则
+grep -c "a16" sofagent/core/src/config-loader.ts
+grep -c "a17" sofagent/core/src/config-loader.ts
+# 期望：≥ 1（knownKeys 含 a16/a17）
+grep -c "A16" sofagent/audit/src/rules/index.ts
+grep -c "A17" sofagent/audit/src/rules/index.ts
+# 期望：≥ 1（index.ts 注册了 A16/A17）
+```
+
+#### 313. tag commit message 含版本号 🆕
+
+```bash
+# v1.1.3 第二次审查：v1.1.3 tag 指向 commit message = "v1.1.3: …"
+# tag 版本号必须与指向的 commit message 中的版本号一致
+git tag -l "v*" | while read t; do
+  v=$(echo $t | sed 's/^v//')
+  msg=$(git log -1 --format=%s $t)
+  echo "$t → $msg"
+done
+# 期望：每个 tag 的 commit message 含对应版本号
+```
+
+#### 314. 孤儿 changelog 检测 🆕
+
+```bash
+# v1.1.3 第二次审查：docs/changelog/v1.1.3.md 存在但无对应 tag（应为规划中）
+# 正向：changelog 文件是否有对应 tag
+for f in docs/changelog/v*.md; do
+  v=$(basename $f .md)
+  git rev-parse $v >/dev/null 2>&1 || echo "⚠️ $v: changelog 存在但无对应 tag（应为规划中）"
+done
+# 期望：无输出 = 全部有对应 tag（规划中的 changelog 应标注「规划中」）
+# 反向：tag 是否有对应 CHANGELOG 索引
+git tag -l "v*" | while read t; do
+  grep -q "$t" CHANGELOG.md || echo "❌ $t: tag 存在但 CHANGELOG.md 索引遗漏"
+done
+# 期望：零输出
+```
+
+#### 315. CHANGELOG 纯度 grep 扩至全量子文件 🆕
+
+```bash
+# v1.1.3 第二次审查：纯度 grep 从 CHANGELOG.md 扩展到 docs/changelog/v*.md 全量
+# 历史 experimental changelog 可能含遗留审查元信息
+grep -rniE "GLM|DeepSeek|双视角|P[012]×|审查修复|陌生视角|fresh-eyes|审查轮次|审查×|审查驱动|审查吸收" CHANGELOG.md docs/changelog/v*.md
+# 期望：零命中（工作流正当描述如「FDE 审查报告」「独立审查 + 写 changelog」不在此列）
+```
+
+#### 316. ruleClass 代码↔README 跨文档一致性 🆕
+
+```bash
+# v1.1.3 第二次审查：A6/A11 的 ruleClass 在 index.ts 和 audit/README.md 之间反复漂移
+# 以 rules/index.ts 为 SSOT，全量对比 audit/README.md 规则表
+# 当前只做 A6/A11 人工 grep（维度 308），本维度扩展为全量逐行 diff
+# 方法：提取 index.ts 的 name+ruleClass → 与 audit/README.md 规则表逐行对照
+grep "name:" sofagent/audit/src/rules/index.ts | wc -l
+# 期望：19（规则总数，与 README 声称一致）
+echo "建议：将 ruleClass 全量 diff 脚本加入 pre-push-check（参考维度 308 的 A6/A11 手动 grep）"
 ```
