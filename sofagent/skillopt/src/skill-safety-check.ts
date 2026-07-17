@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // skill-safety-check.ts · Skill 安全审查（入口）
-// v1.1.2：迁移至 @sofagent/skillopt
+// v1.1.3：迁移至 @sofagent/skillopt
 // ============================================================
 // 扫描 Skill 文件中的安全威胁——恶意命令/密钥泄露/危险API/Prompt注入/数据外泄。
 // 纯 TypeScript + Node.js 内置模块，最小运行时依赖：仅 js-yaml。
@@ -17,16 +17,18 @@
 // ============================================================
 
 import { existsSync } from 'fs';
-import { VERSION, type SafetyResult } from './rules/skill-safety-rules';
-import { findFiles, scanFile } from './rules/skill-safety-engine';
 import {
+  SKILL_SAFETY_VERSION as VERSION,
+  type SafetyResult,
+  findFiles,
+  scanFile,
   printFileResult,
   printTerminalSummary,
   printJsonOutput,
   printQuietOutput,
   printError,
   showHelp,
-} from './rules/skill-safety-reporter';
+} from '@sofagent/audit';
 
 /**
  * 扫描指定目标的安全性。
@@ -126,6 +128,6 @@ if (require.main === module) {
   main();
 }
 
-// 重新导出子模块（保持向后兼容）
-export { findFiles, scanFile } from './rules/skill-safety-engine';
-export { type SafetyHit, type SafetyRule, type SafetyResult } from './rules/skill-safety-rules';
+// 重新导出子模块（保持向后兼容，v1.1.3: 从 @sofagent/audit 统一导出）
+export { findFiles, scanFile } from '@sofagent/audit';
+export type { SafetyHit, SafetyRule, SafetyResult } from '@sofagent/audit';

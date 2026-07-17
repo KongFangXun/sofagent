@@ -1,0 +1,49 @@
+// ============================================================
+// graph/index.ts · graph 模块 barrel export
+// v1.1.3 新增
+// ============================================================
+
+// State
+export {
+  LoopStateAnnotation,
+  emptyArtifacts,
+  type LoopGraphState,
+  type LoopArtifacts,
+  type LoopNodeName,
+  type LoopFinalStatus,
+  type AuditVerdict,
+} from './state';
+
+// Checkpoint
+export {
+  FileCheckpointer,
+  CHECKPOINT_SCHEMA_VERSION,
+  migrateCheckpoint,
+  type CheckpointRecord,
+} from './checkpoint';
+
+// Nodes & Dependencies
+export {
+  defaultDeps,
+  makeEngineerNode,
+  makeAuditNode,
+  makeReviewerNode,
+  makeHumanConfirmNode,
+  DEFAULT_MAX_RETRIES,
+  type LoopGraphDeps,
+  type AuditOutcome,
+  type HumanDecision,
+} from './nodes';
+
+// Graph & Routing
+export {
+  runLoopGraph,
+  resumeLoopGraph,
+  buildLoopGraph,
+  resolveCheckpointDir,
+  resolveResumeNode,
+  routeAfterAudit,
+  routeAfterHuman,
+  type LoopGraphResult,
+  type LoopGraphOptions,
+} from './loop-graph';

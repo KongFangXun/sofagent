@@ -1,6 +1,6 @@
 // ============================================================
 // public-api.ts · @sofagent/audit 公共 API（barrel export）
-// v1.1.2: 供 @sofagent/mcp 等外部包使用的稳定接口
+// v1.1.3: 供 @sofagent/mcp 等外部包使用的稳定接口
 // ============================================================
 // 注意：此文件只导出已经稳定且被外部消费的符号。
 // 内部实现细节不要加到这里——避免泄露实现导致耦合。
@@ -30,3 +30,16 @@ export {
   hasShadowRepo,
 } from '@sofagent/core';
 export type { SnapshotEntry } from '@sofagent/core';
+
+// ── Skill 安全审查（v1.1.3: 供 @sofagent/skillopt 等外部包使用） ──
+export { findFiles, scanFile } from './rules/skill-safety-engine';
+export { COMPILED_RULES, SCANNABLE_EXTENSIONS, VERSION as SKILL_SAFETY_VERSION } from './rules/skill-safety-rules';
+export type { SafetyHit, SafetyRule, SafetyResult } from './rules/skill-safety-rules';
+export {
+  printFileResult,
+  printTerminalSummary,
+  printJsonOutput,
+  printQuietOutput,
+  printError,
+  showHelp,
+} from './rules/skill-safety-reporter';

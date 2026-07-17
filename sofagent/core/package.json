@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/core",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "sofagent 核心运行时 — doctor / 配置解析 / 通用类型（不含审计逻辑）",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -24,5 +24,15 @@
   "keywords": ["sofagent", "core", "runtime", "doctor"],
   "license": "MIT",
   "author": "KongFangXun",
-  "dependencies": {}
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KongFangXun/sofagent"
+  },
+  "bugs": {
+    "url": "https://github.com/KongFangXun/sofagent/issues"
+  },
+  "homepage": "https://github.com/KongFangXun/sofagent#readme",
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
 }

@@ -1,7 +1,7 @@
 # sofagent Architecture
 
 > 设计决策记录——从为什么存在、五个引擎如何协作，到每个关键决策的工程理由。
-> v1.1.2 · 2026-07-15（UTC）· 孔放勋
+> v1.1.3 · 2026-07-15（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -22,7 +22,7 @@
 |------|------|------|
 | 🧭 约束底座 | Constraint Base | 四层加载链，Agent 启动前注入红线 |
 | 🔍 审计引擎 | Audit Engine | git diff + 文件变更硬证据审计（v1.1.0 拆独立包） |
-| 🔄 回溯引擎 | Restore Engine | 每次审计自动快照，`--revert` 一键回滚 |
+| 🔄 回溯能力 | Restore Capability | 每次审计自动快照，`--revert` 一键回滚 |
 | ⚙️ 编排引擎 | Orchestration Engine | 任务拆解 + Sub Agent 并行 + A/B 优化 |
 | 🧬 进化引擎 | Evolution Engine | FDE 周度巡检 + 自动优化，v1.0.8+ |
 | 加载链 | Load Chain | Agent 启动时注入的约束文件 |
@@ -54,7 +54,7 @@ sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent �
 graph LR
     A["🧭 约束底座<br/>启动前注入红线"] --> B["⚙️ 编排引擎<br/>拆任务·并行·A/B"]
     B --> C["🔍 审计引擎<br/>每次变更自动扫描"]
-    C --> D["🔄 回溯引擎<br/>快照存档·一键回滚"]
+    C --> D["🔄 回溯能力<br/>快照存档·一键回滚"]
     D --> E["🧬 进化引擎<br/>周度巡检·自动优化"]
     E --> A
 ```
@@ -63,15 +63,15 @@ graph LR
 |------|------|:--:|
 | 🧭 约束底座 | 四层加载链永远在线 | @sofagent/harness |
 | 🔍 审计引擎 | 只看 git diff 硬证据 | @sofagent/audit |
-| 🔄 回溯引擎 | 事后快照 + `--revert` | @sofagent/core |
+| 🔄 回溯能力 | 事后快照 + `--revert` | @sofagent/core |
 | ⚙️ 编排引擎 | DeepAgents + compose CLI | @sofagent/orchestrator |
 | 🧬 进化引擎 | daemon cron @weekly | @sofagent/daemon + @sofagent/skillopt |
 
 > 五引擎的完整设计哲学见 [PHILOSOPHY §三 架构全景](./PHILOSOPHY.md#三怎么跑架构全景)。
 
-### 输出签名机制（v1.1.2）
+### 输出签名机制（v1.1.3）
 
-Harness 中间件最大的挑战是存在感——引擎在正常工作，但用户看到好结果时不知道是 harness 层在起作用。v1.1.2 引入三层签名：
+Harness 中间件最大的挑战是存在感——引擎在正常工作，但用户看到好结果时不知道是 harness 层在起作用。v1.1.3 引入三层签名：
 
 | 层级 | 机制 | 用户如何感知 |
 |------|------|------------|
@@ -166,7 +166,7 @@ graph LR
 
 > a16z 研判：智能体经济瓶颈从「智力」转向「身份」——非人类身份:人类 = 96:1，急需 KYA。审计引擎 + 约束底座 = 企业内部轻量版 KYA。v1.2.x 评估引入签名凭证做 Agent 行动的可审计绑定。
 
-### 🔄 回溯引擎
+### 🔄 回溯能力
 
 行车记录仪，不是安检——事后快照，不依赖任何平台：
 

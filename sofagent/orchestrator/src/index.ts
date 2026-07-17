@@ -20,9 +20,43 @@ export { launch, shutdown, readRuntimeState, writeRuntimeState, spawnSubAgent } 
 // Audit Sub Agent
 export { readAuditHistory, analyzeCostBaseline, generateAuditReport } from './audit-sub-agent';
 
-// LOOP Runner (v1.1.2)
+// LOOP Runner (v1.1.3 — DeepAgents 串行路径)
 export { runLOOPIteration } from './loop-runner';
 export type { LOOPResult, LOOPOptions } from './loop-runner';
+
+// Graph (v1.1.3 — LangGraph StateGraph 节点级流转)
+export {
+  runLoopGraph,
+  resumeLoopGraph,
+  buildLoopGraph,
+  resolveCheckpointDir,
+  resolveResumeNode,
+  routeAfterAudit,
+  routeAfterHuman,
+  emptyArtifacts,
+  FileCheckpointer,
+  defaultDeps,
+  makeEngineerNode,
+  makeAuditNode,
+  makeReviewerNode,
+  makeHumanConfirmNode,
+  CHECKPOINT_SCHEMA_VERSION,
+  migrateCheckpoint,
+  DEFAULT_MAX_RETRIES,
+} from './graph';
+export type {
+  LoopGraphState,
+  LoopArtifacts,
+  LoopNodeName,
+  LoopFinalStatus,
+  AuditVerdict,
+  CheckpointRecord,
+  LoopGraphDeps,
+  AuditOutcome,
+  HumanDecision,
+  LoopGraphResult,
+  LoopGraphOptions,
+} from './graph';
 
 // Orchestrator Compare
 export { scanLogFiles, extractMetrics, generateReport, promoteWorkflow } from './orchestrator-compare';

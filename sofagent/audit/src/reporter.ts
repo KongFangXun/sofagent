@@ -4,7 +4,13 @@
 // 循环调用 rule.check(ctx)，不再硬编码 import 4 条规则
 // v0.94：runRules 签名扩展，支持 silent/commitMsg 参数
 // v0.95：支持 config 注入 AuditContext + extendedRules 开关
-// v1.1.2：fast-fail 优化——委托到 rules/runner.ts
+// v1.1.3：fast-fail 优化——委托到 rules/runner.ts
+//
+// 本文件专用于 @sofagent/audit，包含 runRules 运行时实现（依赖 rules/runner）。
+// 与 core/src/reporter.ts 的关系：
+//   - core/reporter.ts: 类型契约（跨包共享的类型定义）
+//   - audit/reporter.ts: 运行时实现（runRules 函数，依赖 rules/runner）
+//   两者故意分置：类型归 core（无运行时依赖），实现归 audit（有规则引擎依赖）。
 // ============================================================
 
 import type { DiffFile } from '@sofagent/core';

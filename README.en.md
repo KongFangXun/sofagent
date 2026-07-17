@@ -21,7 +21,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.2-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.3-16B8F3" alt="Version" /></a>
 </p>
 
 ---
@@ -152,7 +152,7 @@ Doesn't trust the agent — trusts git diff hard evidence. **0 token cost — pu
 
 > v1.1.0 splits audit into standalone `@sofagent/audit` package. v1.0.8+ embeds isomorphic-git + daemon file monitoring — no git commit needed for non-developers.
 
-#### 🔄 Restore engine
+#### 🔄 Restore capability
 
 Auto-snapshot after every audit — violations trigger notifications + rollback suggestions. When things go wrong, go back:
 
@@ -194,7 +194,7 @@ graph LR
 sofagent-orchestrator subagent run fde --mode sustain --task "Inspect all nodes"
 ```
 
-Five engines, one loop: **Constrain → Orchestrate → Audit → Restore → Evolve**.
+The full loop: **Constrain → Orchestrate → Audit → Restore → Evolve**.
 
 ---
 

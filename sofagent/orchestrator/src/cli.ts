@@ -1,5 +1,9 @@
 #!/usr/bin/env node
-// orchestrator CLI · v1.1.2
+// orchestrator CLI · v1.1.3
+//
+// loop 子命令 v1.1.3 升级：默认走 LangGraph StateGraph 节点级流转
+// （engineer→audit→reviewer→human_confirm），支持 --resume 从 checkpoint
+// 恢复。旧版 DeepAgents 串行路径通过 --legacy 保留兼容。
 
 const args = process.argv.slice(2);
 const subcommand = args[0];
@@ -10,10 +14,14 @@ async function main() {
     console.log('Usage: sofagent-orchestrator <subcommand> [options]');
     console.log('');
     console.log('Subcommands:');
-    console.log('  compose --task <desc>        使用 DeepAgents 编排任务，输出 YAML 工作流');
-    console.log('  subagent run <name> --task <desc>  启动 Sub Agent 执行任务');
-    console.log('  loop --task <desc>           LOOP 双 Agent 自迭代（Engineer → Reviewer 串联）');
-    console.log('  compare                       编排方案 A/B 对比');
+    console.log('  compose --task <desc>            使用 DeepAgents 编排任务，输出 YAML 工作流');
+    console.log('  subagent run <name> --task <desc> 启动 Sub Agent 执行任务（engineer / reviewer 等）');
+    console.log('  loop --task <desc>               LOOP StateGraph 自动流转');
+    console.log('       engineer (AI) → audit (CLI) → reviewer (AI) → human_confirm (HITL)');
+    console.log('       --resume                     从最近 checkpoint 恢复续跑');
+    console.log('       --legacy                     使用旧版 DeepAgents 串行（v1.1.3 兼容）');
+    console.log('       --max-retries <n>            最大重试次数（默认 3，超出标记 blocked）');
+    console.log('  compare                          编排方案 A/B 对比');
     process.exit(0);
   }
 
@@ -69,18 +77,54 @@ async function main() {
       break;
     }
     case 'loop': {
+      const legacyMode = args.includes('--legacy');
+      const resumeMode = args.includes('--resume');
+
+      if (legacyMode) {
+        // 旧版兼容路径
+        const taskIdx = args.indexOf('--task');
+        const taskDesc = taskIdx !== -1 ? args[taskIdx + 1] : undefined;
+        if (!taskDesc && !resumeMode) {
+          console.error('❌ loop --legacy 需要 --task <描述> 参数');
+          process.exit(1);
+        }
+        const { runLOOPIteration } = await import('./loop-runner');
+        const result = await runLOOPIteration(taskDesc!);
+        console.log('');
+        console.log(`判定: ${result.verdict === 'PASS' ? '✅ PASS' : '❌ FAIL'}`);
+        console.log(`迭代次数: ${result.iterations}`);
+        process.exit(result.verdict === 'PASS' ? 0 : 1);
+        break;
+      }
+
+      // v1.1.3: StateGraph 路径
+      if (resumeMode) {
+        const { resumeLoopGraph } = await import('./graph/loop-graph');
+        const result = await resumeLoopGraph();
+        if (!result) {
+          console.log('ℹ️ 未找到可恢复的 checkpoint');
+          process.exit(2);
+        }
+        console.log('');
+        console.log(`终态: ${result.finalStatus}`);
+        console.log(`重试次数: ${result.retryCount}`);
+        process.exit(result.finalStatus === 'completed' ? 0 : 1);
+        break;
+      }
+
       const taskIdx = args.indexOf('--task');
       const taskDesc = taskIdx !== -1 ? args[taskIdx + 1] : undefined;
       if (!taskDesc) {
-        console.error('❌ loop 需要 --task <描述> 参数');
+        console.error('❌ loop 需要 --task <描述> 参数（追加 --resume 从 checkpoint 恢复）');
         process.exit(1);
       }
-      const { runLOOPIteration } = await import('./loop-runner');
-      const result = await runLOOPIteration(taskDesc);
+      const { runLoopGraph } = await import('./graph/loop-graph');
+      const result = await runLoopGraph(taskDesc);
       console.log('');
-      console.log(`判定: ${result.verdict === 'PASS' ? '✅ PASS' : '❌ FAIL'}`);
-      console.log(`迭代次数: ${result.iterations}`);
-      process.exit(result.verdict === 'PASS' ? 0 : 1);
+      console.log(`终态: ${result.finalStatus}`);
+      console.log(`重试次数: ${result.retryCount}`);
+      console.log(`checkpointId: ${result.checkpointId}`);
+      process.exit(result.finalStatus === 'completed' ? 0 : result.finalStatus === 'blocked' ? 2 : 1);
     }
     case 'compare': {
       const { extractMetrics, generateReport, promoteWorkflow } = await import('./orchestrator-compare');

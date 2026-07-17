@@ -8,14 +8,16 @@
 export {
   scanSkillSafety,
   main as skillSafetyCheckMain,
+} from './skill-safety-check';
+export {
   findFiles,
   scanFile,
-} from './skill-safety-check';
+} from '@sofagent/audit';
 export type {
   SafetyHit,
   SafetyRule,
   SafetyResult,
-} from './rules/skill-safety-rules';
+} from '@sofagent/audit';
 
 // ── SkillOpt 集成 ──
 export {

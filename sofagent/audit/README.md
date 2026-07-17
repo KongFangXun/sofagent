@@ -1,6 +1,6 @@
 # @sofagent/audit
 
-> v1.1.2 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
+> v1.1.3 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
 >
 > **安装后运行：`sofagent-audit --init`**（一键初始化 config + hook + 冒烟测试）
 >
@@ -118,6 +118,8 @@ sofagent-audit --install-hook
 
 # hook 会拦截违规提交（exit code 2 时阻止）
 ```
+
+> 💡 注意：sofagent-audit 进程自身 exit=2（FAIL 拦截），但经 git commit-msg hook 转发后，shell 看到的是 git 的 exit=1。测试拦截行为时以 sofagent-audit 直接调用的 exit code 为准。
 
 ### CI/CD 集成（GitHub Actions 示例）
 
@@ -237,7 +239,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 
 ## 审计规则
 
-### 默认规则（A1-A11；A14-A17 为扩展规则，需在 config.yml 启用 extendedRules）
+### 默认规则（A1-A11）
 
 | 规则 | 判定 | 严重度 | 说明 |
 |------|------|:--:|------|
@@ -253,16 +255,22 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 | A10 不引毒源 | 依赖包黑名单检测 | WARN | 业务底线 |
 | A11 不滥资源 | 资源滥用检测（超大文件等） | WARN | 业务底线 |
 
-### 扩展规则（E1-E4，4 条）
+### 扩展规则（A14-A17 + E1-E4，共 8 条）
 
-需要在 `.sofagent/config.yml` 中启用 `extendedRules: true`。
+A14-A17 + E1-E4 均需 `extendedRules: true` 启用（`DEFAULT_CONFIG=false`，opt-in）。仅当 config 解析失败走 `safeDefaults` 时 fail-closed 强制启用所有扩展规则——这是有意的保护性设计。
 
-| 规则 | 判定 | 严重度 |
-|------|------|:--:|
-| E1 不含测试文件 | 测试文件被提交到生产目录 | WARN |
-| E2 TODO 未声明 | 新增 TODO 未在任务中声明 | WARN |
-| E3 大量删除 | 单次提交删除行数 > 阈值 | WARN |
-| E4 低注释率 | 新增 >200 行且注释率 < 5% | WARN |
+| 规则 | 判定 | 严重度 | 说明 |
+|------|------|:--:|------|
+| A14 知识库越权 | 访问超出工作流声明范围的知识库页面 | WARN | 事后审计，非运行时阻断 |
+| A15 不盲动 | workflow.yml 节点未声明 actions 时降级 WARN 提示（非静默绕过） | WARN | 不强制声明 actions，未声明时提示 |
+| A16 非授权文件变更 | 非工作流声明范围内的文件被修改 | FAIL | 行为级检测（文件路径/扩展名） |
+| A17 异常批量变更 | 单次提交变更文件数超阈值 | WARN | 行为级检测（变更数量） |
+| E1 不含测试文件 | 测试文件被提交到生产目录 | WARN | |
+| E2 TODO 未声明 | 新增 TODO 未在任务中声明 | WARN | |
+| E3 大量删除 | 单次提交删除行数 > 阈值 | WARN | |
+| E4 低注释率 | 新增 >200 行且注释率 < 5% | WARN | |
+
+> ⚠️ **A15 说明**：A15 不强制声明 actions；workflow.yml 节点未声明 actions 时降级 WARN 提示（非静默绕过）。
 
 ### 规则分级
 
@@ -313,6 +321,8 @@ historyRetentionDays: 90
 ---
 
 ## 开发
+
+> ⚠️ **单包测试前提**：monorepo 未 build 时单包 `npm test` 可能因依赖 `dist/` 而失败。先在根目录 `npm run build --workspaces` 或按 [CONTRIBUTING](../../CONTRIBUTING.md) 流程操作。
 
 ```bash
 git clone https://github.com/KongFangXun/sofagent.git

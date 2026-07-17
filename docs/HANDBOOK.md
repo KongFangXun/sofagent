@@ -1,8 +1,8 @@
 # sofagent Handbook
 
-> **Gateway 管怎么跑，sofagent 管跑没跑对。** 约束底座→编排引擎→审计引擎→回溯引擎→进化引擎，一底座四引擎覆盖全生命周期。装完 sofagent 之后，你不再需要依赖别人来部署 AI——**你自己就具备了 FDE 的能力：掌握完整上下文、打破岗位边界、对结果负责。** 下面从装到用到查问题，全流程走一遍。
+> **Gateway 管怎么跑，sofagent 管跑没跑对。** 约束底座→编排引擎→审计引擎→回溯能力→进化引擎，一底座·三引擎·一能力覆盖全生命周期。装完 sofagent 之后，你不再需要依赖别人来部署 AI——**你自己就具备了 FDE 的能力：掌握完整上下文、打破岗位边界、对结果负责。** 下面从装到用到查问题，全流程走一遍。
 >
-> v1.1.2 · 2026-07-15（UTC）· 孔放勋
+> v1.1.3 · 2026-07-15（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -147,7 +147,7 @@ sofagent-audit --history              # 查看审计快照
 sofagent-audit --revert <sha>         # 回滚到某次审计前
 ```
 
-Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯引擎](./ARCHITECTURE.md#🔄-回溯引擎)。
+Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#🔄-回溯能力)。
 
 ### CI 集成
 
@@ -207,7 +207,7 @@ jobs:
 |------|------|------|
 | 🧭 **约束底座** | 四层加载链注入规则 | Agent 启动时自动（OpenClaw Hook / Sub Agent 自加载） |
 | 🔍 **审计引擎** | git diff → A1-A11、A14-A17 规则检查 | git commit / daemon 文件变更 |
-| 🔄 **回溯引擎** | 审计后自动 snapshot，违规时建议回滚 | 审计完成后自动 |
+| 🔄 **回溯能力** | 审计后自动 snapshot，违规时建议回滚 | 审计完成后自动 |
 | ⚙️ **编排引擎** | 拆解任务 + Sub Agent 并行 + A/B 优化 | CLI / MCP compose tool |
 | 🧬 **进化引擎**（v1.0.8+） | FDE 周度巡检审计趋势 + 反思，自动优化 | daemon cron @weekly / 手动触发 |
 
@@ -326,7 +326,7 @@ Agent 先判断任务复杂度：
 |------|------|
 | **Harness 中间件** | Agent 治理——五个引擎覆盖全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他平台，sofagent 是独立的底线守卫层。→ [设计原理](./ARCHITECTURE.md#五引擎治理架构) |
 | **审计引擎** | 看 git diff 硬证据判定违规，不依赖 Agent 配合。v1.0.8+ daemon 监控文件变更，**非开发者也能用**。→ [审计引擎设计](./ARCHITECTURE.md#🔍-审计引擎) |
-| **回溯引擎**（v1.0.8+） | 审计后自动快照存档，违规时建议回滚——不只是告诉你违规了，还存了快照、推了通知 |
+| **回溯能力**（v1.0.8+） | 审计后自动快照存档，违规时建议回滚——不只是告诉你违规了，还存了快照、推了通知 |
 | **编排引擎**（实验性）| 拆任务→编排→执行，基于 DeepAgents Sub Agent。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
 | **铁律** | Agent 行为约束规则（4 底线 + 7 铁律），写在 MD 文件里注入上下文 |
 | **审计规则** | 代码变更检查规则（A1-A11、A14-A17 + E1-E4），审计引擎按此判定 exit code |
@@ -427,4 +427,4 @@ sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 > 大半年 OpenClaw 实战笔记。如有更好的用法，欢迎开 Issue。
 >
-> *v1.1.2，2026 年 7 月 13 日*
+> *v1.1.3，2026 年 7 月 13 日*

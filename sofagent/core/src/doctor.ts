@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // doctor.ts · sofagent 健康检查
-// v1.1.2 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
-// v1.1.2 维护：新增 post-commit hook 存在性检查
+// v1.1.3 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
+// v1.1.3 维护：新增 post-commit hook 存在性检查
 //
 // 检查项：
 //   1. 环境检查（Node / git / npm / disk / bash）
@@ -18,6 +18,7 @@ import { execFileSync } from 'child_process';
 import { homedir } from 'os';
 import { checkEnv } from './env-check';
 import { VERSION } from './shared/constants';
+import { load as yamlLoad, YAMLException } from 'js-yaml';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
 function warn(msg: string) { console.log(`  ⚠️  ${msg}`); }
@@ -60,7 +61,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     if (!env.sofagent.exists) warn('~/.sofagent 不存在（将自动创建）');
   }
 
-  // 2. 配置检查
+  // 2. 配置检查（v1.1.3: 从「存在」升级为「存在且合法」）
   console.log('\n── 配置检查 ──');
   const sofagentDir = join(projectDir, '.sofagent');
   const configPath = join(sofagentDir, 'config.yml');
@@ -68,11 +69,23 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   if (existsSync(configPath)) {
     try {
       const content = readFileSync(configPath, 'utf-8');
-      if (content.trim().length > 0) {
-        ok('.sofagent/config.yml 存在');
-        configOk = true;
-      } else {
+      if (content.trim().length === 0) {
         warn('.sofagent/config.yml 为空');
+      } else {
+        // v1.1.3: 验证 YAML 合法性
+        try {
+          yamlLoad(content);
+          ok('.sofagent/config.yml 存在且合法');
+          configOk = true;
+        } catch (yamlErr) {
+          if (yamlErr instanceof YAMLException) {
+            const line = yamlErr.mark?.line != null ? yamlErr.mark.line + 1 : '?';
+            const col = yamlErr.mark?.column != null ? yamlErr.mark.column + 1 : '?';
+            fail(`.sofagent/config.yml 格式错误（第 ${line} 行第 ${col} 列: ${yamlErr.reason}）`);
+          } else {
+            fail(`.sofagent/config.yml 格式错误: ${(yamlErr as Error).message}`);
+          }
+        }
       }
     } catch {
       fail('.sofagent/config.yml 读取失败');

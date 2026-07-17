@@ -93,7 +93,7 @@ describe('webhook', () => {
     expect(body.text.content).toContain('⚠️ sofagent 审计警告');
   });
 
-  it('全部 PASS 时也推送（v1.1.2 起 PASS 推送）', async () => {
+  it('全部 PASS 时也推送（v1.1.3 起 PASS 推送）', async () => {
     const mockFetch = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
     const payload: WebhookPayload = {
       platform: 'dingtalk',
