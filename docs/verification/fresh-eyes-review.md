@@ -621,6 +621,15 @@
    - **盲区本质**：规则分级定义在两处——代码（SSOT）和文档（README 规则表）手工维护。每次调整 ruleClass 时，README 表格容易遗漏更新。
    - **检查手法**：提取 index.ts 的 `name` + `ruleClass` → 与 audit/README.md 规则表的名称+分级列逐行 diff。建议对此建自动化脚本加入 pre-push-check（参考回归维度 308 的 A6/A11 人工 grep，扩展为全量逐行 diff）。
 
+#### 28. **Agent 身份感知有效性（v1.1.3 补入）** 🆕
+   - **背景**：v1.1.2 的三层输出签名（CLI/Webhook/MCP 带 `[sofagent]` 前缀）解决了「输出渠道可见性」，但 Agent 本身不知道约束来自 sofagent——约束在生效，用户和 Agent 都感知不到。
+   - **检查手法**：
+     1. SKILL.md 是否含方案 C 身份感知指令（`grep -c "露个脸就够了" sofagent/skill/SKILL.md` ≥ 1）
+     2. engage.md 是否含身份感知序言（`grep -c "质量搭档" sofagent/skill/engage.md` ≥ 1）
+     3. install.sh 完成后是否输出「✅ sofagent 已就绪」品牌行
+     4. FDE/FDE.md §13 是否注明 Agent 身份感知设计意图
+   - **验证**：从一个 clean slate 加载 sofagent skill 后，Agent 是否在上下文中感知到 sofagent 的存在（通过 system prompt 或首次响应确认）
+
 **输出格式**：
 
 ```markdown
