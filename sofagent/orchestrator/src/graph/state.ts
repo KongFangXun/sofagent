@@ -1,6 +1,6 @@
 // ============================================================
 // graph/state.ts · LOOP StateGraph 状态定义
-// v1.1.3 新增：LangGraph StateGraph 的状态 schema
+// v1.1.4 新增：LangGraph StateGraph 的状态 schema
 //
 // 说明：
 // - LoopGraphState 是对外契约（TypeScript interface）
@@ -20,6 +20,46 @@ export type LoopNodeName = 'engineer' | 'audit' | 'reviewer' | 'human_confirm';
 
 /** LOOP 终态：running=流转中 / completed=人工确认通过 / blocked=重试超限 / aborted=人工中断 */
 export type LoopFinalStatus = 'running' | 'completed' | 'blocked' | 'aborted';
+
+// ════════════════════════════════════════
+// Workflow YAML 类型（v1.1.4）
+// 消费外部编排平台（WorkBuddy 等）产出的任务列表
+// ════════════════════════════════════════
+
+/** workflow.yml 中的单个子任务 */
+export interface WorkflowNode {
+  id: string;
+  task: string;
+  agent?: string;
+  depends_on?: string[];
+  acceptance_criteria?: string;
+}
+
+/** workflow.yml 的完整结构 */
+export interface Workflow {
+  name: string;
+  description?: string;
+  nodes: WorkflowNode[];
+}
+
+/** workflow 执行策略 */
+export type WorkflowStrategy = 'sequential' | 'parallel-safe';
+
+/** workflow 运行选项 */
+export interface WorkflowOptions {
+  /** 沉默模式 */
+  silent?: boolean;
+  /** 执行策略（默认 sequential） */
+  strategy?: WorkflowStrategy;
+  /** 遇到 blocked 是否立即终止（默认 true） */
+  stopOnBlocked?: boolean;
+  /** 单子任务重试上限（覆盖 DEFAULT_MAX_RETRIES） */
+  maxRetriesPerNode?: number;
+  /** checkpoint 目录（透传给 runLoopGraph） */
+  checkpointDir?: string;
+  /** 依赖注入（透传给 runLoopGraph，测试用） */
+  deps?: Record<string, unknown>;
+}
 
 /**
  * 跨节点传递的工作上下文（节点 I/O 汇集处）
