@@ -52,7 +52,7 @@
 | 11 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
 | 12 | **🔴 更新 `tools/acceptance-test.sh` + `docs/verification/openclaw-acceptance-test.md`**（v1.1.3 教训——验收测试文件自身的功能会过时，场景数落后于代码实现、新增功能零覆盖）<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `tools/acceptance-test.sh` 和 `docs/verification/openclaw-acceptance-test.md`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `tools/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述（如 `38 个` → `42 个`、描述追加新功能关键词）<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n tools/acceptance-test.sh` 确认语法<br><br>**Step C — 更新 `docs/verification/openclaw-acceptance-test.md`**：<br>① 在文件末尾追加新部分（如 `## 第N部分：xxx`），包含场景描述 + 命令 + 期望<br>② 更新顶部「覆盖范围」描述行，追加本版本新增功能关键词<br>③ 在验证检查清单末尾追加新场景的核对项<br>④ 更新测试目的表中 `acceptance-test.sh` 的场景数引用<br><br>**Step D — 同步 `docs/verification/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增） | 三个文件 git diff 显示均有新增；`bash -n tools/acceptance-test.sh` 通过 |
 | 13 | `bash tools/acceptance-test.sh` — 端到端场景：Fresh install → --init → --doctor → 正常 commit → 违规拦截 → --json → --ci → 首次提交 → hook 破坏 → --no-verify 检测 → config rules 过滤 → A1-A11 → E1-E4 扩展规则 → --strict exit code=2 → hook 迁移 → post-commit → hashVersion 混合格式 → history.jsonl 写入 → --json 违规输出 → post-commit 安装+丢失检测 → subagent + 新包 CLI → shim 安全 → Harness 签名 → LOOP Agent → MCP 烟测 → 文件系统审计 → 权限作用域化 → fast-fail → MCP compose | 全部 PASS。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
-| 14 | **OpenClaw 综合验证**：执行 `docs/verification/openclaw-acceptance-test.md`（全场景：审计管道全规则 + hook 机制 + hashVersion 混合格式 + SkillOpt 自净化 + DeepAgents Sub Agent + optional 依赖降级 + config rules 过滤 + v1.1.3 shim/签名/LOOP + 历史核心功能 A14/A15/约束自加载/文件系统审计/权限/经验共享/Workflow Hub） | 全部通过 |
+| ~~14~~ | ~~OpenClaw 综合验证~~ → **已合并到阶段六统一执行入口**。阶段四只保留 CLI 自动化测试（步骤 13）；`openclaw-acceptance-test.md` 的 Agent 端到端验证与 `regression-checklist.md` 统一在阶段六的新 session 里顺序跑完，不在开发 session 单独执行（避免重复 + 保证独立性） | — |
 
 ---
 
@@ -87,6 +87,8 @@
 
 **操作模式**：开一个**全新的 Agent session**（不要从开发 session 继续），在其中控制 OpenClaw 执行全面检查。OpenClaw 有 Bash tool 跑 grep/shellcheck/npm test，也有审计环境跑验收场景。
 
+> **统一执行入口**（v1.1.3）：本阶段是验收测试与回归检查的**唯一执行入口**——`openclaw-acceptance-test.md`（Agent 端到端）和 `regression-checklist.md`（文档级回归）在同一个新 session 里**顺序跑完**，不在其他阶段单独执行。开发 session 的步骤 13（CLI 自动化 `acceptance-test.sh`）是预检，不替代本阶段的独立验证。
+
 ### OpenClaw 检查 Prompt（直接复制给新 session）
 
 > 这份 prompt 已内嵌在 SOP 中，开新 session 时直接整段复制粘贴即可，无需重新生成。把 `vX.Y` 替换为下一个待发布的实际版本号。
@@ -97,19 +99,16 @@
 ## 你的角色
 你是 sofagent vX.Y 的**独立发版审查者**。你对 vX.Y 的开发过程**一无所知**——没看过开发对话、dev-prompt、开发报告或审查记录。你只相信代码和文档的当前真实状态，以及亲手跑出来的命令结果。
 
-## 执行步骤
+## 执行步骤（一个 session 顺序跑完两份文档，不拆分）
 1. 工作目录：/Users/kongfangxun/Workbuddy/sofagent（后续相对路径均基于此）
-2. 读取 docs/verification/regression-checklist.md（重点看本版本新增维度）
-3. 读取 docs/verification/openclaw-acceptance-test.md（端到端验收场景）
-3.5 【v1.0.8 优化】构建审计包：在跑任何依赖 dist/ 的检查前，先 `cd sofagent/audit && npm run build`。否则 --version / --help banner / `ontology view` / `compose` 等基于 dist 的回归维度（#248 #251）与验收场景会命中 stale dist 误报 FAIL
-4. 控制 OpenClaw 一次性执行两份报告：
-   【报告一：回归检查】读 regression-checklist.md，用 Bash 跑全部维度验证命令，逐项输出 PASS/FAIL/SKIP。完成后将完整报告保存为 `~/Desktop/vX.Y-regression-report.md`
-   【报告二：OpenClaw 验收】读 openclaw-acceptance-test.md，按场景逐一验证，逐项输出 PASS/FAIL/SKIP。完成后将完整报告保存为 `~/Desktop/vX.Y-acceptance-report.md`
+2. 【v1.0.8 优化】构建审计包：在跑任何依赖 dist/ 的检查前，先 `cd sofagent/audit && npm run build`。否则 --version / --help banner / `ontology view` / `compose` 等基于 dist 的回归维度（#248 #251）与验收场景会命中 stale dist 误报 FAIL
+3. **第一轮：回归检查** —— 读 `docs/verification/regression-checklist.md`，用 Bash 跑全部维度验证命令，逐项输出 PASS/FAIL/SKIP。完成后将完整报告保存为 `~/Desktop/vX.Y-regression-report.md`
+4. **第二轮：OpenClaw 验收** —— 读 `docs/verification/openclaw-acceptance-test.md`，按场景逐一验证，逐项输出 PASS/FAIL/SKIP。完成后将完整报告保存为 `~/Desktop/vX.Y-acceptance-report.md`
 5. 时序注意：
-   - 标注「发布后验证」的项（如 npm latest 版本号）必然不满足 → 标 SKIP，不标 FAIL
+   - regression-checklist 头部「⏰ 时序说明」标记的检查项（git tag / npm registry / 全局二进制版本），发版前必然不满足 → 标 ⏳（待发版），不标 FAIL
    - 不在 OpenClaw 环境时，按验收文件降级说明跳过相应场景 → 标 SKIP，不标 FAIL
    - 任何 FAIL 必须是真实跑命令得到的失败，不凭猜测
-6. 判定：两份报告全 PASS（或 SKIP 合理、无 FAIL）→ 回复"vX.Y 阶段六通过"。任何 FAIL → 不自行改代码，整理失败清单（维度/场景编号、现象、命令、期望vs实际）回复开发侧修复。
+6. 判定：两份报告全 PASS（或 ⏳/SKIP 合理、无 FAIL）→ 回复"vX.Y 阶段六通过"。任何 FAIL → 不自行改代码，整理失败清单（维度/场景编号、现象、命令、期望vs实际）回复开发侧修复
 
 ## 纪律
 - 不创建/不修改任何代码或文档，只验证 + 生成报告
@@ -126,9 +125,7 @@
 
 > 🔴 **循环测试机制**：阶段六任何 FAIL → 回**阶段三**（优化回归清单 `regression-checklist.md` + 发布后审查 `fresh-eyes-review.md` 两个文档）→ 再开新 session 控制 OpenClaw 重查。全部改完、阶段六全 PASS 后，进阶段七。最多循环 2 轮；2 轮仍不过则在报告中标注遗留问题，交开发侧决策。
 
-**时序注意**：
-- 回归清单中标注「发布后验证」的检查项（如 npm latest 版本号），在检查阶段必然不满足——这是正常的，不要标 FAIL
-- OpenClaw 验收需要 OpenClaw 环境——如果当前 session 不在 OpenClaw 中，部分场景可跳过（prompt 中有降级说明）
+> 时序说明已内嵌在 prompt 的步骤 5——回归清单中标注「⏰ 待发版」的检查项（git tag / npm registry / 全局二进制版本）在检查阶段必然不满足，这是正常的，不标 FAIL。
 
 ---
 
