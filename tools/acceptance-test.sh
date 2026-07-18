@@ -1381,32 +1381,38 @@ fi
 
 scenario 43 "ConfigParseError（非法 YAML → doctor 报错 + audit warning）"
 
-# 构造非法 YAML 配置文件
-TMP_CFG_DIR=$(mktemp -d)
-echo "invalid: [}" > "$TMP_CFG_DIR/config.yml"
-# 验证 doctor 拒绝非法 YAML
-node "$PROJECT_ROOT/sofagent/core/dist/cli.js" doctor --config-dir "$TMP_CFG_DIR" 2>&1 | grep -q "格式错误" && DOCTOR_FAILED_YAML=true || DOCTOR_FAILED_YAML=false
+# 构造临时项目目录 + 非法 YAML 配置（doctor 读 <projectDir>/.sofagent/config.yml）
+TMP_BADCFG_DIR=$(mktemp -d)
+mkdir -p "$TMP_BADCFG_DIR/.sofagent"
+echo "invalid: [}" > "$TMP_BADCFG_DIR/.sofagent/config.yml"
+# doctor 以 projectDir（cwd）为根，检查 .sofagent/config.yml 合法性
+set +e
+DOCTOR_OUT=$(cd "$TMP_BADCFG_DIR" && node "$PROJECT_ROOT/sofagent/core/dist/cli.js" doctor 2>&1)
+echo "$DOCTOR_OUT" | grep -q "格式错误" && DOCTOR_FAILED_YAML=true || DOCTOR_FAILED_YAML=false
 # 验证 audit 不崩溃（降级 warning）
-(cd "$PROJECT_ROOT" && node sofagent/audit/dist/index.js --diff HEAD~1..HEAD --task "test" 2>&1; echo "EXIT: $?") > /dev/null 2>&1
+(cd "$PROJECT_ROOT" && node sofagent/audit/dist/index.js --diff HEAD~1..HEAD --task "test") > /dev/null 2>&1
 AUDIT_NO_CRASH=true
+set -e
 
 if $DOCTOR_FAILED_YAML && $AUDIT_NO_CRASH; then
   pass
 else
   fail "ConfigParseError: doctor 未拒绝非法 YAML 或 audit 崩溃"
 fi
-rm -rf "$TMP_CFG_DIR"
+rm -rf "$TMP_BADCFG_DIR"
 
 scenario 44 "PASS 签名行（stderr 含 sofagent-audit + 版本号）"
 
 cd "$TMPDIR"
 rm -rf pass-sign && mkdir pass-sign && cd pass-sign
 git init -q && git config user.email "qa@test" && git config user.name "QA"
-echo "safe" > file.txt && git add . && git commit -qm "safe commit"
+echo "safe" > file.txt && git add . && git commit -qm "init file.txt"
 SAFE_HASH=$(git rev-parse HEAD)
-echo "more safe" >> file.txt && git add . && git commit -qm "another safe change"
-# 跑审计检查 PASS 签名行
-node "$PROJECT_ROOT/sofagent/audit/dist/index.js" --diff ${SAFE_HASH}..HEAD --task "safe change" 2>&1 | grep -q "sofagent-audit v" && PASS_SIGN=true || PASS_SIGN=false
+echo "more safe" >> file.txt && git add . && git commit -qm "update file.txt"
+# 跑审计检查 PASS 签名行（task 描述含 file.txt 以过 A3）
+set +eo pipefail
+node "$PROJECT_ROOT/sofagent/audit/dist/index.js" --diff ${SAFE_HASH}..HEAD --task "update file.txt" 2>&1 | grep -q "sofagent-audit v" && PASS_SIGN=true || PASS_SIGN=false
+set -eo pipefail
 cd "$PROJECT_ROOT"
 
 if $PASS_SIGN; then
