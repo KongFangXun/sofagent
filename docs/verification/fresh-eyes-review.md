@@ -67,6 +67,7 @@
 7. **tag 指向确认**：跑 `git show vX.Y.Z --stat`——tag 指向的是发布提交还是修复提交？tag commit message 是否包含版本号？
 8. **双节点架构验证**：README 说 sofagent 支持两种部署节点——"自动运行节点"（需 OpenClaw）和"个人增强节点"（WorkBuddy/Codex/Claude Code，不需 OpenClaw）。你用的是哪个？如果你用的不是 OpenClaw（比如 WorkBuddy），能跑通吗？README 里"个人增强节点"的说明清楚吗？`sofagent-orchestrator compose --task` 这个 CLI 入口你找得到吗？**这个声称是 v1.0.7+ 的核心卖点——如果不装 OpenClaw 就能跑，文档要让你相信这一点；如果其实跑不通，就是夸大宣传。**
 9. **输出归属感（v1.1.3 新增）**：跑 `sofagent-audit --help`、`--init`、`--doctor` 后，你知道这些功能是谁提供的吗？输出里有没有 sofagent 的名字？还是你看到的只是通用工具输出（"PASS""FAIL""检测完成"），不知道背后是哪个引擎在跑？作为一个刚装上的开发者，你能感知到"这是 sofagent 在做的事"吗，还是觉得"这不就是普通的 git hook 吗"？**Harness 中间件最大的挑战是存在感——如果用户用了三周还不知道自己装了 sofagent，这个产品就是失败的。**
+10. **独立产品边界感知（v1.1.4 新增）**：你在 GitHub 看到 `FDE/` 和 `LOOP/` 两个**大写**目录——3 秒内能搞清楚：它们是 sofagent 的子功能，还是独立产品？装了 sofagent 是否自动包含 FDE / LOOP？还是要分别独立安装？三个产品（sofagent / FDE / LOOP）的关系在 README 首屏能看出来吗？还是需要点进各自目录的 README 才能拼出全貌？**特别检查**：FDE/SKILL.md 和 LOOP/SKILL.md 都声明"独立安装、按需选用"，但用户从 GitHub 主页的第一印象，能否得出同样的结论？大写目录的命名约定（大写=独立产品、小写=代码文件夹）——文档里有写明吗？还是只有作者自己懂？
 
 你是一个普通开发者，不是来审代码的。你会读多少文档取决于你的好奇心——有人 3 屏就走了，有人会点进 ARCHITECTURE 看看设计思路。**读什么不重要，重要的是始终用普通开发者的心态判断：这东西对我有用吗？我愿意花时间装吗？**
 
@@ -126,6 +127,7 @@
 6. **安装脚本的报错友好度**：跑 `LOOP/loop-install.sh` 在缺少前置依赖时（比如没装 sofagent 底座、不支持的平台）——报错信息清楚吗？告诉你缺什么、怎么装了吗？还是直接 exit 1 让你摸不着头脑？
 7. **批量部署/集中配置**：如果要给 50 个仓库都装 sofagent，有没有批量安装或集中配置下发的能力？企业级场景需要 org-level 配置。当前是 per-repo 安装——这对 DevOps 来说够用吗？
 8. **`--strict`/`--ci` 模式验证**：跑 `sofagent-audit --diff HEAD~1..HEAD --task "wrong" --strict`，实际 exit code 是 2（承诺值）还是 1？文档声称的模式行为与实现是否一致？**如果 exit code 不是 2，这就是 P0——文档声称与实现不符。**
+9. **独立 install 闭环（v1.1.4 新增）**：在干净环境（不预装 sofagent 底座）只跑 `bash FDE/fde-install.sh` 或 `bash LOOP/loop-install.sh`——能跑通吗？两个脚本第 52 行都调用 `$PROJECT_ROOT/sofagent/scripts/install.sh`、fde-install.sh 第 64 行依赖 `$PROJECT_ROOT/sofagent/skill/data/fde.md`、第 82 行依赖根目录 `agents/SKILL/`——**如果用户只 git clone 了 FDE/ 或 LOOP/ 子目录，绝对跑不通**。这是"声称独立产品 vs 实现深度耦合主包路径"的鸿沟。FDE 和 LOOP 真的独立吗？还是说"独立"只是营销话术，实质是主包的快捷安装入口？如果用户跟着 FDE/README 的"装上就能用"指引走，会不会卡在某个主包路径找不到？
 
 你是"先动手再看文档"型开发者。装完跑通了，可能会随手翻一下 README 看看还有没有别的功能。**你的判断标准不是文档完不完整，而是"从敲下 npm install 到觉得这东西有用，中间花了多长时间"。**
 
@@ -147,6 +149,7 @@
 8. **根目录整洁度**：根目录应该只有 5-7 个核心文件（README/LICENSE/CHANGELOG/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/ROADMAP）。其余 md 文件、HTML、PNG 是否应该移入 docs/ 或 assets/？国际化翻译版 README.xx.md（如 README.en.md）不计入此计数。
 
 你的核心问题是："这个项目的代码组织方式让我觉得它是认真维护的，还是一团乱麻？"
+9. **跨产品契约稳定性（v1.1.4 新增）**：`FDE/fde-install.sh` 第 52 行和 `LOOP/loop-install.sh` 第 53 行都调用 `sofagent/scripts/install.sh`——这个跨产品调用接口（路径、参数、退出码、依赖文件位置）有契约文档吗？有没有版本兼容性声明？**特别检查**：`sofagent/scripts/install.sh` 如果改了平台参数命名（如 `--platform` 改成 `--target`）、改了输出路径、删了某个被依赖的文件——FDE 和 LOOP 会崩吗？这个风险有预防机制（pin 版本 / 锁定 commit / 兼容性测试）吗？还是说三个产品的 install 脚本是"作者脑子里记着"的隐式契约，任何人改主 install.sh 都可能悄悄打断 FDE/LOOP？同类检查：`sofagent/skill/data/fde.md` 被 fde-install.sh 引用、`sofagent/skill/data/` 下的模板被 install.sh 引用——这些跨目录引用都是跨产品契约的一部分。
 
 ---
 
@@ -171,6 +174,18 @@
 **输出格式**：画一张用户旅程图（文字版即可），标注每一步的体验评分（🟢 顺滑 / 🟡 小障碍 / 🔴 卡住），以及每个障碍的具体描述。
 
 **放弃阈值**：如果前 3 步（发现 → 安装 → 初始化）出现 2 个🔴，记录放弃点并停止后续步骤——这个体验已经不及格，继续走只是浪费时间。直接在报告里标"放弃点：第 X 步"并说明原因。
+
+---
+
+### 🔁 独立产品旅程（v1.1.4 新增）
+
+上面走的是 sofagent 主线。但 sofagent 声称 FDE 和 LOOP 是**独立产品**——用户也可能从这两个入口进来，根本不装 sofagent 主包。独立产品的用户旅程必须单独走一遍：
+
+**FDE 旅程（企业 IT 视角）**：你是一家 200 人公司的 IT 负责人，听说 sofagent 有个 FDE 工具包能帮你梳理 AI 落地。点开 `FDE/README.md` → 按"装上就能用"指引跑 `bash fde-install.sh` → 期望走完 FDE.md 的 12 步部署流程。**逐步记录**：从 GitHub 看到 FDE/ 目录、读 README、跑 install、激活 @sofagent-fde Skill、Agent 引导走 §1 确定场景——每一步是 🟢 顺滑 / 🟡 小障碍 / 🔴 卡住？特别关注：fde-install.sh 装完之后，你的 Agent 真能识别 `@sofagent-fde` 这个 Skill 吗？FDE.md 的 12 步流程在真实环境真能走完吗？还是某一步会缺前置文件、CLI 不存在、路径找不到？
+
+**LOOP 旅程（开发者视角）**：你是 sofagent 的贡献者，想用 LOOP 自迭代开发。点开 `LOOP/README.md` → 跑 `bash LOOP/loop-install.sh` → 设 env → 跑 `sofagent-orchestrator loop --task "..."`。**逐步记录**：从看到 LOOP/ 目录、读 quick-start.md、跑 install、设 LLM 模型、触发第一条 LOOP——每一步是 🟢 / 🟡 / 🔴？特别关注：`sofagent-orchestrator loop --task` 这个 CLI 真的存在吗？engineer/reviewer 两个内置 Agent 真能被 spawn 出来吗？LOOP_AUTO=1 的 IS_PASS 自动门控真会触发吗？
+
+**两条独立旅程必须各自画出用户旅程图**（文字版），标注放弃点。如果 FDE / LOOP 任一旅程在前 3 步出现 2 个🔴，该独立产品判定为"声称独立但实质跑不通"，直接标放弃点。
 
 ---
 
@@ -321,6 +336,12 @@
     - 如果当前版本已实现 Sub Agent 自加载（`buildConstrainedSystemPrompt`）：Agent 在启动时读 `.sofagent/` 下的约束文件——如果 Agent 在读之前先把 SKILL.md 的内容换成空字符串，约束就没了。有校验机制吗？
     - 约束文件被 Agent 自己删除后重新创建（内容不同）——自加载能检测到篡改吗？还是直接信任磁盘上的内容？
     - CLI 编排入口 `sofagent-orchestrator compose --task`——如果 Agent 调用时传入一个超长的 task 描述（prompt injection），编排引擎会原样传给 Sub Agent 吗？
+
+27. **独立 Skill 激活链路对抗（v1.1.4 新增）**：
+    - FDE/SKILL.md 和 LOOP/SKILL.md 引用的所有路径——`agents/SKILL/sofagent-engineer/SKILL.md`、`agents/SKILL/sofagent-reviewer/SKILL.md`、`agents/SKILL/sofagent-fde/SKILL.md`、`agents/SKILL/sofagent-audit/SKILL.md`——逐个确认存在吗？
+    - SKILL.md 里引用的 CLI 命令——`sofagent-orchestrator subagent run fde --task "..."`、`sofagent-orchestrator loop --task "..."`——在装完底座后真能跑通吗？`--help` 输出里有这些子命令吗？
+    - **跨平台激活对抗**：`@sofagent-fde` 在 WorkBuddy 真能激活吗（需要 Skill 复制到 `~/.workbuddy/skills/sofagent-fde/`）？`@skill:sofagent-loop` 在 OpenClaw 真能加载吗？fde-install.sh / loop-install.sh 在 workbuddy 分支真的把 Skill 目录复制对位置了吗？**实跑验证**：装完后在对应平台输入 `@sofagent-fde` / `@skill:sofagent-loop`，Agent 真能读到 SKILL.md 内容吗？还是静默失败？
+    - **种子指令对抗**：FDE/README.md 第 40-44 行的"种子指令"（让 Agent 读 SKILL.md + FDE.md）——如果 Agent 收到这段指令但 SKILL.md 路径错了（相对路径 vs 绝对路径混淆），Agent 会报错还是假装读了？
 
 **输出格式**：
 
@@ -494,6 +515,15 @@
      3. install.sh 完成后是否输出「✅ sofagent 已就绪」品牌行
      4. FDE/FDE.md §13 是否注明 Agent 身份感知设计意图
    - **验证**：从一个 clean slate 加载 sofagent skill 后，Agent 是否在上下文中感知到 sofagent 的存在（通过 system prompt 或首次响应确认）
+
+#### 29. **独立产品声称一致性（v1.1.4 新增）** 🆕
+   - **盲区**：FDE 和 LOOP 声称独立产品，但它们的 README / SKILL.md / quick-start.md / FDE.md / LOOP.md 里声称的流程步数、Agent 数量、CLI 命令、Skill 路径——与实际代码和文件交叉验证后是否一致？单篇文档审查发现不了跨文档声称漂移。
+   - **检查手法**：
+     1. **FDE 12 步流程声称**：FDE/SKILL.md 写"四阶段十一关键步"、FDE/README.md 写"12 步流程"、fde-install.sh 第 110 行写"走完 11 步"——**到底是 11 步还是 12 步？** 三个地方声称不一致。打开 FDE/FDE.md 实数章节标题，与三处声称对照。
+     2. **LOOP 内置 Agent 数声称**：LOOP/SKILL.md 列了 3 个（engineer/reviewer/audit）、LOOP/README.md 列了 3 个、LOOP/quick-start.md 列了 4 个（多了 sofagent-fde）——**到底是 3 个还是 4 个？** 实数 `ls agents/SKILL/sofagent-*` 看真实安装了几个。
+     3. **CLI 命令声称**：所有 SKILL.md / README / quick-start 里出现的 `sofagent-orchestrator <subcommand>` 命令——逐一在装完底座后跑 `--help` 确认子命令存在。历史教训：SKILL.md 曾写过不存在的 CLI 子命令。
+     4. **Skill 路径声称**：FDE/SKILL.md / LOOP/SKILL.md 引用的 `agents/SKILL/<name>/SKILL.md` 路径——逐个 `ls` 确认存在。fde-install.sh / loop-install.sh 复制源路径与文档声称路径一致吗？
+     5. **跨产品版本一致性**：FDE/package.json / LOOP/package.json / 主 package.json 三者 version 必须一致。`diff <(grep version FDE/package.json) <(grep version LOOP/package.json)` 期望零差异。
 
 **输出格式**：
 
