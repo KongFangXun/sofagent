@@ -184,14 +184,14 @@ const AUDIT_AGENT: SubAgentDefinition = {
 // ============================================================
 
 /**
- * 最小变更工程师（LOOP 代码执行者）
+ * 软件工程师（LOOP 代码执行者——最小变更哲学）
  *
  * systemPrompt 优先加载 agents/SKILL/sofagent-engineer/SKILL.md
  */
 export const ENGINEER_AGENT: SubAgentDefinition = {
   name: 'engineer',
   type: 'development',
-  description: '最小变更工程师——只修复被要求的内容，拒绝范围蔓延，逐行自证差异',
+  description: '软件工程师——只修复被要求的内容，拒绝范围蔓延，逐行自证差异',
   tools: ['read', 'write', 'bash', 'grep', 'glob'],
   systemPrompt: loadAgentMdFile(
     'sofagent-engineer',
