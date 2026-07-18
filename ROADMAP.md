@@ -23,7 +23,7 @@
 
 ## 现在在哪：v1.1.3 🚧（开发完成 · 待发版）
 
-> LangGraph StateGraph 四节点自动流转（engineer → audit → reviewer → human_confirm）+ Checkpoint 持久化 + HITL 确认节点，编排控制从 DeepAgents compose 上提为 sofagent 直接掌握。同时吸收四路发布后审查 39 项问题——跨包代码重复清零、silent exit code 修正、PASS 品牌签名、CHANGELOG 补 v1.1.1 索引、「回溯引擎」更名「回溯能力」。557 tests / acceptance 55/55 / pre-push 13 通过，全门禁绿。
+> LangGraph StateGraph 四节点自动流转（engineer → audit → reviewer → human_confirm）+ Checkpoint 持久化 + HITL 确认节点，编排控制从 DeepAgents compose 上提为 sofagent 直接掌握。同时吸收四路发布后审查 39 项问题——跨包代码重复清零、silent exit code 修正、PASS 品牌签名、CHANGELOG 补 v1.1.1 索引、「回溯引擎」更名「回溯能力」。558 tests / acceptance 55/55 / pre-push 15 通过（共 16 项），全门禁绿。
 >
 > 📖 [v1.1.3 开发日志](./docs/changelog/v1.1.3.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 

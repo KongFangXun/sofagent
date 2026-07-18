@@ -10,7 +10,7 @@
 > 2026-07-18（UTC）· 开发完成 · 待发版
 **核心变更**：编排控制从 DeepAgents compose（一次性生成 YAML）上提为 sofagent 直接掌握的 LangGraph StateGraph 节点级流转——四节点（engineer → audit → reviewer → human_confirm）自动流转 + 条件路由（FAIL 回 engineer，3 轮重试上限 + blocked 终态）+ Checkpoint 持久化（并发安全：原子写/文件锁/schemaVersion/latest 指针）+ HITL 确认节点（y/n + --resume 断点续跑）。`@langchain/langgraph@^1.4.7` 首次成为直接依赖。daemon 集成顺延 v1.1.4。
 **缺陷修复**：跨包代码重复清零、silent 模式 exit code 修正、PASS 输出品牌签名、CHANGELOG 补 v1.1.1 索引、「回溯引擎」更名「回溯能力」、pre-push 新增 tag message 校验与依赖循环检测。
-**质量验证**：557 tests across 12 packages 全绿 · acceptance-test 55/55 · check-version 67/67 · pre-push-check 13 通过/0 失败。
+**质量验证**：558 tests across 12 packages 全绿 · acceptance-test 55/55 · check-version 67/67 · pre-push-check 15 通过/0 失败（共 16 项）。
 > 📖 [开发日志](./docs/changelog/v1.1.3.md)
 
 ### [v1.1.2] — LOOP 双 Agent 串联 + Harness 可见性
