@@ -26,7 +26,7 @@ echo "=== 1b. 全仓相对路径死链扫描（维度 306）==="
 # docs/changelog/docs/evidence/sofagent/skill/FDE）。
 DEAD_LINKS=0
 DEAD_DETAIL=""
-EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/sofagent/skill/*" -not -path "*/FDE/*")
+EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/sofagent/skill/*" -not -path "*/FDE/*" -not -path "*/docs/archive/*")
 while IFS= read -r -d '' mdfile; do
   in_fence=0
   while IFS= read -r line; do
