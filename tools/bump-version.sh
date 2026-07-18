@@ -267,6 +267,7 @@ ts_header_count=0
 while IFS= read -r ts; do
   [[ -f "$ts" ]] || continue
   [[ "$ts" == */_archive/* ]] && continue
+  [[ "$ts" == */docs/archive/* ]] && continue
   [[ "$ts" == *.test.ts ]] && continue
   [[ "$ts" == */dist/* ]] && continue
   # 只处理文件头前 10 行的注释（文件头版本号声明区域）
@@ -447,6 +448,8 @@ done < <(find "$PROJECT_ROOT" \
   -not -path '*/.git/*' \
   -not -path '*/dist/*' \
   -not -path '*/docs/changelog/*' \
+  -not -path '*/docs/archive/*' \
+  -not -path '*/_archive/*' \
   -type f)
 echo -e "  ${YELLOW}已扫描 $md_count 个 MD 文件有匹配${NC}"
 echo ""
@@ -558,6 +561,8 @@ done < <(find "$PROJECT_ROOT" \
   -not -path '*/.git/*' \
   -not -path '*/dist/*' \
   -not -path '*/docs/changelog/*' \
+  -not -path '*/docs/archive/*' \
+  -not -path '*/_archive/*' \
   -type f)
 if [[ $sig_count -eq 0 ]]; then
   echo -e "  ${YELLOW}(no match)${NC}"

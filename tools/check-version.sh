@@ -138,7 +138,7 @@ extract_version() {
 }
 
 # ── 2. 检查 .ts 文件 const VERSION = 'X.Y'（动态扫描，不硬编码文件列表）
-echo -e "${BOLD}── [1/13] TypeScript 常量 ──${NC}"
+echo -e "${BOLD}── [1/14] TypeScript 常量 ──${NC}"
 # 动态扫描 12 个子包目录（v1.1.0 多包结构）
 SCAN_DIRS=()
 for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test work模板市场 think skillopt; do
@@ -149,8 +149,9 @@ for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test work
 done
 while IFS= read -r ts; do
   [[ -f "${ts}" ]] || continue
-  # 跳过 _archive
+  # 跳过归档目录（_archive 和 docs/archive）
   [[ "${ts}" == */_archive/* ]] && continue
+  [[ "${ts}" == */docs/archive/* ]] && continue
   # mcp-server.ts 已改为从 @sofagent/audit 导入 VERSION，不再跳过
   # v1.1.3: SCHEMA_VERSION 是数据结构 schema 版本（如 checkpoint 'v1'），非产品版本，豁免
   match=$(grep -n "const [A-Z_]*VERSION = '" "${ts}" | grep -v 'PROTOCOL_VERSION' | grep -v 'SCHEMA_VERSION' | head -1)
@@ -170,7 +171,7 @@ done < <(grep -rl "const [A-Z_]*VERSION = '" \
 echo ""
 
 # ── 3. 检查 index.ts vOLD 引用（12 子包遍历）────────────────
-echo -e "${BOLD}── [2/13] index.ts 版本引用 ──${NC}"
+echo -e "${BOLD}── [2/14] index.ts 版本引用 ──${NC}"
 for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test work模板市场 think skillopt; do
   INDEX_TS="${PROJECT_ROOT}/sofagent/${pkg}/src/index.ts"
   if [[ ! -f "${INDEX_TS}" ]]; then
@@ -193,7 +194,7 @@ done
 echo ""
 
 # ── 4. 检查 .sh 文件 VERSION="X.Y" ────────────────────────────
-echo -e "${BOLD}── [3/13] Shell 脚本 ──${NC}"
+echo -e "${BOLD}── [3/14] Shell 脚本 ──${NC}"
 SH_DIR="${PROJECT_ROOT}/sofagent/scripts"
 if [[ ! -d "${SH_DIR}" ]]; then
   echo -e "  ${YELLOW}⚠${NC} 目录不存在: ${SH_DIR}"
@@ -248,7 +249,7 @@ done
 echo ""
 
 # ── 5. 检查 .ps1 文件 $VERSION / $VERSION_STR = "X.Y" ──────────
-echo -e "${BOLD}── [4/13] PowerShell 脚本 ──${NC}"
+echo -e "${BOLD}── [4/14] PowerShell 脚本 ──${NC}"
 PS1_DIR="${PROJECT_ROOT}/sofagent/scripts/windows"
 if [[ ! -d "${PS1_DIR}" ]]; then
   echo -e "  ${YELLOW}⚠${NC} 目录不存在: ${PS1_DIR}"
@@ -279,7 +280,7 @@ echo ""
 # ── 6. 检查 MD 文件头 > vX.Y · date（版本头格式）──────────────
 # 只匹配 "> vX.Y · " 格式（带 · 分隔符），这是版本头标记。
 # 正文中引用旧版本的 "> v0.84 只记录..." 不带 · 分隔符，自然被过滤。
-echo -e "${BOLD}── [5/13] Markdown 版本头 (> vX.Y · 日期/描述) ──${NC}"
+echo -e "${BOLD}── [5/14] Markdown 版本头 (> vX.Y · 日期/描述) ──${NC}"
 md_checked=0
 md_mismatch=0
 while IFS= read -r md; do
@@ -302,12 +303,14 @@ done < <(find "${PROJECT_ROOT}" \
   -not -path '*/.git/*' \
   -not -path '*/dist/*' \
   -not -path '*/docs/changelog/*' \
+  -not -path '*/docs/archive/*' \
+  -not -path '*/_archive/*' \
   -type f)
 echo -e "  ${GREEN}✓${NC} ${md_checked} 个 MD 版本头一致（共检查 $((md_checked + md_mismatch)) 个）"
 echo ""
 
 # ── 7. 检查 README badge version-vX.Y ─────────────────────────
-echo -e "${BOLD}── [6/13] README badge ──${NC}"
+echo -e "${BOLD}── [6/14] README badge ──${NC}"
 for readme in \
   "${PROJECT_ROOT}/README.md" \
   "${PROJECT_ROOT}/README.en.md"; do
@@ -339,7 +342,7 @@ done
 echo ""
 
 # ── 8. 检查 SKILL.md frontmatter version: X.Y ─────────────────
-echo -e "${BOLD}── [7/13] SKILL.md frontmatter ──${NC}"
+echo -e "${BOLD}── [7/14] SKILL.md frontmatter ──${NC}"
 while IFS= read -r skill; do
   match=$(grep -m5 -nE '^version: [0-9]+\.[0-9]+' "${skill}" | head -1)
   if [[ -z "${match}" ]]; then
@@ -374,7 +377,7 @@ done < <(find "${PROJECT_ROOT}" \
 echo ""
 
 # ── 9. 检查 package.json SSOT 格式（必须 3 段）─────────────────
-echo -e "${BOLD}── [8/13] package.json SSOT 格式 ──${NC}"
+echo -e "${BOLD}── [8/14] package.json SSOT 格式 ──${NC}"
 seg_count=$(echo "${SSOT_VERSION}" | tr -cd '.' | wc -c | tr -d ' ')
 if [[ "${seg_count}" -ne 2 ]]; then
   echo -e "  ${RED}✗${NC} package.json version 应为 3 段格式（如 0.94.0），当前: ${SSOT_VERSION}"
@@ -385,7 +388,7 @@ fi
 echo ""
 
 # ── 9b. 检查 12 个子包 package.json version 与 SSOT 一致 ─
-echo -e "${BOLD}── [9/13] 子包版本号一致性 ──${NC}"
+echo -e "${BOLD}── [9/14] 子包版本号一致性 ──${NC}"
 for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test work模板市场 think skillopt; do
   PKG_JSON="${PROJECT_ROOT}/sofagent/${pkg}/package.json"
   if [[ ! -f "${PKG_JSON}" ]]; then
@@ -429,7 +432,7 @@ fi
 echo ""
 
 # ── 10b. 检查 sofagent/mcp 自身 version 字段与 SSOT 一致 ─
-echo -e "${BOLD}── [10/13] mcp 包版本号 ──${NC}"
+echo -e "${BOLD}── [10/14] mcp 包版本号 ──${NC}"
 if [[ -f "${MCP_PKG}" ]]; then
   mcp_ver=$(grep '"version":' "${MCP_PKG}" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
   if [[ -z "${mcp_ver}" ]]; then
@@ -443,7 +446,7 @@ fi
 echo ""
 
 # ── 10c. 检查 ROADMAP「现在在哪」节标题版本号 ─
-echo -e "${BOLD}── [11/13] ROADMAP 节标题 ──${NC}"
+echo -e "${BOLD}── [11/14] ROADMAP 节标题 ──${NC}"
 ROADMAP="${PROJECT_ROOT}/ROADMAP.md"
 if [[ -f "${ROADMAP}" ]]; then
   roadmap_ver=$(grep '^## 现在在哪：v' "${ROADMAP}" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
@@ -480,11 +483,12 @@ fi
 echo ""
 
 # ── 10d. 检查 .ts 文件头注释中的 vX.Y.Z 残留 ─
-echo -e "${BOLD}── [12/13] TS 文件头注释版本号 ──${NC}"
+echo -e "${BOLD}── [12/14] TS 文件头注释版本号 ──${NC}"
 ts_header_errors=0
 while IFS= read -r ts; do
   [[ -f "${ts}" ]] || continue
   [[ "${ts}" == */_archive/* ]] && continue
+  [[ "${ts}" == */docs/archive/* ]] && continue
   [[ "${ts}" == *.test.ts ]] && continue
   [[ "${ts}" == */dist/* ]] && continue
   # 只检查文件头前 10 行的注释（与 bump-version.sh [4/13] 对齐）
