@@ -50,33 +50,33 @@
 | **v1.0.1** 🔧 | AI 知识库实现版：7 件事（目录骨架/fde 规则/Skill/四层加载链/daemon Ingest/Lint/轮次上限）+ A14 越权审计 + 回归检查清单 | [📖](./docs/changelog/v1.0.1.md) |
 | **v1.0.0** 🎉 | 正式版：Agent 审计工具——18 件事 + 408 测试全绿 + 回归检查清单 | [📖](./docs/changelog/v1.0.0.md) |
 | *(实验/测试版)* | | |
-| **v0.99.9** | AI 知识库概念先行 + verify.ts 拆分（1257→4模块）+ 行业笔记落地 + 理论引证 | [📖](./docs/changelog/experimental/v0.99.9.md) |
-| **v0.99.8** | 文档收尾 + FDE 架构重构：FDE 四层→三层实体 + templates 镜像产出 + Skill 精简 | [📖](./docs/changelog/experimental/v0.99.8.md) |
-| **v0.99.7** | 发布基础设施修复：CI E403 根治 + OIDC 清零 + mcp 依赖解锁 + shellcheck 清零 + Windows 标注 | [📖](./docs/changelog/experimental/v0.99.7.md) |
-| **v0.99.6** | npm 双包发布 + 25 项修复 | [📖](./docs/changelog/experimental/v0.99.6.md) |
-| **v0.99.5** | CI 自动化 + npm 发布：NPM_TOKEN 自动发布 + 工具增强 | [📖](./docs/changelog/experimental/v0.99.5.md) |
-| **v0.99.4** | 准入诚实化：41 项全面修复，准入 6✅→3✅ 诚实化，doc-vs-reality 清零，闭环→多维 | [📖](./docs/changelog/experimental/v0.99.4.md) |
-| **v0.99.3** | 文档校准：16 项一致性清零（术语/幽灵引用/ROADMAP/CI/归档）+ bump-version 修复 | [📖](./docs/changelog/experimental/v0.99.3.md) |
-| **v0.99.2** | 18 项修复：daemon 歧义根治 + 死链清零 | [📖](./docs/changelog/experimental/v0.99.2.md) |
-| **v0.99.1** | OpenClaw 叙事重写 + YAML→js-yaml + MCP 独立包 + 局限声明修正 | [📖](./docs/changelog/experimental/v0.99.1.md) |
-| **v0.99** | v1.0 前收尾：Skill≤90行 + 放弃条件 + MCP Server + verify→TS | [📖](./docs/changelog/experimental/v0.99.md) |
-| **v0.98** | 架构重组：产品核心转为事后审计 + FDE 企业部署 + OpenClaw 必装 | [📖](./docs/changelog/experimental/v0.98.md) |
-| **v0.97** | 审计 A9/A10/A11 + 编排引擎重构（砍四级深度→两档拆解 + engage.md）+ bash→TS 第二波 + 概念精简 | [📖](./docs/changelog/experimental/v0.97.md) |
-| **v0.96** | README 六段式重构（373→166行）+ bash→TS 第一波 + 铁律重排 + 编排定位澄清 | [📖](./docs/changelog/experimental/v0.96.md) |
-| **v0.95** | 铁律精简 10→6（4 条移审计层）+ 目录改名 + 三源收敛 + FDE 商业模式 | [📖](./docs/changelog/experimental/v0.95.md) |
-| **v0.94** | 6 项代码止血 + --silent 模式 + LogFormat 可插拔 + FDE Skill 部署者优先 | [📖](./docs/changelog/experimental/v0.94.md) |
-| **v0.93** | 4 项 FP 修复 + bash→TS 迁移 + 27 cases FP=0% FN=0% + 10 组对照实验 | [📖](./docs/changelog/experimental/v0.93.md) |
-| **v0.92** | 安全加固 + 信任模型声明 + 审计 A7 检测加固 + 工程欠债清算 + OpenClaw 对照实验 | [📖](./docs/changelog/experimental/v0.92.md) |
-| **v0.91** | sofagent-audit MVP + ARCHITECTURE 瘦身（710→378行）+ COMMUNITY.md | [📖](./docs/changelog/experimental/v0.91.md) |
-| **v0.86** | 读写型分流 + Loop 成熟度四问 + 19 项学习笔记约束 + 8 项评审反馈 | [📖](./docs/changelog/experimental/v0.86.md) |
-| **v0.85** | 定位校准（「治理」→「纪律」）+ ROADMAP 砍削 + 45 组验证实验设计 + sofagent-audit 方向确立 | [📖](./docs/changelog/experimental/v0.85.md) |
-| **v0.82** | 五平台实测 + 步数闸/熔断闸/幂等检查/评判器隔离在非 OpenClaw 平台均不生效确认 | [📖](./docs/changelog/experimental/v0.82.md) |
-| **v0.81** | daemon 核心骨架 + 5 项治理加固 + macOS launchd + Linux systemd | [📖](./docs/changelog/experimental/v0.81.md) |
-| **v0.75** | 降低试用门槛 + benchmark.sh + 英文 README + Co-maintainer 招募 | [📖](./docs/changelog/experimental/v0.75.md) |
-| **v0.74** | 文档拆分去重 + verify.sh --quick + Scoring 基准线 | [📖](./docs/changelog/experimental/v0.74.md) |
-| **v0.73** | 三道闸门体系 + 编排加固 + 记忆最小闭环 + scoring 第九维 | [📖](./docs/changelog/experimental/v0.73.md) |
-| **v0.72** | README 平台能力表重构 + benchmark.sh + anti-cases | [📖](./docs/changelog/experimental/v0.72.md) |
-| **v0.7x** | 企业合规：数据保留 + task/logs 脱敏 + 审计日志 | [📖](./docs/changelog/experimental/v0.75.md) |
+| **v0.99.9** | AI 知识库概念先行 + verify.ts 拆分（1257→4模块）+ 行业笔记落地 + 理论引证 | [📖](./docs/archive/changelog-experimental/v0.99.9.md) |
+| **v0.99.8** | 文档收尾 + FDE 架构重构：FDE 四层→三层实体 + templates 镜像产出 + Skill 精简 | [📖](./docs/archive/changelog-experimental/v0.99.8.md) |
+| **v0.99.7** | 发布基础设施修复：CI E403 根治 + OIDC 清零 + mcp 依赖解锁 + shellcheck 清零 + Windows 标注 | [📖](./docs/archive/changelog-experimental/v0.99.7.md) |
+| **v0.99.6** | npm 双包发布 + 25 项修复 | [📖](./docs/archive/changelog-experimental/v0.99.6.md) |
+| **v0.99.5** | CI 自动化 + npm 发布：NPM_TOKEN 自动发布 + 工具增强 | [📖](./docs/archive/changelog-experimental/v0.99.5.md) |
+| **v0.99.4** | 准入诚实化：41 项全面修复，准入 6✅→3✅ 诚实化，doc-vs-reality 清零，闭环→多维 | [📖](./docs/archive/changelog-experimental/v0.99.4.md) |
+| **v0.99.3** | 文档校准：16 项一致性清零（术语/幽灵引用/ROADMAP/CI/归档）+ bump-version 修复 | [📖](./docs/archive/changelog-experimental/v0.99.3.md) |
+| **v0.99.2** | 18 项修复：daemon 歧义根治 + 死链清零 | [📖](./docs/archive/changelog-experimental/v0.99.2.md) |
+| **v0.99.1** | OpenClaw 叙事重写 + YAML→js-yaml + MCP 独立包 + 局限声明修正 | [📖](./docs/archive/changelog-experimental/v0.99.1.md) |
+| **v0.99** | v1.0 前收尾：Skill≤90行 + 放弃条件 + MCP Server + verify→TS | [📖](./docs/archive/changelog-experimental/v0.99.md) |
+| **v0.98** | 架构重组：产品核心转为事后审计 + FDE 企业部署 + OpenClaw 必装 | [📖](./docs/archive/changelog-experimental/v0.98.md) |
+| **v0.97** | 审计 A9/A10/A11 + 编排引擎重构（砍四级深度→两档拆解 + engage.md）+ bash→TS 第二波 + 概念精简 | [📖](./docs/archive/changelog-experimental/v0.97.md) |
+| **v0.96** | README 六段式重构（373→166行）+ bash→TS 第一波 + 铁律重排 + 编排定位澄清 | [📖](./docs/archive/changelog-experimental/v0.96.md) |
+| **v0.95** | 铁律精简 10→6（4 条移审计层）+ 目录改名 + 三源收敛 + FDE 商业模式 | [📖](./docs/archive/changelog-experimental/v0.95.md) |
+| **v0.94** | 6 项代码止血 + --silent 模式 + LogFormat 可插拔 + FDE Skill 部署者优先 | [📖](./docs/archive/changelog-experimental/v0.94.md) |
+| **v0.93** | 4 项 FP 修复 + bash→TS 迁移 + 27 cases FP=0% FN=0% + 10 组对照实验 | [📖](./docs/archive/changelog-experimental/v0.93.md) |
+| **v0.92** | 安全加固 + 信任模型声明 + 审计 A7 检测加固 + 工程欠债清算 + OpenClaw 对照实验 | [📖](./docs/archive/changelog-experimental/v0.92.md) |
+| **v0.91** | sofagent-audit MVP + ARCHITECTURE 瘦身（710→378行）+ COMMUNITY.md | [📖](./docs/archive/changelog-experimental/v0.91.md) |
+| **v0.86** | 读写型分流 + Loop 成熟度四问 + 19 项学习笔记约束 + 8 项评审反馈 | [📖](./docs/archive/changelog-experimental/v0.86.md) |
+| **v0.85** | 定位校准（「治理」→「纪律」）+ ROADMAP 砍削 + 45 组验证实验设计 + sofagent-audit 方向确立 | [📖](./docs/archive/changelog-experimental/v0.85.md) |
+| **v0.82** | 五平台实测 + 步数闸/熔断闸/幂等检查/评判器隔离在非 OpenClaw 平台均不生效确认 | [📖](./docs/archive/changelog-experimental/v0.82.md) |
+| **v0.81** | daemon 核心骨架 + 5 项治理加固 + macOS launchd + Linux systemd | [📖](./docs/archive/changelog-experimental/v0.81.md) |
+| **v0.75** | 降低试用门槛 + benchmark.sh + 英文 README + Co-maintainer 招募 | [📖](./docs/archive/changelog-experimental/v0.75.md) |
+| **v0.74** | 文档拆分去重 + verify.sh --quick + Scoring 基准线 | [📖](./docs/archive/changelog-experimental/v0.74.md) |
+| **v0.73** | 三道闸门体系 + 编排加固 + 记忆最小闭环 + scoring 第九维 | [📖](./docs/archive/changelog-experimental/v0.73.md) |
+| **v0.72** | README 平台能力表重构 + benchmark.sh + anti-cases | [📖](./docs/archive/changelog-experimental/v0.72.md) |
+| **v0.7x** | 企业合规：数据保留 + task/logs 脱敏 + 审计日志 | [📖](./docs/archive/changelog-experimental/v0.75.md) |
 | **v0.6x** | 质量加固：端到端测试 + 闭环验证 + WorkBuddy 专家团共存 | — |
 | **v0.5x** | 企业级能力：install.sh/uninstall.sh + 离线模式 + 编排 fallback | — |
 | **v0.1~v0.4** | 核心约束：4 底线 + 6 铁律 + Loop Agent + 三层闸门 + 渐进减薄 + 反思区 + scoring | — |
@@ -98,7 +98,7 @@
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
 | **v1.1.4** | 📋 规划中 | **LOOP 工具注入 + USB federation**：engineer/reviewer 注入自有工具集（Read/Write/Edit/Bash/Search/Test，内嵌 A1-A19 约束）+ daemon USB 检测自动配置（SOFAGENT 标签 U 盘 → federation.json 自动入网）| [📖](./docs/changelog/v1.1.4.md) |
-| **v1.1.5** | 📋 规划中 | **releasing.md SOP 集成 + MCP knowledge resource**：Agent 按十一阶段 SOP 全流程自动发版 + 7 个 knowledge MCP resource | [📖](./docs/changelog/v1.1.5.md) |
+| **v1.1.5** | 📋 规划中 | **releasing.md SOP 集成 + MCP knowledge resource**：Agent 按十二阶段 SOP 全流程自动发版 + 7 个 knowledge MCP resource | [📖](./docs/changelog/v1.1.5.md) |
 | **v1.1.6** | 📋 规划中 | **LLM Wiki 3 层分层 + conflict-check**：Ledger-Views-Policy 显式化 + daemon 知识健康巡检 | [📖](./docs/changelog/v1.1.6.md) |
 | **v1.1.7** | 📋 规划中 | **Dream Cycle 6 阶段 + sensitivity**：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级 | [📖](./docs/changelog/v1.1.7.md) |
 | **v1.1.8** | 📋 规划中 | **安全层 + 联邦查询**：AES-256-GCM + ECDH 配对 + OpenClaw channel 联邦知识查询 | [📖](./docs/changelog/v1.1.8.md) |
