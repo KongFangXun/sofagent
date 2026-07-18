@@ -8,7 +8,7 @@
 
 ```bash
 # 1. 设模型
-export SOFAGENT_LLM_ENGINEER=deepseek:deepseek-chat  # 开发（便宜）
+export SOFAGENT_LLM_ENGINEER=deepseek:deepseek-v4-pro  # 开发（便宜）
 export SOFAGENT_LLM_REVIEWER=glm:glm-5.2             # 审查（贵）
 export OPENAI_API_KEY=xxx
 export LOOP_AUTO=1                                    # 全自动
