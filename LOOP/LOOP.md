@@ -6,12 +6,12 @@
 
 <img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
 
-> 📖 LOOP 自迭代的设计哲学见 [PHILOSOPHY §七](../docs/PHILOSOPHY.md#七怎么进化loop-自迭代)。Agent 定义见 [`agents/`](../agents/)——遵循 [Agency Agents](https://github.com/jnMetaCode/agency-agents-zh) 格式标准。编排层通过 [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) `createDeepAgent()` 接入 LangGraph StateGraph。
+> 📖 LOOP 自迭代的设计哲学见 [PHILOSOPHY §七](../docs/PHILOSOPHY.md#七怎么进化loop-自迭代)。Agent 定义见 [`agents/SKILL/`](../agents/SKILL/)——遵循 [Agency Agents](https://github.com/jnMetaCode/agency-agents-zh) 格式标准。编排层通过 [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) `createDeepAgent()` 接入 LangGraph StateGraph。
 
 ## 整体流程
 
 ```
-人类下任务 → engineering-minimal-change-engineer 写代码 → git commit
+人类下任务 → sofagent-engineer（软件工程师）写代码 → git commit
     → sofagent-audit (commit-msg hook) 硬证据审计
     → engineering-code-reviewer 代码审查
     → 审查报告交给人类确认
