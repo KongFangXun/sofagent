@@ -923,12 +923,13 @@ git reset HEAD . 2>/dev/null || true
 ### 场景 47：ConfigParseError — 非法 YAML 不崩溃
 
 ```bash
-# 构造非法 YAML
+# 构造临时项目目录 + 非法 YAML（doctor 读 <projectDir>/.sofagent/config.yml）
 TMPD=$(mktemp -d)
-echo "invalid: [}" > "$TMPD/config.yml"
-# doctor 应拒绝
-$SOFAGENT_DIR/sofagent/core/dist/cli.js doctor --config-dir "$TMPD" 2>&1 | grep -q "格式错误"
-# ✅ 期望：doctor 报告格式错误，exit 0 友好降级
+mkdir -p "$TMPD/.sofagent"
+echo "invalid: [}" > "$TMPD/.sofagent/config.yml"
+# doctor 以 cwd 为根，检查 .sofagent/config.yml 合法性
+(cd "$TMPD" && $SOFAGENT_DIR/sofagent/core/dist/cli.js doctor 2>&1) | grep -q "格式错误"
+# ✅ 期望：doctor 报告格式错误（exit 1，友好降级不崩溃）
 rm -rf "$TMPD"
 ```
 
