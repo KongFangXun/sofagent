@@ -68,7 +68,7 @@ ACTUAL=$(grep -c "^#### " docs/verification/regression-checklist.md)
 cd /Users/kongfangxun/Workbuddy/sofagent
 bash tools/pre-push-check.sh                    # 期望：7/7 全绿
 cd sofagent/audit && npm test && cd ../..        # 期望：全部 passed
-node sofagent/audit/dist/verify.js --list 2>&1 | head -5  # 期望：~48 项
+node sofagent/core/dist/verify.js 2>&1 | tail -10  # 期望：无 FAIL（verify.js 不支持 --list，直接输出全量结果）
 bash tools/check-docs.sh 2>&1 | tail -3          # 期望：全部通过
 bash tools/check-version.sh 2>&1 | tail -3       # 期望：全部通过
 grep -rn '建议\|应该\|尽量' sofagent/skill/*.md FDE/SKILL.md | grep -v 'not_when\|Gotcha\|场景\|如果\|注\|说明'
@@ -86,9 +86,9 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 
 ---
 
-## 审查维度（15 项 · 编号 1–15）
+## 审查维度（17 项 · 编号 1–17）
 
-> 2026-07-18 治理：从原 35 维度归并同类项而来。
+> 2026-07-18 治理：从原 35 维度归并同类项而来。2026-07-18 追加维度 16-17（安全约束 + 发布产物验证）。
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -149,11 +149,11 @@ git grep -n "OLD_RELATIVE_PATH" -- '*.md'
 
 ```bash
 # 子项 a: think.md 始终为 Ledger/source
-grep -rn "think.md.*Views\|think.md.*派生视图" ARCHITECTURE.md PHILOSOPHY.md DEVELOPMENT.md FDE/FDE.md
+grep -rn "think.md.*Views\|think.md.*派生视图" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md FDE/FDE.md
 # 期望：无匹配（若匹配 = P0）
 
 # 子项 b: canonical source 一致性
-grep -rn "Ledger-Views-Policy" ARCHITECTURE.md PHILOSOPHY.md DEVELOPMENT.md | head
+grep -rn "Ledger-Views-Policy" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md | head
 # 期望：各文档描述一致
 ```
 
@@ -177,6 +177,11 @@ grep "name:" sofagent/audit/src/rules/index.ts | wc -l    # 期望：19
 grep "不坏构建" sofagent/audit/src/rules/index.ts | grep -o "能力拐杖" && echo "A6=能力拐杖 ✅"
 grep "不滥资源" sofagent/audit/src/rules/index.ts | grep -o "业务底线" && echo "A11=业务底线 ✅"
 grep "A6.*能力拐杖\|A11.*业务底线" sofagent/audit/README.md | wc -l  # 期望：2
+
+# 子项 d: ruleClass SSOT ↔ README 逐行 diff（v1.1.3 盲区，A6/A11 反复漂移）
+diff <(grep -E "name:|ruleClass:" sofagent/audit/src/rules/index.ts | paste - - | sort) \
+     <(grep -oE "A[0-9]+ .*  \|  (业务底线|能力拐杖|工程规范)" sofagent/audit/README.md | sort)
+# 期望：零差异
 ```
 
 #### 5. 审计 exit code 与输出签名
@@ -230,14 +235,16 @@ grep "enabled: true" .sofagent/config.yml 2>/dev/null && echo "✅ 已启用"
 # 子项 b: 推送目标
 grep "push_target:" .sofagent/config.yml | grep -q "webhook://" && echo "✅ 已配置"
 
-# 子项 c: MCP 返回值签名
-grep "sofagent-audit.*扫描" sofagent/mcp/src/mcp-server.ts > /dev/null && echo "✅ 审计已签名"
+# 子项 c: MCP 返回值签名（v1.1.3 追加：所有 sendToolResult text 必须带 [sofagent]）
+grep -rn 'sendToolResult' sofagent/mcp/src/mcp-server.ts | head -5
+# 人工检查：每个 sendToolResult 的 text 字段开头必须以 [sofagent] 或 sofagent 开头
+# 特别查 think.md 回读工具（get_think/write_think）的返回——这是感知层废墟高发区
 
 # 子项 d: Webhook PASS 推送
 grep -c "PASS" sofagent/audit/src/webhook.ts  # 应 > 0
 
 # 子项 e: MCP capabilities 准确性
-grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "19 条规则"  # 应 ≥ 1
+grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "21 条规则"  # 应 ≥ 1
 grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "A1-A14"      # 应 = 0
 ```
 
@@ -347,6 +354,130 @@ grep -c "Agent 身份感知" FDE/FDE.md                      # 期望：≥ 1
 
 ---
 
+### 安全约束（v1.1.3 追加）
+
+#### 16. 安全约束 fail-closed 与权限加固
+
+> 归并自：v1.1.3 审查建议——A15 actions 绕过 + .sofagent 权限 + A/B promote 守卫
+
+```bash
+# 子项 a: A15 actions 未声明时必须 FAIL（非 fail-open WARN）
+# 防御：Agent 通过"不声明 actions"绕过所有约束检查
+grep -n "nodesWithActions.length === 0\|nodesWithActions.length === 0" sofagent/audit/src/rules/rule-a15-action-constraint.ts
+# 人工检查：该分支返回 FAIL 或 WARN。返回 PASS = P0 安全红线违反
+
+# 子项 b: .sofagent/ 子目录权限 700
+ls -ld .sofagent .sofagent/audit .sofagent/task 2>/dev/null
+# 期望：drwx------（700）。drwxr-xr-x（755）= P1，审计日志目录权限过宽
+
+# 子项 c: A/B promote 守卫——overallImprovement > 0
+grep -n "overallImprovement\|decidePromotion" sofagent/ab-test/src/*.ts 2>/dev/null
+# 人工检查：decidePromotion() 必须有 overallImprovement > 0 守卫
+# 防御：窄 eval 集连胜 2 次即晋升更差版本
+```
+
+---
+
+### 发布产物验证（v1.1.3 追加）
+
+#### 17. npm 产物 + bin 权限 + tag commit message
+
+> 归并自：v1.1.3 审查建议——bin 执行权限 + npm registry 与工作树一致性 + tag commit msg
+
+```bash
+# 子项 a: bin 文件执行权限（doctor/verify 不可用风险）
+for pkg in audit core orchestrator daemon mcp; do
+  bin=$(node -e "const p=require('./sofagent/$pkg/package.json'); console.log(Object.keys(p.bin||{}).map(k=>p.bin[k]).join(' '))" 2>/dev/null)
+  for b in $bin; do
+    [ -x "sofagent/$pkg/$b" ] || ls -la "sofagent/$pkg/$b" 2>/dev/null | grep -q '^-.x' || echo "❌ $pkg/$b 无执行权限"
+  done
+done
+
+# 子项 b: npm registry 版本 vs git tag vs 工作树三方一致
+NPM_VER=$(npm view @sofagent/audit version 2>/dev/null)
+SSOT_VER=$(node -e "console.log(require('./sofagent/audit/package.json').version)")
+TAG_VER=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
+echo "npm=$NPM_VER ssot=$SSOT_VER tag=$TAG_VER"
+# 期望：三者一致。npm < ssot = 工作树修复未发布（P0）
+
+# 子项 c: tag 指向的 commit message 含版本号（v1.1.3 盲区——tag 自身 msg 对但 commit msg 错）
+git tag -l "v*" | while read t; do
+  v=$(echo $t | sed 's/^v//')
+  msg=$(git log -1 --format=%s $t^{commit})
+  echo "$msg" | grep -q "$v" || echo "❌ $t: commit message 不含 $v — $msg"
+done
+
+# 子项 d: 发版前工作树 clean
+git diff --quiet || echo "⚠️ 工作树有未提交修改——发版前必须 commit"
+```
+
+### 审计规则扩展（v1.1.4 追加）
+
+#### 18. A19 commit message 质量
+
+| 检查项 | 验证方式 |
+|--------|----------|
+| message 长度 < 8 字符 → FAIL | `grep -c "MIN_LENGTH = 8" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts` |
+| 黑名单 8 词（add/fix/test/update/change/wip/tmp/asdf）→ FAIL | `grep -c "BLACKLIST" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts` |
+| 黑名单优先于长度检查 | `grep -A 2 "检查 1：黑名单" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts \| grep "优先"` |
+| A19 在 defaultRules（始终生效） | `grep "A19" sofagent/audit/src/rules/index.ts \| head -1` |
+| critical 层阻断序列含 A19 | `grep -c "A19" sofagent/audit/src/rules/runner.ts` |
+| 空 message 降级 PASS（不误杀） | `grep "!commitMsg \|\| !commitMsg.trim" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts` |
+| ruleClass = 业务底线 | `grep "业务底线" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts` |
+
+```bash
+# 验证命令
+grep "MIN_LENGTH = 8" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts
+grep "BLACKLIST.*=.*\[" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts
+# 期望：两者都存在
+```
+
+#### 19. A18 垃圾文件检测
+
+| 检查项 | 验证方式 |
+|--------|----------|
+| 3 组正则模式（单字母/临时前缀/可疑命名） | `grep -c "JUNK_PATTERNS" sofagent/audit/src/rules/rule-a18-junk-file.ts` |
+| 豁免规则（测试目录 + .test.ts/spec.ts 后缀） | `grep -c "isExempt" sofagent/audit/src/rules/rule-a18-junk-file.ts` |
+| 不区分 file.status（modified 也告警——v1.1.4 审查修正） | `grep -c "isExempt(file.path)" sofagent/audit/src/rules/rule-a18-junk-file.ts` |
+| A18 在 extendedRules（需 config 开启） | `grep "A18" sofagent/audit/src/rules/index.ts \| tail -1` |
+| extended 优先级 A18 排在 A17 之后 | `grep "A18" sofagent/audit/src/rules/runner.ts` |
+| 只产生 WARN 不产生 FAIL | `grep "\"WARN\"" sofagent/audit/src/rules/rule-a18-junk-file.ts` |
+
+### daemon 可见性（v1.1.4 追加）
+
+#### 20. daemon plist + watch.yml 正确性
+
+| 检查项 | 验证方式 |
+|--------|----------|
+| plist ProgramArguments = sofagent-daemon（不再调 sofagent-audit --daemon） | `grep "sofagent-daemon" ~/Library/LaunchAgents/com.sofagent.daemon.plist` |
+| plist WorkingDirectory = 项目目录（非 $HOME） | `grep "Workbuddy/sofagent" ~/Library/LaunchAgents/com.sofagent.daemon.plist` |
+| --init 生成 watch.yml | `test -f .sofagent/watch.yml && grep "paths:" .sofagent/watch.yml` |
+| daemon 日志无 "不支持的参数 --daemon" | `! grep -q "不支持的参数.*--daemon" ~/.sofagent/daemon.log` |
+| daemon 运行时监控目录正确 | `tail -20 ~/.sofagent/daemon.log \| grep "监控目录"` |
+
+### LOOP 工具注入（v1.1.4 追加）
+
+#### 21. LOOP 工具注入 + 硬约束
+
+| 检查项 | 验证方式 |
+|--------|----------|
+| maxTurns = 20 常量存在 | `grep "DEFAULT_AGENT_MAX_TURNS = 20" sofagent/orchestrator/src/graph/nodes.ts` |
+| engineer 使用 ENGINEER_TOOLS（6 个） | `grep "ENGINEER_TOOLS" sofagent/orchestrator/src/graph/nodes.ts` |
+| reviewer 使用 REVIEWER_TOOLS（3 个，只读） | `grep "REVIEWER_TOOLS" sofagent/orchestrator/src/graph/nodes.ts` |
+| WARN verdict 写入 audit history（三态全写） | `grep -c "recordLoopAuditHistory" sofagent/orchestrator/src/graph/nodes.ts` |
+| run_bash 高危命令黑名单（5 类） | `grep -c "checkDangerousCommand" sofagent/orchestrator/src/tools.ts` |
+| warn-accumulator 真正连续性（遇 PASS/FAIL 中断） | `grep "break.*连续中断" sofagent/daemon/src/inspectors/warn-accumulator.ts` |
+| USB federation 基础检测（SOFAGENT 卷标） | `grep "SOFAGENT_LABEL" sofagent/daemon/src/usb-detect.ts` |
+| USB federation 签名校验标注为 v1.1.5+ | `grep "无签名校验\|v1.1.5" SECURITY.md` |
+
+```bash
+# 验证命令
+grep "DEFAULT_AGENT_MAX_TURNS" sofagent/orchestrator/src/graph/nodes.ts
+grep "checkDangerousCommand" sofagent/orchestrator/src/tools.ts
+grep "recordLoopAuditHistory" sofagent/orchestrator/src/graph/nodes.ts
+# 期望：三者都存在
+```
+
 ## 审查约束
 
 - **版本号全量一致**——`check-version.sh` 0 不一致，`pre-push-check.sh` 7/7 全绿
@@ -354,10 +485,33 @@ grep -c "Agent 身份感知" FDE/FDE.md                      # 期望：≥ 1
 - **Skill 文件行数 ≤100**——每次发版必须验证
 - **CHANGELOG 纯度**——只写产品变更，不含审查元信息
 - **测试数一致**——README/ROADMAP/evidence 与 npm test 输出一致
+- **安全约束 fail-closed**——A15 未声明 actions 时必须 FAIL 或 WARN（v1.1.3 追加）
+- **npm 产物三方一致**——npm registry = SSOT = git tag = 工作树 clean（v1.1.3 追加）
 - **实验性标注不能去掉**——daemon/编排引擎/Windows 仍然实验性
 - **发版前 git status 零未提交修改**
 - **追加新维度前先 grep 同类**——见维护公约
 - **发现的问题请给出文件路径+行号+具体建议**
+- **🔴 plist 不被外来 --init 覆盖**（v1.1.4 阶段六暴露）——`--init` 在任何目录都会重写 `~/Library/LaunchAgents/com.sofagent.daemon.plist`，验收测试的临时目录 --init 会破坏本机 plist。plist 是全局系统资源——应只在 WorkingDirectory 变化时才重新生成（见维度 22）
+
+---
+
+### 发版流程（v1.1.4 阶段六暴露）
+
+#### 22. plist 不被外来 --init 覆盖
+
+| 检查项 | 验证方式 |
+|--------|----------|
+| plist WorkingDirectory 指向当前项目 | `grep "Workbuddy/sofagent" ~/Library/LaunchAgents/com.sofagent.daemon.plist` |
+| plist ProgramArguments = sofagent-daemon（不复古） | `grep "sofagent-daemon" ~/Library/LaunchAgents/com.sofagent.daemon.plist` |
+| daemon 进程正常运行（非 exit 78） | `launchctl list \| grep sofagent \| awk '{print $2}'` 期望 = 0 |
+| 验收测试后 plist 未被污染 | 跑完 acceptance-test.sh 后重复上述检查，期望不变 |
+
+```bash
+# 验证命令
+grep "Workbuddy/sofagent" ~/Library/LaunchAgents/com.sofagent.daemon.plist
+launchctl list | grep sofagent | awk '{print $2}'
+# 期望：第一行有匹配，第二行 = 0
+```
 
 ---
 
@@ -372,7 +526,7 @@ grep -c "Agent 身份感知" FDE/FDE.md                      # 期望：≥ 1
 
 ## 总览
 - 审查日期：YYYY-MM-DD
-- 审查范围：15 维度 + 跨版本核心维度
+- 审查范围：22 维度 + 跨版本核心维度
 - 环境验证：pre-push-check [✅/❌] / npm test [✅/❌] / check-docs [✅/❌] / check-version [✅/❌]
 - Fresh clone：[✅/❌]
 - 整体结论：[已发布无遗留 / 需修复后补发 / 阻塞]

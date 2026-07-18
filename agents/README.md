@@ -1,6 +1,6 @@
 # sofagent Agent 库
 
-> v1.0.7 起（当前 v1.1.3），预装 Agent 为 Skill 格式。Skill 是调用入口——第三方 Agent 平台（WorkBuddy/Codex/OpenClaw 等）加载 Skill 后，通过 CLI 命令把任务交给 DeepAgents 编排引擎执行。
+> v1.0.7 起（当前 v1.1.4），预装 Agent 为 Skill 格式。Skill 是调用入口——第三方 Agent 平台（WorkBuddy/Codex/OpenClaw 等）加载 Skill 后，通过 CLI 命令把任务交给 DeepAgents 编排引擎执行。
 
 ## Agent 列表
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.1.3 · 47 个端到端场景，覆盖完整用户旅程 + 全规则覆盖 + 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知
+# v1.1.3 · 50 个端到端场景，覆盖完整用户旅程 + 全规则覆盖 + 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成
 # ============================================================
 # 用真实 git 仓库走完整用户旅程：
 #   Fresh install → --init → --doctor → 正常 commit → 违规拦截
@@ -763,7 +763,7 @@ EXT_OK=true
 echo 'describe("test", () => { it("works", () => expect(true).toBe(true)) })' > src/app.spec.ts
 git add src/app.spec.ts
 E1_OUTPUT=$($CLI --diff HEAD --task "add code" 2>&1 || true)
-echo "E1: $(echo "$E1_OUTPUT" | grep -i "E1\|WARN" | head -1)"
+echo "E1: $(echo "$E1_OUTPUT" | grep -i "E1\|WARN" | head -1 || true)"
 echo "$E1_OUTPUT" | grep -qi "E1\|WARN" || EXT_OK=false
 git reset HEAD . 2>/dev/null || true
 rm -f src/app.spec.ts
@@ -772,7 +772,7 @@ rm -f src/app.spec.ts
 echo '// TODO: implement this later' > src/todo.ts
 git add src/todo.ts
 E2_OUTPUT=$($CLI --diff HEAD --task "add code" 2>&1 || true)
-echo "E2: $(echo "$E2_OUTPUT" | grep -i "E2\|WARN" | head -1)"
+echo "E2: $(echo "$E2_OUTPUT" | grep -i "E2\|WARN" | head -1 || true)"
 echo "$E2_OUTPUT" | grep -qi "E2\|WARN" || EXT_OK=false
 git reset HEAD . 2>/dev/null || true
 rm -f src/todo.ts
@@ -784,7 +784,7 @@ GIT_EDITOR=true git commit --quiet -m "add content" 2>&1 || true
 echo "" > src/content.ts
 git add src/content.ts
 E3_OUTPUT=$($CLI --diff HEAD~1..HEAD --task "delete content" 2>&1 || true)
-echo "E3: $(echo "$E3_OUTPUT" | grep -i "E3\|WARN" | head -1)"
+echo "E3: $(echo "$E3_OUTPUT" | grep -i "E3\|WARN" | head -1 || true)"
 echo "$E3_OUTPUT" | grep -qi "E3\|WARN" || EXT_OK=false
 git reset HEAD . 2>/dev/null || true
 
@@ -792,7 +792,7 @@ git reset HEAD . 2>/dev/null || true
 python3 -c "open('src/nocomment.ts','w').write('\n'.join(['const x = %d;' % i for i in range(50)]))"
 git add src/nocomment.ts
 E4_OUTPUT=$($CLI --diff HEAD --task "add code" 2>&1 || true)
-echo "E4: $(echo "$E4_OUTPUT" | grep -i "E4\|WARN" | head -1)"
+echo "E4: $(echo "$E4_OUTPUT" | grep -i "E4\|WARN" | head -1 || true)"
 echo "$E4_OUTPUT" | grep -qi "E4\|WARN" || EXT_OK=false
 git reset HEAD . 2>/dev/null || true
 rm -f src/nocomment.ts
@@ -1432,6 +1432,36 @@ grep -q "循环依赖\|circular\|循环检测" "$PROJECT_ROOT/tools/pre-push-che
 scenario 47 "Agent 身份感知（SKILL.md 含方案 C 指令）"
 
 grep -q "露个脸就够了" "$PROJECT_ROOT/sofagent/skill/SKILL.md" && pass || fail "SKILL.md 缺少 Agent 身份感知指令"
+
+scenario 48 "A19 commit message 质量（\"add\" → FAIL 阻断）"
+
+# 确保在 git 仓库内且 committer 已配置
+if [ -d .git ]; then
+  A19_OUTPUT=$(GIT_EDITOR=true git commit --allow-empty -m "add" 2>&1 || true)
+  echo "$A19_OUTPUT" | grep -q "A19\|FAIL\|msg 质量" && pass || fail "A19 未阻断短 message 'add'"
+else
+  echo "  ⏭ 非 git 仓库，跳过 A19 场景"
+  PASSED=$((PASSED + 1))
+fi
+
+scenario 49 "正常 commit（≥8 字符 message → PASS）"
+
+if [ -d .git ]; then
+  A19_PASS_OUTPUT=$(GIT_EDITOR=true git commit --allow-empty -m "fix: apply v1.1.4 review fixes" 2>&1 || true)
+  echo "$A19_PASS_OUTPUT" | grep -q "FAIL" && fail "A19 错误阻断了正常长度 message" || pass
+else
+  echo "  ⏭ 非 git 仓库，跳过 A19 PASS 场景"
+  PASSED=$((PASSED + 1))
+fi
+
+scenario 50 "daemon 可见性（--init 生成 watch.yml）"
+
+PROJECT_DIR="${PROJECT_ROOT}/.sofagent"
+if [ -f "$PROJECT_DIR/watch.yml" ]; then
+  grep -q "paths:" "$PROJECT_DIR/watch.yml" && pass || fail "watch.yml 不含 paths 配置"
+else
+  fail "watch.yml 不存在（--init 未生成或项目 watch 配置缺失）"
+fi
 
 # ── 总结 ──────────────────────────────────────────────────────
 echo ""

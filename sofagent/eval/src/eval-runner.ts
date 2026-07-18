@@ -1,16 +1,22 @@
 // ============================================================
 // eval/eval-runner.ts · eval 核心运行器
-// v1.1.3 从 sofagent/audit/src/eval/eval-runner.ts 迁出
+// v1.1.4 从 sofagent/audit/src/eval/eval-runner.ts 迁出
 // 加载 golden set → 逐条跑 → 收集输出 → 评分
 // ============================================================
 
 import { existsSync, readFileSync } from 'fs';
+import { createHash } from 'crypto';
 import { load as yamlLoad } from 'js-yaml';
 import type { TestCase, TestCaseResult, EvalResult, EvalConfig } from './types';
 import { evalCase } from './eval-scorer';
 
 /**
  * 加载 golden set YAML 文件
+ *
+ * v1.1.3 发布后审查加固：支持可选的 .sha256 sidecar 校验。
+ * 如果 golden set 文件旁边有同名 .sha256 文件，加载时自动校验内容 hash。
+ * 这可以检测到 golden set 被 Agent 篡改（修改测试用例以刷分）。
+ * 如果没有 .sha256 文件，跳过校验（向后兼容）。
  */
 function loadGoldenSet(filePath: string): TestCase[] {
   if (!existsSync(filePath)) {
@@ -18,6 +24,22 @@ function loadGoldenSet(filePath: string): TestCase[] {
   }
 
   const content = readFileSync(filePath, 'utf-8');
+
+  // 可选 hash 校验：检查同名 .sha256 sidecar 文件
+  const hashPath = filePath + '.sha256';
+  if (existsSync(hashPath)) {
+    const expectedHash = readFileSync(hashPath, 'utf-8').trim().split(/\s+/)[0];
+    const actualHash = createHash('sha256').update(content).digest('hex');
+    if (expectedHash !== actualHash) {
+      throw new Error(
+        `golden set hash 校验失败：${filePath}\n` +
+        `期望: ${expectedHash}\n` +
+        `实际: ${actualHash}\n` +
+        `文件可能被篡改。如为合法变更，请重新生成 .sha256 文件。`
+      );
+    }
+  }
+
   const parsed = yamlLoad(content) as unknown;
 
   if (!Array.isArray(parsed)) {

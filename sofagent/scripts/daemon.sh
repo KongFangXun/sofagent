@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent daemon.sh · daemon 主进程 · v1.1.3
+# sofagent daemon.sh · daemon 主进程 · v1.1.4
 # ============================================================
 # 命令行接口：start / stop / status / --foreground
 # 主循环每 30 秒：检测平台进程 + 文件 hash 变化 → 更新 daemon.json
@@ -13,7 +13,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.1.3"
+VERSION="1.1.4"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." 2>/dev/null && pwd || echo "$PWD")"
@@ -159,7 +159,7 @@ _main_loop() {
     fi
     set_json_field "last_evidence_score" "$evidence_score"
 
-    # 6. task/logs 变化检测 + Ingest 触发（v1.1.3）
+    # 6. task/logs 变化检测 + Ingest 触发（v1.1.4）
     local logs_dir="${SOFAGENT_DATA}/task/logs"
     local pending_count=0
     if [ -d "$logs_dir" ]; then

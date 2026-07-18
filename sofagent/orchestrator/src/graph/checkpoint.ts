@@ -35,7 +35,7 @@ import {
 } from 'fs';
 import { join, dirname } from 'path';
 import { randomBytes } from 'crypto';
-import type { LoopGraphState } from './state';
+import type { LoopGraphState } from '../loop/state';
 
 /** checkpoint schema 版本——schema 变化时递增并在 migrateCheckpoint 中显式迁移 */
 export const CHECKPOINT_SCHEMA_VERSION = 'v1';

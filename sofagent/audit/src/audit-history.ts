@@ -1,6 +1,6 @@
 // ============================================================
 // audit-history.ts · 审计历史持久化
-// v1.1.3 env fingerprint: hash chain 加环境指纹防 Agent 重算整链
+// v1.1.4 env fingerprint: hash chain 加环境指纹防 Agent 重算整链
 // ============================================================
 //
 // 并发安全说明：appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的。
@@ -19,7 +19,7 @@
 // 向后兼容——不做指纹校验，只做链完整性校验。
 // ============================================================
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'fs';
 import { join, dirname } from 'path';
 import { createHash } from 'crypto';
 import { hostname, userInfo } from 'os';
@@ -114,9 +114,11 @@ function getEnvFingerprint(dataDir?: string): string {
 export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void {
   const filePath = getHistoryFilePath(dataDir);
   const dir = dirname(filePath);
+  const fileExists = existsSync(filePath);
 
   if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
+    // 权限收紧为 0o700（仅当前用户可读写），防止同机其他用户读取审计日志
+    mkdirSync(dir, { recursive: true, mode: 0o700 });
   }
 
   // P0-5: 计算 prevHash（上一行的 hash）
@@ -150,6 +152,15 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   };
   // v1.0.5: 使用原子追加（先读+追加+原子写），避免并发写入导致的行交错
   atomicAppendSync(filePath, JSON.stringify(sanitizedEntry));
+
+  // 文件首次创建时收紧权限为 0o600（仅当前用户可读写）
+  if (!fileExists) {
+    try {
+      chmodSync(filePath, 0o600);
+    } catch {
+      // chmod 失败不影响审计记录写入
+    }
+  }
 }
 
 /**

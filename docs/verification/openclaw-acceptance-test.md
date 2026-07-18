@@ -900,9 +900,9 @@ grep -B3 "^# 代码审查报告" $SOFAGENT_DIR/agents/engineering-code-reviewer.
 grep -c '\[sofagent\]' $SOFAGENT_DIR/sofagent/mcp/src/mcp-server.ts
 # ✅ 期望：≥ 6
 
-# 验证 MCP capabilities 工具描述准确性（v1.1.3 P0-5）
-grep "run_audit" $SOFAGENT_DIR/sofagent/mcp/src/mcp-server.ts | grep -c "19 条规则"
-# ✅ 期望：≥ 1，描述含 "19 条规则" 而非过期的 "A1-A14"
+# 验证 MCP capabilities 工具描述准确性（v1.1.4 更新规则数）
+grep "run_audit" $SOFAGENT_DIR/sofagent/mcp/src/mcp-server.ts | grep -c "21 条规则"
+# ✅ 期望：≥ 1，描述含 "21 条规则" 而非过期的 "A1-A14"
 
 grep "run_audit" $SOFAGENT_DIR/sofagent/mcp/src/mcp-server.ts | grep -c "0 token"
 # ✅ 期望：≥ 1，描述标注 "0 token 纯正则"
@@ -1132,7 +1132,7 @@ ls $SOFAGENT_DIR/workflow-hub/templates/ 2>/dev/null | wc -l
 - [ ] 场景 37：PASS 场景输出含"审计引擎: sofagent-audit" + "条规则全部通过"；FAIL 场景输出含"条规则已完成检测"
 - [ ] 场景 38：orchestrator --help 含 engineer/reviewer 和 loop 子命令；loop 子命令可调用不崩溃
 - [ ] 场景 39：loop-runner.ts 存在 + maxIterations.*3 保护 + runLOOPIteration 导出 + ENGINEER_AGENT/REVIEWER_AGENT 导出
-- [ ] 场景 40：engineering-code-reviewer.md 签名段（sofagent-audit + sofagent-orchestrator）在标题前；MCP [sofagent] ≥ 6；run_audit 描述含 "19 条规则" + "0 token"
+- [ ] 场景 40：engineering-code-reviewer.md 签名段（sofagent-audit + sofagent-orchestrator）在标题前；MCP [sofagent] ≥ 6；run_audit 描述含 "21 条规则" + "0 token"
 - [ ] 场景 41：Webhook PASS 推送不崩溃（假 URL + a1 禁用 → commit 成功）
 
 ### 历史版本核心功能（场景 42-46）

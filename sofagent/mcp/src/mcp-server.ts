@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // mcp-server.ts · MCP Server (Model Context Protocol)
-// v1.1.3: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
+// v1.1.4: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
 //
 // 协议：https://spec.modelcontextprotocol.io/
 // 传输：stdio（stdin/stdout，每行一个 JSON-RPC 消息）
@@ -214,7 +214,7 @@ class McpServer {
       tools: [
         {
           name: 'run_audit',
-          description: '对 git diff 运行全量审计规则（sofagent 审计引擎 · 19 条规则 · 0 token 纯正则）。返回结构化审计报告。',
+          description: '对 git diff 运行全量审计规则（sofagent 审计引擎 · 21 条规则 · 0 token 纯正则）。返回结构化审计报告。',
           inputSchema: {
             type: 'object' as const,
             properties: {
@@ -391,7 +391,7 @@ class McpServer {
     }
 
     if (triggeredRules.length === 0) {
-      lines.push('全部审计规则通过。');
+      lines.push('[sofagent] ✅ 全部审计规则通过。');
     }
 
     this.sendToolResult(id, {
@@ -443,7 +443,7 @@ class McpServer {
 
     this.sendToolResult(id, {
       type: 'text',
-      text: formatted.join('\n\n') || '(无反思条目)',
+      text: `[sofagent] think.md 反思记录（最近 ${recent.length} 条）：\n\n${formatted.join('\n\n') || '(无反思条目)'}`,
       data: {
         totalEntries: entries.length,
         returned: recent.length,
@@ -602,7 +602,7 @@ class McpServer {
           {
             uri: 'think://latest',
             mimeType: 'text/markdown',
-            text: '(think.md 不存在)',
+            text: '[sofagent] think.md 不存在。运行审计后会自动生成反思条目。',
           },
         ],
       });
@@ -618,7 +618,7 @@ class McpServer {
         {
           uri: 'think://latest',
           mimeType: 'text/markdown',
-          text: lastEntry ? (lastEntry.startsWith('## ') ? lastEntry : '## ' + lastEntry) : '(无条目)',
+          text: lastEntry ? (lastEntry.startsWith('## ') ? lastEntry : '## ' + lastEntry) : '[sofagent] (无反思条目)',
         },
       ],
     });
@@ -637,7 +637,7 @@ class McpServer {
           {
             uri: 'logs://today',
             mimeType: 'text/plain',
-            text: '(日志目录不存在)',
+            text: '[sofagent] (日志目录不存在)',
           },
         ],
       });
@@ -669,7 +669,7 @@ class McpServer {
           {
             uri: 'logs://today',
             mimeType: 'text/plain',
-            text: `(今日 ${todayStr} 无任务日志)`,
+            text: `[sofagent] (今日 ${todayStr} 无任务日志)`,
           },
         ],
       });
@@ -711,7 +711,7 @@ class McpServer {
           {
             uri: 'audit://last-report',
             mimeType: 'application/json',
-            text: JSON.stringify({ message: '无审计历史记录。运行审计后会自动生成。' }),
+            text: JSON.stringify({ message: '[sofagent] 无审计历史记录。运行审计后会自动生成。' }),
           },
         ],
       });

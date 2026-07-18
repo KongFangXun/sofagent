@@ -1,14 +1,21 @@
 # Changelog
 
 每个版本的详细开发日志在 docs/changelog/ 下。v1.0.0+ 为正式版，v0.x 实验版日志在 [docs/archive/changelog-experimental/](./docs/archive/changelog-experimental/)。本文件是目录索引。
-> v1.1.3 · 2026-07-18（UTC）· 孔放勋
+> v1.1.4 · 2026-07-18（UTC）· 孔放勋
 
 ---
 
 ## 正式版
 
+### [v1.1.4] — A18/A19 审计新规则 + LOOP 工具注入 + daemon 可见性
+> 2026-07-19（UTC）· 待发版
+**核心变更**：新增 A18 垃圾文件检测/A19 commit message 质量两条审计规则（21 条规则集）+ LOOP 编排引擎 engineer/reviewer 节点从零工具升级为 6 工具注入（read/write/edit/bash/search/test）+ daemon 可见性修复（v1.1.0 拆包后 plist/WorkingDirectory/PATH 三个参数错误导致 daemon 从未运行）+ USB federation 基础检测（SOFAGENT 卷标 U 盘自动导入 federation.json）+ WARN 累积报告巡检器（连续未处理 WARN 告警）。
+**缺陷修复**：11 包 ESM exports 修复（CI vitest 全绿）+ maxTurns=20 落地 + WARN 写入 history（三态全记录）+ run_bash 高危命令黑名单（defense-in-depth）。
+**质量验证**：660 tests across 12 packages 全绿 · acceptance-test 50/50 · check-version 67/67 · pre-push-check 15 通过/1 警告（共 16 项）。
+> 📖 [开发日志](./docs/changelog/v1.1.4.md)
+
 ### [v1.1.3] — LangGraph StateGraph 直接编排 + Checkpoint + HITL
-> 2026-07-18（UTC）· 开发完成 · 待发版
+> 2026-07-18（UTC）· 已发版
 **核心变更**：编排控制从 DeepAgents compose（一次性生成 YAML）上提为 sofagent 直接掌握的 LangGraph StateGraph 节点级流转——四节点（engineer → audit → reviewer → human_confirm）自动流转 + 条件路由（FAIL 回 engineer，3 轮重试上限 + blocked 终态）+ Checkpoint 持久化（并发安全：原子写/文件锁/schemaVersion/latest 指针）+ HITL 确认节点（y/n + --resume 断点续跑）。`@langchain/langgraph@^1.4.7` 首次成为直接依赖。daemon 集成顺延 v1.1.4。
 **缺陷修复**：跨包代码重复清零、silent 模式 exit code 修正、PASS 输出品牌签名、CHANGELOG 补 v1.1.1 索引、「回溯引擎」更名「回溯能力」、pre-push 新增 tag message 校验与依赖循环检测。
 **质量验证**：558 tests across 12 packages 全绿 · acceptance-test 55/55 · check-version 67/67 · pre-push-check 15 通过/0 失败（共 16 项）。
@@ -253,4 +260,6 @@ daemon 核心骨架（纯 bash：launchd/systemd + 文件 hash 监控）+ 5 项�
 | v0.54–v0.56 | 加载链防漏读 + Handbook 拆分 |
 | v0.51–v0.53 | 宣称对齐 + 评审反馈修复 |
 | v0.47–v0.50 | 项目首次发布 + 安装断裂修复 |
+
+> ℹ️ 以上区间涵盖此时期所有 git tag（含 v0.62, v0.63.1, v0.64, v0.70.0, v0.70.1, v0.71, v0.72, v0.73, v0.74, v0.75 等子版本），子版本无单独索引条目。
 > 早期版本的完整日志在 [docs/changelog/](./docs/changelog/) 目录下。

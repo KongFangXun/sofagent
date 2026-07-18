@@ -88,7 +88,7 @@
 
 7. **审计日志自身安全**：打开 `sofagent/audit/src/audit-history.ts`。审计拦截了密钥泄漏后，拦截结果（含 diff 内容）被写入 `history.jsonl`。这个文件本身会不会成为第二个泄漏点？Agent 能读这个文件吗？能篡改吗？有没有脱敏机制？
 8. **optional dependency 类型安全**：检查对 optional dependency（如 deepagents）的 import 是否用了 `as unknown as` 双重转换。CI 环境 TS 类型检查比本地严格——直接 `as` 可能本地通过但 CI 失败。
-9. **文件系统审计的企业适用性**：README 声称"v1.0.8+ 支持文件系统审计——内嵌 isomorphic-git，daemon 监控文件变更自动审计，非开发者也能用，不需要装 git、不需要 commit"。你管理的是 200 人公司，大部分岗位不是开发者——这个声称对你有吸引力吗？从文档里你能搞清楚怎么配置 daemon 监控哪些目录吗？审计结果推到哪里（企业协同平台 / Webhook）？如果非开发岗的 AI 改了文件但没人 commit，审计日志在哪看？**这是 sofagent 从"开发者工具"向"企业全员 AI 治理"扩展的关键声称——对企业 IT 来说，非开发岗才是真正的痛点。**
+9. **文件系统审计的企业适用性**：README 声称"v1.0.8+ 支持文件系统审计——内嵌 isomorphic-git，daemon 监控文件变更自动审计，非开发者也能用，不需要装 git、不需要 commit"。你管理的是 200 人公司，大部分岗位不是开发者——这个声称对你有吸引力吗？从文档里你能搞清楚怎么配置 daemon 监控哪些目录吗？审计结果推到哪里？**v1.2.x 前 daemon 审计结果仅本地 stdout（daemon-notice.md），Webhook 推送能力待落地**——文档有没有诚实标注这个限制？
 10. **合规审计可追溯性（v1.1.3 新增）**：企业 IT 做合规审计时，审计记录里能追溯到"这是 sofagent 审计引擎做的"吗？Webhook 推送的消息、history.jsonl 的审计记录、daemon 的巡检报告——每一条是否能清晰地归因到 sofagent？如果你们的合规审查员翻审计日志，看到"PASS"却不知道是谁判的 PASS，这对企业来说是不可接受的——就像财务报表没有审计师签名一样。
 
 ---
@@ -106,7 +106,7 @@
 6. **规则声称验证**：README 说的规则数量（如"17 条规则"）——打开 `sofagent/audit/src/rules/index.ts`，数 `defaultRules` + `extendedRules` 的实际注册数量。一致吗？每条规则的 `evidenceMode`（`git-diff` vs `hybrid`）与 README 的分类描述是否匹配？有没有声称了但代码里没注册的规则？**特别检查规则 ID 是否真实存在**：README 分类描述中提到的每个规则 ID（如"A1-A6, A9-A11"），逐个确认在 index.ts 的 `name:` 字段中确实有注册。**注意跳号**：规则编号不是连续的——A1-A11 后跳到 A14/A15（A12/A13 是永久跳号，不是"规划中"），不要把跳号当作遗漏。历史教训：曾出现 README 声称了代码中根本不存在的规则 ID（文档漂移问题）。
 7. **声称与实现一致性**：CHANGELOG 标题中声称的功能（如"自进化引擎"），实际代码是否匹配？有没有夸大——比如 wrapper 叫"引擎"、CLI 调用叫"集成"？
 8. **CHANGELOG 纯度**：CHANGELOG 历史条目中有没有审查元信息（模型名、审查轮次、P0/P1 计数）？CHANGELOG 应该只写产品变更。
-9. **SkillOpt 集成 CLI 契约验证**：打开 `skillopt-integration.ts`——`isSkillOptAvailable()` 和 `runSkillOpt()` 调用的 CLI 参数形式与真实安装的 `skillopt-sleep --help` 声明的子命令/参数一致吗？**特别检查**：`isSkillOptAvailable()` 探针是否用 `status` 子命令（而非被 CLI 拒绝的 `--version`）；`runSkillOpt()` 是否用 `run --target-skill-path <input> --auto-adopt` 子命令形式（而非 flat positional + `--output`）。历史教训：曾发现集成代码照着不存在的 CLI 契约写了整整一个版本——探针用 `--version`（真实 CLI exit 2）、调用用 flat positional + `--output`（真实 CLI 只认子命令）。
+9. **SkillOpt 集成 CLI 契约验证**：打开 `skillopt-integration.ts`——`isSkillOptAvailable()` 和 `runSkillOpt()` 调用的 CLI 参数形式与真实安装的 `skillopt-sleep --help` 声明的子命令/参数一致吗？**特别检查**：`isSkillOptAvailable()` 探针是否用 `status` 子命令（而非被 CLI 拒绝的 `--version`）；`runSkillOpt()` 是否用 `run --target-skill-path <input> --auto-adopt` 子命令形式（而非 flat positional + `--output`）。历史教训：曾发现集成代码照着不存在的 CLI 契约写了整整一个版本——探针用 `--version`（真实 CLI exit 2）、调用用 flat positional + `--output`（真实 CLI 只认子命令）。**v1.1.3 起升级为 CI 必跑**：装 skillopt-sleep 后实跑 `skillopt-sleep --help` 对比集成代码的调用形式，仅读源码不算验证。
 10. **Agent 定义的平台耦合度**：打开 `agents/` 下的 Agent 定义——它们的 role/workflow/rules 是否过度依赖 OpenClaw 的 `session.spawn` API？如果未来换平台，这些 Agent 定义还能独立使用吗？还是需要大幅改写？
 11. **ruleClass 跨文档漂移检测（v1.1.3 追加）**：提取 `sofagent/audit/src/rules/index.ts` 的 `name` + `ruleClass`，与 `sofagent/audit/README.md` 规则表逐行 diff。ruleClass 漂移已反复出现（A6 曾从「业务底线」漂移到「能力拐杖」、A11 反向漂移），单文档审查永远发现不了——只有跨文档交叉对照才暴露矛盾。**检查手法**：`diff <(grep "name:\|ruleClass:" sofagent/audit/src/rules/index.ts | paste - -) <(提取 audit/README.md 规则表的名称+分级列)`。建议对此建自动化脚本加入 pre-push-check。
 
@@ -280,7 +280,7 @@
 19. **A15 约束验证绕过**：
     - config.yml 声明 `actions: [read]` 但 Agent 实际执行了 write——A15 离线验证能检出吗？
     - 如果 config.yml 没有 actions 字段——A15 是跳过还是告警？Agent 能否通过"不声明 actions"来规避约束检查？
-    - **actions 未声明绕过**：workflow.yml 存在但各节点没有 `actions` 字段——A15 返回 PASS 还是 WARN？如果返回 PASS，Agent 只要不声明 actions 就能绕过所有约束检查。验证 `rule-a15-action-constraint.ts` 中 `nodesWithActions.length === 0` 的分支返回什么。
+    - **actions 未声明绕过（v1.1.3 升级——安全红线）**：workflow.yml 存在但各节点没有 `actions` 字段——A15 应返回 **FAIL**（而非 fail-open WARN）。验证 `rule-a15-action-constraint.ts` 中 `nodesWithActions.length === 0` 分支：返回 PASS 或静默 = P0 安全红线（Agent 不声明 actions 即绕过所有约束）；返回 WARN 是当前默认，FAIL 是更严格的设计目标。
     - actions 提取正则——如果 diff 格式不标准（如 binary 文件 / 特殊编码），正则漏匹配导致"没检测到"被当作"合规"？
 
 20. **HITL 置信度操纵**：
@@ -288,7 +288,7 @@
     - 四类强制人工场景（删除 / 外部 API / 权限变更 / 数据迁移）的正则——`rm -rf test/`（合理的测试清理）会被误匹配吗？
 
 21. **A/B 自进化 promote 攻击**：
-    - `decidePromotion()` 的连续胜出阈值——如果 B 版本碰巧在阈值内的几个场景赢了，但整体更差，会 promote 吗？
+    - `decidePromotion()` 的连续胜出阈值——如果 B 版本碰巧在阈值内的几个场景赢了，但整体更差，会 promote 吗？**v1.1.3 追加**：promote 守卫——除连续胜出外，还必须要求 `overallImprovement > 0`（整体改善）。没有这个守卫 = 窄 eval 集连胜 2 次即晋升更差版本。
     - promote 后旧版本归档到 `.sofagent/subagents/history/`——Agent 能否通过删除归档来"洗白"被回退的历史？
     - A/B 对比的 eval 场景如果偏窄（只测了简单 case），promote 的版本在复杂场景下更差怎么办？
 
@@ -404,6 +404,7 @@
    - 跑 `node -e "console.log(require('./sofagent/audit/dist/skillopt-integration').isSkillOptAvailable())"` 在已安装 skillopt-sleep 的环境下返回 `true`？
    - 如果返回 `false`——检查探针形式是否匹配真实 CLI（`status` 子命令 exit 0 vs `--version` exit 2）。历史教训：曾因探针形式错误导致已安装也返回 false，SkillOpt 能力被静默禁用
    - 跑 `node -e "console.log(typeof require('./sofagent/audit/dist/skillopt-integration').isSkillOptAvailable())"` 确认返回 `boolean`（不是 Promise）
+   - **v1.1.3 升级为实跑验证**：装 skillopt-sleep 后跑 `skillopt-sleep --help` 看真实子命令列表，逐一对比集成代码的调用形式。仅静态读源码不算验证。
 
 12. **版本敏感的规则数声称**：
    - README 可能声称"17 条规则（v1.0.9 扩展为 19 条）"——这是**版本条件声称**。验证当前 `package.json` 的版本号，再看 A16/A17 是否已在 `index.ts` 注册。如果当前是 v1.0.8 但 README 说"19 条"，就是 P0 不一致。
@@ -525,7 +526,7 @@
 1. **所有面向用户的输出是否带签名**：
    - 翻查 `sofagent/audit/src/index.ts` 中所有 `console.log` 输出：PASS/WARN/FAIL 的判定行是否标注了引擎身份（`sofagent-audit` 或 `[sofagent]`）？
    - 翻查 `sofagent/audit/src/webhook.ts` 中推送到 IM 的消息：第一行是否以 `[sofagent]` 或 `sofagent` 开头？
-   - 翻查 `sofagent/mcp/src/mcp-server.ts` 中所有 `sendToolResult` 的 `text` 字段：是否以 `[sofagent]` 为前缀标注来源？
+   - 翻查 `sofagent/mcp/src/mcp-server.ts` 中所有 `sendToolResult` 的 `text` 字段：是否以 `[sofagent]` 为前缀标注来源？**特别检查 think.md 回读工具（get_think/write_think）的返回——这是 v1.1.3 审查发现的感知层废墟高发区**，Agent 在回读反思/日志时如果不知道"这是 sofagent 管的数据"，就等于废墟功能。
 
 2. **PASS 是否也在推送**：
    - 检查 `sofagent/audit/src/webhook.ts` 的 `pushAuditResult()` 函数：PASS 时是否推送？还是只在 WARN/FAIL 时推送？
@@ -630,6 +631,22 @@
 
 **关联回归维度**：维度 8「acceptance-test 健壮性」
 
+### 盲区 5：npm 已发布版本与工作树不一致（v1.1.3 暴露）
+
+**现象**：v1.1.3 已 commit + tag + npm publish，但 ESM P0 修复（13 个 package.json exports 字段）仍躺工作树未提交。npm 用户装到的是有 ESM bug 的版本，工作树虽修好了却没上车。
+
+**教训**：发版前的"工作树 clean 检查"不能只查"有没有未 commit 的修改"，要扩展为"**npm registry 版本 vs git tag vs 工作树三方一致**"——npm 版本落后于 SSOT 就是发版诚信问题。
+
+**关联回归维度**：维度 17「npm 产物 + bin 权限 + tag commit message」
+
+### 盲区 6：MCP 回读工具缺 [sofagent] 前缀（v1.1.3 暴露）
+
+**现象**：v1.1.2 三层输出签名只覆盖了 CLI/Webhook/审计结果，但 MCP 的 think.md 回读工具（get_think/write_think）返回的 text 缺 `[sofagent]` 前缀。Agent 回读反思/日志时不知道"这是 sofagent 管的数据"——感知层废墟功能。
+
+**教训**：感知层签名不是"做一遍就完了"——每加一个面向用户的输出渠道（含 MCP tools 返回的 text），都要回查签名是否覆盖。MCP 回读类工具是高发区。
+
+**关联回归维度**：维度 7「感知层配置与推送链路」+ 维度九感知层
+
 ---
 
 ## 审查体系演进（附录）
@@ -663,3 +680,23 @@
 - **孤儿 changelog + 索引遗漏**：v1.1.1 tag 存在但 CHANGELOG 索引遗漏。→ 维度八·任务 26
 - **ruleClass 跨文档漂移**：A6/A11 在代码与 README 间反复漂移，须逐行 diff。→ 维度八·任务 27
 - **tag commit message 一致性**：v1.1.3 tag 指向 commit message "v1.1.3: …" 与版本号不符。→ 维度八·任务 5
+- **npm 发版诚信**：v1.1.3 npm 已发布但工作树仍有 13 文件 ESM 修复未提交。→ 回归维度 17（新增）
+- **MCP 回读缺签名**：MCP think.md 回读工具返回缺 [sofagent] 前缀（感知层废墟）。→ 回归维度 7 + 维度九
+- **A15 actions fail-open**：A15 未声明 actions 时 fail-open（当前 WARN），理想应为 FAIL。→ 回归维度 16（新增）
+- **A/B promote 缺守卫**：decidePromotion 缺 overallImprovement > 0 守卫，窄 eval 集可晋升更差版本。→ 回归维度 16（新增）
+- **SkillOpt 仅静态验证**：读源码不实跑导致 CLI 契约漂移整版本未发现。→ 维度三·任务 9 升级为实跑
+
+### v1.1.4 暴露
+- **daemon 物理失效**：v1.1.0 拆包后 plist 仍调用 `sofagent-audit --daemon start`（已废），WorkingDirectory=$HOME 而非项目目录，PATH 残缺——daemon 自 v1.1.0 起从未真正运行。→ 回归维度 20 + init.ts 修复
+- **watch.yml 不生成**：`--init` 只生成 config.yml 不生成 watch.yml，daemon 只能 fallback 到默认 paths=['src/','agents/','.sofagent/']——项目结构不同则完全失效。→ 回归维度 20
+- **LOOP maxTurns 漏传**：createDeepAgent 未传 maxTurns 参数，PRD Q1 决策「先按 20」未落地，Agent 理论上可无限轮次。→ 回归维度 21
+- **WARN 不写 history**：defaultRunAudit 的 WARN 路径不写 audit history，warn-accumulator 对 LOOP 场景完全失效。→ 回归维度 21 + nodes.ts 修复
+- **warn-accumulator 语义错误**：先过滤 WARN 再判连续——任何 N 条 WARN 都触发，不区分"WARN 后有 PASS 清理"。→ warn-accumulator.ts 重写（真正连续性）
+- **tools.ts run_bash 无代码级拦截**：A11「禁止 rm -rf /」只写在 description 约束里——Agent 忽视 description 时无障碍。→ 回归维度 21 + checkDangerousCommand 黑名单
+- **USB federation 无签名校验**：任何人制作 SOFAGENT 卷标 U 盘即可注入任意 federation 配置——企业环境安全缺口。→ SECURITY.md 警告 + v1.1.5 签名计划
+- **USB applyFederation 未实现**：只写到 ~/.sofagent/federation.json，不自动分发 nodes/policies 到各目录。→ v1.1.4 changelog 标注 + v1.1.5 计划
+- **架构设计文档与实现偏离**：A18 检测范围（设计写只看 added，实现遍历所有）、checkDangerousCommand 正则 \b 边界陷阱——都需要独立审查来发现。→ 发布前审查流程强化
+- **版本标注系统性漂移**：tools.ts/nodes.ts/rule-a18/a19/warn-accumulator/usb-detect 共 6 个文件注释写「v1.1.3 新增」但实际 v1.1.4 交付——SSOT 版本号与交付版本号混淆的连锁效应。→ 阶段八文档收尾强化
+- **`--init` 无条件覆盖全局 plist**（v1.1.4 阶段六暴露）：init.ts 在任何目录跑 --init 都会 unload + 重写 `~/Library/LaunchAgents/com.sofagent.daemon.plist`。OpenClaw 验收 session 在临时目录跑 --init 后，本机 daemon 被指向临时路径完全失效。plist 是系统级全局资源——应只在 WorkingDirectory 变化时才重新生成，否则应跳过。→ 回归维度 22
+- **文档测试数手工同步无人验证**（v1.1.4 回归报告 P0-1）：LIMITATIONS.md/evidence.md 各自声明测试数 343，实际 audit 包 388、全 workspace 660——三个文档手工维护同一个数字，无人验证一致性。应加入 pre-push-check 自动比对 `npm test` 实际输出与文档声明。→ 后续版本工具链增强
+

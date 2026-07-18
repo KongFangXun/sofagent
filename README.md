@@ -21,7 +21,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.3-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.4-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center" style="color:#64748B;font-size:13px;">
@@ -80,7 +80,8 @@ sofagent-audit --timeline
 
 | 包 | 用途 | 安装命令 |
 |------|------|------|
-| `@sofagent/audit` | 纯审计引擎（19 条规则，git diff 硬证据） | `npm install -g @sofagent/audit` |
+| `@sofagent/audit` | 纯审计引擎（21 条规则，git diff 硬证据） | `npm install -g @sofagent/audit` |
+| `@sofagent/core` | 运行时诊断（doctor/verify，audit 的必备配套） | `npm install -g @sofagent/core` |
 | `@sofagent/orchestrator` | 编排引擎（多 Agent 协作 / 工作流调度） | `npm install -g @sofagent/orchestrator` |
 | `@sofagent/daemon` | 主动巡检守护进程（定时审计/健康度/新鲜度检测） | `npm install -g @sofagent/daemon` |
 | `@sofagent/mcp` | MCP Server（JSON-RPC 2.0，暴露审计能力给 MCP Client） | `npm install -g @sofagent/mcp` |
@@ -158,14 +159,14 @@ graph LR
 ```mermaid
 graph LR
     A[Agent 改代码/改文件] --> B[git commit 或 daemon 检测到变更]
-    B --> C{审计引擎<br/>19 条规则判定}
+    B --> C{审计引擎<br/>规则库判定}
     C -->|违规| D[⛔ 拦截 + 记录]
     C -->|合规| E[✅ 放行]
     D --> F[think.md<br/>自动反思]
     F --> A
 ```
 
-不依赖 AI 自觉——看的是 git diff 硬证据。**0 token 消耗——纯正则引擎，不调 LLM。** 核心规则纯看 git diff，不需要 Agent 配合。
+不依赖 AI 自觉——看的是 git diff 硬证据。**0 token 消耗——纯正则引擎，不调 LLM。** 21 条规则中 17 条为纯 git-diff（不依赖 Agent 配合），4 条需 Agent 日志/文件系统（A7/A8/A14/A15 hybrid + A16/A17 filesystem）。
 
 > v1.1.0 已拆为独立 `@sofagent/audit` 包。v1.0.8+ 内嵌 isomorphic-git + daemon 文件监控，不需 git commit。
 
@@ -187,7 +188,9 @@ sofagent-audit --revert <SHA>      # 回滚到任意快照
 
 sofagent 是**行车记录仪**，不是安检——不管什么 Agent、什么平台，事后审计 + 回溯恢复，不依赖任何平台。
 
-#### 🧬 进化引擎（v1.0.8+）
+#### 🧬 进化引擎（v1.0.8+ · 实验性）
+
+> ⚠️ **实验性功能**：A/B 自动 promote 基于 `consecutiveWins ≥ threshold` + `overallImprovement` 守卫，eval 评分依赖 LLM 自评（存在 self-grading bias）。窄 eval 集场景下可能误晋升。生产环境使用建议人工复核 promote 决策。
 
 FDE Agent 不只部署一次——部署完成后转为**持续优化角色**。每周自动巡检审计趋势 + 反思记录，发现退化就优化。
 
@@ -225,7 +228,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 | 维度 | 数据 | 什么意思 |
 |------|------|------|
 | 审计引擎稳定性 | `npm test` 全绿 — diff-parser / A1-A11、A14-A17 / reporter / init 全覆盖 | 改了代码就能查，不会被绕过 |
-| 审计覆盖率 | 19 条规则（A1-A11、A14-A17 + E1-E4），覆盖密钥泄漏、越界修改、注入攻击、盲改、知识库越权 | 最常见的 Agent 翻车模式都拦住了 |
+| 审计覆盖率 | 21 条规则（A1-A11、A14-A19 + E1-E4），覆盖密钥泄漏、越界修改、注入攻击、盲改、知识库越权、垃圾文件、commit 质量 | 最常见的 Agent 翻车模式都拦住了 |
 | 平台覆盖 | git commit 审计（开发者）+ daemon 文件审计（非开发者） | 不管谁改的文件，都能审计 |
 | 开源协议 | MIT | 随便用，代码、文档、模板都行 |
 

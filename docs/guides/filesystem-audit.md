@@ -1,6 +1,6 @@
 # 文件系统审计 — 非开发者使用指南
 
-> v1.1.3 · 让非开发者也能被 sofagent 审计覆盖
+> v1.1.4 · 让非开发者也能被 sofagent 审计覆盖
 
 ## 概述
 
@@ -19,7 +19,7 @@ debounceMs: 5000
 ## 启动 daemon
 
 ```bash
-sofagent-audit --daemon start   # 前台运行
+sofagent-daemon start   # 前台运行（v1.1.4 起，旧版用 sofagent-audit --daemon）
 sofagent-audit --init           # 注册 LaunchAgent（macOS，开机自启）
 ```
 

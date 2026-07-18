@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.1.3 · 2026-07-18（UTC）· LangGraph StateGraph 直接编排 + Checkpoint + HITL · 规划：v1.1.3-v1.1.9 → v1.2.0 收口
+> v1.1.4 · 2026-07-19（UTC）· A18/A19 审计新规则 + LOOP 工具注入 + daemon 可见性 · 规划：v1.1.5-v1.1.9 → v1.2.0 收口
 
 <img src="docs/assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -21,11 +21,11 @@
 
 ---
 
-## 现在在哪：v1.1.3 🚧（开发完成 · 待发版）
+## 现在在哪：v1.1.5 📋（规划中）
 
-> LangGraph StateGraph 四节点自动流转（engineer → audit → reviewer → human_confirm）+ Checkpoint 持久化 + HITL 确认节点，编排控制从 DeepAgents compose 上提为 sofagent 直接掌握。同时吸收四路发布后审查 39 项问题——跨包代码重复清零、silent exit code 修正、PASS 品牌签名、CHANGELOG 补 v1.1.1 索引、「回溯引擎」更名「回溯能力」。558 tests / acceptance 55/55 / pre-push 15 通过（共 16 项），全门禁绿。
+> MCP pipe 协议 + Agent 按 SOP 十二阶段自动发版——补上审计覆盖的最后盲区（Agent 通过 MCP 编辑的文件也能即时审计）。v1.1.4 刚完成开发，修复审查 8 个 P0/P1/P2 问题 + 660 tests 全绿 + pre-push 17/17。
 >
-> 📖 [v1.1.3 开发日志](./docs/changelog/v1.1.3.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [v1.1.4 开发日志](./docs/changelog/v1.1.4.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -35,7 +35,8 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
-| **v1.1.3** 🚧 | LangGraph StateGraph 四节点自动流转 + Checkpoint 持久化 + HITL 确认 + 39 项审查修复 | [📖](./docs/changelog/v1.1.3.md) |
+| **v1.1.4** 🚧 | A18/A19 两条审计新规则（21 条规则集）+ LOOP 工具注入（6 工具）+ daemon 可见性修复 + USB federation + WARN 累积报告 + 8 项审查修复 | [📖](./docs/changelog/v1.1.4.md) |
+| **v1.1.3** 🔧 | LangGraph StateGraph 四节点自动流转 + Checkpoint 持久化 + HITL 确认 + 39 项审查修复 | [📖](./docs/changelog/v1.1.3.md) |
 | **v1.1.2** 🔧 | LOOP 双 Agent 串联 + Harness 可见性签名 + 多设备同步指南 + 测试体系修复 | [📖](./docs/changelog/v1.1.2.md) |
 | **v1.1.1** 🔧 | 双 Agent 串联验证 + 记忆契约代码化 + 多设备同步 + 全仓质量审计收口 | [📖](./docs/changelog/v1.1.1.md) |
 | **v1.1.0** 🎉 | 包结构纯度重构（12 包独立）+ 轻量多设备（权限作用域化+经验共享+自迭代周报+daemon 主动巡检）| [📖](./docs/changelog/v1.1.0.md) |
@@ -97,11 +98,10 @@
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.1.4** | 📋 规划中 | **LOOP 工具注入 + USB federation + 审计闭环加固**：engineer/reviewer 注入自有工具集（Read/Write/Edit/Bash/Search/Test，内嵌 A1-A17 约束）+ daemon USB 检测自动配置 + A18 垃圾文件检测 + A19 commit message 质量（critical 阻断）+ daemon WARN 累积报告 + 新增规则集全局视图 | [📖](./docs/changelog/v1.1.4.md) |
 | **v1.1.5** | 📋 规划中 | **releasing.md SOP 集成 + MCP knowledge resource**：Agent 按十二阶段 SOP 全流程自动发版 + 7 个 knowledge MCP resource | [📖](./docs/changelog/v1.1.5.md) |
 | **v1.1.6** | 📋 规划中 | **LLM Wiki 3 层分层 + conflict-check**：Ledger-Views-Policy 显式化 + daemon 知识健康巡检 | [📖](./docs/changelog/v1.1.6.md) |
 | **v1.1.7** | 📋 规划中 | **Dream Cycle 6 阶段 + sensitivity**：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级 | [📖](./docs/changelog/v1.1.7.md) |
-| **v1.1.8** | 📋 规划中 | **安全层 + 联邦查询**：AES-256-GCM + ECDH 配对 + OpenClaw channel 联邦知识查询 | [📖](./docs/changelog/v1.1.8.md) |
+| **v1.1.8** | 📋 规划中 | **安全层 + 联邦查询 + Agent 安全防护**：AES-256-GCM + ECDH 配对 + OpenClaw channel 联邦知识查询 + Prompt 注入 8 层防护体系（指令分层隔离 / 工具动态最小权限 / 后端强制校验 / 敏感数据不进 prompt / RAG 可信分级 / 输出结构化+执行前审核 / 高危动作强制人工确认 / 全链路日志+红队测试——核心原则：模型提建议，系统控执行） | [📖](./docs/changelog/v1.1.8.md) |
 | **v1.1.9** | 📋 规划中 | **USB 完整运行时**：Node.js 单文件打包 + OpenClaw 便携化 + 跨平台启动脚本（macOS/Windows/Linux）。U 盘插入 → 双击 start → 联邦在线 → 拔掉零残留 | [📖](./docs/changelog/v1.1.9.md) |
 | **v1.2.0** | 📋 规划中 | **多设备知识联邦收口 🎉**：端到端全功能验证（LOOP + Dream Cycle + 联邦查询 + 加密）+ gbrain 行业对标 + USB key 产品故事写入主文档 + 兜底修复。v1.2.x 完整多设备协同的起点 | [📖](./docs/changelog/v1.2.0.md) |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同——**L2 团队协作协议**：共享态/意图广播/触发反应/冲突消解/反馈放大五大机制，从单人约束到团队协作；**L3 组织能力市场**：Skill/Agent/流程在企业内发布→发现→调用→评价，高频高价值自然胜出。+ Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界。**🔮 探索**：路由器式配网（边缘设备 WiFi 热点 + 手机端配置网页，仅用于初始配置，配置完成后回归纯 LUI）+ **协议中立**（审计层只走 MCP 等开放协议和 git diff/JSONL/Markdown 开放格式，不为任何单一平台写专属集成——不绑定平台，平台不绑定审计） | — |
@@ -191,6 +191,10 @@
 | FDE 陪跑期机制 | 部署后前 2 周 AI 节点 daily review，人类反馈和 AI 反思双向写入 think.md |
 | 国标 Agent 审计对位 | 关注国家 AI 智能体互联标准草案进展（截至 2026-07 仍为征求意见稿阶段），标准正式发布后评估 sofagent 审计规则的合规对齐 |
 | **Agent 身份码（v1.1.0）** | 国标草案中唯一明确「后续转强制」的方向。v1.1.0 预研——标准仍在制定中，落地取决于国标正式发布 |
+| **RSI 验证体系（v2.x+ 远期储备）** | 递归漂移（Recursive Drift）是 RSI 核心障碍。验证体系 = 分治式子 Agent + 多路径冗余校验 + RL 同步训练裁判防"奖励黑客"。当前漂移率 10% 量级，目标降到 0.1% 以下——解题/验证分离思想已近期吸收（ARCHITECTURE §二），RL 裁判训练远期储备 |
+| **FDE 双团队模型（储备）** | Echo（领域专家发现）+ Delta（工程师快速原型）双团队配对 + demo 驱动 + 产品团队作泛化引擎。作 FDE 模型补充参考 |
+| **WB 企业版竞品对标（商业化储备）** | 席位全生命周期管理（离职自动释放）+ 成本三维核算（部门/项目/成员）+ 统一采购合规 + 审计追踪+安全沙箱 + 知识资产沉淀。商业化方向参考 |
+| **FDE Demo Kit 工程化（储备）** | 演示工具包范式：7 行业 demo + demo 隔离 + IaC/CI-CD + 可追溯部署 + 权限演示。FDE demo 工程化参照标杆 |
 
 ---
 

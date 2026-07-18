@@ -32,7 +32,12 @@ export {
   checkDoctorHealth,
   checkKnowledgeFreshness,
   checkSkillStaleness,
+  accumulateWarnings,
   runInspectors,
   DEFAULT_INSPECTOR_CONFIG,
 } from './inspectors';
 export type { InspectorConfig, InspectorResult } from './inspectors';
+
+// USB Federation (v1.1.4)
+export { detectSofagentUsb } from './usb-detect';
+export type { UsbDetectResult } from './usb-detect';

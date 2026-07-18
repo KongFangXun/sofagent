@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // doctor.ts · sofagent 健康检查
-// v1.1.3 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
-// v1.1.3 维护：新增 post-commit hook 存在性检查
+// v1.1.4 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
+// v1.1.4 维护：新增 post-commit hook 存在性检查
 //
 // 检查项：
 //   1. 环境检查（Node / git / npm / disk / bash）
@@ -94,23 +94,37 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     warn('.sofagent/config.yml 不存在（将使用默认配置）');
   }
 
-  // 3. 数据目录结构
+  // 3. 数据目录结构（v1.1.3 修复：路径口径与实际运行时一致）
+  // v1.1.4 修复：所有运行时目录都是首次使用时自动创建的，全新用户不存在完全正常。
+  // 只在目录存在但无法读取时 warn，不存在时完全静默（不报 info 避免噪音）。
+  // v1.1.4 起从陈旧的 logs/history/snapshots 修正为实际路径：
+  //   - audit/（含 history.jsonl + audit.md，v1.0.8 起审计结果归档在此）
+  //   - task/logs/（A7/A8/A15 读取的任务日志目录）
+  //   - knowledge/（L1 task 记忆 + shared/ 跨设备共享）
+  //   - .git-shadow/（v1.0.8 文件系统审计的 isomorphic-git 隐藏仓库）
+  //   - ontology/（本体缓存，v1.1.0+）
+  //   - orchestrator/（编排状态，v1.1.3+ Checkpoint 存储）
   console.log('\n── 数据目录结构 ──');
-  const expectedDirs = ['logs', 'history', 'ontology', 'snapshots'];
+  const expectedDirs = ['audit', 'task/logs', 'knowledge', '.git-shadow', 'ontology', 'orchestrator'];
   let dirsOk = true;
   if (existsSync(sofagentDir)) {
+    let existingCount = 0;
     for (const dir of expectedDirs) {
       const dirPath = join(sofagentDir, dir);
       if (existsSync(dirPath)) {
+        existingCount++;
         try {
           const files = readdirSync(dirPath).filter((f) => !f.startsWith('.'));
           ok(`${dir}/ (${files.length} 文件)`);
         } catch {
           warn(`${dir}/ (无法读取)`);
+          dirsOk = false;
         }
-      } else {
-        info(`${dir}/ 不存在（将在首次运行时自动创建）`);
       }
+      // 不存在的目录不输出——它们都是运行时自动创建的，全新用户不存在完全正常
+    }
+    if (existingCount === 0) {
+      info('.sofagent/ 已初始化，运行一次审计后将自动创建数据目录');
     }
   } else {
     info('.sofagent/ 目录不存在（运行 sofagent-audit --init 创建）');
