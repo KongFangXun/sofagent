@@ -109,14 +109,14 @@ function withCheckpoint<S extends LoopGraphState>(
   fn: (state: S) => Promise<Partial<LoopGraphState>>
 ) {
   return async (state: S) => {
-    checkpointer.save(state, node, 'before');
+    checkpointer.save(state as any as unknown as import('../graph/checkpoint').CheckpointState, node, 'before');
     const update = await fn(state);
     const merged: LoopGraphState = {
       ...state,
       ...update,
       artifacts: { ...state.artifacts, ...(update.artifacts ?? {}) },
     } as LoopGraphState;
-    checkpointer.save(merged, node, 'after');
+    checkpointer.save(merged as any as unknown as import('../graph/checkpoint').CheckpointState, node, 'after');
     return update;
   };
 }
@@ -222,13 +222,13 @@ export function resolveResumeNode(record: CheckpointRecord): LoopNodeName | null
     case 'engineer':
       return 'audit';
     case 'audit': {
-      const next = routeAfterAudit(record.state);
+      const next = routeAfterAudit(record.state as any);
       return next === END ? null : next;
     }
     case 'reviewer':
       return 'human_confirm';
     case 'human_confirm': {
-      const next = routeAfterHuman(record.state);
+      const next = routeAfterHuman(record.state as any);
       return next === END ? null : next;
     }
     default:
@@ -256,13 +256,13 @@ export async function resumeLoopGraph(
 
   if (record.state.finalStatus !== 'running') {
     deps.log(`ℹ️ 最近 checkpoint 已是终态（${record.state.finalStatus}），无需恢复`);
-    return toResult(record.state);
+    return toResult(record.state as any);
   }
 
   const entry = resolveResumeNode(record);
   if (!entry) {
     deps.log('ℹ️ 最近 checkpoint 已到达流程末尾，无需恢复');
-    return toResult(record.state);
+    return toResult(record.state as any);
   }
 
   deps.log(
@@ -270,7 +270,7 @@ export async function resumeLoopGraph(
   );
 
   const app = buildLoopGraph(deps);
-  const resumedInitial: LoopGraphState = { ...record.state, resumeFrom: entry };
+  const resumedInitial: LoopGraphState = { ...record.state as any, resumeFrom: entry };
   const finalState = (await app.invoke(resumedInitial, {
     recursionLimit: RECURSION_LIMIT,
   })) as LoopGraphState;

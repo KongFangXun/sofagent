@@ -35,7 +35,18 @@ import {
 } from 'fs';
 import { join, dirname } from 'path';
 import { randomBytes } from 'crypto';
-import type { LoopGraphState } from '../loop/state';
+
+/** checkpoint 中保存的最小状态接口——与 CheckpointState 兼容 */
+export interface CheckpointState {
+  finalStatus: string;
+  checkpointId: string;
+  retryCount: number;
+  currentNode: string;
+  auditResult: string | null;
+  resumeFrom: string | null;
+  artifacts: Record<string, unknown>;
+  [key: string]: unknown;
+}
 
 /** checkpoint schema 版本——schema 变化时递增并在 migrateCheckpoint 中显式迁移 */
 export const CHECKPOINT_SCHEMA_VERSION = 'v1';
@@ -65,7 +76,7 @@ export interface CheckpointRecord {
   /** 原始 ISO 时间戳 */
   savedAt: string;
   /** StateGraph 完整状态 */
-  state: LoopGraphState;
+  state: CheckpointState;
 }
 
 /** 同步 sleep——锁等待用（checkpoint 写入是同步链路，无 event loop 可让出） */
@@ -197,7 +208,7 @@ export class FileCheckpointer {
    *
    * @returns 落盘的 checkpoint 文件绝对路径
    */
-  save(state: LoopGraphState, node: string, phase: 'before' | 'after'): string {
+  save(state: CheckpointState, node: string, phase: 'before' | 'after'): string {
     this.ensureDirs();
 
     const savedAt = new Date().toISOString();

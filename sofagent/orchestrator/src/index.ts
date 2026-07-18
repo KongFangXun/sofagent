@@ -41,8 +41,6 @@ export {
   makeHumanConfirmNode,
   parseReviewerPass,
   DEFAULT_MAX_RETRIES,
-  loadWorkflow,
-  runLoopWorkflow,
 } from './loop';
 export type {
   LoopGraphState,
@@ -55,11 +53,6 @@ export type {
   HumanDecision,
   LoopGraphResult,
   LoopGraphOptions,
-  Workflow,
-  WorkflowNode,
-  WorkflowOptions,
-  WorkflowStrategy,
-  WorkflowResult,
 } from './loop';
 
 // Checkpoint（共享基础设施，被 daemon 和 LOOP 共用）
