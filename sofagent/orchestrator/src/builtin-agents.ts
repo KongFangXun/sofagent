@@ -1,12 +1,12 @@
 // ============================================================
-// builtin-agents.ts · 预装 Agent 定义（v1.1.3）
+// builtin-agents.ts · 预装 Agent 定义（v1.1.4）
 //
 // 每个 Agent 的 systemPrompt 来自 agents/SKILL/<name>/ 下的
 // Agency Agents 格式 .md 文件。DeepAgents 启动时读取文件、
 // 剥离 frontmatter、注入为 system prompt。
 //
 // 如果文件找不到（如 npm 全局安装路径不同），回退到硬编码精简版。
-// v1.1.3：迁移至 @sofagent/orchestrator
+// v1.1.4：迁移至 @sofagent/orchestrator
 // ============================================================
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
@@ -76,14 +76,27 @@ function loadAgentMd(skillName: string, fallback: string): string {
 }
 
 /**
- * v1.1.3: 加载 agents/<name>.md 格式的 Agent 定义
- * 用于不遵循 SKILL/<name>/SKILL.md 目录结构的独立 Agent 文件
+/**
+ * v1.1.4: 加载 agents/<name>.md 格式的 Agent 定义
+ * 搜索优先级：LOOP/agents/ > agents/ > 包相对路径
  */
 function loadAgentMdFile(name: string, fallback: string): string {
-  // 路径 3: cwd/agents/<name>.md
+  // 路径 1: cwd/LOOP/agents/<name>.md（v1.1.4 新增）
+  const loopPath = join(process.cwd(), 'LOOP', 'agents', `${name}.md`);
+  if (existsSync(loopPath)) {
+    return parseSkillMd(readFileSync(loopPath, 'utf-8'));
+  }
+
+  // 路径 2: cwd/agents/<name>.md
   const cwdPath = join(process.cwd(), 'agents', `${name}.md`);
   if (existsSync(cwdPath)) {
     return parseSkillMd(readFileSync(cwdPath, 'utf-8'));
+  }
+
+  // 路径 3: 包相对路径/LOOP/agents/<name>.md（v1.1.4 新增）
+  const pkgLoopPath = join(__dirname, '..', '..', '..', '..', 'LOOP', 'agents', `${name}.md`);
+  if (existsSync(pkgLoopPath)) {
+    return parseSkillMd(readFileSync(pkgLoopPath, 'utf-8'));
   }
 
   // 路径 4: 包相对路径/agents/<name>.md

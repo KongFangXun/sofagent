@@ -9,8 +9,8 @@ import * as path from 'path';
 import * as os from 'os';
 import { randomBytes } from 'crypto';
 
-import { emptyArtifacts } from '../LOOP/state';
-import type { LoopGraphState, LoopArtifacts } from '../LOOP/state';
+import { emptyArtifacts } from '../loop/state';
+import type { LoopGraphState, LoopArtifacts } from '../loop/state';
 import {
   FileCheckpointer,
 } from '../graph/checkpoint';
@@ -23,7 +23,7 @@ import {
   type LoopGraphDeps,
   DEFAULT_MAX_RETRIES,
   DEFAULT_AGENT_MAX_TURNS,
-} from '../LOOP/nodes';
+} from '../loop/nodes';
 
 // ════════════════════════════════════════
 // Helper
