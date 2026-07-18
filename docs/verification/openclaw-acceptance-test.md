@@ -19,7 +19,7 @@
 | 层级 | 工具 | 覆盖范围 |
 |------|------|---------|
 | 函数级 | 单元测试（vitest） | CI 自动，每次 push |
-| CLI 端到端 | `acceptance-test.sh`（42 场景） | 手动，发版前 |
+| CLI 端到端 | `acceptance-test.sh`（47 场景） | 手动，发版前 |
 | **Agent 端到端** | **本文件**（全场景） | **手动，发版前** |
 | 文档级 | 回归检查清单（维度总数随版本增长，见 regression-checklist.md 头部当前值） | 手动，发版前 |
 | 发布后审查 | fresh-eyes-review.md | 手动，发布后 |
@@ -920,6 +920,53 @@ GIT_EDITOR=true git commit -m "webhook pass test" 2>&1 || true
 git reset HEAD . 2>/dev/null || true
 ```
 
+### 场景 47：ConfigParseError — 非法 YAML 不崩溃
+
+```bash
+# 构造非法 YAML
+TMPD=$(mktemp -d)
+echo "invalid: [}" > "$TMPD/config.yml"
+# doctor 应拒绝
+$SOFAGENT_DIR/sofagent/core/dist/cli.js doctor --config-dir "$TMPD" 2>&1 | grep -q "格式错误"
+# ✅ 期望：doctor 报告格式错误，exit 0 友好降级
+rm -rf "$TMPD"
+```
+
+### 场景 48：PASS 签名行 — stderr 含 sofagent-audit 品牌行
+
+```bash
+cd "$TMPDIR"
+rm -rf pass-sig && mkdir pass-sig && cd pass-sig
+git init -q && git config user.email "qa" && git config user.name "QA"
+echo safe > f.txt && git add . && git commit -qm "init"
+echo more >> f.txt && git add . && git commit -qm "update"
+# 审计输出应含品牌签名行
+$SOFAGENT_DIR/sofagent/audit/dist/index.js --diff HEAD~1..HEAD --task "safe" 2>&1 | grep -q "sofagent-audit v"
+# ✅ 期望：stderr 含 "sofagent-audit v1.1.3 · N 条规则全部通过"
+cd "$SOFAGENT_DIR"
+```
+
+### 场景 49：pre-push-check — tag message 校验步骤存在
+
+```bash
+grep -q "tag.*message\|Tag message" "$SOFAGENT_DIR/tools/pre-push-check.sh"
+# ✅ 期望：pre-push-check.sh 含 tag message 校验步骤
+```
+
+### 场景 50：pre-push-check — 依赖图循环检测步骤存在
+
+```bash
+grep -q "循环依赖\|circular" "$SOFAGENT_DIR/tools/pre-push-check.sh"
+# ✅ 期望：pre-push-check.sh 含依赖图循环检测步骤
+```
+
+### 场景 51：SKILL.md Agent 身份感知指令存在
+
+```bash
+grep -q "露个脸就够了" "$SOFAGENT_DIR/sofagent/skill/SKILL.md"
+# ✅ 期望：SKILL.md 含方案 C 身份感知指令（v1.1.3 补入）
+```
+
 ---
 
 ## 第十一部分：历史版本核心功能验证
@@ -1084,6 +1131,11 @@ ls $SOFAGENT_DIR/workflow-hub/templates/ 2>/dev/null | wc -l
 - [ ] 场景 44：A14 知识库越权规则注册（index.ts + evidenceMode hybrid + 测试文件）
 - [ ] 场景 45：A15 约束验证规则注册（index.ts + actions 配置解析）
 - [ ] 场景 46：Workflow Hub CLI help + 模板目录（list/deploy ≥ 2 + templates ≥ 1）
+- [ ] 场景 47：ConfigParseError — 非法 YAML → doctor 拒绝 + audit 不崩溃
+- [ ] 场景 48：PASS 签名行 — stderr 含 sofagent-audit 品牌行
+- [ ] 场景 49：pre-push-check 含 tag message 校验步骤
+- [ ] 场景 50：pre-push-check 含依赖图循环检测步骤
+- [ ] 场景 51：SKILL.md Agent 身份感知指令存在
 
 ## 清理
 
