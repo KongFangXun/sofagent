@@ -706,7 +706,7 @@ async function main(): Promise<void> {
   // 设计原则：只有 PASS 才快照（WARN/FAIL 不快照，符合「审计通过后自动快照」契约）
   // daemon 的 createPostAuditSnapshot 是封装层，但 audit→daemon→audit 循环依赖，
   // 所以直接用 core 的底层函数（createShadowRepo/commitSnapshot/hasShadowRepo）
-  if (results.exitCode === 0 && isInGitRepo()) {
+  if (results.exitCode !== 2 && isInGitRepo()) {
     try {
       if (!hasShadowRepo(process.cwd())) {
         createShadowRepo(process.cwd());
