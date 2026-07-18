@@ -1,6 +1,7 @@
 // ============================================================
 // graph/nodes.ts · LOOP StateGraph 节点实现
 // v1.1.3 新增：engineer / audit / reviewer / human_confirm 四节点
+// v1.1.4 升级：工具注入路径 + maxTurns + WARN 写入 history + 三态全记录
 //
 // 设计：
 // - 节点通过 LoopGraphDeps 依赖注入——默认实现走 launcher.ts 的
@@ -16,11 +17,60 @@ import { execSync } from 'child_process';
 import { createInterface } from 'readline';
 import { ENGINEER_AGENT, REVIEWER_AGENT } from '../builtin-agents';
 import { spawnSubAgent } from '../launcher';
+import { ENGINEER_TOOLS, REVIEWER_TOOLS } from '../tools';
+import { buildConstrainedSystemPrompt } from '@sofagent/harness';
+import type { AuditHistoryEntry } from '@sofagent/audit';
 import type { AuditVerdict, LoopArtifacts, LoopGraphState } from './state';
 import type { FileCheckpointer } from './checkpoint';
 
 /** 重试上限：第 3 轮重试后仍未过 → blocked 终态 */
 export const DEFAULT_MAX_RETRIES = 3;
+
+/** Agent 最大轮次（PRD Q1 决策：v1.1.4 硬编码 20，v1.1.5 评估可配置） */
+export const DEFAULT_AGENT_MAX_TURNS = 20;
+
+// ════════════════════════════════════════
+// LLM Provider 解析（v1.1.4）
+// 通过 SOFAGENT_LLM=provider:modelName 指定模型。
+// 支持: glm / kimi / deepseek（全部走 OpenAI 兼容 API）。
+// API key 从 OPENAI_API_KEY 环境变量读取。
+// 未设置 SOFAGENT_LLM → 返回 null → 降级到 spawnSubAgent [降级运行]。
+// ════════════════════════════════════════
+
+interface LLMProviderConfig {
+  baseURL: string;
+  defaultModel: string;
+}
+
+const LLM_PROVIDERS: Record<string, LLMProviderConfig> = {
+  glm:      { baseURL: 'https://open.bigmodel.cn/api/paas/v4/', defaultModel: 'glm-4-flash' },
+  kimi:     { baseURL: 'https://api.moonshot.cn/v1/',         defaultModel: 'moonshot-v1-8k' },
+  deepseek: { baseURL: 'https://api.deepseek.com/v1/',         defaultModel: 'deepseek-chat' },
+};
+
+async function resolveLLMModel(): Promise<Record<string, unknown> | null> {
+  const llmEnv = process.env.SOFAGENT_LLM;
+  if (!llmEnv) return null;
+
+  const [provider, modelName] = llmEnv.split(':');
+  const config = LLM_PROVIDERS[provider ?? ''];
+  if (!config) {
+    console.warn(`[sofagent] 未知的 LLM provider: ${provider ?? '(空)'}。支持: ${Object.keys(LLM_PROVIDERS).join(', ')}`);
+    return null;
+  }
+
+  try {
+    const { ChatOpenAI } = await import('@langchain/openai');
+    const model = new ChatOpenAI({
+      modelName: modelName || config.defaultModel,
+      configuration: { baseURL: config.baseURL },
+    });
+    return { model };
+  } catch {
+    console.warn('[sofagent] @langchain/openai 初始化失败，降级到零工具路径');
+    return null;
+  }
+}
 
 /** audit 节点产出 */
 export interface AuditOutcome {
@@ -58,8 +108,15 @@ export interface LoopGraphDeps {
 // ────────────────────────────────
 
 /**
- * 默认 engineer 实现——通过 launcher.ts 的 Sub Agent 机制启动
- * 最小变更工程师（agents/engineering-minimal-change-engineer.md）
+ * 默认 engineer 实现——v1.1.4 升级为工具注入路径：
+ * 用 DeepAgents createDeepAgent + ENGINEER_TOOLS（6 个工具）启动，
+ * engineer 节点从"零工具只能说话"升级为"能读写文件、跑测试、改代码"。
+ *
+ * 约束通过工具 description 内嵌（A1-A17 边界），不做 hook 拦截。
+ * systemPrompt = 四层约束链 + ENGINEER_AGENT.systemPrompt。
+ *
+ * 降级兜底：如果 deepagents import 失败，降级回 spawnSubAgent
+ * （composer 零工具路径），并在输出前加 `[降级运行] ` 标注。
  */
 async function defaultRunEngineer(task: string, feedback: string): Promise<string> {
   const fullTask = [
@@ -74,7 +131,34 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
       ? ['', '# 上一轮反馈（audit/review 未通过原因，只修复标记的问题）', feedback.slice(0, 2000)]
       : []),
   ].join('\n');
-  return spawnSubAgent(ENGINEER_AGENT, fullTask);
+
+  // v1.1.4：工具注入路径——DeepAgents + ENGINEER_TOOLS
+  // SOFAGENT_LLM 未设置或解析失败时自动降级到 spawnSubAgent 零工具路径
+  try {
+    const resolved = await resolveLLMModel();
+    if (!resolved) throw new Error('SOFAGENT_LLM 未设置，无法确定模型 provider');
+
+    const { createDeepAgent } = await import('deepagents');
+    const constrainedPrompt = buildConstrainedSystemPrompt(process.cwd());
+    const systemPrompt = `${constrainedPrompt}\n\n${ENGINEER_AGENT.systemPrompt}`;
+    const agent = await (createDeepAgent as unknown as (params: Record<string, unknown>) => Promise<{
+      invoke?: (input: Record<string, unknown>) => Promise<unknown>;
+    }>)({
+      ...resolved,
+      tools: ENGINEER_TOOLS,
+      systemPrompt,
+      maxTurns: DEFAULT_AGENT_MAX_TURNS,
+    });
+    const result = await agent.invoke?.({
+      messages: [{ role: 'user', content: fullTask }],
+    });
+    const output = extractAgentText(result);
+    return output || '[降级运行] DeepAgents 未返回内容，已回退';
+  } catch {
+    // 降级兜底：模型解析失败 / deepagents import 失败 → spawnSubAgent 零工具路径
+    const fallback = await spawnSubAgent(ENGINEER_AGENT, fullTask);
+    return `[降级运行] ${fallback}`;
+  }
 }
 
 /**
@@ -93,10 +177,12 @@ async function defaultRunAudit(artifacts: LoopArtifacts): Promise<AuditOutcome> 
       maxBuffer: 16 * 1024 * 1024,
     });
     if (!rawDiff.trim()) {
-      return {
+      const emptyWarnOutcome: AuditOutcome = {
         verdict: 'WARN',
         report: '审计提示：git diff HEAD 无变更——engineer 可能未产生文件修改，请人工复核。',
       };
+      recordLoopAuditHistory(audit, emptyWarnOutcome, artifacts.task);
+      return emptyWarnOutcome;
     }
     const diffFiles = audit.parseDiff('HEAD');
     const result = audit.runRules(diffFiles, [], artifacts.task, false, true);
@@ -105,22 +191,67 @@ async function defaultRunAudit(artifacts: LoopArtifacts): Promise<AuditOutcome> 
     const lines = result.rules
       .filter((r) => r.status !== 'SKIPPED')
       .map((r) => `- [${r.status}] #${r.number} ${r.name}${r.details.length ? `：${r.details.join('；')}` : ''}`);
-    return {
+    const outcome: AuditOutcome = {
       verdict,
       report: [`审计判定: ${verdict}（exitCode=${result.exitCode}）`, ...lines].join('\n'),
     };
+    recordLoopAuditHistory(audit, outcome, artifacts.task, {
+      ruleResults: result.rules,
+      diffFileCount: diffFiles.length,
+    });
+    return outcome;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return {
+    const degradedOutcome: AuditOutcome = {
       verdict: 'WARN',
       report: `审计提示：审计引擎不可用（${msg}）——降级 WARN，由 reviewer 与人工确认兜底。`,
     };
+    // 审计引擎不可用时也尝试写 history（engine 字段标 loop-graph-degraded 便于追溯）
+    try {
+      const audit = await import('@sofagent/audit');
+      recordLoopAuditHistory(audit, degradedOutcome, artifacts.task, { engine: 'loop-graph-degraded' });
+    } catch {
+      // 连 import 都失败——忽略，history 写入失败不阻塞 LOOP 流程
+    }
+    return degradedOutcome;
   }
 }
 
 /**
- * 默认 reviewer 实现——通过 launcher.ts 的 Sub Agent 机制启动
- * 代码审查员（agents/engineering-code-reviewer.md）
+ * 将 LOOP 内的审计判定写入 audit history。
+ * 三态都写——这是 warn-accumulator 判定「WARN 之后是否有 PASS 清理」的前提。
+ * 写入失败不抛异常（history 是辅助追溯，不阻塞 LOOP 主流程）。
+ */
+function recordLoopAuditHistory(
+  audit: typeof import('@sofagent/audit'),
+  outcome: AuditOutcome,
+  task: string,
+  extra?: { ruleResults?: unknown[]; diffFileCount?: number; engine?: string },
+): void {
+  try {
+    audit.appendHistory({
+      timestamp: new Date().toISOString(),
+      diffRange: 'HEAD',
+      task: task.slice(0, 500),
+      exitCode: outcome.verdict === 'PASS' ? 0 : outcome.verdict === 'WARN' ? 1 : 2,
+      ruleResults: (extra?.ruleResults as AuditHistoryEntry['ruleResults']) ?? [],
+      diffFileCount: extra?.diffFileCount ?? 0,
+      commitMsg: `[LOOP audit] verdict=${outcome.verdict}`,
+      engine: extra?.engine ?? 'loop-graph',
+    });
+  } catch {
+    // history 写入失败不阻塞 LOOP 主流程
+  }
+}
+
+/**
+ * 默认 reviewer 实现——v1.1.4 升级为工具注入路径：
+ * 用 DeepAgents createDeepAgent + REVIEWER_TOOLS（只读 3 个工具）启动。
+ *
+ * 审查员工具子集：read_file, search_code, run_bash（只读不写）。
+ * systemPrompt = 四层约束链 + REVIEWER_AGENT.systemPrompt。
+ *
+ * 降级兜底：同 engineer，失败时降级回 spawnSubAgent。
  */
 async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
   const reviewTask = [
@@ -140,7 +271,34 @@ async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
     '3. 检查是否有范围蔓延（做了任务不需要的改动）',
     '4. 输出判定：IS_PASS: YES 或 IS_PASS: NO',
   ].join('\n');
-  return spawnSubAgent(REVIEWER_AGENT, reviewTask);
+
+  // v1.1.4：工具注入路径——DeepAgents + REVIEWER_TOOLS
+  // SOFAGENT_LLM 未设置或解析失败时自动降级到 spawnSubAgent 零工具路径
+  try {
+    const resolved = await resolveLLMModel();
+    if (!resolved) throw new Error('SOFAGENT_LLM 未设置，无法确定模型 provider');
+
+    const { createDeepAgent } = await import('deepagents');
+    const constrainedPrompt = buildConstrainedSystemPrompt(process.cwd());
+    const systemPrompt = `${constrainedPrompt}\n\n${REVIEWER_AGENT.systemPrompt}`;
+    const agent = await (createDeepAgent as unknown as (params: Record<string, unknown>) => Promise<{
+      invoke?: (input: Record<string, unknown>) => Promise<unknown>;
+    }>)({
+      ...resolved,
+      tools: REVIEWER_TOOLS,
+      systemPrompt,
+      maxTurns: DEFAULT_AGENT_MAX_TURNS,
+    });
+    const result = await agent.invoke?.({
+      messages: [{ role: 'user', content: reviewTask }],
+    });
+    const output = extractAgentText(result);
+    return output || '[降级运行] DeepAgents 未返回内容，已回退';
+  } catch {
+    // 降级兜底：模型解析失败 / deepagents import 失败 → spawnSubAgent 零工具路径
+    const fallback = await spawnSubAgent(REVIEWER_AGENT, reviewTask);
+    return `[降级运行] ${fallback}`;
+  }
 }
 
 /**
@@ -183,6 +341,28 @@ function defaultConfirmHuman(reviewReport: string): Promise<HumanDecision> {
     // checkpoint 已保存，可用 loop --resume 恢复到本确认节点
     rl.on('close', () => settle('abort'));
   });
+}
+
+/**
+ * 从 DeepAgents invoke 结果中提取文本内容
+ * 兼容 string / { content } / { messages: [...] } 多种返回格式
+ */
+function extractAgentText(result: unknown): string {
+  if (typeof result === 'string') return result;
+  if (result && typeof result === 'object') {
+    const obj = result as Record<string, unknown>;
+    if (typeof obj.content === 'string') return obj.content;
+    if (typeof obj.text === 'string') return obj.text;
+    if (Array.isArray(obj.messages)) {
+      for (let i = obj.messages.length - 1; i >= 0; i--) {
+        const msg = obj.messages[i] as Record<string, unknown>;
+        if ((msg.role === 'assistant' || msg.type === 'ai') && typeof msg.content === 'string') {
+          return msg.content;
+        }
+      }
+    }
+  }
+  return String(result ?? '');
 }
 
 /**
@@ -263,12 +443,17 @@ export function makeAuditNode(deps: LoopGraphDeps) {
     const outcome = await deps.runAudit(state.artifacts);
     deps.log(`🛡️ audit 判定: ${outcome.verdict}`);
 
+    // v1.1.4：WARN 标注透传——不阻断流转，但标记到 reviewer 输入
+    const auditReport = outcome.verdict === 'WARN'
+      ? `[审计告警] ${outcome.report}`
+      : outcome.report;
+
     const base: Record<string, unknown> = {
       currentNode: 'audit',
       auditResult: outcome.verdict,
       artifacts: {
-        auditReport: outcome.report,
-        auditReports: [...state.artifacts.auditReports, outcome.report],
+        auditReport,
+        auditReports: [...state.artifacts.auditReports, auditReport],
       },
     };
 
