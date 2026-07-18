@@ -1,50 +1,13 @@
 // ============================================================
 // graph/index.ts · graph 模块 barrel export
-// v1.1.4 新增
+// v1.1.4 重构：LOOP 相关代码已移至 LOOP/ 目录
+// 本目录仅保留共享的 checkpoint 基础设施（被 daemon 和 LOOP 共用）
 // ============================================================
 
-// State
-export {
-  LoopStateAnnotation,
-  emptyArtifacts,
-  type LoopGraphState,
-  type LoopArtifacts,
-  type LoopNodeName,
-  type LoopFinalStatus,
-  type AuditVerdict,
-} from './state';
-
-// Checkpoint
+// Checkpoint（共享基础设施）
 export {
   FileCheckpointer,
   CHECKPOINT_SCHEMA_VERSION,
   migrateCheckpoint,
   type CheckpointRecord,
 } from './checkpoint';
-
-// Nodes & Dependencies
-export {
-  defaultDeps,
-  makeEngineerNode,
-  makeAuditNode,
-  makeReviewerNode,
-  makeHumanConfirmNode,
-  parseReviewerPass,
-  DEFAULT_MAX_RETRIES,
-  type LoopGraphDeps,
-  type AuditOutcome,
-  type HumanDecision,
-} from './nodes';
-
-// Graph & Routing
-export {
-  runLoopGraph,
-  resumeLoopGraph,
-  buildLoopGraph,
-  resolveCheckpointDir,
-  resolveResumeNode,
-  routeAfterAudit,
-  routeAfterHuman,
-  type LoopGraphResult,
-  type LoopGraphOptions,
-} from './loop-graph';

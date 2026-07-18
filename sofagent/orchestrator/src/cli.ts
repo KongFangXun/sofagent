@@ -98,7 +98,7 @@ async function main() {
 
       // v1.1.3: StateGraph 路径
       if (resumeMode) {
-        const { resumeLoopGraph } = await import('./graph/loop-graph');
+        const { resumeLoopGraph } = await import('./LOOP/graph');
         const result = await resumeLoopGraph();
         if (!result) {
           console.log('ℹ️ 未找到可恢复的 checkpoint');
@@ -146,7 +146,7 @@ async function main() {
         console.error('❌ loop 需要 --task <描述> 参数（追加 --resume 从 checkpoint 恢复）');
         process.exit(1);
       }
-      const { runLoopGraph } = await import('./graph/loop-graph');
+      const { runLoopGraph } = await import('./LOOP/graph');
       const result = await runLoopGraph(taskDesc);
       console.log('');
       console.log(`终态: ${result.finalStatus}`);

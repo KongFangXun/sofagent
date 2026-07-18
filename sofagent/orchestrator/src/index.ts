@@ -34,40 +34,42 @@ export {
   routeAfterAudit,
   routeAfterHuman,
   emptyArtifacts,
-  FileCheckpointer,
   defaultDeps,
   makeEngineerNode,
   makeAuditNode,
   makeReviewerNode,
   makeHumanConfirmNode,
-  CHECKPOINT_SCHEMA_VERSION,
-  migrateCheckpoint,
+  parseReviewerPass,
   DEFAULT_MAX_RETRIES,
-} from './graph';
+  loadWorkflow,
+  runLoopWorkflow,
+} from './LOOP';
 export type {
   LoopGraphState,
   LoopArtifacts,
   LoopNodeName,
   LoopFinalStatus,
   AuditVerdict,
-  CheckpointRecord,
   LoopGraphDeps,
   AuditOutcome,
   HumanDecision,
   LoopGraphResult,
   LoopGraphOptions,
-} from './graph';
-
-// Orchestrator Compare
-export { scanLogFiles, extractMetrics, generateReport, promoteWorkflow } from './orchestrator-compare';
-export type { Metric } from './orchestrator-compare';
-
-// LOOP Workflow（v1.1.4）——消费外部编排平台产出的 YAML
-export { loadWorkflow, runLoopWorkflow } from './LOOP';
-export type {
   Workflow,
   WorkflowNode,
   WorkflowOptions,
   WorkflowStrategy,
   WorkflowResult,
 } from './LOOP';
+
+// Checkpoint（共享基础设施，被 daemon 和 LOOP 共用）
+export {
+  FileCheckpointer,
+  CHECKPOINT_SCHEMA_VERSION,
+  migrateCheckpoint,
+  type CheckpointRecord,
+} from './graph';
+
+// Orchestrator Compare
+export { scanLogFiles, extractMetrics, generateReport, promoteWorkflow } from './orchestrator-compare';
+export type { Metric } from './orchestrator-compare';
