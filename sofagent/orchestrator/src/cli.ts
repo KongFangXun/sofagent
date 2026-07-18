@@ -123,7 +123,7 @@ async function main() {
           console.warn('⚠️  提示: workflow 模式建议设置 LOOP_AUTO=1（自动审核判定），否则每个子任务后仍需人工确认');
         }
         const stopOnBlocked = !args.includes('--no-stop-on-blocked');
-        const { runLoopWorkflow } = await import('./graph/loop-graph');
+        const { runLoopWorkflow } = await import('./LOOP/workflow');
         const wfResult = await runLoopWorkflow(workflowPath, { stopOnBlocked });
         console.log('');
         console.log(`Workflow: ${wfResult.workflowName}`);
