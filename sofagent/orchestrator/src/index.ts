@@ -43,7 +43,7 @@ export {
   DEFAULT_MAX_RETRIES,
   loadWorkflow,
   runLoopWorkflow,
-} from './LOOP';
+} from './loop';
 export type {
   LoopGraphState,
   LoopArtifacts,
@@ -60,7 +60,7 @@ export type {
   WorkflowOptions,
   WorkflowStrategy,
   WorkflowResult,
-} from './LOOP';
+} from './loop';
 
 // Checkpoint（共享基础设施，被 daemon 和 LOOP 共用）
 export {

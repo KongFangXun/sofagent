@@ -98,7 +98,7 @@ async function main() {
 
       // v1.1.3: StateGraph 路径
       if (resumeMode) {
-        const { resumeLoopGraph } = await import('./LOOP/graph');
+        const { resumeLoopGraph } = await import('./loop/graph');
         const result = await resumeLoopGraph();
         if (!result) {
           console.log('ℹ️ 未找到可恢复的 checkpoint');
@@ -123,7 +123,7 @@ async function main() {
           console.warn('⚠️  提示: workflow 模式建议设置 LOOP_AUTO=1（自动审核判定），否则每个子任务后仍需人工确认');
         }
         const stopOnBlocked = !args.includes('--no-stop-on-blocked');
-        const { runLoopWorkflow } = await import('./LOOP/workflow');
+        const { runLoopWorkflow } = await import('./loop/workflow');
         const wfResult = await runLoopWorkflow(workflowPath, { stopOnBlocked });
         console.log('');
         console.log(`Workflow: ${wfResult.workflowName}`);
@@ -146,7 +146,7 @@ async function main() {
         console.error('❌ loop 需要 --task <描述> 参数（追加 --resume 从 checkpoint 恢复）');
         process.exit(1);
       }
-      const { runLoopGraph } = await import('./LOOP/graph');
+      const { runLoopGraph } = await import('./loop/graph');
       const result = await runLoopGraph(taskDesc);
       console.log('');
       console.log(`终态: ${result.finalStatus}`);
