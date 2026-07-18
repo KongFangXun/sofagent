@@ -14,17 +14,17 @@ not_when: [纯技术讨论, 不需要代码审查的任务, 单次简单查询]
 
 # sofagent-loop · SKILL.md · v1.1.4
 
-> 自迭代开发循环 Skill。装上后，一条 prompt 触发整套 LOOP：minimal-change-engineer 写代码 → sofagent-audit 审计 → code-reviewer 审查 → 人类确认 → 下一轮。Agent 定义在 `agents/`，编排文档在 `LOOP/LOOP.md`，审查文档在 `docs/verification/`。
+> 自迭代开发循环 Skill。装上后，一条 prompt 触发整套 LOOP：sofagent-engineer（软件工程师）写代码 → sofagent-audit（合规审计员）硬证据审计 → sofagent-reviewer（代码审查员）语义审查 → IS_PASS 自动判定 → 下一轮。Agent 定义在 `agents/SKILL/`，编排文档在 `LOOP/LOOP.md`。
 
 ## 为什么要用
 
-开发 sofagent 本身是一个复杂的多 Agent 协作场景。LOOP 把这些已有的工具（agents/ 的 Agent 定义 + sofagent-audit + 审查文档）串联成自动化流程，让开发从"人驱动"变成"Agent 驱动 + 人监督"。你也可以把这套 LOOP 装到自己的项目上——它就是 sofagent 的最佳使用案例。
+开发 sofagent 本身是一个复杂的多 Agent 协作场景。LOOP 把这些已有的工具（agents/SKILL/ 的 Agent 定义 + sofagent-audit + sofagent-reviewer）串联成自动化流程，让开发从"人驱动"变成"Agent 驱动 + 人监督"。
 
 ## 适用场景
 
 你是 sofagent 的开发者或贡献者。你需要写代码、跑测试、提交、审查——这个循环每天重复几十次。LOOP 把这个循环自动化了：你只下任务，Agent 干活、审计、审查，你只看最后的审查报告。
 
-也适用于任何想在自己的项目上跑自迭代开发循环的用户——改 `agents/` 下的 Agent 定义来适配你的项目。
+也适用于任何想在自己的项目上跑自迭代开发循环的用户——修改 `agents/SKILL/sofagent-engineer/SKILL.md` 和 `agents/SKILL/sofagent-reviewer/SKILL.md` 来适配你的项目。
 
 ## 和 sofagent 主项目的关系
 
