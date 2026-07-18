@@ -216,6 +216,32 @@ if [ -n "$SSOT_VERSION" ] && git tag -l "v${SSOT_VERSION}" | grep -q "v${SSOT_VE
   else
     check_fail "Tag v${SSOT_VERSION} message 与版本号不一致（message: \"${TAG_MSG}\"）"
   fi
+
+  # v1.1.3 教训补强：tag 指向的 commit message 也必须含版本号
+  # （v1.1.1/v1.1.2 tag 本身 subject 正确，但指向的 commit message 不含版本号，
+  #  导致 changelog 索引交叉验证失败。此检查预防此类问题）
+  # v1.1.4 修复策略（路径 3：历史豁免）：
+  #   - tag 指向的 commit == HEAD（当前发版刚打的 tag）：commit message 不含版本号 → FAIL（阻断）
+  #   - tag 指向的 commit != HEAD（历史 tag）：静默豁免，不再报 WARN
+  # 理由：历史 commit message 不可改（rebase 重写会级联影响 52 个 tag），
+  #   pre-push-check 的职责是预防未来，不是追溯历史。历史污点在 LIMITATIONS.md 标注即可。
+  TAG_COMMIT_MSG=$(git log -1 "v${SSOT_VERSION}^{commit}" --format=%s 2>/dev/null || true)
+  if [ -n "$TAG_COMMIT_MSG" ]; then
+    if echo "$TAG_COMMIT_MSG" | grep -q "${SSOT_VERSION}"; then
+      check_pass "Tag v${SSOT_VERSION} 指向的 commit message 含版本号"
+    else
+      # 判断是历史污点还是当前发版的问题：tag 指向的 commit 是否等于 HEAD
+      TAG_COMMIT_HASH=$(git rev-parse "v${SSOT_VERSION}^{commit}" 2>/dev/null || true)
+      HEAD_COMMIT_HASH=$(git rev-parse HEAD 2>/dev/null || true)
+      if [ "$TAG_COMMIT_HASH" = "$HEAD_COMMIT_HASH" ]; then
+        # tag 指向 HEAD = 当前发版的 commit，commit message 不含版本号是本轮问题 → FAIL
+        check_fail "Tag v${SSOT_VERSION} 指向当前 HEAD commit，但 commit message 不含版本号（commit: \"${TAG_COMMIT_MSG}\"）。请在 commit message 中包含版本号 ${SSOT_VERSION}"
+      else
+        # tag 指向历史 commit = 历史豁免，不阻断也不告警
+        check_pass "Tag v${SSOT_VERSION} 指向历史 commit（非 HEAD），commit message 不含版本号属历史污点——已豁免"
+      fi
+    fi
+  fi
 else
   check_warn "Tag v${SSOT_VERSION} 不存在（发版前正常）"
 fi
