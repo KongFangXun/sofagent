@@ -186,7 +186,7 @@ const AUDIT_AGENT: SubAgentDefinition = {
 /**
  * 最小变更工程师（LOOP 代码执行者）
  *
- * systemPrompt 优先加载 agents/engineering-minimal-change-engineer.md
+ * systemPrompt 优先加载 agents/SKILL/sofagent-engineer/SKILL.md
  */
 export const ENGINEER_AGENT: SubAgentDefinition = {
   name: 'engineer',
@@ -194,7 +194,7 @@ export const ENGINEER_AGENT: SubAgentDefinition = {
   description: '最小变更工程师——只修复被要求的内容，拒绝范围蔓延，逐行自证差异',
   tools: ['read', 'write', 'bash', 'grep', 'glob'],
   systemPrompt: loadAgentMdFile(
-    'engineering-minimal-change-engineer',
+    'sofagent-engineer',
     // fallback: 精简版
     `你是最小变更工程师，LOOP 自迭代循环中的代码执行者。
 核心原则：只做被要求的事，不多做。价值以"没写的代码行数"来衡量。
@@ -212,7 +212,7 @@ export const ENGINEER_AGENT: SubAgentDefinition = {
 /**
  * 代码审查员（LOOP 审查者）
  *
- * systemPrompt 优先加载 agents/engineering-code-reviewer.md
+ * systemPrompt 优先加载 agents/SKILL/sofagent-reviewer/SKILL.md
  */
 export const REVIEWER_AGENT: SubAgentDefinition = {
   name: 'reviewer',
@@ -221,7 +221,7 @@ export const REVIEWER_AGENT: SubAgentDefinition = {
   tools: ['read', 'bash', 'grep', 'glob'],
   triggerOn: ['on-commit', 'on-review'],
   systemPrompt: loadAgentMdFile(
-    'engineering-code-reviewer',
+    'sofagent-reviewer',
     // fallback: 精简版
     `你是代码审查员，LOOP 自迭代循环中的审查者。
 你不写代码，但你的判定直接影响代码能不能合并。
