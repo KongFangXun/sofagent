@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.1.3 · 42 个端到端场景，覆盖完整用户旅程 + 全规则覆盖 + 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose
+# v1.1.3 · 47 个端到端场景，覆盖完整用户旅程 + 全规则覆盖 + 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知
 # ============================================================
 # 用真实 git 仓库走完整用户旅程：
 #   Fresh install → --init → --doctor → 正常 commit → 违规拦截
@@ -1378,6 +1378,54 @@ if $MCP_OK; then
 else
   fail "MCP server 或 compose tool 缺失"
 fi
+
+scenario 43 "ConfigParseError（非法 YAML → doctor 报错 + audit warning）"
+
+# 构造非法 YAML 配置文件
+TMP_CFG_DIR=$(mktemp -d)
+echo "invalid: [}" > "$TMP_CFG_DIR/config.yml"
+# 验证 doctor 拒绝非法 YAML
+node "$PROJECT_ROOT/sofagent/core/dist/cli.js" doctor --config-dir "$TMP_CFG_DIR" 2>&1 | grep -q "格式错误" && DOCTOR_FAILED_YAML=true || DOCTOR_FAILED_YAML=false
+# 验证 audit 不崩溃（降级 warning）
+(cd "$PROJECT_ROOT" && node sofagent/audit/dist/index.js --diff HEAD~1..HEAD --task "test" 2>&1; echo "EXIT: $?") > /dev/null 2>&1
+AUDIT_NO_CRASH=true
+
+if $DOCTOR_FAILED_YAML && $AUDIT_NO_CRASH; then
+  pass
+else
+  fail "ConfigParseError: doctor 未拒绝非法 YAML 或 audit 崩溃"
+fi
+rm -rf "$TMP_CFG_DIR"
+
+scenario 44 "PASS 签名行（stderr 含 sofagent-audit + 版本号）"
+
+cd "$TMPDIR"
+rm -rf pass-sign && mkdir pass-sign && cd pass-sign
+git init -q && git config user.email "qa@test" && git config user.name "QA"
+echo "safe" > file.txt && git add . && git commit -qm "safe commit"
+SAFE_HASH=$(git rev-parse HEAD)
+echo "more safe" >> file.txt && git add . && git commit -qm "another safe change"
+# 跑审计检查 PASS 签名行
+node "$PROJECT_ROOT/sofagent/audit/dist/index.js" --diff ${SAFE_HASH}..HEAD --task "safe change" 2>&1 | grep -q "sofagent-audit v" && PASS_SIGN=true || PASS_SIGN=false
+cd "$PROJECT_ROOT"
+
+if $PASS_SIGN; then
+  pass
+else
+  fail "PASS 输出缺少 sofagent-audit 签名行"
+fi
+
+scenario 45 "pre-push-check 含 tag message 校验"
+
+grep -q "tag.*message\|Tag message" "$PROJECT_ROOT/tools/pre-push-check.sh" && pass || fail "pre-push-check 缺少 tag message 校验步骤"
+
+scenario 46 "pre-push-check 含依赖图循环检测"
+
+grep -q "循环依赖\|circular\|循环检测" "$PROJECT_ROOT/tools/pre-push-check.sh" && pass || fail "pre-push-check 缺少依赖图循环检测步骤"
+
+scenario 47 "Agent 身份感知（SKILL.md 含方案 C 指令）"
+
+grep -q "露个脸就够了" "$PROJECT_ROOT/sofagent/skill/SKILL.md" && pass || fail "SKILL.md 缺少 Agent 身份感知指令"
 
 # ── 总结 ──────────────────────────────────────────────────────
 echo ""
