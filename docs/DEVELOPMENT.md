@@ -466,6 +466,6 @@ v1.0.8 内嵌 `isomorphic-git`（纯 JS Git，~2MB）作为 diff 引擎——非
 | 验证了 | 跑了什么命令，结果 |
 | 还剩 | 接下来要做什么 |
 
-`task/logs` 模板参照这个四字段结构。状态外化到文件——Agent 失忆，文件不失忆。设计文档见 [audit-design.md](./design/audit-design.md)。
+`task/logs` 模板参照这个四字段结构。状态外化到文件——Agent 失忆，文件不失忆。设计文档见 [audit-design.md](./archive/design/audit-design.md)。
 
 ---
