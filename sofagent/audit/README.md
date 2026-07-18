@@ -330,7 +330,7 @@ cd sofagent/sofagent/audit
 
 npm ci           # 安装依赖
 npm run build    # 编译 TypeScript
-npm test         # 运行测试（342 tests）
+npm test         # 运行测试（343 tests）
 npm run check    # 类型检查（tsc --noEmit）
 ```
 
