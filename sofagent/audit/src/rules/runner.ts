@@ -22,6 +22,10 @@ export interface AuditResult {
  * - warning:  WARN 规则——全部跑完
  * - crutch:   拐杖规则——依赖日志，最慢
  * - extended: 扩展规则（E 组工程规范 + A 组扩展审计）
+ *
+ * v1.1.4 后：
+ *   critical: A1→A2→A9→A4→A21  (A21 message 质量排在 A4 之后，早于 A3)
+ *   extended: E3→E1→E2→E4→A15→A14→A20→A16→A17  (A20 垃圾文件检测)
  */
 export const AUDIT_PRIORITY = {
   critical: ['A1', 'A2', 'A9', 'A4'],
