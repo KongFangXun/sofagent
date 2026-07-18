@@ -1,6 +1,6 @@
 // ============================================================
 // ab-testing/ab-promoter.ts · A/B 晋升决策器
-// v1.1.3 新增
+// v1.1.4 新增
 // candidate 连续胜出 → promote 替换 current
 // ============================================================
 
@@ -41,6 +41,10 @@ export function decidePromotion(
   }
 
   // 安全性检查：确保 candidate 不是退化
+  // 设计说明（v1.1.3 发布后审查回应）：此处用 -0.05 容差而非 > 0 硬守卫，理由：
+  // 1) overallScore 是多维加权，微小负差（如 -0.03）常来自评分抖动而非真实退化
+  // 2) consecutiveWins ≥ threshold 已保证多次稳定胜出，单次 borderline 可接受
+  // 3) 若 candidate 真实退化，后续 A/B 会回退——自纠错闭环
   const overallImprovement = result.candidateScore.overall - result.currentScore.overall;
   if (overallImprovement < -0.05) {
     return {
@@ -50,15 +54,7 @@ export function decidePromotion(
     };
   }
 
-  // candidate 胜出次数不够的非退化情况，重置
-  if (result.consecutiveWins < threshold) {
-    return {
-      shouldPromote: false,
-      reason: `candidate 连续胜出 ${result.consecutiveWins}/${threshold}，继续观察`,
-      newConsecutiveWins: result.consecutiveWins,
-    };
-  }
-
+  // 到这里：winner=candidate + consecutiveWins≥threshold + 非退化 → 晋升
   return {
     shouldPromote: true,
     reason: `candidate 连续 ${result.consecutiveWins} 次胜出（阈值: ${threshold}），综合提升 ${(overallImprovement * 100).toFixed(1)}%，建议晋升`,

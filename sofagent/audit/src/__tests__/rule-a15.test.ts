@@ -24,13 +24,21 @@ function makeCtx(addedLines: string[] = []): AuditContext {
 }
 
 describe('A15 不越约束', () => {
+  // 保存/恢复 SOFAGENT_DATA，避免污染其他测试
+  let savedDataDir: string | undefined;
+
   beforeEach(() => {
-    // 确保测试数据目录干净
     if (existsSync(testDir)) rmSync(testDir, { recursive: true });
+    savedDataDir = process.env.SOFAGENT_DATA;
   });
 
   afterEach(() => {
     if (existsSync(testDir)) rmSync(testDir, { recursive: true });
+    if (savedDataDir !== undefined) {
+      process.env.SOFAGENT_DATA = savedDataDir;
+    } else {
+      delete process.env.SOFAGENT_DATA;
+    }
   });
 
   it('无 workflow.yml → 跳过', () => {
@@ -88,5 +96,19 @@ describe('A15 不越约束', () => {
     const result = checkRuleA15(ctx);
     // 无 workflow 配置时跳过
     expect(result.status).toBe('PASS');
+  });
+
+  it('workflow.yml 有 nodes 但零 actions 声明 → FAIL（fail-closed）', () => {
+    // v1.1.3 发布后审查修复：防止 Agent 通过"不声明 actions"绕过约束检查。
+    // workflow.yml 存在且有 nodes，但所有节点都没有 actions 字段 → 必须 FAIL 而非 WARN。
+    process.env.SOFAGENT_DATA = testDir;
+    const wfDir = join(testDir, 'orchestrator', 'workflows');
+    mkdirSync(wfDir, { recursive: true });
+    writeFileSync(join(wfDir, 'workflow.yml'), `nodes:\n  - id: AP-审批\n    description: 审批节点\n  - id: AP-付款\n    description: 付款节点\n`);
+
+    const ctx = makeCtx(['action: approve']);
+    const result = checkRuleA15(ctx);
+    expect(result.status).toBe('FAIL');
+    expect(result.details[0]).toContain('均未声明 actions');
   });
 });

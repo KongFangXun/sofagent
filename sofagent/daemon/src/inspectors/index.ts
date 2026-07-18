@@ -1,6 +1,6 @@
 // ============================================================
 // inspectors/index.ts · 巡检器统一入口
-// v1.1.3 新增
+// v1.1.4 新增
 // ============================================================
 
 import type { InspectorConfig, InspectorResult } from './types';
@@ -8,8 +8,9 @@ import { analyzeAuditHistory } from './audit-history-analyzer';
 import { checkDoctorHealth } from './doctor-checker';
 import { checkKnowledgeFreshness } from './knowledge-freshness';
 import { checkSkillStaleness } from './skill-staleness';
+import { accumulateWarnings } from './warn-accumulator';
 
-export { analyzeAuditHistory, checkDoctorHealth, checkKnowledgeFreshness, checkSkillStaleness };
+export { analyzeAuditHistory, checkDoctorHealth, checkKnowledgeFreshness, checkSkillStaleness, accumulateWarnings };
 export type { InspectorConfig, InspectorResult } from './types';
 
 /** 默认巡检器配置 */
@@ -18,6 +19,7 @@ export const DEFAULT_INSPECTOR_CONFIG: Record<string, InspectorConfig> = {
   'doctor-health': { enabled: true, schedule: '@daily' },
   'knowledge-freshness': { enabled: true, schedule: '@weekly' },
   'skill-staleness': { enabled: false, schedule: '@weekly' },
+  'warn-accumulator': { enabled: true, schedule: '@daily' },
 };
 
 /**
@@ -36,5 +38,6 @@ export function runInspectors(
     checkDoctorHealth(projectDir),
     checkKnowledgeFreshness(projectDir),
     checkSkillStaleness(projectDir),
+    accumulateWarnings(projectDir),
   ];
 }

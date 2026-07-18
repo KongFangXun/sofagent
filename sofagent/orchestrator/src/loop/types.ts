@@ -3,7 +3,7 @@
 // v1.1.4：消费外部编排平台（WorkBuddy 等）产出的任务列表
 // ============================================================
 
-import type { LoopFinalStatus } from '../graph/state';
+import type { LoopFinalStatus } from './state';
 
 /** workflow.yml 中的单个子任务 */
 export interface WorkflowNode {

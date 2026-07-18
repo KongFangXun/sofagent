@@ -36,7 +36,7 @@
 
 ---
 
-## 阶段四：自测
+## 阶段三：自测
 
 开发完成后、交审核之前，工程师先自己跑一轮。
 
@@ -57,7 +57,7 @@
 
 ---
 
-## 阶段五：代码审核
+## 阶段四：代码审核
 
 在当前 session 中，拿着 changelog 当核对表，逐项确认每个改动存在且正确。核心价值不是"换模型"，而是"拿 changelog 当 checklist 逐项验证代码"——代码就在磁盘上，读 diff 验证不需要换脑子。真正的独立性验证交给阶段六。
 
@@ -65,11 +65,10 @@
 |:--:|------|:--:|------|
 | 15 | 逐项核对 changelog 每一项 | 当前 session | 逐文件读源码/diff，逐项确认改动存在且正确，标记 PASS/FAIL |
 | 16 | FAIL 项修复 | 当前 session（切回开发者角色） | build + test 全绿 |
-| 17 | 二次复核确认全部到位 | 当前 session | changelog 所有项 PASS |
 
 ---
 
-## 🔴 阶段三：审查体系合并更新（回归清单 + 发布后审查，一步完成）
+## 🔴 阶段五：审查体系合并更新（回归清单 + 发布后审查，一步完成）
 
 > ⚠️ 本版本已开发完成，遇到的问题和情况都已清楚——**回归清单维度**和**发布后审查**在**同一步骤**一并更新，不要拆成两步。趁记忆最新，把"修过什么"和"下次从什么角度能一眼看出"同时写进去。
 
@@ -386,7 +385,7 @@ bash tools/acceptance-test.sh                                      # 期望：�
 |:--:|------|------|
 | 23 | **新增文件类型/目录排查**<br><br>① 本版本有没有新增文件类型（如 `.yaml`/`.toml`/`.json5`）？→ `check-version.sh` 是否需要加对应检查项？`bump-version.sh` 是否需要加对应 bump 步骤？<br>② 本版本有没有新增目录（如 `LOOP/`/`agents/`/`docs/new-section/`）？→ `bump-version.sh` 和 `check-version.sh` 的 `find` 排除规则是否需要更新（`_archive`/`docs/archive`/`node_modules`/`dist`）？<br>③ 本版本有没有文件迁移（如 `audit/src/` → `core/src/`）？→ `regression-checklist.md` 中的路径是否需要更新？跑 `grep -rn "旧路径" docs/verification/regression-checklist.md` 确认 | 三项逐一确认，有变更则更新对应脚本 |
 | 24 | **三脚本对照检查**<br><br>① `check-version.sh` 检查的每一类文件，`bump-version.sh` 是否都有对应的 bump 步骤？（缺口 = check 能发现但不自动修复——如 v1.1.3 发现的 10 个 workspace 子包 version 字段）<br>② `pre-push-check.sh` 的检查项数量是否和 CHANGELOG/ROADMAP 声明的一致？（v1.1.3 教训：声明 13 通过，实际 15 通过/16 项）<br>③ `check-version.sh` 的检查项编号分母是否和实际检查项数一致？（v1.1.3 教训：`[1/13]~[12/13]+[13/14]+[14/14]` 分母跳变） | ① `diff <(grep '──\|✓\|✗' <(./tools/check-version.sh 2>&1 \| grep '── \[')) <(grep '\[.*\/13\]' tools/bump-version.sh)` 粗略对照<br>② `./tools/pre-push-check.sh 2>&1 \| grep '结果:'` 的数字和 CHANGELOG 声明对比<br>③ `grep '\[.*\/' tools/check-version.sh \| head -20` 检查分母一致性 |
-| 25 | **过时检查清理**<br><br>`regression-checklist.md` 里有没有已知过时（路径不存在/功能已迁移）的检查项？→ 更新路径或标注 `[已过时·vX.Y]`<br><br>批量检测命令：<br>`grep -rn 'sofagent/audit/src/verify\|sofagent/audit/src/doctor\|sofagent/audit/src/config' docs/verification/regression-checklist.md`（这些是 v1.1.0 迁移到 core 的路径，如果还在 checklist 里就是过时） | 过时检查项 ≤ 5%（v1.1.3 基线 26/278=9.4%，目标持续下降） |
+| 25 | **过时检查清理**<br><br>**机制**（v1.1.4 重构——从版本专用硬编码升级为通用框架）：<br><br>**Step A — 从 SSOT changelog 推导检测模式**：<br>读 `docs/changelog/v{SSOT}.md`，从「核心变更」「缺陷修复」章节提取本版本涉及的废弃/变更项。按以下模板生成检测关键词：<br>　· 新增规则 → 搜索旧规则数（如 v1.1.4 新增 A18/A19 → 搜索 `19 条规则`）<br>　· 废弃命令/入口 → 搜索旧命令（如 `sofagent-audit --daemon`）<br>　· 测试数变化 → 搜索旧测试数（如 `343` → 388）<br>　· 术语更名 → 搜索旧术语（如 `回溯引擎` → `回溯能力`）<br>　· 删除的标志/功能 → 搜索删除项（如 `verify.js --list`）<br><br>**Step B — 运行检测**：`grep -rn '<模式>' docs/ *.md --include='*.md' \| grep -v 'docs/changelog/\|.workbuddy/\|node_modules/'`<br><br>**Step C — 判定与分类**：<br>　· 历史记录（changelog 正文、审查盲区描述）→ 保留，不标过时<br>　· 当前文档（README/ARCHITECTURE/LIMITATIONS/指南）→ **必须更新**<br>　· 检查模式自身（regression-checklist 中的 grep 命令）→ 保留<br><br>**Step D — 历史存档**：将本版本新增的废弃项追加到下面的「历史废弃项」表，供后续版本回溯——**不要替换**，累积追加。<br><br>**硬规**：检测结果中，除 changelog 历史记录和检查模式自身外，**零残留**。<br><br>── 历史废弃项（按版本累积，只追加不替换）──<br><br>**v1.1.4 废弃/变更项**（SSOT 1.1.3→1.1.4）：<br>· `sofagent-audit --daemon` → `sofagent-daemon`（daemon 独立 CLI）<br>· `19 条规则` → `21 条`（A18/A19 新增）<br>· `343` tests → `388`（audit）/ `558` → `660`（全 workspace）<br>· `回溯引擎` → `回溯能力`（v1.1.3 更名，v1.1.4 继续清理残留）<br>· `verify.js --list` → 删除（标志不存在）<br>· pre-push-check 数字：`14/14` → 去硬编码 | 除 changelog 历史 + 检查模式自身外，**零残留**（0 处） |
 
 ---
 
@@ -439,7 +438,7 @@ sofagent-audit --doctor
 
 ```bash
 # 🔴 v0.99.1 起铁律：推前预检必须全绿
-bash tools/pre-push-check.sh            # 14/14 全绿（v1.1.0 起全量 workspace）
+bash tools/pre-push-check.sh            # 全绿（全量 workspace）
 bash tools/check-docs.sh                # 文档死链 + 预算 + Skill 行数
 
 # 全部 12 包 .js.map 泄露检查 + 类型检查 + README 非空检查

@@ -4,14 +4,14 @@
 //   1. 生成 .sofagent/config.yml 配置模板
 //   2. 安装 git commit-msg hook
 //   3. 冒烟测试——验证审计引擎可用
-// v1.1.3: 新增仓库状态分类器（gstack 首次运行引导）
+// v1.1.4: 新增仓库状态分类器（gstack 首次运行引导）
 // ============================================================
 
 import { existsSync, writeFileSync, mkdirSync, chmodSync, readFileSync, appendFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { execFileSync, execSync } from 'child_process';
 import { homedir, platform } from 'os';
-import { CONFIG_TEMPLATE, HOOK_TEMPLATE, VERSION } from '@sofagent/core';
+import { CONFIG_TEMPLATE, HOOK_TEMPLATE, VERSION, generateWatchTemplate } from '@sofagent/core';
 import { writeConfig } from '@sofagent/core';
 
 /**
@@ -103,8 +103,8 @@ export function runInit(): void {
   let stepOk = 0;
   let stepSkipped = 0;
 
-  // [1/4] 创建配置文件
-  console.log('[1/4] 创建配置文件...');
+  // [1/5] 创建配置文件
+  console.log('[1/5] 创建配置文件...');
   const configDir = join(cwd, '.sofagent');
   const configPath = join(configDir, 'config.yml');
 
@@ -122,12 +122,27 @@ export function runInit(): void {
     stepOk++;
   }
 
+  // v1.1.3 新增：生成 watch.yml（daemon 文件监控配置）
+  // 没 watch.yml 的话 daemon 会 fallback 到默认 paths=['src/','agents/','.sofagent/']
+  // 但项目结构各异，默认 paths 往往不匹配——生成模板让 daemon 真正监控项目
+  const watchConfigPath = join(configDir, 'watch.yml');
+  if (existsSync(watchConfigPath)) {
+    console.log('  → .sofagent/watch.yml 已存在，跳过（不覆盖你的配置）');
+  } else {
+    if (!existsSync(configDir)) {
+      mkdirSync(configDir, { recursive: true });
+    }
+    writeFileSync(watchConfigPath, generateWatchTemplate(), 'utf-8');
+    console.log('  → .sofagent/watch.yml 已生成（daemon 文件监控配置）');
+    console.log('  → 监控路径不匹配？编辑 .sofagent/watch.yml 的 watch.paths');
+  }
+
   // P1-1: 确保 .sofagent/ 被 gitignore
   ensureGitignore(cwd);
 
-  // [2/4] 安装 git commit-msg hook
+  // [2/5] 安装 git commit-msg hook
   console.log('');
-  console.log('[2/4] 安装 git commit-msg hook...');
+  console.log('[2/5] 安装 git commit-msg hook...');
 
   // 检测 git 仓库
   let gitDir: string | null = null;
@@ -278,9 +293,9 @@ exit 0
     }
   }
 
-  // [3/4] 创建知识库目录骨架（v1.0.1 新增）
+  // [3/5] 创建知识库目录骨架（v1.0.1 新增）
   console.log('');
-  console.log('[3/4] 创建知识库目录...');
+  console.log('[3/5] 创建知识库目录...');
   const knowledgeDir = join(configDir, 'knowledge');
   if (existsSync(knowledgeDir)) {
     console.log('  → .sofagent/knowledge/ 已存在，跳过');
@@ -307,9 +322,9 @@ exit 0
     stepOk++;
   }
 
-  // [4/4] 冒烟测试
+  // [4/5] 冒烟测试
   console.log('');
-  console.log('[4/4] 冒烟测试...');
+  console.log('[4/5] 冒烟测试...');
 
   let smokeOk = true;
 
@@ -363,15 +378,55 @@ exit 0
         mkdirSync(launchAgentsDir, { recursive: true });
       }
 
-      // 获取 sofagent-audit 的绝对路径和 node 的 bin 目录
-      let cliPath = 'sofagent-audit';
+      // 获取 sofagent-daemon 的绝对路径和 node 的 bin 目录
+      // v1.1.3 修复：daemon 已从 audit 拆出，入口是 sofagent-daemon（不是 sofagent-audit --daemon）
+      let cliPath = 'sofagent-daemon';
       let nodeBinDir = '';
       try {
-        cliPath = execSync('which sofagent-audit', { encoding: 'utf-8' }).trim();
+        // 优先找 sofagent-daemon（v1.1.3 拆包后的独立入口）
+        try {
+          cliPath = execSync('which sofagent-daemon', { encoding: 'utf-8' }).trim();
+        } catch {
+          // fallback：找 sofagent-audit 所在 bin 目录，拼出 sofagent-daemon（通常 link 在同目录）
+          try {
+            const auditPath = execSync('which sofagent-audit', { encoding: 'utf-8' }).trim();
+            const auditBinDir = auditPath.substring(0, auditPath.lastIndexOf('/'));
+            const candidateDaemon = `${auditBinDir}/sofagent-daemon`;
+            if (existsSync(candidateDaemon)) {
+              cliPath = candidateDaemon;
+            } else {
+              // 项目内 fallback：直接用 daemon dist 入口
+              cliPath = 'node';
+            }
+          } catch {
+            cliPath = 'sofagent-daemon';
+          }
+        }
         nodeBinDir = execSync('dirname $(which node)', { encoding: 'utf-8' }).trim();
       } catch {
-        // fallback 到 PATH 中的 sofagent-audit
+        // fallback 到 PATH 中的 sofagent-daemon
       }
+
+      // v1.1.3 修复：WorkingDirectory 用项目 cwd，不是 $HOME
+      // daemon 启动后以 cwd 为 projectDir，监控的就是这个项目
+      const projectWorkingDir = cwd;
+
+      // v1.1.3 修复：cliPath 兜底——如果没找到 sofagent-daemon 二进制，
+      // 用项目内 daemon dist 入口 + node 绝对路径
+      let finalCliPath = cliPath;
+      let finalProgArgs: string[];
+      if (cliPath === 'node') {
+        // node + 项目内 daemon/dist/cli.js
+        const daemonEntry = join(cwd, 'sofagent', 'daemon', 'dist', 'cli.js');
+        finalCliPath = nodeBinDir ? join(nodeBinDir, 'node') : 'node';
+        finalProgArgs = [daemonEntry, 'start'];
+      } else {
+        finalProgArgs = ['start'];
+      }
+
+      // PATH 兜底：确保 nodeBinDir 不为空
+      const safeNodeBinDir = nodeBinDir || '/usr/local/bin';
+      const envPath = `${safeNodeBinDir}:/usr/local/bin:/usr/bin:/bin`;
 
       const plistPath = join(launchAgentsDir, 'com.sofagent.daemon.plist');
 
@@ -392,12 +447,11 @@ exit 0
     <string>com.sofagent.daemon</string>
     <key>ProgramArguments</key>
     <array>
-        <string>${cliPath}</string>
-        <string>--daemon</string>
-        <string>start</string>
+        <string>${finalCliPath}</string>
+${finalProgArgs.map((a) => `        <string>${a}</string>`).join('\n')}
     </array>
     <key>WorkingDirectory</key>
-    <string>${homedir()}</string>
+    <string>${projectWorkingDir}</string>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
@@ -409,7 +463,7 @@ exit 0
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>${nodeBinDir}:/usr/local/bin:/usr/bin:/bin</string>
+        <string>${envPath}</string>
     </dict>
     <key>ThrottleInterval</key>
     <integer>5</integer>
@@ -424,6 +478,7 @@ exit 0
       try {
         execSync(`launchctl load "${plistPath}"`, { stdio: 'pipe' });
         console.log('  ✅ daemon 已注册并启动（下次开机自动运行）');
+        console.log(`  → 监控项目: ${projectWorkingDir}`);
         console.log(`  → 日志: ~/.sofagent/daemon.log`);
         stepOk++;
       } catch (err) {

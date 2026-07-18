@@ -20,6 +20,8 @@ import { checkRuleA14 } from './rule-a14-kb-cross-domain';
 import { checkRuleA15 } from './rule-a15-action-constraint';
 import { checkRuleA16 } from './rule-a16-unauthorized-change';
 import { checkRuleA17 } from './rule-a17-bulk-change';
+import { checkRuleA18 } from './rule-a18-junk-file';
+import { checkRuleA19 } from './rule-a19-commit-msg-quality';
 import { checkRuleE1 } from './rule-e1-no-test-files';
 import { checkRuleE2 } from './rule-e2-todo-undeclared';
 import { checkRuleE3 } from './rule-e3-large-deletion';
@@ -38,6 +40,7 @@ export const defaultRules: Rule[] = [
   { name: 'A9 不纳注入', number: 9, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA9 },
   { name: 'A10 不引毒源', number: 10, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA10 },
   { name: 'A11 不滥资源', number: 11, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA11 },
+  { name: 'A19 msg 质量', number: 19, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA19 },
 ];
 
 /** 扩展规则（E1-E4 + A14-A17）——默认不生效，需 config.extendedRulesEnabled = true */
@@ -50,6 +53,7 @@ export const extendedRules: Rule[] = [
   { name: 'A15 不越约束', number: 15, evidenceMode: 'hybrid', ruleClass: '能力拐杖', check: checkRuleA15 },
   { name: 'A16 非授权文件变更', number: 16, evidenceMode: 'git-diff', ruleClass: '工程规范', check: checkRuleA16, description: '检测敏感目录/文件类型的非授权变更' },
   { name: 'A17 异常批量变更', number: 17, evidenceMode: 'filesystem', ruleClass: '工程规范', check: checkRuleA17, description: '检测短时间内大量文件变更' },
+  { name: 'A18 垃圾文件', number: 18, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleA18, description: '检测临时文件名模式的垃圾文件' },
 ];
 
 /** 全部规则——reporter 默认使用此数组（含 default + extended） */

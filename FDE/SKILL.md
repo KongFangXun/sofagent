@@ -1,7 +1,7 @@
 ---
 name: sofagent-fde
 slug: sofagent-fde
-version: 1.1.3
+version: 1.1.4
 displayName: FDE 部署工程师
 description: >
   前线部署工程师——梳理企业工作流、识别 AI 节点、构建知识库、安装 sofagent 底座、交付离场。
@@ -46,7 +46,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 约束层配置：改写 fde.md（企业专属规则）→ 配置 config.yml → knowledge-domain include/exclude
 
-## 持续优化模式（sustain · v1.1.3）
+## 持续优化模式（sustain · v1.1.4）
 
 `sustain` 模式下 FDE 作为基础设施 Agent 与 Audit 平级：
 - 读取 audit 报告趋势（权重最高）→ think.md 反思趋势 → eval 数据

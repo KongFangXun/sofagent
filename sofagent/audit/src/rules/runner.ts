@@ -1,6 +1,6 @@
 // ============================================================
 // runner.ts · 审计规则运行器（fast-fail 优化）
-// v1.1.3 新增：按严重度分四优先级，critical 层 FAIL 即停
+// v1.1.4 新增：按严重度分四优先级，critical 层 FAIL 即停
 // ============================================================
 
 import type { DiffFile } from '@sofagent/core';
@@ -28,10 +28,10 @@ export interface AuditResult {
  *   extended: A14→A15→A16→A17→A18→E1→E2→E3→E4  (A 组优先，正序排列)
  */
 export const AUDIT_PRIORITY = {
-  critical: ['A1', 'A2', 'A9', 'A4'],
+  critical: ['A1', 'A2', 'A9', 'A4', 'A19'],
   warning:  ['A3', 'A5', 'A6', 'A10', 'A11'],
   crutch:   ['A7', 'A8'],
-  extended: ['A14', 'A15', 'A16', 'A17', 'E1', 'E2', 'E3', 'E4'],
+  extended: ['A14', 'A15', 'A16', 'A17', 'A18', 'E1', 'E2', 'E3', 'E4'],
 } as const;
 
 /**

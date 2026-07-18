@@ -2,7 +2,7 @@
 // A15 不越约束（扩展层 · 能力拐杖）
 // 检查 Agent action 是否在 Workflow 节点声明的 actions 范围内
 // evidenceMode: hybrid——需要读 config + diff
-// v1.1.3 新增
+// v1.1.4 新增
 // ============================================================
 
 import { existsSync, readFileSync } from 'fs';
@@ -100,8 +100,12 @@ export function checkRuleA15(ctx: AuditContext): RuleCheck {
   // 检查哪些节点有声明的 actions
   const nodesWithActions = [...workflowNodes.values()].filter((n) => n.actions && n.actions.length > 0);
   if (nodesWithActions.length === 0) {
-    rule.status = 'WARN';
-    rule.details.push('workflow.yml 各节点均未声明 actions。建议为每个节点声明 allowed actions，否则 A15 无法验证约束合规性。');
+    // P2 修复（v1.1.3 发布后审查）：无 actions 声明应 FAIL 而非 WARN，
+    // 否则 Agent 可通过"不声明 actions"绕过所有约束检查。
+    // 仅当 workflow.yml 存在且有 nodes 但零 actions 声明时触发——
+    // 如果 workflow.yml 不存在或无 nodes，上面已跳过。
+    rule.status = 'FAIL';
+    rule.details.push('workflow.yml 存在 nodes 但均未声明 actions。为防止绕过约束检查，A15 要求每个节点显式声明 allowed actions。请在各节点添加 actions 字段，或删除 workflow.yml。');
     return rule;
   }
 

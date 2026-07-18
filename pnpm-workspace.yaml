@@ -1,0 +1,5 @@
+minimumReleaseAgeExclude:
+  - '@sofagent/audit@1.1.3'
+  - '@sofagent/core@1.1.3'
+  - '@sofagent/harness@1.1.3'
+  - '@sofagent/ontology@1.1.3'

@@ -1,6 +1,6 @@
 // ============================================================
 // diff-parser.ts · git diff 解析器
-// v1.1.3: 添加 isomorphic-git fallback（当系统 git 不可用时）
+// v1.1.4: 添加 isomorphic-git fallback（当系统 git 不可用时）
 // ============================================================
 
 import { execFileSync } from 'child_process';
@@ -67,6 +67,9 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
   if (!/^[a-zA-Z0-9~^.\-]+$/.test(range)) {
     console.error(
       `参数校验失败: range "${range}" 包含非法字符。只允许 [a-zA-Z0-9~^.-] 字符。`
+    );
+    console.error(
+      '提示：使用 git refspec 而非文件路径，例如 HEAD~1..HEAD 或 origin/main..HEAD'
     );
     return files;
   }
