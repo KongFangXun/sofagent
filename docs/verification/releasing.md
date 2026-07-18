@@ -515,8 +515,8 @@ echo "✅ 全部 12 包版本一致 = $NEW_VER"
 13. git tag vX.Y.Z && git tag -l "vX.Y.Z" --format='%(subject)' | grep "vX.Y.Z" || echo "⚠️ tag message 不匹配，建议重新打 tag"
 14. git push origin vX.Y.Z
 14. gh release create vX.Y.Z
-   🔴 Release body **必须**包含开发日志链接：
-   📖 详细开发日志：`docs/changelog/vX.Y.Z.md`
+   🔴 Release body **必须**包含开发日志链接（**必须用 markdown 链接语法**，不要用反引号包裹的纯文本路径——后者在 GitHub 上不可点击）：
+   📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)
 
    🔴 Release Notes 标准格式：
 
@@ -541,7 +541,7 @@ echo "✅ 全部 12 包版本一致 = $NEW_VER"
    | pre-push-check | {N}/{N} 全绿 ✅ |
    | 回归检查 | {N}/{N} 全绿 ✅ |
 
-   📖 详细开发日志：`docs/changelog/vX.Y.Z.md`
+   📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)
    ```
 
    **Emoji 规范**：
@@ -556,17 +556,18 @@ echo "✅ 全部 12 包版本一致 = $NEW_VER"
    - 每个变更点用 `-` 列表，一句话说清楚做了什么（不写"为什么"——那在开发日志里）
    - 质量验证表格**固定 6 项**：npm test / acceptance-test / OpenClaw 验收 / shellcheck / pre-push-check / 回归检查
    - 测试数字写**实际值**（从 `npm test 2>&1 | tail -5` 获取），不写约数
-   - 末尾**必须有**开发日志链接
+   - 末尾**必须有**开发日志链接——**🔴 v1.1.4 教训：必须用 markdown 链接语法 `[详细开发日志](./docs/changelog/vX.Y.Z.md)`，不要写成 `` `docs/changelog/vX.Y.Z.md` `` 反引号纯文本（后者在 GitHub 上不可点击）**
    - **不含**审查元信息（模型名、审查轮次、P0/P1 标签）——那是内部过程
 
 ── Step 5: Skill 分发 + 本机升级 ──
 🔴 v1.0.9 教训：skillhub CLI 语法与 clawhub 不同——`skillhub publish <path> --version X`（无 `skill` 子命令，无 --slug/--owner）
 🔴 v1.0.9 教训：FDE 发布到 ClawHub 时 slug "fde" 冲突——必须用 --slug sofagent-fde
+🔴 v1.1.4 教训：ClawHub 默认版本号从 1.0.0 开始自增（不走 SKILL.md 的 version 字段），必须显式 `--version X.Y.Z` 才能对齐；`--changelog` 可附简短变更说明
 
-15. clawhub skill publish ./sofagent/skill --slug sofagent --owner KongFangXun
-16. skillhub publish ./sofagent/skill --version vX.Y.Z
-17. clawhub skill publish ./FDE --slug sofagent-fde --owner KongFangXun
-18. skillhub publish ./FDE --version vX.Y.Z
+15. clawhub skill publish ./sofagent/skill --slug sofagent --owner KongFangXun --version X.Y.Z --changelog " vX.Y.Z: {简短变更}"
+16. skillhub publish ./sofagent/skill --version X.Y.Z
+17. clawhub skill publish ./FDE --slug sofagent-fde --owner KongFangXun --version X.Y.Z --changelog "vX.Y.Z: {简短变更}"
+18. skillhub publish ./FDE --version X.Y.Z
 19. **🔴 本机全局升级**（v1.0.7 教训——忘了更新本机安装，导致 QA 测试时跑的是旧版本）：
     npm install -g @sofagent/audit@latest
     sofagent-audit --version                    # 验证版本号
@@ -593,10 +594,11 @@ gh release view vX.Y.Z
 
 # 🔴 Release Notes 完整性检查（v1.0.3 教训）
 # 1. body 不为空
-# 2. 包含 📖 详细开发日志：`docs/changelog/vX.Y.Z.md` 链接
+# 2. 包含 📖 [详细开发日志](./docs/changelog/vX.Y.Z.md) 链接——🔴 v1.1.4 教训：
+#    必须是 markdown 链接语法（`[...](...)`），不是反引号包裹的纯文本路径
 # 3. 不是 Draft 状态
 gh release view vX.Y.Z --json isDraft,body -q '.body | length'  # 期望 > 100
-gh release view vX.Y.Z --json body -q '.body | contains("详细开发日志")'  # 期望: true
+gh release view vX.Y.Z --json body -q '.body | contains("](./docs/changelog/")'  # 期望: true（验证是 markdown 链接而非纯文本）
 
 # npm
 npm view @sofagent/audit version
