@@ -143,3 +143,11 @@ export {
   hasShadowRepo,
 } from './filesystem/isomorphic-git';
 export type { SnapshotEntry, IsoDiff } from './filesystem/isomorphic-git';
+
+// ── 快照辅助函数（人类可读封装 · v1.1.3 从 daemon 迁入） ──
+export {
+  createPostAuditSnapshot,
+  listAllSnapshots,
+  restoreSnapshot,
+} from './snapshot-helpers';
+export type { SnapshotInfo } from './snapshot-helpers';

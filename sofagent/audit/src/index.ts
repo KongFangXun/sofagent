@@ -404,12 +404,12 @@ function printTimeline(limit: number, json: boolean): void {
   }
 }
 
-// 同步加载 snapshot 模块（v1.0.8 迁移到 @sofagent/daemon）
+// 同步加载 snapshot 模块（v1.1.3 从 @sofagent/daemon 迁移到 @sofagent/core，消除循环依赖）
 function awaitLoadSnapshot(): any {
   try {
-    return require('@sofagent/daemon');
+    return require('@sofagent/core');
   } catch {
-    throw new Error('sofagent daemon 模块未安装。请安装 @sofagent/daemon 包。');
+    throw new Error('sofagent core 模块未安装。请先安装依赖。');
   }
 }
 
@@ -532,7 +532,7 @@ async function main(): Promise<void> {
   // --revert 模式：恢复到指定快照（v1.0.9 新增，v1.0.9 确认交互改进）
   if (args.revertSha) {
     try {
-      const { restoreSnapshot, listAllSnapshots } = await import('@sofagent/daemon');
+      const { restoreSnapshot, listAllSnapshots } = await import('@sofagent/core');
       const projectDir = process.cwd();
 
       // 列出可用快照供用户参考
@@ -704,8 +704,7 @@ async function main(): Promise<void> {
 
   // 审计通过（PASS）后自动创建 shadow repo 快照，供 --timeline/--revert 使用
   // 设计原则：只有 PASS 才快照（WARN/FAIL 不快照，符合「审计通过后自动快照」契约）
-  // daemon 的 createPostAuditSnapshot 是封装层，但 audit→daemon→audit 循环依赖，
-  // 所以直接用 core 的底层函数（createShadowRepo/commitSnapshot/hasShadowRepo）
+  // v1.1.3：snapshot helpers 已从 @sofagent/daemon 迁移到 @sofagent/core，循环依赖已消除
   if (results.exitCode !== 2 && isInGitRepo()) {
     try {
       if (!hasShadowRepo(process.cwd())) {
