@@ -19,7 +19,6 @@ async function main() {
     console.log('       engineer (AI) → audit (CLI) → reviewer (AI) → human_confirm (HITL)');
     console.log('       --resume                     从最近 checkpoint 恢复续跑');
     console.log('       --legacy                     使用旧版 DeepAgents 串行（v1.1.3 兼容）');
-    console.log('  loop --workflow <path>            Workflow 模式：消费外部编排平台 YAML（需 LOOP_AUTO=1）');
     console.log('  compare                          编排方案 A/B 对比');
     process.exit(0);
   }
@@ -108,35 +107,6 @@ async function main() {
         console.log(`终态: ${result.finalStatus}`);
         console.log(`重试次数: ${result.retryCount}`);
         process.exit(result.finalStatus === 'completed' ? 0 : 1);
-        break;
-      }
-
-      // v1.1.4: Workflow 模式——消费外部编排平台产出的 workflow.yml
-      const workflowIdx = args.indexOf('--workflow');
-      if (workflowIdx !== -1) {
-        const workflowPath = args[workflowIdx + 1];
-        if (!workflowPath) {
-          console.error('❌ loop --workflow 需要 <path> 参数');
-          process.exit(1);
-        }
-        if (process.env.LOOP_AUTO !== '1') {
-          console.warn('⚠️  提示: workflow 模式建议设置 LOOP_AUTO=1（自动审核判定），否则每个子任务后仍需人工确认');
-        }
-        const stopOnBlocked = !args.includes('--no-stop-on-blocked');
-        const { runLoopWorkflow } = await import('./loop/workflow');
-        const wfResult = await runLoopWorkflow(workflowPath, { stopOnBlocked });
-        console.log('');
-        console.log(`Workflow: ${wfResult.workflowName}`);
-        console.log(`终态: ${wfResult.finalStatus}`);
-        console.log(`完成: ${wfResult.nodesCompleted}/${wfResult.nodesTotal}`);
-        if (wfResult.nodesBlocked > 0) {
-          console.log(`阻塞: ${wfResult.nodesBlocked}`);
-        }
-        for (const nr of wfResult.nodeResults) {
-          const icon = nr.status === 'completed' ? '✅' : '⛔';
-          console.log(`  ${icon} [${nr.nodeId}] ${nr.task.slice(0, 60)}... (retry: ${nr.retryCount})`);
-        }
-        process.exit(wfResult.finalStatus === 'completed' ? 0 : 2);
         break;
       }
 

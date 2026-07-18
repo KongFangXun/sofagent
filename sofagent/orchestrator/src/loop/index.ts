@@ -43,13 +43,3 @@ export {
   type LoopGraphResult,
   type LoopGraphOptions,
 } from './graph';
-
-// Workflow（消费外部编排 YAML）
-export { loadWorkflow, runLoopWorkflow } from './workflow';
-export type {
-  Workflow,
-  WorkflowNode,
-  WorkflowOptions,
-  WorkflowStrategy,
-  WorkflowResult,
-} from './types';

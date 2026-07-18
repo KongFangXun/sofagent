@@ -3,7 +3,8 @@
 // v1.1.4：消费外部编排平台（WorkBuddy 等）产出的任务列表
 // ============================================================
 
-import type { LoopFinalStatus } from './state';
+/** LOOP 终态——定义本地避免循环依赖 sofagent 包 */
+type LoopFinalStatus = 'running' | 'completed' | 'blocked' | 'aborted';
 
 /** workflow.yml 中的单个子任务 */
 export interface WorkflowNode {

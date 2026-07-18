@@ -9,9 +9,8 @@
 
 import { readFileSync, existsSync } from 'fs';
 import * as yaml from 'js-yaml';
-import { runLoopGraph, resolveCheckpointDir } from './graph';
-import type { LoopGraphDeps } from './nodes';
-import type { LoopFinalStatus } from './state';
+import { runLoopGraph, resolveCheckpointDir, type LoopGraphDeps } from '@sofagent/orchestrator';
+import type { LoopFinalStatus } from '@sofagent/orchestrator';
 import type { Workflow, WorkflowOptions, WorkflowResult } from './types';
 
 /**
