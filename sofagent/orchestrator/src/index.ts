@@ -61,3 +61,13 @@ export type {
 // Orchestrator Compare
 export { scanLogFiles, extractMetrics, generateReport, promoteWorkflow } from './orchestrator-compare';
 export type { Metric } from './orchestrator-compare';
+
+// LOOP Workflow（v1.1.4）——消费外部编排平台产出的 YAML
+export { loadWorkflow, runLoopWorkflow } from './LOOP';
+export type {
+  Workflow,
+  WorkflowNode,
+  WorkflowOptions,
+  WorkflowStrategy,
+  WorkflowResult,
+} from './LOOP';

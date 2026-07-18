@@ -12,9 +12,6 @@ export {
   type LoopNodeName,
   type LoopFinalStatus,
   type AuditVerdict,
-  type Workflow,
-  type WorkflowNode,
-  type WorkflowOptions,
 } from './state';
 
 // Checkpoint
@@ -43,8 +40,6 @@ export {
 export {
   runLoopGraph,
   resumeLoopGraph,
-  runLoopWorkflow,
-  loadWorkflow,
   buildLoopGraph,
   resolveCheckpointDir,
   resolveResumeNode,
@@ -52,5 +47,4 @@ export {
   routeAfterHuman,
   type LoopGraphResult,
   type LoopGraphOptions,
-  type WorkflowResult,
 } from './loop-graph';
