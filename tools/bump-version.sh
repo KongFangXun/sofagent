@@ -226,6 +226,40 @@ for pkg_file in "$PROJECT_ROOT/FDE/package.json" "$PROJECT_ROOT/LOOP/package.jso
 done
 echo ""
 
+# 1d. v1.1.3: 批量处理所有 workspace 子包 package.json version 字段
+# （audit/mcp 已在上面处理，这里覆盖其余 10 个子包）
+echo -e "${BOLD}[2c/13] workspace 子包 package.json version${NC}"
+ws_pkg_count=0
+while IFS= read -r ws_pkg; do
+  # 跳过已处理的 audit 和 mcp
+  [[ "$ws_pkg" == *"audit/package.json" ]] && continue
+  [[ "$ws_pkg" == *"mcp/package.json" ]] && continue
+  [[ -f "$ws_pkg" ]] || continue
+  ws_content=$(cat "$ws_pkg")
+  ws_new=$(sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g" "$ws_pkg")
+  if [[ "$ws_new" == "$ws_content" ]]; then
+    ws_new=$(sed "s/\"version\": \"$OLD_2SEG\"/\"version\": \"$NEW_2SEG\"/g" "$ws_pkg")
+  fi
+  if [[ "$ws_new" != "$ws_content" ]]; then
+    echo -e "  ${GREEN}✓${NC} version: $OLD_3SEG → $NEW_3SEG"
+    echo -e "    ${CYAN}$ws_pkg${NC}"
+    if ! $DRY_RUN; then
+      printf '%s\n' "$ws_new" > "$ws_pkg"
+    fi
+    ws_pkg_count=$((ws_pkg_count + 1))
+    TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
+  fi
+done < <(find "$PROJECT_ROOT/sofagent" \
+  -name 'package.json' \
+  -not -path '*/node_modules/*' \
+  -not -path '*/dist/*' \
+  -maxdepth 3 \
+  -type f 2>/dev/null || true)
+if [[ $ws_pkg_count -eq 0 ]]; then
+  echo -e "  ${YELLOW}（无匹配——可能已是 $NEW_3SEG）${NC}"
+fi
+echo ""
+
 # 2. .ts 文件: const VERSION = 'OLD'（动态扫描，不硬编码文件列表）
 echo -e "${BOLD}[3/13] TypeScript 常量${NC}"
 ts_count=0
