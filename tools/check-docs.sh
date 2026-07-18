@@ -111,7 +111,7 @@ LAYER_A=$(find . -name "*.md" \
   -not -path "*/agents/*" \
   -not -path "*/.github/*" \
   -not -path "*/sofagent/hooks/*" \
-  -not -path "*/workflow-hub/*" \
+  -not -path "*/FLOWHUB/*" \
   -not -path "*/docs/DEVELOPMENT.md" \
   -not -path "*/docs/archive/*" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
@@ -135,7 +135,7 @@ LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 LIMIT_A=4500  # v1.1.0: 五个引擎重构 + ARCHITECTURE 叙事升级 + README 内容增长
 LIMIT_B=2000
 LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
-LIMIT_D=500
+LIMIT_D=700  # v1.1.4: 架构师产出 v1.1.4 系统设计文档（604 行），从 500 上调到 700 容纳架构设计自然增长
 LIMIT_E=1000  # v1.1.3 P0-1: 从 600 上调到 1000，多设备同步指南等 E 层文档扩展导致自然增长
 LIMIT_TOTAL=6200  # v1.1.0: A 层文档五个引擎重构导致自然增长
 
