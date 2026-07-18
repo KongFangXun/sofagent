@@ -163,7 +163,7 @@ export function checkRuleA3(ctx: AuditContext): RuleCheck {
   ]);
   const taskKeywords = task
     .toLowerCase()
-    .split(/[\s,，。、；;:：()（）]+/)
+    .split(/[\s,，。、；;:：()（）+]+/)
     .filter((w) => w.length >= 3 && !STOP_WORDS.has(w));
 
   const unexpectedFiles: string[] = [];

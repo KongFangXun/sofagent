@@ -201,6 +201,17 @@ describe('A3 不改越界', () => {
     expect(result.details[0]).toContain('未提供');
   });
 
+  it('+ 号分割关键词 → 匹配成功 PASS', () => {
+    // commit message 中用 + 连接组件名（项目惯用格式）：SKILL+engage+FDE+install
+    // 此前 + 不是分割符导致整串不匹配 → 误报 WARN
+    const ctx = makeCtx(
+      [makeDiffFile('FDE/FDE.md')],
+      { task: 'v1.1.3: SKILL+engage+FDE+install+审查体系' }
+    );
+    const result = checkRuleA3(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
   it('路径关键词匹配但不同文件 → WARN（关键词 auth 匹配 auth.ts 但任务只提 login）', () => {
     const ctx = makeCtx(
       [makeDiffFile('src/auth.ts')],
