@@ -97,7 +97,7 @@
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.1.4** | 📋 规划中 | **LOOP 工具注入 + USB federation**：engineer/reviewer 注入自有工具集（Read/Write/Edit/Bash/Search/Test，内嵌 A1-A19 约束）+ daemon USB 检测自动配置（SOFAGENT 标签 U 盘 → federation.json 自动入网）| [📖](./docs/changelog/v1.1.4.md) |
+| **v1.1.4** | 📋 规划中 | **LOOP 工具注入 + USB federation + 审计闭环加固**：engineer/reviewer 注入自有工具集（Read/Write/Edit/Bash/Search/Test，内嵌 A1-A19 约束）+ daemon USB 检测自动配置（SOFAGENT 标签 U 盘 → federation.json 自动入网）+ A20 垃圾文件检测 + A21 commit message 质量 + daemon WARN 累积报告（检测→跟进闭环）| [📖](./docs/changelog/v1.1.4.md) |
 | **v1.1.5** | 📋 规划中 | **releasing.md SOP 集成 + MCP knowledge resource**：Agent 按十二阶段 SOP 全流程自动发版 + 7 个 knowledge MCP resource | [📖](./docs/changelog/v1.1.5.md) |
 | **v1.1.6** | 📋 规划中 | **LLM Wiki 3 层分层 + conflict-check**：Ledger-Views-Policy 显式化 + daemon 知识健康巡检 | [📖](./docs/changelog/v1.1.6.md) |
 | **v1.1.7** | 📋 规划中 | **Dream Cycle 6 阶段 + sensitivity**：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级 | [📖](./docs/changelog/v1.1.7.md) |
