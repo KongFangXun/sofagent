@@ -564,7 +564,7 @@ composeWithDeepAgents({
 
 ---
 
-### 场景 26b：内置 Sub Agent 注册与 CLI 调用（FDE + Audit · v1.1.3）
+### 场景 26b：内置 Sub Agent 注册与 CLI 调用（FDE + Audit · v1.0.8）
 
 > v1.0.8 新增：验证 `sofagent-fde` 和 `sofagent-audit` 两个内置 Agent 可从 CLI 正常调用。
 >
@@ -981,20 +981,22 @@ grep -q "露个脸就够了" "$SOFAGENT_DIR/sofagent/skill/SKILL.md"
 
 > v1.0.1-v1.1.0 中已在代码层面实现但验收测试未覆盖的核心功能。本部分作为补丁式验收——每个场景验证功能模块存在且接口正确，不要求端到端执行。
 
-### 场景 42：经验共享 — knowledge/shared/ 目录结构（v1.1.0）
+### 场景 42：经验共享 — 代码模块完整性（v1.1.0）
+
+> **修正点**：原文档验用户级 `~/.sofagent/knowledge/` 目录是否初始化——这是运行时数据，全新环境必然不存在，会误报 ⚠️。改为验**代码模块完整性**：think 包、memory-contract、generateThinkEntry 函数是否存在且可调用。用户数据目录在首次使用时自动创建，不需要验收。
 
 ```bash
-# 1. knowledge 目录骨架
-DATA_DIR="${SOFAGENT_DATA_DIR:-$HOME/.sofagent}"
-ls "$DATA_DIR/knowledge/" 2>/dev/null
-# ✅ 期望：存在子目录（entities/ concepts/ comparisons/ shared/ 等）
+# 1. think 包存在且可 require
+node -e "const t = require('$SOFAGENT_DIR/sofagent/think/dist/index.js'); console.log('generateThinkEntry:', typeof t.generateThinkEntry)"
+# ✅ 期望：generateThinkEntry: function
 
-# 2. knowledge/shared/ 目录
-ls "$DATA_DIR/knowledge/shared/" 2>/dev/null && echo "OK" || echo "MISSING (may be created on first use)"
-# ✅ 期望：目录存在或首次使用时创建
+# 2. core memory-contract 导出 knowledge 归属定义
+grep -c "knowledge.*Views\|knowledge/.*派生" $SOFAGENT_DIR/sofagent/core/src/memory-contract.ts
+# ✅ 期望：≥ 1（knowledge/ 在三层模型中归属 Views 派生层）
 
-# 3. think.md 文件存在
-[ -f "$DATA_DIR/think.md" ] && echo "think.md OK" || echo "think.md MISSING"
+# 3. think-generator 源码存在
+ls $SOFAGENT_DIR/sofagent/think/src/think-generator.ts
+# ✅ 期望：文件存在
 ```
 
 ### 场景 43：约束自加载 — buildConstrainedSystemPrompt（v1.0.7）
@@ -1134,7 +1136,7 @@ ls $SOFAGENT_DIR/workflow-hub/templates/ 2>/dev/null | wc -l
 - [ ] 场景 41：Webhook PASS 推送不崩溃（假 URL + a1 禁用 → commit 成功）
 
 ### 历史版本核心功能（场景 42-46）
-- [ ] 场景 42：经验共享 knowledge/shared/ 目录结构 + think.md
+- [ ] 场景 42：经验共享代码模块完整性（think 包 generateThinkEntry + memory-contract knowledge Views 定义）——不验用户数据目录（首次使用自动创建）
 - [ ] 场景 43：约束自加载 buildConstrainedSystemPrompt（harness 包 + launcher 引用）
 - [ ] 场景 44：A14 知识库越权规则注册（index.ts + evidenceMode hybrid + 测试文件）
 - [ ] 场景 45：A15 约束验证规则注册（index.ts + actions 配置解析）
