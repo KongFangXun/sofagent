@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.1.3 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
-// v1.1.3 精简：compose→orchestrator, subagent→orchestrator,
+// v1.0.8 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.0.8 精简：compose→orchestrator, subagent→orchestrator,
 //          hub→workflow-hub, skillopt-run→skillopt, ab-test→ab-test,
 //          daemon→daemon, doctor/verify→core (deprecation shim)
 // ============================================================
@@ -32,6 +32,7 @@ import { loadConfig, ConfigLoadError, ConfigParseError } from '@sofagent/core';
 import { VERSION } from '@sofagent/core';
 import { resolveDiffEndpoint } from './diff-ref';
 import { checkLogs } from '@sofagent/core';
+import { createShadowRepo, commitSnapshot, hasShadowRepo } from '@sofagent/core';
 import { runRules, type AuditResult } from './reporter';
 import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-history';
 import { analyzeRootCause } from './audit-root-cause';
@@ -99,7 +100,7 @@ function parseArgs(argv: string[]): Args {
       i++;
       args.regressionDir = argv[i] as string;
     } else if (argv[i] === '--revert') {
-      // v1.1.3: 无参报错修复
+      // v1.0.8: 无参报错修复
       if (!argv[i + 1] || argv[i + 1]!.startsWith('--')) {
         console.error('❌ sofagent 提示：缺少快照 SHA 参数，用法: sofagent-audit --revert <snapshot-sha>');
         console.error('   查看可用快照：sofagent-audit --timeline');
@@ -108,7 +109,7 @@ function parseArgs(argv: string[]): Args {
       i++;
       args.revertSha = argv[i] as string;
     } else if (argv[i] === '--timeline') {
-      // v1.1.3: 快照时间线
+      // v1.0.8: 快照时间线
       args.timeline = true;
       args.timelineJson = argv.includes('--json');
       // 下一个参数如果是数字则为 limit
@@ -153,7 +154,7 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit --timeline [N]                      查看快照时间线');
       console.log('  sofagent-audit ontology view                        本体人类可读视图');
       console.log('');
-      console.log('v1.1.3 已弃用的子命令（将在 v1.2.0 移除，请尽快迁移）:');
+      console.log('v1.0.8 已弃用的子命令（将在 v1.2.0 移除，请尽快迁移）:');
       console.log('  compose      → sofagent-orchestrator compose');
       console.log('  subagent run → sofagent-orchestrator subagent run');
       console.log('  hub          → sofagent-workflow-hub');
@@ -196,7 +197,7 @@ function parseArgs(argv: string[]): Args {
         console.error('   使用 --help 查看可用参数');
         process.exit(1);
       } else if (arg && !arg.startsWith('-')) {
-        // v1.1.3: 未知子命令报错
+        // v1.0.8: 未知子命令报错
         const SUBCOMMANDS = ['ontology'];
         if (!SUBCOMMANDS.includes(arg)) {
           console.error(`未知子命令: ${arg}`);
@@ -403,7 +404,7 @@ function printTimeline(limit: number, json: boolean): void {
   }
 }
 
-// 同步加载 snapshot 模块（v1.1.3 迁移到 @sofagent/daemon）
+// 同步加载 snapshot 模块（v1.0.8 迁移到 @sofagent/daemon）
 function awaitLoadSnapshot(): any {
   try {
     return require('@sofagent/daemon');
@@ -425,11 +426,11 @@ function confirm(question: string): Promise<boolean> {
 }
 
 async function main(): Promise<void> {
-  // === v1.1.3 deprecation shim ===
+  // === v1.0.8 deprecation shim ===
   // 在 args 解析之后、主 switch 分支之前，拦截已迁移的子命令
   const rawArgs = process.argv.slice(2);
 
-  // compose → sofagent-orchestrator (v1.1.3 P0-2: 友好报错降级，不再 execFileSync)
+  // compose → sofagent-orchestrator (v1.0.8 P0-2: 友好报错降级，不再 execFileSync)
   if (rawArgs.includes('compose')) {
     console.error('⚠️  "sofagent-audit compose" 已弃用，将在 v1.2.0 移除，请尽快迁移到 "sofagent-orchestrator compose"。');
     console.error('   请直接运行：sofagent-orchestrator compose');
@@ -437,7 +438,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // doctor → sofagent-core (v1.1.3: ENOENT 友好降级)
+  // doctor → sofagent-core (v1.0.8: ENOENT 友好降级)
   if (rawArgs.includes('--doctor')) {
     console.error('⚠️  "sofagent-audit --doctor" 已弃用，将在 v1.2.0 移除，请尽快迁移到 "sofagent-core --doctor"。');
     try {
@@ -453,7 +454,7 @@ async function main(): Promise<void> {
     }
   }
 
-  // verify → sofagent-core (v1.1.3 P0-2: 友好报错降级，不再 execFileSync)
+  // verify → sofagent-core (v1.0.8 P0-2: 友好报错降级，不再 execFileSync)
   if (rawArgs.includes('verify')) {
     console.error('⚠️  "sofagent-audit verify" 已弃用，将在 v1.2.0 移除，请尽快迁移到 "sofagent-core verify"。');
     console.error('   请直接运行：sofagent-core verify');
@@ -490,7 +491,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  // ontology 子命令（v1.0.9 新增，v1.1.3 改用 @sofagent/ontology）
+  // ontology 子命令（v1.0.9 新增，v1.0.8 改用 @sofagent/ontology）
   if (args.ontologyCommand === 'view') {
     const { generateOntologyView } = await import('@sofagent/ontology');
     try {
@@ -639,7 +640,7 @@ async function main(): Promise<void> {
     throw err;
   }
 
-  // 4.5 权限检查（v1.1.3：权限作用域化）
+  // 4.5 权限检查（v1.0.8：权限作用域化）
   const permission = loadPermission(process.cwd());
   const permissionDenials: string[] = [];
   for (const file of diffFiles) {
@@ -699,6 +700,22 @@ async function main(): Promise<void> {
   } catch {
     // 历史写入失败不影响审计结果
     process.stderr.write('[sofagent-audit] 警告: 审计历史写入失败，跳过（不影响审计结果）\n');
+  }
+
+  // 审计通过（PASS）后自动创建 shadow repo 快照，供 --timeline/--revert 使用
+  // 设计原则：只有 PASS 才快照（WARN/FAIL 不快照，符合「审计通过后自动快照」契约）
+  // daemon 的 createPostAuditSnapshot 是封装层，但 audit→daemon→audit 循环依赖，
+  // 所以直接用 core 的底层函数（createShadowRepo/commitSnapshot/hasShadowRepo）
+  if (results.exitCode === 0 && isInGitRepo()) {
+    try {
+      if (!hasShadowRepo(process.cwd())) {
+        createShadowRepo(process.cwd());
+      }
+      commitSnapshot(process.cwd());
+    } catch {
+      // 快照失败不影响审计结果
+      process.stderr.write('[sofagent-audit] 警告: 快照创建失败，跳过（不影响审计结果）\n');
+    }
   }
 
   // think.md 生成由 @sofagent/think 的 generateThinkEntry 负责（审计后反思生成器），
@@ -782,7 +799,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
   if (ci || silent) {
     const problems = results.rules.filter((r) => r.status !== 'PASS' && r.status !== 'SKIPPED');
     if (problems.length === 0) {
-      // v1.1.3: PASS 时向 stderr 输出轻量签名行（防遗忘装了 sofagent）
+      // v1.0.8: PASS 时向 stderr 输出轻量签名行（防遗忘装了 sofagent）
       if (!ci) {
         // --quiet/--ci 模式抑制签名行
         const totalRules = results.rules.length;
@@ -881,7 +898,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
     : `${results.rules.length} 条规则已完成检测`;
   console.log(`  审计引擎: sofagent-audit v${VERSION} · ${ruleSummary}`);
 
-  // v1.1.3: PASS 时向 stderr 输出轻量签名行（防遗忘装了 sofagent）
+  // v1.0.8: PASS 时向 stderr 输出轻量签名行（防遗忘装了 sofagent）
   if (exitCode === 0) {
     process.stderr.write(`✅ sofagent-audit v${VERSION} · ${results.rules.length} 条规则全部通过\n`);
   }
