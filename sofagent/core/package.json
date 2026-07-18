@@ -21,7 +21,12 @@
     "test": "vitest run",
     "check": "tsc --noEmit"
   },
-  "keywords": ["sofagent", "core", "runtime", "doctor"],
+  "keywords": [
+    "sofagent",
+    "core",
+    "runtime",
+    "doctor"
+  ],
   "license": "MIT",
   "author": "KongFangXun",
   "repository": {
@@ -34,5 +39,11 @@
   "homepage": "https://github.com/KongFangXun/sofagent#readme",
   "dependencies": {
     "js-yaml": "^4.1.0"
-  }
+  },
+  "files": [
+    "dist/",
+    "!dist/**/*.js.map",
+    "!dist/**/*.d.ts.map",
+    "!dist/**/*.test.*"
+  ]
 }

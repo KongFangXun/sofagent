@@ -37,5 +37,11 @@
       "require": "./dist/index.js"
     },
     "./package.json": "./package.json"
-  }
+  },
+  "files": [
+    "dist/",
+    "!dist/**/*.js.map",
+    "!dist/**/*.d.ts.map",
+    "!dist/**/*.test.*"
+  ]
 }
