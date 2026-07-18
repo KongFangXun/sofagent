@@ -1,7 +1,7 @@
 # sofagent Architecture
 
 > 设计决策记录——从为什么存在、五个引擎如何协作，到每个关键决策的工程理由。
-> v1.1.3 · 2026-07-15（UTC）· 孔放勋
+> v1.1.4 · 2026-07-15（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -142,7 +142,7 @@ OpenClaw 通过 Hook 精确注入，其他平台 Agent 主动 Read，v1.0.7+ Sub
 ```mermaid
 graph LR
     A[Agent 改代码/改文件] --> B[git commit 或 daemon 检测到变更]
-    B --> C{审计引擎<br/>19 条规则判定}
+    B --> C{审计引擎<br/>规则库判定}
     C -->|违规| D[⛔ 拦截 + 记录]
     C -->|合规| E[✅ 放行]
     D --> F[think.md 自动反思]
@@ -198,6 +198,10 @@ daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml
 
 **工具集设计约束**：每个 Sub Agent 的工具集应零重叠、无歧义——工具功能描述不能模糊交叉。当工具数上百时，瓶颈不在模型推理而在工具描述歧义。v1.1.0 daemon 工具注册将做静态重叠检测。
 
+**为什么多 Agent 协作 > 单强模型**：来自 Apple Dex RSI 训练团队的一手观察——基于 self-attention 架构的固有局限，单模型处理超长上下文有不可逾越的上限。多 Agent 协作（分治验证 + 多路径冗余 + 记忆机制）效果远超单强模型。核心推论：**工程化能力具备独立于模型基础能力的护城河**，不会被通用模型迭代轻易覆盖。sofagent 的编排引擎（Sub Agent 分治 + Maker-Checker 分离）正是这个理论的产品化落地。
+
+**解题/验证分离**：RSI 研究表明，同一 Agent 自验覆盖率仅 7-33%，分离为独立验证后提升至 73%。这与审计引擎的"不信任 Agent 自我报告"原则同构——解题 Agent 和验证 Agent 必须物理隔离，验证是核心基因，需分领域（代码用单测、数学用形式化证明、非标准领域用多 Agent 协作）。
+
 ### 🧬 进化引擎
 
 FDE 部署完成后转为**持续优化角色**。daemon cron @weekly 自动巡检审计趋势 + 反思记录，发现退化就优化。
@@ -234,7 +238,7 @@ sofagent 支持两种节点类型：
 
 **River = 多个 Workflow 的集合**——每条小溪（Workflow）并行/串行执行，汇入同一条大河（River），从头到尾同一个身份、同一段上下文。
 
-Work模板市场 的实现规范见 [work模板市场/SPEC.md](../work模板市场/SPEC.md)（混合架构：外层 `workflow.yml` Graph 骨架锁步骤 + 内层 ReAct 节点）。
+Work模板市场 的实现规范见 [模板市场/SPEC.md](../模板市场/SPEC.md)（混合架构：外层 `workflow.yml` Graph 骨架锁步骤 + 内层 ReAct 节点）。
 
 ```
 用户 → River（统一入口）→ Workflow A/B/C（任务拆解）→ Subagent（执行）
@@ -249,7 +253,7 @@ Work模板市场 的实现规范见 [work模板市场/SPEC.md](../work模板市�
 
 River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 本身，而是确保 River 里的每一个 Sub Agent 都有纪律、可追溯、会反思。
 
-> **Workflow 的混合架构**：每条 Workflow 采用「外层 Graph 骨架 + 内层 ReAct 节点」——`workflow.yml` 的 `nextNodes` 锁定全链路步骤、保证可追溯（对应行业笔记中的「Graph 实现全局流程骨架」），单个节点的 `prompt` 保留模型自主规划能力（对应「内层 ReAct Agent」）。这一设计兼顾全局稳定性与局部灵活性：低容错业务靠 Graph 锁死流程，复杂节点靠 ReAct 保灵活。详见 [work模板市场/SPEC.md](../work模板市场/SPEC.md)。
+> **Workflow 的混合架构**：每条 Workflow 采用「外层 Graph 骨架 + 内层 ReAct 节点」——`workflow.yml` 的 `nextNodes` 锁定全链路步骤、保证可追溯（对应行业笔记中的「Graph 实现全局流程骨架」），单个节点的 `prompt` 保留模型自主规划能力（对应「内层 ReAct Agent」）。这一设计兼顾全局稳定性与局部灵活性：低容错业务靠 Graph 锁死流程，复杂节点靠 ReAct 保灵活。详见 [模板市场/SPEC.md](../模板市场/SPEC.md)。
 
 ### Agent 基础设施层（v1.0.8+）
 
