@@ -314,14 +314,16 @@ $AUDIT_CLI --init > /dev/null 2>&1
 
 ### 场景 15：post-commit 正常触发（v1.0.6）
 
+> **修正点**：原文档期望正常 commit 输出中文提示。实际 post-commit 的设计是「60 秒内有审计记录 → 静默 exit 0（不打扰用户）」「60 秒内无审计记录（--no-verify 绕过）→ 打印中文提示」。正常 commit 静默是正确的设计行为——详见场景 16 才是打印提示的场景。
+
 ```bash
 echo "// normal change" >> README.md
 git add README.md && git commit -m "normal change"
 # ✅ 期望：
 #   1. commit 成功后 post-commit hook 触发
-#   2. 输出含中文提示（UTF-8 正确，无乱码）
-#   3. 提示内容含"当前 commit"和"审计记录"
-#   4. exit 0（不阻断）
+#   2. 60 秒内有审计记录 → 静默 exit 0（不打印提示，不打扰用户）—— 这是设计行为
+#   3. exit 0（不阻断）
+#   注意：中文提示仅在 --no-verify 绕过审计时打印（见场景 16）
 ```
 
 ### 场景 16：--no-verify 绕不过 post-commit
@@ -426,7 +428,7 @@ mv "$HISTORY_DIR/audit/history.jsonl.bak" "$HISTORY_DIR/audit/history.jsonl"
 # 确保 skillopt-sleep 在 PATH（见第一部分方式 A/B）
 cd "$SOFAGENT_DIR"
 node -e "
-const { isSkillOptAvailable } = require('./sofagent/audit/dist/skillopt-integration.js');
+const { isSkillOptAvailable } = require('./sofagent/skillopt/dist/skillopt-integration.js');
 const avail = isSkillOptAvailable();   // 同步调用，不要 .then
 console.log('SkillOpt available:', avail, '| typeof:', typeof avail);
 // 期望：avail 是 boolean
@@ -444,7 +446,7 @@ console.log('SkillOpt available:', avail, '| typeof:', typeof avail);
 ```bash
 cd "$SOFAGENT_DIR"
 node -e "
-const { validateCandidate } = require('./sofagent/audit/dist/skillopt-integration.js');
+const { validateCandidate } = require('./sofagent/skillopt/dist/skillopt-integration.js');
 const fs = require('fs');
 // 原始 10 行
 const orig = Array.from({length: 10}, (_, i) => 'Line ' + (i+1)).join('\n') + '\n';
@@ -478,7 +480,7 @@ When testing SkillOpt integration.
 2. Do something else
 EOF
 node -e "
-const { runSkillOpt } = require('./sofagent/audit/dist/skillopt-integration.js');
+const { runSkillOpt } = require('./sofagent/skillopt/dist/skillopt-integration.js');
 const r = runSkillOpt('/tmp/skill-sample.md');   // 第一参数是输入/输出（就地演化）路径
 console.log('runSkillOpt:', JSON.stringify(r));
 // 期望：{success:true, candidatePath:'/tmp/skill-sample.md'}
@@ -521,7 +523,7 @@ cd "$SOFAGENT_DIR"
 RT_DIR="/tmp/sofagent-rt-test"
 mkdir -p "$RT_DIR"
 SOFAGENT_DATA="$RT_DIR" NODE_PATH="$DEEPAGENTS_MODULES" node -e "
-const { writeRuntimeState, readRuntimeState } = require('./sofagent/audit/dist/subagents/launcher.js');
+const { writeRuntimeState, readRuntimeState } = require('./sofagent/orchestrator/dist/launcher.js');
 // writeRuntimeState(state) —— 不接受 dataDir 参数，路径来自 SOFAGENT_DATA
 writeRuntimeState({agents:[{name:'qa', status:'running', startedAt:new Date().toISOString(), lastActive:new Date().toISOString(), pid:12345}]});
 // readRuntimeState() —— 同样不接受 dataDir 参数
@@ -540,7 +542,7 @@ console.log('pid:', state.agents[0].pid, '| status:', state.agents[0].status, '|
 ```bash
 cd "$SOFAGENT_DIR"
 NODE_PATH="$DEEPAGENTS_MODULES" node -e "
-const { composeWithDeepAgents } = require('./sofagent/audit/dist/subagents/composer.js');
+const { composeWithDeepAgents } = require('./sofagent/orchestrator/dist/composer.js');
 composeWithDeepAgents({
   task: 'Review the authentication module for security issues',
   context: 'Node.js Express app with JWT auth',
@@ -565,22 +567,25 @@ composeWithDeepAgents({
 ### 场景 26b：内置 Sub Agent 注册与 CLI 调用（FDE + Audit · v1.1.3）
 
 > v1.0.8 新增：验证 `sofagent-fde` 和 `sofagent-audit` 两个内置 Agent 可从 CLI 正常调用。
+>
+> **修正点**：`subagent run` 子命令的真正实现在 orchestrator CLI 下（`sofagent-orchestrator subagent run`），audit CLI 只做转发提示。测试统一用 orchestrator CLI 调用，避免"未知子命令"误报。
 
 ```bash
 cd "$SOFAGENT_DIR"
+ORCH_CLI="node $SOFAGENT_DIR/sofagent/orchestrator/dist/cli.js"
 
-# 验证 --help 列出内置 Agent
+# 验证 orchestrator --help 列出内置 Agent
 echo "=== 内置 Agent 注册 ==="
-$AUDIT_CLI --help 2>&1 | grep "subagent run"
+$ORCH_CLI --help 2>&1 | grep "subagent run"
 # ✅ 期望：输出包含 subagent run 命令
 
-$AUDIT_CLI --help 2>&1 | grep "fde"
+$ORCH_CLI --help 2>&1 | grep "fde"
 # ✅ 期望：输出包含 fde 关键字
 
-$AUDIT_CLI --help 2>&1 | grep "audit"
+$ORCH_CLI --help 2>&1 | grep "audit"
 # ✅ 期望：输出包含 audit 关键字
 
-$AUDIT_CLI --help 2>&1 | grep "mode sustain"
+$ORCH_CLI --help 2>&1 | grep "mode sustain"
 # ✅ 期望：输出包含 --mode sustain
 
 # 验证 Agent SKILL 文件存在
@@ -592,17 +597,17 @@ wc -l agents/SKILL/sofagent-audit/SKILL.md
 
 # 验证 FDE subagent CLI 调用不崩溃（deepagents 未装时优雅降级）
 echo "=== FDE subagent 调用 ==="
-$AUDIT_CLI subagent run fde --task "echo hello" 2>&1 || true
+$ORCH_CLI subagent run fde --task "echo hello" 2>&1 || true
 # ✅ 期望：输出有意义的响应或优雅降级提示，不抛 uncaught 异常
 
 # 验证 Audit subagent CLI 调用不崩溃
 echo "=== Audit subagent 调用 ==="
-$AUDIT_CLI subagent run audit --task "echo hello" 2>&1 || true
+$ORCH_CLI subagent run audit --task "echo hello" 2>&1 || true
 # ✅ 期望：输出有意义的响应或优雅降级提示
 
 # 验证 FDE sustain mode
 echo "=== FDE sustain mode ==="
-$AUDIT_CLI subagent run fde --mode sustain --task "echo hello" 2>&1 || true
+$ORCH_CLI subagent run fde --mode sustain --task "echo hello" 2>&1 || true
 # ✅ 期望：接受 --mode sustain 参数，不报参数错误
 ```
 
@@ -659,18 +664,17 @@ git reset HEAD . 2>/dev/null
 
 ## 第九部分：v1.0.9 新增规则与命令
 
-### 场景 29：A16 非授权文件变更（保护目录下敏感文件修改 → WARN）
+### 场景 29：A16 非授权文件变更（保护目录下敏感文件修改/删除 → WARN）
 
 ```bash
 cd /tmp/sofagent-openclaw-test
 
-# 恢复默认配置
-echo 'audit:
-  rules: {}' > .sofagent/config.yml
-
-# A16 规则需要 A16 配置——在 config.yml 启用
-cat >> .sofagent/config.yml << 'CFG16'
+# A16 是扩展规则，需 extendedRulesEnabled + A16.enabled 两个开关
+cat > .sofagent/config.yml << 'CFG16'
+audit:
+  extendedRulesEnabled: true
   A16:
+    enabled: true
     protected_dirs:
       - "config/"
       - "secrets/"
@@ -683,14 +687,17 @@ cat >> .sofagent/config.yml << 'CFG16'
       - ".sqlite"
 CFG16
 
-# 在保护目录下新增敏感文件
+# A16 只检测 modified/deleted，不检测 added——先 commit 一个文件再修改它
 mkdir -p config
+echo "original" > config/settings.db
+git add config/settings.db && git commit -m "add config/settings.db" 2>&1 || true
+# 现在修改它（modified → 触发 A16）
 echo "modified" > config/settings.db
 git add config/settings.db
 
-A16_OUT=$($AUDIT_CLI --diff --cached --task "add config file" 2>&1 || true)
-echo "$A16_OUT" | grep -i "A16\|非授权\|sensitive\|WARN" && echo "A16 ✅" || echo "A16 ❌"
-# ✅ 期望：A16 检测到 .db 文件在 config/ 保护目录下 → WARN
+A16_OUT=$($AUDIT_CLI --diff --cached --task "modify config file" 2>&1 || true)
+echo "$A16_OUT" | grep -i "A16\|非授权\|保护目录" && echo "A16 ✅" || echo "A16 ❌"
+# ✅ 期望：A16 检测到 .db 文件在 config/ 保护目录下被修改 → WARN
 
 git reset HEAD config/settings.db 2>/dev/null || true
 rm -rf config
@@ -768,7 +775,7 @@ cd $SOFAGENT_DIR
 
 # daemon 闭环验证：run-fs-audit.ts 的 runFilesystemAudit 函数是否存在且可调用
 RESULT=$(node -e "
-const mod = require('./sofagent/audit/dist/daemon/run-fs-audit');
+const mod = require('./sofagent/daemon/dist/run-fs-audit');
 console.log(typeof mod.runFilesystemAudit);
 " 2>&1)
 echo "$RESULT" | grep -q "function" && echo "runFilesystemAudit ✅ 已导出" || echo "runFilesystemAudit ❌ $RESULT"
@@ -780,14 +787,14 @@ echo "$RESULT" | grep -q "function" && echo "runFilesystemAudit ✅ 已导出" |
 cd $SOFAGENT_DIR
 
 RESULT=$(node -e "
-const mod = require('./sofagent/audit/dist/daemon/cron');
+const mod = require('./sofagent/daemon/dist/cron');
 console.log(typeof mod.startCron);
 " 2>&1)
 echo "$RESULT" | grep -q "function" && echo "startCron ✅ 已导出" || echo "startCron ❌ $RESULT"
 
 # startCron 传不存在的路径不应崩溃
 RESULT2=$(node -e "
-const mod = require('./sofagent/audit/dist/daemon/cron');
+const mod = require('./sofagent/daemon/dist/cron');
 try {
   mod.startCron('/nonexistent/path');
   setTimeout(() => process.exit(0), 100);
@@ -957,8 +964,8 @@ grep -q "tag.*message\|Tag message" "$SOFAGENT_DIR/tools/pre-push-check.sh"
 ### 场景 50：pre-push-check — 依赖图循环检测步骤存在
 
 ```bash
-grep -q "循环依赖\|circular" "$SOFAGENT_DIR/tools/pre-push-check.sh"
-# ✅ 期望：pre-push-check.sh 含依赖图循环检测步骤
+grep -q "依赖图循环检测\|circular" "$SOFAGENT_DIR/tools/pre-push-check.sh"
+# ✅ 期望：pre-push-check.sh 含依赖图循环检测步骤（注意语序是「依赖图循环检测」不是「循环依赖」）
 ```
 
 ### 场景 51：SKILL.md Agent 身份感知指令存在
@@ -1086,7 +1093,7 @@ ls $SOFAGENT_DIR/work模板市场/templates/ 2>/dev/null | wc -l
 - [ ] 场景 11-14：E1-E4 扩展规则（audit: 段下 extendedRulesEnabled:true + rules:e1..e4:true）
 
 ### Hook 机制（场景 15-18）
-- [ ] 场景 15：post-commit 中文输出正确（UTF-8 无乱码），exit 0
+- [ ] 场景 15：post-commit 正常 commit 静默 exit 0（60 秒内有审计记录，设计行为）；中文提示仅在 --no-verify 绕过时打印
 - [ ] 场景 16：--no-verify 绕不过 post-commit
 - [ ] 场景 17：--doctor 能检测 --no-verify 绕过
 - [ ] 场景 18：hook 丢失被 --doctor 发现 + --install-hook 可恢复
@@ -1110,7 +1117,7 @@ ls $SOFAGENT_DIR/work模板市场/templates/ 2>/dev/null | wc -l
 - [ ] 场景 28：config rules 过滤生效（audit: 段下禁用 A1 后不拦截 .env）
 
 ### v1.0.9 新增（场景 29-35）
-- [ ] 场景 29：A16 保护目录下敏感文件 → WARN
+- [ ] 场景 29：A16 保护目录下敏感文件修改/删除 → WARN（需 extendedRulesEnabled + A16.enabled + modified/deleted 触发）
 - [ ] 场景 30：A17 规则注册（JSON 输出含 number=17）
 - [ ] 场景 31：--timeline 输出时间线
 - [ ] 场景 32：--revert 无参报错 + 有参可调用
