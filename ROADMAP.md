@@ -97,7 +97,7 @@
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.1.4** | 📋 规划中 | **LOOP 工具注入 + USB federation + 审计闭环加固**：engineer/reviewer 注入自有工具集（Read/Write/Edit/Bash/Search/Test，内嵌 A1-A17 约束）+ daemon USB 检测自动配置 + A20 垃圾文件检测 + A21 commit message 质量（critical 阻断）+ daemon WARN 累积报告 + 新增规则集全局视图 | [📖](./docs/changelog/v1.1.4.md) |
+| **v1.1.4** | 📋 规划中 | **LOOP 工具注入 + USB federation + 审计闭环加固**：engineer/reviewer 注入自有工具集（Read/Write/Edit/Bash/Search/Test，内嵌 A1-A17 约束）+ daemon USB 检测自动配置 + A18 垃圾文件检测 + A19 commit message 质量（critical 阻断）+ daemon WARN 累积报告 + 新增规则集全局视图 | [📖](./docs/changelog/v1.1.4.md) |
 | **v1.1.5** | 📋 规划中 | **releasing.md SOP 集成 + MCP knowledge resource**：Agent 按十二阶段 SOP 全流程自动发版 + 7 个 knowledge MCP resource | [📖](./docs/changelog/v1.1.5.md) |
 | **v1.1.6** | 📋 规划中 | **LLM Wiki 3 层分层 + conflict-check**：Ledger-Views-Policy 显式化 + daemon 知识健康巡检 | [📖](./docs/changelog/v1.1.6.md) |
 | **v1.1.7** | 📋 规划中 | **Dream Cycle 6 阶段 + sensitivity**：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级 | [📖](./docs/changelog/v1.1.7.md) |
@@ -434,8 +434,8 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | 恢复路径结构化 | think.md 记录失败但没有结构化恢复机制，等 JSONL 落地
 | 审计规则模板消除重复 | RuleFunction 类型工厂 + Runner 注册模式（15 个 rule-*.ts 减少 30% 重复代码）
 | 测试工具函数提取 | makeDiffFile / runDiffParse 等重复定义收敛到 test-utils.ts
-| A18 供应链安全 | 依赖变更审计
-| A19 文件权限 | chmod 操作检测
+| A20 供应链安全 | 依赖变更审计（v1.1.4 占用 A18/A19 编号，此项后移为 A20） |
+| A21 文件权限 | chmod 操作检测（v1.1.4 占用 A18/A19 编号，此项后移为 A21） |
 | MCP/Plugin/Skill/Hook 四组件扩展 | 在现有 MCP+Skill 基础上架构 Plugin+Hook 层
 | 双闸验证：执行前 + 副作用写回前 | 审计从事后 diff 扩展到事前拦截
 | **entry-gate 风险分级审批** | 当前权限清单是二分（能做/不能做）。升级为三级：🟢 低风险自动放行 / 🟡 中风险需确认 / 🔴 高风险（DB/外部 API/文件删除）必须人工审批。让低风险更快通过，把人工注意力精准投放到高风险节点。**不做**超时降级和防橡皮图章——那是企业级 BPM 的功能，不是 Agent harness 层的职责（v2.x 再探索） |

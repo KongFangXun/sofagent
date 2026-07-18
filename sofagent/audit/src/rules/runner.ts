@@ -24,8 +24,8 @@ export interface AuditResult {
  * - extended: 扩展规则——A 组核心扩展优先，E 组工程规范补充；各组内按编号正序
  *
  * v1.1.4 后：
- *   critical: A1→A2→A9→A4→A21  (A21 message 质量排在 A4 之后，早于 A3)
- *   extended: A14→A15→A16→A17→A20→E1→E2→E3→E4  (A 组优先，正序排列)
+ *   critical: A1→A2→A9→A4→A19  (A19 message 质量排在 A4 之后，早于 A3)
+ *   extended: A14→A15→A16→A17→A18→E1→E2→E3→E4  (A 组优先，正序排列)
  */
 export const AUDIT_PRIORITY = {
   critical: ['A1', 'A2', 'A9', 'A4'],

@@ -98,7 +98,7 @@ v1.0.0 本轮完成 AI 知识库代码实现——7 件事：目录骨架（6 �
 
 ### [v1.1.4] — LOOP 工具注入 + USB federation + 审计闭环加固 📋
 > 规划中
-**核心变更**：LOOP 工具注入（engineer/reviewer 注入 6 工具集，从"会说话"到"能干活"）+ 条件路由升级 + daemon USB 检测自动配置 + A20 垃圾文件检测 + A21 commit message 质量 + daemon WARN 累积报告。
+**核心变更**：LOOP 工具注入（engineer/reviewer 注入 6 工具集，从"会说话"到"能干活"）+ 条件路由升级 + daemon USB 检测自动配置 + A18 垃圾文件检测 + A19 commit message 质量 + daemon WARN 累积报告。
 > 📖 [开发日志](./docs/changelog/v1.1.4.md)
 
 ### [v1.1.5] — releasing.md SOP 集成 + MCP knowledge resource 📋
