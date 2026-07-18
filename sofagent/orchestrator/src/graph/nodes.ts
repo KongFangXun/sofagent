@@ -1,6 +1,6 @@
 // ============================================================
 // graph/nodes.ts · LOOP StateGraph 节点实现
-// v1.1.3 新增：engineer / audit / reviewer / human_confirm 四节点
+// v1.1.4 新增：engineer / audit / reviewer / human_confirm 四节点
 // v1.1.4 升级：工具注入路径 + maxTurns + WARN 写入 history + 三态全记录
 //
 // 设计：
@@ -72,6 +72,25 @@ async function resolveLLMModel(): Promise<Record<string, unknown> | null> {
   }
 }
 
+/**
+ * 按角色解析 LLM 模型（v1.1.4 双模型支持）。
+ * 优先级：SOFAGENT_LLM_{ROLE} > SOFAGENT_LLM（兜底）。
+ * engineer 用便宜模型（如 deepseek），reviewer 用贵模型（如 glm-5.2）。
+ */
+async function resolveLLMModelFor(role: 'engineer' | 'reviewer'): Promise<Record<string, unknown> | null> {
+  const envKey = `SOFAGENT_LLM_${role.toUpperCase()}`;
+  const roleEnv = process.env[envKey];
+  if (roleEnv) {
+    const saved = process.env.SOFAGENT_LLM;
+    process.env.SOFAGENT_LLM = roleEnv;
+    const result = await resolveLLMModel();
+    process.env.SOFAGENT_LLM = saved ?? '';
+    if (result) return result;
+    console.warn(`[sofagent] ${envKey}=${roleEnv} 解析失败，尝试 SOFAGENT_LLM 兜底`);
+  }
+  return resolveLLMModel();
+}
+
 /** audit 节点产出 */
 export interface AuditOutcome {
   verdict: AuditVerdict;
@@ -135,7 +154,7 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
   // v1.1.4：工具注入路径——DeepAgents + ENGINEER_TOOLS
   // SOFAGENT_LLM 未设置或解析失败时自动降级到 spawnSubAgent 零工具路径
   try {
-    const resolved = await resolveLLMModel();
+    const resolved = await resolveLLMModelFor('engineer');
     if (!resolved) throw new Error('SOFAGENT_LLM 未设置，无法确定模型 provider');
 
     const { createDeepAgent } = await import('deepagents');
@@ -275,7 +294,7 @@ async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
   // v1.1.4：工具注入路径——DeepAgents + REVIEWER_TOOLS
   // SOFAGENT_LLM 未设置或解析失败时自动降级到 spawnSubAgent 零工具路径
   try {
-    const resolved = await resolveLLMModel();
+    const resolved = await resolveLLMModelFor('engineer');
     if (!resolved) throw new Error('SOFAGENT_LLM 未设置，无法确定模型 provider');
 
     const { createDeepAgent } = await import('deepagents');
@@ -302,16 +321,48 @@ async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
 }
 
 /**
- * 默认 HITL 实现——stdin readline，等待不限时（人可以明天再回来确认）。
- *
- * v1.1.3 范围注：当前为单进程/常驻方式（CLI 前台 loop 命令）。
- * daemon 推送确认提示 + y/n 回传的跨进程集成经评估超出 daemon
- * "最小改动"边界（需要新增 IPC 事件通道），顺延 v1.1.4——
- * checkpoint 已落盘，届时 daemon 可从 latest 恢复挂起的确认。
+ * 从 reviewer 审查报告中提取 IS_PASS 判定。
+ * reviewer 被要求在报告中输出 "IS_PASS: YES" 或 "IS_PASS: NO"。
+ */
+export function parseReviewerPass(reviewReport: string): boolean | null {
+  const match = reviewReport.match(/\bIS_PASS\s*:\s*(YES|NO)\b/i);
+  if (!match) return null;
+  return match[1]!.toUpperCase() === 'YES';
+}
+
+/**
+ * 自动确认——LOOP_AUTO=1 时根据 reviewer 的 IS_PASS 自动判定。
+ * IS_PASS: YES → y（通过）
+ * IS_PASS: NO  → n（驳回回 engineer）
+ * 无法解析      → n（保守默认驳回）
+ */
+function autoConfirmHuman(reviewReport: string): HumanDecision {
+  const isPass = parseReviewerPass(reviewReport);
+  if (isPass === true) return 'y';
+  if (isPass === false) return 'n';
+  // 无法解析 IS_PASS——保守默认驳回
+  console.log('[sofagent] 自动模式：无法从 review 报告中解析 IS_PASS，默认驳回');
+  return 'n';
+}
+
+/**
+ * 默认 HITL 实现。
+ * LOOP_AUTO=1 时：自动根据 reviewer 的 IS_PASS 判定（不等待人工）。
+ * LOOP_AUTO 未设时：stdin readline 等待人工 y/n（不限时）。
  */
 function defaultConfirmHuman(reviewReport: string): Promise<HumanDecision> {
+  // v1.1.4：LOOP_AUTO=1 时自动判定，不走 stdin readline
+  if (process.env.LOOP_AUTO === '1') {
+    const autoDecision = autoConfirmHuman(reviewReport);
+    console.log(`\n🤖 自动模式判定: ${autoDecision === 'y' ? '✅ 通过 (IS_PASS: YES)' : '🔄 驳回 (IS_PASS: NO)'}`);
+    return Promise.resolve(autoDecision);
+  }
+
+  // HITL 模式——stdin readline
   console.log('');
   console.log('══════════ 审查报告（HITL 确认） ══════════');
+  console.log(reviewReport);
+  console.log('═══════════════════════════════════════════');
   console.log(reviewReport);
   console.log('═══════════════════════════════════════════');
 
@@ -501,7 +552,8 @@ export function makeReviewerNode(deps: LoopGraphDeps) {
 export function makeHumanConfirmNode(deps: LoopGraphDeps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return async (state: LoopGraphState): Promise<any> => {
-    deps.log('🙋 等待人工确认（不限时）...');
+    const isAuto = process.env.LOOP_AUTO === '1';
+    deps.log(isAuto ? '🤖 自动审核判定中...' : '🙋 等待人工确认（不限时）...');
     const decision = await deps.confirmHuman(state.artifacts.reviewReport);
 
     if (decision === 'y') {
