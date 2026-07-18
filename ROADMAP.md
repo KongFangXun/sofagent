@@ -35,6 +35,9 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
+| **v1.1.3** 🚧 | LangGraph StateGraph 四节点自动流转 + Checkpoint 持久化 + HITL 确认 + 39 项审查修复 | [📖](./docs/changelog/v1.1.3.md) |
+| **v1.1.2** 🔧 | LOOP 双 Agent 串联 + Harness 可见性签名 + 多设备同步指南 + 测试体系修复 | [📖](./docs/changelog/v1.1.2.md) |
+| **v1.1.1** 🔧 | 双 Agent 串联验证 + 记忆契约代码化 + 多设备同步 + 全仓质量审计收口 | [📖](./docs/changelog/v1.1.1.md) |
 | **v1.1.0** 🎉 | 包结构纯度重构（12 包独立）+ 轻量多设备（权限作用域化+经验共享+自迭代周报+daemon 主动巡检）| [📖](./docs/changelog/v1.1.0.md) |
 | **v1.0.9** 🔧 | 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool + daemon 闭环 + cron 巡检 + A9 中文注入 | [📖](./docs/changelog/v1.0.9.md) |
 | **v1.0.8** 🔧 | FDE Agent 自进化（deploy + sustain 双模式）+ 文件系统审计（isomorphic-git + fs-watch）+ 快照回溯 + Agent 定义去耦合 + TencentDB Memory | [📖](./docs/changelog/v1.0.8.md) |
@@ -94,18 +97,6 @@
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.0.1** | ✅ 已完成 | AI 知识库 + 访问控制 + entities 实体关联 + deepagentsjs 引入 + think.md 模板 + loop-check 轮次上限 | [📖](./docs/changelog/v1.0.1.md) |
-| **v1.0.2** | ✅ 已完成 | 文档修正 + 规则对齐：15 项修复 | [📖](./docs/changelog/v1.0.2.md) |
-| **v1.0.3** | ✅ 已完成 | LOOP 自迭代架构（4 Agent + 内外层循环） + SkillOpt 自动优化 + Audit Sub Agent（含成本） + think.md 判断单元结构化 + 文档分层预算 | [📖](./docs/changelog/v1.0.3.md) |
-| **v1.0.4** | ✅ 已完成 | 自动优化 + 约束验证版——eval harness + Sub Agent A/B 自动优化 + HITL 渐进自主度 + A15 约束验证 | [📖](./docs/changelog/v1.0.4.md) |
-| **v1.0.5** | ✅ 已完成 | Ontology 统一层 + Work模板市场 + A9 分级安全 + A15 绕过修复 + fail-closed 默认安全 + 安全加固 | [📖](./docs/changelog/v1.0.5.md) |
-| **v1.0.6** | ✅ 已完成 | 编排迁移 + A/B 真实运行器 + 文档一致性修复：DeepAgents compose + Sub Agent 状态 + A/B 模型 API 直跑 + history.jsonl 环境指纹 + post-commit hook + 文档一致性修复 | [📖](./docs/changelog/v1.0.6.md) |
-| **v1.0.7** | ✅ 已完成 | 双节点架构 + Sub Agent 约束自加载 + CLI 编排入口 + ao 完全退役 + A/B 自动切换 + **预装 FDE 部署工程师 + 合规审计员两个内置 Agent** | [📖](./docs/changelog/v1.0.7.md) |
-| **v1.0.8** | ✅ 已完成 | **⭐ FDE Agent 自进化（部署 + 持续优化双模式）**→ 一管底线（Audit）一管上限（FDE）+ 文件系统审计（isomorphic-git + fs-watch）+ 快照回溯 + Agent 定义去耦合 + TencentDB Memory 集成 + Ontology 人类可读视图 | [📖](./docs/changelog/v1.0.8.md) |
-| **v1.0.9** | ✅ 已完成 | 二进制文件审计（A16-A17）+ 快照时间线 + MCP compose tool | [📖](./docs/changelog/v1.0.9.md) |
-| **v1.1.0** | ✅ 已完成 | **包结构纯度重构（audit 只做 audit）**：把 `@sofagent/audit` 上帝包拆为 12 个独立包——基础层 `@sofagent/{harness,ontology,eval,core}` + 运行层 `@sofagent/{orchestrator,daemon,ab-test,work模板市场,think,skillopt}` + 协议层 `@sofagent/mcp` + 纯审计 `@sofagent/audit`（收敛为 rules/webhook/filesystem/audit-*/permission），依赖单向无循环；+ **轻量多设备四件事**：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md → lessons-missteps）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检。一次性抽干净 | [📖](./docs/changelog/v1.1.0.md) |
-| **v1.1.2** | ✅ 已完成 | **LOOP 双 Agent 串联 + 维护**：engineering-minimal-change-engineer + engineering-code-reviewer 通过 DeepAgents compose 自循环 + 多设备同步指南 + Harness 可见性（签名机制）+ v1.1.0 遗留问题修复 + 测试体系修复与文档一致性 | [📖](./docs/changelog/v1.1.2.md) |
-| **v1.1.3** | ✅ 已完成 | **LangGraph StateGraph 直接编排**：StateGraph 四节点自动流转 + Checkpoint 持久化 + HITL 确认节点，编排控制从 DeepAgents compose 上提为 sofagent 直接掌握 | [📖](./docs/changelog/v1.1.3.md) |
 | **v1.1.4** | 📋 规划中 | **LOOP 工具注入 + USB federation**：engineer/reviewer 注入自有工具集（Read/Write/Edit/Bash/Search/Test，内嵌 A1-A19 约束）+ daemon USB 检测自动配置（SOFAGENT 标签 U 盘 → federation.json 自动入网）| [📖](./docs/changelog/v1.1.4.md) |
 | **v1.1.5** | 📋 规划中 | **releasing.md SOP 集成 + MCP knowledge resource**：Agent 按十一阶段 SOP 全流程自动发版 + 7 个 knowledge MCP resource | [📖](./docs/changelog/v1.1.5.md) |
 | **v1.1.6** | 📋 规划中 | **LLM Wiki 3 层分层 + conflict-check**：Ledger-Views-Policy 显式化 + daemon 知识健康巡检 | [📖](./docs/changelog/v1.1.6.md) |
@@ -115,6 +106,125 @@
 | **v1.2.0** | 📋 规划中 | **多设备知识联邦收口 🎉**：端到端全功能验证（LOOP + Dream Cycle + 联邦查询 + 加密）+ gbrain 行业对标 + USB key 产品故事写入主文档 + 兜底修复。v1.2.x 完整多设备协同的起点 | [📖](./docs/changelog/v1.2.0.md) |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同——**L2 团队协作协议**：共享态/意图广播/触发反应/冲突消解/反馈放大五大机制，从单人约束到团队协作；**L3 组织能力市场**：Skill/Agent/流程在企业内发布→发现→调用→评价，高频高价值自然胜出。+ Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界。**🔮 探索**：路由器式配网（边缘设备 WiFi 热点 + 手机端配置网页，仅用于初始配置，配置完成后回归纯 LUI）+ **协议中立**（审计层只走 MCP 等开放协议和 git diff/JSONL/Markdown 开放格式，不为任何单一平台写专属集成——不绑定平台，平台不绑定审计） | — |
 | **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A17 + 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **SubAgent 沙箱执行环境**：将 orchestrator 内置为完整的沙箱运行时——文件系统隔离、网络出站白名单、工具调用审计追踪——让 LOOP SubAgent 不依赖外部 Agent 平台，自给自足完成代码开发全流程 | — |
+
+---
+
+
+### v1.2.0 — 记忆/知识层升级（认知底座铺垫）
+
+> 💡 **v1.2.0 是 v1.2.x 主题线的第一刀**：把 gbrain / LLM Wiki 的外部验证吸收为「方法」（分阶段记忆整合、分层巡检），不吸收其「定位」（不变成 agent runtime）。详细 scope / 交付拆分（P0/P1/P2）/ 边界见 [v1.2.0 开发日志](./docs/changelog/v1.2.0.md)。
+
+🛡️ **差异化铁律（对标时必守）**：gbrain 是「agent 自己的脑」，sofagent 是「约束中间件」（数据主权 + 第三方独立 + MIT 可审计）。吸收方法，不吸收定位；不建自动化 diff 任务，发版前由架构评审顺带 diff 一次 gbrain 的 dream-cycle / skillopt，结论进当版 changelog「行业对标」小节。
+
+### v1.2.x — 完整多设备协同（规划中）
+
+> 💡 **多 Agent 协同已在 v1.x 完成**：v1.0.3 FDE Sub Agent + Audit Sub Agent 并存 → v1.0.4 A/B 自动优化双 Agent 对比 → v1.0.5 Agent Dashboard 探索原型。**轻量多设备在 v1.1.0 起步**（经验共享 + 权限作用域化 + daemon 主动巡检）。v1.2.x 做完整版。
+>
+> v1.2.x 的核心是两件事：**完整多设备协同**（每个 AI 节点拥有独立身份、跨设备审计轨迹可追溯、场景驱动权限体系、代理网关硬边界）和 **Work模板市场 前端**（Web catalog + 社区贡献仪表盘 + 模板 marketplace）。
+
+**ATTRIBUTION 归因引擎（v1.2.x 探索）**：当前 sofagent 审计能告诉你 Agent 违规了，但不能告诉你哪次正确的审计干预带来了业务价值。ATTRIBUTION 需要在多设备、多客户、长时间尺度上追踪审计决策→业务指标的因果链——"到底哪一次审计干预推动了真实业务结果"。依赖真实企业数据和 v1.2.x 的多设备协同基础设施。
+
+**失败清单驱动 skillopt（v1.2.x 探索）**：当前 skillopt 基于正例（成功任务模式）优化 Skill。更有效的做法是积累负面样本——每个 Skill 跑失败时记录失败场景 + 原因 + 正确做法，daemon 定期汇总为"失败清单"，skillopt 以负面样本为主要燃料驱动优化。"告诉模型什么做法是错的"比"什么是对的"信息量更大。前置设计文档见 [FDE 附录：Skill 质量标尺与编写原则](FDE/FDE.md#附录skill-质量标尺与编写原则)。
+
+**KYA 身份确权 — 审计引擎作为 Agent 责任绑定底座（v1.2.x 探索）**：a16z 研判智能体经济瓶颈从「智力」转向「身份」——非人类身份:人类 = 96:1，急需 KYA（Know Your Agent）：加密签名凭证将 Agent 与委托人/约束/法律责任深度绑定。sofagent 的审计引擎（约束行为 + 变更审计 + 责任归属）本质就是企业内部轻量版 KYA。v1.2.x 评估是否引入签名凭证做 Agent 行动的可审计绑定。
+
+**SkillHub — 向「单人闭环多岗（阿里 OPT）」演进**：当前 SkillHub 定位为 Workflow 模板 marketplace。演进方向是对标阿里 OPT（One Person Team）——单人 + agent skill + 企业系统 → 闭环完成多岗工作。SkillHub 不只是模板库，是「硅基员工进组织架构」的产品化雏形。
+
+**焊死的门——规则文件独立只读（v1.3.x 探索）**：当前 sofagent 的约束规则（SKILL.md / fde.md）以纯 MD 文件注入 Agent 上下文，Agent 可修改自己的约束文件。v1.3.x 评估引入文件系统权限模型——规则文件独立于 Agent 工作区，只读挂载，Agent 不可篡改。这是「AI 改测试掩盖错误」问题的根治方案。
+
+四阶段渐进：协同编排协议（Markdown 优先）→ Agent 发现与注册 → 跨设备任务分发 → 企业 Agent 知识库（多设备蒸馏记忆聚合到企业自有 NAS/云盘，底层用 [Graphify](https://github.com/safishamsi/graphify) 轻量知识图谱）
+
+> 🧠 **技术底座参考 — A2A 协议**：Google A2A（Agent-to-Agent）协议为多智能体协作定义了三个关键层级：① 动态服务发现（Agent 版 DNS——Agent 广播能力，匹配条件者自动响应）、② 能力契约对齐（入参/输出 Schema 握手，消除自然语言歧义）、③ 全状态接力（任务交接时同时移交执行目标 + 前置共识 + 专属记忆）。MCP 解决「脑和手」的工具调用，A2A 解决「脑和脑」的协作分工。
+>
+> 同时也需防御 A2A 的三大工程雷区：**语义漂移**（多 Agent 链路中每层推理偏差累积导致末端动作与原始需求南辕北辙）、**死循环雪崩**（Agent 互等形成逻辑闭环，数秒内耗尽 Token 预算）、**权限穿透**（低权限 Agent 构造恶意 A2A 请求诱骗高权限 Agent 执行危险操作）。防御方案三板斧：协调者中枢监控 + 强类型 Schema 前置拦截 + 零信任动态令牌——这三条将纳入 sofagent v2.x 的审计规则体系。
+
+> 🛠️ **工程参考 — Multica**：[Multica](https://github.com/multica-ai/multica)（4000+ commits）在 Agent 团队协作的工程实现上有三个可直接参考的模式：① **Polymorphic Actor**——用 `(type, id)` 二元组统一建模人类和 Agent，不区分「人做的」还是「AI 做的」，只关心「谁做了、做到哪了」；② **Session Resumption**——Agent 跨会话恢复工作目录和上下文，不仅反思（think.md），还保留执行环境；③ **Claim-then-Execute**——daemon 用 PostgreSQL `SELECT ... FOR UPDATE SKIP LOCKED` 抢锁认领任务，保证多设备并发下不重复执行。这三个模式为 sofagent v1.2.x 的 Agent 独立身份码 + 跨设备审计聚合提供了可落地的工程参考。
+
+**多 Agent 共享记忆三模式对比**（未做决策，先让讨论可见）：
+
+| 模式 | 机制 | 优势 | 劣势 | 适用场景 |
+|------|------|------|------|---------|
+| **黑板模式** | 中央共享文件，所有 Agent 读写同一区域 | 简单直观，一致性容易保证 | 单点瓶颈，并发写冲突 | 设备数少、信任度高 |
+| **Gossip 协议** | P2P 传播，Agent 间互相同步增量 | 去中心化，容错强 | 最终一致，同步延迟 | 设备多、网络不稳定 |
+| **上下文路由** | 按需注入，协调者根据任务匹配相关记忆 | 精准，不浪费上下文 | 需要智能匹配引擎 | 任务边界清晰、记忆量大 |
+
+**双层循环（Loop Engineering）**：
+
+> 来源：Karpathy [AutoResearch](https://github.com/karpathy/autoresearch) + Bilevel Autoresearch 论文。与 ARCHITECTURE 的[三层循环（Andrew Ng 框架）](https://www.deeplearning.ai/the-batch/three-key-loops-for-building-great-software)视角不同——Karpathy 的双层循环关注自动化迭代的深度，Ng 的三层循环关注产品反馈的广度。
+
+当前 sofagent 实现了**内层循环**（Agent 执行→审计→反思→自动纠偏）。v1.2.x 将实现**外层循环**——loop-evaluate 评分驱动 Skill 自动优化，打破 Agent 的先验认知，强制探索本能回避的优化方向。
+
+| 循环层 | 时间尺度 | 职责 | sofagent 对应 | 当前状态 |
+|--------|:--:|------|------|:--:|
+| 内层 | 秒-分钟 | Agent 执行 + 反思 + 自动纠偏 | entry-gate → task-aware → loop-check → think.md → loop-exit | ✅ v0.99+ |
+| 外层 | 天-周 | Skill 优化 + 知识库沉淀 | loop-evaluate → eval.md → AI 知识库 → Skill 自动优化 | v1.2.x |
+
+> 当前 ROADMAP 已有「分布式反思同步」（Gossip 方向）。三模式不是互斥的——实践中可能黑板打底 + 上下文路由按需补充。决策留到 v1.2.x 需求分析时做。
+
+**Dream Sandbox 沙盒审计（探索方向）**：参照 Palantir AIP 的 Dream Sandbox——Agent 操作先在平行空间模拟运行，人类审批后点「合并」才生效，相当于「对现实做版本控制」。当前 sofagent 只能事后 git diff 审计，沙盒审计将约束从事后升级为事前。v2.x 如果企业用户对 Agent 自主操作有安全需求时探索。（来源：Palantir AIP 架构分析，详见 [THANKS.md](./docs/THANKS.md)）
+
+**审批通道分层（探索方向）**：entry-gate 风险分级（v1.x）之上，可探索超时降级（审批 30 分钟无响应 → 自动降级为只读模式还是阻塞？）和防橡皮图章（连续秒批 → 系统警告）。**这是企业级 BPM 功能，不是 Agent harness 层的职责**——v2.x 如果企业用户强烈需求才考虑。
+
+**演化路径**：
+
+| 阶段 | 形态 | 对应版本 |
+|------|------|:--:|
+| Ralph 循环（真菌） | 状态外化到文件，Agent 本体无状态 | v0.x-v1.0.x |
+| Ralph 工厂（轻量多设备） | 自治循环进化——经验共享 + 审计可见 + 权限作用域化 | v1.1.x |
+| 有身份 Agent（多设备完整） | 每个 AI 节点有独立身份，跨设备审计聚合，场景驱动权限 | v1.2.x 规划 |
+| 无身份 Agent（细菌） | 用完即焚，全新生成，零状态 | v3.x 远景 |
+
+---
+
+## 探索方向
+
+| 方向 | 一句话 |
+|------|------|
+| workflow 外部模板扩充 | 引入 BPMN 2.0 / Coze / Dify 作为行业流程参考 |
+| 企业 AI 节点知识库 | 多设备蒸馏记忆聚合到企业 NAS，知识库管理员 Agent 自动分类 |
+| Agent 疲劳度检测 | 监控上下文窗口污染和决策质量衰减信号 |
+| 双闸验证 | 工具执行前 gate + 执行后副作用复查 |
+| SMB 场景审计扩展 | 审计从代码开发扩展到数据处理/报表生成 |
+| 组织记忆主动调取 | Agent 接任务前先检索 think.md 共享版 |
+| 异步长任务自治 | daemon 从文件监控升级为长任务自主运行 |
+| PE/VC 多企业审计仪表盘 | 投后管理场景——所有被投企业的 AI 审计数据汇总到一个面板，投后团队统一监控 |
+| FDE 陪跑期机制 | 部署后前 2 周 AI 节点 daily review，人类反馈和 AI 反思双向写入 think.md |
+| 国标 Agent 审计对位 | 关注国家 AI 智能体互联标准草案进展（截至 2026-07 仍为征求意见稿阶段），标准正式发布后评估 sofagent 审计规则的合规对齐 |
+| **Agent 身份码（v1.1.0）** | 国标草案中唯一明确「后续转强制」的方向。v1.1.0 预研——标准仍在制定中，落地取决于国标正式发布 |
+
+---
+
+## 不需要的
+
+以下认真考虑过但决定不做。完整设计禁区见 [PHILOSOPHY §八](./docs/PHILOSOPHY.md#八不做什么设计禁区)。
+
+---
+
+## 欢迎参与
+
+| 你能做的事 | 时间 | 说明 |
+|------|:--:|------|
+| 跨平台测试 | 30 min | 你有 Codex / Hermes / Claude Code？装一下告诉我们 |
+| 补充 FAQ | 20 min | 你踩了什么坑？直接改 HANDBOOK §三（排查问题） |
+| 文档翻译 | 1-2 h | 英文翻译对社区意义巨大 |
+| 第三方证据 | 1 周 | 装完用一周，填 EVIDENCE.md |
+| 安全审计 | 不限 | 给 SECURITY.md 挑刺 |
+| 企业场景反馈 | 30 min | 你们团队怎么用 Agent？直接开 Issue |
+
+→ [CONTRIBUTING.md](./CONTRIBUTING.md)
+
+---
+
+## 长期叙事：Conway/Coase 双重反转
+
+> **Conway 定律反转**：传统软件架构反映组织沟通结构。Agent 时代出现反转——Agent 架构（谁做什么、怎么协作）开始**反向塑造企业组织形态**。阿里巴巴 OPT 已观察到这一趋势：单人 + Agent Skill + 企业系统 → 闭环完成多岗工作，传统部门边界被 Agent 能力边界替代。
+>
+> **Coase 定理反转**：企业存在的经济学理由是内部交易成本低于市场。当 Agent 将内部协调成本降为零，企业的边界开始模糊——一个人借 Agent 能做成的事，不再需要一个部门。"企业"从组织结构变成一个 Agent 能力矩阵。
+>
+> sofagent 的终局：**Ontology（业务世界模型）+ SkillHub（跨岗能力）+ 审计引擎（责任确权）= 让单人 + 硅基构成的最小闭环单元，替代传统多部门协作。**
+## 历史架构演进
+
+> 以下记录了 sofagent 从 v1.0.0 到 v1.1.3 的架构演变过程——编排引擎从 ao 迁移到 DeepAgents 再到 LangGraph 直接控制、Ontology 从实体关联渐进构建到认知底座、以及外部框架对标和行业信号验证。这些不是未来的规划，是已经走过的路。保留在此供新人理解架构的历史上下文。
 
 ### v1.x — 发布后
 
@@ -358,116 +468,3 @@ v1.x 的多设备 = **经验共享 + 审计可见**，不碰身份/权限/协同
 **不做的**（v1.2.x 再说）：Agent 独立身份码、跨设备实时任务分发、多人协同线程、场景驱动权限的频道级、代理网关。
 
 > 📖 4 种同步方案（iCloud / NAS / Dropbox / git submodule）见 [多设备同步指南](./docs/guides/multi-device-sync.md)。
-
-### v1.2.0 — 记忆/知识层升级（认知底座铺垫）
-
-> 💡 **v1.2.0 是 v1.2.x 主题线的第一刀**：把 gbrain / LLM Wiki 的外部验证吸收为「方法」（分阶段记忆整合、分层巡检），不吸收其「定位」（不变成 agent runtime）。详细 scope / 交付拆分（P0/P1/P2）/ 边界见 [v1.2.0 开发日志](./docs/changelog/v1.2.0.md)。
-
-🛡️ **差异化铁律（对标时必守）**：gbrain 是「agent 自己的脑」，sofagent 是「约束中间件」（数据主权 + 第三方独立 + MIT 可审计）。吸收方法，不吸收定位；不建自动化 diff 任务，发版前由架构评审顺带 diff 一次 gbrain 的 dream-cycle / skillopt，结论进当版 changelog「行业对标」小节。
-
-### v1.2.x — 完整多设备协同（规划中）
-
-> 💡 **多 Agent 协同已在 v1.x 完成**：v1.0.3 FDE Sub Agent + Audit Sub Agent 并存 → v1.0.4 A/B 自动优化双 Agent 对比 → v1.0.5 Agent Dashboard 探索原型。**轻量多设备在 v1.1.0 起步**（经验共享 + 权限作用域化 + daemon 主动巡检）。v1.2.x 做完整版。
->
-> v1.2.x 的核心是两件事：**完整多设备协同**（每个 AI 节点拥有独立身份、跨设备审计轨迹可追溯、场景驱动权限体系、代理网关硬边界）和 **Work模板市场 前端**（Web catalog + 社区贡献仪表盘 + 模板 marketplace）。
-
-**ATTRIBUTION 归因引擎（v1.2.x 探索）**：当前 sofagent 审计能告诉你 Agent 违规了，但不能告诉你哪次正确的审计干预带来了业务价值。ATTRIBUTION 需要在多设备、多客户、长时间尺度上追踪审计决策→业务指标的因果链——"到底哪一次审计干预推动了真实业务结果"。依赖真实企业数据和 v1.2.x 的多设备协同基础设施。
-
-**失败清单驱动 skillopt（v1.2.x 探索）**：当前 skillopt 基于正例（成功任务模式）优化 Skill。更有效的做法是积累负面样本——每个 Skill 跑失败时记录失败场景 + 原因 + 正确做法，daemon 定期汇总为"失败清单"，skillopt 以负面样本为主要燃料驱动优化。"告诉模型什么做法是错的"比"什么是对的"信息量更大。前置设计文档见 [FDE 附录：Skill 质量标尺与编写原则](FDE/FDE.md#附录skill-质量标尺与编写原则)。
-
-**KYA 身份确权 — 审计引擎作为 Agent 责任绑定底座（v1.2.x 探索）**：a16z 研判智能体经济瓶颈从「智力」转向「身份」——非人类身份:人类 = 96:1，急需 KYA（Know Your Agent）：加密签名凭证将 Agent 与委托人/约束/法律责任深度绑定。sofagent 的审计引擎（约束行为 + 变更审计 + 责任归属）本质就是企业内部轻量版 KYA。v1.2.x 评估是否引入签名凭证做 Agent 行动的可审计绑定。
-
-**SkillHub — 向「单人闭环多岗（阿里 OPT）」演进**：当前 SkillHub 定位为 Workflow 模板 marketplace。演进方向是对标阿里 OPT（One Person Team）——单人 + agent skill + 企业系统 → 闭环完成多岗工作。SkillHub 不只是模板库，是「硅基员工进组织架构」的产品化雏形。
-
-**焊死的门——规则文件独立只读（v1.3.x 探索）**：当前 sofagent 的约束规则（SKILL.md / fde.md）以纯 MD 文件注入 Agent 上下文，Agent 可修改自己的约束文件。v1.3.x 评估引入文件系统权限模型——规则文件独立于 Agent 工作区，只读挂载，Agent 不可篡改。这是「AI 改测试掩盖错误」问题的根治方案。
-
-四阶段渐进：协同编排协议（Markdown 优先）→ Agent 发现与注册 → 跨设备任务分发 → 企业 Agent 知识库（多设备蒸馏记忆聚合到企业自有 NAS/云盘，底层用 [Graphify](https://github.com/safishamsi/graphify) 轻量知识图谱）
-
-> 🧠 **技术底座参考 — A2A 协议**：Google A2A（Agent-to-Agent）协议为多智能体协作定义了三个关键层级：① 动态服务发现（Agent 版 DNS——Agent 广播能力，匹配条件者自动响应）、② 能力契约对齐（入参/输出 Schema 握手，消除自然语言歧义）、③ 全状态接力（任务交接时同时移交执行目标 + 前置共识 + 专属记忆）。MCP 解决「脑和手」的工具调用，A2A 解决「脑和脑」的协作分工。
->
-> 同时也需防御 A2A 的三大工程雷区：**语义漂移**（多 Agent 链路中每层推理偏差累积导致末端动作与原始需求南辕北辙）、**死循环雪崩**（Agent 互等形成逻辑闭环，数秒内耗尽 Token 预算）、**权限穿透**（低权限 Agent 构造恶意 A2A 请求诱骗高权限 Agent 执行危险操作）。防御方案三板斧：协调者中枢监控 + 强类型 Schema 前置拦截 + 零信任动态令牌——这三条将纳入 sofagent v2.x 的审计规则体系。
-
-> 🛠️ **工程参考 — Multica**：[Multica](https://github.com/multica-ai/multica)（4000+ commits）在 Agent 团队协作的工程实现上有三个可直接参考的模式：① **Polymorphic Actor**——用 `(type, id)` 二元组统一建模人类和 Agent，不区分「人做的」还是「AI 做的」，只关心「谁做了、做到哪了」；② **Session Resumption**——Agent 跨会话恢复工作目录和上下文，不仅反思（think.md），还保留执行环境；③ **Claim-then-Execute**——daemon 用 PostgreSQL `SELECT ... FOR UPDATE SKIP LOCKED` 抢锁认领任务，保证多设备并发下不重复执行。这三个模式为 sofagent v1.2.x 的 Agent 独立身份码 + 跨设备审计聚合提供了可落地的工程参考。
-
-**多 Agent 共享记忆三模式对比**（未做决策，先让讨论可见）：
-
-| 模式 | 机制 | 优势 | 劣势 | 适用场景 |
-|------|------|------|------|---------|
-| **黑板模式** | 中央共享文件，所有 Agent 读写同一区域 | 简单直观，一致性容易保证 | 单点瓶颈，并发写冲突 | 设备数少、信任度高 |
-| **Gossip 协议** | P2P 传播，Agent 间互相同步增量 | 去中心化，容错强 | 最终一致，同步延迟 | 设备多、网络不稳定 |
-| **上下文路由** | 按需注入，协调者根据任务匹配相关记忆 | 精准，不浪费上下文 | 需要智能匹配引擎 | 任务边界清晰、记忆量大 |
-
-**双层循环（Loop Engineering）**：
-
-> 来源：Karpathy [AutoResearch](https://github.com/karpathy/autoresearch) + Bilevel Autoresearch 论文。与 ARCHITECTURE 的[三层循环（Andrew Ng 框架）](https://www.deeplearning.ai/the-batch/three-key-loops-for-building-great-software)视角不同——Karpathy 的双层循环关注自动化迭代的深度，Ng 的三层循环关注产品反馈的广度。
-
-当前 sofagent 实现了**内层循环**（Agent 执行→审计→反思→自动纠偏）。v1.2.x 将实现**外层循环**——loop-evaluate 评分驱动 Skill 自动优化，打破 Agent 的先验认知，强制探索本能回避的优化方向。
-
-| 循环层 | 时间尺度 | 职责 | sofagent 对应 | 当前状态 |
-|--------|:--:|------|------|:--:|
-| 内层 | 秒-分钟 | Agent 执行 + 反思 + 自动纠偏 | entry-gate → task-aware → loop-check → think.md → loop-exit | ✅ v0.99+ |
-| 外层 | 天-周 | Skill 优化 + 知识库沉淀 | loop-evaluate → eval.md → AI 知识库 → Skill 自动优化 | v1.2.x |
-
-> 当前 ROADMAP 已有「分布式反思同步」（Gossip 方向）。三模式不是互斥的——实践中可能黑板打底 + 上下文路由按需补充。决策留到 v1.2.x 需求分析时做。
-
-**Dream Sandbox 沙盒审计（探索方向）**：参照 Palantir AIP 的 Dream Sandbox——Agent 操作先在平行空间模拟运行，人类审批后点「合并」才生效，相当于「对现实做版本控制」。当前 sofagent 只能事后 git diff 审计，沙盒审计将约束从事后升级为事前。v2.x 如果企业用户对 Agent 自主操作有安全需求时探索。（来源：Palantir AIP 架构分析，详见 [THANKS.md](./docs/THANKS.md)）
-
-**审批通道分层（探索方向）**：entry-gate 风险分级（v1.x）之上，可探索超时降级（审批 30 分钟无响应 → 自动降级为只读模式还是阻塞？）和防橡皮图章（连续秒批 → 系统警告）。**这是企业级 BPM 功能，不是 Agent harness 层的职责**——v2.x 如果企业用户强烈需求才考虑。
-
-**演化路径**：
-
-| 阶段 | 形态 | 对应版本 |
-|------|------|:--:|
-| Ralph 循环（真菌） | 状态外化到文件，Agent 本体无状态 | v0.x-v1.0.x |
-| Ralph 工厂（轻量多设备） | 自治循环进化——经验共享 + 审计可见 + 权限作用域化 | v1.1.x |
-| 有身份 Agent（多设备完整） | 每个 AI 节点有独立身份，跨设备审计聚合，场景驱动权限 | v1.2.x 规划 |
-| 无身份 Agent（细菌） | 用完即焚，全新生成，零状态 | v3.x 远景 |
-
----
-
-## 探索方向
-
-| 方向 | 一句话 |
-|------|------|
-| workflow 外部模板扩充 | 引入 BPMN 2.0 / Coze / Dify 作为行业流程参考 |
-| 企业 AI 节点知识库 | 多设备蒸馏记忆聚合到企业 NAS，知识库管理员 Agent 自动分类 |
-| Agent 疲劳度检测 | 监控上下文窗口污染和决策质量衰减信号 |
-| 双闸验证 | 工具执行前 gate + 执行后副作用复查 |
-| SMB 场景审计扩展 | 审计从代码开发扩展到数据处理/报表生成 |
-| 组织记忆主动调取 | Agent 接任务前先检索 think.md 共享版 |
-| 异步长任务自治 | daemon 从文件监控升级为长任务自主运行 |
-| PE/VC 多企业审计仪表盘 | 投后管理场景——所有被投企业的 AI 审计数据汇总到一个面板，投后团队统一监控 |
-| FDE 陪跑期机制 | 部署后前 2 周 AI 节点 daily review，人类反馈和 AI 反思双向写入 think.md |
-| 国标 Agent 审计对位 | 关注国家 AI 智能体互联标准草案进展（截至 2026-07 仍为征求意见稿阶段），标准正式发布后评估 sofagent 审计规则的合规对齐 |
-| **Agent 身份码（v1.1.0）** | 国标草案中唯一明确「后续转强制」的方向。v1.1.0 预研——标准仍在制定中，落地取决于国标正式发布 |
-
----
-
-## 不需要的
-
-以下认真考虑过但决定不做。完整设计禁区见 [PHILOSOPHY §八](./docs/PHILOSOPHY.md#八不做什么设计禁区)。
-
----
-
-## 欢迎参与
-
-| 你能做的事 | 时间 | 说明 |
-|------|:--:|------|
-| 跨平台测试 | 30 min | 你有 Codex / Hermes / Claude Code？装一下告诉我们 |
-| 补充 FAQ | 20 min | 你踩了什么坑？直接改 HANDBOOK §三（排查问题） |
-| 文档翻译 | 1-2 h | 英文翻译对社区意义巨大 |
-| 第三方证据 | 1 周 | 装完用一周，填 EVIDENCE.md |
-| 安全审计 | 不限 | 给 SECURITY.md 挑刺 |
-| 企业场景反馈 | 30 min | 你们团队怎么用 Agent？直接开 Issue |
-
-→ [CONTRIBUTING.md](./CONTRIBUTING.md)
-
----
-
-## 长期叙事：Conway/Coase 双重反转
-
-> **Conway 定律反转**：传统软件架构反映组织沟通结构。Agent 时代出现反转——Agent 架构（谁做什么、怎么协作）开始**反向塑造企业组织形态**。阿里巴巴 OPT 已观察到这一趋势：单人 + Agent Skill + 企业系统 → 闭环完成多岗工作，传统部门边界被 Agent 能力边界替代。
->
-> **Coase 定理反转**：企业存在的经济学理由是内部交易成本低于市场。当 Agent 将内部协调成本降为零，企业的边界开始模糊——一个人借 Agent 能做成的事，不再需要一个部门。"企业"从组织结构变成一个 Agent 能力矩阵。
->
-> sofagent 的终局：**Ontology（业务世界模型）+ SkillHub（跨岗能力）+ 审计引擎（责任确权）= 让单人 + 硅基构成的最小闭环单元，替代传统多部门协作。**
