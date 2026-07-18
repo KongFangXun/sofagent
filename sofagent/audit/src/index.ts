@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.0.8 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
-// v1.0.8 精简：compose→orchestrator, subagent→orchestrator,
+// v1.1.3 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.0.8 精简（历史）：compose→orchestrator, subagent→orchestrator,
 //          hub→workflow-hub, skillopt-run→skillopt, ab-test→ab-test,
 //          daemon→daemon, doctor/verify→core (deprecation shim)
 // ============================================================
