@@ -7,25 +7,35 @@ on:
 
 jobs:
   publish-audit:
+    # v1.1.4 修复：原配置只在 sofagent/audit 目录跑 npm ci + npm test，
+    # 但 audit 运行时依赖 @sofagent/core（workspace 链接到 ../core），
+    # 而 core/dist 被 gitignore 且 CI 中无人 build core，导致 vitest 无法解析入口
+    # 现改为从根目录 workspace 构建（与 publish-mcp 对齐）
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    defaults:
-      run:
-        working-directory: sofagent/audit
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+      # 从根目录安装——workspace 模式让 audit 链接到本地 @sofagent/core
       - run: npm ci
+        working-directory: .
       - run: npm install --no-save @rollup/rollup-linux-x64-gnu
+        working-directory: .
         # npm ci 从 macOS 生成的 lock 文件在 Linux 上可能漏装 optional native 模块
         # (https://github.com/npm/cli/issues/4828)
+      # workspace 拓扑序构建（含 core + audit + 其他依赖项）
+      - run: npm run build
+        working-directory: .
+      # 在 audit 包内跑测试（此时 core/dist 已构建好）
       - run: npm test
+        working-directory: sofagent/audit
       - name: Check if version already published
         id: version-check
+        working-directory: sofagent/audit
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if npm view "@sofagent/audit@${VERSION}" version 2>/dev/null; then
@@ -38,6 +48,7 @@ jobs:
       - name: Publish to npm
         if: steps.version-check.outputs.skip != 'true'
         run: npm publish --access public
+        working-directory: sofagent/audit
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
