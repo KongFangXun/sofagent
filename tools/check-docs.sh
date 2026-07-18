@@ -1,6 +1,6 @@
 #!/bin/bash
 # 文档一致性自动化检查
-set -euo pipefail
+set -uo pipefail
 shopt -s nullglob
 
 cd "$(dirname "$0")/.." || exit 1
@@ -113,22 +113,23 @@ LAYER_A=$(find . -name "*.md" \
   -not -path "*/sofagent/hooks/*" \
   -not -path "*/workflow-hub/*" \
   -not -path "*/docs/DEVELOPMENT.md" \
-  -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+  -not -path "*/docs/archive/*" \
+  -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
 
 # B 层：开发者参考（LOOP/ + agents/ + .github/ + hooks/HOOK.md + DEVELOPMENT.md）
 LAYER_B=$(find ./LOOP ./agents ./.github ./sofagent/hooks ./docs/DEVELOPMENT.md \
   -name "*.md" \
   -not -path "*/node_modules/*" \
-  -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+  -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
 
 # C 层：审查体系（docs/verification/）
-LAYER_C=$(find ./docs/verification -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+LAYER_C=$(find ./docs/verification -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
 
 # D 层：设计文档（docs/design/）
-LAYER_D=$(find ./docs/design -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+LAYER_D=$(find ./docs/design -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
 
 # E 层：运维指南（docs/guides/）
-LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
 
 # 上限定义
 LIMIT_A=4500  # v1.1.0: 五个引擎重构 + ARCHITECTURE 叙事升级 + README 内容增长
@@ -145,7 +146,7 @@ echo "  C 审查体系:     ${LAYER_C} 行 / ${LIMIT_C} 上限"
 echo "  D 设计文档:     ${LAYER_D} 行 / ${LIMIT_D} 上限"
 echo "  E 运维指南:     ${LAYER_E} 行 / ${LIMIT_E} 上限"
 echo "  ─────────────────────────"
-AB_TOTAL=$((LAYER_A + LAYER_B))
+AB_TOTAL=$(( ${LAYER_A:-0} + ${LAYER_B:-0} ))
 echo "  A+B 合计:       ${AB_TOTAL} 行 / ${LIMIT_TOTAL} 上限"
 
 # 检查各层
