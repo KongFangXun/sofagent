@@ -262,7 +262,7 @@ sofagent supports two node types:
 
 Pure autonomous Agents are flexible but uncontrolled — random step-skipping, hallucination, and hard-to-trace end-to-end flows are fatal risks in low-tolerance business like credit-risk audit or accounts-payable approval. Yet **80% of enterprise landing scenarios are better served by Workflow** (predefined branches, tool-call order, DB/3rd-party calls): fixed execution trace, per-node monitoring, parallel speedup, near-zero hallucination.
 
-sofagent's [Work模板市场](./work模板市场/) uses a **hybrid architecture**: an outer Graph skeleton (`nextNodes` in `workflow.yml`) locks the end-to-end steps and keeps them traceable; inner nodes keep model autonomy (the node `prompt` is a ReAct Agent). You get Workflow's controllability plus local flexibility. Workflows mapped during FDE onboarding become reusable enterprise templates.
+sofagent's [Work模板市场](./模板市场/) uses a **hybrid architecture**: an outer Graph skeleton (`nextNodes` in `workflow.yml`) locks the end-to-end steps and keeps them traceable; inner nodes keep model autonomy (the node `prompt` is a ReAct Agent). You get Workflow's controllability plus local flexibility. Workflows mapped during FDE onboarding become reusable enterprise templates.
 
 ---
 
@@ -276,7 +276,7 @@ sofagent's [Work模板市场](./work模板市场/) uses a **hybrid architecture*
 | Known limitations | [LIMITATIONS](./LIMITATIONS.md) |
 | Roadmap | [ROADMAP](./ROADMAP.md) |
 | Contributing | [CONTRIBUTING](./CONTRIBUTING.md) |
-| Enterprise deploy (FDE + Workflow) | [FDE/](./FDE/) \| [Work模板市场](./work模板市场/) |
+| Enterprise deploy (FDE + Workflow) | [FDE/](./FDE/) \| [Work模板市场](./模板市场/) |
 
 ---
 

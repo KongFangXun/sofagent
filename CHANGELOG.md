@@ -7,9 +7,9 @@
 
 ## 正式版
 
-### [v1.1.4] — A18/A19 审计新规则 + LOOP 工具注入 + daemon 可见性
+### [v1.1.4] — LOOP 独立产品化 + 工具注入 + A18/A19 + daemon 可见性
 > 2026-07-19（UTC）· 待发版
-**核心变更**：新增 A18 垃圾文件检测/A19 commit message 质量两条审计规则（21 条规则集）+ LOOP 编排引擎 engineer/reviewer 节点从零工具升级为 6 工具注入（read/write/edit/bash/search/test）+ daemon 可见性修复（v1.1.0 拆包后 plist/WorkingDirectory/PATH 三个参数错误导致 daemon 从未运行）+ USB federation 基础检测（SOFAGENT 卷标 U 盘自动导入 federation.json）+ WARN 累积报告巡检器（连续未处理 WARN 告警）。
+**核心变更**：① **LOOP 独立产品化**（本版本最大架构调整）——workflow 代码从 orchestrator 彻底分离到 `LOOP/`，建立三层命名规则（大写=独立产品 / 小写=代码文件夹 / `agents/SKILL/`=Skill 权威源），Skill 命名统一（engineering-* → sofagent-*），`work模板市场` → `模板市场`（大写独立产品）。② **Workflow 模式 + 双模型 + 自动门控**——外部编排平台产出 workflow.yml → LOOP 外层循环逐个执行子任务，engineer/reviewer 可分别配模型（`SOFAGENT_LLM_ENGINEER` / `SOFAGENT_LLM_REVIEWER`），`LOOP_AUTO=1` 启用 IS_PASS 自动判定。③ **LOOP 工具注入**——engineer/reviewer 节点从零工具升级为 6 工具集（read/write/edit/bash/search/test），每个 tool 内嵌 A1-A17 约束。④ **A18 垃圾文件检测 + A19 commit message 质量**——21 条规则集。⑤ **daemon 可见性修复**（v1.1.0 拆包后 plist/WorkingDirectory/PATH 三个参数错误导致 daemon 从未运行）+ USB federation 基础检测 + WARN 累积报告巡检器。
 **缺陷修复**：11 包 ESM exports 修复（CI vitest 全绿）+ maxTurns=20 落地 + WARN 写入 history（三态全记录）+ run_bash 高危命令黑名单（defense-in-depth）。
 **质量验证**：660 tests across 12 packages 全绿 · acceptance-test 50/50 · check-version 67/67 · pre-push-check 15 通过/1 警告（共 16 项）。
 > 📖 [开发日志](./docs/changelog/v1.1.4.md)

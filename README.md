@@ -270,7 +270,7 @@ sofagent 支持两种节点类型，按需选择：
 
 纯自主 Agent 灵活但不可控——随机跳步、幻觉、全链路难追溯，在金融信贷审核、应付账款这类**低容错业务**上是致命风险。而 **80% 的企业级落地场景，Workflow（预先编排好分支、工具调用顺序、数据库/第三方接口调用）反而更靠谱**：全流程轨迹固定、节点独立监控、可并行提效、几乎无幻觉。
 
-sofagent 的 [Work模板市场](./work模板市场/) 采用**混合架构**：外层用 `workflow.yml` 的 Graph 骨架（`nextNodes`）锁定全链路步骤、保证可追溯；内层单个节点保留模型自主规划（节点 `prompt` 即 ReAct Agent）。既拿到 Workflow 的可控性，又保留局部灵活性。FDE 进场梳理出的工作流，直接沉淀为可复用的企业模板。
+sofagent 的 [Work模板市场](./模板市场/) 采用**混合架构**：外层用 `workflow.yml` 的 Graph 骨架（`nextNodes`）锁定全链路步骤、保证可追溯；内层单个节点保留模型自主规划（节点 `prompt` 即 ReAct Agent）。既拿到 Workflow 的可控性，又保留局部灵活性。FDE 进场梳理出的工作流，直接沉淀为可复用的企业模板。
 
 ---
 
@@ -284,7 +284,7 @@ sofagent 的 [Work模板市场](./work模板市场/) 采用**混合架构**：�
 | 已知局限 | [LIMITATIONS](./LIMITATIONS.md) |
 | 版本路线图 | [ROADMAP](./ROADMAP.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
-| 企业部署（FDE 工具包 + Workflow 模板） | [FDE/](./FDE/) \| [Work模板市场](./work模板市场/) |
+| 企业部署（FDE 工具包 + Workflow 模板） | [FDE/](./FDE/) \| [Work模板市场](./模板市场/) |
 | 12 包架构（v1.1.0） | [ARCHITECTURE](./docs/ARCHITECTURE.md) · [v1.1.0 日志](./docs/changelog/v1.1.0.md) |
 
 ---
