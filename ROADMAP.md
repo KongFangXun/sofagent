@@ -108,7 +108,7 @@
 | **v1.1.0** | ✅ 已完成 | **包结构纯度重构（audit 只做 audit）**：把 `@sofagent/audit` 上帝包拆为 12 个独立包——基础层 `@sofagent/{harness,ontology,eval,core}` + 运行层 `@sofagent/{orchestrator,daemon,ab-test,work模板市场,think,skillopt}` + 协议层 `@sofagent/mcp` + 纯审计 `@sofagent/audit`（收敛为 rules/webhook/filesystem/audit-*/permission），依赖单向无循环；+ **轻量多设备四件事**：经验共享（knowledge/ + think.md 跨设备同步）+ 自迭代周报（daemon 汇总 think.md → lessons-missteps）+ 权限作用域化（项目级 permission override）+ daemon 主动巡检。一次性抽干净 | [📖](./docs/changelog/v1.1.0.md) |
 | **v1.1.2** | ✅ 已完成 | **LOOP 双 Agent 串联 + 维护**：engineering-minimal-change-engineer + engineering-code-reviewer 通过 DeepAgents compose 自循环 + 多设备同步指南 + Harness 可见性（签名机制）+ v1.1.0 遗留问题修复 + 测试体系修复与文档一致性 | [📖](./docs/changelog/v1.1.2.md) |
 | **v1.1.3** | ✅ 已完成 | **LangGraph StateGraph 直接编排**：StateGraph 四节点自动流转 + Checkpoint 持久化 + HITL 确认节点，编排控制从 DeepAgents compose 上提为 sofagent 直接掌握 | [📖](./docs/changelog/v1.1.3.md) |
-| **v1.1.4** | 📋 规划中 | **条件路由 + USB federation**：audit PASS→push / FAIL→fix / WARN→human + daemon USB 检测自动配置 | [📖](./docs/changelog/v1.1.4.md) |
+| **v1.1.4** | 📋 规划中 | **LOOP 工具注入**：engineer/reviewer 节点不再走 composer 零工具路径，直接注入 sofagent 自有工具集（Read/Write/Edit/Bash/Search/Test），每个工具内嵌 A1-A19 约束。端到端验证：用一个真实任务跑通 engineer → audit → reviewer → human_confirm 全链路 | [📖](./docs/changelog/v1.1.4.md) |
 | **v1.1.5** | 📋 规划中 | **releasing.md SOP 集成 + MCP knowledge resource**：Agent 按十一阶段 SOP 全流程自动发版 + 7 个 knowledge MCP resource | [📖](./docs/changelog/v1.1.5.md) |
 | **v1.1.6** | 📋 规划中 | **LLM Wiki 3 层分层 + conflict-check**：Ledger-Views-Policy 显式化 + daemon 知识健康巡检 | [📖](./docs/changelog/v1.1.6.md) |
 | **v1.1.7** | 📋 规划中 | **Dream Cycle 6 阶段 + sensitivity**：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级 | [📖](./docs/changelog/v1.1.7.md) |
@@ -116,7 +116,7 @@
 | **v1.1.9** | 📋 规划中 | **USB 完整运行时**：Node.js 单文件打包 + OpenClaw 便携化 + 跨平台启动脚本（macOS/Windows/Linux）。U 盘插入 → 双击 start → 联邦在线 → 拔掉零残留 | [📖](./docs/changelog/v1.1.9.md) |
 | **v1.2.0** | 📋 规划中 | **多设备知识联邦收口 🎉**：端到端全功能验证（LOOP + Dream Cycle + 联邦查询 + 加密）+ gbrain 行业对标 + USB key 产品故事写入主文档 + 兜底修复。v1.2.x 完整多设备协同的起点 | [📖](./docs/changelog/v1.2.0.md) |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同——**L2 团队协作协议**：共享态/意图广播/触发反应/冲突消解/反馈放大五大机制，从单人约束到团队协作；**L3 组织能力市场**：Skill/Agent/流程在企业内发布→发现→调用→评价，高频高价值自然胜出。+ Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界。**🔮 探索**：路由器式配网（边缘设备 WiFi 热点 + 手机端配置网页，仅用于初始配置，配置完成后回归纯 LUI）+ **协议中立**（审计层只走 MCP 等开放协议和 git diff/JSONL/Markdown 开放格式，不为任何单一平台写专属集成——不绑定平台，平台不绑定审计） | — |
-| **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A17 + 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线 | — |
+| **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A17 + 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **SubAgent 沙箱执行环境**：将 orchestrator 内置为完整的沙箱运行时——文件系统隔离、网络出站白名单、工具调用审计追踪——让 LOOP SubAgent 不依赖外部 Agent 平台，自给自足完成代码开发全流程 | — |
 
 ### v1.x — 发布后
 
