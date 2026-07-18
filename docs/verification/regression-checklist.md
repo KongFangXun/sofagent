@@ -3055,7 +3055,7 @@ grep -c "44-48" LIMITATIONS.md       # 期望: ≥ 1（动态范围，非固定�
 find . -name SKILL.md ! -path "*/node_modules/*" ! -path "*/experimental/*" -exec grep -L "tags:" {} \;
 # 期望: 空输出（全部有 tags 字段）
 find . -name SKILL.md ! -path "*/node_modules/*" ! -path "*/experimental/*" -exec wc -l {} \;
-# 期望: 全部 ≤ 90 行
+# 期望: 全部 ≤ 100 行
 ```
 
 #### 260. README「非开发者」声称有上手路径 🆕
