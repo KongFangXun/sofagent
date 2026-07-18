@@ -9,9 +9,9 @@
 
 import { readFileSync, existsSync } from 'fs';
 import * as yaml from 'js-yaml';
-import { runLoopGraph, resolveCheckpointDir } from '../graph/loop-graph';
-import type { LoopGraphDeps } from '../graph/nodes';
-import type { LoopFinalStatus } from '../graph/state';
+import { runLoopGraph, resolveCheckpointDir } from './graph';
+import type { LoopGraphDeps } from './nodes';
+import type { LoopFinalStatus } from './state';
 import type { Workflow, WorkflowOptions, WorkflowResult } from './types';
 
 /**

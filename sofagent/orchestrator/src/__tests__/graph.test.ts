@@ -18,8 +18,8 @@ import * as path from 'path';
 import * as os from 'os';
 import { randomBytes } from 'crypto';
 
-import { emptyArtifacts } from '../graph/state';
-import type { LoopGraphState, LoopArtifacts } from '../graph/state';
+import { emptyArtifacts } from '../LOOP/state';
+import type { LoopGraphState, LoopArtifacts } from '../LOOP/state';
 
 import {
   FileCheckpointer,
@@ -37,7 +37,7 @@ import {
   type LoopGraphDeps,
   type AuditOutcome,
   type HumanDecision,
-} from '../graph/loop-graph';
+} from '../LOOP/graph';
 
 import { END } from '@langchain/langgraph';
 
