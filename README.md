@@ -15,7 +15,7 @@
 
 <p align="center" style="color:#64748B;font-size:14px;">
   Agent Harness 中间件 + FDE 工具包<br/>
-  <strong>让每个人都具备 FDE 的能力</strong>
+  <strong>让 SMB 与 OPC 的每个人都具备 FDE 的能力</strong>
 </p>
 
 <p align="center">
@@ -39,20 +39,20 @@
 
 ## 30 秒看懂 sofagent
 
-> **sofagent 是一套开源（MIT）的 FDE（前线部署工程）方法论 + Harness 工具包，不是 Agent 工具厂商。**
+> **sofagent 是一套开源（MIT）的 FDE（前线部署工程）工具包——FDE 不是软件，而是一种能力。**
 
-我们基于**你自选的大厂 Agent 和大模型**，用自研的**审计 / 约束 / 回溯 / 迭代**四个引擎做问责底座，帮个人或企业梳理 workflow、搭建本体模型、部署专有 Sub Agent。
+我们基于**你自选的大厂 Agent 和大模型**，用自研的**审计 / 约束 / 回溯 / 迭代**四个引擎做问责底座，帮 SMB 与 OPC 梳理 workflow、搭建本体模型、部署专有 Sub Agent。
 
 四个引擎是 FDE 工具包的**核心能力**，不是独立销售的产品——单独拿任何一个出来都没有意义。
 
-**一句话定位**：你选哪家大厂的 Agent 和模型都行，sofagent 用自己的 Harness 中间层把它们管住、审计住；我们的目标是让**每个人、每个 SMB 与 OPC 都能快速成为 FDE**，用这套工具包自主完成自己的部署工作，成为被项目赋能的 FDE 节点。
+**一句话定位**：sofagent 是开源（MIT）的 FDE（前线部署工程）工具包。FDE 不是一款软件，而是一种能力——让任意大厂 Agent + 大模型在企业里可治理、可问责地落地。四个引擎（审计 / 约束 / 回溯 / 迭代）做问责底座，帮 **SMB 与 OPC 的每个人**，用自己选的 Agent 和模型，快速成为自己业务的 FDE。
 
 ```mermaid
 graph TD
     A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent Harness 中间层<br/>审计 / 约束 / 回溯 / 迭代 — 问责底座]
     B --> C[让任意 Agent 可治理 · 可审计 · 可回溯]
     C --> D[FDE 工具包<br/>梳理 workflow / 本体模型 / 专有 Sub Agent]
-    D --> E[每个人 · SMB · OPC<br/>成为 FDE 节点，自主完成部署]
+    D --> E[SMB · OPC 的每个人<br/>成为 FDE 节点，自主完成部署]
 ```
 
 ---

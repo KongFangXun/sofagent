@@ -7,14 +7,14 @@
 
 ## 心智模型（先读这个）
 
-> sofagent 是开源（MIT）的 FDE 工具包：不造 Agent，骑在你自选的大厂 Agent + 模型之上做问责底座；目标是让每个人、SMB 与 OPC 都能成为 FDE，用这套工具包自主完成部署。
+> sofagent 是开源（MIT）的 FDE（前线部署工程）工具包。FDE 不是一款软件，而是一种能力——让任意大厂 Agent + 大模型在企业里可治理、可问责地落地。四个引擎（审计 / 约束 / 回溯 / 迭代）做问责底座，帮 SMB 与 OPC 的每个人，用自己选的 Agent 和模型，快速成为自己业务的 FDE。
 
 ```mermaid
 graph TD
     A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent Harness 中间层<br/>审计 / 约束 / 回溯 / 迭代 — 问责底座]
     B --> C[让任意 Agent 可治理 · 可审计 · 可回溯]
     C --> D[FDE 工具包<br/>梳理 workflow / 本体模型 / 专有 Sub Agent]
-    D --> E[每个人 · SMB · OPC<br/>成为 FDE 节点，自主完成部署]
+    D --> E[SMB · OPC 的每个人<br/>成为 FDE 节点，自主完成部署]
 ```
 
 ## 目录
@@ -38,7 +38,7 @@ graph TD
 | ⚙️ 编排引擎 | Orchestration Engine | 任务拆解 + Sub Agent 并行 + A/B 优化 |
 | 🧬 进化引擎 | Evolution Engine | FDE 周度巡检 + 自动优化，v1.0.8+ |
 | 加载链 | Load Chain | Agent 启动时注入的约束文件 |
-| FDE | Forward Deployed Engineer | 前线部署工程师——梳理工作流、部署 sofagent、交付离场 |
+| FDE | 一种能力（非岗位 title）——前线部署工程能力模型：掌握完整上下文、打破岗位边界、对结果负责 |
 | Gateway | Gateway | 企业级 AI 统一入口（OpenClaw/DeepAgents） |
 
 > 💬 **交互范式**：sofagent 没有图形界面。所有能力通过 MCP 协议暴露，用户通过 Agent 对话（LUI）操作——说一句话，它做完告诉你结果在哪。这是架构的根本设计约束：不存在「仅 CLI 可用」或「需要打开页面」的能力。详见 [设计哲学](./PHILOSOPHY.md)。
