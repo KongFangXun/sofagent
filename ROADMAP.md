@@ -385,6 +385,22 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | 记忆分层金字塔 | TencentDB Agent Memory（L0-L3 四层 + 双轨存储 + 符号化压缩） | 只读 Markdown 产物集成 | v1.0.8 |
 | Harness 理论基础 | Hugging Face 实验 + ICML 2025 + Harness Engineering 三代演进（Prompt→Context→Harness）+ LangChain/Codex/gstack 工业验证 | 多重验证 | v1.0 基线 |
 | 任务路由 + Skill 组合 | Router+Skill 架构（行业评估为性价比最高方案） | task-aware 路由与 sofagent 方向一致 | v1.x 基线 |
+| 文档理解 / RAG | [WeKnora](https://github.com/Tencent/WeKnora)（腾讯微信对话开放平台开源，MIT，Go+Python，v0.7.0） | 潜在下游能力——RAG/ReAct Agent/Auto-Wiki/多模态文档解析。sofagent 是 Harness（管 Agent），WeKnora 是 RAG 平台（跑任务），非竞品。无 NPM/TS SDK，只能 MCP/REST/CLI 集成。三步走详见[下方专节](#weknora-集成三步走文档理解rag-能力补位) | v1.2.x 评估 |
+
+#### WeKnora 集成三步走（文档理解/RAG 能力补位）
+
+> 来源：腾讯微信对话开放平台开源项目 WeKnora（v0.7.0，2026-07-17，MIT，[GitHub](https://github.com/Tencent/WeKnora)）。调研时间 2026-07-19。**WeKnora 和 sofagent 不在同一层，是潜在下游能力，不是竞品**——sofagent 是 Harness 中间件（管 Agent），WeKnora 是 RAG 知识平台（跑任务的 Agent）。
+
+**为什么值得看**：WeKnora 的工程化程度（企业级 RBAC + Langfuse 可观测性 + 契约测试 + MCP/CLI/REST 三套对外接口 + 20+ LLM 集成 + 8 向量库 + 9 IM 渠道）是腾讯微信对话开放平台的真实生产沉淀。sofagent 当前 knowledge 层只支持 markdown/text，WeKnora 能补齐 PDF/Word/图片/Excel/PPT 多模态文档解析 + 知识图谱 + 自适应分块这一整块能力。
+
+| 阶段 | 版本 | 动作 | 风险/边界 |
+|:--:|:--:|------|------|
+| 🔍 **短期·认知储备** | **现在** | 只做调研，不开新线。把 WeKnora 列入"v1.2.x 企业级方向参考项目"清单。v1.1.x 收口期不动 | 无风险——零代码改动 |
+| 🧩 **中期·MCP connector** | **v1.2.x** | 评估加一个 `sofagent/mcp` 的 weknora connector。WeKnora 自带 MCP server（`weknora mcp serve`，stdio/SSE/HTTP），sofagent 已有 `sofagent/mcp` 子包，MCP 协议对接最小侵入。Agent 通过 sofagent MCP 调 WeKnora RAG 能力时，行为仍受 sofagent 审计引擎约束 | WeKnora v0.x 尚未 1.0，接口可能不稳；需评估私有化部署的数据主权边界 |
+| 🏗️ **长期·knowledge 后端** | **v1.3.x+** | 把 WeKnora 的文档解析能力作为 sofagent knowledge 层的可选后端——扩展 PDF/Word/图片/Excel 支持。daemon 文件变更审计扩展到多模态文档。WeKnora v0.6 企业级 RBAC + v0.7 Scoped API Key 可作为 sofagent 企业版权限体系的参考标杆 | 长期项，v1.3.x Ontology 认知底座 + 国标对齐落地后再评估 |
+
+**差异化铁律（与 gbrain 对标同款守则）**：吸收 WeKnora 的「方法」（多模态解析、自适应分块、企业级 RBAC 工程化），不吸收其「定位」（不变成 RAG 平台）。sofagent 始终是 Harness 中间件——数据主权（本地不送云）+ 第三方独立性（不做 Agent 运行）+ 开源 MIT（审计工具本身可审计）。Agent 用什么 RAG 后端是 Agent 的自由，sofagent 只负责审计 Agent 行为。
+
 
 #### Loop Engineering 全栈对照（已实现能力自证）
 
