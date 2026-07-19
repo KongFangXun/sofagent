@@ -665,8 +665,8 @@ async function main(): Promise<void> {
   }
   printResults(results, diffFiles, args.json, args.ci, args.silent);
 
-  // 7. webhook 推送（fire-and-forget，有 WARN/FAIL 且配置了 webhook 时推送）
-  if (results.exitCode > 0 && args.webhook && args.webhookUrl) {
+  // 7. webhook 推送（fire-and-forget，配置了 webhook 时 PASS/WARN/FAIL 三态都推送）
+  if (args.webhook && args.webhookUrl) {
     try {
       const pushed = await pushAuditResult({
         platform: args.webhook,

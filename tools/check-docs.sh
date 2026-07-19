@@ -115,7 +115,7 @@ LAYER_A=$(find . -name "*.md" \
   -not -path "*/agents/*" \
   -not -path "*/.github/*" \
   -not -path "*/sofagent/hooks/*" \
-  -not -path "*/模板市场/*" \
+  -not -path "*/work模板市场/*" \
   -not -path "*/docs/DEVELOPMENT.md" \
   -not -path "*/docs/archive/*" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
@@ -244,6 +244,28 @@ if [ "$MISMATCH" -eq 0 ]; then
   echo "  ✅ 三者一致"
 else
   ERRORS=$((ERRORS + MISMATCH))
+fi
+
+echo ""
+echo "=== 8. audit/README 规则表 ruleClass 完整性（v1.1.6 回归追加）==="
+VALID_CLASSES="业务底线|能力拐杖|工程规范"
+MISSING_CLASS=0
+while IFS= read -r row; do
+  if ! echo "$row" | grep -qE "$VALID_CLASSES"; then
+    echo "  ❌ $row （缺少合法 ruleClass）"
+    MISSING_CLASS=$((MISSING_CLASS + 1))
+  fi
+done < <(grep -nE "^\| (A|E)[0-9]+ .* \|" sofagent/audit/README.md 2>/dev/null)
+for cls in 业务底线 能力拐杖 工程规范; do
+  if ! grep -q "$cls" sofagent/audit/README.md; then
+    echo "  ❌ audit/README.md 未定义 ruleClass: $cls"
+    MISSING_CLASS=$((MISSING_CLASS + 1))
+  fi
+done
+if [ "$MISSING_CLASS" -eq 0 ]; then
+  echo "  [OK] 规则表 ruleClass 完整且定义齐全"
+else
+  ERRORS=$((ERRORS + MISSING_CLASS))
 fi
 
 echo ""

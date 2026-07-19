@@ -584,6 +584,28 @@ if $INTERNAL_DEPS_OK; then
 fi
 echo ""
 
+# ── 文案数字漂移扫描（v1.1.6 新增 · 维度八·任务5 强化）──────────
+# 扫描 audit 源码中疑似硬编码的「N 条规则」类声称，与 SSOT 对账
+# SSOT: defaultRules.length（当前 13）/ 注册总数（21）
+# 防止 init.ts 输出文案、fix-suggestions.ts/qa-boundary-verify.test.ts 注释等小数字无人对账
+echo "=== 13. 文案数字漂移扫描（audit 源码硬编码规则条数）==="
+DOC_DRIFT_OK=true
+DEFAULT_RULES_COUNT=$(grep -cE "^\s+\{ name: 'A[0-9]+" sofagent/audit/src/rules/index.ts 2>/dev/null || echo 0)
+TOTAL_RULES_COUNT=$(grep -cE "^\s+\{ name: '(A|E)[0-9]+" sofagent/audit/src/rules/index.ts 2>/dev/null || echo 0)
+echo "  SSOT: defaultRules.length=$DEFAULT_RULES_COUNT 注册总数=$TOTAL_RULES_COUNT"
+while IFS= read -r line; do
+  num=$(echo "$line" | grep -oE "[0-9]+ 条" | grep -oE "^[0-9]+" | head -1)
+  if [ -n "$num" ] && [ "$num" != "$DEFAULT_RULES_COUNT" ] && [ "$num" != "$TOTAL_RULES_COUNT" ]; then
+    echo "  ❌ $line （与 SSOT $DEFAULT_RULES_COUNT/$TOTAL_RULES_COUNT 不符）"
+    DOC_DRIFT_OK=false
+    ERRORS=$((ERRORS + 1))
+  fi
+done < <(grep -rnE "[0-9]+ 条规则|[0-9]+ 条默认的|[0-9]+ 条各自的" sofagent/audit/src 2>/dev/null | grep -v "import" | grep -v "defaultRules.length")
+if $DOC_DRIFT_OK; then
+  echo "  [OK] audit 源码无规则条数漂移"
+fi
+echo ""
+
 # ── 汇总 ──────────────────────────────────────────────────────
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then
