@@ -65,7 +65,7 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 - **版本号全量一致**：`check-version.sh` → 0 不一致；`pre-push-check.sh` → 7/7 全绿
 - **铁律措辞清零**：grep「建议/应该/尽量」→ 无输出
 - **Skill 文件行数 ≤100**：每个文件 ≤100 行
-- **测试数一致**：`npm test` 的 Tests 数与 README/ROADMAP/evidence 一致
+- **测试数一致**：`tools/test-count.sh` 实测 audit/workspace 数与 FDE/LIMITATIONS/audit-README 声称一致（维度 13 SSOT 反查）
 - **发版前 git status 零未提交修改**
 
 ---
@@ -372,14 +372,27 @@ dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path 
 [ -z "$dup" ] && echo "OK" || echo "❌ 跨包重复: $dup"
 ```
 
-#### 13. README 测试数时效性
+#### 13. 测试数声称一致性（SSOT 反查 · v1.1.4 扩）
 
-> 原 309
+> 原 309（只查 audit/README）。v1.1.4 暴露盲区：文档声称测试数与实测漂移
+> （FDE.md 一度写 343、LIMITATIONS 写 660，实测 audit=388 / workspace=668）。
+> 现覆盖所有声称型位置，SSOT = vitest 实测（与 test-count.sh 同源）。
 
 ```bash
-README_NUM=$(grep -oP '[0-9]+(?= tests)' sofagent/audit/README.md)
-ACTUAL_NUM=$(cd sofagent/audit && npx vitest run 2>&1 | grep Tests | grep -oP '[0-9]+(?= passed)')
-[ "$README_NUM" = "$ACTUAL_NUM" ] && echo "✅ $README_NUM" || echo "❌ $README_NUM ≠ $ACTUAL_NUM"
+# SSOT：audit 包实测 + workspace 总数（test-count.sh 同源）
+AUDIT=$(cd sofagent/audit && npx vitest run 2>&1 | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
+WS=$(bash tools/test-count.sh --quiet 2>&1 | grep -oE 'TOTAL_TESTS=[0-9]+' | cut -d= -f2)
+echo "SSOT → audit=$AUDIT  workspace=$WS"
+# 逐文档核对 audit 数（出现 "N tests 全绿" 或 "N 个测试" 的位置）
+for f in sofagent/audit/README.md FDE/FDE.md LIMITATIONS.md; do
+  c=$(grep -oE '[0-9]+ tests 全绿|[0-9]+ 个测试' "$f" | grep -oE '[0-9]+' | head -1)
+  [ "$c" = "$AUDIT" ] && echo "✅ $f audit=$c" || echo "❌ $f audit=$c ≠ SSOT $AUDIT"
+done
+# 核对 workspace 总数（"全 workspace N"）
+for f in FDE/FDE.md LIMITATIONS.md; do
+  c=$(grep -oE '全 workspace [0-9]+' "$f" | grep -oE '[0-9]+' | head -1)
+  [ "$c" = "$WS" ] && echo "✅ $f workspace=$c" || echo "❌ $f workspace=$c ≠ SSOT $WS"
+done
 ```
 
 ---
@@ -522,21 +535,24 @@ grep "BLACKLIST.*=.*\[" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts
 
 | 检查项 | 验证方式 |
 |--------|----------|
-| maxTurns = 20 常量存在 | `grep "DEFAULT_AGENT_MAX_TURNS = 20" sofagent/orchestrator/src/loop/nodes.ts` |
+| maxTurns 常量（v1.1.5 拆分） | `grep "DEFAULT_ENGINEER_MAX_TURNS = 20" sofagent/orchestrator/src/loop/nodes.ts` + `grep "DEFAULT_REVIEWER_MAX_TURNS = 15" sofagent/orchestrator/src/loop/nodes.ts` |
 | engineer 使用 ENGINEER_TOOLS（6 个） | `grep "ENGINEER_TOOLS" sofagent/orchestrator/src/loop/nodes.ts` |
 | reviewer 使用 REVIEWER_TOOLS（3 个，只读） | `grep "REVIEWER_TOOLS" sofagent/orchestrator/src/loop/nodes.ts` |
 | WARN verdict 写入 audit history（三态全写） | `grep -c "recordLoopAuditHistory" sofagent/orchestrator/src/loop/nodes.ts` |
+| maxTurns 注入（resolveMaxTurns 函数） | `grep "maxTurns: resolveMaxTurns" sofagent/orchestrator/src/loop/nodes.ts` |
 | run_bash 高危命令黑名单（5 类） | `grep -c "checkDangerousCommand" sofagent/orchestrator/src/tools.ts` |
 | warn-accumulator 真正连续性（遇 PASS/FAIL 中断） | `grep "break.*连续中断" sofagent/daemon/src/inspectors/warn-accumulator.ts` |
 | USB federation 基础检测（SOFAGENT 卷标） | `grep "SOFAGENT_LABEL" sofagent/daemon/src/usb-detect.ts` |
 | USB federation 签名校验标注为 v1.1.5+ | `grep "无签名校验\|v1.1.5" SECURITY.md` |
 
 ```bash
-# 验证命令
-grep "DEFAULT_AGENT_MAX_TURNS" sofagent/orchestrator/src/loop/nodes.ts
+# 验证命令（v1.1.5 重构：DEFAULT_ENGINEER_MAX_TURNS=20 + DEFAULT_REVIEWER_MAX_TURNS=15 + resolveMaxTurns）
+grep "DEFAULT_ENGINEER_MAX_TURNS = 20" sofagent/orchestrator/src/loop/nodes.ts
+grep "DEFAULT_REVIEWER_MAX_TURNS = 15" sofagent/orchestrator/src/loop/nodes.ts
+grep "maxTurns: resolveMaxTurns" sofagent/orchestrator/src/loop/nodes.ts
 grep "checkDangerousCommand" sofagent/orchestrator/src/tools.ts
 grep "recordLoopAuditHistory" sofagent/orchestrator/src/loop/nodes.ts
-# 期望：三者都存在
+# 期望：全部存在
 ```
 
 ## 审查约束
@@ -545,7 +561,7 @@ grep "recordLoopAuditHistory" sofagent/orchestrator/src/loop/nodes.ts
 - **铁律措辞必须用 grep 验证**——不能凭感觉
 - **Skill 文件行数 ≤100**——每次发版必须验证
 - **CHANGELOG 纯度**——只写产品变更，不含审查元信息
-- **测试数一致**——README/ROADMAP/evidence 与 npm test 输出一致
+- **测试数一致**——FDE/LIMITATIONS/audit-README 声称数与 test-count.sh 实测一致（维度 13 SSOT 反查）
 - **安全约束 fail-closed**——A15 未声明 actions 时必须 FAIL 或 WARN（v1.1.3 追加）
 - **npm 产物三方一致**——npm registry = SSOT = git tag = 工作树 clean（v1.1.3 追加）
 
