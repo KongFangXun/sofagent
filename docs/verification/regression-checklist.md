@@ -544,6 +544,12 @@ grep "BLACKLIST.*=.*\[" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts
 | warn-accumulator 真正连续性（遇 PASS/FAIL 中断） | `grep "break.*连续中断" sofagent/daemon/src/inspectors/warn-accumulator.ts` |
 | USB federation 基础检测（SOFAGENT 卷标） | `grep "SOFAGENT_LABEL" sofagent/daemon/src/usb-detect.ts` |
 | USB federation 签名校验标注为 v1.1.5+ | `grep "无签名校验\|v1.1.5" SECURITY.md` |
+| USB federation HMAC 实现（v1.1.5 新增） | `grep "createHmac\|timingSafeEqual\|mode: 0o600\|applyFederation" sofagent/daemon/src/usb-detect.ts` |
+| MCP audit_file pipe（v1.1.5 新增） | `grep "audit_file\|auditEngine" sofagent/mcp/src/mcp-server.ts` |
+| MCP list_capabilities 能力清单（v1.1.5 新增） | `grep "list_capabilities\|search_knowledge\|read_entity\|stats" sofagent/mcp/src/mcp-server.ts` |
+| daemon push-target 5 种路由（v1.1.5 新增） | `grep "webhook:dingtalk\|webhook:feishu\|webhook:wecom\|openclaw:im\|daemon:notice" sofagent/daemon/src/push-target.ts` |
+| orchestrator --mode 参数（v1.1.5 新增） | `grep "parseSubagentRunArgs\|--mode" sofagent/orchestrator/src/cli-args.ts` |
+| sofagent-releaser Skill 复制契约（v1.1.5 新增） | `grep "sofagent-releaser" sofagent/scripts/lib/file-deploy.sh FDE/fde-install.sh LOOP/loop-install.sh` |
 
 ```bash
 # 验证命令（v1.1.5 重构：DEFAULT_ENGINEER_MAX_TURNS=20 + DEFAULT_REVIEWER_MAX_TURNS=15 + resolveMaxTurns）
@@ -552,6 +558,13 @@ grep "DEFAULT_REVIEWER_MAX_TURNS = 15" sofagent/orchestrator/src/loop/nodes.ts
 grep "maxTurns: resolveMaxTurns" sofagent/orchestrator/src/loop/nodes.ts
 grep "checkDangerousCommand" sofagent/orchestrator/src/tools.ts
 grep "recordLoopAuditHistory" sofagent/orchestrator/src/loop/nodes.ts
+# v1.1.5 追加：USB HMAC + MCP audit_file + list_capabilities + push-target + cli --mode + releaser
+grep -c "createHmac\|timingSafeEqual\|mode: 0o600\|applyFederation" sofagent/daemon/src/usb-detect.ts  # 期望：≥4
+grep -c "audit_file\|auditEngine" sofagent/mcp/src/mcp-server.ts  # 期望：≥2
+grep -c "list_capabilities\|search_knowledge\|stats" sofagent/mcp/src/mcp-server.ts  # 期望：≥3
+grep -c "webhook:dingtalk\|webhook:wecom\|daemon:notice" sofagent/daemon/src/push-target.ts  # 期望：≥3
+grep -c "parseSubagentRunArgs" sofagent/orchestrator/src/cli-args.ts  # 期望：≥1
+grep -l "sofagent-releaser" sofagent/scripts/lib/file-deploy.sh FDE/fde-install.sh LOOP/loop-install.sh 2>/dev/null | wc -l  # 期望：3
 # 期望：全部存在
 ```
 

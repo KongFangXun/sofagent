@@ -4,7 +4,7 @@
 >
 > 最后复核：2026-07-13
 >
-> **每次发版前，在全新 session 中粘贴本文件执行。** 覆盖审计管道全规则（含 A18/A19）+ hook 机制 + SkillOpt 自净化 + DeepAgents Sub Agent + 内置 Agent 验证（FDE + Audit）+ optional 依赖降级 + v1.1.3：deprecation shim 安全 + Harness 签名 + LOOP 双 Agent + v1.0.1-v1.1.0：A14/A15 + 约束自加载 + 文件系统审计 + 权限作用域化 + 经验共享 + Workflow Hub + **v1.1.4：LOOP 工具注入（maxTurns/ENGINEER_TOOLS/checkDangerousCommand）+ warn-accumulator 连续性 + USB federation + LOOP 独立产品**。
+> **每次发版前，在全新 session 中粘贴本文件执行。** 覆盖审计管道全规则（含 A18/A19）+ hook 机制 + SkillOpt 自净化 + DeepAgents Sub Agent + 内置 Agent 验证（FDE + Audit）+ optional 依赖降级 + v1.1.3：deprecation shim 安全 + Harness 签名 + LOOP 双 Agent + v1.0.1-v1.1.0：A14/A15 + 约束自加载 + 文件系统审计 + 权限作用域化 + 经验共享 + Workflow Hub + v1.1.4：LOOP 工具注入（maxTurns/ENGINEER_TOOLS/checkDangerousCommand）+ warn-accumulator 连续性 + USB federation + LOOP 独立产品 + **v1.1.5：sofagent-releaser Skill + MCP audit_file pipe + list_capabilities 能力清单 + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts --mode 参数**。
 >
 > 与 `acceptance-test.sh`（CLI 自动化）互补——本文件是 Agent 驱动的端到端验收，包含更多场景类型。
 >
@@ -19,8 +19,8 @@
 | 层级 | 工具 | 覆盖范围 |
 |------|------|---------|
 | 函数级 | 单元测试（vitest） | CI 自动，每次 push |
-| CLI 端到端 | `acceptance-test.sh`（56 场景） | 手动，发版前 |
-| **Agent 端到端** | **本文件**（58 场景） | **手动，发版前** |
+| CLI 端到端 | `acceptance-test.sh`（62 场景） | 手动，发版前 |
+| **Agent 端到端** | **本文件**（64 场景） | **手动，发版前** |
 | 文档级 | 回归检查清单（维度总数随版本增长，见 regression-checklist.md 头部当前值） | 手动，发版前 |
 | 发布后审查 | fresh-eyes-review.md | 手动，发布后 |
 
@@ -1221,6 +1221,187 @@ head -5 "$LOOP_DIR/loop-install.sh" | grep -q "v1\.1\.[0-9]" && echo "版本号 
 
 ---
 
+## 第十三部分：v1.1.5 新增功能验收（releaser + audit_file + list_capabilities + push-target + USB HMAC + cli --mode）
+
+> v1.1.5 暴露严重缺口：发版时 `tools/acceptance-test.sh` 和本文件都对 v1.1.5 新增的 6 项功能**零覆盖**。本部分补齐 6 个核心场景。
+
+### 场景 58：sofagent-releaser Skill 存在性（文件 + frontmatter + install 复制）
+
+```bash
+RELEASER_SKILL="$SOFAGENT_DIR/agents/SKILL/sofagent-releaser/SKILL.md"
+
+# 1. SKILL.md 文件存在
+[ -f "$RELEASER_SKILL" ] && echo "文件存在 ✅" || echo "文件存在 ❌"
+
+# 2. 行数 ≤100
+wc -l "$RELEASER_SKILL"
+# ✅ 期望：≤100
+
+# 3. frontmatter 含 name/description/emoji/color 四字段
+for f in "^name:" "^description:" "^emoji:" "^color:"; do
+  head -10 "$RELEASER_SKILL" | grep -qE "$f" && echo "$f ✅" || echo "$f ❌"
+done
+
+# 4. 三处 install.sh 都含 releaser 复制逻辑
+grep -q "sofagent-releaser" "$SOFAGENT_DIR/sofagent/scripts/lib/file-deploy.sh" && echo "主 install ✅" || echo "主 install ❌"
+grep -q "sofagent-releaser" "$SOFAGENT_DIR/FDE/fde-install.sh" && echo "FDE install ✅" || echo "FDE install ❌"
+grep -q "sofagent-releaser" "$SOFAGENT_DIR/LOOP/loop-install.sh" && echo "LOOP install ✅" || echo "LOOP install ❌"
+```
+
+### 场景 59：MCP audit_file tool 注册 + 返回结构（[sofagent] + auditEngine）
+
+```bash
+MCP_DIST="$SOFAGENT_DIR/sofagent/mcp/dist/mcp-server.js"
+
+# 1. tools/list 含 audit_file 描述
+LIST_TOOLS_RESP=$(printf '%s\n' \
+  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
+  '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+  | node "$MCP_DIST" 2>/dev/null || true)
+echo "$LIST_TOOLS_RESP" | grep -q "audit_file" && echo "tools/list 含 audit_file ✅" || echo "tools/list ❌"
+
+# 2. 调 audit_file 跑一次违规（password="123456"）→ 返回含 [sofagent] + auditEngine
+AUDIT_FILE_RESP=$(printf '%s
+' \
+  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
+  '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"audit_file","arguments":{"path":"src/leak.ts","change_type":"create","diff":"+const pw = \"123456\";"}}}' \
+  | node "$MCP_DIST" 2>/dev/null || true)
+echo "$AUDIT_FILE_RESP" | head -3
+# ✅ 期望：含 [sofagent] 前缀 + auditEngine 字段（auditEngine 字段在 _meta.data 中）
+echo "$AUDIT_FILE_RESP" | grep -q '\[sofagent\]' && echo "[sofagent] 前缀 ✅" || echo "[sofagent] ❌"
+echo "$AUDIT_FILE_RESP" | grep -q "auditEngine" && echo "auditEngine ✅" || echo "auditEngine ❌"
+```
+
+### 场景 60：list_capabilities 能力清单完整性（audit_file + 7 个 knowledge resource）
+
+```bash
+# 验证 list_capabilities tool 注册 + 返回完整能力
+LIST_CAP_RESP=$(printf '%s
+' \
+  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
+  '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_capabilities","arguments":{}}}' \
+  | node "$MCP_DIST" 2>/dev/null || true)
+echo "$LIST_CAP_RESP" | head -3
+
+# ✅ 期望：含 audit_file
+echo "$LIST_CAP_RESP" | grep -q "audit_file" && echo "audit_file ✅" || echo "audit_file ❌"
+
+# ✅ 期望：含 7 个 knowledge tool
+for kt in search_knowledge read_entity read_concept list_entities read_lessons read_think_md stats; do
+  echo "$LIST_CAP_RESP" | grep -q "$kt" && echo "$kt ✅" || echo "$kt ❌"
+done
+
+# ✅ 期望：含 auditEngine + rulesCount
+echo "$LIST_CAP_RESP" | grep -q "auditEngine" && echo "auditEngine ✅" || echo "auditEngine ❌"
+echo "$LIST_CAP_RESP" | grep -q "rulesCount" && echo "rulesCount ✅" || echo "rulesCount ❌"
+```
+
+### 场景 61：push-target 5 种 target 路由 + 失败 warning 不阻断
+
+```bash
+PUSH_TARGET="$SOFAGENT_DIR/sofagent/daemon/src/push-target.ts"
+
+# 1. 5 种 target 字符串都出现
+for t in "webhook:dingtalk" "webhook:feishu" "webhook:wecom" "openclaw:im" "daemon:notice"; do
+  grep -q "$t" "$PUSH_TARGET" && echo "$t ✅" || echo "$t ❌"
+done
+
+# 2. throwOnError 参数存在（默认 false = 失败 warning 不阻断）
+grep -q "throwOnError" "$PUSH_TARGET" && echo "throwOnError ✅" || echo "throwOnError ❌"
+
+# 3. 实跑——配置错误 webhook URL 跑 push，不崩溃（返回 false 而非抛错）
+PUSH_DIST="$SOFAGENT_DIR/sofagent/daemon/dist/push-target.js"
+SOFAGENT_WEBHOOK_FEISHU="http://localhost:19999/invalid" node -e "
+(async () => {
+  try {
+    const { pushToTarget } = require('$PUSH_DIST');
+    const ok = await pushToTarget({ target: 'webhook:feishu', title: 't', message: 'm' });
+    console.log('RETURNED:', ok);  // ✅ 期望：RETURNED: false
+  } catch (e) {
+    console.log('THREW:', e.message);  // ❌ 不应抛错
+  }
+})();
+" 2>&1
+```
+
+### 场景 62：USB federation HMAC（HMAC-SHA256 + timingSafeEqual + 0600 + applyFederation）
+
+```bash
+USB_DETECT="$SOFAGENT_DIR/sofagent/daemon/src/usb-detect.ts"
+USB_DIST="$SOFAGENT_DIR/sofagent/daemon/dist/usb-detect.js"
+
+# 1. 源码必备关键字
+for kw in "createHmac" "timingSafeEqual" "FederationConfig" "applyFederation" "mode: 0o600" "loadOrCreateSecretKey" "signFederation" "verifySignature"; do
+  grep -q "$kw" "$USB_DETECT" && echo "$kw ✅" || echo "$kw ❌"
+done
+
+# 2. 构造 federation.json + .sig → 验签通过；改 sig → 拒绝
+node -e "
+const m = require('$USB_DIST');
+const key = m.loadOrCreateSecretKey();
+const cfg = { version: 1, nodes: [{ name: 'test', platform: 'openclaw' }], notes: 'verify test' };
+const content = JSON.stringify(cfg, null, 2);
+const sig = m.signFederation(content, key);
+const okMatch = m.verifySignature(content, sig, key);
+const tampered = sig.slice(0, -4) + '0000';
+const okReject = !m.verifySignature(content, tampered, key);
+const schemaOk = m.validateFederationSchema(cfg);
+const schemaBad = !m.validateFederationSchema({ wrong: true });
+const applyResult = m.applyFederation({ version: 1 });
+console.log(JSON.stringify({ okMatch, okReject, schemaOk, schemaBad, applied: applyResult.applied }));
+"
+# ✅ 期望：{"okMatch":true,"okReject":true,"schemaOk":true,"schemaBad":true,"applied":false}
+
+# 3. 密钥文件权限 0600（生成时 mode: 0o600）
+ls -la ~/.sofagent/usb-secret.key 2>/dev/null
+# ✅ 期望：-rw-------（0600）
+```
+
+### 场景 63：cli.ts --mode 参数（deploy|sustain + 默认 + 非法报错 + help）
+
+```bash
+CLI_ARGS="$SOFAGENT_DIR/sofagent/orchestrator/src/cli-args.ts"
+CLI_ARGS_DIST="$SOFAGENT_DIR/sofagent/orchestrator/dist/cli-args.js"
+ORCH_CLI="$SOFAGENT_DIR/sofagent/orchestrator/dist/cli.js"
+
+# 1. cli-args.ts 文件存在
+[ -f "$CLI_ARGS" ] && echo "cli-args.ts 存在 ✅" || echo "cli-args.ts ❌"
+
+# 2. parseSubagentRunArgs 单元行为
+node -e "
+const { parseSubagentRunArgs } = require('$CLI_ARGS_DIST');
+const r1 = parseSubagentRunArgs(['fde', '--task', 'x']);
+const r2 = parseSubagentRunArgs(['fde', '--mode', 'sustain', '--task', 'x']);
+const r3 = parseSubagentRunArgs(['fde', '--mode', 'deploy', '--task', 'x']);
+let r4 = null, r5 = null;
+try { parseSubagentRunArgs(['fde', '--mode', 'bad', '--task', 'x']); } catch (e) { r4 = e.message; }
+try { parseSubagentRunArgs(['fde']); } catch (e) { r5 = e.message; }
+console.log(JSON.stringify({
+  defaultDeploy: r1.mode === 'deploy',           // ✅ 默认 deploy
+  sustain: r2.mode === 'sustain',                 // ✅ sustain 解析
+  deployExplicit: r3.mode === 'deploy',           // ✅ deploy 显式
+  invalidThrows: /--mode/.test(r4 || ''),         // ✅ 非法值报错
+  missingTaskThrows: /--task/.test(r5 || '')      // ✅ 缺 --task 报错
+}));
+"
+# ✅ 期望：{"defaultDeploy":true,"sustain":true,"deployExplicit":true,"invalidThrows":true,"missingTaskThrows":true}
+
+# 3. orchestrator --help 含 --mode（及 deploy/sustain 关键字）
+node "$ORCH_CLI" --help 2>&1 | grep -q -- "--mode" && echo "help --mode ✅" || echo "help --mode ❌"
+node "$ORCH_CLI" --help 2>&1 | grep -q "deploy" && echo "help deploy ✅" || echo "help deploy ❌"
+node "$ORCH_CLI" --help 2>&1 | grep -q "sustain" && echo "help sustain ✅" || echo "help sustain ❌"
+
+# 4. 实跑——缺 --task 报错
+node "$ORCH_CLI" subagent run fde 2>&1 | grep -q -- "--task\|task" && echo "缺 --task 报错 ✅" || echo "缺 --task 报错 ❌"
+
+# 5. 跑 vitest 单测（如果已配置）
+cd "$SOFAGENT_DIR/sofagent/orchestrator" && npx vitest run src/__tests__/cli-args-mode.test.ts 2>&1 | tail -5
+# ✅ 期望：所有测试通过（7 个 it）
+cd "$SOFAGENT_DIR"
+```
+
+---
+
 ## 验证检查清单
 
 每个场景需确认：
@@ -1299,6 +1480,14 @@ head -5 "$LOOP_DIR/loop-install.sh" | grep -q "v1\.1\.[0-9]" && echo "版本号 
 - [ ] 场景 56：USB federation 基础检测（SOFAGENT_LABEL + SECURITY.md 无签名警告）
 - [ ] 场景 57：LOOP 独立产品（LOOP/ 目录 + FLOWHUB/ 隔离 + loop-install.sh 跨产品契约 + dependsOn 元数据）
 
+### v1.1.5 新增功能（场景 58-63）
+- [ ] 场景 58：sofagent-releaser Skill 存在性（SKILL.md 文件 + ≤100 行 + frontmatter 4 字段 + 三处 install.sh 含复制逻辑）
+- [ ] 场景 59：MCP audit_file tool 注册 + 返回结构（[sofagent] 前缀 + auditEngine 字段）
+- [ ] 场景 60：list_capabilities 能力清单完整性（audit_file + 7 个 knowledge resource + auditEngine + rulesCount）
+- [ ] 场景 61：push-target 5 种 target 路由 + 失败 warning 不阻断（throwOnError 默认 false）
+- [ ] 场景 62：USB federation HMAC（HMAC-SHA256 + timingSafeEqual + 密钥 0600 + applyFederation + FederationConfig schema）
+- [ ] 场景 63：cli.ts --mode 参数（deploy|sustain 解析 + 默认 deploy + 非法值报错 + help 含 --mode）
+
 ## 清理
 
 ```bash
@@ -1342,4 +1531,10 @@ unset PATH NODE_PATH
 | warn-accumulator / daemon 巡检逻辑变更 | 第十二部分（场景 55） |
 | USB federation / 安全签名变更 | 第十二部分（场景 56） |
 | LOOP 独立产品 / FLOWHUB / install 脚本契约变更 | 第十二部分（场景 57） |
+| v1.1.5：sofagent-releaser Skill / install 复制契约变更 | 第十三部分（场景 58） |
+| v1.1.5：MCP audit_file pipe / 单文件审计逻辑变更 | 第十三部分（场景 59） |
+| v1.1.5：MCP list_capabilities / 能力清单变更 | 第十三部分（场景 60） |
+| v1.1.5：daemon push-target / 5 种路由 / 失败降级策略变更 | 第十三部分（场景 61） |
+| v1.1.5：USB federation HMAC 签名 / schema / applyFederation 变更 | 第十三部分（场景 62） |
+| v1.1.5：orchestrator cli-args / --mode 参数 / subagent run 变更 | 第十三部分（场景 63） |
 | 发版前 | 仅当审计规则 / hook / SkillOpt / DeepAgents 等**场景逻辑**变更时需同步对应部分；版本号已动态解析，**无需逐处替换** |
