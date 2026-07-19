@@ -33,7 +33,7 @@
 
 **管住 Agent 从部署到持续优化的全生命周期。**
 
-🧭 约束底座 · ⚙️ 编排引擎 · 🔍 审计引擎 · 🧬 进化引擎 · 🎯 FDE 能力
+🧭 约束底座 · ⚙️ 编排引擎 · 🔍 审计引擎 · 🧬 进化引擎 · 🔄 回溯能力 · 📊 质评能力
 
 ---
 
@@ -41,17 +41,17 @@
 
 > **sofagent 是一套开源（MIT）的 FDE（前线部署工程）工具包——FDE 不是软件，而是一种能力。**
 
-我们基于**你自选的大厂 Agent 和大模型**，用自研的**一底座·三引擎·一能力（约束底座 + 编排/审计/进化引擎 + FDE 能力）**做问责底座，帮 SMB 与 OPC 梳理 workflow、搭建本体模型、部署专有 Sub Agent。
+我们基于**你自选的大厂 Agent 和大模型**，用自研的**一底座·两能力·三引擎（约束底座 + 编排/审计/进化引擎 + 回溯/质评能力）**做问责底座，帮 SMB 与 OPC 梳理 workflow、搭建本体模型、部署专有 Sub Agent。
 
-一底座·三引擎·一能力是 FDE 工具包的**核心能力**，不是独立销售的产品——单独拿任何一个出来都没有意义。
+一底座·两能力·三引擎是 FDE 工具包的**核心架构**，不是独立销售的产品——单独拿任何一个出来都没有意义。
 
-**一句话定位**：sofagent 是开源（MIT）的 FDE（前线部署工程）工具包。FDE 不是一款软件，而是一种能力——让任意大厂 Agent + 大模型在企业里可治理、可问责地落地。一底座·三引擎·一能力（约束底座 + 编排/审计/进化引擎 + FDE 能力）做问责底座，帮 **SMB 与 OPC 的每个人**，用自己选的 Agent 和模型，快速成为自己业务的 FDE。
+**一句话定位**：sofagent 是开源（MIT）的 FDE（前线部署工程）工具包。FDE 不是一款软件，而是一种能力——让任意大厂 Agent + 大模型在企业里可治理、可问责地落地。一底座·两能力·三引擎（约束底座 + 编排/审计/进化引擎 + 回溯/质评能力）做问责底座，帮 **SMB 与 OPC 的每个人**，用自己选的 Agent 和模型，快速成为自己业务的 FDE。
 
 ```mermaid
 graph LR
     A[大厂 Agent + 大模型<br/>你自选 · 我们不替代] --> B[约束底座<br/>Harness 中间件]
     B --> C[三引擎<br/>编排 · 审计 · 进化]
-    C --> D[FDE 能力<br/>SMB 与 OPC 的每个人<br/>自主完成部署]
+    C --> D[回溯/质评能力<br/>SMB 与 OPC 的每个人<br/>自主完成部署]
 ```
 
 ---
@@ -114,7 +114,7 @@ sofagent-audit --timeline
 想用 sofagent 成为自己业务的 FDE 节点？按这个顺序读，半小时就能上手：
 
 1. 读 [FDE/FDE.md](./FDE/FDE.md) 的四阶段流程（进场 → 挖掘 → 交付 → 离场）。
-2. 读 [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) 理解一底座·三引擎·一能力怎么协作。
+2. 读 [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) 理解一底座·两能力·三引擎怎么协作。
 3. 读 [docs/PHILOSOPHY.md](./docs/PHILOSOPHY.md) 理解「为什么这么做」。
 4. 动手部署：参考 [FDE/fde-install.sh](./FDE/fde-install.sh) 与 [LOOP/loop-install.sh](./LOOP/loop-install.sh)。
 
