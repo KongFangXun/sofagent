@@ -110,6 +110,19 @@ sofagent-audit --timeline
 
 ---
 
+## 新手上路（成为 FDE 节点）
+
+想用 sofagent 成为自己业务的 FDE 节点？按这个顺序读，半小时就能上手：
+
+1. 读 [FDE/FDE.md](./FDE/FDE.md) 的四阶段流程（进场 → 挖掘 → 交付 → 离场）。
+2. 读 [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) 理解五个引擎怎么协作。
+3. 读 [docs/PHILOSOPHY.md](./docs/PHILOSOPHY.md) 理解「为什么这么做」。
+4. 动手部署：参考 [FDE/fde-install.sh](./FDE/fde-install.sh) 与 [LOOP/loop-install.sh](./LOOP/loop-install.sh)。
+
+> 具体安装与命令以对应脚本和文档为准。术语速查见 [docs/ARCHITECTURE.md · 术语对照](./docs/ARCHITECTURE.md#术语对照)。
+
+---
+
 ## FDE 怎么工作？
 
 FDE 进驻企业做两件事——梳理 + 识别，分出两种节点，然后五个能力接管运行。
