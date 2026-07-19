@@ -42,6 +42,7 @@ import { defaultRules } from './rules';
 import type { RuleCheck } from './rules/types';
 import { pushAuditResult, type WebhookPlatform } from './webhook';
 import { getFixSuggestion } from './fix-suggestions';
+import { buildSessionReport, writeSessionReport } from './session-report';
 import { loadPermission, checkPermission } from './permission';
 
 interface Args {
@@ -68,11 +69,13 @@ interface Args {
   timelineJson?: boolean;
   /** v1.0.9: ontology 子命令 */
   ontologyCommand?: string;
+  /** v1.1.5: 审计 session 产物（默认开启，--no-session 关闭） */
+  noSession: boolean;
 }
 
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, cached: false };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, cached: false, noSession: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff' && argv[i + 1]) {
       i++;
@@ -134,6 +137,8 @@ function parseArgs(argv: string[]): Args {
       args.mcp = true;
     } else if (argv[i] === '--init') {
       args.init = true;
+    } else if (argv[i] === '--no-session') {
+      args.noSession = true;
     } else if (argv[i] === 'ontology' && argv[i + 1]) {
       i++;
       args.ontologyCommand = argv[i] as string;
@@ -179,6 +184,7 @@ function parseArgs(argv: string[]): Args {
         console.log('  --root-cause       根因分析');
         console.log('  --regression <dir> 回归验证');
         console.log('  --init             一键初始化');
+        console.log('  --no-session      不写入 session 报告文件');
         console.log('  --webhook <p>      webhook 推送（dingtalk/feishu/wecom）');
         console.log('  --webhook-url <u>  webhook URL');
         console.log('  --mcp              MCP Server（已拆分为 @sofagent/mcp）');
@@ -678,9 +684,9 @@ async function main(): Promise<void> {
   }
 
   // 8. 写入审计历史（JSONL 持久化，用于根因分析和回归验证）
+  let commitSha: string | undefined;
   try {
     // P1-15: 获取当前 HEAD SHA
-    let commitSha: string | undefined;
     try {
       commitSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
     } catch { /* 非 git 环境 */ }
@@ -700,6 +706,20 @@ async function main(): Promise<void> {
   } catch {
     // 历史写入失败不影响审计结果
     process.stderr.write('[sofagent-audit] 警告: 审计历史写入失败，跳过（不影响审计结果）\n');
+  }
+
+  // 8.5 session 产物（P0：审计结果 session 可见性）——v1.1.5
+  if (!args.noSession) {
+    try {
+      const report = buildSessionReport(results, diffFiles, { task: args.task, commitSha });
+      const { jsonPath, mdPath } = writeSessionReport(report, process.cwd());
+      // 不打扰终端，但 stderr 轻量提示产物位置（非 --ci 时）
+      if (!args.ci && !args.silent) {
+        process.stderr.write(`[sofagent] session 报告已写入: ${jsonPath}\n`);
+      }
+    } catch {
+      process.stderr.write('[sofagent-audit] 警告: session 报告写入失败，跳过（不影响审计结果）\n');
+    }
   }
 
   // 审计通过（PASS）后自动创建 shadow repo 快照，供 --timeline/--revert 使用
@@ -787,7 +807,7 @@ function getHistoryStats(): { total: number; thisMonth: number } | null {
   }
 }
 
-function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean, ci: boolean, silent?: boolean): void {
+export function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean, ci: boolean, silent?: boolean): void {
   // JSON 输出模式——输出结构化 JSON，适合 CI 系统解析
   if (json) {
     console.log(JSON.stringify({ exitCode: results.exitCode, rules: results.rules }, null, 2));
@@ -796,6 +816,19 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
 
   // 静默 / CI 模式——只抑制输出，不改 exit code 判定
   if (ci || silent) {
+    // ★ v1.1.5: 无条件向 stdout 输出一行结论（session 可见性核心）
+    const c = results.exitCode;
+    const failN = results.rules.filter((r) => r.status === 'FAIL').length;
+    const warnN = results.rules.filter((r) => r.status === 'WARN').length;
+    const n = results.rules.length;
+    const line =
+      c === 0
+        ? `✅ [sofagent] 审计通过 · ${n} 项检查 · exit 0`
+        : c === 1
+          ? `⚠️ [sofagent] 审计 ${warnN} 警告 · exit 1`
+          : `❌ [sofagent] 审计拦截 ${failN} 违规 · exit 2`;
+    console.log(line);
+
     const problems = results.rules.filter((r) => r.status !== 'PASS' && r.status !== 'SKIPPED');
     if (problems.length === 0) {
       // v1.0.8: PASS 时向 stderr 输出轻量签名行（防遗忘装了 sofagent）
@@ -915,7 +948,10 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
   console.log('');
 }
 
-main().catch((err) => {
-  console.error('sofagent-audit 内部错误:', err.message);
-  process.exit(2);
-});
+// v1.1.5: 仅作为 CLI 入口时执行 main，避免被测试 import 时触发副作用（如 process.exit）
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('sofagent-audit 内部错误:', err.message);
+    process.exit(2);
+  });
+}
