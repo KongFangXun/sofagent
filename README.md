@@ -23,7 +23,7 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.6-16B8F3" alt="Version" /></a>
   <a href="https://www.npmjs.com/package/@sofagent/audit"><img src="https://img.shields.io/npm/v/@sofagent/audit?label=npm&color=16B8F3" alt="npm" /></a>
-  <a href="./README.md"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
+  <a href="#怎么装"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
 <p align="center" style="color:#64748B;font-size:13px;">
@@ -46,7 +46,7 @@
 
 > 💡 急着装？直接跳 [Quick Start](#怎么装)
 
-> 💡 **命名约定**：`FDE/`、`LOOP/`、`work模板市场/` 是独立产品 / 模板仓库，按需选用；`sofagent/`、`agents/`、`docs/`、`tools/` 是核心代码与配置。clone 主仓库后全部可用。
+> 💡 **命名约定**：`FDE/`、`LOOP/`、`work模板市场/` 是独立产品 / 模板仓库，按需选用；`sofagent/`、`docs/`、`tools/` 是核心代码与配置。clone 主仓库后全部可用。
 
 ---
 
@@ -66,7 +66,7 @@
 不用请顾问、不用养 AI 团队。FDE 进场四步走，交付完离场——AI 节点留在企业自己跑。与 AgentLoop 的区别：它观测 Agent 怎么想（运行时轨迹、SaaS），sofagent 审计 Agent **改了什么**（文件 diff、本地、MIT 开源）。
 
 > [!IMPORTANT]
-> 🔬 **Hugging Face 实测**：同一模型不改权重、仅优化外层 Harness，法律 Agent 基准 **3.5% → 80.1%**（76 分差全部来自外层机制），成本仅 1/7（追平 Claude Sonnet 4.6）。[详情](./docs/ARCHITECTURE.md)
+> 🔬 **Hugging Face 实测**：同一模型不改权重、仅优化外层 Harness，法律 Agent 基准 **3.5% → 80.1%**（76 分差全部来自外层机制），成本仅 1/7（追平 Claude Sonnet 4.6）。[详情](./docs/THANKS.md)
 
 ---
 
@@ -188,6 +188,9 @@ flowchart LR
 
 开工前把规则注入 Agent 上下文——让它知道红线在哪。
 
+<details>
+<summary>🔍 约束底座内部流程</summary>
+
 ```mermaid
 graph LR
     A[Agent 启动] --> B[SKILL.md<br/>宪法层·4 底线 + 7 铁律]
@@ -195,12 +198,16 @@ graph LR
     C --> D[think.md<br/>反思层·历史踩坑]
     D --> E[knowledge/<br/>知识库·自动积累]
 ```
+</details>
 
 四层加载链自动注入，Agent 会话一开始就带着约束。全平台可用——OpenClaw 通过 Hook 精确注入，其他平台 Agent 主动 Read，v1.0.7+ Sub Agent 启动时自加载（`buildConstrainedSystemPrompt`）。
 
 #### ⚙️ 编排引擎
 
 把大任务拆小、多 Sub Agent 并行执行、A/B 对比找更优方案。
+
+<details>
+<summary>🔍 编排引擎内部流程</summary>
 
 ```mermaid
 graph LR
@@ -211,6 +218,7 @@ graph LR
     E -->|新版更好| F[自动 promote<br/>连续胜出2次]
     E -->|旧版更好| G[保留]
 ```
+</details>
 
 当前走 DeepAgents（v1.0.7 OpenClaw 编排层完全退役）。`sofagent-orchestrator compose --task` CLI 入口——**任何 Agent 平台都能用编排引擎**。A/B 自动切换：连续胜出 2 次才 promote，切换前旧版本保留为 fallback。详见 [ROADMAP](./ROADMAP.md)。
 
@@ -251,6 +259,9 @@ sofagent 是**行车记录仪**，不是安检——不管什么 Agent、什么�
 
 FDE Agent 不只部署一次——部署完成后转为**持续优化角色**。每周自动巡检审计趋势 + 反思记录，发现退化就优化。
 
+<details>
+<summary>🔍 进化引擎内部流程</summary>
+
 ```mermaid
 graph LR
     A[FDE 周度巡检] --> B[读 audit 趋势<br/>history.jsonl]
@@ -261,6 +272,7 @@ graph LR
     E -->|否| G[标记「稳定」]
     F --> A
 ```
+</details>
 
 | 模式 | 时机 | 做什么 |
 |------|------|------|
