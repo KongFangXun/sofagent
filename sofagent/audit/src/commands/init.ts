@@ -342,8 +342,8 @@ exit 0
   try {
     // 动态导入验证规则注册表可用
     const { defaultRules } = require('../rules');
-    // v1.1.4: A19 加入 defaultRules，期望数从 11 提升为 12
-    const expectedDefaultRules = 12;
+    // v1.1.5: A18 提升为 defaultRules（v1.1.4=12 → v1.1.5=13）
+    const expectedDefaultRules = 13;
     if (defaultRules && defaultRules.length === expectedDefaultRules) {
       console.log(`  ✅ ${expectedDefaultRules} 条默认规则全部加载`);
     } else {

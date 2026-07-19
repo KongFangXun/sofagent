@@ -14,7 +14,9 @@ async function main() {
     console.log('');
     console.log('Subcommands:');
     console.log('  compose --task <desc>            使用 DeepAgents 编排任务，输出 YAML 工作流');
-    console.log('  subagent run <name> --task <desc> 启动 Sub Agent 执行任务（engineer / reviewer 等）');
+    console.log('  subagent run <name> [--mode deploy|sustain] --task <desc>');
+    console.log('                                   启动 Sub Agent 执行任务（engineer / reviewer / fde 等）');
+    console.log('                                   --mode 缺省 deploy；sustain 用于 FDE 持续优化模式');
     console.log('  loop --task <desc>               LOOP StateGraph 自动流转');
     console.log('       engineer (AI) → audit (CLI) → reviewer (AI) → human_confirm (HITL)');
     console.log('       --resume                     从最近 checkpoint 恢复续跑');
@@ -46,20 +48,19 @@ async function main() {
       const action = args[1];
       if (action !== 'run') {
         console.error(`❌ sofagent 提示：不支持的子命令 "${action || ''}"`);
-        console.error('   用法: sofagent-orchestrator subagent run <name> --task <desc>');
+        console.error('   用法: sofagent-orchestrator subagent run <name> [--mode deploy|sustain] --task <desc>');
         process.exit(1);
       }
-      const agentName = args[2];
-      if (!agentName) {
-        console.error('❌ subagent run 需要 <name> 参数');
+      // v1.1.5 审-8：解析 --mode <deploy|sustain>，缺省 deploy（向后兼容）
+      const { parseSubagentRunArgs } = await import('./cli-args');
+      let parsed: ReturnType<typeof parseSubagentRunArgs>;
+      try {
+        parsed = parseSubagentRunArgs(args.slice(2));
+      } catch (err) {
+        console.error(`❌ ${(err as Error).message}`);
         process.exit(1);
       }
-      const taskIdx = args.indexOf('--task');
-      const taskDesc = taskIdx !== -1 ? args[taskIdx + 1] : undefined;
-      if (!taskDesc) {
-        console.error('❌ subagent run 需要 --task <描述> 参数');
-        process.exit(1);
-      }
+      const { agentName, task: taskDesc, mode } = parsed!;
       const { listAgents } = await import('./registry');
       const { spawnSubAgent } = await import('./launcher');
       const dataDir = process.env.SOFAGENT_DATA_DIR || '.sofagent';
@@ -70,7 +71,7 @@ async function main() {
         console.error('   已注册的 Agent:', agents.map((a) => a.name).join(', '));
         process.exit(1);
       }
-      const output = await spawnSubAgent(definition, taskDesc);
+      const output = await spawnSubAgent(definition, taskDesc, mode);
       console.log(output);
       break;
     }

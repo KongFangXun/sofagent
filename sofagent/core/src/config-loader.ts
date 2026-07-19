@@ -194,9 +194,15 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
     const parsed = yamlLoad(content) as Record<string, unknown> | null;
     if (parsed && typeof parsed === 'object') {
       const audit = parsed['audit'];
+      // v1.1.5: loop 是顶层独立节，不进 audit 段——单独提取，与 audit 段合并
+      const loopSection = parsed['loop'];
       if (audit && typeof audit === 'object') {
         configStrict = !!(audit as Record<string, unknown>)['strict'];
-        return audit as Partial<AuditConfig>;
+        const result: Partial<AuditConfig> = { ...(audit as Partial<AuditConfig>) };
+        if (loopSection && typeof loopSection === 'object') {
+          result.loop = loopSection as AuditConfig['loop'];
+        }
+        return result;
       }
       // v1.1.5: 顶层（无 audit 包装）含 AuditConfig 已知字段时，直接当作 AuditConfig 使用
       // 这样 mergeWithDefaults 的 extendedRulesEnabled / rules / A16 / A17 等字段都能正常生效
