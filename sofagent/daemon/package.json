@@ -9,7 +9,7 @@
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "npm run clean && tsc",
+    "build": "npm run clean && tsc && [ -f dist/cli.js ] && chmod +x dist/cli.js || true",
     "test": "vitest run",
     "check": "tsc --noEmit"
   },

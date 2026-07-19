@@ -34,12 +34,12 @@ graph TD
 |------|------|------|
 | 🧭 约束底座 | Constraint Base | 四层加载链，Agent 启动前注入红线 |
 | 🔍 审计引擎 | Audit Engine | git diff + 文件变更硬证据审计（v1.1.0 拆独立包） |
-| 🔄 回溯引擎 | Restore Capability | 每次审计自动快照，`--revert` 一键回滚 |
+| 🔄 回溯能力 | Restore Capability | 每次审计自动快照，`--revert` 一键回滚 |
 | ⚙️ 编排引擎 | Orchestration Engine | 任务拆解 + Sub Agent 并行 + A/B 优化 |
 | 🧬 进化引擎 | Evolution Engine | FDE 周度巡检 + 自动优化，v1.0.8+ |
 | 加载链 | Load Chain | Agent 启动时注入的约束文件 |
 | FDE | 一种能力（非岗位 title）——前线部署工程能力模型：掌握完整上下文、打破岗位边界、对结果负责 |
-| Harness | Harness 中间层 | 挂在 Agent 之上的行为治理层：约束 + 审计 + 回溯 + 迭代 |
+| Harness | Harness 中间层 | 挂在 Agent 之上的行为约束层（约束底座）：约束 + 审计 + 回溯 + 迭代 |
 | Gateway | Gateway | 企业级 AI 统一入口（OpenClaw/DeepAgents），sofagent 不替代它 |
 | Sub Agent | Sub Agent | 用 LangGraph + DeepAgents 搭的专有执行节点 |
 | Ontology | 本体模型 | 企业的业务世界模型，FDE 帮你搭建并持续维护 |
@@ -62,7 +62,7 @@ sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent �
 | 管什么 | 「会不会做」——能力问题 | 「能不能每次都做对」——执行控制问题 |
 | 关系 | Gateway 高速公路 | 交规 + 测速摄像头 + 驾校教练 |
 
-> **90%/10% 价值分层**：AI 模型提供 90% 的智力输出（写代码、做分析、生成报告），但企业敢不敢让 Agent 自主执行，取决于最后 10%——**可靠性、可追溯性、可问责性**。sofagent 的价值不在那 90% 里（那是模型的事），在那 10% 里（纪律层的事）。模型越强，纪律层越值钱——因为 Agent 能做更多事了，但"做错了怎么办"的代价也更大。
+> **90%/10% 价值分层**：AI 模型提供 90% 的智力输出（写代码、做分析、生成报告），但企业敢不敢让 Agent 自主执行，取决于最后 10%——**可靠性、可追溯性、可问责性**。sofagent 的价值不在那 90% 里（那是模型的事），在那 10% 里（约束底座的事）。模型越强，纪律层越值钱——因为 Agent 能做更多事了，但"做错了怎么办"的代价也更大。
 
 > 理论基础及行业验证见 [THANKS.md](./THANKS.md) 和 [PHILOSOPHY §四 信任模型](./PHILOSOPHY.md#四怎么管信任模型)。
 
@@ -72,7 +72,7 @@ sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent �
 graph LR
     A["🧭 约束底座<br/>启动前注入红线"] --> B["⚙️ 编排引擎<br/>拆任务·并行·A/B"]
     B --> C["🔍 审计引擎<br/>每次变更自动扫描"]
-    C --> D["🔄 回溯引擎<br/>快照存档·一键回滚"]
+    C --> D["🔄 回溯能力<br/>快照存档·一键回滚"]
     D --> E["🧬 进化引擎<br/>周度巡检·自动优化"]
     E --> A
 ```
@@ -81,7 +81,7 @@ graph LR
 |------|------|:--:|
 | 🧭 约束底座 | 四层加载链永远在线 | @sofagent/harness |
 | 🔍 审计引擎 | 只看 git diff 硬证据 | @sofagent/audit |
-| 🔄 回溯引擎 | 事后快照 + `--revert` | @sofagent/core |
+| 🔄 回溯能力 | 事后快照 + `--revert` | @sofagent/core |
 | ⚙️ 编排引擎 | DeepAgents + compose CLI | @sofagent/orchestrator |
 | 🧬 进化引擎 | daemon cron @weekly | @sofagent/daemon + @sofagent/skillopt |
 
@@ -114,7 +114,7 @@ Harness 中间件最大的挑战是存在感——引擎在正常工作，但用
 | 地基 | 四层加载链（纯 MD 文件，Agent 读即生效） | ~3,500 token |
 | 引擎 | 编排 + 审计 + 回溯 + 质评 + 进化 + 约束底座（daemon + CLI） | 按需启动 |
 
-> v1.1.0 将审计引擎拆为独立 npm 包 `@sofagent/audit`，地基（约束底座）和其余引擎（编排/审计/进化）与回溯引擎不受影响。
+> v1.1.0 将审计引擎拆为独立 npm 包 `@sofagent/audit`，地基（约束底座）和其余引擎（编排/审计/进化）与回溯能力不受影响。
 
 ### 产品架构展望（五层）
 
@@ -186,7 +186,7 @@ graph LR
 
 > **设计原则**：Review Agent 默认不配代码执行权限——纯静态分析避免执行逻辑干扰审查客观性。sofagent 审计引擎同样零执行权限，只看 git diff 硬证据。
 
-### 🔄 回溯引擎
+### 🔄 回溯能力（本质：git snapshot + revert 包装）
 
 行车记录仪，不是安检——事后快照，不依赖任何平台：
 

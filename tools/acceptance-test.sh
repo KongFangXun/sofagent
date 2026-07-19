@@ -1103,9 +1103,9 @@ git reset HEAD . 2>/dev/null || true
 rm -f .env
 
 # ── 场景 34/34b/34c: Webhook 三态推送端到端（PASS + WARN + FAIL 都推）──
-# v1.1.6: 对齐 webhook.ts 注释——PASS 也推送（旧版只在 WARN/FAIL 时推送，PASS 推送是死代码）
-# 启动本地 mock webhook server 记录收到的 POST 请求
-WEBHOOK_LOG=$(mktemp /tmp/sofagent-wh.XXXX.log)
+# v1.1.6: 启动前清理旧 temp 文件（48 小时内残留的碰撞修复）
+rm -f /tmp/sofagent-wh.*.log 2>/dev/null || true
+WEBHOOK_LOG=$(mktemp /tmp/sofagent-wh.XXXXXXXX.log)
 WEBHOOK_PORT=$(( (RANDOM % 8000) + 12000 ))
 WEBHOOK_URL="http://localhost:${WEBHOOK_PORT}/test"
 node -e '
