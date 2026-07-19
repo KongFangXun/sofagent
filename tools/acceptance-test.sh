@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.1.3 · 50 个端到端场景，覆盖完整用户旅程 + 全规则覆盖 + 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成
+# v1.1.4 · 56 个端到端场景，覆盖完整用户旅程 + 全规则覆盖（含 A18/A19）+ 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成 + v1.1.4: LOOP 工具注入(maxTurns/ENGINEER_TOOLS/checkDangerousCommand) + warn-accumulator 连续性 + USB federation + LOOP 独立产品
 # ============================================================
 # 用真实 git 仓库走完整用户旅程：
 #   Fresh install → --init → --doctor → 正常 commit → 违规拦截
@@ -1461,6 +1461,142 @@ if [ -f "$PROJECT_DIR/watch.yml" ]; then
   grep -q "paths:" "$PROJECT_DIR/watch.yml" && pass || fail "watch.yml 不含 paths 配置"
 else
   fail "watch.yml 不存在（--init 未生成或项目 watch 配置缺失）"
+fi
+
+# ── 场景 51-56: v1.1.4 新增功能（LOOP 工具注入 + USB + A18 + LOOP 独立产品）────
+
+# 51: A18 垃圾文件检测（extendedRules，需 config 开启）
+scenario 51 "A18 垃圾文件检测（单字母 + tmp 前缀）"
+
+A18_TEST_DIR=$(mktemp -d /tmp/sofagent-a18-XXXX)
+cd "$A18_TEST_DIR"
+git init --quiet && git config user.email "t@t.com" && git config user.name "T"
+$CLI --init > /dev/null 2>&1
+# 开启 extended rules
+mkdir -p .sofagent
+cat > .sofagent/config.yml << 'CFG'
+audit:
+  extendedRulesEnabled: true
+CFG
+
+# 创建垃圾文件——单字母 + tmp 前缀
+echo "junk" > a.txt
+echo "junk" > tmp.test.ts
+git add a.txt tmp.test.ts 2>/dev/null
+A18_OUT=$(git commit -m "add junk files" 2>&1 || true)
+echo "$A18_OUT" | head -5
+# A18 只产生 WARN 不阻断——commit 应成功，但输出含 A18 告警
+echo "$A18_OUT" | grep -q "A18\|垃圾文件" && pass || fail "A18 未告警垃圾文件"
+cd "$PROJECT_ROOT" && rm -rf "$A18_TEST_DIR"
+
+# 52: A18 豁免规则（正规测试文件不误报）
+scenario 52 "A18 豁免规则（正规测试文件不误报）"
+
+A18_EXEMPT_DIR=$(mktemp -d /tmp/sofagent-a18-exempt-XXXX)
+cd "$A18_EXEMPT_DIR"
+git init --quiet && git config user.email "t@t.com" && git config user.name "T"
+$CLI --init > /dev/null 2>&1
+mkdir -p .sofagent
+cat > .sofagent/config.yml << 'CFG'
+audit:
+  extendedRulesEnabled: true
+CFG
+
+# 正规测试文件——不应触发 A18
+mkdir -p src
+echo "test" > src/foo.test.ts
+echo "test" > src/bar.spec.ts
+git add src/ 2>/dev/null
+A18_EXEMPT_OUT=$(git commit -m "add real test files" 2>&1 || true)
+echo "$A18_EXEMPT_OUT" | head -5
+# 期望：不包含 A18 告警（正规测试文件豁免）
+echo "$A18_EXEMPT_OUT" | grep -q "A18\|垃圾文件" && fail "A18 误报正规测试文件" || pass
+cd "$PROJECT_ROOT" && rm -rf "$A18_EXEMPT_DIR"
+
+# 53: LOOP 工具注入——maxTurns + ENGINEER_TOOLS + REVIEWER_TOOLS 常量存在
+scenario 53 "LOOP 工具注入（maxTurns=20 + ENGINEER/REVIEWER_TOOLS）"
+
+LOOP_NODES="$PROJECT_ROOT/sofagent/orchestrator/src/loop/nodes.ts"
+LOOP_TOOLS="$PROJECT_ROOT/sofagent/orchestrator/src/tools.ts"
+LOOP_TOOL_INJECT_OK=true
+
+[ ! -f "$LOOP_NODES" ] && LOOP_TOOL_INJECT_OK=false && fail "loop/nodes.ts 不存在"
+[ ! -f "$LOOP_TOOLS" ] && LOOP_TOOL_INJECT_OK=false && fail "orchestrator/tools.ts 不存在"
+
+if $LOOP_TOOL_INJECT_OK; then
+  # maxTurns = 20 常量
+  grep -q "DEFAULT_AGENT_MAX_TURNS = 20" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
+  # ENGINEER_TOOLS + REVIEWER_TOOLS 导入
+  grep -q "ENGINEER_TOOLS" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
+  grep -q "REVIEWER_TOOLS" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
+  # tools: ENGINEER_TOOLS 实际传给 createDeepAgent
+  grep -q "tools: ENGINEER_TOOLS" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
+  # maxTurns 传入
+  grep -q "maxTurns: DEFAULT_AGENT_MAX_TURNS" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
+  # checkDangerousCommand 高危命令拦截
+  grep -q "checkDangerousCommand" "$LOOP_TOOLS" || LOOP_TOOL_INJECT_OK=false
+  # recordLoopAuditHistory 三态全记录
+  grep -q "recordLoopAuditHistory" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
+  $LOOP_TOOL_INJECT_OK && pass || fail "LOOP 工具注入常量缺失（见上）"
+fi
+
+# 54: warn-accumulator 真正连续性（遇 PASS/FAIL 中断）
+scenario 54 "warn-accumulator 连续性语义（遇 PASS/FAIL 中断）"
+
+WARN_ACC="$PROJECT_ROOT/sofagent/daemon/src/inspectors/warn-accumulator.ts"
+if [ -f "$WARN_ACC" ]; then
+  # 期望含 "break" + 连续中断逻辑（不是简单计数 N 条 WARN）
+  grep -q "break.*连续中断\|连续中断" "$WARN_ACC" && pass || fail "warn-accumulator 缺连续性中断逻辑（只数 WARN 不区分清理）"
+else
+  fail "warn-accumulator.ts 不存在"
+fi
+
+# 55: USB federation 基础检测（SOFAGENT 卷标）
+scenario 55 "USB federation 基础检测（SOFAGENT 卷标 + 安全警告）"
+
+USB_DETECT="$PROJECT_ROOT/sofagent/daemon/src/usb-detect.ts"
+USB_FED_OK=true
+[ ! -f "$USB_DETECT" ] && USB_FED_OK=false && fail "usb-detect.ts 不存在"
+
+if $USB_FED_OK; then
+  # SOFAGENT 卷标常量
+  grep -q "SOFAGENT_LABEL" "$USB_DETECT" || USB_FED_OK=false
+  # SECURITY.md 标注无签名校验 + v1.1.5+ 计划
+  grep -q "无签名校验\|v1.1.5" "$PROJECT_ROOT/SECURITY.md" || USB_FED_OK=false
+  $USB_FED_OK && pass || fail "USB federation 基础检测缺失（SOFAGENT_LABEL 或 SECURITY 警告）"
+fi
+
+# 56: LOOP 独立产品（LOOP/ 目录 + loop-install.sh + 模板市场 隔离）
+scenario 56 "LOOP 独立产品（目录结构 + install 脚本 + 模板市场 隔离）"
+
+LOOP_DIR="$PROJECT_ROOT/LOOP"
+模板市场_DIR="$PROJECT_ROOT/模板市场"
+LOOP_PROD_OK=true
+
+# LOOP/ 目录核心文件
+[ ! -d "$LOOP_DIR" ] && LOOP_PROD_OK=false && fail "LOOP/ 目录不存在"
+[ ! -f "$LOOP_DIR/README.md" ] && LOOP_PROD_OK=false
+[ ! -f "$LOOP_DIR/SKILL.md" ] && LOOP_PROD_OK=false
+[ ! -f "$LOOP_DIR/LOOP.md" ] && LOOP_PROD_OK=false
+[ ! -f "$LOOP_DIR/quick-start.md" ] && LOOP_PROD_OK=false
+[ ! -f "$LOOP_DIR/loop-install.sh" ] && LOOP_PROD_OK=false
+[ ! -f "$LOOP_DIR/loop-workflow.sh" ] && LOOP_PROD_OK=false
+[ ! -f "$LOOP_DIR/package.json" ] && LOOP_PROD_OK=false
+
+# 模板市场/ 目录（社区模板市场，与 LOOP 内部编排隔离）
+[ ! -d "$模板市场_DIR" ] && LOOP_PROD_OK=false
+[ ! -f "$模板市场_DIR/README.md" ] && LOOP_PROD_OK=false
+[ ! -f "$模板市场_DIR/CATALOG.md" ] && LOOP_PROD_OK=false
+
+if $LOOP_PROD_OK; then
+  # LOOP/package.json 用 sofagent 自定义元数据（dependsOn/optionalDependsOn）——不是标准 npm dependencies
+  grep -q "sofagent-audit" "$LOOP_DIR/package.json" || LOOP_PROD_OK=false
+  grep -q "dependsOn" "$LOOP_DIR/package.json" || LOOP_PROD_OK=false
+  # loop-install.sh 调主 install.sh（跨产品契约，v1.1.5 已加契约文档）
+  grep -q "scripts/install.sh" "$LOOP_DIR/loop-install.sh" || LOOP_PROD_OK=false
+  # loop-install.sh 有版本号头部（v1.1.4 教训——曾写 v1.1.5）
+  head -5 "$LOOP_DIR/loop-install.sh" | grep -q "v1\.1\.[0-9]" || LOOP_PROD_OK=false
+  $LOOP_PROD_OK && pass || fail "LOOP 独立产品目录结构缺失（见上）"
 fi
 
 # ── 总结 ──────────────────────────────────────────────────────

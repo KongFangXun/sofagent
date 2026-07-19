@@ -121,7 +121,7 @@ OpenClaw 完整能力（Hook 自动注入 + 断路器 + 编排引擎）。其他
 
 ### 提交后审计
 
-Agent 改完代码 commit 了——`sofagent-audit` 扫描 git diff 对照 A1-A11、A14-A17 审计规则逐条判定：
+Agent 改完代码 commit 了——`sofagent-audit` 扫描 git diff 对照 A1-A11、A14-A19 审计规则逐条判定：
 
 ```bash
 cd sofagent/audit && npm ci && npm run build
@@ -206,7 +206,7 @@ jobs:
 | 引擎 | 做什么 | 触发方式 |
 |------|------|------|
 | 🧭 **约束底座** | 四层加载链注入规则 | Agent 启动时自动（OpenClaw Hook / Sub Agent 自加载） |
-| 🔍 **审计引擎** | git diff → A1-A11、A14-A17 规则检查 | git commit / daemon 文件变更 |
+| 🔍 **审计引擎** | git diff → A1-A11、A14-A19 规则检查 | git commit / daemon 文件变更 |
 | 🔄 **回溯能力** | 审计后自动 snapshot，违规时建议回滚 | 审计完成后自动 |
 | ⚙️ **编排引擎** | 拆解任务 + Sub Agent 并行 + A/B 优化 | CLI / MCP compose tool |
 | 🧬 **进化引擎**（v1.0.8+） | FDE 周度巡检审计趋势 + 反思，自动优化 | daemon cron @weekly / 手动触发 |
@@ -318,7 +318,7 @@ Agent 先判断任务复杂度：
 
 ### 审计规则
 
-当前共 19 条审计规则（A1-A11、A14-A17 + E1-E4），源码在 `sofagent/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计)。
+当前共 21 条审计规则（A1-A11、A14-A19 + E1-E4），源码在 `sofagent/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计)。
 
 ### 概念速查
 
@@ -329,7 +329,7 @@ Agent 先判断任务复杂度：
 | **回溯能力**（v1.0.8+） | 审计后自动快照存档，违规时建议回滚——不只是告诉你违规了，还存了快照、推了通知 |
 | **编排引擎**（实验性）| 拆任务→编排→执行，基于 DeepAgents Sub Agent。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
 | **铁律** | Agent 行为约束规则（4 底线 + 7 铁律），写在 MD 文件里注入上下文 |
-| **审计规则** | 代码变更检查规则（A1-A11、A14-A17 + E1-E4），审计引擎按此判定 exit code |
+| **审计规则** | 代码变更检查规则（A1-A11、A14-A19 + E1-E4），审计引擎按此判定 exit code |
 | **Skill** | Agent 行为模板——一组 .md 文件，定义 Agent 在什么场景做什么 |
 | **think.md** | Agent 任务结束后的反思记录——踩了什么坑、下次怎么办 |
 | **daemon** | 轻量后台进程，检查 think.md/fde.md 文件 hash 变化并通知；v1.0.8+ 扩展为文件变更审计（fs.watch + isomorphic-git） |
@@ -351,14 +351,7 @@ FDE = Forward Deployed Engineer。完整流程见 [FDE/FDE.md](../FDE/FDE.md)。
 
 没有 sofagent，梳理的 workflow 就是一份 PPT。引擎装到设备上，AI 节点才有纪律和审计。完整引擎对照表与部署步骤见 [FDE/FDE.md §装上 sofagent](../FDE/FDE.md#装上-sofagent整个部署的核心)。
 
-**节点类型选择**：
-
-| | 自动运行节点 | 个人增强节点 |
-|---|---|---|
-| 装什么 | OpenClaw + sofagent 全栈 | sofagent + 预定义 Sub Agent |
-| 编排调用 | OpenClaw 内部 API | `sofagent-orchestrator compose --task` CLI |
-| 约束注入 | OpenClaw Hook 精确注入 | Sub Agent 启动时自加载 |
-| 适合 | 7×24 无人值守设备 | 个人开发工位 |
+**节点类型选择**：自动运行节点（需 OpenClaw 全栈）vs 个人增强节点（WorkBuddy/Codex，无需 OpenClaw）。完整对照表见 [ARCHITECTURE 双节点架构](./ARCHITECTURE.md#双节点架构)。
 
 ### 离场后：企业留下什么 + 谁来管
 
@@ -374,7 +367,7 @@ FDE 离场后，两个内置 Agent 接手持续运维：
 | | 审计 Agent | FDE Agent |
 |------|------|------|
 | 方向 | 向下看——防止退化 | 向上看——推动进化 |
-| 数据源 | git diff + A1-A11、A14-A17 规则 | audit 报告 + think.md + eval |
+| 数据源 | git diff + A1-A11、A14-A19 规则 | audit 报告 + think.md + eval |
 | 输出 | "哪里坏了 + 怎么修" | "怎么做得更好 + 趋势分析" |
 | 频率 | 每次 commit 自动 | 每周自动巡检 |
 
@@ -427,4 +420,4 @@ sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 > 大半年 OpenClaw 实战笔记。如有更好的用法，欢迎开 Issue。
 >
-> *v1.1.4，2026 年 7 月 13 日*
+> *v1.1.4，2026 年 7 月 15 日*

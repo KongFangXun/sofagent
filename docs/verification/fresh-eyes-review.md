@@ -485,38 +485,42 @@
    - **检查手法**：`find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path '*/__tests__/*' | sed 's#.*/##' | sort | uniq -d` —— 有输出 = 跨包重复 → 提升为 import（core 为 canonical source），删除副本。
 
 #### 25. **Ledger-Views 归属一致性（think.md 永远为 Ledger/source）** 🆕
-   - **v1.1.3 全仓审计发现**：ARCHITECTURE.md:320 将 think.md 错标为 Views(派生视图)，PHILOSOPHY.md:132 正确标为 Ledger(原始数据)。Dream Cycle 从 think.md **抽取** 事实进 knowledge/(派生)——think.md 是 source 不是 derived。单篇阅读发现不了，必须两篇对照 + 推理数据流。
-   - **盲区本质**：记忆模型三层(Ledger-Views-Policy)的归属描述散落在多文档，任何一篇单独看都「像对的」，只有跨文档对照 + 确认派生方向才暴露矛盾。
+   - **教训（v1.1.3）**：ARCHITECTURE.md:320 将 think.md 错标为 Views(派生视图)，PHILOSOPHY.md:132 正确标为 Ledger。Dream Cycle 从 think.md **抽取**事实进 knowledge/——think.md 是 source 不是 derived。三层归属描述散落多文档，单篇看都「像对的」，只有跨文档对照 + 确认派生方向才暴露矛盾。
    - **检查手法**：`grep -rn "think.md.*Views\|think.md.*派生视图" ARCHITECTURE.md PHILOSOPHY.md DEVELOPMENT.md FDE/FDE.md` 期望零匹配；且 Ledger-Views-Policy 映射中 think.md=Ledger、knowledge/=Views、方向严格 think.md→knowledge/。
 
 #### 26. **孤儿 changelog 与 CHANGELOG 索引完整性（v1.1.3 追加）** 🆕
-   - **盲区**：`docs/changelog/` 下存在无对应 git tag 的 .md 文件（如 v1.1.3.md/v1.1.4.md 等规划中文件），可能被自动化门禁误读为已发布版本。反向也存在：git tag 存在但 CHANGELOG.md 索引中无条目（v1.1.3 审查发现 v1.1.1 tag 存在但索引遗漏）。
+   - **盲区**：`docs/changelog/` 下无对应 git tag 的 .md 文件（规划中）可能被自动化门禁误读为已发布；反向也存在 tag 存在但 CHANGELOG 索引遗漏（v1.1.3 发现 v1.1.1）。
    - **检查手法**：
      - 正向：`for f in docs/changelog/v*.md; do v=$(basename $f .md); git rev-parse $v >/dev/null 2>&1 || echo "⚠️ $v: changelog 存在但无对应 tag（应为规划中）"; done`
      - 反向：`git tag -l "v*" | while read t; do grep -q "$t" CHANGELOG.md || echo "❌ $t: tag 存在但 CHANGELOG.md 索引遗漏"; done`
 
 #### 27. **ruleClass 跨文档漂移检测（v1.1.3 追加）** 🆕
-   - **v1.1.3 审查发现**：A6 和 A11 的 ruleClass 在 `rules/index.ts`（SSOT）和 `audit/README.md` 规则表之间反复漂移。单文档审查永远发现不了——ruleClass 不是"错"，是"不一致"。
-   - **盲区本质**：规则分级定义在两处——代码（SSOT）和文档（README 规则表）手工维护。每次调整 ruleClass 时，README 表格容易遗漏更新。
-   - **检查手法**：提取 index.ts 的 `name` + `ruleClass` → 与 audit/README.md 规则表的名称+分级列逐行 diff。建议对此建自动化脚本加入 pre-push-check（参考回归清单·维度 4「审计规则分级与 ruleClass 一致性」的 A6/A11 人工 grep，扩展为全量逐行 diff）。
+   - **教训（v1.1.3）**：A6 和 A11 的 ruleClass 在 `rules/index.ts`（SSOT）和 `audit/README.md` 规则表之间反复漂移。ruleClass 不是"错"，是"不一致"——代码和文档两处手工维护，调整时 README 表格容易遗漏。
+   - **检查手法**：`diff <(grep -E "name:|ruleClass:" sofagent/audit/src/rules/index.ts | paste - - | sort) <(grep -oE "A[0-9]+ .*  \|  (业务底线|能力拐杖|工程规范)" sofagent/audit/README.md | sort)` 期望零差异。建议加自动化脚本进 pre-push-check。
 
 #### 28. **Agent 身份感知有效性（v1.1.3 补入）** 🆕
-   - **背景**：v1.1.2 的三层输出签名（CLI/Webhook/MCP 带 `[sofagent]` 前缀）解决了「输出渠道可见性」，但 Agent 本身不知道约束来自 sofagent——约束在生效，用户和 Agent 都感知不到。
-   - **检查手法**：
-     1. SKILL.md 是否含方案 C 身份感知指令（`grep -c "露个脸就够了" sofagent/skill/SKILL.md` ≥ 1）
-     2. engage.md 是否含身份感知序言（`grep -c "质量搭档" sofagent/skill/engage.md` ≥ 1）
-     3. install.sh 完成后是否输出「✅ sofagent 已就绪」品牌行
-     4. FDE/FDE.md §13 是否注明 Agent 身份感知设计意图
-   - **验证**：从一个 clean slate 加载 sofagent skill 后，Agent 是否在上下文中感知到 sofagent 的存在（通过 system prompt 或首次响应确认）
+   - **背景**：v1.1.2 三层输出签名解决了「输出渠道可见性」，但 Agent 本身不知道约束来自 sofagent——约束在生效，用户和 Agent 都感知不到。
+   - **检查手法**：① `grep -c "露个脸就够了" sofagent/skill/SKILL.md` ≥ 1 ② `grep -c "质量搭档" sofagent/skill/engage.md` ≥ 1 ③ install.sh 完成后输出「✅ sofagent 已就绪」品牌行 ④ FDE/FDE.md §13 注明设计意图。**验证**：clean slate 加载 sofagent skill 后，Agent 是否在上下文中感知到 sofagent 的存在。
 
 #### 29. **独立产品声称一致性（v1.1.4 新增）** 🆕
-   - **盲区**：FDE 和 LOOP 声称独立产品，但它们的 README / SKILL.md / quick-start.md / FDE.md / LOOP.md 里声称的流程步数、Agent 数量、CLI 命令、Skill 路径——与实际代码和文件交叉验证后是否一致？单篇文档审查发现不了跨文档声称漂移。
+   - **盲区**：FDE 和 LOOP 声称独立产品，但 README / SKILL.md / quick-start.md / FDE.md / LOOP.md 里声称的流程步数、Agent 数量、CLI 命令、Skill 路径——与实际代码交叉验证后是否一致？单篇审查发现不了跨文档漂移。
    - **检查手法**：
-     1. **FDE 12 步流程声称**：FDE/SKILL.md 写"四阶段十一关键步"、FDE/README.md 写"12 步流程"、fde-install.sh 第 110 行写"走完 11 步"——**到底是 11 步还是 12 步？** 三个地方声称不一致。打开 FDE/FDE.md 实数章节标题，与三处声称对照。
-     2. **LOOP 内置 Agent 数声称**：LOOP/SKILL.md 列了 3 个（engineer/reviewer/audit）、LOOP/README.md 列了 3 个、LOOP/quick-start.md 列了 4 个（多了 sofagent-fde）——**到底是 3 个还是 4 个？** 实数 `ls agents/SKILL/sofagent-*` 看真实安装了几个。
-     3. **CLI 命令声称**：所有 SKILL.md / README / quick-start 里出现的 `sofagent-orchestrator <subcommand>` 命令——逐一在装完底座后跑 `--help` 确认子命令存在。历史教训：SKILL.md 曾写过不存在的 CLI 子命令。
-     4. **Skill 路径声称**：FDE/SKILL.md / LOOP/SKILL.md 引用的 `agents/SKILL/<name>/SKILL.md` 路径——逐个 `ls` 确认存在。fde-install.sh / loop-install.sh 复制源路径与文档声称路径一致吗？
-     5. **跨产品版本一致性**：FDE/package.json / LOOP/package.json / 主 package.json 三者 version 必须一致。`diff <(grep version FDE/package.json) <(grep version LOOP/package.json)` 期望零差异。
+     1. **FDE 步数声称**：FDE/SKILL.md 写"四阶段十一关键步"、FDE/README.md 写"12 步流程"、fde-install.sh:110 写"走完 11 步"——三处不一致。打开 FDE/FDE.md 实数章节标题对照。
+     2. **LOOP Agent 数声称**：LOOP/SKILL.md 列 3、README 列 3、quick-start 列 4（含 sofagent-fde）。实数 `ls agents/SKILL/sofagent-*`。
+     3. **CLI 命令声称**：所有 SKILL.md / README / quick-start 里的 `sofagent-orchestrator <subcommand>`——逐一跑 `--help` 确认子命令存在。SKILL.md 曾写过不存在的子命令。
+     4. **Skill 路径声称**：FDE/SKILL.md / LOOP/SKILL.md 引用的 `agents/SKILL/<name>/SKILL.md`——逐个 `ls` 确认存在。
+     5. **跨产品版本一致性**：`diff <(grep version FDE/package.json) <(grep version LOOP/package.json)` 期望零差异。
+
+#### 30. **两份验收测试的场景覆盖率与功能对齐（v1.1.4 新增）** 🆕
+   - **盲区（v1.1.4 暴露）**：`tools/acceptance-test.sh`（50 场景）和 `docs/verification/openclaw-acceptance-test.md`（51 场景）对本版本新增功能**零覆盖**——A18 垃圾文件检测、LOOP 独立产品（LOOP/ 目录 / loop-install.sh / loop-workflow.sh / 模板市场）、USB federation、工具注入（ENGINEER_TOOLS / REVIEWER_TOOLS / maxTurns / checkDangerousCommand / recordLoopAuditHistory / warn-accumulator）全部无场景。两份验收测试是"最后一道防线"——场景数远落后于代码实现意味着回归测试无法发现新功能的退化。
+   - **盲区本质**：验收测试自身会过时——开发者新增功能后只更新产品代码和 changelog，忘了同步追加 acceptance test 场景。releasing.md 阶段三步骤 12 虽有操作指南，但没有"覆盖率必须达标"的硬判定。
+   - **检查手法**：
+     1. **场景数声称与实际对齐**：`DECLARED=$(head -5 tools/acceptance-test.sh | grep -oE "[0-9]+ 个端到端" | grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " tools/acceptance-test.sh); echo "声明=$DECLARED 实际=$ACTUAL"` 期望一致。
+     2. **本版本 changelog 功能点逐条对照**：读 `docs/changelog/vX.Y.md`「核心变更/交付」章节，提取每条功能关键词，逐条 grep 两份 acceptance test 文件——零覆盖 = P0（回归测试无法发现该功能的退化）。
+     3. **两份 test 同步性**：`diff <(grep -oE "A[0-9]+|LOOP|USB|daemon|maxTurns|warn-accumulator" tools/acceptance-test.sh | sort -u) <(grep -oE "A[0-9]+|LOOP|USB|daemon|maxTurns|warn-accumulator" docs/verification/openclaw-acceptance-test.md | sort -u)` 期望覆盖集合大致一致（允许有差异但不能一方完全缺失某功能）。
+     4. **openclaw-acceptance-test.md 顶部"覆盖范围"描述行同步**：该文件第 7 行的覆盖描述是否包含本版本新增关键功能。
+     5. **失效场景清理**：`grep -rn "sofagent-audit --daemon\|work模板市场/" tools/acceptance-test.sh docs/verification/openclaw-acceptance-test.md` 期望零命中（命中 = 场景引用已废弃命令/已迁移路径，必然 FAIL）。
+
 
 **输出格式**：
 

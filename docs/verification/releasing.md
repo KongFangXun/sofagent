@@ -51,7 +51,7 @@
 | 9 | `shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
 | 10 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
 | 11 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
-| 12 | **🔴 更新 `tools/acceptance-test.sh` + `docs/verification/openclaw-acceptance-test.md`**（v1.1.3 教训——验收测试文件自身的功能会过时，场景数落后于代码实现、新增功能零覆盖）<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `tools/acceptance-test.sh` 和 `docs/verification/openclaw-acceptance-test.md`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `tools/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述（如 `38 个` → `42 个`、描述追加新功能关键词）<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n tools/acceptance-test.sh` 确认语法<br><br>**Step C — 更新 `docs/verification/openclaw-acceptance-test.md`**：<br>① 在文件末尾追加新部分（如 `## 第N部分：xxx`），包含场景描述 + 命令 + 期望<br>② 更新顶部「覆盖范围」描述行，追加本版本新增功能关键词<br>③ 在验证检查清单末尾追加新场景的核对项<br>④ 更新测试目的表中 `acceptance-test.sh` 的场景数引用<br><br>**Step D — 同步 `docs/verification/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增） | 三个文件 git diff 显示均有新增；`bash -n tools/acceptance-test.sh` 通过 |
+| 12 | **🔴 更新 `tools/acceptance-test.sh` + `docs/verification/openclaw-acceptance-test.md`**（v1.1.3 教训——验收测试文件自身的功能会过时，场景数落后于代码实现、新增功能零覆盖）<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `tools/acceptance-test.sh` 和 `docs/verification/openclaw-acceptance-test.md`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `tools/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述（如 `38 个` → `42 个`、描述追加新功能关键词）<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n tools/acceptance-test.sh` 确认语法<br><br>**Step C — 更新 `docs/verification/openclaw-acceptance-test.md`**：<br>① 在文件末尾追加新部分（如 `## 第N部分：xxx`），包含场景描述 + 命令 + 期望<br>② 更新顶部「覆盖范围」描述行，追加本版本新增功能关键词<br>③ 在验证检查清单末尾追加新场景的核对项<br>④ 更新测试目的表中 `acceptance-test.sh` 的场景数引用<br><br>**Step D — 同步 `docs/verification/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增）<br><br>**🔴 Step E — 覆盖率闭环判定（v1.1.4 教训——两份验收测试对本版本新增功能零覆盖）**：<br>① **场景数声称 vs 实际对齐**：`DECLARED=$(head -5 tools/acceptance-test.sh \| grep -oE "[0-9]+ 个端到端" \| grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " tools/acceptance-test.sh); [ "$DECLARED" = "$ACTUAL" ]` 不一致 = P0<br>② **功能点逐条对照**：从 changelog「核心变更/交付」提取功能关键词，逐条 grep 两份 acceptance test——零覆盖 = P0（回归测试无法发现该功能退化）<br>③ **两份同步性**：`diff <(grep -oE "A[0-9]+\|LOOP\|USB\|daemon\|maxTurns\|warn-accumulator" tools/acceptance-test.sh \| sort -u) <(grep -oE "A[0-9]+\|LOOP\|USB\|daemon\|maxTurns\|warn-accumulator" docs/verification/openclaw-acceptance-test.md \| sort -u)` 覆盖集合应大致一致<br>④ **失效场景清理**：`grep -rn "sofagent-audit --daemon\|work模板市场/" tools/acceptance-test.sh docs/verification/openclaw-acceptance-test.md` 期望零命中 | 三个文件 git diff 显示均有新增；`bash -n tools/acceptance-test.sh` 通过；**Step E 四项判定全 PASS** |
 | 13 | `bash tools/acceptance-test.sh` — 端到端场景：Fresh install → --init → --doctor → 正常 commit → 违规拦截 → --json → --ci → 首次提交 → hook 破坏 → --no-verify 检测 → config rules 过滤 → A1-A11 → E1-E4 扩展规则 → --strict exit code=2 → hook 迁移 → post-commit → hashVersion 混合格式 → history.jsonl 写入 → --json 违规输出 → post-commit 安装+丢失检测 → subagent + 新包 CLI → shim 安全 → Harness 签名 → LOOP Agent → MCP 烟测 → 文件系统审计 → 权限作用域化 → fast-fail → MCP compose | 全部 PASS。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
 | ~~14~~ | ~~OpenClaw 综合验证~~ → **已合并到阶段六统一执行入口**。阶段四只保留 CLI 自动化测试（步骤 13）；`openclaw-acceptance-test.md` 的 Agent 端到端验证与 `regression-checklist.md` 统一在阶段六的新 session 里顺序跑完，不在开发 session 单独执行（避免重复 + 保证独立性） | — |
 
@@ -113,11 +113,12 @@
 2. 【v1.0.8 优化】构建审计包：在跑任何依赖 dist/ 的检查前，先 `cd sofagent/audit && npm run build`。否则 --version / --help banner / `ontology view` / `compose` 等基于 dist 的回归维度（#248 #251）与验收场景会命中 stale dist 误报 FAIL
 3. **第一轮：回归检查** —— 读 `docs/verification/regression-checklist.md`，用 Bash 跑全部维度验证命令，逐项输出 PASS/FAIL/SKIP。完成后将完整报告保存为 `~/Desktop/vX.Y-regression-report.md`
 4. **第二轮：OpenClaw 验收** —— 读 `docs/verification/openclaw-acceptance-test.md`，按场景逐一验证，逐项输出 PASS/FAIL/SKIP。完成后将完整报告保存为 `~/Desktop/vX.Y-acceptance-report.md`
-5. 时序注意：
+5. **🔴 第三轮：验收测试覆盖率交叉检查（v1.1.4 教训——两份 test 对新功能零覆盖）** —— 读 `docs/changelog/vX.Y.md`「核心变更/交付」章节，提取每条功能关键词（如新规则号 A18/A19、新模块 LOOP/USB/工具注入等）。逐条 grep `tools/acceptance-test.sh` + `docs/verification/openclaw-acceptance-test.md`，确认每条功能都有对应场景。**零覆盖 = FAIL**（回归测试无法发现该功能退化）。两份 test 的覆盖集合也应大致一致——`diff <(grep -oE "A[0-9]+|LOOP|USB|daemon|maxTurns" tools/acceptance-test.sh | sort -u) <(grep -oE "A[0-9]+|LOOP|USB|daemon|maxTurns" docs/verification/openclaw-acceptance-test.md | sort -u)`，一方完全缺失某功能 = FAIL
+6. 时序注意：
    - regression-checklist 头部「⏰ 时序说明」标记的检查项（git tag / npm registry / 全局二进制版本），发版前必然不满足 → 标 ⏳（待发版），不标 FAIL
    - 不在 OpenClaw 环境时，按验收文件降级说明跳过相应场景 → 标 SKIP，不标 FAIL
    - 任何 FAIL 必须是真实跑命令得到的失败，不凭猜测
-6. 判定：两份报告全 PASS（或 ⏳/SKIP 合理、无 FAIL）→ 回复"vX.Y 阶段六通过"。任何 FAIL → 不自行改代码，整理失败清单（维度/场景编号、现象、命令、期望vs实际）回复开发侧修复
+7. 判定：三份报告全 PASS（或 ⏳/SKIP 合理、无 FAIL）→ 回复"vX.Y 阶段六通过"。任何 FAIL → 不自行改代码，整理失败清单（维度/场景编号、现象、命令、期望vs实际）回复开发侧修复
 
 ## 纪律
 - 不创建/不修改任何代码或文档，只验证 + 生成报告
@@ -147,8 +148,9 @@
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
 | 22 | **最终确认两份审查文档**：regression 维度与 fresh-eyes 维度互相印证，循环修复中暴露的新盲区已补入 | 两份文档最终状态见于文件 diff |
+| 22b | **🔴 确认两份 acceptance test 的审查维度已同步**（v1.1.4 教训）：`regression-checklist.md` 维度 24「验收测试覆盖率与时效性」+ `fresh-eyes-review.md` 维度八任务 30「两份验收测试的场景覆盖率与功能对齐」——两处都必须覆盖本版本新功能的验收场景缺口 | grep 两份审查文档含本版本新功能关键词 |
 
-**审查体系闭环**（v1.0.4 教训）：审查文档自身也会过时——每次发版后审视审查 prompt 的数字、路径、维度是否还有效。
+**审查体系闭环**（v1.0.4 教训）：审查文档自身也会过时——每次发版后审视审查 prompt 的数字、路径、维度是否还有效。**验收测试同理**（v1.1.4 教训）——两份 acceptance test 的场景数和覆盖范围必须与 changelog 功能点对齐，否则回归测试形同虚设。
 
 ---
 
