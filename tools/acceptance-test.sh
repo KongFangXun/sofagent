@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.1.6 · 81 个端到端场景，覆盖完整用户旅程 + 全规则覆盖（含 A14-A19）+ 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成 + v1.1.4: LOOP 工具注入(maxTurns/ENGINEER_TOOLS/checkDangerousCommand) + warn-accumulator 连续性 + USB federation + LOOP 独立产品 + v1.1.5: sofagent-releaser Skill + MCP audit_file pipe + list_capabilities 能力清单 + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts --mode 参数 + SkillOpt 自净化 + validateCandidate + DeepAgents 可用性 + runtime.json 原子写入 + A16 非授权变更 + A17 异常批量变更 + --timeline 快照时间线 + --revert 回滚 + daemon 审计闭环 + cron 定时巡检 + EvidenceMode filesystem + 经验共享 + buildConstrainedSystemPrompt + A14 知识库越权 + A15 约束验证 + Workflow Hub
+# v1.1.6 · 87 个端到端场景，覆盖完整用户旅程 + 全规则覆盖（含 A14-A19）+ 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成 + v1.1.4: LOOP 工具注入(maxTurns/ENGINEER_TOOLS/checkDangerousCommand) + warn-accumulator 连续性 + USB federation + LOOP 独立产品 + v1.1.5: sofagent-releaser Skill + MCP audit_file pipe + list_capabilities 能力清单 + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts --mode 参数 + SkillOpt 自净化 + validateCandidate + DeepAgents 可用性 + runtime.json 原子写入 + A16 非授权变更 + A17 异常批量变更 + --timeline 快照时间线 + --revert 回滚 + daemon 审计闭环 + cron 定时巡检 + EvidenceMode filesystem + 经验共享 + buildConstrainedSystemPrompt + A14 知识库越权 + A15 约束验证 + Workflow Hub + v1.1.6: conflict-check 巡检器（矛盾/orphan/deadlink）+ llm-wiki 三层映射
 # ============================================================
 # 用真实 git 仓库走完整用户旅程：
 #   Fresh install → --init → --doctor → 正常 commit → 违规拦截
@@ -2653,6 +2653,123 @@ fi
 if $S79_OK; then
   pass
 fi
+
+# ── 场景 80-85: v1.1.6 新功能 — conflict-check 巡检器 + LLM Wiki 三层映射 ──
+
+# 80: conflict-check 在空 knowledge 目录上优雅降级
+scenario 80 "conflict-check 空 knowledge 优雅降级"
+cd "$PROJECT_ROOT"
+TMP80=$(mktemp -d /tmp/sofagent-cc80-XXXXXX)
+mkdir -p "$TMP80/.sofagent/knowledge"/{entities,concepts,comparisons,summaries}
+
+CC80_OUT=$(node -e "
+const {checkConflict} = require('$PROJECT_ROOT/sofagent/daemon/dist/inspectors/conflict-check.js');
+console.log(JSON.stringify(checkConflict('$TMP80')));
+" 2>/dev/null)
+
+if echo "$CC80_OUT" | grep -q '"triggered":false'; then
+  pass
+else
+  fail "空 knowledge 期望 triggered:false，实际: $CC80_OUT"
+fi
+rm -rf "$TMP80"
+
+# 81: conflict-check 检测 domain 矛盾（critical）
+scenario 81 "conflict-check 矛盾检测（domain 冲突 → critical）"
+TMP81=$(mktemp -d /tmp/sofagent-cc81-XXXXXX)
+mkdir -p "$TMP81/.sofagent/knowledge"/{entities,summaries}
+cat > "$TMP81/.sofagent/knowledge/entities/alice.md" <<'EOF'
+---
+domain: user
+---
+# Alice (user)
+EOF
+cat > "$TMP81/.sofagent/knowledge/summaries/alice.md" <<'EOF'
+---
+domain: order
+---
+# Alice (order)
+EOF
+cat > "$TMP81/.sofagent/knowledge/index.md" <<'EOF'
+| 页面 | 域 | 备注 |
+|------|----|------|
+| entities/alice.md | - | - |
+| summaries/alice.md | - | - |
+EOF
+
+CC81_OUT=$(node -e "
+const {checkConflict} = require('$PROJECT_ROOT/sofagent/daemon/dist/inspectors/conflict-check.js');
+console.log(JSON.stringify(checkConflict('$TMP81')));
+" 2>/dev/null)
+
+if echo "$CC81_OUT" | grep -q '"triggered":true' && echo "$CC81_OUT" | grep -q '"severity":"critical"' && echo "$CC81_OUT" | grep -q "矛盾"; then
+  pass
+else
+  fail "矛盾检测期望 critical + 含「矛盾」，实际: $CC81_OUT"
+fi
+rm -rf "$TMP81"
+
+# 82: conflict-check 检测孤儿 + 死链（warning）
+scenario 82 "conflict-check 孤儿+死链检测（→ warning）"
+TMP82=$(mktemp -d /tmp/sofagent-cc82-XXXXXX)
+mkdir -p "$TMP82/.sofagent/knowledge"/entities
+cat > "$TMP82/.sofagent/knowledge/entities/bob.md" <<'EOF'
+---
+domain: core
+---
+# Bob
+EOF
+cat > "$TMP82/.sofagent/knowledge/index.md" <<'EOF'
+| 页面 | 域 | 备注 |
+|------|----|------|
+| entities/ghost.md | - | - |
+EOF
+
+CC82_OUT=$(node -e "
+const {checkConflict} = require('$PROJECT_ROOT/sofagent/daemon/dist/inspectors/conflict-check.js');
+console.log(JSON.stringify(checkConflict('$TMP82')));
+" 2>/dev/null)
+
+if echo "$CC82_OUT" | grep -q '"triggered":true' && echo "$CC82_OUT" | grep -q '"severity":"warning"' && echo "$CC82_OUT" | grep -q "孤儿" && echo "$CC82_OUT" | grep -q "死链"; then
+  pass
+else
+  fail "孤儿+死链期望 warning + 含「孤儿」「死链」，实际: $CC82_OUT"
+fi
+rm -rf "$TMP82"
+
+# 83: docs/llm-wiki-mapping.md 存在且含核心内容
+scenario 83 "llm-wiki-mapping.md 存在且含三层映射"
+LLW="$PROJECT_ROOT/docs/llm-wiki-mapping.md"
+S83_OK=true
+[ -f "$LLW" ] || { fail "llm-wiki-mapping.md 不存在"; S83_OK=false; }
+if $S83_OK; then
+  S83_MAP=$(grep -c "Ledger\|Views\|Policy" "$LLW" 2>/dev/null || echo 0)
+  S83_FLOW=$(grep -c "派生\|mermaid" "$LLW" 2>/dev/null || echo 0)
+  S83_V17=$(grep -c "v1.1.7\|Dream Cycle" "$LLW" 2>/dev/null || echo 0)
+  if [ "$S83_MAP" -ge 3 ] && [ "$S83_FLOW" -ge 1 ] && [ "$S83_V17" -ge 1 ]; then
+    :
+  else
+    fail "llm-wiki-mapping.md 内容不完整（Ledger/Views/Policy:$S83_MAP, 派生/mermaid:$S83_FLOW, v1.1.7:$S83_V17）"
+    S83_OK=false
+  fi
+fi
+$S83_OK && pass
+
+# 84: ROADMAP v1.1.6 行链接到 llm-wiki-mapping.md
+scenario 84 "ROADMAP v1.1.6 链接到 llm-wiki-mapping.md"
+if grep -q "llm-wiki-mapping.md" "$PROJECT_ROOT/ROADMAP.md"; then
+  pass
+else
+  fail "ROADMAP.md 缺少 llm-wiki-mapping.md 链接"
+fi
+
+# 85: daemon 注册 conflict-check @weekly
+scenario 85 "daemon 注册 conflict-check（@weekly）"
+INSPECTOR_INDEX="$PROJECT_ROOT/sofagent/daemon/src/inspectors/index.ts"
+S85_OK=true
+grep -q "'conflict-check'.*'@weekly'" "$INSPECTOR_INDEX" || { fail "DEFAULT_INSPECTOR_CONFIG 缺 conflict-check @weekly"; S85_OK=false; }
+grep -q "export.*checkConflict\|from.*conflict-check" "$INSPECTOR_INDEX" || { fail "export 列表缺 checkConflict"; S85_OK=false; }
+$S85_OK && pass
 
 # ── 总结 ──────────────────────────────────────────────────────
 echo ""

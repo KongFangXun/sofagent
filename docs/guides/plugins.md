@@ -6,7 +6,7 @@
 
 一条审计规则就是一个实现 `Rule` 接口的 TypeScript 文件（`sofagent/audit/src/rules/types.ts`）：
 
-- `name`: 规则名称（如 `A12 不留 console`）
+- `name`: 规则名称（如 `A22 不留 console`）
 - `number`: 规则编号
 - `evidenceMode`: 证据来源——`'git-diff'`（纯 diff 判定）/ `'logs'`（纯日志判定）/ `'hybrid'`（混合回退）
 - `ruleClass`: 规则分级——`'业务底线'`（违反即破坏交付完整性）或 `'能力拐杖'`（帮助 Agent 走完正确流程）
@@ -14,20 +14,20 @@
 
 ## 4 步加规则
 
-以「A12 不留 console」为例——检查 diff 新增行里有没有 `console.log`。
+以「A22 不留 console」为例——检查 diff 新增行里有没有 `console.log`。
 
 ### Step 1：创建规则文件
 
-在 `sofagent/audit/src/rules/` 下创建 `rule-a12-no-console.ts`：
+在 `sofagent/audit/src/rules/` 下创建 `rule-a22-no-console.ts`：
 
 ```typescript
 import type { AuditContext, RuleCheck } from './types';
 
 const CONSOLE_PATTERNS: RegExp[] = [/console\.(log|debug|info)\s*\(/];
 
-export function checkRuleA12(ctx: AuditContext): RuleCheck {
+export function checkRuleA22(ctx: AuditContext): RuleCheck {
   const rule: RuleCheck = {
-    name: 'A12 不留 console', number: 12, status: 'PASS',
+    name: 'A22 不留 console', number: 22, status: 'PASS',
     details: [], evidenceMode: 'git-diff', ruleClass: '能力拐杖',
   };
   for (const file of ctx.diffFiles) {
