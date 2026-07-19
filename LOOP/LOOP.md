@@ -2,7 +2,7 @@
 
 > sofagent 怎么用自己的工具开发自己。
 >
-> v1.1.4 · 2026-07-13（UTC）· 孔放勋
+> v1.1.5 · 2026-07-13（UTC）· 孔放勋
 
 <img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
 

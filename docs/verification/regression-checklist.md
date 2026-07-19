@@ -372,7 +372,7 @@ dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path 
 [ -z "$dup" ] && echo "OK" || echo "❌ 跨包重复: $dup"
 ```
 
-#### 13. 测试数声称一致性（SSOT 反查 · v1.1.4 扩）
+#### 13. 测试数声称一致性（SSOT 反查 · v1.1.5 扩）
 
 > 原 309（只查 audit/README）。v1.1.4 暴露盲区：文档声称测试数与实测漂移
 > （FDE.md 一度写 343、LIMITATIONS 写 660，实测 audit=388 / workspace 与文档声称漂移）。

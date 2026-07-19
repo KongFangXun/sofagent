@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.1.4 · 2026-07-19（UTC）· A18/A19 审计新规则 + LOOP 工具注入 + daemon 可见性 · 规划：v1.1.5-v1.1.9 → v1.2.0 收口
+> v1.1.5 · 2026-07-19（UTC）· A18/A19 审计新规则 + LOOP 工具注入 + daemon 可见性 · 规划：v1.1.5-v1.1.9 → v1.2.0 收口
 
 <img src="docs/assets/sofagent.png" alt="sofagent" width="160" />
 

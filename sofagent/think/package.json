@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/think",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "sofagent 思考链分析 — 推理路径追踪 / 决策可视化 / 思维审计",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,8 +22,8 @@
   "license": "MIT",
   "author": "KongFangXun",
   "dependencies": {
-    "@sofagent/audit": "1.1.4",
-    "@sofagent/core": "1.1.4"
+    "@sofagent/audit": "1.1.5",
+    "@sofagent/core": "1.1.5"
   },
   "exports": {
     ".": {
