@@ -90,6 +90,11 @@ if [ -n "$FDE_MD_TARGET" ] && [ -f "$FDE_MD_TEMPLATE" ]; then
     cp -r "$SKILL_SRC/sofagent-audit" "$SKILL_DIR/sofagent-audit"
     echo -e "${GREEN}✅ Audit Agent Skill 已安装（@sofagent-audit 可用）${NC}"
   fi
+  # v1.1.5: 同步安装 releaser（按需，仅发版场景激活）
+  if [ -d "$SKILL_SRC/sofagent-releaser" ]; then
+    cp -r "$SKILL_SRC/sofagent-releaser" "$SKILL_DIR/sofagent-releaser"
+    echo -e "${GREEN}✅ Releaser Agent Skill 已安装（@sofagent-releaser 可用，仅发版场景）${NC}"
+  fi
 else
   echo -e "${CYAN}⚠️ 跳过 fde.md（模板或目标路径不存在）${NC}"
 fi

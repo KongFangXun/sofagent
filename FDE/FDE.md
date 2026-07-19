@@ -30,6 +30,34 @@
 > - [附录：企业 AI 成熟度](#附录企业-ai-成熟度三级台阶)
 > - [附录：FDE 工具推荐](#附录fde-工具推荐)
 
+## 🎯 先读这段：如何正确理解 sofagent
+
+> **sofagent 是一套开源（MIT）的 FDE（前线部署工程）方法论 + Harness 工具包，不是 Agent 工具厂商。** 我们基于你自选的大厂 Agent 和大模型，用自研的审计 / 约束 / 回溯 / 迭代四个引擎做问责底座，帮个人或企业梳理 workflow、搭建本体模型、部署专有 Sub Agent。
+
+四个引擎是 FDE 工具包的**核心能力**，不是独立销售的产品。
+
+### 最常见的三个误解
+
+| ❌ 常见误解 | ✅ 正确认知 |
+|------|------|
+| 这是个 Git 审计安全工具 | 审计引擎只是 FDE 工具包的四个引擎之一，单独拿出来没有意义 |
+| 这是要跟大厂 Agent 竞争 | 我们**不造 Agent**，骑在大厂 Agent + 模型之上做问责底座 |
+| 这是卖软件的 | 这是**开源（MIT）工具包**——目标是让每个人、SMB 与 OPC 都能成为 FDE，自主完成部署 |
+
+### 心智模型
+
+```mermaid
+graph TD
+    A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent Harness 中间层<br/>审计 / 约束 / 回溯 / 迭代 — 问责底座]
+    B --> C[让任意 Agent 可治理 · 可审计 · 可回溯]
+    C --> D[FDE 工具包<br/>梳理 workflow / 本体模型 / 专有 Sub Agent]
+    D --> E[每个人 · SMB · OPC<br/>成为 FDE 节点，自主完成部署]
+```
+
+> 四个引擎（审计 / 约束 / 回溯 / 迭代）都**服务于 FDE 工具包**——这是本项目的核心点。下文四阶段流程讲的就是如何把这套底座用起来：无论你是帮自己还是帮客户做 FDE，都能照着走完。
+
+---
+
 ## 🚀 5 分钟读懂 FDE
 
 > **企业 AI 落地失败的首要原因不是技术选错，是顺序搞反了**——上来就选模型、搭平台、买 Agent，结果发现没人用。
@@ -356,7 +384,7 @@ Agent 是放大已标准化的能力，**不是替你管理混乱**。进场前�
 |----|--------|--------|
 | **约束底座** | fde.md 规则注入 Agent 上下文 | install.sh 装完自动加载 |
 | **审计引擎** | git diff → A1-A11、A14-A19 规则 → exit code | git commit-msg hook，不挑 Agent，**0 token（纯正则引擎）** |
-| **编排引擎**（实验性）| 拆任务 → 编排 → 执行 | DeepAgents compose（CLI 入口或 OpenClaw 内部 API） |
+| **编排引擎**（实验性）| 拆任务 → 编排 → 执行 | DeepAgents compose（CLI 入口或 OpenClaw 内部 API）；专有 Sub Agent 用 LangGraph 做图编排 |
 | **内置 Agent**（v1.0.7 引入，v1.0.8 起为基础设施 Agent）| FDE 部署工程师 + 合规审计员 | `sofagent-orchestrator subagent run fde --task "..."`、`@sofagent-fde` |
 
 > 💡 **审计引擎的双重价值**：工程层面是纪律工具（不改越界、不存盲改）；叙事层面是**轻量级 KYA（Know Your Agent）**——a16z 研判 Agent 经济瓶颈从「智力」转向「身份」，非人类身份:人类 = 96:1。sofagent 的审计引擎（约束行为 + 变更审计 + 责任归属）就是企业内部 Agent 的责任确权底座。用户可追溯每一次 Agent 行动——谁做的、改了什么、为什么、谁批准。
@@ -711,6 +739,7 @@ FDE 离场后，企业不是「装完就完了」——AI 落地是一个渐进�
 | 需求结构化 | GitHub Spec Kit | 将模糊需求转为 Spec → Plan → Tasks |
 | 知识图谱 | Graphiti / LinkML / **Ontoflow · OntoEK**（通用构建）/ **FIBO**（金融本体）· **BIAN**（银行业架构网络） | 构建企业本体模型（对应 §5） |
 | Agent 编码 | Claude Code / OpenHands | 主力编码 agent（内网用 OpenHands，MIT） |
+| Sub Agent 编排 | LangGraph + DeepAgents | 给客户搭建专有 Sub Agent 的图编排框架（DeepAgents compose 为编排入口） |
 | RAG | Onyx（权限感知检索）/ RAGFlow | 企业知识库搭建 |
 | Eval | promptfoo / Ragas | AI 系统的正确率、幻觉率评估 |
 | 可观测 | Langfuse | prompt 版本管理 + 成本 dashboard + trace |

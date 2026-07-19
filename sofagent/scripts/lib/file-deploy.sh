@@ -89,6 +89,25 @@ T
       ok "think.md 模板已创建: $THINK_DST"
     else ok "think.md 已存在，跳过"; fi
   fi
+
+  # v1.1.5: 同步复制 agents/SKILL/sofagent-releaser（发版 Agent，按需激活）
+  # 对标 LOOP/loop-install.sh 与 FDE/fde-install.sh 的 reviewer/engineer 复制方式
+  # ⚠️ 防御：用 ${VAR:-} 防止 set -u 下因罕见瞬态条件导致的 unbound variable
+  local AGENT_SKILL_SRC="${SCRIPT_DIR}/../../agents/SKILL/sofagent-releaser"
+  local AGENT_SKILL_DST="${TARGET:-}/agents/SKILL/sofagent-releaser"
+  if [ -n "${AGENT_SKILL_DST:-}" ] && [ -d "${AGENT_SKILL_SRC:-}" ]; then
+    mkdir -p "$(dirname "${AGENT_SKILL_DST}")"
+    if [ -d "${AGENT_SKILL_DST}" ] && diff -r "${AGENT_SKILL_SRC}" "${AGENT_SKILL_DST}" >/dev/null 2>&1; then
+      ok "sofagent-releaser Skill — 已存在且内容相同，跳过"
+    else
+      cp -r "${AGENT_SKILL_SRC}" "${AGENT_SKILL_DST}"
+      ok "sofagent-releaser Skill — 已安装到 ${AGENT_SKILL_DST}（按需激活，仅发版场景使用）"
+    fi
+  elif [ -z "${AGENT_SKILL_SRC:-}" ] || [ ! -d "${AGENT_SKILL_SRC:-}" ]; then
+    warn "sofagent-releaser Skill 未找到: ${AGENT_SKILL_SRC:-未设置}，跳过"
+  else
+    warn "sofagent-releaser Skill 目标路径无效，跳过"
+  fi
 }
 deploy_scripts() {
   # P0-2/P0-3 修复：配套脚本和 .sofagent/ 对所有平台均执行

@@ -104,8 +104,14 @@ install_daemon() {  # Step 6b: daemon 可选安装
           echo "  └──────────────────────────────────────────┘"; echo ""
           echo "  daemon 是一个轻量后台进程，监控 think.md / fde.md 变化。"
           echo "  macOS (launchd) / Linux (systemd) 支持，Windows 自动跳过。"
-          echo ""; echo "  是否安装 daemon？[y/N] "
-          read -r INSTALL_DAEMON
+          # 检测是否交互式终端——非 TTY 环境（CI/管道）自动跳过，避免挂死
+          if [ -t 0 ]; then
+            echo ""; echo "  是否安装 daemon？[y/N] "
+            read -r INSTALL_DAEMON
+          else
+            echo "  ⏭️  非交互环境，自动跳过 daemon 安装"
+            INSTALL_DAEMON="n"
+          fi
           if [ "${INSTALL_DAEMON:-n}" = "y" ] || [ "${INSTALL_DAEMON:-n}" = "Y" ]; then bash "$DAEMON_INSTALL_SCRIPT"
           else echo "  已跳过 daemon 安装（以后可以手动运行: bash sofagent/scripts/daemon-install.sh）"; fi
         fi ;;

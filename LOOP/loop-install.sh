@@ -100,6 +100,14 @@ if [ -n "$SKILL_DIR" ] && [ -d "$SKILL_SRC" ]; then
     cp -r "$SKILL_SRC/sofagent-audit" "$SKILL_DIR/sofagent-audit"
     echo -e "${GREEN}✅ @sofagent-audit（合规审计员）已安装${NC}"
   fi
+
+  # releaser (v1.1.5 新增——按需，仅发版场景激活)
+  if [ -d "$SKILL_SRC/sofagent-releaser" ]; then
+    cp -r "$SKILL_SRC/sofagent-releaser" "$SKILL_DIR/sofagent-releaser"
+    echo -e "${GREEN}✅ @sofagent-releaser（发布工程师）已安装${NC}"
+  else
+    echo -e "${YELLOW}⚠️ sofagent-releaser Skill 未找到，跳过${NC}"
+  fi
 else
   echo -e "${CYAN}⚠️ 跳过 Agent Skill 安装（模板或目标路径不存在）${NC}"
 fi

@@ -53,6 +53,15 @@ export interface AuditConfig {
     bulk_threshold?: number;
     bulk_window_ms?: number;
   };
+  /** v1.1.5: LOOP 编排配置 */
+  loop?: {
+    maxTurns?: {
+      /** engineer Sub Agent 最大轮次（默认 20） */
+      engineer?: number;
+      /** reviewer Sub Agent 最大轮次（默认 15） */
+      reviewer?: number;
+    };
+  };
 }
 
 /**
@@ -194,6 +203,7 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
       const topLevelAuditKeys: (keyof AuditConfig)[] = [
         'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
         'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17',
+        'loop',
       ];
       const hasAny = topLevelAuditKeys.some(k => k in parsed);
       if (hasAny) {
@@ -236,6 +246,8 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     strict: partial.strict ?? false,
     A16: partial.A16,
     A17: partial.A17,
+    // v1.1.5: loop 配置透传
+    loop: partial.loop,
   };
 
   // 校验 rules key——未知规则名输出警告

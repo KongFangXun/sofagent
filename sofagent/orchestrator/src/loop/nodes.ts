@@ -19,6 +19,7 @@ import { ENGINEER_AGENT, REVIEWER_AGENT } from '../builtin-agents';
 import { spawnSubAgent } from '../launcher';
 import { ENGINEER_TOOLS, REVIEWER_TOOLS } from '../tools';
 import { buildConstrainedSystemPrompt } from '@sofagent/harness';
+import { loadConfig } from '@sofagent/core';
 import type { AuditHistoryEntry } from '@sofagent/audit';
 import type { AuditVerdict, LoopArtifacts, LoopGraphState } from './state';
 import type { FileCheckpointer } from '../graph/checkpoint';
@@ -26,8 +27,31 @@ import type { FileCheckpointer } from '../graph/checkpoint';
 /** 重试上限：第 3 轮重试后仍未过 → blocked 终态 */
 export const DEFAULT_MAX_RETRIES = 3;
 
-/** Agent 最大轮次（PRD Q1 决策：v1.1.4 硬编码 20，v1.1.5 评估可配置） */
-export const DEFAULT_AGENT_MAX_TURNS = 20;
+/** Agent 最大轮次默认值（v1.1.4 硬编码 20 → v1.1.5 可配置）
+ * 配置位置：.sofagent/config.yml 的 loop.maxTurns.{engineer,reviewer}
+ * config 不存在 → fallback 到此处默认值 */
+export const DEFAULT_ENGINEER_MAX_TURNS = 20;
+export const DEFAULT_REVIEWER_MAX_TURNS = 15;
+
+/**
+ * v1.1.5: 按角色解析 maxTurns
+ * 优先级：config.yml loop.maxTurns.{role} > 默认值
+ * @param role 'engineer' | 'reviewer'
+ * @param cwd 项目根目录（用于定位 .sofagent/config.yml）
+ */
+export function resolveMaxTurns(role: 'engineer' | 'reviewer', cwd?: string): number {
+  const fallback = role === 'engineer' ? DEFAULT_ENGINEER_MAX_TURNS : DEFAULT_REVIEWER_MAX_TURNS;
+  try {
+    const config = loadConfig(cwd, false);
+    const roleMax = config.loop?.maxTurns?.[role];
+    if (typeof roleMax === 'number' && roleMax > 0) {
+      return roleMax;
+    }
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 // ════════════════════════════════════════
 // LLM Provider 解析（v1.1.4 · v1.1.5 通用化）
@@ -210,7 +234,7 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
       ...resolved,
       tools: ENGINEER_TOOLS,
       systemPrompt,
-      maxTurns: DEFAULT_AGENT_MAX_TURNS,
+      maxTurns: resolveMaxTurns('engineer'),
     });
     const result = await agent.invoke?.({
       messages: [{ role: 'user', content: fullTask }],
@@ -350,7 +374,7 @@ async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
       ...resolved,
       tools: REVIEWER_TOOLS,
       systemPrompt,
-      maxTurns: DEFAULT_AGENT_MAX_TURNS,
+      maxTurns: resolveMaxTurns('reviewer'),
     });
     const result = await agent.invoke?.({
       messages: [{ role: 'user', content: reviewTask }],

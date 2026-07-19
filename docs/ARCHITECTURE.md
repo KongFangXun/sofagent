@@ -5,6 +5,18 @@
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
+## 心智模型（先读这个）
+
+> sofagent 是开源（MIT）的 FDE 工具包：不造 Agent，骑在你自选的大厂 Agent + 模型之上做问责底座；目标是让每个人、SMB 与 OPC 都能成为 FDE，用这套工具包自主完成部署。
+
+```mermaid
+graph TD
+    A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent Harness 中间层<br/>审计 / 约束 / 回溯 / 迭代 — 问责底座]
+    B --> C[让任意 Agent 可治理 · 可审计 · 可回溯]
+    C --> D[FDE 工具包<br/>梳理 workflow / 本体模型 / 专有 Sub Agent]
+    D --> E[每个人 · SMB · OPC<br/>成为 FDE 节点，自主完成部署]
+```
+
 ## 目录
 
 - [术语对照](#术语对照)
