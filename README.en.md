@@ -23,7 +23,7 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.6-16B8F3" alt="Version" /></a>
   <a href="https://www.npmjs.com/package/@sofagent/audit"><img src="https://img.shields.io/npm/v/@sofagent/audit?label=npm&color=16B8F3" alt="npm" /></a>
-  <a href="./README.md"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
+  <a href="#install"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
 ---
@@ -56,7 +56,7 @@ Most SME AI projects collect dust within 6 months. It's not a tech problem — i
 No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep running. Unlike AgentLoop (SaaS, runtime trajectory), sofagent audits **what changed** (file diff, local, MIT open source).
 
 > [!IMPORTANT]
-> 🔬 **Hugging Face benchmark**: same model, harness-only optimization — legal-agent score jumped from 3.5% to 80.1% (76-point gain, at ~1/7 the cost of Claude Sonnet). [Details](./docs/ARCHITECTURE.md)
+> 🔬 **Hugging Face benchmark**: same model, harness-only optimization — legal-agent score jumped from 3.5% to 80.1% (76-point gain, at ~1/7 the cost of Claude Sonnet). [Details](./docs/THANKS.md)
 
 ---
 
@@ -147,6 +147,9 @@ flowchart LR
 
 Rules injected into agent context before work starts — so it knows the red lines.
 
+<details>
+<summary>🔍 Constraint Base internals</summary>
+
 ```mermaid
 graph LR
     A[Agent starts] --> B[SKILL.md<br/>Constitution · 4 rules + 7 principles]
@@ -154,12 +157,16 @@ graph LR
     C --> D[think.md<br/>Reflection · past lessons]
     D --> E[knowledge/<br/>Knowledge base · auto-built]
 ```
+</details>
 
 Four-layer loading chain auto-injects on session start. Any platform — OpenClaw via Hook enforcement, other platforms via Agent Read. v1.0.7+ Sub Agents self-load constraints at startup (`buildConstrainedSystemPrompt`).
 
 #### ⚙️ Orchestration engine
 
 Decomposes large tasks, runs Sub Agents in parallel, compares A/B results for better approaches. FDE generates the workflow on onboarding; nodes run autonomously after that.
+
+<details>
+<summary>🔍 Orchestration internals</summary>
 
 ```mermaid
 graph LR
@@ -170,6 +177,7 @@ graph LR
     E -->|New better| F[Auto-switch]
     E -->|Old better| G[Keep]
 ```
+</details>
 
 Powered by DeepAgents (v1.0.7, OpenClaw orchestration layer fully retired). `sofagent-orchestrator compose --task` CLI entry — **any Agent platform can use the orchestration engine**. See [ROADMAP](./ROADMAP.md).
 
@@ -179,6 +187,9 @@ Powered by DeepAgents (v1.0.7, OpenClaw orchestration layer fully retired). `sof
 #### 🔍 Audit engine
 
 Every git commit gets scanned — what the agent changed can't be denied.
+
+<details>
+<summary>🔍 Audit engine internals</summary>
 
 ```mermaid
 graph LR
@@ -191,6 +202,7 @@ graph LR
     F --> H[Code in repo]
     G --> A
 ```
+</details>
 
 Doesn't trust the agent — trusts git diff hard evidence. **0 token cost — pure regex engine, no LLM calls.** Core rules inspect git diff only, no agent cooperation needed. v1.0.8+ adds filesystem audit via embedded isomorphic-git + daemon, covering non-developers too.
 
@@ -222,6 +234,9 @@ sofagent is a **dashcam**, not a security checkpoint — post-hoc audit + restor
 
 FDE Agent doesn't just deploy once — after deployment, it shifts into **continuous optimization**. Weekly automatic inspection of audit trends + reflections, catching degradation before it impacts production.
 
+<details>
+<summary>🔍 Evolution engine internals</summary>
+
 ```mermaid
 graph LR
     A[FDE Weekly Inspection] --> B[Read audit trends<br/>history.jsonl]
@@ -232,6 +247,7 @@ graph LR
     E -->|No| G[Mark "stable"]
     F --> A
 ```
+</details>
 
 | Mode | When | What |
 |------|------|------|
@@ -335,11 +351,11 @@ Install and run — no dependency on agent compliance:
 | Automatic task orchestration | + orchestration engine (DeepAgents Sub Agent) |
 
 > [!NOTE]
-> ⚠️ **Current version (v1.1.5) coverage**: Developer roles (git commit audit) + non-developer roles (filesystem audit) — full coverage. Non-developer filesystem audit requires installing and running the `@sofagent/daemon` daemon.
+> ⚠️ **Current version (v1.1.6) coverage**: Developer roles (git commit audit) + non-developer roles (filesystem audit) — full coverage. Non-developer filesystem audit requires installing and running the `@sofagent/daemon` daemon.
 
 ### Dual-node deployment (v1.0.7+)
 
-sofagent supports two node types — **Auto-running node** (OpenClaw full-stack) and **Personal enhancement node** (third-party Agent + sofagent, no OpenClaw needed). Full comparison table: [ARCHITECTURE — Dual-node architecture](./docs/ARCHITECTURE.md#双节点架构).
+sofagent supports two node types — **Auto-running node** (OpenClaw full-stack) and **Personal enhancement node** (third-party Agent + sofagent, no OpenClaw needed). Full comparison table: [ARCHITECTURE — Dual-node architecture](./docs/ARCHITECTURE.md#dual-node-architecture).
 
 > [!NOTE]
 > v1.0.7 Sub Agent constraint self-loading (`buildConstrainedSystemPrompt`) makes constraints platform-independent — Sub Agents read `.sofagent/` files at startup. Change your Agent platform, constraints stay.

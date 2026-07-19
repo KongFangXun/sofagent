@@ -241,6 +241,8 @@ graph LR
 
 ## 三、部署与运行架构
 
+<a id="dual-node-architecture"></a>
+
 ### 双节点架构
 
 sofagent 支持两种节点类型：
