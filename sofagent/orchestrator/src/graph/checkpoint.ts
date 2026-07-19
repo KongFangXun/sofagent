@@ -1,6 +1,6 @@
 // ============================================================
 // graph/checkpoint.ts · StateGraph Checkpoint 文件持久化
-// v1.1.5 新增：每个节点执行前后 snapshot 状态到 .sofagent/checkpoint/
+// v1.1.6 新增：每个节点执行前后 snapshot 状态到 .sofagent/checkpoint/
 //
 // 并发安全设计（五条全做）：
 // 1. 文件名 = checkpoint-{ISO时间戳}-{6位随机}.json，永不覆盖

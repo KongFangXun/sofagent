@@ -1,6 +1,6 @@
 // ============================================================
 // isomorphic-git.ts · 同构 Git 集成
-// v1.1.5 新增：纯 JS 实现的 git diff / shadow repo
+// v1.1.6 新增：纯 JS 实现的 git diff / shadow repo
 //
 // 用途：
 //   - 在非 git 目录中创建 shadow repo，实现文件快照和差异追踪

@@ -8,13 +8,6 @@
   <img src="docs/assets/sofagent.png" alt="sofagent" width="160" />
 </p>
 
-<svg width="100%" height="60" viewBox="0 0 720 60" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="sofagent capability banner">
-  <rect width="720" height="60" rx="8" fill="#0B1220"/>
-  <rect x="0" y="0" width="144" height="60" fill="#16B8F3" opacity="0.15"/>
-  <text x="360" y="26" fill="#16B8F3" font-family="-apple-system,Segoe UI,sans-serif" font-size="16" font-weight="700" text-anchor="middle">Constraint · Orchestration · Audit · Restore · Evolution</text>
-  <text x="360" y="46" fill="#94A3B8" font-family="-apple-system,Segoe UI,sans-serif" font-size="12" text-anchor="middle">Agent Harness Middleware + FDE Toolkit · Helping businesses use AI right</text>
-</svg>
-
 <p align="center">
   <strong>sofa + agent = sofagent / 沙发特工</strong><br/>
   <em>It's not about connecting businesses to AI — it's about helping them use AI right.</em>
@@ -22,13 +15,13 @@
 
 <p align="center" style="color:#64748B;font-size:14px;">
   Agent Harness Middleware + FDE Toolkit<br/>
-  <strong>Giving everyone FDE capabilities</strong>
+  <strong>Giving everyone in SMBs (Small & Medium Businesses) and OPCs (Operating Companies) the capabilities of an FDE (Frontline Deployment Engineer)</strong>
 </p>
 
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.5-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.6-16B8F3" alt="Version" /></a>
   <a href="https://www.npmjs.com/package/@sofagent/audit"><img src="https://img.shields.io/npm/v/@sofagent/audit?label=npm&color=16B8F3" alt="npm" /></a>
   <a href="./README.md"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
@@ -42,40 +35,13 @@
 
 ---
 
-| You want | sofagent gives you |
-|------|------|
-| Keep Agents in bounds | 🧭 Constraint Base (red lines injected) |
-| Parallel big tasks, auto-pick best | ⚙️ Orchestration engine |
-| Prove what changed | 🔍 Audit engine (git diff hard evidence · 0 token) |
-| Roll back when things break | 🔄 Restore engine (auto-snapshot) |
-| Get better over time | 🧬 Evolution engine (weekly self-check, experimental) |
-
----
-
-## Contents
-
-- [10-second version](#10-second-version)
-- [Why sofagent?](#why-sofagent)
-- [Install](#install)
-- [How FDE works](#how-fde-works)
-- [vs. existing tools](#vs-existing-tools)
-- [Does it work?](#does-it-work)
-- [Built-in Agents](#built-in-agents)
-- [Which do you need?](#which-do-you-need)
-- [模板市场](#模板市场-the-reliable-foundation-for-enterprise-landing)
-- [Further reading](#further-reading)
-
----
-
-↑ [Back to top](#sofagent)
-
 ## 10-second version
 
 > **sofagent = an open-source (MIT) FDE toolkit: deploy AI with your own Agents + LLMs, governed and accountable. One base + four engines (constraint / orchestration / audit / restore / evolution) form the accountability base.**
 
----
+> 💡 Just want to install? Jump to [Quick Start](#install)
 
-↑ [Back to top](#sofagent)
+---
 
 ## Why sofagent?
 
@@ -93,8 +59,6 @@ No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep 
 > 🔬 **Hugging Face benchmark**: same model, harness-only optimization — legal-agent score jumped from 3.5% to 80.1% (76-point gain, at ~1/7 the cost of Claude Sonnet). [Details](./docs/ARCHITECTURE.md)
 
 ---
-
-↑ [Back to top](#sofagent)
 
 ## Install
 
@@ -137,8 +101,6 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 
 ---
 
-↑ [Back to top](#sofagent)
-
 ## How FDE works
 
 FDE does two things — map + identify, splits into two node types, then the base and four engines take over.
@@ -164,25 +126,11 @@ No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep 
 
 ### 1 base + 4 engines
 
-> [!NOTE]
-> 💡 **sofagent and Gateway**: Enterprise AI can't ship without a Gateway (unified entry/routing/orchestration/sessions).
-> OpenClaw/DeepAgents IS your Gateway. sofagent doesn't replace it — it layers on top for governance.
-> **The Gateway is the highway. sofagent is the traffic rules + speed cameras + driving coach.**
-
-> [!NOTE]
-> 💬 **sofagent has no UI. You talk to it, and it tells you where the result is.** Language is the interface. MCP is the entry point. See [Philosophy](./docs/PHILOSOPHY.md). Full MCP reference: [MCP Usage Guide](./docs/guides/mcp-usage.md).
-
-> [!NOTE]
-> 🔮 **v1.1.0 released**: Package purity refactor — audit just audits, 12 independent packages + lightweight multi-device. See [changelog](./docs/changelog/v1.1.0.md). 4 sync methods: [Multi-Device Sync Guide](./docs/guides/multi-device-sync.md).
-
-> [!TIP]
-> Bird's-eye: Gateway runs outside, sofagent plugs in to govern behavior; five capabilities form a loop, landing on two deployment nodes.
-
 ```mermaid
-flowchart TB
+flowchart LR
     GW[🌐 Gateway<br/>OpenClaw / DeepAgents<br/>entry · routing · sessions]
     subgraph SA[sofagent · Agent Harness Middleware]
-        direction TB
+        direction LR
         CB[🧭 Constraint Base<br/>red lines]
         OR[⚙️ Orchestration<br/>split · parallel · A/B]
         AU[🔍 Audit<br/>git diff evidence]
@@ -249,7 +197,7 @@ Doesn't trust the agent — trusts git diff hard evidence. **0 token cost — pu
 > [!NOTE]
 > v1.1.0 splits audit into standalone `@sofagent/audit` package. v1.0.8+ embeds isomorphic-git + daemon file monitoring — no git commit needed for non-developers.
 
-#### 🔄 Restore capability
+#### 🔄 Restore engine (essentially: git snapshot + revert wrapper)
 
 Auto-snapshot after every audit — violations trigger notifications + rollback suggestions. When things go wrong, go back:
 
@@ -317,9 +265,16 @@ The full loop: **Constrain → Orchestrate → Audit → Restore → Evolve**.
 
 ---
 
-↑ [Back to top](#sofagent)
-
 ## vs. existing tools
+
+| Tool | Positioning | Relationship with sofagent |
+|------|------|------------------|
+| pre-commit + custom scripts | General code quality checks | sofagent focuses on Agent behavior (secrets/boundaries/injection), doesn't duplicate general lint |
+| Cursor Rules | IDE-level rule constraints | sofagent is a commit-msg hook, IDE-agnostic |
+| Claude Code hooks | Claude-specific hooks | sofagent is platform-agnostic, any Agent + git repo works |
+
+<details>
+<summary>📊 Comparison with secret scanners</summary>
 
 | | sofagent | detect-secrets | pre-commit hooks |
 |------|:--:|:--:|:--:|
@@ -331,6 +286,8 @@ The full loop: **Constrain → Orchestrate → Audit → Restore → Evolve**.
 | Config deletion detection | ✅ | ❌ | ❌ |
 | Setup | One command | One command | Manual rules |
 
+</details>
+
 <details>
 <summary>💡 How it relates to secret scanners</summary>
 
@@ -340,8 +297,6 @@ The full loop: **Constrain → Orchestrate → Audit → Restore → Evolve**.
 </details>
 
 ---
-
-↑ [Back to top](#sofagent)
 
 ## Does it work?
 
@@ -355,8 +310,6 @@ Install and run — no dependency on agent compliance:
 | License | MIT | Code, docs, templates — use freely |
 
 ---
-
-↑ [Back to top](#sofagent)
 
 ## Built-in Agents (v1.0.7 introduced · infra Agent since v1.0.8)
 
@@ -372,8 +325,6 @@ Install and run — no dependency on agent compliance:
 > `@sofagent-audit` is the `@sofagent/audit` npm package invoked as a Skill Agent; `@sofagent-fde` similarly comes from the FDE toolkit — same capability, available both as a CLI and as an Agent.
 
 </details>
-
-↑ [Back to top](#sofagent)
 
 ## Which do you need?
 
@@ -395,15 +346,13 @@ sofagent supports two node types — **Auto-running node** (OpenClaw full-stack)
 
 ---
 
-↑ [Back to top](#sofagent)
-
-## 模板市场: the reliable foundation for enterprise landing
+## Work模板市场: the reliable foundation for enterprise landing
 
 Pure autonomous Agents are flexible but uncontrolled — random step-skipping, hallucination, and hard-to-trace end-to-end flows are fatal risks in low-tolerance business like credit-risk audit or accounts-payable approval. Yet **80% of enterprise landing scenarios are better served by Workflow** (predefined branches, tool-call order, DB/3rd-party calls): fixed execution trace, per-node monitoring, parallel speedup, near-zero hallucination.
 
-sofagent's [模板市场](./模板市场/) uses a **hybrid architecture**: an outer Graph skeleton (`nextNodes` in `workflow.yml`) locks the end-to-end steps and keeps them traceable; inner nodes keep model autonomy (the node `prompt` is a ReAct Agent). You get Workflow's controllability plus local flexibility. Workflows mapped during FDE onboarding become reusable enterprise templates.
+sofagent's [Work模板市场](./work模板市场/) uses a **hybrid architecture**: an outer Graph skeleton (`nextNodes` in `workflow.yml`) locks the end-to-end steps and keeps them traceable; inner nodes keep model autonomy (the node `prompt` is a ReAct Agent). You get Workflow's controllability plus local flexibility. Workflows mapped during FDE onboarding become reusable enterprise templates.
 
-| Dimension | Pure autonomous Agent | 模板市场 hybrid |
+| Dimension | Pure autonomous Agent | Work模板市场 hybrid |
 |------|:--:|:--:|
 | End-to-end traceable | ❌ | ✅ fixed nodes + snapshot |
 | Anti-hallucination | ❌ | ✅ path locked, flexible only inside nodes |
@@ -412,11 +361,11 @@ sofagent's [模板市场](./模板市场/) uses a **hybrid architecture**: an ou
 
 ### What's inside?
 
-模板市场 is a community-driven industry workflow template repository (code in `sofagent/work模板市场/`). Ships with **1 real template**:
+Work模板市场 is a community-driven industry workflow template repository (code in `sofagent/work模板市场/`). Ships with **1 real template**:
 
 | Industry | Template | Flow | Nodes | Bundled files |
 |------|------|------|:--:|------|
-| Manufacturing | [Accounts-payable approval](./模板市场/templates/制造业/应付账款审批/) | Vendor invoice → 3-way match → approve → pay | 4 | `workflow.yml` + README + knowledge(4) + skills(3) + subagents(2) |
+| Manufacturing | [Accounts-payable approval](./work模板市场/templates/制造业/应付账款审批/) | Vendor invoice → 3-way match → approve → pay | 4 | `workflow.yml` + README + knowledge(4) + skills(3) + subagents(2) |
 
 <details>
 <summary>📂 Template directory tree (accounts-payable approval)</summary>
@@ -441,7 +390,7 @@ sofagent's [模板市场](./模板市场/) uses a **hybrid architecture**: an ou
 </details>
 
 > [!NOTE]
-> Template format spec: [SPEC.md](./模板市场/SPEC.md); full catalog: [CATALOG.md](./模板市场/CATALOG.md); submit a template: [CONTRIBUTING.md](./模板市场/CONTRIBUTING.md). Local validation: `bash 模板市场/tools/validate.sh templates/制造业/应付账款审批/`
+> Template format spec: [SPEC.md](./work模板市场/SPEC.md); full catalog: [CATALOG.md](./work模板市场/CATALOG.md); submit a template: [CONTRIBUTING.md](./work模板市场/CONTRIBUTING.md). Local validation: `bash work模板市场/tools/validate.sh templates/制造业/应付账款审批/`
 
 ### How to use?
 
@@ -451,8 +400,6 @@ sofagent hub deploy 制造业/应付账款审批    # one-click deploy to your o
 ```
 
 ---
-
-↑ [Back to top](#sofagent)
 
 ## Further reading
 
@@ -464,11 +411,9 @@ sofagent hub deploy 制造业/应付账款审批    # one-click deploy to your o
 | Known limitations | [LIMITATIONS](./LIMITATIONS.md) |
 | Roadmap | [ROADMAP](./ROADMAP.md) |
 | Contributing | [CONTRIBUTING](./CONTRIBUTING.md) |
-| Enterprise deploy (FDE + Workflow) | [FDE/](./FDE/) \| [模板市场](./模板市场/) |
+| Enterprise deploy (FDE + Workflow) | [FDE/](./FDE/) \| [Work模板市场](./work模板市场/) |
 
 ---
-
-↑ [Back to top](#sofagent)
 
 ## Contributing
 
@@ -476,5 +421,3 @@ Issues and PRs welcome — especially the critical kind. [CONTRIBUTING.md](./CON
 
 > [!NOTE]
 > sofagent is designed by KongFangXun. Code written by AI models, product decisions and final review by the author. Every release reviewed by an independent model.
-
-↑ [Back to top](#sofagent)

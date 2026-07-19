@@ -133,4 +133,60 @@ describe('webhook', () => {
     expect(body.text.content).not.toContain('A1');
     expect(body.text.content).toContain('修复报价计算逻辑');
   });
+
+  it('PASS 场景推送（exitCode=0，内容含审计通过）', async () => {
+    const mockFetch = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    const payload: WebhookPayload = {
+      platform: 'dingtalk',
+      url: 'https://oapi.dingtalk.com/robot/send?access_token=passtest',
+      task: '功能开发完成',
+      rules: [passRule],
+      exitCode: 0,
+    };
+
+    const result = await pushAuditResult(payload);
+
+    expect(result).toBe(true);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const body = JSON.parse((mockFetch.mock.calls[0]![1] as RequestInit).body as string);
+    expect(body.text.content).toContain('✅ sofagent 审计通过');
+  });
+
+  it('WARN 场景推送（exitCode=1，内容含警告）', async () => {
+    const mockFetch = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    const payload: WebhookPayload = {
+      platform: 'feishu',
+      url: 'https://open.feishu.cn/open-apis/bot/v2/hook/warntest',
+      task: '代码优化任务',
+      rules: [warnRule],
+      exitCode: 1,
+    };
+
+    const result = await pushAuditResult(payload);
+
+    expect(result).toBe(true);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const body = JSON.parse((mockFetch.mock.calls[0]![1] as RequestInit).body as string);
+    expect(body.content.text).toContain('⚠️ sofagent 审计警告');
+    expect(body.content.text).toContain('A7 不存盲改');
+  });
+
+  it('FAIL 场景推送（exitCode=2，内容含拦截）', async () => {
+    const mockFetch = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    const payload: WebhookPayload = {
+      platform: 'wecom',
+      url: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=failtest',
+      task: '安全修复',
+      rules: [failRule],
+      exitCode: 2,
+    };
+
+    const result = await pushAuditResult(payload);
+
+    expect(result).toBe(true);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const body = JSON.parse((mockFetch.mock.calls[0]![1] as RequestInit).body as string);
+    expect(body.text.content).toContain('⚠️ sofagent 审计警告');
+    expect(body.text.content).toContain('A3 不改越界');
+  });
 });

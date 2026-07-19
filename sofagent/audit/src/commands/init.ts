@@ -4,7 +4,7 @@
 //   1. 生成 .sofagent/config.yml 配置模板
 //   2. 安装 git commit-msg hook
 //   3. 冒烟测试——验证审计引擎可用
-// v1.1.5: 新增仓库状态分类器（gstack 首次运行引导）
+// v1.1.6: 新增仓库状态分类器（gstack 首次运行引导）
 // ============================================================
 
 import { existsSync, writeFileSync, mkdirSync, chmodSync, readFileSync, appendFileSync } from 'fs';
@@ -13,6 +13,7 @@ import { execFileSync, execSync } from 'child_process';
 import { homedir, platform } from 'os';
 import { CONFIG_TEMPLATE, HOOK_TEMPLATE, VERSION, generateWatchTemplate } from '@sofagent/core';
 import { writeConfig } from '@sofagent/core';
+import { defaultRules } from '../rules';
 
 /**
  * 仓库状态分类（v1.0.5 新增）
@@ -117,7 +118,7 @@ export function runInit(): void {
       mkdirSync(configDir, { recursive: true });
     }
     writeConfig(configPath, CONFIG_TEMPLATE);
-    console.log(`  → .sofagent/config.yml 已生成（11 条规则默认全部启用）`);
+    console.log(`  → .sofagent/config.yml 已生成（${defaultRules.length} 条规则默认全部启用）`);
     console.log('  → 这个配置控制哪些审计规则启用，直接编辑 .sofagent/config.yml 即可自定义');
     stepOk++;
   }

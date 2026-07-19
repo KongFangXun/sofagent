@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v1.1.5 · 2026-07-14（UTC）· 孔放勋
+> v1.1.6 · 2026-07-14（UTC）· 孔放勋
 
 ---
 
@@ -132,6 +132,7 @@ sofagent 无法在运行时动态注册安全护栏。Hook 是 OpenClaw 配置�
 ### 🧩 不是分布式系统 / 不是多用户系统
 
 sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实例协调。子 Agent 是 session 隔离，不是独立 Agent 进程。多用户共享 `.sofagent/` 会交叉污染。多用户场景建议每人独立 `.sofagent/`。
+- **批量部署**：当前 per-repo 安装，无 org-level 集中配置下发。企业批量部署需自行编写脚本（参见 docs/guides/enterprise-deploy.md）。
 
 ### 🧩 单平台用户建议
 
@@ -146,6 +147,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 ### 🔒 数据存储安全
 
 task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。v0.90 不实现加密，只做诚实声明——age 加密推到 v1.x。
+- history.jsonl 存审计判定详情，A2/A9 已脱敏，其他规则 details 可能含代码片段或文件路径，敏感场景请配合外部加密卷
 
 ---
 
@@ -239,9 +241,9 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 | install.sh | 无独立测试 | 跨平台行为变化无法自动捕获 |
 | daemon 脚本 | 测试覆盖不足 | launchd/systemd 注册失败无早期预警；计划 v1.x 补充核心功能测试。**行为边界**：daemon 监控 think.md/fde.md 文件 hash 变化 → 写 daemon-notice.md，不直接审计 git commit。commit 审计由 commit-msg hook（`sofagent-audit --install-hook` 安装）负责 |
 | MCP Server | 仅手动验证 | JSON-RPC 协议边界情况未覆盖。无自动测试。核心逻辑（run_audit/get_think/write_think）调用 audit 包已测方法。 |
-| verify.sh/verify.ts | 部分覆盖 | 约 44-48 项（动态，因环境条件变化）的逻辑分支未穷举 |
+| sofagent-core verify | 部分覆盖 | 约 44-48 项（动态，因环境条件变化）的逻辑分支未穷举 |
 
-缓解：install.sh 和 verify.sh 有约 44-48 项动态检查作为 smoke test，审计引擎核心逻辑已有全面测试。上述模块的测试缺口不会影响审计结果的可靠性。
+缓解：install.sh 和 sofagent-core verify 有约 44-48 项动态检查作为 smoke test，审计引擎核心逻辑已有全面测试。上述模块的测试缺口不会影响审计结果的可靠性。
 
 ---
 
@@ -263,6 +265,7 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `.sofagent/task/logs/
 - **bash 代码债**：~450 行重复代码（颜色常量/日志函数/平台探测），方向是 bash → TypeScript 迁移，不新建 bash 基础设施
 - **架构概念过载**：概念密度对新手不友好，缓解措施是 CONTRIBUTING 的「10 分钟速览」
 - **缺少恢复路径**：think.md 记录了踩坑，但没有结构化的「失败了怎么恢复」机制，等 JSONL 落地
+- **CHANGELOG 历史遗留**：CHANGELOG 历史版（v1.0.6 及之前）含审查元信息（"审查驱动修复"等），已发布不便回改。v1.0.7 起的 changelog 已严格区分产品变更与审查过程。
 
 ---
 
@@ -280,7 +283,7 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](FDE/FDE.md)）已在作�
 
 但以下两点影响外部信任：
 
-1. **缺乏第三方独立验证**：所有部署案例均为作者自有企业，没有外部用户或客户的独立验证数据。外部审查者只能看到「作者说它工作了」，看不到「别人验证过它工作了」。
+1. **缺乏第三方独立验证**：v1.0.0 发版时硬性截止日期 #7 达标了 3 名外部用户验证（见 [v1.0.0 changelog](./docs/changelog/v1.0.0.md)），但无持续的、来自独立机构的验证数据。外部审查者只能看到「作者说它工作了」+「3 名用户时点验证过」，看不到「机构级持续验证」或公开的 case study。
 2. **缺乏公开案例**：没有可公开引用的 case study 文档——包括部署规模、使用的具体功能、遇到的问题、量化效果。已有 [case study 模板](docs/evidence/case-study-template.md)，等待真实用户填写。
 
 缓解：如果你在真实环境中使用了 sofagent，欢迎提交 case study——这比任何内部测试都更有说服力。模板在 `docs/evidence/case-study-template.md`。
@@ -297,7 +300,7 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](FDE/FDE.md)）已在作�
 
 v1.0 新增 `tools/acceptance-test.sh`（9 个场景），但覆盖范围有限：
 
-- **CI 已覆盖**：单元测试 402 个（函数级，审计核心；全 workspace 726）、verify.sh 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试 402 个（函数级，审计核心；全 workspace 726）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 62 场景（CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）

@@ -1,4 +1,4 @@
-# 模板市场
+# Work模板市场
 
 > **这是社区模板市场**——面向用户的 workflow 目录和格式规范。
 > 代码实现在 `sofagent/work模板市场/`（npm 包，负责解析和运行 workflow）。
@@ -13,4 +13,4 @@
 - [SPEC.md](./SPEC.md) —— Workflow 格式规范（`workflow.yml` 骨架 + 节点 prompt 约定）
 - [CONTRIBUTING.md](./CONTRIBUTING.md) —— 如何新增 / 提交模板
 
-设计定位详见 [根 README §模板市场](../README.md#模板市场企业落地的可靠底座) 与 [ARCHITECTURE §River—Workflow—Subagent](../docs/ARCHITECTURE.md#river--workflow--subagent-三层架构)。
+设计定位详见 [根 README §Work模板市场](../README.md#work模板市场企业落地的可靠底座) 与 [ARCHITECTURE §River—Workflow—Subagent](../docs/ARCHITECTURE.md#river--workflow--subagent-三层架构)。

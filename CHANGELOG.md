@@ -1,16 +1,22 @@
 # Changelog
 
 每个版本的详细开发日志在 docs/changelog/ 下。v1.0.0+ 为正式版，v0.x 实验版日志在 [docs/archive/changelog-experimental/](./docs/archive/changelog-experimental/)。本文件是目录索引。
-> v1.1.5 · 2026-07-19（UTC）· 孔放勋
+> v1.1.6 · 2026-07-19（UTC）· 孔放勋
 
 ---
 
 ## 正式版
 
-### [v1.1.5] — releasing.md SOP 集成 + MCP pipe + knowledge resource + USB federation HMAC
+### [v1.1.6] — v1.1.5 发布后问题修复（21 项）
+> 2026-07-19（UTC）· 已发版
+**核心变更**：纯 BugFix 版本，不新增功能。修复 v1.1.5 发布后独立检查发现的 21 项问题（5 P0 + 5 P1 + 8 P2 + 3 P3）：webhook PASS 推送接通（声称了未实现的死代码）+ init.ts 文案规则数动态读取（根治 11 vs 13 漂移）+ "knowledge resource"→"knowledge tool" 全仓清零 + CHANGELOG 索引 v1.1.5 重复条目删除 + v1.1.5 changelog 清理审查措辞 + audit/README 规则分级补"工程规范"定义 + 规则表 ruleClass 列统一 + FDE/README 文案诚实化 + README 加竞品对比表 + "回溯引擎"加诚实说明 + 3 个 SKILL.md 补 frontmatter + LIMITATIONS 多项修正 + 成功悖论文档去重 + README 命名约定/缩写展开/Quick Start 跳转 + SECURITY.md 加版本头 + verify 措辞更新 + 批量部署说明。
+**质量验证**：405 tests 全绿（audit 包）· CHANGELOG 纯度零命中 · CHANGELOG 索引无重复 · MCP resource/tool 一致性零命中。
+> 📖 [开发日志](./docs/changelog/v1.1.6.md)
+
+### [v1.1.5] — releasing.md SOP 集成 + MCP pipe + knowledge tool + USB federation HMAC
 > 2026-07-19（UTC）· 已发版
 **核心变更**：① **releaser Skill**——把 `docs/verification/releasing.md` 十二阶段发版 SOP 注入 Agent 上下文，Agent 按全流程自动执行发版（三个 human check 节点显式介入）。② **MCP `audit_file` pipe**——Agent 通过 MCP 协议编辑的文件也能即时审计（补 v1.1.4 daemon 盲区，daemon 只监控 fs.watch 物理变更，MCP 协议层编辑看不见）。③ **7 个 knowledge MCP resource** + `list_capabilities`——Agent 第一次连上 MCP server 主动推送能力清单。④ **push-target 5 种路由**——webhook:dingtalk/feishu/wecom + openclaw:im + daemon:notice，工作流节点输出自动推到对应通道。⑤ **USB federation HMAC 签名**——`createHmac` + `timingSafeEqual` + `mode: 0o600`，补 v1.1.4 USB federation 只有基础检测的缺口。⑥ **cli.ts `--mode` 参数**——orchestrator 支持 `--mode engineer/reviewer` 单节点执行。
-**缺陷修复**：v1.1.4 审查 9 项 P0/P1 文档漂移（knownKeys 补 a18/a19 + schema 一致性 + install.sh 跨产品契约 + A5 描述 + 历史措辞清理）+ maxTurns 可配置（DEFAULT_ENGINEER_MAX_TURNS=20 + DEFAULT_REVIEWER_MAX_TURNS=15）+ warn-accumulator 文件级追踪 + A18 提升 defaultRules（513 文件 0 误报）+ LOOP audit history 端到端 + MCP server JSON-RPC 2.0 协议合规（notifications/initialized 静默）。
+**缺陷修复**：v1.1.4 发布后 9 项 P0/P1 文档漂移修复（knownKeys 补 a18/a19 + schema 一致性 + install.sh 跨产品契约 + A5 描述 + 历史措辞清理）+ maxTurns 可配置（DEFAULT_ENGINEER_MAX_TURNS=20 + DEFAULT_REVIEWER_MAX_TURNS=15）+ warn-accumulator 文件级追踪 + A18 提升 defaultRules（513 文件 0 误报）+ LOOP audit history 端到端 + MCP server JSON-RPC 2.0 协议合规（notifications/initialized 静默）。
 **质量验证**：726 tests across 12 packages 全绿 · acceptance-test 79/79 · check-version 67/67 · pre-push-check 15 通过/1 警告。
 > 📖 [开发日志](./docs/changelog/v1.1.5.md)
 
@@ -109,12 +115,6 @@ v1.0.0 本轮完成 AI 知识库代码实现——7 件事：目录骨架（6 �
 > 规划中（v1.1.3~v1.1.9 子能力收口）
 **核心变更**：LOOP 双 Agent 自循环 + LangGraph 编排 + OpenClaw MCP 知识联邦 + Dream Cycle 知识管道 + LLM Wiki 3 层分层 + AES-256-GCM 加密 + USB key 物理身份。7 个子版本 → 1 个联邦。v1.2.x 完整多设备协同的起点。
 > 📖 [开发日志](./docs/changelog/v1.2.0.md)
-
-### [v1.1.5] — SOP 自动发版 + MCP pipe audit_file + knowledge resource + USB federation 📋
-> 规划中
-**核心变更**：① Agent 按 releasing.md 十二阶段 SOP 全流程自动发版（releaser Skill，3 次 human check）；② MCP 协议层编辑纳入审计（`sofagent.audit_file` tool，补 v1.1.4 daemon 只监控 fs.watch 的盲区）；③ 7 个 MCP knowledge resource + push target 路由（飞书/钉钉/企微 Webhook + daemon 通知）+ list_capabilities 主动推送；④ USB federation HMAC-SHA256 签名校验 + schema 校验 + applyFederation 实现；⑤ v1.1.4 审查 9 项修复（3 P0 文档漂移 + 5 P1 文档/代码 + 1 工具增强）+ maxTurns 可配置化 + warn-accumulator 文件级追踪 + A18 提升 defaultRules 评估 + LOOP audit history 端到端验证 + tools.ts 高危命令可配置评估。
-**安全修复**：A9 不纳注入根治——上下文感知扫描（字符串字面量/注释仅检 HIGH 置信度，消除 MEDIUM 模糊档在文案/注释中的整类误报；HIGH 真注入仍照常 FAIL）+ A3 越界误报治理（commit-msg 审计改读完整 message，副标题/正文里的任务引用不再误判越界）。
-> 📖 [开发日志](./docs/changelog/v1.1.5.md)
 
 ### [v1.1.6] — LLM Wiki 3 层分层 + conflict-check 📋
 > 规划中

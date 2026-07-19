@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent install.sh · 多平台一键安装脚本（v1.1.5）
+# sofagent install.sh · 多平台一键安装脚本（v1.1.6）
 # ============================================================
 # 将 sofagent 约束层部署到目标平台，让 Agent 获得治理能力。
 # v0.98: 从 941 行拆分为 4 个 lib 模块 + 纯组装入口
@@ -9,9 +9,11 @@
 # 平台：openclaw（完整）/ workbuddy / claude / codex / hermes / 自动探测
 # 编排引擎：DeepAgents（npm 包，正式依赖）
 #
-# ── 跨产品调用契约（v1.1.5）──
+# ── 跨产品调用契约（v1.1.6）──
 # FDE/fde-install.sh 与 LOOP/loop-install.sh 在第 1 步会调用本脚本：
 #   bash "$PROJECT_ROOT/sofagent/scripts/install.sh" --platform "$PLATFORM"
+# 版本锁定：本脚本的接口（入参/退出码/副作用）从 v1.1.5 起冻结，
+# 任何 breaking change 必须 bump major 版本并同步更新 FDE/LOOP install 脚本。
 # 契约约定：
 #   1. 入参：--platform <name>（可选，缺省时自动探测）
 #   2. 退出码：0=成功，非 0=失败（调用方依赖 set -e 自动中断）
@@ -21,7 +23,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.1.5"
+VERSION="1.1.6"
 
 # ── 颜色输出 ──
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'

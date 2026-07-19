@@ -1,6 +1,6 @@
 /**
  * @sofagent/eval — 评分引擎
- * v1.1.5 从 sofagent/audit/src/eval/ 迁出
+ * v1.1.6 从 sofagent/audit/src/eval/ 迁出
  */
 
 export type {
