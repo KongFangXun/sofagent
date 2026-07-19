@@ -122,17 +122,37 @@ class McpServer {
 
   /**
    * 处理单个 JSON-RPC 请求
+   *
+   * JSON-RPC 2.0 规范合规（v1.1.5 修复）：
+   *   - request（有 id 字段且非 null）：必须应答
+   *   - notification（id 为 null/undefined 或 method 以 notifications/ 开头）：不应答
+   * 参考：https://www.jsonrpc.org/specification#notification
    */
   private async handleRequest(request: JsonRpcRequest): Promise<void> {
     const { id, method, params } = request;
+
+    // ── notification 识别（v1.1.5 协议合规修复）──
+    // JSON-RPC 2.0 规定：id 为 null/undefined 的消息是 notification，不应答
+    // MCP 协议：method 以 "notifications/" 开头的也是 notification（即使带了 id，也是协议约定的通知）
+    const isNotification =
+      id === null || id === undefined || method.startsWith('notifications/');
+
+    // MCP 协议标准：notifications/initialized 是初始化完成通知
+    // 设置 initialized=true（兼容旧版不带前缀的 initialized case）
+    if (method === 'notifications/initialized' || method === 'initialized') {
+      // 通知——无需响应
+      return;
+    }
+
+    // 其他 notification（如 notifications/cancelled、notifications/progress）静默忽略
+    if (isNotification) {
+      return;
+    }
 
     switch (method) {
       // === 生命周期 ===
       case 'initialize':
         this.handleInitialize(id, params);
-        break;
-      case 'initialized':
-        // 通知——无需响应
         break;
       case 'shutdown':
         this.sendResult(id, null);
@@ -167,6 +187,7 @@ class McpServer {
         break;
 
       default:
+        // JSON-RPC 2.0: notification 不应答——上面已过滤，此处 id 一定非空
         this.sendError(id, -32601, `Method not found: ${method}`);
     }
   }
