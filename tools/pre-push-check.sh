@@ -11,7 +11,8 @@
 #   - sofagent-audit.yml    → sofagent-audit --silent --diff HEAD~1..HEAD
 #   + check-version.sh      → 版本号一致性
 #   + check-docs.sh         → 文档预算+死链+Skill 行数
-#   + npm test / build      → 审计引擎构建+测试
+#   + test-count.sh         → 各包测试数汇总（任一包失败即拦截）
+#   + npm run build         → 审计引擎构建
 #
 # 用法:
 #   ./tools/pre-push-check.sh           # 全量检查
@@ -129,10 +130,10 @@ if [ "$AUDIT_ONLY" = false ]; then
 fi
 
 # ════════════════════════════════════════
-# 4. 审计引擎构建+测试（对应 verify.yml）
+# 4. 审计引擎构建 + 测试数汇总（对应 verify.yml + test-count.sh 门禁）
 # ════════════════════════════════════════
 if [ "$AUDIT_ONLY" = false ] && [ "$QUICK" = false ]; then
-  echo -e "\n${BOLD}── 4. 审计引擎构建+测试 ──${NC}"
+  echo -e "\n${BOLD}── 4. 审计引擎构建 + 测试数汇总 ──${NC}"
   echo "  构建中..."
   if (npm run build >/dev/null 2>&1); then
     check_pass "npm run build (workspace 拓扑序)"
@@ -140,11 +141,15 @@ if [ "$AUDIT_ONLY" = false ] && [ "$QUICK" = false ]; then
     check_fail "npm run build 失败"
   fi
 
-  echo "  测试中..."
-  if (npm run test >/dev/null 2>&1); then
-    check_pass "npm run test (workspace 全量)"
+  echo "  测试+汇总中（test-count.sh，任一包失败即拦截）..."
+  TEST_OUT=$(bash tools/test-count.sh 2>&1)
+  TEST_RC=$?
+  # 输出 test-count.sh 的人读明细（每包 ✓/✗）
+  echo "$TEST_OUT" | grep -E '✓|✗|⚠|TOTAL_TESTS' | sed 's/^/  /'
+  if [ "$TEST_RC" -eq 0 ]; then
+    check_pass "test-count.sh（workspace 全量，0 失败）"
   else
-    check_fail "npm run test 有失败"
+    check_fail "test-count.sh 有失败（RC=$TEST_RC，见上方 ✗ 明细）"
   fi
 fi
 

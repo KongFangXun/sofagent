@@ -375,7 +375,7 @@ dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path 
 #### 13. 测试数声称一致性（SSOT 反查 · v1.1.4 扩）
 
 > 原 309（只查 audit/README）。v1.1.4 暴露盲区：文档声称测试数与实测漂移
-> （FDE.md 一度写 343、LIMITATIONS 写 660，实测 audit=388 / workspace=668）。
+> （FDE.md 一度写 343、LIMITATIONS 写 660，实测 audit=388 / workspace 与文档声称漂移）。
 > 现覆盖所有声称型位置，SSOT = vitest 实测（与 test-count.sh 同源）。
 
 ```bash

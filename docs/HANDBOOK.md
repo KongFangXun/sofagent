@@ -201,7 +201,7 @@ jobs:
 
 ### 引擎怎么跑
 
-> 💡 五引擎的完整设计哲学见 [PHILOSOPHY](./PHILOSOPHY.md#三怎么跑架构全景)。这里只讲使用。
+> 💡 一底座·三引擎·一能力的完整设计哲学见 [PHILOSOPHY](./PHILOSOPHY.md#三怎么跑架构全景)。这里只讲使用。
 
 | 引擎 | 做什么 | 触发方式 |
 |------|------|------|
@@ -324,7 +324,7 @@ Agent 先判断任务复杂度：
 
 | 术语 | 一句话解释 |
 |------|------|
-| **Harness 中间件** | Agent 治理——五个引擎覆盖全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他平台，sofagent 是独立的底线守卫层。→ [设计原理](./ARCHITECTURE.md#五引擎治理架构) |
+| **Harness 中间件** | Agent 治理——一底座·三引擎·一能力覆盖全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他平台，sofagent 是独立的底线守卫层。→ [设计原理](./ARCHITECTURE.md#治理架构一底座三引擎一能力) |
 | **审计引擎** | 看 git diff 硬证据判定违规，不依赖 Agent 配合。v1.0.8+ daemon 监控文件变更，**非开发者也能用**。→ [审计引擎设计](./ARCHITECTURE.md#🔍-审计引擎) |
 | **回溯能力**（v1.0.8+） | 审计后自动快照存档，违规时建议回滚——不只是告诉你违规了，还存了快照、推了通知 |
 | **编排引擎**（实验性）| 拆任务→编排→执行，基于 DeepAgents Sub Agent。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
@@ -337,7 +337,7 @@ Agent 先判断任务复杂度：
 | **四层加载链** | SKILL.md（宪法层）→ think.md（反思层）→ fde.md（执行层）→ knowledge/index.md（知识层）注入顺序 |
 | **FDE** | Forward Deployed Engineer，四阶段十二步：梳理工作流→构建本体模型→识别节点与量化→部署→离场 |
 
-核心 = **一底座四引擎覆盖全生命周期**（约束·编排·审计·回溯·进化），三个维度管住 Agent 行为：四层加载链（所有平台生效）、审计引擎 + daemon（开发者 + 非开发者）、编排引擎 + 进化引擎（增强，OpenClaw 全功能）。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
+核心 = **一底座·三引擎·一能力覆盖全生命周期**（约束底座 + 编排/审计/进化引擎 + 回溯能力），三个维度管住 Agent 行为：四层加载链（所有平台生效）、审计引擎 + daemon（开发者 + 非开发者）、编排引擎 + 进化引擎（增强，OpenClaw 全功能）。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 ---
 
