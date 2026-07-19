@@ -208,6 +208,45 @@ else
 fi
 
 echo ""
+echo "=== 7. 规则数跨文档对照（v1.1.5 审-9 新增）==="
+# 比对三个来源的规则数：
+#   A. sofagent/audit/README.md 规则表行数（A 类 + E 类）
+#   B. sofagent/audit/src/rules/index.ts 注册规则数
+#   C. 主 README.md 声称的 "N 条规则"
+# 三者不一致即告警——避免审-1（A18/A19 漂移）类问题再次出现
+
+# A. audit/README 规则表行数（数 | A* 或 | E* 开头的表行）
+AUDIT_README_COUNT=$(grep -cE "^\| (A|E)[0-9]+ " sofagent/audit/README.md 2>/dev/null || echo "0")
+AUDIT_README_COUNT=$(echo "$AUDIT_README_COUNT" | tr -d '[:space:]')
+
+# B. rules/index.ts 注册规则数（数 { name: 'A* 或 'E* 开头的对象）
+INDEX_TS_COUNT=$(grep -cE "^\s+\{ name: '(A|E)[0-9]+" sofagent/audit/src/rules/index.ts 2>/dev/null || echo "0")
+INDEX_TS_COUNT=$(echo "$INDEX_TS_COUNT" | tr -d '[:space:]')
+
+# C. 主 README 声称的规则数（从 "21 条规则" 这种措辞提取）
+MAIN_README_COUNT=$(grep -oE "[0-9]+ 条规则" README.md 2>/dev/null | head -1 | grep -oE "^[0-9]+" || echo "0")
+MAIN_README_COUNT=$(echo "$MAIN_README_COUNT" | tr -d '[:space:]')
+
+echo "  audit/README.md 规则表行数: $AUDIT_README_COUNT"
+echo "  rules/index.ts 注册规则数:   $INDEX_TS_COUNT"
+echo "  主 README.md 声称规则数:     $MAIN_README_COUNT"
+
+MISMATCH=0
+if [ "$AUDIT_README_COUNT" != "$INDEX_TS_COUNT" ]; then
+  echo "  ❌ audit/README ($AUDIT_README_COUNT) ≠ index.ts ($INDEX_TS_COUNT)"
+  MISMATCH=$((MISMATCH + 1))
+fi
+if [ "$MAIN_README_COUNT" != "0" ] && [ "$MAIN_README_COUNT" != "$INDEX_TS_COUNT" ]; then
+  echo "  ❌ 主 README ($MAIN_README_COUNT) ≠ index.ts ($INDEX_TS_COUNT)"
+  MISMATCH=$((MISMATCH + 1))
+fi
+if [ "$MISMATCH" -eq 0 ]; then
+  echo "  ✅ 三者一致"
+else
+  ERRORS=$((ERRORS + MISMATCH))
+fi
+
+echo ""
 if [ "$ERRORS" -gt 0 ]; then
   echo "发现 ${ERRORS} 个问题"
   exit 1

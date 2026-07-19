@@ -27,7 +27,10 @@ import { checkRuleE2 } from './rule-e2-todo-undeclared';
 import { checkRuleE3 } from './rule-e3-large-deletion';
 import { checkRuleE4 } from './rule-e4-low-comment-ratio';
 
-/** 默认规则（A1-A11）——始终生效 */
+/** 默认规则（A1-A11 + A18/A19）——始终生效
+ * v1.1.5: A18 从 extendedRules 提升为 defaultRules
+ *        评估：在 sofagent 自身仓库根目录跑 A18（排除 node_modules/.git/dist/.workbuddy/docs/archive）
+ *        扫描 513 个文件 → 误报 0 个 < 阈值 3 → 提升为基线能力 */
 export const defaultRules: Rule[] = [
   { name: 'A1 不碰敏感', number: 1, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA1 },
   { name: 'A2 不泄密钥', number: 2, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA2 },
@@ -40,6 +43,7 @@ export const defaultRules: Rule[] = [
   { name: 'A9 不纳注入', number: 9, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA9 },
   { name: 'A10 不引毒源', number: 10, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA10 },
   { name: 'A11 不滥资源', number: 11, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA11 },
+  { name: 'A18 垃圾文件', number: 18, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleA18 },
   { name: 'A19 msg 质量', number: 19, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA19 },
 ];
 
@@ -53,7 +57,6 @@ export const extendedRules: Rule[] = [
   { name: 'A15 不越约束', number: 15, evidenceMode: 'hybrid', ruleClass: '能力拐杖', check: checkRuleA15 },
   { name: 'A16 非授权文件变更', number: 16, evidenceMode: 'git-diff', ruleClass: '工程规范', check: checkRuleA16, description: '检测敏感目录/文件类型的非授权变更' },
   { name: 'A17 异常批量变更', number: 17, evidenceMode: 'filesystem', ruleClass: '工程规范', check: checkRuleA17, description: '检测短时间内大量文件变更' },
-  { name: 'A18 垃圾文件', number: 18, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleA18, description: '检测临时文件名模式的垃圾文件' },
 ];
 
 /** 全部规则——reporter 默认使用此数组（含 default + extended） */

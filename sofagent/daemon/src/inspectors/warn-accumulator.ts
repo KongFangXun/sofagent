@@ -2,11 +2,13 @@
 // warn-accumulator.ts · WARN 累积报告巡检器
 // 扫描 history.jsonl，检测连续未处理的 WARN。
 // v1.1.4 新增 · v1.1.4 修正连续性判定语义
+// v1.1.5 增强：文件级追踪——WARN 涉及的文件已被删除/修复时不计入累积
 //
-// 判定逻辑（v1.1.4 修正）：
+// 判定逻辑（v1.1.4 修正 + v1.1.5 文件级）：
 //   连续性 = 从时间序列末尾往前数 WARN，遇到 PASS/FAIL 则清零。
-//   即「最近 N 条审计全是 WARN」才触发告警。
-//   v1.1.4 版本只过滤 WARN 后计数——任何 N 条 WARN 都触发，语义错误。
+//   文件级过滤 = 末尾连续 WARN 中，若某条 WARN 涉及的所有文件已被删除
+//              （fs.existsSync 返回 false）或后续 history 有该文件的
+//              delete 记录，则该条 WARN 不计入"未处理"。
 //
 // 配合 v1.1.4 LOOP audit 三态全写 history（PASS/WARN/FAIL），
 // warn-accumulator 现在能正确识别「WARN 之后有 PASS 清理」的情况。
@@ -18,11 +20,11 @@ import * as path from 'path';
 import type { InspectorResult } from './types';
 
 /**
- * 检测连续 WARN 累积（v1.1.4 修正版）
+ * 检测连续 WARN 累积（v1.1.5 文件级追踪版）
  *
  * @param projectDir 项目根目录
  * @param threshold 连续 WARN 触发阈值（默认 3）
- * @returns 巡检结果——末尾连续 N 条 WARN（中间无 PASS/FAIL）时 triggered=true
+ * @returns 巡检结果——末尾连续 N 条 WARN（中间无 PASS/FAIL，且涉及文件仍存在）时 triggered=true
  */
 export function accumulateWarnings(
   projectDir: string,
@@ -57,6 +59,8 @@ export function accumulateWarnings(
     exitCode: number; // 0=PASS / 1=WARN / 2=FAIL
     task: string;
     files: string[];
+    /** v1.1.5: 从 ruleResults[].details 提取的涉及文件 */
+    involvedFiles: string[];
   }
   const records: AuditRecord[] = [];
 
@@ -68,17 +72,32 @@ export function accumulateWarnings(
         task?: string;
         commitMsg?: string;
         diffRange?: string;
+        ruleResults?: Array<{ name?: string; status?: string; details?: string[] }>;
       };
       if (
         typeof entry.exitCode === 'number' &&
         entry.timestamp &&
         new Date(entry.timestamp).getTime() > sevenDaysAgo
       ) {
+        // v1.1.5: 从 ruleResults[].details 提取涉及文件（而非仅 task/commitMsg 文本）
+        const involved = new Set<string>();
+        if (Array.isArray(entry.ruleResults)) {
+          for (const r of entry.ruleResults) {
+            if (r.status === 'WARN' && Array.isArray(r.details)) {
+              for (const detail of r.details) {
+                for (const f of extractFilePaths(detail)) {
+                  involved.add(f);
+                }
+              }
+            }
+          }
+        }
         records.push({
           timestamp: entry.timestamp,
           exitCode: entry.exitCode,
           task: entry.task ?? entry.commitMsg ?? entry.diffRange ?? '(unknown)',
           files: extractFileHints(entry.task ?? entry.commitMsg ?? ''),
+          involvedFiles: Array.from(involved),
         });
       }
     } catch {
@@ -99,24 +118,35 @@ export function accumulateWarnings(
   records.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
   // v1.1.4 修正：真正的连续性判定——从末尾往前数 WARN，遇到 PASS/FAIL 中断
-  // 末尾连续 N 条 WARN（中间无 PASS/FAIL）才触发
+  // v1.1.5 文件级过滤：末尾连续 WARN 中剔除「涉及文件已不存在」的条目
   let consecutiveWarn = 0;
+  const unresolvedRecords: AuditRecord[] = [];
   for (let i = records.length - 1; i >= 0; i--) {
     const rec = records[i];
-    if (rec && rec.exitCode === 1) {
-      consecutiveWarn++;
-    } else {
-      break; // 遇到 PASS/FAIL 或无效记录，连续中断
+    if (!rec) break;
+    if (rec.exitCode !== 1) break; // 遇到 PASS/FAIL 中断
+
+    // 文件级追踪：该条 WARN 涉及的所有文件是否仍存在于项目？
+    // 全部已删除 → 视为已处理，不计入累积
+    if (rec.involvedFiles.length > 0) {
+      const anyExists = rec.involvedFiles.some((f) =>
+        fs.existsSync(path.join(projectDir, f)),
+      );
+      if (!anyExists) {
+        // 所有涉及文件都已删除——这条 WARN 已自然消解
+        continue;
+      }
     }
+    consecutiveWarn++;
+    unresolvedRecords.unshift(rec);
   }
 
   // 统计近 7 天总 WARN 数（用于 message 信息量）
   const totalWarn = records.filter((r) => r.exitCode === 1).length;
 
   if (consecutiveWarn >= threshold) {
-    const recentRecords = records.slice(-consecutiveWarn);
-    const recentFiles = recentRecords
-      .flatMap((r) => r.files)
+    const recentFiles = unresolvedRecords
+      .flatMap((r) => [...r.files, ...r.involvedFiles])
       .filter(Boolean);
     const fileHint = recentFiles.length > 0
       ? ` 涉及文件：${[...new Set(recentFiles)].slice(0, 5).join(', ')}`
@@ -124,7 +154,7 @@ export function accumulateWarnings(
     return {
       name: 'warn-accumulator',
       triggered: true,
-      message: `连续 ${consecutiveWarn} 条 WARN 未处理（近 7 天共 ${totalWarn} 条 WARN，末尾连续 ${consecutiveWarn} 条无 PASS 清理），建议人工跟进。${fileHint}`,
+      message: `连续 ${consecutiveWarn} 条 WARN 未处理（近 7 天共 ${totalWarn} 条 WARN，末尾连续 ${consecutiveWarn} 条无 PASS 清理且涉及文件仍存在），建议人工跟进。${fileHint}`,
       severity: 'warning',
     };
   }
@@ -132,7 +162,7 @@ export function accumulateWarnings(
   return {
     name: 'warn-accumulator',
     triggered: false,
-    message: `No consecutive WARN accumulation (近 7 天 ${totalWarn} 条 WARN，末尾连续 ${consecutiveWarn} 条，阈值 ${threshold})`,
+    message: `No consecutive WARN accumulation (近 7 天 ${totalWarn} 条 WARN，末尾连续 ${consecutiveWarn} 条（文件级过滤后），阈值 ${threshold})`,
     severity: 'info',
   };
 }
@@ -144,4 +174,41 @@ function extractFileHints(text: string): string[] {
   if (!text) return [];
   const matches = text.match(/[^\s:,;()"'`]+\/[^\s:,;()"'`]+/g);
   return matches ? matches.slice(0, 3) : [];
+}
+
+/**
+ * v1.1.5: 从 ruleResults[].details 文本中提取文件路径
+ * 匹配形式：
+ *   - 含路径分隔符：path/to/file.ts / path/to/file.ts:12
+ *   - 单独文件名（含扩展名）：a.txt / bak.log / file.test.ts
+ * 排除：
+ *   - URL（http/https）
+ *   - 通配符模式（含 * 或 ?）
+ */
+function extractFilePaths(text: string): string[] {
+  if (!text) return [];
+  const results = new Set<string>();
+
+  // 1. 含 / 的路径
+  const pathMatches = text.match(/[a-zA-Z0-9_\-./]+\/[a-zA-Z0-9_\-./]+/g);
+  if (pathMatches) {
+    for (const m of pathMatches) {
+      const cleaned = m.replace(/:\d+$/, '').replace(/\s.*$/, '');
+      if (!cleaned.includes('://') && !cleaned.includes('*') && !cleaned.includes('?')) {
+        results.add(cleaned);
+      }
+    }
+  }
+
+  // 2. 单独文件名（word.ext 形式，ext 为 1-10 字母数字）
+  const fileMatches = text.match(/\b[a-zA-Z0-9_\-]+\.[a-zA-Z0-9]{1,10}\b/g);
+  if (fileMatches) {
+    for (const m of fileMatches) {
+      // 排除版本号 (1.1.5) / IP 段 / 纯数字小数
+      if (/^\d+\.\d+/.test(m)) continue;
+      results.add(m);
+    }
+  }
+
+  return Array.from(results).slice(0, 5);
 }

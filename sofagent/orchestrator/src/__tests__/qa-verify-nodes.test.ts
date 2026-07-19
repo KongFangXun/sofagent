@@ -22,7 +22,9 @@ import {
   defaultDeps,
   type LoopGraphDeps,
   DEFAULT_MAX_RETRIES,
-  DEFAULT_AGENT_MAX_TURNS,
+  DEFAULT_ENGINEER_MAX_TURNS,
+  DEFAULT_REVIEWER_MAX_TURNS,
+  resolveMaxTurns,
 } from '../loop/nodes';
 
 // ════════════════════════════════════════
@@ -233,14 +235,50 @@ describe('nodes.ts QA 验证 · 默认重试上限', () => {
 });
 
 describe('nodes.ts QA 验证 · v1.1.4 审查修复', () => {
-  // 测试：DEFAULT_AGENT_MAX_TURNS = 20（PRD Q1 决策落地）
-  it('DEFAULT_AGENT_MAX_TURNS 应为 20（PRD Q1 决策）', () => {
-    expect(DEFAULT_AGENT_MAX_TURNS).toBe(20);
+  // v1.1.5: maxTurns 拆分——engineer=20 / reviewer=15 默认值（可配置化）
+  it('DEFAULT_ENGINEER_MAX_TURNS 应为 20（PRD Q1 决策落地）', () => {
+    expect(DEFAULT_ENGINEER_MAX_TURNS).toBe(20);
   });
 
-  // 测试：常量已导出（非 undefined）
-  it('DEFAULT_AGENT_MAX_TURNS 已导出且为数字类型', () => {
-    expect(typeof DEFAULT_AGENT_MAX_TURNS).toBe('number');
-    expect(DEFAULT_AGENT_MAX_TURNS).toBeDefined();
+  it('DEFAULT_REVIEWER_MAX_TURNS 应为 15（v1.1.5 新增）', () => {
+    expect(DEFAULT_REVIEWER_MAX_TURNS).toBe(15);
+  });
+
+  it('resolveMaxTurns 已导出且为函数', () => {
+    expect(typeof resolveMaxTurns).toBe('function');
+  });
+});
+
+describe('resolveMaxTurns 可配置化（v1.1.5）', () => {
+  it('config 不存在时 fallback 到默认值', () => {
+    const tmp = tmpDir();
+    // 空目录——loadConfig 走 DEFAULT_CONFIG，无 loop 字段
+    expect(resolveMaxTurns('engineer', tmp)).toBe(20);
+    expect(resolveMaxTurns('reviewer', tmp)).toBe(15);
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it('config 配置 engineer=5 时返回 5', () => {
+    const tmp = tmpDir();
+    fs.mkdirSync(path.join(tmp, '.sofagent'), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, '.sofagent', 'config.yml'),
+      'audit:\n  lowRiskPatterns: []\n  testPatterns: []\n  carefulModifyThreshold: 0.2\n  extendedRulesEnabled: false\nloop:\n  maxTurns:\n    engineer: 5\n    reviewer: 10\n'
+    );
+    expect(resolveMaxTurns('engineer', tmp)).toBe(5);
+    expect(resolveMaxTurns('reviewer', tmp)).toBe(10);
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it('只配 engineer 时 reviewer fallback 到默认值', () => {
+    const tmp = tmpDir();
+    fs.mkdirSync(path.join(tmp, '.sofagent'), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, '.sofagent', 'config.yml'),
+      'loop:\n  maxTurns:\n    engineer: 7\n'
+    );
+    expect(resolveMaxTurns('engineer', tmp)).toBe(7);
+    expect(resolveMaxTurns('reviewer', tmp)).toBe(15); // fallback
+    fs.rmSync(tmp, { recursive: true, force: true });
   });
 });

@@ -205,4 +205,78 @@ describe('warn-accumulator QA 验证', () => {
     expect(result.message).toMatch(/共 5 条 WARN/);
     expect(result.message).toMatch(/末尾连续 3 条/);
   });
+
+  // ────────────────────────────────────────
+  // v1.1.5 文件级追踪：WARN 涉及的文件已被删除/修复时不计入累积
+  // ────────────────────────────────────────
+
+  // 测试：WARN(fileA) → 后续 commit 删除 fileA → warn-accumulator 不再触发
+  it('WARN 涉及文件已被删除 → 该条 WARN 不计入累积', () => {
+    const now = Date.now();
+    // 构造 3 条 WARN，前两条涉及的文件已不存在（模拟被删除）
+    // 第 3 条涉及的文件存在
+    fs.writeFileSync(path.join(dir, 'still-exists.ts'), 'export const x = 1;\n');
+
+    const entries = [
+      // 早两条：涉及文件已删除
+      JSON.stringify({
+        timestamp: new Date(now - 3 * 3600_000).toISOString(),
+        exitCode: 1,
+        task: 'WARN deleted file',
+        diffRange: 'HEAD~1..HEAD',
+        ruleResults: [
+          { name: 'A18 垃圾文件', status: 'WARN', details: ['deleted-file-1.ts 是垃圾文件'] },
+        ],
+      }),
+      JSON.stringify({
+        timestamp: new Date(now - 2 * 3600_000).toISOString(),
+        exitCode: 1,
+        task: 'WARN deleted file',
+        diffRange: 'HEAD~1..HEAD',
+        ruleResults: [
+          { name: 'A18 垃圾文件', status: 'WARN', details: ['deleted-file-2.ts 是垃圾文件'] },
+        ],
+      }),
+      // 最新一条：涉及文件仍存在
+      JSON.stringify({
+        timestamp: new Date(now - 1 * 3600_000).toISOString(),
+        exitCode: 1,
+        task: 'WARN existing file',
+        diffRange: 'HEAD~1..HEAD',
+        ruleResults: [
+          { name: 'A18 垃圾文件', status: 'WARN', details: ['still-exists.ts 是垃圾文件'] },
+        ],
+      }),
+    ];
+    fs.writeFileSync(path.join(auditDir, 'history.jsonl'), entries.join('\n'));
+    const result = accumulateWarnings(dir, 3);
+    // 前两条涉及的文件已删除 → 不计入 → 末尾连续 = 1（< 阈值 3）→ 不触发
+    expect(result.triggered).toBe(false);
+  });
+
+  // 测试：WARN(fileA) → 后续无 commit 处理 fileA → warn-accumulator 触发
+  it('WARN 涉及文件仍存在 → 计入累积，达阈值触发', () => {
+    const now = Date.now();
+    // 创建 3 个真实存在的文件
+    fs.writeFileSync(path.join(dir, 'file-a.ts'), 'export const a = 1;\n');
+    fs.writeFileSync(path.join(dir, 'file-b.ts'), 'export const b = 1;\n');
+    fs.writeFileSync(path.join(dir, 'file-c.ts'), 'export const c = 1;\n');
+
+    const entries = ['file-a.ts', 'file-b.ts', 'file-c.ts'].map((f, i) =>
+      JSON.stringify({
+        timestamp: new Date(now - (3 - i) * 3600_000).toISOString(),
+        exitCode: 1,
+        task: `WARN ${f}`,
+        diffRange: 'HEAD~1..HEAD',
+        ruleResults: [
+          { name: 'A18 垃圾文件', status: 'WARN', details: [`${f} 是垃圾文件`] },
+        ],
+      }),
+    );
+    fs.writeFileSync(path.join(auditDir, 'history.jsonl'), entries.join('\n'));
+    const result = accumulateWarnings(dir, 3);
+    // 3 条 WARN 涉及文件都存在 → 末尾连续 = 3 → 触发
+    expect(result.triggered).toBe(true);
+    expect(result.message).toMatch(/连续 3 条 WARN/);
+  });
 });

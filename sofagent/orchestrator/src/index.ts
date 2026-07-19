@@ -17,6 +17,10 @@ export { BUILTIN_AGENTS, ENGINEER_AGENT, REVIEWER_AGENT } from './builtin-agents
 // Launcher
 export { launch, shutdown, readRuntimeState, writeRuntimeState, spawnSubAgent } from './launcher';
 
+// CLI args parsing (v1.1.5 审-8：--mode <deploy|sustain> 纯函数，可单测)
+export { parseSubagentRunArgs } from './cli-args';
+export type { SubagentRunArgs } from './cli-args';
+
 // Audit Sub Agent
 export { readAuditHistory, analyzeCostBaseline, generateAuditReport } from './audit-sub-agent';
 

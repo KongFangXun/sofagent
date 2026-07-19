@@ -239,7 +239,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 
 ## 审计规则
 
-### 默认规则（A1-A11）
+### 默认规则（A1-A11 + A18/A19，共 13 条）
 
 | 规则 | 判定 | 严重度 | 说明 |
 |------|------|:--:|------|
@@ -254,10 +254,12 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 | A9 不纳注入 | 代码中存在命令注入风险模式 | FAIL | 业务底线 |
 | A10 不引毒源 | 依赖包黑名单检测 | WARN | 业务底线 |
 | A11 不滥资源 | 资源滥用检测（超大文件等） | WARN | 业务底线 |
+| A18 垃圾文件 | 临时文件名模式的垃圾文件 | WARN | v1.1.5 起提升为默认规则（评估误报率 0/513） |
+| A19 commit message 质量 | message 命中黑名单词或过短 | FAIL | 防"add"/"test"/"fix" 等低质 message |
 
-### 扩展规则（A14-A19 + E1-E4，共 10 条）
+### 扩展规则（A14-A17 + E1-E4，共 8 条）
 
-A14-A19 + E1-E4 均需 `extendedRules: true` 启用（`DEFAULT_CONFIG=false`，opt-in）。仅当 config 解析失败走 `safeDefaults` 时 fail-closed 强制启用所有扩展规则——这是有意的保护性设计。
+A14-A17 + E1-E4 均需 `extendedRules: true` 启用（`DEFAULT_CONFIG=false`，opt-in）。仅当 config 解析失败走 `safeDefaults` 时 fail-closed 强制启用所有扩展规则——这是有意的保护性设计。
 
 | 规则 | 判定 | 严重度 | 说明 |
 |------|------|:--:|------|
@@ -265,8 +267,6 @@ A14-A19 + E1-E4 均需 `extendedRules: true` 启用（`DEFAULT_CONFIG=false`，o
 | A15 不盲动 | workflow.yml 节点未声明 actions 时 FAIL（防绕过） | FAIL | v1.1.3 起未声明 actions = FAIL（原 WARN 升级） |
 | A16 非授权文件变更 | 非工作流声明范围内的文件被修改 | FAIL | 行为级检测（文件路径/扩展名） |
 | A17 异常批量变更 | 单次提交变更文件数超阈值 | WARN | 行为级检测（变更数量，evidenceMode=filesystem） |
-| A18 垃圾文件 | 临时文件名模式的垃圾文件 | WARN | 检测 a.txt/bak.log 等无意义文件 |
-| A19 commit message 质量 | message 命中黑名单词或过短 | FAIL | 防"add"/"test"/"fix" 等低质 message |
 | E1 不含测试文件 | 测试文件被提交到生产目录 | WARN | |
 | E2 TODO 未声明 | 新增 TODO 未在任务中声明 | WARN | |
 | E3 大量删除 | 单次提交删除行数 > 阈值 | WARN | |
