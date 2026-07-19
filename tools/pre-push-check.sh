@@ -89,8 +89,19 @@ run_step() {
 # ════════════════════════════════════════
 echo -e "\n${BOLD}── 1. ShellCheck ──${NC}"
 if command -v shellcheck &>/dev/null; then
-  SHELL_FILES=$(find sofagent/scripts tools FDE -name "*.sh" -not -path "*/node_modules/*" 2>/dev/null)
+  # v1.1.6: 补 LOOP（CI shellcheck.yml 扫全仓，列表必须与 CI 保持一致）
+  SHELL_FILES=$(find sofagent/scripts tools FDE LOOP -name "*.sh" -not -path "*/node_modules/*" -not -path "*/dist/*" 2>/dev/null)
   SC_FAIL=0
+
+  # ShellCheck 版本兼容性：CI 用 v0.11.0，本地 ≥0.11.0 才能保证与 CI 一致
+  # v0.10.0 对 SC2155 等 warning 判定宽松（exit 0），v0.11.0 exit 1
+  SC_VER=$(shellcheck --version 2>/dev/null | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | head -1)
+  sc_ver_major=$(echo "$SC_VER" | cut -d. -f1)
+  sc_ver_minor=$(echo "$SC_VER" | cut -d. -f2)
+  if [ -n "$SC_VER" ] && { [ "$sc_ver_major" -lt 0 ] || { [ "$sc_ver_major" -eq 0 ] && [ "$sc_ver_minor" -lt 11 ]; }; } 2>/dev/null; then
+    check_warn "shellcheck $SC_VER < 0.11.0（CI 用 v0.11.0）——建议 brew upgrade shellcheck"
+  fi
+
   for f in $SHELL_FILES; do
     # severity=warning 只报 warning+error，忽略 style/info（SC2015/SC2002 等代码风格建议）
     # v0.99.8: SC2086/SC2155 收窄——全仓库已修复，不再全局排除
