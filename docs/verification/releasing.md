@@ -365,17 +365,14 @@ ls docs/changelog/*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
 
 ### 🔴 CLI 迁移版本回归闸（v1.1.0 教训）
 
-> 如果本版本涉及 CLI 命令迁移（旧命令改名、上帝包子命令拆到新包二进制），阶段四跳过的 shellcheck（步骤 9）和 acceptance-test（步骤 13）在**此处补跑**——文档收尾已完成，所有引用已更新，跑出来是真实结果。
+> 如果本版本涉及 CLI 命令迁移（旧命令改名、上帝包子命令拆到新包二进制），阶段四跳过的 shellcheck（步骤 9）在**此处补跑**——文档收尾已完成，所有引用已更新，跑出来是真实结果。acceptance-test 不在此处补跑——它已挪到阶段6新 session 跑（由独立审查者执行）。
 
 ```bash
 # 补跑 shellcheck
 shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh   # 期望：零 error
-
-# 补跑 acceptance-test
-bash tools/acceptance-test.sh                                      # 期望：全部 PASS
 ```
 
-> 如果 shellcheck/acceptance-test 因脚本未适配新命令而大量 FAIL，标注为已知遗留并写入下版本的 Wave 5 适配计划。
+> 如果 shellcheck 因脚本未适配新命令而大量 FAIL，标注为已知遗留并写入下版本的 Wave 5 适配计划。acceptance-test 同理——在阶段6新 session 跑时如因 CLI 迁移大量 FAIL，标注为已知遗留。
 
 ---
 
