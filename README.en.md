@@ -28,7 +28,21 @@
 
 **Agents can work. Did they do it right? sofagent governs — 1 base + 4 engines, one system.**
 
-🧭 Constraint Base · ⚙️ Orchestration · 🔍 Audit · 🔄 Restore · 🧬 Evolution
+🧭 Constraint Base · ⚙️ Orchestration · 🔍 Audit · 🔄 Restore · 🧬 Evolution (experimental)
+
+---
+
+## Contents
+
+- [Why sofagent?](#why-sofagent)
+- [Install](#install)
+- [How FDE works](#how-fde-works)
+- [vs. existing tools](#vs-existing-tools)
+- [Does it work?](#does-it-work)
+- [Built-in Agents](#built-in-agents)
+- [Which do you need?](#which-do-you-need)
+- [Work模板市场](#work模板市场-the-reliable-foundation-for-enterprise-landing)
+- [Further reading](#further-reading)
 
 ---
 
@@ -44,6 +58,8 @@ Most SME AI projects collect dust within 6 months. It's not a tech problem — i
 
 No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep running. Unlike AgentLoop (SaaS, runtime trajectory), sofagent audits **what changed** (file diff, local, MIT open source).
 
+> 🔬 **Hugging Face benchmark**: same model, harness-only optimization — legal-agent score jumped from 3.5% to 80.1% (76-point gain, at ~1/7 the cost of Claude Sonnet). [Details](./docs/ARCHITECTURE.md)
+
 ---
 
 ## Install
@@ -58,15 +74,28 @@ Three-step first experience:
 # 1. See constraints — agents carry these rules
 sofagent-audit --help | head -5
 
-# 2. Run audit — change a file and see
+# 2. Run audit — --init installed a pre-commit hook, so every commit is scanned by A1
 echo "API_KEY=sk-123456" > .env && git add .env && git commit -m "test"
-# → ⛔ A1 sensitive files: .env contains key pattern, commit blocked
+# → ⛔ A1 sensitive files: .env contains key pattern, commit blocked (never lands)
 
 # 3. Check snapshots — auto-saved after every audit
 sofagent-audit --timeline
+
+# Cleanup after demo (A1 blocked the commit, no new commit): unstage and remove .env
+git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
 
 > Requires Node.js ≥ 18 + bash + git. Full macOS/Linux support, Windows experimental. [Full install guide](./docs/HANDBOOK.md)
+
+### Uninstall
+
+```bash
+npm uninstall -g @sofagent/audit @sofagent/core @sofagent/orchestrator @sofagent/daemon @sofagent/mcp
+# Remove the git hook installed by --init (in the current repo)
+rm -f .git/hooks/commit-msg .git/hooks/post-commit
+```
+
+> Packages are published to npm on each release. If `npm install -g` fails locally, use the in-repo script `sofagent/scripts/install.sh`.
 
 ---
 
@@ -130,7 +159,7 @@ graph LR
     E -->|Old better| G[Keep]
 ```
 
-Powered by DeepAgents (v1.0.7, ao fully retired). `sofagent-orchestrator compose --task` CLI entry — **any Agent platform can use the orchestration engine**. See [ROADMAP](./ROADMAP.md).
+Powered by DeepAgents (v1.0.7, OpenClaw orchestration layer fully retired). `sofagent-orchestrator compose --task` CLI entry — **any Agent platform can use the orchestration engine**. See [ROADMAP](./ROADMAP.md).
 
 #### 🔍 Audit engine
 
@@ -140,7 +169,7 @@ Every git commit gets scanned — what the agent changed can't be denied.
 graph LR
     A[AI Agent<br/>writes code] --> B[git commit]
     B --> C{sofagent<br/>audit engine}
-    C -->|git diff scan| D[19 rule checks]
+    C -->|git diff scan| D[21 rule checks]
     D -->|violation| E[⛔ Block + log]
     D -->|clean| F[✅ Pass]
     E --> G[think.md<br/>auto-reflect]
@@ -170,7 +199,7 @@ sofagent-audit --revert <SHA>      # Rollback to any snapshot
 
 sofagent is a **dashcam**, not a security checkpoint — post-hoc audit + restore, platform-agnostic.
 
-#### 🧬 Evolution engine (v1.0.8+)
+#### 🧬 Evolution engine (v1.0.8+ · experimental)
 
 FDE Agent doesn't just deploy once — after deployment, it shifts into **continuous optimization**. Weekly automatic inspection of audit trends + reflections, catching degradation before it impacts production.
 
@@ -214,8 +243,6 @@ The full loop: **Constrain → Orchestrate → Audit → Restore → Evolve**.
 
 ## Does it work?
 
-> 🔬 Hugging Face legal-agent benchmark: same model, harness-only optimization — score jumped from 3.5% to 80.1% (76-point gain, matching Claude Sonnet at 1/7 the cost). [Details](./docs/ARCHITECTURE.md)
-
 Install and run — no dependency on agent compliance:
 
 | Dimension | Data | What it means |
@@ -235,6 +262,8 @@ Install and run — no dependency on agent compliance:
 | **FDE Deployment Engineer** | `@sofagent-fde` | Suggests follow-up inspection after deployment |
 | **Compliance Auditor** | `@sofagent-audit` | Every commit / FDE deployment / LOOP task completion |
 
+> `@sofagent-audit` is the `@sofagent/audit` npm package invoked as a Skill Agent; `@sofagent-fde` similarly comes from the FDE toolkit — same capability, available both as a CLI and as an Agent.
+
 ## Which do you need?
 
 | Your scenario | Use |
@@ -243,7 +272,7 @@ Install and run — no dependency on agent compliance:
 | Full agent behavior management | Audit engine + harness base (install.sh) |
 | Automatic task orchestration | + orchestration engine (DeepAgents Sub Agent) |
 
-> ⚠️ **Current version (v1.1.5) coverage**: Developer roles (git commit audit) + non-developer roles (filesystem audit) — full coverage.
+> ⚠️ **Current version (v1.1.5) coverage**: Developer roles (git commit audit) + non-developer roles (filesystem audit) — full coverage. Non-developer filesystem audit requires installing and running the `@sofagent/daemon` daemon.
 
 ### Dual-node deployment (v1.0.7+)
 
