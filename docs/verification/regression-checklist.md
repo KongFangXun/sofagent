@@ -295,9 +295,9 @@ grep -nE "期望.*[0-9]+\s*项\|期望.*[0-9]+\s*条\|expected.*[0-9]+" tools/ac
 # 新增规则后必须同步更新 acceptance-test 的期望值——否则烟测永远失败或永远假绿
 ```
 
-#### 9. 动态规则禁用逻辑
+#### 9. 动态规则禁用逻辑 + 文档侧规则数声称一致性
 
-> 原 312
+> 原 312。v1.1.5 扩展：v1.1.4 加 A18/A19 时代码侧 knownKeys 同步了，但文档侧 6 个文档的"19 条 / A14-A17"声称全漏改（P0 发版诚信）。本维度现在覆盖**代码侧 + 文档侧**两个一致性面。
 
 ```bash
 grep -c "a16\|a17" sofagent/core/src/config-loader.ts   # 期望: ≥ 2
@@ -321,6 +321,17 @@ KNOWN_KEYS=$(grep -A20 "knownKeys = new Set" sofagent/core/src/config-loader.ts 
 echo "index.ts 注册: $INDEX_RULES"
 echo "knownKeys 集合: $KNOWN_KEYS"
 # 期望：两集合相等（knownKeys 应覆盖所有已注册规则号，可多于但不能少于）
+
+# 子项: 文档侧规则数声称全仓同步（v1.1.5 追加——v1.1.4 加 A18/A19 时只改 README，
+# HANDBOOK/DEVELOPMENT/FDE/LOOP 共 6 文档仍写"19 条 / A14-A17"，P0 发版诚信问题）
+# 规则数变更时必须全仓 grep 所有"声称型"数字同步：规则总数 + 规则编号区间 + 各类规则数
+SSOT_TOTAL=$(grep -cE "^\s*name:\s*'A[0-9]+" sofagent/audit/src/rules/index.ts)
+SSOT_MAX=$(grep -oE "name:\s*'A[0-9]+" sofagent/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tail -1)
+echo "SSOT 规则总数: $SSOT_TOTAL / 最大编号: A$SSOT_MAX"
+# 全仓扫描所有声称型数字（规则总数 + A14-A1X 区间）
+grep -rnE "A1-A11、A14-A1[0-9]|[0-9]+ 条审计规则" --include="*.md" README.md README.en.md docs/ FDE/ LOOP/ ROADMAP.md 2>/dev/null | grep -v "regression-checklist\|fresh-eyes-review\|changelog/"
+# 人工核对：每处声称的数字必须与 SSOT 一致。命中旧数字 = P0（check-version.sh 只查版本号不查规则数，门禁盲区）
+# 已知历史漏改位置：README.md / docs/HANDBOOK.md / docs/DEVELOPMENT.md / docs/ARCHITECTURE.md / FDE/FDE.md / LOOP/LOOP.md
 ```
 
 #### 10. tag commit message 规范
