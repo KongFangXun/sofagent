@@ -23,7 +23,7 @@ function makeCtx(addedLines: string[] = []): AuditContext {
   };
 }
 
-describe('A15 不越约束', () => {
+describe('A15 不盲动', () => {
   // 保存/恢复 SOFAGENT_DATA，避免污染其他测试
   let savedDataDir: string | undefined;
 
