@@ -1,5 +1,5 @@
 // ============================================================
-// graph/nodes.ts · LOOP StateGraph 节点实现
+// loop/nodes.ts · LOOP StateGraph 节点实现
 // v1.1.4 新增：engineer / audit / reviewer / human_confirm 四节点
 // v1.1.4 升级：工具注入路径 + maxTurns + WARN 写入 history + 三态全记录
 //
