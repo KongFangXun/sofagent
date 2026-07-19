@@ -66,6 +66,14 @@ A17:
   enabled: true
   bulk_threshold: 50
   bulk_window_ms: 300000
+
+# v1.1.6: 感知层配置——控制 sofagent 输出签名与品牌可见性
+perception:
+  # 所有输出是否带 [sofagent] 签名（审计报告/webhook 推送/MCP tool 返回）
+  enabled: true
+  # 推送目标（可多个）：webhook://钉钉/飞书/企微 URL
+  # push_target:
+  #   - webhook://https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx
 `;
 
 /**
