@@ -7,12 +7,6 @@
 
 ## 正式版
 
-### [v1.1.6] — v1.1.5 发布后问题修复（21 项）
-> 2026-07-19（UTC）· 已发版
-**核心变更**：纯 BugFix 版本，不新增功能。修复 v1.1.5 发布后独立检查发现的 21 项问题（5 P0 + 5 P1 + 8 P2 + 3 P3）：webhook PASS 推送接通（声称了未实现的死代码）+ init.ts 文案规则数动态读取（根治 11 vs 13 漂移）+ "knowledge resource"→"knowledge tool" 全仓清零 + CHANGELOG 索引 v1.1.5 重复条目删除 + v1.1.5 changelog 清理审查措辞 + audit/README 规则分级补"工程规范"定义 + 规则表 ruleClass 列统一 + FDE/README 文案诚实化 + README 加竞品对比表 + "回溯引擎"加诚实说明 + 3 个 SKILL.md 补 frontmatter + LIMITATIONS 多项修正 + 成功悖论文档去重 + README 命名约定/缩写展开/Quick Start 跳转 + SECURITY.md 加版本头 + verify 措辞更新 + 批量部署说明。
-**质量验证**：405 tests 全绿（audit 包）· CHANGELOG 纯度零命中 · CHANGELOG 索引无重复 · MCP resource/tool 一致性零命中。
-> 📖 [开发日志](./docs/changelog/v1.1.6.md)
-
 ### [v1.1.5] — releasing.md SOP 集成 + MCP pipe + knowledge tool + USB federation HMAC
 > 2026-07-19（UTC）· 已发版
 **核心变更**：① **releaser Skill**——把 `docs/verification/releasing.md` 十二阶段发版 SOP 注入 Agent 上下文，Agent 按全流程自动执行发版（三个 human check 节点显式介入）。② **MCP `audit_file` pipe**——Agent 通过 MCP 协议编辑的文件也能即时审计（补 v1.1.4 daemon 盲区，daemon 只监控 fs.watch 物理变更，MCP 协议层编辑看不见）。③ **7 个 knowledge MCP resource** + `list_capabilities`——Agent 第一次连上 MCP server 主动推送能力清单。④ **push-target 5 种路由**——webhook:dingtalk/feishu/wecom + openclaw:im + daemon:notice，工作流节点输出自动推到对应通道。⑤ **USB federation HMAC 签名**——`createHmac` + `timingSafeEqual` + `mode: 0o600`，补 v1.1.4 USB federation 只有基础检测的缺口。⑥ **cli.ts `--mode` 参数**——orchestrator 支持 `--mode engineer/reviewer` 单节点执行。
