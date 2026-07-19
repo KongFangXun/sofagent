@@ -1,5 +1,5 @@
 // ============================================================
-// A15 不越约束（扩展层 · 能力拐杖）
+// A15 不盲动（扩展层 · 能力拐杖）
 // 检查 Agent action 是否在 Workflow 节点声明的 actions 范围内
 // evidenceMode: hybrid——需要读 config + diff
 // v1.1.6 新增
@@ -76,7 +76,7 @@ function extractActionsFromLines(lines: string[]): string[] {
 
 export function checkRuleA15(ctx: AuditContext): RuleCheck {
   const rule: RuleCheck = {
-    name: 'A15 不越约束',
+    name: 'A15 不盲动',
     number: 15,
     status: 'PASS',
     details: [],
