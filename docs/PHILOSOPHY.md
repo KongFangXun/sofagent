@@ -170,7 +170,7 @@ sofagent 的三条中立性原则：
 | 层 | 是什么 | 例子 |
 |------|------|------|
 | Ledger | 发生了什么（原始数据） | task/logs、think.md、审计历史 |
-| Views | 这代表什么（知识提炼） | knowledge/ entities/concepts/comparisons |
+| Views | 这代表什么（知识提炼） | knowledge/ entities/concepts/comparisons/summaries |
 | Policy | 该怎么办（约束规则） | fde.md 业务四问、SKILL.md 铁律 |
 
 三层不互相替代——Ledger 是原材料，Views 是加工品，Policy 是使用说明。

@@ -243,7 +243,7 @@ Install and run — no dependency on agent compliance:
 | Full agent behavior management | Audit engine + harness base (install.sh) |
 | Automatic task orchestration | + orchestration engine (DeepAgents Sub Agent) |
 
-> ⚠️ **Current version (v1.1.4) coverage**: Developer roles (git commit audit) + non-developer roles (filesystem audit) — full coverage.
+> ⚠️ **Current version (v1.1.5) coverage**: Developer roles (git commit audit) + non-developer roles (filesystem audit) — full coverage.
 
 ### Dual-node deployment (v1.0.7+)
 
