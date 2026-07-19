@@ -33,26 +33,30 @@
 
 **管住 Agent 从部署到持续优化的全生命周期。**
 
-🧭 约束底座 · ⚙️ 编排引擎 · 🔍 审计引擎 · 🔄 回溯引擎 · 🧬 进化引擎
+🧭 约束底座 · ⚙️ 编排引擎 · 🔍 审计引擎 · 🔄 回溯引擎 · 🧬 进化引擎（实验性）
+
+---
+
+## 目录
+
+- [30 秒看懂 sofagent](#30-秒看懂-sofagent)
+- [为什么需要 sofagent？](#为什么需要-sofagent)
+- [怎么装？](#怎么装)
+- [新手上路（成为 FDE 节点）](#新手上路成为-fde-节点)
+- [FDE 怎么工作？](#fde-怎么工作)
+- [效果怎么样？](#效果怎么样)
+- [内置 Agent](#内置-agent)
+- [你需要哪个？](#你需要哪个)
+- [Workflow Hub：企业落地的可靠底座](#workflow-hub企业落地的可靠底座)
+- [延伸阅读](#延伸阅读)
 
 ---
 
 ## 30 秒看懂 sofagent
 
-> **sofagent 是一套开源（MIT）的 FDE（前线部署工程）工具包——FDE 不是软件，而是一种能力。**
+> **sofagent 是一套开源（MIT）的 FDE（前线部署工程）工具包——FDE 不是软件，而是一种能力：让企业用自己选的 Agent + 大模型，可治理、可问责地落地 AI。**
 
-我们基于**你自选的大厂 Agent 和大模型**，用自研的**一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）**做问责底座，帮 SMB 与 OPC 梳理 workflow、搭建本体模型、部署专有 Sub Agent。
-
-一底座·四引擎是 FDE 工具包的**核心架构**，不是独立销售的产品——单独拿任何一个出来都没有意义。
-
-**一句话定位**：sofagent 是开源（MIT）的 FDE（前线部署工程）工具包。FDE 不是一款软件，而是一种能力——让任意大厂 Agent + 大模型在企业里可治理、可问责地落地。一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）做问责底座，帮 **SMB 与 OPC 的每个人**，用自己选的 Agent 和模型，快速成为自己业务的 FDE。
-
-```mermaid
-graph LR
-    A[大厂 Agent + 大模型<br/>你自选 · 我们不替代] --> B[约束底座<br/>Harness 中间件]
-    B --> C[四引擎<br/>编排 · 审计 · 回溯 · 进化]
-    C --> D[回溯引擎<br/>SMB 与 OPC 的每个人<br/>自主完成部署]
-```
+我们用自研的**一底座·四引擎（约束底座 + 编排 / 审计 / 回溯 / 进化引擎）**做问责底座，基于你自选的大厂 Agent 和大模型，帮 SMB 与 OPC 梳理 workflow、搭建本体、部署专有 Sub Agent。
 
 ---
 
@@ -67,6 +71,8 @@ graph LR
 | 👻 装了没人管，改坏了不知道、半年水平不变、出事找不到人 | 每次改动自动审计 + 快照回滚 + 编排拆任务并行 + 周度巡检自动优化 |
 
 不用请顾问、不用养 AI 团队。FDE 进场四步走，交付完离场——AI 节点留在企业自己跑。与 AgentLoop 的区别：它观测 Agent 怎么想（运行时轨迹、SaaS），sofagent 审计 Agent **改了什么**（文件 diff、本地、MIT 开源）。
+
+> 🔬 **Hugging Face 实测**：同一模型不改权重、仅优化外层 Harness，法律 Agent 基准 **3.5% → 80.1%**（76 分差全部来自外层机制）。[详情](./docs/ARCHITECTURE.md)
 
 ---
 
@@ -83,12 +89,15 @@ npm install -g @sofagent/audit @sofagent/core && sofagent-audit --init
 # 1. 看约束规则——Agent 会带着这些红线干活
 sofagent-audit --help | head -5
 
-# 2. 跑审计——改个文件试试（--init 已将 .env 加入 .gitignore，演示需 -f）
+# 2. 跑审计——--init 已装好 pre-commit hook，每次 commit 都会被 A1 拦
 echo "API_KEY=sk-123456" > .env && git add -f .env && GIT_EDITOR=true git commit -m "test"
-# → ⛔ A1 不碰敏感：.env 包含密钥格式，拦截提交
+# → ⛔ A1 不碰敏感：.env 含密钥格式，提交被拦截（不会真的落库）
 
 # 3. 看快照——每次审计后自动存档
 sofagent-audit --timeline
+
+# 演示完清理（A1 已拦提交，无新 commit）：取消暂存并删除 .env
+git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
 
 > 需要 Node.js ≥ 18 + bash + git。macOS / Linux 全功能，Windows 实验性。[完整安装说明](./docs/HANDBOOK.md)
@@ -106,6 +115,16 @@ sofagent-audit --timeline
 | `@sofagent/mcp` | MCP Server（JSON-RPC 2.0，暴露审计能力给 MCP Client） | `npm install -g @sofagent/mcp` |
 
 > 以上包均可独立使用，互不强制依赖。`@sofagent/audit` 为最简入口，其他包按需叠加。
+
+### 卸载
+
+```bash
+npm uninstall -g @sofagent/audit @sofagent/core @sofagent/orchestrator @sofagent/daemon @sofagent/mcp
+# 移除 --init 装入的 git hook（当前仓库）
+rm -f .git/hooks/commit-msg .git/hooks/post-commit
+```
+
+> 包随每次发版自动发布到 npm；若本地 `npm install -g` 装不上，可改用仓库内本地安装脚本 `sofagent/scripts/install.sh`。
 
 ---
 
@@ -180,7 +199,7 @@ graph LR
     E -->|旧版更好| G[保留]
 ```
 
-当前走 DeepAgents（v1.0.7 ao 完全退役）。`sofagent-orchestrator compose --task` CLI 入口——**任何 Agent 平台都能用编排引擎**。A/B 自动切换：连续胜出 2 次才 promote，切换前旧版本保留为 fallback。详见 [ROADMAP](./ROADMAP.md)。
+当前走 DeepAgents（v1.0.7 OpenClaw 编排层完全退役）。`sofagent-orchestrator compose --task` CLI 入口——**任何 Agent 平台都能用编排引擎**。A/B 自动切换：连续胜出 2 次才 promote，切换前旧版本保留为 fallback。详见 [ROADMAP](./ROADMAP.md)。
 
 > ⚠️ 编排能力需另装 `@sofagent/orchestrator`（`npm install -g @sofagent/orchestrator`）。审计引擎（`@sofagent/audit`）不绑 OpenClaw，可独立运行；编排引擎需 orchestrator 包。
 
@@ -243,8 +262,6 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 ## 效果怎么样？
 
-> 🔬 Hugging Face 实验：同一模型不改权重，仅优化外层 Harness，法律 Agent 基准 3.5%→80.1%（76 分差全部来自外层机制）。[详情](./docs/ARCHITECTURE.md)
-
 装上就跑通，不靠 Agent 自觉：
 
 | 维度 | 数据 | 什么意思 |
@@ -263,6 +280,8 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 | **FDE 部署工程师** | `@sofagent-fde` | 部署完成后 suggest 后续巡检 |
 | **合规审计员** | `@sofagent-audit` | 每次 commit / FDE 部署 / LOOP 任务闭环 |
 
+> `@sofagent-audit` 底层即 `@sofagent/audit` npm 包，以 Skill Agent 形式被调用；`@sofagent-fde` 同理来自 FDE 工具包——同一套能力，既可以命令行跑，也可以 Agent 身份被调用。
+
 ---
 
 ## 你需要哪个？
@@ -273,7 +292,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 | 管住 Agent 全流程 | 审计引擎 + 约束底座（install.sh） |
 | 自动编排 Agent 任务 | + 编排引擎（DeepAgents Sub Agent） |
 
-> ⚠️ **当前版本（v1.1.5）覆盖范围**：开发者岗位（git commit 审计）+ 非开发岗位（文件系统审计）全覆盖。
+> ⚠️ **当前版本（v1.1.5）覆盖范围**：开发者岗位（git commit 审计）+ 非开发岗位（文件系统审计）全覆盖。非开发岗位的文件系统审计需安装并启动 `@sofagent/daemon` 守护进程。
 
 ### 两种部署节点（v1.0.7+）
 
