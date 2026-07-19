@@ -1578,8 +1578,12 @@ scenario 54 "warn-accumulator 连续性语义（遇 PASS/FAIL 中断）"
 
 WARN_ACC="$PROJECT_ROOT/sofagent/daemon/src/inspectors/warn-accumulator.ts"
 if [ -f "$WARN_ACC" ]; then
-  # 期望含 "break" + 连续中断逻辑（不是简单计数 N 条 WARN）
-  grep -q "break.*连续中断\|连续中断" "$WARN_ACC" && pass || fail "warn-accumulator 缺连续性中断逻辑（只数 WARN 不区分清理）"
+  # v1.1.5 重构：用 exitCode !== 1 判断中断（不再简单计数 WARN）
+  # 同时需含文件级追踪（involvedFiles）——排除已删除文件的过期 WARN
+  WARN_CONTINUITY=true
+  grep -q "exitCode !== 1.*break\|break.*PASS/FAIL\|break.*中断" "$WARN_ACC" || WARN_CONTINUITY=false
+  grep -q "involvedFiles" "$WARN_ACC" || WARN_CONTINUITY=false
+  $WARN_CONTINUITY && pass || fail "warn-accumulator 缺连续性中断逻辑或文件级追踪"
 else
   fail "warn-accumulator.ts 不存在"
 fi

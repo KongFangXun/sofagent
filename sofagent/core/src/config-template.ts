@@ -73,7 +73,7 @@ A17:
  * 与 hooks/commit-msg 保持一致（含 v1.0 无声失败保护）
  */
 export const HOOK_TEMPLATE = `#!/bin/bash
-# sofagent commit-msg hook v1.0.8
+# sofagent commit-msg hook v1.1.4
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # commit-msg hook 接收 $1 = commit message 文件路径
 
@@ -107,12 +107,9 @@ else
   exit 1
 fi
 
-# 3. 检测是否首次提交——无 HEAD 时用 --cached 模式扫描 staged 文件
-if git rev-parse --verify HEAD &>/dev/null; then
-  AUDIT_DIFF_ARG="HEAD"
-else
-  AUDIT_DIFF_ARG="--cached"
-fi
+# 3. 用 --cached 只审计暂存区（避免扫到工作树未 staged 的改动导致 A3 误报）
+# 统一用 --cached——审计引擎自带首次提交空 HEAD 兼容
+AUDIT_DIFF_ARG="--cached"
 
 # 4. 正常运行审计
 # commit-msg hook 可读取 commit message，传 --task 使 A3 越界检查生效
