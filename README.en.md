@@ -92,12 +92,12 @@ sofagent is a **Harness middleware** — no matter what Agent you use (Claude Co
 | Category | Rules | What they block |
 |------|------|--------|
 | 🔴 **Secret security** | A1 sensitive files · A2 secret leaks | `.env` / `*.pem` commits, hardcoded API keys |
-| 🟡 **Behavior boundaries** | A3 out-of-scope · A4 config deletion · A15 blind action | Editing files outside task scope, deleting configs, undeclared actions |
+| 🟡 **Behavior boundaries** | A3 out-of-scope · A4 config deletion | Editing files outside task scope, deleting configs |
 | 🟠 **Injection defense** | A9 injection · A10 malicious sources | Prompt injection patterns, unofficial source deps |
 | 🔵 **Process compliance** | A5 empty message · A7 blind edit · A8 skip tests · A19 message quality | Empty commit msg, edit-without-read, skip tests, low-quality msg |
 | ⚪ **Engineering quality** | A6 build break · A11 resource abuse · A18 junk files | Build config anomalies, oversized files, temp file commits |
 
-**Extended rules (8, opt-in)**: A14 KB cross-domain · A16 unauthorized file change · A17 abnormal batch change · E1-E4 (test files / undeclared TODO / mass deletion / low comment ratio).
+**Extended rules (8, opt-in)**: A14 KB cross-domain · A15 blind action · A16 unauthorized file change · A17 abnormal batch change · E1-E4 (test files / undeclared TODO / mass deletion / low comment ratio).
 
 <details>
 <summary>📋 Full rule table (21 rules, with detection logic)</summary>
@@ -255,7 +255,7 @@ sofagent isn't just a developer tool — enterprise deployment uses the **FDE To
 
 | Dimension | Data |
 |------|------|
-| Audit engine | 21 rules fully covered, `npm test` 728/728 green, 0 token cost |
+| Audit engine | 21 rules fully covered, `npm test` green (700+ cases), 0 token cost |
 | Platform coverage | git commit audit (developers) + daemon file audit (non-developers) |
 | License | MIT (code / docs / templates — use freely) |
 
