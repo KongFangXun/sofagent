@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.1.5 · 79 个端到端场景，覆盖完整用户旅程 + 全规则覆盖（含 A14-A19）+ 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成 + v1.1.4: LOOP 工具注入(maxTurns/ENGINEER_TOOLS/checkDangerousCommand) + warn-accumulator 连续性 + USB federation + LOOP 独立产品 + v1.1.5: sofagent-releaser Skill + MCP audit_file pipe + list_capabilities 能力清单 + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts --mode 参数 + SkillOpt 自净化 + validateCandidate + DeepAgents 可用性 + runtime.json 原子写入 + A16 非授权变更 + A17 异常批量变更 + --timeline 快照时间线 + --revert 回滚 + daemon 审计闭环 + cron 定时巡检 + EvidenceMode filesystem + 经验共享 + buildConstrainedSystemPrompt + A14 知识库越权 + A15 约束验证 + Workflow Hub
+# v1.1.6 · 81 个端到端场景，覆盖完整用户旅程 + 全规则覆盖（含 A14-A19）+ 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成 + v1.1.4: LOOP 工具注入(maxTurns/ENGINEER_TOOLS/checkDangerousCommand) + warn-accumulator 连续性 + USB federation + LOOP 独立产品 + v1.1.5: sofagent-releaser Skill + MCP audit_file pipe + list_capabilities 能力清单 + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts --mode 参数 + SkillOpt 自净化 + validateCandidate + DeepAgents 可用性 + runtime.json 原子写入 + A16 非授权变更 + A17 异常批量变更 + --timeline 快照时间线 + --revert 回滚 + daemon 审计闭环 + cron 定时巡检 + EvidenceMode filesystem + 经验共享 + buildConstrainedSystemPrompt + A14 知识库越权 + A15 约束验证 + Workflow Hub
 # ============================================================
 # 用真实 git 仓库走完整用户旅程：
 #   Fresh install → --init → --doctor → 正常 commit → 违规拦截
@@ -1102,39 +1102,92 @@ fi
 git reset HEAD . 2>/dev/null || true
 rm -f .env
 
-# ── 场景 34: Webhook PASS 推送不崩溃 ────────────────────────
-scenario 34 "Webhook PASS 推送不崩溃"
+# ── 场景 34/34b/34c: Webhook 三态推送端到端（PASS + WARN + FAIL 都推）──
+# v1.1.6: 对齐 webhook.ts 注释——PASS 也推送（旧版只在 WARN/FAIL 时推送，PASS 推送是死代码）
+# 启动本地 mock webhook server 记录收到的 POST 请求
+WEBHOOK_LOG=$(mktemp /tmp/sofagent-wh.XXXX.log)
+WEBHOOK_PORT=$(( (RANDOM % 8000) + 12000 ))
+WEBHOOK_URL="http://localhost:${WEBHOOK_PORT}/test"
+node -e '
+const http=require("http");const fs=require("fs");
+const port=Number(process.argv[1]);const log=process.argv[2];
+http.createServer((req,res)=>{let b="";req.on("data",d=>b+=d);req.on("end",()=>{fs.appendFileSync(log,req.method+"\n");res.writeHead(200);res.end("ok");});}).listen(port,()=>fs.appendFileSync(log,"LISTENING\n"));
+' "$WEBHOOK_PORT" "$WEBHOOK_LOG" &
+WEBHOOK_PID=$!
+sleep 1
 
+webhook_assert() {
+  local label="$1"
+  sleep 1
+  local n=0
+  n=$(grep -c "POST" "$WEBHOOK_LOG" 2>/dev/null) || true
+  if [ "${n:-0}" -ge 1 ]; then
+    pass "$label: mock server 收到推送（${n} 次）"
+  else
+    fail "$label: mock server 未收到推送（PASS/WARN/FAIL 三态都应推送）"
+  fi
+  : > "$WEBHOOK_LOG"
+}
+
+# 场景 34: PASS 推送（禁用 a1，提交 .env 通过 → PASS 也应推送）
+scenario 34 "Webhook PASS 推送生效"
 cd "$TMP_REPO"
-
-# 配置 webhook（假 URL）+ 禁用 a1 让 .env 通过
-cat > "$TMP_REPO/.sofagent/config.yml" << 'CONF'
+cat > "$TMP_REPO/.sofagent/config.yml" << CONF
 audit:
   rules:
     a1: false
   webhook:
-    url: "http://localhost:19999/test"
+    url: "$WEBHOOK_URL"
     platform: "feishu"
 CONF
-
-# 提交 .env + 正常文件（a1 禁用 → PASS）
-echo "TOKEN=webhook-test" > .env
-echo "// webhook pass test" >> README.md
+echo "TOKEN=webhook-pass" > .env
+echo "// webhook pass" >> README.md
 git add -f .env README.md
-
 WEBHOOK_OUTPUT=$(GIT_EDITOR=true git commit -m "webhook pass test" 2>&1 || true)
-WEBHOOK_RC=$?
-echo "$WEBHOOK_OUTPUT" | head -5
-
-# 核心验证：PASS 场景不崩溃（假 URL HTTP 调用会失败，但进程不崩就算 pass）
-if [ "$WEBHOOK_RC" -eq 0 ] || echo "$WEBHOOK_OUTPUT" | grep -q "webhook pass test"; then
-  pass
-else
-  fail "Webhook PASS 推送导致崩溃（exit=$WEBHOOK_RC）"
-fi
-
+echo "$WEBHOOK_OUTPUT" | head -3
+webhook_assert "PASS"
 git reset HEAD . 2>/dev/null || true
 rm -f .env
+
+# 场景 34b: WARN 推送（commit message 说修 README，实际也改 src/utils.ts → A3 WARN）
+scenario 34b "Webhook WARN 推送生效"
+cd "$TMP_REPO"
+cat > "$TMP_REPO/.sofagent/config.yml" << CONF
+audit:
+  rules: {}
+  webhook:
+    url: "$WEBHOOK_URL"
+    platform: "feishu"
+CONF
+mkdir -p src
+echo "// refactored" >> src/utils.ts
+echo "# Updated" > README.md
+git add src/utils.ts README.md
+WEBHOOK_OUTPUT=$(GIT_EDITOR=true git commit -m "fix: update README title" 2>&1 || true)
+echo "$WEBHOOK_OUTPUT" | head -3
+webhook_assert "WARN"
+git reset HEAD . 2>/dev/null || true
+
+# 场景 34c: FAIL 推送（提交 .env，a1 启用 → A1 FAIL）
+scenario 34c "Webhook FAIL 推送生效"
+cd "$TMP_REPO"
+cat > "$TMP_REPO/.sofagent/config.yml" << CONF
+audit:
+  rules: {}
+  webhook:
+    url: "$WEBHOOK_URL"
+    platform: "feishu"
+CONF
+echo "TOKEN=webhook-fail" > .env
+git add -f .env
+WEBHOOK_OUTPUT=$(GIT_EDITOR=true git commit -m "webhook fail test" 2>&1 || true)
+echo "$WEBHOOK_OUTPUT" | head -3
+webhook_assert "FAIL"
+git reset HEAD . 2>/dev/null || true
+rm -f .env
+
+# 关掉 mock server
+kill "$WEBHOOK_PID" 2>/dev/null || true
 
 # 恢复默认配置
 echo 'audit:
@@ -1616,11 +1669,11 @@ if $USB_FED_OK; then
   $USB_FED_OK && pass || fail "USB federation 基础检测缺失（SOFAGENT_LABEL 或 SECURITY 警告）"
 fi
 
-# 56: LOOP 独立产品（LOOP/ 目录 + loop-install.sh + FLOWHUB 隔离）
-scenario 56 "LOOP 独立产品（目录结构 + install 脚本 + FLOWHUB 隔离）"
+# 56: LOOP 独立产品（LOOP/ 目录 + loop-install.sh + workflow-hub 隔离）
+scenario 56 "LOOP 独立产品（目录结构 + install 脚本 + workflow-hub 隔离）"
 
 LOOP_DIR="$PROJECT_ROOT/LOOP"
-FLOWHUB_DIR="$PROJECT_ROOT/FLOWHUB"
+WORKFLOW_HUB_DIR="$PROJECT_ROOT/workflow-hub"
 LOOP_PROD_OK=true
 
 # LOOP/ 目录核心文件
@@ -1633,10 +1686,10 @@ LOOP_PROD_OK=true
 [ ! -f "$LOOP_DIR/loop-workflow.sh" ] && LOOP_PROD_OK=false
 [ ! -f "$LOOP_DIR/package.json" ] && LOOP_PROD_OK=false
 
-# FLOWHUB/ 目录（社区模板市场，与 LOOP 内部编排隔离）
-[ ! -d "$FLOWHUB_DIR" ] && LOOP_PROD_OK=false
-[ ! -f "$FLOWHUB_DIR/README.md" ] && LOOP_PROD_OK=false
-[ ! -f "$FLOWHUB_DIR/CATALOG.md" ] && LOOP_PROD_OK=false
+# workflow-hub/ 目录（社区模板市场，与 LOOP 内部编排隔离）
+[ ! -d "$WORKFLOW_HUB_DIR" ] && LOOP_PROD_OK=false
+[ ! -f "$WORKFLOW_HUB_DIR/README.md" ] && LOOP_PROD_OK=false
+[ ! -f "$WORKFLOW_HUB_DIR/CATALOG.md" ] && LOOP_PROD_OK=false
 
 if $LOOP_PROD_OK; then
   # LOOP/package.json 用 sofagent 自定义元数据（dependsOn/optionalDependsOn）——不是标准 npm dependencies
@@ -2562,7 +2615,7 @@ if $S78_OK; then
 fi
 
 # ── 场景 79: Workflow Hub 命令验证 ───────────────────────────
-scenario 79 "Workflow Hub 命令验证（FLOWHUB + workflow-hub CLI）"
+scenario 79 "Workflow Hub 命令验证（workflow-hub CLI）"
 
 S79_OK=true
 WFHUB_CLI="$PROJECT_ROOT/sofagent/workflow-hub/dist/cli.js"
@@ -2585,14 +2638,14 @@ if $S79_OK; then
   fi
 fi
 
-# FLOWHUB/templates 目录非空
+# workflow-hub/templates 目录非空
 if $S79_OK; then
-  S79_TMPL=$(ls "$PROJECT_ROOT/FLOWHUB/templates/" 2>/dev/null | wc -l | tr -d ' ')
-  echo "  FLOWHUB/templates/: $S79_TMPL 项"
+  S79_TMPL=$(ls "$PROJECT_ROOT/workflow-hub/templates/" 2>/dev/null | wc -l | tr -d ' ')
+  echo "  workflow-hub/templates/: $S79_TMPL 项"
   if [ "$S79_TMPL" -ge 1 ]; then
     :
   else
-    fail "FLOWHUB/templates/ 为空"
+    fail "workflow-hub/templates/ 为空"
     S79_OK=false
   fi
 fi

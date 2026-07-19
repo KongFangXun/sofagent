@@ -1,10 +1,10 @@
-# sofagent 发布后审查 Prompt（9 维度 × 6 方面）
+# sofagent 发布后审查 Prompt（10 维度 × 6 方面）
 
 > **核心原则**：假装你完全不知道 sofagent 是什么，用陌生人的眼睛重新看。不设固定检查项、不指定具体文件、不跑 grep、不预设"之前已修好 X"——凭第一印象和直觉判断。
 >
 > **审查对象**：https://github.com/KongFangXun/sofagent（当前已发布版本）
 >
-> **九维度 · 五轮法**：
+> **十维度 · 五轮法**：
 > | 轮次 | 维度 | 角色 | 方法 |
 > |------|------|------|------|
 > | 1 角色扮演 | 一 陌生人 / 二 企业IT / 三 竞品 / 四 npm / 五 开源 | 5 个陌生人各自独立看 | 凭直觉 |
@@ -49,7 +49,7 @@
 2. 如果要装，你第一步做什么？这一步有没有障碍？
 3. 用 npm 装完 `@sofagent/audit`，跑 `sofagent-audit --help` 或者 `sofagent-audit --doctor`。输出让你觉得这东西能用吗？还是想卸载？
 4. 你会把这个项目发给同事吗？如果会，你会怎么介绍它？（用你自己的话，不抄 README）
-5. **版本声称验证**：看 CHANGELOG——它声称了什么？实际在项目里找到了吗？标题说的功能，在代码/目录/配置里能找到对应实现吗？你觉得这个声称诚实吗，还是夸大了？**特别检查 README 规则分类**：README 把规则分成"纯 git-diff"和"需 Agent 日志"两类并标注规则 ID——打开 `sofagent/audit/src/rules/index.ts`，分类里提到的每个 ID 是否真实存在？有没有"幽灵规则"（README 写了但代码里根本没注册的 ID）？
+5. **版本声称验证**：看 CHANGELOG——它声称了什么？实际在项目里找到了吗？标题说的功能，在代码/目录/配置里能找到对应实现吗？你觉得这个声称诚实吗，还是夸大了？**特别检查 README 规则分类**：README 把规则分成"纯 git-diff"和"需 Agent 日志"两类并标注规则 ID——打开 `sofagent/audit/src/rules/index.ts`，分类里提到的每个 ID 是否真实存在？有没有"幽灵规则"（README 写了但代码里根本没注册的 ID）？（v1.1.6 起降为快速抽查：连续 3 个版本无幽灵规则问题，发版时只需 grep index.ts 注册 ID 与 README/audit/README 声称 ID 做一次快照比对，不再作为重负载任务；原误记为"维度一·任务3"，实际位于任务5）
 6. **文档瘦身**：README 行数——你能在一屏内搞清楚这东西是干什么的吗？有没有你想找但找不到的东西？（比如"这东西能企业部署吗？"——你从 README 能看出来吗？）
 7. **tag 指向确认**：跑 `git show vX.Y.Z --stat`——tag 指向的是发布提交还是修复提交？tag commit message 是否包含版本号？
 8. **双节点架构验证**：README 说 sofagent 支持两种部署节点——"自动运行节点"（需 OpenClaw）和"个人增强节点"（WorkBuddy/Codex/Claude Code，不需 OpenClaw）。你用的是哪个？如果你用的不是 OpenClaw（比如 WorkBuddy），能跑通吗？README 里"个人增强节点"的说明清楚吗？`sofagent-orchestrator compose --task` 这个 CLI 入口你找得到吗？**这个声称是 v1.0.7+ 的核心卖点——如果不装 OpenClaw 就能跑，文档要让你相信这一点；如果其实跑不通，就是夸大宣传。**
@@ -135,7 +135,7 @@
 5. 看 issue / PR 数量（如果有）。这是一个"作者自嗨"项目还是有社区活性的项目？
 6. **文档引用链**：从 README 出发，点进 3-5 个链接——有没有 404？有没有引用的章节不存在？HANDBOOK 引用的 ARCHITECTURE §xxx 能对上吗？FDE 引用的模板路径存在吗？还缺引用吗——有没有地方提到了某个概念（如「AI 知识库」「铁律」）却没有指向设计原理或详细说明的链接？
    检查所有文档头部的日期是否与当前发版日期一致。`grep 'YYYY-MM-' *.md docs/design/*.md`——有没有过期日期？bump-version 脚本只改版本号不改日期，这个坑反复出现。
-7. **CHANGELOG 全历史纯度**：检查所有历史 CHANGELOG 条目——有没有审查元信息（模型名、审查轮次、维度数、P0/P1 计数）？CHANGELOG 应该只写产品变更，不含审查过程。
+7. **CHANGELOG 全历史纯度**：检查所有历史 CHANGELOG 条目——有没有审查元信息（模型名、审查轮次、维度数、P0/P1 计数）？CHANGELOG 应该只写产品变更，不含审查过程。**已知遗留**：v1.0.6 及之前的 docs/changelog/v*.md 含审查元信息属已知历史遗留，v1.0.7 起已严格区分。
 8. **根目录整洁度**：根目录应该只有 5-7 个核心文件（README/LICENSE/CHANGELOG/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/ROADMAP）。其余 md 文件、HTML、PNG 是否应该移入 docs/ 或 assets/？国际化翻译版 README.xx.md（如 README.en.md）不计入此计数。
 
 你的核心问题是："这个项目的代码组织方式让我觉得它是认真维护的，还是一团乱麻？"
@@ -405,6 +405,8 @@
    - **版本全量一致（v1.0.8 暴露的新盲区，阶段六实证）**：`sofagent/audit/src/shared/constants.ts` 的 `VERSION` 常量、各 `package.json`、`index.ts` 文件头注释——与 `sofagent/audit/package.json` 的 `version` 一致吗？**但不能只查这几个 CLI 自报源**：v1.0.8 曾只 bump 了 package.json + constants.ts + mcp + index.ts 部分（4 源全 1.0.8），91 个散落文件的版本号仍是 1.0.7——4 源检查全过却发了错版，阶段六才用 `check-version.sh` 抓出 93 处不一致。权威门禁是 `bash tools/check-version.sh`（应 0 不一致）+ `bash tools/pre-push-check.sh`（应 7/7 全绿）。CI 机器人必须跑全量扫描，不能凭"4 源对得上"就放行。
    - **tag commit message 一致性（v1.1.3 追加）**：跑 `git show vX.Y.Z --format=%s -s`——tag 指向的 commit message 必须含版本号。历史教训：v1.1.3 tag 指向 commit message 为 "v1.1.3: …"——tag 版本与 commit message 不一致。检查手法：`git tag -l "v*" | while read t; do v=$(echo $t | sed 's/^v//'); msg=$(git log -1 --format=%s $t); echo "$t → $msg" | grep -q "$v" || echo "❌ $t: commit message 不含 $v"; done`
 
+  - **文案数字漂移（v1.1.6 追加 · 维度调整建议②）**：`sofagent/audit/src/commands/init.ts` 输出文案、`fix-suggestions.ts` / `qa-boundary-verify.test.ts` 注释中的"N 条规则"等硬编码小数字，必须与 SSOT 一致——`defaultRules.length`（动态）/ 注册总数（动态）。历史教训：init.ts 曾写死旧数字但实际已变更，无人对账。`tools/check-version.sh` 已加「文案数字漂移扫描」自动核对 .ts 源中疑似硬编码规则条数（≠ `defaultRules.length` 且 ≠ 注册总数 即告警）。
+
 6. **文件计数一致性**：
    - 根目录 `.md` 文件数——是否 ≤7（README/CHANGELOG/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/ROADMAP/LIMITATIONS）？多余的 .md / .html / .png 应移入 docs/ 或 assets/。国际化翻译版 README.xx.md（如 README.en.md）不计入此计数。
    - Skill 文件数——README 声称"10 个 Skill 文件"——实际 `ls sofagent/skill/*.md | wc -l` 一致吗？
@@ -585,11 +587,25 @@
 4. **如果用户看到的结果没有 sofagent 签名**：从用户的角度，你怎么区分"模型自己生成的结果"和"经过 sofagent 审计引擎验证的结果"？如果无法区分，这就是废墟功能——做了但用户感知不到，等于没做。
 
 
-> 📋 输出格式见下方「审查输出格式」（适用于全部九维度）。
+## 维度十：📉 文档数字漂移检测（v1.1.6 新增 · 维度调整建议①）
+
+> 你专门盯着"文档里那些不起眼的小数字"——它们最容易在发版时悄悄漂移，且最没人对账。大数字（21 条规则、503 测试）有人盯，小数字（"11 条""3 处"）往往写完就没人再看。
+
+**你的任务**：
+
+1. **文案声称 vs 代码 SSOT**：
+   - `sofagent/audit/src/commands/init.ts` 输出的"N 条规则默认全部启用"——必须等于 `defaultRules.length`（动态），不能写死数字。
+   - `fix-suggestions.ts` / `qa-boundary-verify.test.ts` 等源文件注释里的"N 条规则"——必须等于实际注册数（动态），不能残留旧数字。
+   - 跑 `bash tools/check-version.sh`——「文案数字漂移扫描」应 0 告警。
+2. **evidenceMode 分类计数**：README 声称的 git-diff/hybrid/filesystem 数量（16/4/1）必须与 `sofagent/audit/src/rules/index.ts` 实际 `evidenceMode` 计数一致。每次发版后核对（回归检查清单维度4 子项e 已自动化）。
+3. **ruleClass 文档完整性**：audit/README 规则表的每一行都必须带合法 `ruleClass`（业务底线/能力拐杖/工程规范），且「规则分级」小节定义了全部三类。跑 `bash tools/check-docs.sh`——ruleClass 完整性检查应 0 报错（回归检查追加③）。
+4. **install 独立闭环诚实度**：每次新增大写目录（独立产品，如 FDE/LOOP）后，文档必须诚实标注"需要完整 clone 仓库"，不能让用户误以为只 clone 子目录就能跑（回归检查清单维度23 子项d 已自动化）。
+
+> 📋 输出格式见下方「审查输出格式」（适用于全部十维度）。
 
 ---
 
-## 审查输出格式（适用于全部九维度）
+## 审查输出格式（适用于全部十维度）
 
 每轮维度输出一份不超过 1 页的报告：
 
@@ -622,7 +638,7 @@
 |--------|------|------|
 ```
 
-### 审查体系更新建议（完成全部九维度后输出一次）
+### 审查体系更新建议（完成全部十维度后输出一次）
 
 > 以下两项在完成所有维度后输出一次。不填视为审查未完成。
 

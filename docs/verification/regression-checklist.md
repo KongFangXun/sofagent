@@ -164,8 +164,19 @@ ACTUAL_GITDIFF=$(grep -c "evidenceMode: 'git-diff'" sofagent/audit/src/rules/ind
 ACTUAL_HYBRID=$(grep -c "evidenceMode: 'hybrid'" sofagent/audit/src/rules/index.ts)
 ACTUAL_FS=$(grep -c "evidenceMode: 'filesystem'" sofagent/audit/src/rules/index.ts)
 echo "实际: git-diff=$ACTUAL_GITDIFF hybrid=$ACTUAL_HYBRID filesystem=$ACTUAL_FS"
-grep -oE "[0-9]+ 条为纯 git-diff\|[0-9]+ 条纯 git-diff\|[0-9]+ 条需 Agent" README.md sofagent/audit/README.md 2>/dev/null
-# 人工检查：README 声称的 git-diff/hybrid/filesystem 数量与 index.ts 实际计数一致
+# 自动对账（v1.1.6）：从 README 提取声称的 git-diff/hybrid/filesystem 数量，与 index.ts 实际计数比对
+README_GD=$(grep -hoE "[0-9]+ 条为纯 git-diff" README.md sofagent/audit/README.md 2>/dev/null | grep -oE "^[0-9]+" | head -1)
+README_HY=$(grep -hoE "[0-9]+ 条 hybrid" README.md sofagent/audit/README.md 2>/dev/null | grep -oE "^[0-9]+" | head -1)
+README_FS=$(grep -hoE "[0-9]+ 条 filesystem" README.md sofagent/audit/README.md 2>/dev/null | grep -oE "^[0-9]+" | head -1)
+if [ -n "$README_GD" ] && [ -n "$README_HY" ] && [ -n "$README_FS" ]; then
+  if [ "$README_GD" = "$ACTUAL_GITDIFF" ] && [ "$README_HY" = "$ACTUAL_HYBRID" ] && [ "$README_FS" = "$ACTUAL_FS" ]; then
+    echo "  ✅ evidenceMode 计数一致（git-diff=$ACTUAL_GITDIFF hybrid=$ACTUAL_HYBRID filesystem=$ACTUAL_FS）"
+  else
+    echo "  ❌ evidenceMode 不一致: README 声称 git-diff=$README_GD hybrid=$README_HY fs=$README_FS；实际 git-diff=$ACTUAL_GITDIFF hybrid=$ACTUAL_HYBRID fs=$ACTUAL_FS"
+  fi
+else
+  echo "  ⚠️ 未在 README 找到 evidenceMode 计数声称，跳过自动对账（人工核对）"
+fi
 
 # 子项 f: audit/README.md 规则表完整性（v1.1.4 教训——A18/A19 新增后规则表漏更新）
 # 规则表应覆盖所有已注册规则，不能漏新增规则
@@ -372,7 +383,7 @@ dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path 
 [ -z "$dup" ] && echo "OK" || echo "❌ 跨包重复: $dup"
 ```
 
-#### 13. 测试数声称一致性（SSOT 反查 · v1.1.5 扩）
+#### 13. 测试数声称一致性（SSOT 反查 · v1.1.6 扩）
 
 > 原 309（只查 audit/README）。v1.1.4 暴露盲区：文档声称测试数与实测漂移
 > （FDE.md 一度写 343、LIMITATIONS 写 660，实测 audit=388 / workspace 与文档声称漂移）。
@@ -629,8 +640,19 @@ grep -n "sofagent/scripts/install.sh\|PROJECT_ROOT.*install.sh" FDE/fde-install.
 # FDE/fde-install.sh:52 调 $PROJECT_ROOT/sofagent/scripts/install.sh
 # LOOP/loop-install.sh:54 调 $PROJECT_ROOT/sofagent/scripts/install.sh
 # 如果用户只 clone 了 FDE/ 或 LOOP/ 子目录，绝对跑不通——"独立产品"声称打折
-# 人工验证：在仅含 FDE/ 的环境跑 bash fde-install.sh，记录失败点
-# 文档应诚实标注"需要完整 clone 仓库"或提供独立安装包
+# v1.1.6 自动化：检查 FDE/LOOP install.sh 仍依赖主 install.sh（契约未变），且文档已诚实标注"需完整 clone"
+FDE_DEP=$(grep -c "sofagent/scripts/install.sh" FDE/fde-install.sh 2>/dev/null || echo 0)
+LOOP_DEP=$(grep -c "sofagent/scripts/install.sh" LOOP/loop-install.sh 2>/dev/null || echo 0)
+echo "FDE 依赖主 install.sh: $FDE_DEP 处 / LOOP 依赖: $LOOP_DEP 处"
+CLONE_NOTE=$(grep -rliE "完整 clone|完整仓库|需要.*sofagent.*仓库|clone.*完整" FDE/README.md FDE/SKILL.md LOOP/README.md 2>/dev/null | head -1 || true)
+if [ -n "$CLONE_NOTE" ]; then
+  echo "  ✅ 文档已标注完整 clone 要求（$CLONE_NOTE）"
+else
+  echo "  ⚠️ 未在 FDE/LOOP 文档找到『需完整 clone』诚实标注——独立产品声称可能误导（人工确认）"
+fi
+grep -q "被 FDE/LOOP 依赖\|FDE/LOOP" sofagent/scripts/install.sh 2>/dev/null \
+  && echo "  ✅ 主 install.sh 已标注被 FDE/LOOP 依赖" \
+  || echo "  ⚠️ 主 install.sh 未标注被 FDE/LOOP 依赖（建议在头部注释补充契约说明）"
 
 # 子项 e: install 脚本版本号 = SSOT（v1.1.4 暴露——loop-install.sh:3 写 v1.1.5 但发 v1.1.4）
 SSOT_VER=$(node -e "console.log(require('./package.json').version)")
@@ -664,8 +686,8 @@ echo "$CHANGELOG_FEATURES"
 
 # 子项 c: 失效场景清理（acceptance test 里的旧命令/旧路径）
 # 代码演进后，旧场景可能引用已废弃的 CLI 子命令或已迁移的文件路径——跑起来必然 FAIL
-# 例：sofagent-audit --daemon（v1.1.4 废弃）、workflow-hub/（v1.1.4 更更名为 FLOWHUB/）
-grep -rn "sofagent-audit --daemon\|workflow-hub/" tools/acceptance-test.sh
+# 例：sofagent-audit --daemon（v1.1.4 废弃）、FLOWHUB/（v1.1.4 更名，已 revert 回 workflow-hub/）
+grep -rn "sofagent-audit --daemon\|FLOWHUB/" tools/acceptance-test.sh
 # 期望：零命中。命中 = 场景引用了已废弃命令/已迁移路径，必然 FAIL
 
 # 子项 d: acceptance-test.sh 场景间清理健壮性（v1.1.3 教训——scenario() 函数的清理逻辑）

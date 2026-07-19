@@ -8,6 +8,7 @@ import { checkRuleE4 } from './rules/rule-e4-low-comment-ratio';
 import { checkRuleA3 } from './rules/rule-a3-careful-modify';
 import { checkRuleA5 } from './rules/rule-a5-honest-report';
 import { rules } from './rules';
+import { defaultRules } from './rules';
 import type { AuditContext } from './rules/types';
 import type { DiffFile } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from './test-utils';
@@ -76,7 +77,7 @@ describe('QA 边界验证 · evidenceMode 标注完整性', () => {
     expect(result.evidenceMode).toBe('git-diff');
   });
 
-  it('所有 11 条规则的 check 返回值都带 evidenceMode', () => {
+  it(`所有 ${defaultRules.length} 条规则的 check 返回值都带 evidenceMode`, () => {
     // 构造一个能触发各规则的上下文
     const ctx: AuditContext = {
       diffFiles: [makeDiffFile('src/index.ts')],
