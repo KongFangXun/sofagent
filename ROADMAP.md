@@ -244,7 +244,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 > **v1.0.1-v1.0.9 开发日志**：[v1.0.1](./docs/changelog/v1.0.1.md) → [v1.0.2](./docs/changelog/v1.0.2.md) → [v1.0.3](./docs/changelog/v1.0.3.md) → [v1.0.4](./docs/changelog/v1.0.4.md) → [v1.0.5](./docs/changelog/v1.0.5.md) → [v1.0.6](./docs/changelog/v1.0.6.md) → [v1.0.7](./docs/changelog/v1.0.7.md) → [v1.0.8](./docs/changelog/v1.0.8.md) → [v1.0.9](./docs/changelog/v1.0.9.md)
 >
-> **v1.0.7 双节点架构**：v1.0.7 起 sofagent 分两种部署节点——**自动运行节点**（OpenClaw 全栈）和**个人增强节点**（第三方 Agent + sofagent，不需 OpenClaw）。Sub Agent 启动时自加载约束（`buildConstrainedSystemPrompt`），不依赖宿主平台 Skill 系统。编排引擎通过 CLI 入口（`sofagent-orchestrator compose --task`）对任意 Agent 平台开放。
+> **v1.0.7 双节点架构**：v1.0.7 起 sofagent 分两种部署节点——**自动运行节点**（OpenClaw 全栈）和**个人增强节点**（第三方 Agent + sofagent，不需 OpenClaw）。Sub Agent 启动时自加载约束（`buildConstrainedSystemPrompt`），不依赖宿主平台 Skill 系统。编排引擎通过 CLI 入口（`sofagent-orchestrator compose --task`）对任意 Agent 平台开放。（完整对照表见 [ARCHITECTURE 双节点架构](./docs/ARCHITECTURE.md#双节点架构)）
 >
 > **v1.0.8 文件系统审计**：审计引擎从"只有 git commit 才触发"扩展为"任何文件变更都触发"。内嵌 `isomorphic-git`（纯 JS Git，~2MB），daemon 监控文件变更直接跑审计——不需要装 git、不需要 commit。这让审计引擎成为**平台无关的核心能力**，非开发者的 AI 文件变更也能审计。v1.0.9 加二进制文件审计（A16-A17）+ 快照时间线。
 

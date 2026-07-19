@@ -49,7 +49,7 @@ No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep 
 ## Install
 
 ```bash
-npm install -g @sofagent/audit && sofagent-audit --init
+npm install -g @sofagent/audit @sofagent/core && sofagent-audit --init
 ```
 
 Three-step first experience:
@@ -220,8 +220,8 @@ Install and run — no dependency on agent compliance:
 
 | Dimension | Data | What it means |
 |------|------|------|
-| Audit stability | `npm test` all green — diff-parser / A1-A11, A14-A17 / reporter / init | Every code change is audit-checked, cannot be bypassed |
-| Audit coverage | 19 rules (A1-A11, A14-A17 + E1-E4): secret leaks, boundary violations, injection, blind edits, knowledge-base access | Most common agent failure modes are caught |
+| Audit stability | `npm test` all green — diff-parser / A1-A11, A14-A19 / reporter / init | Every code change is audit-checked, cannot be bypassed |
+| Audit coverage | 21 rules (A1-A11, A14-A19 + E1-E4): secret leaks, boundary violations, injection, blind edits, knowledge-base access | Most common agent failure modes are caught |
 | Platform coverage | git commit audit (developers) + daemon filesystem audit (non-developers) | Anyone's file changes get audited |
 | License | MIT | Code, docs, templates — use freely |
 
@@ -239,20 +239,15 @@ Install and run — no dependency on agent compliance:
 
 | Your scenario | Use |
 |---------|------|
-| Just block secret leaks | `npm install -g @sofagent/audit` is enough |
+| Just block secret leaks | `npm install -g @sofagent/audit @sofagent/core` is enough |
 | Full agent behavior management | Audit engine + harness base (install.sh) |
 | Automatic task orchestration | + orchestration engine (DeepAgents Sub Agent) |
 
-> ⚠️ **Current version (v1.1.0) coverage**: Developer roles (git commit audit) + non-developer roles (filesystem audit) — full coverage.
+> ⚠️ **Current version (v1.1.4) coverage**: Developer roles (git commit audit) + non-developer roles (filesystem audit) — full coverage.
 
 ### Dual-node deployment (v1.0.7+)
 
-sofagent supports two node types:
-
-| Node type | For whom | OpenClaw | Orchestration | Constraints |
-|---------|--------|:--:|------|------|
-| **Auto-running node** | Enterprise unattended devices | ✅ Required | OpenClaw API | Hook injection |
-| **Personal enhancement node** | Individual developers (WorkBuddy/Codex/Claude Code) | ❌ Not needed | `sofagent-orchestrator compose --task` CLI | Sub Agent self-load |
+sofagent supports two node types — **Auto-running node** (OpenClaw full-stack) and **Personal enhancement node** (third-party Agent + sofagent, no OpenClaw needed). Full comparison table: [ARCHITECTURE — Dual-node architecture](./docs/ARCHITECTURE.md#双节点架构).
 
 > v1.0.7 Sub Agent constraint self-loading (`buildConstrainedSystemPrompt`) makes constraints platform-independent — Sub Agents read `.sofagent/` files at startup. Change your Agent platform, constraints stay.
 

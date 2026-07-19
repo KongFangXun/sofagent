@@ -1072,7 +1072,7 @@ $SOFAGENT_DIR/sofagent/workflow-hub/dist/cli.js --help 2>&1 | grep -c "list\|dep
 # ✅ 期望：≥ 2
 
 # 3. 模板目录非空
-ls $SOFAGENT_DIR/workflow-hub/templates/ 2>/dev/null | wc -l
+ls $SOFAGENT_DIR/FLOWHUB/templates/ 2>/dev/null | wc -l
 # ✅ 期望：≥ 1
 ```
 
