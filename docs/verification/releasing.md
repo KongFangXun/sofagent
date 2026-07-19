@@ -27,7 +27,7 @@
 | 3 | P0 安全硬伤 | 工程师 | 必须修，阻塞发布。**每修完一个 P0/P1，顺手在回归清单追加检查项——趁记忆新鲜，不要等到发版前才回忆。** |
 | 4 | P1 工程欠债 | 工程师 | 应该修 |
 | 5 | P2 改进 | 工程师 | 不阻塞发布 |
-| 6 | 审查体系更新 | 工程师 | 随修复同步更新：① 回归清单追加检查项（编号递增）② 发布后审查 prompt 补充新盲区维度/任务。**不要等到阶段三和阶段八才做——开发时记忆最新，随修随记** |
+| 6 | 审查体系更新 | 工程师 | 随修复同步更新：① 回归清单追加检查项（编号递增）② 发布后审查文档（`fresh-eyes-review.md`）补充新盲区维度/任务。**不要等到阶段三和阶段八才做——开发时记忆最新，随修随记** |
 | 6b | 版本号前置 bump | 工程师 | 开发完成后、自测前：`./tools/bump-version.sh <旧> <新>` → `./tools/check-version.sh` 全绿。npm 不动 |
 
 **🔴 开发铁律（v1.0.3 教训）**：
@@ -150,7 +150,7 @@
 | 22 | **最终确认两份审查文档**：regression 维度与 fresh-eyes 维度互相印证，循环修复中暴露的新盲区已补入 | 两份文档最终状态见于文件 diff |
 | 22b | **🔴 确认 acceptance test 的审查维度已同步**（v1.1.4 教训）：`regression-checklist.md` 维度 24「验收测试覆盖率与时效性」+ `fresh-eyes-review.md` 维度八任务 30「验收测试场景覆盖率与功能对齐」——两处都必须覆盖本版本新功能的验收场景缺口 | grep 两份审查文档含本版本新功能关键词 |
 
-**审查体系闭环**（v1.0.4 教训）：审查文档自身也会过时——每次发版后审视审查 prompt 的数字、路径、维度是否还有效。**验收测试同理**（v1.1.4 教训）——`acceptance-test.sh` 的场景数和覆盖范围必须与 changelog 功能点对齐，否则回归测试形同虚设。
+**审查体系闭环**（v1.0.4 教训）：审查文档自身也会过时——每次发版后审视 `fresh-eyes-review.md` 和 `regression-checklist.md` 的数字、路径、维度是否还有效。**验收测试同理**（v1.1.4 教训）——`acceptance-test.sh` 的场景数和覆盖范围必须与 changelog 功能点对齐，否则回归测试形同虚设。
 
 ---
 
@@ -645,7 +645,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 33 | **🔴 审查闭环——发布后审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `docs/verification/fresh-eyes-review.md`（已在本版本阶段三中更新），对已发布版本做独立审查<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，作为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的维度和检查项 |
 | 34 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 直接吸收进对应阶段，标注版本号<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 LOOP.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
 | 35 | **生成「下一版本开发 Prompt」到桌面**：综合 `ROADMAP.md`（未来规划）+ `CHANGELOG.md` + 下一版本 `docs/changelog/vX.Y.md`（若存在），生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`。<br>**若下一版本 changelog 尚未创建**：先 ① 写新版本需求并产出 `docs/changelog/vX.Y.md`；再 ② 生成桌面开发 prompt |
-| 36 | **🔴 输出「下一版本发布后审查 Prompt」**：本阶段结束前，必须输出一份可直接粘贴到**新 session** 的审查 prompt（模板见下方「下一版本审查 Prompt 模板」）。因为本版本已全部提交，需开新 session 运行该 prompt → 读 `fresh-eyes-review.md` → 对已发布版本做全新审查 → 产出驱动下一版本的 P0/P1/P2 清单，从而开启下一个版本的迭代 |
+| 36 | **🔴 不再落盘独立审查 prompt（v1.1.5 决策）**：<br>发布的 `fresh-eyes-review.md` 本身已经是一份完整的、可直接在**新 session** 中执行的审查指令（5 轮 9 视角 + 维度 1-32）。额外生成 `~/Desktop/vX.Y-review-prompt.md` 落盘会造成两个文件各自演进、偏离同步——人来改 fresh-eyes-review 时忘了同步桌面 prompt，或者反过来用旧 prompt 跑新审查。**新 session 直接读 `docs/verification/fresh-eyes-review.md` 执行发布会后审查**——比单独维护一份桌面 prompt 更干净、更不容易过时。 |
 
 ### 下一版本开发 Prompt 生成说明（步骤 35）
 
@@ -660,18 +660,6 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 **若下一版本 changelog 尚未创建**（开发到下一版本时文件还不存在）：
 1. 先写新版本需求，产出 `docs/changelog/vX.Y.md`（含问题描述 → 修复方案 → 验证方式 → 发布检查清单）
 2. 再执行上方「生成流程」生成桌面开发 prompt
-
-### 下一版本审查 Prompt（步骤 36 输出，落盘桌面）
-
-> 每版本发布后，根据当前版本的审查体系更新情况，生成一份针对**下一版本**的独立审查 prompt，落盘 `~/Desktop/vX.Y-review-prompt.md`。这份 prompt 包含：
-> - 当前审查体系的最新版本（fresh-eyes-review.md + regression-checklist.md 的引用）
-> - 上一版本遗留问题的复查清单（必须标注为"如果未修复 → 升级为 P0"）
-> - 本版本新增功能的存在性验证（功能是否存在，不是审查质量）
-> - 全部门禁命令
->
-> 开新 session 时直接读桌面文件即可执行审查，无需重新生成 prompt。
-
-本次输出的审查 prompt 见：`~/Desktop/v1.1.3-review-prompt.md`
 
 ---
 
@@ -690,7 +678,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 九 | 工具脚本健康检查 | 作者 | 否 | check-version/bump-version/pre-push-check 覆盖同步 + 过时检查清理 |
 | 十 | 确认关口 | AI → **生成发布 prompt 交接** | 否 | git diff 确认 → 检查清单打勾 → 生成发布 prompt 交给负责人 |
 | 十一 | 发布（含本地安装） | **🔴 项目负责人亲手执行** | 否 | 先装本地版本验证 → 再按依赖层分批 npm publish + git tag + gh release + Skill 分发 |
-| 十二 | 发布后 | 作者 | 是（步骤 36 开新 session 审查） | npm 验证 + 发布后审查 → 生成下版本开发 prompt 到桌面（步骤 35）+ 输出审查 prompt（步骤 36）→ 自动进入下版本阶段一 |
+| 十二 | 发布后 | 作者 | 是（步骤 33 开新 session 读 `fresh-eyes-review.md` 做审查） | npm 验证 + 发布后审查 → 生成下版本开发 prompt 到桌面（步骤 35）→ 自动进入下版本阶段一 |
 
 ---
 
