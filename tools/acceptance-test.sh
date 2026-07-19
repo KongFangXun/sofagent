@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.1.6 · 87 个端到端场景，覆盖完整用户旅程 + 全规则覆盖（含 A14-A19）+ 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成 + v1.1.4: LOOP 工具注入(maxTurns/ENGINEER_TOOLS/checkDangerousCommand) + warn-accumulator 连续性 + USB federation + LOOP 独立产品 + v1.1.5: sofagent-releaser Skill + MCP audit_file pipe + list_capabilities 能力清单 + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts --mode 参数 + SkillOpt 自净化 + validateCandidate + DeepAgents 可用性 + runtime.json 原子写入 + A16 非授权变更 + A17 异常批量变更 + --timeline 快照时间线 + --revert 回滚 + daemon 审计闭环 + cron 定时巡检 + EvidenceMode filesystem + 经验共享 + buildConstrainedSystemPrompt + A14 知识库越权 + A15 约束验证 + Work模板市场 + v1.1.6: conflict-check 巡检器（矛盾/orphan/deadlink）+ llm-wiki 三层映射
+# v1.1.6 · 88 个端到端场景，覆盖完整用户旅程 + 全规则覆盖（含 A14-A19）+ 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成 + v1.1.4: LOOP 工具注入(maxTurns/ENGINEER_TOOLS/checkDangerousCommand) + warn-accumulator 连续性 + USB federation + LOOP 独立产品 + v1.1.5: sofagent-releaser Skill + MCP audit_file pipe + list_capabilities 能力清单 + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts --mode 参数 + SkillOpt 自净化 + validateCandidate + DeepAgents 可用性 + runtime.json 原子写入 + A16 非授权变更 + A17 异常批量变更 + --timeline 快照时间线 + --revert 回滚 + daemon 审计闭环 + cron 定时巡检 + EvidenceMode filesystem + 经验共享 + buildConstrainedSystemPrompt + A14 知识库越权 + A15 约束验证 + Work模板市场 + v1.1.6: conflict-check 巡检器（矛盾/orphan/deadlink）+ llm-wiki 三层映射
 # ============================================================
 # 用真实 git 仓库走完整用户旅程：
 #   Fresh install → --init → --doctor → 正常 commit → 违规拦截
@@ -2770,6 +2770,15 @@ S85_OK=true
 grep -q "'conflict-check'.*'@weekly'" "$INSPECTOR_INDEX" || { fail "DEFAULT_INSPECTOR_CONFIG 缺 conflict-check @weekly"; S85_OK=false; }
 grep -q "export.*checkConflict\|from.*conflict-check" "$INSPECTOR_INDEX" || { fail "export 列表缺 checkConflict"; S85_OK=false; }
 $S85_OK && pass
+
+# 86: pre-push-check shellcheck 扫描范围覆盖 LOOP（v1.1.6 修复后基线）
+scenario 86 "pre-push-check shellcheck 扫描范围含 LOOP"
+S86_OK=true
+SHELL_FIND=$(grep "find.*\.sh" "$PROJECT_ROOT/tools/pre-push-check.sh")
+echo "$SHELL_FIND" | grep -q "LOOP" || { fail "pre-push-check shellcheck find 命令漏扫 LOOP/（CI 扫全仓，本地必须一致）"; S86_OK=false; }
+# 确认 shellcheck 版本检测逻辑存在
+grep -q "0.11.0\|SC_VER\|brew upgrade shellcheck" "$PROJECT_ROOT/tools/pre-push-check.sh" || { fail "pre-push-check 缺 shellcheck 版本兼容检测"; S86_OK=false; }
+$S86_OK && pass
 
 # ── 总结 ──────────────────────────────────────────────────────
 echo ""
