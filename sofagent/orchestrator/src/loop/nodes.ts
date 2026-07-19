@@ -30,10 +30,21 @@ export const DEFAULT_MAX_RETRIES = 3;
 export const DEFAULT_AGENT_MAX_TURNS = 20;
 
 // ════════════════════════════════════════
-// LLM Provider 解析（v1.1.4）
+// LLM Provider 解析（v1.1.4 · v1.1.5 通用化）
 // 通过 SOFAGENT_LLM=provider:modelName 指定模型。
-// 支持: glm / kimi / deepseek（全部走 OpenAI 兼容 API）。
-// API key 从 OPENAI_API_KEY 环境变量读取。
+//
+// 支持两种 provider：
+//   1. 预置 provider: glm / kimi / deepseek（走 OpenAI 兼容 API）
+//   2. custom: 任意 OpenAI 兼容 API
+//      SOFAGENT_LLM=custom:<模型名>
+//      SOFAGENT_LLM_BASE_URL=https://your-endpoint/v1/
+//      SOFAGENT_LLM_API_KEY=sk-xxx
+//
+// API key 优先级（按角色解析）：
+//   SOFAGENT_LLM_{ROLE}_API_KEY > SOFAGENT_LLM_API_KEY > OPENAI_API_KEY（兜底）
+//   例：engineer 用 SOFAGENT_LLM_ENGINEER_API_KEY；reviewer 用 SOFAGENT_LLM_REVIEWER_API_KEY
+//   如果没设角色 key，退到通用 SOFAGENT_LLM_API_KEY；再退到 OPENAI_API_KEY
+//
 // 未设置 SOFAGENT_LLM → 返回 null → 降级到 spawnSubAgent [降级运行]。
 // ════════════════════════════════════════
 
@@ -48,22 +59,55 @@ const LLM_PROVIDERS: Record<string, LLMProviderConfig> = {
   deepseek: { baseURL: 'https://api.deepseek.com/v1/',         defaultModel: 'deepseek-chat' },
 };
 
-async function resolveLLMModel(): Promise<Record<string, unknown> | null> {
+/**
+ * 按角色解析 API key（v1.1.5）。
+ * 三级回退：SOFAGENT_LLM_{ROLE}_API_KEY > SOFAGENT_LLM_API_KEY > OPENAI_API_KEY
+ */
+function resolveApiKey(role: 'engineer' | 'reviewer' | null = null): string | undefined {
+  if (role) {
+    const roleKey = process.env[`SOFAGENT_LLM_${role.toUpperCase()}_API_KEY`];
+    if (roleKey) return roleKey;
+  }
+  return process.env.SOFAGENT_LLM_API_KEY ?? process.env.OPENAI_API_KEY;
+}
+
+async function resolveLLMModel(role: 'engineer' | 'reviewer' | null = null): Promise<Record<string, unknown> | null> {
   const llmEnv = process.env.SOFAGENT_LLM;
   if (!llmEnv) return null;
 
   const [provider, modelName] = llmEnv.split(':');
-  const config = LLM_PROVIDERS[provider ?? ''];
-  if (!config) {
-    console.warn(`[sofagent] 未知的 LLM provider: ${provider ?? '(空)'}。支持: ${Object.keys(LLM_PROVIDERS).join(', ')}`);
+  const providerKey = provider ?? '';
+
+  // 解析 baseURL：custom 走 env，预置 provider 走查表
+  let baseURL: string;
+  if (providerKey === 'custom') {
+    baseURL = process.env.SOFAGENT_LLM_BASE_URL ?? '';
+    if (!baseURL) {
+      console.warn('[sofagent] custom provider 需要 SOFAGENT_LLM_BASE_URL 环境变量');
+      return null;
+    }
+  } else {
+    const config = LLM_PROVIDERS[providerKey];
+    if (!config) {
+      console.warn(`[sofagent] 未知的 LLM provider: ${providerKey || '(空)'}。支持: glm, kimi, deepseek, custom。custom 需配合 SOFAGENT_LLM_BASE_URL 使用`);
+      return null;
+    }
+    baseURL = config.baseURL;
+  }
+
+  // 解析 API key（v1.1.5 三级回退）
+  const apiKey = resolveApiKey(role);
+  if (!apiKey) {
+    console.warn(`[sofagent] 未找到 API key。请设置以下任一环境变量（按优先级）：${role ? `\n  SOFAGENT_LLM_${role.toUpperCase()}_API_KEY（推荐：${role} 专用）` : ''}\n  SOFAGENT_LLM_API_KEY（通用）\n  OPENAI_API_KEY（兜底）`);
     return null;
   }
 
   try {
     const { ChatOpenAI } = await import('@langchain/openai');
     const model = new ChatOpenAI({
-      modelName: modelName || config.defaultModel,
-      configuration: { baseURL: config.baseURL },
+      modelName: modelName || LLM_PROVIDERS[providerKey]?.defaultModel || 'gpt-4o-mini',
+      configuration: { baseURL },
+      openAIApiKey: apiKey,
     });
     return { model };
   } catch {
@@ -73,9 +117,9 @@ async function resolveLLMModel(): Promise<Record<string, unknown> | null> {
 }
 
 /**
- * 按角色解析 LLM 模型（v1.1.4 双模型支持）。
+ * 按角色解析 LLM 模型（v1.1.4 双模型支持 · v1.1.5 通用化）。
  * 优先级：SOFAGENT_LLM_{ROLE} > SOFAGENT_LLM（兜底）。
- * engineer 用便宜模型（如 deepseek），reviewer 用贵模型（如 glm-5.2）。
+ * 模型选择建议（厂商无关）：engineer 用性价比模型，reviewer 用推理能力更强的模型。
  */
 async function resolveLLMModelFor(role: 'engineer' | 'reviewer'): Promise<Record<string, unknown> | null> {
   const envKey = `SOFAGENT_LLM_${role.toUpperCase()}`;
@@ -83,12 +127,12 @@ async function resolveLLMModelFor(role: 'engineer' | 'reviewer'): Promise<Record
   if (roleEnv) {
     const saved = process.env.SOFAGENT_LLM;
     process.env.SOFAGENT_LLM = roleEnv;
-    const result = await resolveLLMModel();
+    const result = await resolveLLMModel(role);
     process.env.SOFAGENT_LLM = saved ?? '';
     if (result) return result;
     console.warn(`[sofagent] ${envKey}=${roleEnv} 解析失败，尝试 SOFAGENT_LLM 兜底`);
   }
-  return resolveLLMModel();
+  return resolveLLMModel(role);
 }
 
 /** audit 节点产出 */
@@ -294,7 +338,7 @@ async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
   // v1.1.4：工具注入路径——DeepAgents + REVIEWER_TOOLS
   // SOFAGENT_LLM 未设置或解析失败时自动降级到 spawnSubAgent 零工具路径
   try {
-    const resolved = await resolveLLMModelFor('engineer');
+    const resolved = await resolveLLMModelFor('reviewer');
     if (!resolved) throw new Error('SOFAGENT_LLM 未设置，无法确定模型 provider');
 
     const { createDeepAgent } = await import('deepagents');
@@ -361,8 +405,6 @@ function defaultConfirmHuman(reviewReport: string): Promise<HumanDecision> {
   // HITL 模式——stdin readline
   console.log('');
   console.log('══════════ 审查报告（HITL 确认） ══════════');
-  console.log(reviewReport);
-  console.log('═══════════════════════════════════════════');
   console.log(reviewReport);
   console.log('═══════════════════════════════════════════');
 

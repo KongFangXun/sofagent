@@ -342,10 +342,12 @@ exit 0
   try {
     // 动态导入验证规则注册表可用
     const { defaultRules } = require('../rules');
-    if (defaultRules && defaultRules.length === 11) {
-      console.log(`  ✅ 11 条规则全部加载`);
+    // v1.1.4: A19 加入 defaultRules，期望数从 11 提升为 12
+    const expectedDefaultRules = 12;
+    if (defaultRules && defaultRules.length === expectedDefaultRules) {
+      console.log(`  ✅ ${expectedDefaultRules} 条默认规则全部加载`);
     } else {
-      console.log(`  ⚠️ 规则数异常: ${defaultRules?.length ?? 0}（期望 11）`);
+      console.log(`  ⚠️ 规则数异常: ${defaultRules?.length ?? 0}（期望 ${expectedDefaultRules}）`);
       smokeOk = false;
     }
   } catch {

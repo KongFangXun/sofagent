@@ -7,13 +7,15 @@
 ## 快速开始
 
 ```bash
-# 1. 一键安装
+# 1. 一键安装（会引导你配置 LLM provider + API key）
 bash LOOP/loop-install.sh
 
-# 2. 设模型
-export SOFAGENT_LLM_ENGINEER=deepseek:deepseek-chat  # 开发（便宜）
-export SOFAGENT_LLM_REVIEWER=glm:glm-5.2             # 审查（贵）
-export OPENAI_API_KEY=xxx
+# 2. 如果跳过了安装向导，手动设模型 + key
+#    engineer（写代码）建议性价比模型，reviewer（审查）建议推理能力更强的模型
+export SOFAGENT_LLM_ENGINEER=deepseek:deepseek-chat
+export SOFAGENT_LLM_REVIEWER=glm:glm-4-flash
+#    OpenAI API 格式是事实标准——所有主流模型供应商都兼容，统一用 OPENAI_API_KEY 入口
+export OPENAI_API_KEY=sk-xxx
 export LOOP_AUTO=1                                    # 全自动
 
 # 3. 跑单任务
@@ -21,6 +23,12 @@ sofagent-orchestrator loop --task "在 README.md 第三行后加一条项目简�
 ```
 
 LOOP 自动流转：engineer 写代码 → audit 审计 → reviewer 审查 → IS_PASS 自动判定。
+
+**一个 key 走天下**：DeepSeek / GLM / Kimi / OpenRouter / Together / 本地 vLLM / Ollama 都是 OpenAI 兼容 API，一把 `OPENAI_API_KEY` 就能跑——key 只发到你 `SOFAGENT_LLM_*` 指定的 provider，不会发到 OpenAI。
+
+**engineer/reviewer 分账号**（可选高级用法）见 `LOOP/quick-start.md` 高级用法小节。
+
+**不局限于预置 provider**：任何 OpenAI 兼容 API 都能用 `custom:<model>` + `SOFAGENT_LLM_BASE_URL` 接入。详见 `LOOP/quick-start.md` 第四步。
 
 ## 内置 Agent
 

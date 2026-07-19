@@ -166,7 +166,7 @@ graph LR
     F --> A
 ```
 
-不依赖 AI 自觉——看的是 git diff 硬证据。**0 token 消耗——纯正则引擎，不调 LLM。** 21 条规则中 17 条为纯 git-diff（不依赖 Agent 配合），4 条需 Agent 日志/文件系统（A7/A8/A14/A15 hybrid + A16/A17 filesystem）。
+不依赖 AI 自觉——看的是 git diff 硬证据。**0 token 消耗——纯正则引擎，不调 LLM。** 21 条规则中 16 条为纯 git-diff（不依赖 Agent 配合），4 条 hybrid 需 Agent 日志（A7/A8/A14/A15），1 条 filesystem（A17 异常批量变更）。
 
 > v1.1.0 已拆为独立 `@sofagent/audit` 包。v1.0.8+ 内嵌 isomorphic-git + daemon 文件监控，不需 git commit。
 
@@ -251,7 +251,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 | 管住 Agent 全流程 | 审计引擎 + 约束底座（install.sh） |
 | 自动编排 Agent 任务 | + 编排引擎（DeepAgents Sub Agent） |
 
-> ⚠️ **当前版本（v1.1.3）覆盖范围**：开发者岗位（git commit 审计）+ 非开发岗位（文件系统审计）全覆盖。
+> ⚠️ **当前版本（v1.1.4）覆盖范围**：开发者岗位（git commit 审计）+ 非开发岗位（文件系统审计）全覆盖。
 
 ### 两种部署节点（v1.0.7+）
 

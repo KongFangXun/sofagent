@@ -34,18 +34,58 @@ workflow:
 
 ## 第三步：设模型 + 跑
 
+**最简路径（推荐 · 一个 key 搞定）**：
+
 ```bash
-# 设模型（重要！）
-export SOFAGENT_LLM_ENGINEER=deepseek:deepseek-chat  # 开发（便宜）
-export SOFAGENT_LLM_REVIEWER=glm:glm-5.2             # 审查（贵）
-export OPENAI_API_KEY=xxx
-export LOOP_AUTO=1                                    # 全自动，不弹 y/n
+# 1. 设模型（engineer 写代码用性价比模型，reviewer 审查用推理能力更强的模型）
+export SOFAGENT_LLM_ENGINEER=deepseek:deepseek-chat
+export SOFAGENT_LLM_REVIEWER=glm:glm-4-flash
+
+# 2. API key——直接用 OPENAI_API_KEY，所有 OpenAI 兼容 API 通用
+#    （DeepSeek/GLM/Kimi/OpenRouter/Together/vLLM/Ollama 都是 OpenAI 兼容协议）
+export OPENAI_API_KEY=sk-xxx
+
+# 3. 全自动模式
+export LOOP_AUTO=1
 
 # 跑
 sofagent-orchestrator loop --task "你的任务描述"
 ```
 
 LOOP 自动流转：engineer 写代码 → audit 审计 → reviewer 审查 → IS_PASS → 完成 / IS_PASS:NO → 回 engineer 修复。
+
+**为什么是 `OPENAI_API_KEY`**：OpenAI API 格式已经是事实标准——所有主流模型供应商都提供兼容 endpoint。OpenAI SDK 默认读这个环境变量，所以用它作为统一入口最省事。你的 key 不会发到 OpenAI，只发到你 `SOFAGENT_LLM_*` 指定的 provider。
+
+---
+
+### 高级用法（可选）
+
+**engineer 和 reviewer 用不同账号分账**（例如开发用便宜账号、审查用高质量账号）：
+
+```bash
+# 不设 OPENAI_API_KEY，改用角色专用 key
+export SOFAGENT_LLM_ENGINEER_API_KEY=sk-cheap-account
+export SOFAGENT_LLM_REVIEWER_API_KEY=sk-premium-account
+```
+
+**完整 fallback 顺序**（任一命中即可，不用都设）：
+
+```
+SOFAGENT_LLM_{ROLE}_API_KEY  >  SOFAGENT_LLM_API_KEY  >  OPENAI_API_KEY
+   角色专用 key（分账）         通用 key（共用一个）      OpenAI 兼容默认（推荐入门）
+```
+
+## 第四步（可选）：custom provider
+
+预置 provider（`deepseek`/`glm`/`kimi`）覆盖大部分场景。如果你用的模型不在预置列表（本地部署、企业内网、OpenRouter、Together AI、第三方兼容 API），用 `custom`：
+
+```bash
+export SOFAGENT_LLM_ENGINEER=custom:your-model-name
+export SOFAGENT_LLM_BASE_URL=https://your-endpoint/v1/
+export OPENAI_API_KEY=sk-xxx
+```
+
+`custom` provider 不会硬编码任何厂商假设——只要你给的 base URL 和 model name 能被 OpenAI SDK 识别，就能用。
 
 ## 怎么用 workflow 模式
 
@@ -60,14 +100,15 @@ Workflow 模式是 LOOP 的高级用法——外部编排平台产出 workflow.y
 
 ## 内置 Agent
 
-LOOP 带有 4 个内置 Agent Skill，装在 `agents/SKILL/` 下：
+LOOP 带有 3 个内置 Agent Skill，装在 `agents/SKILL/` 下：
 
 | Skill | 角色 | 模型建议 |
 |-------|------|---------|
-| `sofagent-engineer` | 软件工程师——写代码、修复、build/test | 便宜模型（DeepSeek） |
-| `sofagent-reviewer` | 代码审查员——审查 + IS_PASS 判定 | 贵模型（GLM-5.2） |
-| `sofagent-audit` | 合规审计员——A1-A19 规则检查 | 本地 |
-| `sofagent-fde` | 前线部署工程师——Workflow 优化 | 本地 |
+| `sofagent-engineer` | 软件工程师——写代码、修复、build/test | 性价比模型（量大、任务明确） |
+| `sofagent-reviewer` | 代码审查员——审查 + IS_PASS 判定 | 推理能力更强的模型（判断需要深思） |
+| `sofagent-audit` | 合规审计员——A1-A19 规则检查 | 本地（不调 LLM） |
+
+> 💡 如需 Workflow 优化（sofagent-fde），用 `bash FDE/fde-install.sh` 单独装。
 
 ## 常见问题
 
@@ -75,5 +116,7 @@ LOOP 带有 4 个内置 Agent Skill，装在 `agents/SKILL/` 下：
 |------|------|------|
 | `sofagent-orchestrator` 未找到 | sofagent 底座没装 | `bash LOOP/loop-install.sh` |
 | engineer 不干活 | 没设 `SOFAGENT_LLM_ENGINEER` | 设 env var |
+| API key 报错 | `OPENAI_API_KEY` 没设（或角色专用 key 没设） | 最简：`export OPENAI_API_KEY=sk-xxx` |
 | reviewer 每轮都驳回 | 审查标准太严 | 改 `agents/SKILL/sofagent-reviewer/SKILL.md` 的判定标准 |
 | LOOP_AUTO=0 时卡住 | 需要人工按 y/n | 设 `LOOP_AUTO=1` 或手动确认 |
+| 用的模型不在预置 provider 列表 | 只支持 deepseek/glm/kimi 预置 | 用 `custom:<model>` + `SOFAGENT_LLM_BASE_URL` |

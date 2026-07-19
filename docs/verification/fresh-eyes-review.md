@@ -1,10 +1,6 @@
 # sofagent 发布后审查 Prompt（9 维度 × 6 方面）
 
-> **发版后独立审查**：当前版本发版后，在全新 session 中跑本 prompt 对已发布版本做独立审查。审查发现的问题不阻塞当前版本——进入下版本开发计划。
->
 > **核心原则**：假装你完全不知道 sofagent 是什么，用陌生人的眼睛重新看。不设固定检查项、不指定具体文件、不跑 grep、不预设"之前已修好 X"——凭第一印象和直觉判断。
->
-> 📋 **审视变更记录**：本 prompt 随 v1.0.6→v1.1.3 多轮审查持续演进，每次新增的检查项已直接写入对应维度任务（均带版本标注，如「v1.1.3 新增」）。跨版本核心教训见文末附录「审查体系演进」。
 >
 > **审查对象**：https://github.com/KongFangXun/sofagent（当前已发布版本）
 >
@@ -17,7 +13,7 @@
 > | 4 CI 一致性 | 八 CI/自动化 | CI 机器人对数字 | 文档 vs 代码 |
 > | 5 感知层 | 九 感知层健全性 | 感知审查 | 用户能否感知 sofagent |
 >
-> 五轮九维可以分多次跑，也可以一次性全跑。轮次之间清空认知，从空白开始。
+> 五轮九维一次性全跑。轮次之间清空认知，从空白开始。
 
 ---
 
@@ -110,6 +106,9 @@
 9. **SkillOpt 集成 CLI 契约验证**：打开 `skillopt-integration.ts`——`isSkillOptAvailable()` 和 `runSkillOpt()` 调用的 CLI 参数形式与真实安装的 `skillopt-sleep --help` 声明的子命令/参数一致吗？**特别检查**：`isSkillOptAvailable()` 探针是否用 `status` 子命令（而非被 CLI 拒绝的 `--version`）；`runSkillOpt()` 是否用 `run --target-skill-path <input> --auto-adopt` 子命令形式（而非 flat positional + `--output`）。历史教训：曾发现集成代码照着不存在的 CLI 契约写了整整一个版本——探针用 `--version`（真实 CLI exit 2）、调用用 flat positional + `--output`（真实 CLI 只认子命令）。**v1.1.3 起升级为 CI 必跑**：装 skillopt-sleep 后实跑 `skillopt-sleep --help` 对比集成代码的调用形式，仅读源码不算验证。
 10. **Agent 定义的平台耦合度**：打开 `agents/` 下的 Agent 定义——它们的 role/workflow/rules 是否过度依赖 OpenClaw 的 `session.spawn` API？如果未来换平台，这些 Agent 定义还能独立使用吗？还是需要大幅改写？
 11. **ruleClass 跨文档漂移检测（v1.1.3 追加）**：提取 `sofagent/audit/src/rules/index.ts` 的 `name` + `ruleClass`，与 `sofagent/audit/README.md` 规则表逐行 diff。ruleClass 漂移已反复出现（A6 曾从「业务底线」漂移到「能力拐杖」、A11 反向漂移），单文档审查永远发现不了——只有跨文档交叉对照才暴露矛盾。**检查手法**：`diff <(grep "name:\|ruleClass:" sofagent/audit/src/rules/index.ts | paste - -) <(提取 audit/README.md 规则表的名称+分级列)`。建议对此建自动化脚本加入 pre-push-check。
+12. **evidenceMode 计数对账（v1.1.4 追加）**：README 声称"X 条纯 git-diff + Y 条需 Agent 日志"——数 index.ts 里 `evidenceMode: 'git-diff'` / `'hybrid'` / `'filesystem'` 的实际计数。**v1.1.4 教训**：README:169 声称"17 条纯 git-diff"，实际 16 条（defaultRules 10 git-diff + extendedRules 6 git-diff = 16）。evidenceMode 分类漂移和 ruleClass 漂移同理——单看数字"像对的"，只有实数才暴露矛盾。**检查手法**：`grep -oE "evidenceMode: '[a-z-]+'" sofagent/audit/src/rules/index.ts | sort | uniq -c`，与 README 的"X 条为纯 git-diff / Y 条需 Agent 日志"对照。
+13. **audit/README 规则表完整性（v1.1.4 追加）**：打开 `sofagent/audit/README.md` 的默认规则表 + 扩展规则表——每条已注册规则都有对应行吗？**v1.1.4 教训**：A18/A19 新增后 audit/README 规则表完全没更新（grep 零命中），用户从 npm 包文档看不到这两条规则。**检查手法**：`INDEX_COUNT=$(grep -cE "name:\s*'A[0-9]|name:\s*'E[0-9]" index.ts); README_ROWS=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " audit/README.md)`，两者应一致。
+14. **独立产品 install 闭环实跑（v1.1.4 追加）**：FDE 和 LOOP 声称"独立产品"——实跑验证：在仅含 FDE/ 子目录的环境（不 clone 主仓库）跑 `bash fde-install.sh`，能跑通吗？**v1.1.4 教训**：fde-install.sh:52 调 `$PROJECT_ROOT/sofagent/scripts/install.sh`、loop-install.sh:54 同理——只 clone 子目录绝对跑不通。"独立产品"是营销话术还是真能独立装？实跑才知道。同时检查跨产品 install.sh 调用接口（路径/参数/退出码）有没有契约文档或 pin commit。
 
 ---
 
@@ -343,6 +342,12 @@
     - **跨平台激活对抗**：`@sofagent-fde` 在 WorkBuddy 真能激活吗（需要 Skill 复制到 `~/.workbuddy/skills/sofagent-fde/`）？`@skill:sofagent-loop` 在 OpenClaw 真能加载吗？fde-install.sh / loop-install.sh 在 workbuddy 分支真的把 Skill 目录复制对位置了吗？**实跑验证**：装完后在对应平台输入 `@sofagent-fde` / `@skill:sofagent-loop`，Agent 真能读到 SKILL.md 内容吗？还是静默失败？
     - **种子指令对抗**：FDE/README.md 第 40-44 行的"种子指令"（让 Agent 读 SKILL.md + FDE.md）——如果 Agent 收到这段指令但 SKILL.md 路径错了（相对路径 vs 绝对路径混淆），Agent 会报错还是假装读了？
 
+28. **A18/A19 实跑拦截验证（v1.1.4 新增）**：
+    - **A19 commit message 质量**：代码级已确认 `MIN_LENGTH = 8` + 黑名单 8 词存在，但行为级要现场跑——提交一个 6 字符的 message（如 "second"），A19 是否真拦截？exit code 是否 = 2？黑名单词（add/fix/test/update/change/wip/tmp/asdf）逐个试，是否都拦？
+    - **A18 垃圾文件检测**：提交 `a.txt` / `tmp.bak` / `213.tmp` 类文件名，A18 是否告警（WARN）？A18 在 extendedRules——确认 config `extendedRulesEnabled: true` 时才生效，默认 false 时跳过。
+    - **A18/A19 config 禁用**：在 config.yml 写 `rules: { a18: false }` / `{ a19: false }`——确认真能禁用（不出现该规则判定行），且不误报"未知规则名"。**v1.1.4 教训**：config-loader.ts 的 knownKeys 集合曾漏 a18/a19，用户禁用时误报未知——这是每新增规则必查项（见回归清单维度 9）。
+    - **A19 在 defaultRules 的排序合理性**：A19 编号是 19 但放在 defaultRules（始终生效），不在 extendedRules——确认这是有意设计（commit msg 质量是基础要求），不是放错数组。
+
 **输出格式**：
 
 ```markdown
@@ -380,6 +385,9 @@
    - README 声称"Y 条纯 git-diff + Z 条需 Agent 日志"——逐条检查每条规则的 `evidenceMode` 字段，数 `git-diff` 和 `hybrid` 的数量。一致吗？
    - CHANGELOG 历史条目中提到的规则数量——与当前 index.ts 一致吗？有没有"历史声称 > 实际注册"的情况？
    - **规则 ID 分类交叉验证**：README 分类描述里的每个规则 ID 逐个在 index.ts 中确认存在。历史教训：曾反复出现"幽灵规则"问题——README 声称了代码中无对应 `name:` 注册的规则 ID。不仅看数量，还要看 ID 是否一一对应。**注意跳号**：A1-A11 后直接跳到 A14（A12/A13 永久跳号），这不是遗漏——但如果 README 声称了 A12 或 A13，那才是幽灵规则。
+   - **evidenceMode 计数对账（v1.1.4 追加）**：v1.1.4 暴露 README:169 声称"17 条纯 git-diff"但实际 16 条——`grep -oE "evidenceMode: '[a-z-]+'" sofagent/audit/src/rules/index.ts | sort | uniq -c`，与 README 的"X 条纯 git-diff / Y 条需 Agent 日志"逐数字对照。
+   - **audit/README.md 规则表完整性（v1.1.4 追加）**：v1.1.4 暴露 A18/A19 新增后 audit/README.md 规则表完全没更新（grep 零命中）。`INDEX_COUNT=$(grep -cE "name:\s*'A[0-9]|name:\s*'E[0-9]" index.ts); README_ROWS=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " audit/README.md)`，README_ROWS 应 ≥ INDEX_COUNT。
+   - **自动化对账脚本建议（v1.1.4 追加）**：规则数字验证散落在 4 处（README 总数 + README 分类数 + audit/README 表行数 + MCP 工具描述数），每次发版都要手动对照易漏。建议把"index.ts SSOT → 4 处文档声称"对账逻辑加进 pre-push-check，一处不齐就门禁红。
 
 2. **测试数量一致性**：
    - CHANGELOG / README / evidence.md 中声称的测试数量——实际跑 `cd sofagent/audit && npm test 2>&1 | grep 'Tests'`。一致吗？
@@ -729,4 +737,14 @@
 - **版本标注系统性漂移**：tools.ts/nodes.ts/rule-a18/a19/warn-accumulator/usb-detect 共 6 个文件注释写「v1.1.3 新增」但实际 v1.1.4 交付——SSOT 版本号与交付版本号混淆的连锁效应。→ 阶段八文档收尾强化
 - **`--init` 无条件覆盖全局 plist**（v1.1.4 阶段六暴露）：init.ts 在任何目录跑 --init 都会 unload + 重写 `~/Library/LaunchAgents/com.sofagent.daemon.plist`。OpenClaw 验收 session 在临时目录跑 --init 后，本机 daemon 被指向临时路径完全失效。plist 是系统级全局资源——应只在 WorkingDirectory 变化时才重新生成，否则应跳过。→ 回归维度 22
 - **文档测试数手工同步无人验证**（v1.1.4 回归报告 P0-1）：LIMITATIONS.md/evidence.md 各自声明测试数 343，实际 audit 包 388、全 workspace 660——三个文档手工维护同一个数字，无人验证一致性。应加入 pre-push-check 自动比对 `npm test` 实际输出与文档声明。→ 后续版本工具链增强
+
+### v1.1.4 发版后审查追补（2026-07-19）
+- **config-loader knownKeys 漏 a18/a19**：`config-loader.ts:232-235` 的 knownKeys 集合只有 a1-a11/a14-a17/e1-e4，缺 a18/a19——用户在 config.yml 禁用 a18/a19 会误报"未知规则名"。同类问题 v1.0.9（A16/A17）犯过，这是第三次复发。→ 回归维度 9 通用化检查（knownKeys 集合 = index.ts 所有注册号）
+- **config-loader tryLoadYaml 强制 audit 段**：`config-loader.ts:186-193` 要求 config 必须有 `audit:` 嵌套段，但 `mergeWithDefaults`（218 行）支持顶层字段——前后矛盾。用户按文档顶层写 `extendedRulesEnabled: true` 会被静默忽略 + 误报"未找到 config.yml"。→ 新增 config schema 一致性检查（建议回归维度 7 追加子项）
+- **README git-diff 数声称错误**：`README.md:169` 声称"17 条纯 git-diff"，实际 16 条（defaultRules 10 + extendedRules 6）。总数 21 对，但分类数错。→ 回归维度 4 子项 e（evidenceMode 计数对账）
+- **LOOP/loop-install.sh 版本号写 v1.1.5**：`loop-install.sh:3` 注释写 v1.1.5，但发版是 v1.1.4。check-version.sh 不扫 .sh 文件。→ 回归维度 6 子项 c（.sh 脚本版本号扫描）
+- **FDE/LOOP 调主 install.sh 无契约文档**：`fde-install.sh:52` 和 `loop-install.sh:54` 都调 `sofagent/scripts/install.sh`——跨产品调用接口（路径/参数/退出码）没有契约文档或 pin commit，主 install.sh 改参会悄悄打断 FDE/LOOP。→ 回归维度 23 子项 c
+- **LOOP Agent 数文档不一致**：quick-start 说 3、README 列 2、实际装 4（含 sofagent-fde）。→ 回归维度 23 子项 b
+- **pre-push-check 占位符死链误报**：`check-docs.sh` 把 `releasing.md` 里的 `vX.Y.Z.md` 模板占位符当成死链，导致门禁 16/17 不绿。工具的边界假设也是审查对象。→ 回归维度 2 子项 c
+- **Agent 审查报告需主理人交叉验证**：本次审查派 3 个 Agent 并行跑，其中 2 个 Agent 报了误报 P0（维度一说"README:254 残留 v1.1.3"实际是 v1.1.4；维度三说"audit/README 数字滞后 19/8"实际已更新为 21/10）。成员结论为准 ≠ 成员结论全信——主理人汇编时必须实跑复核。→ 审查流程本身的方法论教训
 

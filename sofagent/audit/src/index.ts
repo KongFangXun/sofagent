@@ -811,7 +811,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
       const icon = rule.status === 'FAIL' ? '❌' : '⚠️';
       const classTag = rule.ruleClass === '业务底线' ? '[底线]' : rule.ruleClass === '能力拐杖' ? '[拐杖]' : '';
       for (const detail of rule.details) {
-        console.log(`${icon} ${rule.name} ${classTag}: ${detail}`);
+        console.log(`${icon} [sofagent] ${rule.name} ${classTag}: ${detail}`);
       }
       // 修复建议
       const suggestion = getFixSuggestion(rule.name);
@@ -819,7 +819,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
         console.log(`   怎么修: ${suggestion}`);
       }
     }
-    console.log(`\n判定: ${results.exitCode === 1 ? '⚠️  WARN' : '❌ FAIL'} (exit ${results.exitCode})`);
+    console.log(`\n[sofagent] 判定: ${results.exitCode === 1 ? '⚠️  WARN' : '❌ FAIL'} (exit ${results.exitCode})`);
     return;
   }
 
@@ -852,7 +852,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
       const icon = rule.status === 'FAIL' ? '❌' : '⚠️';
       const classTag = rule.ruleClass === '业务底线' ? '[底线]' : rule.ruleClass === '能力拐杖' ? '[拐杖]' : '';
       for (const detail of rule.details) {
-        console.log(`  ${icon} ${rule.name} ${classTag}: ${detail}`);
+        console.log(`  ${icon} [sofagent] ${rule.name} ${classTag}: ${detail}`);
         // 修复建议（v1.0.9 新增）
         const suggestion = getFixSuggestion(rule.name);
         if (suggestion) {
@@ -891,7 +891,7 @@ function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean
   // 判定行
   console.log('');
   const judgeIcon = exitCode === 0 ? '✅ PASS' : exitCode === 1 ? '⚠️  WARN (有警告)' : '❌ FAIL (有违规)';
-  console.log(`  判定: ${judgeIcon} · exit code ${exitCode}`);
+  console.log(`  [sofagent] 判定: ${judgeIcon} · exit code ${exitCode}`);
   const ruleSummary = exitCode === 0
     ? `${results.rules.length} 条规则全部通过`
     : `${results.rules.length} 条规则已完成检测`;

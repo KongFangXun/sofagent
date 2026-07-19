@@ -103,9 +103,9 @@ v1.0.0 本轮完成 AI 知识库代码实现——7 件事：目录骨架（6 �
 **核心变更**：LOOP 双 Agent 自循环 + LangGraph 编排 + OpenClaw MCP 知识联邦 + Dream Cycle 知识管道 + LLM Wiki 3 层分层 + AES-256-GCM 加密 + USB key 物理身份。7 个子版本 → 1 个联邦。v1.2.x 完整多设备协同的起点。
 > 📖 [开发日志](./docs/changelog/v1.2.0.md)
 
-### [v1.1.5] — releasing.md SOP 集成 + MCP knowledge resource 📋
+### [v1.1.5] — SOP 自动发版 + MCP pipe audit_file + knowledge resource + USB federation 📋
 > 规划中
-**核心变更**：Agent 按 releasing.md 十二阶段 SOP 全流程自动发版 + 7 个 MCP knowledge resource。
+**核心变更**：① Agent 按 releasing.md 十二阶段 SOP 全流程自动发版（releaser Skill，3 次 human check）；② MCP 协议层编辑纳入审计（`sofagent.audit_file` tool，补 v1.1.4 daemon 只监控 fs.watch 的盲区）；③ 7 个 MCP knowledge resource + push target 路由（飞书/钉钉/企微 Webhook + daemon 通知）+ list_capabilities 主动推送；④ USB federation HMAC-SHA256 签名校验 + schema 校验 + applyFederation 实现；⑤ v1.1.4 审查 9 项修复（3 P0 文档漂移 + 5 P1 文档/代码 + 1 工具增强）+ maxTurns 可配置化 + warn-accumulator 文件级追踪 + A18 提升 defaultRules 评估 + LOOP audit history 端到端验证 + tools.ts 高危命令可配置评估。
 > 📖 [开发日志](./docs/changelog/v1.1.5.md)
 
 ### [v1.1.6] — LLM Wiki 3 层分层 + conflict-check 📋
