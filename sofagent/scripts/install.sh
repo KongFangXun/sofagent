@@ -8,6 +8,16 @@
 #
 # 平台：openclaw（完整）/ workbuddy / claude / codex / hermes / 自动探测
 # 编排引擎：DeepAgents（npm 包，正式依赖）
+#
+# ── 跨产品调用契约（v1.1.5）──
+# FDE/fde-install.sh 与 LOOP/loop-install.sh 在第 1 步会调用本脚本：
+#   bash "$PROJECT_ROOT/sofagent/scripts/install.sh" --platform "$PLATFORM"
+# 契约约定：
+#   1. 入参：--platform <name>（可选，缺省时自动探测）
+#   2. 退出码：0=成功，非 0=失败（调用方依赖 set -e 自动中断）
+#   3. 副作用：写入 ~/.sofagent/ + 目标平台配置目录；不修改调用方脚本
+#   4. 幂等性：重复执行安全，已存在的 hook/config 不覆盖（除非 --force）
+#   5. 输出：使用 [sofagent] 前缀，调用方可据日志判断阶段
 # ============================================================
 
 set -euo pipefail

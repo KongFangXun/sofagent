@@ -49,6 +49,7 @@ echo -e "  平台: ${BOLD}${PLATFORM}${NC}"
 echo ""
 
 # ── 1. 装 sofagent 底座 ──
+# 调用契约见 sofagent/scripts/install.sh 头部「跨产品调用契约」段（v1.1.5）
 echo -e "${BOLD}[1/5] 安装 sofagent 底座（三层引擎）...${NC}"
 echo -e "  ${CYAN}约束底座 + 审计引擎 + 编排引擎（sofagent-orchestrator）${NC}"
 bash "$PROJECT_ROOT/sofagent/scripts/install.sh" --platform "$PLATFORM"

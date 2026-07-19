@@ -9,27 +9,7 @@
 
 ## 🔒 维护公约（防膨胀铁律）
 
-> 本清单历史上曾膨胀到 288 个维度（3686 行），根因是「每次追加 🆕 维度却不归并同类」。2026-07-18 治理：归并同类项 + 重排编号 + 删除归档（历史维度靠 git 找回）。
-
-**追加新维度前，必须执行**：
-
-1. **先 grep 同类**：用新维度的关键词在本文档内搜索，确认是否已有同类维度
-2. **有同类 → 扩展旧维度**：在已有维度的 bash 块里追加子项（用 `# 子项:` 注释分隔），不新增编号
-3. **无同类 → 才新增**：编号取当前最大编号 +1，归入对应主题 section
-4. **禁止跨主题散落**：同一主题只在一个 section 里出现
-
-**主题分类**（追加时归入对应 section）：
-
-| Section | 覆盖范围 |
-|---------|---------|
-| 跨版本核心维度 | 版本号/铁律措辞/Skill 行数/测试数——每次发版必跑的基线 |
-| 文档与 CHANGELOG | 纯度/死链/规范源/迁移完整性/索引一致性 |
-| 审计引擎一致性 | 规则分级/exit code/签名/ruleClass/版本号硬编码 |
-| 感知与推送层 | config/webhook/MCP 签名/capabilities |
-| 测试与工具链 | acceptance-test/pre-push-check/依赖图/跨包重复/README 测试数 |
-| Agent 身份感知 | SKILL/engage/FDE/install 签名 |
-
-**历史维度找回**：`git show 43fac89:docs/verification/regression-checklist.md`
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项（用 `# 子项:` 注释分隔），不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:docs/verification/regression-checklist.md` 找回。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
@@ -42,22 +22,9 @@ ACTUAL=$(grep -c "^#### " docs/verification/regression-checklist.md)
 
 ## 你的身份
 
-你是一名**回归测试工程师**。你的任务不是发现新问题，而是**确认已知的修复没有回退**。逐项核对，全部 PASS 就是通过。
+你是**回归测试工程师**——任务是确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。
 
-**与发布后审查的区别**：发布后审查是陌生视角找新问题；回归检查是确认修过的没退回去。两者互补，发版前都要跑。
-
-### ⏰ 时序说明
-
-回归检查在 **releasing.md 阶段四（审核）** 跑——此时还没 commit/tag/publish：
-
-| 检查项 | 回归检查时 | 满足时机 |
-|--------|:----:|------|
-| git tag vX.Y.Z 存在 | ❌ 正常 | 阶段七打 tag 后 |
-| npm registry 版本 = SSOT | ❌ 正常 | 阶段七 npm publish 后 |
-| 全局二进制版本 = SSOT | ❌ 正常 | 阶段七 npm i -g 后 |
-| 工作目录零未提交修改 | ❌ 正常 | 阶段七 commit 后 |
-
-**遇到以上检查项时标 ⏳（待发版），不标 FAIL。**
+**⏰ 时序**：回归检查在 releasing.md 阶段四（审核）跑，此时 git tag / npm registry / 全局二进制版本 / 工作目录 clean 都还没到位——遇到这些检查项标 ⏳（待发版），不标 FAIL。
 
 ---
 
@@ -67,8 +34,9 @@ ACTUAL=$(grep -c "^#### " docs/verification/regression-checklist.md)
 ```bash
 cd /Users/kongfangxun/Workbuddy/sofagent
 bash tools/pre-push-check.sh                    # 期望：N/N 全绿（项数随版本演进，以脚本尾部"共 N 项"为准）
-# ⚠️ v1.1.4 教训：不接受"误报"辩解——check-docs.sh 把 releasing.md 的 vX.Y.Z.md 占位符当死链
-# 导致 16/17 不绿。占位符不是真死链，但门禁不绿就是发版诚信问题。见维度 2 子项 c。
+# ⚠️ v1.1.4 教训：检查过程中如发现 check-docs.sh 把模板占位符（vX.Y.Z.md 类）当死链导致门禁不绿，
+# 不要当"误报"忽略——占位符不是真死链，但门禁不绿就是发版诚信问题。
+# 正解：要么 check-docs.sh 排除占位符，要么把模板里的占位符路径改成反引号包裹的纯文本。见维度 2 子项 c。
 cd sofagent/audit && npm test && cd ../..        # 期望：全部 passed
 node sofagent/core/dist/verify.js 2>&1 | tail -10  # 期望：无 FAIL（verify.js 不支持 --list，直接输出全量结果）
 bash tools/check-docs.sh 2>&1 | tail -3          # 期望：全部通过
@@ -144,11 +112,11 @@ bash tools/check-docs.sh 2>&1 | grep -i 'dead\|死链'
 # 子项 b: 文件/目录迁移四动作——旧路径应 0 命中
 git grep -n "OLD_RELATIVE_PATH" -- '*.md'
 
-# 子项 c: 占位符死链豁免（v1.1.4 暴露——pre-push-check 因 releasing.md 的 vX.Y.Z.md 占位符失败）
-# check-docs.sh 应排除模板占位符路径，否则发版门禁永远不绿
+# 子项 c: 占位符死链豁免（v1.1.4 教训——check-docs.sh 曾把 releasing.md 的 vX.Y.Z.md 占位符当死链）
+# 即使当前已修复（pre-push-check 17/17 全绿），仍需警惕回退——模板文件里的占位符路径易被死链扫描误判
 grep -n "vX\.Y\.Z\|<.*>\.md\|EXAMPLE.*\.md" docs/verification/releasing.md docs/guides/*.md 2>/dev/null | head
 # 人工检查：check-docs.sh 的死链扫描逻辑是否对占位符路径（含大写变量名/<>/{}/X.Y.Z）做豁免
-# 若没有豁免 → 追加到 check-docs.sh 的排除规则，或把模板里的占位符路径改成反引号包裹的纯文本
+# 若没有豁免规则 → 追加排除逻辑，或把模板里的占位符路径改成反引号包裹的纯文本（代码 span 不被当链接）
 ```
 
 #### 3. 文档规范源与归属一致性
