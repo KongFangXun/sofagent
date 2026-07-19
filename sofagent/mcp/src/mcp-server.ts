@@ -294,6 +294,96 @@ class McpServer {
             required: ['task'],
           },
         },
+        {
+          name: 'audit_file',
+          description: '单文件变更即时审计（v1.1.5 新增）——Agent 通过 MCP 编辑文件时调用，即时跑适用于单文件的规则（A3/A7/A11/A18，可选 A14 当传 task 时）。返回结构化结果（不阻断，由 Agent 自决）。',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              path: {
+                type: 'string',
+                description: '变更文件路径（必填）',
+              },
+              change_type: {
+                type: 'string',
+                enum: ['create', 'modify', 'delete'],
+                description: '变更类型：create / modify / delete',
+              },
+              diff: {
+                type: 'string',
+                description: '文件变更 diff 内容（可选，用于 A2/A9 等内容级规则）',
+              },
+              task: {
+                type: 'string',
+                description: '任务描述（可选，传入时启用 A3/A14 上下文规则）',
+              },
+            },
+            required: ['path', 'change_type'],
+          },
+        },
+        {
+          name: 'search_knowledge',
+          description: '跨 entities/concepts 模糊搜索 knowledge 库（v1.1.5）。返回匹配的页面列表（含路径 + 首行摘要）。',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              query: { type: 'string', description: '搜索关键词（模糊匹配页面名 + 内容）' },
+            },
+            required: ['query'],
+          },
+        },
+        {
+          name: 'read_entity',
+          description: '读取单个 entity 页（knowledge/entities/<name>.md）',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              name: { type: 'string', description: 'entity 名称（不含 .md 后缀）' },
+            },
+            required: ['name'],
+          },
+        },
+        {
+          name: 'read_concept',
+          description: '读取单个 concept 页（knowledge/concepts/<name>.md）',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              name: { type: 'string', description: 'concept 名称（不含 .md 后缀）' },
+            },
+            required: ['name'],
+          },
+        },
+        {
+          name: 'list_entities',
+          description: '列出 knowledge/entities/ 下所有 entity（可选按 domain 过滤）',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              domain: { type: 'string', description: 'domain 过滤（可选）' },
+            },
+          },
+        },
+        {
+          name: 'read_lessons',
+          description: '读取 knowledge/lessons-missteps.md（踩坑记录）',
+          inputSchema: { type: 'object' as const, properties: {} },
+        },
+        {
+          name: 'read_think_md',
+          description: '读取 think.md 完整内容（v1.1.5 新增，返回值首行带 [sofagent] 前缀）',
+          inputSchema: { type: 'object' as const, properties: {} },
+        },
+        {
+          name: 'stats',
+          description: 'knowledge 库统计（entities 数 / concepts 数 / 最后更新时间）',
+          inputSchema: { type: 'object' as const, properties: {} },
+        },
+        {
+          name: 'list_capabilities',
+          description: '返回 sofagent MCP 完整能力清单（tools + resources + 描述）——Agent 首次连上时调用获取能力地图',
+          inputSchema: { type: 'object' as const, properties: {} },
+        },
       ],
     });
   }
@@ -321,6 +411,33 @@ class McpServer {
         break;
       case 'sofagent_compose':
         await this.toolCompose(id, args);
+        break;
+      case 'audit_file':
+        this.toolAuditFile(id, args);
+        break;
+      case 'search_knowledge':
+        this.toolSearchKnowledge(id, args);
+        break;
+      case 'read_entity':
+        this.toolReadEntity(id, args);
+        break;
+      case 'read_concept':
+        this.toolReadConcept(id, args);
+        break;
+      case 'list_entities':
+        this.toolListEntities(id, args);
+        break;
+      case 'read_lessons':
+        this.toolReadLessons(id);
+        break;
+      case 'read_think_md':
+        this.toolReadThinkMd(id);
+        break;
+      case 'stats':
+        this.toolStats(id);
+        break;
+      case 'list_capabilities':
+        this.toolListCapabilities(id);
         break;
       default:
         this.sendError(id, -32602, `Unknown tool: ${toolName}`);
@@ -492,11 +609,113 @@ class McpServer {
   }
 
   /**
+   * Tool: audit_file (v1.1.5 新增)
+   * 单文件变更即时审计——MCP 协议层的文件编辑事件（Agent 通过 MCP 写文件时调用）
+   * 规则作用域：A3（不改越界，需 task）/ A7（不存盲改）/ A11（不滥资源）/ A18（垃圾文件）
+   *              + A14（知识库越权，仅当传 task 时启用）
+   * NOT 跑：A1/A2/A9（需要完整 git diff 上下文，在 commit-msg hook 里跑）
+   * 返回：结构化结果（不阻断，由 Agent 自决——WARN/FAIL 都只是告知）
+   */
+  private toolAuditFile(id: number | string | null, args: Record<string, unknown>): void {
+    const path = args.path as string | undefined;
+    const changeType = args.change_type as 'create' | 'modify' | 'delete' | undefined;
+    const task = args.task as string | undefined;
+
+    if (!path || typeof path !== 'string') {
+      this.sendError(id, -32602, 'Missing or invalid required argument: path');
+      return;
+    }
+    if (!changeType || !['create', 'modify', 'delete'].includes(changeType)) {
+      this.sendError(id, -32602, `Invalid change_type: ${changeType}（必须为 create|modify|delete）`);
+      return;
+    }
+
+    // 构造 DiffFile（change_type 映射到 status）
+    const statusMap: Record<'create' | 'modify' | 'delete', 'added' | 'modified' | 'deleted'> = {
+      create: 'added',
+      modify: 'modified',
+      delete: 'deleted',
+    };
+    const diffFiles = [
+      {
+        path,
+        status: statusMap[changeType],
+        lines: [],
+      },
+    ];
+
+    // 加载配置（三级 fallback，配置损坏降级为 DEFAULT_CONFIG）
+    let config;
+    try {
+      config = loadConfig(undefined, false);
+    } catch {
+      config = undefined;
+    }
+
+    // 跑规则——通过 MCP pipe 单文件即时审计
+    // runRules 返回完整 21 条规则结果，我们只关心 MCP pipe 作用域内的
+    const results = runRules(diffFiles, [], task, false, true /* silent */, undefined, config);
+
+    // 过滤 MCP pipe 作用域：A3 / A7 / A11 / A18 (+ A14 当传 task)
+    const scopeRuleNumbers = new Set<number>([7, 11, 18]); // A7/A11/A18 始终跑
+    if (task) {
+      scopeRuleNumbers.add(3);  // A3 需要 task
+      scopeRuleNumbers.add(14); // A14 需要 task
+    }
+
+    const violations: Array<{ rule: string; severity: string; message: string }> = [];
+    let hasWarn = false;
+    let hasFail = false;
+
+    for (const rule of results.rules) {
+      // 跳过作用域外的规则
+      if (!scopeRuleNumbers.has(rule.number)) continue;
+      // 跳过 PASS / SKIPPED
+      if (rule.status === 'PASS' || rule.status === 'SKIPPED') continue;
+
+      for (const detail of rule.details) {
+        violations.push({
+          rule: rule.name,
+          severity: rule.status,
+          message: detail,
+        });
+      }
+      if (rule.status === 'WARN') hasWarn = true;
+      if (rule.status === 'FAIL') hasFail = true;
+    }
+
+    const status: 'PASS' | 'WARN' | 'FAIL' = hasFail ? 'FAIL' : hasWarn ? 'WARN' : 'PASS';
+
+    // 首行必须带 [sofagent] 前缀（v1.1.2 三层签名铁律）
+    const lines: string[] = [];
+    lines.push(`[sofagent] audit_file: ${path} (${changeType})`);
+    lines.push(`判定: ${status}`);
+    if (violations.length > 0) {
+      lines.push('');
+      for (const v of violations) {
+        lines.push(`${v.severity} ${v.rule}: ${v.message}`);
+      }
+    } else {
+      lines.push('[sofagent] ✅ 单文件审计通过');
+    }
+
+    this.sendToolResult(id, {
+      type: 'text',
+      text: lines.join('\n'),
+      data: {
+        status,
+        violations,
+        auditEngine: `sofagent-audit v${SERVER_VERSION}`,
+        scope: Array.from(scopeRuleNumbers).sort((a, b) => a - b).map((n) => `A${n}`),
+      },
+    });
+  }
+
+  /**
    * Tool: sofagent_compose (v1.1.0)
    * 调用 sofagent-orchestrator compose 逻辑，返回 YAML 编排方案
    */
-  private async toolCompose(id: number | string | null, args: Record<string, unknown>): Promise<void> {
-    if (typeof args.task !== 'string' || !args.task) {
+  private async toolCompose(id: number | string | null, args: Record<string, unknown>): Promise<void> {    if (typeof args.task !== 'string' || !args.task) {
       this.sendError(id, -32602, 'Missing or invalid required argument: task');
       return;
     }
@@ -528,10 +747,285 @@ class McpServer {
   }
 
   // ============================================================
+  // v1.1.5 新增：knowledge tools（7 个）+ list_capabilities
+  // ============================================================
+
+  /** knowledge 库根目录（.sofagent/knowledge） */
+  private getKnowledgeDir(): string {
+    return join(getSofagentDataDir(), 'knowledge');
+  }
+
+  /** Tool: search_knowledge(query) — 跨 entities/concepts 模糊搜索 */
+  private toolSearchKnowledge(id: number | string | null, args: Record<string, unknown>): void {
+    const query = (args.query as string || '').toLowerCase();
+    if (!query) {
+      this.sendError(id, -32602, 'Missing required argument: query');
+      return;
+    }
+    const kbDir = this.getKnowledgeDir();
+    const matches: Array<{ path: string; kind: string; firstLine: string }> = [];
+    if (existsSync(kbDir)) {
+      for (const kind of ['entities', 'concepts', 'comparisons', 'summaries'] as const) {
+        const subDir = join(kbDir, kind);
+        if (!existsSync(subDir)) continue;
+        let files: string[] = [];
+        try {
+          files = readdirSync(subDir).filter((f) => f.endsWith('.md'));
+        } catch {
+          continue;
+        }
+        for (const f of files) {
+          const fullPath = join(subDir, f);
+          let content = '';
+          try {
+            content = readFileSync(fullPath, 'utf-8');
+          } catch {
+            continue;
+          }
+          const name = f.replace(/\.md$/, '');
+          if (name.toLowerCase().includes(query) || content.toLowerCase().includes(query)) {
+            const firstLine = content.split('\n').find((l) => l.trim() && !l.startsWith('---')) || '';
+            matches.push({ path: `${kind}/${f}`, kind, firstLine: firstLine.slice(0, 100) });
+          }
+        }
+      }
+    }
+    const text = matches.length
+      ? `[sofagent] 找到 ${matches.length} 个匹配:\n` + matches.map((m) => `- ${m.path}: ${m.firstLine}`).join('\n')
+      : `[sofagent] 未找到匹配 "${query}" 的知识页`;
+    this.sendToolResult(id, {
+      type: 'text',
+      text,
+      data: { query, count: matches.length, matches },
+    });
+  }
+
+  /** Tool: read_entity(name) — 读单个 entity 页 */
+  private toolReadEntity(id: number | string | null, args: Record<string, unknown>): void {
+    const name = args.name as string | undefined;
+    if (!name) {
+      this.sendError(id, -32602, 'Missing required argument: name');
+      return;
+    }
+    // 防路径穿越
+    if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+      this.sendError(id, -32602, 'Invalid name: must not contain path separators');
+      return;
+    }
+    const file = join(this.getKnowledgeDir(), 'entities', `${name}.md`);
+    if (!existsSync(file)) {
+      this.sendToolResult(id, {
+        type: 'text',
+        text: `[sofagent] entity "${name}" 不存在`,
+        data: { found: false, name },
+      });
+      return;
+    }
+    const content = readFileSync(file, 'utf-8');
+    this.sendToolResult(id, {
+      type: 'text',
+      text: `[sofagent] entity: ${name}\n\n${content}`,
+      data: { found: true, name, content },
+    });
+  }
+
+  /** Tool: read_concept(name) — 读单个 concept 页 */
+  private toolReadConcept(id: number | string | null, args: Record<string, unknown>): void {
+    const name = args.name as string | undefined;
+    if (!name) {
+      this.sendError(id, -32602, 'Missing required argument: name');
+      return;
+    }
+    if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+      this.sendError(id, -32602, 'Invalid name: must not contain path separators');
+      return;
+    }
+    const file = join(this.getKnowledgeDir(), 'concepts', `${name}.md`);
+    if (!existsSync(file)) {
+      this.sendToolResult(id, {
+        type: 'text',
+        text: `[sofagent] concept "${name}" 不存在`,
+        data: { found: false, name },
+      });
+      return;
+    }
+    const content = readFileSync(file, 'utf-8');
+    this.sendToolResult(id, {
+      type: 'text',
+      text: `[sofagent] concept: ${name}\n\n${content}`,
+      data: { found: true, name, content },
+    });
+  }
+
+  /** Tool: list_entities(domain?) — 列出所有 entity */
+  private toolListEntities(id: number | string | null, args: Record<string, unknown>): void {
+    const domain = args.domain as string | undefined;
+    const dir = join(this.getKnowledgeDir(), 'entities');
+    if (!existsSync(dir)) {
+      this.sendToolResult(id, {
+        type: 'text',
+        text: '[sofagent] knowledge/entities 目录不存在',
+        data: { entities: [], count: 0 },
+      });
+      return;
+    }
+    let files: string[] = [];
+    try {
+      files = readdirSync(dir).filter((f) => f.endsWith('.md'));
+    } catch {
+      files = [];
+    }
+    let entities = files.map((f) => f.replace(/\.md$/, ''));
+    // domain 过滤：读文件检查 frontmatter 的 domain 字段
+    if (domain) {
+      entities = entities.filter((name) => {
+        try {
+          const content = readFileSync(join(dir, `${name}.md`), 'utf-8');
+          return content.includes(`domain: ${domain}`) || content.includes(`domain:${domain}`);
+        } catch {
+          return false;
+        }
+      });
+    }
+    this.sendToolResult(id, {
+      type: 'text',
+      text: `[sofagent] entities${domain ? ` (domain: ${domain})` : ''} 共 ${entities.length} 个:\n` + entities.map((e) => `- ${e}`).join('\n'),
+      data: { entities, count: entities.length, domain },
+    });
+  }
+
+  /** Tool: read_lessons — 读 knowledge/lessons-missteps.md */
+  private toolReadLessons(id: number | string | null): void {
+    const file = join(this.getKnowledgeDir(), 'lessons-missteps.md');
+    if (!existsSync(file)) {
+      this.sendToolResult(id, {
+        type: 'text',
+        text: '[sofagent] lessons-missteps.md 不存在',
+        data: { found: false },
+      });
+      return;
+    }
+    const content = readFileSync(file, 'utf-8');
+    this.sendToolResult(id, {
+      type: 'text',
+      text: `[sofagent] lessons-missteps:\n\n${content}`,
+      data: { found: true, content },
+    });
+  }
+
+  /** Tool: read_think_md — 读 think.md 完整内容（首行必须 [sofagent] 前缀） */
+  private toolReadThinkMd(id: number | string | null): void {
+    const thinkPath = getThinkPath(getSofagentDataDir());
+    if (!existsSync(thinkPath)) {
+      this.sendToolResult(id, {
+        type: 'text',
+        text: '[sofagent] think.md 不存在',
+        data: { found: false },
+      });
+      return;
+    }
+    const content = readFileSync(thinkPath, 'utf-8');
+    // v1.1.3 盲区 6 教训：返回值首行必须带 [sofagent] 前缀（三层签名铁律）
+    this.sendToolResult(id, {
+      type: 'text',
+      text: `[sofagent] think.md:\n\n${content}`,
+      data: { found: true, content },
+    });
+  }
+
+  /** Tool: stats — knowledge 库统计 */
+  private toolStats(id: number | string | null): void {
+    const kbDir = this.getKnowledgeDir();
+    const count = (sub: string): number => {
+      const dir = join(kbDir, sub);
+      if (!existsSync(dir)) return 0;
+      try {
+        return readdirSync(dir).filter((f) => f.endsWith('.md')).length;
+      } catch {
+        return 0;
+      }
+    };
+    const lastUpdate = (): string | null => {
+      if (!existsSync(kbDir)) return null;
+      let latest = 0;
+      for (const sub of ['entities', 'concepts', 'comparisons', 'summaries']) {
+        const dir = join(kbDir, sub);
+        if (!existsSync(dir)) continue;
+        try {
+          for (const f of readdirSync(dir)) {
+            try {
+              const mtime = statSync(join(dir, f)).mtimeMs;
+              if (mtime > latest) latest = mtime;
+            } catch {
+              /* skip */
+            }
+          }
+        } catch {
+          /* skip */
+        }
+      }
+      return latest > 0 ? new Date(latest).toISOString() : null;
+    };
+    const stats = {
+      entities: count('entities'),
+      concepts: count('concepts'),
+      comparisons: count('comparisons'),
+      summaries: count('summaries'),
+      lastUpdate: lastUpdate(),
+    };
+    this.sendToolResult(id, {
+      type: 'text',
+      text: `[sofagent] knowledge 统计: entities=${stats.entities} concepts=${stats.concepts} comparisons=${stats.comparisons} summaries=${stats.summaries} lastUpdate=${stats.lastUpdate || 'N/A'}`,
+      data: stats,
+    });
+  }
+
+  /** Tool: list_capabilities — 完整能力清单（Agent 首次连接用） */
+  private toolListCapabilities(id: number | string | null): void {
+    const capabilities = {
+      tools: [
+        { name: 'run_audit', description: '对 git diff 跑全量审计规则（21 条）' },
+        { name: 'get_think', description: '读取 think.md 最近 N 条反思条目' },
+        { name: 'write_think', description: '向 think.md 追加反思记录' },
+        { name: 'sofagent_compose', description: '编排引擎——产出 Sub Agent 编排方案 YAML' },
+        { name: 'audit_file', description: '单文件变更即时审计（A3/A7/A11/A18 + 可选 A14）' },
+        { name: 'search_knowledge', description: '跨 entities/concepts 模糊搜索' },
+        { name: 'read_entity', description: '读单个 entity 页' },
+        { name: 'read_concept', description: '读单个 concept 页' },
+        { name: 'list_entities', description: '列出所有 entity（可选 domain 过滤）' },
+        { name: 'read_lessons', description: '读 lessons-missteps.md' },
+        { name: 'read_think_md', description: '读 think.md 完整内容（含 [sofagent] 前缀）' },
+        { name: 'stats', description: 'knowledge 库统计' },
+        { name: 'list_capabilities', description: '返回本能力清单' },
+      ],
+      resources: [
+        { uri: 'think://latest', description: 'think.md 最后一条条目' },
+        { uri: 'logs://today', description: '今日任务日志' },
+        { uri: 'audit://last-report', description: '最近一次审计报告' },
+        { uri: 'orchestrator://latest-comparison', description: '最新 A/B 对比报告' },
+      ],
+      auditEngine: `sofagent-audit v${SERVER_VERSION}`,
+      rulesCount: 21,
+    };
+    const lines: string[] = ['[sofagent] 能力清单:', ''];
+    lines.push('Tools:');
+    for (const t of capabilities.tools) lines.push(`  - ${t.name}: ${t.description}`);
+    lines.push('');
+    lines.push('Resources:');
+    for (const r of capabilities.resources) lines.push(`  - ${r.uri}: ${r.description}`);
+    lines.push('');
+    lines.push(`Audit engine: ${capabilities.auditEngine} (${capabilities.rulesCount} 条规则)`);
+    this.sendToolResult(id, {
+      type: 'text',
+      text: lines.join('\n'),
+      data: capabilities,
+    });
+  }
+
+  // ============================================================
   // resources/list
   // ============================================================
-  private handleResourcesList(id: number | string | null): void {
-    this.sendResult(id, {
+  private handleResourcesList(id: number | string | null): void {    this.sendResult(id, {
       resources: [
         {
           uri: 'think://latest',
