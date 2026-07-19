@@ -56,7 +56,7 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 
 ---
 
-## 审查维度（24 项 · 编号 1–24）
+## 审查维度（26 项 · 编号 1–26）
 
 > 2026-07-18 治理：从原 35 维度归并同类项而来。2026-07-18 追加维度 16-17（安全约束 + 发布产物验证）。2026-07-19 追加维度 23（独立产品声称一致性）+ 维度 24（验收测试覆盖率与时效性），扩展维度 2/4/6/7/8/9 子项（v1.1.4 审查发现）。
 
@@ -705,6 +705,58 @@ grep -n "\-\-json.*2>&1\|2>&1.*\-\-json" tools/acceptance-test.sh
 # 同理扫描 --format json
 grep -n "format json.*2>&1\|2>&1.*format json" tools/acceptance-test.sh
 # 期望：零命中
+```
+
+---
+
+#### 25. conflict-check 巡检器只读铁律 + schedule 正确性（v1.1.6 新增）
+
+```bash
+# 子项 a: fail-closed 只读——源码零写操作（排除注释）
+grep -n "writeFile\|writeFileSync\|unlink\|rmSync" \
+  sofagent/daemon/src/inspectors/conflict-check.ts | grep -v "^.*\/\/"
+# 期望：零命中（只在注释中提及"绝不调用"属合规，>0 = P0）
+
+# 子项 b: schedule = @weekly（非 @daily）
+grep -A1 "'conflict-check'" sofagent/daemon/src/inspectors/index.ts | grep -c "@weekly"
+# 期望：≥1
+
+# 子项 c: runInspectors 调用链包含 conflict-check
+grep -c "checkConflict\|conflict-check" sofagent/daemon/src/inspectors/index.ts
+# 期望：≥3（DEFAULT_INSPECTOR_CONFIG + runInspectors + export）
+
+# 子项 d: 空 knowledge 目录优雅降级（真实环境跑一次）
+node -e "
+const {checkConflict} = require('./sofagent/daemon/dist/inspectors/conflict-check.js');
+const r = checkConflict(process.cwd());
+if (r.triggered) throw new Error('Expected triggered:false but got true');
+if (r.severity !== 'info') throw new Error('Expected info');
+console.log('OK');
+"
+# 期望：OK
+```
+
+#### 26. llm-wiki-mapping.md 存在 + 内容完整性（v1.1.6 新增）
+
+```bash
+# 子项 a: 文档存在
+[ -f docs/llm-wiki-mapping.md ] && echo "EXISTS" || echo "MISSING"
+
+# 子项 b: 三层映射齐全
+grep -c "Ledger\|Views\|Policy" docs/llm-wiki-mapping.md
+# 期望：≥3
+
+# 子项 c: 数据流图存在（mermaid）
+grep -c "mermaid\|flowchart" docs/llm-wiki-mapping.md
+# 期望：≥1
+
+# 子项 d: ROADMAP v1.1.6 行链接到文档
+grep -c "llm-wiki-mapping.md" ROADMAP.md
+# 期望：≥1
+
+# 子项 e: 文档不重新定义三层（引用 PHILOSOPHY §五 为权威源）
+grep -c "唯一权威\|不重新定义\|PHILOSOPHY.md.*§五" docs/llm-wiki-mapping.md
+# 期望：≥1
 ```
 
 ---

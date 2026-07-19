@@ -23,9 +23,9 @@ workflow:
   name: "示例：新增一条审计规则"
   nodes:
     - id: T1
-      task: "在 rules/ 下新建 rule-a20.ts，定义 checkRuleA20"
+      task: "在 rules/ 下新建 rule-a22.ts，定义 checkRuleA22"
     - id: T2
-      task: "在 rules/index.ts 中注册 A20"
+      task: "在 rules/index.ts 中注册 A22"
       depends_on: [T1]
     - id: T3
       task: "在 runner.ts 中调整优先级"
