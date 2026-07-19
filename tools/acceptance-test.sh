@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.1.4 · 56 个端到端场景，覆盖完整用户旅程 + 全规则覆盖（含 A18/A19）+ 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成 + v1.1.4: LOOP 工具注入(maxTurns/ENGINEER_TOOLS/checkDangerousCommand) + warn-accumulator 连续性 + USB federation + LOOP 独立产品
+# v1.1.5 · 62 个端到端场景，覆盖完整用户旅程 + 全规则覆盖（含 A18/A19）+ 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成 + v1.1.4: LOOP 工具注入(maxTurns/ENGINEER_TOOLS/checkDangerousCommand) + warn-accumulator 连续性 + USB federation + LOOP 独立产品 + v1.1.5: sofagent-releaser Skill + MCP audit_file pipe + list_capabilities 能力清单 + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts --mode 参数
 # ============================================================
 # 用真实 git 仓库走完整用户旅程：
 #   Fresh install → --init → --doctor → 正常 commit → 违规拦截
@@ -1634,6 +1634,401 @@ if $LOOP_PROD_OK; then
   # loop-install.sh 有版本号头部（v1.1.4 教训——曾写 v1.1.5）
   head -5 "$LOOP_DIR/loop-install.sh" | grep -q "v1\.1\.[0-9]" || LOOP_PROD_OK=false
   $LOOP_PROD_OK && pass || fail "LOOP 独立产品目录结构缺失（见上）"
+fi
+
+# ── 场景 57-62: v1.1.5 新增功能（releaser Skill + audit_file + list_capabilities + push-target + USB HMAC + cli --mode）────
+
+# 57: sofagent-releaser Skill 存在性（文件 + frontmatter + install.sh 复制逻辑）
+scenario 57 "sofagent-releaser Skill 存在性（文件+frontmatter+install 复制）"
+
+RELEaser_SKILL="$PROJECT_ROOT/agents/SKILL/sofagent-releaser/SKILL.md"
+RELEASER_OK=true
+
+# 57a: SKILL.md 文件存在
+if [ ! -f "$RELEaser_SKILL" ]; then
+  RELEASER_OK=false
+  fail "sofagent-releaser/SKILL.md 不存在"
+fi
+
+# 57b: 行数 ≤100
+if $RELEASER_OK; then
+  LINE_COUNT=$(wc -l < "$RELEaser_SKILL")
+  if [ "$LINE_COUNT" -gt 100 ]; then
+    RELEASER_OK=false
+    fail "sofagent-releaser/SKILL.md 行数 $LINE_COUNT > 100"
+  fi
+fi
+
+# 57c: frontmatter 含 name/description/emoji/color 四字段
+if $RELEASER_OK; then
+  FRONTMATTER=$(head -10 "$RELEaser_SKILL")
+  for field in "^name:" "^description:" "^emoji:" "^color:"; do
+    if ! echo "$FRONTMATTER" | grep -qE "$field"; then
+      RELEASER_OK=false
+      fail "sofagent-releaser frontmatter 缺字段: $field"
+    fi
+  done
+fi
+
+# 57d: 三处 install.sh 含 releaser 复制逻辑（主 install.sh + FDE + LOOP）
+if $RELEASER_OK; then
+  RELEASER_COPY_OK=true
+  # 主 install.sh 的 file-deploy.sh 引用 releaser
+  if ! grep -q "sofagent-releaser" "$PROJECT_ROOT/sofagent/scripts/lib/file-deploy.sh" 2>/dev/null; then
+    RELEASER_COPY_OK=false
+  fi
+  # FDE install
+  if ! grep -q "sofagent-releaser" "$PROJECT_ROOT/FDE/fde-install.sh" 2>/dev/null; then
+    RELEASER_COPY_OK=false
+  fi
+  # LOOP install
+  if ! grep -q "sofagent-releaser" "$PROJECT_ROOT/LOOP/loop-install.sh" 2>/dev/null; then
+    RELEASER_COPY_OK=false
+  fi
+  if $RELEASER_COPY_OK; then
+    :
+  else
+    RELEASER_OK=false
+    fail "三处 install.sh 中至少一处缺少 sofagent-releaser 复制逻辑"
+  fi
+fi
+
+if $RELEASER_OK; then
+  pass
+fi
+
+# 58: MCP audit_file tool 注册 + 返回结构（[sofagent] 前缀 + auditEngine 字段）
+scenario 58 "MCP audit_file tool 注册 + 返回结构（[sofagent] + auditEngine）"
+
+MCP_DIST_58="$PROJECT_ROOT/sofagent/mcp/dist/mcp-server.js"
+AUDIT_FILE_OK=true
+
+# 58a: tools/list 含 audit_file 描述
+if [ -f "$MCP_DIST_58" ]; then
+  # 通过 MCP 消息调 list_tools → 含 audit_file
+  # 注意：initialize 已设置 initialized=true，无需发 initialized 通知
+  LIST_TOOLS_RESP=$(printf '%s\n' \
+    '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
+    '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+    | node "$MCP_DIST_58" 2>/dev/null || true)
+  if echo "$LIST_TOOLS_RESP" | grep -q "audit_file"; then
+    :
+  else
+    AUDIT_FILE_OK=false
+    fail "MCP tools/list 未含 audit_file"
+  fi
+
+  # 58b: 调 audit_file 跑一次违规（password="123456"）→ 返回含 [sofagent] + auditEngine
+  AUDIT_FILE_RESP=$(printf '%s\n' \
+    '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
+    '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"audit_file","arguments":{"path":"src/leak.ts","change_type":"create","diff":"+const pw = \"123456\";"}}}' \
+    | node "$MCP_DIST_58" 2>/dev/null || true)
+  echo "$AUDIT_FILE_RESP" | head -5
+  if echo "$AUDIT_FILE_RESP" | grep -q '\[sofagent\]'; then
+    :
+  else
+    AUDIT_FILE_OK=false
+    fail "audit_file 返回未含 [sofagent] 前缀"
+  fi
+  if echo "$AUDIT_FILE_RESP" | grep -q "auditEngine"; then
+    :
+  else
+    AUDIT_FILE_OK=false
+    fail "audit_file 返回未含 auditEngine 字段"
+  fi
+else
+  AUDIT_FILE_OK=false
+  fail "mcp/dist/mcp-server.js 未构建"
+fi
+
+if $AUDIT_FILE_OK; then
+  pass
+fi
+
+# 59: list_capabilities tool 注册 + 能力清单完整性（audit_file + 7 knowledge resource）
+scenario 59 "list_capabilities tool 注册 + 能力清单完整性"
+
+CAP_OK=true
+
+if [ -f "$MCP_DIST_58" ]; then
+  # 59a: tools/list 含 list_capabilities
+  LIST_CAP_RESP=$(printf '%s\n' \
+    '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
+    '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_capabilities","arguments":{}}}' \
+    | node "$MCP_DIST_58" 2>/dev/null || true)
+  echo "$LIST_CAP_RESP" | head -3
+
+  # 59b: 返回含 audit_file
+  if echo "$LIST_CAP_RESP" | grep -q "audit_file"; then
+    :
+  else
+    CAP_OK=false
+    fail "list_capabilities 未含 audit_file"
+  fi
+
+  # 59c: 返回含 7 个 knowledge resource（search/read_entity/read_concept/list_entities/read_lessons/read_think_md/stats）
+  for kt in search_knowledge read_entity read_concept list_entities read_lessons read_think_md stats; do
+    if ! echo "$LIST_CAP_RESP" | grep -q "$kt"; then
+      CAP_OK=false
+      fail "list_capabilities 缺 knowledge tool: $kt"
+    fi
+  done
+
+  # 59d: 含 auditEngine
+  if ! echo "$LIST_CAP_RESP" | grep -q "auditEngine"; then
+    CAP_OK=false
+    fail "list_capabilities 未含 auditEngine"
+  fi
+
+  # 59e: 含 rulesCount
+  if ! echo "$LIST_CAP_RESP" | grep -q "rulesCount"; then
+    CAP_OK=false
+    fail "list_capabilities 未含 rulesCount"
+  fi
+else
+  CAP_OK=false
+  fail "mcp/dist/mcp-server.js 未构建"
+fi
+
+if $CAP_OK; then
+  pass
+fi
+
+# 60: push-target 5 种 target 路由 + 失败 warning 不阻断
+scenario 60 "push-target 5 种 target 路由 + 失败 warning 不阻断"
+
+PUSH_TARGET="$PROJECT_ROOT/sofagent/daemon/src/push-target.ts"
+PUSH_OK=true
+
+# 60a: 5 种 target 字符串都出现
+if [ -f "$PUSH_TARGET" ]; then
+  for t in "webhook:dingtalk" "webhook:feishu" "webhook:wecom" "openclaw:im" "daemon:notice"; do
+    if ! grep -q "$t" "$PUSH_TARGET"; then
+      PUSH_OK=false
+      fail "push-target.ts 缺 target: $t"
+    fi
+  done
+else
+  PUSH_OK=false
+  fail "push-target.ts 不存在"
+fi
+
+# 60b: 失败 warning 不阻断——pushToTarget 抛错被 catch，throwOnError 默认 false
+if [ -f "$PUSH_TARGET" ]; then
+  if ! grep -q "throwOnError" "$PUSH_TARGET"; then
+    PUSH_OK=false
+    fail "push-target.ts 缺 throwOnError 参数"
+  fi
+  # catch 块默认不抛
+  if ! grep -qE "catch.*err.*\{" "$PUSH_TARGET"; then
+    PUSH_OK=false
+    fail "push-target.ts 缺 try/catch"
+  fi
+fi
+
+# 60c: 实跑——配置错误 webhook URL 跑 push，不崩溃
+if $PUSH_OK; then
+  PUSH_DIST="$PROJECT_ROOT/sofagent/daemon/dist/push-target.js"
+  if [ -f "$PUSH_DIST" ]; then
+    PUSH_RUN=$(SOFAGENT_WEBHOOK_FEISHU="http://localhost:19999/invalid" node -e "
+    (async () => {
+      try {
+        const { pushToTarget } = require('$PUSH_DIST');
+        const ok = await pushToTarget({ target: 'webhook:feishu', title: 't', message: 'm' });
+        console.log('RETURNED:', ok);
+      } catch (e) {
+        console.log('THREW:', e.message);
+      }
+    })();
+    " 2>&1 || true)
+    echo "$PUSH_RUN" | head -3
+    # 期望：RETURNED false（不抛错）
+    if echo "$PUSH_RUN" | grep -q "RETURNED: false\|RETURNED:false"; then
+      :
+    else
+      # 若无 notify 依赖或 daemon 未初始化，允许 warning 输出但不允许 throw
+      if echo "$PUSH_RUN" | grep -q "THREW:"; then
+        PUSH_OK=false
+        fail "pushToTarget 抛错（期望 catch 后返回 false）"
+      fi
+    fi
+  fi
+fi
+
+if $PUSH_OK; then
+  pass
+fi
+
+# 61: USB federation HMAC（HMAC-SHA256 + timingSafeEqual + 0600 + applyFederation + schema）
+scenario 61 "USB federation HMAC（签名 + timingSafeEqual + 0600 + schema）"
+
+USB_DETECT="$PROJECT_ROOT/sofagent/daemon/src/usb-detect.ts"
+USB_DIST="$PROJECT_ROOT/sofagent/daemon/dist/usb-detect.js"
+USB_HMAC_OK=true
+
+# 61a: 源码必备关键字
+if [ -f "$USB_DETECT" ]; then
+  for kw in "createHmac" "timingSafeEqual" "FederationConfig" "applyFederation" "mode: 0o600" "loadOrCreateSecretKey" "signFederation" "verifySignature"; do
+    if ! grep -q "$kw" "$USB_DETECT"; then
+      USB_HMAC_OK=false
+      fail "usb-detect.ts 缺关键字: $kw"
+    fi
+  done
+else
+  USB_HMAC_OK=false
+  fail "usb-detect.ts 不存在"
+fi
+
+# 61b: 构造 federation.json + .sig → 验签通过；改 sig → 拒绝
+if $USB_HMAC_OK && [ -f "$USB_DIST" ]; then
+  HMAC_RUN=$(node -e "
+    const m = require('$USB_DIST');
+    // 1. 生成密钥
+    const key = m.loadOrCreateSecretKey();
+    // 2. 构造合法 federation.json 内容
+    const cfg = { version: 1, nodes: [{ name: 'test', platform: 'openclaw' }], notes: 'verify test' };
+    const content = JSON.stringify(cfg, null, 2);
+    // 3. 签名
+    const sig = m.signFederation(content, key);
+    // 4. 验签——正确 sig 应通过
+    const okMatch = m.verifySignature(content, sig, key);
+    // 5. 改 sig → 拒绝
+    const tampered = sig.slice(0, -4) + '0000';
+    const okReject = !m.verifySignature(content, tampered, key);
+    // 6. schema 校验
+    const schemaOk = m.validateFederationSchema(cfg);
+    const schemaBad = m.validateFederationSchema({ wrong: true });
+    // 7. applyFederation（空 nodes/policies 应返回 applied=false）
+    const applyResult = m.applyFederation({ version: 1 });
+    console.log(JSON.stringify({ okMatch, okReject, schemaOk, schemaBad: !schemaBad, applied: applyResult.applied }));
+  " 2>&1 || true)
+  echo "$HMAC_RUN" | head -3
+  if echo "$HMAC_RUN" | grep -q '"okMatch":true' && \
+     echo "$HMAC_RUN" | grep -q '"okReject":true' && \
+     echo "$HMAC_RUN" | grep -q '"schemaOk":true' && \
+     echo "$HMAC_RUN" | grep -q '"schemaBad":true'; then
+    :
+  else
+    USB_HMAC_OK=false
+    fail "HMAC 签名/验签/schema 测试失败: $HMAC_RUN"
+  fi
+else
+  if [ ! -f "$USB_DIST" ]; then
+    # 未构建不 fail，只 warn
+    warn "usb-detect dist 未构建，跳过运行时验签"
+  fi
+fi
+
+# 61c: 密钥文件权限 0600（生成时）
+if $USB_HMAC_OK && [ -f "$USB_DIST" ]; then
+  # 先备份已有密钥
+  KEY_PATH="$HOME/.sofagent/usb-secret.key"
+  KEY_BAK=""
+  if [ -f "$KEY_PATH" ]; then
+    KEY_BAK=$(mktemp)
+    cp "$KEY_PATH" "$KEY_BAK"
+    rm -f "$KEY_PATH"
+  fi
+  # 触发生成
+  node -e "require('$USB_DIST').loadOrCreateSecretKey();" >/dev/null 2>&1 || true
+  if [ -f "$KEY_PATH" ]; then
+    PERM=$(stat -f "%Lp" "$KEY_PATH" 2>/dev/null || stat -c "%a" "$KEY_PATH" 2>/dev/null || echo "")
+    if [ "$PERM" != "600" ]; then
+      USB_HMAC_OK=false
+      fail "密钥权限 = $PERM（期望 600）"
+    fi
+  fi
+  # 恢复备份
+  if [ -n "$KEY_BAK" ]; then
+    cp "$KEY_BAK" "$KEY_PATH"
+    rm -f "$KEY_BAK"
+  fi
+fi
+
+if $USB_HMAC_OK; then
+  pass
+fi
+
+# 62: cli.ts --mode 参数（解析 deploy|sustain + 默认 deploy + 非法报错 + help 含 --mode）
+scenario 62 "cli.ts --mode 参数（deploy|sustain + 默认 + 非法报错 + help）"
+
+CLI_ARGS="$PROJECT_ROOT/sofagent/orchestrator/src/cli-args.ts"
+CLI_ARGS_DIST="$PROJECT_ROOT/sofagent/orchestrator/dist/cli-args.js"
+ORCH_CLI_62="$PROJECT_ROOT/sofagent/orchestrator/dist/cli.js"
+MODE_OK=true
+
+# 62a: cli-args.ts 存在
+if [ ! -f "$CLI_ARGS" ]; then
+  MODE_OK=false
+  fail "cli-args.ts 不存在"
+fi
+
+# 62b: parseSubagentRunArgs 单元测试全过
+if $MODE_OK; then
+  if [ -f "$CLI_ARGS_DIST" ]; then
+    PARSE_RUN=$(node -e "
+      const { parseSubagentRunArgs } = require('$CLI_ARGS_DIST');
+      const r1 = parseSubagentRunArgs(['fde', '--task', 'x']);
+      const r2 = parseSubagentRunArgs(['fde', '--mode', 'sustain', '--task', 'x']);
+      const r3 = parseSubagentRunArgs(['fde', '--mode', 'deploy', '--task', 'x']);
+      let r4 = null, r5 = null;
+      try { parseSubagentRunArgs(['fde', '--mode', 'bad', '--task', 'x']); } catch (e) { r4 = e.message; }
+      try { parseSubagentRunArgs(['fde']); } catch (e) { r5 = e.message; }
+      console.log(JSON.stringify({
+        defaultDeploy: r1.mode === 'deploy',
+        sustain: r2.mode === 'sustain',
+        deployExplicit: r3.mode === 'deploy',
+        invalidThrows: /--mode/.test(r4 || ''),
+        missingTaskThrows: /--task/.test(r5 || '')
+      }));
+    " 2>&1 || true)
+    echo "$PARSE_RUN" | head -3
+    if echo "$PARSE_RUN" | grep -q '"defaultDeploy":true' && \
+       echo "$PARSE_RUN" | grep -q '"sustain":true' && \
+       echo "$PARSE_RUN" | grep -q '"deployExplicit":true' && \
+       echo "$PARSE_RUN" | grep -q '"invalidThrows":true' && \
+       echo "$PARSE_RUN" | grep -q '"missingTaskThrows":true'; then
+      :
+    else
+      MODE_OK=false
+      fail "parseSubagentRunArgs 行为不符: $PARSE_RUN"
+    fi
+  else
+    warn "cli-args.js 未构建，跳过 dist 验证"
+  fi
+fi
+
+# 62c: orchestrator --help 含 --mode
+if $MODE_OK && [ -f "$ORCH_CLI_62" ]; then
+  HELP_OUT=$(node "$ORCH_CLI_62" --help 2>&1 || true)
+  if echo "$HELP_OUT" | grep -q "\-\-mode"; then
+    :
+  else
+    MODE_OK=false
+    fail "orchestrator --help 未含 --mode"
+  fi
+  # 应同时含 deploy 和 sustain
+  if echo "$HELP_OUT" | grep -q "deploy" && echo "$HELP_OUT" | grep -q "sustain"; then
+    :
+  else
+    MODE_OK=false
+    fail "orchestrator --help 未含 deploy/sustain 关键字"
+  fi
+fi
+
+# 62d: 实跑——缺 --task 报错
+if $MODE_OK && [ -f "$ORCH_CLI_62" ]; then
+  NO_TASK_OUT=$(node "$ORCH_CLI_62" subagent run fde 2>&1 || true)
+  if echo "$NO_TASK_OUT" | grep -q "\-\-task\|任务\|task"; then
+    :
+  else
+    MODE_OK=false
+    fail "subagent run 缺 --task 未报错"
+  fi
+fi
+
+if $MODE_OK; then
+  pass
 fi
 
 # ── 总结 ──────────────────────────────────────────────────────
