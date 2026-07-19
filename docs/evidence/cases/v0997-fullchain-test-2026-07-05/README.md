@@ -7,7 +7,7 @@
 | 测试人 | KongFangXun |
 | 测试日期 | 2026-07-05 |
 | 测试环境 | macOS + OpenClaw 0.7.5 + WorkBuddy（内嵌 OpenClaw 2026.6.8）+ Node v22.22.2 |
-| 测试版本 | v0.99.7（commit 6e06e47，两轮审查修复后） |
+| 测试版本 | v0.99.7（commit 6e06e47，两轮质量加固后） |
 | 测试类型 | 全链路功能验证（8 场景） |
 
 ---
@@ -69,4 +69,4 @@ daemon（场景 6/8）和 webhook（场景 7）受 WorkBuddy sandbox 环境限�
 
 ---
 
-> 本测试在 v0.99.7 两轮独立审查修复（GLM-5.2 + DeepSeek，共 14 项问题）完成后执行。测试环境为 macOS sandbox，daemon/webhook 场景的非 sandbox 验证基于历史日志确认。
+> 本测试在 v0.99.7 两轮独立质量加固（GLM-5.2 + DeepSeek，共 14 项问题）完成后执行。测试环境为 macOS sandbox，daemon/webhook 场景的非 sandbox 验证基于历史日志确认。
