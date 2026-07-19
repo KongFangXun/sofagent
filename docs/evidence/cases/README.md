@@ -5,7 +5,7 @@ sofagent 在真实环境中的使用记录。按时间倒序排列。
 | 日期 | 案例 | 平台 | 摘要 |
 |------|------|------|------|
 | 2026-07-01 | [审计引擎检出率首次实测](./v0992-audit-detection-2026-07-01/README.md) | WorkBuddy（关联企业） | 5/5 全绿 100%：A2 密钥/A3 越界/A4 删配置/A5 commit/E1 缺测试 |
-| 2026-07-01 | [v0.99.2 质量加固 + 六步闭环验证](./v0992-release-test-2026-07-01/README.md) | WorkBuddy + OpenClaw | 18 项审查修复 + 6 TC 全绿（daemon/MCP/审计/AO/macOS） |
+| 2026-07-01 | [v0.99.2 质量加固 + 六步闭环验证](./v0992-release-test-2026-07-01/README.md) | WorkBuddy + OpenClaw | 18 项问题修复 + 6 TC 全绿（daemon/MCP/审计/AO/macOS） |
 | 2026-07-01 | [v0.99 发版前三线并行测试](./v099-release-test-2026-07-01/README.md) | WorkBuddy + OpenClaw | 发版前全量测试（398 tests + ao compose 多智能体审查） |
 | 2026-06-24 | [社区 A/B 测试](./community-ab-test-2026-06-24/README.md) | Community | 社区用户 A/B 对比测试 |
 | 2026-06-22 | [Claude v0.82 测试](./claude-v082-2026-06-22/README.md) | Claude | Claude Agent 纪律层验证 |
