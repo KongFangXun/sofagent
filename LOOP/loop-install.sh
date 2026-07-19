@@ -357,7 +357,8 @@ if [ -f "$LOOP_ENV_FILE" ]; then
       " "$role" 2>&1)
       local node_exit=$?
       # 只取前 3 行，避免 langchain 长 stack trace 刷屏
-      local trimmed=$(echo "$raw_output" | head -3)
+      local trimmed
+      trimmed=$(echo "$raw_output" | head -3)
       echo "${node_exit}|${trimmed}"
     }
 
