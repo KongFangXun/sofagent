@@ -66,7 +66,9 @@ ACTUAL=$(grep -c "^#### " docs/verification/regression-checklist.md)
 ### 步骤 1：环境验证
 ```bash
 cd /Users/kongfangxun/Workbuddy/sofagent
-bash tools/pre-push-check.sh                    # 期望：7/7 全绿
+bash tools/pre-push-check.sh                    # 期望：N/N 全绿（项数随版本演进，以脚本尾部"共 N 项"为准）
+# ⚠️ v1.1.4 教训：不接受"误报"辩解——check-docs.sh 把 releasing.md 的 vX.Y.Z.md 占位符当死链
+# 导致 16/17 不绿。占位符不是真死链，但门禁不绿就是发版诚信问题。见维度 2 子项 c。
 cd sofagent/audit && npm test && cd ../..        # 期望：全部 passed
 node sofagent/core/dist/verify.js 2>&1 | tail -10  # 期望：无 FAIL（verify.js 不支持 --list，直接输出全量结果）
 bash tools/check-docs.sh 2>&1 | tail -3          # 期望：全部通过
@@ -86,9 +88,9 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 
 ---
 
-## 审查维度（17 项 · 编号 1–17）
+## 审查维度（23 项 · 编号 1–23）
 
-> 2026-07-18 治理：从原 35 维度归并同类项而来。2026-07-18 追加维度 16-17（安全约束 + 发布产物验证）。
+> 2026-07-18 治理：从原 35 维度归并同类项而来。2026-07-18 追加维度 16-17（安全约束 + 发布产物验证）。2026-07-19 追加维度 23（独立产品声称一致性），扩展维度 2/4/6/7/8/9 子项（v1.1.4 审查发现）。
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -141,6 +143,12 @@ bash tools/check-docs.sh 2>&1 | grep -i 'dead\|死链'
 
 # 子项 b: 文件/目录迁移四动作——旧路径应 0 命中
 git grep -n "OLD_RELATIVE_PATH" -- '*.md'
+
+# 子项 c: 占位符死链豁免（v1.1.4 暴露——pre-push-check 因 releasing.md 的 vX.Y.Z.md 占位符失败）
+# check-docs.sh 应排除模板占位符路径，否则发版门禁永远不绿
+grep -n "vX\.Y\.Z\|<.*>\.md\|EXAMPLE.*\.md" docs/verification/releasing.md docs/guides/*.md 2>/dev/null | head
+# 人工检查：check-docs.sh 的死链扫描逻辑是否对占位符路径（含大写变量名/<>/{}/X.Y.Z）做豁免
+# 若没有豁免 → 追加到 check-docs.sh 的排除规则，或把模板里的占位符路径改成反引号包裹的纯文本
 ```
 
 #### 3. 文档规范源与归属一致性
@@ -182,6 +190,27 @@ grep "A6.*能力拐杖\|A11.*业务底线" sofagent/audit/README.md | wc -l  # �
 diff <(grep -E "name:|ruleClass:" sofagent/audit/src/rules/index.ts | paste - - | sort) \
      <(grep -oE "A[0-9]+ .*  \|  (业务底线|能力拐杖|工程规范)" sofagent/audit/README.md | sort)
 # 期望：零差异
+
+# 子项 e: evidenceMode 计数对账（v1.1.4 暴露——README:169 声称 17 条 git-diff，实际 16 条）
+ACTUAL_GITDIFF=$(grep -c "evidenceMode: 'git-diff'" sofagent/audit/src/rules/index.ts)
+ACTUAL_HYBRID=$(grep -c "evidenceMode: 'hybrid'" sofagent/audit/src/rules/index.ts)
+ACTUAL_FS=$(grep -c "evidenceMode: 'filesystem'" sofagent/audit/src/rules/index.ts)
+echo "实际: git-diff=$ACTUAL_GITDIFF hybrid=$ACTUAL_HYBRID filesystem=$ACTUAL_FS"
+grep -oE "[0-9]+ 条为纯 git-diff\|[0-9]+ 条纯 git-diff\|[0-9]+ 条需 Agent" README.md sofagent/audit/README.md 2>/dev/null
+# 人工检查：README 声称的 git-diff/hybrid/filesystem 数量与 index.ts 实际计数一致
+
+# 子项 f: audit/README.md 规则表完整性（v1.1.4 教训——A18/A19 新增后规则表漏更新）
+# 规则表应覆盖所有已注册规则，不能漏新增规则
+INDEX_COUNT=$(grep -cE "name:\s*'A[0-9]|name:\s*'E[0-9]" sofagent/audit/src/rules/index.ts)
+README_TABLE_ROWS=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " sofagent/audit/README.md)
+echo "index.ts 注册 $INDEX_COUNT 条 / audit/README 规则表 $README_TABLE_ROWS 行"
+# 期望：两者相等（或 README 表行数 ≥ INDEX_COUNT，多出的属分多行展示）
+# 若 README 表行数 < INDEX_COUNT → 新增规则没写进规则表（A18/A19 当年就这么漏的）
+
+# 子项 g: MCP 工具描述规则数同步（v1.1.4 暴露——MCP run_audit 描述里的规则数要与 index.ts 一致）
+INDEX_COUNT2=$(grep -cE "name:\s*'A[0-9]|name:\s*'E[0-9]" sofagent/audit/src/rules/index.ts)
+grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -oE "[0-9]+ 条规则"
+# 人工检查：MCP 描述里的数字 = index.ts 注册数
 ```
 
 #### 5. 审计 exit code 与输出签名
@@ -217,6 +246,22 @@ grep -rn "version\s*=\s*'[0-9]" sofagent/*/src/*.ts | grep -v __tests__ | grep -
 # 子项 b: SECURITY.md 版本标注 = 当前版本
 SSOT_VER=$(node -e "console.log(require('./package.json').version)")
 grep "当前状态（v${SSOT_VER}" SECURITY.md   # 期望：有匹配
+
+# 子项 c: .sh 脚本版本号扫描（v1.1.4 暴露——LOOP/loop-install.sh:3 写 v1.1.5 但发 v1.1.4）
+# check-version.sh 只扫 .ts/.json/.md，不扫 .sh——install 脚本头部注释的版本号会漂移
+grep -rn "v[0-9]\+\.[0-9]\+\.[0-9]\+" FDE/fde-install.sh LOOP/loop-install.sh sofagent/scripts/install.sh sofagent/scripts/verify.sh 2>/dev/null | grep -v "^.*:#" | head
+# 只看非注释行的版本号（注释里的版本号也查，但要对照 SSOT）
+grep -E "v[0-9]+\.[0-9]+\.[0-9]+" FDE/fde-install.sh LOOP/loop-install.sh | while read line; do
+  echo "$line" | grep -q "v${SSOT_VER}" || echo "⚠️ 版本号非 SSOT: $line"
+done
+# 期望：所有 .sh 里的版本号 = SSOT_VER
+
+# 子项 d: README 正文版本引用一致（v1.1.4 教训——正文残留旧版本号）
+grep -oE "v1\.[0-9]+\.[0-9]+" README.md | sort | uniq -c
+# 期望：只有一个版本号（= SSOT_VER），或多个但都在"历史变更说明"语境下
+# 特别检查"当前版本（vX.Y.Z）"类声称：
+grep -E "当前版本.*v[0-9]+\.[0-9]+\.[0-9]+\|当前版本（v[0-9]+\.[0-9]+\.[0-9]+）" README.md
+# 期望：括号内版本号 = SSOT_VER
 ```
 
 ---
@@ -246,6 +291,16 @@ grep -c "PASS" sofagent/audit/src/webhook.ts  # 应 > 0
 # 子项 e: MCP capabilities 准确性
 grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "21 条规则"  # 应 ≥ 1
 grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "A1-A14"      # 应 = 0
+
+# 子项 f: CLI stdout 签名一致性（v1.1.4 暴露——所有面向用户的判定行必须带 sofagent 身份）
+# 感知层废墟高发区：用户跑了 sofagent 但输出里看不到 sofagent 名字 = 废墟功能
+node sofagent/audit/dist/index.js --version 2>&1 | grep -q "sofagent" && echo "✅ --version 签名存在"
+# 核心判定输出框（╔══╗ 那个）必须含 "sofagent-audit · vX.Y.Z"
+grep -c "sofagent-audit.*v\|sofagent-audit ·" sofagent/audit/src/index.ts  # 期望：≥ 1
+# 最终判定行（"判定: ✅/⚠️/❌ ..."）所在文件应同时输出"审计引擎: sofagent-audit vX.Y.Z"
+grep -c "审计引擎.*sofagent-audit\|审计引擎:.*sofagent" sofagent/audit/src/index.ts  # 期望：≥ 1
+# --doctor / --init / --timeline 的输出开头也要带 sofagent（不是裸的"检查完成"）
+# 人工跑一次 --doctor 和 --init，确认输出能让人知道"这是 sofagent 在跑"
 ```
 
 ---
@@ -262,6 +317,14 @@ grep -n 'grep.*|.*head\|grep.*|.*wc' tools/acceptance-test.sh | grep -v '|| true
 
 # 子项 b: 场景间清理
 grep -c "git rm --cached -f .env" tools/acceptance-test.sh  # 期望：≥ 2
+
+# 子项 c: --init 烟测期望值与实际 defaultRules 对齐（v1.1.4 教训——A19 加入后 --init 的"期望 12 项"类硬编码值易漂移）
+# acceptance-test 里若写了 "期望 12 项检查" 之类，要和 index.ts 的 defaultRules.length 对齐
+DEFAULT_COUNT=$(grep -cE "name:\s*'A[0-9]" sofagent/audit/src/rules/index.ts | head -1)
+# 注：defaultRules 在 index.ts 前段，实际计法见维度 4
+grep -nE "期望.*[0-9]+\s*项\|期望.*[0-9]+\s*条\|expected.*[0-9]+" tools/acceptance-test.sh | head
+# 人工检查：acceptance-test 里所有"期望 N 项/条"的硬编码 N，是否与当前 index.ts 注册数一致
+# 新增规则后必须同步更新 acceptance-test 的期望值——否则烟测永远失败或永远假绿
 ```
 
 #### 9. 动态规则禁用逻辑
@@ -271,6 +334,25 @@ grep -c "git rm --cached -f .env" tools/acceptance-test.sh  # 期望：≥ 2
 ```bash
 grep -c "a16\|a17" sofagent/core/src/config-loader.ts   # 期望: ≥ 2
 grep -c "A16\|A17" sofagent/audit/src/rules/index.ts     # 期望: ≥ 2
+
+# v1.1.4 追加：A18/A19 同步检查（v1.0.9 曾漏 A16/A17，v1.1.4 又漏 A18/A19——同类问题第三次复发）
+# 每新增一条规则，config-loader.ts 的 knownKeys 集合必须同步更新
+grep -c "a18\|a19" sofagent/core/src/config-loader.ts   # 期望: ≥ 2
+grep -c "A18\|A19" sofagent/audit/src/rules/index.ts     # 期望: ≥ 2
+
+# 实测验证：在 config.yml 禁用 a18，跑审计确认不误报"未知规则名"
+# cd /tmp && mkdir -p test-knownkeys && cd test-knownkeys && git init -q
+# printf 'extendedRulesEnabled: true\nrules:\n  a18: false\n' > .sofagent/config.yml
+# node $REPO/sofagent/audit/dist/index.js --diff HEAD~1..HEAD 2>&1 | grep -i "未知"
+# 期望：无"未知规则名 a18"告警
+
+# 通用化检查（防同类问题第四次复发）：
+# config-loader knownKeys 集合应 = index.ts 注册的所有规则号
+INDEX_RULES=$(grep -oE "name:\s*'A[0-9]+" sofagent/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tr '\n' ',')
+KNOWN_KEYS=$(grep -A20 "knownKeys = new Set" sofagent/core/src/config-loader.ts | grep -oE "'a[0-9]+'" | tr -d "'a" | sort -n | tr '\n' ',')
+echo "index.ts 注册: $INDEX_RULES"
+echo "knownKeys 集合: $KNOWN_KEYS"
+# 期望：两集合相等（knownKeys 应覆盖所有已注册规则号，可多于但不能少于）
 ```
 
 #### 10. tag commit message 规范
@@ -515,6 +597,46 @@ launchctl list | grep sofagent | awk '{print $2}'
 
 ---
 
+### 独立产品声称一致性（v1.1.4 追加）
+
+#### 23. FDE/LOOP 跨产品声称一致性
+
+> v1.1.4 暴露：FDE/LOOP 声称"独立产品"，但文档里步数、Agent 数、CLI 子命令、版本号、跨产品 install 契约存在多处矛盾。grep 无同类，新增维度。
+
+```bash
+# 子项 a: FDE 步数跨文档一致（v1.1.4 已修复，固化防回退）
+# 三处声称：FDE/SKILL.md（阶段+步数）/ FDE/README.md（12 步）/ FDE/FDE.md（4 阶段 12 步）
+grep -oE "[0-9]+ 个阶段|[0-9]+ 个关键步骤|[0-9]+ 步" FDE/SKILL.md FDE/README.md FDE/FDE.md 2>/dev/null | sort | uniq -c
+# 期望：步数声称一致（目前 = 4 阶段 12 步）
+
+# 子项 b: LOOP Agent 数跨文档一致（v1.1.4 暴露——quick-start 说 3、README 列 2、实际装 4）
+ACTUAL_AGENTS=$(ls agents/SKILL/sofagent-* -d 2>/dev/null | wc -l)
+echo "实际安装 Agent 数: $ACTUAL_AGENTS"
+grep -oE "[0-9]+ 个内置 Agent\|[0-9]+ 个 Agent" LOOP/SKILL.md LOOP/README.md LOOP/quick-start.md 2>/dev/null
+# 人工检查：文档声称的数字与实际安装数一致。LOOP 核心流程用 engineer+audit+reviewer，
+# 但 agents/SKILL/ 下还装了 sofagent-fde——文档要说清"3 个 LOOP 核心 + 1 个 FDE 共用"
+
+# 子项 c: 跨产品 install.sh 契约稳定性（v1.1.4 暴露——FDE/LOOP 调主 install.sh 无契约文档）
+grep -n "sofagent/scripts/install.sh\|PROJECT_ROOT.*install.sh" FDE/fde-install.sh LOOP/loop-install.sh
+# 人工检查：这个跨产品调用接口（路径/参数/退出码/依赖文件位置）有没有契约文档？
+# 主 install.sh 改了 --platform 参数命名或输出路径，会不会悄悄打断 FDE/LOOP？
+# 建议有 pin commit 或契约文档。若都没有，至少在 install.sh 头部注释标注"被 FDE/LOOP 依赖"
+
+# 子项 d: 独立 install 闭环（v1.1.4 暴露——只 clone FDE/ 子目录能否跑通 fde-install.sh）
+# FDE/fde-install.sh:52 调 $PROJECT_ROOT/sofagent/scripts/install.sh
+# LOOP/loop-install.sh:54 调 $PROJECT_ROOT/sofagent/scripts/install.sh
+# 如果用户只 clone 了 FDE/ 或 LOOP/ 子目录，绝对跑不通——"独立产品"声称打折
+# 人工验证：在仅含 FDE/ 的环境跑 bash fde-install.sh，记录失败点
+# 文档应诚实标注"需要完整 clone 仓库"或提供独立安装包
+
+# 子项 e: install 脚本版本号 = SSOT（v1.1.4 暴露——loop-install.sh:3 写 v1.1.5 但发 v1.1.4）
+SSOT_VER=$(node -e "console.log(require('./package.json').version)")
+grep -H "v[0-9]\+\.[0-9]\+\.[0-9]\+" FDE/fde-install.sh LOOP/loop-install.sh | head -4
+# 期望：所有 .sh 头部版本号 = SSOT_VER
+```
+
+---
+
 > **审查者**：请严格验证每一项声称，全维度逐项核对。
 
 ---
@@ -526,7 +648,7 @@ launchctl list | grep sofagent | awk '{print $2}'
 
 ## 总览
 - 审查日期：YYYY-MM-DD
-- 审查范围：22 维度 + 跨版本核心维度
+- 审查范围：23 维度 + 跨版本核心维度
 - 环境验证：pre-push-check [✅/❌] / npm test [✅/❌] / check-docs [✅/❌] / check-version [✅/❌]
 - Fresh clone：[✅/❌]
 - 整体结论：[已发布无遗留 / 需修复后补发 / 阻塞]

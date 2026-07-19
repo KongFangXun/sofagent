@@ -107,7 +107,7 @@ echo -e "  ${BOLD}下一步：${NC}"
 if [ "$PLATFORM" = "openclaw" ]; then
   echo -e "  1. 打开你的 Agent——它会检测到 FDE 场景，自动加载工作台"
   echo -e "  2. 告诉 Agent 企业基本信息（名称/行业/规模），开始 §1 确定场景"
-  echo -e "  3. 走完 11 步后，找台闲置设备装上 sofagent 底座给客户"
+  echo -e "  3. 走完 12 步后，找台闲置设备装上 sofagent 底座给客户"
 else
   echo -e "  1. 在你的 Agent 中输入 ${BOLD}@sofagent-fde${NC} 开始部署"
   echo -e "  2. Agent 读完后按 FDE 流程引导你梳理工作流"

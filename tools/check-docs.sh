@@ -46,6 +46,8 @@ while IFS= read -r -d '' mdfile; do
       [ -z "$path_part" ] && continue
       case "$path_part" in
         *'://'*) continue ;;               # 非 http 的其他协议
+        # v1.1.5 起豁免：SOP 文档里的模板占位符 vX.Y / vX.Y.Z 不是真实链接
+        *'/vX.Y'*|*'vX.Y.Z'*|*'vX.Y.md'*) continue ;;
         /*) resolved=".${path_part}" ;;    # 仓库根绝对路径（去前导 /）
         *)  resolved="$(dirname "$mdfile")/$path_part" ;;
       esac
