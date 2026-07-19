@@ -33,12 +33,12 @@ else
   exit 1
 fi
 
-# 3. 检测是否首次提交——无 HEAD 时用 --cached 模式扫描 staged 文件
-if git rev-parse --verify HEAD &>/dev/null; then
-  AUDIT_DIFF_ARG="HEAD"
-else
-  AUDIT_DIFF_ARG="--cached"
-fi
+# 3. 审计范围固定为「暂存区（staged）= 即将提交的变更」
+#    无论是否首次提交都用 --cached：
+#    - commit-msg 钩子运行时提交尚未生成，staged 即本次提交的真实内容；
+#    - 若用 HEAD，git diff HEAD 会包含工作区未暂存的无关改动（如未提交的源码残文件），
+#      导致 A3「不改越界」误报不属于本次提交的文件（ghost bug，v1.1.4 修复）。
+AUDIT_DIFF_ARG="--cached"
 
 # 4. 正常运行审计
 # commit-msg hook 可读取 commit message，传 --task 使 A3 越界检查生效
