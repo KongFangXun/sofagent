@@ -4,7 +4,7 @@
 >
 > 最后复核：2026-07-13
 >
-> **每次发版前，在全新 session 中粘贴本文件执行。** 覆盖审计管道全规则 + hook 机制 + SkillOpt 自净化 + DeepAgents Sub Agent + 内置 Agent 验证（FDE + Audit）+ optional 依赖降级 + v1.1.3 新增：deprecation shim 安全 + Harness 签名 + LOOP 双 Agent + v1.0.1-v1.1.0：A14/A15 + 约束自加载 + 文件系统审计 + 权限作用域化 + 经验共享 + Work模板市场。
+> **每次发版前，在全新 session 中粘贴本文件执行。** 覆盖审计管道全规则（含 A18/A19）+ hook 机制 + SkillOpt 自净化 + DeepAgents Sub Agent + 内置 Agent 验证（FDE + Audit）+ optional 依赖降级 + v1.1.3：deprecation shim 安全 + Harness 签名 + LOOP 双 Agent + v1.0.1-v1.1.0：A14/A15 + 约束自加载 + 文件系统审计 + 权限作用域化 + 经验共享 + Work模板市场 + **v1.1.4：LOOP 工具注入（maxTurns/ENGINEER_TOOLS/checkDangerousCommand）+ warn-accumulator 连续性 + USB federation + LOOP 独立产品**。
 >
 > 与 `acceptance-test.sh`（CLI 自动化）互补——本文件是 Agent 驱动的端到端验收，包含更多场景类型。
 >
@@ -19,8 +19,8 @@
 | 层级 | 工具 | 覆盖范围 |
 |------|------|---------|
 | 函数级 | 单元测试（vitest） | CI 自动，每次 push |
-| CLI 端到端 | `acceptance-test.sh`（47 场景） | 手动，发版前 |
-| **Agent 端到端** | **本文件**（全场景） | **手动，发版前** |
+| CLI 端到端 | `acceptance-test.sh`（56 场景） | 手动，发版前 |
+| **Agent 端到端** | **本文件**（57 场景） | **手动，发版前** |
 | 文档级 | 回归检查清单（维度总数随版本增长，见 regression-checklist.md 头部当前值） | 手动，发版前 |
 | 发布后审查 | fresh-eyes-review.md | 手动，发布后 |
 
@@ -1077,6 +1077,148 @@ ls $SOFAGENT_DIR/work模板市场/templates/ 2>/dev/null | wc -l
 
 ---
 
+## 第十二部分：v1.1.4 新增功能（LOOP 工具注入 + USB + A18 + LOOP 独立产品）
+
+> v1.1.4 暴露严重缺口：发版时 `tools/acceptance-test.sh` 和本文件都对 v1.1.4 新增功能**零覆盖**。本部分补齐 6 个核心场景。
+
+### 场景 52：A18 垃圾文件检测（extendedRules，单字母 + tmp 前缀）
+
+```bash
+# 创建临时测试仓库 + 开启 extended rules
+A18_DIR=$(mktemp -d /tmp/sofagent-a18-XXXX)
+cd "$A18_DIR"
+git init -q && git config user.email "t@t.com" && git config user.name "T"
+$AUDIT_CLI --init > /dev/null 2>&1
+mkdir -p .sofagent
+cat > .sofagent/config.yml << 'CFG'
+audit:
+  extendedRulesEnabled: true
+CFG
+
+# 创建垃圾文件——单字母 + tmp 前缀
+echo "junk" > a.txt
+echo "junk" > tmp.test.ts
+git add a.txt tmp.test.ts
+A18_OUT=$(git commit -m "add junk files" 2>&1 || true)
+echo "$A18_OUT" | head -5
+# ✅ 期望：A18 WARN（不阻断 commit，但告警 "检测到疑似垃圾文件"）
+echo "$A18_OUT" | grep -q "A18\|垃圾文件" && echo "A18 ✅" || echo "A18 ❌"
+cd "$SOFAGENT_DIR" && rm -rf "$A18_DIR"
+```
+
+### 场景 53：A18 豁免规则（正规测试文件不误报）
+
+```bash
+A18_EXEMPT_DIR=$(mktemp -d /tmp/sofagent-a18-exempt-XXXX)
+cd "$A18_EXEMPT_DIR"
+git init -q && git config user.email "t@t.com" && git config user.name "T"
+$AUDIT_CLI --init > /dev/null 2>&1
+mkdir -p .sofagent
+cat > .sofagent/config.yml << 'CFG'
+audit:
+  extendedRulesEnabled: true
+CFG
+
+# 正规测试文件——不应触发 A18
+mkdir -p src
+echo "test" > src/foo.test.ts
+echo "test" > src/bar.spec.ts
+git add src/
+A18_EXEMPT_OUT=$(git commit -m "add real test files" 2>&1 || true)
+echo "$A18_EXEMPT_OUT" | head -5
+# ✅ 期望：不包含 A18 告警（正规测试文件 *.test.ts / *.spec.ts 豁免）
+echo "$A18_EXEMPT_OUT" | grep -q "A18\|垃圾文件" && echo "A18 豁免 ❌ 误报" || echo "A18 豁免 ✅"
+cd "$SOFAGENT_DIR" && rm -rf "$A18_EXEMPT_DIR"
+```
+
+### 场景 54：LOOP 工具注入（maxTurns=20 + ENGINEER/REVIEWER_TOOLS）
+
+```bash
+# v1.1.4 修复：LOOP Agent 之前零工具路径，v1.1.4 注入 ENGINEER_TOOLS（6 个）+ REVIEWER_TOOLS（3 个只读）+ maxTurns=20
+
+LOOP_NODES="$SOFAGENT_DIR/sofagent/orchestrator/src/loop/nodes.ts"
+LOOP_TOOLS="$SOFAGENT_DIR/sofagent/orchestrator/src/tools.ts"
+
+# 1. maxTurns 常量
+grep -q "DEFAULT_AGENT_MAX_TURNS = 20" "$LOOP_NODES" && echo "maxTurns=20 ✅" || echo "maxTurns ❌"
+
+# 2. ENGINEER_TOOLS + REVIEWER_TOOLS 导入
+grep -q "ENGINEER_TOOLS\|REVIEWER_TOOLS" "$LOOP_NODES" && echo "tools import ✅" || echo "tools import ❌"
+
+# 3. tools: ENGINEER_TOOLS 实际传给 createDeepAgent
+grep -q "tools: ENGINEER_TOOLS" "$LOOP_NODES" && echo "tools 注入 ✅" || echo "tools 注入 ❌"
+
+# 4. maxTurns 传入 createDeepAgent
+grep -q "maxTurns: DEFAULT_AGENT_MAX_TURNS" "$LOOP_NODES" && echo "maxTurns 传入 ✅" || echo "maxTurns 传入 ❌"
+
+# 5. checkDangerousCommand 高危命令黑名单（run_bash 守卫）
+grep -q "checkDangerousCommand" "$LOOP_TOOLS" && echo "dangerous cmd 拦截 ✅" || echo "dangerous cmd 拦截 ❌"
+
+# 6. recordLoopAuditHistory 三态全记录（PASS/WARN/FAIL 都写 history）
+grep -c "recordLoopAuditHistory" "$LOOP_NODES" | xargs -I{} bash -c '[ {} -ge 3 ] && echo "三态记录 ✅ ({})" || echo "三态记录 ❌ ({})"'
+```
+
+### 场景 55：warn-accumulator 连续性语义（遇 PASS/FAIL 中断）
+
+```bash
+# v1.1.4 修复：旧版 warn-accumulator 先过滤 WARN 再判连续——任何 N 条 WARN 都触发。
+# 新版实现真正连续性：遇 PASS/FAIL 即 break 连续中断
+
+WARN_ACC="$SOFAGENT_DIR/sofagent/daemon/src/inspectors/warn-accumulator.ts"
+if [ -f "$WARN_ACC" ]; then
+  # 期望含 break + 连续中断逻辑
+  grep -q "break.*连续中断\|连续中断" "$WARN_ACC" && echo "连续性语义 ✅" || echo "连续性语义 ❌（只数 WARN 不区分清理）"
+else
+  echo "warn-accumulator.ts 不存在 ❌"
+fi
+```
+
+### 场景 56：USB federation 基础检测（SOFAGENT 卷标 + 安全警告）
+
+```bash
+# v1.1.4 新增：USB federation 基础检测——识别带 SOFAGENT 卷标的 U 盘作为 federation 配置载体
+# ⚠️ 当前无签名校验——任何人制作 SOFAGENT 卷标 U 盘即可注入配置（SECURITY.md 已标注，v1.1.5+ 加签名）
+
+USB_DETECT="$SOFAGENT_DIR/sofagent/daemon/src/usb-detect.ts"
+
+# 1. SOFAGENT 卷标常量
+grep -q "SOFAGENT_LABEL" "$USB_DETECT" && echo "SOFAGENT_LABEL ✅" || echo "SOFAGENT_LABEL ❌"
+
+# 2. SECURITY.md 标注无签名校验 + v1.1.5+ 签名计划
+grep -q "无签名校验\|v1.1.5" "$SOFAGENT_DIR/SECURITY.md" && echo "安全警告 ✅" || echo "安全警告 ❌（未在 SECURITY.md 标注风险）"
+```
+
+### 场景 57：LOOP 独立产品（目录结构 + install 契约 + 模板市场 隔离）
+
+```bash
+# v1.1.4 最大架构调整：LOOP 从 sofagent 包内迁出到根目录 LOOP/，成为独立产品
+# 大写目录=独立产品（LOOP/FDE/模板市场），小写=代码文件夹
+
+LOOP_DIR="$SOFAGENT_DIR/LOOP"
+模板市场_DIR="$SOFAGENT_DIR/模板市场"
+
+# 1. LOOP/ 目录核心文件齐全
+for f in README.md SKILL.md LOOP.md quick-start.md loop-install.sh loop-workflow.sh package.json; do
+  [ -f "$LOOP_DIR/$f" ] && echo "LOOP/$f ✅" || echo "LOOP/$f ❌"
+done
+
+# 2. 模板市场/ 目录（社区模板市场，与 LOOP 内部编排隔离）
+for f in README.md CATALOG.md; do
+  [ -f "$模板市场_DIR/$f" ] && echo "模板市场/$f ✅" || echo "模板市场/$f ❌"
+done
+
+# 3. LOOP/package.json 用 sofagent 元数据格式（dependsOn，非标准 npm dependencies）
+grep -q "sofagent-audit" "$LOOP_DIR/package.json" && echo "dependsOn ✅" || echo "dependsOn ❌"
+
+# 4. loop-install.sh 调主 install.sh（跨产品契约，v1.1.5 已加契约文档）
+grep -q "scripts/install.sh" "$LOOP_DIR/loop-install.sh" && echo "跨产品契约 ✅" || echo "跨产品契约 ❌"
+
+# 5. loop-install.sh 头部版本号（v1.1.4 教训——曾写 v1.1.5）
+head -5 "$LOOP_DIR/loop-install.sh" | grep -q "v1\.1\.[0-9]" && echo "版本号 ✅" || echo "版本号 ❌"
+```
+
+---
+
 ## 验证检查清单
 
 每个场景需确认：
@@ -1147,6 +1289,14 @@ ls $SOFAGENT_DIR/work模板市场/templates/ 2>/dev/null | wc -l
 - [ ] 场景 50：pre-push-check 含依赖图循环检测步骤
 - [ ] 场景 51：SKILL.md Agent 身份感知指令存在
 
+### v1.1.4 新增功能（场景 52-57）
+- [ ] 场景 52：A18 垃圾文件检测（单字母 + tmp 前缀 → WARN，需 extendedRulesEnabled）
+- [ ] 场景 53：A18 豁免规则（正规测试文件 *.test.ts / *.spec.ts 不误报）
+- [ ] 场景 54：LOOP 工具注入（maxTurns=20 + ENGINEER_TOOLS 6 个 + REVIEWER_TOOLS 3 个 + checkDangerousCommand + recordLoopAuditHistory 三态全记录）
+- [ ] 场景 55：warn-accumulator 连续性语义（遇 PASS/FAIL 中断，非简单 N 条 WARN 计数）
+- [ ] 场景 56：USB federation 基础检测（SOFAGENT_LABEL + SECURITY.md 无签名警告）
+- [ ] 场景 57：LOOP 独立产品（LOOP/ 目录 + 模板市场/ 隔离 + loop-install.sh 跨产品契约 + dependsOn 元数据）
+
 ## 清理
 
 ```bash
@@ -1186,4 +1336,8 @@ unset PATH NODE_PATH
 | CLI 命令变更（--timeline/--revert 等） | 第九部分 |
 | daemon / cron 架构变更 | 第九部分（场景 33/34） |
 | EvidenceMode 类型变更 | 第九部分（场景 35） |
+| LOOP 工具注入 / maxTurns / ENGINEER_TOOLS / checkDangerousCommand 变更 | 第十二部分（场景 54） |
+| warn-accumulator / daemon 巡检逻辑变更 | 第十二部分（场景 55） |
+| USB federation / 安全签名变更 | 第十二部分（场景 56） |
+| LOOP 独立产品 / 模板市场 / install 脚本契约变更 | 第十二部分（场景 57） |
 | 发版前 | 仅当审计规则 / hook / SkillOpt / DeepAgents 等**场景逻辑**变更时需同步对应部分；版本号已动态解析，**无需逐处替换** |
