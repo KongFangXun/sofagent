@@ -1,7 +1,7 @@
 # sofagent Architecture
 
 > 设计决策记录——从为什么存在、一底座·四引擎如何协作，到每个关键决策的工程理由。
-> v1.1.6 · 2026-07-15（UTC）· 孔放勋
+> v1.1.6 · 2026-07-19（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -172,7 +172,7 @@ graph LR
 | 工程层 | 约束行为 + 变更审计 + 责任归属 | 事后护栏——每次变更都可追溯 |
 | 叙事层 | Agent 责任确权底座 | **轻量级 KYA（Know Your Agent）**——Agent 的每一次行动都有加密签名凭证 + 不可伪造的硬证据链 |
 
-在 agent-wrapping-agent 多层嵌套的架构趋势下（a16z 2026 研判），审计引擎不仅是「事后护栏」——它是 Agent 嵌套体系中的**一等架构评估层**：外层 Agent 在运行时评估子 Agent 的方法论质量，层层筛选合成高价值结论。审计引擎是这个评估层的基础设施。
+在 agent-wrapping-agent 多层嵌套的架构趋势下（a16z 2026 研判），审计引擎不仅是「事后护栏」——它是 Agent 嵌套体系中的**一等架构评估层**：外层 Agent 在运行期评估子 Agent 的方法论质量（评估层定位，非运行时实时拦截；实时拦截治理仅限 v1.3.0 自派 SubAgent 沙箱），层层筛选合成高价值结论。审计引擎是这个评估层的基础设施。
 
 > a16z 研判：智能体经济瓶颈从「智力」转向「身份」——非人类身份:人类 = 96:1，急需 KYA。审计引擎 + 约束底座 = 企业内部轻量版 KYA。v1.2.x 评估引入签名凭证做 Agent 行动的可审计绑定（身份层，**对所有 Agent 适用**）；凭证虚拟 key 中介（host 边界注入真凭证）在 v1.3.0 **仅限自派 SubAgent 沙箱**。
 
@@ -374,4 +374,15 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 - **v1.2.x**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界
 - **v2.x**：组织级共享记忆 + 协同层
 
-> **范围声明**：sofagent 是 Harness 中间件——覆盖行为约束 + 变更审计 + 经验沉淀 + 持续优化。不覆盖**主 Agent 平台**本身（IM 渠道 / 主 Agent 的沙箱 / 工具调用——OpenClaw/DeepAgents 的事），也不覆盖运维层（监控/告警/重启/日志轮转）。**例外**：v1.3.0 起 sofagent 托管**自派 SubAgent** 的隔离运行时（文件系统隔离 + 网络出站白名单 + 工具调用中介 + 虚拟 key 边界注入），因 sofagent 既起环境又发凭证、天然拥有执行边界。**运行时治理仅限自派 SubAgent，主 Agent 永远事后审计**（详见 ROADMAP「范围铁律」）。Cloudtag 类全栈产品管从 Agent 到权限的全部层，sofagent 管其中可独立标准化的约束+审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立底线守卫。
+**daemon 主动巡检清单**（`sofagent/daemon/src/inspectors/`，注册于 `runInspectors()`）：
+
+| Inspector | schedule | 检查内容 |
+|-----------|----------|---------|
+| audit-history | @daily | 审计历史健康度（exit code 分布 / 高频 WARN 规则） |
+| conflict-check | @weekly | knowledge 矛盾（critical）/ 孤儿（warning）/ 死链（warning） |
+| doctor-health | @daily | daemon 自身运行状态（plist / fs-watch / 依赖） |
+| knowledge-freshness | @weekly | knowledge/ 30 天以上未更新提醒 |
+| skill-staleness | @weekly（默认禁用） | Skill 陈旧度（需 eval 数据支持） |
+| warn-accumulator | @daily | 连续未处理 WARN 累积（阈值 3，含文件级追踪） |
+
+> **范围声明**：sofagent 是 Harness 中间件——覆盖行为约束 + 变更审计 + 经验沉淀 + 持续优化。不覆盖**主 Agent 平台**本身（IM 渠道 / 第三方平台托管的沙箱（如 OpenClaw 沙箱）/ 工具调用——OpenClaw/DeepAgents 的事），也不覆盖运维层（监控/告警/重启/日志轮转）。**例外**：v1.3.0 起 sofagent 托管**自派 SubAgent** 的隔离运行时（文件系统隔离 + 网络出站白名单 + 工具调用中介 + 虚拟 key 边界注入），因 sofagent 既起环境又发凭证、天然拥有执行边界。**运行时治理仅限自派 SubAgent，主 Agent 永远事后审计**（详见 ROADMAP「范围铁律」）。Cloudtag 类全栈产品管从 Agent 到权限的全部层，sofagent 管其中可独立标准化的约束+审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立底线守卫。

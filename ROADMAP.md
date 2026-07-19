@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.1.6 · 2026-07-19（UTC）· LLM Wiki 3 层分层 + conflict-check（规划中）· 规划：v1.1.6-v1.1.9 → v1.2.0 收口
+> v1.1.6 · 2026-07-19（UTC）· LLM Wiki 3 层分层 + conflict-check · 规划：v1.1.6-v1.1.9 → v1.2.0 收口
 
 <img src="docs/assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -23,11 +23,11 @@
 
 ---
 
-## 现在在哪：v1.1.6 📋（规划中）
+## 现在在哪：v1.1.6 ✅（已发布）
 
-> **LLM Wiki 3 层分层 + conflict-check**：Ledger-Views-Policy 显式化 + daemon 知识健康巡检。v1.1.5 交付：releaser Skill（十二阶段 SOP）+ MCP `audit_file` pipe（Agent 协议层编辑纳入审计）+ 7 个 knowledge MCP resource + push target 路由 + USB federation HMAC 签名 + cli.ts `--mode` 参数 + v1.1.4 审查 9 项 P0/P1 文档漂移修复 + maxTurns/warn-accumulator/A18/audit history/tools.ts 6 项改进。v1.1.5 pre-push-check 15 通过/1 警告、726 tests 全绿、acceptance-test 79/79、check-version 67/67。
+> **BugFix 21 项 + LLM Wiki 3 层分层 + conflict-check**：v1.1.5 遗留 21 项全数修复（webhook PASS 推送接通 / 规则数文案动态读取 / knowledge tool 命名统一 / CHANGELOG 纯度 / 文档诚实化等）+ Ledger-Views-Policy 与 LLM Wiki `raw → Wiki → spec` 三层范式同构映射（[docs/llm-wiki-mapping.md](./docs/llm-wiki-mapping.md)）+ daemon `conflict-check` 巡检器（矛盾/孤儿/死链，@weekly，fail-closed 只读）。质量验证：737 tests across 12 packages 全绿、check-version 70/70、check-docs 全过、pre-push-check 15 通过/1 警告。
 >
-> 📖 [v1.1.5 开发日志](./docs/changelog/v1.1.5.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [v1.1.6 开发日志](./docs/changelog/v1.1.6.md) · [🗺️ LLM Wiki 三层映射](./docs/llm-wiki-mapping.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -37,7 +37,8 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
-| **v1.1.5** 🚧 | releasing.md SOP 集成（releaser Skill 十二阶段）+ MCP `audit_file` pipe + 7 个 knowledge MCP resource + list_capabilities + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts `--mode` 参数 + 9 项审查 P0/P1 修复 + MCP server JSON-RPC 2.0 协议合规 | [📖](./docs/changelog/v1.1.5.md) |
+| **v1.1.6** ✅ | BugFix 21 项 + LLM Wiki 3 层分层（[🗺️ 映射](./docs/llm-wiki-mapping.md)）+ daemon conflict-check（矛盾/孤儿/死链 @weekly 只读） | [📖](./docs/changelog/v1.1.6.md) |
+| **v1.1.5** ✅ | releasing.md SOP 集成（releaser Skill 十二阶段）+ MCP `audit_file` pipe + 7 个 knowledge MCP resource + list_capabilities + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts `--mode` 参数 + 9 项审查 P0/P1 修复 + MCP server JSON-RPC 2.0 协议合规 | [📖](./docs/changelog/v1.1.5.md) |
 | **v1.1.4** 🚧 | A18/A19 两条审计新规则（21 条规则集）+ LOOP 工具注入（6 工具）+ daemon 可见性修复 + USB federation + WARN 累积报告 + 8 项审查修复 | [📖](./docs/changelog/v1.1.4.md) |
 | **v1.1.3** 🔧 | LangGraph StateGraph 四节点自动流转 + Checkpoint 持久化 + HITL 确认 + 39 项审查修复 | [📖](./docs/changelog/v1.1.3.md) |
 | **v1.1.2** 🔧 | LOOP 双 Agent 串联 + Harness 可见性签名 + 多设备同步指南 + 测试体系修复 | [📖](./docs/changelog/v1.1.2.md) |
@@ -113,7 +114,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.1.6** | 📋 规划中 | **LLM Wiki 3 层分层 + conflict-check**：Ledger-Views-Policy 显式化 + daemon 知识健康巡检 | [📖](./docs/changelog/v1.1.6.md) |
+| **v1.1.6** | ✅ 已发布 | **BugFix 21 项 + LLM Wiki 3 层分层 + conflict-check**：v1.1.5 遗留全数修复 + Ledger-Views-Policy 显式化 + daemon 知识健康巡检（矛盾/孤儿/死链） | [📖](./docs/changelog/v1.1.6.md) · [🗺️ 三层映射](./docs/llm-wiki-mapping.md) |
 | **v1.1.7** | 📋 规划中 | **Dream Cycle 6 阶段 + sensitivity**：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级 | [📖](./docs/changelog/v1.1.7.md) |
 | **v1.1.8** | 📋 规划中 | **安全层 + 联邦查询 + Agent 安全防护**：AES-256-GCM + ECDH 配对 + OpenClaw channel 联邦知识查询 + Prompt 注入 8 层防护体系（指令分层隔离 / 工具动态最小权限 / 后端强制校验 / 敏感数据不进 prompt / RAG 可信分级 / 输出结构化+执行前审核 / 高危动作强制人工确认 / 全链路日志+红队测试——核心原则：模型提建议，系统控执行） | [📖](./docs/changelog/v1.1.8.md) |
 | **v1.1.9** | 📋 规划中 | **USB 完整运行时**：Node.js 单文件打包 + OpenClaw 便携化 + 跨平台启动脚本（macOS/Windows/Linux）。U 盘插入 → 双击 start → 联邦在线 → 拔掉零残留 | [📖](./docs/changelog/v1.1.9.md) |
@@ -315,7 +316,7 @@ OpenClaw 总管（TS）
 
 > 来源：GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》（2026-01-28 发布，2026-08-01 实施）+ 企业 AI Ontology 基石方法论。
 
-**⬜1 本体即认知底座（非静态知识库）**：当前 sofagent 的认知核心是「LLM + Harness 规则(A1-A17) + 记忆(Ledger-Views-Policy)」，Ontology 统一层是「事实如何被理解」的显式层。v1.3.0 将其从"描述层"升级为"可运行推理底座"——本体参与编排决策（Action Type 定级、Domain/Range 约束直接驱动 entry-gate 与 loop 出口），而非仅作文档摘要。sofagent 已非纯静态 KB，此方向是强化而非 pivot。（原拟 v2.x，调整为 v1.3.0——本体推理化是近期可落地的渐进增强。）
+**⬜1 本体即认知底座（非静态知识库）**：当前 sofagent 的认知核心是「LLM + Harness 规则（A1-A11、A14-A19，共 17 条）+ 记忆(Ledger-Views-Policy)」，Ontology 统一层是「事实如何被理解」的显式层。v1.3.0 将其从"描述层"升级为"可运行推理底座"——本体参与编排决策（Action Type 定级、Domain/Range 约束直接驱动 entry-gate 与 loop 出口），而非仅作文档摘要。sofagent 已非纯静态 KB，此方向是强化而非 pivot。（原拟 v2.x，调整为 v1.3.0——本体推理化是近期可落地的渐进增强。）
 
 **本体论护城河（战略维度）**：Ontology-first 不只是技术正确，更是商业护城河。行业 scale 落地把套路沉淀为固化文档，而大模型厂商可快速将其蒸馏进基础模型瞬间替代——通用 Skill / 模板会被吞噬，企业本体论却因绑定创始人风格与真实业务基因而不可迁移。这是一道"阳谋"：模型越强，越证明企业需要标准化本体，而 sofagent 已占位 Ontology 渐进构建路线。v1.3.0 的对外叙事卖的是"企业专属认知底座"，不是可被吞噬的通用能力。
 
@@ -349,7 +350,7 @@ OpenClaw 总管（TS）
 - **AI 控制赛道 2026-2029**：外部信号一致指向"AI 控制将在 3 年内成为安全核心"。sofagent 提前卡位"执行控制"方向正确，作为对外叙事时间窗锚点（2026-2029）。
 - **FDE 中国落地困境**：笔记列 5 大障碍（不为探索付费/难盈利/SaaS 渗透仅 15.8%/人才缺失/甲方不信任 95% 失败）。sofagent 用"固定 AI 节点生成企业专有 skill"规避人力 FDE 陷阱——验证 AI-Native FDE 路线正确性。商业化策略参考，非工程任务。（注：项目暂无独立商业笔记文件，此条记入 ROADMAP。）
 - **拟人化风险**：叙事护栏——"AI 数字员工进组织架构"需设边界，避免过度承诺自主。与 HANDBOOK 叙事护栏并一处。
-- **Self-Improvement 诚实化**：LOOP 自迭代架构（4 Agent）**有效奖励信号必须外生**（环境/人工校验），不暗示自主自我提升。诚实标注于 LOOP 架构处。
+- **Self-Improvement 诚实化**：LOOP 自迭代架构（4 Agent：engineer / reviewer / FDE / compliance，**与 ARCHITECTURE 的 2 个基础设施 Agent 是不同集合**）**有效奖励信号必须外生**（环境/人工校验），不暗示自主自我提升。诚实标注于 LOOP 架构处。
 
 #### V2.0 规划（远期架构探索）
 

@@ -7,6 +7,12 @@
 
 ## 正式版
 
+### [v1.1.6] — BugFix 21 项 + LLM Wiki 3 层分层 + conflict-check
+> 2026-07-19（UTC）· 已发布
+**核心变更**：① **v1.1.5 发布后 BugFix 21 项**——webhook PASS 推送死代码接通、`--init` 文案规则数动态读取、"knowledge resource" → "knowledge tool" 全仓清零、CHANGELOG v1.1.5 重复条目删除、v1.1.5 changelog 清理过程元信息、audit/README 规则分级补"工程规范"定义、规则表 ruleClass 三档统一、FDE 文案诚实化、README 竞品对比表、3 个 SKILL.md 补 frontmatter、LIMITATIONS 多处修订、SECURITY.md 加版本头等。② **LLM Wiki 3 层显式化**——新增 [docs/llm-wiki-mapping.md](./docs/llm-wiki-mapping.md)，把 Ledger-Views-Policy 与 LLM Wiki `raw → Wiki → spec` 三层范式做同构映射（不重新定义三层，只做映射），含数据流图与引擎调用关系，并明确 v1.1.6 只"检测"、v1.1.7 Dream Cycle 才"生产"。③ **daemon `conflict-check` 巡检器**——周期性检测 `knowledge/` 的矛盾（critical，同名 entity 多目录 + frontmatter `domain` 冲突）/ 孤儿（warning，文件系统有 `.md` 但 `index.md` 无对应行）/ 死链（warning，`index.md` 表或页面 markdown 链接指向不存在目标）；fail-closed 只读、schedule `@weekly`、空 knowledge 优雅降级。
+**质量验证**：737 tests across 12 packages 全绿（daemon 43 含新增 8 用例 / audit 405 / core 96 / orchestrator 116）· check-version 70/70 · check-docs 全过（规则数 21/21/21 一致）· pre-push-check 15 通过/1 警告（警告为 tag 未建，发版前正常）。
+> 📖 [开发日志](./docs/changelog/v1.1.6.md)
+
 ### [v1.1.5] — releasing.md SOP 集成 + MCP pipe + knowledge tool + USB federation HMAC
 > 2026-07-19（UTC）· 已发版
 **核心变更**：① **releaser Skill**——把 `docs/verification/releasing.md` 十二阶段发版 SOP 注入 Agent 上下文，Agent 按全流程自动执行发版（三个 human check 节点显式介入）。② **MCP `audit_file` pipe**——Agent 通过 MCP 协议编辑的文件也能即时审计（补 v1.1.4 daemon 盲区，daemon 只监控 fs.watch 物理变更，MCP 协议层编辑看不见）。③ **7 个 knowledge MCP resource** + `list_capabilities`——Agent 第一次连上 MCP server 主动推送能力清单。④ **push-target 5 种路由**——webhook:dingtalk/feishu/wecom + openclaw:im + daemon:notice，工作流节点输出自动推到对应通道。⑤ **USB federation HMAC 签名**——`createHmac` + `timingSafeEqual` + `mode: 0o600`，补 v1.1.4 USB federation 只有基础检测的缺口。⑥ **cli.ts `--mode` 参数**——orchestrator 支持 `--mode engineer/reviewer` 单节点执行。
@@ -109,11 +115,6 @@ v1.0.0 本轮完成 AI 知识库代码实现——7 件事：目录骨架（6 �
 > 规划中（v1.1.3~v1.1.9 子能力收口）
 **核心变更**：LOOP 双 Agent 自循环 + LangGraph 编排 + OpenClaw MCP 知识联邦 + Dream Cycle 知识管道 + LLM Wiki 3 层分层 + AES-256-GCM 加密 + USB key 物理身份。7 个子版本 → 1 个联邦。v1.2.x 完整多设备协同的起点。
 > 📖 [开发日志](./docs/changelog/v1.2.0.md)
-
-### [v1.1.6] — LLM Wiki 3 层分层 + conflict-check 📋
-> 规划中
-**核心变更**：Ledger-Views-Policy 显式映射 + daemon conflict-check（矛盾/孤儿/死链）。
-> 📖 [开发日志](./docs/changelog/v1.1.6.md)
 
 ### [v1.1.7] — Dream Cycle 6 阶段 + sensitivity 📋
 > 规划中

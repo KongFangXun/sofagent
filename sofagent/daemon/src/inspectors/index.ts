@@ -5,17 +5,19 @@
 
 import type { InspectorConfig, InspectorResult } from './types';
 import { analyzeAuditHistory } from './audit-history-analyzer';
+import { checkConflict } from './conflict-check';
 import { checkDoctorHealth } from './doctor-checker';
 import { checkKnowledgeFreshness } from './knowledge-freshness';
 import { checkSkillStaleness } from './skill-staleness';
 import { accumulateWarnings } from './warn-accumulator';
 
-export { analyzeAuditHistory, checkDoctorHealth, checkKnowledgeFreshness, checkSkillStaleness, accumulateWarnings };
+export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFreshness, checkSkillStaleness, accumulateWarnings };
 export type { InspectorConfig, InspectorResult } from './types';
 
 /** 默认巡检器配置 */
 export const DEFAULT_INSPECTOR_CONFIG: Record<string, InspectorConfig> = {
   'audit-history': { enabled: true, schedule: '@daily' },
+  'conflict-check': { enabled: true, schedule: '@weekly' },
   'doctor-health': { enabled: true, schedule: '@daily' },
   'knowledge-freshness': { enabled: true, schedule: '@weekly' },
   'skill-staleness': { enabled: false, schedule: '@weekly' },
@@ -35,6 +37,7 @@ export function runInspectors(
 ): InspectorResult[] {
   return [
     analyzeAuditHistory(projectDir),
+    checkConflict(projectDir),
     checkDoctorHealth(projectDir),
     checkKnowledgeFreshness(projectDir),
     checkSkillStaleness(projectDir),
