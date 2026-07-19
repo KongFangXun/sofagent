@@ -13,19 +13,19 @@
 ```
 人类下任务 → sofagent-engineer（软件工程师）写代码 → git commit
     → sofagent-audit (commit-msg hook) 硬证据审计
-    → engineering-code-reviewer 代码审查
+    → sofagent-reviewer 代码审查
     → 审查报告交给人类确认
     → 通过 → git push → 下一轮
-    → 不通过 → engineering-minimal-change-engineer 修复 → 回到审计
+    → 不通过 → sofagent-engineer 修复 → 回到审计
 ```
 
 4 层防线：
 
 | # | 防线 | 谁做 | 看什么 | 可绕过？ |
 |---|------|------|------|:--:|
-| 1 | 构建验证 | engineering-minimal-change-engineer | build + test 必须通过才提交 | 不可——规则写死在 Agent 定义里 |
+| 1 | 构建验证 | sofagent-engineer | build + test 必须通过才提交 | 不可——规则写死在 Agent 定义里 |
 | 2 | 硬证据审计 | sofagent-audit (TS CLI) | git diff → A1-A11 模式匹配 | 不可——commit-msg hook |
-| 3 | 代码审查 | engineering-code-reviewer (LLM) | 代码变更 → 语义/影响/质量 | 可配置——改 `agents/engineering-code-reviewer.md` |
+| 3 | 代码审查 | sofagent-reviewer (LLM) | 代码变更 → 语义/影响/质量 | 可配置——改 `agents/sofagent-reviewer.md` |
 | 4 | 人类确认 | 你 | 审查报告 → 直觉判断 | 最终决定权 |
 
 ## 一个迭代周期
@@ -34,12 +34,12 @@
 flowchart TB
     Human["👤 人类<br/>输入任务"] --> Engineer
     subgraph Inner["内层循环：coding→audit→review→human"]
-        Engineer["engineering-minimal-change-engineer<br/>1. Read 相关文件<br/>2. 规划变更<br/>3. Write/Edit 代码<br/>4. build + test<br/>5. git commit → sofagent-audit hook<br/>6. 写 think.md"]
+        Engineer["sofagent-engineer<br/>1. Read 相关文件<br/>2. 规划变更<br/>3. Write/Edit 代码<br/>4. build + test<br/>5. git commit → sofagent-audit hook<br/>6. 写 think.md"]
     end
     Engineer --> Diff["提交的 diff"]
     Diff --> Reviewer
     subgraph Outer["审查 + 反馈"]
-        Reviewer["engineering-code-reviewer<br/>1. 读 git diff<br/>2. 语义审查<br/>3. 影响范围审查<br/>4. 铁律合规审查<br/>5. 代码质量审查<br/>6. 输出审查报告"]
+        Reviewer["sofagent-reviewer<br/>1. 读 git diff<br/>2. 语义审查<br/>3. 影响范围审查<br/>4. 铁律合规审查<br/>5. 代码质量审查<br/>6. 输出审查报告"]
     end
     Reviewer --> Report["审查报告<br/>🔴 阻断 / 🟡 建议 / 💭 小改进"]
     Report --> HumanConfirm["👤 人类确认"]
@@ -47,21 +47,21 @@ flowchart TB
     HumanConfirm -->|IS_PASS: NO| Engineer
 ```
 
-## 为什么 engineering-minimal-change-engineer 不审查自己的代码
+## 为什么 sofagent-engineer 不审查自己的代码
 
-银行转账——录入和复核是两个人。engineering-minimal-change-engineer 看自己写的代码不是审查，是自我说服过程。engineering-code-reviewer 的独立 session 保证了它只能看到最终 diff，没有开发过程的上下文污染。
+银行转账——录入和复核是两个人。sofagent-engineer 看自己写的代码不是审查，是自我说服过程。sofagent-reviewer 的独立 session 保证了它只能看到最终 diff，没有开发过程的上下文污染。
 
 这是 sofagent 架构中的"评判者与执行者分离"原则——和 `loop-evaluate.md` 的设计一脉相承。
 
 ## 为什么人类确认还在循环里
 
-Agent 出问题人负责。LOOP 不是替代人类，是升级人类的角色——从逐行读 diff 变成看审查报告做判断。engineering-minimal-change-engineer 和 engineering-code-reviewer 把"我该担心什么"提炼出来了，人类只需要确认"这个担心对不对"。
+Agent 出问题人负责。LOOP 不是替代人类，是升级人类的角色——从逐行读 diff 变成看审查报告做判断。sofagent-engineer 和 sofagent-reviewer 把"我该担心什么"提炼出来了，人类只需要确认"这个担心对不对"。
 
 三道护栏（fde.md 规则覆盖 / 编排可回滚 / 审计独立）中，人类确认是第一道光。
 
 ## DeepAgentsJS + LangGraph 编排层（计划中）
 
-当 engineering-minimal-change-engineer 和 engineering-code-reviewer 各自独立跑通后，用 [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) 的 `createDeepAgent()` API 和 LangGraph `StateGraph` 串流程：
+当 sofagent-engineer 和 sofagent-reviewer 各自独立跑通后，用 [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) 的 `createDeepAgent()` API 和 LangGraph `StateGraph` 串流程：
 
 ```mermaid
 graph TD
@@ -166,9 +166,9 @@ LOOP 设计为**平台无关**——不依赖特定 Agent 平台。运行原理�
 OpenClaw（sofagent 底座，随 sofagent 安装）
   │
   │  按 LOOP/loop.md 的 StateGraph 自动调度：
-  ├→ session.spawn engineering-minimal-change-engineer
+  ├→ session.spawn sofagent-engineer
   ├→ run sofagent-audit (commit-msg hook)
-  ├→ session.spawn engineering-code-reviewer
+  ├→ session.spawn sofagent-reviewer
   └→ 审查报告返回给用户 Agent
 ```
 
@@ -239,9 +239,9 @@ flowchart TD
 
 ## 下一步
 
-1. 验证 OpenClaw `session.spawn` 能加载 engineering-minimal-change-engineer（Agency Agents 格式 → convert.sh → SOUL/agents/IDENTITY）
-2. 让 engineering-minimal-change-engineer 完成一个真实任务（比如修 README 里的 typo）
-3. 让 engineering-code-reviewer 审查那次提交
+1. 验证 OpenClaw `session.spawn` 能加载 sofagent-engineer（Agency Agents 格式 → convert.sh → SOUL/agents/IDENTITY）
+2. 让 sofagent-engineer 完成一个真实任务（比如修 README 里的 typo）
+3. 让 sofagent-reviewer 审查那次提交
 4. 人工判断审查报告质量
-5. 审查报告不达标 → 改 `agents/engineering-code-reviewer.md` 重新跑
+5. 审查报告不达标 → 改 `agents/sofagent-reviewer.md` 重新跑
 6. 审查报告达标 → 开始写 DeepAgentsJS + LangGraph 编排代码

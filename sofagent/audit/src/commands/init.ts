@@ -381,7 +381,7 @@ exit 0
       }
 
       // 获取 sofagent-daemon 的绝对路径和 node 的 bin 目录
-      // v1.1.3 修复：daemon 已从 audit 拆出，入口是 sofagent-daemon（不是 sofagent-audit --daemon）
+      // v1.1.4 修复：daemon 已从 audit 拆出，入口是 sofagent-daemon（不是 sofagent-audit --daemon）
       let cliPath = 'sofagent-daemon';
       let nodeBinDir = '';
       try {
@@ -409,11 +409,11 @@ exit 0
         // fallback 到 PATH 中的 sofagent-daemon
       }
 
-      // v1.1.3 修复：WorkingDirectory 用项目 cwd，不是 $HOME
+      // v1.1.4 修复：WorkingDirectory 用项目 cwd，不是 $HOME
       // daemon 启动后以 cwd 为 projectDir，监控的就是这个项目
       const projectWorkingDir = cwd;
 
-      // v1.1.3 修复：cliPath 兜底——如果没找到 sofagent-daemon 二进制，
+      // v1.1.4 修复：cliPath 兜底——如果没找到 sofagent-daemon 二进制，
       // 用项目内 daemon dist 入口 + node 绝对路径
       let finalCliPath = cliPath;
       let finalProgArgs: string[];
