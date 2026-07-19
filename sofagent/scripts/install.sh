@@ -3,6 +3,12 @@
 # sofagent install.sh · 多平台一键安装脚本（v1.1.6）
 # ============================================================
 # 将 sofagent 约束层部署到目标平台，让 Agent 获得治理能力。
+#
+# 🔗 跨产品契约：FDE/fde-install.sh 和 LOOP/loop-install.sh 依赖本脚本。
+#    改动此文件前，确认 FDE/LOOP 的安装链路不受影响：
+#    - FDE/LOOP 调用 `bash sofagent/scripts/install.sh` 作为底座安装入口
+#    - 改参数名/输出路径/依赖文件前必须 grep 两个 install 脚本的调用方式
+#    - 删被依赖文件（如 sofagent/skill/data/fde.md）前确认 FDE/LOOP install 不再引用
 # v0.98: 从 941 行拆分为 4 个 lib 模块 + 纯组装入口
 # v1.0.7: ao 退役，移除 agency-orchestrator 安装逻辑
 #
