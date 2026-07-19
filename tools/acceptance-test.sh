@@ -1266,7 +1266,8 @@ fi
 # ── 场景 38: 审查报告签名模板 ───────────────────────────────
 scenario 38 "审查报告签名模板"
 
-REVIEW_FILE="$PROJECT_ROOT/agents/engineering-code-reviewer.md"
+# v1.1.4：agents/engineering-code-reviewer.md 重命名为 agents/SKILL/sofagent-reviewer/SKILL.md
+REVIEW_FILE="$PROJECT_ROOT/agents/SKILL/sofagent-reviewer/SKILL.md"
 SIGN_OK=true
 
 # 38a: 验证 # 代码审查报告 上方有签名段
@@ -1282,7 +1283,7 @@ if [ -f "$REVIEW_FILE" ]; then
   fi
 else
   SIGN_OK=false
-  fail "engineering-code-reviewer.md 不存在"
+  fail "sofagent-reviewer/SKILL.md 不存在"
 fi
 
 # 38b: 验证签名行在标题之前
@@ -1435,10 +1436,27 @@ grep -q "露个脸就够了" "$PROJECT_ROOT/sofagent/skill/SKILL.md" && pass || 
 
 scenario 48 "A19 commit message 质量（\"add\" → FAIL 阻断）"
 
-# 确保在 git 仓库内且 committer 已配置
+# v1.1.4 修正：commit-msg hook 在无 staged diff 时早退（line 13-16），A19 不触发。
+# 不能用 git commit --allow-empty，必须创建真实 staged diff 让 hook 跑完整流程。
+# A19 单元测试（rule-a19-commit-msg-quality.test.ts，10 用例）已覆盖 BLACKLIST + 长度规则；
+# 本场景只验证端到端：真实 diff + 黑名单 message → hook 阻断 commit。
+
 if [ -d .git ]; then
-  A19_OUTPUT=$(GIT_EDITOR=true git commit --allow-empty -m "add" 2>&1 || true)
-  echo "$A19_OUTPUT" | grep -q "A19\|FAIL\|msg 质量" && pass || fail "A19 未阻断短 message 'add'"
+  A19_BASE_HEAD=$(git rev-parse HEAD)
+  A19_TEST_FILE="$PROJECT_ROOT/.a19-scenario48-probe.txt"
+  echo "probe content for A19 scenario 48" > "$A19_TEST_FILE"
+  git add "$A19_TEST_FILE" 2>/dev/null || true
+
+  A19_OUTPUT=$(GIT_EDITOR=true git commit -m "add" 2>&1 || true)
+  echo "$A19_OUTPUT"
+  if echo "$A19_OUTPUT" | grep -q "A19\|FAIL\|msg 质量\|违规\|阻止"; then
+    pass
+  else
+    fail "A19 未阻断黑名单 message 'add'（commit 实际成功 = bug）"
+  fi
+  # 鲁棒清理：无论 commit 成功与否，强制还原 base HEAD + 删文件
+  git reset --hard "$A19_BASE_HEAD" >/dev/null 2>&1 || true
+  rm -f "$A19_TEST_FILE"
 else
   echo "  ⏭ 非 git 仓库，跳过 A19 场景"
   PASSED=$((PASSED + 1))
@@ -1446,9 +1464,23 @@ fi
 
 scenario 49 "正常 commit（≥8 字符 message → PASS）"
 
+# v1.1.4 修正：同场景 48，必须创建真实 staged diff
 if [ -d .git ]; then
-  A19_PASS_OUTPUT=$(GIT_EDITOR=true git commit --allow-empty -m "fix: apply v1.1.4 review fixes" 2>&1 || true)
-  echo "$A19_PASS_OUTPUT" | grep -q "FAIL" && fail "A19 错误阻断了正常长度 message" || pass
+  A49_BASE_HEAD=$(git rev-parse HEAD)
+  A19_PASS_FILE="$PROJECT_ROOT/.a19-scenario49-probe.txt"
+  echo "probe content for A19 scenario 49 normal commit" > "$A19_PASS_FILE"
+  git add "$A19_PASS_FILE" 2>/dev/null || true
+
+  A19_PASS_OUTPUT=$(GIT_EDITOR=true git commit -m "fix: apply v1.1.4 review fixes" 2>&1 || true)
+  echo "$A19_PASS_OUTPUT"
+  if echo "$A19_PASS_OUTPUT" | grep -q "FAIL"; then
+    fail "A19 错误阻断了正常长度 message"
+  else
+    pass
+  fi
+  # 鲁棒清理：强制还原 base HEAD + 删文件
+  git reset --hard "$A49_BASE_HEAD" >/dev/null 2>&1 || true
+  rm -f "$A19_PASS_FILE"
 else
   echo "  ⏭ 非 git 仓库，跳过 A19 PASS 场景"
   PASSED=$((PASSED + 1))

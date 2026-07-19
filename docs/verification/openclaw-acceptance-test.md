@@ -20,7 +20,7 @@
 |------|------|---------|
 | 函数级 | 单元测试（vitest） | CI 自动，每次 push |
 | CLI 端到端 | `acceptance-test.sh`（56 场景） | 手动，发版前 |
-| **Agent 端到端** | **本文件**（57 场景） | **手动，发版前** |
+| **Agent 端到端** | **本文件**（58 场景） | **手动，发版前** |
 | 文档级 | 回归检查清单（维度总数随版本增长，见 regression-checklist.md 头部当前值） | 手动，发版前 |
 | 发布后审查 | fresh-eyes-review.md | 手动，发布后 |
 
@@ -892,8 +892,9 @@ console.log('BUILTIN_AGENTS count:', m.BUILTIN_AGENTS.length);
 ### 场景 40：Harness 签名——审查报告模板
 
 ```bash
+# v1.1.4：路径从 agents/engineering-code-reviewer.md 重命名为 agents/SKILL/sofagent-reviewer/SKILL.md
 # 验证审查报告模板顶部有签名段
-grep -B3 "^# 代码审查报告" $SOFAGENT_DIR/agents/engineering-code-reviewer.md
+grep -B3 "^# 代码审查报告" $SOFAGENT_DIR/agents/SKILL/sofagent-reviewer/SKILL.md
 # ✅ 期望：签名行（含 sofagent-audit 和 sofagent-orchestrator）在标题之前
 
 # 验证 MCP 工具返回值含 [sofagent] 前缀
@@ -1274,7 +1275,7 @@ head -5 "$LOOP_DIR/loop-install.sh" | grep -q "v1\.1\.[0-9]" && echo "版本号 
 - [ ] 场景 37：PASS 场景输出含"审计引擎: sofagent-audit" + "条规则全部通过"；FAIL 场景输出含"条规则已完成检测"
 - [ ] 场景 38：orchestrator --help 含 engineer/reviewer 和 loop 子命令；loop 子命令可调用不崩溃
 - [ ] 场景 39：loop-runner.ts 存在 + maxIterations.*3 保护 + runLOOPIteration 导出 + ENGINEER_AGENT/REVIEWER_AGENT 导出
-- [ ] 场景 40：engineering-code-reviewer.md 签名段（sofagent-audit + sofagent-orchestrator）在标题前；MCP [sofagent] ≥ 6；run_audit 描述含 "21 条规则" + "0 token"
+- [ ] 场景 40：sofagent-reviewer/SKILL.md 签名段（sofagent-audit + sofagent-orchestrator）在标题前；MCP [sofagent] ≥ 6；run_audit 描述含 "21 条规则" + "0 token"
 - [ ] 场景 41：Webhook PASS 推送不崩溃（假 URL + a1 禁用 → commit 成功）
 
 ### 历史版本核心功能（场景 42-46）

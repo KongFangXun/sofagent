@@ -522,10 +522,10 @@ grep "BLACKLIST.*=.*\[" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts
 
 | 检查项 | 验证方式 |
 |--------|----------|
-| maxTurns = 20 常量存在 | `grep "DEFAULT_AGENT_MAX_TURNS = 20" sofagent/orchestrator/src/graph/nodes.ts` |
-| engineer 使用 ENGINEER_TOOLS（6 个） | `grep "ENGINEER_TOOLS" sofagent/orchestrator/src/graph/nodes.ts` |
-| reviewer 使用 REVIEWER_TOOLS（3 个，只读） | `grep "REVIEWER_TOOLS" sofagent/orchestrator/src/graph/nodes.ts` |
-| WARN verdict 写入 audit history（三态全写） | `grep -c "recordLoopAuditHistory" sofagent/orchestrator/src/graph/nodes.ts` |
+| maxTurns = 20 常量存在 | `grep "DEFAULT_AGENT_MAX_TURNS = 20" sofagent/orchestrator/src/loop/nodes.ts` |
+| engineer 使用 ENGINEER_TOOLS（6 个） | `grep "ENGINEER_TOOLS" sofagent/orchestrator/src/loop/nodes.ts` |
+| reviewer 使用 REVIEWER_TOOLS（3 个，只读） | `grep "REVIEWER_TOOLS" sofagent/orchestrator/src/loop/nodes.ts` |
+| WARN verdict 写入 audit history（三态全写） | `grep -c "recordLoopAuditHistory" sofagent/orchestrator/src/loop/nodes.ts` |
 | run_bash 高危命令黑名单（5 类） | `grep -c "checkDangerousCommand" sofagent/orchestrator/src/tools.ts` |
 | warn-accumulator 真正连续性（遇 PASS/FAIL 中断） | `grep "break.*连续中断" sofagent/daemon/src/inspectors/warn-accumulator.ts` |
 | USB federation 基础检测（SOFAGENT 卷标） | `grep "SOFAGENT_LABEL" sofagent/daemon/src/usb-detect.ts` |
@@ -533,9 +533,9 @@ grep "BLACKLIST.*=.*\[" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts
 
 ```bash
 # 验证命令
-grep "DEFAULT_AGENT_MAX_TURNS" sofagent/orchestrator/src/graph/nodes.ts
+grep "DEFAULT_AGENT_MAX_TURNS" sofagent/orchestrator/src/loop/nodes.ts
 grep "checkDangerousCommand" sofagent/orchestrator/src/tools.ts
-grep "recordLoopAuditHistory" sofagent/orchestrator/src/graph/nodes.ts
+grep "recordLoopAuditHistory" sofagent/orchestrator/src/loop/nodes.ts
 # 期望：三者都存在
 ```
 
