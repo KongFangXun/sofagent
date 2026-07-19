@@ -82,7 +82,7 @@ FDE（或企业 CIO/网管）的操作手册。**读它 → 帮企业梳理 work
 | 维度 | 状态 |
 |------|------|
 | FDE 四阶段流程 | ✅ 已在作者自有企业中实际部署（2026-07） |
-| 审计引擎 | ✅ 独立产品，审计核心 343 tests 全绿（全 workspace 558）、跨平台 CI 覆盖 |
+| 审计引擎 | ✅ 独立产品，审计核心 388 tests 全绿（全 workspace 668）、跨平台 CI 覆盖 |
 | 覆盖范围 | Agent 质量层（代码纪律 + 审计 + 经验沉淀） |
 | 不覆盖 | 运维层（监控 / 告警 / 重启 / 日志轮转） |
 
@@ -384,6 +384,8 @@ bash sofagent/scripts/install.sh
 | **个人增强节点** | 个人开发者用 WorkBuddy/Codex/Claude Code | ❌ 不需要 | `sofagent-orchestrator compose --task` CLI |
 
 > 两种模式的核心约束体系完全一致——都是宪法层 SKILL.md + 规范层 fde.md + 反思层 think.md + 知识库 knowledge/。区别只在编排触达方式：自动运行节点走 OpenClaw 内部 API（更快），个人增强节点走 CLI 编排入口（不装 OpenClaw 也能用）。
+
+> 📖 完整对照表（适用场景 / OpenClaw 依赖 / 编排方式）见 [ARCHITECTURE 双节点架构](../docs/ARCHITECTURE.md#双节点架构)。
 
 #### 逐节点部署
 

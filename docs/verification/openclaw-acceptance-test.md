@@ -1072,7 +1072,7 @@ $SOFAGENT_DIR/sofagent/work模板市场/dist/cli.js --help 2>&1 | grep -c "list\
 # ✅ 期望：≥ 2
 
 # 3. 模板目录非空
-ls $SOFAGENT_DIR/work模板市场/templates/ 2>/dev/null | wc -l
+ls $SOFAGENT_DIR/模板市场/templates/ 2>/dev/null | wc -l
 # ✅ 期望：≥ 1
 ```
 
