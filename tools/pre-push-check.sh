@@ -17,7 +17,7 @@
 # 用法:
 #   ./tools/pre-push-check.sh           # 全量检查
 #   ./tools/pre-push-check.sh --quick   # 跳过 npm test/build（快）
-#   ./tools/pre-push-check.sh --audit-only  # 只跑审计（最快）
+#   ./tools/pre-push-check.sh --minimal      # 结构性快检（跳过版本号/文档/构建/测试门禁）
 #
 # 退出码:
 #   0 = 全部通过，可以 push
@@ -39,17 +39,17 @@ PASS=0
 FAIL=0
 WARN=0
 QUICK=false
-AUDIT_ONLY=false
+MINIMAL=false
 
 # ── 参数解析 ──
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --quick)       QUICK=true; shift ;;
-    --audit-only)  AUDIT_ONLY=true; shift ;;
+    --minimal)     MINIMAL=true; shift ;;
     --help|-h)
       echo "pre-push-check.sh — 推前预检"
       echo "  --quick        跳过 npm test/build"
-      echo "  --audit-only   只跑 sofagent-audit + shellcheck"
+      echo "  --minimal     结构性快检：只跑 shellcheck+CLI验证+安装路径+tag+依赖图，跳过 版本号/文档/构建/测试门禁"
       echo "  --help         显示帮助"
       exit 0 ;;
     *) shift ;;
@@ -60,6 +60,12 @@ echo ""
 echo -e "${BOLD}═══════════════════════════════════════${NC}"
 echo -e "${BOLD}  sofagent · 推前预检${NC}"
 echo -e "${BOLD}═══════════════════════════════════════${NC}"
+
+if [ "$MINIMAL" = true ]; then
+  echo -e "  ${YELLOW}⚠ --minimal 模式：已跳过 版本号校验 / 文档检查 / 构建 / 测试门禁${NC}"
+  echo -e "  ${YELLOW}  此结果不能替代完整 pre-push-check，请勿据此直接 push 未经测试的代码${NC}"
+fi
+
 echo ""
 
 # ── 辅助函数 ──
@@ -106,7 +112,7 @@ fi
 # ════════════════════════════════════════
 # 2. 版本号一致性（check-version.sh）
 # ════════════════════════════════════════
-if [ "$AUDIT_ONLY" = false ]; then
+if [ "$MINIMAL" = false ]; then
   echo -e "\n${BOLD}── 2. 版本号一致性 ──${NC}"
   if bash tools/check-version.sh >/dev/null 2>&1; then
     check_pass "check-version.sh 全部通过"
@@ -119,7 +125,7 @@ fi
 # ════════════════════════════════════════
 # 3. 文档检查（check-docs.sh）
 # ════════════════════════════════════════
-if [ "$AUDIT_ONLY" = false ]; then
+if [ "$MINIMAL" = false ]; then
   echo -e "\n${BOLD}── 3. 文档检查 ──${NC}"
   if bash tools/check-docs.sh >/dev/null 2>&1; then
     check_pass "check-docs.sh 全部通过"
@@ -132,7 +138,7 @@ fi
 # ════════════════════════════════════════
 # 4. 审计引擎构建 + 测试数汇总（对应 verify.yml + test-count.sh 门禁）
 # ════════════════════════════════════════
-if [ "$AUDIT_ONLY" = false ] && [ "$QUICK" = false ]; then
+if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
   echo -e "\n${BOLD}── 4. 审计引擎构建 + 测试数汇总 ──${NC}"
   echo "  构建中..."
   if (npm run build >/dev/null 2>&1); then
