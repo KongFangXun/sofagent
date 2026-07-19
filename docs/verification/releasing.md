@@ -42,7 +42,7 @@
 
 > 🔴 **v1.0.9 教训**：步骤 9（shellcheck）和步骤 13（acceptance-test）依赖当前版本的 CLI 命令名。如果本版本涉及 CLI 命令迁移（如旧命令改名、上帝包子命令拆到新包二进制），shellcheck 和 acceptance-test **跳过本阶段**，延后到阶段八文档收尾全部完成之后补跑——那时文档引用和脚本命令名都已更新完毕，跑出来才是真实结果。build + test（步骤 7/8）不受影响，正常执行。
 
-> 🔴 **v1.1.3 教训**：每版本发版后，验收测试文件自身的功能也会过时——**场景数落后于代码实现、新增功能零覆盖**。在跑验收测试之前，必须先审查并更新 `tools/acceptance-test.sh`（唯一验收测试文件，原 `openclaw-acceptance-test.md` 已合并入此），确保本版本新增的每条功能都有对应的验收场景。
+> 🔴 **v1.1.3 教训**：每版本发版后，验收测试文件自身的功能也会过时——**场景数落后于代码实现、新增功能零覆盖**。在跑验收测试之前，必须先审查并更新 `tools/acceptance-test.sh`，确保本版本新增的每条功能都有对应的验收场景。
 
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
@@ -51,9 +51,9 @@
 | 9 | `shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
 | 10 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
 | 11 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
-| 12 | **🔴 更新 `tools/acceptance-test.sh`**（唯一验收测试文件——原 `openclaw-acceptance-test.md` 已合并入此）<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `tools/acceptance-test.sh`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `tools/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n tools/acceptance-test.sh` 确认语法<br><br>**Step C — 同步 `docs/verification/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增）<br><br>**🔴 Step D — 覆盖率闭环判定**：<br>① **场景数声称 vs 实际对齐**：`DECLARED=$(head -5 tools/acceptance-test.sh \| grep -oE "[0-9]+ 个端到端" \| grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " tools/acceptance-test.sh); [ "$DECLARED" = "$ACTUAL" ]` 不一致 = P0<br>② **功能点逐条对照**：从 changelog「核心变更/交付」提取功能关键词，逐条 grep `tools/acceptance-test.sh`——零覆盖 = P0（回归测试无法发现该功能退化）<br>③ **失效场景清理**：`grep -rn "sofagent-audit --daemon\|workflow-hub/" tools/acceptance-test.sh` 期望零命中 | `bash -n tools/acceptance-test.sh` 通过；**Step D 三项判定全 PASS** |
-| 13 | `bash tools/acceptance-test.sh` — CLI 自动化测试覆盖全部场景（原 `openclaw-acceptance-test.md` 已合并入 `acceptance-test.sh`，不再有独立的 Agent 端到端验收文件） | 全部 PASS。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
-| ~~14~~ | ~~OpenClaw 综合验证~~ → **已合并到阶段六统一执行入口**。阶段四只保留 CLI 自动化测试（步骤 13）；`regression-checklist.md` 统一在阶段六的新 session 里跑完，不在开发 session 单独执行 | — |
+| 12 | **🔴 更新 `tools/acceptance-test.sh`**<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `tools/acceptance-test.sh`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `tools/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n tools/acceptance-test.sh` 确认语法<br><br>**Step C — 同步 `docs/verification/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增）<br><br>**🔴 Step D — 覆盖率闭环判定**：<br>① **场景数声称 vs 实际对齐**：`DECLARED=$(head -5 tools/acceptance-test.sh \| grep -oE "[0-9]+ 个端到端" \| grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " tools/acceptance-test.sh); [ "$DECLARED" = "$ACTUAL" ]` 不一致 = P0<br>② **功能点逐条对照**：从 changelog「核心变更/交付」提取功能关键词，逐条 grep `tools/acceptance-test.sh`——零覆盖 = P0（回归测试无法发现该功能退化）<br>③ **失效场景清理**：`grep -rn "sofagent-audit --daemon\|workflow-hub/" tools/acceptance-test.sh` 期望零命中 | `bash -n tools/acceptance-test.sh` 通过；**Step D 三项判定全 PASS** |
+| 13 | `bash tools/acceptance-test.sh` — 全场景验收测试 | 全部 PASS。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
+| ~~14~~ | ~~OpenClaw 综合验证~~ → **已取消**。原独立 Agent 端到端验收文件（openclaw-acceptance-test.md）已合并入 acceptance-test.sh，步骤 13 统一覆盖。阶段六不再单独重跑 acceptance-test（阶段四已跑），只做 regression-checklist 回归检查 + 覆盖率交叉验证 | — |
 
 ---
 
@@ -96,7 +96,7 @@
 
 **操作模式**：开一个**全新的 Agent session**（不要从开发 session 继续），在其中控制 OpenClaw 执行全面检查。OpenClaw 有 Bash tool 跑 grep/shellcheck/npm test，也有审计环境跑验收场景。
 
-> **统一执行入口**（v1.1.5 更新）：本阶段是回归检查的唯一执行入口——`regression-checklist.md`（文档级回归）在新 session 里跑完。原 `openclaw-acceptance-test.md` 已合并入 `tools/acceptance-test.sh`（阶段四步骤 13 已覆盖全部场景），不再有独立的 Agent 端到端验收文件。如需最终确认，跑 `./tools/acceptance-test.sh --all` 即可。
+> **统一执行入口**（v1.1.5 更新）：本阶段是回归检查的唯一执行入口——在全新 session 里跑 `docs/verification/regression-checklist.md`（文档级回归）。acceptance-test.sh 已在阶段四步骤 13 跑过（全场景预检），阶段六不重跑——本阶段的核心价值是"独立审查者用全新视角验证"，不是重复跑测试。
 
 ### OpenClaw 检查 Prompt（直接复制给新 session）
 
@@ -112,7 +112,7 @@
 1. 工作目录：/Users/kongfangxun/Workbuddy/sofagent（后续相对路径均基于此）
 2. 【v1.0.8 优化】构建审计包：在跑任何依赖 dist/ 的检查前，先 `cd sofagent/audit && npm run build`。否则 --version / --help banner / `ontology view` / `compose` 等基于 dist 的回归维度（#248 #251）与验收场景会命中 stale dist 误报 FAIL
 3. **回归检查** —— 读 `docs/verification/regression-checklist.md`，用 Bash 跑全部维度验证命令，逐项输出 PASS/FAIL/SKIP。完成后将完整报告保存为 `~/Desktop/vX.Y-regression-report.md`
-4. **🔴 验收测试覆盖率交叉检查（v1.1.4 教训——acceptance-test 对新功能零覆盖）** —— 读 `docs/changelog/vX.Y.md`「核心变更/交付」章节，提取每条功能关键词（如新规则号 A18/A19、新模块 LOOP/USB/工具注入等）。逐条 grep `tools/acceptance-test.sh`，确认每条功能都有对应场景。**零覆盖 = FAIL**（回归测试无法发现该功能退化）。原 `openclaw-acceptance-test.md` 已合并入 `acceptance-test.sh`，不再有独立文件。如需最终确认，跑 `./tools/acceptance-test.sh --all` 做最终确认
+4. **🔴 验收测试覆盖率交叉检查（v1.1.4 教训——acceptance-test 对新功能零覆盖）** —— 读 `docs/changelog/vX.Y.md`「核心变更/交付」章节，提取每条功能关键词（如新规则号 A18/A19、新模块 LOOP/USB/工具注入等）。逐条 grep `tools/acceptance-test.sh`，确认每条功能都有对应场景。**零覆盖 = FAIL**（回归测试无法发现该功能退化）
 5. 时序注意：
    - regression-checklist 头部「⏰ 时序说明」标记的检查项（git tag / npm registry / 全局二进制版本），发版前必然不满足 → 标 ⏳（待发版），不标 FAIL
    - 不在 OpenClaw 环境时，按验收文件降级说明跳过相应场景 → 标 SKIP，不标 FAIL
@@ -147,9 +147,9 @@
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
 | 22 | **最终确认两份审查文档**：regression 维度与 fresh-eyes 维度互相印证，循环修复中暴露的新盲区已补入 | 两份文档最终状态见于文件 diff |
-| 22b | **🔴 确认两份 acceptance test 的审查维度已同步**（v1.1.4 教训）：`regression-checklist.md` 维度 24「验收测试覆盖率与时效性」+ `fresh-eyes-review.md` 维度八任务 30「两份验收测试的场景覆盖率与功能对齐」——两处都必须覆盖本版本新功能的验收场景缺口 | grep 两份审查文档含本版本新功能关键词 |
+| 22b | **🔴 确认 acceptance test 的审查维度已同步**（v1.1.4 教训）：`regression-checklist.md` 维度 24「验收测试覆盖率与时效性」+ `fresh-eyes-review.md` 维度八任务 30「验收测试场景覆盖率与功能对齐」——两处都必须覆盖本版本新功能的验收场景缺口 | grep 两份审查文档含本版本新功能关键词 |
 
-**审查体系闭环**（v1.0.4 教训）：审查文档自身也会过时——每次发版后审视审查 prompt 的数字、路径、维度是否还有效。**验收测试同理**（v1.1.4 教训）——两份 acceptance test 的场景数和覆盖范围必须与 changelog 功能点对齐，否则回归测试形同虚设。
+**审查体系闭环**（v1.0.4 教训）：审查文档自身也会过时——每次发版后审视审查 prompt 的数字、路径、维度是否还有效。**验收测试同理**（v1.1.4 教训）——`acceptance-test.sh` 的场景数和覆盖范围必须与 changelog 功能点对齐，否则回归测试形同虚设。
 
 ---
 
