@@ -19,20 +19,11 @@
 
 ## 全局约定
 
-> **路径约定**：本 prompt 中所有文件路径（如 `sofagent/audit/src/rules/index.ts`）均相对于**项目根目录**——即 `git clone` 后的仓库顶层。
-
-> **审查者身份**：这是 sofagent 发布后独立审查。当前版本开发完成、发版前审查（pre-push-check / acceptance-test / OpenClaw / 回归清单 全绿）已通过。这轮是"你完全不知道我是谁——你第一眼看到我，心里在想什么"。你的直觉比 grep 更有价值。发现的问题不阻塞本版本，进下版本修复。
-
-> **审查约束**：
-> - 🔴 **全新 session 硬性条件**——必须在零开发上下文的新 session 中跑。有记忆的审查者不是"陌生人"。
-> - **想读什么读什么**——不限制文件范围，始终戴着当前身份眼镜在读。
-> - **不设预期**——不要告诉审查者"之前已修好 X"，让他自己发现。
-> - **相信直觉**——第一反应"不对劲"就是不对劲，不用证明。
-> - **5 轮独立**——每轮写完后清空上一轮认知，从空白开始。
-
-## 你的身份（第一轮：5 角色切换）
-
-> 第一轮你将**连续切换 5 个身份**，每轮只能从当前身份出发，不能借用其他身份的知识。每轮完成后再切换到下一个。第二、三、四、五轮各有独立的身份设定。
+> **路径**：本 prompt 中文件路径均相对于项目根目录（git clone 后的仓库顶层）。
+>
+> **身份**：sofagent 发布后独立审查。当前版本已通过发版前审查（pre-push-check / acceptance-test / OpenClaw / 回归清单全绿）。这轮是"你完全不知道我是谁——你第一眼看到我，心里在想什么"。直觉比 grep 更有价值。发现的问题不阻塞本版本，进下版本修复。
+>
+> **约束**：🔴 必须在零开发上下文的新 session 中跑（有记忆的审查者不是"陌生人"）/ 想读什么读什么，始终戴着当前身份眼镜 / 不设预期（不告诉审查者"之前已修好 X"）/ 相信直觉（第一反应"不对劲"就是不对劲）/ 5 轮独立（每轮写完后清空上一轮认知）。
 
 ---
 
@@ -440,52 +431,46 @@
    - README 审计引擎 Mermaid 图里写的规则数（如"17 条规则"）——与 index.ts 注册数一致吗？
    - CHANGELOG 历史条目中提到的规则数——有没有"当时声称 N 条但代码实际 M 条"的情况？
 
-13. **发版终验必须独立跑完整门禁（不信任任何"已验证"声明）** 🆕
-   - **v1.0.8 教训**：阶段四终审只验了用户指定的 4 项（constants/README/build/test），漏跑了实际发版门禁（`pre-push-check` / `check-version`）。版本号散落 91 文件仍是 1.0.7 因此溜过，直到阶段六独立 session 才用 `check-version.sh` 抓出 93 处不一致。
-   - **盲区本质**：独立审查者不能只验"别人/用户给的清单"——开发报告、用户指定项、上次审查结论都不算数。**收口硬判定必须是亲手跑** `bash tools/pre-push-check.sh`（7/7）+ `bash tools/check-version.sh`（0 不一致，非 strict 下 1 项 warning 属预期）。清单验收永远代替不了门禁实跑。
+13. **发版终验必须独立跑完整门禁** 🆕
+   - **教训（v1.0.8）**：阶段四终审只验用户指定 4 项，漏跑 pre-push-check / check-version，版本号散落 91 文件仍 1.0.7 溜过，阶段六才抓出 93 处不一致。
+   - **检查手法**：收口硬判定必须**亲手跑** `bash tools/pre-push-check.sh`（7/7）+ `bash tools/check-version.sh`（0 不一致）。清单验收永远代替不了门禁实跑。
 
-14. **版本变更必须走工具，且工具自身状态假设也是审查对象** 🆕
-   - 版本 bump 一律走 `tools/bump-version.sh`，禁手动散点改 SSOT（v1.0.8 P0 正是手动散点 bump 漏了 91 文件）。
-   - 但文档化工具自身有状态假设：`bump-version.sh` 从 `package.json` 读 OLD 版本号，若 SSOT 已被手动超前（如先手 bump 成 1.0.8），脚本会误判并在 296 行 `NEW_3SEG unbound` 崩溃。独立审查者应注意"工具可用性边界"，别盲信文档化脚本——遇到崩溃先查 SSOT 与磁盘是否一致。
-   - 跨包依赖（`sofagent/mcp/package.json` 对 `@sofagent/audit` 的 `^1.0.0`）用通用范围、不写死 SSOT：功能已覆盖当前版本，`check-version.sh` 的 1 项 warning 是预期非阻断。**不要用 `^1.0.8` 硬编码**——否则每发一版都得手改这条依赖，reintroduce 散点 bump 风险。
+14. **版本变更必须走工具，工具自身状态假设也是审查对象** 🆕
+   - **教训**：手动散点 bump 会漏文件（v1.0.8 P0 正是此坑），但 bump-version.sh 自身有状态假设——若 SSOT 已被手动超前，脚本会在 `NEW_3SEG unbound` 崩溃。
+   - **检查手法**：遇 bump 脚本崩溃先查 SSOT 与磁盘是否一致。跨包依赖用通用范围（`^1.0.0`），不要硬编码 SSOT——否则每版都得手改依赖。
 
 15. **验收测试脚本自身的 shell 安全性** 🆕
-   - **v1.0.9 教训**：acceptance-test.sh 全局 `set -euo pipefail`，但多处 `git log --oneline | grep -q "xxx"` 模式在 commit 数量大时被 SIGPIPE 误杀（grep -q 匹配后退出 → git log 收到 SIGPIPE 返回 141 → pipefail 判管道失败 → if ! 判 true → 误报 FAIL）。同类模式还包括 `$CLI --doctor 2>&1` 返回非零时 set -e 直接终止脚本，跳过后续场景。
-   - **盲区本质**：开发者写测试脚本时，默认"set -e 保护我"——但 `pipefail` 和"长管道匹配"组合后，保护变成炸弹。陌生审查者应把 `grep -n 'git log.*| grep -q' tools/acceptance-test.sh` 当第一件事跑。
-   - **同类风险扩散**：所有 `... | grep -q` 模式（不只 git log）、所有 `$(... )` 子shell 中返回非零的 $CLI 调用——都需检查是否有 `|| true` 保护。
+   - **教训（v1.0.9）**：`set -euo pipefail` 下 `git log | grep -q` 在 commit 数大时被 SIGPIPE 误杀 → pipefail 误判管道失败 → 误报 FAIL 或后续场景全跳过。
+   - **检查手法**：`grep -n 'git log.*| grep -q' tools/acceptance-test.sh`。所有 `... | grep -q` 模式、所有 `$(...)` 子shell 中返回非零的 $CLI 调用——都要有 `|| true` 保护。
 
 16. **hook 安装入口的语义差异（--install-hook vs --init）** 🆕
-   - **v1.0.9 教训**：`--install-hook` 只装 `commit-msg`（快速入口），`--init` 装 `commit-msg` + `post-commit` + `config.yml`（完整初始化）。两者都是"安装"但产物不同，验收测试场景 1 混用了 `--install-hook` 却检查两个 hook。
-   - **盲区本质**：CLI 有多个"看起来做同一件事"的入口（install-hook / init / 手动 cp），但它们的产品语义不同。陌生审查者不能假设"安装了就全套"——必须验证每个入口安装的具体产物清单。
-   - **延伸检查**：`--init` 在 v1.0.9 还加了"dirty 状态检测"——有未提交更改时会拒绝安装 hook（只创建 config）。这意味着 acceptance-test 在连续场景中，前一个场景的脏状态会阻断后续场景的 `--init`。
+   - **教训（v1.0.9）**：`--install-hook` 只装 commit-msg，`--init` 装 commit-msg + post-commit + config.yml。两者都是"安装"但产物不同。
+   - **检查手法**：必须验证每个入口安装的具体产物清单，不能假设"安装了就全套"。延伸：`--init` 有 dirty 状态检测——连续场景中前场景脏状态会阻断后续 `--init`。
 
 17. **新增功能的注册同步盲区与规则禁用逻辑验证（v1.1.3 路径修正）** 🆕
-   - **v1.0.9 阶段六教训**：新增 A16/A17 规则后，规则校验器的已知键集合忘记同步更新，导致用户在 config.yml 写 `a16: true` 时误报"未知规则名"。v1.1.0 包拆分后，`config-loader.ts` 已迁至 `core/src/`，规则动态禁用逻辑改为 `runner.ts` 的 `a{number}`/`e{number}` 动态键生成。
-   - **盲区本质**：每新增一个功能（规则/函数/命令），需要同步更新的地方不止一处——注册表（rules/index.ts）、规则禁用校验器、帮助文本、注释。开发者只改了"核心实现"，忘了"外围感知"。陌生审查者必须**沿着功能注册链走一遍**：规则号在 index.ts 注册了吗？动态禁用逻辑覆盖了吗？注释和警告文案更新了吗？测试的所有分支和代码行为一致吗？
-   - **检查手法（v1.1.3 更新）**：在 config.yml 中设 `rules: { a16: false }`，跑审计提交一个触发 A16 的变更。确认 A16 真的被跳过（不再出现 A16 判定行）。同理验证 `a17: false`、`a1: false`、多条同时禁用。每个新增纯函数跑 `npm test` 确认 0 failed。
+   - **教训（v1.0.9 → v1.1.0）**：新增 A16/A17 后规则校验器已知键集合忘同步更新，用户 config.yml 写 `a16: true` 误报"未知规则名"。每新增一个功能（规则/函数/命令），需同步更新的地方不止一处——注册表 / 规则禁用校验器 / 帮助文本 / 注释。
+   - **检查手法**：沿功能注册链走一遍——规则号在 index.ts 注册了？动态禁用逻辑覆盖了？在 config.yml 设 `rules: { a16: false }` 跑审计确认真被跳过。`npm test` 确认 0 failed。
 
 18. **包拆分后的独立构建验证（新攻击面）** 🆕
-   - **v1.1.0 教训**：11 包拆分后，audit 构建通过不代表 core/orchestrator 也能独立构建。core 曾因缺少 `filesystem/` 目录报 TS2307，orchestrator 可能因依赖缺失而失败。陌生审查者必须对每个包独立跑 `tsc --noEmit`——不要假设"主包过了其他包也能过"。
-   - **盲区本质**：开发者在 audit 包内开发、测试，习惯性只跑 audit 的 build。拆包后每个包的 tsconfig 独立、依赖独立，一个包的构建成功不传递到其他包。
+   - **教训（v1.1.0）**：11 包拆分后 audit 构建通过不代表 core/orchestrator 也能构建。core 曾缺 `filesystem/` 目录报 TS2307。一个包过不传递到其他包。
    - **检查手法**：对 core/orchestrator/daemon/ab-test 等新包逐一 `npx tsc --noEmit`，报任何 TS2307/TS2305 都是 P0。
 
 19. **"复制≠移动"——文件迁移完整性检测（新攻击面）** 🆕
-   - **v1.1.0 教训**：AI 工程师做源码迁移时，在新包创建了文件副本，但忘了删除 audit/src/ 中的原文件。导致 audit 成为"重复文件仓库"——同一份代码在 audit 和新包各有一份，后续修改不同步产生行为差异。
-   - **盲区本质**：人类审查"文件迁移"时会自然检查源是否已删，但 AI 工程师的"完成报告"只说"已创建 N 个文件"，不会主动报告"未删除 M 个源文件"。陌生审查者必须反向验证——不是确认新包有啥，而是确认 audit/src/ 里**不该有啥**。
-   - **检查手法**：对照架构设计文档中的迁移清单，逐项确认 audit/src/ 中不应存在的目录/文件是否已删除。`grep -rn "from '\.\.\/subagents\|from '\.\.\/eval" sofagent/audit/src/` 查残留 import。
+   - **教训（v1.1.0）**：AI 迁移只建副本不删源 → audit 成重复仓库，同一份代码两包各一份，后续修改不同步。
+   - **检查手法**：`grep -rn "from '\.\.\/subagents\|from '\.\.\/eval" sofagent/audit/src/` 查残留 import。反向验证——不是确认新包有啥，而是确认 audit/src/ 里**不该有啥**。
 
 20. **测试工厂函数迁移后的签名兼容性（新盲区）** 🆕
-   - **v1.1.0 教训**：测试辅助函数（`makeCtx`/`makeDiffFile`）从各测试文件内联实现提取为共享 `test-utils.ts` 后，参数签名与原始调用方不兼容——`makeCtx` 缺少 `commitMsg`/`task`/`strict` 字段透传导致所有规则测试返回 PASS；`makeDiffFile` 缺少 `status` 参数导致删除类规则测试失效。
-   - **盲区本质**：提取共享 helper 时，开发者只看了"最常见调用方式"，没覆盖所有调用方的参数组合。陌生审查者应实际运行测试——74 个测试因这个盲区静默失败，但 npm test 的 exit code 仍然是 1（有 failure），只是被 IS_PASS 声明掩盖了。
-   - **检查手法**：`npm test` 后检查是否有 `expected 'PASS' to be 'WARN'` 模式的断言失败（所有规则都返回 PASS），这是工厂函数不兼容的典型信号。
+   - **教训（v1.1.0）**：`makeCtx`/`makeDiffFile` 提取为共享 helper 后签名不兼容，74 测试静默失败但 exit code 仍 1（有 failure），被 IS_PASS 声明掩盖。
+   - **检查手法**：`npm test` 后检查是否有 `expected 'PASS' to be 'WARN'` 模式断言失败（所有规则都返回 PASS）。
 
 21. **audit/src/ 收敛验证（v1.0.9 文件迁移后联动）** 🆕
-   - **v1.0.9 教训**：LIMITATIONS.md 从 `docs/` 迁到根目录后，8 处跨文件引用未同步更新，形成死链。v1.1.0 教训放大：不仅文档会迁移，源码也会——subagents/ontology/eval/daemon/ 等 9 个目录从 audit 迁到新包后，audit/src/ 中残留副本 + 残留 import + 残留测试文件形成三重污染。
-   - **盲区本质**：文件迁移不是"复制过去"就完了——是"移动过去 + 删除源 + 更新所有引用 + 迁移测试"。四个动作缺一不可。陌生审查者必须逐一验证这四个动作都已完成。
-   - **检查手法**：`for d in subagents ontology eval daemon; do ls sofagent/audit/src/$d 2>&1; done` 全部应报 No such file。同样检查散文件。
+   - **教训（v1.0.9 → v1.1.0）**：9 个目录从 audit 迁到新包后，残留副本 + 残留 import + 残留测试文件形成三重污染。文件迁移是"移动 + 删除源 + 更新引用 + 迁移测试"四动作。
+   - **检查手法**：`for d in subagents ontology eval daemon; do ls sofagent/audit/src/$d 2>&1; done` 全部应报 No such file。
 
 22. **测试计数漂移的文档联动检测（新盲区）** 🆕
-   - **v1.1.0 教训**：77 个测试随被测模块迁出后，npm test 从 531→417。但 CHANGELOG/ROADMAP/FDE/evidence/LIMITATIONS 等 5 处文档仍写 531。发布后审查者的任务八"测试数一致性"被触发——发现文档数字与实跑数字不符。
+   - **教训（v1.1.0）**：77 个测试随被测模块迁出后，npm test 从 531→417，但 CHANGELOG/ROADMAP/FDE/evidence/LIMITATIONS 等 5 处文档仍写 531。测试数是"分布式声称"——8 个文档各自维护。
+   - **检查手法**：`ACTUAL=$(cd sofagent/audit && npm test 2>&1 | grep Tests | grep -oE '[0-9]+(?= passed)'); grep -rn "$ACTUAL" ROADMAP.md FDE/FDE.md docs/evidence/evidence.md LIMITATIONS.md` 期望 4 处全部命中。
+
    - **盲区本质**：测试数是一个"分布式声称"——8 个文档各自维护，没有单一事实源自动同步。每次测试迁移必须全量 grep 更新。
    - **检查手法**：`ACTUAL=$(cd sofagent/audit && npm test 2>&1 | grep Tests | grep -oE '[0-9]+(?= passed)'); grep -rn "$ACTUAL" ROADMAP.md FDE/FDE.md docs/evidence/evidence.md LIMITATIONS.md` 期望 4 处全部命中。
 
@@ -632,119 +617,3 @@
 | 检查点描述 | 防御的问题 | 建议落位 |
 |-----------|-----------|---------|
 |           |           |         |
----
-## v1.1.3 审查追补——本版新暴露的盲区
-> 以下盲区来自 v1.1.3 BugFix 版的开发经验，是本次新暴露的**具体案例**。跨版本提炼的**通用教训**见文末「审查体系演进」附录——两者互补：盲区讲"当时发生了什么"，附录讲"以后怎么防"，不重复。
-
-
-### 盲区 1：acceptance-test.sh 管道 pipefail 导致虚假绿色
-
-**现象**：`set -euo pipefail` 下 `echo "$OUTPUT" | grep -i "pattern" | head -3` 在 grep 无匹配时，head -3 关闭管道 → grep 收 SIGPIPE → pipefail 判管道失败 → set -e 直接退出脚本。exit code 可能是 0，表面看不出问题，但后续场景全部跳过。
-
-**教训**：bash 脚本中所有 `... | grep ... | head/tail/wc` 展示管道必须在末尾补 `|| true`。CI 机器人应扫描 acceptance-test.sh 中所有此类管道，确认有保护。
-
-**关联回归维度**：维度 8「acceptance-test 健壮性」
-
-### 盲区 2：跨文档 ruleClass 不一致（README vs 代码）
-
-**现象**：`sofagent/audit/README.md` 写 A6=业务底线（代码=能力拐杖）、A11=能力拐杖（代码=业务底线）。单看任何一篇都"像对的"，只有交叉对照才暴露矛盾。
-
-**教训**：规则分级（ruleClass）不是只定义一次就完事了——README 表格是手动维护的，代码是 SSOT。每次新增/调整规则时必须同时更新 README 表格。
-
-**关联回归维度**：维度 4「审计规则分级与 ruleClass 一致性」
-
-### 盲区 3：webhook.ts 硬编码版本号散落
-
-**现象**：`sofagent/audit/src/webhook.ts:24` 写 `const version = '1.1.3'`，check-version.sh 不会扫描到这种局部变量。版本号散落点不止 package.json + constants.ts + index.ts 自报——任何 `const version = 'X.Y.Z'` 模式都是散落点。
-
-**教训**：全局搜索 `version\s*=\s*'[0-9]` 匹配所有硬编码版本号，将其改为 `import { VERSION } from '@sofagent/core'`。
-
-**关联回归维度**：维度 6「版本号硬编码检测」
-
-### 盲区 4：scenario() 场景间清理不彻底（git index vs 工作区）
-
-**现象**：`scenario()` 函数的 `rm -f .env` 只清工作区文件，但 git index 中的 .env 仍然存在。后续场景 `git reset --hard` 回到含 .env 的 commit 时，工作区 .env 被重新还原。
-
-**教训**：场景间清理必须是"git index + 工作区"双重清除：`git rm --cached -f .env 2>/dev/null || true` + `rm -f .env`。
-
-**关联回归维度**：维度 8「acceptance-test 健壮性」
-
-### 盲区 5：npm 已发布版本与工作树不一致（v1.1.3 暴露）
-
-**现象**：v1.1.3 已 commit + tag + npm publish，但 ESM P0 修复（13 个 package.json exports 字段）仍躺工作树未提交。npm 用户装到的是有 ESM bug 的版本，工作树虽修好了却没上车。
-
-**教训**：发版前的"工作树 clean 检查"不能只查"有没有未 commit 的修改"，要扩展为"**npm registry 版本 vs git tag vs 工作树三方一致**"——npm 版本落后于 SSOT 就是发版诚信问题。
-
-**关联回归维度**：维度 17「npm 产物 + bin 权限 + tag commit message」
-
-### 盲区 6：MCP 回读工具缺 [sofagent] 前缀（v1.1.3 暴露）
-
-**现象**：v1.1.2 三层输出签名只覆盖了 CLI/Webhook/审计结果，但 MCP 的 think.md 回读工具（get_think/write_think）返回的 text 缺 `[sofagent]` 前缀。Agent 回读反思/日志时不知道"这是 sofagent 管的数据"——感知层废墟功能。
-
-**教训**：感知层签名不是"做一遍就完了"——每加一个面向用户的输出渠道（含 MCP tools 返回的 text），都要回查签名是否覆盖。MCP 回读类工具是高发区。
-
-**关联回归维度**：维度 7「感知层配置与推送链路」+ 维度九感知层
-
----
-
-## 审查体系演进（附录）
-
-> 本 prompt 自 v1.0.6 起随每轮审查持续追加检查项，新增项已写入对应维度任务（带版本标注）。以下仅保留跨版本**核心教训**，供审视时参考。
-
-### v1.0.7 暴露
-- **发版状态真实性**：changelog 写"已正式发版"必须有真实 commit + tag 支撑（v1.0.7 曾 97 文件未提交却标已发版）。→ 维度八·任务 13
-- **测试数跨文件一致性**：CHANGELOG/ROADMAP/README/README.en/evidence 五处测试数必须一致（v1.0.7 实测 493，曾四处写 480）。→ 维度八·任务 2
-- **版本号复制粘贴**：改写段落版本号必须与 package.json 一致（v1.0.7 P2-10 把 v1.0.7 误抄 v1.0.6）。→ 维度八·任务 5
-- **hook skip 模糊匹配**：`includes('sofagent')` 式判断会让存量用户永远跳过重装（v1.0.7 P1-1）。→ 维度七
-
-### v1.1.0 暴露
-- **workspace 构建顺序**：`--workspaces` 按数组顺序非拓扑，think 排 mcp 后 CI 报 TS2307。→ 维度八·任务 15
-- **12 包发布顺序**：拆分后发布顺序错会导致 npm install 失败。→ 维度二·任务 10
-- **新包测试覆盖率鸿沟**：workflow-hub 1 / harness 0 / eval 0 vs audit 342。→ 维度八·任务 16
-- **deprecation shim 可用性**：core 非必装，未装时 `--doctor` 崩溃→篡改检测降级。→ 维度七·任务 27
-- **包拆分后独立构建**：一个包过不代表全体过（v1.1.0 core 曾缺 filesystem/ 报 TS2307）。→ 维度八·任务 18
-- **"复制≠移动"**：AI 迁移只建副本不删源 → audit 成重复仓库。→ 维度八·任务 19/24
-- **测试工厂函数签名**：提取共享 helper 后签名不兼容，74 测试静默失败。→ 维度八·任务 20
-- **audit/src 收敛**：9 目录迁出后残留副本+import+测试三重污染。→ 维度八·任务 21
-
-### v1.1.3 暴露
-- **Harness 输出可见性**：所有输出渠道须标 sofagent 来源（MCP capabilities 曾漏 A15-A17）。→ 维度一·任务 14 等
-- **deprecation shim 一致性**：注释说"已改"实际只 doctor 改了（v1.1.0）。→ 维度八·任务 19
-- **维度数自校验**：回归清单头声称维度数与实际 #### 数须对齐（v1.1.3 曾 254≠259）。→ 维度八·任务 21/22
-- **包依赖循环持续监控**：audit↔daemon 循环依赖首次独立检出。→ 回归维度 300
-- **跨文档死链全量扫描**：v1.1.3 发现 23 处（文件迁移后 `../` 层数错）。→ 维度五·任务 15
-- **跨包代码重复**：同名 .ts 两包各一份（isomorphic-git.ts 仅 4 行差）。→ 维度八·任务 24
-- **Ledger-Views 归属**：think.md 永为 Ledger/source（ARCHITECTURE:320 曾错标 Views）。→ 维度八·任务 25
-- **孤儿 changelog + 索引遗漏**：v1.1.1 tag 存在但 CHANGELOG 索引遗漏。→ 维度八·任务 26
-- **ruleClass 跨文档漂移**：A6/A11 在代码与 README 间反复漂移，须逐行 diff。→ 维度八·任务 27
-- **tag commit message 一致性**：v1.1.3 tag 指向 commit message "v1.1.3: …" 与版本号不符。→ 维度八·任务 5
-- **npm 发版诚信**：v1.1.3 npm 已发布但工作树仍有 13 文件 ESM 修复未提交。→ 回归维度 17（新增）
-- **MCP 回读缺签名**：MCP think.md 回读工具返回缺 [sofagent] 前缀（感知层废墟）。→ 回归维度 7 + 维度九
-- **A15 actions fail-open**：A15 未声明 actions 时 fail-open（当前 WARN），理想应为 FAIL。→ 回归维度 16（新增）
-- **A/B promote 缺守卫**：decidePromotion 缺 overallImprovement > 0 守卫，窄 eval 集可晋升更差版本。→ 回归维度 16（新增）
-- **SkillOpt 仅静态验证**：读源码不实跑导致 CLI 契约漂移整版本未发现。→ 维度三·任务 9 升级为实跑
-
-### v1.1.4 暴露
-- **daemon 物理失效**：v1.1.0 拆包后 plist 仍调用 `sofagent-audit --daemon start`（已废），WorkingDirectory=$HOME 而非项目目录，PATH 残缺——daemon 自 v1.1.0 起从未真正运行。→ 回归维度 20 + init.ts 修复
-- **watch.yml 不生成**：`--init` 只生成 config.yml 不生成 watch.yml，daemon 只能 fallback 到默认 paths=['src/','agents/','.sofagent/']——项目结构不同则完全失效。→ 回归维度 20
-- **LOOP maxTurns 漏传**：createDeepAgent 未传 maxTurns 参数，PRD Q1 决策「先按 20」未落地，Agent 理论上可无限轮次。→ 回归维度 21
-- **WARN 不写 history**：defaultRunAudit 的 WARN 路径不写 audit history，warn-accumulator 对 LOOP 场景完全失效。→ 回归维度 21 + nodes.ts 修复
-- **warn-accumulator 语义错误**：先过滤 WARN 再判连续——任何 N 条 WARN 都触发，不区分"WARN 后有 PASS 清理"。→ warn-accumulator.ts 重写（真正连续性）
-- **tools.ts run_bash 无代码级拦截**：A11「禁止 rm -rf /」只写在 description 约束里——Agent 忽视 description 时无障碍。→ 回归维度 21 + checkDangerousCommand 黑名单
-- **USB federation 无签名校验**：任何人制作 SOFAGENT 卷标 U 盘即可注入任意 federation 配置——企业环境安全缺口。→ SECURITY.md 警告 + v1.1.5 签名计划
-- **USB applyFederation 未实现**：只写到 ~/.sofagent/federation.json，不自动分发 nodes/policies 到各目录。→ v1.1.4 changelog 标注 + v1.1.5 计划
-- **架构设计文档与实现偏离**：A18 检测范围（设计写只看 added，实现遍历所有）、checkDangerousCommand 正则 \b 边界陷阱——都需要独立审查来发现。→ 发布前审查流程强化
-- **版本标注系统性漂移**：tools.ts/nodes.ts/rule-a18/a19/warn-accumulator/usb-detect 共 6 个文件注释写「v1.1.3 新增」但实际 v1.1.4 交付——SSOT 版本号与交付版本号混淆的连锁效应。→ 阶段八文档收尾强化
-- **`--init` 无条件覆盖全局 plist**（v1.1.4 阶段六暴露）：init.ts 在任何目录跑 --init 都会 unload + 重写 `~/Library/LaunchAgents/com.sofagent.daemon.plist`。OpenClaw 验收 session 在临时目录跑 --init 后，本机 daemon 被指向临时路径完全失效。plist 是系统级全局资源——应只在 WorkingDirectory 变化时才重新生成，否则应跳过。→ 回归维度 22
-- **文档测试数手工同步无人验证**（v1.1.4 回归报告 P0-1）：LIMITATIONS.md/evidence.md 各自声明测试数 343，实际 audit 包 388、全 workspace 660——三个文档手工维护同一个数字，无人验证一致性。应加入 pre-push-check 自动比对 `npm test` 实际输出与文档声明。→ 后续版本工具链增强
-
-### v1.1.4 发版后审查追补（2026-07-19）
-- **config-loader knownKeys 漏 a18/a19**：`config-loader.ts:232-235` 的 knownKeys 集合只有 a1-a11/a14-a17/e1-e4，缺 a18/a19——用户在 config.yml 禁用 a18/a19 会误报"未知规则名"。同类问题 v1.0.9（A16/A17）犯过，这是第三次复发。→ 回归维度 9 通用化检查（knownKeys 集合 = index.ts 所有注册号）
-- **config-loader tryLoadYaml 强制 audit 段**：`config-loader.ts:186-193` 要求 config 必须有 `audit:` 嵌套段，但 `mergeWithDefaults`（218 行）支持顶层字段——前后矛盾。用户按文档顶层写 `extendedRulesEnabled: true` 会被静默忽略 + 误报"未找到 config.yml"。→ 新增 config schema 一致性检查（建议回归维度 7 追加子项）
-- **README git-diff 数声称错误**：`README.md:169` 声称"17 条纯 git-diff"，实际 16 条（defaultRules 10 + extendedRules 6）。总数 21 对，但分类数错。→ 回归维度 4 子项 e（evidenceMode 计数对账）
-- **LOOP/loop-install.sh 版本号写 v1.1.5**：`loop-install.sh:3` 注释写 v1.1.5，但发版是 v1.1.4。check-version.sh 不扫 .sh 文件。→ 回归维度 6 子项 c（.sh 脚本版本号扫描）
-- **FDE/LOOP 调主 install.sh 无契约文档**：`fde-install.sh:52` 和 `loop-install.sh:54` 都调 `sofagent/scripts/install.sh`——跨产品调用接口（路径/参数/退出码）没有契约文档或 pin commit，主 install.sh 改参会悄悄打断 FDE/LOOP。→ 回归维度 23 子项 c
-- **LOOP Agent 数文档不一致**：quick-start 说 3、README 列 2、实际装 4（含 sofagent-fde）。→ 回归维度 23 子项 b
-- **pre-push-check 占位符死链风险**：`check-docs.sh` 曾把 `releasing.md` 里的 `vX.Y.Z.md` 模板占位符当成死链，导致门禁不绿（v1.1.4 发版后审查时短暂出现，后已修复）。工具的边界假设也是审查对象——占位符不是真死链，但被当死链就阻塞发版。→ 回归维度 2 子项 c
-- **Agent 审查报告需主理人交叉验证**：本次审查派 3 个 Agent 并行跑，其中 2 个 Agent 报了误报 P0（维度一说"README:254 残留 v1.1.3"实际是 v1.1.4；维度三说"audit/README 数字滞后 19/8"实际已更新为 21/10）。成员结论为准 ≠ 成员结论全信——主理人汇编时必须实跑复核。→ 审查流程本身的方法论教训
-

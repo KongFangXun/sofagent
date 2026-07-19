@@ -56,9 +56,9 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 
 ---
 
-## 审查维度（23 项 · 编号 1–23）
+## 审查维度（24 项 · 编号 1–24）
 
-> 2026-07-18 治理：从原 35 维度归并同类项而来。2026-07-18 追加维度 16-17（安全约束 + 发布产物验证）。2026-07-19 追加维度 23（独立产品声称一致性），扩展维度 2/4/6/7/8/9 子项（v1.1.4 审查发现）。
+> 2026-07-18 治理：从原 35 维度归并同类项而来。2026-07-18 追加维度 16-17（安全约束 + 发布产物验证）。2026-07-19 追加维度 23（独立产品声称一致性）+ 维度 24（验收测试覆盖率与时效性），扩展维度 2/4/6/7/8/9 子项（v1.1.4 审查发现）。
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -537,11 +537,6 @@ grep "recordLoopAuditHistory" sofagent/orchestrator/src/graph/nodes.ts
 - **测试数一致**——README/ROADMAP/evidence 与 npm test 输出一致
 - **安全约束 fail-closed**——A15 未声明 actions 时必须 FAIL 或 WARN（v1.1.3 追加）
 - **npm 产物三方一致**——npm registry = SSOT = git tag = 工作树 clean（v1.1.3 追加）
-- **实验性标注不能去掉**——daemon/编排引擎/Windows 仍然实验性
-- **发版前 git status 零未提交修改**
-- **追加新维度前先 grep 同类**——见维护公约
-- **发现的问题请给出文件路径+行号+具体建议**
-- **🔴 plist 不被外来 --init 覆盖**（v1.1.4 阶段六暴露）——`--init` 在任何目录都会重写 `~/Library/LaunchAgents/com.sofagent.daemon.plist`，验收测试的临时目录 --init 会破坏本机 plist。plist 是全局系统资源——应只在 WorkingDirectory 变化时才重新生成（见维度 22）
 
 ---
 
@@ -605,38 +600,70 @@ grep -H "v[0-9]\+\.[0-9]\+\.[0-9]\+" FDE/fde-install.sh LOOP/loop-install.sh | h
 
 ---
 
-> **审查者**：请严格验证每一项声称，全维度逐项核对。
+### 验收测试覆盖率与时效性（v1.1.4 追加）
+
+#### 24. 两份 acceptance test 与 changelog 功能对齐
+
+> v1.1.4 暴露：`tools/acceptance-test.sh`（50 场景）和 `docs/verification/openclaw-acceptance-test.md`（51 场景）对本版本新增功能**零覆盖**——A18 垃圾文件检测、LOOP 独立产品（LOOP/ 目录 / loop-install.sh / loop-workflow.sh / FLOWHUB）、USB federation、工具注入（ENGINEER_TOOLS / REVIEWER_TOOLS / maxTurns / checkDangerousCommand / recordLoopAuditHistory / warn-accumulator）全部无场景。两份验收测试场景数远落后于代码实现。
+
+```bash
+# 子项 a: 场景数声称与实际对齐（v1.1.4 教训——acceptance-test.sh 头部声明 "50 个" 但 grep 实际场景数）
+DECLARED_COUNT=$(head -5 tools/acceptance-test.sh | grep -oE "[0-9]+ 个端到端" | grep -oE "[0-9]+")
+ACTUAL_COUNT=$(grep -c "^scenario " tools/acceptance-test.sh)
+echo "声明: $DECLARED_COUNT / 实际: $ACTUAL_COUNT"
+# 期望：两者相等。acceptance-test.sh 头部第 4 行的场景数必须与 grep '^scenario ' 的实际数一致
+
+# 子项 b: 本版本 changelog 功能点逐条对照 acceptance-test 覆盖
+# 读 docs/changelog/vX.Y.md 的「核心变更/交付」章节，提取每条功能关键词
+# 逐条 grep tools/acceptance-test.sh + docs/verification/openclaw-acceptance-test.md
+# 例：v1.1.4 新增 A18 → grep A18 两份文件，期望都有场景
+CHANGELOG_FEATURES=$(grep -E "^### |^## 交付" docs/changelog/v$(node -e "console.log(require('./package.json').version)").md | head -20)
+echo "$CHANGELOG_FEATURES"
+# 人工检查：每个功能点在两份 acceptance test 里都有对应场景。
+# 零覆盖 = P0（验收测试无法发现本版本功能的回归）
+
+# 子项 c: 两份 acceptance test 同步性（v1.1.4 暴露——openclaw-acceptance-test.md 零覆盖 v1.1.4）
+# openclaw-acceptance-test.md 是 Agent 端到端验收，acceptance-test.sh 是 CLI 自动化——两者覆盖范围应大致同步
+SH_TEST_FEATURES=$(grep -oE "A[0-9]+|LOOP|USB|daemon|maxTurns|warn-accumulator" tools/acceptance-test.sh | sort -u)
+OC_TEST_FEATURES=$(grep -oE "A[0-9]+|LOOP|USB|daemon|maxTurns|warn-accumulator" docs/verification/openclaw-acceptance-test.md | sort -u)
+diff <(echo "$SH_TEST_FEATURES") <(echo "$OC_TEST_FEATURES")
+# 期望：两份覆盖的功能关键词集合大致一致（允许有差异，但不能一方完全缺失某功能）
+
+# 子项 d: openclaw-acceptance-test.md 顶部"覆盖范围"描述行同步
+# 该文件第 7 行写「覆盖审计管道全规则 + hook 机制 + SkillOpt + ...」——新增功能后必须同步更新
+HEAD_LINE=$(sed -n '7p' docs/verification/openclaw-acceptance-test.md)
+echo "当前覆盖描述: $HEAD_LINE"
+# 人工检查：描述行是否包含本版本新增的关键功能（A18/A19/LOOP/USB/工具注入等）
+
+# 子项 e: 失效场景清理（acceptance test 里的旧命令/旧路径）
+# 代码演进后，旧场景可能引用已废弃的 CLI 子命令或已迁移的文件路径——跑起来必然 FAIL
+# 例：sofagent-audit --daemon（v1.1.4 废弃）、workflow-hub/（v1.1.4 更名为 FLOWHUB/）
+grep -rn "sofagent-audit --daemon\|workflow-hub/" tools/acceptance-test.sh docs/verification/openclaw-acceptance-test.md
+# 期望：零命中。命中 = 场景引用了已废弃命令/已迁移路径，必然 FAIL
+
+# 子项 f: acceptance-test.sh 场景间清理健壮性（v1.1.3 教训——scenario() 函数的清理逻辑）
+# 每个 scenario() 调用都应清理上一场景的残留（git reset + rm .env + unstage）
+# v1.1.3 曾出现 scenario 间 .env 残留导致后续场景误判
+grep -A5 "^scenario()" tools/acceptance-test.sh | grep -c "git rm --cached -f .env\|git reset --hard"
+# 期望：≥ 1（scenario 函数含清理逻辑）
+```
 
 ---
 
-请按以下结构输出审查报告：
+## 输出报告格式
 
 ```markdown
 # sofagent 回归检查报告
 
 ## 总览
-- 审查日期：YYYY-MM-DD
-- 审查范围：23 维度 + 跨版本核心维度
-- 环境验证：pre-push-check [✅/❌] / npm test [✅/❌] / check-docs [✅/❌] / check-version [✅/❌]
-- Fresh clone：[✅/❌]
+- 审查日期 / 审查范围（23 维度 + 跨版本核心维度）
+- 环境验证：pre-push-check / npm test / check-docs / check-version / Fresh clone 各项 [✅/❌]
 - 整体结论：[已发布无遗留 / 需修复后补发 / 阻塞]
 
-## 问题清单
-
-### 🔴 P0（阻塞发布）
-> 必须修复才能发版
-
-### 🟡 P1（建议修复）
-| # | 维度 | 文件:行 | 问题 | 建议 |
-|---|------|---------|------|------|
-
-### 🟢 P2（优化建议）
-| # | 维度 | 文件:行 | 问题 | 建议 |
-|---|------|---------|------|------|
+## 问题清单（按 P0/P1/P2 分级，列：维度 / 文件:行 / 问题 / 建议）
 
 ## 维度通过统计
-- 通过：X / ⚠️：X / ❌：X
-- 🔴 P0：X / 🟡 P1：X / 🟢 P2：X
+- 通过：X / ⚠️：X / ❌：X / 🔴 P0：X / 🟡 P1：X / 🟢 P2：X
 
 ## 最终建议
 - [ ] 可以发版 / [ ] 需修复 P0 后发版 / [ ] 需重大修复
