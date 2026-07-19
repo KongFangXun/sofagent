@@ -8,6 +8,13 @@
   </a>
 </p>
 
+<svg width="100%" height="60" viewBox="0 0 720 60" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="sofagent capability banner">
+  <rect width="720" height="60" rx="8" fill="#0B1220"/>
+  <rect x="0" y="0" width="144" height="60" fill="#16B8F3" opacity="0.15"/>
+  <text x="360" y="26" fill="#16B8F3" font-family="-apple-system,Segoe UI,sans-serif" font-size="16" font-weight="700" text-anchor="middle">约束底座 · 编排 · 审计 · 回溯 · 进化</text>
+  <text x="360" y="46" fill="#94A3B8" font-family="-apple-system,Segoe UI,sans-serif" font-size="12" text-anchor="middle">Agent Harness 中间件 + FDE 工具包 · 让企业用对 AI</text>
+</svg>
+
 <p align="center">
   <strong>sofa + agent = sofagent / 沙发特工</strong><br/>
   <em>不是帮企业「接上 AI」，是帮企业「用对 AI」。</em>
@@ -22,6 +29,8 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.5-16B8F3" alt="Version" /></a>
+  <a href="https://www.npmjs.com/package/@sofagent/audit"><img src="https://img.shields.io/npm/v/@sofagent/audit?label=npm&color=16B8F3" alt="npm" /></a>
+  <a href="./README.md"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
 <p align="center" style="color:#64748B;font-size:13px;">
@@ -38,9 +47,19 @@
 
 ---
 
+| 你想要 | sofagent 给什么 |
+|------|------|
+| 让 Agent 不越界 | 🧭 约束底座（红线注入） |
+| 大任务并行、自动择优 | ⚙️ 编排引擎 |
+| 改了什么赖不掉 | 🔍 审计引擎（git diff 硬证据·0 token） |
+| 出事能回滚 | 🔄 回溯引擎（自动快照） |
+| 越用越好 | 🧬 进化引擎（周度自检，实验性） |
+
+---
+
 ## 目录
 
-- [30 秒看懂 sofagent](#30-秒看懂-sofagent)
+- [10 秒看懂 sofagent](#10-秒看懂-sofagent)
 - [为什么需要 sofagent？](#为什么需要-sofagent)
 - [怎么装？](#怎么装)
 - [新手上路（成为 FDE 节点）](#新手上路成为-fde-节点)
@@ -54,13 +73,15 @@
 
 ---
 
-## 30 秒看懂 sofagent
+↑ [回到顶部](#sofagent)
 
-> **sofagent 是一套开源（MIT）的 FDE（前线部署工程）工具包——FDE 不是软件，而是一种能力：让企业用自己选的 Agent + 大模型，可治理、可问责地落地 AI。**
+## 10 秒看懂 sofagent
 
-我们用自研的**一底座·四引擎（约束底座 + 编排 / 审计 / 回溯 / 进化引擎）**做问责底座，基于你自选的大厂 Agent 和大模型，帮 SMB 与 OPC 梳理 workflow、搭建本体、部署专有 Sub Agent。
+> **sofagent = 开源（MIT）的 FDE 工具包：用你自选的 Agent + 大模型，可治理、可问责地落地 AI。一底座·四引擎（约束 / 编排 / 审计 / 回溯 / 进化）做问责底座。**
 
 ---
+
+↑ [回到顶部](#sofagent)
 
 ## 为什么需要 sofagent？
 
@@ -79,6 +100,8 @@
 
 ---
 
+↑ [回到顶部](#sofagent)
+
 ## 怎么装？
 
 ```bash
@@ -87,7 +110,8 @@ npm install -g @sofagent/audit @sofagent/core && sofagent-audit --init
 > [!NOTE]
 > `@sofagent/core` 提供 doctor/verify 等运行时诊断能力，是 audit 的必备配套包。
 
-装完三步体验：
+<details>
+<summary>🚀 装完三步体验（点开）</summary>
 
 ```bash
 # 1. 看约束规则——Agent 会带着这些红线干活
@@ -103,6 +127,7 @@ sofagent-audit --timeline
 # 演示完清理（A1 已拦提交，无新 commit）：取消暂存并删除 .env
 git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
+</details>
 
 > [!NOTE]
 > 需要 Node.js ≥ 18 + bash + git。macOS / Linux 全功能，Windows 实验性。[完整安装说明](./docs/HANDBOOK.md)
@@ -135,6 +160,8 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 
 ---
 
+↑ [回到顶部](#sofagent)
+
 ## 新手上路（成为 FDE 节点）
 
 想用 sofagent 成为自己业务的 FDE 节点？按这个顺序读，半小时就能上手：
@@ -148,6 +175,8 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 > 具体安装与命令以对应脚本和文档为准。术语速查见 [docs/ARCHITECTURE.md · 术语对照](./docs/ARCHITECTURE.md#术语对照)。
 
 ---
+
+↑ [回到顶部](#sofagent)
 
 ## FDE 怎么工作？
 
@@ -182,6 +211,26 @@ FDE 交付完就撤离，AI 节点留在企业自己跑。
 
 > [!NOTE]
 > 🔮 **v1.1.0 已发布**：包结构纯度重构——audit 只做审计，12 个独立包 + 轻量多设备。详见 [开发日志](./docs/changelog/v1.1.0.md)。4 种同步方案见 [多设备同步指南](./docs/guides/multi-device-sync.md)。
+
+> [!TIP]
+> 一图鸟瞰：Gateway 在外面跑，sofagent 挂进去管行为；五能力形成闭环，落到两种部署节点。
+
+```mermaid
+flowchart TB
+    GW[🌐 Gateway<br/>OpenClaw / DeepAgents<br/>统一入口·路由·会话]
+    subgraph SA[sofagent · Agent Harness 中间件]
+        direction TB
+        CB[🧭 约束底座<br/>红线注入]
+        OR[⚙️ 编排引擎<br/>拆任务·并行·A/B]
+        AU[🔍 审计引擎<br/>git diff 硬证据]
+        RE[🔄 回溯引擎<br/>快照·回滚]
+        EV[🧬 进化引擎<br/>周度自检·实验性]
+        CB --> OR --> AU --> RE --> EV --> CB
+    end
+    GW --> SA
+    SA --> N1[🔄 自动运行节点<br/>企业无人值守·需 OpenClaw]
+    SA --> N2[⚡ 个人增强节点<br/>开发者·WorkBuddy/Codex]
+```
 
 #### 🧭 约束底座
 
@@ -294,6 +343,8 @@ flowchart LR
 
 ---
 
+↑ [回到顶部](#sofagent)
+
 ## 对比现有工具
 
 | | sofagent | detect-secrets | pre-commit hooks |
@@ -306,10 +357,17 @@ flowchart LR
 | 配置删除检测 | ✅ | ❌ | ❌ |
 | 安装方式 | 一条命令 | 一条命令 | 手动配置规则 |
 
+<details>
+<summary>💡 它和密钥扫描工具的关系</summary>
+
 > [!NOTE]
 > sofagent 不替代密钥扫描工具，而是补上它们没覆盖的「Agent 行为治理」——边界越界、注入、流程合规、知识库跨域，是 LLM Agent 特有的翻车模式。
 
+</details>
+
 ---
+
+↑ [回到顶部](#sofagent)
 
 ## 效果怎么样？
 
@@ -324,6 +382,8 @@ flowchart LR
 
 ---
 
+↑ [回到顶部](#sofagent)
+
 ## 内置 Agent（v1.0.7 引入 · 基础设施 Agent 自 v1.0.8）
 
 | Agent | 调用方式 | 触发时机 |
@@ -331,10 +391,17 @@ flowchart LR
 | **FDE 部署工程师** | `@sofagent-fde` | 部署完成后 suggest 后续巡检 |
 | **合规审计员** | `@sofagent-audit` | 每次 commit / FDE 部署 / LOOP 任务闭环 |
 
+<details>
+<summary>💡 命令行 vs Agent 身份</summary>
+
 > [!NOTE]
 > `@sofagent-audit` 底层即 `@sofagent/audit` npm 包，以 Skill Agent 形式被调用；`@sofagent-fde` 同理来自 FDE 工具包——同一套能力，既可以命令行跑，也可以 Agent 身份被调用。
 
+</details>
+
 ---
+
+↑ [回到顶部](#sofagent)
 
 ## 你需要哪个？
 
@@ -355,6 +422,8 @@ sofagent 支持两种节点类型——**自动运行节点**（企业无人值�
 > v1.0.7 的 Sub Agent 约束自加载（`buildConstrainedSystemPrompt`）让约束不依赖任何 Agent 平台的 Skill 系统——Sub Agent 启动时直接读 `.sofagent/` 文件，平台换了约束不丢。
 
 ---
+
+↑ [回到顶部](#sofagent)
 
 ## Flow Hub：企业落地的可靠底座
 
@@ -411,6 +480,8 @@ sofagent hub deploy 制造业/应付账款审批    # 一键部署到企业
 
 ---
 
+↑ [回到顶部](#sofagent)
+
 ## 延伸阅读
 
 | 你想了解 | 看哪里 |
@@ -426,9 +497,13 @@ sofagent hub deploy 制造业/应付账款审批    # 一键部署到企业
 
 ---
 
+↑ [回到顶部](#sofagent)
+
 ## 贡献与致谢
 
 欢迎提 Issue 和 PR，尤其挑刺的那种。[CONTRIBUTING.md](./CONTRIBUTING.md) · [致谢](./docs/THANKS.md)
 
 > [!NOTE]
 > sofagent 由孔放勋设计，代码由 AI 模型编写，每个版本经独立模型评审。
+
+↑ [回到顶部](#sofagent)

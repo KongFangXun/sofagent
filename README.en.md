@@ -8,6 +8,13 @@
   <img src="docs/assets/sofagent.png" alt="sofagent" width="160" />
 </p>
 
+<svg width="100%" height="60" viewBox="0 0 720 60" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="sofagent capability banner">
+  <rect width="720" height="60" rx="8" fill="#0B1220"/>
+  <rect x="0" y="0" width="144" height="60" fill="#16B8F3" opacity="0.15"/>
+  <text x="360" y="26" fill="#16B8F3" font-family="-apple-system,Segoe UI,sans-serif" font-size="16" font-weight="700" text-anchor="middle">Constraint · Orchestration · Audit · Restore · Evolution</text>
+  <text x="360" y="46" fill="#94A3B8" font-family="-apple-system,Segoe UI,sans-serif" font-size="12" text-anchor="middle">Agent Harness Middleware + FDE Toolkit · Helping businesses use AI right</text>
+</svg>
+
 <p align="center">
   <strong>sofa + agent = sofagent / 沙发特工</strong><br/>
   <em>It's not about connecting businesses to AI — it's about helping them use AI right.</em>
@@ -22,6 +29,8 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.5-16B8F3" alt="Version" /></a>
+  <a href="https://www.npmjs.com/package/@sofagent/audit"><img src="https://img.shields.io/npm/v/@sofagent/audit?label=npm&color=16B8F3" alt="npm" /></a>
+  <a href="./README.md"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
 ---
@@ -33,8 +42,19 @@
 
 ---
 
+| You want | sofagent gives you |
+|------|------|
+| Keep Agents in bounds | 🧭 Constraint Base (red lines injected) |
+| Parallel big tasks, auto-pick best | ⚙️ Orchestration engine |
+| Prove what changed | 🔍 Audit engine (git diff hard evidence · 0 token) |
+| Roll back when things break | 🔄 Restore engine (auto-snapshot) |
+| Get better over time | 🧬 Evolution engine (weekly self-check, experimental) |
+
+---
+
 ## Contents
 
+- [10-second version](#10-second-version)
 - [Why sofagent?](#why-sofagent)
 - [Install](#install)
 - [How FDE works](#how-fde-works)
@@ -46,6 +66,16 @@
 - [Further reading](#further-reading)
 
 ---
+
+↑ [Back to top](#sofagent)
+
+## 10-second version
+
+> **sofagent = an open-source (MIT) FDE toolkit: deploy AI with your own Agents + LLMs, governed and accountable. One base + four engines (constraint / orchestration / audit / restore / evolution) form the accountability base.**
+
+---
+
+↑ [Back to top](#sofagent)
 
 ## Why sofagent?
 
@@ -64,13 +94,16 @@ No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep 
 
 ---
 
+↑ [Back to top](#sofagent)
+
 ## Install
 
 ```bash
 npm install -g @sofagent/audit @sofagent/core && sofagent-audit --init
 ```
 
-Three-step first experience:
+<details>
+<summary>🚀 Three-step first experience (click to open)</summary>
 
 ```bash
 # 1. See constraints — agents carry these rules
@@ -86,6 +119,7 @@ sofagent-audit --timeline
 # Cleanup after demo (A1 blocked the commit, no new commit): unstage and remove .env
 git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
+</details>
 
 > [!NOTE]
 > Requires Node.js ≥ 18 + bash + git. Full macOS/Linux support, Windows experimental. [Full install guide](./docs/HANDBOOK.md)
@@ -102,6 +136,8 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 > Packages are published to npm on each release. If `npm install -g` fails locally, use the in-repo script `sofagent/scripts/install.sh`.
 
 ---
+
+↑ [Back to top](#sofagent)
 
 ## How FDE works
 
@@ -138,6 +174,26 @@ No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep 
 
 > [!NOTE]
 > 🔮 **v1.1.0 released**: Package purity refactor — audit just audits, 12 independent packages + lightweight multi-device. See [changelog](./docs/changelog/v1.1.0.md). 4 sync methods: [Multi-Device Sync Guide](./docs/guides/multi-device-sync.md).
+
+> [!TIP]
+> Bird's-eye: Gateway runs outside, sofagent plugs in to govern behavior; five capabilities form a loop, landing on two deployment nodes.
+
+```mermaid
+flowchart TB
+    GW[🌐 Gateway<br/>OpenClaw / DeepAgents<br/>entry · routing · sessions]
+    subgraph SA[sofagent · Agent Harness Middleware]
+        direction TB
+        CB[🧭 Constraint Base<br/>red lines]
+        OR[⚙️ Orchestration<br/>split · parallel · A/B]
+        AU[🔍 Audit<br/>git diff evidence]
+        RE[🔄 Restore<br/>snapshot · rollback]
+        EV[🧬 Evolution<br/>weekly self-check · experimental]
+        CB --> OR --> AU --> RE --> EV --> CB
+    end
+    GW --> SA
+    SA --> N1[🔄 Auto-running node<br/>unattended · needs OpenClaw]
+    SA --> N2[⚡ Personal node<br/>dev · WorkBuddy/Codex]
+```
 
 #### 🧭 Constraint Base
 
@@ -261,6 +317,8 @@ The full loop: **Constrain → Orchestrate → Audit → Restore → Evolve**.
 
 ---
 
+↑ [Back to top](#sofagent)
+
 ## vs. existing tools
 
 | | sofagent | detect-secrets | pre-commit hooks |
@@ -273,7 +331,17 @@ The full loop: **Constrain → Orchestrate → Audit → Restore → Evolve**.
 | Config deletion detection | ✅ | ❌ | ❌ |
 | Setup | One command | One command | Manual rules |
 
+<details>
+<summary>💡 How it relates to secret scanners</summary>
+
+> [!NOTE]
+> sofagent doesn't replace secret scanners — it adds the "Agent behavior governance" they miss: boundary violations, injection, process compliance, knowledge-base cross-domain are LLM-Agent-specific failure modes.
+
+</details>
+
 ---
+
+↑ [Back to top](#sofagent)
 
 ## Does it work?
 
@@ -288,6 +356,8 @@ Install and run — no dependency on agent compliance:
 
 ---
 
+↑ [Back to top](#sofagent)
+
 ## Built-in Agents (v1.0.7 introduced · infra Agent since v1.0.8)
 
 | Agent | How to invoke | When it auto-triggers |
@@ -295,8 +365,15 @@ Install and run — no dependency on agent compliance:
 | **FDE Deployment Engineer** | `@sofagent-fde` | Suggests follow-up inspection after deployment |
 | **Compliance Auditor** | `@sofagent-audit` | Every commit / FDE deployment / LOOP task completion |
 
+<details>
+<summary>💡 CLI vs Agent identity</summary>
+
 > [!NOTE]
 > `@sofagent-audit` is the `@sofagent/audit` npm package invoked as a Skill Agent; `@sofagent-fde` similarly comes from the FDE toolkit — same capability, available both as a CLI and as an Agent.
+
+</details>
+
+↑ [Back to top](#sofagent)
 
 ## Which do you need?
 
@@ -317,6 +394,8 @@ sofagent supports two node types — **Auto-running node** (OpenClaw full-stack)
 > v1.0.7 Sub Agent constraint self-loading (`buildConstrainedSystemPrompt`) makes constraints platform-independent — Sub Agents read `.sofagent/` files at startup. Change your Agent platform, constraints stay.
 
 ---
+
+↑ [Back to top](#sofagent)
 
 ## Flow Hub: the reliable foundation for enterprise landing
 
@@ -373,6 +452,8 @@ sofagent hub deploy 制造业/应付账款审批    # one-click deploy to your o
 
 ---
 
+↑ [Back to top](#sofagent)
+
 ## Further reading
 
 | You want | Read |
@@ -387,9 +468,13 @@ sofagent hub deploy 制造业/应付账款审批    # one-click deploy to your o
 
 ---
 
+↑ [Back to top](#sofagent)
+
 ## Contributing
 
 Issues and PRs welcome — especially the critical kind. [CONTRIBUTING.md](./CONTRIBUTING.md) · [Credits](./docs/THANKS.md)
 
 > [!NOTE]
 > sofagent is designed by KongFangXun. Code written by AI models, product decisions and final review by the author. Every release reviewed by an independent model.
+
+↑ [Back to top](#sofagent)
