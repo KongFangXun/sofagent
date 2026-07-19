@@ -139,7 +139,7 @@ sofagent 不只是审计——完整形态是「一底座 + 四引擎」的 Harn
 flowchart LR
     CB[🧭 约束底座<br/>开工前注入红线] --> OR[⚙️ 编排引擎<br/>大任务拆小·多 Agent 并行]
     OR --> AU[🔍 审计引擎<br/>每次变更硬证据审查]
-    AU --> RE[🔄 回溯引擎<br/>自动快照·一键回滚]
+    AU --> RE[🔄 回溯引擎<br/>git snapshot·一键回滚]
     RE --> EV[🧬 进化引擎<br/>周度巡检·越用越好]
     EV -.-> CB
 ```

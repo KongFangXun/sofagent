@@ -22,9 +22,9 @@ not_when: [简单闲聊, 纯技术问题不涉及部署]
 
 ```bash
 # 部署模式
-sofagent-audit subagent run fde --task "<用户的任务描述，原样传入>"
+sofagent-orchestrator subagent run fde --task "<用户的任务描述，原样传入>"
 # 持续优化模式（v1.0.8 新增）
-sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
+sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点"
 ```
 
 部署完成后自动提醒运行合规审计 `@sofagent-audit`——所有 Agent 部署后必调 Audit。

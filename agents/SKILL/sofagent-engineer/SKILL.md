@@ -76,7 +76,7 @@ slug: sofagent-engineer
 ```
 编排层（WorkBuddy 等）产出 workflow.yml → LOOP 引擎 → 你执行子任务 N/M
                                                 ↓
-                                    engineer → audit(A1-A19) → reviewer
+                                    engineer → audit(A1-A11、A14-A19) → reviewer
                                                 ↓ IS_PASS:NO
                                           你收到反馈 → 只修标记问题
 ```

@@ -106,7 +106,7 @@ LOOP 带有 3 个内置 Agent Skill，装在 `agents/SKILL/` 下：
 |-------|------|---------|
 | `sofagent-engineer` | 软件工程师——写代码、修复、build/test | 性价比模型（量大、任务明确） |
 | `sofagent-reviewer` | 代码审查员——审查 + IS_PASS 判定 | 推理能力更强的模型（判断需要深思） |
-| `sofagent-audit` | 合规审计员——A1-A19 规则检查 | 本地（不调 LLM） |
+| `sofagent-audit` | 合规审计员——A1-A11、A14-A19 规则检查 | 本地（不调 LLM） |
 
 > 💡 如需 Workflow 优化（sofagent-fde），用 `bash FDE/fde-install.sh` 单独装。
 

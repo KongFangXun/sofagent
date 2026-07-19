@@ -24,8 +24,8 @@
 | # | 防线 | 谁做 | 看什么 | 可绕过？ |
 |---|------|------|------|:--:|
 | 1 | 构建验证 | sofagent-engineer | build + test 必须通过才提交 | 不可——规则写死在 Agent 定义里 |
-| 2 | 硬证据审计 | sofagent-audit (TS CLI) | git diff → A1-A11 模式匹配 | 不可——commit-msg hook |
-| 3 | 代码审查 | sofagent-reviewer (LLM) | 代码变更 → 语义/影响/质量 | 可配置——改 `agents/sofagent-reviewer.md` |
+| 2 | 硬证据审计 | sofagent-audit (TS CLI) | git diff → A1-A11、A14-A19 模式匹配 | 不可——commit-msg hook |
+| 3 | 代码审查 | sofagent-reviewer (LLM) | 代码变更 → 语义/影响/质量 | 可配置——改 `agents/SKILL/sofagent-reviewer/SKILL.md` |
 | 4 | 人类确认 | 你 | 审查报告 → 直觉判断 | 最终决定权 |
 
 ## 一个迭代周期
@@ -77,7 +77,7 @@ graph TD
     FDE[forward-deployed-engineer] -.->|定期监督| THINK[think.md 反思趋势]
     FDE -.->|定期监督| STATS[审计拦截统计]
     FDE -.->|触发巡检| COMPLIANCE[compliance-auditor]
-    FDE -.->|优化| AGENT_DEF[agents/*.md rules/workflow]
+    FDE -.->|优化| AGENT_DEF[agents/SKILL/ rules/workflow]
     AGENT_DEF -.->|升级| CODING
     AGENT_DEF -.->|升级| REVIEW
 ```
@@ -87,7 +87,7 @@ graph TD
 - **内层循环 StateGraph**：`coding → audit → review → human`，条件路由 `audit.fail→coding` / `review.reject→coding` / `human.confirm→next`
 - **外层循环定时触发**：FDE 每周分析 think.md 趋势，每月触发 compliance-auditor 全量巡检
 - **发版后自进化**：FDE 自动更新 fresh-eyes-review / regression-checklist / acceptance-test.sh（纯增量），releasing.md 需人类确认后 apply
-- **Agent 定义来源**：`agents/*.md` → `createDeepAgent({ systemPrompt: loadPrompt(...) })`
+- **Agent 定义来源**：`agents/SKILL/*/SKILL.md` → `createDeepAgent({ systemPrompt: loadPrompt(...) })`
 
 > ⚠️ 以上为计划，未实际运行。当前阶段是 Agent 定义 + 流程图 + 验证文档映射，代码化在 Agent 各自跑通后启动。
 
@@ -136,16 +136,16 @@ sofagent 的版本发布遵循 [`docs/verification/releasing.md`](../docs/verifi
 
 | 文档 | 在 LOOP 中的角色 | 谁执行 |
 |------|------|------|
-| `docs/verification/fresh-eyes-review.md` | 发版前/后发布后审查（7 维度 × 3 轮） | review-agent（全新 session） |
-| `docs/verification/regression-checklist.md` | 发版前全局回归检查（176 维度） | FDE 触发 compliance-auditor |
-| `tools/acceptance-test.sh` | 发版前 CLI 端到端验收（79 场景，原 openclaw-acceptance-test.md 已合并入此） | minimal-change-engineer 自检 |
+| `docs/verification/fresh-eyes-review.md` | 发版前/后发布后审查（10 维度 × 6 方面） | review-agent（全新 session） |
+| `docs/verification/regression-checklist.md` | 发版前全局回归检查（26 项） | FDE 触发 compliance-auditor |
+| `tools/acceptance-test.sh` | 发版前 CLI 端到端验收（87 个场景，原 openclaw-acceptance-test.md 已合并入此） | minimal-change-engineer 自检 |
 | `docs/verification/releasing.md` | LOOP 的整体流程参照——哪个阶段谁做什么 | FDE（流程监督者） |
 
 ### 未来：DeepAgentsJS + LangGraph 实现
 
-v1.1.4 当前是**文档定义阶段**——Agent 定义在 `agents/` 下，流程定义在 `LOOP/` 下。等 Agent 各自通过 OpenClaw 跑通后，下一步是用 DeepAgentsJS + LangGraph 把流程**代码化**：
+v1.1.4 当前是**文档定义阶段**——Agent 定义在 `agents/SKILL/` 下，流程定义在 `LOOP/` 下。等 Agent 各自通过 OpenClaw 跑通后，下一步是用 DeepAgentsJS + LangGraph 把流程**代码化**：
 
-- `agents/` 下的 Agent 定义 → `createDeepAgent()` 的 `systemPrompt` 参数
+- `agents/SKILL/` 下的 Agent 定义 → `createDeepAgent()` 的 `systemPrompt` 参数
 - `LOOP/loop.md` 中的 Mermaid 流程图 → LangGraph `StateGraph` 的节点和边
 - `docs/verification/releasing.md` 的十二阶段 SOP → StateGraph 中的条件路由（自动执行 vs 人类确认）
 - 验证文档 → StateGraph 节点的输入参数
@@ -184,7 +184,7 @@ flowchart TD
     FDE --> T2["2. 审查 reviewer 报告质量<br/>审查变橡皮图章？→ 调整审查标准"]
     FDE --> T3["3. 分析 audit 拦截统计<br/>哪种违规增加？→ 新增审计规则？"]
     FDE --> T4["4. 触发 @sofagent-audit 巡检<br/>Workflow 完整性 + 配置一致性 + 死链"]
-    FDE --> T5["5. 优化 Agent 定义<br/>改 agents/*.md，内层循环自动升级"]
+    FDE --> T5["5. 优化 Agent 定义<br/>改 agents/SKILL/，内层循环自动升级"]
     FDE --> T6["6. 发版后 SOP 自我进化<br/>读 think.md + changelog → 提出流程改进建议"]
     T6 --> Human_Confirm["👤 作者确认后 apply"]
 ```
@@ -205,7 +205,7 @@ flowchart TD
 
 ### 外层循环的产物
 
-- **优化后的 Agent 定义**：`agents/*.md` 的 rules 和 workflow 更新
+- **优化后的 Agent 定义**：`agents/SKILL/*/SKILL.md` 的 rules 和 workflow 更新
 - **审计规则调整**：`.sofagent/config.yml` 的新增或修改
 - **合规审计报告**：compliance-auditor 产出的周期性报告
 - **优化记录**：think.md 中记录"本次优化了什么、为什么、预期效果"
@@ -242,5 +242,5 @@ flowchart TD
 2. 让 sofagent-engineer 完成一个真实任务（比如修 README 里的 typo）
 3. 让 sofagent-reviewer 审查那次提交
 4. 人工判断审查报告质量
-5. 审查报告不达标 → 改 `agents/sofagent-reviewer.md` 重新跑
+5. 审查报告不达标 → 改 `agents/SKILL/sofagent-reviewer/SKILL.md` 重新跑
 6. 审查报告达标 → 开始写 DeepAgentsJS + LangGraph 编排代码

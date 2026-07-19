@@ -48,7 +48,7 @@ export function checkRuleA22(ctx: AuditContext): RuleCheck {
 
 ### Step 2：写测试
 
-在同级目录创建 `rule-a12-no-console.test.ts`，用 `makeDiffFile` 和 `makeCtx`（来自 `src/test-utils.ts`）造 mock 数据。覆盖：新增 console.log → WARN、无 console → PASS、删除行中的 console 不触发、evidenceMode 标注正确。
+在同级目录创建 `rule-a22-no-console.test.ts`，用 `makeDiffFile` 和 `makeCtx`（来自 `src/test-utils.ts`）造 mock 数据。覆盖：新增 console.log → WARN、无 console → PASS、删除行中的 console 不触发、evidenceMode 标注正确。
 
 ### Step 3：注册规则
 

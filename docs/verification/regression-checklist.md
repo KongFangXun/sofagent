@@ -81,9 +81,10 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 grep -rniE "GLM|DeepSeek|双视角|P[012]×|审查修复|陌生视角|fresh-eyes|审查轮次|审查×|审查驱动|审查吸收" CHANGELOG.md docs/changelog/v*.md ROADMAP.md
 # 期望：零命中
 
-# 子项 b: 「回溯引擎」零残留
-grep -rn "回溯引擎" --include="*.md" . | grep -v node_modules | grep -v "docs/changelog"
-# 期望：零匹配
+# 子项 b: 「回溯引擎」诚实化检查（v1.1.6 更新——不要求零命中，只要求有诚实说明）
+# 「回溯引擎」后应跟"本质：git snapshot"或已改为「回溯能力」
+grep -rn "回溯引擎" --include="*.md" . | grep -v node_modules | grep -v "docs/changelog" | grep -v "CHANGELOG.md" | grep -v ".workbuddy/" | grep -v "regression-checklist.md" | grep -v "git snapshot\|revert 包装\|本质"
+# 期望：零命中（所有保留「回溯引擎」的地方都附了诚实说明；改为「回溯能力」的使用不用匹配）
 
 # 子项 c: 孤儿 changelog 检测
 for f in docs/changelog/v*.md; do
