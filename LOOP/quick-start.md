@@ -100,7 +100,7 @@ Workflow 模式是 LOOP 的高级用法——外部编排平台产出 workflow.y
 
 ## 内置 Agent
 
-LOOP 带有 3 个内置 Agent Skill，装在 `agents/SKILL/` 下：
+LOOP 内置 3 个 Sub Agent Skill，装在 `agents/SKILL/` 下（项目仓库中 agent 定义文件更多，这 3 个是 LOOP 编排引擎直接调度的）：
 
 | Skill | 角色 | 模型建议 |
 |-------|------|---------|
