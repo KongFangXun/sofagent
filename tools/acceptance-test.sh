@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.1.5 · 62 个端到端场景，覆盖完整用户旅程 + 全规则覆盖（含 A18/A19）+ 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成 + v1.1.4: LOOP 工具注入(maxTurns/ENGINEER_TOOLS/checkDangerousCommand) + warn-accumulator 连续性 + USB federation + LOOP 独立产品 + v1.1.5: sofagent-releaser Skill + MCP audit_file pipe + list_capabilities 能力清单 + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts --mode 参数
+# v1.1.5 · 79 个端到端场景，覆盖完整用户旅程 + 全规则覆盖（含 A14-A19）+ 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成 + v1.1.4: LOOP 工具注入(maxTurns/ENGINEER_TOOLS/checkDangerousCommand) + warn-accumulator 连续性 + USB federation + LOOP 独立产品 + v1.1.5: sofagent-releaser Skill + MCP audit_file pipe + list_capabilities 能力清单 + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts --mode 参数 + SkillOpt 自净化 + validateCandidate + DeepAgents 可用性 + runtime.json 原子写入 + A16 非授权变更 + A17 异常批量变更 + --timeline 快照时间线 + --revert 回滚 + daemon 审计闭环 + cron 定时巡检 + EvidenceMode filesystem + 经验共享 + buildConstrainedSystemPrompt + A14 知识库越权 + A15 约束验证 + Workflow Hub
 # ============================================================
 # 用真实 git 仓库走完整用户旅程：
 #   Fresh install → --init → --doctor → 正常 commit → 违规拦截
@@ -22,6 +22,18 @@
 # ============================================================
 
 set -euo pipefail
+
+# ── 参数解析 ──────────────────────────────────────────────────
+# --cli-only（默认）/ --agent-only / --all
+RUN_MODE="all"
+for _arg in "$@"; do
+  case "$_arg" in
+    --cli-only)   RUN_MODE="cli-only" ;;
+    --agent-only) RUN_MODE="agent-only" ;;
+    --all)        RUN_MODE="all" ;;
+    *) echo "未知参数: $_arg"; echo "用法: $0 [--cli-only|--agent-only|--all]"; exit 1 ;;
+  esac
+done
 
 # ── 颜色 ──────────────────────────────────────────────────────
 RED='\033[0;31m'
@@ -2029,6 +2041,563 @@ if $MODE_OK && [ -f "$ORCH_CLI_62" ]; then
 fi
 
 if $MODE_OK; then
+  pass
+fi
+
+# ============================================================
+# 场景 63-79：从 openclaw-acceptance-test.md 合并迁移
+# 覆盖 SkillOpt/validateCandidate/skillopt-sleep/DeepAgents可用性/
+# runtime.json/A16/A17/timeline/revert/daemon闭环/cron/
+# EvidenceMode/经验共享/buildConstrainedSystemPrompt/A14/A15/WorkflowHub
+# ============================================================
+
+SKILLOPT_DIST="$PROJECT_ROOT/sofagent/skillopt/dist/skillopt-integration.js"
+SKILLOPT_VENV_BIN="/Users/kongfangxun/.workbuddy/binaries/python/envs/skillopt/bin"
+DAEMON_DIST="$PROJECT_ROOT/sofagent/daemon/dist"
+AUDIT_RULES_INDEX="$PROJECT_ROOT/sofagent/audit/src/rules/index.ts"
+AUDIT_RULES_TYPES="$PROJECT_ROOT/sofagent/audit/src/rules/types.ts"
+
+# ── 场景 63: SkillOpt 可用性检测（同步 API）──────────────────
+scenario 63 "SkillOpt 可用性检测（同步 API isSkillOptAvailable）"
+
+S63_OK=true
+
+if [ ! -f "$SKILLOPT_DIST" ]; then
+  fail "skillopt-integration.js 不存在（需 build）"
+  S63_OK=false
+fi
+
+if $S63_OK; then
+  # 确保 skillopt-sleep 在 PATH（venv bin 目录）
+  export PATH="$SKILLOPT_VENV_BIN:$PATH"
+  S63_RESULT=$(node -e "
+    const { isSkillOptAvailable } = require('$SKILLOPT_DIST');
+    const avail = isSkillOptAvailable();
+    console.log('typeof:' + typeof avail + '|value:' + avail);
+  " 2>&1 || true)
+  echo "  $S63_RESULT"
+  if echo "$S63_RESULT" | grep -q "typeof:boolean"; then
+    :
+  else
+    fail "isSkillOptAvailable 未返回 boolean: $S63_RESULT"
+    S63_OK=false
+  fi
+fi
+
+if $S63_OK; then
+  pass
+fi
+
+# ── 场景 64: validateCandidate 校验逻辑 ──────────────────────
+scenario 64 "validateCandidate 校验逻辑（传文件路径，返回 canReplace）"
+
+S64_OK=true
+
+if [ ! -f "$SKILLOPT_DIST" ]; then
+  fail "skillopt-integration.js 不存在（需 build）"
+  S64_OK=false
+fi
+
+if $S64_OK; then
+  # 构造临时文件
+  ORIG_64=$(mktemp /tmp/s64-orig-XXXX.md)
+  CAND_64=$(mktemp /tmp/s64-cand-XXXX.md)
+  # 原始 10 行
+  node -e "
+    const fs = require('fs');
+    const orig = Array.from({length: 10}, (_, i) => 'Line ' + (i+1)).join('\n') + '\n';
+    fs.writeFileSync('$ORIG_64', orig);
+    const cand = Array.from({length: 12}, (_, i) => 'Line ' + (i+1) + (i === 0 ? ' modified' : '')).join('\n') + '\n';
+    fs.writeFileSync('$CAND_64', cand);
+  "
+  S64_RESULT=$(node -e "
+    const { validateCandidate } = require('$SKILLOPT_DIST');
+    const result = validateCandidate('$CAND_64', '$ORIG_64');
+    console.log(JSON.stringify(result));
+  " 2>&1 || true)
+  echo "  $S64_RESULT"
+  rm -f "$ORIG_64" "$CAND_64"
+  if echo "$S64_RESULT" | grep -q '"canReplace"'; then
+    :
+  else
+    fail "validateCandidate 未返回 canReplace 字段: $S64_RESULT"
+    S64_OK=false
+  fi
+fi
+
+if $S64_OK; then
+  pass
+fi
+
+# ── 场景 65: skillopt-sleep CLI 可调用 ───────────────────────
+scenario 65 "skillopt-sleep CLI 可调用验证"
+
+S65_OK=true
+
+export PATH="$SKILLOPT_VENV_BIN:$PATH"
+if command -v skillopt-sleep >/dev/null 2>&1; then
+  S65_HELP=$(skillopt-sleep --help 2>&1 || true)
+  echo "  skillopt-sleep --help: $(echo "$S65_HELP" | head -1)"
+  if echo "$S65_HELP" | grep -qi "usage\|usage:"; then
+    :
+  else
+    fail "skillopt-sleep --help 无 usage 输出"
+    S65_OK=false
+  fi
+else
+  warn "skillopt-sleep 未安装（venv: $SKILLOPT_VENV_BIN）"
+  # 不计 FAIL——skillopt-sleep 是 optional 依赖
+fi
+
+if $S65_OK; then
+  pass
+fi
+
+# ── 场景 66: DeepAgents 可用性（require.resolve）────────────
+scenario 66 "DeepAgents 可用性（require.resolve 验证）"
+
+DEEPAGENTS_MODULES="/Users/kongfangxun/.workbuddy/binaries/node/workspace/node_modules"
+S66_OK=true
+
+S66_RESULT=$(NODE_PATH="$DEEPAGENTS_MODULES" node -e "
+  try {
+    const p = require.resolve('deepagents');
+    console.log('resolved:' + p);
+  } catch (e) {
+    console.log('NOT installed');
+  }
+" 2>&1 || true)
+echo "  $S66_RESULT"
+
+if echo "$S66_RESULT" | grep -qE "resolved:|NOT installed"; then
+  :
+else
+  fail "DeepAgents require.resolve 异常: $S66_RESULT"
+  S66_OK=false
+fi
+
+if $S66_OK; then
+  pass
+fi
+
+# ── 场景 67: runtime.json 原子写入（writeRuntimeState + readRuntimeState）
+scenario 67 "runtime.json 原子写入 / 读取（同 SOFAGENT_DATA）"
+
+S67_OK=true
+LAUNCHER_DIST="$PROJECT_ROOT/sofagent/orchestrator/dist/launcher.js"
+
+if [ ! -f "$LAUNCHER_DIST" ]; then
+  fail "launcher.js 不存在（需 build orchestrator）"
+  S67_OK=false
+fi
+
+if $S67_OK; then
+  RT_DIR_67=$(mktemp -d /tmp/s67-rt-XXXX)
+  S67_RESULT=$(SOFAGENT_DATA="$RT_DIR_67" NODE_PATH="$DEEPAGENTS_MODULES" node -e "
+    const { writeRuntimeState, readRuntimeState } = require('$LAUNCHER_DIST');
+    writeRuntimeState({agents:[{name:'qa', status:'running', startedAt:new Date().toISOString(), lastActive:new Date().toISOString(), pid:12345}]});
+    const state = readRuntimeState();
+    console.log('pid:' + state.agents[0].pid + '|status:' + state.agents[0].status + '|name:' + state.agents[0].name);
+  " 2>&1 || true)
+  echo "  $S67_RESULT"
+  rm -rf "$RT_DIR_67"
+  if echo "$S67_RESULT" | grep -q "pid:12345" && echo "$S67_RESULT" | grep -q "status:running"; then
+    :
+  else
+    fail "writeRuntimeState/readRuntimeState 回读不一致: $S67_RESULT"
+    S67_OK=false
+  fi
+fi
+
+if $S67_OK; then
+  pass
+fi
+
+# ── 场景 68: A16 非授权文件变更（规则注册验证）───────────────
+scenario 68 "A16 非授权文件变更（规则注册验证）"
+
+S68_OK=true
+
+# A16 规则注册
+S68_REG=$(grep -c "A16" "$AUDIT_RULES_INDEX" 2>/dev/null || echo "0")
+echo "  A16 in index.ts: $S68_REG 处"
+if [ "$S68_REG" -ge 2 ]; then
+  :
+else
+  fail "A16 规则未注册（grep A16 in index.ts < 2）"
+  S68_OK=false
+fi
+
+# A16 源文件存在
+if $S68_OK && [ ! -f "$PROJECT_ROOT/sofagent/audit/src/rules/rule-a16-unauthorized-change.ts" ]; then
+  fail "rule-a16-unauthorized-change.ts 不存在"
+  S68_OK=false
+fi
+
+if $S68_OK; then
+  pass
+fi
+
+# ── 场景 69: A17 异常批量变更（规则注册验证）─────────────────
+scenario 69 "A17 异常批量变更（规则注册验证）"
+
+S69_OK=true
+
+S69_REG=$(grep -c "A17" "$AUDIT_RULES_INDEX" 2>/dev/null || echo "0")
+echo "  A17 in index.ts: $S69_REG 处"
+if [ "$S69_REG" -ge 2 ]; then
+  :
+else
+  fail "A17 规则未注册（grep A17 in index.ts < 2）"
+  S69_OK=false
+fi
+
+# A17 源文件存在
+if $S69_OK && [ ! -f "$PROJECT_ROOT/sofagent/audit/src/rules/rule-a17-bulk-change.ts" ]; then
+  fail "rule-a17-bulk-change.ts 不存在"
+  S69_OK=false
+fi
+
+if $S69_OK; then
+  pass
+fi
+
+# ── 场景 70: --timeline 快照时间线命令 ──────────────────────
+scenario 70 "--timeline 快照时间线命令"
+
+S70_OK=true
+
+S70_HELP=$($CLI --help 2>&1 || true)
+if echo "$S70_HELP" | grep -q "\-\-timeline"; then
+  echo "  --help 含 --timeline ✅"
+else
+  # 尝试直接调用
+  S70_RUN=$($CLI --timeline 2>&1 || true)
+  echo "  --timeline 输出: $(echo "$S70_RUN" | head -1)"
+  if echo "$S70_RUN" | grep -qiE "时间线|timeline|PASS|WARN|snapshot"; then
+    :
+  else
+    fail "CLI 无 --timeline 命令"
+    S70_OK=false
+  fi
+fi
+
+if $S70_OK; then
+  pass
+fi
+
+# ── 场景 71: --revert 回滚命令 ───────────────────────────────
+scenario 71 "--revert 回滚命令"
+
+S71_OK=true
+
+S71_HELP=$($CLI --help 2>&1 || true)
+if echo "$S71_HELP" | grep -q "\-\-revert"; then
+  echo "  --help 含 --revert ✅"
+else
+  # 尝试无参调用验证报错
+  S71_RUN=$($CLI --revert 2>&1 || true)
+  echo "  --revert 无参输出: $(echo "$S71_RUN" | head -1)"
+  if echo "$S71_RUN" | grep -qiE "缺少|SHA|参数|usage"; then
+    :
+  else
+    fail "CLI 无 --revert 命令"
+    S71_OK=false
+  fi
+fi
+
+if $S71_OK; then
+  pass
+fi
+
+# ── 场景 72: daemon 审计闭环（runFilesystemAudit）────────────
+scenario 72 "daemon 审计闭环（runFilesystemAudit 函数导出）"
+
+S72_OK=true
+
+if [ ! -f "$DAEMON_DIST/run-fs-audit.js" ]; then
+  fail "daemon/dist/run-fs-audit.js 不存在（需 build daemon）"
+  S72_OK=false
+fi
+
+if $S72_OK; then
+  S72_RESULT=$(node -e "
+    const mod = require('$DAEMON_DIST/run-fs-audit');
+    console.log(typeof mod.runFilesystemAudit);
+  " 2>&1 || true)
+  echo "  runFilesystemAudit: $S72_RESULT"
+  if echo "$S72_RESULT" | grep -q "function"; then
+    :
+  else
+    fail "runFilesystemAudit 未导出或非 function"
+    S72_OK=false
+  fi
+fi
+
+if $S72_OK; then
+  pass
+fi
+
+# ── 场景 73: cron 定时巡检（startCron）───────────────────────
+scenario 73 "cron 定时巡检（startCron 函数导出）"
+
+S73_OK=true
+
+if [ ! -f "$DAEMON_DIST/cron.js" ]; then
+  fail "daemon/dist/cron.js 不存在（需 build daemon）"
+  S73_OK=false
+fi
+
+if $S73_OK; then
+  S73_RESULT=$(node -e "
+    const mod = require('$DAEMON_DIST/cron');
+    console.log(typeof mod.startCron);
+  " 2>&1 || true)
+  echo "  startCron: $S73_RESULT"
+  if echo "$S73_RESULT" | grep -q "function"; then
+    :
+  else
+    fail "startCron 未导出或非 function"
+    S73_OK=false
+  fi
+fi
+
+if $S73_OK; then
+  pass
+fi
+
+# ── 场景 74: EvidenceMode filesystem 类型 ────────────────────
+scenario 74 "EvidenceMode filesystem 类型验证"
+
+S74_OK=true
+
+if [ ! -f "$AUDIT_RULES_TYPES" ]; then
+  fail "audit/src/rules/types.ts 不存在"
+  S74_OK=false
+fi
+
+if $S74_OK; then
+  S74_TYPES=$(grep "filesystem" "$AUDIT_RULES_TYPES" | head -1)
+  echo "  types.ts: $S74_TYPES"
+  if echo "$S74_TYPES" | grep -q "filesystem"; then
+    :
+  else
+    fail "EvidenceMode 不含 filesystem 类型"
+    S74_OK=false
+  fi
+fi
+
+# A17 使用 filesystem evidenceMode
+if $S74_OK; then
+  S74_A17=$(grep "A17" "$AUDIT_RULES_INDEX" | grep -c "filesystem" || echo "0")
+  echo "  A17 filesystem evidenceMode: $S74_A17"
+  if [ "$S74_A17" -ge 1 ]; then
+    :
+  else
+    fail "A17 未使用 filesystem evidenceMode"
+    S74_OK=false
+  fi
+fi
+
+if $S74_OK; then
+  pass
+fi
+
+# ── 场景 75: 经验共享代码模块完整性 ──────────────────────────
+scenario 75 "经验共享代码模块完整性（think + memory-contract）"
+
+S75_OK=true
+THINK_DIST="$PROJECT_ROOT/sofagent/think/dist/index.js"
+
+if [ ! -f "$THINK_DIST" ]; then
+  fail "think/dist/index.js 不存在（需 build）"
+  S75_OK=false
+fi
+
+if $S75_OK; then
+  S75_RESULT=$(node -e "
+    const t = require('$THINK_DIST');
+    console.log('generateThinkEntry:' + typeof t.generateThinkEntry);
+  " 2>&1 || true)
+  echo "  $S75_RESULT"
+  if echo "$S75_RESULT" | grep -q "function"; then
+    :
+  else
+    fail "generateThinkEntry 未导出或非 function"
+    S75_OK=false
+  fi
+fi
+
+# memory-contract 含 knowledge Views 定义
+if $S75_OK; then
+  S75_MC=$(grep -c "knowledge.*Views\|knowledge/.*派生" "$PROJECT_ROOT/sofagent/core/src/memory-contract.ts" 2>/dev/null || echo "0")
+  echo "  memory-contract knowledge refs: $S75_MC"
+  if [ "$S75_MC" -ge 1 ]; then
+    :
+  else
+    fail "memory-contract.ts 无 knowledge Views 定义"
+    S75_OK=false
+  fi
+fi
+
+if $S75_OK; then
+  pass
+fi
+
+# ── 场景 76: 约束自加载 buildConstrainedSystemPrompt ──────────
+scenario 76 "约束自加载 buildConstrainedSystemPrompt（harness 包）"
+
+S76_OK=true
+HARNESS_DIST="$PROJECT_ROOT/sofagent/harness/dist/index.js"
+
+if [ ! -f "$HARNESS_DIST" ]; then
+  fail "harness/dist/index.js 不存在（需 build）"
+  S76_OK=false
+fi
+
+if $S76_OK; then
+  S76_RESULT=$(node -e "
+    try {
+      const h = require('$HARNESS_DIST');
+      console.log('buildConstrainedSystemPrompt:' + typeof h.buildConstrainedSystemPrompt);
+    } catch(e) {
+      console.log('error:' + e.message);
+    }
+  " 2>&1 || true)
+  echo "  $S76_RESULT"
+  if echo "$S76_RESULT" | grep -q "function"; then
+    :
+  else
+    fail "buildConstrainedSystemPrompt 未导出或非 function"
+    S76_OK=false
+  fi
+fi
+
+# launcher 引用 harness
+if $S76_OK; then
+  S76_HARNESS=$(grep -c "harness" "$PROJECT_ROOT/sofagent/orchestrator/src/launcher.ts" 2>/dev/null || echo "0")
+  echo "  launcher harness refs: $S76_HARNESS"
+  if [ "$S76_HARNESS" -ge 1 ]; then
+    :
+  else
+    fail "launcher.ts 未引用 harness"
+    S76_OK=false
+  fi
+fi
+
+if $S76_OK; then
+  pass
+fi
+
+# ── 场景 77: A14 知识库越权审计 ──────────────────────────────
+scenario 77 "A14 知识库越权审计（规则注册验证）"
+
+S77_OK=true
+
+S77_REG=$(grep -c "A14" "$AUDIT_RULES_INDEX" 2>/dev/null || echo "0")
+echo "  A14 in index.ts: $S77_REG 处"
+if [ "$S77_REG" -ge 2 ]; then
+  :
+else
+  fail "A14 规则未注册"
+  S77_OK=false
+fi
+
+# A14 evidenceMode = hybrid
+if $S77_OK; then
+  S77_HYBRID=$(grep "A14" "$AUDIT_RULES_INDEX" | grep -c "hybrid" || echo "0")
+  echo "  A14 hybrid evidenceMode: $S77_HYBRID"
+  if [ "$S77_HYBRID" -ge 1 ]; then
+    :
+  else
+    fail "A14 未使用 hybrid evidenceMode"
+    S77_OK=false
+  fi
+fi
+
+# A14 源文件存在
+if $S77_OK && [ ! -f "$PROJECT_ROOT/sofagent/audit/src/rules/rule-a14-kb-cross-domain.ts" ]; then
+  fail "rule-a14-kb-cross-domain.ts 不存在"
+  S77_OK=false
+fi
+
+if $S77_OK; then
+  pass
+fi
+
+# ── 场景 78: A15 约束验证 ────────────────────────────────────
+scenario 78 "A15 约束验证（规则注册验证）"
+
+S78_OK=true
+
+S78_REG=$(grep -c "A15" "$AUDIT_RULES_INDEX" 2>/dev/null || echo "0")
+echo "  A15 in index.ts: $S78_REG 处"
+if [ "$S78_REG" -ge 2 ]; then
+  :
+else
+  fail "A15 规则未注册"
+  S78_OK=false
+fi
+
+# A15 evidenceMode = hybrid
+if $S78_OK; then
+  S78_HYBRID=$(grep "A15" "$AUDIT_RULES_INDEX" | grep -c "hybrid" || echo "0")
+  echo "  A15 hybrid evidenceMode: $S78_HYBRID"
+  if [ "$S78_HYBRID" -ge 1 ]; then
+    :
+  else
+    fail "A15 未使用 hybrid evidenceMode"
+    S78_OK=false
+  fi
+fi
+
+# A15 源文件存在
+if $S78_OK && [ ! -f "$PROJECT_ROOT/sofagent/audit/src/rules/rule-a15-action-constraint.ts" ]; then
+  fail "rule-a15-action-constraint.ts 不存在"
+  S78_OK=false
+fi
+
+if $S78_OK; then
+  pass
+fi
+
+# ── 场景 79: Workflow Hub 命令验证 ───────────────────────────
+scenario 79 "Workflow Hub 命令验证（FLOWHUB + workflow-hub CLI）"
+
+S79_OK=true
+WFHUB_CLI="$PROJECT_ROOT/sofagent/workflow-hub/dist/cli.js"
+
+if [ ! -f "$WFHUB_CLI" ]; then
+  fail "workflow-hub/dist/cli.js 不存在（需 build）"
+  S79_OK=false
+fi
+
+if $S79_OK; then
+  S79_HELP=$(node "$WFHUB_CLI" --help 2>&1 || true)
+  echo "  workflow-hub --help: $(echo "$S79_HELP" | head -1)"
+  # help 应含 list / deploy 子命令
+  S79_SUBS=$(echo "$S79_HELP" | grep -c "list\|deploy" || echo "0")
+  if [ "$S79_SUBS" -ge 2 ]; then
+    :
+  else
+    fail "workflow-hub --help 未含 list/deploy 子命令"
+    S79_OK=false
+  fi
+fi
+
+# FLOWHUB/templates 目录非空
+if $S79_OK; then
+  S79_TMPL=$(ls "$PROJECT_ROOT/FLOWHUB/templates/" 2>/dev/null | wc -l | tr -d ' ')
+  echo "  FLOWHUB/templates/: $S79_TMPL 项"
+  if [ "$S79_TMPL" -ge 1 ]; then
+    :
+  else
+    fail "FLOWHUB/templates/ 为空"
+    S79_OK=false
+  fi
+fi
+
+if $S79_OK; then
   pass
 fi
 

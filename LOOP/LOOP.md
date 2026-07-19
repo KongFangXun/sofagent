@@ -86,7 +86,7 @@ graph TD
 
 - **内层循环 StateGraph**：`coding → audit → review → human`，条件路由 `audit.fail→coding` / `review.reject→coding` / `human.confirm→next`
 - **外层循环定时触发**：FDE 每周分析 think.md 趋势，每月触发 compliance-auditor 全量巡检
-- **发版后自进化**：FDE 自动更新 fresh-eyes-review / regression-checklist / openclaw-acceptance-test（纯增量），releasing.md 需人类确认后 apply
+- **发版后自进化**：FDE 自动更新 fresh-eyes-review / regression-checklist / acceptance-test.sh（纯增量），releasing.md 需人类确认后 apply
 - **Agent 定义来源**：`agents/*.md` → `createDeepAgent({ systemPrompt: loadPrompt(...) })`
 
 > ⚠️ 以上为计划，未实际运行。当前阶段是 Agent 定义 + 流程图 + 验证文档映射，代码化在 Agent 各自跑通后启动。
@@ -138,8 +138,7 @@ sofagent 的版本发布遵循 [`docs/verification/releasing.md`](../docs/verifi
 |------|------|------|
 | `docs/verification/fresh-eyes-review.md` | 发版前/后发布后审查（7 维度 × 3 轮） | review-agent（全新 session） |
 | `docs/verification/regression-checklist.md` | 发版前全局回归检查（176 维度） | FDE 触发 compliance-auditor |
-| `docs/verification/openclaw-acceptance-test.md` | 发版前 Agent 端到端验收（5 场景） | review-agent |
-| `tools/acceptance-test.sh` | 发版前 CLI 端到端验收（11 场景） | minimal-change-engineer 自检 |
+| `tools/acceptance-test.sh` | 发版前 CLI 端到端验收（79 场景，原 openclaw-acceptance-test.md 已合并入此） | minimal-change-engineer 自检 |
 | `docs/verification/releasing.md` | LOOP 的整体流程参照——哪个阶段谁做什么 | FDE（流程监督者） |
 
 ### 未来：DeepAgentsJS + LangGraph 实现
@@ -220,7 +219,7 @@ flowchart TD
 |------|------|------|------|
 | `fresh-eyes-review.md` | `docs/verification/` | ① 审视上轮审查发现的盲区 → 新增维度/任务 ② 过时的角色/问题 → 删除或更新 ③ 本轮新发现的"反复出现的同类问题" → 抽象为新的通用维度 | FDE |
 | `regression-checklist.md` | `docs/verification/` | ① 本轮修复的 P0/P1 → 抽象为新的检查项（从 177 开始编号）② 审查体系更新建议中"建议追加到回归检查"的条目 → 正式写入 | FDE |
-| `openclaw-acceptance-test.md` | `docs/verification/` | ① 新增的审计规则 → 新增对应测试场景 ② 新功能（如 SkillOpt）→ 新增验收场景 ③ 上一版本被绕过的边缘 case → 新增为测试场景 | FDE |
+| `acceptance-test.sh` | `tools/` | ① 新增的审计规则 → 新增对应测试场景 ② 新功能（如 SkillOpt）→ 新增验收场景 ③ 上一版本被绕过的边缘 case → 新增为测试场景 | FDE |
 | `releasing.md` | `docs/verification/` | ① 本版本发布过程中遇到的流程漏洞 → 沉淀到「历史教训」区 ② 检查 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）③ 新增的工具/脚本是否已纳入对应阶段 ④ 把更新后的 releasing.md 同步到 LOOP.md 的映射表 | FDE 提议 → 作者确认 |
 
 **这不是可选操作——是 LOOP 外层循环的核心职责。** 如果发版后这四份文件没有更新，外层循环就是失败的。这四份文件是 LOOP 的"经验存储器"——每次发版的经验必须变成下次审查更锋利的武器。

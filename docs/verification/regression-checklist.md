@@ -640,14 +640,14 @@ grep -H "v[0-9]\+\.[0-9]\+\.[0-9]\+" FDE/fde-install.sh LOOP/loop-install.sh | h
 
 ---
 
-### 验收测试覆盖率与时效性（v1.1.4 追加）
+### 验收测试覆盖率与时效性（v1.1.4 追加，v1.1.5 合并更新）
 
-#### 24. 两份 acceptance test 与 changelog 功能对齐
+#### 24. acceptance-test.sh 与 changelog 功能对齐（单文件）
 
-> v1.1.4 暴露：`tools/acceptance-test.sh`（50 场景）和 `docs/verification/openclaw-acceptance-test.md`（51 场景）对本版本新增功能**零覆盖**——A18 垃圾文件检测、LOOP 独立产品（LOOP/ 目录 / loop-install.sh / loop-workflow.sh / FLOWHUB）、USB federation、工具注入（ENGINEER_TOOLS / REVIEWER_TOOLS / maxTurns / checkDangerousCommand / recordLoopAuditHistory / warn-accumulator）全部无场景。两份验收测试场景数远落后于代码实现。
+> v1.1.5 更新：原 `docs/verification/openclaw-acceptance-test.md` 已合并入 `tools/acceptance-test.sh`（79 场景），不再有两份验收测试文件。以下检查全部针对 `acceptance-test.sh` 单文件。
 
 ```bash
-# 子项 a: 场景数声称与实际对齐（v1.1.4 教训——acceptance-test.sh 头部声明 "50 个" 但 grep 实际场景数）
+# 子项 a: 场景数声称与实际对齐（v1.1.4 教训——acceptance-test.sh 头部声明场景数但 grep 实际场景数不一致）
 DECLARED_COUNT=$(head -5 tools/acceptance-test.sh | grep -oE "[0-9]+ 个端到端" | grep -oE "[0-9]+")
 ACTUAL_COUNT=$(grep -c "^scenario " tools/acceptance-test.sh)
 echo "声明: $DECLARED_COUNT / 实际: $ACTUAL_COUNT"
@@ -655,39 +655,26 @@ echo "声明: $DECLARED_COUNT / 实际: $ACTUAL_COUNT"
 
 # 子项 b: 本版本 changelog 功能点逐条对照 acceptance-test 覆盖
 # 读 docs/changelog/vX.Y.md 的「核心变更/交付」章节，提取每条功能关键词
-# 逐条 grep tools/acceptance-test.sh + docs/verification/openclaw-acceptance-test.md
-# 例：v1.1.4 新增 A18 → grep A18 两份文件，期望都有场景
+# 逐条 grep tools/acceptance-test.sh
+# 例：v1.1.4 新增 A18 → grep A18 acceptance-test.sh，期望有场景
 CHANGELOG_FEATURES=$(grep -E "^### |^## 交付" docs/changelog/v$(node -e "console.log(require('./package.json').version)").md | head -20)
 echo "$CHANGELOG_FEATURES"
-# 人工检查：每个功能点在两份 acceptance test 里都有对应场景。
+# 人工检查：每个功能点在 acceptance-test.sh 里都有对应场景。
 # 零覆盖 = P0（验收测试无法发现本版本功能的回归）
 
-# 子项 c: 两份 acceptance test 同步性（v1.1.4 暴露——openclaw-acceptance-test.md 零覆盖 v1.1.4）
-# openclaw-acceptance-test.md 是 Agent 端到端验收，acceptance-test.sh 是 CLI 自动化——两者覆盖范围应大致同步
-SH_TEST_FEATURES=$(grep -oE "A[0-9]+|LOOP|USB|daemon|maxTurns|warn-accumulator" tools/acceptance-test.sh | sort -u)
-OC_TEST_FEATURES=$(grep -oE "A[0-9]+|LOOP|USB|daemon|maxTurns|warn-accumulator" docs/verification/openclaw-acceptance-test.md | sort -u)
-diff <(echo "$SH_TEST_FEATURES") <(echo "$OC_TEST_FEATURES")
-# 期望：两份覆盖的功能关键词集合大致一致（允许有差异，但不能一方完全缺失某功能）
-
-# 子项 d: openclaw-acceptance-test.md 顶部"覆盖范围"描述行同步
-# 该文件第 7 行写「覆盖审计管道全规则 + hook 机制 + SkillOpt + ...」——新增功能后必须同步更新
-HEAD_LINE=$(sed -n '7p' docs/verification/openclaw-acceptance-test.md)
-echo "当前覆盖描述: $HEAD_LINE"
-# 人工检查：描述行是否包含本版本新增的关键功能（A18/A19/LOOP/USB/工具注入等）
-
-# 子项 e: 失效场景清理（acceptance test 里的旧命令/旧路径）
+# 子项 c: 失效场景清理（acceptance test 里的旧命令/旧路径）
 # 代码演进后，旧场景可能引用已废弃的 CLI 子命令或已迁移的文件路径——跑起来必然 FAIL
-# 例：sofagent-audit --daemon（v1.1.4 废弃）、workflow-hub/（v1.1.4 更名为 FLOWHUB/）
-grep -rn "sofagent-audit --daemon\|workflow-hub/" tools/acceptance-test.sh docs/verification/openclaw-acceptance-test.md
+# 例：sofagent-audit --daemon（v1.1.4 废弃）、workflow-hub/（v1.1.4 更更名为 FLOWHUB/）
+grep -rn "sofagent-audit --daemon\|workflow-hub/" tools/acceptance-test.sh
 # 期望：零命中。命中 = 场景引用了已废弃命令/已迁移路径，必然 FAIL
 
-# 子项 f: acceptance-test.sh 场景间清理健壮性（v1.1.3 教训——scenario() 函数的清理逻辑）
+# 子项 d: acceptance-test.sh 场景间清理健壮性（v1.1.3 教训——scenario() 函数的清理逻辑）
 # 每个 scenario() 调用都应清理上一场景的残留（git reset + rm .env + unstage）
 # v1.1.3 曾出现 scenario 间 .env 残留导致后续场景误判
 grep -A5 "^scenario()" tools/acceptance-test.sh | grep -c "git rm --cached -f .env\|git reset --hard"
 # 期望：≥ 1（scenario 函数含清理逻辑）
 
-# 子项 g: JSON 输出场景的 stderr 隔离（v1.1.5 追加——场景 6/26 教训）
+# 子项 e: JSON 输出场景的 stderr 隔离（v1.1.5 追加——场景 6/26 教训）
 # 所有用 --json 模式的 acceptance-test 场景，必须用 2>/dev/null 丢弃 stderr，
 # 不能用 2>&1 合并——config-loader.ts:146 的 console.warn 会污染 JSON 首行。
 # v1.1.5 实证：场景 6/26 用 2>&1，临时空目录触发 config 警告，python3 json.load() 失败

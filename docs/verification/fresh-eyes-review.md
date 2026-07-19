@@ -517,15 +517,13 @@
      4. **Skill 路径声称**：FDE/SKILL.md / LOOP/SKILL.md 引用的 `agents/SKILL/<name>/SKILL.md`——逐个 `ls` 确认存在。
      5. **跨产品版本一致性**：`diff <(grep version FDE/package.json) <(grep version LOOP/package.json)` 期望零差异。
 
-#### 30. **两份验收测试的场景覆盖率与功能对齐（v1.1.4 新增）** 🆕
-   - **盲区（v1.1.4 暴露）**：`tools/acceptance-test.sh`（50 场景）和 `docs/verification/openclaw-acceptance-test.md`（51 场景）对本版本新增功能**零覆盖**——A18 垃圾文件检测、LOOP 独立产品（LOOP/ 目录 / loop-install.sh / loop-workflow.sh / FLOWHUB）、USB federation、工具注入（ENGINEER_TOOLS / REVIEWER_TOOLS / maxTurns / checkDangerousCommand / recordLoopAuditHistory / warn-accumulator）全部无场景。两份验收测试是"最后一道防线"——场景数远落后于代码实现意味着回归测试无法发现新功能的退化。
+#### 30. **验收测试场景覆盖率与功能对齐（单文件）** 🆕
+   - **盲区（v1.1.4 暴露，v1.1.5 合并）**：`tools/acceptance-test.sh`（现 79 场景，原 `openclaw-acceptance-test.md` 已合并入此）对本版本新增功能可能**零覆盖**——验收测试是"最后一道防线"，场景数远落后于代码实现意味着回归测试无法发现新功能的退化。
    - **盲区本质**：验收测试自身会过时——开发者新增功能后只更新产品代码和 changelog，忘了同步追加 acceptance test 场景。releasing.md 阶段三步骤 12 虽有操作指南，但没有"覆盖率必须达标"的硬判定。
    - **检查手法**：
      1. **场景数声称与实际对齐**：`DECLARED=$(head -5 tools/acceptance-test.sh | grep -oE "[0-9]+ 个端到端" | grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " tools/acceptance-test.sh); echo "声明=$DECLARED 实际=$ACTUAL"` 期望一致。
-     2. **本版本 changelog 功能点逐条对照**：读 `docs/changelog/vX.Y.md`「核心变更/交付」章节，提取每条功能关键词，逐条 grep 两份 acceptance test 文件——零覆盖 = P0（回归测试无法发现该功能的退化）。
-     3. **两份 test 同步性**：`diff <(grep -oE "A[0-9]+|LOOP|USB|daemon|maxTurns|warn-accumulator" tools/acceptance-test.sh | sort -u) <(grep -oE "A[0-9]+|LOOP|USB|daemon|maxTurns|warn-accumulator" docs/verification/openclaw-acceptance-test.md | sort -u)` 期望覆盖集合大致一致（允许有差异但不能一方完全缺失某功能）。
-     4. **openclaw-acceptance-test.md 顶部"覆盖范围"描述行同步**：该文件第 7 行的覆盖描述是否包含本版本新增关键功能。
-     5. **失效场景清理**：`grep -rn "sofagent-audit --daemon\|workflow-hub/" tools/acceptance-test.sh docs/verification/openclaw-acceptance-test.md` 期望零命中（命中 = 场景引用已废弃命令/已迁移路径，必然 FAIL）。
+     2. **本版本 changelog 功能点逐条对照**：读 `docs/changelog/vX.Y.md`「核心变更/交付」章节，提取每条功能关键词，逐条 grep `tools/acceptance-test.sh`——零覆盖 = P0（回归测试无法发现该功能的退化）。
+     3. **失效场景清理**：`grep -rn "sofagent-audit --daemon\|workflow-hub/" tools/acceptance-test.sh` 期望零命中（命中 = 场景引用已废弃命令/已迁移路径，必然 FAIL）。
 
 #### 31. **JSON 输出场景的 stderr 隔离（v1.1.5 新增）** 🆕
    - **盲区（v1.1.5 acceptance-test 场景 6/26 实证）**：测试用 `$CLI --json 2>&1` 合并 stderr 到 stdout，但 `config-loader.ts:146` 的「⚠️ 未找到 .sofagent/config.yml」`console.warn` 在临时空目录会触发，污染 JSON 首行 → `python3 json.load()` 失败。这个 bug v1.1.4 就存在，只是测试环境巧合没触发，到 v1.1.5 才暴露。
