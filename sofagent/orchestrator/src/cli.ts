@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// orchestrator CLI · v1.1.4
+// orchestrator CLI · v1.1.5
 //
-// loop 子命令 v1.1.4 升级：默认走 LangGraph StateGraph 节点级流转
+// loop 子命令 v1.1.5 升级：默认走 LangGraph StateGraph 节点级流转
 // （engineer→audit→reviewer→human_confirm），支持 --resume 从 checkpoint
 // 恢复。旧版 DeepAgents 串行路径通过 --legacy 保留兼容。
 

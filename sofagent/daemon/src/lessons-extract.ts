@@ -1,6 +1,6 @@
 // ============================================================
 // lessons-extract.ts · 从 think.md 提取经验到 knowledge/shared/
-// v1.1.4 新增
+// v1.1.5 新增
 // ============================================================
 //
 // ⚠️ 记忆契约：本文件是 think.md（Ledger）→ knowledge/（Views）**唯一合法的派生写入方**
@@ -11,7 +11,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { getThinkPath } from '@sofagent/core';
 
-const VERSION = '1.1.4';
+const VERSION = '1.1.5';
 
 /**
  * 从 think.md 中提取「教训」章节，写入 knowledge/shared/lessons-{date}.md
