@@ -1,6 +1,6 @@
 # sofagent · 新手上路（ONBOARDING）
 
-> 开源（MIT）FDE 工具包 · 一句话：让每个人、SMB 与 OPC 都能成为 FDE，用自己的大厂 Agent + 模型自主完成部署。
+> 开源（MIT）FDE 工具包 · 一句话：让 SMB 与 OPC 的每个人都能成为 FDE，用自己的大厂 Agent + 模型自主完成部署。
 > v1.1.4 · 2026-07-19 · 孔放勋
 
 如果你是第一次接触 sofagent，或是来评估方案 / 来贡献代码的，先花 5 分钟读这篇，能省掉后面所有误解。
@@ -20,7 +20,7 @@ graph TD
     A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent Harness 中间层<br/>审计 / 约束 / 回溯 / 迭代 — 问责底座]
     B --> C[让任意 Agent 可治理 · 可审计 · 可回溯]
     C --> D[FDE 工具包<br/>梳理 workflow / 本体模型 / 专有 Sub Agent]
-    D --> E[每个人 · SMB · OPC<br/>成为 FDE 节点，自主完成部署]
+    D --> E[SMB · OPC 的每个人<br/>成为 FDE 节点，自主完成部署]
 ```
 
 ## 三个最常见误解
@@ -29,13 +29,12 @@ graph TD
 |------|------|
 | 这是个 Git 审计安全工具 | 审计引擎只是 FDE 工具包的四个引擎之一 |
 | 这是要跟大厂 Agent 竞争 | 我们**不造 Agent**，骑在大厂 Agent + 模型之上做问责底座 |
-| 这是卖软件的 | 这是**开源（MIT）工具包**——目标是让每个人、SMB 与 OPC 都能成为 FDE |
+| 这是卖软件的 | 这是**开源（MIT）工具包**——目标是让 SMB 与 OPC 的每个人都能成为 FDE |
 
 ## 你属于哪类人
 
-- **个体 / 一人团队**：想让自己的 Agent 跑得可控、可审计、可回溯 → 装工具包，照 FDE 流程给自己部署。
 - **SMB（中小企业）**：没有专职 AI 部署团队，想低成本具备 FDE 能力 → 用工具包梳理 workflow、搭本体、部署 Sub Agent。
-- **OPC（私有组织 / 客户）**：有内部部署需求但不想被单一厂商锁定 → 选厂商中立的 Harness 底座。
+- **OPC（一人公司 / One Person Company）**：个人或小团队想用自己的 Agent + 模型自主完成部署，不愿被单一厂商锁定 → 装工具包，照 FDE 流程给自己或客户部署。
 
 ## 怎么开始（成为 FDE 节点）
 
@@ -50,14 +49,14 @@ graph TD
 
 | 词 | 含义 |
 |----|------|
-| FDE | 前线部署工程 / 能力模型——掌握完整上下文、打破岗位边界、对结果负责 |
+| FDE | 一种能力，不是软件——前线部署工程（Frontline Deployed Engineer）能力模型：掌握完整上下文、打破岗位边界、对结果负责 |
 | Harness | 挂在 Agent 之上的中间层，做行为治理（约束 + 审计 + 回溯 + 迭代） |
 | Gateway | 企业级 AI 统一入口（OpenClaw / DeepAgents），sofagent 不替代它 |
 | Sub Agent | 用 LangGraph + DeepAgents 搭的专有执行节点 |
 | Ontology | 企业的本体模型 / 业务世界模型，FDE 帮你搭建 |
 | River | FDE 离场时交接的产物集合（私有化评估 / Ontology 说明书 / 持续巡检配置） |
 | SMB | 中小企业（Small & Medium Business） |
-| OPC | 私有组织 / 客户（Other Private Client / Org）——有内部部署需求、不愿被单厂商锁定的主体 |
+| OPC | 一人公司（One Person Company）——个人或小团队用自己的 Agent + 模型自主完成部署，不愿被单一厂商锁定 |
 
 ## 相关文档
 
