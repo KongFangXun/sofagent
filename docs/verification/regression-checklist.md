@@ -56,7 +56,7 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 
 ---
 
-## 审查维度（26 项 · 编号 1–26）
+## 审查维度（27 项 · 编号 1–27）
 
 > 2026-07-18 治理：从原 35 维度归并同类项而来。2026-07-18 追加维度 16-17（安全约束 + 发布产物验证）。2026-07-19 追加维度 23（独立产品声称一致性）+ 维度 24（验收测试覆盖率与时效性），扩展维度 2/4/6/7/8/9 子项（v1.1.4 审查发现）。
 
@@ -758,6 +758,37 @@ grep -c "llm-wiki-mapping.md" ROADMAP.md
 # 子项 e: 文档不重新定义三层（引用 PHILOSOPHY §五 为权威源）
 grep -c "唯一权威\|不重新定义\|PHILOSOPHY.md.*§五" docs/llm-wiki-mapping.md
 # 期望：≥1
+```
+
+---
+
+#### 27. pre-push-check shellcheck 扫描范围与 CI 一致性（v1.1.6 新增）
+
+> v1.1.6 教训：`LOOP/` 有 `.sh` 但 pre-push-check 的 shellcheck `find` 只扫了 `sofagent/scripts tools FDE`——CI 的 `shellcheck.yml` 扫全仓抓住了 SC2155，本地门禁却放行。本地 shellcheck 版本 v0.10.0 与 CI v0.11.0 不一致也导致判定差异。
+
+```bash
+# 子项 a: pre-push-check 的 find 命令含全部含 .sh 的目录
+# 对比 CI .github/workflows/shellcheck.yml 的 files 配置，确保一致
+FIND_LINE=$(grep "find.*\.sh" tools/pre-push-check.sh)
+echo "当前扫描范围: $FIND_LINE"
+
+# 子项 b: 确认 LOOP/ 在扫描范围内（v1.1.6 补上后的基线）
+echo "$FIND_LINE" | grep -q "LOOP" && echo "LOOP 已纳入扫描" || echo "❌ LOOP 漏扫"
+
+# 子项 c: CI shellcheck.yml 是否存在
+[ -f .github/workflows/shellcheck.yml ] && echo "CI 配置存在" || echo "❌ CI 配置缺失"
+
+# 子项 d: shellcheck 版本检测（≥0.11.0 与 CI 一致）
+SC_VER=$(shellcheck --version 2>/dev/null | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | head -1)
+if [ -n "$SC_VER" ]; then
+  major=$(echo "$SC_VER" | cut -d. -f1)
+  minor=$(echo "$SC_VER" | cut -d. -f2)
+  if [ "$major" -eq 0 ] && [ "$minor" -lt 11 ] 2>/dev/null; then
+    echo "⚠️  shellcheck $SC_VER < 0.11.0（CI 用 v0.11.0），建议升级"
+  else
+    echo "✅ shellcheck $SC_VER ≥ 0.11.0"
+  fi
+fi
 ```
 
 ---
