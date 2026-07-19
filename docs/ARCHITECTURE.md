@@ -39,7 +39,13 @@ graph TD
 | 🧬 进化引擎 | Evolution Engine | FDE 周度巡检 + 自动优化，v1.0.8+ |
 | 加载链 | Load Chain | Agent 启动时注入的约束文件 |
 | FDE | 一种能力（非岗位 title）——前线部署工程能力模型：掌握完整上下文、打破岗位边界、对结果负责 |
-| Gateway | Gateway | 企业级 AI 统一入口（OpenClaw/DeepAgents） |
+| Harness | Harness 中间层 | 挂在 Agent 之上的行为治理层：约束 + 审计 + 回溯 + 迭代 |
+| Gateway | Gateway | 企业级 AI 统一入口（OpenClaw/DeepAgents），sofagent 不替代它 |
+| Sub Agent | Sub Agent | 用 LangGraph + DeepAgents 搭的专有执行节点 |
+| Ontology | 本体模型 | 企业的业务世界模型，FDE 帮你搭建并持续维护 |
+| River | 交接产物（River） | FDE 离场时交接的产物集合：私有化评估 / Ontology 说明书 / 持续巡检配置 |
+| SMB | 中小企业（Small & Medium Business） | 没有专职 AI 部署团队、想低成本具备 FDE 能力的企业 |
+| OPC | 一人公司（One Person Company） | 个人或小团队，用自己的 Agent + 模型自主完成部署，不愿被单一厂商锁定 |
 
 > 💬 **交互范式**：sofagent 没有图形界面。所有能力通过 MCP 协议暴露，用户通过 Agent 对话（LUI）操作——说一句话，它做完告诉你结果在哪。这是架构的根本设计约束：不存在「仅 CLI 可用」或「需要打开页面」的能力。详见 [设计哲学](./PHILOSOPHY.md)。
 
