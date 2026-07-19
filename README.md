@@ -271,6 +271,25 @@ graph LR
 sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点"
 ```
 
+#### 一底座·四引擎 能力总览
+
+| 能力 | 解决什么 | 需额外安装 | 状态 |
+|------|---------|:--:|------|
+| 🧭 约束底座 | Agent 带着红线开工，不越界 | 否（随上下文注入） | 稳定 |
+| ⚙️ 编排引擎 | 大任务拆小、多 Agent 并行、A/B 择优 | 是（`@sofagent/orchestrator`） | 稳定 |
+| 🔍 审计引擎 | 每次变更硬证据审查，赖不掉 | 否（`@sofagent/audit` 独立） | 稳定 |
+| 🔄 回溯引擎 | 自动快照 + 一键回滚 | 否（随审计触发） | 稳定 |
+| 🧬 进化引擎 | 周度巡检、持续自我优化 | 否（FDE sustain 模式） | ⚠️ 实验性 |
+
+```mermaid
+flowchart LR
+    A[🧭 约束<br/>定红线] --> B[⚙️ 编排<br/>拆任务]
+    B --> C[🔍 审计<br/>盯变更]
+    C --> D[🔄 回溯<br/>保回滚]
+    D --> E[🧬 进化<br/>越用越好]
+    E --> A
+```
+
 一底座 · 四引擎形成闭环：**约束定红线 → 编排拆任务 → 审计盯变更 → 回溯保回滚 → 进化越用越好**。
 
 ---
@@ -342,6 +361,53 @@ sofagent 支持两种节点类型——**自动运行节点**（企业无人值�
 纯自主 Agent 灵活但不可控——随机跳步、幻觉、全链路难追溯，在金融信贷审核、应付账款这类**低容错业务**上是致命风险。而 **80% 的企业级落地场景，Workflow（预先编排好分支、工具调用顺序、数据库/第三方接口调用）反而更靠谱**：全流程轨迹固定、节点独立监控、可并行提效、几乎无幻觉。
 
 sofagent 的 [模板市场](./模板市场/) 采用**混合架构**：外层用 `workflow.yml` 的 Graph 骨架（`nextNodes`）锁定全链路步骤、保证可追溯；内层单个节点保留模型自主规划（节点 `prompt` 即 ReAct Agent）。既拿到 Workflow 的可控性，又保留局部灵活性。FDE 进场梳理出的工作流，直接沉淀为可复用的企业模板。
+
+| 维度 | 纯自主 Agent | 模板市场 混合架构 |
+|------|:--:|:--:|
+| 全链路可追溯 | ❌ | ✅ 节点固定 + 快照 |
+| 抗幻觉 | ❌ | ✅ 路径锁定，仅节点内灵活 |
+| 节点级并行提效 | ⚠️ | ✅ |
+| 局部灵活性 | ✅ | ✅ 节点内 ReAct |
+
+### 里面有什么？
+
+模板市场 是社区驱动的行业工作流模板仓库（代码实现在 `sofagent/work模板市场/`）。开箱已带 **1 个真实模板**：
+
+| 行业 | 模板 | 流程 | 节点 | 配套文件 |
+|------|------|------|:--:|------|
+| 制造业 | [应付账款审批](./模板市场/templates/制造业/应付账款审批/) | 供应商发票 → 三单匹配 → 审批 → 付款 | 4 | `workflow.yml` + README + 知识库(4) + 技能(3) + Sub Agent(2) |
+
+<details>
+<summary>📂 模板目录结构（应付账款审批）</summary>
+
+```text
+制造业/应付账款审批/
+├── workflow.yml          # 工作流定义（节点 + nextNodes 骨架）
+├── README.md             # 适配指南
+├── knowledge/            # 知识库初始数据
+│   ├── approver-list.yml
+│   ├── payment-accounts.yml
+│   ├── payment-history.yml
+│   └── supplier-whitelist.yml
+├── skills/               # 技能定义
+│   ├── approval-route.md
+│   ├── invoice-ocr.md
+│   └── three-way-match.md
+└── subagents/            # Sub Agent 定义
+    ├── ap-approver.md
+    └── ap-executor.md
+```
+</details>
+
+> [!NOTE]
+> 模板格式规范见 [SPEC.md](./模板市场/SPEC.md)；完整模板目录见 [CATALOG.md](./模板市场/CATALOG.md)；提交新模板见 [CONTRIBUTING.md](./模板市场/CONTRIBUTING.md)。本地校验：`bash 模板市场/tools/validate.sh templates/制造业/应付账款审批/`
+
+### 怎么用？
+
+```bash
+sofagent hub list                         # 浏览已发布模板
+sofagent hub deploy 制造业/应付账款审批    # 一键部署到企业
+```
 
 ---
 

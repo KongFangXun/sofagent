@@ -238,6 +238,25 @@ graph LR
 sofagent-orchestrator subagent run fde --mode sustain --task "Inspect all nodes"
 ```
 
+#### 1 base + 4 engines — capability overview
+
+| Capability | Solves | Extra install | Status |
+|------|---------|:--:|------|
+| 🧭 Constraint Base | Agents start with red lines, stay in bounds | No (injected with context) | Stable |
+| ⚙️ Orchestration | Break big tasks, parallel Sub Agents, A/B pick | Yes (`@sofagent/orchestrator`) | Stable |
+| 🔍 Audit | Hard-evidence review of every change | No (`@sofagent/audit` standalone) | Stable |
+| 🔄 Restore | Auto-snapshot + one-click rollback | No (triggered by audit) | Stable |
+| 🧬 Evolution | Weekly inspection, self-optimize | No (FDE sustain mode) | ⚠️ Experimental |
+
+```mermaid
+flowchart LR
+    A[🧭 Constrain<br/>red lines] --> B[⚙️ Orchestrate<br/>split tasks]
+    B --> C[🔍 Audit<br/>watch changes]
+    C --> D[🔄 Restore<br/>rollback]
+    D --> E[🧬 Evolve<br/>get better]
+    E --> A
+```
+
 The full loop: **Constrain → Orchestrate → Audit → Restore → Evolve**.
 
 ---
@@ -304,6 +323,53 @@ sofagent supports two node types — **Auto-running node** (OpenClaw full-stack)
 Pure autonomous Agents are flexible but uncontrolled — random step-skipping, hallucination, and hard-to-trace end-to-end flows are fatal risks in low-tolerance business like credit-risk audit or accounts-payable approval. Yet **80% of enterprise landing scenarios are better served by Workflow** (predefined branches, tool-call order, DB/3rd-party calls): fixed execution trace, per-node monitoring, parallel speedup, near-zero hallucination.
 
 sofagent's [模板市场](./模板市场/) uses a **hybrid architecture**: an outer Graph skeleton (`nextNodes` in `workflow.yml`) locks the end-to-end steps and keeps them traceable; inner nodes keep model autonomy (the node `prompt` is a ReAct Agent). You get Workflow's controllability plus local flexibility. Workflows mapped during FDE onboarding become reusable enterprise templates.
+
+| Dimension | Pure autonomous Agent | 模板市场 hybrid |
+|------|:--:|:--:|
+| End-to-end traceable | ❌ | ✅ fixed nodes + snapshot |
+| Anti-hallucination | ❌ | ✅ path locked, flexible only inside nodes |
+| Node-level parallel | ⚠️ | ✅ |
+| Local flexibility | ✅ | ✅ ReAct inside nodes |
+
+### What's inside?
+
+模板市场 is a community-driven industry workflow template repository (code in `sofagent/work模板市场/`). Ships with **1 real template**:
+
+| Industry | Template | Flow | Nodes | Bundled files |
+|------|------|------|:--:|------|
+| Manufacturing | [Accounts-payable approval](./模板市场/templates/制造业/应付账款审批/) | Vendor invoice → 3-way match → approve → pay | 4 | `workflow.yml` + README + knowledge(4) + skills(3) + subagents(2) |
+
+<details>
+<summary>📂 Template directory tree (accounts-payable approval)</summary>
+
+```text
+制造业/应付账款审批/
+├── workflow.yml          # workflow definition (nodes + nextNodes skeleton)
+├── README.md             # adaptation guide
+├── knowledge/            # knowledge base seed data
+│   ├── approver-list.yml
+│   ├── payment-accounts.yml
+│   ├── payment-history.yml
+│   └── supplier-whitelist.yml
+├── skills/               # skill definitions
+│   ├── approval-route.md
+│   ├── invoice-ocr.md
+│   └── three-way-match.md
+└── subagents/            # sub-agent definitions
+    ├── ap-approver.md
+    └── ap-executor.md
+```
+</details>
+
+> [!NOTE]
+> Template format spec: [SPEC.md](./模板市场/SPEC.md); full catalog: [CATALOG.md](./模板市场/CATALOG.md); submit a template: [CONTRIBUTING.md](./模板市场/CONTRIBUTING.md). Local validation: `bash 模板市场/tools/validate.sh templates/制造业/应付账款审批/`
+
+### How to use?
+
+```bash
+sofagent hub list                         # browse published templates
+sofagent hub deploy 制造业/应付账款审批    # one-click deploy to your org
+```
 
 ---
 
