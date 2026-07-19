@@ -1,17 +1,17 @@
 # sofagent Architecture
 
-> 设计决策记录——从为什么存在、一底座·三引擎·一能力如何协作，到每个关键决策的工程理由。
+> 设计决策记录——从为什么存在、一底座·两能力·三引擎如何协作，到每个关键决策的工程理由。
 > v1.1.4 · 2026-07-15（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
 ## 心智模型（先读这个）
 
-> sofagent 是开源（MIT）的 FDE（前线部署工程）工具包。FDE 不是一款软件，而是一种能力——让任意大厂 Agent + 大模型在企业里可治理、可问责地落地。一底座·三引擎·一能力（约束底座 + 编排/审计/进化引擎 + FDE 能力）做问责底座，帮 SMB 与 OPC 的每个人，用自己选的 Agent 和模型，快速成为自己业务的 FDE。
+> sofagent 是开源（MIT）的 FDE（前线部署工程）工具包。FDE 不是一款软件，而是一种能力——让任意大厂 Agent + 大模型在企业里可治理、可问责地落地。一底座·两能力·三引擎（约束底座 + 编排/审计/进化引擎 + 回溯/质评能力）做问责底座，帮 SMB 与 OPC 的每个人，用自己选的 Agent 和模型，快速成为自己业务的 FDE。
 
 ```mermaid
 graph TD
-    A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent Harness 中间层<br/>一底座·三引擎·一能力 — 问责底座]
+    A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent Harness 中间层<br/>一底座·两能力·三引擎 — 问责底座]
     B --> C[让任意 Agent 可治理 · 可审计 · 可回溯]
     C --> D[FDE 工具包<br/>梳理 workflow / 本体模型 / 专有 Sub Agent]
     D --> E[SMB · OPC 的每个人<br/>成为 FDE 节点，自主完成部署]
@@ -21,7 +21,7 @@ graph TD
 
 - [术语对照](#术语对照)
 - [一、核心理念与架构全景](#一核心理念与架构全景)
-- [二、一底座·三引擎·一能力设计](#二一底座三引擎一能力设计)
+- [二、一底座·两能力·三引擎设计](#二一底座两能力三引擎设计)
 - [三、部署与运行架构](#三部署与运行架构)
 - [四、核心设计决策](#四核心设计决策)
 - [五、已知局限与未来方向](#五已知局限与未来方向)
@@ -35,6 +35,7 @@ graph TD
 | 🧭 约束底座 | Constraint Base | 四层加载链，Agent 启动前注入红线 |
 | 🔍 审计引擎 | Audit Engine | git diff + 文件变更硬证据审计（v1.1.0 拆独立包） |
 | 🔄 回溯能力 | Restore Capability | 每次审计自动快照，`--revert` 一键回滚 |
+| 📊 质评能力 | Quality Evaluation Capability | 闭环量化评分 + 私有化评估 + 报告（v1.1.4 从 audit 迁出） |
 | ⚙️ 编排引擎 | Orchestration Engine | 任务拆解 + Sub Agent 并行 + A/B 优化 |
 | 🧬 进化引擎 | Evolution Engine | FDE 周度巡检 + 自动优化，v1.0.8+ |
 | 加载链 | Load Chain | Agent 启动时注入的约束文件 |
@@ -66,7 +67,7 @@ sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent �
 
 > 理论基础及行业验证见 [THANKS.md](./THANKS.md) 和 [PHILOSOPHY §四 信任模型](./PHILOSOPHY.md#四怎么管信任模型)。
 
-### 治理架构（一底座·三引擎·一能力）
+### 治理架构（一底座·两能力·三引擎）
 
 ```mermaid
 graph LR
@@ -85,7 +86,7 @@ graph LR
 | ⚙️ 编排引擎 | DeepAgents + compose CLI | @sofagent/orchestrator |
 | 🧬 进化引擎 | daemon cron @weekly | @sofagent/daemon + @sofagent/skillopt |
 
-> 一底座·三引擎·一能力的完整设计哲学见 [PHILOSOPHY §三 架构全景](./PHILOSOPHY.md#三怎么跑架构全景)。
+> 一底座·两能力·三引擎的完整设计哲学见 [PHILOSOPHY §三 架构全景](./PHILOSOPHY.md#三怎么跑架构全景)。
 
 ### 输出签名机制（v1.1.3）
 
@@ -112,7 +113,7 @@ Harness 中间件最大的挑战是存在感——引擎在正常工作，但用
 | 层 | 是什么 | 成本 |
 |:--:|------|:--:|
 | 地基 | 四层加载链（纯 MD 文件，Agent 读即生效） | ~3,500 token |
-| 引擎 | 编排 + 审计 + 回溯 + 进化 + 约束底座（daemon + CLI） | 按需启动 |
+| 引擎 | 编排 + 审计 + 回溯 + 质评 + 进化 + 约束底座（daemon + CLI） | 按需启动 |
 
 > v1.1.0 将审计引擎拆为独立 npm 包 `@sofagent/audit`，地基（约束底座）和其余引擎（编排/审计/进化）与回溯能力不受影响。
 
@@ -130,7 +131,7 @@ Harness 中间件最大的挑战是存在感——引擎在正常工作，但用
 
 ---
 
-## 二、一底座·三引擎·一能力设计
+## 二、一底座·两能力·三引擎设计
 
 ### 🧭 约束底座
 
