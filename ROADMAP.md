@@ -396,10 +396,26 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | 阶段 | 版本 | 动作 | 风险/边界 |
 |:--:|:--:|------|------|
 | 🔍 **短期·认知储备** | **现在** | 只做调研，不开新线。把 WeKnora 列入"v1.2.x 企业级方向参考项目"清单。v1.1.x 收口期不动 | 无风险——零代码改动 |
-| 🧩 **中期·MCP connector** | **v1.2.x** | 评估加一个 `sofagent/mcp` 的 weknora connector。WeKnora 自带 MCP server（`weknora mcp serve`，stdio/SSE/HTTP），sofagent 已有 `sofagent/mcp` 子包，MCP 协议对接最小侵入。Agent 通过 sofagent MCP 调 WeKnora RAG 能力时，行为仍受 sofagent 审计引擎约束 | WeKnora v0.x 尚未 1.0，接口可能不稳；需评估私有化部署的数据主权边界 |
+| 🧩 **中期·审计增强型 connector** | **v1.2.x** | `sofagent/mcp` 新增 `rag_query` 工具，底层调 WeKnora MCP server（`weknora mcp serve`）。**非透传模式**——sofagent 三层加值：① 调用前审计 query（R1 query 审计）；② 调用中包装返回，强制走三层签名铁律；③ 调用后记录 RAG 调用链到 audit history | WeKnora v0.x 尚未 1.0，接口可能不稳；需评估私有化部署的数据主权边界 |
 | 🏗️ **长期·knowledge 后端** | **v1.3.x+** | 把 WeKnora 的文档解析能力作为 sofagent knowledge 层的可选后端——扩展 PDF/Word/图片/Excel 支持。daemon 文件变更审计扩展到多模态文档。WeKnora v0.6 企业级 RBAC + v0.7 Scoped API Key 可作为 sofagent 企业版权限体系的参考标杆 | 长期项，v1.3.x Ontology 认知底座 + 国标对齐落地后再评估 |
 
-**差异化铁律（与 gbrain 对标同款守则）**：吸收 WeKnora 的「方法」（多模态解析、自适应分块、企业级 RBAC 工程化），不吸收其「定位」（不变成 RAG 平台）。sofagent 始终是 Harness 中间件——数据主权（本地不送云）+ 第三方独立性（不做 Agent 运行）+ 开源 MIT（审计工具本身可审计）。Agent 用什么 RAG 后端是 Agent 的自由，sofagent 只负责审计 Agent 行为。
+**品牌可见性铁律（connector 禁止透传）**：WeKnora connector 是"审计增强型"，不是"透明管道"。每次 `rag_query` 返回必须走 sofagent 已有的三层签名铁律（v1.1.2 落地，见 `sofagent/mcp/src/mcp-server.ts`）：
+
+| 层 | 现有实现位置 | 对 RAG connector 的要求 |
+|---|---|---|
+| ① 首行 `[sofagent]` 前缀 | mcp-server.ts 三层签名铁律 | 返回首行格式：`[sofagent] rag_query: <query> (via weknora) · <verdict>`，让 Agent 第一眼就知道是谁在说话 |
+| ② 结构化 `auditEngine` + `via` 字段 | mcp-server.ts `auditEngine: 'sofagent-audit v${VERSION}'` | `data.auditEngine: 'sofagent-audit v${VERSION}'` + 新增 `data.via: 'weknora'`——Agent 解析 JSON 时能看到审计引擎标识 + RAG 后端来源 |
+| ③ 规则编号 + 规则数 | mcp-server.ts `scope: ['A3','A7',...]` / `rulesCount` | `data.scope: ['R1','R2','R3']`（新增 R 系列规则）+ `data.rulesCount` 递增 |
+
+**新增审计维度 — R 系列 RAG 规则**（区别于现有 A 系列提交审计、E 系列 eval 评分）：
+
+| 规则 | 触发时机 | 检查内容 | 返回示例 |
+|---|---|---|---|
+| **R1 query 审计** | `rag_query` 调用前 | query 越界（请求其他项目知识库）、敏感词、数据主权边界（私有化部署时禁止跨租户查询） | `[sofagent] R1: query 越界，请求了未授权的 knowledge base` |
+| **R2 结果可信度审计** | `rag_query` 返回后 | 引用是否可追溯（无 source 的回答降级）、置信度是否达标（< 阈值打 WARN）、是否触发幻觉模式（答案与知识库矛盾） | `[sofagent] R2: 3/5 引用无可追溯 source，置信度 0.42（< 阈值 0.7）` |
+| **R3 引用追溯审计** | Agent 后续 commit 时 | Agent 在代码/文档中引用的事实，是否能在 RAG 调用历史中找到出处（类似 A14 知识库越权，但作用域是 RAG 结果） | `[sofagent] R3: 引用的事实无 RAG 来源记录` |
+
+**差异化铁律（与 gbrain 对标同款守则）**：吸收 WeKnora 的「方法」（多模态解析、自适应分块、企业级 RBAC 工程化），不吸收其「定位」（不变成 RAG 平台）。sofagent 始终是 Harness 中间件——数据主权（本地不送云）+ 第三方独立性（不做 Agent 运行）+ 开源 MIT（审计工具本身可审计）。**Agent 用什么 RAG 后端是 Agent 的自由，sofagent 负责审计 Agent 调 RAG 的行为——这就是 connector 不做透传的根因。**
 
 
 #### Loop Engineering 全栈对照（已实现能力自证）
