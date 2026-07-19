@@ -31,7 +31,8 @@
 
 ---
 
-**管住 Agent 从部署到持续优化的全生命周期。**
+> [!IMPORTANT]
+> **管住 Agent 从部署到持续优化的全生命周期。**
 
 🧭 约束底座 · ⚙️ 编排引擎 · 🔍 审计引擎 · 🔄 回溯引擎 · 🧬 进化引擎（实验性）
 
@@ -44,10 +45,11 @@
 - [怎么装？](#怎么装)
 - [新手上路（成为 FDE 节点）](#新手上路成为-fde-节点)
 - [FDE 怎么工作？](#fde-怎么工作)
+- [对比现有工具](#对比现有工具)
 - [效果怎么样？](#效果怎么样)
 - [内置 Agent](#内置-agent)
 - [你需要哪个？](#你需要哪个)
-- [Work模板市场：企业落地的可靠底座](#work模板市场企业落地的可靠底座)
+- [模板市场：企业落地的可靠底座](#模板市场企业落地的可靠底座)
 - [延伸阅读](#延伸阅读)
 
 ---
@@ -72,7 +74,8 @@
 
 不用请顾问、不用养 AI 团队。FDE 进场四步走，交付完离场——AI 节点留在企业自己跑。与 AgentLoop 的区别：它观测 Agent 怎么想（运行时轨迹、SaaS），sofagent 审计 Agent **改了什么**（文件 diff、本地、MIT 开源）。
 
-> 🔬 **Hugging Face 实测**：同一模型不改权重、仅优化外层 Harness，法律 Agent 基准 **3.5% → 80.1%**（76 分差全部来自外层机制）。[详情](./docs/ARCHITECTURE.md)
+> [!IMPORTANT]
+> 🔬 **Hugging Face 实测**：同一模型不改权重、仅优化外层 Harness，法律 Agent 基准 **3.5% → 80.1%**（76 分差全部来自外层机制），成本仅 1/7（追平 Claude Sonnet 4.6）。[详情](./docs/ARCHITECTURE.md)
 
 ---
 
@@ -81,6 +84,7 @@
 ```bash
 npm install -g @sofagent/audit @sofagent/core && sofagent-audit --init
 ```
+> [!NOTE]
 > `@sofagent/core` 提供 doctor/verify 等运行时诊断能力，是 audit 的必备配套包。
 
 装完三步体验：
@@ -100,6 +104,7 @@ sofagent-audit --timeline
 git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
 
+> [!NOTE]
 > 需要 Node.js ≥ 18 + bash + git。macOS / Linux 全功能，Windows 实验性。[完整安装说明](./docs/HANDBOOK.md)
 
 ### 按需安装独立包
@@ -114,6 +119,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 | `@sofagent/daemon` | 主动巡检守护进程（定时审计/健康度/新鲜度检测） | `npm install -g @sofagent/daemon` |
 | `@sofagent/mcp` | MCP Server（JSON-RPC 2.0，暴露审计能力给 MCP Client） | `npm install -g @sofagent/mcp` |
 
+> [!NOTE]
 > 以上包均可独立使用，互不强制依赖。`@sofagent/audit` 为最简入口，其他包按需叠加。
 
 ### 卸载
@@ -124,6 +130,7 @@ npm uninstall -g @sofagent/audit @sofagent/core @sofagent/orchestrator @sofagent
 rm -f .git/hooks/commit-msg .git/hooks/post-commit
 ```
 
+> [!NOTE]
 > 包随每次发版自动发布到 npm；若本地 `npm install -g` 装不上，可改用仓库内本地安装脚本 `sofagent/scripts/install.sh`。
 
 ---
@@ -137,6 +144,7 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 3. 读 [docs/PHILOSOPHY.md](./docs/PHILOSOPHY.md) 理解「为什么这么做」。
 4. 动手部署：参考 [FDE/fde-install.sh](./FDE/fde-install.sh) 与 [LOOP/loop-install.sh](./LOOP/loop-install.sh)。
 
+> [!NOTE]
 > 具体安装与命令以对应脚本和文档为准。术语速查见 [docs/ARCHITECTURE.md · 术语对照](./docs/ARCHITECTURE.md#术语对照)。
 
 ---
@@ -161,15 +169,19 @@ graph LR
 
 FDE 交付完就撤离，AI 节点留在企业自己跑。
 
+> [!NOTE]
 > 📖 完整 FDE 工作流程见 [FDE/FDE.md](./FDE/FDE.md)
 
 ### 一底座 · 四引擎
 
+> [!NOTE]
 > 💡 **sofagent 和 Gateway 的关系**：见首屏定位区。sofagent 不替代 Gateway——它挂在 Gateway 里面，管 Agent 行为治理。
 
+> [!NOTE]
 > 💬 **sofagent 没有界面。你和它对话，它做完了告诉你结果在哪。** 语言就是界面，MCP 就是入口。详见 [设计哲学](./docs/PHILOSOPHY.md)。MCP 完整调用方式见 [MCP 使用指南](./docs/guides/mcp-usage.md)。
 
-> 🔮 **v1.1.0 已发布**：包结构纯度重构——audit 只做审计，12 个独立包 + 轻量多设备四件事。详见 [开发日志](./docs/changelog/v1.1.0.md)。4 种同步方案见 [多设备同步指南](./docs/guides/multi-device-sync.md)。
+> [!NOTE]
+> 🔮 **v1.1.0 已发布**：包结构纯度重构——audit 只做审计，12 个独立包 + 轻量多设备。详见 [开发日志](./docs/changelog/v1.1.0.md)。4 种同步方案见 [多设备同步指南](./docs/guides/multi-device-sync.md)。
 
 #### 🧭 约束底座
 
@@ -201,6 +213,7 @@ graph LR
 
 当前走 DeepAgents（v1.0.7 OpenClaw 编排层完全退役）。`sofagent-orchestrator compose --task` CLI 入口——**任何 Agent 平台都能用编排引擎**。A/B 自动切换：连续胜出 2 次才 promote，切换前旧版本保留为 fallback。详见 [ROADMAP](./ROADMAP.md)。
 
+> [!WARNING]
 > ⚠️ 编排能力需另装 `@sofagent/orchestrator`（`npm install -g @sofagent/orchestrator`）。审计引擎（`@sofagent/audit`）不绑 OpenClaw，可独立运行；编排引擎需 orchestrator 包。
 
 #### 🔍 审计引擎
@@ -209,6 +222,7 @@ graph LR
 
 不依赖 AI 自觉——看的是 git diff 硬证据。**0 token 消耗——纯正则引擎，不调 LLM。** 21 条规则中 16 条为纯 git-diff（不依赖 Agent 配合），4 条 hybrid 需 Agent 日志（A7/A8/A14/A15），1 条 filesystem（A17 异常批量变更）。
 
+> [!NOTE]
 > v1.1.0 已拆为独立 `@sofagent/audit` 包。v1.0.8+ 内嵌 isomorphic-git + daemon 文件监控，不需 git commit。
 
 #### 🔄 回溯引擎
@@ -231,6 +245,7 @@ sofagent 是**行车记录仪**，不是安检——不管什么 Agent、什么�
 
 #### 🧬 进化引擎（v1.0.8+ · 实验性）
 
+> [!WARNING]
 > ⚠️ **实验性功能**：A/B 自动 promote 基于 `consecutiveWins ≥ threshold` + `overallImprovement` 守卫，eval 评分依赖 LLM 自评（存在 self-grading bias）。窄 eval 集场景下可能误晋升。生产环境使用建议人工复核 promote 决策。
 
 FDE Agent 不只部署一次——部署完成后转为**持续优化角色**。每周自动巡检审计趋势 + 反思记录，发现退化就优化。
@@ -260,26 +275,44 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 ---
 
+## 对比现有工具
+
+| | sofagent | detect-secrets | pre-commit hooks |
+|------|:--:|:--:|:--:|
+| 密钥检测 | ✅ | ✅ | ❌ |
+| Agent 边界越界 | ✅ | ❌ | ❌ |
+| 注入攻击检测 | ✅ | ❌ | ❌ |
+| 流程合规 | ✅ | ❌ | ❌ |
+| 知识库跨域 | ✅ | ❌ | ❌ |
+| 配置删除检测 | ✅ | ❌ | ❌ |
+| 安装方式 | 一条命令 | 一条命令 | 手动配置规则 |
+
+> [!NOTE]
+> sofagent 不替代密钥扫描工具，而是补上它们没覆盖的「Agent 行为治理」——边界越界、注入、流程合规、知识库跨域，是 LLM Agent 特有的翻车模式。
+
+---
+
 ## 效果怎么样？
 
 装上就跑通，不靠 Agent 自觉：
 
 | 维度 | 数据 | 什么意思 |
 |------|------|------|
-| 审计引擎稳定性 | `npm test` 全绿 — diff-parser / A1-A11、A14-A19 / reporter / init 全覆盖 | 改了代码就能查，不会被绕过 |
+| 审计引擎稳定性 | `npm test` 全绿 — diff-parser / A1-A11、A14-A19、E1-E4 / reporter / init 全覆盖 | 改了代码就能查，不会被绕过 |
 | 审计覆盖率 | 21 条规则（A1-A11、A14-A19 + E1-E4），覆盖密钥泄漏、越界修改、注入攻击、盲改、知识库越权、垃圾文件、commit 质量 | 最常见的 Agent 翻车模式都拦住了 |
 | 平台覆盖 | git commit 审计（开发者）+ daemon 文件审计（非开发者） | 不管谁改的文件，都能审计 |
 | 开源协议 | MIT | 随便用，代码、文档、模板都行 |
 
 ---
 
-## 内置 Agent
+## 内置 Agent（v1.0.7 引入 · 基础设施 Agent 自 v1.0.8）
 
 | Agent | 调用方式 | 触发时机 |
 |------|------|------|
 | **FDE 部署工程师** | `@sofagent-fde` | 部署完成后 suggest 后续巡检 |
 | **合规审计员** | `@sofagent-audit` | 每次 commit / FDE 部署 / LOOP 任务闭环 |
 
+> [!NOTE]
 > `@sofagent-audit` 底层即 `@sofagent/audit` npm 包，以 Skill Agent 形式被调用；`@sofagent-fde` 同理来自 FDE 工具包——同一套能力，既可以命令行跑，也可以 Agent 身份被调用。
 
 ---
@@ -289,24 +322,26 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 | 你的场景 | 用什么 |
 |---------|--------|
 | 只想拦截密钥泄漏 | `npm install -g @sofagent/audit @sofagent/core` |
-| 管住 Agent 全流程 | 审计引擎 + 约束底座（install.sh） |
+| 管住 Agent 全流程 | 审计引擎 + 约束底座（sofagent/scripts/install.sh） |
 | 自动编排 Agent 任务 | + 编排引擎（DeepAgents Sub Agent） |
 
+> [!NOTE]
 > ⚠️ **当前版本（v1.1.5）覆盖范围**：开发者岗位（git commit 审计）+ 非开发岗位（文件系统审计）全覆盖。非开发岗位的文件系统审计需安装并启动 `@sofagent/daemon` 守护进程。
 
 ### 两种部署节点（v1.0.7+）
 
 sofagent 支持两种节点类型——**自动运行节点**（企业无人值守设备，需 OpenClaw）和**个人增强节点**（个人开发者用 WorkBuddy/Codex/Claude Code，不需要 OpenClaw）。完整对照表见 [ARCHITECTURE 双节点架构](./docs/ARCHITECTURE.md#双节点架构)。
 
+> [!NOTE]
 > v1.0.7 的 Sub Agent 约束自加载（`buildConstrainedSystemPrompt`）让约束不依赖任何 Agent 平台的 Skill 系统——Sub Agent 启动时直接读 `.sofagent/` 文件，平台换了约束不丢。
 
 ---
 
-## Work模板市场：企业落地的可靠底座
+## 模板市场：企业落地的可靠底座
 
 纯自主 Agent 灵活但不可控——随机跳步、幻觉、全链路难追溯，在金融信贷审核、应付账款这类**低容错业务**上是致命风险。而 **80% 的企业级落地场景，Workflow（预先编排好分支、工具调用顺序、数据库/第三方接口调用）反而更靠谱**：全流程轨迹固定、节点独立监控、可并行提效、几乎无幻觉。
 
-sofagent 的 [Work模板市场](./模板市场/) 采用**混合架构**：外层用 `workflow.yml` 的 Graph 骨架（`nextNodes`）锁定全链路步骤、保证可追溯；内层单个节点保留模型自主规划（节点 `prompt` 即 ReAct Agent）。既拿到 Workflow 的可控性，又保留局部灵活性。FDE 进场梳理出的工作流，直接沉淀为可复用的企业模板。
+sofagent 的 [模板市场](./模板市场/) 采用**混合架构**：外层用 `workflow.yml` 的 Graph 骨架（`nextNodes`）锁定全链路步骤、保证可追溯；内层单个节点保留模型自主规划（节点 `prompt` 即 ReAct Agent）。既拿到 Workflow 的可控性，又保留局部灵活性。FDE 进场梳理出的工作流，直接沉淀为可复用的企业模板。
 
 ---
 
@@ -320,7 +355,7 @@ sofagent 的 [Work模板市场](./模板市场/) 采用**混合架构**：外层
 | 已知局限 | [LIMITATIONS](./LIMITATIONS.md) |
 | 版本路线图 | [ROADMAP](./ROADMAP.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
-| 企业部署（FDE 工具包 + Workflow 模板） | [FDE/](./FDE/) \| [Work模板市场](./模板市场/) |
+| 企业部署（FDE 工具包 + Workflow 模板） | [FDE/](./FDE/) \| [模板市场](./模板市场/) |
 | 12 包架构（v1.1.0） | [ARCHITECTURE](./docs/ARCHITECTURE.md) · [v1.1.0 日志](./docs/changelog/v1.1.0.md) |
 
 ---
@@ -329,4 +364,5 @@ sofagent 的 [Work模板市场](./模板市场/) 采用**混合架构**：外层
 
 欢迎提 Issue 和 PR，尤其挑刺的那种。[CONTRIBUTING.md](./CONTRIBUTING.md) · [致谢](./docs/THANKS.md)
 
+> [!NOTE]
 > sofagent 由孔放勋设计，代码由 AI 模型编写，每个版本经独立模型评审。
