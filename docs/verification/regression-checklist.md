@@ -686,6 +686,16 @@ grep -rn "sofagent-audit --daemon\|workflow-hub/" tools/acceptance-test.sh docs/
 # v1.1.3 曾出现 scenario 间 .env 残留导致后续场景误判
 grep -A5 "^scenario()" tools/acceptance-test.sh | grep -c "git rm --cached -f .env\|git reset --hard"
 # 期望：≥ 1（scenario 函数含清理逻辑）
+
+# 子项 g: JSON 输出场景的 stderr 隔离（v1.1.5 追加——场景 6/26 教训）
+# 所有用 --json 模式的 acceptance-test 场景，必须用 2>/dev/null 丢弃 stderr，
+# 不能用 2>&1 合并——config-loader.ts:146 的 console.warn 会污染 JSON 首行。
+# v1.1.5 实证：场景 6/26 用 2>&1，临时空目录触发 config 警告，python3 json.load() 失败
+grep -n "\-\-json.*2>&1\|2>&1.*\-\-json" tools/acceptance-test.sh
+# 期望：零命中（所有 --json 场景都用 2>/dev/null）
+# 同理扫描 --format json
+grep -n "format json.*2>&1\|2>&1.*format json" tools/acceptance-test.sh
+# 期望：零命中
 ```
 
 ---

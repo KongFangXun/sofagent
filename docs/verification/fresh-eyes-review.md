@@ -339,6 +339,12 @@
     - **A18/A19 config 禁用**：在 config.yml 写 `rules: { a18: false }` / `{ a19: false }`——确认真能禁用（不出现该规则判定行），且不误报"未知规则名"。**v1.1.4 教训**：config-loader.ts 的 knownKeys 集合曾漏 a18/a19，用户禁用时误报未知——这是每新增规则必查项（见回归清单维度 9）。
     - **A19 在 defaultRules 的排序合理性**：A19 编号是 19 但放在 defaultRules（始终生效），不在 extendedRules——确认这是有意设计（commit msg 质量是基础要求），不是放错数组。
 
+29. **MCP server JSON-RPC 协议合规（v1.1.5 新增）** 🆕：
+    - **盲区**：MCP server 对 notification 类消息（`notifications/initialized` 等）不应返回 error response——JSON-RPC 规范规定 notification（**无 id 字段**的消息）不返回响应，request（有 id 字段）才返回。v1.1.5 验收测试场景 58 初版给 server 发了 `{"id":2,"method":"notifications/initialized"}`——server 按 id=2 回了 `{"error":{"code":-32601,"message":"Method not found"}}`，虽然测试能过但属协议违规（带 id 的 notification 是错误用法，正确用法是省略 id）。
+    - **盲区本质**：JSON-RPC 2.0 规范里 request 与 notification 的区分点是 `id` 字段有无——开发者容易把 notification 当成"没返回值的 method 调用"，给它加个 id；或者反过来，把所有 method 都当 request 处理，对 notification 也回 error。这是协议层的基础合规问题，单看功能不会暴露——必须实跑 notification 消息看 server 行为。
+    - **检查手法**：`printf '%s\n' '{"jsonrpc":"2.0","method":"notifications/initialized"}' | node sofagent/mcp/dist/mcp-server.js` 期望**零输出**（notification 不应答）。
+    - **v1.1.5 实证（2026-07-19 跑通）**：本子项验证时跑 `notifications/initialized`（无 id），MCP server 仍返回 `{"jsonrpc":"2.0","error":{"code":-32601,"message":"Method not found: notifications/initialized"}}`——**当前实现不合规**，server 没识别 notification（所有 method 都走 `handleRequest` 然后 default 分支回 error）。这是已知 P2 协议合规问题，**不阻断 v1.1.5 发版**（所有 MCP client 实现都容忍这种多余 error response），进 v1.1.6+ 修复。修复点：`handleRequest` 入口先判 `request.id === null && !Array.isArray(request.id)` → notification → 静默 return（不调 sendResult/sendError）。
+
 **输出格式**：
 
 ```markdown
@@ -520,6 +526,20 @@
      3. **两份 test 同步性**：`diff <(grep -oE "A[0-9]+|LOOP|USB|daemon|maxTurns|warn-accumulator" tools/acceptance-test.sh | sort -u) <(grep -oE "A[0-9]+|LOOP|USB|daemon|maxTurns|warn-accumulator" docs/verification/openclaw-acceptance-test.md | sort -u)` 期望覆盖集合大致一致（允许有差异但不能一方完全缺失某功能）。
      4. **openclaw-acceptance-test.md 顶部"覆盖范围"描述行同步**：该文件第 7 行的覆盖描述是否包含本版本新增关键功能。
      5. **失效场景清理**：`grep -rn "sofagent-audit --daemon\|workflow-hub/" tools/acceptance-test.sh docs/verification/openclaw-acceptance-test.md` 期望零命中（命中 = 场景引用已废弃命令/已迁移路径，必然 FAIL）。
+
+#### 31. **JSON 输出场景的 stderr 隔离（v1.1.5 新增）** 🆕
+   - **盲区（v1.1.5 acceptance-test 场景 6/26 实证）**：测试用 `$CLI --json 2>&1` 合并 stderr 到 stdout，但 `config-loader.ts:146` 的「⚠️ 未找到 .sofagent/config.yml」`console.warn` 在临时空目录会触发，污染 JSON 首行 → `python3 json.load()` 失败。这个 bug v1.1.4 就存在，只是测试环境巧合没触发，到 v1.1.5 才暴露。
+   - **盲区本质**：`2>&1` 是 shell 测试的常见模式（看 STDERR 方便排错），但 JSON 解析场景必须丢弃 stderr——JSON 是严格的 stdout 协议。同理：所有 `--json` / `--format json` 输出 + 下游 `jq` / `python -c "json.load(sys.stdin)"` 解析链路，stderr 噪声都会让解析失败。问题不在工具（config-loader 警告是合理的），在测试自身——测试场景按"调试模式"写，没切到"协议模式"。
+   - **检查手法**：`grep -n "\-\-json.*2>&1\|2>&1.*\-\-json" tools/acceptance-test.sh` 期望**零命中**。所有 `--json` 测试场景统一用 `2>/dev/null` 丢弃 stderr。同理覆盖 `--format json` 等所有结构化输出开关。
+
+#### 32. **交付声明反向验证（v1.1.5 新增）** 🆕
+   - **盲区（v1.1.5 审-8 事件）**：changelog 声称「改动文件 X 加了 Y 功能」但实际未改——AI 工程师把「应当做的事」写成「已经做的事」。审-8 事件：changelog v1.1.5 交付八声称改了 `cli.ts` 加 `--mode` 参数，实际 `git log --oneline -3 -- sofagent/orchestrator/src/cli.ts` + `grep "\-\-mode" sofagent/orchestrator/src/cli.ts` 双查全部为空。审查阶段才发现，距离发版一步之遥。
+   - **盲区本质**：AI 的「计划」和「执行」容易混淆——写作 changelog 时把 todo 当 done。同事 review 文字时不会去验证「这个改动真的存在吗」（默认相信作者），只有 git 工具闭环能识别。人类审查 changelog 文字时，"声明 X 改了 Y"这种句子读完不会触发警觉——它读起来完全正常。
+   - **检查手法**：对 changelog 每一条「改动文件 X / 加了功能 Y」声明，跑双查：
+     1. `git log --oneline -5 -- <file>` —— 文件近期是否有改动
+     2. `grep -n "<关键标识>" <file>` —— 关键标识当前文件里是否真有
+     两者都有命中才算真改。任一为零 = 谎报，必须 P0 阻断发版。
+   - **抽样策略**：changelog 条目多时无需全查，但**每条声称改动文件路径 + 关键标识**的条目至少抽 3 条做双查。审-8 事件中抽样查了 cli.ts / cli-args.ts / push-target.ts 三条，其中 cli.ts 命中谎报。
 
 
 **输出格式**：
