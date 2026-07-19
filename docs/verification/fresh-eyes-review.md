@@ -745,6 +745,6 @@
 - **LOOP/loop-install.sh 版本号写 v1.1.5**：`loop-install.sh:3` 注释写 v1.1.5，但发版是 v1.1.4。check-version.sh 不扫 .sh 文件。→ 回归维度 6 子项 c（.sh 脚本版本号扫描）
 - **FDE/LOOP 调主 install.sh 无契约文档**：`fde-install.sh:52` 和 `loop-install.sh:54` 都调 `sofagent/scripts/install.sh`——跨产品调用接口（路径/参数/退出码）没有契约文档或 pin commit，主 install.sh 改参会悄悄打断 FDE/LOOP。→ 回归维度 23 子项 c
 - **LOOP Agent 数文档不一致**：quick-start 说 3、README 列 2、实际装 4（含 sofagent-fde）。→ 回归维度 23 子项 b
-- **pre-push-check 占位符死链误报**：`check-docs.sh` 把 `releasing.md` 里的 `vX.Y.Z.md` 模板占位符当成死链，导致门禁 16/17 不绿。工具的边界假设也是审查对象。→ 回归维度 2 子项 c
+- **pre-push-check 占位符死链风险**：`check-docs.sh` 曾把 `releasing.md` 里的 `vX.Y.Z.md` 模板占位符当成死链，导致门禁不绿（v1.1.4 发版后审查时短暂出现，后已修复）。工具的边界假设也是审查对象——占位符不是真死链，但被当死链就阻塞发版。→ 回归维度 2 子项 c
 - **Agent 审查报告需主理人交叉验证**：本次审查派 3 个 Agent 并行跑，其中 2 个 Agent 报了误报 P0（维度一说"README:254 残留 v1.1.3"实际是 v1.1.4；维度三说"audit/README 数字滞后 19/8"实际已更新为 21/10）。成员结论为准 ≠ 成员结论全信——主理人汇编时必须实跑复核。→ 审查流程本身的方法论教训
 

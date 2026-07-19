@@ -247,7 +247,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 | A2 不泄密钥 | 代码中出现 API Key / Token / Password 模式 | FAIL | 业务底线 |
 | A3 不改越界 | 修改文件路径与任务描述不匹配 | WARN | 业务底线 |
 | A4 不删配置 | 配置文件被删除 | FAIL | 业务底线 |
-| A5 不瞒真相 | commit message 质量检查 | WARN | 业务底线 |
+| A5 不瞒真相 | commit message 为空或纯占位符（fix/update/wip 等） | WARN | 业务底线 |
 | A6 不坏构建 | 构建配置文件异常改动 | WARN | 能力拐杖 |
 | A7 不存盲改 | 被修改文件无读取记录（依赖 `.sofagent/task/logs/`） | FAIL/WARN | 能力拐杖 |
 | A8 不逃验证 | 构建文件变更后无测试记录 | FAIL/WARN | 能力拐杖 |

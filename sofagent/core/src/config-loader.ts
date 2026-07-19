@@ -35,7 +35,7 @@ export interface AuditConfig {
   carefulModifyThreshold: number;
   /** 是否启用扩展规则（E1-E4 + A14-A17） */
   extendedRulesEnabled: boolean;
-  /** 按规则名禁用——key 为 a1~a15/e1~e4，value 为 false 时禁用 */
+  /** 按规则名禁用——key 为 a1~a19/e1~e4，value 为 false 时禁用 */
   rules?: Record<string, boolean>;
   /** loop-check 绝对轮次上限（v1.0.1），默认 20 */
   loopCheckMaxRounds?: number;
@@ -179,6 +179,7 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
   }
 
   // v1.1.3: 先尝试浅层解析以提取 audit.strict（用于 fail-closed 判定）
+  // v1.1.5: P1-1 schema 一致性——允许顶层配置（无 audit: 包装），与 mergeWithDefaults 支持范围对齐
   let configStrict = false;
   try {
     const parsed = yamlLoad(content) as Record<string, unknown> | null;
@@ -188,7 +189,17 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
         configStrict = !!(audit as Record<string, unknown>)['strict'];
         return audit as Partial<AuditConfig>;
       }
-      // P2-3: 配置文件缺少 audit 段时提示
+      // v1.1.5: 顶层（无 audit 包装）含 AuditConfig 已知字段时，直接当作 AuditConfig 使用
+      // 这样 mergeWithDefaults 的 extendedRulesEnabled / rules / A16 / A17 等字段都能正常生效
+      const topLevelAuditKeys: (keyof AuditConfig)[] = [
+        'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
+        'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17',
+      ];
+      const hasAny = topLevelAuditKeys.some(k => k in parsed);
+      if (hasAny) {
+        return parsed as Partial<AuditConfig>;
+      }
+      // 既无 audit 段也无任何已知字段——确实不是有效配置
       console.warn('⚠️ 配置文件缺少 audit 段，使用默认配置');
       return null;
     }
@@ -228,14 +239,18 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
   };
 
   // 校验 rules key——未知规则名输出警告
+  // v1.1.5: P0-1 补全 a18/a19（v1.1.4 新增 A18/A19 规则后此处遗漏）
+  // ⚠️ 同步要求：新增 A 类规则时，此处必须同步追加
+  //    权威源见 sofagent/audit/src/rules/runner.ts AUDIT_PRIORITY
   if (merged.rules) {
     const knownKeys = new Set([
-      'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11', 'a14', 'a15', 'a16', 'a17',
+      'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11',
+      'a14', 'a15', 'a16', 'a17', 'a18', 'a19',
       'e1', 'e2', 'e3', 'e4',
     ]);
     for (const key of Object.keys(merged.rules)) {
       if (!knownKeys.has(key.toLowerCase())) {
-        console.warn(`⚠️ config.yml: 未知规则名 "${key}"（已知: a1-a11, a14-a17, e1-e4）`);
+        console.warn(`⚠️ config.yml: 未知规则名 "${key}"（已知: a1-a11, a14-a19, e1-e4）`);
       }
     }
 
@@ -274,7 +289,7 @@ export function safeDefaults(): AuditConfig {
     rules: {
       a1: true, a2: true, a3: true, a4: true, a5: true,
       a6: true, a7: true, a8: true, a9: true, a10: true, a11: true,
-      a14: true, a15: true, a16: true, a17: true,
+      a14: true, a15: true, a16: true, a17: true, a18: true, a19: true,
     },
     loopCheckMaxRounds: 20,
     strict: false,
