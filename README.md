@@ -46,6 +46,8 @@
 
 > 💡 急着装？直接跳 [Quick Start](#怎么装)
 
+> 💡 **命名约定**：`FDE/`、`LOOP/`、`workflow-hub/` 是独立产品 / 模板仓库，按需选用；`sofagent/`、`agents/`、`docs/`、`tools/` 是核心代码与配置。clone 主仓库后全部可用。
+
 ---
 
 ## 为什么需要 sofagent？
@@ -365,7 +367,7 @@ flowchart LR
 | 自动编排 Agent 任务 | + 编排引擎（DeepAgents Sub Agent） |
 
 > [!NOTE]
-> ⚠️ **当前版本（v1.1.5）覆盖范围**：开发者岗位（git commit 审计）+ 非开发岗位（文件系统审计）全覆盖。非开发岗位的文件系统审计需安装并启动 `@sofagent/daemon` 守护进程。
+> ⚠️ **当前版本（v1.1.6）覆盖范围**：开发者岗位（git commit 审计）+ 非开发岗位（文件系统审计）全覆盖。非开发岗位的文件系统审计需安装并启动 `@sofagent/daemon` 守护进程。
 
 ### 两种部署节点（v1.0.7+）
 
