@@ -1,11 +1,18 @@
 # Changelog
 
 每个版本的详细开发日志在 docs/changelog/ 下。v1.0.0+ 为正式版，v0.x 实验版日志在 [docs/archive/changelog-experimental/](./docs/archive/changelog-experimental/)。本文件是目录索引。
-> v1.1.5 · 2026-07-18（UTC）· 孔放勋
+> v1.1.5 · 2026-07-19（UTC）· 孔放勋
 
 ---
 
 ## 正式版
+
+### [v1.1.5] — releasing.md SOP 集成 + MCP pipe + knowledge resource + USB federation HMAC
+> 2026-07-19（UTC）· 已发版
+**核心变更**：① **releaser Skill**——把 `docs/verification/releasing.md` 十二阶段发版 SOP 注入 Agent 上下文，Agent 按全流程自动执行发版（三个 human check 节点显式介入）。② **MCP `audit_file` pipe**——Agent 通过 MCP 协议编辑的文件也能即时审计（补 v1.1.4 daemon 盲区，daemon 只监控 fs.watch 物理变更，MCP 协议层编辑看不见）。③ **7 个 knowledge MCP resource** + `list_capabilities`——Agent 第一次连上 MCP server 主动推送能力清单。④ **push-target 5 种路由**——webhook:dingtalk/feishu/wecom + openclaw:im + daemon:notice，工作流节点输出自动推到对应通道。⑤ **USB federation HMAC 签名**——`createHmac` + `timingSafeEqual` + `mode: 0o600`，补 v1.1.4 USB federation 只有基础检测的缺口。⑥ **cli.ts `--mode` 参数**——orchestrator 支持 `--mode engineer/reviewer` 单节点执行。
+**缺陷修复**：v1.1.4 审查 9 项 P0/P1 文档漂移（knownKeys 补 a18/a19 + schema 一致性 + install.sh 跨产品契约 + A5 描述 + 历史措辞清理）+ maxTurns 可配置（DEFAULT_ENGINEER_MAX_TURNS=20 + DEFAULT_REVIEWER_MAX_TURNS=15）+ warn-accumulator 文件级追踪 + A18 提升 defaultRules（513 文件 0 误报）+ LOOP audit history 端到端 + MCP server JSON-RPC 2.0 协议合规（notifications/initialized 静默）。
+**质量验证**：726 tests across 12 packages 全绿 · acceptance-test 79/79 · check-version 67/67 · pre-push-check 15 通过/1 警告。
+> 📖 [开发日志](./docs/changelog/v1.1.5.md)
 
 ### [v1.1.4] — LOOP 独立产品化 + 工具注入 + A18/A19 + CI 修复
 > 2026-07-19（UTC）· 已发版

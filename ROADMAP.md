@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.1.5 · 2026-07-19（UTC）· A18/A19 审计新规则 + LOOP 工具注入 + daemon 可见性 · 规划：v1.1.5-v1.1.9 → v1.2.0 收口
+> v1.1.5 · 2026-07-19（UTC）· releasing.md SOP 集成 + MCP pipe + knowledge resource · 规划：v1.1.6-v1.1.9 → v1.2.0 收口
 
 <img src="docs/assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -23,11 +23,11 @@
 
 ---
 
-## 现在在哪：v1.1.5 📋（规划中）
+## 现在在哪：v1.1.6 📋（规划中）
 
-> **releasing.md SOP 集成 + MCP pipe `audit_file` + MCP knowledge resource + USB federation HMAC**——Agent 按十二阶段 SOP 自动发版（releaser Skill）+ Agent 通过 MCP 编辑的文件也能即时审计（补 v1.1.4 daemon 盲区）+ 7 个 knowledge resource 暴露 + push target 路由 + USB federation 签名校验。同时修复 v1.1.4 审查 9 项 P0/P1 文档漂移 + maxTurns/warn-accumulator/A18/audit history/tools.ts 6 项改进。v1.1.4 pre-push-check 13 通过/1 警告（共 14 项）、660 tests 全绿。
+> **LLM Wiki 3 层分层 + conflict-check**：Ledger-Views-Policy 显式化 + daemon 知识健康巡检。v1.1.5 交付：releaser Skill（十二阶段 SOP）+ MCP `audit_file` pipe（Agent 协议层编辑纳入审计）+ 7 个 knowledge MCP resource + push target 路由 + USB federation HMAC 签名 + cli.ts `--mode` 参数 + v1.1.4 审查 9 项 P0/P1 文档漂移修复 + maxTurns/warn-accumulator/A18/audit history/tools.ts 6 项改进。v1.1.5 pre-push-check 15 通过/1 警告、726 tests 全绿、acceptance-test 79/79、check-version 67/67。
 >
-> 📖 [v1.1.4 开发日志](./docs/changelog/v1.1.4.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [v1.1.5 开发日志](./docs/changelog/v1.1.5.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -37,6 +37,7 @@
 
 | 版本 | 核心交付 | 日志 |
 |------|------|:--:|
+| **v1.1.5** 🚧 | releasing.md SOP 集成（releaser Skill 十二阶段）+ MCP `audit_file` pipe + 7 个 knowledge MCP resource + list_capabilities + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts `--mode` 参数 + 9 项审查 P0/P1 修复 + MCP server JSON-RPC 2.0 协议合规 | [📖](./docs/changelog/v1.1.5.md) |
 | **v1.1.4** 🚧 | A18/A19 两条审计新规则（21 条规则集）+ LOOP 工具注入（6 工具）+ daemon 可见性修复 + USB federation + WARN 累积报告 + 8 项审查修复 | [📖](./docs/changelog/v1.1.4.md) |
 | **v1.1.3** 🔧 | LangGraph StateGraph 四节点自动流转 + Checkpoint 持久化 + HITL 确认 + 39 项审查修复 | [📖](./docs/changelog/v1.1.3.md) |
 | **v1.1.2** 🔧 | LOOP 双 Agent 串联 + Harness 可见性签名 + 多设备同步指南 + 测试体系修复 | [📖](./docs/changelog/v1.1.2.md) |
@@ -110,7 +111,6 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.1.5** | ✅ 已发布 | **SOP 自动发版 + MCP pipe `audit_file` + knowledge resource + USB federation HMAC**：releaser Skill（十二阶段 SOP）+ MCP 协议层编辑纳入审计（补 v1.1.4 daemon 盲区）+ 7 个 knowledge MCP resource + push target 路由 + USB federation 签名 + v1.1.4 审查 9 项修复（文档漂移）+ maxTurns/warn-accumulator/A18/audit history/tools.ts 6 项改进 | [📖](./docs/changelog/v1.1.5.md) |
 | **v1.1.6** | 📋 规划中 | **LLM Wiki 3 层分层 + conflict-check**：Ledger-Views-Policy 显式化 + daemon 知识健康巡检 | [📖](./docs/changelog/v1.1.6.md) |
 | **v1.1.7** | 📋 规划中 | **Dream Cycle 6 阶段 + sensitivity**：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级 | [📖](./docs/changelog/v1.1.7.md) |
 | **v1.1.8** | 📋 规划中 | **安全层 + 联邦查询 + Agent 安全防护**：AES-256-GCM + ECDH 配对 + OpenClaw channel 联邦知识查询 + Prompt 注入 8 层防护体系（指令分层隔离 / 工具动态最小权限 / 后端强制校验 / 敏感数据不进 prompt / RAG 可信分级 / 输出结构化+执行前审核 / 高危动作强制人工确认 / 全链路日志+红队测试——核心原则：模型提建议，系统控执行） | [📖](./docs/changelog/v1.1.8.md) |
