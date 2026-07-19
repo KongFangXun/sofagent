@@ -210,7 +210,8 @@ echo "// updated" >> README.md
 git add README.md
 GIT_EDITOR=true git commit --quiet -m "test: json scenario" 2>&1 || true
 
-JSON_OUTPUT=$($CLI --diff HEAD~1..HEAD --json 2>&1 || true)
+# v1.1.5: 用 2>/dev/null 不用 2>&1——stderr 的 config.yml 警告会污染 JSON 首行
+JSON_OUTPUT=$($CLI --diff HEAD~1..HEAD --json 2>/dev/null || true)
 echo "$JSON_OUTPUT" | head -5
 
 # 验证是有效 JSON，含 exitCode 和 rules
@@ -856,8 +857,8 @@ echo 'const key = "ghp_999999999999999999999999999999999999";' > src/key.ts
 git add -f src/key.ts
 GIT_EDITOR=true git commit --no-verify --quiet -m "add key" 2>&1 || true
 
-# 用 --json 拿审计结果
-JSON_VIOLATION=$($CLI --diff HEAD~1..HEAD --json 2>&1 || true)
+# 用 --json 拿审计结果（v1.1.5: 2>/dev/null 避免 stderr 警告污染 JSON 首行）
+JSON_VIOLATION=$($CLI --diff HEAD~1..HEAD --json 2>/dev/null || true)
 echo "$JSON_VIOLATION" | head -3
 
 # 验证 JSON 含 ruleResults 且至少有一条 FAIL
