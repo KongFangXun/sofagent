@@ -337,7 +337,7 @@ Agent 先判断任务复杂度：
 | **四层加载链** | SKILL.md（宪法层）→ think.md（反思层）→ fde.md（执行层）→ knowledge/index.md（知识层）注入顺序 |
 | **FDE** | Forward Deployed Engineer，四阶段十二步：梳理工作流→构建本体模型→识别节点与量化→部署→离场 |
 
-核心 = **一底座·三引擎·一能力覆盖全生命周期**（约束底座 + 编排/审计/进化引擎 + 回溯能力），三个维度管住 Agent 行为：四层加载链（所有平台生效）、审计引擎 + daemon（开发者 + 非开发者）、编排引擎 + 进化引擎（增强，OpenClaw 全功能）。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
+核心 = **一底座·三引擎·一能力覆盖全生命周期**（约束底座 + 编排/审计/进化引擎 + FDE 能力），三个维度管住 Agent 行为：四层加载链（所有平台生效）、审计引擎 + daemon（开发者 + 非开发者）、编排引擎 + 进化引擎（增强，OpenClaw 全功能）。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 ---
 
