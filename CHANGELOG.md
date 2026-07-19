@@ -106,6 +106,7 @@ v1.0.0 本轮完成 AI 知识库代码实现——7 件事：目录骨架（6 �
 ### [v1.1.5] — SOP 自动发版 + MCP pipe audit_file + knowledge resource + USB federation 📋
 > 规划中
 **核心变更**：① Agent 按 releasing.md 十二阶段 SOP 全流程自动发版（releaser Skill，3 次 human check）；② MCP 协议层编辑纳入审计（`sofagent.audit_file` tool，补 v1.1.4 daemon 只监控 fs.watch 的盲区）；③ 7 个 MCP knowledge resource + push target 路由（飞书/钉钉/企微 Webhook + daemon 通知）+ list_capabilities 主动推送；④ USB federation HMAC-SHA256 签名校验 + schema 校验 + applyFederation 实现；⑤ v1.1.4 审查 9 项修复（3 P0 文档漂移 + 5 P1 文档/代码 + 1 工具增强）+ maxTurns 可配置化 + warn-accumulator 文件级追踪 + A18 提升 defaultRules 评估 + LOOP audit history 端到端验证 + tools.ts 高危命令可配置评估。
+**安全修复**：A9 不纳注入根治——上下文感知扫描（字符串字面量/注释仅检 HIGH 置信度，消除 MEDIUM 模糊档在文案/注释中的整类误报；HIGH 真注入仍照常 FAIL）+ A3 越界误报治理（commit-msg 审计改读完整 message，副标题/正文里的任务引用不再误判越界）。
 > 📖 [开发日志](./docs/changelog/v1.1.5.md)
 
 ### [v1.1.6] — LLM Wiki 3 层分层 + conflict-check 📋
