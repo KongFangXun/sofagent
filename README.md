@@ -50,7 +50,7 @@
 ```mermaid
 graph LR
     A[大厂 Agent + 大模型<br/>你自选 · 我们不替代] --> B[约束底座<br/>Harness 中间件]
-    B --> C[三引擎<br/>编排 · 审计 · 进化]
+    B --> C[四引擎<br/>编排 · 审计 · 回溯 · 进化]
     C --> D[回溯引擎<br/>SMB 与 OPC 的每个人<br/>自主完成部署]
 ```
 
@@ -144,7 +144,7 @@ FDE 交付完就撤离，AI 节点留在企业自己跑。
 
 > 📖 完整 FDE 工作流程见 [FDE/FDE.md](./FDE/FDE.md)
 
-### 一底座 · 三引擎 · 一能力
+### 一底座 · 四引擎
 
 > 💡 **sofagent 和 Gateway 的关系**：见首屏定位区。sofagent 不替代 Gateway——它挂在 Gateway 里面，管 Agent 行为治理。
 
@@ -237,7 +237,7 @@ graph LR
 sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点"
 ```
 
-一底座 · 三引擎 · 一能力形成闭环：**约束定红线 → 编排拆任务 → 审计盯变更 → 回溯保回滚 → 进化越用越好**。
+一底座 · 四引擎形成闭环：**约束定红线 → 编排拆任务 → 审计盯变更 → 回溯保回滚 → 进化越用越好**。
 
 ---
 
