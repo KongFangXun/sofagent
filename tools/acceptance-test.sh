@@ -1556,15 +1556,16 @@ LOOP_TOOL_INJECT_OK=true
 [ ! -f "$LOOP_TOOLS" ] && LOOP_TOOL_INJECT_OK=false && fail "orchestrator/tools.ts 不存在"
 
 if $LOOP_TOOL_INJECT_OK; then
-  # maxTurns = 20 常量
-  grep -q "DEFAULT_AGENT_MAX_TURNS = 20" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
+  # v1.1.5 重构：DEFAULT_AGENT_MAX_TURNS → DEFAULT_ENGINEER_MAX_TURNS(20) + DEFAULT_REVIEWER_MAX_TURNS(15)
+  grep -q "DEFAULT_ENGINEER_MAX_TURNS = 20" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
+  grep -q "DEFAULT_REVIEWER_MAX_TURNS = 15" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
   # ENGINEER_TOOLS + REVIEWER_TOOLS 导入
   grep -q "ENGINEER_TOOLS" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
   grep -q "REVIEWER_TOOLS" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
   # tools: ENGINEER_TOOLS 实际传给 createDeepAgent
   grep -q "tools: ENGINEER_TOOLS" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
-  # maxTurns 传入
-  grep -q "maxTurns: DEFAULT_AGENT_MAX_TURNS" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
+  # maxTurns 改为 resolveMaxTurns('engineer') / resolveMaxTurns('reviewer')
+  grep -q "maxTurns: resolveMaxTurns" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
   # checkDangerousCommand 高危命令拦截
   grep -q "checkDangerousCommand" "$LOOP_TOOLS" || LOOP_TOOL_INJECT_OK=false
   # recordLoopAuditHistory 三态全记录

@@ -1135,13 +1135,14 @@ cd "$SOFAGENT_DIR" && rm -rf "$A18_EXEMPT_DIR"
 ### 场景 54：LOOP 工具注入（maxTurns=20 + ENGINEER/REVIEWER_TOOLS）
 
 ```bash
-# v1.1.4 修复：LOOP Agent 之前零工具路径，v1.1.4 注入 ENGINEER_TOOLS（6 个）+ REVIEWER_TOOLS（3 个只读）+ maxTurns=20
+# v1.1.5 重构：DEFAULT_AGENT_MAX_TURNS → DEFAULT_ENGINEER_MAX_TURNS(20) + DEFAULT_REVIEWER_MAX_TURNS(15) + resolveMaxTurns()
 
 LOOP_NODES="$SOFAGENT_DIR/sofagent/orchestrator/src/loop/nodes.ts"
 LOOP_TOOLS="$SOFAGENT_DIR/sofagent/orchestrator/src/tools.ts"
 
-# 1. maxTurns 常量
-grep -q "DEFAULT_AGENT_MAX_TURNS = 20" "$LOOP_NODES" && echo "maxTurns=20 ✅" || echo "maxTurns ❌"
+# 1. maxTurns 常量（v1.1.5 拆分为 engineer/reviewer 独立常量）
+grep -q "DEFAULT_ENGINEER_MAX_TURNS = 20" "$LOOP_NODES" && echo "engineer maxTurns=20 ✅" || echo "engineer maxTurns ❌"
+grep -q "DEFAULT_REVIEWER_MAX_TURNS = 15" "$LOOP_NODES" && echo "reviewer maxTurns=15 ✅" || echo "reviewer maxTurns ❌"
 
 # 2. ENGINEER_TOOLS + REVIEWER_TOOLS 导入
 grep -q "ENGINEER_TOOLS\|REVIEWER_TOOLS" "$LOOP_NODES" && echo "tools import ✅" || echo "tools import ❌"
@@ -1149,8 +1150,8 @@ grep -q "ENGINEER_TOOLS\|REVIEWER_TOOLS" "$LOOP_NODES" && echo "tools import ✅
 # 3. tools: ENGINEER_TOOLS 实际传给 createDeepAgent
 grep -q "tools: ENGINEER_TOOLS" "$LOOP_NODES" && echo "tools 注入 ✅" || echo "tools 注入 ❌"
 
-# 4. maxTurns 传入 createDeepAgent
-grep -q "maxTurns: DEFAULT_AGENT_MAX_TURNS" "$LOOP_NODES" && echo "maxTurns 传入 ✅" || echo "maxTurns 传入 ❌"
+# 4. maxTurns 通过 resolveMaxTurns 函数注入
+grep -q "maxTurns: resolveMaxTurns" "$LOOP_NODES" && echo "resolveMaxTurns 注入 ✅" || echo "resolveMaxTurns 注入 ❌"
 
 # 5. checkDangerousCommand 高危命令黑名单（run_bash 守卫）
 grep -q "checkDangerousCommand" "$LOOP_TOOLS" && echo "dangerous cmd 拦截 ✅" || echo "dangerous cmd 拦截 ❌"
