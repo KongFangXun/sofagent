@@ -1,5 +1,5 @@
 // ============================================================
-// usb-detect.ts · USB federation 检测 + 安全层（v1.1.5 增强）
+// usb-detect.ts · USB federation 检测 + 安全层（v1.1.4 增强）
 // v1.1.4 基础版无签名校验——任何人制作 SOFAGENT 卷标 U 盘即可注入任意配置
 // v1.1.5 补上：
 //   - HMAC-SHA256 签名校验（federation.json 配 .sig sidecar）
