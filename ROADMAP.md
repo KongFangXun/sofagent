@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.1.5 · 2026-07-19（UTC）· releasing.md SOP 集成 + MCP pipe + knowledge resource · 规划：v1.1.6-v1.1.9 → v1.2.0 收口
+> v1.1.6 · 2026-07-19（UTC）· v1.1.6 发布后问题修复（21 项）· 规划：v1.1.6-v1.1.9 → v1.2.0 收口
 
 <img src="docs/assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -23,11 +23,11 @@
 
 ---
 
-## 现在在哪：v1.1.6 📋（规划中）
+## 现在在哪：v1.1.6（已发版）
 
-> **LLM Wiki 3 层分层 + conflict-check**：Ledger-Views-Policy 显式化 + daemon 知识健康巡检。v1.1.5 交付：releaser Skill（十二阶段 SOP）+ MCP `audit_file` pipe（Agent 协议层编辑纳入审计）+ 7 个 knowledge MCP resource + push target 路由 + USB federation HMAC 签名 + cli.ts `--mode` 参数 + v1.1.4 审查 9 项 P0/P1 文档漂移修复 + maxTurns/warn-accumulator/A18/audit history/tools.ts 6 项改进。v1.1.5 pre-push-check 15 通过/1 警告、726 tests 全绿、acceptance-test 79/79、check-version 67/67。
+> **v1.1.5 发布后问题修复（21 项）**：纯 BugFix 版本——webhook PASS 推送接通 + init.ts 文案动态读取 + "knowledge resource"→"tool" 全仓清零 + CHANGELOG 纯度修复 + audit/README 规则分级补全 + FDE 文案诚实化 + README 加竞品对比表 + 多项文档一致性修复。v1.1.6 audit 包 405 tests 全绿。
 >
-> 📖 [v1.1.5 开发日志](./docs/changelog/v1.1.5.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [v1.1.6 开发日志](./docs/changelog/v1.1.6.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 ---
 
@@ -207,6 +207,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **FDE 双团队模型（储备）** | Echo（领域专家发现）+ Delta（工程师快速原型）双团队配对 + demo 驱动 + 产品团队作泛化引擎。作 FDE 模型补充参考 |
 | **WB 企业版竞品对标（商业化储备）** | 席位全生命周期管理（离职自动释放）+ 成本三维核算（部门/项目/成员）+ 统一采购合规 + 审计追踪+安全沙箱 + 知识资产沉淀。商业化方向参考 |
 | **FDE Demo Kit 工程化（储备）** | 演示工具包范式：7 行业 demo + demo 隔离 + IaC/CI-CD + 可追溯部署 + 权限演示。FDE demo 工程化参照标杆 |
+| **Agent 执行层实时治理（Runta 参考 · v1.3.0+）** | syscall/网络/凭证边界实时拦截，审计引擎从"事后"扩展到"运行时"；凭证虚拟 key 中介（host 边界注入）。详见[下方 Runta 参考章节](#runta-执行层治理参考实时拦截-vs-事后审计) |
 
 ---
 
@@ -416,6 +417,31 @@ sofagent 不是孤立的——五层架构与以下成熟项目有明确的对�
 | **R3 引用追溯审计** | Agent 后续 commit 时 | Agent 在代码/文档中引用的事实，是否能在 RAG 调用历史中找到出处（类似 A14 知识库越权，但作用域是 RAG 结果） | `[sofagent] R3: 引用的事实无 RAG 来源记录` |
 
 **差异化铁律（与 gbrain 对标同款守则）**：吸收 WeKnora 的「方法」（多模态解析、自适应分块、企业级 RBAC 工程化），不吸收其「定位」（不变成 RAG 平台）。sofagent 始终是 Harness 中间件——数据主权（本地不送云）+ 第三方独立性（不做 Agent 运行）+ 开源 MIT（审计工具本身可审计）。**Agent 用什么 RAG 后端是 Agent 的自由，sofagent 负责审计 Agent 调 RAG 的行为——这就是 connector 不做透传的根因。**
+
+
+#### Runta 执行层治理参考（实时拦截 vs 事后审计）
+
+> 来源：Runta（a16z 领投 2000 万美元种子轮，2026-07-17，估值 1 亿+；创始人 Guanlan Dai，前 Cloudflare 边缘 / Kong 核心代理）。调研时间 2026-07-19。**Runta 是第三方创业公司做的 Agent 执行层治理（execution layer），与 sofagent 不在同一所有权下——是方向验证，不是竞品对标。** 它的价值是资本侧背书 sofagent 已选的主航道，并提示前沿已推进到「运行时实时拦截」。
+
+**为什么值得看**：a16z 核心判断——"agents just want a computer"（Agent 要的是一台完整、有状态、本地或云端、内置安全与策略接口的 OS）。这从资本侧验证了 sofagent「Agent 执行层治理」方向：企业不是不想用 Agent，是不敢——先为可控性买单，再为能力买单。
+
+**与 sofagent 的差距（关键）**：Runta 在 **syscall / 网络 / 凭证边界实时拦截**（动作发生前就挡）；sofagent 当前在 **git commit / 文件变更事件事后审计**（A16/A17 已行为级但仍事后）。这是 sofagent 架构上值得规划的下一段。
+
+**Runta 三个可借鉴的具体点**：
+- **凭证虚拟 key 中介**（ClawShell 模式）：真实凭证留在服务端，只在 host 边界注入，Agent 进程只拿本地有效的临时虚拟 key——即便 Agent 被攻破也摸不到真凭证。可细化 v1.2.x KYA 签名凭证方向。
+- **parenting 叙事**：把 Agent 比作「好奇小孩，装防撞角、把信用卡放高处」。极好传播，对外讲「约束 Agent 行为」可直接借用（已写入 README 定位）。
+- **CPU 荒洞察**：Agent 编排与有状态动作大量吃普通 CPU，出现「GPU 荒之外的 CPU 荒」——提示 daemon / 文件系统审计常驻进程的资源模型要前置考虑空闲暂停与 Token 压缩。
+
+**落地阶段（与现有 ROADMAP 对齐）**：
+
+| 阶段 | 版本 | 动作 | 与现有规划关系 |
+|:--:|:--:|------|------|
+| 🔍 短期·认知储备 | 现在 | 只调研，不开新线。Runta 列入"执行层治理方向参考"，本仓零代码改动 | 无风险 |
+| 🧩 中期·凭证最小权限 | v1.2.x | KYA 身份确权引入签名凭证做 Agent 行动可审计绑定；吸收 Runta「虚拟 key + host 边界注入」模式做凭证中介 | 对齐 v1.2.x KYA 探索（[行 141](#v12x--完整多设备协同规划中)） |
+| 🏗️ 长期·SubAgent 沙箱运行时 | v1.3.0 | 「SubAgent 沙箱执行环境」（文件系统隔离 + 网络出站白名单 + 工具调用审计追踪）即 Runta 式运行时治理的 sofagent 落地形态——Runta 外部验证此方向正确 | 对齐 v1.3.0 规划（[行 120](#v130--规划中)） |
+| 🔮 远期·全链路治理 | v2.x | 把「实时拦截（syscall/网络边界）+ 双闸验证 + Dream Sandbox 沙盒审计」合并为事前+事中+事后全链路；审计引擎从"提交时/文件变更时"扩展到"运行时" | 对齐 v2.x Dream Sandbox（[行 176](#v120--记忆知识层升级认知底座铺垫)）+ 双闸验证（[探索方向表](#探索方向)） |
+
+**差异化铁律（与 gbrain / WeKnora 对标同款守则）**：吸收 Runta 的「方法」（实时拦截、凭证中介、最小权限 runtime），不吸收其「定位」（不变成 Agent 运行时托管商）。sofagent 始终是 Harness 中间件——数据主权（本地不送云）+ 第三方独立性（不做 Agent 运行）+ 开源 MIT（审计工具本身可审计）。Runta 给 Agent「一台计算机」= 托管运行时；sofagent 明确不托管、只管跑任务的 Agent。
 
 
 #### Loop Engineering 全栈对照（已实现能力自证）

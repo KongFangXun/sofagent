@@ -1,4 +1,4 @@
-# Flow Hub
+# Workflow Hub
 
 > **这是社区模板市场**——面向用户的 workflow 目录和格式规范。
 > 代码实现在 `sofagent/workflow-hub/`（npm 包，负责解析和运行 workflow）。
@@ -13,4 +13,4 @@
 - [SPEC.md](./SPEC.md) —— Workflow 格式规范（`workflow.yml` 骨架 + 节点 prompt 约定）
 - [CONTRIBUTING.md](./CONTRIBUTING.md) —— 如何新增 / 提交模板
 
-设计定位详见 [根 README §Flow Hub](../README.md#flow-hub企业落地的可靠底座) 与 [ARCHITECTURE §River—Workflow—Subagent](../docs/ARCHITECTURE.md#river--workflow--subagent-三层架构)。
+设计定位详见 [根 README §Workflow Hub](../README.md#workflow-hub企业落地的可靠底座) 与 [ARCHITECTURE §River—Workflow—Subagent](../docs/ARCHITECTURE.md#river--workflow--subagent-三层架构)。

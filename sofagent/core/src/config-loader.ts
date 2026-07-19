@@ -1,10 +1,10 @@
 // ============================================================
 // config-loader.ts · .sofagent/config.yml 配置加载器
-// v0.95 新增：三级 fallback（v1.1.5，js-yaml 替代手写 YAML 解析器）
+// v0.95 新增：三级 fallback（v1.1.6，js-yaml 替代手写 YAML 解析器）
 // v0.97 扩展：环境变量配置（从 lib/config.sh 合并）
-// v1.1.5 重构：用 js-yaml 替代手写 YAML 解析器
-// v1.1.5 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
-// v1.1.5：新增 ConfigParseError（含 cause 链），audit.strict fail-closed 选项
+// v1.1.6 重构：用 js-yaml 替代手写 YAML 解析器
+// v1.1.6 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
+// v1.1.6：新增 ConfigParseError（含 cause 链），audit.strict fail-closed 选项
 // ============================================================
 //
 // 三级 fallback：
@@ -61,6 +61,13 @@ export interface AuditConfig {
       /** reviewer Sub Agent 最大轮次（默认 15） */
       reviewer?: number;
     };
+  };
+  /** v1.1.6: webhook 推送配置——CLI --webhook/--webhook-url 未传时回退到此 */
+  webhook?: {
+    /** webhook 平台：dingtalk / feishu / wecom */
+    platform?: 'dingtalk' | 'feishu' | 'wecom';
+    /** webhook URL（完整 URL，含 token query 参数） */
+    url?: string;
   };
 }
 
@@ -209,7 +216,7 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
       const topLevelAuditKeys: (keyof AuditConfig)[] = [
         'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
         'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17',
-        'loop',
+        'loop', 'webhook',
       ];
       const hasAny = topLevelAuditKeys.some(k => k in parsed);
       if (hasAny) {
@@ -254,6 +261,8 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     A17: partial.A17,
     // v1.1.5: loop 配置透传
     loop: partial.loop,
+    // v1.1.6: webhook 配置透传（CLI 未传 --webhook 时回退到此）
+    webhook: partial.webhook,
   };
 
   // 校验 rules key——未知规则名输出警告

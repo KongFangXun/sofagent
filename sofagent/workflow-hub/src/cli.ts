@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// workflow-hub CLI · v1.1.5
+// workflow-hub CLI · v1.1.6
 
 import { listTemplates } from './hub-list';
 import { deployTemplate } from './hub-deploy';

@@ -1,13 +1,13 @@
 // ============================================================
 // weekly-report.ts · 生成 lessons-missteps 周报
-// v1.1.5 新增
+// v1.1.6 新增
 // ============================================================
 
 import * as fs from 'fs';
 import * as path from 'path';
 import { getThinkPath } from '@sofagent/core';
 
-const VERSION = '1.1.5';
+const VERSION = '1.1.6';
 
 /** 周报生成结果 */
 export interface WeeklyReportResult {
