@@ -26,7 +26,8 @@
 
 ---
 
-**Agents can work. Did they do it right? sofagent governs — 1 base + 4 engines, one system.**
+> [!IMPORTANT]
+> **Agents can work. Did they do it right? sofagent governs — 1 base + 4 engines, one system.**
 
 🧭 Constraint Base · ⚙️ Orchestration · 🔍 Audit · 🔄 Restore · 🧬 Evolution (experimental)
 
@@ -41,7 +42,7 @@
 - [Does it work?](#does-it-work)
 - [Built-in Agents](#built-in-agents)
 - [Which do you need?](#which-do-you-need)
-- [Workflow Hub](#workflow-hub-the-reliable-foundation-for-enterprise-landing)
+- [Flow Hub](#flow-hub-the-reliable-foundation-for-enterprise-landing)
 - [Further reading](#further-reading)
 
 ---
@@ -58,6 +59,7 @@ Most SME AI projects collect dust within 6 months. It's not a tech problem — i
 
 No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep running. Unlike AgentLoop (SaaS, runtime trajectory), sofagent audits **what changed** (file diff, local, MIT open source).
 
+> [!IMPORTANT]
 > 🔬 **Hugging Face benchmark**: same model, harness-only optimization — legal-agent score jumped from 3.5% to 80.1% (76-point gain, at ~1/7 the cost of Claude Sonnet). [Details](./docs/ARCHITECTURE.md)
 
 ---
@@ -75,7 +77,7 @@ Three-step first experience:
 sofagent-audit --help | head -5
 
 # 2. Run audit — --init installed a pre-commit hook, so every commit is scanned by A1
-echo "API_KEY=sk-123456" > .env && git add .env && git commit -m "test"
+echo "API_KEY=sk-123456" > .env && git add -f .env && GIT_EDITOR=true git commit -m "test"
 # → ⛔ A1 sensitive files: .env contains key pattern, commit blocked (never lands)
 
 # 3. Check snapshots — auto-saved after every audit
@@ -85,6 +87,7 @@ sofagent-audit --timeline
 git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
 
+> [!NOTE]
 > Requires Node.js ≥ 18 + bash + git. Full macOS/Linux support, Windows experimental. [Full install guide](./docs/HANDBOOK.md)
 
 ### Uninstall
@@ -95,13 +98,14 @@ npm uninstall -g @sofagent/audit @sofagent/core @sofagent/orchestrator @sofagent
 rm -f .git/hooks/commit-msg .git/hooks/post-commit
 ```
 
+> [!NOTE]
 > Packages are published to npm on each release. If `npm install -g` fails locally, use the in-repo script `sofagent/scripts/install.sh`.
 
 ---
 
 ## How FDE works
 
-FDE does two things — map + identify, splits into two node types, then five engines take over.
+FDE does two things — map + identify, splits into two node types, then the base and four engines take over.
 
 ```mermaid
 graph LR
@@ -115,20 +119,24 @@ Step 2 is the key — not every step should be fully automated:
 | Node type | How it runs | Human's role | sofagent's role |
 |------|------|------|------|
 | ⚡ **Augmented role** | AI navigates, suggests — rules describable | Decide, approve, sign off | Constraint keeps AI in bounds, audit logs every suggestion, restore enables rollback, evolution refines skills |
-| 🔄 **Auto-execute** | AI runs end-to-end autonomously | Review audit reports, spot-check | All five: constrain → orchestrate → audit → restore → evolve weekly |
+| 🔄 **Auto-execute** | AI runs end-to-end autonomously | Review audit reports, spot-check | All five components: constrain → orchestrate → audit → restore → evolve weekly |
 
 No consultants. No AI team. FDE onboards, deploys, leaves — the AI nodes keep running.
 
+> [!NOTE]
 > 📖 Full FDE workflow: [FDE/FDE.md](./FDE/FDE.md)
 
 ### 1 base + 4 engines
 
+> [!NOTE]
 > 💡 **sofagent and Gateway**: Enterprise AI can't ship without a Gateway (unified entry/routing/orchestration/sessions).
 > OpenClaw/DeepAgents IS your Gateway. sofagent doesn't replace it — it layers on top for governance.
 > **The Gateway is the highway. sofagent is the traffic rules + speed cameras + driving coach.**
 
+> [!NOTE]
 > 💬 **sofagent has no UI. You talk to it, and it tells you where the result is.** Language is the interface. MCP is the entry point. See [Philosophy](./docs/PHILOSOPHY.md). Full MCP reference: [MCP Usage Guide](./docs/guides/mcp-usage.md).
 
+> [!NOTE]
 > 🔮 **v1.1.0 released**: Package purity refactor — audit just audits, 12 independent packages + lightweight multi-device. See [changelog](./docs/changelog/v1.1.0.md). 4 sync methods: [Multi-Device Sync Guide](./docs/guides/multi-device-sync.md).
 
 #### 🧭 Constraint Base
@@ -161,6 +169,9 @@ graph LR
 
 Powered by DeepAgents (v1.0.7, OpenClaw orchestration layer fully retired). `sofagent-orchestrator compose --task` CLI entry — **any Agent platform can use the orchestration engine**. See [ROADMAP](./ROADMAP.md).
 
+> [!WARNING]
+> Orchestration requires the separate `@sofagent/orchestrator` package (`npm install -g @sofagent/orchestrator`). The audit engine (`@sofagent/audit`) doesn't bind to OpenClaw and runs standalone; the orchestration engine needs the orchestrator package.
+
 #### 🔍 Audit engine
 
 Every git commit gets scanned — what the agent changed can't be denied.
@@ -179,6 +190,7 @@ graph LR
 
 Doesn't trust the agent — trusts git diff hard evidence. **0 token cost — pure regex engine, no LLM calls.** Core rules inspect git diff only, no agent cooperation needed. v1.0.8+ adds filesystem audit via embedded isomorphic-git + daemon, covering non-developers too.
 
+> [!NOTE]
 > v1.1.0 splits audit into standalone `@sofagent/audit` package. v1.0.8+ embeds isomorphic-git + daemon file monitoring — no git commit needed for non-developers.
 
 #### 🔄 Restore capability
@@ -200,6 +212,9 @@ sofagent-audit --revert <SHA>      # Rollback to any snapshot
 sofagent is a **dashcam**, not a security checkpoint — post-hoc audit + restore, platform-agnostic.
 
 #### 🧬 Evolution engine (v1.0.8+ · experimental)
+
+> [!WARNING]
+> **Experimental feature**: A/B auto-promote is based on `consecutiveWins ≥ threshold` + `overallImprovement` guard; eval scoring relies on LLM self-grading (self-grading bias exists). Narrow eval sets may cause false promotions. For production, manually review promote decisions.
 
 FDE Agent doesn't just deploy once — after deployment, it shifts into **continuous optimization**. Weekly automatic inspection of audit trends + reflections, catching degradation before it impacts production.
 
@@ -247,14 +262,13 @@ Install and run — no dependency on agent compliance:
 
 | Dimension | Data | What it means |
 |------|------|------|
-| Audit stability | `npm test` all green — diff-parser / A1-A11, A14-A19 / reporter / init | Every code change is audit-checked, cannot be bypassed |
+| Audit stability | `npm test` all green — diff-parser / A1-A11, A14-A19, E1-E4 / reporter / init | Every code change is audit-checked, cannot be bypassed |
 | Audit coverage | 21 rules (A1-A11, A14-A19 + E1-E4): secret leaks, boundary violations, injection, blind edits, knowledge-base access | Most common agent failure modes are caught |
 | Platform coverage | git commit audit (developers) + daemon filesystem audit (non-developers) | Anyone's file changes get audited |
 | License | MIT | Code, docs, templates — use freely |
 
 ---
 
----
 ## Built-in Agents (v1.0.7 introduced · infra Agent since v1.0.8)
 
 | Agent | How to invoke | When it auto-triggers |
@@ -262,6 +276,7 @@ Install and run — no dependency on agent compliance:
 | **FDE Deployment Engineer** | `@sofagent-fde` | Suggests follow-up inspection after deployment |
 | **Compliance Auditor** | `@sofagent-audit` | Every commit / FDE deployment / LOOP task completion |
 
+> [!NOTE]
 > `@sofagent-audit` is the `@sofagent/audit` npm package invoked as a Skill Agent; `@sofagent-fde` similarly comes from the FDE toolkit — same capability, available both as a CLI and as an Agent.
 
 ## Which do you need?
@@ -269,24 +284,26 @@ Install and run — no dependency on agent compliance:
 | Your scenario | Use |
 |---------|------|
 | Just block secret leaks | `npm install -g @sofagent/audit @sofagent/core` is enough |
-| Full agent behavior management | Audit engine + harness base (install.sh) |
+| Full agent behavior management | Audit engine + harness base (sofagent/scripts/install.sh) |
 | Automatic task orchestration | + orchestration engine (DeepAgents Sub Agent) |
 
+> [!NOTE]
 > ⚠️ **Current version (v1.1.5) coverage**: Developer roles (git commit audit) + non-developer roles (filesystem audit) — full coverage. Non-developer filesystem audit requires installing and running the `@sofagent/daemon` daemon.
 
 ### Dual-node deployment (v1.0.7+)
 
 sofagent supports two node types — **Auto-running node** (OpenClaw full-stack) and **Personal enhancement node** (third-party Agent + sofagent, no OpenClaw needed). Full comparison table: [ARCHITECTURE — Dual-node architecture](./docs/ARCHITECTURE.md#双节点架构).
 
+> [!NOTE]
 > v1.0.7 Sub Agent constraint self-loading (`buildConstrainedSystemPrompt`) makes constraints platform-independent — Sub Agents read `.sofagent/` files at startup. Change your Agent platform, constraints stay.
 
 ---
 
-## Workflow Hub: the reliable foundation for enterprise landing
+## Flow Hub: the reliable foundation for enterprise landing
 
 Pure autonomous Agents are flexible but uncontrolled — random step-skipping, hallucination, and hard-to-trace end-to-end flows are fatal risks in low-tolerance business like credit-risk audit or accounts-payable approval. Yet **80% of enterprise landing scenarios are better served by Workflow** (predefined branches, tool-call order, DB/3rd-party calls): fixed execution trace, per-node monitoring, parallel speedup, near-zero hallucination.
 
-sofagent's [Workflow Hub](./FLOWHUB/) uses a **hybrid architecture**: an outer Graph skeleton (`nextNodes` in `workflow.yml`) locks the end-to-end steps and keeps them traceable; inner nodes keep model autonomy (the node `prompt` is a ReAct Agent). You get Workflow's controllability plus local flexibility. Workflows mapped during FDE onboarding become reusable enterprise templates.
+sofagent's [Flow Hub](./FLOWHUB/) uses a **hybrid architecture**: an outer Graph skeleton (`nextNodes` in `workflow.yml`) locks the end-to-end steps and keeps them traceable; inner nodes keep model autonomy (the node `prompt` is a ReAct Agent). You get Workflow's controllability plus local flexibility. Workflows mapped during FDE onboarding become reusable enterprise templates.
 
 ---
 
@@ -300,7 +317,7 @@ sofagent's [Workflow Hub](./FLOWHUB/) uses a **hybrid architecture**: an outer G
 | Known limitations | [LIMITATIONS](./LIMITATIONS.md) |
 | Roadmap | [ROADMAP](./ROADMAP.md) |
 | Contributing | [CONTRIBUTING](./CONTRIBUTING.md) |
-| Enterprise deploy (FDE + Workflow) | [FDE/](./FDE/) \| [Workflow Hub](./FLOWHUB/) |
+| Enterprise deploy (FDE + Workflow) | [FDE/](./FDE/) \| [Flow Hub](./FLOWHUB/) |
 
 ---
 
@@ -308,4 +325,5 @@ sofagent's [Workflow Hub](./FLOWHUB/) uses a **hybrid architecture**: an outer G
 
 Issues and PRs welcome — especially the critical kind. [CONTRIBUTING.md](./CONTRIBUTING.md) · [Credits](./docs/THANKS.md)
 
+> [!NOTE]
 > sofagent is designed by KongFangXun. Code written by AI models, product decisions and final review by the author. Every release reviewed by an independent model.
