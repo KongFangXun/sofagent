@@ -80,7 +80,7 @@ sofagent-audit --timeline
 
 | 包 | 用途 | 安装命令 |
 |------|------|------|
-| `@sofagent/audit` | 纯审计引擎（21 条规则，git diff 硬证据） | `npm install -g @sofagent/audit` |
+| `@sofagent/audit` | 纯审计引擎（21 条规则，git diff 硬证据） | `npm install -g @sofagent/audit @sofagent/core` |
 | `@sofagent/core` | 运行时诊断（doctor/verify，audit 的必备配套） | `npm install -g @sofagent/core` |
 | `@sofagent/orchestrator` | 编排引擎（多 Agent 协作 / 工作流调度） | `npm install -g @sofagent/orchestrator` |
 | `@sofagent/daemon` | 主动巡检守护进程（定时审计/健康度/新鲜度检测） | `npm install -g @sofagent/daemon` |
@@ -154,17 +154,7 @@ graph LR
 
 #### 🔍 审计引擎
 
-每次 git commit 或文件变更时自动扫描——改了什么就是什么，赖不掉。
-
-```mermaid
-graph LR
-    A[Agent 改代码/改文件] --> B[git commit 或 daemon 检测到变更]
-    B --> C{审计引擎<br/>规则库判定}
-    C -->|违规| D[⛔ 拦截 + 记录]
-    C -->|合规| E[✅ 放行]
-    D --> F[think.md<br/>自动反思]
-    F --> A
-```
+每次 git commit 或文件变更时自动扫描——Agent 改代码 → git commit/daemon 检测 → 审计引擎规则库判定 → 违规拦截+记录 / 合规放行 → think.md 自动反思。改了什么就是什么，赖不掉。
 
 不依赖 AI 自觉——看的是 git diff 硬证据。**0 token 消耗——纯正则引擎，不调 LLM。** 21 条规则中 16 条为纯 git-diff（不依赖 Agent 配合），4 条 hybrid 需 Agent 日志（A7/A8/A14/A15），1 条 filesystem（A17 异常批量变更）。
 
@@ -227,7 +217,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 | 维度 | 数据 | 什么意思 |
 |------|------|------|
-| 审计引擎稳定性 | `npm test` 全绿 — diff-parser / A1-A11、A14-A17 / reporter / init 全覆盖 | 改了代码就能查，不会被绕过 |
+| 审计引擎稳定性 | `npm test` 全绿 — diff-parser / A1-A11、A14-A19 / reporter / init 全覆盖 | 改了代码就能查，不会被绕过 |
 | 审计覆盖率 | 21 条规则（A1-A11、A14-A19 + E1-E4），覆盖密钥泄漏、越界修改、注入攻击、盲改、知识库越权、垃圾文件、commit 质量 | 最常见的 Agent 翻车模式都拦住了 |
 | 平台覆盖 | git commit 审计（开发者）+ daemon 文件审计（非开发者） | 不管谁改的文件，都能审计 |
 | 开源协议 | MIT | 随便用，代码、文档、模板都行 |
@@ -247,7 +237,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 | 你的场景 | 用什么 |
 |---------|--------|
-| 只想拦截密钥泄漏 | `npm install -g @sofagent/audit` |
+| 只想拦截密钥泄漏 | `npm install -g @sofagent/audit @sofagent/core` |
 | 管住 Agent 全流程 | 审计引擎 + 约束底座（install.sh） |
 | 自动编排 Agent 任务 | + 编排引擎（DeepAgents Sub Agent） |
 
@@ -255,12 +245,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 ### 两种部署节点（v1.0.7+）
 
-sofagent 支持两种节点类型，按需选择：
-
-| 节点类型 | 适合谁 | 需要 OpenClaw | 编排引擎怎么用 | 约束怎么注入 |
-|---------|--------|:--:|------|------|
-| **自动运行节点** | 企业无人值守设备 | ✅ 必须 | OpenClaw Channel + DeepAgents 内部 API | OpenClaw Hook 精确注入 |
-| **个人增强节点** | 个人开发者用 WorkBuddy/Codex/Claude Code | ❌ 不需要 | `sofagent-orchestrator compose --task` CLI | Sub Agent 启动时自加载 |
+sofagent 支持两种节点类型——**自动运行节点**（企业无人值守设备，需 OpenClaw）和**个人增强节点**（个人开发者用 WorkBuddy/Codex/Claude Code，不需要 OpenClaw）。完整对照表见 [ARCHITECTURE 双节点架构](./docs/ARCHITECTURE.md#双节点架构)。
 
 > v1.0.7 的 Sub Agent 约束自加载（`buildConstrainedSystemPrompt`）让约束不依赖任何 Agent 平台的 Skill 系统——Sub Agent 启动时直接读 `.sofagent/` 文件，平台换了约束不丢。
 

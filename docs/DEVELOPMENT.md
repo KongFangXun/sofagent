@@ -168,7 +168,7 @@ FDE 部署 SOP 应遵循此顺序：
 **目录结构**：
 - `sofagent/skill/`：纯 MD 规则（平台无关，所有 Agent 平台共用）
   - `SKILL.md`：主入口（宪法内联——4 底线 + 7 则铁律）
-  - 子 Skill（8 个 .md）：`entry-gate.md` / `task-aware.md` / `task-closure.md` / `loop-check.md` / `loop-evaluate.md` / `loop-exit.md` / `engage.md` / `engage-fde.md`
+  - 子 Skill（9 个 .md）：`entry-gate.md` / `task-aware.md` / `task-closure.md` / `loop-check.md` / `loop-evaluate.md` / `loop-exit.md` / `engage.md` / `engage-fde.md` / `fde.md`
   - `fde.md`：宪法文件（企业运行规范，部署时复制到目标项目）
   - `data/`（6 个模板）：`think.md` / `orchestrator.md` / `task.md` / `eval.md` / `fde.md` / `IDENTITY.md`
 - `sofagent/scripts/`（核心 4 个）：`install.sh` / `verify.sh` / `uninstall.sh` / `task-record.sh`
@@ -346,7 +346,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 | | Audit Agent | FDE Agent (sustain) |
 |------|------|------|
 | 方向 | 向下看——防退化 | 向上看——促进化 |
-| 数据源 | git diff + A1-A11、A14-A17 | audit 报告 + think.md + eval |
+| 数据源 | git diff + A1-A11、A14-A19 | audit 报告 + think.md + eval |
 | 频率 | 每次 commit | 每周自动 |
 | 输出 | 🔴 P0 / 🟡 P1 | 优化建议 + 趋势分析 |
 
@@ -443,7 +443,7 @@ sofagent-audit（v1.0.8）是 TypeScript CLI，支持两种审计触发模式：
 | git commit 审计 | v0.92+ | `git commit` → commit-msg hook | 开发者 | ✅ |
 | 文件系统审计 | v1.0.8+ | daemon 监控文件变更 | 开发者 + 非开发者 | ❌（内嵌 isomorphic-git） |
 
-两种模式共用同一套审计规则（A1-A11、A14-A17 + E1-E4，共 19 条）和 exit code（0=PASS / 1=WARN / 2=FAIL）。差异在于触发时机和拦截能力：git commit 审计能阻断 commit，文件系统审计只能事后告警 + 快照回溯。
+两种模式共用同一套审计规则（A1-A11、A14-A19 + E1-E4，共 21 条）和 exit code（0=PASS / 1=WARN / 2=FAIL）。差异在于触发时机和拦截能力：git commit 审计能阻断 commit，文件系统审计只能事后告警 + 快照回溯。
 
 v1.0.8 内嵌 `isomorphic-git`（纯 JS Git，~2MB）作为 diff 引擎——非 git 目录也能做行级 diff。daemon 用 `chokidar` 监控文件变更，5 秒防抖后触发审计。每次审计后自动做 git 快照，用户可 `sofagent-audit --revert <sha>` 回滚。
 

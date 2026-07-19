@@ -82,101 +82,14 @@ graph TD
     AGENT_DEF -.->|升级| REVIEW
 ```
 
-伪代码示意（DeepAgentsJS v1.10.7）：
+**核心实现要点**（完整伪代码见 [v1.1.3 changelog](../docs/changelog/v1.1.3.md)）：
 
-```typescript
-// LOOP 引擎入口——任何 Agent 平台通过 OpenClaw 调用此入口
-async function runLOOP(task: string, platform: string) {
-  // 内层循环：任务执行
-  const result = await innerLoop.invoke({ task });
-  
-  // 如果任务完成且审查通过
-  if (result.reviewPassed && result.humanConfirmed) {
-    // 外层循环：FDE 检查是否需要优化
-    await fdeAgent.invoke({
-      task: "检查本次任务的 think.md 和审计统计",
-      context: { lastTaskThinkMd: result.thinkMd, auditStats: result.auditStats }
-    });
-  }
-  
-  return {
-    codeChanges: result.diff,
-    reviewReport: result.reviewReport,
-    taskReflection: result.thinkMd,
-  };
-}
+- **内层循环 StateGraph**：`coding → audit → review → human`，条件路由 `audit.fail→coding` / `review.reject→coding` / `human.confirm→next`
+- **外层循环定时触发**：FDE 每周分析 think.md 趋势，每月触发 compliance-auditor 全量巡检
+- **发版后自进化**：FDE 自动更新 fresh-eyes-review / regression-checklist / openclaw-acceptance-test（纯增量），releasing.md 需人类确认后 apply
+- **Agent 定义来源**：`agents/*.md` → `createDeepAgent({ systemPrompt: loadPrompt(...) })`
 
-```typescript
-import { createDeepAgent } from "deepagents";
-import { StateGraph } from "@langchain/langgraph";
-
-// 内层循环 Agents
-const codingAgent = createDeepAgent({
-  model: "claude-sonnet-4-20250514",
-  systemPrompt: loadPrompt("agents/engineering-minimal-change-engineer.md"),
-  middleware: [fsMiddleware()],
-});
-
-const reviewAgent = createDeepAgent({
-  model: "claude-sonnet-4-20250514",
-  systemPrompt: loadPrompt("agents/engineering-code-reviewer.md"),
-  middleware: [fsMiddleware()],
-});
-
-// 外层循环 Agents
-const fdeAgent = createDeepAgent({
-  model: "claude-sonnet-4-20250514",
-  systemPrompt: loadPrompt("agents/forward-deployed-engineer.md"),
-  middleware: [fsMiddleware(), subAgentMiddleware()],  // 可以触发 compliance-auditor
-});
-
-const complianceAgent = createDeepAgent({
-  model: "claude-sonnet-4-20250514",
-  systemPrompt: loadPrompt("agents/security-compliance-auditor.md"),
-  middleware: [fsMiddleware()],
-});
-
-// 内层循环 StateGraph
-const innerLoop = new StateGraph(LoopState)
-  .addNode("coding", codingAgent)
-  .addNode("audit", runAuditHook)
-  .addNode("review", reviewAgent)
-  .addNode("human", humanConfirm)
-  .addConditionalEdges("audit", auditResult, {
-    fail: "coding", pass: "review",
-  })
-  .addConditionalEdges("review", reviewResult, {
-    reject: "coding", approve: "human",
-  });
-
-// 外层循环：定时触发
-cron.schedule("0 9 * * 1", async () => {  // 每周一早 9 点
-  await fdeAgent.invoke("分析本周 think.md 趋势和审计拦截统计");
-});
-
-cron.schedule("0 9 1 * *", async () => {  // 每月 1 号
-  await complianceAgent.invoke("全量 Workflow 巡检");
-});
-
-// 外层循环：发版后触发——四份验证文件自进化
-async function postReleaseEvolution(version: string) {
-  // 前三份：FDE 直接做（纯增量操作）
-  await fdeAgent.invoke(`更新 fresh-eyes-review.md：新增本版本审查盲区`);
-  await fdeAgent.invoke(`更新 regression-checklist.md：追加本版本 P0/P1 检查项`);
-  await fdeAgent.invoke(`更新 openclaw-acceptance-test.md：新增本版本边缘 case`);
-
-  // 第四份：FDE 提议 → 作者确认（含修改操作，需人类把关）
-  const releasingDiff = await fdeAgent.invoke({
-    task: `检查 releasing.md：① 数字过期 ② 新工具未纳入 ③ 流程漏洞沉淀`,
-    context: { version, changelog: readChangelog(version) }
-  });
-  // releasingDiff = { suggestions: [...], diff: "..." }
-  if (releasingDiff.suggestions.length > 0) {
-    const approved = await humanConfirm(releasingDiff.diff);
-    if (approved) await applyDiff("docs/verification/releasing.md", releasingDiff.diff);
-  }
-}
-```
+> ⚠️ 以上为计划，未实际运行。当前阶段是 Agent 定义 + 流程图 + 验证文档映射，代码化在 Agent 各自跑通后启动。
 
 ## 当前限制
 
@@ -200,22 +113,22 @@ async function postReleaseEvolution(version: string) {
 
 ## LOOP 与发版流程的对应
 
-sofagent 的版本发布遵循 [`docs/verification/releasing.md`](../docs/verification/releasing.md) 的 11 阶段 SOP。LOOP 将其中可由 Agent 自动化的步骤映射到对应的 Agent：
+sofagent 的版本发布遵循 [`docs/verification/releasing.md`](../docs/verification/releasing.md) 的十二阶段 SOP。LOOP 将其中可由 Agent 自动化的步骤映射到对应的 Agent：
 
 | releasing.md 阶段 | 当前（人类做） | LOOP 映射 |
 |---|---|---|
-| 阶段一：审查 | 发布后审查（`docs/verification/fresh-eyes-review.md`） | review-agent + 全新 session |
+| 阶段一：审查 → 开发日志 | 发布后审查（`docs/verification/fresh-eyes-review.md`） | review-agent + 全新 session |
 | 阶段二：开发 | 修复 P0/P1/P2 | minimal-change-engineer（7 步开发流程） |
 | 阶段三：自测 | `npm run build` + `npm test` + `acceptance-test.sh` | minimal-change-engineer 自检 |
-| 阶段四：审核 | 独立审核者逐项核对 | review-agent（全新 session） |
-| **阶段五：回归清单验证** | **全新 session 独立验证更新后的 checklist** | **review-agent（全新 session）** |
+| 阶段四：代码审核 | 独立审核者逐项核对 | review-agent（全新 session） |
+| 阶段五：审查体系合并更新（含瘦身检查） | 更新 fresh-eyes-review.md + regression-checklist.md | FDE（前三份验证文件直接做，releasing.md 提议→确认） |
 | 阶段六：回归检查 + OpenClaw 验收 | 全量回归检查（regression-checklist.md）+ OpenClaw 验收测试 | FDE 触发 compliance-auditor + review-agent 执行验收 |
-| 阶段七：审查体系维护 | 更新 fresh-eyes-review.md（新增盲区/维度/攻击面） | FDE（前三份验证文件直接做，releasing.md 提议→确认） |
+| 阶段七：审查体系最终确认 | 审查 prompt 与回归清单一致性最终核对 | review-agent（全新 session） |
 | 阶段八：文档收尾 | bump-version + CHANGELOG/ROADMAP 更新 + 内容新鲜度检查 | FDE |
-| 阶段九：确认关口 | 作者确认改动清单 | 人类确认（不可自动化） |
-| 阶段十：发布 | npm publish + git tag + Skill 分发 | 人类操作（不可自动化） |
-| 阶段十一：发布后 | 发布后审查 → 发现问题 → 自动回流阶段一 | review-agent（全新 session）|
-| 阶段十一：发布后 | SOP 自我进化——沉淀教训 + 更新过期数字 + 纳入新工具 | FDE 提议 → 作者确认 |
+| 阶段九：工具脚本健康检查 | check/bump 排除规则 + 三脚本对照 + 过时清理 | FDE |
+| 阶段十：确认关口 | 作者确认改动清单 | 人类确认（不可自动化） |
+| 阶段十一：发布 | npm publish + git tag + Skill 分发 | 人类操作（不可自动化） |
+| 阶段十二：发布后 | 发布后审查 → 发现问题 → 自动回流阶段一；SOP 自我进化——沉淀教训 + 更新过期数字 + 纳入新工具 | review-agent（全新 session）+ FDE 提议 → 作者确认 |
 
 ### LOOP 中的验证文档
 
@@ -231,11 +144,11 @@ sofagent 的版本发布遵循 [`docs/verification/releasing.md`](../docs/verifi
 
 ### 未来：DeepAgentsJS + LangGraph 实现
 
-v1.0.4 当前是**文档定义阶段**——Agent 定义在 `agents/` 下，流程定义在 `LOOP/` 下。等 Agent 各自通过 OpenClaw 跑通后，下一步是用 DeepAgentsJS + LangGraph 把流程**代码化**：
+v1.1.4 当前是**文档定义阶段**——Agent 定义在 `agents/` 下，流程定义在 `LOOP/` 下。等 Agent 各自通过 OpenClaw 跑通后，下一步是用 DeepAgentsJS + LangGraph 把流程**代码化**：
 
 - `agents/` 下的 Agent 定义 → `createDeepAgent()` 的 `systemPrompt` 参数
 - `LOOP/loop.md` 中的 Mermaid 流程图 → LangGraph `StateGraph` 的节点和边
-- `docs/verification/releasing.md` 的 8 阶段 SOP → StateGraph 中的条件路由（自动执行 vs 人类确认）
+- `docs/verification/releasing.md` 的十二阶段 SOP → StateGraph 中的条件路由（自动执行 vs 人类确认）
 - 验证文档 → StateGraph 节点的输入参数
 - **平台无关的触发机制** → 用户在任意 Agent（WorkBuddy/Codex/Claude Code/Hermes/Cursor）中，一条 prompt 即可触发整套 LOOP。用户的 Agent 作为"遥控器"，OpenClaw 作为"引擎"，按 StateGraph 自动调度所有 sub-agent
 

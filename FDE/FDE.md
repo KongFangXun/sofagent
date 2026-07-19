@@ -82,7 +82,7 @@ FDE（或企业 CIO/网管）的操作手册。**读它 → 帮企业梳理 work
 | 维度 | 状态 |
 |------|------|
 | FDE 四阶段流程 | ✅ 已在作者自有企业中实际部署（2026-07） |
-| 审计引擎 | ✅ 独立产品，审计核心 388 tests 全绿（全 workspace 660）、跨平台 CI 覆盖 |
+| 审计引擎 | ✅ 独立产品，审计核心 343 tests 全绿（全 workspace 558）、跨平台 CI 覆盖 |
 | 覆盖范围 | Agent 质量层（代码纪律 + 审计 + 经验沉淀） |
 | 不覆盖 | 运维层（监控 / 告警 / 重启 / 日志轮转） |
 
@@ -355,7 +355,7 @@ Agent 是放大已标准化的能力，**不是替你管理混乱**。进场前�
 | 层 | 做什么 | 怎么跑 |
 |----|--------|--------|
 | **约束底座** | fde.md 规则注入 Agent 上下文 | install.sh 装完自动加载 |
-| **审计引擎** | git diff → A1-A11、A14-A17 规则 → exit code | git commit-msg hook，不挑 Agent，**0 token（纯正则引擎）** |
+| **审计引擎** | git diff → A1-A11、A14-A19 规则 → exit code | git commit-msg hook，不挑 Agent，**0 token（纯正则引擎）** |
 | **编排引擎**（实验性）| 拆任务 → 编排 → 执行 | DeepAgents compose（CLI 入口或 OpenClaw 内部 API） |
 | **内置 Agent**（v1.0.7 引入，v1.0.8 起为基础设施 Agent）| FDE 部署工程师 + 合规审计员 | `sofagent-orchestrator subagent run fde --task "..."`、`@sofagent-fde` |
 
