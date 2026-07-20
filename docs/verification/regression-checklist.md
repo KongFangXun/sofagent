@@ -61,9 +61,9 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 
 ---
 
-## 审查维度（28 项 · 编号 1–28）
+## 审查维度（38 项 · 编号 1–38）
 
-> 2026-07-18 治理：从原 35 维度归并同类项而来。2026-07-18 追加维度 16-17（安全约束 + 发布产物验证）。2026-07-19 追加维度 23（独立产品声称一致性）+ 维度 24（验收测试覆盖率与时效性），扩展维度 2/4/6/7/8/9 子项（v1.1.4 审查发现）。
+> 2026-07-18 治理：从原 35 维度归并同类项而来。2026-07-18 追加维度 16-17（安全约束 + 发布产物验证）。2026-07-19 追加维度 23（独立产品声称一致性）+ 维度 24（验收测试覆盖率与时效性），扩展维度 2/4/6/7/8/9 子项（v1.1.4 审查发现）。2026-07-20 追加维度 29-38（v1.1.7：Dream Cycle / sensitivity / knowledge-health / knowledge-status / ActionGovernance / 文档时效性 / 产品关系 / red-team / 安全文档）。
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -862,13 +862,303 @@ done
 # 期望：每个 SKILL.md 命中 9 个必需字段（name/slug/displayName/description/version/tags/image/triggers/scenarios/not_when）
 ```
 
+---
+
+### v1.1.7 新增维度（29-38）
+
+---
+
+#### 29. Dream Cycle 管道完整性 + 只读铁律（v1.1.7 新增 · 交付一）
+
+> Dream Cycle 是 v1.1.7 知识生成管道的核心——6 阶段缺一不可，且 think.md（Ledger）必须只读
+
+```bash
+# 子项 a: 6 阶段文件全部存在
+for stage in extract-facts extract-atoms cluster-patterns synthesize-concepts skillopt-backfill embed; do
+  test -f "sofagent/daemon/src/dream-cycle/${stage}.ts" && echo "✅ ${stage}.ts" || echo "❌ 缺失: ${stage}.ts"
+done
+# 期望：6 个全在
+
+# 子项 b: 状态机存在且有断点续跑逻辑
+grep -c "DREAM_CYCLE_STAGES\|fromStage\|loadState\|saveState" sofagent/daemon/src/dream-cycle/state-machine.ts
+# 期望：≥4（阶段枚举 + 续跑 + 加载 + 保存）
+
+# 子项 c: dream-cycle 源码对 think.md 只读（排除注释行）
+grep -n "writeFile\|writeFileSync\|unlink\|rmSync" sofagent/daemon/src/dream-cycle/*.ts \
+  | grep -v "__tests__\|llm-mock\|state-machine" \
+  | grep -v "^.*/\/"
+# 期望：仅 state-machine.ts 的 saveState/appendWeeklyLog 出现（写 .sofagent/dream-cycle/state.md + knowledge/log.md，不写 think.md）
+
+# 子项 d: 旧脚本 weekly-report / lessons-extract 引用清零
+grep -rn "weekly-report\|lessons-extract" --include="*.ts" sofagent/daemon/src/ | grep -v node_modules | grep -v "memory-contract.ts" | grep -v "\.test\.\|__tests__"
+# 期望：零命中（旧脚本已被 Dream Cycle 替代，源码中不应残留引用）
+# 注：memory-contract.ts 注释中的 readers 列表属文档说明，不在此扫描范围
+
+# 子项 e: 6 阶段定义与 types.ts 一致
+grep -c "extract_facts\|extract_atoms\|cluster_patterns\|synthesize_concepts\|skillopt_backfill\|embed" sofagent/daemon/src/dream-cycle/types.ts
+# 期望：≥6（DREAM_CYCLE_STAGES 数组中 6 个阶段全在）
+```
+
+---
+
+#### 30. sensitivity frontmatter + 联邦过滤（v1.1.7 新增 · 交付二）
+
+> sensitivity 分级决定 restricted 条目是否在联邦查询中泄露——缺省必须 internal，restricted 绝不默认
+
+```bash
+# 子项 a: core/src/ 有 sensitivity 三值定义
+grep -c "'public'\|'internal'\|'restricted'" sofagent/core/src/memory-contract.ts
+# 期望：≥3（三值枚举定义存在）
+
+# 子项 b: 缺省级别 = internal（safe-by-default）
+grep "DEFAULT_SENSITIVITY.*=.*'internal'" sofagent/core/src/memory-contract.ts
+# 期望：有匹配
+
+# 子项 c: resolveSensitivity 非法值回落 internal
+grep -c "return DEFAULT_SENSITIVITY" sofagent/core/src/memory-contract.ts
+# 期望：≥2（无 frontmatter / 非 string / 非法枚举值 三种回落路径）
+
+# 子项 d: isSensitivityVisible 实现 restricted 不泄露
+grep -c "SENSITIVITY_ORDER\|isSensitivityVisible" sofagent/core/src/memory-contract.ts
+# 期望：≥2（全序权重表 + 可见性判定函数）
+
+# 子项 e: 测试覆盖联邦过滤
+grep -c "sensitivity\|restricted\|internal" sofagent/core/src/__tests__/memory-contract-sensitivity.test.ts
+# 期望：≥3（sensitivity 测试文件存在且有内容）
+```
+
+---
+
+#### 31. knowledge-health inspector 注册 + 五项检查 + 只读（v1.1.7 新增 · 交付三）
+
+> knowledge-health 巡检器必须注册为 @weekly，执行五项检查，且自身零写操作（除 health-report.md 产物）
+
+```bash
+# 子项 a: 注册在 inspectors/index.ts 且 schedule = @weekly
+grep "'knowledge-health'" sofagent/daemon/src/inspectors/index.ts | grep "@weekly"
+# 期望：有匹配
+
+# 子项 b: 5 项检查关键词全在源码
+grep -c "孤立\|重复\|断链\|index 过旧\|缺源" sofagent/daemon/src/inspectors/knowledge-health.ts
+# 期望：≥5（五项检查全部实现）
+
+# 子项 c: knowledge-health.ts 无写操作（只读铁律）
+# 注：health-report.md 是 LUI A 产物，写在 knowledge-health.ts 中——排除该行后应零写操作
+grep -n "writeFile\|writeFileSync\|unlink\|rmSync" sofagent/daemon/src/inspectors/knowledge-health.ts \
+  | grep -v "health-report\|writeReport\|saveReport\|appendReport"
+# 期望：零命中（health-report.md 写入是允许的 LUI A 产物，其余文件零写）
+
+# 子项 d: 测试用例 ≥8
+grep -c "  it(" sofagent/daemon/src/inspectors/__tests__/knowledge-health.test.ts
+# 期望：≥8（10 个测试用例）
+
+# 子项 e: health-report.md 是巡检产物（LUI A 可感知）
+grep -c "health-report" sofagent/daemon/src/inspectors/knowledge-health.ts
+# 期望：≥1（生成 health-report.md）
+```
+
+---
+
+#### 32. `sofagent knowledge status` 聚合命令 + restricted 不泄露（v1.1.7 新增 · 交付四）
+
+> `knowledge status` 命令聚合各巡检器结果，输出一页可读报告——自身必须只读，且不泄露 restricted 条目
+
+```bash
+# 子项 a: 命令文件存在
+test -f sofagent/daemon/src/commands/knowledge-status.ts && echo "✅ 存在" || echo "❌ 缺失"
+
+# 子项 b: 命令在 daemon CLI 中可发现
+grep -c "knowledge.status\|knowledge-status\|knowledgeStatus" sofagent/daemon/src/cli.ts sofagent/daemon/src/index.ts 2>/dev/null
+# 期望：≥1（CLI 入口注册了该子命令）
+
+# 子项 c: commands/knowledge-status.ts 无写操作（只读聚合）
+grep -n "writeFile\|writeFileSync\|unlink\|rmSync" sofagent/daemon/src/commands/knowledge-status.ts
+# 期望：零命中（聚合命令只读，绝不修改源数据）
+
+# 子项 d: 测试用例 ≥4
+grep -c "  it(" sofagent/daemon/src/commands/__tests__/knowledge-status.test.ts
+# 期望：≥4（5 个测试用例）
+
+# 子项 e: 输出含受限条目不泄露提示（sensitivity 集成）
+grep -c "restricted\|sensitivity\|隐藏\|不可见" sofagent/daemon/src/commands/knowledge-status.ts
+# 期望：≥1（聚合时过滤 restricted 条目或有提示）
+```
+
+---
+
+#### 33. ActionGovernance schema 完整性 + 向后兼容（v1.1.7 新增 · 交付六）
+
+> ActionGovernance 让审计记录从"结果"升级为"可问责的动作凭证"——schema 字段必须完整，旧记录必须向后兼容
+
+```bash
+# 子项 a: types.ts 有 ActionGovernance 接口 + 5 字段
+grep -A15 "export interface ActionGovernance" sofagent/audit/src/rules/types.ts | grep -c "actor\|timestamp\|targetEntity\|beforeAfter\|context\|decisionProvenance"
+# 期望：≥5（actor + timestamp + targetEntity + beforeAfter + context + decisionProvenance）
+
+# 子项 b: DecisionProvenance 决策溯源组存在
+grep "export interface DecisionProvenance" sofagent/audit/src/rules/types.ts
+# 期望：有匹配
+
+# 子项 c: audit-history.ts 有 actionGovernance 字段写入
+grep -c "actionGovernance" sofagent/audit/src/audit-history.ts
+# 期望：≥1（AuditHistoryEntry 接口含 actionGovernance 可选字段）
+
+# 子项 d: index.ts 实际写入 actionGovernance
+grep -c "actionGovernance" sofagent/audit/src/index.ts
+# 期望：≥1（审计主流程实际填充 actionGovernance）
+
+# 子项 e: 旧格式向后兼容测试（无 actionGovernance 的旧记录可加载）
+grep -c "向后兼容\|undefined\|actionGovernance" sofagent/audit/src/audit-history.test.ts
+# 期望：≥3（测试覆盖了旧格式兼容场景）
+
+# 子项 f: audit 测试不回归（总数 ≥407）
+grep -c "  it(" sofagent/audit/src/audit-history.test.ts
+# 期望：≥13（actionGovernance 相关测试用例数）
+```
+
+---
+
+#### 34. 文档头日期一致性扫描门禁（v1.1.7 新增 · BugFix 1）
+
+> bump-version.sh 只改版本号不改日期——文档头日期反复漂移。check-version.sh 第 14 项为门禁
+
+```bash
+# 子项 a: check-version.sh 有第 14 项日期扫描
+grep -c "14\.\|日期一致性扫描\|文档头日期" tools/check-version.sh
+# 期望：≥1（第 14 项检查存在）
+
+# 子项 b: 扫描以发版日期为基准
+grep -c "EXPECTED_DOC_DATE\|发版日期" tools/check-version.sh
+# 期望：≥2（发版日期作为基准使用）
+
+# 子项 c: 跑 check-version 全绿（含第 14 项）
+bash tools/check-version.sh 2>&1 | tail -5
+# 期望：全部通过（含「文档头日期一致」）
+
+# 子项 d: 文档头日期格式统一（> vX.Y · YYYY-MM-DD）
+grep -rn "^> v[0-9]\+\.[0-9]\+\.[0-9]\+ · [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}" --include="*.md" README.md SECURITY.md LIMITATIONS.md docs/*.md 2>/dev/null | head -5
+# 期望：每个文档头日期格式一致
+```
+
+---
+
+#### 35. 文档数字 SSOT 一致性（v1.1.7 新增 · BugFix 5+7+8+10）
+
+> 文档中的数字声称（规则数、测试数等）必须以代码 SSOT 为准——模糊数字（"700+"）和漂移数字都是 P0
+
+```bash
+# 子项 a: README 无模糊数字（700+ 等区间声称）
+grep -n "[0-9]\++\|700+" README.md 2>/dev/null
+# 期望：零命中（不应有模糊区间声称）
+
+# 子项 b: test-count.sh 实测与文档声称比对
+ACTUAL=$(bash tools/test-count.sh --quiet 2>&1 | grep -oE 'TOTAL_TESTS=[0-9]+' | cut -d= -f2)
+echo "实测 workspace 测试数: $ACTUAL"
+# 人工检查：FDE/FDE.md / LIMITATIONS.md 中声称的测试数与此一致
+
+# 子项 c: 三产品（sofagent / FDE / LOOP）关系表述一致
+grep -c "独立产品\|按需选用\|独立安装" README.md FDE/README.md LOOP/README.md 2>/dev/null
+# 期望：每个文档 ≥1（三产品关系表述一致，都声称独立产品按需选用）
+
+# 子项 d: README 使用精确数字（非模糊区间）
+grep -oE "[0-9]+ 条规则\|[0-9]+ 条审计规则\|[0-9]+ 条 git-diff" README.md | head -5
+# 期望：只有精确数字，无 "约"/"超过"/"+" 等模糊修饰
+```
+
+---
+
+#### 36. 跨产品 install 契约 CI 验证（v1.1.7 新增 · BugFix 11）
+
+> FDE/LOOP 调用主 install.sh 的接口（路径/参数/退出码）是跨产品契约——CI 应有专门 job 验证
+
+```bash
+# 子项 a: CI 有 cross-product-contract job
+grep -c "cross-product-contract\|cross_product_contract" .github/workflows/*.yml 2>/dev/null
+# 期望：≥1（CI 配置含跨产品契约验证 job）
+
+# 子项 b: FDE install.sh 引用主 install.sh
+grep -c "sofagent/scripts/install.sh" FDE/fde-install.sh 2>/dev/null
+# 期望：≥1
+
+# 子项 c: LOOP install.sh 引用主 install.sh
+grep -c "sofagent/scripts/install.sh" LOOP/loop-install.sh 2>/dev/null
+# 期望：≥1
+
+# 子项 d: 主 install.sh 标注被 FDE/LOOP 依赖
+grep -c "FDE/LOOP\|被.*依赖\|跨产品" sofagent/scripts/install.sh 2>/dev/null
+# 期望：≥1（头部注释标注了契约关系）
+```
+
+---
+
+#### 37. red-team 回归锁完整性（v1.1.7 新增 · BugFix 12）
+
+> acceptance-test.sh 的 red-team 场景是安全基线——场景数声称必须与实际一致，且覆盖关键攻击面
+
+```bash
+# 子项 a: A9 全角/leet 注入检测场景存在
+grep -c "全角\|leet\|unicode" tools/acceptance-test.sh
+# 期望：≥3（场景标题 + 代码注释 + 断言）
+
+# 子项 b: history.jsonl 篡改检测场景存在
+grep -c "篡改\|tamper\|CHAIN_BREAK\|hash chain" tools/acceptance-test.sh
+# 期望：≥2
+
+# 子项 c: hook 删除检测场景存在
+grep -c "hook.*删除\|hook.*丢失\|删除.*hook" tools/acceptance-test.sh
+# 期望：≥1
+
+# 子项 d: 非法 YAML → ConfigParseError 场景存在
+grep -c "ConfigParseError\|非法.*YAML\|非法 YAML" tools/acceptance-test.sh
+# 期望：≥2
+
+# 子项 e: 非 git 目录场景存在
+grep -c "非.*git.*目录\|not.*a.*git.*repo\|非 git" tools/acceptance-test.sh
+# 期望：≥1
+
+# 子项 f: 场景数声称 = 实际
+DECLARED=$(head -5 tools/acceptance-test.sh | grep -oE "[0-9]+ 个端到端" | grep -oE "[0-9]+")
+ACTUAL=$(grep -c "^scenario " tools/acceptance-test.sh)
+echo "声称: $DECLARED / 实际: $ACTUAL"
+# 期望：两者相等
+```
+
+---
+
+#### 38. daemon 审计集中收集 workaround + 安全文档时效性（v1.1.7 新增 · BugFix 9+13）
+
+> SECURITY.md 必须诚实标注 daemon 审计推送的现状（workaround + Webhook 阻塞 + USB federation 状态）
+
+```bash
+# 子项 a: SECURITY.md 有 filebeat/logstash workaround
+grep -c "filebeat\|logstash" SECURITY.md
+# 期望：≥1（企业集中收集 workaround 已文档化）
+
+# 子项 b: Webhook 推送标企业采购阻塞（v1.2.x 才就绪）
+grep -c "v1.2.x\|不推送\|企业.*阻塞\|待落地" SECURITY.md
+# 期望：≥1（诚实标注推送能力当前不可用）
+
+# 子项 c: USB federation 标注 v1.1.6 当前状态（HMAC 签名已有）
+grep -c "v1.1.6\|HMAC\|签名校验" SECURITY.md
+# 期望：≥2（USB federation 安全模型已含 v1.1.6 状态）
+
+# 子项 d: daemon 审计结果推送现状标注
+grep -c "daemon.*审计.*推送\|仅本地\|daemon-notice" SECURITY.md
+# 期望：≥1（诚实标注当前推送限制）
+
+# 子项 e: SECURITY.md 版本标注与 SSOT 一致
+SSOT_VER=$(node -e "console.log(require('./package.json').version)")
+grep "当前状态（v${SSOT_VER}" SECURITY.md
+# 期望：有匹配（版本标注 = SSOT）
+```
+
 ## 输出报告格式
 
 ```markdown
 # sofagent 回归检查报告
 
 ## 总览
-- 审查日期 / 审查范围（23 维度 + 跨版本核心维度）
+- 审查日期 / 审查范围（38 维度 + 跨版本核心维度）
 - 环境验证：pre-push-check / npm test / check-docs / check-version / Fresh clone 各项 [✅/❌]
 - 整体结论：[已发布无遗留 / 需修复后补发 / 阻塞]
 
