@@ -554,6 +554,46 @@
      两者都有命中才算真改。任一为零 = 谎报，必须 P0 阻断发版。
    - **抽样策略**：changelog 条目多时无需全查，但**每条声称改动文件路径 + 关键标识**的条目至少抽 3 条做双查。审-8 事件中抽样查了 cli.ts / cli-args.ts / push-target.ts 三条，其中 cli.ts 命中谎报。
 
+#### 33. **Dream Cycle 知识生成质量（v1.1.7 新增）** 🆕
+   - **盲区（v1.1.7 Dream Cycle 引入）**：Dream Cycle 的 6 阶段管道把 think.md + audit history → facts → atoms → patterns → concepts → embeddings。但**产出真的有价值吗**？fact/atom/concept 是有意义的知识点，还是 LLM 把「调试时发现 bug」拆成了 10 条废话？skillopt_backfill 环节真的把 concept 回灌到 Skill 优化了吗，还是写了个空壳？如果 MockLLM 产出的全是占位符文本，整个管道就是"格式正确但内容为零"的装饰品。
+   - **盲区本质**：AI 生成的知识有一个"看起来像知识但不是知识"的陷阱——格式正确、结构完整、用词专业，但读完什么也没学到。这和幻觉不同：幻觉是错的，这个是对的废话。MockLLM 阶段无法暴露这类问题（mock 本来就产出占位符），只有接入 RealLLM 后才会显现——但到那时管道结构已固化，改不动了。
+   - **检查手法**：打开 `sofagent/daemon/src/dream-cycle/extract-facts.ts` 和 `extract-atoms.ts`——看 prompt 模板里是否要求 LLM 输出结构化事实（而非自由文本）。打开 `synthesize-concepts.ts`——concept 写入 `knowledge/entities/` 时 frontmatter 是否带 source 回指。打开 `skillopt-backfill.ts`——backfillHook 是否真的被调用（还是只写了个类型签名）。跑一次 MockLLM 全管道，看产出的 concept.md 文件——读起来像知识还是像噪音。
+
+#### 34. **sensitivity 分级准确性（v1.1.7 新增）** 🆕
+   - **盲区（v1.1.7 sensitivity 分级引入）**：memory-contract.ts 定义了 public/internal/restricted 三级分级，缺省 internal。但**分级本身靠谱吗**？有没有该标 restricted 的知识被标成了 public？如果所有页面都走缺省 internal，分级系统就是"存在但没在用"的装饰。更危险的：Dream Cycle 自动生成的 concept.md 如果缺省都标 public，restricted 知识可能通过联邦查询泄露到其他 viewer。
+   - **盲区本质**：安全分级系统的致命弱点不在实现（代码可以很完美），而在**标注质量**。开发者写 frontmatter 时不会逐条思考"这条该 public 还是 restricted"——99% 的页面会走缺省值。缺省值越安全（internal），系统越安全但越没用（所有东西都不对外）。缺省值越开放（public），系统越方便但越危险。这个张力在设计阶段不暴露，在实际使用 3 个月后才爆炸。
+   - **检查手法**：打开 `memory-contract.ts`——看 `resolveSensitivity()` 的回落逻辑是否真的 safe-by-default（非法值 → internal）。打开 Dream Cycle 的 `synthesize-concepts.ts`——生成的 concept.md 的 sensitivity 字段是什么值？是写死了还是从源数据继承？打开 `isSensitivityVisible()`——构造一个 restricted 条目，用 internal viewer 查询，确认真的被过滤掉。问自己：如果我是一个恶意 viewer，有什么办法绕过这个过滤？
+
+#### 35. **knowledge-health 闭环（v1.1.7 新增）** 🆕
+   - **盲区（v1.1.7 knowledge-health 巡检器引入）**：巡检器检测 5 类知识库问题（孤立/重复/断链/index 过旧/缺源），生成 health-report.md。但**报告有人看吗**？如果只生成不消费，knowledge 库会持续腐烂——巡检器变成"定期报告房间很脏但没人打扫"的摆设。更微妙：warning 级 inspector 等于"知道有问题但不阻断"，在 daemon 语境里 warning 意味着「不紧急」，于是永远不会被修。
+   - **盲区本质**：只建议不自动修复的巡检器面临一个治理悖论——检测到问题但不解决问题，等于把责任转移给了「某个将来会看报告的人」。但那个人不存在。Dream Cycle 每周生成 concept，knowledge-health 每周检测腐烂，两者形成"一边倒水一边擦地"的循环——如果擦地只是"记下来地上有水"，水位只会越来越高。
+   - **检查手法**：打开 `knowledge-health.ts`——triggered 时的 severity 是 warning 还是 error？health-report.md 写在哪？用户在什么场景下会看到这个报告（daemon 推送？CLI 查询？日志？）。打开 `knowledge-status.ts`——聚合命令是否把 health-report 的结论纳入了一页报告？如果用户跑 `knowledge status` 看不到 health 问题，这个巡检器就是废墟功能。
+
+#### 36. **knowledge status 可用性（v1.1.7 新增）** 🆕
+   - **盲区（v1.1.7 knowledge status 聚合命令引入）**：命令号称输出"一页可读"的 knowledge 状态摘要。但**用户真的看得懂吗**？如果输出充满了 inspector 名、severity 枚举值、normalized-key detection 标签——只有写这个命令的开发者能看懂。普通用户（甚至 FDE 实施人员）打开看一眼就关了。命令的"可用性"不是"功能存在"，是"用户能据此做决策"。
+   - **盲区本质**：开发者设计的 CLI 输出天然偏向"机器可读"和"开发者可读"——字段名、枚举值、技术术语。但 `knowledge status` 面向的是"想知道知识库健康状况的人"，不一定是 sofagent 的开发者。如果输出需要配合文档才能理解，它就不是"一页可读"，而是"一页技术报告"。
+   - **检查手法**：实际跑一次 `sofagent knowledge status`（或在代码中模拟跑）。看输出——3 秒内你能判断"知识库健康还是不健康"吗？输出有红色/绿色的视觉区分吗？有"建议操作"吗（不只是"发现问题"，而是"你可以这样做"）？如果你是一个从没读过 memory-contract.ts 的 FDE 实施人员，这个输出对你有用吗？
+
+#### 37. **ActionGovernance 可问责性（v1.1.7 新增）** 🆕
+   - **盲区（v1.1.7 ActionGovernance 引入）**：ActionGovernance 让审计记录从"结果"升级为"可问责的动作凭证"，含 actor/timestamp/targetEntity/beforeAfter/context + DecisionProvenance。但**actor 填的是"Agent"还是具体名**？如果每条记录的 actor 都是"Agent"（或"system"），追溯链就断了——"Agent 改了文件"等于"不知道谁改的"。字段全部可选（beforeAfter? / context?）意味着实际使用时可能全留空，ActionGovernance 变成一个永远 undefined 的装饰字段。
+   - **盲区本质**：审计追溯系统的价值不在 schema 设计（schema 可以很完整），而在**字段填充质量**。如果调用方不填（或填了无意义的值），schema 再完整也是空的。AI 生成的审计记录尤其危险——AI 倾向于填最安全的默认值（actor: "Agent", context: "automated"），这些值格式正确但信息量为零。"可问责"的前提是"可区分"——如果所有 actor 都一样，就无法问责。
+   - **检查手法**：打开 `audit/src/index.ts` 第 722 行附近——actionGovernance 实际填充时 actor 填的是什么值？是硬编码字符串还是从上下文动态取？DecisionProvenance 的四个字段（who/when/which-data-version/which-app）是否都有真实值？打开 `audit-history.test.ts`——测试断言是否验证了字段值的**内容**（而非只验证字段存在）？如果测试只断言 `expect(gov.actor).toBeDefined()`，等于没测。
+
+#### 38. **文档系统性滞后（v1.1.7 新增）** 🆕
+   - **盲区（v1.1.7 新功能文档同步引入）**：文档是 sofagent 的系统性弱点——v1.1.7 修了至少 8 个文档相关 BugFix（BugFix 1/3/5/7/8/9/10/13）。新功能开发时 changelog 先写、文档后补、安全文档最后——这个顺序导致文档永远滞后一个版本。**v1.1.7 新功能（Dream Cycle / sensitivity / knowledge-health / knowledge-status / ActionGovernance）的文档同步做了吗**？SECURITY.md 更新了吗？README 有没有提这些新能力？还是只在 CHANGELOG 里提了，用户从文档体系里完全看不到？
+   - **盲区本质**：文档滞后不是"忘了写"，是**工程流程的结构性缺陷**——功能开发优先级永远高于文档维护，发版压力下文档永远是"下次再补"。但"下次"永远不会来，因为又有新功能要开发。v1.1.7 修了 8 个文档 BugFix 恰恰证明了这一点：这些问题不是 v1.1.7 才出现的，是历史版本积累的文档债在 v1.1.7 集中爆发。如果不改变流程（而非只修症状），v1.1.8 还会有 8 个新的文档 BugFix。
+   - **检查手法**：grep Dream Cycle / sensitivity / knowledge-health / ActionGovernance 这些关键词——在 README 中出现几次？在 SECURITY.md 中？在 FDE/FDE.md 中？如果只在 CHANGELOG 和代码注释中出现，用户从文档入口完全看不到这些新功能。特别检查：`sofagent knowledge status` 这个命令在哪个文档里有说明？如果用户不知道命令存在，就不会去跑。
+
+#### 39. **新功能攻击面 red-team 覆盖（v1.1.7 新增）** 🆕
+   - **盲区（v1.1.7 新功能引入新攻击面）**：v1.1.7 引入了 Dream Cycle（LLM 生成知识）、sensitivity 分级（安全边界）、knowledge-health（文件系统巡检）。这些新功能引入了新的攻击面：Dream Cycle 处理 LLM 输出 → prompt injection 风险；sensitivity 可被篡改 → 权限绕过风险；knowledge-health 读文件 → 路径遍历风险。**18 个 red-team 场景够吗**？还是这些新攻击面完全没有被覆盖？
+   - **盲区本质**：red-team 场景的数量增长永远滞后于功能增长——每加一个功能就多一个攻击面，但 acceptance-test.sh 的场景不会自动追加。更危险的是：新功能的攻击面往往是"组合攻击"（如 Dream Cycle 的 prompt injection + sensitivity 篡改联动），单维度 red-team 测试发现不了。开发者在写功能时想的是"正常路径"，red-team 场景也是按"已知攻击模式"写的——未知攻击模式永远不在覆盖范围内。
+   - **检查手法**：打开 `tools/acceptance-test.sh`——grep "dream-cycle\|Dream Cycle\|sensitivity\|knowledge-health\|actionGovernance\|prompt injection"——有对应场景吗？如果没有，这些新功能的攻击面就是裸奔的。特别检查：Dream Cycle 从 think.md 读取内容喂给 LLM——如果 think.md 里写了 `ignore previous instructions`，extract-facts 会不会被劫持？sensitivity frontmatter 可被用户手动改成 public——restricted 知识泄露的测试有吗？
+
+#### 40. **--doctor 迁移路径通不通（v1.1.7 新增）** 🆕
+   - **盲区（v1.1.7 --doctor 措辞修改引入）**：v1.1.7 改了 --doctor 的某些措辞（BugFix 15）。但**措辞改了迁移路径通吗**？如果一个用户在 v1.1.6 用 --doctor 发现了问题，v1.1.7 升级后 --doctor 还能引导他解决吗？还是措辞改了但操作步骤没跟上，用户读完更迷茫了？**受限网络环境**（公司防火墙 / 代理 / npm registry 镜像）的用户能做到吗？
+   - **盲区本质**：CLI 工具的 --doctor 是用户的"救命稻草"——出问题时第一个跑的命令。如果 --doctor 只说"你缺 X"不说"怎么装 X"，等于只诊断不治疗。措辞修改是表层的（"找不到" → "尚未安装"），但如果底层操作路径（下载链接 / 安装命令 / 权限提示）没跟着改，用户读完诊断信息后仍然不知道下一步做什么。受限网络环境的用户更惨：--doctor 建议的安装方式在他们的环境里跑不通，但 --doctor 不会检测网络环境。
+   - **检查手法**：实际跑一次 `sofagent-audit --doctor`——输出里每个"问题"后面都跟着"建议操作"吗？建议操作里的命令/链接在受限网络环境下（无 GitHub 访问 / npm registry 镜像）能跑通吗？特别检查 v1.1.7 改过措辞的那些项——改了"怎么说"之后，"怎么做"的步骤是否也同步更新了？
+
 
 **输出格式**：
 
