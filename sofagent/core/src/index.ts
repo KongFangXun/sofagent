@@ -107,8 +107,11 @@ export {
   KNOWLEDGE_DIR_LAYER,
   getThinkPath,
   appendThinkEntry,
+  DEFAULT_SENSITIVITY,
+  resolveSensitivity,
+  isSensitivityVisible,
 } from './memory-contract';
-export type { MemoryLayer } from './memory-contract';
+export type { MemoryLayer, Sensitivity } from './memory-contract';
 
 // ── 审计结果类型 ──
 export type { AuditResult, RuleCheck } from './reporter';

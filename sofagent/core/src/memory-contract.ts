@@ -1,6 +1,7 @@
 // ============================================================
 // memory-contract.ts · think.md 记忆契约（Ledger-Views-Policy 模型）
 // v1.1.6: 将 think.md 的不变量从"文档约定"提升为代码级单一事实来源
+// v1.1.6 新增: knowledge entry 的 sensitivity 分级契约（safe-by-default）
 // ============================================================
 //
 // sofagent 记忆三层模型（Ledger-Views-Policy）中，think.md 的契约定义。
@@ -65,4 +66,69 @@ export function appendThinkEntry(thinkPath: string, entry: string): number {
   // 防御：绝不调用 writeFileSync / truncate，只追加
   appendFileSync(thinkPath, entry, 'utf-8');
   return statSync(thinkPath).size;
+}
+
+// ────────────────────────────────────────────────────────────
+// sensitivity 分级契约（v1.1.6 新增）
+//
+// knowledge entry（entity/concept/comparison/summary）的 frontmatter
+// 可声明 `sensitivity: public | internal | restricted`，为后续联邦查询
+// 的安全过滤铺路。缺省语义（已定）：缺省/非法值一律按 internal
+// （safe-by-default；restricted 绝不默认）。
+// ────────────────────────────────────────────────────────────
+
+/** sensitivity 分级（敏感度全序：public ≤ internal ≤ restricted） */
+export type Sensitivity = 'public' | 'internal' | 'restricted';
+
+/** sensitivity 缺省级别（safe-by-default，restricted 绝不默认） */
+export const DEFAULT_SENSITIVITY: Sensitivity = 'internal';
+
+/** 敏感度全序权重（用于可见性判定） */
+const SENSITIVITY_ORDER: Record<Sensitivity, number> = {
+  public: 0,
+  internal: 1,
+  restricted: 2,
+};
+
+/**
+ * 从 frontmatter 解析 sensitivity，缺省/非法值 → internal。
+ *
+ * 只识别精确三个枚举值；其他任何值（大小写异常、拼写错误、注入串）
+ * 一律回落 DEFAULT_SENSITIVITY（safe-by-default）。
+ *
+ * @param frontmatter 页面的 frontmatter 键值对（已解析）
+ * @returns 解析后的 sensitivity（必为合法枚举值）
+ */
+export function resolveSensitivity(
+  frontmatter: Record<string, unknown> | null | undefined,
+): Sensitivity {
+  if (!frontmatter) return DEFAULT_SENSITIVITY;
+  const raw = frontmatter['sensitivity'];
+  if (typeof raw !== 'string') return DEFAULT_SENSITIVITY;
+  const normalized = raw.trim().toLowerCase();
+  if (
+    normalized === 'public' ||
+    normalized === 'internal' ||
+    normalized === 'restricted'
+  ) {
+    return normalized;
+  }
+  return DEFAULT_SENSITIVITY;
+}
+
+/**
+ * 判定给定 sensitivity 对 viewer 是否可见。
+ *
+ * 全序：public ≤ internal ≤ restricted。viewer 只能看到 ≤ 自身级别的条目；
+ * restricted 对非 restricted viewer 不可见（联邦查询不泄露）。
+ *
+ * @param entrySensitivity 条目敏感度
+ * @param viewer viewer 级别（默认 internal）
+ * @returns true = 可见；false = 不可见（过滤掉）
+ */
+export function isSensitivityVisible(
+  entrySensitivity: Sensitivity,
+  viewer: Sensitivity = DEFAULT_SENSITIVITY,
+): boolean {
+  return SENSITIVITY_ORDER[entrySensitivity] <= SENSITIVITY_ORDER[viewer];
 }
