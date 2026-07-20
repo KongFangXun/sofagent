@@ -18,11 +18,29 @@ export SOFAGENT_LLM_REVIEWER=glm:glm-4-flash
 export OPENAI_API_KEY=sk-xxx
 export LOOP_AUTO=1                                    # 全自动
 
+# API key 解析优先级（三级回退）：
+#   SOFAGENT_LLM_ENGINEER_API_KEY ← 角色专用（推荐）
+#     ↓ 找不到
+#   SOFAGENT_LLM_API_KEY           ← 通用
+#     ↓ 找不到
+#   OPENAI_API_KEY                 ← 兜底（OpenAI 兼容 API 的事实标准入口）
+# engineer 和 reviewer 可以用不同 key（分账号计费）。
+# 同理 reviewer 用 SOFAGENT_LLM_REVIEWER_API_KEY。
+# 三个都没设 → 节点降级到零工具路径（输出加 [降级运行] 前缀）。
+
+# LOOP_AUTO 自动判定行为：
+#   LOOP_AUTO=1 时 human_confirm 节点不等待人工，直接解析 reviewer 报告里的 IS_PASS：
+#     IS_PASS: YES   → ✅ 通过，进 completed 终态
+#     IS_PASS: NO    → 🔄 驳回，回 engineer 修复
+#     无法解析        → 🔄 保守默认驳回（不瞎放行）
+#   未设 LOOP_AUTO 时走 stdin readline 等待人工 y/n，不限时——
+#   stdin 关闭视为 abort，checkpoint 已保存，可 loop --resume 恢复。
+
 # 3. 跑单任务
 sofagent-orchestrator loop --task "在 README.md 第三行后加一条项目简介"
 ```
 
-LOOP 自动流转：engineer 写代码 → audit 审计 → reviewer 审查 → IS_PASS 自动判定。
+LOOP 自动流转：engineer 写代码 → audit 审计 → reviewer 审查 → 人工确认（`LOOP_AUTO=1` 时按 `IS_PASS` 自动判定，见上方注释）。
 
 **一个 key 走天下**：DeepSeek / GLM / Kimi / OpenRouter / Together / 本地 vLLM / Ollama 都是 OpenAI 兼容 API，一把 `OPENAI_API_KEY` 就能跑——key 只发到你 `SOFAGENT_LLM_*` 指定的 provider，不会发到 OpenAI。
 

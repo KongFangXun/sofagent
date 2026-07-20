@@ -181,7 +181,7 @@ FDE 部署 SOP 应遵循此顺序：
 | `install.sh` | 多平台一键安装（7 步） | 手动跑 |
 | `uninstall.sh` | 删约束文件，保留 `.sofagent/` | 手动跑 |
 | `verify.sh` | 装后验证 9 类 24+ 检查项 | 安装完自动跑，也可手动 |
-| `orchestrate-compare.ts` | A/B 对比 + promote + compose（合并了原 task-orchestrate） | 编排引擎定期调用 |
+| `orchestrator-compare.ts` | A/B 对比 + promote + compose（合并了原 task-orchestrate） | 编排引擎定期调用 |
 | `task-record.sh` | 收集任务数据 → 拼 Markdown → 追加到 task/logs/ | 闭环时自动调用 |
 
 > 前三个是用户侧工具，后两个是运行时脚本。**设计原则**：确定性操作脚本化——去重、格式校验、文件清理这类即刻运算，脚本比 Agent 更快更省更可靠。
@@ -195,6 +195,35 @@ FDE 部署 SOP 应遵循此顺序：
 ### 编排流程
 
 任务到达 → 两轮澄清 → 目标定稿 → DeepAgents compose 拆任务（v1.0.6 从 ao 迁移，v1.0.7 ao 完全退役） → 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 Sub Agent 启动时自加载（v1.0.7+ `buildConstrainedSystemPrompt`）或 OpenClaw Hook 注入。
+
+#### 两条执行路径
+
+编排引擎有两条执行路径，新代码应优先走路径二：
+
+| 维度 | 路径一：compose（v1.0.6+） | 路径二：StateGraph（v1.1.3+，主推） |
+|------|---------------------------|-------------------------------------|
+| 入口 | `composeWithDeepAgents()` / `sofagent-orchestrator compose --task` | `runLoopGraph()` / `sofagent-orchestrator loop --task` |
+| 原理 | DeepAgents 把任务拆成 YAML 工作流 DAG | LangGraph 四节点状态机 + checkpoint |
+| Checkpoint | 无 | 有（`.sofagent/checkpoint/`，断点续跑） |
+| HITL | 无 | 有（human_confirm 节点，`loop --resume` 可恢复） |
+| 状态 | 保留兼容 | **主推** |
+
+> 对应源码：路径一 `sofagent/orchestrator/src/composer.ts` + `loop-runner.ts`；路径二 `sofagent/orchestrator/src/loop/`（state/nodes/graph）。
+
+#### 降级链
+
+StateGraph 的 engineer/reviewer 节点优先走"工具注入路径"——用 DeepAgents `createDeepAgent` + 工具集启动，systemPrompt 拼装四层约束链 + Agent 定义。当 `SOFAGENT_LLM` 环境变量未设置、provider 解析失败、或 `@langchain/openai` 初始化失败时，**自动降级**到 `spawnSubAgent` 零工具路径（composer），并在输出前加 `[降级运行] ` 标注。
+
+```
+SOFAGENT_LLM=glm:glm-4-flash 解析成功
+  → createDeepAgent({ model, tools, systemPrompt, maxTurns })  ← 工具注入路径
+解析失败 / import 失败
+  → spawnSubAgent(ENGINEER_AGENT, task)  ← 零工具降级路径，输出加 [降级运行] 前缀
+```
+
+#### 测试友好：依赖注入
+
+StateGraph 的流转逻辑通过 `LoopGraphDeps` 接口完全可 mock——`runEngineer / runAudit / runReviewer / confirmHuman / recordBlocked / checkpointer / maxRetries / log` 七个槽位。`defaultDeps()` 给生产实现，测试时整体替换。这让节点流转逻辑可以脱离真实 LLM 单测（v1.1.7 测试堆到 770 case 的前提）。
 
 ### 收敛约束
 

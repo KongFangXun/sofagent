@@ -83,7 +83,7 @@ graph LR
 | 🧭 约束底座 | 四层加载链永远在线 | @sofagent/harness |
 | 🔍 审计引擎 | 只看 git diff 硬证据 | @sofagent/audit |
 | 🔄 回溯能力 | 事后快照 + `--revert` | @sofagent/core |
-| ⚙️ 编排引擎 | LOOP 串行自迭代 + 任务拆解 | @sofagent/orchestrator 🔶 |
+| ⚙️ 编排引擎 | StateGraph 四节点循环 + 任务拆解（v1.1.3+） | @sofagent/orchestrator |
 | 🧬 进化引擎 | daemon cron @weekly | @sofagent/daemon + @sofagent/skillopt |
 
 > 一底座·四引擎的完整设计哲学见 [PHILOSOPHY §三 架构全景](./PHILOSOPHY.md#三怎么跑架构全景)。
