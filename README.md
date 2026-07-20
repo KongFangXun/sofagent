@@ -26,7 +26,7 @@
 
 Agent 越聪明，企业越不敢放手——真出事了，谁负责？能拦住吗？能回滚吗？
 
-**sofagent 是 AI Agent 的事后审计工具**：每次 Agent 改完代码、写完文件，自动跑一遍规则库，违规的当场拦截、合规的存快照。改了什么就是什么，赖不掉。零 token 消耗——纯正则引擎，不调 LLM。
+**sofagent 是 AI Agent 的 Harness 中间件**：每次 Agent 改完代码、写完文件，自动跑一遍规则库，违规的当场拦截、合规的存快照。改了什么就是什么，赖不掉。零 token 消耗——纯正则引擎，不调 LLM。
 
 ```bash
 npm install -g @sofagent/audit @sofagent/core && sofagent-audit --init

@@ -590,7 +590,7 @@ echo ""
 # 防止 init.ts 输出文案、fix-suggestions.ts/qa-boundary-verify.test.ts 注释等小数字无人对账
 echo "=== 13. 文案数字漂移扫描（audit 源码硬编码规则条数）==="
 DOC_DRIFT_OK=true
-DEFAULT_RULES_COUNT=$(grep -cE "^\s+\{ name: 'A[0-9]+" sofagent/audit/src/rules/index.ts 2>/dev/null || echo 0)
+DEFAULT_RULES_COUNT=$(awk '/export const defaultRules/{f=1; next} f && /^[[:space:]]*\{.*name:/{c++} f && /^[[:space:]]*\];/{exit} END{print c+0}' sofagent/audit/src/rules/index.ts 2>/dev/null || echo 0)
 TOTAL_RULES_COUNT=$(grep -cE "^\s+\{ name: '(A|E)[0-9]+" sofagent/audit/src/rules/index.ts 2>/dev/null || echo 0)
 echo "  SSOT: defaultRules.length=$DEFAULT_RULES_COUNT 注册总数=$TOTAL_RULES_COUNT"
 while IFS= read -r line; do

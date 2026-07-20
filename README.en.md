@@ -26,7 +26,7 @@
 
 The smarter the Agent, the less companies dare to let go — when something goes wrong, who's accountable? Can it be stopped? Can it be rolled back?
 
-**sofagent is a post-hoc audit tool for AI Agents**: every time an Agent finishes writing code or files, a rule engine scans automatically — violations are blocked on the spot, compliant changes get snapshotted. What was changed is what was changed, no denying it. Zero token cost — pure regex engine, no LLM calls.
+**sofagent is a Harness middleware for AI Agents**: every time an Agent finishes writing code or files, a rule engine scans automatically — violations are blocked on the spot, compliant changes get snapshotted. What was changed is what was changed, no denying it. Zero token cost — pure regex engine, no LLM calls.
 
 ```bash
 npm install -g @sofagent/audit @sofagent/core && sofagent-audit --init

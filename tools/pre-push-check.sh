@@ -264,6 +264,40 @@ if [ -n "$SSOT_VERSION" ] && git tag -l "v${SSOT_VERSION}" | grep -q "v${SSOT_VE
       fi
     fi
   fi
+
+  # ── 全量历史 tag 扫描（v1.0.0+ 正式版 · v1.1.6 新增）──
+  # 遍历所有 v1.* tag，检查 commit message 是否含对应版本号
+  # 原则：历史 commit message 不可改（rebase 会级联影响 50+ tag）
+  # 全量扫描职责是"暴露历史污点"而非阻断推送——非 HEAD 历史 tag 一律 WARN 豁免，
+  # 只有指向当前 HEAD 的 tag（=本轮发版 tag）不含版本号才 FAIL
+  echo ""
+  echo -e "  ${BOLD}── 全量历史 tag 扫描（v1.0.0+）──${NC}"
+  HISTORY_TAG_TOTAL=0
+  HISTORY_DIRTY_EXEMPT=0
+  HISTORY_NEW_ISSUES=0
+  while IFS= read -r t; do
+    [ -z "$t" ] && continue
+    HISTORY_TAG_TOTAL=$((HISTORY_TAG_TOTAL + 1))
+    hv=$(echo "$t" | sed 's/^v//')
+    hmsg=$(git log -1 "$t^{commit}" --format=%s 2>/dev/null || true)
+    if echo "$hmsg" | grep -q "$hv"; then
+      : # commit message 含版本号，正常
+    else
+      # 历史 commit message 不可改（rebase 重写会级联影响 50+ tag）
+      # 只有指向当前 HEAD 的 tag（= 本轮发版的 tag）commit message 不含版本号才 FAIL，
+      # 其余所有历史 tag 一律 WARN 豁免，并在 LIMITATIONS.md 记录。
+      TAG_COMMIT_HASH=$(git rev-parse "$t^{commit}" 2>/dev/null || true)
+      HEAD_COMMIT_HASH=$(git rev-parse HEAD 2>/dev/null || true)
+      if [ "$TAG_COMMIT_HASH" = "$HEAD_COMMIT_HASH" ]; then
+        check_fail "$t: commit message 不含 ${hv}（msg: ${hmsg}）—— 当前发版 tag 必须含版本号"
+        HISTORY_NEW_ISSUES=$((HISTORY_NEW_ISSUES + 1))
+      else
+        check_warn "$t: commit message 不含 ${hv}（历史污点，已豁免）"
+        HISTORY_DIRTY_EXEMPT=$((HISTORY_DIRTY_EXEMPT + 1))
+      fi
+    fi
+  done < <(git tag -l "v1.*" --sort=-creatordate 2>/dev/null)
+  echo -e "  ${GREEN}✓${NC} 共扫描 ${HISTORY_TAG_TOTAL} 个 tag，${HISTORY_DIRTY_EXEMPT} 个历史污点豁免，${HISTORY_NEW_ISSUES} 个新问题"
 else
   check_warn "Tag v${SSOT_VERSION} 不存在（发版前正常）"
 fi
