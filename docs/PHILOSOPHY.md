@@ -324,7 +324,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 > 📖 来源：31 篇行业笔记跨批研读（2026-07-20）
 
-### 去人化口径：human-in-the-loop 是「可靠优先」卖点（L3）
+### 去人化口径：human-in-the-loop 是「可靠优先」价值点（L3）
 
 行业一派主张「去掉人」（L4 Hill-Climbing 去人化）。sofagent 反其道——human-in-the-loop 不是能力缺陷，而是**可靠优先于自主**的差异化优势。
 

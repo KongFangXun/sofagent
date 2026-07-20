@@ -7,6 +7,12 @@
 
 ## 正式版
 
+### [v1.1.7] — Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性
+> 2026-07-20（UTC）· 已发布
+**核心变更**：① **Dream Cycle 6 阶段流水线**——知识沉淀从 daemon 两个散点脚本（weekly-report / lessons-extract）升级为 6 阶段 pipeline（extract_facts → extract_atoms → cluster_patterns → synthesize_concepts → skillopt_backfill → embed）；纯函数 stage + `state.md` 断点游标 + fromStage 续跑 + cycle_complete 标志 + 失败标记 failed:&lt;stage&gt;；LLM 经 `LLMProvider` 接口抽象（MockLLM 确定性输出先行，RealLLM v1.1.8 接入）；旧脚本三处清理（源文件 + index.ts export + 测试），`@sofagent/ontology` 加 synthesize 接口、`@sofagent/skillopt` 加 backfill 钩子。② **sensitivity frontmatter 契约**——`core/memory-contract.ts` 新增 `Sensitivity`（public/internal/restricted）+ `DEFAULT_SENSITIVITY='internal'`（safe-by-default，restricted 绝不默认）+ `resolveSensitivity()`（缺省/非法值回落 internal）+ `isSensitivityVisible()`（全序 public≤internal≤restricted）。③ **knowledge-health inspector**——5 项检查（孤立/重复 normalized-key 碰撞/断链/index 过旧 &gt;24h/缺源），单遍扫描 + 邻接表 Map；fail-closed 只读源数据，唯一写例外 `appendFileSync` 写 `health-report.md`；schedule `@weekly`、finding 级别 warning、只建议不自动删。④ **知识可观测性（LUI 感知 A+B）**——A：Dream Cycle nightly 追加 `knowledge/log.md` 周报 + sensitivity 分类可见 + `health-report.md` 落盘；B：`sofagent-daemon knowledge status` 聚合命令（三源：log.md 周报 / health-report.md / sensitivity 计数），只读聚合、任一源缺失优雅降级、restricted 只计数不返回内容。
+**质量验证**：770 tests across 12 packages 全绿（daemon 69 含 dream-cycle 14 + knowledge-health 10 + knowledge-status 5 / core 101 含 sensitivity 5 / audit 407 不回归）· check-version 69/69 · pre-push-check 17 通过/6 警告/0 失败（6 警告为历史 tag 污点豁免）· e2e 真实 `.sofagent/knowledge/`（4 空子目录）`triggered:false` 不误报。
+> 📖 [开发日志](./docs/changelog/v1.1.7.md)
+
 ### [v1.1.6] — BugFix 21 项 + LLM Wiki 3 层分层 + conflict-check
 > 2026-07-19（UTC）· 已发布
 **核心变更**：① **v1.1.5 发布后 BugFix 21 项**——webhook PASS 推送死代码接通、`--init` 文案规则数动态读取、"knowledge resource" → "knowledge tool" 全仓清零、CHANGELOG v1.1.5 重复条目删除、v1.1.5 changelog 清理过程元信息、audit/README 规则分级补"工程规范"定义、规则表 ruleClass 三档统一、FDE 文案诚实化、README 竞品对比表、3 个 SKILL.md 补 frontmatter、LIMITATIONS 多处修订、SECURITY.md 加版本头等。② **LLM Wiki 3 层显式化**——新增 [docs/llm-wiki-mapping.md](./docs/llm-wiki-mapping.md)，把 Ledger-Views-Policy 与 LLM Wiki `raw → Wiki → spec` 三层范式做同构映射（不重新定义三层，只做映射），含数据流图与引擎调用关系，并明确 v1.1.6 只"检测"、v1.1.7 Dream Cycle 才"生产"。③ **daemon `conflict-check` 巡检器**——周期性检测 `knowledge/` 的矛盾（critical，同名 entity 多目录 + frontmatter `domain` 冲突）/ 孤儿（warning，文件系统有 `.md` 但 `index.md` 无对应行）/ 死链（warning，`index.md` 表或页面 markdown 链接指向不存在目标）；fail-closed 只读、schedule `@weekly`、空 knowledge 优雅降级。
