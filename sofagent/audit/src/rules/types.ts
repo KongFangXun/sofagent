@@ -24,6 +24,50 @@ export type EvidenceMode = 'git-diff' | 'logs' | 'hybrid' | 'filesystem';
 export type RuleClass = '业务底线' | '能力拐杖' | '工程规范';
 
 /**
+ * Action Governance · 决策溯源组
+ *
+ * 来源：行业五层骨架 / Palantir Action Type 研读（A4）——每条被审计的「动作」
+ * 应结构化带决策溯源组，对应 sofagent Ledger 层的「谁在何时基于哪版数据做了什么决策」。
+ *
+ * - who: 谁做的决策（人类 / Agent / 系统）
+ * - when: 决策时间（ISO 8601）
+ * - whichDataVersion: 决策所基于的知识 / 本体数据版本（FDE 知识库版本化后回填）
+ * - whichApp: 决策发生的 app / Agent 身份
+ */
+export interface DecisionProvenance {
+  who: string;
+  when: string;
+  /** 知识 / 本体数据版本；当前审计流尚未捕获，FDE 知识库版本化后回填。TODO(v1.x) */
+  whichDataVersion?: string;
+  /** 决策发生的 app / Agent 身份；当前填审计引擎标识 */
+  whichApp?: string;
+}
+
+/**
+ * Action Governance · 审计 5 字段 schema
+ *
+ * 来源：行业五层骨架 / Palantir Action Type 研读（A4）——每条被审计的「动作」
+ * 结构化带 5 字段 + 决策溯源组，使审计记录从「结果」升级为「可问责的动作凭证」。
+ *
+ * - actor: 发起方（谁触发了这次变更）
+ * - timestamp: 时间（动作发生时间，ISO 8601）
+ * - targetEntity: 目标实体（被变更的对象：文件路径 / 实体 ID / 资源）
+ * - beforeAfter: 前后值（变更前 / 后摘要）
+ * - context: 上下文（任务 / workflow / session）
+ */
+export interface ActionGovernance {
+  actor: string;
+  timestamp: string;
+  targetEntity: string;
+  /** 变更前后值摘要；当前审计流不承载 diff 原文（避免大段写入 history.jsonl，且 A2/A9 需脱敏），按需从 git diff 取。TODO(v1.x) */
+  beforeAfter?: { before?: string; after?: string };
+  /** 上下文：任务描述 / commit message / workflow */
+  context?: string;
+  /** 决策溯源组（who / when / which-data-version / which-app） */
+  decisionProvenance: DecisionProvenance;
+}
+
+/**
  * 单条规则的检查结果
  */
 export interface RuleCheck {
@@ -35,6 +79,8 @@ export interface RuleCheck {
   evidenceMode?: EvidenceMode;
   /** 规则分级标签（用于 reporter 输出 [底线]/[拐杖] 前缀） */
   ruleClass?: RuleClass;
+  /** Action Governance 溯源（可选项；单条 finding 默认不带，由 AuditHistoryEntry 统一承载动作级溯源） */
+  actionGovernance?: ActionGovernance;
 }
 
 /**

@@ -29,3 +29,7 @@ export type {
   SkillOptResult,
   ValidationResult,
 } from './skillopt-integration';
+
+// ── Dream Cycle backfill 钩子（v1.1.6 新增）──
+export { backfill, getBackfillQueue, clearBackfillQueue } from './backfill';
+export type { BackfillConcept, BackfillEntry } from './backfill';

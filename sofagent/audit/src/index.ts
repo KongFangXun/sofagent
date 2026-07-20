@@ -696,8 +696,21 @@ async function main(): Promise<void> {
       commitSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
     } catch { /* 非 git 环境 */ }
 
+    // A4 研读落地：Action Governance 审计 5 字段 schema + 决策溯源组
+    // 发起方 = git 提交作者；非 git 环境 / 文件系统审计下退化为 unknown（不伪造）
+    let actor = 'unknown';
+    try {
+      const author = execFileSync('git', ['log', '-1', '--format=%an'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+      if (author) actor = author;
+    } catch { /* 非 git 环境 */ }
+    const govTimestamp = new Date().toISOString();
+    // 目标实体 = 本次变更涉及的文件路径（最多取前 20 个，避免记录超长）
+    const targetEntity = diffFiles.length > 0
+      ? diffFiles.slice(0, 20).map((f) => f.path).join('; ')
+      : 'no-file-change';
+
     const historyEntry: AuditHistoryEntry = {
-      timestamp: new Date().toISOString(),
+      timestamp: govTimestamp,
       diffRange: args.diffRange,
       task: args.task,
       exitCode: results.exitCode,
@@ -706,6 +719,19 @@ async function main(): Promise<void> {
       commitMsg: commitMsg || undefined,
       commitSha,
       engine: `sofagent-audit v${VERSION}`,
+      actionGovernance: {
+        actor,
+        timestamp: govTimestamp,
+        targetEntity,
+        // beforeAfter: 当前审计流不承载 diff 前后值原文（避免大段写入 history.jsonl，且 A2/A9 需脱敏），按需从 git diff 取。TODO(v1.x)
+        context: args.task || commitMsg || undefined,
+        decisionProvenance: {
+          who: actor,
+          when: govTimestamp,
+          // whichDataVersion: 知识 / 本体数据版本——FDE 知识库版本化后回填。TODO(v1.x)
+          whichApp: `sofagent-audit v${VERSION}`,
+        },
+      },
     };
     appendHistory(historyEntry);
   } catch {

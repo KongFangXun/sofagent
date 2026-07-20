@@ -85,7 +85,6 @@ sofagent 是 **Harness 中间件**——不管你用什么 Agent（Claude Code /
 | pre-commit / husky | 代码质量（lint / format） | **Agent 行为**（密钥泄漏 / 越界修改 / 注入攻击 / 盲改） |
 | detect-secrets / gitleaks | 密钥扫描 | 密钥只是 A2 一条规则，sofagent 还有 20 条管 Agent 翻车模式 |
 | Cursor Rules / Claude Code hooks | 单平台 IDE 内约束 | 平台无关——任何 Agent + git 仓库都能跑 |
-| AgentLoop（SaaS） | 运行时轨迹观测（依赖云端回传轨迹） | **改了什么**（git diff 硬证据，本地不送云、不依赖云端轨迹回传，MIT 开源）|
 
 > 💡 **核心差异**：现有工具查「代码写得对不对」，sofagent 查「Agent 做得对不对」——边界越界、知识库跨域、流程合规、盲改逃验证，这些是 LLM Agent 特有的翻车模式，通用 lint 工具覆盖不到。
 
@@ -251,9 +250,6 @@ sofagent 不只是开发者工具——企业落地用 **FDE 工具包** + **Wor
 - **Work模板市场**（`work模板市场/`）：行业工作流模板仓库，外层 Graph 骨架锁定全链路 + 内层节点保留 ReAct 灵活性。开箱带制造业应付账款审批模板。详见 [work模板市场/](./work模板市场/)。
 - **LOOP 自迭代工具包**（`LOOP/`）：sofagent 的外层自迭代编排——内层 `coding → audit → review → human`，外层 `FDE 监督 → compliance 巡检 → 优化 Agent 定义`。详见 [LOOP/README.md](./LOOP/README.md)。
 
-**三产品关系**：sofagent 核心管「每次变更守门」（commit / 文件变更即审计）；FDE 管「进场部署交付」（把 sofagent 装到企业设备并撤离）；LOOP 管「长期自迭代」（持续巡检 + 优化 Agent 定义）。三者共享同一套约束底座与审计引擎，均非可独立运行的独立仓库（需先 `git clone` 主仓库）。
-
-> 💡 **命名约定**：大写目录（`FDE/`、`LOOP/`、`work模板市场/`）是 sofagent 的**部署/产品入口**，需先 `git clone` 主仓库后运行（**非可独立运行的独立仓库**，单独 clone 子目录会因依赖主仓库 `sofagent/scripts/install.sh` 而跑不通）；小写目录（`sofagent/`、`docs/`、`tools/`）= 核心代码与配置。
 
 ---
 
@@ -264,7 +260,7 @@ sofagent 不只是开发者工具——企业落地用 **FDE 工具包** + **Wor
 
 | 维度 | 数据 |
 |------|------|
-| 审计引擎 | 21 条规则全覆盖，`npm test` 全绿（审计核心 405 用例；全 workspace 737 用例），0 token 消耗 |
+| 审计引擎 | 21 条规则全覆盖，`npm test` 全绿（见 tools/test-count.sh 实测），0 token 消耗 |
 | 平台覆盖 | git commit 审计（开发者）+ daemon 文件审计（非开发者）|
 | 协议 | MIT（代码 / 文档 / 模板随便用）|
 
@@ -277,7 +273,6 @@ sofagent 不只是开发者工具——企业落地用 **FDE 工具包** + **Wor
 | 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
 | 为什么这么设计 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
-| LLM Wiki 治理映射 | [docs/llm-wiki-mapping.md](./docs/llm-wiki-mapping.md) |
 | 安全声明 | [SECURITY](./SECURITY.md) |
 | 已知局限 | [LIMITATIONS](./LIMITATIONS.md) |
 | 版本路线图 | [ROADMAP](./ROADMAP.md) |

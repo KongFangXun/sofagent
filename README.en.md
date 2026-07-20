@@ -85,7 +85,6 @@ sofagent is a **Harness middleware** — no matter what Agent you use (Claude Co
 | pre-commit / husky | Code quality (lint / format) | **Agent behavior** (secret leaks / out-of-scope edits / injection attacks / blind edits) |
 | detect-secrets / gitleaks | Secret scanning | Secrets are just A2; sofagent has 20 more rules for Agent failure modes |
 | Cursor Rules / Claude Code hooks | Single-platform IDE constraints | Platform-agnostic — any Agent + git repo |
-| AgentLoop (SaaS) | Runtime trajectory observation | **What changed** (git diff hard evidence, local, MIT open source) |
 
 > 💡 **Core difference**: existing tools check "is the code written well"; sofagent checks "did the Agent behave well" — out-of-scope edits, knowledge base cross-domain, process compliance, blind edits without reading first. These are LLM-Agent-specific failure modes that generic lint tools don't cover.
 
@@ -249,8 +248,6 @@ sofagent isn't just a developer tool — enterprise deployment uses the **FDE To
 
 - **FDE Toolkit** (`FDE/`): Frontline Deployment Engineer four-phase onboarding (map → mine → deliver → leave) — turns enterprise workflows into AI nodes, FDE leaves after deployment, AI nodes run themselves. See [FDE/FDE.md](./FDE/FDE.md).
 - **Work模板市场** (`work模板市场/`): Industry workflow template repo — outer Graph skeleton locks the full chain + inner nodes keep ReAct flexibility. Ships with a manufacturing accounts-payable template. See [work模板市场/](./work模板市场/).
-
-> 💡 **Naming convention**: Uppercase dirs (`FDE/`, `LOOP/`, `work模板市场/`) = standalone products, optional; lowercase dirs (`sofagent/`, `docs/`, `tools/`) = core code and config.
 
 ---
 

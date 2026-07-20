@@ -10,6 +10,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSy
 import { join } from 'path';
 import { homedir } from 'os';
 import { VERSION } from '@sofagent/core';
+import type { ActionGovernance } from './rules/types';
 
 export interface AuditEntry {
   operation: string;
@@ -18,6 +19,8 @@ export interface AuditEntry {
   timestamp?: string;
   user?: string;
   host?: string;
+  /** Action Governance 审计 5 字段 schema + 决策溯源组（A4 研读落地）。可选项。 */
+  actionGovernance?: ActionGovernance;
 }
 
 function getDataBase(): string {
