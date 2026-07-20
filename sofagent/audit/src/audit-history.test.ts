@@ -209,4 +209,52 @@ describe('audit-history', () => {
     //      e1→e2 这一步用 curr(e2).hashVersion === undefined 决定算法（不含指纹）
     expect(checkHistoryChainIntegrity(testDir)).toBe(true);
   });
+
+  describe('Action Governance schema (A4 研读落地)', () => {
+    it('appendHistory 保留 actionGovernance（5 字段 + 决策溯源组）', () => {
+      // 验证：审计记录经 append/load 往返后，Action Governance 5 字段 + 决策溯源组不丢失
+      const entry: AuditHistoryEntry = {
+        ...makeEntry('2026-01-01T00:00:00.000Z', 0),
+        actionGovernance: {
+          actor: 'alice',
+          timestamp: '2026-01-01T00:00:00.000Z',
+          targetEntity: 'src/foo.ts; src/bar.ts',
+          context: '修复 issue #1',
+          decisionProvenance: {
+            who: 'alice',
+            when: '2026-01-01T00:00:00.000Z',
+            whichApp: 'sofagent-audit v1.1.6',
+          },
+        },
+      };
+      appendHistory(entry, testDir);
+
+      const loaded = loadHistory(undefined, testDir);
+      expect(loaded.length).toBe(1);
+      const gov = loaded[0]!.actionGovernance;
+      expect(gov).toBeDefined();
+      // 5 字段
+      expect(gov!.actor).toBe('alice');
+      expect(gov!.timestamp).toBe('2026-01-01T00:00:00.000Z');
+      expect(gov!.targetEntity).toBe('src/foo.ts; src/bar.ts');
+      expect(gov!.context).toBe('修复 issue #1');
+      // decisionProvenance 决策溯源组
+      expect(gov!.decisionProvenance.who).toBe('alice');
+      expect(gov!.decisionProvenance.when).toBe('2026-01-01T00:00:00.000Z');
+      expect(gov!.decisionProvenance.whichApp).toBe('sofagent-audit v1.1.6');
+      // whichDataVersion 当前未回填——可省略（不伪造）
+      expect(gov!.decisionProvenance.whichDataVersion).toBeUndefined();
+    });
+
+    it('actionGovernance 为可选字段——无该字段的旧记录向后兼容', () => {
+      // 验证：旧格式记录（无 actionGovernance）写入后仍能正常加载，不报错
+      const filePath = getHistoryFilePath(testDir);
+      mkdirSync(join(testDir, 'audit'), { recursive: true });
+      writeFileSync(filePath, JSON.stringify(makeEntry('2026-01-01T00:00:00.000Z', 0)) + '\n', 'utf-8');
+
+      const loaded = loadHistory(undefined, testDir);
+      expect(loaded.length).toBe(1);
+      expect(loaded[0]!.actionGovernance).toBeUndefined();
+    });
+  });
 });

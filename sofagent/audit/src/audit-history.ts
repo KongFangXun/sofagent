@@ -26,7 +26,7 @@ import { hostname, userInfo } from 'os';
 import { execSync } from 'child_process';
 import { loadEnvConfig } from '@sofagent/core';
 import { atomicAppendSync, atomicWriteSync } from '@sofagent/core';
-import type { RuleCheck } from './rules/types';
+import type { RuleCheck, ActionGovernance } from './rules/types';
 
 /**
  * 对 ruleResult 做脱敏处理——避免审计工具自身成为第二泄漏点。
@@ -75,6 +75,8 @@ export interface AuditHistoryEntry {
   hashVersion?: number;
   /** v1.1.3+: 审计引擎标识，用于追溯记录来源 */
   engine?: string;
+  /** Action Governance 审计 5 字段 schema + 决策溯源组（A4 研读落地）。可选项——旧记录无此字段时向后兼容。 */
+  actionGovernance?: ActionGovernance;
 }
 
 /**
