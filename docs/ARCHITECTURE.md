@@ -279,7 +279,7 @@ Work模板市场 的实现规范见 [work模板市场/SPEC.md](../work模板市�
 
 River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 本身（堤坝，不是河床），而是确保 River 里的每一个 Sub Agent 都有纪律、可追溯、会反思。
 
-> 🏞️ **一条河的比喻**：水 = 模型（不受控的 AI 能力，像水会泛滥）；堤坝 = sofagent 约束层（外在守卫，让河水不侵蚀城市）；管网 = Workflow（把能力引到业务）；水龙头 / 用水设备 = Subagent（让能力真正作用）；城市 / 企业 / 工厂 / 社区 = 业务环节。大厂建江+供水（AI 中台 = 江，模型 = 水），我们做堤坝+管网+水龙头。详见 [FDE §9.6](../FDE/FDE.md#96-river企业统一-agent-入口)。
+> 🏞️ **一条河的比喻**：水 = 模型（不受控的 AI 能力，像水会泛滥）；堤坝 = sofagent 约束层（外在守卫，让河水不侵蚀城市）；管网 = Workflow（把能力引到业务）；水龙头 / 用水设备 = Subagent（让能力真正作用）；城市 / 企业 / 工厂 / 社区 = 业务环节；市政管网规划 = Ontology（规划水怎么被用到业务里）；蓄水池 = AI 知识库（河跑起来后自动积累的记忆）。大厂建江+供水（AI 中台 = 江，模型 = 水），我们做堤坝+管网+水龙头。详见 [FDE §9.6](../FDE/FDE.md#96-river企业统一-agent-入口)。
 
 > **Workflow 的混合架构**：每条 Workflow 采用「外层 Graph 骨架 + 内层 ReAct 节点」——`workflow.yml` 的 `nextNodes` 锁定全链路步骤、保证可追溯（对应行业笔记中的「Graph 实现全局流程骨架」），单个节点的 `prompt` 保留模型自主规划能力（对应「内层 ReAct Agent」）。这一设计兼顾全局稳定性与局部灵活性：低容错业务靠 Graph 锁死流程，复杂节点靠 ReAct 保灵活。详见 [work模板市场/SPEC.md](../work模板市场/SPEC.md)。
 
