@@ -80,7 +80,7 @@ OLD_2SEG=$(echo "$OLD_VERSION" | cut -d. -f1-2)
 NEW_2SEG=$(echo "$NEW_VERSION" | cut -d. -f1-2)
 
 # 3 段版本号（从实际 package.json 读取，而非 .0 补零）
-# 注意：根 package.json 无 version 字段（workspaces 根），SSOT 在 sofagent/audit/package.json
+# 注意：根 package.json 和 audit/package.json 都有 version 字段，两者同步 bump。SSOT 读 audit/package.json。
 
 # 用于实际文件替换的模式——优先 3 段精确匹配
 # 这是因为大多数文件中的版本号是 3 段格式（如 VERSION="0.99.3"），
@@ -161,9 +161,10 @@ echo -e "${BOLD}── 将要修改的文件 ──${NC}"
 echo ""
 
 # 1. package.json version 字段（SSOT，3 段格式）
-echo -e "${BOLD}[1/13] package.json（SSOT）${NC}"
-PJ="$PROJECT_ROOT/sofagent/audit/package.json"
-if [[ -f "$PJ" ]]; then
+#    同时处理根 package.json（workspace 根）+ audit/package.json（SSOT）
+echo -e "${BOLD}[1/13] package.json（SSOT + workspace 根）${NC}"
+for PJ in "$PROJECT_ROOT/package.json" "$PROJECT_ROOT/sofagent/audit/package.json"; do
+  [[ -f "$PJ" ]] || continue
   pj_content=$(cat "$PJ")
   if $PATCH_ONLY; then
     pj_new=$(sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g" "$PJ")
@@ -182,7 +183,7 @@ if [[ -f "$PJ" ]]; then
     fi
     TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
   fi
-fi
+done
 echo ""
 
 # 1b. mcp/package.json version 字段
@@ -227,8 +228,9 @@ done
 echo ""
 
 # 1d. v1.1.3: 批量处理所有 workspace 子包 package.json version 字段
+#     v1.1.7: 同时替换 dependencies/devDependencies 里的 @sofagent/* 版本号
 # （audit/mcp 已在上面处理，这里覆盖其余 10 个子包）
-echo -e "${BOLD}[2c/13] workspace 子包 package.json version${NC}"
+echo -e "${BOLD}[2c/13] workspace 子包 package.json version + @sofagent/* 依赖${NC}"
 ws_pkg_count=0
 while IFS= read -r ws_pkg; do
   # 跳过已处理的 audit 和 mcp
@@ -236,12 +238,15 @@ while IFS= read -r ws_pkg; do
   [[ "$ws_pkg" == *"mcp/package.json" ]] && continue
   [[ -f "$ws_pkg" ]] || continue
   ws_content=$(cat "$ws_pkg")
-  ws_new=$(sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g" "$ws_pkg")
+  # version 字段 + @sofagent/* 依赖版本号一起替换（ERE 分组保留包名）
+  ws_new=$(sed -E -e "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g" \
+                  -e "s/(\"@sofagent\/[a-z-]+\": \")$OLD_3SEG(\")/\1$NEW_3SEG\2/g" "$ws_pkg")
   if [[ "$ws_new" == "$ws_content" ]]; then
-    ws_new=$(sed "s/\"version\": \"$OLD_2SEG\"/\"version\": \"$NEW_2SEG\"/g" "$ws_pkg")
+    ws_new=$(sed -E -e "s/\"version\": \"$OLD_2SEG\"/\"version\": \"$NEW_2SEG\"/g" \
+                    -e "s/(\"@sofagent\/[a-z-]+\": \")$OLD_2SEG(\")/\1$NEW_2SEG\2/g" "$ws_pkg")
   fi
   if [[ "$ws_new" != "$ws_content" ]]; then
-    echo -e "  ${GREEN}✓${NC} version: $OLD_3SEG → $NEW_3SEG"
+    echo -e "  ${GREEN}✓${NC} version + @sofagent/* deps: $OLD_3SEG → $NEW_3SEG"
     echo -e "    ${CYAN}$ws_pkg${NC}"
     if ! $DRY_RUN; then
       printf '%s\n' "$ws_new" > "$ws_pkg"
@@ -288,10 +293,10 @@ while IFS= read -r ts; do
   fi
 done < <(grep -rl "const VERSION = '" \
   --include='*.ts' \
-  "$PROJECT_ROOT/sofagent/audit/src/" \
+  "$PROJECT_ROOT/sofagent/" \
   2>/dev/null || true)
 if [[ $ts_count -eq 0 ]]; then
-  echo -e "  ${YELLOW}（无匹配——可能已是 $NEW_2SEG 或 audit/src/ 下无 const VERSION）${NC}"
+  echo -e "  ${YELLOW}（无匹配——可能已是 $NEW_2SEG 或 sofagent/ 下无 const VERSION）${NC}"
 fi
 echo ""
 
