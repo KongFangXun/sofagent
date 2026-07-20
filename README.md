@@ -70,11 +70,9 @@ flowchart LR
 
 sofagent 是 **Harness 中间件**——不管你用什么 Agent（Claude Code / Codex / Cursor / WorkBuddy）、什么模型，挂在 git commit 这个节点上，用 git diff 硬证据做审计。**平台无关、零侵入、零 token**。
 
-> 🏞️ **一条河的比喻**：大厂建江+供水（AI 中台 = 江，模型 = 水），我们做**堤坝 + 管网 + 水龙头**——约束层（不让水泛滥）+ Workflow（把能力引到业务）+ Subagent（让能力真正作用）。让企业安全地用自己的 AI 能力流进业务。约束层也像「操守过滤器 / 有护栏的操作台」——受控变更，而非自由 SQL 通道。详见 [`FDE/FDE.md` §9.6](FDE/FDE.md#96-river企业统一-agent-入口)。
+> 🏞️ **一条河的比喻**：大厂建江+供水（AI 中台 = 江，模型 = 水），我们做**堤坝 + 管网 + 水龙头**——约束层（不让水泛滥）+ Workflow（把能力引到业务）+ Subagent（让能力真正作用）。让企业安全地用自己的 AI 能力流进业务。详见 [`FDE/FDE.md` §9.6](FDE/FDE.md#96-river企业统一-agent-入口)。
 
-> 💡 **一个能用的智能体 ≠ AI + 一段 prompt**——它是一套由多层组成的骨架（配置 / 知识 / 指令 / 校验 / 编排）。sofagent 的约束底座是骨架里的钢筋，审计引擎是质检。我们处在 **Harness Engineering（2025-2026 行业范式跃迁阶段）**——给 Agent 搭脚手架（工具 / 权限 / 沙箱 / 规则），而非造一个更聪明的模型。
->
-> 📖 来源：31 篇行业笔记跨批研读（2026-07-20）
+> 💡 **一个能用的智能体 ≠ AI + 一段 prompt**——它是一套由多层组成的骨架（配置 / 知识 / 指令 / 校验 / 编排）。sofagent 的约束底座是骨架里的钢筋，审计引擎是质检。给 Agent 搭脚手架（工具 / 权限 / 沙箱 / 规则），而非造一个更聪明的模型。
 
 ---
 
@@ -164,15 +162,43 @@ flowchart LR
 
 ### 🧭 约束底座
 
+```mermaid
+graph LR
+    A[Agent 启动] --> B[SKILL.md<br/>宪法层·红线+铁律]
+    B --> C[fde.md<br/>规范层·企业专属规则]
+    C --> D[think.md<br/>反思层·历史踩坑]
+    D --> E[knowledge/<br/>知识库·自动积累]
+```
+
 开工前把规则注入 Agent 上下文——让它知道红线在哪。四层加载链：SKILL.md（宪法层）→ fde.md（企业规则层）→ think.md（历史踩坑层）→ knowledge/（自动积累层）。v1.0.7+ Sub Agent 启动时自加载（`buildConstrainedSystemPrompt`），不依赖任何 Agent 平台的 Skill 系统。
 
 > 📚 **知识沉淀流水线（v1.1.7）**：knowledge/ 由 daemon **Dream Cycle 6 阶段 pipeline** 自动沉淀（extract_facts → extract_atoms → cluster_patterns → synthesize_concepts → skillopt_backfill → embed），替换旧散点脚本；每条知识带 `sensitivity` 分级（public/internal/restricted，缺省 internal）。配套治理：`knowledge-health` 巡检器（@weekly，孤立/重复/断链/index 过旧/缺源 5 项，fail-closed 只读）+ `sofagent-daemon knowledge status` 聚合命令（一眼看见 Dream Cycle 周报 / 知识健康 / sensitivity 统计，restricted 只计数不泄露）。
 
 ### ⚙️ 编排引擎
 
+```mermaid
+graph LR
+    A[接收任务] --> B[编排引擎<br/>拆解 + 匹配模板]
+    B --> C[Sub Agent 并行执行]
+    C --> D[多维评分]
+    D --> E{A/B 对比}
+    E -->|新版更好| F[自动 promote<br/>连续胜出2次]
+    E -->|旧版更好| G[保留为 fallback]
+```
+
 把大任务拆小、多 Sub Agent 并行执行、A/B 对比找更优方案。走 DeepAgents（v1.0.7 起 OpenClaw 编排层完全退役）。CLI 入口 `sofagent-orchestrator compose --task`——**任何 Agent 平台都能用编排引擎**。A/B 自动切换：连续胜出 2 次才 promote，切换前旧版本保留为 fallback。
 
 ### 🔍 审计引擎
+
+```mermaid
+graph LR
+    A[Agent 改代码/改文件] --> B[git commit 或 daemon 检测]
+    B --> C{审计引擎<br/>规则库判定}
+    C -->|违规| D[⛔ 拦截 + 记录]
+    C -->|合规| E[✅ 放行]
+    D --> F[think.md 自动反思]
+    F --> A
+```
 
 每次 git commit 或文件变更时自动扫描——Agent 改代码 → git commit/daemon 检测 → 审计引擎规则库判定 → 违规拦截+记录 / 合规放行 → think.md 自动反思。21 条规则中 16 条为纯 git-diff（不依赖 Agent 配合），4 条 hybrid（A7/A8/A14/A15 需 Agent 日志），1 条 filesystem（A17 异常批量变更）。v1.0.8+ 内嵌 isomorphic-git + daemon 文件监控，**不需 git commit 也能审计**。
 
@@ -187,6 +213,17 @@ flowchart LR
 | ❌ FAIL | 存档 + 建议回滚 | Webhook 推送 + 终端标红 |
 
 ### 🧬 进化引擎（实验性）
+
+```mermaid
+graph LR
+    A[FDE 周度巡检] --> B[读 audit 趋势<br/>history.jsonl]
+    B --> C[分析 think.md<br/>反复出错的操作]
+    C --> D[读 eval<br/>哪个节点在退化]
+    D --> E{发现问题?}
+    E -->|是| F[生成优化报告<br/>更新规则/补充 knowledge]
+    E -->|否| G[标记「稳定」]
+    F --> A
+```
 
 ⚠️ A/B 自动 promote 基于 `consecutiveWins ≥ threshold` + `overallImprovement` 守卫，eval 评分依赖 LLM 自评（存在 self-grading bias）。窄 eval 集场景下可能误晋升，生产环境建议人工复核 promote 决策。两种模式：`deploy`（首次部署/业务大变更）+ `sustain`（每周自动/手动触发巡检）。
 

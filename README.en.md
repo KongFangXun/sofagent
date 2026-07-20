@@ -70,11 +70,9 @@ flowchart LR
 
 sofagent is a **Harness middleware** — no matter what Agent you use (Claude Code / Codex / Cursor / WorkBuddy) or what model, it hooks into the git commit node and audits with hard git diff evidence. **Platform-agnostic, zero-intrusion, zero tokens**.
 
-> 💡 **An agent that works ≠ a model + a prompt** — it's a multi-layer skeleton (config / knowledge / instruction / validation / orchestration). sofagent is the Harness layer (the rebar + quality inspector), not a smarter model. We operate at the **Harness Engineering** inflection (2025-2026): scaffolding agents with tools / permissions / sandboxes / rules.
->
-> 📖 来源：31 篇行业笔记跨批研读（2026-07-20）
+> 💡 **An agent that works ≠ a model + a prompt** — it's a multi-layer skeleton (config / knowledge / instruction / validation / orchestration). sofagent is the rebar in that skeleton, the audit engine is the quality inspector. We scaffold agents with tools / permissions / sandboxes / rules — rather than building a smarter model.
 
-> 🏞️ **The "one river" analogy**: Big vendors build the river and supply the water (AI platform = river, model = water); we build the **dam + pipe network + faucet** — the constraint layer (keeps water from flooding the city) + Workflow (routes capability to the business) + Subagent (where capability actually acts). We let enterprises safely run their own AI capability into their business. See [FDE/FDE.md §9.6](./FDE/FDE.md#96-river企业统一-agent-入口).
+> 🏞️ **The "one river" analogy**: Big vendors build the river and supply the water (AI platform = river, model = water); we build the **dam + pipe network + faucet** — the constraint layer (keeps water from flooding) + Workflow (routes capability to the business) + Subagent (where capability actually acts). We let enterprises safely run their own AI capability into their business. See [FDE/FDE.md §9.6](./FDE/FDE.md#96-river企业统一-agent-入口).
 
 ---
 
@@ -164,15 +162,43 @@ flowchart LR
 
 ### 🧭 Constraint Base
 
+```mermaid
+graph LR
+    A[Agent startup] --> B[SKILL.md<br/>Constitution · red lines + rules]
+    B --> C[fde.md<br/>Norms · enterprise-specific rules]
+    C --> D[think.md<br/>Reflection · historical pitfalls]
+    D --> E[knowledge/<br/>Knowledge base · auto-accumulated]
+```
+
 Injects rules into Agent context before work starts — so it knows where the red lines are. Four-layer loading chain: SKILL.md (constitution) → fde.md (enterprise rules) → think.md (historical pitfalls) → knowledge/ (auto-accumulated). v1.0.7+ Sub Agents self-load on startup (`buildConstrainedSystemPrompt`), independent of any Agent platform's Skill system.
 
 > 📚 **Knowledge pipeline (v1.1.7)**: knowledge/ is auto-accumulated by the daemon's **Dream Cycle 6-stage pipeline** (extract_facts → extract_atoms → cluster_patterns → synthesize_concepts → skillopt_backfill → embed), replacing the legacy scatter scripts; every entry carries a `sensitivity` level (public/internal/restricted, default internal). Companion governance: the `knowledge-health` inspector (@weekly — orphan/duplicate/broken-link/stale-index/missing-source, fail-closed read-only) plus the `sofagent-daemon knowledge status` aggregation command (one glance at Dream Cycle weekly report / knowledge health / sensitivity stats; restricted entries are counted only, never leaked).
 
 ### ⚙️ Orchestration Engine
 
+```mermaid
+graph LR
+    A[Receive task] --> B[Orchestration engine<br/>decompose + match template]
+    B --> C[Sub Agents run in parallel]
+    C --> D[Multi-dimension scoring]
+    D --> E{A/B compare}
+    E -->|new better| F[Auto-promote<br/>2 consecutive wins]
+    E -->|old better| G[Keep as fallback]
+```
+
 Splits big tasks, runs multi-Sub-Agents in parallel, A/B compares for better solutions. Uses DeepAgents (OpenClaw orchestration fully retired since v1.0.7). CLI entry `sofagent-orchestrator compose --task` — **any Agent platform can use the orchestration engine**. A/B auto-switch: promote only after 2 consecutive wins, old version kept as fallback before switch.
 
 ### 🔍 Audit Engine
+
+```mermaid
+graph LR
+    A[Agent edits code/files] --> B[git commit or daemon detects]
+    B --> C{Audit engine<br/>rule-based verdict}
+    C -->|violation| D[⛔ Block + log]
+    C -->|compliant| E[✅ Pass]
+    D --> F[think.md auto-reflection]
+    F --> A
+```
 
 Auto-scans on every git commit or file change — Agent edits code → git commit/daemon detects → audit engine rules judge → violation blocked+logged / compliant released → think.md auto-reflection. Of the 21 rules, 16 are pure git-diff (don't need Agent cooperation), 4 are hybrid (A7/A8/A14/A15 need Agent logs), 1 is filesystem (A17 abnormal batch change). v1.0.8+ embeds isomorphic-git + daemon file monitoring, **audits without git commit**.
 
@@ -187,6 +213,17 @@ Auto-snapshots after every audit — pushes notification + suggests rollback on 
 | ❌ FAIL | Snapshot + suggest rollback | Webhook push + terminal red |
 
 ### 🧬 Evolution Engine (experimental)
+
+```mermaid
+graph LR
+    A[FDE weekly inspection] --> B[Read audit trends<br/>history.jsonl]
+    B --> C[Analyze think.md<br/>repeated errors]
+    C --> D[Read eval<br/>which node is degrading]
+    D --> E{Problem found?}
+    E -->|Yes| F[Generate optimization report<br/>update rules / enrich knowledge]
+    E -->|No| G[Mark "stable"]
+    F --> A
+```
 
 ⚠️ A/B auto-promote is based on `consecutiveWins ≥ threshold` + `overallImprovement` guard, eval scoring relies on LLM self-grading (self-grading bias exists). May mis-promote in narrow eval scenarios — for production, recommend manual review of promote decisions. Two modes: `deploy` (first deployment / major business change) + `sustain` (weekly auto / manual trigger inspection).
 
