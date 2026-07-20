@@ -70,6 +70,10 @@ flowchart LR
 
 sofagent is a **Harness middleware** — no matter what Agent you use (Claude Code / Codex / Cursor / WorkBuddy) or what model, it hooks into the git commit node and audits with hard git diff evidence. **Platform-agnostic, zero-intrusion, zero tokens**.
 
+> 💡 **An agent that works ≠ a model + a prompt** — it's a multi-layer skeleton (config / knowledge / instruction / validation / orchestration). sofagent is the Harness layer (the rebar + quality inspector), not a smarter model. We operate at the **Harness Engineering** inflection (2025-2026): scaffolding agents with tools / permissions / sandboxes / rules.
+>
+> 📖 来源：31 篇行业笔记跨批研读（2026-07-20）
+
 > 🏞️ **The "one river" analogy**: Big vendors build the river and supply the water (AI platform = river, model = water); we build the **dam + pipe network + faucet** — the constraint layer (keeps water from flooding the city) + Workflow (routes capability to the business) + Subagent (where capability actually acts). We let enterprises safely run their own AI capability into their business. See [FDE/FDE.md §9.6](./FDE/FDE.md#96-river企业统一-agent-入口).
 
 ---

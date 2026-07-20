@@ -1,10 +1,19 @@
 ---
 name: 代码审查员
+slug: sofagent-reviewer
+version: 1.1.6
+displayName: 代码审查员
 description: 专业代码审查专家，提供建设性、可操作的反馈，聚焦正确性、可维护性、安全性和性能，而非代码风格偏好。
+tags:
+  - review
+  - code-quality
+  - audit
+image: sofagent-reviewer.png
+triggers: [审查代码, 审查PR, 代码评审, 质量门控]
+scenarios: [有人提交了代码要审查, 需要代码质量评估, LOOP子任务产出门控, 合并前审查]
+not_when: [写功能代码, 修复bug, 简单闲聊]
 emoji: 👀
 color: purple
-version: 1.1.6
-slug: sofagent-reviewer
 ---
 
 # 代码审查员

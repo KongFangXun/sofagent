@@ -446,7 +446,7 @@ async function main(): Promise<void> {
 
   // doctor → sofagent-core (v1.0.8: ENOENT 友好降级)
   if (rawArgs.includes('--doctor')) {
-    console.error('⚠️  "sofagent-audit --doctor" 已弃用，将在 v1.2.0 移除，请尽快迁移到 "sofagent-core --doctor"。');
+    console.error('⚠️  "sofagent-audit --doctor" 已不建议使用，建议改用功能更强的 "sofagent-core --doctor"（迁移：先 npm install -g @sofagent/core，再运行 sofagent-core --doctor）。');
     try {
       const { runDoctor } = await import('@sofagent/core');
       const report = runDoctor(process.cwd());

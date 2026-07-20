@@ -606,6 +606,41 @@ if $DOC_DRIFT_OK; then
 fi
 echo ""
 
+# ── 文档头日期一致性扫描（v1.1.7 新增 · 修复一）──────────────
+# 所有 `> vX.Y · YYYY-MM-DD` 文档头日期应与发版日期一致。
+# bump-version.sh 只改版本号不改日期，反复出现文档头日期漂移；
+# 本扫描以发版日期为唯一基准，任何不一致都报错。随版本更新时，
+# 同步修改下方 EXPECTED_DOC_DATE 与 bump-version.sh。
+echo "=== 14. 文档头日期一致性扫描（> vX.Y · YYYY-MM-DD）==="
+DOC_DATE_OK=true
+EXPECTED_DOC_DATE="2026-07-19"
+while IFS= read -r md; do
+  match=$(grep -m1 -nE "^> v[0-9]+\.[0-9]+(\.[0-9]+)? · [0-9]{4}-[0-9]{2}-[0-9]{2}" "$md" 2>/dev/null)
+  if [ -n "$match" ]; then
+    doc_date=$(printf '%s' "$match" | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" | head -1)
+    if [ "$doc_date" != "$EXPECTED_DOC_DATE" ]; then
+      echo "  ❌ $md : 文档头日期 ${doc_date} ≠ 发版日期 ${EXPECTED_DOC_DATE}"
+      DOC_DATE_OK=false
+      ERRORS=$((ERRORS + 1))
+    fi
+  fi
+done < <(find "${PROJECT_ROOT}" \
+  -name '*.md' \
+  -not -path '*/node_modules/*' \
+  -not -path '*/.git/*' \
+  -not -path '*/dist/*' \
+  -not -path '*/docs/changelog/*' \
+  -not -path '*/docs/archive/*' \
+  -not -path '*/_archive/*' \
+  -type f)
+if $DOC_DATE_OK; then
+  echo -e "  ${GREEN}✓${NC} 文档头日期一致（发版日期 ${EXPECTED_DOC_DATE}）"
+  CHECKS=$((CHECKS + 1))
+else
+  echo -e "  ${RED}✗${NC} 存在文档头日期漂移（应统一为发版日期 ${EXPECTED_DOC_DATE}）"
+fi
+echo ""
+
 # ── 汇总 ──────────────────────────────────────────────────────
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then

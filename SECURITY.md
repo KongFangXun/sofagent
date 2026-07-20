@@ -35,22 +35,24 @@ sofagent daemon 是本地文件系统监控守护进程，其行为边界如下�
 | **数据去向** | 所有数据本地存储（`.sofagent/` 目录下），不上传云端，不向外发送网络请求——除非用户显式配置 TencentDB Memory 集成（`install.sh --with-memory`，opt-in）。 |
 | **权限** | 只读监听文件事件（hash 变化检测 + cron 定时巡检）。**不修改用户文件、不删除文件、不外传数据**。审计发现写入 `daemon-notice.md` 和 `history.jsonl`。 |
 | **审计结果推送** | v1.2.x 前 daemon 审计结果**仅本地存储**（`daemon-notice.md` + 终端 stdout），**不推送 Webhook/企业协同平台**。企业 IT 如需集中收集审计日志，当前版本需自行定时轮询 `.sofagent/audit/history.jsonl`。Webhook 推送能力规划在 v1.2.x。 |
+
+> 💡 **企业集中收集 workaround（v1.1.6）**：Webhook 推送在 v1.2.x 才就绪，企业 IT 如需在 v1.1.x 集中收集审计日志，可用 filebeat / logstash 等采集 agent **定时轮询 `.sofagent/audit/history.jsonl`**（append-only、JSONL 明文），转发至 SIEM / 企业日志平台。注意 history.jsonl 为明文存储，转发前建议配合外部加密卷或 age 加密，避免敏感 diff 摘要外泄。
 | **history.jsonl 存储** | 审计拦截记录以 JSONL 明文存储在 `.sofagent/audit/history.jsonl`，目录权限 0o700、文件权限 0o600（v1.1.3 起收紧）。仅追加写入（`appendFileSync`），不覆盖、不删除。历史记录供编排引擎和进化引擎本地读取。 |
 
 > daemon 源码见 `sofagent/daemon/src/`：`fs-watch.ts`（文件监听）、`cron.ts`（定时巡检）、`snapshot.ts`（快照）、`weekly-report.ts`（周报生成）、`lessons-extract.ts`（经验提取）、`usb-detect.ts`（USB federation 检测，v1.1.4+）。
 
 ### USB federation 安全模型（v1.1.4+）
 
-> ⚠️ **企业环境警告**：v1.1.4 的 USB federation 是**基础检测模式**，**无签名校验**。
+> ⚠️ **企业环境警告**：v1.1.4 的 USB federation 曾是**基础检测模式**、**无签名校验**；**自 v1.1.5 起已加入 HMAC 签名校验**，v1.1.6 当前状态已具备签名保护（详见下方对比表）。
 
-| 维度 | v1.1.4（当前） | v1.1.5+（计划） |
+| 维度 | v1.1.6（当前） | v1.1.7+（计划） |
 |------|:--|:--|
 | 检测条件 | USB 卷标 = `SOFAGENT` + 存在 `federation.json` | 同左 + HMAC 签名校验（`.sig` sidecar） |
 | 配置应用 | 写入 `~/.sofagent/federation.json`，**不自动分发到各目录**（applyFederation 未实现） | 自动 nodes → orchestrator/nodes/、policies → audit/policies/ |
 | 注入风险 | 🔴 **任何人制作的 SOFAGENT 卷标 U 盘可注入任意 federation 配置** | ✅ 签名不匹配则拒绝导入 |
 | Schema 校验 | ❌ JSON.parse 后直接序列化写入，不校验字段 | ✅ 按 FederationConfig schema 校验 |
 
-**企业部署建议（v1.1.4）**：
+**企业部署建议（v1.1.6）**：
 - 不要在共享/公共设备上启用 USB federation 自动检测
 - 如需使用，插入 U 盘前先在隔离设备上检查 `federation.json` 内容
 - 生产环境等 v1.1.5 的签名校验上线后再启用

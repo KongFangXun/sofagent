@@ -11,6 +11,8 @@
 >
 > 📖 [v1.1.6 开发日志](./docs/changelog/v1.1.6.md) · [🗺️ LLM Wiki 三层映射](./docs/llm-wiki-mapping.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
+> 🔴 **企业采购阻塞项 · Webhook 推送优先级上调**：v1.1.6 已接通 webhook **PASS/WARN/FAIL 三态推送**（本地 agent 自测可用），但推送到企业协同平台（飞书/钉钉/企微）的**完整 Webhook 能力仍规划在 v1.2.x**（见 SECURITY.md「审计结果推送」）。对需通过企业安全采购评审的客户，Webhook 推送是**采购阻塞项**——建议从 **v1.1.7 起优先排期**，而非等到 v1.2.x，以免卡住企业订单。
+
 ---
 
 ## 迭代历程
