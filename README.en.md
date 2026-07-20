@@ -251,6 +251,17 @@ sofagent isn't just a developer tool — enterprise deployment uses the **FDE To
 - **FDE Toolkit** (`FDE/`): Frontline Deployment Engineer four-phase onboarding (map → mine → deliver → leave) — turns enterprise workflows into AI nodes, FDE leaves after deployment, AI nodes run themselves. See [FDE/FDE.md](./FDE/FDE.md).
 - **Workflow Hub** (`workflow-hub/`): Industry workflow template repo — outer Graph skeleton locks the full chain + inner nodes keep ReAct flexibility. Ships with a manufacturing accounts-payable template. See [workflow-hub/](./workflow-hub/).
 
+## Product form: MCP + dashboard
+
+The sofagent core (audit engine + orchestration engine + FDE toolkit) is for developers. But when productized and handed to non-technical buyers (SMB / OPC owners, internal champions), it needs a different shell:
+
+- **Sell capability, not hours**: FDE is not "on-site deployment service" — it's the capability every enterprise should have, packaged as a toolkit so the enterprise's own people use it and land AI adoption themselves. Revenue shifts from "consultant hours" to "number of enterprises × subscription", scalable.
+- **Why a dashboard is needed**: sofagent itself is LUI-first (language is the interface) — but the Agent's LUI + LLM "swallows everything"; non-expert buyers can't see persistent state, no sense-of-achievement anchor. So productization must ship a **lightweight dashboard** as its own view (audit status / AI adoption progress / compliance monthly report), letting buyers always see "how far my company's AI adoption has gone".
+- **Why MCP**: the dashboard is lightweight, powered by **MCP** — MCP acts as an outward bridge, letting the customer's existing Agent / your sub-agent feed data to the dashboard backend. MCP is a bridge, not the only entry point; the dashboard must be owned.
+- **open-core dual track**: the core (audit rules / FDE workflow / orchestration) stays MIT open-source as a trust asset; commercialization only sells that dashboard layer (console / compliance monthly report / alerts). Open-source earns trust, closed-source earns payment.
+
+> Control-plane play: the underlying Agent intelligence can be swapped freely (OpenClaw / customer's choice / big-tech), but governance and truth (who configured the policy, what the audit chain looks like, where Agents are registered) always live in sofagent's dashboard.
+
 ---
 
 ## Measured impact
