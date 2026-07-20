@@ -13,10 +13,31 @@ async function main() {
     console.log('  start                        启动守护进程（cron + 文件监听）');
     console.log('  snapshot list                列出所有快照');
     console.log('  snapshot restore <sha>       恢复到指定快照');
+    console.log('  knowledge status             聚合知识库状态（Dream Cycle / 健康 / sensitivity）');
     process.exit(0);
   }
 
   switch (subcommand) {
+    case 'knowledge': {
+      const action = args[1];
+      const projectDir = process.cwd();
+      switch (action) {
+        case 'status': {
+          // 延迟加载 commands/knowledge-status（避免拖累 CLI 启动）
+          const { knowledgeStatus, formatKnowledgeStatus } = await import(
+            './commands/knowledge-status'
+          );
+          const report = knowledgeStatus(projectDir);
+          console.log(formatKnowledgeStatus(report));
+          break;
+        }
+        default:
+          console.error('❌ 未知 knowledge 子命令: ' + (action || ''));
+          console.error('   用法: sofagent-daemon knowledge <status>');
+          process.exit(1);
+      }
+      break;
+    }
     case 'start': {
       const projectDir = process.cwd();
       const { startCron } = await import('./cron');
@@ -109,7 +130,7 @@ async function main() {
     }
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Usage: sofagent-daemon <start|snapshot> [options]');
+      console.error('Usage: sofagent-daemon <start|snapshot|knowledge> [options]');
       process.exit(1);
   }
 }
