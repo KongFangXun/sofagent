@@ -736,6 +736,10 @@ echo "声明: $DECLARED_COUNT / 实际: $ACTUAL_COUNT"
 # 读 docs/changelog/vX.Y.md 的「核心变更/交付」章节，提取每条功能关键词
 # 逐条 grep tools/acceptance-test.sh
 # 例：v1.1.4 新增 A18 → grep A18 acceptance-test.sh，期望有场景
+# 🔴 v1.1.7 教训：阶段三更新 acceptance-test 时必须同步跑此检查（releasing.md 步骤 13 Step D），
+# 不能只更新场景数声称就跳过——v1.1.7 阶段三更新了场景数但跳过了覆盖率交叉检查，
+# 导致 sensitivity/knowledge-health/knowledge-status/ActionGovernance 4 个新功能零覆盖，
+# 直到阶段六独立审查才发现，被迫回阶段五循环修复（新增场景 97-100）。
 CHANGELOG_FEATURES=$(grep -E "^### |^## 交付" docs/changelog/v$(node -e "console.log(require('./package.json').version)").md | head -20)
 echo "$CHANGELOG_FEATURES"
 # 人工检查：每个功能点在 acceptance-test.sh 里都有对应场景。
