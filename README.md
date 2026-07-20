@@ -140,7 +140,7 @@ sofagent 不只是审计——完整形态是「一底座 + 四引擎」的 Harn
 
 ```mermaid
 flowchart LR
-    CB[🧭 约束底座<br/>开工前注入红线] --> OR[⚙️ 编排引擎<br/>大任务拆小·多 Agent 并行]
+    CB[🧭 约束底座<br/>开工前注入红线] --> OR[⚙️ 编排引擎<br/>LOOP 自迭代·任务拆解]
     OR --> AU[🔍 审计引擎<br/>每次变更硬证据审查]
     AU --> RE[🔄 回溯引擎<br/>git snapshot·一键回滚]
     RE --> EV[🧬 进化引擎<br/>周度巡检·越用越好]
@@ -150,7 +150,7 @@ flowchart LR
 | 引擎 | 作用 | 状态 |
 |------|--------|:--:|
 | 🧭 约束底座 | 开工前把规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
-| ⚙️ 编排引擎 | 大任务拆小、多 Sub Agent 并行、A/B 对比择优 | ✅ 稳定（需 `@sofagent/orchestrator`）|
+| ⚙️ 编排引擎 | LOOP 自迭代（engineer→audit→reviewer 串行）+ 任务拆解（生成编排方案）| 🔶 部分（需 `@sofagent/orchestrator`）|
 | 🔍 审计引擎 | 每次 git commit / 文件变更跑 21 条规则，违规拦截+存证 | ✅ 稳定（`@sofagent/audit` 独立）|
 | 🔄 回溯引擎 | 每次审计后自动 git snapshot，违规时一键 revert | ✅ 稳定 |
 | 🧬 进化引擎 | FDE 周度巡检审计趋势 + 反思记录，发现退化就优化 | ⚠️ 实验性 |
@@ -178,15 +178,20 @@ graph LR
 
 ```mermaid
 graph LR
-    A[接收任务] --> B[编排引擎<br/>拆解 + 匹配模板]
-    B --> C[Sub Agent 并行执行]
-    C --> D[多维评分]
-    D --> E{A/B 对比}
-    E -->|新版更好| F[自动 promote<br/>连续胜出2次]
-    E -->|旧版更好| G[保留为 fallback]
+    A[接收任务] --> B[DeepAgents compose<br/>生成编排方案 YAML]
+    B --> E[engineer 执行]
+    E --> F[audit 审计]
+    F -->|FAIL| G{重试 ≤ 3 次?}
+    G -->|是| E
+    G -->|否| H[blocked 终态]
+    F -->|PASS/WARN| I[reviewer 审查]
+    I --> J[human_confirm]
+    J --> K[完成 / checkpoint 存档]
 ```
 
-把大任务拆小、多 Sub Agent 并行执行、A/B 对比找更优方案。走 DeepAgents（v1.0.7 起 OpenClaw 编排层完全退役）。CLI 入口 `sofagent-orchestrator compose --task`——**任何 Agent 平台都能用编排引擎**。A/B 自动切换：连续胜出 2 次才 promote，切换前旧版本保留为 fallback。
+当前实现两层能力：① **任务拆解**——DeepAgents compose 把任务描述转成编排方案 YAML；② **LOOP 自迭代**——`engineer → audit → reviewer → human_confirm` 四节点 StateGraph，audit FAIL 自动回 engineer 重试（最多 3 轮），每个节点 checkpoint 存档支持中断恢复。
+
+> 🔶 **能力边界**：LOOP 当前是**串行**状态机（非并行 DAG 调度）。compose 输出的编排方案 YAML 描述了"应该有哪些节点"，但暂无按 DAG 并行分发 Sub Agent 的执行器。A/B 对比机制（连续胜出 2 次 promote）已实现，但依赖历史日志统计，非实时双跑。完整的 DAG 并行调度 + 沙箱执行环境规划在 [ROADMAP v1.3.0](./ROADMAP.md)。
 
 ### 🔍 审计引擎
 

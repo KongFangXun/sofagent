@@ -140,7 +140,7 @@ sofagent isn't just audit — the full form is a Harness middleware with "one ba
 
 ```mermaid
 flowchart LR
-    CB[🧭 Constraint Base<br/>inject red lines before work] --> OR[⚙️ Orchestration<br/>split tasks · multi-Agent parallel]
+    CB[🧭 Constraint Base<br/>inject red lines before work] --> OR[⚙️ Orchestration<br/>LOOP self-iteration · task decomposition]
     OR --> AU[🔍 Audit Engine<br/>hard evidence per change]
     AU --> RE[🔄 Restore Engine<br/>auto-snapshot · one-click revert]
     RE --> EV[🧬 Evolution<br/>weekly inspection · improves with use]
@@ -150,7 +150,7 @@ flowchart LR
 | Engine | What it does | Status |
 |------|--------|:--:|
 | 🧭 Constraint Base | Injects rules into Agent context before work starts (SKILL.md + fde.md + think.md + knowledge/) | ✅ stable |
-| ⚙️ Orchestration | Splits big tasks, multi-Sub-Agent parallel, A/B compare to pick best | ✅ stable (needs `@sofagent/orchestrator`) |
+| ⚙️ Orchestration | LOOP self-iteration (engineer→audit→reviewer serial) + task decomposition (generates plan) | 🔶 partial (needs `@sofagent/orchestrator`) |
 | 🔍 Audit Engine | Runs 21 rules on every git commit / file change, blocks + logs violations | ✅ stable (`@sofagent/audit` standalone) |
 | 🔄 Restore Engine | Auto git snapshot after every audit, one-click revert on violation | ✅ stable |
 | 🧬 Evolution | FDE weekly inspection of audit trends + reflection logs | ⚠️ experimental |
@@ -178,15 +178,20 @@ Injects rules into Agent context before work starts — so it knows where the re
 
 ```mermaid
 graph LR
-    A[Receive task] --> B[Orchestration engine<br/>decompose + match template]
-    B --> C[Sub Agents run in parallel]
-    C --> D[Multi-dimension scoring]
-    D --> E{A/B compare}
-    E -->|new better| F[Auto-promote<br/>2 consecutive wins]
-    E -->|old better| G[Keep as fallback]
+    A[Receive task] --> B[DeepAgents compose<br/>generate orchestration plan YAML]
+    B --> E[engineer executes]
+    E --> F[audit check]
+    F -->|FAIL| G{retry ≤ 3?}
+    G -->|yes| E
+    G -->|no| H[blocked terminal]
+    F -->|PASS/WARN| I[reviewer review]
+    I --> J[human_confirm]
+    J --> K[done / checkpoint saved]
 ```
 
-Splits big tasks, runs multi-Sub-Agents in parallel, A/B compares for better solutions. Uses DeepAgents (OpenClaw orchestration fully retired since v1.0.7). CLI entry `sofagent-orchestrator compose --task` — **any Agent platform can use the orchestration engine**. A/B auto-switch: promote only after 2 consecutive wins, old version kept as fallback before switch.
+Two layers currently implemented: ① **Task decomposition** — DeepAgents compose turns a task description into an orchestration plan YAML; ② **LOOP self-iteration** — a 4-node StateGraph (engineer → audit → reviewer → human_confirm), where audit FAIL auto-routes back to engineer for retry (up to 3 rounds), with per-node checkpoint for interrupt recovery.
+
+> 🔶 **Capability boundary**: LOOP is currently a **serial** state machine (not a parallel DAG scheduler). The compose output YAML describes "which nodes should exist," but there is no executor that dispatches Sub Agents in parallel by DAG. The A/B comparison mechanism (promote after 2 consecutive wins) is implemented but relies on historical log statistics, not real-time dual runs. Full DAG parallel scheduling + sandbox execution is planned in [ROADMAP v1.3.0](./ROADMAP.md).
 
 ### 🔍 Audit Engine
 
