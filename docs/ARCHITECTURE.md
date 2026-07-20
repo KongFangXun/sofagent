@@ -360,6 +360,37 @@ River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 
 
 > **Workflow 的混合架构**：每条 Workflow 采用「外层 Graph 骨架 + 内层 ReAct 节点」——`workflow.yml` 的 `nextNodes` 锁定全链路步骤、保证可追溯（对应行业笔记中的「Graph 实现全局流程骨架」），单个节点的 `prompt` 保留模型自主规划能力（对应「内层 ReAct Agent」）。这一设计兼顾全局稳定性与局部灵活性：低容错业务靠 Graph 锁死流程，复杂节点靠 ReAct 保灵活。详见 [work模板市场/SPEC.md](../work模板市场/SPEC.md)。
 
+#### MCP 触发完整链路（v1.1.8+）
+
+> 这一节回答一个具体问题：**企业员工在钉钉/飞书/企微里 @ 一个 tag，sofagent 怎么接住这个请求并跑完 Workflow？**
+
+大厂入口 Agent（River 载体）通过 MCP 协议调用 sofagent。`sofagent_compose` 这个 MCP tool **已存在**（v1.1.0 起），v1.1.8 补上 `--run` 真正执行 + `--enterprise-workflow` 接收 FDE workflow 参考后，链路完整：
+
+```
+① 用户在钉钉 @sofagent-tag "帮我实现用户注册模块"
+     ↓ 钉钉 AI（LLM：Opus / GPT / 智谱 / DeepSeek 均可）识别意图
+② LLM 调用 MCP tool: sofagent_compose
+     参数：
+       task: "实现用户注册模块"
+       enterprise_workflow: "fde梳理的认证流程.yaml"  ← v1.1.8 T02 新增
+       run: true                                     ← v1.1.8 T03 新增
+③ sofagent compose 基于企业 workflow 拆解任务
+     → 输出编排方案 YAML + 结构化 SubAgent[] 配置
+     → 每个 SubAgent 注入四层约束加载链（buildConstrainedSystemPrompt）
+④ dag-runner 调 createDeepAgent({ subagents }) 真正调度
+     → 主 Agent 自主决定何时委派给哪个 Sub Agent（串行 / 同步并行）
+⑤ Sub Agent 执行（带企业专有 Harness 约束）
+     → 审计引擎在每个节点卡关（git diff 硬证据）
+⑥ 审计通过 → human_confirm → 结果回传给 LLM
+⑦ LLM 把结果翻译成自然语言返回给用户
+```
+
+**关键差异化**：大厂入口 Agent 做通用调度（什么都能干，但什么都不精），sofagent 做 **Workflow 专项**——FDE 帮企业梳理好的 workflow 做约束，Sub Agent 只做这一个专项任务，比入口 Agent 的通用调度更可控。这就是「专项 Harness > 通用 Agent」的价值，也是 sofagent 不与大厂 Agent 竞争而是做补充层的定位体现。
+
+**前提条件**：大厂入口 Agent 需支持 MCP 协议。目前 Coze / Dify / WorkBuddy 已支持，钉钉/飞书/企微的 AI 助手在跟进 MCP 标准。
+
+**与 Cloudtag 在 Slack @tag 的区别**：Cloudtag 把 Agent 嵌入协同平台（Agent 还是通用 Agent），sofagent 把**约束过的专项 Workflow** 嵌入协同平台（Agent 行为被 Harness 限制在企业业务流程边界内）。
+
 ### Agent 基础设施层（v1.0.8+）
 
 两个内置 Agent 被所有 workflow 节点引用：
