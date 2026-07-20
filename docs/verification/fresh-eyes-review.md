@@ -64,6 +64,7 @@
     - **中英对齐抽查**：如果项目有 README.en.md，抽查 3-5 段——中英两版结构是否完全对应？有没有中文版有但英文版漏的章节，或反过来？段落顺序、表格行数、details 块数是否一致？
     - **历史教训（v1.1.6）**：v1.1.5 及之前 README 首屏 3 个比喻打架（"接上 AI" / "高速公路" / "全生命周期"），结构上"设计哲学"在"怎么装"之前，读者 3 屏还搞不清这东西是干什么的。v1.1.6 重构后统一为"行车记录仪+安全带"一个比喻，对比表前置，467→280 行减 40%。这类"整体文档编排"问题单看任何一段发现不了，必须把 README 当一个整体来读才能暴露。
 12. **三层模型文档可发现性（v1.1.6 新增）**：`docs/llm-wiki-mapping.md` 把 sofagent 的 Ledger-Views-Policy 与 LLM Wiki 的 `raw → Wiki → spec` 三层范式做了同构映射。你需要回答：① 你能从 README 找到这个文档吗？（有没有链接指向它？）② 读完后你能说清 sofagent 的三层模型吗？③ 文档里明确写了"不重新定义三层，以 PHILOSOPHY.md §五 为权威源"——你认可这个做法吗，还是觉得它应该独立定义？（v1.1.6 教训：三层模型分散在 PHILOSOPHY/ARCHITECTURE/memory-contract 三处，映射文档的价值是"统一入口"——如果这个入口藏太深就白做了）
+13. **SKILL.md frontmatter 完整性（v1.1.6 新增 · 来自审查建议）**：用户从 README 进入 FDE/LOOP 后，如果子 Agent SKILL.md 缺少触发词/必需字段，Agent 可能无法自动加载。检查所有 SKILL.md 必需字段（name/slug/displayName/description/version/tags/image/triggers/scenarios/not_when）。已自动化 → 见 regression-checklist.md 维度 28。
 
 你是一个普通开发者，不是来审代码的。你会读多少文档取决于你的好奇心——有人 3 屏就走了，有人会点进 ARCHITECTURE 看看设计思路。**读什么不重要，重要的是始终用普通开发者的心态判断：这东西对我有用吗？我愿意花时间装吗？**
 
@@ -342,13 +343,13 @@
     - **跨平台激活对抗**：`@sofagent-fde` 在 WorkBuddy 真能激活吗（需要 Skill 复制到 `~/.workbuddy/skills/sofagent-fde/`）？`@skill:sofagent-loop` 在 OpenClaw 真能加载吗？fde-install.sh / loop-install.sh 在 workbuddy 分支真的把 Skill 目录复制对位置了吗？**实跑验证**：装完后在对应平台输入 `@sofagent-fde` / `@skill:sofagent-loop`，Agent 真能读到 SKILL.md 内容吗？还是静默失败？
     - **种子指令对抗**：FDE/README.md 第 40-44 行的"种子指令"（让 Agent 读 SKILL.md + FDE.md）——如果 Agent 收到这段指令但 SKILL.md 路径错了（相对路径 vs 绝对路径混淆），Agent 会报错还是假装读了？
 
-28. **A18/A19 实跑拦截验证（v1.1.4 新增）**：
+28. **A18/A19 实跑拦截验证（v1.1.4 新增）** 🔽 降级为快速抽查（v1.1.6 已验证多轮通过）——确认 config-loader knownKeys 含 a18/a19 即可，不必每次实跑拦截。已自动化 → 见 acceptance-test.sh 场景 58/59。
     - **A19 commit message 质量**：代码级已确认 `MIN_LENGTH = 8` + 黑名单 8 词存在，但行为级要现场跑——提交一个 6 字符的 message（如 "second"），A19 是否真拦截？exit code 是否 = 2？黑名单词（add/fix/test/update/change/wip/tmp/asdf）逐个试，是否都拦？
     - **A18 垃圾文件检测**：提交 `a.txt` / `tmp.bak` / `213.tmp` 类文件名，A18 是否告警（WARN）？A18 在 extendedRules——确认 config `extendedRulesEnabled: true` 时才生效，默认 false 时跳过。
     - **A18/A19 config 禁用**：在 config.yml 写 `rules: { a18: false }` / `{ a19: false }`——确认真能禁用（不出现该规则判定行），且不误报"未知规则名"。**v1.1.4 教训**：config-loader.ts 的 knownKeys 集合曾漏 a18/a19，用户禁用时误报未知——这是每新增规则必查项（见回归清单维度 9）。
     - **A19 在 defaultRules 的排序合理性**：A19 编号是 19 但放在 defaultRules（始终生效），不在 extendedRules——确认这是有意设计（commit msg 质量是基础要求），不是放错数组。
 
-29. **MCP server JSON-RPC 协议合规（v1.1.5 新增，v1.1.5 已修）** 🆕 ✅：
+29. **MCP server JSON-RPC 协议合规（v1.1.5 新增，v1.1.5 已修）** 🔒 锁定。仅 mcp-server.ts 相关代码改动时才重新审查（v1.1.5 已修复验证，v1.1.6 未改此段逻辑）。已自动化 → 见 acceptance-test.sh 场景 58/59。 🆕 ✅：
     - **盲区**：MCP server 对 notification 类消息（`notifications/initialized` 等）不应返回 error response——JSON-RPC 规范规定 notification（**无 id 字段**的消息）不返回响应，request（有 id 字段）才返回。v1.1.5 验收测试场景 58 初版给 server 发了 `{"id":2,"method":"notifications/initialized"}`——server 按 id=2 回了 `{"error":{"code":-32601,"message":"Method not found"}}`，虽然测试能过但属协议违规（带 id 的 notification 是错误用法，正确用法是省略 id）。
     - **盲区本质**：JSON-RPC 2.0 规范里 request 与 notification 的区分点是 `id` 字段有无——开发者容易把 notification 当成"没返回值的 method 调用"，给它加个 id；或者反过来，把所有 method 都当 request 处理，对 notification 也回 error。这是协议层的基础合规问题，单看功能不会暴露——必须实跑 notification 消息看 server 行为。
     - **检查手法**：`printf '%s\n' '{"jsonrpc":"2.0","method":"notifications/initialized"}' | node sofagent/mcp/dist/mcp-server.js` 期望**零输出**（notification 不应答）。
@@ -394,6 +395,10 @@
    - **evidenceMode 计数对账（v1.1.4 追加）**：v1.1.4 暴露 README:169 声称"17 条纯 git-diff"但实际 16 条——`grep -oE "evidenceMode: '[a-z-]+'" sofagent/audit/src/rules/index.ts | sort | uniq -c`，与 README 的"X 条纯 git-diff / Y 条需 Agent 日志"逐数字对照。
    - **audit/README.md 规则表完整性（v1.1.4 追加）**：v1.1.4 暴露 A18/A19 新增后 audit/README.md 规则表完全没更新（grep 零命中）。`INDEX_COUNT=$(grep -cE "name:\s*'A[0-9]|name:\s*'E[0-9]" index.ts); README_ROWS=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " audit/README.md)`，README_ROWS 应 ≥ INDEX_COUNT。
    - **自动化对账脚本建议（v1.1.4 追加）**：规则数字验证散落在 4 处（README 总数 + README 分类数 + audit/README 表行数 + MCP 工具描述数），每次发版都要手动对照易漏。建议把"index.ts SSOT → 4 处文档声称"对账逻辑加进 pre-push-check，一处不齐就门禁红。
+   - **版本敏感的规则数声称（v1.1.6 合并自原任务 12）**：README 可能声称"17 条规则（v1.0.9 扩展为 19 条）"——这是**版本条件声称**。验证当前 `package.json` 的版本号，再看 A16/A17 是否已在 `index.ts` 注册。如果当前是 v1.0.8 但 README 说"19 条"，就是 P0 不一致。
+   - README 审计引擎 Mermaid 图里写的规则数（如"17 条规则"）——与 index.ts 注册数一致吗？
+   - CHANGELOG 历史条目中提到的规则数——有没有"当时声称 N 条但代码实际 M 条"的情况？
+   - 确认本任务所有子项的自动对账：`bash tools/check-version.sh` 通过即确认本任务所有子项（index.ts SSOT → README/audit-README/MCP工具描述 4处文档声称自动对账）。
 
 2. **测试数量一致性**：
    - CHANGELOG / README / evidence.md 中声称的测试数量——实际跑 `cd sofagent/audit && npm test 2>&1 | grep 'Tests'`。一致吗？
@@ -443,10 +448,7 @@
    - 跑 `node -e "console.log(typeof require('./sofagent/audit/dist/skillopt-integration').isSkillOptAvailable())"` 确认返回 `boolean`（不是 Promise）
    - **v1.1.3 升级为实跑验证**：装 skillopt-sleep 后跑 `skillopt-sleep --help` 看真实子命令列表，逐一对比集成代码的调用形式。仅静态读源码不算验证。
 
-12. **版本敏感的规则数声称**：
-   - README 可能声称"17 条规则（v1.0.9 扩展为 19 条）"——这是**版本条件声称**。验证当前 `package.json` 的版本号，再看 A16/A17 是否已在 `index.ts` 注册。如果当前是 v1.0.8 但 README 说"19 条"，就是 P0 不一致。
-   - README 审计引擎 Mermaid 图里写的规则数（如"17 条规则"）——与 index.ts 注册数一致吗？
-   - CHANGELOG 历史条目中提到的规则数——有没有"当时声称 N 条但代码实际 M 条"的情况？
+> ✅ 原任务 12（版本敏感的规则数声称）已合并入任务 1（v1.1.6）——内容见任务 1 末尾。
 
 13. **发版终验必须独立跑完整门禁** 🆕
    - **教训（v1.0.8）**：阶段四终审只验用户指定 4 项，漏跑 pre-push-check / check-version，版本号散落 91 文件仍 1.0.7 溜过，阶段六才抓出 93 处不一致。
@@ -650,6 +652,7 @@
 ### 审查体系更新建议（完成全部十维度后输出一次）
 
 > 以下两项在完成所有维度后输出一次。不填视为审查未完成。
+> 💡 **落位原则（v1.1.6+）**：本模板收集的建议，应在发版前落地为**自动化检查**——回归检查清单维度（regression-checklist.md）/ 验收测试场景（acceptance-test.sh）/ 推前门禁（pre-push-check.sh）。填完即由维护者转化为脚本检查并清空本模板，不在 prompt 长期保留。理由：手动维护的 prompt 检查项易随版本漂移，脚本化才能持续生效。
 
 #### 建议调整的维度
 > 有没有维度需要增删改？角色是否已过时？任务描述是否跟不上项目变化？

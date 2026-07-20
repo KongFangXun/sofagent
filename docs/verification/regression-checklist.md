@@ -28,6 +28,11 @@ ACTUAL=$(grep -c "^#### " docs/verification/regression-checklist.md)
 
 ---
 
+> **🔍 环境依赖标注（v1.1.6+）**
+> 以下维度依赖真实环境（需装 npm / 需真跑 git 仓库 / 需 OpenClaw），AI 审查环境难自动化执行，每次跑时标 `需人工环境`：
+> - 维度 5（exit code 实跑）· 维度 7 子项 f（--doctor/--init 输出）· 维度 17 子项 a/b（bin 权限 + npm registry 三方一致）· 维度 20（daemon plist）· 维度 22（plist 不被覆盖）
+> - 这些维度在 AI 审查中可标 `⏸️ 需人工环境`，不重复列在每次审查报告里。人工审查时必跑。
+
 ## 审查步骤
 
 ### 步骤 1：环境验证
@@ -56,7 +61,7 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 
 ---
 
-## 审查维度（27 项 · 编号 1–27）
+## 审查维度（28 项 · 编号 1–28）
 
 > 2026-07-18 治理：从原 35 维度归并同类项而来。2026-07-18 追加维度 16-17（安全约束 + 发布产物验证）。2026-07-19 追加维度 23（独立产品声称一致性）+ 维度 24（验收测试覆盖率与时效性），扩展维度 2/4/6/7/8/9 子项（v1.1.4 审查发现）。
 
@@ -99,6 +104,9 @@ done
 # 子项 d: CHANGELOG 索引含全部已发版 tag + 规划版独立分组
 grep -A1 "## 规划中" CHANGELOG.md | head -1
 # 期望：有「规划中」独立标题
+
+# 子项 f: README 对核心文档的链接可发现性（v1.1.6 教训——llm-wiki-mapping.md 存在但 README 零引用）
+grep -c "llm-wiki-mapping" README.md   # 期望: ≥ 1
 ```
 
 #### 2. 跨文档死链全量扫描
@@ -305,6 +313,16 @@ DEFAULT_COUNT=$(grep -cE "name:\s*'A[0-9]" sofagent/audit/src/rules/index.ts | h
 grep -nE "期望.*[0-9]+\s*项\|期望.*[0-9]+\s*条\|expected.*[0-9]+" tools/acceptance-test.sh | head
 # 人工检查：acceptance-test 里所有"期望 N 项/条"的硬编码 N，是否与当前 index.ts 注册数一致
 # 新增规则后必须同步更新 acceptance-test 的期望值——否则烟测永远失败或永远假绿
+
+# 子项 d: check-version 文案扫描 baseline 用真实正则计算（v1.1.6 教训——曾输出 defaultRules.length=17 实为 13）
+# 防御：工具自身的 SSOT 标签误导会让审查者误信
+EXPECTED_DEFAULT=$(awk '/export const defaultRules/{f=1; next} f && /^[[:space:]]*\{.*name:/{c++} f && /^[[:space:]]*\];/{exit} END{print c+0}' sofagent/audit/src/rules/index.ts)
+REPORTED_DEFAULT=$(bash tools/check-version.sh 2>&1 | grep -oE "defaultRules.length=[0-9]+" | grep -oE "[0-9]+")
+echo "期望=$EXPECTED_DEFAULT 报告=$REPORTED_DEFAULT"
+# 期望：两者相等。不相等 = check-version 的正则有 bug
+
+# 子项 e: acceptance-test.sh 自身 JSON 输出不被 stderr 污染（v1.1.5 教训——stderr 的 config.yml 警告污染 JSON 首行）
+grep -E "\-\-json.*2>&1|2>&1.*\-\-json" tools/acceptance-test.sh   # 期望：零命中（场景 6/26 已用 2>/dev/null）
 ```
 
 #### 9. 动态规则禁用逻辑 + 文档侧规则数声称一致性
@@ -344,6 +362,18 @@ echo "SSOT 规则总数: $SSOT_TOTAL / 最大编号: A$SSOT_MAX"
 grep -rnE "A1-A11、A14-A1[0-9]|[0-9]+ 条审计规则" --include="*.md" README.md README.en.md docs/ FDE/ LOOP/ ROADMAP.md 2>/dev/null | grep -v "regression-checklist\|fresh-eyes-review\|changelog/"
 # 人工核对：每处声称的数字必须与 SSOT 一致。命中旧数字 = P0（check-version.sh 只查版本号不查规则数，门禁盲区）
 # 已知历史漏改位置：README.md / docs/HANDBOOK.md / docs/DEVELOPMENT.md / docs/ARCHITECTURE.md / FDE/FDE.md / LOOP/LOOP.md
+
+# 子项: 规则定义字段完整性（v1.1.6 教训——规则定义突然丢失字段）
+# 每条规则应有 name + ruleClass 两字段，21 规则 × 2 = 42
+FIELD_COUNT=$(grep -oE "name:|ruleClass:" sofagent/audit/src/rules/index.ts | wc -l | tr -d ' ')
+echo "字段出现次数: $FIELD_COUNT（期望 42 = 21 规则 × 2 字段）"
+# 期望：42。name: 与 ruleClass: 同行时 grep -c 按行计=21 会误报，必须用 -o 按匹配计
+
+# 子项: evidenceMode 计数一致性（v1.1.4 教训——声称 17 实际 16）
+# index.ts 里 evidenceMode 字段数 = README/audit-README 声称的分类数（16 git-diff + 4 hybrid + 1 filesystem = 21）
+EXPECTED_EM=$(grep -cE "evidenceMode:" sofagent/audit/src/rules/index.ts)
+echo "evidenceMode 字段数: $EXPECTED_EM（期望 21，与 README 声称分类数一致）"
+# 建议未来自动化入 pre-push-check（本项当前为人工核对）
 ```
 
 #### 10. tag commit message 规范
@@ -357,6 +387,13 @@ git tag -l "v*" | while read t; do
   echo "$t → $msg"
 done
 # 期望：每个 tag 的 commit message 含对应版本号
+
+# 子项: changelog 规划中标注（v1.1.6 教训——未来版本 changelog 忘了标"规划中"会被误认为已发版）
+for f in docs/changelog/v*.md; do
+  v=$(basename "$f" .md)
+  git rev-parse "$v" >/dev/null 2>&1 || echo "⚠️ $v: 规划中"
+done
+# 期望：输出仅含 v1.1.7+ 等未来版本（已正确标注"规划中"）。若输出含已发版版本号 = 漏标规划中
 ```
 
 #### 11. 包依赖图循环检测
@@ -395,8 +432,13 @@ dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path 
 AUDIT=$(cd sofagent/audit && npx vitest run 2>&1 | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
 WS=$(bash tools/test-count.sh --quiet 2>&1 | grep -oE 'TOTAL_TESTS=[0-9]+' | cut -d= -f2)
 echo "SSOT → audit=$AUDIT  workspace=$WS"
-# 逐文档核对 audit 数（出现 "N tests 全绿" 或 "N 个测试" 的位置）
+# 逐文档核对 audit 数
+# v1.1.6 调整：文档若已改为「见 test-count.sh」引用（去硬编码），则跳过数字反查，确认 SSOT 引用存在即可
 for f in sofagent/audit/README.md FDE/FDE.md LIMITATIONS.md; do
+  if grep -q "test-count.sh" "$f"; then
+    echo "✅ $f 已 SSOT 化（引用 test-count.sh，跳过数字反查）"
+    continue
+  fi
   c=$(grep -oE '[0-9]+ tests 全绿|[0-9]+ 个测试' "$f" | grep -oE '[0-9]+' | head -1)
   [ "$c" = "$AUDIT" ] && echo "✅ $f audit=$c" || echo "❌ $f audit=$c ≠ SSOT $AUDIT"
 done
@@ -495,6 +537,18 @@ done
 
 # 子项 d: 发版前工作树 clean
 git diff --quiet || echo "⚠️ 工作树有未提交修改——发版前必须 commit"
+
+# 子项 e: 全量历史 tag commit message 含版本号（v1.1.6+ 自动化 · pre-push-check 步骤 7 扩展）
+# 防御：v1.1.5 等历史 tag 曾缺版本号。非 HEAD 历史 tag 一律 WARN 豁免，HEAD tag 不含版本号 → FAIL
+git tag -l "v1.*" | while read t; do
+  v=$(echo $t | sed 's/^v//')
+  msg=$(git log -1 "$t^{commit}" --format=%s 2>/dev/null)
+  hc=$(git rev-parse "$t^{commit}" 2>/dev/null)
+  hhead=$(git rev-parse HEAD 2>/dev/null)
+  if ! echo "$msg" | grep -q "$v"; then
+    if [ "$hc" = "$hhead" ]; then echo "❌ $t: 当前发版 tag commit msg 不含 $v"; else echo "⚠️ $t: 历史污点（已豁免）"; fi
+  fi
+done
 ```
 
 ### 审计规则扩展（v1.1.4 追加）
@@ -670,6 +724,8 @@ grep -H "v[0-9]\+\.[0-9]\+\.[0-9]\+" FDE/fde-install.sh LOOP/loop-install.sh | h
 > v1.1.5 更新：原 `docs/verification/openclaw-acceptance-test.md` 已合并入 `tools/acceptance-test.sh`（79 场景），不再有两份验收测试文件。以下检查全部针对 `acceptance-test.sh` 单文件。
 
 ```bash
+> ℹ️ 本子项属「文档数字漂移」类，单一 SSOT 见维度 13（测试数）+ 维度 4（规则数/evidenceMode）。acceptance 场景数对齐保留在此因 acceptance-test.sh 是独立产物。
+
 # 子项 a: 场景数声称与实际对齐（v1.1.4 教训——acceptance-test.sh 头部声明场景数但 grep 实际场景数不一致）
 DECLARED_COUNT=$(head -5 tools/acceptance-test.sh | grep -oE "[0-9]+ 个端到端" | grep -oE "[0-9]+")
 ACTUAL_COUNT=$(grep -c "^scenario " tools/acceptance-test.sh)
@@ -792,6 +848,19 @@ fi
 ```
 
 ---
+
+#### 28. Skill 元数据完整性（v1.1.6 新增 · 来自审查建议）
+
+> 子 Agent / Skill 的 SKILL.md 若缺必需字段，Agent 可能无法自动加载或触发词失效
+
+```bash
+for f in agents/SKILL/*/SKILL.md FDE/SKILL.md LOOP/SKILL.md sofagent/skill/SKILL.md; do
+  [ -f "$f" ] || continue
+  miss=$(grep -cE "name:|slug:|displayName:|description:|version:|tags:|image:|triggers:|scenarios:|not_when:" "$f")
+  echo "$f: 命中必需字段 $miss/9"
+done
+# 期望：每个 SKILL.md 命中 9 个必需字段（name/slug/displayName/description/version/tags/image/triggers/scenarios/not_when）
+```
 
 ## 输出报告格式
 
