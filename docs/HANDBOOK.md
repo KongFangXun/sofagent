@@ -208,7 +208,7 @@ jobs:
 | 🧭 **约束底座** | 四层加载链注入规则 | Agent 启动时自动（OpenClaw Hook / Sub Agent 自加载） |
 | 🔍 **审计引擎** | git diff → A1-A11、A14-A19 规则检查 | git commit / daemon 文件变更 |
 | 🔄 **回溯引擎** | 审计后自动 snapshot（本质：git snapshot + revert 包装），违规时建议回滚 | 审计完成后自动 |
-| ⚙️ **编排引擎** | 拆解任务 + Sub Agent 并行 + A/B 优化 | CLI / MCP compose tool |
+| ⚙️ **编排引擎** | 拆解任务 + Sub Agent 并行 + StateGraph 循环（v1.1.3+） | CLI / MCP compose tool |
 | 🧬 **进化引擎**（v1.0.8+） | FDE 周度巡检审计趋势 + 反思，自动优化 | daemon cron @weekly / 手动触发 |
 
 > 📖 **多设备同步**：v1.1.0 起支持轻量多设备——经验共享（knowledge/ + think.md）跨设备同步。4 种方案（iCloud / NAS / Dropbox / git submodule）见 [多设备同步指南](./guides/multi-device-sync.md)。
@@ -327,7 +327,7 @@ Agent 先判断任务复杂度：
 | **Harness 中间件** | Agent 治理——一底座·四引擎覆盖全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他平台，sofagent 是独立的底线守卫层。→ [设计原理](./ARCHITECTURE.md#治理架构一底座四引擎) |
 | **审计引擎** | 看 git diff 硬证据判定违规，不依赖 Agent 配合。v1.0.8+ daemon 监控文件变更，**非开发者也能用**。→ [审计引擎设计](./ARCHITECTURE.md#审计引擎) |
 | **回溯引擎**（v1.0.8+，本质：git snapshot + revert 包装） | 审计后自动快照存档，违规时建议回滚——不只是告诉你违规了，还存了快照、推了通知 |
-| **编排引擎**（实验性）| 拆任务→编排→执行，基于 DeepAgents Sub Agent。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
+| **编排引擎** | 拆任务→编排→执行，DeepAgents Sub Agent + LangGraph StateGraph（v1.1.3+ 稳定）。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
 | **铁律** | Agent 行为约束规则（4 底线 + 7 铁律），写在 MD 文件里注入上下文 |
 | **审计规则** | 代码变更检查规则（A1-A11、A14-A19 + E1-E4），审计引擎按此判定 exit code |
 | **Skill** | Agent 行为模板——一组 .md 文件，定义 Agent 在什么场景做什么 |
@@ -343,7 +343,7 @@ Agent 先判断任务复杂度：
 
 ## 场景五：FDE 部署与持续优化
 
-> ⚠️ **成熟度**：审计引擎稳定。FDE 部署四阶段十二步 + 五份模板 + quick-start，核心流程可用。编排引擎实验性（DeepAgents Sub Agent，全平台可用）。
+> ⚠️ **成熟度**：审计引擎稳定。FDE 部署四阶段十二步 + 五份模板 + quick-start，核心流程可用。编排引擎 v1.1.3 起 StateGraph 已稳定（DeepAgents Sub Agent + LangGraph，全平台可用）。
 
 FDE = Forward Deployed Engineer。完整流程见 [FDE/FDE.md](../FDE/FDE.md)。建议装 [sofagent-fde Skill](../FDE/SKILL.md) 让 Agent 自动加载 FDE 工作台。
 

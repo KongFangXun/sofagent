@@ -59,9 +59,9 @@ Agent 出问题人负责。LOOP 不是替代人类，是升级人类的角色—
 
 三道护栏（fde.md 规则覆盖 / 编排可回滚 / 审计独立）中，人类确认是第一道光。
 
-## DeepAgentsJS + LangGraph 编排层（计划中）
+## DeepAgentsJS + LangGraph 编排层
 
-当 sofagent-engineer 和 sofagent-reviewer 各自独立跑通后，用 [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) 的 `createDeepAgent()` API 和 LangGraph `StateGraph` 串流程：
+sofagent-engineer 和 sofagent-reviewer 通过 [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) 的 `createDeepAgent()` API 和 LangGraph `StateGraph` 串流程（v1.1.3 起代码化）：
 
 ```mermaid
 graph TD
@@ -82,21 +82,20 @@ graph TD
     AGENT_DEF -.->|升级| REVIEW
 ```
 
-**核心实现要点**（完整伪代码见 [v1.1.3 changelog](../docs/changelog/v1.1.3.md)）：
+**核心实现要点**（完整实现见 [v1.1.3 changelog](../docs/changelog/v1.1.3.md)）：
 
 - **内层循环 StateGraph**：`coding → audit → review → human`，条件路由 `audit.fail→coding` / `review.reject→coding` / `human.confirm→next`
 - **外层循环定时触发**：FDE 每周分析 think.md 趋势，每月触发 compliance-auditor 全量巡检
 - **发版后自进化**：FDE 自动更新 fresh-eyes-review / regression-checklist / acceptance-test.sh（纯增量），releasing.md 需人类确认后 apply
 - **Agent 定义来源**：`agents/SKILL/*/SKILL.md` → `createDeepAgent({ systemPrompt: loadPrompt(...) })`
 
-> ⚠️ 以上为计划，未实际运行。当前阶段是 Agent 定义 + 流程图 + 验证文档映射，代码化在 Agent 各自跑通后启动。
+---
 
 ## 当前限制
 
-- **OpenClaw 依赖**：Sub-agent 通过 `session.spawn` 启动（当前阶段）
-- **DeepAgentsJS 未集成**：`createDeepAgent()` 代码示例仅为计划，未实际运行
-- **不是无人值守**：人类确认还在循环里
-- **未验证端到端**：Agent 定义有了（Agency Agents 格式），但实际运行尚未测试
+- **不是无人值守**：人类确认还在循环里（`LOOP_AUTO=1` 可走自动判定，但生产场景仍建议人工把关）
+- **OpenClaw 全功能集成顺延**：Sub-agent 当前通过 DeepAgents `createDeepAgent()` + 工具注入启动（v1.1.4+）；OpenClaw `session.spawn` 路径的完整集成（重启自动续跑 + HITL 事件推送回传）需新增跨进程事件通道，顺延后续版本
+- **LOOP_AUTO 的边界**：自动模式靠解析 reviewer 的 `IS_PASS` 判定，无法解析时保守驳回——复杂语义争议仍需人工裁决
 
 ### Loop 成熟度自检
 
@@ -141,17 +140,9 @@ sofagent 的版本发布遵循 [`docs/verification/releasing.md`](../docs/verifi
 | `tools/acceptance-test.sh` | 发版前 CLI 端到端验收（87 个场景，原 openclaw-acceptance-test.md 已合并入此） | minimal-change-engineer 自检 |
 | `docs/verification/releasing.md` | LOOP 的整体流程参照——哪个阶段谁做什么 | FDE（流程监督者） |
 
-### 未来：DeepAgentsJS + LangGraph 实现
+### DeepAgentsJS + LangGraph 实现细节
 
-v1.1.4 当前是**文档定义阶段**——Agent 定义在 `agents/SKILL/` 下，流程定义在 `LOOP/` 下。等 Agent 各自通过 OpenClaw 跑通后，下一步是用 DeepAgentsJS + LangGraph 把流程**代码化**：
-
-- `agents/SKILL/` 下的 Agent 定义 → `createDeepAgent()` 的 `systemPrompt` 参数
-- `LOOP/loop.md` 中的 Mermaid 流程图 → LangGraph `StateGraph` 的节点和边
-- `docs/verification/releasing.md` 的十二阶段 SOP → StateGraph 中的条件路由（自动执行 vs 人类确认）
-- 验证文档 → StateGraph 节点的输入参数
-- **平台无关的触发机制** → 用户在任意 Agent（WorkBuddy/Codex/Claude Code/Hermes/Cursor）中，一条 prompt 即可触发整套 LOOP。用户的 Agent 作为"遥控器"，OpenClaw 作为"引擎"，按 StateGraph 自动调度所有 sub-agent
-
-**当前不是落代码的阶段。** 先把 Agent 定义写好、把 flow 画清楚、把验证文档映射好。这些都对了，写 LangGraph 代码就是照图施工。
+v1.1.3 起 StateGraph 已代码化（`sofagent/orchestrator/src/loop/`）。Agent 定义在 `agents/SKILL/`，流程定义在 LangGraph 节点+边。完整实现原理（四节点状态机 / Checkpoint / 降级链）见 [ARCHITECTURE §编排引擎](../docs/ARCHITECTURE.md#⚙️-编排引擎)。
 
 ### 平台无关触发（已设计，待代码化）
 
@@ -250,9 +241,6 @@ flowchart TD
 
 ## 下一步
 
-1. 验证 OpenClaw `session.spawn` 能加载 sofagent-engineer（Agency Agents 格式 → convert.sh → SOUL/agents/IDENTITY）
-2. 让 sofagent-engineer 完成一个真实任务（比如修 README 里的 typo）
-3. 让 sofagent-reviewer 审查那次提交
-4. 人工判断审查报告质量
-5. 审查报告不达标 → 改 `agents/SKILL/sofagent-reviewer/SKILL.md` 重新跑
-6. 审查报告达标 → 开始写 DeepAgentsJS + LangGraph 编排代码
+- v1.1.3 StateGraph 已代码化（四节点状态机 + checkpoint），v1.1.4 起工具注入路径稳定
+- 当前限制见上方"当前限制"段——核心是 OpenClaw `session.spawn` 全功能集成（重启自动续跑 + HITL 事件推送）顺延后续版本
+- 持续方向：外层循环的自动化程度提升（Loop 成熟度自检表第 2-4 列"目标"列）
