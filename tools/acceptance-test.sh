@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.1.6 · 96 个端到端场景 / 109 个断言全通过，覆盖完整用户旅程 + 全规则覆盖（含 A14-A19）+ 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成 + v1.1.4: LOOP 工具注入(maxTurns/ENGINEER_TOOLS/checkDangerousCommand) + warn-accumulator 连续性 + USB federation + LOOP 独立产品 + v1.1.5: sofagent-releaser Skill + MCP audit_file pipe + list_capabilities 能力清单 + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts --mode 参数 + SkillOpt 自净化 + validateCandidate + DeepAgents 可用性 + runtime.json 原子写入 + A16 非授权变更 + A17 异常批量变更 + --timeline 快照时间线 + --revert 回滚 + daemon 审计闭环 + cron 定时巡检 + EvidenceMode filesystem + 经验共享 + buildConstrainedSystemPrompt + A14 知识库越权 + A15 约束验证 + Work模板市场 + v1.1.6: conflict-check 巡检器（矛盾/orphan/deadlink）+ llm-wiki 三层映射 + 红队对抗（strict exit/A9 全角+leet 检测/history 篡改/hook 删除/非法 YAML/非 git 目录/skillopt CLI 回归锁）
+# v1.1.6 · 100 个端到端场景 / 113+ 个断言全通过，覆盖完整用户旅程 + 全规则覆盖（含 A14-A19）+ 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成 + v1.1.4: LOOP 工具注入(maxTurns/ENGINEER_TOOLS/checkDangerousCommand) + warn-accumulator 连续性 + USB federation + LOOP 独立产品 + v1.1.5: sofagent-releaser Skill + MCP audit_file pipe + list_capabilities 能力清单 + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts --mode 参数 + SkillOpt 自净化 + validateCandidate + DeepAgents 可用性 + runtime.json 原子写入 + A16 非授权变更 + A17 异常批量变更 + --timeline 快照时间线 + --revert 回滚 + daemon 审计闭环 + cron 定时巡检 + EvidenceMode filesystem + 经验共享 + buildConstrainedSystemPrompt + A14 知识库越权 + A15 约束验证 + Work模板市场 + v1.1.6: conflict-check 巡检器（矛盾/orphan/deadlink）+ llm-wiki 三层映射 + 红队对抗（strict exit/A9 全角+leet 检测/history 篡改/hook 删除/非法 YAML/非 git 目录/skillopt CLI 回归锁）+ v1.1.7: sensitivity 分级（resolveSensitivity 三值+缺省回落）+ knowledge-health 巡检器（孤立页检测）+ knowledge-status 聚合命令（空目录优雅降级）+ ActionGovernance（审计历史含 actionGovernance.actor）
 # ============================================================
 # 用真实 git 仓库走完整用户旅程：
 #   Fresh install → --init → --doctor → 正常 commit → 违规拦截
@@ -2955,6 +2955,197 @@ if [ -f "$SKILLOPT_CLI" ]; then
   rm -rf "$SKDIR"
 else
   warn "skillopt dist 未构建，跳过 skillopt CLI 回归锁"
+fi
+
+# ── 场景 97-100: v1.1.7 新增功能验收（sensitivity / knowledge-health / knowledge-status / ActionGovernance）────
+
+# 97: sensitivity 分级（resolveSensitivity 三值 + 缺省/非法回落 + 可见性判定）
+scenario 97 "sensitivity 分级（resolveSensitivity 三值 + 缺省/非法回落 + 可见性）"
+
+S97_OK=true
+MC_DIST_97="$PROJECT_ROOT/sofagent/core/dist/memory-contract.js"
+
+if [ ! -f "$MC_DIST_97" ]; then
+  fail "core/dist/memory-contract.js 未构建"
+  S97_OK=false
+fi
+
+if $S97_OK; then
+  S97_RESULT=$(node -e "
+    const m = require('$MC_DIST_97');
+    // 1. resolveSensitivity 三值
+    const r1 = m.resolveSensitivity({ sensitivity: 'public' });
+    const r2 = m.resolveSensitivity({ sensitivity: 'internal' });
+    const r3 = m.resolveSensitivity({ sensitivity: 'restricted' });
+    // 2. 缺省 → internal
+    const r4 = m.resolveSensitivity({});
+    const r5 = m.resolveSensitivity(null);
+    const r6 = m.resolveSensitivity(undefined);
+    // 3. 非法值 → internal
+    const r7 = m.resolveSensitivity({ sensitivity: 'top-secret' });
+    // 4. isSensitivityVisible 可见性判定
+    const v1 = m.isSensitivityVisible('public', 'public');
+    const v2 = m.isSensitivityVisible('restricted', 'public');
+    const v3 = m.isSensitivityVisible('restricted', 'restricted');
+    console.log(JSON.stringify({
+      public: r1, internal: r2, restricted: r3,
+      defaultEmpty: r4, defaultNull: r5, defaultUndefined: r6, invalidFallback: r7,
+      visiblePubToPub: v1, hiddenRestrictedToPub: v2, visibleRestrictedToRestricted: v3
+    }));
+  " 2>&1 || true)
+  echo "  $S97_RESULT" | head -3
+  # 验证三值正确
+  if echo "$S97_RESULT" | grep -q '"public":"public"' && \
+     echo "$S97_RESULT" | grep -q '"internal":"internal"' && \
+     echo "$S97_RESULT" | grep -q '"restricted":"restricted"' && \
+     echo "$S97_RESULT" | grep -q '"defaultEmpty":"internal"' && \
+     echo "$S97_RESULT" | grep -q '"invalidFallback":"internal"' && \
+     echo "$S97_RESULT" | grep -q '"visiblePubToPub":true' && \
+     echo "$S97_RESULT" | grep -q '"hiddenRestrictedToPub":false' && \
+     echo "$S97_RESULT" | grep -q '"visibleRestrictedToRestricted":true'; then
+    :
+  else
+    fail "sensitivity 分级行为不符: $S97_RESULT"
+    S97_OK=false
+  fi
+fi
+
+if $S97_OK; then
+  pass
+fi
+
+# 98: knowledge-health 巡检器（孤立页检测 → warning，含「孤立」关键字）
+scenario 98 "knowledge-health 巡检器（孤立页检测 → warning）"
+
+S98_OK=true
+KH_DIST_98="$PROJECT_ROOT/sofagent/daemon/dist/inspectors/knowledge-health.js"
+
+if [ ! -f "$KH_DIST_98" ]; then
+  fail "daemon/dist/inspectors/knowledge-health.js 未构建"
+  S98_OK=false
+fi
+
+if $S98_OK; then
+  S98_TMP=$(mktemp -d /tmp/sofagent-kh98-XXXXXX)
+  mkdir -p "$S98_TMP/.sofagent/knowledge/entities"
+  printf -- '---\ndomain: test\nsensitivity: internal\n---\n# Orphan Page\nNo incoming links from index.\n' > "$S98_TMP/.sofagent/knowledge/entities/orphan-page.md"
+  printf -- '| pages | domain | notes |\n|---|---|---|\n| entities/other.md | test | - |\n' > "$S98_TMP/.sofagent/knowledge/index.md"
+
+  S98_RESULT=$(node -e "
+    const m = require('$KH_DIST_98');
+    const result = m.checkKnowledgeHealth('$S98_TMP');
+    console.log(JSON.stringify(result));
+  " 2>&1 || true)
+  echo "  $S98_RESULT" | head -3
+  rm -rf "$S98_TMP"
+
+  if echo "$S98_RESULT" | grep -q '"triggered":true' && \
+     echo "$S98_RESULT" | grep -q '"severity":"warning"' && \
+     echo "$S98_RESULT" | grep -q "孤立"; then
+    :
+  else
+    fail "knowledge-health 孤立页检测不符预期: $S98_RESULT"
+    S98_OK=false
+  fi
+fi
+
+if $S98_OK; then
+  pass
+fi
+
+# 99: knowledge-status 命令（空 knowledge/ 目录优雅降级，不报错）
+scenario 99 "knowledge-status 命令（空 knowledge/ 优雅降级）"
+
+S99_OK=true
+KS_DIST_99="$PROJECT_ROOT/sofagent/daemon/dist/commands/knowledge-status.js"
+
+if [ ! -f "$KS_DIST_99" ]; then
+  fail "daemon/dist/commands/knowledge-status.js 未构建"
+  S99_OK=false
+fi
+
+if $S99_OK; then
+  S99_TMP=$(mktemp -d /tmp/sofagent-ks99-XXXXXX)
+  # 构造空 knowledge 目录
+  mkdir -p "$S99_TMP/.sofagent/knowledge"/{entities,concepts,comparisons,summaries}
+
+  S99_RESULT=$(node -e "
+    const m = require('$KS_DIST_99');
+    const result = m.knowledgeStatus('$S99_TMP');
+    console.log(typeof result);
+  " 2>&1)
+  echo "  knowledgeStatus 返回类型: $(echo "$S99_RESULT" | head -1)"
+  rm -rf "$S99_TMP"
+
+  # 期望：不抛异常（typeof 返回 object 或有输出）
+  if echo "$S99_RESULT" | grep -q "object"; then
+    :
+  else
+    fail "knowledge-status 在空 knowledge/ 上崩溃: $S99_RESULT"
+    S99_OK=false
+  fi
+fi
+
+if $S99_OK; then
+  pass
+fi
+
+# 100: ActionGovernance（审计 history.jsonl 新记录含 actionGovernance.actor 字段）
+scenario 100 "ActionGovernance（history.jsonl 含 actionGovernance.actor）"
+
+S100_OK=true
+
+# 用独立临时仓库，避免前序场景污染 history/config
+S100_REPO=$(mktemp -d /tmp/sofagent-s100-XXXXXX)
+cd "$S100_REPO"
+git init --quiet
+git config user.email "s100@test.com"
+git config user.name "S100"
+
+# init sofagent（生成 config + hooks）
+node "$AUDIT_DIR/dist/index.js" --init > /dev/null 2>&1
+
+# 先做一个 base commit
+echo "# base" > README.md
+git add README.md
+GIT_EDITOR=true git commit --quiet -m "base commit for action governance test" 2>&1 || true
+
+# 做第二次 commit（有 diff 可审计），用 --no-verify 绕过 hook，然后手动审计
+echo "# modified content" > README.md
+git add README.md
+GIT_EDITOR=true git commit --no-verify --quiet -m "fix: action governance scenario test" 2>&1 || true
+
+S100_HISTORY="$S100_REPO/.sofagent/audit/history.jsonl"
+mkdir -p "$(dirname "$S100_HISTORY")"
+
+# 直接调 audit CLI 跑审计（触发 actionGovernance 写入）
+S100_AUDIT=$(node "$AUDIT_DIR/dist/index.js" --diff HEAD~1..HEAD --task "action governance scenario test" 2>&1 || true)
+echo "$S100_AUDIT" | head -3
+
+if [ -f "$S100_HISTORY" ]; then
+  S100_LAST=$(tail -1 "$S100_HISTORY")
+  # 检查最后一条记录含 actionGovernance.actor 字段
+  if echo "$S100_LAST" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+ag = d.get('actionGovernance', {})
+assert 'actor' in ag, 'missing actionGovernance.actor'
+" 2>/dev/null; then
+    :
+  else
+    fail "history.jsonl 最后一条记录缺少 actionGovernance.actor: $(echo "$S100_LAST" | head -c 200)"
+    S100_OK=false
+  fi
+else
+  fail "history.jsonl 未生成——审计未写入"
+  S100_OK=false
+fi
+
+cd "$PROJECT_ROOT"
+rm -rf "$S100_REPO"
+
+if $S100_OK; then
+  pass
 fi
 
 # ── 总结 ──────────────────────────────────────────────────────
