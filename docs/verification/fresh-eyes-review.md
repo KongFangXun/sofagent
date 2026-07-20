@@ -534,7 +534,7 @@
 
 #### 30. **验收测试场景覆盖率与功能对齐（单文件）** 🆕
    - **盲区（v1.1.4 暴露，v1.1.5 合并，v1.1.6 追加）**：`tools/acceptance-test.sh`（v1.1.6 现 87 场景）对本版本新增功能可能**零覆盖**——验收测试是"最后一道防线"，场景数远落后于代码实现意味着回归测试无法发现新功能的退化。v1.1.6 新增 conflict-check 巡检器 6 个场景（80-85）和 llm-wiki 文档校验，验证这些场景确实覆盖了新功能的端到端路径。
-   - **盲区本质**：验收测试自身会过时——开发者新增功能后只更新产品代码和 changelog，忘了同步追加 acceptance test 场景。releasing.md 阶段三步骤 12 虽有操作指南，但没有"覆盖率必须达标"的硬判定。
+   - **盲区本质**：验收测试自身会过时——开发者新增功能后只更新产品代码和 changelog，忘了同步追加 acceptance test 场景。releasing.md 阶段三步骤 13 虽有操作指南，但没有"覆盖率必须达标"的硬判定。
    - **检查手法**：
      1. **场景数声称与实际对齐**：`DECLARED=$(head -5 tools/acceptance-test.sh | grep -oE "[0-9]+ 个端到端" | grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " tools/acceptance-test.sh); echo "声明=$DECLARED 实际=$ACTUAL"` 期望一致。
      2. **本版本 changelog 功能点逐条对照**：读 `docs/changelog/vX.Y.md`「核心变更/交付」章节，提取每条功能关键词，逐条 grep `tools/acceptance-test.sh`——零覆盖 = P0（回归测试无法发现该功能的退化）。

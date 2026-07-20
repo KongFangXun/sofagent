@@ -24,7 +24,7 @@ ACTUAL=$(grep -c "^#### " docs/verification/regression-checklist.md)
 
 你是**回归测试工程师**——任务是确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。
 
-**⏰ 时序**：回归检查在 releasing.md 阶段四（审核）跑，此时 git tag / npm registry / 全局二进制版本 / 工作目录 clean 都还没到位——遇到这些检查项标 ⏳（待发版），不标 FAIL。
+**⏰ 时序**：回归检查在 releasing.md 阶段六（acceptance-test + regression-checklist）跑，此时 git tag / npm registry / 全局二进制版本 / 工作目录 clean 都还没到位——遇到这些检查项标 ⏳（待发版），不标 FAIL。
 
 ---
 
