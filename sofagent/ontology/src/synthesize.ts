@@ -1,6 +1,6 @@
 // ============================================================
 // ontology/synthesize.ts · Dream Cycle synthesize_concepts 落点接口
-// v1.1.6 新增
+// v1.1.7 新增
 //
 // 供 @sofagent/daemon Dream Cycle Stage 4 调用：把合成出的 Concept
 // 登记到本体层。本版为轻量登记（内存态 + 可选 yml 追加），不建

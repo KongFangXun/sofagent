@@ -1,13 +1,13 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.1.6 · 2026-07-19（UTC）· LLM Wiki 3 层分层 + conflict-check · 规划：v1.1.6-v1.1.9 → v1.2.0 收口
+> v1.1.7 · 2026-07-21（UTC）· Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性 · 规划：v1.1.7-v1.1.9 → v1.2.0 收口
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
-## 现在在哪：v1.1.6 ✅（已发布）
+## 现在在哪：v1.1.7 🚧（开发完成待发版）
 
-> **BugFix 21 项 + LLM Wiki 3 层分层 + conflict-check**：v1.1.5 遗留 21 项全数修复（webhook PASS 推送接通 / 规则数文案动态读取 / knowledge tool 命名统一 / CHANGELOG 纯度 / 文档诚实化等）+ Ledger-Views-Policy 与 LLM Wiki `raw → Wiki → spec` 三层范式同构映射（[docs/llm-wiki-mapping.md](./docs/llm-wiki-mapping.md)）+ daemon `conflict-check` 巡检器（矛盾/孤儿/死链，@weekly，fail-closed 只读）。质量验证：737 tests across 12 packages 全绿、check-version 70/70、check-docs 全过、pre-push-check 15 通过/1 警告。
+> **Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性**：知识沉淀从散点脚本升级为 6 阶段流水线（extract_facts → extract_atoms → cluster_patterns → synthesize_concepts → skillopt_backfill → embed）+ knowledge 敏感度分级（缺省 internal）+ knowledge-health 5 项检查（@weekly）+ `knowledge status` 聚合命令 + audit ActionGovernance schema。质量验证：770 tests across 12 packages 全绿、check-version 69/69、acceptance 100 场景/113 断言。
 >
 > 📖 [v1.1.6 开发日志](./docs/changelog/v1.1.6.md) · [🗺️ LLM Wiki 三层映射](./docs/llm-wiki-mapping.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
