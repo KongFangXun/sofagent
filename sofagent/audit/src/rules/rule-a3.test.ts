@@ -220,4 +220,39 @@ describe('A3 不改越界', () => {
     const result = checkRuleA3(ctx);
     expect(result.status).toBe('WARN');
   });
+
+  // ---- commitMsg 关联测试（v1.x：A3 不再只匹配 subject，也匹配 commit body）----
+
+  it('commit message body 含文件名 -> 即使 subject 未提也判定相关 -> PASS', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('LOOP/LOOP.md')],
+      {
+        task: 'docs: orchestrator 编排引擎实现原理补全',
+        commitMsg: 'docs: orchestrator 编排引擎实现原理补全\n\n- LOOP/LOOP.md: 删"计划中"段\n- ARCHITECTURE.md: +5 子节',
+      }
+    );
+    const result = checkRuleA3(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('commit message body 也未提及文件 -> 仍然 WARN（不因有 commitMsg 就放行）', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('src/unrelated.ts')],
+      {
+        task: '修复 login 模块',
+        commitMsg: '修复 login 模块\n\n仅改了 login.ts 和 auth.ts',
+      }
+    );
+    const result = checkRuleA3(ctx);
+    expect(result.status).toBe('WARN');
+  });
+
+  it('commitMsg 为 undefined -> 回退到仅 task 匹配（向后兼容）', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('src/login.ts')],
+      { task: '修复 login.ts', commitMsg: undefined }
+    );
+    const result = checkRuleA3(ctx);
+    expect(result.status).toBe('PASS');
+  });
 });
