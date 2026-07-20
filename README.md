@@ -70,6 +70,8 @@ flowchart LR
 
 sofagent 是 **Harness 中间件**——不管你用什么 Agent（Claude Code / Codex / Cursor / WorkBuddy）、什么模型，挂在 git commit 这个节点上，用 git diff 硬证据做审计。**平台无关、零侵入、零 token**。
 
+> 🏞️ **一条河的比喻**：大厂建江+供水（AI 中台 + 模型），我们做**堤坝 + 管网 + 水龙头**——约束层（不让水泛滥）+ Workflow（把能力引到业务）+ Subagent（让能力真正作用）。让企业安全地用自己的 AI 能力流进业务。详见 [`FDE/FDE.md` §9.6](FDE/FDE.md)。
+
 ---
 
 ## 为什么不用现有工具
@@ -255,7 +257,7 @@ sofagent 不只是开发者工具——企业落地用 **FDE 工具包** + **Wor
 
 | 维度 | 数据 |
 |------|------|
-| 审计引擎 | 21 条规则全覆盖，`npm test` 全绿（700+ 用例），0 token 消耗 |
+| 审计引擎 | 21 条规则全覆盖，`npm test` 全绿（见 `tools/test-count.sh` 实测），0 token 消耗 |
 | 平台覆盖 | git commit 审计（开发者）+ daemon 文件审计（非开发者）|
 | 协议 | MIT（代码 / 文档 / 模板随便用）|
 

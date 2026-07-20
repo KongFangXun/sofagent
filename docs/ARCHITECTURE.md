@@ -262,22 +262,24 @@ sofagent 支持两种节点类型：
 
 ### River — Workflow — Subagent 三层架构
 
-**River = 多个 Workflow 的集合**——每条小溪（Workflow）并行/串行执行，汇入同一条大河（River），从头到尾同一个身份、同一段上下文。
+**River = 多个 Workflow（管网）的集合**——每段管网（Workflow）把模型能力（水）引到业务侧，汇入同一条大河（River），从头到尾同一个身份、同一段上下文。
 
 Workflow Hub 的实现规范见 [workflow-hub/SPEC.md](../workflow-hub/SPEC.md)（混合架构：外层 `workflow.yml` Graph 骨架锁步骤 + 内层 ReAct 节点）。
 
 ```
-用户 → River（统一入口）→ Workflow A/B/C（任务拆解）→ Subagent（执行）
+用户 → River（统一入口）→ Workflow A/B/C（管网分发）→ Subagent（水龙头，执行）
               ↑ 回流                                    ↑ 审计引擎
 ```
 
 | 层 | 是什么 | 类比 |
 |------|------|------|
 | **River** | 统一 Agent 入口 | 大河——只有一个入口 |
-| **Workflow** | 任务编排方案 | 河道——决定水流走向 |
-| **Subagent** | 执行具体能力的 Agent | 水滴——干完活消失 |
+| **Workflow** | 任务编排方案 | 管网——把水引到业务侧 |
+| **Subagent** | 执行具体能力的 Agent | 水龙头 / 用水设备——让水真正作用 |
 
-River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 本身，而是确保 River 里的每一个 Sub Agent 都有纪律、可追溯、会反思。
+River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 本身（堤坝，不是河床），而是确保 River 里的每一个 Sub Agent 都有纪律、可追溯、会反思。
+
+> 🏞️ **一条河的比喻**：水 = 模型（不受控的 AI 能力，像水会泛滥）；堤坝 = sofagent 约束层（外在守卫，让河水不侵蚀城市）；管网 = Workflow（把能力引到业务）；水龙头 / 用水设备 = Subagent（让能力真正作用）；城市 / 企业 / 工厂 / 社区 = 业务环节。大厂建江+供水，我们做堤坝+管网+水龙头。详见 [FDE §9.6](../FDE/FDE.md#96-river企业统一-agent-入口)。
 
 > **Workflow 的混合架构**：每条 Workflow 采用「外层 Graph 骨架 + 内层 ReAct 节点」——`workflow.yml` 的 `nextNodes` 锁定全链路步骤、保证可追溯（对应行业笔记中的「Graph 实现全局流程骨架」），单个节点的 `prompt` 保留模型自主规划能力（对应「内层 ReAct Agent」）。这一设计兼顾全局稳定性与局部灵活性：低容错业务靠 Graph 锁死流程，复杂节点靠 ReAct 保灵活。详见 [workflow-hub/SPEC.md](../workflow-hub/SPEC.md)。
 
