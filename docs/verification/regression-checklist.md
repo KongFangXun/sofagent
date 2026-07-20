@@ -1013,7 +1013,7 @@ grep -c "向后兼容\|undefined\|actionGovernance" sofagent/audit/src/audit-his
 
 # 子项 f: audit 测试不回归（总数 ≥407）
 grep -c "  it(" sofagent/audit/src/audit-history.test.ts
-# 期望：≥13（actionGovernance 相关测试用例数）
+# 期望：≥11（v1.1.7 新增 2 个 actionGovernance 测试后，audit-history.test.ts 共 11 个 it() 用例）
 ```
 
 ---
