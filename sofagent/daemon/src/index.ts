@@ -19,12 +19,23 @@ export { runFilesystemAudit } from './run-fs-audit';
 export { createPostAuditSnapshot, listAllSnapshots, restoreSnapshot } from './snapshot';
 export type { SnapshotInfo } from './snapshot';
 
-// Lessons Extract
-export { extractLessons } from './lessons-extract';
-
-// Weekly Report
-export { generateWeeklyReport } from './weekly-report';
-export type { WeeklyReportResult } from './weekly-report';
+// Dream Cycle（v1.1.6 新增：6 阶段流水线替换旧散点周报/经验提取脚本）
+export { runDreamCycle, loadLedger, loadState } from './dream-cycle/state-machine';
+export { MockLLM, RealLLM } from './dream-cycle/llm-mock';
+export type {
+  Stage,
+  Ledger,
+  AuditEntry,
+  Fact,
+  Atom,
+  Pattern,
+  Concept,
+  Embedding,
+  LLMProvider,
+  DreamCycleState,
+  DreamCycleResult,
+} from './dream-cycle/types';
+export { DREAM_CYCLE_STAGES } from './dream-cycle/types';
 
 // Inspectors
 export {
