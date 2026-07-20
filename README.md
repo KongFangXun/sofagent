@@ -26,7 +26,7 @@
 
 Agent 越聪明，企业越不敢放手——真出事了，谁负责？能拦住吗？能回滚吗？
 
-**sofagent 是 AI Agent 的 Harness 中间件**：每次 Agent 改完代码、写完文件，自动跑一遍规则库，违规的当场拦截、合规的存快照。改了什么就是什么，赖不掉。零 token 消耗——纯正则引擎，不调 LLM。
+**sofagent 是 AI Agent 的 Harness 中间件**：每次 Agent 改完代码、写完文件，自动跑一遍规则库，违规的当场拦截、合规的存快照。改了什么就是什么，无可抵赖。零 token 消耗——纯正则引擎，不调 LLM。
 
 ```bash
 npm install -g @sofagent/audit @sofagent/core && sofagent-audit --init
@@ -83,10 +83,10 @@ sofagent 是 **Harness 中间件**——不管你用什么 Agent（Claude Code /
 | 工具 | 它查什么 | sofagent 查什么 |
 |------|---------|----------------|
 | pre-commit / husky | 代码质量（lint / format） | **Agent 行为**（密钥泄漏 / 越界修改 / 注入攻击 / 盲改） |
-| detect-secrets / gitleaks | 密钥扫描 | 密钥只是 A2 一条规则，sofagent 还有 20 条管 Agent 翻车模式 |
+| detect-secrets / gitleaks | 密钥扫描 | 密钥只是 A2 一条规则，sofagent 还有 20 条管 Agent 失效模式 |
 | Cursor Rules / Claude Code hooks | 单平台 IDE 内约束 | 平台无关——任何 Agent + git 仓库都能跑 |
 
-> 💡 **核心差异**：现有工具查「代码写得对不对」，sofagent 查「Agent 做得对不对」——边界越界、知识库跨域、流程合规、盲改逃验证，这些是 LLM Agent 特有的翻车模式，通用 lint 工具覆盖不到。
+> 💡 **核心差异**：现有工具查「代码写得对不对」，sofagent 查「Agent 做得对不对」——边界越界、知识库跨域、流程合规、盲改逃验证，这些是 LLM Agent 特有的失效模式，通用 lint 工具覆盖不到。
 
 ---
 
@@ -149,7 +149,7 @@ flowchart LR
     EV -.-> CB
 ```
 
-| 引擎 | 干嘛的 | 状态 |
+| 引擎 | 作用 | 状态 |
 |------|--------|:--:|
 | 🧭 约束底座 | 开工前把规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
 | ⚙️ 编排引擎 | 大任务拆小、多 Sub Agent 并行、A/B 对比择优 | ✅ 稳定（需 `@sofagent/orchestrator`）|
@@ -210,7 +210,7 @@ flowchart LR
 | 🔄 自动运行节点 | 企业无人值守设备（服务器/旧电脑）| 是 |
 | ⚡ 个人增强节点 | 开发者用 WorkBuddy / Codex / Claude Code | 否 |
 
-> 💡 个人增强节点：clone 仓库 → `npm install -g @sofagent/audit @sofagent/core` → `sofagent-audit --init` → 开干。
+> 💡 个人增强节点：clone 仓库 → `npm install -g @sofagent/audit @sofagent/core` → `sofagent-audit --init` → 直接上手。
 
 ---
 
@@ -284,4 +284,4 @@ sofagent 不只是开发者工具——企业落地用 **FDE 工具包** + **Wor
 
 ## 贡献与致谢
 
-欢迎提 Issue 和 PR，尤其挑刺的那种。[CONTRIBUTING.md](./CONTRIBUTING.md) · [致谢](./docs/THANKS.md)
+欢迎提 Issue 和 PR，尤其较真的那种。[CONTRIBUTING.md](./CONTRIBUTING.md) · [致谢](./docs/THANKS.md)
