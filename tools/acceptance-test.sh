@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.1.6 · 91 个端到端场景，覆盖完整用户旅程 + 全规则覆盖（含 A14-A19）+ 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成 + v1.1.4: LOOP 工具注入(maxTurns/ENGINEER_TOOLS/checkDangerousCommand) + warn-accumulator 连续性 + USB federation + LOOP 独立产品 + v1.1.5: sofagent-releaser Skill + MCP audit_file pipe + list_capabilities 能力清单 + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts --mode 参数 + SkillOpt 自净化 + validateCandidate + DeepAgents 可用性 + runtime.json 原子写入 + A16 非授权变更 + A17 异常批量变更 + --timeline 快照时间线 + --revert 回滚 + daemon 审计闭环 + cron 定时巡检 + EvidenceMode filesystem + 经验共享 + buildConstrainedSystemPrompt + A14 知识库越权 + A15 约束验证 + Workflow Hub + v1.1.6: conflict-check 巡检器（矛盾/orphan/deadlink）+ llm-wiki 三层映射 + 红队对抗（strict exit/A9 unicode/history 健壮性）
+# v1.1.6 · 96 个端到端场景，覆盖完整用户旅程 + 全规则覆盖（含 A14-A19）+ 内置 Sub Agent + 新包 CLI 烟测 + LOOP 双Agent + Harness 签名 + MCP 烟测 + 文件系统审计 + 权限作用域化 + fast-fail + MCP compose + ConfigParseError + PASS 签名行 + 依赖循环检测 + Agent 身份感知 + A19 msg 质量阻断 + daemon watch.yml 生成 + v1.1.4: LOOP 工具注入(maxTurns/ENGINEER_TOOLS/checkDangerousCommand) + warn-accumulator 连续性 + USB federation + LOOP 独立产品 + v1.1.5: sofagent-releaser Skill + MCP audit_file pipe + list_capabilities 能力清单 + push-target 5 种路由 + USB federation HMAC 签名 + cli.ts --mode 参数 + SkillOpt 自净化 + validateCandidate + DeepAgents 可用性 + runtime.json 原子写入 + A16 非授权变更 + A17 异常批量变更 + --timeline 快照时间线 + --revert 回滚 + daemon 审计闭环 + cron 定时巡检 + EvidenceMode filesystem + 经验共享 + buildConstrainedSystemPrompt + A14 知识库越权 + A15 约束验证 + Workflow Hub + v1.1.6: conflict-check 巡检器（矛盾/orphan/deadlink）+ llm-wiki 三层映射 + 红队对抗（strict exit/A9 全角+leet 检测/history 篡改/hook 删除/非法 YAML/非 git 目录/skillopt CLI 回归锁）
 # ============================================================
 # 用真实 git 仓库走完整用户旅程：
 #   Fresh install → --init → --doctor → 正常 commit → 违规拦截
@@ -2794,7 +2794,7 @@ git rm --cached -f .env >/dev/null 2>&1 || true
 rm -f .env
 
 # 90: A9 全角字符 / leet speak 注入检测
-scenario 90 "A9 全角字符 / leet speak 注入检测（暴露检测边界）"
+scenario 90 "A9 全角字符 / leet speak 注入检测（断言 rc=2）"
 cd "$TMP_REPO"
 # 注入样本运行时由 base64 解码生成，源码不出现完整注入串，避免 A9 静态扫描自引用拦截（测 A9 的脚本被 A9 自己拦死）
 U_B64="772J772H772O772P772S772FIO+9kO+9ku+9he+9lu+9ie+9j++9le+9kyDvvYnvvY7vvZPvvZTvvZLvvZXvvYPvvZTvvYnvvY/vvY7vvZM="
@@ -2811,12 +2811,11 @@ set +e
 $CLI --diff --cached --silent >/dev/null 2>&1
 rc_leet=$?
 set -e
-# A9 当前实现可能只覆盖 ASCII 正则，全角/leet 是已知检测边界
-# 这个场景的价值是"暴露检测边界"——两种都 exit 0 = A9 漏检，标 WARN 不 FAIL
-if [ "$rc_unicode" = "2" ] || [ "$rc_leet" = "2" ]; then
+# A9 经 NFKC 归一化 + leet 反转（normalizeLine），全角/leet 注入均能被检出 → rc=2
+if [ "$rc_unicode" = "2" ] && [ "$rc_leet" = "2" ]; then
   pass
 else
-  warn "A9 未检出 unicode/leet 注入（已知检测边界，非 bug）"
+  fail "A9 未检出 unicode(rc=$rc_unicode)/leet(rc=$rc_leet) 注入 —— normalizeLine 应覆盖全角与 leet 变体"
 fi
 git rm --cached -f unicode-test.js leet-test.js >/dev/null 2>&1 || true
 rm -f unicode-test.js leet-test.js
@@ -2843,6 +2842,119 @@ if [ -f "$HISTORY_FILE" ]; then
   fi
 else
   warn "history.jsonl 未生成，跳过损坏行测试"
+fi
+
+# 92: history.jsonl 篡改检测（hash chain 完整性；注：Agent 可重算，检测为 advisory）
+scenario 92 "history.jsonl 篡改检测（hash chain 完整性）"
+cd "$TMP_REPO"
+HISTORY_FILE=".sofagent/audit/history.jsonl"
+mkdir -p "$(dirname "$HISTORY_FILE")"
+# 生成几条真实审计记录，形成有效 hash chain
+for i in 1 2 3; do
+  echo "// commit $i" >> README.md
+  git add README.md
+  $CLI --diff --cached --task "gen history $i" >/dev/null 2>&1 || true
+  git rm --cached -f README.md >/dev/null 2>&1 || true
+done
+if [ -f "$HISTORY_FILE" ]; then
+  LINE_COUNT=$(wc -l < "$HISTORY_FILE" | tr -d ' ')
+  if [ "$LINE_COUNT" -ge 2 ]; then
+    # 篡改中间一条记录的 prevHash（破坏 hash 链）→ checkHistoryChainIntegrity 应报 CHAIN_BREAK
+    # 注：不传 dataDir，与审计写入时一致（audit 写入用 undefined dataDir，指纹取 ''）
+    cp "$HISTORY_FILE" "$HISTORY_FILE.bak"
+    sed -i.tmp '2s/"prevHash":"[0-9a-f]*"/"prevHash":"tampered99"/' "$HISTORY_FILE"
+    set +e
+    TAMPER_RUN=""
+    TAMPER_RUN=$(cd "$TMP_REPO" && node -e "
+      try {
+        const { checkHistoryChainIntegrity } = require('$PROJECT_ROOT/sofagent/audit/dist/audit-history.js');
+        console.log(checkHistoryChainIntegrity() ? 'CHAIN_OK' : 'CHAIN_BREAK');
+      } catch (e) { console.log('CHAIN_ERROR'); }
+    " 2>/dev/null) || true
+    set -e
+    # 注：检测为 advisory——攻击者篡改后亦可重算整条链（Agent 可重算），故非防篡改，仅为异常告警
+    if echo "$TAMPER_RUN" | grep -q "CHAIN_BREAK"; then
+      pass
+    else
+      fail "history.jsonl 篡改未被 hash chain 检出（期望 CHAIN_BREAK，实际 $TAMPER_RUN）"
+    fi
+    mv "$HISTORY_FILE.bak" "$HISTORY_FILE"
+  else
+    warn "history.jsonl 行数不足（<2），跳过篡改检测"
+  fi
+else
+  warn "history.jsonl 未生成，跳过篡改检测"
+fi
+
+# 93: red-team 高频对抗——hook 被反复删除，doctor 仍检测缺失
+scenario 93 "red-team: hook 被删 → doctor 持续检测缺失（高频对抗）"
+cd "$TMP_REPO"
+# 模拟攻击者高频删除 commit-msg hook
+for i in 1 2 3; do rm -f "$TMP_REPO/.git/hooks/commit-msg"; done
+set +e
+DOC=$(node "$AUDIT_DIR/dist/index.js" --doctor 2>&1 || true)
+set -e
+if echo "$DOC" | grep -qi "❌\|hook.*缺\|hook.*未\|未安装"; then
+  pass
+else
+  fail "doctor 未检测 hook 缺失（red-team 高频删除后）"
+fi
+# 恢复 hook
+$CLI --install-hook > /dev/null 2>&1 || true
+
+# 94: red-team——非法 YAML config 下 audit --diff 不崩（降级 warning）
+scenario 94 "red-team: 非法 YAML config → audit --diff 不崩"
+cd "$TMP_REPO"
+mkdir -p .sofagent
+echo "audit: {" > .sofagent/config.yml  # 非法 YAML（未闭合）
+set +e
+OUT=$(node "$AUDIT_DIR/dist/index.js" --diff HEAD~1..HEAD --task "x" 2>&1 || true)
+set -e
+echo "$OUT" | head -3
+# 关键：进程不得抛未捕获异常崩溃
+if echo "$OUT" | grep -qi "Uncaught\|TypeError\|Cannot read\|is not a function"; then
+  fail "audit 因非法 YAML 崩溃（未捕获异常）"
+else
+  pass
+fi
+# 恢复合法 config
+printf 'audit:\n  rules: {}\n' > .sofagent/config.yml
+
+# 95: red-team——非 git 目录运行 audit，友好报错不崩
+scenario 95 "red-team: 非 git 目录运行 audit → 友好报错"
+NONGIT=$(mktemp -d /tmp/sofagent-nongit-XXXX)
+cd "$NONGIT"
+set +e
+OUT=$(node "$AUDIT_DIR/dist/index.js" --doctor 2>&1 || true)
+rc=$?
+set -e
+echo "$OUT" | head -3
+if echo "$OUT" | grep -qi "git\|仓库\|repository\|不是.*git\|not a git" || [ "$rc" = "1" ]; then
+  pass
+else
+  fail "非 git 目录未友好报错（rc=$rc，无 git 相关提示）"
+fi
+cd "$PROJECT_ROOT"; rm -rf "$NONGIT"
+
+# 96: regression lock——skillopt CLI check 子命令可用（扫描 Skill 安全性）
+scenario 96 "regression lock: skillopt CLI（check 子命令）"
+SKILLOPT_CLI="$PROJECT_ROOT/sofagent/skillopt/dist/cli.js"
+if [ -f "$SKILLOPT_CLI" ]; then
+  SKDIR=$(mktemp -d /tmp/sofagent-skillopt-XXXX)
+  printf -- '---\nname: test-skill\ndescription: a test skill\n---\n# Test\n' > "$SKDIR/SKILL.md"
+  set +e
+  OUT=$(node "$SKILLOPT_CLI" check "$SKDIR" 2>&1 || true)
+  rc=$?
+  set -e
+  echo "$OUT" | head -3
+  if [ "$rc" = "0" ]; then
+    pass
+  else
+    fail "skillopt check 异常（rc=$rc）"
+  fi
+  rm -rf "$SKDIR"
+else
+  warn "skillopt dist 未构建，跳过 skillopt CLI 回归锁"
 fi
 
 # ── 总结 ──────────────────────────────────────────────────────

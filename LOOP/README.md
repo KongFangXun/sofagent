@@ -2,7 +2,7 @@
 
 > LOOP 是 sofagent 项目自己的开发编排工具——用 sofagent 的审计引擎和 Sub Agent 能力，自动执行 WorkBuddy 等外部平台编排好的开发任务。
 >
-> **这不是产品功能，是独立工具包。** 用户点开 LOOP/ → 安装 → 就能跑自迭代。
+> **LOOP 是 sofagent 的自迭代部署入口（非独立产品）。** 需先 `git clone` 主仓库，再从 `LOOP/` 目录运行（依赖主仓库 `sofagent/scripts/install.sh`）；单独 clone `LOOP/` 子目录会因缺少主仓库依赖而跑不通。
 
 ## 快速开始
 
