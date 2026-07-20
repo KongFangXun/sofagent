@@ -1,13 +1,12 @@
 // ============================================================
 // dream-cycle/synthesize-concepts.ts · Stage 4 — 模式合成概念写 knowledge/entities/
-// v1.1.6 新增
+// v1.1.7 新增
 //
 // 输入：Pattern[] + Atom[]
 // 输出：Concept[]（写入 knowledge/entities/<slug>.md）
 // 铁律：不直接调 LLM SDK，必须经 LLMProvider.synthesize；
 //       写 knowledge/ 是 Dream Cycle 的合法职责（Views 层派生写入）。
 // ============================================================
-
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.1.6 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.1.7 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // v1.0.8 精简（历史）：compose→orchestrator, subagent→orchestrator,
 //          hub→workflow-hub, skillopt-run→skillopt, ab-test→ab-test,
 //          daemon→daemon, doctor/verify→core (deprecation shim)
@@ -69,7 +69,7 @@ interface Args {
   timelineJson?: boolean;
   /** v1.0.9: ontology 子命令 */
   ontologyCommand?: string;
-  /** v1.1.6: 审计 session 产物（默认开启，--no-session 关闭） */
+  /** v1.1.7: 审计 session 产物（默认开启，--no-session 关闭） */
   noSession: boolean;
 }
 
@@ -410,7 +410,7 @@ function printTimeline(limit: number, json: boolean): void {
   }
 }
 
-// 同步加载 snapshot 模块（v1.1.6 从 @sofagent/daemon 迁移到 @sofagent/core，消除循环依赖）
+// 同步加载 snapshot 模块（v1.1.7 从 @sofagent/daemon 迁移到 @sofagent/core，消除循环依赖）
 function awaitLoadSnapshot(): any {
   try {
     return require('@sofagent/core');
@@ -666,7 +666,7 @@ async function main(): Promise<void> {
   printResults(results, diffFiles, args.json, args.ci, args.silent);
 
   // 7. webhook 推送（fire-and-forget，配置了 webhook 时 PASS/WARN/FAIL 三态都推送）
-  // v1.1.6: 优先 CLI --webhook/--webhook-url，回退 config.yml audit.webhook.{platform,url}，
+  // v1.1.7: 优先 CLI --webhook/--webhook-url，回退 config.yml audit.webhook.{platform,url}，
   //         再回退环境变量 SOFAGENT_WEBHOOK_URL（已在 parseArgs 初始化 webhookUrl）。
   //         修复场景：commit-msg hook 不传 CLI webhook 参数，用户在 config.yml 配了 webhook 也不生效。
   const webhookPlatform = args.webhook || config.webhook?.platform;
@@ -739,7 +739,7 @@ async function main(): Promise<void> {
     process.stderr.write('[sofagent-audit] 警告: 审计历史写入失败，跳过（不影响审计结果）\n');
   }
 
-  // 8.5 session 产物（P0：审计结果 session 可见性）——v1.1.6
+  // 8.5 session 产物（P0：审计结果 session 可见性）——v1.1.7
   if (!args.noSession) {
     try {
       const report = buildSessionReport(results, diffFiles, { task: args.task, commitSha });
@@ -755,7 +755,7 @@ async function main(): Promise<void> {
 
   // 审计通过（PASS）后自动创建 shadow repo 快照，供 --timeline/--revert 使用
   // 设计原则：只有 PASS 才快照（WARN/FAIL 不快照，符合「审计通过后自动快照」契约）
-  // v1.1.6：snapshot helpers 已从 @sofagent/daemon 迁移到 @sofagent/core，循环依赖已消除
+  // v1.1.7：snapshot helpers 已从 @sofagent/daemon 迁移到 @sofagent/core，循环依赖已消除
   if (results.exitCode !== 2 && isInGitRepo()) {
     try {
       if (!hasShadowRepo(process.cwd())) {
@@ -847,7 +847,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
 
   // 静默 / CI 模式——只抑制输出，不改 exit code 判定
   if (ci || silent) {
-    // ★ v1.1.6: 无条件向 stdout 输出一行结论（session 可见性核心）
+    // ★ v1.1.7: 无条件向 stdout 输出一行结论（session 可见性核心）
     const c = results.exitCode;
     const failN = results.rules.filter((r) => r.status === 'FAIL').length;
     const warnN = results.rules.filter((r) => r.status === 'WARN').length;
@@ -979,7 +979,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   console.log('');
 }
 
-// v1.1.6: 仅作为 CLI 入口时执行 main，避免被测试 import 时触发副作用（如 process.exit）
+// v1.1.7: 仅作为 CLI 入口时执行 main，避免被测试 import 时触发副作用（如 process.exit）
 if (require.main === module) {
   main().catch((err) => {
     console.error('sofagent-audit 内部错误:', err.message);

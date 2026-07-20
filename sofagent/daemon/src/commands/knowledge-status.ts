@@ -1,6 +1,6 @@
 // ============================================================
 // commands/knowledge-status.ts · `sofagent-daemon knowledge status` 聚合命令
-// v1.1.6 新增
+// v1.1.7 新增
 //
 // 一次性聚合输出「上次 Dream Cycle 时间 + 产出概览 / 知识健康状态 /
 // sensitivity 统计」成一页可读报告（LUI 感知 B——把 A 三处的可感知产物

@@ -1,7 +1,7 @@
 ---
 name: 发布工程师
 slug: sofagent-releaser
-version: 1.1.6
+version: 1.1.7
 displayName: 发布工程师
 description: 发版 SOP 执行器——读 docs/verification/releasing.md 十二阶段，从审查到发版全流程驱动，三个 human check 节点显式介入（阶段一 changelog 确认 / 阶段五审查报告确认 / 发版前最终确认），不发 prompt 不动作。
 emoji: 🚀

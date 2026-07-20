@@ -1,7 +1,7 @@
 // ============================================================
-// usb-detect.ts · USB federation 检测 + 安全层（v1.1.6 增强）
-// v1.1.6 基础版无签名校验——任何人制作 SOFAGENT 卷标 U 盘即可注入任意配置
-// v1.1.6 补上：
+// usb-detect.ts · USB federation 检测 + 安全层（v1.1.7 增强）
+// v1.1.7 基础版无签名校验——任何人制作 SOFAGENT 卷标 U 盘即可注入任意配置
+// v1.1.7 补上：
 //   - HMAC-SHA256 签名校验（federation.json 配 .sig sidecar）
 //   - 密钥独立存放 ~/.sofagent/usb-secret.key（install 时生成，不进 git）
 //   - exportToUSB 自动签名

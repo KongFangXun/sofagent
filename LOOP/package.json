@@ -1,6 +1,6 @@
 {
   "name": "sofagent-loop",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "LOOP 自迭代开发循环——让 sofagent 用自己的 Agent 和审计引擎开发自己。装上后一条 prompt 触发整套 LOOP。",
   "private": true,
   "sofagent": {

@@ -1,4 +1,4 @@
-// push-target.ts · MCP push target 路由（v1.1.6 新增）
+// push-target.ts · MCP push target 路由（v1.1.7 新增）
 // workflow.yml 节点支持 output.target，daemon 监听任务完成事件按配置路由推送
 //
 // 支持目标：

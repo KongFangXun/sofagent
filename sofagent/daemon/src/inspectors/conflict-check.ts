@@ -1,6 +1,6 @@
 // ============================================================
 // conflict-check.ts · knowledge 矛盾/孤儿/死链巡检
-// v1.1.6 新增
+// v1.1.7 新增
 //
 // 周期性检测 `.sofagent/knowledge/` 的三类健康问题：
 //   - 矛盾（critical）：同名 entity/concept 在多目录出现且 frontmatter

@@ -31,7 +31,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$VERSION_STR = "1.1.6"
+$VERSION_STR = "1.1.7"
 
 # 强制 UTF-8 控制台输出——PS 5.1 默认按 OEM/GBK 输出，被 UTF-8 消费方(Agent/Git Bash)读会乱码
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
