@@ -48,7 +48,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
 | **v1.1.6** | ✅ 已发布 | **BugFix 21 项 + LLM Wiki 3 层分层 + conflict-check**：v1.1.5 遗留全数修复 + Ledger-Views-Policy 显式化 + daemon 知识健康巡检（矛盾/孤儿/死链） | [📖](./docs/changelog/v1.1.6.md) · [🗺️ 三层映射](./docs/llm-wiki-mapping.md) |
-| **v1.1.7** | ✅ 已发布 | **Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性**：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级（缺省 internal）+ knowledge-health 5 项检查（@weekly）+ `knowledge status` 聚合命令 | [📖](./docs/changelog/v1.1.7.md) |
+| **v1.1.7** | 🚧 开发完成待发版 | **Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性**：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级（缺省 internal）+ knowledge-health 5 项检查（@weekly）+ `knowledge status` 聚合命令 | [📖](./docs/changelog/v1.1.7.md) |
 | **v1.1.8** | 📋 规划中 | **安全层 + 联邦查询 + Agent 安全防护**：AES-256-GCM + ECDH 配对 + OpenClaw channel 联邦知识查询 + Prompt 注入 8 层防护体系（指令分层隔离 / 工具动态最小权限 / 后端强制校验 / 敏感数据不进 prompt / RAG 可信分级 / 输出结构化+执行前审核 / 高危动作强制人工确认 / 全链路日志+红队测试——核心原则：模型提建议，系统控执行） | [📖](./docs/changelog/v1.1.8.md) |
 | **v1.1.9** | 📋 规划中 | **USB 完整运行时**：Node.js 单文件打包 + OpenClaw 便携化 + 跨平台启动脚本（macOS/Windows/Linux）。U 盘插入 → 双击 start → 联邦在线 → 拔掉零残留 | [📖](./docs/changelog/v1.1.9.md) |
 | **v1.2.0** | 📋 规划中 | **多设备知识联邦收口 🎉**：端到端全功能验证（LOOP + Dream Cycle + 联邦查询 + 加密）+ gbrain 行业对标 + USB key 产品故事写入主文档 + 兜底修复。v1.2.x 完整多设备协同的起点 | [📖](./docs/changelog/v1.2.0.md) |
