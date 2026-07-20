@@ -393,6 +393,7 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 | conflict-check | @weekly | knowledge 矛盾（critical）/ 孤儿（warning）/ 死链（warning） |
 | doctor-health | @daily | daemon 自身运行状态（plist / fs-watch / 依赖） |
 | knowledge-freshness | @weekly | knowledge/ 30 天以上未更新提醒 |
+| knowledge-health | @weekly | knowledge 健康：孤立/重复（normalized-key）/断链/index 过旧（>24h）/缺源（warning，fail-closed 只读，报告落 health-report.md） |
 | skill-staleness | @weekly（默认禁用） | Skill 陈旧度（需 eval 数据支持） |
 | warn-accumulator | @daily | 连续未处理 WARN 累积（阈值 3，含文件级追踪） |
 
