@@ -151,7 +151,7 @@ sofagent v1.3.0 的 Ontology 认知底座方向与之高度同构，但走**分�
 | 补充 FAQ | 20 min | 你踩了什么坑？直接改 HANDBOOK §三（排查问题） |
 | 文档翻译 | 1-2 h | 英文翻译对社区意义巨大 |
 | 第三方证据 | 1 周 | 装完用一周，填 EVIDENCE.md |
-| 安全审计 | 不限 | 给 SECURITY.md 挑刺 |
+| 安全审计 | 不限 | 给 SECURITY.md 较真 |
 | 企业场景反馈 | 30 min | 你们团队怎么用 Agent？直接开 Issue |
 
 → [CONTRIBUTING.md](./CONTRIBUTING.md)
