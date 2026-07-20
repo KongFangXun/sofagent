@@ -83,7 +83,7 @@ graph LR
 | 🧭 约束底座 | 四层加载链永远在线 | @sofagent/harness |
 | 🔍 审计引擎 | 只看 git diff 硬证据 | @sofagent/audit |
 | 🔄 回溯能力 | 事后快照 + `--revert` | @sofagent/core |
-| ⚙️ 编排引擎 | DeepAgents + compose CLI | @sofagent/orchestrator |
+| ⚙️ 编排引擎 | LOOP 串行自迭代 + 任务拆解 | @sofagent/orchestrator 🔶 |
 | 🧬 进化引擎 | daemon cron @weekly | @sofagent/daemon + @sofagent/skillopt |
 
 > 一底座·四引擎的完整设计哲学见 [PHILOSOPHY §三 架构全景](./PHILOSOPHY.md#三怎么跑架构全景)。
@@ -230,6 +230,78 @@ daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml
 > 💡 **Agent 粒度判定（X4）**：单请求内被调 >3 次的 Agent 合并到上游；日均调用 <5 次的 Agent 标记僵尸预警——防纳米 Agent 膨胀。
 >
 > 📖 来源：31 篇行业笔记跨批研读（2026-07-20）
+
+#### 四节点状态机（v1.1.3+）
+
+编排引擎的核心是 LangGraph StateGraph——一条 `engineer → audit → reviewer → human_confirm` 的流水线，跑挂了能回退重试，中断了能从断点续跑。
+
+```mermaid
+flowchart LR
+    START([START]) --> Engineer
+    subgraph Inner["StateGraph 内层循环"]
+        Engineer["engineer<br/>AI · DeepAgents + 工具"] --> Audit["audit<br/>CLI · git diff 硬证据"]
+        Audit --> Reviewer["reviewer<br/>AI · 只读工具"]
+        Reviewer --> Human["human_confirm<br/>HITL · y/n"]
+    end
+    Audit -. "FAIL (retryCount<3)" .-> Engineer
+    Human -. "驳回 (retryCount<3)" .-> Engineer
+    Human -->|确认| END([END · completed])
+    Audit -. "FAIL 且重试上限" .-> BLOCKED([END · blocked])
+    Human -. "驳回且重试上限" .-> BLOCKED
+```
+
+**三态终态**：`completed`（人工确认通过）/ `blocked`（重试 3 次仍不过）/ `aborted`（stdin 关闭等中断，checkpoint 已保存可 `loop --resume` 恢复）。
+
+**三个条件路由函数**（纯函数，可单测）：
+
+| 路由 | 判定 | 出口 |
+|------|------|------|
+| `routeAfterAudit` | blocked→END；FAIL→engineer；PASS/WARN→reviewer | engineer / reviewer / END |
+| `routeAfterHuman` | 非 running→END；running（驳回）→engineer | engineer / END |
+| `routeFromStart` | 正常→engineer；resume→指定节点 | 四节点之一 |
+
+**为什么 audit 是程序不是 AI**：audit 节点调 `@sofagent/audit` 跑 A1-A17 规则——只看 `git diff HEAD` 硬证据，标准是硬的、可复现的，不随模型波动。reviewer 才是 AI 语义审查。这正是上文"解题/验证分离"在编排层的产品化落地——audit 做确定性验证，reviewer 做概率性语义验证，两者物理隔离。
+
+#### 状态契约：LoopArtifacts
+
+节点之间不靠全局变量，全靠 `state.artifacts` 这个对象传递。LangGraph 的 `Annotation` 给它配了浅合并 reducer——节点返回时只需给增量字段，框架自动合并。
+
+| 字段 | 类型 | 谁写 | 谁读 |
+|------|------|------|------|
+| `task` | string | 初始化 | 全部节点 |
+| `engineerOutput` | string | engineer | audit / reviewer |
+| `engineerOutputs` | string[] | engineer（追加） | 历史追溯 |
+| `auditReport` | string | audit | reviewer / engineer 修复 |
+| `auditReports` | string[] | audit（追加） | 历史追溯 |
+| `reviewReport` | string | reviewer | human_confirm / engineer 修复 |
+| `reviewReports` | string[] | reviewer（追加） | 历史追溯 |
+| `humanFeedback` | string | human_confirm | 路由判定 |
+
+> 这张表对应的源码是 `sofagent/orchestrator/src/loop/state.ts` 的 `LoopArtifacts` 接口。
+
+#### 重试语义：统一计数器
+
+`retryCount` 一个计数器管两种失败——audit 判 FAIL 或 HITL 驳回，都 `retryCount++` 回 engineer。达到上限（默认 3）仍未过 → `finalStatus = 'blocked'` 终态 + 写 audit history（engine 字段标 `loop-graph`），不无限循环。blocked 可被 `audit-root-cause` / 周报追溯。
+
+WARN 不阻断流转——`[审计告警]` 前缀透传给 reviewer 输入，由 reviewer + human_confirm 兜底把关。
+
+#### Checkpoint 持久化
+
+每个节点执行**前后各 snapshot 一次**到 `.sofagent/checkpoint/`。`resumeLoopGraph()` 读 latest checkpoint → 算出恢复入口节点 → 重新跑图。daemon 重启后的自动续跑也复用这条路径。
+
+**FileCheckpointer 五条并发安全规矩**（`sofagent/orchestrator/src/graph/checkpoint.ts`）：
+
+| # | 规矩 | 实现 |
+|---|------|------|
+| 1 | 文件名永不覆盖 | `checkpoint-{ISO时间戳}-{6位随机}.json`（时间戳 `:`/`.` 替换为 `-`，Windows 兼容） |
+| 2 | latest 指针 | symlink 指向最新（Windows 无权限时降级为指针文件，读取端两种都兼容） |
+| 3 | schema 版本 | JSON 第一字段 `schemaVersion: 'v1'`，未来变化走 `migrateCheckpoint()` 显式迁移，不静默丢字段 |
+| 4 | 原子写 | `writeFileSync(tmp) + renameSync(final)`，跨设备 EXDEV 时降级 copy+unlink |
+| 5 | 文件锁 | `O_EXCL` 排它创建 `locks/{checkpointId}.lock`，30s stale 检测回收，防多进程并发写脏 |
+
+#### audit 节点降级逻辑
+
+audit 节点程序化调用 `@sofagent/audit`（比 CLI 子进程侵入更小，类型安全）。审计引擎不可用时（如 git 环境缺失）**降级 WARN 而非 FAIL**——不直接烧穿重试次数，由 reviewer + human_confirm 兜底。降级时 audit history 的 engine 字段标 `loop-graph-degraded` 便于追溯。`git diff HEAD` 为空时也返回 WARN（engineer 可能未产生文件修改）。
 
 ### 🧬 进化引擎
 
