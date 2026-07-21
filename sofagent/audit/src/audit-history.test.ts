@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { existsSync, readFileSync, writeFileSync, rmSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { tmpdir } from 'os';
+import { tmpdir, homedir } from 'os';
 import { createHash, randomBytes } from 'crypto';
 import {
   appendHistory,
@@ -255,6 +255,60 @@ describe('audit-history', () => {
       const loaded = loadHistory(undefined, testDir);
       expect(loaded.length).toBe(1);
       expect(loaded[0]!.actionGovernance).toBeUndefined();
+    });
+  });
+
+  describe('P2-6: HMAC-SHA256 签名（v1.1.8）', () => {
+    const KEY_PATH = join(homedir(), '.sofagent-key');
+    let backupKey: string | null = null;
+
+    beforeEach(() => {
+      // 备份真实密钥（若存在），避免测试污染；确保初始无密钥（降级模式）
+      if (existsSync(KEY_PATH)) {
+        backupKey = readFileSync(KEY_PATH, 'utf-8');
+        rmSync(KEY_PATH);
+      }
+    });
+
+    afterEach(() => {
+      // 恢复真实密钥或清理测试密钥
+      if (backupKey !== null) {
+        writeFileSync(KEY_PATH, backupKey, 'utf-8');
+      } else if (existsSync(KEY_PATH)) {
+        rmSync(KEY_PATH);
+      }
+      backupKey = null;
+    });
+
+    it('无 HMAC 密钥：降级 SHA-256，append + check 通过且不含 hmacSig', () => {
+      appendHistory(makeEntry('2026-02-01T00:00:00Z', 0), testDir);
+      expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+      const lines = readFileSync(getHistoryFilePath(testDir), 'utf-8').trim().split('\n');
+      const parsed = JSON.parse(lines[0]!);
+      expect(parsed.hmacSig).toBeUndefined();
+    });
+
+    it('有 HMAC 密钥：写入 hmacSig 且 append + check 通过', () => {
+      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      appendHistory(makeEntry('2026-02-02T00:00:00Z', 0), testDir);
+      expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+      const lines = readFileSync(getHistoryFilePath(testDir), 'utf-8').trim().split('\n');
+      const parsed = JSON.parse(lines[0]!);
+      expect(typeof parsed.hmacSig).toBe('string');
+      expect(parsed.hmacSig.length).toBeGreaterThan(0);
+    });
+
+    it('有 HMAC 密钥：篡改条目 → HMAC 校验失败（链断裂）', () => {
+      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      appendHistory(makeEntry('2026-02-03T00:00:00Z', 0), testDir);
+      appendHistory(makeEntry('2026-02-04T00:00:00Z', 0), testDir);
+      // 篡改最后一条（exitCode 从 0 改成 2）
+      const histPath = getHistoryFilePath(testDir);
+      const lines = readFileSync(histPath, 'utf-8').trim().split('\n');
+      const tampered = JSON.parse(lines[lines.length - 1]!);
+      tampered.exitCode = 2;
+      writeFileSync(histPath, lines.slice(0, -1).concat(JSON.stringify(tampered)).join('\n') + '\n');
+      expect(checkHistoryChainIntegrity(testDir)).toBe(false);
     });
   });
 });

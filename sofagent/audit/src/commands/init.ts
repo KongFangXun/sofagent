@@ -344,7 +344,8 @@ exit 0
     // 动态导入验证规则注册表可用
     const { defaultRules } = require('../rules');
     // v1.1.5: A18 提升为 defaultRules（v1.1.4=12 → v1.1.5=13）
-    const expectedDefaultRules = 13;
+    // v1.1.8: 动态引用 defaultRules.length，规则增减自动同步，不再硬编码
+    const expectedDefaultRules = defaultRules.length;
     if (defaultRules && defaultRules.length === expectedDefaultRules) {
       console.log(`  ✅ ${expectedDefaultRules} 条默认规则全部加载`);
     } else {
@@ -504,6 +505,7 @@ ${finalProgArgs.map((a) => `        <string>${a}</string>`).join('\n')}
   console.log('║  git commit 审计 + daemon 文件监控已就绪   ║');
   console.log('╚══════════════════════════════════════════╝');
   console.log('');
+  console.log('  💡 首次使用？先 cd 到你的项目目录跑 `sofagent-audit --init` 初始化审计。');
   console.log('  下一步：');
   console.log('    1. 改个文件，试试 git commit——你会看到审计引擎在提交前自动扫描');
   console.log('    2. 想测试拦截？echo "API_KEY=test" > .env && git add .env && git commit -m "test"');

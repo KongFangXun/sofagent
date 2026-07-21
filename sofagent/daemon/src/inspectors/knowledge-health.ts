@@ -26,7 +26,7 @@
 //   - 单遍扫描 + 邻接表（Map），不引 graphlib
 // ============================================================
 
-import { readdirSync, readFileSync, existsSync, statSync, appendFileSync } from 'fs';
+import { readdirSync, readFileSync, existsSync, statSync, appendFileSync, writeFileSync } from 'fs';
 import { join, relative } from 'path';
 
 import { resolveSensitivity, isSensitivityVisible } from '@sofagent/core';
@@ -159,6 +159,16 @@ function resolveLinkCandidates(
   ];
 }
 
+/** 由当前页面重新生成 index.md 内容（--auto-fix 消除 index 过旧用） */
+function generateIndexMarkdown(pages: KnowledgePage[]): string {
+  const header = `# Knowledge Index\n\n自动生成于 ${new Date().toISOString()}\n\n`;
+  const tableHeader = '| 页面 | 子目录 | 来源 | 敏感度 |\n|------|------|------|------|\n';
+  const rows = pages
+    .map((p) => `| [${p.slug}](${p.relPath}) | ${p.subdir} | ${p.source ?? ''} | ${p.sensitivity} |`)
+    .join('\n');
+  return header + tableHeader + rows + '\n';
+}
+
 /** 向 health-report.md 追加一段报告（唯一允许的写操作） */
 function appendHealthReport(knowledgeDir: string, lines: string[]): void {
   try {
@@ -177,7 +187,10 @@ function appendHealthReport(knowledgeDir: string, lines: string[]): void {
  * @param projectDir 项目根目录
  * @returns InspectorResult（triggered + severity=warning + 五类 finding 汇总）
  */
-export function checkKnowledgeHealth(projectDir: string): InspectorResult {
+export function checkKnowledgeHealth(
+  projectDir: string,
+  options: { autoFix?: boolean } = {},
+): InspectorResult {
   const knowledgeDir = join(projectDir, '.sofagent', 'knowledge');
 
   // 优雅降级：knowledge/ 不存在 → info
@@ -363,7 +376,41 @@ export function checkKnowledgeHealth(projectDir: string): InspectorResult {
     parts.push(`缺源 ${visibleMissingSource.length} 项：${visibleMissingSource.slice(0, 3).join(', ')}${visibleMissingSource.length > 3 ? '…' : ''}`);
     reportLines.push(`缺源 concept ${visibleMissingSource.length} 项（无 source: frontmatter）：${visibleMissingSource.join(', ')}`);
   }
-  reportLines.push('（只建议不自动删——fail-closed 只读，修复留给 Agent + 人）');
+  // ── [P2-10] 可选自动修复（仅 --auto-fix 开启时，默认关闭）──
+  // 低风险管理：① 移除 index.md 中指向断链目标的行 ② index 过旧重新生成。
+  // 孤立页 / 重复 normalized-key 仍仅报告、不自动改（避免误删源数据）。
+  if (options.autoFix) {
+    const autoFixed: string[] = [];
+    // 1. 断链：移除 index.md 中指向不存在目标的行（低风险）
+    if (existsSync(indexPath)) {
+      const indexLines = readFileSync(indexPath, 'utf-8').split('\n');
+      const kept = indexLines.filter((line) => {
+        const targets = [...extractMarkdownLinks(line), ...extractWikilinks(line)];
+        const isBroken = targets.some((t) => {
+          const candidates = resolveLinkCandidates(t, indexPath, knowledgeDir);
+          return !candidates.some((p) => existsSync(p));
+        });
+        return !isBroken;
+      });
+      if (kept.length !== indexLines.length) {
+        writeFileSync(indexPath, kept.join('\n'), 'utf-8');
+        autoFixed.push('index.md 断链行已移除');
+      }
+    }
+    // 2. index 过旧：重新生成 index.md
+    const indexRel = relative(knowledgeDir, indexPath) || 'index.md';
+    if (staleIndexes.includes(indexRel)) {
+      writeFileSync(indexPath, generateIndexMarkdown(pages), 'utf-8');
+      autoFixed.push('index.md 已重新生成（消除过旧）');
+    }
+    reportLines.push(
+      autoFixed.length > 0
+        ? `（已自动修复低风险项：${autoFixed.join('；')}；孤立/重复仍仅报告）`
+        : '（只建议不自动删——fail-closed 只读，修复留给 Agent + 人）',
+    );
+  } else {
+    reportLines.push('（只建议不自动删——fail-closed 只读，修复留给 Agent + 人）');
+  }
 
   // 唯一写操作：追加 health-report.md（独立报告，不改源数据）
   appendHealthReport(knowledgeDir, reportLines);

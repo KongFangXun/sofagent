@@ -56,7 +56,7 @@ function parseArgs(argv: string[]): Args {
       args.platform = arg.slice('--platform='.length).toLowerCase();
       i++;
     } else if (arg === '--help') {
-      console.log(`sofagent verify v${VERSION}`);
+      console.log(`sofagent-verify v${VERSION} · 安装完整性验证`);
       console.log('  正常模式  彩色终端，显示所有检查项');
       console.log('  --json    JSON 机器可读输出（CI/CD 用）');
       console.log('  --quiet   只输出失败和警告，全通过时静默');

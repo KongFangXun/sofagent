@@ -216,4 +216,42 @@ describe('knowledge-health · knowledge 健康巡检', () => {
     const sourceContent = fs.readFileSync(path.join(knowledgeDir, 'entities', 'lonely.md'), 'utf-8');
     expect(sourceContent).toContain('# Lonely 孤立页');
   });
+
+  // 用例 11（P2-10）：--auto-fix 移除 index.md 断链行，但孤立页文件不删除
+  it('P2-10: --auto-fix 移除 index.md 断链行，但不删除孤立页文件', () => {
+    const knowledgeDir = makeKnowledgeSkeleton(dir);
+    // alice 被 index 引用（非孤立）；orphan 无引用（孤立）
+    writePage(knowledgeDir, 'entities/alice.md', { source: 'x' }, '# Alice');
+    writePage(knowledgeDir, 'entities/orphan.md', { source: 'x' }, '# Orphan');
+    const indexPath = path.join(knowledgeDir, 'index.md');
+    fs.writeFileSync(
+      indexPath,
+      '# Index\n\n| 页面 | 域 |\n|------|----|\n| [alice](entities/alice.md) | - |\n| [ghost](entities/ghost.md) | - |\n',
+      'utf-8',
+    );
+    const result = checkKnowledgeHealth(dir, { autoFix: true });
+    // 断链行已从 index.md 移除
+    const indexContent = fs.readFileSync(indexPath, 'utf-8');
+    expect(indexContent).not.toContain('entities/ghost.md');
+    expect(indexContent).toContain('entities/alice.md');
+    // 孤立页文件未被删除（仅报告，不自动删）
+    expect(fs.existsSync(path.join(knowledgeDir, 'entities', 'orphan.md'))).toBe(true);
+    // orphan 仍是孤立（报告仍含「孤立」）
+    expect(result.message).toContain('孤立');
+  });
+
+  // 用例 12（P2-10）：--auto-fix 重新生成过旧 index.md，但不动源页面
+  it('P2-10: --auto-fix 重新生成过旧 index.md', () => {
+    const knowledgeDir = makeKnowledgeSkeleton(dir);
+    writePage(knowledgeDir, 'entities/alice.md', { source: 'x' }, '# Alice 引用 [[alice]]');
+    const indexPath = path.join(knowledgeDir, 'index.md');
+    fs.writeFileSync(indexPath, '# Index（很旧）\n', 'utf-8');
+    setMtime(indexPath, new Date(Date.now() - 3 * 24 * 60 * 60 * 1000));
+    checkKnowledgeHealth(dir, { autoFix: true });
+    const indexContent = fs.readFileSync(indexPath, 'utf-8');
+    expect(indexContent).toContain('Knowledge Index');
+    expect(indexContent).toContain('entities/alice.md');
+    // 源页面未被删除
+    expect(fs.existsSync(path.join(knowledgeDir, 'entities', 'alice.md'))).toBe(true);
+  });
 });

@@ -32,6 +32,8 @@ Agent 越聪明，企业越不敢放手——真出事了，谁负责？能拦�
 npm install -g @sofagent/audit @sofagent/core && sofagent-audit --init
 ```
 
+> 💡 个人开发者：只需 npm install，不需要 OpenClaw。OpenClaw 是企业无人值守场景才需要。
+
 > [!NOTE]
 > 需要 Node.js ≥ 18 + bash + git。macOS / Linux 全功能，Windows 实验性。
 
@@ -70,9 +72,14 @@ flowchart LR
 
 sofagent 是 **Harness 中间件**——不管你用什么 Agent（Claude Code / Codex / Cursor / WorkBuddy）、什么模型，挂在 git commit 这个节点上，用 git diff 硬证据做审计。**平台无关、零侵入、零 token**。
 
-> 🏞️ **一条河的比喻**：大厂造河（LLM = 水，Agent 平台 = 河床，没有河床水只是一片汪洋），我们做**堤坝 + 自来水厂 + 管网 + 水龙头**——约束层（不让水泛滥）+ 沙箱安全（让水从"能喝"到"敢喝"）+ Workflow（把能力引到业务）+ Subagent（让能力在具体业务用水）。让企业安全地用自己的 AI 能力流进业务。详见 [`FDE/FDE.md` §9.6](FDE/FDE.md#96-river大厂造河与企业用水)。
+<details>
+<summary>🏞️ 补充类比：一条河的模型（点开）</summary>
 
-> 💡 **一个能用的智能体 ≠ AI + 一段 prompt**——它是一套由多层组成的骨架（配置 / 知识 / 指令 / 校验 / 编排）。sofagent 的约束底座是骨架里的钢筋，审计引擎是质检。给 Agent 搭脚手架（工具 / 权限 / 沙箱 / 规则），而非造一个更聪明的模型。
+大厂造河（LLM = 水，Agent 平台 = 河床，没有河床水只是一片汪洋），我们做**堤坝 + 自来水厂 + 管网 + 水龙头**——约束层（不让水泛滥）+ 沙箱安全（让水从"能喝"到"敢喝"）+ Workflow（把能力引到业务）+ Subagent（让能力在具体业务用水）。让企业安全地用自己的 AI 能力流进业务。详见 [`FDE/FDE.md` §9.6](FDE/FDE.md#96-river大厂造河与企业用水)。
+
+</details>
+
+> 💡 **换个角度说：一个能用的智能体 ≠ AI + 一段 prompt**——它是一套由多层组成的骨架（配置 / 知识 / 指令 / 校验 / 编排）。sofagent 的约束底座是骨架里的钢筋，审计引擎是质检。给 Agent 搭脚手架（工具 / 权限 / 沙箱 / 规则），而非造一个更聪明的模型。
 
 ---
 
