@@ -1,6 +1,6 @@
-# FDE Agent — 你的常驻数字 FDE
+# FDE Agent — 你的常驻 AI FDE Agent
 
-> **FDE Agent 是建在 sofagent core 上的产品封装——用户买到的是一个常驻 FDE Agent，不是一套工具。**
+> **FDE Agent 是建在 sofagent core 上的产品封装——用户得到的是一个常驻 AI FDE Agent，不是一套工具。**
 >
 > [sofagent core](../README.md) 是开源（MIT）底座——一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎），你自己拿去怎么跑都行。FDE 文件夹是建在这个底座上的**产品形态**：把底座能力封装成一个常驻 FDE Agent，帮你梳理工作流、自检合规、持续优化。**人走 FDE 不走。**
 >
