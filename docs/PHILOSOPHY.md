@@ -77,11 +77,12 @@ sofagent 的生存位不在"写更聪明的约束文字"，而在**细分业务 
 - 🔴 **术语纠正——不是裁大模型，是选小基座 + LoRA 精调**：剪枝 / 蒸馏 / 量化是大厂造小基座的**上游技术**（你看到的 Qwen2.5-0.5B 已是这三者一起上的产物）。我们不碰上游，只做下游最后一环：下载已开源小基座，用企业 workflow 日志挂一个 LoRA 适配器"教它这一个 workflow"，基座参数不动。
 - 🟢 **优先 QLoRA（量化版 LoRA）**：把基座先 4-bit 量化再挂 LoRA 适配器，显存门槛从 A100 级压到**消费级显卡（24GB 的 3090 / 4090）就能训**——几乎是用消费级显卡玩大模型的标配方案。量化压显存、LoRA 挂业务插件，二者叠加让 FDE 部署无需 GPU 集群。
 - **两个商业动因**：① 数据安全——数据不出域，敏感素材不再送大厂被拿去训练；② 成本——自建大模型企业级数百万起步、最新模型上千万，而 workflow 专属小模型用数万级成本即可满足单个业务场景（领域够窄，0.5B 在单一 workflow 准确率可追平 70B 通用模型）。
-- **默认小基座选型**：普通业务 workflow 严格 **≤1B**——中文 **Qwen2.5-0.5B** / 英文 **Llama-3.2-1B** / 代码本地 **Qwen2.5-Coder-0.5B**（千问系统一工具链）。🔴 **强推理本地化**：需要强推理/复杂代码/多步规划时，用**本地**部署的 **DeepSeek-R1-Distill-7B/14B**（跑在 Mac Mini 农场），**不调云端大厂 API**——私有部署的全部价值就在于数据不出企业内网。⚠️ 注意：DeepSeek-R1-Distill 系列最小 1.5B、无 ≤1B 版本，故强推理本地基座放宽到 7B/14B（仍在私有硬件上，不触碰大厂）；普通 workflow 仍守 ≤1B 约束。云端大厂 LLM 仅作**可选 fallback**（需企业显式配置 `local_only=false`），默认 `local_only=true`，绝不上云。
+- **默认小基座选型（业务 workflow 严格 ≤1B）**：中文业务 **Qwen2.5-0.5B** / 英文场景（外贸等）**Llama-3.2-1B**。中文、英文两类业务 workflow 用本地小模型，省钱、数据不出域。
+- 🔴 **任务价值分流——代码/强推理直接用最好模型**：代码生成、复杂推理、多步规划这类"值得用最强智能"的高价值任务，用户明确**直接选用云端最强 LLM**（如 Claude / GPT / Gemini），**不强行本地化**。本地小模型只覆盖"可窄域替代"的业务 workflow 场景；私有部署优先铁律针对业务数据，不与高价值智能任务走云端冲突。云端大厂 LLM 在此类场景是**默认路径**（非 fallback）。
 - **训练硬件——Apple Silicon（Mac Mini）可行，且是消费级优选**：QLoRA 的 4-bit 量化在 Mac 上**不走 CUDA/bitsandbytes**，改走 **Apple MLX（mlx-lm）**——Apple 官方框架，M 系列芯片原生优化；Apple Silicon 统一内存架构（如 M4 Max 128GB）跑 ≤1B 模型微调/推理极轻松。单台 Mac Mini 足以训练，无需 GPU 集群；多台 Mac Mini 的价值在**推理并发节点**（多个 Subagent 同时跑不同 workflow 模型），非训练集群。无头部署流程：SSH 接入 → CLI 后台训练（nohup/tmux）→ 导出 LoRA adapter（几十 MB）→ Subagent 经 ollama / llama.cpp 加载推理。
 - **NodeJS 集成方向（项目工程面保持 Node/TS）**：纯 NodeJS 做 LLM **微调目前生态不成熟**（微调在 Python 生态：MLX / Llama-Factory）；但 NodeJS 的**推理 + 编排已成熟**（node-llama-cpp 加载 GGUF + LoRA adapter、Metal 加速；@huggingface/transformers.js；ollama Node SDK）。务实架构：训练引擎仍是 Python，但封装进我们的 **TypeScript CLI（`sofagent-model`）**——TS 写 CLI、内部 spawn 训练引擎，对外是 npm 包，开发者全程 Node/TS 不碰 Python；推理/运行时/Subagent 全用 TypeScript（sofagent 本就是 Node/TS）。结论：**训练用 TS 封装 Python、推理用 Node 绑定**，让整个项目对外是纯 NodeJS 工作流。
 
-**四阶段路线**（详见 ROADMAP「Subagent 内置专精小模型」）：v1.2.x 架构预留（`inference` 字段支持 Ollama）→ v3.x 工具链（`sofagent-model` 微调 CLI）→ v4.x 本地推理（精调模型默认，大厂 LLM 仅 fallback）→ v4.x+ 离线节点（USB key 完整离线 AI 节点）。
+**四阶段路线**（详见 ROADMAP「Subagent 内置专精小模型」）：v1.2.x 架构预留（`inference` 字段支持 Ollama）→ v3.x 工具链（`sofagent-model` 微调 CLI）→ v4.x 本地推理（业务 workflow 跑精调模型；代码/强推理直连云端最强 LLM）→ v4.x+ 离线节点（USB key 完整离线 AI 节点，覆盖业务 workflow）。
 
 ### 为什么不建图形界面
 
