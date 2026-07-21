@@ -30,11 +30,29 @@
 | 4 | P1 工程欠债 | 工程师 | 应该修 |
 | 5 | P2 改进 | 工程师 | 不阻塞发布 |
 | 6 | 审查体系更新 | 工程师 | 随修复同步更新：① 回归清单追加检查项（编号递增）② 发布后审查文档（`fresh-eyes-review.md`）补充新盲区维度/任务。**不要等到阶段五和阶段八才做——开发时记忆最新，随修随记** |
-| 7 | 版本号前置 bump | 工程师 | 开发完成后、自测前：`./tools/bump-version.sh <旧> <新>` → `./tools/check-version.sh` 全绿。npm 不动 |
+| 7 | 版本号前置 bump | 工程师 | 开发完成后、自测前：`./tools/bump-version.sh <旧> <新>` → `./tools/check-version.sh` 全绿。npm 不动。**⚠️ 跨 session 场景**：如果开发 session 和发版 session 分离，版本号 bump 可留到发版 session 阶段三执行——开发 session 只需确保代码实现完成 + changelog 写好 |
 
 **🔴 开发铁律（v1.0.3 教训）**：
 - **🔴 版本号前置（v1.1.3 流程优化）**：开发完成后、进入自测（阶段三）之前，先跑 `bump-version.sh <旧版本> <新版本>` 把 13 类位置全部更新到目标版本号。然后跑 `check-version.sh` 确认全绿。这样测试阶段所有版本号已统一，不会出现「全局 v1.1.2 vs SSOT v1.1.3」的漂移。npm publish 仍在阶段十一，版本号一致性 ≠ 发布。
 - 对 optional dependency（如 deepagents）的类型断言统一用 `as unknown as` 双重转换——本地编译通过不代表 CI 通过
+
+### 🔴 开发 session 交付物清单闸门（v1.1.8 流程优化）
+
+> **结构性问题（v1.1.8 暴露）**：releasing.md 历史假设「开发→自测→审核→发版」一个 session 连贯完成。实际项目中，**开发 session 和发版 session 经常分离**——开发 session 交付代码后，发版 session 接手时不知道前面做到哪一步，经常卡在步骤 7（版本号 bump）、步骤 13（acceptance-test 补场景）、步骤 16（审查体系更新）。
+>
+> **解决方案**：开发 session 交付前，必须过这个交付物清单闸门。发版 session 接手时，第一件事就是核对这个清单——全部 ✅ 才能从阶段三自测开始。
+
+开发 session 交付代码时，**必须**确认以下交付物全部就绪：
+
+| # | 交付物 | 验证方式 | 谁负责 |
+|:--:|------|---------|:--:|
+| D1 | **代码实现完成** | `npm run build` exit 0 + `npm test` 全绿 | 工程师 |
+| D2 | **changelog 已写** | `docs/changelog/vX.Y.md` 存在，含功能点 + 新增测试数 | 工程师 |
+| D3 | **acceptance-test 补场景** | 按 changelog 功能点逐条 grep `tools/acceptance-test.sh`，零覆盖 = 未交付。**Step D 覆盖率闭环判定三项全 PASS** | 工程师 |
+| D4 | **审查体系已更新** | `regression-checklist.md` 追加本版本新维度 + `fresh-eyes-review.md` 补充新盲区。**可留发版 session 阶段五补做**，但开发 session 须标注「待补」 | 工程师 |
+| D5 | **版本号状态标注** | changelog 头部标注「开发期 SSOT 仍为 vX.Y.Z，版本号 bump 留发版 SOP」或已 bump 完成 | 工程师 |
+
+> **发版 session 接手检查**：打开 `docs/changelog/vX.Y.md`，看头部状态标注。如果 D3/D4 标「待补」，发版 session 须先补完才能进入阶段三自测。**绝不能跳过 D3 直接跑 acceptance-test**——零覆盖的新功能跑出来全绿是假象。
 
 ---
 
