@@ -292,7 +292,7 @@ flowchart LR
 
 **控制图 vs 数据图二分天然具备**：管网（Workflow / StateGraph）= 控制图，决定"先干什么后干什么"；蓄水池 + 市政规划 = 数据图，承载"知道什么、怎么理解"。两者解耦——控制图无知识库也能跑（纯编排），数据图无控制图也能沉淀（Dream Cycle 独立跑）。
 
-**可学习的未来迭代（落盘见 [ROADMAP](./ROADMAP.md)「Graph Engineering 印证」）**：① 控制图多循环 DAG 波次并行（v1.3.0）；② 并行 SubAgent git worktree 隔离（v1.2.x）；③ 用户视角波次拓扑可视化（v1.2.x）。本视角只框定术语，不引入新能力。
+**可学习的未来迭代（落盘见 [ROADMAP](../ROADMAP.md)「Graph Engineering 印证」）**：① 控制图多循环 DAG 波次并行（v1.3.0）；② 并行 SubAgent git worktree 隔离（v1.2.x）；③ 用户视角波次拓扑可视化（v1.2.x）。本视角只框定术语，不引入新能力。
 
 #### 重试语义：统一计数器
 

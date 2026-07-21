@@ -50,7 +50,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.1.6** | ✅ 已发布 | **BugFix 21 项 + LLM Wiki 3 层分层 + conflict-check**：v1.1.5 遗留全数修复 + Ledger-Views-Policy 显式化 + daemon 知识健康巡检（矛盾/孤儿/死链） | [📖](./docs/changelog/v1.1.6.md) · [🗺️ 三层映射](./docs/llm-wiki-mapping.md) |
 | **v1.1.7** | ✅ 已发布 | **Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性**：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级（缺省 internal）+ knowledge-health 5 项检查（@weekly）+ `knowledge status` 聚合命令 | [📖](./docs/changelog/v1.1.7.md) |
 | **v1.1.8** | 📋 规划中 | **安全层 + 联邦查询 + Agent 安全防护 + 编排引擎最小版**：AES-256-GCM + ECDH 配对 + OpenClaw channel 联邦知识查询 + Prompt 注入 8 层防护体系 + **编排引擎最小版**（DeepAgents `subagents` 参数接入——compose 拆解的 YAML 不再只打印，真正传给 `createDeepAgent({ subagents })` 让 DeepAgents 原生调度 Sub Agent，串联执行 → 不带沙箱的 DAG 调度原型） | [📖](./docs/changelog/v1.1.8.md) |
-| **v1.1.9** | 📋 规划中 | **USB 完整运行时 + daemon A/B 自动调度器**：① Node.js 单文件打包 + OpenClaw 便携化 + 跨平台启动脚本（macOS/Windows/Linux），U 盘插入 → 双击 start → 联邦在线 → 拔掉零残留；② **daemon 探索-利用 A/B 调度器**——v1.1.8 手动 A/B 原型的自动化升级，daemon cron 定期用当前方案跑真实任务积累 N 次数据 → 自动切换候选方案再跑 N 次 → compare 聚合指标 → promote 赢家，后台自动持续优化编排策略 | [📖](./docs/changelog/v1.1.9.md) |
+| **v1.1.9** | 📋 规划中 | **USB 完整运行时 + daemon A/B 自动调度器**：① Node.js 单文件打包 + OpenClaw 便携化 + 跨平台启动脚本（macOS/Windows/Linux），U 盘插入 → 双击 start → 联邦在线 → 拔掉零残留；② **daemon 探索-利用 A/B 调度器**——v1.1.8 手动 A/B 原型的自动化升级，daemon cron 定期用当前方案跑真实任务积累 N 次数据 → 自动切换候选方案再跑 N 次 → compare 聚合指标 → promote 赢家，后台自动持续优化编排策略；③ **控制图状态抽取（Graph Engineering 波次拓扑可视化·数据层）**：从 `.sofagent/checkpoint/` + `LoopArtifacts` 抽取结构化 JSON（节点状态/波次序号/guard 触发/★Reality Anchor 证据链），为 v1.2.x Dashboard 波次视图提供数据底座 | [📖](./docs/changelog/v1.1.9.md) |
 | **v1.2.0** | 📋 规划中 | **多设备知识联邦收口 🎉**：端到端全功能验证（LOOP + Dream Cycle + 联邦查询 + 加密）+ gbrain 行业对标 + USB key 产品故事写入主文档 + 兜底修复。v1.2.x 完整多设备协同的起点 | [📖](./docs/changelog/v1.2.0.md) |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同——**L2 团队协作协议**：共享态/意图广播/触发反应/冲突消解/反馈放大五大机制，从单人约束到团队协作；**L3 组织能力市场**：Skill/Agent/流程在企业内发布→发现→调用→评价，高频高价值自然胜出。+ Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界。**🔮 探索**：路由器式配网（边缘设备 WiFi 热点 + 手机端配置网页，仅用于初始配置，配置完成后回归纯 LUI）+ **协议中立**（审计层只走 MCP 等开放协议和 git diff/JSONL/Markdown 开放格式，不为任何单一平台写专属集成——不绑定平台，平台不绑定审计） + **编排隔离底座（git worktree 轻量形态）+ 波次拓扑可视化（控制图视角，随 dashboard 交付，详见子里程碑）** | — |
 | **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐 + 并行编排**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **编排引擎并行调度（Graph Engineering 视角：控制图多循环 DAG 波次并行）**：基于 v1.1.8 的 DeepAgents subagents 调度原型，新增 DAG 依赖解析（Kahn 波次拓扑）+ 并行扇出/扇入（LangGraph `Send` API）+ 循环依赖检测 + 失败传播策略 + 超时熔断；每波次经 audit 节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供 | — |
@@ -115,10 +115,9 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 - **②·3 冲突消解策略**：并行 SubAgent 写到同一逻辑文件时的冲突仲裁规则（按节点职责域划分优先 / 人工确认兜底），写入 harness 约束
 - **②·4 与 v1.1.8 `filesValue` 同步合并的边界**：明确"同步并行用 filesValue 自动合并" vs "跨波次并行用 worktree 隔离"的适用边界，二者不互相替代
 
-**③ 用户视角波次拓扑可视化（拆 3 子里程碑）**：
-- **③·1 控制图状态抽取**：从 `.sofagent/checkpoint/` + `LoopArtifacts` 抽取结构化 JSON——节点状态 / 波次序号 / guard 触发结果 / Reality Anchor（audit）证据链
-- **③·2 Dashboard 波次拓扑视图**：前端渲染控制图（节点 + 边 + 波次分层），实时显示每波次 SubAgent 状态 + audit 卡关结果，替代纯技术状态文件
-- **③·3 用户可读性**：面向"人看一眼就懂现在卡在哪"的语言化呈现（非开发者视角），随 v1.2.x dashboard 产品化节奏交付
+**③ 用户视角波次拓扑可视化（拆 2 子里程碑，数据层 ③·1 已提前至 v1.1.9）**：
+- **③·1 Dashboard 波次拓扑视图**：前端渲染控制图（节点 + 边 + 波次分层），实时显示每波次 SubAgent 状态 + audit 卡关结果，替代纯技术状态文件
+- **③·2 用户可读性**：面向"人看一眼就懂现在卡在哪"的语言化呈现（非开发者视角），随 v1.2.x dashboard 产品化节奏交付
 
 **演化路径**：
 
@@ -156,7 +155,7 @@ sofagent 的编排引擎天然就是「控制图」——`sofagent/orchestrator/
 |---|------|------|:--:|------|
 | ① | **多循环 DAG 波次并行**（控制图 wave parallelism：Kahn 波次拓扑 + 扇出/扇入 + 循环依赖检测） | v1.1.8 仅串行+同步并行（`filesValue` 合并）；DAG 循环依赖检测已划 v1.3.0 | **v1.3.0** | 重构为「控制图波次并行」，见 v1.3.0 ④。★Reality Anchor（audit）作每波次 guard edge，失败传播 + 超时熔断 |
 | ② | **并行 SubAgent git worktree 隔离**（轻量 git 原生形态：每并行子 Agent `git worktree add` 独立工作树，sofagent audit 合并/diff） | v1.1.8 沙箱隔离划 v1.4.0（与 FilesystemBackend 重沙箱捆绑） | **v1.2.x（子里程碑 ②·1~②·4）** | 从 v1.4.0 重沙箱捆绑中拆出、提前落地——纯 git 原生原语，无新运行时基础设施；拆 4 子里程碑（隔离原语 / 审计合并卡关 / 冲突消解 / 与 filesValue 边界），见 v1.2.x 详细节。为 v1.3.0 波次并行提供文件隔离底座。重沙箱（虚拟文件系统/虚拟 key/AsyncSubAgent）仍留 v1.4.0 |
-| ③ | **用户视角波次拓扑可视化**（控制图可视化：节点状态/波次/guard 触发/Reality Anchor 证据链） | 无 | **v1.2.x（子里程碑 ③·1~③·3）** | 已钉死——控制图波次拓扑可视化，拆 3 子里程碑（状态抽取 / Dashboard 视图 / 用户可读性），随 v1.2.x dashboard 交付，见 v1.2.x 详细节 |
+| ③ | **用户视角波次拓扑可视化**（控制图可视化：节点状态/波次/guard 触发/Reality Anchor 证据链） | 无 | **数据层 v1.1.9（③·1 状态抽取）；视图层 v1.2.x（③·2~③·3 Dashboard + 可读性）** | 状态抽取（数据层）提前到 v1.1.9——v1.1.9 是 daemon 可观测版本，后台 A/B 跑真实任务需可读性，且原始数据（checkpoint + LoopArtifacts）已存在于 v1.1.x；Dashboard 视图 + 用户可读性仍随 v1.2.x dashboard 交付。见 v1.2.x 详细节 |
 
 > 🔴 **落地纪律**：① 和 ② 是「用 Graph Engineering 术语框定已有/规划能力」，不新增能力范围；③ 是纯可视化，依赖 dashboard 产品化节奏（v1.2.x 起）。
 
