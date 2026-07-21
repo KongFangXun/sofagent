@@ -1,6 +1,6 @@
 // ============================================================
 // dream-cycle/state-machine.ts · Dream Cycle 6 阶段编排状态机
-// v1.1.7 新增
+// v1.1.8 新增
 //
 // 职责：
 //   - 按序串 6 个 stage（extract_facts → … → embed）
@@ -29,6 +29,8 @@ import type {
   Stage,
 } from './types';
 import { DREAM_CYCLE_STAGES } from './types';
+import { pushKnowledgeSummary } from '../notify';
+import { pushToTarget } from '../push-target';
 import { MockLLM } from './llm-mock';
 import { extractFacts } from './extract-facts';
 import { extractAtoms } from './extract-atoms';
@@ -256,5 +258,7 @@ export async function runDreamCycle(
     lastRunAt: new Date().toISOString(),
   });
   appendWeeklyLog(projectDir, result.counts, result.auditEntryCount);
+  // v1.1.7 新增：cycle_complete 触发知识摘要主动通知（best-effort，失败静默）
+  void pushKnowledgeSummary(projectDir, pushToTarget);
   return result;
 }

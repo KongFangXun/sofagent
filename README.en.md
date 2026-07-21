@@ -16,7 +16,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.7-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.8-16B8F3" alt="Version" /></a>
   <a href="#install"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
@@ -173,6 +173,8 @@ graph LR
 Injects rules into Agent context before work starts — so it knows where the red lines are. Four-layer loading chain: SKILL.md (constitution) → fde.md (enterprise rules) → think.md (historical pitfalls) → knowledge/ (auto-accumulated). v1.0.7+ Sub Agents self-load on startup (`buildConstrainedSystemPrompt`), independent of any Agent platform's Skill system.
 
 > 📚 **Knowledge pipeline (v1.1.7)**: knowledge/ is auto-accumulated by the daemon's **Dream Cycle 6-stage pipeline** (extract_facts → extract_atoms → cluster_patterns → synthesize_concepts → skillopt_backfill → embed), replacing the legacy scatter scripts; every entry carries a `sensitivity` level (public/internal/restricted, default internal). Companion governance: the `knowledge-health` inspector (@weekly — orphan/duplicate/broken-link/stale-index/missing-source, fail-closed read-only) plus the `sofagent-daemon knowledge status` aggregation command (one glance at Dream Cycle weekly report / knowledge health / sensitivity stats; restricted entries are counted only, never leaked).
+
+> 🔐 **Security & federation (v1.1.8 · in development)**: two paired devices query each other's knowledge/ over the OpenClaw channel — AES-256-GCM application-layer encryption + ECDH key exchange (keys live in memory only) + three pairing paths (6-digit code confirmation / token via `SOFAGENT_FEDERATION_TOKEN` / federation.json HMAC signature verification) + double sensitivity filtering + automerge CRDT merge (trust outranks mtime) + graceful offline fallback. Prompt-injection defenses completed: `<untrusted>` wrapping for external content, prompt-level redaction, and knowledge trust grading (official>internal>user>web; web+restricted dropped). Proactive knowledge notifications: Dream Cycle / health inspections push a summary on completion (best-effort; restricted never included).
 
 ### ⚙️ Orchestration Engine
 

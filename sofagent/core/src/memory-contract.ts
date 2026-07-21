@@ -1,7 +1,7 @@
 // ============================================================
 // memory-contract.ts · think.md 记忆契约（Ledger-Views-Policy 模型）
-// v1.1.7: 将 think.md 的不变量从"文档约定"提升为代码级单一事实来源
-// v1.1.7 新增: knowledge entry 的 sensitivity 分级契约（safe-by-default）
+// v1.1.8: 将 think.md 的不变量从"文档约定"提升为代码级单一事实来源
+// v1.1.8 新增: knowledge entry 的 sensitivity 分级契约（safe-by-default）
 // ============================================================
 //
 // sofagent 记忆三层模型（Ledger-Views-Policy）中，think.md 的契约定义。
@@ -131,4 +131,59 @@ export function isSensitivityVisible(
   viewer: Sensitivity = DEFAULT_SENSITIVITY,
 ): boolean {
   return SENSITIVITY_ORDER[entrySensitivity] <= SENSITIVITY_ORDER[viewer];
+}
+
+// ────────────────────────────────────────────────────────────
+// trust 可信分级契约（v1.1.7 新增）
+//
+// 与 sensitivity 正交：sensitivity 管"谁能看"，trust 管"多可信"。
+// knowledge entry 的 frontmatter 可声明 `trust: official | internal | user | web`。
+// 缺省语义与 sensitivity 同范式：缺省/非法值一律按 internal（safe-by-default；
+// 读取侧兜底解析，不做回填脚本——frontmatter 保持作者原样）。
+//
+// 全序：official > internal > user > web（RAG 召回按此排序）。
+// 联动规则：web + restricted 组合直接丢弃（低可信 + 高敏感 = 高风险），
+// 该判定在 security/trust-grading.ts 的 isTrustEntryUsable() 实现。
+// ────────────────────────────────────────────────────────────
+
+/** trust 可信分级（全序：official > internal > user > web） */
+export type Trust = 'official' | 'internal' | 'user' | 'web';
+
+/** trust 缺省级别（safe-by-default，web 绝不默认） */
+export const DEFAULT_TRUST: Trust = 'internal';
+
+/** trust 全序权重（数值越大越可信，用于 RAG 召回排序） */
+export const TRUST_ORDER: Record<Trust, number> = {
+  official: 3,
+  internal: 2,
+  user: 1,
+  web: 0,
+};
+
+/**
+ * 从 frontmatter 解析 trust，缺省/非法值 → internal。
+ *
+ * 完全仿写 resolveSensitivity 范式：trim + lowercase 后只认精确四枚举，
+ * 其他任何值（大小写异常、拼写错误、注入串、非字符串类型）一律回落
+ * DEFAULT_TRUST（safe-by-default）。读取侧兜底，不回填 frontmatter。
+ *
+ * @param frontmatter 页面的 frontmatter 键值对（已解析）
+ * @returns 解析后的 trust（必为合法枚举值）
+ */
+export function resolveTrust(
+  frontmatter: Record<string, unknown> | null | undefined,
+): Trust {
+  if (!frontmatter) return DEFAULT_TRUST;
+  const raw = frontmatter['trust'];
+  if (typeof raw !== 'string') return DEFAULT_TRUST;
+  const normalized = raw.trim().toLowerCase();
+  if (
+    normalized === 'official' ||
+    normalized === 'internal' ||
+    normalized === 'user' ||
+    normalized === 'web'
+  ) {
+    return normalized;
+  }
+  return DEFAULT_TRUST;
 }

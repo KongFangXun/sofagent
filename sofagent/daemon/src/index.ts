@@ -52,3 +52,30 @@ export type { InspectorConfig, InspectorResult } from './inspectors';
 // USB Federation (v1.1.4)
 export { detectSofagentUsb } from './usb-detect';
 export type { UsbDetectResult } from './usb-detect';
+
+// OpenClaw Federation（联邦查询 · v1.1.7 新增）
+export { loadOpenClawChannel, createMemoryChannel, filterOnlinePeers } from './federation/channel';
+export type { ChannelMessage, FederationChannel } from './federation/channel';
+export {
+  registerPeer,
+  unregisterPeer,
+  listPeers,
+  getPeer,
+  markPeerAlive,
+  markPeerFailure,
+  clearPeers,
+} from './federation/peers';
+export type { PeerState } from './federation/peers';
+export {
+  broadcastQuery,
+  fetchFromPeer,
+  encodeFrame,
+  decodeFrame,
+  validateRemoteResult,
+  PEER_QUERY_TIMEOUT_MS,
+} from './federation/query-router';
+export type { KnowledgeQuery, KnowledgeQueryResult, FederationResult } from './federation/query-router';
+export { mergeFederationResults, pickWinner } from './federation/merge';
+export type { MergedKnowledge } from './federation/merge';
+export { withOfflineFallback } from './federation/offline-fallback';
+export type { FederationAuditEntry, AuditWriter } from './federation/offline-fallback';

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // sofagent-orchestrate-compare · 编排方案 A/B 对比 + 任务编排 CLI
 //
-// v1.1.7: ao 完全退役，DeepAgents 为唯一编排引擎。
+// v1.1.8: ao 完全退役，DeepAgents 为唯一编排引擎。
 // 新增连续胜出计数器（CONSECUTIVE_WINS_REQUIRED = 2）+ ab-state.json 持久化。
-// v1.1.7：迁移至 @sofagent/orchestrator，import → 同包内 composer
+// v1.1.8：迁移至 @sofagent/orchestrator，import → 同包内 composer
 //
 // 用法:
 //   sofagent-orchestrate-compare --current <dir> --candidate <dir> --output <dir>
@@ -14,9 +14,10 @@ import { execFileSync } from 'child_process';
 import { existsSync, readdirSync, readFileSync, statSync, mkdirSync, writeFileSync, copyFileSync, renameSync, rmSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { createHash } from 'crypto';
-import { composeWithDeepAgents } from './composer';
+import { composeWithDeepAgents, compose, type ComposeVariant } from './composer';
+import { runDAG } from './dag-runner';
 
-const VERSION = '1.1.7';
+const VERSION = '1.1.8';
 
 export interface Metric { runCount: number; auditViolations: number; avgSteps: number; firstPassRate: number; }
 interface Args { current: string; candidate: string; output: string; }
@@ -288,12 +289,34 @@ async function composeTask(args: string[]): Promise<void> {
   let taskDesc = '';
   let dryRun = false;
   let useWorktree = false;
+  // v1.1.7 新增：--run / --enterprise-workflow / --variants / --label / --alt-prompt
+  let doRun = false;
+  let enterpriseWorkflowFile = '';
+  let variants: ComposeVariant[] = [];
+  let label = '';
+  let altPromptFile = '';
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!;
     switch (a) {
       case '--dry-run': dryRun = true; break;
       case '--worktree': useWorktree = true; break;
+      case '--run': doRun = true; break;
+      case '--enterprise-workflow':
+        if (args[i + 1]) enterpriseWorkflowFile = args[++i]!;
+        break;
+      case '--variants':
+        if (args[i + 1]) {
+          const raw = args[++i]!;
+          variants = raw.split(',').map((v) => v.trim().toUpperCase()).filter((v): v is ComposeVariant => /^[ABCD]$/.test(v));
+        }
+        break;
+      case '--label':
+        if (args[i + 1]) label = args[++i]!;
+        break;
+      case '--alt-prompt':
+        if (args[i + 1]) altPromptFile = args[++i]!;
+        break;
       case '--version': console.log(`sofagent-orchestrate-compare compose v${VERSION}`); process.exit(0);
       case '--help': showComposeHelp(); process.exit(0);
       default:
@@ -302,6 +325,19 @@ async function composeTask(args: string[]): Promise<void> {
   }
 
   if (!taskDesc) { err('缺少任务描述。用法: sofagent-orchestrate-compare compose "你的任务"'); process.exit(1); }
+
+  // v1.1.7 新增：多变体 A/B 串行双跑模式（--variants A,B,C,D）
+  // 同一 enterpriseWorkflowYaml，变的是"怎么拆"（策略）不变的是"拆什么"（企业流程）
+  if (variants.length > 0) {
+    await composeVariants(taskDesc, variants, {
+      enterpriseWorkflowFile,
+      doRun,
+      label,
+      altPromptFile,
+      dryRun,
+    });
+    return;
+  }
 
   console.log('');
   console.log('  ╔═══════════════════════════════════╗');
@@ -348,7 +384,19 @@ async function composeTask(args: string[]): Promise<void> {
     info('Step 1/3 · 编排分析（DeepAgents compose 拆解）...');
     workflowFile = join(process.env.TMPDIR || '/tmp', `sofagent-workflow-${process.pid}.yaml`);
 
-    const deepAgentsYaml = await composeWithDeepAgents(taskDesc);
+    // v1.1.7 新增：--enterprise-workflow 让企业 workflow 作为 compose 参考上下文
+    let enterpriseYaml: string | undefined;
+    if (enterpriseWorkflowFile) {
+      try {
+        enterpriseYaml = readFileSync(enterpriseWorkflowFile, 'utf-8');
+        info(`企业 workflow 参考已加载: ${enterpriseWorkflowFile}`);
+      } catch {
+        warn(`企业 workflow 读取失败（${enterpriseWorkflowFile}），按通用拆解继续`);
+      }
+    }
+    const deepAgentsYaml = enterpriseYaml !== undefined
+      ? (await compose({ taskDesc, enterpriseWorkflowYaml: enterpriseYaml, variant: 'A' }))?.yaml ?? null
+      : await composeWithDeepAgents(taskDesc);
     if (deepAgentsYaml) {
       writeFileSync(workflowFile, deepAgentsYaml);
       ok('DeepAgents compose 成功');
@@ -440,7 +488,39 @@ async function composeTask(args: string[]): Promise<void> {
     console.log('');
     console.log(yamlContent);
     console.log('');
-    ok('编排完成。使用 --run 执行编排方案。');
+    // v1.1.7 新增：--run 真正执行编排（dag-runner 委派 Sub Agent）
+    if (doRun) {
+      info('Step 3.5 · 执行编排（dag-runner 委派 Sub Agent）...');
+      try {
+        const result = await runDAG(taskDesc, yamlContent, process.cwd());
+        ok(`编排执行完成——${result.subagentCount} 个 Sub Agent 参与`);
+        for (const w of result.warnings) warn(w);
+        console.log('');
+        console.log('  ── 执行结果 ──');
+        console.log(typeof result.finalOutput === 'string'
+          ? result.finalOutput
+          : JSON.stringify(result.finalOutput, null, 2));
+        // A/B 记录：--label 标记本轮方案（供连续胜出计数）
+        if (label) {
+          try {
+            mkdirSync(orchestratorDir, { recursive: true });
+            atomicWriteSync(
+              join(orchestratorDir, `run-${taskSlug}-${label}.json`),
+              JSON.stringify({
+                task: taskDesc, label, at: new Date().toISOString(),
+                subagentCount: result.subagentCount, warnings: result.warnings,
+              }, null, 2),
+            );
+            info(`运行记录已写入 run-${taskSlug}-${label}.json`);
+          } catch { /* best-effort */ }
+        }
+      } catch (e) {
+        err(`编排执行失败：${e instanceof Error ? e.message : String(e)}`);
+        process.exit(1);
+      }
+    } else {
+      ok('编排完成。使用 --run 执行编排方案。');
+    }
     if (!skipCompose && existsSync(workflowFile)) {
       try {
         mkdirSync(orchestratorDir, { recursive: true });
@@ -456,6 +536,131 @@ async function composeTask(args: string[]): Promise<void> {
   console.log(`  编排结束。模式: ${mode}`);
   console.log('');
   process.exit(0);
+}
+
+/**
+ * v1.1.7 新增：多变体 A/B 串行双跑
+ *
+ * 同一 enterpriseWorkflowYaml，变的是"怎么拆"（A/B/C/D 策略）不变的是"拆什么"。
+ * 逐变体串行 compose（→ 可选 --run 执行）→ 提取指标 → 更新连续胜出状态（阈值 2）。
+ * --alt-prompt 提供候选拆解 prompt 文件时，按 candidate 方案计入 A/B 状态。
+ */
+async function composeVariants(
+  taskDesc: string,
+  variants: ComposeVariant[],
+  opts: {
+    enterpriseWorkflowFile: string;
+    doRun: boolean;
+    label: string;
+    altPromptFile: string;
+    dryRun: boolean;
+  },
+): Promise<void> {
+  console.log('');
+  console.log('  ╔═══════════════════════════════════╗');
+  console.log('  ║   sofagent · 多变体编排对比       ║');
+  console.log('  ╚═══════════════════════════════════╝');
+  console.log('');
+  info(`任务: ${taskDesc}`);
+  info(`变体: ${variants.join(' / ')}（串行双跑）`);
+
+  // 企业 workflow 参考（可选）
+  let enterpriseYaml: string | undefined;
+  if (opts.enterpriseWorkflowFile) {
+    try {
+      enterpriseYaml = readFileSync(opts.enterpriseWorkflowFile, 'utf-8');
+      info(`企业 workflow 参考: ${opts.enterpriseWorkflowFile}`);
+    } catch {
+      warn(`企业 workflow 读取失败（${opts.enterpriseWorkflowFile}），按通用拆解继续`);
+    }
+  }
+  // 候选拆解 prompt（A/B 的 B 侧；记录进 ab-state 供连续胜出计数）
+  let altPrompt = '';
+  if (opts.altPromptFile) {
+    try {
+      altPrompt = readFileSync(opts.altPromptFile, 'utf-8');
+      info(`候选拆解 prompt: ${opts.altPromptFile}`);
+    } catch {
+      warn(`候选 prompt 读取失败（${opts.altPromptFile}），忽略`);
+    }
+  }
+
+  const homeDir = process.env.HOME || '/tmp';
+  const sofagentData = process.env.SOFAGENT_DATA || join(homeDir, '.sofagent');
+  const orchestratorDir = join(sofagentData, 'orchestrator');
+  mkdirSync(orchestratorDir, { recursive: true });
+  const taskSlug = createHash('sha256').update(taskDesc).digest('hex').slice(0, 8);
+
+  interface VariantOutcome {
+    variant: ComposeVariant;
+    yaml: string | null;
+    nodeCount: number;
+    runOk: boolean;
+  }
+  const outcomes: VariantOutcome[] = [];
+
+  // 串行双跑（实时并行留 v1.4.0）
+  for (const variant of variants) {
+    console.log('');
+    info(`── 变体 ${variant} ──`);
+    const result = await compose(
+      { taskDesc, enterpriseWorkflowYaml: enterpriseYaml, variant },
+    );
+    if (!result) {
+      warn(`变体 ${variant} compose 失败`);
+      outcomes.push({ variant, yaml: null, nodeCount: 0, runOk: false });
+      continue;
+    }
+    const nodeCount = (result.yaml.match(/- id:/g) ?? []).length;
+    ok(`变体 ${variant} compose 成功（${nodeCount} 节点）`);
+    console.log(result.yaml);
+
+    let runOk = false;
+    if (opts.doRun && !opts.dryRun) {
+      try {
+        const dagResult = await runDAG(taskDesc, result.yaml, process.cwd());
+        runOk = true;
+        ok(`变体 ${variant} 执行完成——${dagResult.subagentCount} 个 Sub Agent`);
+        for (const w of dagResult.warnings) warn(w);
+      } catch (e) {
+        warn(`变体 ${variant} 执行失败：${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    outcomes.push({ variant, yaml: result.yaml, nodeCount, runOk });
+
+    // 落盘每变体产物（缓存 + 记录）
+    try {
+      writeFileSync(join(orchestratorDir, `${taskSlug}-variant-${variant}.yaml`), result.yaml, 'utf-8');
+    } catch { /* best-effort */ }
+  }
+
+  // 汇总对比 + 连续胜出状态更新（复用 CONSECUTIVE_WINS_REQUIRED=2 机制）
+  console.log('');
+  info('── 变体对比汇总 ──');
+  for (const o of outcomes) {
+    const status = o.yaml === null ? 'compose 失败' : `${o.nodeCount} 节点${opts.doRun ? (o.runOk ? ' · 执行成功' : ' · 执行失败') : ''}`;
+    console.log(`  变体 ${o.variant}: ${status}`);
+  }
+  const [first, second] = outcomes;
+  if (first && second) {
+    // 简化评分：compose 成功 + 节点数更多者胜（完整指标对比走 compare 主路径）
+    const scoreOf = (o: VariantOutcome): number =>
+      (o.yaml === null ? 0 : 1) + o.nodeCount + (opts.doRun && o.runOk ? 2 : 0);
+    const winner: CompareResult['winner'] =
+      scoreOf(first) === scoreOf(second) ? 'tie' : scoreOf(first) > scoreOf(second) ? 'current' : 'candidate';
+    const winnerLabel = winner === 'tie' ? '平手' : winner === 'current' ? `变体 ${first.variant}` : `变体 ${second.variant}`;
+    ok(`本轮胜出：${winnerLabel}`);
+    // candidate 侧身份：--alt-prompt 文件或第二变体；--label 作为 current 侧标记
+    updateAbState(
+      { winner, currentScore: scoreOf(first), candidateScore: scoreOf(second) },
+      opts.altPromptFile || `variant-${second.variant}`,
+      opts.label || `variant-${first.variant}`,
+      opts.dryRun,
+    );
+  }
+  if (altPrompt) {
+    info(`候选 prompt 已参与对比（${opts.altPromptFile}）`);
+  }
 }
 
 function analyzeTrackRecord(taskDesc: string, sofagentData: string): [number, number] {
@@ -499,6 +704,10 @@ function showComposeHelp(): void {
   console.log('  用法:');
   console.log('    sofagent-orchestrate-compare compose "任务描述"');
   console.log('    sofagent-orchestrate-compare compose "任务描述" --dry-run    仅预览编排');
+  console.log('    sofagent-orchestrate-compare compose "任务描述" --run        编排后立即执行（dag-runner）');
+  console.log('    sofagent-orchestrate-compare compose "任务描述" --enterprise-workflow wf.yaml   企业 workflow 参考拆解');
+  console.log('    sofagent-orchestrate-compare compose "任务描述" --variants A,B --run            多变体串行双跑对比');
+  console.log('      [--label A] [--alt-prompt candidate-prompt.md]                              A/B 连续胜出计数');
   console.log('    sofagent-orchestrate-compare compose "任务描述" --worktree   创建独立 worktree');
   console.log('');
   console.log('  两档拆解:');

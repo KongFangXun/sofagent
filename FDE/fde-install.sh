@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# fde-install.sh · FDE 工具包一键部署 · v1.1.7
+# fde-install.sh · FDE 工具包一键部署 · v1.1.8
 # ============================================================
 # 用法: bash fde-install.sh [--platform openclaw|workbuddy|codex|hermes|claude]
 #       默认 --platform openclaw（编排引擎需要 OpenClaw 后台）
@@ -47,7 +47,7 @@ echo -e "  平台: ${BOLD}${PLATFORM}${NC}"
 echo ""
 
 # ── 1. 装 sofagent 底座 ──
-# 调用契约见 sofagent/scripts/install.sh 头部「跨产品调用契约」段（v1.1.7）
+# 调用契约见 sofagent/scripts/install.sh 头部「跨产品调用契约」段（v1.1.8）
 echo -e "${BOLD}[1/3] 安装 sofagent 底座（三层引擎）...${NC}"
 echo -e "  ${CYAN}约束底座 + 审计引擎 + 编排引擎（sofagent-orchestrator）${NC}"
 bash "$PROJECT_ROOT/sofagent/scripts/install.sh" --platform "$PLATFORM"

@@ -1,11 +1,19 @@
 # Changelog
 
 每个版本的详细开发日志在 docs/changelog/ 下。v1.0.0+ 为正式版，v0.x 实验版日志在 [docs/archive/changelog-experimental/](./docs/archive/changelog-experimental/)。本文件是目录索引。
-> v1.1.7 · 2026-07-21（UTC）· 孔放勋
+> v1.1.8 · 2026-07-21（UTC）· 孔放勋
 
 ---
 
 ## 正式版
+
+### [v1.1.8] — 安全层加密配对 + 联邦查询 + Prompt 注入防护补齐 + 编排引擎最小版（开发中）
+> 2026-07-21（UTC）· 开发期（SSOT 仍为 v1.1.7，bump 留发版 SOP）
+
+**核心变更**：① **AES-256-GCM + ECDH 配对**——`core/src/crypto/` 四件套（aes-gcm / ecdh / key-rotation / pairing）：零 npm 依赖全用 Node 内置 crypto；IV 12 字节随机不复用、GCM tag 校验失败抛错；ECDH(prime256v1)+HKDF 派生 32 字节 AES key；三条配对路径（A：6 位码 + 公钥指纹 y/N 确认 / B：`SOFAGENT_FEDERATION_TOKEN` 环境变量 token + HMAC 公钥认证 / C：复用 v1.1.5 federation.json + HMAC .sig sidecar 验签）；key 只存内存；24h 密钥轮换旧 key 只解不加。② **OpenClaw channel 联邦查询**——`daemon/src/federation/` 五件套：帧格式 iv‖tag‖ciphertext；单 peer 5s 超时按离线；sensitivity 双重过滤（peer 端 + 本地端二次校验，restricted 不接收）；篡改标签降权 trust=web + 审计 WARN 不丢弃；`automerge@1.0.1-preview.7`（MIT）CRDT 合并，裁决 #3 trust 优先于 mtime；整块失败退化本地查；审计记 `federation_query{peers, merged, onlinePeers}`；mcp-server `search_knowledge` 异步联邦合并（best-effort）；harness 加载链第 3 层注入 `knowledge/federation/`（`<untrusted source="federation">` 包裹，低于 SKILL.md 高于本地 knowledge/）。③ **Prompt 注入 8 层防护补齐**——层 1 `wrapUntrusted()`（web/user 强制 `<untrusted>` 包裹 + 闭合标签转义防逃逸）+ 层 4 `redactForPrompt()`（sk-\*\*\*/AKIA\*\*\*/手机号/邮箱正则脱敏；restricted 占位兜底）+ 层 5 trust 可信分级（`memory-contract.ts` 新增 `Trust` + `resolveTrust()` 仿 sensitivity 范式缺省 internal；`TRUST_ORDER` official>internal>user>web；web+restricted 组合直接丢弃；RAG 召回 sortByTrust）。④ **编排引擎最小版**——`dag-runner.ts`（createDeepAgent({subagents}) 真委派，每个 SubAgent 注入四层约束加载链；裁决 #1 同文件冲突 WARN；裁决 #4 ORCHESTRATOR_PROMPT 并行引导）+ `workflow-parser.ts`（YAML→SubAgent 映射：developer→ENGINEER / qa-engineer→REVIEWER / researcher→FDE sustain / technical-writer→内置；DAG 悬空/自依赖/环校验）+ `composer.ts` 改造（`ComposeResult{yaml, subagents}`，接 `enterpriseWorkflowYaml` + `variant` A/B/C/D 拆解策略）+ `orchestrator-compare.ts` 实现 `--run` / `--enterprise-workflow` / `--variants` / `--label` / `--alt-prompt`（A/B 串行双跑 + CONSECUTIVE_WINS_REQUIRED=2 promote）。⑤ **知识沉淀主动通知**——`notify.ts` pushKnowledgeSummary + buildSummary（素材 log.md + health-report.md，缺失降级"尚无数据"；通道复用 push-target 的 daemon:notice + openclaw:im；best-effort 失败静默；restricted 不进通知）；dream-cycle cycle_complete 与 knowledge-health 跑完双触发。
+**质量验证**：852 tests across 12 packages 全绿（core 139 / daemon 89 / orchestrator 132 / mcp 36 / harness 13 / audit 413 不回归）· 累计新增 69 case · 新增依赖唯一 automerge（license MIT 核验通过）。
+
+> 📖 [开发日志](./docs/changelog/v1.1.8.md)
 
 ### [v1.1.7] — Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性
 > 2026-07-20（UTC）· 已发布

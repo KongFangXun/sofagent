@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-verify · 装后验证脚本（TypeScript 版）——入口文件
-// v1.1.7 从 @sofagent/core re-export（消除跨包代码重复）
+// v1.1.8 从 @sofagent/core re-export（消除跨包代码重复）
 // ============================================================
 // 验证 sofagent 安装完整性（9 个检查类别，~48 项动态）。
 // 由 verify.sh (942 行 bash) + windows/verify.ps1 合并而来，
