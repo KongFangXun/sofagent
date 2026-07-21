@@ -13,6 +13,7 @@
 - [场景三：排查问题](#场景三排查问题)
 - [场景四：自定义](#场景四自定义)
 - [场景五：FDE 部署与持续优化](#场景五fde-部署与持续优化)
+- [相关技术栈](#相关技术栈)
 - [致谢](#致谢)
 - [彩蛋](#彩蛋)
 
@@ -307,7 +308,7 @@ Agent 先判断任务复杂度：
 
 ### 改写 fde.md
 
-`fde.md` 是你的运行规范，优先级最高。写什么就生效什么。设计理想 ≤500 字（当前实际 ~1,600 字——写少了 Agent 记得更牢，v1.x 计划精简）
+`fde.md` 是你的运行规范，优先级最高。写什么就生效什么。设计理想 ≤500 字（当前实际 ~1,600 字——写少了 Agent 记得更牢，v1.x 计划精简）。注：此 ≤500 字是代码注释 / 提交信息等短文本的简洁预算原则，企业红线文档（fde.md）本身可超出该预算。
 
 模板在 `sofagent/skill/data/fde.md`。常用配置：
 - 模型偏好（`深度思考优先` / `速度优先`）
@@ -322,22 +323,7 @@ Agent 先判断任务复杂度：
 
 ### 概念速查
 
-| 术语 | 一句话解释 |
-|------|------|
-| **Harness 中间件** | Agent 治理——一底座·四引擎覆盖全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他平台，sofagent 是独立的底线守卫层。→ [设计原理](./ARCHITECTURE.md#治理架构一底座四引擎) |
-| **审计引擎** | 看 git diff 硬证据判定违规，不依赖 Agent 配合。v1.0.8+ daemon 监控文件变更，**非开发者也能用**。→ [审计引擎设计](./ARCHITECTURE.md#审计引擎) |
-| **回溯引擎**（v1.0.8+，本质：git snapshot + revert 包装） | 审计后自动快照存档，违规时建议回滚——不只是告诉你违规了，还存了快照、推了通知 |
-| **编排引擎** | 拆任务→编排→执行，DeepAgents Sub Agent + LangGraph StateGraph（v1.1.3+ 稳定）。→ [编排哲学](./DEVELOPMENT.md#二编排哲学) |
-| **铁律** | Agent 行为约束规则（4 底线 + 7 铁律），写在 MD 文件里注入上下文 |
-| **审计规则** | 代码变更检查规则（A1-A11、A14-A19 + E1-E4），审计引擎按此判定 exit code |
-| **Skill** | Agent 行为模板——一组 .md 文件，定义 Agent 在什么场景做什么 |
-| **think.md** | Agent 任务结束后的反思记录——踩了什么坑、下次怎么办 |
-| **daemon** | 轻量后台进程，检查 think.md/fde.md 文件 hash 变化并通知；v1.0.8+ 扩展为文件变更审计（fs.watch + isomorphic-git） |
-| **OpenClaw** | 开源 Agent 平台，sofagent 的约束底座和加载链 Hook 跑在上面 |
-| **四层加载链** | SKILL.md（宪法层）→ think.md（反思层）→ fde.md（执行层）→ knowledge/index.md（知识层）注入顺序 |
-| **FDE** | Forward Deployed Engineer，四阶段十二步：梳理工作流→构建本体模型→识别节点与量化→部署→离场 |
-
-核心 = **一底座·四引擎覆盖全生命周期**（约束底座 + 编排/审计/进化引擎 + 回溯引擎（本质：git snapshot + revert 包装））。FDE 工具包服务于这套底座，三个维度管住 Agent 行为：四层加载链（所有平台生效）、审计引擎 + daemon（开发者 + 非开发者）、编排引擎 + 进化引擎（增强，OpenClaw 全功能）。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
+上述术语（Harness 中间件、审计/回溯/编排/进化引擎、铁律、审计规则、Skill、think.md、daemon、OpenClaw、FDE 等）已在上方「四层加载链」「引擎怎么跑」节详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。核心 = **一底座·四引擎覆盖全生命周期**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 ---
 
@@ -397,7 +383,7 @@ sofagent 不是孤立的——它构建于以下成熟项目之上，各司其�
 
 ## 致谢
 
-sofagent 站在 8 个开源项目和 7 篇文章/社区的肩膀上。→ [完整致谢](./THANKS.md)
+sofagent 站在 6 个开源项目和 7 篇文章/社区的肩膀上。→ [完整致谢](./THANKS.md)
 
 ## 彩蛋
 

@@ -76,7 +76,7 @@ flowchart LR
 
 ## 四、与 v1.1.7（Dream Cycle）的衔接
 
-| 维度 | v1.1.6（本版本） | v1.1.7（下一版） |
+| 维度 | v1.1.7（本版本） | v1.1.8（下一版） |
 |------|------|------|
 | **核心动作** | **检测**：发现 Views 层健康问题（矛盾/孤儿/死链） | **生产**：Dream Cycle 6 阶段管道自动从 Ledger 派生 Views |
 | **knowledge/ 内容来源** | 人工 + Agent 手动写入 | fact → atom → cluster → synthesize → skillopt → embed 自动派生 |
