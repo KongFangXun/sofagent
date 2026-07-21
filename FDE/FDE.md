@@ -662,7 +662,7 @@ FDE 进场 → 梳理 Workflow A、B、C（每段管网）——梳理结果可�
 
 ### 配置方法
 
-> ⚠️ **Webhook 推送为 v1.2.x 规划能力**：下方 `push_target: webhook://feishu/xxx` 的对外推送目前**尚未实装**。当前版本（v1.1.7）感知报告**仅本地存储**，不会经 Webhook 推送到飞书等外部渠道；该配置项先按规划保留，待 v1.2.x 落地后生效。
+> ⚠️ **Webhook 推送为 v1.2.x 规划能力**：下方 `push_target: webhook://feishu/xxx` 的对外推送目前**尚未实装**。当前版本（v1.1.8）感知报告**仅本地存储**，不会经 Webhook 推送到飞书等外部渠道；该配置项先按规划保留，待 v1.2.x 落地后生效。
 
 在 `.sofagent/config.yml` 中配置（v1.1.7 仅本地存储，不对外推送）：
 
@@ -672,7 +672,7 @@ perception:
   fde:
     name: "孔放勋"               # FDE 团队联系人
     deployed_at: "2026-07-15"     # 部署日期
-  push_target: "webhook://feishu/xxx"  # v1.2.x 规划：Webhook 推送目标；当前 v1.1.7 仅本地存储，不对外推送
+  push_target: "webhook://feishu/xxx"  # v1.2.x 规划：Webhook 推送目标；当前 v1.1.8 仅本地存储，不对外推送
   reports:
     weekly_audit: true            # 每周审计守护报告
     monthly_growth: true          # 每月知识库增长报告
