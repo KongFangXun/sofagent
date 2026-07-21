@@ -1,31 +1,28 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.1.8 · 2026-07-21（UTC）· Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性 · 规划：v1.1.8（编排引擎最小版接入）→ v1.1.9 → v1.2.0 → v1.2.x（编排隔离底座：并行 SubAgent git worktree 隔离）→ v1.3.0（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）
+> v1.1.8 · 2026-07-22（UTC）· 安全层加密配对 + 联邦查询 + Prompt 注入防护补齐 + 编排引擎最小版 · 规划：v1.1.9 → v1.2.0 → v1.2.x（编排隔离底座：并行 SubAgent git worktree 隔离）→ v1.3.0（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
-## 开发中：v1.1.8 🚧（代码实现完成，待发版 SOP）
+## 现在在哪：v1.1.8 ✅（已发布）
 
-> **安全层加密配对 + 联邦查询 + Prompt 注入防护补齐 + 编排引擎最小版**：`core/src/crypto/` 四件套（AES-256-GCM / ECDH+HKDF / 24h 密钥轮换 / 三条配对路径，零 npm 依赖、key 只存内存）→ `daemon/src/federation/` 五件套（OpenClaw channel 联邦查询：5s 超时离线降级、sensitivity 双重过滤、篡改标签降权 + 审计、automerge CRDT 合并 trust 优先于 mtime、mcp-server search_knowledge 注入、harness 加载链第 3 层）→ Prompt 注入 8 层防护补齐层 1/4/5（`<untrusted>` 包裹 + prompt 级脱敏 + trust 可信分级，web+restricted 丢弃）→ 编排引擎从「只打印 YAML」升级为「真正调度 Sub Agent」（dag-runner + workflow-parser + composer 接企业 workflow + `--run`/`--variants A,B,C,D` A/B 串行双跑）→ 知识沉淀主动通知（dream-cycle / knowledge-health 双触发，best-effort）。
+> **安全层加密配对 + 联邦查询 + Prompt 注入防护补齐 + 编排引擎最小版**：AES-256-GCM + ECDH 配对（三条路径）+ OpenClaw channel 联邦查询（automerge CRDT 合并）+ Prompt 注入 8 层防护补齐（层 1/4/5）+ 编排引擎从「只打印 YAML」升级为「真正调度 Sub Agent」（dag-runner + workflow-parser + composer 接企业 workflow + A/B 原型）+ 知识沉淀主动通知。质量验证：852 tests across 12 packages 全绿、check-version 70/70、acceptance 122 通过/0 失败（109 场景）、pre-push-check 16/18 全绿。
 >
-> 质量验证：852 tests across 12 packages 全绿（core 139 / daemon 89 / orchestrator 132 / mcp 36 / harness 13 / audit 413 不回归）· 累计新增 69 case · 新增依赖唯一 `automerge@1.0.1-preview.7`（MIT）。
->
-> 📖 [v1.1.8 开发日志](./docs/changelog/v1.1.8.md) · 版本号 bump 留发版 SOP（开发期 SSOT 仍为 v1.1.7）
+> 📖 [v1.1.8 开发日志](./docs/changelog/v1.1.8.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
-## 现在在哪：v1.1.7 ✅（已发布）
-
-> **Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性**：知识沉淀从散点脚本升级为 6 阶段流水线（extract_facts → extract_atoms → cluster_patterns → synthesize_concepts → skillopt_backfill → embed）+ knowledge 敏感度分级（缺省 internal）+ knowledge-health 5 项检查（@weekly）+ `knowledge status` 聚合命令 + audit ActionGovernance schema。质量验证：781 tests across 12 packages 全绿、check-version 70/70、acceptance 100 场景/113 断言。
->
-> 📖 [v1.1.7 开发日志](./docs/changelog/v1.1.7.md) · [🗺️ LLM Wiki 三层映射](./docs/llm-wiki-mapping.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
-
-> 🔴 **企业采购阻塞项 · Webhook 推送优先级上调**：v1.1.6 已接通 webhook **PASS/WARN/FAIL 三态推送**（本地 agent 自测可用），但推送到企业协同平台（飞书/钉钉/企微）的**完整 Webhook 能力仍规划在 v1.2.x**（见 SECURITY.md「审计结果推送」）。对需通过企业安全采购评审的客户，Webhook 推送是**采购阻塞项**——建议从 **v1.1.7 起优先排期**，而非等到 v1.2.x，以免卡住企业订单。
+> 🔴 **企业采购阻塞项 · Webhook 推送优先级上调**：v1.1.6 已接通 webhook **PASS/WARN/FAIL 三态推送**（本地 agent 自测可用），但推送到企业协同平台（飞书/钉钉/企微）的**完整 Webhook 能力仍规划在 v1.2.x**（见 SECURITY.md「审计结果推送」）。对需通过企业安全采购评审的客户，Webhook 推送是**采购阻塞项**——建议从 **v1.1.9 起优先排期**，而非等到 v1.2.x，以免卡住企业订单。
 
 ---
 
 ## 迭代历程
 
 完整版本历史见 [CHANGELOG](./CHANGELOG.md)。v0.x 为实验/测试版，v1.0.0 起为正式版。
+
+| 版本 | 核心交付 |
+|------|------|
+| **v1.1.7** | Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级（缺省 internal）+ knowledge-health 5 项检查（@weekly）+ `knowledge status` 聚合命令 |
+| **v1.1.6** | BugFix 21 项 + LLM Wiki 3 层分层 + conflict-check：v1.1.5 遗留全数修复 + Ledger-Views-Policy 显式化 + daemon 知识健康巡检（矛盾/孤儿/死链） |
 
 ## 未来去哪
 
@@ -61,9 +58,6 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.1.6** | ✅ 已发布 | **BugFix 21 项 + LLM Wiki 3 层分层 + conflict-check**：v1.1.5 遗留全数修复 + Ledger-Views-Policy 显式化 + daemon 知识健康巡检（矛盾/孤儿/死链） | [📖](./docs/changelog/v1.1.6.md) · [🗺️ 三层映射](./docs/llm-wiki-mapping.md) |
-| **v1.1.7** | ✅ 已发布 | **Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性**：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级（缺省 internal）+ knowledge-health 5 项检查（@weekly）+ `knowledge status` 聚合命令 | [📖](./docs/changelog/v1.1.7.md) |
-| **v1.1.8** | 🚧 开发中 | **安全层 + 联邦查询 + Agent 安全防护 + 编排引擎最小版**：AES-256-GCM + ECDH 配对 + OpenClaw channel 联邦知识查询 + Prompt 注入 8 层防护体系 + **编排引擎最小版**（DeepAgents `subagents` 参数接入——compose 拆解的 YAML 不再只打印，真正传给 `createDeepAgent({ subagents })` 让 DeepAgents 原生调度 Sub Agent，串联执行 → 不带沙箱的 DAG 调度原型） | [📖](./docs/changelog/v1.1.8.md) |
 | **v1.1.9** | 📋 规划中 | **USB 完整运行时 + daemon A/B 自动调度器**：① Node.js 单文件打包 + OpenClaw 便携化 + 跨平台启动脚本（macOS/Windows/Linux），U 盘插入 → 双击 start → 联邦在线 → 拔掉零残留；② **daemon 探索-利用 A/B 调度器**——v1.1.8 手动 A/B 原型的自动化升级，daemon cron 定期用当前方案跑真实任务积累 N 次数据 → 自动切换候选方案再跑 N 次 → compare 聚合指标 → promote 赢家，后台自动持续优化编排策略；③ **控制图状态抽取（Graph Engineering 波次拓扑可视化·数据层）**：从 `.sofagent/checkpoint/` + `LoopArtifacts` 抽取结构化 JSON（节点状态/波次序号/guard 触发/★Reality Anchor 证据链），为 v1.2.x Dashboard 波次视图提供数据底座 | [📖](./docs/changelog/v1.1.9.md) |
 | **v1.2.0** | 📋 规划中 | **多设备知识联邦收口 🎉**：端到端全功能验证（LOOP + Dream Cycle + 联邦查询 + 加密）+ gbrain 行业对标 + USB key 产品故事写入主文档 + 兜底修复。v1.2.x 完整多设备协同的起点 | [📖](./docs/changelog/v1.2.0.md) |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同——**L2 团队协作协议**：共享态/意图广播/触发反应/冲突消解/反馈放大五大机制，从单人约束到团队协作；**L3 组织能力市场**：Skill/Agent/流程在企业内发布→发现→调用→评价，高频高价值自然胜出。+ Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界。**🔮 探索**：路由器式配网（边缘设备 WiFi 热点 + 手机端配置网页，仅用于初始配置，配置完成后回归纯 LUI）+ **协议中立**（审计层只走 MCP 等开放协议和 git diff/JSONL/Markdown 开放格式，不为任何单一平台写专属集成——不绑定平台，平台不绑定审计） + **编排隔离底座（git worktree 轻量形态）+ 波次拓扑可视化（控制图视角，随 dashboard 交付，详见子里程碑）** | — |

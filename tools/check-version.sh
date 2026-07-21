@@ -632,7 +632,7 @@ echo ""
 # 同步修改下方 EXPECTED_DOC_DATE 与 bump-version.sh。
 echo "=== 14. 文档头日期一致性扫描（> vX.Y · YYYY-MM-DD）==="
 DOC_DATE_OK=true
-EXPECTED_DOC_DATE="2026-07-21"
+EXPECTED_DOC_DATE="2026-07-22"
 while IFS= read -r md; do
   match=$(grep -m1 -nE "^> v[0-9]+\.[0-9]+(\.[0-9]+)? · [0-9]{4}-[0-9]{2}-[0-9]{2}" "$md" 2>/dev/null)
   if [ -n "$match" ]; then
