@@ -2,7 +2,7 @@
 
 > v1.1.7 · 2026-07-21（UTC）· 孔放勋
 >
-> 今天你看到这个文件名还是 "Forward Deployed Engineer"。FDE 从岗位 title 升级为能力模型，再升级为**常驻 Agent**——**FDE Agent 不走**。你（人）帮客户部署完离场了，FDE Agent 留在客户那里继续干活：梳理好的工作流在跑、合规自检在跑、周度巡检在跑。客户买到的不是一个工具，是一个 7×24 在线的数字 FDE。
+> 今天你看到这个文件名还是 "Forward Deployed Engineer"。FDE 从岗位 title 升级为能力模型，再升级为**常驻 AI FDE Agent**——**FDE Agent 不走**。你（人）帮客户部署完离场了，FDE Agent 留在客户那里继续干活：梳理好的工作流在跑、合规自检在跑、周度巡检在跑。客户得到的不是一个工具，是一个 7×24 在线的 AI FDE Agent。
 
 <img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -88,7 +88,7 @@ FDE（或企业 CIO/网管）的操作手册。**读它 → 帮企业梳理 work
 | AI 知识库 | 持续积累的实体、概念、对比页 |
 | 私有化评估体系 | eval 反馈 + Skill 迭代历史——无法复制的企业 IP |
 
-**但其实留下的第五样东西才是最重要的——FDE Agent 本身。** 上面四样东西不是静态交付物，是 FDE Agent 持续维护的活资产：它跑交付手册里的 workflow、管 AI 节点的生命周期、给知识库做 Dream Cycle 沉淀、用 eval 驱动 Skill 迭代。人（FDE 工程师）离场了，FDE Agent 留下——7×24 在跑。这才是「常驻数字 FDE」的真正含义：客户买到的不是一套文档+几个脚本，而是一个一直在线、一直干活、一直自检的数字 FDE。
+**但其实留下的第五样东西才是最重要的——FDE Agent 本身。** 上面四样东西不是静态交付物，是 FDE Agent 持续维护的活资产：它跑交付手册里的 workflow、管 AI 节点的生命周期、给知识库做 Dream Cycle 沉淀、用 eval 驱动 Skill 迭代。人（FDE 工程师）离场了，FDE Agent 留下——7×24 在跑。这才是「常驻 AI FDE Agent」的真正含义：客户得到的不是一套文档+几个脚本，而是一个一直在线、一直干活、一直自检的 AI FDE Agent。
 
 > 📖 FDE 的产品哲学——「不配置 UI，配置对话能力」见 [设计哲学](../docs/PHILOSOPHY.md#六怎么装部署哲学)。
 
