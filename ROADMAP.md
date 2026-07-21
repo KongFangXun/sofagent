@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.1.7 · 2026-07-21（UTC）· Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性 · 规划：v1.1.8（编排引擎最小版接入）→ v1.1.9 → v1.2.0 → v1.3.0（并行编排）→ v1.4.0（沙箱执行+生产级编排）
+> v1.1.7 · 2026-07-21（UTC）· Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性 · 规划：v1.1.8（编排引擎最小版接入）→ v1.1.9 → v1.2.0 → v1.2.x（编排隔离底座：并行 SubAgent git worktree 隔离）→ v1.3.0（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
@@ -53,8 +53,8 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.1.9** | 📋 规划中 | **USB 完整运行时 + daemon A/B 自动调度器**：① Node.js 单文件打包 + OpenClaw 便携化 + 跨平台启动脚本（macOS/Windows/Linux），U 盘插入 → 双击 start → 联邦在线 → 拔掉零残留；② **daemon 探索-利用 A/B 调度器**——v1.1.8 手动 A/B 原型的自动化升级，daemon cron 定期用当前方案跑真实任务积累 N 次数据 → 自动切换候选方案再跑 N 次 → compare 聚合指标 → promote 赢家，后台自动持续优化编排策略 | [📖](./docs/changelog/v1.1.9.md) |
 | **v1.2.0** | 📋 规划中 | **多设备知识联邦收口 🎉**：端到端全功能验证（LOOP + Dream Cycle + 联邦查询 + 加密）+ gbrain 行业对标 + USB key 产品故事写入主文档 + 兜底修复。v1.2.x 完整多设备协同的起点 | [📖](./docs/changelog/v1.2.0.md) |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同——**L2 团队协作协议**：共享态/意图广播/触发反应/冲突消解/反馈放大五大机制，从单人约束到团队协作；**L3 组织能力市场**：Skill/Agent/流程在企业内发布→发现→调用→评价，高频高价值自然胜出。+ Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界。**🔮 探索**：路由器式配网（边缘设备 WiFi 热点 + 手机端配置网页，仅用于初始配置，配置完成后回归纯 LUI）+ **协议中立**（审计层只走 MCP 等开放协议和 git diff/JSONL/Markdown 开放格式，不为任何单一平台写专属集成——不绑定平台，平台不绑定审计） | — |
-| **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐 + 并行编排**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **编排引擎并行调度**：基于 v1.1.8 的 DeepAgents subagents 调度原型，新增 DAG 依赖解析 + 并行扇出/扇入（LangGraph `Send` API）+ 循环依赖检测 + 失败传播策略 + 超时熔断 | — |
-| **v1.4.0** | 📋 规划中 | **SubAgent 沙箱执行环境 + 生产级编排**：将 orchestrator 内置为完整的沙箱运行时——文件系统隔离、网络出站白名单、**工具调用中介（前置 allow/deny，非仅审计追踪）**、**虚拟 key 凭证边界注入（真实凭证 host 边界注入，SubAgent 只拿临时虚拟 key）**——让 LOOP SubAgent 不依赖外部 Agent 平台，自给自足完成代码开发全流程；审计引擎从「事后」扩展到「运行时」（**范围限定 SubAgent，主 Agent 仍事后审计**）。+ 真·实时 A/B 双跑（候选方案并行执行实时对比，替代当前日志统计法）+ worktree 隔离 + 多 Sub Agent 文件竞争检测 | — |
+| **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐 + 并行编排**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **编排引擎并行调度（Graph Engineering 视角：控制图多循环 DAG 波次并行）**：基于 v1.1.8 的 DeepAgents subagents 调度原型，新增 DAG 依赖解析（Kahn 波次拓扑）+ 并行扇出/扇入（LangGraph `Send` API）+ 循环依赖检测 + 失败传播策略 + 超时熔断；每波次经 audit 节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供 | — |
+| **v1.4.0** | 📋 规划中 | **SubAgent 完整沙箱执行环境 + 生产级编排**：将 orchestrator 内置为完整的沙箱运行时——虚拟文件系统隔离（FilesystemBackend + virtualMode）、网络出站白名单、**工具调用中介（前置 allow/deny，非仅审计追踪）**、**虚拟 key 凭证边界注入（真实凭证 host 边界注入，SubAgent 只拿临时虚拟 key）**、AsyncSubAgent（远程 Agent Protocol 服务端）+ 真·实时 A/B 双跑（候选方案并行执行实时对比，替代当前日志统计法）。**并行 SubAgent 文件隔离**：git worktree 轻量形态已于 v1.2.x 落地，v1.4.0 升级为完整沙箱隔离 + 多 Sub Agent 文件竞争检测。审计引擎从「事后」扩展到「运行时」（**范围限定 SubAgent，主 Agent 仍事后审计**） | — |
 
 ---
 
@@ -105,6 +105,8 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 
 **Dream Sandbox 沙盒审计（v2.x 探索）**：Agent 操作先在平行空间模拟运行，人类审批后点「合并」才生效——将约束从事后升级为事前。来源：Palantir AIP，详见 [THANKS](./docs/THANKS.md)。
 
+**并行 SubAgent git worktree 隔离底座（v1.2.x 收口前序 · Graph Engineering 印证）**：从 v1.4.0 重沙箱捆绑中拆出**纯 git 原生形态**的并行文件隔离——每个并行 SubAgent `git worktree add` 独立工作树，sofagent audit 负责合并/diff，无需 FilesystemBackend / 虚拟文件系统 / AsyncSubAgent 等新运行时基础设施。这是 v1.3.0「控制图波次并行」的**隔离前提**：并行扇出/扇入若共用同一工作树会互相踩文件，worktree 隔离让每波次 SubAgent 在独立分支上工作、审计后合并。重沙箱（虚拟文件系统 + 虚拟 key 凭证边界 + AsyncSubAgent + 实时 A/B 双跑）仍留 v1.4.0。
+
 **演化路径**：
 
 | 阶段 | 形态 | 对应版本 |
@@ -128,6 +130,22 @@ sofagent v1.3.0 的 Ontology 认知底座方向与之高度同构，但走**分�
 | Markings + CBAC 本体级安全 | sensitivity frontmatter + 跨设备联邦过滤 | 渐进式演进 |
 
 ---
+
+### 🔮 Graph Engineering 印证（2026-07 新概念 · 迭代参考）
+
+> 📐 来源：2026-07 行业新概念「Graph Engineering」——prompt→context→harness→loop→**graph** 的演进（嵌套非替换）；本质 = 设计 loop/process 之间的关系。理论根 = FSM/Statecharts（Harel 1987）。核心构件：**控制图**（node=state, edge=transition, guard edge 守门）+ **数据图**（知识图谱/血缘）+ **★Reality Anchor**（无 anchor = 披着 PM 外衣的幻觉）。实现模式含 DAG 波次拓扑（Kahn）、扇出/扇入、worktree 隔离、可审计状态文件、动态重规划。
+
+sofagent 的编排引擎天然就是「控制图」——`sofagent/orchestrator/src/loop/graph.ts` 用 `@langchain/langgraph` StateGraph 实现 `START→engineer→audit→reviewer→human_confirm→END`，`audit` 节点即 Reality Anchor（真实 git diff A1-A19 作 guard edge），`FileCheckpointer` 快照到 `.sofagent/checkpoint/` 即可审计状态文件。数据图天然对应 蓄水池（知识库）+ 市政规划（Ontology）。**所以 sofagent 已经在做 Graph Engineering，只是没用这个词**——后续迭代用其术语框定「并行编排」与「可视化」，不引入新能力。
+
+**可学习的未来迭代（落盘到对应版本）**：
+
+| # | Graph Engineering 衍生能力 | sofagent 现状 | 落地版本 | 说明 |
+|---|------|------|:--:|------|
+| ① | **多循环 DAG 波次并行**（控制图 wave parallelism：Kahn 波次拓扑 + 扇出/扇入 + 循环依赖检测） | v1.1.8 仅串行+同步并行（`filesValue` 合并）；DAG 循环依赖检测已划 v1.3.0 | **v1.3.0** | 重构为「控制图波次并行」，见 v1.3.0 ④。★Reality Anchor（audit）作每波次 guard edge，失败传播 + 超时熔断 |
+| ② | **并行 SubAgent git worktree 隔离**（轻量 git 原生形态：每并行子 Agent `git worktree add` 独立工作树，sofagent audit 合并/diff） | v1.1.8 沙箱隔离划 v1.4.0（与 FilesystemBackend 重沙箱捆绑） | **v1.2.x（收口前序）** | 从 v1.4.0 重沙箱捆绑中拆出、提前落地——纯 git 原生原语，无新运行时基础设施；为 v1.3.0 波次并行提供文件隔离底座。重沙箱（虚拟文件系统/虚拟 key/AsyncSubAgent）仍留 v1.4.0 |
+| ③ | **用户视角波次拓扑可视化**（控制图可视化：节点状态/波次/guard 触发/Reality Anchor 证据链） | 无 | 待定（dashboard 阶段） | 迭代参考已认可，非本次重点；随 v1.2.x dashboard 自然承接 |
+
+> 🔴 **落地纪律**：① 和 ② 是「用 Graph Engineering 术语框定已有/规划能力」，不新增能力范围；③ 是纯可视化，依赖 dashboard 产品化节奏（v1.2.x 起）。
 
 ## 探索方向
 
@@ -153,7 +171,7 @@ sofagent v1.3.0 的 Ontology 认知底座方向与之高度同构，但走**分�
 | **Agent 执行层实时治理（Runta 参考 · v1.3.0+，仅 SubAgent）** | syscall/网络/凭证边界实时拦截，**范围限定 sofagent 自派 SubAgent 沙箱**（主 Agent 永远事后审计，不做实时拦截）；凭证虚拟 key 中介（host 边界注入）。详见[下方 Runta 参考章节](#runta-执行层治理参考实时拦截-vs-事后审计) |
 | SkillHub → 单人闭环多岗（阿里 OPT） | 对标阿里 OPT（One Person Team）——单人 + agent skill + 企业系统 → 闭环完成多岗工作 |
 | 规则文件独立只读（焊死的门 · v1.3.x） | 约束规则文件独立于 Agent 工作区，只读挂载，Agent 不可篡改——根治「AI 改测试掩盖错误」 |
-| **Subagent 内置专精小模型（v3.x-v4.x+ 远景 · "自带净水设备的水龙头"）** | 四阶段：① v1.2.x 架构预留（Subagent 定义加 `inference` 字段支持调 Ollama）→ ② v3.x 工具链（`sofagent-model distill`，用 workflow 运行日志微调专属小模型，0.5B-3B 参数）→ ③ v4.x 本地推理（Subagent 默认跑本地精调模型；强推理走本地 DeepSeek-R1-Distill-7B/14B，云端大厂 LLM 仅可选 fallback，默认 `local_only=true`）→ ④ v4.x+ 离线节点（USB key = 完整 AI 节点，不联网、不走大厂、零投喂——数据主权的终极形态）。详见 [River 比喻概念体系](../Desktop/sofagent-river-比喻概念体系-2026-07-21.md) §3.2。为什么不是 v2.x 做工具链：微调是数据工程，需要足够多的真实 workflow 日志才有训练燃料；v2.x 还在铺多设备协同和 Dashboard，数据积累不够 · 🔴 术语纠正：这里不是「从 72B 大模型剪枝/蒸馏」——剪枝/蒸馏/量化是大厂造小基座的上游技术（Qwen2.5-0.5B 已是蒸馏+剪枝+量化后的开源产物，直接拿）。sofagent 做产业链下游最后一环：下载已开源小基座（0.5B-3B）→ 用企业 workflow 数据 **LoRA 微调**（挂业务插件，不动基座参数）→ 教它这一个 workflow。CLI 名 `distill` 是品牌叫法，实际动作是 LoRA 精调 · 默认基座选型：普通 workflow 严格 ≤1B——中文 Qwen2.5-0.5B / 英文 Llama-3.2-1B / 代码本地 Qwen2.5-Coder-0.5B；强推理（复杂代码/多步规划）用**本地** DeepSeek-R1-Distill-7B/14B 跑在 Mac Mini 农场（私有部署，不触大厂 API，不受 ≤1B 限）。🔴 私有部署优先：默认 `local_only=true`，云端大厂 LLM 仅作可选 fallback（需企业显式开启），绝不默认上云——否则私有部署价值落空· 训练硬件 Mac Mini（Apple Silicon + MLX 量化，非 CUDA bitsandbytes），无头 SSH 部署 · 工具链 TypeScript CLI（`sofagent-model`）封装 Python 训练引擎 + node-llama-cpp 推理，项目工程面保持 NodeJS
+| **Subagent 内置专精小模型（v3.x-v4.x+ 远景 · "自带净水设备的水龙头"）** | 四阶段：① v1.2.x 架构预留（Subagent 定义加 `inference` 字段支持调 Ollama）→ ② v3.x 工具链（`sofagent-model distill`，用 workflow 运行日志微调专属小模型，0.5B-3B 参数）→ ③ v4.x 本地推理（业务 workflow 默认跑本地精调模型；代码/强推理等高价值智能任务直连云端最强 LLM，本地小模型只覆盖业务 workflow 场景）→ ④ v4.x+ 离线节点（USB key = 完整 AI 节点，不联网、不走大厂、零投喂——数据主权的终极形态）。详见 [River 比喻概念体系](../Desktop/sofagent-river-比喻概念体系-2026-07-21.md) §3.2。为什么不是 v2.x 做工具链：微调是数据工程，需要足够多的真实 workflow 日志才有训练燃料；v2.x 还在铺多设备协同和 Dashboard，数据积累不够 · 🔴 术语纠正：这里不是「从 72B 大模型剪枝/蒸馏」——剪枝/蒸馏/量化是大厂造小基座的上游技术（Qwen2.5-0.5B 已是蒸馏+剪枝+量化后的开源产物，直接拿）。sofagent 做产业链下游最后一环：下载已开源小基座（0.5B-3B）→ 用企业 workflow 数据 **LoRA 微调**（挂业务插件，不动基座参数）→ 教它这一个 workflow。CLI 名 `distill` 是品牌叫法，实际动作是 LoRA 精调 · 默认基座选型：业务 workflow 严格 ≤1B——中文业务 **Qwen2.5-0.5B** / 英文场景（外贸等）**Llama-3.2-1B**。🔴 任务价值分流：代码生成/复杂推理/多步规划这类高价值智能任务，用户直接选用**云端最强 LLM**（如 Claude/GPT/Gemini），**不强行本地化**；本地小模型只覆盖可窄域替代的业务 workflow 场景。私有部署优先铁律针对业务数据，不与高价值智能任务走云端冲突· 训练硬件 Mac Mini（Apple Silicon + MLX 量化，非 CUDA bitsandbytes），无头 SSH 部署 · 工具链 TypeScript CLI（`sofagent-model`）封装 Python 训练引擎 + node-llama-cpp 推理，项目工程面保持 NodeJS
 
 ---
 
