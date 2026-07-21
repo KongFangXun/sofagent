@@ -171,20 +171,9 @@ sofagent 的编排引擎天然就是「控制图」——`sofagent/orchestrator/
 
 ### 🔮 a16z AI 管理七法则 印证（2026-07 · 迭代参考）
 
-> 📐 来源：a16z（2026-07-14，Hebbia 创始人 George Sivulka）《You Just Hired a Million Bad Employees》——「人比软件便宜」，解法 = 管理。七法则逐条印证 sofagent 已做对什么、缺什么。
+> 📐 来源：a16z（2026-07-15，Hebbia 创始人 George Sivulka）[《You Just Hired a Million Bad Employees》](https://www.a16z.news/p/the-next-ai-goldrush-tokens-loops)——「人比软件便宜」，解法 = 管理。七法则逐条印证 sofagent 已做对什么、缺什么。
 
-| # | a16z 概念 | sofagent 对应 | 现状 | 落地版本 | 说明 |
-|---|------|------|:--:|------|------|
-| 1 | 事实1 成本倒挂（人比软件便宜） | 90/10 价值分层 | 已具备（叙事） | 叙事支撑 | Harness = 把 p90 拉回 p10 的管理杠杆 |
-| 2 | 事实2 增员非裁员（AI 放大组织） | FDE 卖转型 + sustain | 已具备（定位） | 叙事支撑 | AI 放大组织，sofagent 管放大后的队伍 |
-| 3 | 1841 铁路事故 → 现代管理 | guard edge + Reality Anchor + River 堤坝 | 已具备 | 叙事背书 | 直接引用作 Harness 必要性历史背书 |
-| 4 | 法则1 挥霍 Tokenmaxxing | 约束底座 + 明确不做 + FDE 讲清流程 + Ontology | 已具备+可强化 | 印证 | FDE 把模糊流程讲清即抗 Tokenmaxxing |
-| 5 | 法则2 空转 Loops | graph.ts guard edge retryCount<3 | 已原生具备（核心） | 印证 | Loops 治理工程答案 |
-| 6 | 法则3 冗员 Token Bloat | 明确不做清单 / 防 scope 蔓延 + 审计拦改测试 | 已具备+可强化 | 印证 | 砍循环优于优化 |
-| 7 | 法则4 杠杆 100X Token | 90/10 分层 Harness 可靠性最值钱 | 已具备（叙事） | 印证 | 那 10% 即文章「管理杠杆」 |
-| 8 | 法则5 政治 上下文囤积 | 不投喂 / 数据主权 + 知识主权归客户 | 已具备（差异化） | 印证 | 叙事回应组织政治 |
-| 9 | 法则6 考核 Evals | 审计 A1-A11、A14-A19 + E1-E4（共 21 条）= Reality Anchor + Dream Cycle eval 驱动 | 已具备（底座）+ 缺口 | v1.3.0+ 产品化 | 企业专属 eval 套件缺口 |
-| 10 | 法则7 万亿转型服务 | FDE = Services-as-Software + 市场信号互证 | 已具备（核心背书） | 印证 + 规模化缺口 | a16z 最重磅外部背书；规模化交付进未来迭代 |
+七法则完整映射表（a16z 概念 → sofagent 对应 → 现状 → 落地版本 → 说明）已整理到 [PHILOSOPHY · a16z 印证](./docs/PHILOSOPHY.md#a16z你刚雇了一百万个糟糕员工印证2026-07)。本节仅保留与 ROADMAP 规划直接相关的「落地纪律」结论：
 
 > 🔴 **落地纪律**：①~⑧ 是「用 a16z 术语框定已有/规划能力」，不新增能力范围；⑨ 企业专属 eval 套件产品化 → v1.3.0+（tie 失败清单驱动优化 v1.2.x + RSI 验证体系 v2.x）；⑩ 转型服务规模化 / 多客户并行交付 → tie FDE 陪跑期机制 + PE/VC 多企业审计仪表盘 + FDE Demo Kit 工程化。两者均为真实缺口，挂接既有储备，不凭空造功能。
 

@@ -638,11 +638,11 @@ sofagent 自有三层：
 
 ### 外部研究印证：a16z 与 2026-07 研报
 
-a16z《你刚雇了一百万个糟糕员工》七法则、以及 2026-07 三篇研报（Prompt→Loop→Graph 范式 / Ontology Runtime / 工具网关）如何逐条印证 sofagent，含落地版本映射与「5 阶段风险收敛」节奏，已统一整理到 [ROADMAP · 行业印证](../ROADMAP.md#行业印证)（a16z 七法则表 + 动态 Agent 组织与 5 阶段风险收敛）。本节仅保留与架构选型直接相关的两点补充：
+a16z《你刚雇了一百万个糟糕员工》七法则（完整映射见 [PHILOSOPHY · a16z 印证](./PHILOSOPHY.md#a16z你刚雇了一百万个糟糕员工印证2026-07)）、以及 2026-07 三篇研报（Prompt→Loop→Graph 范式 / Ontology Runtime / 工具网关）如何印证 sofagent 的架构选型，已统一整理到 [ROADMAP · 行业印证](../ROADMAP.md#行业印证)（动态 Agent 组织与 5 阶段风险收敛）。本节仅保留与架构选型直接相关的两点补充：
 
 - **Ontology Runtime 六组件补全**：Object（业务语义单元≠表/DTO）/ Link（语义路径≠外键）/ State（统一生命周期）/ Method（确定性计算，AI 调用不替代）/ Action（受控动作：前置·权限·幂等·副作用·审计）/ Policy-Audit-Lineage（全链路治理）。其中 **Method 与 Action 的二分**直接对齐「刚性规则进代码、概率性判断留 LLM」——AI 调用 Method 拿确定性结果，只在 Action 边界受控。
 - **工具网关 = 统一受控 MCP 入口**：研报将「工具网关」定义为统一受控入口（身份·路由·重试·审计集中），与 sofagent 的 MCP 桥 + 审计引擎同构——MCP 是受控入口而非任意调用通道。
 
 > 💡 **铁路类比**：1841 年铁路相撞（协调失误非技术故障）倒逼现代管理诞生；今天 AI 正复刻——模糊指令交给 agent，损失以秒计、指数扩散。Harness = 堤坝，正是这一次的「管理层」。a16z 文章几乎是为 sofagent 写的外部背书。
 
-> 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）/ a16z（2026-07-14）
+> 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）/ a16z（2026-07-15，[You Just Hired a Million Bad Employees](https://www.a16z.news/p/the-next-ai-goldrush-tokens-loops)）
