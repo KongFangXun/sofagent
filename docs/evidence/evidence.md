@@ -2,7 +2,7 @@
 
 > ⚠️ `ao compose` 为 v1.0.7 前命令，现已退役。编排请使用 `sofagent-orchestrator compose`。
 
-> 当前单元测试数：见 `tools/test-count.sh` 实跑（audit 包 / 全 workspace 汇总）。历史记录（v1.1.4 起快照）：v1.1.4 为 388、v1.1.5 为 405、v1.1.6 为 405、v1.1.7 为 410（audit 包）；全 workspace v1.1.4 为 660、v1.1.5 为 726、v1.1.6 为 737、v1.1.7 为 773。
+> 当前单元测试数：见 `tools/test-count.sh` 实跑（audit 包 / 全 workspace 汇总）。历史记录（v1.1.4 起快照）：v1.1.4 为 388、v1.1.5 为 405、v1.1.6 为 405、v1.1.7 为 413（audit 包）；全 workspace v1.1.4 为 660、v1.1.5 为 726、v1.1.6 为 737、v1.1.7 为 781。
 
 > ⚠️ **中文版为完整版（截至 Case 025，2026-07-06）。** 英文版同步至 Case 025。
 

@@ -7,7 +7,7 @@
 
 ## 现在在哪：v1.1.7 ✅（已发布）
 
-> **Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性**：知识沉淀从散点脚本升级为 6 阶段流水线（extract_facts → extract_atoms → cluster_patterns → synthesize_concepts → skillopt_backfill → embed）+ knowledge 敏感度分级（缺省 internal）+ knowledge-health 5 项检查（@weekly）+ `knowledge status` 聚合命令 + audit ActionGovernance schema。质量验证：773 tests across 12 packages 全绿、check-version 69/69、acceptance 100 场景/113 断言。
+> **Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性**：知识沉淀从散点脚本升级为 6 阶段流水线（extract_facts → extract_atoms → cluster_patterns → synthesize_concepts → skillopt_backfill → embed）+ knowledge 敏感度分级（缺省 internal）+ knowledge-health 5 项检查（@weekly）+ `knowledge status` 聚合命令 + audit ActionGovernance schema。质量验证：781 tests across 12 packages 全绿、check-version 70/70、acceptance 100 场景/113 断言。
 >
 > 📖 [v1.1.6 开发日志](./docs/changelog/v1.1.6.md) · [🗺️ LLM Wiki 三层映射](./docs/llm-wiki-mapping.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
