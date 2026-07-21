@@ -116,7 +116,7 @@ export {
 } from './memory-contract';
 export type { MemoryLayer, Sensitivity, Trust } from './memory-contract';
 
-// ── prompt 注入防线（层 1 包裹 + 层 4 脱敏 + 层 5 可信分级 · v1.1.7 新增）──
+// ── prompt 注入防线（层 1 包裹 + 层 4 脱敏 + 层 5 可信分级 · v1.1.8 新增）──
 export {
   wrapUntrusted,
   needsUntrustedWrap,
@@ -132,7 +132,7 @@ export {
 } from './security/trust-grading';
 export type { TrustTagged } from './security/trust-grading';
 
-// ── 联邦加密（AES-256-GCM / ECDH / 密钥轮换 / 配对 · v1.1.7 新增）──
+// ── 联邦加密（AES-256-GCM / ECDH / 密钥轮换 / 配对 · v1.1.8 新增）──
 export {
   encryptPayload,
   decryptPayload,

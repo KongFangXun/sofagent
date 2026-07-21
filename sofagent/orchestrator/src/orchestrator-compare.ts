@@ -289,7 +289,7 @@ async function composeTask(args: string[]): Promise<void> {
   let taskDesc = '';
   let dryRun = false;
   let useWorktree = false;
-  // v1.1.7 新增：--run / --enterprise-workflow / --variants / --label / --alt-prompt
+  // v1.1.8 新增：--run / --enterprise-workflow / --variants / --label / --alt-prompt
   let doRun = false;
   let enterpriseWorkflowFile = '';
   let variants: ComposeVariant[] = [];
@@ -326,7 +326,7 @@ async function composeTask(args: string[]): Promise<void> {
 
   if (!taskDesc) { err('缺少任务描述。用法: sofagent-orchestrate-compare compose "你的任务"'); process.exit(1); }
 
-  // v1.1.7 新增：多变体 A/B 串行双跑模式（--variants A,B,C,D）
+  // v1.1.8 新增：多变体 A/B 串行双跑模式（--variants A,B,C,D）
   // 同一 enterpriseWorkflowYaml，变的是"怎么拆"（策略）不变的是"拆什么"（企业流程）
   if (variants.length > 0) {
     await composeVariants(taskDesc, variants, {
@@ -384,7 +384,7 @@ async function composeTask(args: string[]): Promise<void> {
     info('Step 1/3 · 编排分析（DeepAgents compose 拆解）...');
     workflowFile = join(process.env.TMPDIR || '/tmp', `sofagent-workflow-${process.pid}.yaml`);
 
-    // v1.1.7 新增：--enterprise-workflow 让企业 workflow 作为 compose 参考上下文
+    // v1.1.8 新增：--enterprise-workflow 让企业 workflow 作为 compose 参考上下文
     let enterpriseYaml: string | undefined;
     if (enterpriseWorkflowFile) {
       try {
@@ -488,7 +488,7 @@ async function composeTask(args: string[]): Promise<void> {
     console.log('');
     console.log(yamlContent);
     console.log('');
-    // v1.1.7 新增：--run 真正执行编排（dag-runner 委派 Sub Agent）
+    // v1.1.8 新增：--run 真正执行编排（dag-runner 委派 Sub Agent）
     if (doRun) {
       info('Step 3.5 · 执行编排（dag-runner 委派 Sub Agent）...');
       try {
@@ -539,7 +539,7 @@ async function composeTask(args: string[]): Promise<void> {
 }
 
 /**
- * v1.1.7 新增：多变体 A/B 串行双跑
+ * v1.1.8 新增：多变体 A/B 串行双跑
  *
  * 同一 enterpriseWorkflowYaml，变的是"怎么拆"（A/B/C/D 策略）不变的是"拆什么"。
  * 逐变体串行 compose（→ 可选 --run 执行）→ 提取指标 → 更新连续胜出状态（阈值 2）。

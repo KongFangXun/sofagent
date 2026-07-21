@@ -1,6 +1,6 @@
 // ============================================================
 // workflow-parser.test.ts · workflow YAML → SubAgent 映射测试
-// v1.1.7 新增
+// v1.1.8 新增
 //
 // 覆盖用例（共 9 case）：
 //   1. 合法 workflow 解析：name/description/nodes 归一化，depends_on 缺省补 []

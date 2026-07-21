@@ -8,11 +8,11 @@
 export { composeWithDeepAgents, compose } from './composer';
 export type { ComposeInput, ComposeResult, ComposeVariant } from './composer';
 
-// DAG Runner（编排执行器 · v1.1.7 新增）
+// DAG Runner（编排执行器 · v1.1.8 新增）
 export { runDAG, detectFileConflicts, ORCHESTRATOR_PROMPT } from './dag-runner';
 export type { DAGResult, DagRunnerDeps, CreateDeepAgentFn } from './dag-runner';
 
-// Workflow Parser（YAML → SubAgent 映射 · v1.1.7 新增）
+// Workflow Parser（YAML → SubAgent 映射 · v1.1.8 新增）
 export {
   parseWorkflowYaml,
   toSubAgentConfigs,

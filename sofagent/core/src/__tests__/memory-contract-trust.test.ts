@@ -1,6 +1,6 @@
 // ============================================================
 // memory-contract-trust.test.ts · trust 可信分级契约测试
-// v1.1.7 新增
+// v1.1.8 新增
 //
 // 覆盖用例（共 4 case）：
 //   1. 缺省：frontmatter 缺 trust → 按 internal 处理（safe-by-default）

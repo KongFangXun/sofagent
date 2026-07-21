@@ -53,7 +53,7 @@ export type { InspectorConfig, InspectorResult } from './inspectors';
 export { detectSofagentUsb } from './usb-detect';
 export type { UsbDetectResult } from './usb-detect';
 
-// OpenClaw Federation（联邦查询 · v1.1.7 新增）
+// OpenClaw Federation（联邦查询 · v1.1.8 新增）
 export { loadOpenClawChannel, createMemoryChannel, filterOnlinePeers } from './federation/channel';
 export type { ChannelMessage, FederationChannel } from './federation/channel';
 export {

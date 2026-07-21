@@ -134,7 +134,7 @@ export function isSensitivityVisible(
 }
 
 // ────────────────────────────────────────────────────────────
-// trust 可信分级契约（v1.1.7 新增）
+// trust 可信分级契约（v1.1.8 新增）
 //
 // 与 sensitivity 正交：sensitivity 管"谁能看"，trust 管"多可信"。
 // knowledge entry 的 frontmatter 可声明 `trust: official | internal | user | web`。

@@ -814,7 +814,7 @@ class McpServer {
     const text = matches.length
       ? `[sofagent] 找到 ${matches.length} 个匹配:\n` + matches.map((m) => `- ${m.path}: ${m.firstLine}`).join('\n')
       : `[sofagent] 未找到匹配 "${query}" 的知识页`;
-    // v1.1.7 新增：联邦结果异步合并（best-effort——federation 不可用/超时
+    // v1.1.8 新增：联邦结果异步合并（best-effort——federation 不可用/超时
     // 都不阻塞本地结果；peer 返回经 sensitivity 二次过滤 + trust 降权）
     this.sendToolResult(id, {
       type: 'text',
@@ -825,7 +825,7 @@ class McpServer {
   }
 
   /**
-   * v1.1.7 新增：联邦查询异步合并（fire-and-forget）
+   * v1.1.8 新增：联邦查询异步合并（fire-and-forget）
    *
    * 动态探测 daemon federation 模块（mcp 包不直接依赖 daemon——保持包边界；
    * daemon 未安装/OpenClaw 未启动/无任何配对 peer 时静默跳过）。

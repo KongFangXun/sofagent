@@ -47,7 +47,7 @@ export function banner(projectDir: string): void {
 }
 
 // ============================================================
-// v1.1.7 新增：知识沉淀主动通知（T05）
+// v1.1.8 新增：知识沉淀主动通知（T05）
 //
 // 触发源：dream-cycle cycle_complete / knowledge-health 跑完。
 // 素材：log.md（本周学习摘要）+ health-report.md（健康报告）。

@@ -22,13 +22,13 @@ async function loadDeepAgentsCreate(): Promise<Function | null> {
 }
 
 // ────────────────────────────────────────────────────────────
-// v1.1.7 新增：compose 输入/输出结构化
+// v1.1.8 新增：compose 输入/输出结构化
 // ────────────────────────────────────────────────────────────
 
 /** 拆解策略变体：A 步骤拆解（默认）/ B 领域驱动 / C 风险优先 / D 测试先行 */
 export type ComposeVariant = 'A' | 'B' | 'C' | 'D';
 
-/** compose 输入（v1.1.7 新增 enterpriseWorkflowYaml + variant） */
+/** compose 输入（v1.1.8 新增 enterpriseWorkflowYaml + variant） */
 export interface ComposeInput {
   /** 任务描述 */
   taskDesc: string;
@@ -38,7 +38,7 @@ export interface ComposeInput {
   variant?: ComposeVariant;
 }
 
-/** compose 结构化结果（v1.1.7 新增） */
+/** compose 结构化结果（v1.1.8 新增） */
 export interface ComposeResult {
   /** YAML 文本（保留，给 --dry-run 预览） */
   yaml: string;

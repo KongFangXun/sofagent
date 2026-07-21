@@ -54,6 +54,10 @@ OpenClaw/DeepAgents 管路由调度——「会不会做」。sofagent 管行为
 
 **商业层**：36 氪警示——盲目 Palantir 化是服务陷阱。Palantir 的护城河 = 平台优先（可复用原语）+ 主见 + 耐心资本。没核心平台只会沦为咨询/外包公司。sofagent 做的是审计标准中间件——独立、可审计、MIT 开源——不是穿西装的埃森哲。
 
+**市场实证——垂直 Harness 才是护城河**：行业共识正形成——开源 Agent 自进化、大模型公司亲自下场做 Agent（如 Anthropic Claude Code）、大厂高速迭代，三股力量把"通用 Agent 能力"做成基础设施，**通用 Harness 正被模型公司吞噬**（与 §模型层「通用模型越强、通用 Harness 越不值钱」同频）。但离钱近的**垂直 Harness** 仍筑起深壁垒：法律 Agent **Harvey** 公开披露超 1 亿美元 ARR、服务 500+ 客户、42% 的 AmLaw 100 采用；客服 Agent **Sierra** 上线七季度破 1 亿美元 ARR——客户买的是"解决问题+完成服务"，不只调一次模型。这与 sofagent「不做通用平台、做细分业务 workflow 的可约束性」定位同频：护城河在垂直、在审计、在客户工作流，不在通用能力堆叠。
+
+> 📖 来源：温故知新 2026-07-21（行业研读 · Harvey/Sierra 公开披露 + a16z Services-as-Software 论述 + 36氪 Palantir 化警示）
+
 ### 为什么不封装成 Skill——大模型会吞噬文字形式的约束
 
 有人会问：为什么不把 sofagent 的能力封装成 Skill（像 Claude Code Skills / Cursor Rules 那样）？因为**大模型会吞噬一切文字形式的约束**。

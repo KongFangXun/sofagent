@@ -1,6 +1,6 @@
 // ============================================================
 // dag-runner.test.ts · 编排执行器测试（mock DeepAgents）
-// v1.1.7 新增
+// v1.1.8 新增
 //
 // 覆盖用例（共 5 case）：
 //   1. 端到端：YAML → SubAgent 创建（注入四层约束 prompt）→ invoke → DAGResult
