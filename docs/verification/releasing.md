@@ -188,6 +188,31 @@
 - 开发日志是活文档，代码改完立刻回写，不要等
 - 发布检查清单全部打 `[x]`（在阶段十确认关口之后）
 
+### 发版日期同步（🔴 v1.1.8 教训）
+
+bump-version.sh 在开发期写入日期（如 `2026-07-21`），但实际发版可能跨天（`2026-07-22`）。check-version.sh 第 14 项 `EXPECTED_DOC_DATE` 硬编码了这个日期，跨天会导致所有文档头漂移报错。
+
+**发版时（阶段八或阶段十一 Step 0）必须执行**：
+
+```bash
+# 1. 把 check-version.sh 的 EXPECTED_DOC_DATE 改为今天
+TODAY=$(date -u +%Y-%m-%d)
+sed -i '' "s/EXPECTED_DOC_DATE=\"[0-9-]*\"/EXPECTED_DOC_DATE=\"$TODAY\"/" tools/check-version.sh
+
+# 2. 批量更新文档头日期（bump-version.sh 写入的旧日期 → 今天）
+# 只改 > vX.Y 开头的文档头行，不改正文中的历史日期引用
+OLD_DATE=$(git log --format="%ci" -1 --diff-filter=A -- package.json | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" | head -1)
+# 如果 bump 日期和今天不同，批量替换
+if [ -n "$OLD_DATE" ] && [ "$OLD_DATE" != "$TODAY" ]; then
+  grep -rl "^> v[0-9].*· ${OLD_DATE}" --include="*.md" . \
+    | grep -v "docs/changelog/" | grep -v "node_modules/" | grep -v ".workbuddy/" \
+    | xargs sed -i '' "s/· ${OLD_DATE}（UTC）/· ${TODAY}（UTC）/"
+fi
+
+# 3. 验证
+bash tools/check-version.sh  # 期望：第 14 项 ✓ 文档头日期一致
+```
+
 ### 测试数字一致性（🔴 v1.1.7 起用脚本自动校验）
 
 CHANGELOG/ROADMAP/LIMITATIONS/evidence.md 中声称的测试数必须与实际 `test-count.sh` 输出一致。v1.0.4 曾写 455 但实际 465；v1.1.7 再次漂移（773→781），根因是 commit 自身新增了测试用例但文档没跟着改。
@@ -413,7 +438,7 @@ shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh   # 期望：零 
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
 | 22 | **新增文件类型/目录排查**<br><br>① 本版本有没有新增文件类型（如 `.yaml`/`.toml`/`.json5`）？→ `check-version.sh` 是否需要加对应检查项？`bump-version.sh` 是否需要加对应 bump 步骤？<br>② 本版本有没有新增目录（如 `LOOP/`/`agents/`/`docs/new-section/`）？→ `bump-version.sh` 和 `check-version.sh` 的 `find` 排除规则是否需要更新（`_archive`/`docs/archive`/`node_modules`/`dist`）？<br>③ 本版本有没有文件迁移（如 `audit/src/` → `core/src/`）？→ `regression-checklist.md` 中的路径是否需要更新？跑 `grep -rn "旧路径" docs/verification/regression-checklist.md` 确认<br>④ **🔴 v1.1.4 教训：孤儿配置文件排查**——`pnpm-workspace.yaml` 是上个版本的残留配置（项目用 npm workspace，文件不被任何工具读取）。本步追加：扫根目录有无不属于本项目技术栈的配置文件（`pnpm-workspace.yaml`/`yarn.lock`/`.ruby-version` 等），有则确认是否需要删除<br>⑤ **🔴 v1.1.6 教训：shellcheck 扫描范围与 CI 一致性**——本版本有没有新增含 `.sh` 的目录？→ `pre-push-check.sh` 的 shellcheck `find` 命令是否覆盖了所有含 `.sh` 的目录？对比 CI 的 `.github/workflows/shellcheck.yml` 确保一致（CI 扫全仓，本地也必须全扫）。v1.1.6 教训：`LOOP/` 有 `.sh` 但 pre-push-check 的 find 没扫它——CI 抓住了，本地门禁放行。另外检查本地 shellcheck 版本 ≥0.11.0（与 CI 对齐），低于则 warning 提示升级——v0.10.0 对 SC2155 等 warning 判定宽松（exit 0），v0.11.0 更严格（exit 1），版本差会导致本地过了 CI 挂了 | 五项逐一确认，有变更则更新对应脚本；④ 额外扫孤儿配置；⑤ `grep "find.*\.sh" tools/pre-push-check.sh` 抓当前扫描目录，与 CI shellcheck.yml 的 files 配置对照 |
-| 23 | **三脚本对照检查**<br><br>① `check-version.sh` 检查的每一类文件，`bump-version.sh` 是否都有对应的 bump 步骤？（缺口 = check 能发现但不自动修复——如 v1.1.3 发现的 10 个 workspace 子包 version 字段）<br>② `pre-push-check.sh` 的检查项数量是否和 CHANGELOG/ROADMAP 声明的一致？（v1.1.3 教训：声明 13 通过，实际 15 通过/16 项）<br>③ `check-version.sh` 的检查项编号分母是否和实际检查项数一致？（v1.1.3 教训：`[1/13]~[12/13]+[13/14]+[14/14]` 分母跳变） | ① `diff <(grep '──\|✓\|✗' <(./tools/check-version.sh 2>&1 \| grep '── \[')) <(grep '\[.*\/13\]' tools/bump-version.sh)` 粗略对照<br>② `./tools/pre-push-check.sh 2>&1 \| grep '结果:'` 的数字和 CHANGELOG 声明对比<br>③ `grep '\[.*\/' tools/check-version.sh \| head -20` 检查分母一致性 |
+| 23 | **三脚本对照检查**<br><br>① `check-version.sh` 检查的每一类文件，`bump-version.sh` 是否都有对应的 bump 步骤？（缺口 = check 能发现但不自动修复——如 v1.1.3 发现的 10 个 workspace 子包 version 字段）<br>② `pre-push-check.sh` 的检查项数量是否和 CHANGELOG/ROADMAP 声明的一致？（v1.1.3 教训：声明 13 通过，实际 15 通过/16 项）<br>③ `check-version.sh` 的检查项编号分母是否和实际检查项数一致？（v1.1.3 教训：`[1/13]~[12/13]+[13/14]+[14/14]` 分母跳变） | ① 跑 `./tools/check-version.sh` 看末尾「检查通过: N/N 项」，再跑 `./tools/bump-version.sh --dry-run` 对照 bump 步骤数，两者覆盖范围应一致<br>② `./tools/pre-push-check.sh 2>&1 \| grep '结果:'` 的数字和 CHANGELOG 质量验证段对比<br>③ `grep '── \[' tools/check-version.sh` 看实际打印的分母是否全一致（注释中的引用不算） |
 | 24 | **过时检查清理**<br><br>**机制**（v1.1.4 重构——从版本专用硬编码升级为通用框架）：<br><br>**Step A — 从 SSOT changelog 推导检测模式**：<br>读 `docs/changelog/v{SSOT}.md`，从「核心变更」「缺陷修复」章节提取本版本涉及的废弃/变更项。按以下模板生成检测关键词：<br>　· 新增规则 → 搜索旧规则数（如 v1.1.4 新增 A18/A19 → 搜索 `19 条规则`）<br>　· 废弃命令/入口 → 搜索旧命令（如 `sofagent-audit --daemon`）<br>　· 测试数变化 → 搜索旧测试数（如 `343` → 388）<br>　· 术语更名 → 搜索旧术语（如 `回溯引擎` → `回溯能力`）<br>　· 删除的标志/功能 → 搜索删除项（如 `verify.js --list`）<br>　· **🔴 目录更名（v1.1.4 教训）→ 搜索旧目录名**（如 `workflow-hub` → `FLOWHUB`，这种更名会留下 markdown 相对路径死链——`./workflow-hub/` 在 README 里变成死链。grep 搜索旧目录名 + 跑 `bash tools/check-docs.sh` 维度 1b「全仓相对路径死链扫描」）<br><br>**Step B — 运行检测**：`grep -rn '<模式>' docs/ *.md --include='*.md' \| grep -v 'docs/changelog/\|.workbuddy/\|node_modules/'` + `bash tools/check-docs.sh`（特别是维度 1b 死链扫描）<br><br>**Step C — 判定与分类**：<br>　· 历史记录（changelog 正文、审查盲区描述）→ 保留，不标过时<br>　· 当前文档（README/ARCHITECTURE/LIMITATIONS/指南）→ **必须更新**<br>　· 检查模式自身（regression-checklist 中的 grep 命令）→ 保留<br><br>**Step D — 历史存档**：将本版本新增的废弃项追加到下面的「历史废弃项」表，供后续版本回溯——**不要替换**，累积追加。<br><br>**硬规**：检测结果中，除 changelog 历史记录和检查模式自身外，**零残留**。<br><br>── 历史废弃项（按版本累积，只追加不替换）──<br><br>**v1.1.4 废弃/变更项**（SSOT 1.1.3→1.1.4）：<br>· `sofagent-audit --daemon` → `sofagent-daemon`（daemon 独立 CLI）<br>· `19 条规则` → `21 条`（A18/A19 新增）<br>· `343` tests → `388`（audit）/ `558` → `660`（全 workspace）<br>· `回溯引擎` → `回溯能力`（v1.1.3 更名，v1.1.4 继续清理残留）<br>· `verify.js --list` → 删除（标志不存在）<br>· pre-push-check 数字：`14/14` → 去硬编码<br>· `workflow-hub/` → `FLOWHUB/`（目录更名，README 4 处死链）<br>· `engineering-*` → `sofagent-*`（Skill 命名统一） | 除 changelog 历史 + 检查模式自身外，**零残留**（0 处） |
 
 ---
@@ -427,13 +452,19 @@ shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh   # 期望：零 
 | 25 | 展示全部改动清单 | `git diff --stat` |
 | 26 | 作者逐项确认 | 重点看版本号、ROADMAP、CHANGELOG |
 | 27 | 确认通过后，开发日志「发布检查清单」打 `[x]` | 不在文档收尾前打勾 |
-| 28 | **AI 生成发布 prompt，交接给项目负责人**——发版命令由 AI 准备但绝不执行 | AI 输出完整的发布 prompt（含 npm publish / git tag / gh release / Skill 分发 / 发布后验证），项目负责人亲手跑 |
+| 28 | **AI 生成发布 prompt，交接给项目负责人**——发版命令由 AI 准备，项目负责人可亲手执行或授权 AI 代执行 | AI 输出完整的发布 prompt（含 npm publish / git tag / gh release / Skill 分发 / 发布后验证）。项目负责人可选择亲手跑，或说「交给你了」授权 AI 在已登录环境代执行 |
 
 ---
 
-## 阶段十一：发布（🔴 项目负责人根据 AI 生成的发布 prompt 亲手执行）
+## 阶段十一：发布（🔴 项目负责人亲手执行，或授权 AI 代执行）
 
-> AI 在阶段十确认关口生成一份完整的发布 prompt（含所有命令），项目负责人（孔放勋）拿到后亲手逐条执行。npm publish、git tag、gh release create 涉及凭证和权限，AI 绝不代劳。
+> AI 在阶段十确认关口生成一份完整的发布 prompt（含所有命令），项目负责人（孔放勋）拿到后可亲手逐条执行。
+>
+> **🔴 AI 代执行边界（v1.1.8 决策）**：如果项目负责人说「交给你了」明确授权，AI 可以在项目负责人已登录的环境代执行发布命令（npm publish / git tag / gh release / Skill 分发）。但：
+> - npm 凭证必须在项目负责人已登录的终端中使用，**AI 不得自行 `npm login` 或操作凭证**
+> - 每一步执行后立即报告结果，遇到报错暂停并请示
+> - 不可逆操作（npm publish / git push --force）前确认环境无误
+> - 这里的核心是：**授权 AI 跑命令 ≠ 授权 AI 管凭证**——凭证始终在人的控制下
 
 ### 本地安装（自己吃自己的狗粮）
 
@@ -497,27 +528,31 @@ npm run build
 
 ── Step 2: 按依赖层分批 publish ──
 
+> 🔴 macOS 兼容（v1.1.8 教训）：不要用 `cd ../xxx && npm publish` 的连续 `&&` 链——
+> 如果某一步失败或单独执行，`cd ../` 的基准目录是错的。用 `(cd sofagent/xxx && npm publish --access public)`
+> 子 shell 模式，每行独立可执行。
+
 🔴 第一层·叶子包（零 @sofagent 依赖，可并行）：
-1. cd sofagent/harness   && npm publish --access public
-2. cd ../ontology        && npm publish --access public
-3. cd ../eval            && npm publish --access public
-4. cd ../core            && npm publish --access public
+1. (cd sofagent/harness     && npm publish --access public)
+2. (cd sofagent/ontology    && npm publish --access public)
+3. (cd sofagent/eval        && npm publish --access public)
+4. (cd sofagent/core        && npm publish --access public)
 
 🔴 第二层·依赖第一层（audit/orchestrator/skillopt 可并行）：
-5. cd ../audit           && npm publish --access public
-6. cd ../orchestrator    && npm publish --access public
-7. cd ../skillopt        && npm publish --access public
+5. (cd sofagent/audit        && npm publish --access public)
+6. (cd sofagent/orchestrator && npm publish --access public)
+7. (cd sofagent/skillopt     && npm publish --access public)
 
 🔴 第三层·依赖第二层（think/daemon 可并行）：
-8. cd ../think           && npm publish --access public
-9. cd ../daemon          && npm publish --access public
+8. (cd sofagent/think   && npm publish --access public)
+9. (cd sofagent/daemon  && npm publish --access public)
 
 🔴 第四层·依赖第二+三层（ab-test/workflow-hub 可并行）：
-10. cd ../ab-test        && npm publish --access public
-11. cd ../workflow-hub   && npm publish --access public
+10. (cd sofagent/ab-test      && npm publish --access public)
+11. (cd sofagent/workflow-hub && npm publish --access public)
 
 🔴 第五层·收官（mcp 依赖 audit+orchestrator+think）：
-12. cd ../mcp            && npm publish --access public
+12. (cd sofagent/mcp  && npm publish --access public)
 
 ── Step 3: 验证全部 12 包（🔴 v1.1.3 教训强化——只 echo 不判 FAIL 是虚假绿色） ──
 NEW_VER="1.1.X"  # 替换为实际新版本号
@@ -544,7 +579,34 @@ echo "✅ 全部 12 包版本一致 = $NEW_VER"
 12.7 🔴 tag 必须指向最终发布提交（v1.1.8 起）：tag 不得提前打好再回头补丁——必须等本版全部改动（含文档 / 测试）合入、且 `bash tools/check-version.sh` / `bash tools/check-docs.sh` / 各包 `npm test` 全绿后，才在**最后一个本版提交**上打 tag。提前打 tag 会导致补丁提交游离在 tag 之外、版本号与代码不一致，破坏可回溯性。
 13. git tag vX.Y.Z && git tag -l "vX.Y.Z" --format='%(subject)' | grep "vX.Y.Z" || echo "⚠️ tag message 不匹配，建议重新打 tag"
 14. git push origin vX.Y.Z
-14. gh release create vX.Y.Z
+```
+
+**🔴 网络降级策略（v1.1.8 教训）**：
+
+如果 git push HTTPS 超时（GitHub 网络波动），但 tag 已推上去（可用 `gh api` 确认），**不要干等**——gh CLI / clawhub / skillhub 走各自的 API 通道，不受 git HTTPS 影响。执行顺序可调整为：
+
+```bash
+# 确认 tag 已在远端
+gh api repos/KongFangXun/sofagent/git/refs/tags/vX.Y.Z --jq '.object.sha'
+# 对比本地 tag sha
+git rev-parse vX.Y.Z
+# 两者一致 → tag 已推送成功，可以继续 gh release
+
+# 先用 gh API 通道完成 release + Skill 分发（不依赖 main push）
+gh release create vX.Y.Z ...
+clawhub skill publish ...
+skillhub publish ...
+
+# main push 后台重试（带超时保护）
+GIT_HTTP_LOW_SPEED_LIMIT=1000 GIT_HTTP_LOW_SPEED_TIME=15 git push origin main
+# 失败就多重试几次，间隔 5s
+```
+
+**关键认知**：gh release 只依赖 tag 存在于远端，**不依赖 main push 完成**。tag push 成功后就可以做 release + Skill 分发，main push 可以后台慢慢重试。
+
+```bash
+── Step 5: gh release create ──
+15. gh release create vX.Y.Z
    🔴 Release body **必须**包含开发日志链接（**必须用 markdown 链接语法**，不要用反引号包裹的纯文本路径——后者在 GitHub 上不可点击）：
    📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)
 
@@ -676,7 +738,6 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 32 | **🔴 审查闭环——发布后审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `docs/verification/fresh-eyes-review.md`（已在本版本阶段五中更新），对已发布版本做独立审查<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，作为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的维度和检查项 |
 | 33 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 直接吸收进对应阶段，标注版本号<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 LOOP.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
 | 34 | **生成「下一版本开发 Prompt」到桌面**：综合 `ROADMAP.md`（未来规划）+ `CHANGELOG.md` + 下一版本 `docs/changelog/vX.Y.md`（若存在），生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`。<br>**若下一版本 changelog 尚未创建**：先 ① 写新版本需求并产出 `docs/changelog/vX.Y.md`；再 ② 生成桌面开发 prompt |
-| 35 | **🔴 不再落盘独立审查 prompt（v1.1.5 决策）**：<br>发布的 `fresh-eyes-review.md` 本身已经是一份完整的、可直接在**新 session** 中执行的审查指令（5 轮 9 视角 + 维度 1-32）。额外生成 `~/Desktop/vX.Y-review-prompt.md` 落盘会造成两个文件各自演进、偏离同步——人来改 fresh-eyes-review 时忘了同步桌面 prompt，或者反过来用旧 prompt 跑新审查。**新 session 直接读 `docs/verification/fresh-eyes-review.md` 执行发布会后审查**——比单独维护一份桌面 prompt 更干净、更不容易过时。 |
 
 ### 下一版本开发 Prompt 生成说明（步骤 34）
 
@@ -705,10 +766,10 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 五 | 审查体系合并更新（含瘦身检查） | 当前 session | 否 | regression-checklist + fresh-eyes-review 同步更新 |
 | **六** | **acceptance-test + regression-checklist（开新 session）** | **审核者控制 OpenClaw** | **🔴 是（全新认知；FAIL 回阶段五循环）** | **stage6 合并报告全 PASS** |
 | 七 | 审查体系最终确认 | 作者 | 否 | 两份审查文档状态一致、无遗漏（初版已在阶段五写入） |
-| 八 | 文档收尾 | 作者 | 否 | CHANGELOG/ROADMAP 五步/版本号/日期对齐。CLI 迁移版本在此处补跑 shellcheck/acceptance |
+| 八 | 文档收尾 | 作者 | 否 | CHANGELOG/ROADMAP 五步/版本号/**发版日期同步**/测试数一致性。涉及 CLI 迁移时 shellcheck 在此补跑 |
 | 九 | 工具脚本健康检查 | 作者 | 否 | check-version/bump-version/pre-push-check 覆盖同步 + 过时检查清理 |
-| 十 | 确认关口 | AI → **生成发布 prompt 交接** | 否 | git diff 确认 → 检查清单打勾 → 生成发布 prompt 交给负责人 |
-| 十一 | 发布（含本地安装） | **🔴 项目负责人亲手执行** | 否 | 先装本地版本验证 → 再按依赖层分批 npm publish + git tag + gh release + Skill 分发 |
+| 十 | 确认关口 | AI → **生成发布 prompt 交接** | 否 | git diff 确认 → 检查清单打勾 → 生成发布 prompt 交给负责人（可授权 AI 代执行） |
+| 十一 | 发布（含本地安装） | **🔴 项目负责人，或授权 AI 代执行** | 否 | 先装本地版本验证 → 再按依赖层分批 npm publish + git tag + gh release + Skill 分发。**网络降级**：tag 推上后 gh release/Skill 分发不依赖 main push |
 | 十二 | 发布后 | 作者 | 是（步骤 32 开新 session 读 `fresh-eyes-review.md` 做审查） | npm 验证 + 发布后审查 → 生成下版本开发 prompt 到桌面（步骤 34）→ 自动进入下版本阶段一 |
 
 ---
