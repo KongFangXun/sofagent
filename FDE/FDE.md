@@ -771,6 +771,12 @@ F2 的「自动化程度四模式」与「架构复杂度四模式」（A 任务
 
 > 📖 来源：31 篇行业笔记跨批研读（2026-07-20）
 
+### a16z《你刚雇了一百万个糟糕员工》对标（2026-07）
+
+> 📐 来源：a16z（2026-07-14）法则7——面向存量传统企业的 AI 转型服务市场 = Neofirm（AI 原生）的 10 倍；Palantir 卖转型非卖工具（ChatGPT 基期总回报 +26x vs SaaS 一篮子 -2.9%）；Jevons 悖论：每落地 1 个 AI 用例暴露 10 个新需求，持续转型成唯一竞争壁垒。
+
+与 FDE 定位同频：FDE = Services-as-Software，交付「常驻 FDE Agent」而非工具包（见 §先读这段）。ROADMAP「市场信号验证」已有 4 条互证（Anthropic 收 Fractional AI / Accenture×Anthropic 3 万人 FDE 受训 / Blackstone+H&F+Goldman 共建企业 AI 服务 / Anthropic×Palantir FedStart）。Jevons 悖论亦呼应 §13 持续存在感机制（sustain）——转型不是一锤子买卖，是持续陪跑。
+
 ---
 
 ## 产品化护栏

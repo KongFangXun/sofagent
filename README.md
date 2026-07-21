@@ -28,6 +28,8 @@ Agent 越聪明，企业越不敢放手——真出事了，谁负责？能拦�
 
 **sofagent 是 AI Agent 的 Harness 中间件**：每次 Agent 改完代码、写完文件，自动跑一遍规则库，违规的当场拦截、合规的存快照。改了什么就是什么，无可抵赖。零 token 消耗——纯正则引擎，不调 LLM。
 
+> 💡 **为什么是现在**：a16z（2026-07）指出「人类历史上第一次，人比软件便宜」——每家公司在雇「一百万个糟糕的 AI 员工」，80% 的 token 在空转。解法不是更强的模型，而是**管理**。sofagent 正是那一层：用约束 + 审计把 Agent 队伍管起来。
+
 ```bash
 npm install -g @sofagent/audit @sofagent/core && sofagent-audit --init
 ```
@@ -180,6 +182,8 @@ graph LR
 开工前把规则注入 Agent 上下文——让它知道红线在哪。四层加载链：SKILL.md（宪法层）→ fde.md（企业规则层）→ think.md（历史踩坑层）→ knowledge/（自动积累层）。v1.0.7+ Sub Agent 启动时自加载（`buildConstrainedSystemPrompt`），不依赖任何 Agent 平台的 Skill 系统。
 
 > 📚 **知识沉淀流水线（v1.1.7）**：knowledge/ 由 daemon **Dream Cycle 6 阶段 pipeline** 自动沉淀（extract_facts → extract_atoms → cluster_patterns → synthesize_concepts → skillopt_backfill → embed），替换旧散点脚本；每条知识带 `sensitivity` 分级（public/internal/restricted，缺省 internal）。配套治理：`knowledge-health` 巡检器（@weekly，孤立/重复/断链/index 过旧/缺源 5 项，fail-closed 只读）+ `sofagent-daemon knowledge status` 聚合命令（一眼看见 Dream Cycle 周报 / 知识健康 / sensitivity 统计，restricted 只计数不泄露）。
+
+> 🔐 **安全与联邦（v1.1.8 · 开发中）**：两台配对设备经 OpenClaw channel 互查 knowledge/——AES-256-GCM 应用加密 + ECDH 密钥交换（key 只存内存）+ 三条配对路径（6 位码确认 / token / federation.json HMAC 验签）+ sensitivity 双重过滤 + automerge CRDT 合并（trust 优先于 mtime）+ 离线降级不阻塞。Prompt 注入防护补齐：外部内容 `<untrusted>` 包裹 + prompt 级脱敏 + 知识可信分级（official>internal>user>web，web+restricted 丢弃）。知识沉淀主动通知：Dream Cycle / 健康巡检跑完自动推送摘要（best-effort，restricted 不进通知）。
 
 ### ⚙️ 编排引擎
 

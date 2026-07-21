@@ -394,3 +394,15 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 三条共同指向：约束 / 治理不是「加分项」，是 Agent 可投产的前提——与 sofagent「约束层永远在线」同源。
 
 > 📖 来源：联网核验（2026-07-20）· Gartner / MIT NANDA / Governance Decay 论文
+
+### a16z《你刚雇了一百万个糟糕员工》印证（2026-07）
+
+> 📐 来源：a16z（2026-07-14，Hebbia 创始人 George Sivulka）核心判断——「人类历史上第一次，人比软件便宜」；每家公司在雇「一百万个糟糕的 AI 员工」，80% 的 token 在空转浪费。解法不是更强的模型、也不是更多算力，而是 185 年前诞生的老手艺：**管理**。
+
+这与 sofagent 底层定位同频：**Harness 中间件 = 管住 Agent 行为的那一层**（River 比喻里「堤坝」）。a16z 七法则中 Loops / 100X / 冗员 / Evals / 转型 五条，sofagent 已原生具备对应物（映射表见 ARCHITECTURE §六「行业框架对齐」）。其中最关键的三条：
+
+- **空转 Loops → guard edge**：`graph.ts` 的 `retryCount<3` 条件路由天然防 loops 失控——这是 Loops 治理的工程化答案。
+- **考核 Evals → Reality Anchor**：审计引擎 A1-A19 把「可评估性」硬编码为真实 git diff，而非 Agent 自报完成。
+- **万亿转型 → FDE 卖转型**：FDE = Services-as-Software，交付「常驻 FDE Agent」而非工具包；ROADMAP 已有 4 条市场信号互证。
+
+> 💡 **铁路类比**：1841 年铁路事故（协调失误非技术故障）催生现代管理；今天 AI 放大组织失调的速度以秒计——Harness 是 AI 时代的「管理层」。外部权威再次确认：模型越强，那 10% 的「行」（约束与可靠性）越值钱。
