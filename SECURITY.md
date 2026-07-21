@@ -35,6 +35,49 @@ v1.1.7 引入了三项新能力，其安全语义与边界如下：
 | **sensitivity 敏感度分级** | `core/memory-contract.ts` 定义 `Sensitivity`（public/internal/restricted），`DEFAULT_SENSITIVITY='internal'` 为 safe-by-default，restricted 绝不默认。语义是**可见性分级**而非加密——restricted 内容在 `knowledge status` 聚合时只计数不返回内容，但明文存储不变。 |
 | **ActionGovernance 审计溯源** | 审计记录升级为可问责的动作凭证：`ActionGovernance`（actor/timestamp/targetEntity/context）+ `DecisionProvenance` 决策溯源组，写入 `history.jsonl`。提供**事后可追溯性**，但不在运行时阻断——Agent 仍可伪造 actor 字段（信任模型同 §审计工具信任模型）。防篡改 HMAC 签名规划在 v1.2.x（见 P2-6）。 |
 
+### v1.1.8 新增能力的安全边界（开发期）
+
+v1.1.8 引入了联邦传输与 Prompt 注入防护，其安全语义与边界如下：
+
+#### 联邦查询四层防线攻防表
+
+| 层 | 做什么 | 谁负责 | 被攻破的后果 | 攻击者需要 |
+|:--:|------|:--:|------|------|
+| 1 | MCP server 只绑 localhost | sofagent | 无法从网络直接访问 MCP | 先攻破本机 |
+| 2 | OpenClaw channel 路由 | OpenClaw | 无法接入联邦 channel | OpenClaw device token |
+| 3 | AES-256-GCM 加密 payload（`core/src/crypto/aes-gcm.ts`） | sofagent | channel 被窃听但内容不可读 | 256-bit 密钥（2^256 暴力不可行） |
+| 4 | sensitivity frontmatter 过滤（peer 端 + 本地端双重校验） | sofagent | `restricted` entity 不可读 | 伪造设备 identity + 突破加密 |
+
+> 🔴 **OpenClaw channel 审计结论（v1.1.8 开发前置核实）**：OpenClaw 本地回环 ws:// 明文传输、无 TLS——**第 3 层 sofagent 应用加密是唯一保密防线**。因此 federation channel 只搬运密文帧（iv‖tag‖ciphertext），绝不触碰明文 payload；即使 channel 被中间人劫持，内容仍不可读（纵深防御原则，不依赖 channel 自身安全性）。
+
+#### 配对与密钥管理
+
+| 项 | 语义 |
+|------|------|
+| **三条配对路径** | A：6 位码 + 公钥指纹 y/N 人工确认（防中间人）· B：`SOFAGENT_FEDERATION_TOKEN` 环境变量带外交换 + token-HMAC 公钥认证（CI/无人值守）· C：复用 v1.1.5 federation.json + HMAC `.sig` sidecar 验签（timingSafeEqual 恒定时间比较，缺失/篡改拒绝） |
+| **key 存储** | ECDH(prime256v1) + HKDF-SHA256 派生的 32 字节 AES key **只存内存**，不落盘明文；持久化（OS keychain / age）留 v1.1.9 |
+| **IV/nonce 管理** | 每条消息随机 12 字节 IV，绝不复用；GCM 16 字节认证标签校验失败即拒绝 |
+| **密钥轮换** | 24h 过渡窗口内旧 key 只解不加，过窗口销毁强制重新协商 |
+
+#### Prompt 注入 8 层防护映射表
+
+| 层 | 防护内容 | sofagent 落点 | 状态 |
+|:--:|------|------|:---:|
+| 1 | 指令分层隔离——外部内容 `<untrusted>` 标签包裹 | `core/src/security/prompt-sanitizer.ts` `wrapUntrusted()`（闭合标签转义防逃逸；harness 加载链联邦知识强制包裹） | ✅ v1.1.8 补齐 |
+| 2 | 工具动态最小权限 | Sub Agent 工具集零重叠设计（v1.1.0） | ✅ 已有 |
+| 3 | 工具参数后端强制校验 | 审计引擎 git diff 硬证据 | ✅ 已有 |
+| 4 | 敏感数据不进 prompt——脱敏 | `prompt-sanitizer.ts` `redactForPrompt()`（sk-\*\*\*/AKIA\*\*\*/手机号/邮箱；restricted 占位兜底，与 v1.1.6 `isSensitivityVisible` 过滤双保险） | ✅ v1.1.8 补齐 |
+| 5 | RAG 召回可信分级 | `core/src/security/trust-grading.ts`（`resolveTrust` 缺省 internal；official>internal>user>web；web+restricted 丢弃；sortByTrust） | ✅ v1.1.8 补齐 |
+| 6 | 输出结构化 + 执行前审核 | entry-gate 风险分级 + HITL | ✅ 已有 |
+| 7 | 高危动作强制人工确认 | entry-gate 🔴 高风险审批 | ✅ 已有 |
+| 8 | 全链路日志 + 红队测试 | 审计 history.jsonl + daemon WARN 累积（v1.1.4）；联邦查询 `federation_query` 审计条目 | ✅ 已有 |
+
+| 其他能力 | 安全边界 / 语义 |
+|------|------|
+| **联邦查询离线降级** | 单 peer 5s 超时按离线跳过不阻塞；全部 peer 离线 / federation 整块失败 → 退化纯本地查，不影响 MCP server 运行（best-effort）。 |
+| **知识摘要主动通知** | 素材仅 `log.md` + `health-report.md`（restricted 在生产侧已被 sensitivity 过滤，不进通知）；通道复用 push-target（daemon:notice + openclaw:im outbox）；失败静默不阻塞 dream-cycle / health 主流程。 |
+| **编排引擎 Sub Agent 委派** | 每个 Sub Agent 的 systemPrompt 前置四层约束加载链（SKILL.md 宪法层不可被 workflow YAML 覆盖）；同文件冲突检测 WARN（filesValue 文件级 LWW 合并的提醒，不阻塞）；dag-runner 不引入新工具面（`tools: []`）。 |
+
 ### Daemon 监控边界
 
 sofagent daemon 是本地文件系统监控守护进程，其行为边界如下：
@@ -188,3 +231,13 @@ sanitize() 管道在写入 history.jsonl、think.md、task/logs 等文件前自�
 **供应链安全建议**：
 - 每次 `npm install` 后运行 `npm audit`
 - 内网环境建议预装 deepagents 并验证安装通过后再部署
+
+## 知识库与工具网关的安全边界（2026-07 研报印证）
+
+2026-07 行业研报对「知识库作为 Agent 可信调用载体」提出的 4 道关卡，与 sofagent 安全模型同构：
+
+- **权限实时回连核验**：研报强调数据入口权限必须**实时回连**核验、不静态拷贝。对应 sofagent 审计 A14（知识库越权：事后审计而非运行时阻断，见 LIMITATIONS §五）——当前为事后发现，运行时阻断是 v2.x 方向。
+- **受控 Action + 全链路审计**：研报的 Action（前置·权限·幂等·副作用·审计）与 sofagent「模型提建议、审计引擎控执行」同一原则（见 DEVELOPMENT §八 财务报销沙盒）。
+- **权限隔离（Entity Resolution）**：多源知识需先解析实体归属再授权，避免越权拼接——对应 knowledge/ 的实体归属与 A15 约束验证。
+
+> 📖 来源：温故知新 2026-07-21（行业研报《企业知识库进阶》《Ontology Runtime 企业级架构落地》）

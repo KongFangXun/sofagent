@@ -238,7 +238,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 413 个、全 workspace 781 个测试全绿（实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 413 个、全 workspace 852 个测试全绿（实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -304,7 +304,7 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](FDE/FDE.md)）已在作�
 
 v1.0 新增 `tools/acceptance-test.sh`（9 个场景），但覆盖范围有限：
 
-- **CI 已覆盖**：单元测试审计核心 413 个、全 workspace 781 个全绿（函数级，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 413 个、全 workspace 852 个全绿（函数级，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 100 场景（CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
@@ -364,3 +364,15 @@ Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown fr
 ### daemon 通知机制为轻量版
 
 v1.1.3 新增 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的统一通知接口，但当前 daemon 的 cron 巡检和文件监听结果仍通过 stdout 输出（非 Webhook/IM 推送）。完整的 daemon 通知机制（Webhook 推送、IM 集成）计划在 v1.2.x 实现。
+
+## 九、行业研报印证的新增局限（2026-07）
+
+### 不要一上来就 Agent 自动闭环
+
+研报明确「不要一上来就 Agent 自动闭环」——存量系统之上的语义接管应走「只读对象层 → 统一状态关系 → 挂载 Method → 开放低风险 Action → 高风险 Action」五阶段。这印证 sofagent 的**分阶段风险收敛**策略：审计 A14 仍是事后审计（非运行时阻断，见 §五），高风险 Action 必须 human-in-the-loop。自动闭环的诱惑永远存在，但收敛节奏不可跳步。
+
+### 模糊提示下确定性骨架不可替代
+
+研报测评发现：当用户提示模糊时，精简上下文方案弱于「有完整 system prompt 兜底」的工具。对应 sofagent 的**依赖良好 Skill 定义**——fde.md / SKILL.md 提供的确定性骨架（岗位模板 + 四问 + 铁律）正是弥补模糊提示的兜底层；Skill 定义质量直接决定 Agent 在模糊输入下的下限。Skill 级经验漂移（见 §三）会侵蚀这层兜底，需持续维护。
+
+> 📖 来源：温故知新 2026-07-21（行业研报《Ontology Runtime 企业级架构落地》《Databricks 真实代码库测评》）

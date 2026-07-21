@@ -196,31 +196,9 @@ FDE 部署 SOP 应遵循此顺序：
 
 任务到达 → 两轮澄清 → 目标定稿 → DeepAgents compose 拆任务（v1.0.6 从 ao 迁移，v1.0.7 ao 完全退役） → 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 Sub Agent 启动时自加载（v1.0.7+ `buildConstrainedSystemPrompt`）或 OpenClaw Hook 注入。
 
-#### 两条执行路径
+#### 两条执行路径与降级链
 
-编排引擎有两条执行路径，新代码应优先走路径二：
-
-| 维度 | 路径一：compose（v1.0.6+） | 路径二：StateGraph（v1.1.3+，主推） |
-|------|---------------------------|-------------------------------------|
-| 入口 | `composeWithDeepAgents()` / `sofagent-orchestrator compose --task` | `runLoopGraph()` / `sofagent-orchestrator loop --task` |
-| 原理 | DeepAgents 把任务拆成 YAML 工作流 DAG | LangGraph 四节点状态机 + checkpoint |
-| Checkpoint | 无 | 有（`.sofagent/checkpoint/`，断点续跑） |
-| HITL | 无 | 有（human_confirm 节点，`loop --resume` 可恢复） |
-| 状态 | 保留兼容 | **主推** |
-
-> 对应源码：路径一 `sofagent/orchestrator/src/composer.ts` + `loop-runner.ts`；路径二 `sofagent/orchestrator/src/loop/`（state/nodes/graph）。
-
-#### 降级链
-
-StateGraph 的 engineer/reviewer 节点优先走"工具注入路径"——用 DeepAgents `createDeepAgent` + 工具集启动，systemPrompt 拼装四层约束链 + Agent 定义。当 `SOFAGENT_LLM` 环境变量未设置、provider 解析失败、或 `@langchain/openai` 初始化失败时，**自动降级**到 `spawnSubAgent` 零工具路径（composer），并在输出前加 `[降级运行] ` 标注。
-
-```
-SOFAGENT_LLM=glm:glm-4-flash 解析成功
-  → createDeepAgent({ model, tools, systemPrompt, maxTurns })  ← 工具注入路径
-解析失败 / import 失败
-  → spawnSubAgent(ENGINEER_AGENT, task)  ← 零工具降级路径，输出加 [降级运行] 前缀
-```
-
+编排引擎有两条执行路径，新代码应优先走 StateGraph（v1.1.3+，主推）：入口 `runLoopGraph()` / `sofagent-orchestrator loop --task`，LangGraph 四节点状态机 + checkpoint（`.sofagent/checkpoint/`，断点续跑）+ HITL（human_confirm 节点，`loop --resume` 可恢复）。路径一 compose（v1.0.6+，`composeWithDeepAgents()`）保留兼容——DeepAgents 只把任务拆成 YAML 工作流 DAG，无 checkpoint 无 HITL。对应源码：路径一 `sofagent/orchestrator/src/composer.ts` + `loop-runner.ts`；路径二 `sofagent/orchestrator/src/loop/`（state/nodes/graph）。StateGraph 的 engineer/reviewer 节点优先走"工具注入路径"（`createDeepAgent` + 工具集，systemPrompt 拼装四层约束链）；`SOFAGENT_LLM` 未设置或解析失败时，自动降级到 `spawnSubAgent` 零工具路径（composer）。
 #### 测试友好：依赖注入
 
 StateGraph 的流转逻辑通过 `LoopGraphDeps` 接口完全可 mock——`runEngineer / runAudit / runReviewer / confirmHuman / recordBlocked / checkpointer / maxRetries / log` 七个槽位。`defaultDeps()` 给生产实现，测试时整体替换。这让节点流转逻辑可以脱离真实 LLM 单测（v1.1.7 测试堆到 770 case 的前提）。
@@ -502,3 +480,12 @@ v1.0.8 内嵌 `isomorphic-git`（纯 JS Git，~2MB）作为 diff 引擎——非
 `task/logs` 模板参照这个四字段结构。状态外化到文件——Agent 失忆，文件不失忆。设计文档见 [audit-design.md](./archive/design/audit-design.md)。
 
 ---
+
+## 九、验证方法论（2026-07 研报印证）
+
+行业测评揭示的「防刷分验证法」与 sofagent 验证体系同构：
+
+- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（265 维）+ `acceptance-test.sh`（100 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
+- **上下文精简 = 低成本高通过**：研报发现 Pipe Agent 同模型下比原生工具便宜 1.2–2×、性能差距 <3pt，根因是初始提示 <1500 token（vs Claude Code 20k）。这从量化角度印证 sofagent「Harness 要轻」——约束底座零 token 运行（21 条规则 16 条纯 git-diff），把成本压在确定性引擎而非上下文堆料。
+
+> 📖 来源：温故知新 2026-07-21（行业研报《Databricks 真实代码库 AI 编程工具测评》）
