@@ -18,7 +18,7 @@ sofagent 是纯本地 Harness 中间件，**数据不出本机**——但以下�
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
 - ⚠️ 明文存储：`.sofagent/` 下文件仍为 Markdown 明文，未做加密
-- ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**预计 v1.2.x 落地**（与 LIMITATIONS「v1.2.x 评估解耦」口径一致；v0.85 砍削决策：先验证核心价值再谈企业级）。合规审查员请注意：v1.1.x 版本不适合直接用于强合规场景，需配合外部加密卷（gpg / disk encryption）。
+- ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**预计 v1.2.x 落地**（属本文数据存储安全相关章节（Daemon 监控边界 / history.jsonl 访问控制）所述明文存储与加密措施范畴；v0.85 砍削决策：先验证核心价值再谈企业级）。合规审查员请注意：v1.1.x 版本不适合直接用于强合规场景，需配合外部加密卷（gpg / disk encryption）。
 - `.sofagent/` 目录权限为 700（仅当前用户可访问），但同一服务器其他用户若有 root 权限可读
 
 **企业环境建议**：
@@ -75,7 +75,7 @@ v1.1.8 引入了联邦传输与 Prompt 注入防护，其安全语义与边界�
 | 其他能力 | 安全边界 / 语义 |
 |------|------|
 | **联邦查询离线降级** | 单 peer 5s 超时按离线跳过不阻塞；全部 peer 离线 / federation 整块失败 → 退化纯本地查，不影响 MCP server 运行（best-effort）。 |
-| **知识摘要主动通知** | 素材仅 `log.md` + `health-report.md`（restricted 在生产侧已被 sensitivity 过滤，不进通知）；通道复用 push-target（daemon:notice + openclaw:im outbox）；失败静默不阻塞 dream-cycle / health 主流程。 |
+| **知识摘要主动通知** | 素材仅 `log.md` + `health-report.md`（restricted 在生产侧已被 sensitivity 过滤，不进通知）；通道复用 push-target（daemon:notice + openclaw:im outbox），仅本机/联邦内通知，非 v1.2.x 规划的对外 Webhook/飞书推送；失败静默不阻塞 dream-cycle / health 主流程。 |
 | **编排引擎 Sub Agent 委派** | 每个 Sub Agent 的 systemPrompt 前置四层约束加载链（SKILL.md 宪法层不可被 workflow YAML 覆盖）；同文件冲突检测 WARN（filesValue 文件级 LWW 合并的提醒，不阻塞）；dag-runner 不引入新工具面（`tools: []`）。 |
 
 ### Daemon 监控边界

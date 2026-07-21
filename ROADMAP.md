@@ -51,6 +51,12 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 设备端形态：安装时自动带 OpenClaw，审计结果通过 MCP server 推到企业协同平台。**数据主权在设备**——所有记忆、日志、决策记录永不离开本地。
 
+---
+
+## 版本规划
+
+> 以下带状态版本表为权威源；各版本详细子节见下方 `###`。
+
 ### 规划版本
 
 | 版本 | 状态 | 核心交付 | 日志 |
@@ -63,26 +69,6 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.2.x** | 📋 规划中 | 完整多设备协同——**L2 团队协作协议**：共享态/意图广播/触发反应/冲突消解/反馈放大五大机制，从单人约束到团队协作；**L3 组织能力市场**：Skill/Agent/流程在企业内发布→发现→调用→评价，高频高价值自然胜出。+ Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界。**🔮 探索**：路由器式配网（边缘设备 WiFi 热点 + 手机端配置网页，仅用于初始配置，配置完成后回归纯 LUI）+ **协议中立**（审计层只走 MCP 等开放协议和 git diff/JSONL/Markdown 开放格式，不为任何单一平台写专属集成——不绑定平台，平台不绑定审计） + **编排隔离底座（git worktree 轻量形态）+ 波次拓扑可视化（控制图视角，随 dashboard 交付，详见子里程碑）** | — |
 | **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐 + 并行编排**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **编排引擎并行调度（Graph Engineering 视角：控制图多循环 DAG 波次并行）**：基于 v1.1.8 的 DeepAgents subagents 调度原型，新增 DAG 依赖解析（Kahn 波次拓扑）+ 并行扇出/扇入（LangGraph `Send` API）+ 循环依赖检测 + 失败传播策略 + 超时熔断；每波次经 audit 节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供 | — |
 | **v1.4.0** | 📋 规划中 | **SubAgent 完整沙箱执行环境 + 生产级编排**：将 orchestrator 内置为完整的沙箱运行时——虚拟文件系统隔离（FilesystemBackend + virtualMode）、网络出站白名单、**工具调用中介（前置 allow/deny，非仅审计追踪）**、**虚拟 key 凭证边界注入（真实凭证 host 边界注入，SubAgent 只拿临时虚拟 key）**、AsyncSubAgent（远程 Agent Protocol 服务端）+ 真·实时 A/B 双跑（候选方案并行执行实时对比，替代当前日志统计法）。**并行 SubAgent 文件隔离**：git worktree 轻量形态已于 v1.2.x 落地，v1.4.0 升级为完整沙箱隔离 + 多 Sub Agent 文件竞争检测。审计引擎从「事后」扩展到「运行时」（**范围限定 SubAgent，主 Agent 仍事后审计**） | — |
-
----
-
-## 产品化与商业化方向
-
-> 控制平面打法——卖「能力」不卖「工时」，必须有自己的 MCP + dashboard。
-
-sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商品化的东西），而在「管住 Agent 的那一层」。产品化方向锁定四条：
-
-1. **卖能力不卖工时**：FDE 从「一种岗位 / 服务」重构成「企业该有的能力」，用 Agent / sub-agent / 产品化封装交给企业，企业自己用、自己落地 AI 化。
-2. **MCP + dashboard 必须有**：dashboard 是自有视图（持久可见 + 真相源），MCP 是向外接的桥。Agent 的 LUI + LLM 吞噬一切 → 所以要有 dashboard；dashboard 轻量 → 所以靠 MCP 配合。两者配合才能把「项目」变成「产品」。
-3. **open-core 双轨**：内核 MIT 开源（信任 + 分发 + 生态），只卖 dashboard 那层（控制台 / 合规月报 / 告警）。
-4. **能力长在代码里，不长在 prompt 里——对抗「模型吞噬一切」**：skill / prompt engineering / context engineering / 以 skill 形式做的 harness engineering，本质都是**文字形式的约束**。每次注入到模型 = 每次投喂 = 每次训练——模型会训练得越来越强，**必然吞噬文字形式的约束**（今天的 Skill 是差异化优势，明天就是模型的内置能力）。sofagent 对策：把 Skill + Harness 能力**封装进 Subagent**（代码级实现，非文字注入）+ **防投喂机制**（防止输入素材变成大模型训练材料）。生存位：细分业务 workflow 上对业务最终结果的可约束性——这个不会被模型吞噬。
-
-**市场信号**（非技术变更，纯定位 / 竞品补充）：
-- **FDE-as-a-Service / Services-as-Software 被资本验证**（详见「探索方向 · 市场信号验证」）：Anthropic 收购 Fractional AI、Accenture×Anthropic 3 万人 FDE 受训、Blackstone+H&F+Goldman 共建企业 AI 服务公司、Anthropic 接入 Palantir FedStart。
-- **PE/VC 多企业审计仪表盘**（探索方向）：投后管理场景，所有被投企业 AI 审计数据汇总到一个面板。
-- **WB 企业版竞品对标**（商业化储备）：席位全生命周期管理 + 成本三维核算 + 统一采购合规 + 审计追踪 + 安全沙箱。
-
-**待落地**：首个 MVP = FDE 工具包 + 一个引擎 dashboard（进度 / 合规视图）；商业计划（GTM / 定价 / 买家画像 / 竞争象限）独立私有仓维护，不进本 MIT 库。
 
 ### v1.2.0 — 记忆/知识层升级（认知底座铺垫）
 
@@ -151,19 +137,35 @@ sofagent v1.3.0 的 Ontology 认知底座方向与之高度同构，但走**分�
 
 ---
 
+## 产品化与商业化方向
+
+> 控制平面打法——卖「能力」不卖「工时」，必须有自己的 MCP + dashboard。
+
+sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商品化的东西），而在「管住 Agent 的那一层」。产品化方向锁定四条：
+
+1. **卖能力不卖工时**：FDE 从「一种岗位 / 服务」重构成「企业该有的能力」，用 Agent / sub-agent / 产品化封装交给企业，企业自己用、自己落地 AI 化。
+2. **MCP + dashboard 必须有**：dashboard 是自有视图（持久可见 + 真相源），MCP 是向外接的桥。Agent 的 LUI + LLM 吞噬一切 → 所以要有 dashboard；dashboard 轻量 → 所以靠 MCP 配合。两者配合才能把「项目」变成「产品」。
+3. **open-core 双轨**：内核 MIT 开源（信任 + 分发 + 生态），只卖 dashboard 那层（控制台 / 合规月报 / 告警）。
+4. **能力长在代码里，不长在 prompt 里——对抗「模型吞噬一切」**：skill / prompt engineering / context engineering / 以 skill 形式做的 harness engineering，本质都是**文字形式的约束**。每次注入到模型 = 每次投喂 = 每次训练——模型会训练得越来越强，**必然吞噬文字形式的约束**（今天的 Skill 是差异化优势，明天就是模型的内置能力）。sofagent 对策：把 Skill + Harness 能力**封装进 Subagent**（代码级实现，非文字注入）+ **防投喂机制**（防止输入素材变成大模型训练材料）。生存位：细分业务 workflow 上对业务最终结果的可约束性——这个不会被模型吞噬。
+
+**市场信号**（非技术变更，纯定位 / 竞品补充）：
+- **FDE-as-a-Service / Services-as-Software 被资本验证**（详见「探索方向 · 市场信号验证」）：Anthropic 收购 Fractional AI、Accenture×Anthropic 3 万人 FDE 受训、Blackstone+H&F+Goldman 共建企业 AI 服务公司、Anthropic 接入 Palantir FedStart。
+- **PE/VC 多企业审计仪表盘**（探索方向）：投后管理场景，所有被投企业 AI 审计数据汇总到一个面板。
+- **WB 企业版竞品对标**（商业化储备）：席位全生命周期管理 + 成本三维核算 + 统一采购合规 + 审计追踪 + 安全沙箱。
+
+**待落地**：首个 MVP = FDE 工具包 + 一个引擎 dashboard（进度 / 合规视图）；商业计划（GTM / 定价 / 买家画像 / 竞争象限）独立私有仓维护，不进本 MIT 库。
+
+---
+
+## 行业印证
+
 ### 🔮 Graph Engineering 印证（2026-07 新概念 · 迭代参考）
 
 > 📐 来源：2026-07 行业新概念「Graph Engineering」——prompt→context→harness→loop→**graph** 的演进（嵌套非替换）；本质 = 设计 loop/process 之间的关系。理论根 = FSM/Statecharts（Harel 1987）。核心构件：**控制图**（node=state, edge=transition, guard edge 守门）+ **数据图**（知识图谱/血缘）+ **★Reality Anchor**（无 anchor = 披着 PM 外衣的幻觉）。实现模式含 DAG 波次拓扑（Kahn）、扇出/扇入、worktree 隔离、可审计状态文件、动态重规划。
 
-sofagent 的编排引擎天然就是「控制图」——`sofagent/orchestrator/src/loop/graph.ts` 用 `@langchain/langgraph` StateGraph 实现 `START→engineer→audit→reviewer→human_confirm→END`，`audit` 节点即 Reality Anchor（真实 git diff A1-A19 作 guard edge），`FileCheckpointer` 快照到 `.sofagent/checkpoint/` 即可审计状态文件。数据图天然对应 蓄水池（知识库）+ 市政规划（Ontology）。**所以 sofagent 已经在做 Graph Engineering，只是没用这个词**——后续迭代用其术语框定「并行编排」与「可视化」，不引入新能力。
+sofagent 的编排引擎天然就是「控制图」——`sofagent/orchestrator/src/loop/graph.ts` 用 `@langchain/langgraph` StateGraph 实现 `START→engineer→audit→reviewer→human_confirm→END`，`audit` 节点即 Reality Anchor（真实 git diff A1-A11、A14-A19 + E1-E4（共 21 条）作 guard edge），`FileCheckpointer` 快照到 `.sofagent/checkpoint/` 即可审计状态文件。数据图天然对应 蓄水池（知识库）+ 市政规划（Ontology）。**所以 sofagent 已经在做 Graph Engineering，只是没用这个词**——后续迭代用其术语框定「并行编排」与「可视化」，不引入新能力。
 
-**可学习的未来迭代（落盘到对应版本）**：
-
-| # | Graph Engineering 衍生能力 | sofagent 现状 | 落地版本 | 说明 |
-|---|------|------|:--:|------|
-| ① | **多循环 DAG 波次并行**（控制图 wave parallelism：Kahn 波次拓扑 + 扇出/扇入 + 循环依赖检测） | v1.1.8 仅串行+同步并行（`filesValue` 合并）；DAG 循环依赖检测已划 v1.3.0 | **v1.3.0** | 重构为「控制图波次并行」，见 v1.3.0 ④。★Reality Anchor（audit）作每波次 guard edge，失败传播 + 超时熔断 |
-| ② | **并行 SubAgent git worktree 隔离**（轻量 git 原生形态：每并行子 Agent `git worktree add` 独立工作树，sofagent audit 合并/diff） | v1.1.8 沙箱隔离划 v1.4.0（与 FilesystemBackend 重沙箱捆绑） | **v1.2.x（子里程碑 ②·1~②·4）** | 从 v1.4.0 重沙箱捆绑中拆出、提前落地——纯 git 原生原语，无新运行时基础设施；拆 4 子里程碑（隔离原语 / 审计合并卡关 / 冲突消解 / 与 filesValue 边界），见 v1.2.x 详细节。为 v1.3.0 波次并行提供文件隔离底座。重沙箱（虚拟文件系统/虚拟 key/AsyncSubAgent）仍留 v1.4.0 |
-| ③ | **用户视角波次拓扑可视化**（控制图可视化：节点状态/波次/guard 触发/Reality Anchor 证据链） | 无 | **数据层 v1.1.9（③·1 状态抽取）；视图层 v1.2.x（③·2~③·3 Dashboard + 可读性）** | 状态抽取（数据层）提前到 v1.1.9——v1.1.9 是 daemon 可观测版本，后台 A/B 跑真实任务需可读性，且原始数据（checkpoint + LoopArtifacts）已存在于 v1.1.x；Dashboard 视图 + 用户可读性仍随 v1.2.x dashboard 交付。见 v1.2.x 详细节 |
+**可学习的未来迭代（落盘到对应版本）**：① 多循环 DAG 波次并行、② 并行 SubAgent git worktree 隔离、③ 用户视角波次拓扑可视化——三项能力的现状与落地版本已并入上方「版本规划」表（v1.3.0 ④ / v1.2.x 子里程碑 ②·1~②·4、③·1~③·2 / v1.1.9 ③·1），详细拆分见 `### v1.2.x` 与 `### v1.3.0` 子节。此处仅作 Graph Engineering 概念框定，不新增能力范围。
 
 > 🔴 **落地纪律**：① 和 ② 是「用 Graph Engineering 术语框定已有/规划能力」，不新增能力范围；③ 是纯可视化，依赖 dashboard 产品化节奏（v1.2.x 起）。
 
@@ -181,10 +183,19 @@ sofagent 的编排引擎天然就是「控制图」——`sofagent/orchestrator/
 | 6 | 法则3 冗员 Token Bloat | 明确不做清单 / 防 scope 蔓延 + 审计拦改测试 | 已具备+可强化 | 印证 | 砍循环优于优化 |
 | 7 | 法则4 杠杆 100X Token | 90/10 分层 Harness 可靠性最值钱 | 已具备（叙事） | 印证 | 那 10% 即文章「管理杠杆」 |
 | 8 | 法则5 政治 上下文囤积 | 不投喂 / 数据主权 + 知识主权归客户 | 已具备（差异化） | 印证 | 叙事回应组织政治 |
-| 9 | 法则6 考核 Evals | 审计 A1-A19 = Reality Anchor + Dream Cycle eval 驱动 | 已具备（底座）+ 缺口 | v1.3.0+ 产品化 | 企业专属 eval 套件缺口 |
+| 9 | 法则6 考核 Evals | 审计 A1-A11、A14-A19 + E1-E4（共 21 条）= Reality Anchor + Dream Cycle eval 驱动 | 已具备（底座）+ 缺口 | v1.3.0+ 产品化 | 企业专属 eval 套件缺口 |
 | 10 | 法则7 万亿转型服务 | FDE = Services-as-Software + 市场信号互证 | 已具备（核心背书） | 印证 + 规模化缺口 | a16z 最重磅外部背书；规模化交付进未来迭代 |
 
 > 🔴 **落地纪律**：①~⑧ 是「用 a16z 术语框定已有/规划能力」，不新增能力范围；⑨ 企业专属 eval 套件产品化 → v1.3.0+（tie 失败清单驱动优化 v1.2.x + RSI 验证体系 v2.x）；⑩ 转型服务规模化 / 多客户并行交付 → tie FDE 陪跑期机制 + PE/VC 多企业审计仪表盘 + FDE Demo Kit 工程化。两者均为真实缺口，挂接既有储备，不凭空造功能。
+
+### 行业研报印证：动态 Agent 组织与 5 阶段风险收敛（2026-07）
+
+- **动态 Agent 组织（Graph 自我改写）**：研报把「Prompt → Loop → Graph」的下一跳定义为「动态 Agent 组织」——图结构能自行改写自身（增删节点/重排依赖）。这是 sofagent 编排层（graph.ts + 进化引擎）的远期探索方向，但需与「约束底座永远在线」共存——动态只在编排层发生，约束/审计层不动。
+- **5 阶段落地节奏对照**：研报给出「只读对象层 → 统一状态关系 → 挂载 Method → 开放低风险 Action → 高风险 Action」的渐进路径，核心是**不要一上来就 Agent 自动闭环**。与 sofagent「分阶段风险收敛 + human-in-the-loop 按风险分级」同构，可作为 v1.3.0 Ontology 认知底座落地的节奏参考。
+
+> 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）
+
+---
 
 ## 探索方向
 
@@ -213,13 +224,6 @@ sofagent 的编排引擎天然就是「控制图」——`sofagent/orchestrator/
 | **Subagent 内置专精小模型（v3.x-v4.x+ 远景 · "自带净水设备的水龙头"）** | 四阶段：① v1.2.x 架构预留（Subagent 定义加 `inference` 字段支持调 Ollama）→ ② v3.x 工具链（`sofagent-model distill`，用 workflow 运行日志微调专属小模型，0.5B-3B 参数）→ ③ v4.x 本地推理（业务 workflow 默认跑本地精调模型；代码/强推理等高价值智能任务直连云端最强 LLM，本地小模型只覆盖业务 workflow 场景）→ ④ v4.x+ 离线节点（USB key = 完整 AI 节点，不联网、不走大厂、零投喂——数据主权的终极形态）。详见 River 比喻概念体系（本地 Desktop 概念稿 `sofagent-river-比喻概念体系-2026-07-21.md`，未入仓）§3.2。为什么不是 v2.x 做工具链：微调是数据工程，需要足够多的真实 workflow 日志才有训练燃料；v2.x 还在铺多设备协同和 Dashboard，数据积累不够 · 🔴 术语纠正：这里不是「从 72B 大模型剪枝/蒸馏」——剪枝/蒸馏/量化是大厂造小基座的上游技术（Qwen2.5-0.5B 已是蒸馏+剪枝+量化后的开源产物，直接拿）。sofagent 做产业链下游最后一环：下载已开源小基座（0.5B-3B）→ 用企业 workflow 数据 **LoRA 微调**（挂业务插件，不动基座参数）→ 教它这一个 workflow。CLI 名 `distill` 是品牌叫法，实际动作是 LoRA 精调 · 默认基座选型：业务 workflow 严格 ≤1B——中文业务 **Qwen2.5-0.5B** / 英文场景（外贸等）**Llama-3.2-1B**。🔴 任务价值分流：代码生成/复杂推理/多步规划这类高价值智能任务，用户直接选用**云端最强 LLM**（如 Claude/GPT/Gemini），**不强行本地化**；本地小模型只覆盖可窄域替代的业务 workflow 场景。私有部署优先铁律针对业务数据，不与高价值智能任务走云端冲突· 训练硬件 Mac Mini（Apple Silicon + MLX 量化，非 CUDA bitsandbytes），无头 SSH 部署 · 工具链 TypeScript CLI（`sofagent-model`）封装 Python 训练引擎 + node-llama-cpp 推理，项目工程面保持 NodeJS
 
 ---
-
-### 行业研报印证：动态 Agent 组织与 5 阶段风险收敛（2026-07）
-
-- **动态 Agent 组织（Graph 自我改写）**：研报把「Prompt → Loop → Graph」的下一跳定义为「动态 Agent 组织」——图结构能自行改写自身（增删节点/重排依赖）。这是 sofagent 编排层（graph.ts + 进化引擎）的远期探索方向，但需与「约束底座永远在线」共存——动态只在编排层发生，约束/审计层不动。
-- **5 阶段落地节奏对照**：研报给出「只读对象层 → 统一状态关系 → 挂载 Method → 开放低风险 Action → 高风险 Action」的渐进路径，核心是**不要一上来就 Agent 自动闭环**。与 sofagent「分阶段风险收敛 + human-in-the-loop 按风险分级」同构，可作为 v1.3.0 Ontology 认知底座落地的节奏参考。
-
-> 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）
 
 ## 不需要的
 

@@ -113,7 +113,7 @@ Harness 中间件最大的挑战是存在感——引擎在正常工作，但用
 | 层 | 是什么 | 成本 |
 |:--:|------|:--:|
 | 地基 | 四层加载链（纯 MD 文件，Agent 读即生效） | ~3,500 token |
-| 引擎 | 编排 + 审计 + 回溯 + 质评 + 进化 + 约束底座（daemon + CLI） | 按需启动 |
+| 引擎 | 编排 + 审计 + 回溯能力 + 进化（含质量评估）+ 约束底座（daemon + CLI） | 按需启动 |
 
 > v1.1.0 将审计引擎拆为独立 npm 包 `@sofagent/audit`，地基（约束底座）和其余引擎（编排/审计/进化）与回溯能力不受影响。
 
@@ -275,7 +275,7 @@ flowchart LR
 | `routeAfterHuman` | 非 running→END；running（驳回）→engineer | engineer / END |
 | `routeFromStart` | 正常→engineer；resume→指定节点 | 四节点之一 |
 
-**为什么 audit 是程序不是 AI**：audit 节点调 `@sofagent/audit` 跑 A1-A17 规则——只看 `git diff HEAD` 硬证据，标准是硬的、可复现的，不随模型波动。reviewer 才是 AI 语义审查。这正是上文"解题/验证分离"在编排层的产品化落地——audit 做确定性验证，reviewer 做概率性语义验证，两者物理隔离。
+**为什么 audit 是程序不是 AI**：audit 节点调 `@sofagent/audit` 跑 A1-A11、A14-A19 + E1-E4（共 21 条）规则——只看 `git diff HEAD` 硬证据，标准是硬的、可复现的，不随模型波动。reviewer 才是 AI 语义审查。这正是上文"解题/验证分离"在编排层的产品化落地——audit 做确定性验证，reviewer 做概率性语义验证，两者物理隔离。
 
 #### 状态契约：LoopArtifacts
 
@@ -301,7 +301,7 @@ flowchart LR
 | Graph Engineering 构件 | sofagent 对应实现 | 源码位置 |
 |------|------|------|
 | **控制图 Control Graph**（node=state, edge=transition, guard edge 守门） | `StateGraph` 四节点 `START→engineer→audit→reviewer→human_confirm→END`，`routeAfterAudit`/`routeAfterHuman` 条件路由，WARN 透传为 guard 放行 | `sofagent/orchestrator/src/loop/graph.ts` |
-| **★Reality Anchor**（无锚点 = 披 PM 外衣的幻觉） | `audit` 节点——只看 `git diff HEAD` 硬证据（A1-A17），不信任 Agent 自报，比"只看 PR 号"更硬 | `@sofagent/audit` |
+| **★Reality Anchor**（无锚点 = 披 PM 外衣的幻觉） | `audit` 节点——只看 `git diff HEAD` 硬证据（A1-A11、A14-A19 + E1-E4，共 21 条），不信任 Agent 自报，比"只看 PR 号"更硬 | `@sofagent/audit` |
 | **可审计状态文件**（状态落盘可复核） | `FileCheckpointer` 每节点前后 snapshot 到 `.sofagent/checkpoint/`，`resumeLoopGraph()` 断点续跑 | `sofagent/orchestrator/src/graph/checkpoint.ts` |
 | **数据图 Data Graph**（知识图谱/血缘） | 蓄水池（知识库 `knowledge/`） + 市政规划（Ontology，Ledger-Views-Policy）——与编排控制图正交 | `knowledge/` + Ontology 层 |
 
@@ -472,8 +472,8 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 | 层 | 文件 | 权限 | 位置原因 |
 |:--:|------|:--:|------|
 | 1 | SKILL.md（宪法） | ❌ 不可改 | 最前面——开头注意力最高 |
-| 2 | think.md（反思） | ⚠️ 自动生成 | 中间——提醒上轮踩坑 |
-| 3 | fde.md（规范） | ✅ 可改 | 最后——末尾注意力最高 |
+| 2 | fde.md（规范） | ✅ 可改 | 企业专属规则 |
+| 3 | think.md（反思） | ⚠️ 自动生成 | 上轮踩过的坑 |
 
 三层之外还有 knowledge/（第四层，按需加载 top-N）。加载链总占用不超过上下文窗口的 3%，500 字原则（每份文件 ≤500 字）是 Agent 压缩后可读的最低保证。
 
@@ -514,7 +514,6 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 **已知局限**：18 条详见 [LIMITATIONS.md](../LIMITATIONS.md)。核心：Harness 层自身在上下文里、加载链步进脆弱性、Skill 自进化处于经验记录阶段。
 
 **未来方向**：
-- **v1.1.0**：审计引擎拆独立包 `@sofagent/audit` + 轻量多设备经验共享（[同步指南](./guides/multi-device-sync.md)）+ daemon 主动巡检
 - **v1.2.x**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界
 - **v2.x**：组织级共享记忆 + 协同层
 
@@ -580,20 +579,9 @@ Action Type = 一个**有身份的变更请求**：携带参数 + 校验 + 权�
 
 > 📖 来源：31 篇行业笔记跨批研读（2026-07-20）
 
-### Onyx 四阶段闭环（L1）
+### 外层 Loop 的节奏与护栏（L1 / L2）
 
-可见性（Visibility）→ 仿真（Simulation）→ 执行（Execution）→ 学习（Learning），是外层 Loop 的现成叙事模板：先让企业看见 AI 能干什么（沙箱仿真）→ 人工审核确认 → 写回业务（执行）→ 沉淀经验（学习）。sofagent 的「先跑通后沉淀 Skill」「定期价值证明」正对应这一闭环。
-
-> 📖 来源：31 篇行业笔记跨批研读（2026-07-20）
-
-### 人类审批双模式（L2）
-
-| 模式 | 触发 | 运行时策略 |
-|------|------|------|
-| 高风险人工确认 | 钱 / 权益 / 合规 / 人事 / 医疗 / 法律 | 每次触发走 human-in-the-loop，确认后才执行 |
-| 常规受信自动执行 | 低风险的只读 / 强化类动作 | 受信自动执行，事后审计留证 |
-
-这具象化了 Loop 内层 human 节点的运行时策略——不是「所有动作都等人」，而是按风险分级。
+Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人类审批双模式（L2：高风险人工确认 / 常规受信自动执行）是 31 篇研读里外层 Loop 的两个关键印证——前者给出闭环叙事节奏，后者给出「按风险分级放行」的 human 节点策略。详细展开与 sofagent 对应见 [LOOP §行业框架印证](../LOOP/LOOP.md)。
 
 > 📖 来源：31 篇行业笔记跨批研读（2026-07-20）
 
@@ -603,7 +591,7 @@ Action Type = 一个**有身份的变更请求**：携带参数 + 校验 + 权�
 
 > 💡 **产品化视角（控制平面）**：上面「企业换 Agent 平台，约束与审计不动」就是产品化时 **控制平面打法** 的技术根——底层 Agent 智能随便换（OpenClaw / 客户自选 / 大厂），治理与真相（策略谁配、审计链长啥样、Agent 注册在哪）永远在 sofagent 一侧。产品化时这层真相源表现为一个**自有 dashboard**（只读可见视图：审计状态 / AI 采用进度 / 合规月报），靠 **MCP** 作向外接的桥把数据喂进来；MCP 是桥、不是唯一入口，dashboard 必须自己拥有。详见 [设计哲学](./PHILOSOPHY.md) 与 [README](../README.md)。
 
-> 💡 **实现参考（X8 / X9）**：指令层用 Jinja2 变量槽渲染 `prompts/`（把企业规则注入为可填充模板）；校验层用 JSON Schema 三步校验（格式 → 完整性 → 约束）；经验法则——首次因 AI 格式问题排查超 1 小时，就该上校验层（把概率性输出收口到确定性 schema）。
+> 💡 **实现参考（X9）**：指令层用 Jinja2 变量槽渲染 `prompts/`（把企业规则注入为可填充模板）；校验层用 JSON Schema 三步校验（格式 → 完整性 → 约束）；经验法则——首次因 AI 格式问题排查超 1 小时，就该上校验层（把概率性输出收口到确定性 schema）。
 >
 > 📖 来源：31 篇行业笔记跨批研读（2026-07-20）
 
@@ -633,32 +621,13 @@ sofagent 自有三层：
 
 > 📖 来源：31 篇行业笔记跨批研读（2026-07-20）
 
-### a16z《你刚雇了一百万个糟糕员工》映射（2026-07）
+### 外部研究印证：a16z 与 2026-07 研报
 
-> 📐 来源：a16z（2026-07-14，Hebbia 创始人 George Sivulka）核心判断——每家公司在雇「一百万个糟糕的 AI 员工」，80% 的 token 在空转；解法不是更强的模型，而是 185 年前诞生的老手艺：**管理**。七条平行法则（对应人类组织逻辑）逐条可映射到 sofagent 已有 / 规划能力：
+a16z《你刚雇了一百万个糟糕员工》七法则、以及 2026-07 三篇研报（Prompt→Loop→Graph 范式 / Ontology Runtime / 工具网关）如何逐条印证 sofagent，含落地版本映射与「5 阶段风险收敛」节奏，已统一整理到 [ROADMAP · 行业印证](../ROADMAP.md#行业印证)（a16z 七法则表 + 动态 Agent 组织与 5 阶段风险收敛）。本节仅保留与架构选型直接相关的两点补充：
 
-| 文章概念 | sofagent 对应 | 状态 |
-|----------|--------------|:--:|
-| 事实1 成本倒挂（人比软件便宜） | 90/10 价值分层：Harness 可靠性 > 模型智力 | 已具备（叙事） |
-| 事实2 增员非裁员（AI 放大组织） | FDE 卖转型 + sustain 持续存在感；管放大后的 agent 队伍 | 已具备（定位） |
-| 历史类比：1841 铁路事故 → 现代管理诞生 | 编排 guard edge（retryCount<3）+ 审计 Reality Anchor（真实 git diff）+ River「堤坝 = Harness」 | 已具备（工程+叙事） |
-| 法则1 挥霍 Tokenmaxxing（清晰 4$ vs 模糊 310$） | 约束底座 / 明确不做清单；FDE 帮客户把模糊流程讲清楚；Ontology 共同理解层 | 已具备 + 可强化 |
-| 法则2 空转 Loops | graph.ts guard edge retryCount<3 天然防 loops 失控 | 已原生具备（核心） |
-| 法则3 冗员 Token Bloat | 明确不做清单 / 防 scope 蔓延；审计拦「AI 改测试掩盖错误」 | 已具备 + 可强化 |
-| 法则4 杠杆 100X Token（管理得当 4$ vs 失当 7000$） | 90/10 分层——Harness 的可靠性比模型智力更值钱 | 已具备（叙事） |
-| 法则5 政治 上下文囤积 | 不投喂 / 数据主权；知识主权归客户（知识联邦 + Ledger-Views-Policy） | 已具备（差异化） |
-| 法则6 考核 Evals（AI 渗透 ∝ 可评估性） | 审计 A1-A19 = Reality Anchor 把「可评估性」硬编码；Dream Cycle eval 驱动 Skill 迭代 | 已具备（底座）+ 缺口（产品化） |
-| 法则7 万亿转型服务（卖转型非卖工具） | FDE = Services-as-Software 卖转型；ROADMAP 市场信号互证 | 已具备（核心背书） |
+- **Ontology Runtime 六组件补全**：Object（业务语义单元≠表/DTO）/ Link（语义路径≠外键）/ State（统一生命周期）/ Method（确定性计算，AI 调用不替代）/ Action（受控动作：前置·权限·幂等·副作用·审计）/ Policy-Audit-Lineage（全链路治理）。其中 **Method 与 Action 的二分**直接对齐「刚性规则进代码、概率性判断留 LLM」——AI 调用 Method 拿确定性结果，只在 Action 边界受控。
+- **工具网关 = 统一受控 MCP 入口**：研报将「工具网关」定义为统一受控入口（身份·路由·重试·审计集中），与 sofagent 的 MCP 桥 + 审计引擎同构——MCP 是受控入口而非任意调用通道。
 
 > 💡 **铁路类比**：1841 年铁路相撞（协调失误非技术故障）倒逼现代管理诞生；今天 AI 正复刻——模糊指令交给 agent，损失以秒计、指数扩散。Harness = 堤坝，正是这一次的「管理层」。a16z 文章几乎是为 sofagent 写的外部背书。
 
-### 范式演进与 Object Runtime 印证（2026-07 研报补充）
-
-三篇 2026-07 行业研报进一步印证并补全「行业框架对齐」（§六）：
-
-- **Prompt → Loop → Graph 三级范式**：AI 编程能力重心持续上移（写好提示 → 设计循环 → 构建多 Agent 协作图）。Loop = 延期决策（一个 Agent 包揽直到处理不了），Graph = 提前决策（预先声明完整结构）。sofagent 的 LOOP 自迭代 + 外层循环正落在「Loop Engineering」这一级；Graph 级的 **Org Graph（长期存活、固定领域、保留上下文与工具权限的 Agent）即「进组织架构的硅基员工」**，正是 FDE 卖转型 + sustain 持续存在感的产品内核。
-- **Object Runtime 六组件补全**：Object（业务语义单元≠表/DTO）/ Link（语义路径≠外键）/ State（统一生命周期）/ Method（确定性计算，AI 调用不替代）/ Action（受控动作：前置·权限·幂等·副作用·审计）/ Policy-Audit-Lineage（全链路治理）。其中 **Method 与 Action 的二分**直接对齐「刚性规则进代码、概率性判断留 LLM」——AI 调用 Method 拿确定性结果，只在 Action 边界受控。
-- **工具网关 = 统一受控 MCP 入口**：研报将「工具网关」定义为统一受控入口（身份·路由·重试·审计集中），与 sofagent 的 MCP 桥 + 审计引擎同构——MCP 是受控入口而非任意调用通道。
-- **5 阶段落地节奏**：只读对象层 → 统一状态关系 → 挂载 Method → 开放低风险 Action → 高风险 Action。**关键避坑：不要一上来就 Agent 自动闭环**——与 sofagent「分阶段风险收敛 + human-in-the-loop 按风险分级」完全一致。
-
-> 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）
+> 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）/ a16z（2026-07-14）

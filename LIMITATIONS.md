@@ -22,7 +22,7 @@
 
 | # | 局限 | 详见 |
 |:--:|------|------|
-| 1 | **audit ↔ daemon 循环依赖**——两个包互相引用（`optionalDependencies` + `dependencies`），违反四层单向依赖原则。npm install 不阻塞，但逻辑上存在张力。 | [八、v1.1.3 新增局限 → audit ↔ daemon 循环依赖](#八v112-新增局限) |
+| 1 | **audit ↔ daemon 循环依赖**——两个包互相引用（`optionalDependencies` + `dependencies`），违反四层单向依赖原则。npm install 不阻塞，但逻辑上存在张力。 | [八、v1.1.3 新增局限 → audit ↔ daemon 循环依赖](#八v113-新增局限) |
 | 2 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
 | 3 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
 | 4 | **编排能力依赖 orchestrator 包 + 模型质量**——DeepAgents 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排引擎稳定性](#五审计与工程局限) |
@@ -369,7 +369,7 @@ v1.1.3 新增 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的�
 
 ### 不要一上来就 Agent 自动闭环
 
-研报明确「不要一上来就 Agent 自动闭环」——存量系统之上的语义接管应走「只读对象层 → 统一状态关系 → 挂载 Method → 开放低风险 Action → 高风险 Action」五阶段。这印证 sofagent 的**分阶段风险收敛**策略：审计 A14 仍是事后审计（非运行时阻断，见 §五），高风险 Action 必须 human-in-the-loop。自动闭环的诱惑永远存在，但收敛节奏不可跳步。
+研报的「分阶段风险收敛」警示：存量系统之上的语义接管不可跳步，高风险 Action 必须 human-in-the-loop。这印证 sofagent 的现状——审计 A14 仍是事后审计（非运行时阻断，见 §五）。五阶段的完整对照（只读对象层 → 统一状态关系 → 挂载 Method → 开放低风险 Action → 高风险 Action）与动态 Agent 组织印证见 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)。
 
 ### 模糊提示下确定性骨架不可替代
 

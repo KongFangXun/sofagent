@@ -16,6 +16,7 @@
 
 ## 目录
 
+- [开发环境](#开发环境)
 - [一、工作原理](#一工作原理)
 - [二、编排哲学](#二编排哲学)
 - [三、模型最优选择](#三模型最优选择)
@@ -24,10 +25,11 @@
 - [六、反思工程](#六反思工程)
 - [七、数据文件架构](#七数据文件架构)
 - [八、提交时审计 + 文件系统审计](#八提交时审计--文件系统审计)
+- [九、验证方法论](#九验证方法论)
 
 ---
 
-### 开发环境
+## 开发环境
 
 > 开发前先确认标准安装通过——[HANDBOOK §装完第一件事](./HANDBOOK.md#场景一装完第一件事)。
 
@@ -39,7 +41,7 @@
 | Python 3 + `pip install skillopt` | Skill 自进化引擎（通过 CLI subprocess 调用，可选） | v1.0.3+ |
 | 无其他外部运行时依赖 | — | — |
 
-#### Windows 开发踩坑（PowerShell 移植必读）
+### Windows 开发踩坑（PowerShell 移植必读）
 
 > 来源：Windows 11 + PowerShell 5.1 实地勘察（2026-06）。核心 9 坑：UTF-8 BOM / 控制台编码 / .gitattributes 换行 / if-表达式 / switch-break / 数组摊平 / WSLENV / BSD sed。详见 [PS5兼容踩坑清单](https://github.com/KongFangXun/sofagent/issues?q=label%3Awindows)。
 
@@ -169,7 +171,7 @@ FDE 部署 SOP 应遵循此顺序：
 - `sofagent/skill/`：纯 MD 规则（平台无关，所有 Agent 平台共用）
   - `SKILL.md`：主入口（宪法内联——4 底线 + 7 则铁律）
   - 子 Skill（9 个 .md）：`entry-gate.md` / `task-aware.md` / `task-closure.md` / `loop-check.md` / `loop-evaluate.md` / `loop-exit.md` / `engage.md` / `engage-fde.md` / `fde.md`
-  - `fde.md`：宪法文件（企业运行规范，部署时复制到目标项目）
+  - `fde.md`：规范文件（企业运行规范，部署时复制到目标项目）
   - `data/`（6 个模板）：`think.md` / `orchestrator.md` / `task.md` / `eval.md` / `fde.md` / `IDENTITY.md`
 - `sofagent/scripts/`（核心 4 个）：`install.sh` / `verify.sh` / `uninstall.sh` / `task-record.sh`
 - `sofagent/hooks/sofagent-load-chain/`：`HOOK.md` + `handler.ts`（OpenClaw 内部 hook）
