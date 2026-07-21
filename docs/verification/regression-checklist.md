@@ -47,7 +47,7 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 ```
 
 **步骤 3：逐维度审查**
-## 审查维度（38 项 · 编号 1–38）
+## 审查维度（43 项 · 编号 1–43）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -831,6 +831,117 @@ for feat in "${SECURITY_REQUIRED_FEATURES[@]}"; do
   count=$(grep -ci "$feat" SECURITY.md)
   [ "$count" -ge 1 ] && echo "✅ SECURITY.md 覆盖 '$feat'" || echo "❌ SECURITY.md 缺 '$feat' 安全声明"
 done
+```
+
+#### 39. AES-256-GCM 加密 + ECDH 配对（v1.1.8 新增 · 交付一）
+
+**背景**：联邦查询第 3 层防线——应用层加密。channel 明文无 TLS，AES-256-GCM 是唯一保密层。ECDH 协商密钥，人不手打。
+
+```bash
+# 子项 a: AES-256-GCM 加解密往返
+grep -c "encryptPayload\|decryptPayload\|GCM_IV_BYTES" sofagent/core/src/crypto/aes-gcm.ts   # ≥3
+
+# 子项 b: ECDH 密钥协商——双方独立 derive 出相同 key
+grep -c "generateKeyPair\|deriveSharedKey\|prime256v1" sofagent/core/src/crypto/ecdh.ts   # ≥3
+
+# 子项 c: 三配对路径（code/token/federation-file）+ 密钥轮换
+grep -c "pairByCode\|pairByToken\|pairByFederationFile\|rotateKey" sofagent/core/src/crypto/pairing.ts sofagent/core/src/crypto/key-rotation.ts   # ≥3
+
+# 子项 d: 密钥只存内存，不落盘明文（安全红线）
+grep -r "sharedKey.*Buffer\|只存内存\|不落盘" sofagent/core/src/crypto/*.ts   # ≥1
+
+# 子项 e: 验收场景覆盖（acceptance-test 场景 101-102）
+grep -c "AES-256-GCM\|ECDH.*配对\|pairByToken" tools/acceptance-test.sh   # ≥3
+```
+
+#### 40. OpenClaw channel 联邦查询（v1.1.8 新增 · 交付二）
+
+**背景**：两台设备互相 search_knowledge。Automerge CRDT 合并不手写三路（v1.0.5 教训）。离线降级不阻塞。
+
+```bash
+# 子项 a: federation 模块完整性（6 文件）
+ls sofagent/daemon/src/federation/{channel,index,merge,offline-fallback,peers,query-router}.ts   # 全部存在
+
+# 子项 b: 并发 fetch + 单 peer 超时（5s）
+grep -c "PEER_QUERY_TIMEOUT_MS\|broadcastQuery" sofagent/daemon/src/federation/query-router.ts   # ≥2
+
+# 子项 c: Automerge CRDTD 合并（不手写三路）
+grep -c "automerge\|Automerge\|CRDT" sofagent/daemon/src/federation/merge.ts   # ≥1
+
+# 子项 d: sensitivity 双重过滤（peer 端 + 本地端）
+grep -c "isSensitivityVisible\|restricted.*不泄露\|sensitivity.*过滤" sofagent/daemon/src/federation/query-router.ts   # ≥1
+
+# 子项 e: 离线降级不阻塞主流程
+grep -c "offline\|fallback\|降级" sofagent/daemon/src/federation/offline-fallback.ts   # ≥1
+
+# 子项 f: 验收场景覆盖（acceptance-test 场景 103）
+grep -c "联邦.*sensitivity\|federation\|broadcastQuery" tools/acceptance-test.sh   # ≥2
+```
+
+#### 41. Prompt 注入 8 层防护（层 1 + 层 4 + 层 5）（v1.1.8 新增 · 交付三）
+
+**背景**：8 层防护体系中的三层实现——外部内容标签包裹（层1）+ prompt 级脱敏（层4）+ 知识可信分级（层5）。memory-contract trust 字段联动。
+
+```bash
+# 子项 a: 层 1 wrapUntrusted + 防标签逃逸
+grep -c "wrapUntrusted\|needsUntrustedWrap\|untrusted" sofagent/core/src/security/prompt-sanitizer.ts   # ≥3
+
+# 子项 b: 层 4 redactForPrompt 脱敏规则库（sk- / AKIA / 手机号 / 邮箱）
+grep -c "redactForPrompt\|REDACT_RULES\|RESTRICTED_PLACEHOLDER" sofagent/core/src/security/prompt-sanitizer.ts   # ≥2
+
+# 子项 c: 层 5 trust 分级——web+restricted 组合丢弃（安全红线）
+grep -c "isTrustEntryUsable\|sortByTrust\|web.*restricted" sofagent/core/src/security/trust-grading.ts   # ≥3
+
+# 子项 d: memory-contract trust 字段（official > internal > user > web）
+grep -c "TRUST_ORDER\|trust.*Trust\|official.*internal" sofagent/core/src/memory-contract.ts   # ≥1
+
+# 子项 e: 验收场景覆盖（acceptance-test 场景 104-105）
+grep -c "wrapUntrusted\|redactForPrompt\|trust.*分级\|isTrustEntryUsable" tools/acceptance-test.sh   # ≥4
+```
+
+#### 42. 编排引擎 dag-runner + compose --run（v1.1.8 新增 · 交付四）
+
+**背景**：v1.0.7 退役 ao 时没接入 deepagents subagents 调度，compose 只打印不执行。v1.1.8 补上——compose --run 真正委派 Sub Agent。同文件冲突检测 WARN（裁决 #1）。
+
+```bash
+# 子项 a: dag-runner 核心函数
+grep -c "runDAG\|detectFileConflicts\|ORCHESTRATOR_PROMPT" sofagent/orchestrator/src/dag-runner.ts   # ≥3
+
+# 子项 b: workflow-parser（YAML → SubAgent 映射）
+grep -c "parseWorkflowYaml\|toSubAgentConfigs\|ParsedWorkflow" sofagent/orchestrator/src/workflow-parser.ts   # ≥2
+
+# 子项 c: compose --run + enterprise-workflow 参数
+grep -c "\-\-run\|enterpriseWorkflow\|composeWithDeepAgents" sofagent/orchestrator/src/composer.ts   # ≥2
+
+# 子项 d: A/B variants（一次生成多种拆解策略）
+grep -c "variants\|variant\|VARIANT" sofagent/orchestrator/src/composer.ts   # ≥2
+
+# 子项 e: SubAgent 四层约束注入
+grep -c "buildConstrainedSystemPrompt\|约束.*加载链" sofagent/orchestrator/src/dag-runner.ts   # ≥1
+
+# 子项 f: 验收场景覆盖（acceptance-test 场景 106）
+grep -c "dag-runner\|detectFileConflicts\|compose.*DAG" tools/acceptance-test.sh   # ≥2
+```
+
+#### 43. pushKnowledgeSummary 主动通知（v1.1.8 新增 · 交付五）
+
+**背景**：Dream Cycle / knowledge-health 跑完后主动推送摘要，无需用户主动 status。通知内容按 sensitivity 过滤，restricted 不出现。
+
+```bash
+# 子项 a: notify 模块核心函数
+grep -c "pushKnowledgeSummary\|collectSummaryMaterial\|buildSummary" sofagent/daemon/src/notify.ts   # ≥3
+
+# 子项 b: 两触发源接通（dream-cycle + knowledge-health）
+grep -rn "pushKnowledgeSummary" sofagent/daemon/src/dream-cycle/state-machine.ts sofagent/daemon/src/inspectors/knowledge-health.ts   # 各 ≥1
+
+# 子项 c: 通知内容 sensitivity 过滤
+grep -c "sensitivity\|restricted\|NO_DATA_TEXT" sofagent/daemon/src/notify.ts   # ≥2
+
+# 子项 d: best-effort 降级（通知失败不影响主流程）
+grep -c "best-effort\|catch\|不影响主流程\|void pushKnowledgeSummary" sofagent/daemon/src/notify.ts   # ≥1
+
+# 子项 e: 验收场景覆盖（acceptance-test 场景 107）
+grep -c "pushKnowledgeSummary\|collectSummaryMaterial" tools/acceptance-test.sh   # ≥2
 ```
 
 ## 输出报告格式
