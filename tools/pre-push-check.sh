@@ -12,6 +12,7 @@
 #   + check-version.sh      → 版本号一致性
 #   + check-docs.sh         → 文档预算+死链+Skill 行数
 #   + test-count.sh         → 各包测试数汇总（任一包失败即拦截）
+#   + check-test-count.sh   → 文档声称测试数 vs 实际值一致性（P1-3 根治）
 #   + npm run build         → 审计引擎构建
 #
 # 用法:
@@ -167,6 +168,15 @@ if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
     check_pass "test-count.sh（workspace 全量，0 失败）"
   else
     check_fail "test-count.sh 有失败（RC=$TEST_RC，见上方 ✗ 明细）"
+  fi
+
+  # 4b. 文档声称测试数 vs 实际值一致性（P1-3 根治 · v1.1.7 起）
+  echo -e "\n  ${BOLD}文档测试数一致性（check-test-count.sh）...${NC}"
+  if bash tools/check-test-count.sh --quiet 2>/dev/null | grep -q "^OK$"; then
+    check_pass "check-test-count.sh（文档声称数 = 实际值）"
+  else
+    check_fail "check-test-count.sh 检测到文档测试数漂移"
+    bash tools/check-test-count.sh 2>&1 | grep "✗" | head -5 | sed 's/^/    /'
   fi
 fi
 

@@ -170,20 +170,24 @@
 - 开发日志是活文档，代码改完立刻回写，不要等
 - 发布检查清单全部打 `[x]`（在阶段十确认关口之后）
 
-### 测试数字一致性（v1.0.4 教训）
+### 测试数字一致性（🔴 v1.1.7 起用脚本自动校验）
 
-CHANGELOG/ROADMAP 中声称的测试数必须与实际 `npm test` 输出一致。v1.0.4 曾写 455 但实际 465。
+CHANGELOG/ROADMAP/LIMITATIONS/evidence.md 中声称的测试数必须与实际 `test-count.sh` 输出一致。v1.0.4 曾写 455 但实际 465；v1.1.7 再次漂移（773→781），根因是 commit 自身新增了测试用例但文档没跟着改。
+
+**v1.1.7 起有门禁脚本**，禁止手动 grep：
 
 ```bash
-# 获取实际测试数
-actual=$(cd sofagent/audit && npm test 2>&1 | grep 'Tests' | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+')
-echo "实际测试数: $actual"
-
-# 检查 CHANGELOG/ROADMAP 中写的数字
-grep "$actual" CHANGELOG.md
-grep "$actual" ROADMAP.md
-# 如果 grep 不到 = 文档写错了
+# 一键校验所有文档声称数 vs 实际值
+bash tools/check-test-count.sh
+# 输出示例：
+#   ✓ CHANGELOG.md：781
+#   ✓ ROADMAP.md：781
+#   ✓ LIMITATIONS.md：audit 413 / workspace 781
+#   ✓ evidence.md：audit 413 / workspace 781
+# 任一不一致 → 红字报具体声称值 vs 实际值 + exit 1
 ```
+
+脚本自动跑 `test-count.sh --quiet` 拿 SSOT 真值，再逐文档 grep 最新版本段声称的数字。**如果漂移**：打开脚本指出的文件+行号，把旧数字改成脚本输出中的实际值。
 
 ### 全项目版本号扫描（🔴 v0.95 起用脚本，禁止手动 grep）
 
