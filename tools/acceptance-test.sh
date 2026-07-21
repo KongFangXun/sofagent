@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.1.8 · 102 个端到端场景：用户旅程 + 规则覆盖(A1-A19,E1-E4) + Sub Agent
+# v1.1.8 · 109 个端到端场景：用户旅程 + 规则覆盖(A1-A19,E1-E4) + Sub Agent
 # + LOOP + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
 # 详细功能映射见 docs/verification/acceptance-coverage.md
 # ============================================================
@@ -1111,6 +1111,224 @@ import sys, json; d = json.load(sys.stdin); ag = d.get('actionGovernance', {}); 
 else fail "history.jsonl 未生成"; S100_OK=false; fi
 cd "$PROJECT_ROOT"; rm -rf "$S100_REPO"
 $S100_OK && pass
+# ════════════════════════════════════════════════════════════
+# v1.1.8 六大交付验收场景（101-106）
+# ════════════════════════════════════════════════════════════
+scenario 101 "v1.1.8 安全层——AES-256-GCM 加解密往返 + ECDH 密钥协商"
+S101_OK=true
+require_dist "sofagent/core/dist/crypto/aes-gcm.js" || S101_OK=false
+require_dist "sofagent/core/dist/crypto/ecdh.js" || S101_OK=false
+if $S101_OK; then
+  S101_RESULT=$(CRYPTO_DIR="$PROJECT_ROOT/sofagent/core/dist/crypto" node -e "
+    const { encryptPayload, decryptPayload } = require(process.env.CRYPTO_DIR + '/aes-gcm.js');
+    const { generateKeyPair, deriveSharedKey, publicKeyFingerprint } = require(process.env.CRYPTO_DIR + '/ecdh.js');
+    // AES-256-GCM 往返
+    const key = require('crypto').randomBytes(32);
+    const pt = Buffer.from('sofagent v1.1.8 secret payload', 'utf8');
+    const enc = encryptPayload(key, pt);
+    const dec = decryptPayload(key, enc.iv, enc.ciphertext, enc.tag);
+    if (dec.toString('utf8') !== pt.toString('utf8')) { console.log('AES 往返失败'); process.exit(1); }
+    // ECDH 密钥协商——双方独立生成 keyPair，各自 derive 出相同 sharedKey
+    const alice = generateKeyPair();
+    const bob = generateKeyPair();
+    const aliceShared = deriveSharedKey(alice.privateKey, bob.publicKey);
+    const bobShared = deriveSharedKey(bob.privateKey, alice.publicKey);
+    if (!aliceShared.equals(bobShared)) { console.log('ECDH 双方共享密钥不一致'); process.exit(1); }
+    // fingerprint 确定性
+    const fp1 = publicKeyFingerprint(alice.publicKey);
+    const fp2 = publicKeyFingerprint(alice.publicKey);
+    if (fp1 !== fp2 || fp1.length < 8) { console.log('fingerprint 非确定性或过短'); process.exit(1); }
+    console.log('OK');
+  " 2>&1) || true
+  echo "$S101_RESULT" | grep -q "^OK$" || { fail "AES/ECDH 验证失败: $S101_RESULT"; S101_OK=false; }
+fi
+$S101_OK && pass
+scenario 102 "v1.1.8 安全层——ECDH 配对路径 B（token 带外交换）"
+S102_OK=true
+require_dist "sofagent/core/dist/crypto/pairing.js" || S102_OK=false
+if $S102_OK; then
+  S102_RESULT=$(PAIRING_DIR="$PROJECT_ROOT/sofagent/core/dist/crypto" node -e "
+    (async () => {
+      const { createPairingSession, pairByToken, computeTokenTag, FEDERATION_TOKEN_ENV, MIN_TOKEN_LENGTH } = require(process.env.PAIRING_DIR + '/pairing.js');
+      const { deriveSharedKey } = require(process.env.PAIRING_DIR + '/ecdh.js');
+      const initiator = createPairingSession();
+      const responder = createPairingSession();
+      const token = 'a'.repeat(MIN_TOKEN_LENGTH + 8);
+      process.env[FEDERATION_TOKEN_ENV] = token;
+      const initiatorTag = computeTokenTag(token, initiator.publicKey);
+      try {
+        const paired = await pairByToken(token, responder.privateKey, initiator.publicKey, initiatorTag);
+        // PairedPeer: peerId(string) + sharedKey(Buffer) + fingerprint(string) + via
+        if (!paired.peerId || paired.peerId.length < 8) {
+          console.log('配对失败或 peerId 异常: ' + paired.peerId); process.exit(1);
+        }
+        if (!paired.sharedKey || paired.sharedKey.length !== 32) {
+          console.log('sharedKey 非 32 字节'); process.exit(1);
+        }
+        if (paired.via !== 'token') {
+          console.log('via 应为 token, 实际 ' + paired.via); process.exit(1);
+        }
+        // 验证配对后双方共享密钥一致
+        const initiatorShared = deriveSharedKey(initiator.privateKey, responder.publicKey);
+        if (!paired.sharedKey.equals(initiatorShared)) {
+          console.log('配对后共享密钥不一致'); process.exit(1);
+        }
+        console.log('OK');
+      } catch (e) {
+        console.log('异常: ' + e.message); process.exit(1);
+      }
+    })();
+  " 2>&1) || true
+  echo "$S102_RESULT" | grep -q "^OK$" || { fail "ECDH 配对路径 B 验证失败: $S102_RESULT"; S102_OK=false; }
+fi
+$S102_OK && pass
+scenario 103 "v1.1.8 联邦查询——sensitivity 过滤（restricted entity 不泄露）"
+S103_OK=true
+require_dist "sofagent/daemon/dist/federation/query-router.js" || S103_OK=false
+require_dist "sofagent/core/dist/security/trust-grading.js" || S103_OK=false
+if $S103_OK; then
+  S103_RESULT=$(QR_DIR="$PROJECT_ROOT/sofagent/daemon/dist/federation" node -e "
+    const { trustWeightOf } = require(process.env.QR_DIR + '/query-router.js');
+    // restricted entity 的 trust weight 应为 0 或被过滤（安全边界：restricted 不可见）
+    const restrictedItem = { content: 'restricted-secret', sensitivity: 'restricted', trust: 'federation', source: 'peer-a' };
+    const publicItem = { content: 'public-info', sensitivity: 'public', trust: 'official', source: 'peer-b' };
+    const wRestricted = trustWeightOf(restrictedItem);
+    const wPublic = trustWeightOf(publicItem);
+    // restricted item 不应有正权重（防止泄露）
+    if (wRestricted > 0) { console.log('restricted entity 有正权重 ' + wRestricted + '，安全边界失效'); process.exit(1); }
+    // public + official 应有正权重
+    if (wPublic <= 0) { console.log('public/official item 权重异常: ' + wPublic); process.exit(1); }
+    console.log('OK ' + wRestricted + '/' + wPublic);
+  " 2>&1) || true
+  echo "$S103_RESULT" | grep -q "^OK " || { fail "联邦 sensitivity 过滤验证失败: $S103_RESULT"; S103_OK=false; }
+fi
+$S103_OK && pass
+scenario 104 "v1.1.8 Prompt 注入防护——wrapUntrusted 标签包裹 + redactForPrompt 脱敏"
+S104_OK=true
+require_dist "sofagent/core/dist/security/prompt-sanitizer.js" || S104_OK=false
+if $S104_OK; then
+  S104_RESULT=$(SANITIZER="$PROJECT_ROOT/sofagent/core/dist/security/prompt-sanitizer.js" node -e "
+    const { wrapUntrusted, redactForPrompt, RESTRICTED_PLACEHOLDER } = require(process.env.SANITIZER);
+    // wrapUntrusted: 外部内容被标签包裹
+    const wrapped = wrapUntrusted('user uploaded code', 'web');
+    if (!wrapped.includes('<untrusted') || !wrapped.includes('user uploaded code')) {
+      console.log('wrapUntrusted 未正确包裹: ' + wrapped); process.exit(1);
+    }
+    // redactForPrompt: restricted sensitivity 内容被替换为占位符
+    const redacted = redactForPrompt('secret-api-key=xxx', 'restricted');
+    if (!redacted.includes(RESTRICTED_PLACEHOLDER) || redacted.includes('xxx')) {
+      console.log('redactForPrompt 未正确脱敏: ' + redacted); process.exit(1);
+    }
+    // public 内容不应被脱敏
+    const passthrough = redactForPrompt('public info', 'public');
+    if (passthrough !== 'public info') {
+      console.log('public 内容被错误脱敏: ' + passthrough); process.exit(1);
+    }
+    console.log('OK');
+  " 2>&1) || true
+  echo "$S104_RESULT" | grep -q "^OK$" || { fail "wrapUntrusted/redactForPrompt 验证失败: $S104_RESULT"; S104_OK=false; }
+fi
+$S104_OK && pass
+scenario 105 "v1.1.8 Prompt 注入防护——trust 分级（web+restricted 被丢弃）"
+S105_OK=true
+require_dist "sofagent/core/dist/security/trust-grading.js" || S105_OK=false
+if $S105_OK; then
+  S105_RESULT=$(TG_DIR="$PROJECT_ROOT/sofagent/core/dist/security/trust-grading.js" node -e "
+    const { isTrustEntryUsable, sortByTrust } = require(process.env.TG_DIR);
+    // web + restricted 组合应不可用（最不可信来源 + 最高敏感度 = 安全红线）
+    const webRestricted = { trust: 'web', sensitivity: 'restricted', content: 'should-not-leak' };
+    if (isTrustEntryUsable(webRestricted)) {
+      console.log('web+restricted 被判为可用，安全红线失效'); process.exit(1);
+    }
+    // official + public 应可用
+    const officialPublic = { trust: 'official', sensitivity: 'public', content: 'safe' };
+    if (!isTrustEntryUsable(officialPublic)) {
+      console.log('official+public 被判为不可用'); process.exit(1);
+    }
+    // sortByTrust: official 应排在 web 前面
+    const sorted = sortByTrust([webRestricted, officialPublic]);
+    if (sorted[0].trust !== 'official') {
+      console.log('sortByTrust 排序异常: official 未优先'); process.exit(1);
+    }
+    console.log('OK');
+  " 2>&1) || true
+  echo "$S105_RESULT" | grep -q "^OK$" || { fail "trust 分级验证失败: $S105_RESULT"; S105_OK=false; }
+fi
+$S105_OK && pass
+scenario 106 "v1.1.8 编排引擎——compose DAG 调度（detectFileConflicts 同文件冲突检测）"
+S106_OK=true
+require_dist "sofagent/orchestrator/dist/dag-runner.js" || S106_OK=false
+if $S106_OK; then
+  S106_RESULT=$(ORCH_DIR="$PROJECT_ROOT/sofagent/orchestrator/dist" node -e "
+    const { detectFileConflicts } = require(process.env.ORCH_DIR + '/dag-runner.js');
+    // 构造两个 node 写同一文件的 workflow → 应检测到冲突
+    // detectFileConflicts 从 node.task 字符串中提取反引号路径
+    const conflictParsed = {
+      nodes: [
+        { id: 'n1', task: 'write to \`src/output.ts\` for feature A' },
+        { id: 'n2', task: 'update \`src/output.ts\` for feature B' }
+      ]
+    };
+    const conflicts = detectFileConflicts(conflictParsed);
+    if (!conflicts || conflicts.length === 0) {
+      console.log('同文件冲突未检出'); process.exit(1);
+    }
+    if (!conflicts.some(c => c.includes('output.ts'))) {
+      console.log('冲突报告不含文件名: ' + JSON.stringify(conflicts)); process.exit(1);
+    }
+    // 无冲突场景：不同文件不应报告
+    const cleanParsed = {
+      nodes: [
+        { id: 'n1', task: 'write to \`src/a.ts\`' },
+        { id: 'n2', task: 'write to \`src/b.ts\`' }
+      ]
+    };
+    const cleanConflicts = detectFileConflicts(cleanParsed);
+    if (cleanConflicts.length > 0) {
+      console.log('无冲突场景误报: ' + JSON.stringify(cleanConflicts)); process.exit(1);
+    }
+    console.log('OK');
+  " 2>&1) || true
+  echo "$S106_RESULT" | grep -q "^OK$" || { fail "compose DAG 冲突检测验证失败: $S106_RESULT"; S106_OK=false; }
+fi
+$S106_OK && pass
+scenario 107 "v1.1.8 主动通知——pushKnowledgeSummary（material 收集 + summary 构建 + 推送）"
+S107_OK=true
+require_dist "sofagent/daemon/dist/notify.js" || S107_OK=false
+if $S107_OK; then
+  S107_RESULT=$(NOTIFY="$PROJECT_ROOT/sofagent/daemon/dist/notify.js" node -e "
+    (async () => {
+      const fs = require('fs');
+      const { pushKnowledgeSummary, collectSummaryMaterial, buildSummary, NO_DATA_TEXT } = require(process.env.NOTIFY);
+      // 空目录降级：collectSummaryMaterial 应不崩溃，buildSummary 返回含 NO_DATA_TEXT
+      const os = require('os'); const path = require('path');
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-s107-'));
+      fs.mkdirSync(path.join(tmpDir, '.sofagent', 'knowledge'), { recursive: true });
+      const material = collectSummaryMaterial(tmpDir);
+      const summary = buildSummary(material);
+      if (!summary || summary.length < 5) {
+        console.log('summary 构建异常: 长度' + summary.length); process.exit(1);
+      }
+      // pushKnowledgeSummary 用 mock pushFn 验证推送链路
+      let pushedTarget = '';
+      let pushedTitle = '';
+      const mockPush = async (opts) => {
+        pushedTarget = opts.target; pushedTitle = opts.title;
+        return true;
+      };
+      const result = await pushKnowledgeSummary(tmpDir, mockPush);
+      if (!result) { console.log('pushKnowledgeSummary 返回 false'); process.exit(1); }
+      if (!pushedTarget || !pushedTitle) {
+        console.log('mock pushFn 未被正确调用'); process.exit(1);
+      }
+      // 清理
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+      console.log('OK ' + pushedTarget);
+    })().catch(e => { console.log('异常: ' + e.message); process.exit(1); });
+  " 2>&1) || true
+  echo "$S107_RESULT" | grep -q "^OK " || { fail "pushKnowledgeSummary 验证失败: $S107_RESULT"; S107_OK=false; }
+fi
+$S107_OK && pass
 # ── 总结 ──────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
