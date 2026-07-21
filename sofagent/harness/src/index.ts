@@ -99,7 +99,7 @@ export function buildConstrainedSystemPrompt(
   const sharedDir = path.join(skillDir, 'knowledge', 'shared');
   const sharedKnowledge = listKnowledgeTopN(sharedDir, 3);
 
-  // 4a+. v1.1.7 新增：联邦知识注入（第 3 层——低于 SKILL.md 宪法层，
+  // 4a+. v1.1.8 新增：联邦知识注入（第 3 层——低于 SKILL.md 宪法层，
   // 高于本地 knowledge/）。来源：knowledge/federation/ 目录
   // （daemon 联邦查询落盘的 peer 知识快照）。联邦内容是外部来源，
   // 强制 <untrusted> 包裹（prompt 注入防线层 1，与 trust 分级层 5 联动）。

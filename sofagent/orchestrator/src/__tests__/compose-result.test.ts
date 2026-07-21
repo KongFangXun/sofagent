@@ -1,6 +1,6 @@
 // ============================================================
 // compose-result.test.ts · composer ComposeResult 结构化返回测试
-// v1.1.7 新增
+// v1.1.8 新增
 //
 // 覆盖用例（共 2 case）：
 //   1. compose() 返回 ComposeResult{yaml, subagents}：解析器注入时 subagents 被填充

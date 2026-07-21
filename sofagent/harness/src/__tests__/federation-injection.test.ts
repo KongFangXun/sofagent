@@ -1,6 +1,6 @@
 // ============================================================
 // federation-injection.test.ts · 联邦知识加载链注入测试
-// v1.1.7 新增
+// v1.1.8 新增
 //
 // 覆盖用例（共 2 case）：
 //   1. knowledge/federation/ 存在时 → 注入且 <untrusted source="federation"> 包裹，
