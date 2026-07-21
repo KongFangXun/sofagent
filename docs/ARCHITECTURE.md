@@ -146,6 +146,21 @@ Harness 中间件最大的挑战是存在感——引擎在正常工作，但用
 
 OpenClaw 通过 Hook 精确注入，其他平台 Agent 主动 Read，v1.0.7+ Sub Agent 启动时自加载（`buildConstrainedSystemPrompt`）。
 
+> **v1.1.8 加载链扩展**：联邦知识作为第 3 层注入（`knowledge/federation/` 目录，daemon 联邦查询落盘的 peer 知识快照）——低于 SKILL.md 宪法层、高于本地 knowledge/。联邦内容是外部来源，强制 `<untrusted source="federation">` 包裹（Prompt 注入防线层 1，详见 SECURITY.md 8 层映射表）。
+
+### 联邦查询（v1.1.8）
+
+两台配对设备经 OpenClaw channel 互相查 knowledge/。纵深防御四层：MCP localhost 绑定 → OpenClaw channel 路由 → **AES-256-GCM 应用加密**（审计结论：OpenClaw 本地回环 ws:// 明文无 TLS，第 3 层是唯一保密防线）→ sensitivity frontmatter 过滤。
+
+| 模块 | 落点 | 职责 |
+|------|------|------|
+| 安全层 | `core/src/crypto/` | AES-256-GCM（IV 12 字节随机不复用 + tag 校验）· ECDH(prime256v1)+HKDF 派生 32 字节 key（只存内存）· 24h 密钥轮换（旧 key 只解不加）· 三条配对路径（6 位码 + y/N / `SOFAGENT_FEDERATION_TOKEN` token / federation.json HMAC .sig 验签） |
+| 传输层 | `daemon/src/federation/channel.ts` | OpenClaw channel 抽象（依赖倒置，测试内存 channel）；只搬运密文帧（iv‖tag‖ciphertext） |
+| 查询路由 | `daemon/src/federation/query-router.ts` | 并发 fetch + 单 peer 5s 超时按离线 + sensitivity 本地端二次校验（restricted 不接收；篡改标签降权 trust=web + 审计 WARN） |
+| 合并 | `daemon/src/federation/merge.ts` | `automerge@1.0.1-preview.7`（MIT）CRDT 合并（clone-fork 共享版本史收敛）；裁决：trust 优先于 mtime；排序 trust 降 → mtime 降 |
+| 离线降级 | `daemon/src/federation/offline-fallback.ts` | 任一 peer 离线跳过不阻塞；全部离线/整块失败退化纯本地查；审计 `federation_query{peers, merged, onlinePeers}` |
+| 注入点 | `mcp/src/mcp-server.ts` · `harness/src/index.ts` | search_knowledge 异步联邦合并（best-effort）；harness 加载链第 3 层（`<untrusted>` 包裹） |
+
 ### 审计引擎
 
 核心设计决策：**审计必须外置。** Anthropic 发现 Claude 内部存在 J-space——AI 自己知道控制不住自己。所以不信任 Agent 自我报告，只看 git diff 硬证据。
@@ -617,3 +632,22 @@ sofagent 自有三层：
 **同构点**：五层里**仅指令层直接调 AI**，其余四层为 AI 铺路；sofagent 亦然——只有「知识 / 指令」承载概率性 AI，约束 / 校验 / 编排全部落在确定性引擎。这正是「约束层 = Harness 中间件」的骨架级印证：对外讲我们自己的三层，行业五层做映射而不喧宾夺主。
 
 > 📖 来源：31 篇行业笔记跨批研读（2026-07-20）
+
+### a16z《你刚雇了一百万个糟糕员工》映射（2026-07）
+
+> 📐 来源：a16z（2026-07-14，Hebbia 创始人 George Sivulka）核心判断——每家公司在雇「一百万个糟糕的 AI 员工」，80% 的 token 在空转；解法不是更强的模型，而是 185 年前诞生的老手艺：**管理**。七条平行法则（对应人类组织逻辑）逐条可映射到 sofagent 已有 / 规划能力：
+
+| 文章概念 | sofagent 对应 | 状态 |
+|----------|--------------|:--:|
+| 事实1 成本倒挂（人比软件便宜） | 90/10 价值分层：Harness 可靠性 > 模型智力 | 已具备（叙事） |
+| 事实2 增员非裁员（AI 放大组织） | FDE 卖转型 + sustain 持续存在感；管放大后的 agent 队伍 | 已具备（定位） |
+| 历史类比：1841 铁路事故 → 现代管理诞生 | 编排 guard edge（retryCount<3）+ 审计 Reality Anchor（真实 git diff）+ River「堤坝 = Harness」 | 已具备（工程+叙事） |
+| 法则1 挥霍 Tokenmaxxing（清晰 4$ vs 模糊 310$） | 约束底座 / 明确不做清单；FDE 帮客户把模糊流程讲清楚；Ontology 共同理解层 | 已具备 + 可强化 |
+| 法则2 空转 Loops | graph.ts guard edge retryCount<3 天然防 loops 失控 | 已原生具备（核心） |
+| 法则3 冗员 Token Bloat | 明确不做清单 / 防 scope 蔓延；审计拦「AI 改测试掩盖错误」 | 已具备 + 可强化 |
+| 法则4 杠杆 100X Token（管理得当 4$ vs 失当 7000$） | 90/10 分层——Harness 的可靠性比模型智力更值钱 | 已具备（叙事） |
+| 法则5 政治 上下文囤积 | 不投喂 / 数据主权；知识主权归客户（知识联邦 + Ledger-Views-Policy） | 已具备（差异化） |
+| 法则6 考核 Evals（AI 渗透 ∝ 可评估性） | 审计 A1-A19 = Reality Anchor 把「可评估性」硬编码；Dream Cycle eval 驱动 Skill 迭代 | 已具备（底座）+ 缺口（产品化） |
+| 法则7 万亿转型服务（卖转型非卖工具） | FDE = Services-as-Software 卖转型；ROADMAP 市场信号互证 | 已具备（核心背书） |
+
+> 💡 **铁路类比**：1841 年铁路相撞（协调失误非技术故障）倒逼现代管理诞生；今天 AI 正复刻——模糊指令交给 agent，损失以秒计、指数扩散。Harness = 堤坝，正是这一次的「管理层」。a16z 文章几乎是为 sofagent 写的外部背书。

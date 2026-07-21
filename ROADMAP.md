@@ -5,6 +5,14 @@
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
+## 开发中：v1.1.8 🚧（代码实现完成，待发版 SOP）
+
+> **安全层加密配对 + 联邦查询 + Prompt 注入防护补齐 + 编排引擎最小版**：`core/src/crypto/` 四件套（AES-256-GCM / ECDH+HKDF / 24h 密钥轮换 / 三条配对路径，零 npm 依赖、key 只存内存）→ `daemon/src/federation/` 五件套（OpenClaw channel 联邦查询：5s 超时离线降级、sensitivity 双重过滤、篡改标签降权 + 审计、automerge CRDT 合并 trust 优先于 mtime、mcp-server search_knowledge 注入、harness 加载链第 3 层）→ Prompt 注入 8 层防护补齐层 1/4/5（`<untrusted>` 包裹 + prompt 级脱敏 + trust 可信分级，web+restricted 丢弃）→ 编排引擎从「只打印 YAML」升级为「真正调度 Sub Agent」（dag-runner + workflow-parser + composer 接企业 workflow + `--run`/`--variants A,B,C,D` A/B 串行双跑）→ 知识沉淀主动通知（dream-cycle / knowledge-health 双触发，best-effort）。
+>
+> 质量验证：852 tests across 12 packages 全绿（core 139 / daemon 89 / orchestrator 132 / mcp 36 / harness 13 / audit 413 不回归）· 累计新增 69 case · 新增依赖唯一 `automerge@1.0.1-preview.7`（MIT）。
+>
+> 📖 [v1.1.8 开发日志](./docs/changelog/v1.1.8.md) · 版本号 bump 留发版 SOP（开发期 SSOT 仍为 v1.1.7）
+
 ## 现在在哪：v1.1.7 ✅（已发布）
 
 > **Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性**：知识沉淀从散点脚本升级为 6 阶段流水线（extract_facts → extract_atoms → cluster_patterns → synthesize_concepts → skillopt_backfill → embed）+ knowledge 敏感度分级（缺省 internal）+ knowledge-health 5 项检查（@weekly）+ `knowledge status` 聚合命令 + audit ActionGovernance schema。质量验证：781 tests across 12 packages 全绿、check-version 70/70、acceptance 100 场景/113 断言。
@@ -49,7 +57,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 |------|:--:|------|:--:|
 | **v1.1.6** | ✅ 已发布 | **BugFix 21 项 + LLM Wiki 3 层分层 + conflict-check**：v1.1.5 遗留全数修复 + Ledger-Views-Policy 显式化 + daemon 知识健康巡检（矛盾/孤儿/死链） | [📖](./docs/changelog/v1.1.6.md) · [🗺️ 三层映射](./docs/llm-wiki-mapping.md) |
 | **v1.1.7** | ✅ 已发布 | **Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性**：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级（缺省 internal）+ knowledge-health 5 项检查（@weekly）+ `knowledge status` 聚合命令 | [📖](./docs/changelog/v1.1.7.md) |
-| **v1.1.8** | 📋 规划中 | **安全层 + 联邦查询 + Agent 安全防护 + 编排引擎最小版**：AES-256-GCM + ECDH 配对 + OpenClaw channel 联邦知识查询 + Prompt 注入 8 层防护体系 + **编排引擎最小版**（DeepAgents `subagents` 参数接入——compose 拆解的 YAML 不再只打印，真正传给 `createDeepAgent({ subagents })` 让 DeepAgents 原生调度 Sub Agent，串联执行 → 不带沙箱的 DAG 调度原型） | [📖](./docs/changelog/v1.1.8.md) |
+| **v1.1.8** | 🚧 开发中 | **安全层 + 联邦查询 + Agent 安全防护 + 编排引擎最小版**：AES-256-GCM + ECDH 配对 + OpenClaw channel 联邦知识查询 + Prompt 注入 8 层防护体系 + **编排引擎最小版**（DeepAgents `subagents` 参数接入——compose 拆解的 YAML 不再只打印，真正传给 `createDeepAgent({ subagents })` 让 DeepAgents 原生调度 Sub Agent，串联执行 → 不带沙箱的 DAG 调度原型） | [📖](./docs/changelog/v1.1.8.md) |
 | **v1.1.9** | 📋 规划中 | **USB 完整运行时 + daemon A/B 自动调度器**：① Node.js 单文件打包 + OpenClaw 便携化 + 跨平台启动脚本（macOS/Windows/Linux），U 盘插入 → 双击 start → 联邦在线 → 拔掉零残留；② **daemon 探索-利用 A/B 调度器**——v1.1.8 手动 A/B 原型的自动化升级，daemon cron 定期用当前方案跑真实任务积累 N 次数据 → 自动切换候选方案再跑 N 次 → compare 聚合指标 → promote 赢家，后台自动持续优化编排策略；③ **控制图状态抽取（Graph Engineering 波次拓扑可视化·数据层）**：从 `.sofagent/checkpoint/` + `LoopArtifacts` 抽取结构化 JSON（节点状态/波次序号/guard 触发/★Reality Anchor 证据链），为 v1.2.x Dashboard 波次视图提供数据底座 | [📖](./docs/changelog/v1.1.9.md) |
 | **v1.2.0** | 📋 规划中 | **多设备知识联邦收口 🎉**：端到端全功能验证（LOOP + Dream Cycle + 联邦查询 + 加密）+ gbrain 行业对标 + USB key 产品故事写入主文档 + 兜底修复。v1.2.x 完整多设备协同的起点 | [📖](./docs/changelog/v1.2.0.md) |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同——**L2 团队协作协议**：共享态/意图广播/触发反应/冲突消解/反馈放大五大机制，从单人约束到团队协作；**L3 组织能力市场**：Skill/Agent/流程在企业内发布→发现→调用→评价，高频高价值自然胜出。+ Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界。**🔮 探索**：路由器式配网（边缘设备 WiFi 热点 + 手机端配置网页，仅用于初始配置，配置完成后回归纯 LUI）+ **协议中立**（审计层只走 MCP 等开放协议和 git diff/JSONL/Markdown 开放格式，不为任何单一平台写专属集成——不绑定平台，平台不绑定审计） + **编排隔离底座（git worktree 轻量形态）+ 波次拓扑可视化（控制图视角，随 dashboard 交付，详见子里程碑）** | — |
@@ -158,6 +166,25 @@ sofagent 的编排引擎天然就是「控制图」——`sofagent/orchestrator/
 | ③ | **用户视角波次拓扑可视化**（控制图可视化：节点状态/波次/guard 触发/Reality Anchor 证据链） | 无 | **数据层 v1.1.9（③·1 状态抽取）；视图层 v1.2.x（③·2~③·3 Dashboard + 可读性）** | 状态抽取（数据层）提前到 v1.1.9——v1.1.9 是 daemon 可观测版本，后台 A/B 跑真实任务需可读性，且原始数据（checkpoint + LoopArtifacts）已存在于 v1.1.x；Dashboard 视图 + 用户可读性仍随 v1.2.x dashboard 交付。见 v1.2.x 详细节 |
 
 > 🔴 **落地纪律**：① 和 ② 是「用 Graph Engineering 术语框定已有/规划能力」，不新增能力范围；③ 是纯可视化，依赖 dashboard 产品化节奏（v1.2.x 起）。
+
+### 🔮 a16z AI 管理七法则 印证（2026-07 · 迭代参考）
+
+> 📐 来源：a16z（2026-07-14，Hebbia 创始人 George Sivulka）《You Just Hired a Million Bad Employees》——「人比软件便宜」，解法 = 管理。七法则逐条印证 sofagent 已做对什么、缺什么。
+
+| # | a16z 概念 | sofagent 对应 | 现状 | 落地版本 | 说明 |
+|---|------|------|:--:|------|------|
+| 1 | 事实1 成本倒挂（人比软件便宜） | 90/10 价值分层 | 已具备（叙事） | 叙事支撑 | Harness = 把 p90 拉回 p10 的管理杠杆 |
+| 2 | 事实2 增员非裁员（AI 放大组织） | FDE 卖转型 + sustain | 已具备（定位） | 叙事支撑 | AI 放大组织，sofagent 管放大后的队伍 |
+| 3 | 1841 铁路事故 → 现代管理 | guard edge + Reality Anchor + River 堤坝 | 已具备 | 叙事背书 | 直接引用作 Harness 必要性历史背书 |
+| 4 | 法则1 挥霍 Tokenmaxxing | 约束底座 + 明确不做 + FDE 讲清流程 + Ontology | 已具备+可强化 | 印证 | FDE 把模糊流程讲清即抗 Tokenmaxxing |
+| 5 | 法则2 空转 Loops | graph.ts guard edge retryCount<3 | 已原生具备（核心） | 印证 | Loops 治理工程答案 |
+| 6 | 法则3 冗员 Token Bloat | 明确不做清单 / 防 scope 蔓延 + 审计拦改测试 | 已具备+可强化 | 印证 | 砍循环优于优化 |
+| 7 | 法则4 杠杆 100X Token | 90/10 分层 Harness 可靠性最值钱 | 已具备（叙事） | 印证 | 那 10% 即文章「管理杠杆」 |
+| 8 | 法则5 政治 上下文囤积 | 不投喂 / 数据主权 + 知识主权归客户 | 已具备（差异化） | 印证 | 叙事回应组织政治 |
+| 9 | 法则6 考核 Evals | 审计 A1-A19 = Reality Anchor + Dream Cycle eval 驱动 | 已具备（底座）+ 缺口 | v1.3.0+ 产品化 | 企业专属 eval 套件缺口 |
+| 10 | 法则7 万亿转型服务 | FDE = Services-as-Software + 市场信号互证 | 已具备（核心背书） | 印证 + 规模化缺口 | a16z 最重磅外部背书；规模化交付进未来迭代 |
+
+> 🔴 **落地纪律**：①~⑧ 是「用 a16z 术语框定已有/规划能力」，不新增能力范围；⑨ 企业专属 eval 套件产品化 → v1.3.0+（tie 失败清单驱动优化 v1.2.x + RSI 验证体系 v2.x）；⑩ 转型服务规模化 / 多客户并行交付 → tie FDE 陪跑期机制 + PE/VC 多企业审计仪表盘 + FDE Demo Kit 工程化。两者均为真实缺口，挂接既有储备，不凭空造功能。
 
 ## 探索方向
 
