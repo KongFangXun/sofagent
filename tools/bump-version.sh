@@ -300,7 +300,7 @@ if [[ $ts_count -eq 0 ]]; then
 fi
 echo ""
 
-# 2b. .ts 文件头注释中的 vX.Y.Z（匹配注释行，与 check-version [11/12] 检测范围对齐）
+# 2b. .ts 文件头注释中的 vX.Y.Z（匹配注释行，与 check-version [12/14] TS 文件头检测范围对齐）
 echo -e "${BOLD}[4/13] TS 文件头注释版本号${NC}"
 ts_header_count=0
 while IFS= read -r ts; do
