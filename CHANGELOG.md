@@ -36,7 +36,7 @@
 
 ### [v1.1.4] — LOOP 独立产品化 + 工具注入 + A18/A19 + CI 修复
 > 2026-07-19（UTC）· 已发版
-**核心变更**：① **LOOP 独立产品化**——workflow 代码从 orchestrator 分离到 `LOOP/`，配套 `loop-install.sh` 全栈部署；Skill 命名统一（engineering-* → sofagent-*）；`work模板市场` → `模板市场`（三层命名规则：大写=独立产品）。② **LOOP 工具注入**——engineer/reviewer 从零工具升级为 6 工具集（read/write/edit/bash/search/test），支持双模型配置 + IS_PASS 自动门控。③ **新审计规则**：A18 垃圾文件检测 + A19 commit message 质量（规则集 19→21）。④ **daemon 可见性修复**（v1.1.0 拆包后 plist 参数错误导致 daemon 从未运行）+ USB federation 基础检测 + WARN 累积报告巡检器。
+**核心变更**：① **LOOP 独立产品化**——workflow 代码从 orchestrator 分离到 `LOOP/`，配套 `loop-install.sh` 全栈部署；Skill 命名统一（engineering-* → sofagent-*）；`work模板市场` 产品化命名为 `模板市场`（三层命名规则：大写=独立产品名，代码目录名保持小写 `work模板市场/`，详见 v1.1.5 命名约定）。② **LOOP 工具注入**——engineer/reviewer 从零工具升级为 6 工具集（read/write/edit/bash/search/test），支持双模型配置 + IS_PASS 自动门控。③ **新审计规则**：A18 垃圾文件检测 + A19 commit message 质量（规则集 19→21）。④ **daemon 可见性修复**（v1.1.0 拆包后 plist 参数错误导致 daemon 从未运行）+ USB federation 基础检测 + WARN 累积报告巡检器。
 **缺陷修复**：11 包 ESM exports 修复（CI vitest 全绿）+ 🔴 **release.yml publish-audit 修复**（v1.1.1-v1.1.3 npm publish 持续失败根因——CI 漏 build @sofagent/core）+ maxTurns=20 + WARN 写入 history + run_bash 高危命令黑名单。
 **质量验证**：660 tests across 12 packages 全绿 · acceptance-test 50/50 · check-version 67/67 · pre-push-check 13 通过/1 警告（共 14 项）。
 > 📖 [开发日志](./docs/changelog/v1.1.4.md)

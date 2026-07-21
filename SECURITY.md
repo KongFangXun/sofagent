@@ -98,12 +98,12 @@ sofagent daemon 是本地文件系统监控守护进程，其行为边界如下�
 
 > ⚠️ **企业环境警告**：v1.1.4 的 USB federation 曾是**基础检测模式**、**无签名校验**；**自 v1.1.5 起已加入 HMAC 签名校验**，v1.1.6 当前状态已具备签名保护（详见下方对比表）。
 
-| 维度 | v1.1.6（当前） | v1.1.7+（计划） |
+| 维度 | v1.1.4（基础检测，无签名） | v1.1.5+（HMAC 签名，当前） |
 |------|:--|:--|
 | 检测条件 | USB 卷标 = `SOFAGENT` + 存在 `federation.json` | 同左 + HMAC 签名校验（`.sig` sidecar） |
-| 配置应用 | 写入 `~/.sofagent/federation.json`，**不自动分发到各目录**（applyFederation 未实现） | 自动 nodes → orchestrator/nodes/、policies → audit/policies/ |
+| 配置应用 | 写入 `~/.sofagent/federation.json`，**不自动分发到各目录**（applyFederation 未实现） | 自动 nodes → orchestrator/nodes/、policies → audit/policies/（v1.1.6+ 计划） |
 | 注入风险 | 🔴 **任何人制作的 SOFAGENT 卷标 U 盘可注入任意 federation 配置** | ✅ 签名不匹配则拒绝导入 |
-| Schema 校验 | ❌ JSON.parse 后直接序列化写入，不校验字段 | ✅ 按 FederationConfig schema 校验 |
+| Schema 校验 | ❌ JSON.parse 后直接序列化写入，不校验字段 | ✅ 按 FederationConfig schema 校验（v1.1.6+ 计划） |
 
 **企业部署建议（v1.1.6）**：
 - 不要在共享/公共设备上启用 USB federation 自动检测
