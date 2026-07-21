@@ -191,6 +191,17 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     }
   }
 
+  // 6. 审计日志完整性（HMAC 签名，v1.1.8 新增）
+  // 若 ~/.sofagent-key 不存在，审计日志仅用 SHA-256 校验（Agent 可重算整链），完整性校验强度降低。
+  // 配置密钥后可启用 HMAC-SHA256 强校验（见 audit-history.ts）。
+  console.log('\n── 审计日志完整性 ──');
+  const hmacKeyPath = join(homedir(), '.sofagent-key');
+  if (existsSync(hmacKeyPath)) {
+    ok('已配置 HMAC 密钥（~/.sofagent-key），审计日志使用 HMAC-SHA256 强校验');
+  } else {
+    warn('无 HMAC 签名，完整性校验强度降低：审计日志仅 SHA-256 校验（Agent 可重算整链）。配置 ~/.sofagent-key 可启用 HMAC-SHA256 强校验');
+  }
+
   // 总结
   const allOk = env.allOk && configOk && dirsOk && hookOk && depsOk;
   console.log('\n── 健康检查结果 ──');

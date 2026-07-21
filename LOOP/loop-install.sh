@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# loop-install.sh · LOOP 自迭代工具包一键部署 · v1.1.6
+# loop-install.sh · LOOP 自迭代工具包一键部署 · v1.1.7
 # ============================================================
 # 用法: bash loop-install.sh [--platform openclaw|workbuddy|codex|hermes|claude]
 #       默认 --platform openclaw（编排引擎需要 OpenClaw 后台）
@@ -22,6 +22,8 @@
 #   LOOP_AUTO=1 \
 #   sofagent-orchestrator loop --task "..."
 # ============================================================
+
+VERSION="1.1.7"  # 与 package.json / SSOT 版本保持一致（v1.1.7）
 
 set -euo pipefail
 

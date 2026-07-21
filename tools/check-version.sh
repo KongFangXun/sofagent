@@ -235,6 +235,25 @@ if [[ -f "${FDE_SH}" ]]; then
   fi
 fi
 
+# 检查 LOOP/loop-install.sh 注释头版本号 + VERSION 常量
+LOOP_SH="${PROJECT_ROOT}/LOOP/loop-install.sh"
+if [[ -f "${LOOP_SH}" ]]; then
+  header_ver=$(head -5 "${LOOP_SH}" | grep -oE '· v[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
+  if [[ -n "${header_ver}" ]] && [[ "${header_ver}" != "${SSOT_VERSION}" ]]; then
+    report_error "${LOOP_SH}" "注释头 v${header_ver}" "v${SSOT_VERSION}"
+  else
+    report_ok "loop-install.sh" "v${header_ver:-N/A}"
+  fi
+  # VERSION 常量（如存在）也必须与 SSOT 一致
+  ver_const=$(grep -nE '^VERSION="[0-9]+\.[0-9]+\.[0-9]+"' "${LOOP_SH}" | head -1)
+  if [[ -n "${ver_const}" ]]; then
+    ver_const_val=$(extract_version "${ver_const}")
+    if [[ "${ver_const_val}" != "${SSOT_VERSION}" ]]; then
+      report_error "${LOOP_SH}" "VERSION 常量 ${ver_const_val}" "${SSOT_VERSION}"
+    fi
+  fi
+fi
+
 # 检查 FDE/package.json + LOOP/package.json version 字段
 for pkg_file in "${PROJECT_ROOT}/FDE/package.json" "${PROJECT_ROOT}/LOOP/package.json"; do
   if [[ -f "${pkg_file}" ]]; then

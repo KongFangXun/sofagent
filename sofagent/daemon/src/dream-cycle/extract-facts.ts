@@ -10,6 +10,7 @@
 import { createHash } from 'crypto';
 
 import type { Fact, Ledger, LLMProvider } from './types';
+import { validateExtractOutput, scanInjection } from './injection-guard';
 
 /** 文本 → 稳定 fact id（内容 hash 前 12 位） */
 function factId(text: string): string {
@@ -28,7 +29,11 @@ export async function extractFacts(ledger: Ledger, llm: LLMProvider): Promise<Fa
 
   // think.md 事实
   if (ledger.thinkContent.trim().length > 0) {
-    const texts = await llm.extract(ledger.thinkContent);
+    // [P2-5] 第三层隔离：A9 注入扫描标记 think.md 潜在注入，隔离于提取结果
+    const { marked } = scanInjection(ledger.thinkContent);
+    // [P2-5] 第二层隔离：校验 llm.extract() 返回 schema，非法时回退按行切分
+    const raw = await llm.extract(marked);
+    const texts = validateExtractOutput(raw, marked);
     for (const text of texts) {
       facts.push({ id: factId(`think:${text}`), text, source: 'think.md' });
     }

@@ -25,6 +25,16 @@ sofagent 是纯本地 Harness 中间件，**数据不出本机**——但以下�
 - 对 `.sofagent/` 目录做 gpg 加密或放在加密卷上
 - 脱敏/保留/审计能力已在 v0.71 落地，详见 [企业部署指南](./docs/guides/enterprise-deploy.md)
 
+### v1.1.7 新增能力的安全边界
+
+v1.1.7 引入了三项新能力，其安全语义与边界如下：
+
+| 能力 | 安全边界 / 语义 |
+|------|------|
+| **Dream Cycle（LLM 知识沉淀）** | 6 阶段流水线经 `LLMProvider` 接口抽象；v1.1.7 默认使用 MockLLM（确定性、无外部调用），RealLLM 在 v1.1.8 才接入。LLM 仅读取 `think.md`/知识库内容并产出结构化事实/概念，**不回写代码、不执行命令、不访问网络**。注入隔离见 `daemon/src/dream-cycle/` 的 system-role 声明与返回 schema 校验（P2-5）。 |
+| **sensitivity 敏感度分级** | `core/memory-contract.ts` 定义 `Sensitivity`（public/internal/restricted），`DEFAULT_SENSITIVITY='internal'` 为 safe-by-default，restricted 绝不默认。语义是**可见性分级**而非加密——restricted 内容在 `knowledge status` 聚合时只计数不返回内容，但明文存储不变。 |
+| **ActionGovernance 审计溯源** | 审计记录升级为可问责的动作凭证：`ActionGovernance`（actor/timestamp/targetEntity/context）+ `DecisionProvenance` 决策溯源组，写入 `history.jsonl`。提供**事后可追溯性**，但不在运行时阻断——Agent 仍可伪造 actor 字段（信任模型同 §审计工具信任模型）。防篡改 HMAC 签名规划在 v1.2.x（见 P2-6）。 |
+
 ### Daemon 监控边界
 
 sofagent daemon 是本地文件系统监控守护进程，其行为边界如下：

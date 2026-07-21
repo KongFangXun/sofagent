@@ -21,8 +21,8 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'fs';
 import { join, dirname } from 'path';
-import { createHash } from 'crypto';
-import { hostname, userInfo } from 'os';
+import { createHash, createHmac } from 'crypto';
+import { hostname, userInfo, homedir } from 'os';
 import { execSync } from 'child_process';
 import { loadEnvConfig } from '@sofagent/core';
 import { atomicAppendSync, atomicWriteSync } from '@sofagent/core';
@@ -73,6 +73,8 @@ export interface AuditHistoryEntry {
   commitSha?: string;
   /** hash 算法版本：1 = 无指纹（v1.0.5 及以前），2 = 环境指纹（v1.0.6+） */
   hashVersion?: number;
+  /** v1.1.8+: HMAC-SHA256 签名（密钥来自 ~/.sofagent-key，chmod 600）。无密钥时缺省（降级 SHA-256，向后兼容）。用于强防篡改。 */
+  hmacSig?: string;
   /** v1.1.3+: 审计引擎标识，用于追溯记录来源 */
   engine?: string;
   /** Action Governance 审计 5 字段 schema + 决策溯源组（A4 研读落地）。可选项——旧记录无此字段时向后兼容。 */
@@ -108,6 +110,31 @@ function getEnvFingerprint(dataDir?: string): string {
 }
 
 /**
+ * HMAC 密钥路径（v1.1.8+）
+ * 来自 ~/.sofagent-key（建议 chmod 600，Agent 默认不读取）。
+ */
+const SOFAGENT_KEY_PATH = join(homedir(), '.sofagent-key');
+
+/**
+ * 读取 HMAC 密钥（v1.1.8+）。
+ * 密钥来自 ~/.sofagent-key（chmod 600，Agent 默认不读取）。
+ * 存在则返回密钥字符串；不存在返回 null（降级为 SHA-256，向后兼容）。
+ */
+export function getHmacKey(): string | null {
+  try {
+    if (!existsSync(SOFAGENT_KEY_PATH)) return null;
+    return readFileSync(SOFAGENT_KEY_PATH, 'utf-8').trim();
+  } catch {
+    return null;
+  }
+}
+
+/** 是否已配置 HMAC 密钥（供 --doctor 提示完整性校验强度用） */
+export function isHmacKeyConfigured(): boolean {
+  return getHmacKey() !== null;
+}
+
+/**
  * 追加一条审计记录到历史文件
  * 文件不存在时自动创建目录和文件
  * @param entry 审计历史条目
@@ -123,6 +150,9 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     mkdirSync(dir, { recursive: true, mode: 0o700 });
   }
 
+  // v1.0.6: 加入环境指纹——Agent 重算整链时不包含指纹则校验不一致
+  const fingerprint = getEnvFingerprint(dataDir);
+
   // P0-5: 计算 prevHash（上一行的 hash）
   let prevHash = 'genesis';
   if (existsSync(filePath)) {
@@ -131,18 +161,23 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
       const lastLine = lines[lines.length - 1]!;
       try {
         const lastEntry = JSON.parse(lastLine);
-  // 计算 hash：SHA-256(record_without_hash + env_fingerprint)
-  // v1.0.6: 加入环境指纹——Agent 重算整链时不包含指纹则校验不一致
-  const fingerprint = getEnvFingerprint(dataDir);
-  const lastRecordForHash = { ...lastEntry, prevHash: undefined, hashVersion: undefined };
-  prevHash = createHash('sha256')
-    .update(JSON.stringify(lastRecordForHash) + '|' + fingerprint)
-    .digest('hex').slice(0, 16);
+        const lastRecordForHash = { ...lastEntry, prevHash: undefined, hashVersion: undefined };
+        prevHash = createHash('sha256')
+          .update(JSON.stringify(lastRecordForHash) + '|' + fingerprint)
+          .digest('hex').slice(0, 16);
       } catch {
         prevHash = 'unknown';
       }
     }
   }
+
+  // v1.1.8: HMAC-SHA256 签名（密钥来自 ~/.sofagent-key，chmod 600）。
+  // 有密钥时签名整条记录（防 Agent 重算整链）；无密钥时降级 SHA-256（不写 hmacSig，向后兼容）。
+  const hmacKey = getHmacKey();
+  const recordForSig = { ...entry, prevHash: undefined, hashVersion: undefined, hmacSig: undefined };
+  const hmacSig = hmacKey
+    ? createHmac('sha256', hmacKey).update(JSON.stringify(recordForSig) + '|' + fingerprint).digest('hex').slice(0, 32)
+    : undefined;
 
   // 写入前脱敏——避免 A2/A9 拦截结果中存密钥明文
   // v1.0.6: hashVersion: 2 标记使用环境指纹算法
@@ -150,6 +185,7 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     ...entry,
     prevHash,
     hashVersion: 2,
+    hmacSig: hmacSig ?? undefined,
     ruleResults: entry.ruleResults.map(sanitizeRuleResult),
   };
   // v1.0.5: 使用原子追加（先读+追加+原子写），避免并发写入导致的行交错
@@ -253,6 +289,8 @@ export function checkHistoryChainIntegrity(dataDir?: string): boolean {
   // 旧用户升级后 history.jsonl 可能混合旧条目（无 hashVersion）和新条目（hashVersion:2）
   // 不用 firstEntry 一刀切，而用每条 curr 自己的 hashVersion 决定算法
   const fingerprint = getEnvFingerprint(dataDir);
+  const hmacKey = getHmacKey();
+  const keyAvailable = hmacKey !== null;
 
   for (let i = 1; i < entries.length; i++) {
     const prev = entries[i - 1]!;
@@ -274,6 +312,18 @@ export function checkHistoryChainIntegrity(dataDir?: string): boolean {
 
     if (curr.prevHash !== expectedPrevHash && curr.prevHash !== 'unknown') {
       return false; // 链断裂
+    }
+
+    // v1.1.8: 验证 HMAC 签名（条目带 hmacSig 且有密钥时）。
+    // 有密钥却签名不符 = 篡改；无密钥时不校验（向后兼容降级模式）。
+    if (curr.hmacSig && keyAvailable && hmacKey) {
+      const recordForSig = { ...curr, prevHash: undefined, hashVersion: undefined, hmacSig: undefined };
+      const expectedHmac = createHmac('sha256', hmacKey)
+        .update(JSON.stringify(recordForSig) + '|' + fingerprint)
+        .digest('hex').slice(0, 32);
+      if (curr.hmacSig !== expectedHmac) {
+        return false; // HMAC 校验失败 = 篡改
+      }
     }
   }
 

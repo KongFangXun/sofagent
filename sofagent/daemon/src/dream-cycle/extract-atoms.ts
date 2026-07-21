@@ -10,6 +10,7 @@
 import { createHash } from 'crypto';
 
 import type { Atom, Fact, LLMProvider } from './types';
+import { validateExtractOutput } from './injection-guard';
 
 /** 文本 → 稳定 atom id */
 function atomId(factId: string, text: string): string {
@@ -26,7 +27,9 @@ export async function extractAtoms(facts: Fact[], llm: LLMProvider): Promise<Ato
   const atoms: Atom[] = [];
   for (const fact of facts) {
     // 用 llm.extract 对单条事实再切分（mock 按行切，单行事实原样返回）
-    const pieces = await llm.extract(fact.text);
+    // [P2-5] 第二层隔离：校验返回 schema，非法时回退按行切分
+    const raw = await llm.extract(fact.text);
+    const pieces = validateExtractOutput(raw, fact.text);
     const clauses = pieces
       .flatMap((piece) => piece.split(/[，,；;。]/))
       .map((c) => c.trim())
