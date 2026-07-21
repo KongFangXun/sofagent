@@ -77,6 +77,9 @@ sofagent 的生存位不在"写更聪明的约束文字"，而在**细分业务 
 - 🔴 **术语纠正——不是裁大模型，是选小基座 + LoRA 精调**：剪枝 / 蒸馏 / 量化是大厂造小基座的**上游技术**（你看到的 Qwen2.5-0.5B 已是这三者一起上的产物）。我们不碰上游，只做下游最后一环：下载已开源小基座，用企业 workflow 日志挂一个 LoRA 适配器"教它这一个 workflow"，基座参数不动。
 - 🟢 **优先 QLoRA（量化版 LoRA）**：把基座先 4-bit 量化再挂 LoRA 适配器，显存门槛从 A100 级压到**消费级显卡（24GB 的 3090 / 4090）就能训**——几乎是用消费级显卡玩大模型的标配方案。量化压显存、LoRA 挂业务插件，二者叠加让 FDE 部署无需 GPU 集群。
 - **两个商业动因**：① 数据安全——数据不出域，敏感素材不再送大厂被拿去训练；② 成本——自建大模型企业级数百万起步、最新模型上千万，而 workflow 专属小模型用数万级成本即可满足单个业务场景（领域够窄，0.5B 在单一 workflow 准确率可追平 70B 通用模型）。
+- **默认小基座选型（量级严格 ≤1B）**：中文业务默认 **Qwen2.5-0.5B**（中文强、生态顺、千问系）；英文场景用 **Llama-3.2-1B**；代码场景本地用 **Qwen2.5-Coder-0.5B**（专攻代码、仍千问生态，统一工具链）。需要强推理/复杂代码时自动 **fallback 到云端 DeepSeek-R1**（属大厂 LLM fallback，不受 ≤1B 限制）。⚠️ 注意：DeepSeek-R1-Distill 系列最小为 1.5B，**无 ≤1B 版本**，故代码场景本地基座用千问代码版以满足 ≤1B 约束，DeepSeek-R1 仅作云端 fallback。
+- **训练硬件——Apple Silicon（Mac Mini）可行，且是消费级优选**：QLoRA 的 4-bit 量化在 Mac 上**不走 CUDA/bitsandbytes**，改走 **Apple MLX（mlx-lm）**——Apple 官方框架，M 系列芯片原生优化；Apple Silicon 统一内存架构（如 M4 Max 128GB）跑 ≤1B 模型微调/推理极轻松。单台 Mac Mini 足以训练，无需 GPU 集群；多台 Mac Mini 的价值在**推理并发节点**（多个 Subagent 同时跑不同 workflow 模型），非训练集群。无头部署流程：SSH 接入 → CLI 后台训练（nohup/tmux）→ 导出 LoRA adapter（几十 MB）→ Subagent 经 ollama / llama.cpp 加载推理。
+- **NodeJS 集成方向（项目工程面保持 Node/TS）**：纯 NodeJS 做 LLM **微调目前生态不成熟**（微调在 Python 生态：MLX / Llama-Factory）；但 NodeJS 的**推理 + 编排已成熟**（node-llama-cpp 加载 GGUF + LoRA adapter、Metal 加速；@huggingface/transformers.js；ollama Node SDK）。务实架构：训练引擎仍是 Python，但封装进我们的 **TypeScript CLI（`sofagent-model`）**——TS 写 CLI、内部 spawn 训练引擎，对外是 npm 包，开发者全程 Node/TS 不碰 Python；推理/运行时/Subagent 全用 TypeScript（sofagent 本就是 Node/TS）。结论：**训练用 TS 封装 Python、推理用 Node 绑定**，让整个项目对外是纯 NodeJS 工作流。
 
 **四阶段路线**（详见 ROADMAP「Subagent 内置专精小模型」）：v1.2.x 架构预留（`inference` 字段支持 Ollama）→ v3.x 工具链（`sofagent-model` 微调 CLI）→ v4.x 本地推理（精调模型默认，大厂 LLM 仅 fallback）→ v4.x+ 离线节点（USB key 完整离线 AI 节点）。
 
