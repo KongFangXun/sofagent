@@ -1,7 +1,7 @@
 /**
  * @sofagent/harness — 四层约束加载链
  * 生成 Sub Agent 启动时的 context prompt：SKILL.md → fde.md → think.md → knowledge/
- * v1.1.7 从 sofagent/audit/src/subagents/launcher.ts 迁出
+ * v1.1.8 从 sofagent/audit/src/subagents/launcher.ts 迁出
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -99,14 +99,24 @@ export function buildConstrainedSystemPrompt(
   const sharedDir = path.join(skillDir, 'knowledge', 'shared');
   const sharedKnowledge = listKnowledgeTopN(sharedDir, 3);
 
+  // 4a+. v1.1.7 新增：联邦知识注入（第 3 层——低于 SKILL.md 宪法层，
+  // 高于本地 knowledge/）。来源：knowledge/federation/ 目录
+  // （daemon 联邦查询落盘的 peer 知识快照）。联邦内容是外部来源，
+  // 强制 <untrusted> 包裹（prompt 注入防线层 1，与 trust 分级层 5 联动）。
+  const federationDir = path.join(skillDir, 'knowledge', 'federation');
+  const federationKnowledge = listKnowledgeTopN(federationDir, 3).map(
+    (content) => `<untrusted source="federation">\n${content}\n</untrusted>`,
+  );
+
   // 4b. knowledge/ top-5（本机知识）
   const knowledgeDir = path.join(skillDir, 'knowledge');
   const localKnowledge = listKnowledgeTopN(knowledgeDir, 5);
 
-  // 合并去重（按内容前 100 字符），shared 排在前
+  // 合并去重（按内容前 100 字符），shared + federation 排在前（联邦低于
+  // 宪法层但优先于本地 knowledge/）
   const MAX_PARTS = 20;
   const seen = new Set<string>();
-  for (const file of [...sharedKnowledge, ...localKnowledge]) {
+  for (const file of [...sharedKnowledge, ...federationKnowledge, ...localKnowledge]) {
     const key = file.slice(0, 100);
     if (!seen.has(key) && parts.length < MAX_PARTS) {
       parts.push(file);

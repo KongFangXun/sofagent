@@ -1,6 +1,6 @@
 /**
  * @sofagent/ontology — 领域本体定义
- * v1.1.7 从 sofagent/audit/src/ontology/ 迁出
+ * v1.1.8 从 sofagent/audit/src/ontology/ 迁出
  */
 
 export type {

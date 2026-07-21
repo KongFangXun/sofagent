@@ -1,6 +1,6 @@
 // ============================================================
 // shared-merge.ts · 跨设备 ontology relations 合并
-// v1.1.7 新增
+// v1.1.8 新增
 // ============================================================
 
 import type { MergedOntology, OntologyObject } from './types';

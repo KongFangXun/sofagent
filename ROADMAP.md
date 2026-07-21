@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.1.7 · 2026-07-21（UTC）· Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性 · 规划：v1.1.8（编排引擎最小版接入）→ v1.1.9 → v1.2.0 → v1.2.x（编排隔离底座：并行 SubAgent git worktree 隔离）→ v1.3.0（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）
+> v1.1.8 · 2026-07-21（UTC）· Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性 · 规划：v1.1.8（编排引擎最小版接入）→ v1.1.9 → v1.2.0 → v1.2.x（编排隔离底座：并行 SubAgent git worktree 隔离）→ v1.3.0（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
@@ -13,7 +13,7 @@
 >
 > 📖 [v1.1.8 开发日志](./docs/changelog/v1.1.8.md) · 版本号 bump 留发版 SOP（开发期 SSOT 仍为 v1.1.7）
 
-## 现在在哪：v1.1.7 ✅（已发布）
+## 现在在哪：v1.1.8 ✅（已发布）
 
 > **Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性**：知识沉淀从散点脚本升级为 6 阶段流水线（extract_facts → extract_atoms → cluster_patterns → synthesize_concepts → skillopt_backfill → embed）+ knowledge 敏感度分级（缺省 internal）+ knowledge-health 5 项检查（@weekly）+ `knowledge status` 聚合命令 + audit ActionGovernance schema。质量验证：781 tests across 12 packages 全绿、check-version 70/70、acceptance 100 场景/113 断言。
 >

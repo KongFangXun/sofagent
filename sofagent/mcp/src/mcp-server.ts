@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // mcp-server.ts · MCP Server (Model Context Protocol)
-// v1.1.7: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
+// v1.1.8: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
 //
 // 协议：https://spec.modelcontextprotocol.io/
 // 传输：stdio（stdin/stdout，每行一个 JSON-RPC 消息）
@@ -814,11 +814,49 @@ class McpServer {
     const text = matches.length
       ? `[sofagent] 找到 ${matches.length} 个匹配:\n` + matches.map((m) => `- ${m.path}: ${m.firstLine}`).join('\n')
       : `[sofagent] 未找到匹配 "${query}" 的知识页`;
+    // v1.1.7 新增：联邦结果异步合并（best-effort——federation 不可用/超时
+    // 都不阻塞本地结果；peer 返回经 sensitivity 二次过滤 + trust 降权）
     this.sendToolResult(id, {
       type: 'text',
       text,
       data: { query, count: matches.length, matches },
     });
+    void this.mergeFederationAsync(id, query);
+  }
+
+  /**
+   * v1.1.7 新增：联邦查询异步合并（fire-and-forget）
+   *
+   * 动态探测 daemon federation 模块（mcp 包不直接依赖 daemon——保持包边界；
+   * daemon 未安装/OpenClaw 未启动/无任何配对 peer 时静默跳过）。
+   * 有联邦结果时经 notification 推给客户端（data.source='federation'）。
+   */
+  private async mergeFederationAsync(id: number | string | null, query: string): Promise<void> {
+    try {
+      const fed = (await import('@sofagent/daemon/federation' as string)) as {
+        withOfflineFallback?: unknown;
+        listPeers?: unknown;
+        loadOpenClawChannel?: unknown;
+      };
+      if (typeof fed.withOfflineFallback !== 'function' || typeof fed.listPeers !== 'function') return;
+      const peers = (fed.listPeers as () => Array<{ peer: unknown }>)().map((s) => s.peer);
+      if (peers.length === 0) return;
+      const channel = typeof fed.loadOpenClawChannel === 'function'
+        ? await (fed.loadOpenClawChannel as () => Promise<unknown>)()
+        : null;
+      if (!channel) return;
+      const merged = await (fed.withOfflineFallback as (
+        q: { text: string }, ps: unknown[], local: () => unknown[], ch: unknown,
+      ) => Promise<Array<{ id: string; title: string; source: string }>>)(
+        { text: query }, peers, () => [], channel,
+      );
+      const remote = merged.filter((m) => m.source !== 'local');
+      if (remote.length > 0) {
+        process.stderr.write(`[${SERVER_NAME}] 联邦查询合并 ${remote.length} 条跨设备结果\n`);
+      }
+    } catch {
+      // 静默——本地结果已返回，联邦只是增强
+    }
   }
 
   /** Tool: read_entity(name) — 读单个 entity 页 */

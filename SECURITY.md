@@ -1,6 +1,6 @@
 # 安全策略
 
-> v1.1.7 · 2026-07-21（UTC）· 孔放勋
+> v1.1.8 · 2026-07-21（UTC）· 孔放勋
 
 ## 已知风险
 
@@ -13,7 +13,7 @@ sofagent 是纯本地 Harness 中间件，**数据不出本机**——但以下�
 | `knowledge/` | `.sofagent/knowledge/` | 知识库 / 评估反馈（eval 体系；旧 `scoring/` 已废弃） |
 | `orchestrator/` | `.sofagent/orchestrator/` | 编排决策历史 |
 
-**当前状态（v1.1.7）**：
+**当前状态（v1.1.8）**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道

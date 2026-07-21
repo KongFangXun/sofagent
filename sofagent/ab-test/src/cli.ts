@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// ab-test CLI · v1.1.7
+// ab-test CLI · v1.1.8
 
 const args = process.argv.slice(2);
 const subcommand = args[0];

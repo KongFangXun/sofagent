@@ -1,6 +1,6 @@
 /**
  * @sofagent/core — 基础设施层
- * v1.1.7 从 sofagent/audit/src/ 迁出
+ * v1.1.8 从 sofagent/audit/src/ 迁出
  *
  * 包含：常量、原子写入、git diff 解析、配置加载、模板、
  * 监控配置、模型客户端、日志读取、环境探测、成本基线、
@@ -110,8 +110,67 @@ export {
   DEFAULT_SENSITIVITY,
   resolveSensitivity,
   isSensitivityVisible,
+  DEFAULT_TRUST,
+  TRUST_ORDER,
+  resolveTrust,
 } from './memory-contract';
-export type { MemoryLayer, Sensitivity } from './memory-contract';
+export type { MemoryLayer, Sensitivity, Trust } from './memory-contract';
+
+// ── prompt 注入防线（层 1 包裹 + 层 4 脱敏 + 层 5 可信分级 · v1.1.7 新增）──
+export {
+  wrapUntrusted,
+  needsUntrustedWrap,
+  redactForPrompt,
+  RESTRICTED_PLACEHOLDER,
+  UNTRUSTED_PROMPT_DECLARATION,
+} from './security/prompt-sanitizer';
+export type { UntrustedSource, UntrustedMeta } from './security/prompt-sanitizer';
+export {
+  isTrustEntryUsable,
+  sortByTrust,
+  prepareForPrompt,
+} from './security/trust-grading';
+export type { TrustTagged } from './security/trust-grading';
+
+// ── 联邦加密（AES-256-GCM / ECDH / 密钥轮换 / 配对 · v1.1.7 新增）──
+export {
+  encryptPayload,
+  decryptPayload,
+  GCM_IV_BYTES,
+  GCM_TAG_BYTES,
+  AES_KEY_BYTES,
+} from './crypto/aes-gcm';
+export type { EncryptedPayload } from './crypto/aes-gcm';
+export {
+  generateKeyPair,
+  deriveSharedKey,
+  publicKeyFingerprint,
+  ECDH_CURVE,
+  DERIVED_KEY_BYTES,
+} from './crypto/ecdh';
+export type { EcdhKeyPair } from './crypto/ecdh';
+export {
+  createKeySlot,
+  rotateKey,
+  getEncryptionKey,
+  getDecryptionKeys,
+  isPreviousKeyUsable,
+  shouldRotate,
+  ROTATION_GRACE_MS,
+} from './crypto/key-rotation';
+export type { KeySlot } from './crypto/key-rotation';
+export {
+  generatePairingCode,
+  createPairingSession,
+  pairByCode,
+  pairByToken,
+  computeTokenTag,
+  pairByFederationFile,
+  FEDERATION_TOKEN_ENV,
+  PAIRING_CODE_LENGTH,
+  MIN_TOKEN_LENGTH,
+} from './crypto/pairing';
+export type { PairedPeer, PairingSession } from './crypto/pairing';
 
 // ── 审计结果类型 ──
 export type { AuditResult, RuleCheck } from './reporter';

@@ -323,7 +323,7 @@ dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path 
 [ -z "$dup" ] && echo "OK" || echo "❌ 跨包重复: $dup"
 ```
 
-#### 13. 测试数声称一致性（SSOT 反查 · v1.1.7 扩）
+#### 13. 测试数声称一致性（SSOT 反查 · v1.1.8 扩）
 
 > SSOT = vitest 实测（与 test-count.sh 同源）
 

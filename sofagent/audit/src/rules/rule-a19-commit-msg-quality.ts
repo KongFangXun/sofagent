@@ -2,7 +2,7 @@
 // A19 commit message 质量（安全层 · 业务底线）
 // 检测 commit message 过短或命中黑名单无意义词
 // evidenceMode: git-diff（实际只看 commitMsg，不读 diff）
-// v1.1.7 新增 · v1.1.7 审查确认（黑名单优先于长度的顺序正确）
+// v1.1.8 新增 · v1.1.8 审查确认（黑名单优先于长度的顺序正确）
 // ============================================================
 
 import type { AuditContext, RuleCheck } from './types';

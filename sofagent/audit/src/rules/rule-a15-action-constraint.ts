@@ -2,7 +2,7 @@
 // A15 不盲动（扩展层 · 能力拐杖）
 // 检查 Agent action 是否在 Workflow 节点声明的 actions 范围内
 // evidenceMode: hybrid——需要读 config + diff
-// v1.1.7 新增
+// v1.1.8 新增
 // ============================================================
 
 import { existsSync, readFileSync } from 'fs';
