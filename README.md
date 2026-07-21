@@ -307,7 +307,7 @@ sofagent 不只是开发者工具——企业落地用 **FDE 工具包** + **Wor
 
 **三产品关系**：sofagent 核心管「每次变更守门」（commit / 文件变更即审计）；FDE 管「进场部署交付」（把 sofagent 装到企业设备并撤离）；LOOP 管「长期自迭代」（持续巡检 + 优化 Agent 定义）。三者共享同一套约束底座与审计引擎，均非可独立运行的独立仓库（需先 `git clone` 主仓库）。
 
-> 💡 **命名约定**：大写目录（`FDE/`、`LOOP/`、`workflow-hub/`）是 sofagent 的**部署/产品入口**，需先 `git clone` 主仓库后运行（**非可独立运行的独立仓库**，单独 clone 子目录会因依赖主仓库 `sofagent/scripts/install.sh` 而跑不通）；小写目录（`sofagent/`、`docs/`、`tools/`）= 核心代码与配置。
+> 💡 **命名约定**：大写目录（`FDE/`、`LOOP/`）与产品名 `FLOWHUB`（对应小写代码目录 `workflow-hub/`）是 sofagent 的**部署/产品入口**，需先 `git clone` 主仓库后运行（**非可独立运行的独立仓库**，单独 clone 子目录会因依赖主仓库 `sofagent/scripts/install.sh` 而跑不通）；小写目录（`sofagent/`、`docs/`、`tools/`）= 核心代码与配置。
 
 
 ## 产品形态：MCP + dashboard
