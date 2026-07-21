@@ -72,7 +72,7 @@ sofagent is a **Harness middleware** — no matter what Agent you use (Claude Co
 
 > 💡 **An agent that works ≠ a model + a prompt** — it's a multi-layer skeleton (config / knowledge / instruction / validation / orchestration). sofagent is the rebar in that skeleton, the audit engine is the quality inspector. We scaffold agents with tools / permissions / sandboxes / rules — rather than building a smarter model.
 
-> 🏞️ **The "one river" analogy**: Big vendors build the river and supply the water (AI platform = river, model = water); we build the **dam + pipe network + faucet** — the constraint layer (keeps water from flooding) + Workflow (routes capability to the business) + Subagent (where capability actually acts). We let enterprises safely run their own AI capability into their business. See [FDE/FDE.md §9.6](./FDE/FDE.md#96-river企业统一-agent-入口).
+> 🏞️ **The "one river" analogy**: Big vendors build the river (LLM = water, Agent platform = riverbed — without the riverbed, water is just an ocean); we build the **dam + water treatment plant + pipe network + faucet** — the constraint layer (keeps water from flooding) + sandbox/security (makes water from "drinkable" to "trustworthy") + Workflow (routes capability to the business) + Subagent (uses capability in specific business tasks) + water meter / quality monitor (Dashboard — lets enterprises see their AI water usage). See [FDE/FDE.md §9.6](./FDE/FDE.md#96-river大厂造河与企业用水).
 
 ---
 

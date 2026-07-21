@@ -63,7 +63,7 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 
 ## 审查维度（38 项 · 编号 1–38）
 
-> 2026-07-18 治理：从原 35 维度归并同类项而来。2026-07-18 追加维度 16-17（安全约束 + 发布产物验证）。2026-07-19 追加维度 23（独立产品声称一致性）+ 维度 24（验收测试覆盖率与时效性），扩展维度 2/4/6/7/8/9 子项（v1.1.4 审查发现）。2026-07-20 追加维度 29-38（v1.1.7：Dream Cycle / sensitivity / knowledge-health / knowledge-status / ActionGovernance / 文档时效性 / 产品关系 / red-team / 安全文档）。
+> 2026-07-18 治理：从原 35 维度归并同类项而来。2026-07-18 追加维度 16-17（安全约束 + 发布产物验证）。2026-07-19 追加维度 23（独立产品声称一致性）+ 维度 24（验收测试覆盖率与时效性），扩展维度 2/4/6/7/8/9 子项（v1.1.4 审查发现）。2026-07-20 追加维度 29-38（v1.1.7：Dream Cycle / sensitivity / knowledge-health / knowledge-status / ActionGovernance / 文档时效性 / 产品关系 / red-team / 安全文档）。2026-07-21 扩展维度 6/8/13/16/38 子项（v1.1.7 三轮独立审查发现，全部扩展旧维度未新增编号）。
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -244,6 +244,12 @@ grep -E "v[0-9]+\.[0-9]+\.[0-9]+" FDE/fde-install.sh LOOP/loop-install.sh | whil
 done
 # 期望：所有 .sh 里的版本号 = SSOT_VER
 
+# 子项 c-2: check-version.sh 应把 .sh 头部版本号纳入扫描（v1.1.8 追加——loop-install.sh v1.1.6 漂移未被门禁抓）
+# 防御：.sh 脚本头部注释里的版本号是 SSOT 漂移高发区，bump-version.sh 不覆盖
+grep -c "fde-install.sh\|loop-install.sh\|install.sh" tools/check-version.sh
+# 期望：≥ 1（check-version.sh 的扫描范围已含 install 脚本）
+# 若零命中 = check-version.sh 没扫 .sh 头部，install 脚本版本号漂移只能靠本维度人工发现
+
 # 子项 d: README 正文版本引用一致（v1.1.4 教训——正文残留旧版本号）
 grep -oE "v1\.[0-9]+\.[0-9]+" README.md | sort | uniq -c
 # 期望：只有一个版本号（= SSOT_VER），或多个但都在"历史变更说明"语境下
@@ -323,6 +329,13 @@ echo "期望=$EXPECTED_DEFAULT 报告=$REPORTED_DEFAULT"
 
 # 子项 e: acceptance-test.sh 自身 JSON 输出不被 stderr 污染（v1.1.5 教训——stderr 的 config.yml 警告污染 JSON 首行）
 grep -E "\-\-json.*2>&1|2>&1.*\-\-json" tools/acceptance-test.sh   # 期望：零命中（场景 6/26 已用 2>/dev/null）
+
+# 子项 f: init.ts 禁止硬编码规则条数常量（v1.1.8 追加——init.ts:347 曾 expectedDefaultRules = 13 硬编码）
+# 防御：任何规则增减都得手改这里，漏了就漂移。必须动态引用 defaultRules.length
+grep -nE "expectedDefaultRules\s*=\s*[0-9]+|expectedDefault\s*=\s*[0-9]+" sofagent/audit/src/commands/init.ts
+# 期望：零命中。命中 = 规则条数被硬编码，规则增减时漂移
+grep -c "defaultRules\.length\|defaultRules\[.length\]" sofagent/audit/src/commands/init.ts
+# 期望：≥ 1（动态引用存在）
 ```
 
 #### 9. 动态规则禁用逻辑 + 文档侧规则数声称一致性
@@ -432,21 +445,36 @@ dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path 
 AUDIT=$(cd sofagent/audit && npx vitest run 2>&1 | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
 WS=$(bash tools/test-count.sh --quiet 2>&1 | grep -oE 'TOTAL_TESTS=[0-9]+' | cut -d= -f2)
 echo "SSOT → audit=$AUDIT  workspace=$WS"
-# 逐文档核对 audit 数
+
+# 子项 a: 逐文档核对 audit 数
 # v1.1.6 调整：文档若已改为「见 test-count.sh」引用（去硬编码），则跳过数字反查，确认 SSOT 引用存在即可
-for f in sofagent/audit/README.md FDE/FDE.md LIMITATIONS.md; do
+# v1.1.8 扩展：evidence.md 历史时间线允许保留快照数字，但"当前态"必须 SSOT 引用（防 v1.1.4→v1.1.7 三版漂移）
+for f in sofagent/audit/README.md FDE/FDE.md LIMITATIONS.md docs/evidence/evidence.md; do
   if grep -q "test-count.sh" "$f"; then
     echo "✅ $f 已 SSOT 化（引用 test-count.sh，跳过数字反查）"
     continue
   fi
   c=$(grep -oE '[0-9]+ tests 全绿|[0-9]+ 个测试' "$f" | grep -oE '[0-9]+' | head -1)
-  [ "$c" = "$AUDIT" ] && echo "✅ $f audit=$c" || echo "❌ $f audit=$c ≠ SSOT $AUDIT"
+  [ "$c" = "$AUDIT" ] && echo "✅ $f audit=$c" || echo "❌ $f audit=$c ≠ SSOT $AUDIT（v1.1.7 教训：evidence.md 曾 388→410 漂移 22）"
 done
-# 核对 workspace 总数（"全 workspace N"）
+
+# 子项 b: 核对 workspace 总数（"全 workspace N"）
 for f in FDE/FDE.md LIMITATIONS.md; do
   c=$(grep -oE '全 workspace [0-9]+' "$f" | grep -oE '[0-9]+' | head -1)
   [ "$c" = "$WS" ] && echo "✅ $f workspace=$c" || echo "❌ $f workspace=$c ≠ SSOT $WS"
 done
+
+# 子项 c: CHANGELOG / ROADMAP 当前版本测试数快照对账（v1.1.8 追加——发版前必须对齐当前版本声称的数字）
+# v1.1.7 教训：CHANGELOG 写 770 / audit 407 但实际 773 / 410（漂移 +3）
+# 历史版本的快照数字不查（属历史记录），只查当前版本
+CUR_VER=$(node -e "console.log(require('./package.json').version)")
+# CHANGELOG.md 找当前版本条目里的测试数
+CHANGELOG_TEST=$(grep -A5 "^## v${CUR_VER}" CHANGELOG.md | grep -oE '[0-9]+ tests|[0-9]+ 测试' | grep -oE '[0-9]+' | head -1)
+# ROADMAP.md 找当前版本段的测试数
+ROADMAP_TEST=$(grep -oE '[0-9]+ tests|[0-9]+ 测试' ROADMAP.md | grep -oE '[0-9]+' | head -1)
+echo "CHANGELOG v${CUR_VER} 声称: $CHANGELOG_TEST / ROADMAP: $ROADMAP_TEST / 实测 SSOT: $WS"
+[ "$CHANGELOG_TEST" = "$WS" ] && echo "✅ CHANGELOG 当前版本 workspace=$CHANGELOG_TEST" || echo "❌ CHANGELOG workspace=$CHANGELOG_TEST ≠ SSOT $WS"
+[ "$ROADMAP_TEST" = "$WS" ] && echo "✅ ROADMAP workspace=$ROADMAP_TEST" || echo "❌ ROADMAP workspace=$ROADMAP_TEST ≠ SSOT $WS"
 ```
 
 ---
@@ -491,8 +519,13 @@ grep -c "Agent 身份感知" FDE/FDE.md                      # 期望：≥ 1
 ```bash
 # 子项 a: A15 actions 未声明时必须 FAIL（非 fail-open WARN）
 # 防御：Agent 通过"不声明 actions"绕过所有约束检查
+# ⚠️ v1.1.7 二次验证结论：A15 已返回 FAIL（rule-a15-action-constraint.ts:107 `rule.status = 'FAIL'`）。
+#    第二份独立审查曾误报此处为 fail-open(WARN) → 已核实为误报，开发者不需要改 A15。
+#    本子项保留为回归锁：若有人把 FAIL 改回 WARN/PASS → 本检查应报红。
 grep -n "nodesWithActions.length === 0\|nodesWithActions.length === 0" sofagent/audit/src/rules/rule-a15-action-constraint.ts
-# 人工检查：该分支返回 FAIL 或 WARN。返回 PASS = P0 安全红线违反
+# 进一步确认该分支返回 FAIL（非 WARN/PASS）
+grep -A2 "nodesWithActions.length === 0" sofagent/audit/src/rules/rule-a15-action-constraint.ts | grep -c "FAIL"
+# 期望：≥ 1（紧邻该分支的 2 行内出现 FAIL）。若为 0 → A15 退化为 fail-open，P0 安全红线违反
 
 # 子项 b: .sofagent/ 子目录权限 700
 ls -ld .sofagent .sofagent/audit .sofagent/task 2>/dev/null
@@ -1154,6 +1187,20 @@ grep -c "daemon.*审计.*推送\|仅本地\|daemon-notice" SECURITY.md
 SSOT_VER=$(node -e "console.log(require('./package.json').version)")
 grep "当前状态（v${SSOT_VER}" SECURITY.md
 # 期望：有匹配（版本标注 = SSOT）
+
+# 子项 f: SECURITY.md 覆盖本版本引入的数据处理/安全语义新能力（v1.1.8 追加——v1.1.7 教训：
+# Dream Cycle / sensitivity / ActionGovernance 三个新能力引入了新的安全边界，但 SECURITY.md 零提及）
+# 每个引入「数据处理」或「安全语义」的新引擎/能力，必须在 SECURITY.md 有对应声明
+# 已落地的能力关键词（追加新能力时在此数组里加一个即可，不新增编号）
+SECURITY_REQUIRED_FEATURES=("Dream Cycle" "sensitivity" "ActionGovernance")
+for feat in "${SECURITY_REQUIRED_FEATURES[@]}"; do
+  count=$(grep -ci "$feat" SECURITY.md)
+  if [ "$count" -ge 1 ]; then
+    echo "✅ SECURITY.md 覆盖 '$feat'（$count 处）"
+  else
+    echo "❌ SECURITY.md 缺 '$feat' 安全声明（新数据处理能力必须在 SECURITY.md 声明其安全边界）"
+  fi
+done
 ```
 
 ## 输出报告格式
