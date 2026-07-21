@@ -651,3 +651,14 @@ sofagent 自有三层：
 | 法则7 万亿转型服务（卖转型非卖工具） | FDE = Services-as-Software 卖转型；ROADMAP 市场信号互证 | 已具备（核心背书） |
 
 > 💡 **铁路类比**：1841 年铁路相撞（协调失误非技术故障）倒逼现代管理诞生；今天 AI 正复刻——模糊指令交给 agent，损失以秒计、指数扩散。Harness = 堤坝，正是这一次的「管理层」。a16z 文章几乎是为 sofagent 写的外部背书。
+
+### 范式演进与 Object Runtime 印证（2026-07 研报补充）
+
+三篇 2026-07 行业研报进一步印证并补全「行业框架对齐」（§六）：
+
+- **Prompt → Loop → Graph 三级范式**：AI 编程能力重心持续上移（写好提示 → 设计循环 → 构建多 Agent 协作图）。Loop = 延期决策（一个 Agent 包揽直到处理不了），Graph = 提前决策（预先声明完整结构）。sofagent 的 LOOP 自迭代 + 外层循环正落在「Loop Engineering」这一级；Graph 级的 **Org Graph（长期存活、固定领域、保留上下文与工具权限的 Agent）即「进组织架构的硅基员工」**，正是 FDE 卖转型 + sustain 持续存在感的产品内核。
+- **Object Runtime 六组件补全**：Object（业务语义单元≠表/DTO）/ Link（语义路径≠外键）/ State（统一生命周期）/ Method（确定性计算，AI 调用不替代）/ Action（受控动作：前置·权限·幂等·副作用·审计）/ Policy-Audit-Lineage（全链路治理）。其中 **Method 与 Action 的二分**直接对齐「刚性规则进代码、概率性判断留 LLM」——AI 调用 Method 拿确定性结果，只在 Action 边界受控。
+- **工具网关 = 统一受控 MCP 入口**：研报将「工具网关」定义为统一受控入口（身份·路由·重试·审计集中），与 sofagent 的 MCP 桥 + 审计引擎同构——MCP 是受控入口而非任意调用通道。
+- **5 阶段落地节奏**：只读对象层 → 统一状态关系 → 挂载 Method → 开放低风险 Action → 高风险 Action。**关键避坑：不要一上来就 Agent 自动闭环**——与 sofagent「分阶段风险收敛 + human-in-the-loop 按风险分级」完全一致。
+
+> 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）

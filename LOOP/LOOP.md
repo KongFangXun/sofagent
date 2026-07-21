@@ -239,6 +239,13 @@ flowchart TD
 
 外层循环让 LOOP 具备**自我改进能力**：不只是跑得快，而且是越跑越好。
 
+### 行业印证：Loop Engineering 趋势验证自迭代循环（2026-07）
+
+- **Loop Engineering 是行业范式级趋势**：研报将「Loop（延期决策）」列为与 Prompt / Context / Graph 并列的 AI 编程范式跃迁阶段。sofagent 的 LOOP 自迭代（内层 Dream Cycle + 外层持续监督）正落在这一阶段，且已有「外层循环的必要性与护栏」体系（见上方「行业框架印证」），与行业判断互为印证。
+- **Goal 模式 ↔ 审计引擎**：研报定义 Goal 模式 =「继续工作直到这个结果成立」，含持久状态 / 自动续跑 / 证据校验（测试·日志·文件）/ 预算上限 / 生命周期控制。这正对应 sofagent 审计引擎（git diff 硬证据 + 21 条规则判停）+ verification 三件套（fresh-eyes / regression / acceptance）——把「合格与完成」写进确定性规则，让 Loop 有判停依据。
+
+> 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》）
+
 ## 下一步
 
 - v1.1.3 StateGraph 已代码化（四节点状态机 + checkpoint），v1.1.4 起工具注入路径稳定

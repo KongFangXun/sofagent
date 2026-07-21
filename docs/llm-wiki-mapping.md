@@ -108,3 +108,18 @@ flowchart LR
 - [memory-contract.ts · think.md 契约代码级 SSOT](../sofagent/core/src/memory-contract.ts)
 - [ROADMAP.md v1.1.6 行](../ROADMAP.md)
 - [docs/changelog/v1.1.6.md](./changelog/v1.1.6.md)
+
+## 七、知识库作为 Agent 可信调用载体（2026-07 研报印证）
+
+企业知识库正从「问答工具」升级为「Agent 可信调用载体」——研报的 4 道关卡模型可直接映射到 LLM Wiki 三层：
+
+| 研报关卡 | 对应 LLM Wiki 层 | sofagent 落点 |
+|----------|----------------|--------------|
+| 数据入口（权限**实时回连**核验，不静态拷贝） | Ledger（append-only 真相源） | FDE 知识主权归客户 + 审计 A14 事后审计 |
+| 内容解析（多模态结构化） | Ledger → Views 派生 | Dream Cycle 自动派生 |
+| 复杂检索（先规划再分步检索，动态判充足度） | Views（按需查询） | conflict-check 质量巡检 |
+| 工具网关（统一受控入口：身份·路由·重试·审计） | Policy（约束注入） | MCP 桥 + 审计引擎 |
+
+**可信工具 4 要求**（可溯源 / 权限合规 / 过程可查 / 证据可验）即 LLM Wiki「spec norms 是人类意志最后防线」的工程化表达——Policy 层 = 受控调用，审计引擎 = 证据可验，二者同构。
+
+> 📖 来源：温故知新 2026-07-21（行业研报《企业知识库进阶：从问答工具到 Agent 可信调用载体》）
