@@ -130,9 +130,12 @@ v1.0.0 本轮完成 AI 知识库代码实现——7 件事：目录骨架（6 �
 **核心变更**：LOOP 双 Agent 自循环 + LangGraph 编排 + OpenClaw MCP 知识联邦 + Dream Cycle 知识管道 + LLM Wiki 3 层分层 + AES-256-GCM 加密 + USB key 物理身份。7 个子版本 → 1 个联邦。v1.2.x 完整多设备协同的起点。
 > 📖 [开发日志](./docs/changelog/v1.2.0.md)
 
-### [v1.1.9] — USB 完整运行时 📋
+### [v1.1.9] — USB 完整运行时 + daemon A/B 自动调度器 + 控制图状态抽取 📋
 > 规划中
-**核心变更**：Node.js 单文件打包 + OpenClaw 便携化 + 跨平台启动脚本。U 盘插入 → 双击 start → 联邦在线 → 拔掉零残留。
+**核心变更**：
+- **USB 完整运行时**：Node.js 单文件打包 + OpenClaw 便携化 + 跨平台启动脚本。U 盘插入 → 双击 start → 联邦在线 → 拔掉零残留；HMAC-SHA256 防篡改签名 + `knowledge/` AES-256 磁盘加密。
+- **daemon A/B 自动调度器**：v1.1.8 手动 A/B 原型的自动化升级——daemon cron 定期用当前方案跑真实任务积累 N 次数据 → 自动切换候选方案再跑 N 次 → `compare` 聚合指标 → promote 赢家，后台探索-利用持续优化编排策略。
+- **控制图状态抽取（Graph Engineering 波次拓扑·数据层）**：从 `.sofagent/checkpoint/` + `LoopArtifacts` 抽取结构化 JSON（节点状态/波次序号/guard 触发/★Reality Anchor 证据链），为 v1.2.x Dashboard 波次视图提供数据底座。
 > 📖 [开发日志](./docs/changelog/v1.1.9.md)
 
 ---
