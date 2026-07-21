@@ -279,6 +279,21 @@ flowchart LR
 
 > 这张表对应的源码是 `sofagent/orchestrator/src/loop/state.ts` 的 `LoopArtifacts` 接口。
 
+#### Graph Engineering 视角（控制图 = StateGraph）
+
+> 📐 2026-07 行业新概念「Graph Engineering」把 prompt→context→harness→loop→**graph** 的演进框定为"设计 loop/process 之间的关系"，理论根 = FSM/Statecharts（Harel 1987）。sofagent 的编排引擎天然就是一张**控制图（Control Graph）**——不必新造能力，只需用这套精确词汇重新表述已有实现。
+
+| Graph Engineering 构件 | sofagent 对应实现 | 源码位置 |
+|------|------|------|
+| **控制图 Control Graph**（node=state, edge=transition, guard edge 守门） | `StateGraph` 四节点 `START→engineer→audit→reviewer→human_confirm→END`，`routeAfterAudit`/`routeAfterHuman` 条件路由，WARN 透传为 guard 放行 | `sofagent/orchestrator/src/loop/graph.ts` |
+| **★Reality Anchor**（无锚点 = 披 PM 外衣的幻觉） | `audit` 节点——只看 `git diff HEAD` 硬证据（A1-A17），不信任 Agent 自报，比"只看 PR 号"更硬 | `@sofagent/audit` |
+| **可审计状态文件**（状态落盘可复核） | `FileCheckpointer` 每节点前后 snapshot 到 `.sofagent/checkpoint/`，`resumeLoopGraph()` 断点续跑 | `sofagent/orchestrator/src/graph/checkpoint.ts` |
+| **数据图 Data Graph**（知识图谱/血缘） | 蓄水池（知识库 `knowledge/`） + 市政规划（Ontology，Ledger-Views-Policy）——与编排控制图正交 | `knowledge/` + Ontology 层 |
+
+**控制图 vs 数据图二分天然具备**：管网（Workflow / StateGraph）= 控制图，决定"先干什么后干什么"；蓄水池 + 市政规划 = 数据图，承载"知道什么、怎么理解"。两者解耦——控制图无知识库也能跑（纯编排），数据图无控制图也能沉淀（Dream Cycle 独立跑）。
+
+**可学习的未来迭代（落盘见 [ROADMAP](./ROADMAP.md)「Graph Engineering 印证」）**：① 控制图多循环 DAG 波次并行（v1.3.0）；② 并行 SubAgent git worktree 隔离（v1.2.x）；③ 用户视角波次拓扑可视化（v1.2.x）。本视角只框定术语，不引入新能力。
+
 #### 重试语义：统一计数器
 
 `retryCount` 一个计数器管两种失败——audit 判 FAIL 或 HITL 驳回，都 `retryCount++` 回 engineer。达到上限（默认 3）仍未过 → `finalStatus = 'blocked'` 终态 + 写 audit history（engine 字段标 `loop-graph`），不无限循环。blocked 可被 `audit-root-cause` / 周报追溯。
