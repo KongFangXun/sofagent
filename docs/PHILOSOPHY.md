@@ -393,13 +393,28 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 ### a16z《你刚雇了一百万个糟糕员工》印证（2026-07）
 
-> 📐 来源：a16z（2026-07-14，Hebbia 创始人 George Sivulka）核心判断——「人类历史上第一次，人比软件便宜」；每家公司在雇「一百万个糟糕的 AI 员工」，80% 的 token 在空转浪费。解法不是更强的模型、也不是更多算力，而是 185 年前诞生的老手艺：**管理**。
+> 📐 来源：a16z（2026-07-15，Hebbia 创始人 George Sivulka）[《You Just Hired a Million Bad Employees》](https://www.a16z.news/p/the-next-ai-goldrush-tokens-loops) 核心判断——「人类历史上第一次，人比软件便宜」；每家公司在雇「一百万个糟糕的 AI 员工」，80% 的 token 在空转浪费。解法不是更强的模型、也不是更多算力，而是 185 年前诞生的老手艺：**管理**。
 
-这与 sofagent 底层定位同频：**Harness 中间件 = 管住 Agent 行为的那一层**（River 比喻里「堤坝」）。a16z 七法则中 Loops / 100X / 冗员 / Evals / 转型 五条，sofagent 已原生具备对应物（映射表见 ARCHITECTURE §六「行业框架对齐」）。其中最关键的三条：
+这与 sofagent 底层定位同频：**Harness 中间件 = 管住 Agent 行为的那一层**（River 比喻里「堤坝」）。a16z 七法则中 Loops / 100X / 冗员 / Evals / 转型 五条，sofagent 已原生具备对应物。完整映射见下方表格；其中最关键的三条：
 
 - **空转 Loops → guard edge**：`graph.ts` 的 `retryCount<3` 条件路由天然防 loops 失控——这是 Loops 治理的工程化答案。
 - **考核 Evals → Reality Anchor**：审计引擎 A1-A11、A14-A19 + E1-E4（共 21 条）把「可评估性」硬编码为真实 git diff，而非 Agent 自报完成。
 - **万亿转型 → FDE 卖转型**：FDE = Services-as-Software，交付「常驻 FDE Agent」而非工具包；ROADMAP 已有 4 条市场信号互证。
+
+**七法则完整映射**（a16z 概念 → sofagent 对应 → 现状 → 落地版本 → 说明）：
+
+| # | a16z 概念 | sofagent 对应 | 现状 | 落地版本 | 说明 |
+|---|------|------|:--:|------|------|
+| 1 | 事实1 成本倒挂（人比软件便宜） | 90/10 价值分层 | 已具备（叙事） | 叙事支撑 | Harness = 把 p90 拉回 p10 的管理杠杆 |
+| 2 | 事实2 增员非裁员（AI 放大组织） | FDE 卖转型 + sustain | 已具备（定位） | 叙事支撑 | AI 放大组织，sofagent 管放大后的队伍 |
+| 3 | 1841 铁路事故 → 现代管理 | guard edge + Reality Anchor + River 堤坝 | 已具备 | 叙事背书 | 直接引用作 Harness 必要性历史背书 |
+| 4 | 法则1 挥霍 Tokenmaxxing | 约束底座 + 明确不做 + FDE 讲清流程 + Ontology | 已具备+可强化 | 印证 | FDE 把模糊流程讲清即抗 Tokenmaxxing |
+| 5 | 法则2 空转 Loops | graph.ts guard edge retryCount<3 | 已原生具备（核心） | 印证 | Loops 治理工程答案 |
+| 6 | 法则3 冗员 Token Bloat | 明确不做清单 / 防 scope 蔓延 + 审计拦改测试 | 已具备+可强化 | 印证 | 砍循环优于优化 |
+| 7 | 法则4 杠杆 100X Token | 90/10 分层 Harness 可靠性最值钱 | 已具备（叙事） | 印证 | 那 10% 即文章「管理杠杆」 |
+| 8 | 法则5 政治 上下文囤积 | 不投喂 / 数据主权 + 知识主权归客户 | 已具备（差异化） | 印证 | 叙事回应组织政治 |
+| 9 | 法则6 考核 Evals | 审计 A1-A11、A14-A19 + E1-E4（共 21 条）= Reality Anchor + Dream Cycle eval 驱动 | 已具备（底座）+ 缺口 | v1.3.0+ 产品化 | 企业专属 eval 套件缺口 |
+| 10 | 法则7 万亿转型服务 | FDE = Services-as-Software + 市场信号互证 | 已具备（核心背书） | 印证 + 规模化缺口 | a16z 最重磅外部背书；规模化交付进未来迭代 |
 
 > 💡 **铁路类比**：1841 年铁路事故（协调失误非技术故障）催生现代管理；今天 AI 放大组织失调的速度以秒计——Harness 是 AI 时代的「管理层」。外部权威再次确认：模型越强，那 10% 的「行」（约束与可靠性）越值钱。
 
