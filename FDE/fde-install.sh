@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# fde-install.sh · FDE 工具包一键部署 · v1.1.8
+# fde-install.sh · FDE Agent 一键部署 · v1.1.8
 # ============================================================
 # 用法: bash fde-install.sh [--platform openclaw|workbuddy|codex|hermes|claude]
 #       默认 --platform openclaw（编排引擎需要 OpenClaw 后台）
@@ -41,7 +41,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}${CYAN}  sofagent FDE 工具包 · 一键部署${NC}"
+echo -e "${BOLD}${CYAN}  sofagent FDE Agent · 一键部署${NC}"
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 echo -e "  平台: ${BOLD}${PLATFORM}${NC}"
 echo ""

@@ -31,7 +31,7 @@ not_when: [纯技术讨论, 不需要代码审查的任务, 单次简单查询]
 LOOP 不是 sofagent 的必装组件。装 sofagent 不会自动装 LOOP。如果你想用 LOOP：
 
 - **装 sofagent** → 获得审计引擎、约束底座、编排引擎
-- **装 FDE**（`fde-install.sh`）→ 获得企业部署工具包
+- **装 FDE**（`fde-install.sh`）→ 获得 FDE Agent（企业部署能力）
 - **装 LOOP**（`loop-install.sh`）→ 获得自迭代开发循环
 
 三者独立安装，按需选用。
@@ -40,7 +40,7 @@ LOOP 不是 sofagent 的必装组件。装 sofagent 不会自动装 LOOP。如�
 
 - 已装 sofagent（`sofagent/scripts/install.sh`）
 - OpenClaw（sub-agent 通过 `session.spawn` 启动）
-- 已装 FDE（可选——外层循环的 forward-deployed-engineer 需要 FDE 工具包）
+- 已装 FDE（可选——外层循环的 forward-deployed-engineer 需要 FDE Agent）
 
 ## 安装
 

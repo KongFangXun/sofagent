@@ -68,7 +68,7 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对�
 
 ```bash
 # 从 repo-list.txt 批量安装
-npm install -g @sofagent/audit @sofagent/core
+bash FDE/fde-install.sh
 
 while IFS= read -r repo; do
   (cd "$repo" && sofagent-audit --init)
@@ -119,7 +119,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - run: npm install -g @sofagent/audit @sofagent/core
+      - run: bash FDE/fde-install.sh
       - run: sofagent-audit --diff origin/main..HEAD --ci --json
 ```
 
