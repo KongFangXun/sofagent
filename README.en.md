@@ -46,7 +46,7 @@ Big vendors build the river (LLM = water, Agent platform = riverbed — without 
 
 | Dimension | Data |
 |------|------|
-| Audit engine | 21 rules fully covered, `npm test` green (700+ cases), 0 token cost |
+| Audit engine | 21 rules fully covered, `npm test` green (live count via `tools/test-count.sh`), 0 token cost |
 | Platform coverage | git commit audit (developers) + daemon file audit (non-developers) |
 | License | MIT (code / docs / templates — use freely) |
 
