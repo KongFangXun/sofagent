@@ -10,7 +10,7 @@
 
 <p align="center">
   <strong>sofa + agent = sofagent / 沙发特工</strong><br/>
-  <em>帮 SMB 和 OPC 的人成为自己业务的前线部署工程师。</em>
+  <em>让 SMB 和 OPC 的所有人都拥有 FDE 的能力。</em>
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 
 Agent 越聪明，企业越不敢放手——真出事了，谁负责？能拦住吗？能回滚吗？
 
-**FDE Agent —— 帮 SMB 和 OPC 的人成为自己业务的前线部署工程师。** 底层是 sofagent 引擎（Harness 中间件）：每次 Agent 改代码、写文件，自动跑 21 条规则审计——违规的当场拦截，合规的存快照。审计引擎零 token（纯正则，不调 LLM）。
+**FDE Agent —— 让 SMB 和 OPC 的所有人都拥有 FDE 的能力。** 底层是 sofagent 引擎（Harness 中间件）：每次 Agent 改代码、写文件，自动跑 21 条规则审计——违规的当场拦截，合规的存快照。审计引擎零 token（纯正则，不调 LLM）。
 
 > 🏞️ **一条河的模型**：大厂造河（LLM = 水，Agent 平台 = 河床），我们不做河——做堤坝（约束）+ 自来水厂（沙箱）+ 管网（Workflow）+ 水龙头（Subagent），让原水变直饮水。详见 [ARCHITECTURE · River](./docs/ARCHITECTURE.md)。
 
