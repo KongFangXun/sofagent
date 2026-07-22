@@ -1,10 +1,10 @@
 // ============================================================
 // config-loader.ts · .sofagent/config.yml 配置加载器
-// v0.95 新增：三级 fallback（v1.1.8，js-yaml 替代手写 YAML 解析器）
+// v0.95 新增：三级 fallback（v1.1.9，js-yaml 替代手写 YAML 解析器）
 // v0.97 扩展：环境变量配置（从 lib/config.sh 合并）
-// v1.1.8 重构：用 js-yaml 替代手写 YAML 解析器
-// v1.1.8 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
-// v1.1.8：新增 ConfigParseError（含 cause 链），audit.strict fail-closed 选项
+// v1.1.9 重构：用 js-yaml 替代手写 YAML 解析器
+// v1.1.9 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
+// v1.1.9：新增 ConfigParseError（含 cause 链），audit.strict fail-closed 选项
 // ============================================================
 //
 // 三级 fallback：

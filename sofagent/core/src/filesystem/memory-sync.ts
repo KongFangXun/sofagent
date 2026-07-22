@@ -1,6 +1,6 @@
 // ============================================================
 // memory-sync.ts · TencentDB Agent Memory 同步
-// v1.1.8 新增：检测 ~/.openclaw/memory-tdai/persona.md 变更
+// v1.1.9 新增：检测 ~/.openclaw/memory-tdai/persona.md 变更
 //
 // 用途：
 //   - 监控 TencentDB Agent 的 persona 记忆文件变化

@@ -1,6 +1,6 @@
 /**
  * @sofagent/core · crypto/ecdh —— ECDH 密钥交换 + HKDF 派生 AES key
- * v1.1.8 新增
+ * v1.1.9 新增
  *
  * 联邦配对的核心原语：人不手打密钥。
  *   - 曲线：prime256v1（NIST P-256，Node 内置支持）

@@ -1,6 +1,6 @@
 // ============================================================
 // graph/loop-graph.ts · LOOP StateGraph 组装与运行入口
-// v1.1.8 新增：编排控制从 DeepAgents compose（一次性生成 YAML）
+// v1.1.9 新增：编排控制从 DeepAgents compose（一次性生成 YAML）
 // 上提为 sofagent 直接掌握的 LangGraph StateGraph 节点级流转
 //
 // 流转图：

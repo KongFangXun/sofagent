@@ -1,7 +1,7 @@
 // ============================================================
 // loop/nodes.ts · LOOP StateGraph 节点实现
-// v1.1.8 新增：engineer / audit / reviewer / human_confirm 四节点
-// v1.1.8 升级：工具注入路径 + maxTurns + WARN 写入 history + 三态全记录
+// v1.1.9 新增：engineer / audit / reviewer / human_confirm 四节点
+// v1.1.9 升级：工具注入路径 + maxTurns + WARN 写入 history + 三态全记录
 //
 // 设计：
 // - 节点通过 LoopGraphDeps 依赖注入——默认实现走 launcher.ts 的

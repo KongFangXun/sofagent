@@ -1,6 +1,6 @@
 /**
  * @sofagent/core · security/prompt-sanitizer —— prompt 注入防线（层 1 + 层 4）
- * v1.1.8 新增
+ * v1.1.9 新增
  *
  * 8 层 prompt 注入防护体系中的两层：
  *   - 层 1（外部内容标签包裹）：任何外部来源（web/RAG/用户上传/federation peer）
