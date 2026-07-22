@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>sofagent · 中小企业和 OPC 的 FDE 工具包</title>
+<title>sofagent · 中小企业和 OPC 的 FDE Agent</title>
 <meta property="og:title" content="sofagent · 企业上AI，先上缰绳再上路">
-<meta property="og:description" content="中小企业和 OPC 的 FDE 工具包——约束底座管行为，审计引擎盯结果。">
+<meta property="og:description" content="中小企业和 OPC 的 FDE Agent——约束底座管行为，审计引擎盯结果。">
 <meta property="og:image" content="https://kongfangxun-d1gc3w0x3d6a74f96-1428477840.tcloudbaseapp.com/sofagent/sofagent.png">
-<meta name="description" content="sofagent 是中小企业和 OPC 的 FDE 工具包——约束底座管行为，审计引擎盯结果，编排引擎自动干活。一条命令安装，开源 MIT 协议。">
+<meta name="description" content="sofagent 是中小企业和 OPC 的 FDE Agent——约束底座管行为，审计引擎盯结果，编排引擎自动干活。一键部署 FDE Agent，开源 MIT 协议。">
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://api.github.com" crossorigin>
@@ -760,7 +760,7 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "sofagent",
-  "description": "中小企业和 OPC 的 FDE 工具包——约束底座管行为，审计引擎盯结果，编排引擎自动干活。",
+  "description": "中小企业和 OPC 的 FDE Agent——约束底座管行为，审计引擎盯结果，编排引擎自动干活。",
   "applicationCategory": "SoftwareApplication",
   "operatingSystem": "Web",
   "offers": {
@@ -782,7 +782,7 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
       <i class="bi bi-list" aria-hidden="true"></i>
     </button>
     <a href="#hero" class="topbar-logo">
-      <img src="sofagent.png" alt="sofagent FDE 工具包 logo">
+      <img src="sofagent.png" alt="sofagent FDE Agent logo">
       <span><span style="color:var(--brand)">sofa</span>gent</span>
       <span class="topbar-tag">FDE</span>
     </a>
@@ -816,7 +816,7 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
 <aside class="drawer" id="drawer">
   <div class="drawer-header">
     <div class="drawer-logo">
-      <img src="sofagent.png" alt="sofagent FDE 工具包 logo">
+      <img src="sofagent.png" alt="sofagent FDE Agent logo">
       <span><span style="color:var(--brand)">sofa</span>gent</span>
       <span class="drawer-tag">FDE</span>
     </div>
@@ -860,15 +860,15 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
 <!-- ===== HERO ===== -->
 <section class="hero" id="hero">
   <div class="ctn">
-    <img src="sofagent.png" alt="sofagent FDE 工具包 logo" class="hero-logo" fetchpriority="high">
+    <img src="sofagent.png" alt="sofagent FDE Agent logo" class="hero-logo" fetchpriority="high">
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">
-      <span class="hero-badge" style="margin-bottom:0" data-i18n="hero.badge1">FDE 工具包</span>
+      <span class="hero-badge" style="margin-bottom:0" data-i18n="hero.badge1">FDE Agent</span>
       <span class="hero-badge" style="margin-bottom:0;background:var(--card-bg);color:var(--text-muted);border-color:var(--border)" data-i18n="hero.badge2">MIT 开源</span>
       <span class="hero-badge" style="margin-bottom:0;background:var(--card-bg);color:var(--text-muted);border-color:var(--border)" data-i18n="hero.badge3">Harness 层</span>
     </div>
     <h1 class="hero-title" data-i18n="hero.title">企业上 AI，<em>先上缰绳再上路</em></h1>
     <p class="hero-subtitle" data-i18n="hero.subtitle">
-      中小企业和 OPC 的 FDE 工具包——约束底座管行为，审计引擎盯结果<br>
+      中小企业和 OPC 的 FDE Agent——约束底座管行为，审计引擎盯结果<br>
       不用请昂贵顾问，不用养 AI 团队，自己就能搭建 AI 节点，让你的企业在 AI 时代先人一步
     </p>
     <p class="hero-tagline" data-i18n="hero.tagline">
@@ -919,7 +919,7 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
 <!-- ===== HOW IT WORKS ===== -->
 <section class="section" id="how">
   <div class="ctn">
-    <h2 class="section-title" data-i18n="how.title">sofagent 的解法：FDE 工具包</h2>
+    <h2 class="section-title" data-i18n="how.title">sofagent 的解法：FDE Agent</h2>
     <p class="section-desc" data-i18n="how.desc">四步，把企业工作流改造成 AI Workflow</p>
     <div class="step-row">
       <div class="step-item reveal reveal-delay-1">
@@ -934,7 +934,7 @@ html[lang="en"] .orch-flow-inline { gap: 6px; }
       </div>
       <div class="step-item reveal reveal-delay-3">
         <div class="step-num">3</div><div class="step-line"></div>
-        <div class="step-title" data-i18n="how.step3.title">装上工具包</div>
+        <div class="step-title" data-i18n="how.step3.title">部署 FDE Agent</div>
         <div class="step-desc" data-i18n="how.step3.desc">闲置设备装 sofagent</div>
       </div>
       <div class="step-item reveal reveal-delay-4">
@@ -1453,10 +1453,10 @@ var I18n = (function() {
       'nav.install': '安装',
       'nav.section.links': '链接',
       'hero.title': '企业上 AI，<em>先上缰绳再上路</em>',
-      'hero.subtitle': '中小企业和 OPC 的 FDE 工具包——<br class="mobile-br">约束底座管行为，审计引擎盯结果<br>不用请昂贵顾问，不用养 AI 团队，自己就能搭建 AI 节点，让你的企业在 AI 时代先人一步',
+      'hero.subtitle': '中小企业和 OPC 的 FDE Agent——<br class="mobile-br">约束底座管行为，审计引擎盯结果<br>不用请昂贵顾问，不用养 AI 团队，自己就能搭建 AI 节点，让你的企业在 AI 时代先人一步',
       'hero.tagline': 'sofagent 做的不是帮企业"接上 AI"，<br class="mobile-br">是帮企业"用对 AI"<br>FDE 就像一个工头，带着一群 AI 工人为企业干活',
       'hero.installBtn': '开始安装',
-      'hero.badge1': 'FDE 工具包',
+      'hero.badge1': 'FDE Agent',
       'hero.badge2': 'MIT 开源',
       'hero.badge3': 'Harness 层',
       'pain.title': 'AI 落地难',
@@ -1467,13 +1467,13 @@ var I18n = (function() {
       'pain.card2.desc': '技术视角看不到业务节点<br>AI 落地不是 IT 项目，是业务改造',
       'pain.card3.title': '装了没人管',
       'pain.card3.desc': 'AI 干得好不好没人知道<br>行为没约束、结果缺审计',
-      'how.title': 'sofagent 的解法：FDE 工具包',
+      'how.title': 'sofagent 的解法：FDE Agent',
       'how.desc': '四步，把企业工作流改造成 AI Workflow',
       'how.step1.title': '梳理工作流',
       'how.step1.desc': '把企业工作流画出来',
       'how.step2.title': '识别 AI 节点',
       'how.step2.desc': '标注自动或辅助节点',
-      'how.step3.title': '装上工具包',
+      'how.step3.title': '部署 FDE Agent',
       'how.step3.desc': '闲置设备装 sofagent',
       'how.step4.title': '自动跑业务',
       'how.step4.desc': 'AI 自己干活、汇报、复盘',
@@ -1604,10 +1604,10 @@ var I18n = (function() {
       'nav.install': 'Install',
       'nav.section.links': 'Links',
       'hero.title': 'AI for Business, <em>Harness First</em>',
-      'hero.subtitle': 'The FDE Toolkit for SMEs and OPCs —<br class="mobile-br">a harness for your AI, an audit trail for every result<br>No expensive consultants, no AI team needed.<br class="mobile-br">Build your own AI nodes and stay ahead in the AI era.',
+      'hero.subtitle': 'The FDE Agent for SMEs and OPCs —<br class="mobile-br">a harness for your AI, an audit trail for every result<br>No expensive consultants, no AI team needed.<br class="mobile-br">Build your own AI nodes and stay ahead in the AI era.',
       'hero.tagline': 'sofagent doesn\'t just "connect AI" —<br class="mobile-br">it helps businesses "use AI right"<br>FDE is like a foreman leading a team of AI workers for your enterprise.',
       'hero.installBtn': 'Get Started',
-      'hero.badge1': 'FDE Toolkit',
+      'hero.badge1': 'FDE Agent',
       'hero.badge2': 'MIT Open Source',
       'hero.badge3': 'Harness Layer',
       'pain.title': 'AI Adoption is Hard',
@@ -1618,13 +1618,13 @@ var I18n = (function() {
       'pain.card2.desc': 'Tech view misses business nodes<br>AI adoption is not an IT project — it\'s business transformation',
       'pain.card3.title': 'Unattended After Setup',
       'pain.card3.desc': 'No one knows if AI is performing well<br>No behavior constraints, no audit trail',
-      'how.title': 'The sofagent Solution: FDE Toolkit',
+      'how.title': 'The sofagent Solution: FDE Agent',
       'how.desc': 'Four steps to turn your workflow into AI Workflow',
       'how.step1.title': 'Map Workflow',
       'how.step1.desc': 'Visualize your business workflow',
       'how.step2.title': 'Identify AI Nodes',
       'how.step2.desc': 'Mark auto or assist nodes',
-      'how.step3.title': 'Install Toolkit',
+      'how.step3.title': 'Deploy FDE Agent',
       'how.step3.desc': 'Install sofagent on idle devices',
       'how.step4.title': 'Run Automatically',
       'how.step4.desc': 'AI works, reports, and reviews itself',

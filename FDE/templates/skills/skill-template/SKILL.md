@@ -10,13 +10,13 @@ tags: [企业专属, FDE, 节点判定]
 image: skill-template.png
 note: >
   ⚠️ 这是给客户企业 AI 节点用的 Skill 模板（以 sofagent 自身为案例），
-  不是 FDE 工具包自己的 Skill。FDE 自己的 Skill 在 FDE/SKILL.md。
+  不是 FDE Agent 自己的 Skill。FDE 自己的 Skill 在 FDE/SKILL.md。
 ---
 
 # 企业专属 Skill · 识别 AI 节点（sofagent 自案例 · 模板）
 
 > 📋 **这是模板文件**——给客户企业每个 AI 节点定制的 Skill 格式参考。
-> 不是 FDE 工具包自己的 Skill（那个在 `FDE/SKILL.md`）。
+> 不是 FDE Agent 自己的 Skill（那个在 `FDE/SKILL.md`）。
 >
 > FDE 在 §7-§8 定制。每个 AI 节点一个专属 Skill，注入企业的行业术语 / 业务规则 / 历史案例。
 > 实际产出路径：`skills/fde-识别AI节点/SKILL.md`（每个节点一个目录，SKILL.md 是入口）。

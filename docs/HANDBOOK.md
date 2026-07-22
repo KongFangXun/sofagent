@@ -168,7 +168,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - run: npm install -g @sofagent/audit
+      - run: bash FDE/fde-install.sh
       - run: sofagent-audit --diff HEAD --silent --ci
 ```
 
