@@ -90,8 +90,8 @@ run_step() {
 # ════════════════════════════════════════
 echo -e "\n${BOLD}── 1. ShellCheck ──${NC}"
 if command -v shellcheck &>/dev/null; then
-  # v1.1.6: 补 LOOP（CI shellcheck.yml 扫全仓，列表必须与 CI 保持一致）
-  SHELL_FILES=$(find sofagent/scripts tools FDE LOOP -name "*.sh" -not -path "*/node_modules/*" -not -path "*/dist/*" 2>/dev/null)
+  # v1.1.9: 补 sofagent/daemon（USB 启动脚本 start.sh 在 daemon/usb/）
+  SHELL_FILES=$(find sofagent/scripts sofagent/daemon tools FDE LOOP -name "*.sh" -not -path "*/node_modules/*" -not -path "*/dist/*" 2>/dev/null)
   SC_FAIL=0
 
   # ShellCheck 版本兼容性：CI 用 v0.11.0，本地 ≥0.11.0 才能保证与 CI 一致
