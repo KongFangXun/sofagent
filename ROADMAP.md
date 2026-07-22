@@ -22,7 +22,7 @@
 | 版本 | 核心交付 |
 |------|------|
 | **v1.1.7** | Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级（缺省 internal）+ knowledge-health 5 项检查（@weekly）+ `knowledge status` 聚合命令 |
-| **v1.1.6** | BugFix 21 项 + LLM Wiki 3 层分层 + conflict-check：v1.1.5 遗留全数修复 + Ledger-Views-Policy 显式化 + daemon 知识健康巡检（矛盾/孤儿/死链） |
+| **v1.1.6** | BugFix 21 项 + LLM Wiki 3 层分层 + conflict-check：v1.1.5 遗留全数修复 + Ledger-Views-Policy 显式化（详见 [`docs/llm-wiki-mapping.md`](docs/llm-wiki-mapping.md)）+ daemon 知识健康巡检（矛盾/孤儿/死链） |
 
 ## 未来去哪
 
