@@ -685,7 +685,7 @@
 4. **如果用户看到的结果没有 sofagent 签名**：从用户的角度，你怎么区分"模型自己生成的结果"和"经过 sofagent 审计引擎验证的结果"？如果无法区分，这就是废墟功能——做了但用户感知不到，等于没做。
 
 
-## 维度十：📉 文档数字漂移检测（v1.1.6 新增 · 维度调整建议①）
+## 维度十：📉 文档一致性检测（数字漂移 + 概念/叙事收敛）
 
 > 你专门盯着"文档里那些不起眼的小数字"——它们最容易在发版时悄悄漂移，且最没人对账。大数字（21 条规则、503 测试）有人盯，小数字（"11 条""3 处"）往往写完就没人再看。
 
@@ -700,6 +700,8 @@
 4. **install 独立闭环诚实度**：每次新增大写目录（独立产品，如 FDE/LOOP）后，文档必须诚实标注"需要完整 clone 仓库"，不能让用户误以为只 clone 子目录就能跑（回归检查清单维度23 子项d 已自动化）。
 
 5. **v1.1.9 测试数五处一致性（v1.1.9 新增）**：v1.1.9 测试数（909 tests）需在以下五处一致：①CHANGELOG.md（版本条目正文）②ROADMAP.md（如有引用）③docs/verification/LIMITATIONS.md（如有引用）④docs/verification/evidence/v1.1.9.md（验收证据）⑤docs/changelog/v1.1.9.md（如存在 changelog 拆分）。`grep -rn "909" CHANGELOG.md ROADMAP.md docs/verification/LIMITATIONS.md docs/verification/evidence/ docs/changelog/`——每处声称的数字必须与 `cd sofagent/audit && npm test 2>&1 | grep 'Tests:'` 实际值一致。**v1.2.0 建议**：将 `docs/changelog/v*.md` 中的测试数纳入 `check-test-count.sh` 自动化监控范围，防止发版后 changelog 数字漂移。
+
+6. **概念/叙事收敛**：重大概念/叙事重构后，跨文档的叙事口径是否一致？旧的框架表述、悬空指向、重复铺陈是否还有残留？以你自己的视角通读，不预设结论。
 
 > 📋 输出格式见下方「审查输出格式」（适用于全部十维度）。
 
@@ -756,3 +758,4 @@
 | 检查点描述 | 防御的问题 | 建议落位 |
 |-----------|-----------|---------|
 | regression-checklist 维度的 bash 示例命令自身可能有 Bug（如只有 1 个 commit 就跑 `HEAD~1..HEAD`），导致独立审查者照着跑出假阳性 FAIL | 维度示例命令 ≠ 可正确执行的复现脚本；审查者盲信示例命令会误报 | regression-checklist 每个维度的 bash 示例命令在写入前必须本地实跑验证一次（同 acceptance-test 场景的硬约束） |
+| 跨文档内部锚点有效性（如 `FDE/FDE.md#xxx`） | 重构改名/搬家章节后，HANDBOOK / ARCHITECTURE / mcp-usage 等跨文档 `#锚点` 失效——读者跳过去 404 或语义落空 | regression-checklist 新增「重构后跨文档锚点解析」维度，或在 pre-push-check 增加死链/锚点扫描 |
