@@ -10,7 +10,7 @@
 
 <p align="center">
   <strong>sofa + agent = sofagent / 沙发特工</strong><br/>
-  <em>AI Agent 的行车记录仪 + 安全带。</em>
+  <em>给 SMB 和 OPC 的 FDE Agent —— 约束底座管行为，审计引擎盯结果，编排引擎自动干活。</em>
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 
 Agent 越聪明，企业越不敢放手——真出事了，谁负责？能拦住吗？能回滚吗？
 
-**sofagent 是 AI Agent 的 Harness 中间件**：每次 Agent 改完代码、写完文件，自动跑一遍规则库，违规的当场拦截、合规的存快照。改了什么就是什么，无可抵赖。零 token 消耗——纯正则引擎，不调 LLM。
+**sofagent 给 SMB 和 OPC 提供 FDE Agent**——一个帮你把企业工作流梳理成 AI 节点、部署完就能自己跑的常驻 Agent。底层是 sofagent 引擎（Harness 中间件）：每次 Agent 改完代码、写完文件，自动跑一遍规则库，违规的当场拦截、合规的存快照。改了什么就是什么，无可抵赖。审计引擎零 token 消耗——纯正则引擎，不调 LLM。
 
 > 💡 **为什么是现在**：a16z（2026-07）指出「人类历史上第一次，人比软件便宜」——每家公司在雇「一百万个糟糕的 AI 员工」，80% 的 token 在空转。解法不是更强的模型，而是**管理**。sofagent 正是那一层：用约束 + 审计把 Agent 队伍管起来。
 
@@ -72,7 +72,7 @@ flowchart LR
     D -->|❌ FAIL| G[拦截提交 + 建议回滚<br/>Webhook 推送]
 ```
 
-sofagent 是 **Harness 中间件**——不管你用什么 Agent（Claude Code / Codex / Cursor / WorkBuddy）、什么模型，挂在 git commit 这个节点上，用 git diff 硬证据做审计。**平台无关、零侵入、零 token**。
+sofagent 引擎是 **Harness 中间件**——不管你用什么 Agent（Claude Code / Codex / Cursor / WorkBuddy）、什么模型，挂在 git commit 这个节点上，用 git diff 硬证据做审计。**平台无关、零侵入、零 token**。FDE Agent 就建在这套引擎上。
 
 <details>
 <summary>🏞️ 补充类比：一条河的模型（点开）</summary>
@@ -97,7 +97,7 @@ sofagent 是 **Harness 中间件**——不管你用什么 Agent（Claude Code /
 
 ---
 
-## 21 条规则（4 类）
+## 21 条规则（5 类）
 
 **默认规则（13 条，装完即生效）**：
 
@@ -143,9 +143,9 @@ sofagent 是 **Harness 中间件**——不管你用什么 Agent（Claude Code /
 
 ---
 
-## 一底座 · 四引擎
+## 引擎架构（开发者段）：一底座 · 四引擎
 
-sofagent 不只是审计——完整形态是「一底座 + 四引擎」的 Harness 中间件：
+sofagent 引擎不只是审计——完整形态是「一底座 + 四引擎」的 Harness 中间件：
 
 ```mermaid
 flowchart LR
@@ -183,7 +183,7 @@ graph LR
 
 > 📚 **知识沉淀流水线（v1.1.7）**：knowledge/ 由 daemon **Dream Cycle 6 阶段 pipeline** 自动沉淀（extract_facts → extract_atoms → cluster_patterns → synthesize_concepts → skillopt_backfill → embed），替换旧散点脚本；每条知识带 `sensitivity` 分级（public/internal/restricted，缺省 internal）。配套治理：`knowledge-health` 巡检器（@weekly，孤立/重复/断链/index 过旧/缺源 5 项，fail-closed 只读）+ `sofagent-daemon knowledge status` 聚合命令（一眼看见 Dream Cycle 周报 / 知识健康 / sensitivity 统计，restricted 只计数不泄露）。
 
-> 🔐 **安全与联邦（v1.1.8 · 开发中）**：两台配对设备经 OpenClaw channel 互查 knowledge/——AES-256-GCM 应用加密 + ECDH 密钥交换（key 只存内存）+ 三条配对路径（6 位码确认 / token / federation.json HMAC 验签）+ sensitivity 双重过滤 + automerge CRDT 合并（trust 优先于 mtime）+ 离线降级不阻塞。Prompt 注入防护补齐：外部内容 `<untrusted>` 包裹 + prompt 级脱敏 + 知识可信分级（official>internal>user>web，web+restricted 丢弃）。知识沉淀主动通知：Dream Cycle / 健康巡检跑完自动推送摘要（best-effort，restricted 不进通知）。
+> 🔐 **安全与联邦（v1.1.8 · 已发布）**：两台配对设备经 OpenClaw channel 互查 knowledge/——AES-256-GCM 应用加密 + ECDH 密钥交换（key 只存内存）+ 三条配对路径（6 位码确认 / token / federation.json HMAC 验签）+ sensitivity 双重过滤 + automerge CRDT 合并（trust 优先于 mtime）+ 离线降级不阻塞。Prompt 注入防护补齐：外部内容 `<untrusted>` 包裹 + prompt 级脱敏 + 知识可信分级（official>internal>user>web，web+restricted 丢弃）。知识沉淀主动通知：Dream Cycle / 健康巡检跑完自动推送摘要（best-effort，restricted 不进通知）。
 
 ### ⚙️ 编排引擎
 
@@ -297,17 +297,17 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 
 ---
 
-## 企业落地：FDE + Work模板市场
+## 企业落地：FDE Agent
 
-sofagent 不只是开发者工具——企业落地用 **FDE Agent** + **Work模板市场**：
+sofagent 不只是开发者工具——企业落地用 **FDE Agent**：
 
 - **FDE Agent**（`FDE/`）：前线部署工程师进场四阶段（梳理 → 挖掘 → 交付 → 离场），把企业工作流梳理成 AI 节点，部署完撤离、AI 节点自己跑。详见 [FDE/FDE.md](./FDE/FDE.md)。
-- **Work模板市场**（`work模板市场/`）：行业工作流模板仓库，外层 Graph 骨架锁定全链路 + 内层节点保留 ReAct 灵活性。开箱带制造业应付账款审批模板。详见 [work模板市场/](./work模板市场/)。
+- **Work模板市场**：行业工作流模板（v1.1.9 已物理迁出至商业产品 `商业仓库/模板市场/`，MIT 仓库不再维护）。
 - **LOOP 自迭代工具包**（`LOOP/`）：sofagent 的外层自迭代编排——内层 `coding → audit → review → human`，外层 `FDE 监督 → compliance 巡检 → 优化 Agent 定义`。详见 [LOOP/README.md](./LOOP/README.md)。
 
 **三产品关系**：sofagent 核心管「每次变更守门」（commit / 文件变更即审计）；FDE 管「进场部署交付」（把 sofagent 装到企业设备并撤离）；LOOP 管「长期自迭代」（持续巡检 + 优化 Agent 定义）。三者共享同一套约束底座与审计引擎，均非可独立运行的独立仓库（需先 `git clone` 主仓库）。
 
-> 💡 **命名约定**：大写目录（`FDE/`、`LOOP/`）与产品名 `模板市场`（对应小写代码目录 `work模板市场/`）是 sofagent 的**部署/产品入口**，需先 `git clone` 主仓库后运行（**非可独立运行的独立仓库**，单独 clone 子目录会因依赖主仓库 `sofagent/scripts/install.sh` 而跑不通）；小写目录（`sofagent/`、`docs/`、`tools/`）= 核心代码与配置。
+> 💡 **命名约定**：大写目录（`FDE/`、`LOOP/`）是 sofagent 的**部署/产品入口**，需先 `git clone` 主仓库后运行（**非可独立运行的独立仓库**，单独 clone 子目录会因依赖主仓库 `sofagent/scripts/install.sh` 而跑不通）；小写目录（`sofagent/`、`docs/`、`tools/`）= 核心代码与配置。
 
 
 ## 产品形态：MCP + dashboard

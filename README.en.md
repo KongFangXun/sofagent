@@ -10,7 +10,7 @@
 
 <p align="center">
   <strong>sofa + agent = sofagent</strong><br/>
-  <em>The dashcam + seatbelt for AI Agents.</em>
+  <em>The FDE Agent for SMBs and OPCs — a harness for your AI, an audit trail for every result.</em>
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 
 The smarter the Agent, the less companies dare to let go — when something goes wrong, who's accountable? Can it be stopped? Can it be rolled back?
 
-**sofagent is a Harness middleware for AI Agents**: every time an Agent finishes writing code or files, a rule engine scans automatically — violations are blocked on the spot, compliant changes get snapshotted. What was changed is what was changed, no denying it. Zero token cost — pure regex engine, no LLM calls.
+**sofagent provides FDE Agent for SMBs and OPCs** — a resident Agent that maps your enterprise workflows into AI nodes and runs autonomously after deployment. Under the hood is the sofagent engine (Harness middleware): every time an Agent finishes writing code or files, a rule engine scans automatically — violations are blocked on the spot, compliant changes get snapshotted. What was changed is what was changed, no denying it. The audit engine has zero token cost — pure regex engine, no LLM calls.
 
 ```bash
 bash FDE/fde-install.sh
@@ -68,7 +68,7 @@ flowchart LR
     D -->|❌ FAIL| G[Block commit + suggest revert<br/>Webhook push]
 ```
 
-sofagent is a **Harness middleware** — no matter what Agent you use (Claude Code / Codex / Cursor / WorkBuddy) or what model, it hooks into the git commit node and audits with hard git diff evidence. **Platform-agnostic, zero-intrusion, zero tokens**.
+The sofagent engine is a **Harness middleware** — no matter what Agent you use (Claude Code / Codex / Cursor / WorkBuddy) or what model, it hooks into the git commit node and audits with hard git diff evidence. **Platform-agnostic, zero-intrusion, zero tokens**. FDE Agent is built on top of this engine.
 
 > 💡 **An agent that works ≠ a model + a prompt** — it's a multi-layer skeleton (config / knowledge / instruction / validation / orchestration). sofagent is the rebar in that skeleton, the audit engine is the quality inspector. We scaffold agents with tools / permissions / sandboxes / rules — rather than building a smarter model.
 
@@ -134,9 +134,9 @@ sofagent is a **Harness middleware** — no matter what Agent you use (Claude Co
 
 ---
 
-## One base · Four engines
+## Engine Architecture (Developer Section): One base · Four engines
 
-sofagent isn't just audit — the full form is a Harness middleware with "one base + four engines":
+The sofagent engine isn't just audit — the full form is a Harness middleware with "one base + four engines":
 
 ```mermaid
 flowchart LR
@@ -288,12 +288,12 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 
 ---
 
-## Enterprise deployment: FDE + Work模板市场
+## Enterprise deployment: FDE Agent
 
-sofagent isn't just a developer tool — enterprise deployment uses the **FDE Agent** + **Work模板市场**:
+sofagent isn't just a developer tool — enterprise deployment uses the **FDE Agent**:
 
 - **FDE Agent** (`FDE/`): Frontline Deployment Engineer four-phase onboarding (map → mine → deliver → leave) — turns enterprise workflows into AI nodes, FDE leaves after deployment, AI nodes run themselves. See [FDE/FDE.md](./FDE/FDE.md).
-- **Work模板市场** (`work模板市场/`): Industry workflow template repo — outer Graph skeleton locks the full chain + inner nodes keep ReAct flexibility. Ships with a manufacturing accounts-payable template. See [work模板市场/](./work模板市场/).
+- **Work模板市场**: Industry workflow templates (v1.1.9 physically migrated to commercial product `商业仓库/模板市场/`; no longer maintained in the MIT repo).
 
 ## Product form: MCP + dashboard
 
