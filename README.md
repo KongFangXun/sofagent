@@ -125,14 +125,14 @@ sofagent 不只是开发者工具——企业落地用 **FDE Agent**：
 
 ### 产品形态：MCP + dashboard
 
-sofagent 内核（审计引擎 + 编排引擎 + FDE 能力）是给开发者用的。但当它被产品化、交给非技术买家（SMB / OPC 老板、企业内部 champion）时，需要一层不同的外壳：
+sofagent 内核（审计引擎 + 编排引擎 + FDE 能力）是给开发者用的。产品化交给非技术买家时，需要一层不同的外壳：
 
-- **卖能力，不卖工时**：FDE 不是「驻场部署服务」，而是把「企业该有的 AI 落地能力」封装成由 Agent 驱动的 FDE 能力，让企业自己的员工去用、自己落地 AI 化。营收模型从「顾问工时」变成「企业数 × 订阅」，可规模化。
-- **为什么需要 dashboard**：sofagent 本身是 LUI-first（语言即界面）——但 Agent 的 LUI + LLM 会「吞噬一切」，非专家买家看不到持久状态、没有成就感锚点。所以产品化必须带一个**轻量 dashboard** 作为自有视图（审计状态 / AI 化进度 / 合规月报），让买家随时看得见「我公司 AI 化到哪了」。
-- **为什么用 MCP**：dashboard 是轻量化的，靠 **MCP** 配合——MCP 作为向外接的桥，让客户已有的 Agent / 你的 sub-agent 把数据喂给 dashboard 后端。MCP 是桥、不是唯一入口；dashboard 必须自己拥有。
-- **open-core 双轨**：内核（审计规则 / FDE 工作流 / 编排）继续 MIT 开源做信任资产；商业化只卖那层 dashboard（控制台 / 合规月报 / 告警）。开源负责让人信，闭源负责让人付。
+- **卖能力，不卖工时**——把「企业该有的 AI 落地能力」封装成 Agent 驱动的产品，营收从「顾问工时」变成「企业数 × 订阅」。
+- **轻量 dashboard**——LUI-first 不变，但非专家买家需要一个看得见「我公司 AI 化到哪了」的只读视图（审计状态 / AI 化进度 / 合规月报）。
+- **MCP 做桥**——dashboard 不重，靠 MCP 让客户已有的 Agent / 你的 sub-agent 把数据喂给后端。
+- **open-core 双轨**——内核（审计 / FDE / 编排）MIT 开源做信任资产；商业化只卖那层 dashboard。开源负责让人信，闭源负责让人付。
 
-> 控制平面打法：底层 Agent 智能随便换（OpenClaw / 客户自选 / 大厂），治理与真相（策略谁配、审计链长啥样、Agent 注册在哪）永远在 sofagent 的 dashboard 里。
+> 控制平面打法：底层 Agent 智能随便换，治理与真相永远在 sofagent 的 dashboard 里。详见 [PHILOSOPHY §六](./docs/PHILOSOPHY.md)。
 
 ---
 
@@ -325,6 +325,7 @@ graph LR
 
 | 你想了解 | 看哪里 |
 |---------|--------|
+| FDE Agent 进场四阶段、企业落地 | [FDE.md](./FDE/FDE.md) |
 | 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
 | 为什么这么设计 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
