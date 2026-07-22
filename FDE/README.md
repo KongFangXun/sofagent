@@ -43,7 +43,7 @@
 
 1. **激活 Skill** → 按上表对应平台的方法让 Agent 加载 FDE 工作台
 2. **Agent 引导** → Agent 会按 [FDE.md](./FDE.md) §1 开始，引导你描述企业基本信息，然后走完 12 个关键步骤
-3. **部署 sofagent 到设备**（核心步骤）→ 流程走完后，找一台闲置设备（服务器/旧电脑），`bash sofagent/scripts/install.sh` 把 sofagent 一底座·四引擎装上去——约束底座 + 编排引擎 + 审计引擎 + 回溯引擎（git snapshot + revert）+ 进化引擎就绪，上面开始跑你的 workflow AI 节点
+3. **部署 sofagent 到设备**（核心步骤）→ 流程走完后，找一台闲置设备（服务器/旧电脑），`bash sofagent/scripts/install.sh` 把 sofagent 一底座·四引擎装上去（注：此命令装**底层引擎底座**；FDE 入口本身用 `FDE/fde-install.sh` 安装，见上方安装表）——约束底座 + 编排引擎 + 审计引擎 + 回溯引擎（git snapshot + revert）+ 进化引擎就绪，上面开始跑你的 workflow AI 节点
 
 ### 种子指令（备选，非 OpenClaw/WorkBuddy 用户使用）
 
