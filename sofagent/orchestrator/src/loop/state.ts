@@ -1,6 +1,6 @@
 // ============================================================
 // graph/state.ts · LOOP StateGraph 状态定义
-// v1.1.8 新增：LangGraph StateGraph 的状态 schema
+// v1.1.9 新增：LangGraph StateGraph 的状态 schema
 //
 // 说明：
 // - LoopGraphState 是对外契约（TypeScript interface）

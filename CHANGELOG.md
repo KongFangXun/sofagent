@@ -1,7 +1,7 @@
 # Changelog
 
 每个版本的详细开发日志在 docs/changelog/ 下。v1.0.0+ 为正式版，v0.x 实验版日志在 [docs/archive/changelog-experimental/](./docs/archive/changelog-experimental/)。本文件是目录索引。
-> v1.1.8 · 2026-07-22（UTC）· 孔放勋
+> v1.1.9 · 2026-07-22（UTC）· 孔放勋
 
 ---
 

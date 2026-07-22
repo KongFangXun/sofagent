@@ -1,7 +1,7 @@
 # sofagent Architecture
 
 > 设计决策记录——从为什么存在、一底座·四引擎如何协作，到每个关键决策的工程理由。
-> v1.1.8 · 2026-07-22（UTC）· 孔放勋
+> v1.1.9 · 2026-07-22（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 

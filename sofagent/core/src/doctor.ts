@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // doctor.ts · sofagent 健康检查
-// v1.1.8 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
-// v1.1.8 维护：新增 post-commit hook 存在性检查
+// v1.1.9 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
+// v1.1.9 维护：新增 post-commit hook 存在性检查
 //
 // 检查项：
 //   1. 环境检查（Node / git / npm / disk / bash）

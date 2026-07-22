@@ -1,6 +1,6 @@
 // ============================================================
 // verify/verifier.ts · Verifier 验证器主类
-// v1.1.8 从 sofagent/audit/src/verify/verifier.ts 迁出
+// v1.1.9 从 sofagent/audit/src/verify/verifier.ts 迁出
 // ============================================================
 // 从 verify.ts 中提取的 Verifier 类——管理检查项的记录与输出。
 

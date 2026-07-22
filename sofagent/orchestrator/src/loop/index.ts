@@ -1,6 +1,6 @@
 // ============================================================
 // LOOP/index.ts · LOOP 引擎 barrel export
-// v1.1.8：StateGraph 单任务 LOOP + Workflow 消费引擎
+// v1.1.9：StateGraph 单任务 LOOP + Workflow 消费引擎
 //
 // 编排智能来自外部平台（WorkBuddy 等），sofagent LOOP 负责执行层。
 // checkpoint 保留在 graph/ 下（被 daemon 和 LOOP 共用）。
