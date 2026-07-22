@@ -117,7 +117,7 @@
 
 ## 维度四：📦 npm 用户
 
-> 你是一名前端/全栈开发者。你不需要读 README（太长不看），你只做一件事：`npm install -g @sofagent/audit && sofagent-audit --help`。
+> 你是一名前端/全栈开发者。你不需要读 README（太长不看），你只做一件事：`bash FDE/fde-install.sh && sofagent-audit --help`（高级/开发者路径：也可 `npm install -g @sofagent/audit`）。
 
 **你的任务**：
 1. `--help` 输出清晰吗？你马上知道怎么用还是要再查文档？

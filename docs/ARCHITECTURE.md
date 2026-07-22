@@ -371,7 +371,7 @@ sofagent 支持两种节点类型：
 
 **River = 多个 Workflow（管网）的集合**——每段管网（Workflow）把模型能力（水）引到业务侧，汇入同一条大河（River），从头到尾同一个身份、同一段上下文。
 
-Workflow Hub 的实现规范见 [workflow-hub/SPEC.md](../workflow-hub/SPEC.md)（混合架构：外层 `workflow.yml` Graph 骨架锁步骤 + 内层 ReAct 节点）。
+Workflow Hub 的实现规范已随 v1.1.9 迁至商业产品 `sofagent-commercial/FLOWHUB/`（混合架构：外层 `workflow.yml` Graph 骨架锁步骤 + 内层 ReAct 节点）。
 
 ```
 用户 → River（统一入口）→ Workflow A/B/C（管网分发）→ Subagent（水龙头，执行）
@@ -388,7 +388,7 @@ River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 
 
 > 🏞️ **一条河的比喻**：大厂造河——大模型 LLM 是水，Agent 平台是河床，没有河床水只是一片汪洋。堤坝 = Harness 约束层（外在守卫，让河水不侵蚀城市）；自来水厂 = 沙箱/安全机制（让水从"能喝"到"敢喝"）；管网 = Workflow（把能力引到业务）；水龙头 / 用水设备 = Subagent（让能力在具体业务用水）；城市 / 企业 / 工厂 / 社区 = 业务环节；市政管网规划 = Ontology（规划水怎么被用到业务里）；蓄水池 = AI 知识库（河跑起来后自动积累的记忆）；水表/水质监测屏 = Dashboard（让企业看得见 AI 用水情况——sofagent 产品的可见性窗口）。大厂造河（LLM + Agent 平台），我们做堤坝 + 自来水厂 + 管网 + 水龙头。详见 [FDE §9.6](../FDE/FDE.md#96-river大厂造河与企业用水)。
 
-> **Workflow 的混合架构**：每条 Workflow 采用「外层 Graph 骨架 + 内层 ReAct 节点」——`workflow.yml` 的 `nextNodes` 锁定全链路步骤、保证可追溯（对应行业笔记中的「Graph 实现全局流程骨架」），单个节点的 `prompt` 保留模型自主规划能力（对应「内层 ReAct Agent」）。这一设计兼顾全局稳定性与局部灵活性：低容错业务靠 Graph 锁死流程，复杂节点靠 ReAct 保灵活。详见 [workflow-hub/SPEC.md](../workflow-hub/SPEC.md)。
+> **Workflow 的混合架构**：每条 Workflow 采用「外层 Graph 骨架 + 内层 ReAct 节点」——`workflow.yml` 的 `nextNodes` 锁定全链路步骤、保证可追溯（对应行业笔记中的「Graph 实现全局流程骨架」），单个节点的 `prompt` 保留模型自主规划能力（对应「内层 ReAct Agent」）。这一设计兼顾全局稳定性与局部灵活性：低容错业务靠 Graph 锁死流程，复杂节点靠 ReAct 保灵活。实现规范已随 v1.1.9 迁至商业产品 `sofagent-commercial/FLOWHUB/`。
 
 #### MCP 触发完整链路（v1.1.8+）
 
@@ -434,7 +434,7 @@ Agent 定义在 `agents/SKILL/{name}/SKILL.md`，`parseSkillMd()` 读 front matt
 
 ### OpenClaw 在架构中的角色
 
-**审计层不需要 OpenClaw**——sofagent-audit 是独立 TypeScript CLI，输入 git diff，输出 exit code。即使不装 OpenClaw，`npm install -g @sofagent/audit` 配 commit-msg hook 就能让任何 Agent 平台的提交经过审计。
+**审计层不需要 OpenClaw**——sofagent-audit 是独立 TypeScript CLI，输入 git diff，输出 exit code。即使不装 OpenClaw，开发者也可通过 `bash FDE/fde-install.sh`（推荐）或 `npm install -g @sofagent/audit`（高级/开发者路径）配 commit-msg hook，让任何 Agent 平台的提交经过审计。
 
 **编排层当前走 DeepAgents**——`compose --task` CLI 入口，任何 Agent 平台都能用。迁移路径：ao → DeepAgents（v1.0.7 完成，ao 已退役）。
 
