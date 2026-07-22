@@ -57,7 +57,7 @@ assert_js() {
     global.eq=(a,b)=>{if(JSON.stringify(a)!==JSON.stringify(b)){console.log('ASSERT_FAIL: '+JSON.stringify(a)+' !== '+JSON.stringify(b));process.exit(1);}};
     global.ok=(c,m)=>{if(!c){console.log('ASSERT_FAIL: '+(m||'falsy'));process.exit(1);}};
     $js_code;console.log('ASSERT_OK');" 2>&1) || true
-  echo "$result" | grep -q "ASSERT_OK" && return 0 || { fail "$dist_rel 断言失败: $(echo "$result" | grep ASSERT_FAIL | head -1)"; return 1; }
+  echo "$result" | grep -q "ASSERT_OK" && return 0 || { fail "$dist_rel 断言失败: $(echo "$result" | grep ASSERT_FAIL | head -1 || true)"; return 1; }
 }
 assert_rc() { local expected="$1"; shift; set +e; "$@" >/dev/null 2>&1; local actual=$?; set -e; [ "$actual" = "$expected" ] && return 0 || { fail "exit code 期望 $expected 实际 $actual"; return 1; }; }
 assert_grep() { grep -q "$1" "$2" 2>/dev/null && return 0 || { fail "grep 零命中: '$1' in $2"; return 1; }; }
@@ -468,7 +468,7 @@ if [ -f "$REVIEW_FILE" ]; then
   echo "$SIGN_BEFORE" | grep -q "sofagent-audit" && echo "$SIGN_BEFORE" | grep -q "sofagent-orchestrator" && pass || { SIGN_OK=false; fail "审查报告签名模板缺少 sofagent-audit 或 sofagent-orchestrator"; }
 else SIGN_OK=false; fail "sofagent-reviewer/SKILL.md 不存在"; fi
 if [ -f "$REVIEW_FILE" ]; then
-  [ -n "$(grep -A2 "代码审查报告" "$REVIEW_FILE" | head -3)" ] && pass || fail "审查报告标题行不存在"
+  [ -n "$(grep -A2 "代码审查报告" "$REVIEW_FILE" 2>/dev/null | head -3 || true)" ] && pass || fail "审查报告标题行不存在"
 fi
 scenario 39 "文件系统审计（isomorphic-git + fs-watch 模块存在验证）"
 FS_AUDIT_OK=true
@@ -758,7 +758,7 @@ scenario 74 "EvidenceMode filesystem 类型验证"
 S74_OK=true
 [ ! -f "$AUDIT_RULES_TYPES" ] && { fail "audit/src/rules/types.ts 不存在"; S74_OK=false; }
 if $S74_OK; then
-  grep "filesystem" "$AUDIT_RULES_TYPES" | head -1 | grep -q "filesystem" || { fail "EvidenceMode 不含 filesystem"; S74_OK=false; }
+  grep "filesystem" "$AUDIT_RULES_TYPES" 2>/dev/null | head -1 | grep -q "filesystem" || { fail "EvidenceMode 不含 filesystem"; S74_OK=false; }
 fi
 if $S74_OK; then
   S74_A17=$(grep "A17" "$AUDIT_RULES_INDEX" | grep -c "filesystem" || echo "0")

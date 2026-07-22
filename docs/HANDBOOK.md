@@ -208,7 +208,7 @@ jobs:
 |------|------|------|
 | 🧭 **约束底座** | 四层加载链注入规则 | Agent 启动时自动（OpenClaw Hook / Sub Agent 自加载） |
 | 🔍 **审计引擎** | git diff → A1-A11、A14-A19 规则检查 | git commit / daemon 文件变更 |
-| 🔄 **回溯引擎** | 审计后自动 snapshot（本质：git snapshot + revert 包装），违规时建议回滚 | 审计完成后自动 |
+| 🔄 **回溯引擎** | 审计后自动 git snapshot，违规时建议 revert 回滚（本质：git snapshot + revert 包装） | 审计完成后自动 |
 | ⚙️ **编排引擎** | 拆解任务 + Sub Agent 并行 + StateGraph 循环（v1.1.3+） | CLI / MCP compose tool |
 | 🧬 **进化引擎**（v1.0.8+） | FDE 周度巡检审计趋势 + 反思，自动优化 | daemon cron @weekly / 手动触发 |
 
