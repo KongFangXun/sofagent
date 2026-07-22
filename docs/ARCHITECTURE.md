@@ -7,13 +7,13 @@
 
 ## 心智模型（先读这个）
 
-> sofagent 是开源（MIT）的 FDE（前线部署工程）工具包。FDE 不是一款软件，而是一种能力——让任意大厂 Agent + 大模型在企业里可治理、可问责地落地。一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）做问责底座，帮 SMB 与 OPC 的每个人，用自己选的 Agent 和模型，快速成为自己业务的 FDE。
+> sofagent 是由 Agent 驱动的 FDE 能力封装（开源 MIT）。FDE 不是一款软件，而是一种能力——让任意大厂 Agent + 大模型在企业里可治理、可问责地落地。一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）做问责底座，帮 SMB 与 OPC 的每个人，用自己选的 Agent 和模型，快速成为自己业务的 FDE。
 
 ```mermaid
 graph TD
     A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent Harness 中间层<br/>一底座·四引擎 — 问责底座]
     B --> C[让任意 Agent 可治理 · 可审计 · 可回溯]
-    C --> D[FDE 工具包<br/>梳理 workflow / 本体模型 / 专有 Sub Agent]
+    C --> D[FDE Agent<br/>梳理 workflow / 本体模型 / 专有 Sub Agent]
     D --> E[SMB · OPC 的每个人<br/>成为 FDE 节点，自主完成部署]
 ```
 

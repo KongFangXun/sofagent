@@ -29,7 +29,7 @@ The smarter the Agent, the less companies dare to let go — when something goes
 **sofagent is a Harness middleware for AI Agents**: every time an Agent finishes writing code or files, a rule engine scans automatically — violations are blocked on the spot, compliant changes get snapshotted. What was changed is what was changed, no denying it. Zero token cost — pure regex engine, no LLM calls.
 
 ```bash
-npm install -g @sofagent/audit @sofagent/core && sofagent-audit --init
+bash FDE/fde-install.sh
 ```
 
 > [!NOTE]
@@ -254,15 +254,15 @@ graph LR
 | 🔄 Auto-run node | Enterprise unattended device (server / old computer) | Yes |
 | ⚡ Personal augmentation node | Developer using WorkBuddy / Codex / Claude Code | No |
 
-> 💡 Personal augmentation node: clone repo → `npm install -g @sofagent/audit @sofagent/core` → `sofagent-audit --init` → go.
+> 💡 Personal augmentation node: clone repo → `bash FDE/fde-install.sh` → go.
 
 ---
 
 ## Install
 
 ```bash
-# Minimum install (pure audit)
-npm install -g @sofagent/audit @sofagent/core
+# FDE Agent one-click deploy
+bash FDE/fde-install.sh
 
 # Full install (one base · four engines)
 git clone https://github.com/KongFangXun/sofagent.git
@@ -290,16 +290,16 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 
 ## Enterprise deployment: FDE + Work模板市场
 
-sofagent isn't just a developer tool — enterprise deployment uses the **FDE Toolkit** + **Work模板市场**:
+sofagent isn't just a developer tool — enterprise deployment uses the **FDE Agent** + **Work模板市场**:
 
-- **FDE Toolkit** (`FDE/`): Frontline Deployment Engineer four-phase onboarding (map → mine → deliver → leave) — turns enterprise workflows into AI nodes, FDE leaves after deployment, AI nodes run themselves. See [FDE/FDE.md](./FDE/FDE.md).
+- **FDE Agent** (`FDE/`): Frontline Deployment Engineer four-phase onboarding (map → mine → deliver → leave) — turns enterprise workflows into AI nodes, FDE leaves after deployment, AI nodes run themselves. See [FDE/FDE.md](./FDE/FDE.md).
 - **Work模板市场** (`work模板市场/`): Industry workflow template repo — outer Graph skeleton locks the full chain + inner nodes keep ReAct flexibility. Ships with a manufacturing accounts-payable template. See [work模板市场/](./work模板市场/).
 
 ## Product form: MCP + dashboard
 
-The sofagent core (audit engine + orchestration engine + FDE toolkit) is for developers. But when productized and handed to non-technical buyers (SMB / OPC owners, internal champions), it needs a different shell:
+The sofagent core (audit engine + orchestration engine + FDE capability) is for developers. But when productized and handed to non-technical buyers (SMB / OPC owners, internal champions), it needs a different shell:
 
-- **Sell capability, not hours**: FDE is not "on-site deployment service" — it's the capability every enterprise should have, packaged as a toolkit so the enterprise's own people use it and land AI adoption themselves. Revenue shifts from "consultant hours" to "number of enterprises × subscription", scalable.
+- **Sell capability, not hours**: FDE is not "on-site deployment service" — it's the capability every enterprise should have, packaged as an Agent-driven FDE capability so the enterprise's own people use it and land AI adoption themselves. Revenue shifts from "consultant hours" to "number of enterprises × subscription", scalable.
 - **Why a dashboard is needed**: sofagent itself is LUI-first (language is the interface) — but the Agent's LUI + LLM "swallows everything"; non-expert buyers can't see persistent state, no sense-of-achievement anchor. So productization must ship a **lightweight dashboard** as its own view (audit status / AI adoption progress / compliance monthly report), letting buyers always see "how far my company's AI adoption has gone".
 - **Why MCP**: the dashboard is lightweight, powered by **MCP** — MCP acts as an outward bridge, letting the customer's existing Agent / your sub-agent feed data to the dashboard backend. MCP is a bridge, not the only entry point; the dashboard must be owned.
 - **open-core dual track**: the core (audit rules / FDE workflow / orchestration) stays MIT open-source as a trust asset; commercialization only sells that dashboard layer (console / compliance monthly report / alerts). Open-source earns trust, closed-source earns payment.

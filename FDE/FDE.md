@@ -37,17 +37,17 @@
 
 ## 🎯 先读这段：如何正确理解 sofagent
 
-> **sofagent 是一套开源（MIT）的 FDE（前线部署工程）工具包——FDE 不是软件，而是一种能力。** 我们基于你自选的大厂 Agent 和大模型，用自研的一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）做问责底座，帮 SMB 与 OPC 梳理 workflow、搭建本体模型、部署专有 Sub Agent。
+> **sofagent 是一套开源（MIT）的 FDE（前线部署工程）能力封装——FDE 不是软件，而是一种能力。** 我们基于你自选的大厂 Agent 和大模型，用自研的一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）做问责底座，帮 SMB 与 OPC 梳理 workflow、搭建本体模型、部署专有 Sub Agent。
 
-一底座·四引擎是 FDE 工具包的**核心架构**，不是独立销售的产品。
+一底座·四引擎是 FDE Agent 的**核心架构**，不是独立销售的产品。
 
 ### 最常见的三个误解
 
 | ❌ 常见误解 | ✅ 正确认知 |
 |------|------|
-| 这是个 Git 审计安全工具 | 审计引擎只是 FDE 工具包「一底座·四引擎」中的一环，单独拿出来没有意义 |
+| 这是个 Git 审计安全工具 | 审计引擎只是 FDE Agent「一底座·四引擎」中的一环，单独拿出来没有意义 |
 | 这是要跟大厂 Agent 竞争 | 我们**不造 Agent**，骑在大厂 Agent + 模型之上做问责底座 |
-| 这是卖软件的 | 这是**开源（MIT）工具包**——目标是让 SMB 与 OPC 的每个人都能成为 FDE，自主完成部署 |
+| 这是卖软件的 | 这是**开源（MIT）的 FDE 能力封装**——目标是让 SMB 与 OPC 的每个人都能成为 FDE，自主完成部署 |
 
 ### 心智模型
 
@@ -58,7 +58,7 @@ graph LR
     C --> D[回溯能力<br/>SMB 与 OPC 的每个人<br/>自主完成部署]
 ```
 
-> 一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）都**服务于 FDE 工具包**——这是本项目的核心点。下文四阶段流程讲的就是如何把这套底座用起来：无论你是帮自己还是帮客户做 FDE，都能照着走完。
+> 一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）都**服务于 FDE Agent**——这是本项目的核心点。下文四阶段流程讲的就是如何把这套底座用起来：无论你是帮自己还是帮客户做 FDE，都能照着走完。
 
 ---
 
@@ -132,7 +132,7 @@ FDE（或企业 CIO/网管）的操作手册。**读它 → 帮企业梳理 work
 
 **Agent 让 FDE 更重要**：Bob McGrew（前 Palantir/OpenAI）指出 AI agent 没有现成的产品，是 FDE 兴起的核心原因。Agent 是非确定性系统，必须配套 eval、guardrail 和人工复核——这正是审计引擎做的事。
 
-前 Partnership 副总裁、FDE 模式创始人之一 Bob Mycroft 进一步点明：Agent OS 这类产品的核心服务对象**不是终端客户，而是 FDE**——它把原本难以规模化的「沙石路」铺成高速公路，让单个 FDE 服务更多客户、沉淀领域知识。这与上文「碎石路到高速公路」同源，也印证了 sofagent 只做 FDE 工具包、不做 Agent 运行时的定位。
+前 Partnership 副总裁、FDE 模式创始人之一 Bob Mycroft 进一步点明：Agent OS 这类产品的核心服务对象**不是终端客户，而是 FDE**——它把原本难以规模化的「沙石路」铺成高速公路，让单个 FDE 服务更多客户、沉淀领域知识。这与上文「碎石路到高速公路」同源，也印证了 sofagent 只做 FDE Agent 能力封装、不做 Agent 运行时的定位。
 
 > 详见：[fde.academy](https://fde.academy/blog/how-palantir-invented-the-forward-deployed-engineer-model) · [OpenFDE](https://open-fde.com/zh/docs/agent-era) · [OpenFDE 工作流](https://open-fde.com/docs/workflow)
 
