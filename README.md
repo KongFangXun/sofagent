@@ -24,20 +24,11 @@
 
 ## ① FDE Agent 是什么
 
-Agent 越聪明，企业越不敢放手——真出事了，谁负责？能拦住吗？能回滚吗？
+企业越来越需要 AI，但不知道怎么用——不是缺模型，是缺一个能把 AI 装进业务流程的人。
 
-**FDE Agent —— 让 SMB 和 OPC 的所有人都拥有 FDE 的能力。** 底层是 sofagent 引擎（Harness 中间件）：每次 Agent 改代码、写文件，自动跑 21 条规则审计——违规的当场拦截，合规的存快照。审计引擎零 token（纯正则，不调 LLM）。
+**FDE Agent —— 让 SMB 和 OPC 的所有人都拥有 FDE 的能力。** 进场四阶段：梳理你的工作流 → 识别哪些环节 AI 能替 → 把 AI 节点部署到设备上 → 离场。离场后 AI 节点 7×24 自己跑，你留下的是一套可持续维护的 AI 化资产。
 
-> 🏞️ **一条河的模型**：大厂造河（LLM = 水，Agent 平台 = 河床），我们不做河——做堤坝（约束）+ 自来水厂（沙箱）+ 管网（Workflow）+ 水龙头（Subagent），让原水变直饮水。详见 [ARCHITECTURE · River](./docs/ARCHITECTURE.md)。
-
-> [!NOTE]
-> 🔬 **Hugging Face 实测**：同一模型不改权重、仅优化外层 Harness，法律 Agent 基准 **3.5% → 80.1%**（76 分差全部来自外层机制），成本仅 1/7。详见 [THANKS.md](./docs/THANKS.md)。
-
-| 维度 | 数据 |
-|------|------|
-| 审计引擎 | 21 条规则全覆盖，`npm test` 全绿（见 `tools/test-count.sh` 实测），0 token 消耗 |
-| 平台覆盖 | git commit 审计（开发者）+ daemon 文件审计（非开发者）|
-| 协议 | MIT（代码 / 文档 / 模板随便用）|
+> 🏞️ **大厂造河，企业用水。** 大厂造了江（LLM = 水，Agent 平台 = 河床），但企业不敢直接舀着喝。FDE Agent 做的是堤坝 + 自来水厂 + 管网 + 水龙头——帮每个人把原水变成直饮水。详见 [ARCHITECTURE · River](./docs/ARCHITECTURE.md)。
 
 <details>
 <summary>📦 FDE Agent 交付什么 + USB 一键烧录</summary>
