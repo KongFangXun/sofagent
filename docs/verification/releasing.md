@@ -1,8 +1,8 @@
 # sofagent 版本开发 SOP
 
-> v0.95 实践沉淀。**十二阶段**：审查→开发→自测→代码审核→审查体系合并更新（含瘦身检查）→OpenClaw 全面检查→审查体系最终确认→文档收尾→工具脚本健康检查→确认关口→发布（含本地安装）→发布后。
-> 🔴 v0.95 起，版本号操作用 `bump-version.sh` + `check-version.sh`，禁止手动 grep/sed。
-> 🔴 v1.0.3 起，文档预算分层检查（A 用户文档 / B 开发者参考 / C 审查体系 / E 指南），见 `check-docs.sh`。
+> **十二阶段**：审查→开发→自测→代码审核→审查体系合并更新（含瘦身检查）→OpenClaw 全面检查→审查体系最终确认→文档收尾→工具脚本健康检查→确认关口→发布（含本地安装）→发布后。
+> 🔴 版本号操作用 `bump-version.sh` + `check-version.sh`，禁止手动 grep/sed。
+> 🔴 文档预算分层检查（A 用户文档 / B 开发者参考 / C 审查体系 / E 指南），见 `check-docs.sh`。
 > 🔴 回归检查已升格为**独立阶段**（阶段六）——需要全新 session，不再作为"审核"的子步骤。
 
 ---
@@ -180,7 +180,7 @@
 
 ---
 
-## 阶段八：文档收尾（🔴 v0.92 踩坑最密集）
+## 阶段八：文档收尾
 
 ### 开发日志自更新
 
@@ -232,7 +232,7 @@ bash tools/check-test-count.sh
 
 脚本自动跑 `test-count.sh --quiet` 拿 SSOT 真值，再逐文档 grep 最新版本段声称的数字。**如果漂移**：打开脚本指出的文件+行号，把旧数字改成脚本输出中的实际值。
 
-### 全项目版本号扫描（🔴 v0.95 起用脚本，禁止手动 grep）
+### 全项目版本号扫描（用脚本，禁止手动 grep）
 
 #### Step 1: 一键升级
 
@@ -259,7 +259,7 @@ bash tools/check-test-count.sh
 12. SECURITY.md 状态标注 `**当前状态（vX.Y）**`
 13. FDE/package.json + LOOP/package.json（v1.0.3 起）
 
-**不碰**：正文中的历史引用（如 "v0.94 新增"）。这是正确设计。
+**不碰**：正文中的历史引用（如 "v1.0 新增"）。这是正确设计。
 
 #### Step 2: 一致性校验
 
@@ -307,11 +307,11 @@ npm publish # 重新发 → 400 Cannot publish over previously published version
 
 ```bash
 # 全项目搜旧版本号（排除 changelog 历史 + node_modules）
-grep -rn "v0\.旧版本" --include="*.md" --include="*.ts" --include="*.sh" . \
+grep -rn "vX\.Y\.旧" --include="*.md" --include="*.ts" --include="*.sh" . \
   | grep -v "docs/changelog/" | grep -v "node_modules"
 ```
 
-> 手动 grep 的结果会包含大量"合理的历史引用"（如 "v0.94 新增"）。这些**不改**——它们是变更溯源标记。
+> 手动 grep 的结果会包含大量"合理的历史引用"（如 "v1.0 新增"）。这些**不改**——它们是变更溯源标记。
 
 #### 脚本不覆盖（必须手动）
 
@@ -321,7 +321,7 @@ grep -rn "v0\.旧版本" --include="*.md" --include="*.ts" --include="*.sh" . \
 | `ROADMAP.md` 五步更新 | 结构性改动（删节/迁移），不是纯替换 | 每次发版手动做五步（详见阶段八） |
 | `ARCHITECTURE.md` 正文"当前 vX.Y" | 正文引用，不是版本头格式 | bump 后 grep `当前 v` 检查并手动更新 |
 | `package-lock.json` | bump-version.sh 不覆盖 | 「同步 package-lock.json」小节用 `npm install --package-lock-only` 同步 |
-| 正文中的历史引用 | "v0.94 新增"是溯源标记，不改 | 永远不改 |
+| 正文中的历史引用 | "v1.0 新增"是溯源标记，不改 | 永远不改 |
 
 #### 🔴 版本重编号全局 grep（v1.0.2 教训）
 
@@ -445,7 +445,7 @@ shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh   # 期望：零 
 
 ## 阶段十：确认关口
 
-文档全部收尾后，**必须**让作者过一遍改动，确认没问题再交接给项目负责人发版。v0.92 的教训：文档收尾完直接发布，没人确认，导致遗留问题。
+文档全部收尾后，**必须**让作者过一遍改动，确认没问题再交接给项目负责人发版。
 
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
@@ -497,7 +497,7 @@ sofagent-audit --doctor
 ### 发布前检查（npm 包洁净度 + 推前预检）
 
 ```bash
-# 🔴 v0.99.1 起铁律：推前预检必须全绿
+# 🔴 推前预检必须全绿
 bash tools/pre-push-check.sh            # 全绿（全量 workspace）
 bash tools/check-docs.sh                # 文档死链 + 预算 + Skill 行数
 
@@ -517,7 +517,7 @@ echo "⚠️ 确认 audit/mcp 的 README.md 在 npm pack 输出中有内容—�
 
 ### 执行发布
 
-**npm 先行策略**（v0.99.7 起推荐）：先手动发布 npm 全部包（按依赖顺序），再 git tag + push。即使 CI 失败，npm 包已就位。
+**npm 先行策略**：先手动发布 npm 全部包（按依赖顺序），再 git tag + push。即使 CI 失败，npm 包已就位。
 
 > 🔴 v1.1.0 教训：12 包按依赖层分批发布——叶子包先发，消费方后发，npm workspace symlink 在 publish 时不生效，必须在 npm registry 上有真实包。
 
