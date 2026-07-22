@@ -33,7 +33,7 @@ The smarter the Agent, the less companies dare to let go — when something goes
 <details>
 <summary>🏞️ The "one river" analogy (click to open)</summary>
 
-Big vendors build the river (LLM = water, Agent platform = riverbed — without the riverbed, water is just an ocean); we build the **dam + water treatment plant + pipe network + faucet** — the constraint layer (keeps water from flooding) + sandbox/security (makes water from "drinkable" to "trustworthy") + Workflow (routes capability to the business) + Subagent (uses capability in specific business tasks). Picture a city with a great river — the water is good, but you wouldn't scoop it straight from the river to drink; sofagent is the infrastructure that **turns raw river water into tap water businesses dare to drink**. See [FDE/FDE.md §9.6](./FDE/FDE.md#96-river大厂造河与企业用水).
+Big vendors build the river (LLM = water, Agent platform = riverbed); we don't build the river — we govern it: the dam (constraints) + water treatment plant (sandbox) + pipe network (Workflow) + faucet (Subagent), turning raw water into drinkable water. Full analogy and component mapping: [ARCHITECTURE · River](./docs/ARCHITECTURE.md).
 
 </details>
 
@@ -119,7 +119,7 @@ sofagent isn't just a developer tool — enterprise deployment uses the **FDE Ag
 - **Workflow Hub**: Industry workflow templates (v1.1.9 physically migrated to commercial product `sofagent-commercial/FLOWHUB/`; no longer maintained in the MIT repo).
 - **LOOP self-iteration toolkit** (`LOOP/`): sofagent's outer-loop self-iteration orchestration — inner loop `coding → audit → review → human`, outer loop `FDE supervision → compliance inspection → Agent definition optimization`. See [LOOP/README.md](./LOOP/README.md).
 
-**Three-product relationship**: sofagent core handles "gatekeeping every change" (commit / file change triggers audit); FDE handles "onboarding & delivery" (deploying sofagent into enterprise devices then leaving); LOOP handles "long-term self-iteration" (continuous inspection + optimizing Agent definitions). All three share the same constraint base and audit engine, and none are standalone repos (require cloning the main repo first).
+**Three-product relationship**: sofagent engine handles "gatekeeping every change" (commit / file change triggers audit); FDE handles "onboarding & delivery" (deploying sofagent into enterprise devices then leaving); LOOP handles "long-term self-iteration" (continuous inspection + optimizing Agent definitions). All three share the same constraint base and audit engine, and none are standalone repos (require cloning the main repo first).
 
 > 💡 **Naming convention**: capitalized directories (`FDE/`, `LOOP/`) are sofagent's **deployment/product entry points** — they require cloning the main repo first (not standalone repos; cloning just the subdirectory will fail due to dependency on `sofagent/scripts/install.sh`); lowercase directories (`sofagent/`, `docs/`, `tools/`) = core code and configuration.
 
@@ -155,7 +155,7 @@ sofagent-daemon create-usb-key \
 
 ### Product form: MCP + dashboard
 
-The sofagent core (audit engine + orchestration engine + FDE capability) is for developers. When productized for non-technical buyers, it needs a different shell:
+The sofagent engine (audit engine + orchestration engine + FDE capability) is for developers. When productized for non-technical buyers, it needs a different shell:
 
 - **Sell capability, not hours** — package "the AI adoption capability every enterprise should have" as an Agent-driven product; revenue shifts from "consultant hours" to "number of enterprises × subscription".
 - **Lightweight dashboard** — LUI-first unchanged, but non-expert buyers need a read-only view showing "how far my company's AI adoption has gone" (audit status / AI progress / compliance monthly report).

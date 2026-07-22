@@ -4,9 +4,9 @@
 
 > 🔖 **品牌归属**：FDE（前线部署工程师）是 **sofagent** 底座的产品封装。FDE Agent（由 sofagent 引擎驱动）的所有审计拦截、约束注入、知识沉淀能力均来自 sofagent 引擎——`sofagent-audit`（审计引擎）、`sofagent-harness`（约束底座）、`sofagent-daemon`（知识沉淀）。FDE 做的是"把 sofagent 装到企业设备并撤离"，底层引擎始终是 sofagent。
 
-> **FDE Agent 是建在 sofagent core 上的产品封装——用户得到的是一个常驻 AI FDE Agent，不是一套工具。FDE Agent 是企业用户的唯一入口。**
+> **FDE Agent 是建在 sofagent 引擎上的产品封装——用户得到的是一个常驻 AI FDE Agent，是企业用户的唯一入口。**
 >
-> [sofagent core](../README.md) 是开源（MIT）底座——一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎），你自己拿去怎么跑都行。FDE 文件夹是建在这个底座上的**产品形态**：把底座能力封装成一个常驻 FDE Agent，帮你梳理工作流、自检合规、持续优化。**人走 FDE 不走。**
+> [sofagent 引擎](../README.md) 是开源（MIT）底座——一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎），你自己拿去怎么跑都行。FDE 文件夹是建在这个底座上的**产品形态**：把底座能力封装成一个常驻 FDE Agent，帮你梳理工作流、自检合规、持续优化。**人走 FDE 不走。**
 >
 > 内部由 4 个 Sub Agent 协作（`sofagent-fde` 部署 / `sofagent-audit` 合规审计 / `sofagent-engineer` 代码工程 / `sofagent-reviewer` 代码审查），对外用户只看到一个 FDE Agent 身份。Maker-Checker 分离在内部保持，用户不需要知道。
 >
