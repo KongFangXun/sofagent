@@ -11,10 +11,9 @@
 
 ```mermaid
 graph TD
-    A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent Harness 中间层<br/>一底座·四引擎 — 问责底座]
-    B --> C[让任意 Agent 可治理 · 可审计 · 可回溯]
-    C --> D[FDE Agent<br/>梳理 workflow / 本体模型 / 专有 Sub Agent]
-    D --> E[SMB · OPC 的每个人<br/>成为 FDE 节点，自主完成部署]
+    A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent 引擎<br/>Harness 中间件 = 一底座·四引擎<br/>堤坝=约束底座 · 自来水厂=沙箱安全<br/>管网=编排引擎 · 水龙头=Sub Agent]
+    B --> C[FDE Agent<br/>帮你梳理→部署→离场→AI 节点自己跑]
+    C --> D[SMB · OPC 的每个人<br/>成为自己业务的 FDE]
 ```
 
 ## 目录

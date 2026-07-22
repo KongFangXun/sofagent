@@ -22,15 +22,44 @@
 
 ---
 
-## What problem does it solve
+## ① What is FDE Agent
 
 The smarter the Agent, the less companies dare to let go — when something goes wrong, who's accountable? Can it be stopped? Can it be rolled back?
 
 **sofagent provides FDE Agent for SMBs and OPCs** — a resident Agent that maps your enterprise workflows into AI nodes and runs autonomously after deployment. Under the hood is the sofagent engine (Harness middleware): every time an Agent finishes writing code or files, a rule engine scans automatically — violations are blocked on the spot, compliant changes get snapshotted. What was changed is what was changed, no denying it. The audit engine has zero token cost — pure regex engine, no LLM calls.
 
+> 💡 **Why now**: a16z (2026-07) points out "for the first time in human history, humans are cheaper than software" — every company is hiring "a million bad AI employees," with 80% of tokens spinning idle. The solution isn't a smarter model, but **management**. sofagent is exactly that layer: governing the Agent workforce with constraints + auditing.
+
+<details>
+<summary>🏞️ The "one river" analogy (click to open)</summary>
+
+Big vendors build the river (LLM = water, Agent platform = riverbed — without the riverbed, water is just an ocean); we build the **dam + water treatment plant + pipe network + faucet** — the constraint layer (keeps water from flooding) + sandbox/security (makes water from "drinkable" to "trustworthy") + Workflow (routes capability to the business) + Subagent (uses capability in specific business tasks). Picture a city with a great river — the water is good, but you wouldn't scoop it straight from the river to drink; sofagent is the infrastructure that **turns raw river water into tap water businesses dare to drink**. See [FDE/FDE.md §9.6](./FDE/FDE.md#96-river大厂造河与企业用水).
+
+</details>
+
+> 💡 **Another angle: a working agent ≠ a model + a prompt** — it's a multi-layer skeleton (config / knowledge / instruction / validation / orchestration). sofagent's constraint base is the rebar in that skeleton, the audit engine is the quality inspector. We scaffold agents with tools / permissions / sandboxes / rules — rather than building a smarter model.
+
+**Measured impact**:
+
+> [!NOTE]
+> 🔬 **Hugging Face benchmark**: same model, harness-only optimization — legal-agent score jumped from 3.5% to 80.1% (76-point gain entirely from outer-layer mechanisms), at ~1/7 the cost (matching Claude Sonnet 4.6). [Details](./docs/THANKS.md)
+
+| Dimension | Data |
+|------|------|
+| Audit engine | 21 rules fully covered, `npm test` green (700+ cases), 0 token cost |
+| Platform coverage | git commit audit (developers) + daemon file audit (non-developers) |
+| License | MIT (code / docs / templates — use freely) |
+
+---
+
+## ② Install and get going
+
 ```bash
+# FDE Agent one-click deploy
 bash FDE/fde-install.sh
 ```
+
+> 💡 Developer wanting only the audit engine? See "④ Engine Architecture · Advanced/Developer Path" below. OpenClaw is only needed for enterprise unattended scenarios.
 
 > [!NOTE]
 > Requires Node.js ≥ 18 + bash + git. macOS / Linux fully supported, Windows experimental.
@@ -54,9 +83,64 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
 </details>
 
+**Install on demand**:
+
+| Package | Purpose |
+|------|------|
+| `@sofagent/audit` | Audit engine (21 rules, git diff hard evidence) |
+| `@sofagent/core` | Runtime diagnostics (doctor / verify) |
+| `@sofagent/orchestrator` | Orchestration engine (multi-Agent collaboration) |
+| `@sofagent/daemon` | Daemon process (file monitoring / scheduled inspection) |
+| `@sofagent/mcp` | MCP Server (JSON-RPC 2.0) |
+
+**Uninstall**:
+
+```bash
+npm uninstall -g @sofagent/audit @sofagent/core @sofagent/orchestrator @sofagent/daemon @sofagent/mcp
+rm -f .git/hooks/commit-msg .git/hooks/post-commit
+```
+
+### Two deployment node types
+
+| Node | Scenario | Needs OpenClaw |
+|------|------|:--:|
+| 🔄 Auto-run node | Enterprise unattended device (server / old computer) | Yes |
+| ⚡ Personal augmentation node | Developer using WorkBuddy / Codex / Claude Code | No |
+
+> 💡 Personal augmentation node: clone repo → `bash FDE/fde-install.sh` → go.
+
 ---
 
-## 30-second version
+## ③ Enterprise deployment: FDE Agent
+
+sofagent isn't just a developer tool — enterprise deployment uses the **FDE Agent**:
+
+- **FDE Agent** (`FDE/`): Frontline Deployment Engineer four-phase onboarding (map → mine → deliver → leave) — turns enterprise workflows into AI nodes, FDE leaves after deployment, AI nodes run themselves. See [FDE/FDE.md](./FDE/FDE.md).
+- **Work模板市场**: Industry workflow templates (v1.1.9 physically migrated to commercial product `商业仓库/模板市场/`; no longer maintained in the MIT repo).
+- **LOOP self-iteration toolkit** (`LOOP/`): sofagent's outer-loop self-iteration orchestration — inner loop `coding → audit → review → human`, outer loop `FDE supervision → compliance inspection → Agent definition optimization`. See [LOOP/README.md](./LOOP/README.md).
+
+**Three-product relationship**: sofagent core handles "gatekeeping every change" (commit / file change triggers audit); FDE handles "onboarding & delivery" (deploying sofagent into enterprise devices then leaving); LOOP handles "long-term self-iteration" (continuous inspection + optimizing Agent definitions). All three share the same constraint base and audit engine, and none are standalone repos (require cloning the main repo first).
+
+> 💡 **Naming convention**: capitalized directories (`FDE/`, `LOOP/`) are sofagent's **deployment/product entry points** — they require cloning the main repo first (not standalone repos; cloning just the subdirectory will fail due to dependency on `sofagent/scripts/install.sh`); lowercase directories (`sofagent/`, `docs/`, `tools/`) = core code and configuration.
+
+### Product form: MCP + dashboard
+
+The sofagent core (audit engine + orchestration engine + FDE capability) is for developers. But when productized and handed to non-technical buyers (SMB / OPC owners, internal champions), it needs a different shell:
+
+- **Sell capability, not hours**: FDE is not "on-site deployment service" — it's the capability every enterprise should have, packaged as an Agent-driven FDE capability so the enterprise's own people use it and land AI adoption themselves. Revenue shifts from "consultant hours" to "number of enterprises × subscription", scalable.
+- **Why a dashboard is needed**: sofagent itself is LUI-first (language is the interface) — but the Agent's LUI + LLM "swallows everything"; non-expert buyers can't see persistent state, no sense-of-achievement anchor. So productization must ship a **lightweight dashboard** as its own view (audit status / AI adoption progress / compliance monthly report), letting buyers always see "how far my company's AI adoption has gone".
+- **Why MCP**: the dashboard is lightweight, powered by **MCP** — MCP acts as an outward bridge, letting the customer's existing Agent / your sub-agent feed data to the dashboard backend. MCP is a bridge, not the only entry point; the dashboard must be owned.
+- **open-core dual track**: the core (audit rules / FDE workflow / orchestration) stays MIT open-source as a trust asset; commercialization only sells that dashboard layer (console / compliance monthly report / alerts). Open-source earns trust, closed-source earns payment.
+
+> Control-plane play: the underlying Agent intelligence can be swapped freely (OpenClaw / customer's choice / big-tech), but governance and truth (who configured the policy, what the audit chain looks like, where Agents are registered) always live in sofagent's dashboard.
+
+---
+
+## ④ Engine Architecture (Developer Section)
+
+> The following is for developers. Non-technical users only need to know: FDE Agent is built on the sofagent engine, which handles auditing and rollback for every change.
+
+### 30-second version of the audit engine
 
 ```mermaid
 flowchart LR
@@ -70,13 +154,7 @@ flowchart LR
 
 The sofagent engine is a **Harness middleware** — no matter what Agent you use (Claude Code / Codex / Cursor / WorkBuddy) or what model, it hooks into the git commit node and audits with hard git diff evidence. **Platform-agnostic, zero-intrusion, zero tokens**. FDE Agent is built on top of this engine.
 
-> 💡 **An agent that works ≠ a model + a prompt** — it's a multi-layer skeleton (config / knowledge / instruction / validation / orchestration). sofagent is the rebar in that skeleton, the audit engine is the quality inspector. We scaffold agents with tools / permissions / sandboxes / rules — rather than building a smarter model.
-
-> 🏞️ **The "one river" analogy**: Big vendors build the river (LLM = water, Agent platform = riverbed — without the riverbed, water is just an ocean); we build the **dam + water treatment plant + pipe network + faucet** — the constraint layer (keeps water from flooding) + sandbox/security (makes water from "drinkable" to "trustworthy") + Workflow (routes capability to the business) + Subagent (uses capability in specific business tasks) + water meter / quality monitor (Dashboard — lets enterprises see their AI water usage). Picture a city with a great river — the water is good, but you wouldn't scoop it straight from the river to drink; sofagent is the infrastructure that **turns raw river water into tap water businesses dare to drink**. See [FDE/FDE.md §9.6](./FDE/FDE.md#96-river大厂造河与企业用水).
-
----
-
-## Why not existing tools
+### Why not existing tools
 
 | Tool | What it checks | What sofagent checks |
 |------|---------|----------------|
@@ -86,9 +164,7 @@ The sofagent engine is a **Harness middleware** — no matter what Agent you use
 
 > 💡 **Core difference**: existing tools check "is the code written well"; sofagent checks "did the Agent behave well" — out-of-scope edits, knowledge base cross-domain, process compliance, blind edits without reading first. These are LLM-Agent-specific failure modes that generic lint tools don't cover.
 
----
-
-## 21 rules (4 categories)
+### 21 rules (5 categories)
 
 **Default rules (13, active on install)**:
 
@@ -132,9 +208,7 @@ The sofagent engine is a **Harness middleware** — no matter what Agent you use
 **Rule classes**: business baseline (violation breaks delivery integrity) · capability crutch (helps Agent follow correct flow) · engineering norm (code engineering quality baseline).
 </details>
 
----
-
-## Engine Architecture (Developer Section): One base · Four engines
+### One base · Four engines
 
 The sofagent engine isn't just audit — the full form is a Harness middleware with "one base + four engines":
 
@@ -174,7 +248,7 @@ Injects rules into Agent context before work starts — so it knows where the re
 
 > 📚 **Knowledge pipeline (v1.1.7)**: knowledge/ is auto-accumulated by the daemon's **Dream Cycle 6-stage pipeline** (extract_facts → extract_atoms → cluster_patterns → synthesize_concepts → skillopt_backfill → embed), replacing the legacy scatter scripts; every entry carries a `sensitivity` level (public/internal/restricted, default internal). Companion governance: the `knowledge-health` inspector (@weekly — orphan/duplicate/broken-link/stale-index/missing-source, fail-closed read-only) plus the `sofagent-daemon knowledge status` aggregation command (one glance at Dream Cycle weekly report / knowledge health / sensitivity stats; restricted entries are counted only, never leaked).
 
-> 🔐 **Security & federation (v1.1.8 · in development)**: two paired devices query each other's knowledge/ over the OpenClaw channel — AES-256-GCM application-layer encryption + ECDH key exchange (keys live in memory only) + three pairing paths (6-digit code confirmation / token via `SOFAGENT_FEDERATION_TOKEN` / federation.json HMAC signature verification) + double sensitivity filtering + automerge CRDT merge (trust outranks mtime) + graceful offline fallback. Prompt-injection defenses completed: `<untrusted>` wrapping for external content, prompt-level redaction, and knowledge trust grading (official>internal>user>web; web+restricted dropped). Proactive knowledge notifications: Dream Cycle / health inspections push a summary on completion (best-effort; restricted never included).
+> 🔐 **Security & federation (v1.1.8 · released)**: two paired devices query each other's knowledge/ over the OpenClaw channel — AES-256-GCM application-layer encryption + ECDH key exchange (keys live in memory only) + three pairing paths (6-digit code confirmation / token via `SOFAGENT_FEDERATION_TOKEN` / federation.json HMAC signature verification) + double sensitivity filtering + automerge CRDT merge (trust outranks mtime) + graceful offline fallback. Prompt-injection defenses completed: `<untrusted>` wrapping for external content, prompt-level redaction, and knowledge trust grading (official>internal>user>web; web+restricted dropped). Proactive knowledge notifications: Dream Cycle / health inspections push a summary on completion (best-effort; restricted never included).
 
 ### ⚙️ Orchestration Engine
 
@@ -236,9 +310,7 @@ graph LR
 
 </details>
 
----
-
-## Your scenario → what to install
+### Your scenario → what to install
 
 | Your scenario | Install |
 |---------|--------|
@@ -246,78 +318,6 @@ graph LR
 | Full-lifecycle Agent governance (constraint + audit + revert) | + `@sofagent/daemon` (file monitoring) |
 | Multi-Agent collaboration / workflow orchestration | + `@sofagent/orchestrator` (orchestration engine) |
 | Let MCP Client call audit capability | + `@sofagent/mcp` (MCP Server) |
-
-### Two deployment node types
-
-| Node | Scenario | Needs OpenClaw |
-|------|------|:--:|
-| 🔄 Auto-run node | Enterprise unattended device (server / old computer) | Yes |
-| ⚡ Personal augmentation node | Developer using WorkBuddy / Codex / Claude Code | No |
-
-> 💡 Personal augmentation node: clone repo → `bash FDE/fde-install.sh` → go.
-
----
-
-## Install
-
-```bash
-# FDE Agent one-click deploy
-bash FDE/fde-install.sh
-
-# Full install (one base · four engines)
-git clone https://github.com/KongFangXun/sofagent.git
-bash sofagent/scripts/install.sh
-```
-
-**Standalone packages on demand**:
-
-| Package | Purpose |
-|------|------|
-| `@sofagent/audit` | Audit engine (21 rules, git diff hard evidence) |
-| `@sofagent/core` | Runtime diagnostics (doctor / verify) |
-| `@sofagent/orchestrator` | Orchestration engine (multi-Agent collaboration) |
-| `@sofagent/daemon` | Daemon process (file monitoring / scheduled inspection) |
-| `@sofagent/mcp` | MCP Server (JSON-RPC 2.0) |
-
-**Uninstall**:
-
-```bash
-npm uninstall -g @sofagent/audit @sofagent/core @sofagent/orchestrator @sofagent/daemon @sofagent/mcp
-rm -f .git/hooks/commit-msg .git/hooks/post-commit
-```
-
----
-
-## Enterprise deployment: FDE Agent
-
-sofagent isn't just a developer tool — enterprise deployment uses the **FDE Agent**:
-
-- **FDE Agent** (`FDE/`): Frontline Deployment Engineer four-phase onboarding (map → mine → deliver → leave) — turns enterprise workflows into AI nodes, FDE leaves after deployment, AI nodes run themselves. See [FDE/FDE.md](./FDE/FDE.md).
-- **Work模板市场**: Industry workflow templates (v1.1.9 physically migrated to commercial product `商业仓库/模板市场/`; no longer maintained in the MIT repo).
-
-## Product form: MCP + dashboard
-
-The sofagent core (audit engine + orchestration engine + FDE capability) is for developers. But when productized and handed to non-technical buyers (SMB / OPC owners, internal champions), it needs a different shell:
-
-- **Sell capability, not hours**: FDE is not "on-site deployment service" — it's the capability every enterprise should have, packaged as an Agent-driven FDE capability so the enterprise's own people use it and land AI adoption themselves. Revenue shifts from "consultant hours" to "number of enterprises × subscription", scalable.
-- **Why a dashboard is needed**: sofagent itself is LUI-first (language is the interface) — but the Agent's LUI + LLM "swallows everything"; non-expert buyers can't see persistent state, no sense-of-achievement anchor. So productization must ship a **lightweight dashboard** as its own view (audit status / AI adoption progress / compliance monthly report), letting buyers always see "how far my company's AI adoption has gone".
-- **Why MCP**: the dashboard is lightweight, powered by **MCP** — MCP acts as an outward bridge, letting the customer's existing Agent / your sub-agent feed data to the dashboard backend. MCP is a bridge, not the only entry point; the dashboard must be owned.
-- **open-core dual track**: the core (audit rules / FDE workflow / orchestration) stays MIT open-source as a trust asset; commercialization only sells that dashboard layer (console / compliance monthly report / alerts). Open-source earns trust, closed-source earns payment.
-
-> Control-plane play: the underlying Agent intelligence can be swapped freely (OpenClaw / customer's choice / big-tech), but governance and truth (who configured the policy, what the audit chain looks like, where Agents are registered) always live in sofagent's dashboard.
-
----
-
-## Measured impact
-
-> [!NOTE]
-> 🔬 **Hugging Face benchmark**: same model, harness-only optimization — legal-agent score jumped from 3.5% to 80.1% (76-point gain, at ~1/7 the cost of Claude Sonnet). [Details](./docs/THANKS.md)
-
-| Dimension | Data |
-|------|------|
-| Audit engine | 21 rules fully covered, `npm test` green (700+ cases), 0 token cost |
-| Platform coverage | git commit audit (developers) + daemon file audit (non-developers) |
-| License | MIT (code / docs / templates — use freely) |
 
 ---
 
@@ -328,6 +328,7 @@ The sofagent core (audit engine + orchestration engine + FDE capability) is for 
 | Install, usage, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
 | Why designed this way | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | Design philosophy | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
+| LLM Wiki governance mapping | [docs/llm-wiki-mapping.md](./docs/llm-wiki-mapping.md) |
 | Security statement | [SECURITY](./SECURITY.md) |
 | Known limitations | [LIMITATIONS](./LIMITATIONS.md) |
 | Version roadmap | [ROADMAP](./ROADMAP.md) |
