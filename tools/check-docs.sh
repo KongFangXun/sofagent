@@ -26,7 +26,7 @@ echo "=== 1b. 全仓相对路径死链扫描（维度 306）==="
 # docs/changelog/docs/evidence/sofagent/skill/FDE）。
 DEAD_LINKS=0
 DEAD_DETAIL=""
-EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/sofagent/skill/*" -not -path "*/FDE/*" -not -path "*/docs/archive/*")
+EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/sofagent/skill/*" -not -path "*/FDE/*" -not -path "*/docs/archive/*" -not -path "*/commercial/*")
 while IFS= read -r -d '' mdfile; do
   in_fence=0
   while IFS= read -r line; do
@@ -111,11 +111,13 @@ LAYER_A=$(find . -name "*.md" \
   -not -path "*/docs/verification/*" \
   -not -path "*/docs/guides/*" \
   -not -path "*/docs/design/*" \
+  -not -path "*/docs/architecture/*" \
+  -not -path "*/docs/prd/*" \
   -not -path "*/LOOP/*" \
   -not -path "*/agents/*" \
   -not -path "*/.github/*" \
   -not -path "*/sofagent/hooks/*" \
-  -not -path "*/work模板市场/*" \
+  -not -path "*/commercial/*" \
   -not -path "*/docs/DEVELOPMENT.md" \
   -not -path "*/docs/archive/*" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
@@ -129,19 +131,19 @@ LAYER_B=$(find ./LOOP ./agents ./.github ./sofagent/hooks ./docs/DEVELOPMENT.md 
 # C 层：审查体系（docs/verification/）
 LAYER_C=$(find ./docs/verification -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
 
-# D 层：设计文档（docs/design/）
-LAYER_D=$(find ./docs/design -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
+# D 层：设计文档（docs/design/ + docs/architecture/ + docs/prd/）
+LAYER_D=$(find ./docs/design ./docs/architecture ./docs/prd -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
 
 # E 层：运维指南（docs/guides/）
 LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
 
 # 上限定义
-LIMIT_A=4500  # v1.1.0: 五个引擎重构 + ARCHITECTURE 叙事升级 + README 内容增长
+LIMIT_A=4700  # v1.1.9: SECURITY.md 按主题重构（F-41）+ LIMITATIONS.md 安全补充（F-17/F-31/F-32）
 LIMIT_B=2000
 LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
-LIMIT_D=700  # v1.1.4: 架构师产出 v1.1.4 系统设计文档（604 行），从 500 上调到 700 容纳架构设计自然增长
+LIMIT_D=2000  # v1.1.9: D 层纳入口径修正——docs/architecture（v1.1.9 设计 876 行）+ docs/prd（193 行）从 A 层归入 D 层（工程文档与设计文档同语义），700→2000 容纳
 LIMIT_E=1000  # v1.1.3 P0-1: 从 600 上调到 1000，多设备同步指南等 E 层文档扩展导致自然增长
-LIMIT_TOTAL=6400  # v1.1.8: 从 6200 上调到 6400，安全层/联邦查询/编排引擎等功能文档自然增长
+LIMIT_TOTAL=6700  # v1.1.9: SECURITY.md 按主题重构 + 安全文档补充导致 A 层自然增长
 
 # 输出各层
 echo "  A 用户文档:     ${LAYER_A} 行 / ${LIMIT_A} 上限"

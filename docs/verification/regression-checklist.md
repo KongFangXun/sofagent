@@ -47,7 +47,7 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 ```
 
 **步骤 3：逐维度审查**
-## 审查维度（43 项 · 编号 1–43）
+## 审查维度（47 项 · 编号 1–47）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -112,41 +112,21 @@ grep -rn "Ledger-Views-Policy" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVE
 > 归并自：317+316+308
 
 ```bash
-# 子项 a: A4 ruleClass = 业务底线
+# 子项 a-c: A4=业务底线 / 规则总数=21 / A6=能力拐杖 A11=业务底线
 grep -A5 "'A4\|name.*不删配置" sofagent/audit/src/rules/index.ts | grep "ruleClass" | grep "业务底线"
-grep 'A4.*不删配置.*业务底线' sofagent/audit/README.md
-
-# 子项 b: 规则总数一致
-grep "name:" sofagent/audit/src/rules/index.ts | wc -l    # 期望：21（A1-A11,A14-A19 + E1-E4）
-
-# 子项 c: A6/A11 分级标签
-grep "不坏构建" sofagent/audit/src/rules/index.ts | grep -o "能力拐杖" && echo "A6=能力拐杖 ✅"
-grep "不滥资源" sofagent/audit/src/rules/index.ts | grep -o "业务底线" && echo "A11=业务底线 ✅"
-grep "A6.*能力拐杖\|A11.*业务底线" sofagent/audit/README.md | wc -l  # 期望：2
+grep "name:" sofagent/audit/src/rules/index.ts | wc -l   # 期望 21
+grep "A6.*能力拐杖\|A11.*业务底线" sofagent/audit/README.md | wc -l   # 期望 2
 
 # 子项 d: ruleClass SSOT ↔ README 逐行 diff（v1.1.3 盲区）
 diff <(grep -E "name:|ruleClass:" sofagent/audit/src/rules/index.ts | paste - - | sort) \
-     <(grep -oE "A[0-9]+ .*  \|  (业务底线|能力拐杖|工程规范)" sofagent/audit/README.md | sort)   # 期望：零差异
+     <(grep -oE "A[0-9]+ .*  \|  (业务底线|能力拐杖|工程规范)" sofagent/audit/README.md | sort)   # 零差异
 
-# 子项 e: evidenceMode 计数对账（v1.1.4 教训）
-ACTUAL_GITDIFF=$(grep -c "evidenceMode: 'git-diff'" sofagent/audit/src/rules/index.ts)
-ACTUAL_HYBRID=$(grep -c "evidenceMode: 'hybrid'" sofagent/audit/src/rules/index.ts)
-ACTUAL_FS=$(grep -c "evidenceMode: 'filesystem'" sofagent/audit/src/rules/index.ts)
-echo "实际: git-diff=$ACTUAL_GITDIFF hybrid=$ACTUAL_HYBRID filesystem=$ACTUAL_FS"
-README_GD=$(grep -hoE "[0-9]+ 条为纯 git-diff" README.md sofagent/audit/README.md 2>/dev/null | grep -oE "^[0-9]+" | head -1)
-README_HY=$(grep -hoE "[0-9]+ 条 hybrid" README.md sofagent/audit/README.md 2>/dev/null | grep -oE "^[0-9]+" | head -1)
-README_FS=$(grep -hoE "[0-9]+ 条 filesystem" README.md sofagent/audit/README.md 2>/dev/null | grep -oE "^[0-9]+" | head -1)
-[ -n "$README_GD" ] && [ "$README_GD" = "$ACTUAL_GITDIFF" ] && [ "$README_HY" = "$ACTUAL_HYBRID" ] && [ "$README_FS" = "$ACTUAL_FS" ] \
-  && echo "✅ evidenceMode 计数一致" || echo "❌ 不一致或未找到"
-
-# 子项 f: audit/README.md 规则表完整性（v1.1.4 教训——A18/A19 漏更新）
-INDEX_COUNT=$(grep -cE "name:\s*'A[0-9]|name:\s*'E[0-9]" sofagent/audit/src/rules/index.ts)
-README_TABLE_ROWS=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " sofagent/audit/README.md)
-echo "index.ts 注册 $INDEX_COUNT 条 / audit/README 规则表 $README_TABLE_ROWS 行"   # 期望：README ≥ INDEX
-
-# 子项 g: MCP 工具描述规则数同步（v1.1.4 教训）
-INDEX_COUNT2=$(grep -cE "name:\s*'A[0-9]|name:\s*'E[0-9]" sofagent/audit/src/rules/index.ts)
-grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -oE "[0-9]+ 条规则"   # 人工核对数字一致
+# 子项 e-g: evidenceMode 计数 + README 表行数 + MCP 规则数（v1.1.4 教训）
+echo "git-diff=$(grep -c "evidenceMode: 'git-diff'" sofagent/audit/src/rules/index.ts) hybrid=$(grep -c "evidenceMode: 'hybrid'" sofagent/audit/src/rules/index.ts) fs=$(grep -c "evidenceMode: 'filesystem'" sofagent/audit/src/rules/index.ts)"   # 人工核对 README
+INDEX=$(grep -cE "name:\s*'A[0-9]|name:\s*'E[0-9]" sofagent/audit/src/rules/index.ts)
+TABLE=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " sofagent/audit/README.md)
+echo "index=$INDEX / README表=$TABLE（期望 TABLE≥INDEX）"   # v1.1.4：A18/A19 漏更新
+grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -oE "[0-9]+ 条规则"   # MCP 数字一致
 ```
 
 #### 5. 审计 exit code 与输出签名
@@ -155,18 +135,15 @@ grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -oE "[0-9]+ 条规则"   
 
 ```bash
 # 子项 a: silent 模式 A1 FAIL → exit 2
-cd /tmp && rm -rf test-silent && mkdir test-silent && cd test-silent
-git init && git config user.email "test@test.com" && git config user.name "test"
-echo "sk-abc123" > secret.txt && git add secret.txt && git commit -m "leak" --no-verify
+cd /tmp && rm -rf t && mkdir t && cd t && git init && git config user.email t@t.com && git config user.name t
+echo "sk-abc123" > s.txt && git add s.txt && git commit -m "leak" --no-verify
 sofagent-audit --diff HEAD~1..HEAD --silent >/dev/null 2>&1; echo "exit=$?"   # 期望: exit=2
-cd /tmp && rm -rf test-silent
-
-# 子项 b: 签名行存在且版本号非硬编码
+cd /tmp && rm -rf t
+# 子项 b: 签名行版本号非硬编码
 grep -rn "v1\.1\.[0-9]" sofagent/audit/src/index.ts | grep -v "import\|from\|\/\/"   # 期望：零匹配
 sofagent-audit --version 2>&1 | grep -q "sofagent" && echo "✅ 签名存在"
-
 # 子项 c: webhook 签名半角冒号
-grep -rn "sofagent.*全角\|sofagent：\|sofagent ：" sofagent/audit/src/ 2>/dev/null   # 期望：无匹配
+grep -rn "sofagent.*全角\|sofagent：" sofagent/audit/src/ 2>/dev/null   # 期望：无匹配
 ```
 
 #### 6. 版本号硬编码检测
@@ -182,13 +159,9 @@ grep -rn "version\s*=\s*'[0-9]" sofagent/*/src/*.ts | grep -v __tests__ | grep -
 # 子项 b: SECURITY.md 版本标注 = 当前版本
 grep "当前状态（v${SSOT_VER}" SECURITY.md   # 期望：有匹配
 
+# [v1.1.9 移除: 被 check-version.sh [3/14]+[12/14] 全量覆盖——.sh 脚本 VERSION 常量+注释头版本号每次 pre-push 都跑]
 # 子项 c: .sh 脚本版本号扫描（v1.1.4 教训——loop-install.sh 版本号漂移）
-grep -E "v[0-9]+\.[0-9]+\.[0-9]+" FDE/fde-install.sh LOOP/loop-install.sh | while read line; do
-  echo "$line" | grep -q "v${SSOT_VER}" || echo "⚠️ 版本号非 SSOT: $line"
-done   # 期望：所有 .sh 版本号 = SSOT_VER
-
 # 子项 c-2: check-version.sh 应把 .sh 头部版本号纳入扫描（v1.1.8 教训）
-grep -c "fde-install.sh\|loop-install.sh\|install.sh" tools/check-version.sh   # 期望：≥ 1
 
 # 子项 d: README 正文版本引用一致（v1.1.4 教训）
 grep -oE "v1\.[0-9]+\.[0-9]+" README.md | sort | uniq -c   # 期望：只有一个版本号
@@ -215,8 +188,9 @@ grep -rn 'sendToolResult' sofagent/mcp/src/mcp-server.ts | head -5
 grep -c "PASS" sofagent/audit/src/webhook.ts   # 应 > 0
 
 # 子项 e: MCP capabilities 准确性
-grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "21 条规则"   # 应 ≥ 1
-grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "A1-A14"       # 应 = 0
+# [v1.1.9 移除: 被 check-docs.sh §7 规则数跨文档对照全量覆盖——三源规则数比对每次 pre-push 都跑]
+# grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "21 条规则"   # 应 ≥ 1
+# grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "A1-A14"       # 应 = 0
 
 # 子项 f: CLI stdout 签名一致性（v1.1.4 教训——感知层废墟高发区）
 node sofagent/audit/dist/index.js --version 2>&1 | grep -q "sofagent" && echo "✅ --version 签名存在"
@@ -263,35 +237,25 @@ SSOT_TOTAL=$(grep -cE "^\s*name:\s*'A[0-9]+" sofagent/audit/src/rules/index.ts)
 SSOT_MAX=$(grep -oE "name:\s*'A[0-9]+" sofagent/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tail -1)
 echo "SSOT 规则总数: $SSOT_TOTAL / 最大编号: A$SSOT_MAX"
 
-# 代码侧：config-loader knownKeys 集合 = index.ts 注册的所有规则号
-grep -c "a16\|a17" sofagent/core/src/config-loader.ts   # 期望: ≥ 2
-grep -c "A16\|A17" sofagent/audit/src/rules/index.ts    # 期望: ≥ 2
-grep -c "a18\|a19" sofagent/core/src/config-loader.ts   # 期望: ≥ 2
-grep -c "A18\|A19" sofagent/audit/src/rules/index.ts    # 期望: ≥ 2
+# 代码侧：knownKeys = index.ts 注册号（A16-A19 两组各验证）
+grep -c "a1[6-9]" sofagent/core/src/config-loader.ts   # ≥4
 INDEX_RULES=$(grep -oE "name:\s*'A[0-9]+" sofagent/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tr '\n' ',')
 KNOWN_KEYS=$(grep -A20 "knownKeys = new Set" sofagent/core/src/config-loader.ts | grep -oE "'a[0-9]+'" | tr -d "'a" | sort -n | tr '\n' ',')
-echo "index.ts 注册: $INDEX_RULES"; echo "knownKeys 集合: $KNOWN_KEYS"   # 期望：两集合相等
+echo "index.ts: $INDEX_RULES / knownKeys: $KNOWN_KEYS"   # 期望：两集合相等
 
-# 文档侧：全仓扫描所有声称型数字（v1.1.5 教训——6 文档漏改）
-grep -rnE "A1-A11、A14-A1[0-9]|[0-9]+ 条审计规则" --include="*.md" README.md README.en.md docs/ FDE/ LOOP/ ROADMAP.md 2>/dev/null | grep -v "regression-checklist\|fresh-eyes-review\|changelog/"
-# 人工核对：每处声称的数字必须与 SSOT 一致
+# 文档侧：声称型数字（v1.1.5 教训——6 文档漏改）
+grep -rnE "A1-A11、A14-A1[0-9]|[0-9]+ 条审计规则" --include="*.md" README.md README.en.md docs/ FDE/ LOOP/ ROADMAP.md 2>/dev/null | grep -v "regression-checklist\|fresh-eyes-review\|changelog/"   # 人工核对：与 SSOT 一致
 
-# 规则定义字段完整性（v1.1.6 教训——name + ruleClass 各 21 条 = 42）
-FIELD_COUNT=$(grep -oE "name:|ruleClass:" sofagent/audit/src/rules/index.ts | wc -l | tr -d ' ')
-echo "字段出现次数: $FIELD_COUNT（期望 42）"
-
-# evidenceMode 计数一致性（v1.1.4 教训）
-EXPECTED_EM=$(grep -cE "evidenceMode:" sofagent/audit/src/rules/index.ts)
-echo "evidenceMode 字段数: $EXPECTED_EM（期望 21）"
+# 字段完整性（v1.1.6：name+ruleClass 各 21 条=42）+ evidenceMode 计数（v1.1.4：期望 21）
+grep -oE "name:|ruleClass:" sofagent/audit/src/rules/index.ts | wc -l   # 期望 42
+grep -cE "evidenceMode:" sofagent/audit/src/rules/index.ts   # 期望 21
 ```
 
 #### 10. tag commit message 规范
 
 ```bash
-git tag -l "v*" | while read t; do
-  v=$(echo $t | sed 's/^v//'); msg=$(git log -1 --format=%s $t)
-  echo "$t → $msg"
-done   # 期望：每个 tag 的 commit message 含对应版本号
+# [v1.1.9 移除: 被 pre-push-check.sh 步骤 7「Tag message 校验」全量覆盖——tag commit message 前瞻校验每次推送都跑]
+# git tag -l "v*" | while read t; do ... done   # 期望：每个 tag 的 commit message 含对应版本号
 
 # 子项: changelog 规划中标注（v1.1.6 教训）
 for f in docs/changelog/v*.md; do v=$(basename "$f" .md); git rev-parse "$v" >/dev/null 2>&1 || echo "⚠️ $v: 规划中"; done
@@ -309,8 +273,9 @@ DAEMON_DEP=$(node -e "const p=require('./sofagent/daemon/package.json'); console
 [ "$AUDIT_OPT" = "OPTIONAL_DAEMON" ] && [ "$DAEMON_DEP" = "DEP_AUDIT" ] && echo "⚠️ 循环依赖（已知债务）" || echo "✅ 无循环依赖"
 
 # 子项 b: pre-push-check 含循环依赖检测
-grep -c "依赖图循环检测" tools/pre-push-check.sh   # 期望: 1
-grep -c "Tag message 校验" tools/pre-push-check.sh  # 期望: 1
+# [v1.1.9 移除: 被 pre-push-check.sh 步骤 8「依赖图循环检测」全量覆盖——每次推送都跑]
+# grep -c "依赖图循环检测" tools/pre-push-check.sh   # 期望: 1
+# grep -c "Tag message 校验" tools/pre-push-check.sh  # 期望: 1
 ```
 
 #### 12. 跨包代码重复检测
@@ -325,34 +290,14 @@ dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path 
 
 #### 13. 测试数声称一致性（SSOT 反查 · v1.1.8 扩）
 
-> SSOT = vitest 实测（与 test-count.sh 同源）
+> SSOT = vitest 实测（与 test-count.sh 同源）。v1.1.7 起有 `tools/check-test-count.sh` 一键校验。
 
 ```bash
-AUDIT=$(cd sofagent/audit && npx vitest run 2>&1 | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
-WS=$(bash tools/test-count.sh --quiet 2>&1 | grep -oE 'TOTAL_TESTS=[0-9]+' | cut -d= -f2)
-echo "SSOT → audit=$AUDIT  workspace=$WS"
-
-# 子项 a: 逐文档核对 audit 数（已 SSOT 化的跳过数字反查）
-for f in sofagent/audit/README.md FDE/FDE.md LIMITATIONS.md docs/evidence/evidence.md; do
-  if grep -q "test-count.sh" "$f"; then echo "✅ $f 已 SSOT 化"; continue; fi
-  c=$(grep -oE '[0-9]+ tests 全绿|[0-9]+ 个测试' "$f" | grep -oE '[0-9]+' | head -1)
-  [ "$c" = "$AUDIT" ] && echo "✅ $f audit=$c" || echo "❌ $f audit=$c ≠ SSOT $AUDIT"
-done
-
-# 子项 b: 核对 workspace 总数
-for f in FDE/FDE.md LIMITATIONS.md; do
-  c=$(grep -oE '全 workspace [0-9]+' "$f" | grep -oE '[0-9]+' | head -1)
-  [ "$c" = "$WS" ] && echo "✅ $f workspace=$c" || echo "❌ $f workspace=$c ≠ SSOT $WS"
-done
-
-# 子项 c: CHANGELOG / ROADMAP 当前版本测试数快照对账（v1.1.8 追加）
-# CHANGELOG 标题格式为 `### [vX.Y.Z] —`，用 sed 提取版本段更稳健（grep 方括号需转义）
-CUR_VER=$(node -e "console.log(require('./package.json').version)")
-CHANGELOG_TEST=$(sed -n "/\[v${CUR_VER}\]/,/📖\|^$/p" CHANGELOG.md | grep -oE '[0-9]+ tests|[0-9]+ 测试' | grep -oE '[0-9]+' | head -1)
-ROADMAP_TEST=$(grep -oE '[0-9]+ tests|[0-9]+ 测试' ROADMAP.md | grep -oE '[0-9]+' | head -1)
-echo "CHANGELOG v${CUR_VER}: $CHANGELOG_TEST / ROADMAP: $ROADMAP_TEST / 实测: $WS"
-[ "$CHANGELOG_TEST" = "$WS" ] && echo "✅ CHANGELOG 一致" || echo "❌ CHANGELOG 不一致"
-[ "$ROADMAP_TEST" = "$WS" ] && echo "✅ ROADMAP 一致" || echo "❌ ROADMAP 不一致"
+bash tools/check-test-count.sh   # 一键校验 CHANGELOG/ROADMAP/LIMITATIONS/evidence.md 声称数 vs 实际值
+# 如漂移：脚本指出文件+行号，手动改成实际值
+# 也可单独跑：AUDIT=$(cd sofagent/audit && npx vitest run 2>&1 | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
+# WS=$(bash tools/test-count.sh --quiet 2>&1 | grep -oE 'TOTAL_TESTS=[0-9]+' | cut -d= -f2)
+# 逐文档核对（已 SSOT 化的跳过）：for f in sofagent/audit/README.md FDE/FDE.md LIMITATIONS.md docs/evidence/evidence.md; do ...
 ```
 
 #### 14. enterprise-deploy 完整性
@@ -410,81 +355,63 @@ TAG_VER=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
 echo "npm=$NPM_VER ssot=$SSOT_VER tag=$TAG_VER"   # 期望：三者一致
 
 # 子项 c: tag 指向的 commit message 含版本号
-git tag -l "v*" | while read t; do v=$(echo $t | sed 's/^v//'); msg=$(git log -1 --format=%s $t^{commit}); echo "$msg" | grep -q "$v" || echo "❌ $t: commit message 不含 $v"; done
+# [v1.1.9 移除: 被 pre-push-check.sh 步骤 7「Tag message 校验」全量覆盖——tag commit message 前瞻校验每次推送都跑]
+# git tag -l "v*" | while read t; do ... done
 
 # 子项 d: 发版前工作树 clean
 git diff --quiet || echo "⚠️ 工作树有未提交修改"
 
 # 子项 e: 全量历史 tag commit message 含版本号（v1.1.6+ 自动化）
-git tag -l "v1.*" | while read t; do
-  v=$(echo $t | sed 's/^v//'); msg=$(git log -1 "$t^{commit}" --format=%s 2>/dev/null)
-  hc=$(git rev-parse "$t^{commit}" 2>/dev/null); hhead=$(git rev-parse HEAD 2>/dev/null)
-  if ! echo "$msg" | grep -q "$v"; then
-    [ "$hc" = "$hhead" ] && echo "❌ $t: 当前发版 tag commit msg 不含 $v" || echo "⚠️ $t: 历史污点（已豁免）"
-  fi
-done
+# [v1.1.9 移除: 被 pre-push-check.sh 步骤 7「全量历史 tag 扫描」全量覆盖——历史污点豁免+HEAD 阻断逻辑完全一致]
 ```
 
 #### 18. A19 commit message 质量
 
-| 检查项 | 验证方式 |
-|--------|----------|
-| message 长度 < 8 字符 → FAIL | `grep -c "MIN_LENGTH = 8" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts` |
-| 黑名单 8 词 → FAIL | `grep -c "BLACKLIST" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts` |
-| 黑名单优先于长度检查 | `grep -A 2 "检查 1：黑名单" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts \| grep "优先"` |
-| A19 在 defaultRules | `grep "A19" sofagent/audit/src/rules/index.ts \| head -1` |
-| critical 层阻断含 A19 | `grep -c "A19" sofagent/audit/src/rules/runner.ts` |
-| 空 message 降级 PASS | `grep "!commitMsg \|\| !commitMsg.trim" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts` |
-| ruleClass = 业务底线 | `grep "业务底线" sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts` |
+```bash
+F=sofagent/audit/src/rules/rule-a19-commit-msg-quality.ts
+grep -c "MIN_LENGTH = 8" $F && grep -c "BLACKLIST" $F && grep "业务底线" $F   # 长度检查+黑名单+分级
+grep "!commitMsg || !commitMsg.trim" $F   # 空 message 降级 PASS
+grep "A19" sofagent/audit/src/rules/index.ts | head -1   # 在 defaultRules
+grep -c "A19" sofagent/audit/src/rules/runner.ts   # critical 层阻断
+```
 
 #### 19. A18 垃圾文件检测
 
-| 检查项 | 验证方式 |
-|--------|----------|
-| 3 组正则模式（单字母/临时前缀/可疑命名） | `grep -c "JUNK_PATTERNS" sofagent/audit/src/rules/rule-a18-junk-file.ts` |
-| 豁免规则（测试目录 + .test.ts/spec.ts） | `grep -c "isExempt" sofagent/audit/src/rules/rule-a18-junk-file.ts` |
-| 不区分 file.status（modified 也告警） | `grep -c "isExempt(file.path)" sofagent/audit/src/rules/rule-a18-junk-file.ts` |
-| A18 在 extendedRules | `grep "A18" sofagent/audit/src/rules/index.ts \| tail -1` |
-| extended 优先级 A18 排在 A17 之后 | `grep "A18" sofagent/audit/src/rules/runner.ts` |
-| 只产生 WARN 不产生 FAIL | `grep "\"WARN\"" sofagent/audit/src/rules/rule-a18-junk-file.ts` |
+```bash
+F=sofagent/audit/src/rules/rule-a18-junk-file.ts
+grep -c "JUNK_PATTERNS" $F   # 3 组正则
+grep -c "isExempt" $F   # 豁免规则
+grep "\"WARN\"" $F   # 只产生 WARN
+grep "A18" sofagent/audit/src/rules/runner.ts   # extended 优先级 A18 排在 A17 之后
+```
 
 #### 20. daemon plist + watch.yml 正确性
 
-| 检查项 | 验证方式 |
-|--------|----------|
-| plist ProgramArguments = sofagent-daemon | `grep "sofagent-daemon" ~/Library/LaunchAgents/com.sofagent.daemon.plist` |
-| plist WorkingDirectory = 项目目录 | `grep "Workbuddy/sofagent" ~/Library/LaunchAgents/com.sofagent.daemon.plist` |
-| --init 生成 watch.yml | `test -f .sofagent/watch.yml && grep "paths:" .sofagent/watch.yml` |
-| daemon 日志无"不支持的参数 --daemon" | `! grep -q "不支持的参数.*--daemon" ~/.sofagent/daemon.log` |
-| daemon 运行时监控目录正确 | `tail -20 ~/.sofagent/daemon.log \| grep "监控目录"` |
+```bash
+grep "sofagent-daemon" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # ProgramArguments
+grep "Workbuddy/sofagent" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # WorkingDirectory
+test -f .sofagent/watch.yml && grep "paths:" .sofagent/watch.yml   # --init 生成
+! grep -q "不支持的参数.*--daemon" ~/.sofagent/daemon.log   # 无废弃参数
+tail -20 ~/.sofagent/daemon.log | grep "监控目录"   # 监控目录正确
+```
 
 #### 21. LOOP 工具注入 + 硬约束
 
-| 检查项 | 验证方式 |
-|--------|----------|
-| maxTurns 常量（v1.1.5 拆分） | `grep "DEFAULT_ENGINEER_MAX_TURNS = 20" + "DEFAULT_REVIEWER_MAX_TURNS = 15" sofagent/orchestrator/src/loop/nodes.ts` |
-| engineer 使用 ENGINEER_TOOLS | `grep "ENGINEER_TOOLS" sofagent/orchestrator/src/loop/nodes.ts` |
-| reviewer 使用 REVIEWER_TOOLS | `grep "REVIEWER_TOOLS" sofagent/orchestrator/src/loop/nodes.ts` |
-| WARN verdict 写入 audit history | `grep -c "recordLoopAuditHistory" sofagent/orchestrator/src/loop/nodes.ts` |
-| maxTurns 注入（resolveMaxTurns） | `grep "maxTurns: resolveMaxTurns" sofagent/orchestrator/src/loop/nodes.ts` |
-| run_bash 高危命令黑名单 | `grep -c "checkDangerousCommand" sofagent/orchestrator/src/tools.ts` |
-| warn-accumulator 连续性 | `grep "break.*连续中断" sofagent/daemon/src/inspectors/warn-accumulator.ts` |
-| USB federation 基础检测 | `grep "SOFAGENT_LABEL" sofagent/daemon/src/usb-detect.ts` |
-| USB federation HMAC 实现 | `grep "createHmac\|timingSafeEqual\|mode: 0o600\|applyFederation" sofagent/daemon/src/usb-detect.ts` |
-| MCP audit_file pipe | `grep "audit_file\|auditEngine" sofagent/mcp/src/mcp-server.ts` |
-| MCP list_capabilities | `grep "list_capabilities\|search_knowledge\|stats" sofagent/mcp/src/mcp-server.ts` |
-| daemon push-target 5 种路由 | `grep "webhook:dingtalk\|webhook:feishu\|webhook:wecom\|openclaw:im\|daemon:notice" sofagent/daemon/src/push-target.ts` |
-| orchestrator --mode 参数 | `grep "parseSubagentRunArgs\|--mode" sofagent/orchestrator/src/cli-args.ts` |
-| sofagent-releaser Skill 复制契约 | `grep "sofagent-releaser" sofagent/scripts/lib/file-deploy.sh FDE/fde-install.sh LOOP/loop-install.sh` |
-
 ```bash
-# 验证命令（维度 21 各子项汇总验证）
-grep "DEFAULT_ENGINEER_MAX_TURNS = 20\|DEFAULT_REVIEWER_MAX_TURNS = 15\|maxTurns: resolveMaxTurns" sofagent/orchestrator/src/loop/nodes.ts
-grep -c "createHmac\|timingSafeEqual\|mode: 0o600\|applyFederation" sofagent/daemon/src/usb-detect.ts   # ≥4
-grep -c "audit_file\|auditEngine" sofagent/mcp/src/mcp-server.ts   # ≥2
-grep -c "list_capabilities\|search_knowledge\|stats" sofagent/mcp/src/mcp-server.ts   # ≥3
-grep -c "webhook:dingtalk\|webhook:wecom\|daemon:notice" sofagent/daemon/src/push-target.ts   # ≥3
-grep -l "sofagent-releaser" sofagent/scripts/lib/file-deploy.sh FDE/fde-install.sh LOOP/loop-install.sh 2>/dev/null | wc -l   # 3
+F=sofagent/orchestrator/src/loop/nodes.ts
+grep "DEFAULT_ENGINEER_MAX_TURNS = 20\|DEFAULT_REVIEWER_MAX_TURNS = 15" $F   # maxTurns 常量
+grep "ENGINEER_TOOLS\|REVIEWER_TOOLS" $F   # 工具注入
+grep -c "recordLoopAuditHistory" $F   # WARN verdict 写入 audit history
+grep "maxTurns: resolveMaxTurns" $F   # maxTurns 注入
+grep -c "checkDangerousCommand" sofagent/orchestrator/src/tools.ts   # 高危命令黑名单
+grep "break.*连续中断" sofagent/daemon/src/inspectors/warn-accumulator.ts   # warn-accumulator
+grep "SOFAGENT_LABEL" sofagent/daemon/src/usb-detect.ts   # USB federation 基础检测
+grep -c "createHmac\|timingSafeEqual\|applyFederation" sofagent/daemon/src/usb-detect.ts   # USB HMAC
+grep -c "audit_file\|auditEngine" sofagent/mcp/src/mcp-server.ts   # MCP audit_file
+grep -c "list_capabilities\|search_knowledge\|stats" sofagent/mcp/src/mcp-server.ts   # MCP capabilities
+grep -c "webhook:dingtalk\|webhook:feishu\|webhook:wecom\|openclaw:im\|daemon:notice" sofagent/daemon/src/push-target.ts   # 5 种路由
+grep "parseSubagentRunArgs\|--mode" sofagent/orchestrator/src/cli-args.ts   # --mode 参数
+grep -l "sofagent-releaser" sofagent/scripts/lib/file-deploy.sh FDE/fde-install.sh LOOP/loop-install.sh 2>/dev/null | wc -l   # Skill 复制契约=3
 ```
 
 ## 审查约束（每次发版必验铁律）
@@ -493,12 +420,12 @@ grep -l "sofagent-releaser" sofagent/scripts/lib/file-deploy.sh FDE/fde-install.
 
 #### 22. plist 不被外来 --init 覆盖
 
-| 检查项 | 验证方式 |
-|--------|----------|
-| plist WorkingDirectory 指向当前项目 | `grep "Workbuddy/sofagent" ~/Library/LaunchAgents/com.sofagent.daemon.plist` |
-| plist ProgramArguments = sofagent-daemon | `grep "sofagent-daemon" ~/Library/LaunchAgents/com.sofagent.daemon.plist` |
-| daemon 进程正常运行（非 exit 78） | `launchctl list \| grep sofagent \| awk '{print $2}'` 期望 = 0 |
-| 验收测试后 plist 未被污染 | 跑完 acceptance-test.sh 后重复上述检查 |
+```bash
+grep "Workbuddy/sofagent" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # WorkingDirectory 指向当前项目
+grep "sofagent-daemon" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # ProgramArguments
+launchctl list | grep sofagent | awk '{print $2}'   # 期望=0（daemon 正常运行）
+# 跑完 acceptance-test.sh 后重复上述检查，确认 plist 未被污染
+```
 
 #### 23. FDE/LOOP 跨产品声称一致性
 
@@ -546,14 +473,16 @@ CHANGELOG_FEATURES=$(grep -E "^### |^## 交付" docs/changelog/v$(node -e "conso
 echo "$CHANGELOG_FEATURES"   # 人工检查：每个功能点在 acceptance-test.sh 里都有对应场景
 
 # 子项 c: 失效场景清理（旧命令/旧路径）
-grep -rn "sofagent-audit --daemon\|模板市场/" tools/acceptance-test.sh   # 期望：零命中
+# [v1.1.9 移除: 已归并至维度 8——acceptance-test 自身健壮性检查统一管理]
+# grep -rn "sofagent-audit --daemon\|模板市场/" tools/acceptance-test.sh   # 期望：零命中
 
 # 子项 d: 场景间清理健壮性（v1.1.3 教训）
-grep -A5 "^scenario()" tools/acceptance-test.sh | grep -c "git rm --cached -f .env\|git reset --hard"   # 期望：≥ 1
+# [v1.1.9 移除: 与维度 8 子项 b 重叠（grep "git rm --cached -f .env" 同一检查）]
+# grep -A5 "^scenario()" tools/acceptance-test.sh | grep -c "git rm --cached -f .env\|git reset --hard"   # 期望：≥ 1
 
 # 子项 e: JSON 输出场景的 stderr 隔离（v1.1.5 教训）
-grep -n "\-\-json.*2>&1\|2>&1.*\-\-json" tools/acceptance-test.sh   # 期望：零命中
-grep -n "format json.*2>&1\|2>&1.*format json" tools/acceptance-test.sh   # 期望：零命中
+# [v1.1.9 移除: 与维度 8 子项 e 重叠（JSON 输出 stderr 隔离同一检查）]
+# grep -n "\-\-json.*2>&1\|2>&1.*\-\-json" tools/acceptance-test.sh   # 期望：零命中
 ```
 #### 25. conflict-check 巡检器只读铁律 + schedule 正确性（v1.1.6 新增）
 
@@ -723,7 +652,7 @@ grep -c "actionGovernance" sofagent/audit/src/index.ts   # ≥1
 # 子项 e: 旧格式向后兼容测试（无 actionGovernance 的旧记录可加载）
 grep -c "向后兼容\|undefined\|actionGovernance" sofagent/audit/src/audit-history.test.ts   # ≥3
 
-# 子项 f: audit 测试不回归（总数 ≥407）
+# 子项 f: audit-history 测试用例数（v1.1.9 移除旧声称数 ≥407——过时，已被维度 13 SSOT 反查覆盖）
 grep -c "  it(" sofagent/audit/src/audit-history.test.ts   # ≥11
 ```
 #### 34. 文档头日期一致性扫描门禁（v1.1.7 新增 · BugFix 1）
@@ -799,9 +728,8 @@ grep -c "ConfigParseError\|非法.*YAML\|非法 YAML" tools/acceptance-test.sh  
 grep -c "非.*git.*目录\|not.*a.*git.*repo\|非 git" tools/acceptance-test.sh   # ≥1
 
 # 子项 f: 场景数声称 = 实际
-DECLARED=$(head -5 tools/acceptance-test.sh | grep -oE "[0-9]+ 个端到端" | grep -oE "[0-9]+")
-ACTUAL=$(grep -c "^scenario " tools/acceptance-test.sh)
-echo "声称: $DECLARED / 实际: $ACTUAL"   # 期望：两者相等
+# [v1.1.9 移除: 与维度 24 子项 a 完全重叠——场景数声称与实际对齐是同一检查]
+> 归并自：维度 24 子项 a（场景数声称与实际对齐）
 ```
 #### 38. daemon 审计集中收集 workaround + 安全文档时效性（v1.1.7 新增 · BugFix 9+13）
 
@@ -944,24 +872,116 @@ grep -c "best-effort\|catch\|不影响主流程\|void pushKnowledgeSummary" sofa
 grep -c "pushKnowledgeSummary\|collectSummaryMaterial" tools/acceptance-test.sh   # ≥2
 ```
 
-## 输出报告格式
+#### 44. USB 完整运行时——HMAC 签名 + AES-256 加密 + fail-closed 验签（v1.1.9 新增 · 交付一）
 
-```markdown
-# sofagent 回归检查报告
+**背景**：U 盘便携运行时——全量文件 HMAC-SHA256 签名（确定性算法跨平台可复算），验签 fail-closed（篡改/缺失/多余/签名缺失四场景），knowledge/ AES-256-GCM 密文落盘（U 盘文件系统永为密文）。
 
-## 总览
-- 审查日期 / 审查范围（38 维度 + 跨版本核心维度）
-- 环境验证：pre-push-check / npm test / check-docs / check-version / Fresh clone 各项 [✅/❌]
-- 整体结论：[已发布无遗留 / 需修复后补发 / 阻塞]
+```bash
+# 子项 a: 签名模块核心函数
+grep -c "collectFiles\|computeUsbSignature\|writeSignatureManifest\|verifyUsbSignature" sofagent/daemon/src/usb-signature.ts   # ≥4
 
-## 问题清单（按 P0/P1/P2 分级，列：维度 / 文件:行 / 问题 / 建议）
+# 子项 b: 确定性算法要素（POSIX 归一化 + 字典序 + timingSafeEqual）
+grep -c "normalizePath\|sort.*relativePath\|timingSafeEqual" sofagent/daemon/src/usb-signature.ts   # ≥3
 
-## 维度通过统计
-- 通过：X / ⚠️：X / ❌：X / 🔴 P0：X / 🟡 P1：X / 🟢 P2：X
+# 子项 c: verifyUsbSignature fail-closed 四 reason
+grep -c "signature-missing\|signature-mismatch\|file-missing\|file-added" sofagent/daemon/src/usb-signature.ts   # ≥4
 
-## 最终建议
-- [ ] 可以发版 / [ ] 需修复 P0 后发版 / [ ] 需重大修复
+# 子项 d: AES-256-GCM 密文落盘（.enc 不含明文）
+grep -c "encryptKnowledgeFile\|ENC_FRAME_MAGIC\|AES_KEY_BYTES" sofagent/daemon/src/usb-key.ts   # ≥3
 
-## 审查体系更新建议
-> 追加前请先 grep 同类维度（见维护公约）。有同类则扩展旧维度的子项，不新增编号。
+# 子项 e: USB 运行时验签 + 内存解密 + 退出清密钥
+grep -c "startUsbRuntime\|verifyUsbSignature\|decryptKnowledgeToMemory\|cleanupMemoryKeys\|setupPortableEnv" sofagent/daemon/src/usb-runtime.ts   # ≥5
+
+# 子项 f: CLI 接入（create-usb-key + --usb-root）
+grep -c "create-usb-key\|usb-root\|createUsbKey\|startUsbRuntime" sofagent/daemon/src/cli.ts   # ≥4
+
+# 子项 g: 三平台启动脚本存在 + 可执行位
+test -x sofagent/daemon/usb/start.command && test -x sofagent/daemon/usb/start.sh && test -f sofagent/daemon/usb/start.bat   # 全部通过
+
+# 子项 h: 验收场景覆盖（acceptance-test 场景 108-113）
+grep -c "usb-signature\|usb-key\|createUsbKey\|verifyUsbSignature" tools/acceptance-test.sh   # ≥4
 ```
+
+#### 45. daemon A/B 自动调度器——四阶段状态机 + jsonl 持久化（v1.1.9 新增 · 交付二）
+
+**背景**：真实任务探索-利用状态机（exploit→explore→judge→promote），跑企业真实日常任务而非专为 A/B 造的测试任务，连续胜出达阈值后自动 promote 并联动控制图状态落盘。
+
+```bash
+# 子项 a: 状态机核心函数
+grep -c "initialState\|checkThreshold\|startExploration\|judgeAndPromote\|runABScheduledTask" sofagent/orchestrator/src/ab-scheduler.ts   # ≥5
+
+# 子项 b: 四阶段定义（exploit/explore/judge/idle）
+grep -c "'exploit'\|'explore'\|'judge'\|'idle'" sofagent/orchestrator/src/ab-scheduler.ts   # ≥4
+
+# 子项 c: promote 阈值常量（CONSECUTIVE_WINS_REQUIRED=2）
+grep -c "DEFAULT_PROMOTE_THRESHOLD\|promoteThreshold" sofagent/orchestrator/src/ab-scheduler.ts   # ≥2
+
+# 子项 d: jsonl 持久化 + 滑窗聚合
+grep -c "appendMetrics\|aggregateRecent\|truncateToLastK\|HISTORY_MAX_ENTRIES" sofagent/orchestrator/src/ab-history.ts   # ≥4
+
+# 子项 e: daemon cron ab-schedule 分支
+grep -c "ab-schedule\|runABScheduledTask" sofagent/daemon/src/cron.ts   # ≥2
+
+# 子项 f: 依赖注入可测试性
+grep -c "executePlan\|writeGraphState\|ABSchedulerDeps" sofagent/orchestrator/src/ab-scheduler.ts   # ≥3
+
+# 子项 g: 验收场景覆盖（acceptance-test 场景 114-117）
+grep -c "ab-scheduler\|ab-history\|judgeAndPromote\|ab-schedule" tools/acceptance-test.sh   # ≥4
+```
+
+#### 46. 控制图状态抽取 + 路径穿越安全防护（v1.1.9 新增 · 交付三）
+
+**背景**：checkpoint → 可读 ControlGraphState JSON（带 version:'v1' schema），供 v1.2.x Dashboard 消费。loopId 消毒防路径穿越（QA 红队 POC-6 修复），ab-scheduler promote 后联动落盘。
+
+```bash
+# 子项 a: 抽取核心函数
+grep -c "extractControlGraphState\|writeControlGraphState\|CONTROL_GRAPH_SCHEMA_VERSION" sofagent/orchestrator/src/loop-state-extractor.ts   # ≥3
+
+# 子项 b: schema 版本 v1
+grep "CONTROL_GRAPH_SCHEMA_VERSION = 'v1'" sofagent/orchestrator/src/loop-state-extractor.ts   # 命中
+
+# 子项 c: sanitizeLoopId 消毒（[^a-zA-Z0-9_\-]→_ + 碰撞消除 8 位哈希后缀）
+grep -c "sanitizeLoopId\|createHash.*sha256.*slice.*0.*8\|sanitized.*===.*loopId" sofagent/orchestrator/src/loop-state-extractor.ts   # ≥2
+
+# 子项 d: assertWithinDir 路径穿越断言（resolve.startsWith 双重防护）
+grep -c "assertWithinDir\|resolved.*startsWith\|路径穿越" sofagent/orchestrator/src/loop-state-extractor.ts   # ≥3
+
+# 子项 e: ab-scheduler promote 联动 writeControlGraphState
+grep -c "writeControlGraphState\|writeGraphState" sofagent/orchestrator/src/ab-scheduler.ts   # ≥2
+
+# 子项 f: 波次拆分 + 节点状态映射 + 证据链
+grep -c "splitWaves\|mapNodeStates\|buildEvidenceChain" sofagent/orchestrator/src/loop-state-extractor.ts   # ≥3
+
+# 子项 g: 验收场景覆盖（acceptance-test 场景 118-119）
+grep -c "extractControlGraphState\|sanitizeLoopId\|路径穿越" tools/acceptance-test.sh   # ≥3
+```
+
+#### 47. 产品叙事收敛红线 + BugFix 42 项核心回归锁（v1.1.9 新增 · 交付四+五）
+
+**背景**：README 首屏叙事收敛（FDE Agent 定位 ≥5 次 + 审计引擎零 token + v1.1.8 已发布红线保留），BugFix 42 项中选取核心修复加回归锁防止回退。
+
+```bash
+# 子项 a: README FDE Agent 叙事收敛（≥5 处）
+FDE_COUNT=$(grep -c "FDE Agent" README.md) && [ "$FDE_COUNT" -ge 5 ]   # 通过
+
+# 子项 b: 审计引擎零 token 红线保留
+grep -q "审计引擎零 token" README.md   # 命中
+
+# 子项 c: v1.1.8 已发布标记保留
+grep -q "v1.1.8" README.md   # 命中
+
+# 子项 d: dag-runner SubAgent 不带 tools（assertSubAgentsNoEmptyTools 回归锁）
+grep -c "assertSubAgentsNoEmptyTools" sofagent/orchestrator/src/dag-runner.ts   # ≥1
+
+# 子项 e: prompt-sanitizer 9 条 REDACT_RULES（含 PEM 多行正则）
+SANITIZER_COUNT=$(grep -c "name: '" sofagent/core/src/security/prompt-sanitizer.ts) && [ "$SANITIZER_COUNT" -ge 9 ]   # 通过
+
+# 子项 f: workflow-parser schema limits（MAX_NODES=20 / MAX_TASK_LENGTH=2000）
+grep -c "MAX_NODES = 20\|MAX_TASK_LENGTH = 2000" sofagent/orchestrator/src/workflow-parser.ts   # ≥2
+
+# 子项 g: 验收场景覆盖（acceptance-test 场景 120-121）
+grep -c "FDE Agent\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODES" tools/acceptance-test.sh   # ≥4
+```
+
+## 输出报告格式
+> 审查日期 / 范围 / 环境验证（pre-push-check/npm test/check-docs/check-version）→ 问题清单（P0/P1/P2 分级，维度/文件:行/问题/建议）→ 通过统计 → 最终建议（可发版/需修复P0/需重大修复）。追加维度前先 grep 同类。

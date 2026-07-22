@@ -26,6 +26,7 @@
     "@sofagent/core": "1.1.8",
     "@sofagent/harness": "1.1.8",
     "@sofagent/ontology": "1.1.8",
+    "@sofagent/orchestrator": "1.1.8",
     "automerge": "1.0.1-preview.7"
   },
   "exports": {
@@ -43,6 +44,7 @@
   },
   "files": [
     "dist/",
+    "usb/",
     "!dist/**/*.js.map",
     "!dist/**/*.d.ts.map",
     "!dist/**/*.test.*"

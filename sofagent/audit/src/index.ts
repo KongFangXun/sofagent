@@ -3,7 +3,7 @@
 // sofagent-audit · 提交时审计 CLI 入口
 // v1.1.8 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // v1.0.8 精简（历史）：compose→orchestrator, subagent→orchestrator,
-//          hub→work模板市场, skillopt-run→skillopt, ab-test→ab-test,
+//          skillopt-run→skillopt, ab-test→ab-test,
 //          daemon→daemon, doctor/verify→core (deprecation shim)
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
@@ -162,7 +162,6 @@ function parseArgs(argv: string[]): Args {
       console.log('v1.0.8 已弃用的子命令（将在 v1.2.0 移除，请尽快迁移）:');
       console.log('  compose      → sofagent-orchestrator compose');
       console.log('  subagent run → sofagent-orchestrator subagent run');
-      console.log('  hub          → sofagent-work模板市场');
       console.log('  skillopt-run → sofagent-skillopt');
       console.log('  ab-test      → sofagent-ab-test');
       console.log('  daemon       → sofagent-daemon');

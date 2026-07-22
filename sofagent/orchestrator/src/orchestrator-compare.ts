@@ -285,7 +285,7 @@ export function promoteWorkflow(candidateDir: string): void {
 
 const BINARY_MODE = { SPLIT: '拆', DIRECT: '不拆' } as const;
 
-async function composeTask(args: string[]): Promise<void> {
+export async function composeTask(args: string[]): Promise<void> {
   let taskDesc = '';
   let dryRun = false;
   let useWorktree = false;

@@ -1,8 +1,8 @@
 // ============================================================
 // workflow-parser.test.ts · workflow YAML → SubAgent 映射测试
-// v1.1.8 新增
+// v1.1.8 新增 · v1.1.9 补 schema 校验测试（F-36）
 //
-// 覆盖用例（共 9 case）：
+// 覆盖用例（共 12 case）：
 //   1. 合法 workflow 解析：name/description/nodes 归一化，depends_on 缺省补 []
 //   2. agent 映射表：developer→engineer / qa-engineer→reviewer / researcher→fde(sustain)
 //      / technical-writer→内置
@@ -13,6 +13,9 @@
 //   7. depends_on 悬空引用 / 自依赖 → WorkflowParseError
 //   8. 环检测：A→B→C→A → WorkflowParseError
 //   9. 节点 id 重复 → WorkflowParseError
+//  10. F-36：节点数超上限（>20）→ WorkflowParseError
+//  11. F-36：task 字段超长（>2000 字符）→ 截断 + WARN
+//  12. F-36：正常 5 节点 → 不触发截断/不抛错（回归验证）
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
@@ -145,5 +148,39 @@ workflow:
     }
     // 一站式入口等价
     expect(parseWorkflowToSubAgents(yaml).map((c) => c.name)).toEqual(['engineer', 'engineer-b', 'reviewer']);
+  });
+});
+
+describe('workflow-parser · F-36 schema 校验（v1.1.9）', () => {
+  // 用例 10：节点数超上限（21 节点）
+  it('21 个节点 → WorkflowParseError（超上限 20）', () => {
+    const lines: string[] = ['workflow:', '  name: too-many-nodes', '  nodes:'];
+    for (let i = 1; i <= 21; i++) {
+      lines.push(`    - { id: n${i}, agent: developer, task: task-${i} }`);
+    }
+    expect(() => parseWorkflowYaml(lines.join('\n'))).toThrow(WorkflowParseError);
+    expect(() => parseWorkflowYaml(lines.join('\n'))).toThrow(/超过上限/);
+  });
+
+  // 用例 11：task 字段超长（3000 字符）→ 截断至 2000
+  it('task 字段 3000 字符 → 截断至 2000', () => {
+    const longTask = 'A'.repeat(3000);
+    const yaml = `workflow:\n  nodes:\n    - { id: a, agent: developer, task: "${longTask}" }`;
+    const parsed = parseWorkflowYaml(yaml);
+    expect(parsed.nodes[0]!.task.length).toBe(2000);
+    expect(parsed.nodes[0]!.task).toBe('A'.repeat(2000));
+  });
+
+  // 用例 12：正常 5 节点 → 不触发截断/不抛错（回归验证）
+  it('正常 5 节点 YAML → 不触发截断/不抛错', () => {
+    const lines: string[] = ['workflow:', '  name: normal-five', '  nodes:'];
+    for (let i = 1; i <= 5; i++) {
+      lines.push(`    - { id: n${i}, agent: developer, task: task-${i} }`);
+    }
+    const parsed = parseWorkflowYaml(lines.join('\n'));
+    expect(parsed.nodes.length).toBe(5);
+    for (const n of parsed.nodes) {
+      expect(n.task.length).toBeLessThan(2000);
+    }
   });
 });

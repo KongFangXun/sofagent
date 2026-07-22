@@ -184,7 +184,7 @@ fi
 # 5. sofagent-audit（对应 sofagent-audit.yml）
 # ════════════════════════════════════════
 echo -e "\n${BOLD}── 5. CLI 二进制验证 ──${NC}"
-for bin_name in sofagent-audit sofagent-orchestrator sofagent-daemon sofagent-ontology sofagent-work模板市场 sofagent-ab-test sofagent-think sofagent-skillopt sofagent-core; do
+for bin_name in sofagent-audit sofagent-orchestrator sofagent-daemon sofagent-ontology sofagent-ab-test sofagent-think sofagent-skillopt sofagent-core; do
   pkg=$(echo "$bin_name" | sed 's/sofagent-//')
   if [ -f "sofagent/$pkg/dist/cli.js" ]; then
     node "sofagent/$pkg/dist/cli.js" --help >/dev/null 2>&1 && check_pass "$bin_name --help" || check_fail "$bin_name --help"
@@ -338,30 +338,25 @@ for (const d of dirs) {
   }
   if (deps.size > 0) edges[name] = deps;
 }
-let newCycles = [];
+let cycles = [];
 for (const [a, depsA] of Object.entries(edges)) {
   for (const b of depsA) {
     if (edges[b] && edges[b].has(a)) {
       const key = [a.replace("@sofagent/",""), b.replace("@sofagent/","")].sort().join("↔");
-      if (key === "audit↔daemon") {
-        // known cycle, warn only
-      } else {
-        newCycles.push(key);
-      }
+      cycles.push(key);
     }
   }
 }
-if (newCycles.length > 0) {
-  console.log("NEW_CYCLE:" + newCycles.join(","));
+if (cycles.length > 0) {
+  console.log("CYCLE:" + cycles.join(","));
 } else {
   console.log("OK");
 }
 ' 2>&1)
 if echo "$CYCLE_CHECK" | grep -q "^OK$"; then
-  check_pass "依赖图无新增循环（已知 audit↔daemon 豁免）"
-  echo -e "  ${YELLOW}⚠${NC} 已知循环：audit↔daemon（解耦计划 v1.2.x）"
-elif echo "$CYCLE_CHECK" | grep -q "^NEW_CYCLE:"; then
-  check_fail "依赖图发现新增循环：$(echo "$CYCLE_CHECK" | sed 's/NEW_CYCLE://')"
+  check_pass "依赖图无循环"
+elif echo "$CYCLE_CHECK" | grep -q "^CYCLE:"; then
+  check_fail "依赖图发现循环：$(echo "$CYCLE_CHECK" | sed 's/CYCLE://')"
 else
   check_warn "依赖图循环检测执行异常（跳过）"
 fi

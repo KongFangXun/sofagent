@@ -141,7 +141,7 @@ extract_version() {
 echo -e "${BOLD}── [1/14] TypeScript 常量 ──${NC}"
 # 动态扫描 12 个子包目录（v1.1.0 多包结构）
 SCAN_DIRS=()
-for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test work模板市场 think skillopt; do
+for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test think skillopt; do
   PKG_SRC="${PROJECT_ROOT}/sofagent/${pkg}/src"
   if [[ -d "${PKG_SRC}" ]]; then
     SCAN_DIRS+=("${PKG_SRC}")
@@ -172,7 +172,7 @@ echo ""
 
 # ── 3. 检查 index.ts vOLD 引用（12 子包遍历）────────────────
 echo -e "${BOLD}── [2/14] index.ts 版本引用 ──${NC}"
-for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test work模板市场 think skillopt; do
+for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test think skillopt; do
   INDEX_TS="${PROJECT_ROOT}/sofagent/${pkg}/src/index.ts"
   if [[ ! -f "${INDEX_TS}" ]]; then
     continue
@@ -408,7 +408,7 @@ echo ""
 
 # ── 9b. 检查 12 个子包 package.json version 与 SSOT 一致 ─
 echo -e "${BOLD}── [9/14] 子包版本号一致性 ──${NC}"
-for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test work模板市场 think skillopt; do
+for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test think skillopt; do
   PKG_JSON="${PROJECT_ROOT}/sofagent/${pkg}/package.json"
   if [[ ! -f "${PKG_JSON}" ]]; then
     continue

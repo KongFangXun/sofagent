@@ -85,3 +85,55 @@ export {
 // Orchestrator Compare
 export { scanLogFiles, extractMetrics, generateReport, promoteWorkflow } from './orchestrator-compare';
 export type { Metric } from './orchestrator-compare';
+
+// A/B History（真实任务指标 jsonl 持久化 · v1.1.8 新增）
+export {
+  appendMetrics,
+  aggregateRecent,
+  truncateToLastK,
+  readAll,
+  HISTORY_MAX_ENTRIES,
+} from './ab-history';
+export type { PlanMetrics, AggregateMetrics } from './ab-history';
+
+// A/B Scheduler（daemon cron 探索-利用状态机 · v1.1.8 新增）
+export {
+  runABScheduledTask,
+  checkThreshold,
+  startExploration,
+  judgeAndPromote,
+  loadState,
+  saveState,
+  initialState,
+  resolveStatePath,
+  resolveHistoryPath,
+  planToVariant,
+  DEFAULT_THRESHOLD,
+  DEFAULT_PROMOTE_THRESHOLD,
+  DEFAULT_EXPLORE_CANDIDATES,
+  DEFAULT_CURRENT_PLAN,
+} from './ab-scheduler';
+export type {
+  ABSchedulerState,
+  ABScheduleConfig,
+  ABSchedulerDeps,
+  ABPhase,
+  RunOutcome,
+} from './ab-scheduler';
+
+// Loop State Extractor（checkpoint → ControlGraphState 翻译 · v1.1.8 新增）
+export {
+  extractControlGraphState,
+  writeControlGraphState,
+  splitWaves,
+  mapNodeStates,
+  buildEvidenceChain,
+  CONTROL_GRAPH_SCHEMA_VERSION,
+} from './loop-state-extractor';
+export type {
+  ControlGraphState,
+  WaveState,
+  NodeState,
+  Evidence,
+  WaveTrigger,
+} from './loop-state-extractor';

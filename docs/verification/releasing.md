@@ -71,7 +71,7 @@
 | 10 | `shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
 | 11 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
 | 12 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
-| 13 | **🔴 更新 `tools/acceptance-test.sh`**<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `tools/acceptance-test.sh`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `tools/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n tools/acceptance-test.sh` 确认语法<br><br>**Step C — 同步 `docs/verification/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增）<br><br>**🔴 Step D — 覆盖率闭环判定**：<br>① **场景数声称 vs 实际对齐**：`DECLARED=$(head -5 tools/acceptance-test.sh \| grep -oE "[0-9]+ 个端到端" \| grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " tools/acceptance-test.sh); [ "$DECLARED" = "$ACTUAL" ]` 不一致 = P0<br>② **功能点逐条对照**：从 changelog「核心变更/交付」提取功能关键词，逐条 grep `tools/acceptance-test.sh`——零覆盖 = P0（回归测试无法发现该功能退化）<br>③ **失效场景清理**：`grep -rn "sofagent-audit --daemon\|work模板市场/" tools/acceptance-test.sh` 期望零命中 | `bash -n tools/acceptance-test.sh` 通过；**Step D 三项判定全 PASS** |
+| 13 | **🔴 更新 `tools/acceptance-test.sh`**<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `tools/acceptance-test.sh`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `tools/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n tools/acceptance-test.sh` 确认语法<br><br>**Step C — 同步 `docs/verification/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增）<br><br>**🔴 Step D — 覆盖率闭环判定**：<br>① **场景数声称 vs 实际对齐**：`DECLARED=$(head -5 tools/acceptance-test.sh \| grep -oE "[0-9]+ 个端到端" \| grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " tools/acceptance-test.sh); [ "$DECLARED" = "$ACTUAL" ]` 不一致 = P0<br>② **功能点逐条对照**：从 changelog「核心变更/交付」提取功能关键词，逐条 grep `tools/acceptance-test.sh`——零覆盖 = P0（回归测试无法发现该功能退化）<br>③ **失效场景清理**：`grep -rn "sofagent-audit --daemon" tools/acceptance-test.sh` 期望零命中 | `bash -n tools/acceptance-test.sh` 通过；**Step D 三项判定全 PASS** |
 
 ---
 
@@ -502,7 +502,7 @@ bash tools/pre-push-check.sh            # 全绿（全量 workspace）
 bash tools/check-docs.sh                # 文档死链 + 预算 + Skill 行数
 
 # 全部 12 包 .js.map 泄露检查 + 类型检查 + README 非空检查
-for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test work模板市场 skillopt; do
+for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test skillopt; do
   echo "=== $pkg ==="
   (cd sofagent/$pkg && npm pack --dry-run 2>&1 | grep -c '\.js\.map')  # 期望: 0
   (cd sofagent/$pkg && npx tsc --noEmit && echo "✅ tsc")
@@ -547,17 +547,16 @@ npm run build
 8. (cd sofagent/think   && npm publish --access public)
 9. (cd sofagent/daemon  && npm publish --access public)
 
-🔴 第四层·依赖第二+三层（ab-test/work模板市场 可并行）：
+🔴 第四层·依赖第二+三层（ab-test）：
 10. (cd sofagent/ab-test      && npm publish --access public)
-11. (cd sofagent/work模板市场 && npm publish --access public)
 
 🔴 第五层·收官（mcp 依赖 audit+orchestrator+think）：
-12. (cd sofagent/mcp  && npm publish --access public)
+11. (cd sofagent/mcp  && npm publish --access public)
 
-── Step 3: 验证全部 12 包（🔴 v1.1.3 教训强化——只 echo 不判 FAIL 是虚假绿色） ──
+── Step 3: 验证全部 11 包（🔴 v1.1.3 教训强化——只 echo 不判 FAIL 是虚假绿色） ──
 NEW_VER="1.1.X"  # 替换为实际新版本号
 FAILED=""
-for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test work模板市场 skillopt; do
+for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test skillopt; do
   ver=$(npm view "@sofagent/$pkg" version 2>/dev/null)
   if [ "$ver" != "$NEW_VER" ]; then
     echo "❌ @sofagent/$pkg: $ver（期望 $NEW_VER）"

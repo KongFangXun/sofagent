@@ -3,6 +3,12 @@
 // v1.1.8 新增
 // ============================================================
 //
+// ⚠️ 命名说明：文件名 dag-runner 指向最终目标（DAG 并行调度），
+//    v1.1.8 当前实现为**串行状态机**——主 Agent 按 depends_on
+//    顺序委派 Sub Agent，无依赖的节点可同步并行（取决于 LLM
+//    是否在一次回复中发出多个 task 调用）。完整 DAG 并行调度
+//    + 沙箱隔离规划在 v1.3.0。
+//
 // 把 compose 产出的 workflow YAML 真正跑起来：
 //   1. parseWorkflowYaml → SubAgentConfig[]（workflow-parser）
 //   2. 每个 SubAgent 的 systemPrompt 前置 buildConstrainedSystemPrompt 四层加载链
@@ -46,6 +52,20 @@ export type CreateDeepAgentFn = (params: {
   tools: unknown[];
   systemPrompt: string;
 }) => Promise<{ invoke: (input: { messages: Array<{ role: string; content: string }> }) => Promise<unknown> }>;
+
+/**
+ * 断言 SubAgent 配置数组中不包含空 tools 数组（F-01 回归防护）。
+ * SubAgent 应 omit tools 字段，继承 DeepAgents 默认工具集。
+ */
+export function assertSubAgentsNoEmptyTools(subagents: Array<Record<string, unknown>>): void {
+  for (const sa of subagents) {
+    if ('tools' in sa && Array.isArray(sa['tools']) && (sa['tools'] as unknown[]).length === 0) {
+      throw new Error(
+        `SubAgent "${sa['name']}" 包含空 tools 数组——应 omit tools 字段以继承 DeepAgents 默认工具集`,
+      );
+    }
+  }
+}
 
 /** 可注入依赖（测试 mock 入口） */
 export interface DagRunnerDeps {
@@ -179,11 +199,13 @@ export async function runDAG(
   const constrainedPrefix = buildPrompt ? buildPrompt(projectRoot) : '';
 
   // 4. 每个 SubAgent 注入四层约束加载链（前置，不覆盖 agent 自身 prompt）
+  //    omit tools 字段——SubAgent 继承 DeepAgents 默认工具集（read_file/write_file/edit_file/glob/grep/execute）
+  //    主 Agent 保留 tools: []（只用 task 委派工具）
   const subagents = configs.map((c) => ({
     name: c.name,
     description: c.description,
     systemPrompt: constrainedPrefix ? `${constrainedPrefix}\n\n${c.systemPrompt}` : c.systemPrompt,
-    tools: [] as unknown[],
+    // omit tools → SubAgent 使用 DeepAgents 默认工具集（read_file/write_file/edit_file/glob/grep/execute）
   }));
 
   // 5. 创建编排 Agent（subagents 不再是 []）
