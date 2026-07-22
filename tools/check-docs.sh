@@ -120,26 +120,32 @@ LAYER_A=$(find . -name "*.md" \
   -not -path "*/commercial/*" \
   -not -path "*/docs/DEVELOPMENT.md" \
   -not -path "*/docs/archive/*" \
-  -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
+  -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+LAYER_A=${LAYER_A:-0}
 
 # B 层：开发者参考（LOOP/ + agents/ + .github/ + hooks/HOOK.md + DEVELOPMENT.md）
 LAYER_B=$(find ./LOOP ./agents ./.github ./sofagent/hooks ./docs/DEVELOPMENT.md \
   -name "*.md" \
   -not -path "*/node_modules/*" \
-  -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
+  -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+LAYER_B=${LAYER_B:-0}
 
 # C 层：审查体系（docs/verification/）
-LAYER_C=$(find ./docs/verification -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
+LAYER_C=$(find ./docs/verification -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+LAYER_C=${LAYER_C:-0}
 
 # D 层：设计文档（docs/design/ + docs/architecture/ + docs/prd/）
-LAYER_D=$(find ./docs/design ./docs/architecture ./docs/prd -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
+# 注：部分子目录可能暂不存在，find 会报错但 stderr 已抑制；用 `{ ...; } 2>/dev/null || true` 防止 pipefail 传播
+LAYER_D=$({ find ./docs/design ./docs/architecture ./docs/prd -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}'; } || true)
+LAYER_D=${LAYER_D:-0}
 
 # E 层：运维指南（docs/guides/）
-LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}' || echo 0)
+LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+LAYER_E=${LAYER_E:-0}
 
 # 上限定义
 LIMIT_A=4700  # v1.1.9: SECURITY.md 按主题重构（F-41）+ LIMITATIONS.md 安全补充（F-17/F-31/F-32）
-LIMIT_B=2000
+LIMIT_B=2100  # v1.1.9: DEVELOPMENT.md 新增 USB 运行时代码架构 + DAG Runner + A/B 自动调度器，B 层自然增长 2000→2100
 LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
 LIMIT_D=2000  # v1.1.9: D 层纳入口径修正——docs/architecture（v1.1.9 设计 876 行）+ docs/prd（193 行）从 A 层归入 D 层（工程文档与设计文档同语义），700→2000 容纳
 LIMIT_E=1000  # v1.1.3 P0-1: 从 600 上调到 1000，多设备同步指南等 E 层文档扩展导致自然增长

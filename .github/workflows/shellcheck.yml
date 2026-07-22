@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'sofagent/scripts/**/*.sh'
+      - 'sofagent/daemon/**/*.sh'
       - 'sofagent-lite/**/*.sh'
       - 'scripts/**/*.sh'
       - 'tools/**/*.sh'
@@ -15,6 +16,7 @@ on:
     branches: [main]
     paths:
       - 'sofagent/scripts/**/*.sh'
+      - 'sofagent/daemon/**/*.sh'
       - 'sofagent-lite/**/*.sh'
       - 'scripts/**/*.sh'
       - 'tools/**/*.sh'

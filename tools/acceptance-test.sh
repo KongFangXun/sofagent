@@ -64,9 +64,9 @@ assert_grep() { grep -q "$1" "$2" 2>/dev/null && return 0 || { fail "grep 零命
 # exit_of: capture exit code without dying from set -e
 exit_of() { set +e; "$@" >/dev/null 2>&1; local rc=$?; set -e; echo "$rc"; }
 # write_config: write minimal .sofagent/config.yml (rules block)
-write_config() { printf 'audit:\n  rules: %s\n' "${1:-{}}" > "$TMP_REPO/.sofagent/config.yml"; }
+write_config() { printf 'audit:\n  rules: {}\n' > "$TMP_REPO/.sofagent/config.yml"; }
 # wh_config: write config.yml with webhook section (rules + url+platform)
-wh_config() { printf 'audit:\n  rules: %s\n  webhook:\n    url: "%s"\n    platform: "feishu"\n' "${1:-{}}" "$WEBHOOK_URL" > "$TMP_REPO/.sofagent/config.yml"; }
+wh_config() { printf 'audit:\n  rules: {}\n  webhook:\n    url: "%s"\n    platform: "feishu"\n' "$WEBHOOK_URL" > "$TMP_REPO/.sofagent/config.yml"; }
 # ============================================================
 scenario 1 "Fresh install（--install-hook）"
 TMP_REPO=$(mktmp_repo); cd "$TMP_REPO"
