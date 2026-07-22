@@ -125,14 +125,14 @@ sofagent isn't just a developer tool — enterprise deployment uses the **FDE Ag
 
 ### Product form: MCP + dashboard
 
-The sofagent core (audit engine + orchestration engine + FDE capability) is for developers. But when productized and handed to non-technical buyers (SMB / OPC owners, internal champions), it needs a different shell:
+The sofagent core (audit engine + orchestration engine + FDE capability) is for developers. When productized for non-technical buyers, it needs a different shell:
 
-- **Sell capability, not hours**: FDE is not "on-site deployment service" — it's the capability every enterprise should have, packaged as an Agent-driven FDE capability so the enterprise's own people use it and land AI adoption themselves. Revenue shifts from "consultant hours" to "number of enterprises × subscription", scalable.
-- **Why a dashboard is needed**: sofagent itself is LUI-first (language is the interface) — but the Agent's LUI + LLM "swallows everything"; non-expert buyers can't see persistent state, no sense-of-achievement anchor. So productization must ship a **lightweight dashboard** as its own view (audit status / AI adoption progress / compliance monthly report), letting buyers always see "how far my company's AI adoption has gone".
-- **Why MCP**: the dashboard is lightweight, powered by **MCP** — MCP acts as an outward bridge, letting the customer's existing Agent / your sub-agent feed data to the dashboard backend. MCP is a bridge, not the only entry point; the dashboard must be owned.
-- **open-core dual track**: the core (audit rules / FDE workflow / orchestration) stays MIT open-source as a trust asset; commercialization only sells that dashboard layer (console / compliance monthly report / alerts). Open-source earns trust, closed-source earns payment.
+- **Sell capability, not hours** — package "the AI adoption capability every enterprise should have" as an Agent-driven product; revenue shifts from "consultant hours" to "number of enterprises × subscription".
+- **Lightweight dashboard** — LUI-first unchanged, but non-expert buyers need a read-only view showing "how far my company's AI adoption has gone" (audit status / AI progress / compliance monthly report).
+- **MCP as bridge** — the dashboard is lightweight, using MCP to let the customer's existing Agent / your sub-agent feed data to the backend.
+- **open-core dual track** — the core (audit / FDE / orchestration) stays MIT open-source as a trust asset; commercialization only sells that dashboard layer. Open-source earns trust, closed-source earns payment.
 
-> Control-plane play: the underlying Agent intelligence can be swapped freely (OpenClaw / customer's choice / big-tech), but governance and truth (who configured the policy, what the audit chain looks like, where Agents are registered) always live in sofagent's dashboard.
+> Control-plane play: the underlying Agent intelligence can be swapped freely, but governance and truth always live in sofagent's dashboard. See [PHILOSOPHY §6](./docs/PHILOSOPHY.md).
 
 ---
 
@@ -325,6 +325,7 @@ graph LR
 
 | Want to learn | Where |
 |---------|--------|
+| FDE Agent four-phase onboarding, enterprise deployment | [FDE.md](./FDE/FDE.md) |
 | Install, usage, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
 | Why designed this way | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | Design philosophy | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
