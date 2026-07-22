@@ -31,10 +31,10 @@ Agent 越聪明，企业越不敢放手——真出事了，谁负责？能拦�
 > 💡 **为什么是现在**：a16z（2026-07）指出「人类历史上第一次，人比软件便宜」——每家公司在雇「一百万个糟糕的 AI 员工」，80% 的 token 在空转。解法不是更强的模型，而是**管理**。sofagent 正是那一层：用约束 + 审计把 Agent 队伍管起来。
 
 ```bash
-npm install -g @sofagent/audit @sofagent/core && sofagent-audit --init
+bash FDE/fde-install.sh
 ```
 
-> 💡 个人开发者：只需 npm install，不需要 OpenClaw。OpenClaw 是企业无人值守场景才需要。
+> 💡 开发者想只跑审计引擎？看下方「高级 / 开发者路径」。OpenClaw 是企业无人值守场景才需要。
 
 > [!NOTE]
 > 需要 Node.js ≥ 18 + bash + git。macOS / Linux 全功能，Windows 实验性。
@@ -263,15 +263,15 @@ graph LR
 | 🔄 自动运行节点 | 企业无人值守设备（服务器/旧电脑）| 是 |
 | ⚡ 个人增强节点 | 开发者用 WorkBuddy / Codex / Claude Code | 否 |
 
-> 💡 个人增强节点：clone 仓库 → `npm install -g @sofagent/audit @sofagent/core` → `sofagent-audit --init` → 直接上手。
+> 💡 个人增强节点：clone 仓库 → `bash FDE/fde-install.sh` → 直接上手。
 
 ---
 
 ## 怎么装
 
 ```bash
-# 最小安装（纯审计）
-npm install -g @sofagent/audit @sofagent/core
+# FDE Agent 一键部署
+bash FDE/fde-install.sh
 
 # 完整安装（一底座·四引擎）
 git clone https://github.com/KongFangXun/sofagent.git
@@ -299,9 +299,9 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 
 ## 企业落地：FDE + Workflow Hub
 
-sofagent 不只是开发者工具——企业落地用 **FDE 工具包** + **Workflow Hub**：
+sofagent 不只是开发者工具——企业落地用 **FDE Agent** + **Workflow Hub**：
 
-- **FDE 工具包**（`FDE/`）：前线部署工程师进场四阶段（梳理 → 挖掘 → 交付 → 离场），把企业工作流梳理成 AI 节点，部署完撤离、AI 节点自己跑。详见 [FDE/FDE.md](./FDE/FDE.md)。
+- **FDE Agent**（`FDE/`）：前线部署工程师进场四阶段（梳理 → 挖掘 → 交付 → 离场），把企业工作流梳理成 AI 节点，部署完撤离、AI 节点自己跑。详见 [FDE/FDE.md](./FDE/FDE.md)。
 - **Workflow Hub**（`workflow-hub/`）：行业工作流模板仓库，外层 Graph 骨架锁定全链路 + 内层节点保留 ReAct 灵活性。开箱带制造业应付账款审批模板。详见 [workflow-hub/](./workflow-hub/)。
 - **LOOP 自迭代工具包**（`LOOP/`）：sofagent 的外层自迭代编排——内层 `coding → audit → review → human`，外层 `FDE 监督 → compliance 巡检 → 优化 Agent 定义`。详见 [LOOP/README.md](./LOOP/README.md)。
 
@@ -312,9 +312,9 @@ sofagent 不只是开发者工具——企业落地用 **FDE 工具包** + **Wor
 
 ## 产品形态：MCP + dashboard
 
-sofagent 内核（审计引擎 + 编排引擎 + FDE 工具包）是给开发者用的。但当它被产品化、交给非技术买家（SMB / OPC 老板、企业内部 champion）时，需要一层不同的外壳：
+sofagent 内核（审计引擎 + 编排引擎 + FDE 能力）是给开发者用的。但当它被产品化、交给非技术买家（SMB / OPC 老板、企业内部 champion）时，需要一层不同的外壳：
 
-- **卖能力，不卖工时**：FDE 不是「驻场部署服务」，而是把「企业该有的 AI 落地能力」封装成工具包，让企业自己的员工去用、自己落地 AI 化。营收模型从「顾问工时」变成「企业数 × 订阅」，可规模化。
+- **卖能力，不卖工时**：FDE 不是「驻场部署服务」，而是把「企业该有的 AI 落地能力」封装成由 Agent 驱动的 FDE 能力，让企业自己的员工去用、自己落地 AI 化。营收模型从「顾问工时」变成「企业数 × 订阅」，可规模化。
 - **为什么需要 dashboard**：sofagent 本身是 LUI-first（语言即界面）——但 Agent 的 LUI + LLM 会「吞噬一切」，非专家买家看不到持久状态、没有成就感锚点。所以产品化必须带一个**轻量 dashboard** 作为自有视图（审计状态 / AI 化进度 / 合规月报），让买家随时看得见「我公司 AI 化到哪了」。
 - **为什么用 MCP**：dashboard 是轻量化的，靠 **MCP** 配合——MCP 作为向外接的桥，让客户已有的 Agent / 你的 sub-agent 把数据喂给 dashboard 后端。MCP 是桥、不是唯一入口；dashboard 必须自己拥有。
 - **open-core 双轨**：内核（审计规则 / FDE 工作流 / 编排）继续 MIT 开源做信任资产；商业化只卖那层 dashboard（控制台 / 合规月报 / 告警）。开源负责让人信，闭源负责让人付。
