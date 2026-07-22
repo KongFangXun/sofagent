@@ -183,7 +183,7 @@
 
 上面走的是 sofagent 主线。但 sofagent 声称 FDE 和 LOOP 是**独立产品**——用户也可能从这两个入口进来，根本不装 sofagent 主包。独立产品的用户旅程必须单独走一遍：
 
-**FDE 旅程（企业 IT 视角）**：你是一家 200 人公司的 IT 负责人，听说 sofagent 有个 FDE 工具包能帮你梳理 AI 落地。点开 `FDE/README.md` → 按"装上就能用"指引跑 `bash fde-install.sh` → 期望走完 FDE.md 的 12 步部署流程。**逐步记录**：从 GitHub 看到 FDE/ 目录、读 README、跑 install、激活 @sofagent-fde Skill、Agent 引导走 §1 确定场景——每一步是 🟢 顺滑 / 🟡 小障碍 / 🔴 卡住？特别关注：fde-install.sh 装完之后，你的 Agent 真能识别 `@sofagent-fde` 这个 Skill 吗？FDE.md 的 12 步流程在真实环境真能走完吗？还是某一步会缺前置文件、CLI 不存在、路径找不到？
+**FDE 旅程（企业 IT 视角）**：你是一家 200 人公司的 IT 负责人，听说 sofagent 有个 FDE Agent 能帮你梳理 AI 落地。点开 `FDE/README.md` → 按"装上就能用"指引跑 `bash fde-install.sh` → 期望走完 FDE.md 的 12 步部署流程。**逐步记录**：从 GitHub 看到 FDE/ 目录、读 README、跑 install、激活 @sofagent-fde Skill、Agent 引导走 §1 确定场景——每一步是 🟢 顺滑 / 🟡 小障碍 / 🔴 卡住？特别关注：fde-install.sh 装完之后，你的 Agent 真能识别 `@sofagent-fde` 这个 Skill 吗？FDE.md 的 12 步流程在真实环境真能走完吗？还是某一步会缺前置文件、CLI 不存在、路径找不到？
 
 **LOOP 旅程（开发者视角）**：你是 sofagent 的贡献者，想用 LOOP 自迭代开发。点开 `LOOP/README.md` → 跑 `bash LOOP/loop-install.sh` → 设 env → 跑 `sofagent-orchestrator loop --task "..."`。**逐步记录**：从看到 LOOP/ 目录、读 quick-start.md、跑 install、设 LLM 模型、触发第一条 LOOP——每一步是 🟢 / 🟡 / 🔴？特别关注：`sofagent-orchestrator loop --task` 这个 CLI 真的存在吗？engineer/reviewer 两个内置 Agent 真能被 spawn 出来吗？LOOP_AUTO=1 的 IS_PASS 自动门控真会触发吗？
 
@@ -393,6 +393,9 @@
 32. **ActionGovernance actor 伪造（v1.1.8 新增）**：
     - `history.jsonl` 的 `ActionGovernance.actor` 字段是否可由 Agent 任意填写（如伪造为 `human` / `sofagent-core`）？这能否骗过「事后追溯」——审计记录声称是人工操作，实际是 Agent？
     - 验证信任模型：当前 `ActionGovernance` 提供可追溯性但**不在运行时阻断**（见 SECURITY.md「v1.1.7 新增能力的安全边界」），actor 伪造属于已知信任模型局限，不在 v1.1.8 修复范围（防伪造需 v1.2.x HMAC 签名）。本轮仅确认文档与实现对齐、无越权写入其他字段。
+
+   - **USB 签名绕过尝试（v1.1.9 新增）**：`verifyUsbSignature` 是 U 盘运行时的信任根——尝试以下绕过：①构造特殊文件名（Unicode 同形字符、超长路径、null 字节注入）绕过 `collectFiles` 的路径归一化；②symlink 指向签名清单外的系统文件，验证是否被纳入或排除；③空文件 / 零字节 knowledge .enc，验证 `parseEncFrame` 是否正确降级；④超大文件（>2GB）导致 `hashFileContent` 流式读取 OOM 或超时。每次绕过尝试后确认 fail-closed 语义——任一异常不得导致 `verifyResult.ok === true`。**关注点**：`normalizePath` 的 POSIX 归一化在 Windows 反斜杠场景下是否彻底。
+   - **sanitizeLoopId 消毒碰撞（v1.1.9 新增）**：POC-6 已修复但需持续关注——构造两个 loopId 使其消毒后同名（如 `a/b` → `a_b` vs 原始 `a_b` → `a_b`），验证 8 位短哈希后缀是否正确区分。尝试 Unicode 字符（中文、emoji）作为 loopId，验证消毒后是否产生意外文件名。**关注点**：哈希后缀碰撞概率（8 位 hex = 2^32 空间，birthday paradox ~65536 次后 50% 碰撞，实际 loopId 数量远低于此）。
 
 **输出格式**：
 
@@ -631,6 +634,11 @@
    - **盲区本质**：CLI 工具的 --doctor 是用户的"救命稻草"——出问题时第一个跑的命令。如果 --doctor 只说"你缺 X"不说"怎么装 X"，等于只诊断不治疗。措辞修改是表层的（"找不到" → "尚未安装"），但如果底层操作路径（下载链接 / 安装命令 / 权限提示）没跟着改，用户读完诊断信息后仍然不知道下一步做什么。受限网络环境的用户更惨：--doctor 建议的安装方式在他们的环境里跑不通，但 --doctor 不会检测网络环境。
    - **检查手法**：实际跑一次 `sofagent-audit --doctor`——输出里每个"问题"后面都跟着"建议操作"吗？建议操作里的命令/链接在受限网络环境下（无 GitHub 访问 / npm registry 镜像）能跑通吗？特别检查 v1.1.7 改过措辞的那些项——改了"怎么说"之后，"怎么做"的步骤是否也同步更新了？
 
+#### 41. **acceptance-test 场景数一致性 + v1.1.9 新功能覆盖交叉检查（v1.1.9 新增）** 🆕
+   - **盲区（验收场景数与文件头声称漂移）**：`tools/acceptance-test.sh` 文件头声称"N 个端到端场景"，但每次追加场景后可能忘记更新文件头数字。`DECLARED=$(head -5 tools/acceptance-test.sh | grep -oE "[0-9]+ 个端到端" | grep -oE "[0-9]+")` vs `ACTUAL=$(grep -c "^scenario " tools/acceptance-test.sh)`——两者必须一致。历史教训：v1.1.8 追加场景后文件头数字滞后了一整个 sprint。
+   - **盲区（v1.1.9 新功能零覆盖风险）**：v1.1.9 五个交付（USB 完整运行时 / A/B 自动调度器 / 控制图状态抽取 / 产品叙事收敛 / BugFix 42 项）引入了大量新代码——acceptance-test 是否有对应场景？`grep -c "usb-signature\|ab-scheduler\|loop-state-extractor\|FDE Agent\|assertSubAgentsNoEmptyTools" tools/acceptance-test.sh`——每个关键词都应 ≥1 命中。**关注点**：新功能的验收场景是否只检查"文件存在"而不测试"行为正确"（如 USB 验签是否真跑 fail-closed 四场景）。
+   - **检查手法**：`bash -n tools/acceptance-test.sh`（语法通过）+ 场景数一致性校验 + v1.1.9 关键词覆盖交叉检查（每个交付至少 2 个场景覆盖核心行为）。
+
 
 **输出格式**：
 
@@ -690,6 +698,8 @@
 2. **evidenceMode 分类计数**：README 声称的 git-diff/hybrid/filesystem 数量（16/4/1）必须与 `sofagent/audit/src/rules/index.ts` 实际 `evidenceMode` 计数一致。每次发版后核对（回归检查清单维度4 子项e 已自动化）。
 3. **ruleClass 文档完整性**：audit/README 规则表的每一行都必须带合法 `ruleClass`（业务底线/能力拐杖/工程规范），且「规则分级」小节定义了全部三类。跑 `bash tools/check-docs.sh`——ruleClass 完整性检查应 0 报错（回归检查追加③）。
 4. **install 独立闭环诚实度**：每次新增大写目录（独立产品，如 FDE/LOOP）后，文档必须诚实标注"需要完整 clone 仓库"，不能让用户误以为只 clone 子目录就能跑（回归检查清单维度23 子项d 已自动化）。
+
+5. **v1.1.9 测试数五处一致性（v1.1.9 新增）**：v1.1.9 测试数（909 tests）需在以下五处一致：①CHANGELOG.md（版本条目正文）②ROADMAP.md（如有引用）③docs/verification/LIMITATIONS.md（如有引用）④docs/verification/evidence/v1.1.9.md（验收证据）⑤docs/changelog/v1.1.9.md（如存在 changelog 拆分）。`grep -rn "909" CHANGELOG.md ROADMAP.md docs/verification/LIMITATIONS.md docs/verification/evidence/ docs/changelog/`——每处声称的数字必须与 `cd sofagent/audit && npm test 2>&1 | grep 'Tests:'` 实际值一致。**v1.2.0 建议**：将 `docs/changelog/v*.md` 中的测试数纳入 `check-test-count.sh` 自动化监控范围，防止发版后 changelog 数字漂移。
 
 > 📋 输出格式见下方「审查输出格式」（适用于全部十维度）。
 

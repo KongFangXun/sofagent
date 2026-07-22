@@ -11,12 +11,11 @@
     "sofagent/orchestrator",
     "sofagent/daemon",
     "sofagent/ab-test",
-    "sofagent/workflow-hub",
     "sofagent/skillopt",
     "sofagent/mcp"
   ],
   "scripts": {
     "test": "npm test --workspaces --if-present",
-    "build": "npm run build --workspace=sofagent/harness && npm run build --workspace=sofagent/ontology && npm run build --workspace=sofagent/eval && npm run build --workspace=sofagent/core && npm run build --workspace=sofagent/think && npm run build --workspace=sofagent/audit && npm run build --workspace=sofagent/orchestrator && npm run build --workspace=sofagent/daemon && npm run build --workspace=sofagent/ab-test && npm run build --workspace=sofagent/workflow-hub && npm run build --workspace=sofagent/skillopt && npm run build --workspace=sofagent/mcp"
+    "build": "npm run build --workspace=sofagent/harness && npm run build --workspace=sofagent/ontology && npm run build --workspace=sofagent/eval && npm run build --workspace=sofagent/core && npm run build --workspace=sofagent/think && npm run build --workspace=sofagent/audit && npm run build --workspace=sofagent/orchestrator && npm run build --workspace=sofagent/daemon && npm run build --workspace=sofagent/ab-test && npm run build --workspace=sofagent/skillopt && npm run build --workspace=sofagent/mcp"
   }
 }

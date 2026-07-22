@@ -24,7 +24,6 @@
       "@sofagent/orchestrator": ["sofagent/orchestrator/src"],
       "@sofagent/daemon": ["sofagent/daemon/src"],
       "@sofagent/ab-test": ["sofagent/ab-test/src"],
-      "@sofagent/workflow-hub": ["sofagent/workflow-hub/src"],
       "@sofagent/think": ["sofagent/think/src"],
       "@sofagent/skillopt": ["sofagent/skillopt/src"]
     }

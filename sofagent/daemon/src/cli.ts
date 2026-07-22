@@ -11,6 +11,10 @@ async function main() {
     console.log('');
     console.log('Subcommands:');
     console.log('  start                        启动守护进程（cron + 文件监听）');
+    console.log('                                 [--usb-root <path>] 走 U 盘便携运行时');
+    console.log('  create-usb-key               写入 U 盘完整运行时（v1.1.8 新增）');
+    console.log('                                 --role <角色> --target <U盘路径> --platform <macos|linux|win>');
+    console.log('                                 [--node-binary-path <path>]');
     console.log('  snapshot list                列出所有快照');
     console.log('  snapshot restore <sha>       恢复到指定快照');
     console.log('  knowledge status             聚合知识库状态（Dream Cycle / 健康 / sensitivity）');
@@ -40,6 +44,21 @@ async function main() {
     }
     case 'start': {
       const projectDir = process.cwd();
+
+      // v1.1.8 新增：--usb-root <path> → U 盘便携运行时（验签 → 内存解密 → 便携化 env）
+      const usbRootIdx = args.indexOf('--usb-root');
+      if (usbRootIdx !== -1) {
+        const usbRoot = args[usbRootIdx + 1];
+        if (!usbRoot) {
+          console.error('❌ --usb-root 需要 <path> 参数');
+          process.exit(1);
+        }
+        const { startUsbRuntime } = await import('./usb-runtime');
+        console.log(`sofagent-daemon v${VERSION} — U 盘便携运行时启动`);
+        await startUsbRuntime(usbRoot, projectDir);
+        break;
+      }
+
       const { startCron } = await import('./cron');
       const { startWatching } = await import('./fs-watch');
       const { runFilesystemAudit } = await import('./run-fs-audit');
@@ -128,9 +147,51 @@ async function main() {
       }
       break;
     }
+    case 'create-usb-key': {
+      // v1.1.8 新增：写入 U 盘完整运行时（延迟加载 usb-key，避免拖累 CLI 启动）
+      let role = '';
+      let target = '';
+      let platform = '';
+      let nodeBinaryPath: string | undefined;
+      for (let i = 1; i < args.length; i++) {
+        switch (args[i]) {
+          case '--role': role = args[++i] ?? ''; break;
+          case '--target': target = args[++i] ?? ''; break;
+          case '--platform': platform = args[++i] ?? ''; break;
+          case '--node-binary-path': nodeBinaryPath = args[++i]; break;
+        }
+      }
+      if (!role || !target || !platform) {
+        console.error('❌ create-usb-key 需要 --role / --target / --platform 三个参数');
+        console.error('   用法: sofagent-daemon create-usb-key --role "财务审计节点" --target /Volumes/SOFAGENT --platform macos');
+        process.exit(1);
+      }
+      if (platform !== 'macos' && platform !== 'linux' && platform !== 'win') {
+        console.error(`❌ --platform 必须是 macos / linux / win，实际: ${platform}`);
+        process.exit(1);
+      }
+      const { createUsbKey } = await import('./usb-key');
+      console.log(`sofagent-daemon v${VERSION} — 写入 U 盘完整运行时`);
+      console.log(`  角色: ${role} · 目标: ${target} · 平台: ${platform}`);
+      const result = await createUsbKey({
+        role,
+        target,
+        platform: platform as 'macos' | 'linux' | 'win',
+        nodeBinaryPath,
+      });
+      for (const warning of result.warnings) {
+        console.warn(`  ⚠️  ${warning}`);
+      }
+      console.log(`  ✅ U 盘写入完成：${result.filesWritten} 个文件`);
+      console.log(`  ✅ 签名已生成：${result.signatureFile}`);
+      console.log(`  ✅ knowledge/ 已 AES-256 加密落盘（明文只在内存）`);
+      console.log('');
+      console.log('  员工使用：插上 U 盘 → 双击 start（macOS 用 start.command）→ 联邦在线');
+      break;
+    }
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Usage: sofagent-daemon <start|snapshot|knowledge> [options]');
+      console.error('Usage: sofagent-daemon <start|create-usb-key|snapshot|knowledge> [options]');
       process.exit(1);
   }
 }

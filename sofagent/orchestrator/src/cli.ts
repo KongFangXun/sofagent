@@ -13,7 +13,8 @@ async function main() {
     console.log('Usage: sofagent-orchestrator <subcommand> [options]');
     console.log('');
     console.log('Subcommands:');
-    console.log('  compose --task <desc>            使用 DeepAgents 编排任务，输出 YAML 工作流');
+    console.log('  compose --task <desc> [--run] [--enterprise-workflow <f>] [--variants A,B,C,D] [--label <n>] [--alt-prompt <f>]');
+    console.log('                                   使用 DeepAgents 编排任务（--run 执行编排）；默认只打印 YAML 工作流');
     console.log('  subagent run <name> [--mode deploy|sustain] --task <desc>');
     console.log('                                   启动 Sub Agent 执行任务（engineer / reviewer / fde 等）');
     console.log('                                   --mode 缺省 deploy；sustain 用于 FDE 持续优化模式');
@@ -27,6 +28,19 @@ async function main() {
 
   switch (subcommand) {
     case 'compose': {
+      // v1.1.9 (F-02): 检测 --run / --variants 等新 flag，委托给 composeTask（单一实现源）
+      const hasNewFlags = args.includes('--run') ||
+        args.includes('--variants') ||
+        args.includes('--enterprise-workflow') ||
+        args.includes('--label') ||
+        args.includes('--alt-prompt');
+      if (hasNewFlags) {
+        // 委托给 orchestrator-compare.ts 的 composeTask（去掉 'compose' 前缀）
+        const { composeTask } = await import('./orchestrator-compare');
+        await composeTask(args.slice(1));
+        break;
+      }
+      // 原有路径：只打印 YAML，不执行
       const taskIdx = args.indexOf('--task');
       const taskDesc = taskIdx !== -1 ? args[taskIdx + 1] : undefined;
       if (!taskDesc) {

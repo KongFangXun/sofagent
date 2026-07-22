@@ -46,7 +46,13 @@ export interface SubAgentConfig {
   name: string;
   description: string;
   systemPrompt: string;
-  /** 工具名列表（来自 SubAgentDefinition.tools；dag-runner 负责实例化） */
+  /**
+   * 工具名列表（来自 SubAgentDefinition.tools）。
+   * 注意：此字段为语义标签（'read'/'write'/'bash' 等），用于审计日志和
+   * SubAgent 行为约束文档。不直接传给 DeepAgents SubAgent.tools（后者要求
+   * StructuredTool[] 实例）。dag-runner 中 SubAgent omit tools 字段，
+   * 继承 DeepAgents 默认工具集（read_file/write_file/edit_file/glob/grep/execute）。
+   */
   tools: string[];
 }
 
@@ -157,6 +163,21 @@ export function parseWorkflowYaml(workflowYaml: string): ParsedWorkflow {
       depends_on: (deps as unknown[] | undefined)?.map((d) => String(d)) ?? [],
     };
   });
+
+  // 节点总数上限（防资源耗尽）
+  const MAX_NODES = 20;
+  if (nodes.length > MAX_NODES) {
+    throw new WorkflowParseError(`节点数 ${nodes.length} 超过上限 ${MAX_NODES}`);
+  }
+
+  // task 字段长度上限（防 prompt 注入）
+  const MAX_TASK_LENGTH = 2000;
+  for (const n of nodes) {
+    if (n.task.length > MAX_TASK_LENGTH) {
+      console.warn(`⚠️ [workflow-parser] 节点 ${n.id} 的 task 描述超长（${n.task.length} 字符），截断至 ${MAX_TASK_LENGTH}`);
+      n.task = n.task.slice(0, MAX_TASK_LENGTH);
+    }
+  }
 
   // id 唯一性
   const ids = new Set<string>();

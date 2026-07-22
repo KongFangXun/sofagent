@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.1.8 · 109 个端到端场景：用户旅程 + 规则覆盖(A1-A19,E1-E4) + Sub Agent
+# v1.1.9 · 122 个端到端场景：用户旅程 + 规则覆盖(A1-A19,E1-E4) + Sub Agent
 # + LOOP + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
 # 详细功能映射见 docs/verification/acceptance-coverage.md
 # ============================================================
@@ -370,7 +370,7 @@ SUSTAIN_OUT=$(node "$ORCH_CLI_29" subagent run fde --mode sustain --task "echo h
 echo "$SUSTAIN_OUT" | grep -qE "fde|FDE|sustain|deepagents|not found|不可用|启动失败|未返回结果|已接收任务" && pass "FDE sustain mode 接受了 --mode sustain 参数" || fail "FDE sustain mode 无任何输出: $SUSTAIN_OUT"
 scenario 31 "新包 CLI 烟测（orchestrator/daemon/core/ontology/...）"
 NEW_PKG_OK=true
-for pkg in orchestrator daemon core ontology workflow-hub ab-test think skillopt; do
+for pkg in orchestrator daemon core ontology ab-test think skillopt; do
   CLI_JS="sofagent/$pkg/dist/cli.js"
   if [ -f "$PROJECT_ROOT/$CLI_JS" ]; then
     if node "$PROJECT_ROOT/$CLI_JS" --help >/dev/null 2>&1; then echo "  ✅ sofagent-$pkg --help"
@@ -626,13 +626,10 @@ if $USB_FED_OK; then
   grep -q "无签名校验\|v1.1.5" "$PROJECT_ROOT/SECURITY.md" || USB_FED_OK=false
   $USB_FED_OK && pass || fail "USB federation 基础检测缺失"
 fi
-scenario 56 "LOOP 独立产品（目录结构 + install 脚本 + workflow-hub 隔离）"
-LOOP_DIR="$PROJECT_ROOT/LOOP"; WORKFLOW_HUB_DIR="$PROJECT_ROOT/workflow-hub"; LOOP_PROD_OK=true
+scenario 56 "LOOP 独立产品（目录结构 + install 脚本）"
+LOOP_DIR="$PROJECT_ROOT/LOOP"; LOOP_PROD_OK=true
 for f in README.md SKILL.md LOOP.md quick-start.md loop-install.sh loop-workflow.sh package.json; do [ -f "$LOOP_DIR/$f" ] || LOOP_PROD_OK=false; done
 [ -d "$LOOP_DIR" ] || LOOP_PROD_OK=false
-[ -d "$WORKFLOW_HUB_DIR" ] || LOOP_PROD_OK=false
-[ -f "$WORKFLOW_HUB_DIR/README.md" ] || LOOP_PROD_OK=false
-[ -f "$WORKFLOW_HUB_DIR/CATALOG.md" ] || LOOP_PROD_OK=false
 if $LOOP_PROD_OK; then
   grep -q "sofagent-audit" "$LOOP_DIR/package.json" || LOOP_PROD_OK=false
   grep -q "dependsOn" "$LOOP_DIR/package.json" || LOOP_PROD_OK=false
@@ -914,18 +911,6 @@ if $S78_OK; then
 fi
 $S78_OK && [ -f "$PROJECT_ROOT/sofagent/audit/src/rules/rule-a15-action-constraint.ts" ] || { fail "rule-a15-action-constraint.ts 不存在"; S78_OK=false; }
 $S78_OK && pass
-scenario 79 "Workflow Hub 命令验证（workflow-hub CLI）"
-S79_OK=true; WFHUB_CLI="$PROJECT_ROOT/sofagent/workflow-hub/dist/cli.js"
-require_dist "sofagent/workflow-hub/dist/cli.js" || S79_OK=false
-if $S79_OK; then
-  S79_HELP=$(node "$WFHUB_CLI" --help 2>&1 || true)
-  echo "$S79_HELP" | grep -c "list\|deploy" | grep -q "[2-9]" || { fail "workflow-hub --help 未含 list/deploy"; S79_OK=false; }
-fi
-if $S79_OK; then
-  S79_TMPL=$(ls "$PROJECT_ROOT/workflow-hub/templates/" 2>/dev/null | wc -l | tr -d ' ')
-  [ "$S79_TMPL" -ge 1 ] || { fail "workflow-hub/templates/ 为空"; S79_OK=false; }
-fi
-$S79_OK && pass
 # ── 场景 80-82: conflict-check 巡检器 ─────────────────────────
 scenario 80 "conflict-check 空 knowledge 优雅降级"
 cd "$PROJECT_ROOT"; TMP80=$(mktemp -d /tmp/sofagent-cc80-XXXXXX)
@@ -1329,6 +1314,258 @@ if $S107_OK; then
   echo "$S107_RESULT" | grep -q "^OK " || { fail "pushKnowledgeSummary 验证失败: $S107_RESULT"; S107_OK=false; }
 fi
 $S107_OK && pass
+# ── v1.1.9 新功能验收（scenario 108-121） ──────────────────────
+scenario 108 "v1.1.9 USB 签名——HMAC 确定性算法验证（collectFiles + computeUsbSignature 跨平台一致）"
+S108_OK=true
+require_dist "sofagent/daemon/dist/usb-signature.js" || S108_OK=false
+if $S108_OK; then
+  S108_RESULT=$(USB_SIG="$PROJECT_ROOT/sofagent/daemon/dist/usb-signature.js" node -e "
+    const { collectFiles, computeUsbSignature } = require(process.env.USB_SIG);
+    const crypto = require('crypto'), fs = require('fs'), os = require('os'), path = require('path');
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 's108-'));
+    fs.writeFileSync(path.join(tmp, 'a.txt'), 'hello');
+    fs.mkdirSync(path.join(tmp, 'sub'));
+    fs.writeFileSync(path.join(tmp, 'sub', 'b.md'), 'world');
+    const files = collectFiles(tmp);
+    if (files.length !== 2) { console.log('文件数错误: ' + files.length); process.exit(1); }
+    if (files[0].relativePath !== 'a.txt' || files[1].relativePath !== 'sub/b.md') {
+      console.log('排序或路径错误: ' + JSON.stringify(files.map(f=>f.relativePath))); process.exit(1);
+    }
+    const key = crypto.randomBytes(32);
+    const sig1 = computeUsbSignature(files, key);
+    const sig2 = computeUsbSignature(files.slice().reverse(), key);
+    if (sig1 !== sig2) { console.log('确定性失败: 顺序不同签名不同'); process.exit(1); }
+    if (sig1.length !== 64) { console.log('签名长度错误: ' + sig1.length); process.exit(1); }
+    fs.rmSync(tmp, { recursive: true, force: true });
+    console.log('OK ' + sig1.slice(0, 8));
+  " 2>&1) || true
+  echo "$S108_RESULT" | grep -q "^OK " || { fail "USB 签名确定性验证失败: $S108_RESULT"; S108_OK=false; }
+fi
+$S108_OK && pass
+scenario 109 "v1.1.9 USB 签名——verifyUsbSignature fail-closed（篡改+缺失+多余+签名缺失）"
+S109_OK=true
+require_dist "sofagent/daemon/dist/usb-signature.js" || S109_OK=false
+if $S109_OK; then
+  S109_RESULT=$(USB_SIG="$PROJECT_ROOT/sofagent/daemon/dist/usb-signature.js" node -e "
+    const { collectFiles, writeSignatureManifest, verifyUsbSignature } = require(process.env.USB_SIG);
+    const crypto = require('crypto'), fs = require('fs'), os = require('os'), path = require('path');
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 's109-'));
+    fs.writeFileSync(path.join(tmp, 'config.yml'), 'original');
+    const key = crypto.randomBytes(32);
+    writeSignatureManifest(tmp, key);
+    if (!verifyUsbSignature(tmp, key).ok) { console.log('正常验签应通过'); process.exit(1); }
+    fs.writeFileSync(path.join(tmp, 'config.yml'), 'tampered');
+    const r1 = verifyUsbSignature(tmp, key);
+    if (r1.ok || r1.reason !== 'signature-mismatch') { console.log('篡改检测失败: ' + JSON.stringify(r1)); process.exit(1); }
+    fs.unlinkSync(path.join(tmp, 'config.yml'));
+    const r2 = verifyUsbSignature(tmp, key);
+    if (r2.ok || r2.reason !== 'file-missing') { console.log('缺失检测失败: ' + JSON.stringify(r2)); process.exit(1); }
+    fs.writeFileSync(path.join(tmp, 'config.yml'), 'original');
+    fs.writeFileSync(path.join(tmp, 'extra.txt'), 'unauthorized');
+    const r3 = verifyUsbSignature(tmp, key);
+    if (r3.ok || r3.reason !== 'file-added') { console.log('多余检测失败: ' + JSON.stringify(r3)); process.exit(1); }
+    fs.unlinkSync(path.join(tmp, 'extra.txt'));
+    fs.unlinkSync(path.join(tmp, '.sofagent-signature'));
+    const r4 = verifyUsbSignature(tmp, key);
+    if (r4.ok || r4.reason !== 'signature-missing') { console.log('签名缺失检测失败: ' + JSON.stringify(r4)); process.exit(1); }
+    fs.rmSync(tmp, { recursive: true, force: true });
+    console.log('OK all-fail-closed-passed');
+  " 2>&1) || true
+  echo "$S109_RESULT" | grep -q "^OK " || { fail "verifyUsbSignature fail-closed 验证失败: $S109_RESULT"; S109_OK=false; }
+fi
+$S109_OK && pass
+scenario 110 "v1.1.9 USB 写入——createUsbKey 骨架验证（源文件+dist+三平台脚本）"
+S110_OK=true
+USB_KEY_SRC="$PROJECT_ROOT/sofagent/daemon/src/usb-key.ts"
+USB_KEY_DIST="$PROJECT_ROOT/sofagent/daemon/dist/usb-key.js"
+[ -f "$USB_KEY_SRC" ] || { fail "usb-key.ts 源文件不存在"; S110_OK=false; }
+[ -f "$USB_KEY_DIST" ] || { fail "usb-key.js dist 不存在"; S110_OK=false; }
+if $S110_OK; then
+  for f in start.command start.sh start.bat; do
+    [ -f "$PROJECT_ROOT/sofagent/daemon/usb/$f" ] || { fail "启动脚本缺失: $f"; S110_OK=false; }
+  done
+fi
+if $S110_OK; then
+  grep -q "createUsbKey\|encryptKnowledgeFile\|ENC_FRAME_MAGIC" "$USB_KEY_SRC" || { fail "usb-key.ts 缺核心函数"; S110_OK=false; }
+fi
+$S110_OK && pass
+scenario 111 "v1.1.9 USB knowledge 加密——AES-256-GCM 密文落盘验证（.enc 不含明文）"
+S111_OK=true
+require_dist "sofagent/daemon/dist/usb-key.js" || S111_OK=false
+if $S111_OK; then
+  S111_RESULT=$(USB_KEY="$PROJECT_ROOT/sofagent/daemon/dist/usb-key.js" node -e "
+    const { encryptKnowledgeFile, parseEncFrame, ENC_FRAME_MAGIC } = require(process.env.USB_KEY);
+    const crypto = require('crypto');
+    const aesKey = crypto.randomBytes(32);
+    const plaintext = Buffer.from('SECRET-DATA-12345 机密内容', 'utf-8');
+    const enc = encryptKnowledgeFile(aesKey, plaintext);
+    if (!enc.subarray(0, 4).equals(ENC_FRAME_MAGIC)) { console.log('magic 不匹配'); process.exit(1); }
+    if (enc.includes(plaintext)) { console.log('密文含明文'); process.exit(1); }
+    const parsed = parseEncFrame(enc);
+    if (!parsed) { console.log('parseEncFrame 返回 null'); process.exit(1); }
+    const { decryptPayload } = require('$PROJECT_ROOT/sofagent/core/dist/index.js');
+    const decrypted = decryptPayload(aesKey, parsed.iv, parsed.ciphertext, parsed.tag);
+    if (!decrypted.equals(plaintext)) { console.log('解密失败'); process.exit(1); }
+    console.log('OK enc=' + enc.length + 'B');
+  " 2>&1) || true
+  echo "$S111_RESULT" | grep -q "^OK " || { fail "AES-256-GCM 加密验证失败: $S111_RESULT"; S111_OK=false; }
+fi
+$S111_OK && pass
+scenario 112 "v1.1.9 daemon CLI——create-usb-key 子命令 + --usb-root 参数"
+S112_OK=true
+CLI_DAEMON="$PROJECT_ROOT/sofagent/daemon/dist/cli.js"
+[ -f "$CLI_DAEMON" ] || { fail "daemon/dist/cli.js 不存在"; S112_OK=false; }
+if $S112_OK; then
+  grep -q "create-usb-key" "$CLI_DAEMON" || { fail "cli.js 缺 create-usb-key 子命令"; S112_OK=false; }
+  grep -q "usb-root\|usbRoot" "$CLI_DAEMON" || { fail "cli.js 缺 --usb-root 参数"; S112_OK=false; }
+  grep -q "startUsbRuntime" "$CLI_DAEMON" || { fail "cli.js 缺 startUsbRuntime 引用"; S112_OK=false; }
+fi
+$S112_OK && pass
+scenario 113 "v1.1.9 USB 启动脚本——三平台存在性 + 可执行位"
+S113_OK=true
+for f in start.command start.sh; do
+  [ -x "$PROJECT_ROOT/sofagent/daemon/usb/$f" ] || { fail "$f 不存在或不可执行"; S113_OK=false; }
+done
+[ -f "$PROJECT_ROOT/sofagent/daemon/usb/start.bat" ] || { fail "start.bat 不存在"; S113_OK=false; }
+$S113_OK && pass
+scenario 114 "v1.1.9 ab-scheduler 状态机——四阶段状态定义 + 纯函数转换"
+S114_OK=true
+require_dist "sofagent/orchestrator/dist/ab-scheduler.js" || S114_OK=false
+if $S114_OK; then
+  S114_RESULT=$(AB_SCH="$PROJECT_ROOT/sofagent/orchestrator/dist/ab-scheduler.js" node -e "
+    const { initialState, checkThreshold, startExploration, DEFAULT_THRESHOLD, DEFAULT_PROMOTE_THRESHOLD } = require(process.env.AB_SCH);
+    let s = initialState({ threshold: 2 });
+    if (s.currentPlan !== 'A-step-by-step' || s.candidatePlan !== null) { console.log('初始状态错误: ' + JSON.stringify({cp:s.currentPlan,ca:s.candidatePlan})); process.exit(1); }
+    if (s.threshold !== 2 || s.promoteThreshold !== DEFAULT_PROMOTE_THRESHOLD) { console.log('阈值错误'); process.exit(1); }
+    s = { ...s, currentRunCount: 2 };
+    s = checkThreshold(s, '2025-01-01T00:00:00Z');
+    if (s.candidatePlan === null || s.lastPhase !== 'explore') { console.log('checkThreshold 未触发探索: ' + JSON.stringify({ca:s.candidatePlan,lp:s.lastPhase})); process.exit(1); }
+    console.log('OK phase=' + s.lastPhase + ' candidate=' + s.candidatePlan);
+  " 2>&1) || true
+  echo "$S114_RESULT" | grep -q "^OK " || { fail "ab-scheduler 状态机验证失败: $S114_RESULT"; S114_OK=false; }
+fi
+$S114_OK && pass
+scenario 115 "v1.1.9 ab-scheduler judgeAndPromote——候选胜出 promote 逻辑"
+S115_OK=true
+require_dist "sofagent/orchestrator/dist/ab-scheduler.js" || S115_OK=false
+if $S115_OK; then
+  S115_RESULT=$(AB_SCH="$PROJECT_ROOT/sofagent/orchestrator/dist/ab-scheduler.js" node -e "
+    (async () => {
+      const { initialState, judgeAndPromote, DEFAULT_PROMOTE_THRESHOLD } = require(process.env.AB_SCH);
+      const fs = require('fs'), os = require('os'), path = require('path');
+      const tmpHist = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 's115-')), 'ab-history.jsonl');
+      const writeMock = (plan, passRate, count) => {
+        const lines = [];
+        for (let i = 0; i < count; i++) lines.push(JSON.stringify({ plan, task: 't', timestamp: new Date().toISOString(), passed: passRate ? 8 : 2, failed: passRate ? 2 : 8, duration: 100, qualityScore: passRate ? 80 : 20 }));
+        fs.writeFileSync(tmpHist, lines.join('\n') + '\n');
+      };
+      writeMock('A-step-by-step', false, 5);
+      writeMock('B-domain', true, 5);
+      let s = initialState({ threshold: 5 });
+      s = { ...s, candidatePlan: 'B-domain', candidateRunCount: 5, currentRunCount: 5 };
+      s = await judgeAndPromote(s, tmpHist, { writeGraphState: () => '/tmp/mock' });
+      if (s.consecutiveWins !== 1) { console.log('首次胜出 consecutiveWins 应=1: ' + s.consecutiveWins); process.exit(1); }
+      writeMock('B-domain', true, 5);
+      s = { ...s, candidatePlan: 'B-domain', candidateRunCount: 5 };
+      s = await judgeAndPromote(s, tmpHist, { writeGraphState: () => '/tmp/mock' });
+      if (s.currentPlan !== 'B-domain' || s.candidatePlan !== null) { console.log('promote 失败: currentPlan=' + s.currentPlan); process.exit(1); }
+      fs.rmSync(path.dirname(tmpHist), { recursive: true, force: true });
+      console.log('OK promoted-to=' + s.currentPlan);
+    })().catch(e => { console.log('异常: ' + e.message); process.exit(1); });
+  " 2>&1) || true
+  echo "$S115_RESULT" | grep -q "^OK " || { fail "judgeAndPromote 验证失败: $S115_RESULT"; S115_OK=false; }
+fi
+$S115_OK && pass
+scenario 116 "v1.1.9 ab-history jsonl 持久化——appendMetrics + aggregateRecent 滑窗"
+S116_OK=true
+require_dist "sofagent/orchestrator/dist/ab-history.js" || S116_OK=false
+if $S116_OK; then
+  S116_RESULT=$(AB_HIST="$PROJECT_ROOT/sofagent/orchestrator/dist/ab-history.js" node -e "
+    const { appendMetrics, aggregateRecent, readAll } = require(process.env.AB_HIST);
+    const fs = require('fs'), os = require('os'), path = require('path');
+    const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 's116-')), 'ab-history.jsonl');
+    for (let i = 0; i < 3; i++) appendMetrics(tmp, { plan: 'A', task: 't', timestamp: new Date().toISOString(), passed: 8, failed: 2, duration: 100, qualityScore: 80 });
+    appendMetrics(tmp, { plan: 'B', task: 't', timestamp: new Date().toISOString(), passed: 2, failed: 8, duration: 100, qualityScore: 20 });
+    const all = readAll(tmp);
+    if (all.length !== 4) { console.log('readAll 条数错误: ' + all.length); process.exit(1); }
+    const aggA = aggregateRecent(tmp, 'A', 3);
+    if (aggA.sampleSize !== 3 || aggA.avgPassRate < 70) { console.log('aggregateRecent A 错误: ' + JSON.stringify(aggA)); process.exit(1); }
+    const aggB = aggregateRecent(tmp, 'B', 3);
+    if (aggB.sampleSize !== 1 || aggB.avgPassRate > 30) { console.log('aggregateRecent B 错误: ' + JSON.stringify(aggB)); process.exit(1); }
+    fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
+    console.log('OK A.avg=' + aggA.avgPassRate + ' B.avg=' + aggB.avgPassRate);
+  " 2>&1) || true
+  echo "$S116_RESULT" | grep -q "^OK " || { fail "ab-history 持久化验证失败: $S116_RESULT"; S116_OK=false; }
+fi
+$S116_OK && pass
+scenario 117 "v1.1.9 daemon cron——ab-schedule 分支存在"
+S117_OK=true
+CRON_SRC="$PROJECT_ROOT/sofagent/daemon/src/cron.ts"
+CRON_DIST="$PROJECT_ROOT/sofagent/daemon/dist/cron.js"
+[ -f "$CRON_SRC" ] || { fail "cron.ts 不存在"; S117_OK=false; }
+if $S117_OK; then
+  grep -q "ab-schedule" "$CRON_SRC" || { fail "cron.ts 缺 ab-schedule 分支"; S117_OK=false; }
+  grep -q "runABScheduledTask" "$CRON_SRC" || { fail "cron.ts 缺 runABScheduledTask 调用"; S117_OK=false; }
+fi
+$S117_OK && pass
+scenario 118 "v1.1.9 loop-state-extractor——extractControlGraphState 骨架（version:v1 + 空骨架降级）"
+S118_OK=true
+require_dist "sofagent/orchestrator/dist/loop-state-extractor.js" || S118_OK=false
+if $S118_OK; then
+  S118_RESULT=$(LSE="$PROJECT_ROOT/sofagent/orchestrator/dist/loop-state-extractor.js" node -e "
+    const { extractControlGraphState, CONTROL_GRAPH_SCHEMA_VERSION } = require(process.env.LSE);
+    const state = extractControlGraphState('nonexistent-loop', '/tmp/nonexistent-checkpoint-dir');
+    if (state.version !== CONTROL_GRAPH_SCHEMA_VERSION || state.version !== 'v1') { console.log('version 错误: ' + state.version); process.exit(1); }
+    if (state.loopId !== 'nonexistent-loop') { console.log('loopId 错误: ' + state.loopId); process.exit(1); }
+    if (state.waves.length !== 0 || state.nodes.length !== 0) { console.log('空骨架应无 waves/nodes'); process.exit(1); }
+    if (state.finalStatus !== 'running') { console.log('空骨架 finalStatus 应 running: ' + state.finalStatus); process.exit(1); }
+    console.log('OK version=' + state.version);
+  " 2>&1) || true
+  echo "$S118_RESULT" | grep -q "^OK " || { fail "extractControlGraphState 骨架验证失败: $S118_RESULT"; S118_OK=false; }
+fi
+$S118_OK && pass
+scenario 119 "v1.1.9 loop-state-extractor——sanitizeLoopId + assertWithinDir 路径穿越防护"
+S119_OK=true
+require_dist "sofagent/orchestrator/dist/loop-state-extractor.js" || S119_OK=false
+if $S119_OK; then
+  S119_RESULT=$(LSE="$PROJECT_ROOT/sofagent/orchestrator/dist/loop-state-extractor.js" node -e "
+    const { extractControlGraphState, writeControlGraphState } = require(process.env.LSE);
+    // 路径穿越 POC：loopId 含 ../../ 应被消毒为 ____（非穿越）
+    const evil = '../../../etc/passwd';
+    const state = extractControlGraphState(evil, '/tmp/nonexistent');
+    // 消毒后 loopId 不应含原始路径分隔符
+    if (state.loopId.includes('/') || state.loopId.includes('..')) { console.log('消毒失败 loopId=' + state.loopId); process.exit(1); }
+    // writeControlGraphState 对路径穿越 loopId 应安全落盘（消毒后路径在 dir 内）
+    const fs = require('fs'), os = require('os'), path = require('path');
+    const tmpOut = fs.mkdtempSync(path.join(os.tmpdir(), 's119-'));
+    const written = writeControlGraphState(evil, '/tmp/nonexistent', tmpOut);
+    const resolved = path.resolve(written);
+    if (!resolved.startsWith(path.resolve(tmpOut) + path.sep)) { console.log('落盘路径越界: ' + resolved); process.exit(1); }
+    fs.rmSync(tmpOut, { recursive: true, force: true });
+    console.log('OK sanitized=' + state.loopId.slice(0, 12));
+  " 2>&1) || true
+  echo "$S119_RESULT" | grep -q "^OK " || { fail "路径穿越防护验证失败: $S119_RESULT"; S119_OK=false; }
+fi
+$S119_OK && pass
+scenario 120 "v1.1.9 产品叙事收敛——README FDE Agent + 审计引擎零 token + v1.1.8 已发布 红线保留"
+S120_OK=true
+README="$PROJECT_ROOT/README.md"
+FDE_COUNT=$(grep -c "FDE Agent" "$README" 2>/dev/null || echo 0)
+[ "$FDE_COUNT" -ge 5 ] || { fail "README 'FDE Agent' 出现 $FDE_COUNT 次（期望 ≥5）"; S120_OK=false; }
+grep -q "审计引擎零 token" "$README" || { fail "README 缺 '审计引擎零 token'"; S120_OK=false; }
+grep -q "v1.1.8" "$README" || { fail "README 缺 'v1.1.8' 版本标记"; S120_OK=false; }
+$S120_OK && pass
+scenario 121 "v1.1.9 BugFix 回归锁——dag-runner SubAgent 无 tools / sanitizer 9 条 / parser schema limits"
+S121_OK=true
+DAG_RUNNER="$PROJECT_ROOT/sofagent/orchestrator/src/dag-runner.ts"
+SANITIZER="$PROJECT_ROOT/sofagent/core/src/security/prompt-sanitizer.ts"
+PARSER="$PROJECT_ROOT/sofagent/orchestrator/src/workflow-parser.ts"
+grep -q "assertSubAgentsNoEmptyTools" "$DAG_RUNNER" || { fail "dag-runner 缺 assertSubAgentsNoEmptyTools"; S121_OK=false; }
+SANITIZER_COUNT=$(grep -c "name: '" "$SANITIZER" 2>/dev/null || echo 0)
+[ "$SANITIZER_COUNT" -ge 9 ] || { fail "prompt-sanitizer 规则数 $SANITIZER_COUNT（期望 ≥9）"; S121_OK=false; }
+grep -q "MAX_NODES = 20" "$PARSER" || { fail "workflow-parser 缺 MAX_NODES = 20"; S121_OK=false; }
+grep -q "MAX_TASK_LENGTH = 2000" "$PARSER" || { fail "workflow-parser 缺 MAX_TASK_LENGTH = 2000"; S121_OK=false; }
+$S121_OK && pass
 # ── 总结 ──────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

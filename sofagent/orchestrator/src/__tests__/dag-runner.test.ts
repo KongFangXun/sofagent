@@ -16,6 +16,7 @@ import {
   runDAG,
   detectFileConflicts,
   ORCHESTRATOR_PROMPT,
+  assertSubAgentsNoEmptyTools,
   type CreateDeepAgentFn,
 } from '../dag-runner';
 import { parseWorkflowYaml } from '../workflow-parser';
@@ -126,5 +127,24 @@ workflow:
         buildConstrainedSystemPrompt: mockBuildPrompt,
       }),
     ).rejects.toThrow(/deepagents 不可用/);
+  });
+
+  // 用例 6（F-01 回归防护）：SubAgent 配置不含空 tools 数组
+  it('SubAgent 配置不含空 tools 数组（omit tools → 继承默认工具集）', async () => {
+    const captured: { params?: Parameters<CreateDeepAgentFn>[0] } = {};
+    await runDAG('实现登录', TWO_NODE_YAML, '/proj', {
+      createDeepAgent: mockCreateDeepAgent(captured),
+      buildConstrainedSystemPrompt: mockBuildPrompt,
+    });
+    expect(captured.params).toBeDefined();
+    for (const sa of captured.params!.subagents) {
+      // tools 字段不应存在或不应为空数组
+      expect(sa.tools === undefined || (Array.isArray(sa.tools) && sa.tools.length > 0)).toBe(true);
+      if ('tools' in sa) {
+        expect(Array.isArray(sa['tools']) ? (sa['tools'] as unknown[]).length > 0 : true).toBe(true);
+      }
+    }
+    // 回归防护辅助函数也验证
+    expect(() => assertSubAgentsNoEmptyTools(captured.params!.subagents as Array<Record<string, unknown>>)).not.toThrow();
   });
 });

@@ -32,6 +32,8 @@ templates/ 不是装到本地的——是给 FDE 读的案例参考。与其留�
 | `quick-start.md`（上手文档） | sofagent 安装包自带，在 `FDE/quick-start.md`，直接复用 |
 | AI 知识库（think.md / task/logs / eval.md / orchestrator/） | AI 节点跑起来后自动积累，模板在 `sofagent/skill/data/` 下 |
 
+> 💡 **这个目录是 FDE 自己读的案例参考，产出不落在这里。** FDE 读 templates/ 填完内容后，产出落到用户项目根目录的企业名文件夹（如 `{企业名}/`），详见 [FDE.md §9 交接清单](../FDE.md#9-交接清单)。用户打开 Finder 就能看到。
+
 ## 交付物分两类
 
 ### 一、交付手册（一份文档）
@@ -63,7 +65,7 @@ FDE 离场前打包给企业的文档，只含 4 章：
 ## fde-install.sh 不装这个目录
 
 templates/ 是给 FDE 读的案例参考，**不是装到客户设备上的**。客户设备上跑的是：
-- `nodes/`（基于模板填出来的实际节点文档）
-- `skills/`（基于模板填出来的实际企业 Skill）
+- `{企业名}/nodes/`（基于模板填出来的实际节点文档）
+- `{企业名}/skills/`（基于模板填出来的实际企业 Skill）
 
-fde-install.sh 只装运行时必需的：sofagent 底座 + fde.md。
+fde-install.sh 只装运行时必需的：sofagent 底座 + fde.md。FDE §9 交接清单填完后，产出落盘到用户项目根目录的企业名文件夹。
