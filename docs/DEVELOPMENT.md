@@ -188,6 +188,20 @@ FDE 部署 SOP 应遵循此顺序：
 
 > 前三个是用户侧工具，后两个是运行时脚本。**设计原则**：确定性操作脚本化——去重、格式校验、文件清理这类即刻运算，脚本比 Agent 更快更省更可靠。
 
+#### USB 完整运行时代码架构（v1.1.8+）
+
+USB key 不是简单的文件复制——它是一个完整的便携式运行时。三个模块协作：
+
+| 模块 | 源码 | 职责 |
+|------|------|------|
+| 写入侧 | `daemon/src/usb-key.ts` | `createUsbKey()` 主入口——复制 Node 便携版 + sofagent dist + 三平台启动脚本 → 写 federation.json（AES key + HMAC key，缺字段自动生成随机密钥）→ knowledge/ 用 `core/crypto/aes-gcm.ts` 加密落盘（只存密文）→ 全量 HMAC 签名 |
+| 签名 | `daemon/src/usb-signature.ts` | HMAC-SHA256 全量签名：路径 POSIX 归一化 + 字典序 + SHA-256 内容哈希串联，不含 mtime（确定性可复算） |
+| 运行侧 | `daemon/src/usb-runtime.ts` | `startUsbRuntime()` 主入口——启动验签 fail-closed（失败写 `security-events.jsonl` + exit 1）→ 内存解密 knowledge/（明文不落盘）→ `SOFAGENT_DATA`/`OPENCLAW_HOME` 便携化 env → daemon 主循环 → 退出 `Buffer.fill(0)` 清内存密钥 |
+
+CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写入侧）+ `sofagent-daemon start --usb-root`（运行侧）。启动脚本：`daemon/usb/start.command`（macOS）/ `start.sh`（Linux）/ `start.bat`（Windows）。
+
+> 💡 USB 功能的用户侧使用见 [HANDBOOK 场景五](./HANDBOOK.md#usb-烧录给普通员工发-u-盘v118) 和 [FDE/FDE.md §部署场景](../FDE/FDE.md)。这里只讲代码层架构。
+
 ---
 
 ## 二、编排哲学
@@ -204,6 +218,31 @@ FDE 部署 SOP 应遵循此顺序：
 #### 测试友好：依赖注入
 
 StateGraph 的流转逻辑通过 `LoopGraphDeps` 接口完全可 mock——`runEngineer / runAudit / runReviewer / confirmHuman / recordBlocked / checkpointer / maxRetries / log` 七个槽位。`defaultDeps()` 给生产实现，测试时整体替换。这让节点流转逻辑可以脱离真实 LLM 单测（v1.1.7 测试堆到 770 case 的前提）。
+
+#### DAG Runner 与 Workflow 解析（v1.1.8+）
+
+compose 生成的编排方案 YAML 怎么真正跑起来——`dag-runner.ts`（`createDeepAgent({ subagents })` 真委派）负责调度，`workflow-parser.ts` 负责把 YAML 映射为 SubAgent 配置：
+
+| 模块 | 源码 | 职责 |
+|------|------|------|
+| dag-runner | `orchestrator/src/dag-runner.ts` | 接收 SubAgent[] 配置 → `createDeepAgent` 真委派 → 主 Agent 自主决定何时调哪个 Sub Agent（串行）。每个 Sub Agent 注入四层约束加载链 |
+| workflow-parser | `orchestrator/src/workflow-parser.ts` | YAML→SubAgent 映射（developer→ENGINEER / qa-engineer→REVIEWER / researcher→FDE sustain / technical-writer→内置）。DAG 悬空 / 自依赖 / 环校验 |
+| composer 改造 | `orchestrator/src/composer.ts` | `ComposeResult{ yaml, subagents }`——接 `enterpriseWorkflowYaml` + `variant` A/B/C/D 拆解策略 |
+
+> ⚠️ **当前是串行**：dag-runner 文件名暗示 DAG 并行，但实际是串行状态机（非并行调度）。完整的 DAG 并行规划在 [ROADMAP v1.3.0](../ROADMAP.md)。
+
+#### A/B 自动调度器（v1.1.9+）
+
+v1.1.8 手动 A/B 对比的自动化升级——daemon cron 在后台跑探索-利用循环：
+
+| 阶段 | 做什么 |
+|------|--------|
+| 利用 | 当前方案跑真实任务攒 N 次数据 |
+| 探索 | exploreCandidates 队首候选方案跑 N 次 |
+| 判定 | `aggregateRecent` 对比 avgPassRate，候选连续 2 轮更好 → promote |
+| 循环 | 旧方案回探索队尾，状态原子写 `ab-scheduler-state.json` 可重启恢复 |
+
+`ab-history.ts` 负责累积 jsonl + 最近 N 次聚合（平均通过率 / 平均耗时 / 失败模式聚类）+ K=100 截断。注入依赖（compose / runDAG / extractMetrics）而非硬编码，测试零网络全 mock。
 
 ### 收敛约束
 
