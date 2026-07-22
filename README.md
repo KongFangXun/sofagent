@@ -22,7 +22,7 @@
 
 ---
 
-## 它解决什么问题
+## ① FDE Agent 是什么
 
 Agent 越聪明，企业越不敢放手——真出事了，谁负责？能拦住吗？能回滚吗？
 
@@ -30,11 +30,36 @@ Agent 越聪明，企业越不敢放手——真出事了，谁负责？能拦�
 
 > 💡 **为什么是现在**：a16z（2026-07）指出「人类历史上第一次，人比软件便宜」——每家公司在雇「一百万个糟糕的 AI 员工」，80% 的 token 在空转。解法不是更强的模型，而是**管理**。sofagent 正是那一层：用约束 + 审计把 Agent 队伍管起来。
 
+<details>
+<summary>🏞️ 一条河的模型（点开）</summary>
+
+大厂造河（LLM = 水，Agent 平台 = 河床，没有河床水只是一片汪洋），我们做**堤坝 + 自来水厂 + 管网 + 水龙头**——约束层（不让水泛滥）+ 沙箱安全（让水从"能喝"到"敢喝"）+ Workflow（把能力引到业务）+ Subagent（让能力在具体业务用水）。想象一座城市——城边的大江水是好水，但你不敢直接舀着喝；sofagent 就是修堤坝、建自来水厂、铺管网、装水龙头那套——**让原水变成企业敢喝的直饮水**。详见 [`FDE/FDE.md` §9.6](FDE/FDE.md#96-river大厂造河与企业用水)。
+
+</details>
+
+> 💡 **换个角度说：一个能用的智能体 ≠ AI + 一段 prompt**——它是一套由多层组成的骨架（配置 / 知识 / 指令 / 校验 / 编排）。sofagent 的约束底座是骨架里的钢筋，审计引擎是质检。给 Agent 搭脚手架（工具 / 权限 / 沙箱 / 规则），而非造一个更聪明的模型。
+
+**实测效果**：
+
+> [!NOTE]
+> 🔬 **Hugging Face 实测**：同一模型不改权重、仅优化外层 Harness，法律 Agent 基准 **3.5% → 80.1%**（76 分差全部来自外层机制），成本仅 1/7（追平 Claude Sonnet 4.6）。[详情](./docs/THANKS.md)
+
+| 维度 | 数据 |
+|------|------|
+| 审计引擎 | 21 条规则全覆盖，`npm test` 全绿（见 tools/test-count.sh 实测），0 token 消耗 |
+| 平台覆盖 | git commit 审计（开发者）+ daemon 文件审计（非开发者）|
+| 协议 | MIT（代码 / 文档 / 模板随便用）|
+
+---
+
+## ② 装上就能用
+
 ```bash
+# FDE Agent 一键部署
 bash FDE/fde-install.sh
 ```
 
-> 💡 开发者想只跑审计引擎？看下方「高级 / 开发者路径」。OpenClaw 是企业无人值守场景才需要。
+> 💡 开发者想只跑审计引擎？看下方「④ 引擎架构 · 高级/开发者路径」。OpenClaw 是企业无人值守场景才需要。
 
 > [!NOTE]
 > 需要 Node.js ≥ 18 + bash + git。macOS / Linux 全功能，Windows 实验性。
@@ -58,9 +83,64 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
 </details>
 
+**按需安装**：
+
+| 包 | 用途 |
+|------|------|
+| `@sofagent/audit` | 审计引擎（21 条规则，git diff 硬证据）|
+| `@sofagent/core` | 运行时诊断（doctor / verify）|
+| `@sofagent/orchestrator` | 编排引擎（多 Agent 协作）|
+| `@sofagent/daemon` | 守护进程（文件监控 / 定时巡检）|
+| `@sofagent/mcp` | MCP Server（JSON-RPC 2.0）|
+
+**卸载**：
+
+```bash
+npm uninstall -g @sofagent/audit @sofagent/core @sofagent/orchestrator @sofagent/daemon @sofagent/mcp
+rm -f .git/hooks/commit-msg .git/hooks/post-commit
+```
+
+### 两种部署节点
+
+| 节点 | 场景 | 需要 OpenClaw |
+|------|------|:--:|
+| 🔄 自动运行节点 | 企业无人值守设备（服务器/旧电脑）| 是 |
+| ⚡ 个人增强节点 | 开发者用 WorkBuddy / Codex / Claude Code | 否 |
+
+> 💡 个人增强节点：clone 仓库 → `bash FDE/fde-install.sh` → 直接上手。
+
 ---
 
-## 30 秒看懂
+## ③ 企业落地：FDE Agent
+
+sofagent 不只是开发者工具——企业落地用 **FDE Agent**：
+
+- **FDE Agent**（`FDE/`）：前线部署工程师进场四阶段（梳理 → 挖掘 → 交付 → 离场），把企业工作流梳理成 AI 节点，部署完撤离、AI 节点自己跑。详见 [FDE/FDE.md](./FDE/FDE.md)。
+- **Workflow Hub**：行业工作流模板（v1.1.9 已物理迁出至商业产品 `sofagent-commercial/FLOWHUB/`，MIT 仓库不再维护）。
+- **LOOP 自迭代工具包**（`LOOP/`）：sofagent 的外层自迭代编排——内层 `coding → audit → review → human`，外层 `FDE 监督 → compliance 巡检 → 优化 Agent 定义`。详见 [LOOP/README.md](./LOOP/README.md)。
+
+**三产品关系**：sofagent 核心管「每次变更守门」（commit / 文件变更即审计）；FDE 管「进场部署交付」（把 sofagent 装到企业设备并撤离）；LOOP 管「长期自迭代」（持续巡检 + 优化 Agent 定义）。三者共享同一套约束底座与审计引擎，均非可独立运行的独立仓库（需先 `git clone` 主仓库）。
+
+> 💡 **命名约定**：大写目录（`FDE/`、`LOOP/`）是 sofagent 的**部署/产品入口**，需先 `git clone` 主仓库后运行（**非可独立运行的独立仓库**，单独 clone 子目录会因依赖主仓库 `sofagent/scripts/install.sh` 而跑不通）；小写目录（`sofagent/`、`docs/`、`tools/`）= 核心代码与配置。
+
+### 产品形态：MCP + dashboard
+
+sofagent 内核（审计引擎 + 编排引擎 + FDE 能力）是给开发者用的。但当它被产品化、交给非技术买家（SMB / OPC 老板、企业内部 champion）时，需要一层不同的外壳：
+
+- **卖能力，不卖工时**：FDE 不是「驻场部署服务」，而是把「企业该有的 AI 落地能力」封装成由 Agent 驱动的 FDE 能力，让企业自己的员工去用、自己落地 AI 化。营收模型从「顾问工时」变成「企业数 × 订阅」，可规模化。
+- **为什么需要 dashboard**：sofagent 本身是 LUI-first（语言即界面）——但 Agent 的 LUI + LLM 会「吞噬一切」，非专家买家看不到持久状态、没有成就感锚点。所以产品化必须带一个**轻量 dashboard** 作为自有视图（审计状态 / AI 化进度 / 合规月报），让买家随时看得见「我公司 AI 化到哪了」。
+- **为什么用 MCP**：dashboard 是轻量化的，靠 **MCP** 配合——MCP 作为向外接的桥，让客户已有的 Agent / 你的 sub-agent 把数据喂给 dashboard 后端。MCP 是桥、不是唯一入口；dashboard 必须自己拥有。
+- **open-core 双轨**：内核（审计规则 / FDE 工作流 / 编排）继续 MIT 开源做信任资产；商业化只卖那层 dashboard（控制台 / 合规月报 / 告警）。开源负责让人信，闭源负责让人付。
+
+> 控制平面打法：底层 Agent 智能随便换（OpenClaw / 客户自选 / 大厂），治理与真相（策略谁配、审计链长啥样、Agent 注册在哪）永远在 sofagent 的 dashboard 里。
+
+---
+
+## ④ 引擎架构（开发者段）
+
+> 以下内容面向开发者。非技术用户只需知道：FDE Agent 建在 sofagent 引擎上，引擎负责每次变更的审计与回滚。
+
+### 30 秒看懂审计引擎
 
 ```mermaid
 flowchart LR
@@ -74,18 +154,7 @@ flowchart LR
 
 sofagent 引擎是 **Harness 中间件**——不管你用什么 Agent（Claude Code / Codex / Cursor / WorkBuddy）、什么模型，挂在 git commit 这个节点上，用 git diff 硬证据做审计。**平台无关、零侵入、零 token**。FDE Agent 就建在这套引擎上。
 
-<details>
-<summary>🏞️ 补充类比：一条河的模型（点开）</summary>
-
-大厂造河（LLM = 水，Agent 平台 = 河床，没有河床水只是一片汪洋），我们做**堤坝 + 自来水厂 + 管网 + 水龙头**——约束层（不让水泛滥）+ 沙箱安全（让水从"能喝"到"敢喝"）+ Workflow（把能力引到业务）+ Subagent（让能力在具体业务用水）。想象一座城市——城边的大江水是好水，但你不敢直接舀着喝；sofagent 就是修堤坝、建自来水厂、铺管网、装水龙头那套——**让原水变成企业敢喝的直饮水**。详见 [`FDE/FDE.md` §9.6](FDE/FDE.md#96-river大厂造河与企业用水)。
-
-</details>
-
-> 💡 **换个角度说：一个能用的智能体 ≠ AI + 一段 prompt**——它是一套由多层组成的骨架（配置 / 知识 / 指令 / 校验 / 编排）。sofagent 的约束底座是骨架里的钢筋，审计引擎是质检。给 Agent 搭脚手架（工具 / 权限 / 沙箱 / 规则），而非造一个更聪明的模型。
-
----
-
-## 为什么不用现有工具
+### 为什么不用现有工具
 
 | 工具 | 它查什么 | sofagent 查什么 |
 |------|---------|----------------|
@@ -95,9 +164,7 @@ sofagent 引擎是 **Harness 中间件**——不管你用什么 Agent（Claude 
 
 > 💡 **核心差异**：现有工具查「代码写得对不对」，sofagent 查「Agent 做得对不对」——边界越界、知识库跨域、流程合规、盲改逃验证，这些是 LLM Agent 特有的失效模式，通用 lint 工具覆盖不到。
 
----
-
-## 21 条规则（5 类）
+### 21 条规则（5 类）
 
 **默认规则（13 条，装完即生效）**：
 
@@ -141,9 +208,7 @@ sofagent 引擎是 **Harness 中间件**——不管你用什么 Agent（Claude 
 **规则分级**：业务底线（违反即破坏交付完整性）· 能力拐杖（帮 Agent 走完正确流程）· 工程规范（代码工程质量基线）。
 </details>
 
----
-
-## 引擎架构（开发者段）：一底座 · 四引擎
+### 一底座 · 四引擎
 
 sofagent 引擎不只是审计——完整形态是「一底座 + 四引擎」的 Harness 中间件：
 
@@ -245,9 +310,7 @@ graph LR
 
 </details>
 
----
-
-## 你的场景 → 用什么
+### 你的场景 → 用什么
 
 | 你的场景 | 装什么 |
 |---------|--------|
@@ -255,84 +318,6 @@ graph LR
 | 管住 Agent 全流程（约束 + 审计 + 回滚）| + `@sofagent/daemon`（文件监控）|
 | 多 Agent 协作 / 工作流编排 | + `@sofagent/orchestrator`（编排引擎）|
 | 让 MCP Client 调用审计能力 | + `@sofagent/mcp`（MCP Server）|
-
-### 两种部署节点
-
-| 节点 | 场景 | 需要 OpenClaw |
-|------|------|:--:|
-| 🔄 自动运行节点 | 企业无人值守设备（服务器/旧电脑）| 是 |
-| ⚡ 个人增强节点 | 开发者用 WorkBuddy / Codex / Claude Code | 否 |
-
-> 💡 个人增强节点：clone 仓库 → `bash FDE/fde-install.sh` → 直接上手。
-
----
-
-## 怎么装
-
-```bash
-# FDE Agent 一键部署
-bash FDE/fde-install.sh
-
-# 完整安装（一底座·四引擎）
-git clone https://github.com/KongFangXun/sofagent.git
-bash sofagent/scripts/install.sh
-```
-
-**按需安装独立包**：
-
-| 包 | 用途 |
-|------|------|
-| `@sofagent/audit` | 审计引擎（21 条规则，git diff 硬证据）|
-| `@sofagent/core` | 运行时诊断（doctor / verify）|
-| `@sofagent/orchestrator` | 编排引擎（多 Agent 协作）|
-| `@sofagent/daemon` | 守护进程（文件监控 / 定时巡检）|
-| `@sofagent/mcp` | MCP Server（JSON-RPC 2.0）|
-
-**卸载**：
-
-```bash
-npm uninstall -g @sofagent/audit @sofagent/core @sofagent/orchestrator @sofagent/daemon @sofagent/mcp
-rm -f .git/hooks/commit-msg .git/hooks/post-commit
-```
-
----
-
-## 企业落地：FDE Agent
-
-sofagent 不只是开发者工具——企业落地用 **FDE Agent**：
-
-- **FDE Agent**（`FDE/`）：前线部署工程师进场四阶段（梳理 → 挖掘 → 交付 → 离场），把企业工作流梳理成 AI 节点，部署完撤离、AI 节点自己跑。详见 [FDE/FDE.md](./FDE/FDE.md)。
-- **Workflow Hub**：行业工作流模板（v1.1.9 已物理迁出至商业产品 `sofagent-commercial/FLOWHUB/`，MIT 仓库不再维护）。
-- **LOOP 自迭代工具包**（`LOOP/`）：sofagent 的外层自迭代编排——内层 `coding → audit → review → human`，外层 `FDE 监督 → compliance 巡检 → 优化 Agent 定义`。详见 [LOOP/README.md](./LOOP/README.md)。
-
-**三产品关系**：sofagent 核心管「每次变更守门」（commit / 文件变更即审计）；FDE 管「进场部署交付」（把 sofagent 装到企业设备并撤离）；LOOP 管「长期自迭代」（持续巡检 + 优化 Agent 定义）。三者共享同一套约束底座与审计引擎，均非可独立运行的独立仓库（需先 `git clone` 主仓库）。
-
-> 💡 **命名约定**：大写目录（`FDE/`、`LOOP/`）是 sofagent 的**部署/产品入口**，需先 `git clone` 主仓库后运行（**非可独立运行的独立仓库**，单独 clone 子目录会因依赖主仓库 `sofagent/scripts/install.sh` 而跑不通）；小写目录（`sofagent/`、`docs/`、`tools/`）= 核心代码与配置。
-
-
-## 产品形态：MCP + dashboard
-
-sofagent 内核（审计引擎 + 编排引擎 + FDE 能力）是给开发者用的。但当它被产品化、交给非技术买家（SMB / OPC 老板、企业内部 champion）时，需要一层不同的外壳：
-
-- **卖能力，不卖工时**：FDE 不是「驻场部署服务」，而是把「企业该有的 AI 落地能力」封装成由 Agent 驱动的 FDE 能力，让企业自己的员工去用、自己落地 AI 化。营收模型从「顾问工时」变成「企业数 × 订阅」，可规模化。
-- **为什么需要 dashboard**：sofagent 本身是 LUI-first（语言即界面）——但 Agent 的 LUI + LLM 会「吞噬一切」，非专家买家看不到持久状态、没有成就感锚点。所以产品化必须带一个**轻量 dashboard** 作为自有视图（审计状态 / AI 化进度 / 合规月报），让买家随时看得见「我公司 AI 化到哪了」。
-- **为什么用 MCP**：dashboard 是轻量化的，靠 **MCP** 配合——MCP 作为向外接的桥，让客户已有的 Agent / 你的 sub-agent 把数据喂给 dashboard 后端。MCP 是桥、不是唯一入口；dashboard 必须自己拥有。
-- **open-core 双轨**：内核（审计规则 / FDE 工作流 / 编排）继续 MIT 开源做信任资产；商业化只卖那层 dashboard（控制台 / 合规月报 / 告警）。开源负责让人信，闭源负责让人付。
-
-> 控制平面打法：底层 Agent 智能随便换（OpenClaw / 客户自选 / 大厂），治理与真相（策略谁配、审计链长啥样、Agent 注册在哪）永远在 sofagent 的 dashboard 里。
-
----
-
-## 实测效果
-
-> [!NOTE]
-> 🔬 **Hugging Face 实测**：同一模型不改权重、仅优化外层 Harness，法律 Agent 基准 **3.5% → 80.1%**（76 分差全部来自外层机制），成本仅 1/7（追平 Claude Sonnet 4.6）。[详情](./docs/THANKS.md)
-
-| 维度 | 数据 |
-|------|------|
-| 审计引擎 | 21 条规则全覆盖，`npm test` 全绿（见 tools/test-count.sh 实测），0 token 消耗 |
-| 平台覆盖 | git commit 审计（开发者）+ daemon 文件审计（非开发者）|
-| 协议 | MIT（代码 / 文档 / 模板随便用）|
 
 ---
 

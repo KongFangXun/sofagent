@@ -1,6 +1,6 @@
 # sofagent Handbook
 
-> **Gateway 管怎么跑，sofagent 管跑没跑对。** 约束底座→编排引擎→审计引擎→回溯引擎（本质：git snapshot + revert 包装）→进化引擎，一底座·四引擎覆盖全生命周期。装完 sofagent 之后，你不再需要依赖别人来部署 AI——**你自己就具备了 FDE 的能力：掌握完整上下文、打破岗位边界、对结果负责。** 下面从装到用到查问题，全流程走一遍。
+> **给 SMB 和 OPC 的 FDE Agent ——底层是 sofagent 引擎（Harness 中间件），一底座·四引擎覆盖全生命周期。** 你看到的 FDE Agent 是产品身份；翻到底下，约束底座管行为、审计引擎盯结果、编排引擎自动干活、回溯引擎兜回滚、进化引擎越用越好。装完之后，你不再需要依赖别人来部署 AI——**你自己就具备了 FDE 的能力：掌握完整上下文、打破岗位边界、对结果负责。** 下面从装到用到查问题，全流程走一遍。
 >
 > v1.1.8 · 2026-07-22（UTC）· 孔放勋
 
@@ -40,7 +40,7 @@
 
 | 你想知道的 | 一句话 | 详见 |
 |------|------|------|
-| 这是什么 | 给 Agent 加行为约束——4 底线 + 7 则铁律 | 场景二 |
+| 这是什么 | 给 SMB 和 OPC 的 FDE Agent——底层 sofagent 引擎（Harness 中间件）管 Agent 行为 | 场景二 |
 | 怎么装 | `bash sofagent/scripts/install.sh` | 场景一 |
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | 场景二 |
 | 审计怎么跑 | 开发者：git commit 自动审计。非开发者：v1.0.8+ daemon 监控文件变更自动审计 | 场景一 |
@@ -364,7 +364,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 审计 Agent 管"刹车是不是还在"，FDE Agent 管"能不能换更好的轮胎"。两者合在一起，企业的 AI 节点不需要人盯着。
 
-> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。
+> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。FDE Agent 是这一层的产品封装——对外你看到的是 FDE Agent，对内是 sofagent 引擎在跑。
 
 ---
 
