@@ -755,4 +755,4 @@
 
 | 检查点描述 | 防御的问题 | 建议落位 |
 |-----------|-----------|---------|
-|           |           |         |
+| regression-checklist 维度的 bash 示例命令自身可能有 Bug（如只有 1 个 commit 就跑 `HEAD~1..HEAD`），导致独立审查者照着跑出假阳性 FAIL | 维度示例命令 ≠ 可正确执行的复现脚本；审查者盲信示例命令会误报 | regression-checklist 每个维度的 bash 示例命令在写入前必须本地实跑验证一次（同 acceptance-test 场景的硬约束） |

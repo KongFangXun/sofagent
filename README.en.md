@@ -123,6 +123,36 @@ sofagent isn't just a developer tool — enterprise deployment uses the **FDE Ag
 
 > 💡 **Naming convention**: capitalized directories (`FDE/`, `LOOP/`) are sofagent's **deployment/product entry points** — they require cloning the main repo first (not standalone repos; cloning just the subdirectory will fail due to dependency on `sofagent/scripts/install.sh`); lowercase directories (`sofagent/`, `docs/`, `tools/`) = core code and configuration.
 
+### What FDE Agent delivers
+
+After FDE leaves, the enterprise keeps five things — the first four are assets, the fifth is the FDE Agent itself keeping them alive:
+
+| Deliverable | Description |
+|-------------|-------------|
+| Deployment manual | Operation manual that enterprise IT can independently maintain |
+| AI nodes | Running Agents that auto-execute daily tasks (financial reconciliation, audit inspection, data analysis...) |
+| AI knowledge base | Continuously accumulated entities, concepts, comparison pages (Dream Cycle auto-sedimentation) |
+| Private evaluation system | eval feedback + Skill iteration history — non-copyable enterprise IP |
+| **FDE Agent itself** | Running 24/7 — manages the lifecycle of the above four; the human leaves, it stays |
+
+### USB one-click burn: build workflow → distribute USB keys
+
+After FDE maps out the workflow nodes, you can burn a complete runtime onto a USB key — employees plug it into any computer, double-click, and it runs. No installation, no pairing:
+
+```bash
+# After plugging in the USB, one command burns the full runtime
+sofagent-daemon create-usb-key \
+  --role "Financial Audit Node" \
+  --target /Volumes/SOFAGENT \
+  --platform macos
+```
+
+**What's on the USB**: Portable Node.js + sofagent engine (audit/orchestration/constraint/rollback) + knowledge encrypted on disk (AES-256-GCM) + cross-platform start scripts + HMAC tamper-proof signature.
+
+**Plug and play**: Double-click `start.command` (macOS) / `start.sh` (Linux) / `start.bat` (Windows) → verify signature → decrypt knowledge to memory → daemon starts → federation online. Unplug the USB, zero residue on the computer.
+
+> 💡 Build a financial workflow → burn a batch of USB keys → distribute to the finance team → each person plugs in and uses their own Agent to access the USB's knowledge and audit capabilities. See [FDE/FDE.md §deployment scenarios](./FDE/FDE.md).
+
 ### Product form: MCP + dashboard
 
 The sofagent core (audit engine + orchestration engine + FDE capability) is for developers. When productized for non-technical buyers, it needs a different shell:

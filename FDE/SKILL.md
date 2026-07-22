@@ -68,6 +68,23 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 | 部署方案 | Workflow 节点清单、knowledge-domain 矩阵、HITL 配置 |
 | 企业 Skill | 注入企业专属规则和行业术语的定制 Skill |
 | 部署手册 | 企业 IT 可独立维护的操作手册 |
+| **USB key**（v1.1.8+） | 梳理好的 workflow 烧录到 U 盘——员工插上即用 |
+
+### USB 烧录（v1.1.8+）
+
+当用户需要给普通员工或无头设备部署时，帮他们烧录 U 盘：
+
+```bash
+# 插上 U 盘后跑这条命令（或用 Agent 对话触发）
+sofagent-daemon create-usb-key \
+  --role "<节点角色名，如：财务审计节点>" \
+  --target /Volumes/SOFAGENT \
+  --platform macos   # 或 linux / win
+```
+
+U 盘写入完成后，包含：Node.js 便携版 + sofagent 引擎 + knowledge 加密落盘 + 启动脚本 + HMAC 签名。员工双击 `start.command`（macOS）/ `start.sh`（Linux）/ `start.bat`（Windows）即用。
+
+**触发场景**：用户说"帮我烧一个 U 盘"/"给 XX 岗位做一个 U 盘"/"批量发给员工"时，先确认目标平台（macOS/Linux/Windows）和 U 盘挂载路径，再执行烧录。
 
 **成功指标**：知识库覆盖率 ≥80% · 节点定义 100% 完整 · knowledge-domain 零漏洞 · IT 可独立维护 · doctor 全绿
 

@@ -339,6 +339,21 @@ FDE = Forward Deployed Engineer。完整流程见 [FDE/FDE.md](../FDE/FDE.md)。
 
 **节点类型选择**：自动运行节点（需 OpenClaw 全栈）vs 个人增强节点（WorkBuddy/Codex，无需 OpenClaw）。完整对照表见 [ARCHITECTURE 双节点架构](./ARCHITECTURE.md#双节点架构)。
 
+### USB 烧录：给普通员工发 U 盘（v1.1.8+）
+
+FDE 梳理好 workflow 节点后，可以一键烧录到 U 盘——员工拿到插上就能用：
+
+```bash
+sofagent-daemon create-usb-key \
+  --role "财务审计节点" \
+  --target /Volumes/SOFAGENT \
+  --platform macos   # 或 linux / win
+```
+
+U 盘包含：Node.js 便携版 + sofagent 引擎 + knowledge/ 加密落盘 + 启动脚本 + HMAC 防篡改签名。员工双击 `start.command`/`.sh`/`.bat` → 验签 → 内存解密 → daemon 启动 → 联邦在线。拔掉零残留。详见 [FDE/FDE.md §部署场景](../FDE/FDE.md)。
+
+> 💡 跟你的 Agent 说"帮我烧一个 XX 节点的 U 盘"也行——Agent 会通过 FDE Skill 触发 `create-usb-key`。
+
 ### 离场后：企业留下什么 + 谁来管
 
 | 产物 | 说明 |
@@ -347,6 +362,7 @@ FDE = Forward Deployed Engineer。完整流程见 [FDE/FDE.md](../FDE/FDE.md)。
 | **AI 节点** | 文档层（.md）+ Skill 层（企业专属）+ 运行层（在跑的 session） |
 | **AI 知识库** | `.sofagent/knowledge/` — daemon 自动 Ingest，加载链被动注入 |
 | **私有化评估体系** | eval.md + Skill 迭代历史 + 知识库演变轨迹 |
+| **USB key**（v1.1.8+） | 烧录好的 U 盘——插上即用，换电脑身份不变 |
 
 FDE 离场后，两个内置 Agent 接手持续运维：
 
