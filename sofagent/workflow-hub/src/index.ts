@@ -1,9 +1,0 @@
-/**
- * @sofagent/work模板市场
- *
- * 工作流中心 — 工作流注册 / 模板管理 / 执行历史
- */
-
-export { listTemplates } from './hub-list';
-export { deployTemplate } from './hub-deploy';
-export type { WorkflowTemplate } from './hub-list';
