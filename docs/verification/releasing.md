@@ -51,8 +51,9 @@
 | D3 | **acceptance-test 补场景** | 按 changelog 功能点逐条 grep `tools/acceptance-test.sh`，零覆盖 = 未交付。**Step D 覆盖率闭环判定三项全 PASS** | 工程师 |
 | D4 | **审查体系已更新** | `regression-checklist.md` 追加本版本新维度 + `fresh-eyes-review.md` 补充新盲区。**可留发版 session 阶段五补做**，但开发 session 须标注「待补」 | 工程师 |
 | D5 | **版本号状态标注** | changelog 头部标注「开发期 SSOT 仍为 vX.Y.Z，版本号 bump 留发版 SOP」或已 bump 完成 | 工程师 |
+| D6 | **项目文档同步清单**（v1.1.9 新增） | 从 `docs/changelog/vX.Y.md`「核心变更/交付」提取所有新功能关键词，列出「功能点 → 应在哪个文档出现」对照表。**归属原则**：详细机制写到权威文档（FDE.md / DEVELOPMENT.md / ARCHITECTURE.md），其他文档（HANDBOOK / README / PHILOSOPHY）一句话 + 链接引用，不重复展开。可留发版 session 阶段八执行，但开发 session 须产出清单 | 工程师 |
 
-> **发版 session 接手检查**：打开 `docs/changelog/vX.Y.md`，看头部状态标注。如果 D3/D4 标「待补」，发版 session 须先补完才能进入阶段三自测。**绝不能跳过 D3 直接跑 acceptance-test**——零覆盖的新功能跑出来全绿是假象。
+> **发版 session 接手检查**：打开 `docs/changelog/vX.Y.md`，看头部状态标注。如果 D3/D4/D6 标「待补」，发版 session 须先补完才能进入阶段三自测。**绝不能跳过 D3 直接跑 acceptance-test**——零覆盖的新功能跑出来全绿是假象。**D6 同理**——绝不能跳过文档同步直接进发布，changelog 里写了新功能但项目文档（HANDBOOK / ARCHITECTURE / DEVELOPMENT / PHILOSOPHY / README / FDE / LOOP）零提及 = 用户读文档不知道有这功能。
 
 ---
 
@@ -355,6 +356,64 @@ bash tools/check-version.sh 2>&1 | grep 'SKILL.md'
 - [ ] 前置依赖表——新增工具是否需要新依赖？
 - [ ] 英文版（README.en / EVIDENCE.en）内容是否与中文版同步？
 - [ ] COMMUNITY.md 实验状态、contributor 数是否为当前实际状态？
+
+#### 🔴 文档同步闭环（v1.1.9 新增，D6 闸门落地）
+
+> **结构性缺口（v1.1.9 暴露）**：changelog 维护得好，但项目介绍文档落后——v1.0.0→v1.1.8 期间开发了 Dream Cycle / sensitivity 分级 / knowledge status CLI / 安全联邦 / Prompt 注入防护 / USB 运行时 / A/B 调度器等十几个新功能，handbook/architecture/development/philosophy/readme 里大量功能零提及。changelog 是开发者看的，文档是用户看的——**changelog 写了但文档没同步，等于用户不知道有这功能**。
+>
+> **解决机制**：本步骤与 D3 的「acceptance-test 功能点对照闭环」完全对称——D3 做"changelog 功能点→验收场景覆盖率"对照，本步骤做"changelog 功能点→项目文档覆盖率"对照。
+
+**Step A — 从 D6 清单提取功能关键词**
+
+开发 session 在 D6 已产出「功能点 → 应在哪个文档出现」对照表。如果开发 session 标了「待补」，此时必须补上。
+
+```bash
+# 从本版本 changelog 提取功能关键词
+# 读 docs/changelog/vX.Y.md 的「核心变更/交付」章节
+# 列出每条功能 + 其应在的项目文档（按归属原则）
+```
+
+**归属原则**（v1.1.9 定稿）：
+
+| 功能类型 | 权威文档（写详细机制 + 配置方法） | 其他文档（一句话 + 链接引用） |
+|---------|------|------|
+| 审计规则/引擎内部机制 | DEVELOPMENT.md | HANDBOOK 速览表 + ARCHITECTURE 引用 |
+| FDE 企业操作流程 | FDE.md | README 企业段 + HANDBOOK 速览表 |
+| 编排/调度/运行时 | ARCHITECTURE.md + DEVELOPMENT.md | README 引擎段引用 |
+| 理念/定位叙事 | PHILOSOPHY.md | README 开篇引用 |
+| 安全机制 | SECURITY.md | FDE/ARCHITECTURE 引用 |
+| 用户日常使用 | HANDBOOK.md | README 快速上手段引用 |
+| 开发循环工具 | LOOP.md | DEVELOPMENT 引用 |
+
+**Step B — 逐条 grep 验证覆盖**
+
+```bash
+# 对每个功能关键词，grep 对应文档确认有提及
+# 例子：Dream Cycle 应在 DEVELOPMENT.md 有详细说明，HANDBOOK 有速览表条目
+grep -l "Dream Cycle" docs/HANDBOOK.md docs/DEVELOPMENT.md docs/ARCHITECTURE.md
+# 期望：权威文档命中 + 引用文档命中
+```
+
+**Step C — 补齐零覆盖功能点**
+
+对 Step B 发现零覆盖的功能点，按归属原则写入对应文档：
+- **权威文档**：写详细机制 + 配置方法 + 版本标注（如「v1.1.7+」）
+- **引用文档**：一句话说明 + 版本标注 + 链接到权威文档
+- **不重复展开**：同一个功能点只在权威文档写一次详细内容，其他文档只引用
+
+**🔴 Step D — 覆盖率闭环判定**
+
+对 changelog 里每条新功能，判定以下三项：
+
+| 判定项 | 要求 | 不满足 |
+|--------|------|--------|
+| ① 权威文档命中 | 功能点在归属原则指定的权威文档中有详细说明 | P0（用户无处查阅） |
+| ② 引用文档命中 | 功能点在 HANDBOOK 速览表 / README 相关段有引用（一句话 + 链接） | P1（入口缺失） |
+| ③ 无重复展开 | 同一功能详细内容只出现在一个权威文档，其他文档只引用不复制 | P2（维护负担） |
+
+> **判定后**：① 不满足 → 补齐后才能进入阶段九；② 不满足 → 补齐后才能进入阶段九；③ 不满足 → 标注遗留，下版本瘦身。
+>
+> **与 D3 的对称性**：D3 Step D 是"changelog 功能点 → acceptance-test 场景覆盖率"对照；本步骤是"changelog 功能点 → 项目文档覆盖率"对照。两个闭环共同确保：changelog 里写的每条新功能，**既有自动化测试守护，也有用户文档说明**。
 
 #### 文档日期检查（🔴 v1.0.2 教训）
 
@@ -765,7 +824,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 五 | 审查体系合并更新（含瘦身检查） | 当前 session | 否 | regression-checklist + fresh-eyes-review 同步更新 |
 | **六** | **acceptance-test + regression-checklist（开新 session）** | **审核者控制 OpenClaw** | **🔴 是（全新认知；FAIL 回阶段五循环）** | **stage6 合并报告全 PASS** |
 | 七 | 审查体系最终确认 | 作者 | 否 | 两份审查文档状态一致、无遗漏（初版已在阶段五写入） |
-| 八 | 文档收尾 | 作者 | 否 | CHANGELOG/ROADMAP 五步/版本号/**发版日期同步**/测试数一致性。涉及 CLI 迁移时 shellcheck 在此补跑 |
+| 八 | 文档收尾 | 作者 | 否 | CHANGELOG/ROADMAP 五步/版本号/**发版日期同步**/测试数一致性/**🔴 文档同步闭环（D6 落地：changelog 功能点→项目文档覆盖率对照）**。涉及 CLI 迁移时 shellcheck 在此补跑 |
 | 九 | 工具脚本健康检查 | 作者 | 否 | check-version/bump-version/pre-push-check 覆盖同步 + 过时检查清理 |
 | 十 | 确认关口 | AI → **生成发布 prompt 交接** | 否 | git diff 确认 → 检查清单打勾 → 生成发布 prompt 交给负责人（可授权 AI 代执行） |
 | 十一 | 发布（含本地安装） | **🔴 项目负责人，或授权 AI 代执行** | 否 | 先装本地版本验证 → 再按依赖层分批 npm publish + git tag + gh release + Skill 分发。**网络降级**：tag 推上后 gh release/Skill 分发不依赖 main push |
