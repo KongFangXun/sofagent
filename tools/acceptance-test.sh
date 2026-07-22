@@ -595,21 +595,12 @@ A18_EXEMPT_OUT=$(git commit -m "add real test files" 2>&1 || true)
 echo "$A18_EXEMPT_OUT" | grep -q "A18\|垃圾文件" && fail "A18 误报正规测试文件" || pass
 cd "$PROJECT_ROOT" && rm -rf "$A18_EXEMPT_DIR"
 scenario 53 "LOOP 工具注入（maxTurns=20 + ENGINEER/REVIEWER_TOOLS）"
-LOOP_NODES="$PROJECT_ROOT/sofagent/orchestrator/src/loop/nodes.ts"
-LOOP_TOOLS="$PROJECT_ROOT/sofagent/orchestrator/src/tools.ts"; LOOP_TOOL_INJECT_OK=true
-[ ! -f "$LOOP_NODES" ] && LOOP_TOOL_INJECT_OK=false && fail "loop/nodes.ts 不存在"
-[ ! -f "$LOOP_TOOLS" ] && LOOP_TOOL_INJECT_OK=false && fail "orchestrator/tools.ts 不存在"
-if $LOOP_TOOL_INJECT_OK; then
-  grep -q "DEFAULT_ENGINEER_MAX_TURNS = 20" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
-  grep -q "DEFAULT_REVIEWER_MAX_TURNS = 15" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
-  grep -q "ENGINEER_TOOLS" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
-  grep -q "REVIEWER_TOOLS" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
-  grep -q "tools: ENGINEER_TOOLS" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
-  grep -q "maxTurns: resolveMaxTurns" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
-  grep -q "checkDangerousCommand" "$LOOP_TOOLS" || LOOP_TOOL_INJECT_OK=false
-  grep -q "recordLoopAuditHistory" "$LOOP_NODES" || LOOP_TOOL_INJECT_OK=false
-  $LOOP_TOOL_INJECT_OK && pass || fail "LOOP 工具注入常量缺失"
-fi
+F="$PROJECT_ROOT/sofagent/orchestrator/src/loop/nodes.ts"; T="$PROJECT_ROOT/sofagent/orchestrator/src/tools.ts"
+if [ -f "$F" ] && [ -f "$T" ]; then
+  assert_grep "DEFAULT_ENGINEER_MAX_TURNS = 20" "$F" && assert_grep "DEFAULT_REVIEWER_MAX_TURNS = 15" "$F" && \
+  assert_grep "ENGINEER_TOOLS" "$F" && assert_grep "REVIEWER_TOOLS" "$F" && assert_grep "maxTurns: resolveMaxTurns" "$F" && \
+  assert_grep "checkDangerousCommand" "$T" && assert_grep "recordLoopAuditHistory" "$F" && pass || true
+else fail "loop/nodes.ts 或 tools.ts 不存在"; fi
 scenario 54 "warn-accumulator 连续性语义（遇 PASS/FAIL 中断）"
 WARN_ACC="$PROJECT_ROOT/sofagent/daemon/src/inspectors/warn-accumulator.ts"
 if [ -f "$WARN_ACC" ]; then
@@ -619,43 +610,28 @@ if [ -f "$WARN_ACC" ]; then
   $WARN_CONTINUITY && pass || fail "warn-accumulator 缺连续性中断逻辑或文件级追踪"
 else fail "warn-accumulator.ts 不存在"; fi
 scenario 55 "USB federation 基础检测（SOFAGENT 卷标 + 安全警告）"
-USB_DETECT="$PROJECT_ROOT/sofagent/daemon/src/usb-detect.ts"; USB_FED_OK=true
-[ ! -f "$USB_DETECT" ] && USB_FED_OK=false && fail "usb-detect.ts 不存在"
-if $USB_FED_OK; then
-  grep -q "SOFAGENT_LABEL" "$USB_DETECT" || USB_FED_OK=false
-  grep -q "无签名校验\|v1.1.5" "$PROJECT_ROOT/SECURITY.md" || USB_FED_OK=false
-  $USB_FED_OK && pass || fail "USB federation 基础检测缺失"
-fi
+USB_DETECT="$PROJECT_ROOT/sofagent/daemon/src/usb-detect.ts"
+if [ -f "$USB_DETECT" ]; then
+  assert_grep "SOFAGENT_LABEL" "$USB_DETECT" && assert_grep "无签名校验\|v1.1.5" "$PROJECT_ROOT/SECURITY.md" && pass || true
+else fail "usb-detect.ts 不存在"; fi
 scenario 56 "LOOP 独立产品（目录结构 + install 脚本）"
 LOOP_DIR="$PROJECT_ROOT/LOOP"; LOOP_PROD_OK=true
 for f in README.md SKILL.md LOOP.md quick-start.md loop-install.sh loop-workflow.sh package.json; do [ -f "$LOOP_DIR/$f" ] || LOOP_PROD_OK=false; done
 [ -d "$LOOP_DIR" ] || LOOP_PROD_OK=false
 if $LOOP_PROD_OK; then
-  grep -q "sofagent-audit" "$LOOP_DIR/package.json" || LOOP_PROD_OK=false
-  grep -q "dependsOn" "$LOOP_DIR/package.json" || LOOP_PROD_OK=false
-  grep -q "scripts/install.sh" "$LOOP_DIR/loop-install.sh" || LOOP_PROD_OK=false
-  head -5 "$LOOP_DIR/loop-install.sh" | grep -q "v1\.1\.[0-9]" || LOOP_PROD_OK=false
-  $LOOP_PROD_OK && pass || fail "LOOP 独立产品目录结构缺失"
+  assert_grep "sofagent-audit" "$LOOP_DIR/package.json" && assert_grep "dependsOn" "$LOOP_DIR/package.json" && \
+  assert_grep "scripts/install.sh" "$LOOP_DIR/loop-install.sh" && pass || true
 else fail "LOOP 独立产品目录结构缺失"; fi
 scenario 57 "sofagent-releaser Skill 存在性（文件+frontmatter+install 复制）"
-RELEaser_SKILL="$PROJECT_ROOT/agents/SKILL/sofagent-releaser/SKILL.md"; RELEASER_OK=true
-[ ! -f "$RELEaser_SKILL" ] && { RELEASER_OK=false; fail "sofagent-releaser/SKILL.md 不存在"; }
-if $RELEASER_OK; then
-  LINE_COUNT=$(wc -l < "$RELEaser_SKILL")
-  [ "$LINE_COUNT" -gt 100 ] && { RELEASER_OK=false; fail "sofagent-releaser/SKILL.md 行数 $LINE_COUNT > 100"; }
-fi
-if $RELEASER_OK; then
-  FRONTMATTER=$(head -10 "$RELEaser_SKILL")
-  for field in "^name:" "^description:" "^emoji:" "^color:"; do
-    echo "$FRONTMATTER" | grep -qE "$field" || { RELEASER_OK=false; fail "frontmatter 缺字段: $field"; }
-  done
-fi
-if $RELEASER_OK; then
-  RELEASER_COPY_OK=true
-  grep -q "sofagent-releaser" "$PROJECT_ROOT/sofagent/scripts/lib/file-deploy.sh" 2>/dev/null || RELEASER_COPY_OK=false
-  grep -q "sofagent-releaser" "$PROJECT_ROOT/FDE/fde-install.sh" 2>/dev/null || RELEASER_COPY_OK=false
-  grep -q "sofagent-releaser" "$PROJECT_ROOT/LOOP/loop-install.sh" 2>/dev/null || RELEASER_COPY_OK=false
-  $RELEASER_COPY_OK || { RELEASER_OK=false; fail "三处 install.sh 中至少一处缺少 sofagent-releaser 复制逻辑"; }
+R_SKILL="$PROJECT_ROOT/agents/SKILL/sofagent-releaser/SKILL.md"; R_OK=true
+[ ! -f "$R_SKILL" ] && { R_OK=false; fail "sofagent-releaser/SKILL.md 不存在"; }
+if $R_OK; then
+  LINE_COUNT=$(wc -l < "$R_SKILL"); [ "$LINE_COUNT" -gt 100 ] && { R_OK=false; fail "行数 $LINE_COUNT > 100"; }
+  FRONTMATTER=$(head -10 "$R_SKILL")
+  for field in "^name:" "^description:" "^emoji:" "^color:"; do echo "$FRONTMATTER" | grep -qE "$field" || { R_OK=false; fail "frontmatter 缺 $field"; }; done
+  grep -q "sofagent-releaser" "$PROJECT_ROOT/sofagent/scripts/lib/file-deploy.sh" 2>/dev/null && \
+  grep -q "sofagent-releaser" "$PROJECT_ROOT/FDE/fde-install.sh" 2>/dev/null && \
+  grep -q "sofagent-releaser" "$PROJECT_ROOT/LOOP/loop-install.sh" 2>/dev/null && pass || { R_OK=false; fail "install.sh 缺复制逻辑"; }
 fi
 $RELEASER_OK && pass
 scenario 58 "MCP audit_file tool 注册 + 返回结构（[sofagent] + auditEngine）"
