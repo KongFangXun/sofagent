@@ -61,6 +61,12 @@ assert_js() {
 }
 assert_rc() { local expected="$1"; shift; set +e; "$@" >/dev/null 2>&1; local actual=$?; set -e; [ "$actual" = "$expected" ] && return 0 || { fail "exit code 期望 $expected 实际 $actual"; return 1; }; }
 assert_grep() { grep -q "$1" "$2" 2>/dev/null && return 0 || { fail "grep 零命中: '$1' in $2"; return 1; }; }
+# exit_of: capture exit code without dying from set -e
+exit_of() { set +e; "$@" >/dev/null 2>&1; local rc=$?; set -e; echo "$rc"; }
+# write_config: write minimal .sofagent/config.yml (rules block)
+write_config() { printf 'audit:\n  rules: %s\n' "${1:-{}}" > "$TMP_REPO/.sofagent/config.yml"; }
+# wh_config: write config.yml with webhook section (rules + url+platform)
+wh_config() { printf 'audit:\n  rules: %s\n  webhook:\n    url: "%s"\n    platform: "feishu"\n' "${1:-{}}" "$WEBHOOK_URL" > "$TMP_REPO/.sofagent/config.yml"; }
 # ============================================================
 scenario 1 "Fresh install（--install-hook）"
 TMP_REPO=$(mktmp_repo); cd "$TMP_REPO"
@@ -121,13 +127,7 @@ if echo "$BYPASS_COMMIT" | grep -q "test: skip audit"; then
   else fail "commit-msg hook 丢失"; fi
 else fail "--no-verify commit 未创建或内容不符"; fi
 scenario 11 "config rules 过滤"
-cd "$TMP_REPO"
-cat > "$TMP_REPO/.sofagent/config.yml" << 'CONF'
-audit:
-  rules:
-    a1: false
-    a3: false
-CONF
+cd "$TMP_REPO"; printf 'audit:\n  rules:\n    a1: false\n    a3: false\n' > "$TMP_REPO/.sofagent/config.yml"
 echo "SECRET_KEY=should-not-trigger" > .env; git add -f .env
 RULES_OUTPUT=$(GIT_EDITOR=true git commit -m "test: rules filtering" 2>&1 || true)
 if echo "$RULES_OUTPUT" | grep -qi "判定.*FAIL\|commit.*已阻止"; then fail "rules: { a1: false } 未生效——.env 仍被拦截"
@@ -135,9 +135,7 @@ elif echo "$RULES_OUTPUT" | grep -q "rules filtering"; then pass
 else fail "commit 失败但非 A1 拦截：$RULES_OUTPUT"; fi
 cd "$TMP_REPO"; git reset --hard HEAD~1 2>/dev/null || true; git rm --cached -f .env 2>/dev/null || true; rm -f .env 2>/dev/null || true
 scenario 12 "A2 Secret 检测（代码中写 GitHub Token）"
-cd "$TMP_REPO"
-echo 'audit:
-  rules: {}' > "$TMP_REPO/.sofagent/config.yml"
+cd "$TMP_REPO"; write_config
 mkdir -p src
 FAKE_GH_TOKEN='ghp_'"1234567890abcdef1234567890abcdef123456"
 echo "const token = \"$FAKE_GH_TOKEN\";" > src/secrets.ts
@@ -156,8 +154,7 @@ elif git_log_has "update README title"; then pass
 else fail "A3 场景 commit 被意外拦截"; fi
 scenario 14 "A4 配置删除（WARN，commit 应成功）"
 rm -f .env src/app.ts .gitignore 2>/dev/null || true; git checkout -- . 2>/dev/null || true; git reset HEAD . 2>/dev/null || true
-echo 'audit:
-  rules: {}' > "$TMP_REPO/.sofagent/config.yml"
+write_config
 echo '{}' > tsconfig.json; git add tsconfig.json
 GIT_EDITOR=true git commit --quiet -m "add tsconfig" 2>&1 || true
 git rm tsconfig.json --quiet 2>/dev/null || true
@@ -176,11 +173,7 @@ STRICT_CODE=$(echo "$STRICT_EXIT" | grep -o 'EXIT:[0-9]*' | cut -d: -f2)
 if [ "$STRICT_CODE" = "2" ]; then $STRICT_HELP_OK && pass
 else fail "--strict --ci exit code = $STRICT_CODE（期望 2）"; fi
 scenario 16 "旧版 hook 迁移（pre-commit → commit-msg）"
-cat > "$TMP_REPO/.git/hooks/pre-commit" << 'OLDHOOK'
-#!/bin/bash
-# sofagent pre-commit hook v1.0
-echo "old sofagent hook"
-OLDHOOK
+printf '#!/bin/bash\n# sofagent pre-commit hook v1.0\necho "old sofagent hook"\n' > "$TMP_REPO/.git/hooks/pre-commit"
 chmod +x "$TMP_REPO/.git/hooks/pre-commit"
 $CLI --install-hook > /dev/null 2>&1
 MIGRATION_PASS=true
@@ -253,8 +246,7 @@ if $CHAIN_OK && $TAMPER_DETECTED; then pass
 elif ! $CHAIN_OK; then fail "混合格式误报链断裂"
 else fail "篡改 v2 条目 hash 未被 doctor 检出"; fi
 scenario 19 "A5 commit message 与实际改动不符"
-echo 'audit:
-  rules: {}' > "$TMP_REPO/.sofagent/config.yml"
+write_config
 mkdir -p src; echo 'export function newFeature() { return true; }' > src/feature.ts; git add src/feature.ts
 A5_OUTPUT=$(GIT_EDITOR=true git commit -m "fix: update README typo" 2>&1 || true)
 A5_OK=false
@@ -296,11 +288,7 @@ elif git_log_has "large file"; then pass
 else fail "A11 未检测到异常大文件"; fi
 git reset HEAD . 2>/dev/null || true; rm -f src/huge.txt
 scenario 24 "E1-E4 扩展规则（extendedRulesEnabled）"
-cat > "$TMP_REPO/.sofagent/config.yml" << 'CONF'
-audit:
-  extendedRulesEnabled: true
-  rules: {}
-CONF
+printf 'audit:\n  extendedRulesEnabled: true\n  rules: {}\n' > "$TMP_REPO/.sofagent/config.yml"
 EXT_OK=true
 echo 'describe("test", () => { it("works", () => expect(true).toBe(true)) })' > src/app.spec.ts; git add src/app.spec.ts
 E1_OUTPUT=$($CLI --diff HEAD --task "add code" 2>&1 || true); echo "$E1_OUTPUT" | grep -qi "E1\|WARN" || EXT_OK=false
@@ -321,8 +309,7 @@ if $EXT_OK; then pass; else
   for rule in E1 E2 E3 E4; do RULE_VAR="${rule}_OUTPUT"; echo "${!RULE_VAR}" | grep -qi "$rule\|WARN" && PASS_COUNT=$((PASS_COUNT + 1)); done
   [ $PASS_COUNT -ge 2 ] && pass || fail "扩展规则触发不足（$PASS_COUNT/4）"
 fi
-echo 'audit:
-  rules: {}' > "$TMP_REPO/.sofagent/config.yml"
+write_config
 scenario 25 "history.jsonl 审计历史写入"
 HISTORY="$TMP_REPO/.sofagent/audit/history.jsonl"; mkdir -p "$TMP_REPO/.sofagent/audit"
 echo "# history test" >> README.md; git add README.md
@@ -421,44 +408,22 @@ webhook_assert() { local label="$1"; sleep 1; local n=0; n=$(grep -c "POST" "$WE
   if [ "${n:-0}" -ge 1 ]; then pass "$label: mock server 收到推送（${n} 次）"; else fail "$label: mock server 未收到推送"; fi; : > "$WEBHOOK_LOG"; }
 scenario 34 "Webhook PASS 推送生效"
 cd "$TMP_REPO"
-cat > "$TMP_REPO/.sofagent/config.yml" << CONF
-audit:
-  rules:
-    a1: false
-  webhook:
-    url: "$WEBHOOK_URL"
-    platform: "feishu"
-CONF
+printf 'audit:\n  rules:\n    a1: false\n  webhook:\n    url: "%s"\n    platform: "feishu"\n' "$WEBHOOK_URL" > "$TMP_REPO/.sofagent/config.yml"
 echo "TOKEN=webhook-pass" > .env; echo "// webhook pass" >> README.md; git add -f .env README.md
 GIT_EDITOR=true git commit -m "webhook pass test" 2>&1 || true
 webhook_assert "PASS"; git reset HEAD . 2>/dev/null || true; rm -f .env
 scenario 34b "Webhook WARN 推送生效"
-cd "$TMP_REPO"
-cat > "$TMP_REPO/.sofagent/config.yml" << CONF
-audit:
-  rules: {}
-  webhook:
-    url: "$WEBHOOK_URL"
-    platform: "feishu"
-CONF
+cd "$TMP_REPO"; wh_config
 mkdir -p src; echo "// refactored" >> src/utils.ts; echo "# Updated" > README.md; git add src/utils.ts README.md
 GIT_EDITOR=true git commit -m "fix: update README title" 2>&1 || true
 webhook_assert "WARN"; git reset HEAD . 2>/dev/null || true
 scenario 34c "Webhook FAIL 推送生效"
-cd "$TMP_REPO"
-cat > "$TMP_REPO/.sofagent/config.yml" << CONF
-audit:
-  rules: {}
-  webhook:
-    url: "$WEBHOOK_URL"
-    platform: "feishu"
-CONF
+cd "$TMP_REPO"; wh_config
 echo "TOKEN=webhook-fail" > .env; git add -f .env
 GIT_EDITOR=true git commit -m "webhook fail test" 2>&1 || true
 webhook_assert "FAIL"; git reset HEAD . 2>/dev/null || true; rm -f .env
 kill "$WEBHOOK_PID" 2>/dev/null || true
-echo 'audit:
-  rules: {}' > "$TMP_REPO/.sofagent/config.yml"
+write_config
 scenario 35 "BUILTIN_AGENTS 包含 4 个 Agent（fde/audit/engineer/reviewer）"
 ORCH_CLI="$PROJECT_ROOT/sofagent/orchestrator/dist/cli.js"
 ORCH_INDEX="$PROJECT_ROOT/sofagent/orchestrator/dist/index.js"
@@ -633,84 +598,49 @@ if $R_OK; then
   grep -q "sofagent-releaser" "$PROJECT_ROOT/FDE/fde-install.sh" 2>/dev/null && \
   grep -q "sofagent-releaser" "$PROJECT_ROOT/LOOP/loop-install.sh" 2>/dev/null && pass || { R_OK=false; fail "install.sh 缺复制逻辑"; }
 fi
-$RELEASER_OK && pass
 scenario 58 "MCP audit_file tool 注册 + 返回结构（[sofagent] + auditEngine）"
-MCP_DIST_58="$PROJECT_ROOT/sofagent/mcp/dist/mcp-server.js"; AUDIT_FILE_OK=true
+MCP_DIST_58="$PROJECT_ROOT/sofagent/mcp/dist/mcp-server.js"
 if [ -f "$MCP_DIST_58" ]; then
   LIST_TOOLS_RESP=$(printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' | node "$MCP_DIST_58" 2>/dev/null || true)
-  echo "$LIST_TOOLS_RESP" | grep -q "audit_file" || { AUDIT_FILE_OK=false; fail "MCP tools/list 未含 audit_file"; }
+  echo "$LIST_TOOLS_RESP" | grep -q "audit_file" || { fail "MCP tools/list 未含 audit_file"; }
   AUDIT_FILE_RESP=$(printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"audit_file","arguments":{"path":"src/leak.ts","change_type":"create","diff":"+const pw = \"123456\";"}}}' | node "$MCP_DIST_58" 2>/dev/null || true)
-  echo "$AUDIT_FILE_RESP" | grep -q '\[sofagent\]' || { AUDIT_FILE_OK=false; fail "audit_file 返回未含 [sofagent] 前缀"; }
-  echo "$AUDIT_FILE_RESP" | grep -q "auditEngine" || { AUDIT_FILE_OK=false; fail "audit_file 返回未含 auditEngine 字段"; }
-else AUDIT_FILE_OK=false; fail "mcp/dist/mcp-server.js 未构建"; fi
-$AUDIT_FILE_OK && pass
+  echo "$AUDIT_FILE_RESP" | grep -q '\[sofagent\]' && echo "$AUDIT_FILE_RESP" | grep -q "auditEngine" && pass || fail "audit_file 返回缺 [sofagent] 或 auditEngine"
+else fail "mcp/dist/mcp-server.js 未构建"; fi
 scenario 59 "list_capabilities tool 注册 + 能力清单完整性"
 CAP_OK=true
 if [ -f "$MCP_DIST_58" ]; then
   LIST_CAP_RESP=$(printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_capabilities","arguments":{}}}' | node "$MCP_DIST_58" 2>/dev/null || true)
-  echo "$LIST_CAP_RESP" | grep -q "audit_file" || { CAP_OK=false; fail "list_capabilities 未含 audit_file"; }
-  for kt in search_knowledge read_entity read_concept list_entities read_lessons read_think_md stats; do
-    echo "$LIST_CAP_RESP" | grep -q "$kt" || { CAP_OK=false; fail "list_capabilities 缺 knowledge tool: $kt"; }
-  done
-  echo "$LIST_CAP_RESP" | grep -q "auditEngine" || { CAP_OK=false; fail "list_capabilities 未含 auditEngine"; }
-  echo "$LIST_CAP_RESP" | grep -q "rulesCount" || { CAP_OK=false; fail "list_capabilities 未含 rulesCount"; }
-else CAP_OK=false; fail "mcp/dist/mcp-server.js 未构建"; fi
-$CAP_OK && pass
+  echo "$LIST_CAP_RESP" | grep -q "audit_file" || CAP_OK=false
+  for kt in search_knowledge read_entity read_concept list_entities read_lessons read_think_md stats; do echo "$LIST_CAP_RESP" | grep -q "$kt" || CAP_OK=false; done
+  echo "$LIST_CAP_RESP" | grep -q "auditEngine" && echo "$LIST_CAP_RESP" | grep -q "rulesCount" || CAP_OK=false
+  $CAP_OK && pass || fail "list_capabilities 能力清单不完整（audit_file/knowledge tools/auditEngine/rulesCount）"
+else fail "mcp/dist/mcp-server.js 未构建"; fi
 scenario 60 "push-target 5 种 target 路由 + 失败 warning 不阻断"
 PUSH_TARGET="$PROJECT_ROOT/sofagent/daemon/src/push-target.ts"; PUSH_OK=true
 if [ -f "$PUSH_TARGET" ]; then
-  for t in "webhook:dingtalk" "webhook:feishu" "webhook:wecom" "openclaw:im" "daemon:notice"; do
-    grep -q "$t" "$PUSH_TARGET" || { PUSH_OK=false; fail "push-target.ts 缺 target: $t"; }
-  done
-  grep -q "throwOnError" "$PUSH_TARGET" || { PUSH_OK=false; fail "push-target.ts 缺 throwOnError 参数"; }
-  grep -qE "catch.*err.*\{" "$PUSH_TARGET" || { PUSH_OK=false; fail "push-target.ts 缺 try/catch"; }
-else PUSH_OK=false; fail "push-target.ts 不存在"; fi
-if $PUSH_OK; then
+  for t in "webhook:dingtalk" "webhook:feishu" "webhook:wecom" "openclaw:im" "daemon:notice"; do grep -q "$t" "$PUSH_TARGET" || PUSH_OK=false; done
+  grep -q "throwOnError" "$PUSH_TARGET" && grep -qE "catch.*err.*\{" "$PUSH_TARGET" || PUSH_OK=false
   PUSHDIST="$PROJECT_ROOT/sofagent/daemon/dist/push-target.js"
-  if [ -f "$PUSHDIST" ]; then
-    PUSH_RUN=$(SOFAGENT_WEBHOOK_FEISHU="http://localhost:19999/invalid" node -e "
-    (async () => {
-      try { const { pushToTarget } = require('$PUSHDIST'); const ok = await pushToTarget({ target: 'webhook:feishu', title: 't', message: 'm' }); console.log('RETURNED:', ok); }
-      catch (e) { console.log('THREW:', e.message); }
-    })();" 2>&1 || true)
-    if echo "$PUSH_RUN" | grep -q "RETURNED: false\|RETURNED:false"; then :; else
-      if echo "$PUSH_RUN" | grep -q "THREW:"; then PUSH_OK=false; fail "pushToTarget 抛错（期望 catch 后返回 false）"; fi
-    fi
+  if $PUSH_OK && [ -f "$PUSHDIST" ]; then
+    PUSH_RUN=$(SOFAGENT_WEBHOOK_FEISHU="http://localhost:19999/invalid" node -e "(async()=>{try{const{pushToTarget}=require('$PUSHDIST');console.log('RETURNED:',await pushToTarget({target:'webhook:feishu',title:'t',message:'m'}))}catch(e){console.log('THREW:',e.message)}})()" 2>&1 || true)
+    echo "$PUSH_RUN" | grep -q "THREW:" && PUSH_OK=false || true
   fi
-fi
-$PUSH_OK && pass
+  $PUSH_OK && pass || fail "push-target 缺 target 路由或异常处理"
+else fail "push-target.ts 不存在"; fi
 scenario 61 "USB federation HMAC（签名 + timingSafeEqual + 0600 + schema）"
-USB_DETECT="$PROJECT_ROOT/sofagent/daemon/src/usb-detect.ts"
-USB_DIST="$PROJECT_ROOT/sofagent/daemon/dist/usb-detect.js"; USB_HMAC_OK=true
+USB_DETECT="$PROJECT_ROOT/sofagent/daemon/src/usb-detect.ts"; USB_DIST="$PROJECT_ROOT/sofagent/daemon/dist/usb-detect.js"; USB_HMAC_OK=true
 if [ -f "$USB_DETECT" ]; then
-  for kw in "createHmac" "timingSafeEqual" "FederationConfig" "applyFederation" "mode: 0o600" "loadOrCreateSecretKey" "signFederation" "verifySignature"; do
-    grep -q "$kw" "$USB_DETECT" || { USB_HMAC_OK=false; fail "usb-detect.ts 缺关键字: $kw"; }
-  done
+  for kw in "createHmac" "timingSafeEqual" "FederationConfig" "applyFederation" "mode: 0o600" "loadOrCreateSecretKey" "signFederation" "verifySignature"; do grep -q "$kw" "$USB_DETECT" || USB_HMAC_OK=false; done
 else USB_HMAC_OK=false; fail "usb-detect.ts 不存在"; fi
 if $USB_HMAC_OK && [ -f "$USB_DIST" ]; then
-  HMAC_RUN=$(node -e "
-    const m = require('$USB_DIST');
-    const key = m.loadOrCreateSecretKey();
-    const cfg = { version: 1, nodes: [{ name: 'test', platform: 'openclaw' }], notes: 'verify test' };
-    const content = JSON.stringify(cfg, null, 2);
-    const sig = m.signFederation(content, key);
-    const okMatch = m.verifySignature(content, sig, key);
-    const tampered = sig.slice(0, -4) + '0000';
-    const okReject = !m.verifySignature(content, tampered, key);
-    const schemaOk = m.validateFederationSchema(cfg);
-    const schemaBad = m.validateFederationSchema({ wrong: true });
-    const applyResult = m.applyFederation({ version: 1 });
-    console.log(JSON.stringify({ okMatch, okReject, schemaOk, schemaBad: !schemaBad, applied: applyResult.applied }));" 2>&1 || true)
-  echo "$HMAC_RUN" | grep -q '"okMatch":true' && echo "$HMAC_RUN" | grep -q '"okReject":true' && echo "$HMAC_RUN" | grep -q '"schemaOk":true' && echo "$HMAC_RUN" | grep -q '"schemaBad":true' || { USB_HMAC_OK=false; fail "HMAC 签名/验签/schema 测试失败: $HMAC_RUN"; }
+  HMAC_RUN=$(USB_DIST="$USB_DIST" node -e "const m=require(process.env.USB_DIST);const k=m.loadOrCreateSecretKey();const c=JSON.stringify({version:1,nodes:[{name:'test',platform:'openclaw'}],notes:'verify test'});const s=m.signFederation(c,k);console.log(JSON.stringify({okMatch:m.verifySignature(c,s,k),okReject:!m.verifySignature(c,s.slice(0,-4)+'0000',k),schemaOk:m.validateFederationSchema({version:1,nodes:[]}),schemaBad:!m.validateFederationSchema({wrong:true}),applied:m.applyFederation({version:1}).applied}))" 2>&1 || true)
+  echo "$HMAC_RUN" | grep -q '"okMatch":true' && echo "$HMAC_RUN" | grep -q '"okReject":true' && echo "$HMAC_RUN" | grep -q '"schemaOk":true' && echo "$HMAC_RUN" | grep -q '"schemaBad":true' || { USB_HMAC_OK=false; fail "HMAC 签名/验签/schema 测试失败"; }
 else [ ! -f "$USB_DIST" ] && warn "usb-detect dist 未构建，跳过运行时验签"; fi
 if $USB_HMAC_OK && [ -f "$USB_DIST" ]; then
   KEY_PATH="$HOME/.sofagent/usb-secret.key"; KEY_BAK=""
   [ -f "$KEY_PATH" ] && { KEY_BAK=$(mktemp); cp "$KEY_PATH" "$KEY_BAK"; rm -f "$KEY_PATH"; }
   node -e "require('$USB_DIST').loadOrCreateSecretKey();" >/dev/null 2>&1 || true
-  if [ -f "$KEY_PATH" ]; then
-    PERM=$(stat -f "%Lp" "$KEY_PATH" 2>/dev/null || stat -c "%a" "$KEY_PATH" 2>/dev/null || echo "")
-    [ "$PERM" != "600" ] && { USB_HMAC_OK=false; fail "密钥权限 = $PERM（期望 600）"; }
-  fi
+  if [ -f "$KEY_PATH" ]; then PERM=$(stat -f "%Lp" "$KEY_PATH" 2>/dev/null || stat -c "%a" "$KEY_PATH" 2>/dev/null || echo ""); [ "$PERM" != "600" ] && { USB_HMAC_OK=false; fail "密钥权限=$PERM（期望600）"; }; fi
   [ -n "$KEY_BAK" ] && { cp "$KEY_BAK" "$KEY_PATH"; rm -f "$KEY_BAK"; }
 fi
 $USB_HMAC_OK && pass
@@ -720,15 +650,7 @@ CLI_ARGS_DIST="$PROJECT_ROOT/sofagent/orchestrator/dist/cli-args.js"
 ORCH_CLI_62="$PROJECT_ROOT/sofagent/orchestrator/dist/cli.js"; MODE_OK=true
 [ ! -f "$CLI_ARGS" ] && { MODE_OK=false; fail "cli-args.ts 不存在"; }
 if $MODE_OK && [ -f "$CLI_ARGS_DIST" ]; then
-  PARSE_RUN=$(node -e "
-      const { parseSubagentRunArgs } = require('$CLI_ARGS_DIST');
-      const r1 = parseSubagentRunArgs(['fde', '--task', 'x']);
-      const r2 = parseSubagentRunArgs(['fde', '--mode', 'sustain', '--task', 'x']);
-      const r3 = parseSubagentRunArgs(['fde', '--mode', 'deploy', '--task', 'x']);
-      let r4 = null, r5 = null;
-      try { parseSubagentRunArgs(['fde', '--mode', 'bad', '--task', 'x']); } catch (e) { r4 = e.message; }
-      try { parseSubagentRunArgs(['fde']); } catch (e) { r5 = e.message; }
-      console.log(JSON.stringify({ defaultDeploy: r1.mode === 'deploy', sustain: r2.mode === 'sustain', deployExplicit: r3.mode === 'deploy', invalidThrows: /--mode/.test(r4 || ''), missingTaskThrows: /--task/.test(r5 || '') }));" 2>&1 || true)
+  PARSE_RUN=$(CLI_ARGS_DIST="$CLI_ARGS_DIST" node -e "const{parseSubagentRunArgs}=require(process.env.CLI_ARGS_DIST);const r1=parseSubagentRunArgs(['fde','--task','x']);const r2=parseSubagentRunArgs(['fde','--mode','sustain','--task','x']);const r3=parseSubagentRunArgs(['fde','--mode','deploy','--task','x']);let r4='',r5='';try{parseSubagentRunArgs(['fde','--mode','bad','--task','x'])}catch(e){r4=e.message}try{parseSubagentRunArgs(['fde'])}catch(e){r5=e.message}console.log(JSON.stringify({defaultDeploy:r1.mode==='deploy',sustain:r2.mode==='sustain',deployExplicit:r3.mode==='deploy',invalidThrows:/--mode/.test(r4),missingTaskThrows:/--task/.test(r5)}))" 2>&1 || true)
   echo "$PARSE_RUN" | grep -q '"defaultDeploy":true' && echo "$PARSE_RUN" | grep -q '"sustain":true' && echo "$PARSE_RUN" | grep -q '"deployExplicit":true' && echo "$PARSE_RUN" | grep -q '"invalidThrows":true' && echo "$PARSE_RUN" | grep -q '"missingTaskThrows":true' || { MODE_OK=false; fail "parseSubagentRunArgs 行为不符: $PARSE_RUN"; }
 fi
 if $MODE_OK && [ -f "$ORCH_CLI_62" ]; then
