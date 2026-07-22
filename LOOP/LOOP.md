@@ -87,6 +87,7 @@ graph TD
 - **内层循环 StateGraph**：`coding → audit → review → human`，条件路由 `audit.fail→coding` / `review.reject→coding` / `human.confirm→next`
 - **外层循环定时触发**：FDE 每周分析 think.md 趋势，每月触发 compliance-auditor 全量巡检
 - **发版后自进化**：FDE 自动更新 fresh-eyes-review / regression-checklist / acceptance-test.sh（纯增量），releasing.md 需人类确认后 apply
+- **releaser Skill**（v1.1.5+）：把 `docs/verification/releasing.md` 十二阶段发版 SOP 注入 Agent 上下文——Agent 按全流程自动执行发版（三个 human check 节点显式介入：阶段一 changelog 确认 / 阶段五审查报告确认 / 发版前最终确认）。`sofagent-fde` Skill 已内置 releaser 子能力，在 WorkBuddy 中 `@sofagent-fde 走发版流程` 即可触发。详见 [releasing.md](../docs/verification/releasing.md)
 - **Agent 定义来源**：`agents/SKILL/*/SKILL.md` → `createDeepAgent({ systemPrompt: loadPrompt(...) })`
 
 ---

@@ -214,6 +214,20 @@ jobs:
 
 > 📖 **多设备同步**：v1.1.0 起支持轻量多设备——经验共享（knowledge/ + think.md）跨设备同步。4 种方案（iCloud / NAS / Dropbox / git submodule）见 [多设备同步指南](./guides/multi-device-sync.md)。
 
+#### 近期版本新功能速览
+
+以下功能 daemon 自动运行，装完即生效——你不需要做任何配置：
+
+| 功能 | 版本 | 一句话 | 详见 |
+|------|:--:|------|------|
+| Dream Cycle | v1.1.7 | knowledge/ 自动沉淀——daemon 6 阶段 pipeline 从 task/logs 提取知识，不再靠散点脚本 | [FDE §9.3 知识治理](../FDE/FDE.md) |
+| sensitivity 分级 | v1.1.7 | 每条知识带 public/internal/restricted 分级，缺省 internal——restricted 在联邦查询中不外发 | [FDE §9.3](../FDE/FDE.md) |
+| knowledge status | v1.1.7 | `sofagent-daemon knowledge status` 一条命令看知识全貌（Dream Cycle 周报 + 健康度 + sensitivity 计数） | [FDE §9.3](../FDE/FDE.md) |
+| 安全联邦 | v1.1.8 | 两台配对设备互查 knowledge/，AES-256-GCM 全链路加密 + sensitivity 双重过滤 | [FDE §部署场景·安全联邦](../FDE/FDE.md) |
+| Prompt 注入防护 | v1.1.8 | 8 层纵深防御——外部内容包裹 + 脱敏 + 知识可信分级 | [SECURITY.md](../SECURITY.md) |
+| USB 一键烧录 | v1.1.8 | workflow 烧进 U 盘 → 发给员工 → 插上即用，拔掉零残留 | [场景五 USB 烧录](#usb-烧录给普通员工发-u-盘v118) |
+| A/B 自动调度 | v1.1.9 | daemon 后台跑探索-利用——当前方案攒数据 → 自动切候选方案对比 → 赢家自动 promote | [ARCHITECTURE 编排引擎](./ARCHITECTURE.md) |
+
 ### 4 条底线 + 7 则行为铁律
 
 **底线**：

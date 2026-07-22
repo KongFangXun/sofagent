@@ -122,6 +122,21 @@ sofagent-daemon create-usb-key \
 
 **典型场景**：搭好一个财务 workflow → 烧一批 U 盘 → 发给财务团队 → 每人插上就能用自己的 Agent 调用 U 盘里的知识和审计能力开始干活。换电脑插上，身份不变，知识不变。详见 [PHILOSOPHY §六](../docs/PHILOSOPHY.md#六怎么装部署哲学)。
 
+#### 安全联邦：多设备知识互查（v1.1.8+）
+
+FDE 部署多台设备后，设备之间可以互相查询 knowledge/——财务节点的知识，采购节点经授权后也能查到。整个链路加密，不经过任何第三方服务器。
+
+**安全模型四层纵深防御**：
+
+| 层 | 机制 |
+|------|------|
+| 应用加密 | AES-256-GCM（IV 12 字节随机不复用 + GCM tag 校验失败抛错），key 只存内存，退出清零 |
+| 密钥交换 | ECDH(prime256v1) + HKDF 派生 32 字节 AES key（三条配对路径：6 位码确认 / 环境变量 token / federation.json HMAC 验签），24h 轮换（旧 key 只解不加） |
+| sensitivity 过滤 | peer 端 + 本地端双重校验（restricted 不外发、不接收） |
+| 合并策略 | automerge CRDT 合并（trust 优先于 mtime）；篡改标签降权 trust=web + 审计 WARN |
+
+> 💡 **FDE 部署时的联邦配置**：FDE 在 §7 交付方案时为每个节点设定 sensitivity（restricted 标好客户名单/财务数据），配对完成后设备间查询自动遵守分级。架构层纵深详见 [ARCHITECTURE 联邦查询](../docs/ARCHITECTURE.md#联邦查询v1118)；Prompt 注入防护体系（外部内容 `<untrusted>` 包裹 + 脱敏 + 可信分级）详见 [SECURITY.md](../SECURITY.md)。
+
 > 🔑 微软 CEO Nadella：「未来企业最重要的知识产权是 private evals——工具可以被复制，但差异化反馈数据无法被复制。」
 
 ---
@@ -488,6 +503,32 @@ v1.0.1 起为**结构化 AI 知识库**（`.sofagent/knowledge/` 目录）：dae
 
 详见 [v1.0.1 开发日志](../docs/changelog/v1.0.1.md)。
 
+#### 知识治理体系（v1.1.7+）
+
+knowledge/ 不再是散点脚本——从 v1.1.7 起升级为 daemon **Dream Cycle 6 阶段流水线**，自动从 task/logs 提取知识，FDE 不需要手动维护：
+
+| 阶段 | 做什么 |
+|------|--------|
+| ① extract_facts | 从 task/logs 提取事实记录 |
+| ② extract_atoms | 分解为知识原子 |
+| ③ cluster_patterns | 聚类发现重复模式 |
+| ④ synthesize_concepts | 合成概念页写入 concepts/ |
+| ⑤ skillopt_backfill | 回填 Skill 优化建议 |
+| ⑥ embed | 向量化入库 |
+
+每轮跑完写 `knowledge/log.md` 周报。FDE 部署完，知识库自动生长。
+
+**sensitivity 分级**：每条知识 frontmatter 带 `sensitivity: public | internal | restricted`（缺省 internal）。FDE 部署时需标好 restricted 项（客户名单、财务数据等）——restricted 知识在联邦查询时不外发，`knowledge status` 中只计数不返回内容。
+
+**一条命令看全貌**：
+
+```bash
+sofagent-daemon knowledge status
+# 输出三源聚合：Dream Cycle 周报 / 知识健康度 / sensitivity 计数
+```
+
+> 💡 配套治理：`knowledge-health` 巡检器（daemon @weekly，5 项检查：孤立 / 重复 / 断链 / index 过旧 / 缺源，fail-closed 只读）。详见 [ARCHITECTURE 巡检清单](../docs/ARCHITECTURE.md)。
+
 企业画像是唯一需要 FDE 持续维护的活文档——每次回访、每次调整都同步进去。其余的，AI 跑着跑着就有了。
 
 #### 9.4 私有化评估体系
@@ -585,6 +626,19 @@ FDE 进场 → 梳理 Workflow A、B、C（每段管网）——梳理结果可�
 - [ ] AI 节点运行记忆（think.md / task/logs / eval.md / orchestrator/）开始积累
 - [ ] 审计周报推送已配置并收到第一期
 - [ ] **对抗性测试已跑过**——prompt 注入模拟 / 权限越界 / 异常输入（大部分企业只测功能不测攻击）
+
+#### 对抗性测试怎么跑（v1.1.8+）
+
+sofagent 内置 **8 层 Prompt 注入防护**，FDE 部署完用以下方法验证防线是否生效：
+
+| 测试项 | 怎么测 | 预期行为（防护生效） |
+|--------|--------|---------------------|
+| 外部内容注入 | 向知识库写入含「忽略类」注入指令的页面，看 Agent 是否遵守 | 外部内容被 `<untrusted>` 包裹，注入指令不被执行 |
+| 密钥脱敏 | 在 Agent 输入中放入 `sk-xxxx` / `AKIAxxxx` / 手机号格式 | `redactForPrompt()` 自动脱敏为 `sk-***` / `AKIA***` / `1xx****xxxx` |
+| 知识可信降级 | 手动将某条 knowledge 标 `trust: web` + `sensitivity: restricted` | 该条被直接丢弃（web+restricted 组合禁止） |
+| 联邦篡改 | 模拟 peer 发送篡改标签的 knowledge | 标签被降权 `trust=web` + 审计 WARN，不丢弃但不可信 |
+
+> 💡 8 层防护完整映射表见 [SECURITY.md](../SECURITY.md)。FDE 不需要理解每层实现——只需要知道怎么测防线在不在。
 
 ### 11. 两周无报错
 
