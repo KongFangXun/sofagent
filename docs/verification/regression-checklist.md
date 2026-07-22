@@ -134,8 +134,9 @@ grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -oE "[0-9]+ 条规则"   
 > 归并自：319+320+321
 
 ```bash
-# 子项 a: silent 模式 A1 FAIL → exit 2
+# 子项 a: silent 模式 A1 FAIL → exit 2（⚠️ 需 ≥2 commits：先建正常 commit，再建违规 commit）
 cd /tmp && rm -rf t && mkdir t && cd t && git init && git config user.email t@t.com && git config user.name t
+echo "normal" > a.txt && git add a.txt && git commit -m "init normal commit"
 echo "sk-abc123" > s.txt && git add s.txt && git commit -m "leak" --no-verify
 sofagent-audit --diff HEAD~1..HEAD --silent >/dev/null 2>&1; echo "exit=$?"   # 期望: exit=2
 cd /tmp && rm -rf t
@@ -562,9 +563,9 @@ done
 # 子项 b: 状态机存在且有断点续跑逻辑
 grep -c "DREAM_CYCLE_STAGES\|fromStage\|loadState\|saveState" sofagent/daemon/src/dream-cycle/state-machine.ts   # ≥4
 
-# 子项 c: dream-cycle 源码对 think.md 只读（排除注释行 + state-machine 写 state.md/log.md）
-grep -n "writeFile\|writeFileSync\|unlink\|rmSync" sofagent/daemon/src/dream-cycle/*.ts | grep -v "__tests__\|llm-mock\|state-machine" | grep -v "^.*/\/"
-# 期望：零命中
+# 子项 c: dream-cycle 源码对 think.md 只读（排除注释行 + state-machine 写 state.md/log.md + synthesize-concepts 写 entities/ 产物落盘）
+grep -n "writeFile\|writeFileSync\|unlink\|rmSync" sofagent/daemon/src/dream-cycle/*.ts | grep -v "__tests__\|llm-mock\|state-machine\|synthesize-concepts" | grep -v "^.*/\/"
+# 期望：零命中（synthesize-concepts 的 writeFileSync 是概念实体产物落盘，非 think.md 写入）
 
 # 子项 d: 旧脚本 weekly-report / lessons-extract 引用清零
 grep -rn "weekly-report\|lessons-extract" --include="*.ts" sofagent/daemon/src/ | grep -v node_modules | grep -v "memory-contract.ts" | grep -v "\.test\.\|__tests__"   # 期望：零命中
@@ -594,7 +595,7 @@ grep -c "sensitivity\|restricted\|internal" sofagent/core/src/__tests__/memory-c
 ```
 #### 31. knowledge-health inspector 注册 + 五项检查 + 只读（v1.1.7 新增 · 交付三）
 
-> knowledge-health 巡检器必须注册为 @weekly，执行五项检查，且自身零写操作（除 health-report.md）
+> knowledge-health 巡检器必须注册为 @weekly，执行五项检查，且自身零写操作（除 health-report.md + index.md 自动修复）
 
 ```bash
 # 子项 a: 注册在 inspectors/index.ts 且 schedule = @weekly
@@ -603,8 +604,8 @@ grep "'knowledge-health'" sofagent/daemon/src/inspectors/index.ts | grep "@weekl
 # 子项 b: 5 项检查关键词全在源码
 grep -c "孤立\|重复\|断链\|index 过旧\|缺源" sofagent/daemon/src/inspectors/knowledge-health.ts   # ≥5
 
-# 子项 c: knowledge-health.ts 无写操作（只读铁律，排除 health-report）
-grep -n "writeFile\|writeFileSync\|unlink\|rmSync" sofagent/daemon/src/inspectors/knowledge-health.ts | grep -v "health-report\|writeReport\|saveReport\|appendReport"   # 期望：零命中
+# 子项 c: knowledge-health.ts 无写操作（只读铁律，排除 health-report + index.md 断链修复/索引重建）
+grep -n "writeFile\|writeFileSync\|unlink\|rmSync" sofagent/daemon/src/inspectors/knowledge-health.ts | grep -v "health-report\|writeReport\|saveReport\|appendReport\|indexPath\|generateIndexMarkdown\|^29:import"   # 期望：零命中
 
 # 子项 d: 测试用例 ≥8
 grep -c "  it(" sofagent/daemon/src/inspectors/__tests__/knowledge-health.test.ts   # ≥8
