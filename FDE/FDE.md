@@ -102,10 +102,25 @@ FDE（或企业 CIO/网管）的操作手册。**读它 → 帮企业梳理 work
 | 场景 | 用户 | 方式 |
 |------|------|------|
 | 懂电脑 | 技术人员 | 正常安装流程，部署到电脑上就能用 |
-| 不懂电脑 | 普通员工 | 给一个 U 盘——sofagent + OpenClaw + 联邦密钥全在盘上，插上就能用 |
+| 不懂电脑 | 普通员工 | 给一个 U 盘——sofagent + 联邦密钥 + knowledge 全在盘上，插上就能用 |
 | 无头设备 | 服务器/工控机 | U 盘插上别拔，Agent 一直在联邦里跑 |
 
-> 💿 **USB key 是 FDE 的核心交付工具之一。** IT 部门下载 sofagent → 写一批 U 盘 → 定义好岗位/节点 → 发给员工。员工插上就能用，不需要安装、不需要配对、不需要专业知识。换电脑插上，身份不变，知识不变。详见 [PHILOSOPHY §六](../docs/PHILOSOPHY.md#六怎么装部署哲学)。
+> 💿 **USB key 是 FDE 的核心交付工具。** FDE 帮企业梳理好 workflow 节点后，一条命令烧录完整运行时到 U 盘——员工拿到 U 盘，插上任何电脑双击就能跑，不需要安装、不需要配对、不需要专业知识。
+
+**烧录方式**——插上 U 盘后跟你的 Agent 说"帮我烧一个财务审计节点的 U 盘"，或直接跑 CLI：
+
+```bash
+sofagent-daemon create-usb-key \
+  --role "财务审计节点" \
+  --target /Volumes/SOFAGENT \
+  --platform macos   # 或 linux / win
+```
+
+**U 盘里有什么**：Node.js 便携版 + sofagent 引擎（审计/编排/约束/回溯）+ knowledge/ 加密落盘（AES-256-GCM，明文只在内存）+ 三平台启动脚本（start.command/.sh/.bat）+ HMAC-SHA256 防篡改签名。
+
+**插上即用**：双击启动脚本 → 全量验签（fail-closed：签名不匹配拒绝启动）→ 内存解密 knowledge（明文不落盘）→ daemon 启动（cron + 文件监听 + 联邦在线）→ 本机零残留（所有路径指向 U 盘）。
+
+**典型场景**：搭好一个财务 workflow → 烧一批 U 盘 → 发给财务团队 → 每人插上就能用自己的 Agent 调用 U 盘里的知识和审计能力开始干活。换电脑插上，身份不变，知识不变。详见 [PHILOSOPHY §六](../docs/PHILOSOPHY.md#六怎么装部署哲学)。
 
 > 🔑 微软 CEO Nadella：「未来企业最重要的知识产权是 private evals——工具可以被复制，但差异化反馈数据无法被复制。」
 

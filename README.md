@@ -123,6 +123,36 @@ sofagent 不只是开发者工具——企业落地用 **FDE Agent**：
 
 > 💡 **命名约定**：大写目录（`FDE/`、`LOOP/`）是 sofagent 的**部署/产品入口**，需先 `git clone` 主仓库后运行（**非可独立运行的独立仓库**，单独 clone 子目录会因依赖主仓库 `sofagent/scripts/install.sh` 而跑不通）；小写目录（`sofagent/`、`docs/`、`tools/`）= 核心代码与配置。
 
+### FDE Agent 交付什么
+
+FDE 离场后，企业留下五样东西——前四样是资产，第五样是让前四样一直活着的 FDE Agent 本身：
+
+| 交付物 | 说明 |
+|--------|------|
+| 交付手册 | 企业 IT 可独立维护的操作手册 |
+| AI 节点 | 在跑的 Agent，自动执行日常任务（财务对账、审计巡检、数据分析…）|
+| AI 知识库 | 持续积累的实体、概念、对比页（Dream Cycle 自动沉淀）|
+| 私有化评估体系 | eval 反馈 + Skill 迭代历史——无法复制的企业 IP |
+| **FDE Agent 本身** | 7×24 在跑——管上面四样东西的生命周期，人离场了它留下 |
+
+### USB 一键烧录：搭好 workflow → 发 U 盘
+
+FDE 帮企业梳理好 workflow 节点后，可以一键烧录到 U 盘——员工拿到 U 盘，插上任何电脑双击就能跑，不需要安装、不需要配对：
+
+```bash
+# 插上 U 盘后，一条命令烧录完整运行时
+sofagent-daemon create-usb-key \
+  --role "财务审计节点" \
+  --target /Volumes/SOFAGENT \
+  --platform macos
+```
+
+**U 盘里有什么**：Node.js 便携版 + sofagent 引擎（审计/编排/约束/回溯）+ knowledge 加密落盘（AES-256-GCM）+ 三平台启动脚本 + HMAC 防篡改签名。
+
+**插上即用**：双击 `start.command`（macOS）/ `start.sh`（Linux）/ `start.bat`（Windows）→ 验签 → 内存解密 knowledge → daemon 启动 → 联邦在线。拔掉 U 盘，电脑零残留。
+
+> 💡 搭好一个财务 workflow → 烧一批 U 盘 → 发给财务团队 → 每人插上就能用自己的 Agent 调用 U 盘里的知识和审计能力开始干活。详见 [FDE/FDE.md §部署场景](./FDE/FDE.md)。
+
 ### 产品形态：MCP + dashboard
 
 sofagent 内核（审计引擎 + 编排引擎 + FDE 能力）是给开发者用的。产品化交给非技术买家时，需要一层不同的外壳：
