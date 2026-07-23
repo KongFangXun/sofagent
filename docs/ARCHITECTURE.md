@@ -7,7 +7,7 @@
 
 ## 心智模型（先读这个）
 
-> sofagent 给 SMB 和 OPC 提供 **FDE Agent**（开源 MIT）——对外产品身份是 FDE Agent，底层是 sofagent 引擎（Harness 中间件）。一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）保证每次变更可审计、可回滚、可进化，帮 SMB 与 OPC 的每个人，用自己选的 Agent 和模型，快速成为自己业务的 FDE。
+> **sofagent 是一个 FDE Agent**（开源 MIT）——对外帮你进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎是一套约束 Agent 行为的 Harness 中间件，一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）保证每次变更可审计、可回滚、可进化。
 
 ```mermaid
 graph TD
@@ -368,24 +368,24 @@ sofagent 支持两种节点类型：
 
 ### River — Workflow — Subagent 三层架构
 
-**River = 多个 Workflow（管网）的集合**——每段管网（Workflow）把模型能力（水）引到业务侧，汇入同一条大河（River），从头到尾同一个身份、同一段上下文。
+**River = 多个 Workflow 的集合**——每段 Workflow 把模型能力（水）引到业务侧，汇入同一条大河（River），从头到尾同一个身份、同一段上下文。
 
 Work模板市场 的实现规范已随 v1.1.9 迁至商业产品 `商业仓库/模板市场/`（混合架构：外层 `workflow.yml` Graph 骨架锁步骤 + 内层 ReAct 节点）。
 
 ```
-用户 → River（统一入口）→ Workflow A/B/C（管网分发）→ Subagent（水龙头，执行）
+用户 → River（统一入口）→ Workflow A/B/C（分发）→ Subagent（执行）
               ↑ 回流                                    ↑ 审计引擎
 ```
 
 | 层 | 是什么 | 类比 |
 |------|------|------|
 | **River** | 统一 Agent 入口 | 大河——只有一个入口 |
-| **Workflow** | 任务编排方案 | 管网——把水引到业务侧 |
+| **Workflow** | 任务编排方案 | 把水引到业务侧 |
 | **Subagent** | 执行具体能力的 Agent | 水龙头 / 用水设备——让水真正作用 |
 
-River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 本身（河是大厂造的——LLM 是水，Agent 平台是河床），而是做河的治理层（堤坝 + 自来水厂 + 管网 + 水龙头），确保 River 里的每一个 Sub Agent 都有纪律、可追溯、会反思。
+River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 本身（河是大厂造的——LLM 是水，Agent 平台是河床），而是做河的治理层（约束 + 安全 + 编排 + 执行），确保 River 里的每一个 Sub Agent 都有纪律、可追溯、会反思。
 
-> 🏞️ **一条河的比喻**：大厂造河——大模型 LLM 是水，Agent 平台是河床，没有河床水只是一片汪洋。堤坝 = Harness 约束层（外在守卫，让河水不侵蚀城市）；自来水厂 = 沙箱/安全机制（让水从"能喝"到"敢喝"）；管网 = Workflow（把能力引到业务）；水龙头 / 用水设备 = Subagent（让能力在具体业务用水）；城市 / 企业 / 工厂 / 社区 = 业务环节；市政管网规划 = Ontology（规划水怎么被用到业务里）；蓄水池 = AI 知识库（河跑起来后自动积累的记忆）；水表/水质监测屏 = Dashboard（让企业看得见 AI 用水情况——sofagent 产品的可见性窗口）。大厂造河（LLM + Agent 平台），我们做堤坝 + 自来水厂 + 管网 + 水龙头。详见 [FDE §9.6](../FDE/FDE.md#96-river大厂造河与企业用水)。
+> 🏞️ **River 比喻完整映射**见 [README §①](../README.md)——sofagent 做堤坝 + 自来水厂 + 管网 + 水龙头，不做河本身。
 
 > **Workflow 的混合架构**：每条 Workflow 采用「外层 Graph 骨架 + 内层 ReAct 节点」——`workflow.yml` 的 `nextNodes` 锁定全链路步骤、保证可追溯（对应行业笔记中的「Graph 实现全局流程骨架」），单个节点的 `prompt` 保留模型自主规划能力（对应「内层 ReAct Agent」）。这一设计兼顾全局稳定性与局部灵活性：低容错业务靠 Graph 锁死流程，复杂节点靠 ReAct 保灵活。实现规范已随 v1.1.9 迁至商业产品 `商业仓库/模板市场/`。
 

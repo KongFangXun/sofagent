@@ -18,6 +18,54 @@
 
 > **🔴 changelog 章节顺序铁律（v1.1.7 教训）**：合并版本（新功能 + BugFix 同版）时，**新功能在前、BugFix 在后**。用户读 changelog 第一眼看到的应该是「这个版本带来了什么新价值」，而不是「修了上个版本的哪些坑」。BugFix 放前面会让用户觉得这只是个补丁版，掩盖了新功能的价值传达。背景段的两行概述同理——先写新功能一句话，再写 BugFix。
 
+### 开发日志标准结构（v1.1.8 起固化 · v1.1.9 校验补强）
+
+照抄以下骨架，避免 v1.1.7（交付 `###` 嵌套在 `## 背景` 里结构混乱）→ v1.1.8（确立实现纪要表）→ v1.1.9（编号顺序与铁律冲突）的演进漂移：
+
+```markdown
+# vX.Y.Z 开发日志 — {新功能一句话} + {BugFix 概要}
+
+> 状态：已发布（tag vX.Y.Z）· 作者 · 日期
+> 前置依赖：{上一版本能力}
+>
+> 开发完成快照：{交付数 + 测试数 + 版本 bump 状态}
+
+## 实现纪要
+| 交付 | 落点 | 说明 |
+|------|------|------|
+| 一 · {新功能A} | {文件} | {一句话} |
+| … | … | … |
+| 阶段一 · {上一版 BugFix 批次} | {N 条} | 先于新功能完成，按铁律记录置后 |
+
+> 阶段一 = {上一版} BugFix 批次（{N} 条，P0×a·P1×b·P2×c）
+
+## 背景
+{两行概述：先新功能、后 BugFix（守铁律）}
+
+## 交付一：{新功能A}（优先级）
+### 问题诊断 / 实现 / 测试 / 明确不做（按需）
+### 发布检查清单
+
+## 交付二：{新功能B}
+…
+
+## BugFix 批次（阶段一 · {上一版} 发布后审查 N 项 · 🔧）
+### 问题模式 / P0 清单 / 执行顺序 / 发布检查清单
+
+## 发布检查清单（汇总）
+### {新功能A} / {新功能B} / … / {BugFix 批次} / 通用
+```
+
+**强制项**：
+1. 文件命名 `vX.Y.Z.md`（三段式，🔴 v1.0.3 教训）
+2. 头部引用块：状态 + 前置依赖 + 开发完成快照
+3. `## 实现纪要` 表格（v1.1.8 起标准，不可省）
+4. 章节顺序铁律：新功能交付（一~N）在前，`## BugFix 批次` 独立章置后（**不编号为零**——编号零会误导为"应排最前"，与铁律冲突）
+5. 每个交付含：问题 → 方案 → 验证 → 发布检查清单（L17 四要素）
+6. 末尾 `## 发布检查清单` 汇总，按"新功能 → BugFix → 通用"排列
+7. 测试数与 CHANGELOG/ROADMAP/LIMITATIONS/evidence 一致（D2 闸门）
+8. 头部标注版本号状态（D5 闸门）
+
 ---
 
 ## 阶段二：开发
@@ -233,6 +281,15 @@ bash tools/check-test-count.sh
 
 脚本自动跑 `test-count.sh --quiet` 拿 SSOT 真值，再逐文档 grep 最新版本段声称的数字。**如果漂移**：打开脚本指出的文件+行号，把旧数字改成脚本输出中的实际值。
 
+### LIMITATIONS 新功能覆盖检查（🔴 F-11 / fresh-eyes F-05 教训）
+
+LIMITATIONS.md 必须覆盖本版本引入的核心新功能带来的已知局限。fresh-eyes 审查发现 v1.1.7+ 的 5 个新功能（Dream Cycle / sensitivity / USB / knowledge-health / A/B 调度器）在 LIMITATIONS 中零覆盖。
+
+**检查手法**：
+1. 读 `docs/changelog/vX.Y.md` 的核心变更，提取每个新功能关键词
+2. `grep -c "关键词" LIMITATIONS.md` 确认覆盖
+3. 零覆盖的新功能 = 遗漏，需补录对应局限（每条 2-4 句，含风险描述+缓解措施）
+
 ### 全项目版本号扫描（用脚本，禁止手动 grep）
 
 #### Step 1: 一键升级
@@ -356,6 +413,18 @@ bash tools/check-version.sh 2>&1 | grep 'SKILL.md'
 - [ ] 前置依赖表——新增工具是否需要新依赖？
 - [ ] 英文版（README.en / EVIDENCE.en）内容是否与中文版同步？
 - [ ] COMMUNITY.md 实验状态、contributor 数是否为当前实际状态？
+- [ ] 🔴 **LIMITATIONS 覆盖新功能**（v1.1.9 fresh-eyes 教训——文档滞后 P1）：LIMITATIONS.md 必须覆盖近 3 个版本引入的核心新功能。检查方式：
+  ```bash
+  # 从最近版本 changelog 提取核心功能关键词，逐个 grep LIMITATIONS.md
+  NEW_FEATURES="Dream Cycle\|sensitivity\|knowledge-health\|ActionGovernance\|ab-scheduler"
+  COV=$(grep -c "$NEW_FEATURES" LIMITATIONS.md || echo 0)
+  [ "$COV" -lt 3 ] && echo "⚠️ LIMITATIONS 新功能覆盖不足（$COV 处）" || echo "✅ $COV 处"
+  ```
+- [ ] 🔴 **evidence 文件存在且测试数一致**（v1.1.9 fresh-eyes 教训）：证据文件路径是 `docs/evidence/evidence.md`（单文件，非按版本拆分），测试数由 `check-test-count.sh` 自动校验。检查方式：
+  ```bash
+  test -f docs/evidence/evidence.md && echo "✅ evidence 文件存在" || echo "❌ evidence 文件缺失"
+  bash tools/check-test-count.sh   # 期望：全绿（CHANGELOG/ROADMAP/LIMITATIONS/evidence.md 声称数 vs 实际值）
+  ```
 
 #### 🔴 文档同步闭环（v1.1.9 新增，D6 闸门落地）
 
@@ -639,6 +708,24 @@ echo "✅ 全部 12 包版本一致 = $NEW_VER"
 14. git push origin vX.Y.Z
 ```
 
+**🔴 tag 后零 commit 校验（v1.1.9 fresh-eyes 教训）**：
+
+tag push 成功后，确认 tag 指向的 commit 就是 HEAD（tag 之后没有游离 commit）：
+
+```bash
+TAG_SHA=$(git rev-parse vX.Y.Z^{commit} 2>/dev/null)
+HEAD_SHA=$(git rev-parse HEAD)
+if [ "$TAG_SHA" = "$HEAD_SHA" ]; then
+  echo "✅ tag 指向 HEAD（零游离 commit）"
+else
+  echo "🔴 tag ($TAG_SHA) ≠ HEAD ($HEAD_SHA)——tag 之后有游离 commit"
+  git log --oneline vX.Y.Z..HEAD   # 查看游离的 commit
+  echo "⚠️ 如果游离 commit 属于本版本，需要重新打 tag"
+fi
+```
+
+> **什么情况会触发**：发版过程中 tag 打好后，又手动 commit 了文档微调、CHANGELOG 措辞修正等改动，但没有重新打 tag。这会导致 tag 版本与实际仓库状态不一致。
+
 **🔴 网络降级策略（v1.1.8 教训）**：
 
 如果 git push HTTPS 超时（GitHub 网络波动），但 tag 已推上去（可用 `gh api` 确认），**不要干等**——gh CLI / clawhub / skillhub 走各自的 API 通道，不受 git HTTPS 影响。执行顺序可调整为：
@@ -661,6 +748,21 @@ GIT_HTTP_LOW_SPEED_LIMIT=1000 GIT_HTTP_LOW_SPEED_TIME=15 git push origin main
 ```
 
 **关键认知**：gh release 只依赖 tag 存在于远端，**不依赖 main push 完成**。tag push 成功后就可以做 release + Skill 分发，main push 可以后台慢慢重试。
+
+### 🔴 tag 后 commit 校验（F-10 / fresh-eyes F-03 教训）
+
+tag 打好后，检查是否有新的 commit：
+
+```bash
+git log vX.Y.Z..HEAD --oneline
+```
+
+- **输出为空** → tag 是最终状态，正常
+- **有 commit** → 检查 commit 类型：
+  - 全是 `docs:` 前缀的文档微调 → **接受**，记录说明（文档微调不影响代码功能）
+  - 有代码 commit（feat/fix/refactor）→ **评估是否需要 re-tag**（re-tag 流程：`git tag -f vX.Y.Z && git push origin vX.Y.Z --force`）
+
+**规则**：tag 后允许文档微调 commit，代码变更 commit 必须重新评估是否 re-tag。
 
 ```bash
 ── Step 5: gh release create ──

@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <strong>Constrain Agent behavior · Audit every change · Distill every experience</strong><br/>
-  <em>Give SMBs and OPCs the ability to put AI into their daily workflows.</em>
+  <strong>Onboard · Deploy AI nodes · Leave them running 24/7</strong><br/>
+  <em>Give SMBs the ability to turn AI into daily work.</em>
 </p>
 
 <p align="center">
@@ -21,29 +21,37 @@
 </p>
 
 <p align="center">
-  <a href="#what-is-this">What is this</a> · <a href="#key-features">Features</a> · <a href="#install-and-get-going">Install</a> · <a href="#engine-architecture">Architecture</a> · <a href="#further-reading">Docs</a>
+  <a href="#what-is-this">What is this</a> · <a href="#what-sofagent-can-do-for-you">Features</a> · <a href="#install-and-get-going">Install</a> · <a href="#engine-architecture">Architecture</a> · <a href="#further-reading">Docs</a>
 </p>
 
 ---
 
 ## What is this
 
-Companies don't lack AI models — they lack the ability to turn AI into daily work.
+Companies don't lack LLMs and Agents — they lack the ability to turn AI into daily work.
 
-**That's what FDE Agent does.** It onboards with a four-phase process: map your workflows, identify which steps AI can take over, deploy AI nodes onto devices, then leave. After departure, those nodes run 24/7 on their own. What you keep is a set of self-sustaining AI assets.
+**That's what sofagent does.** It's an FDE Agent — it onboards with a four-phase process: map your workflows, turn automatable steps into AI nodes, deploy them onto devices, then leave. After departure, those nodes run 24/7 on their own. What you keep is a set of self-sustaining AI assets.
 
-Under the hood is the sofagent engine — a Harness middleware that constrains Agent behavior. How the engine works, [explained below](#engine-architecture).
-
-> [!TIP]
-> **90/10 value split**: the model provides 90% of the intelligence, sofagent adds the 10% of reliable execution — and that 10% gets more valuable over time. Not a smarter model, but a set of gates for the intelligence you already have.
+Big vendors built the river — LLM is the water, Agent platforms are the riverbed. But enterprises don't dare drink straight from it. sofagent builds the dam + water treatment plant + pipe network + faucet — turning raw water into drinkable water for everyone. Full analogy: [ARCHITECTURE · River](./docs/ARCHITECTURE.md).
 
 > [!IMPORTANT]
 > **Measured impact**: Hugging Face benchmark — same model, harness-only optimization, legal-agent score jumped from 3.5% to 80.1% (76-point gain entirely from outer-layer mechanisms), at ~1/7 the cost.
 
+### Why not existing tools
+
+| Tool | What they check | What sofagent checks |
+|:------|:---------|:----------------|
+| pre-commit / husky | Code quality (lint / format) | **Agent behavior** (secret leaks / out-of-scope edits / injection attacks / blind edits) |
+| detect-secrets / gitleaks | Secret scanning | Secrets are just A1; sofagent has 20 more rules for Agent failure modes |
+| Cursor Rules / Claude Code hooks | Single-platform IDE constraints | Platform-agnostic — any Agent + git repo |
+| Agent platforms (OpenClaw etc.) | Agent scheduling — "can it do it" | Agent governance — "can it do it right every time" |
+
+Existing tools check "is the code written well"; sofagent checks "did the Agent behave well" — out-of-scope edits, knowledge base cross-domain, process compliance, edit-without-read. These are LLM-Agent-specific failure modes that generic lint tools don't cover.
+
 <details>
 <summary>📦 After FDE leaves, the enterprise keeps five things</summary>
 
-The first four are assets, the fifth is the FDE Agent itself keeping them alive:
+The first four are assets, the fifth is sofagent itself — the FDE Agent that stays and keeps them running:
 
 | Deliverable | Description |
 |-------------|-------------|
@@ -51,7 +59,7 @@ The first four are assets, the fifth is the FDE Agent itself keeping them alive:
 | AI nodes | Running Agents that auto-execute daily tasks (financial reconciliation, audit inspection, data analysis...) |
 | AI knowledge base | Continuously accumulated entities, concepts, comparison pages (Dream Cycle auto-sedimentation) |
 | Private evaluation system | eval feedback + Skill iteration history — non-copyable enterprise IP |
-| **FDE Agent itself** | Running 24/7 — manages the lifecycle of the above four; the human leaves, it stays |
+| **sofagent itself** | The FDE Agent running 24/7 — manages the lifecycle of the above four; the human leaves, it stays |
 
 **USB one-click burn** — build a workflow → burn a batch of USB keys → distribute to the team:
 
@@ -63,21 +71,20 @@ What's on the USB: Portable Node.js + sofagent engine + knowledge encrypted on d
 
 </details>
 
-<details>
-<summary>🏞️ Big vendors build the river, enterprises use the water</summary>
-
-Big vendors built the river — LLM is the water, Agent platforms are the riverbed. But enterprises don't dare drink straight from it. FDE Agent builds the dam + water treatment plant + pipe network + faucet — turning raw water into drinkable water for everyone. Full analogy: [ARCHITECTURE · River](./docs/ARCHITECTURE.md).
-
-</details>
-
 ---
 
-## Key features
+## What sofagent can do for you
 
-- 🔍 **21 audit rules** — every Agent change is inspected with hard evidence; violations blocked on the spot, zero token cost
-- 🧩 **Platform-agnostic** — Claude Code / Codex / Cursor / WorkBuddy; any Agent + git repo, plug and play
-- 🔒 **Every change traceable** — auto git snapshots, one-click revert to any safe state
-- 📈 **Improves with use** — experience auto-sedimented, FDE weekly inspection continuously optimizes rules and knowledge
+| What you want to solve | How sofagent does it |
+|------|------|
+| **Want AI to auto-run daily tasks** | Onboard, map workflows, turn automatable steps into AI nodes — they run on their own after deployment |
+| **What if the Agent goes out of bounds** | 21 rules auto-audit every change — out-of-scope edits, secret leaks, injection attacks, blocked on the spot |
+| **Can I roll back if something goes wrong** | Auto git snapshot after every change, one-click revert to any safe state |
+| **What if I switch Agent / model** | Platform-agnostic — Claude Code / Codex / Cursor / WorkBuddy, plug and play |
+| **Does it get better over time** | Experience auto-sedimented, FDE weekly inspection continuously optimizes rules and knowledge |
+
+> [!TIP]
+> **90/10 value split**: the model provides 90% of the intelligence, sofagent adds the 10% of reliable execution — and that 10% gets more valuable over time. Not a smarter model, but a set of gates for the intelligence you already have.
 
 ---
 
@@ -142,29 +149,9 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 
 ## Engine architecture
 
-```mermaid
-flowchart LR
-    A[Agent edits code] --> B[git commit / file change]
-    B --> C[🔍 Audit Engine<br/>21 rules scan]
-    C --> D{Verdict}
-    D -->|✅ PASS| E[Snapshot<br/>silent pass]
-    D -->|⚠️ WARN| F[Snapshot + alert]
-    D -->|❌ FAIL| G[Block commit + suggest revert]
-```
+> The following is for developers. Regular users just need to know what sofagent can do — skip to [Further reading](#further-reading).
 
-No matter what Agent or model you use, it hooks into the git commit node and audits with hard git diff evidence. **Platform-agnostic, zero-intrusion, zero tokens.**
-
-### Why not existing tools
-
-| Tool | What it checks | What sofagent checks |
-|:------|:---------|:----------------|
-| pre-commit / husky | Code quality (lint / format) | **Agent behavior** (secret leaks / out-of-scope edits / injection attacks / blind edits) |
-| detect-secrets / gitleaks | Secret scanning | Secrets are just A1; sofagent has 20 more rules for Agent failure modes |
-| Cursor Rules / Claude Code hooks | Single-platform IDE constraints | Platform-agnostic — any Agent + git repo |
-
-Existing tools check "is the code written well"; sofagent checks "did the Agent behave well" — out-of-scope edits, knowledge base cross-domain, process compliance, edit-without-read. These are LLM-Agent-specific failure modes that generic lint tools don't cover.
-
-### One base · Four engines
+sofagent is an FDE Agent — its product identity is to help you map workflows and deploy AI nodes. Under the hood is a Harness middleware that constrains Agent behavior, with one base and four engines covering the full lifecycle:
 
 ```mermaid
 flowchart LR

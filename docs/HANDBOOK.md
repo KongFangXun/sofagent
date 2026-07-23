@@ -1,6 +1,6 @@
 # sofagent Handbook
 
-> **给 SMB 和 OPC 的 FDE Agent ——底层是 sofagent 引擎（Harness 中间件），一底座·四引擎覆盖全生命周期。** 你看到的 FDE Agent 是产品身份；翻到底下，约束底座管行为、审计引擎盯结果、编排引擎自动干活、回溯引擎兜回滚、进化引擎越用越好。装完之后，你不再需要依赖别人来部署 AI——**你自己就具备了 FDE 的能力：掌握完整上下文、打破岗位边界、对结果负责。** 下面从装到用到查问题，全流程走一遍。
+> **sofagent 是一个 FDE Agent——进场梳理你的工作流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent（WorkBuddy / Codex / Claude Code）里说一句话，它就帮你干活——审计每次变更、沉淀每次经验、越用越好。下面从装到用到查问题，全流程走一遍。
 >
 > v1.1.9 · 2026-07-22（UTC）· 孔放勋
 
@@ -40,10 +40,10 @@
 
 | 你想知道的 | 一句话 | 详见 |
 |------|------|------|
-| 这是什么 | 给 SMB 和 OPC 的 FDE Agent——底层 sofagent 引擎（Harness 中间件）管 Agent 行为 | 场景二 |
-| 怎么装 | `bash sofagent/scripts/install.sh`（装底层 sofagent 引擎底座；装 FDE 入口见 [FDE/README](../FDE/README.md)） | 场景一 |
+| 这是什么 | sofagent——一个 FDE Agent，进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑 | 场景二 |
+| 怎么装 | `bash sofagent/scripts/install.sh`（装底层引擎底座；装 FDE 入口见 [FDE/README](../FDE/README.md)） | 场景一 |
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | 场景二 |
-| 审计怎么跑 | 开发者：git commit 自动审计。非开发者：v1.0.8+ daemon 监控文件变更自动审计 | 场景一 |
+| AI 节点怎么跑 | 开发者：git commit 自动审计。非开发者：v1.0.8+ daemon 监控文件变更自动审计 | 场景一 |
 | AI 知识库 | `.sofagent/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [v1.0.1 日志](./changelog/v1.0.1.md) |
 | AI 成熟度 | 三级台阶（替换→增强→重构），FDE 帮企业从第二级跨到第三级——不只装 AI，还装上责任机制 | [FDE/FDE.md](../FDE/FDE.md#附录企业-ai-成熟度三级台阶) |
 | 已知局限 | 核心效果见 [evidence.md](./evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](../LIMITATIONS.md) |
@@ -52,9 +52,9 @@
 
 ## 场景一：装完第一件事
 
-> 💬 **sofagent 没有界面。** 装完之后，你不会看到任何窗口或网页。你通过你的 Agent（WorkBuddy / Codex / Claude Code）和 sofagent 对话——说一句话，它做完了告诉你结果在哪。这就是 sofagent 的运行方式：语言就是界面，MCP 就是入口。详见 [设计哲学](./PHILOSOPHY.md)。
+> 💬 **sofagent 没有界面。** 装完之后，你不会看到任何窗口或网页。你通过你的 Agent（WorkBuddy / Codex / Claude Code）和 sofagent 对话——说一句话，它做完了告诉你结果在哪。语言就是界面，MCP 就是入口。详见 [设计哲学](./PHILOSOPHY.md)。
 
-> 📊 **部署后你会自动收到这些**：每周审计守护报告（拦截了多少次违规）、每月知识库增长报告（AI 掌握了多少实体）、每季度无 FDE 对照报告（裸模型 vs sofagent 回答对比）、扩容预警。这些是 FDE 持续存在感的证明——由 sofagent 引擎自动生成推送，不需要人工干预。详见 [FDE §13 持续存在感机制](../FDE/FDE.md#13-竣工后持续存在感机制)。
+> 📊 **部署后你会自动收到这些**：每周审计守护报告（拦截了多少次违规）、每月知识库增长报告（AI 掌握了多少实体）、每季度无 FDE 对照报告（裸模型 vs sofagent 回答对比）、扩容预警。这些是 sofagent 持续存在感的证明——由引擎自动生成推送，不需要人工干预。详见 [FDE §13 持续存在感机制](../FDE/FDE.md#13-竣工后持续存在感机制)。
 
 ### 安装
 
@@ -394,7 +394,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 审计 Agent 管"刹车是不是还在"，FDE Agent 管"能不能换更好的轮胎"。两者合在一起，企业的 AI 节点不需要人盯着。
 
-> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。FDE Agent 是这一层的产品封装——对外你看到的是 FDE Agent，对内是 sofagent 引擎在跑。
+> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。FDE Agent 是 sofagent 的产品形态——对外你看到的是 FDE Agent 在帮你干活，对内是 sofagent 引擎在跑。
 
 ---
 

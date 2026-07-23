@@ -18,7 +18,7 @@
 
 ## 已知风险（明文存储）
 
-sofagent 给 SMB 和 OPC 提供 FDE Agent（对外产品身份），底层是纯本地 Harness 中间件（约束中间层），**数据不出本机**——但以下数据以**明文 Markdown** 存储，请评估风险：
+sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（约束中间层），**数据不出本机**——但以下数据以**明文 Markdown** 存储，请评估风险：
 
 | 文件 | 位置 | 可能含 |
 |------|------|------|
@@ -83,7 +83,7 @@ sofagent 给 SMB 和 OPC 提供 FDE Agent（对外产品身份），底层是纯
 - 如需使用，插入 U 盘前先在隔离设备上检查 `federation.json` 内容
 - 生产环境等 v1.1.5 的签名校验上线后再启用
 
-`detectSofagentUsb()` 源码见 `sofagent/daemon/src/usb-detect.ts`，错误处理完善（设备不存在/文件不存在/JSON 解析失败都 try-catch 返回明确错误），但**不做内容安全校验**——这是 PRD Q4 的明确决策（v1.1.4 先做基础检测，签名校验留后续）。
+`detectSofagentUsb()` 源码见 `sofagent/daemon/src/usb-detect.ts`，错误处理完善（设备不存在/文件不存在/JSON 解析失败都 try-catch 返回明确错误）。内容安全校验自 v1.1.5 起由 HMAC 签名校验覆盖（`.sig` sidecar + `timingSafeEqual`），v1.1.9 升级为全量签名（`usb-signature.ts`：HMAC-SHA256 路径 POSIX 归一化 + 字典序 + SHA-256 内容哈希串联，详见上方「USB 完整运行时攻防表」）。
 
 ### 摘要推送安全（v1.1.8）
 
@@ -241,7 +241,7 @@ sofagent daemon 是本地文件系统监控守护进程，其行为边界如下�
 
 > 💡 **企业集中收集 workaround（v1.1.6）**：Webhook 推送在 v1.2.x 才就绪，企业 IT 如需在 v1.1.x 集中收集审计日志，可用 filebeat / logstash 等采集 agent **定时轮询 `.sofagent/audit/history.jsonl`**（append-only、JSONL 明文），转发至 SIEM / 企业日志平台。注意 history.jsonl 为明文存储，转发前建议配合外部加密卷或 age 加密，避免敏感 diff 摘要外泄。
 
-> daemon 源码见 `sofagent/daemon/src/`：`fs-watch.ts`（文件监听）、`cron.ts`（定时巡检）、`snapshot.ts`（快照）、`weekly-report.ts`（周报生成）、`lessons-extract.ts`（经验提取）、`usb-detect.ts`（USB federation 检测，v1.1.4+）。
+> daemon 源码见 `sofagent/daemon/src/`：`fs-watch.ts`（文件监听）、`cron.ts`（定时巡检）、`snapshot.ts`（快照）、`usb-detect.ts`（USB federation 检测，v1.1.4+）、`dream-cycle/`（Dream Cycle 6 阶段管道，v1.1.7+）、`inspectors/knowledge-health.ts`（知识健康巡检，v1.1.7+）、`commands/knowledge-status.ts`（知识状态聚合命令，v1.1.7+）、`federation/`（联邦查询，v1.1.8+）、`usb-signature.ts`（USB HMAC 签名，v1.1.9+）、`usb-key.ts`（USB key 创建，v1.1.9+）、`usb-runtime.ts`（USB 运行时启动，v1.1.9+）、`notify.ts`（统一通知接口，v1.1.3+）。
 
 ---
 

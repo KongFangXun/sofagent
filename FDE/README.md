@@ -1,18 +1,14 @@
-# FDE Agent — 你的常驻 AI FDE Agent
+# FDE Agent — sofagent 的产品入口
 
 > 🔖 **定位**：FDE 是 sofagent 的**部署产品入口**（非独立仓库）。需先 `git clone` sofagent 主仓库，FDE 依赖主仓库的 `sofagent/scripts/install.sh`。
 
-> 🔖 **品牌归属**：FDE（前线部署工程师）是 **sofagent** 底座的产品封装。FDE Agent（由 sofagent 引擎驱动）的所有审计拦截、约束注入、知识沉淀能力均来自 sofagent 引擎——`sofagent-audit`（审计引擎）、`sofagent-harness`（约束底座）、`sofagent-daemon`（知识沉淀）。FDE 做的是"把 sofagent 装到企业设备并撤离"，底层引擎始终是 sofagent。
+> **sofagent 是一个 FDE Agent**——进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。你通过 FDE 入口安装它，装完之后它就是你的常驻 AI 员工：梳理 workflow、审计变更、持续优化。**人走 sofagent 不走。**
 
-> **FDE Agent 是建在 sofagent 引擎上的产品封装——用户得到的是一个常驻 AI FDE Agent，是企业用户的唯一入口。**
->
-> [sofagent 引擎](../README.md) 是开源（MIT）底座——一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎），你自己拿去怎么跑都行。FDE 文件夹是建在这个底座上的**产品形态**：把底座能力封装成一个常驻 FDE Agent，帮你梳理工作流、自检合规、持续优化。**人走 FDE 不走。**
->
 > 内部由 4 个 Sub Agent 协作（`sofagent-fde` 部署 / `sofagent-audit` 合规审计 / `sofagent-engineer` 代码工程 / `sofagent-reviewer` 代码审查），对外用户只看到一个 FDE Agent 身份。Maker-Checker 分离在内部保持，用户不需要知道。
->
-> 🏞️ **River 比喻**：大厂造河（LLM=水，Agent 平台=河床）；sofagent 引擎是堤坝+自来水厂+管网，**FDE Agent 是你家的水龙头**——你唯一打交道的就是它，拧开就有安全的 AI 能力流进业务。
->
-> > 💡 FDE 是什么、12 个关键步骤详解：[FDE.md](./FDE.md)。这里只讲怎么装、怎么用。
+
+> 🏞️ **River 比喻**：大厂造河（LLM=水，Agent 平台=河床）；sofagent 是堤坝+自来水厂+管网，**FDE Agent 是你家的水龙头**——你唯一打交道的就是它，拧开就有安全的 AI 能力流进业务。
+
+> 💡 FDE 是什么、12 个关键步骤详解：[FDE.md](./FDE.md)。这里只讲怎么装、怎么用。
 
 > 🧭 **v1.2.0 目标结构（方向声明，只声明不搬）**：仓库将收敛为 `/engine/`（现 `sofagent/`，引擎层）+ `/SKILL/`（Skill 统一收敛）+ `install.sh` 提升到仓库根目录；**FDE 交付物将可见化**——按企业实例化落盘（`{企业名}/` 目录承载该企业的工作流梳理、AI 节点配置与交付记录），让企业看得见「我的 AI 化交付了什么」。v1.1.9 仅声明方向，物理迁移在 v1.2.0/v1.2.x 进行。
 

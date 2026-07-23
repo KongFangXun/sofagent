@@ -37,7 +37,7 @@
 
 ## 🎯 先读这段：如何正确理解 sofagent
 
-> **sofagent 给 SMB 和 OPC 提供 FDE Agent——对外你看到的是一个常驻 AI 员工（FDE Agent），底层是 sofagent 引擎（Harness 中间件）的一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）做问责底座。** 我们基于你自选的大厂 Agent 和大模型，不替代它们，而是帮企业梳理 workflow、搭建本体模型、部署专有 Sub Agent。
+> **sofagent 是一个 FDE Agent——对外你看到的是一个常驻 AI 员工（FDE Agent），底层是 sofagent 引擎（Harness 中间件）的一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）做问责底座。** 我们基于你自选的大厂 Agent 和大模型，不替代它们，而是帮企业梳理 workflow、搭建本体模型、部署专有 Sub Agent。
 
 一底座·四引擎是 FDE Agent 的**核心架构**，不是独立销售的产品。
 
@@ -84,7 +84,7 @@ sofagent 的 FDE 方法论正是照着这个逻辑设计的：**第一步梳理�
 
 FDE（或企业 CIO/网管）的操作手册。**读它 → 帮企业梳理 workflow → 识别 AI 节点 → 生成交付手册**。Agent 全程辅助：你负责和人聊，Agent 负责记录、分析、出方案。
 
-**离场后企业留下四样东西**：
+**离场后企业留下五样东西**：
 
 | 交付物 | 说明 |
 |--------|------|
@@ -92,8 +92,9 @@ FDE（或企业 CIO/网管）的操作手册。**读它 → 帮企业梳理 work
 | AI 节点 | 在跑的 Agent，自动执行日常任务 |
 | AI 知识库 | 持续积累的实体、概念、对比页 |
 | 私有化评估体系 | eval 反馈 + Skill 迭代历史——无法复制的企业 IP |
+| **sofagent 本身** | **FDE Agent 7×24 在跑**——管上面四样东西的生命周期，人离场了它留下 |
 
-**但其实留下的第五样东西才是最重要的——FDE Agent 本身。** 上面四样东西不是静态交付物，是 FDE Agent 持续维护的活资产：它跑交付手册里的 workflow、管 AI 节点的生命周期、给知识库做 Dream Cycle 沉淀、用 eval 驱动 Skill 迭代。人（FDE 工程师）离场了，FDE Agent 留下——7×24 在跑。这才是「常驻 AI FDE Agent」的真正含义：客户得到的不是一套文档+几个脚本，而是一个一直在线、一直干活、一直自检的 AI FDE Agent。
+**但其实留下的第五样东西才是最重要的——sofagent 本身。** 上面四样东西不是静态交付物，是 FDE Agent 持续维护的活资产：它跑交付手册里的 workflow、管 AI 节点的生命周期、给知识库做 Dream Cycle 沉淀、用 eval 驱动 Skill 迭代。人（FDE 工程师）离场了，sofagent 留下——7×24 在跑。这才是「常驻 AI FDE Agent」的真正含义：客户得到的不是一套文档+几个脚本，而是一个一直在线、一直干活、一直自检的 AI FDE Agent。
 
 > 📖 FDE 的产品哲学——「不配置 UI，配置对话能力」见 [设计哲学](../docs/PHILOSOPHY.md#六怎么装部署哲学)。
 
@@ -564,7 +565,7 @@ Ontology 说明书是 FDE 离场交付物之一——不是一次性文档。企
 
 #### 9.6 River——大厂造河与企业用水
 
-FDE 交付的本质不是一个个独立 AI 节点，而是把节点间的**关联关系**梳理清楚，让企业 AI 能力（模型）流到业务侧。核心隐喻（城市自来水比喻）：大厂造了江（**LLM 是水**，Agent 平台是**河床**），但企业要用上水，得有人修堤坝、建水厂、铺管网、装水龙头——sofagent **不做河**，做**堤坝（约束层）+ 管网（Workflow）+ 水龙头（Subagent）**，**让原水变直饮水**。完整隐喻与组件映射见 [ARCHITECTURE · River](../docs/ARCHITECTURE.md)。
+FDE 交付的本质不是一个个独立 AI 节点，而是把节点间的**关联关系**梳理清楚，让企业 AI 能力流到业务侧。River 比喻完整映射见 [README §①](../README.md) 和 [ARCHITECTURE · River](../docs/ARCHITECTURE.md)——sofagent 做堤坝 + 管网 + 水龙头，不做河本身。
 
 **战略判断（sofagent 的差异化根）**
 
@@ -572,7 +573,7 @@ FDE 交付的本质不是一个个独立 AI 节点，而是把节点间的**关�
 - **水龙头长出净水能力——选小基座 + QLoRA 精调**：不做大模型剪枝，直接下载开源小基座（0.5B-3B），用企业 workflow 数据做 QLoRA 微调（4-bit 量化 + 低秩适配器，Mac Mini 可跑，适配器几 MB），只干这一个 workflow。详见 ROADMAP「Subagent 内置专精小模型」。
 - **任务价值分流**：本地小模型（Qwen2.5-0.5B / Llama-3.2-1B，≤1B）只覆盖业务 workflow（省钱、数据不出域、零投喂）；代码 / 强推理 / 多步规划等高价值任务直接走云端最强 LLM（Claude / GPT / Gemini）。私有部署铁律针对业务数据，与高价值任务走云端不冲突。
 
-> Dashboard 的 River 模块（v1.1.0+）展示管网流向图——哪些 Workflow 互联、数据怎么回流、任务怎么从入口分发再汇总。不是聊天窗口，是河流流向图。
+> Dashboard 的 River 模块（v1.1.0+）展示流向图——哪些 Workflow 互联、数据怎么回流、任务怎么从入口分发再汇总。不是聊天窗口，是河流流向图。
 
 ---
 

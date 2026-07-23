@@ -896,7 +896,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   const passCount = totalRules - failCount - warnCount - skipCount;
 
   // banner 状态
-  const statusLabel = exitCode === 0 ? '✅ 审计通过' : exitCode === 1 ? '⚠️  有警告' : '❌ 审计拦截';
+  const statusLabel = exitCode === 0 ? '✅ [sofagent] 审计通过' : exitCode === 1 ? '⚠️  [sofagent] 有警告' : '❌ [sofagent] 审计拦截';
   const actionLabel = exitCode === 0 ? '可以放心提交' : exitCode === 1 ? '建议修复后再提交' : '提交已被阻止';
   const issueWord = failCount > 0 ? `${failCount} 违规` : warnCount > 0 ? `${warnCount} 警告` : '0 违规';
 

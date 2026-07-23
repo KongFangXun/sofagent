@@ -277,6 +277,116 @@ else
 fi
 
 echo ""
+echo "=== 9. River 比喻跨文档计数（F-09）==="
+# River 比喻词（堤坝/自来水厂/管网）在非 README 文档中应 ≤4 处
+# README.md 是锚点，不限制
+RIVER_DOCS="docs/ARCHITECTURE.md docs/PHILOSOPHY.md FDE/FDE.md"
+RIVER_WARN=0
+for doc in $RIVER_DOCS; do
+  if [ -f "$doc" ]; then
+    RIVER_COUNT=$(grep -c "堤坝\|自来水厂\|管网" "$doc" 2>/dev/null || echo "0")
+    if [ "$RIVER_COUNT" -gt 4 ]; then
+      echo "  ⚠ $doc River 比喻 ${RIVER_COUNT} 处（建议 ≤4）"
+      RIVER_WARN=$((RIVER_WARN + 1))
+    else
+      echo "  ✓ $doc River 比喻 ${RIVER_COUNT} 处"
+    fi
+  fi
+done
+if [ "$RIVER_WARN" -gt 0 ]; then
+  echo "  共 ${RIVER_WARN} 个文档超标"
+else
+  echo "  全部在阈值内"
+fi
+
+echo ""
+echo "=== 10. SKILL.md 底线/铁律数一致性（F-19）==="
+SKILL_FILE="sofagent/skill/SKILL.md"
+if [ -f "$SKILL_FILE" ]; then
+  # 提取标题声称的底线数
+  BOTTOM_CLAIMED=$(grep -oE "### ([0-9]+) 底线" "$SKILL_FILE" | grep -oE "[0-9]+" | head -1)
+  # 提取标题声称的铁律数
+  IRON_CLAIMED=$(grep -oE "### ([0-9]+) 则铁律" "$SKILL_FILE" | grep -oE "[0-9]+" | head -1)
+  # 提取实际底线条数（### N 底线 到下一个 ### 之间的 - 开头行）
+  if [ -n "$BOTTOM_CLAIMED" ]; then
+    BOTTOM_ACTUAL=$(sed -n "/^### ${BOTTOM_CLAIMED} 底线/,/^### /p" "$SKILL_FILE" | grep -cE "^[0-9]+\. |^- " || echo "0")
+  else
+    BOTTOM_ACTUAL=0
+  fi
+  if [ -n "$IRON_CLAIMED" ]; then
+    IRON_ACTUAL=$(sed -n "/^### ${IRON_CLAIMED} 则铁律/,/^### /p" "$SKILL_FILE" | grep -cE "^[0-9]+\. |^- " || echo "0")
+  else
+    IRON_ACTUAL=0
+  fi
+  echo "  底线: 标题声称 ${BOTTOM_CLAIMED:-N/A} 条，实际 ${BOTTOM_ACTUAL} 条"
+  echo "  铁律: 标题声称 ${IRON_CLAIMED:-N/A} 条，实际 ${IRON_ACTUAL} 条"
+  if [ "${BOTTOM_CLAIMED:-0}" != "${BOTTOM_ACTUAL}" ] 2>/dev/null; then
+    echo "  ❌ 底线数不一致: 标题 ${BOTTOM_CLAIMED} vs 实际 ${BOTTOM_ACTUAL}"
+    ERRORS=$((ERRORS + 1))
+  fi
+  if [ "${IRON_CLAIMED:-0}" != "${IRON_ACTUAL}" ] 2>/dev/null; then
+    echo "  ❌ 铁律数不一致: 标题 ${IRON_CLAIMED} vs 实际 ${IRON_ACTUAL}"
+    ERRORS=$((ERRORS + 1))
+  fi
+  if [ "${BOTTOM_CLAIMED:-0}" = "${BOTTOM_ACTUAL}" ] && [ "${IRON_CLAIMED:-0}" = "${IRON_ACTUAL}" ] 2>/dev/null; then
+    echo "  ✓ 底线/铁律数一致"
+  fi
+else
+  echo "  ⚠ SKILL.md 不存在: $SKILL_FILE"
+fi
+
+echo ""
+echo "=== 11. 跨文档 #锚点 死链扫描（F-20，WARN 级）==="
+# 扫描 .md 中的跨文档锚点引用 [text](path.md#anchor)，检查目标文件和锚点是否存在
+# 排除 archive/changelog/node_modules
+ANCHOR_WARN=0
+while IFS= read -r -d '' mdfile; do
+  in_fence=0
+  while IFS= read -r line; do
+    if [[ "$line" =~ ^[[:space:]]*\`\`\` ]] || [[ "$line" =~ ^[[:space:]]*~~~ ]]; then
+      in_fence=$((1 - in_fence)); continue
+    fi
+    [ "$in_fence" -eq 1 ] && continue
+    # 提取含 #锚点 的 markdown 链接
+    targets=$(printf '%s\n' "$line" | grep -oE '\]\([^)]+\.md#[^)]+\)' | sed -E 's/^\]\(//; s/\)$//' || true)
+    for target in $targets; do
+      file_part="${target%%#*}"
+      anchor_part="${target#*#}"
+      [ -z "$file_part" ] && continue
+      # 解析相对路径
+      resolved="$(dirname "$mdfile")/$file_part"
+      resolved="$(cd "$(dirname "$resolved")" >/dev/null 2>&1 && echo "$(pwd)/$(basename "$resolved")" || echo "$resolved")"
+      if [ ! -f "$resolved" ]; then
+        echo "  ⚠ ${mdfile}: 目标文件不存在 → ${target}"
+        ANCHOR_WARN=$((ANCHOR_WARN + 1))
+        continue
+      fi
+      # 粗略检查锚点是否对应标题（GitHub 规则：小写+空格转-+去标点）
+      # 提取标题行，转成锚点格式，与 anchor_part 比对
+      anchor_lower=$(echo "$anchor_part" | tr '[:upper:]' '[:lower:]')
+      found_match=false
+      while IFS= read -r heading; do
+        # 模拟 GitHub 锚点生成：去 # 前缀 → 小写 → 空格转 - → 删特殊字符
+        norm=$(echo "$heading" | sed 's/^#\+ *//' | tr '[:upper:]' '[:lower:]' | sed 's/[[:space:]]/-/g; s/[，。、（）()【】\[\]：:，,。！？?！]/-/g; s/--*/-/g' | sed 's/^-//;s/-$//')
+        if [ "$norm" = "$anchor_lower" ]; then
+          found_match=true
+          break
+        fi
+      done < <(grep -E '^#{1,6} ' "$resolved" 2>/dev/null)
+      if ! $found_match; then
+        echo "  ⚠ ${mdfile}: 锚点可能失效 → ${target}"
+        ANCHOR_WARN=$((ANCHOR_WARN + 1))
+      fi
+    done
+  done < "$mdfile"
+done < <(find . -name "*.md" "${EXCLUDE[@]}" -print0)
+if [ "$ANCHOR_WARN" -eq 0 ]; then
+  echo "  ✓ 跨文档锚点无死链"
+else
+  echo "  共 ${ANCHOR_WARN} 处可能死链（人工确认）"
+fi
+
+echo ""
 if [ "$ERRORS" -gt 0 ]; then
   echo "发现 ${ERRORS} 个问题"
   exit 1

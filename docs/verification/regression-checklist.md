@@ -47,15 +47,13 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 ```
 
 **步骤 3：逐维度审查**
-## 审查维度（47 项 · 编号 1–47）
+## 审查维度（48 项 · 编号 1–48）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · 测试数一致（维度 13 SSOT 反查） · git status 零未提交修改
 
 #### 1. CHANGELOG 纯度与完整性
-
-> 归并自：跨版本纯度项 + 299+314+315+322+323
 
 ```bash
 # 子项 a: 纯度——不含审查元信息
@@ -81,8 +79,6 @@ grep -c "llm-wiki-mapping" README.md   # 期望: ≥ 1
 
 #### 2. 跨文档死链全量扫描
 
-> 归并自：301+305+306
-
 ```bash
 # 子项 a: check-docs 全仓相对路径死链
 bash tools/check-docs.sh 2>&1 | grep -i 'dead\|死链'   # 期望：0 处
@@ -97,8 +93,6 @@ grep -n "vX\.Y\.Z\|<.*>\.md\|EXAMPLE.*\.md" docs/verification/releasing.md docs/
 
 #### 3. 文档规范源与归属一致性
 
-> 归并自：303+304
-
 ```bash
 # 子项 a: think.md 始终为 Ledger/source（非 Views/派生视图）
 grep -rn "think.md.*Views\|think.md.*派生视图" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md FDE/FDE.md   # 期望：无匹配
@@ -108,8 +102,6 @@ grep -rn "Ledger-Views-Policy" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVE
 ```
 
 #### 4. 审计规则分级与 ruleClass 一致性
-
-> 归并自：317+316+308
 
 ```bash
 # 子项 a-c: A4=业务底线 / 规则总数=21 / A6=能力拐杖 A11=业务底线
@@ -131,8 +123,6 @@ grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -oE "[0-9]+ 条规则"   
 
 #### 5. 审计 exit code 与输出签名
 
-> 归并自：319+320+321
-
 ```bash
 # 子项 a: silent 模式 A1 FAIL → exit 2（⚠️ 需 ≥2 commits：先建正常 commit，再建违规 commit）
 cd /tmp && rm -rf t && mkdir t && cd t && git init && git config user.email t@t.com && git config user.name t
@@ -149,8 +139,6 @@ grep -rn "sofagent.*全角\|sofagent：" sofagent/audit/src/ 2>/dev/null   # 期
 
 #### 6. 版本号硬编码检测
 
-> 归并自：310+324
-
 ```bash
 SSOT_VER=$(node -e "console.log(require('./package.json').version)")
 
@@ -160,18 +148,12 @@ grep -rn "version\s*=\s*'[0-9]" sofagent/*/src/*.ts | grep -v __tests__ | grep -
 # 子项 b: SECURITY.md 版本标注 = 当前版本
 grep "当前状态（v${SSOT_VER}" SECURITY.md   # 期望：有匹配
 
-# [v1.1.9 移除: 被 check-version.sh [3/14]+[12/14] 全量覆盖——.sh 脚本 VERSION 常量+注释头版本号每次 pre-push 都跑]
-# 子项 c: .sh 脚本版本号扫描（v1.1.4 教训——loop-install.sh 版本号漂移）
-# 子项 c-2: check-version.sh 应把 .sh 头部版本号纳入扫描（v1.1.8 教训）
-
-# 子项 d: README 正文版本引用一致（v1.1.4 教训）
+# 子项 c: README 正文版本引用一致（v1.1.4 教训）
 grep -oE "v1\.[0-9]+\.[0-9]+" README.md | sort | uniq -c   # 期望：只有一个版本号
 grep -E "当前版本.*v[0-9]+\.[0-9]+\.[0-9]+\|当前版本（v[0-9]+\.[0-9]+\.[0-9]+）" README.md   # 期望：括号内 = SSOT_VER
 ```
 
 #### 7. 感知层配置与推送链路
-
-> 归并自：293+294+295+296+297
 
 ```bash
 # 子项 a: 配置完整性
@@ -188,10 +170,7 @@ grep -rn 'sendToolResult' sofagent/mcp/src/mcp-server.ts | head -5
 # 子项 d: Webhook PASS 推送
 grep -c "PASS" sofagent/audit/src/webhook.ts   # 应 > 0
 
-# 子项 e: MCP capabilities 准确性
-# [v1.1.9 移除: 被 check-docs.sh §7 规则数跨文档对照全量覆盖——三源规则数比对每次 pre-push 都跑]
-# grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "21 条规则"   # 应 ≥ 1
-# grep "run_audit" sofagent/mcp/src/mcp-server.ts | grep -c "A1-A14"       # 应 = 0
+# 子项 e: MCP capabilities 准确性（被 check-docs.sh §7 跨文档对照覆盖）
 
 # 子项 f: CLI stdout 签名一致性（v1.1.4 教训——感知层废墟高发区）
 node sofagent/audit/dist/index.js --version 2>&1 | grep -q "sofagent" && echo "✅ --version 签名存在"
@@ -201,8 +180,6 @@ grep -c "审计引擎.*sofagent-audit\|审计引擎:.*sofagent" sofagent/audit/s
 ```
 
 #### 8. acceptance-test 健壮性
-
-> 归并自：307+311
 
 ```bash
 # 子项 a: 管道 pipefail 保护
@@ -255,9 +232,6 @@ grep -cE "evidenceMode:" sofagent/audit/src/rules/index.ts   # 期望 21
 #### 10. tag commit message 规范
 
 ```bash
-# [v1.1.9 移除: 被 pre-push-check.sh 步骤 7「Tag message 校验」全量覆盖——tag commit message 前瞻校验每次推送都跑]
-# git tag -l "v*" | while read t; do ... done   # 期望：每个 tag 的 commit message 含对应版本号
-
 # 子项: changelog 规划中标注（v1.1.6 教训）
 for f in docs/changelog/v*.md; do v=$(basename "$f" .md); git rev-parse "$v" >/dev/null 2>&1 || echo "⚠️ $v: 规划中"; done
 # 期望：输出仅含未来版本
@@ -265,23 +239,16 @@ for f in docs/changelog/v*.md; do v=$(basename "$f" .md); git rev-parse "$v" >/d
 
 #### 11. 包依赖图循环检测
 
-> 归并自：300+326
-
 ```bash
 # 子项 a: audit↔daemon 循环依赖
 AUDIT_OPT=$(node -e "const p=require('./sofagent/audit/package.json'); console.log(p.optionalDependencies?.['@sofagent/daemon'] ? 'OPTIONAL_DAEMON' : 'NONE')")
 DAEMON_DEP=$(node -e "const p=require('./sofagent/daemon/package.json'); console.log(p.dependencies?.['@sofagent/audit'] ? 'DEP_AUDIT' : 'NONE')")
 [ "$AUDIT_OPT" = "OPTIONAL_DAEMON" ] && [ "$DAEMON_DEP" = "DEP_AUDIT" ] && echo "⚠️ 循环依赖（已知债务）" || echo "✅ 无循环依赖"
 
-# 子项 b: pre-push-check 含循环依赖检测
-# [v1.1.9 移除: 被 pre-push-check.sh 步骤 8「依赖图循环检测」全量覆盖——每次推送都跑]
-# grep -c "依赖图循环检测" tools/pre-push-check.sh   # 期望: 1
-# grep -c "Tag message 校验" tools/pre-push-check.sh  # 期望: 1
+# 子项 b: 循环依赖 + tag message 校验（被 pre-push-check.sh 步骤 7+8 全量覆盖）
 ```
 
 #### 12. 跨包代码重复检测
-
-> 归并自：302+318
 
 ```bash
 dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path '*/__tests__/*' -not -path '*/test*/*' \
@@ -322,8 +289,6 @@ grep -c "Agent 身份感知" FDE/FDE.md                      # 期望：≥ 1
 
 #### 16. 安全约束 fail-closed 与权限加固
 
-> 归并自：v1.1.3 审查建议
-
 ```bash
 # 子项 a: A15 actions 未声明时必须 FAIL（非 fail-open WARN）—— v1.1.7 二次验证确认已返回 FAIL，本项保留为回归锁
 grep -n "nodesWithActions.length === 0\|nodesWithActions.length === 0" sofagent/audit/src/rules/rule-a15-action-constraint.ts
@@ -339,8 +304,6 @@ grep -n "overallImprovement\|decidePromotion" sofagent/ab-test/src/*.ts 2>/dev/n
 
 #### 17. npm 产物 + bin 权限 + tag commit message
 
-> 归并自：v1.1.3 审查建议
-
 ```bash
 SSOT_VER=$(node -e "console.log(require('./sofagent/audit/package.json').version)")
 
@@ -355,15 +318,12 @@ NPM_VER=$(npm view @sofagent/audit version 2>/dev/null)
 TAG_VER=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
 echo "npm=$NPM_VER ssot=$SSOT_VER tag=$TAG_VER"   # 期望：三者一致
 
-# 子项 c: tag 指向的 commit message 含版本号
-# [v1.1.9 移除: 被 pre-push-check.sh 步骤 7「Tag message 校验」全量覆盖——tag commit message 前瞻校验每次推送都跑]
-# git tag -l "v*" | while read t; do ... done
+# 子项 c: tag 指向的 commit message 含版本号（被 pre-push-check.sh 步骤 7 全量覆盖）
 
 # 子项 d: 发版前工作树 clean
 git diff --quiet || echo "⚠️ 工作树有未提交修改"
 
-# 子项 e: 全量历史 tag commit message 含版本号（v1.1.6+ 自动化）
-# [v1.1.9 移除: 被 pre-push-check.sh 步骤 7「全量历史 tag 扫描」全量覆盖——历史污点豁免+HEAD 阻断逻辑完全一致]
+# 子项 e: 全量历史 tag commit message 含版本号（被 pre-push-check.sh 步骤 7 全量覆盖）
 ```
 
 #### 18. A19 commit message 质量
@@ -473,17 +433,7 @@ echo "声明: $DECLARED_COUNT / 实际: $ACTUAL_COUNT"   # 期望：两者相等
 CHANGELOG_FEATURES=$(grep -E "^### |^## 交付" docs/changelog/v$(node -e "console.log(require('./package.json').version)").md | head -20)
 echo "$CHANGELOG_FEATURES"   # 人工检查：每个功能点在 acceptance-test.sh 里都有对应场景
 
-# 子项 c: 失效场景清理（旧命令/旧路径）
-# [v1.1.9 移除: 已归并至维度 8——acceptance-test 自身健壮性检查统一管理]
-# grep -rn "sofagent-audit --daemon\|模板市场/" tools/acceptance-test.sh   # 期望：零命中
-
-# 子项 d: 场景间清理健壮性（v1.1.3 教训）
-# [v1.1.9 移除: 与维度 8 子项 b 重叠（grep "git rm --cached -f .env" 同一检查）]
-# grep -A5 "^scenario()" tools/acceptance-test.sh | grep -c "git rm --cached -f .env\|git reset --hard"   # 期望：≥ 1
-
-# 子项 e: JSON 输出场景的 stderr 隔离（v1.1.5 教训）
-# [v1.1.9 移除: 与维度 8 子项 e 重叠（JSON 输出 stderr 隔离同一检查）]
-# grep -n "\-\-json.*2>&1\|2>&1.*\-\-json" tools/acceptance-test.sh   # 期望：零命中
+# 子项 c-e: 失效场景清理 / 场景间清理 / JSON stderr 隔离（已归并至维度 8 统一管理）
 ```
 #### 25. conflict-check 巡检器只读铁律 + schedule 正确性（v1.1.6 新增）
 
@@ -653,7 +603,7 @@ grep -c "actionGovernance" sofagent/audit/src/index.ts   # ≥1
 # 子项 e: 旧格式向后兼容测试（无 actionGovernance 的旧记录可加载）
 grep -c "向后兼容\|undefined\|actionGovernance" sofagent/audit/src/audit-history.test.ts   # ≥3
 
-# 子项 f: audit-history 测试用例数（v1.1.9 移除旧声称数 ≥407——过时，已被维度 13 SSOT 反查覆盖）
+# 子项 f: audit-history 测试用例数（测试数声称已被维度 13 SSOT 反查覆盖，此处只验证结构）
 grep -c "  it(" sofagent/audit/src/audit-history.test.ts   # ≥11
 ```
 #### 34. 文档头日期一致性扫描门禁（v1.1.7 新增 · BugFix 1）
@@ -728,9 +678,7 @@ grep -c "ConfigParseError\|非法.*YAML\|非法 YAML" tools/acceptance-test.sh  
 # 子项 e: 非 git 目录场景存在
 grep -c "非.*git.*目录\|not.*a.*git.*repo\|非 git" tools/acceptance-test.sh   # ≥1
 
-# 子项 f: 场景数声称 = 实际
-# [v1.1.9 移除: 与维度 24 子项 a 完全重叠——场景数声称与实际对齐是同一检查]
-> 归并自：维度 24 子项 a（场景数声称与实际对齐）
+# 子项 f: 场景数声称 = 实际（归并至维度 24 子项 a 统一检查）
 ```
 #### 38. daemon 审计集中收集 workaround + 安全文档时效性（v1.1.7 新增 · BugFix 9+13）
 
@@ -983,6 +931,52 @@ grep -c "MAX_NODES = 20\|MAX_TASK_LENGTH = 2000" sofagent/orchestrator/src/workf
 # 子项 g: 验收场景覆盖（acceptance-test 场景 120-121）
 grep -c "FDE Agent\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODES" tools/acceptance-test.sh   # ≥4
 ```
+
+#### 48. 文档时效性 + CHANGELOG 纯度 + 跨文档一致性（v1.1.9 fresh-eyes 三轮审查整合）
+
+**背景**：v1.1.9 三轮 fresh-eyes 审查发现 20 个问题，其中可固化为回归检查的 8 项整合于此——防御文档滞后、审查元信息混入、跨文档数字漂移、感知层签名缺失等系统性缺陷。
+
+```bash
+# 子项 a: ROADMAP 版本头描述与当前版本一致（防御 F-01 P0）
+# 版本头描述关键词应与 CHANGELOG 标题关键词显著重合
+ROADMAP_DESC=$(sed -n '4p' ROADMAP.md)
+CHANGELOG_TITLE=$(grep -m1 "^### \[v" CHANGELOG.md)
+echo "$ROADMAP_DESC" | grep -qE "产品叙事|USB|A/B|控制图" || echo "⚠️ ROADMAP 版本头描述可能错配"
+
+# 子项 b: README.en 与 README.md 关键比喻计数对齐（防御双语叙事断裂）
+CN_RIVER=$(grep -c "堤坝\|自来水厂\|管网" README.md)
+EN_RIVER=$(grep -c "embankment\|water.*plant\|pipeline\|River" README.en.md)
+[ "$CN_RIVER" -gt 0 ] && [ "$EN_RIVER" -eq 0 ] && echo "⚠️ README.en River 比喻缺失"
+
+# 子项 c: River 比喻非 README 文档计数 ≤ 阈值（防御跨文档重复展开）
+for doc in docs/ARCHITECTURE.md docs/PHILOSOPHY.md FDE/FDE.md; do
+  COUNT=$(grep -c "堤坝\|自来水厂\|管网" "$doc" 2>/dev/null || echo 0)
+  [ "$COUNT" -gt 4 ] && echo "⚠️ $doc River 比喻 $COUNT 处（建议 ≤4）"
+done
+
+# 子项 d: SECURITY.md 旧描述清理（防御安全文档滞后）
+grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 措辞过时（v1.1.5+ 已加签名）"
+grep -q "weekly-report\|lessons-extract" SECURITY.md && echo "⚠️ SECURITY.md daemon 清单含已移除文件"
+
+# 子项 e: CHANGELOG 纯度——当前版本条目不含审查元信息（防御 F-14 P1）
+LATEST_VER=$(grep -m1 "^### \[v" CHANGELOG.md | grep -oE 'v[0-9.]+')
+sed -n "/^### \[$LATEST_VER\]/,/^### \[v/p" CHANGELOG.md | grep -qE "P[012]×|fresh-eyes|审查轮次|审查发现" && echo "⚠️ CHANGELOG 当前版本含审查元信息"
+
+# 子项 f: 视觉模式 banner 状态行含 [sofagent] 前缀（防御感知层签名缺失 F-18）
+grep -q "\[sofagent\]" <(grep "statusLabel" sofagent/audit/src/index.ts) || echo "⚠️ 视觉模式 statusLabel 缺 [sofagent] 前缀"
+
+# 子项 g: SKILL.md 铁律/底线数标题声称与实际一致（防御跨图数字漂移 F-19）
+SKILL_BOTTOM_CLAIMED=$(grep -oE "### ([0-9]+) 底线" sofagent/skill/SKILL.md | grep -oE "[0-9]+" || echo 0)
+SKILL_BOTTOM_ACTUAL=$(sed -n '/^### [0-9] 底线/,/^### /p' sofagent/skill/SKILL.md | grep -cE "^- " || echo 0)
+[ "$SKILL_BOTTOM_CLAIMED" != "$SKILL_BOTTOM_ACTUAL" ] && echo "⚠️ SKILL.md 底线数标题 $SKILL_BOTTOM_CLAIMED vs 实际 $SKILL_BOTTOM_ACTUAL"
+
+# 子项 h: LIMITATIONS 覆盖最近版本新功能（防御文档滞后 F-05 P1）
+NEW_FEATURES="Dream Cycle\|sensitivity\|knowledge-health\|ActionGovernance\|ab-scheduler"
+LIMITATIONS_COV=$(grep -c "$NEW_FEATURES" LIMITATIONS.md || echo 0)
+[ "$LIMITATIONS_COV" -lt 3 ] && echo "⚠️ LIMITATIONS 对 v1.1.7+ 新功能覆盖不足（$LIMITATIONS_COV 处）"
+```
+
+> **releasing.md 联动**：以下检查项已写入 `docs/verification/releasing.md`，不在本清单重复——① 阶段八「LIMITATIONS 覆盖新功能」② 阶段八「evidence 文件存在且测试数一致」③ 阶段十一「tag 后零 commit 校验」。本维度只覆盖可自动化 grep 的文档一致性检查。
 
 ## 输出报告格式
 > 审查日期 / 范围 / 环境验证（pre-push-check/npm test/check-docs/check-version）→ 问题清单（P0/P1/P2 分级，维度/文件:行/问题/建议）→ 通过统计 → 最终建议（可发版/需修复P0/需重大修复）。追加维度前先 grep 同类。
