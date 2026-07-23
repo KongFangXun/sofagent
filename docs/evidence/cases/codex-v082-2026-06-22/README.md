@@ -69,7 +69,7 @@ Codex 子会话输出已保存到：`outputs/codex-sofagent-smoke-output.txt`
 复现方式：在全新临时 `OPENCLAW_STATE_DIR` 下运行：
 
 ```bash
-bash sofagent/scripts/install.sh --platform openclaw --no-ao --quick --project-dir <tmp-project>
+bash install.sh --platform openclaw --no-ao --quick --project-dir <tmp-project>
 ```
 
 现象：

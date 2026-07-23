@@ -319,5 +319,5 @@ else
 fi
 
 echo ""
-echo "  如需重新安装，运行: bash engine/scripts/install.sh --platform $PLATFORM"
+echo "  如需重新安装，运行: bash install.sh --platform $PLATFORM"
 echo ""

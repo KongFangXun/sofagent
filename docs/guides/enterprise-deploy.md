@@ -9,7 +9,7 @@
 ### 1. 跳过外部依赖安装
 
 ```bash
-bash sofagent/scripts/install.sh --platform openclaw \
+bash install.sh --platform openclaw \
   --no-config-inject
 # --no-config-inject   跳过自动改 OpenClaw config.json
 ```

@@ -6,13 +6,13 @@
 #
 # 🧭 路径声明（v1.1.9 新增）：本脚本 v1.2.0 将提升到仓库根目录
 #    （随 /engine/ + /SKILL/ 目录收敛同步进行），当前路径
-#    engine/scripts/install.sh 在 v1.2.0 前保持不变。
+#    install.sh 在 v1.2.0 前保持不变。
 #
 # 📦 三个安装包边界（v1.1.9 声明）：
 #    ┌─────────────────────────────┬──────────┬──────────────────────┬─────────┐
 #    │ 脚本                        │ 给谁     │ 装什么               │ 装 LOOP │
 #    ├─────────────────────────────┼──────────┼──────────────────────┼─────────┤
-#    │ engine/scripts/install.sh │ 所有用户 │ 约束底座+四引擎      │   否    │
+#    │ install.sh │ 所有用户 │ 约束底座+四引擎      │   否    │
 #    │ FDE/fde-install.sh          │ 企业用户 │ 上者+FDE Agent Skill │   否    │
 #    │ LOOP/loop-install.sh        │ 开发者   │ 上者+LOOP 自迭代包   │   是    │
 #    └─────────────────────────────┴──────────┴──────────────────────┴─────────┘
@@ -21,7 +21,7 @@
 #
 # 🔗 跨产品契约：FDE/fde-install.sh 和 LOOP/loop-install.sh 依赖本脚本。
 #    改动此文件前，确认 FDE/LOOP 的安装链路不受影响：
-#    - FDE/LOOP 调用 `bash engine/scripts/install.sh` 作为底座安装入口
+#    - FDE/LOOP 调用 `bash install.sh` 作为底座安装入口
 #    - 改参数名/输出路径/依赖文件前必须 grep 两个 install 脚本的调用方式
 #    - 删被依赖文件（如 engine/skill/data/fde.md）前确认 FDE/LOOP install 不再引用
 # v0.98: 从 941 行拆分为 4 个 lib 模块 + 纯组装入口
@@ -32,7 +32,7 @@
 #
 # ── 跨产品调用契约（v1.1.9）──
 # FDE/fde-install.sh 与 LOOP/loop-install.sh 在第 1 步会调用本脚本：
-#   bash "$PROJECT_ROOT/engine/scripts/install.sh" --platform "$PLATFORM"
+#   bash "$PROJECT_ROOT/install.sh" --platform "$PLATFORM"
 # 版本锁定：本脚本的接口（入参/退出码/副作用）从 v1.1.5 起冻结，
 # 任何 breaking change 必须 bump major 版本并同步更新 FDE/LOOP install 脚本。
 # 契约约定：
@@ -104,10 +104,10 @@ if [ "${REMOTE_MODE}" = "1" ]; then
     ok "仓库已克隆到: $REMOTE_TMP"; cd "$REMOTE_TMP"
     REMAINING_ARGS=""
     for _arg in "${ORIGINAL_ARGS[@]}"; do [ "$_arg" = "--remote" ] && continue; REMAINING_ARGS="$REMAINING_ARGS $_arg"; done
-    exec bash engine/scripts/install.sh "${REMAINING_ARGS# }"
+    exec bash install.sh "${REMAINING_ARGS# }"
   else
     err "git 不可用——远程安装需要 git。请先安装 git 或使用完整安装方式："
-    err "  git clone https://github.com/KongFangXun/sofagent.git && cd sofagent && bash engine/scripts/install.sh"
+    err "  git clone https://github.com/KongFangXun/sofagent.git && cd sofagent && bash install.sh"
     exit 1
   fi
 fi

@@ -5,7 +5,7 @@
 ## 📦 第 1 天：装上
 
 - [ ] 选一个平台（OpenClaw 推荐，WorkBuddy/Claude Code 也行）
-- [ ] `bash sofagent/scripts/install.sh --platform 你的平台`
+- [ ] `bash install.sh --platform 你的平台`
 - [ ] `bash sofagent/scripts/verify.sh` 确认 0 fail
 - [ ] 跑一个简单任务（「帮我查一下今天的日程」），确认 Agent 正常回复
 - [ ] 企业内网：加 `--no-config-inject`，编辑 fde.md 取消 `offline: true` 注释
@@ -49,7 +49,7 @@ sofagent 是单用户设计。如果团队多人用：
 
 如果你的团队已经在用 Agent（裸 OpenClaw / WorkBuddy / Claude Code），以下是接入 sofagent 的步骤清单：
 
-1. [ ] **安装 sofagent**：`bash sofagent/scripts/install.sh --platform 你的平台`
+1. [ ] **安装 sofagent**：`bash install.sh --platform 你的平台`
 2. [ ] **跑 verify.sh**：`bash sofagent/scripts/verify.sh --quick` 确认 4/4 通过
 3. [ ] **先跑一个简单任务**：不做大改动，用现有 prompt 跑一次，观察 Agent 回复是否正常
 4. [ ] **跑 verify.sh 环境验证**：`bash sofagent/scripts/verify.sh --quiet` 确认全绿

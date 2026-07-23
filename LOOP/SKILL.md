@@ -38,7 +38,7 @@ LOOP 不是 sofagent 的必装组件。装 sofagent 不会自动装 LOOP。如�
 
 ## 前置依赖
 
-- 已装 sofagent（`sofagent/scripts/install.sh`）
+- 已装 sofagent（`install.sh`）
 - OpenClaw（sub-agent 通过 `session.spawn` 启动）
 - 已装 FDE（可选——外层循环的 forward-deployed-engineer 需要 FDE Agent）
 

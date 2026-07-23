@@ -6,7 +6,7 @@
 
 ## 测试环境要求
 
-- 已安装 sofagent（`bash sofagent/scripts/install.sh --platform 你的平台`）
+- 已安装 sofagent（`bash install.sh --platform 你的平台`）
 - 已运行 `verify.sh` 且全部通过
 - Agent 客户端已重启
 
@@ -15,7 +15,7 @@
 ## 用例 0：安装验证
 
 **目的**：验证 install.sh + verify.sh 全链路通过。
-**步骤**：`bash sofagent/scripts/install.sh --platform 你的平台` → `bash sofagent/scripts/verify.sh`
+**步骤**：`bash install.sh --platform 你的平台` → `bash sofagent/scripts/verify.sh`
 **通过标准**：verify.sh exit 0，fail = 0。
 
 ## 用例 1：地基加载验证

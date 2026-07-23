@@ -1,6 +1,6 @@
 # FDE Agent — sofagent 的产品入口
 
-> 🔖 **定位**：FDE 是 sofagent 的**部署产品入口**（非独立仓库）。需先 `git clone` sofagent 主仓库，FDE 依赖主仓库的 `sofagent/scripts/install.sh`。
+> 🔖 **定位**：FDE 是 sofagent 的**部署产品入口**（非独立仓库）。需先 `git clone` sofagent 主仓库，FDE 依赖主仓库的 `install.sh`。
 
 > **sofagent 是一个 FDE Agent**——进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。你通过 FDE 入口安装它，装完之后它就是你的常驻 AI 员工：梳理 workflow、审计变更、持续优化。**人走 sofagent 不走。**
 
@@ -25,7 +25,7 @@
 
 ## 安装（需 clone 主仓库）
 
-> ⚠️ 本脚本依赖主仓库的 `sofagent/scripts/install.sh`，请确保已 clone 完整仓库后再从 `FDE/` 目录运行。
+> ⚠️ 本脚本依赖主仓库的 `install.sh`，请确保已 clone 完整仓库后再从 `FDE/` 目录运行。
 
 | 平台 | 怎么装 | 怎么激活 |
 |------|------|------|
@@ -39,7 +39,7 @@
 
 1. **激活 Skill** → 按上表对应平台的方法让 Agent 加载 FDE 工作台
 2. **Agent 引导** → Agent 会按 [FDE.md](./FDE.md) §1 开始，引导你描述企业基本信息，然后走完 12 个关键步骤
-3. **部署 sofagent 到设备**（核心步骤）→ 流程走完后，找一台闲置设备（服务器/旧电脑），`bash sofagent/scripts/install.sh` 把 sofagent 一底座·四引擎装上去（注：此命令装**底层引擎底座**；FDE 入口本身用 `FDE/fde-install.sh` 安装，见上方安装表）——约束底座 + 编排引擎 + 审计引擎 + 回溯引擎（git snapshot + revert）+ 进化引擎就绪，上面开始跑你的 workflow AI 节点
+3. **部署 sofagent 到设备**（核心步骤）→ 流程走完后，找一台闲置设备（服务器/旧电脑），`bash install.sh` 把 sofagent 一底座·四引擎装上去（注：此命令装**底层引擎底座**；FDE 入口本身用 `FDE/fde-install.sh` 安装，见上方安装表）——约束底座 + 编排引擎 + 审计引擎 + 回溯引擎（git snapshot + revert）+ 进化引擎就绪，上面开始跑你的 workflow AI 节点
 
 ### 种子指令（备选，非 OpenClaw/WorkBuddy 用户使用）
 

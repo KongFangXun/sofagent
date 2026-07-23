@@ -12,7 +12,7 @@
 
 ```bash
 # 1. OpenClaw 部署 sofagent v0.71（完整能力）
-bash sofagent/scripts/install.sh --platform openclaw
+bash install.sh --platform openclaw
 # → sofagent/ 同步到 ~/.openclaw/skills/sofagent/
 # → scripts/ 同步到 ~/.openclaw/scripts/
 # → Hook handler.ts 部署到 ~/.openclaw/hooks/sofagent-load-chain/

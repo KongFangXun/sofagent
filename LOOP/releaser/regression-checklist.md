@@ -4,19 +4,19 @@
 > **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量）
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:docs/verification/regression-checklist.md` 找回。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:LOOP/releaser/regression-checklist.md` 找回。
 
-**行数警戒线（验收脚本联动，v1.1.7 起）**：两份验证文件任一行数越线即触发瘦身（releasing.md 阶段五 Tier 2）——`regression-checklist.md` ≤ 1000 行、`tools/acceptance-test.sh` ≤ 1500 行。越线不表示有 bug，只是提醒该做一轮精简，防止几版后回到 3000+ 行不可维护。
+**行数警戒线（验收脚本联动，v1.1.7 起）**：两份验证文件任一行数越线即触发瘦身（releasing.md 阶段五 Tier 2）——`regression-checklist.md` ≤ 1000 行、`LOOP/releaser/acceptance-test.sh` ≤ 1500 行。越线不表示有 bug，只是提醒该做一轮精简，防止几版后回到 3000+ 行不可维护。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
-HEAD_VAL=$(grep -oE '审查维度（[0-9]+ 项' docs/verification/regression-checklist.md | grep -oE '[0-9]+')
-ACTUAL=$(grep -c "^#### " docs/verification/regression-checklist.md)
+HEAD_VAL=$(grep -oE '审查维度（[0-9]+ 项' LOOP/releaser/regression-checklist.md | grep -oE '[0-9]+')
+ACTUAL=$(grep -c "^#### " LOOP/releaser/regression-checklist.md)
 [ "$HEAD_VAL" = "$ACTUAL" ] && echo "✅ 维度数一致 ($HEAD_VAL)" || echo "❌ 标题声称 $HEAD_VAL ≠ 实际 $ACTUAL"
 
 # 行数警戒线自检（越线提醒瘦身，非失败）
-WC_CHK=$(wc -l < docs/verification/regression-checklist.md)
-WC_ACC=$(wc -l < tools/acceptance-test.sh)
+WC_CHK=$(wc -l < LOOP/releaser/regression-checklist.md)
+WC_ACC=$(wc -l < LOOP/releaser/acceptance-test.sh)
 [ "$WC_CHK" -le 1000 ] && echo "✅ checklist 行数 $WC_CHK (≤1000)" || echo "⚠️ checklist 行数 $WC_CHK 超 1000，触发瘦身"
 [ "$WC_ACC" -le 1500 ] && echo "✅ acceptance-test 行数 $WC_ACC (≤1500)" || echo "⚠️ acceptance-test 行数 $WC_ACC 超 1500，触发瘦身"
 ```
@@ -87,7 +87,7 @@ bash tools/check-docs.sh 2>&1 | grep -i 'dead\|死链'   # 期望：0 处
 git grep -n "OLD_RELATIVE_PATH" -- '*.md'
 
 # 子项 c: 占位符死链豁免（v1.1.4 教训）
-grep -n "vX\.Y\.Z\|<.*>\.md\|EXAMPLE.*\.md" docs/verification/releasing.md docs/guides/*.md 2>/dev/null | head
+grep -n "vX\.Y\.Z\|<.*>\.md\|EXAMPLE.*\.md" LOOP/releaser/releasing.md docs/guides/*.md 2>/dev/null | head
 # 人工检查：check-docs.sh 是否对占位符路径做豁免
 ```
 
@@ -183,14 +183,14 @@ grep -c "审计引擎.*sofagent-audit\|审计引擎:.*sofagent" sofagent/audit/s
 
 ```bash
 # 子项 a: 管道 pipefail 保护
-grep -n 'grep.*|.*head\|grep.*|.*wc' tools/acceptance-test.sh | grep -v '|| true'   # 期望：零命中
+grep -n 'grep.*|.*head\|grep.*|.*wc' LOOP/releaser/acceptance-test.sh | grep -v '|| true'   # 期望：零命中
 
 # 子项 b: 场景间清理
-grep -c "git rm --cached -f .env" tools/acceptance-test.sh   # 期望：≥ 2
+grep -c "git rm --cached -f .env" LOOP/releaser/acceptance-test.sh   # 期望：≥ 2
 
 # 子项 c: --init 烟测期望值与实际对齐（v1.1.4 教训）
 DEFAULT_COUNT=$(grep -cE "name:\s*'A[0-9]" sofagent/audit/src/rules/index.ts | head -1)
-grep -nE "期望.*[0-9]+\s*项\|期望.*[0-9]+\s*条\|expected.*[0-9]+" tools/acceptance-test.sh | head
+grep -nE "期望.*[0-9]+\s*项\|期望.*[0-9]+\s*条\|expected.*[0-9]+" LOOP/releaser/acceptance-test.sh | head
 # 人工检查：acceptance-test 里所有"期望 N 项/条"的硬编码 N 是否与 index.ts 注册数一致
 
 # 子项 d: check-version 文案扫描 baseline（v1.1.6 教训——工具自身 SSOT 标签误导）
@@ -199,7 +199,7 @@ REPORTED_DEFAULT=$(bash tools/check-version.sh 2>&1 | grep -oE "defaultRules.len
 echo "期望=$EXPECTED_DEFAULT 报告=$REPORTED_DEFAULT"   # 期望：两者相等
 
 # 子项 e: acceptance-test.sh JSON 输出不被 stderr 污染（v1.1.5 教训）
-grep -E "\-\-json.*2>&1|2>&1.*\-\-json" tools/acceptance-test.sh   # 期望：零命中
+grep -E "\-\-json.*2>&1|2>&1.*\-\-json" LOOP/releaser/acceptance-test.sh   # 期望：零命中
 
 # 子项 f: init.ts 禁止硬编码规则条数常量（v1.1.8 教训）
 grep -nE "expectedDefaultRules\s*=\s*[0-9]+|expectedDefault\s*=\s*[0-9]+" sofagent/audit/src/commands/init.ts   # 期望：零命中
@@ -403,16 +403,16 @@ ACTUAL_AGENTS=$(ls agents/SKILL/sofagent-* -d 2>/dev/null | wc -l); echo "实际
 grep -oE "[0-9]+ 个内置 Agent\|[0-9]+ 个 Agent" LOOP/SKILL.md LOOP/README.md LOOP/quick-start.md 2>/dev/null   # 人工核对一致
 
 # 子项 c: 跨产品 install.sh 契约稳定性（v1.1.4 暴露——无契约文档）
-grep -n "sofagent/scripts/install.sh\|PROJECT_ROOT.*install.sh" FDE/fde-install.sh LOOP/loop-install.sh
+grep -n "install.sh\|PROJECT_ROOT.*install.sh" FDE/fde-install.sh LOOP/loop-install.sh
 # 人工检查：接口（路径/参数/退出码）有无契约文档或 pin commit
 
 # 子项 d: 独立 install 闭环（v1.1.4 暴露——只 clone FDE/ 子目录能否跑通）
-FDE_DEP=$(grep -c "sofagent/scripts/install.sh" FDE/fde-install.sh 2>/dev/null || echo 0)
-LOOP_DEP=$(grep -c "sofagent/scripts/install.sh" LOOP/loop-install.sh 2>/dev/null || echo 0)
+FDE_DEP=$(grep -c "install.sh" FDE/fde-install.sh 2>/dev/null || echo 0)
+LOOP_DEP=$(grep -c "install.sh" LOOP/loop-install.sh 2>/dev/null || echo 0)
 echo "FDE 依赖主 install.sh: $FDE_DEP / LOOP 依赖: $LOOP_DEP"
 CLONE_NOTE=$(grep -rliE "完整 clone|完整仓库|需要.*sofagent.*仓库|clone.*完整" FDE/README.md FDE/SKILL.md LOOP/README.md 2>/dev/null | head -1 || true)
 [ -n "$CLONE_NOTE" ] && echo "✅ 文档已标注完整 clone 要求" || echo "⚠️ 未找到标注"
-grep -q "被 FDE/LOOP 依赖\|FDE/LOOP" sofagent/scripts/install.sh 2>/dev/null && echo "✅ 主 install.sh 已标注" || echo "⚠️ 未标注"
+grep -q "被 FDE/LOOP 依赖\|FDE/LOOP" install.sh 2>/dev/null && echo "✅ 主 install.sh 已标注" || echo "⚠️ 未标注"
 
 # 子项 e: install 脚本版本号 = SSOT（v1.1.4 暴露——loop-install.sh 版本号漂移）
 grep -H "v[0-9]\+\.[0-9]\+\.[0-9]\+" FDE/fde-install.sh LOOP/loop-install.sh | head -4   # 期望：所有版本号 = SSOT_VER
@@ -420,12 +420,12 @@ grep -H "v[0-9]\+\.[0-9]\+\.[0-9]\+" FDE/fde-install.sh LOOP/loop-install.sh | h
 
 #### 24. acceptance-test.sh 与 changelog 功能对齐（单文件）
 
-> v1.1.5 更新：原 `docs/verification/openclaw-acceptance-test.md` 已合并入 `tools/acceptance-test.sh`
+> v1.1.5 更新：原 `docs/verification/openclaw-acceptance-test.md` 已合并入 `LOOP/releaser/acceptance-test.sh`
 
 ```bash
 # 子项 a: 场景数声称与实际对齐（v1.1.4 教训）
-DECLARED_COUNT=$(head -5 tools/acceptance-test.sh | grep -oE "[0-9]+ 个端到端" | grep -oE "[0-9]+")
-ACTUAL_COUNT=$(grep -c "^scenario " tools/acceptance-test.sh)
+DECLARED_COUNT=$(head -5 LOOP/releaser/acceptance-test.sh | grep -oE "[0-9]+ 个端到端" | grep -oE "[0-9]+")
+ACTUAL_COUNT=$(grep -c "^scenario " LOOP/releaser/acceptance-test.sh)
 echo "声明: $DECLARED_COUNT / 实际: $ACTUAL_COUNT"   # 期望：两者相等
 
 # 子项 b: 本版本 changelog 功能点逐条对照 acceptance-test 覆盖
@@ -650,13 +650,13 @@ grep -oE "[0-9]+ 条规则\|[0-9]+ 条审计规则\|[0-9]+ 条 git-diff" README.
 grep -c "cross-product-contract\|cross_product_contract" .github/workflows/*.yml 2>/dev/null   # ≥1
 
 # 子项 b: FDE install.sh 引用主 install.sh
-grep -c "sofagent/scripts/install.sh" FDE/fde-install.sh 2>/dev/null   # ≥1
+grep -c "install.sh" FDE/fde-install.sh 2>/dev/null   # ≥1
 
 # 子项 c: LOOP install.sh 引用主 install.sh
-grep -c "sofagent/scripts/install.sh" LOOP/loop-install.sh 2>/dev/null   # ≥1
+grep -c "install.sh" LOOP/loop-install.sh 2>/dev/null   # ≥1
 
 # 子项 d: 主 install.sh 标注被 FDE/LOOP 依赖
-grep -c "FDE/LOOP\|被.*依赖\|跨产品" sofagent/scripts/install.sh 2>/dev/null   # ≥1
+grep -c "FDE/LOOP\|被.*依赖\|跨产品" install.sh 2>/dev/null   # ≥1
 ```
 #### 37. red-team 回归锁完整性（v1.1.7 新增 · BugFix 12）
 
@@ -664,19 +664,19 @@ grep -c "FDE/LOOP\|被.*依赖\|跨产品" sofagent/scripts/install.sh 2>/dev/nu
 
 ```bash
 # 子项 a: A9 全角/leet 注入检测场景存在
-grep -c "全角\|leet\|unicode" tools/acceptance-test.sh   # ≥3
+grep -c "全角\|leet\|unicode" LOOP/releaser/acceptance-test.sh   # ≥3
 
 # 子项 b: history.jsonl 篡改检测场景存在
-grep -c "篡改\|tamper\|CHAIN_BREAK\|hash chain" tools/acceptance-test.sh   # ≥2
+grep -c "篡改\|tamper\|CHAIN_BREAK\|hash chain" LOOP/releaser/acceptance-test.sh   # ≥2
 
 # 子项 c: hook 删除检测场景存在
-grep -c "hook.*删除\|hook.*丢失\|删除.*hook" tools/acceptance-test.sh   # ≥1
+grep -c "hook.*删除\|hook.*丢失\|删除.*hook" LOOP/releaser/acceptance-test.sh   # ≥1
 
 # 子项 d: 非法 YAML → ConfigParseError 场景存在
-grep -c "ConfigParseError\|非法.*YAML\|非法 YAML" tools/acceptance-test.sh   # ≥2
+grep -c "ConfigParseError\|非法.*YAML\|非法 YAML" LOOP/releaser/acceptance-test.sh   # ≥2
 
 # 子项 e: 非 git 目录场景存在
-grep -c "非.*git.*目录\|not.*a.*git.*repo\|非 git" tools/acceptance-test.sh   # ≥1
+grep -c "非.*git.*目录\|not.*a.*git.*repo\|非 git" LOOP/releaser/acceptance-test.sh   # ≥1
 
 # 子项 f: 场景数声称 = 实际（归并至维度 24 子项 a 统一检查）
 ```
@@ -728,7 +728,7 @@ grep -c "pairByCode\|pairByToken\|pairByFederationFile\|rotateKey" sofagent/core
 grep -r "sharedKey.*Buffer\|只存内存\|不落盘" sofagent/core/src/crypto/*.ts   # ≥1
 
 # 子项 e: 验收场景覆盖（acceptance-test 场景 101-102）
-grep -c "AES-256-GCM\|ECDH.*配对\|pairByToken" tools/acceptance-test.sh   # ≥3
+grep -c "AES-256-GCM\|ECDH.*配对\|pairByToken" LOOP/releaser/acceptance-test.sh   # ≥3
 ```
 
 #### 40. OpenClaw channel 联邦查询（v1.1.8 新增 · 交付二）
@@ -752,7 +752,7 @@ grep -c "isSensitivityVisible\|restricted.*不泄露\|sensitivity.*过滤" sofag
 grep -c "offline\|fallback\|降级" sofagent/daemon/src/federation/offline-fallback.ts   # ≥1
 
 # 子项 f: 验收场景覆盖（acceptance-test 场景 103）
-grep -c "联邦.*sensitivity\|federation\|broadcastQuery" tools/acceptance-test.sh   # ≥2
+grep -c "联邦.*sensitivity\|federation\|broadcastQuery" LOOP/releaser/acceptance-test.sh   # ≥2
 ```
 
 #### 41. Prompt 注入 8 层防护（层 1 + 层 4 + 层 5）（v1.1.8 新增 · 交付三）
@@ -773,7 +773,7 @@ grep -c "isTrustEntryUsable\|sortByTrust\|web.*restricted" sofagent/core/src/sec
 grep -c "TRUST_ORDER\|trust.*Trust\|official.*internal" sofagent/core/src/memory-contract.ts   # ≥1
 
 # 子项 e: 验收场景覆盖（acceptance-test 场景 104-105）
-grep -c "wrapUntrusted\|redactForPrompt\|trust.*分级\|isTrustEntryUsable" tools/acceptance-test.sh   # ≥4
+grep -c "wrapUntrusted\|redactForPrompt\|trust.*分级\|isTrustEntryUsable" LOOP/releaser/acceptance-test.sh   # ≥4
 ```
 
 #### 42. 编排引擎 dag-runner + compose --run（v1.1.8 新增 · 交付四）
@@ -797,7 +797,7 @@ grep -c "variants\|variant\|VARIANT" sofagent/orchestrator/src/composer.ts   # �
 grep -c "buildConstrainedSystemPrompt\|约束.*加载链" sofagent/orchestrator/src/dag-runner.ts   # ≥1
 
 # 子项 f: 验收场景覆盖（acceptance-test 场景 106）
-grep -c "dag-runner\|detectFileConflicts\|compose.*DAG" tools/acceptance-test.sh   # ≥2
+grep -c "dag-runner\|detectFileConflicts\|compose.*DAG" LOOP/releaser/acceptance-test.sh   # ≥2
 ```
 
 #### 43. pushKnowledgeSummary 主动通知（v1.1.8 新增 · 交付五）
@@ -818,7 +818,7 @@ grep -c "sensitivity\|restricted\|NO_DATA_TEXT" sofagent/daemon/src/notify.ts   
 grep -c "best-effort\|catch\|不影响主流程\|void pushKnowledgeSummary" sofagent/daemon/src/notify.ts   # ≥1
 
 # 子项 e: 验收场景覆盖（acceptance-test 场景 107）
-grep -c "pushKnowledgeSummary\|collectSummaryMaterial" tools/acceptance-test.sh   # ≥2
+grep -c "pushKnowledgeSummary\|collectSummaryMaterial" LOOP/releaser/acceptance-test.sh   # ≥2
 ```
 
 #### 44. USB 完整运行时——HMAC 签名 + AES-256 加密 + fail-closed 验签（v1.1.9 新增 · 交付一）
@@ -848,7 +848,7 @@ grep -c "create-usb-key\|usb-root\|createUsbKey\|startUsbRuntime" sofagent/daemo
 test -x sofagent/daemon/usb/start.command && test -x sofagent/daemon/usb/start.sh && test -f sofagent/daemon/usb/start.bat   # 全部通过
 
 # 子项 h: 验收场景覆盖（acceptance-test 场景 108-113）
-grep -c "usb-signature\|usb-key\|createUsbKey\|verifyUsbSignature" tools/acceptance-test.sh   # ≥4
+grep -c "usb-signature\|usb-key\|createUsbKey\|verifyUsbSignature" LOOP/releaser/acceptance-test.sh   # ≥4
 ```
 
 #### 45. daemon A/B 自动调度器——四阶段状态机 + jsonl 持久化（v1.1.9 新增 · 交付二）
@@ -875,7 +875,7 @@ grep -c "ab-schedule\|runABScheduledTask" sofagent/daemon/src/cron.ts   # ≥2
 grep -c "executePlan\|writeGraphState\|ABSchedulerDeps" sofagent/orchestrator/src/ab-scheduler.ts   # ≥3
 
 # 子项 g: 验收场景覆盖（acceptance-test 场景 114-117）
-grep -c "ab-scheduler\|ab-history\|judgeAndPromote\|ab-schedule" tools/acceptance-test.sh   # ≥4
+grep -c "ab-scheduler\|ab-history\|judgeAndPromote\|ab-schedule" LOOP/releaser/acceptance-test.sh   # ≥4
 ```
 
 #### 46. 控制图状态抽取 + 路径穿越安全防护（v1.1.9 新增 · 交付三）
@@ -902,7 +902,7 @@ grep -c "writeControlGraphState\|writeGraphState" sofagent/orchestrator/src/ab-s
 grep -c "splitWaves\|mapNodeStates\|buildEvidenceChain" sofagent/orchestrator/src/loop-state-extractor.ts   # ≥3
 
 # 子项 g: 验收场景覆盖（acceptance-test 场景 118-119）
-grep -c "extractControlGraphState\|sanitizeLoopId\|路径穿越" tools/acceptance-test.sh   # ≥3
+grep -c "extractControlGraphState\|sanitizeLoopId\|路径穿越" LOOP/releaser/acceptance-test.sh   # ≥3
 ```
 
 #### 47. 产品叙事收敛红线 + BugFix 42 项核心回归锁（v1.1.9 新增 · 交付四+五）
@@ -929,7 +929,7 @@ SANITIZER_COUNT=$(grep -c "name: '" sofagent/core/src/security/prompt-sanitizer.
 grep -c "MAX_NODES = 20\|MAX_TASK_LENGTH = 2000" sofagent/orchestrator/src/workflow-parser.ts   # ≥2
 
 # 子项 g: 验收场景覆盖（acceptance-test 场景 120-121）
-grep -c "FDE Agent\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODES" tools/acceptance-test.sh   # ≥4
+grep -c "FDE Agent\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODES" LOOP/releaser/acceptance-test.sh   # ≥4
 ```
 
 #### 48. 文档时效性 + CHANGELOG 纯度 + 跨文档一致性（v1.1.9 fresh-eyes 三轮审查整合）
@@ -976,7 +976,7 @@ LIMITATIONS_COV=$(grep -c "$NEW_FEATURES" LIMITATIONS.md || echo 0)
 [ "$LIMITATIONS_COV" -lt 3 ] && echo "⚠️ LIMITATIONS 对 v1.1.7+ 新功能覆盖不足（$LIMITATIONS_COV 处）"
 ```
 
-> **releasing.md 联动**：以下检查项已写入 `docs/verification/releasing.md`，不在本清单重复——① 阶段八「LIMITATIONS 覆盖新功能」② 阶段八「evidence 文件存在且测试数一致」③ 阶段十一「tag 后零 commit 校验」。本维度只覆盖可自动化 grep 的文档一致性检查。
+> **releasing.md 联动**：以下检查项已写入 `LOOP/releaser/releasing.md`，不在本清单重复——① 阶段八「LIMITATIONS 覆盖新功能」② 阶段八「evidence 文件存在且测试数一致」③ 阶段十一「tag 后零 commit 校验」。本维度只覆盖可自动化 grep 的文档一致性检查。
 
 ## 输出报告格式
 > 审查日期 / 范围 / 环境验证（pre-push-check/npm test/check-docs/check-version）→ 问题清单（P0/P1/P2 分级，维度/文件:行/问题/建议）→ 通过统计 → 最终建议（可发版/需修复P0/需重大修复）。追加维度前先 grep 同类。

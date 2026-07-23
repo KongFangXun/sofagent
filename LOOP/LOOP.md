@@ -87,7 +87,7 @@ graph TD
 - **内层循环 StateGraph**：`coding → audit → review → human`，条件路由 `audit.fail→coding` / `review.reject→coding` / `human.confirm→next`
 - **外层循环定时触发**：FDE 每周分析 think.md 趋势，每月触发 compliance-auditor 全量巡检
 - **发版后自进化**：FDE 自动更新 fresh-eyes-review / regression-checklist / acceptance-test.sh（纯增量），releasing.md 需人类确认后 apply
-- **releaser Skill**（v1.1.5+）：把 `docs/verification/releasing.md` 十二阶段发版 SOP 注入 Agent 上下文——Agent 按全流程自动执行发版（三个 human check 节点显式介入：阶段一 changelog 确认 / 阶段五审查报告确认 / 发版前最终确认）。`sofagent-fde` Skill 已内置 releaser 子能力，在 WorkBuddy 中 `@sofagent-fde 走发版流程` 即可触发。详见 [releasing.md](../docs/verification/releasing.md)
+- **releaser Skill**（v1.1.5+）：把 `LOOP/releaser/releasing.md` 十二阶段发版 SOP 注入 Agent 上下文——Agent 按全流程自动执行发版（三个 human check 节点显式介入：阶段一 changelog 确认 / 阶段五审查报告确认 / 发版前最终确认）。`sofagent-fde` Skill 已内置 releaser 子能力，在 WorkBuddy 中 `@sofagent-fde 走发版流程` 即可触发。详见 [releasing.md](../LOOP/releaser/releasing.md)
 - **Agent 定义来源**：`agents/SKILL/*/SKILL.md` → `createDeepAgent({ systemPrompt: loadPrompt(...) })`
 
 ---
@@ -113,11 +113,11 @@ graph TD
 
 ## LOOP 与发版流程的对应
 
-sofagent 的版本发布遵循 [`docs/verification/releasing.md`](../docs/verification/releasing.md) 的十二阶段 SOP。LOOP 将其中可由 Agent 自动化的步骤映射到对应的 Agent：
+sofagent 的版本发布遵循 [`LOOP/releaser/releasing.md`](../LOOP/releaser/releasing.md) 的十二阶段 SOP。LOOP 将其中可由 Agent 自动化的步骤映射到对应的 Agent：
 
 | releasing.md 阶段 | 当前（人类做） | LOOP 映射 |
 |---|---|---|
-| 阶段一：审查 → 开发日志 | 发布后审查（`docs/verification/fresh-eyes-review.md`） | review-agent + 全新 session |
+| 阶段一：审查 → 开发日志 | 发布后审查（`LOOP/releaser/fresh-eyes-review.md`） | review-agent + 全新 session |
 | 阶段二：开发 | 修复 P0/P1/P2 | minimal-change-engineer（7 步开发流程） |
 | 阶段三：自测 | `npm run build` + `npm test` + `acceptance-test.sh` | minimal-change-engineer 自检 |
 | 阶段四：代码审核 | 独立审核者逐项核对 | review-agent（全新 session） |
@@ -136,10 +136,10 @@ sofagent 的版本发布遵循 [`docs/verification/releasing.md`](../docs/verifi
 
 | 文档 | 在 LOOP 中的角色 | 谁执行 |
 |------|------|------|
-| `docs/verification/fresh-eyes-review.md` | 发版前/后发布后审查（10 维度 × 6 方面） | review-agent（全新 session） |
-| `docs/verification/regression-checklist.md` | 发版前全局回归检查（26 项） | FDE 触发 compliance-auditor |
-| `tools/acceptance-test.sh` | 发版前 CLI 端到端验收（87 个场景，原 openclaw-acceptance-test.md 已合并入此） | minimal-change-engineer 自检 |
-| `docs/verification/releasing.md` | LOOP 的整体流程参照——哪个阶段谁做什么 | FDE（流程监督者） |
+| `LOOP/releaser/fresh-eyes-review.md` | 发版前/后发布后审查（10 维度 × 6 方面） | review-agent（全新 session） |
+| `LOOP/releaser/regression-checklist.md` | 发版前全局回归检查（26 项） | FDE 触发 compliance-auditor |
+| `LOOP/releaser/acceptance-test.sh` | 发版前 CLI 端到端验收（87 个场景，原 openclaw-acceptance-test.md 已合并入此） | minimal-change-engineer 自检 |
+| `LOOP/releaser/releasing.md` | LOOP 的整体流程参照——哪个阶段谁做什么 | FDE（流程监督者） |
 
 ### DeepAgentsJS + LangGraph 实现细节
 
@@ -232,7 +232,7 @@ flowchart TD
 
 ### 文件位置的说明
 
-三份审查文件已从维护者本地（`~/Workbuddy/`）移入 `docs/verification/`，成为项目的一部分，供所有贡献者使用。`tools/acceptance-test.sh` 已在仓库中。`docs/verification/releasing.md` 是发版 SOP，位置不变。
+三份审查文件已从维护者本地（`~/Workbuddy/`）移入 `docs/verification/`，成为项目的一部分，供所有贡献者使用。`LOOP/releaser/acceptance-test.sh` 已在仓库中。`LOOP/releaser/releasing.md` 是发版 SOP，位置不变。
 
 ### 为什么外层循环是必须的
 
