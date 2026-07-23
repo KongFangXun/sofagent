@@ -1,47 +1,77 @@
 # 用户自定义层（custom/）
 
-> **一句话**：这是你给 FDE Agent 加"私有规则"的地方。你写的规则会在官方规则之后加载，追加生效——类似 CSS 的 `!important`。
+> **一句话**：给 FDE Agent 追加**私有行为规则**的地方——你写的规则在官方规则之后加载，追加生效。**只管规则，不管代码。**
 
-## 这是什么？谁会用？
+---
 
-| 场景 | 具体例子 |
-|------|---------|
-| 企业 FDE 部署后想微调规则 | "我的公司所有 commit message 必须带 JIRA 工单号" |
-| 开发者想给 engineer Sub Agent 加约束 | "只许改 TypeScript 文件，不碰 shell 脚本" |
-| 团队约定覆盖默认铁律 | "我们团队不需要 A3 越界检查，太烦了" |
+## 这个目录到底干什么？
 
-**谁往这里写**：企业 IT 人员（FDE 离场后自主维护）或开发者（个人定制）。**不是 Agent 自己写**——Agent 读这里的文件，不写。
+custom/ 解决一个核心矛盾：**官方升级 vs 用户定制**。
 
-## 怎么用？加载机制
+sofagent 升级时会把 `SKILL.md` / `harness/` / `agents/` 全部覆盖为最新版。如果你直接改这些文件，下次升级就白改了。custom/ 给你一个安全的藏身处——**官方升级不碰这里**，你的规则永久保留。
 
-```
-Agent 启动时的加载顺序：
-① 引擎层先加载（SKILL.md → harness/ → agents/）
-② 用户层后加载（本目录 custom/）← 你写的规则在这里
-```
+**类比**：浏览器扩展 vs 浏览器本体。浏览器更新了，你的扩展配置不会丢。custom/ 就是 Agent 的"扩展配置目录"。
 
-后加载 = 优先级更高。你的规则**追加**到官方规则后面，不是替换。比如官方说"commit message 要描述清楚"（铁律 #0），你在 custom/ 里写"commit message 还要带工单号"，Agent 两条都遵守。
+---
+
+## custom/ 只管规则，不管代码（关键边界）
+
+| 改动类型 | 归属 | 举例 |
+|---------|------|------|
+| **Agent 行为规则追加** | ✅ `custom/` | "commit message 必须带工单号" |
+| **业务流程约束** | ❌ `.sofagent/fde.md` | "每个 PR 要等 5 分钟再合" |
+| **审计规则开关** | ❌ `.sofagent/config.yml` | "关闭 A3 越界检查" |
+| **知识库内容** | ❌ `.sofagent/knowledge/` | "公司 API 文档摘要" |
+| **代码 / 脚本变更** | ❌ Git 仓库 | "给 rules 包加一条新规则" |
+| **LOOP 自迭代沉淀** | ❌ `.sofagent/` + Git | LOOP 写的代码进 Git commit，经验进 knowledge/ |
+
+**为��么代码变更不进 custom/？**
+
+custom/ 里的 `.md` 文件是**文字规则**，被 Agent 当 prompt 加载。代码逻辑变更（加审计规则、改 orchestrator 行为、写新工具）是工程行为，要走 Git commit + 测试 + 发版流程。**文字约束和代码约束是两道防线**——文字约束让 Agent"自觉不犯"，代码约束在 Agent 真犯的时候"硬拦截"。custom/ 只管第一道。
+
+---
+
+## 谁往这里写？谁读？
+
+| 角色 | 操作 | 什么时候 |
+|------|------|---------|
+| **企业 IT / FDE 运维** | 写 | FDE 离场后，企业想微调行为规则 |
+| **开发者** | 写 | 个人定制 Sub Agent 约束 |
+| **Agent 运行时** | 读 | 每次启动时加载引擎层 → 再加载 custom/ |
+| **Agent 自己** | ❌ 不写 | Agent 读 custom/ 但不写——Agent 不能自我修改行为规则 |
+
+---
 
 ## 文件命名规则
 
-文件名决定追加给谁：
+文件名决定规则追加给哪个 Agent：
 
-| 文件名 | 追加到哪个 Agent | 效果 |
-|--------|-----------------|------|
-| `fde-overrides.md` | FDE Agent（SKILL.md 主入口） | 企业全局规则追加 |
-| `engineer-overrides.md` | engineer Sub Agent | 工程师行为约束追加 |
-| `reviewer-overrides.md` | reviewer Sub Agent | 审查员行为约束追加 |
-| `audit-overrides.md` | audit Sub Agent | 审计规则调整追加 |
+| 文件名 | 追加到 | 效果 |
+|--------|--------|------|
+| `fde-overrides.md` | FDE Agent 主入口（SKILL.md） | 企业全局行为规则 |
+| `engineer-overrides.md` | engineer Sub Agent | 工程师行为约束（如文件范围限定） |
+| `reviewer-overrides.md` | reviewer Sub Agent | 审查员行为调整（如审查重点） |
+| `audit-overrides.md` | audit Sub Agent | 审计规则补充说明 |
 
-> 不在上述列表中的文件名会被忽略。如果你想定制全新 Agent（不是覆盖现有的），请在 `custom/` 下建子目录 + SKILL.md。
+> 不在上述列表中的文件名会被忽略。要定制全新 Agent，在 `custom/` 下建子目录 + `SKILL.md`。
 
-## 什么时候不要用 custom/
+---
 
-- **改业务规则** → 写到 `.sofagent/fde.md`（运行时约束层），不要写这里
-- **改审计规则开关** → 改 `.sofagent/config.yml`（规则配置），不要写这里
-- **加新知识** → 写到 `.sofagent/knowledge/`（知识库），不要写这里
+## 加载机制
 
-custom/ 只管 **Agent 行为规则的追加覆盖**。其他配置有各自的归属。
+```
+Agent 启动时加载顺序：
+  ① 引擎层（官方维护，升级时覆盖）
+     SKILL.md → harness/*.md → agents/*/SKILL.md
+  ② 用户层（你维护，升级时不动）
+     custom/*-overrides.md ← 你写的规则追加在这里
+```
+
+后加载 = 优先级更高。你的规则**追加**到官方规则后面，不是替换。官方说"commit 要描述清楚"，你在 custom/ 写"commit 还要带工单号"——Agent 两条都遵守。
+
+> ⚠️ **当前状态**：加载链声明在 SKILL.md 中的接入工作计划在 v1.2.1 落地。当前 custom/ 目录结构已就位，Agent 运行时尚未自动加载——需要手动在 systemPrompt 中拼接 custom/ 内容，或等 v1.2.1 自动加载。
+
+---
 
 ## 升级时会发生什么？
 
@@ -49,23 +79,36 @@ custom/ 只管 **Agent 行为规则的追加覆盖**。其他配置有各自的�
 
 | 策略 | 官方引擎层 | 你的 custom/ |
 |------|----------|------------|
-| 安全升级（默认） | 覆盖为最新版 | **不动** ← 你的定制保留 |
-| 强制覆盖（`--force`） | 覆盖 | **也覆盖** ← 你的定制丢失，恢复官方默认 |
-| diff 合并（`--merge`） | 覆盖 | 尝试三路合并（你的改动 + 官方更新自动合并） |
+| **安全升级**（默认） | 覆盖为最新版 | **不动** ← 你的定制保留 |
+| **强制覆盖**（`--force`） | 覆盖 | **也覆盖** ← 恢复官方默认 |
+| **diff 合并**（`--merge`） | 覆盖 | 尝试三路合并 |
 
-> 90% 场景用默认的安全升级就好。你的 custom/ 永远不会被意外覆盖。
+> ⚠️ **当前状态**：custom/ 安装保护逻辑（安全升级时跳过 custom/）计划在 v1.2.1 落地。
 
-## 示例：企业定制 fde-overrides.md
+---
+
+## 示例
+
+### 企业定制 `fde-overrides.md`
 
 ```markdown
-# 企业定制规则
+# XX 公司定制规则
 
 ## Commit 规范
 - 所有 commit message 必须以 `[JIRA-XXXX]` 开头
 - 禁止直接 push 到 main 分支
 
 ## 文件约束
-- `.env*` 文件禁止提交（已有 A1 审计规则，这里补充提醒）
+- `.env*` 文件禁止提交（已有 A1 审计规则，这里补充提醒 Agent）
 - 任何涉及 `src/payment/` 的改动需要 CTO 签字
 ```
 
+### 开发者定制 `engineer-overrides.md`
+
+```markdown
+# 个人定制
+
+## 文件范围
+- 只许改 TypeScript 文件，不碰 shell 脚本
+- 修改 `package.json` 前先跟我确认
+```
