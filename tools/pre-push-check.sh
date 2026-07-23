@@ -362,6 +362,34 @@ else
 fi
 
 # ════════════════════════════════════════
+# F-17: CHANGELOG 纯度扫描
+# ════════════════════════════════════════
+echo -e "\n${BOLD}── 8. CHANGELOG 纯度扫描 ──${NC}"
+CHANGELOG_FILE="CHANGELOG.md"
+if [ -f "$CHANGELOG_FILE" ]; then
+  # 提取当前版本条目（最新 ### [vX.Y.Z] 到下一个 ### [v 之间的内容）
+  LATEST_VER=$(grep -m1 "^### \[v" "$CHANGELOG_FILE" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  if [ -n "$LATEST_VER" ]; then
+    # 提取当前版本条目段落
+    CHANGELOG_SECTION=$(sed -n "/^### \[${LATEST_VER}\]/,/^### \[v/p" "$CHANGELOG_FILE" | head -n -1)
+    # 扫描审查元信息关键词（P0×N / P1×N 等带乘号计数模式 + fresh-eyes 审查描述）
+    META_HITS=$(echo "$CHANGELOG_SECTION" | grep -cE "P[0-2]×|fresh-eyes 独立审查|审查轮次|审查发现 [0-9]+" || echo "0")
+    if [ "$META_HITS" -gt 0 ] 2>/dev/null; then
+      check_fail "CHANGELOG ${LATEST_VER} 条目含 ${META_HITS} 处审查元信息（P0×N / fresh-eyes / 审查轮次）"
+      echo "$CHANGELOG_SECTION" | grep -nE "P[0-2]×|fresh-eyes 独立审查|审查轮次|审查发现 [0-9]+" | head -5 | while read -r hit; do
+        echo "    $hit"
+      done
+    else
+      check_pass "CHANGELOG ${LATEST_VER} 条目无审查元信息残留"
+    fi
+  else
+    check_warn "无法从 CHANGELOG 提取当前版本号"
+  fi
+else
+  check_warn "CHANGELOG.md 不存在"
+fi
+
+# ════════════════════════════════════════
 # 总结
 # ════════════════════════════════════════
 TOTAL=$((PASS + FAIL + WARN))

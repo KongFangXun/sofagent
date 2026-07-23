@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <strong>约束 Agent 行为 · 审计每次变更 · 沉淀每次经验</strong><br/>
-  <em>让中小企业拥有把 AI 装进业务流程的能力。</em>
+  <strong>进场梳理 · 部署 AI 节点 · 离场后 7×24 自己跑</strong><br/>
+  <em>让中小企业拥有把 AI 变成日常工作的能力。</em>
 </p>
 
 <p align="center">
@@ -21,29 +21,37 @@
 </p>
 
 <p align="center">
-  <a href="#这是什么">这是什么</a> · <a href="#核心特性">核心特性</a> · <a href="#装上就能用">安装</a> · <a href="#引擎架构">引擎架构</a> · <a href="#延伸阅读">文档</a>
+  <a href="#这是什么">这是什么</a> · <a href="#sofagent-能帮你做什么">能帮你做什么</a> · <a href="#装上就能用">安装</a> · <a href="#引擎架构开发者段">引擎架构</a> · <a href="#延伸阅读">文档</a>
 </p>
 
 ---
 
 ## 这是什么
 
-企业不缺 AI 模型——缺的是把 AI 变成日常工作的能力。
+企业不缺大模型与 Agent——缺的是把 AI 变成日常工作的能力。
 
-**FDE Agent 做的就是这件事。** 进场梳理你的工作流，把能自动化的环节变成 AI 节点，部署到设备上，然后离场。离场后这些节点 7×24 自己跑，你留下的是一套能持续维护的 AI 化资产。
+**sofagent 做的就是这件事。** 它是一个 FDE Agent——进场梳理你的工作流，把能自动化的环节变成 AI 节点，部署到设备上，然后离场。离场后这些节点 7×24 自己跑，你留下的是一套能持续维护的 AI 化资产。
 
-FDE Agent 底层是 sofagent 引擎——一套约束 Agent 行为的 Harness 中间件。引擎怎么工作，[下方展开](#引擎架构)。
-
-> [!TIP]
-> **90/10 价值分层**：模型给 90% 的智力，sofagent 补 10% 的可靠执行——越往后这 10% 越值钱。不是造更聪明的模型，是给已有的聪明加一套闸门。
+大厂造了江——LLM 是水，Agent 平台是河床。但企业不敢直接舀着喝。sofagent 做的是堤坝 + 自来水厂 + 管网 + 水龙头——帮每个人把原水变成直饮水。完整类比见 [ARCHITECTURE · River](./docs/ARCHITECTURE.md)。
 
 > [!IMPORTANT]
 > **实测数据**：Hugging Face 基准测试——同模型、纯 Harness 优化，legal-agent 得分从 3.5% 跳到 80.1%（76 分提升全来自外层机制），成本仅 1/7。
 
+### 为什么不是现有工具
+
+| 工具 | 它们管什么 | sofagent 管什么 |
+|------|:--------|:----------------|
+| pre-commit / husky | 代码质量（lint / format）| **Agent 行为**（密钥泄漏 / 越界编辑 / 注入攻击 / 盲改）|
+| detect-secrets / gitleaks | 密钥扫描 | 密钥只是 21 条规则中的一条 |
+| Cursor Rules / Claude hooks | 单平台 IDE 约束 | 平台无关——任何 Agent + git 仓库 |
+| Agent 平台（OpenClaw 等）| Agent 调度——「会不会做」| Agent 治理——「能不能每次都做对」|
+
+现有工具查"代码写得对不对"；sofagent 查"Agent 行为对不对"。这些是 LLM Agent 特有的失败模式，通用工具不覆盖。
+
 <details>
 <summary>📦 FDE 离场后，企业留下五样东西</summary>
 
-前四样是资产，第五样是让前四样一直活着的 FDE Agent 本身：
+前四样是资产，第五样是让前四样一直活着的 FDE Agent 本身——sofagent 留在客户那里继续跑：
 
 | 交付物 | 说明 |
 |--------|------|
@@ -53,38 +61,33 @@ FDE Agent 底层是 sofagent 引擎——一套约束 Agent 行为的 Harness �
 | 私有化评估体系 | eval 反馈 + Skill 迭代历史——无法复制的企业 IP |
 | **FDE Agent 本身** | 7×24 在跑——管上面四样东西的生命周期，人离场了它留下 |
 
-**USB 一键烧录**——搭好 workflow → 烧一批 U 盘 → 发给团队：
-
-```bash
-sofagent-daemon create-usb-key --role "财务审计节点" --target /Volumes/SOFAGENT --platform macos
-```
-
-U 盘里有什么：Node.js 便携版 + sofagent 引擎 + knowledge AES-256-GCM 加密落盘 + HMAC 防篡改签名 + 三平台启动脚本。**插上即用，拔掉零残留。** 详见 [FDE/FDE.md](./FDE/FDE.md)。
-
-</details>
-
-<details>
-<summary>🏞️ 大厂造河，企业用水</summary>
-
-大厂造了江——LLM 是水，Agent 平台是河床。但企业不敢直接舀着喝。FDE Agent 做的是堤坝 + 自来水厂 + 管网 + 水龙头——帮每个人把原水变成直饮水。完整类比见 [ARCHITECTURE · River](./docs/ARCHITECTURE.md)。
+**USB 一键烧录**——搭好 workflow → 烧一批 U 盘 → 发给团队。插上即用，拔掉零残留。详见 [FDE/FDE.md](./FDE/FDE.md)。
 
 </details>
 
 ---
 
-## 核心特性
+## sofagent 能帮你做什么
 
-- 🔍 **21 条审计规则** — Agent 每次变更被硬证据审查，违规当场拦截，零 token 成本
-- 🧩 **平台无关** — Claude Code / Codex / Cursor / WorkBuddy，任何 Agent + git 仓库即挂即用
-- 🔒 **每次变更可追溯** — 自动 git snapshot，一键回到任意安全状态
-- 📈 **越用越好** — 经验自动沉淀，FDE 周度巡检持续优化规则与知识
+| 你想解决什么 | sofagent 怎么做 |
+|------|------|
+| **想让 AI 自动跑日常任务** | 进场梳理工作流，把能自动化的环节变成 AI 节点，部署完自己跑 |
+| **Agent 越界了怎么办** | 21 条规则自动审计每次变更——越界编辑、密钥泄漏、注入攻击，当场拦截 |
+| **出了事能回滚吗** | 每次变更自动 git snapshot，一键回到任意安全状态 |
+| **换了 Agent / 模型怎么办** | 平台无关——Claude Code / Codex / Cursor / WorkBuddy，即挂即用 |
+| **越用越好吗** | 经验自动沉淀，FDE Agent 周度巡检持续优化规则与知识 |
+
+> [!TIP]
+> **90/10 价值分层**：模型给 90% 的智力，sofagent 补 10% 的可靠执行——越往后这 10% 越值钱。不是造更聪明的模型，是给已有的聪明加一套闸门。
 
 ---
 
 ## 装上就能用
 
+装完后，你在自己的 Agent（WorkBuddy / Codex / Claude Code）里说一句话，sofagent 就开始干活。没有界面——语言就是界面。
+
 ```bash
-# FDE Agent 一键部署
+# sofagent 一键部署（FDE Agent 入口）
 bash FDE/fde-install.sh
 ```
 
@@ -140,31 +143,14 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 
 ---
 
-## 引擎架构
+## 引擎架构（开发者段）
 
-```mermaid
-flowchart LR
-    A[Agent 改代码] --> B[git commit / 文件变更]
-    B --> C[🔍 审计引擎<br/>21 条规则扫描]
-    C --> D{判定}
-    D -->|✅ PASS| E[存快照<br/>静默放行]
-    D -->|⚠️ WARN| F[存快照 + 告警]
-    D -->|❌ FAIL| G[拦截提交 + 建议回滚]
-```
+> 以下内容面向开发者。普通用户了解 sofagent 能做什么就够了——跳到 [延伸阅读](#延伸阅读)。
 
-不管你用什么 Agent、什么模型，挂在 git commit 上，用 git diff 硬证据做审计。**平台无关、零侵入、零 token。**
+sofagent 是一个 FDE Agent——对外产品身份帮你梳理工作流、部署 AI 节点。底层引擎是一套约束 Agent 行为的 Harness 中间件，一底座·四引擎覆盖全生命周期。
 
-### 为什么不是现有工具
-
-| 工具 | 查什么 | sofagent 查什么 |
-|------|:--------|:----------------|
-| pre-commit / husky | 代码质量（lint / format）| **Agent 行为**（密钥泄漏 / 越界编辑 / 注入攻击 / 盲改）|
-| detect-secrets / gitleaks | 密钥扫描 | 密钥只是 A1，还有 20 条规则覆盖 Agent 失败模式 |
-| Cursor Rules / Claude hooks | 单平台 IDE 约束 | 平台无关——任何 Agent + git 仓库 |
-
-现有工具查"代码写得对不对"；sofagent 查"Agent 行为对不对"——越界编辑、知识库跨域、流程合规、不读就改。这些是 LLM Agent 特有的失败模式，通用 lint 工具不覆盖。
-
-### 一底座·四引擎
+<details>
+<summary>📖 一底座·四引擎架构（开发者参考）</summary>
 
 ```mermaid
 flowchart LR
@@ -182,6 +168,8 @@ flowchart LR
 | 🔍 审计引擎 | 21 条规则，每次 git commit / 文件变更触发，违规拦截+记录 | ✅ 稳定 |
 | 🔄 回溯引擎 | 每次审计后自动 git snapshot，违规一键回滚 | ✅ 稳定 |
 | 🧬 进化引擎 | FDE 周度巡检审计趋势 + 反思日志 | ⚠️ 实验性 |
+
+</details>
 
 > [!NOTE]
 > **最小用量**：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）。五包全装才是完整 Harness 中间件。
@@ -208,7 +196,7 @@ flowchart LR
 | 类别 | 规则 | 拦截什么 |
 |------|------|--------|
 | 🔴 密钥安全 | A1 敏感文件 · A2 密钥泄漏 | `.env` / `*.pem` 提交，硬编码 API Key |
-| 🟡 行为边界 | A3 越界编辑 · A4 ���配置 | 改任务范围外的文件，删配置 |
+| 🟡 行为边界 | A3 越界编辑 · A4 删配置 | 改任务范围外的文件，删配置 |
 | 🟠 注入防御 | A9 注入 · A10 恶意来源 | 命令注入模式，非官方来源依赖 |
 | 🔵 流程合规 | A5 空消息 · A7 盲改 · A8 跳测试 · A19 消息质量 | 空 commit msg，不读就改，跳测试，低质量 msg |
 | ⚪ 工程质量 | A6 破构建 · A11 资源滥用 · A18 垃圾文件 | 构建配置异常，超大文件，临时文件提交 |

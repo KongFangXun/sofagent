@@ -660,6 +660,48 @@ else
 fi
 echo ""
 
+# ── F-08: ROADMAP 版本头描述 vs CHANGELOG 标题一致性（WARN 级）──
+echo "=== 15. ROADMAP 版本头描述 vs CHANGELOG 标题一致性 ==="
+ROADMAP_HEADER=$(sed -n '4p' "${ROADMAP}" 2>/dev/null || echo "")
+if [[ -n "${ROADMAP_HEADER}" ]]; then
+  # 提取 ROADMAP 版本头中的关键词（· 分隔段）
+  ROADMAP_KEYWORDS=$(echo "${ROADMAP_HEADER}" | tr '·' '\n' | grep -vE '^\s*(v[0-9]|规划|.*→.*)' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -vE '^$' | head -5)
+  # 提取 CHANGELOG 当前版本标题
+  CHANGELOG_TITLE=$(grep -m1 "^### \[v" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null || echo "")
+  ROADMAP_WARN=true
+  while IFS= read -r kw; do
+    [[ -z "${kw}" ]] && continue
+    # 跳过太短的关键词（≤2 字符）
+    [[ ${#kw} -lt 3 ]] && continue
+    if echo "${CHANGELOG_TITLE}" | grep -qF "${kw}"; then
+      ROADMAP_WARN=false
+      break
+    fi
+  done <<< "${ROADMAP_KEYWORDS}"
+  if ${ROADMAP_WARN}; then
+    # 尝试更宽松匹配：取核心名词
+    for kw in "产品叙事" "USB" "A/B" "控制图" "BugFix"; do
+      if echo "${ROADMAP_HEADER}" | grep -qF "${kw}" && echo "${CHANGELOG_TITLE}" | grep -qF "${kw}"; then
+        ROADMAP_WARN=false
+        break
+      fi
+    done
+  fi
+  if ${ROADMAP_WARN}; then
+    echo -e "  ${YELLOW}⚠ ROADMAP 版本头描述与 CHANGELOG 标题关键词重合度低${NC}"
+    echo -e "    ROADMAP:  ${ROADMAP_HEADER:0:80}..."
+    echo -e "    CHANGELOG: ${CHANGELOG_TITLE:0:80}"
+    echo -e "    建议检查 ROADMAP L4 描述是否与当前版本一致"
+    WARNINGS=$((WARNINGS + 1))
+  else
+    echo -e "  ${GREEN}✓${NC} ROADMAP 版本头描述与 CHANGELOG 标题关键词重合"
+    CHECKS=$((CHECKS + 1))
+  fi
+else
+  echo -e "  ${YELLOW}⚠${NC} 无法读取 ROADMAP L4"
+fi
+echo ""
+
 # ── 汇总 ──────────────────────────────────────────────────────
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then

@@ -1,20 +1,10 @@
 # LOOP — sofagent 自迭代工具包
 
-> 🔒 **对外叙事边界**：LOOP 不出现在任何对外（用户/买家）叙事中——对外只有 FDE Agent；LOOP 是 sofagent 项目内部的自迭代开发工具包。
-
-> 🔖 **定位**：LOOP 是 sofagent 的**开发者自迭代入口**（非独立仓库）。需先 `git clone` sofagent 主仓库，LOOP 依赖主仓库的编排引擎和审计引擎。
-
-> 🔖 **品牌归属**：LOOP（自迭代编排）是 **sofagent** 底座的产品封装。LOOP 的 engineer→audit→reviewer 循环由 `sofagent-orchestrator` 编排引擎驱动，每个节点的审计卡关由 `sofagent-audit` 执行。LOOP 做的是"持续自迭代优化 Agent 定义"，底层引擎始终是 sofagent。
-
-> **LOOP 是 sofagent 项目的自迭代开发工具包**——用 sofagent 的审计引擎和 Sub Agent 能力，自动执行 WorkBuddy 等外部平台编排好的开发任务。**不泛化为「任何项目」的通用工具**：LOOP 管理的是 sofagent 自己的代码变更（PRD → 架构 → 编码 → 审查 → 发版），服务的是 sofagent 项目的开发者，不是交给企业终端用户的产品。
->
-> **边界**：LOOP 给开发者用（管理代码变更），不给终端用户——企业用户的入口是 [FDE Agent](../FDE/README.md)；`LOOP/loop-install.sh` 是三个安装包中唯一装 LOOP 的（开发者专用），`install.sh` 与 `FDE/fde-install.sh` 均不自动装 LOOP。
->
-> 📦 **发版工具链方向声明（只声明不搬）**：发版 SOP 与发布工程师（sofagent-releaser）链路将归入 `LOOP/releaser/`——发版属于开发链路，理应由 LOOP 承载。v1.1.9 仅声明方向，物理归位在 v1.2.0 进行。
->
-> **LOOP 是 sofagent 的自迭代部署入口（非独立产品）。** 需先 `git clone` 主仓库，再从 `LOOP/` 目录运行（依赖主仓库 `sofagent/scripts/install.sh`）；单独 clone `LOOP/` 子目录会因缺少主仓库依赖而跑不通。
+> **LOOP 是 sofagent 项目的开发者自迭代工具包**——自动执行 engineer→audit���reviewer 循环，管理 sofagent 自己的代码变更。用 sofagent 的引擎驱动，不面向终端用户。企业用户的入口是 [FDE Agent](../FDE/README.md)。
 
 ## 快速开始
+
+LOOP 装完后，你可以派一个开发任务（比如"在 README 加一段简介"），LOOP 自动跑完 engineer 写代码 → audit 审计 → reviewer 审查的循环。
 
 ```bash
 # 1. 一键安装（会引导你配置 LLM provider + API key）

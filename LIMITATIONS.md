@@ -13,10 +13,11 @@
 - [三、安全与信任模型局限](#三安全与信任模型局限)
 - [四、成熟度与测试局限](#四成熟度与测试局限)
 - [五、审计与工程局限](#五审计与工程局限)
-- [六、v1.0.9 新增局限](#六v109-新增局限)
-- [七、v1.0.5 新增局限](#七v105-新增局限)
-- [八、v1.1.3 新增局限](#八v113-新增局限)
-- [九、行业研报印证的新增局限（2026-07）](#九行业研报印证的新增局限2026-07)
+- [六、文件系统审计局限（v1.0.9 起）](#六文件系统审计局限v109-起)
+- [七、定时触发与 Windows 局限（v1.0.5 起）](#七定时触发与-windows-局限v105-起)
+- [八、包依赖与编排局限（v1.1.3 起）](#八包依赖与编排局限v113-起)
+- [九、v1.1.7-v1.1.9 新功能局限](#九v117-v119-新功能局限)
+- [十、行业研报印证的新增局限（2026-07）](#十行业研报印证的新增局限2026-07)
 
 ---
 
@@ -346,7 +347,7 @@ v1.0 新增 `tools/acceptance-test.sh`（9 个场景），但覆盖范围有限�
 
 ---
 
-## 六、v1.0.9 新增局限
+## 六、文件系统审计局限（v1.0.9 起）
 
 ### A16/A17 文件系统审计是行为级检测
 
@@ -357,15 +358,15 @@ A16 的 `evidenceMode: git-diff` 依赖 git diff 获取变更文件列表；daem
 ---
 
 
-## 七、v1.0.5 新增局限
+## 七、定时触发与 Windows 局限（v1.0.5 起）
 
 ### Ontology 合并准确性依赖 frontmatter 质量
 
 Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown frontmatter 提取实体关联。如果 frontmatter 格式不规范（缺少 `---` 分隔符、YAML 语法错误、relations 字段拼写错误），该实体会被静默跳过——不会报错，但 Ontology 中会缺失这个对象。`--doctor` 目前不检查 Ontology 完整性，用户无法自动发现遗漏。
 
-### （Workflow Hub 已迁出商业产品）
+### Workflow Hub 模板（✅ 已随 v1.1.9 迁出 MIT scope）
 
-原「Workflow Hub 模板适配仍需人工介入」局限已随 v1.1.9 将 FlowHub 整体迁出 MIT scope 而失效——相关 CLI（`sofagent hub deploy`）与模板源已移至 `sofagent-commercial/FLOWHUB/`，不在开源仓库维护。
+> ✅ 已于 v1.1.9 修复：FlowHub 整体迁出 MIT scope，相关 CLI（`sofagent hub deploy`）与模板源已移至 `sofagent-commercial/FLOWHUB/`，不在开源仓库维护。
 
 ### Agent Dashboard 是原型而非生产功能
 
@@ -373,7 +374,7 @@ Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown fr
 
 ---
 
-## 八、v1.1.3 新增局限
+## 八、包依赖与编排局限（v1.1.3 起）
 
 ### audit ↔ daemon 循环依赖
 
@@ -387,7 +388,31 @@ Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown fr
 
 v1.1.3 新增 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的统一通知接口，但当前 daemon 的 cron 巡检和文件监听结果仍通过 stdout 输出（非 Webhook/IM 推送）。完整的 daemon 通知机制（Webhook 推送、IM 集成）计划在 v1.2.x 实现。
 
-## 九、行业研报印证的新增局限（2026-07）
+## 九、v1.1.7-v1.1.9 新功能局限
+
+### Dream Cycle 知识质量依赖 LLM（v1.1.7）
+
+Dream Cycle 6 阶段管道从 think.md / task logs 抽取知识（fact → atom → concept → cluster）。当前 MockLLM 产出的是占位符文本——格式正确但内容为零。接入 RealLLM 后，知识质量完全依赖模型能力，无法保证产出的 fact/atom/concept 是有意义的知识点而非「正确的废话」。冷启动阶段尤其明显——没有足够 task logs 时，Dream Cycle 提炼出的概念可能高度重复或过于泛化。
+
+### sensitivity 标注质量（v1.1.7）
+
+public / internal / restricted 三级安全分级缺省 internal。安全分级系统的致命弱点不在实现，在标注质量——开发者写 frontmatter 时不会逐条思考分级，99% 页面走缺省值。Dream Cycle 自动生成的 concept.md 如果缺省标 public，restricted 知识可能通过联邦查询泄露到不信任的 peer。联邦层有 peer 端 + 本地端二次校验，但二次校验依赖标签准确性——标签本身错了，校验也防不住。
+
+### USB 完整运行时信任根（v1.1.9）
+
+U 盘本身即信任根——`federation.json` 的 `key` 字段（AES-256 解密密钥）存在 U 盘上。拿到 U 盘 = 拿到 knowledge 解密能力。防的是「丢盘后被读」（加密 + HMAC 签名），不防「拿到盘的人」（拿到盘 = 合法用户）。HMAC key 如与 `federation.json` 同介质存储，可被伪造（SECURITY.md 已声明此限制）。
+
+### knowledge-health 治理悖论（v1.1.7）
+
+巡检器检测 5 类问题（矛盾 / 孤儿 / 死链 / 过期 / 重复）但只生成报告不自动修复。warning 级 = 「知道有问题但不紧急」，在 daemon 语境里意味着永远不会被修——除非人来看报告。只建议不修复的巡检器面临治理悖论：越用越觉得「知道有问题就够了」，但问题不会自己消失。
+
+### A/B 自动调度 promote 风险（v1.1.9）
+
+ab-scheduler 连续 2 轮更好即 promote。如果 eval 场景偏窄（只测了简单 case），promote 的版本在复杂场景下可能更差。已有 `overallImprovement > 0` 守卫，但窄 eval 集的局限性无法靠代码解决——需要人工定期审查 promote 历史，确认 eval 集是否覆盖了真实业务场景的复杂度。
+
+---
+
+## 十、行业研报印证的新增局限（2026-07）
 
 ### 不要一上来就 Agent 自动闭环
 
