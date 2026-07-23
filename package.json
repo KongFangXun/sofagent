@@ -12,7 +12,8 @@
     "engine/daemon",
     "engine/ab-test",
     "engine/skillopt",
-    "engine/mcp"
+    "engine/mcp",
+    "engine/rules-engine"
   ],
   "scripts": {
     "test": "npm test --workspaces --if-present",
