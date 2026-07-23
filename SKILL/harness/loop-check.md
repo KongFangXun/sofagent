@@ -72,6 +72,8 @@ Log：`Loop checkpoint|{节点}|{结果}|{依据}|{动作}` / `Loop failure|{根
 ---
 
 > Loop Check = 顾问。读数据、做判断、给判断意见——主 Agent 自己决定怎么做。脚本数数，Agent 判断。
+>
+> 循环终止条件（什么时候停、怎么停、停了之后做什么）见 `loop-exit.md`。
 
 ## Gotcha
 
