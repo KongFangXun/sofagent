@@ -1,8 +1,11 @@
 // ============================================================
-// tools.ts · LOOP 工具注入
+// tools.ts · LOOP 工具注入 + ToolGate 事前拦截
 // v1.1.9 新增（骨架）· v1.1.9 正式启用（工具注入路径落地）
+// v1.2.0 新增：ToolGate——接入 @sofagent/rules 做 tool call 事前拦截
 //
-// 设计核心——约束通过 description 注入，不做 hook 拦截：
+// 设计核心——双重防御（defense-in-depth）：
+//   第一层：约束通过 description 注入，让 Agent 自觉不犯（软约束）
+//   第二层：toolGate 在 tool call 前做规则引擎检查（硬拦截）
 //   每个工具的 description 内嵌 A1-A17 约束边界，
 //   让 Agent 在"理解工具用途"时同步吸收约束，
 //   而非事后再用拦截器打补丁。
@@ -20,6 +23,8 @@ import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { basename } from 'path';
 import type { StructuredToolParams } from '@langchain/core/tools';
+import { RulesEngine, defaultToolRules } from '@sofagent/rules';
+import type { ToolCallContext } from '@sofagent/rules';
 
 // ────────────────────────────────
 // 工具类型辅助
@@ -406,6 +411,114 @@ const runTestTool: ExecutableTool = {
     }
   },
 };
+
+// ────────────────────────────────
+// ToolGate · 事前拦截（v1.2.0 新增）
+// ────────────────────────────────
+
+/**
+ * ToolGate 配置选项
+ */
+export interface ToolGateOptions {
+  /** 发起 tool call 的 Agent 名称（默认 'engineer'） */
+  agentName?: string;
+  /** 当前任务描述（默认空字符串） */
+  taskDesc?: string;
+  /** 工作目录（默认 process.cwd()） */
+  cwd?: string;
+}
+
+/**
+ * ToolGate 创建工厂——接入 @sofagent/rules 规则引擎做 tool call 事前拦截。
+ *
+ * 流程：
+ *   1. 构造 ToolCallContext（toolName, args, agentName, taskDesc, cwd）
+ *   2. RulesEngine.check(ctx) → 每条规则独立判定
+ *   3. RulesEngine.aggregate(verdicts) → 聚合为单一决策
+ *   4. FAIL → 返回 { allowed: false, reason }；WARN → { allowed: true, reason }；
+ *      PASS → { allowed: true }
+ *
+ * 当前只用于 LOOP engineer SubAgent 的 tool calls 前置检查，
+ * 主 Agent 仍走事后审计路径。
+ *
+ * @param options 可选配置（agentName / taskDesc / cwd）
+ * @returns gate 函数，每次 tool call 前调用
+ */
+export function createToolGate(options: ToolGateOptions = {}) {
+  const engine = new RulesEngine(defaultToolRules);
+  const agentName = options.agentName ?? 'engineer';
+  const taskDesc = options.taskDesc ?? '';
+  const cwd = options.cwd ?? process.cwd();
+
+  return function gate(
+    toolName: string,
+    args: Record<string, unknown>,
+  ): { allowed: boolean; reason?: string } {
+    const ctx: ToolCallContext = { toolName, args, agentName, taskDesc, cwd };
+    const verdicts = engine.check(ctx);
+    const result = engine.aggregate(verdicts);
+
+    if (result.status === 'FAIL') {
+      return {
+        allowed: false,
+        reason: `[${result.ruleName}] ${result.details.join('; ')}`,
+      };
+    }
+
+    if (result.status === 'WARN') {
+      return {
+        allowed: true,
+        reason: `[${result.ruleName}] ${result.details.join('; ')}`,
+      };
+    }
+
+    return { allowed: true };
+  };
+}
+
+/**
+ * toolGate 单例——供 orchestrator 在每次 tool call 前调用。
+ *
+ * 用法：
+ *   import { toolGate } from './tools';
+ *   const check = toolGate('write_file', { path: '.env', content: '...' });
+ *   if (!check.allowed) { /* 拒绝执行 * / }
+ */
+export const toolGate = createToolGate();
+
+/**
+ * 用 ToolGate 包装一组工具——每个 tool call 执行前先过 gate 检查。
+ *
+ * 包装后：FAIL → 直接返回拒绝信息（不执行原 func）；WARN → 执行但返回值前面拼警告；
+ * PASS → 正常执行。
+ *
+ * v1.2.0 半闭环修复：之前 toolGate 只 export 了但运行时零调用，
+ * 本函数让 nodes.ts 在创建 DeepAgent 时调用 wrapToolsWithGate(ENGINEER_TOOLS, gate)，
+ * 真正实现 tool call 事前拦截。
+ *
+ * @param tools 原始工具集
+ * @param gate ToolGate gate 函数（由 createToolGate 创建）
+ * @returns 包装后的新工具集（不改原数组）
+ */
+export function wrapToolsWithGate(
+  tools: ExecutableTool[],
+  gate: ReturnType<typeof createToolGate>,
+): ExecutableTool[] {
+  return tools.map((tool) => ({
+    ...tool,
+    func: (input: Record<string, unknown>): string => {
+      const check = gate(tool.name, input);
+      if (!check.allowed) {
+        return `⛔ [ToolGate 拦截] ${tool.name} 被拒绝执行：${check.reason ?? '未知原因'}`;
+      }
+      const result = tool.func(input);
+      if (check.reason) {
+        return `⚠️ [ToolGate 告警] ${check.reason}\n\n${result}`;
+      }
+      return result;
+    },
+  }));
+}
 
 // ────────────────────────────────
 // 工具集导出

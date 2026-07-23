@@ -17,7 +17,7 @@ import { execSync } from 'child_process';
 import { createInterface } from 'readline';
 import { ENGINEER_AGENT, REVIEWER_AGENT } from '../builtin-agents';
 import { spawnSubAgent } from '../launcher';
-import { ENGINEER_TOOLS, REVIEWER_TOOLS } from '../tools';
+import { ENGINEER_TOOLS, REVIEWER_TOOLS, createToolGate, wrapToolsWithGate } from '../tools';
 import { buildConstrainedSystemPrompt } from '@sofagent/harness';
 import { loadConfig } from '@sofagent/core';
 import type { AuditHistoryEntry } from '@sofagent/audit';
@@ -228,11 +228,14 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
     const { createDeepAgent } = await import('deepagents');
     const constrainedPrompt = buildConstrainedSystemPrompt(process.cwd());
     const systemPrompt = `${constrainedPrompt}\n\n${ENGINEER_AGENT.systemPrompt}`;
+    // v1.2.0: ToolGate 事前拦截——每个 tool call 前过 @sofagent/rules 检查
+    const gate = createToolGate({ agentName: 'engineer', taskDesc: task.slice(0, 500) });
+    const gatedTools = wrapToolsWithGate(ENGINEER_TOOLS, gate);
     const agent = await (createDeepAgent as unknown as (params: Record<string, unknown>) => Promise<{
       invoke?: (input: Record<string, unknown>) => Promise<unknown>;
     }>)({
       ...resolved,
-      tools: ENGINEER_TOOLS,
+      tools: gatedTools,
       systemPrompt,
       maxTurns: resolveMaxTurns('engineer'),
     });
@@ -368,11 +371,14 @@ async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
     const { createDeepAgent } = await import('deepagents');
     const constrainedPrompt = buildConstrainedSystemPrompt(process.cwd());
     const systemPrompt = `${constrainedPrompt}\n\n${REVIEWER_AGENT.systemPrompt}`;
+    // v1.2.0: ToolGate 事前拦截——reviewer 工具也过 gate（只读工具通常 PASS，但保持一致性）
+    const gate = createToolGate({ agentName: 'reviewer', taskDesc: 'code review'.slice(0, 500) });
+    const gatedTools = wrapToolsWithGate(REVIEWER_TOOLS, gate);
     const agent = await (createDeepAgent as unknown as (params: Record<string, unknown>) => Promise<{
       invoke?: (input: Record<string, unknown>) => Promise<unknown>;
     }>)({
       ...resolved,
-      tools: REVIEWER_TOOLS,
+      tools: gatedTools,
       systemPrompt,
       maxTurns: resolveMaxTurns('reviewer'),
     });

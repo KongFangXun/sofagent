@@ -43,6 +43,10 @@ export { readAuditHistory, analyzeCostBaseline, generateAuditReport } from './au
 export { runLOOPIteration } from './loop-runner';
 export type { LOOPResult, LOOPOptions } from './loop-runner';
 
+// Tools & ToolGate (v1.1.9 / v1.2.0)
+export { ENGINEER_TOOLS, REVIEWER_TOOLS, checkDangerousCommand, createToolGate, toolGate, wrapToolsWithGate } from './tools';
+export type { ToolGateOptions } from './tools';
+
 // Graph (v1.1.3 — LangGraph StateGraph 节点级流转)
 export {
   runLoopGraph,
