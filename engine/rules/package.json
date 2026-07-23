@@ -1,5 +1,5 @@
 {
-  "name": "@sofagent/rules-engine",
+  "name": "@sofagent/rules",
   "version": "1.2.0",
   "description": "sofagent 规则引擎纯函数包——从 audit 抽出，零 fs/git 依赖，供编排引擎 tool call 事前拦截",
   "main": "dist/index.js",

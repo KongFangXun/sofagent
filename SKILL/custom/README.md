@@ -3,7 +3,7 @@
 本目录用于用户自定义覆盖，升级时不会被覆盖。
 
 ## 加载顺序
-1. 引擎层（/SKILL/SKILL.md → /SKILL/sofagent/ → /SKILL/agents/）
+1. 引擎层（/SKILL/SKILL.md → /SKILL/harness/ → /SKILL/agents/）
 2. 用户层（本目录，/SKILL/custom/）
 
 ## 文件示例

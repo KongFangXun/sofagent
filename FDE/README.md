@@ -30,7 +30,7 @@
 | 平台 | 怎么装 | 怎么激活 |
 |------|------|------|
 | **OpenClaw** | `bash fde-install.sh` | 装完直接打开 Agent，自动就绪 |
-| **WorkBuddy** | `bash fde-install.sh --platform workbuddy` 或手动 `cp -r agents/SKILL/sofagent-fde/ ~/.workbuddy/skills/sofagent-fde/` | 在对话中输入 `@sofagent-fde` |
+| **WorkBuddy** | `bash fde-install.sh --platform workbuddy` 或手动 `cp -r SKILL/SKILL.md ~/.workbuddy/skills/sofagent-fde/SKILL.md` | 在对话中输入 `@sofagent-fde` |
 | **其他平台** | 装 sofagent + 复制 SKILL.md 内容到 system prompt | Agent 读完后自动调用 CLI |
 
 `fde-install.sh` 安装完成后，同时安装了两个内置 Agent Skill：`@sofagent-fde`（FDE 部署工程师）和 `@sofagent-audit`（合规审计员）。

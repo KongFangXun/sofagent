@@ -26,7 +26,7 @@
       "@sofagent/ab-test": ["engine/ab-test/src"],
       "@sofagent/think": ["engine/think/src"],
       "@sofagent/skillopt": ["engine/skillopt/src"],
-      "@sofagent/rules-engine": ["engine/rules-engine/src"]
+      "@sofagent/rules": ["engine/rules/src"]
     }
   },
   "include": ["engine/*/src/**/*.ts"],
