@@ -90,11 +90,12 @@ T
     else ok "think.md 已存在，跳过"; fi
   fi
 
-  # v1.1.5: 同步复制 agents/SKILL/sofagent-releaser（发版 Agent，按需激活）
+  # v1.1.5: 同步复制 releaser Skill（发版 Agent，按需激活）
+  # v1.2.0: 迁移路径 agents/SKILL/sofagent-releaser → LOOP/releaser/releaser-skill
   # 对标 LOOP/loop-install.sh 与 FDE/fde-install.sh 的 reviewer/engineer 复制方式
   # ⚠️ 防御：用 ${VAR:-} 防止 set -u 下因罕见瞬态条件导致的 unbound variable
-  local AGENT_SKILL_SRC="${SCRIPT_DIR}/../../agents/SKILL/sofagent-releaser"
-  local AGENT_SKILL_DST="${TARGET:-}/agents/SKILL/sofagent-releaser"
+  local AGENT_SKILL_SRC="${SCRIPT_DIR}/../../../LOOP/releaser/releaser-skill"
+  local AGENT_SKILL_DST="${TARGET:-}/LOOP/releaser/releaser-skill"
   if [ -n "${AGENT_SKILL_DST:-}" ] && [ -d "${AGENT_SKILL_SRC:-}" ]; then
     mkdir -p "$(dirname "${AGENT_SKILL_DST}")"
     if [ -d "${AGENT_SKILL_DST}" ] && diff -r "${AGENT_SKILL_SRC}" "${AGENT_SKILL_DST}" >/dev/null 2>&1; then

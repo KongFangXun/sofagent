@@ -14,7 +14,7 @@
 |------|------|------|------|------|------|
 | **raw materials** | **Ledger** | `.sofagent/think.md` + `.sofagent/audit/history.jsonl` | Agent + 审计引擎 | Agent 实时写入（append-only，`memory-contract.ts` 强制） | audit 引擎每次 commit |
 | **Wiki entries** | **Views** | `.sofagent/knowledge/{entities,concepts,comparisons,summaries}/` | Agent + MCP tools（`read_entity` / `read_concept` / `list_entities` / `search_knowledge`） | Dream Cycle 派生（v1.1.7 落地；v1.1.6 只检测不生产） | daemon `conflict-check`（矛盾/孤儿/死链） |
-| **spec norms** | **Policy** | `.sofagent/fde.md` + `agents/SKILL/sofagent-*/SKILL.md` | Agent 启动时经 Harness 加载链注入 | 人 + FDE 维护（手动 / sustain 模式） | A15 约束验证规则 |
+| **spec norms** | **Policy** | `.sofagent/fde.md` + `SKILL/agents/*/SKILL.md` | Agent 启动时经 Harness 加载链注入 | 人 + FDE 维护（手动 / sustain 模式） | A15 约束验证规则 |
 
 > ⚠️ **Views 层是 4 个子目录**：`entities/` `concepts/` `comparisons/` `summaries/`。此前部分文档只列 3 个（漏 summaries），v1.1.6 起统一为 4 个，与 MCP server（`sofagent/mcp/src/mcp-server.ts` L789/972/994/999）的实际规范对齐。
 
@@ -40,7 +40,7 @@ flowchart LR
 
     subgraph Policy["Policy（约束规则层）"]
         P1[".sofagent/fde.md<br/>业务四问"]
-        P2["agents/SKILL/sofagent-*/SKILL.md<br/>铁律"]
+        P2["SKILL/agents/*/SKILL.md<br/>铁律"]
     end
 
     T1 -->|"派生（v1.1.7 Dream Cycle）"| V1

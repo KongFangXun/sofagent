@@ -80,20 +80,16 @@ if [ -n "$FDE_MD_TARGET" ] && [ -f "$FDE_MD_TEMPLATE" ]; then
   echo -e "  ${CYAN}请编辑此文件，填写你的工作规则${NC}"
 
   # v1.0.7: 同时安装 FDE + Audit 两个内置 Agent 的 Skill
-  SKILL_SRC="$PROJECT_ROOT/agents/SKILL"
+  # v1.2.0: Skill 收敛到 /SKILL/（agents/SKILL/ → SKILL/agents/）
+  SKILL_SRC="$PROJECT_ROOT/SKILL"
   SKILL_DIR="$(dirname "$FDE_MD_TARGET")"
-  if [ -d "$SKILL_SRC/sofagent-fde" ]; then
-    cp -r "$SKILL_SRC/sofagent-fde" "$SKILL_DIR/sofagent-fde"
+  if [ -f "$SKILL_SRC/SKILL.md" ]; then
+    cp "$SKILL_SRC/SKILL.md" "$SKILL_DIR/sofagent-fde/SKILL.md" 2>/dev/null || cp "$SKILL_SRC/SKILL.md" "$SKILL_DIR/SKILL.md"
     echo -e "${GREEN}✅ FDE Agent Skill 已安装（@sofagent-fde 可用）${NC}"
   fi
-  if [ -d "$SKILL_SRC/sofagent-audit" ]; then
-    cp -r "$SKILL_SRC/sofagent-audit" "$SKILL_DIR/sofagent-audit"
+  if [ -d "$SKILL_SRC/agents/audit" ]; then
+    cp -r "$SKILL_SRC/agents/audit" "$SKILL_DIR/sofagent-audit"
     echo -e "${GREEN}✅ Audit Agent Skill 已安装（@sofagent-audit 可用）${NC}"
-  fi
-  # v1.1.5: 同步安装 releaser（按需，仅发版场景激活）
-  if [ -d "$SKILL_SRC/sofagent-releaser" ]; then
-    cp -r "$SKILL_SRC/sofagent-releaser" "$SKILL_DIR/sofagent-releaser"
-    echo -e "${GREEN}✅ Releaser Agent Skill 已安装（@sofagent-releaser 可用，仅发版场景）${NC}"
   fi
 else
   echo -e "${CYAN}⚠️ 跳过 fde.md（模板或目标路径不存在）${NC}"

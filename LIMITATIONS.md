@@ -155,7 +155,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 ## 三、安全与信任模型局限
 
-> **企业 DevOps 集成路径**：当前 `history.jsonl` 为 append-only JSONL 明文，企业 IT 如需接入 SIEM / 企业日志平台，可通过 filebeat / logstash 等采集 agent 定时轮询 `.sofagent/audit/history.jsonl` 转发（见 SECURITY.md「审计结果推送」）。Webhook 推送（飞书 / 钉钉 / 企微）规划在 v1.2.x。CI 集成方面，各包提供 `npm test` 与 `tools/acceptance-test.sh` 可接入现有流水线做门禁；`sofagent-audit --install-hook` 提供的 commit-msg hook 可作为 pre-commit / pre-push 关卡。
+> **企业 DevOps 集成路径**：当前 `history.jsonl` 为 append-only JSONL 明文，企业 IT 如需接入 SIEM / 企业日志平台，可通过 filebeat / logstash 等采集 agent 定时轮询 `.sofagent/audit/history.jsonl` 转发（见 SECURITY.md「审计结果推送」）。Webhook 推送（飞书 / 钉钉 / 企微）规划在 v1.2.x。CI 集成方面，各包提供 `npm test` 与 `LOOP/releaser/acceptance-test.sh` 可接入现有流水线做门禁；`sofagent-audit --install-hook` 提供的 commit-msg hook 可作为 pre-commit / pre-push 关卡。
 
 > **审计日志防篡改检测边界**：`history.jsonl` 的完整性依赖 hash chain（`audit-history.ts`），但 Agent 可在篡改后重算整条链——hash chain 仅提供事后可追溯性，非强防篡改。v1.1.8 起 `--doctor` 在缺少 HMAC 签名时会明确标记「无 HMAC 签名，完整性校验强度降低」（见 P2-6 实施）；强防篡改 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`）计划在 v1.2.x 落地，届时无密钥的明文链将标记为低强度校验。当前版本仍依赖「Agent 自觉 + 定期 --doctor」的信任模型。
 
@@ -319,7 +319,7 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](FDE/FDE.md)）已在作�
 
 ### 端到端验收测试覆盖
 
-v1.0 新增 `tools/acceptance-test.sh`（9 个场景），但覆盖范围有限：
+v1.0 新增 `LOOP/releaser/acceptance-test.sh`（9 个场景），但覆盖范围有限：
 
 - **CI 已覆盖**：单元测试审计核心 413 个、全 workspace 909 个全绿（函数级，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 100 场景（CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）

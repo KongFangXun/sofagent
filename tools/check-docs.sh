@@ -106,9 +106,9 @@ LAYER_A=$(find . -name "*.md" \
   -not -path "*/.sofagent/*" \
   -not -path "*/docs/changelog/*" \
   -not -path "*/docs/evidence/*" \
-  -not -path "*/engine/skill/*" \
+  -not -path "*/SKILL/*" \
   -not -path "*/FDE/*" \
-  -not -path "*/docs/verification/*" \
+  -not -path "*/LOOP/*" \
   -not -path "*/docs/guides/*" \
   -not -path "*/docs/design/*" \
   -not -path "*/docs/architecture/*" \
@@ -130,8 +130,8 @@ LAYER_B=$(find ./LOOP ./agents ./.github ./engine/hooks ./docs/DEVELOPMENT.md \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_B=${LAYER_B:-0}
 
-# C 层：审查体系（docs/verification/）
-LAYER_C=$(find ./docs/verification -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+# C 层：审查体系（LOOP/releaser/，v1.2.0 从 docs/verification/ 迁入）
+LAYER_C=$(find ./LOOP/releaser -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_C=${LAYER_C:-0}
 
 # D 层：设计文档（docs/design/ + docs/architecture/ + docs/prd/）
