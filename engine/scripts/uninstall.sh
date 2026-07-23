@@ -81,13 +81,13 @@ case "$PLATFORM" in
     else
       if [ -f "$path" ]; then rm -f "$path" && ok "已删除: $HOME/.workbuddy/$f"; fi
     fi
-    # 兼容旧 skills/sofagent/ 路径
-    skill_path="$HOME/.workbuddy/skills/sofagent/$f"
+    # 兼容旧 skills/engine/ 路径
+    skill_path="$HOME/.workbuddy/skills/engine/$f"
     if [ -f "$skill_path" ]; then
-      if [ "$LIST_ONLY" = true ]; then info "  $skill_path"; else rm -f "$skill_path" && ok "已删除: skills/sofagent/$f"; fi
+      if [ "$LIST_ONLY" = true ]; then info "  $skill_path"; else rm -f "$skill_path" && ok "已删除: skills/engine/$f"; fi
     fi
     # 兼容旧 constitution/ 路径
-    old_path="$HOME/.workbuddy/skills/sofagent/constitution/$f"
+    old_path="$HOME/.workbuddy/skills/engine/constitution/$f"
     if [ -f "$old_path" ]; then
       if [ "$LIST_ONLY" = true ]; then info "  $old_path（v0.72 前残留）"; else rm -f "$old_path"; rmdir "$(dirname "$old_path")" 2>/dev/null || true; ok "已删除旧版残留: constitution/$f"; fi
     fi
@@ -112,7 +112,7 @@ case "$PLATFORM" in
         info "  $skill_dir/（${skill_count} 个文件）"
       else
         rm -rf "$skill_dir"
-        ok "已删除 skills/sofagent/ 目录（${skill_count} 个文件）"
+        ok "已删除 skills/engine/ 目录（${skill_count} 个文件）"
       fi
       ((removed++)) || true
     fi
@@ -169,21 +169,21 @@ fi
 
 removed=0
 
-# ── 删除 / 列出宪法文件（v0.73：fde.md 扁平化到 skills/sofagent/fde.md）──
+# ── 删除 / 列出宪法文件（v0.73：fde.md 扁平化到 skills/engine/fde.md）──
 f="fde.md"
 # 新路径
-path="${OPENCLAW_DIR}/skills/sofagent/${f}"
+path="${OPENCLAW_DIR}/skills/engine/${f}"
 if [ -f "$path" ]; then
   if [ "$LIST_ONLY" = true ]; then
     info "  $path"
   else
     rm -f "$path" "${path}.bak"
-    ok "已删除: skills/sofagent/$f"
+    ok "已删除: skills/engine/$f"
   fi
   ((removed++)) || true
 fi
 # 兼容旧 constitution/ 路径
-old_path="${OPENCLAW_DIR}/skills/sofagent/constitution/${f}"
+old_path="${OPENCLAW_DIR}/skills/engine/constitution/${f}"
 if [ -f "$old_path" ]; then
   if [ "$LIST_ONLY" = true ]; then
     info "  $old_path（v0.72 前残留）"
@@ -319,5 +319,5 @@ else
 fi
 
 echo ""
-echo "  如需重新安装，运行: bash sofagent/scripts/install.sh --platform $PLATFORM"
+echo "  如需重新安装，运行: bash engine/scripts/install.sh --platform $PLATFORM"
 echo ""

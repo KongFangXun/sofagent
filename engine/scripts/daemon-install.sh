@@ -16,7 +16,7 @@ VERSION="1.1.9"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-TARGET_DIR="$REPO_ROOT/sofagent/scripts"
+TARGET_DIR="$REPO_ROOT/engine/scripts"
 
 # ── 部署脚本 ──
 echo "部署 daemon 脚本..."

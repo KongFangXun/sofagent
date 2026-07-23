@@ -22,4 +22,4 @@ jobs:
       - name: Build (workspace 拓扑序)
         run: npm run build
       - name: Smoke test (audit CLI)
-        run: node sofagent/audit/dist/index.js --help
+        run: node engine/audit/dist/index.js --help

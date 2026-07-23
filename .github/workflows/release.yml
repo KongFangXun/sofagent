@@ -7,7 +7,7 @@ on:
 
 jobs:
   publish-audit:
-    # v1.1.4 修复：原配置只在 sofagent/audit 目录跑 npm ci + npm test，
+    # v1.1.4 修复：原配置只在 engine/audit 目录跑 npm ci + npm test，
     # 但 audit 运行时依赖 @sofagent/core（workspace 链接到 ../core），
     # 而 core/dist 被 gitignore 且 CI 中无人 build core，导致 vitest 无法解析入口
     # 现改为从根目录 workspace 构建（与 publish-mcp 对齐）
@@ -32,10 +32,10 @@ jobs:
         working-directory: .
       # 在 audit 包内跑测试（此时 core/dist 已构建好）
       - run: npm test
-        working-directory: sofagent/audit
+        working-directory: engine/audit
       - name: Check if version already published
         id: version-check
-        working-directory: sofagent/audit
+        working-directory: engine/audit
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if npm view "@sofagent/audit@${VERSION}" version 2>/dev/null; then
@@ -48,7 +48,7 @@ jobs:
       - name: Publish to npm
         if: steps.version-check.outputs.skip != 'true'
         run: npm publish --access public
-        working-directory: sofagent/audit
+        working-directory: engine/audit
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -73,7 +73,7 @@ jobs:
         working-directory: .
       - name: Check if version already published
         id: version-check
-        working-directory: sofagent/mcp
+        working-directory: engine/mcp
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if npm view "@sofagent/mcp@${VERSION}" version 2>/dev/null; then
@@ -86,6 +86,6 @@ jobs:
       - name: Publish to npm
         if: steps.version-check.outputs.skip != 'true'
         run: npm publish --access public
-        working-directory: sofagent/mcp
+        working-directory: engine/mcp
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

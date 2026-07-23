@@ -2,20 +2,20 @@
   "version": "1.1.9",
   "private": true,
   "workspaces": [
-    "sofagent/harness",
-    "sofagent/ontology",
-    "sofagent/eval",
-    "sofagent/core",
-    "sofagent/think",
-    "sofagent/audit",
-    "sofagent/orchestrator",
-    "sofagent/daemon",
-    "sofagent/ab-test",
-    "sofagent/skillopt",
-    "sofagent/mcp"
+    "engine/harness",
+    "engine/ontology",
+    "engine/eval",
+    "engine/core",
+    "engine/think",
+    "engine/audit",
+    "engine/orchestrator",
+    "engine/daemon",
+    "engine/ab-test",
+    "engine/skillopt",
+    "engine/mcp"
   ],
   "scripts": {
     "test": "npm test --workspaces --if-present",
-    "build": "npm run build --workspace=sofagent/harness && npm run build --workspace=sofagent/ontology && npm run build --workspace=sofagent/eval && npm run build --workspace=sofagent/core && npm run build --workspace=sofagent/think && npm run build --workspace=sofagent/audit && npm run build --workspace=sofagent/orchestrator && npm run build --workspace=sofagent/daemon && npm run build --workspace=sofagent/ab-test && npm run build --workspace=sofagent/skillopt && npm run build --workspace=sofagent/mcp"
+    "build": "npm run build --workspace=engine/harness && npm run build --workspace=engine/ontology && npm run build --workspace=engine/eval && npm run build --workspace=engine/core && npm run build --workspace=engine/think && npm run build --workspace=engine/audit && npm run build --workspace=engine/orchestrator && npm run build --workspace=engine/daemon && npm run build --workspace=engine/ab-test && npm run build --workspace=engine/skillopt && npm run build --workspace=engine/mcp"
   }
 }

@@ -4,8 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'sofagent/scripts/**/*.sh'
-      - 'sofagent/daemon/**/*.sh'
+      - 'engine/scripts/**/*.sh'
+      - 'engine/daemon/**/*.sh'
       - 'sofagent-lite/**/*.sh'
       - 'scripts/**/*.sh'
       - 'tools/**/*.sh'
@@ -15,8 +15,8 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'sofagent/scripts/**/*.sh'
-      - 'sofagent/daemon/**/*.sh'
+      - 'engine/scripts/**/*.sh'
+      - 'engine/daemon/**/*.sh'
       - 'sofagent-lite/**/*.sh'
       - 'scripts/**/*.sh'
       - 'tools/**/*.sh'

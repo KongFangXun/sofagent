@@ -58,7 +58,7 @@ if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
 fi
 
 # audit 包单独数（从 test-count.sh 全量输出提取，--quiet 没有逐包明细，用 npm test 取）
-AUDIT_OUT=$(cd sofagent/audit && npm test 2>&1 || true)
+AUDIT_OUT=$(cd engine/audit && npm test 2>&1 || true)
 AUDIT_TESTS=$(echo "$AUDIT_OUT" | grep -E '^\s*Tests\s+' | tail -1 | grep -oE '\([0-9]+\)' | grep -oE '[0-9]+' || echo "0")
 
 if [ "$QUIET" = false ]; then

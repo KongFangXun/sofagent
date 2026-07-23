@@ -15,19 +15,19 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "@sofagent/harness": ["sofagent/harness/src"],
-      "@sofagent/ontology": ["sofagent/ontology/src"],
-      "@sofagent/eval": ["sofagent/eval/src"],
-      "@sofagent/core": ["sofagent/core/src"],
-      "@sofagent/audit": ["sofagent/audit/src"],
-      "@sofagent/mcp": ["sofagent/mcp/src"],
-      "@sofagent/orchestrator": ["sofagent/orchestrator/src"],
-      "@sofagent/daemon": ["sofagent/daemon/src"],
-      "@sofagent/ab-test": ["sofagent/ab-test/src"],
-      "@sofagent/think": ["sofagent/think/src"],
-      "@sofagent/skillopt": ["sofagent/skillopt/src"]
+      "@sofagent/harness": ["engine/harness/src"],
+      "@sofagent/ontology": ["engine/ontology/src"],
+      "@sofagent/eval": ["engine/eval/src"],
+      "@sofagent/core": ["engine/core/src"],
+      "@sofagent/audit": ["engine/audit/src"],
+      "@sofagent/mcp": ["engine/mcp/src"],
+      "@sofagent/orchestrator": ["engine/orchestrator/src"],
+      "@sofagent/daemon": ["engine/daemon/src"],
+      "@sofagent/ab-test": ["engine/ab-test/src"],
+      "@sofagent/think": ["engine/think/src"],
+      "@sofagent/skillopt": ["engine/skillopt/src"]
     }
   },
-  "include": ["sofagent/*/src/**/*.ts"],
+  "include": ["engine/*/src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -151,9 +151,12 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
 
       if (path) {
         // 读取具体 diff 内容
+        // v1.2.0 修复：rename 文件必须同时传 oldPath 和 path 作为 pathspec，
+        // 否则 git 无法配对 rename，R100 纯改名会被当成全新文件输出全量 diff
         let diffLines: string[] = [];
         try {
-          const diffContent = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', range, '--', path], {
+          const pathspec = (status === 'renamed' && oldPath) ? [oldPath, path] : [path];
+          const diffContent = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', range, '--', ...pathspec], {
             encoding: 'utf-8',
             cwd,
             maxBuffer: 5 * 1024 * 1024,
@@ -234,9 +237,12 @@ export function parseStagedDiff(): DiffFile[] {
 
       if (path) {
         // 读取 staged diff 内容
+        // v1.2.0 修复：rename 文件必须同时传 oldPath 和 path 作为 pathspec，
+        // 否则 git 无法配对 rename，R100 纯改名会被当成全新文件输出全量 diff
         let diffLines: string[] = [];
         try {
-          const diffContent = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', '--cached', '--', path], {
+          const pathspec = (status === 'renamed' && oldPath) ? [oldPath, path] : [path];
+          const diffContent = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', '--cached', '--', ...pathspec], {
             encoding: 'utf-8',
             maxBuffer: 5 * 1024 * 1024,
           });
