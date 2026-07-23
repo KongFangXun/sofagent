@@ -3,7 +3,7 @@
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # v1.1.9 · 122 个端到端场景：用户旅程 + 规则覆盖(A1-A19,E1-E4) + Sub Agent
 # + LOOP + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 详细功能映射见 docs/verification/acceptance-coverage.md
+# 详细功能映射见 LOOP/releaser/acceptance-coverage.md
 # ============================================================
 # 用法：bash LOOP/releaser/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
@@ -16,7 +16,7 @@ for _arg in "$@"; do
 done
 RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'; NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 AUDIT_DIR="$PROJECT_ROOT/engine/audit"
 ORIG_DIR="$(pwd)"
 CLI="node $AUDIT_DIR/dist/index.js"
@@ -462,11 +462,11 @@ if [ -f "$MCP_DIST" ]; then
   [ -z "$MCP_IMPORT" ] || echo "$MCP_IMPORT" | grep -qv "Error" && pass || fail "MCP server 导入失败: $MCP_IMPORT"
 fi
 scenario 38 "审查报告签名模板"
-REVIEW_FILE="$PROJECT_ROOT/agents/SKILL/sofagent-reviewer/SKILL.md"; SIGN_OK=true
+REVIEW_FILE="$PROJECT_ROOT/SKILL/agents/reviewer/SKILL.md"; SIGN_OK=true
 if [ -f "$REVIEW_FILE" ]; then
   SIGN_BEFORE=$(grep -B3 "^# 代码审查报告" "$REVIEW_FILE" || true)
   echo "$SIGN_BEFORE" | grep -q "sofagent-audit" && echo "$SIGN_BEFORE" | grep -q "sofagent-orchestrator" && pass || { SIGN_OK=false; fail "审查报告签名模板缺少 sofagent-audit 或 sofagent-orchestrator"; }
-else SIGN_OK=false; fail "sofagent-reviewer/SKILL.md 不存在"; fi
+else SIGN_OK=false; fail "reviewer/SKILL.md 不存在"; fi
 if [ -f "$REVIEW_FILE" ]; then
   [ -n "$(grep -A2 "代码审查报告" "$REVIEW_FILE" 2>/dev/null | head -3 || true)" ] && pass || fail "审查报告标题行不存在"
 fi
@@ -521,7 +521,7 @@ assert_grep "tag.*message\|Tag message" "$PROJECT_ROOT/tools/pre-push-check.sh" 
 scenario 46 "pre-push-check 含依赖图循环检测"
 assert_grep "循环依赖\|circular\|循环检测" "$PROJECT_ROOT/tools/pre-push-check.sh" && pass || true
 scenario 47 "Agent 身份感知（SKILL.md 含方案 C 指令）"
-assert_grep "露个脸就够了" "$PROJECT_ROOT/engine/skill/SKILL.md" && pass || fail "SKILL.md 缺少 Agent 身份感知指令"
+assert_grep "露个脸就够了" "$PROJECT_ROOT/SKILL/SKILL.md" && pass || fail "SKILL.md 缺少 Agent 身份感知指令"
 scenario 48 "A19 commit message 质量（\"add\" → FAIL 阻断）"
 if [ -d .git ]; then
   A19_BASE_HEAD=$(git rev-parse HEAD); A19_TEST_FILE="$PROJECT_ROOT/.a19-scenario48-probe.txt"
@@ -585,18 +585,18 @@ for f in README.md SKILL.md LOOP.md quick-start.md loop-install.sh loop-workflow
 [ -d "$LOOP_DIR" ] || LOOP_PROD_OK=false
 if $LOOP_PROD_OK; then
   assert_grep "sofagent-audit" "$LOOP_DIR/package.json" && assert_grep "dependsOn" "$LOOP_DIR/package.json" && \
-  assert_grep "scripts/install.sh" "$LOOP_DIR/loop-install.sh" && pass || true
+  assert_grep "install.sh" "$LOOP_DIR/loop-install.sh" && pass || true
 else fail "LOOP 独立产品目录结构缺失"; fi
 scenario 57 "sofagent-releaser Skill 存在性（文件+frontmatter+install 复制）"
-R_SKILL="$PROJECT_ROOT/agents/SKILL/sofagent-releaser/SKILL.md"; R_OK=true
-[ ! -f "$R_SKILL" ] && { R_OK=false; fail "sofagent-releaser/SKILL.md 不存在"; }
+R_SKILL="$PROJECT_ROOT/LOOP/releaser/releaser-skill/SKILL.md"; R_OK=true
+[ ! -f "$R_SKILL" ] && { R_OK=false; fail "releaser-skill/SKILL.md 不存在"; }
 if $R_OK; then
   LINE_COUNT=$(wc -l < "$R_SKILL"); [ "$LINE_COUNT" -gt 100 ] && { R_OK=false; fail "行数 $LINE_COUNT > 100"; }
   FRONTMATTER=$(head -10 "$R_SKILL")
   for field in "^name:" "^description:" "^emoji:" "^color:"; do echo "$FRONTMATTER" | grep -qE "$field" || { R_OK=false; fail "frontmatter 缺 $field"; }; done
-  grep -q "sofagent-releaser" "$PROJECT_ROOT/engine/scripts/lib/file-deploy.sh" 2>/dev/null && \
-  grep -q "sofagent-releaser" "$PROJECT_ROOT/FDE/fde-install.sh" 2>/dev/null && \
-  grep -q "sofagent-releaser" "$PROJECT_ROOT/LOOP/loop-install.sh" 2>/dev/null && pass || { R_OK=false; fail "install.sh 缺复制逻辑"; }
+  grep -q "releaser-skill\|releaser" "$PROJECT_ROOT/engine/scripts/lib/file-deploy.sh" 2>/dev/null && \
+  grep -q "releaser\|LOOP" "$PROJECT_ROOT/FDE/fde-install.sh" 2>/dev/null && \
+  grep -q "releaser\|LOOP" "$PROJECT_ROOT/LOOP/loop-install.sh" 2>/dev/null && pass || { R_OK=false; fail "install.sh 缺复制逻辑"; }
 fi
 scenario 58 "MCP audit_file tool 注册 + 返回结构（[sofagent] + auditEngine）"
 MCP_DIST_58="$PROJECT_ROOT/engine/mcp/dist/mcp-server.js"
@@ -856,7 +856,7 @@ grep -q "0.11.0\|SC_VER\|brew upgrade shellcheck" "$PROJECT_ROOT/tools/pre-push-
 $S86_OK && pass
 scenario 87 "SKILL.md frontmatter 10 必需字段完整性"
 S87_OK=true; S87_MISSING=0
-for f in agents/SKILL/*/SKILL.md "$PROJECT_ROOT/FDE/SKILL.md" "$PROJECT_ROOT/LOOP/SKILL.md" "$PROJECT_ROOT/engine/skill/SKILL.md"; do
+for f in SKILL/agents/*/SKILL.md "$PROJECT_ROOT/SKILL/SKILL.md" "$PROJECT_ROOT/LOOP/SKILL.md" "$PROJECT_ROOT/LOOP/releaser/releaser-skill/SKILL.md"; do
   [ -f "$f" ] || continue; miss=0
   for field in "^name:" "^slug:" "^displayName:" "^description:" "^version:" "^tags:" "^image:" "^triggers:" "^scenarios:" "^not_when:"; do
     grep -qE "$field" "$f" || miss=$((miss + 1))
