@@ -31,14 +31,14 @@
 
 | 脚本 | 改什么 | 难度 |
 |------|------|:--:|
-| `sofagent/scripts/install.sh` | BSD/macOS 兼容性修复 | ⭐⭐ |
+| `install.sh` | BSD/macOS 兼容性修复 | ⭐⭐ |
 | `sofagent/scripts/verify.sh` | 新增检查项（bash 版，安装流程内调用） | ⭐ |
 | `sofagent/audit/src/verify.ts` | TS 版验证（npm bin `sofagent-verify`） | ⭐ |
 
 **跑 1 条命令验证**：
 
 ```bash
-bash sofagent/scripts/install.sh && bash sofagent/scripts/verify.sh
+bash install.sh && bash sofagent/scripts/verify.sh
 # 或 TS 版：cd sofagent/audit && npm run build && node dist/verify.js
 ```
 
@@ -82,7 +82,7 @@ bash sofagent/scripts/install.sh && bash sofagent/scripts/verify.sh
 >
 > 示例：`docs: evidence Case 023-025 外部用户验证归档` ✅ / `evidence 归档` ❌
 
-**改 Skill 文件**：先改 `sofagent/skill/`（唯一权威），再 `bash sofagent/scripts/install.sh` 同步。
+**改 Skill 文件**：先改 `sofagent/skill/`（唯一权威），再 `bash install.sh` 同步。
 
 **文档修改**：改 HANDBOOK 必须同步更新 `sofagent/skill/` 下模板。详见 [DEVELOPER §七](./docs/DEVELOPMENT.md#七数据文件架构)。
 
@@ -94,10 +94,10 @@ bash sofagent/scripts/install.sh && bash sofagent/scripts/verify.sh
 
 ```bash
 git clone https://github.com/KongFangXun/sofagent.git
-cd sofagent && bash sofagent/scripts/install.sh && bash sofagent/scripts/verify.sh
+cd sofagent && bash install.sh && bash sofagent/scripts/verify.sh
 ```
 
-发版：`docs/changelog/vX.Y.md` 写日志 → `CHANGELOG.md` 加索引 → `tools/bump-version.sh` 升级版本号 → `cp -r sofagent/ ~/.workbuddy/skills/sofagent/` → `git tag vX.Y && git push` → `gh release create vX.Y`
+发版：`docs/changelog/vX.Y.md` 写日志 → `CHANGELOG.md` 加索引 → `LOOP/releaser/bump-version.sh` 升级版本号 → `cp -r sofagent/ ~/.workbuddy/skills/sofagent/` → `git tag vX.Y && git push` → `gh release create vX.Y`
 
 ---
 

@@ -5,7 +5,7 @@
 # + LOOP + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
 # 详细功能映射见 docs/verification/acceptance-coverage.md
 # ============================================================
-# 用法：bash tools/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
+# 用法：bash LOOP/releaser/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
 RUN_MODE="all"
 for _arg in "$@"; do

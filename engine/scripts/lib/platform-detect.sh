@@ -68,7 +68,7 @@ resolve_data_dir() {
     PROJECT_DIR="$PWD"
     warn "未指定 --project-dir，.sofagent/ 数据目录将创建在当前目录: ${PROJECT_DIR}"
     warn "  如果这不是你的项目工作目录，请用 --project-dir 指定："
-    warn "  bash sofagent/scripts/install.sh --project-dir ~/my-project"
+    warn "  bash install.sh --project-dir ~/my-project"
   fi
   SOFAGENT_DATA="${SOFAGENT_DATA:-${PROJECT_DIR}/.sofagent}"
   # v0.90 P0-3 修复：写入数据目录标记文件，供 audit/verify/orchestrate 定位

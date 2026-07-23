@@ -436,7 +436,7 @@ Agent 是放大已标准化的能力，**不是替你管理混乱**。进场前�
 
 ```bash
 # 设备上装 sofagent（核心）
-bash sofagent/scripts/install.sh
+bash install.sh
 ```
 
 #### 节点类型决策（v1.0.7+）

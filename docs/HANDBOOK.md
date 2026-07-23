@@ -41,7 +41,7 @@
 | 你想知道的 | 一句话 | 详见 |
 |------|------|------|
 | 这是什么 | sofagent——一个 FDE Agent，进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑 | 场景二 |
-| 怎么装 | `bash sofagent/scripts/install.sh`（装底层引擎底座；装 FDE 入口见 [FDE/README](../FDE/README.md)） | 场景一 |
+| 怎么装 | `bash install.sh`（装底层引擎底座；装 FDE 入口见 [FDE/README](../FDE/README.md)） | 场景一 |
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | 场景二 |
 | AI 节点怎么跑 | 开发者：git commit 自动审计。非开发者：v1.0.8+ daemon 监控文件变更自动审计 | 场景一 |
 | AI 知识库 | `.sofagent/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [v1.0.1 日志](./changelog/v1.0.1.md) |
@@ -60,7 +60,7 @@
 
 ```bash
 git clone https://github.com/KongFangXun/sofagent.git
-cd sofagent && bash sofagent/scripts/install.sh
+cd sofagent && bash install.sh
 ```
 
 > 只想加 Agent 行为约束？不需要装整个 sofagent——把 4 底线 + 7 铁律复制进你的 Agent 设置就行，详见 [README](../README.md)。
