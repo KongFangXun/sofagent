@@ -430,7 +430,7 @@ Agent 是放大已标准化的能力，**不是替你管理混乱**。进场前�
 - **FDE 部署工程师**（`@sofagent-fde`）：梳理工作流、识别 AI 节点、构建知识库、交付离场。在 WorkBuddy 中 `@sofagent-fde 梳理采购流程` 即可调用，或 CLI `sofagent-orchestrator subagent run fde --task "..."`。
 - **合规审计员**（`@sofagent-audit`）：Workflow 巡检、铁律覆盖验证、知识库健康度检查。发版前跑一次全量合规扫描。
 
-两个 Agent 的定义在 `agents/SKILL/` 下，`fde-install.sh` 会自动安装。详细用法见 `../agents/README.md`。
+两个 Agent 的定义在 `SKILL/agents/` 下，`fde-install.sh` 会自动安装。详细用法见 `../SKILL/AGENTS.md`。
 
 找一台闲置设备（旧电脑、服务器、Nas 都行），装好 sofagent——这台设备就跑着 harness 层，上面是你梳理出来的 AI 节点。
 

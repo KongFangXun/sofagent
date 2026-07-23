@@ -719,7 +719,7 @@ if [[ ${ERRORS} -eq 0 ]]; then
 else
   echo -e "${RED}${BOLD}  ✗ 发现 ${ERRORS} 处不一致！${NC}"
   echo -e "  期望版本: ${SSOT_VERSION} (SSOT: ${SSOT_VERSION})"
-  echo -e "  修复: ./tools/bump-version.sh <旧版本> ${SSOT_VERSION}"
+  echo -e "  修复: ./LOOP/releaser/bump-version.sh <旧版本> ${SSOT_VERSION}"
   echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
   exit 1
 fi

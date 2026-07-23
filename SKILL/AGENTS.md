@@ -1,14 +1,14 @@
 # sofagent Agent 库
 
-> 📂 Sub Agent 定义集中在 [`agents/SKILL/`](./SKILL/) 子目录，每个子目录含 `SKILL.md`（调用入口）+ `{role}.md`（角色定义）。下表列出 5 个预装 Sub Agent：
+> 📂 Sub Agent 定义集中在 [`SKILL/agents/`](./SKILL/) 子目录，每个子目录含 `SKILL.md`（调用入口）+ `{role}.md`（角色定义）。下表列出 5 个预装 Sub Agent：
 
 | Sub Agent | 目录 | 职责 |
 |-----------|------|------|
-| `@sofagent-audit` | [`agents/SKILL/sofagent-audit/`](./SKILL/sofagent-audit/) | 合规审计员——Workflow 巡检、铁律覆盖验证、知识库健康度检查 |
-| `@sofagent-engineer` | [`agents/SKILL/sofagent-engineer/`](./SKILL/sofagent-engineer/) | 最小变更工程师——读代码 + 写代码 + 跑测试 + git commit |
-| `@sofagent-fde` | [`agents/SKILL/sofagent-fde/`](./SKILL/sofagent-fde/) | 前线部署工程师——梳理工作流、识别 AI 节点、构建知识库、交付离场 |
-| `@sofagent-releaser` | [`agents/SKILL/sofagent-releaser/`](./SKILL/sofagent-releaser/) | 发布工程师——按 releasing.md SOP 自动执行发版流程 |
-| `@sofagent-reviewer` | [`agents/SKILL/sofagent-reviewer/`](./SKILL/sofagent-reviewer/) | 代码审查员——语义审查 + 影响分析 + 铁律合规 |
+| `@sofagent-audit` | [`SKILL/agents/audit/`](./SKILL/agents/audit/) | 合规审计员——Workflow 巡检、铁律覆盖验证、知识库健康度检查 |
+| `@sofagent-engineer` | [`SKILL/agents/engineer/`](./SKILL/agents/engineer/) | 最小变更工程师——读代码 + 写代码 + 跑测试 + git commit |
+| `@sofagent-fde` | [`SKILL/`](./SKILL/) | 前线部署工程师——梳理工作流、识别 AI 节点、构建知识库、交付离场 |
+| `@sofagent-releaser` | [`LOOP/releaser/`](./LOOP/releaser/) | 发布工程师——按 releasing.md SOP 自动执行发版流程 |
+| `@sofagent-reviewer` | [`SKILL/agents/reviewer/`](./SKILL/agents/reviewer/) | 代码审查员——语义审查 + 影响分析 + 铁律合规 |
 
 > v1.0.7 起（当前 v1.1.9），预装 Agent 为 Skill 格式。Skill 是调用入口——第三方 Agent 平台（WorkBuddy/Codex/OpenClaw 等）加载 Skill 后，通过 CLI 命令把任务交给 DeepAgents 编排引擎执行。
 
@@ -16,8 +16,8 @@
 
 | Agent | Skill | CLI 命令 | 职责 |
 |------|------|------|------|
-| 部署工程师 | `@sofagent-fde` · `SKILL/sofagent-fde/SKILL.md` | `sofagent-orchestrator subagent run fde --task "..."` | 梳理工作流、识别 AI 节点、构建知识库、交付离场 |
-| 合规审计员 | `@sofagent-audit` · `SKILL/sofagent-audit/SKILL.md` | `sofagent-orchestrator subagent run audit --task "..."` | Workflow 巡检、铁律覆盖验证、知识库健康度检查 |
+| 部署工程师 | `@sofagent-fde` · `SKILL/SKILL.md` | `sofagent-orchestrator subagent run fde --task "..."` | 梳理工作流、识别 AI 节点、构建知识库、交付离场 |
+| 合规审计员 | `@sofagent-audit` · `SKILL/agents/audit/SKILL.md` | `sofagent-orchestrator subagent run audit --task "..."` | Workflow 巡检、铁律覆盖验证、知识库健康度检查 |
 | 最小变更工程师 | `engineering-minimal-change-engineer.md` | LOOP 内层循环自动调用 | 读代码 + 写代码 + 跑测试 + git commit |
 | 代码审查员 | `engineering-code-reviewer.md` | LOOP 内层循环自动调用 | 语义审查 + 影响分析 + 铁律合规 |
 
@@ -69,7 +69,7 @@ LOOP engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更合
 
 预装 Agent 分两类格式，目录结构不同：
 
-**类型 A — Skill 格式（第三方平台调用入口）**：`SKILL/sofagent-fde/` 与 `SKILL/sofagent-audit/`，每个目录下有**两个文件**，分工明确：
+**类型 A — Skill 格式（第三方平台调用入口）**：`SKILL/` 与 `SKILL/agents/audit/`，每个目录下有**两个文件**，分工明确：
 
 | 文件 | 格式 | 作用 | 谁读 |
 |------|------|------|------|
