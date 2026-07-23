@@ -90,8 +90,8 @@ run_step() {
 # ════════════════════════════════════════
 echo -e "\n${BOLD}── 1. ShellCheck ──${NC}"
 if command -v shellcheck &>/dev/null; then
-  # v1.1.9: 补 sofagent/daemon（USB 启动脚本 start.sh 在 daemon/usb/）
-  SHELL_FILES=$(find sofagent/scripts sofagent/daemon tools FDE LOOP -name "*.sh" -not -path "*/node_modules/*" -not -path "*/dist/*" 2>/dev/null)
+  # v1.1.9: 补 engine/daemon（USB 启动脚本 start.sh 在 daemon/usb/）
+  SHELL_FILES=$(find engine/scripts engine/daemon tools FDE LOOP -name "*.sh" -not -path "*/node_modules/*" -not -path "*/dist/*" 2>/dev/null)
   SC_FAIL=0
 
   # ShellCheck 版本兼容性：CI 用 v0.11.0，本地 ≥0.11.0 才能保证与 CI 一致
@@ -186,8 +186,8 @@ fi
 echo -e "\n${BOLD}── 5. CLI 二进制验证 ──${NC}"
 for bin_name in sofagent-audit sofagent-orchestrator sofagent-daemon sofagent-ontology sofagent-ab-test sofagent-think sofagent-skillopt sofagent-core; do
   pkg=$(echo "$bin_name" | sed 's/sofagent-//')
-  if [ -f "sofagent/$pkg/dist/cli.js" ]; then
-    node "sofagent/$pkg/dist/cli.js" --help >/dev/null 2>&1 && check_pass "$bin_name --help" || check_fail "$bin_name --help"
+  if [ -f "engine/$pkg/dist/cli.js" ]; then
+    node "engine/$pkg/dist/cli.js" --help >/dev/null 2>&1 && check_pass "$bin_name --help" || check_fail "$bin_name --help"
   fi
 done
 
@@ -198,16 +198,16 @@ echo -e "\n${BOLD}── 6. install.sh 关键路径 ──${NC}"
 # v0.99.8 教训：fde.md 从 skill/ 迁到 skill/data/，8 处引用需要同步。
 # pre-push-check 之前不覆盖 install.sh，路径断裂检测不到。此步补盲。
 INSTALL_CRITICAL_FILES=(
-  "sofagent/skill/data/fde.md"
-  "sofagent/skill/SKILL.md"
-  "sofagent/skill/entry-gate.md"
-  "sofagent/skill/task-aware.md"
-  "sofagent/skill/task-closure.md"
-  "sofagent/skill/loop-check.md"
-  "sofagent/skill/engage.md"
-  "sofagent/skill/engage-fde.md"
-  "sofagent/skill/loop-evaluate.md"
-  "sofagent/skill/loop-exit.md"
+  "engine/skill/data/fde.md"
+  "engine/skill/SKILL.md"
+  "engine/skill/entry-gate.md"
+  "engine/skill/task-aware.md"
+  "engine/skill/task-closure.md"
+  "engine/skill/loop-check.md"
+  "engine/skill/engage.md"
+  "engine/skill/engage-fde.md"
+  "engine/skill/loop-evaluate.md"
+  "engine/skill/loop-exit.md"
 )
 PATH_FAIL=0
 for f in "${INSTALL_CRITICAL_FILES[@]}"; do
@@ -219,12 +219,12 @@ done
 
 # 检查 install.sh 引用的路径和实际文件是否一致
 # RULES_SRC 格式: "${SCRIPT_DIR}/../skill/data/fde.md" → 提取 ../skill/data/fde.md
-# SCRIPT_DIR = sofagent/scripts 的绝对路径，所以从 sofagent/scripts/ 解析相对路径
+# SCRIPT_DIR = engine/scripts 的绝对路径，所以从 engine/scripts/ 解析相对路径
 # shellcheck disable=SC2016  # sed pattern matches literal ${SCRIPT_DIR} in install.sh
-INSTALL_RULES_SRC=$(grep 'RULES_SRC=' sofagent/scripts/install.sh 2>/dev/null | head -1 | sed 's/.*="\${SCRIPT_DIR}\///;s/".*//')
+INSTALL_RULES_SRC=$(grep 'RULES_SRC=' engine/scripts/install.sh 2>/dev/null | head -1 | sed 's/.*="\${SCRIPT_DIR}\///;s/".*//')
 if [ -n "$INSTALL_RULES_SRC" ]; then
   # 用 subshell cd 验证路径是否存在（兼容 macOS/Linux，不依赖 realpath）
-  if ! (cd sofagent/scripts 2>/dev/null && [ -f "${INSTALL_RULES_SRC}" ]); then
+  if ! (cd engine/scripts 2>/dev/null && [ -f "${INSTALL_RULES_SRC}" ]); then
     echo -e "  ${RED}✗${NC} install.sh RULES_SRC 路径断裂: ${INSTALL_RULES_SRC}"
     PATH_FAIL=$((PATH_FAIL + 1))
   fi
@@ -319,12 +319,12 @@ echo -e "\n${BOLD}── 8. 依赖图循环检测 ──${NC}"
 CYCLE_CHECK=$(node -e '
 const fs = require("fs");
 const path = require("path");
-const dirs = fs.readdirSync("sofagent").filter(d => {
-  try { return fs.statSync(path.join("sofagent", d)).isDirectory(); } catch(e) { return false; }
+const dirs = fs.readdirSync("engine").filter(d => {
+  try { return fs.statSync(path.join("engine", d)).isDirectory(); } catch(e) { return false; }
 });
 const edges = {}; // pkgName -> Set of depPkgNames
 for (const d of dirs) {
-  const pjPath = path.join("sofagent", d, "package.json");
+  const pjPath = path.join("engine", d, "package.json");
   if (!fs.existsSync(pjPath)) continue;
   const pj = JSON.parse(fs.readFileSync(pjPath, "utf8"));
   const name = pj.name;

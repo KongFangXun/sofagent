@@ -47,10 +47,10 @@ echo -e "  平台: ${BOLD}${PLATFORM}${NC}"
 echo ""
 
 # ── 1. 装 sofagent 底座 ──
-# 调用契约见 sofagent/scripts/install.sh 头部「跨产品调用契约」段（v1.1.9）
+# 调用契约见 engine/scripts/install.sh 头部「跨产品调用契约」段（v1.1.9）
 echo -e "${BOLD}[1/3] 安装 sofagent 底座（三层引擎）...${NC}"
 echo -e "  ${CYAN}约束底座 + 审计引擎 + 编排引擎（sofagent-orchestrator）${NC}"
-bash "$PROJECT_ROOT/sofagent/scripts/install.sh" --platform "$PLATFORM"
+bash "$PROJECT_ROOT/engine/scripts/install.sh" --platform "$PLATFORM"
 echo -e "${GREEN}✅ sofagent 底座安装完成${NC}"
 
 if [ "$PLATFORM" = "openclaw" ]; then
@@ -62,11 +62,11 @@ echo ""
 
 # ── 2. 写入 fde.md ──
 echo -e "${BOLD}[2/3] 写入 FDE 运行规范（harness 层第三层）...${NC}"
-FDE_MD_TEMPLATE="$PROJECT_ROOT/sofagent/skill/data/fde.md"
+FDE_MD_TEMPLATE="$PROJECT_ROOT/engine/skill/data/fde.md"
 
 case "$PLATFORM" in
-  openclaw) FDE_MD_TARGET="$HOME/.openclaw/skills/sofagent/fde.md" ;;
-  workbuddy) FDE_MD_TARGET="$HOME/.workbuddy/skills/sofagent/fde.md" ;;
+  openclaw) FDE_MD_TARGET="$HOME/.openclaw/skills/engine/fde.md" ;;
+  workbuddy) FDE_MD_TARGET="$HOME/.workbuddy/skills/engine/fde.md" ;;
   claude) FDE_MD_TARGET="$HOME/.claude/fde.md" ;;
   codex) FDE_MD_TARGET="$HOME/.codex/fde.md" ;;
   hermes) FDE_MD_TARGET="$HOME/.hermes/fde.md" ;;
@@ -102,7 +102,7 @@ echo ""
 
 # ── 3. 验证 ──
 echo -e "${BOLD}[3/3] 验证安装...${NC}"
-bash "$PROJECT_ROOT/sofagent/scripts/verify.sh" --quick 2>&1 | tail -3
+bash "$PROJECT_ROOT/engine/scripts/verify.sh" --quick 2>&1 | tail -3
 echo ""
 
 echo -e "${BOLD}${GREEN}═══════════════════════════════════════════════════════════${NC}"

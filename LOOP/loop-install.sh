@@ -51,10 +51,10 @@ echo -e "  平台: ${BOLD}${PLATFORM}${NC}"
 echo ""
 
 # ── 1. 装 sofagent 底座 ──
-# 调用契约见 sofagent/scripts/install.sh 头部「跨产品调用契约」段（v1.1.5）
+# 调用契约见 engine/scripts/install.sh 头部「跨产品调用契约」段（v1.1.5）
 echo -e "${BOLD}[1/5] 安装 sofagent 底座（三层引擎）...${NC}"
 echo -e "  ${CYAN}约束底座 + 审计引擎 + 编排引擎（sofagent-orchestrator）${NC}"
-bash "$PROJECT_ROOT/sofagent/scripts/install.sh" --platform "$PLATFORM"
+bash "$PROJECT_ROOT/engine/scripts/install.sh" --platform "$PLATFORM"
 echo -e "${GREEN}✅ sofagent 底座安装完成${NC}"
 
 if [ "$PLATFORM" = "openclaw" ]; then
@@ -304,7 +304,7 @@ echo ""
 
 # ── 5. 验证安装 + LLM smoke test ──
 echo -e "${BOLD}[5/5] 验证安装...${NC}"
-bash "$PROJECT_ROOT/sofagent/scripts/verify.sh" --quick 2>&1 | tail -3
+bash "$PROJECT_ROOT/engine/scripts/verify.sh" --quick 2>&1 | tail -3
 echo ""
 
 # LLM smoke test（如果配置了 loop.env）——engineer 和 reviewer 各跑一次

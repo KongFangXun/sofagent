@@ -37,24 +37,24 @@ jobs:
 
   cross-product-contract:
     # 修复十一：验证 FDE/loop-install.sh 与主 install.sh 的跨产品调用契约不被破坏。
-    # 契约（sofagent/scripts/install.sh 头部「跨产品调用契约」段，v1.1.5 冻结）：
+    # 契约（engine/scripts/install.sh 头部「跨产品调用契约」段，v1.1.5 冻结）：
     #   FDE/fde-install.sh 与 LOOP/loop-install.sh 第 1 步调用
-    #   bash "$PROJECT_ROOT/sofagent/scripts/install.sh" --platform "$PLATFORM"
+    #   bash "$PROJECT_ROOT/engine/scripts/install.sh" --platform "$PLATFORM"
     # 改动主 install.sh 的接口（入参/退出码/副作用）必须同步更新这两个脚本。
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - name: Verify FDE install contract
         run: |
-          grep -q "sofagent/scripts/install.sh" FDE/fde-install.sh || {
-            echo "❌ FDE/fde-install.sh 未调用 sofagent/scripts/install.sh，跨产品契约被破坏"
+          grep -q "engine/scripts/install.sh" FDE/fde-install.sh || {
+            echo "❌ FDE/fde-install.sh 未调用 engine/scripts/install.sh，跨产品契约被破坏"
             exit 1
           }
           echo "✅ FDE/fde-install.sh 契约 intact"
       - name: Verify LOOP install contract
         run: |
-          grep -q "sofagent/scripts/install.sh" LOOP/loop-install.sh || {
-            echo "❌ LOOP/loop-install.sh 未调用 sofagent/scripts/install.sh，跨产品契约被破坏"
+          grep -q "engine/scripts/install.sh" LOOP/loop-install.sh || {
+            echo "❌ LOOP/loop-install.sh 未调用 engine/scripts/install.sh，跨产品契约被破坏"
             exit 1
           }
           echo "✅ LOOP/loop-install.sh 契约 intact"

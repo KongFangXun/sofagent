@@ -8,7 +8,7 @@
 # 与 check-version.sh / check-docs.sh 同源定位：本脚本是"测试数"这道门禁。
 # v1.1.4 修复前 test-count.sh 存在两处缺陷：
 #   1. grep '^Tests\s+' 用行首锚定，但 vitest 输出带前导空格 → 永远匹配 0 行
-#   2. 包名靠 sofagent/[a-z-]+ 提取，而 npm workspaces 吞掉包名行 → 永远显示 ?
+#   2. 包名靠 engine/[a-z-]+ 提取，而 npm workspaces 吞掉包名行 → 永远显示 ?
 # 现改为逐包遍历（包名已知），彻底规避解析歧义。
 #
 # 用法:
@@ -47,7 +47,7 @@ NC='\033[0m'
 # 注意：macOS /bin/bash 是 3.2，无 mapfile 内建，用 command substitution + herestring 兼容写法
 PKG_LIST=$(node -e '
   const fs = require("fs"), path = require("path");
-  const root = "sofagent";
+  const root = "engine";
   const dirs = [];
   if (fs.existsSync(root)) {
     for (const d of fs.readdirSync(root)) {

@@ -17,25 +17,25 @@ jobs:
 
       - name: Setup minimal sofagent environment
         run: |
-          bash sofagent/scripts/install.sh --platform openclaw --quick 2>/dev/null || {
+          bash engine/scripts/install.sh --platform openclaw --quick 2>/dev/null || {
             # install.sh fallback 到手动部署
             echo "[CI] install.sh failed, fallback to manual setup"
             mkdir -p ~/.openclaw/skills/sofagent
             for f in SKILL.md engage.md engage-fde.md entry-gate.md task-aware.md task-closure.md loop-check.md loop-evaluate.md loop-exit.md fde.md; do
-              [ -f "sofagent/skill/$f" ] && cp "sofagent/skill/$f" ~/.openclaw/skills/sofagent/
+              [ -f "engine/skill/$f" ] && cp "engine/skill/$f" ~/.openclaw/skills/engine/
             done
-            mkdir -p ~/.openclaw/skills/sofagent/data
-            cp sofagent/skill/data/*.md ~/.openclaw/skills/sofagent/data/ 2>/dev/null || true
-            cp -r sofagent/scripts ~/.openclaw/
+            mkdir -p ~/.openclaw/skills/engine/data
+            cp engine/skill/data/*.md ~/.openclaw/skills/engine/data/ 2>/dev/null || true
+            cp -r engine/scripts ~/.openclaw/
             chmod +x ~/.openclaw/scripts/*.sh
             mkdir -p ~/.openclaw/hooks/sofagent-load-chain
-            cp sofagent/hooks/sofagent-load-chain/HOOK.md ~/.openclaw/hooks/sofagent-load-chain/
-            cp sofagent/hooks/sofagent-load-chain/handler.ts ~/.openclaw/hooks/sofagent-load-chain/
+            cp engine/hooks/sofagent-load-chain/HOOK.md ~/.openclaw/hooks/sofagent-load-chain/
+            cp engine/hooks/sofagent-load-chain/handler.ts ~/.openclaw/hooks/sofagent-load-chain/
           }
 
       - name: Run verify.sh
         run: |
-          bash sofagent/scripts/verify.sh --quiet || {
+          bash engine/scripts/verify.sh --quiet || {
             echo "❌ verify.sh failed"
             exit 1
           }

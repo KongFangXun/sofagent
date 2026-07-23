@@ -11,16 +11,16 @@
 # ⚠️ 不支持 patch 级版本号变更（如 0.99.3 → 0.99.4）。
 #    只支持 major.minor → major.minor 替换（如 0.99 → 1.0）。
 #    patch bump 需手工执行以下步骤：
-#      1. vi sofagent/audit/package.json          # 改 version 字段
-#      2. vi sofagent/audit/src/index.ts           # 改 v0.99.3 → v0.99.4
-#      3. vi sofagent/scripts/*.sh                 # 改 VERSION="0.99.3"
-#      4. vi sofagent/scripts/windows/*.ps1        # 改 $VERSION = "0.99.3"
+#      1. vi engine/audit/package.json          # 改 version 字段
+#      2. vi engine/audit/src/index.ts           # 改 v0.99.3 → v0.99.4
+#      3. vi engine/scripts/*.sh                 # 改 VERSION="0.99.3"
+#      4. vi engine/scripts/windows/*.ps1        # 改 $VERSION = "0.99.3"
 #      5. vi ROADMAP.md                             # 改文件头 > v0.99.3 ·
 #      6. vi ARCHITECTURE.md                        # 改文件头 > v0.99.3 ·
 #      7. vi HANDBOOK.md                            # 改文件头 > v0.99.3 ·
 #      8. vi README.md README.en.md                 # 改 badge Version-v0.99.3
-#      9. vi sofagent/skill/SKILL.md                # 改 frontmatter + 正文标题
-#     10. vi sofagent/skill/data/*.md               # 改正文标题 · v0.99.3
+#      9. vi engine/skill/SKILL.md                # 改 frontmatter + 正文标题
+#     10. vi engine/skill/data/*.md               # 改正文标题 · v0.99.3
 #     11. vi FDE/SKILL.md                           # 改 frontmatter
 #     12. 跑 ./tools/check-version.sh 确认一致性
 #
@@ -28,7 +28,7 @@
 #   1. .ts 文件:  const VERSION = 'OLD'
 #   2. .sh 文件:  VERSION="OLD"
 #   3. .ps1 文件: $VERSION = "OLD" 或 $VERSION_STR = "OLD"
-#   4. index.ts:  vOLD（仅 sofagent/audit/src/index.ts）
+#   4. index.ts:  vOLD（仅 engine/audit/src/index.ts）
 #   5. MD 文件头: > vOLD（排除 docs/changelog/）
 #   6. README badge: version-OLD
 #   7. SKILL.md frontmatter: version: OLD（及 3 段格式 OLD.0）
@@ -95,7 +95,7 @@ fi
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 # 从实际 SSOT 读取 3 段版本号（audit/package.json），而非 .0 补零
-PJ_SSOT="${PROJECT_ROOT}/sofagent/audit/package.json"
+PJ_SSOT="${PROJECT_ROOT}/engine/audit/package.json"
 OLD_3SEG=$(grep '"version":' "${PJ_SSOT}" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
 # NEW_3SEG: 新版本是 3 段时直接用用户输入；2 段时用 new_2seg + old_patch
 if [[ "$NEW_VERSION" == *.*.* ]]; then
@@ -163,7 +163,7 @@ echo ""
 # 1. package.json version 字段（SSOT，3 段格式）
 #    同时处理根 package.json（workspace 根）+ audit/package.json（SSOT）
 echo -e "${BOLD}[1/13] package.json（SSOT + workspace 根）${NC}"
-for PJ in "$PROJECT_ROOT/package.json" "$PROJECT_ROOT/sofagent/audit/package.json"; do
+for PJ in "$PROJECT_ROOT/package.json" "$PROJECT_ROOT/engine/audit/package.json"; do
   [[ -f "$PJ" ]] || continue
   pj_content=$(cat "$PJ")
   if $PATCH_ONLY; then
@@ -188,7 +188,7 @@ echo ""
 
 # 1b. mcp/package.json version 字段
 echo -e "${BOLD}[2/13] mcp/package.json${NC}"
-MCP_PJ="$PROJECT_ROOT/sofagent/mcp/package.json"
+MCP_PJ="$PROJECT_ROOT/engine/mcp/package.json"
 if [[ -f "$MCP_PJ" ]]; then
   mcp_content=$(cat "$MCP_PJ")
   mcp_new=$(sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g" "$MCP_PJ")
@@ -293,10 +293,10 @@ while IFS= read -r ts; do
   fi
 done < <(grep -rl "const VERSION = '" \
   --include='*.ts' \
-  "$PROJECT_ROOT/sofagent/" \
+  "$PROJECT_ROOT/engine/" \
   2>/dev/null || true)
 if [[ $ts_count -eq 0 ]]; then
-  echo -e "  ${YELLOW}（无匹配——可能已是 $NEW_2SEG 或 sofagent/ 下无 const VERSION）${NC}"
+  echo -e "  ${YELLOW}（无匹配——可能已是 $NEW_2SEG 或 engine/ 下无 const VERSION）${NC}"
 fi
 echo ""
 
@@ -339,7 +339,7 @@ echo ""
 
 # 3. index.ts: vOLD → vNEW（仅 index.ts 这一个文件）
 echo -e "${BOLD}[5/13] index.ts 版本引用${NC}"
-INDEX_TS="$PROJECT_ROOT/sofagent/audit/src/index.ts"
+INDEX_TS="$PROJECT_ROOT/engine/audit/src/index.ts"
 if [[ -f "$INDEX_TS" ]]; then
   idx_content=$(cat "$INDEX_TS")
   # 替换 vOLD 为 vNEW（注意不能误伤 vOLDx 这种）
@@ -365,7 +365,7 @@ echo ""
 
 # 4. .sh 文件: VERSION="OLD"
 echo -e "${BOLD}[6/13] Shell 脚本${NC}"
-SH_DIR="$PROJECT_ROOT/sofagent/scripts"
+SH_DIR="$PROJECT_ROOT/engine/scripts"
 FDE_SH="$PROJECT_ROOT/FDE/fde-install.sh"
 if [[ -d "$SH_DIR" ]] || [[ -f "$FDE_SH" ]]; then
   sh_count=0
@@ -414,7 +414,7 @@ echo ""
 
 # 5. .ps1 文件: $VERSION 或 $VERSION_STR = "OLD"
 echo -e "${BOLD}[7/13] PowerShell 脚本${NC}"
-PS1_DIR="$PROJECT_ROOT/sofagent/scripts/windows"
+PS1_DIR="$PROJECT_ROOT/engine/scripts/windows"
 if [[ -d "$PS1_DIR" ]]; then
   ps1_count=0
   for ps1 in "$PS1_DIR"/*.ps1; do

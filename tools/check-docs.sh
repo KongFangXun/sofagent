@@ -23,10 +23,10 @@ echo ""
 echo "=== 1b. 全仓相对路径死链扫描（维度 306）==="
 # 遍历所有 .md，提取 markdown 链接并校验目标文件是否存在。
 # 排除项与 section 4 公共排除保持一致（node_modules/.workbuddy/.sofagent/
-# docs/changelog/docs/evidence/sofagent/skill/FDE）。
+# docs/changelog/docs/evidence/engine/skill/FDE）。
 DEAD_LINKS=0
 DEAD_DETAIL=""
-EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/sofagent/skill/*" -not -path "*/FDE/*" -not -path "*/docs/archive/*" -not -path "*/commercial/*")
+EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/engine/skill/*" -not -path "*/FDE/*" -not -path "*/docs/archive/*" -not -path "*/commercial/*")
 while IFS= read -r -d '' mdfile; do
   in_fence=0
   while IFS= read -r line; do
@@ -75,7 +75,7 @@ echo "=== 2. 术语一致性检查 ==="
 # 检查三处关键文件的铁律编号
 # v1.1.4 起仅 A1-A14 / A1-A11 是过时编号（早期规则数）；
 # "4 底线" "7 铁律" 是当前正确结构，不算过时
-for file in sofagent/skill/SKILL.md HANDBOOK.md DEVELOPMENT.md; do
+for file in engine/skill/SKILL.md HANDBOOK.md DEVELOPMENT.md; do
   if [ -f "$file" ]; then
     COUNT=$(grep -cE "A1-A14|A1-A11" "$file" 2>/dev/null || echo "0")
     echo "  $file: 过时术语出现 $COUNT 处"
@@ -84,14 +84,14 @@ done
 
 echo ""
 echo "=== 3. 版本号同步检查 ==="
-VERSION_PKG=$(node -e "console.log(require('./sofagent/audit/package.json').version)" 2>/dev/null || echo "N/A")
+VERSION_PKG=$(node -e "console.log(require('./engine/audit/package.json').version)" 2>/dev/null || echo "N/A")
 echo "  package.json: $VERSION_PKG"
 
 echo ""
 echo "=== 4. 文档分层预算 ==="
 
 # 公共排除条件（所有分层都排除的目录）
-COMMON_EXCLUDE='-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/sofagent/skill/*" -not -path "*/FDE/*"'
+COMMON_EXCLUDE='-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/engine/skill/*" -not -path "*/FDE/*"'
 
 # 计算函数：count_md <find_args>
 count_md() {
@@ -106,7 +106,7 @@ LAYER_A=$(find . -name "*.md" \
   -not -path "*/.sofagent/*" \
   -not -path "*/docs/changelog/*" \
   -not -path "*/docs/evidence/*" \
-  -not -path "*/sofagent/skill/*" \
+  -not -path "*/engine/skill/*" \
   -not -path "*/FDE/*" \
   -not -path "*/docs/verification/*" \
   -not -path "*/docs/guides/*" \
@@ -116,7 +116,7 @@ LAYER_A=$(find . -name "*.md" \
   -not -path "*/LOOP/*" \
   -not -path "*/agents/*" \
   -not -path "*/.github/*" \
-  -not -path "*/sofagent/hooks/*" \
+  -not -path "*/engine/hooks/*" \
   -not -path "*/commercial/*" \
   -not -path "*/docs/DEVELOPMENT.md" \
   -not -path "*/docs/archive/*" \
@@ -124,7 +124,7 @@ LAYER_A=$(find . -name "*.md" \
 LAYER_A=${LAYER_A:-0}
 
 # B 层：开发者参考（LOOP/ + agents/ + .github/ + hooks/HOOK.md + DEVELOPMENT.md）
-LAYER_B=$(find ./LOOP ./agents ./.github ./sofagent/hooks ./docs/DEVELOPMENT.md \
+LAYER_B=$(find ./LOOP ./agents ./.github ./engine/hooks ./docs/DEVELOPMENT.md \
   -name "*.md" \
   -not -path "*/node_modules/*" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
@@ -183,7 +183,7 @@ fi
 
 echo ""
 echo "=== 5. Skill 文件行数检查 ==="
-for f in sofagent/skill/*.md; do
+for f in engine/skill/*.md; do
   LINES=$(wc -l < "$f" | tr -d ' ')
   STATUS=""
   if [ "$LINES" -gt 100 ]; then
@@ -198,7 +198,7 @@ done
 echo ""
 echo "=== 6. 铁律措辞检查 ==="
 IRON_FAIL=0
-for f in sofagent/skill/*.md FDE/SKILL.md LOOP/SKILL.md; do
+for f in engine/skill/*.md FDE/SKILL.md LOOP/SKILL.md; do
   if [ -f "$f" ]; then
     WEAK=$(grep -n '建议\|应该\|尽量' "$f" 2>/dev/null | grep -v 'not_when\|Gotcha\|场景\|如果\|注\|说明\|这不是' || true)
     if [ -n "$WEAK" ]; then
@@ -218,17 +218,17 @@ fi
 echo ""
 echo "=== 7. 规则数跨文档对照（v1.1.5 审-9 新增）==="
 # 比对三个来源的规则数：
-#   A. sofagent/audit/README.md 规则表行数（A 类 + E 类）
-#   B. sofagent/audit/src/rules/index.ts 注册规则数
+#   A. engine/audit/README.md 规则表行数（A 类 + E 类）
+#   B. engine/audit/src/rules/index.ts 注册规则数
 #   C. 主 README.md 声称的 "N 条规则"
 # 三者不一致即告警——避免审-1（A18/A19 漂移）类问题再次出现
 
 # A. audit/README 规则表行数（数 | A* 或 | E* 开头的表行）
-AUDIT_README_COUNT=$(grep -cE "^\| (A|E)[0-9]+ " sofagent/audit/README.md 2>/dev/null || echo "0")
+AUDIT_README_COUNT=$(grep -cE "^\| (A|E)[0-9]+ " engine/audit/README.md 2>/dev/null || echo "0")
 AUDIT_README_COUNT=$(echo "$AUDIT_README_COUNT" | tr -d '[:space:]')
 
 # B. rules/index.ts 注册规则数（数 { name: 'A* 或 'E* 开头的对象）
-INDEX_TS_COUNT=$(grep -cE "^\s+\{ name: '(A|E)[0-9]+" sofagent/audit/src/rules/index.ts 2>/dev/null || echo "0")
+INDEX_TS_COUNT=$(grep -cE "^\s+\{ name: '(A|E)[0-9]+" engine/audit/src/rules/index.ts 2>/dev/null || echo "0")
 INDEX_TS_COUNT=$(echo "$INDEX_TS_COUNT" | tr -d '[:space:]')
 
 # C. 主 README 声称的规则数（从 "21 条规则" 这种措辞提取）
@@ -263,9 +263,9 @@ while IFS= read -r row; do
     echo "  ❌ $row （缺少合法 ruleClass）"
     MISSING_CLASS=$((MISSING_CLASS + 1))
   fi
-done < <(grep -nE "^\| (A|E)[0-9]+ .* \|" sofagent/audit/README.md 2>/dev/null)
+done < <(grep -nE "^\| (A|E)[0-9]+ .* \|" engine/audit/README.md 2>/dev/null)
 for cls in 业务底线 能力拐杖 工程规范; do
-  if ! grep -q "$cls" sofagent/audit/README.md; then
+  if ! grep -q "$cls" engine/audit/README.md; then
     echo "  ❌ audit/README.md 未定义 ruleClass: $cls"
     MISSING_CLASS=$((MISSING_CLASS + 1))
   fi
@@ -301,7 +301,7 @@ fi
 
 echo ""
 echo "=== 10. SKILL.md 底线/铁律数一致性（F-19）==="
-SKILL_FILE="sofagent/skill/SKILL.md"
+SKILL_FILE="engine/skill/SKILL.md"
 if [ -f "$SKILL_FILE" ]; then
   # 提取标题声称的底线数
   BOTTOM_CLAIMED=$(grep -oE "### ([0-9]+) 底线" "$SKILL_FILE" | grep -oE "[0-9]+" | head -1)

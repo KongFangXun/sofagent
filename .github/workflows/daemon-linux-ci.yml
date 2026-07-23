@@ -3,13 +3,13 @@ name: daemon-linux-ci
 on:
   push:
     paths:
-      - 'sofagent/scripts/daemon*'
-      - 'sofagent/scripts/lib/daemon*'
+      - 'engine/scripts/daemon*'
+      - 'engine/scripts/lib/daemon*'
       - '.github/workflows/daemon-linux-ci.yml'
   pull_request:
     paths:
-      - 'sofagent/scripts/daemon*'
-      - 'sofagent/scripts/lib/daemon*'
+      - 'engine/scripts/daemon*'
+      - 'engine/scripts/lib/daemon*'
   workflow_dispatch:
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Install daemon
-        run: bash sofagent/scripts/daemon-install.sh
+        run: bash engine/scripts/daemon-install.sh
 
       - name: Verify systemd service registered
         run: |
@@ -30,7 +30,7 @@ jobs:
           # 在 CI 环境中 daemon-install.sh 可能已启动
           # 如果没有 PID 文件，手动启动前台模式 35 秒
           if [ ! -f .sofagent/daemon.pid ] || ! kill -0 $(cat .sofagent/daemon.pid) 2>/dev/null; then
-            sofagent/scripts/daemon.sh --foreground &
+            engine/scripts/daemon.sh --foreground &
             DAEMON_PID=$!
             echo "started daemon foreground PID=$DAEMON_PID"
             sleep 35
@@ -59,13 +59,13 @@ jobs:
 
       - name: Verify daemon-status.sh --json output
         run: |
-          STATUS_JSON=$(bash sofagent/scripts/daemon-status.sh --json 2>/dev/null || true)
+          STATUS_JSON=$(bash engine/scripts/daemon-status.sh --json 2>/dev/null || true)
           echo "$STATUS_JSON"
           echo "$STATUS_JSON" | grep -q '"status"' && echo "JSON output valid" || { echo "JSON output invalid"; exit 1; }
 
       - name: Uninstall daemon
         run: |
-          bash sofagent/scripts/daemon-uninstall.sh
+          bash engine/scripts/daemon-uninstall.sh
           echo "daemon uninstalled"
 
       - name: Verify cleanup

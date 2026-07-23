@@ -142,7 +142,7 @@ echo -e "${BOLD}── [1/14] TypeScript 常量 ──${NC}"
 # 动态扫描 12 个子包目录（v1.1.0 多包结构）
 SCAN_DIRS=()
 for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test think skillopt; do
-  PKG_SRC="${PROJECT_ROOT}/sofagent/${pkg}/src"
+  PKG_SRC="${PROJECT_ROOT}/engine/${pkg}/src"
   if [[ -d "${PKG_SRC}" ]]; then
     SCAN_DIRS+=("${PKG_SRC}")
   fi
@@ -173,7 +173,7 @@ echo ""
 # ── 3. 检查 index.ts vOLD 引用（12 子包遍历）────────────────
 echo -e "${BOLD}── [2/14] index.ts 版本引用 ──${NC}"
 for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test think skillopt; do
-  INDEX_TS="${PROJECT_ROOT}/sofagent/${pkg}/src/index.ts"
+  INDEX_TS="${PROJECT_ROOT}/engine/${pkg}/src/index.ts"
   if [[ ! -f "${INDEX_TS}" ]]; then
     continue
   fi
@@ -195,7 +195,7 @@ echo ""
 
 # ── 4. 检查 .sh 文件 VERSION="X.Y" ────────────────────────────
 echo -e "${BOLD}── [3/14] Shell 脚本 ──${NC}"
-SH_DIR="${PROJECT_ROOT}/sofagent/scripts"
+SH_DIR="${PROJECT_ROOT}/engine/scripts"
 if [[ ! -d "${SH_DIR}" ]]; then
   echo -e "  ${YELLOW}⚠${NC} 目录不存在: ${SH_DIR}"
 else
@@ -269,7 +269,7 @@ echo ""
 
 # ── 5. 检查 .ps1 文件 $VERSION / $VERSION_STR = "X.Y" ──────────
 echo -e "${BOLD}── [4/14] PowerShell 脚本 ──${NC}"
-PS1_DIR="${PROJECT_ROOT}/sofagent/scripts/windows"
+PS1_DIR="${PROJECT_ROOT}/engine/scripts/windows"
 if [[ ! -d "${PS1_DIR}" ]]; then
   echo -e "  ${YELLOW}⚠${NC} 目录不存在: ${PS1_DIR}"
 else
@@ -409,7 +409,7 @@ echo ""
 # ── 9b. 检查 12 个子包 package.json version 与 SSOT 一致 ─
 echo -e "${BOLD}── [9/14] 子包版本号一致性 ──${NC}"
 for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test think skillopt; do
-  PKG_JSON="${PROJECT_ROOT}/sofagent/${pkg}/package.json"
+  PKG_JSON="${PROJECT_ROOT}/engine/${pkg}/package.json"
   if [[ ! -f "${PKG_JSON}" ]]; then
     continue
   fi
@@ -418,15 +418,15 @@ for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test thin
     continue
   fi
   if [[ "${pkg_ver}" != "${SSOT_VERSION}" ]]; then
-    report_error "sofagent/${pkg}/package.json" "version: ${pkg_ver}" "version: ${SSOT_VERSION}"
+    report_error "engine/${pkg}/package.json" "version: ${pkg_ver}" "version: ${SSOT_VERSION}"
   else
-    report_ok "sofagent/${pkg}/package.json" "${pkg_ver}"
+    report_ok "engine/${pkg}/package.json" "${pkg_ver}"
   fi
 done
 echo ""
 
-# ── 10. 检查 sofagent/mcp 依赖 @sofagent/audit 版本（支持 ^ 范围） ─
-MCP_PKG="${PROJECT_ROOT}/sofagent/mcp/package.json"
+# ── 10. 检查 engine/mcp 依赖 @sofagent/audit 版本（支持 ^ 范围） ─
+MCP_PKG="${PROJECT_ROOT}/engine/mcp/package.json"
 if [[ -f "${MCP_PKG}" ]]; then
   dep_line=$(grep '"@sofagent/audit":' "${MCP_PKG}")
   dep_ver=$(echo "${dep_line}" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
@@ -450,7 +450,7 @@ if [[ -f "${MCP_PKG}" ]]; then
 fi
 echo ""
 
-# ── 10b. 检查 sofagent/mcp 自身 version 字段与 SSOT 一致 ─
+# ── 10b. 检查 engine/mcp 自身 version 字段与 SSOT 一致 ─
 echo -e "${BOLD}── [10/14] mcp 包版本号 ──${NC}"
 if [[ -f "${MCP_PKG}" ]]; then
   mcp_ver=$(grep '"version":' "${MCP_PKG}" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
@@ -486,8 +486,8 @@ echo ""
 LOCK_FILE="${PROJECT_ROOT}/package-lock.json"
 if [[ -f "${LOCK_FILE}" ]]; then
   # audit 和 mcp 在 lock 的 packages 段里有 version 字段
-  audit_lock_ver=$(grep -A3 '"sofagent/audit":' "${LOCK_FILE}" | grep '"version"' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  mcp_lock_ver=$(grep -A3 '"sofagent/mcp":' "${LOCK_FILE}" | grep '"version"' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  audit_lock_ver=$(grep -A3 '"engine/audit":' "${LOCK_FILE}" | grep '"version"' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  mcp_lock_ver=$(grep -A3 '"engine/mcp":' "${LOCK_FILE}" | grep '"version"' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
   if [[ -n "${audit_lock_ver}" ]] && [[ "${audit_lock_ver}" != "${SSOT_VERSION}" ]]; then
     report_error "${LOCK_FILE}" "audit lock: ${audit_lock_ver}" "${SSOT_VERSION}"
   elif [[ -n "${audit_lock_ver}" ]]; then
@@ -609,8 +609,8 @@ echo ""
 # 防止 init.ts 输出文案、fix-suggestions.ts/qa-boundary-verify.test.ts 注释等小数字无人对账
 echo "=== 13. 文案数字漂移扫描（audit 源码硬编码规则条数）==="
 DOC_DRIFT_OK=true
-DEFAULT_RULES_COUNT=$(awk '/export const defaultRules/{f=1; next} f && /^[[:space:]]*\{.*name:/{c++} f && /^[[:space:]]*\];/{exit} END{print c+0}' sofagent/audit/src/rules/index.ts 2>/dev/null || echo 0)
-TOTAL_RULES_COUNT=$(grep -cE "^\s+\{ name: '(A|E)[0-9]+" sofagent/audit/src/rules/index.ts 2>/dev/null || echo 0)
+DEFAULT_RULES_COUNT=$(awk '/export const defaultRules/{f=1; next} f && /^[[:space:]]*\{.*name:/{c++} f && /^[[:space:]]*\];/{exit} END{print c+0}' engine/audit/src/rules/index.ts 2>/dev/null || echo 0)
+TOTAL_RULES_COUNT=$(grep -cE "^\s+\{ name: '(A|E)[0-9]+" engine/audit/src/rules/index.ts 2>/dev/null || echo 0)
 echo "  SSOT: defaultRules.length=$DEFAULT_RULES_COUNT 注册总数=$TOTAL_RULES_COUNT"
 while IFS= read -r line; do
   num=$(echo "$line" | grep -oE "[0-9]+ 条" | grep -oE "^[0-9]+" | head -1)
@@ -619,7 +619,7 @@ while IFS= read -r line; do
     DOC_DRIFT_OK=false
     ERRORS=$((ERRORS + 1))
   fi
-done < <(grep -rnE "[0-9]+ 条规则|[0-9]+ 条默认的|[0-9]+ 条各自的" sofagent/audit/src 2>/dev/null | grep -v "import" | grep -v "defaultRules.length")
+done < <(grep -rnE "[0-9]+ 条规则|[0-9]+ 条默认的|[0-9]+ 条各自的" engine/audit/src 2>/dev/null | grep -v "import" | grep -v "defaultRules.length")
 if $DOC_DRIFT_OK; then
   echo "  [OK] audit 源码无规则条数漂移"
 fi
