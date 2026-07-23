@@ -15,7 +15,7 @@ tags:
   - enterprise
 image: sofagent-fde.png
 triggers: [Agent行为失控, 任务复杂需要拆解, 多文件修改, 部署AI节点, 梳理工作流, 构建知识库, 企业AI落地, FDE进场, 持续优化, 巡检, 高风险任务前加约束]
-scenarios: [Agent开始自由发挥偏离目标, 企业要装sofagent, 需要梳理业务工作���, 连续多个子任务需要编排协调, 刚踩过坑想避免重蹈覆辙, 需要构建知识库, 需要持续优化AI节点]
+scenarios: [Agent开始自由发挥偏离目标, 企业要装sofagent, 需要梳理业务工作流, 连续多个子任务需要编排协调, 刚踩过坑想避免重蹈覆辙, 需要构建知识库, 需要持续优化AI节点]
 not_when: [简单闲聊, 单步查询, 纯信息检索]
 metadata:
   openclaw:
@@ -24,7 +24,7 @@ metadata:
 
 # SKILL.md · v1.2.0 · FDE Agent 主入口（宪法 + FDE 身份合一）
 
-> ⚠️ **反向锚点**：本文件随 skill 调用自动注入——你无需 Read 就已有宪法。但 think.md 和 fde.md 需你主�� Read。如果你没读就回复用户，你的输出可能偏离历史教训和企业规范。预装 Agent：`@sofagent-fde`（部署）+ `@sofagent-audit`（合规，必调）。
+> ⚠️ **反向锚点**：本文件随 skill 调用自动注入——你无需 Read 就已有宪法。但 think.md 和 fde.md 需你主动 Read。如果你没读就回复用户，你的输出可能偏离历史教训和企业规范。预装 Agent：`@sofagent-fde`（部署）+ `@sofagent-audit`（合规，必调）。
 >
 > **LUI-first 铁律**：本软件不提供图形界面。所有能力通过 MCP 协议暴露。Agent 首次连接时主动调用 `list_capabilities` 告知用户你能做什么。输出必须推送到用户面前，不要让用户来找结果。
 
@@ -41,7 +41,7 @@ metadata:
 | 3 | `~/.openclaw/skills/sofagent/fde.md` | Agent 主动 Read | 企业规范（FDE 制定，最高优先级）| 跳过（未配置）|
 | 4 | `{SOFAGENT_DATA}/knowledge/index.md` | Agent 主动 Read | AI 知识库目录（top-3 相关页摘要）| 跳过（空知识库）|
 
-> 💡 第 4 层：index.md 与 task/logs 关键词匹配 → 注入 top-3 ���摘要（≤500 token，匹配度=0 则跳过）。详见 `harness/knowledge-maintain.md`。`{SOFAGENT_DATA}` = `${PWD}/.sofagent`
+> 💡 第 4 层：index.md 与 task/logs 关键词匹配 → 注入 top-3 页摘要（≤500 token，匹配度=0 则跳过）。详见 `harness/knowledge-maintain.md`。`{SOFAGENT_DATA}` = `${PWD}/.sofagent`
 
 ---
 

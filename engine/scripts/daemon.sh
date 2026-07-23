@@ -190,7 +190,7 @@ _main_loop() {
     # 读 eval.md → 阈值检测 → 24h 防抖 → 调 skillopt-run
     _trigger_skillopt() {
       # 读取 eval.md，检查累积评分条目数是否到阈值
-      local scoring_file="${SOFAGENT_DATA}/../skill/data/eval.md"
+      local scoring_file="${SOFAGENT_DATA}/../SKILL/harness/data/eval.md"
       local threshold=20  # 累积 20 条评分后触发
       if [ ! -f "$scoring_file" ]; then
         return
@@ -222,7 +222,7 @@ _main_loop() {
 
       # 真正调用——通过 npx @sofagent/audit skillopt-run
       echo "[$(date '+%Y-%m-%d %H:%M:%S')] SkillOpt: eval.md 累积 ${score_count} 条，触发自进化" >> "${SOFAGENT_DATA}/daemon-notice.md"
-      npx @sofagent/audit skillopt-run --input "${SOFAGENT_DATA}/../skill/SKILL.md" --output "${SOFAGENT_DATA}/skill-candidate.md" --scoring "$scoring_file" 2>>"${SOFAGENT_DATA}/daemon-notice.md"
+      npx @sofagent/audit skillopt-run --input "${SOFAGENT_DATA}/../SKILL/SKILL.md" --output "${SOFAGENT_DATA}/skill-candidate.md" --scoring "$scoring_file" 2>>"${SOFAGENT_DATA}/daemon-notice.md"
       date +%s > "$last_trigger"
     }
     _trigger_skillopt

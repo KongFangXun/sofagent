@@ -102,10 +102,10 @@ Write-Ok "运行环境: Windows PowerShell"
 
 # ── 确定脚本所在目录 ──
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
-# scripts/windows/ → scripts/ → sofagent/ → sofagent/skill/ (项目内 skill 源码目录)
-$SKILL_SRC_DIR = Join-Path (Split-Path -Parent (Split-Path -Parent $SCRIPT_DIR)) "skill"
-$SOFAGENT_DIR = Split-Path -Parent $SKILL_SRC_DIR  # sofagent/ (hooks/audit/scripts 所在目录)
-# sofagent/ → 项目根目录
+# scripts/windows/ → scripts/ → engine/ → 项目根目录 → SKILL/harness/ (约束底座源码目录)
+$SKILL_SRC_DIR = Join-Path (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $SCRIPT_DIR))) "SKILL\harness"
+$SOFAGENT_DIR = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $SCRIPT_DIR))  # engine/ (hooks/audit/scripts 所在目录)
+# engine/ → 项目根目录
 $PROJECT_ROOT = Split-Path -Parent $SOFAGENT_DIR
 
 # ── 平台探测 ──

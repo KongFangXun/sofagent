@@ -36,9 +36,15 @@ deploy_constitution() {
 }
 deploy_skill_files() {
   info "Step 5/7 · 部署 Skill 文件 → $TARGET/skills/sofagent"
-  local SKILL_SRC="${SCRIPT_DIR}/../skill"
+  local SKILL_SRC="${SCRIPT_DIR}/SKILL/harness"
+  local SKILL_MAIN="${SCRIPT_DIR}/SKILL/SKILL.md"
   local SKILL_DST="${TARGET}/skills/sofagent"; mkdir -p "$SKILL_DST"; local copied=0 f src dst
-  for f in SKILL.md entry-gate.md task-aware.md task-closure.md loop-check.md engage.md engage-fde.md loop-evaluate.md loop-exit.md knowledge-maintain.md; do  # 核心 Skill 文件
+  # v1.2.0: SKILL.md 在 SKILL/ 根层，其余约束底座文件在 SKILL/harness/
+  if [ -f "$SKILL_MAIN" ]; then
+    dst="${SKILL_DST}/SKILL.md"
+    { [ -f "$dst" ] && cmp -s "$SKILL_MAIN" "$dst" 2>/dev/null; } || { cp "$SKILL_MAIN" "$dst"; ((copied++)) || true; }
+  else warn "找不到 SKILL/SKILL.md，跳过"; fi
+  for f in entry-gate.md task-aware.md task-closure.md loop-check.md engage.md engage-fde.md loop-evaluate.md loop-exit.md knowledge-maintain.md; do  # 约束底座文件
     src="${SKILL_SRC}/${f}"; dst="${SKILL_DST}/${f}"
     if [ -f "$src" ]; then
       [ -f "$dst" ] && cmp -s "$src" "$dst" 2>/dev/null && continue

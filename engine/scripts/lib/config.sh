@@ -62,8 +62,8 @@ export SOFAGENT_DATA
 _find_rules() {
   local candidate
   for candidate in \
-    "${PWD}/sofagent/skill/data/fde.md" \
-    "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)/skill/data/fde.md" \
+    "${PWD}/SKILL/harness/data/fde.md" \
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." 2>/dev/null && pwd)/SKILL/harness/data/fde.md" \
     "${OPENCLAW_STATE_DIR:-$HOME/.openclaw}/skills/sofagent/fde.md" \
     "${OPENCLAW_STATE_DIR:-$HOME/.openclaw}/fde.md" \
     "$HOME/.openclaw/fde.md" \
