@@ -783,10 +783,10 @@ fi
 # 兼容 fallback：工作目录（开发态）/ 旧部署路径（老安装）
 RULES_FILE=""
 for candidate in \
-  "${PWD}/engine/skill/data/fde.md" \
+  "${PWD}/SKILL/harness/data/fde.md" \
   "$HOME/.openclaw/skills/engine/fde.md" \
   "$HOME/.workbuddy/skills/engine/fde.md" \
-  "${PWD}/engine/skill/constitution/fde.md" \
+  "${PWD}/SKILL/harness/constitution/fde.md" \
   "$HOME/.openclaw/skills/engine/constitution/fde.md" \
   "$HOME/.workbuddy/skills/engine/constitution/fde.md"; do
   if [ -f "$candidate" ]; then RULES_FILE="$candidate"; break; fi

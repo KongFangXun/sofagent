@@ -55,6 +55,8 @@ err()   { echo -e "${RED}[✗]${NC} $1"; }
 
 # ── 确定脚本所在目录（支持符号链接）──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# v1.2.0: install.sh 提升到根目录，lib/ 仍在 engine/scripts/lib/
+LIB_DIR="${SCRIPT_DIR}/engine/scripts/lib"
 
 # ── 安装日志 ──
 INSTALL_LOG=""
@@ -65,13 +67,13 @@ QUICK_MODE="${QUICK_MODE:-0}"; REMOTE_MODE="${REMOTE_MODE:-0}"
 
 # ── source 模块 ──
 # shellcheck disable=SC1091
-source "${SCRIPT_DIR}/lib/platform-detect.sh"
+source "${LIB_DIR}/platform-detect.sh"
 # shellcheck disable=SC1091
-source "${SCRIPT_DIR}/lib/file-deploy.sh"
+source "${LIB_DIR}/file-deploy.sh"
 # shellcheck disable=SC1091
-source "${SCRIPT_DIR}/lib/daemon-register.sh"
+source "${LIB_DIR}/daemon-register.sh"
 # shellcheck disable=SC1091
-source "${SCRIPT_DIR}/lib/post-install.sh"
+source "${LIB_DIR}/post-install.sh"
 
 # ── 环境检测 ──
 RUNTIME_ENV=$(detect_env)
@@ -113,7 +115,7 @@ if [ "${REMOTE_MODE}" = "1" ]; then
 fi
 
 # ── 审计：安装开始 ──
-bash "${SCRIPT_DIR}/audit.sh" --operation "install" --target "开始" --result "v${VERSION}, $(uname -s)" 2>/dev/null || true
+bash "${SCRIPT_DIR}/engine/scripts/audit.sh" --operation "install" --target "开始" --result "v${VERSION}, $(uname -s)" 2>/dev/null || true
 
 # ════════════════════════════════════════
 # Step 1: 确定平台和目标路径
@@ -130,7 +132,7 @@ echo "" >> "$INSTALL_LOG"
 echo "=== sofagent install $(date -u +'%Y-%m-%dT%H:%M:%SZ') ===" >> "$INSTALL_LOG"
 _log "TARGET=$TARGET"; _log "SCRIPT_DIR=$SCRIPT_DIR"
 
-RULES_SRC="${SCRIPT_DIR}/../skill/data/fde.md"
+RULES_SRC="${SCRIPT_DIR}/SKILL/harness/data/fde.md"
 if [ ! -f "$RULES_SRC" ]; then
   err "找不到 fde.md。请在 sofagent 项目根目录下运行此脚本。"
   err "  当前脚本位置: $SCRIPT_DIR"; err "  期望文件: $RULES_SRC"; exit 1

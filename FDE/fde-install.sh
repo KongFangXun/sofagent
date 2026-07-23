@@ -62,7 +62,7 @@ echo ""
 
 # ── 2. 写入 fde.md ──
 echo -e "${BOLD}[2/3] 写入 FDE 运行规范（harness 层第三层）...${NC}"
-FDE_MD_TEMPLATE="$PROJECT_ROOT/engine/skill/data/fde.md"
+FDE_MD_TEMPLATE="$PROJECT_ROOT/SKILL/harness/data/fde.md"
 
 case "$PLATFORM" in
   openclaw) FDE_MD_TARGET="$HOME/.openclaw/skills/engine/fde.md" ;;
