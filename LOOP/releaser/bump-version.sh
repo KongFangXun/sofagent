@@ -2,9 +2,9 @@
 # ============================================================
 # bump-version.sh · 一键升级全项目版本号
 # ============================================================
-# 用法: ./tools/bump-version.sh <旧版本> <新版本> [--dry-run]
-#   ./tools/bump-version.sh 0.94 0.95          # 实际替换
-#   ./tools/bump-version.sh 0.94 0.95 --dry-run # 只打印，不修改
+# 用法: ./LOOP/releaser/bump-version.sh <旧版本> <新版本> [--dry-run]
+#   ./LOOP/releaser/bump-version.sh 0.94 0.95          # 实际替换
+#   ./LOOP/releaser/bump-version.sh 0.94 0.95 --dry-run # 只打印，不修改
 #
 # 版本号格式: 2 段（如 0.94），package.json 自动补 3 段（0.94.0）
 #
