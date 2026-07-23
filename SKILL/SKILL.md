@@ -41,7 +41,7 @@ metadata:
 | 3 | `~/.openclaw/skills/sofagent/fde.md` | Agent 主动 Read | 企业规范（FDE 制定，最高优先级）| 跳过（未配置）|
 | 4 | `{SOFAGENT_DATA}/knowledge/index.md` | Agent 主动 Read | AI 知识库目录（top-3 相关页摘要）| 跳过（空知识库）|
 
-> 💡 第 4 层：index.md 与 task/logs 关键词匹配 → 注入 top-3 页摘要（≤500 token，匹配度=0 则跳过）。详见 `sofagent/knowledge-maintain.md`。`{SOFAGENT_DATA}` = `${PWD}/.sofagent`
+> 💡 第 4 层：index.md 与 task/logs 关键词匹配 → 注入 top-3 ���摘要（≤500 token，匹配度=0 则跳过）。详见 `harness/knowledge-maintain.md`。`{SOFAGENT_DATA}` = `${PWD}/.sofagent`
 
 ---
 
@@ -79,15 +79,15 @@ metadata:
 
 ## A0. 复杂度预判（仅看消息文字，加载链完成后）
 
-- 🟢🟡 → Read `sofagent/task-aware.md` → 简复 · 闲聊 → 跳过 · 🔴 → 激活 `sofagent/engage.md`
+- 🟢🟡 → Read `harness/task-aware.md` → 简复 · 闲聊 → 跳过 · 🔴 → 激活 `harness/engage.md`
 
 ---
 
 ## ⚠️ 回复前闸门（内部执行，不输出）
 
 ① 回复含内部标记（C步/入境闸门/闸门/Loop checkpoint/八维/think/编排/task-aware） → 删除
-② 闭合：最小成果 + 用户确认 → task/logs → Read `sofagent/task-closure.md` → Loop Check
-③ 执行中子任务间/60%预算/重大操作前/失败 → Read `sofagent/loop-check.md`
+② 闭合：最小成果 + 用户确认 → task/logs → Read `harness/task-closure.md` → Loop Check
+③ 执行中子任务间/60%预算/重大操作前/失败 → Read `harness/loop-check.md`
 ④ 兜底：当日 task/logs 不存在 → 口头告警
 
 ---
