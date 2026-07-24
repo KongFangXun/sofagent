@@ -632,10 +632,10 @@ sofagent-audit --version  # 应显示当前开发版本号
 cp -r SKILL/harness/* ~/.workbuddy/skills/sofagent/
 cp -r SKILL/harness/* ~/.openclaw/skills/sofagent/
 cp FDE/SKILL.md ~/.workbuddy/skills/sofagent-fde/
-cp -r agents/SKILL/sofagent-fde/ ~/.workbuddy/skills/sofagent-fde/
-cp -r agents/SKILL/sofagent-audit/ ~/.workbuddy/skills/sofagent-audit/
-cp -r agents/SKILL/sofagent-fde/ ~/.openclaw/skills/sofagent-fde/
-cp -r agents/SKILL/sofagent-audit/ ~/.openclaw/skills/sofagent-audit/
+cp -r SKILL/agents/fde/ ~/.workbuddy/skills/sofagent-fde/
+cp -r SKILL/agents/audit/ ~/.workbuddy/skills/sofagent-audit/
+cp -r SKILL/agents/fde/ ~/.openclaw/skills/sofagent-fde/
+cp -r SKILL/agents/audit/ ~/.openclaw/skills/sofagent-audit/
 
 # 4. dogfood 验证（在当前 workspace 跑最新的 --doctor）
 sofagent-audit --doctor
@@ -850,10 +850,10 @@ git log vX.Y.Z..HEAD --oneline
     cp -r SKILL/harness/* ~/.openclaw/skills/sofagent/
     cp FDE/SKILL.md ~/.workbuddy/skills/sofagent-fde/
     # v1.0.7 新增：Agent Skill（@sofagent-fde / @sofagent-audit）
-    cp -r agents/SKILL/sofagent-fde/ ~/.workbuddy/skills/sofagent-fde/
-    cp -r agents/SKILL/sofagent-audit/ ~/.workbuddy/skills/sofagent-audit/
-    cp -r agents/SKILL/sofagent-fde/ ~/.openclaw/skills/sofagent-fde/
-    cp -r agents/SKILL/sofagent-audit/ ~/.openclaw/skills/sofagent-audit/
+    cp -r SKILL/agents/fde/ ~/.workbuddy/skills/sofagent-fde/
+    cp -r SKILL/agents/audit/ ~/.workbuddy/skills/sofagent-audit/
+    cp -r SKILL/agents/fde/ ~/.openclaw/skills/sofagent-fde/
+    cp -r SKILL/agents/audit/ ~/.openclaw/skills/sofagent-audit/
 ```
 
 > **💡 WorkBuddy Skill 自动同步说明**：作者的 WorkBuddy 已安装 sofagent skill。每次 sofagent skill 文件更新并 cp 到 `~/.workbuddy/skills/sofagent/` 后，WorkBuddy 客户端会自动同步本地 skill 内容——这是作者自己开发环境内的同步，**不影响 ClawHub/SkillHub 发布流程**。ClawHub（`clawhub skill publish`）和 SkillHub 仍然是每次发版必须执行的发布渠道，一个都不能少。

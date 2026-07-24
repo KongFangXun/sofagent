@@ -1,7 +1,7 @@
 // ============================================================
 // builtin-agents.ts · 预装 Agent 定义（v1.2.0）
 //
-// 每个 Agent 的 systemPrompt 来自 agents/SKILL/<name>/ 下的
+// 每个 Agent 的 systemPrompt 来自 SKILL/agents/<name>/ 下的
 // Agency Agents 格式 .md 文件。DeepAgents 启动时读取文件、
 // 剥离 frontmatter、注入为 system prompt。
 //
@@ -60,14 +60,14 @@ function parseSkillMd(content: string): string {
 }
 
 function loadAgentMd(skillName: string, fallback: string): string {
-  // 路径 1: cwd/agents/SKILL/<skillName>/SKILL.md
-  const cwdPath = join(process.cwd(), 'agents', 'SKILL', skillName, 'SKILL.md');
+  // 路径 1: cwd/SKILL/agents/<skillName>/SKILL.md
+  const cwdPath = join(process.cwd(), 'SKILL', 'agents', skillName, 'SKILL.md');
   if (existsSync(cwdPath)) {
     return parseSkillMd(readFileSync(cwdPath, 'utf-8'));
   }
 
-  // 路径 2: 包相对路径/agents/SKILL/<skillName>/SKILL.md
-  const pkgPath = join(__dirname, '..', '..', '..', '..', 'agents', 'SKILL', skillName, 'SKILL.md');
+  // 路径 2: 包相对路径/SKILL/agents/<skillName>/SKILL.md
+  const pkgPath = join(__dirname, '..', '..', '..', '..', 'SKILL', 'agents', skillName, 'SKILL.md');
   if (existsSync(pkgPath)) {
     return parseSkillMd(readFileSync(pkgPath, 'utf-8'));
   }
@@ -115,7 +115,7 @@ function loadAgentMdFile(name: string, fallback: string): string {
 /**
  * FDE 部署工程师
  *
- * systemPrompt 优先加载 agents/SKILL/sofagent-fde/forward-deployed-engineer.md
+ * systemPrompt 优先加载 SKILL/agents/fde/forward-deployed-engineer.md
  */
 const FDE_AGENT: SubAgentDefinition = {
   name: 'fde',
@@ -124,7 +124,7 @@ const FDE_AGENT: SubAgentDefinition = {
   tools: ['read', 'write', 'bash', 'grep', 'glob'],
   mode: 'deploy', // v1.0.8: 默认部署模式，可通过 CLI -mode sustain 切换
   systemPrompt: loadAgentMd(
-    'sofagent-fde',
+    'fde',
     // fallback: 精简版（文件找不到时使用）
     `你是部署工程师（FDE），一名精通企业 IT 架构、知识工程和 AI 部署的前线工程师。
 你不写应用代码——你的职责是把企业世界的业务规则、组织架构、系统边界，转译成 sofagent 的数据层和约束层。
@@ -150,7 +150,7 @@ const FDE_AGENT: SubAgentDefinition = {
 /**
  * 合规审计员
  *
- * systemPrompt 优先加载 agents/SKILL/sofagent-audit/security-compliance-auditor.md
+ * systemPrompt 优先加载 SKILL/agents/audit/security-compliance-auditor.md
  */
 const AUDIT_AGENT: SubAgentDefinition = {
   name: 'audit',
@@ -159,7 +159,7 @@ const AUDIT_AGENT: SubAgentDefinition = {
   tools: ['read', 'bash', 'grep'],
   triggerOn: ['on-commit', 'on-schedule'],
   systemPrompt: loadAgentMd(
-    'sofagent-audit',
+    'audit',
     // fallback: 精简版
     `你是合规审计员，一名 sofagent 系统级合规审计师。
 你不审查代码逻辑（那是 code-reviewer 的事），你审查的是整个 sofagent 部署的系统层面是否合规。
@@ -186,7 +186,7 @@ const AUDIT_AGENT: SubAgentDefinition = {
 /**
  * 软件工程师（LOOP 代码执行者——最小变更哲学）
  *
- * systemPrompt 优先加载 agents/SKILL/sofagent-engineer/SKILL.md
+ * systemPrompt 优先加载 SKILL/agents/engineer/SKILL.md
  */
 export const ENGINEER_AGENT: SubAgentDefinition = {
   name: 'engineer',
@@ -194,7 +194,7 @@ export const ENGINEER_AGENT: SubAgentDefinition = {
   description: '软件工程师——只修复被要求的内容，拒绝范围蔓延，逐行自证差异',
   tools: ['read', 'write', 'bash', 'grep', 'glob'],
   systemPrompt: loadAgentMdFile(
-    'sofagent-engineer',
+    'engineer',
     // fallback: 精简版
     `你是最小变更工程师，LOOP 自迭代循环中的代码执行者。
 核心原则：只做被要求的事，不多做。价值以"没写的代码行数"来衡量。
@@ -212,7 +212,7 @@ export const ENGINEER_AGENT: SubAgentDefinition = {
 /**
  * 代码审查员（LOOP 审查者）
  *
- * systemPrompt 优先加载 agents/SKILL/sofagent-reviewer/SKILL.md
+ * systemPrompt 优先加载 SKILL/agents/reviewer/SKILL.md
  */
 export const REVIEWER_AGENT: SubAgentDefinition = {
   name: 'reviewer',
@@ -221,7 +221,7 @@ export const REVIEWER_AGENT: SubAgentDefinition = {
   tools: ['read', 'bash', 'grep', 'glob'],
   triggerOn: ['on-commit', 'on-review'],
   systemPrompt: loadAgentMdFile(
-    'sofagent-reviewer',
+    'reviewer',
     // fallback: 精简版
     `你是代码审查员，LOOP 自迭代循环中的审查者。
 你不写代码，但你的判定直接影响代码能不能合并。

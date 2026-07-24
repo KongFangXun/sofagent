@@ -265,6 +265,19 @@ for pkg_file in "${PROJECT_ROOT}/FDE/package.json" "${PROJECT_ROOT}/LOOP/package
     fi
   fi
 done
+
+# 检查 install.sh 内部 VERSION= 变量（v1.2.0 新增 · P1-3 盲区修复）
+INSTALL_SH="${PROJECT_ROOT}/install.sh"
+if [[ -f "${INSTALL_SH}" ]]; then
+  install_ver=$(grep '^VERSION="' "${INSTALL_SH}" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  if [[ -n "${install_ver}" ]] && [[ "${install_ver}" == "${SSOT_VERSION}" ]]; then
+    report_ok "install.sh" "VERSION: v${install_ver}"
+  elif [[ -n "${install_ver}" ]]; then
+    report_error "${INSTALL_SH}" "VERSION=${install_ver}" "VERSION=${SSOT_VERSION}"
+  else
+    report_warn "install.sh" "未找到 VERSION= 变量定义"
+  fi
+fi
 echo ""
 
 # ── 5. 检查 .ps1 文件 $VERSION / $VERSION_STR = "X.Y" ──────────

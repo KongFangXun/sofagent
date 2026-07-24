@@ -54,10 +54,10 @@ LOOP 自动流转：engineer 写代码 → audit 审计 → reviewer 审查 → 
 
 | Skill | 角色 | 位置 |
 |-------|------|------|
-| `sofagent-engineer` | 软件工程师——写代码、修复 | `agents/SKILL/sofagent-engineer/SKILL.md` |
-| `sofagent-reviewer` | 代码审查员——审查 + 自动门控 | `agents/SKILL/sofagent-reviewer/SKILL.md` |
-| `sofagent-audit` | 合规审计员——A1-A11、A14-A19 规则检查 | `agents/SKILL/sofagent-audit/SKILL.md` |
-| `sofagent-releaser` | 发布工程师——十二阶段发版 SOP（v1.1.5 新增，按需激活） | `agents/SKILL/sofagent-releaser/SKILL.md` |
+| `sofagent-engineer` | 软件工程师——写代码、修复 | `SKILL/agents/engineer/SKILL.md` |
+| `sofagent-reviewer` | 代码审查员——审查 + 自动门控 | `SKILL/agents/reviewer/SKILL.md` |
+| `sofagent-audit` | 合规审计员——A1-A11、A14-A19 规则检查 | `SKILL/agents/audit/SKILL.md` |
+| `sofagent-releaser` | 发布工程师——十二阶段发版 SOP（v1.1.5 新增，按需激活） | `LOOP/releaser/releaser-skill/SKILL.md` |
 
 ## 怎么用 workflow 模式（高级）
 

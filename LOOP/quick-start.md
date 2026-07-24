@@ -100,7 +100,7 @@ Workflow 模式是 LOOP 的高级用法——外部编排平台产出 workflow.y
 
 ## 内置 Agent
 
-LOOP 内置 3 个 Sub Agent Skill，装在 `agents/SKILL/` 下（项目仓库中 agent 定义文件更多，这 3 个是 LOOP 编排引擎直接调度的）：
+LOOP 内置 3 个 Sub Agent Skill，装在 `SKILL/agents/` 下（项目仓库中 agent 定义文件更多，这 3 个是 LOOP 编排引擎直接调度的）：
 
 | Skill | 角色 | 模型建议 |
 |-------|------|---------|
@@ -117,6 +117,6 @@ LOOP 内置 3 个 Sub Agent Skill，装在 `agents/SKILL/` 下（项目仓库中
 | `sofagent-orchestrator` 未找到 | sofagent 底座没装 | `bash LOOP/loop-install.sh` |
 | engineer 不干活 | 没设 `SOFAGENT_LLM_ENGINEER` | 设 env var |
 | API key 报错 | `OPENAI_API_KEY` 没设（或角色专用 key 没设） | 最简：`export OPENAI_API_KEY=sk-xxx` |
-| reviewer 每轮都驳回 | 审查标准太严 | 改 `agents/SKILL/sofagent-reviewer/SKILL.md` 的判定标准 |
+| reviewer 每轮都驳回 | 审查标准太严 | 改 `SKILL/agents/reviewer/SKILL.md` 的判定标准 |
 | LOOP_AUTO=0 时卡住 | 需要人工按 y/n | 设 `LOOP_AUTO=1` 或手动确认 |
 | 用的模型不在预置 provider 列表 | 只支持 deepseek/glm/kimi 预置 | 用 `custom:<model>` + `SOFAGENT_LLM_BASE_URL` |

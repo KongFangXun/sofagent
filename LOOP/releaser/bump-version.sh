@@ -115,6 +115,15 @@ if [[ "${OLD_VERSION}" != *.*.* ]]; then
   NEW_3SEG="${NEW_2SEG}.0"
 fi
 
+# 防御：确保 NEW_3SEG 已绑定（set -u 下避免 unbound variable 崩溃）
+NEW_3SEG="${NEW_3SEG:-$NEW_VERSION}"
+
+# 同版本号早期退出（dry-run 模式下）
+if [[ "${OLD_3SEG:-}" == "${NEW_3SEG}" ]] && $DRY_RUN; then
+  echo -e "  ${YELLOW}版本号相同（${OLD_3SEG}），无变更${NC}"
+  exit 0
+fi
+
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 echo -e "${BOLD}${CYAN}  bump-version${NC}"
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"

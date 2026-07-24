@@ -129,7 +129,7 @@
 6. **安装脚本的报错友好度**：跑 `LOOP/loop-install.sh` 在缺少前置依赖时（比如没装 sofagent 底座、不支持的平台）——报错信息清楚吗？告诉你缺什么、怎么装了吗？还是直接 exit 1 让你摸不着头脑？
 7. **批量部署/集中配置**：如果要给 50 个仓库都装 sofagent，有没有批量安装或集中配置下发的能力？企业级场景需要 org-level 配置。当前是 per-repo 安装——这对 DevOps 来说够用吗？
 8. **`--strict`/`--ci` 模式验证**：跑 `sofagent-audit --diff HEAD~1..HEAD --task "wrong" --strict`，实际 exit code 是 2（承诺值）还是 1？文档声称的模式行为与实现是否一致？**如果 exit code 不是 2，这就是 P0——文档声称与实现不符。**
-9. **独立 install 闭环（v1.1.4 新增）**：在干净环境（不预装 sofagent 底座）只跑 `bash FDE/fde-install.sh` 或 `bash LOOP/loop-install.sh`——能跑通吗？两个脚本第 52 行都调用 `$PROJECT_ROOT/install.sh`、fde-install.sh 第 64 行依赖 `$PROJECT_ROO./SKILL/data/fde.md`、第 82 行依赖根目录 `agents/SKILL/`——**如果用户只 git clone 了 FDE/ 或 LOOP/ 子目录，绝对跑不通**。这是"声称独立产品 vs 实现深度耦合主包路径"的鸿沟。FDE 和 LOOP 真的独立吗？还是说"独立"只是营销话术，实质是主包的快捷安装入口？如果用户跟着 FDE/README 的"装上就能用"指引走，会不会卡在某个主包路径找不到？
+9. **独立 install 闭���（v1.1.4 新增）**：在干净环境（不预装 sofagent 底座）只跑 `bash FDE/fde-install.sh` 或 `bash LOOP/loop-install.sh`——能跑通吗？两个脚本第 52 行都调用 `$PROJECT_ROOT/install.sh`、fde-install.sh 第 64 行依赖 `$PROJECT_ROO./SKILL/data/fde.md`、第 82 行依赖根目录 `SKILL/agents/`——**如果用户只 git clone 了 FDE/ 或 LOOP/ 子目录，绝对跑不通**。这是"声称独立产品 vs 实现深度耦合主包路径"的鸿沟。FDE 和 LOOP 真的独立吗？还是说"独立"只是营销话术，实质是主包的快捷安装入口？如果用户跟着 FDE/README 的"装上就能用"指引走，会不会卡在某个主包路径找不到？
 
 你是"先动手再看文档"型开发者。装完跑通了，可能会随手翻一下 README 看看还有没有别的功能。**你的判断标准不是文档完不完整，而是"从敲下 npm install 到觉得这东西有用，中间花了多长时间"。**
 
@@ -364,7 +364,7 @@
     - CLI 编排入口 `sofagent-orchestrator compose --task`——如果 Agent 调用时传入一个超长的 task 描述（prompt injection），编排引擎会原样传给 Sub Agent 吗？
 
 27. **独立 Skill 激活链路对抗（v1.1.4 新增）**：
-    - FDE/SKILL.md 和 LOOP/SKILL.md 引用的所有路径——`agents/SKILL/sofagent-engineer/SKILL.md`、`agents/SKILL/sofagent-reviewer/SKILL.md`、`agents/SKILL/sofagent-fde/SKILL.md`、`agents/SKILL/sofagent-audit/SKILL.md`——逐个确认存在吗？
+    - FDE/SKILL.md 和 LOOP/SKILL.md 引用的所有路径——`SKILL/agents/engineer/SKILL.md`、`SKILL/agents/reviewer/SKILL.md`、`SKILL/agents/fde/SKILL.md`、`SKILL/agents/audit/SKILL.md`——逐个确认存在吗？
     - SKILL.md 里引用的 CLI 命令——`sofagent-orchestrator subagent run fde --task "..."`、`sofagent-orchestrator loop --task "..."`——在装完底座后真能跑通吗？`--help` 输出里有这些子命令吗？
     - **跨平台激活对抗**：`@sofagent-fde` 在 WorkBuddy 真能激活吗（需要 Skill 复制到 `~/.workbuddy/skills/sofagent-fde/`）？`@skill:sofagent-loop` 在 OpenClaw 真能加载吗？fde-install.sh / loop-install.sh 在 workbuddy 分支真的把 Skill 目录复制对位置了吗？**实跑验证**：装完后在对应平台输入 `@sofagent-fde` / `@skill:sofagent-loop`，Agent 真能读到 SKILL.md 内容吗？还是静默失败？
     - **种子指令对抗**：FDE/README.md 第 40-44 行的"种子指令"（让 Agent 读 SKILL.md + FDE.md）——如果 Agent 收到这段指令但 SKILL.md 路径错了（相对路径 vs 绝对路径混淆），Agent 会报错还是假装读了？
@@ -567,9 +567,9 @@
    - **盲区**：FDE 和 LOOP 声称独立产品，但 README / SKILL.md / quick-start.md / FDE.md / LOOP.md 里声称的流程步数、Agent 数量、CLI 命令、Skill 路径——与实际代码交叉验证后是否一致？单篇审查发现不了跨文档漂移。
    - **检查手法**：
      1. **FDE 步数声称**：FDE/SKILL.md 写"四阶段十一关键步"、FDE/README.md 写"12 步流程"、fde-install.sh:110 写"走完 11 步"——三处不一致。打开 FDE/FDE.md 实数章节标题对照。
-     2. **LOOP Agent 数声称**：LOOP/SKILL.md 列 3、README 列 3、quick-start 列 4（含 sofagent-fde）。实数 `ls agents/SKILL/sofagent-*`。
+     2. **LOOP Agent 数声称**：LOOP/SKILL.md 列 3、README 列 3、quick-start 列 4（含 sofagent-fde）。实数 `ls SKILL/agents/`。
      3. **CLI 命令声称**：所有 SKILL.md / README / quick-start 里的 `sofagent-orchestrator <subcommand>`——逐一跑 `--help` 确认子命令存在。SKILL.md 曾写过不存在的子命令。
-     4. **Skill 路径声称**：FDE/SKILL.md / LOOP/SKILL.md 引用的 `agents/SKILL/<name>/SKILL.md`——逐个 `ls` 确认存在。
+     4. **Skill 路径声称**：FDE/SKILL.md / LOOP/SKILL.md 引用的 `SKILL/agents/<name>/SKILL.md`——逐个 `ls` 确认存在。
      5. **跨产品版本一致性**：`diff <(grep version FDE/package.json) <(grep version LOOP/package.json)` 期望零差异。
 
 #### 30. **验收测试场景覆盖率与功能对齐（单文件）** 🆕

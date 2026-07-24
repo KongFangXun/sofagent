@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.2.0 · 127 个端到端场景：用户旅程 + 规则覆盖(A1-A19,E1-E4) + Sub Agent
+# v1.2.0 · 127 个场景定义（含子断言，合计 140 个 pass 判定）
 # + LOOP + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
 # 详细功能映射见 LOOP/releaser/acceptance-coverage.md
 # ============================================================
