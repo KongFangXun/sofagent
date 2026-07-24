@@ -22,11 +22,11 @@
   "license": "MIT",
   "author": "KongFangXun",
   "dependencies": {
-    "@sofagent/audit": "1.2.0",
-    "@sofagent/core": "1.2.0",
-    "@sofagent/harness": "1.2.0",
-    "@sofagent/ontology": "1.2.0",
-    "@sofagent/orchestrator": "1.2.0",
+    "@sofagent/audit": "1.2.1",
+    "@sofagent/core": "1.2.1",
+    "@sofagent/harness": "1.2.1",
+    "@sofagent/ontology": "1.2.1",
+    "@sofagent/orchestrator": "1.2.1",
     "automerge": "1.0.1-preview.7"
   },
   "exports": {

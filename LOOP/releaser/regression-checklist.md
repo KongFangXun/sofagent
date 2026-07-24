@@ -1,6 +1,7 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
+> ⚠️ **v1.2.0 瘦身标注**：本文件 1024 行（警戒线 1000），越线 24 行。可归并方向——维度 1+48（CHANGELOG 纯度重叠）、维度 16+44（fail-closed 交叉）。v1.2.x 做一轮归并即可。acceptance-test.sh 同步标注（1528 行，79 处 git 脚手架可抽为 `mktmp_repo` 公共函数）。
 > **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量）
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -47,7 +48,7 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 ```
 
 **步骤 3：逐维度审查**
-## 审查维度（48 项 · 编号 1–48）
+## 审查维度（49 项 · 编号 1–49）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -979,6 +980,46 @@ LIMITATIONS_COV=$(grep -c "$NEW_FEATURES" LIMITATIONS.md || echo 0)
 ```
 
 > **releasing.md 联动**：以下检查项已写入 `LOOP/releaser/releasing.md`，不在本清单重复——① 阶段八「LIMITATIONS 覆盖新功能」② 阶段八「evidence 文件存在且测试数一致」③ 阶段十一「tag 后零 commit 校验」。本维度只覆盖可自动化 grep 的文档一致性检查。
+
+---
+
+#### 49. v1.2.0 物理结构大重构——旧路径零残留 + 新结构就位（v1.2.0 新增 · fresh-eyes 三轮审查）
+
+```bash
+# 子项 a: /sofagent/ 目录残留（应零命中，排除 changelog 历史引用）
+# 用 node 扫描绕开 BSD grep 中文误判
+node -e "const fs=require('fs');const dirs=['engine','LOOP','FDE','SKILL','docs','tools','.github'];let hits=[];dirs.forEach(d=>{if(!fs.existsSync(d))return;function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist','target'].includes(e.name))continue;const f=dir+'/'+e.name;if(e.isDirectory())walk(f);else if(e.name.endsWith('.md')||e.name.endsWith('.ts')||e.name.endsWith('.sh')){const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('sofagent/skill/')&&!l.includes('已')&&!l.includes('旧')&&!l.includes('→')&&!l.includes('历史'))hits.push(f+':'+(i+1))})}}}walk(d)});['install.sh','SECURITY.md','README.md'].forEach(f=>{if(!fs.existsSync(f))return;const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('sofagent/skill/')&&!l.includes('已')&&!l.includes('旧')&&!l.includes('→')&&!l.includes('历史'))hits.push(f+':'+(i+1))})});console.log(hits.length===0?'✅ sofagent/skill/ 零残留':'❌ FOUND '+hits.length);hits.forEach(h=>console.log('  '+h))"
+
+# 子项 b: agents/SKILL/ 旧路径残留（应零命中，排除 changelog 历史 + acceptance-test 反向断言）
+node -e "const fs=require('fs');const dirs=['engine/src','engine/orchestrator/src','engine/rules/src','LOOP','FDE','SKILL','docs','tools'];let hits=[];dirs.forEach(d=>{if(!fs.existsSync(d))return;function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist'].includes(e.name))continue;const f=dir+'/'+e.name;if(e.isDirectory())walk(f);else if(e.name.endsWith('.md')||e.name.endsWith('.ts')||e.name.endsWith('.sh')){const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('agents/SKILL')&&!f.includes('changelog/')&&!(f.includes('acceptance-test')&&l.includes('! -d')))hits.push(f+':'+(i+1))})}}}walk(d)});console.log(hits.length===0?'✅ agents/SKILL/ 零残留':'❌ FOUND '+hits.length);hits.forEach(h=>console.log('  '+h))"
+
+# 子项 c: SECURITY.md Dengine/ 残留（应零命中）
+node -e "const fs=require('fs');const c=fs.readFileSync('SECURITY.md','utf8');let n=0;c.split('\n').forEach((l,i)=>{if(l.includes('Dengine')){console.log('  L'+(i+1)+': '+l.trim());n++}});console.log(n===0?'✅ SECURITY.md Dengine 零残留':'❌ FOUND '+n)"
+
+# 子项 d: install.sh VERSION 变量（应为 1.2.0）
+grep '^VERSION=' install.sh | head -1
+
+# 子项 e: engine/rules/package.json files 字段存在
+node -e "const p=require('./engine/rules/package.json');console.log(p.files?'✅ rules files 字段存在':'❌ 缺 files 字段')"
+
+# 子项 f: verify.yml CI 路径（应引用 SKILL/harness/ 而非 engine/skill/）
+grep -n "engine/skill" .github/workflows/verify.yml
+# 期望：零输出
+
+# 子项 g: shellcheck.yml 覆盖 install.sh + 无旧路径
+grep -n "sofagent-lite\|'scripts/\*\*" .github/workflows/shellcheck.yml
+# 期望：零输出
+grep -c "'install.sh'" .github/workflows/shellcheck.yml
+# 期望：2（push + pull_request 各一）
+
+# 子项 h: bump-version.sh 同版本号优雅退出
+bash LOOP/releaser/bump-version.sh 1.2.0 1.2.0 --dry-run 2>&1 | tail -3
+# 期望：版本号相同，无 unbound variable
+```
+
+> **fresh-eyes 教训（v1.2.0 三轮审查）**：物理结构大重构容易在边缘文件留下旧路径残留。最危险的是 `builtin-agents.ts` 源码路径断裂（P0-2）——运行时找不到 Skill 文件静默走 fallback，用户改 Skill 不生效但不知道为什么。第二危险的是 `install.sh` VERSION 变量没 bump（check-version.sh 盲区）——用户装到的是旧版本号。子项 a-h 覆盖了这三轮审查发现的核心盲区。
+
+---
 
 ## 输出报告格式
 > 审查日期 / 范围 / 环境验证（pre-push-check/npm test/check-docs/check-version）→ 问题清单（P0/P1/P2 分级，维度/文件:行/问题/建议）→ 通过统计 → 最终建议（可发版/需修复P0/需重大修复）。追加维度前先 grep 同类。
