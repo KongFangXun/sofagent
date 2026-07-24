@@ -24,7 +24,7 @@ npm install -g agency-orchestrator
 export DEEPSEEK_API_KEY=sk-xxx
 
 # 4. 验证部署
-bash sofagent/scripts/verify.sh --quiet   # 33 项全部通过
+bash engine/scripts/verify.sh --quiet   # 33 项全部通过
 command -v ao                              # 确认 ao 可用
 ```
 
@@ -49,7 +49,7 @@ command -v ao                              # 确认 ao 可用
 ```bash
 # 1. OpenClaw CLI 端：验证约束生效（6 项）
 openclaw agent --session-key agent:default:sofagent-v071-test \
-  --message "请读取 sofagent/SKILL.md，然后告诉我 sofagent 的 4 条底线分别是什么。"
+  --message "请读取 SKILL/SKILL.md，然后告诉我 sofagent 的 4 条底线分别是什么。"
 # → ✅ 正确列出 4 条底线
 
 openclaw agent --session-key agent:default:sofagent-v071-test \

@@ -19,9 +19,9 @@
 #      6. vi ARCHITECTURE.md                        # 改文件头 > v0.99.3 ·
 #      7. vi HANDBOOK.md                            # 改文件头 > v0.99.3 ·
 #      8. vi README.md README.en.md                 # 改 badge Version-v0.99.3
-#      9. vi engine/skill/SKILL.md                # 改 frontmatter + 正文标题
-#     10. vi engine/skill/data/*.md               # 改正文标题 · v0.99.3
-#     11. vi FDE/SKILL.md                           # 改 frontmatter
+#      9. vi SKILL/SKILL.md                          # 改 frontmatter + 正文标题
+#     10. vi SKILL/harness/data/*.md                # 改正文标题 · v0.99.3
+#     11. vi LOOP/SKILL.md                           # 改 frontmatter
 #     12. 跑 ./tools/check-version.sh 确认一致性
 #
 # 替换范围（结构性位置，不碰历史引用）:
@@ -91,8 +91,8 @@ else
   HAS_PATCH=false
 fi
 
-# ── 项目根目录（脚本在 tools/ 下，根在上一级）──────────────
-PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# ── 项目根目录（脚本在 LOOP/releaser/ 下，根在上两级）────────
+PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 # 从实际 SSOT 读取 3 段版本号（audit/package.json），而非 .0 补零
 PJ_SSOT="${PROJECT_ROOT}/engine/audit/package.json"
@@ -254,7 +254,7 @@ while IFS= read -r ws_pkg; do
     ws_pkg_count=$((ws_pkg_count + 1))
     TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
   fi
-done < <(find "$PROJECT_ROOT/sofagent" \
+done < <(find "$PROJECT_ROOT/engine" \
   -name 'package.json' \
   -not -path '*/node_modules/*' \
   -not -path '*/dist/*' \
@@ -325,7 +325,7 @@ while IFS= read -r ts; do
     ts_header_count=$((ts_header_count + 1))
     TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
   fi
-done < <(find "$PROJECT_ROOT/sofagent" \
+done < <(find "$PROJECT_ROOT/engine" \
   -name '*.ts' \
   -not -path '*/node_modules/*' \
   -not -path '*/.git/*' \
@@ -642,7 +642,7 @@ while IFS= read -r -d '' pkg_json; do
     BUMP_INTERNAL_DEPS_COUNT=$((BUMP_INTERNAL_DEPS_COUNT + 1))
     echo -e "  ${GREEN}✓${NC} $pkg_json (内部依赖已同步)"
   fi
-done < <(find "$SCRIPT_DIR/../sofagent" -maxdepth 3 -name "package.json" -not -path "*/node_modules/*" -print0 2>/dev/null)
+done < <(find "$PROJECT_ROOT/engine" -maxdepth 3 -name "package.json" -not -path "*/node_modules/*" -print0 2>/dev/null)
 TOTAL_CHANGED=$((TOTAL_CHANGED + BUMP_INTERNAL_DEPS_COUNT))
 
 # 10. 汇总

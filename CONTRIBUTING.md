@@ -23,7 +23,7 @@
 
 | 顺序 | 文件 | 看什么 | 约几分钟 |
 |:--:|------|------|:--:|
-| 1 | [SKILL.md](./sofagent/skill/SKILL.md) | 4 底线 + 7 则铁律 | 3 min |
+| 1 | [SKILL.md](./SKILL/SKILL.md) | 4 底线 + 7 则铁律 | 3 min |
 | 2 | [CHANGELOG.md](./CHANGELOG.md) | 最新版本的变更 | 5 min |
 | 3 | [LIMITATIONS.md](./LIMITATIONS.md) | 已知局限 | 2 min |
 
@@ -32,24 +32,24 @@
 | 脚本 | 改什么 | 难度 |
 |------|------|:--:|
 | `install.sh` | BSD/macOS 兼容性修复 | ⭐⭐ |
-| `sofagent/scripts/verify.sh` | 新增检查项（bash 版，安装流程内调用） | ⭐ |
-| `sofagent/audit/src/verify.ts` | TS 版验证（npm bin `sofagent-verify`） | ⭐ |
+| `engine/scripts/verify.sh` | 新增检查项（bash 版，安装流程内调用） | ⭐ |
+| `engine/audit/src/verify.ts` | TS 版验证（npm bin `sofagent-verify`） | ⭐ |
 
 **跑 1 条命令验证**：
 
 ```bash
-bash install.sh && bash sofagent/scripts/verify.sh
-# 或 TS 版：cd sofagent/audit && npm run build && node dist/verify.js
+bash install.sh && bash engine/scripts/verify.sh
+# 或 TS 版：cd engine/audit && npm run build && node dist/verify.js
 ```
 
-> ⚠️ **本地测试用 `node dist/index.js` 而非全局二进制**——全局 `sofagent-audit` 可能是旧版本（npm publish 后才更新）。改代码后先 `npm run build`，再用 `node sofagent/audit/dist/index.js --diff HEAD~1..HEAD` 测试。
+> ⚠️ **本地测试用 `node dist/index.js` 而非全局二进制**——全局 `sofagent-audit` 可能是旧版本（npm publish 后才更新）。改代码后先 `npm run build`，再用 `node engine/audit/dist/index.js --diff HEAD~1..HEAD` 测试。
 
 ### 微任务清单（5-15 分钟）
 
 | # | 任务 | 文件 | 难度 | 时间 |
 |:--:|------|------|:--:|:--:|
-| 1 | 改一条审计规则的正则 | `sofagent/audit/src/rules/rule-a*.ts` | ⭐ | 5 min |
-| 2 | 给 install.sh lib 模块加参数校验 | `sofagent/scripts/lib/*.sh` | ⭐ | 10 min |
+| 1 | 改一条审计规则的正则 | `engine/audit/src/rules/rule-a*.ts` | ⭐ | 5 min |
+| 2 | 给 install.sh lib 模块加参数校验 | `engine/scripts/lib/*.sh` | ⭐ | 10 min |
 | 3 | 修复一个 ShellCheck 警告 | 见 ShellCheck Action 报告 | ⭐⭐ | 10 min |
 | 4 | 补一个规则示例 | `docs/guides/plugins.md` | ⭐ | 15 min |
 | 5 | 翻译一段 README 到英文 | `README.en.md` | ⭐⭐ | 15 min |
@@ -82,9 +82,9 @@ bash install.sh && bash sofagent/scripts/verify.sh
 >
 > 示例：`docs: evidence Case 023-025 外部用户验证归档` ✅ / `evidence 归档` ❌
 
-**改 Skill 文件**：先改 `sofagent/skill/`（唯一权威），再 `bash install.sh` 同步。
+**改 Skill 文件**：先改 `SKILL/harness/`（唯一权威），再 `bash install.sh` 同步。
 
-**文档修改**：改 HANDBOOK 必须同步更新 `sofagent/skill/` 下模板。详见 [DEVELOPER §七](./docs/DEVELOPMENT.md#七数据文件架构)。
+**文档修改**：改 HANDBOOK 必须同步更新 `SKILL/harness/` 下模板。详见 [DEVELOPER §七](./docs/DEVELOPMENT.md#七数据文件架构)。
 
 ## 项目维护模型
 
@@ -94,7 +94,7 @@ bash install.sh && bash sofagent/scripts/verify.sh
 
 ```bash
 git clone https://github.com/KongFangXun/sofagent.git
-cd sofagent && bash install.sh && bash sofagent/scripts/verify.sh
+cd sofagent && bash install.sh && bash engine/scripts/verify.sh
 ```
 
 发版：`docs/changelog/vX.Y.md` 写日志 → `CHANGELOG.md` 加索引 → `LOOP/releaser/bump-version.sh` 升级版本号 → `cp -r sofagent/ ~/.workbuddy/skills/sofagent/` → `git tag vX.Y && git push` → `gh release create vX.Y`

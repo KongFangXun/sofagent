@@ -291,7 +291,7 @@ flowchart LR
 | `reviewReports` | string[] | reviewer（追加） | 历史追溯 |
 | `humanFeedback` | string | human_confirm | 路由判定 |
 
-> 这张表对应的源码是 `sofagent/orchestrator/src/loop/state.ts` 的 `LoopArtifacts` 接口。
+> 这张表对应的源码是 `engine/orchestrator/src/loop/state.ts` 的 `LoopArtifacts` 接口。
 
 #### Graph Engineering 视角（控制图 = StateGraph）
 
@@ -299,9 +299,9 @@ flowchart LR
 
 | Graph Engineering 构件 | sofagent 对应实现 | 源码位置 |
 |------|------|------|
-| **控制图 Control Graph**（node=state, edge=transition, guard edge 守门） | `StateGraph` 四节点 `START→engineer→audit→reviewer→human_confirm→END`，`routeAfterAudit`/`routeAfterHuman` 条件路由，WARN 透传为 guard 放行 | `sofagent/orchestrator/src/loop/graph.ts` |
+| **控制图 Control Graph**（node=state, edge=transition, guard edge 守门） | `StateGraph` 四节点 `START→engineer→audit→reviewer→human_confirm→END`，`routeAfterAudit`/`routeAfterHuman` 条件路由，WARN 透传为 guard 放行 | `engine/orchestrator/src/loop/graph.ts` |
 | **★Reality Anchor**（无锚点 = 披 PM 外衣的幻觉） | `audit` 节点——只看 `git diff HEAD` 硬证据（A1-A11、A14-A19 + E1-E4，共 21 条），不信任 Agent 自报，比"只看 PR 号"更硬 | `@sofagent/audit` |
-| **可审计状态文件**（状态落盘可复核） | `FileCheckpointer` 每节点前后 snapshot 到 `.sofagent/checkpoint/`，`resumeLoopGraph()` 断点续跑 | `sofagent/orchestrator/src/graph/checkpoint.ts` |
+| **可审计状态文件**（状态落盘可复核） | `FileCheckpointer` 每节点前后 snapshot 到 `.sofagent/checkpoint/`，`resumeLoopGraph()` 断点续跑 | `engine/orchestrator/src/graph/checkpoint.ts` |
 | **数据图 Data Graph**（知识图谱/血缘） | 蓄水池（知识库 `knowledge/`） + 市政规划（Ontology，Ledger-Views-Policy）——与编排控制图正交 | `knowledge/` + Ontology 层 |
 
 **控制图 vs 数据图二分天然具备**：管网（Workflow / StateGraph）= 控制图，决定"先干什么后干什么"；蓄水池 + 市政规划 = 数据图，承载"知道什么、怎么理解"。两者解耦——控制图无知识库也能跑（纯编排），数据图无控制图也能沉淀（Dream Cycle 独立跑）。
@@ -318,7 +318,7 @@ WARN 不阻断流转——`[审计告警]` 前缀透传给 reviewer 输入，由
 
 每个节点执行**前后各 snapshot 一次**到 `.sofagent/checkpoint/`。`resumeLoopGraph()` 读 latest checkpoint → 算出恢复入口节点 → 重新跑图。daemon 重启后的自动续跑也复用这条路径。
 
-**FileCheckpointer 五条并发安全规矩**（`sofagent/orchestrator/src/graph/checkpoint.ts`）：
+**FileCheckpointer 五条并发安全规矩**（`engine/orchestrator/src/graph/checkpoint.ts`）：
 
 | # | 规矩 | 实现 |
 |---|------|------|
@@ -528,7 +528,7 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 - **v1.2.x**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界
 - **v2.x**：组织级共享记忆 + 协同层
 
-**daemon 主动巡检清单**（`sofagent/daemon/src/inspectors/`，注册于 `runInspectors()`）：
+**daemon 主动巡检清单**（`engine/daemon/src/inspectors/`，注册于 `runInspectors()`）：
 
 | Inspector | schedule | 检查内容 |
 |-----------|----------|---------|

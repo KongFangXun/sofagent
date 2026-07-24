@@ -6,7 +6,7 @@
 
 ## ⬜ 执行清单
 
-> **闭环前先写 task/logs**（`{OPENCLAW_SCRIPTS}` 优先 `~/.openclaw/scripts/`，不存在则搜 `sofagent/scripts/`）：
+> **闭环前先写 task/logs**（`{OPENCLAW_SCRIPTS}` 优先 `~/.openclaw/scripts/`，不存在则搜 `engine/scripts/`）：
 > ```bash
 > bash {OPENCLAW_SCRIPTS}/task-record.sh \
 >   --task "任务简述" \

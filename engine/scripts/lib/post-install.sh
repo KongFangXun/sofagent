@@ -77,7 +77,7 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
   echo "  │  下一步                                   │"
   echo "  └──────────────────────────────────────────┘"
   echo ""
-  echo "  1. 验证安装：bash sofagent/scripts/verify.sh"
+  echo "  1. 验证安装：bash engine/scripts/verify.sh"
   echo "  2. 在你的 git 项目初始化审计：sofagent-audit --init"
   echo "  3. 体验效果：cd 你的 git 项目 && git commit（hook 自动触发）"
   echo "  4. 5 分钟入门：cat HANDBOOK.md"

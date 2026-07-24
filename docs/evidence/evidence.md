@@ -10,7 +10,7 @@
 
 > ⚠️ **诚实声明**：以下数据含作者自测。复盘评分为 LLM 自评（非 OpenClaw 平台无工程隔离）。企业级评估请等待 v0.9 加密 + 外部评估器。当前数据适合探索性评估，不适用于生产决策。
 
-> ⚠️ **v0.99.2 起**：benchmark.sh 已移除。以下 benchmark 数据为 v0.92-v0.93 期间的历史实验记录。当前部署验证请使用 `bash sofagent/scripts/verify.sh --quiet`（verify 全绿即通过）。benchmark 体系将在 v1.x 重建。
+> ⚠️ **v0.99.2 起**：benchmark.sh 已移除。以下 benchmark 数据为 v0.92-v0.93 期间的历史实验记录。当前部署验证请使用 `bash engine/scripts/verify.sh --quiet`（verify 全绿即通过）。benchmark 体系将在 v1.x 重建。
 >
 > 📊 **A/B benchmark 数据**：
 >
@@ -81,7 +81,7 @@
 
 ## 基准测试
 
-> 可复现对比测试结果。运行 `bash sofagent/scripts/verify.sh --quiet`（检查全绿即 ✓）。
+> 可复现对比测试结果。运行 `bash engine/scripts/verify.sh --quiet`（检查全绿即 ✓）。
 >
 > 说明：benchmark.sh 已在 v0.99.2 移除，部署验证改用 verify.sh。
 

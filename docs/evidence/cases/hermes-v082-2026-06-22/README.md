@@ -10,7 +10,7 @@
 
 | 维度 | 结果 | 备注 |
 |------|:--:|------|
-| daemon 进程检测 | ❌ 未测 | daemon脚本未部署，`find / -path "*/sofagent/scripts/daemon*"` 无结果 |
+| daemon 进程检测 | ❌ 未测 | daemon脚本未部署，`find / -path "*/engine/scripts/daemon*"` 无结果 |
 | 步数闸生效 | ❌ 不生效 | prompt级软约束，需engine.md+STEP_FILE，Hermes无此基础设施 |
 | 熔断闸生效 | ❌ 不生效 | 实测：连续调用不存在API 5次，第4/5次未熔断跳过 |
 | 幂等检查生效 | ❌ 不生效 | prompt级软约束，需engine.md+task/logs，Hermes无自动加载 |

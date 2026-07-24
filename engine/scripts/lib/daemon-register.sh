@@ -90,14 +90,14 @@ install_daemon() {  # Step 6b: daemon 可选安装
   local OS_TYPE
   OS_TYPE="$(uname -s)"
   local DAEMON_INSTALL_SCRIPT="${SCRIPT_DIR}/daemon-install.sh"
-  [ "${REMOTE_MODE:-0}" = "1" ] && DAEMON_INSTALL_SCRIPT="${REMOTE_TMP}/sofagent/scripts/daemon-install.sh"
+  [ "${REMOTE_MODE:-0}" = "1" ] && DAEMON_INSTALL_SCRIPT="${REMOTE_TMP}/engine/scripts/daemon-install.sh"
   if [ -f "$DAEMON_INSTALL_SCRIPT" ] && [ -x "$DAEMON_INSTALL_SCRIPT" ]; then
     case "$OS_TYPE" in
       Darwin|Linux)
         # --quick / CI：跳过（不交互）；--no-daemon：用户明确要求跳过
         if [ "$QUICK_MODE" = "1" ] || [ "$NO_DAEMON" = "1" ]; then
           echo ""; echo "  ⏭️  跳过 daemon 安装"
-          echo "  （以后可以手动运行: bash sofagent/scripts/daemon-install.sh）"
+          echo "  （以后可以手动运行: bash engine/scripts/daemon-install.sh）"
         else
           echo ""; echo "  ┌──────────────────────────────────────────┐"
           echo "  │  Step 6b: daemon 后台进程（可选）          │"
@@ -113,7 +113,7 @@ install_daemon() {  # Step 6b: daemon 可选安装
             INSTALL_DAEMON="n"
           fi
           if [ "${INSTALL_DAEMON:-n}" = "y" ] || [ "${INSTALL_DAEMON:-n}" = "Y" ]; then bash "$DAEMON_INSTALL_SCRIPT"
-          else echo "  已跳过 daemon 安装（以后可以手动运行: bash sofagent/scripts/daemon-install.sh）"; fi
+          else echo "  已跳过 daemon 安装（以后可以手动运行: bash engine/scripts/daemon-install.sh）"; fi
         fi ;;
       *)
         echo ""; echo "  daemon 不支持此系统 ($OS_TYPE)，自动跳过。"

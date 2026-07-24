@@ -1,7 +1,7 @@
 ---
 name: sofagent-fde
 slug: sofagent-fde
-version: 1.2.0
+version: 1.1.9
 displayName: FDE Agent
 description: >
   FDE Agent——约束 Agent 行为、审计每次变更、沉淀经验。对外统一身份是 FDE Agent（用户面对的唯一入口），

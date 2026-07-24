@@ -15,7 +15,7 @@
 ## 用例 0：安装验证
 
 **目的**：验证 install.sh + verify.sh 全链路通过。
-**步骤**：`bash install.sh --platform 你的平台` → `bash sofagent/scripts/verify.sh`
+**步骤**：`bash install.sh --platform 你的平台` → `bash engine/scripts/verify.sh`
 **通过标准**：verify.sh exit 0，fail = 0。
 
 ## 用例 1：地基加载验证
@@ -39,7 +39,7 @@
 ## 用例 4：Harness 层自我约束
 
 **目的**：验证 sofagent「吃自己的狗粮」。
-**步骤**：修改 `sofagent/skill/` 下 Skill 文件，检查 Agent 是否在闭环前提醒「已修改但未同步」。
+**步骤**：修改 `SKILL/harness/` 下 Skill 文件，检查 Agent 是否在闭环前提醒「已修改但未同步」。
 **通过标准**：Agent 提示文件已修改但未同步。
 
 ## 用例 5：跨任务反思生效

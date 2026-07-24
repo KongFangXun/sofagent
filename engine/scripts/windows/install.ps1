@@ -88,7 +88,7 @@ if (-not $Quick) {
 # 检测是否在 WSL 中运行（仅认 WSL_DISTRO_NAME——WSLENV 在装了 WSL 的 Windows 主机上也会被设，不能作判据）
 if ($env:WSL_DISTRO_NAME) {
     Write-Err "检测到 WSL 环境，请使用 install.sh (bash) 而非本脚本"
-    Write-Warn "  bash sofagent/scripts/install.sh --platform workbuddy"
+    Write-Warn "  bash engine/scripts/install.sh --platform workbuddy"
     exit 1
 }
 
@@ -160,7 +160,7 @@ if ($Platform -in @("openclaw", "workbuddy")) {
 
 # ── 检查源文件 ──
 if (-not (Test-Path $SKILL_SRC_DIR)) {
-    Write-Err "找不到 sofagent/ 目录。请在 sofagent 项目根目录下运行此脚本。"
+    Write-Err "找不到 engine/ 目录。请在 sofagent 项目根目录下运行此脚本。"
     Write-Err "  当前脚本位置: $SCRIPT_DIR"
     Write-Err "  期望目录: $SKILL_SRC_DIR"
     exit 1
@@ -325,7 +325,7 @@ Write-Ok "$psCount 个 .ps1 脚本已部署到 $scriptsDst"
 # ════════════════════════════════════════
 Write-Info "Step 3/4 · 部署宪法文件 → $TARGET\fde.md"
 
-# v0.73 起 fde.md 扁平化到 sofagent/fde.md；旧布局 fallback 到 constitution/fde.md
+# v0.73 起 fde.md 扁平化到 SKILL/harness/data/fde.md；旧布局 fallback 到 constitution/fde.md
 $rulesSrc = Join-Path $SKILL_SRC_DIR "fde.md"
 if (-not (Test-Path $rulesSrc)) {
     $rulesSrc = Join-Path $SKILL_SRC_DIR "constitution\fde.md"

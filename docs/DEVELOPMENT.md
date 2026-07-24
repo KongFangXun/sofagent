@@ -51,19 +51,19 @@
 
 | 你想找什么 | 文件/目录 |
 |-----------|---------|
-| 审计规则代码 | `sofagent/audit/src/rules/` |
-| 审计 CLI 入口 | `sofagent/audit/src/index.ts` |
-| 审计报告生成 | `sofagent/audit/src/reporter.ts` |
-| think.md 自动生成 | `sofagent/audit/src/think-generator.ts` |
-| Skill 主入口（宪法内联） | `sofagent/skill/SKILL.md` |
-| 编排引擎 | `sofagent/skill/engage.md` |
-| FDE 场景引导 | `sofagent/skill/engage-fde.md` |
-| 入境/每任务/离境闸门 | `sofagent/skill/entry-gate.md` / `task-aware.md` / `task-closure.md` |
-| 循环检查/评估/退出 | `sofagent/skill/loop-check.md` / `loop-evaluate.md` / `loop-exit.md` |
-| 数据模板 / 部署脚本 | `sofagent/skill/data/` / `sofagent/scripts/` |
+| 审计规则代码 | `engine/audit/src/rules/` |
+| 审计 CLI 入口 | `engine/audit/src/index.ts` |
+| 审计报告生成 | `engine/audit/src/reporter.ts` |
+| think.md 自动生成 | `engine/audit/src/think-generator.ts` |
+| Skill 主入口（宪法内联） | `SKILL/SKILL.md` |
+| 编排引擎 | `SKILL/harness/engage.md` |
+| FDE 场景引导 | `SKILL/harness/engage-fde.md` |
+| 入境/每任务/离境闸门 | `SKILL/harness/entry-gate.md` / `task-aware.md` / `task-closure.md` |
+| 循环检查/评估/退出 | `SKILL/harness/loop-check.md` / `loop-evaluate.md` / `loop-exit.md` |
+| 数据模板 / 部署脚本 | `SKILL/harness/data/` / `engine/scripts/` |
 | FDE 交付物模板 | `FDE/templates/` |
 | FDE 部署知识文档 | `FDE/FDE.md`（含角色定义 + 步骤详解，唯一知识源） |
-| 加载链 Hook | `sofagent/hooks/sofagent-load-chain/` |
+| 加载链 Hook | `engine/hooks/sofagent-load-chain/` |
 
 ---
 
@@ -168,13 +168,13 @@ FDE 部署 SOP 应遵循此顺序：
 ### 脚本与文件结构速查
 
 **目录结构**：
-- `sofagent/skill/`：纯 MD 规则（平台无关，所有 Agent 平台共用）
+- `SKILL/harness/`：纯 MD 规则（平台无关，所有 Agent 平台共用）
   - `SKILL.md`：主入口（宪法内联——4 底线 + 7 则铁律）
   - 子 Skill（9 个 .md）：`entry-gate.md` / `task-aware.md` / `task-closure.md` / `loop-check.md` / `loop-evaluate.md` / `loop-exit.md` / `engage.md` / `engage-fde.md` / `fde.md`
   - `fde.md`：规范文件（企业运行规范，部署时复制到目标项目）
   - `data/`（6 个模板）：`think.md` / `orchestrator.md` / `task.md` / `eval.md` / `fde.md` / `IDENTITY.md`
-- `sofagent/scripts/`（核心 4 个）：`install.sh` / `verify.sh` / `uninstall.sh` / `task-record.sh`
-- `sofagent/hooks/sofagent-load-chain/`：`HOOK.md` + `handler.ts`（OpenClaw 内部 hook）
+- `engine/scripts/`（核心 4 个）：`install.sh` / `verify.sh` / `uninstall.sh` / `task-record.sh`
+- `engine/hooks/sofagent-load-chain/`：`HOOK.md` + `handler.ts`（OpenClaw 内部 hook）
 
 > npm 包 @sofagent/audit 当前仅暴露 `sofagent-audit` 一个 bin（v1.1.0 拆包后 verify / orchestrate-compare / env-check / skill-safety-check 等已迁至对应独立包，实际 bin 以各包 `package.json` 为准）。
 
@@ -214,7 +214,7 @@ CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写�
 
 #### 两条执行路径与降级链
 
-编排引擎有两条执行路径，新代码应优先走 StateGraph（v1.1.3+，主推）：入口 `runLoopGraph()` / `sofagent-orchestrator loop --task`，LangGraph 四节点状态机 + checkpoint（`.sofagent/checkpoint/`，断点续跑）+ HITL（human_confirm 节点，`loop --resume` 可恢复）。路径一 compose（v1.0.6+，`composeWithDeepAgents()`）保留兼容——DeepAgents 只把任务拆成 YAML 工作流 DAG，无 checkpoint 无 HITL。对应源码：路径一 `sofagent/orchestrator/src/composer.ts` + `loop-runner.ts`；路径二 `sofagent/orchestrator/src/loop/`（state/nodes/graph）。StateGraph 的 engineer/reviewer 节点优先走"工具注入路径"（`createDeepAgent` + 工具集，systemPrompt 拼装四层约束链）；`SOFAGENT_LLM` 未设置或解析失败时，自动降级到 `spawnSubAgent` 零工具路径（composer）。
+编排引擎有两条执行路径，新代码应优先走 StateGraph（v1.1.3+，主推）：入口 `runLoopGraph()` / `sofagent-orchestrator loop --task`，LangGraph 四节点状态机 + checkpoint（`.sofagent/checkpoint/`，断点续跑）+ HITL（human_confirm 节点，`loop --resume` 可恢复）。路径一 compose（v1.0.6+，`composeWithDeepAgents()`）保留兼容——DeepAgents 只把任务拆成 YAML 工作流 DAG，无 checkpoint 无 HITL。对应源码：路径一 `engine/orchestrator/src/composer.ts` + `loop-runner.ts`；路径二 `engine/orchestrator/src/loop/`（state/nodes/graph）。StateGraph 的 engineer/reviewer 节点优先走"工具注入路径"（`createDeepAgent` + 工具集，systemPrompt 拼装四层约束链）；`SOFAGENT_LLM` 未设置或解析失败时，自动降级到 `spawnSubAgent` 零工具路径（composer）。
 #### 测试友好：依赖注入
 
 StateGraph 的流转逻辑通过 `LoopGraphDeps` 接口完全可 mock——`runEngineer / runAudit / runReviewer / confirmHuman / recordBlocked / checkpointer / maxRetries / log` 七个槽位。`defaultDeps()` 给生产实现，测试时整体替换。这让节点流转逻辑可以脱离真实 LLM 单测（v1.1.7 测试堆到 770 case 的前提）。
@@ -466,9 +466,9 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 在 CHANGELOG 写版本条目之前，跑以下 6 步：
 
 1. `./tools/check-version.sh`——把输出的「N 项」数字抄进 CHANGELOG，确认无 FAIL
-2. `bash sofagent/scripts/verify.sh --quiet`——确认输出数字与文档中引用一致
-3. `cd sofagent/audit && npm test 2>&1 | grep "Tests"`——确认通过数
-4. `wc -m sofagent/skill/SKILL.md sofagent/skill/data/fde.md`——确认 Skill 字数旁注准确
+2. `bash engine/scripts/verify.sh --quiet`——确认输出数字与文档中引用一致
+3. `cd engine/audit && npm test 2>&1 | grep "Tests"`——确认通过数
+4. `wc -m SKILL/SKILL.md SKILL/harness/data/fde.md`——确认 Skill 字数旁注准确
 5. 全文件类型术语扫描：`grep -rn "纪律层\|纪律底座\|工具箱\|FDE 工程师\|部署底座\|AI 控制节点" --include="*.md" --include="*.sh" --include="*.ps1" . | grep -v docs/changelog/ | grep -v docs/evidence/`（其中"FDE 工程师"是禁用词——FDE 的 E 已经是 Engineer，不叠叫）
 6. `./tools/check-version.sh > /dev/null 2>&1; echo $?`——必须为 0
 
