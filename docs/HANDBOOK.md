@@ -98,7 +98,7 @@ cd sofagent && bash install.sh
 ### 验证装好了
 
 ```bash
-bash sofagent/scripts/verify.sh    # 跑 verify 检查，通过即装好可用（--json 可进 CI）
+bash engine/scripts/verify.sh    # 跑 verify 检查，通过即装好可用（--json 可进 CI）
 # 或 npm 安装后直接用
 sofagent-verify                     # 同样跑 verify 检查
 ```
@@ -125,7 +125,7 @@ OpenClaw 完整能力（Hook 自动注入 + 断路器 + 编排引擎）。其他
 Agent 改完代码 commit 了——`sofagent-audit` 扫描 git diff 对照 A1-A11、A14-A19 审计规则逐条判定：
 
 ```bash
-cd sofagent/audit && npm ci && npm run build
+cd engine/audit && npm ci && npm run build
 node dist/index.js --diff HEAD~1..HEAD --task "修复登录页 bug"
 ```
 
@@ -324,7 +324,7 @@ Agent 先判断任务复杂度：
 
 `fde.md` 是你的运行规范，优先级最高。写什么就生效什么。设计理想 ≤500 字（当前实际 ~1,600 字——写少了 Agent 记得更牢，v1.x 计划精简）。注：此 ≤500 字是代码注释 / 提交信息等短文本的简洁预算原则，企业红线文档（fde.md）本身可超出该预算。
 
-模板在 `sofagent/skill/data/fde.md`。常用配置：
+模板在 `SKILL/harness/data/fde.md`。常用配置：
 - 模型偏好（`深度思考优先` / `速度优先`）
 - 输出风格（`回复控制在 200 字以内` / `优先用中文`）
 - 项目规则（`不要生成 .md 文件` / `改代码前先确认`）
@@ -333,7 +333,7 @@ Agent 先判断任务复杂度：
 
 ### 审计规则
 
-当前共 21 条审计规则（A1-A11、A14-A19 + E1-E4），源码在 `sofagent/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计)。
+当前共 21 条审计规则（A1-A11、A14-A19 + E1-E4），源码在 `engine/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计)。
 
 ### 概念速查
 
@@ -345,7 +345,7 @@ Agent 先判断任务复杂度：
 
 > ⚠️ **成熟度**：审计引擎稳定。FDE 部署四阶段十二步 + 五份模板 + quick-start，核心流程可用。编排引擎 v1.1.3 起 StateGraph 已稳定（DeepAgents Sub Agent + LangGraph，全平台可用）。
 
-FDE = Forward Deployed Engineer。完整流程见 [FDE/FDE.md](../FDE/FDE.md)。建议装 [sofagent-fde Skill](../FDE/SKILL.md) 让 Agent 自动加载 FDE 工作台。
+FDE = Forward Deployed Engineer。完整流程见 [FDE/FDE.md](../FDE/FDE.md)。建议装 [sofagent-fde Skill](../SKILL/SKILL.md) 让 Agent 自动加载 FDE 工作台。
 
 ### 部署：装上 sofagent
 
