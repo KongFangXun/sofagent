@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# loop-install.sh · LOOP 开发循环一键安装 · v1.2.0
+# loop-install.sh · LOOP 开发循环一键安装 · v1.1.9
 # ============================================================
 # 用法: bash loop-install.sh [--platform openclaw|workbuddy|codex|hermes|claude]
 #       默认 --platform openclaw（编排引擎需要 OpenClaw 后台）

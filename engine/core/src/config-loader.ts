@@ -69,6 +69,13 @@ export interface AuditConfig {
     /** webhook URL（完整 URL，含 token query 参数） */
     url?: string;
   };
+  /** v1.2.0: toolGate 前置拦截配置——orchestrator tool call 事前规则检查 */
+  toolGate?: {
+    /** 是否启用 tool gate 前置拦截（默认 true） */
+    enabled: boolean;
+    /** WARN 是否升级为 FAIL 阻断（默认 false，WARN 不阻断） */
+    warnAsFail: boolean;
+  };
 }
 
 /**
@@ -79,6 +86,7 @@ export const DEFAULT_CONFIG: AuditConfig = {
   testPatterns: ['npm test', 'npm run test', 'pytest', 'go test'],
   carefulModifyThreshold: 0.2,
   extendedRulesEnabled: false,
+  toolGate: { enabled: true, warnAsFail: false },
 };
 
 /** 配置加载错误——YAML 语法错误时抛出（v1.1.3: 保留向后兼容） */
@@ -261,6 +269,8 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     A17: partial.A17,
     // v1.1.5: loop 配置透传
     loop: partial.loop,
+    // v1.2.0: toolGate 配置透传——orchestrator tool call 事前拦截
+    toolGate: partial.toolGate ?? DEFAULT_CONFIG.toolGate,
     // v1.1.6: webhook 配置透传（CLI 未传 --webhook 时回退到此）
     webhook: partial.webhook,
   };
@@ -321,6 +331,7 @@ export function safeDefaults(): AuditConfig {
     },
     loopCheckMaxRounds: 20,
     strict: false,
+    toolGate: { enabled: true, warnAsFail: false },
   };
 }
 

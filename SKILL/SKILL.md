@@ -22,7 +22,7 @@ metadata:
     requires: {}
 ---
 
-# SKILL.md · v1.2.0 · FDE Agent 主入口（宪法 + FDE 身份合一）
+# SKILL.md · v1.1.9 · FDE Agent 主入口（宪法 + FDE 身份合一）
 
 > ⚠️ **反向锚点**：本文件随 skill 调用自动注入——你无需 Read 就已有宪法。但 think.md 和 fde.md 需你主动 Read。如果你没读就回复用户，你的输出可能偏离历史教训和企业规范。预装 Agent：`@sofagent-fde`（部署）+ `@sofagent-audit`（合规，必调）。
 >

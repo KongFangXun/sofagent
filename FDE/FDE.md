@@ -96,6 +96,32 @@ FDE（或企业 CIO/网管）的操作手册。**读它 → 帮企业梳理 work
 
 **但其实留下的第五样东西才是最重要的——sofagent 本身。** 上面四样东西不是静态交付物，是 FDE Agent 持续维护的活资产：它跑交付手册里的 workflow、管 AI 节点的生命周期、给知识库做 Dream Cycle 沉淀、用 eval 驱动 Skill 迭代。人（FDE 工程师）离场了，sofagent 留下——7×24 在跑。这才是「常驻 AI FDE Agent」的真正含义：客户得到的不是一套文档+几个脚本，而是一个一直在线、一直干活、一直自检的 AI FDE Agent。
 
+#### 交付物放在哪：{企业名}/ 可见目录（v1.2.0）
+
+FDE 的交付物不只存在隐藏目录里让用户看不到。交付时在你项目里建一个**以企业名命名的可见目录**：
+
+```
+{企业名}/                            ← FDE §3 建档时确定，以此为根目录名
+  交付手册/
+    企业画像.md                       ← 基于 FDE/templates/enterprise-profile.md
+    部署方案.md                       ← 基于 FDE/templates/deployment-plan.md
+    运行规范.md                       ← 安装包自带 fde.md
+    上手文档.md                       ← 安装包自带 quick-start.md
+  nodes/                              ← AI 节点文档（人读 + 编排引擎读）
+    节点A.md                          ← 基于 FDE/templates/nodes/node-template.md
+    节点B.md
+  skills/                             ← AI 节点 Skill（AI 读）
+    节点A/SKILL.md                    ← 基于 FDE/templates/skills/skill-template/SKILL.md
+    节点B/SKILL.md
+  workflows/                          ← Workflow 定义
+    节点A.yml
+    节点B.yml
+```
+
+> 📌 这些文件**不写进 `.gitignore`**——企业画像、节点文档、Skill、Workflow 是企业 AI 化的重要资产，应该进版本控制、团队共享。
+>
+> 📌 `.sofagent/` 运行时目录保留作为真源与 Dashboard 数据源，`{企业名}/` 为交付物副本，二者并存。
+
 > 📖 FDE 的产品哲学——「不配置 UI，配置对话能力」见 [设计哲学](../docs/PHILOSOPHY.md#六怎么装部署哲学)。
 
 ### 三种部署场景
