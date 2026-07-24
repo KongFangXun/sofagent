@@ -18,5 +18,12 @@
   },
   "peerDependencies": {
     "@sofagent/core": "^1.1.9"
-  }
+  },
+  "files": [
+    "dist/",
+    "!dist/**/*.js.map",
+    "!dist/**/*.d.ts.map",
+    "!dist/**/*.test.*",
+    "README.md"
+  ]
 }

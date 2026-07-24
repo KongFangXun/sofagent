@@ -6,8 +6,7 @@ on:
     paths:
       - 'engine/scripts/**/*.sh'
       - 'engine/daemon/**/*.sh'
-      - 'sofagent-lite/**/*.sh'
-      - 'scripts/**/*.sh'
+      - 'install.sh'
       - 'tools/**/*.sh'
       - 'FDE/**/*.sh'
       - 'LOOP/**/*.sh'
@@ -17,8 +16,7 @@ on:
     paths:
       - 'engine/scripts/**/*.sh'
       - 'engine/daemon/**/*.sh'
-      - 'sofagent-lite/**/*.sh'
-      - 'scripts/**/*.sh'
+      - 'install.sh'
       - 'tools/**/*.sh'
       - 'FDE/**/*.sh'
       - 'LOOP/**/*.sh'

@@ -83,7 +83,32 @@ Agent 启动时加载顺序：
 | **强制覆盖**（`--force`） | 覆盖 | **也覆盖** ← 恢复官方默认 |
 | **diff 合并**（`--merge`） | 覆盖 | 尝试三路合并 |
 
-> ⚠️ **当前状态**：custom/ 安装保护逻辑（安全升级时跳过 custom/）计划在 v1.2.1 落地。
+### `--force` 安全机制
+
+`--force` 会覆盖 custom/，因此加入**交互式确认**：
+
+```
+[sofagent] 检测到 --force，以下 custom/ 文件将被覆盖：
+  - fde-overrides.md (1.2KB)
+  - engineer-overrides.md (0.8KB)
+继续？[y/N]
+```
+
+- 默认 `N`（不覆盖），需手动输入 `y` 才执行
+- `--force --yes` 可跳过确认（CI 场景）
+- 覆盖前自动备份到 `custom/.backup/{timestamp}/`
+
+### diff 合并冲突处理
+
+`--merge` 模式对 custom/ 文件做三路合并（base → ours → theirs）：
+
+| 情况 | 处理 |
+|------|------|
+| 无冲突 | 自动合并 |
+| 有冲突 | 生成 `.merge-conflict` 文件，保留双方内容（`<<<<<<<` / `=======` / `>>>>>>>` 标记），**不覆盖原始文件** |
+| 合并失败 | 原始文件不动，输出 `[sofagent] 合并冲突：手动处理 custom/*.merge-conflict` |
+
+> ⚠️ **当前状态**：custom/ 安装保护逻辑（安全升级时跳过 custom/）+ `--force` 确认 + `--merge` 三路合并计划在 v1.2.1 落地。
 
 ---
 
