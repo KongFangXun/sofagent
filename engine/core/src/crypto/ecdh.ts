@@ -1,12 +1,12 @@
 /**
  * @sofagent/core · crypto/ecdh —— ECDH 密钥交换 + HKDF 派生 AES key
- * v1.1.9 新增
+ * v1.2.0 新增
  *
  * 联邦配对的核心原语：人不手打密钥。
  *   - 曲线：prime256v1（NIST P-256，Node 内置支持）
  *   - 双方各自 generateKeyPair() → 交换公钥 → deriveSharedKey() 派生同一把 32 字节 AES key
  *   - 派生链路：ECDH shared secret → HKDF-SHA256（带 info 上下文绑定）→ 32 字节 AES-256 key
- *   - key 只存内存，不落盘明文（持久化留 v1.1.9：OS keychain / age 加密）
+ *   - key 只存内存，不落盘明文（持久化留 v1.2.0：OS keychain / age 加密）
  */
 
 import crypto from 'node:crypto';

@@ -1,6 +1,6 @@
 {
   "name": "sofagent-fde",
-  "version": "1.1.9",
+  "version": "1.2.0",
   "description": "FDE Agent——Forward Deployed Engineer 的企业部署技能。装上后 Agent 带你完成企业 AI 化全流程（四阶段十二步）。",
   "private": true,
   "sofagent": {

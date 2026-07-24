@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // sofagent-orchestrate-compare · 编排方案 A/B 对比 + 任务编排 CLI
 //
-// v1.1.9: ao 完全退役，DeepAgents 为唯一编排引擎。
+// v1.2.0: ao 完全退役，DeepAgents 为唯一编排引擎。
 // 新增连续胜出计数器（CONSECUTIVE_WINS_REQUIRED = 2）+ ab-state.json 持久化。
-// v1.1.9：迁移至 @sofagent/orchestrator，import → 同包内 composer
+// v1.2.0：迁移至 @sofagent/orchestrator，import → 同包内 composer
 //
 // 用法:
 //   sofagent-orchestrate-compare --current <dir> --candidate <dir> --output <dir>
@@ -17,7 +17,7 @@ import { createHash } from 'crypto';
 import { composeWithDeepAgents, compose, type ComposeVariant } from './composer';
 import { runDAG } from './dag-runner';
 
-const VERSION = '1.1.9';
+const VERSION = '1.2.0';
 
 export interface Metric { runCount: number; auditViolations: number; avgSteps: number; firstPassRate: number; }
 interface Args { current: string; candidate: string; output: string; }

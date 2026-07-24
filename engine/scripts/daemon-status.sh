@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent daemon-status.sh · daemon 状态查询 · v1.1.9
+# sofagent daemon-status.sh · daemon 状态查询 · v1.2.0
 # ============================================================
 # 默认：运行状态 + PID + 时长 + mode + detected_platforms
 # --detect：仅进程检测，输出平台列表
@@ -14,7 +14,7 @@
 
 set -euo pipefail
 # shellcheck disable=SC2034  # VERSION 供版本追踪用，不直接引用
-VERSION="1.1.9"
+VERSION="1.2.0"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
