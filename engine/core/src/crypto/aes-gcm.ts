@@ -1,6 +1,6 @@
 /**
  * @sofagent/core · crypto/aes-gcm —— AES-256-GCM payload 加解密
- * v1.1.9 新增
+ * v1.2.0 新增
  *
  * 联邦查询的第 3 层防线（应用层加密）：
  *   - 每条消息使用随机 12 字节 IV（96-bit，GCM 推荐长度），绝不复用

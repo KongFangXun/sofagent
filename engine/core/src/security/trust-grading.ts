@@ -1,6 +1,6 @@
 /**
  * @sofagent/core · security/trust-grading —— 知识可信分级（层 5）
- * v1.1.9 新增
+ * v1.2.0 新增
  *
  * trust 与 sensitivity 正交：
  *   - sensitivity 管"谁能看"（public ≤ internal ≤ restricted）

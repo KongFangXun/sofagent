@@ -16,7 +16,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.1.9-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.0-16B8F3" alt="Version" /></a>
   <a href="#装上就能用"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
@@ -167,7 +167,7 @@ flowchart LR
 |:------|:--------|:--:|
 | 🧭 约束底座 | 开工前规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
 | ⚙️ 编排引擎 | LOOP 自迭代（engineer→audit→reviewer 串行）+ 任务拆解 | 🔶 部分 |
-| 🔍 审计引擎 | 21 条规则，每次 git commit / 文件变更触发，违规拦截+记录 | ✅ 稳定 |
+| 🔍 审计引擎 | 21 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计引擎零 token**——纯静态分析，不消耗任何 LLM 额度 | ✅ 稳定 |
 | 🔄 回溯引擎 | 每次审计后自动 git snapshot，违规一键回滚 | ✅ 稳定 |
 | 🧬 进化引擎 | FDE 周度巡检审计趋势 + 反思日志 | ⚠️ 实验性 |
 
@@ -175,6 +175,8 @@ flowchart LR
 
 > [!NOTE]
 > **最小用量**：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）。五包全装才是完整 Harness 中间件。
+>
+> **三个产品层各自独立、按需选用**：`install.sh`（底座引擎，所有人）· `FDE/fde-install.sh`（底座 + FDE Agent，企业）· `LOOP/loop-install.sh`（底座 + 开发循环，开发者）。FDE 安装不自动装 LOOP——用户要的是"能干活的人"，不是"自己迭代开发工具"。
 
 <details>
 <summary>📖 引擎细节 + 21 条规则</summary>
@@ -191,7 +193,7 @@ flowchart LR
 
 ### 🔍 审计引擎
 
-21 条规则中 16 条纯 git-diff（不依赖 Agent 配合），4 条混合（A7/A8/A14/A15 需 Agent 日志），1 条文件系统（A17 异常批量变更）。v1.0.8+ 内嵌 isomorphic-git + daemon 文件监控，**不需要 git commit 也能审计**。
+21 条规则中 16 条纯 git-diff（不依赖 Agent 配合），4 条混合（A7/A8/A14/A15 需 Agent 日志），1 条文件系统（A17 异常批量变更）。v1.0.8+ 内嵌 isomorphic-git + daemon 文件监控，**不需要 git commit 也能审计**。自 v1.1.8 起加入 Prompt 注入防护（A9 扩展）+ 联邦查询加密，审计能力从本地扩展到跨设备。
 
 **默认规则（13 条，装上就生效）**：
 
@@ -207,7 +209,7 @@ flowchart LR
 
 ### 🔄 回溯引擎
 
-每次审计后自动 git snapshot——违规时推送通知 + 建议回滚。`sofagent-audit --revert <sha>` 一键回到任意快照。
+每次审计后自动 git snapshot（本质是对工作树的轻量快照，不是 git commit——不产生历史污染）。违规时推送通知 + 建议回滚。`sofagent-audit --revert <sha>` 一键回到任意快照。
 
 ### 🧬 进化引擎（实验性）
 
@@ -231,6 +233,7 @@ FDE 周度巡检：读审计趋势（history.jsonl）→ 分析 think.md 反复�
 | 安全声明 | [SECURITY](./SECURITY.md) |
 | 已知局限 | [LIMITATIONS](./LIMITATIONS.md) |
 | 版本路线图 | [ROADMAP](./ROADMAP.md) |
+| LLM 对标映射 | [llm-wiki-mapping](./docs/llm-wiki-mapping.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
 
 ---

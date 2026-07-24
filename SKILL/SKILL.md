@@ -1,7 +1,7 @@
 ---
 name: sofagent-fde
 slug: sofagent-fde
-version: 1.1.9
+version: 1.2.0
 displayName: FDE Agent
 description: >
   FDE Agent——约束 Agent 行为、审计每次变更、沉淀经验。对外统一身份是 FDE Agent（用户面对的唯一入口），
@@ -22,7 +22,7 @@ metadata:
     requires: {}
 ---
 
-# SKILL.md · v1.1.9 · FDE Agent 主入口（宪法 + FDE 身份合一）
+# SKILL.md · v1.2.0 · FDE Agent 主入口（宪法 + FDE 身份合一）
 
 > ⚠️ **反向锚点**：本文件随 skill 调用自动注入——你无需 Read 就已有宪法。但 think.md 和 fde.md 需你主动 Read。如果你没读就回复用户，你的输出可能偏离历史教训和企业规范。预装 Agent：`@sofagent-fde`（部署）+ `@sofagent-audit`（合规，必调）。
 >
@@ -138,7 +138,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 约束层配置：改写 fde.md（企业专属规则）→ 配置 config.yml → knowledge-domain include/exclude
 
-## 持续优化模式（sustain · v1.1.9）
+## 持续优化模式（sustain · v1.2.0）
 
 `sustain` 模式下 FDE 作为基础设施 Agent 与 Audit 平级：
 - 读取 audit 报告趋势（权重最高）→ think.md 反思趋势 → eval 数据

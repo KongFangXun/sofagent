@@ -1,6 +1,6 @@
 /**
  * @sofagent/core · crypto/key-rotation —— 24h 密钥轮换
- * v1.1.9 新增
+ * v1.2.0 新增
  *
  * 轮换策略：
  *   - 当前 key（current）用于加密 + 解密

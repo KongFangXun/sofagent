@@ -1,6 +1,6 @@
 # FDE.md · FDE 能力模型
 
-> v1.1.9 · 2026-07-22（UTC）· 孔放勋
+> v1.2.0 · 2026-07-22（UTC）· 孔放勋
 >
 > 今天你看到这个文件名还是 "Forward Deployed Engineer"。FDE 从岗位 title 升级为能力模型，再升级为**常驻 AI FDE Agent**——**FDE Agent 不走**。你（人）帮客户部署完离场了，FDE Agent 留在客户那里继续干活：梳理好的工作流在跑、合规自检在跑、周度巡检在跑。客户得到的不是一个工具，是一个 7×24 在线的 AI FDE Agent。
 
@@ -732,7 +732,7 @@ perception:
   fde:
     name: "孔放勋"               # FDE 团队联系人
     deployed_at: "2026-07-15"     # 部署日期
-  push_target: "webhook://feishu/xxx"  # v1.2.x 规划：Webhook 推送目标；当前 v1.1.9 仅本地存储，不对外推送
+  push_target: "webhook://feishu/xxx"  # v1.2.x 规划：Webhook 推送目标；当前 v1.2.0 仅本地存储，不对外推送
   reports:
     weekly_audit: true            # 每周审计守护报告
     monthly_growth: true          # 每月知识库增长报告

@@ -95,7 +95,9 @@ grep -n "vX\.Y\.Z\|<.*>\.md\|EXAMPLE.*\.md" LOOP/releaser/releasing.md docs/guid
 
 ```bash
 # 子项 a: think.md 始终为 Ledger/source（非 Views/派生视图）
-grep -rn "think.md.*Views\|think.md.*派生视图" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md FDE/FDE.md   # 期望：无匹配
+# 注意：grep 须精确匹配"think.md 被标为 Views"，而非"think.md 和 Views 出现在同一行"
+# 正确模式：think.md 后跟 Views/派生（think.md = Views）→ 误标；think.md 后跟 Ledger/source → 正确
+grep -rn "think\.md.* Views\|think\.md.*派生视图\|think\.md（Views" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md FDE/FDE.md   # 期望：无匹配
 
 # 子项 b: canonical source 一致性
 grep -rn "Ledger-Views-Policy" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md | head   # 期望：各文档描述一致
@@ -256,7 +258,7 @@ dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path 
 [ -z "$dup" ] && echo "OK" || echo "❌ 跨包重复: $dup"
 ```
 
-#### 13. 测试数声称一致性（SSOT 反查 · v1.1.9 扩）
+#### 13. 测试数声称一致性（SSOT 反查 · v1.2.0 扩）
 
 > SSOT = vitest 实测（与 test-count.sh 同源）。v1.1.7 起有 `tools/check-test-count.sh` 一键校验。
 
@@ -281,7 +283,7 @@ test -f docs/guides/enterprise-deploy.md && echo "✅ 文件存在"
 #### 15. Agent 身份感知有效性
 
 ```bash
-grep -c "露个脸就够了" SKILL/harness/SKILL.md          # 期望：≥ 1
+grep -c "露个脸就够了" SKILL/SKILL.md          # 期望：≥ 1
 grep -c "质量搭档" SKILL/harness/engage.md              # 期望：≥ 1
 grep -c "sofagent 已就绪" engine/scripts/lib/post-install.sh  # 期望：≥ 1
 grep -c "Agent 身份感知" FDE/FDE.md                      # 期望：≥ 1
@@ -399,7 +401,7 @@ SSOT_VER=$(node -e "console.log(require('./package.json').version)")
 grep -oE "[0-9]+ 个阶段|[0-9]+ 个关键步骤|[0-9]+ 步" FDE/SKILL.md FDE/README.md FDE/FDE.md 2>/dev/null | sort | uniq -c   # 期望：一致
 
 # 子项 b: LOOP Agent 数跨文档一致（v1.1.4 暴露）
-ACTUAL_AGENTS=$(ls agents/SKILL/sofagent-* -d 2>/dev/null | wc -l); echo "实际安装 Agent 数: $ACTUAL_AGENTS"
+ACTUAL_AGENTS=$(ls SKILL/agents/*/SKILL.md 2>/dev/null | wc -l); echo "实际安装 Agent 数: $ACTUAL_AGENTS"
 grep -oE "[0-9]+ 个内置 Agent\|[0-9]+ 个 Agent" LOOP/SKILL.md LOOP/README.md LOOP/quick-start.md 2>/dev/null   # 人工核对一致
 
 # 子项 c: 跨产品 install.sh 契约稳定性（v1.1.4 暴露——无契约文档）
@@ -494,7 +496,7 @@ fi
 > SKILL.md 若缺必需字段，Agent 可能无法自动加载
 
 ```bash
-for f in agents/SKILL/*/SKILL.md FDE/SKILL.md LOOP/SKILL.md SKILL/harness/SKILL.md; do
+for f in SKILL/agents/*/SKILL.md FDE/SKILL.md LOOP/SKILL.md SKILL/SKILL.md; do
   [ -f "$f" ] || continue
   miss=$(grep -cE "name:|slug:|displayName:|description:|version:|tags:|image:|triggers:|scenarios:|not_when:" "$f")
   echo "$f: 命中必需字段 $miss/9"
@@ -966,8 +968,8 @@ sed -n "/^### \[$LATEST_VER\]/,/^### \[v/p" CHANGELOG.md | grep -qE "P[012]×|fr
 grep -q "\[sofagent\]" <(grep "statusLabel" engine/audit/src/index.ts) || echo "⚠️ 视觉模式 statusLabel 缺 [sofagent] 前缀"
 
 # 子项 g: SKILL.md 铁律/底线数标题声称与实际一致（防御跨图数字漂移 F-19）
-SKILL_BOTTOM_CLAIMED=$(grep -oE "### ([0-9]+) 底线" SKILL/harness/SKILL.md | grep -oE "[0-9]+" || echo 0)
-SKILL_BOTTOM_ACTUAL=$(sed -n '/^### [0-9] 底线/,/^### /p' SKILL/harness/SKILL.md | grep -cE "^- " || echo 0)
+SKILL_BOTTOM_CLAIMED=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || echo 0)
+SKILL_BOTTOM_ACTUAL=$(sed -n '/^### [0-9] 底线/,/^### /p' SKILL/SKILL.md | grep -cE "^- " || echo 0)
 [ "$SKILL_BOTTOM_CLAIMED" != "$SKILL_BOTTOM_ACTUAL" ] && echo "⚠️ SKILL.md 底线数标题 $SKILL_BOTTOM_CLAIMED vs 实际 $SKILL_BOTTOM_ACTUAL"
 
 # 子项 h: LIMITATIONS 覆盖最近版本新功能（防御文档滞后 F-05 P1）
