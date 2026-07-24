@@ -28,6 +28,7 @@
     "@sofagent/audit": "1.1.9",
     "@sofagent/core": "1.1.9",
     "@sofagent/harness": "1.1.9",
+    "@sofagent/rules": "1.2.0",
     "deepagents": "^1.10.7",
     "js-yaml": "^5.2.0"
   },

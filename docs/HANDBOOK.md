@@ -353,7 +353,17 @@ FDE = Forward Deployed Engineer。完整流程见 [FDE/FDE.md](../FDE/FDE.md)。
 
 **节点类型选择**：自动运行节点（需 OpenClaw 全栈）vs 个人增强节点（WorkBuddy/Codex，无需 OpenClaw）。完整对照表见 [ARCHITECTURE 双节点架构](./ARCHITECTURE.md#双节点架构)。
 
-### USB 烧录：给普通员工发 U 盘（v1.1.8+）
+### USB 烧录：三种部署场景全覆盖（v1.1.8+ / v1.2.0 叙事收口）
+
+**三种场景，一种方式**——sofagent 用 USB key 覆盖全部部署需求：
+
+| 场景 | 用户 | 方式 |
+|------|------|------|
+| 装电脑 | 技术人员 | 正常安装流程，部署到电脑上就能用 |
+| U 盘 | 普通员工 | sofagent + 联邦密钥 + knowledge 全在盘上，插上即用 |
+| 无头设备 | 服务器/工控机 | U 盘插上别拔，Agent 一直在联邦里跑 |
+
+**企业叙事**：「买 U 盘 → 下载 sofagent → 写盘 → 发给员工」——FDE 梳理好 workflow 节点后，一条命令烧录完整运行时到 U 盘。员工拿到 U 盘，插上任何电脑双击就能跑，不需要安装、不需要配对、不需要专业知识。
 
 FDE 梳理好 workflow 节点后，可以一键烧录到 U 盘——员工拿到插上就能用：
 

@@ -7,7 +7,7 @@
 
 ## 现在在哪：v1.1.9 ✅（开发完成，bump 留 releasing SOP）
 
-> **产品叙事收敛 + USB 完整运行时 + daemon A/B 自动调度器 + 控制图状态抽取 + v1.1.8 BugFix 42 项**：对外身份收敛为「FDE Agent（由 sofagent 引擎驱动）」（README 双语首屏 + River 比喻 + Harness 降级开发者段）；USB 完整运行时（`create-usb-key` 写 U 盘：Node 便携版 + HMAC 签名 + knowledge/ AES-256 加密 + 三平台启动脚本，双击 start 联邦在线、拔盘零残留）；daemon A/B 自动调度（ab-scheduler 四阶段状态机 + ab-history jsonl 聚合 + cron `ab-schedule` 分支，连续 2 轮更好自动 promote）；控制图状态抽取（checkpoint → ControlGraphState，version:'v1' 供 v1.2.x Dashboard 消费）。质量验证：909 tests across 11 packages 全绿（daemon 104 / orchestrator 167 / audit 413 不回归）、累计新增 46 case、零新增 runtime npm 依赖。
+> **产品叙事收敛 + USB 完整运行时 + daemon A/B 自动调度器 + 控制图状态抽取 + v1.1.8 BugFix 42 项**：对外身份收敛为「FDE Agent（由 sofagent 引擎驱动）」（README 双语首屏 + River 比喻 + Harness 降级开发者段）；USB 完整运行时（`create-usb-key` 写 U 盘：Node 便携版 + HMAC 签名 + knowledge/ AES-256 加密 + 三平台启动脚本，双击 start 联邦在线、拔盘零残留）；daemon A/B 自动调度（ab-scheduler 四阶段状态机 + ab-history jsonl 聚合 + cron `ab-schedule` 分支，连续 2 轮更好自动 promote）；控制图状态抽取（checkpoint → ControlGraphState，version:'v1' 供 v1.2.x Dashboard 消费）。质量验证：937 tests across 12 packages 全绿（daemon 104 / orchestrator 167 / audit 413 不回归）、累计新增 46 case、零新增 runtime npm 依赖。
 >
 > 📖 [v1.1.9 开发日志](./docs/changelog/v1.1.9.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 

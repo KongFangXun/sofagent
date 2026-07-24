@@ -198,16 +198,16 @@ echo -e "\n${BOLD}── 6. install.sh 关键路径 ──${NC}"
 # v0.99.8 教训：fde.md 从 skill/ 迁到 skill/data/，8 处引用需要同步。
 # pre-push-check 之前不覆盖 install.sh，路径断裂检测不到。此步补盲。
 INSTALL_CRITICAL_FILES=(
-  "engine/skill/data/fde.md"
-  "engine/skill/SKILL.md"
-  "engine/skill/entry-gate.md"
-  "engine/skill/task-aware.md"
-  "engine/skill/task-closure.md"
-  "engine/skill/loop-check.md"
-  "engine/skill/engage.md"
-  "engine/skill/engage-fde.md"
-  "engine/skill/loop-evaluate.md"
-  "engine/skill/loop-exit.md"
+  "SKILL/harness/data/fde.md"
+  "SKILL/SKILL.md"
+  "SKILL/harness/entry-gate.md"
+  "SKILL/harness/task-aware.md"
+  "SKILL/harness/task-closure.md"
+  "SKILL/harness/loop-check.md"
+  "SKILL/harness/engage.md"
+  "SKILL/harness/engage-fde.md"
+  "SKILL/harness/loop-evaluate.md"
+  "SKILL/harness/loop-exit.md"
 )
 PATH_FAIL=0
 for f in "${INSTALL_CRITICAL_FILES[@]}"; do
@@ -218,13 +218,11 @@ for f in "${INSTALL_CRITICAL_FILES[@]}"; do
 done
 
 # 检查 install.sh 引用的路径和实际文件是否一致
-# RULES_SRC 格式: "${SCRIPT_DIR}/../skill/data/fde.md" → 提取 ../skill/data/fde.md
-# SCRIPT_DIR = engine/scripts 的绝对路径，所以从 engine/scripts/ 解析相对路径
-# shellcheck disable=SC2016  # sed pattern matches literal ${SCRIPT_DIR} in install.sh
+# v1.2.0: install.sh 已从 engine/scripts/ 提升到根目录，SCRIPT_DIR = 项目根目录
+# RULES_SRC 格式: "${SCRIPT_DIR}/SKILL/harness/data/fde.md" → 从项目根目录解析相对路径
 INSTALL_RULES_SRC=$(grep 'RULES_SRC=' install.sh 2>/dev/null | head -1 | sed 's/.*="\${SCRIPT_DIR}\///;s/".*//')
 if [ -n "$INSTALL_RULES_SRC" ]; then
-  # 用 subshell cd 验证路径是否存在（兼容 macOS/Linux，不依赖 realpath）
-  if ! (cd engine/scripts 2>/dev/null && [ -f "${INSTALL_RULES_SRC}" ]); then
+  if [ ! -f "$INSTALL_RULES_SRC" ]; then
     echo -e "  ${RED}✗${NC} install.sh RULES_SRC 路径断裂: ${INSTALL_RULES_SRC}"
     PATH_FAIL=$((PATH_FAIL + 1))
   fi
