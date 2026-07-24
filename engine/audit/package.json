@@ -62,7 +62,7 @@
     "deepagents": "^1.10.7",
     "isomorphic-git": "^1.25.0",
     "js-yaml": "^5.2.0",
-    "@sofagent/ontology": "1.2.0",
-    "@sofagent/core": "1.2.0"
+    "@sofagent/ontology": "1.2.1",
+    "@sofagent/core": "1.2.1"
   }
 }

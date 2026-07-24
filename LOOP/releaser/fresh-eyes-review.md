@@ -757,4 +757,11 @@
 
 | 检查点描述 | 防御的问题 | 建议落位 |
 |-----------|-----------|---------|
-| | | |
+| 物理重构后旧路径全仓残留扫描（sofagent/skill/ + agents/SKILL/ + Dengine/） | 大重构容易在边缘文件留下旧路径，导致运行时静默走 fallback | regression-checklist.md 维度 49（v1.2.0 已落地） |
+| install.sh 内部 VERSION= 变量与 package.json SSOT 一致性 | check-version.sh 只扫脚本头注释不扫变量赋值，VERSION= 成盲区 | regression-checklist.md 维度 49 子项 d + check-version.sh 追加检查段 |
+| bump-version.sh set -u 下变量作用域 edge case | 同版本号 dry-run 崩溃，unbound variable 在特定 subshell 路径触发 | regression-checklist.md 维度 49 子项 h |
+| npm 子包 dependencies 写了超前版本号 | mcp 包依赖写 1.2.1 但 SSOT 才 1.2.0，check-version 报 ✗ | check-version.sh §9 已有覆盖，发版前必扫 |
+
+> **v1.2.0 三轮 fresh-eyes 审查教训汇总**：物理结构大重构（目录更名 + Skill 收敛 + 工具链搬迁）是最容易产生路径残留的场景。核心教训——① 源码中的硬编码路径（builtin-agents.ts）比文档路径更危险（静默 fallback vs 明显报错）；② 版本号检查工具自己也有盲区（VERSION= 变量不在扫描范围）；③ BSD grep 对中文 UTF-8 的误判让传统 grep 扫描不可靠，必须用 node 替代。
+
+---

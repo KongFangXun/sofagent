@@ -22,9 +22,9 @@
   "license": "MIT",
   "author": "KongFangXun",
   "dependencies": {
-    "@sofagent/ontology": "1.2.0",
-    "@sofagent/core": "1.2.0",
-    "@sofagent/audit": "1.2.0"
+    "@sofagent/ontology": "1.2.1",
+    "@sofagent/core": "1.2.1",
+    "@sofagent/audit": "1.2.1"
   },
   "exports": {
     ".": {
