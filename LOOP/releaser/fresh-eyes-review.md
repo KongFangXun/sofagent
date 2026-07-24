@@ -49,14 +49,14 @@
 **你的任务**：
 1. 看 GitHub 项目首页（README），**只往下滚 3 屏**。v1.1.9 起四段式结构：① FDE Agent 是什么（含 River 比喻 + a16z + Hugging Face 实测）→ ② 装上就能用（安装 + 三步体验）→ ③ 企业落地 → ④ 引擎架构（开发者段）。在这 3 屏里（对应 §① + §② 前半），你形成了什么印象？说清楚还是糊涂？3 屏内你能搞清楚"这东西是干什么的"吗？
 2. 如果要装，你第一步做什么？这一步有没有障碍？
-3. 用 npm 装完 `@sofagent/audit`，跑 `sofagent-audit --help` 或者 `sofagent-audit --doctor`。输出让你觉得这东西能用吗？还是想卸载？
+3. 用 npm 装完 `/audit`，跑 `sofagent-audit --help` 或者 `sofagent-audit --doctor`。输出让你觉得这东西能用吗？还是想卸载？
 4. 你会把这个项目发给同事吗？如果会，你会怎么介绍它？（用你自己的话，不抄 README）
-5. **版本声称验证**：看 CHANGELOG——它声称了什么？实际在项目里找到了吗？标题说的功能，在代码/目录/配置里能找到对应实现吗？你觉得这个声称诚实吗，还是夸大了？**特别检查 README 规则分类**：README 把规则分成"纯 git-diff"和"需 Agent 日志"两类并标注规则 ID——打开 `sofagent/audit/src/rules/index.ts`，分类里提到的每个 ID 是否真实存在？有没有"幽灵规则"（README 写了但代码里根本没注册的 ID）？（v1.1.6 起降为快速抽查：连续 3 个版本无幽灵规则问题，发版时只需 grep index.ts 注册 ID 与 README/audit/README 声称 ID 做一次快照比对，不再作为重负载任务；原误记为"维度一·任务3"，实际位于任务5）
+5. **版本声称验证**：看 CHANGELOG——它声称了什么？实际在项目里找到了吗？标题说的功能，在代码/目录/配置里能找到对应实现吗？你觉得这个声称诚实吗，还是夸大了？**特别检查 README 规则分类**：README 把规则分成"纯 git-diff"和"需 Agent 日志"两类并标注规则 ID——打开 `engine/audit/src/rules/index.ts`，分类里提到的每个 ID 是否真实存在？有没有"幽灵规则"（README 写了但代码里根本没注册的 ID）？（v1.1.6 起降为快速抽查：连续 3 个版本无幽灵规则问题，发版时只需 grep index.ts 注册 ID 与 README/audit/README 声称 ID 做一次快照比对，不再作为重负载任务；原误记为"维度一·任务3"，实际位于任务5）
 6. **文档瘦身**：README 行数——你能在一屏内搞清楚这东西是干什么的吗？有没有你想找但找不到的东西？（比如"这东西能企业部署吗？"——你从 README 能看出来吗？）
 7. **tag 指向确认**：跑 `git show vX.Y.Z --stat`——tag 指向的是发布提交还是修复提交？tag commit message 是否包含版本号？
 8. **双节点架构验证**：README 说 sofagent 支持两种部署节点——"自动运行节点"（需 OpenClaw）和"个人增强节点"（WorkBuddy/Codex/Claude Code，不需 OpenClaw）。你用的是哪个？如果你用的不是 OpenClaw（比如 WorkBuddy），能跑通吗？README 里"个人增强节点"的说明清楚吗？`sofagent-orchestrator compose --task` 这个 CLI 入口你找得到吗？**这个声称是 v1.0.7+ 的核心卖点——如果不装 OpenClaw 就能跑，文档要让你相信这一点；如果其实跑不通，就是夸大宣传。**
 9. **输出归属感（v1.1.3 新增，v1.1.9 叙事转向更新）**：跑 `sofagent-audit --help`、`--init`、`--doctor` 后，你知道这些功能是谁提供的吗？输出里有没有 sofagent 的名字？还是你看到的只是通用工具输出（"PASS""FAIL""检测完成"），不知道背后是哪个引擎在跑？作为一个刚装上的开发者，你能感知到"这是 sofagent 引擎在做的事"吗，还是觉得"这不就是普通的 git hook 吗"？**v1.1.9 叙事转向后**：用户面对的产品身份是 FDE Agent——如果用户用了三周还不知道自己装了 FDE Agent（底层是 sofagent 引擎在保护），这个产品就是失败的。
-10. **README 首屏无旧叙事残留（v1.1.4 新增，v1.1.9 叙事转向后重写）**：v1.1.9 叙事收敛后，README 首屏应统一为 FDE Agent 产品身份，不应残留旧叙事的「三产品并列」「一底座·四引擎首屏直接暴露」等问题。**验证**：① README §① 让你形成「这是一个产品」的印象，还是仍有「三个并列产品」（sofagent + FDE + LOOP）的错觉？② README 首屏 3 屏内不应出现旧的「一底座·四引擎」Mermaid 图（应降级到「引擎架构（开发者段）」折叠块内）。③ **双层身份一致性**：所有文档中「FDE Agent」（对外产品身份）与「sofagent 引擎」（底层引擎）两层是否一致？有没有该说「FDE Agent」却说了「sofagent 引擎」的地方？④ 大写目录（`FDE/`、`LOOP/`）是部署/产品入口，小写目录（`sofagent/`、`docs/`）是核心代码——这个命名约定文档里有写明吗？**历史教训**：v1.1.6 起就存在「一底座·四引擎」图干扰 FDE Agent 统一身份的问题，到 v1.1.9 仍未完全消除（Mermaid 图只降级了标题没折叠内容）。
+10. **README 首屏无旧叙事残留（v1.1.4 新增，v1.1.9 叙事转向后重写）**：v1.1.9 叙事收敛后，README 首屏应统一为 FDE Agent 产品身份，不应残留旧叙事的「三产品并列」「一底座·四引擎首屏直接暴露」等问题。**验证**：① README §① 让你形成「这是一个产品」的印象，还是仍有「三个并列产品」（sofagent + FDE + LOOP）的错觉？② README 首屏 3 屏内不应出现旧的「一底座·四引擎」Mermaid 图（应降级到「引擎架构（开发者段）」折叠块内）。③ **双层身份一致性**：所有文档中「FDE Agent」（对外产品身份）与「sofagent 引擎」（底层引擎）两层是否一致？有没有该说「FDE Agent」却说了「sofagent 引擎」的地方？④ 大写目录（`FDE/`、`LOOP/`）是部署/产品入口，小写目录（`engine/`、`docs/`）是核心代码——这个命名约定文档里有写明吗？**历史教训**：v1.1.6 起就存在「一底座·四引擎」图干扰 FDE Agent 统一身份的问题，到 v1.1.9 仍未完全消除（Mermaid 图只降级了标题没折叠内容）。
 11. **README 首屏信息架构评审（v1.1.6 新增）**：前面几个任务都是"读 README 某一段判断一件事"，这一项专门审查 README 作为整体文档的**编排质量**——结构、密度、对比表诚实度、首屏比喻一致性。任务 6（文档瘦身）看的是"行数够不够短"，任务 11 看的是"排得够不够好"。具体检查：
     - **首屏比喻一致性**：首屏用的核心比喻（v1.1.9 起统一为 **River——堤坝 + 自来水厂 + 管网 + 水龙头**）——后面章节有没有换比喻？有没有三个比喻打架让读者摸不清这东西到底像什么？一个 README 最多一个核心比喻，多即是乱。**特别检查**：River 比喻全文应 ≤2 处完整展开（README §① 为锚点），PHILOSOPHY / FDE / HANDBOOK 等其他文档应引用而非重复展开——如果走完 README → PHILOSOPHY → FDE 连续读到 3 遍完整 River 比喻，就是维护负担。
     - **结构编排 vs 读者意图**：读者打开 GitHub 项目首页，心智路径通常是「这是什么 → 有什么不同 → 怎么用 → 装得了吗」。README 的章节顺序是否匹配这个心智路径？有没有把"设计哲学/架构细节"放在"怎么装"前面，导致读者还没决定要不要用就被灌了一堆原理？
@@ -86,7 +86,7 @@
 
 你关心的核心问题是"出事了谁负责"和"这东西能进公司吗"。你会从 SECURITY.md 和 LIMITATIONS.md 开始，但如果其他文档（比如 ROADMAP 里的准入条件、ARCHITECTURE 里的实验性标注）能帮你判断项目成熟度，你也会去看。**你读任何文档的出发点都是：这一页让我更放心了，还是更担心了？**
 
-7. **审计日志自身安全**：打开 `sofagent/audit/src/audit-history.ts`。审计拦截了密钥泄漏后，拦截结果（含 diff 内容）被写入 `history.jsonl`。这个文件本身会不会成为第二个泄漏点？Agent 能读这个文件吗？能篡改吗？有没有脱敏机制？
+7. **审计日志自身安全**：打开 `engine/audit/src/audit-history.ts`。审计拦截了密钥泄漏后，拦截结果（含 diff 内容）被写入 `history.jsonl`。这个文件本身会不会成为第二个泄漏点？Agent 能读这个文件吗？能篡改吗？有没有脱敏机制？
 8. **optional dependency 类型安全**：检查对 optional dependency（如 deepagents）的 import 是否用了 `as unknown as` 双重转换。CI 环境 TS 类型检查比本地严格——直接 `as` 可能本地通过但 CI 失败。
 9. **文件系统审计的企业适用性**：README 声称"v1.0.8+ 支持文件系统审计——内嵌 isomorphic-git，daemon 监控文件变更自动审计，非开发者也能用，不需要装 git、不需要 commit"。你管理的是 200 人公司，大部分岗位不是开发者——这个声称对你有吸引力吗？从文档里你能搞清楚怎么配置 daemon 监控哪些目录吗？审计结果推到哪里？**v1.2.x 前 daemon 审计结果仅本地 stdout（daemon-notice.md），Webhook 推送能力待落地**——文档有没有诚实标注这个限制？
 10. **合规审计可追溯性（v1.1.3 新增）**：企业 IT 做合规审计时，审计记录里能追溯到"这是 sofagent 审计引擎做的"吗？Webhook 推送的消息、history.jsonl 的审计记录、daemon 的巡检报告——每一条是否能清晰地归因到 sofagent？如果你们的合规审查员翻审计日志，看到"PASS"却不知道是谁判的 PASS，这对企业来说是不可接受的——就像财务报表没有审计师签名一样。
@@ -103,25 +103,25 @@
 3. 如果你要写一篇文章《为什么不用 sofagent》，你的核心论据是什么？
 4. 这个项目自称"正式版"和"可生产使用"。以你的标准，它够格吗？什么地方让你觉得不够格？
 5. **范围合理性**：CHANGELOG 和文档中描述的每一条功能，以你的标准判断它是真功能还是花架子？一个 commit-msg 审计工具为什么要关心"知识库访问控制"？这是范围蔓延还是合理的演进？
-6. **规则声称验证**：README 说的规则数量（如"17 条规则"）——打开 `sofagent/audit/src/rules/index.ts`，数 `defaultRules` + `extendedRules` 的实际注册数量。一致吗？每条规则的 `evidenceMode`（`git-diff` vs `hybrid`）与 README 的分类描述是否匹配？有没有声称了但代码里没注册的规则？**特别检查规则 ID 是否真实存在**：README 分类描述中提到的每个规则 ID（如"A1-A6, A9-A11"），逐个确认在 index.ts 的 `name:` 字段中确实有注册。**注意跳号**：规则编号不是连续的——A1-A11 后跳到 A14/A15（A12/A13 是永久跳号，不是"规划中"），不要把跳号当作遗漏。历史教训：曾出现 README 声称了代码中根本不存在的规则 ID（文档漂移问题）。
+6. **规则声称验证**：README 说的规则数量（如"17 条规则"）——打开 `engine/audit/src/rules/index.ts`，数 `defaultRules` + `extendedRules` 的实际注册数量。一致吗？每条规则的 `evidenceMode`（`git-diff` vs `hybrid`）与 README 的分类描述是否匹配？有没有声称了但代码里没注册的规则？**特别检查规则 ID 是否真实存在**：README 分类描述中提到的每个规则 ID（如"A1-A6, A9-A11"），逐个确认在 index.ts 的 `name:` 字段中确实有注册。**注意跳号**：规则编号不是连续的——A1-A11 后跳到 A14/A15（A12/A13 是永久跳号，不是"规划中"），不要把跳号当作遗漏。历史教训：曾出现 README 声称了代码中根本不存在的规则 ID（文档漂移问题）。
 7. **声称与实现一致性**：CHANGELOG 标题中声称的功能（如"自进化引擎"），实际代码是否匹配？有没有夸大——比如 wrapper 叫"引擎"、CLI 调用叫"集成"？
 8. **CHANGELOG 纯度**：CHANGELOG 历史条目中有没有审查元信息（模型名、审查轮次、P0/P1 计数）？CHANGELOG 应该只写产品变更。
 9. **SkillOpt 集成 CLI 契约验证**：打开 `skillopt-integration.ts`——`isSkillOptAvailable()` 和 `runSkillOpt()` 调用的 CLI 参数形式与真实安装的 `skillopt-sleep --help` 声明的子命令/参数一致吗？**特别检查**：`isSkillOptAvailable()` 探针是否用 `status` 子命令（而非被 CLI 拒绝的 `--version`）；`runSkillOpt()` 是否用 `run --target-skill-path <input> --auto-adopt` 子命令形式（而非 flat positional + `--output`）。历史教训：曾发现集成代码照着不存在的 CLI 契约写了整整一个版本——探针用 `--version`（真实 CLI exit 2）、调用用 flat positional + `--output`（真实 CLI 只认子命令）。**v1.1.3 起升级为 CI 必跑**：装 skillopt-sleep 后实跑 `skillopt-sleep --help` 对比集成代码的调用形式，仅读源码不算验证。
 10. **Agent 定义的平台耦合度**：打开 `agents/` 下的 Agent 定义——它们的 role/workflow/rules 是否过度依赖 OpenClaw 的 `session.spawn` API？如果未来换平台，这些 Agent 定义还能独立使用吗？还是需要大幅改写？
-11. **ruleClass 跨文档漂移检测（v1.1.3 追加）**：提取 `sofagent/audit/src/rules/index.ts` 的 `name` + `ruleClass`，与 `sofagent/audit/README.md` 规则表逐行 diff。ruleClass 漂移已反复出现（A6 曾从「业务底线」漂移到「能力拐杖」、A11 反向漂移），单文档审查永远发现不了——只有跨文档交叉对照才暴露矛盾。**检查手法**：`diff <(grep "name:\|ruleClass:" sofagent/audit/src/rules/index.ts | paste - -) <(提取 audit/README.md 规则表的名称+分级列)`。建议对此建自动化脚本加入 pre-push-check。
-12. **evidenceMode 计数对账（v1.1.4 追加）**：README 声称"X 条纯 git-diff + Y 条需 Agent 日志"——数 index.ts 里 `evidenceMode: 'git-diff'` / `'hybrid'` / `'filesystem'` 的实际计数。**v1.1.4 教训**：README:169 声称"17 条纯 git-diff"，实际 16 条（defaultRules 10 git-diff + extendedRules 6 git-diff = 16）。evidenceMode 分类漂移和 ruleClass 漂移同理——单看数字"像对的"，只有实数才暴露矛盾。**检查手法**：`grep -oE "evidenceMode: '[a-z-]+'" sofagent/audit/src/rules/index.ts | sort | uniq -c`，与 README 的"X 条为纯 git-diff / Y 条需 Agent 日志"对照。
-13. **audit/README 规则表完整性（v1.1.4 追加）**：打开 `sofagent/audit/README.md` 的默认规则表 + 扩展规则表——每条已注册规则都有对应行吗？**v1.1.4 教训**：A18/A19 新增后 audit/README 规则表完全没更新（grep 零命中），用户从 npm 包文档看不到这两条规则。**检查手法**：`INDEX_COUNT=$(grep -cE "name:\s*'A[0-9]|name:\s*'E[0-9]" index.ts); README_ROWS=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " audit/README.md)`，两者应一致。
+11. **ruleClass 跨文档漂移检测（v1.1.3 追加）**：提取 `engine/audit/src/rules/index.ts` 的 `name` + `ruleClass`，与 `engine/audit/README.md` 规则表逐行 diff。ruleClass 漂移已反复出现（A6 曾从「业务底线」漂移到「能力拐杖」、A11 反向漂移），单文档审查永远发现不了——只有跨文档交叉对照才暴露矛盾。**检查手法**：`diff <(grep "name:\|ruleClass:" engine/audit/src/rules/index.ts | paste - -) <(提取 audit/README.md 规则表的名称+分级列)`。建议对此建自动化脚本加入 pre-push-check。
+12. **evidenceMode 计数对账（v1.1.4 追加）**：README 声称"X 条纯 git-diff + Y 条需 Agent 日志"——数 index.ts 里 `evidenceMode: 'git-diff'` / `'hybrid'` / `'filesystem'` 的实际计数。**v1.1.4 教训**：README:169 声称"17 条纯 git-diff"，实际 16 条（defaultRules 10 git-diff + extendedRules 6 git-diff = 16）。evidenceMode 分类漂移和 ruleClass 漂移同理——单看数字"像对的"，只有实数才暴露矛盾。**检查手法**：`grep -oE "evidenceMode: '[a-z-]+'" engine/audit/src/rules/index.ts | sort | uniq -c`，与 README 的"X 条为纯 git-diff / Y 条需 Agent 日志"对照。
+13. **audit/README 规则表完整性（v1.1.4 追加）**：打开 `engine/audit/README.md` 的默认规则表 + 扩展规则表——每条已注册规则都有对应行吗？**v1.1.4 教训**：A18/A19 新增后 audit/README 规则表完全没更新（grep 零命中），用户从 npm 包文档看不到这两条规则。**检查手法**：`INDEX_COUNT=$(grep -cE "name:\s*'A[0-9]|name:\s*'E[0-9]" index.ts); README_ROWS=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " audit/README.md)`，两者应一致。
 14. **独立产品 install 闭环实跑（v1.1.4 追加）**：FDE 和 LOOP 声称"独立产品"——实跑验证：在仅含 FDE/ 子目录的环境（不 clone 主仓库）跑 `bash fde-install.sh`，能跑通吗？**v1.1.4 教训**：fde-install.sh:52 调 `$PROJECT_ROOT/install.sh`、loop-install.sh:54 同理——只 clone 子目录绝对跑不通。"独立产品"是营销话术还是真能独立装？实跑才知道。同时检查跨产品 install.sh 调用接口（路径/参数/退出码）有没有契约文档或 pin commit。
 
 ---
 
 ## 维度四：📦 npm 用户
 
-> 你是一名前端/全栈开发者。你不需要读 README（太长不看），你只做一件事：`bash FDE/fde-install.sh && sofagent-audit --help`（高级/开发者路径：也可 `npm install -g @sofagent/audit`）。
+> 你是一名前端/全栈开发者。你不需要读 README（太长不看），你只做一件事：`bash FDE/fde-install.sh && sofagent-audit --help`（高级/开发者路径：也可 `npm install -g /audit`）。
 
 **你的任务**：
 1. `--help` 输出清晰吗？你马上知道怎么用还是要再查文档？
-   先试 `npx @sofagent/audit --help`——能跑吗？如果不能，报什么错？README 有没有告诉你该怎么办？
+   先试 `npx /audit --help`——能跑吗？如果不能，报什么错？README 有没有告诉你该怎么办？
 2. 在随便一个 git 项目里跑 `sofagent-audit --init`，然后 commit 一个改动。这个体验顺滑吗？有没有让你困惑的输出？
 3. 跑 `sofagent-audit --doctor`。输出有用吗？每一项检查都合理还是有的凑数？有没有你看到"跳过"或"未找到"但不明白什么意思的检查项？你会查文档还是忽略？
 4. 如果你装完后跑不通，你会投诉什么？（模拟一次失败的场景，比如 Node 版本不够、没在 git 仓库里跑）
@@ -129,7 +129,7 @@
 6. **安装脚本的报错友好度**：跑 `LOOP/loop-install.sh` 在缺少前置依赖时（比如没装 sofagent 底座、不支持的平台）——报错信息清楚吗？告诉你缺什么、怎么装了吗？还是直接 exit 1 让你摸不着头脑？
 7. **批量部署/集中配置**：如果要给 50 个仓库都装 sofagent，有没有批量安装或集中配置下发的能力？企业级场景需要 org-level 配置。当前是 per-repo 安装——这对 DevOps 来说够用吗？
 8. **`--strict`/`--ci` 模式验证**：跑 `sofagent-audit --diff HEAD~1..HEAD --task "wrong" --strict`，实际 exit code 是 2（承诺值）还是 1？文档声称的模式行为与实现是否一致？**如果 exit code 不是 2，这就是 P0——文档声称与实现不符。**
-9. **独立 install 闭环（v1.1.4 新增）**：在干净环境（不预装 sofagent 底座）只跑 `bash FDE/fde-install.sh` 或 `bash LOOP/loop-install.sh`——能跑通吗？两个脚本第 52 行都调用 `$PROJECT_ROOT/install.sh`、fde-install.sh 第 64 行依赖 `$PROJECT_ROOT/sofagent/skill/data/fde.md`、第 82 行依赖根目录 `agents/SKILL/`——**如果用户只 git clone 了 FDE/ 或 LOOP/ 子目录，绝对跑不通**。这是"声称独立产品 vs 实现深度耦合主包路径"的鸿沟。FDE 和 LOOP 真的独立吗？还是说"独立"只是营销话术，实质是主包的快捷安装入口？如果用户跟着 FDE/README 的"装上就能用"指引走，会不会卡在某个主包路径找不到？
+9. **独立 install 闭环（v1.1.4 新增）**：在干净环境（不预装 sofagent 底座）只跑 `bash FDE/fde-install.sh` 或 `bash LOOP/loop-install.sh`——能跑通吗？两个脚本第 52 行都调用 `$PROJECT_ROOT/install.sh`、fde-install.sh 第 64 行依赖 `$PROJECT_ROO./SKILL/data/fde.md`、第 82 行依赖根目录 `agents/SKILL/`——**如果用户只 git clone 了 FDE/ 或 LOOP/ 子目录，绝对跑不通**。这是"声称独立产品 vs 实现深度耦合主包路径"的鸿沟。FDE 和 LOOP 真的独立吗？还是说"独立"只是营销话术，实质是主包的快捷安装入口？如果用户跟着 FDE/README 的"装上就能用"指引走，会不会卡在某个主包路径找不到？
 
 你是"先动手再看文档"型开发者。装完跑通了，可能会随手翻一下 README 看看还有没有别的功能。**你的判断标准不是文档完不完整，而是"从敲下 npm install 到觉得这东西有用，中间花了多长时间"。**
 
@@ -151,7 +151,7 @@
 8. **根目录整洁度**：根目录应该只有 5-7 个核心文件（README/LICENSE/CHANGELOG/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/ROADMAP）。其余 md 文件、HTML、PNG 是否应该移入 docs/ 或 assets/？国际化翻译版 README.xx.md（如 README.en.md）不计入此计数。
 
 你的核心问题是："这个项目的代码组织方式让我觉得它是认真维护的，还是一团乱麻？"
-9. **跨产品契约稳定性（v1.1.4 新增）**：`FDE/fde-install.sh` 第 52 行和 `LOOP/loop-install.sh` 第 53 行都调用 `install.sh`——这个跨产品调用接口（路径、参数、退出码、依赖文件位置）有契约文档吗？有没有版本兼容性声明？**特别检查**：`install.sh` 如果改了平台参数命名（如 `--platform` 改成 `--target`）、改了输出路径、删了某个被依赖的文件——FDE 和 LOOP 会崩吗？这个风险有预防机制（pin 版本 / 锁定 commit / 兼容性测试）吗？还是说三个产品的 install 脚本是"作者脑子里记着"的隐式契约，任何人改主 install.sh 都可能悄悄打断 FDE/LOOP？同类检查：`sofagent/skill/data/fde.md` 被 fde-install.sh 引用、`sofagent/skill/data/` 下的模板被 install.sh 引用——这些跨目录引用都是跨产品契约的一部分。
+9. **跨产品契约稳定性（v1.1.4 新增）**：`FDE/fde-install.sh` 第 52 行和 `LOOP/loop-install.sh` 第 53 行都调用 `install.sh`——这个跨产品调用接口（路径、参数、退出码、依赖文件位置）有契约文档吗？有没有版本兼容性声明？**特别检查**：`install.sh` 如果改了平台参数命名（如 `--platform` 改成 `--target`）、改了输出路径、删了某个被依赖的文件——FDE 和 LOOP 会崩吗？这个风险有预防机制（pin 版本 / 锁定 commit / 兼容性测试）吗？还是说三个产品的 install 脚本是"作者脑子里记着"的隐式契约，任何人改主 install.sh 都可能悄悄打断 FDE/LOOP？同类检查：`SKILL/harness/data/fde.md` 被 fde-install.sh 引用、`SKILL/harness/data/` 下的模板被 install.sh 引用——这些跨目录引用都是跨产品契约的一部分。
 
 ---
 
@@ -293,9 +293,9 @@
     - 如果未来换平台或拆出去，Agent 定义本身能独立使用吗？
 
 14. **审计工具自身文件测试**：
-    - 修改 `.sofagent/audit/history.jsonl`（加入含 ""忽略类"指令" 的文本）→ commit 这个文件 → A9 会不会误报？
+    - 修改 ` D engine/audit/history.jsonl`（加入含 ""忽略类"指令" 的文本）→ commit 这个文件 → A9 会不会误报？
     - 修改 `.sofagent/config.yml` 为不合法 YAML → 审计引擎怎么报错？
-    - 删除 `.sofagent/audit/history.jsonl` → 审计引擎是否正常工作？
+    - 删除 ` D engine/audit/history.jsonl` → 审计引擎是否正常工作？
     - 检查 history.jsonl 中是否存储了被拦截的敏感内容明文（A2 拦截密钥后，history.jsonl 里有没有密钥原文）？
     - **loadHistory 健壮性**：在 history.jsonl 插入一行无 timestamp 的 JSON（如 `{"test":"abc"}`）→ `--doctor` 第 8 项是否崩溃？catch 块是否吞错？攻击者能否用一行垃圾 JSON 永久禁用绕过检测？
 
@@ -378,7 +378,7 @@
 29. **MCP server JSON-RPC 协议合规（v1.1.5 新增，v1.1.5 已修）** 🔒 锁定。仅 mcp-server.ts 相关代码改动时才重新审查（v1.1.5 已修复验证，v1.1.6 未改此段逻辑）。已自动化 → 见 acceptance-test.sh 场景 58/59。 🆕 ✅：
     - **盲区**：MCP server 对 notification 类消息（`notifications/initialized` 等）不应返回 error response——JSON-RPC 规范规定 notification（**无 id 字段**的消息）不返回响应，request（有 id 字段）才返回。v1.1.5 验收测试场景 58 初版给 server 发了 `{"id":2,"method":"notifications/initialized"}`——server 按 id=2 回了 `{"error":{"code":-32601,"message":"Method not found"}}`，虽然测试能过但属协议违规（带 id 的 notification 是错误用法，正确用法是省略 id）。
     - **盲区本质**：JSON-RPC 2.0 规范里 request 与 notification 的区分点是 `id` 字段有无——开发者容易把 notification 当成"没返回值的 method 调用"，给它加个 id；或者反过来，把所有 method 都当 request 处理，对 notification 也回 error。这是协议层的基础合规问题，单看功能不会暴露——必须实跑 notification 消息看 server 行为。
-    - **检查手法**：`printf '%s\n' '{"jsonrpc":"2.0","method":"notifications/initialized"}' | node sofagent/mcp/dist/mcp-server.js` 期望**零输出**（notification 不应答）。
+    - **检查手法**：`printf '%s\n' '{"jsonrpc":"2.0","method":"notifications/initialized"}' | node engine/mcp/dist/mcp-server.js` 期望**零输出**（notification 不应答）。
     - **v1.1.5 实证（2026-07-19 跑通）**：阶段五步骤 19 验证暴露——跑 `notifications/initialized`（无 id），MCP server 返回 `{"jsonrpc":"2.0","error":{"code":-32601,"message":"Method not found: notifications/initialized"}}`——**违反 JSON-RPC 2.0 规范**。根因双重：① `handleRequest` 的 case `'initialized'` 不带 `notifications/` 前缀，不匹配 MCP 协议标准方法名；② default 分支无条件 `sendError(id, ...)`，即使 id=null 也答了。**v1.1.5 已修复**（交付十二）：switch 前加 `isNotification` 判断 + `notifications/initialized` 显式 case + default 分支前过滤 notification。修复后 `notifications/initialized` 静默无应答（合规）。
 
 30. **Dream Cycle prompt injection（v1.1.8 新增）**：
@@ -430,11 +430,11 @@
 **你的任务（每个都要实际跑命令验证）**：
 
 1. **规则数量一致性**：
-   - README 声称"X 条规则"——打开 `sofagent/audit/src/rules/index.ts`，数 `defaultRules` + `extendedRules` 的 `name:` 字段数。一致吗？
+   - README 声称"X 条规则"——打开 `engine/audit/src/rules/index.ts`，数 `defaultRules` + `extendedRules` 的 `name:` 字段数。一致吗？
    - README 声称"Y 条纯 git-diff + Z 条需 Agent 日志"——逐条检查每条规则的 `evidenceMode` 字段，数 `git-diff` 和 `hybrid` 的数量。一致吗？
    - CHANGELOG 历史条目中提到的规则数量——与当前 index.ts 一致吗？有没有"历史声称 > 实际注册"的情况？
    - **规则 ID 分类交叉验证**：README 分类描述里的每个规则 ID 逐个在 index.ts 中确认存在。历史教训：曾反复出现"幽灵规则"问题——README 声称了代码中无对应 `name:` 注册的规则 ID。不仅看数量，还要看 ID 是否一一对应。**注意跳号**：A1-A11 后直接跳到 A14（A12/A13 永久跳号），这不是遗漏——但如果 README 声称了 A12 或 A13，那才是幽灵规则。
-   - **evidenceMode 计数对账（v1.1.4 追加）**：v1.1.4 暴露 README:169 声称"17 条纯 git-diff"但实际 16 条——`grep -oE "evidenceMode: '[a-z-]+'" sofagent/audit/src/rules/index.ts | sort | uniq -c`，与 README 的"X 条纯 git-diff / Y 条需 Agent 日志"逐数字对照。
+   - **evidenceMode 计数对账（v1.1.4 追加）**：v1.1.4 暴露 README:169 声称"17 条纯 git-diff"但实际 16 条——`grep -oE "evidenceMode: '[a-z-]+'" engine/audit/src/rules/index.ts | sort | uniq -c`，与 README 的"X 条纯 git-diff / Y 条需 Agent 日志"逐数字对照。
    - **audit/README.md 规则表完整性（v1.1.4 追加）**：v1.1.4 暴露 A18/A19 新增后 audit/README.md 规则表完全没更新（grep 零命中）。`INDEX_COUNT=$(grep -cE "name:\s*'A[0-9]|name:\s*'E[0-9]" index.ts); README_ROWS=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " audit/README.md)`，README_ROWS 应 ≥ INDEX_COUNT。
    - **自动化对账脚本建议（v1.1.4 追加）**：规则数字验证散落在 4 处（README 总数 + README 分类数 + audit/README 表行数 + MCP 工具描述数），每次发版都要手动对照易漏。建议把"index.ts SSOT → 4 处文档声称"对账逻辑加进 pre-push-check，一处不齐就门禁红。
    - **版本敏感的规则数声称（v1.1.6 合并自原任务 12）**：README 可能声称"17 条规则（v1.0.9 扩展为 19 条）"——这是**版本条件声称**。验证当前 `package.json` 的版本号，再看 A16/A17 是否已在 `index.ts` 注册。如果当前是 v1.0.8 但 README 说"19 条"，就是 P0 不一致。
@@ -443,11 +443,11 @@
    - 确认本任务所有子项的自动对账：`bash tools/check-version.sh` 通过即确认本任务所有子项（index.ts SSOT → README/audit-README/MCP工具描述 4处文档声称自动对账）。
 
 2. **测试数量一致性**：
-   - CHANGELOG / README / evidence.md 中声称的测试数量——实际跑 `cd sofagent/audit && npm test 2>&1 | grep 'Tests'`。一致吗？
+   - CHANGELOG / README / evidence.md 中声称的测试数量——实际跑 `cd engine/audit && npm test 2>&1 | grep 'Tests'`。一致吗？
    - evidence.md 的数字是上次发版时的快照还是当前实际值？
 
 3. **verify 项数一致性**：
-   - LIMITATIONS.md 声称"~N 项（动态）"——实际跑 `node sofagent/audit/dist/verify.js --list 2>&1 | head -5`。在声称范围内吗？
+   - LIMITATIONS.md 声称"~N 项（动态）"——实际跑 `node engine/audit/dist/verify.js --list 2>&1 | head -5`。在声称范围内吗？
    - CHANGELOG 中提到的 verify 项数——与当前一致吗？
 
 4. **维度数字一致性**：
@@ -456,16 +456,16 @@
 
 5. **版本号全局一致（含 tag commit message）**：
    - `package.json` 版本号——与 README / CHANGELOG / SECURITY / LIMITATIONS / ROADMAP 文件头版本号一致吗？
-   - `sofagent/audit/package.json` 与 `sofagent/mcp/package.json` 版本号一致吗？
+   - `engine/audit/package.json` 与 `engine/mcp/package.json` 版本号一致吗？
    - `tools/check-version.sh` 检查的版本号与 SSOT 一致吗？
-   - **版本全量一致（v1.0.8 暴露的新盲区，阶段六实证）**：`sofagent/audit/src/shared/constants.ts` 的 `VERSION` 常量、各 `package.json`、`index.ts` 文件头注释——与 `sofagent/audit/package.json` 的 `version` 一致吗？**但不能只查这几个 CLI 自报源**：v1.0.8 曾只 bump 了 package.json + constants.ts + mcp + index.ts 部分（4 源全 1.0.8），91 个散落文件的版本号仍是 1.0.7——4 源检查全过却发了错版，阶段六才用 `check-version.sh` 抓出 93 处不一致。权威门禁是 `bash tools/check-version.sh`（应 0 不一致）+ `bash tools/pre-push-check.sh`（应 7/7 全绿）。CI 机器人必须跑全量扫描，不能凭"4 源对得上"就放行。
+   - **版本全量一致（v1.0.8 暴露的新盲区，阶段六实证）**：`engine/audit/src/shared/constants.ts` 的 `VERSION` 常量、各 `package.json`、`index.ts` 文件头注释——与 `engine/audit/package.json` 的 `version` 一致吗？**但不能只查这几个 CLI 自报源**：v1.0.8 曾只 bump 了 package.json + constants.ts + mcp + index.ts 部分（4 源全 1.0.8），91 个散落文件的版本号仍是 1.0.7——4 源检查全过却发了错版，阶段六才用 `check-version.sh` 抓出 93 处不一致。权威门禁是 `bash tools/check-version.sh`（应 0 不一致）+ `bash tools/pre-push-check.sh`（应 7/7 全绿）。CI 机器人必须跑全量扫描，不能凭"4 源对得上"就放行。
    - **tag commit message 一致性（v1.1.3 追加）**：跑 `git show vX.Y.Z --format=%s -s`——tag 指向的 commit message 必须含版本号。历史教训：v1.1.3 tag 指向 commit message 为 "v1.1.3: …"——tag 版本与 commit message 不一致。检查手法：`git tag -l "v*" | while read t; do v=$(echo $t | sed 's/^v//'); msg=$(git log -1 --format=%s $t); echo "$t → $msg" | grep -q "$v" || echo "❌ $t: commit message 不含 $v"; done`
 
-  - **文案数字漂移（v1.1.6 追加 · 维度调整建议②）**：`sofagent/audit/src/commands/init.ts` 输出文案、`fix-suggestions.ts` / `qa-boundary-verify.test.ts` 注释中的"N 条规则"等硬编码小数字，必须与 SSOT 一致——`defaultRules.length`（动态）/ 注册总数（动态）。历史教训：init.ts 曾写死旧数字但实际已变更，无人对账。`tools/check-version.sh` 已加「文案数字漂移扫描」自动核对 .ts 源中疑似硬编码规则条数（≠ `defaultRules.length` 且 ≠ 注册总数 即告警）。
+  - **文案数字漂移（v1.1.6 追加 · 维度调整建议②）**：`engine/audit/src/commands/init.ts` 输出文案、`fix-suggestions.ts` / `qa-boundary-verify.test.ts` 注释中的"N 条规则"等硬编码小数字，必须与 SSOT 一致——`defaultRules.length`（动态）/ 注册总数（动态）。历史教训：init.ts 曾写死旧数字但实际已变更，无人对账。`tools/check-version.sh` 已加「文案数字漂移扫描」自动核对 .ts 源中疑似硬编码规则条数（≠ `defaultRules.length` 且 ≠ 注册总数 即告警）。
 
 6. **文件计数一致性**：
    - 根目录 `.md` 文件数——是否 ≤7（README/CHANGELOG/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/ROADMAP/LIMITATIONS）？多余的 .md / .html / .png 应移入 docs/ 或 assets/。国际化翻译版 README.xx.md（如 README.en.md）不计入此计数。
-   - Skill 文件数——README 声称"10 个 Skill 文件"——实际 `ls sofagent/skill/*.md | wc -l` 一致吗？
+   - Skill 文件数——README 声称"10 个 Skill 文件"——实际 `ls SKILL/harness/*.md | wc -l` 一致吗？
    - Agent 定义文件数——README/LOOP 文档声称的 Agent 数——实际 `ls agents/*.md | wc -l`（减去 README.md）一致吗？
 
 7. **CHANGELOG 纯度**：
@@ -485,9 +485,9 @@
    - 检查：README 对编排引擎的描述是否诚实标注了"实验性"和当前限制？
 
 11. **SkillOpt 可用性返回值实测**：
-   - 跑 `node -e "console.log(require('./sofagent/audit/dist/skillopt-integration').isSkillOptAvailable())"` 在已安装 skillopt-sleep 的环境下返回 `true`？
+   - 跑 `node -e "console.log(require('./engine/audit/dist/skillopt-integration').isSkillOptAvailable())"` 在已安装 skillopt-sleep 的环境下返回 `true`？
    - 如果返回 `false`——检查探针形式是否匹配真实 CLI（`status` 子命令 exit 0 vs `--version` exit 2）。历史教训：曾因探针形式错误导致已安装也返回 false，SkillOpt 能力被静默禁用
-   - 跑 `node -e "console.log(typeof require('./sofagent/audit/dist/skillopt-integration').isSkillOptAvailable())"` 确认返回 `boolean`（不是 Promise）
+   - 跑 `node -e "console.log(typeof require('./engine/audit/dist/skillopt-integration').isSkillOptAvailable())"` 确认返回 `boolean`（不是 Promise）
    - **v1.1.3 升级为实跑验证**：装 skillopt-sleep 后跑 `skillopt-sleep --help` 看真实子命令列表，逐一对比集成代码的调用形式。仅静态读源码不算验证。
 
 > ✅ 原任务 12（版本敏感的规则数声称）已合并入任务 1（v1.1.6）——内容见任务 1 末尾。
@@ -518,7 +518,7 @@
 
 19. **"复制≠移动"——文件迁移完整性检测（新攻击面）** 🆕
    - **教训（v1.1.0）**：AI 迁移只建副本不删源 → audit 成重复仓库，同一份代码两包各一份，后续修改不同步。
-   - **检查手法**：`grep -rn "from '\.\.\/subagents\|from '\.\.\/eval" sofagent/audit/src/` 查残留 import。反向验证——不是确认新包有啥，而是确认 audit/src/ 里**不该有啥**。
+   - **检查手法**：`grep -rn "from '\.\.\/subagents\|from '\.\.\/eval" engine/audit/src/` 查残留 import。反向验证——不是确认新包有啥，而是确认 audit/src/ 里**不该有啥**。
 
 20. **测试工厂函数迁移后的签名兼容性（新盲区）** 🆕
    - **教训（v1.1.0）**：`makeCtx`/`makeDiffFile` 提取为共享 helper 后签名不兼容，74 测试静默失败但 exit code 仍 1（有 failure），被 IS_PASS 声明掩盖。
@@ -526,22 +526,22 @@
 
 21. **audit/src/ 收敛验证（v1.0.9 文件迁移后联动）** 🆕
    - **教训（v1.0.9 → v1.1.0）**：9 个目录从 audit 迁到新包后，残留副本 + 残留 import + 残留测试文件形成三重污染。文件迁移是"移动 + 删除源 + 更新引用 + 迁移测试"四动作。
-   - **检查手法**：`for d in subagents ontology eval daemon; do ls sofagent/audit/src/$d 2>&1; done` 全部应报 No such file。
+   - **检查手法**：`for d in subagents ontology eval daemon; do ls engine/audit/src/$d 2>&1; done` 全部应报 No such file。
 
 22. **测试计数漂移的文档联动检测（新盲区）** 🆕
    - **教训（v1.1.0）**：77 个测试随被测模块迁出后，npm test 从 531→417，但 CHANGELOG/ROADMAP/FDE/evidence/LIMITATIONS 等 5 处文档仍写 531。测试数是"分布式声称"——8 个文档各自维护。
-   - **检查手法**：`ACTUAL=$(cd sofagent/audit && npm test 2>&1 | grep Tests | grep -oE '[0-9]+(?= passed)'); grep -rn "$ACTUAL" ROADMAP.md FDE/FDE.md docs/evidence/evidence.md LIMITATIONS.md` 期望 4 处全部命中。
+   - **检查手法**：`ACTUAL=$(cd engine/audit && npm test 2>&1 | grep Tests | grep -oE '[0-9]+(?= passed)'); grep -rn "$ACTUAL" ROADMAP.md FDE/FDE.md docs/evidence/evidence.md LIMITATIONS.md` 期望 4 处全部命中。
 
    - **盲区本质**：测试数是一个"分布式声称"——8 个文档各自维护，没有单一事实源自动同步。每次测试迁移必须全量 grep 更新。
-   - **检查手法**：`ACTUAL=$(cd sofagent/audit && npm test 2>&1 | grep Tests | grep -oE '[0-9]+(?= passed)'); grep -rn "$ACTUAL" ROADMAP.md FDE/FDE.md docs/evidence/evidence.md LIMITATIONS.md` 期望 4 处全部命中。
+   - **检查手法**：`ACTUAL=$(cd engine/audit && npm test 2>&1 | grep Tests | grep -oE '[0-9]+(?= passed)'); grep -rn "$ACTUAL" ROADMAP.md FDE/FDE.md docs/evidence/evidence.md LIMITATIONS.md` 期望 4 处全部命中。
 
 23. **基础层叶子包的反向依赖验证（新维度）** 🆕
-   - **v1.1.0 架构铁律**：harness/ontology/eval/core 为基础层叶子，**绝不** import 任何 `@sofagent/*` 包。陌生审查者应逐一检查四个包的 src/ 目录是否真的零跨包引用。
+   - **v1.1.0 架构铁律**：harness/ontology/eval/core 为基础层叶子，**绝不** import 任何 `/*` 包。陌生审查者应逐一检查四个包的 src/ 目录是否真的零跨包引用。
    - **盲区本质**：开发者可能在"最后一刻"加了一个 import 来解决编译问题（如 core 想 import ontology 的某个类型），但违反架构铁律。这类 import 在 monorepo symlink 环境下编译能过（npm workspace 自动 resolve），但破坏了分层。
-   - **检查手法**：`for pkg in harness ontology eval core; do grep -rn "from '@sofagent/" "sofagent/$pkg/src/"; done` 期望四个包全部零输出。
+   - **检查手法**：`for pkg in harness ontology eval core; do grep -rn "from '/" "engine/$pkg/src/"; done` 期望四个包全部零输出。
 
 #### 24. **跨包代码重复检测（复制≠移动）** 🆕
-   - **v1.1.3 全仓审计发现**：audit/src/filesystem/isomorphic-git.ts(383行) 与 core/src/filesystem/isomorphic-git.ts(383行) 仅 4 行差异——audit 应 import @sofagent/core，却复制了一份。跨包复制在 monorepo 下编译能过、功能正常，所以永远不进功能回归——只有「跨包 diff」才发现得了。
+   - **v1.1.3 全仓审计发现**：audit/src/filesystem/isomorphic-git.ts(383行) 与 core/src/filesystem/isomorphic-git.ts(383行) 仅 4 行差异——audit 应 import /core，却复制了一份。跨包复制在 monorepo 下编译能过、功能正常，所以永远不进功能回归——只有「跨包 diff」才发现得了。
    - **盲区本质**：单包审查（「我只在 audit 包改」）看不到别的包有同名文件；它「能用」所以没症状。陌生审查者必须跨包比对同名源文件。
    - **检查手法**：`find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path '*/__tests__/*' | sed 's#.*/##' | sort | uniq -d` —— 有输出 = 跨包重复 → 提升为 import（core 为 canonical source），删除副本。
 
@@ -557,11 +557,11 @@
 
 #### 27. **ruleClass 跨文档漂移检测（v1.1.3 追加）** 🆕
    - **教训（v1.1.3）**：A6 和 A11 的 ruleClass 在 `rules/index.ts`（SSOT）和 `audit/README.md` 规则表之间反复漂移。ruleClass 不是"错"，是"不一致"——代码和文档两处手工维护，调整时 README 表格容易遗漏。
-   - **检查手法**：`diff <(grep -E "name:|ruleClass:" sofagent/audit/src/rules/index.ts | paste - - | sort) <(grep -oE "A[0-9]+ .*  \|  (业务底线|能力拐杖|工程规范)" sofagent/audit/README.md | sort)` 期望零差异。建议加自动化脚本进 pre-push-check。
+   - **检查手法**：`diff <(grep -E "name:|ruleClass:" engine/audit/src/rules/index.ts | paste - - | sort) <(grep -oE "A[0-9]+ .*  \|  (业务底线|能力拐杖|工程规范)" engine/audit/README.md | sort)` 期望零差异。建议加自动化脚本进 pre-push-check。
 
 #### 28. **Agent 身份感知有效性（v1.1.3 补入）** 🆕
    - **背景**：v1.1.2 三层输出签名解决了「输出渠道可见性」，但 Agent 本身不知道约束来自 sofagent——约束在生效，用户和 Agent 都感知不到。
-   - **检查手法**：① `grep -c "露个脸就够了" sofagent/skill/SKILL.md` ≥ 1 ② `grep -c "质量搭档" sofagent/skill/engage.md` ≥ 1 ③ install.sh 完成后输出「✅ sofagent 已就绪」品牌行 ④ FDE/FDE.md §13 注明设计意图。**验证**：clean slate 加载 sofagent skill 后，Agent 是否在上下文中感知到 sofagent 的存在。
+   - **检查手法**：① `grep -c "露个脸就够了" SKILL/harness/SKILL.md` ≥ 1 ② `grep -c "质量搭档" SKILL/harness/engage.md` ≥ 1 ③ install.sh 完成后输出「✅ sofagent 已就绪」品牌行 ④ FDE/FDE.md §13 注明设计意图。**验证**：clean slate 加载 sofagent skill 后，Agent 是否在上下文中感知到 sofagent 的存在。
 
 #### 29. **独立产品声称一致性（v1.1.4 新增）** 🆕
    - **盲区**：FDE 和 LOOP 声称独立产品，但 README / SKILL.md / quick-start.md / FDE.md / LOOP.md 里声称的流程步数、Agent 数量、CLI 命令、Skill 路径——与实际代码交叉验证后是否一致？单篇审查发现不了跨文档漂移。
@@ -586,7 +586,7 @@
    - **检查手法**：`grep -n "\-\-json.*2>&1\|2>&1.*\-\-json" LOOP/releaser/acceptance-test.sh` 期望**零命中**。所有 `--json` 测试场景统一用 `2>/dev/null` 丢弃 stderr。同理覆盖 `--format json` 等所有结构化输出开关。
 
 #### 32. **交付声明反向验证（v1.1.5 新增）** 🆕
-   - **盲区（v1.1.5 审-8 事件）**：changelog 声称「改动文件 X 加了 Y 功能」但实际未改——AI 工程师把「应当做的事」写成「已经做的事」。审-8 事件：changelog v1.1.5 交付八声称改了 `cli.ts` 加 `--mode` 参数，实际 `git log --oneline -3 -- sofagent/orchestrator/src/cli.ts` + `grep "\-\-mode" sofagent/orchestrator/src/cli.ts` 双查全部为空。审查阶段才发现，距离发版一步之遥。
+   - **盲区（v1.1.5 审-8 事件）**：changelog 声称「改动文件 X 加了 Y 功能」但实际未改——AI 工程师把「应当做的事」写成「已经做的事」。审-8 事件：changelog v1.1.5 交付八声称改了 `cli.ts` 加 `--mode` 参数，实际 `git log --oneline -3 -- engine/orchestrator/src/cli.ts` + `grep "\-\-mode" engine/orchestrator/src/cli.ts` 双查全部为空。审查阶段才发现，距离发版一步之遥。
    - **盲区本质**：AI 的「计划」和「执行」容易混淆——写作 changelog 时把 todo 当 done。同事 review 文字时不会去验证「这个改动真的存在吗」（默认相信作者），只有 git 工具闭环能识别。人类审查 changelog 文字时，"声明 X 改了 Y"这种句子读完不会触发警觉——它读起来完全正常。
    - **检查手法**：对 changelog 每一条「改动文件 X / 加了功能 Y」声明，跑双查：
      1. `git log --oneline -5 -- <file>` —— 文件近期是否有改动
@@ -597,7 +597,7 @@
 #### 33. **Dream Cycle 知识生成质量（v1.1.7 新增）** 🆕
    - **盲区（v1.1.7 Dream Cycle 引入）**：Dream Cycle 的 6 阶段管道把 think.md + audit history → facts → atoms → patterns → concepts → embeddings。但**产出真的有价值吗**？fact/atom/concept 是有意义的知识点，还是 LLM 把「调试时发现 bug」拆成了 10 条废话？skillopt_backfill 环节真的把 concept 回灌到 Skill 优化了吗，还是写了个空壳？如果 MockLLM 产出的全是占位符文本，整个管道就是"格式正确但内容为零"的装饰品。
    - **盲区本质**：AI 生成的知识有一个"看起来像知识但不是知识"的陷阱——格式正确、结构完整、用词专业，但读完什么也没学到。这和幻觉不同：幻觉是错的，这个是对的废话。MockLLM 阶段无法暴露这类问题（mock 本来就产出占位符），只有接入 RealLLM 后才会显现——但到那时管道结构已固化，改不动了。
-   - **检查手法**：打开 `sofagent/daemon/src/dream-cycle/extract-facts.ts` 和 `extract-atoms.ts`——看 prompt 模板里是否要求 LLM 输出结构化事实（而非自由文本）。打开 `synthesize-concepts.ts`——concept 写入 `knowledge/entities/` 时 frontmatter 是否带 source 回指。打开 `skillopt-backfill.ts`——backfillHook 是否真的被调用（还是只写了个类型签名）。跑一次 MockLLM 全管道，看产出的 concept.md 文件——读起来像知识还是像噪音。
+   - **检查手法**：打开 `engine/daemon/src/dream-cycle/extract-facts.ts` 和 `extract-atoms.ts`——看 prompt 模板里是否要求 LLM 输出结构化事实（而非自由文本）。打开 `synthesize-concepts.ts`——concept 写入 `knowledge/entities/` 时 frontmatter 是否带 source 回指。打开 `skillopt-backfill.ts`——backfillHook 是否真的被调用（还是只写了个类型签名）。跑一次 MockLLM 全管道，看产出的 concept.md 文件——读起来像知识还是像噪音。
 
 #### 34. **sensitivity 分级准确性（v1.1.7 新增）** 🆕
    - **盲区（v1.1.7 sensitivity 分级引入）**：memory-contract.ts 定义了 public/internal/restricted 三级分级，缺省 internal。但**分级本身靠谱吗**？有没有该标 restricted 的知识被标成了 public？如果所有页面都走缺省 internal，分级系统就是"存在但没在用"的装饰。更危险的：Dream Cycle 自动生成的 concept.md 如果缺省都标 public，restricted 知识可能通过联邦查询泄露到其他 viewer。
@@ -669,12 +669,12 @@
 **你的任务**：
 
 1. **所有面向用户的输出是否带签名**：
-   - 翻查 `sofagent/audit/src/index.ts` 中所有 `console.log` 输出：PASS/WARN/FAIL 的判定行是否标注了引擎身份（`sofagent-audit` 或 `[sofagent]`）？
-   - 翻查 `sofagent/audit/src/webhook.ts` 中推送到 IM 的消息：第一行是否以 `[sofagent]` 或 `sofagent` 开头？
-   - 翻查 `sofagent/mcp/src/mcp-server.ts` 中所有 `sendToolResult` 的 `text` 字段：是否以 `[sofagent]` 为前缀标注来源？**特别检查 think.md 回读工具（get_think/write_think）的返回——这是 v1.1.3 审查发现的感知层废墟高发区**，Agent 在回读反思/日志时如果不知道"这是 sofagent 管的数据"，就等于废墟功能。
+   - 翻查 `engine/audit/src/index.ts` 中所有 `console.log` 输出：PASS/WARN/FAIL 的判定行是否标注了引擎身份（`sofagent-audit` 或 `[sofagent]`）？
+   - 翻查 `engine/audit/src/webhook.ts` 中推送到 IM 的消息：第一行是否以 `[sofagent]` 或 `sofagent` 开头？
+   - 翻查 `engine/mcp/src/mcp-server.ts` 中所有 `sendToolResult` 的 `text` 字段：是否以 `[sofagent]` 为前缀标注来源？**特别检查 think.md 回读工具（get_think/write_think）的返回——这是 v1.1.3 审查发现的感知层废墟高发区**，Agent 在回读反思/日志时如果不知道"这是 sofagent 管的数据"，就等于废墟功能。
 
 2. **PASS 是否也在推送**：
-   - 检查 `sofagent/audit/src/webhook.ts` 的 `pushAuditResult()` 函数：PASS 时是否推送？还是只在 WARN/FAIL 时推送？
+   - 检查 `engine/audit/src/webhook.ts` 的 `pushAuditResult()` 函数：PASS 时是否推送？还是只在 WARN/FAIL 时推送？
    - 如果只在 WARN/FAIL 时推送——PASS 是最大的可见性缺口。Agent 做对了的时候，用户恰恰最需要知道"这个对，是经过验证的对"。
 
 3. **持续感知层文档是否健全**：
@@ -692,14 +692,14 @@
 **你的任务**：
 
 1. **文案声称 vs 代码 SSOT**：
-   - `sofagent/audit/src/commands/init.ts` 输出的"N 条规则默认全部启用"——必须等于 `defaultRules.length`（动态），不能写死数字。
+   - `engine/audit/src/commands/init.ts` 输出的"N 条规则默认全部启用"——必须等于 `defaultRules.length`（动态），不能写死数字。
    - `fix-suggestions.ts` / `qa-boundary-verify.test.ts` 等源文件注释里的"N 条规则"——必须等于实际注册数（动态），不能残留旧数字。
    - 跑 `bash tools/check-version.sh`——「文案数字漂移扫描」应 0 告警。
-2. **evidenceMode 分类计数**：README 声称的 git-diff/hybrid/filesystem 数量（16/4/1）必须与 `sofagent/audit/src/rules/index.ts` 实际 `evidenceMode` 计数一致。每次发版后核对（回归检查清单维度4 子项e 已自动化）。
+2. **evidenceMode 分类计数**：README 声称的 git-diff/hybrid/filesystem 数量（16/4/1）必须与 `engine/audit/src/rules/index.ts` 实际 `evidenceMode` 计数一致。每次发版后核对（回归检查清单维度4 子项e 已自动化）。
 3. **ruleClass 文档完整性**：audit/README 规则表的每一行都必须带合法 `ruleClass`（业务底线/能力拐杖/工程规范），且「规则分级」小节定义了全部三类。跑 `bash tools/check-docs.sh`——ruleClass 完整性检查应 0 报错（回归检查追加③）。
 4. **install 独立闭环诚实度**：每次新增大写目录（独立产品，如 FDE/LOOP）后，文档必须诚实标注"需要完整 clone 仓库"，不能让用户误以为只 clone 子目录就能跑（回归检查清单维度23 子项d 已自动化）。
 
-5. **v1.1.9 测试数五处一致性（v1.1.9 新增）**：v1.1.9 测试数（909 tests）需在以下五处一致：①CHANGELOG.md（版本条目正文）②ROADMAP.md（如有引用）③docs/verification/LIMITATIONS.md（如有引用）④docs/verification/evidence/v1.1.9.md（验收证据）⑤docs/changelog/v1.1.9.md（如存在 changelog 拆分）。`grep -rn "909" CHANGELOG.md ROADMAP.md docs/verification/LIMITATIONS.md docs/verification/evidence/ docs/changelog/`——每处声称的数字必须与 `cd sofagent/audit && npm test 2>&1 | grep 'Tests:'` 实际值一致。**v1.2.0 建议**：将 `docs/changelog/v*.md` 中的测试数纳入 `check-test-count.sh` 自动化监控范围，防止发版后 changelog 数字漂移。
+5. **v1.1.9 测试数五处一致性（v1.1.9 新增）**：v1.1.9 测试数（909 tests）需在以下五处一致：①CHANGELOG.md（版本条目正文）②ROADMAP.md（如有引用）③docs/verification/LIMITATIONS.md（如有引用）④docs/verification/evidence/v1.1.9.md（验收证据）⑤docs/changelog/v1.1.9.md（如存在 changelog 拆分）。`grep -rn "909" CHANGELOG.md ROADMAP.md docs/verification/LIMITATIONS.md docs/verification/evidence/ docs/changelog/`——每处声称的数字必须与 `cd engine/audit && npm test 2>&1 | grep 'Tests:'` 实际值一致。**v1.2.0 建议**：将 `docs/changelog/v*.md` 中的测试数纳入 `check-test-count.sh` 自动化监控范围，防止发版后 changelog 数字漂移。
 
 6. **概念/叙事收敛**：重大概念/叙事重构后，跨文档的叙事口径是否一致？旧的框架表述、悬空指向、重复铺陈是否还有残留？以你自己的视角通读，不预设结论。
 

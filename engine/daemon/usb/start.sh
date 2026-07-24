@@ -14,7 +14,7 @@ cd "$(dirname "$0")"
 USB_ROOT="$(pwd)"
 
 NODE_BIN="$USB_ROOT/runtime/node"
-CLI_JS="$USB_ROOT/sofagent/daemon/dist/cli.js"
+CLI_JS="$USB_ROOT/engine/daemon/dist/cli.js"
 
 if [ ! -x "$NODE_BIN" ]; then
   echo "❌ 未找到 Node 便携版：$NODE_BIN"

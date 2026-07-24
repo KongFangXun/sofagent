@@ -61,7 +61,7 @@ Write-Host ""
 # WSL 检测 (仅认 WSL_DISTRO_NAME——WSLENV 在装了 WSL 的 Windows 主机上也会被设, 不能作判据)
 if ($env:WSL_DISTRO_NAME) {
     Write-Err "检测到 WSL 环境, 请使用 uninstall.sh (bash) 而非本脚本"
-    Write-Warn "  bash sofagent/scripts/uninstall.sh --platform workbuddy"
+    Write-Warn "  bash engine/scripts/uninstall.sh --platform workbuddy"
     exit 1
 }
 # 操作系统检测（PS 5.1 无 $IsWindows，用 $env:OS 判断）

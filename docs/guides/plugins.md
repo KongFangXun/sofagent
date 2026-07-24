@@ -4,7 +4,7 @@
 
 ## 规则是什么
 
-一条审计规则就是一个实现 `Rule` 接口的 TypeScript 文件（`sofagent/audit/src/rules/types.ts`）：
+一条审计规则就是一个实现 `Rule` 接口的 TypeScript 文件（`engine/audit/src/rules/types.ts`）：
 
 - `name`: 规则名称（如 `A22 不留 console`）
 - `number`: 规则编号
@@ -18,7 +18,7 @@
 
 ### Step 1：创建规则文件
 
-在 `sofagent/audit/src/rules/` 下创建 `rule-a22-no-console.ts`：
+在 `engine/audit/src/rules/` 下创建 `rule-a22-no-console.ts`：
 
 ```typescript
 import type { AuditContext, RuleCheck } from './types';
@@ -52,12 +52,12 @@ export function checkRuleA22(ctx: AuditContext): RuleCheck {
 
 ### Step 3：注册规则
 
-在 `sofagent/audit/src/rules/index.ts` 的 import 区和 `extendedRules`（或 `defaultRules`）数组中各加一行。业务底线规则放 `defaultRules`，代码质量类放 `extendedRules`。
+在 `engine/audit/src/rules/index.ts` 的 import 区和 `extendedRules`（或 `defaultRules`）数组中各加一行。业务底线规则放 `defaultRules`，代码质量类放 `extendedRules`。
 
 ### Step 4：验证
 
 ```bash
-cd sofagent/audit
+cd engine/audit
 npm test && npm run build
 node dist/index.js --diff HEAD~1..HEAD --silent
 ```

@@ -29,20 +29,20 @@ jobs:
           node-version: '22'
 
       - name: 构建 sofagent-audit
-        working-directory: ./sofagent/audit
+        working-directory: ./engine/audit
         run: |
           npm ci
           npm run build
 
       - name: 运行审计
         run: |
-          cd sofagent/audit
+          cd engine/audit
           node dist/index.js --diff origin/${{ github.base_ref }}..HEAD --ci --strict
 ```
 
 提交。下一个 PR 就会自动触发审计。
 
-> **前提**：你的仓库中需要有 `sofagent/audit/` 子目录（包含可构建的源码）。如果 sofagent 是作为 submodule 引入的，将 `working-directory` 路径调整为实际的子目录路径即可。
+> **前提**：你的仓库中需要有 `engine/audit/` 子目录（包含可构建的源码）。如果 sofagent 是作为 submodule 引入的，将 `working-directory` 路径调整为实际的子目录路径即可。
 
 ---
 
@@ -95,8 +95,8 @@ audit:
 | 问题 | 解决 |
 |------|------|
 | 跳过某 PR | commit message 加 `[skip audit]` |
-| "not found" | 确认 `sofagent/audit/` 子目录存在 + `package-lock.json` 已提交 |
+| "not found" | 确认 `engine/audit/` 子目录存在 + `package-lock.json` 已提交 |
 | GitHub Enterprise | 支持，零外部 API 依赖 |
 | 审计太慢 | `npm ci`+build ~20 秒，审计 ~2 秒 |
-| 本地测试 | `cd sofagent/audit && npm ci && npm run build && node dist/index.js --diff main..HEAD --ci` |
+| 本地测试 | `cd engine/audit && npm ci && npm run build && node dist/index.js --diff main..HEAD --ci` |
 | JSON 输出 | 加 `--json` 参数 |

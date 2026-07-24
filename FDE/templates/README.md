@@ -28,9 +28,9 @@ templates/ 不是装到本地的——是给 FDE 读的案例参考。与其留�
 
 | 交付物 | 为什么不用模板 |
 |--------|---------------|
-| `fde.md`（运行规范） | sofagent 安装包自带，在 `sofagent/skill/data/fde.md`，直接复用 |
+| `fde.md`（运行规范） | sofagent 安装包自带，在 `SKILL/harness/data/fde.md`，直接复用 |
 | `quick-start.md`（上手文档） | sofagent 安装包自带，在 `FDE/quick-start.md`，直接复用 |
-| AI 知识库（think.md / task/logs / eval.md / orchestrator/） | AI 节点跑起来后自动积累，模板在 `sofagent/skill/data/` 下 |
+| AI 知识库（think.md / task/logs / eval.md / orchestrator/） | AI 节点跑起来后自动积累，模板在 `SKILL/harness/data/` 下 |
 
 > 💡 **这个目录是 FDE 自己读的案例参考，产出不落在这里。** FDE 读 templates/ 填完内容后，产出落到用户项目根目录的企业名文件夹（如 `{企业名}/`），详见 [FDE.md §9 交接清单](../FDE.md#9-交接清单)。用户打开 Finder 就能看到。
 

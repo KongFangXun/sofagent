@@ -9,7 +9,7 @@
 
 > ⚠️ **Honest disclosure**: The data below includes the author's own testing. Reflection scores are LLM self-assessments (no engineering isolation on non-OpenClaw platforms). For enterprise evaluation, wait for v0.9 encryption + external evaluator. Current data is suitable for exploratory assessment only — not production decisions.
 
-> ⚠️ **Since v0.99.2**: benchmark.sh has been removed. The data below is from v0.92-v0.93 historical experiments. For deployment validation, use `bash sofagent/scripts/verify.sh --quiet` (all checks green = pass). The benchmark system will be rebuilt in v1.x.
+> ⚠️ **Since v0.99.2**: benchmark.sh has been removed. The data below is from v0.92-v0.93 historical experiments. For deployment validation, use `bash engine/scripts/verify.sh --quiet` (all checks green = pass). The benchmark system will be rebuilt in v1.x.
 >
 > 📊 **A/B benchmark data**:
 >
@@ -78,7 +78,7 @@
 
 ## Benchmark testing
 
-> Reproducible A/B test results. Run `bash sofagent/scripts/verify.sh --quiet` (all checks green = ✓).
+> Reproducible A/B test results. Run `bash engine/scripts/verify.sh --quiet` (all checks green = ✓).
 
 Historical benchmark records: [benchmark/](./benchmark/) — archived, no longer auto-updated.
 

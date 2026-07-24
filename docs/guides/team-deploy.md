@@ -6,7 +6,7 @@
 
 - [ ] 选一个平台（OpenClaw 推荐，WorkBuddy/Claude Code 也行）
 - [ ] `bash install.sh --platform 你的平台`
-- [ ] `bash sofagent/scripts/verify.sh` 确认 0 fail
+- [ ] `bash engine/scripts/verify.sh` 确认 0 fail
 - [ ] 跑一个简单任务（「帮我查一下今天的日程」），确认 Agent 正常回复
 - [ ] 企业内网：加 `--no-config-inject`，编辑 fde.md 取消 `offline: true` 注释
 
@@ -50,10 +50,10 @@ sofagent 是单用户设计。如果团队多人用：
 如果你的团队已经在用 Agent（裸 OpenClaw / WorkBuddy / Claude Code），以下是接入 sofagent 的步骤清单：
 
 1. [ ] **安装 sofagent**：`bash install.sh --platform 你的平台`
-2. [ ] **跑 verify.sh**：`bash sofagent/scripts/verify.sh --quick` 确认 4/4 通过
+2. [ ] **跑 verify.sh**：`bash engine/scripts/verify.sh --quick` 确认 4/4 通过
 3. [ ] **先跑一个简单任务**：不做大改动，用现有 prompt 跑一次，观察 Agent 回复是否正常
-4. [ ] **跑 verify.sh 环境验证**：`bash sofagent/scripts/verify.sh --quiet` 确认全绿
-5. [ ] **部署后验证**：`bash sofagent/scripts/verify.sh --quiet` 确认部署生效（全绿）
+4. [ ] **跑 verify.sh 环境验证**：`bash engine/scripts/verify.sh --quiet` 确认全绿
+5. [ ] **部署后验证**：`bash engine/scripts/verify.sh --quiet` 确认部署生效（全绿）
 6. [ ] **翻 think.md**：接入后第 3 天翻一次反思，看 Agent 记了什么
 7. [ ] **决定是否继续**：如果有改善 → 继续用；如果没感觉 → 卸载，记得告诉我们为什么
 
@@ -71,13 +71,13 @@ name: sofagent verify
 on:
   pull_request:
     paths:
-      - 'sofagent/**'
+      - 'engine/**'
       - 'docs/**'
       - '*.md'
   push:
     branches: [main]
     paths:
-      - 'sofagent/**'
+      - 'engine/**'
 
 jobs:
   verify:
@@ -85,7 +85,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Verify sofagent installation
-        run: bash sofagent/scripts/verify.sh --json --platform openclaw
+        run: bash engine/scripts/verify.sh --json --platform openclaw
 ```
 
 > 非 OpenClaw 平台去掉 `--platform` 参数，verify.sh 会自动探测。`--json` 输出机器可读格式，方便接入 CI 结果解析。

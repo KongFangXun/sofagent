@@ -26,7 +26,7 @@
 | 测试项 | 结果 | 说明 |
 |------|:--:|------|
 | 源码下载 | 通过 | 成功 clone `KongFangXun/sofagent` |
-| Shell 语法检查 | 通过 | `sofagent/scripts/*.sh` 全部通过 `bash -n` |
+| Shell 语法检查 | 通过 | `engine/scripts/*.sh` 全部通过 `bash -n` |
 | OpenClaw 安装烟测 | 通过/有警告 | `install.sh --platform openclaw --no-ao --quick` exit 0 |
 | WorkBuddy 安装烟测 | 通过 | `install.sh --platform workbuddy --quick` exit 0 |
 | Claude 安装烟测 | 通过 | `install.sh --platform claude --quick` exit 0 |

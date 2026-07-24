@@ -116,7 +116,7 @@
 |:--:|------|------|
 | 8 | `npm run build` | exit 0 |
 | 9 | `npm test` | 全部通过 |
-| 10 | `shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
+| 10 | `shellcheck engine/scripts/*.sh tools/*.sh FDE/fde-install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
 | 11 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
 | 12 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
 | 13 | **🔴 更新 `LOOP/releaser/acceptance-test.sh`**<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `LOOP/releaser/acceptance-test.sh`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `LOOP/releaser/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n LOOP/releaser/acceptance-test.sh` 确认语法<br><br>**Step C — 同步 `LOOP/releaser/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增）<br><br>**🔴 Step D — 覆盖率闭环判定**：<br>① **场景数声称 vs 实际对齐**：`DECLARED=$(head -5 LOOP/releaser/acceptance-test.sh \| grep -oE "[0-9]+ 个端到端" \| grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " LOOP/releaser/acceptance-test.sh); [ "$DECLARED" = "$ACTUAL" ]` 不一致 = P0<br>② **功能点逐条对照**：从 changelog「核心变更/交付」提取功能关键词，逐条 grep `LOOP/releaser/acceptance-test.sh`——零覆盖 = P0（回归测试无法发现该功能退化）<br>③ **失效场景清理**：`grep -rn "sofagent-audit --daemon" LOOP/releaser/acceptance-test.sh` 期望零命中 | `bash -n LOOP/releaser/acceptance-test.sh` 通过；**Step D 三项判定全 PASS** |
@@ -184,7 +184,7 @@
 
 ## 执行步骤（一个 session 顺序跑完，不拆分）
 1. 工作目录：/Users/kongfangxun/Workbuddy/sofagent（后续相对路径均基于此）
-2. 【v1.0.8 优化】构建审计包：在跑任何依赖 dist/ 的检查前，先 `cd sofagent/audit && npm run build`。否则 --version / --help banner / `ontology view` / `compose` 等基于 dist 的回归维度与验收场景会命中 stale dist 误报 FAIL
+2. 【v1.0.8 优化】构建审计包：在跑任何依赖 dist/ 的检查前，先 `cd engine/audit && npm run build`。否则 --version / --help banner / `ontology view` / `compose` 等基于 dist 的回归维度与验收场景会命中 stale dist 误报 FAIL
 3. **🔴 端到端验收测试** —— `bash LOOP/releaser/acceptance-test.sh`，跑完全部场景。记录结果：场景数 / 通过数 / 失败数 / 失败场景编号清单。⚠️ 涉及 CLI 命令迁移时 acceptance-test 可能大量 FAIL——如果是因为脚本引用了已废弃命令（如 `sofagent-audit --daemon`），标 SKIP 并说明原因，不算真 FAIL
 4. **回归检查** —— 读 `LOOP/releaser/regression-checklist.md`，用 Bash 跑全部维度验证命令，逐项输出 PASS/FAIL/SKIP。**维度24（验收测试覆盖率）此时可引用步骤3 acceptance-test 的真实结果做对照**，而不是干 grep
 5. **🔴 覆盖率交叉检查（v1.1.4 教训——acceptance-test 对新功能零覆盖）** —— 读 `docs/changelog/vX.Y.md`「核心变更/交付」章节，提取每条功能关键词（如新规则号 A18/A19、新模块 LOOP/USB/工具注入等）。逐条 grep `LOOP/releaser/acceptance-test.sh`，确认每条功能都有对应场景。**零覆盖 = FAIL**（回归测试无法发现该功能退化）
@@ -324,8 +324,8 @@ LIMITATIONS.md 必须覆盖本版本引入的核心新功能带来的已知局�
 ```
 
 **脚本覆盖 13 类位置**（全自动扫描，新增 .ts/.sh/.ps1 文件自动发现）：
-1. `sofagent/audit/package.json` version（SSOT）
-2. `sofagent/mcp/package.json` version
+1. `engine/audit/package.json` version（SSOT）
+2. `engine/mcp/package.json` version
 3. `const VERSION = 'x.y'`（动态扫描 `audit/src/` + `mcp/src/` 全目录）
 4. .ts 文件头注释中的 `— vX.Y.Z` 格式
 5. `index.ts` 版本引用
@@ -355,8 +355,8 @@ bump-version.sh 改了 `package.json` 但不会自动同步 `package-lock.json`�
 ```bash
 npm install --package-lock-only
 # 验证
-grep -A3 '"sofagent/audit":' package-lock.json | grep '"version"'
-grep -A3 '"sofagent/mcp":' package-lock.json | grep '"version"'
+grep -A3 '"engine/audit":' package-lock.json | grep '"version"'
+grep -A3 '"/mcp":' package-lock.json | grep '"version"'
 # 两个都应该是新版本号
 ```
 
@@ -573,7 +573,7 @@ ls docs/changelog/*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
 
 ```bash
 # 补跑 shellcheck
-shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh   # 期望：零 error
+shellcheck engine/scripts/*.sh tools/*.sh FDE/fde-install.sh   # 期望：零 error
 ```
 
 > 如果 shellcheck 因脚本未适配新命令而大量 FAIL，标注为已知遗留并写入下版本的 Wave 5 适配计划。acceptance-test 同理——在阶段6新 session 跑时如因 CLI 迁移大量 FAIL，标注为已知遗留。
@@ -621,7 +621,7 @@ shellcheck sofagent/scripts/*.sh tools/*.sh FDE/fde-install.sh   # 期望：零 
 
 ```bash
 # 1. 全局安装最新 audit 包（从本地源码构建安装，不需要等 npm publish）
-cd sofagent/audit
+cd engine/audit
 npm run build && npm install -g .
 cd ../..
 
@@ -629,8 +629,8 @@ cd ../..
 sofagent-audit --version  # 应显示当前开发版本号
 
 # 3. 本地 Skill 同步（WorkBuddy + OpenClaw 双平台）
-cp -r sofagent/skill/* ~/.workbuddy/skills/sofagent/
-cp -r sofagent/skill/* ~/.openclaw/skills/sofagent/
+cp -r SKILL/harness/* ~/.workbuddy/skills/sofagent/
+cp -r SKILL/harness/* ~/.openclaw/skills/sofagent/
 cp FDE/SKILL.md ~/.workbuddy/skills/sofagent-fde/
 cp -r agents/SKILL/sofagent-fde/ ~/.workbuddy/skills/sofagent-fde/
 cp -r agents/SKILL/sofagent-audit/ ~/.workbuddy/skills/sofagent-audit/
@@ -641,7 +641,7 @@ cp -r agents/SKILL/sofagent-audit/ ~/.openclaw/skills/sofagent-audit/
 sofagent-audit --doctor
 ```
 
-> ⚠️ `npm install -g .` 从本地源码安装，不会走 npm registry。**发版时的 `npm install -g @sofagent/audit@latest`（阶段十一·步骤 19）仍然必须做**——那是验证发布的 npm 包。这里是发布前的自用安装。
+> ⚠️ `npm install -g .` 从本地源码安装，不会走 npm registry。**发版时的 `npm install -g /audit@latest`（阶段十一·步骤 19）仍然必须做**——那是验证发布的 npm 包。这里是发布前的自用安装。
 
 ### 发布前检查（npm 包洁净度 + 推前预检）
 
@@ -653,13 +653,13 @@ bash tools/check-docs.sh                # 文档死链 + 预算 + Skill 行数
 # 全部 12 包 .js.map 泄露检查 + 类型检查 + README 非空检查
 for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test skillopt; do
   echo "=== $pkg ==="
-  (cd sofagent/$pkg && npm pack --dry-run 2>&1 | grep -c '\.js\.map')  # 期望: 0
-  (cd sofagent/$pkg && npx tsc --noEmit && echo "✅ tsc")
+  (cd engine/$pkg && npm pack --dry-run 2>&1 | grep -c '\.js\.map')  # 期望: 0
+  (cd engine/$pkg && npx tsc --noEmit && echo "✅ tsc")
 done
 # 🔴 v1.1.3 教训追加（mcp README 0 bytes）：发布前检查 README 非空
 for pkg in audit mcp; do
   size=$(npm pack --dry-run 2>&1 | grep -c 'README\|total files' || true)
-  echo "$pkg pack 输出: $(cd sofagent/$pkg && npm pack --dry-run 2>&1 | tail -1)"
+  echo "$pkg pack 输出: $(cd engine/$pkg && npm pack --dry-run 2>&1 | tail -1)"
 done
 echo "⚠️ 确认 audit/mcp 的 README.md 在 npm pack 输出中有内容——v1.1.3 mcp README 0 bytes"
 ```
@@ -678,40 +678,40 @@ npm run build
 ── Step 2: 按依赖层分批 publish ──
 
 > 🔴 macOS 兼容（v1.1.8 教训）：不要用 `cd ../xxx && npm publish` 的连续 `&&` 链——
-> 如果某一步失败或单独执行，`cd ../` 的基准目录是错的。用 `(cd sofagent/xxx && npm publish --access public)`
+> 如果某一步失败或单独执行，`cd ../` 的基准目录是错的。用 `(cd engine/xxx && npm publish --access public)`
 > 子 shell 模式，每行独立可执行。
 
 🔴 第一层·叶子包（零 @sofagent 依赖，可并行）：
-1. (cd sofagent/harness     && npm publish --access public)
-2. (cd sofagent/ontology    && npm publish --access public)
-3. (cd sofagent/eval        && npm publish --access public)
-4. (cd sofagent/core        && npm publish --access public)
+1. (cd engine/harness     && npm publish --access public)
+2. (cd engine/ontology    && npm publish --access public)
+3. (cd engine/eval        && npm publish --access public)
+4. (cd engine/core        && npm publish --access public)
 
 🔴 第二层·依赖第一层（audit/orchestrator/skillopt 可并行）：
-5. (cd sofagent/audit        && npm publish --access public)
-6. (cd sofagent/orchestrator && npm publish --access public)
-7. (cd sofagent/skillopt     && npm publish --access public)
+5. (cd engine/audit        && npm publish --access public)
+6. (cd engine/orchestrator && npm publish --access public)
+7. (cd engine/skillopt     && npm publish --access public)
 
 🔴 第三层·依赖第二层（think/daemon 可并行）：
-8. (cd sofagent/think   && npm publish --access public)
-9. (cd sofagent/daemon  && npm publish --access public)
+8. (cd engine/think   && npm publish --access public)
+9. (cd engine/daemon  && npm publish --access public)
 
 🔴 第四层·依赖第二+三层（ab-test）：
-10. (cd sofagent/ab-test      && npm publish --access public)
+10. (cd engine/ab-test      && npm publish --access public)
 
 🔴 第五层·收官（mcp 依赖 audit+orchestrator+think）：
-11. (cd sofagent/mcp  && npm publish --access public)
+11. (cd engine/mcp  && npm publish --access public)
 
 ── Step 3: 验证全部 11 包（🔴 v1.1.3 教训强化——只 echo 不判 FAIL 是虚假绿色） ──
 NEW_VER="1.1.X"  # 替换为实际新版本号
 FAILED=""
 for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test skillopt; do
-  ver=$(npm view "@sofagent/$pkg" version 2>/dev/null)
+  ver=$(npm view "/$pkg" version 2>/dev/null)
   if [ "$ver" != "$NEW_VER" ]; then
-    echo "❌ @sofagent/$pkg: $ver（期望 $NEW_VER）"
+    echo "❌ /$pkg: $ver（期望 $NEW_VER）"
     FAILED="$FAILED $pkg"
   else
-    echo "✅ @sofagent/$pkg: $ver"
+    echo "✅ /$pkg: $ver"
   fi
 done
 if [ -n "$FAILED" ]; then
@@ -837,17 +837,17 @@ git log vX.Y.Z..HEAD --oneline
 🔴 v1.0.9 教训：FDE 发布到 ClawHub 时 slug "fde" 冲突——必须用 --slug sofagent-fde
 🔴 v1.1.4 教训：ClawHub 默认版本号从 1.0.0 开始自增（不走 SKILL.md 的 version 字段），必须显式 `--version X.Y.Z` 才能对齐；`--changelog` 可附简短变更说明
 
-15. clawhub skill publish ./sofagent/skill --slug sofagent --owner KongFangXun --version X.Y.Z --changelog " vX.Y.Z: {简短变更}"
-16. skillhub publish ./sofagent/skill --version X.Y.Z
+15. clawhub skill publish ./SKILL --slug sofagent --owner KongFangXun --version X.Y.Z --changelog " vX.Y.Z: {简短变更}"
+16. skillhub publish ./SKILL --version X.Y.Z
 17. clawhub skill publish ./FDE --slug sofagent-fde --owner KongFangXun --version X.Y.Z --changelog "vX.Y.Z: {简短变更}"
 18. skillhub publish ./FDE --version X.Y.Z
 19. **🔴 本机全局升级**（v1.0.7 教训——忘了更新本机安装，导致 QA 测试时跑的是旧版本）：
-    npm install -g @sofagent/audit@latest
+    npm install -g /audit@latest
     sofagent-audit --version                    # 验证版本号
     sofagent-audit --doctor                     # 验证功能正常
 20. 本地 Skill 同步：
-    cp -r sofagent/skill/* ~/.workbuddy/skills/sofagent/
-    cp -r sofagent/skill/* ~/.openclaw/skills/sofagent/
+    cp -r SKILL/harness/* ~/.workbuddy/skills/sofagent/
+    cp -r SKILL/harness/* ~/.openclaw/skills/sofagent/
     cp FDE/SKILL.md ~/.workbuddy/skills/sofagent-fde/
     # v1.0.7 新增：Agent Skill（@sofagent-fde / @sofagent-audit）
     cp -r agents/SKILL/sofagent-fde/ ~/.workbuddy/skills/sofagent-fde/
@@ -874,13 +874,13 @@ gh release view vX.Y.Z --json isDraft,body -q '.body | length'  # 期望 > 100
 gh release view vX.Y.Z --json body -q '.body | contains("](./docs/changelog/")'  # 期望: true（验证是 markdown 链接而非纯文本）
 
 # npm
-npm view @sofagent/audit version
-npm view @sofagent/mcp version
+npm view /audit version
+npm view /mcp version
 
 # 🔴 关键：更新全局安装——npm publish 成功后 npm registry 已更新，
 # 但开发者本地二进制仍是旧版本。不更新会导致 --version 输出旧版本号，
 # 且测试时拿到的是旧功能（如 doctor 少检查项、A14 不存在等）
-npm install -g @sofagent/audit@latest
+npm install -g /audit@latest
 sofagent-audit --version                    # 期望：vX.Y.Z（与 SSOT 一致）
 sofagent-audit --doctor                     # 期望：与当前版本 doctor 项数一致
 
@@ -892,18 +892,18 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 
 | 故障 | 现象 | 解决 |
 |------|------|------|
-| mcp 版本落后 | `npm view @sofagent/mcp version` 显示旧版本 | mcp job 独立于 audit job，版本号需手动同步 |
+| mcp 版本落后 | `npm view /mcp version` 显示旧版本 | mcp job 独立于 audit job，版本号需手动同步 |
 | .js.map 泄露 | `npm pack --dry-run` 显示 .js.map | 检查 package.json `files` 是否包含排除模式 |
 | README 空白 | npm 页面无 README | 检查 package.json `files` 是否引用了不存在的 README.md |
 | npm publish 403 | `npm publish` E403 | 版本号已存在或 NPM_TOKEN 过期 |
-| npm ENOTEMPTY（v1.0.9） | `npm install -g` 报 ENOTEMPTY rename 失败 | 清理全局 `node_modules/@sofagent/.audit-*` 残留目录后重试 |
+| npm ENOTEMPTY（v1.0.9） | `npm install -g` 报 ENOTEMPTY rename 失败 | 清理全局 `node_modules//.audit-*` 残留目录后重试 |
 | gh release TLS timeout（v1.0.9） | `gh release create` 报 TLS handshake timeout | 加 `--repo KongFangXun/sofagent` flag 重试 |
 | ClawHub slug 冲突（v1.0.9） | `clawhub skill publish ./FDE` 报 Ambiguous slug | 加 `--slug sofagent-fde` |
 | skillhub 语法错误（v1.0.9） | `skillhub skill publish` 报 invalid choice | skillhub 无 `skill` 子命令，直接 `skillhub publish <path> --version X` |
 | A9 测试文件误报（v1.0.9） | commit-msg hook 拦截：测试文件中的注入向量被误报 | A9 已在 v1.0.9+post-release 跳过 `.test.`/`__tests__/`/`.fixture`；旧版本用 `--no-verify` |
-| 全局二进制版本落后 | `sofagent-audit --version` 显示旧版本号 | npm registry 已更新但本地未重装。`npm install -g @sofagent/audit@latest` |
+| 全局二进制版本落后 | `sofagent-audit --version` 显示旧版本号 | npm registry 已更新但本地未重装。`npm install -g /audit@latest` |
 | **npm install -g . 权限问题（v1.1.4）** | 本地源码全局安装后 `sofagent-audit` 报 Permission denied | v1.1.4 已修：`chmod +x dist/*.js` 从 `prepublishOnly` 挪到 `build` 脚本。**npm registry 装的包无此问题**，只影响 `npm install -g .` 本地自装场景 |
-| **release.yml publish-audit 失败（v1.1.1-v1.1.3，v1.1.4 修）** | GitHub Actions Release job 失败：`Failed to resolve entry for package "@sofagent/core"` 17 suites FAIL | 根因：publish-audit job 只在 sofagent/audit 目录跑 npm ci+test，漏 build @sofagent/core。v1.1.4 已修：改为根目录 workspace 构建（对齐 publish-mcp）。**每个 npm 包有 runtime 依赖其他 @sofagent/* 包时，CI 必须 workspace 模式 build** |
+| **release.yml publish-audit 失败（v1.1.1-v1.1.3，v1.1.4 修）** | GitHub Actions Release job 失败：`Failed to resolve entry for package "/core"` 17 suites FAIL | 根因：publish-audit job 只在 engine/audit 目录跑 npm ci+test，漏 build /core。v1.1.4 已修：改为根目录 workspace 构建（对齐 publish-mcp）。**每个 npm 包有 runtime 依赖其他 /* 包时，CI 必须 workspace 模式 build** |
 | **ClawHub 版本号显示错误（v1.1.4）** | ClawHub 显示 1.0.11 而非 1.1.4 | clawhub 默认 1.0.0 自增，不走 SKILL.md version。必须 `--version X.Y.Z --changelog "简短说明"` |
 | **Release notes 链接不可点击（v1.1.4）** | `` 📖 详细开发日志：`docs/changelog/vX.Y.Z.md` `` 在 GitHub 不可点击 | 必须用 markdown 链接语法：`📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)` |
 
@@ -914,7 +914,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | # | 步骤 |
 |:--:|------|
 | 29 | **npm 12 包验证**：全部 12 包版本一致，无 MISSING |
-| 30 | npm README 验证：`npm view @sofagent/audit readme` + `npm view @sofagent/mcp readme` 均有内容 |
+| 30 | npm README 验证：`npm view /audit readme` + `npm view /mcp readme` 均有内容 |
 | 31 | 如果本次迭代暴露了新的流程漏洞，**直接吸收进本 SOP 对应阶段**——不要存到单独章节。每条新规则标注版本号（如 `vX.Y 教训`）以便追溯 |
 | 32 | **🔴 审查闭环——发布后审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `LOOP/releaser/fresh-eyes-review.md`（已在本版本阶段五中更新），对已发布版本做独立审查<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，作为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的维度和检查项 |
 | 33 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 直接吸收进对应阶段，标注版本号<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 LOOP.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
