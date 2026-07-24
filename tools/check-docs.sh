@@ -224,7 +224,11 @@ echo "=== 7. 规则数跨文档对照（v1.1.5 审-9 新增）==="
 # 三者不一致即告警——避免审-1（A18/A19 漂移）类问题再次出现
 
 # A. audit/README 规则表行数（数 | A* 或 | E* 开头的表行）
-AUDIT_README_COUNT=$(grep -cE "^\| (A|E)[0-9]+ " engine/audit/README.md 2>/dev/null || echo "0")
+# 用 node 替代 grep（BSD grep 对多字节 UTF-8 中文 .md 有二进制误判 bug）
+AUDIT_README_COUNT=$(node -e '
+const s = require("fs").readFileSync("engine/audit/README.md", "utf8");
+console.log(s.split("\n").filter(l => /^\| (A|E)[0-9]+ /.test(l)).length);
+' 2>/dev/null || echo "0")
 AUDIT_README_COUNT=$(echo "$AUDIT_README_COUNT" | tr -d '[:space:]')
 
 # B. rules/index.ts 注册规则数（数 { name: 'A* 或 'E* 开头的对象）
@@ -256,24 +260,40 @@ fi
 
 echo ""
 echo "=== 8. audit/README 规则表 ruleClass 完整性（v1.1.6 回归追加）==="
-VALID_CLASSES="业务底线|能力拐杖|工程规范"
-MISSING_CLASS=0
-while IFS= read -r row; do
-  if ! echo "$row" | grep -qE "$VALID_CLASSES"; then
-    echo "  ❌ $row （缺少合法 ruleClass）"
-    MISSING_CLASS=$((MISSING_CLASS + 1))
-  fi
-done < <(grep -nE "^\| (A|E)[0-9]+ .* \|" engine/audit/README.md 2>/dev/null)
-for cls in 业务底线 能力拐杖 工程规范; do
-  if ! grep -q "$cls" engine/audit/README.md; then
-    echo "  ❌ audit/README.md 未定义 ruleClass: $cls"
-    MISSING_CLASS=$((MISSING_CLASS + 1))
-  fi
-done
-if [ "$MISSING_CLASS" -eq 0 ]; then
-  echo "  [OK] 规则表 ruleClass 完整且定义齐全"
-else
-  ERRORS=$((ERRORS + MISSING_CLASS))
+# 注意：macOS BSD grep 对含多字节 UTF-8 中文的 .md 文件有二进制误判 bug
+# （file 命令报 data，grep 输出 "Binary file matches"），改用 node 做文本检查
+MISSING_CLASS=$(node -e '
+const fs = require("fs");
+const content = fs.readFileSync("engine/audit/README.md", "utf8");
+const lines = content.split("\n");
+const classes = ["业务底线", "能力拐杖", "工程规范"];
+let errs = 0;
+
+// A. 每个规则表行必须含合法 ruleClass
+for (const line of lines) {
+  if (/^\| (A|E)[0-9]+ .+ \|/.test(line)) {
+    const hasClass = classes.some(c => line.includes(c));
+    if (!hasClass) {
+      console.log("  ❌ " + line.trim() + " （缺少合法 ruleClass）");
+      errs++;
+    }
+  }
+}
+
+// B. 三个 ruleClass 关键词必须都在文件里定义过
+for (const cls of classes) {
+  if (!content.includes(cls)) {
+    console.log("  ❌ audit/README.md 未定义 ruleClass: " + cls);
+    errs++;
+  }
+}
+console.log(errs === 0 ? "  [OK] 规则表 ruleClass 完整且定义齐全" : "");
+process.exit(errs > 0 ? 1 : 0);
+' 2>&1)
+NODE_RC=$?
+echo "$MISSING_CLASS"
+if [ "$NODE_RC" -ne 0 ]; then
+  ERRORS=$((ERRORS + 1))
 fi
 
 echo ""
