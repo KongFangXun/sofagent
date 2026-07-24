@@ -6,7 +6,7 @@
 
 <img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
 
-> 📖 LOOP 自迭代的设计哲学见 [PHILOSOPHY §七](../docs/PHILOSOPHY.md#七怎么进化loop-自迭代)。Agent 定义见 [`agents/SKILL/`](../agents/SKILL/)——遵循 [Agency Agents](https://github.com/jnMetaCode/agency-agents-zh) 格式标准。编排层通过 [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) `createDeepAgent()` 接入 LangGraph StateGraph。
+> 📖 LOOP 自迭代的设计哲学见 [PHILOSOPHY §七](../docs/PHILOSOPHY.md#七怎么进化loop-自迭代)。Agent 定义见 [`SKILL/agents/`](../SKILL/agents/)——遵循 [Agency Agents](https://github.com/jnMetaCode/agency-agents-zh) 格式标准。编排层通过 [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) `createDeepAgent()` 接入 LangGraph StateGraph。
 
 ## 整体流程
 
@@ -25,7 +25,7 @@
 |---|------|------|------|:--:|
 | 1 | 构建验证 | sofagent-engineer | build + test 必须通过才提交 | 不可——规则写死在 Agent 定义里 |
 | 2 | 硬证据审计 | sofagent-audit (TS CLI) | git diff → A1-A11、A14-A19 模式匹配 | 不可——commit-msg hook |
-| 3 | 代码审查 | sofagent-reviewer (LLM) | 代码变更 → 语义/影响/质量 | 可配置——改 `agents/SKILL/sofagent-reviewer/SKILL.md` |
+| 3 | 代码审查 | sofagent-reviewer (LLM) | 代码变更 → 语义/影响/质量 | 可配置——改 `SKILL/agents/sofagent-reviewer/SKILL.md` |
 | 4 | 人类确认 | 你 | 审查报告 → 直觉判断 | 最终决定权 |
 
 ## 一个迭代周期
@@ -77,7 +77,7 @@ graph TD
     FDE[forward-deployed-engineer] -.->|定期监督| THINK[think.md 反思趋势]
     FDE -.->|定期监督| STATS[审计拦截统计]
     FDE -.->|触发巡检| COMPLIANCE[compliance-auditor]
-    FDE -.->|优化| AGENT_DEF[agents/SKILL/ rules/workflow]
+    FDE -.->|优化| AGENT_DEF[SKILL/agents/ rules/workflow]
     AGENT_DEF -.->|升级| CODING
     AGENT_DEF -.->|升级| REVIEW
 ```
@@ -88,7 +88,7 @@ graph TD
 - **外层循环定时触发**：FDE 每周分析 think.md 趋势，每月触发 compliance-auditor 全量巡检
 - **发版后自进化**：FDE 自动更新 fresh-eyes-review / regression-checklist / acceptance-test.sh（纯增量），releasing.md 需人类确认后 apply
 - **releaser Skill**（v1.1.5+）：把 `LOOP/releaser/releasing.md` 十二阶段发版 SOP 注入 Agent 上下文——Agent 按全流程自动执行发版（三个 human check 节点显式介入：阶段一 changelog 确认 / 阶段五审查报告确认 / 发版前最终确认）。`sofagent-fde` Skill 已内置 releaser 子能力，在 WorkBuddy 中 `@sofagent-fde 走发版流程` 即可触发。详见 [releasing.md](../LOOP/releaser/releasing.md)
-- **Agent 定义来源**：`agents/SKILL/*/SKILL.md` → `createDeepAgent({ systemPrompt: loadPrompt(...) })`
+- **Agent 定义来源**：`SKILL/agents/*/SKILL.md` → `createDeepAgent({ systemPrompt: loadPrompt(...) })`
 
 ---
 
@@ -143,7 +143,7 @@ sofagent 的版本发布遵循 [`LOOP/releaser/releasing.md`](../LOOP/releaser/r
 
 ### DeepAgentsJS + LangGraph 实现细节
 
-v1.1.3 起 StateGraph 已代码化（`sofagent/orchestrator/src/loop/`）。Agent 定义在 `agents/SKILL/`，流程定义在 LangGraph 节点+边。完整实现原理（四节点状态机 / Checkpoint / 降级链）见 [ARCHITECTURE §编排引擎](../docs/ARCHITECTURE.md#⚙️-编排引擎)。
+v1.1.3 起 StateGraph 已代码化（`engine/orchestrator/src/loop/`）。Agent 定义在 `SKILL/agents/`，流程定义在 LangGraph 节点+边。完整实现原理（四节点状态机 / Checkpoint / 降级链）见 [ARCHITECTURE §编排引擎](../docs/ARCHITECTURE.md#⚙️-编排引擎)。
 
 ### 平台无关触发（已设计，待代码化）
 
@@ -176,7 +176,7 @@ flowchart TD
     FDE --> T2["2. 审查 reviewer 报告质量<br/>审查变橡皮图章？→ 调整审查标准"]
     FDE --> T3["3. 分析 audit 拦截统计<br/>哪种违规增加？→ 新增审计规则？"]
     FDE --> T4["4. 触发 @sofagent-audit 巡检<br/>Workflow 完整性 + 配置一致性 + 死链"]
-    FDE --> T5["5. 优化 Agent 定义<br/>改 agents/SKILL/，内层循环自动升级"]
+    FDE --> T5["5. 优化 Agent 定义<br/>改 SKILL/agents/，内层循环自动升级"]
     FDE --> T6["6. 发版后 SOP 自我进化<br/>读 think.md + changelog → 提出流程改进建议"]
     T6 --> Human_Confirm["👤 作者确认后 apply"]
 ```
@@ -209,7 +209,7 @@ flowchart TD
 
 ### 外层循环的产物
 
-- **优化后的 Agent 定义**：`agents/SKILL/*/SKILL.md` 的 rules 和 workflow 更新
+- **优化后的 Agent 定义**：`SKILL/agents/*/SKILL.md` 的 rules 和 workflow 更新
 - **审计规则调整**：`.sofagent/config.yml` 的新增或修改
 - **合规审计报告**：compliance-auditor 产出的周期性报告
 - **优化记录**：think.md 中记录"本次优化了什么、为什么、预期效果"

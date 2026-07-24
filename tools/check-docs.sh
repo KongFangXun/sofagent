@@ -23,10 +23,10 @@ echo ""
 echo "=== 1b. 全仓相对路径死链扫描（维度 306）==="
 # 遍历所有 .md，提取 markdown 链接并校验目标文件是否存在。
 # 排除项与 section 4 公共排除保持一致（node_modules/.workbuddy/.sofagent/
-# docs/changelog/docs/evidence/engine/skill/FDE）。
+# docs/changelog/docs/evidence/SKILL/FDE）。
 DEAD_LINKS=0
 DEAD_DETAIL=""
-EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/engine/skill/*" -not -path "*/FDE/*" -not -path "*/docs/archive/*" -not -path "*/commercial/*")
+EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/SKILL/harness/*" -not -path "*/FDE/*" -not -path "*/docs/archive/*" -not -path "*/commercial/*")
 while IFS= read -r -d '' mdfile; do
   in_fence=0
   while IFS= read -r line; do
@@ -75,7 +75,7 @@ echo "=== 2. 术语一致性检查 ==="
 # 检查三处关键文件的铁律编号
 # v1.1.4 起仅 A1-A14 / A1-A11 是过时编号（早期规则数）；
 # "4 底线" "7 铁律" 是当前正确结构，不算过时
-for file in engine/skill/SKILL.md HANDBOOK.md DEVELOPMENT.md; do
+for file in SKILL/SKILL.md HANDBOOK.md DEVELOPMENT.md; do
   if [ -f "$file" ]; then
     COUNT=$(grep -cE "A1-A14|A1-A11" "$file" 2>/dev/null || echo "0")
     echo "  $file: 过时术语出现 $COUNT 处"
@@ -91,7 +91,7 @@ echo ""
 echo "=== 4. 文档分层预算 ==="
 
 # 公共排除条件（所有分层都排除的目录）
-COMMON_EXCLUDE='-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/engine/skill/*" -not -path "*/FDE/*"'
+COMMON_EXCLUDE='-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/SKILL/harness/*" -not -path "*/FDE/*"'
 
 # 计算函数：count_md <find_args>
 count_md() {
@@ -183,7 +183,7 @@ fi
 
 echo ""
 echo "=== 5. Skill 文件行数检查 ==="
-for f in engine/skill/*.md; do
+for f in SKILL/harness/*.md; do
   LINES=$(wc -l < "$f" | tr -d ' ')
   STATUS=""
   if [ "$LINES" -gt 100 ]; then
@@ -198,7 +198,7 @@ done
 echo ""
 echo "=== 6. 铁律措辞检查 ==="
 IRON_FAIL=0
-for f in engine/skill/*.md FDE/SKILL.md LOOP/SKILL.md; do
+for f in SKILL/harness/*.md FDE/SKILL.md LOOP/SKILL.md; do
   if [ -f "$f" ]; then
     WEAK=$(grep -n '建议\|应该\|尽量' "$f" 2>/dev/null | grep -v 'not_when\|Gotcha\|场景\|如果\|注\|说明\|这不是' || true)
     if [ -n "$WEAK" ]; then
@@ -301,7 +301,7 @@ fi
 
 echo ""
 echo "=== 10. SKILL.md 底线/铁律数一致性（F-19）==="
-SKILL_FILE="engine/skill/SKILL.md"
+SKILL_FILE="SKILL/SKILL.md"
 if [ -f "$SKILL_FILE" ]; then
   # 提取标题声称的底线数
   BOTTOM_CLAIMED=$(grep -oE "### ([0-9]+) 底线" "$SKILL_FILE" | grep -oE "[0-9]+" | head -1)
