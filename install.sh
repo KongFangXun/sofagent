@@ -187,12 +187,11 @@ if command -v npm &>/dev/null; then
   if [ -f "$LOCAL_AUDIT_DIST" ]; then
     # 仓库本地构建已就绪，创建 wrapper 到全局路径
     mkdir -p "$NPM_GLOBAL_BIN" 2>/dev/null || true
-    cat > "$NPM_GLOBAL_BIN/sofagent-audit" << 'WRAPPER_EOF'
+    cat > "$NPM_GLOBAL_BIN/sofagent-audit" << WRAPPER_EOF
 #!/usr/bin/env bash
 # sofagent-audit wrapper（从仓库本地 dist 安装）
-exec node "WRAPPER_EOF
-    echo "$LOCAL_AUDIT_DIST" >> "$NPM_GLOBAL_BIN/sofagent-audit"
-    echo '"$@"' >> "$NPM_GLOBAL_BIN/sofagent-audit"
+exec node "$LOCAL_AUDIT_DIST" "\$@"
+WRAPPER_EOF
     chmod +x "$NPM_GLOBAL_BIN/sofagent-audit" 2>/dev/null || true
     ok "  @sofagent/audit 已从仓库本地安装（$(node -e "console.log(require('./engine/audit/package.json').version)" 2>/dev/null || echo "v1.2.0")）"
   else

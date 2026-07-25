@@ -35,6 +35,9 @@ import { checkLogs } from '@sofagent/core';
 import { createShadowRepo, commitSnapshot, hasShadowRepo } from '@sofagent/core';
 import { runRules, type AuditResult } from './reporter';
 import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-history';
+
+// Re-export for external consumers (P0-②: doctor needs checkHistoryChainIntegrity via require('@sofagent/audit'))
+export { checkHistoryChainIntegrity } from './audit-history';
 import { analyzeRootCause } from './audit-root-cause';
 import { formatSuggestions } from './config-suggestion';
 import { runRegression, type DiffSnapshot } from './audit-regression';
