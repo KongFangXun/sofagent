@@ -134,15 +134,15 @@
 
 ---
 
-## 🔴 阶段五：审查体系合并更新（回归清单 + 发布后审查，一步完成）
+## 🔴 阶段五：审查体系合并更新（回归清单 + 发布后审查 + 验收测试，一步完成）
 
-> ⚠️ 本版本已开发完成，遇到的问题和情况都已清楚——**回归清单维度**和**发布后审查**在**同一步骤**一并更新，不要拆成两步。趁记忆最新，把"修过什么"和"下次从什么角度能一眼看出"同时写进去。
+> ⚠️ 本版本已开发完成，遇到的问题和情况都已清楚——**回归清单维度**、**发布后审查**和**验收测试场景**在**同一步骤**一并更新，不要拆成多步。趁记忆最新，把"修过什么"和"下次从什么角度能一眼看出"和"下次怎么能自动检出"同时写进去。
 
 所有 P0/P1/P2 开发修复完毕、自测和代码审核全部通过后，执行以下步骤：
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 16 | **合并更新两份审查文档（两份逻辑不同，区分对待）**：<br>**① regression-checklist.md（加法）**：汇总本版本所有修复项，抽象为回归检查维度（编号递增）写入。每发现一个问题加一条——这是精确清单，膨胀靠瘦身控制<br>**② fresh-eyes-review.md（校准，不是加法）**：按下方「fresh-eyes-review 升级优化」决策树处理本版本审查中的预料外发现。**⚠️ 不要往 fresh-eyes-review 里加精确检查项**——它是留白式的直觉审查，加检查项会让它退化成第二个 regression-checklist（v1.2.0 刚从 826 行砍到 274 行修复了这个问题） | 当前 session | `git diff` 显示两份文档均有更新；regression 新增维度 ≥ 本版本修复数 |
+| 16 | **合并更新三份审查文档（三份逻辑不同，区分对待）**：<br>**① regression-checklist.md（加法）**：汇总本版本所有修复项，抽象为回归检查维度（编号递增）写入。每发现一个问题加一条——这是精确清单，膨胀靠瘦身控制<br>**② fresh-eyes-review.md（校准，不是加法）**：按下方「fresh-eyes-review 升级优化」决策树处理本版本审查中的预料外发现。**⚠️ 不要往 fresh-eyes-review 里加精确检查项**——它是留白式的直觉审查，加检查项会让它退化成第二个 regression-checklist（v1.2.0 刚从 826 行砍到 274 行修复了这个问题）<br>**③ acceptance-test.sh（可自动化验证的发现）**：如果 fresh eyes 审查报告中的 P0/P1 问题可以通过 CLI 命令/grep/bash 自动化验证，**同步追加到 `LOOP/releaser/acceptance-test.sh`**（追加场景，编号递增）。手法与阶段三·步骤 13 Step B 相同——`scenario` 编号 + 中文注释 + 断言。**为什么需要这一步**：regression-checklist 是人工巡检用的，acceptance-test 是机器跑的——如果一个 bug 可以被自动化检出，把它只放在 regression-checklist 里等于每次发版都要人工跑一遍。让它进 acceptance-test 才能让机器替你记住。 | 当前 session | `git diff` 显示三份文档均有更新（fresh-eyes 可能无变更，见下说明）；regression 新增维度 + acceptance-test 新增场景 ≥ 本版本修复数 |
 | 17 | **当前 session 逐项验证**：每条新增回归维度跑一遍命令确认可执行；确认 `fresh-eyes-review.md` 新维度与回归维度互相印证、无矛盾 | 当前 session | 所有新增维度可执行 + 两份文档互相印证 |
 
 > ✅ 完成 步骤 16 → 17 后，**开发 session 的文档工作已一气呵成**——回归清单 + 发布后审查全部在当前 session 更新完。接下来只有**阶段六需要开新 session 控制 OpenClaw**，到那时才停。
@@ -173,9 +173,16 @@
 ```
 预料外发现
     │
-    ├─ 是可精确描述、可 grep/命令验证的具体问题模式？
-    │   └─ ✅ 写进 regression-checklist（加新维度，编号递增）
-    │      不动 fresh-eyes-review
+    ├─ 是可精确描述的具体问题模式？
+    │   │
+    │   ├─ 可通过 CLI 命令/grep/bash 自动化验证？
+    │   │   └─ ✅ 写进 regression-checklist（加新维度，编号递增）
+    │   │       ✅ 写进 acceptance-test.sh（加新场景，编号递增）
+    │   │       不动 fresh-eyes-review
+    │   │
+    │   └─ 不可自动化验证（需人工判断上下文）？
+    │       └─ ✅ 写进 regression-checklist（加新维度，编号递增）
+    │          不动 fresh-eyes-review
     │
     ├─ 是"审查者凭直觉嗅到、但无法写成精确检查项"的系统性盲区？
     │   └─ 走 fresh-eyes-review 三选一升级（见下）
@@ -194,7 +201,7 @@
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 21 | **fresh-eyes-review 升级优化**：① 回顾本版本所有预料外发现，逐一走决策树分类 ② 需要升级的走三选一（A/B/C）③ **风格守护自检**（见下） | 当前 session | `git diff fresh-eyes-review.md` 显示有更新（或确认本版本无需更新）；风格守护自检全 PASS |
+| 21 | **fresh-eyes-review 升级优化**：① 回顾本版本所有预料外发现，逐一走决策树分类 ② 需要升级的走三选一（A/B/C）③ **风格守护自检**（见下）④ 确认本版本审查中「可自动化验证的发现」已同步追加到 `acceptance-test.sh`（`grep -c "关键词" LOOP/releaser/acceptance-test.sh` ≥ 1） | 当前 session | `git diff fresh-eyes-review.md` 显示有更新（或确认本版本无需更新）；风格守护自检全 PASS；acceptance-test 关键词可 grep |
 
 **风格守护自检**（每次更新 fresh-eyes-review 后必跑，防止退化）：
 
@@ -995,7 +1002,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 二 | 开发 | 工程师 | 否 | 代码 + 随修随记的回归维度 |
 | 三 | 自测 | 工程师 | 否 | build/test 全绿 + 更新验收测试文件（acceptance-test 本身只更新不跑，跑在阶段6）。涉及 CLI 迁移时 shellcheck 延后到阶段八 |
 | 四 | 代码审核 | 当前 session | 否 | 逐项 PASS 或 FAIL→修复 |
-| 五 | 审查体系合并更新（含瘦身检查） | 当前 session | 否 | regression-checklist（加法）+ fresh-eyes-review（校准，Tier 3 守护留白风格）+ 防膨胀瘦身 |
+| 五 | 审查体系合并更新（含瘦身检查） | 当前 session | 否 | regression-checklist（加法）+ fresh-eyes-review（校准，Tier 3 守护留白风格）+ acceptance-test.sh（可自动化验证的发现追加入场景）+ 防膨胀瘦身 |
 | **六** | **acceptance-test + regression-checklist（开新 session）** | **审核者控制 OpenClaw** | **🔴 是（全新认知；FAIL 回阶段五循环）** | **stage6 合并报告全 PASS** |
 | 七 | 审查体系最终确认 | 作者 | 否 | 两份审查文档状态一致、无遗漏（初版已在阶段五写入） |
 | 八 | 开发日志定稿 + 文档收尾 | 作者 | 否 | **开发日志定稿（含发布检查清单打勾）** + CHANGELOG/ROADMAP 五步/版本号/**发版日期同步**/测试数一致性/**🔴 文档同步闭环（D6 落地：changelog 功能点→项目文档覆盖率对照）**。涉及 CLI 迁移时 shellcheck 在此补跑 |
