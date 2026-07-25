@@ -1,0 +1,35 @@
+---
+name: fresh-eyes-loop
+description: 发布后独立质量循环——A/B 双盲 12 视角 fresh-eyes 审查 + 修复 + 验证，每轮新 session 保证零上下文，连续 2 轮无 P0/P1 即停。
+emoji: 🔍
+color: "#16B8F3"
+---
+
+# fresh-eyes-loop · 质量循环定义
+
+> **一个循环 = 一轮又一轮的"独立审查 → 修复 → 验证"，直到干净为止。**
+>
+> 这不是检查清单，是一套**让独立性可被重复执行**的机制。每一轮都用全新 session 跑（零上下文），所以"作者自己看不出问题"这个人类弱点被结构性消解。
+
+## 这是什么
+
+一套可复用的质量循环定义。它描述：谁来做（A / B 两个 subagent）、每一轮怎么走（审查 → 合并 → 修复 → 验证）、什么时候停（连续 2 轮无 P0/P1）、产物放哪（`runs/YYYY/MM/DD/run-NN/`）。
+
+- **A** = 审查者 / QA：独立跑 12 视角审查、合并 A/B 两份报告、验证 B 的修复。
+- **B** = 工程师：独立跑 12 视角审查、执行合并后的修复。
+- **driver（"我"，当前会话）**：在 A/B 之间中转、维护 `runs/` 文件、判定停止条件。**driver 不是常驻 agent**，只是一轮里 relay 的人类或会话。
+
+## 怎么用
+
+1. 读 `loop.md` 拿到完整 SOP（角色 / 轮次协议 / 产物 schema / 停止条件）。
+2. 12 视角的定义见 `specs/fresh-eyes-review.md`（两个 subagent 都按它跑）。
+3. A/B 的行为指令在 `prompts/`（a-check / b-check / a-consolidate / b-fix / a-verify）。
+4. 跨 run 的永久索引在 `LOOP/LEDGER.md`（被 git 跟踪）；每轮正文在 `runs/`（不进 git）。
+
+## 实现载体
+
+A/B 由 **DeepAgents** 驱动（开新 session，或每轮刷新对话）——这是为企业定制 workflow 时的标准做法。WorkBuddy 会话只是沙箱 / 原型，真上生产用 DeepAgents orchestrator 拉起这套循环。
+
+## 循环级演化
+
+`evolution.md` 记录对这套循环本身的改进建议（人类门控的"加一减一"），防止 specs 越长越烂。

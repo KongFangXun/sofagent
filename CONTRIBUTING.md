@@ -97,7 +97,7 @@ git clone https://github.com/KongFangXun/sofagent.git
 cd sofagent && bash install.sh && bash engine/scripts/verify.sh
 ```
 
-发版：`docs/changelog/vX.Y.md` 写日志 → `CHANGELOG.md` 加索引 → `LOOP/releaser/bump-version.sh` 升级版本号 → `cp -r sofagent/ ~/.workbuddy/skills/sofagent/` → `git tag vX.Y && git push` → `gh release create vX.Y`
+发版：`docs/changelog/vX.Y.md` 写日志 → `CHANGELOG.md` 加索引 → `tools/bump-version.sh` 升级版本号 → `cp -r sofagent/ ~/.workbuddy/skills/sofagent/` → `git tag vX.Y && git push` → `gh release create vX.Y`
 
 ---
 

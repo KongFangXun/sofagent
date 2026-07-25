@@ -7,7 +7,7 @@
 
 ## 现在在哪：v1.2.x 规划中
 
-> **物理结构大重构已完成（v1.2.0）**：`/sofagent/` → `/engine/` 目录重命名 + Skill 收敛到 `/SKILL/`（harness/ + agents/ + custom/ 三层结构）+ install.sh 提升根目录 + engine/rules/ 独立规则引擎包。后续（v1.2.x）将 `LOOP/releaser/` 发版工具包拆散——发版 SOP 迁 `docs/changelog/releasing.md`、版本号脚本迁 `tools/bump-version.sh`、审查规范迁 `LOOP/SKILL/fresh-eyes-loop/specs/`，质量循环改为基于 `LOOP/SKILL/<loop>/` 定义 + DeepAgents 驱动。v1.2.x 方向：编排隔离底座（并行 SubAgent git worktree 隔离）+ Dashboard 原型 + Skill 分层升级策略实现。
+> **物理结构大重构已完成（v1.2.0）**：`/sofagent/` → `/engine/` 目录重命名 + Skill 收敛到 `/SKILL/`（harness/ + agents/ + custom/ 三层结构）+ install.sh 提升根目录 + engine/rules/ 独立规则引擎包。发版工具链已拆散——发版 SOP 迁 `docs/changelog/releasing.md`、版本号脚本迁 `tools/bump-version.sh`、审查规范迁 `LOOP/SKILL/fresh-eyes-loop/specs/`，releaser Skill 已移除，质量循环改为基于 `LOOP/SKILL/<loop>/` 定义 + DeepAgents 驱动。v1.2.x 方向：编排隔离底座（并行 SubAgent git worktree 隔离）+ Dashboard 原型 + Skill 分层升级策略实现。
 >
 > 📖 [v1.2.0 开发日志](./docs/changelog/v1.2/v1.2.0.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 

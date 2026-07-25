@@ -2,9 +2,9 @@
 # ============================================================
 # bump-version.sh · 一键升级全项目版本号
 # ============================================================
-# 用法: ./LOOP/releaser/bump-version.sh <旧版本> <新版本> [--dry-run]
-#   ./LOOP/releaser/bump-version.sh 0.94 0.95          # 实际替换
-#   ./LOOP/releaser/bump-version.sh 0.94 0.95 --dry-run # 只打印，不修改
+# 用法: ./tools/bump-version.sh <旧版本> <新版本> [--dry-run]
+#   ./tools/bump-version.sh 0.94 0.95          # 实际替换
+#   ./tools/bump-version.sh 0.94 0.95 --dry-run # 只打印，不修改
 #
 # 版本号格式: 2 段（如 0.94），package.json 自动补 3 段（0.94.0）
 #
@@ -21,7 +21,7 @@
 #      8. vi README.md README.en.md                 # 改 badge Version-v0.99.3
 #      9. vi SKILL/SKILL.md                          # 改 frontmatter + 正文标题
 #     10. vi SKILL/harness/data/*.md                # 改正文标题 · v0.99.3
-#     11. vi LOOP/SKILL.md                           # 改 frontmatter
+#     11. vi LOOP/SKILL/fresh-eyes-loop/SKILL.md    # 改 frontmatter（如有版本字段）
 #     12. 跑 ./tools/check-version.sh 确认一致性
 #
 # 替换范围（结构性位置，不碰历史引用）:
@@ -91,7 +91,7 @@ else
   HAS_PATCH=false
 fi
 
-# ── 项目根目录（脚本在 LOOP/releaser/ 下，根在上两级）────────
+# ── 项目根目录（脚本在 tools/ 下，根在上一级）────────
 PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 # 从实际 SSOT 读取 3 段版本号（audit/package.json），而非 .0 补零

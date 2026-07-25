@@ -186,7 +186,7 @@ flowchart LR
 > [!NOTE]
 > **最小用量**：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）。五包全装才是完整 Harness 中间件。
 >
-> **三个产品层各自独立、按需选用**：`install.sh`（底座 + FDE Agent，所有人）· `install.sh --base-only`（仅底座引擎）· `LOOP/loop-install.sh`（底座 + 开发循环，开发者）。FDE 安装不自动装 LOOP——用户要的是"能干活的人"，不是"自己迭代开发工具"。
+> **三个产品层各自独立、按需选用**：`install.sh`（底座 + FDE Agent，所有人）· `install.sh --base-only`（仅底座引擎）。LOOP 自迭代循环由各 `LOOP/SKILL/<loop>/` 定义驱动（如 fresh-eyes-loop），不单独安装——用户要的是"能干活的人"，不是"自己迭代开发工具"。
 
 <details>
 <summary>📖 引擎细节 + 21 条规则</summary>

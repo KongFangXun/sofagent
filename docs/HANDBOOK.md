@@ -43,7 +43,7 @@
 | 你想知道的 | 一句话 | 详见 |
 |------|------|------|
 | 这是什么 | sofagent——一个 FDE Agent，进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑 | [FDE Agent 能替你干什么](#fde-agent-能替你干什么) |
-| 怎么装 | `bash install.sh`（FDE 主安装器，装底座 + FDE Agent）· `bash install.sh --base-only`（仅底座）· `bash LOOP/loop-install.sh`（开发者自迭代闭环） | [落地：装好就能派活](#落地装好就能派活) |
+| 怎么装 | `bash install.sh`（FDE 主安装器，装底座 + FDE Agent）· `bash install.sh --base-only`（仅底座） | [落地：装好就能派活](#落地装好就能派活) |
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | [运行：每次变更都被管住](#运行每次变更都被管住) |
 | AI 节点怎么跑 | 开发者：git commit 自动审计。非开发者：v1.0.8+ daemon 监控文件变更自动审计 | [落地：装好就能派活](#落地装好就能派活) |
 | AI 知识库 | `.sofagent/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [进化：知识自动沉淀](#进化知识自动沉淀) |
@@ -109,7 +109,6 @@
 |---|---|---|---|
 | `bash install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（`@sofagent-fde` / `@sofagent-audit`）+ hook | LOOP | 企业 / FDE：要常驻 硅基员工 |
 | `bash install.sh --base-only` | 仅底座（四引擎） | FDE / LOOP | 开发者 / 企业 IT：只要核心治理引擎 |
-| `bash LOOP/loop-install.sh` | 底座（`--base-only` 内部）+ engineer / reviewer Skill + LOOP 工具链 | FDE Agent | 开发者：自迭代开发闭环 |
 
 > 最小可用：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）；五包全装才是完整 Harness 中间件。完整边界见 [ARCHITECTURE · 三安装包](./ARCHITECTURE.md#三安装包边界v120-设计)。
 

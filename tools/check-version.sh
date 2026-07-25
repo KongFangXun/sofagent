@@ -235,24 +235,7 @@ if [[ -f "${FDE_SH}" ]]; then
   fi
 fi
 
-# 检查 LOOP/loop-install.sh 注释头版本号 + VERSION 常量
-LOOP_SH="${PROJECT_ROOT}/LOOP/loop-install.sh"
-if [[ -f "${LOOP_SH}" ]]; then
-  header_ver=$(head -5 "${LOOP_SH}" | grep -oE '· v[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
-  if [[ -n "${header_ver}" ]] && [[ "${header_ver}" != "${SSOT_VERSION}" ]]; then
-    report_error "${LOOP_SH}" "注释头 v${header_ver}" "v${SSOT_VERSION}"
-  else
-    report_ok "loop-install.sh" "v${header_ver:-N/A}"
-  fi
-  # VERSION 常量（如存在）也必须与 SSOT 一致
-  ver_const=$(grep -nE '^VERSION="[0-9]+\.[0-9]+\.[0-9]+"' "${LOOP_SH}" | head -1)
-  if [[ -n "${ver_const}" ]]; then
-    ver_const_val=$(extract_version "${ver_const}")
-    if [[ "${ver_const_val}" != "${SSOT_VERSION}" ]]; then
-      report_error "${LOOP_SH}" "VERSION 常量 ${ver_const_val}" "${SSOT_VERSION}"
-    fi
-  fi
-fi
+# LOOP/loop-install.sh 已移除：loop 由 LOOP/SKILL/<loop>/ 定义驱动，无独立安装脚本（v1.2.x）
 
 # 检查 FDE/package.json + LOOP/package.json version 字段
 for pkg_file in "${PROJECT_ROOT}/FDE/package.json" "${PROJECT_ROOT}/LOOP/package.json"; do
@@ -523,7 +506,7 @@ while IFS= read -r ts; do
   [[ "${ts}" == */docs/archive/* ]] && continue
   [[ "${ts}" == *.test.ts ]] && continue
   [[ "${ts}" == */dist/* ]] && continue
-  # 只检查文件头前 10 行的注释（与 bump-version.sh [4/13] 对齐）
+  # 只检查文件头前 10 行的注释（与 tools/bump-version.sh [4/13] 对齐）
   match=$(head -10 "${ts}" | grep -m2 -nE '// .*v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
   [[ -z "${match}" ]] && continue
   found_ver=$(echo "${match}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
@@ -732,7 +715,7 @@ if [[ ${ERRORS} -eq 0 ]]; then
 else
   echo -e "${RED}${BOLD}  ✗ 发现 ${ERRORS} 处不一致！${NC}"
   echo -e "  期望版本: ${SSOT_VERSION} (SSOT: ${SSOT_VERSION})"
-  echo -e "  修复: ./LOOP/releaser/bump-version.sh <旧版本> ${SSOT_VERSION}"
+  echo -e "  修复: ./tools/bump-version.sh <旧版本> ${SSOT_VERSION}"
   echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
   exit 1
 fi

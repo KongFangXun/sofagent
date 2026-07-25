@@ -8,22 +8,21 @@
 #    默认模式 = FDE 模式（底座 + FDE Agent Skill）。
 #    --base-only 模式 = 仅装底座（约束层 + 审计 + 编排）。
 #
-# 📦 三个安装包边界（v1.2.0）：
-#    ┌─────────────────────────────┬──────────┬──────────────────────┬─────────┐
-#    │ 脚本                        │ 给谁     │ 装什么               │ 装 LOOP │
-#    ├─────────────────────────────┼──────────┼──────────────────────┼─────────┤
-#    │ install.sh                  │ 所有用户 │ 底座+FDE Agent Skill │   否    │
-#    │ install.sh --base-only      │ 所有用户 │ 约束底座+四引擎      │   否    │
-#    │ LOOP/loop-install.sh        │ 开发者   │ 底座+LOOP 自迭代包   │   是    │
-#    └─────────────────────────────┴──────────┴──────────────────────┴─────────┘
-#    原则：FDE 安装包不自动装 LOOP——LOOP 是 sofagent 项目的自迭代
-#    开发工具包（管理代码变更，给开发者用），不属于企业交付物。
+# 📦 安装包边界（v1.2.0）：
+#    ┌─────────────────────────┬──────────┬──────────────────────┐
+#    │ 脚本                    │ 给谁     │ 装什么               │
+#    ├─────────────────────────┼──────────┼──────────────────────┤
+#    │ install.sh              │ 所有用户 │ 底座+FDE Agent Skill │
+#    │ install.sh --base-only  │ 所有用户 │ 约束底座+四引擎      │
+#    └─────────────────────────┴──────────┴──────────────────────┘
+#    原则：LOOP 由 `LOOP/SKILL/<loop>/` 定义驱动，无需单独安装脚本——
+#    LOOP 是 sofagent 项目的自迭代开发工具包（管理代码变更，给开发者用），
+#    不属于企业交付物。
 #
-# 🔗 跨产品契约：LOOP/loop-install.sh 依赖本脚本（--base-only 模式）。
-#    改动此文件前，确认 LOOP 的安装链路不受影响：
-#    - LOOP 调用 `bash install.sh --base-only --platform "$PLATFORM"` 作为底座安装入口
-#    - 改参数名/输出路径/依赖文件前必须 grep LOOP 的调用方式
-#    - 删被依赖文件（如 SKILL/harness/data/fde.md）前确认 LOOP install 不再引用
+# 🔗 编排契约：FDE/LOOP 调用本脚本（--base-only 模式）作为底座安装入口。
+#    改动此文件前确认调用方不受影响：
+#    - FDE/LOOP 通过 `bash install.sh --base-only --platform "$PLATFORM"` 安装底座
+#    - 删被依赖文件（如 SKILL/harness/data/fde.md）前确认无调用方引用
 # v0.98: 从 941 行拆分为 4 个 lib 模块 + 纯组装入口
 # v1.0.7: ao 退役，移除 agency-orchestrator 安装逻辑
 # v1.2.0: install.sh 吸收 FDE/fde-install.sh，成为主安装器+FDE 入口
@@ -31,11 +30,11 @@
 # 平台：openclaw（完整）/ workbuddy / claude / codex / hermes / 自动探测
 # 编排引擎：DeepAgents（npm 包，正式依赖）
 #
-# ── 跨产品调用契约（v1.2.0）──
-# LOOP/loop-install.sh 在第 1 步会调用本脚本：
+# ── 调用契约（v1.2.0）──
+# FDE/LOOP 通过以下方式调用本脚本安装底座：
 #   bash "$PROJECT_ROOT/install.sh" --base-only --platform "$PLATFORM"
 # 版本锁定：本脚本的接口（入参/退出码/副作用）从 v1.1.5 起冻结，
-# 任何 breaking change 必须 bump major 版本并同步更新 LOOP install 脚本。
+# 任何 breaking change 必须 bump major 版本并通知调用方。
 # 契约约定：
 #   1. 入参：--platform <name>（可选，缺省时自动探测）/ --base-only（仅装底座）
 #   2. 退出码：0=成功，非 0=失败（调用方依赖 set -e 自动中断）
