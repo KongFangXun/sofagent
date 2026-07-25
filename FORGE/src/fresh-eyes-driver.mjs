@@ -25,6 +25,9 @@ import {
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
+// 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
+import { createVisibility, EVENTS } from './visibility.mjs';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
 const REPO_ROOT  = resolve(__dirname, '../..');
@@ -799,6 +802,37 @@ async function runRound(roundNum, runDir, target, dryRun) {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  可见性：适配器探测
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * 探测环境中可用的进度适配器。
+ * 每个 adapter 自行检测是否可用（命令存在 + session 可达）。
+ * 返回可用适配器实例数组；无适配器时返回空数组（核心层兜底）。
+ */
+async function detectReporters() {
+  const reporters = [];
+
+  try {
+    const { createCodebuddyReporter } = await import('./reporters/codebuddy-reporter.mjs');
+    const codebuddy = await createCodebuddyReporter();
+    if (codebuddy) {
+      reporters.push(codebuddy);
+      console.log('[visibility] 适配器已加载: codebuddy');
+    }
+  } catch (err) {
+    // codebuddy 适配器加载失败不阻断 driver
+    console.log(`[visibility] codebuddy 适配器跳过: ${err.message}`);
+  }
+
+  // 未来适配器在此追加：
+  // try { const claude = await createClaudeReporter(); if (claude) reporters.push(claude); } catch {}
+  // try { const chatgpt = await createChatGptReporter(); if (chatgpt) reporters.push(chatgpt); } catch {}
+
+  return reporters;
+}
+
+// ═══════════════════════════════════════════════════════════
 //  主入口
 // ═══════════════════════════════════════════════════════════
 
@@ -841,6 +875,17 @@ async function main() {
 
   // 建 run 目录
   const { runDir, runId, dateStr } = resolveRunDir();
+
+  // ─── 可见性：启动时探测可用适配器并初始化 ───
+  const reporters = await detectReporters();
+  const visibility = createVisibility(runDir, reporters);
+  visibility.emit(EVENTS.RUN_START, {
+    target: args.target,
+    maxRounds: args.maxRounds,
+    runDir: runDir.replace(REPO_ROOT + '/', ''),
+  });
+  console.log(`   可见性     = ${reporters.length} 个适配器${reporters.map(r => ` [${r.name}]`).join('')}`);
+
   console.log(`\n🔍 fresh-eyes-loop 启动`);
   console.log(`   target    = sofagent ${args.target}`);
   console.log(`   max-rounds = ${args.maxRounds}`);
@@ -856,8 +901,16 @@ async function main() {
 
   for (let round = 1; round <= args.maxRounds; round++) {
     actualRounds = round;
+    visibility.emit(EVENTS.ROUND_START, { round, target: args.target });
     const { roundDir, counts, isClean } = await runRound(round, runDir, args.target, args.dryRun);
     finalCounts = counts;
+
+    // 可见性：每轮结束 emit（含停止判定结果）
+    visibility.emit(EVENTS.ROUND_END, {
+      round,
+      counts,
+      isClean,
+    });
 
     if (args.dryRun) {
       // dry-run 只跑一轮示意
@@ -906,6 +959,13 @@ async function main() {
   if (!args.dryRun) {
     appendLedger(dateStr, runId, actualRounds, finalCounts, stopReason, runDir);
   }
+
+  // 可见性：整个循环结束
+  visibility.emit(EVENTS.LOOP_END, {
+    actualRounds,
+    stopReason,
+    counts: finalCounts,
+  });
 
   console.log('\n✅ fresh-eyes-loop 完成\n');
 }
