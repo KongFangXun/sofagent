@@ -50,7 +50,7 @@ constraints:
   - id: C7
     type: "阶段六执行者"
     target: "阶段六 OpenClaw 全面测试"
-    rule: "阶段六由 执行模型 控制 OpenClaw（不是 指挥模型）。测试结果交 指挥模型 评审"
+    rule: "阶段六由执行模型控制 OpenClaw（不是指挥模型）。测试结果交指挥模型评审"
     severity: "P0"
     source: "六阶段版本迭代闭环"
 
@@ -60,21 +60,21 @@ constraints:
     target: "阶段六"
     rule: "阶段六必须新开一个独立 session（全新认知），不得从开发 session 继续"
     severity: "P0"
-    source: "releasing.md 阶段六"
+    source: "docs/changelog/releasing.md阶段六"
 
   - id: C9
     type: "三组检查"
     target: "阶段六 OpenClaw 全面测试"
     rule: "阶段六必须执行三组检查：① acceptance-test（端到端全场景）② regression-checklist（全部维度）③ 覆盖率交叉检查（changelog 功能点逐条对照 acceptance-test）。缺一不可"
     severity: "P0"
-    source: "releasing.md 阶段六"
+    source: "docs/changelog/releasing.md阶段六"
 
   - id: C10
     type: "测试循环"
     target: "阶段六 → 阶段五循环"
     rule: "阶段六任何 FAIL → 回阶段五（优化 regression-checklist + fresh-eyes-review）→ 再开新 session 重查。最多循环 2 轮；2 轮仍不过则标注遗留问题"
     severity: "P1"
-    source: "releasing.md 阶段六"
+    source: "docs/changelog/releasing.md阶段六"
 
   # ===== 四、D3 闸门 =====
   - id: C11
@@ -82,20 +82,20 @@ constraints:
     target: "阶段三自测 / acceptance-test.sh"
     rule: "acceptance-test.sh 必须为本版本新增功能补齐验收场景。零覆盖 = 未交付（P0），不允许进入下一阶段"
     severity: "P0"
-    source: "releasing.md 阶段三 D3 闸门"
+    source: "docs/changelog/releasing.md阶段三 D3 闸门"
 
   - id: C12
     type: "D3 覆盖率闭环"
     target: "acceptance-test.sh"
     rule: "D3 覆盖率闭环判定三项必须全 PASS：① 场景数声称 vs 实际对齐 ② 功能点逐条对照（零覆盖=P0）③ 失效场景清理"
     severity: "P0"
-    source: "releasing.md 阶段三 Step D"
+    source: "docs/changelog/releasing.md阶段三 Step D"
 
   # ===== 五、零号铁律（文件创建安全） =====
   - id: C13
     type: "文件创建安全"
     target: "所有模型 / 所有阶段"
-    rule: "禁止未经确认创建文件。模型可以建议创建文件，但必须经作者（孔放勋）确认后才能执行"
+    rule: "禁止未经确认创建文件。模型可以建议创建文件，但必须经项目负责人确认后才能执行"
     severity: "P0"
     source: "sofagent 安全约束零号铁律"
 
@@ -112,7 +112,7 @@ constraints:
     target: "bump-version.sh / check-version.sh"
     rule: "版本号操作必须使用 bump-version.sh + check-version.sh，禁止手动 grep/sed。13 类位置必须全部同步"
     severity: "P0"
-    source: "releasing.md 版本号管理"
+    source: "docs/changelog/releasing.md版本号管理"
 
   - id: C16
     type: "package-lock.json 安全"
@@ -139,16 +139,16 @@ constraints:
   - id: C19
     type: "CHANGELOG 纯度"
     target: "CHANGELOG.md / docs/changelog/"
-    rule: "CHANGELOG 只写产品变更，不含审查元信息（模型名、审查轮次、P0/P1 标签等内部过程）"
+    rule: "CHANGELOG 只写产品变更（新功能/修复/破坏性变更），不含内部过程信息（审查轮次、P0/P1/P2 标签、bugfix/develop prompt 内容等）。模型角色名（指挥模型/执行模型/备选审查模型）在描述分工时可以出现，但不记录审查过程本身"
     severity: "P1"
-    source: "releasing.md CHANGELOG 两步"
+    source: "docs/changelog/releasing.mdCHANGELOG 两步"
 
   - id: C20
     type: "文档同步闭环（D6）"
     target: "项目文档（L2）"
     rule: "changelog 里写的每条新功能，必须在对应项目文档中有说明。零覆盖的新功能（用户无处查阅）= P0"
     severity: "P0"
-    source: "releasing.md D6 闸门"
+    source: "docs/changelog/releasing.mdD6 闸门"
 
   # ===== 八、防膨胀约束 =====
   - id: C21
@@ -156,14 +156,14 @@ constraints:
     target: "regression-checklist.md / acceptance-test.sh"
     rule: "回归清单 ≤ 1000 行、验收脚本 ≤ 1500 行。每版本发版做一轮瘦身。追加新维度前必须先 grep 同类"
     severity: "P2"
-    source: "releasing.md 防膨胀机制"
+    source: "docs/changelog/releasing.md防膨胀机制"
 
   - id: C22
     type: "fresh-eyes 风格守护"
     target: "fresh-eyes-review.md"
     rule: "fresh-eyes-review 是留白式直觉审查（校准更新），不是精确清单（加法更新）。不得往里加精确检查项，否则退化为第二个 regression-checklist"
     severity: "P1"
-    source: "releasing.md 阶段五 Tier 3"
+    source: "docs/changelog/releasing.md阶段五 Tier 3"
 
   # ===== 九、发版安全约束 =====
   - id: C23
@@ -171,21 +171,21 @@ constraints:
     target: "git tag"
     rule: "tag 必须指向最终发布提交。打 tag 后零代码 commit（允许文档微调）。tag message 必须含版本号"
     severity: "P0"
-    source: "releasing.md 阶段十一"
+    source: "docs/changelog/releasing.md阶段十一"
 
   - id: C24
     type: "发布授权"
     target: "阶段十一发布"
-    rule: "发布由项目负责人（孔放勋）亲手执行或授权 AI 代执行。AI 代执行时 npm 凭证必须在人已登录的终端中使用，AI 不得自行 npm login 或操作凭证"
+    rule: "发布由项目负责人亲手执行或授权 AI 代执行。AI 代执行时 npm 凭证必须在人已登录的终端中使用，AI 不得自行 npm login 或操作凭证"
     severity: "P0"
-    source: "releasing.md 阶段十一 AI 代执行边界"
+    source: "docs/changelog/releasing.md阶段十一 AI 代执行边界"
 
   - id: C25
     type: "npm 分批发布"
     target: "npm publish"
     rule: "12 包按依赖层分批发布——叶子包先发，消费方后发。npm workspace symlink 在 publish 时不生效，必须在 npm registry 上有真实包"
     severity: "P0"
-    source: "releasing.md 阶段十一"
+    source: "docs/changelog/releasing.md阶段十一"
 
   # ===== 十、审查体系闭环 =====
   - id: C26
@@ -193,7 +193,7 @@ constraints:
     target: "阶段十二"
     rule: "发布后必须开全新 session 做独立审查（读 fresh-eyes-review.md）。审查报告中的问题不阻塞当前版本——进入下一版本的阶段一，作为驱动下一版开发方向的输入"
     severity: "P1"
-    source: "releasing.md 阶段十二"
+    source: "docs/changelog/releasing.md阶段十二"
 
   - id: C27
     type: "闭环回阶段零"
@@ -205,8 +205,8 @@ constraints:
   # ===== 十一、知识库安全 =====
   - id: C28
     type: "知识库只读"
-    target: "知识库 / think.md"
-    rule: "知识库核心文件（如 think.md）在生成管道中必须保持只读。生成管道只读不写，产物落盘到独立目录"
+    target: "知识库核心文件"
+    rule: "知识库核心文件在生成管道中必须保持只读。生成管道只读不写，产物落盘到独立目录"
     severity: "P1"
     source: "sofagent 安全约束"
 

@@ -187,14 +187,14 @@ actions:
 
   - id: A10-confirm-gate
     name: "确认关口"
-    domain: "孔放勋"
+    domain: "项目负责人"
     range: "release-sop"
     action_type: "需审批"
     description: "阶段十：作者过一遍全部改动，确认没问题后交接发版。AI 生成发布 prompt，作者可亲手执行或授权 AI 代执行"
 
   - id: A11-publish
     name: "发布"
-    domain: "孔放勋"
+    domain: "项目负责人"
     range: "sofagent-project"
     action_type: "需审批"
     description: "阶段十一：按依赖层分批 npm publish + git tag + gh release + Skill 分发。项目负责人亲手执行或授权 AI 代执行"
@@ -209,7 +209,7 @@ actions:
   # ===== 外部输入循环 =====
   - id: EXT-collect-knowledge
     name: "收集知识"
-    domain: "孔放勋"
+    domain: "项目负责人"
     range: "knowledge-base"
     action_type: "可直接建议"
     description: "外部输入循环：持续收集资料、概念、迭代点到通用知识库"
@@ -223,14 +223,14 @@ actions:
 
   - id: EXT-update-docs
     name: "更新文档"
-    domain: "孔放勋"
+    domain: "项目负责人"
     range: "document-l2"
     action_type: "可执行"
     description: "外部输入循环：讨论后将结论更新到对应项目文档（FDE / DEVELOPMENT / ARCHITECTURE 等）"
 
   - id: EXT-define-roadmap
     name: "定 Roadmap 方向"
-    domain: "孔放勋"
+    domain: "项目负责人"
     range: "roadmap"
     action_type: "需审批"
     description: "外部输入循环：规划后续版本的堆叠方向，写入 ROADMAP.md"

@@ -5,7 +5,7 @@
 entities:
   # ===== 一、人 =====
   - id: kongfangxun
-    name: "孔放勋"
+    name: "项目负责人（孔放勋）"
     type: role
     domain: "[人 / 项目维护者]"
     relations:
@@ -152,7 +152,7 @@ entities:
       exclude: []
 
   - id: phase-two
-    name: "阶段二：指挥模型整合报告"
+    name: "阶段二：指挥模型 整合报告"
     type: entity
     domain: "[版本迭代 / 阶段二]"
     relations:
@@ -188,7 +188,7 @@ entities:
       exclude: []
 
   - id: phase-five
-    name: "阶段五：指挥模型走 releasing 阶段 1-5"
+    name: "阶段五：指挥模型 走 releasing 阶段 1-5"
     type: entity
     domain: "[版本迭代 / 阶段五]"
     relations:
@@ -200,7 +200,7 @@ entities:
       exclude: []
 
   - id: phase-six
-    name: "阶段六：执行模型控制 OpenClaw 全面测试"
+    name: "阶段六：执行模型 控制 OpenClaw 全面测试"
     type: entity
     domain: "[版本迭代 / 阶段六]"
     relations:
@@ -443,6 +443,54 @@ entities:
       include: ["*"]
       exclude: []
 
+  - id: skill-doc
+    name: "Skill 入口文档"
+    type: document
+    domain: "[文档 / L2 / Skill 入口]"
+    relations:
+      has_many: []
+      belongs_to: "document-l2"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: forge-doc
+    name: "FORGE 说明文档"
+    type: document
+    domain: "[文档 / L2 / FORGE 说明]"
+    relations:
+      has_many: []
+      belongs_to: "document-l2"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: readme-en
+    name: "README.en.md"
+    type: document
+    domain: "[文档 / L2 / 英文 README]"
+    relations:
+      has_many: []
+      belongs_to: "document-l2"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: contributing-doc
+    name: "CONTRIBUTING.md"
+    type: document
+    domain: "[文档 / L2 / 贡献指南]"
+    relations:
+      has_many: []
+      belongs_to: "document-l2"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
   # L3 文档实体
   - id: changelog-experimental
     name: "实验期历史日志"
@@ -456,10 +504,46 @@ entities:
       include: ["*"]
       exclude: []
 
+  - id: archive-design
+    name: "旧设计文档"
+    type: document
+    domain: "[文档 / L3 / 旧设计]"
+    relations:
+      has_many: []
+      belongs_to: "document-l3"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
   - id: evidence-doc
     name: "实验证据快照"
     type: document
     domain: "[文档 / L3 / 证据]"
+    relations:
+      has_many: []
+      belongs_to: "document-l3"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: philosophy-doc
+    name: "PHILOSOPHY.md / THANKS.md / LIMITATIONS.md"
+    type: document
+    domain: "[文档 / L3 / 哲学致谢限制]"
+    relations:
+      has_many: []
+      belongs_to: "document-l3"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: code-of-conduct-doc
+    name: "CODE_OF_CONDUCT.md / SECURITY.md / .github/*"
+    type: document
+    domain: "[文档 / L3 / 社区规范]"
     relations:
       has_many: []
       belongs_to: "document-l3"
