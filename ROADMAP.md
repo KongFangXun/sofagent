@@ -67,11 +67,17 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 #### v1.2.x 里程碑拆分
 
+> 6 版本定稿 + 3 弹性位（v1.2.7/v1.2.8/v1.2.9 空位，紧急修复或探索项按需取用）。
+
 | 版本 | 主题 | 核心交付 |
 |------|------|------|
-| **v1.2.1** | **收口验证** | ~~① P2 端到端 mock 验证~~（✅ 已在 v1.2.0 本机验证完成）~~② gbrain / LLM Wiki 架构对标~~（✅ 已在 v1.2.0 changelog 对标小节完成）③ P3 T03-T05（WorkBuddy hook 注入 rules 引擎实现）④ P4 P0 剩余（knowledge-health 合并为统一巡检模块）⑤ custom/ 加载链 + 安装保护闭环（详见 [开发日志](./docs/changelog/v1.2.1.md)）|
-| **v1.2.2** | **数据主权审计 + 混合模型路由** | ① **混合模型路由层**（Harness 按任务复杂度路由到云端/本地，数据主权驱动——敏感数据不出内网）② **数据主权审计追踪**（云端调了什么 / 本地做了什么 / 数据走了哪 / 每次任务是什么，4 维审计日志）③ **FDE Dashboard 原型**（数据主权审计报告 + AI 化进度视图）④ Skill 分层升级策略 install.sh 实现（详见 [开发日志](./docs/changelog/v1.2.2.md)）|
-| **v1.2.3** | **知识进化 + 能力深化** | ① P4 P1（分层巡检 L1/L2/L3 + 读写回路对标 + skillopt 自动触发）② P4 P2（conflict-check CLI + 联邦蒸馏 + OAG 方法论吸收）③ Agent 独立身份码探索 ④ 跨设备审计轨迹聚合（详见 [开发日志](./docs/changelog/v1.2.3.md)）|
+| **v1.2.1** | **收口验证** | ~~① P2 端到端 mock 验证~~（✅ 已在 v1.2.0 完成）~~② gbrain / LLM Wiki 对标~~（✅ 已在 v1.2.0 完成）③ P3 T03-T05（WorkBuddy hook 注入 rules 引擎）④ P4 P0（knowledge-health 合并统一巡检）⑤ custom/ 加载链 + 安装保护闭环（详见 [开发日志](./docs/changelog/v1.2.1.md)）|
+| **v1.2.2** | **数据主权 + 路由 + Dashboard 骨架** | ① 数据主权审计追踪（4 维审计日志 + 年/月目录 + 每日/周/月报告 + 四路分发闭环）② 混合模型路由层（ModelRouter 敏感度×任务类型路由 + Ollama 接入）③ FDE Dashboard 第一版（数据主权视图 + 控制图骨架）④ Webhook 推送完整能力（飞书/钉钉/企微）⑤ Skill 分层升级三策略 install.sh 实现（详见 [开发日志](./docs/changelog/v1.2.2.md)）|
+| **v1.2.3** | **Dashboard 产品化 + 编排隔离** | ① Dashboard 波次拓扑可视化（控制图渲染 + 节点/边/波次分层实时状态）② 编排隔离底座（git worktree 四子里程碑：隔离原语→审计合并卡关→冲突消解→filesValue 边界）③ Dashboard 用户可读性（面向非开发者的语言化呈现）（详见 [开发日志](./docs/changelog/v1.2.3.md)）|
+| **v1.2.4** | **知识进化** | ① 分层巡检 L1/L2/L3（@daily/@weekly/@monthly 三级 + 读写回路对标）② skillopt 自动触发（失败模式 3 次自动优化）③ 失败清单驱动优化（负面样本为主要燃料）④ conflict-check CLI + 联邦蒸馏 ⑤ Skill 升级策略（若 v1.2.2 未完成）（详见 [开发日志](./docs/changelog/v1.2.4.md)）|
+| **v1.2.5** | **多设备协同 L2/L3** | ① L2 团队协作协议（共享态/意图广播/触发反应/冲突消解/反馈放大五大机制）② Agent 独立身份码 + KYA 轻量版 ③ L3 组织能力市场（Skill/Agent/流程发布→发现→调用→评价）④ 跨设备审计轨迹聚合 ⑤ 场景驱动权限体系 + 代理网关硬边界 ⑥ ATTRIBUTION 归因引擎（审计决策→业务价值因果链）⑦ 协议中立审计（只走 MCP + 开放格式）（详见 [开发日志](./docs/changelog/v1.2.5.md)）|
+| **v1.2.6** | **🔒 弹性预留** | 紧急修复 / 探索项按需取用。储备项（不阻塞主线，有空间就做）：路由器式配网 / 阿米巴交付组织 / S·A·B·C 技能分级 / SMB 场景审计扩展 / Dream Sandbox。如果 v1.2.1-v1.2.5 中间有紧急修复，占用此版本号（详见 [开发日志](./docs/changelog/v1.2.6.md)）|
+| **v1.2.7-v1.2.9** | **弹性空位** | 🔒 不预分配——v1.2.6 用完后继续往后排 |
 | **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐 + 并行编排**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **编排引擎并行调度（Graph Engineering 视角：控制图多循环 DAG 波次并行）**：基于 v1.1.8 的 DeepAgents subagents 调度原型，新增 DAG 依赖解析（Kahn 波次拓扑）+ 并行扇出/扇入（LangGraph `Send` API）+ 循环依赖检测 + 失败传播策略 + 超时熔断；每波次经 audit 节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供 | — |
 | **v1.4.0** | 📋 规划中 | **SubAgent 完整沙箱执行环境 + 生产级编排**：将 orchestrator 内置为完整的沙箱运行时——虚拟文件系统隔离（FilesystemBackend + virtualMode）、网络出站白名单、**工具调用中介（前置 allow/deny，非仅审计追踪）**、**虚拟 key 凭证边界注入（真实凭证 host 边界注入，SubAgent 只拿临时虚拟 key）**、AsyncSubAgent（远程 Agent Protocol 服务端）+ 真·实时 A/B 双跑（候选方案并行执行实时对比，替代当前日志统计法）。**并行 SubAgent 文件隔离**：git worktree 轻量形态已于 v1.2.x 落地，v1.4.0 升级为完整沙箱隔离 + 多 Sub Agent 文件竞争检测。审计引擎从「事后」扩展到「运行时」（**范围限定 SubAgent，主 Agent 仍事后审计**） | — |
 

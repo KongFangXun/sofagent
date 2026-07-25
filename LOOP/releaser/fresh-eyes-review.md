@@ -1,19 +1,21 @@
-# sofagent 发布后审查 Prompt（10 维度 × 6 方面）
+# sofagent 发布后审查 Prompt（12 维度 × 6 方面）
 
 > **核心原则**：这是发布后的独立审查（fresh-eyes 复核）——以未参与本版本开发的独立审查者视角重新看。不设固定检查项、不指定具体文件、不跑 grep、不预设"之前已修好 X"——凭第一印象和直觉判断，专门抓"作者自己看不出的、显而易见的问题"。
 >
 > **审查对象**：https://github.com/KongFangXun/sofagent（当前已发布版本）
 >
-> **十维度 · 五轮法**：
+> **十二维度 · 七轮法**：
 > | 轮次 | 维度 | 角色 | 方法 |
 > |------|------|------|------|
 > | 1 多角色 | 一 陌生人 / 二 企业IT / 三 竞品 / 四 npm / 五 开源 | 5 个独立审查者各自独立看 | 凭直觉 |
 > | 2 用户旅程 | 六 完整用户旅程 | 真实用户走完整路径 | 找断点 |
 > | 3 红队对抗 | 七 红队 | 安全测试搞破坏 | 找边缘 case |
 > | 4 CI 一致性 | 八 CI/自动化 | CI 机器人对数字 | 文档 vs 代码 |
-> | 5 感知层 | 九 感知层健全性 | 感知审查 | 用户能否感知 sofagent |
+> | 5 感知层 | 九 感知层健全性 / 十 文档一致性 | 感知审查 + 数字漂移 | 用户能否感知 sofagent |
+> | 6 代码质量 | 十一 代码质量审查 | 打开源码逐行读 | 类型安全 + 错误处理 + 分层 + 死代码 |
+> | 7 文件结构 | 十二 文件结构完整性 | 走文件树 + 查引用链 | 旧路径残留 + 结构完整 + 归属合理 |
 >
-> 五轮九维一次性全跑。轮次之间清空认知，从空白开始。
+> 七轮十二维一次性全跑。轮次之间清空认知，从空白开始。
 >
 > 📌 **术语说明**：本 prompt 的「维度 N」「轮次」是**内部 QA 审查结构标签**（审查维度 / 轮次），与 `regression-checklist.md` 维度编号同源，属正常 QA 术语；本文档是发布后独立审查（fresh-eyes 复核）工具，并非对外扮演「陌生视角 / 外部视角」的文案，与术语铁律所禁角色扮演话术无关。
 
@@ -657,6 +659,129 @@
 |--------|---------|-------|-------|---------|
 | P0 | README 规则数 | 16 | 15 | 改为"15 条已实现 + 2 条规划中" |
 ...
+```
+
+---
+
+
+## 维度十一：🔬 代码质量审查（v1.2.0 新增）
+
+> 前面的维度靠"角色扮演"和"跑命令"——陌生人怎么看、企业 IT 怎么想、红队怎么攻击。但有一个维度前面完全没覆盖：**打开源码文件，逐行读代码**。不跑测试、不跑命令，纯靠读代码发现问题——类型安全、错误处理、代码重复、架构分层、死代码、硬编码。
+
+> 这个维度在 v1.2.0 补入，因为物理重构大版本最容易在搬迁代码时引入隐性缺陷——路径改了但类型没跟上、文件迁移了但 import 残留、包拆分了但依赖方向反了。
+
+**你的任务（打开编辑器/IDE，逐文件审查）**：
+
+1. **TypeScript 类型安全**：
+   - 逐包跑 `npx tsc --noEmit`——零错误是底线，但**有警告也要看**。`as any` / `as unknown as` 双重转换 / `@ts-ignore` / `@ts-expect-error` 都是可疑信号。
+   - `grep -rn "as any\|as unknown as" engine/*/src/`——每处都要问"为什么这里放弃了类型保护？是合理的边缘 case 还是偷懒？"
+   - optional dependency（如 deepagents）的 import 是否用了类型断言绕过——CI 的 TS 检查比本地严格，直接 `as` 可能本地通过��� CI 失败。
+
+2. **错误处理完整性**：
+   - `grep -rn "catch.*{.*}" engine/*/src/`——空 catch 块（吞错静默跳过）是最危险的代码气味。每个 catch 至少要 log 或 rethrow。
+   - `grep -rn "catch (e)" engine/*/src/`——catch 了但 `e` 从未使用 = 吞错。
+   - 异步操作的 reject/throw 是否被正确捕获？unhandled promise rejection 在 daemon 长驻进程里是致命的。
+
+3. **跨包代码重复（复制 ≠ 移动）**：
+   - `find engine -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path '*/__tests__/*' -not -path '*/dist/*' | sed 's#.*/##' | sort | uniq -d`——同名文件在多个包出现 = 可能是复制未提升为 import。
+   - 对每个同名文件做 `diff`——如果只是 4-5 行差异，应该用 import 而不是维护两份副本。
+   - **v1.2.0 特别关注**：物理重构搬迁了文件，最容易出现"audit 包留了旧副本 + core 包有了新副本"的双份问题。
+
+4. **架构分层铁律验证**：
+   - 基础层叶子包（harness/ontology/eval/core/rules）**绝不** import 任何 `@sofagent/*` 包。`for pkg in harness ontology eval core rules; do grep -rn "from '@sofagent" "engine/$pkg/src/"; done` 期望五个包全部零输出。
+   - 依赖方向只能从上层→下层，不能反向。audit 可以 import core，core 不能 import audit。
+   - **v1.2.0 特别关注**：rules 包是新独立的纯函数包——确认它零 fs/git 依赖（`grep -rn "require('fs')\|from 'fs'\|from 'isomorphic-git'" engine/rules/src/`）。
+
+5. **死代码与未使用的 export**：
+   - 有没有 export 了但全仓无人 import 的函数/类型？这些要么是 API 设计给外部用的（有文档），要么是搬迁后的孤儿。
+   - 有没有写了但从未被调用的 CLI 子命令？`grep -rn "\.command(" engine/*/src/` 与实际 `--help` 输出对照。
+   - **v1.2.0 特别关注**：物理重构后旧包的入口文件可能成了死代码——搬迁走了实现但入口 `index.ts` 还 re-export 着空壳。
+
+6. **硬编码路径与魔法数字**：
+   - `grep -rn "sofagent/\|/skill/\|/agents/" engine/*/src/`——源码里的硬编码路径在物理重构后最容易失效。v1.2.0 做了 `/sofagent/` → `/engine/` 改名，任何残留的旧路径都是 P0。
+   - 规则数量、阈值数字、超时时间——是硬编码还是从 config 读？硬编码的数字在 bump 版本后会不会漂移？
+
+7. **测试代码自身的质量**：
+   - 测试是否只断言"字段存在"而不验证"字段值内容"？`expect(x).toBeDefined()` 是最弱的断言——等于没测。
+   - Mock 是否过度？如果 90% 的测试都依赖 MockLLM/MockFS，真实环境的行为就没被验证。
+   - 测试文件是否覆盖了被测模块的所有 export？搬迁后常有"实现搬走了但测试没跟"的情况。
+
+8. **安全编码实践**：
+   - 用户输入（config.yml / commit message / workflow YAML / 联邦 peer 返回）是否都经过校验？有没有直接 `JSON.parse` 不做 schema 验证的？
+   - 文件路径操作有没有路径遍历风险？`path.join` 用户输入的文件名时有没有消毒？
+   - HMAC/AES 加密代码的 key/IV 管理是否正确？key 硬编码？IV 复用？
+
+**输出格式**：与维度八（CI/自动化）相同的表格格式——文件路径 + 行号 + 问题严重度 + 建议修复。
+
+---
+
+
+## 维度十二：🏗️ 文件结构完整性审查（v1.2.0 新增）
+
+> 这个维度专门针对**物理重构后的结构验证**。v1.2.0 做了 sofagent 项目史上最大的结构变更——`/sofagent/` → `/engine/`、Skill 从 4 处散落收敛到 `/SKILL/`、install.sh 提升根目录、发版工具链归 `LOOP/releaser/`。这种规模的重组最容易在边缘文件留下旧路径、在引用链留下断点、在新结构留下空目录。
+
+> **核心方法**：不是读代码内容，而是**走文件树**——ls 每个目录、检查每个引用路径是否存在、验证每个 install 脚本的目标位置。
+
+**你的任务（逐项实际执行）**：
+
+1. **旧路径全仓残留扫描**：
+   - `grep -rn "sofagent/skill\|sofagent/agents\|sofagent/audit\|sofagent/orchestrator\|sofagent/core\|sofagent/harness" --include='*.ts' --include='*.sh' --include='*.md' --include='*.yml' .`——任何命中都是 v1.2.0 物理重构的漏网旧路径。
+   - `grep -rn "engine/skill\|engine/agents" --include='*.ts' --include='*.sh' .`——Skill 已经收敛到根目录 `/SKILL/`，engine/ 下不应再有 skill/agents 目录。
+   - **BSD grep 中文陷阱**：macOS BSD grep 扫含大量中文 UTF-8 的 .md 时可能误判为二进制返回 0。对中文 .md 的扫描用 node（`fs.readFileSync(path,'utf8').includes('关键词')`）代替 grep。
+
+2. **新结构目录树完整性**：
+   - `ls -la engine/`——期望看到：audit/ core/ orchestrator/ daemon/ harness/ mcp/ ontology/ eval/ ab-test/ rules/（11 个子包）。
+   - `ls -la SKILL/`——期望看到三层：harness/（约束底座）+ agents/（fde/audit/engineer/reviewer/releaser）+ custom/（用户自定义）。
+   - `ls -la LOOP/`——期望看到：releaser/（发版工具链：releasing.md + acceptance-test.sh + bump-version.sh + regression-checklist.md + fresh-eyes-review.md）。
+   - `ls -la FDE/`——期望看到 FDE 产品入口文件（README.md + FDE.md + fde-install.sh）。
+   - 每个期望的目录/文件都在吗？有空目录吗？有不该在这里的文件吗？
+
+3. **install 脚本路径契约验证**：
+   - `install.sh` 在根目录（v1.2.0 从 engine/scripts/ 提升到根目录）——确认它在根目录而不是旧位置。
+   - `FDE/fde-install.sh` 调用 `$PROJECT_ROOT/install.sh`——这个路径在 v1.2.0 后还对吗？（install.sh 位置变了）
+   - `LOOP/loop-install.sh` 调用 `$PROJECT_ROOT/install.sh`——同理。
+   - install.sh 内部引用的 Skill 路径（如 `SKILL/harness/data/fde.md`）——路径结构改了后还对吗？
+
+4. **跨文件引用链完整性**：
+   - SKILL.md 里引用的所有路径（`SKILL/agents/*/SKILL.md`、`SKILL/harness/*.md`）——逐个 `ls` 确认存在。
+   - 文档里的相对路径链接（README → ARCHITECTURE → HANDBOOK → PHILOSOPHY 的互链）——有没有 404？
+   - CHANGELOG 索引行链接（`./docs/changelog/vX.Y.Z.md`）——每个链接的文件存在吗？
+
+5. **文件归属合理性**：
+   - 发版工具（releasing.md / acceptance-test.sh / bump-version.sh / regression-checklist.md / fresh-eyes-review.md）——全在 `LOOP/releaser/` 吗？还是有些散落在 `tools/` 或 `docs/verification/`？
+   - 日常质量门禁（check-docs.sh / check-version.sh / check-test-count.sh / pre-push-check.sh / test-count.sh）——全在 `tools/` 吗？
+   - 有没有文件"两边都有"（如 acceptance-test.sh 同时在 LOOP/ 和 docs/verification/ 各一份）？
+
+6. **CHANGELOG 索引 vs 实际文件一致性**：
+   - 根目录 `CHANGELOG.md` 的每个版本链接 → 对应的 `docs/changelog/vX.Y.Z.md` 文件存在吗？
+   - 反向：`docs/changelog/` 下有文件但 `CHANGELOG.md` 索引没列的孤儿文件？
+   - `docs/changelog/` 下有文件但无对应 git tag 的（规划中版本）——有没有被误标为"已发布"？
+
+7. **根目录整洁度**：
+   - 根目录 `.md` 文件数 ≤ 7（README/CHANGELOG/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/ROADMAP/LIMITATIONS）。多余的应该移入 `docs/`。
+   - 根目录有没有不该在这里的临时文件、构建产物、图片？
+   - install.sh 在根目录（v1.2.0 提升）——合理。其他 `.sh` 脚本应该在 `tools/` 或各产品目录下。
+
+**输出格式**：
+
+```markdown
+## 文件结构完整性报告
+
+### 旧路径残留
+| 严重度 | 文件 | 行号 | 旧路径 | 应改为 |
+|--------|------|------|--------|--------|
+
+### 结构完整性
+| 期望目录/文件 | 存在？ | 备注 |
+|--------------|:------:|------|
+
+### 引用链断点
+| 来源文件 | 引用路径 | 目标存在？ | 严重度 |
+|---------|---------|:---------:|--------|
+
+### 文件归属问题
+| 文件 | 当前位置 | 应在位置 | 理由 |
+|------|---------|---------|------|
 ```
 
 ---
