@@ -79,7 +79,7 @@
 | 你想解决什么 | sofagent 怎么做 |
 |------|------|
 | **想让 AI 自动跑日常任务** | 进场梳理工作流，把能自动化的环节变成 AI 节点，部署完自己跑 |
-| **Agent 越界了怎么办** | 21 条规则自动审计每次变更——越界编辑、密钥泄漏、注入攻击，当场拦截 |
+| **Agent 越界了怎么办** | 21 条规则自动审计每次变更——越界编辑、密钥泄漏、注入攻击，commit 时自动拦截（注：`git commit --no-verify` 可绕过 hook，是已知架构限制。企业场景建议配合 CI 侧 `sofagent-audit --diff` 兜底，详见 [LIMITATIONS](./LIMITATIONS.md)） |
 | **出了事能回滚吗** | 每次变更自动 git snapshot，一键回到任意安全状态 |
 | **换了 Agent / 模型怎么办** | 平台无关——Claude Code / Codex / Cursor / WorkBuddy，即挂即用 |
 | **越用越好吗** | 经验自动沉淀，FDE Agent 周度巡检持续优化规则与知识 |
@@ -119,6 +119,8 @@ sofagent-audit --timeline
 git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
 </details>
+
+> ⚠️ **关于 commit 拦截**：`git commit --no-verify` 可以绕过本地 hook。sofagent 的设计初衷是"诚实 Agent 的护栏"而非"恶意攻击者的防线"。企业高安全场景建议在 CI/CD pipeline 侧再加一道 `sofagent-audit --diff` 审计（hook 可绕，CI 不可绕）。详见 [LIMITATIONS](./LIMITATIONS.md) §一·已知架构限制。
 
 **两种使用方式**：
 
