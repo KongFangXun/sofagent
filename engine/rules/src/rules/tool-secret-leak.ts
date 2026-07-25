@@ -32,7 +32,7 @@ function extractStrings(args: Record<string, unknown>): string[] {
 }
 
 /**
- * tool-secret-leak 规则——检查 tool call args 是否含密��串
+ * tool-secret-leak 规则——检查 tool call args 是否含密钥串
  * 移植自 audit rule-a2（tool 视角）
  */
 export const toolSecretLeak: ToolRule = {

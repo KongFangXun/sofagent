@@ -1032,7 +1032,7 @@ grep -c 'sofagent-key' engine/scripts/lib/post-install.sh   # 期望 ≥2（生�
 grep -c 'chmod 600' engine/scripts/lib/post-install.sh       # 期望 ≥1（密钥文件权限）
 ```
 
-> **fresh-eyes 教训（v1.2.0 审查）**：物理结构大重构容易在边缘文件留下旧路径残留。三类最危险的盲区：① `builtin-agents.ts` 源码路径断裂（P0-2）——运行时找不到 Skill 文件静默走 fallback；② `install.sh` 写入路径与 `handler.ts` 读取路径不一致（P0①）——v1.2.0 改名后 install.sh 写 `skills/engine/fde.md`，handler.ts 读 `skills/sofagent/fde.md`，约束层静默失效；③ `install.sh` VERSION 变量没 bump（check-version.sh 盲区）——用户装到旧版本号。子项 a-j 覆盖了审查发现的核心盲区，其中 i 验证路径对齐、j 验证 HMAC key 生成逻辑存在（P0⑥ 教训：HMAC 代码有但 install.sh 不生成密钥 → 防篡改形同虚��）。
+> **fresh-eyes 教训（v1.2.0 审查）**：物理结构大重构容易在边缘文件留下旧路径残留。三类最危险的盲区：① `builtin-agents.ts` 源码路径断裂（P0-2）——运行时找不到 Skill 文件静默走 fallback；② `install.sh` 写入路径与 `handler.ts` 读取路径不一致（P0①）——v1.2.0 改名后 install.sh 写 `skills/engine/fde.md`，handler.ts 读 `skills/sofagent/fde.md`，约束层静默失效；③ `install.sh` VERSION 变量没 bump（check-version.sh 盲区）——用户装到旧版本号。子项 a-j 覆盖了审查发现的核心盲区，其中 i 验证路径对齐、j 验证 HMAC key 生成逻辑存在（P0⑥ 教训：HMAC 代码有但 install.sh 不生成密钥 → 防篡改形同虚设）。
 
 ---
 

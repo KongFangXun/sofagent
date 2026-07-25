@@ -178,15 +178,31 @@ else warn "npm 未安装"; fi
 # Step 3: 编排引擎（v1.0.7：DeepAgents，正式依赖）
 # ════════════════════════════════════════
 info "Step 3/8 · 编排引擎: DeepAgents（@sofagent/audit 正式依赖）"
-# 实际安装 @sofagent/audit（含编排引擎 + 审计引擎）
-# 安装失败不中断（set -e 由 || true 保护），仅警告
+# 优先使用仓库本地的 engine/audit/dist/（避免 npm @latest 版本漂移）
+# 仓库本地版本与用户 clone 的版本一致，npm registry 可能滞后
+LOCAL_AUDIT_DIST="$PROJECT_ROOT/engine/audit/dist/index.js"
+NPM_GLOBAL_BIN=$(npm bin -g 2>/dev/null || echo "/usr/local/bin")
+
 if command -v npm &>/dev/null; then
-  info "  执行: npm install -g @sofagent/audit@latest"
-  if npm install -g "@sofagent/audit@latest" 2>&1 | tail -1; then
-    ok "  @sofagent/audit 已全局安装（含 DeepAgents 编排引擎）"
+  if [ -f "$LOCAL_AUDIT_DIST" ]; then
+    # 仓库本地构建已就绪，创建 wrapper 到全局路径
+    mkdir -p "$NPM_GLOBAL_BIN" 2>/dev/null || true
+    cat > "$NPM_GLOBAL_BIN/sofagent-audit" << 'WRAPPER_EOF'
+#!/usr/bin/env bash
+# sofagent-audit wrapper（从仓库本地 dist 安装）
+exec node "WRAPPER_EOF
+    echo "$LOCAL_AUDIT_DIST" >> "$NPM_GLOBAL_BIN/sofagent-audit"
+    echo '"$@"' >> "$NPM_GLOBAL_BIN/sofagent-audit"
+    chmod +x "$NPM_GLOBAL_BIN/sofagent-audit" 2>/dev/null || true
+    ok "  @sofagent/audit 已从仓库本地安装（$(node -e "console.log(require('./engine/audit/package.json').version)" 2>/dev/null || echo "v1.2.0")）"
   else
-    warn "  npm install -g @sofagent/audit 失败（网络/权限问题）"
-    warn "  请手动安装: npm install -g @sofagent/audit"
+    info "  执行: npm install -g @sofagent/audit@latest"
+    if npm install -g "@sofagent/audit@latest" 2>&1 | tail -1; then
+      ok "  @sofagent/audit 已全局安装（含 DeepAgents 编排引擎）"
+    else
+      warn "  npm install -g @sofagent/audit 失败（网络/权限问题）"
+      warn "  请手动安装: npm install -g @sofagent/audit"
+    fi
   fi
 else
   warn "  npm 不可用，跳过 @sofagent/audit 安装"

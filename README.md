@@ -34,13 +34,10 @@
 
 **sofagent 做的就是这件事。** 它是一个 FDE Agent——进场梳理你的工作流，把能自动化的环节变成 AI 节点，部署到设备上，然后离场。离场后这些节点 7×24 自己跑，你留下的是一套能持续维护的 AI 化资产。
 
-> [!NOTE]
-> **两个名字，一个东西**：你面对的产品叫 **FDE Agent**（帮你梳理工作流、部署 AI 节点）；底层引擎叫 **sofagent**（开源仓库 + npm 包 `@sofagent/*`）。仓库名不改（8 版本已发布），但你对话时只需要记住 **FDE Agent**。
-
 大厂造了江——LLM 是水，Agent 平台是河床。但企业不敢直接舀着喝。sofagent 做的是堤坝 + 自来水厂 + 管网 + 水龙头——帮每个人把原水变成直饮水。完整类比见 [ARCHITECTURE · River](./docs/ARCHITECTURE.md)。
 
 > [!IMPORTANT]
-> **实测数据**：Hugging Face 基准测试——同模型、纯 Harness 优化，legal-agent 得分从 3.5% 跳到 80.1%（76 分提升全来自外层机制），成本仅 1/7。
+> **实测数据**：Hugging Face 基准测试——同模型、纯 Harness 优化，legal-agent 得分从 3.5% 跳到 80.1%（76 分提升全来自外层机制），成本仅 1/7。详见 [Joel Niklaus · Harness Optimization](https://huggingface.co/spaces/joelniklaus/harness-optimization)。
 
 ### 为什么不是现有工具
 
@@ -48,7 +45,7 @@
 |------|:--------|:----------------|
 | pre-commit / husky | 代码质量（lint / format）| **Agent 行为**（密钥泄漏 / 越界编辑 / 注入攻击 / 盲改）|
 | detect-secrets / gitleaks | 密钥扫描 | 密钥只是 21 条规则中的一条 |
-| Cursor Rules / Claude hooks | 单平台 IDE 约束 | 平台无关——任何 Agent + git 仓库 |
+| Cursor Rules / Claude hooks | 单平台 IDE 约束 | 审计层全平台可用（git diff）；约束层按平台分层（OpenClaw 最深 → WorkBuddy SKILL → 其他种子指令） |
 | Agent 平台（OpenClaw 等）| Agent 调度——「会不会做」| Agent 治理——「能不能每次都做对」|
 
 现有工具查"代码写得对不对"；sofagent 查"Agent 行为对不对"。这些是 LLM Agent 特有的失败模式，通用工具不覆盖。
@@ -81,7 +78,7 @@
 | **想让 AI 自动跑日常任务** | 进场梳理工作流，把能自动化的环节变成 AI 节点，部署完自己跑 |
 | **Agent 越界了怎么办** | 21 条规则自动审计每次变更——越界编辑、密钥泄漏、注入攻击，commit 时自动拦截（注：`git commit --no-verify` 可绕过 hook，是已知架构限制。企业场景建议配合 CI 侧 `sofagent-audit --diff` 兜底，详见 [LIMITATIONS](./LIMITATIONS.md)） |
 | **出了事能回滚吗** | 每次变更自动 git snapshot，一键回到任意安全状态 |
-| **换了 Agent / 模型怎么办** | 平台无关——Claude Code / Codex / Cursor / WorkBuddy，即挂即用 |
+| **换了 Agent / 模型怎么办** | 审计引擎全平台可用（只看 git diff）；约束层按平台分层（OpenClaw 最深，其他平台核心约束可用） |
 | **越用越好吗** | 经验自动沉淀，FDE Agent 周度巡检持续优化规则与知识 |
 
 > [!TIP]
@@ -145,7 +142,10 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 <summary>卸载</summary>
 
 ```bash
-npm uninstall -g @sofagent/audit @sofagent/core @sofagent/orchestrator @sofagent/daemon @sofagent/mcp
+# install.sh 全局安装的是 @sofagent/audit（其余引擎通过 monorepo 本地引用）
+npm uninstall -g @sofagent/audit 2>/dev/null || true
+# 如果手动装过其他包，一并清理
+npm uninstall -g @sofagent/core @sofagent/orchestrator @sofagent/daemon @sofagent/mcp 2>/dev/null || true
 rm -f .git/hooks/commit-msg .git/hooks/post-commit
 ```
 </details>
@@ -153,6 +153,9 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 ---
 
 ## 引擎架构（开发者段）
+
+> [!NOTE]
+> **两个名字，一个东西**：你面对的产品叫 **FDE Agent**（帮你梳理工作流、部署 AI 节点）；底层引擎叫 **sofagent**（开源仓库 + npm 包 `@sofagent/*`）。普通用户只需记住 **FDE Agent**——下面这段是给开发者看的。
 
 > 以下内容面向开发者。普通用户了解 sofagent 能做什么就够了——跳到 [延伸阅读](#延伸阅读)。
 

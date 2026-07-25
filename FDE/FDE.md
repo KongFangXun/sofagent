@@ -593,7 +593,7 @@ Ontology 说明书是 FDE 离场交付物之一——不是一次性文档。企
 
 #### 9.6 River——大厂造河与企业用水
 
-FDE 交付的本质不是一个个独立 AI 节点，而是把节点间的**关联关系**梳理清楚，让企业 AI 能力流到业务侧。River 比喻完整映射见 [README §①](../README.md) 和 [ARCHITECTURE · River](../docs/ARCHITECTURE.md)——sofagent 做堤坝 + 管网 + 水龙头，不做河本身。
+FDE 交付的本质不是一个个独立 AI 节点，而是把节点间的**关联关系**梳理清楚，让企业 AI 能力流到业务侧。River 比喻完整映射见 [README §①](../README.md) 和 [ARCHITECTURE · River](../docs/ARCHITECTURE.md)——sofagent 做堤坝 + 自来水厂 + 管网 + 水龙头，不做河本身。
 
 **战略判断（sofagent 的差异化根）**
 
