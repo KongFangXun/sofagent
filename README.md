@@ -20,6 +20,8 @@
   <a href="#装上就能用"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
+<p align="center"><strong>当前版本：v1.2.0</strong> · 2026-07-24 · 物理结构大重构</p>
+
 <p align="center">
   <a href="#这是什么">这是什么</a> · <a href="#sofagent-能帮你做什么">能帮你做什么</a> · <a href="#装上就能用">安装</a> · <a href="#引擎架构开发者段">引擎架构</a> · <a href="#延伸阅读">文档</a>
 </p>
