@@ -12,6 +12,7 @@
 - [三、编排安全](#三编排安全)
 - [四、审计与存储安全](#四审计与存储安全)
 - [五、工程安全](#五工程安全)
+- [六、LLM API Key 透明度](#六llm-api-key-透明度)
 - [报告漏洞](#报告漏洞)
 
 ---
@@ -298,6 +299,73 @@ install.sh 拆分为以下模块，便于逐模块审查：
 **automerge@1.0.1-preview.7 风险声明（v1.1.9 F-04）**：
 
 `automerge@1.0.1-preview.7` 为 preview 版（非稳定版），API 可能在后续版本变更。截至 v1.1.9 发布时，npm 上尚无 ≥1.0.0 的 automerge 稳定版（仅 preview 和 2.0.0-alpha）。daemon 精确锁定版本号（`"automerge": "1.0.1-preview.7"`，非 `^` 前缀）避免意外升级。如 automerge 发布 stable 版本或 breaking change，`daemon/src/merge.ts` 的 `Automerge.change/clone/merge` 调用需重新验证。
+
+---
+
+## 六、LLM API Key 透明度（v1.2.0）
+
+FORGE fresh-eyes-loop 的 A/B sub-agent 需要 LLM API key。
+本节说明 key 的存储、使用、边界。
+
+### Key 存储位置
+
+仅本地环境变量（用户自行配置）：
+
+| 位置 | 适用场景 |
+|------|------|
+| `~/.zshrc` | macOS / Linux 默认 shell |
+| `~/.bashrc` | Linux 备选 shell |
+| 系统环境变量面板 | Windows |
+| CI/CD secret injection | 自动化场景（推荐用 secret 管理服务，不走 `.env` 文件） |
+
+代码库中**零硬编码 key**——`.env` 文件被 `.gitignore` 排除。
+
+### Key 加载优先级（三级回退）
+
+```
+SOFAGENT_LLM_{ROLE}_API_KEY  >  SOFAGENT_LLM_API_KEY  >  OPENAI_API_KEY
+   角色专用 key（A/B 分账）     通用 key（共用一把）     OpenAI 兼容默认
+```
+
+- `SOFAGENT_LLM_A_API_KEY`：A 角色（审查者 GLM-5.2）专用 key
+- `SOFAGENT_LLM_B_API_KEY`：B 角色（工程师 DeepSeek V4 Pro）专用 key
+- `SOFAGENT_LLM_API_KEY`：A/B 共用一把 key（两个 provider 都是 OpenAI 兼容格式时可用）
+- `OPENAI_API_KEY`：兜底默认（OpenAI SDK 标准环境变量）
+
+### Key 使用边界
+
+key 仅用于：
+
+| 用途 | 说明 |
+|------|------|
+| 调用用户配置的 LLM API | GLM（`open.bigmodel.cn`）/ DeepSeek（`api.deepseek.com`）/ OpenAI 兼容 endpoint |
+| 请求头鉴权 | `Authorization: Bearer <key>`，标准 HTTPS 请求 |
+
+### Key 不做什么（四条红线）
+
+- ❌ **不上传**到任何第三方服务（sofagent 无后端服务器，key 不离开本机）
+- ❌ **不写入**任何日志文件（`usage.jsonl` 只记 token 数，不记 key）
+- ❌ **不写入** git 历史（`.gitignore` 排除 `.env`）
+- ❌ **不转发**给除目标 LLM 厂商以外的任何端点
+
+### 验证方式
+
+用户可自行扫描代码确认无硬编码 key：
+
+```bash
+# 扫描代码中的 key 硬编码（不应有结果）
+grep -rnE "sk-[a-zA-Z0-9]{20,}" FORGE/src/ engine/
+```
+
+```bash
+# 确认 .env 在 .gitignore 中
+grep -n "\.env" .gitignore
+```
+
+```bash
+# 确认 usage.jsonl 不含 key（只有 token 计数）
+grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
+```
 
 ---
 
