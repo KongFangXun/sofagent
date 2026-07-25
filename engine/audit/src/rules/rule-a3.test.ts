@@ -225,10 +225,10 @@ describe('A3 不改越界', () => {
 
   it('commit message body 含文件名 -> 即使 subject 未提也判定相关 -> PASS', () => {
     const ctx = makeCtx(
-      [makeDiffFile('LOOP/LOOP.md')],
+      [makeDiffFile('FORGE/FORGE.md')],
       {
         task: 'docs: orchestrator 编排引擎实现原理补全',
-        commitMsg: 'docs: orchestrator 编排引擎实现原理补全\n\n- LOOP/LOOP.md: 删"计划中"段\n- ARCHITECTURE.md: +5 子节',
+        commitMsg: 'docs: orchestrator 编排引擎实现原理补全\n\n- FORGE/FORGE.md: 删"计划中"段\n- ARCHITECTURE.md: +5 子节',
       }
     );
     const result = checkRuleA3(ctx);

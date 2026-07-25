@@ -9,7 +9,7 @@
 - [阅读指南](#阅读指南)
 - [5 分钟速览](#5-分钟速览)
 - [FDE Agent 能替你干什么](#fde-agent-能替你干什么)
-- [心智模型：一底座·四引擎](#心智模型一底座四引擎)
+- [心智模型：一底座·四引擎](#心智模型一底座·四引擎)
 - [落地：装好就能派活](#落地装好就能派活)
 - [运行：每次变更都被管住](#运行每次变更都被管住)
 - [进化：知识自动沉淀](#进化知识自动沉淀)
@@ -93,7 +93,7 @@
 | ⚙️ 引擎③ | **编排引擎**（orchestrator） | 拆任务 + Sub Agent 并行 + A/B 调度 | CLI / MCP compose tool |
 | 🧬 引擎④ | **进化引擎**（eval + ab-test + skillopt + think + ontology；由 daemon 定时驱动） | 知识沉淀 + 反思 + A/B 自优化，越用越好 | daemon cron / 手动触发 |
 
-> 一底座（约束）＋ 四引擎（审计 / 回溯 / 编排 / 进化）＝ 全生命周期**可审计、可回滚、可进化**。完整设计见 [ARCHITECTURE · 一底座·四引擎](./ARCHITECTURE.md#二一底座四引擎设计)。
+> 一底座（约束）＋ 四引擎（审计 / 回溯 / 编排 / 进化）＝ 全生命周期**可审计、可回滚、可进化**。完整设计见 [ARCHITECTURE · 一底座·四引擎](./ARCHITECTURE.md#二一底座·四引擎设计)。
 
 ---
 
@@ -110,7 +110,7 @@
 | `bash install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（`@sofagent-fde` / `@sofagent-audit`）+ hook | FORGE | 企业 / FDE：要常驻 硅基员工 |
 | `bash install.sh --base-only` | 仅底座（四引擎） | FDE / FORGE | 开发者 / 企业 IT：只要核心治理引擎 |
 
-> 最小可用：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）；五包全装才是完整 Harness 中间件。完整边界见 [ARCHITECTURE · 三安装包](./ARCHITECTURE.md#三安装包边界v120-设计)。
+> 最小可用：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）；五包全装才是完整 Harness 中间件。完整边界见 [ARCHITECTURE · 安装包边界](./ARCHITECTURE.md#安装包边界v120-设计)。
 
 ### 安装
 
@@ -284,7 +284,7 @@ sofagent-audit --history              # 查看审计快照
 sofagent-audit --revert <sha>         # 回滚到某次审计前
 ```
 
-Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#回溯能力本质git-snapshot-revert-包装)。
+Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#回溯能力本质git-snapshot--revert-包装)。
 
 ### CI 集成
 
