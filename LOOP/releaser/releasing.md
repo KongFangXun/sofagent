@@ -689,7 +689,7 @@ sofagent-audit --version  # 应显示当前开发版本号
 # 3. 本地 Skill 同步（WorkBuddy + OpenClaw 双平台）
 cp -r SKILL/harness/* ~/.workbuddy/skills/sofagent/
 cp -r SKILL/harness/* ~/.openclaw/skills/sofagent/
-cp FDE/SKILL.md ~/.workbuddy/skills/sofagent-fde/
+cp SKILL/SKILL.md ~/.workbuddy/skills/sofagent-fde/
 cp -r SKILL/agents/fde/ ~/.workbuddy/skills/sofagent-fde/
 cp -r SKILL/agents/audit/ ~/.workbuddy/skills/sofagent-audit/
 cp -r SKILL/agents/fde/ ~/.openclaw/skills/sofagent-fde/
@@ -906,7 +906,7 @@ git log vX.Y.Z..HEAD --oneline
 20. 本地 Skill 同步：
     cp -r SKILL/harness/* ~/.workbuddy/skills/sofagent/
     cp -r SKILL/harness/* ~/.openclaw/skills/sofagent/
-    cp FDE/SKILL.md ~/.workbuddy/skills/sofagent-fde/
+    cp SKILL/SKILL.md ~/.workbuddy/skills/sofagent-fde/
     # v1.0.7 新增：Agent Skill（@sofagent-fde / @sofagent-audit）
     cp -r SKILL/agents/fde/ ~/.workbuddy/skills/sofagent-fde/
     cp -r SKILL/agents/audit/ ~/.workbuddy/skills/sofagent-audit/

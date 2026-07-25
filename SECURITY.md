@@ -173,7 +173,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 
 ### ActionGovernance 审计溯源（v1.1.7）
 
-审计记录升级为可问责的动作凭证：`ActionGovernance`（actor/timestamp/targetEntity/context）+ `DecisionProvenance` 决策溯源组，写入 `history.jsonl`。提供**事后可追溯性**，但不在运行时阻断——Agent 仍可伪造 actor 字段（信任模型同 §审计工具信任模型）。防篡改 HMAC 签名规划在 v1.2.x（见 P2-6）。
+审计记录升级为可问责的动作凭证：`ActionGovernance`（actor/timestamp/targetEntity/context）+ `DecisionProvenance` 决策溯源组，写入 `history.jsonl`。提供**事后可追溯性**，但不在运行时阻断——Agent 仍可伪造 actor 字段（信任模型同 §审计工具信任模型）。防篡改 HMAC 签名详见下方「HMAC 签名（v1.1.8+ 已落地）」。
 
 ### HMAC 签名（v1.1.8+ 已落地）
 
