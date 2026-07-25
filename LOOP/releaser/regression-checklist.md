@@ -375,7 +375,7 @@ grep -c "audit_file\|auditEngine" engine/mcp/src/mcp-server.ts   # MCP audit_fil
 grep -c "list_capabilities\|search_knowledge\|stats" engine/mcp/src/mcp-server.ts   # MCP capabilities
 grep -c "webhook:dingtalk\|webhook:feishu\|webhook:wecom\|openclaw:im\|daemon:notice" engine/daemon/src/push-target.ts   # 5 种路由
 grep "parseSubagentRunArgs\|--mode" engine/orchestrator/src/cli-args.ts   # --mode 参数
-grep -l "sofagent-releaser" engine/scripts/lib/file-deploy.sh FDE/fde-install.sh LOOP/loop-install.sh 2>/dev/null | wc -l   # Skill 复制契约=3
+grep -l "sofagent-releaser" engine/scripts/lib/file-deploy.sh install.sh LOOP/loop-install.sh 2>/dev/null | wc -l   # Skill 复制契约=3
 ```
 
 ## 审查约束（每次发版必验铁律）
@@ -406,19 +406,18 @@ ACTUAL_AGENTS=$(ls SKILL/agents/*/SKILL.md 2>/dev/null | wc -l); echo "实际安
 grep -oE "[0-9]+ 个内置 Agent\|[0-9]+ 个 Agent" LOOP/SKILL.md LOOP/README.md LOOP/quick-start.md 2>/dev/null   # 人工核对一致
 
 # 子项 c: 跨产品 install.sh 契约稳定性（v1.1.4 暴露——无契约文档）
-grep -n "install.sh\|PROJECT_ROOT.*install.sh" FDE/fde-install.sh LOOP/loop-install.sh
+grep -n "install.sh\|PROJECT_ROOT.*install.sh" LOOP/loop-install.sh
 # 人工检查：接口（路径/参数/退出码）有无契约文档或 pin commit
 
 # 子项 d: 独立 install 闭环（v1.1.4 暴露——只 clone FDE/ 子目录能否跑通）
-FDE_DEP=$(grep -c "install.sh" FDE/fde-install.sh 2>/dev/null || echo 0)
 LOOP_DEP=$(grep -c "install.sh" LOOP/loop-install.sh 2>/dev/null || echo 0)
-echo "FDE 依赖主 install.sh: $FDE_DEP / LOOP 依赖: $LOOP_DEP"
+echo "LOOP 依赖主 install.sh: $LOOP_DEP"
 CLONE_NOTE=$(grep -rliE "完整 clone|完整仓库|需要.*sofagent.*仓库|clone.*完整" FDE/README.md FDE/SKILL.md LOOP/README.md 2>/dev/null | head -1 || true)
 [ -n "$CLONE_NOTE" ] && echo "✅ 文档已标注完整 clone 要求" || echo "⚠️ 未找到标注"
 grep -q "被 FDE/LOOP 依赖\|FDE/LOOP" install.sh 2>/dev/null && echo "✅ 主 install.sh 已标注" || echo "⚠️ 未标注"
 
 # 子项 e: install 脚本版本号 = SSOT（v1.1.4 暴露——loop-install.sh 版本号漂移）
-grep -H "v[0-9]\+\.[0-9]\+\.[0-9]\+" FDE/fde-install.sh LOOP/loop-install.sh | head -4   # 期望：所有版本号 = SSOT_VER
+grep -H "v[0-9]\+\.[0-9]\+\.[0-9]\+" install.sh LOOP/loop-install.sh | head -4   # 期望：所有版本号 = SSOT_VER
 ```
 
 #### 24. acceptance-test.sh 与 changelog 功能对齐（单文件）
@@ -652,8 +651,8 @@ grep -oE "[0-9]+ 条规则\|[0-9]+ 条审计规则\|[0-9]+ 条 git-diff" README.
 # 子项 a: CI 有 cross-product-contract job
 grep -c "cross-product-contract\|cross_product_contract" .github/workflows/*.yml 2>/dev/null   # ≥1
 
-# 子项 b: FDE install.sh 引用主 install.sh
-grep -c "install.sh" FDE/fde-install.sh 2>/dev/null   # ≥1
+# 子项 b: install.sh 是主安装器（含 FDE 逻辑）
+grep -c "\-\-base-only" install.sh 2>/dev/null   # ≥1
 
 # 子项 c: LOOP install.sh 引用主 install.sh
 grep -c "install.sh" LOOP/loop-install.sh 2>/dev/null   # ≥1

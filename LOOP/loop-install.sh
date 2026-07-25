@@ -11,8 +11,8 @@
 #   3. 安装 LOOP 开发循环工具链
 #
 # 这个脚本不装什么:
-#   - 不装 FDE Agent（那是 fde-install.sh 的活）
-#   - 不装 audit Agent（fde-install.sh 装）
+#   - 不装 FDE Agent（那是 install.sh 默认模式的活）
+#   - 不装 audit Agent（install.sh 默认模式装）
 #
 # 装完之后:
 #   你的电脑就能用 sofagent 的 LOOP 自迭代开发循环了——
@@ -48,7 +48,7 @@ echo ""
 
 # ── 1. 装 sofagent 底座 ──
 echo -e "${BOLD}[1/3] 安装 sofagent 底座（约束+审计+daemon+mcp）...${NC}"
-bash "$PROJECT_ROOT/install.sh" --platform "$PLATFORM"
+bash "$PROJECT_ROOT/install.sh" --base-only --platform "$PLATFORM"
 echo -e "${GREEN}✅ sofagent 底座安装完成${NC}"
 echo ""
 

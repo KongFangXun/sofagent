@@ -23,6 +23,7 @@ graph TD
 - [二、一底座·四引擎设计](#二一底座四引擎设计)
 - [三、部署与运行架构](#三部署与运行架构)
 - [四、核心设计决策](#四核心设计决策)
+- [能力与状态总览（v1.2.0）](#能力与状态总览v120)
 - [五、已知局限与未来方向](#五已知局限与未来方向)
 - [六、行业框架对齐](./ARCHITECTURE.md#六行业框架对齐研究如何印证-sofagent-架构2026-07-研读)
 
@@ -433,7 +434,7 @@ Agent 定义在 `SKILL/agents/{name}/SKILL.md`，`parseSkillMd()` 读 front matt
 
 ### OpenClaw 在架构中的角色
 
-**审计层不需要 OpenClaw**——sofagent-audit 是独立 TypeScript CLI，输入 git diff，输出 exit code。即使不装 OpenClaw，开发者也可通过 `bash FDE/fde-install.sh`（推荐）或 `npm install -g @sofagent/audit`（高级/开发者路径）配 commit-msg hook，让任何 Agent 平台的提交经过审计。
+**审计层不需要 OpenClaw**——sofagent-audit 是独立 TypeScript CLI，输入 git diff，输出 exit code。即使不装 OpenClaw，开发者也可通过 `bash install.sh`（推荐）或 `npm install -g @sofagent/audit`（高级/开发者路径）配 commit-msg hook，让任何 Agent 平台的提交经过审计。
 
 **编排层当前走 DeepAgents**——`compose --task` CLI 入口，任何 Agent 平台都能用。迁移路径：ao → DeepAgents（v1.0.7 完成，ao 已退役）。
 
@@ -517,6 +518,48 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 | 「优化页面美观度」 | 不可量化，Loop 会跑十几小时无法收敛 |
 | 同一 Agent 自验 | 覆盖率 7-33%，裁判运动员同一人 |
 | Maker-Checker 分离后 | 覆盖率提升至 73% |
+
+---
+
+## 能力与状态总览（v1.2.0）
+
+> 这份清单是「现在能干什么」的单一索引。引擎内部设计见 [二、一底座·四引擎设计](#二一底座四引擎设计)；未来方向见 [五、已知局限与未来方向](#五已知局限与未来方向)。
+
+### 12 个 npm 包（全部 @sofagent/* · v1.2.0）
+
+| 包 | 职责 | 状态 |
+|---|---|---|
+| audit | 提交时审计引擎，21 条规则硬证据扫描 + 快照/回滚/webhook | ✅ 已实现（38 测试） |
+| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor | ✅ 已实现（19 测试） |
+| harness | 四层约束加载链 `buildConstrainedSystemPrompt()` | ✅ 已实现 |
+| rules | 规则引擎纯函数包（零 fs/git 依赖），编排层 tool-call 事前拦截 | ✅ 已实现 |
+| eval | 质量评估引擎：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
+| ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
+| orchestrator | 编排引擎：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 | ✅ 已实现（13 测试） |
+| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 | ✅ 已实现（13 测试） |
+| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources | ✅ 已实现 |
+| ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
+| skillopt | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填 | ✅ 已实现 |
+| think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现 |
+
+### 对外核心能力（FDE Agent 给用户什么）
+
+✅ 已发布可用（v1.2.0）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 21 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关（Claude Code / Codex / Cursor / WorkBuddy / OpenClaw 即挂即用）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 企业本体模型 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 内置双 Agent（@sofagent-fde + @sofagent-audit）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
+
+### 三安装包边界（v1.2.0 设计）
+
+| 安装器 | 装什么 | 不装 | 适用 |
+|---|---|---|---|
+| `install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（@sofagent-fde / @sofagent-audit）+ hook | LOOP | 企业 / FDE：要常驻 AI 员工 |
+| `install.sh --base-only` | 仅底座（四引擎） | FDE / LOOP | 开发者 / 企业 IT：只要核心治理引擎 |
+| `LOOP/loop-install.sh` | 底座（--base-only 内部）+ engineer/reviewer Skill + LOOP 工具链 | FDE Agent | 开发者：自迭代开发闭环 |
+
+> 最小可用：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）；五包全装才是完整 Harness 中间件。
+> 注：v1.2.0 将 `FDE/fde-install.sh` 升格为根 `install.sh` 并新增 `--base-only`，详见发版说明。
+
+### 规划中（仓库内暂无实现）
+
+Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2 / 组织能力市场 · Webhook 推飞书 / 钉钉 / 企微完整能力（本地三态已通）· 并行编排 DAG 波次并行（v1.3.0）· Ontology 升级为可运行推理底座 + 国标对齐（v1.3.0）· SubAgent 完整沙箱（v1.4.0）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [五、已知局限与未来方向](#五已知局限与未来方向) 与 ROADMAP。
 
 ---
 

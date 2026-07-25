@@ -224,14 +224,14 @@ else
   done
 fi
 
-# 检查 FDE/fde-install.sh 注释头版本号
-FDE_SH="${PROJECT_ROOT}/FDE/fde-install.sh"
+# 检查 install.sh 注释头版本号
+FDE_SH="${PROJECT_ROOT}/install.sh"
 if [[ -f "${FDE_SH}" ]]; then
   header_ver=$(head -5 "${FDE_SH}" | grep -oE '· v[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
   if [[ -n "${header_ver}" ]] && [[ "${header_ver}" != "${SSOT_VERSION}" ]]; then
     report_error "${FDE_SH}" "注释头 v${header_ver}" "v${SSOT_VERSION}"
   else
-    report_ok "fde-install.sh" "v${header_ver:-N/A}"
+    report_ok "install.sh" "v${header_ver:-N/A}"
   fi
 fi
 

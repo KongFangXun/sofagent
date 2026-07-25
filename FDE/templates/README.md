@@ -62,10 +62,10 @@ FDE 离场前打包给企业的文档，只含 4 章：
 > 企业方人读（看懂这个节点是什么）+ 编排引擎读（Agent 把文档注入给 sofagent-orchestrator compose 拆任务）。
 > 配置信息用表格写在 .md 里就够了，不需要单独一个没人读的 .yaml。
 
-## fde-install.sh 不装这个目录
+## install.sh --base-only 不装这个目录
 
 templates/ 是给 FDE 读的案例参考，**不是装到客户设备上的**。客户设备上跑的是：
 - `{企业名}/nodes/`（基于模板填出来的实际节点文档）
 - `{企业名}/skills/`（基于模板填出来的实际企业 Skill）
 
-fde-install.sh 只装运行时必需的：sofagent 底座 + fde.md。FDE §9 交接清单填完后，产出落盘到用户项目根目录的企业名文件夹。
+install.sh --base-only 只装运行时必需的：sofagent 底座 + fde.md。FDE §9 交接清单填完后，产出落盘到用户项目根目录的企业名文件夹。

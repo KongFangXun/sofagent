@@ -36,21 +36,25 @@ jobs:
         run: npm run test
 
   cross-product-contract:
-    # 修复十一：验证 FDE/loop-install.sh 与主 install.sh 的跨产品调用契约不被破坏。
-    # 契约（install.sh 头部「跨产品调用契约」段，v1.1.5 冻结）：
-    #   FDE/fde-install.sh 与 LOOP/loop-install.sh 第 1 步调用
-    #   bash "$PROJECT_ROOT/install.sh" --platform "$PLATFORM"
-    # 改动主 install.sh 的接口（入参/退出码/副作用）必须同步更新这两个脚本。
+    # 修复十一：验证 LOOP/loop-install.sh 与主 install.sh 的跨产品调用契约不被破坏。
+    # 契约（install.sh 头部「跨产品调用契约」段，v1.2.0 更新）：
+    #   LOOP/loop-install.sh 第 1 步调用
+    #   bash "$PROJECT_ROOT/install.sh" --base-only --platform "$PLATFORM"
+    # 改动主 install.sh 的接口（入参/退出码/副作用）必须同步更新 LOOP install 脚本。
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Verify FDE install contract
+      - name: Verify install.sh is main installer with --base-only
         run: |
-          grep -q "install.sh" FDE/fde-install.sh || {
-            echo "❌ FDE/fde-install.sh 未调用 install.sh，跨产品契约被破坏"
+          [ -f install.sh ] || {
+            echo "❌ install.sh 不存在"
             exit 1
           }
-          echo "✅ FDE/fde-install.sh 契约 intact"
+          grep -q "\-\-base-only" install.sh || {
+            echo "❌ install.sh 缺少 --base-only 开关"
+            exit 1
+          }
+          echo "✅ install.sh 主安装器 + --base-only 契约 intact"
       - name: Verify LOOP install contract
         run: |
           grep -q "install.sh" LOOP/loop-install.sh || {

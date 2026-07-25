@@ -8,6 +8,7 @@
 
 - [阅读指南](#阅读指南)
 - [5 分钟速览](#5-分钟速览)
+- [FDE Agent 能替你干什么](#fde-agent-能替你干什么)
 - [场景一：装完第一件事](#场景一装完第一件事)
 - [场景二：日常使用](#场景二日常使用)
 - [场景三：排查问题](#场景三排查问题)
@@ -41,12 +42,28 @@
 | 你想知道的 | 一句话 | 详见 |
 |------|------|------|
 | 这是什么 | sofagent——一个 FDE Agent，进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑 | 场景二 |
-| 怎么装 | `bash install.sh`（装底层引擎底座；装 FDE 入口见 [FDE/README](../FDE/README.md)） | 场景一 |
+| 怎么装 | `bash install.sh`（FDE 主安装器，装底座 + FDE Agent）· `bash install.sh --base-only`（仅底座） | 场景一 |
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | 场景二 |
 | AI 节点怎么跑 | 开发者：git commit 自动审计。非开发者：v1.0.8+ daemon 监控文件变更自动审计 | 场景一 |
 | AI 知识库 | `.sofagent/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [v1.0.1 日志](./changelog/v1.0.1.md) |
 | AI 成熟度 | 三级台阶（替换→增强→重构），FDE 帮企业从第二级跨到第三级——不只装 AI，还装上责任机制 | [FDE/FDE.md](../FDE/FDE.md#附录企业-ai-成熟度三级台阶) |
 | 已知局限 | 核心效果见 [evidence.md](./evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](../LIMITATIONS.md) |
+
+---
+
+## FDE Agent 能替你干什么
+
+> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是一个**能进场、能部署、能离场常驻的 AI 员工**——它替企业把大模型变成日常能干活的资产。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览v120)。
+
+**已经能替你干的事（v1.2.0 已发布）**：
+
+- **进场梳理 → 部署 AI 节点 → 离场常驻**：FDE 帮你盘清工作流、识别可自动化环节、把重复业务变成自动跑的 Agent，离场后 7×24 自己巡检、自己优化。
+- **每次变更都被管住**：21 条规则硬证据审计，密钥泄漏 / 越界编辑 / 注入攻击 / 盲改当场拦截；出事一键回滚到任意安全状态。
+- **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
+- **平台无关、即挂即用**：骑在你自选的大厂 Agent（Claude Code / Codex / Cursor / WorkBuddy / OpenClaw）之上，不替代模型，只补「可靠执行」。
+- **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
+
+**现在还干不了的事（规划中，暂无代码）**：Dashboard 可视化前端、完整多设备协同、飞书 / 钉钉 / 企微完整 Webhook 推送、并行编排、SubAgent 生产级沙箱、本地推理小模型——路线见 [ROADMAP](../ROADMAP.md)。
 
 ---
 
@@ -168,7 +185,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - run: bash FDE/fde-install.sh
+      - run: bash install.sh
       - run: sofagent-audit --diff HEAD --silent --ci
 ```
 

@@ -1500,7 +1500,7 @@ $S124_OK && pass
 scenario 125 "v1.2.0 install.sh 提升根目录 + 三安装包边界（install/fde/loop）"
 S125_OK=true
 [ -f "$PROJECT_ROOT/install.sh" ] || { fail "根目录 install.sh 不存在"; S125_OK=false; }
-[ -f "$PROJECT_ROOT/FDE/fde-install.sh" ] || { fail "FDE/fde-install.sh 不存在"; S125_OK=false; }
+[ -f "$PROJECT_ROOT/install.sh" ] || { fail "install.sh 不存在"; S125_OK=false; }
 [ -f "$PROJECT_ROOT/LOOP/loop-install.sh" ] || { fail "LOOP/loop-install.sh 不存在"; S125_OK=false; }
 [ ! -d "$PROJECT_ROOT/agents/SKILL/sofagent-releaser" ] || { fail "agents/SKILL/sofagent-releaser 仍存在（应已归 LOOP/releaser/）"; S125_OK=false; }
 $S125_OK && pass

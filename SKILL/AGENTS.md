@@ -27,7 +27,7 @@
 
 | 方式 | 场景 | 操作 |
 |------|------|------|
-| 装 Skill → @ | WorkBuddy/OpenClaw | `bash fde-install.sh`（自动装），然后 `@sofagent-fde` |
+| 装 Skill → @ | WorkBuddy/OpenClaw | `bash install.sh`（自动装），然后 `@sofagent-fde` |
 | 复制 prompt | 不支持 Skill 的平台 | 把 SKILL.md 内容贴进 system prompt |
 | CLI 直跑 | 任何终端 | `sofagent-orchestrator subagent run fde --task "..."` |
 

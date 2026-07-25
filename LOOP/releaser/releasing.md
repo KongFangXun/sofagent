@@ -116,7 +116,7 @@
 |:--:|------|------|
 | 8 | `npm run build` | exit 0 |
 | 9 | `npm test` | 全部通过 |
-| 10 | `shellcheck engine/scripts/*.sh tools/*.sh FDE/fde-install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
+| 10 | `shellcheck engine/scripts/*.sh tools/*.sh install.sh LOOP/loop-install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
 | 11 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
 | 12 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
 | 13 | **🔴 更新 `LOOP/releaser/acceptance-test.sh`**<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `LOOP/releaser/acceptance-test.sh`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `LOOP/releaser/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n LOOP/releaser/acceptance-test.sh` 确认语法<br><br>**Step C — 同步 `LOOP/releaser/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增）<br><br>**🔴 Step D — 覆盖率闭环判定**：<br>① **场景数声称 vs 实际对齐**：`DECLARED=$(head -5 LOOP/releaser/acceptance-test.sh \| grep -oE "[0-9]+ 个端到端" \| grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " LOOP/releaser/acceptance-test.sh); [ "$DECLARED" = "$ACTUAL" ]` 不一致 = P0<br>② **功能点逐条对照**：从 changelog「核心变更/交付」提取功能关键词，逐条 grep `LOOP/releaser/acceptance-test.sh`——零覆盖 = P0（回归测试无法发现该功能退化）<br>③ **失效场景清理**：`grep -rn "sofagent-audit --daemon" LOOP/releaser/acceptance-test.sh` 期望零命中 | `bash -n LOOP/releaser/acceptance-test.sh` 通过；**Step D 三项判定全 PASS** |
@@ -573,7 +573,7 @@ ls docs/changelog/*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
 
 ```bash
 # 补跑 shellcheck
-shellcheck engine/scripts/*.sh tools/*.sh FDE/fde-install.sh   # 期望：零 error
+shellcheck engine/scripts/*.sh tools/*.sh install.sh LOOP/loop-install.sh   # 期望：零 error
 ```
 
 > 如果 shellcheck 因脚本未适配新命令而大量 FAIL，标注为已知遗留并写入下版本的 Wave 5 适配计划。acceptance-test 同理——在阶段6新 session 跑时如因 CLI 迁移大量 FAIL，标注为已知遗留。

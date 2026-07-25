@@ -89,8 +89,8 @@
 装完后，你在自己的 Agent（WorkBuddy / Codex / Claude Code）里说一句话，sofagent 就开始干活。没有界面——语言就是界面。
 
 ```bash
-# sofagent 一键部署（FDE Agent 入口）
-bash FDE/fde-install.sh
+# sofagent 一键部署（主安装器 = 底座 + FDE Agent）
+bash install.sh
 ```
 
 > [!NOTE]
@@ -122,7 +122,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 | 🔄 自动运行节点 | 企业无人值守设备（服务器 / 旧电脑）| 是 |
 | ⚡ 个人增强节点 | 开发者用 WorkBuddy / Codex / Claude Code | 否 |
 
-> 💡 个人增强节点：clone 仓库 → `bash FDE/fde-install.sh` → 开始用。
+> 💡 个人增强节点：clone 仓库 → `bash install.sh` → 开始用。
 
 **按需安装**：
 
@@ -176,7 +176,7 @@ flowchart LR
 > [!NOTE]
 > **最小用量**：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）。五包全装才是完整 Harness 中间件。
 >
-> **三个产品层各自独立、按需选用**：`install.sh`（底座引擎，所有人）· `FDE/fde-install.sh`（底座 + FDE Agent，企业）· `LOOP/loop-install.sh`（底座 + 开发循环，开发者）。FDE 安装不自动装 LOOP——用户要的是"能干活的人"，不是"自己迭代开发工具"。
+> **三个产品层各自独立、按需选用**：`install.sh`（底座 + FDE Agent，所有人）· `install.sh --base-only`（仅底座引擎）· `LOOP/loop-install.sh`（底座 + 开发循环，开发者）。FDE 安装不自动装 LOOP——用户要的是"能干活的人"，不是"自己迭代开发工具"。
 
 <details>
 <summary>📖 引擎细节 + 21 条规则</summary>
