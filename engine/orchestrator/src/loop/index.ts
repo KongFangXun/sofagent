@@ -1,9 +1,9 @@
 // ============================================================
-// LOOP/index.ts · LOOP 引擎 barrel export
-// v1.2.0：StateGraph 单任务 LOOP + Workflow 消费引擎
+// LOOP/index.ts · FORGE 引擎 barrel export
+// v1.2.0：StateGraph 单任务 FORGE + Workflow 消费引擎
 //
-// 编排智能来自外部平台（WorkBuddy 等），sofagent LOOP 负责执行层。
-// checkpoint 保留在 graph/ 下（被 daemon 和 LOOP 共用）。
+// 编排智能来自外部平台（WorkBuddy 等），sofagent FORGE 负责执行层。
+// checkpoint 保留在 graph/ 下（被 daemon 和 FORGE 共用）。
 // ============================================================
 
 // State
@@ -31,7 +31,7 @@ export {
   type HumanDecision,
 } from './nodes';
 
-// Graph & Routing（单任务 LOOP）
+// Graph & Routing（单任务 FORGE）
 export {
   runLoopGraph,
   resumeLoopGraph,

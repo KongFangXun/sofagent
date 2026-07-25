@@ -155,7 +155,7 @@ sofagent is an FDE Agent — its product identity is to help you map workflows a
 
 ```mermaid
 flowchart LR
-    CB[🧭 Constraint Base<br/>inject red lines before work] --> OR[⚙️ Orchestration<br/>LOOP self-iteration · task decomposition]
+    CB[🧭 Constraint Base<br/>inject red lines before work] --> OR[⚙️ Orchestration<br/>FORGE self-iteration · task decomposition]
     OR --> AU[🔍 Audit Engine<br/>hard evidence per change]
     AU --> RE[🔄 Restore Engine<br/>auto-snapshot · one-click revert]
     RE --> EV[🧬 Evolution<br/>weekly inspection · improves with use]
@@ -165,7 +165,7 @@ flowchart LR
 | Engine | What it does | Status |
 |:------|:--------|:--:|
 | 🧭 Constraint Base | Injects rules into Agent context before work starts (SKILL.md + fde.md + think.md + knowledge/) | ✅ stable |
-| ⚙️ Orchestration | LOOP self-iteration (engineer→audit→reviewer serial) + task decomposition | 🔶 partial |
+| ⚙️ Orchestration | FORGE self-iteration (engineer→audit→reviewer serial) + task decomposition | 🔶 partial |
 | 🔍 Audit Engine | 21 rules on every git commit / file change, blocks + logs violations | ✅ stable |
 | 🔄 Restore Engine | Auto git snapshot after every audit, one-click revert | ✅ stable |
 | 🧬 Evolution | FDE weekly inspection of audit trends + reflection logs | ⚠️ experimental |
@@ -182,7 +182,7 @@ Four-layer loading chain: SKILL.md (constitution · immutable) → fde.md (norms
 
 ### ⚙️ Orchestration Engine
 
-Two layers implemented: ① **Task decomposition** — DeepAgents compose turns a task description into an orchestration plan YAML; ② **LOOP self-iteration** — 4-node StateGraph (engineer → audit → reviewer → human_confirm), audit FAIL auto-routes back to engineer for retry (≤3 rounds), per-node checkpoint for interrupt recovery.
+Two layers implemented: ① **Task decomposition** — DeepAgents compose turns a task description into an orchestration plan YAML; ② **FORGE self-iteration** — 4-node StateGraph (engineer → audit → reviewer → human_confirm), audit FAIL auto-routes back to engineer for retry (≤3 rounds), per-node checkpoint for interrupt recovery.
 
 > 🔶 Currently a **serial** state machine (not a parallel DAG scheduler). Full DAG parallel scheduling + sandbox execution is planned in [ROADMAP v1.3.0](./ROADMAP.md).
 

@@ -10,7 +10,7 @@
 //              （fs.existsSync 返回 false）或后续 history 有该文件的
 //              delete 记录，则该条 WARN 不计入"未处理"。
 //
-// 配合 v1.1.4 LOOP audit 三态全写 history（PASS/WARN/FAIL），
+// 配合 v1.1.4 FORGE audit 三态全写 history（PASS/WARN/FAIL），
 // warn-accumulator 现在能正确识别「WARN 之后有 PASS 清理」的情况。
 // ============================================================
 

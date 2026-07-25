@@ -1,6 +1,6 @@
-# LOOP 快速入门 · 环境配置与模型接入
+# FORGE 快速入门 · 环境配置与模型接入
 
-> 本文覆盖 LLM 接入、环境变量、provider 配置——这些是 LOOP 所有 sub-agent（engineer / reviewer）的通用基础。具体的循环使用方式见各循环的 `loop.md`（当前唯一循环：`LOOP/SKILL/fresh-eyes-loop/loop.md`）。
+> 本文覆盖 LLM 接入、环境变量、provider 配置——这些是 FORGE 所有 sub-agent（engineer / reviewer）的通用基础。具体的循环使用方式见各循环的 `loop.md`（当前唯一循环：`FORGE/SKILL/fresh-eyes-loop/loop.md`）。
 
 ---
 
@@ -16,7 +16,7 @@ bash install.sh
 
 ## 第二步：设模型
 
-LOOP 的 sub-agent（engineer 写代码、reviewer 审查）需要 LLM 能力。每个角色可以指定不同模型。
+FORGE 的 sub-agent（engineer 写代码、reviewer 审查）需要 LLM 能力。每个角色可以指定不同模型。
 
 **最简路径（推荐 · 一个 key 即可）**：
 
@@ -74,11 +74,11 @@ export OPENAI_API_KEY=sk-xxx
 
 ```bash
 # 1. 读协议
-cat LOOP/SKILL/fresh-eyes-loop/loop.md
+cat FORGE/SKILL/fresh-eyes-loop/loop.md
 
 # 2. 开两个 session，分别注入 prompt：
-#    A: LOOP/SKILL/fresh-eyes-loop/prompts/a-check.md
-#    B: LOOP/SKILL/fresh-eyes-loop/prompts/b-check.md
+#    A: FORGE/SKILL/fresh-eyes-loop/prompts/a-check.md
+#    B: FORGE/SKILL/fresh-eyes-loop/prompts/b-check.md
 
 # 3. 按 loop.md 的「单轮协议」走：审查 → 合并 → 修复 → 验证 → 判定停止
 ```
@@ -105,4 +105,4 @@ LOOP_AUTO=1   → 全自动模式（sub-agent 自主判定 IS_PASS，不等人�
 | 用的模型不在预置 provider 列表 | 只支持 deepseek/glm/kimi 预置 | 用 `custom:<model>` + `SOFAGENT_LLM_BASE_URL` |
 | sofagent-audit 命令未找到 | 底座没装 | `bash install.sh` |
 
-> 📖 详细设计见 `LOOP/LOOP.md`（旧自迭代模型，保留参考）和 `LOOP/SKILL/fresh-eyes-loop/loop.md`（当前循环协议）。
+> 📖 详细设计见 `FORGE/FORGE.md`（旧自迭代模型，保留参考）和 `FORGE/SKILL/fresh-eyes-loop/loop.md`（当前循环协议）。

@@ -24,7 +24,7 @@ color: "#16B8F3"
 1. 读 `loop.md` 拿到完整 SOP（角色 / 轮次协议 / 产物 schema / 停止条件）。
 2. 12 视角的定义见 `specs/fresh-eyes-review.md`（两个 subagent 都按它跑）。
 3. A/B 的行为指令在 `prompts/`（a-check / b-check / a-consolidate / b-fix / a-verify）。
-4. 跨 run 的永久索引在 `LOOP/LEDGER.md`（被 git 跟踪）；每轮正文在 `runs/`（不进 git）。
+4. 跨 run 的永久索引在 `FORGE/LEDGER.md`（被 git 跟踪）；每轮正文在 `runs/`（不进 git）。
 
 ## 实现载体
 

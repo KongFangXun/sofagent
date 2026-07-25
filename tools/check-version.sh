@@ -235,10 +235,10 @@ if [[ -f "${FDE_SH}" ]]; then
   fi
 fi
 
-# LOOP/loop-install.sh 已移除：loop 由 LOOP/SKILL/<loop>/ 定义驱动，无独立安装脚本（v1.2.x）
+# FORGE/loop-install.sh 已移除：loop 由 FORGE/SKILL/<loop>/ 定义驱动，无独立安装脚本（v1.2.x）
 
-# 检查 FDE/package.json + LOOP/package.json version 字段
-for pkg_file in "${PROJECT_ROOT}/FDE/package.json" "${PROJECT_ROOT}/LOOP/package.json"; do
+# 检查 FDE/package.json + FORGE/package.json version 字段
+for pkg_file in "${PROJECT_ROOT}/FDE/package.json" "${PROJECT_ROOT}/FORGE/package.json"; do
   if [[ -f "${pkg_file}" ]]; then
     pkg_ver=$(grep -oE '"version": "[0-9]+\.[0-9]+\.[0-9]+"' "${pkg_file}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
     if [[ -n "${pkg_ver}" ]] && [[ "${pkg_ver}" != "${SSOT_VERSION}" ]]; then

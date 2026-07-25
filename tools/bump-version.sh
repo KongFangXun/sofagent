@@ -21,7 +21,7 @@
 #      8. vi README.md README.en.md                 # 改 badge Version-v0.99.3
 #      9. vi SKILL/SKILL.md                          # 改 frontmatter + 正文标题
 #     10. vi SKILL/harness/data/*.md                # 改正文标题 · v0.99.3
-#     11. vi LOOP/SKILL/fresh-eyes-loop/SKILL.md    # 改 frontmatter（如有版本字段）
+#     11. vi FORGE/SKILL/fresh-eyes-loop/SKILL.md    # 改 frontmatter（如有版本字段）
 #     12. 跑 ./tools/check-version.sh 确认一致性
 #
 # 替换范围（结构性位置，不碰历史引用）:
@@ -215,9 +215,9 @@ if [[ -f "$MCP_PJ" ]]; then
 fi
 echo ""
 
-# 1c. FDE/package.json + LOOP/package.json version 字段
-echo -e "${BOLD}[2b/13] FDE/package.json + LOOP/package.json${NC}"
-for pkg_file in "$PROJECT_ROOT/FDE/package.json" "$PROJECT_ROOT/LOOP/package.json"; do
+# 1c. FDE/package.json + FORGE/package.json version 字段
+echo -e "${BOLD}[2b/13] FDE/package.json + FORGE/package.json${NC}"
+for pkg_file in "$PROJECT_ROOT/FDE/package.json" "$PROJECT_ROOT/FORGE/package.json"; do
   if [[ -f "$pkg_file" ]]; then
     pkg_content=$(cat "$pkg_file")
     pkg_new=$(sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g" "$pkg_file")

@@ -107,8 +107,8 @@
 
 | 安装器 | 装什么 | 不装 | 适用 |
 |---|---|---|---|
-| `bash install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（`@sofagent-fde` / `@sofagent-audit`）+ hook | LOOP | 企业 / FDE：要常驻 硅基员工 |
-| `bash install.sh --base-only` | 仅底座（四引擎） | FDE / LOOP | 开发者 / 企业 IT：只要核心治理引擎 |
+| `bash install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（`@sofagent-fde` / `@sofagent-audit`）+ hook | FORGE | 企业 / FDE：要常驻 硅基员工 |
+| `bash install.sh --base-only` | 仅底座（四引擎） | FDE / FORGE | 开发者 / 企业 IT：只要核心治理引擎 |
 
 > 最小可用：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）；五包全装才是完整 Harness 中间件。完整边界见 [ARCHITECTURE · 三安装包](./ARCHITECTURE.md#三安装包边界v120-设计)。
 
