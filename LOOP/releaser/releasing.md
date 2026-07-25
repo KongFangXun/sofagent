@@ -142,7 +142,7 @@
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 16 | **合并更新两份审查文档**：① 汇总本版本所有修复项，抽象为回归检查维度（编号递增）写入 `regression-checklist.md`；② 同步把本版本暴露的新盲区 / 新维度 / 新攻击面写入 `fresh-eyes-review.md`。两项一并完成，不要留到后面 | 当前 session | `git diff` 显示两份文档均有新增；新增维度 ≥ 本版本修复数 |
+| 16 | **合并更新两份审查文档（两份逻辑不同，区分对待）**：<br>**① regression-checklist.md（加法）**：汇总本版本所有修复项，抽象为回归检查维度（编号递增）写入。每发现一个问题加一条——这是精确清单，膨胀靠瘦身控制<br>**② fresh-eyes-review.md（校准，不是加法）**：按下方「fresh-eyes-review 升级优化」决策树处理本版本审查中的预料外发现。**⚠️ 不要往 fresh-eyes-review 里加精确检查项**——它是留白式的直觉审查，加检查项会让它退化成第二个 regression-checklist（v1.2.0 刚从 826 行砍到 274 行修复了这个问题） | 当前 session | `git diff` 显示两份文档均有更新；regression 新增维度 ≥ 本版本修复数 |
 | 17 | **当前 session 逐项验证**：每条新增回归维度跑一遍命令确认可执行；确认 `fresh-eyes-review.md` 新维度与回归维度互相印证、无矛盾 | 当前 session | 所有新增维度可执行 + 两份文档互相印证 |
 
 > ✅ 完成 步骤 16 → 17 后，**开发 session 的文档工作已一气呵成**——回归清单 + 发布后审查全部在当前 session 更新完。接下来只有**阶段六需要开新 session 控制 OpenClaw**，到那时才停。
@@ -163,6 +163,57 @@
 | 20 | **瘦身自验证**：① 跑维护公约自校验脚本确认标题声称数 = 实际 `#### ` 数 ② `bash -n LOOP/releaser/acceptance-test.sh` 语法通过 ③ 跑 `bash LOOP/releaser/acceptance-test.sh` 确认场景数不变、全 PASS | 当前 session | 三项全 PASS |
 
 > 💡 **节奏**：每版本必跑 Tier 1（步骤18）+ Tier 2（步骤19-20）。因为每版都做，单次瘦身量小、负担可控——这也是 v1.1.7 的教训：验证文件一旦放任堆积，几版就会回到 3000+ 行不可维护状态。
+
+**Tier 3 — fresh-eyes-review 升级优化（每版本，v1.2.0 起）**
+
+> 🔴 **核心认知**：fresh-eyes-review 和 regression-checklist 的更新逻辑**根本不同**。regression-checklist 是精确清单（加法：每发现一个问题加一条检查项）。fresh-eyes-review 是留白式的直觉审查（校准：每发现一个问题校准视角敏感度，不是加检查项）。过去十几个版本把两者混为一谈——每发现一个 bug 就往 fresh-eyes 对应维度加一条检查项，导致它从"凭直觉发现问题"膨胀成"第二个 regression-checklist"（826 行）。v1.2.0 重写为 274 行才修复。本 Tier 守住这条底线。
+
+本版本审查（阶段四代码审核 + 阶段六 OpenClaw 检查 + 上一版阶段十二 fresh-eyes 审查报告）中如果产生了**预料外的发现**（不在 regression-checklist 已有维度覆盖范围内、审查者凭直觉/意外发现的），走以下决策树：
+
+```
+预料外发现
+    │
+    ├─ 是可精确描述、可 grep/命令验证的具体问题模式？
+    │   └─ ✅ 写进 regression-checklist（加新维度，编号递增）
+    │      不动 fresh-eyes-review
+    │
+    ├─ 是"审查者凭直觉嗅到、但无法写成精确检查项"的系统性盲区？
+    │   └─ 走 fresh-eyes-review 三选一升级（见下）
+    │
+    └─ 是偶发问题、无规律？
+        └─ ❌ 不动任何审查文档（记在 changelog 即可）
+```
+
+**fresh-eyes-review 三选一升级**（当发现属于"直觉可感但无法精确化"时）：
+
+| 动作 | 什么时候用 | 怎么做 | ⚠️ 禁忌 |
+|------|-----------|--------|---------|
+| **A. 新增视角** | 预料外发现属于一个全新的审查角度，现有 12 个视角都没覆盖 | 新增一个视角（角色+心态+举例），给审查者自由发挥的空间 | ❌ 不要写成检查清单（"检查 X 是否 Y"）。✅ 写成"你是一个 X，你会注意到……" |
+| **B. 校准现有视角** | 预料外发现属于现有某视角的覆盖范围，但该视角对这类问题敏感度不足 | 在该视角的"你可能会关注的方向"举例区补一条，或者微调心态描述 | ❌ 不要把举例区变成必查清单。✅ 保持"举例，不是清单"的措辞 |
+| **C. 更新历史教训** | 预料外发现是一个反复出现的系统性问题模式（≥2 个版本） | 在末尾「附：历史教训」补一条经验提醒 | ❌ 不要写成检查项。✅ 写成"过去在 X 出过问题，保持敏感" |
+
+| # | 步骤 | 谁做 | 验证方式 |
+|:--:|------|:--:|------|
+| 21 | **fresh-eyes-review 升级优化**：① 回顾本版本所有预料外发现，逐一走决策树分类 ② 需要升级的走三选一（A/B/C）③ **风格守护自检**（见下） | 当前 session | `git diff fresh-eyes-review.md` 显示有更新（或确认本版本无需更新）；风格守护自检全 PASS |
+
+**风格守护自检**（每次更新 fresh-eyes-review 后必跑，防止退化）：
+
+```bash
+# 1. 行数守护：不超过 350 行（v1.2.0 重写后基线 274 行，留 76 行弹性空间）
+WC=$(wc -l < LOOP/releaser/fresh-eyes-review.md)
+[ "$WC" -gt 350 ] && echo "🔴 行数膨胀（$WC > 350）——检查是否在加精确检查项" || echo "✅ 行数正常（$WC）"
+
+# 2. 反清单化守护：不应出现精确检查命令（grep/命令式断言应为 0 或极少）
+#    fresh-eyes 的举例应该是"你可能会注意到……"，不是"跑 grep X 确认 Y"
+CMD_COUNT=$(grep -cE '(grep|bash|npm|wc -l|test -)' LOOP/releaser/fresh-eyes-review.md || echo 0)
+[ "$CMD_COUNT" -gt 5 ] && echo "🟡 命令引用偏多（$CMD_COUNT 处）——确认都是举例而非检查项" || echo "✅ 命令引用适度（$CMD_COUNT 处）"
+
+# 3. 视角数守护：当前 12 个视角，新增需谨慎（每个视角增加审查者一轮工作）
+VIEWS=$(grep -c '^### ' LOOP/releaser/fresh-eyes-review.md)
+[ "$VIEWS" -ne 12 ] && echo "🟡 视角数变化（当前 $VIEWS，基线 12）——确认是刻意调整" || echo "✅ 视角数稳定（$VIEWS）"
+```
+
+> 💡 **什么时候 `git diff` 显示无变更也是正常的**：如果本版本审查中所有预料外发现都属于"可精确描述的具体问题模式"，它们全部进了 regression-checklist，fresh-eyes-review 本版本无需更新。零变更 = 审查体系稳定，不是遗漏。
 
 ---
 
@@ -916,7 +967,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 29 | **npm 12 包验证**：全部 12 包版本一致，无 MISSING |
 | 30 | npm README 验证：`npm view /audit readme` + `npm view /mcp readme` 均有内容 |
 | 31 | 如果本次迭代暴露了新的流程漏洞，**直接吸收进本 SOP 对应阶段**——不要存到单独章节。每条新规则标注版本号（如 `vX.Y 教训`）以便追溯 |
-| 32 | **🔴 审查闭环——发布后审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `LOOP/releaser/fresh-eyes-review.md`（已在本版本阶段五中更新），对已发布版本做独立审查<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，作为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的维度和检查项 |
+| 32 | **🔴 审查闭环——发布后审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `LOOP/releaser/fresh-eyes-review.md`（已在本版本阶段五中更新），对已发布版本做独立审查<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，作为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的视角和敏感度。⚠️ 这里的"锋利"指 fresh-eyes-review 的直觉校准（见阶段五 Tier 3），不是加检查项——检查项归 regression-checklist 管 |
 | 33 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 直接吸收进对应阶段，标注版本号<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 LOOP.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
 | 34 | **生成「下一版本开发 Prompt」到桌面**：综合 `ROADMAP.md`（未来规划）+ `CHANGELOG.md` + 下一版本 `docs/changelog/vX.Y.md`（若存在），生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`。<br>**若下一版本 changelog 尚未创建**：先 ① 写新版本需求并产出 `docs/changelog/vX.Y.md`；再 ② 生成桌面开发 prompt |
 
@@ -944,7 +995,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 二 | 开发 | 工程师 | 否 | 代码 + 随修随记的回归维度 |
 | 三 | 自测 | 工程师 | 否 | build/test 全绿 + 更新验收测试文件（acceptance-test 本身只更新不跑，跑在阶段6）。涉及 CLI 迁移时 shellcheck 延后到阶段八 |
 | 四 | 代码审核 | 当前 session | 否 | 逐项 PASS 或 FAIL→修复 |
-| 五 | 审查体系合并更新（含瘦身检查） | 当前 session | 否 | regression-checklist + fresh-eyes-review 同步更新 |
+| 五 | 审查体系合并更新（含瘦身检查） | 当前 session | 否 | regression-checklist（加法）+ fresh-eyes-review（校准，Tier 3 守护留白风格）+ 防膨胀瘦身 |
 | **六** | **acceptance-test + regression-checklist（开新 session）** | **审核者控制 OpenClaw** | **🔴 是（全新认知；FAIL 回阶段五循环）** | **stage6 合并报告全 PASS** |
 | 七 | 审查体系最终确认 | 作者 | 否 | 两份审查文档状态一致、无遗漏（初版已在阶段五写入） |
 | 八 | 开发日志定稿 + 文档收尾 | 作者 | 否 | **开发日志定稿（含发布检查清单打勾）** + CHANGELOG/ROADMAP 五步/版本号/**发版日期同步**/测试数一致性/**🔴 文档同步闭环（D6 落地：changelog 功能点→项目文档覆盖率对照）**。涉及 CLI 迁移时 shellcheck 在此补跑 |
