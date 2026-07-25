@@ -4,6 +4,20 @@
 >
 > v1.2.0 · 2026-07-24（UTC）· 孔放勋
 
+> ## ⚠️ v1.2.0 后期转向（2026-07-25）
+>
+> **本文档描述的是旧 LOOP 自迭代模型（engineer → audit → reviewer → human 单循环）。**
+>
+> v1.2.0 后期，LOOP 已从"自迭代工具包"转向**质量循环定义层**（`LOOP/SKILL/<loop>/` + DeepAgents 驱动）。当前唯一循环是 **fresh-eyes-loop**（A/B 双盲 12 视角审查），协议见 **[`LOOP/SKILL/fresh-eyes-loop/loop.md`](SKILL/fresh-eyes-loop/loop.md)**。
+>
+> 主要变化：
+> - `LOOP/SKILL.md`、`LOOP/loop-install.sh`、`LOOP/loop-workflow.sh`、`LOOP/releaser/` 已删除
+> - 发版 SOP → `docs/changelog/releasing.md`、`bump-version.sh` → `tools/bump-version.sh`
+> - 新增 `LOOP/LEDGER.md`（跨 run 永久索引）、`LOOP/SKILL/fresh-eyes-loop/`
+> - 详细记录见 `docs/changelog/v1.2/v1.2.0.md` §「后期转向」
+>
+> *以下为旧 LOOP 自迭代设计正文，保留作为历史参考。*
+
 <img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
 
 > 📖 LOOP 自迭代的设计哲学见 [PHILOSOPHY §七](../docs/PHILOSOPHY.md#七怎么进化loop-自迭代)。Agent 定义见 [`SKILL/agents/`](../SKILL/agents/)——遵循 [Agency Agents](https://github.com/jnMetaCode/agency-agents-zh) 格式标准。编排层通过 [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) `createDeepAgent()` 接入 LangGraph StateGraph。

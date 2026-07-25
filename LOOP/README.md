@@ -1,85 +1,67 @@
-# LOOP — sofagent 自迭代工具包
+# LOOP — sofagent 质量循环定义层
 
-> **LOOP 是 sofagent 项目的开发者自迭代工具包**——自动执行 engineer→audit→reviewer 循环，管理 sofagent 自己的代码变更。用 sofagent 的引擎驱动，不面向终端用户。企业用户的入口是 [FDE Agent](../FDE/README.md)。
+> **LOOP 是 sofagent 项目的质量循环定义层**——通过 `LOOP/SKILL/<loop>/` 定义可复用的循环协议（如 A/B 双盲 fresh-eyes 审查），由 DeepAgents 编排器驱动执行。不面向终端用户。企业用户的入口是 [FDE Agent](../FDE/README.md)。
 
-## 快速开始
+## 当前循环
 
-LOOP 装完后，你可以派一个开发任务（比如"在 README 加一段简介"），LOOP 自动跑完 engineer 写代码 → audit 审计 → reviewer 审查的循环。
+| 循环 | 路径 | 用途 |
+|------|------|------|
+| **fresh-eyes-loop** | `LOOP/SKILL/fresh-eyes-loop/` | 发布后独立质量循环——A/B 双盲 12 视角审查 + 修复 + 验证，每轮新 session 保证零上下文，连续 2 轮无 P0/P1 即停 |
+
+## 快速开始（fresh-eyes-loop）
+
+fresh-eyes-loop 不需要单独的安装或 CLI——它是一个协议定义（`loop.md` + `prompts/`），由 driver（你）在 A/B 两个 sub-agent 之间 relay 执行。
 
 ```bash
-# 1. LOOP 无需单独安装——各 loop 定义位于 LOOP/SKILL/<loop>/（如 fresh-eyes-loop），
-#    由编排器（WorkBuddy 会话 / DeepAgents 编排器）按 loop.md 协议驱动
+# 1. 确保 sofagent 底座已装
+sofagent-audit --version
 
-# 2. 如果跳过了安装向导，手动设模型 + key
-#    engineer（写代码）建议性价比模型，reviewer（审查）建议推理能力更强的模型
-export SOFAGENT_LLM_ENGINEER=deepseek:deepseek-chat
-export SOFAGENT_LLM_REVIEWER=glm:glm-4-flash
-#    OpenAI API 格式是事实标准——所有主流模型供应商都兼容，统一用 OPENAI_API_KEY 入口
-export OPENAI_API_KEY=sk-xxx
-export LOOP_AUTO=1                                    # 全自动
+# 2. 读协议
+cat LOOP/SKILL/fresh-eyes-loop/loop.md
 
-# API key 解析优先级（三级回退）：
-#   SOFAGENT_LLM_ENGINEER_API_KEY ← 角色专用（推荐）
-#     ↓ 找不到
-#   SOFAGENT_LLM_API_KEY           ← 通用
-#     ↓ 找不到
-#   OPENAI_API_KEY                 ← 兜底（OpenAI 兼容 API 的事实标准入口）
-# engineer 和 reviewer 可以用不同 key（分账号计费）。
-# 同理 reviewer 用 SOFAGENT_LLM_REVIEWER_API_KEY。
-# 三个都没设 → 节点降级到零工具路径（输出加 [降级运行] 前缀）。
+# 3. 开两个 session（A 和 B），分别注入对应的 prompt：
+#    A: LOOP/SKILL/fresh-eyes-loop/prompts/a-check.md
+#    B: LOOP/SKILL/fresh-eyes-loop/prompts/b-check.md
+#    两者独立跑 12 视角审查（双盲），产物写到 runs/.../round-NN/
 
-# LOOP_AUTO 自动判定行为：
-#   LOOP_AUTO=1 时 human_confirm 节点不等待人工，直接解析 reviewer 报告里的 IS_PASS：
-#     IS_PASS: YES   → ✅ 通过，进 completed 终态
-#     IS_PASS: NO    → 🔄 驳回，回 engineer 修复
-#     无法解析        → 🔄 保守默认驳回（不瞎放行）
-#   未设 LOOP_AUTO 时走 stdin readline 等待人工 y/n，不限时——
-#   stdin 关闭视为 abort，checkpoint 已保存，可 loop --resume 恢复。
+# 4. A 合并报告 → B 修复 → A 验证 → 判定停止
 
-# 3. 跑单任务
-sofagent-orchestrator loop --task "在 README.md 第三行后加一条项目简介"
+# 5. 循环结束后 driver 追加一行到 LOOP/LEDGER.md
 ```
 
-LOOP 自动流转：engineer 写代码 → audit 审计 → reviewer 审查 → 人工确认（`LOOP_AUTO=1` 时按 `IS_PASS` 自动判定，见上方注释）。
+**环境变量**（sub-agent 需要 LLM 调用时）：
 
-**一个 key 走天下**：DeepSeek / GLM / Kimi / OpenRouter / Together / 本地 vLLM / Ollama 都是 OpenAI 兼容 API，一把 `OPENAI_API_KEY` 就能跑——key 只发到你 `SOFAGENT_LLM_*` 指定的 provider，不会发到 OpenAI。
-
-**engineer/reviewer 分账号**（可选高级用法）见 `LOOP/quick-start.md` 高级用法小节。
-
-**不局限于预置 provider**：任何 OpenAI 兼容 API 都能用 `custom:<model>` + `SOFAGENT_LLM_BASE_URL` 接入。详见 `LOOP/quick-start.md` 第四步。
+```bash
+export SOFAGENT_LLM_ENGINEER=deepseek:deepseek-chat   # B 修复时用
+export SOFAGENT_LLM_REVIEWER=glm:glm-4-flash          # A 审查时用
+export OPENAI_API_KEY=sk-xxx                           # OpenAI 兼容 API 统一入口
+```
 
 ## 内置 Agent
 
-> 注意：LOOP 的 3 个 Agent Skill（sofagent-engineer / sofagent-reviewer / sofagent-audit）与 FDE 的 4 个（sofagent-fde / sofagent-audit / sofagent-engineer / sofagent-reviewer）有重叠但不完全相同。两者共享 sofagent-audit / sofagent-engineer / sofagent-reviewer 三个 Skill。
+LOOP 的 sub-agent 定义在 `SKILL/agents/` 下：
 
-| Skill | 角色 | 位置 |
+| Agent | 角色 | 位置 |
 |-------|------|------|
 | `sofagent-engineer` | 软件工程师——写代码、修复 | `SKILL/agents/engineer/SKILL.md` |
 | `sofagent-reviewer` | 代码审查员——审查 + 自动门控 | `SKILL/agents/reviewer/SKILL.md` |
-| `sofagent-audit` | 合规审计员——A1-A11、A14-A19 规则检查 | `SKILL/agents/audit/SKILL.md` |
+| `sofagent-audit` | 合规审计员——A1-A21 规则检查 | `SKILL/agents/audit/SKILL.md` |
 
-## 怎么用 workflow 模式（高级）
-
-编排层（WorkBuddy 等）产出 workflow.yml → LOOP 引擎外层循环逐个执行子任务。
-
-```bash
-# workflow 模式由 LOOP/src/workflow.ts 提供
-# 需在 sofagent 底座基础上额外配置
-```
-
-详细文档见 `LOOP/LOOP.md`，快速入门见 `LOOP/quick-start.md`。
+fresh-eyes-loop 的 A/B 即基于 reviewer + engineer 构建（同底座，不同行为指令——见 `prompts/`）。
 
 ## 目录
 
 ```
 LOOP/
   README.md                     ← 你在这里
-  LOOP.md                       ← 设计文档（自迭代总纲）
-  quick-start.md                ← 快速入门
-  LEDGER.md                     ← 跨 run 永久索引
-  src/
-    types.ts / workflow.ts      ← 运行时代码
+  LOOP.md                       ← 设计文档（旧自迭代模型，保留参考）
+  quick-start.md                ← LLM 接入与环境配置
+  LEDGER.md                     ← 跨 run 永久索引（git 跟踪）
   SKILL/
     fresh-eyes-loop/            ← 质量循环（A/B 双 Agent）
       SKILL.md / loop.md / prompts/ / specs/ / evolution.md / runs/
+  src/
+    types.ts / workflow.ts      ← 旧编排运行时（保留参考，不再主动使用）
 ```
+
+> **v1.2.0 后期**：LOOP 已从"自迭代工具包（engineer→audit→reviewer 单循环 + loop-install.sh 独立安装）"转向"质量循环定义层（`LOOP/SKILL/<loop>/` + DeepAgents 驱动）"。旧 `loop-workflow.sh`、`LOOP/SKILL.md`、`LOOP/loop-install.sh`、`LOOP/releaser/` 已删除。详见 [`LOOP/SKILL/fresh-eyes-loop/loop.md`](SKILL/fresh-eyes-loop/loop.md)。

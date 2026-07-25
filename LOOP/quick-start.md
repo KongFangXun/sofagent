@@ -1,6 +1,6 @@
-# LOOP 快速入门 · 5 分钟把自迭代跑起来
+# LOOP 快速入门 · 环境配置与模型接入
 
-> 你已经装了 sofagent 底座和 LOOP Skill。这篇文章告诉你第一条 workflow 怎么跑起来。
+> 本文覆盖 LLM 接入、环境变量、provider 配置——这些是 LOOP 所有 sub-agent（engineer / reviewer）的通用基础。具体的循环使用方式见各循环的 `loop.md`（当前唯一循环：`LOOP/SKILL/fresh-eyes-loop/loop.md`）。
 
 ---
 
@@ -8,31 +8,15 @@
 
 ```bash
 # 确认 sofagent 底座已装
-sofagent-audit --version   # 应输出 v1.1.4 或更高
+sofagent-audit --version   # 应输出 v1.2.0 或更高
 
-# 没用？装一下（LOOP 由 SKILL/<loop>/ 定义驱动，无需单独安装；确保 sofagent 底座已装）
+# 没用？装一下
 bash install.sh
 ```
 
-## 第二步：准备 workflow
+## 第二步：设模型
 
-LOOP 的编排智能来自外部平台（WorkBuddy 等）。你在 WorkBuddy 的软件开发团队里做完 PRD → 架构设计，拿到任务列表，写成 `workflow.yml`：
-
-```yaml
-workflow:
-  name: "示例：新增一条审计规则"
-  nodes:
-    - id: T1
-      task: "在 rules/ 下新建 rule-a22.ts，定义 checkRuleA22"
-    - id: T2
-      task: "在 rules/index.ts 中注册 A22"
-      depends_on: [T1]
-    - id: T3
-      task: "在 runner.ts 中调整优先级"
-      depends_on: [T2]
-```
-
-## 第三步：设模型 + 跑
+LOOP 的 sub-agent（engineer 写代码、reviewer 审查）需要 LLM 能力。每个角色可以指定不同模型。
 
 **最简路径（推荐 · 一个 key 即可）**：
 
@@ -47,18 +31,22 @@ export OPENAI_API_KEY=sk-xxx
 
 # 3. 全自动模式
 export LOOP_AUTO=1
-
-# 跑
-sofagent-orchestrator loop --task "你的任务描述"
 ```
-
-LOOP 自动流转：engineer 写代码 → audit 审计 → reviewer 审查 → IS_PASS → 完成 / IS_PASS:NO → 回 engineer 修复。
 
 **为什么是 `OPENAI_API_KEY`**：OpenAI API 格式已经是事实标准——所有主流模型供应商都提供兼容 endpoint。OpenAI SDK 默认读这个环境变量，所以用它作为统一入口最省事。你的 key 不会发到 OpenAI，只发到你 `SOFAGENT_LLM_*` 指定的 provider。
 
+**API key 解析优先级（三级回退）**：
+
+```
+SOFAGENT_LLM_{ROLE}_API_KEY  >  SOFAGENT_LLM_API_KEY  >  OPENAI_API_KEY
+   角色专用 key（分账）         通用 key（共用一个）      OpenAI 兼容默认（推荐入门）
+```
+
+engineer 和 reviewer 可以用不同 key（分账号计费）。同理 reviewer 用 `SOFAGENT_LLM_REVIEWER_API_KEY`。
+
 ---
 
-### 高级用法（可选）
+### 高级用法
 
 **engineer 和 reviewer 用不同账号分账**（例如开发用便宜账号、审查用高质量账号）：
 
@@ -68,14 +56,7 @@ export SOFAGENT_LLM_ENGINEER_API_KEY=sk-cheap-account
 export SOFAGENT_LLM_REVIEWER_API_KEY=sk-premium-account
 ```
 
-**完整 fallback 顺序**（任一命中即可，不用都设）：
-
-```
-SOFAGENT_LLM_{ROLE}_API_KEY  >  SOFAGENT_LLM_API_KEY  >  OPENAI_API_KEY
-   角色专用 key（分账）         通用 key（共用一个）      OpenAI 兼容默认（推荐入门）
-```
-
-## 第四步（可选）：custom provider
+**custom provider**（不在预置 provider 列表的模型）：
 
 预置 provider（`deepseek`/`glm`/`kimi`）覆盖大部分场景。如果你用的模型不在预置列表（本地部署、企业内网、OpenRouter、Together AI、第三方兼容 API），用 `custom`：
 
@@ -87,36 +68,41 @@ export OPENAI_API_KEY=sk-xxx
 
 `custom` provider 不会硬编码任何厂商假设——只要你给的 base URL 和 model name 能被 OpenAI SDK 识别，就能用。
 
-## 怎么用 workflow 模式
+## 第三步：跑循环
 
-Workflow 模式是 LOOP 的高级用法——外部编排平台产出 workflow.yml → LOOP 外层循环逐个执行子任务。这个功能由 `LOOP/src/workflow.ts` 提供，需要在 sofagent 底座的基础上额外配置。
+当前唯一可用的质量循环是 **fresh-eyes-loop**。它不是通过 CLI 命令跑的——而是 driver（你）按协议在 A/B 之间 relay。
+
+```bash
+# 1. 读协议
+cat LOOP/SKILL/fresh-eyes-loop/loop.md
+
+# 2. 开两个 session，分别注入 prompt：
+#    A: LOOP/SKILL/fresh-eyes-loop/prompts/a-check.md
+#    B: LOOP/SKILL/fresh-eyes-loop/prompts/b-check.md
+
+# 3. 按 loop.md 的「单轮协议」走：审查 → 合并 → 修复 → 验证 → 判定停止
+```
+
+> 💡 未来可通过 DeepAgents orchestrator 自动化这套 relay 流程。现阶段手动驱动即可。
+
+## LOOP_AUTO 行为说明
 
 ```
-编排层（WorkBuddy）产出 workflow.yml
-  → LOOP 引擎逐个执行子任务
-    → engineer(audit → reviewer) → ✅/❌
-    → 下一个子任务...
+LOOP_AUTO=1   → 全自动模式（sub-agent 自主判定 IS_PASS，不等人按 y/n）
+未设或=0      → stdin readline 等待人工确认 y/n，不限时
+               stdin 关闭视为 abort
 ```
 
-## 内置 Agent
-
-LOOP 内置 3 个 Sub Agent Skill，装在 `SKILL/agents/` 下（项目仓库中 agent 定义文件更多，这 3 个是 LOOP 编排引擎直接调度的）：
-
-| Skill | 角色 | 模型建议 |
-|-------|------|---------|
-| `sofagent-engineer` | 软件工程师——写代码、修复、build/test | 性价比模型（量大、任务明确） |
-| `sofagent-reviewer` | 代码审查员——审查 + IS_PASS 判定 | 推理能力更强的模型（判断需要深思） |
-| `sofagent-audit` | 合规审计员——A1-A11、A14-A19 规则检查 | 本地（不调 LLM） |
-
-> 💡 如需 Workflow 优化（sofagent-fde），用 `bash install.sh` 单独装。
+---
 
 ## 常见问题
 
 | 问题 | 原因 | 解决 |
 |------|------|------|
-| `sofagent-orchestrator` 未找到 | sofagent 底座没装 | `bash install.sh` |
-| engineer 不干活 | 没设 `SOFAGENT_LLM_ENGINEER` | 设 env var |
+| sub-agent 不干活 | 没设 `SOFAGENT_LLM_*` | 设 env var |
 | API key 报错 | `OPENAI_API_KEY` 没设（或角色专用 key 没设） | 最简：`export OPENAI_API_KEY=sk-xxx` |
 | reviewer 每轮都驳回 | 审查标准太严 | 改 `SKILL/agents/reviewer/SKILL.md` 的判定标准 |
-| LOOP_AUTO=0 时卡住 | 需要人工按 y/n | 设 `LOOP_AUTO=1` 或手动确认 |
 | 用的模型不在预置 provider 列表 | 只支持 deepseek/glm/kimi 预置 | 用 `custom:<model>` + `SOFAGENT_LLM_BASE_URL` |
+| sofagent-audit 命令未找到 | 底座没装 | `bash install.sh` |
+
+> 📖 详细设计见 `LOOP/LOOP.md`（旧自迭代模型，保留参考）和 `LOOP/SKILL/fresh-eyes-loop/loop.md`（当前循环协议）。
