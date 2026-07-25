@@ -21,7 +21,7 @@ Agent 检测到后跳过 ClawHub 搜索，Skills 手动放入 `~/.openclaw/skill
 
 ### 3. 编排降级
 
-编排引擎基于 DeepAgents（v1.0.7 起 ao 已完全退役，无 ao fallback）。DeepAgents 不可用时手动降级：
+编排引擎基于 LangGraph createReactAgent（v1.2.0 从 deepagents 迁移，v1.0.7 起 ao 已完全退役）。不可用时手动降级：
 - 手动拆任务
 - 用 task-record.sh 逐条记录
 - 手动闭环

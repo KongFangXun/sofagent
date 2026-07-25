@@ -59,7 +59,7 @@ sofagent 不替代大厂 Agent，而是建在它们之上——用 River 比喻�
 
 ### sofagent 不管什么
 
-OpenClaw/DeepAgents 管路由调度——「会不会做」。sofagent 管行为治理——「能不能每次都做对」。**Gateway 是高速公路，sofagent 是交规 + 测速摄像头 + 驾校教练。** 二者互补，不竞争。
+OpenClaw/WorkBuddy 等大厂 Agent 平台管路由调度——「会不���做」。sofagent 管行为治理——「能不能每次都做对」。**Gateway 是高速公路，sofagent 是交规 + 测速摄像头 + 驾校教练。** 二者互补，不竞争。
 
 ### 为什么需要 sofagent——模型越强，Harness 越值钱
 
@@ -432,3 +432,61 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 - **Ontology Runtime 是 AI Native 企业底座，非 API 网关**：研报强调 Runtime 接管的是「语义边界」而非重建核心系统（CRM/OMS/ERP 之上的一层），企业系统边界从「系统接口」转移到「业务对象运行时」。与 sofagent「Harness 中间件 = 给模型搭脚手架、约束底座永远在线」同源——我们不做业务系统，做业务系统之上的约束层。
 
 > 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）
+
+---
+
+## 十一、Agent 生态三层模型与 sofagent 的位置
+
+> 要理解 sofagent 在整个 Agent 生态中的位置，先看清这个生态的三层结构。sofagent 不是开发者框架的竞争者，也不是大厂 Agent 平台的替代品——它占据的是一个被三层夹击后依然空出来的生态位：**约束基础设施**。
+
+### 三层架构——从终端用户到开发者到约束层
+
+Agent 生态自然分化为三层，每层服务不同人群、解决不同问题：
+
+| 层 | 面向谁 | 典型代表 | 核心价值 | sofagent 的关系 |
+|---|---|---|---|---|
+| **Layer 1 — 大厂 Agent 平台** | 终端用户 | OpenClaw / WorkBuddy / 扣子 | 完整产品——UI + 会话 + 记忆 + 插件生态 | sofagent 不替代它 |
+| **Layer 2 — 开发者框架** | 开发者 | LangGraph / LangChain / deepagents | 用代码搭 Agent——状态机、工具链、编排原语 | sofagent 使用它，不竞争 |
+| **Layer 3 — 约束基础设施** | 企业 + 开发者 | sofagent | 跨层约束——守规矩、留痕迹、沉淀经验 | **sofagent 的位置** |
+
+三层不是替代关系，是**叠加关系**——大厂平台（L1）骑在开发者框架（L2）之上，sofagent（L3）又裹在它们外面。用 River 比喻串起来：大厂造河（L1 河床）、开发者框架搭管道（L2 管材），sofagent 做堤坝 + 自来水厂 + 管网 + 水龙头 + 水表——它不造河、不造管材，但它管住河里流过来的每一滴水能不能安全放给企业用。
+
+### deepagents 是被上下夹击的中间层
+
+deepagents 在 v1.0.1-v1.1.x 阶段启发了 sofagent 的编排引擎设计（Harness 范式 + HITL 机制功不可没），但 v1.2.0 起被彻底弃用。原因不在于 deepagents 本身「不好」，而在于它**没有独占领地**：
+
+- **往上看——简单任务大厂平台够了**。WorkBuddy / OpenClaw 免费好用、开箱即用、带 UI + 会话 + 记忆 + 插件生态。当一个终端用户只需要「帮我写段代码」或「帮我分析数据」，直接在大厂平台里说一句话就行——不需要 deepagents 这层抽象。
+- **往下看——精细控制只能上 LangGraph**。deepagents 把编排逻辑封装在黑盒里（FilesystemMiddleware 硬编码注入、wrapToolCall 并行调用崩溃、REQUIRED_MIDDLEWARE_NAMES 白名单禁止排除），当你需要并行 SubAgent、自定义工具注入、精细控制循环路由时，黑盒成了枷锁。LangGraph 的 StateGraph + createReactAgent 把每个节点、每条边都暴露给开发者——黑盒 vs 白盒，精细控制只能选后者。
+
+deepagents 的处境像极了 jQuery：它教会了一代人用更优雅的方式做 DOM 操作和 AJAX，但今天没人用它做生产了——因为浏览器原生 API 追上来了（Layer 1 大厂平台成熟），而需要精细控制的场景有了更好的框架（Layer 2 的 React / Vue / LangGraph）。deepagents 的历史贡献值得感谢（详见 [THANKS](./THANKS.md)），但它不是 sofagent 编排引擎的未来。
+
+### sofagent 不是开发者框架的竞争者
+
+这一点必须讲透，因为它定义了 sofagent 的生存空间：
+
+sofagent **不和** LangGraph / LangChain / deepagents 竞争。这些框架解决的是「怎么用代码搭一个 Agent」——状态机怎么画、工具怎么注册、LLM 怎么调用。sofagent 解决的是完全不同的问题：**不管你的 Agent 是怎么搭的，它跑的时候守不守规矩、留不留痕迹、能不能审计。**
+
+sofagent 是**跨层约束**——不管企业用 WorkBuddy（L1）还是 LangGraph（L2）跑任务，sofagent 在外面裹一层堤坝 + 水表 + 蓄水池：
+
+- **堤坝（约束底座）**：四层加载链注入行为红线，Agent 启动前就知道哪些事不能碰。
+- **水表（审计引擎）**：每次变更都用 git diff 硬证据审计——不信任 Agent 自报，只看文件系统真相。
+- **蓄水池（知识库）**：Dream Cycle 把每次任务的经验沉淀为结构化知识，跨任务、跨设备复用。
+
+这三件事，LangGraph 不做（它是编排框架，不是约束层），WorkBuddy 不做（它是 Agent 平台，利益冲突——平台不会自己审自己），deepagents 也不做（它聚焦 Agent 编排，不管审计和沉淀）。**这个生态位空着，sofagent 填它。**
+
+### 技术选型原则——用什么、不用什么
+
+sofagent 的技术选型有明确的边界纪律：
+
+| LangChain 生态组件 | sofagent 是否使用 | 理由 |
+|---|:---:|---|
+| **LangChain Core** | ✅ 使用 | LLM 调用底座——模型接口抽象、消息格式标准化，这是基础设施 |
+| **LangGraph** | ✅ 使用 | 编排引擎——StateGraph 状态机 + createReactAgent 编排，白盒可控 |
+| **LangChain 全家桶**（Document Loader / Vector Store / RAG pipeline） | ❌ 不使用 | RAG / 向量检索 / Document Loader 是 LangChain 全家桶的事，sofagent 不做——知识管理用干净 Markdown + YAML + Git，不需要向量数据库 |
+| **LangSmith** | ? 未来可选 | 可观测性平台，v2.x+ 评估是否引入做 trace 追踪 |
+
+**不做 RAG、不做向量检索、不做 Document Loader**——这是设计禁区（详见 §八），不是能力不足。sofagent 的知识管理哲学是 [Don't Do RAG](https://arxiv.org/abs/2412.15605) 论文验证的 CAG（编译式 RAG）方向：干净 Markdown 就够了，知识格式标准化 + 加载链按需注入比向量检索更可审计、更透明。
+
+FORGE loop 的技术栈极其克制：LangChain Core（LLM 调用底座）+ LangGraph（createReactAgent 编排引擎）——不多不少。这种克制不是偷懒，是设计哲学——sofagent 的核心价值不在「用了多少技术」，而在「管住了多少行为」。
+
+> 📖 deepagents 弃用决策的完整踩坑记录（FilesystemMiddleware 硬编码注入 / wrapToolCall 并行崩溃 / REQUIRED_MIDDLEWARE_NAMES 白名单）详见 [FORGE/LESSONS.md](../FORGE/LESSONS.md)。
