@@ -118,6 +118,8 @@ function buildStatusSnapshot(event, detail, timestamp) {
       : `round-${detail.round}-issues`;
   } else if (event === EVENTS.LOOP_END) {
     snapshot.phase = 'completed';
+  } else if (event === EVENTS.ERROR) {
+    snapshot.phase = 'error';
   }
 
   return snapshot;
