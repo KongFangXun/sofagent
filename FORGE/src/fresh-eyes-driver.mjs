@@ -28,6 +28,9 @@ import { fileURLToPath } from 'url';
 // 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
 import { createVisibility, EVENTS } from './visibility.mjs';
 
+// 模块级引用——让 catch 块也能写可见性事件（失败场景覆盖）
+let globalVisibility = null;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
 const REPO_ROOT  = resolve(__dirname, '../..');
@@ -879,6 +882,7 @@ async function main() {
   // ─── 可见性：启动时探测可用适配器并初始化 ───
   const reporters = await detectReporters();
   const visibility = createVisibility(runDir, reporters);
+  globalVisibility = visibility;  // 暴露给 catch 块
   visibility.emit(EVENTS.RUN_START, {
     target: args.target,
     maxRounds: args.maxRounds,
@@ -973,5 +977,17 @@ async function main() {
 main().catch(err => {
   console.error(`\n💥 致命错误: ${err.message}`);
   console.error(err.stack);
+  // 可见性：失败路径也要写事件——否则 Dashboard 看到"永远在跑"
+  if (globalVisibility) {
+    globalVisibility.emit(EVENTS.ERROR, {
+      message: err.message,
+      stack: err.stack?.split('\n').slice(0, 3).join(' | '),
+    });
+    globalVisibility.emit(EVENTS.LOOP_END, {
+      actualRounds: 0,
+      stopReason: 'fatal-error',
+      counts: { p0: 0, p1: 0, p2: 0 },
+    });
+  }
   process.exit(1);
 });
