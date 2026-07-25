@@ -78,11 +78,11 @@ function loadAgentMd(skillName: string, fallback: string): string {
 /**
 /**
  * v1.1.4: 加载 agents/<name>.md 格式的 Agent 定义
- * 搜索优先级：LOOP/agents/ > agents/ > 包相对路径
+ * 搜索优先级：FORGE/agents/ > agents/ > 包相对路径
  */
 function loadAgentMdFile(name: string, fallback: string): string {
-  // 路径 1: cwd/LOOP/agents/<name>.md（v1.1.4 新增）
-  const loopPath = join(process.cwd(), 'LOOP', 'agents', `${name}.md`);
+  // 路径 1: cwd/FORGE/agents/<name>.md（v1.1.4 新增）
+  const loopPath = join(process.cwd(), 'FORGE', 'agents', `${name}.md`);
   if (existsSync(loopPath)) {
     return parseSkillMd(readFileSync(loopPath, 'utf-8'));
   }
@@ -93,8 +93,8 @@ function loadAgentMdFile(name: string, fallback: string): string {
     return parseSkillMd(readFileSync(cwdPath, 'utf-8'));
   }
 
-  // 路径 3: 包相对路径/LOOP/agents/<name>.md（v1.1.4 新增）
-  const pkgLoopPath = join(__dirname, '..', '..', '..', '..', 'LOOP', 'agents', `${name}.md`);
+  // 路径 3: 包相对路径/FORGE/agents/<name>.md（v1.1.4 新增）
+  const pkgLoopPath = join(__dirname, '..', '..', '..', '..', 'FORGE', 'agents', `${name}.md`);
   if (existsSync(pkgLoopPath)) {
     return parseSkillMd(readFileSync(pkgLoopPath, 'utf-8'));
   }
@@ -180,11 +180,11 @@ const AUDIT_AGENT: SubAgentDefinition = {
 };
 
 // ============================================================
-// v1.1.3: LOOP 双 Agent（工程师 + 审查员）
+// v1.1.3: FORGE 双 Agent（工程师 + 审查员）
 // ============================================================
 
 /**
- * 软件工程师（LOOP 代码执行者——最小变更哲学）
+ * 软件工程师（FORGE 代码执行者——最小变更哲学）
  *
  * systemPrompt 优先加载 SKILL/agents/engineer/SKILL.md
  */
@@ -196,7 +196,7 @@ export const ENGINEER_AGENT: SubAgentDefinition = {
   systemPrompt: loadAgentMdFile(
     'engineer',
     // fallback: 精简版
-    `你是最小变更工程师，LOOP 自迭代循环中的代码执行者。
+    `你是最小变更工程师，FORGE 自迭代循环中的代码执行者。
 核心原则：只做被要求的事，不多做。价值以"没写的代码行数"来衡量。
 
 ## 关键规则
@@ -210,7 +210,7 @@ export const ENGINEER_AGENT: SubAgentDefinition = {
 };
 
 /**
- * 代码审查员（LOOP 审查者）
+ * 代码审查员（FORGE 审查者）
  *
  * systemPrompt 优先加载 SKILL/agents/reviewer/SKILL.md
  */
@@ -223,7 +223,7 @@ export const REVIEWER_AGENT: SubAgentDefinition = {
   systemPrompt: loadAgentMdFile(
     'reviewer',
     // fallback: 精简版
-    `你是代码审查员，LOOP 自迭代循环中的审查者。
+    `你是代码审查员，FORGE 自迭代循环中的审查者。
 你不写代码，但你的判定直接影响代码能不能合并。
 
 ## 审查维度

@@ -3,9 +3,9 @@
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # v1.2.0 · 128 个场景定义（含子断言，合计 141 个 pass 判定）
 # + LOOP + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 详细功能映射见 LOOP/SKILL/fresh-eyes-loop/specs/acceptance-coverage.md
+# 详细功能映射见 FORGE/SKILL/fresh-eyes-loop/specs/acceptance-coverage.md
 # ============================================================
-# 用法：bash LOOP/SKILL/fresh-eyes-loop/specs/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
+# 用法：bash FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
 RUN_MODE="all"
 for _arg in "$@"; do
@@ -581,7 +581,7 @@ if [ -f "$USB_DETECT" ]; then
 else fail "usb-detect.ts 不存在"; fi
 scenario 56 "LOOP 循环定义结构（SKILL/<loop>/ + 索引文件）"
 LOOP_DIR="$PROJECT_ROOT/LOOP"; LOOP_OK=true
-for f in README.md LOOP.md LEDGER.md SKILL/fresh-eyes-loop/SKILL.md SKILL/fresh-eyes-loop/loop.md SKILL/fresh-eyes-loop/evolution.md; do [ -f "$LOOP_DIR/$f" ] || LOOP_OK=false; done
+for f in README.md FORGE.md LEDGER.md SKILL/fresh-eyes-loop/SKILL.md SKILL/fresh-eyes-loop/loop.md SKILL/fresh-eyes-loop/evolution.md; do [ -f "$LOOP_DIR/$f" ] || LOOP_OK=false; done
 [ -d "$LOOP_DIR/SKILL/fresh-eyes-loop/specs" ] || LOOP_OK=false
 [ -d "$LOOP_DIR/SKILL/fresh-eyes-loop/prompts" ] || LOOP_OK=false
 if $LOOP_OK; then
@@ -589,14 +589,14 @@ if $LOOP_OK; then
   assert_grep "DeepAgents\|session\|round" "$LOOP_DIR/SKILL/fresh-eyes-loop/loop.md" && pass || true
 else fail "LOOP 循环定义结构缺失（SKILL/<loop>/ 驱动，无独立 install）"; fi
 scenario 57 "fresh-eyes-loop Skill 定义完整性（frontmatter + 无 releaser 残留）"
-F_SKILL="$PROJECT_ROOT/LOOP/SKILL/fresh-eyes-loop/SKILL.md"; F_OK=true
+F_SKILL="$PROJECT_ROOT/FORGE/SKILL/fresh-eyes-loop/SKILL.md"; F_OK=true
 [ ! -f "$F_SKILL" ] && { F_OK=false; fail "fresh-eyes-loop/SKILL.md 不存在"; }
 if $F_OK; then
   LINE_COUNT=$(wc -l < "$F_SKILL"); [ "$LINE_COUNT" -gt 100 ] && { F_OK=false; fail "行数 $LINE_COUNT > 100"; }
   FRONTMATTER=$(head -10 "$F_SKILL")
   for field in "^name:" "^description:" "^emoji:" "^color:"; do echo "$FRONTMATTER" | grep -qE "$field" || { F_OK=false; fail "frontmatter 缺 $field"; }; done
   grep -q "releaser-skill\|sofagent-releaser" "$PROJECT_ROOT/engine/scripts/lib/file-deploy.sh" 2>/dev/null && { F_OK=false; fail "file-deploy.sh 仍复制 releaser"; }
-  [ -d "$PROJECT_ROOT/LOOP/releaser" ] && { F_OK=false; fail "LOOP/releaser/ 仍存在"; }
+  [ -d "$PROJECT_ROOT/FORGE/releaser" ] && { F_OK=false; fail "FORGE/releaser/ 仍存在"; }
 fi
 $F_OK && pass || true
 scenario 58 "MCP audit_file tool 注册 + 返回结构（[sofagent] + auditEngine）"
@@ -853,12 +853,12 @@ grep -q "export.*checkConflict\|from.*conflict-check" "$INSPECTOR_INDEX" || { fa
 $S85_OK && pass
 scenario 86 "pre-push-check shellcheck 扫描范围含 LOOP"
 S86_OK=true; SHELL_FIND=$(grep "find.*\.sh" "$PROJECT_ROOT/tools/pre-push-check.sh")
-echo "$SHELL_FIND" | grep -q "LOOP" || { fail "pre-push-check shellcheck find 漏扫 LOOP/"; S86_OK=false; }
+echo "$SHELL_FIND" | grep -q "LOOP" || { fail "pre-push-check shellcheck find 漏扫 FORGE/"; S86_OK=false; }
 grep -q "0.11.0\|SC_VER\|brew upgrade shellcheck" "$PROJECT_ROOT/tools/pre-push-check.sh" || { fail "pre-push-check 缺 shellcheck 版本兼容检测"; S86_OK=false; }
 $S86_OK && pass
 scenario 87 "SKILL.md frontmatter 10 必需字段完整性"
 S87_OK=true; S87_MISSING=0
-for f in SKILL/agents/*/SKILL.md "$PROJECT_ROOT/SKILL/SKILL.md" "$PROJECT_ROOT/LOOP/SKILL/fresh-eyes-loop/SKILL.md"; do
+for f in SKILL/agents/*/SKILL.md "$PROJECT_ROOT/SKILL/SKILL.md" "$PROJECT_ROOT/FORGE/SKILL/fresh-eyes-loop/SKILL.md"; do
   [ -f "$f" ] || continue; miss=0
   for field in "^name:" "^slug:" "^displayName:" "^description:" "^version:" "^tags:" "^image:" "^triggers:" "^scenarios:" "^not_when:"; do
     grep -qE "$field" "$f" || miss=$((miss + 1))
@@ -1492,20 +1492,20 @@ $S123_OK && pass
 scenario 124 "v1.2.0 发版工具链归入 LOOP——5 文件就位 + tools/ 保留日常门禁"
 S124_OK=true
 for f in releasing.md acceptance-test.sh bump-version.sh regression-checklist.md fresh-eyes-review.md; do
-  [ -f "$PROJECT_ROOT/LOOP/SKILL/fresh-eyes-loop/specs/$f" ] || { fail "LOOP/SKILL/fresh-eyes-loop/specs/$f 不存在"; S124_OK=false; }
+  [ -f "$PROJECT_ROOT/FORGE/SKILL/fresh-eyes-loop/specs/$f" ] || { fail "FORGE/SKILL/fresh-eyes-loop/specs/$f 不存在"; S124_OK=false; }
 done
 for f in pre-push-check.sh check-version.sh check-docs.sh check-test-count.sh test-count.sh; do
   [ -f "$PROJECT_ROOT/tools/$f" ] || { fail "tools/$f 不存在"; S124_OK=false; }
 done
-[ ! -d "$PROJECT_ROOT/docs/verification" ] || { fail "docs/verification/ 仍存在（应已迁入 LOOP/SKILL/fresh-eyes-loop/specs/）"; S124_OK=false; }
+[ ! -d "$PROJECT_ROOT/docs/verification" ] || { fail "docs/verification/ 仍存在（应已迁入 FORGE/SKILL/fresh-eyes-loop/specs/）"; S124_OK=false; }
 $S124_OK && pass
 scenario 125 "v1.2.0 install.sh 提根 + loop-install.sh/releaser 已移除（LOOP 由 SKILL/<loop>/ 驱动）"
 S125_OK=true
 [ -f "$PROJECT_ROOT/install.sh" ] || { fail "根目录 install.sh 不存在"; S125_OK=false; }
-[ -f "$PROJECT_ROOT/LOOP/loop-install.sh" ] && { fail "LOOP/loop-install.sh 仍存在（应已删除）"; S125_OK=false; }
-[ -d "$PROJECT_ROOT/LOOP/releaser" ] && { fail "LOOP/releaser/ 仍存在（应已拆散）"; S125_OK=false; }
+[ -f "$PROJECT_ROOT/FORGE/loop-install.sh" ] && { fail "FORGE/loop-install.sh 仍存在（应已删除）"; S125_OK=false; }
+[ -d "$PROJECT_ROOT/FORGE/releaser" ] && { fail "FORGE/releaser/ 仍存在（应已拆散）"; S125_OK=false; }
 [ -d "$PROJECT_ROOT/agents/SKILL/sofagent-releaser" ] && { fail "agents/SKILL/sofagent-releaser 仍存在"; S125_OK=false; }
-[ -f "$PROJECT_ROOT/LOOP/SKILL/fresh-eyes-loop/SKILL.md" ] || { fail "fresh-eyes-loop/SKILL.md 不存在"; S125_OK=false; }
+[ -f "$PROJECT_ROOT/FORGE/SKILL/fresh-eyes-loop/SKILL.md" ] || { fail "fresh-eyes-loop/SKILL.md 不存在"; S125_OK=false; }
 $S125_OK && pass
 scenario 126 "v1.2.0 rules 引擎独立包——engine/rules/ 纯函数导出验证"
 S126_OK=true

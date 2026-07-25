@@ -96,7 +96,7 @@ Harness 中间件最大的挑战是存在感——引擎在正常工作，但用
 |------|------|------------|
 | 审计输出 | CLI / Webhook / MCP 所有返回值以 `[sofagent]` 开头 | 看到 `✅ sofagent 审计通过` 而非 `✅ PASS` |
 | 能力清单 | `list_capabilities` description 标注引擎来源 | Agent 转述能力时附带"谁在做、怎么做的" |
-| 审查报告 | LOOP 审查报告顶部签名段 | 报告第一行就是 `🔍 本报告由 sofagent 审计引擎 + 代码审查员 Agent 联合生成` |
+| 审查报告 | FORGE 审查报告顶部签名段 | 报告第一行就是 `🔍 本报告由 sofagent 审计引擎 + 代码审查员 Agent 联合生成` |
 
 签名不修改审计逻辑、不加速度开关——harness 层不允许关掉自己的存在感。
 
@@ -296,18 +296,26 @@ flowchart LR
 
 #### Graph Engineering 视角（控制图 = StateGraph）
 
-> 📐 2026-07 行业新概念「Graph Engineering」把 prompt→context→harness→loop→**graph** 的演进框定为"设计 loop/process 之间的关系"，理论根 = FSM/Statecharts（Harel 1987）。sofagent 的编排引擎天然就是一张**控制图（Control Graph）**——不必新造能力，只需用这套精确词汇重新表述已有实现。
+> 📐 2026-07 行业新概念「Graph Engineering」把 Prompt→Context→Harness→Loop→**Graph** 的演进框定为五层工程化方法。核心判断：「先做扎实前四层再上 Graph，跳过前四层直接上图会组织混乱」。sofagent 前四层已扎实（v1.2.0 完成），**Graph 层是自然进化而非跳步。** Carlos E. Perez（[From Loop Engineering to Graph Engineering?](https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c)）系统论证了四类失效与拓扑解法，并指出真正的分界线不在 Loop vs Graph，而在是否显式化了 grounding。理论根 = FSM/Statecharts（Harel 1987）。
+
+sofagent 的编排引擎天然就是一张**控制图（Control Graph）**——不必新造能力，只需用这套精确词汇重新表述已有实现：
 
 | Graph Engineering 构件 | sofagent 对应实现 | 源码位置 |
 |------|------|------|
 | **控制图 Control Graph**（node=state, edge=transition, guard edge 守门） | `StateGraph` 四节点 `START→engineer→audit→reviewer→human_confirm→END`，`routeAfterAudit`/`routeAfterHuman` 条件路由，WARN 透传为 guard 放行 | `engine/orchestrator/src/loop/graph.ts` |
-| **★Reality Anchor**（无锚点 = 披 PM 外衣的幻觉） | `audit` 节点——只看 `git diff HEAD` 硬证据（A1-A11、A14-A19 + E1-E4，共 21 条），不信任 Agent 自报，比"只看 PR 号"更硬 | `@sofagent/audit` |
+| **★Reality Anchor**（无锚点 = 披 PM 外衣的幻觉） | `audit` 节点——只看 `git diff HEAD` 硬证据（A1-A11、A14-A19 + E1-E4，共 21 条），不信任 Agent 自报，比"只看 PR 号"更硬。**Grounding 三必要条件**（Carlos E. Perez）：① audit 规则不可篡改 = ground-truth ② `acceptance-test.sh` = 冻结验收标准 ③ 用户 task 来自系统外部 | `@sofagent/audit` |
 | **可审计状态文件**（状态落盘可复核） | `FileCheckpointer` 每节点前后 snapshot 到 `.sofagent/checkpoint/`，`resumeLoopGraph()` 断点续跑 | `engine/orchestrator/src/graph/checkpoint.ts` |
 | **数据图 Data Graph**（知识图谱/血缘） | 蓄水池（知识库 `knowledge/`） + 市政规划（Ontology，Ledger-Views-Policy）——与编排控制图正交 | `knowledge/` + Ontology 层 |
+| **Org Graph（稳定角色）** | 四节点（engineer/audit/reviewer/human_confirm）是稳定角色——不随任务变化；变动的是节点内的 Work Graph 子拓扑 | `engine/orchestrator/src/loop/graph.ts:128-132` |
+| **Work Graph（临时拓扑）** | 每个任务的子任务拆分 + 并行 engineer 实例 = 任务结束即解散的工作图；v1.2.2 Planner 节点落地后显式生成 | 规划中（v1.2.2+） |
 
 **控制图 vs 数据图二分天然具备**：管网（Workflow / StateGraph）= 控制图，决定"先干什么后干什么"；蓄水池 + 市政规划 = 数据图，承载"知道什么、怎么理解"。两者解耦——控制图无知识库也能跑（纯编排），数据图无控制图也能沉淀（Dream Cycle 独立跑）。
 
-**可学习的未来迭代（落盘见 [ROADMAP](../ROADMAP.md)「Graph Engineering 印证」）**：① 控制图多循环 DAG 波次并行（v1.3.0）；② 并行 SubAgent git worktree 隔离（v1.2.x）；③ 用户视角波次拓扑可视化（v1.2.x）。本视角只框定术语，不引入新能力。
+**Org Graph vs Work Graph 双图模型**（行业前沿框架）：Org Graph = 长期稳定的角色节点（engineer/audit/reviewer/human_confirm），变动慢，像公司组织架构；Work Graph = 为当前任务动态拼装的协作拓扑（子任务 engineer 实例 + 并行扇出），任务结束即解散。两者分离——长期能力与短期任务解耦，避免每次任务都重建整套组织。
+
+**五类边契约**（行业共识）：当前实现仅有 **数据流**（`artifacts` 传递）和 **控制流**（`routeAfterAudit`/`routeAfterHuman`）——**缺权限流、证据流、失败流**。v1.2.5 将形式化全部五类边。
+
+**可学习的未来迭代（落盘见 [ROADMAP](../ROADMAP.md)「v1.2.x Graph Engine 进化路线」）**：① **Planner 节点**——任务分解（v1.2.2）；② **降级路由链**——retry→降级→标记→人工（v1.2.2）；③ **engineer-decide/execute 分层**——LLM 层 + 代码层（v1.2.2）；④ **并行子图执行**——worktree 隔离 + 多 engineer 并发（v1.2.3）；⑤ **Dashboard React Flow 控制图**——Org Graph + Work Graph 同屏 + 边类型标注（v1.2.3）；⑥ **多类型 Checker**——format/fact/source-validator（v1.2.4）；⑦ **受控循环升级**——补信息→重规划 + 降级通过（v1.2.4）；⑧ **五类边契约形式化** + Anchor 配置（v1.2.5）；⑨ 控制图多循环 DAG 波次并行（v1.3.0）。
 
 #### 重试语义：统一计数器
 
@@ -427,7 +435,7 @@ River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 
 
 | Agent | 管什么 | 触发时机 |
 |------|------|------|
-| **合规审计员** `@sofagent-audit` | 管底线——P0/P1 分级 | 每次 commit / FDE 部署 / LOOP 闭环 |
+| **合规审计员** `@sofagent-audit` | 管底线——P0/P1 分级 | 每次 commit / FDE 部署 / FORGE 闭环 |
 | **FDE 部署工程师** `@sofagent-fde` | 管上限——deploy/sustain | 部署时 / daemon cron @weekly |
 
 Agent 定义在 `SKILL/agents/{name}/SKILL.md`，`parseSkillMd()` 读 front matter 作为身份标签，body 注入 DeepAgents 作为 role prompt。
@@ -550,8 +558,8 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 
 | 安装器 | 装什么 | 不装 | 适用 |
 |---|---|---|---|
-| `install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（@sofagent-fde / @sofagent-audit）+ hook | LOOP | 企业 / FDE：要常驻硅基员工 |
-| `install.sh --base-only` | 仅底座（四引擎） | FDE / LOOP | 开发者 / 企业 IT：只要核心治理引擎 |
+| `install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（@sofagent-fde / @sofagent-audit）+ hook | FORGE | 企业 / FDE：要常驻硅基员工 |
+| `install.sh --base-only` | 仅底座（四引擎） | FDE / FORGE | 开发者 / 企业 IT：只要核心治理引擎 |
 
 > 最小可用：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）；五包全装才是完整 Harness 中间件。
 > 注：v1.2.0 将 `FDE/fde-install.sh` 升格为根 `install.sh` 并新增 `--base-only`，详见发版说明。
@@ -650,7 +658,7 @@ Action Type = 一个**有身份的变更请求**：携带参数 + 校验 + 权�
 
 ### 外层 Loop 的节奏与护栏（L1 / L2）
 
-Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人类审批双模式（L2：高风险人工确认 / 常规受信自动执行）是 31 篇研读里外层 Loop 的两个关键印证——前者给出闭环叙事节奏，后者给出「按风险分级放行」的 human 节点策略。详细展开与 sofagent 对应见 [LOOP §行业框架印证](../LOOP/LOOP.md)。
+Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人类审批双模式（L2：高风险人工确认 / 常规受信自动执行）是 31 篇研读里外层 Loop 的两个关键印证——前者给出闭环叙事节奏，后者给出「按风险分级放行」的 human 节点策略。详细展开与 sofagent 对应见 [FORGE §行业框架印证](../FORGE/FORGE.md)。
 
 > 📖 来源：31 篇行业笔记跨批研读（2026-07-20）
 
@@ -674,7 +682,7 @@ sofagent 自有三层：
 |----|--------|----------------|
 | **约束底座（Harness / Constraint Base）** | 四层加载链（SKILL.md→fde.md→think.md→knowledge/）+ 审计 / 回溯能力（本质：git snapshot） | 配置 + 指令 + 校验 |
 | **知识层（Knowledge / Ontology）** | knowledge/ + 本体模型（FDE 在客户侧交付的业务资产，见 FDE/FDE.md 知识层归属） | 知识 |
-| **编排层（Orchestration / Loop）** | 编排引擎 + 进化引擎 + 外层 LOOP | 编排 |
+| **编排层（Orchestration / Loop）** | 编排引擎 + 进化引擎 + 外层 FORGE | 编排 |
 
 逐层映射：
 
@@ -684,7 +692,7 @@ sofagent 自有三层：
 | 知识 Knowledge（知道什么） | 知识知道什么 | 知识层 · knowledge/ + 本体模型（FDE 交付，Harness 只挂载 / 校验） |
 | 指令 Instruction（怎么说） | 指令怎么说 | 约束底座 · 四层加载链即「指令」载体（prompt 注入 Agent 上下文） |
 | 校验 Validation（对不对） | 校验对不对 | 约束底座 · 审计引擎 + 约束规则（硬约束，AI 绕不过） |
-| 编排 Orchestration（先干什么后干什么） | 编排先干什么后干什么 | 编排层 · 编排引擎 + 进化引擎 + LOOP |
+| 编排 Orchestration（先干什么后干什么） | 编排先干什么后干什么 | 编排层 · 编排引擎 + 进化引擎 + FORGE |
 
 **同构点**：五层里**仅指令层直接调 AI**，其余四层为 AI 铺路；sofagent 亦然——只有「知识 / 指令」承载概率性 AI，约束 / 校验 / 编排全部落在确定性引擎。这正是「约束层 = Harness 中间件」的骨架级印证：对外讲我们自己的三层，行业五层做映射而不喧宾夺主。
 

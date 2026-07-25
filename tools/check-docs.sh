@@ -108,12 +108,12 @@ LAYER_A=$(find . -name "*.md" \
   -not -path "*/docs/evidence/*" \
   -not -path "*/SKILL/*" \
   -not -path "*/FDE/*" \
-  -not -path "*/LOOP/*" \
+  -not -path "*/FORGE/*" \
   -not -path "*/docs/guides/*" \
   -not -path "*/docs/design/*" \
   -not -path "*/docs/architecture/*" \
   -not -path "*/docs/prd/*" \
-  -not -path "*/LOOP/*" \
+  -not -path "*/FORGE/*" \
   -not -path "*/agents/*" \
   -not -path "*/.github/*" \
   -not -path "*/engine/hooks/*" \
@@ -123,15 +123,15 @@ LAYER_A=$(find . -name "*.md" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_A=${LAYER_A:-0}
 
-# B 层：开发者参考（LOOP/ + agents/ + .github/ + hooks/HOOK.md + DEVELOPMENT.md）
-LAYER_B=$(find ./LOOP ./agents ./.github ./engine/hooks ./docs/DEVELOPMENT.md \
+# B 层：开发者参考（FORGE/ + agents/ + .github/ + hooks/HOOK.md + DEVELOPMENT.md）
+LAYER_B=$(find ./FORGE ./agents ./.github ./engine/hooks ./docs/DEVELOPMENT.md \
   -name "*.md" \
   -not -path "*/node_modules/*" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_B=${LAYER_B:-0}
 
-# C 层：审查体系（LOOP/SKILL/fresh-eyes-loop/specs/，原 LOOP/releaser/ 已拆散）
-LAYER_C=$(find ./LOOP/SKILL/fresh-eyes-loop/specs -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+# C 层：审查体系（FORGE/SKILL/fresh-eyes-loop/specs/，原 FORGE/releaser/ 已拆散）
+LAYER_C=$(find ./FORGE/SKILL/fresh-eyes-loop/specs -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_C=${LAYER_C:-0}
 
 # D 层：设计文档（docs/design/ + docs/architecture/ + docs/prd/）

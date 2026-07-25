@@ -22,14 +22,14 @@ A/B 基于 `SKILL/agents/` 的 `reviewer` + `engineer` 两个 subagent 能力构
 ## 目录约定（3 级分层）
 
 ```
-LOOP/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
+FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 ```
 
 - 不是每天都会跑循环，但不跑的那天不建目录。
 - 一天多次跑 = `run-01` / `run-02` …（当日序号）。
 - 每轮在 `run-NN/` 下再细分：`round-01/` `round-02/` …，每轮产物放对应 round 目录。
 
-**跨 run 永久索引**：`LOOP/LEDGER.md`（被 git 跟踪，追加 only）。`runs/` 正文不进 git（见 `runs/.gitignore`）。
+**跨 run 永久索引**：`FORGE/LEDGER.md`（被 git 跟踪，追加 only）。`runs/` 正文不进 git（见 `runs/.gitignore`）。
 
 ## 单轮协议（Round Protocol）
 
@@ -63,7 +63,7 @@ LOOP/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 - **人工停止**：driver 在任意轮后判定 `human-stop`（如时间窗到了）。
 - **上限**：设 `max-rounds`（默认 10），触顶强制停止并标注 `max-rounds`，遗留 P0/P1 进 `LEDGER.md` 备注。
 
-停止后 driver 向 `LOOP/LEDGER.md` 追加一行（见 `LEDGER.md` 列定义）。
+停止后 driver 向 `FORGE/LEDGER.md` 追加一行（见 `LEDGER.md` 列定义）。
 
 ## DeepAgents 实现提示
 

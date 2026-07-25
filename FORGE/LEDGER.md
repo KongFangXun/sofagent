@@ -26,11 +26,11 @@
 | 轮数 | 实际跑了几轮（round-01 … round-NN） |
 | P0/P1/P2 | 该 run 最终 findings 中各级问题总数（去重后） |
 | 停止原因 | `2-rounds-clean`（连续 2 轮无 P0/P1）/ `human-stop` / `max-rounds` |
-| runs 指针 | 相对仓库根的路径，如 `LOOP/SKILL/fresh-eyes-loop/runs/2026/07/25/run-01` |
+| runs 指针 | 相对仓库根的路径，如 `FORGE/SKILL/fresh-eyes-loop/runs/2026/07/25/run-01` |
 
 ## 示例
 
 ```
 # 日期          | run-id        | 循环       | 轮数 | P0 | P1 | P2 | 停止原因       | → runs 指针
-2026-07-25      | 20260725-01   | fresh-eyes | 3    | 0  | 0  | 7  | 2-rounds-clean | LOOP/SKILL/fresh-eyes-loop/runs/2026/07/25/run-01
+2026-07-25      | 20260725-01   | fresh-eyes | 3    | 0  | 0  | 7  | 2-rounds-clean | FORGE/SKILL/fresh-eyes-loop/runs/2026/07/25/run-01
 ```

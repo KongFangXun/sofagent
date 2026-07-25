@@ -53,7 +53,7 @@ export interface AuditConfig {
     bulk_threshold?: number;
     bulk_window_ms?: number;
   };
-  /** v1.1.5: LOOP 编排配置 */
+  /** v1.1.5: FORGE 编排配置 */
   loop?: {
     maxTurns?: {
       /** engineer Sub Agent 最大轮次（默认 20） */

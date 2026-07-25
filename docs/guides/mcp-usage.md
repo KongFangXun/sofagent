@@ -19,7 +19,7 @@
 Agent 连上 sofagent MCP server 后，第一件事就是 `list_capabilities`。不需要人去教它——它自己知道能调什么。
 
 返回的能力清单会随 sofagent 版本自动扩展。v1.1.0 起包含：
-- 🤖 LOOP 自迭代——自动写代码、自动审、自动发版
+- 🤖 FORGE 自迭代——自动写代码、自动审、自动发版
 - 📚 知识联邦——跨设备查询 knowledge/ 
 - 💿 USB 配置——说一句，写好 U 盘
 - 🔐 安全加密——配对、加密、联邦密钥管理
@@ -29,7 +29,7 @@ Agent 连上 sofagent MCP server 后，第一件事就是 `list_capabilities`。
 
 ## 二、所有 MCP resource（完整列表）
 
-### LOOP 自迭代（v1.1.3-v1.1.5）
+### FORGE 自迭代（v1.1.3-v1.1.5）
 
 | resource | 用法 | 返回 |
 |------|------|------|
@@ -178,7 +178,7 @@ nodes:
 
 | 触发条件 | 推什么 | 推到哪 | 方式 |
 |------|------|------|------|
-| LOOP 审查完成 | 审查报告（🔴/🟡/💭） | IM Webhook | MCP push |
+| FORGE 审查完成 | 审查报告（🔴/🟡/💭） | IM Webhook | MCP push |
 | 发版完成 | 版本号 + tag URL + release notes | IM Webhook | MCP push |
 | USB 创建完成 | 写入确认 + HMAC 验证结果 | Agent 对话 | MCP response |
 | 配对完成 | 联邦密钥确认 | daemon 通知 | MCP push |

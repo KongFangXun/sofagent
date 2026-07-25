@@ -17,8 +17,8 @@
 |------|------|------|------|
 | 部署工程师 | `@sofagent-fde` · `SKILL/SKILL.md` | `sofagent-orchestrator subagent run fde --task "..."` | 梳理工作流、识别 AI 节点、构建知识库、交付离场 |
 | 合规审计员 | `@sofagent-audit` · `SKILL/agents/audit/SKILL.md` | `sofagent-orchestrator subagent run audit --task "..."` | Workflow 巡检、铁律覆盖验证、知识库健康度检查 |
-| 最小变更工程师 | `engineering-minimal-change-engineer.md` | LOOP 内层循环自动调用 | 读代码 + 写代码 + 跑测试 + git commit |
-| 代码审查员 | `engineering-code-reviewer.md` | LOOP 内层循环自动调用 | 语义审查 + 影响分析 + 铁律合规 |
+| 最小变更工程师 | `engineering-minimal-change-engineer.md` | FORGE 内层循环自动调用 | 读代码 + 写代码 + 跑测试 + git commit |
+| 代码审查员 | `engineering-code-reviewer.md` | FORGE 内层循环自动调用 | 语义审查 + 影响分析 + 铁律合规 |
 
 ---
 
@@ -42,7 +42,7 @@
 
 ```
 FDE agent 部署完成   ──→ 自动调用 @sofagent-audit  → 验证部署合规
-LOOP engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更合规
+FORGE engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更合规
 每次 git commit      ──→ commit-msg hook          → A1-A11、A14-A19 规则检查（0 token，纯正则引擎）
 未来任何新 Agent      ──→ SKILL.md 内置审计引用    → 合规检查
 ```
@@ -79,7 +79,7 @@ LOOP engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更合
 - SKILL.md = "怎么调这个 Agent"（一句话：跑 CLI 命令）
 - {role}.md = "这个 Agent 是什么"（完整的角色说明书，100+ 行）
 
-**类型 B — LOOP 内层角色（非 Skill）**：`engineering-minimal-change-engineer.md`、`engineering-code-reviewer.md` 直接由 LOOP 内层循环调度，单文件即完整角色定义，不对外暴露 Skill 入口、也没有对应 SKILL 目录。
+**类型 B — FORGE 内层角色（非 Skill）**：`engineering-minimal-change-engineer.md`、`engineering-code-reviewer.md` 直接由 FORGE 内层循环调度，单文件即完整角色定义，不对外暴露 Skill 入口、也没有对应 SKILL 目录。
 
 ### Skill 格式（调用入口）
 
@@ -105,12 +105,12 @@ color: blue
 ---
 ```
 
-文件名遵循 `{部门}-{角色}.md` 惯例。用于 LOOP 内层循环自动调度。
+文件名遵循 `{部门}-{角色}.md` 惯例。用于 FORGE 内层循环自动调度。
 
 ---
 
 ## 参考
 
-- [LOOP/](../LOOP/) — 自迭代循环的实验编排
+- [FORGE/](../FORGE/) — 自迭代循环的实验编排
 - [Agency Agents（中文版）](https://github.com/jnMetaCode/agency-agents-zh) — 230+ 岗位模板
 - [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) — LangGraph Agent harness

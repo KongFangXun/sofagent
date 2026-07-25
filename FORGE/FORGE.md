@@ -6,21 +6,21 @@
 
 > ## ⚠️ v1.2.0 后期转向（2026-07-25）
 >
-> **本文档描述的是旧 LOOP 自迭代模型（engineer → audit → reviewer → human 单循环）。**
+> **本文档描述的是旧 FORGE 自迭代模型（engineer → audit → reviewer → human 单循环）。**
 >
-> v1.2.0 后期，LOOP 已从"自迭代工具包"转向**质量循环定义层**（`LOOP/SKILL/<loop>/` + DeepAgents 驱动）。当前唯一循环是 **fresh-eyes-loop**（A/B 双盲 12 视角审查），协议见 **[`LOOP/SKILL/fresh-eyes-loop/loop.md`](SKILL/fresh-eyes-loop/loop.md)**。
+> v1.2.0 后期，FORGE 已从"自迭代工具包"转向**质量循环定义层**（`FORGE/SKILL/<loop>/` + DeepAgents 驱动）。当前唯一循环是 **fresh-eyes-loop**（A/B 双盲 12 视角审查），协议见 **[`FORGE/SKILL/fresh-eyes-loop/loop.md`](SKILL/fresh-eyes-loop/loop.md)**。
 >
 > 主要变化：
-> - `LOOP/SKILL.md`、`LOOP/loop-install.sh`、`LOOP/loop-workflow.sh`、`LOOP/releaser/` 已删除
+> - `FORGE/SKILL.md`、`FORGE/loop-install.sh`、`FORGE/loop-workflow.sh`、`FORGE/releaser/` 已删除
 > - 发版 SOP → `docs/changelog/releasing.md`、`bump-version.sh` → `tools/bump-version.sh`
-> - 新增 `LOOP/LEDGER.md`（跨 run 永久索引）、`LOOP/SKILL/fresh-eyes-loop/`
+> - 新增 `FORGE/LEDGER.md`（跨 run 永久索引）、`FORGE/SKILL/fresh-eyes-loop/`
 > - 详细记录见 `docs/changelog/v1.2/v1.2.0.md` §「后期转向」
 >
-> *以下为旧 LOOP 自迭代设计正文，保留作为历史参考。*
+> *以下为旧 FORGE 自迭代设计正文，保留作为历史参考。*
 
 <img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
 
-> 📖 LOOP 自迭代的设计哲学见 [PHILOSOPHY §七](../docs/PHILOSOPHY.md#七怎么进化loop-自迭代)。Agent 定义见 [`SKILL/agents/`](../SKILL/agents/)——遵循 [Agency Agents](https://github.com/jnMetaCode/agency-agents-zh) 格式标准。编排层通过 [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) `createDeepAgent()` 接入 LangGraph StateGraph。
+> 📖 FORGE 自迭代的设计哲学见 [PHILOSOPHY §七](../docs/PHILOSOPHY.md#七怎么进化loop-自迭代)。Agent 定义见 [`SKILL/agents/`](../SKILL/agents/)——遵循 [Agency Agents](https://github.com/jnMetaCode/agency-agents-zh) 格式标准。编排层通过 [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) `createDeepAgent()` 接入 LangGraph StateGraph。
 
 ## 整体流程
 
@@ -69,7 +69,7 @@ flowchart TB
 
 ## 为什么人类确认还在循环里
 
-Agent 出问题人负责。LOOP 不是替代人类，是升级人类的角色——从逐行读 diff 变成看审查报告做判断。sofagent-engineer 和 sofagent-reviewer 把"我该担心什么"提炼出来了，人类只需要确认"这个担心对不对"。
+Agent 出问题人负责。FORGE 不是替代人类，是升级人类的角色——从逐行读 diff 变成看审查报告做判断。sofagent-engineer 和 sofagent-reviewer 把"我该担心什么"提炼出来了，人类只需要确认"这个担心对不对"。
 
 三道护栏（fde.md 规则覆盖 / 编排可回滚 / 审计独立）中，人类确认是第一道光。
 
@@ -114,24 +114,24 @@ graph TD
 
 ### Loop 成熟度自检
 
-每次 LOOP 迭代完成后，用这四个问题评估当前循环的成熟度：
+每次 FORGE 迭代完成后，用这四个问题评估当前循环的成熟度：
 
 | # | 问题 | 当前状态 | 目标 |
 |:--:|------|------|------|
-| 1 | **如何停止？** | 人类确认后停止 | LOOP 内建通过/不通过判定，无需人类"叫停" |
+| 1 | **如何停止？** | 人类确认后停止 | FORGE 内建通过/不通过判定，无需人类"叫停" |
 | 2 | **谁判通过？** | 人类看审查报告判定 | 审查员 Agent 独立给出 IS_PASS，人类仅复核异常 |
 | 3 | **失败如何反馈？** | 审查不通过 → 返回工程师修复 | 失败原因 + 修复建议自动注入 engineer 的下次任务上下文 |
 | 4 | **何时交还人类？** | 每次迭代都交还 | 仅 IS_PASS: NO 或高置信度判定失败时交还；PASS 自动推进 |
 
-> 当前阶段（human-in-the-loop）四个问题都在人类这一侧。v1.2.x LangGraph 编排后会逐步将判定权从人类移向系统，但四个问题的存在本身不变——它们定义 LOOP 是不是真的"在跑"。
+> 当前阶段（human-in-the-loop）四个问题都在人类这一侧。v1.2.x LangGraph 编排后会逐步将判定权从人类移向系统，但四个问题的存在本身不变——它们定义 FORGE 是不是真的"在跑"。
 
-## LOOP 与发版流程的对应
+## FORGE 与发版流程的对应
 
-sofagent 的版本发布遵循 [`docs/changelog/releasing.md`](../docs/changelog/releasing.md) 的十二阶段 SOP。LOOP 将其中可由 Agent 自动化的步骤映射到对应的 Agent：
+sofagent 的版本发布遵循 [`docs/changelog/releasing.md`](../docs/changelog/releasing.md) 的十二阶段 SOP。FORGE 将其中可由 Agent 自动化的步骤映射到对应的 Agent：
 
-| releasing.md 阶段 | 当前（人类做） | LOOP 映射 |
+| releasing.md 阶段 | 当前（人类做） | FORGE 映射 |
 |---|---|---|
-| 阶段一：审查 → 开发日志 | 发布后审查（`LOOP/SKILL/fresh-eyes-loop/specs/fresh-eyes-review.md`） | review-agent + 全新 session |
+| 阶段一：审查 → 开发日志 | 发布后审查（`FORGE/SKILL/fresh-eyes-loop/specs/fresh-eyes-review.md`） | review-agent + 全新 session |
 | 阶段二：开发 | 修复 P0/P1/P2 | minimal-change-engineer（7 步开发流程） |
 | 阶段三：自测 | `npm run build` + `npm test` + `acceptance-test.sh` | minimal-change-engineer 自检 |
 | 阶段四：代码审核 | 独立审核者逐项核对 | review-agent（全新 session） |
@@ -144,16 +144,16 @@ sofagent 的版本发布遵循 [`docs/changelog/releasing.md`](../docs/changelog
 | 阶段十一：发布 | npm publish + git tag + Skill 分发 | 人类操作（不可自动化） |
 | 阶段十二：发布后 | 发布后审查 → 发现问题 → 自动回流阶段一；SOP 自我进化——沉淀教训 + 更新过期数字 + 纳入新工具 | review-agent（全新 session）+ FDE 提议 → 作者确认 |
 
-### LOOP 中的验证文档
+### FORGE 中的验证文档
 
-以下 5 份验证文档已集成到 LOOP 中，由对应 Agent 在特定阶段调用：
+以下 5 份验证文档已集成到 FORGE 中，由对应 Agent 在特定阶段调用：
 
-| 文档 | 在 LOOP 中的角色 | 谁执行 |
+| 文档 | 在 FORGE 中的角色 | 谁执行 |
 |------|------|------|
-| `LOOP/SKILL/fresh-eyes-loop/specs/fresh-eyes-review.md` | 发版前/后发布后审查（10 维度 × 6 方面） | review-agent（全新 session） |
-| `LOOP/SKILL/fresh-eyes-loop/specs/regression-checklist.md` | 发版前全局回归检查（26 项） | FDE 触发 compliance-auditor |
-| `LOOP/SKILL/fresh-eyes-loop/specs/acceptance-test.sh` | 发版前 CLI 端到端验收（128 个场景，原 openclaw-acceptance-test.md 已合并入此） | minimal-change-engineer 自检 |
-| `docs/changelog/releasing.md` | LOOP 的整体流程参照——哪个阶段谁做什么 | FDE（流程监督者） |
+| `FORGE/SKILL/fresh-eyes-loop/specs/fresh-eyes-review.md` | 发版前/后发布后审查（10 维度 × 6 方面） | review-agent（全新 session） |
+| `FORGE/SKILL/fresh-eyes-loop/specs/regression-checklist.md` | 发版前全局回归检查（26 项） | FDE 触发 compliance-auditor |
+| `FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh` | 发版前 CLI 端到端验收（128 个场景，原 openclaw-acceptance-test.md 已合并入此） | minimal-change-engineer 自检 |
+| `docs/changelog/releasing.md` | FORGE 的整体流程参照——哪个阶段谁做什么 | FDE（流程监督者） |
 
 ### DeepAgentsJS + LangGraph 实现细节
 
@@ -161,23 +161,23 @@ v1.1.3 起 StateGraph 已代码化（`engine/orchestrator/src/loop/`）。Agent 
 
 ### 平台无关触发（已设计，待代码化）
 
-LOOP 设计为**平台无关**——不依赖特定 Agent 平台。运行原理：
+FORGE 设计为**平台无关**——不依赖特定 Agent 平台。运行原理：
 
 ```
 你的 Agent（WorkBuddy / Codex / Claude Code / Hermes / Cursor）
   │
-  │  "@openclaw 启动 LOOP：修复 issue #123"
+  │  "@openclaw 启动 FORGE：修复 issue #123"
   ▼
 OpenClaw（sofagent 底座，随 sofagent 安装）
   │
-  │  按 LOOP/loop.md 的 StateGraph 自动调度：
+  │  按 FORGE/loop.md 的 StateGraph 自动调度：
   ├→ session.spawn sofagent-engineer
   ├→ run sofagent-audit (commit-msg hook)
   ├→ session.spawn sofagent-reviewer
   └→ 审查报告返回给用户 Agent
 ```
 
-**用户不需要知道 sub-agent 的存在。** 他们只看到自己的 Agent 完成了任务并附带了审查结果。背后的 LOOP 流程对用户透明。
+**用户不需要知道 sub-agent 的存在。** 他们只看到自己的 Agent 完成了任务并附带了审查结果。背后的 FORGE 流程对用户透明。
 
 ## 外层循环：持续监督与优化
 
@@ -238,25 +238,25 @@ flowchart TD
 | `fresh-eyes-review.md` | `docs/verification/` | ① 审视上轮审查发现的盲区 → 新增维度/任务 ② 过时的角色/问题 → 删除或更新 ③ 本轮新发现的"反复出现的同类问题" → 抽象为新的通用维度 | FDE |
 | `regression-checklist.md` | `docs/verification/` | ① 本轮修复的 P0/P1 → 抽象为新的检查项（从 177 开始编号）② 审查体系更新建议中"建议追加到回归检查"的条目 → 正式写入 | FDE |
 | `acceptance-test.sh` | `tools/` | ① 新增的审计规则 → 新增对应测试场景 ② 新功能（如 SkillOpt）→ 新增验收场景 ③ 上一版本被绕过的边缘 case → 新增为测试场景 | FDE |
-| `releasing.md` | `docs/verification/` | ① 本版本发布过程中遇到的流程漏洞 → 沉淀到「历史教训」区 ② 检查 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）③ 新增的工具/脚本是否已纳入对应阶段 ④ 把更新后的 releasing.md 同步到 LOOP.md 的映射表 | FDE 提议 → 作者确认 |
+| `releasing.md` | `docs/verification/` | ① 本版本发布过程中遇到的流程漏洞 → 沉淀到「历史教训」区 ② 检查 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）③ 新增的工具/脚本是否已纳入对应阶段 ④ 把更新后的 releasing.md 同步到 FORGE.md 的映射表 | FDE 提议 → 作者确认 |
 
-**这不是可选操作——是 LOOP 外层循环的核心职责。** 如果发版后这四份文件没有更新，外层循环就是失败的。这四份文件是 LOOP 的"经验存储器"——每次发版的经验必须变成下次审查更锋利的武器。
+**这不是可选操作——是 FORGE 外层循环的核心职责。** 如果发版后这四份文件没有更新，外层循环就是失败的。这四份文件是 FORGE 的"经验存储器"——每次发版的经验必须变成下次审查更锋利的武器。
 
 前三份是**纯增量**操作（追加检查项/维度/场景），FDE 直接做。第四份 `releasing.md` 包含**修改**操作（更新数字、改步骤）——FDE 生成更新建议（diff 格式），作者确认后 apply。这和内层循环的"code-reviewer 生成审查报告 → 人类确认"是同构的。
 
 ### 文件位置的说明
 
-三份审查文件已从维护者本地（`~/Workbuddy/`）移入 `docs/verification/`，成为项目的一部分，供所有贡献者使用。`LOOP/SKILL/fresh-eyes-loop/specs/acceptance-test.sh` 已在仓库中。`docs/changelog/releasing.md` 是发版 SOP，位置不变。
+三份审查文件已从维护者本地（`~/Workbuddy/`）移入 `docs/verification/`，成为项目的一部分，供所有贡献者使用。`FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh` 已在仓库中。`docs/changelog/releasing.md` 是发版 SOP，位置不变。
 
 ### 为什么外层循环是必须的
 
-内层循环是"每任务"级别的自动化。但 Agent 的行为会漂移、审查会变松、审计规则会过时。没有外层循环，LOOP 只是一个"自动化的代码工厂"——快，但不知道自己越来越差。
+内层循环是"每任务"级别的自动化。但 Agent 的行为会漂移、审查会变松、审计规则会过时。没有外层循环，FORGE 只是一个"自动化的代码工厂"——快，但不知道自己越来越差。
 
-外层循环让 LOOP 具备**自我改进能力**：不只是跑得快，而且是越跑越好。
+外层循环让 FORGE 具备**自我改进能力**：不只是跑得快，而且是越跑越好。
 
 ### 行业印证：Loop Engineering 趋势验证自迭代循环（2026-07）
 
-- **Loop Engineering 是行业范式级趋势**：研报将「Loop（延期决策）」列为与 Prompt / Context / Graph 并列的 AI 编程范式跃迁阶段。sofagent 的 LOOP 自迭代（内层 Dream Cycle + 外层持续监督）正落在这一阶段，且已有「外层循环的必要性与护栏」体系（见上方「行业框架印证」），与行业判断互为印证。
+- **Loop Engineering 是行业范式级趋势**：研报将「Loop（延期决策）」列为与 Prompt / Context / Graph 并列的 AI 编程范式跃迁阶段。sofagent 的 FORGE 自迭代（内层 Dream Cycle + 外层持续监督）正落在这一阶段，且已有「外层循环的必要性与护栏」体系（见上方「行业框架印证」），与行业判断互为印证。
 - **Goal 模式 ↔ 审计引擎**：研报定义 Goal 模式 =「继续工作直到这个结果成立」，含持久状态 / 自动续跑 / 证据校验（测试·日志·文件）/ 预算上限 / 生命周期控制。这正对应 sofagent 审计引擎（git diff 硬证据 + 21 条规则判停）+ verification 三件套（fresh-eyes / regression / acceptance）——把「合格与完成」写进确定性规则，让 Loop 有判停依据。
 
 > 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》）
