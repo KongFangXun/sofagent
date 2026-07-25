@@ -177,6 +177,7 @@ FDE 部署 SOP 应遵循此顺序：
 - `engine/scripts/`（核心 3 个）：`verify.sh` / `uninstall.sh` / `task-record.sh`
 - `install.sh`（仓库根目录）：多平台一键安装（v1.2.0 从 engine/scripts/ 提升到根目录）
 - `engine/hooks/sofagent-load-chain/`：`HOOK.md` + `handler.ts`（OpenClaw 内部 hook）
+- `engine/orchestrator/src/loop/`：**Graph Engine 核心**（StateGraph 四节点 + 条件路由 + checkpoint）。`graph.ts`（图组装+并行调度）、`state.ts`（LoopGraphState 状态契约）、`nodes.ts`（engineer/audit/reviewer/human_confirm 节点实现）
 
 ### docs/ 组织约定
 
@@ -221,7 +222,7 @@ CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写�
 
 ## 二、编排哲学
 
-> 📖 LOOP 自迭代的设计哲学见 [PHILOSOPHY §七](./PHILOSOPHY.md#七怎么进化loop-自迭代)。本章只讲技术实现。
+> 📖 FORGE 自迭代的设计哲学见 [PHILOSOPHY §七](./PHILOSOPHY.md#七怎么进化loop-自迭代)。本章只讲技术实现。
 
 ### 编排流程
 
