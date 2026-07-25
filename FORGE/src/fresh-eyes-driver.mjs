@@ -470,6 +470,9 @@ async function runWorker(step, roundDir, target) {
     tools,
     systemPrompt,
     backend: (config) => new DiskBackend(config),
+    // 禁用 FilesystemMiddleware——其 wrapToolCall 在并行工具调用时有 bug
+    // （读 .length 拿到 undefined 崩溃）。DiskBackend 已替代其文件操作功能。
+    middleware: [],
   });
 
   // 5. invoke（计时）
@@ -910,6 +913,19 @@ async function main() {
       await runWorker(args.step, args.roundDir, args.target);
     } catch (err) {
       console.error(`[worker:${args.step}] 失败: ${err.message}`);
+      // 打印复合错误的子错误（DeepAgents 的 Multiple errors）
+      if (err.errors) {
+        console.error('--- 子错误 (' + err.errors.length + ' 条) ---');
+        for (const [i, subErr] of err.errors.entries()) {
+          console.error(`  [${i}] ${subErr?.message || subErr}`);
+          if (subErr?.stack) {
+            console.error('     stack:', subErr.stack.split('\n').slice(0, 6).join('\n'));
+          }
+        }
+      } else {
+        console.error('--- stack ---');
+        console.error(err.stack);
+      }
       process.exit(1);
     }
     return;
