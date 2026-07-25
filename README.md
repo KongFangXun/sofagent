@@ -34,6 +34,9 @@
 
 **sofagent 做的就是这件事。** 它是一个 FDE Agent——进场梳理你的工作流，把能自动化的环节变成 AI 节点，部署到设备上，然后离场。离场后这些节点 7×24 自己跑，你留下的是一套能持续维护的 AI 化资产。
 
+> [!NOTE]
+> **两个名字，一个东西**：你面对的产品叫 **FDE Agent**（帮你梳理工作流、部署 AI 节点）；底层引擎叫 **sofagent**（开源仓库 + npm 包 `@sofagent/*`）。仓库名不改（8 版本已发布），但你对话时只需要记住 **FDE Agent**。
+
 大厂造了江——LLM 是水，Agent 平台是河床。但企业不敢直接舀着喝。sofagent 做的是堤坝 + 自来水厂 + 管网 + 水龙头——帮每个人把原水变成直饮水。完整类比见 [ARCHITECTURE · River](./docs/ARCHITECTURE.md)。
 
 > [!IMPORTANT]

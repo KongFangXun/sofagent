@@ -6,7 +6,7 @@
 
 > 内部由 4 个 Sub Agent 协作（`sofagent-fde` 部署 / `sofagent-audit` 合规审计 / `sofagent-engineer` 代码工程 / `sofagent-reviewer` 代码审查），对外用户只看到一个 FDE Agent 身份。Maker-Checker 分离在内部保持，用户不需要知道。
 
-> 🏞️ **River 比喻**：大厂造河（LLM=水，Agent 平台=河床）；sofagent 是堤坝+自来水厂+管网，**FDE Agent 是你家的水龙头**——你唯一打交道的就是它，拧开就有安全的 AI 能力流进业务。
+> 🏞️ **River 比喻**：大厂造河（LLM=水，Agent 平台=河床）；sofagent 引擎是堤坝+自来水厂+管网，**FDE Agent 是你唯一打交道的入口**（骑在引擎之上），引擎里的水龙头=Sub Agent 节点——拧开就有安全的 AI 能力流进业务。
 
 > 💡 FDE 是什么、12 个关键步骤详解：[FDE.md](./FDE.md)。这里只讲怎么装、怎么用。
 

@@ -229,8 +229,8 @@ if ! command -v node &>/dev/null; then exit 0; fi
 
 if command -v sofagent-audit &>/dev/null; then
   AUDIT_CMD="sofagent-audit"
-elif [ -f "sofagent/audit/dist/index.js" ]; then
-  AUDIT_CMD="node sofagent/audit/dist/index.js"
+elif [ -f "engine/audit/dist/index.js" ]; then
+  AUDIT_CMD="node engine/audit/dist/index.js"
 else
   exit 0
 fi

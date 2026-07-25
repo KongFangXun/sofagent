@@ -316,9 +316,9 @@ jobs:
 | 默认 | *(无)* | 全部规则（含 Agent 日志） | 0/1/2 |
 | 静默 | `--silent` | 只跑 git-diff 规则（零 Agent 依赖） | 0/1/2 |
 | 严格 | `--strict` | 任何警告都 exit 2 | 0/2 |
-| CI | `--ci` | = `--silent` + `--strict` | 0/2 |
+| CI | `--ci` | = `--silent`（CI 友好输出，无交互提示） | 0/1/2 |
 
-模式可叠加——例如 `--diff HEAD --silent --strict` 等价于 `--diff HEAD --ci`。
+模式可叠加——CI 流水线需零容忍时用 `--diff HEAD --ci --strict`（v1.0.5 起 `--ci` 不再隐含 `--strict`）。
 
 ---
 

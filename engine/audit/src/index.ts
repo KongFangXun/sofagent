@@ -10,12 +10,12 @@
 // 最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
 //
 // 用法：
-//   node sofagent/audit/dist/index.js --diff HEAD~1..HEAD --task "修复登录页 bug"
-//   node sofagent/audit/dist/index.js --diff HEAD~1..HEAD --silent --task "test"
-//   node sofagent/audit/dist/index.js --diff HEAD~1..HEAD --ci --task "test"
-//   node sofagent/audit/dist/index.js --root-cause
-//   node sofagent/audit/dist/index.js --regression ./src
-//   node sofagent/audit/dist/index.js ontology view
+//   node engine/audit/dist/index.js --diff HEAD~1..HEAD --task "修复登录页 bug"
+//   node engine/audit/dist/index.js --diff HEAD~1..HEAD --silent --task "test"
+//   node engine/audit/dist/index.js --diff HEAD~1..HEAD --ci --task "test"
+//   node engine/audit/dist/index.js --root-cause
+//   node engine/audit/dist/index.js --regression ./src
+//   node engine/audit/dist/index.js ontology view
 //
 // 退出码：
 //   0 = 全通过

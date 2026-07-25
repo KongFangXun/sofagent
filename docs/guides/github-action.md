@@ -86,7 +86,7 @@ audit:
   extendedRulesEnabled: false   # E1-E4 扩展规则
 ```
 
-> 三级 fallback：`${cwd}/.sofagent/config.yml` → `~/.sofagent/config.yml` → 内置默认值。`--ci` = `--strict` + `--silent`。
+> 三级 fallback：`${cwd}/.sofagent/config.yml` → `~/.sofagent/config.yml` → 内置默认值。`--ci` = `--silent`（CI 友好输出），需零容忍时加 `--strict`。
 
 ---
 
