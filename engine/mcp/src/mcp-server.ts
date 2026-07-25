@@ -827,8 +827,8 @@ class McpServer {
   /**
    * v1.1.8 新增：联邦查询异步合并（fire-and-forget）
    *
-   * 动态探测 daemon federation 模块（mcp 包不直接依赖 daemon——保持包边界；
-   * daemon 未安装/OpenClaw 未启动/无任何配对 peer 时静默跳过）。
+   * 动态探测 daemon federation 模块（经 optionalDependencies 显式依赖 @sofagent/daemon；
+   * daemon 未安装 / OpenClaw 未启动 / 无配对 peer 时静默跳过）。
    * 有联邦结果时经 notification 推给客户端（data.source='federation'）。
    */
   private async mergeFederationAsync(id: number | string | null, query: string): Promise<void> {

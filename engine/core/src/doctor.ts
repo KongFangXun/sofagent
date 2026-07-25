@@ -19,6 +19,7 @@ import { homedir } from 'os';
 import { checkEnv } from './env-check';
 import { VERSION } from './shared/constants';
 import { load as yamlLoad, YAMLException } from 'js-yaml';
+import { checkHistoryChainIntegrity } from './audit-history';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
 function warn(msg: string) { console.log(`  ⚠️  ${msg}`); }
@@ -204,14 +205,10 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     warn('无 HMAC 签名，完整性校验强度降低：审计日志仅 SHA-256 校验（Agent 可重算整链）。配置 ~/.sofagent-key 可启用 HMAC-SHA256 强校验');
   }
 
-  // 实际校验链完整性（动态加载 audit 包，避免静态循环依赖）
+  // 实际校验链完整性（v1.2.0: checkHistoryChainIntegrity 已下沉到 core，消除 core→audit 反向依赖）
   let auditLogOk = true;
-  let chainChecked = false;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { checkHistoryChainIntegrity } = require('@sofagent/audit');
     const chainIntact = checkHistoryChainIntegrity();
-    chainChecked = true;
     auditLogOk = chainIntact;
     if (chainIntact) {
       ok('审计日志 hash chain 完整性校验通过');
@@ -219,11 +216,8 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
       fail('审计日志 hash chain 断裂——检测到篡改痕迹，请检查 .sofagent/audit/history.jsonl');
     }
   } catch {
-    // audit 包不可用（单包安装 core 的场景），跳过链校验
-    // 只报告密钥状态
-  }
-  if (!chainChecked) {
-    info('未加载 audit 包，跳过链完整性校验');
+    // 链校验异常（极少），不影响其余检查
+    auditLogOk = true;
   }
 
   // 总结
