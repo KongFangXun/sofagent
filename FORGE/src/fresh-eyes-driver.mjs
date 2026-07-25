@@ -41,7 +41,7 @@ const require = createRequire(import.meta.url);
 // ─── 路径常量 ────────────────────────────────────────────────
 const LOOP_DIR    = join(REPO_ROOT, 'FORGE/SKILL/fresh-eyes-loop');
 const PROMPTS_DIR = join(LOOP_DIR, 'prompts');
-const RUNS_DIR    = join(REPO_ROOT, 'FORGE/runs');  // 产物只 2 层深，好找
+const RUNS_DIR    = join(LOOP_DIR, 'runs');  // 每个 loop 自带 runs/，多 loop graph 各自隔离
 const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
 const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 

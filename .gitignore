@@ -27,5 +27,5 @@ Thumbs.db
 # 临时调试文件
 tmp/
 
-# FORGE 运行产物（审查报告是一次性的，不进仓库）
-FORGE/runs/
+# FORGE 运行产物（每个 loop 各自的 runs/，不进仓库）
+FORGE/SKILL/*/runs/
