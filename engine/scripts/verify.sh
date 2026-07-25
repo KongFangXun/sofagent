@@ -176,8 +176,17 @@ if [ "$QUICK_MODE" = true ]; then
   [ "$JSON_MODE" = false ] && _hr
 
   # 1. SKILL.md 存在且含 4 底线 + 7 则铁律关键词
-  SKILL_QUICK="${OPENCLAW_DIR:-$HOME/.openclaw}/skills/engine/SKILL.md"
-  if [ -f "$SKILL_QUICK" ] && grep -q "4.*底线\|6.*铁律" "$SKILL_QUICK" 2>/dev/null; then
+  SKILL_QUICK=""
+  for _sk in \
+    "${OPENCLAW_DIR:-}/skills/engine/SKILL.md" \
+    "$HOME/.openclaw/skills/engine/SKILL.md" \
+    "$HOME/.workbuddy/skills/engine/SKILL.md" \
+    "$HOME/.claude/SKILL.md" \
+    "$HOME/.codex/SKILL.md" \
+    "$HOME/.hermes/SKILL.md"; do
+    [ -f "$_sk" ] && { SKILL_QUICK="$_sk"; break; }
+  done
+  if [ -n "$SKILL_QUICK" ] && grep -q "4.*底线\|6.*铁律" "$SKILL_QUICK" 2>/dev/null; then
     check_pass "SKILL.md 存在且含宪法（4底线+6则铁律）"
   else
     check_fail "SKILL.md 缺失或宪法关键词不全"

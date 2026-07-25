@@ -291,7 +291,7 @@ if [ "${BASE_ONLY:-0}" = "0" ]; then
   # ── 验证安装 ──
   echo ""
   echo -e "${BOLD}[FDE] 验证安装...${NC}"
-  bash "${SCRIPT_DIR}/engine/scripts/verify.sh" --quick 2>&1 | tail -3
+  bash "${SCRIPT_DIR}/engine/scripts/verify.sh" --quick --platform "$PLATFORM" 2>&1 | tail -3
   echo ""
 
   # ── FDE 完成输出 ──
