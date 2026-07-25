@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.2.0 · 127 个场景定义（含子断言，合计 140 个 pass 判定）
+# v1.2.0 · 128 个场景定义（含子断言，合计 141 个 pass 判定）
 # + LOOP + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
 # 详细功能映射见 LOOP/releaser/acceptance-coverage.md
 # ============================================================
@@ -1519,6 +1519,13 @@ if $S126_OK; then
   echo "$S126_RESULT" | grep -q "^OK " || { fail "rules 引擎导出验证失败: $S126_RESULT"; S126_OK=false; }
 fi
 $S126_OK && pass
+scenario 127 "v1.2.0 FDE 交付物可见化——4 个交付模板就位（{企业名}/ 模板实例化基础）"
+S127_OK=true
+[ -f "$PROJECT_ROOT/FDE/templates/enterprise-profile.md" ] || { fail "FDE/templates/enterprise-profile.md 不存在"; S127_OK=false; }
+[ -f "$PROJECT_ROOT/FDE/templates/deployment-plan.md" ] || { fail "FDE/templates/deployment-plan.md 不存在"; S127_OK=false; }
+[ -f "$PROJECT_ROOT/FDE/templates/nodes/node-template.md" ] || { fail "FDE/templates/nodes/node-template.md 不存在"; S127_OK=false; }
+[ -f "$PROJECT_ROOT/FDE/templates/skills/skill-template/SKILL.md" ] || { fail "FDE/templates/skills/skill-template/SKILL.md 不存在"; S127_OK=false; }
+$S127_OK && pass
 # ── 总结 ──────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

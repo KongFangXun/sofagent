@@ -186,7 +186,7 @@
 1. 工作目录：/Users/kongfangxun/Workbuddy/sofagent（后续相对路径均基于此）
 2. 【v1.0.8 优化】构建审计包：在跑任何依赖 dist/ 的检查前，先 `cd engine/audit && npm run build`。否则 --version / --help banner / `ontology view` / `compose` 等基于 dist 的回归维度与验收场景会命中 stale dist 误报 FAIL
 3. **🔴 端到端验收测试** —— `bash LOOP/releaser/acceptance-test.sh`，跑完全部场景。记录结果：场景数 / 通过数 / 失败数 / 失败场景编号清单。⚠️ 涉及 CLI 命令迁移时 acceptance-test 可能大量 FAIL——如果是因为脚本引用了已废弃命令（如 `sofagent-audit --daemon`），标 SKIP 并说明原因，不算真 FAIL
-4. **回归检查** —— 读 `LOOP/releaser/regression-checklist.md`，用 Bash 跑全部维度验证命令，逐项输出 PASS/FAIL/SKIP。**维度24（验收测试覆盖率）此时可引用步骤3 acceptance-test 的真实结果做对照**，而不是干 grep
+4. **回归检查** —— 读 `LOOP/releaser/regression-checklist.md`，用 Bash 跑全部维度验证命令，逐项输出 PASS/FAIL/SKIP。**维度24（验收测试覆盖率）此时可引用步骤3 acceptance-test 的真实结果做对照**，而不是干 grep。**维度 50（文档乱码扫描）必须跑**——v1.2.0 发版中在多个文档反复发现 UTF-8 损坏（U+FFFD/mojibake），这是编码系统性问题，不跑就发现不了
 5. **🔴 覆盖率交叉检查（v1.1.4 教训——acceptance-test 对新功能零覆盖）** —— 读 `docs/changelog/vX.Y.md`「核心变更/交付」章节，提取每条功能关键词（如新规则号 A18/A19、新模块 LOOP/USB/工具注入等）。逐条 grep `LOOP/releaser/acceptance-test.sh`，确认每条功能都有对应场景。**零覆盖 = FAIL**（回归测试无法发现该功能退化）
 6. 时序注意：
    - regression-checklist 头部「⏰ 时序说明」标记的检查项（git tag / npm registry / 全局二进制版本），发版前必然不满足 → 标 ⏳（待发版），不标 FAIL

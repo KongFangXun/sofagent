@@ -1,6 +1,6 @@
 # LOOP — sofagent 自迭代工具包
 
-> **LOOP 是 sofagent 项目的开发者自迭代工具包**——自动执行 engineer→audit���reviewer 循环，管理 sofagent 自己的代码变更。用 sofagent 的引擎驱动，不面向终端用户。企业用户的入口是 [FDE Agent](../FDE/README.md)。
+> **LOOP 是 sofagent 项目的开发者自迭代工具包**——自动执行 engineer→audit→reviewer 循环，管理 sofagent 自己的代码变更。用 sofagent 的引擎驱动，不面向终端用户。企业用户的入口是 [FDE Agent](../FDE/README.md)。
 
 ## 快速开始
 

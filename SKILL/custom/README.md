@@ -25,7 +25,7 @@ sofagent 升级时会把 `SKILL.md` / `harness/` / `agents/` 全部覆盖为最�
 | **代码 / 脚本变更** | ❌ Git 仓库 | "给 rules 包加一条新规则" |
 | **LOOP 自迭代沉淀** | ❌ `.sofagent/` + Git | LOOP 写的代码进 Git commit，经验进 knowledge/ |
 
-**为��么代码变更不进 custom/？**
+**为什么代码变更不进 custom/？**
 
 custom/ 里的 `.md` 文件是**文字规则**，被 Agent 当 prompt 加载。代码逻辑变更（加审计规则、改 orchestrator 行为、写新工具）是工程行为，要走 Git commit + 测试 + 发版流程。**文字约束和代码约束是两道防线**——文字约束让 Agent"自觉不犯"，代码约束在 Agent 真犯的时候"硬拦截"。custom/ 只管第一道。
 
