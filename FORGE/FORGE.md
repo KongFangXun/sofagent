@@ -6,7 +6,7 @@
 
 > ## ⚠️ v1.2.0 后期转向（2026-07-25）
 >
-> **本文档描述的是旧 FORGE 自迭代模型（engineer → audit → reviewer → human 单循环）。**
+> **本文档为 v1.2.0 前期的历史快照，正文已过时，不作现行文档使用。**
 >
 > v1.2.0 后期，FORGE 已从"自迭代工具包"转向**质量循环定义层**（`FORGE/SKILL/<loop>/` + DeepAgents 驱动）。当前唯一循环是 **fresh-eyes-loop**（A/B 双盲 12 视角审查），协议见 **[`FORGE/SKILL/fresh-eyes-loop/loop.md`](SKILL/fresh-eyes-loop/loop.md)**。
 >
@@ -16,7 +16,9 @@
 > - 新增 `FORGE/LEDGER.md`（跨 run 永久索引）、`FORGE/SKILL/fresh-eyes-loop/`
 > - 详细记录见 `docs/changelog/v1.2/v1.2.0.md` §「后期转向」
 >
-> *以下为旧 FORGE 自迭代设计正文，保留作为历史参考。*
+> **⚠️ 正文中的文件路径（如 `docs/verification/`、`FORGE/loop.md`）、维度数字（如 "10 维度"）、Agent 角色名均为 v1.2.0 前期状态，已与现行实现不一致。如需现行信息，请以 [`loop.md`](SKILL/fresh-eyes-loop/loop.md) 和 [`docs/changelog/releasing.md`](../docs/changelog/releasing.md) 为准。**
+>
+> *以下为旧 FORGE 自迭代设计正文，原样保留作为历史参考。*
 
 <img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
 

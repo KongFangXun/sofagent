@@ -75,7 +75,7 @@ const MODEL_CONFIGS = {
 // ⚠️ 计费模式区分（2026-07-25 确认）：
 //   A (glm-5.2) = Coding Plan 订阅制 → cost_cny 记 null，不适用本表计价
 //   B (deepseek-v4-pro) = 按量计费 → 适用本表计价
-// 本表仅用于 B 的成本估算。A 的真实成��见 Coding Plan 后台额度消耗。
+// 本表仅用于 B 的成本估算。A 的真实成本见 Coding Plan 后台额度消耗。
 //
 // ⚠️ 这是「估算」不是「账单」：
 //   官方标价 ≠ 实际扣费。缓存命中率、账号促销、套餐折扣都会影响最终费用。
@@ -765,7 +765,7 @@ async function runRound(roundNum, runDir, target, dryRun) {
     return { roundDir, counts, isClean: true };
   }
 
-  // 步骤 ①② 双盲��立审查——并行
+  // 步骤 ①② 双盲独立审查——并行
   console.log('\n  [步骤 ①②] A/B 双盲独立审查（并行）...');
   await spawnParallel([
     ['a-check', roundDir, target],
