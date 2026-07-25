@@ -284,17 +284,9 @@ const STEP_RECURSION_LIMITS = {
 
 **修复**：两个层面——
 
-**层面 1：步骤级 try/catch + 降级函数**
+**层面 1：步骤级 try/catch + 降级函数**（代码见 [§3.6](#36-失败降级机制)）
 
-```js
-// 步骤 ③ 加 try/catch 降级
-try {
-  await spawnWorker('a-consolidate', roundDir, target, roundNum);
-} catch (consolidateErr) {
-  console.warn(`⚠️ a-consolidate 失败: ${consolidateErr.message}`);
-  writeFallbackFindings(roundDir);  // 降级产物，让循环继续
-}
-```
+在 `spawnWorker('a-consolidate', ...)` 外面包 try/catch，catch 里调 `writeFallbackFindings(roundDir)` 写降级产物。降级产物质量不如正常流程，但"有"比"没有"强——一个步骤崩不能拖死整条链。
 
 **层面 2：driver catch 块写可见性事件**
 
