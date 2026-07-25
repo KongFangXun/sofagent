@@ -45,6 +45,7 @@ const MODEL_CONFIGS = {
     baseURL:         'https://open.bigmodel.cn/api/coding/paas/v4/',
     model:           'glm-5.2',
     temperature:     1.0,
+    maxTokens:       16000,  // 限制输出 token，防止 thinking 模式无限消耗
     apiKeyEnv:       'SOFAGENT_LLM_A_API_KEY',
     specEnv:         'SOFAGENT_LLM_A',
     agentSkillPath:  join(AGENTS_DIR, 'reviewer/SKILL.md'),
@@ -183,6 +184,11 @@ async function createModel(role) {
   // GLM 特殊参数
   if (cfg.temperature !== undefined) {
     ctorArgs.temperature = cfg.temperature;
+  }
+
+  // 限制输出 token（防止 thinking 模式无限消耗）
+  if (cfg.maxTokens) {
+    ctorArgs.maxTokens = cfg.maxTokens;
   }
 
   // DeepSeek 特殊参数
@@ -394,7 +400,13 @@ async function runWorker(step, roundDir, target) {
   const tools = loadTools(role);
 
   const { createDeepAgent } = await import('deepagents');
-  const agent = await createDeepAgent({ model, tools, systemPrompt });
+  const { DiskBackend } = await import('./disk-backend.mjs');
+  const agent = await createDeepAgent({
+    model,
+    tools,
+    systemPrompt,
+    backend: (config) => new DiskBackend(config),
+  });
 
   // 5. invoke（计时）
   console.log(`[worker:${step}] 开始执行（role=${role}, model=${cfg.model}）`);
