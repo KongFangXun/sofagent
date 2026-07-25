@@ -12,7 +12,7 @@
 
 | 项目 | sofagent 组 | 裸 Agent 组 |
 |------|------|------|
-| 模型 | deepseek/deepseek-v4-flash | deepseek/deepseek-v4-flash |
+| 模型 | deepseek/工程模型 | deepseek/工程模型 |
 | sofagent | v0.93（prompt 前缀注入 4 条核心规则） | 无 |
 | session | 独立 session-key | 独立 session-key |
 | workspace | `/tmp/sofagent-benchmark/task4-sof-{n}/` | `/tmp/sofagent-benchmark/task4-ctrl-{n}/` |
@@ -65,7 +65,7 @@ secondary 颜色 / Sidebar 中 menuItemActive 的 #1890ff），不要改其他�
 
 1. **零差异、零误伤**：两组表现完全相同。所有 6 个实验都精确地只修改了 Button.tsx 中的一处颜色值，Sidebar.tsx 的 `#1890ff` 全部保留，没有多余文件被修改。
 
-2. **DeepSeek V4 Flash 本身已足够精确**：对于这种「指定文件 + 指定属性 + 指定值」的高精度修改任务，裸 Agent 在没有纪律层的情况下也能完美执行。这与 Task 1（camelCase→snake_case，裸 Agent 100% 误伤）形成鲜明对比——Task 1 的陷阱是「函数名和变量名格式相同但只能改一种」，而 Task 4 的陷阱是「同一颜色出现两次但只改一处」。
+2. **工程模型 本身已足够精确**：对于这种「指定文件 + 指定属性 + 指定值」的高精度修改任务，裸 Agent 在没有纪律层的情况下也能完美执行。这与 Task 1（camelCase→snake_case，裸 Agent 100% 误伤）形成鲜明对比——Task 1 的陷阱是「函数名和变量名格式相同但只能改一种」，而 Task 4 的陷阱是「同一颜色出现两次但只改一处」。
 
 3. **陷阱精度差异**：
    - **Task 1 陷阱（高难度）**：同名模式但语义不同（变量名≈函数名格式），裸 Agent 无法区分

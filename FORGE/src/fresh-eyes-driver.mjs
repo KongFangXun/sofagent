@@ -223,14 +223,72 @@ async function createModel(role) {
  * 从 dist 导入工具集（ENGINEER_TOOLS / REVIEWER_TOOLS）。
  * dist 是 CJS，createRequire 导入后直接解构。
  */
+/**
+ * 加载工具集并转换为 DeepAgents 兼容格式。
+ *
+ * dist/tools.js 里的工具是手写 ExecutableTool（{name, description, schema, func}），
+ * 但 deepagents 的 ToolNode 期望 tool() 函数创建的 DynamicStructuredTool。
+ * 直接用 ExecutableTool 会触发 "Cannot read properties of undefined (reading 'length')"
+ * （ToolNode 的 wrapToolCall 把 func 返回的字符串当数组处理）。
+ *
+ * 这里加转换层：ExecutableTool → DynamicStructuredTool（通过 @langchain/core/tools 的 tool()）。
+ */
 function loadTools(role) {
   const cfg = MODEL_CONFIGS[role];
   const toolsModule = require('../../engine/orchestrator/dist/tools.js');
-  const tools = toolsModule[cfg.toolsKey];
-  if (!tools) {
+  const rawTools = toolsModule[cfg.toolsKey];
+  if (!rawTools) {
     throw new Error(`工具集 ${cfg.toolsKey} 未在 dist/tools.js 中找到`);
   }
-  return tools;
+
+  // 转换：ExecutableTool → DynamicStructuredTool
+  // 用 @langchain/core/tools 的 tool() 函数包装
+  const { tool } = require('@langchain/core/tools');
+  const { z } = require('zod');
+
+  return rawTools.map((rawTool) => {
+    // 如果已经是 DynamicStructuredTool（有 lc_namespace），直接用
+    if (rawTool.lc_namespace) return rawTool;
+
+    // ExecutableTool → 转换 schema（JSON Schema → zod 简化版）
+    // 注意：deepagents 的 schema 用 JSON Schema 格式，zod 需要转。
+    // 这里用 z.object + z.string() 做最小转换（当前所有工具的参数都是 string 类型）。
+    const properties = rawTool.schema?.properties || {};
+    const zodShape = {};
+    const requiredFields = rawTool.schema?.required || [];
+
+    for (const [key, prop] of Object.entries(properties)) {
+      let zodField;
+      // 根据类型选 zod 校验器
+      if (prop.type === 'string') {
+        zodField = z.string();
+      } else if (prop.type === 'number' || prop.type === 'integer') {
+        zodField = z.number();
+      } else if (prop.type === 'boolean') {
+        zodField = z.boolean();
+      } else {
+        zodField = z.string();  // fallback
+      }
+      if (prop.description) zodField = zodField.describe(prop.description);
+      if (!requiredFields.includes(key)) zodField = zodField.optional();
+      zodShape[key] = zodField;
+    }
+
+    const wrappedTool = tool(
+      async (input) => {
+        const result = rawTool.func(input);
+        // func 可能返回 string 或 Promise<string>
+        return await result;
+      },
+      {
+        name: rawTool.name,
+        description: rawTool.description,
+        schema: z.object(zodShape),
+      }
+    );
+
+    return wrappedTool;
+  });
 }
 
 /**

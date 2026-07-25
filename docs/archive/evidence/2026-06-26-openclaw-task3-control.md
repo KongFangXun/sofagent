@@ -12,7 +12,7 @@
 
 | 项目 | sofagent 组 | 裸 Agent 组 |
 |------|------|------|
-| 模型 | deepseek/deepseek-v4-flash | deepseek/deepseek-v4-flash |
+| 模型 | deepseek/工程模型 | deepseek/工程模型 |
 | sofagent | v0.93（prompt 前缀注入 4 条核心规则） | 无 |
 | session | 独立 session-key | 独立 session-key |
 | workspace | `/tmp/sofagent-benchmark/task3-sof-{n}/` | `/tmp/sofagent-benchmark/task3-ctrl-{n}/` |

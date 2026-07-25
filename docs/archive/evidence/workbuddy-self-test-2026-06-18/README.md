@@ -1,7 +1,7 @@
 # Case 002 — WorkBuddy 自测（2026-06-18）
 
 > **性质**：作者自测·闭环验证 + 加载链缺陷发现
-> **来源**：KongFangXun（WorkBuddy + DeepSeek V4 Pro）
+> **来源**：KongFangXun（WorkBuddy + 工程模型）
 > **版本**：sofagent v0.55（修复前）
 
 ---
@@ -17,7 +17,7 @@
 | 项 | 值 |
 |------|------|
 | 平台 | WorkBuddy |
-| 模型 | DeepSeek V4 Pro |
+| 模型 | 工程模型 |
 | 测试时间 | 2026-06-18 15:30–16:10 |
 | 任务 | sofagent landing page 文案整理 + 设计 Spec |
 | sofagent 版本 | v0.55（修复前） |

@@ -2,7 +2,7 @@
 
 > **测试人**：KongFangXun  
 > **日期**：2026-06-19  
-> **环境**：macOS 26.5.1 + OpenClaw 2026.6.8 + DeepSeek V4 Flash + ao 0.6.17  
+> **环境**：macOS 26.5.1 + OpenClaw 2026.6.8 + 工程模型 + ao 0.6.17  
 > **目标**：验证 v0.64 加载链在 OpenClaw 新版 hook 架构上的全链路兼容性
 
 ---

@@ -34,7 +34,7 @@ command -v ao                              # 确认 ao 可用
 |------|------|
 | sofagent | v0.71（install.sh --platform openclaw 完整部署） |
 | ao compose | npm 全局 `agency-orchestrator` |
-| LLM | DeepSeek Chat（deepseek-chat） |
+| LLM | DeepSeek Chat（工程模型） |
 | 并发度 | 4 |
 | 角色库 | 216 个角色可选 |
 | Hook | sofagent-load-chain（handler.ts 双路径 fallback，优先 constitution 路径） |

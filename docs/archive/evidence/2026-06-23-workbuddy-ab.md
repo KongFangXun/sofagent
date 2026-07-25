@@ -2,7 +2,7 @@
 
 > ⚠️ **方法论缺陷**：本测试在同一 session 按固定顺序执行（先裸 Agent 后 sofagent），无法排除知识传递效应——第二轮可能受益于第一轮上下文，而非 sofagent 的真实约束效果。v0.85 的反转实验设计已将本测试降级为参考数据，不作为纪律层增量证据。基准结论以 [independent-refactor-ab.md](./2026-06-23-independent-refactor-ab.md) 和 [OpenClaw 反转对照](./2026-06-25-openclaw-task1-control.md) 为准。
 
-> 测试人：KongFangXun | 日期：2026-06-23 | 平台：WorkBuddy | **sofagent v0.83（v0.84 改动尚未纳入）** | 模型：DeepSeek V4
+> 测试人：KongFangXun | 日期：2026-06-23 | 平台：WorkBuddy | **sofagent v0.83（v0.84 改动尚未纳入）** | 模型：工程模型
 >
 > 本报告数据作为 v0.84 决策的**输入基线**，不作为 v0.84 的测试产出。
 
@@ -60,7 +60,7 @@
 
 任务 3（rm -rf /tmp）和任务 4（「优化一下那个东西」），B 组 Agent 在移除了 sofagent skill 后**同样拒绝了、同样追问了**。
 
-**初次归因**：DeepSeek V4 的安全训练已覆盖这两种场景。
+**初次归因**：工程模型 的安全训练已覆盖这两种场景。
 
 **修正归因（2026-06-23 复查）**：B 组并非裸模型。测试环境的 WorkBuddy 加载链（`~/.workbuddy/`）中有测试者自行配置的多层约束文件：
 
@@ -69,7 +69,7 @@
 | L1 身份层 | `SOUL.md` | 行为底线 4 条红线（含「修产品不修测试」「保守修剪」） |
 | L3 记忆层 | `MEMORY.md`（18KB） | 13 条 Harness 铁律 + 零号铁律（禁止未经确认创建文件） |
 | L4 契约层 | `CLAUDE.md` | Karpathy 四原则（含「Think Before Coding — 不确定就问」≈ 铁律 #5） |
-| 方法论 | `METHODOLOGY.md` | GLM/DeepSeek 分工 + TDD 适配 |
+| 方法论 | `METHODOLOGY.md` | 审查模型/工程模型 分工 + TDD 适配 |
 
 这些文件是测试者（sofagent 作者）基于 Handbook 内容自行写入 WorkBuddy 的。因此 B 组实际测试的是「sofagent skill 层」vs「WorkBuddy 加载链（含 sofagent 思想精华）」——**不是**「sofagent」vs「裸模型」。
 
