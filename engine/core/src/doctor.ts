@@ -171,7 +171,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   let depsOk = true;
   const workspaceDir = join(projectDir, 'node_modules');
   const rootNodeModules = join(
-    projectDir.split('/sofagent/')[0] || projectDir,
+    projectDir.split('/engine/')[0] || projectDir,
     'node_modules'
   );
 

@@ -154,19 +154,36 @@ describe('tools.ts QA 独立验证', () => {
   // ────────────────────────────────────────
   describe('run_bash 高危命令黑名单（v1.1.4 审查加固）', () => {
     it('rm -rf / → 拦截', () => {
-      expect(checkDangerousCommand('rm -rf /')).toMatch(/rm -rf/);
+      expect(checkDangerousCommand('rm -rf /')).not.toBeNull();
     });
 
     it('rm -rf /* → 拦截', () => {
-      expect(checkDangerousCommand('rm -rf /*')).toMatch(/rm -rf/);
+      expect(checkDangerousCommand('rm -rf /*')).not.toBeNull();
     });
 
     it('rm -rf ~ → 拦截', () => {
-      expect(checkDangerousCommand('rm -rf ~')).toMatch(/rm -rf/);
+      expect(checkDangerousCommand('rm -rf ~')).not.toBeNull();
     });
 
     it('rm -rf ~/ → 拦截', () => {
-      expect(checkDangerousCommand('rm -rf ~/')).toMatch(/rm -rf/);
+      expect(checkDangerousCommand('rm -rf ~/')).not.toBeNull();
+    });
+
+    // v1.2.0 C-1 加固回归：下列命令在旧正则下被绕过，现必须拦截
+    it('rm -rf ./* → 拦截（相对路径通配符）', () => {
+      expect(checkDangerousCommand('rm -rf ./*')).not.toBeNull();
+    });
+
+    it('rm -rf ../ → 拦截（父目录遍历）', () => {
+      expect(checkDangerousCommand('rm -rf ../')).not.toBeNull();
+    });
+
+    it('rm -r -f / → 拦截（flag 拆分）', () => {
+      expect(checkDangerousCommand('rm -r -f /')).not.toBeNull();
+    });
+
+    it('rm --recursive -f / → 拦截（长选项）', () => {
+      expect(checkDangerousCommand('rm --recursive -f /')).not.toBeNull();
     });
 
     it('fork 炸弹 :(){:|:&};: → 拦截', () => {

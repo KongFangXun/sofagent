@@ -109,7 +109,8 @@ export function startCron(projectDir: string): void {
 
     console.log(`[cron] ${job.schedule} → subagent run ${agentName} --mode ${mode}`);
 
-    setInterval(async () => {
+    setInterval(() => {
+      void (async () => {
       try {
         const auditCli = join(__dirname, '..', 'index.js');
         const args = [
@@ -126,6 +127,7 @@ export function startCron(projectDir: string): void {
       } catch (err) {
         console.error(`[cron] ${agentName} 巡检失败:`, (err as Error).message);
       }
+      })();
     }, intervalMs);
   }
 }

@@ -14,6 +14,16 @@ import { evalCase } from '@sofagent/eval';
 import { callModelAPI } from '@sofagent/core';
 import type { ModelMessage } from '@sofagent/core';
 
+/** DeepAgents createDeepAgent 工厂函数签名（A/B 运行器） */
+interface DeepAgentConfig {
+  systemPrompt: string;
+  tools?: unknown[];
+}
+interface DeepAgentInstance {
+  invoke?: (input: { messages: { role: string; content: string }[] }) => Promise<unknown>;
+}
+type DeepAgentFactory = (config: DeepAgentConfig) => Promise<DeepAgentInstance>;
+
 /** Agent 运行结果 */
 interface AgentResult {
   output: Record<string, unknown>;
@@ -126,7 +136,10 @@ async function runDeepAgent(
   testCase: TestCase,
   skillPath: string
 ): Promise<Record<string, unknown>> {
-  const { createDeepAgent } = await import('deepagents');
+  const deepAgents = await import('deepagents');
+  // deepagents 的 createDeepAgent 声明为复杂泛型，与本厂 DeepAgentFactory 签名无结构重叠，
+  // TS 拒绝直转（TS2352）；经 unknown 桥接（非 any，仍保留对返回 DeepAgentInstance 的类型校验）。
+  const createDeepAgent = deepAgents.createDeepAgent as unknown as DeepAgentFactory;
 
   // 从 harness 导入约束构建函数（避免循环依赖）
   const { buildConstrainedSystemPrompt } = await import('@sofagent/harness');
@@ -141,16 +154,16 @@ async function runDeepAgent(
         ? String(testCase.input.task)
         : JSON.stringify(testCase.input);
 
-  const agentConfig: Record<string, unknown> = {
+  const agentConfig: DeepAgentConfig = {
     systemPrompt,
   };
   if (testCase.allowedTools && testCase.allowedTools.length > 0) {
     agentConfig.tools = testCase.allowedTools;
   }
 
-  const agent = await (createDeepAgent as any)(agentConfig);
+  const agent = await createDeepAgent(agentConfig);
 
-  const result = await (agent as any).invoke?.({
+  const result = await agent.invoke?.({
     messages: [{ role: 'user', content: userContent }],
   });
 

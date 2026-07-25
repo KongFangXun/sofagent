@@ -285,14 +285,38 @@ const runBashTool: ExecutableTool = {
  * @returns 拦截原因（string）或 null（放行）
  */
 export function checkDangerousCommand(command: string): string | null {
-  const lower = command.toLowerCase();
+  const lower = command.toLowerCase().trim();
+  if (!lower) return null;
 
-  // rm -rf /（递归删根——允许 rm -rf ./build 这类相对路径）
-  // 模式：rm -rf / 或 rm -rf ~ 或 rm -rf /* 或 rm -rf ~/*
-  // 注意：/ 和 ~ 不是单词字符，不能用 \b，用 (^|[\s;|&]) 匹配命令起始或分隔符
-  const rmPattern = /\brm\s+(-[a-z]*r[a-z]*f*|-[a-z]*f[a-z]*r*)\s+(\/|~\/?|\*|\/\*)/;
-  if (rmPattern.test(lower)) {
-    return 'rm -rf 删除根目录/家目录/通配符根路径';
+  // 把命令按 ; | & 拆成独立段，逐段检查
+  // （避免 `echo x; rm -rf /` 这类拼接漏检）
+  const segments = lower.split(/[;|&]+/).map((s) => s.trim()).filter(Boolean);
+
+  for (const seg of segments) {
+    const tokens = seg.split(/\s+/).filter(Boolean);
+    const rmIdx = tokens.indexOf('rm');
+    if (rmIdx === -1) continue;
+
+    // rm 之后的部分：flags（- 开头）与目标
+    const rest = tokens.slice(rmIdx + 1);
+    const flags = rest.filter((t) => t.startsWith('-'));
+    const targets = rest.filter((t) => !t.startsWith('-'));
+
+    // 是否含递归/危险删除 flag（r/recursive 或 f/force）
+    const hasRecursive = flags.some(
+      (f) => /^(--recursive|-r|-R)$/.test(f) || /^-[a-z]*r[a-z]*$/.test(f)
+    );
+    const hasForce = flags.some(
+      (f) => /^(--force|-f)$/.test(f) || /^-[a-z]*f[a-z]*$/.test(f)
+    );
+    // 普通 rm（无 r/f flag）单文件删除不视为高危
+    if (!hasRecursive && !hasForce) continue;
+
+    // fail-closed：目标命中危险路径即拦截，宁可多拦不可漏拦
+    const danger = targets.find((t) => isDangerousRmTarget(t));
+    if (danger) {
+      return `rm 递归删除危险路径（${danger}）`;
+    }
   }
 
   // fork 炸弹：:(){:|:&};: 或变种（注意 () 在正则里要转义）
@@ -318,6 +342,24 @@ export function checkDangerousCommand(command: string): string | null {
   }
 
   return null;
+}
+
+/**
+ * 判断 rm 目标是否为危险路径（fail-closed：宁可多拦不可漏拦）。
+ *
+ * 危险：绝对路径（/、Windows 盘符）、家目录（~）、父目录遍历（..）、
+ *       当前目录自身及通配（./  ./*  .）、裸通配（*  /*）。
+ * 安全（允许）：明确的相对子路径（./build、src、temp.txt、src/*）。
+ */
+function isDangerousRmTarget(target: string): boolean {
+  const s = target.replace(/^['"]|['"]$/g, ''); // 去引号
+  if (s.length === 0) return false;
+  if (s.startsWith('/') || /^[a-z]:[\\/]/i.test(s)) return true; // 绝对路径 / Windows 盘符
+  if (s.startsWith('~')) return true; // 家目录
+  if (s.startsWith('..')) return true; // 父目录遍历
+  if (s === '.' || s === './' || s === './*') return true; // 当前目录自身/通配
+  if (s === '*' || s === '/*') return true; // 裸通配
+  return false;
 }
 
 /**

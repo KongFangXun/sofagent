@@ -9,13 +9,26 @@
 
 import type { SubAgentConfig } from './workflow-parser';
 
+/** DeepAgents createDeepAgent 工厂函数签名（compose 阶段） */
+interface ComposeAgentConfig {
+  name: string;
+  systemPrompt: string;
+  tools: unknown[];
+}
+interface ComposeAgent {
+  invoke?: (input: { messages: { role: string; content: string }[] }) => Promise<unknown>;
+}
+type DeepAgentFactory = (config: ComposeAgentConfig) => Promise<ComposeAgent>;
+
 /**
  * 动态加载 deepagents（v1.0.9：正式依赖）
  */
-async function loadDeepAgentsCreate(): Promise<Function | null> {
+async function loadDeepAgentsCreate(): Promise<DeepAgentFactory | null> {
   try {
     const { createDeepAgent } = await import('deepagents');
-    return createDeepAgent as Function;
+    // deepagents 的 createDeepAgent 声明为复杂泛型，与本厂 DeepAgentFactory 签名无结构重叠，
+    // TS 拒绝直转（TS2352）；经 unknown 桥接（非 any，仍保留对返回 ComposeAgent 的类型校验）。
+    return createDeepAgent as unknown as DeepAgentFactory;
   } catch {
     return null;
   }
@@ -109,14 +122,14 @@ async function composeYaml(input: ComposeInput): Promise<string | null> {
   try {
     const systemPrompt = buildComposeSystemPrompt(input.enterpriseWorkflowYaml, input.variant ?? 'A');
 
-    const agent = await (createDeepAgent as any)({
+    const agent = await createDeepAgent({
       name: 'sofagent-composer',
       systemPrompt,
       tools: [], // compose 阶段不需要工具——纯文本生成
     });
 
     // 调用 agent 生成工作流
-    const result = await (agent as any).invoke?.({
+    const result = await agent.invoke?.({
       messages: [
         {
           role: 'user',
