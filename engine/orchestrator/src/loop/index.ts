@@ -1,5 +1,5 @@
 // ============================================================
-// LOOP/index.ts · FORGE 引擎 barrel export
+// FORGE 引擎 barrel export
 // v1.2.0：StateGraph 单任务 FORGE + Workflow 消费引擎
 //
 // 编排智能来自外部平台（WorkBuddy 等），sofagent FORGE 负责执行层。

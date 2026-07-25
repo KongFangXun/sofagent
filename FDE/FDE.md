@@ -17,8 +17,8 @@
 > - [🎯 先读这段：如何正确理解 sofagent](#-先读这段如何正确理解-sofagent)
 > - [🚀 5 分钟读懂 FDE](#-5-分钟读懂-fde)
 > - [📋 这是什么](#-这是什么)
-> - [⚠️ 成熟度 & 范围](#️-成熟度--范围)
-> - [🏗️ 理论基础](#️-理论基础)
+> - [⚠️ 成熟度 & 范围](#成熟度--范围)
+> - [🏗️ 理论基础](#理论基础)
 > - [什么时候该上 FDE](#什么时候该上-fde)
 > - [FDE 四阶段流程](#fde-四阶段流程)
 > - [进场阶段](#进场阶段)
@@ -164,7 +164,7 @@ FDE 部署多台设备后，设备之间可以互相查询 knowledge/——财�
 | sensitivity 过滤 | peer 端 + 本地端双重校验（restricted 不外发、不接收） |
 | 合并策略 | automerge CRDT 合并（trust 优先于 mtime）；篡改标签降权 trust=web + 审计 WARN |
 
-> 💡 **FDE 部署时的联邦配置**：FDE 在 §7 交付方案时为每个节点设定 sensitivity（restricted 标好客户名单/财务数据），配对完成后设备间查询自动遵守分级。架构层纵深详见 [ARCHITECTURE 联邦查询](../docs/ARCHITECTURE.md#联邦查询v1118)；Prompt 注入防护体系（外部内容 `<untrusted>` 包裹 + 脱敏 + 可信分级）详见 [SECURITY.md](../SECURITY.md)。
+> 💡 **FDE 部署时的联邦配置**：FDE 在 §7 交付方案时为每个节点设定 sensitivity（restricted 标好客户名单/财务数据），配对完成后设备间查询自动遵守分级。架构层纵深详见 [ARCHITECTURE 联邦查询](../docs/ARCHITECTURE.md#联邦查询v118)；Prompt 注入防护体系（外部内容 `<untrusted>` 包裹 + 脱敏 + 可信分级）详见 [SECURITY.md](../SECURITY.md)。
 
 > 🔑 微软 CEO Nadella：「未来企业最重要的知识产权是 private evals——工具可以被复制，但差异化反馈数据无法被复制。」
 

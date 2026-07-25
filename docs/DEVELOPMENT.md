@@ -31,7 +31,7 @@
 
 ## 开发环境
 
-> 开发前先确认标准安装通过——[HANDBOOK §装完第一件事](./HANDBOOK.md#场景一装完第一件事)。
+> 开发前先确认标准安装通过——[HANDBOOK §安装](./HANDBOOK.md#安装)。
 
 | 依赖 | 用途 | 版本 |
 |------|------|:--:|
@@ -93,7 +93,7 @@
 
 sofagent 一底座·四引擎各有分工。**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义，之后 Sub Agent 自加载约束执行。两种调用路径：OpenClaw 节点走内部 API，非 OpenClaw 节点走 CLI。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
 
-主 Agent 的日常：接活 → 看 `eval.md` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE 编排引擎](./ARCHITECTURE.md#⚙️-编排引擎)。
+主 Agent 的日常：接活 → 看 `eval.md` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE 编排引擎](./ARCHITECTURE.md#编排引擎)。
 
 ### Skill 设计哲学
 
@@ -185,7 +185,7 @@ FDE 部署 SOP 应遵循此顺序：
 
 | 域 | 文档 | 说明 |
 |----|------|------|
-| **Architecture**（架构） | `ARCHITECTURE.md`、`design/`、`llm-wiki-mapping.md` | 系统设计、技术选型、能力清单 |
+| **Architecture**（架构） | `ARCHITECTURE.md`、`llm-wiki-mapping.md` | 系统设计、技术选型、能力清单 |
 | **Handover**（交接/上手） | `HANDBOOK.md`、`DEVELOPMENT.md`、`COMMUNITY.md`、`THANKS.md`、`guides/` | 开发者上手、贡献指南 |
 | **Delivery**（交付/发版） | `changelog/`、根 `ROADMAP.md`、根 `CHANGELOG.md` | 版本记录、路线图 |
 | **Evidence**（证据/归档） | `evidence/`、`archive/` | 实验数据、历史归档 |
@@ -216,13 +216,13 @@ USB key 不是简单的文件复制——它是一个完整的便携式运行时
 
 CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写入侧）+ `sofagent-daemon start --usb-root`（运行侧）。启动脚本：`daemon/usb/start.command`（macOS）/ `start.sh`（Linux）/ `start.bat`（Windows）。
 
-> 💡 USB 功能的用户侧使用见 [HANDBOOK 场景五](./HANDBOOK.md#usb-烧录给普通员工发-u-盘v118) 和 [FDE/FDE.md §部署场景](../FDE/FDE.md)。这里只讲代码层架构。
+> 💡 USB 功能的用户侧使用见 [HANDBOOK §USB 烧录](./HANDBOOK.md#usb-烧录三种部署场景全覆盖v118--v120-叙事收口) 和 [FDE/FDE.md §部署场景](../FDE/FDE.md)。这里只讲代码层架构。
 
 ---
 
 ## 二、编排哲学
 
-> 📖 FORGE 自迭代的设计哲学见 [PHILOSOPHY §七](./PHILOSOPHY.md#七怎么进化loop-自迭代)。本章只讲技术实现。
+> 📖 FORGE 自迭代的设计哲学见 [PHILOSOPHY §七](./PHILOSOPHY.md#七怎么进化-forge-自迭代)。本章只讲技术实现。
 
 ### 编排流程
 
@@ -344,7 +344,7 @@ DeepAgents compose 拆完任务
 
 ### A/B 测试
 
-> A/B 结果异常时的用户侧处理方法见 [HANDBOOK §排查](./HANDBOOK.md#场景三排查问题)。
+> A/B 结果异常时的用户侧处理方法见 [HANDBOOK §排查](./HANDBOOK.md#排查问题)。
 
 `sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排引擎定期重出 candidate 方案后与 current 对比——v1.0.7 实现连续胜出自动计数器（连续 2 次胜出 → auto promote + 原子写入），旧方案归档到 history/。
 
@@ -498,7 +498,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 ## 八、提交时审计 + 文件系统审计
 
-> 审计引擎的 CLI 使用和 exit code 约定。CI 集成例子见 [HANDBOOK §装完第一件事](./HANDBOOK.md#场景一装完第一件事)。
+> 审计引擎的 CLI 使用和 exit code 约定。CI 集成例子见 [HANDBOOK §安装](./HANDBOOK.md#安装)。
 
 sofagent-audit（v1.0.8）是 TypeScript CLI，支持两种审计触发模式：
 
