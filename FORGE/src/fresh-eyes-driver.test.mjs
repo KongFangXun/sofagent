@@ -24,7 +24,7 @@ const SOURCE_PATH = new URL('./fresh-eyes-driver.mjs', import.meta.url);
 const SOURCE_CODE = readFileSync(SOURCE_PATH, 'utf-8');
 
 /**
- * 从源码中提取指定函数的函数体并返回可调用的���数。
+ * 从源码中提取指定函数的函数体并返回可调用的函数。
  *
  * 策略：用正则匹配 `function funcName(params) { ... }`，
  * 花括号配平提取完整函数体。由于被测函数内部不依赖外部 import

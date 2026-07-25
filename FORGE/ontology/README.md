@@ -246,7 +246,7 @@ flowchart TD
 | 角色 | 定位 | 核心职责 | 不可越界 |
 |------|------|---------|---------|
 | **指挥模型** | 指挥官 / 审查官 | 写 bugfix prompt、写 develop prompt、审查 bugfix/develop 结果、走 releasing 流程（阶段 1-5）、评审阶段六测试结果、写下一版 develop prompt | 不直接执行编码/修复 |
-| **执行模型** | 执行者 | 执行 bugfix prompt、执行 develop prompt、**控制 OpenClaw 做阶段六全面测试** | 不自行审查自己的执行��果 |
+| **执行模型** | 执行者 | 执行 bugfix prompt、执行 develop prompt、**控制 OpenClaw 做阶段六全面测试** | 不自行审查自己的执行结果 |
 | **备选审查模型** | 备选审查 | 免费，作为第三独立视角参与阶段一审查 | 仅审查，不执行不决策 |
 
 > **铁律**：指挥模型 审查、执行模型 执行、备选审查模型补充。角色不可互换——执行者不审自己的代码，审查官不亲自编码。
@@ -268,7 +268,7 @@ flowchart TD
 | 5 | `FORGE/SKILL/fresh-eyes-loop/specs/fresh-eyes-review.md` | 审查体系（校准更新） |
 | 6 | `docs/changelog/releasing.md` | 发版 SOP |
 | 7 | `README.md` | 项目首屏 |
-| 8 | `tools/acceptance-test.sh` | 验收测试脚本（每版本补场景） |
+| 8 | `FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh` | 验收测试脚本（每版本补场景） |
 | 9 | `tools/bump-version.sh` | 版本号管理（13 类位置同步） |
 
 ### L2 版本跟随（有相关改动时更新）
@@ -302,7 +302,7 @@ releasing 流程依赖以下核心测试资产，每个版本迭代都会更新�
 | 资产 | 路径 | 用途 | 更新方式 |
 |------|------|------|---------|
 | **回归清单** | `FORGE/SKILL/fresh-eyes-loop/specs/regression-checklist.md` | 每次发版前逐项核对，确认已修问题无回退 | 加法更新（发现新问题追加维度） |
-| **验收测试脚本** | `tools/acceptance-test.sh` | 端到端全场景自动化验收 | 每版本补场景（只增不改编号） |
+| **验收测试脚本** | `FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh` | 端到端全场景自动化验收 | 每版本补场景（只增不改编号） |
 | **审查体系** | `FORGE/SKILL/fresh-eyes-loop/specs/fresh-eyes-review.md` | 留白式直觉审查，凭直觉发现新问题 | 校准更新（不是加法） |
 | **版本号脚本** | `tools/bump-version.sh` | 13 类位置版本号同步替换 | 自动化脚本，禁止手动 grep/sed |
 
@@ -341,4 +341,4 @@ releasing 流程依赖以下核心测试资产，每个版本迭代都会更新�
 
 你可以把它当作模板，为自己的项目建立类似的开发本体。
 
-> **关于 `knowledge-domain` 字段**：当前所有��体的 `include` 都是 `["*"]`（全开），看起来像是形式字段。这是有意的——开发本体描述的是"一个人维护的开源项目"，人和工具之间不存在跨角色的知识隔离（不像多团队企业场景）。字段保留是为了模板完整性，方便多团队场景复用时直接收紧。
+> **关于 `knowledge-domain` 字段**：当前所有实体的 `include` 都是 `["*"]`（全开），看起来像是形式字段。这是有意的——开发本体描述的是"一个人维护的开源项目"，人和工具之间不存在跨角色的知识隔离（不像多团队企业场景）。字段保留是为了模板完整性，方便多团队场景复用时直接收紧。

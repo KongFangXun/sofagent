@@ -314,7 +314,7 @@ entities:
     type: document
     domain: "[文档 / L1 核心高频]"
     relations:
-      has_many: [changelog-dev-log, changelog-root-index, roadmap, regression-checklist, fresh-eyes-review, releasing-md, readme, acceptance-test, bump-version]
+      has_many: [changelog-dev-log, changelog-root-index, roadmap, regression-checklist, fresh-eyes-review, release-sop, readme, acceptance-test, bump-version]
       belongs_to: "sofagent-project"
       depends_on: []
     knowledge-domain:
@@ -552,7 +552,7 @@ entities:
       include: ["*"]
       exclude: []
 
-  # ===== 七、核���测试资产 =====
+  # ===== 七、核心测试资产 =====
   - id: test-asset
     name: "核心测试资产"
     type: entity
