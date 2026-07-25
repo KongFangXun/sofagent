@@ -14,6 +14,15 @@ import { loadEnvConfig } from '@sofagent/core';
 import { getPersonaContent } from '@sofagent/core';
 import type { SubAgentDefinition } from './registry';
 
+/** DeepAgents createDeepAgent 工厂函数签名 */
+interface DeepAgentConfig {
+  name: string;
+  systemPrompt: string;
+  tools: unknown[];
+  modelName?: string;
+}
+type DeepAgentFactory = (config: DeepAgentConfig) => Promise<AgentInstance>;
+
 /** Agent 实例接口 */
 interface AgentInstance {
   close?: () => Promise<void>;
@@ -210,10 +219,12 @@ export { buildConstrainedSystemPrompt } from '@sofagent/harness';
 /**
  * 动态加载 deepagents（v1.0.7：正式依赖）
  */
-async function loadDeepAgents(): Promise<Function | null> {
+async function loadDeepAgents(): Promise<DeepAgentFactory | null> {
   try {
     const { createDeepAgent } = await import('deepagents');
-    return createDeepAgent as Function;
+    // deepagents 的 createDeepAgent 声明为复杂泛型，与本厂 DeepAgentFactory 签名无结构重叠，
+    // TS 拒绝直转（TS2352）；经 unknown 桥接（非 any，仍保留对返回 AgentInstance 的类型校验）。
+    return createDeepAgent as unknown as DeepAgentFactory;
   } catch {
     console.warn('deepagents 未安装，Sub Agent 功能不可用。npm install deepagents 启用。');
     return null;
@@ -230,7 +241,7 @@ export async function launch(definition: SubAgentDefinition): Promise<AgentInsta
   if (!createDeepAgent) return null;
 
   try {
-    const instance = await (createDeepAgent as any)({
+    const instance = await createDeepAgent({
       name: definition.name,
       systemPrompt: definition.systemPrompt,
       tools: definition.tools,
@@ -250,7 +261,7 @@ export async function launch(definition: SubAgentDefinition): Promise<AgentInsta
     // 启动 30s 心跳
     startHeartbeat(definition.name);
 
-    return instance as AgentInstance;
+    return instance;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.warn(`sofagent 提示：Sub Agent "${definition.name}" 启动未完成——${msg}`);

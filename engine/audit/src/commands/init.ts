@@ -406,7 +406,7 @@ exit 0
             cliPath = 'sofagent-daemon';
           }
         }
-        nodeBinDir = execSync('dirname $(which node)', { encoding: 'utf-8' }).trim();
+        nodeBinDir = dirname(process.execPath);
       } catch {
         // fallback 到 PATH 中的 sofagent-daemon
       }
@@ -437,7 +437,7 @@ exit 0
       if (existsSync(plistPath)) {
         console.log('  → LaunchAgent 已存在，先卸载旧版本...');
         try {
-          execSync(`launchctl unload "${plistPath}"`, { stdio: 'pipe' });
+          execFileSync('launchctl', ['unload', plistPath], { stdio: 'pipe' });
         } catch {
           // 可能没有在运行，忽略
         }
@@ -480,7 +480,7 @@ ${finalProgArgs.map((a) => `        <string>${a}</string>`).join('\n')}
 
       // 加载 LaunchAgent
       try {
-        execSync(`launchctl load "${plistPath}"`, { stdio: 'pipe' });
+        execFileSync('launchctl', ['load', plistPath], { stdio: 'pipe' });
         console.log('  ✅ daemon 已注册并启动（下次开机自动运行）');
         console.log(`  → 监控项目: ${projectWorkingDir}`);
         console.log(`  → 日志: ~/.sofagent/daemon.log`);

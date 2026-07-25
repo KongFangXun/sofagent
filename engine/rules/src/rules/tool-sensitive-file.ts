@@ -26,16 +26,36 @@ const SENSITIVE_PATTERNS: RegExp[] = [
   /\.pypirc$/i,
 ];
 
+/** 路径类字段名匹配（仅这些 key 的值才当作文件路径扫描） */
+const PATH_LIKE_KEY = /path|file|dir|folder|source|dest|target/i;
+
 /**
- * 从 tool call args 中提取所有可能是文件路径的字符串值
+ * 从 tool call args 中提取"路径类字段"的字符串值。
+ *
+ * v1.2.0 修复：只取路径类字段（path / file_path / edit_path 等），
+ * 不再把 write_file 的 content、edit_file 的 old/new_string、
+ * run_bash 的 command 等文本字段当路径扫描——
+ * 否则合法写入（内容含 "credentials" 字样）或
+ * `cat ~/.ssh/config` 这类命令会被误判为敏感文件操作。
  */
 function extractFilePaths(args: Record<string, unknown>): string[] {
   const paths: string[] = [];
-  for (const value of Object.values(args)) {
+  for (const [key, value] of Object.entries(args)) {
+    const keyIsPathLike = PATH_LIKE_KEY.test(key);
     if (typeof value === 'string' && value.length > 0) {
-      paths.push(value);
-    }
-    if (typeof value === 'object' && value !== null) {
+      // 标量字符串：仅路径类字段参与扫描
+      if (keyIsPathLike) paths.push(value);
+    } else if (Array.isArray(value)) {
+      for (const item of value) {
+        if (typeof item === 'string' && item.length > 0) {
+          // 数组元素：仅当数组所在 key 本身是路径类字段（如 files / paths）
+          // 才把其中的字符串当作路径。避免扫描 command 等文本数组。
+          if (keyIsPathLike) paths.push(item);
+        } else if (typeof item === 'object' && item !== null) {
+          paths.push(...extractFilePaths(item as Record<string, unknown>));
+        }
+      }
+    } else if (typeof value === 'object' && value !== null) {
       paths.push(...extractFilePaths(value as Record<string, unknown>));
     }
   }

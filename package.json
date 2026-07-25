@@ -18,7 +18,7 @@
   ],
   "scripts": {
     "test": "npm test --workspaces --if-present",
-    "build": "npm run build --workspace=engine/harness && npm run build --workspace=engine/ontology && npm run build --workspace=engine/eval && npm run build --workspace=engine/core && npm run build --workspace=engine/think && npm run build --workspace=engine/audit && npm run build --workspace=engine/orchestrator && npm run build --workspace=engine/daemon && npm run build --workspace=engine/ab-test && npm run build --workspace=engine/skillopt && npm run build --workspace=engine/mcp"
+    "build": "npm run build --workspace=engine/harness && npm run build --workspace=engine/ontology && npm run build --workspace=engine/eval && npm run build --workspace=engine/core && npm run build --workspace=engine/rules && npm run build --workspace=engine/think && npm run build --workspace=engine/audit && npm run build --workspace=engine/orchestrator && npm run build --workspace=engine/daemon && npm run build --workspace=engine/ab-test && npm run build --workspace=engine/skillopt && npm run build --workspace=engine/mcp"
   },
   "optionalDependencies": {
     "@langchain/anthropic": "^1.5.2"

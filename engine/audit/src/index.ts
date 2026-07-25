@@ -418,7 +418,7 @@ function printTimeline(limit: number, json: boolean): void {
 }
 
 // 同步加载 snapshot 模块（v1.2.0 从 @sofagent/daemon 迁移到 @sofagent/core，消除循环依赖）
-function awaitLoadSnapshot(): any {
+function awaitLoadSnapshot(): typeof import('@sofagent/core') {
   try {
     return require('@sofagent/core');
   } catch {

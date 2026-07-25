@@ -22,7 +22,6 @@
   "license": "MIT",
   "author": "KongFangXun",
   "dependencies": {
-    "@sofagent/orchestrator": "1.2.0",
     "@sofagent/harness": "1.2.0",
     "@sofagent/eval": "1.2.0",
     "@sofagent/core": "1.2.0"
