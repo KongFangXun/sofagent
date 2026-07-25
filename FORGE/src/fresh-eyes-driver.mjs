@@ -160,7 +160,27 @@ function buildSystemPrompt(skillPath) {
     val('description') ? `[描述: ${val('description')}]` : '',
     val('triggers') ? `[触发条件: ${val('triggers')}]` : '',
   ].filter(Boolean).join('\n');
-  return header + '\n\n' + body;
+
+  // macOS BSD 工具约束——GLM/DeepSeek 常用 Linux 语法导致命令报错，
+  // 浪费 recursionLimit 步数在重试错误命令上。
+  const shellConstraints = [
+    '',
+    '## 🔧 运行环境约束（macOS BSD 工具）',
+    '',
+    '你在 macOS 上运行，shell 是 BSD 版本，不是 GNU/Linux。以下命令行为不同：',
+    '- `grep`：不支持 `-P`（PCRE），用 `grep -E`（扩展正则）代替',
+    '- `sed`：不支持 `--version`/`-V`；`-i` 必须带后缀（如 `sed -i "" "s/a/b/"`）',
+    '- `head`/`tail`：不支持 `-n +N` 以外的 GNU 扩展',
+    '- `cat`：不支持 `-A`，用 `cat -v` 或 `od -c` 代替',
+    '- `stat`：不支持 `--format`，用 `stat -f` 代替',
+    '- `readlink`：不支持 `-f`，用 `greadlink`（如装了 coreutils）或 `python3 -c`',
+    '- 不支持 `<(...)` process substitution（bash ���有，/bin/sh 没有）',
+    '- 不支持 `${var}` 之外的字符串操作',
+    '',
+    '命令报错时，不要反复重试同一命令——换一种方式或跳过。',
+  ].join('\n');
+
+  return header + '\n\n' + body + shellConstraints;
 }
 
 /**
@@ -484,14 +504,23 @@ async function runWorker(step, roundDir, target) {
   // 5. invoke（计时）
   console.log(`[worker:${step}] 开始执行（role=${role}, model=${cfg.model}）`);
   const t0 = Date.now();
+
+  // recursionLimit 按步骤类型区分：
+  // - 审查类（a-check/b-check）：需要大量读文件+搜索，给 150（=75 轮工具调用）
+  // - 文本处理类（a-consolidate/a-verify/b-fix）：主要做合并/格式化，给 40 够了
+  //   太高会导致消息累积 OOM（exit 137）
+  const STEP_RECURSION_LIMITS = {
+    'a-check': 150,
+    'b-check': 150,
+    'a-consolidate': 50,
+    'b-fix': 60,
+    'a-verify': 50,
+  };
+  const recursionLimit = STEP_RECURSION_LIMITS[step] ?? 50;
+
   const result = await agent.invoke({
     messages: [{ role: 'user', content: userMessage }],
-  }, {
-    // 默认 25 不够——代码审查需要多轮工具调用（读文件+搜索+测试）。
-    // 每次工具调用 = 2 步（model call + tool node），25 步约 12 轮工具调用。
-    // 提到 100 = 最多 50 轮工具调用，足够完整审查。
-    recursionLimit: 100,
-  });
+  }, { recursionLimit });
   const latencyMs = Date.now() - t0;
 
   // 5b. 记录 usage（try/catch 包住——usage 记录失败不能中断主流程）
@@ -677,6 +706,42 @@ function spawnParallel(workers, round) {
 }
 
 /**
+ * 降级兜底：a-consolidate 失败时，直接拼接 check-a + check-b 作为 findings.md。
+ *
+ * 不做去重/合并/优先级排序——只是让循环能继续走到 b-fix。
+ * findings.md 里保留原始两份报告，result.md 写一个最小结构让 parseStopCondition 能数 P0/P1。
+ */
+function writeFallbackFindings(roundDir) {
+  const checkA = join(roundDir, 'check-a.md');
+  const checkB = join(roundDir, 'check-b.md');
+
+  const parts = ['# Fallback Findings（a-consolidate 失败降级）', ''];
+  if (existsSync(checkA)) {
+    parts.push('## A (GLM-5.2) 审查报告', '', readFileSync(checkA, 'utf-8'), '');
+  }
+  if (existsSync(checkB)) {
+    parts.push('## B (DeepSeek) 审查报告', '', readFileSync(checkB, 'utf-8'), '');
+  }
+  writeFileSync(join(roundDir, 'findings.md'), parts.join('\n'), 'utf-8');
+
+  // result.md 写最小结构——parseStopCondition 靠数 P0/P1/P2 标记判定
+  const findingsText = parts.join('\n');
+  const p0 = (findingsText.match(/\bP0\b/g) || []).length;
+  const p1 = (findingsText.match(/\bP1\b/g) || []).length;
+  const resultContent = [
+    '# 修复结果（降级生成——a-consolidate 失败）',
+    '',
+    `| # | 发现 | 优先级 | 状态 |`,
+    `|---|------|--------|------|`,
+    `| fallback | a-consolidate 失败，findings 由 check-a + check-b 直接拼接 | P0×${p0} P1×${p1} | SKIP |`,
+    '',
+  ].join('\n');
+  writeFileSync(join(roundDir, 'result.md'), resultContent, 'utf-8');
+
+  console.log(`     降级 findings.md 已写入（P0×${p0} P1×${p1}）`);
+}
+
+/**
  * 解析停止条件——driver 唯一做判断的地方。
  *
  * 读 findings.md 数 P0/P1 标记；读 result.md verify 列数 FAIL。
@@ -848,8 +913,16 @@ async function runRound(roundNum, runDir, target, dryRun) {
   ], roundNum);
 
   // 步骤 ③ A 合并
+  // 如果 a-consolidate 失败（OOM/recursionLimit/模型错误），降级用两份 check
+  // 报告拼接一个 findings.md，让循环能继续走到 b-fix。
   console.log('\n  [步骤 ③] A 合并 check-a + check-b → findings + result...');
-  await spawnWorker('a-consolidate', roundDir, target, roundNum);
+  try {
+    await spawnWorker('a-consolidate', roundDir, target, roundNum);
+  } catch (consolidateErr) {
+    console.warn(`\n  ⚠️  a-consolidate 失败: ${consolidateErr.message}`);
+    console.warn(`     降级：直接拼接 check-a + check-b 作为 findings.md`);
+    writeFallbackFindings(roundDir);
+  }
 
   // 步骤 ④ B 修复
   console.log('\n  [步骤 ④] B 按 result.md 修复...');
