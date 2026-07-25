@@ -1,4 +1,0 @@
-# runs/ 正文是可丢弃的循环产物，不进 git。
-# LEDGER.md（位于 LOOP/LEDGER.md）是唯一被跟踪的循环状态文件。
-*
-!.gitignore
