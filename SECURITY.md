@@ -125,7 +125,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 
 ### 知识摘要主动通知（v1.1.8）
 
-素材仅 `log.md` + `health-report.md`（restricted 在生产侧已被 sensitivity 过滤，不进通知）；通道复用 push-target（daemon:notice + openclaw:im outbox），仅本机/联邦内通知，非 v1.2.x 规划的对外 Webhook/飞书推送；失败静默不阻塞 dream-cycle / health 主流程。
+素材仅 `log.md` + `health-report.md`（restricted 在生产侧已被 sensitivity 过滤，不进通知）；通道复用 push-target（daemon:notice + openclaw:im outbox），仅本机/联邦内通知，非 v1.2.1 规划的对外 Webhook/飞书推送；失败静默不阻塞 dream-cycle / health 主流程。
 
 ### 知识库与工具网关安全边界（2026-07 研报印证）
 
@@ -238,9 +238,9 @@ sofagent daemon 是本地文件系统监控守护进程，其行为边界如下�
 | **监控范围** | 仅 `.sofagent/` 工作目录 + 用户显式配置的路径（`config.yml` 中的 `daemon.watchPaths`）。不扫描用户其他文件。 |
 | **数据去向** | 所有数据本地存储（`.sofagent/` 目录下），不上传云端，不向外发送网络请求——除非用户显式配置 TencentDB Memory 集成（`install.sh --with-memory`，opt-in）。 |
 | **权限** | 只读监听文件事件（hash 变化检测 + cron 定时巡检）。**不修改用户文件、不删除文件、不外传数据**。审计发现写入 `daemon-notice.md` 和 `history.jsonl`。 |
-| **审计结果推送** | v1.2.x 前 daemon 审计结果**仅本地存储**（`daemon-notice.md` + 终端 stdout），**不推送 Webhook/企业协同平台**。企业 IT 如需集中收集审计日志，当前版本需自行定时轮询 `.sofagent/audit/history.jsonl`。Webhook 推送能力规划在 v1.2.x。 |
+| **审计结果推送** | v1.2.1 前 daemon 审计结果**仅本地存储**（`daemon-notice.md` + 终端 stdout），**不推送 Webhook/企业协同平台**。企业 IT 如需集中收集审计日志，当前版本需自行定时轮询 `.sofagent/audit/history.jsonl`。Webhook 推送完整能力（飞书/钉钉/企微）已上提至 **v1.2.1**（原规划 v1.2.2，采购阻塞项）。 |
 
-> 💡 **企业集中收集 workaround（v1.1.6）**：Webhook 推送在 v1.2.x 才就绪，企业 IT 如需在 v1.1.x 集中收集审计日志，可用 filebeat / logstash 等采集 agent **定时轮询 `.sofagent/audit/history.jsonl`**（append-only、JSONL 明文），转发至 SIEM / 企业日志平台。注意 history.jsonl 为明文存储，转发前建议配合外部加密卷或 age 加密，避免敏感 diff 摘要外泄。
+> 💡 **企业集中收集 workaround（v1.1.6）**：Webhook 推送在 v1.2.1 才就绪，企业 IT 如需在 v1.1.x 集中收集审计日志，可用 filebeat / logstash 等采集 agent **定时轮询 `.sofagent/audit/history.jsonl`**（append-only、JSONL 明文），转发至 SIEM / 企业日志平台。注意 history.jsonl 为明文存储，转发前建议配合外部加密卷或 age 加密，避免敏感 diff 摘要外泄。
 
 > daemon 源码见 `engine/daemon/src/`：`fs-watch.ts`（文件监听）、`cron.ts`（定时巡检）、`snapshot.ts`（快照）、`usb-detect.ts`（USB federation 检测，v1.1.4+）、`dream-cycle/`（Dream Cycle 6 阶段管道，v1.1.7+）、`inspectors/knowledge-health.ts`（知识健康巡检，v1.1.7+）、`commands/knowledge-status.ts`（知识状态聚合命令，v1.1.7+）、`federation/`（联邦查询，v1.1.8+）、`usb-signature.ts`（USB HMAC 签名，v1.1.9+）、`usb-key.ts`（USB key 创建，v1.1.9+）、`usb-runtime.ts`（USB 运行时启动，v1.1.9+）、`notify.ts`（统一通知接口，v1.1.3+）。
 

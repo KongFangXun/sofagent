@@ -95,14 +95,14 @@
 
 ## Webhook（部署完成后配置）
 
-> ⏰ **版本提示（v1.1.x）**：完整的 Webhook 推送到企业协同平台（钉钉/飞书/企业微信）能力规划在 **v1.2.x**。
+> ⏰ **版本提示（v1.1.x）**：完整的 Webhook 推送到企业协同平台（钉钉/飞书/企业微信）能力已上提至 **v1.2.1**（原规划 v1.2.2，企业采购阻塞项）。
 > 当前版本审计结果可通过以下方式获取：
 > - `daemon-notice.md`（daemon 自动写入本地通知文件）
 > - 终端 stdout（实时审计输出）
 > - `sofagent-audit --timeline`（历史快照查看）
 > - 手动轮询 `.sofagent/audit/history.jsonl`（JSONL 明文，可用 filebeat/logstash 转发到 SIEM）
 >
-> 如需 Webhook 推送，请等待 v1.2.x 或使用 history.jsonl 手动转发方案。
+> 如需 Webhook 推送，请等待 v1.2.1 或使用 history.jsonl 手动转发方案。
 
 走完 [FDE.md](./FDE.md) 12 个关键步骤、设备上的 AI 节点开始运行之后，配置 webhook 让审计结果自动推送到公司群：
 
