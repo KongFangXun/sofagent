@@ -8,7 +8,7 @@
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
-> 💡 **行业背景**：sofagent 是一个 FDE Agent——进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎（Harness 中间件）的一底座·四引擎覆盖全生命周期。不管企业用 OpenClaw / DeepAgents / Cloudtag 还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/FDE.md](../FDE/FDE.md)。
+> 💡 **行业背景**：sofagent 是一个 FDE Agent——进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎（Harness 中间件）的一底座·四引擎覆盖全生命周期。不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/FDE.md](../FDE/FDE.md)。
 
 > 💬 **开发铁律**：sofagent 不建图形界面。所有能力必须通过 MCP 协议暴露。Agent 首次连接时主动推送 `list_capabilities`。开发任何新功能前，先回答三个问题：（1）用户怎么通过对话发现这个能力？（2）结果推到哪？（3）用户怎么知道这个结果是 sofagent 做的，不是模型做的？——任何面向用户的输出必须带 `[sofagent]` 签名标注来源。详见 [设计哲学](./PHILOSOPHY.md)。MCP 完整 resource 清单见 [MCP 使用指南](./guides/mcp-usage.md)。
 
@@ -36,7 +36,7 @@
 | 依赖 | 用途 | 版本 |
 |------|------|:--:|
 | Node.js + TypeScript | 审计引擎、CLI、MCP Server | ≥18（v1.1.0 起纳入） |
-| [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) | 编排引擎 + Sub Agent 系统 | v1.0.1+ |
+| [@langchain/langgraph](https://github.com/langchain-ai/langgraph) | 编排引擎（createReactAgent）+ Sub Agent 系统 | v1.2.0+（v1.0.1-v1.1.x 曾用 deepagents，已弃用） |
 | [LangGraph.js](https://github.com/langchain-ai/langgraphjs) | 状态图、条件路由、HITL | v1.0.1+ |
 | Python 3 + `pip install skillopt` | Skill 自进化引擎（通过 CLI subprocess 调用，可选） | v1.0.3+ |
 | 无其他外部运行时依赖 | — | — |
@@ -226,22 +226,22 @@ CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写�
 
 ### 编排流程
 
-任务到达 → 两轮澄清 → 目标定稿 → DeepAgents compose 拆任务（v1.0.6 从 ao 迁移，v1.0.7 ao 完全退役） → 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 Sub Agent 启动时自加载（v1.0.7+ `buildConstrainedSystemPrompt`）或 OpenClaw Hook 注入。
+任务到达 → 两轮澄清 → 目标定稿 → LangGraph createReactAgent 拆任务（v1.0.6 从 ao 迁移至 DeepAgents，v1.2.0 迁移至 LangGraph createReactAgent，deepagents 已弃用） → 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 Sub Agent 启动时自加载（v1.0.7+ `buildConstrainedSystemPrompt`）或 OpenClaw Hook 注入。
 
 #### 两条执行路径与降级链
 
-编排引擎有两条执行路径，新代码应优先走 StateGraph（v1.1.3+，主推）：入口 `runLoopGraph()` / `sofagent-orchestrator loop --task`，LangGraph 四节点状态机 + checkpoint（`.sofagent/checkpoint/`，断点续跑）+ HITL（human_confirm 节点，`loop --resume` 可恢复）。路径一 compose（v1.0.6+，`composeWithDeepAgents()`）保留兼容——DeepAgents 只把任务拆成 YAML 工作流 DAG，无 checkpoint 无 HITL。对应源码：路径一 `engine/orchestrator/src/composer.ts` + `loop-runner.ts`；路径二 `engine/orchestrator/src/loop/`（state/nodes/graph）。StateGraph 的 engineer/reviewer 节点优先走"工具注入路径"（`createDeepAgent` + 工具集，systemPrompt 拼装四层约束链）；`SOFAGENT_LLM` 未设置或解析失败时，自动降级到 `spawnSubAgent` 零工具路径（composer）。
+编排引擎有两条执行路径，新代码应优先走 StateGraph（v1.1.3+，主推）：入口 `runLoopGraph()` / `sofagent-orchestrator loop --task`，LangGraph 四节点状态机 + checkpoint（`.sofagent/checkpoint/`，断点续跑）+ HITL（human_confirm 节点，`loop --resume` 可恢复）。路径一 compose（v1.0.6+，`composeWithDeepAgents()`）保留兼容——v1.2.0 前基于 deepagents，现已迁移至 LangGraph `createReactAgent` 拆任务为 YAML 工作流 DAG，无 checkpoint 无 HITL。对应源码：路径一 `engine/orchestrator/src/composer.ts` + `loop-runner.ts`；路径二 `engine/orchestrator/src/loop/`（state/nodes/graph）。StateGraph 的 engineer/reviewer 节点优先走"工具注入路径"（LangGraph `createReactAgent` + 工具集，systemPrompt 拼装四层约束链）；`SOFAGENT_LLM` 未设置或解析失败时，自动降级到 `spawnSubAgent` 零工具路径（composer）。
 #### 测试友好：依赖注入
 
 StateGraph 的流转逻辑通过 `LoopGraphDeps` 接口完全可 mock——`runEngineer / runAudit / runReviewer / confirmHuman / recordBlocked / checkpointer / maxRetries / log` 七个槽位。`defaultDeps()` 给生产实现，测试时整体替换。这让节点流转逻辑可以脱离真实 LLM 单测（v1.1.7 测试堆到 770 case 的前提）。
 
 #### DAG Runner 与 Workflow 解析（v1.1.8+）
 
-compose 生成的编排方案 YAML 怎么真正跑起来——`dag-runner.ts`（`createDeepAgent({ subagents })` 真委派）负责调度，`workflow-parser.ts` 负责把 YAML 映射为 SubAgent 配置：
+compose 生成的编排方案 YAML 怎么真正跑起来——`dag-runner.ts`（LangGraph `createReactAgent` 真委派）负责调度，`workflow-parser.ts` 负责把 YAML 映射为 SubAgent 配置。v1.2.0 前用 `createDeepAgent`，已弃用。
 
 | 模块 | 源码 | 职责 |
 |------|------|------|
-| dag-runner | `orchestrator/src/dag-runner.ts` | 接收 SubAgent[] 配置 → `createDeepAgent` 真委派 → 主 Agent 自主决定何时调哪个 Sub Agent（串行）。每个 Sub Agent 注入四层约束加载链 |
+| dag-runner | `orchestrator/src/dag-runner.ts` | 接收 SubAgent[] 配置 → LangGraph `createReactAgent` 真委派 → 主 Agent 自主决定何时调哪个 Sub Agent（串行）。每个 Sub Agent 注入四层约束加载链 |
 | workflow-parser | `orchestrator/src/workflow-parser.ts` | YAML→SubAgent 映射（developer→ENGINEER / qa-engineer→REVIEWER / researcher→FDE sustain / technical-writer→内置）。DAG 悬空 / 自依赖 / 环校验 |
 | composer 改造 | `orchestrator/src/composer.ts` | `ComposeResult{ yaml, subagents }`——接 `enterpriseWorkflowYaml` + `variant` A/B/C/D 拆解策略 |
 
@@ -306,7 +306,7 @@ Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与
 模型选择靠 OpenClaw 的 `sessions_spawn.model` 参数——API 级别的硬约束：
 
 ```
-DeepAgents compose 拆完任务
+LangGraph createReactAgent 拆完任务
   → 先查 fde.md：有没有写模型偏好？
   → 有 → 按你写的来（fde.md 优先级最高）
   → 没有 → 查 orchestrator/：有没有最优模型？
@@ -340,7 +340,7 @@ DeepAgents compose 拆完任务
 | `orchestrator/{任务}.md` | loop-check closure 模式 | A/B 对比 → 胜出模板写入 |
 | `eval/{skill}.md` | loop-check closure 模式 | 闭环时评分 → 写入叶子 |
 | `task/logs/` | 主 Agent | 每次执行自动生成，只追加不修改 |
-| `IDENTITY.md` | 来自 agency-agents-zh | DeepAgents compose 按角色自动分配 |
+| `IDENTITY.md` | 来自 agency-agents-zh | createReactAgent 按角色自动分配 |
 
 ### A/B 测试
 
@@ -379,7 +379,7 @@ DeepAgents compose 拆完任务
 ```
 任务来了 → 主 Agent 先查 orchestrator/
   → 有同类最优配置？直接用
-  → 没记录？DeepAgents compose 生成新方案
+  → 没记录？createReactAgent 生成新方案
   → 任务结束 → 对比本次和最优
     → 本次更好 → 覆盖
     → 本次更差 → 不动

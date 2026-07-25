@@ -41,8 +41,8 @@ graph TD
 | 加载链 | Load Chain | Agent 启动时注入的约束文件 |
 | FDE | 一种能力（非岗位 title）——前线部署工程能力模型：掌握完整上下文、打破岗位边界、对结果负责 |
 | Harness | Harness 中间层 | 挂在 Agent 之上的行为约束层（约束底座）：约束 + 审计 + 回溯 + 迭代 |
-| Gateway | Gateway | 企业级 AI 统一入口（OpenClaw/DeepAgents），sofagent 不替代它 |
-| Sub Agent | Sub Agent | 用 LangGraph + DeepAgents 搭的专有执行节点 |
+| Gateway | Gateway | 企业级 AI 统一入口（OpenClaw/WorkBuddy 等大厂平台），sofagent 不替代它 |
+| Sub Agent | Sub Agent | 用 LangGraph createReactAgent 搭的专有执行节点 |
 | Ontology | 本体模型 | 企业的业务世界模型，FDE 帮你搭建并持续维护 |
 | River | 交接产物（River） | FDE 离场时交接的产物集合：私有化评估 / Ontology 说明书 / 持续巡检配置 |
 | SMB | 中小企业（Small & Medium Business） | 没有专职 AI 部署团队、想低成本具备 FDE 能力的企业 |
@@ -58,7 +58,7 @@ graph TD
 
 sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。**不信任 Agent 自我报告，只看 git diff 硬证据。**
 
-| 维度 | 通用 Agent 平台（OpenClaw/DeepAgents） | sofagent |
+| 维度 | 通用 Agent 平台（OpenClaw/WorkBuddy） | sofagent |
 |------|------|------|
 | 管什么 | 「会不会做」——能力问题 | 「能不能每次都做对」——执行控制问题 |
 | 关系 | Gateway 高速公路 | 交规 + 测速摄像头 + 驾校教练 |
@@ -225,7 +225,7 @@ daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml
 
 ### ⚙️ 编排引擎
 
-大任务拆小、多 Sub Agent 并行、A/B 对比找更优方案。基于 DeepAgents，`sofagent-orchestrator compose --task` CLI 入口——任何 Agent 平台都能用。
+大任务拆小、多 Sub Agent 并行、A/B 对比找更优方案。基于 LangGraph createReactAgent，`sofagent-orchestrator compose --task` CLI 入口——任何 Agent 平台都能用。
 
 **为什么是 Skill + 脚本 + Runtime**：
 | 什么事 | 谁来做 | 为什么 |
@@ -254,7 +254,7 @@ daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml
 flowchart LR
     START([START]) --> Engineer
     subgraph Inner["StateGraph 内层循环"]
-        Engineer["engineer<br/>AI · DeepAgents + 工具"] --> Audit["audit<br/>CLI · git diff 硬证据"]
+        Engineer["engineer<br/>AI · createReactAgent + 工具"] --> Audit["audit<br/>CLI · git diff 硬证据"]
         Audit --> Reviewer["reviewer<br/>AI · 只读工具"]
         Reviewer --> Human["human_confirm<br/>HITL · y/n"]
     end
@@ -440,7 +440,7 @@ River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 
 ③ sofagent compose 基于企业 workflow 拆解任务
      → 输出编排方案 YAML + 结构化 SubAgent[] 配置
      → 每个 SubAgent 注入四层约束加载链（buildConstrainedSystemPrompt）
-④ dag-runner 调 createDeepAgent({ subagents }) 真正调度
+④ dag-runner 调 LangGraph createReactAgent 真正调度（v1.2.0 前为 createDeepAgent，已弃用）
      → 主 Agent 自主决定何时委派给哪个 Sub Agent（串行 / 同步并行）
 ⑤ Sub Agent 执行（带企业专有 Harness 约束）
      → 审计引擎在每个节点卡关（git diff 硬证据）
@@ -463,13 +463,13 @@ River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 
 | **合规审计员** `@sofagent-audit` | 管底线——P0/P1 分级 | 每次 commit / FDE 部署 / FORGE 闭环 |
 | **FDE 部署工程师** `@sofagent-fde` | 管上限——deploy/sustain | 部署时 / daemon cron @weekly |
 
-Agent 定义在 `SKILL/agents/{name}/SKILL.md`，`parseSkillMd()` 读 front matter 作为身份标签，body 注入 DeepAgents 作为 role prompt。
+Agent 定义在 `SKILL/agents/{name}/SKILL.md`，`parseSkillMd()` 读 front matter 作为身份标签，body 注入 createReactAgent 作为 role prompt。
 
 ### OpenClaw 在架构中的角色
 
 **审计层不需要 OpenClaw**——sofagent-audit 是独立 TypeScript CLI，输入 git diff，输出 exit code。即使不装 OpenClaw，开发者也可通过 `bash install.sh`（推荐）或 `npm install -g @sofagent/audit`（高级/开发者路径）配 commit-msg hook，让任何 Agent 平台的提交经过审计。
 
-**编排层当前走 DeepAgents**——`compose --task` CLI 入口，任何 Agent 平台都能用。迁移路径：ao → DeepAgents（v1.0.7 完成，ao 已退役）。
+**编排层当前走 LangGraph createReactAgent**——`compose --task` CLI 入口，任何 Agent 平台都能用。迁移路径：ao → DeepAgents（v1.0.7）→ LangGraph createReactAgent（v1.2.0，deepagents 已弃用）。
 
 ### 文件系统审计
 
@@ -616,7 +616,7 @@ Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2
 | skill-staleness | @weekly（默认禁用） | Skill 陈旧度（需 eval 数据支持） |
 | warn-accumulator | @daily | 连续未处理 WARN 累积（阈值 3，含文件级追踪） |
 
-> **范围声明**：sofagent 是 Harness 中间件——覆盖行为约束 + 变更审计 + 经验沉淀 + 持续优化。不覆盖**主 Agent 平台**本身（IM 渠道 / 第三方平台托管的沙箱（如 OpenClaw 沙箱）/ 工具调用——OpenClaw/DeepAgents 的事），也不覆盖运维层（监控/告警/重启/日志轮转）。**例外**：v1.3.0 起 sofagent 托管**自派 SubAgent** 的隔离运行时（文件系统隔离 + 网络出站白名单 + 工具调用中介 + 虚拟 key 边界注入），因 sofagent 既起环境又发凭证、天然拥有执行边界。**运行时治理仅限自派 SubAgent，主 Agent 永远事后审计**（详见 ROADMAP「范围铁律」）。Cloudtag 类全栈产品管从 Agent 到权限的全部层，sofagent 管其中可独立标准化的约束+审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立底线守卫。
+> **范围声明**：sofagent 是 Harness 中间件——覆盖行为约束 + 变更审计 + 经验沉淀 + 持续优化。不覆盖**主 Agent 平台**本身（IM 渠道 / 第三方平台托管的沙箱（如 OpenClaw 沙箱）/ 工具调用——OpenClaw/WorkBuddy 等大厂平台的事），也不覆盖运维层（监控/告警/重启/日志轮转）。**例外**：v1.3.0 起 sofagent 托管**自派 SubAgent** 的隔离运行时（文件系统隔离 + 网络出站白名单 + 工具调用中介 + 虚拟 key 边界注入），因 sofagent 既起环境又发凭证、天然拥有执行边界。**运行时治理仅限自派 SubAgent，主 Agent 永远事后审计**（详见 ROADMAP「范围铁律」）。Cloudtag 类全栈产品管从 Agent 到权限的全部层，sofagent 管其中可独立标准化的约束+审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立底线守卫。
 
 ---
 

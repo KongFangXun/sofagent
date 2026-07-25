@@ -128,7 +128,7 @@ cd sofagent && bash install.sh
 | bash | ≥4 | install.sh / task-record.sh | `bash --version` |
 | git | 任意 | clone + task/logs 追溯 | `git --version` |
 | node | ≥18 | 编排引擎 + 审计 CLI | `node --version` |
-| npm | ≥9 | 安装 deepagents（编排引擎） | `npm --version` |
+| npm | ≥9 | 安装 @langchain/langgraph（编排引擎） | `npm --version` |
 
 > 只用宪法层约束（不跑编排引擎/审计）可不带 node/npm。
 
@@ -237,7 +237,7 @@ Agent 先判断任务复杂度：
   → 用户回答
 
 第二轮 · 编排方案
-  Agent 跑 DeepAgents compose → 输出方案：「拆成 N 个子任务、预估 token/成本。可行？」
+  Agent 跑 LangGraph createReactAgent compose → 输出方案：「拆成 N 个子任务、预估 token/成本。可行？」
   → 用户确认 → 执行
   → 用户不认可 → 指哪改哪，重生成方案
   → 说不清楚 → 回到第一轮
@@ -473,7 +473,7 @@ sofagent 不是孤立的——它构建于以下成熟项目之上，各司其�
 | 技术 | 在 sofagent 中的角色 | 引入版本 |
 |------|------|:--:|
 | [LangChain](https://github.com/langchain-ai/langchainjs) + [LangGraph](https://github.com/langchain-ai/langgraphjs) | 编排引擎——状态图、条件路由、HITL、持久化 | v1.0.1 |
-| [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) | Sub Agent 系统——FDE Sub Agent + Audit Sub Agent | v1.0.1 |
+| [@langchain/langgraph](https://github.com/langchain-ai/langgraph) | Sub Agent 系统（createReactAgent）——FDE Sub Agent + Audit Sub Agent | v1.0.1（v1.2.0 从 deepagents 迁移） |
 | [Agency Agents](https://github.com/msitarzewski/agency-agents) | 230+ 岗位模板——Sub Agent 角色定义 | v1.0.3 |
 | [微软 SkillOpt](https://github.com/microsoft/SkillOpt) | Skill 自进化引擎——训练→验证→替换 | v1.0.3 |
 | [OpenFDE](https://open-fde.com) | 行业定位验证——10 步工作流 + 8 维能力模型 | v1.0 |

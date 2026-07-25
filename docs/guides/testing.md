@@ -67,7 +67,7 @@
 **步骤**：发 🔴 复杂任务「sofagent 项目文档一致性审查」→ 观察 A0 识别 🔴 → 按语义簇拆解子任务 → checkpoint 检查 → 闭环反思写入 think.md。
 **通过标准**：全链路跑通。⚠️ checkpoint 检查在无外部 Hook 平台靠 Agent 自觉。
 
-## 用例 8：编排引擎（DeepAgents compose）验证
+## 用例 8：编排引擎（LangGraph createReactAgent）验证
 
 **目的**：验证编排引擎在复杂任务中正确拆解并执行。
 **步骤**：发 🔴 复杂任务（如「扫描 sofagent 项目做文档一致性审查」）→ 观察 `sofagent-orchestrator compose` 是否生成 workflow → 按语义簇拆解子任务 → 执行 → 闭环反思写入 think.md。
