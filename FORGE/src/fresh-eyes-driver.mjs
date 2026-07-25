@@ -176,7 +176,8 @@ async function createModel(role) {
   const ctorArgs = {
     modelName: cfg.model,
     configuration: { baseURL: cfg.baseURL },
-    openAIApiKey: apiKey,
+    apiKey: apiKey,           // @langchain/openai >=1.x 主参数名
+    openAIApiKey: apiKey,     // 旧版 alias（向后兼容）
   };
 
   // GLM 特殊参数

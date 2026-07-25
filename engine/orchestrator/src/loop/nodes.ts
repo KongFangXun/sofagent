@@ -338,7 +338,7 @@ function recordLoopAuditHistory(
  * 默认 reviewer 实现——v1.1.4 升级为工具注入路径：
  * 用 DeepAgents createDeepAgent + REVIEWER_TOOLS（只读 3 个工具）启动。
  *
- * 审查员工具子集：read_file, search_code, run_bash（只读不写）。
+ * 审查员工具子集：sf_read, search_code, run_bash（只读不写）。
  * systemPrompt = 四层约束链 + REVIEWER_AGENT.systemPrompt。
  *
  * 降级兜底：同 engineer，失败时降级回 spawnSubAgent。

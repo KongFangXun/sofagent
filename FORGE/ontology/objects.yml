@@ -1,0 +1,568 @@
+# sofagent 开发本体 · 实体关联
+# 对齐 FDE §5 本体建模方法论 · 作者：孔放勋
+# 本文件描述 sofagent 开发维护体系中的实体及其关联关系。
+
+entities:
+  # ===== 一、人 =====
+  - id: kongfangxun
+    name: "孔放勋"
+    type: role
+    domain: "[人 / 项目维护者]"
+    relations:
+      has_many: [sofagent-project, dev-ontology, external-input-loop]
+      belongs_to: ""
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  # ===== 二、项目 =====
+  - id: sofagent-project
+    name: "sofagent 项目"
+    type: entity
+    domain: "[项目 / 开源中间件]"
+    relations:
+      has_many: [version-release, document-l1, document-l2, document-l3, test-asset, knowledge-base]
+      belongs_to: "kongfangxun"
+      depends_on: [multi-model-collaboration, toolchain]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  # ===== 三、工具链 =====
+  - id: toolchain
+    name: "工具链"
+    type: entity
+    domain: "[工具链 / 多模型协作基础设施]"
+    relations:
+      has_many: [model-glm, model-deepseek, model-hunyuan, workbuddy, openclaw]
+      belongs_to: "sofagent-project"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: multi-model-collaboration
+    name: "多模型协作体系"
+    type: entity
+    domain: "[工具链 / 模型分工]"
+    relations:
+      has_many: [model-glm, model-deepseek, model-hunyuan]
+      belongs_to: "toolchain"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: model-glm
+    name: "GLM-5.2"
+    type: tool
+    domain: "[工具链 / 模型 / 指挥官]"
+    relations:
+      has_many: [bugfix-prompt, develop-prompt, release-sop, review-report]
+      belongs_to: "multi-model-collaboration"
+      depends_on: [model-deepseek]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: model-deepseek
+    name: "DeepSeek V4 Pro"
+    type: tool
+    domain: "[工具链 / 模型 / 执行者]"
+    relations:
+      has_many: [bugfix-execution, develop-execution, openclaw-test]
+      belongs_to: "multi-model-collaboration"
+      depends_on: [openclaw]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: model-hunyuan
+    name: "混元 3"
+    type: tool
+    domain: "[工具链 / 模型 / 备选审查]"
+    relations:
+      has_many: []
+      belongs_to: "multi-model-collaboration"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: workbuddy
+    name: "WorkBuddy"
+    type: tool
+    domain: "[工具链 / 开发平台]"
+    relations:
+      has_many: []
+      belongs_to: "toolchain"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: openclaw
+    name: "OpenClaw"
+    type: tool
+    domain: "[工具链 / 测试平台]"
+    relations:
+      has_many: [openclaw-test]
+      belongs_to: "toolchain"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  # ===== 四、版本迭代闭环 =====
+  - id: version-release
+    name: "版本迭代闭环"
+    type: entity
+    domain: "[项目 / 版本迭代]"
+    relations:
+      has_many: [phase-zero, phase-one, phase-two, phase-three, phase-four, phase-five, phase-six, post-release]
+      belongs_to: "sofagent-project"
+      depends_on: [model-glm, model-deepseek, model-hunyuan]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: phase-zero
+    name: "阶段零：develop prompt 准备"
+    type: entity
+    domain: "[版本迭代 / 阶段零]"
+    relations:
+      has_many: [develop-prompt]
+      belongs_to: "version-release"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: phase-one
+    name: "阶段一：三模型独立审查"
+    type: entity
+    domain: "[版本迭代 / 阶段一]"
+    relations:
+      has_many: [review-report]
+      belongs_to: "version-release"
+      depends_on: [phase-zero]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: phase-two
+    name: "阶段二：GLM 整合报告"
+    type: entity
+    domain: "[版本迭代 / 阶段二]"
+    relations:
+      has_many: [bugfix-prompt, develop-prompt]
+      belongs_to: "version-release"
+      depends_on: [phase-one]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: phase-three
+    name: "阶段三：bugfix 执行循环"
+    type: entity
+    domain: "[版本迭代 / 阶段三]"
+    relations:
+      has_many: [bugfix-execution, review-report]
+      belongs_to: "version-release"
+      depends_on: [phase-two]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: phase-four
+    name: "阶段四：develop 执行循环"
+    type: entity
+    domain: "[版本迭代 / 阶段四]"
+    relations:
+      has_many: [develop-execution, review-report]
+      belongs_to: "version-release"
+      depends_on: [phase-three]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: phase-five
+    name: "阶段五：GLM 走 releasing 阶段 1-5"
+    type: entity
+    domain: "[版本迭代 / 阶段五]"
+    relations:
+      has_many: [release-sop, regression-checklist, fresh-eyes-review, acceptance-test]
+      belongs_to: "version-release"
+      depends_on: [phase-four]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: phase-six
+    name: "阶段六：DeepSeek 控制 OpenClaw 全面测试"
+    type: entity
+    domain: "[版本迭代 / 阶段六]"
+    relations:
+      has_many: [openclaw-test]
+      belongs_to: "version-release"
+      depends_on: [phase-five]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: post-release
+    name: "发布后"
+    type: entity
+    domain: "[版本迭代 / 发布后]"
+    relations:
+      has_many: [develop-prompt]
+      belongs_to: "version-release"
+      depends_on: [phase-six]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  # ===== 五、产物（prompt / 执行 / 报告） =====
+  - id: bugfix-prompt
+    name: "bugfix prompt"
+    type: document
+    domain: "[产物 / 指令]"
+    relations:
+      has_many: [bugfix-execution]
+      belongs_to: "phase-two"
+      depends_on: [review-report]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: develop-prompt
+    name: "develop prompt"
+    type: document
+    domain: "[产物 / 指令]"
+    relations:
+      has_many: [develop-execution]
+      belongs_to: "phase-zero"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: bugfix-execution
+    name: "bugfix 执行"
+    type: entity
+    domain: "[产物 / 执行]"
+    relations:
+      has_many: []
+      belongs_to: "phase-three"
+      depends_on: [bugfix-prompt]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: develop-execution
+    name: "develop 执行"
+    type: entity
+    domain: "[产物 / 执行]"
+    relations:
+      has_many: []
+      belongs_to: "phase-four"
+      depends_on: [develop-prompt]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: review-report
+    name: "审查报告"
+    type: document
+    domain: "[产物 / 审查报告]"
+    relations:
+      has_many: []
+      belongs_to: "phase-one"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: release-sop
+    name: "发版 SOP（releasing.md）"
+    type: document
+    domain: "[产物 / SOP]"
+    relations:
+      has_many: []
+      belongs_to: "phase-five"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: openclaw-test
+    name: "OpenClaw 全面测试"
+    type: entity
+    domain: "[产物 / 测试]"
+    relations:
+      has_many: [acceptance-test, regression-checklist]
+      belongs_to: "phase-six"
+      depends_on: [openclaw]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  # ===== 六、文档体系（三层分级） =====
+  - id: document-l1
+    name: "L1 核心高频文档"
+    type: document
+    domain: "[文档 / L1 核心高频]"
+    relations:
+      has_many: [changelog-dev-log, changelog-root-index, roadmap, regression-checklist, fresh-eyes-review, releasing-md, readme, acceptance-test, bump-version]
+      belongs_to: "sofagent-project"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: document-l2
+    name: "L2 版本跟随文档"
+    type: document
+    domain: "[文档 / L2 版本跟随]"
+    relations:
+      has_many: [architecture-doc, handbook-doc, development-doc, fde-doc, skill-doc, forge-doc, readme-en, contributing-doc]
+      belongs_to: "sofagent-project"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: document-l3
+    name: "L3 归档参考文档"
+    type: document
+    domain: "[文档 / L3 归档参考]"
+    relations:
+      has_many: [changelog-experimental, archive-design, evidence-doc, philosophy-doc, code-of-conduct-doc]
+      belongs_to: "sofagent-project"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  # L1 文档实体
+  - id: changelog-dev-log
+    name: "开发日志（vX.Y.Z.md）"
+    type: document
+    domain: "[文档 / L1 / 开发日志]"
+    relations:
+      has_many: []
+      belongs_to: "document-l1"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: changelog-root-index
+    name: "CHANGELOG.md（根索引）"
+    type: document
+    domain: "[文档 / L1 / 根索引]"
+    relations:
+      has_many: []
+      belongs_to: "document-l1"
+      depends_on: [changelog-dev-log]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: roadmap
+    name: "ROADMAP.md"
+    type: document
+    domain: "[文档 / L1 / 路线图]"
+    relations:
+      has_many: []
+      belongs_to: "document-l1"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: readme
+    name: "README.md"
+    type: document
+    domain: "[文档 / L1 / 项目首屏]"
+    relations:
+      has_many: []
+      belongs_to: "document-l1"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  # L2 文档实体
+  - id: architecture-doc
+    name: "ARCHITECTURE.md"
+    type: document
+    domain: "[文档 / L2 / 架构总览]"
+    relations:
+      has_many: []
+      belongs_to: "document-l2"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: handbook-doc
+    name: "HANDBOOK.md"
+    type: document
+    domain: "[文档 / L2 / 开发者手册]"
+    relations:
+      has_many: []
+      belongs_to: "document-l2"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: development-doc
+    name: "DEVELOPMENT.md"
+    type: document
+    domain: "[文档 / L2 / 开发指南]"
+    relations:
+      has_many: []
+      belongs_to: "document-l2"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: fde-doc
+    name: "FDE 方法论文档"
+    type: document
+    domain: "[文档 / L2 / FDE 方法论]"
+    relations:
+      has_many: []
+      belongs_to: "document-l2"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  # L3 文档实体
+  - id: changelog-experimental
+    name: "实验期历史日志"
+    type: document
+    domain: "[文档 / L3 / 归档]"
+    relations:
+      has_many: []
+      belongs_to: "document-l3"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: evidence-doc
+    name: "实验证据快照"
+    type: document
+    domain: "[文档 / L3 / 证据]"
+    relations:
+      has_many: []
+      belongs_to: "document-l3"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  # ===== 七、核���测试资产 =====
+  - id: test-asset
+    name: "核心测试资产"
+    type: entity
+    domain: "[项目 / 测试资产]"
+    relations:
+      has_many: [regression-checklist, fresh-eyes-review, acceptance-test, bump-version]
+      belongs_to: "sofagent-project"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: regression-checklist
+    name: "回归清单（regression-checklist.md）"
+    type: document
+    domain: "[测试资产 / 回归清单]"
+    relations:
+      has_many: []
+      belongs_to: "test-asset"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: fresh-eyes-review
+    name: "审查体系（fresh-eyes-review.md）"
+    type: document
+    domain: "[测试资产 / 审查体系]"
+    relations:
+      has_many: []
+      belongs_to: "test-asset"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: acceptance-test
+    name: "验收测试脚本（acceptance-test.sh）"
+    type: tool
+    domain: "[测试资产 / 验收脚本]"
+    relations:
+      has_many: []
+      belongs_to: "test-asset"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: bump-version
+    name: "版本号脚本（bump-version.sh）"
+    type: tool
+    domain: "[测试资产 / 版本号管理]"
+    relations:
+      has_many: []
+      belongs_to: "test-asset"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  # ===== 八、外部输入循环 =====
+  - id: external-input-loop
+    name: "外部输入循环"
+    type: entity
+    domain: "[项目 / 外部输入]"
+    relations:
+      has_many: [knowledge-base]
+      belongs_to: "kongfangxun"
+      depends_on: [model-glm, model-deepseek, model-hunyuan]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  - id: knowledge-base
+    name: "通用知识库"
+    type: entity
+    domain: "[外部输入 / 知识库]"
+    relations:
+      has_many: []
+      belongs_to: "external-input-loop"
+      depends_on: []
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
+
+  # ===== 九、开发本体（dogfooding 自身） =====
+  - id: dev-ontology
+    name: "开发本体模型（本文件集）"
+    type: document
+    domain: "[FORGE/ontology / dogfooding]"
+    relations:
+      has_many: []
+      belongs_to: "kongfangxun"
+      depends_on: [sofagent-project]
+    knowledge-domain:
+      include: ["*"]
+      exclude: []
