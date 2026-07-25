@@ -21,36 +21,36 @@ constraints:
   - id: C3
     type: "审查独立性"
     target: "阶段一三模型独立审查"
-    rule: "三个模型必须在各自独立的 session 中审查，不得共享上下文。混元 3 作为第三独立视角，确保审查多样性"
+    rule: "三个模型必须在各自独立的 session 中审查，不得共享上下文。备选审查模型 作为第三独立视角，确保审查多样性"
     severity: "P1"
     source: "六阶段版本迭代闭环"
 
   # ===== 二、多模型分工铁律 =====
   - id: C4
     type: "角色分工"
-    target: "GLM-5.2 / DeepSeek V4 Pro / 混元 3"
-    rule: "GLM-5.2 是指挥官/审查官（写 prompt、审查、走 releasing），DeepSeek V4 Pro 是执行者（执行 bugfix/develop、控制 OpenClaw 测试），混元 3 是备选审查（第三视角）。角色不可互换"
+    target: "指挥模型 / 执行模型 / 备选审查模型"
+    rule: "指挥模型 是指挥官/审查官（写 prompt、审查、走 releasing），执行模型 是执行者（执行 bugfix/develop、控制 OpenClaw 测试），备选审查模型 是备选审查（第三视角）。角色不可互换"
     severity: "P0"
     source: "多模型分工铁律"
 
   - id: C5
     type: "执行者不审自己"
-    target: "DeepSeek V4 Pro"
-    rule: "执行者（DeepSeek）不得审查自己的执行结果。审查必须由 GLM-5.2 独立完成"
+    target: "执行模型"
+    rule: "执行者（执行模型）不得审查自己的执行结果。审查必须由 指挥模型 独立完成"
     severity: "P0"
     source: "多模型分工铁律"
 
   - id: C6
     type: "审查官不编码"
-    target: "GLM-5.2"
-    rule: "审查官（GLM-5.2）不直接执行编码/修复。编码由 DeepSeek V4 Pro 执行，GLM 只审查和整合"
+    target: "指挥模型"
+    rule: "审查官（指挥模型）不直接执行编码/修复。编码由 执行模型 执行，指挥模型 只审查和整合"
     severity: "P1"
     source: "多模型分工铁律"
 
   - id: C7
     type: "阶段六执行者"
     target: "阶段六 OpenClaw 全面测试"
-    rule: "阶段六由 DeepSeek V4 Pro 控制 OpenClaw（不是 GLM）。测试结果交 GLM-5.2 评审"
+    rule: "阶段六由 执行模型 控制 OpenClaw（不是 指挥模型）。测试结果交 指挥模型 评审"
     severity: "P0"
     source: "六阶段版本迭代闭环"
 
@@ -198,7 +198,7 @@ constraints:
   - id: C27
     type: "闭环回阶段零"
     target: "版本迭代闭环"
-    rule: "发布后 GLM 写下一版 develop prompt，闭环回到阶段零。每个版本必须完成完整六阶段闭环，不得跳过"
+    rule: "发布后 指挥模型 写下一版 develop prompt，闭环回到阶段零。每个版本必须完成完整六阶段闭环，不得跳过"
     severity: "P0"
     source: "六阶段版本迭代闭环"
 
