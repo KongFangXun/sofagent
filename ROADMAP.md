@@ -69,7 +69,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 主题 | 核心交付 |
 |------|------|------|
-| **v1.2.1** | **收口验证** | ① P2 端到端 mock 验证（联邦查询 + Dream Cycle + AES/ECDH + sensitivity 过滤，单机 mock 两设备）② gbrain / LLM Wiki 架构对标（WebSearch 公开资料 + diff 分析写入 changelog 对标小节）③ P3 T03-T05（WorkBuddy hook 注入 rules 引擎实现 + 验证）④ P4 P0 剩余（knowledge-health 合并为统一巡检模块，输出健康度评分 + 问题清单）|
+| **v1.2.1** | **收口验证** | ~~① P2 端到端 mock 验证~~（✅ 已在 v1.2.0 本机验证完成）~~② gbrain / LLM Wiki 架构对标~~（✅ 已在 v1.2.0 changelog 对标小节完成）③ P3 T03-T05（WorkBuddy hook 注入 rules 引擎实现）④ P4 P0 剩余（knowledge-health 合并为统一巡检模块）|
 | **v1.2.2** | **能力深化** | ① P4 P1（分层巡检 L1/L2/L3 + 读写回路对标 + skillopt 自动触发）② FDE Dashboard 原型（`.sofagent/` + `{企业名}/` 数据源对接）③ Skill 分层升级策略 install.sh 实现（安全升级/强制覆盖/diff 合并三策略）|
 | **v1.2.3** | **知识进化** | ① P4 P2（conflict-check CLI + 联邦蒸馏 + OAG 方法论吸收）② Agent 独立身份码探索 ③ 跨设备审计轨迹聚合 |
 | **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐 + 并行编排**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **编排引擎并行调度（Graph Engineering 视角：控制图多循环 DAG 波次并行）**：基于 v1.1.8 的 DeepAgents subagents 调度原型，新增 DAG 依赖解析（Kahn 波次拓扑）+ 并行扇出/扇入（LangGraph `Send` API）+ 循环依赖检测 + 失败传播策略 + 超时熔断；每波次经 audit 节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供 | — |
