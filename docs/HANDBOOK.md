@@ -285,7 +285,7 @@ sofagent-audit --history              # 查看审计快照
 sofagent-audit --revert <sha>         # 回滚到某次审计前
 ```
 
-Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#🔄-回溯能力)。
+Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#回溯能力本质git-snapshot-revert-包装)。
 
 ### CI 集成
 
