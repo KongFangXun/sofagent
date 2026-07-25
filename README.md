@@ -36,6 +36,9 @@
 
 大厂造了江——LLM 是水，Agent 平台是河床。但企业不敢直接舀着喝。sofagent 做的是堤坝 + 自来水厂 + 管网 + 水龙头——帮每个人把原水变成直饮水。完整类比见 [ARCHITECTURE · River](./docs/ARCHITECTURE.md)。
 
+> [!NOTE]
+> **定位澄清**：sofagent 是 **FDE Agent 编排控制平面**，不是「AI 中台」——业界对「AI 中台」在零散个性化场景的成效普遍存疑。它做的是 Agent 的「管住」那一层：约束 + 审计 + 回溯 + 持续优化，让企业敢把 AI 节点放上生产。详见 [ARCHITECTURE · 行业框架对齐](./docs/ARCHITECTURE.md)。
+
 > [!IMPORTANT]
 > **实测数据**：Hugging Face 基准测试——同模型、纯 Harness 优化，legal-agent 得分从 3.5% 跳到 80.1%（76 分提升全来自外层机制），成本仅 1/7。详见 [Joel Niklaus · Harness Optimization](https://huggingface.co/spaces/joelniklaus/harness-optimization)。
 

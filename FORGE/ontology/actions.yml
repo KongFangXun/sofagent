@@ -12,117 +12,117 @@ actions:
   # ===== 阶段零 =====
   - id: A0-write-develop-prompt
     name: "编写 develop prompt"
-    domain: "GLM-5.2"
+    domain: "指挥模型"
     range: "develop-prompt"
     action_type: "需审批"
-    description: "阶段零：GLM-5.2 基于下一版本开发日志编写 develop prompt，需作者确认方向后才能进入开发"
+    description: "阶段零：指挥模型 基于下一版本开发日志编写 develop prompt，需作者确认方向后才能进入开发"
 
   # ===== 阶段一 =====
   - id: A1-independent-review
     name: "三模型独立审查"
-    domain: "GLM-5.2 / DeepSeek V4 Pro / 混元 3"
+    domain: "指挥模型 / 执行模型 / 备选审查模型"
     range: "上一版本已发布代码"
     action_type: "可直接建议"
     description: "阶段一：三个模型在各自独立 session 中审查上一版本，产出独立审查报告（P0/P1/P2 分级）"
 
-  - id: A1-glm-review
-    name: "GLM 审查"
-    domain: "GLM-5.2"
+  - id: A1-commander-review
+    name: "指挥模型审查"
+    domain: "指挥模型"
     range: "上一版本已发布代码"
     action_type: "可直接建议"
-    description: "阶段一 Session A：GLM-5.2 作为第一视角审查"
+    description: "阶段一 Session A：指挥模型 作为第一视角审查"
 
-  - id: A1-deepseek-review
-    name: "DeepSeek 审查"
-    domain: "DeepSeek V4 Pro"
+  - id: A1-executor-review
+    name: "执行模型审查"
+    domain: "执行模型"
     range: "上一版本已发布代码"
     action_type: "可直接建议"
-    description: "阶段一 Session B：DeepSeek V4 Pro 作为第二独立视角审查"
+    description: "阶段一 Session B：执行模型 作为第二独立视角审查"
 
-  - id: A1-hunyuan-review
-    name: "混元审查"
-    domain: "混元 3"
+  - id: A1-reviewer-review
+    name: "备选审查模型审查"
+    domain: "备选审查模型"
     range: "上一版本已发布代码"
     action_type: "可直接建议"
-    description: "阶段一 Session C：混元 3 作为第三独立视角审查（免费模型）"
+    description: "阶段一 Session C：备选审查模型 作为第三独立视角审查（免费模型）"
 
   # ===== 阶段二 =====
   - id: A2-integrate-bugfix-prompt
     name: "整合 bugfix prompt"
-    domain: "GLM-5.2"
+    domain: "指挥模型"
     range: "bugfix-prompt"
     action_type: "需审批"
-    description: "阶段二：GLM-5.2 先整理自己的审查结果，再吸收 DeepSeek 的审查报告，整合为 bugfix prompt"
+    description: "阶段二：指挥模型 先整理自己的审查结果，再吸收 执行模型 的审查报告，整合为 bugfix prompt"
 
-  - id: A2-absorb-deepseek-report
-    name: "吸收 DeepSeek 审查报告"
-    domain: "GLM-5.2"
+  - id: A2-absorb-executor-report
+    name: "吸收执行模型审查报告"
+    domain: "指挥模型"
     range: "review-report"
     action_type: "可直接建议"
-    description: "阶段二：GLM-5.2 将 DeepSeek V4 Pro 的审查报告整合进 bugfix prompt"
+    description: "阶段二：指挥模型 将 执行模型 的审查报告整合进 bugfix prompt"
 
   # ===== 阶段三 =====
   - id: A3-execute-bugfix
     name: "执行 bugfix"
-    domain: "DeepSeek V4 Pro"
+    domain: "执行模型"
     range: "bugfix-prompt"
     action_type: "可执行"
-    description: "阶段三：DeepSeek V4 Pro 执行 bugfix prompt，修复上一版本的问题"
+    description: "阶段三：执行模型 执行 bugfix prompt，修复上一版本的问题"
 
   - id: A3-review-bugfix
     name: "审查 bugfix 结果"
-    domain: "GLM-5.2"
+    domain: "指挥模型"
     range: "bugfix-execution"
     action_type: "需审批"
-    description: "阶段三：GLM-5.2 审查 DeepSeek 的 bugfix 修复结果，P1 问题必须全部修复才算通过；不通过则循环执行"
+    description: "阶段三：指挥模型 审查 执行模型 的 bugfix 修复结果，P1 问题必须全部修复才算通过；不通过则循环执行"
 
   # ===== 阶段四 =====
   - id: A4-execute-develop
     name: "执行 develop"
-    domain: "DeepSeek V4 Pro"
+    domain: "执行模型"
     range: "develop-prompt"
     action_type: "可执行"
-    description: "阶段四：DeepSeek V4 Pro 执行 develop prompt，开发本版本新功能"
+    description: "阶段四：执行模型 执行 develop prompt，开发本版本新功能"
 
   - id: A4-review-develop
     name: "审核 develop 结果"
-    domain: "GLM-5.2"
+    domain: "指挥模型"
     range: "develop-execution"
     action_type: "需审批"
-    description: "阶段四：GLM-5.2 审核 DeepSeek 的开发结果，P1 问题必须全部修复才算通过；不通过则循环执行"
+    description: "阶段四：指挥模型 审核 执行模型 的开发结果，P1 问题必须全部修复才算通过；不通过则循环执行"
 
   # ===== 阶段五 =====
   - id: A5-run-releasing-phase-1to5
     name: "走 releasing 阶段 1-5"
-    domain: "GLM-5.2"
+    domain: "指挥模型"
     range: "release-sop"
     action_type: "需审批"
-    description: "阶段五：GLM-5.2 按 releasing.md 十二阶段流程走阶段一审查→阶段二开发→阶段三自测→阶段四代码审核→阶段五审查体系合并更新"
+    description: "阶段五：指挥模型 按 releasing.md 十二阶段流程走阶段一审查→阶段二开发→阶段三自测→阶段四代码审核→阶段五审查体系合并更新"
 
   - id: A5-d3-gate-check
     name: "D3 闸门检查"
-    domain: "GLM-5.2"
+    domain: "指挥模型"
     range: "acceptance-test"
     action_type: "必须阻断"
     description: "阶段五 D3 闸门：acceptance-test.sh 必须为本版本新增功能补齐验收场景，零覆盖则阻断（不允许进入下一阶段）"
 
   - id: A5-update-regression-checklist
     name: "更新回归清单"
-    domain: "GLM-5.2"
+    domain: "指挥模型"
     range: "regression-checklist"
     action_type: "可执行"
     description: "阶段五：regression-checklist.md 加法更新——汇总本版本修复项，抽象为回归检查维度（编号递增）"
 
   - id: A5-calibrate-fresh-eyes
     name: "校准审查体系"
-    domain: "GLM-5.2"
+    domain: "指挥模型"
     range: "fresh-eyes-review"
     action_type: "可执行"
     description: "阶段五：fresh-eyes-review.md 校准更新（不是加法）——按预料外发现走决策树，校准视角敏感度"
 
   - id: A5-update-acceptance-test
     name: "更新验收测试"
-    domain: "GLM-5.2"
+    domain: "指挥模型"
     range: "acceptance-test"
     action_type: "可执行"
     description: "阶段五：可自动化验证的发现同步追加到 acceptance-test.sh（追加场景，编号递增）"
@@ -130,57 +130,57 @@ actions:
   # ===== 阶段六 =====
   - id: A6-openclaw-full-test
     name: "OpenClaw 全面测试"
-    domain: "DeepSeek V4 Pro"
+    domain: "执行模型"
     range: "openclaw-test"
     action_type: "可执行"
-    description: "阶段六（新 session）：DeepSeek V4 Pro 控制 OpenClaw 执行 acceptance-test + regression-checklist + 覆盖率交叉检查"
+    description: "阶段六（新 session）：执行模型 控制 OpenClaw 执行 acceptance-test + regression-checklist + 覆盖率交叉检查"
 
   - id: A6-run-acceptance-test
     name: "运行验收测试"
-    domain: "DeepSeek V4 Pro"
+    domain: "执行模型"
     range: "acceptance-test"
     action_type: "可执行"
     description: "阶段六：运行 bash acceptance-test.sh，跑完全部端到端场景"
 
   - id: A6-run-regression-check
     name: "运行回归检查"
-    domain: "DeepSeek V4 Pro"
+    domain: "执行模型"
     range: "regression-checklist"
     action_type: "可执行"
     description: "阶段六：逐项跑 regression-checklist.md 全部维度验证命令"
 
   - id: A6-coverage-cross-check
     name: "覆盖率交叉检查"
-    domain: "DeepSeek V4 Pro"
+    domain: "执行模型"
     range: "acceptance-test"
     action_type: "需审批"
     description: "阶段六：读 changelog 核心变更，逐条 grep acceptance-test.sh 确认功能覆盖，零覆盖 = FAIL"
 
-  - id: A6-glm-evaluate-test
-    name: "GLM 评审测试结果"
-    domain: "GLM-5.2"
+  - id: A6-commander-evaluate-test
+    name: "指挥模型评审测试结果"
+    domain: "指挥模型"
     range: "openclaw-test"
     action_type: "需审批"
-    description: "阶段六：GLM-5.2 评审 OpenClaw 全面测试结果。通过→继续 releasing 剩余阶段；不通过→回阶段五（最多 2 轮）"
+    description: "阶段六：指挥模型 评审 OpenClaw 全面测试结果。通过→继续 releasing 剩余阶段；不通过→回阶段五（最多 2 轮）"
 
   # ===== 发布阶段 =====
   - id: A7-release-final-confirm
     name: "最终确认"
-    domain: "GLM-5.2"
+    domain: "指挥模型"
     range: "release-sop"
     action_type: "需审批"
     description: "阶段七：审查体系最终确认——regression-checklist 与 fresh-eyes-review 状态一致、无遗漏"
 
   - id: A8-doc-finalize
     name: "文档收尾"
-    domain: "GLM-5.2"
+    domain: "指挥模型"
     range: "changelog-dev-log"
     action_type: "可执行"
     description: "阶段八：开发日志定稿 + CHANGELOG/ROADMAP 更新 + 版本号同步 + 测试数一致性校验"
 
   - id: A9-script-health-check
     name: "脚本健康检查"
-    domain: "GLM-5.2"
+    domain: "指挥模型"
     range: "bump-version"
     action_type: "可执行"
     description: "阶段九：check-version / bump-version / pre-push-check 覆盖同步 + 过时检查清理"
@@ -201,7 +201,7 @@ actions:
 
   - id: A12-post-release
     name: "发布后"
-    domain: "GLM-5.2"
+    domain: "指挥模型"
     range: "develop-prompt"
     action_type: "可执行"
     description: "阶段十二：npm 验证 + 发布后审查（新 session）+ 生成下一版 develop prompt 到桌面 → 闭环回到阶段零"
@@ -216,7 +216,7 @@ actions:
 
   - id: EXT-discuss-with-ai
     name: "与 AI 讨论"
-    domain: "GLM-5.2 / DeepSeek V4 Pro / 混元 3"
+    domain: "指挥模型 / 执行模型 / 备选审查模型"
     range: "knowledge-base"
     action_type: "可直接建议"
     description: "外部输入循环：哪个模型有 token 就用哪个讨论，模型选择灵活"
@@ -238,14 +238,14 @@ actions:
   # ===== 版本号管理 =====
   - id: VERSION-bump
     name: "版本号升级"
-    domain: "GLM-5.2"
+    domain: "指挥模型"
     range: "bump-version"
     action_type: "可执行"
     description: "使用 bump-version.sh 同步 13 类位置的版本号，禁止手动 grep/sed"
 
   - id: VERSION-check
     name: "版本号一致性校验"
-    domain: "GLM-5.2"
+    domain: "指挥模型"
     range: "bump-version"
     action_type: "必须阻断"
     description: "使用 check-version.sh 校验全项目版本号一致性，任何不一致则阻断发布（exit 1）"

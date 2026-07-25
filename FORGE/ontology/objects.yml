@@ -35,7 +35,7 @@ entities:
     type: entity
     domain: "[工具链 / 多模型协作基础设施]"
     relations:
-      has_many: [model-glm, model-deepseek, model-hunyuan, workbuddy, openclaw]
+      has_many: [model-commander, model-executor, model-reviewer, workbuddy, openclaw]
       belongs_to: "sofagent-project"
       depends_on: []
     knowledge-domain:
@@ -47,27 +47,27 @@ entities:
     type: entity
     domain: "[工具链 / 模型分工]"
     relations:
-      has_many: [model-glm, model-deepseek, model-hunyuan]
+      has_many: [model-commander, model-executor, model-reviewer]
       belongs_to: "toolchain"
       depends_on: []
     knowledge-domain:
       include: ["*"]
       exclude: []
 
-  - id: model-glm
-    name: "GLM-5.2"
+  - id: model-commander
+    name: "指挥模型（强推理+中文理解）"
     type: tool
     domain: "[工具链 / 模型 / 指挥官]"
     relations:
       has_many: [bugfix-prompt, develop-prompt, release-sop, review-report]
       belongs_to: "multi-model-collaboration"
-      depends_on: [model-deepseek]
+      depends_on: [model-executor]
     knowledge-domain:
       include: ["*"]
       exclude: []
 
-  - id: model-deepseek
-    name: "DeepSeek V4 Pro"
+  - id: model-executor
+    name: "执行模型（强编码+最小变更）"
     type: tool
     domain: "[工具链 / 模型 / 执行者]"
     relations:
@@ -78,8 +78,8 @@ entities:
       include: ["*"]
       exclude: []
 
-  - id: model-hunyuan
-    name: "混元 3"
+  - id: model-reviewer
+    name: "备选审查模型"
     type: tool
     domain: "[工具链 / 模型 / 备选审查]"
     relations:
@@ -122,7 +122,7 @@ entities:
     relations:
       has_many: [phase-zero, phase-one, phase-two, phase-three, phase-four, phase-five, phase-six, post-release]
       belongs_to: "sofagent-project"
-      depends_on: [model-glm, model-deepseek, model-hunyuan]
+      depends_on: [model-commander, model-executor, model-reviewer]
     knowledge-domain:
       include: ["*"]
       exclude: []
@@ -152,7 +152,7 @@ entities:
       exclude: []
 
   - id: phase-two
-    name: "阶段二：GLM 整合报告"
+    name: "阶段二：指挥模型整合报告"
     type: entity
     domain: "[版本迭代 / 阶段二]"
     relations:
@@ -188,7 +188,7 @@ entities:
       exclude: []
 
   - id: phase-five
-    name: "阶段五：GLM 走 releasing 阶段 1-5"
+    name: "阶段五：指挥模型走 releasing 阶段 1-5"
     type: entity
     domain: "[版本迭代 / 阶段五]"
     relations:
@@ -200,7 +200,7 @@ entities:
       exclude: []
 
   - id: phase-six
-    name: "阶段六：DeepSeek 控制 OpenClaw 全面测试"
+    name: "阶段六：执行模型控制 OpenClaw 全面测试"
     type: entity
     domain: "[版本迭代 / 阶段六]"
     relations:
@@ -537,7 +537,7 @@ entities:
     relations:
       has_many: [knowledge-base]
       belongs_to: "kongfangxun"
-      depends_on: [model-glm, model-deepseek, model-hunyuan]
+      depends_on: [model-commander, model-executor, model-reviewer]
     knowledge-domain:
       include: ["*"]
       exclude: []

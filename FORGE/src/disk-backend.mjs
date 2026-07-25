@@ -20,7 +20,7 @@ import {
   readFileSync, writeFileSync, readdirSync, statSync,
   existsSync, mkdirSync,
 } from 'fs';
-import { join, resolve, relative, dirname, sep } from 'path';
+import { join, resolve, relative, dirname, sep, isAbsolute } from 'path';
 import { execSync } from 'child_process';
 
 /**
@@ -82,22 +82,26 @@ export class DiskBackend {
       return this.rootDir;
     }
 
-    // 去掉开头的 /（agent 常传 / 开头的虚拟根路径）
-    const cleaned = relPath.replace(/^[/\\]+/, '');
-
-    let abs;
-    if (relPath.startsWith('/')) {
-      // agent 传了绝对路径 → 在 rootDir 下解析
-      abs = resolve(this.rootDir, cleaned);
-    } else {
-      // 相对路径 → 相对于 rootDir
-      abs = resolve(this.rootDir, relPath);
+    // 如果传入的是绝对路径，且在 rootDir 内部，直接使用
+    if (isAbsolute(relPath)) {
+      const resolved = resolve(relPath);
+      const rel = relative(this.rootDir, resolved);
+      // 在 rootDir 内部（rel 不以 .. 开头）→ 直接用
+      if (!rel.startsWith('..')) {
+        return resolved;
+      }
+      // 在 rootDir 外部但以 / 开头 → 当作 rootDir 内的相对路径
+      // （agent 常用虚拟根 / 表示项目根，如 /package.json）
+      const stripped = relPath.replace(/^[/\\]+/, '');
+      return resolve(this.rootDir, stripped);
     }
 
+    // 相对路径 → 相对于 rootDir 解析
+    const abs = resolve(this.rootDir, relPath);
     const rel = relative(this.rootDir, abs);
 
     // rel 以 .. 开头 = 越界；abs === rootDir（rel === ''）合法
-    if (rel.startsWith('..') || resolve(this.rootDir, rel) !== abs) {
+    if (rel.startsWith('..')) {
       throw new Error(`路径越界: ${relPath} (root=${this.rootDir})`);
     }
 
