@@ -689,7 +689,7 @@ SSOT_VER=$(node -e "console.log(require('./package.json').version)")
 # 子项 a: SECURITY.md 有 filebeat/logstash workaround
 grep -c "filebeat\|logstash" SECURITY.md   # ≥1
 
-# 子项 b: Webhook 企业平台推送标企业��购阻塞（本地三态 v1.1.6 已通；企业平台 v1.2.1 才就绪）
+# 子项 b: Webhook 企业平台推送标企业采购阻塞（本地三态 v1.1.6 已通；企业平台 v1.2.1 才就绪）
 grep -c "v1.2.1\|不推送\|企业.*阻塞\|待落地\|本地三态.*已接通" SECURITY.md   # ≥1
 
 # 子项 c: USB federation 标注 v1.1.6 当前状态（HMAC 签名已有）

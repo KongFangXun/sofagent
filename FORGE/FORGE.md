@@ -152,8 +152,8 @@ sofagent 的版本发布遵循 [`docs/changelog/releasing.md`](../docs/changelog
 
 | 文档 | 在 FORGE 中的角色 | 谁执行 |
 |------|------|------|
-| `FORGE/SKILL/fresh-eyes-loop/specs/fresh-eyes-review.md` | 发版前/后发布后审查（10 维度 × 6 方面） | review-agent（全新 session） |
-| `FORGE/SKILL/fresh-eyes-loop/specs/regression-checklist.md` | 发版前全局回归检查（26 项） | FDE 触发 compliance-auditor |
+| `FORGE/SKILL/fresh-eyes-loop/specs/fresh-eyes-review.md` | 发版前/后发布后审查（12 视角） | review-agent（全新 session） |
+| `FORGE/SKILL/fresh-eyes-loop/specs/regression-checklist.md` | 发版前全局回归检查（50 项） | FDE 触发 compliance-auditor |
 | `FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh` | 发版前 CLI 端到端验收（128 个场景，原 openclaw-acceptance-test.md 已合并入此） | minimal-change-engineer 自检 |
 | `docs/changelog/releasing.md` | FORGE 的整体流程参照——哪个阶段谁做什么 | FDE（流程监督者） |
 
@@ -238,7 +238,7 @@ flowchart TD
 | 文件 | 当前位置 | 每次发版后做什么 | 谁做 |
 |------|------|------|------|
 | `fresh-eyes-review.md` | `docs/verification/` | ① 审视上轮审查发现的盲区 → 新增维度/任务 ② 过时的角色/问题 → 删除或更新 ③ 本轮新发现的"反复出现的同类问题" → 抽象为新的通用维度 | FDE |
-| `regression-checklist.md` | `docs/verification/` | ① 本轮修复的 P0/P1 → 抽象为新的检查项（从 177 开始编号）② 审查体系更新建议中"建议追加到回归检查"的条目 → 正式写入 | FDE |
+| `regression-checklist.md` | `docs/verification/` | ① 本轮修复的 P0/P1 → 抽象为新的检查项（编号递增） ② 审查体系更新建议中"建议追加到回归检查"的条目 → 正式写入 | FDE |
 | `acceptance-test.sh` | `tools/` | ① 新增的审计规则 → 新增对应测试场景 ② 新功能（如 SkillOpt）→ 新增验收场景 ③ 上一版本被绕过的边缘 case → 新增为测试场景 | FDE |
 | `releasing.md` | `docs/verification/` | ① 本版本发布过程中遇到的流程漏洞 → 沉淀到「历史教训」区 ② 检查 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）③ 新增的工具/脚本是否已纳入对应阶段 ④ 把更新后的 releasing.md 同步到 FORGE.md 的映射表 | FDE 提议 → 作者确认 |
 

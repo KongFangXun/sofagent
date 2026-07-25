@@ -327,8 +327,8 @@ SOFAGENT_LLM_{ROLE}_API_KEY  >  SOFAGENT_LLM_API_KEY  >  OPENAI_API_KEY
    角色专用 key（A/B 分账）     通用 key（共用一把）     OpenAI 兼容默认
 ```
 
-- `SOFAGENT_LLM_A_API_KEY`：A 角色（审查者 GLM-5.2）专用 key
-- `SOFAGENT_LLM_B_API_KEY`：B 角色（工程师 DeepSeek V4 Pro）专用 key
+- `SOFAGENT_LLM_A_API_KEY`：A 角色（审查模型，用户自行配置）专用 key
+- `SOFAGENT_LLM_B_API_KEY`：B 角色（工程模型，用户自行配置）专用 key
 - `SOFAGENT_LLM_API_KEY`：A/B 共用一把 key（两个 provider 都是 OpenAI 兼容格式时可用）
 - `OPENAI_API_KEY`：兜底默认（OpenAI SDK 标准环境变量）
 

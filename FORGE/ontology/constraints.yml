@@ -112,7 +112,7 @@ constraints:
     target: "bump-version.sh / check-version.sh"
     rule: "版本号操作必须使用 bump-version.sh + check-version.sh，禁止手动 grep/sed。13 类位置必须全部同步"
     severity: "P0"
-    source: "docs/changelog/releasing.md版本号管理"
+    source: "docs/changelog/releasing.md 版本号管理"
 
   - id: C16
     type: "package-lock.json 安全"
@@ -141,14 +141,14 @@ constraints:
     target: "CHANGELOG.md / docs/changelog/"
     rule: "CHANGELOG 只写产品变更（新功能/修复/破坏性变更），不含内部过程信息（审查轮次、P0/P1/P2 标签、bugfix/develop prompt 内容等）。模型角色名（指挥模型/执行模型/备选审查模型）在描述分工时可以出现，但不记录审查过程本身"
     severity: "P1"
-    source: "docs/changelog/releasing.mdCHANGELOG 两步"
+    source: "docs/changelog/releasing.md CHANGELOG 两步"
 
   - id: C20
     type: "文档同步闭环（D6）"
     target: "项目文档（L2）"
     rule: "changelog 里写的每条新功能，必须在对应项目文档中有说明。零覆盖的新功能（用户无处查阅）= P0"
     severity: "P0"
-    source: "docs/changelog/releasing.mdD6 闸门"
+    source: "docs/changelog/releasing.md D6 闸门"
 
   # ===== 八、防膨胀约束 =====
   - id: C21
@@ -156,7 +156,7 @@ constraints:
     target: "regression-checklist.md / acceptance-test.sh"
     rule: "回归清单 ≤ 1000 行、验收脚本 ≤ 1500 行。每版本发版做一轮瘦身。追加新维度前必须先 grep 同类"
     severity: "P2"
-    source: "docs/changelog/releasing.md防膨胀机制"
+    source: "docs/changelog/releasing.md 防膨胀机制"
 
   - id: C22
     type: "fresh-eyes 风格守护"
