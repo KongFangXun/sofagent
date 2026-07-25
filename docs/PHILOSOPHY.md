@@ -483,7 +483,7 @@ sofagent 的技术选型有明确的边界纪律：
 | **LangChain Core** | ✅ 使用 | LLM 调用底座——模型接口抽象、消息格式标准化，这是基础设施 |
 | **LangGraph** | ✅ 使用 | 编排引擎——StateGraph 状态机 + createReactAgent 编排，白盒可控 |
 | **LangChain 全家桶**（Document Loader / Vector Store / RAG pipeline） | ❌ 不使用 | RAG / 向量检索 / Document Loader 是 LangChain 全家桶的事，sofagent 不做——知识管理用干净 Markdown + YAML + Git，不需要向量数据库 |
-| **LangSmith** | ? v1.2.2 可选 | 可观测性平台——零代码接入（两个环境变量），自托管 SmithDB 支持数据主权 |
+| **LangSmith** | ? 开发者可选 | 可观测性平台——开发调试工具，不是产品组成部分（SDK MIT 开源，平台闭源收费） |
 
 **不做 RAG、不做向量检索、不做 Document Loader**——这是设计禁区（详见 §八），不是能力不足。sofagent 的知识管理哲学是 [Don't Do RAG](https://arxiv.org/abs/2412.15605) 论文验证的 CAG（编译式 RAG）方向：干净 Markdown 就够了，知识格式标准化 + 加载链按需注入比向量检索更可审计、更透明。
 
