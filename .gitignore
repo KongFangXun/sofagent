@@ -1,6 +1,9 @@
 # sofagent runtime data
 .sofagent/
 
+# 编译产物
+dist/
+
 # ao compose 运行时产物（任务编排生成的工作流文件）
 # 只忽略仓库根目录的 workflows/，不影响 .github/workflows/
 /workflows/
@@ -20,3 +23,9 @@ Thumbs.db
 .env
 /skills/
 ._DS_Store
+
+# 临时调试文件
+tmp/
+
+# FORGE 运行产物（审查报告是一次性的，不进仓库）
+FORGE/runs/

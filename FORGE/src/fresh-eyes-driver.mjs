@@ -41,7 +41,7 @@ const require = createRequire(import.meta.url);
 // ─── 路径常量 ────────────────────────────────────────────────
 const LOOP_DIR    = join(REPO_ROOT, 'FORGE/SKILL/fresh-eyes-loop');
 const PROMPTS_DIR = join(LOOP_DIR, 'prompts');
-const RUNS_DIR    = join(LOOP_DIR, 'runs');
+const RUNS_DIR    = join(REPO_ROOT, 'FORGE/runs');  // 产物只 2 层深，好找
 const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
 const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 
@@ -174,7 +174,7 @@ function buildSystemPrompt(skillPath) {
     '- `cat`：不支持 `-A`，用 `cat -v` 或 `od -c` 代替',
     '- `stat`：不支持 `--format`，用 `stat -f` 代替',
     '- `readlink`：不支持 `-f`，用 `greadlink`（如装了 coreutils）或 `python3 -c`',
-    '- 不支持 `<(...)` process substitution（bash ���有，/bin/sh 没有）',
+    '- 不支持 `<(...)` process substitution（bash 独有，/bin/sh 没有）',
     '- 不支持 `${var}` 之外的字符串操作',
     '',
     '命令报错时，不要反复重试同一命令——换一种方式或跳过。',
