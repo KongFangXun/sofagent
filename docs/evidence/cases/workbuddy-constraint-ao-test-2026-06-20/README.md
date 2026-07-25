@@ -1,7 +1,7 @@
 # Case 005 — WorkBuddy v0.71 约束 + ao compose 全链路测试
 
 > **性质**：作者自测 · 约束层 + 编排引擎双重验证
-> **来源**：KongFangXun（WorkBuddy + DeepSeek V4 Pro + ao compose via DeepSeek API）
+> **来源**：KongFangXun（WorkBuddy + 工程模型 + ao compose via DeepSeek API）
 > **版本**：sofagent v0.71
 > **测试时间**：2026-06-20 14:15–18:41
 
@@ -18,7 +18,7 @@
 | 项 | 值 |
 |------|------|
 | 平台 | WorkBuddy |
-| 主模型 | DeepSeek V4 Pro（WorkBuddy 内置） |
+| 主模型 | 工程模型（WorkBuddy 内置） |
 | ao compose 模型 | DeepSeek V3（via DeepSeek API `sk-f9c…`） |
 | sofagent 版本 | v0.71 |
 | 测试跨度 | 4 小时 26 分（14:15–18:41） |

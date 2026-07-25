@@ -69,4 +69,4 @@ daemon（场景 6/8）和 webhook（场景 7）受 WorkBuddy sandbox 环境限�
 
 ---
 
-> 本测试在 v0.99.7 两轮独立质量加固（GLM-5.2 + DeepSeek，共 14 项问题）完成后执行。测试环境为 macOS sandbox，daemon/webhook 场景的非 sandbox 验证基于历史日志确认。
+> 本测试在 v0.99.7 两轮独立质量加固（审查模型 + DeepSeek，共 14 项问题）完成后执行。测试环境为 macOS sandbox，daemon/webhook 场景的非 sandbox 验证基于历史日志确认。

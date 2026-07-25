@@ -18,33 +18,33 @@ bash install.sh
 
 fresh-eyes-loop 的核心设计是 **A/B 异构模型**——审查（A）和修复（B）使用不同厂商的模型，减少同模型盲区（同一模型的训练偏差在自审时会被跳过，但跨模型审查能互相发现对方遗漏的问题）。
 
-| 角色 | 职责 | 默认模型 | API 端点 |
+| 角色 | 职责 | 推荐能力 | 示例模型 + 端点 |
 |:--:|------|------|------|
-| **A**（审查者） | 12 视角审查 + 合并 + 验证 | GLM-5.2 | `https://open.bigmodel.cn/api/coding/paas/v4/` |
-| **B**（工程师） | 修复缺陷 | DeepSeek V4 Pro | `https://api.deepseek.com/` |
+| **A**（审查者） | 12 视角审查 + 合并 + 验证 | 强推理 + 中文理解 | 审查类模型，如 `https://<your-provider>/v1/` |
+| **B**（工程师） | 修复缺陷 | 强编码 + 最小变更 | 工程类模型，如 `https://<your-provider>/v1/` |
 
-> 💡 **A 的端点说明**：GLM-5.2 用的是智谱 **Coding Plan**（订阅制），端点是 `/api/coding/paas/v4/`，不是普通按量 API 的 `/api/paas/v4/`。团队套餐 Key 与平台其他 API Key 不通用——详情见[智谱 Coding Plan 文档](https://docs.bigmodel.cn/cn/coding-plan)。
+> 💡 **A/B 必须异构**：审查和修复使用不同厂商的模型，减少同模型盲区。具体选什么模型由你决定——sofagent 不绑定任何特定模型，只要兼容 OpenAI 格式即可。下方示例用占位符演示配置方式。
 
 ### 配置环境变量
 
 ```bash
-# A（审查者）= GLM-5.2
-export SOFAGENT_LLM_A=glm:glm-5.2
-export SOFAGENT_LLM_A_API_KEY=your-glm-key
+# A（审查者）= 你选的审查类模型
+export SOFAGENT_LLM_A=<provider>:<model-name>
+export SOFAGENT_LLM_A_API_KEY=your-key
 
-# B（工程师）= DeepSeek V4 Pro
-export SOFAGENT_LLM_B=deepseek:deepseek-v4-pro
-export SOFAGENT_LLM_B_API_KEY=your-deepseek-key
+# B（工程师）= 你选的工程类模型（必须与 A 不同厂商）
+export SOFAGENT_LLM_B=<provider>:<model-name>
+export SOFAGENT_LLM_B_API_KEY=your-key
 ```
 
-> **为什么是异构**：如果 A 和 B 用同一个模型（例如都用 GLM-5.2），该模型在训练时遗漏的 bug 类型会在自审中被再次遗漏——"fresh eyes"的前提就是审查者换了一双不同的眼睛。GLM-5.2 审 DeepSeek 写的代码、DeepSeek 审 GLM 写的代码，交叉视角才能覆盖单模型盲区。
+> **为什么是异构**：如果 A 和 B 用同一个模型，该模型在训练时遗漏的 bug 类型会在自审中被再次遗漏——"fresh eyes"的前提就是审查者换了一双不同的眼睛。A 审 B 写的代码、B 审 A 写的代码，交叉视角才能覆盖单模型盲区。
 
 ### 模型参数
 
-| 角色 | 模型 | 关键参数 |
+| 角色 | 模型类型 | 关键参数 |
 |:--:|------|------|
-| A | GLM-5.2 | `temperature=1.0`（审查需要发散，不收敛到单一视角） |
-| B | DeepSeek V4 Pro | `thinking.enabled=true` + `reasoning_effort=high`（修复需要深度推理） |
+| A | 审查类（强推理） | `temperature=1.0`（审查需要发散，不收敛到单一视角） |
+| B | 工程类（强编码） | `thinking.enabled=true` + `reasoning_effort=high`（修复需要深度推理） |
 
 > 这些参数由 driver 自动注入，用户无需手动配置。如需覆盖默认参数，在 `FORGE/src/fresh-eyes-driver.mjs` 的 `MODEL_CONFIG` 中修改。
 
@@ -52,15 +52,14 @@ export SOFAGENT_LLM_B_API_KEY=your-deepseek-key
 
 每轮循环的 token 用量会被准确记录。**成本**的估算方式取决于各模型的计费模式：
 
-| 模型 | 计费模式 | 输入（CNY/M token） | 输出（CNY/M token） | 来源 |
-|------|:--:|:---:|:---:|------|
-| **GLM-5.2** (A) | 📦 Coding Plan 订阅制 | 8（仅供参考） | 28（仅供参考） | [open.bigmodel.cn/pricing](https://open.bigmodel.cn/pricing) |
-| **DeepSeek V4 Pro** (B) | 💧 按量计费 | 3 | 6 | [api-docs.deepseek.com/pricing](https://api-docs.deepseek.com/quick_start/pricing) |
+| 模型类型 | 计费模式 | 说明 |
+|------|:--:|------|
+| **A**（订阅制模型） | 📦 订阅制 | 按月固定费用 + 额度，**不按 token 扣费**。driver 对 A 只记录 token 用量，`cost_cny` 记为 `null`，`price_confidence` 标为 `subscription` |
+| **B**（按量计费模型） | 💧 按量计费 | driver 按「官方标价 × token 用量」算出 `cost_cny` 估算值。实际账单受**缓存命中率**影响，以厂商 API 后台为准 |
 
 > ⚠️ **计费模式区分（重要）**：
-> - **A (GLM-5.2)** = **Coding Plan 订阅制**：按月固定费用 + 额度，**不按 token 扣费**。driver 对 A 只记录 token 用量，`cost_cny` 记为 `null`，`price_confidence` 标为 `subscription`。上表 GLM-5.2 标价仅供横向对比参考，不代表实际扣费——真实消耗见 [Coding Plan 后台额度](https://bigmodel.cn/coding-plan)
-> - **B (DeepSeek V4 Pro)** = **按量计费**：driver 按「官方标价 × token 用量」算出 `cost_cny` 估算值。实际账单受**缓存命中率**影响（缓存命中 input 仅 0.025 元，120 倍价差），以 [DeepSeek API 后台](https://platform.deepseek.com) 为准
 > - **token 是客观事实，成本是主观语义**：无论什么计费模式，用了多少 token 是确定的；但硬把订阅制和按量制凑成一个总成本数字会误导，所以 driver 只展示 token 总量 + B 的按量成本
+> - 具体定价查阅你所选模型的厂商官方定价页
 
 ### API key 加载优先级（三级回退）
 
@@ -103,8 +102,8 @@ node FORGE/src/fresh-eyes-driver.mjs --target v1.2.0 --dry-run
 **单轮协议**（driver 自动编排，无需手动 relay）：
 
 ```
-a-check     → A（GLM-5.2）独立跑 12 视角审查，输出 findings.jsonl
-b-check     → B（DeepSeek V4 Pro）独立跑 12 视角审查，输出 findings.jsonl
+a-check     → A（审查模型）独立跑 12 视角审查，输出 findings.jsonl
+b-check     → B（工程模型）独立跑 12 视角审查，输出 findings.jsonl
 a-consolidate → A 合并 A+B findings，去重排序，输出 consolidated.jsonl
 b-fix       → B 按 consolidated.jsonl 修复，输出 diff patch
 a-verify    → A 验证修复结果，判定本轮是否 PASS
@@ -124,7 +123,7 @@ a-verify    → A 验证修复结果，判定本轮是否 PASS
   "round": 1,
   "step": "a-check",
   "role": "A",
-  "model": "glm-5.2",
+  "model": "<你配置的模型名>",
   "api_base": "open.bigmodel.cn",
   "prompt_tokens": 12450,
   "completion_tokens": 1820,
@@ -138,7 +137,7 @@ a-verify    → A 验证修复结果，判定本轮是否 PASS
 | 字段 | 说明 |
 |------|------|
 | `role` | 角色标识（`A` = 审查者 / `B` = 工程师） |
-| `model` | 模型名（`glm-5.2` / `deepseek-v4-pro`） |
+| `model` | 模型名（你配置的 `<provider>:<model-name>`） |
 | `prompt_tokens` | 输入 token 数 |
 | `completion_tokens` | 输出 token 数 |
 | `total_tokens` | prompt + completion 合计 |
@@ -150,8 +149,8 @@ a-verify    → A 验证修复结果，判定本轮是否 PASS
 
 ```
 [总用量] tokens: 68,940  (A 订阅 + B 按量 ¥0.0089)
-         A(glm-5.2):       47,640 tokens  [Coding Plan 订阅额度]
-         B(deepseek-v4-pro):   21,300 tokens  ¥0.0089 [按量计费]
+         A(审查模型):       47,640 tokens  [订阅额度]
+         B(工程模型):   21,300 tokens  ¥0.0089 [按量计费]
 ```
 
 ---
@@ -160,14 +159,14 @@ a-verify    → A 验证修复结果，判定本轮是否 PASS
 
 | 问题 | 原因 | 解决 |
 |------|------|------|
-| `SOFAGENT_LLM_A_API_KEY` 未设 | 没配 A 角色的 key | `export SOFAGENT_LLM_A_API_KEY=your-glm-key` |
-| `SOFAGENT_LLM_B_API_KEY` 未设 | 没配 B 角色的 key | `export SOFAGENT_LLM_B_API_KEY=your-deepseek-key` |
+| `SOFAGENT_LLM_A_API_KEY` 未设 | 没配 A 角色的 key | `export SOFAGENT_LLM_A_API_KEY=your-key` |
+| `SOFAGENT_LLM_B_API_KEY` 未设 | 没配 B 角色的 key | `export SOFAGENT_LLM_B_API_KEY=your-key` |
 | driver 找不到 `node` 命令 | Node.js 未安装或不在 PATH | 装 Node.js ≥ 18（`brew install node` / `nvm install 18`） |
 | A/B 用了同一个模型 | 两个角色配了同一个 `SOFAGENT_LLM_*` | 检查 A/B 是否指向不同厂商模型——异构是设计要求 |
 | reviewer 每轮都驳回 | 审查标准太严 | 改 `SKILL/agents/reviewer/SKILL.md` 的判定标准 |
 | API key 报 401 | key 过期或额度耗尽 | 去对应厂商控制台检查 key 状态和余额 |
 | usage.jsonl 中 `price_confidence: no-pricing` | 该模型不在 `MODEL_PRICING` 表里 | 查阅厂商官方定价页，在 driver 内补上 |
-| A 返回 error 1113「余额不足」| GLM 端点写错成了普通 API | 确认 A 的 `baseURL` 是 `/api/coding/paas/v4/`（Coding Plan），不是 `/api/paas/v4/` |
+| A 返回 error 1113「余额不足」| 审查模型端点写错 | 检查 A 的 `baseURL` 是否与你的模型供应商文档一致（订阅制端点 vs 按量端点可能不同） |
 | sofagent-audit 命令未找到 | 底座没装 | `bash install.sh` |
 
 > 📖 详细设计见 `FORGE/FORGE.md`（旧自迭代模型，保留参考）和 `FORGE/SKILL/fresh-eyes-loop/loop.md`（当前循环协议）。

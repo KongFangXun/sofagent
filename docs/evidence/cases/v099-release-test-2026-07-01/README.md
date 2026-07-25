@@ -10,7 +10,7 @@
 | 测试日期 | 2026-07-01 |
 | 平台 | WorkBuddy + OpenClaw (ao compose) |
 | sofagent 版本 | v0.99 |
-| 模型 | deepseek-chat (DeepSeek V4 Pro) |
+| 模型 | 工程模型 (工程模型) |
 | 操作系统 | macOS |
 
 ---

@@ -11,14 +11,14 @@
 > bash {OPENCLAW_SCRIPTS}/task-record.sh \
 >   --task "任务简述" \
 >   --result "成功|失败|部分完成" \
->   --model "deepseek-v4|claude-sonnet|..." \
+>   --model "你使用的模型 id" \
 >   --tokens 4500 \
 >   --cost 0.15 \
 >   --skills "task-aware"
 > ```
 > 🖥️ **Windows PowerShell（非 WSL，无 bash）**等价命令（见 SKILL.md「跨平台脚本调用约定」）：
 > ```powershell
-> powershell -File {OPENCLAW_SCRIPTS}/task-record.ps1 -Task "任务简述" -Result "成功|失败|部分完成" -Model "deepseek-v4|..." -Tokens 4500 -Cost 0.15 -Skills "task-aware"
+> powershell -File {OPENCLAW_SCRIPTS}/task-record.ps1 -Task "任务简述" -Result "成功|失败|部分完成" -Model "你使用的模型 id" -Tokens 4500 -Cost 0.15 -Skills "task-aware"
 > ```
 > 两者都不可用时降级为 LLM 直接追加写入 `{SOFAGENT_DATA}/task/logs/YYYY-MM/YYYY-MM-DD.md`（格式参考 `data/task.md`）。
 

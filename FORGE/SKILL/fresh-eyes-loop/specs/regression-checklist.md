@@ -419,7 +419,7 @@ grep -H "v[0-9]\+\.[0-9]\+\.[0-9]\+" install.sh | head -4   # 期望：所有版
 
 #### 24. acceptance-test.sh 与 changelog 功能对齐（单文件）
 
-> v1.1.5 更新：原 `docs/verification/openclaw-acceptance-test.md` 已合并入 `FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh`
+> v1.1.5 更新：原 openclaw-acceptance-test.md 已合并入 `FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh`
 
 ```bash
 # 子项 a: 场景数声称与实际对齐（v1.1.4 教训）

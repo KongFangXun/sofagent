@@ -8,7 +8,7 @@
 
 ## 测试概述
 
-评估 sofagent 纪律层对「精准修改范围」的约束能力。同一模型（deepseek/deepseek-v4-flash）在**有/无 sofagent** 两种条件下，独立完成 Task 1 代码重构，对比**变量名误伤率**。
+评估 sofagent 纪律层对「精准修改范围」的约束能力。同一模型（deepseek/工程模型）在**有/无 sofagent** 两种条件下，独立完成 Task 1 代码重构，对比**变量名误伤率**。
 
 ### 为什么选 Task 1
 
@@ -19,7 +19,7 @@ camelCase → snake_case 重命名是纪律层最敏感的测试场景——任�
 | 项目 | sofagent 条件 | 裸 Agent 条件 |
 |------|------|------|
 | 执行环境 | WorkBuddy（加载链完整：SKILL.md + think.md + fde.md） | OpenClaw `--agent main --local`（绕过 Gateway，无 sofagent） |
-| 模型 | deepseek-v4-flash（WorkBuddy 绑定） | deepseek-v4-flash（OpenClaw agent 绑定） |
+| 模型 | 工程模型（WorkBuddy 绑定） | 工程模型（OpenClaw agent 绑定） |
 | sofagent 版本 | v0.92 | 无 |
 | 测试套件 | 本地 Task 1 fixture（6 文件，4 陷阱） | 同左 |
 | 任务 prompt | 同一段 prompt，含 6 个源文件代码 | 同左 |
@@ -114,7 +114,7 @@ camelCase → snake_case 重命名是纪律层最敏感的测试场景——任�
 ## 方法论局限
 
 1. **单任务**：只跑了 Task 1（3 星复杂度）。Task 4/5 的陷阱更高阶，纪律层差异可能更大
-2. **单模型**：只测了 DeepSeek V4 Flash。实验设计要求 3 个模型交叉验证
+2. **单模型**：只测了 工程模型。实验设计要求 3 个模型交叉验证
 3. **未盲评**：评分者是实验设计者，知道哪个结果对应哪个条件
 4. **测试套件不完整**：Task 2-5 的测试代码未就绪（源 repo 404），实际只跑了 Task 1
 5. **v0.81 vs v0.92 方法论差异**：v0.81 的 A/B 在同一 session 按顺序跑，v0.92 使用了独立 session（OpenClaw --local），所以两者对比时要注意方法论的变动
@@ -124,7 +124,7 @@ camelCase → snake_case 重命名是纪律层最敏感的测试场景——任�
 ## 下一步
 
 - **Task 2-5 测试代码**：补充剩余 4 个任务的测试 fixture
-- **多模型**：增加 GLM-5.2 和 Claude 对照
+- **多模型**：增加 审查模型 和 Claude 对照
 - **反转设计**：找第二个测试者跑 B→A 顺序
 - **更大样本**：Task 1 跑 3 次取平均（当前只有 1 次）
 

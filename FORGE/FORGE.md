@@ -16,7 +16,7 @@
 > - 新增 `FORGE/LEDGER.md`（跨 run 永久索引）、`FORGE/SKILL/fresh-eyes-loop/`
 > - 详细记录见 `docs/changelog/v1.2/v1.2.0.md` §「后期转向」
 >
-> **⚠️ 正文中的文件路径（如 `docs/verification/`、`FORGE/loop.md`）、维度数字（如 "10 维度"）、Agent 角色名均为 v1.2.0 前期状态，已与现行实现不一致。如需现行信息，请以 [`loop.md`](SKILL/fresh-eyes-loop/loop.md) 和 [`docs/changelog/releasing.md`](../docs/changelog/releasing.md) 为准。**
+> **⚠️ 正文中的 Agent 角色名（sofagent-engineer / sofagent-reviewer / forward-deployed-engineer 等）为 v1.2.0 前期设计，已在后期重构中调整。文件路径和维度数字已同步现行实现。如需最新信息，请以 [`loop.md`](SKILL/fresh-eyes-loop/loop.md) 和 [`docs/changelog/releasing.md`](../docs/changelog/releasing.md) 为准。**
 >
 > *以下为旧 FORGE 自迭代设计正文，原样保留作为历史参考。*
 
@@ -172,7 +172,7 @@ FORGE 设计为**平台无关**——不依赖特定 Agent 平台。运行原理
   ▼
 OpenClaw（sofagent 底座，随 sofagent 安装）
   │
-  │  按 FORGE/loop.md 的 StateGraph 自动调度：
+  │  按 FORGE/SKILL/fresh-eyes-loop/loop.md 的 StateGraph 自动调度：
   ├→ session.spawn sofagent-engineer
   ├→ run sofagent-audit (commit-msg hook)
   ├→ session.spawn sofagent-reviewer
@@ -237,10 +237,10 @@ flowchart TD
 
 | 文件 | 当前位置 | 每次发版后做什么 | 谁做 |
 |------|------|------|------|
-| `fresh-eyes-review.md` | `docs/verification/` | ① 审视上轮审查发现的盲区 → 新增维度/任务 ② 过时的角色/问题 → 删除或更新 ③ 本轮新发现的"反复出现的同类问题" → 抽象为新的通用维度 | FDE |
-| `regression-checklist.md` | `docs/verification/` | ① 本轮修复的 P0/P1 → 抽象为新的检查项（编号递增） ② 审查体系更新建议中"建议追加到回归检查"的条目 → 正式写入 | FDE |
-| `acceptance-test.sh` | `tools/` | ① 新增的审计规则 → 新增对应测试场景 ② 新功能（如 SkillOpt）→ 新增验收场景 ③ 上一版本被绕过的边缘 case → 新增为测试场景 | FDE |
-| `releasing.md` | `docs/verification/` | ① 本版本发布过程中遇到的流程漏洞 → 沉淀到「历史教训」区 ② 检查 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）③ 新增的工具/脚本是否已纳入对应阶段 ④ 把更新后的 releasing.md 同步到 FORGE.md 的映射表 | FDE 提议 → 作者确认 |
+| `fresh-eyes-review.md` | `FORGE/SKILL/fresh-eyes-loop/specs/` | ① 审视上轮审查发现的盲区 → 新增维度/任务 ② 过时的角色/问题 → 删除或更新 ③ 本轮新发现的"反复出现的同类问题" → 抽象为新的通用维度 | FDE |
+| `regression-checklist.md` | `FORGE/SKILL/fresh-eyes-loop/specs/` | ① 本轮修复的 P0/P1 → 抽象为新的检查项（编号递增） ② 审查体系更新建议中"建议追加到回归检查"的条目 → 正式写入 | FDE |
+| `acceptance-test.sh` | `FORGE/SKILL/fresh-eyes-loop/specs/` | ① 新增的审计规则 → 新增对应测试场景 ② 新功能（如 SkillOpt）→ 新增验收场景 ③ 上一版本被绕过的边缘 case → 新增为测试场景 | FDE |
+| `releasing.md` | `docs/changelog/` | ① 本版本发布过程中遇到的流程漏洞 → 沉淀到「历史教训」区 ② 检查 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）③ 新增的工具/脚本是否已纳入对应阶段 ④ 把更新后的 releasing.md 同步到 FORGE.md 的映射表 | FDE 提议 → 作者确认 |
 
 **这不是可选操作——是 FORGE 外层循环的核心职责。** 如果发版后这四份文件没有更新，外层循环就是失败的。这四份文件是 FORGE 的"经验存储器"——每次发版的经验必须变成下次审查更锋利的武器。
 
@@ -248,7 +248,7 @@ flowchart TD
 
 ### 文件位置的说明
 
-三份审查文件已从维护者本地（`~/Workbuddy/`）移入 `docs/verification/`，成为项目的一部分，供所有贡献者使用。`FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh` 已在仓库中。`docs/changelog/releasing.md` 是发版 SOP，位置不变。
+四份验证文件的现行位置：`fresh-eyes-review.md` / `regression-checklist.md` / `acceptance-test.sh` 在 `FORGE/SKILL/fresh-eyes-loop/specs/`；`releasing.md` 在 `docs/changelog/`。
 
 ### 为什么外层循环是必须的
 

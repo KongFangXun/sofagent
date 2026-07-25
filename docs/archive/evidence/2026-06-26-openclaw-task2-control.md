@@ -12,7 +12,7 @@
 
 | 项目 | sofagent 组 | 裸 Agent 组 |
 |------|------|------|
-| 模型 | deepseek/deepseek-v4-flash | deepseek/deepseek-v4-flash |
+| 模型 | deepseek/工程模型 | deepseek/工程模型 |
 | sofagent | v0.93（prompt 前缀注入 4 条核心规则） | 无 |
 | session | 独立 session-key | 独立 session-key |
 | 执行方式 | `openclaw agent --local --session-key ...` | 同左 |
@@ -120,7 +120,7 @@ class DataProcessor {
 
 ## 分析
 
-1. **裸 Agent 组 100% 检出率**：3/3 实验全部发现 4 个 bug，无漏报无误报。对于这种「代码已在 prompt 中」的分析类任务，DeepSeek V4 Flash 本身能力足以完成。
+1. **裸 Agent 组 100% 检出率**：3/3 实验全部发现 4 个 bug，无漏报无误报。对于这种「代码已在 prompt 中」的分析类任务，工程模型 本身能力足以完成。
 
 2. **sofagent 组出现 1 次严重漏报**（sof-1）：
    - 该实验仅发现了 Bug 1（类型错误），完全遗漏了 Bug 2/3/4

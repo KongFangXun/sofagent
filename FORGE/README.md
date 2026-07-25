@@ -17,10 +17,10 @@ fresh-eyes-loop 由 driver（`fresh-eyes-driver.mjs`）自动编排——driver 
 sofagent-audit --version
 
 # 2. 配置 A/B 异构模型（详见 quick-start.md）
-export SOFAGENT_LLM_A=glm:glm-5.2
-export SOFAGENT_LLM_A_API_KEY=your-glm-key
-export SOFAGENT_LLM_B=deepseek:deepseek-v4-pro
-export SOFAGENT_LLM_B_API_KEY=your-deepseek-key
+export SOFAGENT_LLM_A=<provider>:<model-name>      # 审查类模型
+export SOFAGENT_LLM_A_API_KEY=your-key
+export SOFAGENT_LLM_B=<provider>:<model-name>      # 工程类模型（异构）
+export SOFAGENT_LLM_B_API_KEY=your-key
 
 # 3. 一键启动（driver 自动起 A/B 子进程）
 node FORGE/src/fresh-eyes-driver.mjs --target v1.2.0 --max-rounds 10
@@ -32,13 +32,13 @@ node FORGE/src/fresh-eyes-driver.mjs --target v1.2.0 --dry-run
 **环境变量**（A/B 异构模型）：
 
 ```bash
-# A（审查者）= GLM-5.2
-export SOFAGENT_LLM_A=glm:glm-5.2
-export SOFAGENT_LLM_A_API_KEY=your-glm-key
+# A（审查者）= 你选的审查类模型
+export SOFAGENT_LLM_A=<provider>:<model-name>
+export SOFAGENT_LLM_A_API_KEY=your-key
 
-# B（工程师）= DeepSeek V4 Pro
-export SOFAGENT_LLM_B=deepseek:deepseek-v4-pro
-export SOFAGENT_LLM_B_API_KEY=your-deepseek-key
+# B（工程师）= 你选的工程类模型（必须与 A 不同厂商）
+export SOFAGENT_LLM_B=<provider>:<model-name>
+export SOFAGENT_LLM_B_API_KEY=your-key
 ```
 
 > A 和 B 用不同厂商的模型（异构），这是 fresh-eyes-loop 的设计——审查和修复用不同模型减少同模型盲区。详见 [`quick-start.md`](quick-start.md)。

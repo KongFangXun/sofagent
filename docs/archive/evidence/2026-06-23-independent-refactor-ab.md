@@ -8,7 +8,7 @@
 
 ## 测试概述
 
-量化评估 **sofagent v0.81** 对 AI Agent 代码修改能力的约束效果。采用同一 Agent（deepseek/deepseek-chat）在**有/无 sofagent 约束**两种条件下，独立完成 5 个高复杂度多文件代码重构任务，从**可运行性、完整性、正确性、纪律性**四个维度进行评分对比。
+量化评估 **sofagent v0.81** 对 AI Agent 代码修改能力的约束效果。采用同一 Agent（deepseek/工程模型）在**有/无 sofagent 约束**两种条件下，独立完成 5 个高复杂度多文件代码重构任务，从**可运行性、完整性、正确性、纪律性**四个维度进行评分对比。
 
 ### 测试环境
 
@@ -18,7 +18,7 @@
 | OS | Darwin 25.4.0 (macOS) |
 | Node.js | v24.14.0 |
 | TypeScript | 6.0.3 |
-| Agent 模型 | deepseek/deepseek-chat |
+| Agent 模型 | deepseek/工程模型 |
 | sofagent 版本 | 0.81.0 |
 | sofagent 加载链 | L1: SKILL.md → L2: think.md → L3: fde.md |
 
@@ -103,7 +103,7 @@
 
 1. **知识传递效应**：第二轮可能受益于第一轮——虽然代码被完全还原，但 Agent 同一实例可能保留了一些上下文知识
 2. **单次测试**：未进行多轮重复测试以消除随机性
-3. **单一模型**：仅使用 deepseek/deepseek-chat，未测试其他模型的差异
+3. **单一模型**：仅使用 deepseek/工程模型，未测试其他模型的差异
 4. **任务同质化**：5 个任务均为前端/Node.js 后端代码重构，未测试其他编程语言或领域
 
 > ⚠️ 注意：两轮测试由同一个 Agent 实例执行，第二轮可能受益于第一轮获得的代码知识。但两轮之间代码已被 `git reset --hard` 完全还原，差异仅在于 sofagent 约束层的启用与否。
@@ -139,4 +139,4 @@
 
 ---
 
-*报告生成时间：2026-06-23 10:30 CST | 生成工具：OpenClaw Agent + deepseek/deepseek-chat*
+*报告生成时间：2026-06-23 10:30 CST | 生成工具：OpenClaw Agent + deepseek/工程模型*

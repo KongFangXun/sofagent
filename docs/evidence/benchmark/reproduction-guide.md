@@ -94,7 +94,7 @@ sofagent 声称：给 AI Agent 加纪律约束后，代码重构任务的变量�
 
 | 变量 | 影响 | 如何控制 |
 |------|------|---------|
-| Agent 模型 | 不同模型对指令的遵守程度不同 | 记录模型名（如 deepseek-v4 / claude-sonnet / glm-5.2） |
+| Agent 模型 | 不同模型对指令的遵守程度不同 | 记录所用模型（工程模型 / 审查模型 / 其他对比模型） |
 | 温度（temperature） | 高温 → 更随意 → 更容易误改 | 固定为 0 或默认值 |
 | 平台加载机制 | OpenClaw hook vs WorkBuddy skill 注入方式不同 | 记录平台名 |
 | fixture 版本 | 不同 baseline 的文件结构可能微调 | 固定 `56160e1` |
