@@ -11,6 +11,12 @@ import { loadHistory } from '../audit-history';
 import type { AuditHistoryEntry } from '../audit-history';
 import { defaultRules, rules } from './index';
 
+/**
+ * 基线规则——安全底线，不可通过 config.yml 关闭。
+ * 即使 config.rules.a1 = false，A1 仍然生效。
+ */
+const BASELINE_RULE_NUMBERS = new Set([1, 2, 9]); // A1 敏感文件, A2 密钥泄漏, A9 注入防御
+
 export interface AuditResult {
   rules: RuleCheck[];
   exitCode: number;
@@ -89,10 +95,18 @@ export function runRules(
 
   // 根据 config.rules 按规则名禁用
   const rulesConfig = config?.rules;
+  const suppressedBaselineRules: string[] = [];
   const activeRules = rulesConfig
     ? rulesToRun.filter((r) => {
         const key = r.number >= 200 ? `e${r.number - 200}` : `a${r.number}`;
         const enabled = rulesConfig[key];
+        // 基线规则（A1/A2/A9）无视 config 关闭指令，永远生效
+        if (BASELINE_RULE_NUMBERS.has(r.number)) {
+          if (enabled === false) {
+            suppressedBaselineRules.push(key.toUpperCase());
+          }
+          return true;
+        }
         return enabled !== false;
       })
     : rulesToRun;
@@ -127,6 +141,15 @@ export function runRules(
             });
           }
         }
+        // 基线规则不可关闭检查（fast-fail 前也要报警）
+        if (suppressedBaselineRules.length > 0) {
+          results.push({
+            name: 'BASELINE_GUARD',
+            number: 0,
+            status: 'WARN',
+            details: [`基线规则 ${suppressedBaselineRules.join('、')} 为安全底线，config.yml 关闭指令已忽略——这些规则始终生效`],
+          });
+        }
         // 汇总判定（有 FAIL 直接 exit 2）
         return { rules: results, exitCode: 2 };
       }
@@ -152,6 +175,16 @@ export function runRules(
       if (strict) exitCode = 2;
       else if (exitCode === 0) exitCode = 1;
     }
+  }
+
+  // 基线规则不可关闭检查：config 里关闭了 A1/A2/A9 时记录警告
+  if (suppressedBaselineRules.length > 0) {
+    results.push({
+      name: 'BASELINE_GUARD',
+      number: 0,
+      status: 'WARN',
+      details: [`基线规则 ${suppressedBaselineRules.join('、')} 为安全底线，config.yml 关闭指令已忽略——这些规则始终生效`],
+    });
   }
 
   return { rules: results, exitCode };
