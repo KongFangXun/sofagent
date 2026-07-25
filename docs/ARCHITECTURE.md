@@ -550,7 +550,7 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 
 | 安装器 | 装什么 | 不装 | 适用 |
 |---|---|---|---|
-| `install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（@sofagent-fde / @sofagent-audit）+ hook | LOOP | 企业 / FDE：要常驻 AI 员工 |
+| `install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（@sofagent-fde / @sofagent-audit）+ hook | LOOP | 企业 / FDE：要常驻硅基员工 |
 | `install.sh --base-only` | 仅底座（四引擎） | FDE / LOOP | 开发者 / 企业 IT：只要核心治理引擎 |
 | `LOOP/loop-install.sh` | 底座（--base-only 内部）+ engineer/reviewer Skill + LOOP 工具链 | FDE Agent | 开发者：自迭代开发闭环 |
 

@@ -2,7 +2,7 @@
 
 > 🔖 **定位**：FDE 是 sofagent 的**部署产品入口**（非独立仓库）。需先 `git clone` sofagent 主仓库，FDE 依赖主仓库的 `install.sh`。
 
-> **sofagent 是一个 FDE Agent**——进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。你通过 FDE 入口安装它，装完之后它就是你的常驻 AI 员工：梳理 workflow、审计变更、持续优化。**人走 sofagent 不走。**
+> **sofagent 是一个 FDE Agent**——进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。你通过 FDE 入口安装它，装完之后它就是你的常驻硅基员工：梳理 workflow、审计变更、持续优化。**人走 sofagent 不走。**
 
 > 内部由 4 个 Sub Agent 协作（`sofagent-fde` 部署 / `sofagent-audit` 合规审计 / `sofagent-engineer` 代码工程 / `sofagent-reviewer` 代码审查），对外用户只看到一个 FDE Agent 身份。Maker-Checker 分离在内部保持，用户不需要知道。
 

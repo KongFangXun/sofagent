@@ -37,7 +37,7 @@
 
 ## 🎯 先读这段：如何正确理解 sofagent
 
-> **sofagent 是一个 FDE Agent——对外你看到的是一个常驻 AI 员工（FDE Agent），底层是 sofagent 引擎（Harness 中间件）的一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）做问责底座。** 我们基于你自选的大厂 Agent 和大模型，不替代它们，而是帮企业梳理 workflow、搭建本体模型、部署专有 Sub Agent。
+> **sofagent 是一个 FDE Agent——对外你看到的是一个常驻硅基员工（FDE Agent），底层是 sofagent 引擎（Harness 中间件）的一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）做问责底座。** 我们基于你自选的大厂 Agent 和大模型，不替代它们，而是帮企业梳理 workflow、搭建本体模型、部署专有 Sub Agent。
 
 一底座·四引擎是 FDE Agent 的**核心架构**，不是独立销售的产品。
 
