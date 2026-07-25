@@ -110,7 +110,6 @@ LAYER_A=$(find . -name "*.md" \
   -not -path "*/FDE/*" \
   -not -path "*/FORGE/*" \
   -not -path "*/docs/guides/*" \
-  -not -path "*/docs/design/*" \
   -not -path "*/docs/architecture/*" \
   -not -path "*/docs/prd/*" \
   -not -path "*/FORGE/*" \
@@ -134,9 +133,9 @@ LAYER_B=${LAYER_B:-0}
 LAYER_C=$(find ./FORGE/SKILL/fresh-eyes-loop/specs -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_C=${LAYER_C:-0}
 
-# D 层：设计文档（docs/design/ + docs/architecture/ + docs/prd/）
+# D 层：设计文档（docs/architecture/ + docs/prd/）
 # 注：部分子目录可能暂不存在，find 会报错但 stderr 已抑制；用 `{ ...; } 2>/dev/null || true` 防止 pipefail 传播
-LAYER_D=$({ find ./docs/design ./docs/architecture ./docs/prd -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}'; } || true)
+LAYER_D=$({ find ./docs/architecture ./docs/prd -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}'; } || true)
 LAYER_D=${LAYER_D:-0}
 
 # E 层：运维指南（docs/guides/）

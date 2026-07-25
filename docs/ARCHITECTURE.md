@@ -313,6 +313,31 @@ sofagent 的编排引擎天然就是一张**控制图（Control Graph）**——
 
 **Org Graph vs Work Graph 双图模型**（行业前沿框架）：Org Graph = 长期稳定的角色节点（engineer/audit/reviewer/human_confirm），变动慢，像公司组织架构；Work Graph = 为当前任务动态拼装的协作拓扑（子任务 engineer 实例 + 并行扇出），任务结束即解散。两者分离——长期能力与短期任务解耦，避免每次任务都重建整套组织。
 
+**Org Graph 节点六要素**（每节点定义：职责 / 输入契约 / 输出契约 / 工具权限 / 状态范围 / 退出条件）：
+
+| 节点 | 职责 | 输入 | 输出 | 工具权限 | 退出条件 |
+|------|------|------|------|---------|---------|
+| **engineer** | 写代码/改文件 | `artifacts.task` + `reviewReport` | `engineerOutput` | write/edit/run_bash | audit PASS→next；FAIL→retry；retry≥3→blocked |
+| **audit** | git diff 硬证据审计 | `engineerOutput` | `auditReport` + `auditResult` | 只读 git diff | 规则跑完→next |
+| **reviewer** | AI 语义审查 | `auditReport` + `engineerOutput` | `reviewReport` | 只读上下文 | 审查完成→human_confirm |
+| **human_confirm** | HITL 人工确认 | `reviewReport` + 全量上下文 | `humanFeedback` | 人工决策 | 确认→END；驳回→engineer |
+
+**Work Graph 示例**（行业调研任务，v1.2.2 Planner 落地后自动生成）：
+
+```
+START → plan（拆解："调研 AI 笔记产品"）
+     → engineer-search（并行：竞品 A）
+     → engineer-search（并行：竞品 B）
+     → engineer-search（并行：竞品 C）
+     → merge（合并结果）
+     → engineer-analyze（功能/价格/评价）
+     → audit（审计引用来源）
+     → reviewer（审查分析质量）
+     → human_confirm
+```
+
+**单闭环四类失效 → sofagent 解法**（Carlos E. Perez）：① Goodhart 目标漂移→audit 用 git diff 不信自报；② 参照盲→audit 规则硬编码不随模型波动；③ 耦合冲突→Maker-Checker 职责硬分离；④ 测量退化→指标来自事实层非主观报告。
+
 **五类边契约**（行业共识）：当前实现仅有 **数据流**（`artifacts` 传递）和 **控制流**（`routeAfterAudit`/`routeAfterHuman`）——**缺权限流、证据流、失败流**。v1.2.5 将形式化全部五类边。
 
 **可学习的未来迭代（落盘见 [ROADMAP](../ROADMAP.md)「v1.2.x Graph Engine 进化路线」）**：① **Planner 节点**——任务分解（v1.2.2）；② **降级路由链**——retry→降级→标记→人工（v1.2.2）；③ **engineer-decide/execute 分层**——LLM 层 + 代码层（v1.2.2）；④ **并行子图执行**——worktree 隔离 + 多 engineer 并发（v1.2.3）；⑤ **Dashboard React Flow 控制图**——Org Graph + Work Graph 同屏 + 边类型标注（v1.2.3）；⑥ **多类型 Checker**——format/fact/source-validator（v1.2.4）；⑦ **受控循环升级**——补信息→重规划 + 降级通过（v1.2.4）；⑧ **五类边契约形式化** + Anchor 配置（v1.2.5）；⑨ 控制图多循环 DAG 波次并行（v1.3.0）。
