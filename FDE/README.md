@@ -46,7 +46,7 @@
 把下面这段粘贴给你的 Agent：
 
 ```
-请完整阅读 FDE/SKILL.md、FDE/FDE.md。
+请完整阅读 SKILL/SKILL.md、FDE/FDE.md。
 读完后按 FDE.md §1 开始引导我完成 FDE 部署。
 ```
 
@@ -56,7 +56,7 @@
 
 | 文件 | 干什么 |
 |------|------|
-| `SKILL.md` | Skill 入口（Agent 激活后自动加载，第一个说话引导你） |
+| `SKILL/SKILL.md` | Skill 入口（Agent 激活后自动加载，第一个说话引导你） |
 | `FDE.md` | 12 个关键步骤部署知识文档（4 个阶段：进场→挖掘→交付→检查离场）+ 角色定义 + 步骤详解 |
 | `templates/` | 交付物模板（企业画像 + 部署方案 + 工作流节点文档 + 企业 Skill），以 FDE 自身为案例 |
 | `install.sh` | 一键装 sofagent 底座 + 写入 fde.md（仓库根目录主安装器） |

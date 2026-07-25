@@ -98,13 +98,13 @@ export function runWorkBuddyChecks(
     v.checkWarn('SKILL.md 未部署到 ~/.workbuddy/skills/sofagent/');
   }
 
-  // fde.md 已部署+字符数
-  const wbRules = join(HOME, '.workbuddy', 'fde.md');
+  // fde.md 已部署+字符数（v1.2.0: 路径与 install.sh 部署目标对齐）
+  const wbRules = join(HOME, '.workbuddy', 'skills', 'sofagent', 'fde.md');
   if (existsSync(wbRules) && statSync(wbRules).size > 0) {
     const chars = countChars(wbRules);
     v.checkPass(`fde.md 已部署（${chars} 字符）`);
   } else {
-    v.checkWarn('fde.md 未部署到 ~/.workbuddy/');
+    v.checkWarn('fde.md 未部署到 ~/.workbuddy/skills/sofagent/');
   }
 
   // Skills 目录 .md 文件数

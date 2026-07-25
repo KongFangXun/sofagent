@@ -69,7 +69,7 @@ interface Args {
   timelineJson?: boolean;
   /** v1.0.9: ontology 子命令 */
   ontologyCommand?: string;
-  /** v1.2.9: 审计 session 产物（默认开启，--no-session 关闭） */
+  /** v1.2.0: 审计 session 产物（默认开启，--no-session 关闭） */
   noSession: boolean;
   /** v1.2.0: --commit-msg 完整 commit message（hook 场景传完整 body 供 A9 扫描） */
   commitMsgArg?: string;
@@ -164,7 +164,7 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit --timeline [N]                      查看快照时间线');
       console.log('  sofagent-audit ontology view                        本体人类可读视图');
       console.log('');
-      console.log('v1.0.8 已弃用的子命令（将在 v1.2.0 移除，请尽快迁移）:');
+      console.log('v1.0.8 已弃用的子命令（将在 v1.3.0 移除，请尽快迁移）:');
       console.log('  compose      → sofagent-orchestrator compose');
       console.log('  subagent run → sofagent-orchestrator subagent run');
       console.log('  skillopt-run → sofagent-skillopt');
@@ -414,7 +414,7 @@ function printTimeline(limit: number, json: boolean): void {
   }
 }
 
-// 同步加载 snapshot 模块（v1.2.9 从 @sofagent/daemon 迁移到 @sofagent/core，消除循环依赖）
+// 同步加载 snapshot 模块（v1.2.0 从 @sofagent/daemon 迁移到 @sofagent/core，消除循环依赖）
 function awaitLoadSnapshot(): any {
   try {
     return require('@sofagent/core');
@@ -442,7 +442,7 @@ async function main(): Promise<void> {
 
   // compose → sofagent-orchestrator (v1.0.8 P0-2: 友好报错降级，不再 execFileSync)
   if (rawArgs.includes('compose')) {
-    console.error('⚠️  "sofagent-audit compose" 已弃用，将在 v1.2.0 移除，请尽快迁移到 "sofagent-orchestrator compose"。');
+    console.error('⚠️  "sofagent-audit compose" 已弃用，将在 v1.3.0 移除，请尽快迁移到 "sofagent-orchestrator compose"。');
     console.error('   请直接运行：sofagent-orchestrator compose');
     console.error('   安装：npm install -g @sofagent/orchestrator');
     process.exit(1);
@@ -466,7 +466,7 @@ async function main(): Promise<void> {
 
   // verify → sofagent-core (v1.0.8 P0-2: 友好报错降级，不再 execFileSync)
   if (rawArgs.includes('verify')) {
-    console.error('⚠️  "sofagent-audit verify" 已弃用，将在 v1.2.0 移除，请尽快迁移到 "sofagent-core verify"。');
+    console.error('⚠️  "sofagent-audit verify" 已弃用，将在 v1.3.0 移除，请尽快迁移到 "sofagent-core verify"。');
     console.error('   请直接运行：sofagent-core verify');
     console.error('   安装：npm install -g @sofagent/core');
     process.exit(1);
@@ -670,7 +670,7 @@ async function main(): Promise<void> {
   printResults(results, diffFiles, args.json, args.ci, args.silent);
 
   // 7. webhook 推送（fire-and-forget，配置了 webhook 时 PASS/WARN/FAIL 三态都推送）
-  // v1.2.9: 优先 CLI --webhook/--webhook-url，回退 config.yml audit.webhook.{platform,url}，
+  // v1.2.0: 优先 CLI --webhook/--webhook-url，回退 config.yml audit.webhook.{platform,url}，
   //         再回退环境变量 SOFAGENT_WEBHOOK_URL（已在 parseArgs 初始化 webhookUrl）。
   //         修复场景：commit-msg hook 不传 CLI webhook 参数，用户在 config.yml 配了 webhook 也不生效。
   const webhookPlatform = args.webhook || config.webhook?.platform;
@@ -743,7 +743,7 @@ async function main(): Promise<void> {
     process.stderr.write('[sofagent-audit] 警告: 审计历史写入失败，跳过（不影响审计结果）\n');
   }
 
-  // 8.5 session 产物（P0：审计结果 session 可见性）——v1.2.9
+  // 8.5 session 产物（P0：审计结果 session 可见性）——v1.2.0
   if (!args.noSession) {
     try {
       const report = buildSessionReport(results, diffFiles, { task: args.task, commitSha });
@@ -759,7 +759,7 @@ async function main(): Promise<void> {
 
   // 审计通过（PASS）后自动创建 shadow repo 快照，供 --timeline/--revert 使用
   // 设计原则：只有 PASS 才快照（WARN/FAIL 不快照，符合「审计通过后自动快照」契约）
-  // v1.2.9：snapshot helpers 已从 @sofagent/daemon 迁移到 @sofagent/core，循环依赖已消除
+  // v1.2.0：snapshot helpers 已从 @sofagent/daemon 迁移到 @sofagent/core，循环依赖已消除
   if (results.exitCode !== 2 && isInGitRepo()) {
     try {
       if (!hasShadowRepo(process.cwd())) {
@@ -851,7 +851,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
 
   // 静默 / CI 模式——只抑制输出，不改 exit code 判定
   if (ci || silent) {
-    // ★ v1.2.9: 无条件向 stdout 输出一行结论（session 可见性核心）
+    // ★ v1.2.0: 无条件向 stdout 输出一行结论（session 可见性核心）
     const c = results.exitCode;
     const failN = results.rules.filter((r) => r.status === 'FAIL').length;
     const warnN = results.rules.filter((r) => r.status === 'WARN').length;
@@ -983,7 +983,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   console.log('');
 }
 
-// v1.2.9: 仅作为 CLI 入口时执行 main，避免被测试 import 时触发副作用（如 process.exit）
+// v1.2.0: 仅作为 CLI 入口时执行 main，避免被测试 import 时触发副作用（如 process.exit）
 if (require.main === module) {
   main().catch((err) => {
     console.error('sofagent-audit 内部错误:', err.message);

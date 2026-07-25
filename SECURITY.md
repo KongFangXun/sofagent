@@ -175,9 +175,9 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 
 审计记录升级为可问责的动作凭证：`ActionGovernance`（actor/timestamp/targetEntity/context）+ `DecisionProvenance` 决策溯源组，写入 `history.jsonl`。提供**事后可追溯性**，但不在运行时阻断——Agent 仍可伪造 actor 字段（信任模型同 §审计工具信任模型）。防篡改 HMAC 签名规划在 v1.2.x（见 P2-6）。
 
-### HMAC 签名空窗期（v1.1.x）
+### HMAC 签名（v1.1.8+ 已落地）
 
-当前 `history.jsonl` 仅有 hash chain（可追溯非强防篡改），Agent 可在篡改后重算整条链。v1.2.x 落地 HMAC-SHA256 签名后，无密钥的明文链将标记为低强度校验。此窗口期内，建议对高安全场景配合文件权限（`chmod 600`）+ 定期 `--doctor` 审计。
+`history.jsonl` 自 v1.1.8 起支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`）。有密钥时每条记录签名，Agent 无法在无密钥情况下伪造签名；无密钥时降级为 SHA-256 hash chain（Agent 可重算整链，仅事后可追溯非强防篡改）。`--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainIntegrity()` 校验链完整性。建议高安全场景配置 `~/.sofagent-key` 启用强校验。
 
 ### 审计工具安全性（sofagent-audit）
 

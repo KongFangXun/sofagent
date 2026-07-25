@@ -157,7 +157,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 > **企业 DevOps 集成路径**：当前 `history.jsonl` 为 append-only JSONL 明文，企业 IT 如需接入 SIEM / 企业日志平台，可通过 filebeat / logstash 等采集 agent 定时轮询 `.sofagent/audit/history.jsonl` 转发（见 SECURITY.md「审计结果推送」）。Webhook 推送（飞书 / 钉钉 / 企微）规划在 v1.2.x。CI 集成方面，各包提供 `npm test` 与 `LOOP/releaser/acceptance-test.sh` 可接入现有流水线做门禁；`sofagent-audit --install-hook` 提供的 commit-msg hook 可作为 pre-commit / pre-push 关卡。
 
-> **审计日志防篡改检测边界**：`history.jsonl` 的完整性依赖 hash chain（`audit-history.ts`），但 Agent 可在篡改后重算整条链——hash chain 仅提供事后可追溯性，非强防篡改。v1.1.8 起 `--doctor` 在缺少 HMAC 签名时会明确标记「无 HMAC 签名，完整性校验强度降低」（见 P2-6 实施）；强防篡改 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`）计划在 v1.2.x 落地，届时无密钥的明文链将标记为低强度校验。当前版本仍依赖「Agent 自觉 + 定期 --doctor」的信任模型。
+> **审计日志防篡改检测边界**：`history.jsonl` 的完整性依赖 hash chain（`audit-history.ts`），Agent 可在篡改后重算整条链——hash chain 仅提供事后可追溯性，非强防篡改。v1.1.8 起已支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`），有密钥时强防篡改，无密钥时降级为 SHA-256 hash chain。`--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainIntegrity()` 校验链完整性。当前版本仍依赖「Agent 自觉 + 定期 --doctor」的信任模型。
 
 ### 🔒 数据存储安全
 
@@ -322,7 +322,7 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](FDE/FDE.md)）已在作�
 v1.0 新增 `LOOP/releaser/acceptance-test.sh`（9 个场景），但覆盖范围有限：
 
 - **CI 已覆盖**：单元测试审计核心 413 个、全 workspace 909 个全绿（函数级，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
-- **发版前手动覆盖**：acceptance-test.sh 100 场景（CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
+- **发版前手动覆盖**：acceptance-test.sh 128 场景（含子断言，合计 141 个 pass 判定，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
 
@@ -332,7 +332,7 @@ v1.0 新增 `LOOP/releaser/acceptance-test.sh`（9 个场景），但覆盖范�
 
 ### acceptance-test 数字口径（v1.1.9 澄清）
 
-> **acceptance-test 数字口径（v1.1.9 澄清）**：CHANGELOG 中"109 场景 / 122 断言"的关系是——109 个验收场景（每个场景对应一个端到端测试路径），其中 13 个场景含多个断言点，合计 122 个断言。"4 处 check-test-count 一致"指 4 个关键文件（CHANGELOG / v1.1.8.md / README / acceptance-test.sh）的测试数字声明一致；历史上曾写"5 处"，实际 check-test-count 脚本只校验 4 处。
+> **acceptance-test 数字口径（v1.2.0 更新）**：v1.2.0 版本 acceptance-test.sh 为 128 场景（含子断言，合计 141 个 pass 判定）。v1.1.9 曾为 109 场景 / 122 断言。"4 处 check-test-count 一致"指 4 个关键文件（CHANGELOG / 版本开发日志 / README / acceptance-test.sh）的测试数字声明一致；历史上曾写"5 处"，实际 check-test-count 脚本只校验 4 处。
 
 ---
 

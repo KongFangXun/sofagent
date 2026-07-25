@@ -62,7 +62,9 @@ export function checkEnv(): EnvResult {
     bashOk = m ? parseInt(m[1]!, 10) >= 4 : false;
   } catch { /* */ }
 
-  const allOk = nodeMajor >= 18 && gitAvail && npmAvail && freeMB > 1024 && ocExists && saExists && bashOk;
+  const allOk = nodeMajor >= 18 && gitAvail && npmAvail && freeMB > 1024 && bashOk;
+  // ocExists 和 saExists 降级为建议项——OpenClaw/sofagent 目录不存在不代表系统不可用
+  // 它们会影响 doctor 的 warn 输出但不影响 allOk 判定
   return { node: { version: nodeVersion, ok: nodeMajor >= 18 },
     git: { available: gitAvail, isRepo: gitRepo }, npm: { available: npmAvail },
     disk: { freeMB }, openclaw: { exists: ocExists }, sofagent: { exists: saExists },

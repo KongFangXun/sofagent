@@ -384,7 +384,7 @@ Workflow Hub 的实现规范已随 v1.1.9 迁至商业产品 `sofagent-commercia
 | **Workflow** | 任务编排方案 | 把水引到业务侧 |
 | **Subagent** | 执行具体能力的 Agent | 水龙头 / 用水设备——让水真正作用 |
 
-River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 本身（河是大厂造的——LLM 是水，Agent 平台是河床），而是做河的治理层（约束 + 安全 + 编排 + 执行），确保 River 里的每一个 Sub Agent 都有纪律、可追溯、会反思。
+River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 本身（河是大厂造的——LLM 是水，Agent 平台是河床），而是做河的约束层（约束 + 安全 + 编排 + 执行），确保 River 里的每一个 Sub Agent 都有纪律、可追溯、会反思。
 
 > 🏞️ **River 比喻完整映射**见 [README §①](../README.md)——sofagent 做堤坝 + 自来水厂 + 管网 + 水龙头，不做河本身。
 
