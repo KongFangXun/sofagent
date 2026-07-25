@@ -1,7 +1,7 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
-> ⚠️ **v1.2.0 瘦身标注**：本文件 1024 行（警戒线 1000），越线 24 行。可归并方向——维度 1+48（CHANGELOG 纯度重叠）、维度 16+44（fail-closed 交叉）。v1.2.x 做一轮归并即可。acceptance-test.sh 同步标注（1528 行，79 处 git 脚手架可抽为 `mktmp_repo` 公共函数）。
+> ⚠️ **v1.2.0 瘦身标注**：本文件 1049 行（警戒线 1000），越线 49 行。可归并方向——维度 1+48（CHANGELOG 纯度重叠）、维度 16+44（fail-closed 交叉）。v1.2.x 做一轮归并即可。acceptance-test.sh 同步标注（1535 行，79 处 git 脚手架可抽为 `mktmp_repo` 公共函数）。
 > **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量）
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -48,7 +48,7 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 ```
 
 **步骤 3：逐维度审查**
-## 审查维度（49 项 · 编号 1–49）
+## 审查维度（50 项 · 编号 1–50）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -1018,6 +1018,30 @@ bash LOOP/releaser/bump-version.sh 1.2.0 1.2.0 --dry-run 2>&1 | tail -3
 ```
 
 > **fresh-eyes 教训（v1.2.0 三轮审查）**：物理结构大重构容易在边缘文件留下旧路径残留。最危险的是 `builtin-agents.ts` 源码路径断裂（P0-2）——运行时找不到 Skill 文件静默走 fallback，用户改 Skill 不生效但不知道为什么。第二危险的是 `install.sh` VERSION 变量没 bump（check-version.sh 盲区）——用户装到的是旧版本号。子项 a-h 覆盖了这三轮审查发现的核心盲区。
+
+---
+
+#### 50. 文档乱码扫描——U+FFFD 替换字符 + UTF-8 损坏检测（v1.2.0 新增）
+
+> **背景**：v1.2.0 发版过程中在多个文档（fresh-eyes prompt、stage6 报告、对话历史摘要）反复发现 UTF-8 损坏乱码（` ` 等 U+FFFD 替换字符）。这是编码/传输环节的系统性问题——文档生成或复制时编码断裂，产生不可见的损坏字符。bsd grep 无法检测（U+FFFD 本身是合法 Unicode），必须用 node 逐字符扫描。
+
+```bash
+# 子项 a: U+FFFD 替换字符全仓扫描（核心——编码损坏的直接证据）
+node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL','FDE','LOOP','tools'];const rootFiles=['README.md','README.en.md','CHANGELOG.md','ROADMAP.md','SECURITY.md','LIMITATIONS.md','CODE_OF_CONDUCT.md','CONTRIBUTING.md','install.sh'];const skips=['node_modules','dist','target','.workbuddy','.sofagent','archive','changelog'];let hits=[];const REPL=String.fromCharCode(0xFFFD);function scan(f){try{const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes(REPL))hits.push(f+':'+(i+1)+': U+FFFD 替换字符')})}catch(e){}}function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(skips.includes(e.name))continue;const f=path.join(dir,e.name);if(e.isDirectory())walk(f);else if(/\.(md|ts|sh|json|yml)$/.test(e.name))scan(f)}}dirs.forEach(d=>{if(fs.existsSync(d))walk(d)});rootFiles.forEach(f=>{if(fs.existsSync(f))scan(f)});console.log(hits.length===0?'✅ 零 U+FFFD 乱码':'❌ FOUND '+hits.length);hits.slice(0,20).forEach(h=>console.log('  '+h))"
+
+# 子项 b: C1 控制字符扫描（U+0080-U+009F，非法 UTF-8 残留）
+node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL','FDE','LOOP','tools'];let hits=[];function scan(f){try{const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{for(let j=0;j<l.length;j++){const code=l.charCodeAt(j);if(code>=0x80&&code<=0x9F){hits.push(f+':'+(i+1)+': C1 控制字符 U+'+code.toString(16));break}}})}catch(e){}}function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist','target','.workbuddy','.sofagent','archive','changelog'].includes(e.name))continue;const f=path.join(dir,e.name);if(e.isDirectory())walk(f);else if(/\.(md|ts|sh|json|yml)$/.test(e.name))scan(f)}}dirs.forEach(d=>{if(fs.existsSync(d))walk(d)});console.log(hits.length===0?'✅ 零 C1 控制字符':'❌ FOUND '+hits.length);hits.slice(0,10).forEach(h=>console.log('  '+h))"
+
+# 子项 c: 孤立代理对/颠倒代理对（surrogate pair 损坏）
+node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL','FDE','LOOP','tools'];let hits=[];function scan(f){try{const c=fs.readFileSync(f,'utf8');const arr=[...c];arr.forEach((ch,idx)=>{const code=ch.codePointAt(0);if(code>=0xD800&&code<=0xDFFF){hits.push(f+':char#'+idx+': 孤立代理对 U+'+code.toString(16))}})}catch(e){}}function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist','target','.workbuddy','.sofagent','archive','changelog'].includes(e.name))continue;const f=path.join(dir,e.name);if(e.isDirectory())walk(f);else if(/\.(md|ts|sh|json|yml)$/.test(e.name))scan(f)}}dirs.forEach(d=>{if(fs.existsSync(d))walk(d)});console.log(hits.length===0?'✅ 零孤立代理对':'❌ FOUND '+hits.length);hits.slice(0,10).forEach(h=>console.log('  '+h))"
+
+# 子项 d: 常见 mojibake 模式（UTF-8 被按 Latin-1/GBK 误读）
+# 典型特征：Ã¤ Ã¶ Ã¼ ÃŸ ï¿½ ç‰ (中文被按 latin1 解的残留)
+# 注意：正则用 codepoint（\uXXXX）而非直接嵌入乱码字符，避免 node -e CLI 编码问题
+node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL','FDE','LOOP'];const rootFiles=['README.md','README.en.md','CHANGELOG.md','ROADMAP.md','SECURITY.md'];const exempt=/regression-checklist\.md$|fresh-eyes-review\.md$/;let hits=[];const mojibake=/[\u00C0-\u00C3][\u0080-\u00BF]|\uFFFD\uFFFD|[\u00C2\u00C3][\u0080-\u00BF]|\u00ef\u00bf\u00bd/;function scan(f){if(exempt.test(f))return;try{const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(mojibake.test(l))hits.push(f+':'+(i+1)+': '+l.trim().slice(0,60))})}catch(e){}}function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist','target','.workbuddy','.sofagent','archive','changelog'].includes(e.name))continue;const f=path.join(dir,e.name);if(e.isDirectory())walk(f);else if(/\.(md|ts|sh|json|yml)$/.test(e.name))scan(f)}}dirs.forEach(d=>{if(fs.existsSync(d))walk(d)});rootFiles.forEach(f=>{if(fs.existsSync(f))scan(f)});console.log(hits.length===0?'✅ 零 mojibake':'❌ FOUND '+hits.length);hits.slice(0,20).forEach(h=>console.log('  '+h))"
+```
+
+> **修复指南**：发现 U+FFFD 后，**不要手动逐个删除**——根因是文件编码损坏，手删会留下隐形空洞。正确做法：① 找到原始未损坏版本（git show HEAD~N:path 或 git log 找最近未损坏 commit）→ ② 整文件覆盖恢复 → ③ 重新跑维度 50 确认零残留。如果是新生成文档（如 fresh-eyes prompt），重新生成而非修复。
 
 ---
 

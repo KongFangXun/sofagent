@@ -129,7 +129,7 @@
 6. **安装脚本的报错友好度**：跑 `LOOP/loop-install.sh` 在缺少前置依赖时（比如没装 sofagent 底座、不支持的平台）——报错信息清楚吗？告诉你缺什么、怎么装了吗？还是直接 exit 1 让你摸不着头脑？
 7. **批量部署/集中配置**：如果要给 50 个仓库都装 sofagent，有没有批量安装或集中配置下发的能力？企业级场景需要 org-level 配置。当前是 per-repo 安装——这对 DevOps 来说够用吗？
 8. **`--strict`/`--ci` 模式验证**：跑 `sofagent-audit --diff HEAD~1..HEAD --task "wrong" --strict`，实际 exit code 是 2（承诺值）还是 1？文档声称的模式行为与实现是否一致？**如果 exit code 不是 2，这就是 P0——文档声称与实现不符。**
-9. **独立 install 闭���（v1.1.4 新增）**：在干净环境（不预装 sofagent 底座）只跑 `bash FDE/fde-install.sh` 或 `bash LOOP/loop-install.sh`——能跑通吗？两个脚本第 52 行都调用 `$PROJECT_ROOT/install.sh`、fde-install.sh 第 64 行依赖 `$PROJECT_ROO./SKILL/data/fde.md`、第 82 行依赖根目录 `SKILL/agents/`——**如果用户只 git clone 了 FDE/ 或 LOOP/ 子目录，绝对跑不通**。这是"声称独立产品 vs 实现深度耦合主包路径"的鸿沟。FDE 和 LOOP 真的独立吗？还是说"独立"只是营销话术，实质是主包的快捷安装入口？如果用户跟着 FDE/README 的"装上就能用"指引走，会不会卡在某个主包路径找不到？
+9. **独立 install 闭环（v1.1.4 新增）**：在干净环境（不预装 sofagent 底座）只跑 `bash FDE/fde-install.sh` 或 `bash LOOP/loop-install.sh`——能跑通吗？两个脚本第 52 行都调用 `$PROJECT_ROOT/install.sh`、fde-install.sh 第 64 行依赖 `$PROJECT_ROO./SKILL/data/fde.md`、第 82 行依赖根目录 `SKILL/agents/`——**如果用户只 git clone 了 FDE/ 或 LOOP/ 子目录，绝对跑不通**。这是"声称独立产品 vs 实现深度耦合主包路径"的鸿沟。FDE 和 LOOP 真的独立吗？还是说"独立"只是营销话术，实质是主包的快捷安装入口？如果用户跟着 FDE/README 的"装上就能用"指引走，会不会卡在某个主包路径找不到？
 
 你是"先动手再看文档"型开发者。装完跑通了，可能会随手翻一下 README 看看还有没有别的功能。**你的判断标准不是文档完不完整，而是"从敲下 npm install 到觉得这东西有用，中间花了多长时间"。**
 
@@ -703,6 +703,8 @@
 
 6. **概念/叙事收敛**：重大概念/叙事重构后，跨文档的叙事口径是否一致？旧的框架表述、悬空指向、重复铺陈是否还有残留？以你自己的视角通读，不预设结论。
 
+7. **文档乱码扫描（v1.2.0 新增）**：v1.2.0 发版过程中在多个文档（fresh-eyes prompt、阶段六报告、对话历史摘要）反复发现 UTF-8 损坏乱码——U+FFFD 替换字符（显示为菱形问号或空白方框）、mojibake（`Ã¤` `ï¿½` `â€` 等被按错误编码解读的残留）。这是编码/传输环节的系统性问题，肉眼在等宽字体下极易漏看。**审查方法**：跑 `regression-checklist.md` 维度 50 的 node 扫描脚本（U+FFFD + C1 控制字符 + mojibake 模式），零命中才算通过。如果发现乱码——**不要手动逐个删除**（根因是文件编码损坏，手删会留下隐形空洞），找到原始未损坏版本整文件覆盖恢复，或重新生成。这个检查每次 fresh-eyes 审查必跑——因为编码损坏可能在任意一次文档编辑/传输/粘贴时发生，不是一次修了就永远不会再出现的问题。
+
 > 📋 输出格式见下方「审查输出格式」（适用于全部十维度）。
 
 ---
@@ -761,6 +763,7 @@
 | install.sh 内部 VERSION= 变量与 package.json SSOT 一致性 | check-version.sh 只扫脚本头注释不扫变量赋值，VERSION= 成盲区 | regression-checklist.md 维度 49 子项 d + check-version.sh 追加检查段 |
 | bump-version.sh set -u 下变量作用域 edge case | 同版本号 dry-run 崩溃，unbound variable 在特定 subshell 路径触发 | regression-checklist.md 维度 49 子项 h |
 | npm 子包 dependencies 写了超前版本号 | mcp 包依赖写 1.2.1 但 SSOT 才 1.2.0，check-version 报 ✗ | check-version.sh §9 已有覆盖，发版前必扫 |
+| 文档 UTF-8 乱码扫描（U+FFFD + C1 控制字符 + mojibake 模式） | 编码/传输环节系统性问题，v1.2.0 发版中在多个文档反复发现，肉眼在等宽字体下极易漏看 | regression-checklist.md 维度 50 + fresh-eyes-review.md 维度十任务7（v1.2.0 已落地） |
 
 > **v1.2.0 三轮 fresh-eyes 审查教训汇总**：物理结构大重构（目录更名 + Skill 收敛 + 工具链搬迁）是最容易产生路径残留的场景。核心教训——① 源码中的硬编码路径（builtin-agents.ts）比文档路径更危险（静默 fallback vs 明显报错）；② 版本号检查工具自己也有盲区（VERSION= 变量不在扫描范围）；③ BSD grep 对中文 UTF-8 的误判让传统 grep 扫描不可靠，必须用 node 替代。
 
