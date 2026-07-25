@@ -57,6 +57,8 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0）。最小运行时依赖。
 | `get_think` | 读取 think.md 最近 N 条反思条目 |
 | `write_think` | 向 think.md 追加一条反思记录 |
 
+> 注：A12/A13 已在 v0.99.4 合并入 A11（不滥资源），编号不再使用。
+
 完整文档见主仓库：https://github.com/KongFangXun/sofagent
 
 ## License

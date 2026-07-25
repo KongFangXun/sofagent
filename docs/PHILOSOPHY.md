@@ -199,6 +199,15 @@ sofagent 用三条制度把「判断权不可外包」落成防线，与「反�
 
 这把「人类终裁」从工程约束升维为**主体性护栏**：模型可以跑得远，但问题定义（SKILL.md 目标）、价值排序（fde.md 业务底线）、审美判断（人类验收）必须留在人类手里。
 
+**循环锚点——人类终裁如何不被绕过。** 仅声明「判断权留在人类」不够：一旦把改进循环交给 Agent，它会在古德哈特定律下悄悄优化掉最想削弱的硬规则（Goodhart, 1975）。Perez（2026）把可靠的循环网络归结为三类**锚点**：
+- **不容争辩的测量**：到账收入、真实执行测试、实际留存——物理上不可能被优化器操作的外部事实，而非 Agent 自报指标。
+- **冻结节点**：优化循环永远不许调的规则（如训练循环绝不可看保留评估集），恰是最想削弱的硬约束。
+- **人对「更好」的判断来自图谱外**：哪些值得控制、冻结规则放哪，机器不能自生成——最精密的架构也要标记自己权威终止之处。
+
+sofagent 的审计引擎 Gate + 硬规则正是这类锚点：审计只信 git diff 一手证据（不容争辩），fde.md 业务底线不可被 Agent 覆盖（冻结节点），问题定义与验收终裁权留在人类（图谱外的判断）。人类终裁因此不只是一句宣言，而是一组**写死在优化器碰不到之处的锚点**。
+
+> 📖 来源：温故知新 2026-07-26（Seebin《从 Loop Engineering 到 Graph Engineering》backfill 归档触发）；外部佐证 Goodhart, C.A.E. (1975). *Problems of Monetary Management: The U.K. Experience*. Reserve Bank of Australia；Perez, C.E. (2026). *From Loop Engineering to Graph Engineering?* IntuitionMachine. https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c
+
 ### 中立性——运动员不能兼任裁判
 
 平台内置的审计永远是运动员审计——OpenAI 审计自己的 Agent、字节审计自己的 Agent。这在单供应商场景下够用。但当企业混用多家 Agent（这是确定趋势），就需要一个**不属于任何一方的审计层**。
