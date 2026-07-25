@@ -25,6 +25,18 @@
 - `runs/<YYYY>/<MM>/<DD>/run-NN/round-NN/findings.md`
 - `runs/<YYYY>/<MM>/<DD>/run-NN/round-NN/result.md`
 
+**重要**：本步骤产出两个文件。你的回复文本必须用固定分隔符区分它们，driver 会按分隔符切片分别写入对应文件：
+
+```
+===FILE: findings.md===
+<findings.md 正文>
+
+===FILE: result.md===
+<result.md 正文>
+```
+
+不要省略分隔符，不要把两份内容混在一起——driver 找不到分隔符时会把全部文本塞进第一个文件，导致 B 读不到修复指令。
+
 ## 注意
 
 - 不做优先级通胀：P2 就是 P2，别为了"显得重视"升 P0。
