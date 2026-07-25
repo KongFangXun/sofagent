@@ -177,9 +177,21 @@ else warn "npm 未安装"; fi
 # ════════════════════════════════════════
 # Step 3: 编排引擎（v1.0.7：DeepAgents，正式依赖）
 # ════════════════════════════════════════
-info "Step 3/8 · 编排引擎: DeepAgents（npm 包 @sofagent/audit 正式依赖）..."
-info "  编排引擎随 @sofagent/audit 自动安装（npm install @sofagent/audit）"
-info "  如需 Sub Agent A/B 对比 + 方案 C 运行器，确认 deepagents 已安装：npm ls deepagents"
+info "Step 3/8 · 编排引擎: DeepAgents（@sofagent/audit 正式依赖）"
+# 实际安装 @sofagent/audit（含编排引擎 + 审计引擎）
+# 安装失败不中断（set -e 由 || true 保护），仅警告
+if command -v npm &>/dev/null; then
+  info "  执行: npm install -g @sofagent/audit@latest"
+  if npm install -g "@sofagent/audit@latest" 2>&1 | tail -1; then
+    ok "  @sofagent/audit 已全局安装（含 DeepAgents 编排引擎）"
+  else
+    warn "  npm install -g @sofagent/audit 失败（网络/权限问题）"
+    warn "  请手动安装: npm install -g @sofagent/audit"
+  fi
+else
+  warn "  npm 不可用，跳过 @sofagent/audit 安装"
+  warn "  请安装 Node.js + npm 后手动运行: npm install -g @sofagent/audit"
+fi
 
 # ════════════════════════════════════════
 # Step 4-5b: 部署文件
@@ -209,10 +221,10 @@ log_install_audit
 #   cd ~/SkillOpt && pip install -e .
 echo "ℹ️ SkillOpt 自进化引擎（可选）：clone github.com/microsoft/SkillOpt + pip install -e ."
 
-# ── v1.1.0: 可选包提示 ──
+# ── v1.1.0: 可选包提示（这些不在自动安装范围内，仅提示）──
 echo ""
-echo "可选包（按需安装）："
-echo "  npm install -g @sofagent/orchestrator   # 编排引擎"
+echo "可选 npm 包（上述未自动安装，按需运行）："
+echo "  npm install -g @sofagent/orchestrator   # 独立编排引擎"
 echo "  npm install -g @sofagent/daemon          # 守护进程"
 echo "  npm install -g @sofagent/core            # 基础设施（doctor/verify）"
 echo "  npm install -g @sofagent/ontology        # 本体模型"
@@ -257,9 +269,11 @@ if [ "${BASE_ONLY:-0}" = "0" ]; then
   echo -e "${BOLD}[FDE] 写入 FDE 运行规范 + 安装 Agent Skill...${NC}"
 
   # ── 写入 fde.md（按平台选目标路径）──
+  # ⚠️ 路径必须与 handler.ts / checks.ts 的读取路径对齐：skills/sofagent/
+  # （v1.2.0 仓库改名 /sofagent/→/engine/ 不影响部署目标路径——消费方仍读 skills/sofagent/）
   case "$PLATFORM" in
-    openclaw) FDE_MD_TARGET="$HOME/.openclaw/skills/engine/fde.md" ;;
-    workbuddy) FDE_MD_TARGET="$HOME/.workbuddy/skills/engine/fde.md" ;;
+    openclaw) FDE_MD_TARGET="$HOME/.openclaw/skills/sofagent/fde.md" ;;
+    workbuddy) FDE_MD_TARGET="$HOME/.workbuddy/skills/sofagent/fde.md" ;;
     claude) FDE_MD_TARGET="$HOME/.claude/fde.md" ;;
     codex) FDE_MD_TARGET="$HOME/.codex/fde.md" ;;
     hermes) FDE_MD_TARGET="$HOME/.hermes/fde.md" ;;

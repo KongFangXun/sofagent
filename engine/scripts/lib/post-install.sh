@@ -103,7 +103,28 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
   fi
   echo "  💡 运行 verify.sh 验证安装是否完整。"
 }
-log_install_audit() {  # 审计：安装完成
+log_install_audit() {  # 审计：安装完成 + HMAC key 生成
+  # v1.2.0 P0⑥ 修复：自动生成 HMAC 签名密钥（~/.sofagent-key，chmod 600）
+  # 无此密钥时 history.jsonl 仅用 SHA-256 hash chain（可追溯非强防篡改），
+  # 有此密钥时每条记录带 HMAC-SHA256 签名（防 Agent 篡改后重算整链）
+  local HMAC_KEY="$HOME/.sofagent-key"
+  if [ ! -f "$HMAC_KEY" ]; then
+    # 生成 32 字节随机密钥（hex 编码 = 64 字符）
+    local GENERATED_KEY
+    if [ -c /dev/urandom ]; then
+      GENERATED_KEY=$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')
+    else
+      GENERATED_KEY=$(date +%s%N | md5sum | head -c 64)
+    fi
+    if [ -n "$GENERATED_KEY" ]; then
+      echo "$GENERATED_KEY" > "$HMAC_KEY"
+      chmod 600 "$HMAC_KEY"
+      ok "HMAC 签名密钥已生成（$HMAC_KEY · chmod 600）— history.jsonl 强防篡改已启用"
+      _log "hmac-key generated: $HMAC_KEY"
+    fi
+  else
+    ok "HMAC 签名密钥已存在（$HMAC_KEY）— history.jsonl 强防篡改已启用"
+  fi
   bash "${SCRIPT_DIR}/audit.sh" --operation "install" --target "完成" --result "成功" 2>/dev/null || true
   _log "install complete: constitution=1(rules) skills=6 hook=1 loopdetect=1"
   _log "install log saved to $INSTALL_LOG"
