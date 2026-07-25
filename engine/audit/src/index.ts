@@ -71,6 +71,8 @@ interface Args {
   ontologyCommand?: string;
   /** v1.2.9: 审计 session 产物（默认开启，--no-session 关闭） */
   noSession: boolean;
+  /** v1.2.0: --commit-msg 完整 commit message（hook 场景传完整 body 供 A9 扫描） */
+  commitMsgArg?: string;
 }
 
 
@@ -86,6 +88,9 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === '--task' && argv[i + 1]) {
       i++;
       args.task = argv[i] as string;
+    } else if (argv[i] === '--commit-msg' && argv[i + 1]) {
+      i++;
+      args.commitMsgArg = argv[i] as string;
     } else if (argv[i] === '--strict') {
       args.strict = true;
     } else if (argv[i] === '--silent') {
@@ -599,8 +604,8 @@ async function main(): Promise<void> {
   // 2. 读取任务日志
   const logEntries = checkLogs();
 
-  // 3. 读取 commit message（优先级：--task 参数 > COMMIT_EDITMSG > git log > 空）
-  let commitMsg = args.task || '';
+  // 3. 读取 commit message（优先级：--commit-msg 完整消息 > --task subject > COMMIT_EDITMSG > git log > 空）
+  let commitMsg = args.commitMsgArg || args.task || '';
 
   if (!commitMsg) {
     try {
