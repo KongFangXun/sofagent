@@ -169,6 +169,7 @@ FDE 部署 SOP 应遵循此顺序：
 
 **目录结构**：
 - `SKILL/harness/`：纯 MD 规则（平台无关，所有 Agent 平台共用）
+  > 注意：`SKILL/harness/` 是产品层 markdown 闸门规则文本，与 npm 引擎包 `@sofagent/harness`（TypeScript 实现的 Harness 中间件）不是同一个东西——前者是规则，后者是实现。
   - `SKILL.md`：主入口（宪法内联——4 底线 + 7 则铁律）
   - 子 Skill（9 个 .md）：`entry-gate.md` / `task-aware.md` / `task-closure.md` / `loop-check.md` / `loop-evaluate.md` / `loop-exit.md` / `engage.md` / `engage-fde.md` / `fde.md`
   - `fde.md`：规范文件（企业运行规范，部署时复制到目标项目）
@@ -176,6 +177,19 @@ FDE 部署 SOP 应遵循此顺序：
 - `engine/scripts/`（核心 3 个）：`verify.sh` / `uninstall.sh` / `task-record.sh`
 - `install.sh`（仓库根目录）：多平台一键安装（v1.2.0 从 engine/scripts/ 提升到根目录）
 - `engine/hooks/sofagent-load-chain/`：`HOOK.md` + `handler.ts`（OpenClaw 内部 hook）
+
+### docs/ 组织约定
+
+本仓文档采用 **prd / architecture / handover / delivery** 四域约定，当前文件映射：
+
+| 域 | 文档 | 说明 |
+|----|------|------|
+| **Architecture**（架构） | `ARCHITECTURE.md`、`design/`、`llm-wiki-mapping.md` | 系统设计、技术选型、能力清单 |
+| **Handover**（交接/上手） | `HANDBOOK.md`、`DEVELOPMENT.md`、`COMMUNITY.md`、`THANKS.md`、`guides/` | 开发者上手、贡献指南 |
+| **Delivery**（交付/发版） | `changelog/`、根 `ROADMAP.md`、根 `CHANGELOG.md` | 版本记录、路线图 |
+| **Evidence**（证据/归档） | `evidence/`、`archive/` | 实验数据、历史归档 |
+
+新增文档请归入对应域；跨文档引用保持相对路径，CI 的 `check-docs` 会校验。本仓未强制物理迁移历史文档，仅以本说明固化约定。
 
 > npm 包 @sofagent/audit 当前仅暴露 `sofagent-audit` 一个 bin（v1.1.0 拆包后 verify / orchestrate-compare / env-check / skill-safety-check 等已迁至对应独立包，实际 bin 以各包 `package.json` 为准）。
 

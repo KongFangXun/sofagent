@@ -22,7 +22,6 @@
   "license": "MIT",
   "author": "KongFangXun",
   "dependencies": {
-    "@sofagent/audit": "1.2.0",
     "@sofagent/core": "1.2.0"
   },
   "exports": {

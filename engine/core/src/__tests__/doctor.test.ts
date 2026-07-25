@@ -1,16 +1,14 @@
 // doctor.test.ts · 审计日志 hash chain 完整性校验（P0-② 安全修复的回归保护）
 //
-// doctor.ts 通过动态 require('@sofagent/audit') 调用 checkHistoryChainIntegrity()。
-// 由于 vitest 默认将该 workspace 包外部化，vi.mock 不会拦截动态 require 路径，
-// 因此这里直接 spyOn 真实模块导出的函数——test 与 doctor 共享同一 require 缓存实例，
-// spy 会同时作用于 doctor 内部的 require 调用。
+// v1.2.0: checkHistoryChainIntegrity 下沉到 core（同包 ./audit-history），
+// 消除 core → audit 反向依赖。vitest spyOn 作用在同一模块缓存实例，
+// doctor.ts 内的动态 import('./audit-history') 与测试的静态 import 命中同一实例。
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const audit = require('@sofagent/audit');
+import * as auditHistory from '../audit-history';
 import { runDoctor } from '../doctor';
 
 describe('doctor 审计日志链完整性校验', () => {
@@ -27,7 +25,7 @@ describe('doctor 审计日志链完整性校验', () => {
 
   it('链完整时 auditLog=true 且不被误判为失败', () => {
     const spy = vi
-      .spyOn(audit, 'checkHistoryChainIntegrity')
+      .spyOn(auditHistory, 'checkHistoryChainIntegrity')
       .mockReturnValue(true);
     const r = runDoctor(tmp);
     expect(r.auditLog).toBe(true);
@@ -35,7 +33,7 @@ describe('doctor 审计日志链完整性校验', () => {
   });
 
   it('链断裂时 auditLog=false 且 allOk=false（P0-② 安全修复的回归保护）', () => {
-    vi.spyOn(audit, 'checkHistoryChainIntegrity').mockReturnValue(false);
+    vi.spyOn(auditHistory, 'checkHistoryChainIntegrity').mockReturnValue(false);
     const r = runDoctor(tmp);
     expect(r.auditLog).toBe(false);
     expect(r.allOk).toBe(false);
@@ -43,7 +41,7 @@ describe('doctor 审计日志链完整性校验', () => {
 
   it('audit 包调用抛错时降级不误报（catch 分支）', () => {
     vi
-      .spyOn(audit, 'checkHistoryChainIntegrity')
+      .spyOn(auditHistory, 'checkHistoryChainIntegrity')
       .mockImplementation(() => {
         throw new Error('no audit');
       });

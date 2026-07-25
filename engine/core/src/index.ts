@@ -179,6 +179,9 @@ export type { AuditResult, RuleCheck } from './reporter';
 export { runDoctor } from './doctor';
 export type { DoctorReport } from './doctor';
 
+// ── 审计历史链校验（v1.2.0 从 @sofagent/audit 下沉，消除 core 反向依赖） ──
+export { getHistoryFilePath, getEnvFingerprint, getHmacKey, checkHistoryChainIntegrity } from './audit-history';
+
 // ── 装后验证 ──
 export { verifyEvidence } from './verify-evidence';
 export { Verifier } from './verify/verifier';

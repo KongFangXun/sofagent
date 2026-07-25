@@ -16,9 +16,6 @@
     "typescript": "^5.0.0",
     "vitest": "^3.0.0"
   },
-  "peerDependencies": {
-    "@sofagent/core": "1.2.0"
-  },
   "files": [
     "dist/",
     "!dist/**/*.js.map",
