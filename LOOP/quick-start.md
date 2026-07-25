@@ -10,8 +10,8 @@
 # 确认 sofagent 底座已装
 sofagent-audit --version   # 应输出 v1.1.4 或更高
 
-# 没用？装一下
-bash LOOP/loop-install.sh
+# 没用？装一下（LOOP 由 SKILL/<loop>/ 定义驱动，无需单独安装；确保 sofagent 底座已装）
+bash install.sh
 ```
 
 ## 第二步：准备 workflow
@@ -114,7 +114,7 @@ LOOP 内置 3 个 Sub Agent Skill，装在 `SKILL/agents/` 下（项目仓库中
 
 | 问题 | 原因 | 解决 |
 |------|------|------|
-| `sofagent-orchestrator` 未找到 | sofagent 底座没装 | `bash LOOP/loop-install.sh` |
+| `sofagent-orchestrator` 未找到 | sofagent 底座没装 | `bash install.sh` |
 | engineer 不干活 | 没设 `SOFAGENT_LLM_ENGINEER` | 设 env var |
 | API key 报错 | `OPENAI_API_KEY` 没设（或角色专用 key 没设） | 最简：`export OPENAI_API_KEY=sk-xxx` |
 | reviewer 每轮都驳回 | 审查标准太严 | 改 `SKILL/agents/reviewer/SKILL.md` 的判定标准 |

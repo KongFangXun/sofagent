@@ -130,8 +130,8 @@ LAYER_B=$(find ./LOOP ./agents ./.github ./engine/hooks ./docs/DEVELOPMENT.md \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_B=${LAYER_B:-0}
 
-# C 层：审查体系（LOOP/releaser/，v1.2.0 从 docs/verification/ 迁入）
-LAYER_C=$(find ./LOOP/releaser -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+# C 层：审查体系（LOOP/SKILL/fresh-eyes-loop/specs/，原 LOOP/releaser/ 已拆散）
+LAYER_C=$(find ./LOOP/SKILL/fresh-eyes-loop/specs -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_C=${LAYER_C:-0}
 
 # D 层：设计文档（docs/design/ + docs/architecture/ + docs/prd/）
@@ -198,7 +198,7 @@ done
 echo ""
 echo "=== 6. 铁律措辞检查 ==="
 IRON_FAIL=0
-for f in SKILL/harness/*.md FDE/SKILL.md LOOP/SKILL.md; do
+for f in SKILL/harness/*.md FDE/SKILL.md; do
   if [ -f "$f" ]; then
     WEAK=$(grep -n '建议\|应该\|尽量' "$f" 2>/dev/null | grep -v 'not_when\|Gotcha\|场景\|如果\|注\|说明\|这不是' || true)
     if [ -n "$WEAK" ]; then

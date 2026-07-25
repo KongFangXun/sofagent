@@ -1,13 +1,12 @@
 # sofagent Agent 库
 
-> 📂 Sub Agent 定义集中在 [`agents/`](./agents/) 子目录，每个子目录含 `SKILL.md`（调用入口）+ `{role}.md`（角色定义）。下表列出 5 个预装 Sub Agent：
+> 📂 Sub Agent 定义集中在 [`agents/`](./agents/) 子目录，每个子目录含 `SKILL.md`（调用入口）+ `{role}.md`（角色定义）。下表列出 4 个预装 Sub Agent：
 
 | Sub Agent | 目录 | 职责 |
 |-----------|------|------|
 | `@sofagent-audit` | [`agents/audit/`](./agents/audit/) | 合规审计员——Workflow 巡检、铁律覆盖验证、知识库健康度检查 |
 | `@sofagent-engineer` | [`agents/engineer/`](./agents/engineer/) | 最小变更工程师——读代码 + 写代码 + 跑测试 + git commit |
 | `@sofagent-fde` | [`SKILL.md`](./SKILL.md) | 前线部署工程师——梳理工作流、识别 AI 节点、构建知识库、交付离场 |
-| `@sofagent-releaser` | [`../LOOP/releaser/`](../LOOP/releaser/) | 发布工程师——按 releasing.md SOP 自动执行发版流程 |
 | `@sofagent-reviewer` | [`agents/reviewer/`](./agents/reviewer/) | 代码审查员——语义审查 + 影响分析 + 铁律合规 |
 
 > v1.0.7 起（当前 v1.2.0），预装 Agent 为 Skill 格式。Skill 是调用入口——第三方 Agent 平台（WorkBuddy/Codex/OpenClaw 等）加载 Skill 后，通过 CLI 命令把任务交给 DeepAgents 编排引擎执行。

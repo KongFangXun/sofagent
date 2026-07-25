@@ -7,8 +7,8 @@
 LOOP 装完后，你可以派一个开发任务（比如"在 README 加一段简介"），LOOP 自动跑完 engineer 写代码 → audit 审计 → reviewer 审查的循环。
 
 ```bash
-# 1. 一键安装（会引导你配置 LLM provider + API key）
-bash LOOP/loop-install.sh
+# 1. LOOP 无需单独安装——各 loop 定义位于 LOOP/SKILL/<loop>/（如 fresh-eyes-loop），
+#    由编排器（WorkBuddy 会话 / DeepAgents 编排器）按 loop.md 协议驱动
 
 # 2. 如果跳过了安装向导，手动设模型 + key
 #    engineer（写代码）建议性价比模型，reviewer（审查）建议推理能力更强的模型
@@ -50,14 +50,13 @@ LOOP 自动流转：engineer 写代码 → audit 审计 → reviewer 审查 → 
 
 ## 内置 Agent
 
-> 注意：LOOP 的 4 个 Agent Skill（sofagent-engineer / sofagent-reviewer / sofagent-audit / sofagent-releaser）与 FDE 的 4 个（sofagent-fde / sofagent-audit / sofagent-engineer / sofagent-reviewer）有重叠但不完全相同——LOOP 有发布工程师（releaser），FDE 有部署工程师（fde）。两者共享 sofagent-audit / sofagent-engineer / sofagent-reviewer 三个 Skill。
+> 注意：LOOP 的 3 个 Agent Skill（sofagent-engineer / sofagent-reviewer / sofagent-audit）与 FDE 的 4 个（sofagent-fde / sofagent-audit / sofagent-engineer / sofagent-reviewer）有重叠但不完全相同。两者共享 sofagent-audit / sofagent-engineer / sofagent-reviewer 三个 Skill。
 
 | Skill | 角色 | 位置 |
 |-------|------|------|
 | `sofagent-engineer` | 软件工程师——写代码、修复 | `SKILL/agents/engineer/SKILL.md` |
 | `sofagent-reviewer` | 代码审查员——审查 + 自动门控 | `SKILL/agents/reviewer/SKILL.md` |
 | `sofagent-audit` | 合规审计员——A1-A11、A14-A19 规则检查 | `SKILL/agents/audit/SKILL.md` |
-| `sofagent-releaser` | 发布工程师——十二阶段发版 SOP（v1.1.5 新增，按需激活） | `LOOP/releaser/releaser-skill/SKILL.md` |
 
 ## 怎么用 workflow 模式（高级）
 
@@ -75,10 +74,12 @@ LOOP 自动流转：engineer 写代码 → audit 审计 → reviewer 审查 → 
 ```
 LOOP/
   README.md                     ← 你在这里
-  loop-install.sh               ← 一键安装
-  SKILL.md                      ← Skill 定义
+  LOOP.md                       ← 设计文档（自迭代总纲）
   quick-start.md                ← 快速入门
-  LOOP.md                       ← 设计文档
+  LEDGER.md                     ← 跨 run 永久索引
   src/
     types.ts / workflow.ts      ← 运行时代码
+  SKILL/
+    fresh-eyes-loop/            ← 质量循环（A/B 双 Agent）
+      SKILL.md / loop.md / prompts/ / specs/ / evolution.md / runs/
 ```

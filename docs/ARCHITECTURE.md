@@ -546,13 +546,12 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 
 ✅ 已发布可用（v1.2.0）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 21 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关（Claude Code / Codex / Cursor / WorkBuddy / OpenClaw 即挂即用）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 企业本体模型 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 内置双 Agent（@sofagent-fde + @sofagent-audit）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
 
-### 三安装包边界（v1.2.0 设计）
+### 安装包边界（v1.2.0 设计）
 
 | 安装器 | 装什么 | 不装 | 适用 |
 |---|---|---|---|
 | `install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（@sofagent-fde / @sofagent-audit）+ hook | LOOP | 企业 / FDE：要常驻硅基员工 |
 | `install.sh --base-only` | 仅底座（四引擎） | FDE / LOOP | 开发者 / 企业 IT：只要核心治理引擎 |
-| `LOOP/loop-install.sh` | 底座（--base-only 内部）+ engineer/reviewer Skill + LOOP 工具链 | FDE Agent | 开发者：自迭代开发闭环 |
 
 > 最小可用：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）；五包全装才是完整 Harness 中间件。
 > 注：v1.2.0 将 `FDE/fde-install.sh` 升格为根 `install.sh` 并新增 `--base-only`，详见发版说明。
