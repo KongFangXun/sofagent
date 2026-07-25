@@ -463,16 +463,22 @@ async function runWorker(step, roundDir, target) {
   const model = await createModel(role);
   const tools = loadTools(role);
 
-  const { createDeepAgent } = await import('deepagents');
-  const { DiskBackend } = await import('./disk-backend.mjs');
-  const agent = await createDeepAgent({
-    model,
+  // 用 @langchain/langgraph 的 createReactAgent 替代 deepagents createDeepAgent。
+  //
+  // 根因（2026-07-25 定位）：createDeepAgent 硬编码注入 FilesystemMiddleware
+  // （源码 5879-5895 行），middleware:[] 只是追加到链尾无法替换它。
+  // REQUIRED_MIDDLEWARE_NAMES = Set(["FilesystemMiddleware","SubAgentMiddleware"])
+  // 明确禁止排除。FilesystemMiddleware 的 wrapToolCall 在并行工具调用时
+  // 触发 `undefined.length` 崩溃（superstep N AggregateError）。
+  // DeepSeek 偶然没触发并行调用所以能跑，GLM-5.2 在 superstep 5 触发即崩。
+  //
+  // createReactAgent 是同一套 LangGraph React 模式，但不带 FilesystemMiddleware——
+  // 我们有自己的 sf_read/sf_write/run_bash，不需要 deepagents 的内置文件工具。
+  const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
+  const agent = createReactAgent({
+    llm: model,
     tools,
-    systemPrompt,
-    backend: (config) => new DiskBackend(config),
-    // 禁用 FilesystemMiddleware——其 wrapToolCall 在并行工具调用时有 bug
-    // （读 .length 拿到 undefined 崩溃）。DiskBackend 已替代其文件操作功能。
-    middleware: [],
+    prompt: systemPrompt,
   });
 
   // 5. invoke（计时）
@@ -480,6 +486,11 @@ async function runWorker(step, roundDir, target) {
   const t0 = Date.now();
   const result = await agent.invoke({
     messages: [{ role: 'user', content: userMessage }],
+  }, {
+    // 默认 25 不够——代码审查需要多轮工具调用（读文件+搜索+测试）。
+    // 每次工具调用 = 2 步（model call + tool node），25 步约 12 轮工具调用。
+    // 提到 100 = 最多 50 轮工具调用，足够完整审查。
+    recursionLimit: 100,
   });
   const latencyMs = Date.now() - t0;
 
