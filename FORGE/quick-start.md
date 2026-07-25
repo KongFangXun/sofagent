@@ -20,8 +20,10 @@ fresh-eyes-loop 的核心设计是 **A/B 异构模型**——审查（A）和修
 
 | 角色 | 职责 | 默认模型 | API 端点 |
 |:--:|------|------|------|
-| **A**（审查者） | 12 视角审查 + 合并 + 验证 | GLM-5.2 | `https://open.bigmodel.cn/api/paas/v4/` |
+| **A**（审查者） | 12 视角审查 + 合并 + 验证 | GLM-5.2 | `https://open.bigmodel.cn/api/coding/paas/v4/` |
 | **B**（工程师） | 修复缺陷 | DeepSeek V4 Pro | `https://api.deepseek.com/` |
+
+> 💡 **A 的端点说明**：GLM-5.2 用的是智谱 **Coding Plan**（订阅制），端点是 `/api/coding/paas/v4/`，不是普通按量 API 的 `/api/paas/v4/`。团队套餐 Key 与平台其他 API Key 不通用——详情见[智谱 Coding Plan 文档](https://docs.bigmodel.cn/cn/coding-plan)。
 
 ### 配置环境变量
 
@@ -46,21 +48,19 @@ export SOFAGENT_LLM_B_API_KEY=your-deepseek-key
 
 > 这些参数由 driver 自动注入，用户无需手动配置。如需覆盖默认参数，在 `FORGE/src/fresh-eyes-driver.mjs` 的 `MODEL_CONFIG` 中修改。
 
-### 模型定价（成本估算基础）
+### 模型定价与计费模式
 
-每轮循环的成本基于以下官方标价估算（driver 自动记录到 `usage.jsonl`）：
+每轮循环的 token 用量会被准确记录。**成本**的估算方式取决于各模型的计费模式：
 
-| 模型 | 输入（CNY/M token） | 输出（CNY/M token） | 来源 | 备注 |
-|------|:---:|:---:|------|------|
-| **GLM-5.2** | 8 | 28 | [open.bigmodel.cn/pricing](https://open.bigmodel.cn/pricing) | 缓存命中 input 2元 |
-| **DeepSeek V4 Pro** | 3 | 6 | [api-docs.deepseek.com/pricing](https://api-docs.deepseek.com/quick_start/pricing) | 缓存命中 input 0.025元 |
+| 模型 | 计费模式 | 输入（CNY/M token） | 输出（CNY/M token） | 来源 |
+|------|:--:|:---:|:---:|------|
+| **GLM-5.2** (A) | 📦 Coding Plan 订阅制 | 8（仅供参考） | 28（仅供参考） | [open.bigmodel.cn/pricing](https://open.bigmodel.cn/pricing) |
+| **DeepSeek V4 Pro** (B) | 💧 按量计费 | 3 | 6 | [api-docs.deepseek.com/pricing](https://api-docs.deepseek.com/quick_start/pricing) |
 
-> ⚠️ **这是估算，不���账单**：
-> - driver 按「官方标价 × token 用量」算出 `cost_cny`，仅供成本感知（"这轮大概花了多少"）
-> - 实际账单受**缓存命中率**（DeepSeek 缓存命中 input 仅 0.025 元，120 倍价差）、账号促销、套餐折扣影响
-> - **真实费用请到各厂商 API 后台查看**——driver 不接入计费系统，只做估算
-> - driver 按「缓存未命中」计价（成本上界），缓存命中时实际账单只会更低
-> - 厂商可能调价，以官方定价页为准。`FORGE/src/fresh-eyes-driver.mjs` 的 `MODEL_PRICING` 表更新后估算自动同步
+> ⚠️ **计费模式区分（重要）**：
+> - **A (GLM-5.2)** = **Coding Plan 订阅制**：按月固定费用 + 额度，**不按 token 扣费**。driver 对 A 只记录 token 用量，`cost_cny` 记为 `null`，`price_confidence` 标为 `subscription`。上表 GLM-5.2 标价仅供横向对比参考，不代表实际扣费——真实消耗见 [Coding Plan 后台额度](https://bigmodel.cn/coding-plan)
+> - **B (DeepSeek V4 Pro)** = **按量计费**：driver 按「官方标价 × token 用量」算出 `cost_cny` 估算值。实际账单受**缓存命中率**影响（缓存命中 input 仅 0.025 元，120 倍价差），以 [DeepSeek API 后台](https://platform.deepseek.com) 为准
+> - **token 是客观事实，成本是主观语义**：无论什么计费模式，用了多少 token 是确定的；但硬把订阅制和按量制凑成一个总成本数字会误导，所以 driver 只展示 token 总量 + B 的按量成本
 
 ### API key 加载优先级（三级回退）
 
@@ -129,8 +129,8 @@ a-verify    → A 验证修复结果，判定本轮是否 PASS
   "prompt_tokens": 12450,
   "completion_tokens": 1820,
   "total_tokens": 14270,
-  "cost_cny": 0.0071,
-  "price_confidence": "verified",
+  "cost_cny": null,
+  "price_confidence": "subscription",
   "latency_ms": 8400
 }
 ```
@@ -142,17 +142,16 @@ a-verify    → A 验证修复结果，判定本轮是否 PASS
 | `prompt_tokens` | 输入 token 数 |
 | `completion_tokens` | 输出 token 数 |
 | `total_tokens` | prompt + completion 合计 |
-| `cost_cny` | 本条调用的估算成本（人民币元） |
-| `price_confidence` | 定价置信度（`verified` = 已验证官方定价 / `unverified` = 估算值） |
+| `cost_cny` | 本条调用的估算成本（人民币元）。订阅制模型记为 `null` |
+| `price_confidence` | `subscription` = 订阅制（不按 token 扣费）/ `estimated` = 按量估算（官方标价 × token）/ `no-pricing` = 未知模型无法估算 |
 | `latency_ms` | API 响应延迟（毫秒） |
 
-跑完后 driver 会在 stdout 打印**成本摘要**：
+跑完后 driver 会在 stdout 打印**用量摘要**（token 为主，成本按计费模式区分展示）：
 
 ```
-=== Cost Summary ===
-Role A (GLM-5.2):          3 rounds,  42,180 prompt tokens,  5,460 completion tokens,  ¥0.0213
-Role B (DeepSeek V4 Pro):  3 rounds,  18,200 prompt tokens,  3,100 completion tokens,  ¥0.0089
-Total:                                                   ¥0.0302
+[总用量] tokens: 68,940  (A 订阅 + B 按量 ¥0.0089)
+         A(glm-5.2):       47,640 tokens  [Coding Plan 订阅额度]
+         B(deepseek-v4-pro):   21,300 tokens  ¥0.0089 [按量计费]
 ```
 
 ---
@@ -167,7 +166,8 @@ Total:                                                   ¥0.0302
 | A/B 用了同一个模型 | 两个角色配了同一个 `SOFAGENT_LLM_*` | 检查 A/B 是否指向不同厂商模型——异构是设计要求 |
 | reviewer 每轮都驳回 | 审查标准太严 | 改 `SKILL/agents/reviewer/SKILL.md` 的判定标准 |
 | API key 报 401 | key 过期或额度耗尽 | 去对应厂商控制台检查 key 状态和余额 |
-| usage.jsonl 中 `price_confidence: unverified` | 该模型定价未被验证 | 查阅厂商官方定价页，更新 driver 内的 price table |
+| usage.jsonl 中 `price_confidence: no-pricing` | 该模型不在 `MODEL_PRICING` 表里 | 查阅厂商官方定价页，在 driver 内补上 |
+| A 返回 error 1113「余额不足」| GLM 端点写错成了普通 API | 确认 A 的 `baseURL` 是 `/api/coding/paas/v4/`（Coding Plan），不是 `/api/paas/v4/` |
 | sofagent-audit 命令未找到 | 底座没装 | `bash install.sh` |
 
 > 📖 详细设计见 `FORGE/FORGE.md`（旧自迭代模型，保留参考）和 `FORGE/SKILL/fresh-eyes-loop/loop.md`（当前循环协议）。

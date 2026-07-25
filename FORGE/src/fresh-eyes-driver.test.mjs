@@ -907,18 +907,46 @@ function extractModelPricingSource(source) {
 }
 
 /**
+ * 从源码中提取 MODEL_CONFIGS 常量定义的源码文本，并做清理。
+ *
+ * MODEL_CONFIGS 原文含 join(AGENTS_DIR, ...) 调用——依赖外部常量 AGENTS_DIR。
+ * recordUsage 只用 cfg.model 和 cfg.billing，agentSkillPath 的值不影响测试。
+ * 所以把 join(AGENTS_DIR, '...') 替换为占位字符串，消除外部依赖。
+ */
+function extractModelConfigsSource(source) {
+  const startIdx = source.indexOf('const MODEL_CONFIGS');
+  if (startIdx === -1) throw new Error('无法找到 MODEL_CONFIGS 定义');
+  const assignIdx = source.indexOf('=', startIdx);
+  const braceStart = source.indexOf('{', assignIdx);
+  let depth = 0;
+  let end = braceStart;
+  for (let i = braceStart; i < source.length; i++) {
+    if (source[i] === '{') depth++;
+    else if (source[i] === '}') {
+      depth--;
+      if (depth === 0) { end = i; break; }
+    }
+  }
+  let body = source.slice(startIdx, end + 1) + ';';
+  // 把 join(AGENTS_DIR, '...') 替换为占位字符串（recordUsage 不依赖 agentSkillPath 的值）
+  body = body.replace(/join\(AGENTS_DIR,\s*'[^']*'\)/g, "'<placeholder>'");
+  return body;
+}
+
+/**
  * 构建 recordUsage 的可测试包装。
  *
  * 注入依赖：join（路径拼接）、appendFileSync（写文件）。
- * MODEL_PRICING 和 extractUsage 通过提取源码定义一并注入。
+ * MODEL_CONFIGS、MODEL_PRICING 和 extractUsage 通过提取源码定义一并注入。
  */
 function createRecordUsage(fsDeps) {
+  const modelConfigsSrc = extractModelConfigsSource(SOURCE_CODE);
   const modelPricingSrc = extractModelPricingSource(SOURCE_CODE);
   const { fullBody: extractUsageBody } = extractFunctionBody(SOURCE_CODE, 'extractUsage');
   const { fullBody: recordUsageBody } = extractFunctionBody(SOURCE_CODE, 'recordUsage');
 
-  // 组装：先定义 MODEL_PRICING，再定义 extractUsage，最后定义 recordUsage
-  const combined = modelPricingSrc + '\n' + extractUsageBody + '\n' + recordUsageBody;
+  // 组装：先定义常量，再定义 extractUsage，最后定义 recordUsage
+  const combined = modelConfigsSrc + '\n' + modelPricingSrc + '\n' + extractUsageBody + '\n' + recordUsageBody;
   const wrapper = new Function('join', 'appendFileSync', combined + '\nreturn recordUsage;');
   return wrapper(join, fsDeps.appendFileSync);
 }
@@ -945,10 +973,11 @@ describe('recordUsage', () => {
       .map(line => JSON.parse(line));
   }
 
-  // 测试：正常 usage（已知模型 glm-5.2）→ 写入 cost_cny 有值，price_confidence 来自 MODEL_PRICING
+  // 测试：正常 usage + glm-5.2（订阅制）→ cost_cny 为 null，price_confidence = 'subscription'
   // 输入：result = { usage: { prompt_tokens: 1000, completion_tokens: 500 } }，model = 'glm-5.2'
-  // 预期：usage.jsonl 有一行，含 prompt_tokens=1000, completion_tokens=500, cost_cny 非 null
-  it('正常 usage + 已知模型 → cost_cny 有值', () => {
+  // 预期：usage.jsonl 有一行，含 prompt_tokens=1000, completion_tokens=500,
+  //       cost_cny === null（订阅制不按 token 扣费）, price_confidence === 'subscription'
+  it('正常 usage + glm-5.2（订阅制）→ cost_cny=null, price_confidence=subscription', () => {
     const record = createRecordUsage({ appendFileSync });
     const result = { usage: { prompt_tokens: 1000, completion_tokens: 500 } };
 
@@ -961,13 +990,9 @@ describe('recordUsage', () => {
     expect(rec.prompt_tokens).toBe(1000);
     expect(rec.completion_tokens).toBe(500);
     expect(rec.total_tokens).toBe(1500);
-    expect(rec.cost_cny).not.toBeNull();
-    expect(rec.cost_cny).toBeGreaterThan(0);
-    // glm-5.2 定价 input=8, output=28 CNY/M tokens（2026-07-25 官方标价）
-    // cost = (1000/1M)*8 + (500/1M)*28 = 0.008 + 0.014 = 0.022
-    // 注：这是估算值（官方标价 × token 用量），实际账单以 API 后台为准
-    expect(rec.cost_cny).toBeCloseTo(0.022, 5);
-    expect(rec.price_confidence).toBe('estimated');
+    // glm-5.2 = Coding Plan 订阅制，cost_cny 记 null（不适用按量计价）
+    expect(rec.cost_cny).toBeNull();
+    expect(rec.price_confidence).toBe('subscription');
     expect(rec.model).toBe('glm-5.2');
     expect(rec.role).toBe('A');
     expect(rec.step).toBe('a-check');

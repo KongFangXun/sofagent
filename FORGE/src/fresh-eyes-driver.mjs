@@ -12,7 +12,7 @@
 //   node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>
 //
 // 异构模型（孔老师 2026-07-25 定稿）：
-//   A（审查者）= GLM-5.2     baseURL https://open.bigmodel.cn/api/paas/v4/  temp=1.0
+//   A（审查者）= GLM-5.2     baseURL https://open.bigmodel.cn/api/coding/paas/v4/ (Coding Plan 端点)  temp=1.0
 //   B（工程师）= DeepSeek V4  baseURL https://api.deepseek.com/             thinking+reasoning_effort=high
 // ============================================================
 
@@ -42,13 +42,14 @@ const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 // ─── 异构模型配置 ────────────────────────────────────────────
 const MODEL_CONFIGS = {
   A: {
-    baseURL:         'https://open.bigmodel.cn/api/paas/v4/',
+    baseURL:         'https://open.bigmodel.cn/api/coding/paas/v4/',
     model:           'glm-5.2',
     temperature:     1.0,
     apiKeyEnv:       'SOFAGENT_LLM_A_API_KEY',
     specEnv:         'SOFAGENT_LLM_A',
     agentSkillPath:  join(AGENTS_DIR, 'reviewer/SKILL.md'),
     toolsKey:        'REVIEWER_TOOLS',
+    billing:         'subscription',   // Coding Plan 订阅制，不按 token 扣费
   },
   B: {
     baseURL:         'https://api.deepseek.com/',
@@ -59,12 +60,18 @@ const MODEL_CONFIGS = {
     specEnv:         'SOFAGENT_LLM_B',
     agentSkillPath:  join(AGENTS_DIR, 'engineer/SKILL.md'),
     toolsKey:        'ENGINEER_TOOLS',
+    billing:         'pay-as-you-go',  // 按量计费
   },
 };
 
 // ─── 模型定价（usage.jsonl 成本估算基础）─────────────────────
 // 单位：CNY per 1M tokens（百万 token 计价）
 // 数据来源：各厂商官方定价页（2026-07-25 查证）
+//
+// ⚠️ 计费模式区分（2026-07-25 确认）：
+//   A (glm-5.2) = Coding Plan 订阅制 → cost_cny 记 null，不适用本表计价
+//   B (deepseek-v4-pro) = 按量计费 → 适用本表计价
+// 本表仅用于 B 的成本估算。A 的真实成��见 Coding Plan 后台额度消耗。
 //
 // ⚠️ 这是「估算」不是「账单」：
 //   官方标价 ≠ 实际扣费。缓存命中率、账号促销、套餐折扣都会影响最终费用。
@@ -88,6 +95,7 @@ const MODEL_PRICING = {
     currency: 'CNY',
     source: 'https://open.bigmodel.cn/pricing',
     note: '缓存命中 input 2元/M。官方标价，实际账单以 API 后台为准',
+    billing: 'subscription',   // Coding Plan 订阅制，本表定价仅供参考
   },
   'deepseek-v4-pro': {
     input: 3,
@@ -282,13 +290,31 @@ function recordUsage(runDir, step, round, role, model, result, latencyMs, target
   const pricing = MODEL_PRICING[model];
   const usage = extractUsage(result);
 
+  // 根据 model 名反查 billing 模式
+  let billing = 'pay-as-you-go';
+  for (const [roleKey, cfg] of Object.entries(MODEL_CONFIGS)) {
+    if (cfg.model === model) { billing = cfg.billing; break; }
+  }
+
   let record;
   if (usage) {
-    // 有 usage 数据 → 计算成本
-    const cost = pricing
-      ? ((usage.prompt_tokens / 1_000_000) * pricing.input +
-         (usage.completion_tokens / 1_000_000) * pricing.output)
-      : null;
+    // 成本计算分流（按 billing 模式）：
+    //   subscription → cost = null，不适用按量计价
+    //   pay-as-you-go + 有 pricing → 按 token 估算
+    //   pay-as-you-go + 无 pricing → cost = null，无法估算
+    let cost = null;
+    let priceConfidence;
+    if (billing === 'subscription') {
+      cost = null;
+      priceConfidence = 'subscription';
+    } else if (pricing) {
+      cost = ((usage.prompt_tokens / 1_000_000) * pricing.input +
+             (usage.completion_tokens / 1_000_000) * pricing.output);
+      priceConfidence = 'estimated';
+    } else {
+      cost = null;
+      priceConfidence = 'no-pricing';
+    }
 
     record = {
       ts:                 new Date().toISOString(),
@@ -301,7 +327,7 @@ function recordUsage(runDir, step, round, role, model, result, latencyMs, target
       completion_tokens:  usage.completion_tokens,
       total_tokens:       usage.total_tokens,
       cost_cny:           cost,
-      price_confidence:   pricing ? 'estimated' : 'no-pricing',
+      price_confidence:   priceConfidence,
       latency_ms:         latencyMs,
     };
   } else {
@@ -694,6 +720,7 @@ function appendUsageSummary(runDir, rounds) {
     total_cost_cny: Number(totalCost.toFixed(6)),
     rounds:         rounds,
     by_role:        byRole,
+    a_billing:      'subscription',  // A (glm-5.2) = Coding Plan 订阅制，cost_cny 不适用
   };
 
   appendFileSync(usagePath, JSON.stringify(summary) + '\n', 'utf-8');
@@ -841,9 +868,20 @@ async function main() {
   // usage.jsonl 全量摘要（非 dry-run）
   if (!args.dryRun) {
     const usageSummary = appendUsageSummary(runDir, actualRounds);
-    console.log(`\n  [总成本] tokens: ${usageSummary.total_tokens.toLocaleString()}  成本: ¥${usageSummary.total_cost_cny.toFixed(4)}`);
-    console.log(`           A(${usageSummary.by_role.A.model}): ${usageSummary.by_role.A.total_tokens.toLocaleString()} tokens / ¥${usageSummary.by_role.A.cost_cny.toFixed(4)}`);
-    console.log(`           B(${usageSummary.by_role.B.model}): ${usageSummary.by_role.B.total_tokens.toLocaleString()} tokens / ¥${usageSummary.by_role.B.cost_cny.toFixed(4)}`);
+    // token 为主的展示格式——A 标订阅制（不硬凑成本），B 标按量
+    console.log(
+      `\n  [总用量] tokens: ${usageSummary.total_tokens.toLocaleString()}  ` +
+      `(A 订阅 + B 按量 ¥${usageSummary.total_cost_cny.toFixed(4)})`
+    );
+    console.log(
+      `           A(${usageSummary.by_role.A.model || 'glm-5.2'}):       ` +
+      `${usageSummary.by_role.A.total_tokens.toLocaleString()} tokens  [Coding Plan 订阅额度]`
+    );
+    console.log(
+      `           B(${usageSummary.by_role.B.model || 'deepseek-v4-pro'}):   ` +
+      `${usageSummary.by_role.B.total_tokens.toLocaleString()} tokens  ` +
+      `¥${usageSummary.by_role.B.cost_cny.toFixed(4)} [按量计费]`
+    );
   }
 
   // 写 LEDGER
