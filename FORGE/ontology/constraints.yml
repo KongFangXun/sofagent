@@ -1,0 +1,219 @@
+# sofagent 开发本体 · 约束规则
+# 对齐 FDE §5 本体建模方法论 · 作者：孔放勋
+# 约束规则分 P0（阻断）/ P1（必修）/ P2（改进）三级严重程度。
+
+constraints:
+  # ===== 一、审查通过标准 =====
+  - id: C1
+    type: "审查标准"
+    target: "阶段三 bugfix 审查 / 阶段四 develop 审核"
+    rule: "P1 问题必须全部修复才算通过。P0 必须修（阻塞发布），P1 应该修，P2 不阻塞发布"
+    severity: "P0"
+    source: "六阶段版本迭代闭环"
+
+  - id: C2
+    type: "审查循环"
+    target: "阶段三 / 阶段四执行循环"
+    rule: "审查不通过必须循环执行（执行者再修→审查官再审），直到通过为止。不得跳过审查直接进入下一阶段"
+    severity: "P0"
+    source: "六阶段版本迭代闭环"
+
+  - id: C3
+    type: "审查独立性"
+    target: "阶段一三模型独立审查"
+    rule: "三个模型必须在各自独立的 session 中审查，不得共享上下文。混元 3 作为第三独立视角，确保审查多样性"
+    severity: "P1"
+    source: "六阶段版本迭代闭环"
+
+  # ===== 二、多模型分工铁律 =====
+  - id: C4
+    type: "角色分工"
+    target: "GLM-5.2 / DeepSeek V4 Pro / 混元 3"
+    rule: "GLM-5.2 是指挥官/审查官（写 prompt、审查、走 releasing），DeepSeek V4 Pro 是执行者（执行 bugfix/develop、控制 OpenClaw 测试），混元 3 是备选审查（第三视角）。角色不可互换"
+    severity: "P0"
+    source: "多模型分工铁律"
+
+  - id: C5
+    type: "执行者不审自己"
+    target: "DeepSeek V4 Pro"
+    rule: "执行者（DeepSeek）不得审查自己的执行结果。审查必须由 GLM-5.2 独立完成"
+    severity: "P0"
+    source: "多模型分工铁律"
+
+  - id: C6
+    type: "审查官不编码"
+    target: "GLM-5.2"
+    rule: "审查官（GLM-5.2）不直接执行编码/修复。编码由 DeepSeek V4 Pro 执行，GLM 只审查和整合"
+    severity: "P1"
+    source: "多模型分工铁律"
+
+  - id: C7
+    type: "阶段六执行者"
+    target: "阶段六 OpenClaw 全面测试"
+    rule: "阶段六由 DeepSeek V4 Pro 控制 OpenClaw（不是 GLM）。测试结果交 GLM-5.2 评审"
+    severity: "P0"
+    source: "六阶段版本迭代闭环"
+
+  # ===== 三、阶段六测试约束 =====
+  - id: C8
+    type: "独立 session"
+    target: "阶段六"
+    rule: "阶段六必须新开一个独立 session（全新认知），不得从开发 session 继续"
+    severity: "P0"
+    source: "releasing.md 阶段六"
+
+  - id: C9
+    type: "三组检查"
+    target: "阶段六 OpenClaw 全面测试"
+    rule: "阶段六必须执行三组检查：① acceptance-test（端到端全场景）② regression-checklist（全部维度）③ 覆盖率交叉检查（changelog 功能点逐条对照 acceptance-test）。缺一不可"
+    severity: "P0"
+    source: "releasing.md 阶段六"
+
+  - id: C10
+    type: "测试循环"
+    target: "阶段六 → 阶段五循环"
+    rule: "阶段六任何 FAIL → 回阶段五（优化 regression-checklist + fresh-eyes-review）→ 再开新 session 重查。最多循环 2 轮；2 轮仍不过则标注遗留问题"
+    severity: "P1"
+    source: "releasing.md 阶段六"
+
+  # ===== 四、D3 闸门 =====
+  - id: C11
+    type: "D3 闸门"
+    target: "阶段三自测 / acceptance-test.sh"
+    rule: "acceptance-test.sh 必须为本版本新增功能补齐验收场景。零覆盖 = 未交付（P0），不允许进入下一阶段"
+    severity: "P0"
+    source: "releasing.md 阶段三 D3 闸门"
+
+  - id: C12
+    type: "D3 覆盖率闭环"
+    target: "acceptance-test.sh"
+    rule: "D3 覆盖率闭环判定三项必须全 PASS：① 场景数声称 vs 实际对齐 ② 功能点逐条对照（零覆盖=P0）③ 失效场景清理"
+    severity: "P0"
+    source: "releasing.md 阶段三 Step D"
+
+  # ===== 五、零号铁律（文件创建安全） =====
+  - id: C13
+    type: "文件创建安全"
+    target: "所有模型 / 所有阶段"
+    rule: "禁止未经确认创建文件。模型可以建议创建文件，但必须经作者（孔放勋）确认后才能执行"
+    severity: "P0"
+    source: "sofagent 安全约束零号铁律"
+
+  - id: C14
+    type: "高危操作阻断"
+    target: "所有模型 / 所有阶段"
+    rule: "以下操作必须阻断：删除配置文件、删除数据库、外部写入（未经授权的写操作）、npm publish（未经确认）"
+    severity: "P0"
+    source: "sofagent 安全约束"
+
+  # ===== 六、版本号管理 =====
+  - id: C15
+    type: "版本号管理"
+    target: "bump-version.sh / check-version.sh"
+    rule: "版本号操作必须使用 bump-version.sh + check-version.sh，禁止手动 grep/sed。13 类位置必须全部同步"
+    severity: "P0"
+    source: "releasing.md 版本号管理"
+
+  - id: C16
+    type: "package-lock.json 安全"
+    target: "package-lock.json"
+    rule: "禁止用 sed 直接改 package-lock.json——全局替换会污染外部包版本。只能用 npm install --package-lock-only 重新生成"
+    severity: "P0"
+    source: "v1.1.3 教训"
+
+  - id: C17
+    type: "npm 版本号永久锁"
+    target: "npm publish"
+    rule: "npm 版本号一旦 publish 就永久封存。不在发布前做任何实验性 npm publish。发错了版本号 = 永久浪费"
+    severity: "P0"
+    source: "v1.1.3 npm 发布铁律"
+
+  # ===== 七、文档分级约束 =====
+  - id: C18
+    type: "L1 文档必更"
+    target: "L1 核心高频文档（9 份）"
+    rule: "L1 核心高频文档每版本必须更新：开发日志、CHANGELOG 索引、ROADMAP、回归清单、审查体系、releasing.md、README、acceptance-test.sh、bump-version.sh"
+    severity: "P1"
+    source: "文档分级清单"
+
+  - id: C19
+    type: "CHANGELOG 纯度"
+    target: "CHANGELOG.md / docs/changelog/"
+    rule: "CHANGELOG 只写产品变更，不含审查元信息（模型名、审查轮次、P0/P1 标签等内部过程）"
+    severity: "P1"
+    source: "releasing.md CHANGELOG 两步"
+
+  - id: C20
+    type: "文档同步闭环（D6）"
+    target: "项目文档（L2）"
+    rule: "changelog 里写的每条新功能，必须在对应项目文档中有说明。零覆盖的新功能（用户无处查阅）= P0"
+    severity: "P0"
+    source: "releasing.md D6 闸门"
+
+  # ===== 八、防膨胀约束 =====
+  - id: C21
+    type: "验证文件防膨胀"
+    target: "regression-checklist.md / acceptance-test.sh"
+    rule: "回归清单 ≤ 1000 行、验收脚本 ≤ 1500 行。每版本发版做一轮瘦身。追加新维度前必须先 grep 同类"
+    severity: "P2"
+    source: "releasing.md 防膨胀机制"
+
+  - id: C22
+    type: "fresh-eyes 风格守护"
+    target: "fresh-eyes-review.md"
+    rule: "fresh-eyes-review 是留白式直觉审查（校准更新），不是精确清单（加法更新）。不得往里加精确检查项，否则退化为第二个 regression-checklist"
+    severity: "P1"
+    source: "releasing.md 阶段五 Tier 3"
+
+  # ===== 九、发版安全约束 =====
+  - id: C23
+    type: "tag 完整性"
+    target: "git tag"
+    rule: "tag 必须指向最终发布提交。打 tag 后零代码 commit（允许文档微调）。tag message 必须含版本号"
+    severity: "P0"
+    source: "releasing.md 阶段十一"
+
+  - id: C24
+    type: "发布授权"
+    target: "阶段十一发布"
+    rule: "发布由项目负责人（孔放勋）亲手执行或授权 AI 代执行。AI 代执行时 npm 凭证必须在人已登录的终端中使用，AI 不得自行 npm login 或操作凭证"
+    severity: "P0"
+    source: "releasing.md 阶段十一 AI 代执行边界"
+
+  - id: C25
+    type: "npm 分批发布"
+    target: "npm publish"
+    rule: "12 包按依赖层分批发布——叶子包先发，消费方后发。npm workspace symlink 在 publish 时不生效，必须在 npm registry 上有真实包"
+    severity: "P0"
+    source: "releasing.md 阶段十一"
+
+  # ===== 十、审查体系闭环 =====
+  - id: C26
+    type: "发布后审查"
+    target: "阶段十二"
+    rule: "发布后必须开全新 session 做独立审查（读 fresh-eyes-review.md）。审查报告中的问题不阻塞当前版本——进入下一版本的阶段一，作为驱动下一版开发方向的输入"
+    severity: "P1"
+    source: "releasing.md 阶段十二"
+
+  - id: C27
+    type: "闭环回阶段零"
+    target: "版本迭代闭环"
+    rule: "发布后 GLM 写下一版 develop prompt，闭环回到阶段零。每个版本必须完成完整六阶段闭环，不得跳过"
+    severity: "P0"
+    source: "六阶段版本迭代闭环"
+
+  # ===== 十一、知识库安全 =====
+  - id: C28
+    type: "知识库只读"
+    target: "知识库 / think.md"
+    rule: "知识库核心文件（如 think.md）在生成管道中必须保持只读。生成管道只读不写，产物落盘到独立目录"
+    severity: "P1"
+    source: "sofagent 安全约束"
+
+  # ===== 十二、通用化约束 =====
+  - id: C29
+    type: "通用化表述"
+    target: "开发本体 / 文档"
+    rule: "外部输入循环的描述使用通用表述，不写死个人化细节（如特定习惯、特定设备等）。保持方法论的可复用性"
+    severity: "P2"
+    source: "开发本体写作规范"

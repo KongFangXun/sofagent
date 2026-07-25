@@ -65,12 +65,12 @@ interface ExecutableTool extends LoopTool {
 // ────────────────────────────────
 
 /**
- * read_file —— 读取文件内容
+ * sf_read —— 读取文件内容（原名 read_file，因 deepagents 内置保留名冲突改名）
  *
  * 约束注入：A7 先读再改（修改前必须先读取目标文件）。
  */
 const readFileTool: ExecutableTool = {
-  name: 'read_file',
+  name: 'sf_read',
   description: [
     '读取指定路径文件的内容并返回。',
     '',
@@ -102,7 +102,7 @@ const readFileTool: ExecutableTool = {
 };
 
 /**
- * write_file —— 写入新文件
+ * sf_write —— 写入新文件（原名 write_file，因 deepagents 内置保留名冲突改名）
  *
  * 约束注入：
  *   A1 不碰敏感文件（.env / 密钥 / 凭证）
@@ -110,7 +110,7 @@ const readFileTool: ExecutableTool = {
  *   A16 非授权文件不碰
  */
 const writeFileTool: ExecutableTool = {
-  name: 'write_file',
+  name: 'sf_write',
   description: [
     '将内容写入指定路径文件（覆盖已有内容）。',
     '',
@@ -151,12 +151,12 @@ const writeFileTool: ExecutableTool = {
 };
 
 /**
- * edit_file —— 编辑已有文件（精确替换）
+ * sf_edit —— 编辑已有文件（精确替换）（原名 edit_file，因 deepagents 内置保留名冲突改名）
  *
- * 约束注入：同 write_file（A1 / A3 / A16）
+ * 约束注入：同 sf_write（A1 / A3 / A16）
  */
 const editFileTool: ExecutableTool = {
-  name: 'edit_file',
+  name: 'sf_edit',
   description: [
     '通过精确字符串替换编辑已有文件。',
     '在指定文件中找到 old_string 并替换为 new_string（仅替换首次匹配）。',
@@ -523,7 +523,7 @@ export function createToolGate(options: ToolGateOptions = {}) {
  *
  * 用法：
  *   import { toolGate } from './tools';
- *   const check = toolGate('write_file', { path: '.env', content: '...' });
+ *   const check = toolGate('sf_write', { path: '.env', content: '...' });
  *   if (!check.allowed) { /* 拒绝执行 * / }
  */
 export const toolGate = createToolGate();

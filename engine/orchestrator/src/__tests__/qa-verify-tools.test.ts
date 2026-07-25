@@ -22,29 +22,30 @@ describe('tools.ts QA 独立验证', () => {
     });
 
     // 测试：工程师工具集名称齐全
+    // 注：v1.2.x 改名 read_file→sf_read, write_file→sf_write, edit_file→sf_edit
+    //     因与 deepagents 内置 FilesystemMiddleware 保留工具名冲突
     it('ENGINEER_TOOLS 含全部 6 个工具名', () => {
       const names = ENGINEER_TOOLS.map((t) => t.name);
-      expect(names).toContain('read_file');
-      expect(names).toContain('write_file');
-      expect(names).toContain('edit_file');
+      expect(names).toContain('sf_read');
+      expect(names).toContain('sf_write');
+      expect(names).toContain('sf_edit');
       expect(names).toContain('run_bash');
       expect(names).toContain('search_code');
       expect(names).toContain('run_test');
     });
 
-    // 测试：审查员工具集只有只读工具（无 write_file / edit_file）
-    it('REVIEWER_TOOLS 不含写工具（无 write_file / edit_file）', () => {
+    // 测试：审查员工具集只有只读工具（无 sf_write / sf_edit）
+    it('REVIEWER_TOOLS 不含写工具（无 sf_write / sf_edit）', () => {
       const names = REVIEWER_TOOLS.map((t) => t.name);
-      expect(names).not.toContain('write_file');
-      expect(names).not.toContain('edit_file');
+      expect(names).not.toContain('sf_write');
+      expect(names).not.toContain('sf_edit');
     });
 
-    // 测试：审查员工具集不应有 run_bash（设计要求：read_file, search_code, run_test）
-    // 注：根据任务说明 REVIEWER_TOOLS = [read_file, search_code, run_test]
-    it('REVIEWER_TOOLS = read_file, search_code, run_bash（实际实现）', () => {
+    // 测试：审查员工具集应为 sf_read, search_code, run_bash
+    it('REVIEWER_TOOLS = sf_read, search_code, run_bash（实际实现）', () => {
       const names = REVIEWER_TOOLS.map((t) => t.name).sort();
-      // 实际实现：read_file, search_code, run_bash
-      expect(names).toEqual(['read_file', 'run_bash', 'search_code']);
+      // 实际实现：sf_read, search_code, run_bash
+      expect(names).toEqual(['run_bash', 'search_code', 'sf_read']);
     });
   });
 
@@ -52,21 +53,21 @@ describe('tools.ts QA 独立验证', () => {
   // 约束注入（description 内嵌约束边界）
   // ────────────────────────────────────────
   describe('description 约束注入', () => {
-    // 测试：read_file description 应含 A7 约束
-    it('read_file description 含 A7 先读再改约束', () => {
-      const tool = ENGINEER_TOOLS.find((t) => t.name === 'read_file');
+    // 测试：sf_read description 应含 A7 约束
+    it('sf_read description 含 A7 先读再改约束', () => {
+      const tool = ENGINEER_TOOLS.find((t) => t.name === 'sf_read');
       expect(tool?.description).toMatch(/A7|先读再改/);
     });
 
-    // 测试：write_file description 应含 A1/A3/A16 约束
-    it('write_file description 含 A1 不碰敏感约束', () => {
-      const tool = ENGINEER_TOOLS.find((t) => t.name === 'write_file');
+    // 测试：sf_write description 应含 A1/A3/A16 约束
+    it('sf_write description 含 A1 不碰敏感约束', () => {
+      const tool = ENGINEER_TOOLS.find((t) => t.name === 'sf_write');
       expect(tool?.description).toMatch(/A1|不碰敏感/);
     });
 
-    // 测试：edit_file description 应含约束
-    it('edit_file description 含 A1/A3 约束', () => {
-      const tool = ENGINEER_TOOLS.find((t) => t.name === 'edit_file');
+    // 测试：sf_edit description 应含约束
+    it('sf_edit description 含 A1/A3 约束', () => {
+      const tool = ENGINEER_TOOLS.find((t) => t.name === 'sf_edit');
       expect(tool?.description).toMatch(/A1|A3/);
     });
 
@@ -106,13 +107,13 @@ describe('tools.ts QA 独立验证', () => {
     });
 
     // 测试：required 字段声明正确
-    it('write_file required = [path, content]', () => {
-      const tool = ENGINEER_TOOLS.find((t) => t.name === 'write_file');
+    it('sf_write required = [path, content]', () => {
+      const tool = ENGINEER_TOOLS.find((t) => t.name === 'sf_write');
       expect(tool?.schema.required).toEqual(['path', 'content']);
     });
 
-    it('edit_file required = [path, old_string, new_string]', () => {
-      const tool = ENGINEER_TOOLS.find((t) => t.name === 'edit_file');
+    it('sf_edit required = [path, old_string, new_string]', () => {
+      const tool = ENGINEER_TOOLS.find((t) => t.name === 'sf_edit');
       expect(tool?.schema.required).toEqual(['path', 'old_string', 'new_string']);
     });
   });
@@ -121,16 +122,16 @@ describe('tools.ts QA 独立验证', () => {
   // 工具功能验证（func 执行）
   // ────────────────────────────────────────
   describe('工具 func 执行验证', () => {
-    // 测试：read_file 读不存在文件返回错误信息（不抛异常）
-    it('read_file 读不存在文件 → 返回错误信息', () => {
-      const tool = ENGINEER_TOOLS.find((t) => t.name === 'read_file');
+    // 测试：sf_read 读不存在文件返回错误信息（不抛异常）
+    it('sf_read 读不存在文件 → 返回错误信息', () => {
+      const tool = ENGINEER_TOOLS.find((t) => t.name === 'sf_read');
       const result = (tool as { func: (i: Record<string, unknown>) => string }).func({ path: '/nonexistent/__qa_test__.txt' });
       expect(result).toMatch(/错误|不存在/);
     });
 
-    // 测试：read_file 缺少参数返回错误
-    it('read_file 缺少 path → 返回参数错误', () => {
-      const tool = ENGINEER_TOOLS.find((t) => t.name === 'read_file');
+    // 测试：sf_read 缺少参数返回错误
+    it('sf_read 缺少 path → 返回参数错误', () => {
+      const tool = ENGINEER_TOOLS.find((t) => t.name === 'sf_read');
       const result = (tool as { func: (i: Record<string, unknown>) => string }).func({});
       expect(result).toMatch(/错误|缺少/);
     });

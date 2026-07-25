@@ -34,12 +34,12 @@ export class MarkdownLogReader implements LogReader {
     for (const line of lines) {
       const trimmed = line.trim();
       if (negateRead.test(trimmed)) continue;
-      if (/\b(read|read_file)\b/i.test(trimmed) || /读取/.test(trimmed)) return 'read';
+      if (/\b(read|read_file|sf_read)\b/i.test(trimmed) || /读取/.test(trimmed)) return 'read';
     }
 
     for (const line of lines) {
       const trimmed = line.trim();
-      if (/\b(write|write_to_file)\b/i.test(trimmed) || /写入/.test(trimmed)) return 'write';
+      if (/\b(write|write_to_file|write_file|sf_write)\b/i.test(trimmed) || /写入/.test(trimmed)) return 'write';
     }
 
     for (const line of lines) {
