@@ -1,40 +1,43 @@
 #!/bin/bash
 # ============================================================
-# sofagent install.sh · 多平台一键安装脚本（v1.2.0）
+# sofagent install.sh · 主安装器 / FDE 入口 · v1.2.0
 # ============================================================
 # 将 sofagent 约束层部署到目标平台，让 Agent 获得治理能力。
 #
-# 🧭 路径声明（v1.2.0）：本脚本已在仓库根目录
+# 🧭 路径声明（v1.2.0）：本脚本在仓库根目录，是主安装器。
+#    默认模式 = FDE 模式（底座 + FDE Agent Skill）。
+#    --base-only 模式 = 仅装底座（约束层 + 审计 + 编排）。
 #
-# 📦 三个安装包边界（v1.1.9 声明）：
+# 📦 三个安装包边界（v1.2.0）：
 #    ┌─────────────────────────────┬──────────┬──────────────────────┬─────────┐
 #    │ 脚本                        │ 给谁     │ 装什么               │ 装 LOOP │
 #    ├─────────────────────────────┼──────────┼──────────────────────┼─────────┤
-#    │ install.sh │ 所有用户 │ 约束底座+四引擎      │   否    │
-#    │ FDE/fde-install.sh          │ 企业用户 │ 上者+FDE Agent Skill │   否    │
-#    │ LOOP/loop-install.sh        │ 开发者   │ 上者+LOOP 自迭代包   │   是    │
+#    │ install.sh                  │ 所有用户 │ 底座+FDE Agent Skill │   否    │
+#    │ install.sh --base-only      │ 所有用户 │ 约束底座+四引擎      │   否    │
+#    │ LOOP/loop-install.sh        │ 开发者   │ 底座+LOOP 自迭代包   │   是    │
 #    └─────────────────────────────┴──────────┴──────────────────────┴─────────┘
 #    原则：FDE 安装包不自动装 LOOP——LOOP 是 sofagent 项目的自迭代
 #    开发工具包（管理代码变更，给开发者用），不属于企业交付物。
 #
-# 🔗 跨产品契约：FDE/fde-install.sh 和 LOOP/loop-install.sh 依赖本脚本。
-#    改动此文件前，确认 FDE/LOOP 的安装链路不受影响：
-#    - FDE/LOOP 调用 `bash install.sh` 作为底座安装入口
-#    - 改参数名/输出路径/依赖文件前必须 grep 两个 install 脚本的调用方式
-#    - 删被依赖文件（如 SKILL/harness/data/fde.md）前确认 FDE/LOOP install 不再引用
+# 🔗 跨产品契约：LOOP/loop-install.sh 依赖本脚本（--base-only 模式）。
+#    改动此文件前，确认 LOOP 的安装链路不受影响：
+#    - LOOP 调用 `bash install.sh --base-only --platform "$PLATFORM"` 作为底座安装入口
+#    - 改参数名/输出路径/依赖文件前必须 grep LOOP 的调用方式
+#    - 删被依赖文件（如 SKILL/harness/data/fde.md）前确认 LOOP install 不再引用
 # v0.98: 从 941 行拆分为 4 个 lib 模块 + 纯组装入口
 # v1.0.7: ao 退役，移除 agency-orchestrator 安装逻辑
+# v1.2.0: install.sh 吸收 FDE/fde-install.sh，成为主安装器+FDE 入口
 #
 # 平台：openclaw（完整）/ workbuddy / claude / codex / hermes / 自动探测
 # 编排引擎：DeepAgents（npm 包，正式依赖）
 #
-# ── 跨产品调用契约（v1.1.9）──
-# FDE/fde-install.sh 与 LOOP/loop-install.sh 在第 1 步会调用本脚本：
-#   bash "$PROJECT_ROOT/install.sh" --platform "$PLATFORM"
+# ── 跨产品调用契约（v1.2.0）──
+# LOOP/loop-install.sh 在第 1 步会调用本脚本：
+#   bash "$PROJECT_ROOT/install.sh" --base-only --platform "$PLATFORM"
 # 版本锁定：本脚本的接口（入参/退出码/副作用）从 v1.1.5 起冻结，
-# 任何 breaking change 必须 bump major 版本并同步更新 FDE/LOOP install 脚本。
+# 任何 breaking change 必须 bump major 版本并同步更新 LOOP install 脚本。
 # 契约约定：
-#   1. 入参：--platform <name>（可选，缺省时自动探测）
+#   1. 入参：--platform <name>（可选，缺省时自动探测）/ --base-only（仅装底座）
 #   2. 退出码：0=成功，非 0=失败（调用方依赖 set -e 自动中断）
 #   3. 副作用：写入 ~/.sofagent/ + 目标平台配置目录；不修改调用方脚本
 #   4. 幂等性：重复执行安全，已存在的 hook/config 不覆盖（除非 --force）
@@ -44,8 +47,9 @@
 set -euo pipefail
 VERSION="1.2.0"
 
-# ── 颜色输出 ──
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
+# ── 颜色输出（合并两套）──
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'
+CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 info()  { echo -e "${BLUE}[sofagent]${NC} $1"; }
 ok()    { echo -e "${GREEN}[✓]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
@@ -62,6 +66,12 @@ _log() { echo "[$(date '+%H:%M:%S')] $1" >> "${INSTALL_LOG:-/dev/null}"; }
 
 # ── 快速模式（v0.73：初始化在参数解析之前，set -u 兼容）──
 QUICK_MODE="${QUICK_MODE:-0}"; REMOTE_MODE="${REMOTE_MODE:-0}"
+
+# ── FDE 模式（默认开启，--base-only 关闭）──
+BASE_ONLY=0
+
+# ── 预扫描 --base-only（在 source/参数解析前捕获）──
+for _arg in "$@"; do [ "$_arg" = "--base-only" ] && BASE_ONLY=1; done
 
 # ── source 模块 ──
 # shellcheck disable=SC1091
@@ -82,9 +92,17 @@ for _arg in "$@"; do [ "$_arg" = "--remote" ] && REMOTE_MODE=1; done
 
 # ── 欢迎 ──
 if [ "$QUICK_MODE" = "0" ]; then
-  echo ""; echo "  ╔═══════════════════════════════════╗"
-  echo "  ║   sofagent Harness · installer   ║"
-  echo "  ╚═══════════════════════════════════╝"; echo ""
+  echo ""
+  if [ "${BASE_ONLY:-0}" = "0" ]; then
+    echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
+    echo -e "${BOLD}${CYAN}  sofagent 主安装器 · 底座 + FDE Agent${NC}"
+    echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
+  else
+    echo "  ╔═══════════════════════════════════╗"
+    echo "  ║   sofagent Harness · installer   ║"
+    echo "  ╚═══════════════════════════════════╝"
+  fi
+  echo ""
   info "运行环境: $RUNTIME_ENV"
   # Windows 原生 bash（非 WSL）提示使用 PowerShell 脚本
   if [[ "$RUNTIME_ENV" == "Windows (native bash)" ]] && [ -z "${WSL_DISTRO_NAME:-}" ]; then
@@ -118,7 +136,7 @@ bash "${SCRIPT_DIR}/engine/scripts/audit.sh" --operation "install" --target "开
 # ════════════════════════════════════════
 # Step 1: 确定平台和目标路径
 # ════════════════════════════════════════
-info "Step 1/7 · 确定安装平台..."
+info "Step 1/8 · 确定安装平台..."
 parse_args "$@"
 auto_detect_platform
 resolve_data_dir
@@ -132,7 +150,7 @@ _log "TARGET=$TARGET"; _log "SCRIPT_DIR=$SCRIPT_DIR"
 
 RULES_SRC="${SCRIPT_DIR}/SKILL/harness/data/fde.md"
 if [ ! -f "$RULES_SRC" ]; then
-  err "找不到 fde.md。请在 sofagent 项目根目录下运行此脚本。"
+  err "找不到 fde.md。请在 sofagent 项目根��录下运行此脚本。"
   err "  当前脚本位置: $SCRIPT_DIR"; err "  期望文件: $RULES_SRC"; exit 1
 fi
 # CONFIG_FILE 不预声明——Step 7 中用 local 声明（避免 SC2034 unused 警告）
@@ -140,7 +158,7 @@ fi
 # ════════════════════════════════════════
 # Step 2: 检查环境（Node.js + npm）
 # ════════════════════════════════════════
-info "Step 2/7 · 检查运行环境..."
+info "Step 2/8 · 检查运行环境..."
 if command -v node &>/dev/null; then
   NODE_VER=$(node --version); ok "Node.js 已安装: $NODE_VER"; _log "node=$NODE_VER"
 else
@@ -159,7 +177,7 @@ else warn "npm 未安装"; fi
 # ════════════════════════════════════════
 # Step 3: 编排引擎（v1.0.7：DeepAgents，正式依赖）
 # ════════════════════════════════════════
-info "Step 3/7 · 编排引擎: DeepAgents（npm 包 @sofagent/audit 正式依赖）..."
+info "Step 3/8 · 编排引擎: DeepAgents（npm 包 @sofagent/audit 正式依赖）..."
 info "  编排引擎随 @sofagent/audit 自动安装（npm install @sofagent/audit）"
 info "  如需 Sub Agent A/B 对比 + 方案 C 运行器，确认 deepagents 已安装：npm ls deepagents"
 
@@ -230,4 +248,74 @@ if [[ "${WITH_MEMORY:-0}" == "1" ]]; then
   fi
 fi
 
-echo ""
+# ════════════════════════════════════════
+# FDE 专属步骤（仅默认模式，--base-only 时跳过）
+# ════════════════════════════════════════
+if [ "${BASE_ONLY:-0}" = "0" ]; then
+
+  echo ""
+  echo -e "${BOLD}[FDE] 写入 FDE 运行规范 + 安装 Agent Skill...${NC}"
+
+  # ── 写入 fde.md（按平台选目标路径）──
+  case "$PLATFORM" in
+    openclaw) FDE_MD_TARGET="$HOME/.openclaw/skills/engine/fde.md" ;;
+    workbuddy) FDE_MD_TARGET="$HOME/.workbuddy/skills/engine/fde.md" ;;
+    claude) FDE_MD_TARGET="$HOME/.claude/fde.md" ;;
+    codex) FDE_MD_TARGET="$HOME/.codex/fde.md" ;;
+    hermes) FDE_MD_TARGET="$HOME/.hermes/fde.md" ;;
+    *) FDE_MD_TARGET="" ;;
+  esac
+
+  if [ -n "$FDE_MD_TARGET" ] && [ -f "$RULES_SRC" ]; then
+    mkdir -p "$(dirname "$FDE_MD_TARGET")" 2>/dev/null || true
+    cp "$RULES_SRC" "$FDE_MD_TARGET"
+    echo -e "${GREEN}✅ fde.md 已写入 ${FDE_MD_TARGET}${NC}"
+    echo -e "  ${CYAN}请编辑此文件，填写你的工作规则${NC}"
+
+    # v1.0.7: 同时安装 FDE + Audit 两个内置 Agent 的 Skill
+    # v1.2.0: Skill 收敛到 /SKILL/（agents/SKILL/ → SKILL/agents/）
+    SKILL_SRC="${SCRIPT_DIR}/SKILL"
+    SKILL_DIR="$(dirname "$FDE_MD_TARGET")"
+    if [ -f "$SKILL_SRC/SKILL.md" ]; then
+      cp "$SKILL_SRC/SKILL.md" "$SKILL_DIR/sofagent-fde/SKILL.md" 2>/dev/null || cp "$SKILL_SRC/SKILL.md" "$SKILL_DIR/SKILL.md"
+      echo -e "${GREEN}✅ FDE Agent Skill 已安装（@sofagent-fde 可用）${NC}"
+    fi
+    if [ -d "$SKILL_SRC/agents/audit" ]; then
+      cp -r "$SKILL_SRC/agents/audit" "$SKILL_DIR/sofagent-audit"
+      echo -e "${GREEN}✅ Audit Agent Skill 已安装（@sofagent-audit 可用）${NC}"
+    fi
+  else
+    echo -e "${CYAN}⚠️ 跳过 fde.md（模板或目标路径不存在）${NC}"
+  fi
+
+  # ── 验证安装 ──
+  echo ""
+  echo -e "${BOLD}[FDE] 验证安装...${NC}"
+  bash "${SCRIPT_DIR}/engine/scripts/verify.sh" --quick 2>&1 | tail -3
+  echo ""
+
+  # ── FDE 完成输出 ──
+  echo -e "${BOLD}${GREEN}═══════════════════════════════════════════════════════════${NC}"
+  echo -e "${BOLD}${GREEN}  ✅ 你的电脑现在是一个 FDE 节点了${NC}"
+  echo -e "${BOLD}${GREEN}═══════════════════════════════════════════════════════════${NC}"
+  echo ""
+  echo -e "  ${BOLD}下一步：${NC}"
+  if [ "$PLATFORM" = "openclaw" ]; then
+    echo -e "  1. 打开你的 Agent——它会检测到 FDE 场景，自动加载工作台"
+    echo -e "  2. 告诉 Agent 企业基本信息（名称/行业/规模），开始 §1 确定场景"
+    echo -e "  3. 走完 12 步后，找台闲置设备装上 sofagent 底座给客户"
+  else
+    echo -e "  1. 在你的 Agent 中输入 ${BOLD}@sofagent-fde${NC} 开始部署"
+    echo -e "  2. Agent 读完后按 FDE 流程引导你梳理工作流"
+  fi
+  echo ""
+  echo -e "  ${CYAN}内置 Agent：${NC}@sofagent-fde（部署工程师）+ @sofagent-audit（合规审计员）"
+  echo -e "  ${CYAN}详细指南见 FDE/README.md${NC}"
+  echo ""
+
+else
+  # ── 底座-only 完成输出 ──
+  echo ""
+  echo -e "${GREEN}✅ sofagent 底座安装完成（--base-only 模式）${NC}"
+  echo ""
+fi

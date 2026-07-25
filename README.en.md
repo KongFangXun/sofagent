@@ -91,8 +91,8 @@ What's on the USB: Portable Node.js + sofagent engine + knowledge encrypted on d
 ## Install and get going
 
 ```bash
-# FDE Agent one-click deploy
-bash FDE/fde-install.sh
+# Main installer (base + FDE Agent)
+bash install.sh
 ```
 
 > [!NOTE]
@@ -124,7 +124,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 | 🔄 Auto-run node | Enterprise unattended device (server / old computer) | Yes |
 | ⚡ Personal augmentation node | Developer using WorkBuddy / Codex / Claude Code | No |
 
-> 💡 Personal augmentation node: clone repo → `bash FDE/fde-install.sh` → go.
+> 💡 Personal augmentation node: clone repo → `bash install.sh` → go.
 
 **Install on demand**:
 

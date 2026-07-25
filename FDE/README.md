@@ -25,21 +25,21 @@
 
 ## 安装（需 clone 主仓库）
 
-> ⚠️ 本脚本依赖主仓库的 `install.sh`，请确保已 clone 完整仓库后再从 `FDE/` 目录运行。
+> ⚠️ 本脚本依赖主仓库的 `install.sh`，请确保已 clone 完整仓库后再从仓库根目录运行。
 
 | 平台 | 怎么装 | 怎么激活 |
 |------|------|------|
-| **OpenClaw** | `bash fde-install.sh` | 装完直接打开 Agent，自动就绪 |
-| **WorkBuddy** | `bash fde-install.sh --platform workbuddy` 或手动 `cp -r SKILL/SKILL.md ~/.workbuddy/skills/sofagent-fde/SKILL.md` | 在对话中输入 `@sofagent-fde` |
+| **OpenClaw** | `bash install.sh` | 装完直接打开 Agent，自动就绪 |
+| **WorkBuddy** | `bash install.sh --platform workbuddy` 或手动 `cp -r SKILL/SKILL.md ~/.workbuddy/skills/sofagent-fde/SKILL.md` | 在对话中输入 `@sofagent-fde` |
 | **其他平台** | 装 sofagent + 复制 SKILL.md 内容到 system prompt | Agent 读完后自动调用 CLI |
 
-`fde-install.sh` 安装完成后，同时安装了两个内置 Agent Skill：`@sofagent-fde`（FDE 部署工程师）和 `@sofagent-audit`（合规审计员）。
+`install.sh` 安装完成后（默认模式），同时安装了两个内置 Agent Skill：`@sofagent-fde`（FDE 部署工程师）和 `@sofagent-audit`（合规审计员）。如仅需底座引擎，用 `bash install.sh --base-only`。
 
 ### 装完之后做什么
 
 1. **激活 Skill** → 按上表对应平台的方法让 Agent 加载 FDE 工作台
 2. **Agent 引导** → Agent 会按 [FDE.md](./FDE.md) §1 开始，引导你描述企业基本信息，然后走完 12 个关键步骤
-3. **部署 sofagent 到设备**（核心步骤）→ 流程走完后，找一台闲置设备（服务器/旧电脑），`bash install.sh` 把 sofagent 一底座·四引擎装上去（注：此命令装**底层引擎底座**；FDE 入口本身用 `FDE/fde-install.sh` 安装，见上方安装表）——约束底座 + 编排引擎 + 审计引擎 + 回溯引擎（git snapshot + revert）+ 进化引擎就绪，上面开始跑你的 workflow AI 节点
+3. **部署 sofagent 到设备**（核心步骤）→ 流程走完后，找一台闲置设备（服务器/旧电脑），`bash install.sh --base-only` 把 sofagent 一底座·四引擎装上去（注：此命令装**底层引擎底座**；FDE 入口用 `bash install.sh` 安装，见上方安装表）——约束底座 + 编排引擎 + 审计引擎 + 回溯引擎（git snapshot + revert）+ 进化引擎就绪，上面开始跑你的 workflow AI 节点
 
 ### 种子指令（备选，非 OpenClaw/WorkBuddy 用户使用）
 
@@ -59,7 +59,7 @@
 | `SKILL.md` | Skill 入口（Agent 激活后自动加载，第一个说话引导你） |
 | `FDE.md` | 12 个关键步骤部署知识文档（4 个阶段：进场→挖掘→交付→检查离场）+ 角色定义 + 步骤详解 |
 | `templates/` | 交付物模板（企业画像 + 部署方案 + 工作流节点文档 + 企业 Skill），以 FDE 自身为案例 |
-| `fde-install.sh` | 一键装 sofagent + 写入 fde.md |
+| `install.sh` | 一键装 sofagent 底座 + 写入 fde.md（仓库根目录主安装器） |
 
 ---
 

@@ -14,7 +14,7 @@ detect_env() {
   echo "$n"
 }
 parse_args() {
-  PLATFORM=""; QUICK_MODE=0; NO_DAEMON=0; LITE_MODE=0; WITH_MEMORY=0  # REMOTE_MODE/ORIGINAL_ARGS 已提前初始化
+  PLATFORM=""; QUICK_MODE=0; NO_DAEMON=0; LITE_MODE=0; WITH_MEMORY=0  # REMOTE_MODE/ORIGINAL_ARGS/BASE_ONLY 已提前初始化
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --platform)      PLATFORM="$2"; shift 2 ;;
@@ -28,10 +28,16 @@ parse_args() {
       --skip-daemon)    NO_DAEMON=1; shift ;;                     # 别名
       --lite)           LITE_MODE=1; QUICK_MODE=1; NO_DAEMON=1; NO_CONFIG_INJECT=1; shift ;;
       --remote)         REMOTE_MODE=1; shift ;;
+      --base-only)      BASE_ONLY=1; shift ;;
       --with-memory)    WITH_MEMORY=1; shift ;;
       -h|--help)
         cat << 'HELP'
 用法: install.sh [--platform openclaw|workbuddy|claude|codex|hermes] [--project-dir DIR]
+                 [--base-only]
+
+模式说明：
+  默认模式         安装底座 + FDE Agent Skill（企业部署能力）
+  --base-only      仅安装约束底座 + 四引擎（不装 FDE Agent Skill）
 
 平台说明：
   openclaw  完整部署（宪法 + Hook + 脚本 + 断路器）→ ~/.openclaw/
@@ -43,6 +49,7 @@ parse_args() {
   --no-config-inject  跳过自动注入 OpenClaw config.json（企业环境用）
   --quick             快速模式——跳过交互确认和验证等待，直接完整安装
   --lite              精简模式——仅部署核心约束文件，跳过 daemon/配置注入（= --quick + --no-daemon + --no-config-inject）
+  --base-only         仅装底座（约束层+审计+编排），跳过 FDE Agent Skill 部署
   --remote            远程安装模式——自动 git clone 仓库后安装（配合 curl pipe bash 使用）
 HELP
         exit 0 ;;

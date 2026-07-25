@@ -375,10 +375,10 @@ echo ""
 # 4. .sh 文件: VERSION="OLD"
 echo -e "${BOLD}[6/13] Shell 脚本${NC}"
 SH_DIR="$PROJECT_ROOT/engine/scripts"
-FDE_SH="$PROJECT_ROOT/FDE/fde-install.sh"
+FDE_SH="$PROJECT_ROOT/install.sh"
 if [[ -d "$SH_DIR" ]] || [[ -f "$FDE_SH" ]]; then
   sh_count=0
-  # 收集 scripts/*.sh + FDE/fde-install.sh
+  # 收集 scripts/*.sh + install.sh
   sh_files=()
   if [[ -d "$SH_DIR" ]]; then
     for sh in "$SH_DIR"/*.sh; do

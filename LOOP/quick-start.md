@@ -108,7 +108,7 @@ LOOP 内置 3 个 Sub Agent Skill，装在 `SKILL/agents/` 下（项目仓库中
 | `sofagent-reviewer` | 代码审查员——审查 + IS_PASS 判定 | 推理能力更强的模型（判断需要深思） |
 | `sofagent-audit` | 合规审计员——A1-A11、A14-A19 规则检查 | 本地（不调 LLM） |
 
-> 💡 如需 Workflow 优化（sofagent-fde），用 `bash FDE/fde-install.sh` 单独装。
+> 💡 如需 Workflow 优化（sofagent-fde），用 `bash install.sh` 单独装。
 
 ## 常见问题
 
