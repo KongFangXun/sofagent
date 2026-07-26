@@ -163,21 +163,22 @@ function buildSystemPrompt(skillPath) {
 
   // macOS BSD 工具约束——GLM/DeepSeek 常用 Linux 语法导致命令报错，
   // 浪费 recursionLimit 步数在重试错误命令上。
+  // run-05 教训：GLM-5.2 用 150 步限额全浪费在 sed/openssl 报错重试上导致崩溃。
   const shellConstraints = [
     '',
-    '## 🔧 运行环境约束（macOS BSD 工具）',
+    '## 🔴 铁律：macOS BSD 工具约束（违反必崩）',
     '',
-    '你在 macOS 上运行，shell 是 BSD 版本，不是 GNU/Linux。以下命令行为不同：',
-    '- `grep`：不支持 `-P`（PCRE），用 `grep -E`（扩展正则）代替',
-    '- `sed`：不支持 `--version`/`-V`；`-i` 必须带后缀（如 `sed -i "" "s/a/b/"`）',
-    '- `head`/`tail`：不支持 `-n +N` 以外的 GNU 扩展',
-    '- `cat`：不支持 `-A`，用 `cat -v` 或 `od -c` 代替',
-    '- `stat`：不支持 `--format`，用 `stat -f` 代替',
-    '- `readlink`：不支持 `-f`，用 `greadlink`（如装了 coreutils）或 `python3 -c`',
-    '- 不支持 `<(...)` process substitution（bash 独有，/bin/sh 没有）',
-    '- 不支持 `${var}` 之外的字符串操作',
+    '你在 macOS 上运行，shell 是 BSD 版本，**不是 GNU/Linux**。以下命令在此环境会报错：',
+    '- `grep -P` → 不存在，用 `grep -E`',
+    '- `sed --version` / `sed -V` → 不存在，`sed -i` 必须带后缀 `sed -i ""`',
+    '- `openssl --version` / `openssl -V` → 用 `openssl version`（无横杠）',
+    '- `cat -A` → 用 `cat -v` 或 `od -c`',
+    '- `stat --format` → 用 `stat -f`',
+    '- `readlink -f` → 用 `python3 -c "import os; print(os.path.realpath(\'...\'))`"',
+    '- `<(...)` process substitution → 不支持',
     '',
-    '命令报错时，不要反复重试同一命令——换一种方式或跳过。',
+    '**铁律：命令报错时立即换方案或跳过，禁止用相同语法重试。**',
+    '你已经浪费了大量步数在 BSD 命令报错上——从现在起，任何命令第一次报错就放弃该路径。',
   ].join('\n');
 
   return header + '\n\n' + body + shellConstraints;
@@ -510,8 +511,8 @@ async function runWorker(step, roundDir, target) {
   // - 文本处理类（a-consolidate/a-verify/b-fix）：主要做合并/格式化，给 40 够了
   //   太高会导致消息累积 OOM（exit 137）
   const STEP_RECURSION_LIMITS = {
-    'a-check': 150,
-    'b-check': 150,
+    'a-check': 200,
+    'b-check': 200,
     'a-consolidate': 50,
     'b-fix': 60,
     'a-verify': 50,

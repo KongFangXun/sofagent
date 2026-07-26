@@ -59,7 +59,7 @@ sofagent 不替代大厂 Agent，而是建在它们之上——用 River 比喻�
 
 ### sofagent 不管什么
 
-OpenClaw/WorkBuddy 等大厂 Agent 平台管路由调度——「会不���做」。sofagent 管行为治理——「能不能每次都做对」。**Gateway 是高速公路，sofagent 是交规 + 测速摄像头 + 驾校教练。** 二者互补，不竞争。
+OpenClaw/WorkBuddy 等大厂 Agent 平台管路由调度——「会不会做」。sofagent 管行为治理——「能不能每次都做对」。**Gateway 是高速公路，sofagent 是交规 + 测速摄像头 + 驾校教练。** 二者互补，不竞争。
 
 ### 为什么需要 sofagent——模型越强，Harness 越值钱
 

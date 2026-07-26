@@ -210,7 +210,7 @@ function spawnWorker(step, roundDir, target, round) {
 
 开发新 loop 前，对照这份清单逐项确认：
 
-- [ ] **每个 loop ��包含**——`prompts/` / `specs/` / `runs/` 独立目录，不混用
+- [ ] **每个 loop 都须包含**——`prompts/` / `specs/` / `runs/` 独立目录，不混用
 - [ ] **driver 用 `createReactAgent`**——不用 `createDeepAgent`（已弃用）
 - [ ] **工具用 `tool()` 创建**——JSON Schema → zod 转换，不用手写 ExecutableTool
 - [ ] **工具名加 `sf_` 前缀**——避免和 LangGraph BUILTIN 工具冲突
