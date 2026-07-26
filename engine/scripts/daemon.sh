@@ -100,8 +100,8 @@ _find_think() {
 
 _find_rules() {
   for f in \
-    "${HOME}/.openclaw/skills/engine/fde.md" \
-    "${HOME}/.workbuddy/skills/engine/fde.md" \
+    "${HOME}/.openclaw/skills/sofagent/fde.md" \
+    "${HOME}/.workbuddy/skills/sofagent/fde.md" \
     "${HOME}/.openclaw/fde.md" \
     "${HOME}/.workbuddy/fde.md"; do
     [ -f "$f" ] && { echo "$f"; return 0; }

@@ -178,9 +178,9 @@ if [ "$QUICK_MODE" = true ]; then
   # 1. SKILL.md 存在且含 4 底线 + 7 则铁律关键词
   SKILL_QUICK=""
   for _sk in \
-    "${OPENCLAW_DIR:-}/skills/engine/SKILL.md" \
-    "$HOME/.openclaw/skills/engine/SKILL.md" \
-    "$HOME/.workbuddy/skills/engine/SKILL.md" \
+    "${OPENCLAW_DIR:-}/skills/sofagent/SKILL.md" \
+    "$HOME/.openclaw/skills/sofagent/SKILL.md" \
+    "$HOME/.workbuddy/skills/sofagent/SKILL.md" \
     "$HOME/.claude/SKILL.md" \
     "$HOME/.codex/SKILL.md" \
     "$HOME/.hermes/SKILL.md"; do
@@ -210,8 +210,8 @@ if [ "$QUICK_MODE" = true ]; then
   # 4. fde.md 可读
   RULES_QUICK=""
   for c in \
-    "${OPENCLAW_DIR:-$HOME/.openclaw}/skills/engine/fde.md" \
-    "${HOME}/.workbuddy/skills/engine/fde.md" \
+    "${OPENCLAW_DIR:-$HOME/.openclaw}/skills/sofagent/fde.md" \
+    "${HOME}/.workbuddy/skills/sofagent/fde.md" \
     "${HOME}/.openclaw/fde.md"; do
     [ -f "$c" ] && { RULES_QUICK="$c"; break; }
   done
@@ -255,14 +255,14 @@ if [ "$PLATFORM" = "workbuddy" ]; then
   check_pass "WorkBuddy 平台——宪法/Hook/断路器由 SKILL.md 入口流程管理"
 
   # WorkBuddy 专属检查（v0.62：宪法内联在 SKILL.md，检查 SKILL.md 而非 sofagent.md）
-  if [ -f "$HOME/.workbuddy/skills/engine/SKILL.md" ] && [ -s "$HOME/.workbuddy/skills/engine/SKILL.md" ]; then
-    if grep -q "4 底线\|7 则铁律" "$HOME/.workbuddy/skills/engine/SKILL.md" 2>/dev/null; then
+  if [ -f "$HOME/.workbuddy/skills/sofagent/SKILL.md" ] && [ -s "$HOME/.workbuddy/skills/sofagent/SKILL.md" ]; then
+    if grep -q "4 底线\|7 则铁律" "$HOME/.workbuddy/skills/sofagent/SKILL.md" 2>/dev/null; then
       check_pass "SKILL.md 已部署且含宪法（4底线+6则铁律内联）"
     else
       check_warn "SKILL.md 已部署但宪法内容缺失"
     fi
   else
-    check_warn "SKILL.md 未部署到 ~/.workbuddy/skills/engine/"
+    check_warn "SKILL.md 未部署到 ~/.workbuddy/skills/sofagent/"
   fi
 
   if [ -f "$HOME/.workbuddy/fde.md" ] && [ -s "$HOME/.workbuddy/fde.md" ]; then
@@ -322,8 +322,8 @@ fi
 _section "宪法文件（v0.62：宪法内联在 SKILL.md，此处只检查 fde.md）"
 
 f="fde.md"
-# v0.73: fde.md 部署到 skills/engine/fde.md（扁平化）
-path="${OPENCLAW_DIR}/skills/engine/${f}"
+# v0.73: fde.md 部署到 skills/sofagent/fde.md（扁平化）
+path="${OPENCLAW_DIR}/skills/sofagent/${f}"
 if [ ! -f "$path" ]; then
   path="${OPENCLAW_DIR}/${f}"  # 兼容旧版安装路径
 fi
@@ -405,9 +405,9 @@ else
   fi
 
   # 检查注入源文件是否可解析（think.md / fde.md）
-  # v0.73: fde.md 权威路径 skills/engine/fde.md（扁平化）
+  # v0.73: fde.md 权威路径 skills/sofagent/fde.md（扁平化）
   # ~/.openclaw/fde.md 是用户自定义文件，不再作为 sofagent 部署路径检查
-  RULES_AUTHORITY="${OPENCLAW_DIR}/skills/engine/fde.md"
+  RULES_AUTHORITY="${OPENCLAW_DIR}/skills/sofagent/fde.md"
   if [ -f "$RULES_AUTHORITY" ]; then
     check_pass "fde.md 权威路径就绪（$(wc -m < "$RULES_AUTHORITY" | tr -d ' ') 字符）"
   else
@@ -418,7 +418,7 @@ else
       check_warn "  发现遗留路径（${LEGACY_RULES}）——建议运行 install.sh 升级到 v0.73 扁平化路径"
     fi
     # v0.71-0.72 残留：constitution/fde.md → warning
-    LEGACY_CONST="${OPENCLAW_DIR}/skills/engine/constitution/fde.md"
+    LEGACY_CONST="${OPENCLAW_DIR}/skills/sofagent/constitution/fde.md"
     if [ -f "$LEGACY_CONST" ]; then
       check_warn "  发现 v0.72 前安装残留（${LEGACY_CONST}）——建议运行 install.sh 升级，旧路径将自动迁移"
     fi
@@ -609,7 +609,7 @@ fi
 
 # 9.1 加载链内容完整性——检查 SKILL.md 是否含宪法关键词（v0.62：宪法内联）
 [ "$JSON_MODE" = false ] && echo -n "  约束注入验证: "
-SKILL_FILE="${OPENCLAW_DIR:-$HOME/.openclaw}/skills/engine/SKILL.md"
+SKILL_FILE="${OPENCLAW_DIR:-$HOME/.openclaw}/skills/sofagent/SKILL.md"
 if [ -f "$SKILL_FILE" ]; then
   if grep -q "4.*底线\|6.*铁律" "$SKILL_FILE" 2>/dev/null; then
     check_pass "契约层关键词完整（4底线+6则铁律内联在 SKILL.md）"
@@ -788,16 +788,16 @@ else
 fi
 
 # 10.5 fde.md 配置段完整性
-# v0.73: 权威路径为 skills/engine/fde.md（扁平化）
+# v0.73: 权威路径为 skills/sofagent/fde.md（扁平化）
 # 兼容 fallback：工作目录（开发态）/ 旧部署路径（老安装）
 RULES_FILE=""
 for candidate in \
   "${PWD}/SKILL/harness/data/fde.md" \
-  "$HOME/.openclaw/skills/engine/fde.md" \
-  "$HOME/.workbuddy/skills/engine/fde.md" \
+  "$HOME/.openclaw/skills/sofagent/fde.md" \
+  "$HOME/.workbuddy/skills/sofagent/fde.md" \
   "${PWD}/SKILL/harness/constitution/fde.md" \
-  "$HOME/.openclaw/skills/engine/constitution/fde.md" \
-  "$HOME/.workbuddy/skills/engine/constitution/fde.md"; do
+  "$HOME/.openclaw/skills/sofagent/constitution/fde.md" \
+  "$HOME/.workbuddy/skills/sofagent/constitution/fde.md"; do
   if [ -f "$candidate" ]; then RULES_FILE="$candidate"; break; fi
 done
 if [ -n "$RULES_FILE" ]; then
