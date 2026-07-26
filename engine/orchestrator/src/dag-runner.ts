@@ -7,7 +7,7 @@
 //    v1.2.0 当前实现为**串行状态机**——主 Agent 按 depends_on
 //    顺序委派 Sub Agent，无依赖的节点可同步并行（取决于 LLM
 //    是否在一次回复中发出多个 task 调用）。完整 DAG 并行调度
-//    + 沙��隔离规划在 v1.3.0。
+//    + 沙箱隔离规划在 v1.3.0。
 //
 // 把 compose 产出的 workflow YAML 真正跑起来：
 //   1. parseWorkflowYaml → SubAgentConfig[]（workflow-parser）

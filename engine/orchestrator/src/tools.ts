@@ -33,7 +33,7 @@ import type { ToolCallContext } from '@sofagent/rules';
 
 /**
  * 简易 JSON Schema 描述——LangGraph createReactAgent 通过 convertToLangGraphTools
- * 转换为 DynamicStructuredTool（��� { name, description, schema }），schema 为 JSONSchema 对象。
+ * 转换为 DynamicStructuredTool（如 { name, description, schema }），schema 为 JSONSchema 对象。
  * 这里用宽松类型避免与 zod 强耦合。
  */
 type ToolSchema = {

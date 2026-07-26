@@ -348,7 +348,7 @@ export async function spawnSubAgent(
   ].filter(Boolean).join('\n');
 
   try {
-    // 尝试通过 compose 编排执行（createReactAgent 内部分发到��应 agent）
+    // 尝试通过 compose 编排执行（createReactAgent 内部分发到对应 agent）
     const { composeWithDeepAgents } = await import('./composer');
     // composeTask 自带 agent 名称信息
     const result = await composeWithDeepAgents(prompt);

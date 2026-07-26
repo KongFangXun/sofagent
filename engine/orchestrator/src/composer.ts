@@ -136,7 +136,7 @@ async function composeYaml(input: ComposeInput): Promise<string | null> {
       messages: [
         {
           role: 'user',
-          content: `请将��下任务拆解为工作流 YAML：\n\n${input.taskDesc}`,
+          content: `请将以下任务拆解为工作流 YAML：\n\n${input.taskDesc}`,
         },
       ],
     }, { recursionLimit: 40 });
