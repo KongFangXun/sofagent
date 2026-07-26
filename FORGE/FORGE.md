@@ -4,17 +4,19 @@
 >
 > v1.2.0 · 2026-07-24（UTC）· 孔放勋
 
-> ## ⚠️ v1.2.0 后期转向（2026-07-25）
+> ## ⚠️ v1.2.0 后期重构（2026-07-25）
 >
 > **本文档为 v1.2.0 前期的历史快照，正文已过时，不作现行文档使用。**
 >
-> v1.2.0 后期，FORGE 已从"自迭代工具包"转向**质量循环定义层**（`FORGE/SKILL/<loop>/` + DeepAgents 驱动）。当前唯一循环是 **fresh-eyes-loop**（A/B 双盲 12 视角审查），协议见 **[`FORGE/SKILL/fresh-eyes-loop/loop.md`](SKILL/fresh-eyes-loop/loop.md)**。
+> FORGE 的终极目标始终是**自我迭代**——让 Agent 写代码、Agent 审计、Agent 审查。v1.2.0 后期的重构改变了落地方式：不再是一个硬编码的串行工具包，而是改为**通过 workflow 逐步实现自迭代**。每个 workflow 是一个独立的循环，跑通一个就离自迭代近一步。
+>
+> 当前已落地的第一个 workflow 是 **fresh-eyes-loop**（A/B 双盲 12 视角质量审查循环），协议见 **[`FORGE/SKILL/fresh-eyes-loop/loop.md`](SKILL/fresh-eyes-loop/loop.md)**——`docs/changelog/releasing.md` 的发布后审查环节就是在不停地跑这一个循环。未来更多 workflow 加入后，FORGE 将逐步实现完整的自我迭代能力。
 >
 > 主要变化：
 > - `FORGE/SKILL.md`、`FORGE/loop-install.sh`、`FORGE/loop-workflow.sh`、`FORGE/releaser/` 已删除
-> - 发版 SOP → `docs/changelog/releasing.md`、`bump-version.sh` → `tools/bump-version.sh`
+> - 发版 SOP → `docs/changelog/releasing.md`、`FORGE/releaser/bump-version.sh` → `tools/bump-version.sh`
 > - 新增 `FORGE/LEDGER.md`（跨 run 永久索引）、`FORGE/SKILL/fresh-eyes-loop/`
-> - 详细记录见 `docs/changelog/v1.2/v1.2.0.md` §「后期转向」
+> - 详细记录见 `docs/changelog/v1.2/v1.2.0.md` §「后期重构」
 >
 > **⚠️ 正文中的 Agent 角色名（sofagent-engineer / sofagent-reviewer / forward-deployed-engineer 等）为 v1.2.0 前期设计，已在后期重构中调整。文件路径和维度数字已同步现行实现。如需最新信息，请以 [`loop.md`](SKILL/fresh-eyes-loop/loop.md) 和 [`docs/changelog/releasing.md`](../docs/changelog/releasing.md) 为准。**
 >

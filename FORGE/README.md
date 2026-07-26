@@ -1,6 +1,6 @@
-# FORGE — sofagent 质量循环定义层
+# FORGE — sofagent 自迭代引擎
 
-> **FORGE 是 sofagent 项目的质量循环定义层**——通过 `FORGE/SKILL/<loop>/` 定义可复用的循环协议（如 A/B 双盲 fresh-eyes 审查），由 driver（`fresh-eyes-driver.mjs`）自动编排执行。不面向终端用户。企业用户的入口是 [FDE Agent](../FDE/README.md)。
+> **FORGE 是 sofagent 项目的自迭代引擎**——终极目标是让 Agent 写代码、Agent 审计、Agent 审查。通过 `FORGE/SKILL/<loop>/` 定义可复用的 workflow，每个 workflow 是一步 toward 自迭代。当前已落地第一个 workflow：**fresh-eyes-loop**（A/B 双盲质量审查循环），由 driver（`fresh-eyes-driver.mjs`）自动编排执行。不面向终端用户。企业用户的入口是 [FDE Agent](../FDE/README.md)。
 
 ## 当前循环
 
@@ -60,7 +60,7 @@ fresh-eyes-loop 的 A/B 即基于 reviewer + engineer 构建（同底座，不�
 ```
 FORGE/
   README.md                     ← 你在这里
-  FORGE.md                       ← 设计文档（旧自迭代模型，保留参考）
+  FORGE.md                       ← 早期自迭代设计（历史参考，现行以 loop.md 为准）
   quick-start.md                ← A/B 异构模型接入与环境配置
   LEDGER.md                     ← 跨 run 永久索引（git 跟踪）
   SKILL/
@@ -71,4 +71,4 @@ FORGE/
     types.ts / workflow.ts      ← 旧编排运行时（保留参考，不再主动使用）
 ```
 
-> **v1.2.0 后期**：FORGE 已从"自迭代工具包（engineer→audit→reviewer 单循环 + loop-install.sh 独立安装）"转向"质量循环定义层（`FORGE/SKILL/<loop>/` + driver 自动编排）"。旧 `loop-workflow.sh`、`FORGE/SKILL.md`、`FORGE/loop-install.sh`、`FORGE/releaser/` 已删除。详见 [`FORGE/SKILL/fresh-eyes-loop/loop.md`](SKILL/fresh-eyes-loop/loop.md)。
+> **v1.2.0 后期**：FORGE 的自迭代目标不变，重构了落地方式——从硬编码串行工具包（engineer→audit→reviewer 单循环 + loop-install.sh 独立安装）改为通过 workflow 逐步实现自迭代（`FORGE/SKILL/<loop>/` + driver 自动编排）。当前已落地第一个 workflow **fresh-eyes-loop**。旧 `loop-workflow.sh`、`FORGE/SKILL.md`、`FORGE/loop-install.sh`、`FORGE/releaser/` 已删除。详见 [`FORGE/SKILL/fresh-eyes-loop/loop.md`](SKILL/fresh-eyes-loop/loop.md)。

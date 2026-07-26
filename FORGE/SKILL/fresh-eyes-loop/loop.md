@@ -67,7 +67,7 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 
 ## DeepAgents 实现提示
 
-- A/B 用 DeepAgents **开新 session** 实现零上下文；若平台不支持 per-round session，则用**对话刷新**替代（效果等价）。
+- A/B 由 Node driver（`FORGE/src/fresh-eyes-driver.mjs`）spawn 独立子进程实现真零上下文。
 - driver 把对应 `prompts/*.md` 作为 subagent 的 system/behavior 指令注入。
 - 12 视角正文不必塞进 prompt（太长）——prompt 里写"按 `specs/fresh-eyes-review.md` 的 12 视角跑"，让 subagent 自行读取。
 
