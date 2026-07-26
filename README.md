@@ -169,7 +169,7 @@ sofagent 是一个 FDE Agent——对外产品身份帮你梳理工作流、部�
 
 ```mermaid
 flowchart LR
-    CB[🧭 约束底座<br/>开工前注入红线] --> OR[⚙️ 编排引擎<br/>FORGE 自迭代·任务拆解]
+    CB[🧭 约束底座<br/>开工前注入红线] --> OR[⚙️ 编排引擎<br/>多 Agent 协作·任务拆解]
     OR --> AU[🔍 审计引擎<br/>每次变更硬证据审查]
     AU --> RE[🔄 回溯引擎<br/>git snapshot·一键回滚]
     RE --> EV[🧬 进化引擎<br/>周度巡检·越用越好]
@@ -179,7 +179,7 @@ flowchart LR
 | 引擎 | 作用 | 状态 |
 |:------|:--------|:--:|
 | 🧭 约束底座 | 开工前规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
-| ⚙️ 编排引擎 | FORGE 自迭代（engineer→audit→reviewer 串行）+ 任务拆解 | 🔶 部分 |
+| ⚙️ 编排引擎 | 多 Agent 协作 + 任务拆解 | 🔶 部分 |
 | 🔍 审计引擎 | 21 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计引擎零 token**——纯静态分析，不消耗任何 LLM 额度 | ✅ 稳定 |
 | 🔄 回溯引擎 | 每次审计后自动 git snapshot，违规一键回滚 | ✅ 稳定 |
 | 🧬 进化引擎 | FDE 周度巡检审计趋势 + 反思日志 | ⚠️ 实验性 |
@@ -189,7 +189,7 @@ flowchart LR
 > [!NOTE]
 > **最小用量**：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）。五包全装才是完整 Harness 中间件。
 >
-> **三个产品层各自独立、按需选用**：`install.sh`（底座 + FDE Agent，所有人）· `install.sh --base-only`（仅底座引擎）。FORGE 自迭代循环由各 `FORGE/SKILL/<loop>/` 定义驱动（如 fresh-eyes-loop），不单独安装——用户要的是"能干活的人"，不是"自己迭代开发工具"。
+> **两个产品层各自独立、按需选用**：`install.sh`（底座 + FDE Agent，所有人）· `install.sh --base-only`（仅底座引擎）。FORGE 自迭代引擎由各 `FORGE/SKILL/<loop>/` workflow 定义驱动（如 fresh-eyes-loop），不单独安装——用户要的是"能干活的人"，不是"自己迭代开发工具"。
 
 <details>
 <summary>📖 引擎细节 + 21 条规则</summary>
@@ -200,7 +200,7 @@ flowchart LR
 
 ### ⚙️ 编排引擎
 
-两层已实现：① **任务拆解**——LangGraph createReactAgent 把任务描述变成编排方案 YAML；② **FORGE 自迭代**——四节点 StateGraph（engineer → audit → reviewer → human_confirm），audit FAIL 自动路由回 engineer 重试（≤3 轮），每节点有 checkpoint 支持中断恢复。
+两层已实现：① **任务拆解**——LangGraph createReactAgent 把任务描述变成编排方案 YAML；② **FORGE 自迭代引擎**——通过 workflow 驱动，当前已落地 **fresh-eyes-loop**（A/B 双盲 12 视角质量审查循环），Node driver spawn 独立子进程实现真零上下文，协议见 [`FORGE/SKILL/fresh-eyes-loop/loop.md`](./FORGE/SKILL/fresh-eyes-loop/loop.md)。未来更多 workflow 加入后逐步实现完整自迭代能力。
 
 > 🔶 当前是**串行**状态机（非并行 DAG 调度）。完整 DAG 并行调度 + 沙箱执行规划在 [ROADMAP v1.3.0](./ROADMAP.md)。
 

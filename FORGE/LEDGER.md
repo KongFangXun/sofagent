@@ -35,4 +35,8 @@
 2026-07-25      | 20260725-01   | fresh-eyes | 3    | 0  | 0  | 7  | 2-rounds-clean | FORGE/SKILL/fresh-eyes-loop/runs/2026/07/25/run-01
 ```
 
+---
+
+## 运行记录
+
 2026-07-26     | 20260726-03    | fresh-eyes  | 1    | 14  | 21  | 16  | max-rounds      | FORGE/SKILL/fresh-eyes-loop/runs/2026/07/26/run-03

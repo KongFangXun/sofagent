@@ -19,9 +19,9 @@
 #    FORGE 是 sofagent 项目的自迭代开发工具包（管理代码变更，给开发者用），
 #    不属于企业交付物。
 #
-# 🔗 编排契约：FDE/FORGE 调用本脚本（--base-only 模式）作为底座安装入口。
+# 🔗 编排契约：FDE 调用本脚本（--base-only 模式）作为底座安装入口。
 #    改动此文件前确认调用方不受影响：
-#    - FDE/FORGE 通过 `bash install.sh --base-only --platform "$PLATFORM"` 安装底座
+#    - FDE 通过 `bash install.sh --base-only --platform "$PLATFORM"` 安装底座
 #    - 删被依赖文件（如 SKILL/harness/data/fde.md）前确认无调用方引用
 # v0.98: 从 941 行拆分为 4 个 lib 模块 + 纯组装入口
 # v1.0.7: ao 退役，移除 agency-orchestrator 安装逻辑
@@ -31,7 +31,7 @@
 # 编排引擎：LangGraph createReactAgent（@langchain/langgraph，正式依赖）
 #
 # ── 调用契约（v1.2.0）──
-# FDE/FORGE 通过以下方式调用本脚本安装底座：
+# FDE 通过以下方式调用本脚本安装底座：
 #   bash "$PROJECT_ROOT/install.sh" --base-only --platform "$PLATFORM"
 # 版本锁定：本脚本的接口（入参/退出码/副作用）从 v1.1.5 起冻结，
 # 任何 breaking change 必须 bump major 版本并通知调用方。
