@@ -28,7 +28,7 @@
 # v1.2.0: install.sh 吸收 FDE/fde-install.sh，成为主安装器+FDE 入口
 #
 # 平台：openclaw（完整）/ workbuddy / claude / codex / hermes / 自动探测
-# 编排引擎：DeepAgents（npm 包，正式依赖）
+# 编排引擎：LangGraph createReactAgent（@langchain/langgraph，正式依赖）
 #
 # ── 调用契约（v1.2.0）──
 # FDE/FORGE 通过以下方式调用本脚本安装底座：
@@ -58,6 +58,9 @@ err()   { echo -e "${RED}[✗]${NC} $1"; }
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # v1.2.0: install.sh 提升到根目录，lib/ 仍在 engine/scripts/lib/
 LIB_DIR="${SCRIPT_DIR}/engine/scripts/lib"
+# 项目根目录（install.sh 位于仓库根，SCRIPT_DIR 即根）。
+# 供 Step 3 本地 dist 优先优化等引用（如 $PROJECT_ROOT/engine/audit/dist/index.js）。
+export PROJECT_ROOT="${SCRIPT_DIR}"
 
 # ── 安装日志 ──
 INSTALL_LOG=""
@@ -161,7 +164,7 @@ info "Step 2/8 · 检查运行环境..."
 if command -v node &>/dev/null; then
   NODE_VER=$(node --version); ok "Node.js 已安装: $NODE_VER"; _log "node=$NODE_VER"
 else
-  warn "Node.js 未安装。编排引擎（DeepAgents）需要 Node.js >= 18"; warn "请先安装 Node.js: https://nodejs.org/"
+  warn "Node.js 未安装。编排引擎（LangGraph createReactAgent）需要 Node.js >= 18"; warn "请先安装 Node.js: https://nodejs.org/"
 fi
 if command -v npm &>/dev/null; then
   NPM_VER=$(npm --version); ok "npm 已安装: v$NPM_VER"
@@ -174,9 +177,9 @@ if command -v npm &>/dev/null; then
 else warn "npm 未安装"; fi
 
 # ════════════════════════════════════════
-# Step 3: 编排引擎（v1.0.7：DeepAgents，正式依赖）
+# Step 3: 编排引擎（v1.2.0：LangGraph createReactAgent，正式依赖）
 # ════════════════════════════════════════
-info "Step 3/8 · 编排引擎: DeepAgents（@sofagent/audit 正式依赖）"
+info "Step 3/8 · 编排引擎: LangGraph createReactAgent（@sofagent/audit 正式依赖）"
 # 优先使用仓库本地的 engine/audit/dist/（避免 npm @latest 版本漂移）
 # 仓库本地版本与用户 clone 的版本一致，npm registry 可能滞后
 LOCAL_AUDIT_DIST="$PROJECT_ROOT/engine/audit/dist/index.js"
@@ -196,7 +199,7 @@ WRAPPER_EOF
   else
     info "  执行: npm install -g @sofagent/audit@latest"
     if npm install -g "@sofagent/audit@latest" 2>&1 | tail -1; then
-      ok "  @sofagent/audit 已全局安装（含 DeepAgents 编排引擎）"
+      ok "  @sofagent/audit 已全局安装（含 LangGraph 编排引擎）"
     else
       warn "  npm install -g @sofagent/audit 失败（网络/权限问题）"
       warn "  请手动安装: npm install -g @sofagent/audit"
@@ -243,8 +246,8 @@ echo "  npm install -g @sofagent/daemon          # 守护进程"
 echo "  npm install -g @sofagent/core            # 基础设施（doctor/verify）"
 echo "  npm install -g @sofagent/ontology        # 本体模型"
 
-# deepagents Sub Agent 引擎（正式依赖——npm install @sofagent/audit 自动安装）
-echo "  💡 Sub Agent 引擎: deepagents（@sofagent/audit 正式依赖，npm install 自动安装）"
+# LangGraph Sub Agent 引擎（正式依赖——npm install @sofagent/audit 自动安装）
+echo "  💡 Sub Agent 引擎: LangGraph createReactAgent（@sofagent/audit 正式依赖，npm install 自动安装）"
 
 # ── v1.1.0: TencentDB Memory 集成（--with-memory flag）──
 if [[ "${WITH_MEMORY:-0}" == "1" ]]; then
