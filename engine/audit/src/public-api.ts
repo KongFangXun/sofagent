@@ -16,7 +16,7 @@ export type { AuditResult } from './reporter';
 export { loadConfig } from '@sofagent/core';
 export type { AuditConfig } from '@sofagent/core';
 
-export { loadHistory, appendHistory, clearHistory, checkHistoryChainIntegrity, isHmacKeyConfigured } from './audit-history';
+export { loadHistory, appendHistory, clearHistory, checkHistoryChainIntegrity, isHmacKeyConfigured, validateHmacKey } from './audit-history';
 export type { AuditHistoryEntry } from './audit-history';
 
 export { VERSION } from '@sofagent/core';

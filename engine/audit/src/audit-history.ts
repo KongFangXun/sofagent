@@ -31,8 +31,8 @@ import type { RuleCheck, ActionGovernance } from './rules/types';
 // v1.2.0: checkHistoryChainIntegrity + helpers sunk to core;
 // import for internal use (appendHistory/loadHistory/clearHistory still need them),
 // re-export for external backward compat.
-import { getHistoryFilePath, getEnvFingerprint, getHmacKey, stableStringify } from '@sofagent/core';
-export { checkHistoryChainIntegrity, getHistoryFilePath, getHmacKey } from '@sofagent/core';
+import { getHistoryFilePath, getEnvFingerprint, getHmacKey, stableStringify, validateHmacKey } from '@sofagent/core';
+export { checkHistoryChainIntegrity, getHistoryFilePath, getHmacKey, validateHmacKey } from '@sofagent/core';
 
 /**
  * 对 ruleResult 做脱敏处理——避免审计工具自身成为第二泄漏点。
@@ -137,6 +137,14 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   // ruleResults 签名，含 A2/A9 的条目 HMAC 永远与读侧不匹配，被 hmacAlgo:'stable' 判为篡改 →
   // 干净链误报链断裂（run-09 回归 false-positive）。先脱敏再签名后，写/读两侧 HMAC 输入完全一致。
   const hmacKey = getHmacKey();
+
+  // FLAG-4: HMAC 密钥强度校验——弱密钥（空 / <16 字节）时明确告警，
+  // 不静默用弱密钥签名稀释强校验能力。仍照常签名（优于无密钥），但醒目提示。
+  const keyStatus = validateHmacKey();
+  if (keyStatus.configured && !keyStatus.strong) {
+    console.warn(`⚠️ HMAC 密钥强度不足（${keyStatus.reason ?? ''}）——仍使用弱密钥签名审计日志，建议重新生成 ≥16 字节强密钥（如：openssl rand -hex 32 > ~/.sofagent-key && chmod 600 ~/.sofagent-key）`);
+  }
+
   const baseSanitized = {
     ...entry,
     prevHash,
