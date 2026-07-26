@@ -1,11 +1,11 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.2.0 · 2026-07-24（UTC）· 物理结构大重构（/sofagent/→/engine/ + SKILL 收敛 + 发版工具链拆散 + install.sh 提根 + rules 独立包）· 规划：v1.2.x（编排隔离底座：并行 SubAgent git worktree 隔离）→ v1.3.0（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）
+> v1.2.0 · 2026-07-26（UTC）· 物理结构大重构（/sofagent/→/engine/ + SKILL 收敛 + 发版工具链拆散 + install.sh 提根 + rules 独立包）· 规划：v1.2.x（编排隔离底座：并行 SubAgent git worktree 隔离）→ v1.3.0（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
-## 现在在哪：v1.2.0（已发版 2026-07-26）
+## 现在在哪：v1.2.0（待发版 · 2026-07-26）
 
 > **物理结构大重构已完成（v1.2.0）**：`/sofagent/` → `/engine/` 目录重命名 + Skill 收敛到 `/SKILL/`（harness/ + agents/ + custom/ 三层结构）+ install.sh 提升根目录 + engine/rules/ 独立规则引擎包。发版工具链已拆散——发版 SOP 迁 `docs/changelog/releasing.md`、版本号脚本迁 `tools/bump-version.sh`、审查规范迁 `FORGE/playbook/`，releaser Skill 已移除，质量循环改为基于 `FORGE/SKILL/<loop>/` 定义 + LangGraph createReactAgent 驱动。v1.2.x 方向：编排隔离底座（并行 SubAgent git worktree 隔离）+ Dashboard 原型 + Skill 分层升级策略实现。
 >
