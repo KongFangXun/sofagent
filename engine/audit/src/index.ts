@@ -438,7 +438,40 @@ function confirm(question: string): Promise<boolean> {
   });
 }
 
+/**
+ * v1.2.1 (DP-1) 版本一致性自检——检测陈旧全局安装。
+ *
+ * 原理：运行中的产物有自己的 package.json（与 dist/index.js 同级上层目录），
+ * 读取其实际 version，与编译进代码的 VERSION 常量（来自 @sofagent/core/constants.ts）比对。
+ * 如果不一致，说明全局安装的 npm 包比当前源码旧（用户本地源码已更新但忘了 npm i -g 刷新）。
+ *
+ * 这是轻量、同进程、无副作用的检查，仅在 CLI 入口运行一次，不阻断任何操作。
+ * --version / --help 等快速出口在 parseArgs 内已 process.exit，不会走到这里。
+ */
+function checkVersionConsistency(): void {
+  try {
+    // dist/index.js → 上级目录的 package.json（npm 安装时与 dist 同层）
+    const pkgPath = join(__dirname, '..', 'package.json');
+    if (!existsSync(pkgPath)) return; // 开发模式或非标准安装，静默跳过
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+    const pkgVersion = pkg?.version;
+    if (typeof pkgVersion === 'string' && pkgVersion !== VERSION) {
+      console.warn(
+        `⚠️ 版本不一致：sofagent-audit 全局安装为 v${pkgVersion}，当前源码为 v${VERSION}。`
+      );
+      console.warn(
+        `   全局安装可能陈旧，建议刷新：npm i -g @sofagent/audit@latest`
+      );
+    }
+  } catch {
+    // 读取失败不阻断运行——自检是 advisory，绝不能影响主流程
+  }
+}
+
 async function main(): Promise<void> {
+  // DP-1: 版本一致性自检（轻量、不阻断）
+  checkVersionConsistency();
+
   // === v1.0.8 deprecation shim ===
   // 在 args 解析之后、主 switch 分支之前，拦截已迁移的子命令
   const rawArgs = process.argv.slice(2);
