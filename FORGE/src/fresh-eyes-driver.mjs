@@ -513,7 +513,7 @@ async function runWorker(step, roundDir, target) {
   const STEP_RECURSION_LIMITS = {
     'a-check': 200,
     'b-check': 200,
-    'a-consolidate': 50,
+    'a-consolidate': 100,
     'b-fix': 60,
     'a-verify': 50,
   };
@@ -710,23 +710,65 @@ function spawnParallel(workers, round) {
  * 降级兜底：a-consolidate 失败时，直接拼接 check-a + check-b 作为 findings.md。
  *
  * 不做去重/合并/优先级排序——只是让循环能继续走到 b-fix。
- * findings.md 里保留原始两份报告，result.md 写一个最小结构让 parseStopCondition 能数 P0/P1。
+ * findings.md 里保留两份报告的**摘要**（P0/P1 条目 + 总评），不传完整正文——
+ * 避免 b-fix 收到完整报告后上下文溢出（run-06 教训：119 万 tokens > 104 万上限）。
+ * result.md 写一个最小结构让 parseStopCondition 能数 P0/P1。
  */
 function writeFallbackFindings(roundDir) {
   const checkA = join(roundDir, 'check-a.md');
   const checkB = join(roundDir, 'check-b.md');
 
-  const parts = ['# Fallback Findings（a-consolidate 失败降级）', ''];
+  /**
+   * 从 check 报告中提取摘要：P0/P1 条目 + 总评行。
+   * 跳过 P2 细节和冗长描述，把单份报告压缩到 ~2KB 以内。
+   */
+  function summarize(filePath, label) {
+    if (!existsSync(filePath)) return `（${label} 报告未找到）`;
+    const text = readFileSync(filePath, 'utf-8');
+    const lines = text.split('\n');
+    const kept = [];
+    let inP0P1 = false;
+    for (const line of lines) {
+      // 保留标题行
+      if (/^#{1,3}\s/.test(line)) {
+        kept.push(line);
+        inP0P1 = /P0|P1|🔴|严重|关键/.test(line);
+        continue;
+      }
+      // 保留 P0/P1 相关行
+      if (/\bP0\b|\bP1\b|🔴/.test(line)) {
+        kept.push(line);
+        inP0P1 = true;
+        continue;
+      }
+      // 保留总评行
+      if (/总评|评分|score|\/10/.test(line)) {
+        kept.push(line);
+        continue;
+      }
+      // P0/P1 区块内的内容行也保留（列表项）
+      if (inP0P1 && /^\s*\d+\.|^\s*[-*]\s/.test(line)) {
+        kept.push(line);
+        continue;
+      }
+      // 其他内容跳过（压缩）
+      inP0P1 = false;
+    }
+    return kept.join('\n');
+  }
+
+  const parts = ['# Fallback Findings（a-consolidate 失败降级·摘要模式）', '',
+    '> ⚠️ a-consolidate 失败，以下为 check-a/check-b 的 P0/P1 摘要（非完整报告）。', ''];
   if (existsSync(checkA)) {
-    parts.push('## A (GLM-5.2) 审查报告', '', readFileSync(checkA, 'utf-8'), '');
+    parts.push('## A 审查摘要', '', summarize(checkA, 'A'), '');
   }
   if (existsSync(checkB)) {
-    parts.push('## B (DeepSeek) 审查报告', '', readFileSync(checkB, 'utf-8'), '');
+    parts.push('## B 审查摘要', '', summarize(checkB, 'B'), '');
   }
-  writeFileSync(join(roundDir, 'findings.md'), parts.join('\n'), 'utf-8');
+  const findingsText = parts.join('\n');
+  writeFileSync(join(roundDir, 'findings.md'), findingsText, 'utf-8');
 
   // result.md 写最小结构——parseStopCondition 靠数 P0/P1/P2 标记判定
-  const findingsText = parts.join('\n');
   const p0 = (findingsText.match(/\bP0\b/g) || []).length;
   const p1 = (findingsText.match(/\bP1\b/g) || []).length;
   const resultContent = [
@@ -734,12 +776,12 @@ function writeFallbackFindings(roundDir) {
     '',
     `| # | 发现 | 优先级 | 状态 |`,
     `|---|------|--------|------|`,
-    `| fallback | a-consolidate 失败，findings 由 check-a + check-b 直接拼接 | P0×${p0} P1×${p1} | SKIP |`,
+    `| fallback | a-consolidate 失败，findings 由 check-a + check-b 摘要拼接 | P0×${p0} P1×${p1} | SKIP |`,
     '',
   ].join('\n');
   writeFileSync(join(roundDir, 'result.md'), resultContent, 'utf-8');
 
-  console.log(`     降级 findings.md 已写入（P0×${p0} P1×${p1}）`);
+  console.log(`     降级 findings.md 已写入（P0×${p0} P1×${p1}，摘要模式）`);
 }
 
 /**
