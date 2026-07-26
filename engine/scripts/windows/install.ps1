@@ -415,10 +415,23 @@ if ($Platform -eq "openclaw" -and -not $Lite) {
     Write-Info "OpenClaw · 部署加载链 Hook..."
     $hookSrc = Join-Path $SOFAGENT_DIR "hooks\sofagent-load-chain"
     $hookDst = Join-Path $TARGET "hooks\sofagent-load-chain"
+    # v1.2.1 (DP-4): hook 已提升为正式 workspace 包，handler.ts 由 src/handler.ts 构建生成
+    # 确保 handler.ts 存在（开发模式下可能未 build，从 src/ 复制）
+    if ((Test-Path (Join-Path $hookSrc "HOOK.md")) -and -not (Test-Path (Join-Path $hookSrc "handler.ts"))) {
+        $srcHandler = Join-Path $hookSrc "src\handler.ts"
+        if (Test-Path $srcHandler) { Copy-Item $srcHandler (Join-Path $hookSrc "handler.ts") -Force }
+    }
     if ((Test-Path (Join-Path $hookSrc "HOOK.md")) -and (Test-Path (Join-Path $hookSrc "handler.ts"))) {
         New-Item -ItemType Directory -Force -Path $hookDst | Out-Null
         Copy-Item (Join-Path $hookSrc "HOOK.md") (Join-Path $hookDst "HOOK.md") -Force
         Copy-Item (Join-Path $hookSrc "handler.ts") (Join-Path $hookDst "handler.ts") -Force
+        # 额外部署编译产物（供直接 node 执行）
+        $distHandler = Join-Path $hookSrc "dist\handler.js"
+        if (Test-Path $distHandler) {
+            $distDst = Join-Path $hookDst "dist"
+            New-Item -ItemType Directory -Force -Path $distDst | Out-Null
+            Copy-Item $distHandler (Join-Path $distDst "handler.js") -Force
+        }
         Write-Ok "加载链 Hook 已部署: $hookDst"
         # 注册 openclaw.json: hooks.internal.entries.sofagent-load-chain = {enabled:true}
         $ocCfg = if ($env:OPENCLAW_CONFIG_PATH) { $env:OPENCLAW_CONFIG_PATH } else { Join-Path $TARGET "openclaw.json" }

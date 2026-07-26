@@ -4,6 +4,9 @@
 # 编译产物
 dist/
 
+# hooks 包构建产物（由 src/handler.ts 生成，OpenClaw 声明式 hook 部署用）
+engine/hooks/sofagent-load-chain/handler.ts
+
 # ao compose 运行时产物（任务编排生成的工作流文件）
 # 只忽略仓库根目录的 workflows/，不影响 .github/workflows/
 /workflows/

@@ -1,0 +1,43 @@
+{
+  "name": "@sofagent/load-chain",
+  "version": "1.2.0",
+  "description": "sofagent 加载链 Hook——agent:bootstrap 时注入 fde.md + think.md（OpenClaw 2026.6.x 声明式内部 hook）",
+  "main": "dist/handler.js",
+  "types": "dist/handler.d.ts",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc && cp src/handler.ts handler.ts",
+    "prepublishOnly": "npm run build && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete"
+  },
+  "keywords": [
+    "sofagent",
+    "hook",
+    "load-chain",
+    "openclaw",
+    "bootstrap"
+  ],
+  "license": "MIT",
+  "author": "KongFangXun",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KongFangXun/sofagent"
+  },
+  "bugs": {
+    "url": "https://github.com/KongFangXun/sofagent/issues"
+  },
+  "homepage": "https://github.com/KongFangXun/sofagent#readme",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist/",
+    "HOOK.md",
+    "handler.ts",
+    "!dist/**/*.js.map",
+    "!dist/**/*.d.ts.map"
+  ]
+}
