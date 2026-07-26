@@ -298,11 +298,27 @@ describe('audit-history', () => {
       expect(parsed.hmacSig.length).toBeGreaterThan(0);
     });
 
+    it('有 HMAC 密钥：含 A2/A9 结果的 ≥2 条干净链 append + check 通过（P0-3 回归）', () => {
+      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      // 构造含 A2(number=2) + A9(number=9) 的结果，且 FAIL 触发 sanitizeRuleResult 覆盖 details
+      const a2a9 = [
+        { name: 'A1 不碰敏感', number: 1, status: 'PASS', details: [] },
+        { name: 'A2 不泄密钥', number: 2, status: 'FAIL', details: ['命中行 src/secret.ts'] },
+        { name: 'A9 不纳注入', number: 9, status: 'FAIL', details: ['命中行 evil.py', '命中行 bad.sh'] },
+      ];
+      appendHistory(makeEntry('2026-03-01T00:00:00Z', 2, a2a9), testDir);
+      appendHistory(makeEntry('2026-03-02T00:00:00Z', 2, a2a9), testDir);
+      // 写侧基于脱敏记录签名、读侧校验脱敏记录 → 必须一致（不因 A2/A9 脱敏差异误判篡改）
+      expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+    });
+
     it('有 HMAC 密钥：篡改条目 → HMAC 校验失败（链断裂）', () => {
       writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
       appendHistory(makeEntry('2026-02-03T00:00:00Z', 0), testDir);
       appendHistory(makeEntry('2026-02-04T00:00:00Z', 0), testDir);
-      // 篡改最后一条（exitCode 从 0 改成 2）
+      // 篡改前干净链必须通过（确保不是因 A2/A9 脱敏不一致而“假通过”）
+      expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+      // 篡改最后一条（exitCode 从 0 改成 2）→ HMAC 验签失败 → 链断裂
       const histPath = getHistoryFilePath(testDir);
       const lines = readFileSync(histPath, 'utf-8').trim().split('\n');
       const tampered = JSON.parse(lines[lines.length - 1]!);
