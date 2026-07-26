@@ -21,7 +21,9 @@ import { existsSync, readFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { load as yamlLoad, YAMLException } from 'js-yaml';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { atomicWriteSync } from './shared/atomic-write';
+import { getHmacKey, stableStringify } from './audit-history';
 
 /**
  * 审计配置——由 .sofagent/config.yml 加载
@@ -207,6 +209,8 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
   let configStrict = false;
   try {
     const parsed = yamlLoad(content) as Record<string, unknown> | null;
+    // v1.2.0 (FLAG-3): 可选 signature 字段校验（防 Agent 篡改配置文件）
+    verifyConfigSignature(parsed, filePath);
     if (parsed && typeof parsed === 'object') {
       const audit = parsed['audit'];
       // v1.1.5: loop 是顶层独立节，不进 audit 段——单独提取，与 audit 段合并
@@ -249,6 +253,48 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
       );
     }
     throw new ConfigParseError(`${filePath}: ${(err as Error).message}`, filePath, '?', '?', err as Error);
+  }
+}
+
+/**
+ * v1.2.0 (FLAG-3) 最小安全实现：config.yml 可选 signature 字段校验
+ *
+ * 设计：
+ *   - config.yml 顶层可带 `signature: <hex HMAC-SHA256>` 字段。
+ *   - 加载时用与审计一致的 HMAC-SHA256 + stableStringify（去除 signature 后）
+ *     对整份配置计算签名并与字段比对。
+ *   - 不匹配 → 告警（warn）但不阻断启动（避免把已有用户配置搞崩）。
+ *   - 不带 signature 字段 → 向后兼容，不强制。
+ *   - 无 ~/.sofagent-key 时无法校验 → 跳过（warn 提示，不阻断）。
+ *
+ * 注：完整签名体系（密钥管理 / 签名工具 CLI）属产品决策，本实现仅落地
+ *     「加载侧可选校验」分支。
+ */
+function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath: string): void {
+  if (!parsed || typeof parsed !== 'object') return;
+  const sig = parsed['signature'];
+  if (typeof sig !== 'string' || sig.trim().length === 0) return; // 无 signature → 向后兼容
+
+  // 从待验内容中剔除 signature 字段（无论其在顶层还是 audit 段）
+  if (parsed['audit'] && typeof parsed['audit'] === 'object') {
+    delete (parsed['audit'] as Record<string, unknown>)['signature'];
+  }
+  delete parsed['signature'];
+
+  const key = getHmacKey();
+  if (key === null) {
+    console.warn('⚠️ config.yml 含 signature 字段但无 ~/.sofagent-key，跳过签名校验（向后兼容，未阻断启动）');
+    return;
+  }
+  const canonical = stableStringify(parsed);
+  const expected = createHmac('sha256', key).update(canonical).digest('hex');
+  const provided = sig.trim().toLowerCase();
+  const matched =
+    provided.length === expected.length &&
+    timingSafeEqual(Buffer.from(provided, 'utf-8'), Buffer.from(expected, 'utf-8'));
+  if (!matched) {
+    // 不匹配：告警但不阻断（FLAG-3 要求避免把已有配置搞崩）
+    console.warn(`⚠️ config.yml signature 不匹配——内容可能被篡改或密钥不匹配。为兼容未阻断启动，但请核查: ${filePath}`);
   }
 }
 
