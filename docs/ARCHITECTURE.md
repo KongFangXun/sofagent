@@ -44,7 +44,7 @@ graph TD
 | Gateway | Gateway | 企业级 AI 统一入口（OpenClaw/WorkBuddy 等大厂平台），sofagent 不替代它 |
 | Sub Agent | Sub Agent | 用 LangGraph createReactAgent 搭的专有执行节点 |
 | Ontology | 本体模型 | 企业的业务世界模型，FDE 帮你搭建并持续维护 |
-| River | 交接产物（River） | FDE 离场时交接的产物集合：私有化评估 / Ontology 说明书 / 持续巡检配置 |
+| River | FDE 交接清单 | FDE 离场时交接的产物集合：私有化评估 / Ontology 说明书 / 持续巡检配置 |
 | SMB | 中小企业（Small & Medium Business） | 没有专职 AI 部署团队、想低成本具备 FDE 能力的企业 |
 | OPC | 一人公司（One Person Company） | 个人或小团队，用自己的 Agent + 模型自主完成部署，不愿被单一厂商锁定 |
 
@@ -147,6 +147,19 @@ Harness 中间件最大的挑战是存在感——引擎在正常工作，但用
 OpenClaw 通过 Hook 精确注入，其他平台 Agent 主动 Read，v1.0.7+ Sub Agent 启动时自加载（`buildConstrainedSystemPrompt`）。
 
 > **v1.1.8 加载链扩展**：联邦知识作为第 3 层注入（`knowledge/federation/` 目录，daemon 联邦查询落盘的 peer 知识快照）——低于 SKILL.md 宪法层、高于本地 knowledge/。联邦内容是外部来源，强制 `<untrusted source="federation">` 包裹（Prompt 注入防线层 1，详见 SECURITY.md 8 层映射表）。
+
+### 权限四原则与零凭证沙箱（2026-07 一粟 blog 研读）
+
+一粟将 Agent 权限治理归纳为四条可操作原则，与 sofagent 审计引擎 + 约束底座同构：
+
+1. **最小权限**：每个 Agent 只拿当前任务必需的最小凭证集，不预置全量权限。
+2. **群维度隔离**：按组织 / 项目 / 环境维度隔离权限域，跨域调用需显式授权。
+3. **不可越权**：硬约束层（审计引擎）兜底，越权动作在 Action 边界被拦截，AI 绕不过。
+4. **可热更新**：权限策略运行时可改、即时生效，不重启 Agent。
+
+**零凭证沙箱**：运行时上下文不落明文密钥——凭证由守护进程注入、用毕即销，Agent 全程只见句柄不见明文（对齐 A2 不泄密钥铁律）。
+
+> 📖 来源：一粟 blog《权限四原则》《零凭证沙箱》（2026，具体 URL 待核验）
 
 ### 联邦查询（v1.1.8）
 
@@ -572,12 +585,12 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 
 > 这份清单是「现在能干什么」的单一索引。引擎内部设计见 [二、一底座·四引擎设计](#二一底座·四引擎设计)；未来方向见 [五、已知局限与未来方向](#五已知局限与未来方向)。
 
-### 12 个 npm 包（全部 @sofagent/* · v1.2.0）
+### 13 个 workspace 包（全部 @sofagent/* · v1.2.0，其中 12 个发布到 npm）
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计引擎，21 条规则硬证据扫描 + 快照/回滚/webhook | ✅ 已实现（422 测试） |
-| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor | ✅ 已实现（150 测试） |
+| audit | 提交时审计引擎，21 条规则硬证据扫描 + 快照/回滚/webhook | ✅ 已实现（423 测试） |
+| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor | ✅ 已实现（153 测试） |
 | harness | 四层约束加载链 `buildConstrainedSystemPrompt()` | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 fs/git 依赖），编排层 tool-call 事前拦截 | ✅ 已实现 |
 | eval | 质量评估引擎：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
@@ -592,7 +605,7 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 
 ### 对外核心能力（FDE Agent 给用户什么）
 
-✅ 已发布可用（v1.2.0）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 21 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关（Claude Code / Codex / Cursor / WorkBuddy / OpenClaw 即挂即用）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 企业本体模型 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 内置双 Agent（@sofagent-fde + @sofagent-audit）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
+✅ 已发布可用（v1.2.0）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 21 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关（Claude Code / Codex / Cursor / WorkBuddy / OpenClaw 即挂即用）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 企业本体模型 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
 
 > **v1.2.0 审计链安全加固**（BugFix 批次）：`--doctor` hash chain 三态判定（ok / tampered / unverifiable，`checkHistoryChainDetailed`）· HMAC key ≥16 字节强校验（`validateHmacKey`）· HMAC 签名改为基于脱敏记录（先 sanitize 再签名，写读一致）· config 可选签名校验（`verifyConfigSignature` + `signConfig` CLI）· CLI 版本一致性自检（`checkVersionConsistency`）。详见 `engine/core/src/audit-history.ts`、`engine/core/src/config-loader.ts`。
 
@@ -776,3 +789,32 @@ a16z《你刚雇了一百万个糟糕员工》七法则（完整映射见 [PHILO
 > 💡 **铁路类比**：约束层 = 堤坝——1841 年铁路相撞（协调失误非技术故障）倒逼现代管理诞生，今天 AI 正复刻（模糊指令交给 agent，损失以秒计、指数扩散）。完整历史映射与 a16z 外部背书见 [PHILOSOPHY · §十 方法论印证](./PHILOSOPHY.md)。
 
 > 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）/ a16z（2026-07-15，[You Just Hired a Million Bad Employees](https://www.a16z.news/p/the-next-ai-goldrush-tokens-loops)）
+
+### 一粟 MoA 四层 ↔ sofagent 一底座·四引擎（2026-07 研读）
+
+一粟提出 MoA（Mixture-of-Agents）四层编排：路由 / 专家 / 聚合 / 反思。与 sofagent「一底座·四引擎」逐层同构：
+
+| MoA 四层（一粟）| sofagent 对应 | 说明 |
+|------|------|------|
+| 路由 Routing | 编排引擎 | 任务分发与依赖编排 |
+| 专家 Experts | 四引擎·专项 | 约束 / 审计 / 回溯 / 进化各司其职 |
+| 聚合 Aggregation | 进化引擎 | 多轮产出加权择优 |
+| 反思 Reflection | 约束底座 + 审计 | 硬约束兜底、回溯留痕 |
+
+> 同构点：MoA 的「反思」对应 sofagent 的「约束底座 + 审计」——概率性编排之外，确定性治理兜底。
+
+> 📖 来源：一粟 blog《MoA 四层编排》（2026，具体 URL 待核验）
+
+### AI to B 三层基建：数据 / 连接 / AI Coding（2026-07 一粟 blog 研读）
+
+一粟将「AI 落地企业」拆为三层可替换基建，模型本身是最可被替换的一层：
+
+| 基建层 | 职责 | sofagent 落点 |
+|------|------|------|
+| 数据层 | 企业知识 / 业务语义沉淀 | knowledge/ + Ontology 运行时 |
+| 连接层 | 接系统 / 接流程 / 接人 | MCP 桥 + Gateway（桥接不替代）|
+| AI Coding 层 | 把流程写成可运行代码 | Skill + 审计引擎（代码级封装防投喂）|
+
+> 印证「模型吞噬一切」：文字约束会被投喂吞噬，唯有封装进代码级 Subagent + 防投喂机制能存活；模型选型（DeepSeek / GLM）可随场景替换，基建不动。
+
+> 📖 来源：一粟 blog《AI to B 三层基建》（2026，具体 URL 待核验）
