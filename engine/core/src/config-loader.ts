@@ -312,6 +312,65 @@ function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath:
 }
 
 /**
+ * v1.2.1 (DP-2) 对 config.yml 签名并写回——完整签名体系的颁发侧。
+ *
+ * 算法与 verifyConfigSignature 完全对称：
+ *   1. 解析 YAML → 对象
+ *   2. 剔除 signature 字段（顶层 + audit 段）
+ *   3. stableStringify（字典序排序）→ canonical
+ *   4. HMAC-SHA256(canonical, ~/.sofagent-key) → hex 签名
+ *   5. 把 `signature: <hex>` 写回 YAML 顶层，原子写回文件
+ *
+ * @param filePath config.yml 路径
+ * @returns 'signed' | 'updated'（首次签名 / 更新已有签名）
+ * @throws Error 当文件不存在 / 无 ~/.sofagent-key / YAML 解析失败时
+ */
+export function signConfig(filePath: string): 'signed' | 'updated' {
+  if (!existsSync(filePath)) {
+    throw new Error(`配置文件不存在: ${filePath}`);
+  }
+  const key = getHmacKey();
+  if (key === null) {
+    throw new Error('无 ~/.sofagent-key——无法签名。请先创建密钥：openssl rand -hex 32 > ~/.sofagent-key && chmod 600 ~/.sofagent-key');
+  }
+
+  const content = readFileSync(filePath, 'utf-8');
+  const parsed = yamlLoad(content) as Record<string, unknown> | null;
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error(`YAML 解析失败或顶层非对象: ${filePath}`);
+  }
+
+  // 判断是否已有顶层签名
+  const hadSignature =
+    typeof parsed['signature'] === 'string' && (parsed['signature'] as string).trim().length > 0;
+
+  // 剔除 signature（与 verifyConfigSignature 对称）
+  const auditSection = parsed['audit'];
+  if (
+    auditSection &&
+    typeof auditSection === 'object' &&
+    (auditSection as Record<string, unknown>)['signature'] !== undefined
+  ) {
+    delete (auditSection as Record<string, unknown>)['signature'];
+  }
+  delete parsed['signature'];
+
+  // 计算签名
+  const canonical = stableStringify(parsed);
+  const sig = createHmac('sha256', key).update(canonical).digest('hex');
+
+  // 写回：把 signature 加到 YAML 顶层（在文件末尾追加，YAML 合法）
+  // 先剔除文件中已有的 signature 行（顶层），再追加新的
+  let lines = content.split('\n');
+  lines = lines.filter((line) => !/^signature\s*:/.test(line.trimStart()));
+  lines.push(`signature: ${sig}`);
+  const newContent = lines.join('\n');
+
+  atomicWriteSync(filePath, newContent);
+  return hadSignature ? 'updated' : 'signed';
+}
+
+/**
  * 将部分配置与默认配置合并（缺失字段用默认值填充）
  */
 function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {

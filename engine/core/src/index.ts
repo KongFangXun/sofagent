@@ -35,6 +35,7 @@ export {
   ENV_DEFAULTS,
   ConfigLoadError,
   ConfigParseError,
+  signConfig,
 } from './config-loader';
 export type { AuditConfig, SofaEnvConfig } from './config-loader';
 
