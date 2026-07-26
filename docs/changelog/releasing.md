@@ -780,14 +780,15 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 
 | # | 步骤 |
 |:--:|------|
-| 31 | **npm 12 包验证**：全部 12 包版本一致，无 MISSING |
-| 32 | npm README 验证：`npm view /audit readme` + `npm view /mcp readme` 均有内容 |
-| 33 | 如果本次迭代暴露了新的流程漏洞，**直接吸收进本 SOP 对应阶段**——不要存到单独章节。每条新规则标注版本号（如 `vX.Y 教训`）以便追溯 |
-| 34 | **🔴 审查闭环——发布后审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `FORGE/playbook/fresh-eyes-review.md`（已在本版本阶段五中更新），对已发布版本做独立审查<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，作为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的视角和敏感度。⚠️ 这里的"锋利"指 fresh-eyes-review 的直觉校准（见阶段五 Tier 3），不是加检查项——检查项归 regression-checklist 管 |
-| 35 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 直接吸收进对应阶段，标注版本号<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 FORGE.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
-| 36 | **生成「下一版本开发 Prompt」到桌面**：综合 `ROADMAP.md`（未来规划）+ `CHANGELOG.md` + 下一版本 `docs/changelog/vX.Y.md`（若存在），生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`。<br>**若下一版本 changelog 尚未创建**：先 ① 写新版本需求并产出 `docs/changelog/vX.Y.md`；再 ② 生成桌面开发 prompt |
+| 31 | **npm 13 包验证**：全部 13 包版本一致，无 MISSING |
+| 32 | **🔴 CI 全绿检查（v1.2.0 教训）**：发版 push 触发 GitHub Actions 后，**必须**主动检查全部 workflow 是否通过——不能等报错贴到面前才修。每次修复后重跑 CI，确认全绿才进入下一步。<br>① `gh run list --repo KongFangXun/sofagent -b main -L 10 --json status,conclusion,name,headSha` 列出最新 10 次 workflow run<br>② 逐一检查每次 run 的 conclusion：全 success → ✅；任一 failure → 读 `gh run view --log-failed` 定位根因 → 修复 → commit → push → 重跑 → **回到 ①**<br>③ **v1.2.0 教训：发版 push 后 CI 连续挂了 4 轮**（lock file 缺 load-chain、handler.ts 旧路径、LOOP/loop-install.sh 过期、check-version.sh 日期硬编码漂移），全是 v1.2.0 LOOP→FORGE 重构时 CI 配置没跟着主代码一起改的系统性遗漏。**教训**：发版后第一件事不是宣布胜利，是盯着 CI 跑完——代码写对了不代表 CI 能过，CI 配置文件是代码的一部分** | 工程师 / 作者 |
+| 33 | npm README 验证：`npm view /audit readme` + `npm view /mcp readme` 均有内容 |
+| 34 | 如果本次迭代暴露了新的流程漏洞，**直接吸收进本 SOP 对应阶段**——不要存到单独章节。每条新规则标注版本号（如 `vX.Y 教训`）以便追溯 |
+| 35 | **🔴 审查闭环——发布后审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `FORGE/playbook/fresh-eyes-review.md`（已在本版本阶段五中更新），对已发布版本做独立审查<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，作为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的视角和敏感度。⚠️ 这里的"锋利"指 fresh-eyes-review 的直觉校准（见阶段五 Tier 3），不是加检查项——检查项归 regression-checklist 管 |
+| 36 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 直接吸收进对应阶段，标注版本号<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 FORGE.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
+| 37 | **生成「下一版本开发 Prompt」到桌面**：综合 `ROADMAP.md`（未来规划）+ `CHANGELOG.md` + 下一版本 `docs/changelog/vX.Y.md`（若存在），生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`。<br>**若下一版本 changelog 尚未创建**：先 ① 写新版本需求并产出 `docs/changelog/vX.Y.md`；再 ② 生成桌面开发 prompt |
 
-### 下一版本开发 Prompt 生成说明（步骤 36）
+### 下一版本开发 Prompt 生成说明（步骤 37）
 
 > 来源：下一版本的「开发日志」——在 `docs/changelog/` 中查找（若不存在则先按下方流程补建）。辅助输入：`ROADMAP.md`（未来去哪 / 规划）+ `CHANGELOG.md`（版本索引）。
 
@@ -818,7 +819,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 九 | 发布前质量闸门 + 工具脚本健康检查 | 作者 | 是（步骤 22 开新 session 跑 fresh-eyes-loop） | loop 修复 + changelog 打勾 + check-version/bump-version/pre-push-check 覆盖同步 + 过时检查清理 |
 | 十 | 确认关口 | AI → **生成发布 prompt 交接** | 否 | git diff 确认 → 检查清单打勾 → 生成发布 prompt 交给负责人（可授权 AI 代执行） |
 | 十一 | 发布（含本地安装） | **🔴 项目负责人，或授权 AI 代执行** | 否 | 先装本地版本验证 → 再按依赖层分批 npm publish + git tag + gh release + Skill 分发。**网络降级**：tag 推上后 gh release/Skill 分发不依赖 main push |
-| 十二 | 发布后 | 作者 | 是（步骤 34 开新 session 读 `fresh-eyes-review.md` 做审查） | npm 验证 + 发布前闸门（阶段九）+ 发布后审查 → 生成下版本开发 prompt 到桌面（步骤 36）→ 自动进入下版本阶段一 |
+| 十二 | 发布后 | 作者 | 是（步骤 35 开新 session 读 `fresh-eyes-review.md` 做审查） | npm 验证 + CI 全绿检查（步骤 32）+ 发布后审查 → 生成下版本开发 prompt 到桌面（步骤 37）→ 自动进入下版本阶段一 |
 
 ---
 
