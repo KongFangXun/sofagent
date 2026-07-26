@@ -26,7 +26,21 @@ export class RulesEngine {
    * @returns 每条规则的判定结果数组
    */
   check(ctx: ToolCallContext): InterceptVerdict[] {
-    return this.rules.map((rule) => rule.check(ctx));
+    return this.rules.map((rule) => {
+      try {
+        return rule.check(ctx);
+      } catch (err) {
+        // 单条规则异常不应中断整批检查——降级为该规则 FAIL，
+        // 让编排层 tool-gate 看到明确违规而非进程崩溃（P1-9 修复）
+        return {
+          status: 'FAIL',
+          ruleName: rule.name ?? 'unknown-rule',
+          ruleNumber: rule.number ?? 0,
+          details: [`规则执行异常: ${err instanceof Error ? err.message : String(err)}`],
+          suggestion: '请检查该规则实现或上报此异常',
+        };
+      }
+    });
   }
 
   /**
