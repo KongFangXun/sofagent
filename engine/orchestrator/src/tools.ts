@@ -68,8 +68,12 @@ export interface ExecutableTool extends LoopTool {
 /**
  * sf_read —— 读取文件内容（原名 read_file，因 LangGraph 内置保留名冲突改名）
  *
- * 约束注入：A7 先读再改（修改前必须先读取目标文件）。
+ * 约束注入：
+ *   A7 先读再改（修改前必须先读取目标文件）。
+ *   上下文保护：超长文件自动截断（默认 500 行上限），防止 worker 上下文溢出。
  */
+const READ_MAX_LINES = 500;
+
 const readFileTool: ExecutableTool = {
   name: 'sf_read',
   description: [
@@ -77,6 +81,10 @@ const readFileTool: ExecutableTool = {
     '',
     '【约束 A7 先读再改】修改任何文件之前，必须先用本工具读取目标文件，',
     '确认当前内容与预期一致——禁止盲改。',
+    '',
+    '【上下文保护】文件超过 500 行时自动截断，仅返回前 500 行。',
+    '如需读特定位置，传 offset（起始行号，从 1 开始）和 limit（读多少行）。',
+    '例如只需看第 60-80 行：offset=60, limit=20。',
   ].join('\n'),
   schema: {
     type: 'object',
@@ -85,17 +93,43 @@ const readFileTool: ExecutableTool = {
         type: 'string',
         description: '要读取的文件路径（相对当前工作目录或绝对路径）',
       },
+      offset: {
+        type: 'number',
+        description: '起始行号（从 1 开始计数）。不传则从第 1 行开始。',
+      },
+      limit: {
+        type: 'number',
+        description: '读取的行数上限。不传则使用默认上限（500 行）。',
+      },
     },
     required: ['path'],
   },
   func: (input) => {
     const filePath = String(input.path ?? '');
     if (!filePath) return '错误：缺少 path 参数';
+    const offset = Math.max(1, Number(input.offset ?? 1));
+    const limit = Math.min(READ_MAX_LINES, Number(input.limit ?? READ_MAX_LINES));
     try {
       if (!fs.existsSync(filePath)) {
         return `错误：文件不存在 → ${filePath}`;
       }
-      return fs.readFileSync(filePath, 'utf-8');
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const allLines = content.split('\n');
+      const totalLines = allLines.length;
+
+      // 如果文件足够短（<= READ_MAX_LINES）且没传 offset/limit，直接返回全部
+      if (totalLines <= READ_MAX_LINES && !input.offset && !input.limit) {
+        return content;
+      }
+
+      // 否则按 offset/limit 截断
+      const startIdx = offset - 1; // 转为 0-indexed
+      const endIdx = Math.min(startIdx + limit, totalLines);
+      const sliced = allLines.slice(startIdx, endIdx);
+      const truncated = endIdx < totalLines;
+
+      const header = `[文件 ${filePath} · 共 ${totalLines} 行 · 显示第 ${offset}-${endIdx} 行${truncated ? `（后续 ${totalLines - endIdx} 行省略，用 offset=${endIdx + 1} 继续）` : ''}]`;
+      return header + '\n' + sliced.join('\n');
     } catch (err) {
       return `读取失败：${err instanceof Error ? err.message : String(err)}`;
     }
