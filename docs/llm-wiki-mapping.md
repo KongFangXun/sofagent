@@ -12,7 +12,7 @@
 
 | LLM Wiki 层 | sofagent 对应 | 物理位置 | 读 | 写 | 审计 |
 |------|------|------|------|------|------|
-| **raw materials** | **Ledger** | `.sofagent/think.md` + `.sofagent/engine/audit/history.jsonl` | Agent + 审计引擎 | Agent 实时写入（append-only，`memory-contract.ts` 强制） | audit 引擎每次 commit |
+| **raw materials** | **Ledger** | `.sofagent/think.md` + `.sofagent/audit/history.jsonl` | Agent + 审计引擎 | Agent 实时写入（append-only，`memory-contract.ts` 强制） | audit 引擎每次 commit |
 | **Wiki entries** | **Views** | `.sofagent/knowledge/{entities,concepts,comparisons,summaries}/` | Agent + MCP tools（`read_entity` / `read_concept` / `list_entities` / `search_knowledge`） | Dream Cycle 派生（v1.1.7 落地；v1.1.6 只检测不生产） | daemon `conflict-check`（矛盾/孤儿/死链） |
 | **spec norms** | **Policy** | `.sofagent/fde.md` + `SKILL/agents/*/SKILL.md` | Agent 启动时经 Harness 加载链注入 | 人 + FDE 维护（手动 / sustain 模式） | A15 约束验证规则 |
 
@@ -28,7 +28,7 @@ PHILOSOPHY.md §五 L181 明确：「派生方向严格单向：think.md（Ledge
 flowchart LR
     subgraph Ledger["Ledger（原始数据层）"]
         T1[".sofagent/think.md<br/>append-only 反思"]
-        T2[".sofagent/engine/audit/history.jsonl<br/>审计历史"]
+        T2[".sofagent/audit/history.jsonl<br/>审计历史"]
     end
 
     subgraph Views["Views（派生视图层）"]

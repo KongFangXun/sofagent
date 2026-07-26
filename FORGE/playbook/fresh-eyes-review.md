@@ -1,4 +1,4 @@
-# sofagent 发布后独立审查 Prompt
+# sofagent 独立审查 Prompt
 
 > **这是一个独立审查工具，不是检查清单。**
 >

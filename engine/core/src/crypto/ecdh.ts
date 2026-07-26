@@ -59,8 +59,8 @@ export function deriveSharedKey(privateKey: Buffer, peerPublicKey: Buffer): Buff
   let secret: Buffer;
   try {
     secret = ecdh.computeSecret(peerPublicKey);
-  } catch {
-    throw new Error('ECDH 共享密钥协商失败：对端公钥格式非法');
+  } catch (e) {
+    throw new Error(`ECDH 共享密钥协商失败：对端公钥格式非法（${e instanceof Error ? e.message : String(e)}）`);
   }
   // HKDF-SHA256 派生固定长度 AES key；info 绑定用途防跨协议重放
   const derived = crypto.hkdfSync(

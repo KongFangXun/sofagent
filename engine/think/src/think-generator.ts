@@ -140,7 +140,9 @@ function isDuplicateEntry(thinkPath: string, task: string | undefined, now: Date
   let content: string;
   try {
     content = readFileSync(thinkPath, 'utf-8');
-  } catch {
+  } catch (e) {
+    // best-effort 降级：读不到 think.md 不阻断条目生成，但 warn 原错以便排查
+    console.warn(`[think-generator] 读取 think.md 失败，幂等检查降级为跳过: ${e instanceof Error ? e.message : String(e)}`);
     return false;
   }
 
@@ -203,7 +205,9 @@ function getSofagentDataDir(): string {
 function readThinkForCache(thinkPath: string): string {
   try {
     return existsSync(thinkPath) ? readFileSync(thinkPath, 'utf-8') : '';
-  } catch {
+  } catch (e) {
+    // best-effort 降级：读不到 think.md 缓存不阻断条目生成，但 warn 原错以便排查
+    console.warn(`[think-generator] 读取 think.md 缓存失败，高频检测降级为空: ${e instanceof Error ? e.message : String(e)}`);
     return '';
   }
 }

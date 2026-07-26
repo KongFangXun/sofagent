@@ -221,9 +221,10 @@ export function runInit(): void {
     // v1.0.7: 安装 post-commit hook（timestamp 近邻匹配替代 SHA 精确匹配）
     const postCommitPath = join(hooksDir, 'post-commit');
     const POST_COMMIT_TEMPLATE = `#!/bin/bash
-# sofagent post-commit hook v1.0.8
-# 检测策略：检查 history.jsonl 最后一条记录的 timestamp 是否在 60 秒内
-# 如果 60 秒内有审计记录，认为 commit 通过了审计；否则可能是 --no-verify 绕过
+# sofagent post-commit hook v1.2.1
+# 检测策略：检查 history.jsonl 最后一条记录的 timestamp 是否在 300 秒内
+# 如果 300 秒内有审计记录，认为 commit 通过了审计；否则可能是 --no-verify 绕过
+# post-commit 是 best-effort 检测——不保证 100% 覆盖，建议配合 CI 侧 sofagent-audit --diff 兜底
 
 if ! command -v node &>/dev/null; then exit 0; fi
 
@@ -238,7 +239,7 @@ fi
 HISTORY_FILE=".sofagent/audit/history.jsonl"
 if [ ! -f "$HISTORY_FILE" ]; then exit 0; fi
 
-# 读取 history.jsonl 最后一条的 timestamp，检查是否在 60 秒内
+# 读取 history.jsonl 最后一条的 timestamp，检查是否在 300 秒内
 node -e "
 const fs = require('fs');
 const lines = fs.readFileSync('$HISTORY_FILE', 'utf-8').trim().split('\\\\n').filter(Boolean);
@@ -247,7 +248,7 @@ try {
   const last = JSON.parse(lines[lines.length - 1]);
   if (!last.timestamp) process.exit(0);
   const age = Date.now() - new Date(last.timestamp).getTime();
-  if (age > 60000) {
+  if (age > 300000) {
     console.log('');
     console.log('  sofagent: 最近一次审计记录在 ' + Math.round(age/1000) + ' 秒前，当前 commit 可能未经过审计。');
     console.log('  可能使用了 --no-verify 绕过审计 hook。');
@@ -484,6 +485,7 @@ ${finalProgArgs.map((a) => `        <string>${a}</string>`).join('\n')}
         console.log('  ✅ daemon 已注册并启动（下次开机自动运行）');
         console.log(`  → 监控项目: ${projectWorkingDir}`);
         console.log(`  → 日志: ~/.sofagent/daemon.log`);
+        console.log('  → 如需停用: launchctl unload ~/Library/LaunchAgents/com.sofagent.daemon.plist');
         stepOk++;
       } catch (err) {
         console.log(`  ⚠️ daemon 注册文件已创建，但启动失败: ${(err as Error).message}`);

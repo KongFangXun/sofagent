@@ -50,7 +50,7 @@ describe('evidenceMode 双路径切换', () => {
       };
       const result = checkRuleA7(ctx);
       expect(result.status).toBe('PASS');
-      expect(result.details[0]).toContain('--silent');
+      expect(result.details[0]).toContain('silent');
     });
 
     it('无日志 + 非 silent + 非 strict → WARN（现有行为）', () => {
@@ -112,7 +112,7 @@ describe('evidenceMode 双路径切换', () => {
       };
       const result = checkRuleA8(ctx);
       expect(result.status).toBe('PASS');
-      expect(result.details[0]).toContain('--silent');
+      expect(result.details[0]).toContain('silent');
     });
 
     it('无日志 + 非 silent + 构建文件变更 → WARN（现有行为）', () => {

@@ -152,7 +152,7 @@ function parseArgs(argv: string[]): Args {
       args.ontologyCommand = argv[i] as string;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       const verbose = argv.includes('--verbose');
-      console.log(`sofagent-audit v${VERSION} · Agent 提交时审计\n`);
+      console.log(`sofagent-audit v${VERSION} · FDE Agent 的审计引擎\n`);
       console.log('快速开始:');
       console.log('  安装    npm install -g @sofagent/audit && sofagent-audit --init');
       console.log('  试用    sofagent-audit --diff HEAD~1..HEAD');
@@ -167,13 +167,15 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit --timeline [N]                      查看快照时间线');
       console.log('  sofagent-audit ontology view                        本体人类可读视图');
       console.log('');
-      console.log('v1.0.8 已弃用的子命令（将在 v1.3.0 移除，请尽快迁移）:');
-      console.log('  compose      → sofagent-orchestrator compose');
-      console.log('  subagent run → sofagent-orchestrator subagent run');
-      console.log('  skillopt-run → sofagent-skillopt');
-      console.log('  ab-test      → sofagent-ab-test');
-      console.log('  daemon       → sofagent-daemon');
-      console.log('  doctor/verify → sofagent-core（npm install -g @sofagent/core）');
+      if (verbose) {
+        console.log('v1.0.8 已弃用的子命令（将在 v1.3.0 移除，请尽快迁移）:');
+        console.log('  compose      → sofagent-orchestrator compose');
+        console.log('  subagent run → sofagent-orchestrator subagent run');
+        console.log('  skillopt-run → sofagent-skillopt');
+        console.log('  ab-test      → sofagent-ab-test');
+        console.log('  daemon       → sofagent-daemon');
+        console.log('  doctor/verify → sofagent-core（npm install -g @sofagent/core）');
+      }
       console.log('模式对照表:');
       console.log('  默认模式    全部规则（含 Agent 日志）   exit 0/1/2');
       console.log('  --silent    只跑 git-diff 规则          exit 0/1/2');
@@ -943,7 +945,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
 
   console.log('');
   console.log(bannerTop());
-  console.log(bannerLine(`sofagent-audit · v${VERSION}`));
+  console.log(bannerLine(`sofagent-audit · FDE Agent · v${VERSION}`));
   console.log(bannerLine(`扫描 ${diffFiles.length} 文件 · ${totalRules} 项检查 · ${issueWord}`));
   console.log(bannerLine(`${statusLabel}  ·  ${actionLabel}`));
   console.log(bannerBottom());

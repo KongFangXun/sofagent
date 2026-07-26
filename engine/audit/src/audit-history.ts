@@ -32,7 +32,7 @@ import type { RuleCheck, ActionGovernance } from './rules/types';
 // import for internal use (appendHistory/loadHistory/clearHistory still need them),
 // re-export for external backward compat.
 import { getHistoryFilePath, getEnvFingerprint, getHmacKey, stableStringify, validateHmacKey } from '@sofagent/core';
-export { checkHistoryChainIntegrity, getHistoryFilePath, getHmacKey, validateHmacKey } from '@sofagent/core';
+export { checkHistoryChainIntegrity, checkHistoryChainDetailed, getHistoryFilePath, getHmacKey, validateHmacKey } from '@sofagent/core';
 
 /**
  * 对 ruleResult 做脱敏处理——避免审计工具自身成为第二泄漏点。

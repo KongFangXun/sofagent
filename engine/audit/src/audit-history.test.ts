@@ -13,6 +13,7 @@ import {
   loadHistory,
   clearHistory,
   checkHistoryChainIntegrity,
+  checkHistoryChainDetailed,
   getHistoryFilePath,
   type AuditHistoryEntry,
 } from './audit-history';
@@ -325,6 +326,40 @@ describe('audit-history', () => {
       tampered.exitCode = 2;
       writeFileSync(histPath, lines.slice(0, -1).concat(JSON.stringify(tampered)).join('\n') + '\n');
       expect(checkHistoryChainIntegrity(testDir)).toBe(false);
+    });
+
+    it('R-02: stable 条目被篡改 → checkHistoryChainDetailed 返回 tampered（红）', () => {
+      // stable 新条目用 stableStringify 签名，读侧可正确复现
+      // 篡改内容后 HMAC 不匹配 → 应判 tampered（红），而非 unverifiable（黄）
+      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      appendHistory(makeEntry('2026-04-01T00:00:00Z', 0), testDir);
+      appendHistory(makeEntry('2026-04-02T00:00:00Z', 0), testDir);
+
+      // 篡改前干净链必须是 ok
+      const cleanResult = checkHistoryChainDetailed(testDir);
+      expect(cleanResult.status).toBe('ok');
+
+      // 篡改最后一条（exitCode 从 0 改成 2）→ HMAC 验签失败
+      const histPath = getHistoryFilePath(testDir);
+      const lines = readFileSync(histPath, 'utf-8').trim().split('\n');
+      const tampered = JSON.parse(lines[lines.length - 1]!);
+      tampered.exitCode = 2;
+      writeFileSync(histPath, lines.slice(0, -1).concat(JSON.stringify(tampered)).join('\n') + '\n');
+
+      const result = checkHistoryChainDetailed(testDir);
+      expect(result.status).toBe('tampered');
+    });
+
+    it('R-02: stable 干净链 → checkHistoryChainDetailed 返回 ok（防假阳性回归）', () => {
+      // 确保写入侧用 stableStringify 签名、读取侧也用 stableStringify 校验时
+      // 干净链不会被误报为篡改（run-09 回归防护）
+      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      appendHistory(makeEntry('2026-04-03T00:00:00Z', 0), testDir);
+      appendHistory(makeEntry('2026-04-04T00:00:00Z', 1), testDir);
+      appendHistory(makeEntry('2026-04-05T00:00:00Z', 2), testDir);
+
+      const result = checkHistoryChainDetailed(testDir);
+      expect(result.status).toBe('ok');
     });
   });
 });

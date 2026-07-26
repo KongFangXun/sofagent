@@ -47,13 +47,14 @@ describe('A7 不存盲改', () => {
     expect(result.status).toBe('FAIL');
   });
 
-  it('精确 basename 匹配：同名不同路径正确匹配', () => {
+  it('相对路径精确匹配：同名不同路径视为不同文件 → FAIL', () => {
     const ctx = makeCtx(
       [makeDiffFile('src/utils/config.ts')],
       { logEntries: [makeReadEntry('lib/utils/config.ts')] }
     );
     const result = checkRuleA7(ctx);
-    expect(result.status).toBe('PASS');
+    // v1.2.1: 改用相对路径匹配——src/utils/config.ts ≠ lib/utils/config.ts，应 FAIL
+    expect(result.status).toBe('FAIL');
   });
 
   it('无扩展名文件（Makefile）能被正确匹配', () => {

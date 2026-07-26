@@ -189,8 +189,8 @@ export async function pairByFederationFile(
   let parsed: unknown;
   try {
     parsed = JSON.parse(fileContent);
-  } catch {
-    throw new Error('路径 C 配对失败：federation.json 不是合法 JSON');
+  } catch (e) {
+    throw new Error(`路径 C 配对失败：federation.json 不是合法 JSON（${e instanceof Error ? e.message : String(e)}）`);
   }
   const cfg = parsed as { nodes?: Array<{ name?: unknown }> };
   const firstNode = Array.isArray(cfg.nodes) && cfg.nodes.length > 0 ? cfg.nodes[0] : null;
