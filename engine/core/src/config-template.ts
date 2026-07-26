@@ -74,6 +74,14 @@ perception:
   # 推送目标（可多个）：webhook://钉钉/飞书/企微 URL
   # push_target:
   #   - webhook://https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx
+
+# ── 配置防篡改签名（可选）──
+# 如需防止 Agent 篡改本配置文件，可对 config.yml 签名：
+#   1. 创建密钥（仅一次）：openssl rand -hex 32 > ~/.sofagent-key && chmod 600 ~/.sofagent-key
+#   2. 颁发签名：node tools/sign-config.mjs .sofagent/config.yml
+# 签名后 config.yml 顶层会多出 signature: <hex> 字段。
+# 加载时若签名不匹配会告警（不阻断启动）。
+# 修改配置后需重新签名。
 `;
 
 /**

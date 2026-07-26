@@ -67,6 +67,52 @@ describe('config-loader', () => {
         rmSync(tmpDir, { recursive: true, force: true });
       }
     });
+
+    // DP-2: signConfig 签名颁发 + 验签 round-trip
+    it('signConfig 签名后 loadConfig 验签通过（round-trip）', () => {
+      const { signConfig } = require('@sofagent/core') as typeof import('@sofagent/core');
+      const { getHmacKey } = require('@sofagent/core') as typeof import('@sofagent/core');
+      // 无密钥则跳过（CI / 全新环境）
+      if (getHmacKey() === null) return;
+
+      const tmpDir = join(process.cwd(), '.tmp-dp2-test');
+      const configDir = join(tmpDir, '.sofagent');
+      const configPath = join(configDir, 'config.yml');
+      try {
+        mkdirSync(configDir, { recursive: true });
+        writeFileSync(
+          configPath,
+          [
+            'audit:',
+            '  lowRiskPatterns:',
+            '    - "*.log"',
+            '  carefulModifyThreshold: 0.15',
+          ].join('\n'),
+          'utf-8',
+        );
+
+        // 首次签名
+        const result1 = signConfig(configPath);
+        expect(result1).toBe('signed');
+
+        // 再次签名应为 updated
+        const result2 = signConfig(configPath);
+        expect(result2).toBe('updated');
+
+        // 加载验签：不应出现 signature 不匹配告警
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        loadConfig(tmpDir);
+        const mismatchWarned = warnSpy.mock.calls.some(
+          (call) =>
+            typeof call[0] === 'string' &&
+            call[0].includes('signature 不匹配'),
+        );
+        expect(mismatchWarned).toBe(false);
+        warnSpy.mockRestore();
+      } finally {
+        rmSync(tmpDir, { recursive: true, force: true });
+      }
+    });
   });
 
   describe('loadEnvConfig', () => {
