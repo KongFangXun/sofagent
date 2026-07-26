@@ -5,7 +5,7 @@
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
-## 现在在哪：v1.2.0（待发版 · 2026-07-26）
+## 现在在哪：v1.2.0（已发版 · 2026-07-26）
 
 > **物理结构大重构已完成（v1.2.0）**：`/sofagent/` → `/engine/` 目录重命名 + Skill 收敛到 `/SKILL/`（harness/ + agents/ + custom/ 三层结构）+ install.sh 提升根目录 + engine/rules/ 独立规则引擎包。发版工具链已拆散——发版 SOP 迁 `docs/changelog/releasing.md`、版本号脚本迁 `tools/bump-version.sh`、审查规范迁 `FORGE/playbook/`，releaser Skill 已移除，质量循环改为基于 `FORGE/SKILL/<loop>/` 定义 + LangGraph createReactAgent 驱动。v1.2.x 方向：编排隔离底座（并行 SubAgent git worktree 隔离）+ Dashboard 原型 + Skill 分层升级策略实现。
 >
@@ -191,6 +191,20 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 
 **分层落地中型蓝海**
 商业化切入上，孔老师倾向「分层落地」而非一刀切：先在中型客户（有真实 workflow、愿为成果付费、但养不起自建 AI 团队）的蓝海市场建立标杆，用 FDE 的「交付企业专有 skill」模式把单点打透，再向大型客户的标准化模块、小型客户的自助模板双向延伸。核心判断是——卖能力不卖工时，控制平面（sofagent 引擎）是底层，业务 workflow 的可约束性才是护城河。
+
+### 价值度量翻转：FDE vs 传统外包（2026-07 一粟 blog 研读）
+
+一粟以「数字员工」重新定义 AI to B 的价值度量：传统外包按人·月计费，FDE 按成果·Token 计费，成本差可达三个数量级。
+
+| 维度 | 传统外包团队 | 1 个 FDE Agent |
+|------|------|------|
+| 人力 | 5 人（待核验）| 1 FDE（编排 + 四引擎）|
+| 周期 | 3 个月（待核验）| 3 天（待核验）|
+| 成本 | 50 万（待核验）| 500 元 Token（待核验）|
+
+> 印证 sofagent 商业化判断「卖能力不卖工时」：护城河是可约束的业务 workflow，不是人头。
+
+> 📖 来源：一粟 blog《价值度量翻转》（2026，具体 URL 待核验）
 
 ---
 
