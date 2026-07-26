@@ -36,11 +36,8 @@ jobs:
         run: npm run test
 
   cross-product-contract:
-    # 修复十一：验证 LOOP/loop-install.sh 与主 install.sh 的跨产品调用契约不被破坏。
-    # 契约（install.sh 头部「跨产品调用契约」段，v1.2.0 更新）：
-    #   LOOP/loop-install.sh 第 1 步调用
-    #   bash "$PROJECT_ROOT/install.sh" --base-only --platform "$PLATFORM"
-    # 改动主 install.sh 的接口（入参/退出码/副作用）必须同步更新 LOOP install 脚本。
+    # 验证主 install.sh 的 --base-only 契约不被破坏。
+    # LOOP 已在 v1.2.0 解散为 FORGE，loop-install.sh 已移除。
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -55,10 +52,3 @@ jobs:
             exit 1
           }
           echo "✅ install.sh 主安装器 + --base-only 契约 intact"
-      - name: Verify LOOP install contract
-        run: |
-          grep -q "install.sh" LOOP/loop-install.sh || {
-            echo "❌ LOOP/loop-install.sh 未调用 install.sh，跨产品契约被破坏"
-            exit 1
-          }
-          echo "✅ LOOP/loop-install.sh 契约 intact"
