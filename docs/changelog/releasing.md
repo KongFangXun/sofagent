@@ -517,12 +517,15 @@ sofagent-audit --doctor
 bash tools/pre-push-check.sh            # 全绿（全量 workspace）
 bash tools/check-docs.sh                # 文档死链 + 预算 + Skill 行数
 
-# 全部 12 包 .js.map 泄露检查 + 类型检查 + README 非空检查
-for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test skillopt; do
+# 全部 13 包 .js.map 泄露检查 + 类型检查 + README 非空检查
+for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test skillopt rules; do
   echo "=== $pkg ==="
   (cd engine/$pkg && npm pack --dry-run 2>&1 | grep -c '\.js\.map')  # 期望: 0
   (cd engine/$pkg && npx tsc --noEmit && echo "✅ tsc")
 done
+# engine/hooks/sofagent-load-chain 单独检查（路径不同）
+(cd engine/hooks/sofagent-load-chain && npm pack --dry-run 2>&1 | grep -c '\.js\.map')  # 期望: 0
+(cd engine/hooks/sofagent-load-chain && npx tsc --noEmit && echo "✅ tsc")
 # 🔴 v1.1.3 教训追加（mcp README 0 bytes）：发布前检查 README 非空
 for pkg in audit mcp; do
   size=$(npm pack --dry-run 2>&1 | grep -c 'README\|total files' || true)
@@ -773,6 +776,9 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | **release.yml publish-audit 失败（v1.1.1-v1.1.3，v1.1.4 修）** | GitHub Actions Release job 失败：`Failed to resolve entry for package "/core"` 17 suites FAIL | 根因：publish-audit job 只在 engine/audit 目录跑 npm ci+test，漏 build /core。v1.1.4 已修：改为根目录 workspace 构建（对齐 publish-mcp）。**每个 npm 包有 runtime 依赖其他 /* 包时，CI 必须 workspace 模式 build** |
 | **ClawHub 版本号显示错误（v1.1.4）** | ClawHub 显示 1.0.11 而非 1.1.4 | clawhub 默认 1.0.0 自增，不走 SKILL.md version。必须 `--version X.Y.Z --changelog "简短说明"` |
 | **Release notes 链接不可点击（v1.1.4）** | `` 📖 详细开发日志：`docs/changelog/vX.Y.Z.md` `` 在 GitHub 不可点击 | 必须用 markdown 链接语法：`📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)` |
+| **workspace 新增包后 npm ci 失败（v1.2.0）** | `npm ci` 报 Missing: @sofagent/load-chain | 新增 workspace 包后必须 `npm install` 更新 lock file，否则 CI 的 `npm ci` 找不到新包 |
+| **scoped 新包 npm publish E402（v1.2.0）** | `npm publish` 报 402 Payment Required | scoped 新包（如 @sofagent/load-chain）首次发布需 `--access public` |
+| **重构后 CI 配置路径未同步（v1.2.0）** | CI 连续挂：handler.ts 找不到、LOOP/loop-install.sh 不存在 | 目录重构（如 handler.ts→src/、LOOP→FORGE）后必须 grep 全仓旧路径更新 CI 配置——CI 配置是代码的一部分 |
 
 ---
 
@@ -829,6 +835,9 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 
 | 版本 | 教训摘要 | 所在阶段 |
 |------|---------|---------|
+| v1.2.0 | CI 配置未同步——发版 push 后必须主动 `gh run list` 检查全部 workflow，不能等报错（lock file/handler.ts 路径/LOOP过期/check-version 日期，4 轮全挂） | 阶段十二 |
+| v1.2.0 | workspace 新增包后必须 `npm install` 更新 lock file，否则 `npm ci` 报 Missing | 阶段十一 |
+| v1.2.0 | npm publish scoped 新包（如 @sofagent/load-chain）需 `--access public`，否则 E402 | 阶段十一 |
 | v1.1.9 | tag 后零 commit 校验（tag 后有游离 commit = tag 与仓库不一致） | 阶段十一 |
 | v1.1.9 | LIMITATIONS 覆盖新功能（文档滞后 P1）+ evidence 文件测试数一致 | 阶段八 |
 | v1.1.9 | 文档同步闭环（changelog 写了但项目文档零提及 = 用户不知道有功能） | 阶段八 |
