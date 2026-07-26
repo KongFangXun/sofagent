@@ -147,7 +147,7 @@ LIMIT_A=4700  # v1.1.9: SECURITY.md 按主题重构（F-41）+ LIMITATIONS.md �
 LIMIT_B=4200  # v1.2.0: custom/ + Dashboard 定位 + USB 三场景 + ToolGate 文档 + P4 拆分表，B 层自然增长 2100→4200
 LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
 LIMIT_D=2000  # v1.1.9: D 层纳入口径修正——docs/architecture（v1.1.9 设计 876 行）+ docs/prd（193 行）从 A 层归入 D 层（工程文档与设计文档同语义），700→2000 容纳
-LIMIT_E=1000  # v1.1.3 P0-1: 从 600 上调到 1000，多设备同步指南等 E 层文档扩展导致自然增长
+LIMIT_E=2000  # v1.2.0: 从 1000 上调到 2000——react-agent-migration-plan(548行)+loop-development(449行)+multi-device-sync(167行) 等 E 层文档自然增长，原预算不现实
 LIMIT_TOTAL=9000  # v1.2.0: 同步上调（A+B 各增长，总上限跟随）
 
 # 输出各层

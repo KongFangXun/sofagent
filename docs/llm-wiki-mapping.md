@@ -107,7 +107,7 @@ flowchart LR
 - [ARCHITECTURE.md · 文件系统架构三层映射声明](./ARCHITECTURE.md)
 - [memory-contract.ts · think.md 契约代码级 SSOT](../engine/core/src/memory-contract.ts)
 - [ROADMAP.md v1.1.6 行](../ROADMAP.md)
-- [docs/changelog/v1.1.6.md](./changelog/v1.1.6.md)
+- [docs/changelog/v1.1.6.md](./changelog/v1.1/v1.1.6.md)
 
 ## 七、知识库作为 Agent 可信调用载体（2026-07 研报印证）
 
