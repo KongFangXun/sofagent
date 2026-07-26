@@ -272,13 +272,26 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
  */
 function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath: string): void {
   if (!parsed || typeof parsed !== 'object') return;
-  const sig = parsed['signature'];
-  if (typeof sig !== 'string' || sig.trim().length === 0) return; // 无 signature → 向后兼容
 
-  // 从待验内容中剔除 signature 字段（无论其在顶层还是 audit 段）
-  if (parsed['audit'] && typeof parsed['audit'] === 'object') {
-    delete (parsed['audit'] as Record<string, unknown>)['signature'];
+  // DP-3 修复：检测 audit 段（或其它非顶层位置）误放的 signature 字段。
+  // 设计上 signature 只允许放在顶层；放在 audit 段会被静默剥离且不校验，
+  // 这是 QA 发现的 LOW 级问题���现在明确告警，避免用户以为签了名实际没生效。
+  const auditSection = parsed['audit'];
+  if (
+    auditSection &&
+    typeof auditSection === 'object' &&
+    (auditSection as Record<string, unknown>)['signature'] !== undefined
+  ) {
+    console.warn(
+      `⚠️ config.yml: audit 段含 signature 字段——签名应放在顶层（与 audit 同级），audit 段签名已忽略: ${filePath}`
+    );
+    delete (auditSection as Record<string, unknown>)['signature'];
   }
+
+  const sig = parsed['signature'];
+  if (typeof sig !== 'string' || sig.trim().length === 0) return; // 无顶层 signature → 向后兼容
+
+  // 从待验内容中剔除顶层 signature 字段（计算签名时不应包含签名自身）
   delete parsed['signature'];
 
   const key = getHmacKey();
