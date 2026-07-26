@@ -100,7 +100,7 @@
 | D5 | **版本号状态标注** | changelog 头部标注「开发期 SSOT 仍为 vX.Y.Z，版本号 bump 留发版 SOP」或已 bump 完成 | 工程师 |
 | D6 | **项目文档同步清单**（v1.1.9 新增） | 从 `docs/changelog/vX.Y.md`「核心变更/交付」提取所有新功能关键词，列出「功能点 → 应在哪个文档出现」对照表。**归属原则**：详细机制写到权威文档（FDE.md / DEVELOPMENT.md / ARCHITECTURE.md），其他文档（HANDBOOK / README / PHILOSOPHY）一句话 + 链接引用，不重复展开。可留发版 session 阶段八执行，但开发 session 须产出清单 | 工程师 |
 
-> **发版 session 接手检查**：打开 `docs/changelog/vX.Y.md`，看头部状态标注。如果 D3/D4/D6 标「待补」，发版 session 须先补完才能进入阶段三自测。**绝不能跳过 D3 直接跑 acceptance-test**——零覆盖的新功能跑出来全绿是假象。**D6 同理**——绝不能跳过文档同步直接进发布，changelog 里写了新功能但项目文档（HANDBOOK / ARCHITECTURE / DEVELOPMENT / PHILOSOPHY / README / FDE / LOOP）零提及 = 用户读文档不知道有这功能。
+> **发版 session 接手检查**：打开 `docs/changelog/vX.Y.md`，看头部状态标注。如果 D3/D4/D6 标「待补」，发版 session 须先补完才能进入阶段三自测。**绝不能跳过 D3 直接跑 acceptance-test**——零覆盖的新功能跑出来全绿是假象。**D6 同理**——绝不能跳过文档同步直接进发布，changelog 里写了新功能但项目文档（HANDBOOK / ARCHITECTURE / DEVELOPMENT / PHILOSOPHY / README / FDE / FORGE）零提及 = 用户读文档不知道有这功能。
 
 ---
 
@@ -531,7 +531,7 @@ bash tools/check-version.sh 2>&1 | grep 'SKILL.md'
 | 理念/定位叙事 | PHILOSOPHY.md | README 开篇引用 |
 | 安全机制 | SECURITY.md | FDE/ARCHITECTURE 引用 |
 | 用户日常使用 | HANDBOOK.md | README 快速上手段引用 |
-| 开发循环工具 | LOOP.md | DEVELOPMENT 引用 |
+| 开发循环工具 | FORGE.md | DEVELOPMENT 引用 |
 
 **Step B — 逐条 grep 验证覆盖**
 
@@ -638,15 +638,17 @@ shellcheck engine/scripts/*.sh tools/*.sh install.sh   # 期望：零 error
 
 ---
 
-## 阶段九：工具脚本健康检查（v1.1.3 教训）
+## 阶段九：发布前质量闸门 + 工具脚本健康检查（v1.1.3 教训）
 
 > 工具脚本和产品代码同步演进，不要等脚本报错才发现缺口。每次发版前过一遍——这一步防止「check 能查但 bump 不改」「新增目录没进排除规则」「regression-checklist 路径过时」三类结构性盲区。
 
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
-| 22 | **新增文件类型/目录排查**<br><br>① 本版本有没有新增文件类型（如 `.yaml`/`.toml`/`.json5`）？→ `check-version.sh` 是否需要加对应检查项？`bump-version.sh` 是否需要加对应 bump 步骤？<br>② 本版本有没有新增目录（如 `FORGE/`/`agents/`/`docs/new-section/`）？→ `bump-version.sh` 和 `check-version.sh` 的 `find` 排除规则是否需要更新（`_archive`/`docs/archive`/`node_modules`/`dist`）？<br>③ 本版本有没有文件迁移（如 `audit/src/` → `core/src/`）？→ `regression-checklist.md` 中的路径是否需要更新？跑 `grep -rn "旧路径" FORGE/SKILL/fresh-eyes-loop/specs/regression-checklist.md` 确认<br>④ **🔴 v1.1.4 教训：孤儿配置文件排查**——`pnpm-workspace.yaml` 是上个版本的残留配置（项目用 npm workspace，文件不被任何工具读取）。本步追加：扫根目录有无不属于本项目技术栈的配置文件（`pnpm-workspace.yaml`/`yarn.lock`/`.ruby-version` 等），有则确认是否需要删除<br>⑤ **🔴 v1.1.6 教训：shellcheck 扫描范围与 CI 一致性**——本版本有没有新增含 `.sh` 的目录？→ `pre-push-check.sh` 的 shellcheck `find` 命令是否覆盖了所有含 `.sh` 的目录？对比 CI 的 `.github/workflows/shellcheck.yml` 确保一致（CI 扫全仓，本地也必须全扫）。v1.1.6 教训：`FORGE/` 有 `.sh` 但 pre-push-check 的 find 没扫它——CI 抓住了，本地门禁放行。另外检查本地 shellcheck 版本 ≥0.11.0（与 CI 对齐），低于则 warning 提示升级——v0.10.0 对 SC2155 等 warning 判定宽松（exit 0），v0.11.0 更严格（exit 1），版本差会导致本地过了 CI 挂了 | 五项逐一确认，有变更则更新对应脚本；④ 额外扫孤儿配置；⑤ `grep "find.*\.sh" tools/pre-push-check.sh` 抓当前扫描目录，与 CI shellcheck.yml 的 files 配置对照 |
-| 23 | **三脚本对照检查**<br><br>① `check-version.sh` 检查的每一类文件，`bump-version.sh` 是否都有对应的 bump 步骤？（缺口 = check 能发现但不自动修复——如 v1.1.3 发现的 10 个 workspace 子包 version 字段）<br>② `pre-push-check.sh` 的检查项数量是否和 CHANGELOG/ROADMAP 声明的一致？（v1.1.3 教训：声明 13 通过，实际 15 通过/16 项）<br>③ `check-version.sh` 的检查项编号分母是否和实际检查项数一致？（v1.1.3 教训：`[1/13]~[12/13]+[13/14]+[14/14]` 分母跳变） | ① 跑 `./tools/check-version.sh` 看末尾「检查通过: N/N 项」，再跑 `./tools/bump-version.sh --dry-run` 对照 bump 步骤数，两者覆盖范围应一致<br>② `./tools/pre-push-check.sh 2>&1 \| grep '结果:'` 的数字和 CHANGELOG 质量验证段对比<br>③ `grep '── \[' tools/check-version.sh` 看实际打印的分母是否全一致（注释中的引用不算） |
-| 24 | **过时检查清理**<br><br>**机制**（v1.1.4 重构——从版本专用硬编码升级为通用框架）：<br><br>**Step A — 从 SSOT changelog 推导检测模式**：<br>读 `docs/changelog/v{SSOT}.md`，从「核心变更」「缺陷修复」章节提取本版本涉及的废弃/变更项。按以下模板生成检测关键词：<br>　· 新增规则 → 搜索旧规则数（如 v1.1.4 新增 A18/A19 → 搜索 `19 条规则`）<br>　· 废弃命令/入口 → 搜索旧命令（如 `sofagent-audit --daemon`）<br>　· 测试数变化 → 搜索旧测试数（如 `343` → 388）<br>　· 术语更名 → 搜索旧术语（如 `回溯引擎` → `回溯能力`）<br>　· 删除的标志/功能 → 搜索删除项（如 `verify.js --list`）<br>　· **🔴 目录更名（v1.1.4 教训）→ 搜索旧目录名**（如 `workflow-hub` → `FLOWHUB`，这种更名会留下 markdown 相对路径死链——`./workflow-hub/` 在 README 里变成死链。grep 搜索旧目录名 + 跑 `bash tools/check-docs.sh` 维度 1b「全仓相对路径死链扫描」）<br><br>**Step B — 运行检测**：`grep -rn '<模式>' docs/ *.md --include='*.md' \| grep -v 'docs/changelog/\|.workbuddy/\|node_modules/'` + `bash tools/check-docs.sh`（特别是维度 1b 死链扫描）<br><br>**Step C — 判定与分类**：<br>　· 历史记录（changelog 正文、审查盲区描述）→ 保留，不标过时<br>　· 当前文档（README/ARCHITECTURE/LIMITATIONS/指南）→ **必须更新**<br>　· 检查模式自身（regression-checklist 中的 grep 命令）→ 保留<br><br>**Step D — 历史存档**：将本版本新增的废弃项追加到下面的「历史废弃项」表，供后续版本回溯——**不要替换**，累积追加。<br><br>**硬规**：检测结果中，除 changelog 历史记录和检查模式自身外，**零残留**。<br><br>── 历史废弃项（按版本累积，只追加不替换）──<br><br>**v1.1.4 废弃/变更项**（SSOT 1.1.3→1.1.4）：<br>· `sofagent-audit --daemon` → `sofagent-daemon`（daemon 独立 CLI）<br>· `19 条规则` → `21 条`（A18/A19 新增）<br>· `343` tests → `388`（audit）/ `558` → `660`（全 workspace）<br>· `回溯引擎` → `回溯能力`（v1.1.3 更名，v1.1.4 继续清理残留）<br>· `verify.js --list` → 删除（标志不存在）<br>· pre-push-check 数字：`14/14` → 去硬编码<br>· `workflow-hub/` → `FLOWHUB/`（目录更名，README 4 处死链）<br>· `engineering-*` → `sofagent-*`（Skill 命名统一） | 除 changelog 历史 + 检查模式自身外，**零残留**（0 处） |
+| 22 | **🔴 运行 fresh-eyes-loop（发布前质量闸门）**：在**全新 session** 中启动 Node driver——`node FORGE/src/fresh-eyes-driver.mjs --target <本版本号> --max-rounds 10`。driver 用 LangGraph createReactAgent 编排 A（审查模型）双盲并行审查 + B（工程模型）修复 + A 验证，连续 2 轮 findings 无 P0/P1 即停（机制详见 `FORGE/SKILL/fresh-eyes-loop/SKILL.md`）。**Session 监控协议**：启动 driver 后按 SKILL.md「Session 监控协议」每 5 分钟轮询 `<runDir>/status.json`，只在 phase 变化时一句话汇报——用户从 session 的 working 转圈状态直接感知后台在跑。🔴 修复提交本地、不 push（发版步骤才统一推） | driver 跑完，`status.json` 显示 phase=completed 且无未推送提交被误 push |
+| 23 | **🔴 人工核对 changelog 并打勾（human-in-the-loop）**：loop（步骤 22）跑完后，用户以 `fresh-eyes-review.md` 方法论为参考**人肉**复核，① **汇总 fresh-eyes-loop**：汇总步骤 22 所有的 bug 修改，并整合到这一版的 changelog 开发日志（`docs/changelog/vX.Y.Z.md`）里面；② 将 loop 全部修复计入**本版本** changelog 并打勾——此时所有修复仍本地未推，这是设计内正确状态 | 本版本 changelog 的「发布检查清单」含 loop 全部修复项且全部 `[x]`，开发日志已整合 loop 全部 bug 修改 |
+| 24 | **新增文件类型/目录排查**<br><br>① 本版本有没有新增文件类型（如 `.yaml`/`.toml`/`.json5`）？→ `check-version.sh` 是否需要加对应检查项？`bump-version.sh` 是否需要加对应 bump 步骤？<br>② 本版本有没有新增目录（如 `FORGE/`/`agents/`/`docs/new-section/`）？→ `bump-version.sh` 和 `check-version.sh` 的 `find` 排除规则是否需要更新（`_archive`/`docs/archive`/`node_modules`/`dist`）？<br>③ 本版本有没有文件迁移（如 `audit/src/` → `core/src/`）？→ `regression-checklist.md` 中的路径是否需要更新？跑 `grep -rn "旧路径" FORGE/SKILL/fresh-eyes-loop/specs/regression-checklist.md` 确认<br>④ **🔴 v1.1.4 教训：孤儿配置文件排查**——`pnpm-workspace.yaml` 是上个版本的残留配置（项目用 npm workspace，文件不被任何工具读取）。本步追加：扫根目录有无不属于本项目技术栈的配置文件（`pnpm-workspace.yaml`/`yarn.lock`/`.ruby-version` 等），有则确认是否需要删除<br>⑤ **🔴 v1.1.6 教训：shellcheck 扫描范围与 CI 一致性**——本版本有没有新增含 `.sh` 的目录？→ `pre-push-check.sh` 的 shellcheck `find` 命令是否覆盖了所有含 `.sh` 的目录？对比 CI 的 `.github/workflows/shellcheck.yml` 确保一致（CI 扫全仓，本地也必须全扫）。v1.1.6 教训：`FORGE/` 有 `.sh` 但 pre-push-check 的 find 没扫它——CI 抓住了，本地门禁放行。另外检查本地 shellcheck 版本 ≥0.11.0（与 CI 对齐），低于则 warning 提示升级——v0.10.0 对 SC2155 等 warning 判定宽松（exit 0），v0.11.0 更严格（exit 1），版本差会导致本地过了 CI 挂了 | 五项逐一确认，有变更则更新对应脚本；④ 额外扫孤儿配置；⑤ `grep "find.*\.sh" tools/pre-push-check.sh` 抓当前扫描目录，与 CI shellcheck.yml 的 files 配置对照 |
+| 25 | **三脚本对照检查**<br><br>① `check-version.sh` 检查的每一类文件，`bump-version.sh` 是否都有对应的 bump 步骤？（缺口 = check 能发现但不自动修复——如 v1.1.3 发现的 10 个 workspace 子包 version 字段）<br>② `pre-push-check.sh` 的检查项数量是否和 CHANGELOG/ROADMAP 声明的一致？（v1.1.3 教训：声明 13 通过，实际 15 通过/16 项）<br>③ `check-version.sh` 的检查项编号分母是否和实际检查项数一致？（v1.1.3 教训：`[1/13]~[12/13]+[13/14]+[14/14]` 分母跳变） | ① 跑 `./tools/check-version.sh` 看末尾「检查通过: N/N 项」，再跑 `./tools/bump-version.sh --dry-run` 对照 bump 步骤数，两者覆盖范围应一致<br>② `./tools/pre-push-check.sh 2>&1 \| grep '结果:'` 的数字和 CHANGELOG 质量验证段对比<br>③ `grep '── \[' tools/check-version.sh` 看实际打印的分母是否全一致（注释中的引用不算） |
+| 26 | **过时检查清理**<br><br>**机制**（v1.1.4 重构——从版本专用硬编码升级为通用框架）：<br><br>**Step A — 从 SSOT changelog 推导检测模式**：<br>读 `docs/changelog/v{SSOT}.md`，从「核心变更」「缺陷修复」章节提取本版本涉及的废弃/变更项。按以下模板生成检测关键词：<br>　· 新增规则 → 搜索旧规则数（如 v1.1.4 新增 A18/A19 → 搜索 `19 条规则`）<br>　· 废弃命令/入口 → 搜索旧命令（如 `sofagent-audit --daemon`）<br>　· 测试数变化 → 搜索旧测试数（如 `343` → 388）<br>　· 术语更名 → 搜索旧术语（如 `回溯引擎` → `回溯能力`）<br>　· 删除的标志/功能 → 搜索删除项（如 `verify.js --list`）<br>　· **🔴 目录更名（v1.1.4 教训）→ 搜索旧目录名**（如 `workflow-hub` → `FLOWHUB`，这种更名会留下 markdown 相对路径死链——`./workflow-hub/` 在 README 里变成死链。grep 搜索旧目录名 + 跑 `bash tools/check-docs.sh` 维度 1b「全仓相对路径死链扫描」）<br><br>**Step B — 运行检测**：`grep -rn '<模式>' docs/ *.md --include='*.md' \| grep -v 'docs/changelog/\|.workbuddy/\|node_modules/'` + `bash tools/check-docs.sh`（特别是维度 1b 死链扫描）<br><br>**Step C — 判定与分类**：<br>　· 历史记录（changelog 正文、审查盲区描述）→ 保留，不标过时<br>　· 当前文档（README/ARCHITECTURE/LIMITATIONS/指南）→ **必须更新**<br>　· 检查模式自身（regression-checklist 中的 grep 命令）→ 保留<br><br>**Step D — 历史存档**：将本版本新增的废弃项追加到下面的「历史废弃项」表，供后续版本回溯——**不要替换**，累积追加。<br><br>**硬规**：检测结果中，除 changelog 历史记录和检查模式自身外，**零残留**。<br><br>── 历史废弃项（按版本累积，只追加不替换）──<br><br>**v1.1.4 废弃/变更项**（SSOT 1.1.3→1.1.4）：<br>· `sofagent-audit --daemon` → `sofagent-daemon`（daemon 独立 CLI）<br>· `19 条规则` → `21 条`（A18/A19 新增）<br>· `343` tests → `388`（audit）/ `558` → `660`（全 workspace）<br>· `回溯引擎` → `回溯能力`（v1.1.3 更名，v1.1.4 继续清理残留）<br>· `verify.js --list` → 删除（标志不存在）<br>· pre-push-check 数字：`14/14` → 去硬编码<br>· `workflow-hub/` → `FLOWHUB/`（目录更名，README 4 处死链）<br>· `engineering-*` → `sofagent-*`（Skill 命名统一） | 除 changelog 历史 + 检查模式自身外，**零残留**（0 处） |
 
 ---
 
@@ -656,10 +658,10 @@ shellcheck engine/scripts/*.sh tools/*.sh install.sh   # 期望：零 error
 
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
-| 25 | 展示全部改动清单 | `git diff --stat` |
-| 26 | 作者逐项确认 | 重点看版本号、ROADMAP、CHANGELOG |
-| 27 | 确认开发日志「发布检查清单」已全部 `[x]`（应在阶段八定稿时完成，此处只复核） | 打勾动作在阶段八，不在确认关口 |
-| 28 | **AI 生成发布 prompt，交接给项目负责人**——发版命令由 AI 准备，项目负责人可亲手执行或授权 AI 代执行 | AI 输出完整的发布 prompt（含 npm publish / git tag / gh release / Skill 分发 / 发布后验证）。项目负责人可选择亲手跑，或说「交给你了」授权 AI 在已登录环境代执行 |
+| 27 | 展示全部改动清单 | `git diff --stat` |
+| 28 | 作者逐项确认 | 重点看版本号、ROADMAP、CHANGELOG |
+| 29 | 确认开发日志「发布检查清单」已全部 `[x]`（应在阶段八定稿时完成，此处只复核） | 打勾动作在阶段八，不在确认关口 |
+| 30 | **AI 生成发布 prompt，交接给项目负责人**——发版命令由 AI 准备，项目负责人可亲手执行或授权 AI 代执行 | AI 输出完整的发布 prompt（含 npm publish / git tag / gh release / Skill 分发 / 发布后验证）。项目负责人可选择亲手跑，或说「交给你了」授权 AI 在已登录环境代执行 |
 
 ---
 
@@ -971,14 +973,14 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 
 | # | 步骤 |
 |:--:|------|
-| 29 | **npm 12 包验证**：全部 12 包版本一致，无 MISSING |
-| 30 | npm README 验证：`npm view /audit readme` + `npm view /mcp readme` 均有内容 |
-| 31 | 如果本次迭代暴露了新的流程漏洞，**直接吸收进本 SOP 对应阶段**——不要存到单独章节。每条新规则标注版本号（如 `vX.Y 教训`）以便追溯 |
-| 32 | **🔴 审查闭环——发布后审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `FORGE/SKILL/fresh-eyes-loop/specs/fresh-eyes-review.md`（已在本版本阶段五中更新），对已发布版本做独立审查<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，作为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的视角和敏感度。⚠️ 这里的"锋利"指 fresh-eyes-review 的直觉校准（见阶段五 Tier 3），不是加检查项——检查项归 regression-checklist 管 |
-| 33 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 直接吸收进对应阶段，标注版本号<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 LOOP.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
-| 34 | **生成「下一版本开发 Prompt」到桌面**：综合 `ROADMAP.md`（未来规划）+ `CHANGELOG.md` + 下一版本 `docs/changelog/vX.Y.md`（若存在），生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`。<br>**若下一版本 changelog 尚未创建**：先 ① 写新版本需求并产出 `docs/changelog/vX.Y.md`；再 ② 生成桌面开发 prompt |
+| 31 | **npm 12 包验证**：全部 12 包版本一致，无 MISSING |
+| 32 | npm README 验证：`npm view /audit readme` + `npm view /mcp readme` 均有内容 |
+| 33 | 如果本次迭代暴露了新的流程漏洞，**直接吸收进本 SOP 对应阶段**——不要存到单独章节。每条新规则标注版本号（如 `vX.Y 教训`）以便追溯 |
+| 34 | **🔴 审查闭环——发布后审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `FORGE/SKILL/fresh-eyes-loop/specs/fresh-eyes-review.md`（已在本版本阶段五中更新），对已发布版本做独立审查<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，作为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的视角和敏感度。⚠️ 这里的"锋利"指 fresh-eyes-review 的直觉校准（见阶段五 Tier 3），不是加检查项——检查项归 regression-checklist 管 |
+| 35 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 直接吸收进对应阶段，标注版本号<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 FORGE.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
+| 36 | **生成「下一版本开发 Prompt」到桌面**：综合 `ROADMAP.md`（未来规划）+ `CHANGELOG.md` + 下一版本 `docs/changelog/vX.Y.md`（若存在），生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`。<br>**若下一版本 changelog 尚未创建**：先 ① 写新版本需求并产出 `docs/changelog/vX.Y.md`；再 ② 生成桌面开发 prompt |
 
-### 下一版本开发 Prompt 生成说明（步骤 34）
+### 下一版本开发 Prompt 生成说明（步骤 36）
 
 > 来源：下一版本的「开发日志」——在 `docs/changelog/` 中查找（若不存在则先按下方流程补建）。辅助输入：`ROADMAP.md`（未来去哪 / 规划）+ `CHANGELOG.md`（版本索引）。
 
@@ -998,7 +1000,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 
 | 阶段 | 名称 | 谁做 | 需要新 session？ | 产出 |
 |:--:|------|:--:|:--:|------|
-| 一 | 审查（问题收敛） | 作者 | 是（发布后审查） | 审查报告（→ 本版本 BugFix 批次） |
+| 一 | 审查（问题收敛） | 作者 | 是（阶段九 fresh-eyes-loop 发布前闸门 + 阶段十二发布后审查） | 审查报告（→ 本版本 BugFix 批次） |
 | 二 | 开发 | 工程师 | 否 | 代码 + 随修随记的回归维度 |
 | 三 | 自测 | 工程师 | 否 | build/test 全绿 + 更新验收测试文件（acceptance-test 本身只更新不跑，跑在阶段6）。涉及 CLI 迁移时 shellcheck 延后到阶段八 |
 | 四 | 代码审核 | 当前 session | 否 | 逐项 PASS 或 FAIL→修复 |
@@ -1006,9 +1008,9 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | **六** | **acceptance-test + regression-checklist（开新 session）** | **审核者控制 OpenClaw** | **🔴 是（全新认知；FAIL 回阶段五循环）** | **stage6 合并报告全 PASS** |
 | 七 | 审查体系最终确认 | 作者 | 否 | 两份审查文档状态一致、无遗漏（初版已在阶段五写入） |
 | 八 | 开发日志定稿 + 文档收尾 | 作者 | 否 | **开发日志定稿（含发布检查清单打勾）** + CHANGELOG/ROADMAP 五步/版本号/**发版日期同步**/测试数一致性/**🔴 文档同步闭环（D6 落地：changelog 功能点→项目文档覆盖率对照）**。涉及 CLI 迁移时 shellcheck 在此补跑 |
-| 九 | 工具脚本健康检查 | 作者 | 否 | check-version/bump-version/pre-push-check 覆盖同步 + 过时检查清理 |
+| 九 | 发布前质量闸门 + 工具脚本健康检查 | 作者 | 是（步骤 22 开新 session 跑 fresh-eyes-loop） | loop 修复 + changelog 打勾 + check-version/bump-version/pre-push-check 覆盖同步 + 过时检查清理 |
 | 十 | 确认关口 | AI → **生成发布 prompt 交接** | 否 | git diff 确认 → 检查清单打勾 → 生成发布 prompt 交给负责人（可授权 AI 代执行） |
 | 十一 | 发布（含本地安装） | **🔴 项目负责人，或授权 AI 代执行** | 否 | 先装本地版本验证 → 再按依赖层分批 npm publish + git tag + gh release + Skill 分发。**网络降级**：tag 推上后 gh release/Skill 分发不依赖 main push |
-| 十二 | 发布后 | 作者 | 是（步骤 32 开新 session 读 `fresh-eyes-review.md` 做审查） | npm 验证 + 发布后审查 → 生成下版本开发 prompt 到桌面（步骤 34）→ 自动进入下版本阶段一 |
+| 十二 | 发布后 | 作者 | 是（步骤 34 开新 session 读 `fresh-eyes-review.md` 做审查） | npm 验证 + 发布前闸门（阶段九）+ 发布后审查 → 生成下版本开发 prompt 到桌面（步骤 36）→ 自动进入下版本阶段一 |
 
 ---
