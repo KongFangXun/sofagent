@@ -23,7 +23,7 @@
 <p align="center"><strong>当前版本：v1.2.0</strong> · 2026-07-24 · 物理结构大重构</p>
 
 <p align="center">
-  <a href="#这是什么">这是什么</a> · <a href="#sofagent-能帮你做什么">能帮你做什么</a> · <a href="#装上就能用">安装</a> · <a href="#引擎架构开发者段">引擎架构</a> · <a href="#延伸阅读">文档</a>
+  <a href="#这是什么">这是什么</a> · <a href="#sofagent-能帮你做什么">能帮你做什么</a> · <a href="#三种部署方式覆盖所有场景">部署方式</a> · <a href="#装上就能用">安装</a> · <a href="#延伸阅读">文档</a>
 </p>
 
 ---
@@ -66,10 +66,6 @@
 | 私有化评估体系 | eval 反馈 + Skill 迭代历史——无法复制的企业 IP |
 | **FDE Agent 本身** | 7×24 在跑——管上面四样东西的生命周期，人离场了它留下 |
 
-**USB 一键烧录**——搭好 workflow → 烧一批 U 盘 → 发给团队。插上即用，拔掉零残留。
-
-**三种部署方式，覆盖所有场景**：① 装电脑——技术人员正常安装；② U 盘——普通员工插上就能用，不需要安装、不需要专业知识；③ 无头设备——服务器/工控机插 U 盘别拔，Agent 一直在联邦里跑。企业叙事：「买 U 盘 → 下载 sofagent → 写盘 → 发给员工」。详见 [FDE/FDE.md](./FDE/FDE.md)。
-
 </details>
 
 ---
@@ -86,6 +82,18 @@
 
 > [!TIP]
 > **90/10 价值分层**：模型给 90% 的智力，sofagent 补 10% 的可靠执行——越往后这 10% 越值钱。不是造更聪明的模型，是给已有的聪明加一套闸门。
+
+---
+
+## 三种部署方式，覆盖所有场景
+
+| 方式 | 谁用 | 怎么用 |
+|------|------|--------|
+| 💻 **装电脑** | 技术人员 / 开发者 | `bash install.sh` 正常安装 |
+| 🔌 **U 盘** | 普通员工（SMB 核心场景）| 插上即用，拔掉零残留，不需要安装、不需要专业知识 |
+| 🖥️ **无头设备** | 服务器 / 工控机（OPC 场景）| 插 U 盘别拔，Agent 7×24 在联邦里跑 |
+
+> 💡 **USB 一键烧录**：搭好 workflow → 烧一批 U 盘 → 发给团队。企业叙事：「买 U 盘 → 下载 sofagent → 写盘 → 发给员工」。详见 [FDE/FDE.md](./FDE/FDE.md)。
 
 ---
 
@@ -122,14 +130,12 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 
 > ⚠️ **关于 commit 拦截**：`git commit --no-verify` 可以绕过本地 hook。sofagent 的设计初衷是"诚实 Agent 的护栏"而非"恶意攻击者的防线"。企业高安全场景建议在 CI/CD pipeline 侧再加一道 `sofagent-audit --diff` 审计（hook 可绕，CI 不可绕）。详见 [LIMITATIONS](./LIMITATIONS.md) §一·已知架构限制。
 
-**两种使用方式**：
+**两种安装模式**：
 
-| 节点 | 场景 | 需 OpenClaw |
-|------|------|:--:|
-| 🔄 自动运行节点 | 企业无人值守设备（服务器 / 旧电脑）| 是 |
-| ⚡ 个人增强节点 | 开发者用 WorkBuddy / Codex / Claude Code | 否 |
-
-> 💡 个人增强节点：clone 仓库 → `bash install.sh` → 开始用。
+| 模式 | 命令 | 装什么 |
+|------|------|--------|
+| 全量安装 | `bash install.sh` | 底座 + FDE Agent（所有人） |
+| 仅底座 | `bash install.sh --base-only` | 仅底座引擎（开发者 / 企业 IT） |
 
 **按需安装**：
 
@@ -155,14 +161,29 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 
 ---
 
+## 延伸阅读
+
+| 你想了解 | 看哪里 |
+|:---------|:--------|
+| FDE Agent 进场四阶段、企业落地 | [FDE.md](./FDE/FDE.md) |
+| 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
+| 引擎架构、21 条规则、内部机制 | [↓ 引擎架构（开发者段）](#引擎架构开发者段) |
+| 为什么这么设计 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
+| 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
+| 安全声明 | [SECURITY](./SECURITY.md) |
+| 已知局限 | [LIMITATIONS](./LIMITATIONS.md) |
+| 版本路线图 | [ROADMAP](./ROADMAP.md) |
+| LLM 对标映射 | [llm-wiki-mapping](./docs/llm-wiki-mapping.md) |
+| 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
+
+---
+
 ## 引擎架构（开发者段）
 
 > [!NOTE]
 > **两个名字，一个东西**：你面对的产品叫 **FDE Agent**（帮你梳理工作流、部署 AI 节点）；底层引擎叫 **sofagent**（开源仓库 + npm 包 `@sofagent/*`）。普通用户只需记住 **FDE Agent**——下面这段是给开发者看的。
 
-> 以下内容面向开发者。普通用户了解 sofagent 能做什么就够了——跳到 [延伸阅读](#延伸阅读)。
-
-sofagent 是一个 FDE Agent——对外产品身份帮你梳理工作流、部署 AI 节点。底层引擎是一套约束 Agent 行为的 Harness 中间件，一底座·四引擎覆盖全生命周期。
+sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，一底座·四引擎覆盖全生命周期。
 
 <details>
 <summary>📖 一底座·四引擎架构（开发者参考）</summary>
@@ -186,11 +207,6 @@ flowchart LR
 
 </details>
 
-> [!NOTE]
-> **最小用量**：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）。五包全装才是完整 Harness 中间件。
->
-> **两个产品层各自独立、按需选用**：`install.sh`（底座 + FDE Agent，所有人）· `install.sh --base-only`（仅底座引擎）。FORGE 自迭代引擎由各 `FORGE/SKILL/<loop>/` workflow 定义驱动（如 fresh-eyes-loop），不单独安装——用户要的是"能干活的人"，不是"自己迭代开发工具"。
-
 <details>
 <summary>📖 引擎细节 + 21 条规则</summary>
 
@@ -200,7 +216,7 @@ flowchart LR
 
 ### ⚙️ 编排引擎
 
-两层已实现：① **任务拆解**——LangGraph createReactAgent 把任务描述变成编排方案 YAML；② **FORGE 自迭代引擎**——通过 workflow 驱动，当前已落地 **fresh-eyes-loop**（A/B 双盲 12 视角质量审查循环），Node driver spawn 独立子进程实现真零上下文，协议见 [`FORGE/SKILL/fresh-eyes-loop/loop.md`](./FORGE/SKILL/fresh-eyes-loop/loop.md)。未来更多 workflow 加入后逐步实现完整自迭代能力。
+两层已实现：① **任务拆解**——LangGraph createReactAgent 把任务描述变成编排方案 YAML；② **多 Agent 协作**——支持多 Sub Agent 串行编排，每节点有 checkpoint 支持中断恢复。
 
 > 🔶 当前是**串行**状态机（非并行 DAG 调度）。完整 DAG 并行调度 + 沙箱执行规划在 [ROADMAP v1.3.0](./ROADMAP.md)。
 
@@ -231,23 +247,6 @@ FDE 周度巡检：读审计趋势（history.jsonl）→ 分析 think.md 反复�
 </details>
 
 > 完整引擎说明、架构设计哲学、内部机制 → [ARCHITECTURE](./docs/ARCHITECTURE.md) · [PHILOSOPHY](./docs/PHILOSOPHY.md) · [DEVELOPMENT](./docs/DEVELOPMENT.md)
-
----
-
-## 延伸阅读
-
-| 你想了解 | 看哪里 |
-|:---------|:--------|
-| FDE Agent 进场四阶段、企业落地 | [FDE.md](./FDE/FDE.md) |
-| 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
-| 为什么这么设计 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
-| 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
-| 内部机制（Skill / 编排 / 反思 / 数据架构）| [DEVELOPMENT](./docs/DEVELOPMENT.md) |
-| 安全声明 | [SECURITY](./SECURITY.md) |
-| 已知局限 | [LIMITATIONS](./LIMITATIONS.md) |
-| 版本路线图 | [ROADMAP](./ROADMAP.md) |
-| LLM 对标映射 | [llm-wiki-mapping](./docs/llm-wiki-mapping.md) |
-| 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
 
 ---
 
