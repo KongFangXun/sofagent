@@ -1,7 +1,7 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
-> ⚠️ **v1.2.0 瘦身标注**：本文件 1049 行（警戒线 1000），越线 49 行。可归并方向——维度 1+48（CHANGELOG 纯度重叠）、维度 16+44（fail-closed 交叉）。v1.2.x 做一轮归并即可。acceptance-test.sh 同步标注（1535 行，79 处 git 脚手架可抽为 `mktmp_repo` 公共函数）。
+> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。
 > **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量）
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -48,7 +48,7 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 ```
 
 **步骤 3：逐维度审查**
-## 审查维度（50 项 · 编号 1–50）
+## 审查维度（51 项 · 编号 1–51）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -56,26 +56,25 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 
 #### 1. CHANGELOG 纯度与完整性
 
+> 归并自维度 48（v1.2.0 瘦身）。子项 a-d 原维度 1 + 子项 e-h 原维度 48。
+
 ```bash
 # 子项 a: 纯度——不含审查元信息
-grep -rniE "GLM|DeepSeek|双视角|P[012]×|审查修复|陌生视角|fresh-eyes|审查轮次|审查×|审查驱动|审查吸收" CHANGELOG.md docs/changelog/v*.md ROADMAP.md
-# 期望：零命中
-
-# 子项 b: 「回溯引擎」诚实化检查——后应跟"本质：git snapshot"或已改为「回溯能力」
-grep -rn "回溯引擎" --include="*.md" . | grep -v node_modules | grep -v ".sofagent/" | grep -v "docs/changelog" | grep -v "CHANGELOG.md" | grep -v ".workbuddy/" | grep -v "regression-checklist.md" | grep -v "git snapshot\|revert 包装\|本质"
-# 期望：零命中
-
-# 子项 c: 孤儿 changelog 检测
+grep -rniE "GLM|DeepSeek|双视角|P[012]×|审查修复|陌生视角|fresh-eyes|审查轮次|审查×|审查驱动|审查吸收" CHANGELOG.md docs/changelog/v*.md ROADMAP.md   # 期望：零命中
+# 子项 b: 孤儿 changelog 检测
 for f in docs/changelog/v*.md; do v=$(basename $f .md); git rev-parse $v >/dev/null 2>&1 || echo "⚠️ $v: 无对应 tag"; done
-git tag -l "v*" | while read t; do grep -q "$t" CHANGELOG.md || echo "❌ $t: CHANGELOG 索引遗漏"; done
-# 期望：零输出
-
-# 子项 d: CHANGELOG 索引含全部已发版 tag + 规划版独立分组
-grep -A1 "## 规划中" CHANGELOG.md | head -1
-# 期望：有「规划中」独立标题
-
-# 子项 f: README 对核心文档链接可发现性（v1.1.6 教训）
+# 子项 c: CHANGELOG 索引含全部已发版 tag + 规划版独立分组
+grep -A1 "## 规划中" CHANGELOG.md | head -1   # 期望：有「规划中」独立标题
+# 子项 d: README 对核心文档链接可发现性
 grep -c "llm-wiki-mapping" README.md   # 期望: ≥ 1
+# 子项 e: 当前版本条目不含审查元信息（原维度 48e）
+LATEST_VER=$(grep -m1 "^### \[v" CHANGELOG.md | grep -oE 'v[0-9.]+'); sed -n "/^### \[$LATEST_VER\]/,/^### \[v/p" CHANGELOG.md | grep -qE "P[012]×|fresh-eyes|审查轮次" && echo "⚠️ CHANGELOG 当前版本含审查元信息"
+# 子项 f: ROADMAP 版本头描述与当前版本一致（原维度 48a）
+sed -n '4p' ROADMAP.md | grep -qE "产品叙事|USB|A/B|控制图" || echo "⚠️ ROADMAP 版本头描述可能错配"
+# 子项 g: SECURITY.md 旧描述清理（原维度 48d）
+grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 措辞过时"
+# 子项 h: SKILL.md 铁律/底线数标题声称与实际一致（原维度 48g）
+SKILL_BC=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || echo 0); SKILL_BA=$(sed -n '/^### [0-9] 底线/,/^### /p' SKILL/SKILL.md | grep -cE "^- " || echo 0); [ "$SKILL_BC" != "$SKILL_BA" ] && echo "⚠️ SKILL.md 底线数 $SKILL_BC vs $SKILL_BA"
 ```
 
 #### 2. 跨文档死链全量扫描
@@ -292,6 +291,8 @@ grep -c "Agent 身份感知" FDE/FDE.md                      # 期望：≥ 1
 
 #### 16. 安全约束 fail-closed 与权限加固
 
+> USB 专属 fail-closed 验签见维度 44。
+
 ```bash
 # 子项 a: A15 actions 未声明时必须 FAIL（非 fail-open WARN）—— v1.1.7 二次验证确认已返回 FAIL，本项保留为回归锁
 grep -n "nodesWithActions.length === 0\|nodesWithActions.length === 0" engine/audit/src/rules/rule-a15-action-constraint.ts
@@ -417,23 +418,7 @@ grep -q "被 FDE/LOOP 依赖\|FDE/LOOP" install.sh 2>/dev/null && echo "✅ 主 
 grep -H "v[0-9]\+\.[0-9]\+\.[0-9]\+" install.sh | head -4   # 期望：所有版本号 = SSOT_VER
 ```
 
-#### 24. acceptance-test.sh 与 changelog 功能对齐（单文件）
-
-> v1.1.5 更新：原 openclaw-acceptance-test.md 已合并入 `FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh`
-
-```bash
-# 子项 a: 场景数声称与实际对齐（v1.1.4 教训）
-DECLARED_COUNT=$(head -5 FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh | grep -oE "[0-9]+ 个端到端" | grep -oE "[0-9]+")
-ACTUAL_COUNT=$(grep -c "^scenario " FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh)
-echo "声明: $DECLARED_COUNT / 实际: $ACTUAL_COUNT"   # 期望：两者相等
-
-# 子项 b: 本版本 changelog 功能点逐条对照 acceptance-test 覆盖
-# 🔴 v1.1.7 教训：阶段三必须同步跑此检查，不能只更新场景数就跳过
-CHANGELOG_FEATURES=$(grep -E "^### |^## 交付" docs/changelog/v$(node -e "console.log(require('./package.json').version)").md | head -20)
-echo "$CHANGELOG_FEATURES"   # 人工检查：每个功能点在 acceptance-test.sh 里都有对应场景
-
-# 子项 c-e: 失效场景清理 / 场景间清理 / JSON stderr 隔离（已归并至维度 8 统一管理）
-```
+#### 24. [v1.2.0 移除：被 SOP 步骤 13 Step D 覆盖]
 #### 25. conflict-check 巡检器只读铁律 + schedule 正确性（v1.1.6 新增）
 
 ```bash
@@ -605,41 +590,22 @@ grep -c "向后兼容\|undefined\|actionGovernance" engine/audit/src/audit-histo
 # 子项 f: audit-history 测试用例数（测试数声称已被维度 13 SSOT 反查覆盖，此处只验证结构）
 grep -c "  it(" engine/audit/src/audit-history.test.ts   # ≥11
 ```
-#### 34. 文档头日期一致性扫描门禁（v1.1.7 新增 · BugFix 1）
+#### 34. 文档头日期 + 文档数字 SSOT 一致性（v1.2.0 归并自 34+35）
 
-> bump-version.sh 只改版本号不改日期——文档头日期反复漂移
+> v1.2.0 瘦身：原维度 34（日期门禁）+ 35（数字 SSOT）合并。
 
 ```bash
-# 子项 a: check-version.sh 有第 14 项日期扫描
-grep -c "14\.\|日期一致性扫描\|文档头日期" tools/check-version.sh   # ≥1
-
-# 子项 b: 扫描以发版日期为基准
-grep -c "EXPECTED_DOC_DATE\|发版日期" tools/check-version.sh   # ≥2
-
-# 子项 c: 跑 check-version 全绿（含第 14 项）
+# 子项 a: check-version.sh 有日期扫描 + 跑 check-version 全绿
+grep -c "日期一致性扫描\|文档头日期" tools/check-version.sh   # ≥1
 bash tools/check-version.sh 2>&1 | tail -5   # 期望：全部通过
-
-# 子项 d: 文档头日期格式统一（> vX.Y · YYYY-MM-DD）
-grep -rn "^> v[0-9]\+\.[0-9]\+\.[0-9]\+ · [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}" --include="*.md" README.md SECURITY.md LIMITATIONS.md docs/*.md 2>/dev/null | head -5   # 期望：格式一致
-```
-#### 35. 文档数字 SSOT 一致性（v1.1.7 新增 · BugFix 5+7+8+10）
-
-> 模糊数字（"700+"）和漂移数字都是 P0
-
-```bash
-# 子项 a: README 无模糊数字（700+ 等区间声称）
+# 子项 b: README 无模糊数字（700+ 等区间声称）+ 使用精确数字
 grep -n "[0-9]\++\|700+" README.md 2>/dev/null   # 期望：零命中
-
-# 子项 b: test-count.sh 实测与文档声称比对
-ACTUAL=$(bash tools/test-count.sh --quiet 2>&1 | grep -oE 'TOTAL_TESTS=[0-9]+' | cut -d= -f2)
-echo "实测 workspace 测试数: $ACTUAL"   # 人工检查：FDE/FDE.md / LIMITATIONS.md 一致
-
-# 子项 c: 三产品关系表述一致
+# 子项 c: test-count.sh 实测与文档声称比对
+ACTUAL=$(bash tools/test-count.sh --quiet 2>&1 | grep -oE 'TOTAL_TESTS=[0-9]+' | cut -d= -f2); echo "实测 workspace 测试数: $ACTUAL"
+# 子项 d: 三产品关系表述一致
 grep -c "独立产品\|按需选用\|独立安装" README.md FDE/README.md FORGE/README.md 2>/dev/null   # 每个文档 ≥1
-
-# 子项 d: README 使用精确数字（非模糊区间）
-grep -oE "[0-9]+ 条规则\|[0-9]+ 条审计规则\|[0-9]+ 条 git-diff" README.md | head -5   # 期望：只有精确数字
 ```
+#### 35. [v1.2.0 归并至维度 34]
 #### 36. 跨产品 install 契约 CI 验证（v1.1.7 新增 · BugFix 11）
 
 > FDE/LOOP 调用主 install.sh 的接口是跨产品契约——CI 应有专门 job 验证
@@ -664,19 +630,14 @@ grep -c "FDE/LOOP\|被.*依赖\|跨产品" install.sh 2>/dev/null   # ≥1
 ```bash
 # 子项 a: A9 全角/leet 注入检测场景存在
 grep -c "全角\|leet\|unicode" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥3
-
 # 子项 b: history.jsonl 篡改检测场景存在
 grep -c "篡改\|tamper\|CHAIN_BREAK\|hash chain" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥2
-
 # 子项 c: hook 删除检测场景存在
 grep -c "hook.*删除\|hook.*丢失\|删除.*hook" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥1
-
 # 子项 d: 非法 YAML → ConfigParseError 场景存在
 grep -c "ConfigParseError\|非法.*YAML\|非法 YAML" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥2
-
 # 子项 e: 非 git 目录场景存在
 grep -c "非.*git.*目录\|not.*a.*git.*repo\|非 git" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥1
-
 # 子项 f: 场景数声称 = 实际（归并至维度 24 子项 a 统一检查）
 ```
 #### 38. daemon 审计集中收集 workaround + 安全文档时效性（v1.1.7 新增 · BugFix 9+13）
@@ -711,7 +672,7 @@ done
 
 #### 39. AES-256-GCM 加密 + ECDH 配对（v1.1.8 新增 · 交付一）
 
-**背景**：联邦查询第 3 层防线——应用层加密。channel 明文无 TLS，AES-256-GCM 是唯一保密层。ECDH 协商密钥，人不手打。
+> 联邦查询第 3 层防线——channel 明文无 TLS，AES-256-GCM 唯一保密层。
 
 ```bash
 # 子项 a: AES-256-GCM 加解密往返
@@ -732,7 +693,7 @@ grep -c "AES-256-GCM\|ECDH.*配对\|pairByToken" FORGE/SKILL/fresh-eyes-loop/spe
 
 #### 40. OpenClaw channel 联邦查询（v1.1.8 新增 · 交付二）
 
-**背景**：两台设备互相 search_knowledge。Automerge CRDT 合并不手写三路（v1.0.5 教训）。离线降级不阻塞。
+> 两台设备互相 search_knowledge，Automerge CRDT 合并，离线降级不阻塞。
 
 ```bash
 # 子项 a: federation 模块完整性（6 文件）
@@ -756,7 +717,7 @@ grep -c "联邦.*sensitivity\|federation\|broadcastQuery" FORGE/SKILL/fresh-eyes
 
 #### 41. Prompt 注入 8 层防护（层 1 + 层 4 + 层 5）（v1.1.8 新增 · 交付三）
 
-**背景**：8 层防护体系中的三层实现——外部内容标签包裹（层1）+ prompt 级脱敏（层4）+ 知识可信分级（层5）。memory-contract trust 字段联动。
+> 8 层防护三层实现——标签包裹(层1)+脱敏(层4)+可信分级(层5)。
 
 ```bash
 # 子项 a: 层 1 wrapUntrusted + 防标签逃逸
@@ -777,7 +738,7 @@ grep -c "wrapUntrusted\|redactForPrompt\|trust.*分级\|isTrustEntryUsable" FORG
 
 #### 42. 编排引擎 dag-runner + compose --run（v1.1.8 新增 · 交付四）
 
-**背景**：v1.0.7 退役 ao 时没接入 deepagents subagents 调度，compose 只打印不执行。v1.1.8 补上——compose --run 真正委派 Sub Agent。同文件冲突检测 WARN（裁决 #1）。
+> compose --run 委派 Sub Agent + 同文件冲突检测 WARN。
 
 ```bash
 # 子项 a: dag-runner 核心函数
@@ -801,7 +762,7 @@ grep -c "dag-runner\|detectFileConflicts\|compose.*DAG" FORGE/SKILL/fresh-eyes-l
 
 #### 43. pushKnowledgeSummary 主动通知（v1.1.8 新增 · 交付五）
 
-**背景**：Dream Cycle / knowledge-health 跑完后主动推送摘要，无需用户主动 status。通知内容按 sensitivity 过滤，restricted 不出现。
+> Dream Cycle/knowledge-health 跑完后主动推送摘要，restricted 不泄露。
 
 ```bash
 # 子项 a: notify 模块核心函数
@@ -822,7 +783,9 @@ grep -c "pushKnowledgeSummary\|collectSummaryMaterial" FORGE/SKILL/fresh-eyes-lo
 
 #### 44. USB 完整运行时——HMAC 签名 + AES-256 加密 + fail-closed 验签（v1.1.9 新增 · 交付一）
 
-**背景**：U 盘便携运行时——全量文件 HMAC-SHA256 签名（确定性算法跨平台可复算），验签 fail-closed（篡改/缺失/多余/签名缺失四场景），knowledge/ AES-256-GCM 密文落盘（U 盘文件系统永为密文）。
+> 通用安全 fail-closed 基线见维度 16。
+
+> 全量文件 HMAC 签名 + 验签 fail-closed + knowledge/ AES-256 密文落盘。
 
 ```bash
 # 子项 a: 签名模块核心函数
@@ -852,7 +815,7 @@ grep -c "usb-signature\|usb-key\|createUsbKey\|verifyUsbSignature" FORGE/SKILL/f
 
 #### 45. daemon A/B 自动调度器——四阶段状态机 + jsonl 持久化（v1.1.9 新增 · 交付二）
 
-**背景**：真实任务探索-利用状态机（exploit→explore→judge→promote），跑企业真实日常任务而非专为 A/B 造的测试任务，连续胜出达阈值后自动 promote 并联动控制图状态落盘。
+> 真实任务探索-利用状态机(exploit→explore→judge→promote)，连续胜出达阈值自动 promote。
 
 ```bash
 # 子项 a: 状态机核心函数
@@ -879,7 +842,7 @@ grep -c "ab-scheduler\|ab-history\|judgeAndPromote\|ab-schedule" FORGE/SKILL/fre
 
 #### 46. 控制图状态抽取 + 路径穿越安全防护（v1.1.9 新增 · 交付三）
 
-**背景**：checkpoint → 可读 ControlGraphState JSON（带 version:'v1' schema），供 v1.2.x Dashboard 消费。loopId 消毒防路径穿越（QA 红队 POC-6 修复），ab-scheduler promote 后联动落盘。
+> checkpoint → ControlGraphState JSON（v1 schema），loopId 消毒防路径穿越。
 
 ```bash
 # 子项 a: 抽取核心函数
@@ -906,8 +869,6 @@ grep -c "extractControlGraphState\|sanitizeLoopId\|路径穿越" FORGE/SKILL/fre
 
 #### 47. 产品叙事收敛红线 + BugFix 42 项核心回归锁（v1.1.9 新增 · 交付四+五）
 
-**背景**：README 首屏叙事收敛（FDE Agent 定位 ≥5 次 + 审计引擎零 token + v1.1.8 已发布红线保留），BugFix 42 项中选取核心修复加回归锁防止回退。
-
 ```bash
 # 子项 a: README FDE Agent 叙事收敛（≥5 处）
 FDE_COUNT=$(grep -c "FDE Agent" README.md) && [ "$FDE_COUNT" -ge 5 ]   # 通过
@@ -931,59 +892,16 @@ grep -c "MAX_NODES = 20\|MAX_TASK_LENGTH = 2000" engine/orchestrator/src/workflo
 grep -c "FDE Agent\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODES" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥4
 ```
 
-#### 48. 文档时效性 + CHANGELOG 纯度 + 跨文档一致性（v1.1.9 fresh-eyes 三轮审查整合）
+#### 48. [v1.2.0 归并至维度 1]
 
-**背景**：v1.1.9 三轮 fresh-eyes 审查发现 20 个问题，其中可固化为回归检查的 8 项整合于此——防御文档滞后、审查元信息混入、跨文档数字漂移、感知层签名缺失等系统性缺陷。
-
-```bash
-# 子项 a: ROADMAP 版本头描述与当前版本一致（防御 F-01 P0）
-# 版本头描述关键词应与 CHANGELOG 标题关键词显著重合
-ROADMAP_DESC=$(sed -n '4p' ROADMAP.md)
-CHANGELOG_TITLE=$(grep -m1 "^### \[v" CHANGELOG.md)
-echo "$ROADMAP_DESC" | grep -qE "产品叙事|USB|A/B|控制图" || echo "⚠️ ROADMAP 版本头描述可能错配"
-
-# 子项 b: README.en 与 README.md 关键比喻计数对齐（防御双语叙事断裂）
-CN_RIVER=$(grep -c "堤坝\|自来水厂\|管网" README.md)
-EN_RIVER=$(grep -c "embankment\|water.*plant\|pipeline\|River" README.en.md)
-[ "$CN_RIVER" -gt 0 ] && [ "$EN_RIVER" -eq 0 ] && echo "⚠️ README.en River 比喻缺失"
-
-# 子项 c: River 比喻非 README 文档计数 ≤ 阈值（防御跨文档重复展开）
-for doc in docs/ARCHITECTURE.md docs/PHILOSOPHY.md FDE/FDE.md; do
-  COUNT=$(grep -c "堤坝\|自来水厂\|管网" "$doc" 2>/dev/null || echo 0)
-  [ "$COUNT" -gt 4 ] && echo "⚠️ $doc River 比喻 $COUNT 处（建议 ≤4）"
-done
-
-# 子项 d: SECURITY.md 旧描述清理（防御安全文档滞后）
-grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 措辞过时（v1.1.5+ 已加签名）"
-grep -q "weekly-report\|lessons-extract" SECURITY.md && echo "⚠️ SECURITY.md daemon 清单含已移除文件"
-
-# 子项 e: CHANGELOG 纯度——当前版本条目不含审查元信息（防御 F-14 P1）
-LATEST_VER=$(grep -m1 "^### \[v" CHANGELOG.md | grep -oE 'v[0-9.]+')
-sed -n "/^### \[$LATEST_VER\]/,/^### \[v/p" CHANGELOG.md | grep -qE "P[012]×|fresh-eyes|审查轮次|审查发现" && echo "⚠️ CHANGELOG 当前版本含审查元信息"
-
-# 子项 f: 视觉模式 banner 状态行含 [sofagent] 前缀（防御感知层签名缺失 F-18）
-grep -q "\[sofagent\]" <(grep "statusLabel" engine/audit/src/index.ts) || echo "⚠️ 视觉模式 statusLabel 缺 [sofagent] 前缀"
-
-# 子项 g: SKILL.md 铁律/底线数标题声称与实际一致（防御跨图数字漂移 F-19）
-SKILL_BOTTOM_CLAIMED=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || echo 0)
-SKILL_BOTTOM_ACTUAL=$(sed -n '/^### [0-9] 底线/,/^### /p' SKILL/SKILL.md | grep -cE "^- " || echo 0)
-[ "$SKILL_BOTTOM_CLAIMED" != "$SKILL_BOTTOM_ACTUAL" ] && echo "⚠️ SKILL.md 底线数标题 $SKILL_BOTTOM_CLAIMED vs 实际 $SKILL_BOTTOM_ACTUAL"
-
-# 子项 h: LIMITATIONS 覆盖最近版本新功能（防御文档滞后 F-05 P1）
-NEW_FEATURES="Dream Cycle\|sensitivity\|knowledge-health\|ActionGovernance\|ab-scheduler"
-LIMITATIONS_COV=$(grep -c "$NEW_FEATURES" LIMITATIONS.md || echo 0)
-[ "$LIMITATIONS_COV" -lt 3 ] && echo "⚠️ LIMITATIONS 对 v1.1.7+ 新功能覆盖不足（$LIMITATIONS_COV 处）"
-```
-
-> **releasing.md 联动**：以下检查项已写入 `FORGE/SKILL/fresh-eyes-loop/specs/releasing.md`，不在本清单重复——① 阶段八「LIMITATIONS 覆盖新功能」② 阶段八「evidence 文件存在且测试数一致」③ 阶段十一「tag 后零 commit 校验」。本维度只覆盖可自动化 grep 的文档一致性检查。
+> 维度 48 全部子项归并至维度 1（子项 e-h）。
 
 ---
 
 #### 49. v1.2.0 物理结构大重构——旧路径零残留 + 新结构就位（v1.2.0 新增 · fresh-eyes 三轮审查）
 
 ```bash
-# 子项 a: /sofagent/ 目录残留（应零命中，排除 changelog 历史引用）
-# 用 node 扫描绕开 BSD grep 中文误判
+# 子项 a: /sofagent/ 目录残留（node 扫描绕开 BSD grep 中文误判）
 node -e "const fs=require('fs');const dirs=['engine','LOOP','FDE','SKILL','docs','tools','.github'];let hits=[];dirs.forEach(d=>{if(!fs.existsSync(d))return;function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist','target'].includes(e.name))continue;const f=dir+'/'+e.name;if(e.isDirectory())walk(f);else if(e.name.endsWith('.md')||e.name.endsWith('.ts')||e.name.endsWith('.sh')){const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('sofagent/skill/')&&!l.includes('已')&&!l.includes('旧')&&!l.includes('→')&&!l.includes('历史'))hits.push(f+':'+(i+1))})}}}walk(d)});['install.sh','SECURITY.md','README.md'].forEach(f=>{if(!fs.existsSync(f))return;const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('sofagent/skill/')&&!l.includes('已')&&!l.includes('旧')&&!l.includes('→')&&!l.includes('历史'))hits.push(f+':'+(i+1))})});console.log(hits.length===0?'✅ sofagent/skill/ 零残留':'❌ FOUND '+hits.length);hits.forEach(h=>console.log('  '+h))"
 
 # 子项 b: agents/SKILL/ 旧路径残留（应零命中，排除 changelog 历史 + acceptance-test 反向断言）
@@ -999,43 +917,30 @@ grep '^VERSION=' install.sh | head -1
 node -e "const p=require('./engine/rules/package.json');console.log(p.files?'✅ rules files 字段存在':'❌ 缺 files 字段')"
 
 # 子项 f: verify.yml CI 路径（应引用 SKILL/harness/ 而非 engine/skill/）
-grep -n "engine/skill" .github/workflows/verify.yml
-# 期望：零输出
+grep -n "engine/skill" .github/workflows/verify.yml   # 期望：零输出
 
 # 子项 g: shellcheck.yml 覆盖 install.sh + 无旧路径
-grep -n "sofagent-lite\|'scripts/\*\*" .github/workflows/shellcheck.yml
-# 期望：零输出
-grep -c "'install.sh'" .github/workflows/shellcheck.yml
-# 期望：2（push + pull_request 各一）
+grep -n "sofagent-lite\|'scripts/\*\*" .github/workflows/shellcheck.yml   # 期望：零输出
+grep -c "'install.sh'" .github/workflows/shellcheck.yml   # 期望：2
 
 # 子项 h: bump-version.sh 同版本号优雅退出
-bash tools/bump-version.sh 1.2.0 1.2.0 --dry-run 2>&1 | tail -3
-# 期望：版本号相同，无 unbound variable
+bash tools/bump-version.sh 1.2.0 1.2.0 --dry-run 2>&1 | tail -3   # 期望：无 unbound variable
 
 # 子项 i: install.sh 部署路径 vs handler.ts/checks.ts 读取路径对齐（v1.2.0 P0①）
-# 物理重构改名后 install.sh 写入路径可能跟着改了，但消费方读取路径没改 → 约束层静默失效
-INSTALL_FDE=$(grep -oE 'skills/[a-z]+/fde\.md' install.sh | sort -u)
-HANDLER_FDE=$(grep -oE '"skills", "[a-z]+"' engine/hooks/sofagent-load-chain/handler.ts | head -2 | tr '\n' ' ')
-CHECKS_FDE=$(grep -oE "skills.*[a-z]+.*fde\.md" engine/core/src/verify/checks.ts | head -2 | tr '\n' ' ')
-echo "install.sh fde.md 路径: $INSTALL_FDE"
-echo "handler.ts skills 目录: $HANDLER_FDE"
-echo "checks.ts fde.md 路径: $CHECKS_FDE"
-# 人工核对：install.sh 写入路径应与 handler.ts/checks.ts 读取路径一致
-# 历史：v1.2.0 install.sh 写 skills/engine/fde.md，handler.ts 读 skills/sofagent/fde.md → 约束层失效
+INSTALL_FDE=$(grep -oE 'skills/[a-z]+/fde\.md' install.sh | sort -u); HANDLER_FDE=$(grep -oE '"skills", "[a-z]+"' engine/hooks/sofagent-load-chain/handler.ts | head -2 | tr '\n' ' '); echo "install: $INSTALL_FDE / handler: $HANDLER_FDE"   # 人工核对路径一致
 
 # 子项 j: install.sh HMAC key 自动生成逻辑存在（v1.2.0 P0⑥）
-# history.jsonl HMAC 签名代码在 v1.1.8 就有，但 install.sh 从不生成密钥 → 功能形同虚设
-grep -c 'sofagent-key' engine/scripts/lib/post-install.sh   # 期望 ≥2（生成 + 输出）
-grep -c 'chmod 600' engine/scripts/lib/post-install.sh       # 期望 ≥1（密钥文件权限）
+grep -c 'sofagent-key' engine/scripts/lib/post-install.sh   # ≥2
+grep -c 'chmod 600' engine/scripts/lib/post-install.sh       # ≥1
 ```
 
-> **fresh-eyes 教训（v1.2.0 审查）**：物理结构大重构容易在边缘文件留下旧路径残留。三类最危险的盲区：① `builtin-agents.ts` 源码路径断裂（P0-2）——运行时找不到 Skill 文件静默走 fallback；② `install.sh` 写入路径与 `handler.ts` 读取路径不一致（P0①）——v1.2.0 改名后 install.sh 写 `skills/engine/fde.md`，handler.ts 读 `skills/sofagent/fde.md`，约束层静默失效；③ `install.sh` VERSION 变量没 bump（check-version.sh 盲区）——用户装到旧版本号。子项 a-j 覆盖了审查发现的核心盲区，其中 i 验证路径对齐、j 验证 HMAC key 生成逻辑存在（P0⑥ 教训：HMAC 代码有但 install.sh 不生成密钥 → 防篡改形同虚设）。
+> **fresh-eyes 教训**：物理结构大重构最容易在边缘文件留下旧路径残留（install.sh 写 A，handler.ts 读 B → 约束层静默失效）。
 
 ---
 
 #### 50. 文档乱码扫描——U+FFFD + null byte + UTF-8 损坏检测（v1.2.0 新增）
 
-> **背景**：v1.2.0 发版过程中在多个文档（fresh-eyes prompt、stage6 报告、对话历史摘要）反复发现 UTF-8 损坏乱码（` ` 等 U+FFFD 替换字符）。这是编码/传输环节的系统性问题——文档生成或复制时编码断裂，产生不可见的损坏字符。bsd grep 无法检测（U+FFFD 本身是合法 Unicode），必须用 node 逐字符扫描。**v1.2.0 审查后又发现更隐蔽的 null byte 损坏**（`.sofagent` 被替换为 `<NUL>D<NUL>`，不显示为乱码而是直接嵌入 \x00 字节），新增子项 e 检测。
+> v1.2.0 发版中反复发现 UTF-8 损坏（U+FFFD 乱码 + null byte 嵌入）。bsd grep 无法检测，必须 node 逐字符扫描。
 
 ```bash
 # 子项 a: U+FFFD 替换字符全仓扫描（核心——编码损坏的直接证据）
@@ -1047,19 +952,44 @@ node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL',
 # 子项 c: 孤立代理对/颠倒代理对（surrogate pair 损坏）
 node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL','FDE','FORGE','tools'];let hits=[];function scan(f){try{const c=fs.readFileSync(f,'utf8');const arr=[...c];arr.forEach((ch,idx)=>{const code=ch.codePointAt(0);if(code>=0xD800&&code<=0xDFFF){hits.push(f+':char#'+idx+': 孤立代理对 U+'+code.toString(16))}})}catch(e){}}function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist','target','.workbuddy','.sofagent','archive','changelog'].includes(e.name))continue;const f=path.join(dir,e.name);if(e.isDirectory())walk(f);else if(/\.(md|ts|sh|json|yml)$/.test(e.name))scan(f)}}dirs.forEach(d=>{if(fs.existsSync(d))walk(d)});console.log(hits.length===0?'✅ 零孤立代理对':'❌ FOUND '+hits.length);hits.slice(0,10).forEach(h=>console.log('  '+h))"
 
-# 子项 d: 常见 mojibake 模式（UTF-8 被按 Latin-1/GBK 误读）
-# 典型特征：Ã¤ Ã¶ Ã¼ ÃŸ ï¿½ ç‰ (中文被按 latin1 解的残留)
-# 注意：正则用 codepoint（\uXXXX）而非直接嵌入乱码字符，避免 node -e CLI 编码问题
+# 子项 d: 常见 mojibake 模式（UTF-8 按 Latin-1/GBK 误读，正则用 codepoint 避免 CLI 编码问题）
 node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL','FDE','FORGE'];const rootFiles=['README.md','README.en.md','CHANGELOG.md','ROADMAP.md','SECURITY.md'];const exempt=/regression-checklist\.md$|fresh-eyes-review\.md$/;let hits=[];const mojibake=/[\u00C0-\u00C3][\u0080-\u00BF]|\uFFFD\uFFFD|[\u00C2\u00C3][\u0080-\u00BF]|\u00ef\u00bf\u00bd/;function scan(f){if(exempt.test(f))return;try{const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(mojibake.test(l))hits.push(f+':'+(i+1)+': '+l.trim().slice(0,60))})}catch(e){}}function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist','target','.workbuddy','.sofagent','archive','changelog'].includes(e.name))continue;const f=path.join(dir,e.name);if(e.isDirectory())walk(f);else if(/\.(md|ts|sh|json|yml)$/.test(e.name))scan(f)}}dirs.forEach(d=>{if(fs.existsSync(d))walk(d)});rootFiles.forEach(f=>{if(fs.existsSync(f))scan(f)});console.log(hits.length===0?'✅ 零 mojibake':'❌ FOUND '+hits.length);hits.slice(0,20).forEach(h=>console.log('  '+h))"
 
-# 子项 e: null byte 扫描（\x00 字节嵌入——v1.2.0 审查发现的新损坏模式）
-# 背景：LLM 输出→Write 工具管道可能把多字节 UTF-8 序列损坏为 \x00+字母+\x00
-# 这种损坏不显示为乱码（U+FFFD），而是直接嵌入不可见 \x00 字节，导致文件被渲染器误判为二进制
-# 必须逐字节扫描 Buffer（不是字符串），因为 \x00 在 JSON 字符串里会被吞掉
+# 子项 e: null byte 扫描（\x00 嵌入——逐字节扫 Buffer，\x00 在 JSON 字符串里会被吞掉）
 node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL','FDE','FORGE','tools'];const rootFiles=['README.md','README.en.md','CHANGELOG.md','ROADMAP.md','SECURITY.md','LIMITATIONS.md','CONTRIBUTING.md','install.sh'];const skips=['node_modules','dist','target','.workbuddy','.sofagent','archive','changelog'];let hits=[];function scan(f){try{const buf=fs.readFileSync(f);let line=1;for(let i=0;i<buf.length;i++){if(buf[i]===10)line++;if(buf[i]===0){const ctx=buf.slice(Math.max(0,i-10),Math.min(buf.length,i+10)).toString('utf8').replace(/\x00/g,'<NUL>');hits.push(f+':'+line+': null byte 上下文 ...'+ctx+'...');if(hits.length>20)break}}}catch(e){}}function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(skips.includes(e.name))continue;const f=path.join(dir,e.name);if(e.isDirectory())walk(f);else if(/\.(md|ts|sh|json|yml)$/.test(e.name))scan(f)}}dirs.forEach(d=>{if(fs.existsSync(d))walk(d)});rootFiles.forEach(f=>{if(fs.existsSync(f))scan(f)});console.log(hits.length===0?'✅ 零 null byte':'❌ FOUND '+hits.length);hits.forEach(h=>console.log('  '+h))"
 ```
 
-> **修复指南**：发现 U+FFFD / null byte 后，**不要手动逐个删除**——根因是文件编码损坏，手删会留下隐形空洞。正确做法：① 找到原始未损坏版本（git show HEAD~N:path 或 git log 找最近未损坏 commit）→ ② 整文件覆盖恢复 → ③ 重新跑维度 50 确认零残留。如果是新生成文档（如 fresh-eyes prompt），重新生成而非修复。**null byte 损坏**尤其注意：`<NUL>D<NUL>` 这类模式通常意味着一个完整的多字节词（如 `.sofagent`）被损坏吞掉了，修复时需核对上下文恢复完整原文（不能只删 \x00，否则前后词会粘连）。
+> **修复指南**：发现乱码后不要手删——找到原始未损坏版本（git show）整文件覆盖恢复，再跑维度 50 确认。
+
+---
+
+#### 51. v1.2.0 审计链安全加固回归——HMAC 写读一致 + doctor 三态 + config 签名 + 版本自检 + key 强度（v1.2.0 BugFix 批次新增）
+
+> v1.2.0 BugFix 批次锁定 5 个 HMAC/审计链回归点——写侧与读侧对称性（改了签名逻辑忘了改验签→永久不可复验）。
+
+```bash
+# 子项 a: HMAC 写读一致性——写入侧先 sanitize 再签名（P0-3 教训：改了写入侧没改读取侧→永久验签失败）
+grep -n "stableStringify\|sanitize\|脱敏" engine/core/src/audit-history.ts | grep -i "sign\|hmac\|签" && echo "✅ HMAC 写读对称" || echo "❌ HMAC 写读不对称"
+grep -n "stableStringify\|sanitize" engine/audit/src/audit-history.ts | grep -i "sign\|hmac\|verify" && echo "✅ audit 包 HMAC 对称" || echo "⚠️ 检查 audit 包 HMAC"
+
+# 子项 b: doctor 三态判定——ok/tampered/unverifiable（不可复验 ≠ 篡改）
+grep -q "tampered" engine/core/src/doctor.ts && grep -q "unverifiable" engine/core/src/doctor.ts && echo "✅ 三态判定存在" || echo "❌ 缺少三态判定"
+grep -q "checkHistoryChainDetailed" engine/core/src/doctor.ts && echo "✅ 使用 detailed 版本" || echo "❌ 未使用 detailed 版本"
+
+# 子项 c: config 签名位置——signature 只允许顶层，audit 段内误放要 warn
+grep -q "audit 段含 signature" engine/core/src/config-loader.ts && echo "✅ audit 段签名检测存在" || echo "❌ 缺少 audit 段签名检测"
+grep -q "function verifyConfigSignature" engine/core/src/config-loader.ts && echo "✅ verifyConfigSignature 存在" || echo "❌ 缺少 verifyConfigSignature"
+
+# 子项 d: 版本一致性自检（advisory only，不阻断主流程）
+grep -q "checkVersionConsistency" engine/audit/src/index.ts && echo "✅ 版本自检存在" || echo "❌ 缺少版本自检"
+grep -A3 "checkVersionConsistency" engine/audit/src/index.ts | grep -q "catch\|不阻断\|advisory" && echo "✅ 自检不阻断" || echo "⚠️ 检查是否阻断"
+
+# 子项 e: HMAC key 强度校验——≥16 字节
+grep -q "validateHmacKey" engine/core/src/audit-history.ts && echo "✅ validateHmacKey 存在" || echo "❌ 缺少 validateHmacKey"
+grep -q "byteLen < 16\|16.*字节\|>=.*16" engine/core/src/audit-history.ts && echo "✅ 16 字节阈值存在" || echo "❌ 缺少 16 字节阈值"
+```
+
+> **HMAC 写读一致性教训**（v1.2.0 P0-3）：改了签名算法的一侧**必须同时改另一侧**，否则写入的记录永久「不可复验」。
 
 ---
 

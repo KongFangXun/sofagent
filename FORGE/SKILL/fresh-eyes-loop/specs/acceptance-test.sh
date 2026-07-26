@@ -1007,19 +1007,16 @@ if $S101_OK; then
   S101_RESULT=$(CRYPTO_DIR="$PROJECT_ROOT/engine/core/dist/crypto" node -e "
     const { encryptPayload, decryptPayload } = require(process.env.CRYPTO_DIR + '/aes-gcm.js');
     const { generateKeyPair, deriveSharedKey, publicKeyFingerprint } = require(process.env.CRYPTO_DIR + '/ecdh.js');
-    // AES-256-GCM 往返
     const key = require('crypto').randomBytes(32);
     const pt = Buffer.from('sofagent v1.1.8 secret payload', 'utf8');
     const enc = encryptPayload(key, pt);
     const dec = decryptPayload(key, enc.iv, enc.ciphertext, enc.tag);
     if (dec.toString('utf8') !== pt.toString('utf8')) { console.log('AES 往返失败'); process.exit(1); }
-    // ECDH 密钥协商——双方独立生成 keyPair，各自 derive 出相同 sharedKey
     const alice = generateKeyPair();
     const bob = generateKeyPair();
     const aliceShared = deriveSharedKey(alice.privateKey, bob.publicKey);
     const bobShared = deriveSharedKey(bob.privateKey, alice.publicKey);
     if (!aliceShared.equals(bobShared)) { console.log('ECDH 双方共享密钥不一致'); process.exit(1); }
-    // fingerprint 确定性
     const fp1 = publicKeyFingerprint(alice.publicKey);
     const fp2 = publicKeyFingerprint(alice.publicKey);
     if (fp1 !== fp2 || fp1.length < 8) { console.log('fingerprint 非确定性或过短'); process.exit(1); }
@@ -1043,7 +1040,6 @@ if $S102_OK; then
       const initiatorTag = computeTokenTag(token, initiator.publicKey);
       try {
         const paired = await pairByToken(token, responder.privateKey, initiator.publicKey, initiatorTag);
-        // PairedPeer: peerId(string) + sharedKey(Buffer) + fingerprint(string) + via
         if (!paired.peerId || paired.peerId.length < 8) {
           console.log('配对失败或 peerId 异常: ' + paired.peerId); process.exit(1);
         }
@@ -1053,7 +1049,6 @@ if $S102_OK; then
         if (paired.via !== 'token') {
           console.log('via 应为 token, 实际 ' + paired.via); process.exit(1);
         }
-        // 验证配对后双方共享密钥一致
         const initiatorShared = deriveSharedKey(initiator.privateKey, responder.publicKey);
         if (!paired.sharedKey.equals(initiatorShared)) {
           console.log('配对后共享密钥不一致'); process.exit(1);
@@ -1074,14 +1069,11 @@ require_dist "engine/core/dist/security/trust-grading.js" || S103_OK=false
 if $S103_OK; then
   S103_RESULT=$(QR_DIR="$PROJECT_ROOT/engine/daemon/dist/federation" node -e "
     const { trustWeightOf } = require(process.env.QR_DIR + '/query-router.js');
-    // restricted entity 的 trust weight 应为 0 或被过滤（安全边界：restricted 不可见）
     const restrictedItem = { content: 'restricted-secret', sensitivity: 'restricted', trust: 'federation', source: 'peer-a' };
     const publicItem = { content: 'public-info', sensitivity: 'public', trust: 'official', source: 'peer-b' };
     const wRestricted = trustWeightOf(restrictedItem);
     const wPublic = trustWeightOf(publicItem);
-    // restricted item 不应有正权重（防止泄露）
     if (wRestricted > 0) { console.log('restricted entity 有正权重 ' + wRestricted + '，安全边界失效'); process.exit(1); }
-    // public + official 应有正权重
     if (wPublic <= 0) { console.log('public/official item 权重异常: ' + wPublic); process.exit(1); }
     console.log('OK ' + wRestricted + '/' + wPublic);
   " 2>&1) || true
@@ -1094,17 +1086,14 @@ require_dist "engine/core/dist/security/prompt-sanitizer.js" || S104_OK=false
 if $S104_OK; then
   S104_RESULT=$(SANITIZER="$PROJECT_ROOT/engine/core/dist/security/prompt-sanitizer.js" node -e "
     const { wrapUntrusted, redactForPrompt, RESTRICTED_PLACEHOLDER } = require(process.env.SANITIZER);
-    // wrapUntrusted: 外部内容被标签包裹
     const wrapped = wrapUntrusted('user uploaded code', 'web');
     if (!wrapped.includes('<untrusted') || !wrapped.includes('user uploaded code')) {
       console.log('wrapUntrusted 未正确包裹: ' + wrapped); process.exit(1);
     }
-    // redactForPrompt: restricted sensitivity 内容被替换为占位符
     const redacted = redactForPrompt('secret-api-key=xxx', 'restricted');
     if (!redacted.includes(RESTRICTED_PLACEHOLDER) || redacted.includes('xxx')) {
       console.log('redactForPrompt 未正确脱敏: ' + redacted); process.exit(1);
     }
-    // public 内容不应被脱敏
     const passthrough = redactForPrompt('public info', 'public');
     if (passthrough !== 'public info') {
       console.log('public 内容被错误脱敏: ' + passthrough); process.exit(1);
@@ -1120,17 +1109,14 @@ require_dist "engine/core/dist/security/trust-grading.js" || S105_OK=false
 if $S105_OK; then
   S105_RESULT=$(TG_DIR="$PROJECT_ROOT/engine/core/dist/security/trust-grading.js" node -e "
     const { isTrustEntryUsable, sortByTrust } = require(process.env.TG_DIR);
-    // web + restricted 组合应不可用（最不可信来源 + 最高敏感度 = 安全红线）
     const webRestricted = { trust: 'web', sensitivity: 'restricted', content: 'should-not-leak' };
     if (isTrustEntryUsable(webRestricted)) {
       console.log('web+restricted 被判为可用，安全红线失效'); process.exit(1);
     }
-    // official + public 应可用
     const officialPublic = { trust: 'official', sensitivity: 'public', content: 'safe' };
     if (!isTrustEntryUsable(officialPublic)) {
       console.log('official+public 被判为不可用'); process.exit(1);
     }
-    // sortByTrust: official 应排在 web 前面
     const sorted = sortByTrust([webRestricted, officialPublic]);
     if (sorted[0].trust !== 'official') {
       console.log('sortByTrust 排序异常: official 未优先'); process.exit(1);
@@ -1146,8 +1132,6 @@ require_dist "engine/orchestrator/dist/dag-runner.js" || S106_OK=false
 if $S106_OK; then
   S106_RESULT=$(ORCH_DIR="$PROJECT_ROOT/engine/orchestrator/dist" node -e "
     const { detectFileConflicts } = require(process.env.ORCH_DIR + '/dag-runner.js');
-    // 构造两个 node 写同一文件的 workflow → 应检测到冲突
-    // detectFileConflicts 从 node.task 字符串中提取反引号路径
     const conflictParsed = {
       nodes: [
         { id: 'n1', task: 'write to \`src/output.ts\` for feature A' },
@@ -1161,7 +1145,6 @@ if $S106_OK; then
     if (!conflicts.some(c => c.includes('output.ts'))) {
       console.log('冲突报告不含文件名: ' + JSON.stringify(conflicts)); process.exit(1);
     }
-    // 无冲突场景：不同文件不应报告
     const cleanParsed = {
       nodes: [
         { id: 'n1', task: 'write to \`src/a.ts\`' },
@@ -1185,7 +1168,6 @@ if $S107_OK; then
     (async () => {
       const fs = require('fs');
       const { pushKnowledgeSummary, collectSummaryMaterial, buildSummary, NO_DATA_TEXT } = require(process.env.NOTIFY);
-      // 空目录降级：collectSummaryMaterial 应不崩溃，buildSummary 返回含 NO_DATA_TEXT
       const os = require('os'); const path = require('path');
       const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-s107-'));
       fs.mkdirSync(path.join(tmpDir, '.sofagent', 'knowledge'), { recursive: true });
@@ -1194,7 +1176,6 @@ if $S107_OK; then
       if (!summary || summary.length < 5) {
         console.log('summary 构建异常: 长度' + summary.length); process.exit(1);
       }
-      // pushKnowledgeSummary 用 mock pushFn 验证推送链路
       let pushedTarget = '';
       let pushedTitle = '';
       const mockPush = async (opts) => {
@@ -1206,7 +1187,6 @@ if $S107_OK; then
       if (!pushedTarget || !pushedTitle) {
         console.log('mock pushFn 未被正确调用'); process.exit(1);
       }
-      // 清理
       fs.rmSync(tmpDir, { recursive: true, force: true });
       console.log('OK ' + pushedTarget);
     })().catch(e => { console.log('异常: ' + e.message); process.exit(1); });
@@ -1430,12 +1410,9 @@ require_dist "engine/orchestrator/dist/loop-state-extractor.js" || S119_OK=false
 if $S119_OK; then
   S119_RESULT=$(LSE="$PROJECT_ROOT/engine/orchestrator/dist/loop-state-extractor.js" node -e "
     const { extractControlGraphState, writeControlGraphState } = require(process.env.LSE);
-    // 路径穿越 POC：loopId 含 ../../ 应被消毒为 ____（非穿越）
     const evil = '../../../etc/passwd';
     const state = extractControlGraphState(evil, '/tmp/nonexistent');
-    // 消毒后 loopId 不应含原始路径分隔符
     if (state.loopId.includes('/') || state.loopId.includes('..')) { console.log('消毒失败 loopId=' + state.loopId); process.exit(1); }
-    // writeControlGraphState 对路径穿越 loopId 应安全落盘（消毒后路径在 dir 内）
     const fs = require('fs'), os = require('os'), path = require('path');
     const tmpOut = fs.mkdtempSync(path.join(os.tmpdir(), 's119-'));
     const written = writeControlGraphState(evil, '/tmp/nonexistent', tmpOut);
