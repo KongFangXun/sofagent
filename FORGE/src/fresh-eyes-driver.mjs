@@ -787,7 +787,7 @@ function writeFallbackFindings(roundDir) {
 /**
  * 解析停止条件——driver 唯一做判断的地方。
  *
- * 读 findings.md 数 P0/P1 标记；读 result.md verify 列数 FAIL。
+ * 读 findings.md 数 P0/P1/P2 标记；读 result.md verify 列数 FAIL。
  * 只解析机器可读信号，不读审查内容做语义判断。
  *
  * @returns {{ p0:number, p1:number, p2:number, hasFail:boolean, isClean:boolean }}
@@ -818,8 +818,8 @@ function parseStopCondition(roundDir) {
     hasFail = /\bFAIL\b/i.test(text);
   }
 
-  // 干净轮 = 无 P0 无 P1 且无 FAIL
-  const isClean = (p0 === 0 && p1 === 0 && !hasFail);
+  // 干净轮 = 无 P0 无 P1 无 P2 闭环失败（P2 全量修，未闭环也计入不干净）
+  const isClean = (p0 === 0 && p1 === 0 && p2 === 0 && !hasFail);
 
   return { p0, p1, p2, hasFail, isClean };
 }
