@@ -35,13 +35,25 @@ export interface CronJob {
   config?: ABCronConfig;
 }
 
+/** watch.yml 顶层结构 */
+interface WatchConfig {
+  cron?: unknown[];
+}
+
 /** 从 watch.yml 读取 cron 配置 */
 export function loadCronConfig(projectDir: string): CronJob[] {
   const watchYml = join(projectDir, '.sofagent', 'watch.yml');
   if (!existsSync(watchYml)) return [];
   try {
-    const raw = yamlLoad(readFileSync(watchYml, 'utf-8')) as any;
-    return raw?.cron || [];
+    const raw = yamlLoad(readFileSync(watchYml, 'utf-8')) as WatchConfig | null;
+    const cron = raw?.cron;
+    if (!Array.isArray(cron)) return [];
+    // 运行时校验：确保每条 cron 条目至少包含 schedule 和 task 字段
+    return cron.filter((entry): entry is CronJob => {
+      if (!entry || typeof entry !== 'object') return false;
+      const e = entry as Record<string, unknown>;
+      return typeof e.schedule === 'string' && typeof e.task === 'string';
+    });
   } catch {
     return [];
   }

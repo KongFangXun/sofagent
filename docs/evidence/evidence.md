@@ -1,18 +1,14 @@
 # Evidence.md — sofagent 真的有用吗？
 
-> ⚠️ `ao compose` 为 v1.0.7 前命令，现已退役。编排请使用 `sofagent-orchestrator compose`。
-
-> 当前单元测试数：见 `tools/test-count.sh` 实跑（audit 包 / 全 workspace 汇总）。历史记录（v1.1.4 起快照）：v1.1.4 为 388、v1.1.5 为 405、v1.1.6 为 405、v1.1.7 为 413、v1.1.8 为 413、v1.1.9 为 413、v1.2.0 为 423（audit 包）；全 workspace v1.1.4 为 660、v1.1.5 为 726、v1.1.6 为 737、v1.1.7 为 781、v1.1.8 为 852、v1.1.9 为 909、v1.2.0 为 957（物理结构重构不增测试 + rules-engine 新增 28 + DP-2 signConfig 回归测试）。
+> 当前单元测试数：见 `tools/test-count.sh` 实跑（audit 包 / 全 workspace 汇总）。v1.2.0：audit 包 423、全 workspace 957（物理结构重构不增测试 + rules-engine 新增 28 + DP-2 signConfig 回归测试）。
 
 > ⚠️ **中文版为完整版（截至 Case 025，2026-07-06）。** 英文版同步至 Case 025。
 
 > 我们不替你回答。以下是装了 sofagent 的人自己记录的。
 
-> ⚠️ **诚实声明**：以下数据含作者自测。复盘评分为 LLM 自评（非 OpenClaw 平台无工程隔离）。企业级评估请等待 v0.9 加密 + 外部评估器。当前数据适合探索性评估，不适用于生产决策。
+> ⚠️ **诚实声明**：以下数据含作者自测。复盘评分为 LLM 自评（非 OpenClaw 平台无工程隔离）。企业级评估需配合外部审计 + 独立评估器；age 加密预计 v1.3.0 落地（详见 [SECURITY](../SECURITY.md)）。当前数据适合探索性评估，不适用于生产决策。
 
-> ⚠️ **v0.99.2 起**：benchmark.sh 已移除。以下 benchmark 数据为 v0.92-v0.93 期间的历史实验记录。当前部署验证请使用 `bash engine/scripts/verify.sh --quiet`（verify 全绿即通过）。benchmark 体系将在 v1.x 重建。
->
-> 📊 **A/B benchmark 数据**：
+> 📊 **历史 A/B benchmark 数据**（v0.92-v0.93 期间实验记录，存档参考）：
 >
 > **v0.93 OpenClaw 10 组对照实验**：4 任务 × 2 条件（有/无 sofagent）× 独立 session。结论：**约束底座增量 = f(陷阱难度)**。在高难度「同名语义混淆」场景（Task 1 camelCase→snake_case），sofagent 组变量名误伤率 0%（0/7），裸 Agent 100%（7/7）。在精确指令场景（Task 3/4）无显著差异。Task 2（代码分析）sof-1 异常漏报（1/4 bugs）需更大样本确认。⚠️ 方法论诚实：本次实验 sofagent 条件为 prompt 前缀注入 4 条核心规则（非真实 Skill 加载链），可能低估实际效果。详见 [Task 2-4 实验总览](./benchmark/2026-06-26-openclaw-task2-4-summary.md)。
 >

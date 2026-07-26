@@ -20,7 +20,7 @@
   <a href="#装上就能用"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>当前版本：v1.2.0</strong> · 2026-07-24 · 物理结构大重构</p>
+<p align="center"><strong>当前版本：v1.2.0</strong> · 2026-07-26 · 物理结构大重构</p>
 
 <p align="center">
   <a href="#这是什么">这是什么</a> · <a href="#sofagent-能帮你做什么">能帮你做什么</a> · <a href="#三种部署方式覆盖所有场景">部署方式</a> · <a href="#装上就能用">安装</a> · <a href="#延伸阅读">文档</a>
@@ -34,7 +34,7 @@
 
 **sofagent 做的就是这件事。** 它是一个 FDE Agent——进场梳理你的工作流，把能自动化的环节变成 AI 节点，部署到设备上，然后离场。离场后这些节点 7×24 自己跑，你留下的是一套能持续维护的 AI 化资产。
 
-大厂造了江——LLM 是水，Agent 平台是河床。但企业不敢直接舀着喝。sofagent 做的是堤坝 + 自来水厂 + 管网 + 水龙头——帮每个人把原水变成直饮水。完整类比见 [ARCHITECTURE · River](./docs/ARCHITECTURE.md)。
+大厂造了江（LLM 是水），但企业不敢直接舀。sofagent 做的是堤坝 + 自来水厂 + 管网 + 水龙头——把原水变成直饮水。完整类比见 [ARCHITECTURE](./docs/ARCHITECTURE.md)。
 
 ### 为什么不是现有工具
 
@@ -106,6 +106,8 @@ bash install.sh
 <details>
 <summary>🚀 装完三步体验</summary>
 
+> ⚠️ 需在 git 仓库中运行（`git init` 初始化一个）。
+
 ```bash
 # 1. 看规则——Agent 会带着这些红线干活
 sofagent-audit --help | head -5
@@ -121,6 +123,8 @@ sofagent-audit --timeline
 git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
 </details>
+
+> 💡 **单包测试需先 build**：monorepo 中各包通过 `dist/` 互相引用，跑单包 `npm test` 前需先 `npm run build --workspaces` 构建依赖包（全量 `npm test` 会自动处理）。
 
 > ⚠️ **关于 commit 拦截**：`git commit --no-verify` 可以绕过本地 hook。sofagent 的设计初衷是"诚实 Agent 的护栏"而非"恶意攻击者的防线"。企业高安全场景建议在 CI/CD pipeline 侧再加一道 `sofagent-audit --diff` 审计（hook 可绕，CI 不可绕）。详见 [LIMITATIONS](./LIMITATIONS.md) §一·已知架构限制。
 
@@ -147,8 +151,8 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 ```bash
 # install.sh 全局安装的是 @sofagent/audit（其余引擎通过 monorepo 本地引用）
 npm uninstall -g @sofagent/audit 2>/dev/null || true
-# 如果手动装过其他包，一并清理
-npm uninstall -g @sofagent/core @sofagent/orchestrator @sofagent/daemon @sofagent/mcp 2>/dev/null || true
+# 如果手动装过其他发布包，一并清理（12 个 npm 发布包）
+npm uninstall -g @sofagent/core @sofagent/orchestrator @sofagent/daemon @sofagent/mcp @sofagent/harness @sofagent/rules @sofagent/eval @sofagent/ab-test @sofagent/ontology @sofagent/skillopt @sofagent/think 2>/dev/null || true
 rm -f .git/hooks/commit-msg .git/hooks/post-commit
 ```
 </details>
@@ -191,7 +195,9 @@ flowchart LR
     EV -.-> CB
 ```
 
-| 引擎 | 作用 | 状态 |
+> 下表 5 项 = 1 底座 + 4 引擎。
+
+| 组件 | 作用 | 状态 |
 |:------|:--------|:--:|
 | 🧭 约束底座 | 开工前规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
 | ⚙️ 编排引擎 | 多 Agent 协作 + 任务拆解 | 🔶 部分 |

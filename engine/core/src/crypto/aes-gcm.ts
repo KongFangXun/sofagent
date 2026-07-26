@@ -70,8 +70,8 @@ export function decryptPayload(key: Buffer, iv: Buffer, ciphertext: Buffer, tag:
   decipher.setAuthTag(tag);
   try {
     return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
-  } catch {
+  } catch (e) {
     // final() 在 tag 校验失败时抛错——统一包装为认证失败，不泄露底层细节
-    throw new Error('AES-256-GCM 认证失败：payload 被篡改或密钥不匹配');
+    throw new Error(`AES-256-GCM 认证失败：payload 被篡改或密钥不匹配（${e instanceof Error ? e.message : String(e)}）`);
   }
 }

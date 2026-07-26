@@ -85,6 +85,28 @@ source "${LIB_DIR}/daemon-register.sh"
 # shellcheck disable=SC1091
 source "${LIB_DIR}/post-install.sh"
 
+# ── 帮助 ──
+show_help() {
+  cat <<EOF
+sofagent install.sh v${VERSION} — 主安装器
+
+用法:
+  bash install.sh                       默认模式：底座 + FDE Agent Skill
+  bash install.sh --base-only           仅装底座（约束层 + 四引擎）
+  bash install.sh --platform <name>     指定平台：openclaw / workbuddy / claude / codex / hermes
+  bash install.sh --quick               快速模式
+  bash install.sh --remote              远程安装模式（git clone）
+  bash install.sh --help, -h            显示此帮助
+
+平台: openclaw（完整）/ workbuddy / claude / codex / hermes / 自动探测
+EOF
+}
+
+# ── --help / -h 前置处理 ──
+case "${1:-}" in
+  --help|-h) show_help; exit 0 ;;
+esac
+
 # ── 环境检测 ──
 RUNTIME_ENV=$(detect_env)
 

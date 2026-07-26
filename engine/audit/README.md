@@ -23,16 +23,13 @@ npx @sofagent/audit --diff HEAD~1..HEAD
 
 安装后获得以下命令：
 
-| 命令 | 说明 |
-|------|------|
-| `sofagent-audit` | 审计 CLI 主入口 |
-| `sofagent-verify` | 安装后完整性验证（41 项检查） |
-| `sofagent-orchestrate-compare` | 编排 A/B 对比 + promote + compose |
-| `sofagent-env-check` | FDE 环境验证 |
-| `verify-evidence` | 证据验证工具（别名：`sofagent-verify-evidence`） |
-| `skill-safety-check` | Skill 文件安全检查（别名：`sofagent-skill-safety-check`） |
+| 命令 | 来源 | 说明 |
+|------|------|------|
+| `sofagent-audit` | `@sofagent/audit` | 审计 CLI 主入口 |
+| `sofagent-core` | `@sofagent/core` | 核心运行时（含 `verify` / `doctor` 子命令） |
+| `sofagent-orchestrator` | `@sofagent/orchestrator` | 编排引擎 CLI（含 `compose` / `compare` 子命令） |
 
-> 💡 `sofagent-mcp` 是独立包 `@sofagent/mcp` 的命令。`@sofagent/audit` 内置 MCP Server（通过 `sofagent-audit --mcp` 启动），无需单独安装 mcp 包。
+> 💡 其他常用命令：`sofagent-mcp`（`@sofagent/mcp`）、`sofagent-daemon`（`@sofagent/daemon`）、`sofagent-think`（`@sofagent/think`）等均为各自独立 npm 包的 bin 命令。`@sofagent/audit` 内置 MCP Server（通过 `sofagent-audit --mcp` 启动），无需单独安装 mcp 包。
 
 ---
 
@@ -86,21 +83,26 @@ sofagent-audit --diff HEAD~1..HEAD --ci --json
 
 ### 装后验证
 
+`sofagent-verify` 已迁至 `@sofagent/core` 包，请使用：
+
 ```bash
 # 完整检查（文件/Hook/权限/daemon/脱敏/断路器/平台兼容性）
-sofagent-verify
+sofagent-core verify
 
 # 快速模式（4 项核心检查，5 秒出结果）
-sofagent-verify --quick
+sofagent-core verify --quick
 
 # 只显示失败和警告项
-sofagent-verify --quiet
+sofagent-core verify --quiet
 
 # JSON 输出（CI/CD）
-sofagent-verify --json
+sofagent-core verify --json
 
 # 手动指定平台
-sofagent-verify --platform workbuddy
+sofagent-core verify --platform workbuddy
+
+# 运行 doctor 诊断
+sofagent-core doctor
 ```
 
 | 参数 | 说明 | 默认值 |

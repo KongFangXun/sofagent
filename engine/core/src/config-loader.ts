@@ -160,7 +160,13 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
     }
 
     // 3. 使用默认配置
-    console.warn('⚠️ 未找到 .sofagent/config.yml，使用默认配置。运行 sofagent-audit --init 生成配置。');
+    const projectExists = existsSync(join(baseDir, '.sofagent', 'config.yml'));
+    const homeExists = existsSync(join(homedir(), '.sofagent', 'config.yml'));
+    if (projectExists || homeExists) {
+      console.warn('⚠️ 配置文件存在但缺少 audit 段，使用默认配置。运行 sofagent-core doctor 诊断。');
+    } else {
+      console.warn('⚠️ 未找到 .sofagent/config.yml，使用默认配置。运行 sofagent-audit --init 生成配置。');
+    }
     return { ...DEFAULT_CONFIG };
   } catch (err) {
     // v1.1.3: 统一处理 ConfigParseError 和旧版 ConfigLoadError
@@ -275,7 +281,7 @@ function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath:
 
   // DP-3 修复：检测 audit 段（或其它非顶层位置）误放的 signature 字段。
   // 设计上 signature 只允许放在顶层；放在 audit 段会被静默剥离且不校验，
-  // 这是 QA 发现的 LOW 级问题���现在明确告警，避免用户以为签了名实际没生效。
+  // 这是 QA 发现的 LOW 级问题，现在明确告警，避免用户以为签了名实际没生效。
   const auditSection = parsed['audit'];
   if (
     auditSection &&
@@ -414,7 +420,7 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     ]);
     for (const key of Object.keys(merged.rules)) {
       if (!knownKeys.has(key.toLowerCase())) {
-        console.warn(`⚠️ config.yml: 未知规则名 "${key}"（已知: a1-a11, a14-a19, e1-e4）`);
+        console.warn(`⚠️ config.yml: 未知规则名 "${key}" → 已忽略（已知: a1-a11, a14-a19, e1-e4）`);
       }
     }
   }

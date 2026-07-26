@@ -1,9 +1,10 @@
 #!/bin/bash
-# sofagent post-commit hook v1.0.6
+# sofagent post-commit hook v1.2.1
 # --no-verify 跳过 commit-msg，但不跳过 post-commit
 # 安装：sofagent-audit --init（v1.0.6 起 --init 同时安装 commit-msg + post-commit）
 #
 # CRITICAL: post-commit 永远 exit 0——任何时候都不能阻断 commit
+# post-commit 是 best-effort 检测——不保证 100% 覆盖，建议配合 CI 侧 sofagent-audit --diff 兜底
 
 # 检测 Node.js
 if ! command -v node &>/dev/null; then
@@ -25,15 +26,31 @@ if [ -z "$CURRENT_SHA" ]; then
   exit 0
 fi
 
-# 检查 history.jsonl 是否包含当前 SHA
+# 检查 history.jsonl 最后一条记录的 timestamp 是否在 300 秒内
+# （SHA 精确匹配 + 300s 时间窗口双检测，扩大覆盖）
 HISTORY_FILE=".sofagent/audit/history.jsonl"
 if [ -f "$HISTORY_FILE" ]; then
-  if ! grep -q "$CURRENT_SHA" "$HISTORY_FILE" 2>/dev/null; then
-    echo ""
-    echo "  sofagent: 当前 commit ($CURRENT_SHA) 未在审计记录中找到。"
-    echo "  可能使用了 --no-verify 绕过审计 hook。"
-    echo "  运行 sofagent-audit --doctor 查看详情。"
+  # 先检查 SHA 精确匹配
+  if grep -q "$CURRENT_SHA" "$HISTORY_FILE" 2>/dev/null; then
+    exit 0  # SHA 找到，commit 已审计
   fi
+  # SHA 未找到，回退到时间窗口检测（300 秒内最后一条记录）
+  node -e "
+const fs = require('fs');
+const lines = fs.readFileSync('$HISTORY_FILE', 'utf-8').trim().split('\n').filter(Boolean);
+if (lines.length === 0) process.exit(0);
+try {
+  const last = JSON.parse(lines[lines.length - 1]);
+  if (!last.timestamp) process.exit(0);
+  const age = Date.now() - new Date(last.timestamp).getTime();
+  if (age > 300000) {
+    console.log('');
+    console.log('  sofagent: 最近一次审计记录在 ' + Math.round(age/1000) + ' 秒前，当前 commit 可能未经过审计。');
+    console.log('  可能使用了 --no-verify 绕过审计 hook。');
+    console.log('  运行 sofagent-audit --doctor 查看详情。');
+  }
+} catch { process.exit(0); }
+" 2>/dev/null
 fi
 
 exit 0

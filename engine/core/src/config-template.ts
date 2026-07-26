@@ -140,6 +140,8 @@ if [ $EXIT_CODE -eq 2 ]; then
   echo ""
   echo "❌ sofagent 发现违规，commit 已阻止。"
   echo "   请修复下列问题后重新提交。"
+  echo ""
+  echo "⚠️  如需绕过：git commit --no-verify（不推荐，企业场景建议 CI 侧 sofagent-audit --diff 兜底）"
   exit 1
 fi
 

@@ -33,7 +33,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
 - ⚠️ 明文存储：`.sofagent/` 下文件仍为 Markdown 明文，未做加密
-- ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**预计 v1.2.x 落地**。合规审查员请注意：v1.1.x 版本不适合直接用于强合规场景，需配合外部加密卷（gpg / disk encryption）。
+- ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**预计 v1.3.0 落地**（v1.2.x 已纳入规划但受限于编排隔离底座优先级）。合规审查员请注意：v1.1.x 版本不适合直接用于强合规场景，需配合外部加密卷（gpg / disk encryption）。
 - `.sofagent/` 目录权限为 700（仅当前用户可访问），但同一服务器其他用户若有 root 权限可读
 
 **企业环境建议**：
@@ -228,6 +228,8 @@ sanitize() 管道在写入 history.jsonl、think.md、task/logs 等文件前自�
 | 绕过 --init 直接手动修改 config.yml | ❌ 无自动检测 | config hash 校验（见 fail-closed 改进） |
 
 > ⚠️ 以上绕过路径均依赖 Agent 的"自觉"——这是 sofagent 架构级别的信任模型选择：审计工具是**协助**人类监督，不是**替代**人类监督。已知绕过路径详见 LIMITATIONS 已有信任模型描述。
+
+> ⚠️ **企业高安全场景**：`config.yml` 篡改可绕过审计规则（如关闭规则、放宽阈值）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。
 
 ### Daemon 监控边界
 

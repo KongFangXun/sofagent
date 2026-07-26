@@ -130,8 +130,10 @@ export interface ChainCheckResult {
  *      密钥轮换 / 环境指纹漂移，当前侧无法区分「篡改」与「漂移」）或
  *      v2 段（含环境指纹）因 key/环境漂移无法复现签名，属历史证据不可复验，
  *      非篡改，不报「链断裂/篡改」。
- *   （注：stable 新条目的 HMAC 验签不匹配也被归为②——因密钥一旦漂移，
- *      当前侧无法证明是「伪造」还是「密钥轮换」，依 FLAG-2 不误报篡改原则归黄。）
+ *   （注：stable 新条目（hmacAlgo==='stable'）的 HMAC 验签不匹配判为①篡改（红）——
+ *      因 stableStringify 签名读侧可正确复现，不匹配只能是内容被改。
+ *      旧条目（无 hmacAlgo）HMAC 不匹配仍归为②不可复验（黄）——写入侧用
+ *      内存 key 顺序签名，读侧无法复现，无法区分「篡改」与「密钥轮换」。）
  *
  * @param dataDir 可选的数据目录覆盖
  * @returns ChainCheckResult
@@ -216,10 +218,10 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
     }
 
     // 2) HMAC 验签（仅当条目带 hmacSig 且有密钥时）
-    // 有密钥却签名不符：可能「内容被篡改」，也可能「密钥轮换 / 写入侧 key 顺序 /
-    //   环境指纹漂移」——当前侧无法区分。为避免把 key/环境漂移误报为
-    //   「篡改（红）」，HMAC 不匹配统一归为「历史不可复验（黄）」，不判篡改。
-    //   唯一明确判篡改（红）的是上方「无环境指纹旧算法 prevHash 不匹配」。
+    // v1.2.1: hmacAlgo==='stable' 的条目用 stableStringify 签名，读侧可正确复现，
+    //   HMAC 不匹配 = 内容在签名后被篡改（红）。
+    //   旧条目（无 hmacAlgo）写入侧用内存 key 顺序签名，读侧无法复现，
+    //   HMAC 不匹配归为不可复验（黄）——无法区分「篡改」与「密钥轮换」。
     if (curr.hmacSig && keyAvailable && hmacKey) {
       // hmacAlgo 仅作标记，不参与 HMAC 计算（写入侧 recordForSig 也不含它），保证两侧一致
       const recordForSig = { ...curr, prevHash: undefined, hashVersion: undefined, hmacSig: undefined, hmacAlgo: undefined };
@@ -227,7 +229,12 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
         .update(stableStringify(recordForSig) + '|' + fingerprint)
         .digest('hex').slice(0, 32);
       if (curr.hmacSig !== expectedHmac) {
-        // 无法区分「篡改」与「密钥轮换 / 漂移」→ 归为不可复验（黄），不报篡改
+        if (curr.hmacAlgo === 'stable') {
+          // stable 条目：写入侧用 stableStringify 签名，读侧可正确复现，
+          // HMAC 不匹配只能是内容被篡改（红）
+          return { status: 'tampered', index: i, detail: `历史条目 ${i} HMAC 签名不匹配（stable 条目签名验证失败），疑似内容被篡改` };
+        }
+        // 旧条目（无 hmacAlgo）：写入侧用内存 key 顺序签名，读侧无法复现 → 归为不可复验（黄）
         foundUnverifiable = true;
       }
     }
