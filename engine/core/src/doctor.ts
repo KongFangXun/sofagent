@@ -15,11 +15,10 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 import { execFileSync } from 'child_process';
-import { homedir } from 'os';
 import { checkEnv } from './env-check';
 import { VERSION } from './shared/constants';
 import { load as yamlLoad, YAMLException } from 'js-yaml';
-import { checkHistoryChainIntegrity } from './audit-history';
+import { checkHistoryChainDetailed, validateHmacKey } from './audit-history';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
 function warn(msg: string) { console.log(`  ⚠️  ${msg}`); }
@@ -193,27 +192,33 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     }
   }
 
-  // 6. 审计日志完整性（HMAC 签名 + 链完整性，v1.1.8 新增）
-  // 检查两项：① HMAC 密钥是否配置 ② history.jsonl hash chain 是否完整
+  // 6. 审计日志完整性（HMAC 密钥强度 + 链完整性，v1.1.8 / v1.2.0）
+  // 检查两项：① HMAC 密钥是否配置且足够强 ② history.jsonl 链完整性
+  //   FLAG-2 修复：区分「篡改（红）」与「历史不可复验（黄，key/环境漂移）」
   console.log('\n── 审计日志完整性 ──');
-  const hmacKeyPath = join(homedir(), '.sofagent-key');
-  const hasKey = existsSync(hmacKeyPath);
-
-  if (hasKey) {
-    ok('已配置 HMAC 密钥（~/.sofagent-key），审计日志使用 HMAC-SHA256 强校验');
-  } else {
+  const keyStatus = validateHmacKey();
+  if (!keyStatus.configured) {
     warn('无 HMAC 签名，完整性校验强度降低：审计日志仅 SHA-256 校验（Agent 可重算整链）。配置 ~/.sofagent-key 可启用 HMAC-SHA256 强校验');
+  } else if (!keyStatus.strong) {
+    // FLAG-4：弱密钥明确告警，不静默稀释强校验
+    warn(`HMAC 密钥强度不足（${keyStatus.reason}）——审计日志强校验被弱密钥稀释，建议重新生成 ≥16 字节强密钥（如：openssl rand -hex 32 > ~/.sofagent-key && chmod 600 ~/.sofagent-key）`);
+  } else {
+    ok('已配置 HMAC 密钥（~/.sofagent-key，≥16 字节），审计日志使用 HMAC-SHA256 强校验');
   }
 
-  // 实际校验链完整性（v1.2.0: checkHistoryChainIntegrity 已下沉到 core，消除 core→audit 反向依赖）
+  // 实际校验链完整性（v1.2.0: checkHistoryChainDetailed 已下沉到 core，区分篡改 vs 历史不可复验）
   let auditLogOk = true;
   try {
-    const chainIntact = checkHistoryChainIntegrity();
-    auditLogOk = chainIntact;
-    if (chainIntact) {
+    const result = checkHistoryChainDetailed();
+    if (result.status === 'ok') {
       ok('审计日志 hash chain 完整性校验通过');
+    } else if (result.status === 'tampered') {
+      // ① 篡改检测（红）：确为伪造
+      auditLogOk = false;
+      fail(`审计日志 hash chain 断裂——检测到篡改痕迹（${result.detail ?? ''}），请检查 .sofagent/audit/history.jsonl`);
     } else {
-      fail('审计日志 hash chain 断裂——检测到篡改痕迹，请检查 .sofagent/audit/history.jsonl');
+      // ② 历史不可复验（黄）：key/环境漂移，非篡改——不报「链断裂/篡改」，不判失败
+      warn(`审计日志 hash chain 不可复验（黄色提示，非篡改）：${result.detail ?? ''}。如确为本人环境/密钥变更，可忽略；如非本人操作，请核查 ~/.sofagent-key 与运行环境`);
     }
   } catch (chainErr) {
     // 链校验异常（极少）：不影响其余检查，但记录以便排查，

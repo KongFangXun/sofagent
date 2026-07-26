@@ -101,23 +101,53 @@ function sortKeys(input: unknown): unknown {
 }
 
 /**
- * P0-5: 验证 history.jsonl 的 hash chain 完整性
- * 检测中间条目是否被篡改
- * @param dataDir 可选的数据目录覆盖
- * @returns true = 链完整，false = 链断裂
+ * 链校验结果状态（FLAG-2 修复）
+ * - 'ok'：链完整且可验签（或降级 SHA-256 通过）
+ * - 'tampered'：检测到篡改（红色告警）——仅当「无环境指纹的旧算法 prevHash 不匹配」
+ *   时判定（环境无关、密钥无关，确为内容被改），属真·伪造
+ * - 'unverifiable'：历史段不可复验（黄色提示）——HMAC 验签不匹配（可能密钥轮换 /
+ *   写入侧 key 顺序 / 环境指纹漂移，当前侧无法区分「篡改」与「漂移」）或 v2 段
+ *   （含环境指纹）因 hostname/username/git 路径或 ~/.sofagent-key 漂移无法复现签名，
+ *   属历史证据不可复验，非篡改，不应报「链断裂/篡改」
  */
-export function checkHistoryChainIntegrity(dataDir?: string): boolean {
+export type ChainCheckStatus = 'ok' | 'tampered' | 'unverifiable';
+
+export interface ChainCheckResult {
+  status: ChainCheckStatus;
+  /** 人类可读说明（doctor 输出用） */
+  detail?: string;
+  /** 首个异常条目下标（调试用） */
+  index?: number;
+}
+
+/**
+ * P0-5: 验证 history.jsonl 的 hash chain 完整性（详细判定版，FLAG-2 修复）
+ *
+ * 区分两类异常（篡改优先于不可复验）：
+ *   ① 篡改检测（tampered，红）：仅「无环境指纹的旧算法 prevHash 不匹配」
+ *      时判定——环境无关、密钥无关，确为内容被改，属真·伪造。
+ *   ② 不可复验（unverifiable，黄）：HMAC 验签不匹配（写入侧 key 顺序 /
+ *      密钥轮换 / 环境指纹漂移，当前侧无法区分「篡改」与「漂移」）或
+ *      v2 段（含环境指纹）因 key/环境漂移无法复现签名，属历史证据不可复验，
+ *      非篡改，不报「链断裂/篡改」。
+ *   （注：stable 新条目的 HMAC 验签不匹配也被归为②——因密钥一旦漂移，
+ *      当前侧无法证明是「伪造」还是「密钥轮换」，依 FLAG-2 不误报篡改原则归黄。）
+ *
+ * @param dataDir 可选的数据目录覆盖
+ * @returns ChainCheckResult
+ */
+export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
   const filePath = getHistoryFilePath(dataDir);
 
   if (!existsSync(filePath)) {
-    return true; // 无历史文件 = 未受损
+    return { status: 'ok' }; // 无历史文件 = 未受损
   }
 
   let content: string;
   try {
     content = readFileSync(filePath, 'utf-8');
   } catch {
-    return false;
+    return { status: 'tampered', detail: 'history.jsonl 读取失败（疑似权限/损坏）' };
   }
 
   const entries: ChainEntry[] = [];
@@ -135,7 +165,7 @@ export function checkHistoryChainIntegrity(dataDir?: string): boolean {
     }
   }
 
-  if (entries.length <= 1) return true; // 0 或 1 条记录无需验证
+  if (entries.length <= 1) return { status: 'ok' }; // 0 或 1 条记录无需验证
 
   // v1.0.6: 逐条判断 hashVersion——支持新旧格式混合
   // 旧用户升级后 history.jsonl 可能混合旧条目（无 hashVersion）和新条目（hashVersion:2）
@@ -143,6 +173,12 @@ export function checkHistoryChainIntegrity(dataDir?: string): boolean {
   const fingerprint = getEnvFingerprint(dataDir);
   const hmacKey = getHmacKey();
   const keyAvailable = hmacKey !== null;
+
+  // FLAG-2：篡改优先于「不可复验」——唯一明确判篡改（红）的是
+  // 「无环境指纹的旧算法 prevHash 不匹配」（环境无关、确为内容被改）；
+  // 其余 HMAC / v2 指纹相关异常一律归为「历史不可复验（黄）」，
+  // 因为这些异常无法在当前侧区分「真·篡改」与「密钥轮换 / 环境漂移」。
+  let foundUnverifiable = false;
 
   for (let i = 1; i < entries.length; i++) {
     const prev = entries[i - 1]!;
@@ -153,7 +189,10 @@ export function checkHistoryChainIntegrity(dataDir?: string): boolean {
     // hashVersion 未定义 / === 1：写入时没指纹，校验也不用指纹
     const currUseFingerprint = curr.hashVersion === 2;
 
-    // 计算预期 hash（排除 prevHash 和 hashVersion 字段避免自引用）
+    // 1) prevHash 链校验（权威完整性判定，key 顺序无关）
+    // P0-3 修复：跳过无 prevHash 的 legacy 条目（本就不在链上，避免假阳性）。
+    if (curr.prevHash == null || curr.prevHash === 'unknown') continue;
+
     const recordForHash = { ...prev, prevHash: undefined, hashVersion: undefined };
     const hashInput = currUseFingerprint
       ? JSON.stringify(recordForHash) + '|' + fingerprint
@@ -162,24 +201,25 @@ export function checkHistoryChainIntegrity(dataDir?: string): boolean {
       .update(hashInput)
       .digest('hex').slice(0, 16);
 
-    // P0-3 修复：跳过无 prevHash 的 legacy 条目。
-    // 哈希链引入前（v1.0.5 及更早）写入的历史记录没有 prevHash 字段（undefined），
-    // 它们从未参与哈希链。若不做此判断，`undefined !== 计算哈希` 会恒为真，
-    // 导致 --doctor 对这些「本就不在链上」的条目误报「hash chain 断裂」（假阳性）。
-    // 带 'unknown' 占位（写入时解析失败）的条目同样视为非链上，跳过。
-    if (curr.prevHash == null || curr.prevHash === 'unknown') continue;
-
     if (curr.prevHash !== expectedPrevHash) {
-      return false; // 链断裂（真·篡改或无法复现的历史段）
+      if (currUseFingerprint) {
+        // v2 段（含环境指纹）prevHash 不匹配：环境指纹 / hostname / username /
+        // git 路径或 ~/.sofagent-key 已漂移，无法复现写入时签名 →
+        // 属历史证据不可复验（黄），非篡改，不报「链断裂/篡改」。
+        foundUnverifiable = true;
+      } else {
+        // 无环境指纹的旧算法 prevHash 不匹配：环境无关，属真·篡改（红）。
+        return { status: 'tampered', index: i, detail: `历史条目 ${i} prevHash 不匹配（旧算法，环境无关），疑似内容被篡改` };
+      }
+      // v2 漂移：已记 unverifiable，跳过本条 HMAC，进入下一条
+      continue;
     }
 
-    // v1.1.8: 验证 HMAC 签名（条目带 hmacSig 且有密钥时）。
-    // 有密钥却签名不符 = 篡改；无密钥时不校验（向后兼容降级模式）。
-    // P0-3 修复：历史条目（v1.2.0 前）的 HMAC 用「内存对象 key 顺序」签名，读取时用
-    // 「文件解析 key 顺序」，JSON.stringify 对 key 顺序敏感 → 旧条目必然验签失败。
-    // prevHash 链（统一从文件解析，key 顺序无关）才是权威完整性判定，因此 HMAC
-    // 不匹配不再判为链断裂，避免正常仓库误报「hash chain 断裂」。新写入的条目改用
-    // stableStringify（见 appendHistory），可正确验签。
+    // 2) HMAC 验签（仅当条目带 hmacSig 且有密钥时）
+    // 有密钥却签名不符：可能「内容被篡改」，也可能「密钥轮换 / 写入侧 key 顺序 /
+    //   环境指纹漂移」——当前侧无法区分。为避免把 key/环境漂移误报为
+    //   「篡改（红）」，HMAC 不匹配统一归为「历史不可复验（黄）」，不判篡改。
+    //   唯一明确判篡改（红）的是上方「无环境指纹旧算法 prevHash 不匹配」。
     if (curr.hmacSig && keyAvailable && hmacKey) {
       // hmacAlgo 仅作标记，不参与 HMAC 计算（写入侧 recordForSig 也不含它），保证两侧一致
       const recordForSig = { ...curr, prevHash: undefined, hashVersion: undefined, hmacSig: undefined, hmacAlgo: undefined };
@@ -187,17 +227,59 @@ export function checkHistoryChainIntegrity(dataDir?: string): boolean {
         .update(stableStringify(recordForSig) + '|' + fingerprint)
         .digest('hex').slice(0, 32);
       if (curr.hmacSig !== expectedHmac) {
-        // P0-3 修复：区分「旧条目 key 顺序不可复现（误报）」与「新条目被篡改」。
-        // 旧条目（无 hmacAlgo 标记，写入侧用内存对象 key 顺序签名，读侧无法复现）→
-        //   HMAC 不匹配属历史/环境签名差异，不判链断裂，避免 --doctor 对旧仓库假阳性。
-        // 新条目（hmacAlgo === 'stable'，写入侧用 stableStringify 签名）→
-        //   HMAC 不匹配 = 真·篡改，判链断裂（保留审计工具的篡改检测能力）。
-        if (curr.hmacAlgo === 'stable') {
-          return false; // 新条目 HMAC 验签失败 = 篡改
-        }
+        // 无法区分「篡改」与「密钥轮换 / 漂移」→ 归为不可复验（黄），不报篡改
+        foundUnverifiable = true;
       }
     }
   }
 
-  return true;
+  if (foundUnverifiable) {
+    return {
+      status: 'unverifiable',
+      detail: '部分历史段（v2 含环境指纹条目）因 ~/.sofagent-key 或环境指纹漂移无法复验，属历史证据不可复验，非篡改',
+    };
+  }
+
+  return { status: 'ok' };
+}
+
+/**
+ * P0-5: 验证 history.jsonl 的 hash chain 完整性（boolean 兼容版）
+ * @deprecated 布尔语义无法区分「篡改」与「历史不可复验」，新代码请用 checkHistoryChainDetailed
+ * @returns true = 链完整（含可降级），false = 存在篡改或不可复验段
+ */
+export function checkHistoryChainIntegrity(dataDir?: string): boolean {
+  // 向后兼容：保留 boolean 契约（audit 包外部 API / acceptance-test.sh 依赖）。
+  // 注：'unverifiable' 也返回 false——历史不可复验段同样视为「非完整」，
+  //     但 doctor 已改用 checkHistoryChainDetailed 单独归类为黄色提示而非红色篡改。
+  return checkHistoryChainDetailed(dataDir).status === 'ok';
+}
+
+/**
+ * HMAC 密钥强度校验（FLAG-4 最小安全实现）
+ * 密钥来自 ~/.sofagent-key（chmod 600）。空密钥或长度不足（<16 字节）视为弱密钥，
+ * 用于签名会稀释强校验能力——调用方应在启动时告警，避免静默使用弱密钥。
+ * @returns HmacKeyStatus
+ */
+export interface HmacKeyStatus {
+  /** 密钥文件是否存在 */
+  configured: boolean;
+  /** 密钥是否足够强（非空且 ≥16 字节） */
+  strong: boolean;
+  /** 弱密钥/异常原因（configured=true 且 strong=false 时有值） */
+  reason?: string;
+}
+
+export function validateHmacKey(): HmacKeyStatus {
+  const key = getHmacKey();
+  if (key === null) return { configured: false, strong: false };
+  const trimmed = key.trim();
+  const byteLen = Buffer.byteLength(trimmed, 'utf-8');
+  if (byteLen === 0) {
+    return { configured: true, strong: false, reason: '密钥为空（~/.sofagent-key 仅含空白）' };
+  }
+  if (byteLen < 16) {
+    return { configured: true, strong: false, reason: `密钥长度不足（${byteLen} 字节，建议 ≥16 字节 / 128-bit）` };
+  }
+  return { configured: true, strong: true };
 }
