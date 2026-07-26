@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // sofagent-orchestrate-compare · 编排方案 A/B 对比 + 任务编排 CLI
 //
-// v1.2.0: ao 完全退役，DeepAgents 为唯一编排引擎。
+// v1.2.0: ao 完全退役，createReactAgent 为唯一编排引擎。
 // 新增连续胜出计数器（CONSECUTIVE_WINS_REQUIRED = 2）+ ab-state.json 持久化。
 // v1.2.0：迁移至 @sofagent/orchestrator，import → 同包内 composer
 //
@@ -280,7 +280,7 @@ export function promoteWorkflow(candidateDir: string): void {
 }
 
 // ════════════════════════════════════════
-// 子命令: compose（DeepAgents 编排）
+// 子命令: compose（createReactAgent 编排）
 // ════════════════════════════════════════
 
 const BINARY_MODE = { SPLIT: '拆', DIRECT: '不拆' } as const;
@@ -370,7 +370,7 @@ export async function composeTask(args: string[]): Promise<void> {
     info(`${BINARY_MODE.DIRECT} — 任务稳定（连续 ${successRuns}/${totalRuns} 成功），直接交付 Agent`);
   } else {
     mode = BINARY_MODE.SPLIT;
-    info(`编排模式: ${BINARY_MODE.SPLIT} — DeepAgents compose 一次性拆解`);
+    info(`编排模式: ${BINARY_MODE.SPLIT} — createReactAgent compose 一次性拆解`);
   }
 
   console.log('');
@@ -381,7 +381,7 @@ export async function composeTask(args: string[]): Promise<void> {
     workflowFile = cachedYaml;
     info('Step 1/3 · 使用缓存模板');
   } else {
-    info('Step 1/3 · 编排分析（DeepAgents compose 拆解）...');
+    info('Step 1/3 · 编排分析（createReactAgent compose 拆解）...');
     workflowFile = join(process.env.TMPDIR || '/tmp', `sofagent-workflow-${process.pid}.yaml`);
 
     // v1.1.8 新增：--enterprise-workflow 让企业 workflow 作为 compose 参考上下文
@@ -394,14 +394,14 @@ export async function composeTask(args: string[]): Promise<void> {
         warn(`企业 workflow 读取失败（${enterpriseWorkflowFile}），按通用拆解继续`);
       }
     }
-    const deepAgentsYaml = enterpriseYaml !== undefined
+    const agentYaml = enterpriseYaml !== undefined
       ? (await compose({ taskDesc, enterpriseWorkflowYaml: enterpriseYaml, variant: 'A' }))?.yaml ?? null
       : await composeWithDeepAgents(taskDesc);
-    if (deepAgentsYaml) {
-      writeFileSync(workflowFile, deepAgentsYaml);
-      ok('DeepAgents compose 成功');
+    if (agentYaml) {
+      writeFileSync(workflowFile, agentYaml);
+      ok('createReactAgent compose 成功');
     } else {
-      warn('DeepAgents compose 不可用，使用降级方案');
+      warn('createReactAgent compose 不可用，使用降级方案');
       defaultOrchestrate(taskDesc);
       process.exit(0);
     }
@@ -480,7 +480,7 @@ export async function composeTask(args: string[]): Promise<void> {
   console.log('');
   info('Step 3/3 · 执行编排...');
 
-  // v1.0.7: DeepAgents 是唯一编排引擎，直接输出方案
+  // v1.0.7: createReactAgent 是唯一编排引擎，直接输出方案
   const executeFile = existsSync(workflowFile) ? workflowFile : '';
   if (executeFile) {
     ok('编排方案已就绪');
@@ -699,7 +699,7 @@ function defaultOrchestrate(task: string): void {
 
 function showComposeHelp(): void {
   console.log(`sofagent-orchestrate-compare compose v${VERSION}`);
-  console.log('  DeepAgents 编排——任务拆解 + worktree 隔离');
+  console.log('  createReactAgent 编排——任务拆解 + worktree 隔离');
   console.log('');
   console.log('  用法:');
   console.log('    sofagent-orchestrate-compare compose "任务描述"');
@@ -711,10 +711,10 @@ function showComposeHelp(): void {
   console.log('    sofagent-orchestrate-compare compose "任务描述" --worktree   创建独立 worktree');
   console.log('');
   console.log('  两档拆解:');
-  console.log('    拆    首次运行或复杂任务，DeepAgents compose 一次性拆解');
+  console.log('    拆    首次运行或复杂任务，createReactAgent compose 一次性拆解');
   console.log('    不拆  历史成功率100%或有缓存 → 直接交付 Agent');
   console.log('');
-  console.log('  依赖: deepagents, git (worktree 模式)');
+  console.log('  依赖: @langchain/langgraph, git (worktree 模式)');
 }
 
 // ════════════════════════════════════════

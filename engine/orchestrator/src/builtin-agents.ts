@@ -2,7 +2,7 @@
 // builtin-agents.ts · 预装 Agent 定义（v1.2.0）
 //
 // 每个 Agent 的 systemPrompt 来自 SKILL/agents/<name>/ 下的
-// Agency Agents 格式 .md 文件。DeepAgents 启动时读取文件、
+// Agency Agents 格式 .md 文件。createReactAgent 启动时读取文件、
 // 剥离 frontmatter、注入为 system prompt。
 //
 // 如果文件找不到（如 npm 全局安装路径不同），回退到硬编码精简版。
@@ -16,7 +16,7 @@ import type { SubAgentDefinition } from './registry';
  * 解析 SKILL.md 为 system prompt
  *
  * 不剥掉 front matter——而是把它的字段转成 Agent 能读懂的身份标签，
- * 和 body 内容一起注入 DeepAgents。
+ * 和 body 内容一起注入 createReactAgent。
  */
 function parseSkillMd(content: string): string {
   const parts = content.split('---');

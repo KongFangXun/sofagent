@@ -17,7 +17,7 @@ export interface TestCase {
   expected: Record<string, unknown>;
   /** 标签（分类用） */
   tags?: string[];
-  /** v1.0.7: 允许的工具列表（方案 C DeepAgents 才生效） */
+  /** v1.0.7: 允许的工具列表（方案 C createReactAgent 才生效） */
   allowedTools?: string[];
 }
 

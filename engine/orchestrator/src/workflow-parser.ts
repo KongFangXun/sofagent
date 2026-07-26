@@ -3,7 +3,7 @@
 // v1.2.0 新增
 // ============================================================
 //
-// 把 compose 产出的 workflow YAML 解析为 DeepAgents SubAgent 配置：
+// 把 compose 产出的 workflow YAML 解析为 SubAgent 配置：
 //   - 节点抽取：js-yaml 解析（orchestrator 既有依赖），非法 YAML 抛 WorkflowParseError
 //   - agent 映射表（架构师定稿）：
 //       developer        → ENGINEER_AGENT
@@ -41,7 +41,7 @@ export interface ParsedWorkflow {
   nodes: WorkflowNode[];
 }
 
-/** DeepAgents SubAgent 配置（与 deepagents 的 SubAgent 接口字段对齐） */
+/** SubAgent 配置（供 dag-runner 封装为 task tool） */
 export interface SubAgentConfig {
   name: string;
   description: string;
@@ -49,9 +49,8 @@ export interface SubAgentConfig {
   /**
    * 工具名列表（来自 SubAgentDefinition.tools）。
    * 注意：此字段为语义标签（'read'/'write'/'bash' 等），用于审计日志和
-   * SubAgent 行为约束文档。不直接传给 DeepAgents SubAgent.tools（后者要求
-   * StructuredTool[] 实例）。dag-runner 中 SubAgent omit tools 字段，
-   * 继承 DeepAgents 默认工具集（read_file/write_file/edit_file/glob/grep/execute）。
+   * SubAgent 行为约束文档。dag-runner 中每个 SubAgent 封装为 task tool，
+   * 内部子 Agent 继承 ENGINEER_TOOLS 默认工具集。
    */
   tools: string[];
 }
@@ -74,7 +73,7 @@ const FDE_SUSTAIN_AGENT: SubAgentDefinition = {
   mode: 'sustain',
 };
 
-/** technical-writer 内置定义（deepagents general-purpose 的 sofagent 化） */
+/** technical-writer 内置定义（通用写作 Agent 的 sofagent 化） */
 const TECHNICAL_WRITER_AGENT: SubAgentDefinition = {
   name: 'technical-writer',
   type: 'development',
@@ -229,7 +228,7 @@ function assertAcyclic(nodes: WorkflowNode[]): void {
  * workflow YAML → SubAgent 配置数组
  *
  * 同一 agent 类型出现多次时按节点 id 去重命名（<agent>-<nodeId>），
- * 保证 DeepAgents task tool 的名字唯一。
+ * 保证 task tool 的名字唯一。
  *
  * @param parsed 已解析的 workflow
  * @returns SubAgentConfig 数组（每个节点一个 SubAgent）

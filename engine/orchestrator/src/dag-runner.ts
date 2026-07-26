@@ -1,29 +1,38 @@
 // ============================================================
-// dag-runner.ts · 编排执行器（DeepAgents SubAgent 调度）
-// v1.2.0 新增
+// dag-runner.ts · 编排执行器（createReactAgent SubAgent 调度）
+// v1.2.0 新增 · v1.2.0 迁移至 LangGraph createReactAgent（方案 B）
 // ============================================================
 //
 // ⚠️ 命名说明：文件名 dag-runner 指向最终目标（DAG 并行调度），
 //    v1.2.0 当前实现为**串行状态机**——主 Agent 按 depends_on
 //    顺序委派 Sub Agent，无依赖的节点可同步并行（取决于 LLM
 //    是否在一次回复中发出多个 task 调用）。完整 DAG 并行调度
-//    + 沙箱隔离规划在 v1.3.0。
+//    + 沙��隔离规划在 v1.3.0。
 //
 // 把 compose 产出的 workflow YAML 真正跑起来：
 //   1. parseWorkflowYaml → SubAgentConfig[]（workflow-parser）
 //   2. 每个 SubAgent 的 systemPrompt 前置 buildConstrainedSystemPrompt 四层加载链
-//   3. createDeepAgent({ subagents }) 创建编排 Agent（subagents 不再是 []）
-//   4. 主 Agent 经 task tool 自主委派（可串行可并行）
+//   3. 每个 SubAgent 封装为一个 task_<name> tool（内部创建子 createReactAgent）
+//   4. 所有 task tools 注入给主 createReactAgent，主 Agent 经 tool call 委派
+//
+// 方案 B（subagents → tools）：
+//   createReactAgent 不支持 subagents 参数。每个 SubAgent 被封装为一个
+//   task_<name> tool（@langchain/core/tools 的 tool() 创建），tool 的 func
+//   内部创建子 createReactAgent 并 invoke。所有 task tools 注入给主 agent。
 //
 // 主理人裁决落实：
 //   - 裁决 #1：同文件冲突检测——多个节点声明写同一文件时打 WARN（不阻塞）
 //   - 裁决 #4：ORCHESTRATOR_PROMPT 显式引导主 Agent 对无依赖节点并行委派；
 //     nodes[].parallel=true 时在任务描述中显式要求并发 invoke
 //
-// 依赖倒置：createDeepAgent 与 buildConstrainedSystemPrompt 均可经
+// 依赖倒置：createReactAgent 与 buildConstrainedSystemPrompt 均可经
 // DagRunnerDeps 注入——测试用 mock，生产默认动态 import 真实实现。
 
+import { tool } from '@langchain/core/tools';
+import { z } from 'zod';
 import { parseWorkflowYaml, toSubAgentConfigs, type ParsedWorkflow } from './workflow-parser';
+import { convertToLangGraphTools, ENGINEER_TOOLS } from './tools';
+import { resolveLLMModel } from './loop/nodes';
 
 // ────────────────────────────────────────────────────────────
 // 类型定义
@@ -31,7 +40,7 @@ import { parseWorkflowYaml, toSubAgentConfigs, type ParsedWorkflow } from './wor
 
 /** 编排执行结果 */
 export interface DAGResult {
-  /** 主 Agent 最终输出（DeepAgents invoke 原始返回） */
+  /** 主 Agent 最终输出（createReactAgent invoke 原始返回） */
   finalOutput: unknown;
   /** 参与执行的 SubAgent 数量 */
   subagentCount: number;
@@ -41,36 +50,36 @@ export interface DAGResult {
   workflow: ParsedWorkflow;
 }
 
-/** createDeepAgent 签名（结构化类型；真实实现来自 deepagents 包） */
-export type CreateDeepAgentFn = (params: {
-  subagents: Array<{
-    name: string;
-    description: string;
-    systemPrompt: string;
-    tools?: unknown[];
-  }>;
+/**
+ * createReactAgent 签名（方案 B：纯 { llm, tools, prompt }）。
+ *
+ * 方案 B 后不再有 subagents 参数——每个 SubAgent 被封装为 task tool 注入给主 Agent。
+ * 真实实现来自 @langchain/langgraph/prebuilt 的 createReactAgent。
+ */
+export type CreateReactAgentFn = (params: {
+  llm: unknown;
   tools: unknown[];
-  systemPrompt: string;
-}) => Promise<{ invoke: (input: { messages: Array<{ role: string; content: string }> }) => Promise<unknown> }>;
+  prompt: string;
+}) => Promise<{ invoke: (input: { messages: Array<{ role: string; content: string }> }, config?: { recursionLimit?: number }) => Promise<unknown> }>;
 
 /**
- * 断言 SubAgent 配置数组中不包含空 tools 数组（F-01 回归防护）。
- * SubAgent 应 omit tools 字段，继承 DeepAgents 默认工具集。
+ * 断言 SubAgent tools 数组不为空（F-01 回归防护）。
+ * 迁移后语义变化：不再有 subagents 配置数组，改为检查注入的 subagent tools 数组。
+ * 每个封装的 task tool 必须包含实际工具（不能为空数组）。
  */
-export function assertSubAgentsNoEmptyTools(subagents: Array<Record<string, unknown>>): void {
-  for (const sa of subagents) {
-    if ('tools' in sa && Array.isArray(sa['tools']) && (sa['tools'] as unknown[]).length === 0) {
-      throw new Error(
-        `SubAgent "${sa['name']}" 包含空 tools 数组——应 omit tools 字段以继承 DeepAgents 默认工具集`,
-      );
-    }
+export function assertSubAgentsNoEmptyTools(subagentTools: unknown[]): void {
+  if (subagentTools.length === 0) {
+    throw new Error(
+      'SubAgent tools 数组为空——每个 SubAgent 至少应继承 ENGINEER_TOOLS 默认工具集',
+    );
   }
 }
 
 /** 可注入依赖（测试 mock 入口） */
 export interface DagRunnerDeps {
-  createDeepAgent?: CreateDeepAgentFn;
+  createReactAgent?: CreateReactAgentFn;
   buildConstrainedSystemPrompt?: (projectRoot: string) => string;
+  resolveModel?: () => Promise<unknown | null>;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -79,15 +88,15 @@ export interface DagRunnerDeps {
 
 /**
  * 编排主 Agent 的 system prompt。
- * 关键引导：无依赖关系的子任务**应当在一次回复中并行发出多个 task 调用**，
+ * 关键引导：无依赖关系的子任务**应当在一次回复中并行发出多个 task_<name> 调用**，
  * 有依赖关系的子任务严格等上游完成再委派。
  */
 export const ORCHESTRATOR_PROMPT = `你是 sofagent 编排器。你的职责是把任务按 workflow 拆解结果委派给 Sub Agent 执行，并聚合结果。
 
 ## 委派规则
-1. 每个 workflow 节点对应一个 Sub Agent——用 task 工具把节点的 task 描述交给它
-2. **并行优先**：depends_on 为空的多个节点之间没有依赖——你**应当在同一次回复中并行发出多个 task 调用**，不要串行等待
-3. **依赖有序**：节点 B depends_on 节点 A 时，必须等 A 的 task 调用返回后再委派 B
+1. 每个 workflow 节点对应一个 Sub Agent——用对应的 task_<name> 工具把节点的 task 描述交给它
+2. **并行优先**：depends_on 为空的多个节点之间没有依赖——你**应当在同一次回复中并行发出多个 task_<name> 调用**，不要串行等待
+3. **依赖有序**：节点 B depends_on 节点 A 时，必须等 A 的 task_<name> 调用返回后再委派 B
 4. 节点标记 parallel=true 时，**必须**与同级节点并发执行
 5. 全部节点完成后，汇总各 Sub Agent 的输出，给出结构化的最终结果
 
@@ -104,7 +113,7 @@ export const ORCHESTRATOR_PROMPT = `你是 sofagent 编排器。你的职责是�
  *
  * 识别节点 task 文本中的文件路径声明（"修改/创建/写入 <path>" 或
  * `files: [a.ts, b.ts]` 显式字段）。同一相对路径被 ≥2 个节点引用时
- * 产生一条 WARN（不阻塞——DeepAgents filesValue 会做文件级 LWW 合并，
+ * 产生一条 WARN（不阻塞——subagent tool 内部各自写文件，
  * WARN 只提醒可能的后写覆盖）。
  *
  * @param parsed 已解析的 workflow
@@ -130,7 +139,7 @@ export function detectFileConflicts(parsed: ParsedWorkflow): string[] {
     if (nodeIds.length > 1) {
       warnings.push(
         `同文件冲突：${p} 被节点 ${nodeIds.join(', ')} 同时声明修改——` +
-        `filesValue 将按文件级 LWW 合并，后写覆盖先写，请确认拆分边界`,
+        `各 SubAgent 各自写文件，后写覆盖先写，请确认拆分边界`,
       );
     }
   }
@@ -141,10 +150,11 @@ export function detectFileConflicts(parsed: ParsedWorkflow): string[] {
 // 动态依赖加载（生产路径；测试经 DagRunnerDeps 注入 mock）
 // ────────────────────────────────────────────────────────────
 
-async function loadCreateDeepAgent(): Promise<CreateDeepAgentFn | null> {
+async function loadCreateReactAgent(): Promise<CreateReactAgentFn | null> {
   try {
-    const mod = (await import('deepagents')) as { createDeepAgent?: unknown };
-    return (mod.createDeepAgent ?? null) as CreateDeepAgentFn | null;
+    // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
+    const mod = (await import('@langchain/langgraph/prebuilt')) as { createReactAgent?: unknown };
+    return (mod.createReactAgent ?? null) as CreateReactAgentFn | null;
   } catch {
     return null;
   }
@@ -164,14 +174,37 @@ async function loadBuildConstrainedSystemPrompt(): Promise<((projectRoot: string
 // ────────────────────────────────────────────────────────────
 
 /**
+ * 从 Agent 结果中提取文本（兼容多种返回格式）。
+ */
+function extractAgentText(result: unknown): string {
+  if (typeof result === 'string') return result;
+  if (result && typeof result === 'object') {
+    const obj = result as Record<string, unknown>;
+    if (typeof obj.content === 'string') return obj.content;
+    if (typeof obj.text === 'string') return obj.text;
+    if (Array.isArray(obj.messages)) {
+      for (let i = obj.messages.length - 1; i >= 0; i--) {
+        const msg = obj.messages[i] as Record<string, unknown>;
+        if ((msg.role === 'assistant' || msg.type === 'ai') && typeof msg.content === 'string') {
+          return msg.content;
+        }
+      }
+    }
+  }
+  return String(result ?? '');
+}
+
+/**
  * 执行编排：workflow YAML → SubAgent 委派 → 聚合结果
+ *
+ * 方案 B：每个 SubAgent 被封装为 task_<name> tool，注入给主 createReactAgent。
  *
  * @param taskDesc 原始任务描述
  * @param workflowYaml compose 产出的 workflow YAML
  * @param projectRoot 项目根（buildConstrainedSystemPrompt 加载链锚点，默认 cwd）
  * @param deps 可注入依赖（测试 mock）
  * @returns DAGResult
- * @throws Error deepagents 不可用 / workflow 解析失败
+ * @throws Error createReactAgent 不可用 / workflow 解析失败
  */
 export async function runDAG(
   taskDesc: string,
@@ -190,51 +223,87 @@ export async function runDAG(
   }
 
   // 3. 加载依赖
-  const createDeepAgent = deps.createDeepAgent ?? (await loadCreateDeepAgent());
-  if (!createDeepAgent) {
-    throw new Error('deepagents 不可用——无法创建编排 Agent');
+  const createReactAgent = deps.createReactAgent ?? (await loadCreateReactAgent());
+  if (!createReactAgent) {
+    throw new Error('createReactAgent 不可用——无法创建编排 Agent');
   }
   const buildPrompt =
     deps.buildConstrainedSystemPrompt ?? (await loadBuildConstrainedSystemPrompt());
   const constrainedPrefix = buildPrompt ? buildPrompt(projectRoot) : '';
 
-  // 4. 每个 SubAgent 注入四层约束加载链（前置，不覆盖 agent 自身 prompt）
-  //    omit tools 字段——SubAgent 继承 DeepAgents 默认工具集（read_file/write_file/edit_file/glob/grep/execute）
-  //    主 Agent 保留 tools: []（只用 task 委派工具）
-  const subagents = configs.map((c) => ({
-    name: c.name,
-    description: c.description,
-    systemPrompt: constrainedPrefix ? `${constrainedPrefix}\n\n${c.systemPrompt}` : c.systemPrompt,
-    // omit tools → SubAgent 使用 DeepAgents 默认工具集（read_file/write_file/edit_file/glob/grep/execute）
-  }));
+  // 4. 解析 LLM 模型实例（createReactAgent 需要显式传 llm）
+  const resolveModel = deps.resolveModel ?? (async () => {
+    const resolved = await resolveLLMModel(null);
+    return resolved?.model ?? null;
+  });
+  const model = await resolveModel();
+  if (!model) {
+    throw new Error('LLM 模型未配置——SOFAGENT_LLM 环境变量未设置或解析失败');
+  }
 
-  // 5. 创建编排 Agent（subagents 不再是 []）
-  const orchestrator = await createDeepAgent({
-    subagents,
-    tools: [],
-    systemPrompt: ORCHESTRATOR_PROMPT,
+  // 5. 每个 SubAgent 封装为一个 task_<name> tool（方案 B）
+  //    tool 内部创建子 createReactAgent，注入 ENGINEER_TOOLS（全量 6 个工具）
+  //    主 Agent 通过 tool call 委派（非 subagents 参数）
+  const subagentTools = configs.map((c) => {
+    const subSystemPrompt = constrainedPrefix
+      ? `${constrainedPrefix}\n\n${c.systemPrompt}`
+      : c.systemPrompt;
+
+    return tool(
+      async (input: { task_description: string }) => {
+        // 内部创建子 createReactAgent
+        const subAgent = await createReactAgent({
+          llm: model,
+          tools: convertToLangGraphTools(ENGINEER_TOOLS),
+          prompt: subSystemPrompt,
+        });
+        const result = await subAgent.invoke(
+          { messages: [{ role: 'user', content: input.task_description }] },
+          { recursionLimit: 50 },
+        );
+        return extractAgentText(result);
+      },
+      {
+        name: `task_${c.name}`,
+        description: c.description,
+        schema: z.object({
+          task_description: z.string().describe('委派给此 Agent 的子任务描述'),
+        }),
+      },
+    );
   });
 
-  // 6. 组装任务描述（含 workflow 结构 + 并行引导）
+  // 6. F-01 回归防护：确认 subagent tools 不为空
+  assertSubAgentsNoEmptyTools(subagentTools);
+
+  // 7. 创建编排 Agent（主 Agent 用 subagent tools 委派）
+  const orchestrator = await createReactAgent({
+    llm: model,
+    tools: subagentTools,
+    prompt: ORCHESTRATOR_PROMPT,
+  });
+
+  // 8. 组装任务描述（含 workflow 结构 + 并行引导）
   const nodeLines = parsed.nodes
     .map((n) => {
-      const deps = n.depends_on.length > 0 ? n.depends_on.join(', ') : '无';
-      return `- 节点 ${n.id}（agent: ${n.agent}，depends_on: ${deps}）：${n.task}`;
+      const depStr = n.depends_on.length > 0 ? n.depends_on.join(', ') : '无';
+      return `- 节点 ${n.id}（agent: ${n.agent}，depends_on: ${depStr}）：${n.task}`;
     })
     .join('\n');
   const userContent =
     `任务：${taskDesc}\n\n` +
     `workflow「${parsed.name}」共 ${parsed.nodes.length} 个节点：\n${nodeLines}\n\n` +
-    `请按依赖关系委派执行；无依赖的节点请并行发起 task 调用。`;
+    `请按依赖关系委派执行；无依赖的节点请并行发起 task_<name> 调用。`;
 
-  // 7. 执行——主 Agent 自主决定委派时序（可串行可并行）
-  const result = await orchestrator.invoke({
-    messages: [{ role: 'user', content: userContent }],
-  });
+  // 9. 执行——主 Agent 自主决定委派时序（可串行可并行）
+  const result = await orchestrator.invoke(
+    { messages: [{ role: 'user', content: userContent }] },
+    { recursionLimit: 50 },
+  );
 
   return {
     finalOutput: result,
-    subagentCount: subagents.length,
+    subagentCount: subagentTools.length,
     warnings,
     workflow: parsed,
   };

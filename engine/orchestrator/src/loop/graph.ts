@@ -1,6 +1,6 @@
 // ============================================================
 // graph/loop-graph.ts · LOOP StateGraph 组装与运行入口
-// v1.2.0 新增：编排控制从 DeepAgents compose（一次性生成 YAML）
+// v1.2.0 新增：编排控制从 compose（一次性生成 YAML）
 // 上提为 sofagent 直接掌握的 LangGraph StateGraph 节点级流转
 //
 // 流转图：
@@ -172,7 +172,7 @@ function toResult(finalState: LoopGraphState): LoopGraphResult {
  * 运行 LOOP StateGraph（v1.1.3 主入口）
  *
  * engineer → audit → reviewer → human_confirm 自动流转：
- * 每个节点执行完自动触发下一个，不依赖 DeepAgents compose、
+ * 每个节点执行完自动触发下一个，不依赖 compose、
  * 不依赖人手动调 CLI。
  *
  * @param task 任务描述

@@ -1,7 +1,7 @@
 // ============================================================
 // ab-testing/ab-runner.ts · A/B 测试运行器
 // v1.2.0 新增 · v1.0.9 替换 simulateAgentRun → runMinimalAgent
-// v1.2.0 新增 runDeepAgent（方案 C），保留 runMinimalAgent fallback
+// v1.2.0 新增 runReactAgent（方案 C），保留 runMinimalAgent fallback
 // current vs candidate 并行对比评测
 // v1.2.0：迁移至 @sofagent/ab-test，import 路径对齐新包结构
 // ============================================================
@@ -14,15 +14,15 @@ import { evalCase } from '@sofagent/eval';
 import { callModelAPI } from '@sofagent/core';
 import type { ModelMessage } from '@sofagent/core';
 
-/** DeepAgents createDeepAgent 工厂函数签名（A/B 运行器） */
-interface DeepAgentConfig {
-  systemPrompt: string;
+/** createReactAgent 工厂函数签名（A/B 运行器） */
+interface ReactAgentConfig {
+  prompt: string;
   tools?: unknown[];
 }
-interface DeepAgentInstance {
-  invoke?: (input: { messages: { role: string; content: string }[] }) => Promise<unknown>;
+interface ReactAgentInstance {
+  invoke?: (input: { messages: { role: string; content: string }[] }, config?: { recursionLimit?: number }) => Promise<unknown>;
 }
-type DeepAgentFactory = (config: DeepAgentConfig) => Promise<DeepAgentInstance>;
+type ReactAgentFactory = (config: { llm: unknown; prompt: string; tools?: unknown[] }) => Promise<ReactAgentInstance>;
 
 /** Agent 运行结果 */
 interface AgentResult {
@@ -123,26 +123,32 @@ async function runMinimalAgent(
 }
 
 /**
- * 方案 C：DeepAgents 运行器（v1.0.7 新增）
+ * 方案 C：LangGraph ReactAgent 运行器（v1.0.7 新增，v1.2.0 迁移至 createReactAgent）
  *
- * 使用 DeepAgents createDeepAgent() + buildConstrainedSystemPrompt() 四层加载链。
+ * 使用 createReactAgent() + buildConstrainedSystemPrompt() 四层加载链。
  * 启动真实 Agent，注入宪法约束 + 企业规则 + 历史经验 + 知识库。
  *
  * @param testCase  测试用例
  * @param skillPath Skill 文件路径
  * @returns Agent 输出的结构化结果
  */
-async function runDeepAgent(
+async function runReactAgent(
   testCase: TestCase,
   skillPath: string
 ): Promise<Record<string, unknown>> {
-  const deepAgents = await import('deepagents');
-  // deepagents 的 createDeepAgent 声明为复杂泛型，与本厂 DeepAgentFactory 签名无结构重叠，
-  // TS 拒绝直转（TS2352）；经 unknown 桥接（非 any，仍保留对返回 DeepAgentInstance 的类型校验）。
-  const createDeepAgent = deepAgents.createDeepAgent as unknown as DeepAgentFactory;
+  // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
+  const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
+  const reactCreate = createReactAgent as unknown as ReactAgentFactory;
 
   // 从 harness 导入约束构建函数（避免循环依赖）
   const { buildConstrainedSystemPrompt } = await import('@sofagent/harness');
+
+  // 解析 LLM 模型（从环境变量读取）
+  const { resolveLLMModel } = await import('@sofagent/orchestrator');
+  const resolved = await resolveLLMModel(null);
+  if (!resolved || !resolved.model) {
+    throw new Error('LLM 模型未配置（SOFAGENT_LLM 环境变量）');
+  }
 
   const skillDir = dirname(skillPath);
   const systemPrompt = buildConstrainedSystemPrompt(skillDir);
@@ -154,18 +160,19 @@ async function runDeepAgent(
         ? String(testCase.input.task)
         : JSON.stringify(testCase.input);
 
-  const agentConfig: DeepAgentConfig = {
-    systemPrompt,
+  const agentConfig: { llm: unknown; prompt: string; tools?: unknown[] } = {
+    llm: resolved.model,
+    prompt: systemPrompt,
   };
   if (testCase.allowedTools && testCase.allowedTools.length > 0) {
     agentConfig.tools = testCase.allowedTools;
   }
 
-  const agent = await createDeepAgent(agentConfig);
+  const agent = await reactCreate(agentConfig);
 
   const result = await agent.invoke?.({
     messages: [{ role: 'user', content: userContent }],
-  });
+  }, { recursionLimit: 40 });
 
   const text = extractResultText(result);
   return parseAgentOutput(text);
@@ -195,7 +202,7 @@ function extractResultText(result: unknown): string {
 /**
  * 带降级的运行器：方案 C → 方案 B fallback
  *
- * 先尝试 DeepAgents（方案 C），超时/异常时降级到模型 API 直跑（方案 B）。
+ * 先尝试 createReactAgent（方案 C），超时/异常时降级到模型 API 直跑（方案 B）。
  * 降级信息仅在 verbose 模式下输出。
  *
  * @param testCase  测试用例
@@ -209,12 +216,12 @@ async function runTestCase(
 ): Promise<Record<string, unknown>> {
   try {
     return await withTimeout(
-      () => runDeepAgent(testCase, skillPath),
+      () => runReactAgent(testCase, skillPath),
       5 * 60 * 1000 // 5 分钟超时
     );
   } catch (e) {
     if (verbose) {
-      console.warn(`DeepAgents 运行超时或异常，降级到方案 B（模型 API 直跑）: ${(e as Error).message}`);
+      console.warn(`createReactAgent 运行超时或异常，降级到方案 B（模型 API 直跑）: ${(e as Error).message}`);
     }
     return await runMinimalAgent(testCase, skillPath);
   }
@@ -246,7 +253,7 @@ export async function runABTest(
   let candidateTotal: EvalBreakdown = { exactMatch: 0, semanticSimilarity: 0, ruleCompliance: 0, overall: 0 };
 
   for (const testCase of testCases) {
-    // v1.0.7: 使用方案 C（DeepAgents）+ 方案 B fallback
+    // v1.0.7: 使用方案 C（createReactAgent）+ 方案 B fallback
     const currentOutput = await runTestCase(testCase, config.current);
     const candidateOutput = await runTestCase(testCase, config.candidate);
 

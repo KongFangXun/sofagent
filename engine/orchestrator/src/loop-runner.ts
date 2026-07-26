@@ -129,7 +129,7 @@ export async function runLOOPIteration(
       ].join('\n');
 
       // 将审查反馈追加到 fullTask 中
-      // 注意：这是简单的文本拼接，实际 DeepAgents 环境中由 Agent 自行理解上下文
+      // 注意：这是简单的文本拼接，实际 Agent 环境中由 Agent 自行理解上下文
       log('📎 审查反馈已注入下一轮任务');
     }
   }

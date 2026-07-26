@@ -176,7 +176,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     'node_modules'
   );
 
-  const criticalDeps = ['js-yaml', 'deepagents'];
+  const criticalDeps = ['js-yaml', '@langchain/langgraph'];
   for (const dep of criticalDeps) {
     const depPath = join(rootNodeModules, dep);
     if (existsSync(depPath)) {
