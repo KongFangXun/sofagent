@@ -781,7 +781,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | # | 步骤 |
 |:--:|------|
 | 31 | **npm 13 包验证**：全部 13 包版本一致，无 MISSING |
-| 32 | **🔴 CI 全绿检查（v1.2.0 教训）**：发版 push 触发 GitHub Actions 后，**必须**主动检查全部 workflow 是否通过——不能等报错贴到面前才修。每次修复后重跑 CI，确认全绿才进入下一步。<br>① `gh run list --repo KongFangXun/sofagent -b main -L 10 --json status,conclusion,name,headSha` 列出最新 10 次 workflow run<br>② 逐一检查每次 run 的 conclusion：全 success → ✅；任一 failure → 读 `gh run view --log-failed` 定位根因 → 修复 → commit → push → 重跑 → **回到 ①**<br>③ **v1.2.0 教训：发版 push 后 CI 连续挂了 4 轮**（lock file 缺 load-chain、handler.ts 旧路径、LOOP/loop-install.sh 过期、check-version.sh 日期硬编码漂移），全是 v1.2.0 LOOP→FORGE 重构时 CI 配置没跟着主代码一起改的系统性遗漏。**教训**：发版后第一件事不是宣布胜利，是盯着 CI 跑完——代码写对了不代表 CI 能过，CI 配置文件是代码的一部分** | 工程师 / 作者 |
+| 32 | **🔴 CI 全绿检查（v1.2.0 教训）**：`gh run list -b main -L 10 --json conclusion,name,headSha` → 任一 failure 则 `gh run view --log-failed` 定位 → 修复 → push → 重查。v1.2.0 教训：4 轮 CI 挂全是 LOOP→FORGE 重构时 CI 配置未同步——代码写对不等于 CI 能过 |
 | 33 | npm README 验证：`npm view /audit readme` + `npm view /mcp readme` 均有内容 |
 | 34 | 如果本次迭代暴露了新的流程漏洞，**直接吸收进本 SOP 对应阶段**——不要存到单独章节。每条新规则标注版本号（如 `vX.Y 教训`）以便追溯 |
 | 35 | **🔴 审查闭环——发布后审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `FORGE/playbook/fresh-eyes-review.md`（已在本版本阶段五中更新），对已发布版本做独立审查<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，作为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的视角和敏感度。⚠️ 这里的"锋利"指 fresh-eyes-review 的直觉校准（见阶段五 Tier 3），不是加检查项——检查项归 regression-checklist 管 |
