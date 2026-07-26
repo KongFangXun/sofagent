@@ -35,7 +35,7 @@ Companies don't lack LLMs and Agents — they lack the ability to turn AI into d
 Big vendors built the river — LLM is the water, Agent platforms are the riverbed. But enterprises don't dare drink straight from it. sofagent builds the dam + water treatment plant + pipe network + faucet — turning raw water into drinkable water for everyone. Full analogy: [ARCHITECTURE · River](./docs/ARCHITECTURE.md).
 
 > [!IMPORTANT]
-> **Measured impact**: Hugging Face benchmark — same model, harness-only optimization, legal-agent score jumped from 3.5% to 80.1% (76-point gain entirely from outer-layer mechanisms), at ~1/7 the cost. See [Joel Niklaus · Harness Optimization](https://huggingface.co/spaces/joelniklaus/harness-optimization).
+> **Measured impact**: Hugging Face benchmark — same model, harness-only optimization, legal-agent score jumped from 3.5% to 80.1% (76-point gain entirely from outer-layer mechanisms), at ~1/7 the cost. See [Joel Niklaus · Harness Optimization](https://huggingface.co/spaces/joelniklaus/harness-optimization) (Note: during the run-09 review this HF Space returned 502 — possibly a transient outage or network restriction; a stable mirror is available at the [GitHub repo](https://github.com/JoelNiklaus/harness-optimization)).
 
 ### Why not existing tools
 
