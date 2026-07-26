@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.2.0 · 128 个场景定义（含子断言，合计 141 个 pass 判定）
+# v1.2.0 · 134 个场景定义（含子断言，合计 147 个 pass 判定）
 # + LOOP + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
 # 详细功能映射见 FORGE/SKILL/fresh-eyes-loop/specs/acceptance-coverage.md
 # ============================================================
@@ -1529,6 +1529,66 @@ S127_OK=true
 [ -f "$PROJECT_ROOT/FDE/templates/nodes/node-template.md" ] || { fail "FDE/templates/nodes/node-template.md 不存在"; S127_OK=false; }
 [ -f "$PROJECT_ROOT/FDE/templates/skills/skill-template/SKILL.md" ] || { fail "FDE/templates/skills/skill-template/SKILL.md 不存在"; S127_OK=false; }
 $S127_OK && pass
+# ── v1.2.0 BugFix 批次新功能场景（D3 闸门 · run-09 P0/P1 + FLAG + 决策点）──
+scenario 128 "v1.2.0 DP-1 版本一致性自检——checkVersionConsistency 存在于 audit CLI"
+S128_OK=true
+assert_grep "checkVersionConsistency" "$PROJECT_ROOT/engine/audit/src/index.ts" && assert_grep "VERSION" "$PROJECT_ROOT/engine/audit/src/index.ts" || S128_OK=false
+# 验证编译后 dist 也包含该函数
+AUDIT_INDEX="$PROJECT_ROOT/engine/audit/dist/index.js"
+[ -f "$AUDIT_INDEX" ] && assert_grep "checkVersionConsistency" "$AUDIT_INDEX" || { fail "audit/dist/index.js 不存在或无 checkVersionConsistency"; S128_OK=false; }
+$S128_OK && pass
+scenario 129 "v1.2.0 DP-2 签名颁发 CLI——sign-config.mjs + signConfig() 导出"
+S129_OK=true
+[ -f "$PROJECT_ROOT/tools/sign-config.mjs" ] || { fail "tools/sign-config.mjs 不存在"; S129_OK=false; }
+assert_grep "signConfig" "$PROJECT_ROOT/tools/sign-config.mjs" || S129_OK=false
+# 验证 @sofagent/core 导出 signConfig
+CORE_DIST="$PROJECT_ROOT/engine/core/dist/index.js"
+[ -f "$CORE_DIST" ] && assert_grep "signConfig" "$CORE_DIST" || { fail "core/dist/index.js 不存在或无 signConfig 导出"; S129_OK=false; }
+# sign-config.mjs --help 不报错
+node "$PROJECT_ROOT/tools/sign-config.mjs" --help 2>&1 | grep -q "用法" || { fail "sign-config.mjs --help 无输出"; S129_OK=false; }
+$S129_OK && pass
+scenario 130 "v1.2.0 FLAG-2 doctor 三态判定——checkHistoryChainDetailed（ok/tampered/unverifiable）"
+S130_OK=true
+# 源码验证：core 导出 ChainCheckStatus 三态类型
+assert_grep "ok.*tampered.*unverifiable" "$PROJECT_ROOT/engine/core/src/audit-history.ts" || S130_OK=false
+# doctor.ts 使用三态分支
+assert_grep "result.status === 'tampered'" "$PROJECT_ROOT/engine/core/src/doctor.ts" || S130_OK=false
+assert_grep "不可复验" "$PROJECT_ROOT/engine/core/src/doctor.ts" || S130_OK=false
+# 编译后 core 包含三态逻辑
+CORE_HISTORY="$PROJECT_ROOT/engine/core/dist/audit-history.js"
+[ -f "$CORE_HISTORY" ] && assert_grep "unverifiable" "$CORE_HISTORY" || { fail "core/dist/audit-history.js 无 unverifiable"; S130_OK=false; }
+$S130_OK && pass
+scenario 131 "v1.2.0 FLAG-4 HMAC key 强度校验——validateHmacKey ≥16 字节"
+S131_OK=true
+assert_grep "validateHmacKey" "$PROJECT_ROOT/engine/core/src/audit-history.ts" || S131_OK=false
+assert_grep "byteLen < 16\|>=.*16\|16.*字节" "$PROJECT_ROOT/engine/core/src/audit-history.ts" || S131_OK=false
+# audit-history.ts 导出 validateHmacKey
+assert_grep "export function validateHmacKey" "$PROJECT_ROOT/engine/core/src/audit-history.ts" || S131_OK=false
+# 编译后 core 包含
+CORE_DIST_JS="$PROJECT_ROOT/engine/core/dist/audit-history.js"
+[ -f "$CORE_DIST_JS" ] && assert_grep "validateHmacKey" "$CORE_DIST_JS" || { fail "core/dist/audit-history.js 无 validateHmacKey"; S131_OK=false; }
+$S131_OK && pass
+scenario 132 "v1.2.0 DP-4 hooks 正式包——@sofagent/load-chain workspace 包"
+S132_OK=true
+HOOKS_PKG="$PROJECT_ROOT/engine/hooks/sofagent-load-chain/package.json"
+[ -f "$HOOKS_PKG" ] || { fail "engine/hooks/sofagent-load-chain/package.json 不存在"; S132_OK=false; }
+if [ -f "$HOOKS_PKG" ]; then
+  assert_grep "@sofagent/load-chain" "$HOOKS_PKG" || S132_OK=false
+fi
+# handler.ts 存在且编译产物就位
+[ -f "$PROJECT_ROOT/engine/hooks/sofagent-load-chain/handler.ts" ] || { fail "handler.ts 不存在"; S132_OK=false; }
+[ -f "$PROJECT_ROOT/engine/hooks/sofagent-load-chain/dist/handler.js" ] || { fail "dist/handler.js 不存在（需先 build）"; S132_OK=false; }
+# 根 package.json workspace 引用
+assert_grep "sofagent-load-chain\|hooks/sofagent-load-chain" "$PROJECT_ROOT/package.json" || S132_OK=false
+$S132_OK && pass
+scenario 133 "v1.2.0 DP-3 config audit 段签名校验 warn——verifyConfigSignature"
+S133_OK=true
+assert_grep "verifyConfigSignature" "$PROJECT_ROOT/engine/core/src/config-loader.ts" || S133_OK=false
+assert_grep "audit 段含 signature\|audit.*signature.*warn\|audit.*签名" "$PROJECT_ROOT/engine/core/src/config-loader.ts" || S133_OK=false
+# 编译后包含
+CORE_CFG="$PROJECT_ROOT/engine/core/dist/config-loader.js"
+[ -f "$CORE_CFG" ] && assert_grep "verifyConfigSignature" "$CORE_CFG" || { fail "core/dist/config-loader.js 无 verifyConfigSignature"; S133_OK=false; }
+$S133_OK && pass
 # ── 总结 ──────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
