@@ -215,8 +215,10 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     } else {
       fail('审计日志 hash chain 断裂——检测到篡改痕迹，请检查 .sofagent/audit/history.jsonl');
     }
-  } catch {
-    // 链校验异常（极少），不影响其余检查
+  } catch (chainErr) {
+    // 链校验异常（极少）：不影响其余检查，但记录以便排查，
+    // 不再静默吞掉（P1-B-iv：空 catch 会掩盖内部错误并误报「通过」）
+    warn(`审计日志 hash chain 校验异常，已跳过（不影响其余检查）: ${chainErr instanceof Error ? chainErr.message : String(chainErr)}`);
     auditLogOk = true;
   }
 

@@ -31,7 +31,7 @@ import type { RuleCheck, ActionGovernance } from './rules/types';
 // v1.2.0: checkHistoryChainIntegrity + helpers sunk to core;
 // import for internal use (appendHistory/loadHistory/clearHistory still need them),
 // re-export for external backward compat.
-import { getHistoryFilePath, getEnvFingerprint, getHmacKey } from '@sofagent/core';
+import { getHistoryFilePath, getEnvFingerprint, getHmacKey, stableStringify } from '@sofagent/core';
 export { checkHistoryChainIntegrity, getHistoryFilePath, getHmacKey } from '@sofagent/core';
 
 /**
@@ -131,10 +131,13 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
 
   // v1.1.8: HMAC-SHA256 签名（密钥来自 ~/.sofagent-key，chmod 600）。
   // 有密钥时签名整条记录（防 Agent 重算整链）；无密钥时降级 SHA-256（不写 hmacSig，向后兼容）。
+  // P0-3 修复：写入侧签名改用 core 导出的 stableStringify（递归按 key 字典序排序），
+  // 与读侧 checkHistoryChainIntegrity 的验签算法一致——根除「写入用内存对象 key 顺序、
+  // 读取用文件解析 key 顺序」导致 JSON.stringify 输出不同、历史条目 HMAC 永远验签失败的假阳性。
   const hmacKey = getHmacKey();
   const recordForSig = { ...entry, prevHash: undefined, hashVersion: undefined, hmacSig: undefined };
   const hmacSig = hmacKey
-    ? createHmac('sha256', hmacKey).update(JSON.stringify(recordForSig) + '|' + fingerprint).digest('hex').slice(0, 32)
+    ? createHmac('sha256', hmacKey).update(stableStringify(recordForSig) + '|' + fingerprint).digest('hex').slice(0, 32)
     : undefined;
 
   // 写入前脱敏——避免 A2/A9 拦截结果中存密钥明文
@@ -144,6 +147,9 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     prevHash,
     hashVersion: 2,
     hmacSig: hmacSig ?? undefined,
+    // P0-3: 标记写入侧用 stableStringify 签名（新条目）。读侧据此区分
+    // 「旧条目 key 顺序不可复现（HMAC 不匹配不判篡改）」与「新条目被篡改（判链断裂）」。
+    hmacAlgo: hmacKey ? 'stable' : undefined,
     ruleResults: entry.ruleResults.map(sanitizeRuleResult),
   };
   // v1.0.5: 使用原子追加（先读+追加+原子写），避免并发写入导致的行交错
