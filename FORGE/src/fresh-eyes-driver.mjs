@@ -515,7 +515,7 @@ async function runWorker(step, roundDir, target) {
     'b-check': 200,
     'a-consolidate': 100,
     'b-fix': 60,
-    'a-verify': 50,
+    'a-verify': 100,
   };
   const recursionLimit = STEP_RECURSION_LIMITS[step] ?? 50;
 
