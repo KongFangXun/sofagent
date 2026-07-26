@@ -16,7 +16,7 @@ for _arg in "$@"; do
 done
 RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'; NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 AUDIT_DIR="$PROJECT_ROOT/engine/audit"
 ORIG_DIR="$(pwd)"
 CLI="node $AUDIT_DIR/dist/index.js"
