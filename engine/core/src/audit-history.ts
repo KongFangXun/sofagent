@@ -73,6 +73,31 @@ interface ChainEntry {
   prevHash?: unknown;
   hashVersion?: unknown;
   hmacSig?: unknown;
+  /** P0-3: 写入侧签名算法标记。'stable' = 用 stableStringify 签名（新条目，可正确验签/检测篡改）；缺省 = 旧条目（内存 key 顺序签名，读侧不可复现，HMAC 不匹配不判篡改） */
+  hmacAlgo?: unknown;
+}
+
+/**
+ * 稳定序列化——递归按 key 字典序排序，使 JSON.stringify 输出与对象 key 顺序无关。
+ *
+ * 用于 HMAC 签名：写入时用「内存对象 key 顺序」构造 recordForSig，读取时从文件
+ * 解析得到「文件 key 顺序」，两者 key 顺序不同会让 JSON.stringify 产生不同字符串，
+ * 导致历史条目 HMAC 永远验签失败（P0-3 假阳性根因）。统一用稳定序列化消除顺序敏感性。
+ */
+export function stableStringify(value: unknown): string {
+  return JSON.stringify(sortKeys(value));
+}
+
+function sortKeys(input: unknown): unknown {
+  if (Array.isArray(input)) return input.map(sortKeys);
+  if (input && typeof input === 'object' && input.constructor === Object) {
+    const sorted: Record<string, unknown> = {};
+    for (const key of Object.keys(input as Record<string, unknown>).sort()) {
+      sorted[key] = sortKeys((input as Record<string, unknown>)[key]);
+    }
+    return sorted;
+  }
+  return input;
 }
 
 /**
@@ -137,19 +162,39 @@ export function checkHistoryChainIntegrity(dataDir?: string): boolean {
       .update(hashInput)
       .digest('hex').slice(0, 16);
 
-    if (curr.prevHash !== expectedPrevHash && curr.prevHash !== 'unknown') {
-      return false; // 链断裂
+    // P0-3 修复：跳过无 prevHash 的 legacy 条目。
+    // 哈希链引入前（v1.0.5 及更早）写入的历史记录没有 prevHash 字段（undefined），
+    // 它们从未参与哈希链。若不做此判断，`undefined !== 计算哈希` 会恒为真，
+    // 导致 --doctor 对这些「本就不在链上」的条目误报「hash chain 断裂」（假阳性）。
+    // 带 'unknown' 占位（写入时解析失败）的条目同样视为非链上，跳过。
+    if (curr.prevHash == null || curr.prevHash === 'unknown') continue;
+
+    if (curr.prevHash !== expectedPrevHash) {
+      return false; // 链断裂（真·篡改或无法复现的历史段）
     }
 
     // v1.1.8: 验证 HMAC 签名（条目带 hmacSig 且有密钥时）。
     // 有密钥却签名不符 = 篡改；无密钥时不校验（向后兼容降级模式）。
+    // P0-3 修复：历史条目（v1.2.0 前）的 HMAC 用「内存对象 key 顺序」签名，读取时用
+    // 「文件解析 key 顺序」，JSON.stringify 对 key 顺序敏感 → 旧条目必然验签失败。
+    // prevHash 链（统一从文件解析，key 顺序无关）才是权威完整性判定，因此 HMAC
+    // 不匹配不再判为链断裂，避免正常仓库误报「hash chain 断裂」。新写入的条目改用
+    // stableStringify（见 appendHistory），可正确验签。
     if (curr.hmacSig && keyAvailable && hmacKey) {
-      const recordForSig = { ...curr, prevHash: undefined, hashVersion: undefined, hmacSig: undefined };
+      // hmacAlgo 仅作标记，不参与 HMAC 计算（写入侧 recordForSig 也不含它），保证两侧一致
+      const recordForSig = { ...curr, prevHash: undefined, hashVersion: undefined, hmacSig: undefined, hmacAlgo: undefined };
       const expectedHmac = createHmac('sha256', hmacKey)
-        .update(JSON.stringify(recordForSig) + '|' + fingerprint)
+        .update(stableStringify(recordForSig) + '|' + fingerprint)
         .digest('hex').slice(0, 32);
       if (curr.hmacSig !== expectedHmac) {
-        return false; // HMAC 校验失败 = 篡改
+        // P0-3 修复：区分「旧条目 key 顺序不可复现（误报）」与「新条目被篡改」。
+        // 旧条目（无 hmacAlgo 标记，写入侧用内存对象 key 顺序签名，读侧无法复现）→
+        //   HMAC 不匹配属历史/环境签名差异，不判链断裂，避免 --doctor 对旧仓库假阳性。
+        // 新条目（hmacAlgo === 'stable'，写入侧用 stableStringify 签名）→
+        //   HMAC 不匹配 = 真·篡改，判链断裂（保留审计工具的篡改检测能力）。
+        if (curr.hmacAlgo === 'stable') {
+          return false; // 新条目 HMAC 验签失败 = 篡改
+        }
       }
     }
   }
