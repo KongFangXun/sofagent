@@ -162,7 +162,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 
 ### 编排引擎 Sub Agent 委派（v1.1.8）
 
-每个 Sub Agent 的 systemPrompt 前置四层约束加载链（SKILL.md 宪法层不可被 workflow YAML 覆盖）；同文件冲突检测 WARN（filesValue 文件级 LWW 合并的提醒，不阻塞）；SubAgent 继承 DeepAgents 默认工具集（read_file/write_file/edit_file/glob/grep/execute），主 Agent 仅保留 task 委派工具（`tools: []`）。
+每个 Sub Agent 的 systemPrompt 前置四层约束加载链（SKILL.md 宪法层不可被 workflow YAML 覆盖）；同文件冲突检测 WARN（filesValue 文件级 LWW 合并的提醒，不阻塞）；SubAgent 继承 LangGraph createReactAgent 默认工具集（read_file/write_file/edit_file/glob/grep/execute），主 Agent 仅保留 task 委派工具（`tools: []`）。
 
 ### 联邦查询离线降级（v1.1.8）
 
@@ -261,7 +261,7 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 | 复制文件 | 宪法(fde.md) + 6 核心 Skill + 数据模板 + 配套脚本 | 从仓库 `SKILL/harness/` 和 `engine/scripts/` 复制到目标目录 |
 | 写入配置 | `~/.openclaw/openclaw.json`（仅 OpenClaw） | 注册加载链 Hook |
 | 写入配置 | `~/.openclaw/config.json`（仅 OpenClaw） | 注入 loopDetection 断路器 |
-| npm install | `deepagents`（编排引擎依赖） | Sub Agent 编排引擎 |
+| npm install | `@langchain/langgraph`（编排引擎依赖） | Sub Agent 编排引擎 |
 | 安装服务 | launchd(macOS) / systemd(Linux) | daemon 后台进程（交互确认后。daemon 当前为 bash 实现，正常运行中） |
 
 #### 脚本不会做的事
@@ -288,13 +288,13 @@ install.sh 拆分为以下模块，便于逐模块审查：
 
 ### 第三方依赖供应链
 
-**deepagents** 是 sofagent 编排引擎的正式依赖（`deepagents@^1.10.7`，npm 包）。v1.0.7 起从 optionalDependency 提升为正式依赖。
+**@langchain/langgraph** 是 sofagent 编排引擎的正式依赖（提供 `createReactAgent`）。v1.2.0 起从 DeepAgents 迁移为正式依赖。
 
-> 🔴 **Breaking Change（v1.0.7）**：ao（agency-orchestrator）已完全退役。v1.0.6 用户升级到 v1.0.7 后需手动卸载：`npm uninstall -g agency-orchestrator`。编排引擎已全面迁移到 DeepAgents，ao 代码路径全部移除。
+> 🔴 **Breaking Change（v1.0.7）**：ao（agency-orchestrator）已完全退役。v1.0.6 用户升级到 v1.0.7 后需手动卸载：`npm uninstall -g agency-orchestrator`。编排引擎已全面迁移到 LangGraph createReactAgent，ao 代码路径全部移除。
 
 **供应链安全建议**：
 - 每次 `npm install` 后运行 `npm audit`
-- 内网环境建议预装 deepagents 并验证安装通过后再部署
+- 内网环境建议预装 @langchain/langgraph 并验证安装通过后再部署
 
 **automerge@1.0.1-preview.7 风险声明（v1.1.9 F-04）**：
 
@@ -386,7 +386,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 
 ## 适用范围
 
-本安全策略适用于 sofagent 项目仓库内的所有文件。第三方依赖（如 deepagents、OpenClaw）的安全问题请向对应项目报告。
+本安全策略适用于 sofagent 项目仓库内的所有文件。第三方依赖（如 @langchain/langgraph、OpenClaw）的安全问题请向对应项目报告。
 
 ## 免责声明
 

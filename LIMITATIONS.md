@@ -30,7 +30,7 @@
 | 1 | **audit ↔ daemon 循环依赖**——两个包互相引用（`optionalDependencies` + `dependencies`），违反四层单向依赖原则。npm install 不阻塞，但逻辑上存在张力。 | [八、v1.1.3 新增局限 → audit ↔ daemon 循环依赖](#八v113-新增局限) |
 | 2 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
 | 3 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
-| 4 | **编排能力依赖 orchestrator 包 + 模型质量**——DeepAgents 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排引擎稳定性](#五审计与工程局限) |
+| 4 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排引擎稳定性](#五审计与工程局限) |
 | 5 | **数据明文存储无加密**——`.sofagent/` 下所有数据为明文 Markdown，无传输加密、无静态加密。age 加密推到 v1.2.x。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
 | 6 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#单平台用户建议)
 
@@ -188,7 +188,7 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 **模式 B 的关键约束**：企业 Agent 不跑在 OpenClaw session 里。OpenClaw 不拦截 Agent 的 API 调用、不提供 Docker。sofagent 对企业 Agent 的审计走的是**文件系统层 + git hook**——Agent 在设备上正常安装、正常运行，代码仓库在设备文件系统上，`git commit` 时 commit-msg hook 自动触发 sofagent-audit。不需要"控制"Agent，不需要 Agent 配合，只需要 hook 它们的 git 仓库。
 
-> 以下表格说的是"哪些能力在哪个层生效"——不是"哪些 Agent 被支持"。审计层对所有 Agent 一视同仁（只看 git diff），编排层全平台可用（DeepAgents 驱动）。
+> 以下表格说的是"哪些能力在哪个层生效"——不是"哪些 Agent 被支持"。审计层对所有 Agent 一视同仁（只看 git diff），编排层全平台可用（LangGraph createReactAgent 驱动）。
 
 | 能力 | OpenClaw | WorkBuddy | Codex / Hermes / Claude Code |
 |------|:--:|:--:|:--:|
@@ -255,7 +255,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 413 个、全 workspace 937 个测试全绿（实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 422 个、全 workspace 953 个测试全绿（实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -292,7 +292,7 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `.sofagent/task/logs/
 
 ### 编排引擎稳定性
 
-编排引擎依赖 DeepAgents（deepagents@^1.10.7，npm 包）做任务拆解——本质上是 prompt 驱动，没有确定性 fallback。编排效果完全依赖模型质量：模型换了或者降级了，任务拆解和 Loop 检查就可能失效。Agent 变弱，编排跟着变弱；如果 deepagents 停更或 API break，编排层直接不可用。方案 C（DeepAgents 完整 Agent）超时 5min/次，复杂任务可能超时；multi-step Agent loop 消耗更多 token。
+编排引擎依赖 LangGraph createReactAgent（@langchain/langgraph，npm 包）做任务拆解——本质上是 prompt 驱动，没有确定性 fallback。编排效果完全依赖模型质量：模型换了或者降级了，任务拆解和 Loop 检查就可能失效。Agent 变弱，编排跟着变弱；如果 deepagents 停更或 API break，编排层直接不可用。方案 C（DeepAgents 完整 Agent）超时 5min/次，复杂任务可能超时；multi-step Agent loop 消耗更多 token。
 
 缓解：审计层（git diff）不依赖编排层，独立工作。编排层是可选增强——即使编排不可用，核心约束和审计仍然生效。最终解决方案是 v2.x 协同层的确定性编排引擎。
 
@@ -313,7 +313,7 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](FDE/FDE.md)）已在作�
 
 ### 组件间集成测试
 
-**状态：无集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排引擎 DeepAgents compose 通过——但 daemon → MCP → webhook → 编排四组件串联行为未验证。未来版本计划补全链路 smoke test。
+**状态：无集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排引擎 LangGraph createReactAgent compose 通过——但 daemon → MCP → webhook → 编排四组件串联行为未验证。未来版本计划补全链路 smoke test。
 
 ---
 
@@ -321,7 +321,7 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](FDE/FDE.md)）已在作�
 
 v1.0 新增 `FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh`（128 个场景，含子断言合计 141 个 pass 判定），覆盖范围持续扩展：
 
-- **CI 已覆盖**：单元测试审计核心 413 个、全 workspace 937 个全绿（函数级，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 422 个、全 workspace 953 个全绿（函数级，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 128 场景（含子断言，合计 141 个 pass 判定，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
