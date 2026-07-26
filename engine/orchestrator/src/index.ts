@@ -10,7 +10,7 @@ export type { ComposeInput, ComposeResult, ComposeVariant } from './composer';
 
 // DAG Runner（编排执行器 · v1.1.8 新增）
 export { runDAG, detectFileConflicts, ORCHESTRATOR_PROMPT } from './dag-runner';
-export type { DAGResult, DagRunnerDeps, CreateDeepAgentFn } from './dag-runner';
+export type { DAGResult, DagRunnerDeps, CreateReactAgentFn } from './dag-runner';
 
 // Workflow Parser（YAML → SubAgent 映射 · v1.1.8 新增）
 export {
@@ -39,13 +39,13 @@ export type { SubagentRunArgs } from './cli-args';
 // Audit Sub Agent
 export { readAuditHistory, analyzeCostBaseline, generateAuditReport } from './audit-sub-agent';
 
-// LOOP Runner (v1.1.3 — DeepAgents 串行路径)
+// LOOP Runner (v1.1.3 — 串行路径)
 export { runLOOPIteration } from './loop-runner';
 export type { LOOPResult, LOOPOptions } from './loop-runner';
 
 // Tools & ToolGate (v1.1.9 / v1.2.0)
-export { ENGINEER_TOOLS, REVIEWER_TOOLS, checkDangerousCommand, createToolGate, toolGate, wrapToolsWithGate } from './tools';
-export type { ToolGateOptions } from './tools';
+export { ENGINEER_TOOLS, REVIEWER_TOOLS, checkDangerousCommand, createToolGate, toolGate, wrapToolsWithGate, convertToLangGraphTools } from './tools';
+export type { ToolGateOptions, ExecutableTool } from './tools';
 
 // Graph (v1.1.3 — LangGraph StateGraph 节点级流转)
 export {
@@ -63,7 +63,11 @@ export {
   makeReviewerNode,
   makeHumanConfirmNode,
   parseReviewerPass,
+  resolveLLMModel,
+  resolveMaxTurns,
   DEFAULT_MAX_RETRIES,
+  DEFAULT_ENGINEER_MAX_TURNS,
+  DEFAULT_REVIEWER_MAX_TURNS,
 } from './loop';
 export type {
   LoopGraphState,

@@ -1,34 +1,33 @@
 // ============================================================
-// composer.ts · DeepAgents 任务编排
-// v1.2.0 新增：用 createDeepAgent() 做任务拆解，输出 YAML 工作流
-// v1.2.0：deepagents 提升为正式依赖，移除 as unknown as 类型转换
+// composer.ts · 任务编排
+// v1.2.0 新增：用 createReactAgent() 做任务拆解，输出 YAML 工作流
 // v1.2.0：迁移至 @sofagent/orchestrator
 // v1.2.0 新增：ComposeResult 结构化返回（yaml + subagents）+
 //   enterpriseWorkflowYaml 企业 workflow 参考 + variant 拆解策略（A/B/C/D）
 // ============================================================
 
 import type { SubAgentConfig } from './workflow-parser';
+import { resolveLLMModel } from './loop/nodes';
 
-/** DeepAgents createDeepAgent 工厂函数签名（compose 阶段） */
+/** createReactAgent 工厂函数签名（compose 阶段） */
 interface ComposeAgentConfig {
-  name: string;
-  systemPrompt: string;
+  prompt: string;
   tools: unknown[];
 }
 interface ComposeAgent {
-  invoke?: (input: { messages: { role: string; content: string }[] }) => Promise<unknown>;
+  invoke?: (input: { messages: { role: string; content: string }[] }, config?: { recursionLimit?: number }) => Promise<unknown>;
 }
-type DeepAgentFactory = (config: ComposeAgentConfig) => Promise<ComposeAgent>;
+type ReactAgentFactory = (config: { llm: unknown; prompt: string; tools: unknown[] }) => Promise<ComposeAgent>;
 
 /**
- * 动态加载 deepagents（v1.0.9：正式依赖）
+ * 动态加载 @langchain/langgraph createReactAgent
  */
-async function loadDeepAgentsCreate(): Promise<DeepAgentFactory | null> {
+async function loadReactAgentCreate(): Promise<ReactAgentFactory | null> {
   try {
-    const { createDeepAgent } = await import('deepagents');
-    // deepagents 的 createDeepAgent 声明为复杂泛型，与本厂 DeepAgentFactory 签名无结构重叠，
-    // TS 拒绝直转（TS2352）；经 unknown 桥接（非 any，仍保留对返回 ComposeAgent 的类型校验）。
-    return createDeepAgent as unknown as DeepAgentFactory;
+    // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型，
+    // 但运行时 Node.js 支持（package.json exports 字段已声明）
+    const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
+    return createReactAgent as unknown as ReactAgentFactory;
   } catch {
     return null;
   }
@@ -68,15 +67,15 @@ const VARIANT_GUIDES: Record<ComposeVariant, string> = {
 };
 
 /**
- * 使用 DeepAgents 编排任务（v1.1.7 新签名 · ComposeInput → ComposeResult）
+ * 使用 LangGraph createReactAgent 编排任务（v1.1.7 新签名 · ComposeInput → ComposeResult）
  *
- * 创建一个编排 Agent，systemPrompt 基于 variant 策略 + 企业 workflow 参考，
+ * 创建一个编排 Agent，prompt 基于 variant 策略 + 企业 workflow 参考，
  * Agent 输出格式为 YAML 工作流定义；返回结构化 ComposeResult。
  *
  * @param input ComposeInput（taskDesc 必填，其余可选）
  * @param parseSubAgents 可选的 YAML→SubAgent 解析器（依赖注入，测试可 mock；
  *        缺省时 subagents 为空数组——dag-runner 侧会自行再解析）
- * @returns ComposeResult，或 null（deepagents 不可用/生成失败）
+ * @returns ComposeResult，或 null（createReactAgent 不可用/生成失败）
  */
 export async function compose(
   input: ComposeInput,
@@ -97,7 +96,7 @@ export async function compose(
 }
 
 /**
- * 使用 DeepAgents 编排任务（v1.1.7 兼容签名 · 返回 YAML 字符串）
+ * 使用 LangGraph 编排任务（v1.1.7 兼容签名 · 返回 YAML 字符串）
  *
  * 旧接口保留：composeTask() 等现有调用方不动。内部走 composeYaml()。
  *
@@ -113,19 +112,23 @@ export async function composeWithDeepAgents(
 }
 
 /**
- * compose 核心：调 DeepAgents 生成 YAML 文本
+ * compose 核心：调 createReactAgent 生成 YAML 文本
  */
 async function composeYaml(input: ComposeInput): Promise<string | null> {
-  const createDeepAgent = await loadDeepAgentsCreate();
-  if (!createDeepAgent) return null;
+  const createReactAgent = await loadReactAgentCreate();
+  if (!createReactAgent) return null;
 
   try {
     const systemPrompt = buildComposeSystemPrompt(input.enterpriseWorkflowYaml, input.variant ?? 'A');
 
-    const agent = await createDeepAgent({
-      name: 'sofagent-composer',
-      systemPrompt,
+    // createReactAgent 需要显式传 llm 参数
+    const resolved = await resolveLLMModel(null);
+    if (!resolved || !resolved.model) return null;
+
+    const agent = await createReactAgent({
+      llm: resolved.model,
       tools: [], // compose 阶段不需要工具——纯文本生成
+      prompt: systemPrompt,
     });
 
     // 调用 agent 生成工作流
@@ -133,10 +136,10 @@ async function composeYaml(input: ComposeInput): Promise<string | null> {
       messages: [
         {
           role: 'user',
-          content: `请将以下任务拆解为工作流 YAML：\n\n${input.taskDesc}`,
+          content: `请将��下任务拆解为工作流 YAML：\n\n${input.taskDesc}`,
         },
       ],
-    });
+    }, { recursionLimit: 40 });
 
     // 从 agent 输出中提取 YAML
     const output = extractYAML(result);
@@ -231,7 +234,7 @@ function extractText(result: unknown): string {
   if (result && typeof result === 'object') {
     const obj = result as Record<string, unknown>;
 
-    // LangChain/DeepAgents 风格：result.content 或 result.text
+    // LangChain/LangGraph 风格：result.content 或 result.text
     if (typeof obj.content === 'string') return obj.content;
     if (typeof obj.text === 'string') return obj.text;
 

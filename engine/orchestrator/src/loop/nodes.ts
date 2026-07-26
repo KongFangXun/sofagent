@@ -17,7 +17,7 @@ import { execSync } from 'child_process';
 import { createInterface } from 'readline';
 import { ENGINEER_AGENT, REVIEWER_AGENT } from '../builtin-agents';
 import { spawnSubAgent } from '../launcher';
-import { ENGINEER_TOOLS, REVIEWER_TOOLS, createToolGate, wrapToolsWithGate } from '../tools';
+import { ENGINEER_TOOLS, REVIEWER_TOOLS, createToolGate, wrapToolsWithGate, convertToLangGraphTools } from '../tools';
 import { buildConstrainedSystemPrompt } from '@sofagent/harness';
 import { loadConfig } from '@sofagent/core';
 import type { AuditHistoryEntry } from '@sofagent/audit';
@@ -95,7 +95,7 @@ function resolveApiKey(role: 'engineer' | 'reviewer' | null = null): string | un
   return process.env.SOFAGENT_LLM_API_KEY ?? process.env.OPENAI_API_KEY;
 }
 
-async function resolveLLMModel(role: 'engineer' | 'reviewer' | null = null): Promise<Record<string, unknown> | null> {
+export async function resolveLLMModel(role: 'engineer' | 'reviewer' | null = null): Promise<Record<string, unknown> | null> {
   const llmEnv = process.env.SOFAGENT_LLM;
   if (!llmEnv) return null;
 
@@ -135,8 +135,7 @@ async function resolveLLMModel(role: 'engineer' | 'reviewer' | null = null): Pro
     });
     return { model };
   } catch {
-    console.warn('[sofagent] @langchain/openai 初始化失败，降级到零工具路径');
-    return null;
+    console.warn('[sofagent] @langchain/openai 初始化失败，降级到零工具路径');    return null;
   }
 }
 
@@ -196,13 +195,13 @@ export interface LoopGraphDeps {
 
 /**
  * 默认 engineer 实现——v1.1.4 升级为工具注入路径：
- * 用 DeepAgents createDeepAgent + ENGINEER_TOOLS（6 个工具）启动，
+ * 用 createReactAgent + ENGINEER_TOOLS（6 个工具）启动，
  * engineer 节点从"零工具只能说话"升级为"能读写文件、跑测试、改代码"。
  *
  * 约束通过工具 description 内嵌（A1-A17 边界），不做 hook 拦截。
  * systemPrompt = 四层约束链 + ENGINEER_AGENT.systemPrompt。
  *
- * 降级兜底：如果 deepagents import 失败，降级回 spawnSubAgent
+ * 降级兜底：如果 createReactAgent import 失败，降级回 spawnSubAgent
  * （composer 零工具路径），并在输出前加 `[降级运行] ` 标注。
  */
 async function defaultRunEngineer(task: string, feedback: string): Promise<string> {
@@ -219,33 +218,37 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
       : []),
   ].join('\n');
 
-  // v1.1.4：工具注入路径——DeepAgents + ENGINEER_TOOLS
+  // v1.1.4：工具注入路径——createReactAgent + ENGINEER_TOOLS
   // SOFAGENT_LLM 未设置或解析失败时自动降级到 spawnSubAgent 零工具路径
   try {
     const resolved = await resolveLLMModelFor('engineer');
-    if (!resolved) throw new Error('SOFAGENT_LLM 未设置，无法确定模型 provider');
+    if (!resolved || !resolved.model) throw new Error('SOFAGENT_LLM 未设置，无法确定模型 provider');
 
-    const { createDeepAgent } = await import('deepagents');
+    // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
+    const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
     const constrainedPrompt = buildConstrainedSystemPrompt(process.cwd());
     const systemPrompt = `${constrainedPrompt}\n\n${ENGINEER_AGENT.systemPrompt}`;
     // v1.2.0: ToolGate 事前拦截——每个 tool call 前过 @sofagent/rules 检查
     const gate = createToolGate({ agentName: 'engineer', taskDesc: task.slice(0, 500) });
     const gatedTools = wrapToolsWithGate(ENGINEER_TOOLS, gate);
-    const agent = await (createDeepAgent as unknown as (params: Record<string, unknown>) => Promise<{
-      invoke?: (input: Record<string, unknown>) => Promise<unknown>;
-    }>)({
-      ...resolved,
-      tools: gatedTools,
-      systemPrompt,
-      maxTurns: resolveMaxTurns('engineer'),
+    const langGraphTools = convertToLangGraphTools(gatedTools);
+    const agent = (createReactAgent as unknown as (params: {
+      llm: unknown;
+      tools: unknown[];
+      prompt: string;
+    }) => { invoke: (input: unknown, config?: { recursionLimit?: number }) => Promise<unknown> })({
+      llm: resolved.model,
+      tools: langGraphTools,
+      prompt: systemPrompt,
     });
-    const result = await agent.invoke?.({
-      messages: [{ role: 'user', content: fullTask }],
-    });
+    const result = await agent.invoke(
+      { messages: [{ role: 'user', content: fullTask }] },
+      { recursionLimit: resolveMaxTurns('engineer') * 2 },
+    );
     const output = extractAgentText(result);
-    return output || '[降级运行] DeepAgents 未返回内容，已回退';
+    return output || '[降级运行] createReactAgent 未返回内容，已回退';
   } catch {
-    // 降级兜底：模型解析失败 / deepagents import 失败 → spawnSubAgent 零工具路径
+    // 降级兜底：模型解析失败 / createReactAgent import 失败 → spawnSubAgent 零工具路径
     const fallback = await spawnSubAgent(ENGINEER_AGENT, fullTask);
     return `[降级运行] ${fallback}`;
   }
@@ -336,7 +339,7 @@ function recordLoopAuditHistory(
 
 /**
  * 默认 reviewer 实现——v1.1.4 升级为工具注入路径：
- * 用 DeepAgents createDeepAgent + REVIEWER_TOOLS（只读 3 个工具）启动。
+ * 用 createReactAgent + REVIEWER_TOOLS（只读 3 个工具）启动。
  *
  * 审查员工具子集：sf_read, search_code, run_bash（只读不写）。
  * systemPrompt = 四层约束链 + REVIEWER_AGENT.systemPrompt。
@@ -362,33 +365,37 @@ async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
     '4. 输出判定：IS_PASS: YES 或 IS_PASS: NO',
   ].join('\n');
 
-  // v1.1.4：工具注入路径——DeepAgents + REVIEWER_TOOLS
+  // v1.1.4：工具注入路径——createReactAgent + REVIEWER_TOOLS
   // SOFAGENT_LLM 未设置或解析失败时自动降级到 spawnSubAgent 零工具路径
   try {
     const resolved = await resolveLLMModelFor('reviewer');
-    if (!resolved) throw new Error('SOFAGENT_LLM 未设置，无法确定模型 provider');
+    if (!resolved || !resolved.model) throw new Error('SOFAGENT_LLM 未设置，无法确定模型 provider');
 
-    const { createDeepAgent } = await import('deepagents');
+    // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
+    const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
     const constrainedPrompt = buildConstrainedSystemPrompt(process.cwd());
     const systemPrompt = `${constrainedPrompt}\n\n${REVIEWER_AGENT.systemPrompt}`;
     // v1.2.0: ToolGate 事前拦截——reviewer 工具也过 gate（只读工具通常 PASS，但保持一致性）
     const gate = createToolGate({ agentName: 'reviewer', taskDesc: 'code review'.slice(0, 500) });
     const gatedTools = wrapToolsWithGate(REVIEWER_TOOLS, gate);
-    const agent = await (createDeepAgent as unknown as (params: Record<string, unknown>) => Promise<{
-      invoke?: (input: Record<string, unknown>) => Promise<unknown>;
-    }>)({
-      ...resolved,
-      tools: gatedTools,
-      systemPrompt,
-      maxTurns: resolveMaxTurns('reviewer'),
+    const langGraphTools = convertToLangGraphTools(gatedTools);
+    const agent = (createReactAgent as unknown as (params: {
+      llm: unknown;
+      tools: unknown[];
+      prompt: string;
+    }) => { invoke: (input: unknown, config?: { recursionLimit?: number }) => Promise<unknown> })({
+      llm: resolved.model,
+      tools: langGraphTools,
+      prompt: systemPrompt,
     });
-    const result = await agent.invoke?.({
-      messages: [{ role: 'user', content: reviewTask }],
-    });
+    const result = await agent.invoke(
+      { messages: [{ role: 'user', content: reviewTask }] },
+      { recursionLimit: resolveMaxTurns('reviewer') * 2 },
+    );
     const output = extractAgentText(result);
-    return output || '[降级运行] DeepAgents 未返回内容，已回退';
+    return output || '[降级运行] createReactAgent 未返回内容，已回退';
   } catch {
-    // 降级兜底：模型解析失败 / deepagents import 失败 → spawnSubAgent 零工具路径
+    // 降级兜底：模型解析失败 / createReactAgent import 失败 → spawnSubAgent 零工具路径
     const fallback = await spawnSubAgent(REVIEWER_AGENT, reviewTask);
     return `[降级运行] ${fallback}`;
   }
@@ -467,7 +474,7 @@ function defaultConfirmHuman(reviewReport: string): Promise<HumanDecision> {
 }
 
 /**
- * 从 DeepAgents invoke 结果中提取文本内容
+ * 从 createReactAgent invoke 结果中提取文本内容
  * 兼容 string / { content } / { messages: [...] } 多种返回格式
  */
 function extractAgentText(result: unknown): string {

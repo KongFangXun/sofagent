@@ -3,7 +3,7 @@
 //
 // loop 子命令 v1.2.0 升级：默认走 LangGraph StateGraph 节点级流转
 // （engineer→audit→reviewer→human_confirm），支持 --resume 从 checkpoint
-// 恢复。旧版 DeepAgents 串行路径通过 --legacy 保留兼容。
+// 恢复。旧版串行路径通过 --legacy 保留兼容。
 
 const args = process.argv.slice(2);
 const subcommand = args[0];
@@ -14,14 +14,14 @@ async function main() {
     console.log('');
     console.log('Subcommands:');
     console.log('  compose --task <desc> [--run] [--enterprise-workflow <f>] [--variants A,B,C,D] [--label <n>] [--alt-prompt <f>]');
-    console.log('                                   使用 DeepAgents 编排任务（--run 执行编排）；默认只打印 YAML 工作流');
+    console.log('                                   使用 createReactAgent 编排任务（--run 执行编排）；默认只打印 YAML 工作流');
     console.log('  subagent run <name> [--mode deploy|sustain] --task <desc>');
     console.log('                                   启动 Sub Agent 执行任务（engineer / reviewer / fde 等）');
     console.log('                                   --mode 缺省 deploy；sustain 用于 FDE 持续优化模式');
     console.log('  loop --task <desc>               LOOP StateGraph 自动流转');
     console.log('       engineer (AI) → audit (CLI) → reviewer (AI) → human_confirm (HITL)');
     console.log('       --resume                     从最近 checkpoint 恢复续跑');
-    console.log('       --legacy                     使用旧版 DeepAgents 串行（v1.1.3 兼容）');
+    console.log('       --legacy                     使用旧版串行路径（v1.1.3 兼容）');
     console.log('  compare                          编排方案 A/B 对比');
     process.exit(0);
   }
@@ -52,8 +52,8 @@ async function main() {
       if (result) {
         console.log(result);
       } else {
-        console.error('❌ sofagent 提示：deepagents 可选依赖未安装，编排功能暂不可用');
-        console.error('   如需使用编排，请安装 deepagents（详见 ARCHITECTURE.md）');
+        console.error('❌ sofagent 提示：编排引擎未安装，编排功能暂不可用');
+        console.error('   如需使用编排，请确认 @langchain/langgraph 已安装（详见 ARCHITECTURE.md）');
         process.exit(1);
       }
       break;

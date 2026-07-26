@@ -6,7 +6,7 @@
 //   1. compose() 返回 ComposeResult{yaml, subagents}：解析器注入时 subagents 被填充
 //   2. 解析器抛错 → subagents 降级为空数组，yaml 仍保留（不阻塞）
 //
-// 注：deepagents 真实调用依赖模型 API，测试注入 compose 内部不可达；
+// 注：createReactAgent 真实调用依赖模型 API，测试注入 compose 内部不可达；
 // 这里直接验证 ComposeInput/ComposeResult 的类型契约与降级路径。
 // ============================================================
 

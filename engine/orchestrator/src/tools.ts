@@ -22,7 +22,8 @@
 import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { basename } from 'path';
-import type { StructuredToolParams } from '@langchain/core/tools';
+import { tool, type DynamicStructuredTool, type StructuredToolParams } from '@langchain/core/tools';
+import { z } from 'zod';
 import { RulesEngine, defaultToolRules } from '@sofagent/rules';
 import type { ToolCallContext } from '@sofagent/rules';
 
@@ -31,8 +32,8 @@ import type { ToolCallContext } from '@sofagent/rules';
 // ────────────────────────────────
 
 /**
- * 简易 JSON Schema 描述——DeepAgents 接受 StructuredToolParams
- * （即 { name, description, schema }），schema 为 JSONSchema 对象。
+ * 简易 JSON Schema 描述——LangGraph createReactAgent 通过 convertToLangGraphTools
+ * 转换为 DynamicStructuredTool（��� { name, description, schema }），schema 为 JSONSchema 对象。
  * 这里用宽松类型避免与 zod 强耦合。
  */
 type ToolSchema = {
@@ -43,7 +44,7 @@ type ToolSchema = {
 
 /**
  * 工具定义——StructuredToolParams 兼容格式。
- * schema 字段使用 JSON Schema（非 zod），由 DeepAgents 运行时适配。
+ * schema 字段使用 JSON Schema（非 zod），由 convertToLangGraphTools 运行时适配。
  */
 interface LoopTool extends StructuredToolParams {
   name: string;
@@ -52,11 +53,11 @@ interface LoopTool extends StructuredToolParams {
 }
 
 /**
- * 从工具生成执行器——DeepAgents 调用时传入结构化参数，
+ * 从工具生成执行器——LangGraph createReactAgent 调用时传入结构化参数，
  * 这里统一封装为 (input: Record<string, unknown>) => string。
  */
-interface ExecutableTool extends LoopTool {
-  /** 实际执行函数（DeepAgents 通过 func 字段调用） */
+export interface ExecutableTool extends LoopTool {
+  /** 实际执行函数（由 convertToLangGraphTools 包装后注入 createReactAgent） */
   func: (input: Record<string, unknown>) => string;
 }
 
@@ -65,7 +66,7 @@ interface ExecutableTool extends LoopTool {
 // ────────────────────────────────
 
 /**
- * sf_read —— 读取文件内容（原名 read_file，因 deepagents 内置保留名冲突改名）
+ * sf_read —— 读取文件内容（原名 read_file，因 LangGraph 内置保留名冲突改名）
  *
  * 约束注入：A7 先读再改（修改前必须先读取目标文件）。
  */
@@ -102,7 +103,7 @@ const readFileTool: ExecutableTool = {
 };
 
 /**
- * sf_write —— 写入新文件（原名 write_file，因 deepagents 内置保留名冲突改名）
+ * sf_write —— 写入新文件（原名 write_file，因 LangGraph 内置保留名冲突改名）
  *
  * 约束注入：
  *   A1 不碰敏感文件（.env / 密钥 / 凭证）
@@ -151,7 +152,7 @@ const writeFileTool: ExecutableTool = {
 };
 
 /**
- * sf_edit —— 编辑已有文件（精确替换）（原名 edit_file，因 deepagents 内置保留名冲突改名）
+ * sf_edit —— 编辑已有文件（精确替换）（原名 edit_file，因 LangGraph 内置保留名冲突改名）
  *
  * 约束注入：同 sf_write（A1 / A3 / A16）
  */
@@ -535,7 +536,7 @@ export const toolGate = createToolGate();
  * PASS → 正常执行。
  *
  * v1.2.0 半闭环修复：之前 toolGate 只 export 了但运行时零调用，
- * 本函数让 nodes.ts 在创建 DeepAgent 时调用 wrapToolsWithGate(ENGINEER_TOOLS, gate)，
+ * 本函数让 nodes.ts 在创建 ReactAgent 时调用 wrapToolsWithGate(ENGINEER_TOOLS, gate)，
  * 真正实现 tool call 事前拦截。
  *
  * @param tools 原始工具集
@@ -560,6 +561,65 @@ export function wrapToolsWithGate(
       return result;
     },
   }));
+}
+
+// ────────────────────────────────
+// LangGraph 工具格式转换
+// ────────────────────────────────
+
+/**
+ * 将 sofagent 的 ExecutableTool[] 转换为 LangGraph 兼容的 DynamicStructuredTool[]。
+ *
+ * createReactAgent 的 ToolNode 要求工具由 tool() 函数创建（DynamicStructuredTool），
+ * 不能直接用手写的 {name, description, schema, func} 格式——否则会触发
+ * `Cannot read properties of undefined (reading 'length')` 崩溃。
+ *
+ * 转换逻辑（参考 FORGE fresh-eyes-driver.mjs 的 loadTools()）：
+ *   - JSON Schema properties → zod 对象
+ *   - 根据 type 字段选 z.string() / z.number() / z.boolean()
+ *   - required 字段外的参数标记 optional
+ *   - 用 @langchain/core/tools 的 tool() 包装，func 内部调用原始 ExecutableTool.func
+ *
+ * @param tools sofagent 内部工具集（已经过 wrapToolsWithGate 处理）
+ * @returns LangGraph ToolNode 可用的 DynamicStructuredTool 数组
+ */
+export function convertToLangGraphTools(tools: ExecutableTool[]): DynamicStructuredTool[] {
+  return tools.map((t) => {
+    // JSON Schema → zod 转换
+    const zodShape: Record<string, z.ZodTypeAny> = {};
+    const properties = t.schema.properties as Record<string, { type?: string; description?: string }>;
+    const requiredFields = t.schema.required ?? [];
+
+    for (const [key, prop] of Object.entries(properties)) {
+      let zodField: z.ZodTypeAny;
+      if (prop.type === 'number' || prop.type === 'integer') {
+        zodField = z.number();
+      } else if (prop.type === 'boolean') {
+        zodField = z.boolean();
+      } else {
+        zodField = z.string();
+      }
+      if (prop.description) {
+        zodField = (zodField as z.ZodTypeAny).describe(prop.description);
+      }
+      if (!requiredFields.includes(key)) {
+        zodField = zodField.optional();
+      }
+      zodShape[key] = zodField;
+    }
+
+    return tool(
+      async (input: Record<string, unknown>) => {
+        const result = t.func(input);
+        return await result;
+      },
+      {
+        name: t.name,
+        description: t.description,
+        schema: z.object(zodShape),
+      },
+    );
+  });
 }
 
 // ────────────────────────────────

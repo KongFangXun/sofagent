@@ -1,8 +1,7 @@
 // ============================================================
 // launcher.ts · Sub Agent 启动器
-// v1.2.0 新增：动态 import deepagents，启动/关闭 Agent 实例
+// v1.2.0 新增：动态 import @langchain/langgraph，启动/关闭 Agent 实例
 // v1.2.0 新增：runtime.json 状态管理（name/status/startedAt/lastActive/pid）
-// v1.2.0：deepagents 提升为正式依赖，移除 as unknown as 类型转换
 // v1.2.0 新增：buildConstrainedSystemPrompt() 四层约束加载链
 // v1.2.0：迁移至 @sofagent/orchestrator，buildConstrainedSystemPrompt → @sofagent/harness
 // ============================================================
@@ -13,15 +12,15 @@ import { randomBytes } from 'crypto';
 import { loadEnvConfig } from '@sofagent/core';
 import { getPersonaContent } from '@sofagent/core';
 import type { SubAgentDefinition } from './registry';
+import { resolveLLMModel } from './loop/nodes';
 
-/** DeepAgents createDeepAgent 工厂函数签名 */
-interface DeepAgentConfig {
-  name: string;
-  systemPrompt: string;
+/** createReactAgent 工厂函数签名 */
+interface ReactAgentConfig {
+  prompt: string;
   tools: unknown[];
   modelName?: string;
 }
-type DeepAgentFactory = (config: DeepAgentConfig) => Promise<AgentInstance>;
+type ReactAgentFactory = (config: { llm: unknown; prompt: string; tools: unknown[] }) => Promise<AgentInstance>;
 
 /** Agent 实例接口 */
 interface AgentInstance {
@@ -213,20 +212,19 @@ function listKnowledgeTopN(dir: string, n: number): string[] {
 export { buildConstrainedSystemPrompt } from '@sofagent/harness';
 
 // ════════════════════════════════════════
-// DeepAgents 启动/关闭（v1.0.7：正式依赖）
+// LangGraph Agent 启动/关闭
 // ════════════════════════════════════════
 
 /**
- * 动态加载 deepagents（v1.0.7：正式依赖）
+ * 动态加载 @langchain/langgraph createReactAgent
  */
-async function loadDeepAgents(): Promise<DeepAgentFactory | null> {
+async function loadReactAgent(): Promise<ReactAgentFactory | null> {
   try {
-    const { createDeepAgent } = await import('deepagents');
-    // deepagents 的 createDeepAgent 声明为复杂泛型，与本厂 DeepAgentFactory 签名无结构重叠，
-    // TS 拒绝直转（TS2352）；经 unknown 桥接（非 any，仍保留对返回 AgentInstance 的类型校验）。
-    return createDeepAgent as unknown as DeepAgentFactory;
+    // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
+    const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
+    return createReactAgent as unknown as ReactAgentFactory;
   } catch {
-    console.warn('deepagents 未安装，Sub Agent 功能不可用。npm install deepagents 启用。');
+    console.warn('@langchain/langgraph 未安装，Sub Agent 功能不可用。npm install @langchain/langgraph 启用。');
     return null;
   }
 }
@@ -234,18 +232,21 @@ async function loadDeepAgents(): Promise<DeepAgentFactory | null> {
 /**
  * 启动 Sub Agent
  * @param definition Sub Agent 定义
- * @returns Agent 实例，或 null（deepagents 未安装）
+ * @returns Agent 实例，或 null（createReactAgent 不可用 / 模型解析失败）
  */
 export async function launch(definition: SubAgentDefinition): Promise<AgentInstance | null> {
-  const createDeepAgent = await loadDeepAgents();
-  if (!createDeepAgent) return null;
+  const createReactAgent = await loadReactAgent();
+  if (!createReactAgent) return null;
 
   try {
-    const instance = await createDeepAgent({
-      name: definition.name,
-      systemPrompt: definition.systemPrompt,
+    // createReactAgent 需要显式传 llm 参数
+    const resolved = await resolveLLMModel(null);
+    if (!resolved || !resolved.model) return null;
+
+    const instance = await createReactAgent({
+      llm: resolved.model,
+      prompt: definition.systemPrompt,
       tools: definition.tools,
-      ...(definition.modelName ? { modelName: definition.modelName } : {}),
     });
 
     // 记录 runtime 状态
@@ -347,15 +348,15 @@ export async function spawnSubAgent(
   ].filter(Boolean).join('\n');
 
   try {
-    // 尝试通过 compose 编排执行（DeepAgents 内部分发到对应 agent）
+    // 尝试通过 compose 编排执行（createReactAgent 内部分发到��应 agent）
     const { composeWithDeepAgents } = await import('./composer');
     // composeTask 自带 agent 名称信息
     const result = await composeWithDeepAgents(prompt);
     return result ?? `Agent "${agent.name}" 已接收任务，但编排引擎未返回结果。`;
-  } catch (err) {
-    // DeepAgents 未安装时返回提示
+  } catch {
+    // 编排引擎不可用时返回提示
     return [
-      `⚠️ sofagent 提示：DeepAgents 可选依赖未安装，Agent "${agent.name}" 的 prompt 已生成，可手动执行：`,
+      `⚠️ sofagent 提示：编排引擎未安装，Agent "${agent.name}" 的 prompt 已生成，可手动执行：`,
       '',
       '```yaml',
       `agent: ${agent.name}`,

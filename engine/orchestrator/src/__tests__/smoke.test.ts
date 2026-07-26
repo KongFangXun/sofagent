@@ -16,11 +16,11 @@ import {
 // ════════════════════════════════════════
 
 describe('compose — 编排主链路', () => {
-  it('composeWithDeepAgents 在无 deepagents 环境返回 null（不崩溃）', async () => {
-    // deepagents 不是 devDependency，CI 环境大概率未安装
+  it('composeWithDeepAgents 在无模型环境返回 null（不崩溃）', async () => {
+    // 无 SOFAGENT_LLM 环境变量时，模型解析失败，函数优雅降级返回 null
     // smoke 测试验证函数不抛异常、优雅降级
     const result = await composeWithDeepAgents('测试任务：写一个 hello world');
-    // 无 deepagents 时返回 null，有则返回 YAML 字符串
+    // 无模型时返回 null，有则返回 YAML 字符串
     expect(result === null || typeof result === 'string').toBe(true);
   });
 

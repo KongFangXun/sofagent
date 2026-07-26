@@ -23,7 +23,7 @@ describe('tools.ts QA 独立验证', () => {
 
     // 测试：工程师工具集名称齐全
     // 注：v1.2.x 改名 read_file→sf_read, write_file→sf_write, edit_file→sf_edit
-    //     因与 deepagents 内置 FilesystemMiddleware 保留工具名冲突
+    //     因与 LangGraph 内置保留工具名冲突
     it('ENGINEER_TOOLS 含全部 6 个工具名', () => {
       const names = ENGINEER_TOOLS.map((t) => t.name);
       expect(names).toContain('sf_read');
