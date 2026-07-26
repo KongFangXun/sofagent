@@ -1553,7 +1553,7 @@ if [ -f "$HOOKS_PKG" ]; then
   assert_grep "@sofagent/load-chain" "$HOOKS_PKG" || S132_OK=false
 fi
 # handler.ts 存在且编译产物就位
-[ -f "$PROJECT_ROOT/engine/hooks/sofagent-load-chain/handler.ts" ] || { fail "handler.ts 不存在"; S132_OK=false; }
+[ -f "$PROJECT_ROOT/engine/hooks/sofagent-load-chain/src/handler.ts" ] || { fail "handler.ts 不存在"; S132_OK=false; }
 [ -f "$PROJECT_ROOT/engine/hooks/sofagent-load-chain/dist/handler.js" ] || { fail "dist/handler.js 不存在（需先 build）"; S132_OK=false; }
 # 根 package.json workspace 引用
 assert_grep "sofagent-load-chain\|hooks/sofagent-load-chain" "$PROJECT_ROOT/package.json" || S132_OK=false
