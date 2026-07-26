@@ -998,29 +998,15 @@ async function runRound(roundNum, runDir, target, dryRun) {
 
 /**
  * 探测环境中可用的进度适配器。
- * 每个 adapter 自行检测是否可用（命令存在 + session 可达）。
- * 返回可用适配器实例数组；无适配器时返回空数组（核心层兜底）。
+ *
+ * v1.2.0 起 session 监控协议（SKILL.md 定义）替代了 CLI 推送——
+ * session 自己每 5 分钟读 status.json，driver 不需要主动推。
+ * codebuddy-reporter 已废弃，保留文件供历史参考。
+ *
+ * 返回空数组——visibility 只写 progress.jsonl + status.json。
  */
 async function detectReporters() {
-  const reporters = [];
-
-  try {
-    const { createCodebuddyReporter } = await import('./reporters/codebuddy-reporter.mjs');
-    const codebuddy = await createCodebuddyReporter();
-    if (codebuddy) {
-      reporters.push(codebuddy);
-      console.log('[visibility] 适配器已加载: codebuddy');
-    }
-  } catch (err) {
-    // codebuddy 适配器加载失败不阻断 driver
-    console.log(`[visibility] codebuddy 适配器跳过: ${err.message}`);
-  }
-
-  // 未来适配器在此追加：
-  // try { const claude = await createClaudeReporter(); if (claude) reporters.push(claude); } catch {}
-  // try { const chatgpt = await createChatGptReporter(); if (chatgpt) reporters.push(chatgpt); } catch {}
-
-  return reporters;
+  return [];
 }
 
 // ═══════════════════════════════════════════════════════════
