@@ -1,9 +1,12 @@
 // ============================================================
 // config-loader.test.ts · 配置加载器测试（含环境变量）
 // v0.97 新增：loadEnvConfig 测试
+// v1.2.1 (DP-3): audit 段 signature 校验测试
 // ============================================================
 
-import { describe, it, expect, afterAll } from 'vitest';
+import { describe, it, expect, afterAll, beforeEach, vi } from 'vitest';
+import { writeFileSync, mkdirSync, rmSync } from 'fs';
+import { join } from 'path';
 import { loadEnvConfig, ENV_DEFAULTS, DEFAULT_CONFIG, loadConfig } from '@sofagent/core';
 
 const originalEnv = { ...process.env };
@@ -28,6 +31,41 @@ describe('config-loader', () => {
       expect(config.testPatterns).toContain('npm test');
       expect(config.carefulModifyThreshold).toBe(0.2);
       expect(config.extendedRulesEnabled).toBe(false);
+    });
+
+    // DP-3: audit 段 signature 应被检测并告警，而非静默剥离
+    it('audit 段含 signature 时告警（不静默忽略）', () => {
+      const tmpDir = join(process.cwd(), '.tmp-dp3-test');
+      const configDir = join(tmpDir, '.sofagent');
+      const configPath = join(configDir, 'config.yml');
+      try {
+        mkdirSync(configDir, { recursive: true });
+        // signature 放在 audit 段（错误位置），不是顶层
+        writeFileSync(
+          configPath,
+          [
+            'audit:',
+            '  lowRiskPatterns:',
+            '    - "*.log"',
+            '  signature: deadbeef',
+          ].join('\n'),
+          'utf-8',
+        );
+
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        loadConfig(tmpDir);
+
+        // 应检测到 audit 段 signature 并告警
+        const warned = warnSpy.mock.calls.some(
+          (call) =>
+            typeof call[0] === 'string' &&
+            call[0].includes('audit 段含 signature'),
+        );
+        expect(warned).toBe(true);
+        warnSpy.mockRestore();
+      } finally {
+        rmSync(tmpDir, { recursive: true, force: true });
+      }
     });
   });
 
