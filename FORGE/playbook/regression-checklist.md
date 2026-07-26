@@ -5,19 +5,19 @@
 > **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量）
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/SKILL/fresh-eyes-loop/specs/regression-checklist.md` 找回。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。
 
-**行数警戒线（验收脚本联动，v1.1.7 起）**：两份验证文件任一行数越线即触发瘦身（releasing.md 阶段五 Tier 2）——`regression-checklist.md` ≤ 1000 行、`FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh` ≤ 1500 行。越线不表示有 bug，只是提醒该做一轮精简，防止几版后回到 3000+ 行不可维护。
+**行数警戒线（验收脚本联动，v1.1.7 起）**：两份验证文件任一行数越线即触发瘦身（releasing.md 阶段五 Tier 2）——`regression-checklist.md` ≤ 1000 行、`FORGE/playbook/acceptance-test.sh` ≤ 1500 行。越线不表示有 bug，只是提醒该做一轮精简，防止几版后回到 3000+ 行不可维护。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
-HEAD_VAL=$(grep -oE '审查维度（[0-9]+ 项' FORGE/SKILL/fresh-eyes-loop/specs/regression-checklist.md | grep -oE '[0-9]+')
-ACTUAL=$(grep -c "^#### " FORGE/SKILL/fresh-eyes-loop/specs/regression-checklist.md)
+HEAD_VAL=$(grep -oE '审查维度（[0-9]+ 项' FORGE/playbook/regression-checklist.md | grep -oE '[0-9]+')
+ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 [ "$HEAD_VAL" = "$ACTUAL" ] && echo "✅ 维度数一致 ($HEAD_VAL)" || echo "❌ 标题声称 $HEAD_VAL ≠ 实际 $ACTUAL"
 
 # 行数警戒线自检（越线提醒瘦身，非失败）
-WC_CHK=$(wc -l < FORGE/SKILL/fresh-eyes-loop/specs/regression-checklist.md)
-WC_ACC=$(wc -l < FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh)
+WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md)
+WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
 [ "$WC_CHK" -le 1000 ] && echo "✅ checklist 行数 $WC_CHK (≤1000)" || echo "⚠️ checklist 行数 $WC_CHK 超 1000，触发瘦身"
 [ "$WC_ACC" -le 1500 ] && echo "✅ acceptance-test 行数 $WC_ACC (≤1500)" || echo "⚠️ acceptance-test 行数 $WC_ACC 超 1500，触发瘦身"
 ```
@@ -87,7 +87,7 @@ bash tools/check-docs.sh 2>&1 | grep -i 'dead\|死链'   # 期望：0 处
 git grep -n "OLD_RELATIVE_PATH" -- '*.md'
 
 # 子项 c: 占位符死链豁免（v1.1.4 教训）
-grep -n "vX\.Y\.Z\|<.*>\.md\|EXAMPLE.*\.md" FORGE/SKILL/fresh-eyes-loop/specs/releasing.md docs/guides/*.md 2>/dev/null | head
+grep -n "vX\.Y\.Z\|<.*>\.md\|EXAMPLE.*\.md" FORGE/playbook/releasing.md docs/guides/*.md 2>/dev/null | head
 # 人工检查：check-docs.sh 是否对占位符路径做豁免
 ```
 
@@ -185,14 +185,14 @@ grep -c "审计引擎.*sofagent-audit\|审计引擎:.*sofagent" engine/audit/src
 
 ```bash
 # 子项 a: 管道 pipefail 保护
-grep -n 'grep.*|.*head\|grep.*|.*wc' FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh | grep -v '|| true'   # 期望：零命中
+grep -n 'grep.*|.*head\|grep.*|.*wc' FORGE/playbook/acceptance-test.sh | grep -v '|| true'   # 期望：零命中
 
 # 子项 b: 场景间清理
-grep -c "git rm --cached -f .env" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # 期望：≥ 2
+grep -c "git rm --cached -f .env" FORGE/playbook/acceptance-test.sh   # 期望：≥ 2
 
 # 子项 c: --init 烟测期望值与实际对齐（v1.1.4 教训）
 DEFAULT_COUNT=$(grep -cE "name:\s*'A[0-9]" engine/audit/src/rules/index.ts | head -1)
-grep -nE "期望.*[0-9]+\s*项\|期望.*[0-9]+\s*条\|expected.*[0-9]+" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh | head
+grep -nE "期望.*[0-9]+\s*项\|期望.*[0-9]+\s*条\|expected.*[0-9]+" FORGE/playbook/acceptance-test.sh | head
 # 人工检查：acceptance-test 里所有"期望 N 项/条"的硬编码 N 是否与 index.ts 注册数一致
 
 # 子项 d: check-version 文案扫描 baseline（v1.1.6 教训——工具自身 SSOT 标签误导）
@@ -201,7 +201,7 @@ REPORTED_DEFAULT=$(bash tools/check-version.sh 2>&1 | grep -oE "defaultRules.len
 echo "期望=$EXPECTED_DEFAULT 报告=$REPORTED_DEFAULT"   # 期望：两者相等
 
 # 子项 e: acceptance-test.sh JSON 输出不被 stderr 污染（v1.1.5 教训）
-grep -E "\-\-json.*2>&1|2>&1.*\-\-json" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # 期望：零命中
+grep -E "\-\-json.*2>&1|2>&1.*\-\-json" FORGE/playbook/acceptance-test.sh   # 期望：零命中
 
 # 子项 f: init.ts 禁止硬编码规则条数常量（v1.1.8 教训）
 grep -nE "expectedDefaultRules\s*=\s*[0-9]+|expectedDefault\s*=\s*[0-9]+" engine/audit/src/commands/init.ts   # 期望：零命中
@@ -629,15 +629,15 @@ grep -c "FDE/LOOP\|被.*依赖\|跨产品" install.sh 2>/dev/null   # ≥1
 
 ```bash
 # 子项 a: A9 全角/leet 注入检测场景存在
-grep -c "全角\|leet\|unicode" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥3
+grep -c "全角\|leet\|unicode" FORGE/playbook/acceptance-test.sh   # ≥3
 # 子项 b: history.jsonl 篡改检测场景存在
-grep -c "篡改\|tamper\|CHAIN_BREAK\|hash chain" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥2
+grep -c "篡改\|tamper\|CHAIN_BREAK\|hash chain" FORGE/playbook/acceptance-test.sh   # ≥2
 # 子项 c: hook 删除检测场景存在
-grep -c "hook.*删除\|hook.*丢失\|删除.*hook" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥1
+grep -c "hook.*删除\|hook.*丢失\|删除.*hook" FORGE/playbook/acceptance-test.sh   # ≥1
 # 子项 d: 非法 YAML → ConfigParseError 场景存在
-grep -c "ConfigParseError\|非法.*YAML\|非法 YAML" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥2
+grep -c "ConfigParseError\|非法.*YAML\|非法 YAML" FORGE/playbook/acceptance-test.sh   # ≥2
 # 子项 e: 非 git 目录场景存在
-grep -c "非.*git.*目录\|not.*a.*git.*repo\|非 git" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥1
+grep -c "非.*git.*目录\|not.*a.*git.*repo\|非 git" FORGE/playbook/acceptance-test.sh   # ≥1
 # 子项 f: 场景数声称 = 实际（归并至维度 24 子项 a 统一检查）
 ```
 #### 38. daemon 审计集中收集 workaround + 安全文档时效性（v1.1.7 新增 · BugFix 9+13）
@@ -688,7 +688,7 @@ grep -c "pairByCode\|pairByToken\|pairByFederationFile\|rotateKey" engine/core/s
 grep -r "sharedKey.*Buffer\|只存内存\|不落盘" engine/core/src/crypto/*.ts   # ≥1
 
 # 子项 e: 验收场景覆盖（acceptance-test 场景 101-102）
-grep -c "AES-256-GCM\|ECDH.*配对\|pairByToken" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥3
+grep -c "AES-256-GCM\|ECDH.*配对\|pairByToken" FORGE/playbook/acceptance-test.sh   # ≥3
 ```
 
 #### 40. OpenClaw channel 联邦查询（v1.1.8 新增 · 交付二）
@@ -712,7 +712,7 @@ grep -c "isSensitivityVisible\|restricted.*不泄露\|sensitivity.*过滤" engin
 grep -c "offline\|fallback\|降级" engine/daemon/src/federation/offline-fallback.ts   # ≥1
 
 # 子项 f: 验收场景覆盖（acceptance-test 场景 103）
-grep -c "联邦.*sensitivity\|federation\|broadcastQuery" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥2
+grep -c "联邦.*sensitivity\|federation\|broadcastQuery" FORGE/playbook/acceptance-test.sh   # ≥2
 ```
 
 #### 41. Prompt 注入 8 层防护（层 1 + 层 4 + 层 5）（v1.1.8 新增 · 交付三）
@@ -733,7 +733,7 @@ grep -c "isTrustEntryUsable\|sortByTrust\|web.*restricted" engine/core/src/secur
 grep -c "TRUST_ORDER\|trust.*Trust\|official.*internal" engine/core/src/memory-contract.ts   # ≥1
 
 # 子项 e: 验收场景覆盖（acceptance-test 场景 104-105）
-grep -c "wrapUntrusted\|redactForPrompt\|trust.*分级\|isTrustEntryUsable" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥4
+grep -c "wrapUntrusted\|redactForPrompt\|trust.*分级\|isTrustEntryUsable" FORGE/playbook/acceptance-test.sh   # ≥4
 ```
 
 #### 42. 编排引擎 dag-runner + compose --run（v1.1.8 新增 · 交付四）
@@ -757,7 +757,7 @@ grep -c "variants\|variant\|VARIANT" engine/orchestrator/src/composer.ts   # ≥
 grep -c "buildConstrainedSystemPrompt\|约束.*加载链" engine/orchestrator/src/dag-runner.ts   # ≥1
 
 # 子项 f: 验收场景覆盖（acceptance-test 场景 106）
-grep -c "dag-runner\|detectFileConflicts\|compose.*DAG" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥2
+grep -c "dag-runner\|detectFileConflicts\|compose.*DAG" FORGE/playbook/acceptance-test.sh   # ≥2
 ```
 
 #### 43. pushKnowledgeSummary 主动通知（v1.1.8 新增 · 交付五）
@@ -778,7 +778,7 @@ grep -c "sensitivity\|restricted\|NO_DATA_TEXT" engine/daemon/src/notify.ts   # 
 grep -c "best-effort\|catch\|不影响主流程\|void pushKnowledgeSummary" engine/daemon/src/notify.ts   # ≥1
 
 # 子项 e: 验收场景覆盖（acceptance-test 场景 107）
-grep -c "pushKnowledgeSummary\|collectSummaryMaterial" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥2
+grep -c "pushKnowledgeSummary\|collectSummaryMaterial" FORGE/playbook/acceptance-test.sh   # ≥2
 ```
 
 #### 44. USB 完整运行时——HMAC 签名 + AES-256 加密 + fail-closed 验签（v1.1.9 新增 · 交付一）
@@ -810,7 +810,7 @@ grep -c "create-usb-key\|usb-root\|createUsbKey\|startUsbRuntime" engine/daemon/
 test -x engine/daemon/usb/start.command && test -x engine/daemon/usb/start.sh && test -f engine/daemon/usb/start.bat   # 全部通过
 
 # 子项 h: 验收场景覆盖（acceptance-test 场景 108-113）
-grep -c "usb-signature\|usb-key\|createUsbKey\|verifyUsbSignature" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥4
+grep -c "usb-signature\|usb-key\|createUsbKey\|verifyUsbSignature" FORGE/playbook/acceptance-test.sh   # ≥4
 ```
 
 #### 45. daemon A/B 自动调度器——四阶段状态机 + jsonl 持久化（v1.1.9 新增 · 交付二）
@@ -837,7 +837,7 @@ grep -c "ab-schedule\|runABScheduledTask" engine/daemon/src/cron.ts   # ≥2
 grep -c "executePlan\|writeGraphState\|ABSchedulerDeps" engine/orchestrator/src/ab-scheduler.ts   # ≥3
 
 # 子项 g: 验收场景覆盖（acceptance-test 场景 114-117）
-grep -c "ab-scheduler\|ab-history\|judgeAndPromote\|ab-schedule" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥4
+grep -c "ab-scheduler\|ab-history\|judgeAndPromote\|ab-schedule" FORGE/playbook/acceptance-test.sh   # ≥4
 ```
 
 #### 46. 控制图状态抽取 + 路径穿越安全防护（v1.1.9 新增 · 交付三）
@@ -864,7 +864,7 @@ grep -c "writeControlGraphState\|writeGraphState" engine/orchestrator/src/ab-sch
 grep -c "splitWaves\|mapNodeStates\|buildEvidenceChain" engine/orchestrator/src/loop-state-extractor.ts   # ≥3
 
 # 子项 g: 验收场景覆盖（acceptance-test 场景 118-119）
-grep -c "extractControlGraphState\|sanitizeLoopId\|路径穿越" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥3
+grep -c "extractControlGraphState\|sanitizeLoopId\|路径穿越" FORGE/playbook/acceptance-test.sh   # ≥3
 ```
 
 #### 47. 产品叙事收敛红线 + BugFix 42 项核心回归锁（v1.1.9 新增 · 交付四+五）
@@ -889,7 +889,7 @@ SANITIZER_COUNT=$(grep -c "name: '" engine/core/src/security/prompt-sanitizer.ts
 grep -c "MAX_NODES = 20\|MAX_TASK_LENGTH = 2000" engine/orchestrator/src/workflow-parser.ts   # ≥2
 
 # 子项 g: 验收场景覆盖（acceptance-test 场景 120-121）
-grep -c "FDE Agent\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODES" FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh   # ≥4
+grep -c "FDE Agent\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODES" FORGE/playbook/acceptance-test.sh   # ≥4
 ```
 
 #### 48. [v1.2.0 归并至维度 1]

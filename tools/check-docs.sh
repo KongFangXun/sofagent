@@ -129,7 +129,7 @@ LAYER_B=$(find ./FORGE ./agents ./.github ./engine/hooks ./docs/DEVELOPMENT.md \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_B=${LAYER_B:-0}
 
-# C 层：审查体系（FORGE/SKILL/fresh-eyes-loop/specs/，原 FORGE/releaser/ 已拆散）
+# C 层：审查体系（FORGE/playbook/，原 FORGE/releaser/ 已拆散）
 LAYER_C=$(find ./FORGE/SKILL/fresh-eyes-loop/specs -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_C=${LAYER_C:-0}
 

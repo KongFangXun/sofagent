@@ -191,7 +191,7 @@ flowchart TD
 | **检查内容** | acceptance-test + regression-checklist + 覆盖率交叉检查 |
 
 执行模型 控制 OpenClaw 执行三组检查：
-1. **端到端验收测试**：`bash FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh`
+1. **端到端验收测试**：`bash FORGE/playbook/acceptance-test.sh`
 2. **回归检查**：逐项跑 `regression-checklist.md` 的全部维度
 3. **覆盖率交叉检查**：changelog 功能点逐条对照 acceptance-test 场景
 
@@ -264,11 +264,11 @@ flowchart TD
 | 1 | `docs/changelog/vX.Y/vX.Y.Z.md` | 本版本开发日志（develop prompt 输入源） |
 | 2 | `CHANGELOG.md` | 根索引（纯目录，每版本一行链接） |
 | 3 | `ROADMAP.md` | 版本堆叠路线图 |
-| 4 | `FORGE/SKILL/fresh-eyes-loop/specs/regression-checklist.md` | 回归清单（加法更新） |
-| 5 | `FORGE/SKILL/fresh-eyes-loop/specs/fresh-eyes-review.md` | 审查体系（校准更新） |
+| 4 | `FORGE/playbook/regression-checklist.md` | 回归清单（加法更新） |
+| 5 | `FORGE/playbook/fresh-eyes-review.md` | 审查体系（校准更新） |
 | 6 | `docs/changelog/releasing.md` | 发版 SOP |
 | 7 | `README.md` | 项目首屏 |
-| 8 | `FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh` | 验收测试脚本（每版本补场景） |
+| 8 | `FORGE/playbook/acceptance-test.sh` | 验收测试脚本（每版本补场景） |
 | 9 | `tools/bump-version.sh` | 版本号管理（13 类位置同步） |
 
 ### L2 版本跟随（有相关改动时更新）
@@ -301,9 +301,9 @@ releasing 流程依赖以下核心测试资产，每个版本迭代都会更新�
 
 | 资产 | 路径 | 用途 | 更新方式 |
 |------|------|------|---------|
-| **回归清单** | `FORGE/SKILL/fresh-eyes-loop/specs/regression-checklist.md` | 每次发版前逐项核对，确认已修问题无回退 | 加法更新（发现新问题追加维度） |
-| **验收测试脚本** | `FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh` | 端到端全场景自动化验收 | 每版本补场景（只增不改编号） |
-| **审查体系** | `FORGE/SKILL/fresh-eyes-loop/specs/fresh-eyes-review.md` | 留白式直觉审查，凭直觉发现新问题 | 校准更新（不是加法） |
+| **回归清单** | `FORGE/playbook/regression-checklist.md` | 每次发版前逐项核对，确认已修问题无回退 | 加法更新（发现新问题追加维度） |
+| **验收测试脚本** | `FORGE/playbook/acceptance-test.sh` | 端到端全场景自动化验收 | 每版本补场景（只增不改编号） |
+| **审查体系** | `FORGE/playbook/fresh-eyes-review.md` | 留白式直觉审查，凭直觉发现新问题 | 校准更新（不是加法） |
 | **版本号脚本** | `tools/bump-version.sh` | 13 类位置版本号同步替换 | 自动化脚本，禁止手动 grep/sed |
 
 > **防膨胀机制**：回归清单 ≤ 1000 行、验收脚本 ≤ 1500 行。每版本发版做一轮瘦身，防止验证文件膨胀失控。
