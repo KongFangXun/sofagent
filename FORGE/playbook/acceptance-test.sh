@@ -3,9 +3,9 @@
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # v1.2.0 · 134 个场景定义（含子断言，合计 147 个 pass 判定）
 # + LOOP + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 详细功能映射见 FORGE/SKILL/fresh-eyes-loop/specs/acceptance-coverage.md
+# 详细功能映射见 FORGE/playbook/acceptance-coverage.md
 # ============================================================
-# 用法：bash FORGE/SKILL/fresh-eyes-loop/specs/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
+# 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
 RUN_MODE="all"
 for _arg in "$@"; do
@@ -1469,12 +1469,12 @@ $S123_OK && pass
 scenario 124 "v1.2.0 发版工具链归入 LOOP——5 文件就位 + tools/ 保留日常门禁"
 S124_OK=true
 for f in releasing.md acceptance-test.sh bump-version.sh regression-checklist.md fresh-eyes-review.md; do
-  [ -f "$PROJECT_ROOT/FORGE/SKILL/fresh-eyes-loop/specs/$f" ] || { fail "FORGE/SKILL/fresh-eyes-loop/specs/$f 不存在"; S124_OK=false; }
+  [ -f "$PROJECT_ROOT/FORGE/playbook/$f" ] || { fail "FORGE/playbook/$f 不存在"; S124_OK=false; }
 done
 for f in pre-push-check.sh check-version.sh check-docs.sh check-test-count.sh test-count.sh; do
   [ -f "$PROJECT_ROOT/tools/$f" ] || { fail "tools/$f 不存在"; S124_OK=false; }
 done
-[ ! -d "$PROJECT_ROOT/docs/verification" ] || { fail "docs/verification/ 仍存在（应已迁入 FORGE/SKILL/fresh-eyes-loop/specs/）"; S124_OK=false; }
+[ ! -d "$PROJECT_ROOT/docs/verification" ] || { fail "docs/verification/ 仍存在（应已迁入 FORGE/playbook/）"; S124_OK=false; }
 $S124_OK && pass
 scenario 125 "v1.2.0 install.sh 提根 + loop-install.sh/releaser 已移除（LOOP 由 SKILL/<loop>/ 驱动）"
 S125_OK=true
