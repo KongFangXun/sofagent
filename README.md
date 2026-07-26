@@ -40,7 +40,7 @@
 > **定位澄清**：sofagent 是 **FDE Agent 编排控制平面**，不是「AI 中台」——业界对「AI 中台」在零散个性化场景的成效普遍存疑。它做的是 Agent 的「管住」那一层：约束 + 审计 + 回溯 + 持续优化，让企业敢把 AI 节点放上生产。详见 [ARCHITECTURE · 行业框架对齐](./docs/ARCHITECTURE.md)。
 
 > [!IMPORTANT]
-> **实测数据**：Hugging Face 基准测试——同模型、纯 Harness 优化，legal-agent 得分从 3.5% 跳到 80.1%（76 分提升全来自外层机制），成本仅 1/7。详见 [Joel Niklaus · Harness Optimization](https://huggingface.co/spaces/joelniklaus/harness-optimization)。
+> **实测数据**：Hugging Face 基准测试——同模型、纯 Harness 优化，legal-agent 得分从 3.5% 跳到 80.1%（76 分提升全来自外层机制），成本仅 1/7。详见 [Joel Niklaus · Harness Optimization](https://huggingface.co/spaces/joelniklaus/harness-optimization)（注：run-09 审查时该 HF Space 曾返回 502，可能为临时故障或网络限制；稳定镜像见 [GitHub 仓库](https://github.com/JoelNiklaus/harness-optimization)）。
 
 ### 为什么不是现有工具
 
