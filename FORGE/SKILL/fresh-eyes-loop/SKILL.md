@@ -28,7 +28,39 @@ color: "#16B8F3"
 
 ## 实现载体
 
-A/B 由 **DeepAgents** 驱动（开新 session，或每轮刷新对话）——这是为企业定制 workflow 时的标准做法。WorkBuddy 会话只是沙箱 / 原型，真上生产用 DeepAgents orchestrator 拉起这套循环。
+A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个 step 独立子进程（真零上下文），LangGraph `createReactAgent` 编排。当前 session 只负责启动 driver + 监控进度。
+
+## Session 监控协议（CRITICAL）
+
+**启动 driver 后，session 不是傻等，而是进入 sleep 轮询模式**——保持 working 状态，让用户感知"后台在干活"。
+
+### 执行方式
+
+```
+1. Bash run_in_background:
+   node FORGE/src/fresh-eyes-driver.mjs --target <版本号> --max-rounds 10
+
+2. 记住 runDir（driver 启动日志第一行会打印）
+
+3. 循环（最多 30 次，防 turn 超限）:
+   sleep 300                                          # 等 5 分钟
+   cat <runDir>/status.json                           # 读进度
+   判断:
+     - phase === "completed" 或 "error"  → 汇报最终结果，退出循环
+     - phase 跟上次相同（无变化）        → 静默，继续下一轮 sleep
+     - phase 有变化                      → 一句话汇报，继续 sleep
+```
+
+### 汇报规则
+
+- **只在 phase 变化时说话**——同一状态不重复汇报
+- **一句话**——不展开 details，用户想看细节自己读 status.json
+- 格式示例：`📊 Round 2 完成 — ❌ P0=1 P1=3，进入下一轮`
+- 最终结果用 2-3 行收尾：轮数 + 停止原因 + 最终 P0/P1/P2 计数
+
+### 为什么不用 CLI 推送
+
+driver 写 status.json 就够了——session 自己来读。推变拉，`codebuddy-reporter` 适配器已废弃。driver 不需要知道 session 的存在。
 
 ## 循环级演化
 
