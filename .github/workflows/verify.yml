@@ -31,7 +31,7 @@ jobs:
             chmod +x ~/.openclaw/scripts/*.sh
             mkdir -p ~/.openclaw/hooks/sofagent-load-chain
             cp engine/hooks/sofagent-load-chain/HOOK.md ~/.openclaw/hooks/sofagent-load-chain/
-            cp engine/hooks/sofagent-load-chain/handler.ts ~/.openclaw/hooks/sofagent-load-chain/
+            cp engine/hooks/sofagent-load-chain/src/handler.ts ~/.openclaw/hooks/sofagent-load-chain/
           }
 
       - name: Run verify.sh
