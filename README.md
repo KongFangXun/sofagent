@@ -200,7 +200,7 @@ flowchart LR
 
 ### ⚙️ 编排引擎
 
-两层已实现：① **任务拆解**——DeepAgents compose 把任务描述变成编排方案 YAML；② **FORGE 自迭代**——四节点 StateGraph（engineer → audit → reviewer → human_confirm），audit FAIL 自动路由回 engineer 重试（≤3 轮），每节点有 checkpoint 支持中断恢复。
+两层已实现：① **任务拆解**——LangGraph createReactAgent 把任务描述变成编排方案 YAML；② **FORGE 自迭代**——四节点 StateGraph（engineer → audit → reviewer → human_confirm），audit FAIL 自动路由回 engineer 重试（≤3 轮），每节点有 checkpoint 支持中断恢复。
 
 > 🔶 当前是**串行**状态机（非并行 DAG 调度）。完整 DAG 并行调度 + 沙箱执行规划在 [ROADMAP v1.3.0](./ROADMAP.md)。
 
