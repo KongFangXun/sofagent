@@ -10,12 +10,23 @@ deploy_hook() {  # Step 6: 部署加载链 Hook（仅 OpenClaw）
   info "Step 6/7 · 部署加载链 Hook（OpenClaw 2026.6.x 内部 hook 架构）..."
   local HOOK_SRC_DIR="${SCRIPT_DIR}/../hooks/sofagent-load-chain"
   local HOOK_DST_DIR="${TARGET}/hooks/sofagent-load-chain"
-  if [ ! -d "$HOOK_SRC_DIR" ] || [ ! -f "${HOOK_SRC_DIR}/HOOK.md" ] || [ ! -f "${HOOK_SRC_DIR}/handler.ts" ]; then
-    warn "找不到 hook 源文件（$HOOK_SRC_DIR/HOOK.md 或 handler.ts），跳过部署"
+  # v1.2.1 (DP-4): hook 已提升为正式 workspace 包，源码在 src/handler.ts，
+  # 构建产出 dist/handler.js + handler.ts（根目录副本，OpenClaw 声明式系统用）
+  if [ ! -d "$HOOK_SRC_DIR" ] || [ ! -f "${HOOK_SRC_DIR}/HOOK.md" ]; then
+    warn "找不到 hook 源文件（$HOOK_SRC_DIR/HOOK.md），跳过部署"
     warn "  仓库结构异常？请从 https://github.com/KongFangXun/sofagent 重新拉取"; return 0; fi
+  # 确保 handler.ts 已构建（开发模式下可能未 build）
+  if [ ! -f "${HOOK_SRC_DIR}/handler.ts" ]; then
+    if [ -f "${HOOK_SRC_DIR}/src/handler.ts" ]; then
+      cp "${HOOK_SRC_DIR}/src/handler.ts" "${HOOK_SRC_DIR}/handler.ts"
+    else
+      warn "找不到 handler.ts 或 src/handler.ts，跳过部署"; return 0; fi
+  fi
   mkdir -p "$HOOK_DST_DIR"
   cp "${HOOK_SRC_DIR}/HOOK.md" "${HOOK_DST_DIR}/HOOK.md"
   cp "${HOOK_SRC_DIR}/handler.ts" "${HOOK_DST_DIR}/handler.ts"
+  # 额外部署编译产物（供直接 node 执行）
+  [ -f "${HOOK_SRC_DIR}/dist/handler.js" ] && { mkdir -p "${HOOK_DST_DIR}/dist"; cp "${HOOK_SRC_DIR}/dist/handler.js" "${HOOK_DST_DIR}/dist/handler.js"; }
   ok "加载链内部 Hook 已部署: ${HOOK_DST_DIR}（HOOK.md + handler.ts）"
   # 注册到 openclaw.json（优先 OPENCLAW_CONFIG_PATH，其次 $TARGET/openclaw.json）
   HOOK_CONFIG=""
