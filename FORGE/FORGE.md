@@ -24,7 +24,7 @@
 
 <img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
 
-> 📖 FORGE 自迭代的设计哲学见 [PHILOSOPHY §七](../docs/PHILOSOPHY.md#七怎么进化-forge-自迭代)。Agent 定义见 [`SKILL/agents/`](../SKILL/agents/)——遵循 [Agency Agents](https://github.com/jnMetaCode/agency-agents-zh) 格式标准。编排层通过 [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) `createDeepAgent()` 接入 LangGraph StateGraph。
+> 📖 FORGE 自迭代的设计哲学见 [PHILOSOPHY §七](../docs/PHILOSOPHY.md#七怎么进化forge-自迭代)。Agent 定义见 [`SKILL/agents/`](../SKILL/agents/)——遵循 [Agency Agents](https://github.com/jnMetaCode/agency-agents-zh) 格式标准。编排层通过 [DeepAgentsJS](https://github.com/langchain-ai/deepagentsjs) `createDeepAgent()` 接入 LangGraph StateGraph。
 
 ## 整体流程
 
@@ -161,7 +161,7 @@ sofagent 的版本发布遵循 [`docs/changelog/releasing.md`](../docs/changelog
 
 ### DeepAgentsJS + LangGraph 实现细节
 
-v1.1.3 起 StateGraph 已代码化（`engine/orchestrator/src/loop/`）。Agent 定义在 `SKILL/agents/`，流程定义在 LangGraph 节点+边。完整实现原理（四节点状态机 / Checkpoint / 降级链）见 [ARCHITECTURE §编排引擎](../docs/ARCHITECTURE.md#编排引擎)。
+v1.1.3 起 StateGraph 已代码化（`engine/orchestrator/src/loop/`）。Agent 定义在 `SKILL/agents/`，流程定义在 LangGraph 节点+边。完整实现原理（四节点状态机 / Checkpoint / 降级链）见 [ARCHITECTURE §编排引擎](../docs/ARCHITECTURE.md#⚙️-编排引擎)。
 
 ### 平台无关触发（已设计，待代码化）
 
