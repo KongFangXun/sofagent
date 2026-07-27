@@ -18,16 +18,18 @@ import { join } from 'path';
 import { createHash, createHmac } from 'crypto';
 import { hostname, userInfo, homedir } from 'os';
 import { execSync } from 'child_process';
-import { loadEnvConfig } from './config-loader';
+import { AUDIT_HISTORY } from './data-paths';
 
 /**
  * 获取审计历史文件路径
- * 从 loadEnvConfig().dataDir 解析数据目录
+ * 解析链（v1.2.1）：显式 dataDir 参数 > SOFAGENT_DATA 环境变量 > data/audit/history.jsonl
  * @param dataDir 可选的数据目录覆盖（用于测试）
  */
 export function getHistoryFilePath(dataDir?: string): string {
-  const dir = dataDir ?? loadEnvConfig().dataDir;
-  return join(dir, 'audit', 'history.jsonl');
+  const dir = dataDir ?? process.env.SOFAGENT_DATA;
+  if (dir) return join(dir, 'audit', 'history.jsonl');
+  // v1.2.1：默认路径从 .sofagent/audit/ 迁移到 data/audit/
+  return AUDIT_HISTORY;
 }
 
 /**

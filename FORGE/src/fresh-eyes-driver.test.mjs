@@ -332,10 +332,12 @@ describe('parseStopCondition', () => {
     expect(result.isClean).toBe(false);
   });
 
-  // 测试：findings.md 只有 P2 → isClean=true
+  // 测试：findings.md 只有 P2 → isClean=false
   // 输入：findings.md 只包含 "P2" 标记
-  // 预期：p2 >= 1, p0 === 0, p1 === 0, isClean === true
-  it('findings.md 只有 P2 → isClean=true', () => {
+  // 预期：p2 >= 1, p0 === 0, p1 === 0, isClean === false
+  // 语义依据（commit ac85541 · P2 全量修）：isClean = p0===0 && p1===0 && p2===0 && !hasFail，
+  // P2 未清零即不 clean——停止条件不允许带着 P2 建议收尾。
+  it('findings.md 只有 P2 → isClean=false', () => {
     const roundDir = join(tmpRoot, 'round-01');
     mkdirSync(roundDir, { recursive: true });
     writeFileSync(join(roundDir, 'findings.md'), '# 审查发现\n\n## P2 建议优化\n这是一个 P2 级别的建议\n');
@@ -346,7 +348,7 @@ describe('parseStopCondition', () => {
     expect(result.p2).toBeGreaterThanOrEqual(1);
     expect(result.p0).toBe(0);
     expect(result.p1).toBe(0);
-    expect(result.isClean).toBe(true);
+    expect(result.isClean).toBe(false);
   });
 
   // 测试：result.md verify 列含 FAIL → hasFail=true, isClean=false
@@ -449,10 +451,12 @@ describe('parseStopCondition', () => {
     expect(result.isClean).toBe(false);
   });
 
-  // 测试：完全干净的 findings + result → isClean=true
+  // 测试：findings 只有 P2 + result 全 PASS → isClean=false
   // 输入：findings.md 只有 P2，result.md verify 全 PASS
-  // 预期：isClean === true
-  it('findings 只有 P2 + result 全 PASS → isClean=true', () => {
+  // 预期：p2 === 1, hasFail === false, isClean === false
+  // 语义依据（commit ac85541 · P2 全量修）：即使 verify 全 PASS，
+  // 只要 findings 残留 P2 建议就不算 clean（isClean 要求 p2===0）。
+  it('findings 只有 P2 + result 全 PASS → isClean=false', () => {
     const roundDir = join(tmpRoot, 'round-01');
     mkdirSync(roundDir, { recursive: true });
     writeFileSync(join(roundDir, 'findings.md'), '# 审查发现\nP2 建议优化\n');
@@ -463,7 +467,7 @@ describe('parseStopCondition', () => {
 
     expect(result.p2).toBe(1);
     expect(result.hasFail).toBe(false);
-    expect(result.isClean).toBe(true);
+    expect(result.isClean).toBe(false);
   });
 });
 

@@ -11,7 +11,7 @@ import { existsSync, writeFileSync, mkdirSync, chmodSync, readFileSync, appendFi
 import { join, dirname } from 'path';
 import { execFileSync, execSync } from 'child_process';
 import { homedir, platform } from 'os';
-import { CONFIG_TEMPLATE, HOOK_TEMPLATE, VERSION, generateWatchTemplate } from '@sofagent/core';
+import { CONFIG_TEMPLATE, HOOK_TEMPLATE, VERSION, generateWatchTemplate, resolveKnowledgeDir, resolveDaemonLog } from '@sofagent/core';
 import { writeConfig } from '@sofagent/core';
 import { defaultRules } from '../rules';
 
@@ -236,7 +236,7 @@ else
   exit 0
 fi
 
-HISTORY_FILE=".sofagent/audit/history.jsonl"
+HISTORY_FILE="data/audit/history.jsonl"
 if [ ! -f "$HISTORY_FILE" ]; then exit 0; fi
 
 # 读取 history.jsonl 最后一条的 timestamp，检查是否在 300 秒内
@@ -295,12 +295,12 @@ exit 0
     }
   }
 
-  // [3/5] 创建知识库目录骨架（v1.0.1 新增）
+  // [3/5] 创建知识库目录骨架（v1.0.1 新增；v1.2.1 迁移到 data/knowledge/）
   console.log('');
   console.log('[3/5] 创建知识库目录...');
-  const knowledgeDir = join(configDir, 'knowledge');
+  const knowledgeDir = resolveKnowledgeDir(cwd);
   if (existsSync(knowledgeDir)) {
-    console.log('  → .sofagent/knowledge/ 已存在，跳过');
+    console.log('  → data/knowledge/ 已存在，跳过');
     stepSkipped++;
   } else {
     const subDirs = ['entities', 'concepts', 'comparisons', 'summaries'];
@@ -319,7 +319,7 @@ exit 0
       '# 知识库操作日志\n\n> 自动追加——Ingest / Query / Lint 操作的时间戳记录。\n\n| 时间 | 操作 | 影响页面 | 详情 |\n|------|------|---------|------|\n',
       'utf-8'
     );
-    console.log('  → .sofagent/knowledge/ 已创建（4 子目录 + index.md + log.md）');
+    console.log('  → data/knowledge/ 已创建（4 子目录 + index.md + log.md）');
     console.log('  → 知识库用于沉淀 Agent 的跨任务经验，由 daemon 自动维护');
     stepOk++;
   }
@@ -462,9 +462,9 @@ ${finalProgArgs.map((a) => `        <string>${a}</string>`).join('\n')}
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>${join(homedir(), '.sofagent', 'daemon.log')}</string>
+    <string>${resolveDaemonLog(cwd)}</string>
     <key>StandardErrorPath</key>
-    <string>${join(homedir(), '.sofagent', 'daemon.log')}</string>
+    <string>${resolveDaemonLog(cwd)}</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
@@ -484,7 +484,7 @@ ${finalProgArgs.map((a) => `        <string>${a}</string>`).join('\n')}
         execFileSync('launchctl', ['load', plistPath], { stdio: 'pipe' });
         console.log('  ✅ daemon 已注册并启动（下次开机自动运行）');
         console.log(`  → 监控项目: ${projectWorkingDir}`);
-        console.log(`  → 日志: ~/.sofagent/daemon.log`);
+        console.log(`  → 日志: data/daemon.log`);
         console.log('  → 如需停用: launchctl unload ~/Library/LaunchAgents/com.sofagent.daemon.plist');
         stepOk++;
       } catch (err) {

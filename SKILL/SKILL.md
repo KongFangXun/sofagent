@@ -42,6 +42,8 @@ metadata:
 | 4 | `{SOFAGENT_DATA}/knowledge/index.md` | Agent 主动 Read | AI 知识库目录（top-3 相关页摘要）| 跳过（空知识库）|
 
 > 💡 第 4 层：index.md 与 task/logs 关键词匹配 → 注入 top-3 页摘要（≤500 token，匹配度=0 则跳过）。详见 `harness/knowledge-maintain.md`。`{SOFAGENT_DATA}` = `${PWD}/.sofagent`
+>
+> 🔧 **custom/ 用户自定义层（v1.2.1 起）**：引擎四层加载完成后，Agent 主动 Read 用户层规则——平台 Skill 目录 `skills/sofagent/custom/*-overrides.md`（FDE 主 Agent）与项目 `{SOFAGENT_DATA}/custom/*-overrides.md`（Sub Agent 由 buildConstrainedSystemPrompt 自动注入）。后加载 = 优先级更高：custom/ 规则**追加**在官方规则之后，不是替换；官方升级不覆盖 custom/（安全升级策略）。命名表与升级三策略详见 `custom/README.md`。文件不存在时静默跳过。
 
 ---
 

@@ -45,29 +45,27 @@ trap '_on_signal' TERM
 trap '_on_signal' INT
 
 # ── P2-2: daemon-notice 速率限制（每小时最多 1 次写入）──
+# v1.2.1：不再写入 daemon-notice.md（由 health-reporter.ts 生成 JSON 替代），
+# 改为速率限制写入 daemon.log，保留节流逻辑避免日志膨胀。
 _write_notice_if_stale() {
   local msg="$1"
-  local notice_file="${SOFAGENT_DATA}/daemon-notice.md"
+  local notice_file="${SOFAGENT_DATA}/.notice-last-write"
   local now_ts
   now_ts=$(date +%s)
 
   # 检查上次写入时间
   if [ -f "$notice_file" ]; then
-    local file_ts
-    # macOS/BSD stat vs GNU stat 兼容
-    if stat -f %m "$notice_file" 2>/dev/null; then
-      file_ts=$(stat -f %m "$notice_file" 2>/dev/null)
-    else
-      file_ts=$(stat -c %Y "$notice_file" 2>/dev/null || echo 0)
-    fi
-    local elapsed=$((now_ts - file_ts))
+    local last_ts
+    last_ts=$(cat "$notice_file" 2>/dev/null || echo 0)
+    local elapsed=$((now_ts - last_ts))
     # 3600 秒 = 1 小时
     if [ "$elapsed" -lt 3600 ]; then
       return 0
     fi
   fi
 
-  echo "[daemon] $(date -u +"%Y-%m-%dT%H:%M:%SZ") ${msg}" > "$notice_file"
+  daemon_log "${msg}"
+  echo "$now_ts" > "$notice_file"
 }
 
 # ── 写入 daemon.json 初始结构 ──
@@ -189,6 +187,7 @@ _main_loop() {
     # 7. SkillOpt 自进化调度（v1.0.4 → P0-7 管道接通）
     # 读 eval.md → 阈值检测 → 24h 防抖 → 调 skillopt-run
     _trigger_skillopt() {
+      # TODO-v1.3.0: eval.md 已在 v1.2.1 删除，SkillOpt 评分数据源待重新设计
       # 读取 eval.md，检查累积评分条目数是否到阈值
       local scoring_file="${SOFAGENT_DATA}/../SKILL/harness/data/eval.md"
       local threshold=20  # 累积 20 条评分后触发
@@ -216,13 +215,15 @@ _main_loop() {
 
       # 检测 skillopt-sleep 是否可用
       if ! command -v skillopt-sleep &>/dev/null; then
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] SkillOpt: skillopt-sleep 未安装（需 clone github.com/microsoft/SkillOpt + pip install -e .）。eval.md 已积累 ${score_count} 条，触发条件已满足但引擎不可用。" >> "${SOFAGENT_DATA}/daemon-notice.md"
+        # v1.2.1：不再追加到 daemon-notice.md，改写 daemon.log（健康报告由 health-reporter.ts 生成 JSON）
+        daemon_log "SkillOpt: skillopt-sleep 未安装（需 clone github.com/microsoft/SkillOpt + pip install -e .）。eval.md 已积累 ${score_count} 条，触发条件已满足但引擎不可用。"
         return
       fi
 
       # 真正调用——通过 npx @sofagent/audit skillopt-run
-      echo "[$(date '+%Y-%m-%d %H:%M:%S')] SkillOpt: eval.md 累积 ${score_count} 条，触发自进化" >> "${SOFAGENT_DATA}/daemon-notice.md"
-      npx @sofagent/audit skillopt-run --input "${SOFAGENT_DATA}/../SKILL/SKILL.md" --output "${SOFAGENT_DATA}/skill-candidate.md" --scoring "$scoring_file" 2>>"${SOFAGENT_DATA}/daemon-notice.md"
+      # v1.2.1：不再追加到 daemon-notice.md，改写 daemon.log
+      daemon_log "SkillOpt: eval.md 累积 ${score_count} 条，触发自进化"
+      npx @sofagent/audit skillopt-run --input "${SOFAGENT_DATA}/../SKILL/SKILL.md" --output "${SOFAGENT_DATA}/skill-candidate.md" --scoring "$scoring_file" 2>>"$DAEMON_LOG"
       date +%s > "$last_trigger"
     }
     _trigger_skillopt

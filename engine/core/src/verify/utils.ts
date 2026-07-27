@@ -115,22 +115,26 @@ export function readFileContent(filePath: string): string {
 
 // ── 数据目录解析 ──
 /**
- * 解析 SOFAGENT_DATA 目录。
+ * 解析数据根目录（v1.2.1：从 ${cwd}/.sofagent 迁移到 ${cwd}/data）。
  * 优先从 ~/.openclaw/skills/sofagent/ 下查找已安装的 SKILL.md 定位 repoRoot，
- * 回退到 ${repoRoot}/.sofagent，再回退到 ${cwd}/.sofagent。
+ * 再按 ${cwd}/data → ${cwd}/.sofagent（遗留兼容）顺序解析。
  */
 export function resolveSofagentData(platformDir: string): string {
-  // 1. 尝试从已安装的 SKILL.md 定位（repoRoot/.sofagent）
+  const cwdData = join(process.cwd(), 'data');
+  const legacyData = join(process.cwd(), '.sofagent');
+
+  // 1. 尝试从已安装的 SKILL.md 定位（repoRoot/data）
   const installedSkill = join(platformDir, 'skills', 'sofagent', 'SKILL.md');
   if (existsSync(installedSkill)) {
-    // 已安装到 ~/.openclaw，数据目录用 cwd/.sofagent（用户运行 verify 时在 repo root）
-    const cwdData = join(process.cwd(), '.sofagent');
+    // 已安装到 ~/.openclaw，数据目录用 cwd/data（用户运行 verify 时在 repo root）
     if (existsSync(cwdData)) return cwdData;
+    // 遗留兼容：老安装只有 .sofagent/ 数据目录
+    if (existsSync(legacyData)) return legacyData;
   }
 
-  // 2. 尝试 cwd/.sofagent
-  const cwdData = join(process.cwd(), '.sofagent');
+  // 2. 尝试 cwd/data（v1.2.1 起规范位置），再退 cwd/.sofagent（遗留）
   if (existsSync(cwdData)) return cwdData;
+  if (existsSync(legacyData)) return legacyData;
 
   // 3. 回退：返回默认路径（即使不存在，用于 warning 检查）
   return cwdData;

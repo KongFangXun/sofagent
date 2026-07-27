@@ -97,6 +97,120 @@ T
   fi
 
   # v1.2.x: releaser Skill 已移除（发版 SOP 迁 docs/changelog/releasing.md，版本号脚本迁 tools/bump-version.sh）
+
+  # v1.2.1: custom/ 用户自定义层部署（P2 设计闭环——安装创建 + 升级三策略保护）
+  deploy_custom_dir
+}
+
+# ============================================================
+# v1.2.1: custom/ 用户自定义层部署（P2 设计闭环）
+# ============================================================
+# custom/ 是用户私有行为规则的藏身处——官方升级不碰这里。
+# 三策略（与 custom/README.md 约定一致）：
+#   安装（目标不存在）→ 创建目录 + 部署 README 操作手册
+#   安全升级（默认）  → custom/ 不动（用户定制永久保留）
+#   --force          → 交互确认（--yes/--quick 跳过）+ 备份 → 恢复官方文件
+#   --merge          → 三路合并；冲突生成 .merge-conflict，原始文件不动
+# ============================================================
+
+deploy_custom_dir() {
+  local CUSTOM_SRC="${SCRIPT_DIR}/SKILL/custom"
+  local CUSTOM_DST="${TARGET}/skills/sofagent/custom"
+  if [ ! -d "$CUSTOM_SRC" ]; then
+    warn "custom/ 源目录不存在: ${CUSTOM_SRC}，跳过用户层部署"
+    return 0
+  fi
+
+  # 安装：目标不存在 → 创建 + 部署手册
+  if [ ! -d "$CUSTOM_DST" ]; then
+    mkdir -p "$CUSTOM_DST"
+    if [ -f "$CUSTOM_SRC/README.md" ]; then
+      cp "$CUSTOM_SRC/README.md" "$CUSTOM_DST/README.md"
+    fi
+    ok "custom/ 用户自定义层已创建: ${CUSTOM_DST}（README 手册已部署，按命名表新增 *-overrides.md 即生效）"
+    return 0
+  fi
+
+  # 升级：三策略
+  if [ "${MERGE_MODE:-0}" = "1" ]; then
+    _merge_custom_dir "$CUSTOM_SRC" "$CUSTOM_DST"
+  elif [ "${FORCE_MODE:-0}" = "1" ]; then
+    _force_overwrite_custom_dir "$CUSTOM_SRC" "$CUSTOM_DST"
+  else
+    ok "custom/ 已存在——安全升级策略：跳过（用户定制保留）"
+  fi
+}
+
+# --force 强制覆盖：列出将被覆盖的文件 → 交互确认 → 备份 → 恢复官方版本
+_force_overwrite_custom_dir() {
+  local src="$1" dst="$2" f base size answer
+  local targets=()
+  for f in "$src"/*; do
+    [ -f "$f" ] || continue
+    base=$(basename "$f")
+    [ -f "$dst/$base" ] && targets+=("$base")
+  done
+
+  if [ "${#targets[@]}" -gt 0 ]; then
+    echo "[sofagent] 检测到 --force，以下 custom/ 文件将被覆盖："
+    for base in "${targets[@]}"; do
+      size=$(wc -c < "$dst/$base" 2>/dev/null | tr -d ' ')
+      echo "  - $base (${size:-?}B)"
+    done
+    # 交互确认：--yes / --quick / 非交互 stdin 跳过（默认 N 不覆盖原则只护交互场景）
+    if [ "${YES_MODE:-0}" != "1" ] && [ "${QUICK_MODE:-0}" != "1" ] && [ -t 0 ]; then
+      printf "继续？[y/N] "
+      read -r answer
+      case "$answer" in
+        y|Y|yes|YES) : ;;
+        *) echo "[sofagent] 已取消——custom/ 保持原样"; return 0 ;;
+      esac
+    fi
+  fi
+
+  # 覆盖前自动备份到 custom/.backup/{timestamp}/
+  local backup_dir
+  backup_dir="${dst}/.backup/$(date +%Y%m%d-%H%M%S)"
+  mkdir -p "$backup_dir"
+  for f in "$dst"/*; do
+    [ -f "$f" ] || continue
+    cp "$f" "$backup_dir/" 2>/dev/null || true
+  done
+  # 恢复官方文件（用户新增的 *-overrides.md 不在源中，不受影响——备份仍在）
+  for f in "$src"/*; do
+    [ -f "$f" ] || continue
+    cp "$f" "$dst/$(basename "$f")"
+  done
+  ok "custom/ 已按 --force 恢复官方版本（备份: ${backup_dir}）"
+}
+
+# --merge 三路合并：无冲突自动合并；有冲突生成 .merge-conflict，原始文件不动
+_merge_custom_dir() {
+  local src="$1" dst="$2" f base merged
+  for f in "$src"/*; do
+    [ -f "$f" ] || continue
+    base=$(basename "$f")
+    if [ ! -f "$dst/$base" ]; then
+      cp "$f" "$dst/$base"
+      ok "custom/ 新增官方文件: $base"
+    elif cmp -s "$f" "$dst/$base" 2>/dev/null; then
+      : # 内容相同，跳过
+    elif command -v git >/dev/null 2>&1 && merged=$(git merge-file -p "$dst/$base" /dev/null "$f" 2>/dev/null); then
+      # git merge-file 干净合并（base 为空，双方非重叠新增自动合并）
+      printf '%s\n' "$merged" > "$dst/$base"
+      ok "custom/ 三路合并完成: $base"
+    else
+      # 合并冲突 → 生成 .merge-conflict（保留双方内容），不覆盖原始文件
+      {
+        echo "<<<<<<< 用户版本（custom/${base}）"
+        cat "$dst/$base"
+        echo "======="
+        echo ">>>>>>> 官方版本"
+        cat "$f"
+      } > "$dst/${base}.merge-conflict"
+      warn "custom/ 合并冲突：手动处理 ${base}.merge-conflict（原始文件未动）"
+    fi
+  done
 }
 deploy_scripts() {
   # P0-2/P0-3 修复：配套脚本和 .sofagent/ 对所有平台均执行
@@ -117,6 +231,12 @@ deploy_scripts() {
   else ok "数据目录已存在: $SOFAGENT_DATA"; fi
   # v1.0.1: 创建 knowledge/ 目录骨架
   _deploy_knowledge_skeleton
+  # v1.2.1: 创建 .sofagent/custom/ 骨架（Sub Agent 经 buildConstrainedSystemPrompt 读取的位置）
+  if [ ! -d "${SOFAGENT_DATA}/custom" ]; then
+    mkdir -p "${SOFAGENT_DATA}/custom"
+    [ -f "${SCRIPT_DIR}/SKILL/custom/README.md" ] && cp "${SCRIPT_DIR}/SKILL/custom/README.md" "${SOFAGENT_DATA}/custom/README.md"
+    ok "custom/ 用户自定义层已创建: ${SOFAGENT_DATA}/custom"
+  fi
 }
 
 # v1.0.1: 创建 .sofagent/knowledge/ 目录结构 + 初始模板

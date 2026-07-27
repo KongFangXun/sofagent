@@ -18,7 +18,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
-import { getThinkPath } from '@sofagent/core';
+import { getThinkPath, resolveKnowledgeDir } from '@sofagent/core';
 
 import type {
   AuditEntry,
@@ -45,13 +45,14 @@ const STATE_FILENAME = 'state.md';
 /**
  * 读取 Ledger（think.md + audit history.jsonl）。
  * 任一源缺失优雅降级为空，不抛异常。
+ * v1.2.1：数据根从 .sofagent/ 迁移到 data/
  */
 export function loadLedger(projectDir: string): Ledger {
-  const sofagentDir = join(projectDir, '.sofagent');
+  const dataDir = join(projectDir, 'data');
 
   // think.md（Ledger 原始反思）
   let thinkContent = '';
-  const thinkPath = getThinkPath(sofagentDir);
+  const thinkPath = getThinkPath(dataDir);
   try {
     if (existsSync(thinkPath)) {
       thinkContent = readFileSync(thinkPath, 'utf-8');
@@ -62,7 +63,7 @@ export function loadLedger(projectDir: string): Ledger {
 
   // audit history.jsonl（宽松逐行解析，坏行跳过）
   const auditEntries: AuditEntry[] = [];
-  const historyPath = join(sofagentDir, 'audit', 'history.jsonl');
+  const historyPath = join(dataDir, 'audit', 'history.jsonl');
   try {
     if (existsSync(historyPath)) {
       const lines = readFileSync(historyPath, 'utf-8').split('\n').filter(Boolean);
@@ -144,13 +145,14 @@ function saveState(projectDir: string, state: DreamCycleState): void {
 /**
  * 向 knowledge/log.md 追加 Dream Cycle 周报（LUI A 可感知产物）。
  * log.md 用 appendFileSync（只追加，符合 Ledger-Views 只追加语义）。
+ * v1.2.1：knowledge/ 从 .sofagent/ 迁移到 data/
  */
 function appendWeeklyLog(
   projectDir: string,
   counts: DreamCycleResult['counts'],
   auditEntryCount: number,
 ): void {
-  const knowledgeDir = join(projectDir, '.sofagent', 'knowledge');
+  const knowledgeDir = resolveKnowledgeDir(projectDir);
   mkdirSync(knowledgeDir, { recursive: true });
   const logPath = join(knowledgeDir, 'log.md');
   const now = new Date().toISOString().slice(0, 10);

@@ -19,8 +19,10 @@
 # ============================================================
 
 # ── v0.90 P0-3 统一数据目录解析 ──
-# 优先级：环境变量 > 安装时写入的标记文件 > 当前目录
+# 优先级：环境变量 > 当前目录 data/（v1.2.1 规范位置）> 当前目录 .sofagent/（遗留兼容）
+#         > 安装时写入的标记文件 > fallback
 # 解决问题：install.sh --project-dir 装在 A 目录，audit/verify 硬编码 ${PWD} 导致找不到数据
+# v1.2.1：用户可见数据从 .sofagent/ 迁移到 data/；旧安装的 .sofagent/ 继续可用
 _sofa_find_data_dir() {
   # 1. 环境变量显式指定
   if [ -n "${SOFAGENT_DATA:-}" ] && [ -d "${SOFAGENT_DATA:-}" ]; then
@@ -28,13 +30,19 @@ _sofa_find_data_dir() {
     return 0
   fi
 
-  # 2. 当前工作目录有 .sofagent/
+  # 2. 当前工作目录有 data/（v1.2.1 起规范位置）
+  if [ -d "${PWD}/data" ]; then
+    echo "${PWD}/data"
+    return 0
+  fi
+
+  # 3. 当前工作目录有 .sofagent/（遗留兼容——未迁移的旧安装）
   if [ -d "${PWD}/.sofagent" ]; then
     echo "${PWD}/.sofagent"
     return 0
   fi
 
-  # 3. 安装时写入的数据目录标记（install.sh --project-dir 时写入）
+  # 4. 安装时写入的数据目录标记（install.sh --project-dir 时写入）
   local marker
   for marker in \
     "${HOME}/.openclaw/skills/sofagent/.sofagent-data-path" \
@@ -49,8 +57,8 @@ _sofa_find_data_dir() {
     fi
   done
 
-  # 4. fallback：当前目录（即使不存在也返回，让调用方决定是否创建）
-  echo "${PWD}/.sofagent"
+  # 5. fallback：当前目录 data/（即使不存在也返回，让调用方决定是否创建）
+  echo "${PWD}/data"
   return 0
 }
 

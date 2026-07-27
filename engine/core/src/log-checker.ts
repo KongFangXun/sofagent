@@ -6,6 +6,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 import { pickLogReader } from './log-reader';
+import { TASK_LOGS_DIR } from './data-paths';
 
 export interface LogEntry {
   timestamp: Date;
@@ -15,16 +16,16 @@ export interface LogEntry {
 }
 
 /**
- * 读取 .sofagent/task/logs/ 目录中的任务记录
+ * 读取 data/task/logs/ 目录中的任务记录（v1.2.1 起，原 .sofagent/task/logs/）
  * 检查哪些文件在任务中被 Read/Write 操作过
  * 支持两种格式：.md（Markdown）和 .jsonl（JSONL 结构化）
  */
 export function checkLogs(logDir?: string): LogEntry[] {
-  // 优先找项目根目录的 .sofagent/，其次是当前目录
+  // 优先找项目根目录的 data/，其次是上级目录的 data/
   const searchDirs = [
     logDir,
-    join(process.cwd(), '.sofagent', 'task', 'logs'),
-    join(process.cwd(), '..', '.sofagent', 'task', 'logs'),
+    TASK_LOGS_DIR,
+    join(process.cwd(), '..', 'data', 'task', 'logs'),
   ];
 
   // 内部结构：记录每条 base entry 及其对应的文件名（用于选择 reader）

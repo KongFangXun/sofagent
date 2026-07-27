@@ -15,6 +15,7 @@ detect_env() {
 }
 parse_args() {
   PLATFORM=""; QUICK_MODE=0; NO_DAEMON=0; LITE_MODE=0; WITH_MEMORY=0  # REMOTE_MODE/ORIGINAL_ARGS/BASE_ONLY 已提前初始化
+  FORCE_MODE=0; MERGE_MODE=0; YES_MODE=0  # v1.2.1: custom/ 升级三策略 flags
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --platform)      PLATFORM="$2"; shift 2 ;;
@@ -30,6 +31,9 @@ parse_args() {
       --remote)         REMOTE_MODE=1; shift ;;
       --base-only)      BASE_ONLY=1; shift ;;
       --with-memory)    WITH_MEMORY=1; shift ;;
+      --force)          FORCE_MODE=1; shift ;;                    # v1.2.1: custom/ 强制覆盖策略
+      --merge)          MERGE_MODE=1; shift ;;                    # v1.2.1: custom/ 三路合并策略
+      --yes|-y)         YES_MODE=1; shift ;;                      # v1.2.1: --force 跳过交互确认（CI 场景）
       -h|--help)
         cat << 'HELP'
 用法: install.sh [--platform openclaw|workbuddy|claude|codex|hermes] [--project-dir DIR]
@@ -51,6 +55,9 @@ parse_args() {
   --lite              精简模式——仅部署核心约束文件，跳过 daemon/配置注入（= --quick + --no-daemon + --no-config-inject）
   --base-only         仅装底座（约束层+审计+编排），跳过 FDE Agent Skill 部署
   --remote            远程安装模式——自动 git clone 仓库后安装（配合 curl pipe bash 使用）
+  --force             升级时强制覆盖 custom/ 用户层（交互确认 + 自动备份，恢复官方默认）
+  --merge             升级时三路合并 custom/ 用户层（冲突生成 .merge-conflict，不覆盖原文件）
+  --yes, -y           配合 --force 跳过交互确认（CI 场景）
 HELP
         exit 0 ;;
       *) shift ;;

@@ -43,11 +43,11 @@ export function runQuickChecks(
     v.checkFail('SKILL.md 缺失或宪法关键词不全');
   }
 
-  // 2. .sofagent/ 数据目录存在
+  // 2. data/ 数据目录存在（v1.2.1 起，原 .sofagent/）
   if (existsSync(sofagentData)) {
-    v.checkPass('.sofagent/ 数据目录存在');
+    v.checkPass('data/ 数据目录存在');
   } else {
-    v.checkWarn('.sofagent/ 数据目录不存在（首次使用会自动创建）');
+    v.checkWarn('data/ 数据目录不存在（首次使用会自动创建）');
   }
 
   // 3. createReactAgent 编排引擎可用
@@ -116,11 +116,11 @@ export function runWorkBuddyChecks(
     v.checkWarn('Skills 目录不存在');
   }
 
-  // .sofagent/ 目录存在
+  // data/ 目录存在（v1.2.1 起，原 .sofagent/）
   if (existsSync(sofagentData)) {
-    v.checkPass('.sofagent/ 数据目录存在');
+    v.checkPass('data/ 数据目录存在');
   } else {
-    v.checkWarn('.sofagent/ 数据目录不存在（首次使用会自动创建）');
+    v.checkWarn('data/ 数据目录不存在（首次使用会自动创建）');
   }
 }
 
@@ -383,17 +383,18 @@ export function runAllChecks(
   v.section('数据目录');
 
   if (existsSync(sofagentData)) {
-    v.checkPass('.sofagent/ 数据目录存在');
-    for (const sub of ['task', 'logs', 'orchestrator']) {
+    v.checkPass('data/ 数据目录存在');
+    // v1.2.1：子目录口径与 data/ 目录结构对齐（原 .sofagent/ 的 task/logs/orchestrator）
+    for (const sub of ['task', 'knowledge', 'orchestrator', 'audit']) {
       const subDir = join(sofagentData, sub);
       if (existsSync(subDir)) {
-        v.checkPass(`  .sofagent/${sub}/ 就绪`);
+        v.checkPass(`  data/${sub}/ 就绪`);
       } else {
-        v.checkWarn(`  .sofagent/${sub}/ 缺失`);
+        v.checkWarn(`  data/${sub}/ 缺失`);
       }
     }
   } else {
-    v.checkWarn('.sofagent/ 数据目录不存在（首次使用会自动创建）');
+    v.checkWarn('data/ 数据目录不存在（首次使用会自动创建）');
   }
 
   v.hr();

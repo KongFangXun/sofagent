@@ -10,23 +10,23 @@
 
 import { existsSync, readFileSync, writeFileSync, copyFileSync, mkdirSync, readdirSync, unlinkSync, statSync } from 'fs';
 import { join } from 'path';
-import { homedir } from 'os';
 import { VERSION } from './shared/constants.js';
 import { getThinkPath } from './memory-contract.js';
+import { DATA_DIR } from './data-paths.js';
 
 // ⚠️ think.md 是 Ledger（原始数据层，append-only）。本文件的归档 / 备份 / 摘要
 // 是**授权的生命周期运维操作**，不改变"反思只追加"的契约——它管理 Ledger 的留存，
 // 绝不就地改写反思条目。写入反思请用 core 的 appendThinkEntry()。
 
-/** think.archive.md 路径 */
+/** think.archive.md 路径（v1.2.1：默认根从 ~/.sofagent 迁移到 data/，与 think.md 同目录） */
 function getArchivePath(dataBase?: string): string {
-  const base = dataBase || process.env.SOFAGENT_DATA || join(homedir(), '.sofagent');
+  const base = dataBase || process.env.SOFAGENT_DATA || DATA_DIR;
   return join(base, 'think.archive.md');
 }
 
-/** 数据目录路径 */
+/** 数据目录路径（v1.2.1：默认 data/） */
 function getDataBase(): string {
-  return process.env.SOFAGENT_DATA || join(homedir(), '.sofagent');
+  return process.env.SOFAGENT_DATA || DATA_DIR;
 }
 
 /**

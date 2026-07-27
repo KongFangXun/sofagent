@@ -2,7 +2,7 @@
 # sofagent daemon.ps1 · daemon 主进程 (Windows PowerShell)
 # ============================================================
 # daemon.sh 的原生 Windows 移植。命令：start / stop / status / -Foreground。
-# 主循环每 30s：检测平台进程 + think.md/fde.md hash 变化 → 更新 daemon.json + daemon-notice.md。
+# 主循环每 30s：检测平台进程 + think.md/fde.md hash 变化 → 更新 daemon.json + daemon.log。
 # bash 版拒绝在非 Unix 运行；本版**支持 Windows**（Get-Process/Start-Process/Get-FileHash）。
 #
 # 用法：daemon.ps1 start | stop | status | -Foreground
@@ -65,11 +65,11 @@ function Invoke-MainLoop {
         if ($null -ne $o) {
             if ($thinkHash -and $thinkHash -ne $o.think_hash) {
                 Write-DaemonLog "think.md 已变更 ($($o.think_hash) -> $thinkHash)"
-                [System.IO.File]::WriteAllText((Join-Path $script:SOFAGENT_DATA "daemon-notice.md"), "[daemon] $now think.md 已变更——下次启动时建议读取最新反思`n", $utf8NoBom)
+                Write-DaemonLog "[daemon] $now think.md 已变更——下次启动时建议读取最新反思"
             }
             if ($rulesHash -and $rulesHash -ne $o.rules_hash) {
                 Write-DaemonLog "fde.md 已变更 ($($o.rules_hash) -> $rulesHash)"
-                [System.IO.File]::WriteAllText((Join-Path $script:SOFAGENT_DATA "daemon-notice.md"), "[daemon] $now fde.md 已变更——下次启动时建议读取最新规则`n", $utf8NoBom)
+                Write-DaemonLog "[daemon] $now fde.md 已变更——下次启动时建议读取最新规则"
             }
             $o.pid = $PID; $o.detected_platforms = $platforms; $o.think_hash = $thinkHash; $o.rules_hash = $rulesHash; $o.last_check = $now
             # 最小可信验证

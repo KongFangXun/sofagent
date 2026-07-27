@@ -2,7 +2,7 @@
 // ============================================================
 // verify-evidence.ts · 最小可信验证器 · v0.94
 // ============================================================
-// 扫描 .sofagent/task/logs/ 下今日记录，检查有无客观证据
+// 扫描 data/task/logs/ 下今日记录，检查有无客观证据
 // （测试 exit code / lint 结果），有标 [已验证]，无标 [未验证]。
 //
 // 用法：npx ts-node src/verify-evidence.ts [--daemon] [file-path]
@@ -10,7 +10,9 @@
 // ============================================================
 
 import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 import { VERSION } from './shared/constants.js';
+import { TASK_LOGS_DIR } from './data-paths.js';
 
 /** 测试相关证据关键词 */
 const TEST_PATTERN = /exit\.code|测试.*(pass|fail|通过|失败)|test.*(pass|fail)|✅.*pass|❌.*fail/i;
@@ -26,7 +28,7 @@ const NEGATIVE_PATTERN = /fail|❌|失败|error|broken|crash/i;
 
 /**
  * 扫描日志文件中的客观证据（测试/lint/build 关键词）。
- * @param filePath - 日志文件路径，默认 `${cwd}/.sofagent/task/logs/${YYYY-MM}/${YYYY-MM-DD}.md`
+ * @param filePath - 日志文件路径，默认 `${cwd}/data/task/logs/${YYYY-MM}/${YYYY-MM-DD}.md`
  * @param daemonMode - 静默模式，不输出 console
  * @returns 0 = 已验证（有证据），1 = 未验证（无证据或无日志）
  */
@@ -126,13 +128,13 @@ function countNegativeMatches(content: string): number {
 }
 
 /**
- * 生成默认日志文件路径。
+ * 生成默认日志文件路径（v1.2.1：从 .sofagent/task/logs/ 迁移到 data/task/logs/）。
  */
 function getDefaultLogPath(): string {
   const now = new Date();
   const today = formatDate(now);
   const month = today.slice(0, 7); // YYYY-MM
-  return `${process.cwd()}/.sofagent/task/logs/${month}/${today}.md`;
+  return join(TASK_LOGS_DIR, month, `${today}.md`);
 }
 
 /**
@@ -161,7 +163,7 @@ export function main(): void {
       console.log('');
       console.log('用法: npx ts-node src/verify-evidence.ts [--daemon] [file-path]');
       console.log('  --daemon  静默模式，仅返回 exit code（0=已验证, 1=未验证/无日志）');
-      console.log('  file-path 日志文件路径（默认 .sofagent/task/logs/<月>/<日>.md）');
+      console.log('  file-path 日志文件路径（默认 data/task/logs/<月>/<日>.md）');
       process.exit(0);
     } else if (args[i] === '--version') {
       console.log(`sofagent verify-evidence v${VERSION}`);

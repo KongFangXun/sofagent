@@ -45,13 +45,24 @@ export {
   checkSkillStaleness,
   accumulateWarnings,
   runInspectors,
+  runHealthReport,
   DEFAULT_INSPECTOR_CONFIG,
 } from './inspectors';
-export type { InspectorConfig, InspectorResult } from './inspectors';
+export type { InspectorConfig, InspectorResult, DaemonHealth } from './inspectors';
 
 // USB Federation (v1.1.4)
 export { detectSofagentUsb } from './usb-detect';
 export type { UsbDetectResult } from './usb-detect';
+
+// Webhook 企业平台推送（v1.2.1 · P0 采购阻塞项）
+export { createWebhookPusher } from './webhook/index';
+export type {
+  WebhookPlatform,
+  AuditVerdict,
+  WebhookPushResult,
+  WebhookPusherOptions,
+  WebhookPusher,
+} from './webhook/index';
 
 // OpenClaw Federation（联邦查询 · v1.1.8 新增）
 export { loadOpenClawChannel, createMemoryChannel, filterOnlinePeers } from './federation/channel';

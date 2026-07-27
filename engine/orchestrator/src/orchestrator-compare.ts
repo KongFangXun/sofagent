@@ -16,6 +16,7 @@ import { join, resolve, dirname } from 'path';
 import { createHash } from 'crypto';
 import { composeWithDeepAgents, compose, type ComposeVariant } from './composer';
 import { runDAG } from './dag-runner';
+import { DATA_DIR, ORCHESTRATOR_DIR } from '@sofagent/core';
 
 const VERSION = '1.2.0';
 
@@ -44,9 +45,9 @@ interface AbState {
 }
 
 function getAbStatePath(orchestratorDir?: string): string {
-  const homeDir = process.env.HOME || '/tmp';
-  const sofagentData = process.env.SOFAGENT_DATA || join(homeDir, '.sofagent');
-  const od = orchestratorDir ?? join(sofagentData, 'orchestrator');
+  // v1.2.1：默认编排目录从 ~/.sofagent/orchestrator 迁移到 data/orchestrator
+  const od = orchestratorDir
+    ?? (process.env.SOFAGENT_DATA ? join(process.env.SOFAGENT_DATA, 'orchestrator') : ORCHESTRATOR_DIR);
   return join(od, 'ab-state.json');
 }
 
@@ -346,8 +347,8 @@ export async function composeTask(args: string[]): Promise<void> {
   console.log('');
 
   const taskSlug = createHash('sha256').update(taskDesc).digest('hex').slice(0, 8);
-  const homeDir = process.env.HOME || '/tmp';
-  const sofagentData = process.env.SOFAGENT_DATA || join(homeDir, '.sofagent');
+  // v1.2.1：默认数据根从 ~/.sofagent 迁移到 data/（SOFAGENT_DATA 可覆盖）
+  const sofagentData = process.env.SOFAGENT_DATA || DATA_DIR;
   const orchestratorDir = join(sofagentData, 'orchestrator');
   const workflowsDir = join(orchestratorDir, 'workflows');
   const cachedYaml = join(workflowsDir, `${taskSlug}.yaml`);
@@ -585,9 +586,10 @@ async function composeVariants(
     }
   }
 
-  const homeDir = process.env.HOME || '/tmp';
-  const sofagentData = process.env.SOFAGENT_DATA || join(homeDir, '.sofagent');
-  const orchestratorDir = join(sofagentData, 'orchestrator');
+  // v1.2.1：默认编排目录从 ~/.sofagent/orchestrator 迁移到 data/orchestrator
+  const orchestratorDir = process.env.SOFAGENT_DATA
+    ? join(process.env.SOFAGENT_DATA, 'orchestrator')
+    : ORCHESTRATOR_DIR;
   mkdirSync(orchestratorDir, { recursive: true });
   const taskSlug = createHash('sha256').update(taskDesc).digest('hex').slice(0, 8);
 

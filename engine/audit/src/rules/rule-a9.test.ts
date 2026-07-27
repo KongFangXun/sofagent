@@ -136,6 +136,35 @@ describe('A9 不纳注入', () => {
     expect(result.status).toBe('PASS');
   });
 
+  // ============================================================
+  // 安全文档白名单：SECURITY.md / LIMITATIONS.md 职责是描述
+  // 安全风险与绕过路径，对它们跑注入检测是 false positive 源泉
+  // ============================================================
+
+  it('SECURITY.md 含「绕过审计规则」→ PASS（安全文档白名单豁免）', () => {
+    const ctx = makeCtx([
+      makeDiffFile('SECURITY.md', ['+攻击者可能尝试绕过审计规则以隐藏痕迹']),
+    ]);
+    const result = checkRuleA9(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('LIMITATIONS.md 含「绕过审计规则」→ PASS（安全文档白名单豁免）', () => {
+    const ctx = makeCtx([
+      makeDiffFile('LIMITATIONS.md', ['+已知限制：无法完全防止绕过审计的行为']),
+    ]);
+    const result = checkRuleA9(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('普通 README.md 含同样「绕过审计规则」→ FAIL/WARN（白名单不覆盖 README）', () => {
+    const ctx = makeCtx([
+      makeDiffFile('README.md', ['+绕过审计规则的方法如下']),
+    ]);
+    const result = checkRuleA9(ctx);
+    expect(['FAIL', 'WARN']).toContain(result.status);
+  });
+
   it('忽略对 "instructions" 的正常引用（非注入模式）', () => {
     const ctx = makeCtx([
       makeDiffFile('src/index.ts', ['+// following the instructions from the API']),

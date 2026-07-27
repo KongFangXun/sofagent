@@ -1,6 +1,6 @@
 // ============================================================
 // A7 不存盲改（过程层 · 能力拐杖）
-// 被修改的文件，修改前是否有 Read 操作记录（检查 .sofagent/task/logs/ 目录）
+// 被修改的文件，修改前是否有 Read 操作记录（检查 data/task/logs/ 目录，v1.2.1 起）
 // 违规 → exit code 2
 // v0.94：新增 --silent 双路径——无日志 + silent 走 diff 启发式，只 WARN 不 FAIL
 // v1.2.1：改用相对路径匹配——消除同名文件误判（src/foo.ts ≠ lib/foo.ts）
@@ -44,7 +44,7 @@ export function checkRuleA7(ctx: AuditContext): RuleCheck {
       rule.details.push('--strict 模式：未找到任务日志，「不存盲改」检查失败。Agent 必须记录操作日志。');
     } else {
       rule.status = 'WARN';
-      rule.details.push('未找到 .sofagent/task/logs/ 任务记录——可能是首次使用或日志目录为空。跳过「不存盲改」检查。');
+      rule.details.push('未找到 data/task/logs/ 任务记录——可能是首次使用或日志目录为空。跳过「不存盲改」检查。');
     }
     return rule;
   }

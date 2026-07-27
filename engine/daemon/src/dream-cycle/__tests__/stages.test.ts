@@ -94,7 +94,8 @@ describe('Dream Cycle 6 阶段', () => {
     ];
     const concepts = await synthesizeConcepts(patterns, atoms, llm, dir);
     expect(concepts.length).toBe(1);
-    const entitiesDir = path.join(dir, '.sofagent', 'knowledge', 'entities');
+    // v1.2.1：knowledge/ 从 .sofagent/ 迁移到 data/
+    const entitiesDir = path.join(dir, 'data', 'knowledge', 'entities');
     expect(fs.existsSync(entitiesDir)).toBe(true);
     const files = fs.readdirSync(entitiesDir).filter((f) => f.endsWith('.md'));
     expect(files.length).toBe(1);

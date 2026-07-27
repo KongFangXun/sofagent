@@ -25,7 +25,7 @@
 
 import { appendFileSync, statSync } from 'fs';
 import { join } from 'path';
-import { homedir } from 'os';
+import { DATA_DIR } from './data-paths';
 
 /** think.md 文件名（固定，不得更改） */
 export const THINK_MD_FILENAME = 'think.md';
@@ -44,10 +44,10 @@ export const KNOWLEDGE_DIR_LAYER: MemoryLayer = 'views';
  * 单一事实来源（single source of truth）——所有读写 think.md 的代码都应经此函数，
  * 不得各自硬编码 `path.join(dir, 'think.md')`。
  *
- * @param dataBase 数据目录（默认 SOFAGENT_DATA 环境变量，再退化为 ~/.sofagent）
+ * @param dataBase 数据目录（默认 SOFAGENT_DATA 环境变量，再退化为 data/——v1.2.1 起）
  */
 export function getThinkPath(dataBase?: string): string {
-  const base = dataBase || process.env.SOFAGENT_DATA || join(homedir(), '.sofagent');
+  const base = dataBase || process.env.SOFAGENT_DATA || DATA_DIR;
   return join(base, THINK_MD_FILENAME);
 }
 

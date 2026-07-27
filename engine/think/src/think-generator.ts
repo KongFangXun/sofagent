@@ -5,14 +5,13 @@
 // ============================================================
 
 import { existsSync, readFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import type { DiffFile, AuditResult } from '@sofagent/core';
-import { VERSION, getThinkPath, appendThinkEntry } from '@sofagent/core';
+import { VERSION, getThinkPath, appendThinkEntry, DATA_DIR } from '@sofagent/core';
 /**
  * think.md 条目生成选项
  */
 export interface ThinkEntryOptions {
-  /** {SOFAGENT_DATA} 根目录，默认 process.cwd()/.sofagent */
+  /** 数据根目录，默认 process.cwd()/data（v1.2.1 起，原 .sofagent/） */
   dataDir?: string;
   /** 强制使用的写入时间戳（测试用），默认 now() */
   now?: Date;
@@ -196,9 +195,9 @@ function formatTimestamp(d: Date): string {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
 
-/** 获取 {SOFAGENT_DATA} 目录 */
+/** 获取数据根目录（v1.2.1：默认从 .sofagent/ 迁移到 data/，SOFAGENT_DATA 可覆盖） */
 function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), '.sofagent');
+  return process.env.SOFAGENT_DATA || DATA_DIR;
 }
 
 /** 安全读取 think.md 内容用于缓存 */

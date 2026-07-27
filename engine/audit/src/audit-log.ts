@@ -3,13 +3,12 @@
 // v0.97: 从 audit.sh 迁移到 TS，最小运行时依赖：仅 js-yaml
 // ============================================================
 // 功能：追加审计日志到 MD 表格。
-// 读取 .sofagent/task/logs/ → 提取关键字段 → 追加到 audit.md
+// 读取 data/task/logs/（v1.2.1 起，原 .sofagent/task/logs/）→ 提取关键字段 → 追加到 audit.md
 // ============================================================
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, appendFileSync } from 'fs';
 import { join } from 'path';
-import { homedir } from 'os';
-import { VERSION } from '@sofagent/core';
+import { VERSION, DATA_DIR } from '@sofagent/core';
 import type { ActionGovernance } from './rules/types';
 
 export interface AuditEntry {
@@ -24,7 +23,8 @@ export interface AuditEntry {
 }
 
 function getDataBase(): string {
-  return process.env.SOFAGENT_DATA || join(homedir(), '.sofagent');
+  // v1.2.1：默认数据根从 ~/.sofagent 迁移到 data/（SOFAGENT_DATA 环境变量仍可覆盖）
+  return process.env.SOFAGENT_DATA || DATA_DIR;
 }
 
 function getAuditEnabled(): boolean {

@@ -67,6 +67,13 @@ async function main() {
       console.log(`  监控目录: ${projectDir}`);
       console.log('');
 
+      // v1.2.1 新增：生成健康报告（替代旧的 daemon-notice.md 非结构化输出）
+      const { runHealthReport } = await import('./inspectors/health-reporter');
+      const health = runHealthReport(projectDir);
+      if (health) {
+        console.log(`  💚 健康报告已生成: data/dashboard/daemon-health.json (status=${health.status})`);
+      }
+
       // 启动 cron 定时任务
       startCron(projectDir);
       console.log('  ✅ cron 定时任务已启动');
