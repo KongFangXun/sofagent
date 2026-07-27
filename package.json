@@ -1,6 +1,6 @@
 {
   "name": "sofagent-monorepo",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "workspaces": [
     "engine/harness",
@@ -25,6 +25,6 @@
     "@langchain/anthropic": "^1.5.2"
   },
   "dependencies": {
-    "@sofagent/rules": "^1.2.0"
+    "@sofagent/rules": "^1.2.1"
   }
 }

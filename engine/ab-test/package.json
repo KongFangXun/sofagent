@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/ab-test",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "sofagent A/B 测试框架 — 对比实验 / 指标显著性 / 实验报告",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,10 +23,10 @@
   "author": "KongFangXun",
   "dependencies": {
     "@langchain/langgraph": "^1.4.7",
-    "@sofagent/harness": "1.2.0",
-    "@sofagent/eval": "1.2.0",
-    "@sofagent/core": "1.2.0",
-    "@sofagent/orchestrator": "1.2.0"
+    "@sofagent/harness": "1.2.1",
+    "@sofagent/eval": "1.2.1",
+    "@sofagent/core": "1.2.1",
+    "@sofagent/orchestrator": "1.2.1"
   },
   "exports": {
     ".": {

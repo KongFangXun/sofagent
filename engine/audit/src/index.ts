@@ -781,7 +781,7 @@ async function main(): Promise<void> {
     process.stderr.write('[sofagent-audit] 警告: 审计历史写入失败，跳过（不影响审计结果）\n');
   }
 
-  // 8.5 session 产物（P0：审计结果 session 可见性）——v1.2.0
+  // 8.5 session 产物（P0：审计结果 session 可见性）——v1.2.1
   if (!args.noSession) {
     try {
       const report = buildSessionReport(results, diffFiles, { task: args.task, commitSha });

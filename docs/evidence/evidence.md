@@ -1,6 +1,6 @@
 # Evidence.md — sofagent 真的有用吗？
 
-> 当前单元测试数：见 `tools/test-count.sh` 实跑（audit 包 / 全 workspace 汇总）。v1.2.0：audit 包 423、全 workspace 957（物理结构重构不增测试 + rules-engine 新增 28 + DP-2 signConfig 回归测试）。
+> 当前单元测试数：见 `tools/test-count.sh` 实跑（audit 包 / 全 workspace 汇总）。v1.2.1：audit 包 428、全 workspace 984（v1.2.1 acceptance-test 场景扩展 + 审查维度新增）。v1.2.0：audit 包 423、全 workspace 957（物理结构重构不增测试 + rules-engine 新增 28 + DP-2 signConfig 回归测试）。
 
 > ⚠️ **中文版为完整版（截至 Case 025，2026-07-06）。** 英文版同步至 Case 025。
 

@@ -1,6 +1,6 @@
 # LLM Wiki 三层范式 ↔ sofagent 三层治理映射
 
-> v1.2.0 · 孔放勋 · 2026-07-24（UTC）
+> v1.2.1 · 孔放勋 · 2026-07-24（UTC）
 
 本文档把 LLM Wiki 的「raw materials → Wiki entries → spec norms」三层范式与 sofagent 的「Ledger-Views-Policy」三层治理模型做**同构对照**。
 
