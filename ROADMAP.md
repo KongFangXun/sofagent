@@ -313,6 +313,23 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 
 > 🔴 **落地纪律**：DataFlow 治理「数据流水线」，sofagent 治理「FDE Agent 工作流 + 运行时审计（A1-A19 行为问责）」。它只校验 pipeline 结构与 schema，**不审计 Agent 行为问责、无常驻员工、无控制平面治理**——这些是我们的差异化地盘。以上全部是**设计启发 + 行业背书**，不是依赖引入。可借鉴的 8 项具体落版本见下方「探索方向」表（可视化 DAG 编辑 / ontology I/O schema 硬化 / 工作状态 per-node 遥测 / 分层模型多模型编排 / MCP 暴露 ontology-audit / 变异前读最新状态铁律 / ontology 组合约束图 / workflow 构建蓝图）。
 
+### 🔮 OpenFDE/ChatDemo 参考清单（2026-07 · FDE 同源佐证 + 迭代参考）
+
+> 📐 来源：[ChatDemo](https://github.com/OpenFDEAI/ChatDemo) · OpenFDEAI — 以 **Forward Deployed Engineer** 命名其售前"边聊边出 Demo"工作流（Claude Code Skill + localhost 控制台，回合制 start/turn/wrap）。与我们「前线部署工程师」**术语同源**（Palantir 脉络），但定位在售前采集入口，与 sofagent 常驻部署+治理方法论互补。以下为 FDE 同源佐证 + 优先借鉴项：
+
+| # | ChatDemo 设计 | 印证/借鉴 sofagent 什么 | 关系 | 落地优先级 |
+|---|---|---|---|---|
+| 1 | 回合制协议：FDE 控节拍，agent 不在客户说话时抢话；每回合 ≤3min、超预算占位不阻塞 | 人控节拍、Agent 不自由跑——我们已有同判断，它落成了可操作流程 | 印证+领先（执行更细）| — |
+| 2 | spec-first 硬禁令：DEMO_SPEC.md 单一事实源，transcript 永不直接驱动代码 | 对话/指令增量必须先进 workflow artifact 再驱动实现；补"触发直驱工件"的明文铁律 | 补缺 | **最高优先** |
+| 3 | decisions.jsonl 判断时刻日志：{kind, moment, why, spec_ref} 现场即时记，会后喂 FDE Loop→INDUCE→Judgment Unit | A1-A19 记行为，缺"决策理由链"；吸收该 schema 补行为问责 | 补缺 | **最高优先** |
+| 4 | 开源优先阶梯 + 预验证画廊（复用>组装>生成）+ License 标红 + 会前跑通 | 知识库/工件池升级为带合规标签、会前预验证、候选短名单隔离的"画廊"机制 | 印证+领先 | 参考 |
+| 5 | 双引擎无状态架构（claude/codex 可切，状态在文件，共享回合 prompt）| 印证 Harness 应 runtime-agnostic；借鉴 adapters/prompt.ts 协议-引擎解耦 | 印证 | 参考 |
+| 6 | 分级降级梯队：console→TUI、ASR→手敲、dev 挂→走 spec，workflow never stops | 为 7×24 常驻员工定义分级降级 SOP：模型不可用→规则兜底、工具断→占位、控制面断→本地自治 | 补缺 | **最高优先** |
+| 7 | 数据敏感度分层：转写按敏感度选云/本地、音频不存、API mock-first | 把默认 mock、敏感数据本地推理、凭证 0600 不入库固化为控制平面数据治理基线 | 印证+补缺 | 参考 |
+| 8 | 一键启动器 + 品牌化模板底座（theme.json 一文件换肤）| "安装 sofagent 底座" onboarding 借鉴自包含工作区骨架 + 一键拉起 + 单文件品牌化 | 补缺 | 参考 |
+
+> 🔴 **落地纪律**：ChatDemo 是售前 POC 工具（单 FDE、单场会议），sofagent 是常驻部署+治理的编排操作系统——定位互补不竞争。它**无 A1-A19 运行时行为审计、无常驻硅基员工、无控制平面治理、让 Agent 直接写应用代码**（约束在"何时/权限/来源"而非"禁写脚本"）；这些是我们的差异化地盘。以上全部是**设计启发 + FDE 同源背书**，不是依赖引入。
+
 ### 🔴 运行时审计演进路线（meta-harness 三问作答 · 2026-07）
 
 > 用户三问：① harness 层能否升级 meta-harness？② 何时能做运行时审计？③ 用 LangGraph create_react_agent 时是否就能做到运行时审计？
