@@ -299,6 +299,20 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 
 > 🔴 **落地纪律**：Omnigent 是 Python + 需 server + 沙箱（alpha）。以上全部是**设计启发 + 开源借力**（抄思路 + 拿背书 + 复用现成库），不是依赖引入。差异化铁律：Omnigent 做运行时，sofagent 做提交时——用 Omnigent 的团队，仍然需要一个跨平台、本地留证、不改运行时的审计层。
 
+### 🔮 DataFlow 参考清单（2026-07 · 行业印证 + 迭代参考）
+
+> 📐 来源：[DataFlow](https://github.com/OpenDCAI/DataFlow) · 北京大学 DCAI — 论文 arXiv:2607.16617（HuggingFace Paper of the day）用「Harness」命名其 Agent 约束层，与 DeerFlow / Omnigent 同月，是**第三个独立佐证**（含顶尖高校）。它做「数据流水线」Harness，sofagent 做「FDE Agent 工作流」Harness——对象不同，约束范式同源。以下为印证 + 迭代参考，已按优先级 / 实现成本分配到版本：
+
+| # | DataFlow 设计 | 印证 sofagent 什么 |
+|---|---|---|
+| 1 | Agent 经受控接口（MCP）作业，禁自由写脚本 | scoped tool-gate + SKILL 约束底座——「关 Agent 边界」路线对 |
+| 2 | Request-Validate-Commit 受控变异（State Retrieval→Mediated Mutation→Validation→Commit） | FORGE session 监控 + audit A1-A19——受控变异+校验+提交是通用范式 |
+| 3 | DataFlow-Skills 程序化引导（过程蓝图 + 组合约束） | SKILL 约束底座——用结构化 SKILL 优于裸提示词 |
+| 4 | Validation Engine（DAG 无环 + schema 兼容） | ontology 业务节点本体模型——结构化约束 LLM 输出是共识 |
+| 5 | NL2Pipeline gap（工件须可检查 / 可编辑 / 可复用） | FDE Agent 核心价值——产出可审计工件，而非自由行动 |
+
+> 🔴 **落地纪律**：DataFlow 治理「数据流水线」，sofagent 治理「FDE Agent 工作流 + 运行时审计（A1-A19 行为问责）」。它只校验 pipeline 结构与 schema，**不审计 Agent 行为问责、无常驻员工、无控制平面治理**——这些是我们的差异化地盘。以上全部是**设计启发 + 行业背书**，不是依赖引入。可借鉴的 8 项具体落版本见下方「探索方向」表（可视化 DAG 编辑 / ontology I/O schema 硬化 / 工作状态 per-node 遥测 / 分层模型多模型编排 / MCP 暴露 ontology-audit / 变异前读最新状态铁律 / ontology 组合约束图 / workflow 构建蓝图）。
+
 ### 🔴 运行时审计演进路线（meta-harness 三问作答 · 2026-07）
 
 > 用户三问：① harness 层能否升级 meta-harness？② 何时能做运行时审计？③ 用 LangGraph create_react_agent 时是否就能做到运行时审计？
@@ -378,6 +392,14 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 | **Conductor 轻量多 agent 编排（观察）** | 比 Omnigent 轻量的多 agent 编排验证方案，先于完整 meta-harness 验证「多 agent 并行」价值 |
 | **Cloudflare Agent Runtime / Vercel（观察）** | 云端 runtime 与算力分离的多 provider 格局，未来 SubAgent 云端执行可参考 |
 | **MLflow agent 评估（v2.x · 开源借力）** | Databricks 开源（Apache-2.0），50+ agent 评估指标 + LLM-as-Judge。FORGE fresh-eyes-loop 缺量化「Agent 行为评审标准」，可进 v2.x 评估框架参考 |
+| **可视化 DAG 编辑（v2.x 产品化 · DataFlow 启发）** | Dashboard v2.x 引入 workflow DAG 画布，双模态共享状态（会话 Agent + DAG 画布实时同步同一 pipeline 表示），把 workflow 编排从纯文本/Markdown 升级为可拖拽、可检查、可回滚的可视化图——补 sofagent 缺的「workflow 可视图」 |
+| **ontology I/O schema 硬化（v2.x · DataFlow 启发）** | 将 ontology 从目录级升级为带 JSON Schema 校验的约束图，硬化每个 workflow 节点的输入/输出形状，变异前拦截不兼容——与 audit A1-A19 同源的事前约束 |
+| **工作状态 per-node 遥测（v1.2.2/v2.x · DataFlow 启发）** | 借鉴 DataFlow 按算子统计（执行名/成功率/耗时）的遥测思路，SubAgent 状态卡具体化 per-node 遥测：成功率/平均耗时/任务名——让「工作状态」栏从"在不在跑"升级为"跑得好不好" |
+| **分层模型多模型编排抽象（v3.x · DataFlow 启发）** | 借鉴 DataFlow 的多模型适配层（claude/codex/cursor），为 v3.x 分层模型（云端32B规划+本地7B执行+管道0.5B）引入多模型适配层，统一不同模型供应商接入 |
+| **MCP 暴露 ontology / audit（v2.x+ 集成协议 · DataFlow 启发）** | 提供对外 MCP 集成协议，让外部 Agent 经受控接口读写 ontology 与审计记录（而非自由脚本），对齐 ACP 思路；Dashboard 后端经 MCP 喂数据，与 §六 控制平面打法同源 |
+| **变异前必先读最新状态铁律（v1.x 铁律 + v2.x 实现 · DataFlow 启发）** | 借鉴 DataFlow「每轮合成前先拉取最新 pipeline 状态」的设计，正式立为铁律：任何 workflow 变异前必先读取最新状态（含人工改动），避免并发/陈旧状态导致的不一致——FORGE session 监控已有雏形 |
+| **ontology 组合约束图（v2.x · DataFlow 启发）** | 借鉴 DataFlow 的组合约束（算子兼容图：模态匹配/字段流约定），ontology 从"节点目录"升级为"节点兼容约束图"，显式声明哪些节点可前后衔接 |
+| **workflow 构建蓝图（v2.x · DataFlow 启发）** | 借鉴 DataFlow 的过程蓝图（推荐构建序列），将 SKILL 正式化为 workflow 构建蓝图——给定目标时推荐节点选择/参数配置/组装步骤序列，减少语义错误 |
 
 ## 分层模型架构（v3.x 技术骨架 2026-07-25 定稿）
 

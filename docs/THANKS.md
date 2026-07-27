@@ -63,6 +63,7 @@
 - **[LangChain middleware](https://docs.langchain.com/oss/javascript/langchain/middleware/custom)** · LangChain 1.0+ — create_agent / create_react_agent 的 middleware 系统：node-style hooks（beforeAgent/beforeModel/afterModel/afterAgent）+ wrap-style hooks（**wrapToolCall 绕每次工具调用** / wrapModelCall）。**wrapToolCall 是运行时审计的精确接入点**——咱们已用 createReactAgent，只需包一层 middleware 把 engine/rules 的 tool-gate 规则升级为运行时拦截 + 审计日志。
 - **[EnkryptAI Secure MCP Gateway](https://mintlify.wiki/enkryptai/secure-mcp-gateway)** · EnkryptAI — LangChain/LangGraph 的 pre_model_hook / post_model_hook 安全护栏，支持 **audit_only 模式（只记录不阻断）**。现成的运行时审计/护栏库，可作 v1.4.x 运行时审计层参考或集成。
 - **[Agent Client Protocol (ACP)](https://github.com/Agent-Client-Protocol/spec)** · LSP 式开放协议（Omnigent 在用）— meta-harness 的开放接入标准。跟踪方向：标准化赢面大于厂商锁定，未来接入层可对齐 ACP 而非自造协议。；其中间件链（InputSanitization→TokenBudget→SafetyFinishReason 等 26 步有序流水线）、Skills 渐进式加载 + SkillScan 确定性安全扫描、Session Goals（会话完成条件 + 非思考模型评估）、ToolOutputBudget（工具输出预算）等设计启发了 v1.2.x-v1.3.x 编排引擎与产品化增强方向。它做运行时（River 比喻里的"河"），sofagent 做堤坝——不冲突，互补。
+- **[DataFlow](https://github.com/OpenDCAI/DataFlow)** · 北京大学 DCAI — operator-based 数据合成系统（Pipeline→Operator→Prompt 分层）；其论文 arXiv:2607.16617 独立用「Harness」一词命名 Agent 约束层，与 DeerFlow / Omnigent 同月、且来自顶尖高校，是 sofagent「Harness 品类」判断的第三方独立佐证，启发我们用「分层 + 约束底座」治理 Agent 产出的工件
 
 ### 认知与反馈
 
