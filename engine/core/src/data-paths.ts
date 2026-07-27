@@ -78,7 +78,7 @@ export const INTERNAL_DIR = path.join(SOFAGENT_HOME, 'internal');
 export const SOFAGENT_INTERNAL = INTERNAL_DIR;
 export const CHECKPOINT_DIR = path.join(INTERNAL_DIR, 'checkpoint');
 export const SHADOW_GIT_DIR = path.join(INTERNAL_DIR, '.git-shadow');
-export const CONFIG_FILE = path.join(INTERNAL_DIR, 'config.yml');
+export const CONFIG_FILE = path.join(process.cwd(), '.sofagent', 'config.yml');
 
 // ═══════════════════════════════════════════════════════════
 // 函数式路径解析器（⚠️ 必须保留——测试隔离依赖这些函数）

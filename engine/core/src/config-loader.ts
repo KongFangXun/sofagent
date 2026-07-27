@@ -24,6 +24,7 @@ import { load as yamlLoad, YAMLException } from 'js-yaml';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { atomicWriteSync } from './shared/atomic-write';
 import { getHmacKey, stableStringify } from './audit-history';
+import { CONFIG_FILE } from './data-paths';
 
 /**
  * 审计配置——由 .sofagent/config.yml 加载
@@ -137,7 +138,7 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
 
   try {
     // 1. 尝试 ${cwd}/.sofagent/config.yml
-    const projectConfigPath = join(baseDir, '.sofagent', 'config.yml');
+    const projectConfigPath = CONFIG_FILE;
     const projectConfig = tryLoadYaml(projectConfigPath);
     if (projectConfig) {
       const merged = mergeWithDefaults(projectConfig);
@@ -270,6 +271,9 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
  *   - 加载时用与审计一致的 HMAC-SHA256 + stableStringify（去除 signature 后）
  *     对整份配置计算签名并与字段比对。
  *   - 不匹配 → 告警（warn）但不阻断启动（避免把已有用户配置搞崩）。
+ *     ⚠️ TODO(v1.3.0): 签名不匹配应升级为 fail-closed 阻断启动（当前仅告警，
+ *        Agent 篡改 config 后审计引擎仍照常运行）。本次不改签名逻辑，
+ *        与安全架构决策（F-16/H-01）一并提供。
  *   - 不带 signature 字段 → 向后兼容，不强制。
  *   - 无 ~/.sofagent-key 时无法校验 → 跳过（warn 提示，不阻断）。
  *
@@ -313,6 +317,9 @@ function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath:
     timingSafeEqual(Buffer.from(provided, 'utf-8'), Buffer.from(expected, 'utf-8'));
   if (!matched) {
     // 不匹配：告警但不阻断（FLAG-3 要求避免把已有配置搞崩）
+    // TODO(v1.3.0): F-16——签名不匹配应升级为 fail-closed 阻断启动。
+    //   当前仅告警，Agent 篡改 config 后审计引擎仍照常运行（等于没有防护）。
+    //   需与 H-01（密钥分发安全）一并提供完整安全架构方案。
     console.warn(`⚠️ config.yml signature 不匹配——内容可能被篡改或密钥不匹配。为兼容未阻断启动，但请核查: ${filePath}`);
   }
 }

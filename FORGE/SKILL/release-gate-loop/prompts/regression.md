@@ -19,6 +19,28 @@
 
 ## 你要做的事
 
+### 🔴 异步轮询模式（部分命令可能超 60 秒）
+
+run_bash 工具单次调用超时 60 秒。以下命令可能超时：`pre-push-check.sh`、`npm test`（12 个包）。
+
+**遇到可能超时的命令，用异步轮询模式：**
+
+```bash
+# 后台启动
+cd /Users/kongfangxun/Workbuddy/sofagent && nohup bash tools/pre-push-check.sh > /tmp/prepush.log 2>&1 & echo "PID=$!"
+
+# 轮询（每次 < 1 秒）
+tail -5 /tmp/prepush.log
+# 还没完成？等 15s 再 tail。最多轮询 20 次（5 分钟）。
+
+# 完成后读结果
+cat /tmp/prepush.log
+```
+
+短命令（grep / ls / cat / 单个维度的检查）直接同步跑即可。
+
+### 执行步骤
+
 1. 读 `FORGE/playbook/regression-checklist.md`，理解回归检查清单的结构。
 
 2. 按清单中的**审查步骤**和**逐维度检查项**执行：
@@ -26,15 +48,15 @@
    **步骤 1：环境验证**
    ```bash
    cd /Users/kongfangxun/Workbuddy/sofagent
-   bash tools/pre-push-check.sh
-   cd engine/audit && npm test && cd ../..
+   bash tools/pre-push-check.sh          # ← 可能超时，用异步
+   cd engine/audit && npm test && cd ../..  # ← 可能超时，用异步
    node engine/core/dist/verify.js 2>&1 | tail -10
    bash tools/check-docs.sh 2>&1 | tail -3 && bash tools/check-version.sh 2>&1 | tail -3
    ```
 
    **步骤 2：逐维度审查**
    - 读清单里每个 `#### 维度N` 定义的检查命令
-   - 逐条跑命令
+   - 逐条跑命令（短命令同步跑，长命令异步跑）
    - 记录结果：PASS / FAIL / SKIP / ⏰（待发版）/ ⏸️（需人工环境）
 
 3. **时序标注**（重要）：回归检查在 releasing.md 阶段六跑，此时 git tag / npm registry 等还没到位——遇到这些检查项标 `⏰`（待发版），不标 FAIL。

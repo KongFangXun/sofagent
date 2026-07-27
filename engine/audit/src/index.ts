@@ -160,6 +160,7 @@ function parseArgs(argv: string[]): Args {
       console.log('命令:');
       console.log('  sofagent-audit --diff <range> [--task <desc>]   审计 git diff');
       console.log('  sofagent-audit --init                           一键初始化（配置+hook+冒烟）');
+      console.log('  sofagent-audit --doctor                         运行环境健康检查（检查 config / hook / 版本一致性）');
       console.log('  sofagent-audit --root-cause                     根因分析');
       console.log('  sofagent-audit --regression <dir>               回归验证');
       console.log('  sofagent-audit --install-hook                   安装 commit-msg hook');
@@ -193,6 +194,7 @@ function parseArgs(argv: string[]): Args {
         console.log('  --root-cause       根因分析');
         console.log('  --regression <dir> 回归验证');
         console.log('  --init             一键初始化');
+        console.log('  --doctor           环境健康检查（已迁移至 sofagent-core --doctor）');
         console.log('  --no-session      不写入 session 报告文件');
         console.log('  --webhook <p>      webhook 推送（dingtalk/feishu/wecom）');
         console.log('  --webhook-url <u>  webhook URL');
@@ -278,7 +280,9 @@ function installHook(): void {
         require('fs').unlinkSync(legacyPath);
         console.log('  → 已移除旧版 pre-commit hook（迁移到 commit-msg）');
       }
-    } catch { /* 读不了就跳过 */ }
+    } catch (e) {
+      console.warn('[sofagent] 警告：读取旧版 pre-commit hook 失败，跳过该项清理', e instanceof Error ? e.message : String(e));
+    }
   }
 
   const destPath = join(hooksDir, 'commit-msg');
@@ -736,7 +740,9 @@ async function main(): Promise<void> {
     // P1-15: 获取当前 HEAD SHA
     try {
       commitSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
-    } catch { /* 非 git 环境 */ }
+    } catch {
+      console.warn('[sofagent] 警告：非 git 环境，git 相关审计已跳过');
+    }
 
     // A4 研读落地：Action Governance 审计 5 字段 schema + 决策溯源组
     // 发起方 = git 提交作者；非 git 环境 / 文件系统审计下退化为 unknown（不伪造）
@@ -744,7 +750,9 @@ async function main(): Promise<void> {
     try {
       const author = execFileSync('git', ['log', '-1', '--format=%an'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
       if (author) actor = author;
-    } catch { /* 非 git 环境 */ }
+    } catch {
+      console.warn('[sofagent] 警告：git 操作失败，相关审计已降级');
+    }
     const govTimestamp = new Date().toISOString();
     // 目标实体 = 本次变更涉及的文件路径（最多取前 20 个，避免记录超长）
     const targetEntity = diffFiles.length > 0

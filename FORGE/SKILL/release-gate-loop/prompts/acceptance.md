@@ -19,22 +19,46 @@
 
 ## 你要做的事
 
-1. 跑验收测试脚本：
-   ```bash
-   cd /Users/kongfangxun/Workbuddy/sofagent
-   bash FORGE/playbook/acceptance-test.sh 2>&1
-   ```
+### 🔴 异步轮询模式（acceptance-test.sh 有 100+ 场景，完整跑要 3-5 分钟）
 
-2. 记录完整输出（不要截断），解析以下数据：
+run_bash 工具单次调用超时 60 秒。acceptance-test.sh 完整跑完需要几分钟，**直接同步调用必定超时失败**。必须用异步轮询模式：
+
+**第 1 步：先构建审计包**（v1.0.8 优化）
+```bash
+cd /Users/kongfangxun/Workbuddy/sofagent && cd engine/audit && npm run build 2>&1
+```
+
+**第 2 步：后台启动测试（立即返回，不等待）**
+```bash
+cd /Users/kongfangxun/Workbuddy/sofagent && nohup bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-output.log 2>&1 & echo "PID=$!"
+```
+这一步会在几秒内返�� PID，测试在后台跑。
+
+**第 3 步：轮询日志（每次都 < 1 秒，不会超时）**
+```bash
+tail -5 /tmp/acceptance-output.log
+```
+- 如果日志末尾出现 "EXIT_CODE=" 或测试完成标志 → 测试结束，进第 4 步
+- 如果还在跑 → 等 15-20 秒再 tail 一次
+- **最多轮询 20 次**（20 × 15s = 5 分钟）。超过 5 分钟还没完成 → 标 FAIL（timeout）
+
+**第 4 步：读取完整结果**
+```bash
+cat /tmp/acceptance-output.log
+```
+
+### 数据解析
+
+从完整输出中解析以下数据：
    - **退出码**（0 = 全部通过，非 0 = 有失败场景）
    - **场景总数**（脚本输出的 "场景" 或 "scenario" 计数）
    - **通过数**
    - **失败数**
    - **SKIP 数**（如果脚本有 SKIP 标记）
 
-3. 如果有失败场景，提取失败场景清单（场景编号 + 名称 + 原因）。
+如果有失败场景，提取失败场景清单（场景编号 + 名称 + 原因）。
 
-4. 如果脚本因为环境问题（如 dist 不存在）无法运行，标 SKIP 并注明原因。
+如果脚本因为环境问题（如 dist 不存在）无法运行，标 SKIP 并注明原因。
 
 ## 🔴 铁律：完整报告必须进最终回复
 
