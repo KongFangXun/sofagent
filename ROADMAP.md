@@ -78,10 +78,12 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.2.3** | **Dashboard 产品化 + 编排隔离** | ① Dashboard 波次拓扑可视化（控制图渲染 + 节点/边/波次分层实时状态）② 编排隔离底座（git worktree 四子里程碑：隔离原语→审计合并卡关→冲突消解→filesValue 边界）③ Dashboard 用户可读性（面向非开发者的语言化呈现）（详见 [开发日志](./docs/changelog/v1.2/v1.2.3.md)）|
 | **v1.2.4** | **知识进化** | ① 分层巡检 L1/L2/L3（@daily/@weekly/@monthly 三级 + 读写回路对标）② skillopt 自动触发（失败模式 3 次自动优化）③ 失败清单驱动优化（负面样本为主要燃料）④ conflict-check CLI + 联邦蒸馏 ⑤ Skill 升级策略（若 v1.2.2 未完成）（详见 [开发日志](./docs/changelog/v1.2/v1.2.4.md)）|
 | **v1.2.5** | **多设备协同 L2/L3** | ① L2 团队协作协议（共享态/意图广播/触发反应/冲突消解/反馈放大五大机制）② Agent 独立身份码 + KYA 轻量版 ③ L3 组织能力市场（Skill/Agent/流程发布→发现→调用→评价）④ 跨设备审计轨迹聚合 ⑤ 场景驱动权限体系 + 代理网关硬边界 ⑥ ATTRIBUTION 归因引擎（审计决策→业务价值因果链）⑦ 协议中立审计（只走 MCP + 开放格式）（详见 [开发日志](./docs/changelog/v1.2/v1.2.5.md)）|
-| **v1.2.6** | **🔒 弹性预留** | 紧急修复 / 探索项按需取用。储备项（不阻塞主线，有空间就做）：路由器式配网 / 阿米巴交付组织 / S·A·B·C 技能分级 / SMB 场景审计扩展 / Dream Sandbox。如果 v1.2.1-v1.2.5 中间有紧急修复，占用此版本号（详见 [开发日志](./docs/changelog/v1.2/v1.2.6.md)）|
-| **v1.2.7-v1.2.9** | **弹性空位** | 🔒 不预分配——v1.2.6 用完后继续往后排 |
-| **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐 + 并行编排**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **编排引擎并行调度（Graph Engineering 视角：控制图多循环 DAG 波次并行）**：基于 v1.1.8 的编排引擎调度原型（已从 DeepAgents 迁移至 LangGraph createReactAgent），新增 DAG 依赖解析（Kahn 波次拓扑）+ 并行扇出/扇入（LangGraph `Send` API）+ 循环依赖检测 + 失败传播策略 + 超时熔断；每波次经 audit 节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供 | — |
-| **v1.4.0** | 📋 规划中 | **SubAgent 完整沙箱执行环境 + 生产级编排**：将 orchestrator 内置为完整的沙箱运行时——虚拟文件系统隔离（FilesystemBackend + virtualMode）、网络出站白名单、**工具调用中介（前置 allow/deny，非仅审计追踪）**、**虚拟 key 凭证边界注入（真实凭证 host 边界注入，SubAgent 只拿临时虚拟 key）**、AsyncSubAgent（远程 Agent Protocol 服务端）+ 真·实时 A/B 双跑（候选方案并行执行实时对比，替代当前日志统计法）。**并行 SubAgent 文件隔离**：git worktree 轻量形态已于 v1.2.x 落地，v1.4.0 升级为完整沙箱隔离 + 多 Sub Agent 文件竞争检测。审计引擎从「事后」扩展到「运行时」（**范围限定 SubAgent，主 Agent 仍事后审计**） | — |
+| **v1.2.6** | **🔒 弹性预留 + 产品化快速补强** | 紧急修复 / 探索项按需取用。**储备项（不阻塞主线，有空间就做）**：① `sofagent-audit --support-bundle`（一键生成 issue 摘要 + 证据 zip，参考 DeerFlow `make support-bundle`）② `--doctor` 输出增强（可操作修复提示，不只报红绿，参考 DeerFlow `make doctor`）③ README Deployment Sizing 表格（企业 IT 必问资源规格）④ One-Line Agent Setup（给 Claude Code/Codex 一句话自动安装）。如果 v1.2.1-v1.2.5 中间有紧急修复，占用此版本号（详见 [开发日志](./docs/changelog/v1.2/v1.2.6.md)）|
+| **v1.2.7** | **编排引擎增强（DeerFlow 启发）** | ① **Session Goals**（`/goal` 给线程附完成条件 + 非思考模型评估 + N 次续接上限）— 改进 FORGE fresh-eyes-loop 停止条件（当前仅"连续2轮无发现"）② **手动上下文压缩**（`/compact` 用户侧减压阀，聊天可见但后续调用用摘要）— 直击 LangChain 消息只增不减痛点 ③ **Skill 渐进式加载**（仅任务需要时加载，非全量注入 SKILL.md）— 直击加载链步进脆弱性 ④ **`make doctor` / `--doctor` 可操作修复提示**（从 v1.2.6 储备提升，若 v1.2.6 已做则此条作废）（详见 [开发日志](./docs/changelog/v1.2/v1.2.7.md)）|
+| **v1.2.8** | **记忆分层 + 定时任务（DeerFlow 启发）** | ① **记忆事实级分层**（per-user memory.json + per-fact Markdown + `__default__` 桶）— Dream Cycle 缺事实级粒度 ② **Scheduled Tasks MVP**（cron+once / 暂停/恢复/触发/历史/删除）— daemon cron.ts 从占位升级为一级定时任务（LIMITATIONS §七「定时触发做不到」的解法）③ **Workspace 变更摘要**（每次运行后记录创建/修改/删除文件清单，非完整 diff）— Dashboard 数据前置 ④ **ToolOutputBudget 中间件化**（把 sf_read 500 行截断从单点提升为分层中间件，参考 DeerFlow ToolOutputBudget）（详见 [开发日志](./docs/changelog/v1.2/v1.2.8.md)）|
+| **v1.2.9** | **🔒 弹性预留** | 紧急修复 / 探索项按需取用 |
+| **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐 + 并行编排**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + E1-E4（共 21 条）+ 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **编排引擎并行调度（Graph Engineering 视角：控制图多循环 DAG 波次并行）**：基于 v1.1.8 的编排引擎调度原型（已从 DeepAgents 迁移至 LangGraph createReactAgent），新增 DAG 依赖解析（Kahn 波次拓扑）+ 并行扇出/扇入（LangGraph `Send` API）+ 循环依赖检测 + 失败传播策略 + 超时熔断；每波次经 audit 节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供 | — |
+| **v1.4.0** | 📋 规划中 | **SubAgent 完整沙箱执行环境 + 生产级编排**：将 orchestrator 内置为完整的沙箱运行时——虚拟文件系统隔离（FilesystemBackend + virtualMode）、网络出站白名单、**工具调用中介（前置 allow/deny，非仅审计追踪）**、**虚拟 key 凭证边界注入（真实凭证 host 边界注入，SubAgent 只拿临时虚拟 key）**、AsyncSubAgent（远程 Agent Protocol 服务端）+ 真·实时 A/B 双跑（候选方案并行执行实时对比，替代当前日志统计法）。**并行 SubAgent 文件隔离**：git worktree 轻量形态已于 v1.2.x 落地，v1.4.0 升级为完整沙箱隔离 + 多 SubAgent 文件竞争检测。审计引擎从「事后」扩展到「运行时」（**范围限定 SubAgent，主 Agent 仍事后审计**） | — |
 
 ### v1.2.x Graph Engine 进化路线
 
@@ -103,7 +105,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 ### v1.2.x — 完整多设备协同（规划中）
 
-> 💡 **多 Agent 协同已在 v1.x 完成**：v1.0.3 FDE Sub Agent + Audit Sub Agent 并存 → v1.0.4 A/B 自动优化双 Agent 对比。**轻量多设备在 v1.1.0 起步**（经验共享 + 权限作用域化 + daemon 主动巡检）。v1.2.x 做完整版——两件事：**完整多设备协同**（每个 AI 节点独立身份、跨设备审计轨迹可追溯、场景驱动权限体系、代理网关硬边界）和 **Workflow Hub 前端**（Web catalog + 社区贡献仪表盘 + 模板 marketplace）。
+> 💡 **多 Agent 协同已在 v1.x 完成**：v1.0.3 FDE SubAgent + Audit SubAgent 并存 → v1.0.4 A/B 自动优化双 Agent 对比。**轻量多设备在 v1.1.0 起步**（经验共享 + 权限作用域化 + daemon 主动巡检）。v1.2.x 做完整版——两件事：**完整多设备协同**（每个 AI 节点独立身份、跨设备审计轨迹可追溯、场景驱动权限体系、代理网关硬边界）和 **Workflow Hub 前端**（Web catalog + 社区贡献仪表盘 + 模板 marketplace）。
 
 **ATTRIBUTION 归因引擎（v1.2.x 探索）**：审计能告诉你 Agent 违规了，但不能告诉你哪次正确的审计干预带来了业务价值。ATTRIBUTION 需要在多设备、多客户、长时间尺度上追踪审计决策→业务指标的因果链。
 
@@ -173,7 +175,7 @@ sofagent v1.3.0 的 Ontology 认知底座方向与之高度同构，但走**分�
 
 sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商品化的东西），而在「管住 Agent 的那一层」。产品化方向锁定四条：
 
-1. **卖能力不卖工时**：FDE 从「一种岗位 / 服务」重构成「企业该有的能力」，用 Agent / sub-agent / 产品化封装交给企业，企业自己用、自己落地 AI 化。
+1. **卖能力不卖工时**：FDE 从「一种岗位 / 服务」重构成「企业该有的能力」，用 Agent / SubAgent / 产品化封装交给企业，企业自己用、自己落地 AI 化。
 2. **MCP + dashboard 必须有**：dashboard 是自有视图（持久可见 + 真相源），MCP 是向外接的桥。Agent 的 LUI + LLM 吞噬一切 → 所以要有 dashboard；dashboard 轻量 → 所以靠 MCP 配合。两者配合才能把「项目」变成「产品」。
 3. **open-core 双轨**：内核 MIT 开源（信任 + 分发 + 生态），只卖 dashboard 那层（控制台 / 合规月报 / 告警）。
 4. **能力长在代码里，不长在 prompt 里——对抗「模型吞噬一切」**：skill / prompt engineering / context engineering / 以 skill 形式做的 harness engineering，本质都是**文字形式的约束**。每次注入到模型 = 每次投喂 = 每次训练——模型会训练得越来越强，**必然吞噬文字形式的约束**（今天的 Skill 是差异化优势，明天就是模型的内置能力）。sofagent 对策：把 Skill + Harness 能力**封装进 Subagent**（代码级实现，非文字注入）+ **防投喂机制**（防止输入素材变成大模型训练材料）。生存位：细分业务 workflow 上对业务最终结果的可约束性——这个不会被模型吞噬。
@@ -192,9 +194,9 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 **分层落地中型蓝海**
 商业化切入上，孔老师倾向「分层落地」而非一刀切：先在中型客户（有真实 workflow、愿为成果付费、但养不起自建 AI 团队）的蓝海市场建立标杆，用 FDE 的「交付企业专有 skill」模式把单点打透，再向大型客户的标准化模块、小型客户的自助模板双向延伸。核心判断是——卖能力不卖工时，控制平面（sofagent 引擎）是底层，业务 workflow 的可约束性才是护城河。
 
-### 价值度量翻转：FDE vs 传统外包（2026-07 一粟 blog 研读）
+### 价值度量翻转：FDE vs 传统外包（2026-07 钉钉 CTO 一粟 blog 研读）
 
-一粟以「数字员工」重新定义 AI to B 的价值度量：传统外包按人·月计费，FDE 按成果·Token 计费，成本差可达三个数量级。
+钉钉 CTO 一粟以「数字员工」重新定义 AI to B 的价值度量：传统外包按人·月计费，FDE 按成果·Token 计费，成本差可达三个数量级。
 
 | 维度 | 传统外包团队 | 1 个 FDE Agent |
 |------|------|------|
@@ -204,7 +206,7 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 
 > 印证 sofagent 商业化判断「卖能力不卖工时」：护城河是可约束的业务 workflow，不是人头。
 
-> 📖 来源：一粟 blog《价值度量翻转》（2026，具体 URL 待核验）
+> 📖 来源：钉钉 CTO 一粟 blog《价值度量翻转》（2026，具体 URL 待核验）
 
 ---
 
@@ -220,9 +222,46 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 
 > 🔴 **落地纪律**：① 和 ② 是「用 Graph Engineering 术语框定已有/规划能力」，不新增能力范围；③ 是纯可视化，依赖 dashboard 产品化节奏（v1.2.x 起）。
 
+### 🔮 DeerFlow 参考清单（2026-07 · 行业印证 + 迭代参考）
+
+> 📐 来源：[DeerFlow 2.0](https://github.com/bytedance/deer-flow) · 字节跳动 — 自称 "super agent **harness**"，与 sofagent Harness 中间件品类判断**字面一致**（详见 [PHILOSOPHY §十 · DeerFlow 印证](./docs/PHILOSOPHY.md#deerflow-20大厂用harness命名的活样本2026-07-行业印证)）。它做运行时（River 比喻的「河」），sofagent 做堤坝——定位互补。以下为设计启发清单，已按优先级 / 实现成本分配到版本：
+
+**已落版本（技术设计）**
+
+| # | DeerFlow 设计 | sofagent 痛点 | 落地版本 |
+|---|---|---|---|
+| 1 | `make support-bundle`（一键 issue 摘要 + 证据 zip）| 有 --doctor 但没"出问题怎么收集信息给维护者" | v1.2.6 储备 |
+| 2 | `make doctor` 可操作修复提示（不只红绿，还告诉怎么修）| --doctor 输出质量待提升 | v1.2.6 → v1.2.7 |
+| 3 | Session Goals（`/goal` + 非思考模型评估 + N 次续接上限）| FORGE fresh-eyes-loop 停止条件粗糙 | **v1.2.7** |
+| 4 | 手动上下文压缩（`/compact` 用户侧减压阀）| LangChain 消息只增不减的第四层解法 | **v1.2.7** |
+| 5 | Skill 渐进式加载（仅任务需要时加载）| SKILL.md 全量注入，加载链步进脆弱 | **v1.2.7** |
+| 6 | 记忆事实级分层（per-user memory.json + per-fact Markdown）| knowledge/ 目录级，Dream Cycle 缺事实级粒度 | **v1.2.8** |
+| 7 | Scheduled Tasks MVP（cron+once / 暂停/恢复/触发/历史）| daemon cron.ts 占位，LIMITATIONS 认「定时触发做不到」| **v1.2.8** |
+| 8 | ToolOutputBudget 中间件化（sf_read 500 行截断升级为分层中间件）| FORGE b-fix 上下文溢出三层修复的单点版 | **v1.2.8** |
+| 9 | 中间件链设计（InputSanitization→TokenBudget→SafetyFinishReason 26 步有序流水线）| Graph Engine Harness 层→Loop 层的工程化范式 | v1.2.2-v1.2.5（已在 Graph Engine 进化路线）|
+| 10 | Skill 质量门禁 + content-hash 校验 | skillopt 仅"冷启动保护 + LLM 自评×0.3"，缺 hash 完整性 | v1.2.4 知识进化 |
+| 11 | 多 worker 租约 + 原子 takeover + gap 事件 | v1.3.0 DAG 并行调度的多 worker 安全蓝图 | v1.3.0 |
+
+**长期参考（v1.4.x / v2.x 探索方向，落盘到 ROADMAP 探索表）**
+
+| # | DeerFlow 设计 | sofagent 对应 | 建议版本 |
+|---|---|---|---|
+| 12 | SkillScan 确定性安全扫描器（Phase 1 离线，无 Semgrep 依赖）| A9 注入检测局限的分层补充（纯正则覆盖不了 leet/编码绕过）| v1.4.x Checker 扩展 |
+| 13 | Agentic Browser（Playwright 全套 + SSRF 防护）| FDE Agent 做"网页审计巡检"AI 节点时的现成方案 | v1.4.x 工具层 |
+| 14 | TUI Terminal Workbench（嵌入式运行，键盘驱动 + slash 命令）| 补强"感知层"——用户不开 Agent 平台就能看审计历史/跑 doctor | v2.x 产品化 |
+| 15 | Web UI / Dashboard（流式 Markdown / 对话分支 / 工作区徽章）| 自有 Dashboard（保持轻量单页，不照抄 DeerFlow 重部署）| v2.x 产品化 |
+| 16 | 对话分支（完成回合可分支为新对话）| "Agent 走错路想从中间重来"——Dashboard 关键交互 | v2.x 前端 |
+
+**产品化方向参考（不照抄重部署，保持零依赖调性）**
+
+- DeerFlow 顶部嵌演示视频、One-Line Agent Setup、Deployment Sizing 表格——这些都是低成本高收益的产品化补强，已纳入 v1.2.6 储备项
+- 产品进化叙事（"一开始是 X，社区跑出了新玩法，所以重写成 Y"）——sofagent 有完整 v0.x→v1.2 进化史，可写成故事进 README 或 PHILOSOPHY
+
+> 🔴 **落地纪律**：DeerFlow 是 Python 运行时框架，代码级集成不可行。以上全部是**设计启发**（抄思路 + 拿背书），不是依赖引入。差异化铁律：DeerFlow 做运行时，sofagent 做审计——用 DeerFlow 的团队，仍然需要一个跨平台、本地留证、不改运行时的审计层。
+
 ### 🔮 a16z AI 管理七法则 印证（2026-07 · 迭代参考）
 
-> 📐 来源：a16z（2026-07-15，Hebbia 创始人 George Sivulka）[《You Just Hired a Million Bad Employees》](https://www.a16z.news/p/the-next-ai-goldrush-tokens-loops)——「人比软件便宜」，解法 = 管理。七法则逐条印证 sofagent 已做对什么、缺什么。
+> 📐 来源：a16z（2026-07-15，Hebbia 创始人 George Sivulka）[《You Just Hired a Million Bad Employees》](https://www.a16z.news/)（原文 URL 待核实）——「人比软件便宜」，解法 = 管理。七法则逐条印证 sofagent 已做对什么、缺什么。
 
 七法则完整映射表（a16z 概念 → sofagent 对应 → 现状 → 落地版本 → 说明）已整理到 [PHILOSOPHY · a16z 印证](./docs/PHILOSOPHY.md#a16z你刚雇了一百万个糟糕员工印证2026-07)。本节仅保留与 ROADMAP 规划直接相关的「落地纪律」结论：
 
@@ -262,11 +301,16 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 | **LangSmith 可观测性集成（开发者可选 · 不进产品核心）** | LangSmith 是 LangChain 生态的 Agent 可观测性平台。**定位：开发调试工具，不是产品组成部分**——就像用 Chrome DevTools 调试网页，但不把 DevTools 打包进产品。开发阶段设 `LANGSMITH_TRACING=true` + `LANGSMITH_API_KEY` 获得推理级 trace（免费 5,000 traces/月）。**不作为 sofagent 产品的依赖**——Dashboard 基于 sofagent 自带的 jsonl 状态文件（git diff + usage.jsonl + progress.jsonl），不依赖闭源商业服务。SDK 是 MIT 开源，平台服务闭源收费——企业想用自己集成，不在 MIT 仓内内置 |
 | SkillHub → 单人闭环多岗（阿里 OPT） | 对标阿里 OPT（One Person Team）——单人 + agent skill + 企业系统 → 闭环完成多岗工作 |
 | 规则文件独立只读（焊死的门 · v1.3.x） | 约束规则文件独立于 Agent 工作区，只读挂载，Agent 不可篡改——根治「AI 改测试掩盖错误」 |
+| **SkillScan 确定性安全扫描器（v1.4.x · DeerFlow 启发）** | A9 注入检测局限的分层补充——纯正则覆盖不了 leet speak（`1gn0r3`）/ Unicode 同形字 / Base64 编码绕过。DeerFlow 用确定性扫描器（Phase 1 离线，无 Semgrep 依赖）做第一道，语义分析留后续。sofagent 可借鉴：先做确定性扫描层，LLM 辅助检测推 v1.4.x+ |
+| **Agentic Browser 工具层（v1.4.x · DeerFlow 启发）** | FDE Agent 做"网页审计巡检"AI 节点时的现成方案——Playwright 全套（navigate/snapshot/click/type/screenshot）+ SSRF 防护默认开启。sofagent 可封装为 MCP tool，供 SubAgent 做网页内容审计 |
+| **TUI Terminal Workbench（v2.x 产品化 · DeerFlow 启发）** | 补强感知层——用户不开 Agent 平台就能看审计历史/跑 doctor/看知识库状态。DeerFlow 的 TUI 是嵌入式运行（不需要 Gateway/Docker），键盘驱动 + slash 命令面板。sofagent TUI 应更轻（纯 Node，读 `.sofagent/` 目录），符合零依赖调性。性价比最高的产品化补强 |
+| **轻量 Web UI / Dashboard（v2.x 产品化 · DeerFlow 启发但不照抄）** | DeerFlow Web UI 功能完整（流式 Markdown/对话分支/工作区徽章/设置面板），但部署重（Nginx+Gateway+Postgres 起步 8C16G）。sofagent Dashboard 保持轻量单页（Vite+React 读 `.sofagent/` 目录），不引入重部署依赖。对话分支（完成回合可分支为新对话）是关键交互 |
+| **产品进化叙事（产品化 · DeerFlow 启发）** | DeerFlow 专门写"一开始是 Deep Research 框架，社区跑出了新玩法，所以重写成 Harness"。sofagent 有完整 v0.x→v1.2 进化史（10+ 版本），可写成同样的故事进 README 或 PHILOSOPHY——感染力远胜功能列表 |
 | **Subagent 内置专精小模型（v3.x-v4.x+ 远景 · "自带净水设备的水龙头"）** | 四阶段：① v1.2.x 架构预留（Subagent 定义加 `inference` 字段支持调 Ollama）→ ② v3.x 工具链（`sofagent-model distill`，用 workflow 运行日志微调专属小模型）→ ③ v4.x 本地推理（业务 workflow 默认跑本地精调模型；代码/强推理等高价值智能任务直连云端最强 LLM，本地小模型只覆盖业务 workflow 场景）→ ④ v4.x+ 离线节点（USB key = 完整 AI 节点，不联网、不走大厂、零投喂——数据主权的终极形态）。详见 River 比喻概念体系（本地 Desktop 概念稿 `sofagent-river-比喻概念体系-2026-07-21.md`，未入仓）§3.2。为什么不是 v2.x 做工具链：微调是数据工程，需要足够多的真实 workflow 日志才有训练燃料；v2.x 还在铺多设备协同和 Dashboard，数据积累不够 · 🔴 术语纠正：这里不是「从 72B 大模型剪枝/蒸馏」——剪枝/蒸馏/量化是大厂造小基座的上游技术（Qwen2.5-0.5B 已是蒸馏+剪枝+量化后的开源产物，直接拿）。sofagent 做产业链下游最后一环：下载已开源小基座 → 用企业 workflow 数据 **QLoRA 微调**（4-bit 量化基座 + 低秩适配器；不动基座参数）→ 教它这一个 workflow。CLI 名 `distill` 是品牌叫法，实际动作是 QLoRA 精调 · 🔴 **分层模型策略定稿（2026-07-25 孔老师拍板）**：不做"一个模型跑所有 workflow"，也不做"每个 workflow 一个专职小模型"——做 **Harness 分层路由**（三层模型 + 数据主权驱动）。核心洞察：云端大模型把自然语言 Prompt 翻译成标准化任务指令，摘出本地模型能做的部分交给本地执行，数据不出内网。0.5B 的甜区 = 约束完善后的管道执行（模板填充/格式转换/字段提取），不需要理解自然语言；7B 负责多步 workflow 执行（读写 Excel + 调工具）；32B/云端负责复杂规划推理。核心驱动力 = 数据主权：企业数据进 API key 大模型 = 一定被拿去训练，沙盒也拦不住（已有客户硬件代码出现在 AI 输出中的真实案例）。分层让敏感数据只在本地处理，通用知识才走云端 · 32B 量化后 ~32G 显存单台 RTX 5090 可推理；9B 微调一台 5090 够用；0.5B Mac Mini 可跑 · 🔴 **v3.x 优先级论证（2026-07-25 确认）**：阿里/钉钉会议验证 Skill 廉价化危机——豆包/Hermes 已能自动生成 Skill，以 Prompt 形式出现的产品形态将被模型吞噬。Skill 只是入口（初级交付，数千元），企业专属小模型才是护城河（高阶交付，数十万元）。v3.x 从"远景"应提升为"战略必争" · 工具链 TypeScript CLI（`sofagent-model`）封装 Python 训练引擎 + node-llama-cpp 推理，项目工程面保持 NodeJS
 
 ---
 
-## 分层模型架构（v3.x 技术骨架 · 2026-07-25 定稿）
+## 分层模型架构（v3.x 技术骨架 2026-07-25 定稿）
 
 > 核心驱动力：**数据主权**。企业数据进 API key 大模型 = 一定被拿去训练，沙盒也拦不住。分层让敏感数据只在本地处理。
 

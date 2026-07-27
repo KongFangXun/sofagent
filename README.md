@@ -201,7 +201,7 @@ flowchart LR
 |:------|:--------|:--:|
 | 🧭 约束底座 | 开工前规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
 | ⚙️ 编排引擎 | 多 Agent 协作 + 任务拆解 | 🔶 部分 |
-| 🔍 审计引擎 | 21 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计引擎零 token**——纯静态分析，不消耗任何 LLM 额度 | ✅ 稳定 |
+| 🔍 审计引擎 | 21 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计引擎零 token**——不调用 LLM（0 token），不消耗任何 LLM 额度 | ✅ 稳定 |
 | 🔄 回溯引擎 | 每次审计后自动 git snapshot，违规一键回滚 | ✅ 稳定 |
 | 🧬 进化引擎 | FDE 周度巡检审计趋势 + 反思日志 | ⚠️ 实验性 |
 
@@ -212,11 +212,11 @@ flowchart LR
 
 ### 🧭 约束底座
 
-四层加载链：SKILL.md（宪法·不可改）→ fde.md（规范·可改）→ think.md（反思·自动生成）→ knowledge/（知识·自动积累）。v1.0.7+ Sub Agent 启动时自加载（`buildConstrainedSystemPrompt`），不依赖任何 Agent 平台的 Skill 系统。
+四层加载链：SKILL.md（宪法·不可改）→ fde.md（规范·可改）→ think.md（反思·自动生成）→ knowledge/（知识·自动积累）。v1.0.7+ SubAgent 启动时自加载（`buildConstrainedSystemPrompt`），不依赖任何 Agent 平台的 Skill 系统。
 
 ### ⚙️ 编排引擎
 
-两层已实现：① **任务拆解**——LangGraph createReactAgent 把任务描述变成编排方案 YAML；② **多 Agent 协作**——支持多 Sub Agent 串行编排，每节点有 checkpoint 支持中断恢复。
+两层已实现：① **任务拆解**——LangGraph createReactAgent 把任务描述变成编排方案 YAML；② **多 Agent 协作**——支持多 SubAgent 串行编排，每节点有 checkpoint 支持中断恢复。
 
 > 🔶 当前是**串行**状态机（非并行 DAG 调度）。完整 DAG 并行调度 + 沙箱执行规划在 [ROADMAP v1.3.0](./ROADMAP.md)。
 

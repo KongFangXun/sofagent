@@ -31,7 +31,7 @@ Agent 越聪明，企业越不敢让它碰真活——真出事了，谁负责�
 
 **② sofagent 的答案：一个常驻你企业的 FDE Agent，帮你把工作流梳理成 AI 节点，部署完它自己跑。**
 
-sofagent 不替代大厂 Agent，而是建在它们之上——用 River 比喻说就是：做河的堤坝与约束层，不做河本身（详见 [README §①](../README.md)）。FDE 进场四阶段：梳理→挖掘→交付→离场。离场后 AI 节点自己跑。
+sofagent 不替代大厂 Agent，而是建在它们之上——用 River 比喻说就是：做河的堤坝与约束层，不做河本身（详见 [README（项目概览）](../README.md)）。FDE 进场四阶段：梳理→挖掘→交付→离场。离场后 AI 节点自己跑。
 
 **③ 底层引擎：sofagent 的 Harness 中间件保证每次变更可审计、可回滚、可进化。**
 
@@ -65,7 +65,7 @@ OpenClaw/WorkBuddy 等大厂 Agent 平台管路由调度——「会不会做」
 
 两个维度交叉印证同一结论：**sofagent 必须做平台/中间件，不能做外包/服务。**
 
-**一条河的比喻**：大厂造河，我们做河的约束层——不做河，做河的堤坝 + 自来水厂 + 管网 + 水龙头（详见 [README §①](../README.md)）。这把「做平台/中间件、不做外包/服务」具象化。
+**一条河的比喻**：大厂造河，我们做河的约束层——不做河，做河的堤坝 + 自来水厂 + 管网 + 水龙头（详见 [README（项目概览）](../README.md)）。这把「做平台/中间件、不做外包/服务」具象化。
 
 **模型层**：强模型时代，人工工作流的边际收益从 30 分降到 5 分——甚至负收益（人工结构 = 设计者认知上限，限制模型找最优解）。历史规律反复验证：RAG 流水线被长上下文吃掉 → Prompt Chain 被 agentic 模型取代 → MoT Agent 编排被 sub-agent/plan 覆盖。但三件事的价值**反升**：上下文工程、可追踪验收标准、安全护栏（Harness）。转折点：从告诉 AI "怎么做"(How) → 定义 "做什么 + 做完的判定"(What + Done)。**通用模型越强，Harness 越值钱——这是 90%/10% 价值分层（知行合一框架见 §十）的外部验证。**
 
@@ -432,7 +432,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 ### a16z《你刚雇了一百万个糟糕员工》印证（2026-07）
 
-> 📐 来源：a16z（2026-07-15，Hebbia 创始人 George Sivulka）[《You Just Hired a Million Bad Employees》](https://www.a16z.news/p/the-next-ai-goldrush-tokens-loops) 核心判断——「人类历史上第一次，人比软件便宜」；每家公司在雇「一百万个糟糕的硅基员工」，80% 的 token 在空转浪费。解法不是更强的模型、也不是更多算力，而是 185 年前诞生的老手艺：**管理**。
+> 📐 来源：a16z（2026-07-15，Hebbia 创始人 George Sivulka）[《You Just Hired a Million Bad Employees》](https://www.a16z.news/)（原文 URL 待核实） 核心判断——「人类历史上第一次，人比软件便宜」；每家公司在雇「一百万个糟糕的硅基员工」，80% 的 token 在空转浪费。解法不是更强的模型、也不是更多算力，而是 185 年前诞生的老手艺：**管理**。
 
 这与 sofagent 底层定位同频：**Harness 中间件 = 管住 Agent 行为的那一层**（River 比喻里「堤坝」）。a16z 七法则中 Loops / 100X / 冗员 / Evals / 转型 五条，sofagent 已原生具备对应物。完整映射见下方表格；其中最关键的三条：
 
@@ -440,7 +440,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 - **考核 Evals → Reality Anchor**：审计引擎 A1-A11、A14-A19 + E1-E4（共 21 条）把「可评估性」硬编码为真实 git diff，而非 Agent 自报完成。
 - **万亿转型 → FDE 卖转型**：FDE = Services-as-Software，交付「常驻 FDE Agent」而非工具包；ROADMAP 已有 4 条市场信号互证。
 
-**七法则完整映射**（a16z 概念 → sofagent 对应 → 现状 → 落地版本 → 说明）：
+**a16z 十项映射（七法则 + 三项规模化缺口）完整映射**（a16z 概念 → sofagent 对应 → 现状 → 落地版本 → 说明）：
 
 | # | a16z 概念 | sofagent 对应 | 现状 | 落地版本 | 说明 |
 |---|------|------|:--:|------|------|
@@ -460,9 +460,9 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 - **Org Graph = 进组织架构的硅基员工**：研报把「长期存活、固定领域、保留上下文与工具权限」的 Agent 称为 Org Graph 节点，与 sofagent 核心定位字面对应——AI 不是效率工具，是进组织编制、有独立账号、接受绩效考核的硅基员工；FDE 交付的「常驻 Agent」正是 Org Graph 的企业落地形态。
 - **Ontology Runtime 是 AI Native 企业底座，非 API 网关**：研报强调 Runtime 接管的是「语义边界」而非重建核心系统（CRM/OMS/ERP 之上的一层），企业系统边界从「系统接口」转移到「业务对象运行时」。与 sofagent「Harness 中间件 = 给模型搭脚手架、约束底座永远在线」同源——我们不做业务系统，做业务系统之上的约束层。
 
-### 数字员工操作性定义：四跨越 + 结果负责三要素（2026-07 一粟 blog 研读）
+### 数字员工操作性定义：四跨越 + 结果负责三要素（2026-07 钉钉 CTO 一粟 blog 研读）
 
-一粟区分「数字分身」（服务个人、替代时间）与「数字员工」（服务组织、承接职责、对结果负责）。数字员工进组织需完成**四跨越**：
+钉钉 CTO 一粟区分「数字分身」（服务个人、替代时间）与「数字员工」（服务组织、承接职责、对结果负责）。数字员工进组织需完成**四跨越**：
 
 1. 组织身份（有账号、在编制）
 2. 岗位职责（有清晰 KPI）
@@ -471,9 +471,27 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 **结果负责三要素**（与审计 / 回溯引擎对齐）：可观测（行为留痕）/ 可归因（责任到人 · Agent 身份）/ 可回滚（出错能退）。
 
-> 📖 来源：一粟 blog《分身 vs 员工》《拟人化》（2026，具体 URL 待核验）
+> 📖 来源：钉钉 CTO 一粟 blog《分身 vs 员工》《拟人化》（2026，具体 URL 待核验）
 
 > 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）
+
+### DeerFlow 2.0：大厂用「Harness」命名的活样本（2026-07 行业印证）
+
+字节跳动开源的 [DeerFlow 2.0](https://github.com/bytedance/deer-flow) 自称 **"super agent harness"**——与 sofagent 的 **Harness 中间件**品类判断**字面一致**。这是继 OpenAI《Harness Engineering》、Anthropic《Effective Harnesses》之后，**又一家头部厂商用 Harness 命名 Agent 运行时框架**，说明这个品类词已经站住。
+
+但 DeerFlow 是 River 比喻里的**「河」**（运行时框架，让 Agent 跑起来的基础设施），sofagent 是**「堤坝」**（让 Agent 别跑偏 + 审计它跑过什么）——两者定位互补，不冲突：
+
+| 维度 | DeerFlow | sofagent |
+|------|---------|---------|
+| 本质 | Super Agent 运行时框架 | Harness 中间件 |
+| 语言/栈 | Python (FastAPI + LangGraph + uv) | TypeScript/Node |
+| 安全在哪 | 运行时（沙箱 + fail-closed + 中间件链 26 步）| 提交时（git diff 21 条规则）+ 运行时约束（SKILL.md）|
+| 部署重量 | Nginx + Gateway + Postgres，起步 8C16G | `bash install.sh`，零依赖 |
+| 约束方式 | 需 Agent 跑在它的框架里 | 看 git diff，Agent 在哪跑都行 |
+
+**给我们的背书**：① Harness 品类被字节用真金白银验证；② LangGraph createReactAgent 是编排事实标准（双方都选）；③ 控制平面打法（runtime 内嵌 gateway = 控制平面）是行业共识。**给我们的启发**（进 ROADMAP 与开发日志）：中间件链设计、Skill 质量门禁 + content-hash、Session Goals、ToolOutputBudget、多 worker 租约安全语义——详见 [ROADMAP · DeerFlow 参考清单](../ROADMAP.md#deerflow-参考清单2026-07)。
+
+> 📖 来源：DeerFlow 2.0 README（github.com/bytedance/deer-flow），2026-02-28 登顶 GitHub Trending #1
 
 ---
 

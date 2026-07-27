@@ -61,7 +61,7 @@
 - **进场梳理 → 部署 AI 节点 → 离场常驻**：FDE 帮你盘清工作流、识别可自动化环节、把重复业务变成自动跑的 Agent，离场后 7×24 自己巡检、自己优化。
 - **每次变更都被管住**：21 条规则硬证据审计，密钥泄漏 / 越界编辑 / 注入攻击 / 盲改当场拦截；出事一键回滚到任意安全状态。
 - **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
-- **平台无关、即挂即用**：骑在你自选的大厂 Agent（Claude Code / Codex / Cursor / WorkBuddy / OpenClaw）之上，不替代模型，只补「可靠执行」。
+- **平台无关、即挂即用**：骑在你自选的大厂 Agent（Claude Code / Codex / Cursor / WorkBuddy / 扣子 / OpenClaw）之上，不替代模型，只补「可靠执行」。
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
 
 **现在还干不了的事（规划中，暂无代码）**：Dashboard 可视化前端、完整多设备协同、飞书 / 钉钉 / 企微完整 Webhook 推送、并行编排、SubAgent 生产级沙箱、本地推理小模型——路线见 [ROADMAP](../ROADMAP.md)。
@@ -105,12 +105,7 @@
 
 ### 两种装法（v1.2.0）
 
-| 安装器 | 装什么 | 不装 | 适用 |
-|---|---|---|---|
-| `bash install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（`@sofagent-fde` / `@sofagent-audit`）+ hook | FORGE | 企业 / FDE：要常驻 硅基员工 |
-| `bash install.sh --base-only` | 仅底座（四引擎） | FDE / FORGE | 开发者 / 企业 IT：只要核心治理引擎 |
-
-> 最小可用：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）；五包全装才是完整 Harness 中间件。完整边界见 [ARCHITECTURE · 安装包边界](./ARCHITECTURE.md#安装包边界v120-设计)。
+（详见 [ARCHITECTURE §安装包边界](./ARCHITECTURE.md#安装包边界v120-设计)）
 
 ### 安装
 
@@ -149,7 +144,7 @@ cd sofagent && bash install.sh
 | 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
 | Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计引擎可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](../LIMITATIONS.md#windows-支持是实验性的) |
 | hook 装了但静默跳过 | Node.js 或 sofagent-audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
-| `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（11 条规则全启用） |
+| `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（默认 13 条（A1–A11 + A18/A19）全启用，扩展 8 条（A14–A17 + E1–E4）需开启，全量 21 条） |
 
 ### 验证装好了
 
@@ -256,13 +251,13 @@ Agent 先判断任务复杂度：
 
 超出边界直接说「做不了」，但给替代方向。
 
-### 渐进信任与判断层（2026-07 一粟 blog 研读）
+### 渐进信任与判断层（2026-07 钉钉 CTO 一粟 blog 研读）
 
 用户与 Agent 的信任应逐级释放：**观察**（只汇报不动作）→ **建议**（给方案等你批）→ **代执行**（授权后自主跑）。
 
 **判断层必须 human-in-loop**：选人 / 品（品味）/ 股（重大利益）三类决策 AI 改执行不改判断——品味不可替代，重大利益不快不准。
 
-**对抗防护**：Prompt 注入 / 上下文投毒 / Agent 链式攻击——已有 8 层纵深防御（见 [SECURITY.md](../SECURITY.md)），此处补一粟「判断层不下沉」原则：执行可下放，判断权永留人。
+**对抗防护**：Prompt 注入 / 上下文投毒 / Agent 链式攻击——已有 8 层纵深防御（见 [SECURITY.md](../SECURITY.md)），此处补钉钉 CTO 一粟「判断层不下沉」原则：执行可下放，判断权永留人。
 
 **「从 70 分开始」采用原则**：不要等 Agent 到 100 分再用。新员工第一周不让他独立做架构决策，先让他做确定性高的事——Agent 同理。能力上限不是采用门槛，行为模式才是。
 
@@ -273,7 +268,7 @@ Agent 先判断任务复杂度：
 
 > 「70 分的 Agent + 30 分的人类判断，比 100 分的人类单独干更快、更稳。」数字员工与聊天机器人的区别不在能力上限、在行为模式——主动做该做的事、知道什么不该做；70 分原则即行为模式落地：确定性范围内主动，不确定性边界处上报。
 
-> 📖 来源：一粟 blog（2026，具体 URL 待核验）/ 一粟 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》
+> 📖 来源：钉钉 CTO 一粟 blog（2026，具体 URL 待核验）/ 钉钉 CTO 一粟 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》
 
 ### 提交后自动审计
 
@@ -348,9 +343,9 @@ jobs:
 
 | 功能 | 版本 | 一句话 | 详见 |
 |------|:--:|------|------|
-| Dream Cycle | v1.1.7 | knowledge/ 自动沉淀——daemon 6 阶段 pipeline 从 task/logs 提取知识，不再靠散点脚本 | [FDE §9.3 知识治理](../FDE/FDE.md) |
-| sensitivity 分级 | v1.1.7 | 每条知识带 public/internal/restricted 分级，缺省 internal——restricted 在联邦查询中不外发 | [FDE §9.3](../FDE/FDE.md) |
-| knowledge status | v1.1.7 | `sofagent-daemon knowledge status` 一条命令看知识全貌（Dream Cycle 周报 + 健康度 + sensitivity 计数） | [FDE §9.3](../FDE/FDE.md) |
+| Dream Cycle | v1.1.7 | knowledge/ 自动沉淀——daemon 6 阶段 pipeline 从 task/logs 提取知识，不再靠散点脚本 | [FDE §知识治理体系](../FDE/FDE.md) |
+| sensitivity 分级 | v1.1.7 | 每条知识带 public/internal/restricted 分级，缺省 internal——restricted 在联邦查询中不外发 | [FDE §知识治理体系](../FDE/FDE.md) |
+| knowledge status | v1.1.7 | `sofagent-daemon knowledge status` 一条命令看知识全貌（Dream Cycle 周报 + 健康度 + sensitivity 计数） | [FDE §知识治理体系](../FDE/FDE.md) |
 | 安全联邦 | v1.1.8 | 两台配对设备互查 knowledge/，AES-256-GCM 全链路加密 + sensitivity 双重过滤 | [FDE §部署场景·安全联邦](../FDE/FDE.md) |
 | Prompt 注入防护 | v1.1.8 | 8 层纵深防御——外部内容包裹 + 脱敏 + 知识可信分级 | [SECURITY.md](../SECURITY.md) |
 | USB 一键烧录 | v1.1.8 | workflow 烧进 U 盘 → 发给员工 → 插上即用，拔掉零残留 | [常驻：长期自跑与持续优化](#常驻长期自跑与持续优化) |
@@ -362,7 +357,7 @@ jobs:
 - **Ontology 本体**：企业世界模型——实体 + 关系 + 动作 + 约束，三层 YAML 自动生长，让 Agent 越用越懂你的业务语境。
 - **sensitivity 分级**：每条知识带 public / internal / restricted 分级，restricted 在跨设备联邦查询中默认不外发。
 
-> 知识库不是数据库，是会「长」的资产。完整治理机制见 [FDE §9.3 知识治理](../FDE/FDE.md)。
+> 知识库不是数据库，是会「长」的资产。完整治理机制见 [FDE §知识治理体系](../FDE/FDE.md)。
 
 ### 进化引擎（越用越好）
 
@@ -378,7 +373,7 @@ jobs:
 
 ### 部署：装上 sofagent
 
-没有 sofagent，梳理的 workflow 就是一份 PPT。引擎装到设备上，AI 节点才有纪律和审计。完整引擎对照表与部署步骤见 [FDE/FDE.md §装上 sofagent](../FDE/FDE.md#装上-sofagent整个部署的核心)。
+没有 sofagent，梳理的 workflow 就是一份 PPT。引擎装到设备上，AI 节点才有纪律和审计。完整引擎对照表与部署步骤见 [FDE/FDE.md §装上 sofagent](../FDE/FDE.md#装上-sofagent--整个部署的核心)。
 
 **节点类型选择**：自动运行节点（需 OpenClaw 全栈）vs 个人增强节点（WorkBuddy / Codex，无需 OpenClaw）。完整对照表见 [ARCHITECTURE 双节点架构](./ARCHITECTURE.md#双节点架构)。
 
@@ -417,14 +412,7 @@ U 盘包含：Node.js 便携版 + sofagent 引擎 + knowledge/ 加密落盘 + �
 | **私有化评估体系** | eval.md + Skill 迭代历史 + 知识库演变轨迹 |
 | **USB key**（v1.1.8+） | 烧录好的 U 盘——插上即用，换电脑身份不变 |
 
-FDE 离场后，两个内置 Agent 接手持续运维：
-
-| | 审计 Agent | FDE Agent |
-|------|------|------|
-| 方向 | 向下看——防止退化 | 向上看——推动进化 |
-| 数据源 | git diff + A1-A11、A14-A19 规则 | audit 报告 + think.md + eval |
-| 输出 | "哪里坏了 + 怎么修" | "怎么做得更好 + 趋势分析" |
-| 频率 | 每次 commit 自动 | 每周自动巡检 |
+FDE 离场后，两个内置 Agent 接手持续运维：合规审计员 `@sofagent-audit`（向下看——防退化）与 FDE 部署工程师 `@sofagent-fde`（向上看——推动进化），职责对照（双 Agent 定义详见 [ARCHITECTURE §双 Agent 定义](./ARCHITECTURE.md#agent-基础设施层v108)）。
 
 ```bash
 sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
@@ -521,4 +509,4 @@ sofagent 站在 6 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 > 大半年 OpenClaw 实战笔记。如有更好的用法，欢迎开 Issue。
 >
-> *v1.2.0，2026 年 7 月 15 日*
+> *v1.2.0，2026 年 7 月 26 日*
