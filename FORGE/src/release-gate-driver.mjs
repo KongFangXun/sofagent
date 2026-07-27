@@ -1,0 +1,935 @@
+#!/usr/bin/env node
+// ============================================================
+// FORGE/src/release-gate-driver.mjs · FORGE release-gate-loop Driver
+//
+// 发版闸门循环编排层：5 步串行线性验证，跑完即出 PASS/FAIL。
+// 单角色 V（验证者），纯只读，不修改任何代码或文档。
+//
+// 用法：
+//   node FORGE/src/release-gate-driver.mjs --target v1.2.1 [--dry-run]
+//
+// 自 forks 为 worker：
+//   node FORGE/src/release-gate-driver.mjs --worker --step <step> --run-dir <abs> --target <ver>
+//
+// 模型配置（单角色 V）：
+//   V（验证者）= GLM-5.2     baseURL https://open.bigmodel.cn/api/coding/paas/v4/ (Coding Plan 端点)  temp=1.0
+//
+// 与 fresh-eyes-driver 的差异：
+//   - 单角色 V（无 A/B 双角色）
+//   - 单轮线性（无 round 层级，无多轮收敛）
+//   - 纯只读（REVIEWER_TOOLS，无写工具）
+//   - 5 步：acceptance / regression / coverage / consolidate / verdict
+// ============================================================
+
+import { spawn } from 'child_process';
+import { createRequire } from 'module';
+import {
+  readFileSync, writeFileSync, mkdirSync, existsSync,
+  appendFileSync, readdirSync, copyFileSync,
+} from 'fs';
+import { join, resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import os from 'os';
+
+// 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
+import { createVisibility, EVENTS } from './visibility.mjs';
+
+// L2：SubAgent 内部可观测（工具调用序列 + 模型推理心跳）
+import { createProgressMiddleware } from './progress-middleware.mjs';
+
+// 模块级引用——让 catch 块也能写可见性事件（失败场景覆盖）
+let globalVisibility = null;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = dirname(__filename);
+const REPO_ROOT  = resolve(__dirname, '../..');
+
+// CJS interop — dist 产物是 CommonJS，.mjs 里用 createRequire 导入
+const require = createRequire(import.meta.url);
+
+// ─── 路径常量 ────────────────────────────────────────────────
+const LOOP_DIR    = join(REPO_ROOT, 'FORGE/SKILL/release-gate-loop');
+const PROMPTS_DIR = join(LOOP_DIR, 'prompts');
+// runs 输出优先到 SOFAGENT_HOME/data/forge-runs/，
+// fallback 到仓库内 data/forge-runs/（开发模式兼容）
+const SOFAGENT_HOME = process.env.SOFAGENT_HOME || join(os.homedir(), '.sofagent');
+const RUNS_DIR    = join(SOFAGENT_HOME, 'data', 'forge-runs');
+const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
+const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
+
+// ─── 单角色模型配置（V = 验证者）────────────────────────────
+// 复用 fresh-eyes-driver 的 A（GLM-5.2）配置，toolsKey 改为 REVIEWER_TOOLS
+const MODEL_CONFIGS = {
+  V: {
+    baseURL:         'https://open.bigmodel.cn/api/coding/paas/v4/',
+    model:           'glm-5.2',
+    temperature:     1.0,
+    maxTokens:       16000,
+    apiKeyEnv:       'SOFAGENT_LLM_A_API_KEY',
+    specEnv:         'SOFAGENT_LLM_A',
+    agentSkillPath:  join(AGENTS_DIR, 'reviewer/SKILL.md'),
+    toolsKey:        'REVIEWER_TOOLS',
+    billing:         'subscription',
+  },
+};
+
+// ─── 模型定价（usage.jsonl 成本估算基础）─────────────────────
+// 单位：CNY per 1M tokens（百万 token 计价）
+// 与 fresh-eyes-driver 保持一致（V 用 GLM-5.2 = 订阅制）
+const MODEL_PRICING = {
+  'glm-5.2': {
+    input: 8,
+    output: 28,
+    currency: 'CNY',
+    source: 'https://open.bigmodel.cn/pricing',
+    note: '缓存命中 input 2元/M。官方标价，实际账单以 API 后台为准',
+    billing: 'subscription',
+  },
+};
+
+// ─── 步骤定义（prompt / output / inputs）─────────────────────
+// 单角色 V，无 role 字段。5 步全串行。
+const STEPS = {
+  'acceptance':  { prompt: 'acceptance.md',  outputs: ['acceptance.md'],  inputs: [] },
+  'regression':  { prompt: 'regression.md',  outputs: ['regression.md'],  inputs: [] },
+  'coverage':    { prompt: 'coverage.md',    outputs: ['coverage.md'],    inputs: ['acceptance.md'] },
+  'consolidate': { prompt: 'consolidate.md', outputs: ['stage6-report.md'], inputs: ['acceptance.md', 'regression.md', 'coverage.md'] },
+  'verdict':     { prompt: 'verdict.md',     outputs: ['verdict.md'],     inputs: ['stage6-report.md'] },
+};
+
+// 步骤执行顺序（driver 按此顺序串行执行）
+const STEP_ORDER = ['acceptance', 'regression', 'coverage', 'consolidate', 'verdict'];
+
+// 每步的 recursionLimit
+const STEP_RECURSION_LIMITS = {
+  'acceptance':  100,
+  'regression':  150,
+  'coverage':    100,
+  'consolidate': 80,
+  'verdict':     50,
+};
+
+// ═══════════════════════════════════════════════════════════
+//  CLI 参数解析
+// ═══════════════════════════════════════════════════════════
+function parseArgs(argv) {
+  const args = { target: null, dryRun: false,
+                 worker: false, step: null, runDir: null };
+  for (let i = 2; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--target')        args.target  = argv[++i];
+    else if (a === '--dry-run')  args.dryRun  = true;
+    else if (a === '--worker')   args.worker  = true;
+    else if (a === '--step')     args.step    = argv[++i];
+    else if (a === '--run-dir')  args.runDir  = argv[++i];
+  }
+  return args;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Worker 模式 — 在独立子进程内执行单个步骤
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * 从 SKILL.md 构建 systemPrompt。
+ *
+ * 复用 fresh-eyes-driver 的逻辑：剥离 frontmatter、提取身份标签。
+ * 末尾追加 macOS BSD 工具约束段 + 纯只读铁律段（release-gate-loop 特有）。
+ */
+function buildSystemPrompt(skillPath) {
+  const raw = readFileSync(skillPath, 'utf-8');
+  const parts = raw.split('---');
+  if (parts.length < 3) return raw.trim();
+  const fm = parts[1];
+  const body = parts.slice(2).join('---').trim();
+  const val = (k) => (fm.match(new RegExp(`^${k}:\\s*(.*)`, 'm')) ?? [])[1]?.trim() ?? '';
+  const header = [
+    `[Agent: ${val('name')}]`,
+    val('description') ? `[描述: ${val('description')}]` : '',
+    val('triggers') ? `[触发条件: ${val('triggers')}]` : '',
+  ].filter(Boolean).join('\n');
+
+  // macOS BSD 工具约束——GLM 常用 Linux 语法导致命令报错
+  const shellConstraints = [
+    '',
+    '## 🔴 铁律：macOS BSD 工具约束（违反必崩）',
+    '',
+    '你在 macOS 上运行，shell 是 BSD 版本，**不是 GNU/Linux**。以下命令在此环境会报错：',
+    '- `grep -P` → 不存在，用 `grep -E`',
+    '- `sed --version` / `sed -V` → 不存在，`sed -i` 必须带后缀 `sed -i ""`',
+    '- `openssl --version` / `openssl -V` → 用 `openssl version`（无横杠）',
+    '- `cat -A` → 用 `cat -v` 或 `od -c`',
+    '- `stat --format` → 用 `stat -f`',
+    '- `readlink -f` → 用 `python3 -c "import os; print(os.path.realpath(\'...\'))`"',
+    '- `command -v` 代替 `which`（更可移植）',
+    '- `<(...)` process substitution → 不支持',
+    '',
+    '**铁律：命令报错时立即换方案或跳过，禁止用相同语法重试。**',
+  ].join('\n');
+
+  // 纯只读铁律——release-gate-loop 核心约束
+  const readOnlyRule = [
+    '',
+    '## 🔴 铁律：纯只读（release-gate-loop 核心约束）',
+    '',
+    '你**不得创建或修改任何代码或文档文件**。你的任务是验证 + 生成报告，不是修复。',
+    '',
+    '**禁止操作：**',
+    '- 禁止使用 write_file / edit_file 等写工具',
+    '- 禁止 git commit / git push',
+    '- 禁止 npm publish / npm install',
+    '- 禁止修改 acceptance-test.sh / regression-checklist.md / 任何源码',
+    '',
+    '**允许操作：**',
+    '- 读文件（read_file / ls / glob / grep）',
+    '- 跑验证命令（bash / node / grep 等，但不得有写副作用）',
+    '- 写自己的产物文件（driver 从你的最终回复中提取）',
+  ].join('\n');
+
+  return header + '\n\n' + body + shellConstraints + '\n' + readOnlyRule;
+}
+
+/**
+ * 为角色 V 创建 LLM 模型实例（GLM-5.2）。
+ */
+async function createModel(role) {
+  const cfg = MODEL_CONFIGS[role];
+  const apiKey = process.env[cfg.apiKeyEnv];
+  if (!apiKey) {
+    throw new Error(`环境变量 ${cfg.apiKeyEnv} 未设置（角色 ${role}）`);
+  }
+
+  const { ChatOpenAI } = await import('@langchain/openai');
+
+  const ctorArgs = {
+    modelName: cfg.model,
+    configuration: { baseURL: cfg.baseURL },
+    apiKey: apiKey,
+    openAIApiKey: apiKey,
+  };
+
+  if (cfg.temperature !== undefined) {
+    ctorArgs.temperature = cfg.temperature;
+  }
+  if (cfg.maxTokens) {
+    ctorArgs.maxTokens = cfg.maxTokens;
+  }
+
+  return new ChatOpenAI(ctorArgs);
+}
+
+/**
+ * 从 dist 导入工具集（REVIEWER_TOOLS）。
+ * 转换 ExecutableTool → DynamicStructuredTool（与 fresh-eyes-driver 同逻辑）。
+ */
+function loadTools(role, progressMw = null) {
+  const cfg = MODEL_CONFIGS[role];
+  const toolsModule = require('../../engine/orchestrator/dist/tools.js');
+  const rawTools = toolsModule[cfg.toolsKey];
+  if (!rawTools) {
+    throw new Error(`工具集 ${cfg.toolsKey} 未在 dist/tools.js 中找到`);
+  }
+
+  const { tool } = require('@langchain/core/tools');
+  const { z } = require('zod');
+
+  return rawTools.map((rawTool) => {
+    if (rawTool.lc_namespace) return rawTool;
+
+    const properties = rawTool.schema?.properties || {};
+    const zodShape = {};
+    const requiredFields = rawTool.schema?.required || [];
+
+    for (const [key, prop] of Object.entries(properties)) {
+      let zodField;
+      if (prop.type === 'string') {
+        zodField = z.string();
+      } else if (prop.type === 'number' || prop.type === 'integer') {
+        zodField = z.number();
+      } else if (prop.type === 'boolean') {
+        zodField = z.boolean();
+      } else {
+        zodField = z.string();
+      }
+      if (prop.description) zodField = zodField.describe(prop.description);
+      if (!requiredFields.includes(key)) zodField = zodField.optional();
+      zodShape[key] = zodField;
+    }
+
+    const wrappedTool = tool(
+      async (input) => {
+        if (progressMw) {
+          return await progressMw.wrapToolCall(
+            { tool: rawTool.name, args: input },
+            async () => await rawTool.func(input),
+          );
+        }
+        const result = rawTool.func(input);
+        return await result;
+      },
+      {
+        name: rawTool.name,
+        description: rawTool.description,
+        schema: z.object(zodShape),
+      }
+    );
+
+    return wrappedTool;
+  });
+}
+
+/**
+ * 从 DeepAgent invoke 结果中提取 usage 数据（多级 fallback）。
+ * 与 fresh-eyes-driver 完全一致的 4 路径 fallback。
+ */
+function extractUsage(result) {
+  if (result?.usage) {
+    const u = result.usage;
+    const pt = u.prompt_tokens ?? u.input_tokens ?? 0;
+    const ct = u.completion_tokens ?? u.output_tokens ?? 0;
+    return { prompt_tokens: pt, completion_tokens: ct, total_tokens: u.total_tokens ?? (pt + ct) };
+  }
+
+  if (result?.llmResult?.usage) {
+    const u = result.llmResult.usage;
+    const pt = u.prompt_tokens ?? u.input_tokens ?? 0;
+    const ct = u.completion_tokens ?? u.output_tokens ?? 0;
+    return { prompt_tokens: pt, completion_tokens: ct, total_tokens: u.total_tokens ?? (pt + ct) };
+  }
+
+  if (result?.messages?.length > 0) {
+    const last = result.messages[result.messages.length - 1];
+    if (last?.usage_metadata) {
+      const u = last.usage_metadata;
+      const pt = u.input_tokens ?? u.prompt_tokens ?? 0;
+      const ct = u.output_tokens ?? u.completion_tokens ?? 0;
+      return { prompt_tokens: pt, completion_tokens: ct, total_tokens: u.total_tokens ?? (pt + ct) };
+    }
+    if (last?.response_metadata?.token_usage) {
+      const u = last.response_metadata.token_usage;
+      const pt = u.prompt_tokens ?? 0;
+      const ct = u.completion_tokens ?? 0;
+      return { prompt_tokens: pt, completion_tokens: ct, total_tokens: u.total_tokens ?? (pt + ct) };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * 记录单次 invoke 的 usage 到 runDir/usage.jsonl。
+ * 单角色 V，round 字段固定为 1（单轮）。
+ */
+function recordUsage(runDir, step, role, model, result, latencyMs, target) {
+  const usagePath = join(runDir, 'usage.jsonl');
+  const pricing = MODEL_PRICING[model];
+  const usage = extractUsage(result);
+
+  let billing = 'pay-as-you-go';
+  for (const [roleKey, cfg] of Object.entries(MODEL_CONFIGS)) {
+    if (cfg.model === model) { billing = cfg.billing; break; }
+  }
+
+  let record;
+  if (usage) {
+    let cost = null;
+    let priceConfidence;
+    if (billing === 'subscription') {
+      cost = null;
+      priceConfidence = 'subscription';
+    } else if (pricing) {
+      cost = ((usage.prompt_tokens / 1_000_000) * pricing.input +
+             (usage.completion_tokens / 1_000_000) * pricing.output);
+      priceConfidence = 'estimated';
+    } else {
+      cost = null;
+      priceConfidence = 'no-pricing';
+    }
+
+    record = {
+      ts:                 new Date().toISOString(),
+      target:             target,
+      step:               step,
+      role:               role,
+      model:              model,
+      prompt_tokens:      usage.prompt_tokens,
+      completion_tokens:  usage.completion_tokens,
+      total_tokens:       usage.total_tokens,
+      cost_cny:           cost,
+      price_confidence:   priceConfidence,
+      latency_ms:         latencyMs,
+    };
+  } else {
+    record = {
+      ts:                 new Date().toISOString(),
+      target:             target,
+      step:               step,
+      role:               role,
+      model:              model,
+      usage:              null,
+      note:               'API 未返回 usage 字段',
+      latency_ms:         latencyMs,
+    };
+  }
+
+  appendFileSync(usagePath, JSON.stringify(record) + '\n', 'utf-8');
+}
+
+/**
+ * Worker 主逻辑：读 prompt → 建 model+tools → invoke → 写产物。
+ */
+async function runWorker(step, runDir, target) {
+  const stepDef = STEPS[step];
+  if (!stepDef) throw new Error(`未知步骤: ${step}`);
+
+  const role = 'V';
+  const cfg  = MODEL_CONFIGS[role];
+
+  // 1. 构建 systemPrompt
+  const systemPrompt = buildSystemPrompt(cfg.agentSkillPath);
+
+  // 2. 读 prompt 正文
+  const promptTemplate = readFileSync(join(PROMPTS_DIR, stepDef.prompt), 'utf-8');
+
+  // 3. 组装 user message：prompt 正文 + 路径注入 + target 注入
+  const inputPaths = stepDef.inputs.map(f => `  - ${join(runDir, f)}`).join('\n');
+  const outputPaths = stepDef.outputs.map(f => `  - ${join(runDir, f)}`).join('\n');
+
+  // 注入 changelog 路径（步骤③ coverage 需要）
+  const changelogPath = `docs/changelog/${target}.md`;
+
+  const userMessage = [
+    promptTemplate.trim(),
+    '',
+    '--- driver 注入 ---',
+    `本次验证对象 = sofagent ${target} 完整交付物`,
+    `项目根目录 = ${REPO_ROOT}`,
+    inputPaths ? `输入文件（已由 driver 中转）：\n${inputPaths}` : '',
+    `Changelog 路径 = ${changelogPath}`,
+    `产物输出路径（把你的输出写到这个文件）：\n${outputPaths}`,
+  ].filter(Boolean).join('\n');
+
+  // 4. 创建 model + tools + agent
+  const model = await createModel(role);
+
+  // L2：ProgressMiddleware 注入
+  // 单角色，文件名 sub-progress.jsonl（不带角色字母）
+  let progressMw = null;
+  try {
+    progressMw = createProgressMiddleware({ roundDir: runDir, role: 'V' });
+  } catch (mwErr) {
+    console.warn(`[worker:${step}] ProgressMiddleware 创建失败（不影响主流程）: ${mwErr.message}`);
+  }
+  const tools = loadTools(role, progressMw);
+
+  const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
+  const agent = createReactAgent({
+    llm: model,
+    tools,
+    prompt: systemPrompt,
+  });
+
+  // 5. invoke（计时）
+  console.log(`[worker:${step}] 开始执行（role=V, model=${cfg.model}）`);
+  const t0 = Date.now();
+
+  const recursionLimit = STEP_RECURSION_LIMITS[step] ?? 50;
+
+  const invokeAgent = () => agent.invoke({
+    messages: [{ role: 'user', content: userMessage }],
+  }, { recursionLimit });
+
+  const result = progressMw
+    ? await progressMw.wrapModelCall({ step, role: 'V', model: cfg.model }, invokeAgent)
+    : await invokeAgent();
+  const latencyMs = Date.now() - t0;
+
+  // 5b. 记录 usage
+  try {
+    recordUsage(runDir, step, role, cfg.model, result, latencyMs, target);
+  } catch (usageErr) {
+    console.warn(`[worker:${step}] usage 记录失败（不影响主流程）: ${usageErr.message}`);
+  }
+
+  // 6. 提取文本输出
+  const text = extractAgentText(result);
+  if (!text) {
+    throw new Error(`[worker:${step}] Agent 未返回内容`);
+  }
+
+  // 7. 写产物（release-gate 每步只产出 1 个文件）
+  if (stepDef.outputs.length === 1) {
+    const outPath = join(runDir, stepDef.outputs[0]);
+    writeFileSync(outPath, text, 'utf-8');
+    console.log(`[worker:${step}] 产物已写入 ${outPath}`);
+  } else {
+    const slices = sliceMultiOutput(text, stepDef.outputs);
+    for (const filename of stepDef.outputs) {
+      const outPath = join(runDir, filename);
+      writeFileSync(outPath, slices[filename], 'utf-8');
+      console.log(`[worker:${step}] 产物已写入 ${outPath}`);
+    }
+  }
+}
+
+/**
+ * 按 `===FILE: <filename>===` 分隔符切片多产物输出。
+ * 与 fresh-eyes-driver 完全一致的逻辑。
+ */
+function sliceMultiOutput(text, outputs) {
+  const SEPARATOR_RE = /^===FILE:\s*(.+?)\s*===\s*$/gm;
+  const slices = {};
+
+  const marks = [];
+  let m;
+  while ((m = SEPARATOR_RE.exec(text)) !== null) {
+    const filename = m[1].trim();
+    const contentStart = SEPARATOR_RE.lastIndex;
+    marks.push({ filename, contentStart });
+  }
+
+  if (marks.length === 0) {
+    slices[outputs[0]] = text;
+    for (let i = 1; i < outputs.length; i++) {
+      slices[outputs[i]] = `<!-- 未检测到 ===FILE: 分隔符，此产物为空。请检查 agent 输出。 -->\n`;
+    }
+    return slices;
+  }
+
+  for (let i = 0; i < marks.length; i++) {
+    const contentEnd = (i + 1 < marks.length)
+      ? text.lastIndexOf('===FILE:', marks[i + 1].contentStart)
+      : text.length;
+    const raw = text.slice(marks[i].contentStart, contentEnd).trim();
+    slices[marks[i].filename] = raw;
+  }
+
+  for (const filename of outputs) {
+    if (!(filename in slices)) {
+      slices[filename] = `<!-- agent 未产出此文件，检查 prompt 指令。 -->\n`;
+    }
+  }
+
+  return slices;
+}
+
+/**
+ * 从 DeepAgent invoke 结果中提取文本（兼容多种返回格式）。
+ */
+function extractAgentText(result) {
+  if (typeof result === 'string') return result;
+  if (result?.content) return typeof result.content === 'string'
+    ? result.content
+    : Array.isArray(result.content)
+      ? result.content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('')
+      : String(result.content);
+  if (result?.messages) {
+    const last = result.messages[result.messages.length - 1];
+    if (typeof last?.content === 'string') return last.content;
+    if (Array.isArray(last?.content)) {
+      return last.content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
+    }
+  }
+  return String(result ?? '');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Driver 模式 — 编排 5 步线性验证
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * 生成 run 目录路径：runs/release-gate-loop/YYYY-MM-DD/run-NN/
+ * 单轮结构，无 round 子目录。
+ */
+function resolveRunDir() {
+  const now = new Date();
+  const y  = String(now.getFullYear());
+  const m  = String(now.getMonth() + 1).padStart(2, '0');
+  const d  = String(now.getDate()).padStart(2, '0');
+  const dateStr = `${y}-${m}-${d}`;
+  const workflowDir = join(RUNS_DIR, 'release-gate-loop');
+  const dateDir = join(workflowDir, dateStr);
+
+  let runNum = 1;
+  if (existsSync(dateDir)) {
+    const existing = readdirSync(dateDir)
+      .filter(n => n.startsWith('run-'))
+      .map(n => parseInt(n.replace('run-', ''), 10))
+      .filter(n => !isNaN(n));
+    if (existing.length > 0) runNum = Math.max(...existing) + 1;
+  }
+
+  const runDir = join(dateDir, `run-${String(runNum).padStart(2, '0')}`);
+  mkdirSync(runDir, { recursive: true });
+  return { runDir, runId: `${y}${m}${d}-${String(runNum).padStart(2, '0')}`, dateStr: `${y}-${m}-${d}` };
+}
+
+/**
+ * 起一个 worker 子进程（真·零上下文：独立 node 进程）。
+ * 返回 Promise，resolve 时子进程已退出。
+ *
+ * @param {string} step      步骤名
+ * @param {string} runDir    run 目录绝对路径
+ * @param {string} target    验证目标版本号
+ */
+function spawnWorker(step, runDir, target) {
+  return new Promise((resolveP, rejectP) => {
+    const child = spawn(process.execPath, [
+      __filename,
+      '--worker',
+      '--step', step,
+      '--run-dir', runDir,
+      '--target', target,
+    ], {
+      cwd: REPO_ROOT,
+      stdio: ['pipe', 'inherit', 'inherit'],
+      env: { ...process.env },
+    });
+
+    child.on('close', (code) => {
+      if (code === 0) resolveP();
+      else rejectP(new Error(`worker ${step} 退出码 ${code}`));
+    });
+    child.on('error', rejectP);
+  });
+}
+
+/**
+ * 从 verdict.md 解析最终裁决（PASS/FAIL）。
+ * driver 用于 LEDGER 记录和最终输出。
+ *
+ * @param {string} runDir   run 目录
+ * @returns {{ verdict: string, reason: string }}
+ */
+function parseVerdict(runDir) {
+  const verdictPath = join(runDir, 'verdict.md');
+
+  if (!existsSync(verdictPath)) {
+    return { verdict: 'ERROR', reason: 'verdict.md 不存在（步骤⑤未产出）' };
+  }
+
+  const text = readFileSync(verdictPath, 'utf-8');
+
+  // 匹配 "判定：PASS" / "判定：FAIL" / "判定: PASS" 等
+  const match = text.match(/判定[：:]\s*(PASS|FAIL)/i);
+  if (match) {
+    return { verdict: match[1].toUpperCase(), reason: 'verdict.md 裁决' };
+  }
+
+  // fallback: 文本中出现 FAIL → FAIL，否则 PASS
+  if (/\bFAIL\b/i.test(text)) {
+    return { verdict: 'FAIL', reason: 'verdict.md 含 FAIL 标记' };
+  }
+
+  return { verdict: 'PASS', reason: 'verdict.md 无 FAIL 标记' };
+}
+
+/**
+ * 从三份产物中提取各步骤的验证结果（PASS/FAIL/SKIP）。
+ * 用于 LEDGER 记录。
+ *
+ * @param {string} runDir   run 目录
+ * @returns {{ acceptance: string, regression: string, coverage: string }}
+ */
+function parseStepResults(runDir) {
+  function extractResult(filename) {
+    const filePath = join(runDir, filename);
+    if (!existsSync(filePath)) return 'SKIP';
+    const text = readFileSync(filePath, 'utf-8');
+    // 找结论行
+    const conclusionMatch = text.match(/结论[：:]\s*(PASS|FAIL|SKIP)/i);
+    if (conclusionMatch) return conclusionMatch[1].toUpperCase();
+    // fallback
+    if (/\bFAIL\b/i.test(text)) return 'FAIL';
+    if (/\bPASS\b/i.test(text)) return 'PASS';
+    return 'SKIP';
+  }
+
+  return {
+    acceptance:  extractResult('acceptance.md'),
+    regression:  extractResult('regression.md'),
+    coverage:    extractResult('coverage.md'),
+  };
+}
+
+/**
+ * 复制 stage6-report.md 到桌面。
+ * 目标路径：~/Desktop/vX.Y-stage6-report.md
+ */
+function copyToDesktop(runDir, target) {
+  const reportPath = join(runDir, 'stage6-report.md');
+  if (!existsSync(reportPath)) {
+    console.warn('[driver] stage6-report.md 不存在，跳过桌面复制');
+    return;
+  }
+  const desktopPath = join(os.homedir(), 'Desktop', `${target}-stage6-report.md`);
+  try {
+    copyFileSync(reportPath, desktopPath);
+    console.log(`[driver] 报告已复制到桌面: ${desktopPath}`);
+  } catch (err) {
+    console.warn(`[driver] 桌面复制失败（不影响主流程）: ${err.message}`);
+  }
+}
+
+/**
+ * 向 LEDGER.md 追加一行。
+ * 格式（release-gate 列定义）：
+ *   日期 | run-id | 循环 | 步数 | acceptance | regression | coverage | 裁决 | → runs 指针
+ */
+function appendLedger(dateStr, runId, steps, results, verdict, runDir) {
+  const relPath = runDir.replace(REPO_ROOT + '/', '');
+  const line = [
+    dateStr.padEnd(14),
+    runId.padEnd(14),
+    'release-gate'.padEnd(12),
+    String(steps).padEnd(4),
+    results.acceptance.padEnd(10),
+    results.regression.padEnd(10),
+    results.coverage.padEnd(8),
+    verdict.padEnd(7),
+    relPath,
+  ].join(' | ');
+
+  const content = `\n${line}\n`;
+  appendFileSync(LEDGER_PATH, content, 'utf-8');
+  console.log(`[driver] LEDGER 已追加: ${line}`);
+}
+
+/**
+ * 读 usage.jsonl 全量累计，生成 _summary 行并追加到文件末尾。
+ * 单角色 V，by_role 只有 V。
+ */
+function appendUsageSummary(runDir, steps) {
+  const usagePath = join(runDir, 'usage.jsonl');
+  const byRole = {
+    V: { model: '', prompt_tokens: 0, completion_tokens: 0, total_tokens: 0, cost_cny: 0 },
+  };
+
+  if (existsSync(usagePath)) {
+    const lines = readFileSync(usagePath, 'utf-8').split('\n').filter(Boolean);
+    for (const line of lines) {
+      let rec;
+      try { rec = JSON.parse(line); } catch { continue; }
+      if (rec._summary) continue;
+      if (!rec.role || !(rec.role in byRole)) continue;
+
+      byRole[rec.role].model = rec.model || byRole[rec.role].model;
+      if (rec.prompt_tokens)     byRole[rec.role].prompt_tokens     += rec.prompt_tokens;
+      if (rec.completion_tokens) byRole[rec.role].completion_tokens += rec.completion_tokens;
+      if (rec.total_tokens)      byRole[rec.role].total_tokens      += rec.total_tokens;
+      if (rec.cost_cny)          byRole[rec.role].cost_cny          += rec.cost_cny;
+    }
+  }
+
+  const totalTokens = byRole.V.total_tokens;
+  const totalCost   = byRole.V.cost_cny;
+
+  const summary = {
+    _summary:       true,
+    total_tokens:   totalTokens,
+    total_cost_cny: Number(totalCost.toFixed(6)),
+    steps:          steps,
+    by_role:        byRole,
+    v_billing:      'subscription',
+  };
+
+  appendFileSync(usagePath, JSON.stringify(summary) + '\n', 'utf-8');
+  return summary;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  可见性：适配器探测
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * 探测环境中可用的进度适配器。
+ * 与 fresh-eyes-driver 一致——返回空数组，session 自己读 status.json。
+ */
+async function detectReporters() {
+  return [];
+}
+
+// ═══════════════════════════════════════════════════════════
+//  主入口
+// ═══════════════════════════════════════════════════════════
+
+async function main() {
+  const args = parseArgs(process.argv);
+
+  // ─── Worker 模式 ───
+  if (args.worker) {
+    if (!args.step || !args.runDir || !args.target) {
+      console.error('worker 模式需要 --step --run-dir --target');
+      process.exit(1);
+    }
+    try {
+      await runWorker(args.step, args.runDir, args.target);
+    } catch (err) {
+      console.error(`[worker:${args.step}] 失败: ${err.message}`);
+      if (err.errors) {
+        console.error('--- 子错误 (' + err.errors.length + ' 条) ---');
+        for (const [i, subErr] of err.errors.entries()) {
+          console.error(`  [${i}] ${subErr?.message || subErr}`);
+          if (subErr?.stack) {
+            console.error('     stack:', subErr.stack.split('\n').slice(0, 6).join('\n'));
+          }
+        }
+      } else {
+        console.error('--- stack ---');
+        console.error(err.stack);
+      }
+      process.exit(1);
+    }
+    return;
+  }
+
+  // ─── Driver 模式 ───
+  if (!args.target) {
+    console.error('用法: node FORGE/src/release-gate-driver.mjs --target vX.Y.Z [--dry-run]');
+    process.exit(1);
+  }
+
+  // 验证环境变量（dry-run 跳过）
+  const missingEnvs = [];
+  for (const role of ['V']) {
+    const cfg = MODEL_CONFIGS[role];
+    if (!process.env[cfg.apiKeyEnv])  missingEnvs.push(cfg.apiKeyEnv);
+    if (!process.env[cfg.specEnv])    missingEnvs.push(cfg.specEnv);
+  }
+  if (missingEnvs.length > 0 && !args.dryRun) {
+    console.error(`缺少环境变量: ${missingEnvs.join(', ')}`);
+    console.error('请在 ~/.zshrc 中设置后 source ~/.zshrc');
+    process.exit(1);
+  }
+
+  // 建 run 目录
+  const { runDir, runId, dateStr } = resolveRunDir();
+
+  // ─── 可见性：初始化 ───
+  const reporters = await detectReporters();
+  const visibility = createVisibility(runDir, reporters);
+  globalVisibility = visibility;
+  visibility.emit(EVENTS.RUN_START, {
+    target: args.target,
+    runDir: runDir.replace(REPO_ROOT + '/', ''),
+  });
+  console.log(`   可见性     = ${reporters.length} 个适配器`);
+
+  console.log(`\n🚪 release-gate-loop 启动`);
+  console.log(`   target    = sofagent ${args.target}`);
+  console.log(`   run-dir    = ${runDir}`);
+  console.log(`   dry-run    = ${args.dryRun}`);
+  console.log(`   V          = GLM-5.2 (${MODEL_CONFIGS.V.baseURL})`);
+
+  if (args.dryRun) {
+    console.log(`\n  [dry-run] 将执行以下 5 步：`);
+    console.log('    ① acceptance  (跑 acceptance-test.sh)     → acceptance.md');
+    console.log('    ② regression  (跑 regression-checklist)   → regression.md');
+    console.log('    ③ coverage    (覆盖率交叉检查)             → coverage.md');
+    console.log('    ④ consolidate (合并三份结果)               → stage6-report.md');
+    console.log('    ⑤ verdict     (PASS/FAIL 裁决)             → verdict.md');
+    console.log('\n  ✅ dry-run 完成（未实际执行）\n');
+
+    visibility.emit(EVENTS.LOOP_END, {
+      verdict: 'DRY-RUN',
+      stopReason: 'dry-run',
+    });
+    return;
+  }
+
+  // ─── 5 步串行执行 ───
+  let completedSteps = 0;
+  let stopReason = 'completed';
+  const stepErrors = [];
+
+  for (const step of STEP_ORDER) {
+    const stepIndex = STEP_ORDER.indexOf(step) + 1;
+    console.log(`\n${'═'.repeat(60)}`);
+    console.log(`  步骤 ${stepIndex}/5 — ${step}`);
+    console.log(`${'═'.repeat(60)}`);
+
+    try {
+      await spawnWorker(step, runDir, args.target);
+      completedSteps++;
+
+      // 可见性：步骤完成事件
+      visibility.emit(EVENTS.STEP_DONE, {
+        step,
+        stepIndex,
+        totalSteps: STEP_ORDER.length,
+      });
+
+      console.log(`  ✅ ${step} 完成`);
+
+      // 步骤④完成后复制报告到桌面
+      if (step === 'consolidate') {
+        copyToDesktop(runDir, args.target);
+      }
+    } catch (stepErr) {
+      console.warn(`\n  ⚠️  ${step} 失败: ${stepErr.message}`);
+      console.warn(`     继续执行后续步骤（步骤崩溃不中断）`);
+      stepErrors.push({ step, error: stepErr.message });
+
+      // 可见性：步骤失败也写事件
+      visibility.emit(EVENTS.STEP_DONE, {
+        step,
+        stepIndex,
+        totalSteps: STEP_ORDER.length,
+        error: stepErr.message,
+      });
+
+      stopReason = 'step-error';
+    }
+  }
+
+  // ─── 解析最终结果 ───
+  const results = parseStepResults(runDir);
+  const { verdict, reason } = parseVerdict(runDir);
+
+  // usage.jsonl 全量摘要
+  const usageSummary = appendUsageSummary(runDir, completedSteps);
+  console.log(
+    `\n  [总用量] tokens: ${usageSummary.total_tokens.toLocaleString()}  ` +
+    `(V 订阅制)`
+  );
+
+  // 写 LEDGER
+  console.log(`\n${'═'.repeat(60)}`);
+  console.log(`  循环结束 — 停止原因: ${stopReason}`);
+  console.log(`  完成步数: ${completedSteps}/5`);
+  console.log(`  验证结果: acceptance=${results.acceptance} regression=${results.regression} coverage=${results.coverage}`);
+  console.log(`  最终裁决: ${verdict} (${reason})`);
+  if (stepErrors.length > 0) {
+    console.log(`  步骤错误: ${stepErrors.map(e => e.step).join(', ')}`);
+  }
+  console.log(`${'═'.repeat(60)}`);
+
+  appendLedger(dateStr, runId, completedSteps, results, verdict, runDir);
+
+  // 可见性：循环结束
+  visibility.emit(EVENTS.LOOP_END, {
+    verdict,
+    stopReason,
+    completedSteps,
+    results,
+    stepErrors: stepErrors.map(e => e.step),
+  });
+
+  console.log(`\n${verdict === 'PASS' ? '✅' : '❌'} release-gate-loop 完成 — 裁决: ${verdict}\n`);
+}
+
+main().catch(err => {
+  console.error(`\n💥 致命错误: ${err.message}`);
+  console.error(err.stack);
+  if (globalVisibility) {
+    globalVisibility.emit(EVENTS.ERROR, {
+      message: err.message,
+      stack: err.stack?.split('\n').slice(0, 3).join(' | '),
+    });
+    globalVisibility.emit(EVENTS.LOOP_END, {
+      verdict: 'ERROR',
+      stopReason: 'fatal-error',
+    });
+  }
+  process.exit(1);
+});
