@@ -65,6 +65,12 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 - **人工停止**：driver 在任意轮后判定 `human-stop`（如时间窗到了）。
 - **上限**：设 `max-rounds`（默认 10），触顶强制停止并标注 `max-rounds`，遗留 P0/P1 进 `LEDGER.md` 备注。
 
+### 循环健康指标：Evidence Delta（证据增量）
+
+每轮循环必须产出**证据增量（Evidence Delta）**——新的错误码、新的后台状态或新的产物。无新证据即视为「无效空转（Token Burn）」，应立即停止空转、改变方法而非重复调用。这与「连续 2 轮无 P0/P1 即停」主停止条件互补：前者管单轮是否有效进展，后者管整体收敛。
+
+> 来源：Loop Engineering 反模式「Token Burn」修复方案（二手转述：孔放勋《得到大脑》2026-07-27，URL 待核实）
+
 停止后 driver 向 `FORGE/LEDGER.md` 追加一行（见 `LEDGER.md` 列定义）。
 
 ## createReactAgent 实现提示
