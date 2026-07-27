@@ -169,50 +169,79 @@ auto_detect_platform
 resolve_data_dir
 
 # ════════════════════════════════════════
-# Step 1.5: data/ 数据目录结构 + .sofagent/ 兼容 symlink（v1.2.1 数据目录重构）
+# Step 1.5: v1.2.1 安装路径分离——SOFAGENT_HOME 创建 + 数据迁移
 # ════════════════════════════════════════
-# 用户可见数据（审计/知识库/反思/任务日志/编排/IM 队列）统一收口到 data/；
-# .sofagent/ 只留引擎内部状态（checkpoint / .git-shadow / config.yml / watch.yml / subagents）。
-# 旧路径（.sofagent/audit 等）用 symlink 指向 data/，未升级的代码读写不中断；
-# 已存在的遗留真实目录/文件先并入 data/（不覆盖已有文件），再替换为 symlink。
-info "Step 1.5 · 创建 data/ 数据目录结构（v1.2.1 数据目录重构）..."
-DATA_ROOT="${PROJECT_DIR}/data"
+# v1.2.1：代码仓库与运行时数据物理分离
+#   安装根目录 SOFAGENT_HOME (默认 ~/.sofagent/)
+#     ├── data/       用户可见运行数据（审计/知识库/反思/任务日志/编排/IM 队列）
+#     ├── internal/   引擎内部状态（checkpoint / .git-shadow / config.yml / watch.yml）
+#     ├── bin/        CLI 入口脚本（symlink 到 PATH）
+#     ├── skill/      Skill 文件（从仓库复制，单一真相源）
+#     ├── VERSION     安装版本标记
+#     └── REPO_PATH   源码仓库路径标记（供升级时定位）
+info "Step 1.5 · 创建安装目录结构（v1.2.1 安装路径分离）..."
+
+# 安装根目录（resolve_data_dir 已解析 SOFAGENT_HOME）
+mkdir -p "$SOFAGENT_HOME"
+
+# 数据目录（用户可见数据）
+DATA_ROOT="$SOFAGENT_HOME/data"
+INTERNAL_ROOT="$SOFAGENT_HOME/internal"
+SKILL_DIR="$SOFAGENT_HOME/skill"
+
 mkdir -p "$DATA_ROOT/audit" "$DATA_ROOT/sovereignty" \
          "$DATA_ROOT/task/logs" "$DATA_ROOT/task/plans" \
          "$DATA_ROOT/knowledge" "$DATA_ROOT/orchestrator" \
          "$DATA_ROOT/forge-runs" "$DATA_ROOT/dashboard" "$DATA_ROOT/im-outbox"
 
-_migrate_to_data_symlink() {
-  # $1 = 条目名（.sofagent/ 与 data/ 下同名，如 audit / task / think.md）
-  local name="$1"
-  local legacy="${PROJECT_DIR}/.sofagent/${name}"
-  local target_rel="../data/${name}"
-  local target_abs="${DATA_ROOT}/${name}"
+# 引擎内部状态（Q4 决策：internal/，非 .sofagent/，避免双层嵌套）
+mkdir -p "$INTERNAL_ROOT/checkpoint" "$INTERNAL_ROOT/.git-shadow" "$INTERNAL_ROOT/subagents"
 
-  mkdir -p "${PROJECT_DIR}/.sofagent"
+# 写入版本标记
+echo "${VERSION}" > "$SOFAGENT_HOME/VERSION"
 
-  if [ -L "$legacy" ]; then
-    ln -sfn "$target_rel" "$legacy"          # 已是 symlink → 刷新指向
-  elif [ -e "$legacy" ]; then
-    # 遗留真实目录/文件 → 并入 data/（不覆盖已有文件）后替换为 symlink
-    if [ -d "$legacy" ]; then
-      mkdir -p "$target_abs"
-      cp -Rn "$legacy"/. "$target_abs"/ 2>/dev/null || true
-    elif [ ! -e "$target_abs" ]; then
-      cp "$legacy" "$target_abs"
+# 写入源码仓库路径标记（供升级时定位）
+echo "$SCRIPT_DIR" > "$SOFAGENT_HOME/REPO_PATH"
+
+# ── 迁移旧数据（Q2 决策：自动迁移）──
+# 仓库内 data/ → SOFAGENT_HOME/data/
+# 仓库内 .sofagent/ → SOFAGENT_HOME/internal/
+migrate_to_install_dir() {
+  local old_data="${SCRIPT_DIR}/data"
+  local new_data="$SOFAGENT_HOME/data"
+
+  if [ -d "$old_data" ] && [ "$(ls -A "$old_data" 2>/dev/null)" ]; then
+    info "检测到旧数据目录 ${old_data}，开始迁移..."
+    # 不覆盖已有文件（cp -Rn）
+    cp -Rn "$old_data"/. "$new_data"/ 2>/dev/null || true
+    # 迁移成功后清理仓库内的 data/
+    rm -rf "$old_data"
+    # 同步迁移引擎内部状态（.sofagent/ → internal/）
+    local old_internal="${SCRIPT_DIR}/.sofagent"
+    local new_internal="$SOFAGENT_HOME/internal"
+    if [ -d "$old_internal" ]; then
+      cp -Rn "$old_internal"/. "$new_internal"/ 2>/dev/null || true
+      rm -rf "$old_internal"
     fi
-    rm -rf "$legacy"
-    ln -s "$target_rel" "$legacy"
-  else
-    ln -s "$target_rel" "$legacy"            # 不存在 → 直接建 symlink
+    ok "数据已迁移到 ${SOFAGENT_HOME}"
+  fi
+
+  # 迁移旧版安装标记（v1.2.0 的 ~/.openclaw/skills/sofagent/.sofagent-data-path 指向的目录）
+  local old_marker="${HOME}/.openclaw/skills/sofagent/.sofagent-data-path"
+  if [ -f "$old_marker" ]; then
+    local old_path
+    old_path=$(tr -d '[:space:]' < "$old_marker" 2>/dev/null)
+    if [ -n "$old_path" ] && [ -d "$old_path" ]; then
+      cp -Rn "$old_path"/. "$new_data"/ 2>/dev/null || true
+      rm -f "$old_marker"
+      ok "旧版安装数据已迁移"
+    fi
   fi
 }
+migrate_to_install_dir
 
-for _entry in audit task knowledge orchestrator im-outbox think.md daemon.json daemon.log; do
-  _migrate_to_data_symlink "$_entry"
-done
-ok "  data/ 目录结构就绪，.sofagent/ 兼容 symlink 已生成（8 条映射）"
-_log "data/ structure + symlinks created under ${DATA_ROOT}"
+ok "  安装目录结构就绪：${SOFAGENT_HOME}/ (data/ + internal/ + bin/ + skill/)"
+_log "SOFAGENT_HOME=${SOFAGENT_HOME} structure created"
 
 # 初始化安装日志
 mkdir -p "$TARGET"
@@ -347,6 +376,129 @@ if [[ "${WITH_MEMORY:-0}" == "1" ]]; then
     echo "  ✅ config.yml memory_sync 已开启"
   fi
 fi
+
+# ════════════════════════════════════════
+# Step 8.5: v1.2.1 安装路径分离——CLI 入口 + Skill 统一路径 + symlink
+# ════════════════════════════════════════
+
+# ── CLI 命令入口（用户感知层）──
+# 数据藏在 ~/.sofagent/（隐藏目录），但注册 sofagent 命令到 PATH，
+# 让用户像 brew/git/node 一样，安装后终端输入 sofagent 即可感知。
+install_cli() {
+  local bin_dir="$SOFAGENT_HOME/bin"
+  mkdir -p "$bin_dir"
+
+  # 写入主入口脚本
+  cat > "$bin_dir/sofagent" << 'CLIEOF'
+#!/bin/bash
+# sofagent CLI · v1.2.1 安装路径分离新增
+# 用户感知入口——数据藏在 ~/.sofagent/，通过这个命令操作
+
+SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
+COMMAND="${1:-help}"
+shift 2>/dev/null || true
+
+case "$COMMAND" in
+  status)
+    # 快速状态：版本 + daemon 运行状态 + 今日审计概览
+    echo "sofagent $(cat "$SOFAGENT_HOME/VERSION" 2>/dev/null || echo 'unknown')"
+    if [ -f "$SOFAGENT_HOME/data/daemon.json" ]; then
+      echo "daemon: $(node -e 'const d=require(process.argv[1]);console.log(d.mode||"stopped")' "$SOFAGENT_HOME/data/daemon.json" 2>/dev/null || echo 'unknown')"
+    else
+      echo "daemon: not initialized"
+    fi
+    echo "data: $SOFAGENT_HOME/data/"
+    ;;
+  where)
+    # 安装位置
+    echo "Install:  $SOFAGENT_HOME"
+    echo "Data:     $SOFAGENT_HOME/data/"
+    echo "Skill:    $SOFAGENT_HOME/skill/"
+    echo "Internal: $SOFAGENT_HOME/internal/"
+    ;;
+  version)
+    cat "$SOFAGENT_HOME/VERSION" 2>/dev/null || echo "unknown"
+    ;;
+  dashboard)
+    # 启动 Dashboard（v1.2.2 实现，v1.2.1 先占位）
+    if [ -x "$SOFAGENT_HOME/bin/sofagent-dashboard" ]; then
+      exec "$SOFAGENT_HOME/bin/sofagent-dashboard" "$@"
+    else
+      echo "Dashboard coming in v1.2.2. Current data:"
+      ls -la "$SOFAGENT_HOME/data/" 2>/dev/null
+    fi
+    ;;
+  data)
+    # 打开数据目录（macOS 用 Finder，Linux 用 xdg-open）
+    if command -v open >/dev/null 2>&1; then
+      open "$SOFAGENT_HOME/data/"
+    elif command -v xdg-open >/dev/null 2>&1; then
+      xdg-open "$SOFAGENT_HOME/data/"
+    else
+      echo "$SOFAGENT_HOME/data/"
+    fi
+    ;;
+  help|*)
+    echo "sofagent $(cat "$SOFAGENT_HOME/VERSION" 2>/dev/null || echo 'unknown')"
+    echo ""
+    echo "Commands:"
+    echo "  sofagent status     Show version + daemon status + data location"
+    echo "  sofagent where      Show all install paths"
+    echo "  sofagent version    Show version only"
+    echo "  sofagent dashboard  Open dashboard (v1.2.2)"
+    echo "  sofagent data       Open data directory in Finder"
+    echo "  sofagent help       Show this help"
+    ;;
+esac
+CLIEOF
+  chmod +x "$bin_dir/sofagent"
+
+  # symlink 到 PATH（优先 /usr/local/bin，fallback ~/.local/bin）
+  local target="/usr/local/bin/sofagent"
+  if [ -w "/usr/local/bin" ] || sudo -n true 2>/dev/null; then
+    ln -sf "$bin_dir/sofagent" "$target" 2>/dev/null || true
+  else
+    target="$HOME/.local/bin/sofagent"
+    mkdir -p "$HOME/.local/bin"
+    ln -sf "$bin_dir/sofagent" "$target"
+    # 提示用户 ~/.local/bin 需要在 PATH 里（BSD 兼容：用 case 而非 grep -q）
+    case ":$PATH:" in
+      *":$HOME/.local/bin:"*) ;;
+      *)
+        warn "  请将 ~/.local/bin 加入 PATH："
+        warn "  echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.zshrc"
+        ;;
+    esac
+  fi
+
+  ok "  CLI 命令注册完成：sofagent → $target"
+}
+
+# ── Skill 统一路径（Q3 决策：单一真相源 + symlink）──
+# 把 Skill 文件复制到 ~/.sofagent/skill/（单一真相源），
+# 然后向各平台目录建 symlink，保留平台发现机制。
+install_skill_unified() {
+  local skill_src="${SCRIPT_DIR}/SKILL"
+  if [ -d "$skill_src" ]; then
+    # 复制 Skill 到统一路径
+    mkdir -p "$SOFAGENT_HOME/skill"
+    cp -R "$skill_src"/. "$SOFAGENT_HOME/skill/" 2>/dev/null || true
+
+    # 向平台目录 symlink（保留平台发现机制）
+    local platform_skill_dirs=(
+      "${HOME}/.openclaw/skills/sofagent"
+      "${HOME}/.workbuddy/skills/sofagent"
+    )
+    for psd in "${platform_skill_dirs[@]}"; do
+      mkdir -p "$(dirname "$psd")" 2>/dev/null || true
+      ln -sfn "$SOFAGENT_HOME/skill" "$psd" 2>/dev/null || true
+    done
+    ok "  Skill 统一路径已建立：$SOFAGENT_HOME/skill/ → 平台 symlink"
+  fi
+}
+
+install_cli
+install_skill_unified
 
 # ════════════════════════════════════════
 # FDE 专属步骤（仅默认模式，--base-only 时跳过）

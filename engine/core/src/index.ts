@@ -39,8 +39,9 @@ export {
 } from './config-loader';
 export type { AuditConfig, SofaEnvConfig } from './config-loader';
 
-// ── 数据目录路径（v1.2.1 SSOT：.sofagent/ → data/） ──
+// ── 数据目录路径（v1.2.1 安装路径分离：SOFAGENT_HOME 优先） ──
 export {
+  HOME_DIR,
   DATA_DIR,
   AUDIT_DIR,
   AUDIT_HISTORY,
@@ -57,10 +58,12 @@ export {
   DAEMON_JSON,
   DAEMON_LOG,
   FORGE_RUNS_DIR,
+  INTERNAL_DIR,
   SOFAGENT_INTERNAL,
   CHECKPOINT_DIR,
   SHADOW_GIT_DIR,
   CONFIG_FILE,
+  resolveHomeDir,
   resolveDataDir,
   resolveAuditDir,
   resolveKnowledgeDir,

@@ -75,17 +75,19 @@ auto_detect_platform() {
   else  PLATFORM="openclaw"; fi   # 默认
 }
 resolve_data_dir() {
+  # v1.2.1 安装路径分离：数据根目录 = SOFAGENT_HOME/data
+  # SOFAGENT_HOME 默认 ~/.sofagent，可被环境变量或 --project-dir 覆盖
   if [ -n "${PROJECT_DIR:-}" ]; then
     PROJECT_DIR="$(cd "$PROJECT_DIR" 2>/dev/null && pwd)" || { err "--project-dir 目录不存在或无法访问: $PROJECT_DIR"; exit 1; }
-    ok "数据目录: ${PROJECT_DIR}/.sofagent/"
+    # --project-dir 时，SOFAGENT_HOME 设为该目录（开发/定制场景）
+    SOFAGENT_HOME="${SOFAGENT_HOME:-$PROJECT_DIR}"
+    ok "安装目录: ${SOFAGENT_HOME}"
   else
-    PROJECT_DIR="$PWD"
-    warn "未指定 --project-dir，.sofagent/ 数据目录将创建在当前目录: ${PROJECT_DIR}"
-    warn "  如果这不是你的项目工作目录，请用 --project-dir 指定："
-    warn "  bash install.sh --project-dir ~/my-project"
+    SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
+    ok "安装目录: ${SOFAGENT_HOME}"
   fi
-  SOFAGENT_DATA="${SOFAGENT_DATA:-${PROJECT_DIR}/.sofagent}"
-  # v0.90 P0-3 修复：写入数据目录标记文件，供 audit/verify/orchestrate 定位
+  SOFAGENT_DATA="${SOFAGENT_DATA:-${SOFAGENT_HOME}/data}"
+  # 向后兼容：写入数据目录标记文件（config.sh 和 verify 的 fallback）
   case "$PLATFORM" in
     openclaw|workbuddy)
       _SKILL_DIR="${TARGET:-${HOME}/.${PLATFORM}/skills/sofagent}"
@@ -98,7 +100,7 @@ resolve_data_dir() {
     workbuddy)
       ok "WorkBuddy 平台——部署 Skill 文件并验证数据目录。"; TARGET="$HOME/.workbuddy"
       if [ -d "$SOFAGENT_DATA" ]; then
-        ok "  · .sofagent/ 数据目录存在"
+        ok "  · data/ 数据目录存在"
         if [ -x "${SCRIPT_DIR}/verify.sh" ]; then
           if bash "${SCRIPT_DIR}/verify.sh" --platform workbuddy --quiet 2>/dev/null; then
             ok "  · 数据目录验证通过"
@@ -106,7 +108,7 @@ resolve_data_dir() {
             warn "  · 部分数据文件缺失，下次对话自动触发 B1 重建"
           fi
         fi
-      else warn "  · .sofagent/ 不存在——下次加载 sofagent Skill 时自动创建"; fi ;;
+      else warn "  · data/ 不存在——安装时自动创建"; fi ;;
     claude) TARGET="$HOME/.claude" ;;
     codex)  TARGET="$HOME/.codex" ;;
     hermes) TARGET="$HOME/.hermes" ;;

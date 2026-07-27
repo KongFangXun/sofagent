@@ -24,6 +24,7 @@ import {
 } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import os from 'os';
 
 // 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
 import { createVisibility, EVENTS } from './visibility.mjs';
@@ -44,8 +45,10 @@ const require = createRequire(import.meta.url);
 // ─── 路径常量 ────────────────────────────────────────────────
 const LOOP_DIR    = join(REPO_ROOT, 'FORGE/SKILL/fresh-eyes-loop');
 const PROMPTS_DIR = join(LOOP_DIR, 'prompts');
-// v1.2.1：runs 输出从 FORGE/SKILL/fresh-eyes-loop/runs/ 迁移到 data/forge-runs/（用户可见数据统一收口）
-const RUNS_DIR    = join(REPO_ROOT, 'data', 'forge-runs');
+// v1.2.1 安装路径分离：runs 输出优先到 SOFAGENT_HOME/data/forge-runs/，
+// fallback 到仓库内 data/forge-runs/（开发模式兼容）
+const SOFAGENT_HOME = process.env.SOFAGENT_HOME || join(os.homedir(), '.sofagent');
+const RUNS_DIR    = join(SOFAGENT_HOME, 'data', 'forge-runs');
 const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
 const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 
