@@ -12,7 +12,7 @@
 //   node FORGE/src/release-gate-driver.mjs --worker --step <step> --run-dir <abs> --target <ver>
 //
 // 模型配置（单角色 V）：
-//   V（验证者）= GLM-5.2     baseURL https://open.bigmodel.cn/api/coding/paas/v4/ (Coding Plan 端点)  temp=1.0
+//   V（验证者）= DeepSeek V4 Flash   baseURL https://api.deepseek.com/   thinking=enabled  reasoning_effort=high
 //
 // 与 fresh-eyes-driver 的差异：
 //   - 单角色 V（无 A/B 双角色）
@@ -58,32 +58,39 @@ const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
 const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 
 // ─── 单角色模型配置（V = 验证者）────────────────────────────
-// 复用 fresh-eyes-driver 的 A（GLM-5.2）配置，toolsKey 改为 REVIEWER_TOOLS
+// V 用 DeepSeek V4 Flash：thinking + reasoning_effort=high
+// 比 GLM-5.2 工具调用更聪明（能自主想出异步轮询策略），
+// 且推理速度快、支持 thinking 模式的深度推理。
+// toolsKey 仍为 REVIEWER_TOOLS（纯只读）。
 const MODEL_CONFIGS = {
   V: {
-    baseURL:         'https://open.bigmodel.cn/api/coding/paas/v4/',
-    model:           'glm-5.2',
-    temperature:     1.0,
+    baseURL:         'https://api.deepseek.com/',
+    model:           'deepseek-v4-flash',
+    thinking:        { type: 'enabled' },
+    reasoningEffort: 'high',
     maxTokens:       16000,
-    apiKeyEnv:       'SOFAGENT_LLM_A_API_KEY',
-    specEnv:         'SOFAGENT_LLM_A',
+    apiKeyEnv:       'SOFAGENT_LLM_B_API_KEY',
+    specEnv:         'SOFAGENT_LLM_B',
     agentSkillPath:  join(AGENTS_DIR, 'reviewer/SKILL.md'),
     toolsKey:        'REVIEWER_TOOLS',
-    billing:         'subscription',
+    billing:         'pay-as-you-go',
   },
 };
 
 // ─── 模型定价（usage.jsonl 成本估算基础）─────────────────────
 // 单位：CNY per 1M tokens（百万 token 计价）
-// 与 fresh-eyes-driver 保持一致（V 用 GLM-5.2 = 订阅制）
+// V 用 DeepSeek V4 Flash（按量计费）
+// DeepSeek 官方定价：input 0.5元/M（缓存未命中）、output 8元/M
+// Flash 版为 Pro 版的轻量快速版，定价更低
+// https://api-docs.deepseek.com/quick_start/pricing
 const MODEL_PRICING = {
-  'glm-5.2': {
-    input: 8,
-    output: 28,
+  'deepseek-v4-flash': {
+    input: 0.5,
+    output: 8,
     currency: 'CNY',
-    source: 'https://open.bigmodel.cn/pricing',
-    note: '缓存命中 input 2元/M。官方标价，实际账单以 API 后台为准',
-    billing: 'subscription',
+    source: 'https://api-docs.deepseek.com/quick_start/pricing',
+    note: 'Flash 版定价（缓存未命中）。缓存命中 input 0.025元/M',
+    billing: 'pay-as-you-go',
   },
 };
 
@@ -190,7 +197,11 @@ function buildSystemPrompt(skillPath) {
 }
 
 /**
- * 为角色 V 创建 LLM 模型实例（GLM-5.2）。
+ * 为角色 V 创建 LLM 模型实例。
+ *
+ * DeepSeek V4 Flash：ChatOpenAI + reasoningEffort='high'；thinking 参数通过
+ *   modelKwargs 注入——若 @langchain/openai 版本不支持 modelKwargs，
+ *   会走 catch 分支退到原生 fetch。
  */
 async function createModel(role) {
   const cfg = MODEL_CONFIGS[role];
@@ -208,14 +219,31 @@ async function createModel(role) {
     openAIApiKey: apiKey,
   };
 
-  if (cfg.temperature !== undefined) {
-    ctorArgs.temperature = cfg.temperature;
-  }
+  // 限制输出 token（防止 thinking 模式无限消耗）
   if (cfg.maxTokens) {
     ctorArgs.maxTokens = cfg.maxTokens;
   }
 
-  return new ChatOpenAI(ctorArgs);
+  // DeepSeek 特殊参数
+  if (cfg.reasoningEffort) {
+    ctorArgs.reasoningEffort = cfg.reasoningEffort;
+  }
+  if (cfg.thinking) {
+    // modelKwargs 会原样透传到 API 请求 body
+    ctorArgs.modelKwargs = { thinking: cfg.thinking };
+  }
+
+  try {
+    return new ChatOpenAI(ctorArgs);
+  } catch (err) {
+    if (cfg.thinking) {
+      // 退化：去掉 thinking 再试（reasoning_effort 大概率被支持）
+      console.warn(`[release-gate] ChatOpenAI 不接受 thinking 参数，退化仅用 reasoningEffort: ${err.message}`);
+      delete ctorArgs.modelKwargs;
+      return new ChatOpenAI(ctorArgs);
+    }
+    throw err;
+  }
 }
 
 /**
@@ -819,7 +847,7 @@ async function main() {
   console.log(`   target    = sofagent ${args.target}`);
   console.log(`   run-dir    = ${runDir}`);
   console.log(`   dry-run    = ${args.dryRun}`);
-  console.log(`   V          = GLM-5.2 (${MODEL_CONFIGS.V.baseURL})`);
+  console.log(`   V          = ${MODEL_CONFIGS.V.model} (${MODEL_CONFIGS.V.baseURL})`);
 
   if (args.dryRun) {
     console.log(`\n  [dry-run] 将执行以下 5 步：`);

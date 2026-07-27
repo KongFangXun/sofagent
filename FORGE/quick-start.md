@@ -169,4 +169,4 @@ a-verify    → A 验证修复结果，判定本轮是否 PASS
 | A 返回 error 1113「余额不足」| 审查模型端点写错 | 检查 A 的 `baseURL` 是否与你的模型供应商文档一致（订阅制端点 vs 按量端点可能不同） |
 | sofagent-audit 命令未找到 | 底座没装 | `bash install.sh` |
 
-> 📖 详细设计见 `FORGE/FORGE.md`（旧自迭代模型，保留参考）和 `FORGE/SKILL/fresh-eyes-loop/loop.md`（当前循环协议）。
+> 📖 详细设计见 `FORGE/archive/FORGE.md`（旧自迭代模型，保留参考）和 `FORGE/SKILL/fresh-eyes-loop/loop.md`（当前循环协议）。

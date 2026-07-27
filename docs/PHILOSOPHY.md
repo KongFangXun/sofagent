@@ -340,7 +340,7 @@ FDE 入场时，不搭交互页面。做的事是：梳理 workflow 节点 → �
 
 ## 七、怎么进化——FORGE 自迭代
 
-> ⚠️ **以下为 v1.2.0 前期设计正文，保留作历史参考。** FORGE 的自迭代目标从未改变——v1.2.0 后期重构了落地方式：从硬编码串行工具包改为通过 workflow 逐步实现自迭代。当前已落地第一个 workflow **fresh-eyes-loop**（A/B 双盲 12 视角质量审查循环），未来更多 workflow 加入后逐步实现完整自迭代。如需最新信息，请以 [`FORGE/SKILL/fresh-eyes-loop/loop.md`](../FORGE/SKILL/fresh-eyes-loop/loop.md) 和 [`FORGE/FORGE.md`](../FORGE/FORGE.md) 为准。
+> ⚠️ **以下为 v1.2.0 前期设计正文，保留作历史参考。** FORGE 的自迭代目标从未改变——v1.2.0 后期重构了落地方式：从硬编码串行工具包改为通过 workflow 逐步实现自迭代。当前已落地第一个 workflow **fresh-eyes-loop**（A/B 双盲 12 视角质量审查循环），未来更多 workflow 加入后逐步实现完整自迭代。如需最新信息，请以 [`FORGE/SKILL/fresh-eyes-loop/loop.md`](../FORGE/SKILL/fresh-eyes-loop/loop.md) 和 [`FORGE/archive/FORGE.md`](../FORGE/archive/FORGE.md) 为准。
 >
 > *以下旧设计正文原样保留作为历史参考。*
 

@@ -60,7 +60,7 @@ fresh-eyes-loop 的 A/B 即基于 reviewer + engineer 构建（同底座，不�
 ```
 FORGE/
   README.md                     ← 你在这里
-  FORGE.md                       ← 早期自迭代设计（历史参考，现行以 loop.md 为准）
+  FORGE.md                       ← 早期自迭代设计（历史参考，现行以 loop.md 为准）→ 已移至 archive/FORGE.md
   quick-start.md                ← A/B 异构模型接入与环境配置
   LEDGER.md                     ← 跨 run 永久索引（git 跟踪）
   SKILL/
