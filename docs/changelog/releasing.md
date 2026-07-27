@@ -455,7 +455,7 @@ shellcheck engine/scripts/*.sh tools/*.sh install.sh   # 期望：零 error
 |:--:|------|------|
 | 22 | **🔴 运行 fresh-eyes-loop（发布前质量闸门）**：在**全新 session** 中启动 Node driver——`node FORGE/src/fresh-eyes-driver.mjs --target <本版本号> --max-rounds 10`。driver 用 LangGraph createReactAgent 编排 A（审查模型）双盲并行审查 + B（工程模型）修复 + A 验证，连续 2 轮 findings 无 P0/P1 即停（机制详见 `FORGE/SKILL/fresh-eyes-loop/SKILL.md`）。**Session 监控协议**：启动 driver 后按 SKILL.md「Session 监控协议」每 5 分钟轮询 `<runDir>/status.json`，只在 phase 变化时一句话汇报——用户从 session 的 working 转圈状态直接感知后台在跑。🔴 修复提交本地、不 push（发版步骤才统一推） | driver 跑完，`status.json` 显示 phase=completed 且无未推送提交被误 push |
 
-> **📋 一键复制 prompt（步骤 22 专用）**：把下面这段直接复制粘贴到新 session 的第一条消息（把 `vX.Y.Z` 换成本版本号）：
+> **📋 一键复制 prompt（步骤 22 专用）**：执行到这一步时，**当前 session 的 AI 直接把下面这段 prompt 发到对话里**（不要创建任何文件），用户复制后粘贴到新 session 的第一条消息（把 `vX.Y.Z` 换成本版本号）：
 >
 > ```
 > 在 sofagent 项目（`/Users/kongfangxun/Workbuddy/sofagent`）中，执行 vX.Y.Z 的 fresh-eyes-loop（发布前质量闸门）。
