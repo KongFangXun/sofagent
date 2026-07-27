@@ -46,6 +46,11 @@
 - **[Lost in the Middle](https://arxiv.org/abs/2307.03172)** — 长文档中段注意力衰减，500 字原则的理论源头
 - **[A Global Workspace in Language Models](https://www.anthropic.com/research/global-workspace)** · Anthropic — 模型输出前已形成未表达判断，为「审计必须外置」提供底层论证
 
+- **[Claude Opus 5 / 上下文工程](URL待核实)** · Claude 官方（二手转述：孔放勋《得到大脑》2026-07-27，原始观点来自 Claude 官方发布 + AI酋长 Andy）— Opus 5 将指令从 800 词删至 164 词（删 80%，**数字待核验**）、性能反升，直接宣告提示词工程时代终结。核心机制「上下文腐烂（context rot）」：指令越多每条分到的注意力越小、指令互相打架，旧护栏在强模型下变噪音。底层逻辑从「提示词工程」升级到「上下文工程」——工作变成设计信息架构（什么该给 / 何时给 / 什么不该给）。与 sofagent「大模型吞噬文字约束 → 封装进 SubAgent」判断同源（PHILOSOPHY §模型层 / §为什么不封装成 Skill），是「约束进代码层而非 prompt 层」的外部实证。
+  > 注：笔记为二手转述，800→164 / 80% / 价格减半 / 2 个月间隔等数字均标「待核验」，原始出处 URL 待核实。
+
+- **[Governed Autonomy / Loop Engineering](URL待核实)** · AI酋长 Andy（二手转述：孔放勋《得到大脑》2026-07-27）— 提出「受治理的自主性（Governed Autonomy）」是未来 3 年 Agent 竞争核心，并给出 4 级能力成熟度模型（Copilot→Operator→Bonded Agent→Accountable System）。Accountable System（全流程留证据、可解释决策、责任可追溯）与 sofagent 的 append-only A1-A19 审计 + 控制平面治理目标态同构，为我们的「受控自主性」判断提供外部命名框架。
+
 ### 编排与架构
 
 - **[Managed Agents](https://www.anthropic.com/engineering/managed-agents)** · Anthropic — 四层编排架构，验证 OpenClaw（连接+行动）与 DeepAgents（深度思考）分工
