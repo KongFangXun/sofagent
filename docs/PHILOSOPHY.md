@@ -366,7 +366,7 @@ FDE 入场时，不搭交互页面。做的事是：梳理 workflow 节点 → �
 |------|------|
 | 自研行为验证器 | OpenClaw 原生已覆盖 |
 | 图形界面/仪表盘 | LUI-first——语言就是界面（产品化后的只读 dashboard 见 §六，不是交互式 GUI）|
-| 全栈企业 Agent 平台 | 不做 Cloudtag 竞品——sofagent 是独立底线守卫层 |
+| 全栈企业 Agent 平台 | 不做 扣子（Coze，字节跳动） 竞品——sofagent 是独立底线守卫层 |
 | think.md 强制 gate | 强制会导致 Agent 用垃圾内容填模板 |
 | 记忆压缩自动化 | 每个 Agent 有自己的记忆 |
 | Connector | sofagent 是中间件 + 审计引擎，不是自动化流水线 |
@@ -546,6 +546,8 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 > 📖 来源：[OpenFDEAI/ChatDemo](https://github.com/OpenFDEAI/ChatDemo)（github.com/OpenFDEAI/ChatDemo，2026-07），OpenFDE 主仓 Open-FDE/OpenFDE
 
 ---
+
+> 对应的落地借鉴项清单见 ROADMAP.md §十（行业借鉴项）。
 
 ## 十一、Agent 生态三层模型与 sofagent 的位置
 
