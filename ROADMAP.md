@@ -321,7 +321,7 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 |---|---|---|---|---|
 | 1 | 回合制协议：FDE 控节拍，agent 不在客户说话时抢话；每回合 ≤3min、超预算占位不阻塞 | 人控节拍、Agent 不自由跑——我们已有同判断，它落成了可操作流程 | 印证+领先（执行更细）| — |
 | 2 | spec-first 硬禁令：DEMO_SPEC.md 单一事实源，transcript 永不直接驱动代码 | 对话/指令增量必须先进 workflow artifact 再驱动实现；补"触发直驱工件"的明文铁律 | 补缺 | **最高优先** |
-| 3 | decisions.jsonl 判断时刻日志：{kind, moment, why, spec_ref} 现场即时记，会后喂 FDE Loop→INDUCE→Judgment Unit | A1-A19 记行为，缺"决策理由链"；吸收该 schema 补行为问责 | 补缺 | **最高优先** |
+| 3 | decisions.jsonl 判断时刻日志：{kind, moment, why, spec_ref} 现场即时记，会后喂 FDE Loop→INDUCE→Judgment Unit | A1-A19 记行为，缺"决策理由链"；吸收该 schema 补行为问责；**架构设计已于 v1.3.0 / v1.3.1 开发日志成文（v1.3.x 决策审计专项·最高优先·排在 Graph Engine 前）** | 补缺 | **最高优先** · 已成文 |
 | 4 | 开源优先阶梯 + 预验证画廊（复用>组装>生成）+ License 标红 + 会前跑通 | 知识库/工件池升级为带合规标签、会前预验证、候选短名单隔离的"画廊"机制 | 印证+领先 | 参考 |
 | 5 | 双引擎无状态架构（claude/codex 可切，状态在文件，共享回合 prompt）| 印证 Harness 应 runtime-agnostic；借鉴 adapters/prompt.ts 协议-引擎解耦 | 印证 | 参考 |
 | 6 | 分级降级梯队：console→TUI、ASR→手敲、dev 挂→走 spec，workflow never stops | 为 7×24 常驻员工定义分级降级 SOP：模型不可用→规则兜底、工具断→占位、控制面断→本地自治 | 补缺 | **最高优先** |
@@ -336,10 +336,11 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 
 | # | 主仓设计 | 印证/借鉴 sofagent 什么 | 关系 | 落地优先级 |
 |---|---|---|---|---|
+| 1 | **决策审计 / Judgment Unit（decisions.jsonl 判断时刻日志）**：吸收 `{kind, moment, why, spec_ref}` schema 补 A1-A19「决策理由链」缺失；新增 **kind-wise back** 向后追溯（kind→why→specRef→artifactRef↔A1-A19 双向交叉引用）；受控 `emitDecision()` API + 复用 history.jsonl 同套 HMAC 哈希链；蒸馏高复用 why 成可开关 Judgment Unit（对应 INDUC） | 补缺（行为问责→意图问责）：把"扫 git diff 的行为审计"升级为"运行时记决策理由链的意图审计" | 补缺 | **最高优先** |
 | 2 | **INDUC 阶段化知识归纳**：把"经验→判断"显式成 FDE Loop 的一个阶段，产出可开关的 Judgment Unit（专家判断资产化，规则可开可关、可版本化） | 我们的"蓄水池/知识库"目前是被动沉淀，缺"显式归纳阶段 + 可开关判断资产"；吸收 INDUC 把知识归纳提升为一等公民阶段，Judgment Unit 对应我们 A1-A19 判定层的可开关化 | 补缺 | 参考 |
 | 3 | **产品化阈值 / 四类沉淀物硬护栏**：前 1-3 客户高度定制，第 4 起定制度递减，每单 Day90 前沉淀≥1 能力回产品；四类沉淀物 = ①连接器/集成 playbook ②模板/加速器/框架 ③Eval 框架 ④产品需求 | 为"组织复利纪律"立硬护栏：避免每次交付从零定制、强制沉淀复用；补我们知识库缺的"产品化阈值 + 四类资产形态"定义 | 补缺 | 参考 |
 
-> 🔴 **落地纪律**：#4 分级降级梯队（console→TUI、ASR→手敲、dev 挂→走 spec，workflow never stops）已在上方「OpenFDE/ChatDemo 参考清单」第 6 行（**最高优先**）落盘，**本轮回不重复**。以上主仓项全部是**设计启发 + 行业背书**，不是依赖引入。FDE Loop 运行时实现不可读（FDEAgent 404），结论基于主仓 README 阶段定义 + ChatDemo 数据流（`decisions.jsonl`→INDUC→Judgment Unit）跨仓对齐，未编造。
+> 🔴 **落地纪律**：#4 分级降级梯队（console→TUI、ASR→手敲、dev 挂→走 spec，workflow never stops）已在上方「OpenFDE/ChatDemo 参考清单」第 6 行（**最高优先**）落盘，**本轮回不重复**。#1 决策审计 / Judgment Unit（**最高优先**）架构设计已于 **v1.3.0 / v1.3.1 开发日志成文**（v1.3.x 决策审计专项，排在 Graph Engine 之前；蒸馏落地 v1.3.1），本轮回不重复。**以上主仓项全部是**设计启发 + 行业背书**，不是依赖引入。FDE Loop 运行时实现不可读（FDEAgent 404），结论基于主仓 README 阶段定义 + ChatDemo 数据流（`decisions.jsonl`→INDUC→Judgment Unit）跨仓对齐，未编造。
 
 ### 🔴 运行时审计演进路线（meta-harness 三问作答 · 2026-07）
 
