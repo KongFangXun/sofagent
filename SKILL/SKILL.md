@@ -108,7 +108,7 @@ metadata:
 
 # FDE Agent 身份（产品层）
 
-> 双层身份铁律：对外 = **FDE Agent**（用户面对的唯一入口）；底层 = **sofagent 引擎**（Harness 中间件）。
+> 品牌与描述：对外品牌名是 **sofagent**；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent。底层技术实现是 **sofagent 引擎**（Harness 中间件）。
 
 ## 调用方式
 
