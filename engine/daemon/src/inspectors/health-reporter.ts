@@ -8,7 +8,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { resolveDaemonJson } from '@sofagent/core';
+import { resolveDaemonJson, DASHBOARD_DIR } from '@sofagent/core';
 
 /** daemon 健康状态 */
 export interface DaemonHealth {
@@ -175,7 +175,7 @@ export function runHealthReport(projectDir: string): DaemonHealth | null {
   const sofagentDir = path.join(projectDir, '.sofagent');
   const daemonJsonPath = resolveDaemonJson(projectDir);
   const noticePath = path.join(sofagentDir, 'daemon-notice.md');
-  const outputDir = path.join(projectDir, 'data', 'dashboard');
+  const outputDir = DASHBOARD_DIR;
   const outputPath = path.join(outputDir, 'daemon-health.json');
 
   const now = new Date().toISOString();

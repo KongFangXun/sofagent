@@ -13,6 +13,7 @@
 // ============================================================
 
 import { notify } from './notify';
+import { DATA_DIR } from '@sofagent/core';
 
 export type PushTargetKind =
   | 'webhook:dingtalk'
@@ -133,7 +134,7 @@ async function pushOpenClawIM(title: string, message: string): Promise<boolean> 
   // v1.2.1：默认输出目录从 .sofagent/im-outbox/ 迁移到 data/im-outbox/
   const { writeFileSync, mkdirSync, existsSync } = await import('fs');
   const { join } = await import('path');
-  const dataDir = process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
+  const dataDir = process.env.SOFAGENT_DATA || DATA_DIR;
   const outboxDir = join(dataDir, 'im-outbox');
   try {
     if (!existsSync(outboxDir)) mkdirSync(outboxDir, { recursive: true });

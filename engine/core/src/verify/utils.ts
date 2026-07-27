@@ -8,6 +8,7 @@ import { existsSync, readFileSync, statSync, readdirSync, type Dirent } from 'fs
 import { join } from 'path';
 import { execFileSync, spawnSync } from 'child_process';
 import { homedir } from 'os';
+import { DATA_DIR } from '../data-paths';
 
 // ── 路径工具 ──
 export const HOME = homedir();
@@ -120,7 +121,7 @@ export function readFileContent(filePath: string): string {
  * 再按 ${cwd}/data → ${cwd}/.sofagent（遗留兼容）顺序解析。
  */
 export function resolveSofagentData(platformDir: string): string {
-  const cwdData = join(process.cwd(), 'data');
+  const cwdData = DATA_DIR;
   const legacyData = join(process.cwd(), '.sofagent');
 
   // 1. 尝试从已安装的 SKILL.md 定位（repoRoot/data）
