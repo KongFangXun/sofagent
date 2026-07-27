@@ -119,13 +119,18 @@ LAYER_A=$(find . -name "*.md" \
   -not -path "*/commercial/*" \
   -not -path "*/docs/DEVELOPMENT.md" \
   -not -path "*/docs/archive/*" \
+  -not -path "*/data/*" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_A=${LAYER_A:-0}
 
 # B 层：开发者参考（FORGE/ + agents/ + .github/ + hooks/HOOK.md + DEVELOPMENT.md）
+# v1.2.1: 排除 fresh-eyes runs/ 运行时产物（check/findings/result.md 是审查轮输出，
+# 已被 .gitignore 忽略，不是开发者参考文档——不计入文档预算）
+# v1.2.1: 排除 data/forge-runs/（同属审查轮运行时产物，数据重构后从 .sofagent/ 迁来）
 LAYER_B=$(find ./FORGE ./agents ./.github ./engine/hooks ./docs/DEVELOPMENT.md \
   -name "*.md" \
   -not -path "*/node_modules/*" \
+  -not -path "*/fresh-eyes-loop/runs/*" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_B=${LAYER_B:-0}
 
@@ -143,7 +148,7 @@ LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 LAYER_E=${LAYER_E:-0}
 
 # 上限定义
-LIMIT_A=4700  # v1.1.9: SECURITY.md 按主题重构（F-41）+ LIMITATIONS.md 安全补充（F-17/F-31/F-32）
+LIMIT_A=5100  # v1.2.1: 一粟新文落盘（W2/W3/W4/W5）+ custom/README 操作手册化 + data/ 排除后真实文档 4934 行，5% 余量上调
 LIMIT_B=4200  # v1.2.0: custom/ + Dashboard 定位 + USB 三场景 + ToolGate 文档 + P4 拆分表，B 层自然增长 2100→4200
 LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
 LIMIT_D=2000  # v1.1.9: D 层纳入口径修正——docs/architecture（v1.1.9 设计 876 行）+ docs/prd（193 行）从 A 层归入 D 层（工程文档与设计文档同语义），700→2000 容纳

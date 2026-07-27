@@ -39,6 +39,35 @@ export {
 } from './config-loader';
 export type { AuditConfig, SofaEnvConfig } from './config-loader';
 
+// ── 数据目录路径（v1.2.1 SSOT：.sofagent/ → data/） ──
+export {
+  DATA_DIR,
+  AUDIT_DIR,
+  AUDIT_HISTORY,
+  AUDIT_SESSION_REPORT,
+  SOVEREIGNTY_DIR,
+  TASK_DIR,
+  TASK_LOGS_DIR,
+  TASK_PLANS_DIR,
+  KNOWLEDGE_DIR,
+  THINK_MD,
+  ORCHESTRATOR_DIR,
+  DASHBOARD_DIR,
+  IM_OUTBOX_DIR,
+  DAEMON_JSON,
+  DAEMON_LOG,
+  FORGE_RUNS_DIR,
+  SOFAGENT_INTERNAL,
+  CHECKPOINT_DIR,
+  SHADOW_GIT_DIR,
+  CONFIG_FILE,
+  resolveDataDir,
+  resolveAuditDir,
+  resolveKnowledgeDir,
+  resolveDaemonLog,
+  resolveDaemonJson,
+} from './data-paths';
+
 // ── 配置模板 ──
 export { CONFIG_TEMPLATE, HOOK_TEMPLATE } from './config-template';
 

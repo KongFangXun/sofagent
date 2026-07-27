@@ -23,7 +23,7 @@ const COLD_START_MIN_SAMPLES = 10;
 
 /**
  * 从 task/logs 目录解析 token 消耗记录
- * 遍历 .sofagent/task/logs/ 下所有子目录和 .md 文件，
+ * 遍历 data/task/logs/（v1.2.1 起，原 .sofagent/task/logs/）下所有子目录和 .md 文件，
  * 提取 token 消耗数字（匹配 "token" 相关行）
  */
 function loadTaskLogs(dataDir: string): TaskLogEntry[] {
@@ -97,7 +97,7 @@ function parseLogFile(filePath: string, taskType: string): TaskLogEntry | null {
 /**
  * 计算指定任务类型的成本基线
  * @param taskType 任务类型（用于过滤日志）
- * @param dataDir .sofagent 数据目录
+ * @param dataDir 数据根目录（v1.2.1 起为 data/，原 .sofagent/）
  * @returns 基线统计（mean, stddev, sampleCount），样本不足时返回 null
  */
 export function calculateBaseline(taskType: string, dataDir: string): Baseline | null {

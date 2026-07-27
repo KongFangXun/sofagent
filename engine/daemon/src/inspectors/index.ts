@@ -11,9 +11,11 @@ import { checkKnowledgeFreshness } from './knowledge-freshness';
 import { checkKnowledgeHealth } from './knowledge-health';
 import { checkSkillStaleness } from './skill-staleness';
 import { accumulateWarnings } from './warn-accumulator';
+import { runHealthReport } from './health-reporter';
 
-export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFreshness, checkKnowledgeHealth, checkSkillStaleness, accumulateWarnings };
+export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFreshness, checkKnowledgeHealth, checkSkillStaleness, accumulateWarnings, runHealthReport };
 export type { InspectorConfig, InspectorResult } from './types';
+export type { DaemonHealth } from './health-reporter';
 
 /** 默认巡检器配置 */
 export const DEFAULT_INSPECTOR_CONFIG: Record<string, InspectorConfig> = {

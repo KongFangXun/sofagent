@@ -129,10 +129,11 @@ async function pushWebhook(
 
 async function pushOpenClawIM(title: string, message: string): Promise<boolean> {
   // OpenClaw IM channel——通过本地 socket / 配置文件桥接
-  // v1.1.5 最小实现：写入 .sofagent/im-outbox/ 由 OpenClaw 端拉取
+  // v1.1.5 最小实现：写入 im-outbox/ 由 OpenClaw 端拉取
+  // v1.2.1：默认输出目录从 .sofagent/im-outbox/ 迁移到 data/im-outbox/
   const { writeFileSync, mkdirSync, existsSync } = await import('fs');
   const { join } = await import('path');
-  const dataDir = process.env.SOFAGENT_DATA || join(process.cwd(), '.sofagent');
+  const dataDir = process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
   const outboxDir = join(dataDir, 'im-outbox');
   try {
     if (!existsSync(outboxDir)) mkdirSync(outboxDir, { recursive: true });

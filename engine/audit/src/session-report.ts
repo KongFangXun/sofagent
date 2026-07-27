@@ -2,7 +2,7 @@
 // session-report.ts · 审计 session 产物（P0：审计结果 session 可见性）
 // 新增文件（审计结果 session 可见性，v1.1.x 开发周期内落地）
 //
-// 职责：把 AuditResult + 上下文序列化为 .sofagent/audit/session-report.json
+// 职责：把 AuditResult + 上下文序列化为 data/audit/session-report.json
 // 与 session-report.md，供当前或未来任意 Agent 随时读取——这是
 // "work body 可见性" 与 "未来用户 Agent 可见性" 的落点。
 //
@@ -16,10 +16,10 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { join } from 'path';
 import type { AuditResult } from './reporter';
 import type { DiffFile } from '@sofagent/core';
-import { VERSION } from '@sofagent/core';
+import { VERSION, resolveAuditDir } from '@sofagent/core';
 import { getFixSuggestion } from './fix-suggestions';
 
-/** session 报告聚合结构（写入 .sofagent/audit/session-report.json） */
+/** session 报告聚合结构（写入 data/audit/session-report.json） */
 export interface SessionReport {
   timestamp: string;
   /** `sofagent-audit v${VERSION}` */
@@ -177,14 +177,15 @@ function renderMarkdown(report: SessionReport): string {
 }
 
 /**
- * 把报告写入 projectDir/.sofagent/audit/（session-report.json + session-report.md）
+ * 把报告写入 projectDir/data/audit/（session-report.json + session-report.md）
+ * v1.2.1：从 .sofagent/audit/ 迁移到 data/audit/
  * @returns 两个文件的绝对路径
  */
 export function writeSessionReport(
   report: SessionReport,
   projectDir: string
 ): { jsonPath: string; mdPath: string } {
-  const dir = join(projectDir, '.sofagent', 'audit');
+  const dir = resolveAuditDir(projectDir);
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   const jsonPath = join(dir, 'session-report.json');
   const mdPath = join(dir, 'session-report.md');

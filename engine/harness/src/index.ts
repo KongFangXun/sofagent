@@ -21,6 +21,41 @@ function tryRead(filePath: string): string | null {
 }
 
 /**
+ * 扫描 custom/ 用户自定义层，读取全部 *-overrides.md（v1.2.1 新增）
+ *
+ * 只认 custom/README.md 命名表约定的 *-overrides.md 文件（其余文件名忽略），
+ * 按文件名排序保证注入顺序稳定；每篇截取前 2000 字符。
+ * 目录不存在/无匹配文件 → 空数组（静默跳过，与知识库行为一致）。
+ *
+ * @param dir custom/ 目录绝对路径
+ * @param maxFiles 最多注入文件数（默认 4，防 prompt 膨胀）
+ */
+function listCustomOverrides(dir: string, maxFiles = 4): string[] {
+  const results: string[] = [];
+  try {
+    if (!fs.existsSync(dir)) return results;
+
+    const files = fs.readdirSync(dir)
+      .filter(f => f.endsWith('-overrides.md'))
+      .sort()
+      .map(f => path.join(dir, f))
+      .filter(f => {
+        try { return fs.statSync(f).isFile(); } catch { return false; }
+      });
+
+    for (let i = 0; i < Math.min(files.length, maxFiles); i++) {
+      const content = tryRead(files[i]!);
+      if (content) {
+        results.push(content.slice(0, 2000));
+      }
+    }
+  } catch {
+    // 目录不存在等异常静默跳过
+  }
+  return results;
+}
+
+/**
  * 扫描知识库目录，按 mtime 降序取前 N 个 .md 文件
  * 每篇截取前 2000 字符
  */
@@ -69,6 +104,7 @@ function listKnowledgeTopN(dir: string, n: number): string[] {
  * 1. 宪法层：SKILL.md（4 底线 + 7 铁律）
  * 2. 规范层：fde.md（企业专属规则）
  * 3. 反思层：think.md（历史踩坑）
+ * 3.5 用户层：custom/*-overrides.md（v1.2.1 新增——追加在官方规则之后，不是替换）
  * 4. 知识库：knowledge/ top-N（按 mtime 排序，每篇截取前 2000 字符）
  * 5. v1.0.8: persona.md（Agent 记忆，前 500 字符）
  *
@@ -94,6 +130,14 @@ export function buildConstrainedSystemPrompt(
   // 3. 反思层：think.md
   const thinkContent = tryRead(path.join(skillDir, 'think.md'));
   if (thinkContent) parts.push(`# 历史经验\n${thinkContent}`);
+
+  // 3.5 用户自定义层：custom/*-overrides.md（v1.2.1 新增）
+  // 加载顺序：引擎层（宪法/规范/反思）→ 用户层（custom/ 私有规则）。
+  // 后加载 = 优先级更高——custom/ 规则追加在官方规则之后，不是替换。
+  const customRules = listCustomOverrides(path.join(skillDir, 'custom'));
+  for (const rule of customRules) {
+    parts.push(`# 用户自定义规则（custom/）\n${rule}`);
+  }
 
   // 4a. knowledge/shared/ top-3（跨设备共享经验，优先注入）
   const sharedDir = path.join(skillDir, 'knowledge', 'shared');

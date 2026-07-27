@@ -96,6 +96,9 @@ sofagent install.sh v${VERSION} — 主安装器
   bash install.sh --platform <name>     指定平台：openclaw / workbuddy / claude / codex / hermes
   bash install.sh --quick               快速模式
   bash install.sh --remote              远程安装模式（git clone）
+  bash install.sh --force               升级时强制覆盖 custom/ 用户层（确认+备份）
+  bash install.sh --merge               升级时三路合并 custom/ 用户层
+  bash install.sh --yes, -y             配合 --force 跳过交互确认（CI 场景）
   bash install.sh --help, -h            显示此帮助
 
 平台: openclaw（完整）/ workbuddy / claude / codex / hermes / 自动探测
@@ -164,6 +167,52 @@ info "Step 1/8 · 确定安装平台..."
 parse_args "$@"
 auto_detect_platform
 resolve_data_dir
+
+# ════════════════════════════════════════
+# Step 1.5: data/ 数据目录结构 + .sofagent/ 兼容 symlink（v1.2.1 数据目录重构）
+# ════════════════════════════════════════
+# 用户可见数据（审计/知识库/反思/任务日志/编排/IM 队列）统一收口到 data/；
+# .sofagent/ 只留引擎内部状态（checkpoint / .git-shadow / config.yml / watch.yml / subagents）。
+# 旧路径（.sofagent/audit 等）用 symlink 指向 data/，未升级的代码读写不中断；
+# 已存在的遗留真实目录/文件先并入 data/（不覆盖已有文件），再替换为 symlink。
+info "Step 1.5 · 创建 data/ 数据目录结构（v1.2.1 数据目录重构）..."
+DATA_ROOT="${PROJECT_DIR}/data"
+mkdir -p "$DATA_ROOT/audit" "$DATA_ROOT/sovereignty" \
+         "$DATA_ROOT/task/logs" "$DATA_ROOT/task/plans" \
+         "$DATA_ROOT/knowledge" "$DATA_ROOT/orchestrator" \
+         "$DATA_ROOT/forge-runs" "$DATA_ROOT/dashboard" "$DATA_ROOT/im-outbox"
+
+_migrate_to_data_symlink() {
+  # $1 = 条目名（.sofagent/ 与 data/ 下同名，如 audit / task / think.md）
+  local name="$1"
+  local legacy="${PROJECT_DIR}/.sofagent/${name}"
+  local target_rel="../data/${name}"
+  local target_abs="${DATA_ROOT}/${name}"
+
+  mkdir -p "${PROJECT_DIR}/.sofagent"
+
+  if [ -L "$legacy" ]; then
+    ln -sfn "$target_rel" "$legacy"          # 已是 symlink → 刷新指向
+  elif [ -e "$legacy" ]; then
+    # 遗留真实目录/文件 → 并入 data/（不覆盖已有文件）后替换为 symlink
+    if [ -d "$legacy" ]; then
+      mkdir -p "$target_abs"
+      cp -Rn "$legacy"/. "$target_abs"/ 2>/dev/null || true
+    elif [ ! -e "$target_abs" ]; then
+      cp "$legacy" "$target_abs"
+    fi
+    rm -rf "$legacy"
+    ln -s "$target_rel" "$legacy"
+  else
+    ln -s "$target_rel" "$legacy"            # 不存在 → 直接建 symlink
+  fi
+}
+
+for _entry in audit task knowledge orchestrator im-outbox think.md daemon.json daemon.log; do
+  _migrate_to_data_symlink "$_entry"
+done
+ok "  data/ 目录结构就绪，.sofagent/ 兼容 symlink 已生成（8 条映射）"
+_log "data/ structure + symlinks created under ${DATA_ROOT}"
 
 # 初始化安装日志
 mkdir -p "$TARGET"

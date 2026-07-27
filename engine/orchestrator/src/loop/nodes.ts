@@ -17,7 +17,7 @@ import { execSync } from 'child_process';
 import { createInterface } from 'readline';
 import { ENGINEER_AGENT, REVIEWER_AGENT } from '../builtin-agents';
 import { spawnSubAgent } from '../launcher';
-import { ENGINEER_TOOLS, REVIEWER_TOOLS, createToolGate, wrapToolsWithGate, convertToLangGraphTools } from '../tools';
+import { ENGINEER_TOOLS, REVIEWER_TOOLS, createToolGate, wrapToolsWithGate, convertToLangGraphTools, type ExecutableTool } from '../tools';
 import { buildConstrainedSystemPrompt } from '@sofagent/harness';
 import { loadConfig } from '@sofagent/core';
 import type { AuditHistoryEntry } from '@sofagent/audit';
@@ -192,6 +192,35 @@ export interface LoopGraphDeps {
 // ────────────────────────────────
 // 默认依赖实现
 // ────────────────────────────────
+
+/**
+ * 为 LOOP 节点角色构建 gate 包装后的工具集（v1.2.1 · 公共接线入口）。
+ *
+ * 每个节点独立调用 createToolGate() 创建 gate 实例——agentName + taskDesc
+ * 决定规则上下文，节点间不共享 gate；再经 wrapToolsWithGate() 包装工具集，
+ * 保证每个 tool call 执行前过 @sofagent/rules 检查。
+ *
+ * defaultRunEngineer / defaultRunReviewer 内联同一模式（各自显式接线）；
+ * 未来新增 LOOP 节点（v1.3.0 DAG 并行 planner/fixer 等）必须走本函数，
+ * 避免 v1.2.0「gate 只 export 不接线」的半闭环复发。
+ *
+ * 接线模式（与本文件两处内联接线一致）：
+ *   const gate = createToolGate({ agentName, taskDesc });
+ *   const gatedTools = wrapToolsWithGate(tools, gate);
+ *
+ * @param tools 角色原始工具集（ENGINEER_TOOLS / REVIEWER_TOOLS 等）
+ * @param agentName 节点角色名（写入规则上下文）
+ * @param taskDesc 当前任务描述（截断 500 字符）
+ * @returns gate 包装后的新工具集（不改原数组）
+ */
+export function gateToolsForRole(
+  tools: ExecutableTool[],
+  agentName: 'engineer' | 'reviewer',
+  taskDesc: string,
+): ExecutableTool[] {
+  const gate = createToolGate({ agentName, taskDesc: taskDesc.slice(0, 500) });
+  return wrapToolsWithGate(tools, gate);
+}
 
 /**
  * 默认 engineer 实现——v1.1.4 升级为工具注入路径：

@@ -1,6 +1,9 @@
 # sofagent runtime data
 .sofagent/
 
+# v1.2.1 数据目录重构：用户可见运行时数据（根目录锚定，不影响 SKILL/harness/data/ 等源码模板目录）
+/data/
+
 # 编译产物
 dist/
 
@@ -32,3 +35,7 @@ tmp/
 
 # FORGE 运行产物（每个 loop 各自的 runs/，不进仓库）
 FORGE/SKILL/*/runs/
+
+# 运行时数据 / 临时文件（不进版本库，v1.2.1 后 daemon 运行时产生）
+engine/daemon/data/
+*.tmp.sh

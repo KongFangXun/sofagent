@@ -69,7 +69,7 @@ Agent 启动时加载顺序：
 
 后加载 = 优先级更高。你的规则**追加**到官方规则后面，不是替换。官方说"commit 要描述清楚"，你在 custom/ 写"commit 还要带工单号"——Agent 两条都遵守。
 
-> ⚠️ **当前状态**：加载链声明在 SKILL.md 中的接入工作计划在 v1.2.1 落地。当前 custom/ 目录结构已就位，Agent 运行时尚未自动加载——需要手动在 systemPrompt 中拼接 custom/ 内容，或等 v1.2.1 自动加载。
+> ✅ **当前状态（v1.2.1 已落地）**：加载链已接通——`SKILL.md` 加载链段落已声明 custom/ 用户层；Sub Agent 由 `buildConstrainedSystemPrompt()` 自动注入 `{SOFAGENT_DATA}/custom/*-overrides.md`（按文件名排序，每篇截取前 2000 字符，最多 4 篇）。你只需按命名表新增文件，无需手动拼接 prompt。
 
 ---
 
@@ -108,7 +108,7 @@ Agent 启动时加载顺序：
 | 有冲突 | 生成 `.merge-conflict` 文件，保留双方内容（`<<<<<<<` / `=======` / `>>>>>>>` 标记），**不覆盖原始文件** |
 | 合并失败 | 原始文件不动，输出 `[sofagent] 合并冲突：手动处理 custom/*.merge-conflict` |
 
-> ⚠️ **当前状态**：custom/ 安装保护逻辑（安全升级时跳过 custom/）+ `--force` 确认 + `--merge` 三路合并计划在 v1.2.1 落地。
+> ✅ **当前状态（v1.2.1 已落地）**：`file-deploy.sh` 已实现三策略——安全升级跳过 custom/、`--force` 交互确认 + 备份覆盖、`--merge` 三路合并（冲突生成 `.merge-conflict`，原始文件不动）。安装时自动创建 `skills/sofagent/custom/` 与 `{SOFAGENT_DATA}/custom/` 两处目录。
 
 ---
 

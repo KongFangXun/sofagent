@@ -8,7 +8,7 @@
 // 但概率极低（审计触发频率 < 1次/分钟）。TODO: v1.x 加 file lock 或改为单 writer 模式。
 //
 // 每次 sofagent-audit 运行后，把结果追加到
-// ${SOFAGENT_DATA}/audit/history.jsonl（JSONL 格式）。
+// ${SOFAGENT_DATA}/audit/history.jsonl（JSONL 格式；v1.2.1 起默认 data/audit/history.jsonl）。
 // 用于根因分析（audit-root-cause）和回归验证（audit-regression）。
 //
 // JSONL 格式：每行一个 JSON 对象，\n 分隔。

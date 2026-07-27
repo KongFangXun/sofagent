@@ -28,6 +28,9 @@ import { fileURLToPath } from 'url';
 // 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
 import { createVisibility, EVENTS } from './visibility.mjs';
 
+// v1.2.1 L2：SubAgent 内部可观测（工具调用序列 + 模型推理心跳）
+import { createProgressMiddleware } from './progress-middleware.mjs';
+
 // 模块级引用——让 catch 块也能写可见性事件（失败场景覆盖）
 let globalVisibility = null;
 
@@ -41,7 +44,8 @@ const require = createRequire(import.meta.url);
 // ─── 路径常量 ────────────────────────────────────────────────
 const LOOP_DIR    = join(REPO_ROOT, 'FORGE/SKILL/fresh-eyes-loop');
 const PROMPTS_DIR = join(LOOP_DIR, 'prompts');
-const RUNS_DIR    = join(LOOP_DIR, 'runs');  // 每个 loop 自带 runs/，多 loop graph 各自隔离
+// v1.2.1：runs 输出从 FORGE/SKILL/fresh-eyes-loop/runs/ 迁移到 data/forge-runs/（用户可见数据统一收口）
+const RUNS_DIR    = join(REPO_ROOT, 'data', 'forge-runs');
 const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
 const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 
@@ -253,8 +257,13 @@ async function createModel(role) {
  * （ToolNode 的 wrapToolCall 把 func 返回的字符串当数组处理）。
  *
  * 这里加转换层：ExecutableTool → DynamicStructuredTool（通过 @langchain/core/tools 的 tool()）。
+ *
+ * v1.2.1 L2：可选第二参数 progressMw（ProgressMiddleware）——传入后每个
+ * 工具的 func 经 wrapToolCall 包裹，agent 的每次工具调用都写
+ * start/end 事件到 sub-progress-<role>.jsonl。middleware 内部容错，
+ * 观测失败绝不影响工具执行（与 L1 visibility 容错策略一致）。
  */
-function loadTools(role) {
+function loadTools(role, progressMw = null) {
   const cfg = MODEL_CONFIGS[role];
   const toolsModule = require('../../engine/orchestrator/dist/tools.js');
   const rawTools = toolsModule[cfg.toolsKey];
@@ -297,6 +306,13 @@ function loadTools(role) {
 
     const wrappedTool = tool(
       async (input) => {
+        // v1.2.1 L2：工具调用埋点（start → handler → end，含 duration）
+        if (progressMw) {
+          return await progressMw.wrapToolCall(
+            { tool: rawTool.name, args: input },
+            async () => await rawTool.func(input),
+          );
+        }
         const result = rawTool.func(input);
         // func 可能返回 string 或 Promise<string>
         return await result;
@@ -482,7 +498,18 @@ async function runWorker(step, roundDir, target) {
 
   // 4. 创建 model + tools + agent
   const model = await createModel(role);
-  const tools = loadTools(role);
+
+  // v1.2.1 L2：ProgressMiddleware 注入（SubAgent 内部可观测）。
+  // 事件写 <roundDir>/sub-progress-<role>.jsonl——Dashboard 靠它看到
+  // 「A 正在读哪些文件 / B 正在改哪行 / 模型推理是否卡死」。
+  // 观测层创建失败不阻断 worker 主流程（与 L1 visibility 容错策略一致）。
+  let progressMw = null;
+  try {
+    progressMw = createProgressMiddleware({ roundDir, role });
+  } catch (mwErr) {
+    console.warn(`[worker:${step}] ProgressMiddleware 创建失败（不影响主流程）: ${mwErr.message}`);
+  }
+  const tools = loadTools(role, progressMw);
 
   // 用 @langchain/langgraph 的 createReactAgent 替代 deepagents createDeepAgent。
   //
@@ -519,9 +546,18 @@ async function runWorker(step, roundDir, target) {
   };
   const recursionLimit = STEP_RECURSION_LIMITS[step] ?? 50;
 
-  const result = await agent.invoke({
+  const invokeAgent = () => agent.invoke({
     messages: [{ role: 'user', content: userMessage }],
   }, { recursionLimit });
+
+  // v1.2.1 L2：模型推理心跳。LangGraph 1.4.7 的 createReactAgent 无
+  // middleware 参数（deepagents 的 middleware 链又硬编码 FilesystemMiddleware
+  // 不可用——见上方注释），模型调用的可达接缝是 agent 运行期整体包裹：
+  // 多轮 superstep（LLM 推理 + 工具执行交替）期间持续发 llm-chunk 心跳，
+  // Dashboard 据最后一条事件时间戳判活；工具阶段另有 start/end 事件可区分。
+  const result = progressMw
+    ? await progressMw.wrapModelCall({ step, role, model: cfg.model }, invokeAgent)
+    : await invokeAgent();
   const latencyMs = Date.now() - t0;
 
   // 5b. 记录 usage（try/catch 包住——usage 记录失败不能中断主流程）
@@ -641,7 +677,8 @@ function extractAgentText(result) {
 // ═══════════════════════════════════════════════════════════
 
 /**
- * 生成 run 目录路径：runs/YYYY/MM/DD/run-NN/
+ * 生成 run 目录路径：runs/<workflow-name>/YYYY-MM-DD/run-NN/
+ * 第一级 = workflow 名，第二级 = 拍平日期（非 YYYY/MM/DD 三级嵌套），第三级 = run 序号
  * 同日多次跑 = run-01, run-02 ...
  */
 function resolveRunDir() {
@@ -649,7 +686,9 @@ function resolveRunDir() {
   const y  = String(now.getFullYear());
   const m  = String(now.getMonth() + 1).padStart(2, '0');
   const d  = String(now.getDate()).padStart(2, '0');
-  const dateDir = join(RUNS_DIR, y, m, d);
+  const dateStr = `${y}-${m}-${d}`;            // 拍平：YYYY-MM-DD
+  const workflowDir = join(RUNS_DIR, 'fresh-eyes-loop');  // 第一级：workflow 名
+  const dateDir = join(workflowDir, dateStr);             // 第二级：日期
 
   let runNum = 1;
   if (existsSync(dateDir)) {
