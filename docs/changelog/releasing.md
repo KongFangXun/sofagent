@@ -77,10 +77,10 @@
 | 4 | P1 工程欠债 | 工程师 | 应该修 |
 | 5 | P2 改进 | 工程师 | 不阻塞发布 |
 | 6 | 审查体系更新 | 工程师 | 随修复同步更新：① 回归清单追加检查项（编号递增）② 发布后审查文档（`fresh-eyes-review.md`）补充新盲区维度/任务。**不要等到阶段五和阶段八才做——开发时记忆最新，随修随记** |
-| 7 | 版本号前置 bump | 工程师 | 开发完成后、自测前：`./tools/bump-version.sh <旧> <新>` → `./tools/check-version.sh` 全绿。npm 不动。**⚠️ 跨 session 场景**：如果开发 session 和发版 session 分离，版本号 bump 可留到发版 session 阶段三执行——开发 session 只需确保代码实现完成 + changelog 写好 |
+| 7 | 版本号前置 bump | 工程师 | 开发完成后、自测前：`./tools/bump-version.sh <旧> <新>` → `./tools/check-version.sh` 全绿。npm 不动。**⚠️ 跨 session 场景**：如果开发 session 和发版 session 分离，版本号 bump 可留到发版 session 阶段四执行——开发 session 只需确保代码实现完成 + changelog 写好 |
 
 **🔴 开发铁律（v1.0.3 教训）**：
-- **🔴 版本号前置（v1.1.3 流程优化）**：开发完成后、进入自测（阶段三）之前，先跑 `bump-version.sh <旧版本> <新版本>` 把 13 类位置全部更新到目标版本号。然后跑 `check-version.sh` 确认全绿。这样测试阶段所有版本号已统一，不会出现「全局 v1.1.2 vs SSOT v1.1.3」的漂移。npm publish 仍在阶段十一，版本号一致性 ≠ 发布。
+- **🔴 版本号前置（v1.1.3 流程优化）**：开发完成后、进入自测（阶段四）之前，先跑 `bump-version.sh <旧版本> <新版本>` 把 13 类位置全部更新到目标版本号。然后跑 `check-version.sh` 确认全绿。这样测试阶段所有版本号已统一，不会出现「全局 v1.1.2 vs SSOT v1.1.3」的漂移。npm publish 仍在阶段十一，版本号一致性 ≠ 发布。
 - 对 optional dependency（如 deepagents）的类型断言统一用 `as unknown as` 双重转换——本地编译通过不代表 CI 通过
 
 ### 🔴 开发 session 交付物清单闸门（v1.1.8 流程优化 · [详见索引](#附历史教训索引按版本倒序)）
@@ -102,33 +102,35 @@
 
 ---
 
-## 阶段三：自测
+## 阶段三：代码审核
 
-开发完成后、交审核之前，工程师先自己跑一轮。
-
-> 🔴 **v1.0.9 教训**：步骤 10（shellcheck）依赖当前版本的 CLI 命令名。如果本版本涉及 CLI 命令迁移（如旧命令改名、上帝包子命令拆到新包二进制），shellcheck **跳过本阶段**，延后到阶段八文档收尾全部完成之后补跑——那时文档引用和脚本命令名都已更新完毕，跑出来才是真实结果。build + test（步骤 8/9）不受影响，正常执行。acceptance-test 已挪到阶段6新 session 跑，不在本阶段执行。
-
-> 🔴 **v1.1.3 教训**：每版本发版后，验收测试文件自身的功能也会过时——**场景数落后于代码实现、新增功能零覆盖**。在跑验收测试之前，必须先审查并更新 `FORGE/playbook/acceptance-test.sh`，确保本版本新增的每条功能都有对应的验收场景。
-
-| # | 步骤 | 验证方式 |
-|:--:|------|------|
-| 8 | `npm run build` | exit 0 |
-| 9 | `npm test` | 全部通过 |
-| 10 | `shellcheck engine/scripts/*.sh tools/*.sh install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
-| 11 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
-| 12 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
-| 13 | **🔴 更新 `FORGE/playbook/acceptance-test.sh`**<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `FORGE/playbook/acceptance-test.sh`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `FORGE/playbook/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n FORGE/playbook/acceptance-test.sh` 确认语法<br><br>**Step C — 同步 `FORGE/playbook/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增）<br><br>**🔴 Step D — 覆盖率闭环判定**：<br>① **场景数声称 vs 实际对齐**：`DECLARED=$(head -5 FORGE/playbook/acceptance-test.sh \| grep -oE "[0-9]+ 个端到端" \| grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " FORGE/playbook/acceptance-test.sh); [ "$DECLARED" = "$ACTUAL" ]` 不一致 = P0<br>② **功能点逐条对照**：从 changelog「核心变更/交付」提取功能关键词，逐条 grep `FORGE/playbook/acceptance-test.sh`——零覆盖 = P0（回归测试无法发现该功能退化）<br>③ **失效场景清理**：`grep -rn "sofagent-audit --daemon" FORGE/playbook/acceptance-test.sh` 期望零命中 | `bash -n FORGE/playbook/acceptance-test.sh` 通过；**Step D 三项判定全 PASS** |
-
----
-
-## 阶段四：代码审核
+> **v1.2.1 流程优化**：阶段三/四调换（原三=自测、四=代码审核）。原因：自测的 D3 闸门（步骤 15 补 acceptance-test 场景）需要基于**已审核确认的功能清单**来补场景——先审核再自测，补出来的场景才靠谱。
 
 在当前 session 中，拿着 changelog（开发期活文档草稿）当核对表，逐项确认每个改动存在且正确。核心价值不是"换模型"，而是"拿 changelog 当 checklist 逐项验证代码"——代码就在磁盘上，读 diff 验证不需要换脑子。真正的独立性验证交给阶段六。最终定稿见阶段八。
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 14 | 逐项核对 changelog 每一项 | 当前 session | 逐文件读源码/diff，逐项确认改动存在且正确，标记 PASS/FAIL |
-| 15 | FAIL 项修复 | 当前 session（切回开发者角色） | build + test 全绿 |
+| 8 | 逐项核对 changelog 每一项 | 当前 session | 逐文件读源码/diff，逐项确认改动存在且正确，标记 PASS/FAIL |
+| 9 | FAIL 项修复 | 当前 session（切回开发者角色） | build + test 全绿 |
+
+---
+
+## 阶段四：自测
+
+开发完成后、交审核之前，工程师先自己跑一轮。
+
+> 🔴 **v1.0.9 教训**：步骤 12（shellcheck）依赖当前版本的 CLI 命令名。如果本版本涉及 CLI 命令迁移（如旧命令改名、上帝包子命令拆到新包二进制），shellcheck **跳过本阶段**，延后到阶段八文档收尾全部完成之后补跑——那时文档引用和脚本命令名都已更新完毕，跑出来才是真实结果。build + test（步骤 10/11）不受影响，正常执行。acceptance-test 已挪到阶段6新 session 跑，不在本阶段执行。
+
+> 🔴 **v1.1.3 教训**：每版本发版后，验收测试文件自身的功能也会过时——**场景数落后于代码实现、新增功能零覆盖**。在跑验收测试之前，必须先审查并更新 `FORGE/playbook/acceptance-test.sh`，确保本版本新增的每条功能都有对应的验收场景。
+
+| # | 步骤 | 验证方式 |
+|:--:|------|------|
+| 10 | `npm run build` | exit 0 |
+| 11 | `npm test` | 全部通过 |
+| 12 | `shellcheck engine/scripts/*.sh tools/*.sh install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
+| 13 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
+| 14 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
+| 15 | **🔴 更新 `FORGE/playbook/acceptance-test.sh`**<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `FORGE/playbook/acceptance-test.sh`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `FORGE/playbook/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n FORGE/playbook/acceptance-test.sh` 确认语法<br><br>**Step C — 同步 `FORGE/playbook/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增）<br><br>**🔴 Step D — 覆盖率闭环判定**：<br>① **场景数声称 vs 实际对齐**：`DECLARED=$(head -5 FORGE/playbook/acceptance-test.sh \| grep -oE "[0-9]+ 个端到端" \| grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " FORGE/playbook/acceptance-test.sh); [ "$DECLARED" = "$ACTUAL" ]` 不一致 = P0<br>② **功能点逐条对照**：从 changelog「核心变更/交付」提取功能关键词，逐条 grep `FORGE/playbook/acceptance-test.sh`——零覆盖 = P0（回归测试无法发现该功能退化）<br>③ **失效场景清理**：`grep -rn "sofagent-audit --daemon" FORGE/playbook/acceptance-test.sh` 期望零命中 | `bash -n FORGE/playbook/acceptance-test.sh` 通过；**Step D 三项判定全 PASS** |
 
 ---
 
@@ -140,7 +142,7 @@
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 16 | **合并更新三份审查文档（三份逻辑不同，区分对待）**：<br>**① regression-checklist.md（加法）**：汇总本版本所有修复项，抽象为回归检查维度（编号递增）写入。每发现一个问题加一条——这是精确清单，膨胀靠瘦身控制<br>**② fresh-eyes-review.md（校准，不是加法）**：按下方「fresh-eyes-review 升级优化」决策树处理本版本审查中的预料外发现。**⚠️ 不要往 fresh-eyes-review 里加精确检查项**——它是留白式的直觉审查，加检查项会让它退化成第二个 regression-checklist（v1.2.0 刚从 826 行砍到 274 行修复了这个问题）<br>**③ acceptance-test.sh（可自动化验证的发现）**：如果 fresh eyes 审查报告中的 P0/P1 问题可以通过 CLI 命令/grep/bash 自动化验证，**同步追加到 `FORGE/playbook/acceptance-test.sh`**（追加场景，编号递增）。手法与阶段三·步骤 13 Step B 相同——`scenario` 编号 + 中文注释 + 断言。**为什么需要这一步**：regression-checklist 是人工巡检用的，acceptance-test 是机器跑的——如果一个 bug 可以被自动化检出，把它只放在 regression-checklist 里等于每次发版都要人工跑一遍。让它进 acceptance-test 才能让机器替你记住。 | 当前 session | `git diff` 显示三份文档均有更新（fresh-eyes 可能无变更，见下说明）；regression 新增维度 + acceptance-test 新增场景 ≥ 本版本修复数 |
+| 16 | **合并更新三份审查文档（三份逻辑不同，区分对待）**：<br>**① regression-checklist.md（加法）**：汇总本版本所有修复项，抽象为回归检查维度（编号递增）写入。每发现一个问题加一条——这是精确清单，膨胀靠瘦身控制<br>**② fresh-eyes-review.md（校准，不是加法）**：按下方「fresh-eyes-review 升级优化」决策树处理本版本审查中的预料外发现。**⚠️ 不要往 fresh-eyes-review 里加精确检查项**——它是留白式的直觉审查，加检查项会让它退化成第二个 regression-checklist（v1.2.0 刚从 826 行砍到 274 行修复了这个问题）<br>**③ acceptance-test.sh（可自动化验证的发现）**：如果 fresh eyes 审查报告中的 P0/P1 问题可以通过 CLI 命令/grep/bash 自动化验证，**同步追加到 `FORGE/playbook/acceptance-test.sh`**（追加场景，编号递增）。手法与阶段四·步骤 15 Step B 相同——`scenario` 编号 + 中文注释 + 断言。**为什么需要这一步**：regression-checklist 是人工巡检用的，acceptance-test 是机器跑的——如果一个 bug 可以被自动化检出，把它只放在 regression-checklist 里等于每次发版都要人工跑一遍。让它进 acceptance-test 才能让机器替你记住。 | 当前 session | `git diff` 显示三份文档均有更新（fresh-eyes 可能无变更，见下说明）；regression 新增维度 + acceptance-test 新增场景 ≥ 本版本修复数 |
 | 17 | **当前 session 逐项验证**：每条新增回归维度跑一遍命令确认可执行；确认 `fresh-eyes-review.md` 新维度与回归维度互相印证、无矛盾 | 当前 session | 所有新增维度可执行 + 两份文档互相印证 |
 
 > ✅ 完成 步骤 16 → 17 后，**开发 session 的文档工作已一气呵成**——回归清单 + 发布后审查全部在当前 session 更新完。接下来只有**阶段六需要开新 session 控制 OpenClaw**，到那时才停。
@@ -151,7 +153,7 @@
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 18 | **🔴 防膨胀轻量自检（每版本）**：更新完两份审查文档 + acceptance-test.sh 后，立即跑以下自检：<br>**① 行数警戒线**：`WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md)` 超 1000 → 触发深度瘦身；`WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)` 超 1500 → 触发深度瘦身<br>**② 声称一致性**（复用阶段三步骤13 Step D①）：regression-checklist 标题声称维度数 = 实际 `#### ` 数（当前 38）；acceptance-test.sh 文件头声称场景数 = 实际 `^scenario ` 数（当前 102）；不一致 = P0<br>**③ 公共函数复用**：acceptance-test.sh 中同一段 git 脚手架 / node -e 内联 / 多行 if-else 重复 ≥3 次且可抽为函数 → 标 P2 待瘦身 | 当前 session | 两份文件行数均在警戒线内 + 两项声称一致 |
+| 18 | **🔴 防膨胀轻量自检（每版本）**：更新完两份审查文档 + acceptance-test.sh 后，立即跑以下自检：<br>**① 行数警戒线**：`WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md)` 超 1000 → 触发深度瘦身；`WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)` 超 1500 → 触发深度瘦身<br>**② 声称一致性**（复用阶段四步骤15 Step D①）：regression-checklist 标题声称维度数 = 实际 `#### ` 数（当前 38）；acceptance-test.sh 文件头声称场景数 = 实际 `^scenario ` 数（当前 102）；不一致 = P0<br>**③ 公共函数复用**：acceptance-test.sh 中同一段 git 脚手架 / node -e 内联 / 多行 if-else 重复 ≥3 次且可抽为函数 → 标 P2 待瘦身 | 当前 session | 两份文件行数均在警戒线内 + 两项声称一致 |
 
 **Tier 2 — 深度瘦身（每版本，步骤 18 之后）**
 
@@ -166,7 +168,7 @@
 
 > 🔴 **核心认知**：fresh-eyes-review 和 regression-checklist 的更新逻辑**根本不同**。regression-checklist 是精确清单（加法：每发现一个问题加一条检查项）。fresh-eyes-review 是留白式的直觉审查（校准：每发现一个问题校准视角敏感度，不是加检查项）。过去十几个版本把两者混为一谈——每发现一个 bug 就往 fresh-eyes 对应维度加一条检查项，导致它从"凭直觉发现问题"膨胀成"第二个 regression-checklist"（826 行）。v1.2.0 重写为 274 行才修复。本 Tier 守住这条底线。
 
-本版本审查（阶段四代码审核 + 阶段六 OpenClaw 检查 + 上一版阶段十二 fresh-eyes 审查报告）中如果产生了**预料外的发现**（不在 regression-checklist 已有维度覆盖范围内、审查者凭直觉/意外发现的），走以下决策树：
+本版本审查（阶段三代码审核 + 阶段六 OpenClaw 检查 + 上一版阶段十二 fresh-eyes 审查报告）中如果产生了**预料外的发现**（不在 regression-checklist 已有维度覆盖范围内、审查者凭直觉/意外发现的），走以下决策树：
 
 ```
 预料外发现
@@ -290,7 +292,7 @@ VIEWS=$(grep -c '^### ' FORGE/playbook/fresh-eyes-review.md)
 
 开发/审查/测试全部完成后，在此**正式定稿** `docs/changelog/vX.Y.md`：
 
-- 把开发期活文档草稿（阶段二~三随写的功能点 + 测试数）与**阶段四/五/六审查中涌现的全部 bug 修复**汇总归位到「开发日志标准结构」骨架
+- 把开发期活文档草稿（阶段二~四随写的功能点 + 测试数）与**阶段三/五/六审查中涌现的全部 bug 修复**汇总归位到「开发日志标准结构」骨架
 - 补上本轮 `npm test` / `acceptance-test` / `shellcheck` / `check-version` 的实际结果（不要留占位符）
 - **发布检查清单全部打 `[x]`**——定稿与打勾在此一步完成（阶段十确认关口只复核，不再打勾）
 - 守「章节顺序铁律」：新功能在前、BugFix 批次置后
@@ -434,7 +436,7 @@ ls docs/changelog/*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
 
 ### 🔴 CLI 迁移版本回归闸（v1.1.0 教训）
 
-> 如果本版本涉及 CLI 命令迁移（旧命令改名、上帝包子命令拆到新包二进制），阶段四跳过的 shellcheck（步骤 10）在**此处补跑**——文档收尾已完成，所有引用已更新，跑出来是真实结果。acceptance-test 不在此处补跑——它已挪到阶段6新 session 跑（由独立审查者执行）。
+> 如果本版本涉及 CLI 命令迁移（旧命令改名、上帝包子命令拆到新包二进制），阶段四跳过的 shellcheck（步骤 12）在**此处补跑**——文档收尾已完成，所有引用已更新，跑出来是真实结果。acceptance-test 不在此处补跑——它已挪到阶段6新 session 跑（由独立审查者执行）。
 
 ```bash
 # 补跑 shellcheck
@@ -816,8 +818,8 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 |:--:|------|:--:|:--:|------|
 | 一 | 审查（问题收敛） | 作者 | 是（阶段九 fresh-eyes-loop 发布前闸门 + 阶段十二发布后审查） | 审查报告（→ 本版本 BugFix 批次） |
 | 二 | 开发 | 工程师 | 否 | 代码 + 随修随记的回归维度 |
-| 三 | 自测 | 工程师 | 否 | build/test 全绿 + 更新验收测试文件（acceptance-test 本身只更新不跑，跑在阶段6）。涉及 CLI 迁移时 shellcheck 延后到阶段八 |
-| 四 | 代码审核 | 当前 session | 否 | 逐项 PASS 或 FAIL→修复 |
+| 三 | 代码审核 | 当前 session | 否 | 逐项 PASS 或 FAIL→修复 |
+| 四 | 自测 | 工程师 | 否 | build/test 全绿 + 更新验收测试文件（acceptance-test 本身只更新不跑，跑在阶段6）。涉及 CLI 迁移时 shellcheck 延后到阶段八 |
 | 五 | 审查体系合并更新（含瘦身检查） | 当前 session | 否 | regression-checklist（加法）+ fresh-eyes-review（校准，Tier 3 守护留白风格）+ acceptance-test.sh（可自动化验证的发现追加入场景）+ 防膨胀瘦身 |
 | **六** | **acceptance-test + regression-checklist（开新 session）** | **审核者控制 OpenClaw** | **🔴 是（全新认知；FAIL 回阶段五循环）** | **stage6 合并报告全 PASS** |
 | 七 | 审查体系最终确认 | 作者 | 否 | 两份审查文档状态一致、无遗漏（初版已在阶段五写入） |
@@ -852,7 +854,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | v1.1.4 | ClawHub 版本号从 1.0.0 自增（必须显式 `--version X.Y.Z`） | 阶段十一 |
 | v1.1.4 | Release notes 链接必须用 markdown 语法（反引号纯文本不可点击） | 阶段十一 |
 | v1.1.4 | 孤儿配置文件排查（pnpm-workspace.yaml 等不属于本项目技术栈的残留） | 阶段九 |
-| v1.1.3 | acceptance-test 场景数落后于代码实现（每版本发版后需先审查更新） | 阶段三 |
+| v1.1.3 | acceptance-test 场景数落后于代码实现（每版本发版后需先审查更新） | 阶段四 |
 | v1.1.3 | package-lock.json 禁止 sed 直接改（污染外部包版本→CI 崩溃） | 阶段八 |
 | v1.1.3 | npm 版本号永久锁死（publish 后 unpublish 无法复写） | 阶段十一 |
 | v1.1.3 | Step 3 只 echo 不判 FAIL 是虚假绿色（5/12 包滞留旧版本未发现） | 阶段十一 |
@@ -861,7 +863,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | v1.0.9 | skillhub CLI 语法与 clawhub 不同（无 `skill` 子命令） | 阶段十一 |
 | v1.0.9 | FDE ClawHub slug "fde" 冲突（必须用 `--slug sofagent-fde`） | 阶段十一 |
 | v1.0.7 | 忘了更新本机全局安装（QA 测试时跑旧版本） | 阶段十一 |
-| v1.0.4 | dist 与 src 同步验证 | 阶段三 |
+| v1.0.4 | dist 与 src 同步验证 | 阶段四 |
 | v1.0.4 | 审查文档自身也会过时（每版本审视数字/路径/维度有效性） | 阶段七 |
 | v1.0.3 | changelog 文件命名三段式（vX.Y.Z.md） | 阶段一 |
 | v1.0.3 | Release Notes 完整性检查（body 不为空 + 非 Draft） | 阶段十一 |
