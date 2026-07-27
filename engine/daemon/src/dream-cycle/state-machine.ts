@@ -18,7 +18,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
-import { getThinkPath, resolveKnowledgeDir } from '@sofagent/core';
+import { getThinkPath, resolveKnowledgeDir, resolveDataDir } from '@sofagent/core';
 
 import type {
   AuditEntry,
@@ -48,7 +48,7 @@ const STATE_FILENAME = 'state.md';
  * v1.2.1：数据根从 .sofagent/ 迁移到 data/
  */
 export function loadLedger(projectDir: string): Ledger {
-  const dataDir = join(projectDir, 'data');
+  const dataDir = resolveDataDir(projectDir);
 
   // think.md（Ledger 原始反思）
   let thinkContent = '';

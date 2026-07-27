@@ -25,7 +25,6 @@ export function checkLogs(logDir?: string): LogEntry[] {
   const searchDirs = [
     logDir,
     TASK_LOGS_DIR,
-    join(process.cwd(), '..', 'data', 'task', 'logs'),
   ];
 
   // 内部结构：记录每条 base entry 及其对应的文件名（用于选择 reader）

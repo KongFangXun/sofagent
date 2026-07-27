@@ -19,6 +19,7 @@ import { checkEnv } from './env-check';
 import { VERSION } from './shared/constants';
 import { load as yamlLoad, YAMLException } from 'js-yaml';
 import { checkHistoryChainDetailed, validateHmacKey } from './audit-history';
+import { DATA_DIR } from './data-paths';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
 function warn(msg: string) { console.log(`  ⚠️  ${msg}`); }
@@ -108,7 +109,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   //   - .git-shadow/（v1.0.8 文件系统审计的 isomorphic-git 隐藏仓库）
   //   - ontology/（本体缓存，v1.1.0+）
   console.log('\n── 数据目录结构 ──');
-  const dataDir = join(projectDir, 'data');
+  const dataDir = DATA_DIR;
   // [根目录, 该根下期望的子目录]
   const expectedRoots: Array<[string, string[]]> = [
     [dataDir, ['audit', 'task/logs', 'knowledge', 'orchestrator']],
