@@ -174,7 +174,8 @@ resolve_data_dir
 # v1.2.1：代码仓库与运行时数据物理分离
 #   安装根目录 SOFAGENT_HOME (默认 ~/.sofagent/)
 #     ├── data/       用户可见运行数据（审计/知识库/反思/任务日志/编排/IM 队列）
-#     ├── internal/   引擎内部状态（checkpoint / .git-shadow / config.yml / watch.yml）
+#     ├── internal/   引擎内部状态（checkpoint / .git-shadow / watch.yml）
+#     ├── .sofagent/  项目级配置目录（config.yml 在 ${cwd}/.sofagent/config.yml）
 #     ├── bin/        CLI 入口脚本（symlink 到 PATH）
 #     ├── skill/      Skill 文件（从仓库复制，单一真相源）
 #     ├── VERSION     安装版本标记

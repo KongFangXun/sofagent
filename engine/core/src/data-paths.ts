@@ -78,6 +78,9 @@ export const INTERNAL_DIR = path.join(SOFAGENT_HOME, 'internal');
 export const SOFAGENT_INTERNAL = INTERNAL_DIR;
 export const CHECKPOINT_DIR = path.join(INTERNAL_DIR, 'checkpoint');
 export const SHADOW_GIT_DIR = path.join(INTERNAL_DIR, '.git-shadow');
+// CONFIG_FILE 保留为常量（基于 process.cwd()），向后兼容已有调用方。
+// 但需要 cwd 参数化的场景应使用 getConfigFile(cwd) 函数——避免硬编码 cwd 导致
+// 测试隔离失败（loadConfig(tmpDir) 需要读 tmpDir 下的 config.yml）。
 export const CONFIG_FILE = path.join(process.cwd(), '.sofagent', 'config.yml');
 
 // ═══════════════════════════════════════════════════════════
@@ -99,6 +102,15 @@ export const CONFIG_FILE = path.join(process.cwd(), '.sofagent', 'config.yml');
 /** 解析安装根目录（参数化版本，测试隔离用） */
 export function resolveHomeDir(overrideHome?: string): string {
   return overrideHome ?? SOFAGENT_HOME;
+}
+
+/**
+ * 解析项目级 config.yml 路径（参数化版本，测试隔离用）
+ * SSOT for config path——config-loader.ts / doctor.ts 均通过此函数获取路径。
+ * @param cwd 项目根目录（默认 process.cwd()）
+ */
+export function getConfigFile(cwd?: string): string {
+  return path.join(cwd || process.cwd(), '.sofagent', 'config.yml');
 }
 
 /** 解析用户可见数据根目录（测试可传 fake home 隔离） */

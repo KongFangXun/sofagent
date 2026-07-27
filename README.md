@@ -151,7 +151,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 ```bash
 # install.sh 全局安装的是 @sofagent/audit（其余引擎通过 monorepo 本地引用）
 npm uninstall -g @sofagent/audit 2>/dev/null || true
-# 如果手动装过其他发布包，一并清理（12 个 npm 发布包）
+# 如果手动装过其他发布包，一并清理（13 个 npm 发布包）
 npm uninstall -g @sofagent/core @sofagent/orchestrator @sofagent/daemon @sofagent/mcp @sofagent/harness @sofagent/rules @sofagent/eval @sofagent/ab-test @sofagent/ontology @sofagent/skillopt @sofagent/think 2>/dev/null || true
 rm -f .git/hooks/commit-msg .git/hooks/post-commit
 ```
@@ -201,7 +201,7 @@ flowchart LR
 |:------|:--------|:--:|
 | 🧭 约束底座 | 开工前规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
 | ⚙️ 编排引擎 | 多 Agent 协作 + 任务拆解 | 🔶 部分 |
-| 🔍 审计引擎 | 21 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计引擎零 token**——不调用 LLM（0 token），不消耗任何 LLM 额度 | ✅ 稳定 |
+| 🔍 审计引擎 | 21 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计引擎零 token**（纯 git-diff 规则零 token，4 条混合规则需 Agent 日志）——不调用 LLM（0 token），不消耗任何 LLM 额度 | ✅ 稳定 |
 | 🔄 回溯引擎 | 每次审计后自动 git snapshot，违规一键回滚 | ✅ 稳定 |
 | 🧬 进化引擎 | FDE 周度巡检审计趋势 + 反思日志 | ⚠️ 实验性 |
 

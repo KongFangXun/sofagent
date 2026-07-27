@@ -19,7 +19,7 @@ import { checkEnv } from './env-check';
 import { VERSION } from './shared/constants';
 import { load as yamlLoad, YAMLException } from 'js-yaml';
 import { checkHistoryChainDetailed, validateHmacKey } from './audit-history';
-import { DATA_DIR, CONFIG_FILE } from './data-paths';
+import { DATA_DIR, getConfigFile } from './data-paths';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
 function warn(msg: string) { console.log(`  ⚠️  ${msg}`); }
@@ -66,7 +66,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   // 2. 配置检查（v1.1.3: 从「存在」升级为「存在且合法」）
   console.log('\n── 配置检查 ──');
   const sofagentDir = join(projectDir, '.sofagent');
-  const configPath = CONFIG_FILE;
+  const configPath = getConfigFile(projectDir);
   let configOk = false;
   if (existsSync(configPath)) {
     try {
