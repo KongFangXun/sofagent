@@ -16,11 +16,11 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.0-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.1-16B8F3" alt="Version" /></a>
   <a href="#装上就能用"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>当前版本：v1.2.0</strong> · 2026-07-26 · 物理结构大重构</p>
+<p align="center"><strong>当前版本：v1.2.1</strong> · 2026-07-27 · 数据目录重构 + custom/ 闭环 + ToolGate 接入 + SubAgent 可见性 L2</p>
 
 <p align="center">
   <a href="#这是什么">这是什么</a> · <a href="#sofagent-能帮你做什么">能帮你做什么</a> · <a href="#三种部署方式覆盖所有场景">部署方式</a> · <a href="#装上就能用">安装</a> · <a href="#延伸阅读">文档</a>

@@ -18,7 +18,7 @@ import { composeWithDeepAgents, compose, type ComposeVariant } from './composer'
 import { runDAG } from './dag-runner';
 import { DATA_DIR, ORCHESTRATOR_DIR } from '@sofagent/core';
 
-const VERSION = '1.2.0';
+const VERSION = '1.2.1';
 
 export interface Metric { runCount: number; auditViolations: number; avgSteps: number; firstPassRate: number; }
 interface Args { current: string; candidate: string; output: string; }

@@ -1,17 +1,17 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.2.0 · 2026-07-26（UTC）· 物理结构大重构（/sofagent/→/engine/ + SKILL 收敛 + 发版工具链拆散 + install.sh 提根 + rules 独立包）· 规划：v1.2.x（编排隔离底座：并行 SubAgent git worktree 隔离）→ v1.3.1（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）→ v1.5.0（meta-harness 多 harness 编排）
+> v1.2.1 · 2026-07-27（UTC）· 数据目录重构（.sofagent/ → data/）+ ToolGate 运行时接入 + SubAgent 可见性 L2 + custom/ 闭环 · 规划：v1.2.2（数据主权 + Dashboard）→ v1.2.3（编排隔离 + 波次拓扑可视化）→ v1.3.1（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
-## 现在在哪：v1.2.0（已发版 · 2026-07-26）
+## 现在在哪：v1.2.1（已发版 · 2026-07-27）
 
-> **物理结构大重构已完成（v1.2.0）**：`/sofagent/` → `/engine/` 目录重命名 + Skill 收敛到 `/SKILL/`（harness/ + agents/ + custom/ 三层结构）+ install.sh 提升根目录 + engine/rules/ 独立规则引擎包。发版工具链已拆散——发版 SOP 迁 `docs/changelog/releasing.md`、版本号脚本迁 `tools/bump-version.sh`、审查规范迁 `FORGE/playbook/`，releaser Skill 已移除，质量循环改为基于 `FORGE/SKILL/<loop>/` 定义 + LangGraph createReactAgent 驱动。v1.2.x 方向：编排隔离底座（并行 SubAgent git worktree 隔离）+ Dashboard 原型 + Skill 分层升级策略实现。
+> **数据目录重构 + custom/ 闭环 + ToolGate 接入 + SubAgent 可见性 L2（v1.2.1）**：`.sofagent/` 运行时数据统一迁移到 `data/` 可见目录——用户能直接打开、Dashboard 能直接消费、备份只需拷贝一个目录。ToolGate 运行时接入（wrapToolsWithGate + nodes.ts 双节点调用），engineer/reviewer 工具调用前过 RulesEngine 检查。SubAgent 可见性 L2（ProgressMiddleware：worker 工具调用序列 + LLM 心跳 → sub-progress jsonl）。custom/ README 重写（规则 vs 代码边界 + 加载链声明 + 安装保护逻辑待实施→移至 v1.2.2）。数据层清理（IDENTITY.md + eval.md 删除 + 模板标注 + daemon-health.json）。
 >
-> 📖 [v1.2.0 开发日志](./docs/changelog/v1.2/v1.2.0.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [v1.2.1 开发日志](./docs/changelog/v1.2/v1.2.1.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
-> 🔴 **企业采购阻塞项 · Webhook 推送上提至 v1.2.1**：v1.1.6 已接通 webhook **PASS/WARN/FAIL 三态推送**（本地 agent 自测可用），但推送到企业协同平台（飞书/钉钉/企微）的**完整 Webhook 能力原规划在 v1.2.2，现上提至 v1.2.1**（见 SECURITY.md「审计结果推送」）。对需通过企业安全采购评审的客户，Webhook 推送是**采购阻塞项**——v1.1.6 本地三态已通，v1.2.1 补企业平台完整推送，避免卡住企业订单。
+> ✅ **企业采购阻塞项 · Webhook 推送已于 v1.2.1 交付**：v1.1.6 接通 webhook **PASS/WARN/FAIL 三态推送**（本地 agent 自测），v1.2.1 补齐企业协同平台（飞书/钉钉/企微）完整 Webhook 推送能力（见 SECURITY.md「审计结果推送」）。采购阻塞项已解除。
 
 ---
 
@@ -21,6 +21,7 @@
 
 | 版本 | 核心交付 |
 |------|------|
+| **v1.2.1** | 数据目录重构（.sofagent/ → data/）+ Webhook 推送 + SubAgent 可见性 L2 + custom/ 闭环 |
 | **v1.2.0** | 物理结构大重构（/sofagent/→/engine/ + SKILL 收敛 + 发版工具链拆散 + install.sh 提根 + rules 独立包） |
 | **v1.1.9** | 产品叙事收敛（FDE Agent）+ USB 完整运行时 + daemon A/B 自动调度器 + 控制图状态抽取 + v1.1.8 BugFix 42 项 |
 | **v1.1.8** | 安全层加密配对 + 联邦查询 + Prompt 注入防护补齐 + 编排引擎串行版（DAG 并行规划在 v1.3.1） |
@@ -64,6 +65,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
 | **v1.1.9** | ✅ 开发完成 | **产品叙事收敛 + BugFix + USB + A/B + 控制图**：① 叙事收敛——对外从"Harness 中间件 + FDE 工具包"转为"FDE Agent（由 sofagent 引擎驱动）"；Harness 叙事降级为开发者文档里的实现说明；模板市场 已物理迁出至 商业仓库/模板市场/。② v1.1.8 发布后 42 条 BugFix（6 P0 + 15 P1 + 21 P2）。③ USB 完整运行时（Node 便携版 + 启动脚本 + HMAC 签名 + knowledge/ AES-256 磁盘加密 + 零残留）。④ daemon A/B 自动调度器（探索-利用循环，ab-scheduler 四阶段状态机 + ab-history jsonl + cron `ab-schedule` 分支）。⑤ 控制图状态抽取（checkpoint → ControlGraphState，version:'v1' schema 供 v1.2.x Dashboard 消费）。测试 863→909（11 包全绿，QA 第 1 轮 906 + BUG-1 修复回归 2 + POC-6 碰撞消除 1）；版本 bump 留 releasing SOP | [📖](./docs/changelog/v1.1/v1.1.9.md) |
+| **v1.2.1** | ✅ 已发版 | **数据目录重构 + Webhook 推送 + SubAgent 可见性 L2 + custom/ 闭环**：① 数据目录重构——`.sofagent/` 运行时数据统一迁移到 `data/` 可见目录（用户能打开、Dashboard 能消费、备份只需拷一个目录）。② ToolGate 运行时接入（wrapToolsWithGate + nodes.ts 双节点调用）。③ SubAgent 可见性 L2（ProgressMiddleware：worker 工具调用序列 + LLM 心跳 → sub-progress jsonl）。④ custom/ README 重写（规则 vs 代码边界）。⑤ 数据层清理（IDENTITY.md + eval.md 删除 + 模板标注 + daemon-health.json）。测试 984 tests（12 包全绿，audit 428） | [📖](./docs/changelog/v1.2/v1.2.1.md) |
 | **v1.2.0** | ✅ 已发版 | **物理结构大重构（/sofagent/→/engine/ + SKILL 收敛 + 发版工具链拆散 + install.sh 提根 + rules 独立包）🎉**：① **结构重构**——`/sofagent/` 内层目录 → `/engine/`（底座引擎改名）；Skill 从 4 处散落收敛到根目录 `/SKILL/`（fde/audit/engineer/reviewer/releaser + sofagent 约束底座）；`install.sh` 提升到根目录；模板市场 物理移出 MIT scope 到商业产品目录；engine/rules/ 独立规则引擎包。② 端到端全功能验证（FORGE + Dream Cycle + 联邦查询 + 加密）+ gbrain 行业对标 + USB key 产品故事写入主文档 + 兜底修复。v1.2.x 完整多设备协同的起点 | [📖](./docs/changelog/v1.2/v1.2.0.md) |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同——**L2 团队协作协议**：共享态/意图广播/触发反应/冲突消解/反馈放大五大机制，从单人约束到团队协作；**L3 组织能力市场**：Skill/Agent/流程在企业内发布→发现→调用→评价，高频高价值自然胜出。+ Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界。**🔮 探索**：路由器式配网（边缘设备 WiFi 热点 + 手机端配置网页，仅用于初始配置，配置完成后回归纯 LUI）+ **协议中立**（审计层只走 MCP 等开放协议和 git diff/JSONL/Markdown 开放格式，不为任何单一平台写专属集成——不绑定平台，平台不绑定审计） + **编排隔离底座（git worktree 轻量形态）+ 波次拓扑可视化（控制图视角，随 dashboard 交付，详见子里程碑）** | — |
 
@@ -73,7 +75,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 主题 | 核心交付 |
 |------|------|------|
-| **v1.2.1** | **数据目录重构 + 收口验证 + 🔴 Webhook + SubAgent 可见性 L2** | **数据目录重构**：`.sofagent/` 669 个运行时数据文件统一迁移到 `data/` 可见目录——用户能直接打开、Dashboard 直接消费、备份只需拷贝一个目录（v1.2.2 Dashboard 前置基础设施）· 🔴 **Webhook 推送完整能力（飞书/钉钉/企微）— 采购阻塞项，从 v1.2.2 上提** · **SubAgent 可见性 L2**（ProgressMiddleware：worker 内部工具调用序列 + LLM 心跳 → sub-progress jsonl，Dashboard 实时面板数据前置）· custom/ 加载链 + 安装保护闭环 · 数据层清理（IDENTITY.md + eval.md 删除 + 模板标注 + daemon-health.json）（详见 [开发日志](./docs/changelog/v1.2/v1.2.1.md)）|
+| **v1.2.1** | **数据目录重构 + ✅ Webhook + SubAgent 可见性 L2（已发版）** | **数据目录重构**：`.sofagent/` 669 个运行时数据文件统一迁移到 `data/` 可见目录——用户能直接打开、Dashboard 直接消费、备份只需拷贝一个目录（v1.2.2 Dashboard 前置基础设施）· ✅ **Webhook 推送完整能力（飞书/钉钉/企微）— 采购阻塞项已解除** · **SubAgent 可见性 L2**（ProgressMiddleware：worker 内部工具调用序列 + LLM 心跳 → sub-progress jsonl，Dashboard 实时面板数据前置）· custom/ README 重写（加载链声明 + 安装保护逻辑移至 v1.2.2）· 数据层清理（IDENTITY.md + eval.md 删除 + 模板标注 + daemon-health.json）（详见 [开发日志](./docs/changelog/v1.2/v1.2.1.md)）|
 | **v1.2.2** | **数据主权 + 路由 + Dashboard（数据主权 + SubAgent 实时面板）** | ① 数据主权审计追踪（4 维审计日志 + 年/月目录 + 每日/周/月报告 + 四路分发闭环）② 混合模型路由层（ModelRouter 敏感度×任务类型路由 + Ollama 接入）③ FDE Dashboard 第一版（数据主权视图 + **SubAgent 实时面板 L3**：消费 v1.2.1 L2 数据，双 agent 状态卡 + 工具调用流 + 成本曲线 + 心跳检测）④ Skill 分层升级三策略 install.sh 实现（详见 [开发日志](./docs/changelog/v1.2/v1.2.2.md)）|
 | **v1.2.3** | **Dashboard 产品化 + 编排隔离** | ① Dashboard 波次拓扑可视化（控制图渲染 + 节点/边/波次分层实时状态）② 编排隔离底座（git worktree 四子里程碑：隔离原语→审计合并卡关→冲突消解→filesValue 边界）③ Dashboard 用户可读性（面向非开发者的语言化呈现）（详见 [开发日志](./docs/changelog/v1.2/v1.2.3.md)）|
 | **v1.2.4** | **知识进化** | ① 分层巡检 L1/L2/L3（@daily/@weekly/@monthly 三级 + 读写回路对标）② skillopt 自动触发（失败模式 3 次自动优化）③ 失败清单驱动优化（负面样本为主要燃料）④ conflict-check CLI + 联邦蒸馏 ⑤ Skill 升级策略（若 v1.2.2 未完成）（详见 [开发日志](./docs/changelog/v1.2/v1.2.4.md)）|

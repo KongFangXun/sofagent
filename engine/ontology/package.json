@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/ontology",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "sofagent 领域本体定义 — 场景类型 / 约束类型 / 审计规则注册表",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,7 +21,9 @@
   ],
   "license": "MIT",
   "author": "KongFangXun",
-  "dependencies": { "js-yaml": "^5.2.0" },
+  "dependencies": {
+    "js-yaml": "^5.2.0"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
