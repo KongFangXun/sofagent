@@ -56,6 +56,13 @@
 - **[The Path to Recursively Self-Improving Harnesses](https://lilianweng.github.io/posts/2026-07-04-harness-rsl/)** · 翁荔（Lilian Weng）— 六层 Harness 优化框架
 - **[The Anatomy of an Agent Harness](https://x.com/i/article/2040732084843782144)** · Akshay Pachaar — Harness 即 LLM 的操作系统，12 个核心组件
 - **[Three Key Loops](https://www.deeplearning.ai/the-batch/three-key-loops-for-building-great-software)** · Andrew Ng — 分钟→小时→天-周三层嵌套循环；开发者留在循环的理由是上下文优势而非品味
+- **[DeerFlow](https://github.com/bytedance/deer-flow)** · 字节跳动 — 用 "super agent **harness**" 命名其运行时框架，印证了 Harness 作为 Agent 工程化品类的行业站住
+- **[Omnigent](https://github.com/omnigent-ai/omnigent)** · Databricks 系团队（omnigent-ai 组织，Apache-2.0，alpha，7091 star/31天）— 开源 **meta-harness**（坐在 Claude Code / Codex / Pi 等 harness 之上的一层）：把策略强制在基础设施层（状态化、上下文感知、动作前拦截），而非 prompt。与 sofagent「文字约束被吞噬 → 封装进代码层 + 防投喂」判断同源。它做运行时（河），sofagent 做提交时（堤坝），互补。
+- **[LiteLLM](https://github.com/BerriAI/litellm)** · BerriAI（MIT，100+ LLM，240M+ 拉取）— 开源 LLM gateway：成本追踪 / 预算 / 路由 / 护栏。未来「控制平面」成本与路由层可站在这上面，不必自研网关。
+- **[bubblewrap](https://github.com/containers/bubblewrap)** · containers 项目（GPL-2.0，Linux）+ macOS seatbelt — Omnigent 同款 OS 级沙箱原语。未来 SubAgent 沙箱执行环境（v1.4.0「工具调用中介 + 虚拟 key 边界」）可直接复用，省得自研沙箱底座。
+- **[LangChain middleware](https://docs.langchain.com/oss/javascript/langchain/middleware/custom)** · LangChain 1.0+ — create_agent / create_react_agent 的 middleware 系统：node-style hooks（beforeAgent/beforeModel/afterModel/afterAgent）+ wrap-style hooks（**wrapToolCall 绕每次工具调用** / wrapModelCall）。**wrapToolCall 是运行时审计的精确接入点**——咱们已用 createReactAgent，只需包一层 middleware 把 engine/rules 的 tool-gate 规则升级为运行时拦截 + 审计日志。
+- **[EnkryptAI Secure MCP Gateway](https://mintlify.wiki/enkryptai/secure-mcp-gateway)** · EnkryptAI — LangChain/LangGraph 的 pre_model_hook / post_model_hook 安全护栏，支持 **audit_only 模式（只记录不阻断）**。现成的运行时审计/护栏库，可作 v1.4.x 运行时审计层参考或集成。
+- **[Agent Client Protocol (ACP)](https://github.com/Agent-Client-Protocol/spec)** · LSP 式开放协议（Omnigent 在用）— meta-harness 的开放接入标准。跟踪方向：标准化赢面大于厂商锁定，未来接入层可对齐 ACP 而非自造协议。；其中间件链（InputSanitization→TokenBudget→SafetyFinishReason 等 26 步有序流水线）、Skills 渐进式加载 + SkillScan 确定性安全扫描、Session Goals（会话完成条件 + 非思考模型评估）、ToolOutputBudget（工具输出预算）等设计启发了 v1.2.x-v1.3.x 编排引擎与产品化增强方向。它做运行时（River 比喻里的"河"），sofagent 做堤坝——不冲突，互补。
 
 ### 认知与反馈
 

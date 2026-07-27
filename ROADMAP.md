@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.2.0 · 2026-07-26（UTC）· 物理结构大重构（/sofagent/→/engine/ + SKILL 收敛 + 发版工具链拆散 + install.sh 提根 + rules 独立包）· 规划：v1.2.x（编排隔离底座：并行 SubAgent git worktree 隔离）→ v1.3.0（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）
+> v1.2.0 · 2026-07-26（UTC）· 物理结构大重构（/sofagent/→/engine/ + SKILL 收敛 + 发版工具链拆散 + install.sh 提根 + rules 独立包）· 规划：v1.2.x（编排隔离底座：并行 SubAgent git worktree 隔离）→ v1.3.0（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）→ v1.5.0（meta-harness 多 harness 编排）
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
@@ -73,7 +73,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 主题 | 核心交付 |
 |------|------|------|
-| **v1.2.1** | **收口验证 + 🔴 Webhook + SubAgent 可见性 L2** | 🔴 **Webhook 推送完整能力（飞书/钉钉/企微）— 采购阻塞项，从 v1.2.2 上提** · **SubAgent 可见性 L2**（ProgressMiddleware：worker 内部工具调用序列 + LLM 心跳 → sub-progress jsonl，Dashboard 实时面板数据前置）· ~~① P2 端到端 mock 验证~~（✅ 已在 v1.2.0 完成）~~② gbrain / LLM Wiki 对标~~（✅ 已在 v1.2.0 完成）③ P3 T03-T05（WorkBuddy hook 注入 rules 引擎）④ P4 P0（knowledge-health 合并统一巡检）⑤ custom/ 加载链 + 安装保护闭环（详见 [开发日志](./docs/changelog/v1.2/v1.2.1.md)）|
+| **v1.2.1** | **数据目录重构 + 收口验证 + 🔴 Webhook + SubAgent 可见性 L2** | **数据目录重构**：`.sofagent/` 669 个运行时数据文件统一迁移到 `data/` 可见目录——用户能直接打开、Dashboard 直接消费、备份只需拷贝一个目录（v1.2.2 Dashboard 前置基础设施）· 🔴 **Webhook 推送完整能力（飞书/钉钉/企微）— 采购阻塞项，从 v1.2.2 上提** · **SubAgent 可见性 L2**（ProgressMiddleware：worker 内部工具调用序列 + LLM 心跳 → sub-progress jsonl，Dashboard 实时面板数据前置）· custom/ 加载链 + 安装保护闭环 · 数据层清理（IDENTITY.md + eval.md 删除 + 模板标注 + daemon-health.json）（详见 [开发日志](./docs/changelog/v1.2/v1.2.1.md)）|
 | **v1.2.2** | **数据主权 + 路由 + Dashboard（数据主权 + SubAgent 实时面板）** | ① 数据主权审计追踪（4 维审计日志 + 年/月目录 + 每日/周/月报告 + 四路分发闭环）② 混合模型路由层（ModelRouter 敏感度×任务类型路由 + Ollama 接入）③ FDE Dashboard 第一版（数据主权视图 + **SubAgent 实时面板 L3**：消费 v1.2.1 L2 数据，双 agent 状态卡 + 工具调用流 + 成本曲线 + 心跳检测）④ Skill 分层升级三策略 install.sh 实现（详见 [开发日志](./docs/changelog/v1.2/v1.2.2.md)）|
 | **v1.2.3** | **Dashboard 产品化 + 编排隔离** | ① Dashboard 波次拓扑可视化（控制图渲染 + 节点/边/波次分层实时状态）② 编排隔离底座（git worktree 四子里程碑：隔离原语→审计合并卡关→冲突消解→filesValue 边界）③ Dashboard 用户可读性（面向非开发者的语言化呈现）（详见 [开发日志](./docs/changelog/v1.2/v1.2.3.md)）|
 | **v1.2.4** | **知识进化** | ① 分层巡检 L1/L2/L3（@daily/@weekly/@monthly 三级 + 读写回路对标）② skillopt 自动触发（失败模式 3 次自动优化）③ 失败清单驱动优化（负面样本为主要燃料）④ conflict-check CLI + 联邦蒸馏 ⑤ Skill 升级策略（若 v1.2.2 未完成）（详见 [开发日志](./docs/changelog/v1.2/v1.2.4.md)）|
@@ -83,7 +83,18 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.2.8** | **记忆分层 + 定时任务（DeerFlow 启发）** | ① **记忆事实级分层**（per-user memory.json + per-fact Markdown + `__default__` 桶）— Dream Cycle 缺事实级粒度 ② **Scheduled Tasks MVP**（cron+once / 暂停/恢复/触发/历史/删除）— daemon cron.ts 从占位升级为一级定时任务（LIMITATIONS §七「定时触发做不到」的解法）③ **Workspace 变更摘要**（每次运行后记录创建/修改/删除文件清单，非完整 diff）— Dashboard 数据前置 ④ **ToolOutputBudget 中间件化**（把 sf_read 500 行截断从单点提升为分层中间件，参考 DeerFlow ToolOutputBudget）（详见 [开发日志](./docs/changelog/v1.2/v1.2.8.md)）|
 | **v1.2.9** | **🔒 弹性预留** | 紧急修复 / 探索项按需取用 |
 | **v1.3.0** | 📋 规划中 | **Ontology 认知底座 + 国标对齐 + 并行编排**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + E1-E4（共 21 条）+ 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **编排引擎并行调度（Graph Engineering 视角：控制图多循环 DAG 波次并行）**：基于 v1.1.8 的编排引擎调度原型（已从 DeepAgents 迁移至 LangGraph createReactAgent），新增 DAG 依赖解析（Kahn 波次拓扑）+ 并行扇出/扇入（LangGraph `Send` API）+ 循环依赖检测 + 失败传播策略 + 超时熔断；每波次经 audit 节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供 | — |
+| **v1.3.1** | 📋 规划中 | **运行时审计最小闭环（LangGraph middleware 启发）**：把 engine/rules 的 3 条 tool-gate 规则从「编排层静态 gate」升级为「运行时动态拦截 + 审计日志」——在 createReactAgent 外面包一层 wrapToolCall middleware，拦截每个工具调用、记录审计日志、危险操作前要求人工批准。复用 FORGE fresh-eyes-loop 已跑的 createReactAgent，只加 middleware 层，可行性高 | [📖](./docs/changelog/v1.3/v1.3.1.md) |
 | **v1.4.0** | 📋 规划中 | **SubAgent 完整沙箱执行环境 + 生产级编排**：将 orchestrator 内置为完整的沙箱运行时——虚拟文件系统隔离（FilesystemBackend + virtualMode）、网络出站白名单、**工具调用中介（前置 allow/deny，非仅审计追踪）**、**虚拟 key 凭证边界注入（真实凭证 host 边界注入，SubAgent 只拿临时虚拟 key）**、AsyncSubAgent（远程 Agent Protocol 服务端）+ 真·实时 A/B 双跑（候选方案并行执行实时对比，替代当前日志统计法）。**并行 SubAgent 文件隔离**：git worktree 轻量形态已于 v1.2.x 落地，v1.4.0 升级为完整沙箱隔离 + 多 SubAgent 文件竞争检测。审计引擎从「事后」扩展到「运行时」（**范围限定 SubAgent，主 Agent 仍事后审计**） | — |
+
+#### v1.3.x 里程碑拆分
+
+> 运行时审计最小闭环（v1.3.1）是 v1.3.x 第一刀：不替换 harness，只在 createReactAgent 上加 middleware 层。完整运行时审计（策略强制 + 沙箱 + 状态化拦截）仍留 v1.4.0；meta-harness 多 harness 编排已前移到 v1.5.0（承接 v1.4.0 沙箱底座）。
+
+| 版本 | 主题 | 核心交付 |
+|------|------|------|
+| **v1.3.0** | **Ontology 认知底座 + 国标对齐 + 并行编排** | 见上方主表：本体认知底座 + GB/T 48000.3-2026 国标对齐 + 控制图多循环 DAG 波次并行 |
+| **v1.3.1** | **运行时审计最小闭环（LangGraph middleware）** | ① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent（详见 [开发日志](./docs/changelog/v1.3/v1.3.1.md)）|
+| **v1.3.2-v1.3.9** | 🔒 弹性预留 | 紧急修复 / 探索项按需取用（智能 E2E 测试 Agent、规则文件独立只读焊死门、Agent 执行层实时治理等 v1.3+ 探索项可在此落位）|
 
 ### v1.2.x Graph Engine 进化路线
 
@@ -259,6 +270,55 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 
 > 🔴 **落地纪律**：DeerFlow 是 Python 运行时框架，代码级集成不可行。以上全部是**设计启发**（抄思路 + 拿背书），不是依赖引入。差异化铁律：DeerFlow 做运行时，sofagent 做审计——用 DeerFlow 的团队，仍然需要一个跨平台、本地留证、不改运行时的审计层。
 
+### 🔮 Omnigent 参考清单（2026-07 · meta-harness 印证 + 迭代参考）
+
+> 📐 来源：[Omnigent](https://github.com/omnigent-ai/omnigent) · Databricks 系团队（Apache-2.0，alpha，31 天 7091 star）— 开源 **meta-harness**（坐在 Claude Code / Codex / Pi 等 harness 之上的一层）。与 sofagent「Harness 中间件」品类判断同源（详见 [PHILOSOPHY §十 · Omnigent 印证](./docs/PHILOSOPHY.md#databricks-omnigentmeta-harness-把策略强制在基础设施层2026-07-行业印证)）。它做运行时（河），sofagent 做提交时（堤坝）——定位互补。以下为设计启发清单，分配到版本：
+
+**已实现 → 印证 sofagent 判断（不抄代码，拿背书）**
+
+| # | Omnigent 设计 | 印证 sofagent 什么 |
+|---|---|---|
+| 1 | 策略在 meta-harness **基础设施层**强制（非 prompt）| 印证「约束必须永远在线 + 防投喂」铁律——同一结论的工程化版本 |
+| 2 | 装包后拦截 git push 需人批（状态化、动作前）| 与 commit gate（A1 不碰敏感）+ git hook **同源**，只是运行时版 |
+| 3 | egress proxy 注入密钥，Agent 不见明文 | 与 A2 不泄密钥同源；未来「安全定制层」可采此模式 |
+| 4 | OS 沙箱按平台（bwrap / seatbelt）| 对应「安全定制层 / SubAgent 沙箱」，标准开源可复用 |
+| 5 | YAML agent 跨 harness 一行切换 | 印证「约束底座 harness 无关」设计 |
+
+**未实现 / 路线图 → 有开源可借力（方便未来迭代）**
+
+| # | 方向 | 可直接借力的开源 | 落点 |
+|---|---|---|---|
+| 6 | 成本追踪 / 预算 / 路由 / 护栏（控制平面）| **[LiteLLM](https://github.com/BerriAI/litellm)**（MIT，100+ LLM）| 控制平面 v1.4.x |
+| 7 | OS 沙箱（省得自研）| **[bubblewrap](https://github.com/containers/bubblewrap)** + macOS Seatbelt（Omnigent 同款）| SubAgent 沙箱 v1.4.0 |
+| 8 | agent 量化评估（LLM-as-Judge）| **[MLflow](https://github.com/mlflow/mlflow)** / promptfoo / ragas | FORGE 评估框架 v2.x |
+| 9 | **运行时审计精确接入点** | **[LangChain middleware](https://docs.langchain.com/oss/javascript/langchain/middleware/custom)**（wrapToolCall / wrapModelCall）— 咱们已用 createReactAgent，包一层即运行时审计 | v1.3.x 最小闭环 |
+| 10 | 现成运行时护栏库 | **[EnkryptAI Secure MCP Gateway](https://mintlify.wiki/enkryptai/secure-mcp-gateway)**（audit_only 模式）| v1.4.x 参考/集成 |
+| 11 | meta-harness 开放接入标准 | **[ACP](https://github.com/Agent-Client-Protocol/spec)**（LSP 式，Omnigent 在用）| 观察（不押注单一厂商）|
+| 12 | 轻量多 agent 编排验证 | **Conductor**（比 Omnigent 轻量）| 观察 |
+| 13 | 云端 runtime 与算力分离 | **Cloudflare Agent Runtime / Vercel** | 观察 |
+
+> 🔴 **落地纪律**：Omnigent 是 Python + 需 server + 沙箱（alpha）。以上全部是**设计启发 + 开源借力**（抄思路 + 拿背书 + 复用现成库），不是依赖引入。差异化铁律：Omnigent 做运行时，sofagent 做提交时——用 Omnigent 的团队，仍然需要一个跨平台、本地留证、不改运行时的审计层。
+
+### 🔴 运行时审计演进路线（meta-harness 三问作答 · 2026-07）
+
+> 用户三问：① harness 层能否升级 meta-harness？② 何时能做运行时审计？③ 用 LangGraph create_react_agent 时是否就能做到运行时审计？
+
+**问题①：能否升级 meta-harness？** 能，但分两阶段——
+- 当前 harness 层 = SKILL.md 约束底座（注入层）+ 提交时 git diff 21 条规则。与 Omnigent 的本质差异：咱们管「提交时」，meta-harness 管「运行时」。
+- 阶段一（运行时审计）：把「提交时审计」延伸为「运行时拦截 + 审计日志」——不替换 harness，而是在 createReactAgent 外面包一层 middleware。
+- 阶段二（meta-harness）：多 harness 编排 + 跨会话协作 + 统一策略治理（参考 Omnigent 的 server/agent/session 三档策略）。这是 **v1.5.0** 的事——承接 v1.4.0 沙箱底座（单 SubAgent 沙箱 → 多 harness 统一编排更连贯），不必拖到 v2.x。
+
+**问题②：何时能做运行时审计？**
+- 最小运行时审计（工具调用前/后钩子 + 审计日志，复用 engine/rules 的 3 条 tool-gate 规则）：**v1.3.x** 即可（FORGE fresh-eyes-loop 已用 createReactAgent，加 wrapToolCall 钩子）。
+- 完整运行时审计（策略强制 + 沙箱 + 状态化拦截，范围限定 SubAgent）：**v1.4.0**（已有规划：「审计引擎从事后扩展到运行时，工具调用中介前置 allow/deny，虚拟 key 边界注入」）。
+- meta-harness（多 harness 编排）：**v1.5.0**（承接 v1.4.0 沙箱底座，单 SubAgent 沙箱 → 多 harness 统一编排）。
+
+**问题③：用 create_react_agent 时能否做到运行时审计？** —— **能，但 create_react_agent 本身不做审计，它只提供接入点**：
+- 老版 create_react_agent 有「pre_model_hook」/「post_model_hook」（只能拦 model 前后，粗粒度）。
+- LangGraph 已用 createReactAgent（TS，@langchain/langgraph），支持「interruptBefore」/「interruptAfter」+ pre/post model hook，可做粗粒度运行时拦截。
+- 升级到 LangChain 1.0 的「create_agent」可拿完整 **middleware 系统**：「wrapToolCall」（绕每次工具调用）是运行时审计的**精确接入点**——拦截每个工具调用、记录审计日志、危险操作前要求人工批准。
+- **最小闭环方案**：在 createReactAgent 外面包一层 wrapToolCall middleware，把 engine/rules 的 3 条 tool-gate 规则从「编排层静态 gate」升级为「运行时动态拦截 + 审计日志」。可行性：高（FORGE 已跑 createReactAgent，只需加 middleware 层）。这正是 DeerFlow 中间件链 + Omnigent 策略层的同款思路。
+
 ### 🔮 a16z AI 管理七法则 印证（2026-07 · 迭代参考）
 
 > 📐 来源：a16z（2026-07-15，Hebbia 创始人 George Sivulka）[《You Just Hired a Million Bad Employees》](https://www.a16z.news/)（原文 URL 待核实）——「人比软件便宜」，解法 = 管理。七法则逐条印证 sofagent 已做对什么、缺什么。
@@ -309,6 +369,15 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 | **Subagent 内置专精小模型（v3.x-v4.x+ 远景 · "自带净水设备的水龙头"）** | 四阶段：① v1.2.x 架构预留（Subagent 定义加 `inference` 字段支持调 Ollama）→ ② v3.x 工具链（`sofagent-model distill`，用 workflow 运行日志微调专属小模型）→ ③ v4.x 本地推理（业务 workflow 默认跑本地精调模型；代码/强推理等高价值智能任务直连云端最强 LLM，本地小模型只覆盖业务 workflow 场景）→ ④ v4.x+ 离线节点（USB key = 完整 AI 节点，不联网、不走大厂、零投喂——数据主权的终极形态）。详见 River 比喻概念体系（本地 Desktop 概念稿 `sofagent-river-比喻概念体系-2026-07-21.md`，未入仓）§3.2。为什么不是 v2.x 做工具链：微调是数据工程，需要足够多的真实 workflow 日志才有训练燃料；v2.x 还在铺多设备协同和 Dashboard，数据积累不够 · 🔴 术语纠正：这里不是「从 72B 大模型剪枝/蒸馏」——剪枝/蒸馏/量化是大厂造小基座的上游技术（Qwen2.5-0.5B 已是蒸馏+剪枝+量化后的开源产物，直接拿）。sofagent 做产业链下游最后一环：下载已开源小基座 → 用企业 workflow 数据 **QLoRA 微调**（4-bit 量化基座 + 低秩适配器；不动基座参数）→ 教它这一个 workflow。CLI 名 `distill` 是品牌叫法，实际动作是 QLoRA 精调 · 🔴 **分层模型策略定稿（2026-07-25 孔老师拍板）**：不做"一个模型跑所有 workflow"，也不做"每个 workflow 一个专职小模型"——做 **Harness 分层路由**（三层模型 + 数据主权驱动）。核心洞察：云端大模型把自然语言 Prompt 翻译成标准化任务指令，摘出本地模型能做的部分交给本地执行，数据不出内网。0.5B 的甜区 = 约束完善后的管道执行（模板填充/格式转换/字段提取），不需要理解自然语言；7B 负责多步 workflow 执行（读写 Excel + 调工具）；32B/云端负责复杂规划推理。核心驱动力 = 数据主权：企业数据进 API key 大模型 = 一定被拿去训练，沙盒也拦不住（已有客户硬件代码出现在 AI 输出中的真实案例）。分层让敏感数据只在本地处理，通用知识才走云端 · 32B 量化后 ~32G 显存单台 RTX 5090 可推理；9B 微调一台 5090 够用；0.5B Mac Mini 可跑 · 🔴 **v3.x 优先级论证（2026-07-25 确认）**：阿里/钉钉会议验证 Skill 廉价化危机——豆包/Hermes 已能自动生成 Skill，以 Prompt 形式出现的产品形态将被模型吞噬。Skill 只是入口（初级交付，数千元），企业专属小模型才是护城河（高阶交付，数十万元）。v3.x 从"远景"应提升为"战略必争" · 工具链 TypeScript CLI（`sofagent-model`）封装 Python 训练引擎 + node-llama-cpp 推理，项目工程面保持 NodeJS
 
 ---
+
+| **运行时审计接入点（v1.3.x · LangGraph middleware 启发）** | LangChain 1.0+「create_agent」/「create_react_agent」的 middleware 系统：**wrapToolCall**（绕每次工具调用）是运行时审计精确接入点；node-style hooks（beforeAgent/beforeModel/afterModel/afterAgent）做粗粒度拦截。咱们已用 createReactAgent，包一层 middleware 即可把 engine/rules 的 tool-gate 升级为运行时拦截 + 审计日志 |
+| **EnkryptAI Secure MCP Gateway（v1.4.x · 现成护栏库）** | LangChain/LangGraph 的 pre_model_hook / post_model_hook 安全护栏，支持 **audit_only 模式（只记录不阻断）**。可作为 v1.4.x 运行时审计层的参考或集成，省得自研护栏 |
+| **LiteLLM 控制平面（v1.4.x · 开源借力）** | BerriAI 开源 LLM gateway（MIT，100+ LLM，240M+ 拉取）：成本追踪 / 预算 / 路由 / 护栏。未来「控制平面」成本与路由层站在这上面，不必自研网关 |
+| **bubblewrap / seatbelt 沙箱（v1.4.0 · 开源借力）** | Omnigent 同款 OS 级沙箱原语（Linux bwrap+seccomp / macOS seatbelt）。SubAgent 沙箱执行环境的「工具调用中介 + 虚拟 key 边界」可直接复用，省得自研沙箱底座 |
+| **ACP 开放协议（观察 · 不押注）** | Agent Client Protocol（LSP 式，Omnigent 在用）— meta-harness 开放接入标准。标准化赢面大于厂商锁定，未来接入层可对齐 ACP 而非自造协议 |
+| **Conductor 轻量多 agent 编排（观察）** | 比 Omnigent 轻量的多 agent 编排验证方案，先于完整 meta-harness 验证「多 agent 并行」价值 |
+| **Cloudflare Agent Runtime / Vercel（观察）** | 云端 runtime 与算力分离的多 provider 格局，未来 SubAgent 云端执行可参考 |
+| **MLflow agent 评估（v2.x · 开源借力）** | Databricks 开源（Apache-2.0），50+ agent 评估指标 + LLM-as-Judge。FORGE fresh-eyes-loop 缺量化「Agent 行为评审标准」，可进 v2.x 评估框架参考 |
 
 ## 分层模型架构（v3.x 技术骨架 2026-07-25 定稿）
 

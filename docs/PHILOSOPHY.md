@@ -493,6 +493,19 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 > 📖 来源：DeerFlow 2.0 README（github.com/bytedance/deer-flow），2026-02-28 登顶 GitHub Trending #1
 
+### Databricks Omnigent：meta-harness 把策略强制在基础设施层（2026-07 行业印证）
+
+[Omnigent](https://github.com/omnigent-ai/omnigent)（Databricks 系团队开源，Apache-2.0，alpha，31 天 7091 star）自称 **meta-harness**——坐在 Claude Code / Codex / Pi 等 harness 之上的一层。它把我们的「Harness 中间件」判断又往前推了一步，给了两个可引用的硬证据：
+
+1. **策略在基础设施层强制，不在 prompt**：原文——*stateful, contextual policies ... enforced at the meta-harness layer, not via prompts*。它的权限策略能「在 Agent 刚装了未审查的 npm 包后，拦截下一次 git push 要求人工批准」——因为 prompt 指令无法知道 Agent 刚装了包，而基础设施层可以追踪动态状态、在动作发生**前**拦截。这与 sofagent「文字约束每次注入=投喂 → 必然被吞噬 → 生存位=封装进 SubAgent（代码层）+ 防投喂机制」**是同一个结论，只是人家的工程化版本**。
+2. **密钥不进 Agent 进程**：OS 级沙箱（Omnibox：Linux bwrap+seccomp / macOS seatbelt）锁文件系统，egress proxy 在 approved 出站请求时才注入 GitHub token / API key，Agent 进程永远看不到明文凭证。这是「架构级强制」，不是「别泄露凭证」的指令。
+
+**与 sofagent 的边界（互补，不冲突）**：Omnigent 管**运行时**（坐在 harness 之上，拦截工具调用）；sofagent 管**提交时**（git diff 21 条规则 + 运行时 SKILL.md 约束）。它的策略越重，越反衬「跨平台、本地留证、零依赖、提交时审计」是咱们的地盘。其路线图（GEPA 自动优化 / MemEx 持久记忆 / RLM 强化学习 / Server MCP 跨会话）尚未实现，但方向值得在 v2.x 评估框架参考。
+
+**给我们的演进启示（落盘 ROADMAP）**：① 运行时审计可借 LangGraph middleware 的 wrapToolCall 接入点（咱们已用 createReactAgent）；② 密钥边界可借 bubblewrap/seatbelt + egress proxy 模式；③ 控制平面成本/路由层可借 LiteLLM。详见 [ROADMAP · Omnigent 参考清单](../ROADMAP.md#omnigent-参考清单2026-07--meta-harness-印证--迭代参考)。
+
+> 📖 来源：Databricks blog《Introducing Omnigent》(2026-06) + 技术解析（techtimes / chatforest / aixq.cc），GitHub omnigent-ai/omnigent
+
 ---
 
 ## 十一、Agent 生态三层模型与 sofagent 的位置
