@@ -15,7 +15,7 @@ import { defaultRules, rules } from './index';
  * 基线规则——安全底线，不可通过 config.yml 关闭。
  * 即使 config.rules.a1 = false，A1 仍然生效。
  */
-const BASELINE_RULE_NUMBERS = new Set([1, 2, 9]); // A1 敏感文件, A2 密钥泄漏, A9 注入防御
+const BASELINE_RULE_NUMBERS = new Set([1, 2, 9, 10, 11]); // A1 敏感文件, A2 密钥泄漏, A9 注入防御, A10 恶意来源依赖, A11 资源滥用
 
 export interface AuditResult {
   rules: RuleCheck[];

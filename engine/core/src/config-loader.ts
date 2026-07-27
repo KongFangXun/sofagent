@@ -24,7 +24,7 @@ import { load as yamlLoad, YAMLException } from 'js-yaml';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { atomicWriteSync } from './shared/atomic-write';
 import { getHmacKey, stableStringify } from './audit-history';
-import { CONFIG_FILE } from './data-paths';
+import { getConfigFile } from './data-paths';
 
 /**
  * 审计配置——由 .sofagent/config.yml 加载
@@ -138,7 +138,7 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
 
   try {
     // 1. 尝试 ${cwd}/.sofagent/config.yml
-    const projectConfigPath = CONFIG_FILE;
+    const projectConfigPath = getConfigFile(baseDir);
     const projectConfig = tryLoadYaml(projectConfigPath);
     if (projectConfig) {
       const merged = mergeWithDefaults(projectConfig);

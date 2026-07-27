@@ -7,15 +7,8 @@
 
 ## 正式版（v1.0.0+）
 
-- **v1.3.1** — Ontology 认知底座 + 国标对齐 + 并行编排（本体可运行推理底座 + GB/T 48000.3-2026 + 控制图多循环 DAG 波次并行）· *规划中* · [开发日志](./docs/changelog/v1.3/v1.3.1.md)
-- **v1.3.0** — 运行时审计最小闭环（LangGraph middleware：createReactAgent 外包 wrapToolCall，3 条 tool-gate 升级为运行时拦截 + 审计日志）· *规划中* · [开发日志](./docs/changelog/v1.3/v1.3.0.md)
-- **v1.2.8** — 记忆分层 + 定时任务（记忆事实级 + Scheduled Tasks MVP · DeerFlow 启发）· *规划中* · [开发日志](./docs/changelog/v1.2/v1.2.8.md)
-- **v1.2.7** — 编排引擎增强（Session Goals + /compact + Skill 渐进式加载 · DeerFlow 启发）· *规划中* · [开发日志](./docs/changelog/v1.2/v1.2.7.md)
-- **v1.2.6** — 🔒 弹性预留 + 产品化快速补强（support-bundle/doctor 增强/Deployment Sizing）· *规划中* · [开发日志](./docs/changelog/v1.2/v1.2.6.md)
-- **v1.2.5** — 多设备协同 L2/L3（L2 团队协作协议 + L3 组织能力市场 + Agent 独立身份码 + ATTRIBUTION）· *规划中* · [开发日志](./docs/changelog/v1.2/v1.2.5.md)
-- **v1.2.4** — 知识进化（分层巡检 L1/L2/L3 + skillopt 自动触发 + 失败清单 + 联邦蒸馏 + Dashboard 历史趋势）· *规划中* · [开发日志](./docs/changelog/v1.2/v1.2.4.md)
-- **v1.2.3** — Dashboard 产品化 + 编排隔离（波次拓扑可视化 + git worktree 隔离底座）· *规划中* · [开发日志](./docs/changelog/v1.2/v1.2.3.md)
-- **v1.2.2** — 数据主权审计 + 混合模型路由 + FDE Dashboard（4 维审计追踪 + ModelRouter + 终端三栏面板）· *规划中* · [开发日志](./docs/changelog/v1.2/v1.2.2.md)
+> 未来版本规划见 [ROADMAP.md](./ROADMAP.md)
+
 - **v1.2.1** — 数据目录重构 + Webhook 推送 + SubAgent 可见性 L2 + custom/ 闭环（.sofagent/ → data/ + 飞书/钉钉/企微推送 + ProgressMiddleware + 数据层清理）· 2026-07-27 · [开发日志](./docs/changelog/v1.2/v1.2.1.md)
 - **v1.2.0** — 物理结构大重构（/sofagent/→/engine/ + SKILL 收敛 + 发版工具链归 FORGE + install.sh 提根 + rules 独立包）· 2026-07-26 · [开发日志](./docs/changelog/v1.2/v1.2.0.md)
 - **v1.1.9** — 产品叙事收敛（FDE Agent）+ USB 完整运行时 + daemon A/B 自动调度器 + 控制图状态抽取 + v1.1.8 BugFix 42 项 · 2026-07-22 · [开发日志](./docs/changelog/v1.1/v1.1.9.md)
