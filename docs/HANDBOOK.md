@@ -93,7 +93,7 @@
 | ⚙️ 引擎③ | **编排引擎**（orchestrator） | 拆任务 + Sub Agent 并行 + A/B 调度 | CLI / MCP compose tool |
 | 🧬 引擎④ | **进化引擎**（eval + ab-test + skillopt + think + ontology；由 daemon 定时驱动） | 知识沉淀 + 反思 + A/B 自优化，越用越好 | daemon cron / 手动触发 |
 
-> 一底座（约束）＋ 四引擎（审计 / 回溯 / 编排 / 进化）＝ 全生命周期**可审计、可回滚、可进化**。完整设计见 [ARCHITECTURE · 一底座·四引擎](./ARCHITECTURE.md#二一底座·四引擎设计)。
+> 一底座（约束）＋ 四引擎（审计 / 回溯 / 编排 / 进化）＝ 全生命周期**可审计、可回滚、可进化**。完整设计见 [ARCHITECTURE · 一底座·四引擎](./ARCHITECTURE.md#二一底座四引擎设计)。
 
 ---
 
@@ -142,7 +142,7 @@ cd sofagent && bash install.sh
 | `sofagent-audit: Node.js 未找到` | Node.js 未安装或版本过低 | 安装 Node.js ≥18：`node --version` 确认 |
 | commit 时没有审计输出 | commit-msg hook 未安装 | `sofagent-audit --init` 或 `sofagent-audit --install-hook` |
 | 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
-| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计引擎可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](../LIMITATIONS.md#windows-支持是实验性的) |
+| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计引擎可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](../LIMITATIONS.md#🪟-windows-支持是实验性的) |
 | hook 装了但静默跳过 | Node.js 或 sofagent-audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
 | `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（默认 13 条（A1–A11 + A18/A19）全启用，扩展 8 条（A14–A17 + E1–E4）需开启，全量 21 条） |
 
@@ -298,7 +298,7 @@ sofagent-audit --history              # 查看审计快照
 sofagent-audit --revert <sha>         # 回滚到某次审计前
 ```
 
-Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#回溯能力本质git-snapshot--revert-包装)。
+Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#🔄-回溯能力本质git-snapshot-revert-包装)。
 
 ### CI 集成
 
@@ -373,7 +373,7 @@ jobs:
 
 ### 部署：装上 sofagent
 
-没有 sofagent，梳理的 workflow 就是一份 PPT。引擎装到设备上，AI 节点才有纪律和审计。完整引擎对照表与部署步骤见 [FDE/FDE.md §装上 sofagent](../FDE/FDE.md#装上-sofagent--整个部署的核心)。
+没有 sofagent，梳理的 workflow 就是一份 PPT。引擎装到设备上，AI 节点才有纪律和审计。完整引擎对照表与部署步骤见 [FDE/FDE.md §装上 sofagent](../FDE/FDE.md#装上-sofagent整个部署的核心)。
 
 **节点类型选择**：自动运行节点（需 OpenClaw 全栈）vs 个人增强节点（WorkBuddy / Codex，无需 OpenClaw）。完整对照表见 [ARCHITECTURE 双节点架构](./ARCHITECTURE.md#双节点架构)。
 
