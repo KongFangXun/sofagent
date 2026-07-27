@@ -48,7 +48,7 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 ```
 
 **步骤 3：逐维度审查**
-## 审查维度（51 项 · 编号 1–51）
+## 审查维度（55 项 · 编号 1–55）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -990,6 +990,83 @@ grep -q "byteLen < 16\|16.*字节\|>=.*16" engine/core/src/audit-history.ts && e
 ```
 
 > **HMAC 写读一致性教训**（v1.2.0 P0-3）：改了签名算法的一侧**必须同时改另一侧**，否则写入的记录永久「不可复验」。
+
+---
+
+#### 52. exit code 精确测量——禁止管道取 $?（v1.2.1 新增）
+
+> v1.2.1 教训：`cmd | tail; echo $?` 取到的是 tail 的退出码（0），不是脚本的退出码（可能非 0），掩盖失败。
+
+```bash
+# 错误写法（取 tail 的 exit code）：
+# pre-push-check.sh | tail -5; echo $?  # ← 永远是 0
+# 正确写法（取脚本的 exit code）：
+bash tools/pre-push-check.sh > /tmp/ppc.log 2>&1; echo $?  # ← 真实退出码
+# 声称 EXIT=0 的报告，必须用这种方式交叉验证
+
+# 审查本仓库的验证脚本，确认 exit code 测量不用管道取 $?
+grep -rn 'tail.*;\s*echo \$?' FORGE/ tools/ --include="*.sh" | grep -v "regression-checklist\|# "   # 期望：零命中
+grep -rn '| head.*;\s*echo \$?' FORGE/ tools/ --include="*.sh" | grep -v "regression-checklist\|# "  # 期望：零命中
+```
+
+> **PASS 标准**：发版验证脚本的 exit code 测量必须用 `> log 2>&1; echo $?`，禁止管道取 `$?`。
+
+---
+
+#### 53. SSOT 零硬编码——产品代码不得绕过 data-paths.ts 拼路径（v1.2.1 新增）
+
+> v1.2.1 教训：产品代码（非测试文件）出现 `join(cwd, 'data', ...)` / `join(projectDir, 'data', 'audit')` 等硬编码，绕过 SSOT。
+
+```bash
+# 产品代码零硬编码检查（排除测试文件、data-paths.ts 自身、注释）
+grep -rn "join(.*'data'" engine/ --include="*.ts" | grep -v "data-paths.ts" | grep -v "\.test\." | grep -v "__tests__" | grep -v "// " | grep -v "新的路径"
+# 期望：零命中或仅注释（注释需说明"原...迁移到..."）
+
+# 额外验证：data-paths.ts 存在且导出 resolve* 函数
+grep -c "resolveAuditDir\|resolveDataDir\|resolveTaskDir\|DATA_ROOT" engine/core/src/data-paths.ts   # ≥2
+```
+
+> **PASS 标准**：产品代码零硬编码路径拼接，全部走 data-paths.ts 常量或 resolve* 函数。
+
+---
+
+#### 54. 环境变量命名 Unix 全大写——禁止驼峰（v1.2.1 新增）
+
+> v1.2.1 教训：`SOFAgent_HOME`（驼峰）违反 Unix 环境变量全大写+下划线约定，应为 `SOFAGENT_HOME`。
+
+```bash
+# 全仓搜索驼峰环境变量（shell/ts/mjs 文件）
+grep -rn "SOFAgent_" install.sh engine/ FORGE/ --include="*.sh" --include="*.ts" --include="*.mjs"
+# 期望：零命中
+
+# 确认正确命名已就位
+grep -rc "SOFAGENT_HOME\|SOFAGENT_DATA" engine/scripts/lib/platform-detect.sh engine/scripts/lib/config.sh   # ≥2
+```
+
+> **PASS 标准**：零驼峰环境变量命中。
+
+---
+
+#### 55. 未定义变量检查——set -euo pipefail 陷阱（v1.2.1 新增）
+
+> v1.2.1 教训：shell 脚本在 `set -u` 下引用未定义变量会立即退出。install.sh 曾引用未定义的 PROJECT_DIR（只定义了 PROJECT_ROOT）。
+
+```bash
+# shellcheck 覆盖（已在 pre-push-check.sh 步骤 1）
+shellcheck install.sh engine/scripts/*.sh tools/*.sh 2>&1 | grep "SC2155\|SC2034"
+# SC2155 = 声明并赋值同一条命令 declare 并 assign
+# 额外检查：手动 grep 可能未定义的变量
+grep -rn '\$PROJECT_DIR\b' install.sh  # 期望零命中（只有 PROJECT_ROOT）
+# 更通用：bash -u 模式跑脚本 --dry-run
+bash -n install.sh  # 语法检查
+
+# 交叉验证：确认定义的变量名与引用的变量名一致
+grep -oE '\b[A-Z_]{3,}=' install.sh engine/scripts/lib/*.sh | sort -u   # 定义侧
+grep -ohE '\$\{?[A-Z_]{3,}\}?' install.sh engine/scripts/lib/*.sh | sed 's/[${}]//g' | sort -u   # 引用侧
+# 人工核对：引用侧不应出现定义侧没有的变量名
+```
+
+> **PASS 标准**：shellcheck 零 SC2155/SC2034 + 手动抽查关键变量定义完整。
 
 ---
 
