@@ -377,6 +377,8 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 
 > 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）
 
+> 对应产品哲学见 PHILOSOPHY.md §十（行业方法论印证：FDE / Harness 第三方佐证）。
+
 ---
 
 ## 探索方向
@@ -413,6 +415,8 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 
 ---
 
+| 借鉴项 | 说明 |
+| --- | --- |
 | **运行时审计接入点（v1.3.x · LangGraph middleware 启发）** | LangChain 1.0+「create_agent」/「create_react_agent」的 middleware 系统：**wrapToolCall**（绕每次工具调用）是运行时审计精确接入点；node-style hooks（beforeAgent/beforeModel/afterModel/afterAgent）做粗粒度拦截。咱们已用 createReactAgent，包一层 middleware 即可把 engine/rules 的 tool-gate 升级为运行时拦截 + 审计日志 |
 | **EnkryptAI Secure MCP Gateway（v1.4.x · 现成护栏库）** | LangChain/LangGraph 的 pre_model_hook / post_model_hook 安全护栏，支持 **audit_only 模式（只记录不阻断）**。可作为 v1.4.x 运行时审计层的参考或集成，省得自研护栏 |
 | **LiteLLM 控制平面（v1.4.x · 开源借力）** | BerriAI 开源 LLM gateway（MIT，100+ LLM，240M+ 拉取）：成本追踪 / 预算 / 路由 / 护栏。未来「控制平面」成本与路由层站在这上面，不必自研网关 |
