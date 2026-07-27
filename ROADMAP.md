@@ -330,6 +330,17 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 
 > 🔴 **落地纪律**：ChatDemo 是售前 POC 工具（单 FDE、单场会议），sofagent 是常驻部署+治理的编排操作系统——定位互补不竞争。它**无 A1-A19 运行时行为审计、无常驻硅基员工、无控制平面治理、让 Agent 直接写应用代码**（约束在"何时/权限/来源"而非"禁写脚本"）；这些是我们的差异化地盘。以上全部是**设计启发 + FDE 同源背书**，不是依赖引入。
 
+### 🔮 OpenFDE 主仓 对标借鉴（2026-07 · FDE Loop / INDUC / Judgment Unit）
+
+> 📐 来源：[Open-FDE/OpenFDE](https://github.com/Open-FDE/OpenFDE) 主仓（知识库 + 工具地图**内容仓**，非运行时；FDE Loop 运行时实现 Open-FDE/FDEAgent 已移走 / 404 不可读）。重点对标三大模块：FDE Loop（五阶段 `OBSERVE→ELICIT→INDUC→ACT→EVOLVE + DEPLOY/ATTRIBUTION`）、INDUC（知识沉淀阶段，产出 Judgment Unit）、Judgment Unit（专家判断资产化、可开关规则）。以下为从**主仓**补充的借鉴项（ChatDemo 子项目未覆盖的部分）：
+
+| # | 主仓设计 | 印证/借鉴 sofagent 什么 | 关系 | 落地优先级 |
+|---|---|---|---|---|
+| 2 | **INDUC 阶段化知识归纳**：把"经验→判断"显式成 FDE Loop 的一个阶段，产出可开关的 Judgment Unit（专家判断资产化，规则可开可关、可版本化） | 我们的"蓄水池/知识库"目前是被动沉淀，缺"显式归纳阶段 + 可开关判断资产"；吸收 INDUC 把知识归纳提升为一等公民阶段，Judgment Unit 对应我们 A1-A19 判定层的可开关化 | 补缺 | 参考 |
+| 3 | **产品化阈值 / 四类沉淀物硬护栏**：前 1-3 客户高度定制，第 4 起定制度递减，每单 Day90 前沉淀≥1 能力回产品；四类沉淀物 = ①连接器/集成 playbook ②模板/加速器/框架 ③Eval 框架 ④产品需求 | 为"组织复利纪律"立硬护栏：避免每次交付从零定制、强制沉淀复用；补我们知识库缺的"产品化阈值 + 四类资产形态"定义 | 补缺 | 参考 |
+
+> 🔴 **落地纪律**：#4 分级降级梯队（console→TUI、ASR→手敲、dev 挂→走 spec，workflow never stops）已在上方「OpenFDE/ChatDemo 参考清单」第 6 行（**最高优先**）落盘，**本轮回不重复**。以上主仓项全部是**设计启发 + 行业背书**，不是依赖引入。FDE Loop 运行时实现不可读（FDEAgent 404），结论基于主仓 README 阶段定义 + ChatDemo 数据流（`decisions.jsonl`→INDUC→Judgment Unit）跨仓对齐，未编造。
+
 ### 🔴 运行时审计演进路线（meta-harness 三问作答 · 2026-07）
 
 > 用户三问：① harness 层能否升级 meta-harness？② 何时能做运行时审计？③ 用 LangGraph create_react_agent 时是否就能做到运行时审计？
