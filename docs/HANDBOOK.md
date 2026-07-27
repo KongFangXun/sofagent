@@ -421,7 +421,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 审计 Agent 管"刹车是不是还在"，FDE Agent 管"能不能换更好的轮胎"。两者合在一起，企业的 AI 节点不需要人盯着。
 
-> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。FDE Agent 是 sofagent 的产品形态——对外你看到的是 FDE Agent 在帮你干活，对内是 sofagent 引擎在跑。
+> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。sofagent 本质上是一款 FDE Agent：对外你用的是品牌名 sofagent（它正是一款 FDE Agent 在帮你干活），对内是 sofagent 引擎（Harness 中间件）在跑。
 
 ---
 

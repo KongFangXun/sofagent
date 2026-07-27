@@ -179,7 +179,7 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 ## 引擎架构（开发者段）
 
 > [!NOTE]
-> **两个名字，一个东西**：你面对的产品叫 **FDE Agent**（帮你梳理工作流、部署 AI 节点）；底层引擎叫 **sofagent**（开源仓库 + npm 包 `@sofagent/*`）。普通用户只需记住 **FDE Agent**——下面这段是给开发者看的。
+> **品牌与描述**：**sofagent** 是产品品牌名；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent（进场梳理工作流、把可自动化环节变成 AI 节点、构建本体、部署专属小模型的常驻硅基员工）。底层技术实现是一套约束 Agent 行为的 Harness 中间件（一底座·四引擎），开源在 `@sofagent/*`。下面这段是给开发者看的。
 
 sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，一底座·四引擎覆盖全生命周期。
 
