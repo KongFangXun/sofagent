@@ -534,7 +534,7 @@ describe('resolveRunDir', () => {
     const y = String(now.getFullYear());
     const m = String(now.getMonth() + 1).padStart(2, '0');
     const d = String(now.getDate()).padStart(2, '0');
-    const dateDir = join(tmpRoot, y, m, d);
+    const dateDir = join(tmpRoot, 'fresh-eyes-loop', `${y}-${m}-${d}`);
     mkdirSync(join(dateDir, 'run-01'), { recursive: true });
 
     const resolve = createResolveRunDir(tmpRoot, {
@@ -556,7 +556,7 @@ describe('resolveRunDir', () => {
     const y = String(now.getFullYear());
     const m = String(now.getMonth() + 1).padStart(2, '0');
     const d = String(now.getDate()).padStart(2, '0');
-    const dateDir = join(tmpRoot, y, m, d);
+    const dateDir = join(tmpRoot, 'fresh-eyes-loop', `${y}-${m}-${d}`);
     mkdirSync(join(dateDir, 'run-01'), { recursive: true });
     mkdirSync(join(dateDir, 'run-02'), { recursive: true });
 
@@ -594,7 +594,7 @@ describe('resolveRunDir', () => {
     const y = String(now.getFullYear());
     const m = String(now.getMonth() + 1).padStart(2, '0');
     const d = String(now.getDate()).padStart(2, '0');
-    const dateDir = join(tmpRoot, y, m, d);
+    const dateDir = join(tmpRoot, 'fresh-eyes-loop', `${y}-${m}-${d}`);
     mkdirSync(join(dateDir, 'run-01'), { recursive: true });
     mkdirSync(join(dateDir, 'temp-dir'), { recursive: true });
     mkdirSync(join(dateDir, 'README.md'.replace('.', '_')), { recursive: true });
@@ -617,7 +617,7 @@ describe('resolveRunDir', () => {
     const y = String(now.getFullYear());
     const m = String(now.getMonth() + 1).padStart(2, '0');
     const d = String(now.getDate()).padStart(2, '0');
-    const dateDir = join(tmpRoot, y, m, d);
+    const dateDir = join(tmpRoot, 'fresh-eyes-loop', `${y}-${m}-${d}`);
     mkdirSync(join(dateDir, 'run-01'), { recursive: true });
     mkdirSync(join(dateDir, 'run-abc'), { recursive: true });
 
