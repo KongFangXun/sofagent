@@ -37,6 +37,35 @@
 
 ---
 
+## release-gate 循环列定义
+
+release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分。列格式不同：
+
+```
+日期 | run-id | 循环 | 步数 | acceptance | regression | coverage | 裁决 | → runs 指针
+```
+
+| 列 | 含义 |
+|----|------|
+| 日期 | `YYYY-MM-DD` |
+| run-id | `YYYYMMDD-NN`（同日第 NN 次循环） |
+| 循环 | `release-gate` |
+| 步数 | 实际完成的步骤数（正常 5，有崩溃可能 < 5） |
+| acceptance | 步骤①验收测试结果：`PASS` / `FAIL` / `SKIP` |
+| regression | 步骤②回归检查结果：`PASS` / `FAIL` / `SKIP` |
+| coverage | 步骤③覆盖率交叉检查结果：`PASS` / `FAIL` / `SKIP` |
+| 裁决 | 最终判定：`PASS`（全 PASS）/ `FAIL`（有任一 FAIL）/ `ERROR`（步骤崩溃） |
+| runs 指针 | 相对仓库根或 SOFAGENT_HOME 的路径 |
+
+### release-gate 示例
+
+```
+# 日期          | run-id        | 循环        | 步数 | acceptance | regression | coverage | 裁决  | → runs 指针
+2026-07-27      | 20260727-01   | release-gate| 5    | PASS       | PASS       | PASS     | PASS  | ~/.sofagent/data/forge-runs/release-gate-loop/2026-07-27/run-01
+```
+
+---
+
 ## 运行记录
 
 2026-07-26     | 20260726-03    | fresh-eyes  | 1    | 14  | 21  | 16  | max-rounds      | FORGE/SKILL/fresh-eyes-loop/runs/2026/07/26/run-03
