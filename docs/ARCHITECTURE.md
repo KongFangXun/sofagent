@@ -146,11 +146,11 @@ Harness 中间件最大的挑战是存在感——引擎在正常工作，但用
 
 OpenClaw 通过 Hook 精确注入，其他平台 Agent 主动 Read，v1.0.7+ Sub Agent 启动时自加载（`buildConstrainedSystemPrompt`）。
 
-> **v1.1.8 加载链扩展**：联邦知识作为第 3 层注入（`knowledge/federation/` 目录，daemon 联邦查询落盘的 peer 知识快照）——低于 SKILL.md 宪法层、高于本地 knowledge/。联邦内容是外部来源，强制 `<untrusted source="federation">` 包裹（Prompt 注入防线层 1，详见 SECURITY.md 8 层映射表）。
+> **v1.1.8 加载链扩展**：联邦知识注入于 knowledge/ 层（加载链第 4 层，位于 think.md 第 3 层之后；目录 `knowledge/federation/`，daemon 联邦查询落盘的 peer 知识快照）——低于 SKILL.md 宪法层。联邦内容是外部来源，强制 `<untrusted source="federation">` 包裹（Prompt 注入防线层 1，详见 SECURITY.md 8 层映射表）。
 
-### 权限四原则与零凭证沙箱（2026-07 一粟 blog 研读）
+### 权限四原则与零凭证沙箱（2026-07 钉钉 CTO 一粟 blog 研读）
 
-一粟将 Agent 权限治理归纳为四条可操作原则，与 sofagent 审计引擎 + 约束底座同构：
+钉钉 CTO 一粟将 Agent 权限治理归纳为四条可操作原则，与 sofagent 审计引擎 + 约束底座同构：
 
 1. **最小权限**：每个 Agent 只拿当前任务必需的最小凭证集，不预置全量权限。
 2. **群维度隔离**：按组织 / 项目 / 环境维度隔离权限域，跨域调用需显式授权。
@@ -161,12 +161,12 @@ OpenClaw 通过 Hook 精确注入，其他平台 Agent 主动 Read，v1.0.7+ Sub
 
 **最坏情况反问**（权限模型必答题）：「如果这个 Agent 被 Prompt 注入了，最坏情况是什么？」答案应是它 profile 内那些权限能做的事，而非整个系统沦陷——权限不是限制 Agent，是保护组织。
 
-**动态治理三机制**（一粟内部实践口径，待核验）：
+**动态治理三机制**（钉钉 CTO 一粟内部实践口径，待核验）：
 - 动态提权：任务触发、限时授权、到期自动回收（临时审批申请 → 批准 → 约 2 小时后过期，待核验）。
 - 熔断拦截：高危操作实时拦截、等待人类确认。
 - 红线制度：超阈值动作（如合同金额 > 10 万，待核验）须 VP 签字等边际审批。
 
-> 📖 来源：一粟 blog《权限四原则》《零凭证沙箱》（2026，具体 URL 待核验）/ 一粟 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》
+> 📖 来源：钉钉 CTO 一粟 blog《权限四原则》《零凭证沙箱》（2026，具体 URL 待核验）/ 钉钉 CTO 一粟 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》
 
 ### 联邦查询（v1.1.8）
 
@@ -204,6 +204,8 @@ graph LR
 **Palantir 操作型本体论 ↔ sofagent 三层映射**：Palantir 的核心命题「语义必须与动力学配对」——本体不能只是知识库，必须是能干预世界的操作系统——与 sofagent 的 Ledger-Views-Policy 高度同构：数据集成 = Ledger 层（think.md append-only + audit history）、逻辑层 = Views 层（knowledge/ entities/concepts/comparisons/summaries）、操作层 = Policy 层（fde.md + SKILL.md）、读写回路 = Dream Cycle（v1.1.7 规划）、OAG 语义锚定 = Harness 约束底座。**核心差异**：Palantir 是集中式 SaaS 闭源操作系统，sofagent 是分布式 MIT 开源 Harness 中间件——让 Agent 自建本体，不由中央统一定义。
 
 **「确定性与概率性分离」原则**——Palantir OAG 五层架构的核心理念，与 sofagent 审计引擎完全同构：刚性安全边界由确定性系统保障，不受 LLM 概率性输出影响。sofagent 的 16/21 条规则为纯 git-diff（不依赖 Agent 配合）正是这一原则的工程实现。
+
+> 💡 **规则编号说明**：A1–A11 + A18/A19 为默认规则（13 条），A14–A17 + E1–E4 为扩展规则（8 条，需 opt-in），全量 21 条。A12/A13 为预留编号（当前未启用）。
 
 **审计引擎的双重定位**：
 
@@ -260,7 +262,7 @@ daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml
 >
 > 行业从 Loop Engineering 热到 Graph Engineering，但 Loop 没有被淘汰——**Loop 是带回边的 Graph**，复杂 Graph 内部嵌套大量局部 Loop。sofagent 的 fresh-eyes-loop（A/B 双盲审查 5 步循环）就是一个 Loop，它未来会成为 v1.3.0 控制图里的一个子图节点。演进路径是"Loop 跑通一个 → 编排进 Graph"，不是"丢掉 Loop 换成 Graph"。
 >
-> Graph 的价值在于把**不可合并的独立角色 + 交接点**直接写进系统里——实现→测试→独立审查、合规审批强制节点、多来源并行检索后合并冲突。sofagent 的审计引擎（21 条确定性规则）= "必须走固定流程"；编排引擎（createReactAgent）= "让模型自由判断"——这正是 Graph Engineering 真正的工程难点：**控制权分配**。
+> Graph 的价值在于把**不可合并的独立角色 + 交接点**直接写进系统里——实现→测试→独立审查、合规审批强制节点、多来源并行检索后合并冲突。sofagent 的审计引擎（21 条规则，其中 16 条纯确定性 git-diff，其余需 LLM 语义判断）= "必须走固定流程"；编排引擎（createReactAgent）= "让模型自由判断"——这正是 Graph Engineering 真正的工程难点：**控制权分配**。
 
 > 💡 **「翻译官不应该有决策权」——智能与控制分离**
 >
@@ -453,7 +455,7 @@ Work模板市场 的实现规范已随 v1.1.9 迁至商业产品 `商业仓库/�
 
 River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 本身（河是大厂造的——LLM 是水，Agent 平台是河床），而是做河的约束层（约束 + 安全 + 编排 + 执行），确保 River 里的每一个 Sub Agent 都有纪律、可追溯、会反思。
 
-> 🏞️ **River 比喻完整映射**见 [README §①](../README.md)——sofagent 做堤坝 + 自来水厂 + 管网 + 水龙头，不做河本身。
+> 🏞️ **River 比喻完整映射**见 [README（项目概览）](../README.md)——sofagent 做堤坝 + 自来水厂 + 管网 + 水龙头，不做河本身。
 
 > **Workflow 的混合架构**：每条 Workflow 采用「外层 Graph 骨架 + 内层 ReAct 节点」——`workflow.yml` 的 `nextNodes` 锁定全链路步骤、保证可追溯（对应行业笔记中的「Graph 实现全局流程骨架」），单个节点的 `prompt` 保留模型自主规划能力（对应「内层 ReAct Agent」）。这一设计兼顾全局稳定性与局部灵活性：低容错业务靠 Graph 锁死流程，复杂节点靠 ReAct 保灵活。实现规范已随 v1.1.9 迁至商业产品 `商业仓库/模板市场/`。
 
@@ -474,7 +476,7 @@ River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 
 ③ sofagent compose 基于企业 workflow 拆解任务
      → 输出编排方案 YAML + 结构化 SubAgent[] 配置
      → 每个 SubAgent 注入四层约束加载链（buildConstrainedSystemPrompt）
-④ dag-runner 调 LangGraph createReactAgent 真正调度（v1.2.0 前为 createDeepAgent，已弃用）
+④ dag-runner 调 LangGraph createReactAgent 真正调度（v1.2.0 前为 createDeepAgent（deepagents），已弃用）
      → 主 Agent 自主决定何时委派给哪个 Sub Agent（串行 / 同步并行）
 ⑤ Sub Agent 执行（带企业专有 Harness 约束）
      → 审计引擎在每个节点卡关（git diff 硬证据）
@@ -503,7 +505,7 @@ Agent 定义在 `SKILL/agents/{name}/SKILL.md`，`parseSkillMd()` 读 front matt
 
 **审计层不需要 OpenClaw**——sofagent-audit 是独立 TypeScript CLI，输入 git diff，输出 exit code。即使不装 OpenClaw，开发者也可通过 `bash install.sh`（推荐）或 `npm install -g @sofagent/audit`（高级/开发者路径）配 commit-msg hook，让任何 Agent 平台的提交经过审计。
 
-**编排层当前走 LangGraph createReactAgent**——`compose --task` CLI 入口，任何 Agent 平台都能用。迁移路径：ao → DeepAgents（v1.0.7）→ LangGraph createReactAgent（v1.2.0，deepagents 已弃用）。
+**编排层当前走 LangGraph createReactAgent**——`compose --task` CLI 入口，任何 Agent 平台都能用。迁移路径：ao（AutoGen）→ DeepAgents（v1.0.7）→ LangGraph createReactAgent（v1.2.0，deepagents 已弃用）。
 
 ### 文件系统审计
 
@@ -531,9 +533,9 @@ FDE 用户关心的是「我公司 AI 化进度」——跑着哪些节点、审
 
 ---
 
-### 长驻运行时治理（对标 Managed Agent Runtime，2026-07 一粟 blog 研读）
+### 长驻运行时治理（对标 Managed Agent Runtime，2026-07 钉钉 CTO 一粟 blog 研读）
 
-一粟观点：Agent 不能「用的时候开、不用的时候关」，应作为**长驻微服务**治理（非脚本）。sofagent 的 daemon（cron.ts）已落地常驻，但尚缺下列运维模式——这些模式仅针对 sofagent 自派 SubAgent 的隔离运行时治理（§五 范围声明例外；主 Agent 运行于第三方平台，sofagent 不做其运维层），补齐即 daemon 完整的「7×24 工位」：
+钉钉 CTO 一粟观点：Agent 不能「用的时候开、不用的时候关」，应作为**长驻微服务**治理（非脚本）。sofagent 的 daemon（cron.ts）已落地常驻，但尚缺下列运维模式——这些模式仅针对 sofagent 自派 SubAgent 的隔离运行时治理（§五 范围声明例外；主 Agent 运行于第三方平台，sofagent 不做其运维层），补齐即 daemon 完整的「7×24 工位」：
 
 | 模式 | 作用 | sofagent 现状 |
 |------|------|------|
@@ -546,7 +548,7 @@ FDE 用户关心的是「我公司 AI 化进度」——跑着哪些节点、审
 
 > 关键认知：进程活着 ≠ 服务健康——卡死在死锁里的 Agent 进程 ps 看着正常，但已 30 分钟没处理消息。健康须靠心跳 + 恢复闭环证明。
 
-> 📖 来源：一粟 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》（具体 URL 待核验）
+> 📖 来源：钉钉 CTO 一粟 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》（具体 URL 待核验）
 
 ## 四、核心设计决策
 
@@ -571,7 +573,7 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 | 2 | fde.md（规范） | ✅ 可改 | 企业专属规则 |
 | 3 | think.md（反思） | ⚠️ 自动生成 | 上轮踩过的坑 |
 
-三层之外还有 knowledge/（第四层，按需加载 top-N）。加载链总占用不超过上下文窗口的 3%，500 字原则（每份文件 ≤500 字）是 Agent 压缩后可读的最低保证。
+三层之外还有 knowledge/（第四层，按需加载 top-N）。加载链总占用不超过上下文窗口的 3%，规范类文件（SKILL.md/fde.md 等）预算 ≤500 字，think.md 反思区单独预算 ≤2K token——这是 Agent 压缩后可读的最低保证。
 
 ### 反认知投降的制度设计
 
@@ -625,7 +627,7 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | skillopt | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填 | ✅ 已实现 |
 | think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现 |
-| load-chain | 加载链 Hook 包 `@sofagent/load-chain`：OpenClaw/Agent 平台 hook 注入四层约束（v1.2.0 DP-4 提升为正式 workspace 包） | ✅ 已实现 |
+| load-chain | 加载链 Hook 包 `@sofagent/load-chain`：OpenClaw/Agent 平台 hook 注入四层约束（v1.2.0 DP-4（设计原则 4）提升为正式 workspace 包） | ✅ 已实现 |
 
 ### 对外核心能力（FDE Agent 给用户什么）
 
@@ -656,7 +658,7 @@ Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2
 **未来方向**：
 - **v1.2.x**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界
 - **v2.x**：组织级共享记忆 + 协同层 + **分层模型路由**（Harness 按任务复杂度路由到云端大模型/本地 7B/本地 0.5B，数据主权驱动——敏感数据不出内网）
-- **v3.x-v4.x+**：企业专属小模型精调（`sofagent-model distill` QLoRA）+ 本地推理 + 离线 USB 节点。详见 [ROADMAP · 分层模型架构](../ROADMAP.md#分层模型架构v3x-技术骨架--2026-07-25-定稿)
+- **v3.x-v4.x+**：企业专属小模型精调（`sofagent-model distill` QLoRA）+ 本地推理 + 离线 USB 节点。详见 [ROADMAP · 分层模型架构](../ROADMAP.md#分层模型架构v3x-技术骨架-2026-07-25-定稿)
 
 **daemon 主动巡检清单**（`engine/daemon/src/inspectors/`，注册于 `runInspectors()`）：
 
@@ -676,7 +678,7 @@ Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2
 
 ## 六、行业框架对齐：研究如何印证 sofagent 架构（2026-07 研读）
 
-> 📖 **源声明**：本节及正文多处引用的 `[行业笔记]` 均指同一来源——**31 篇行业笔记跨批研读（2026-07-20）**，涵盖 Palantir Ontology / Action Type / AIP / Onyx / a16z / 一粟 blog 等行业框架与研报。以下各处仅用 `[行业笔记]` 简短引用，不再逐条重复完整来源。
+> 📖 **源声明**：本节及正文多处引用的 `[行业笔记]` 均指同一来源——**31 篇行业笔记跨批研读（2026-07-20）**，涵盖 Palantir Ontology / Action Type / AIP / Onyx / a16z / 钉钉 CTO 一粟 blog 等行业框架与研报。以下各处仅用 `[行业笔记]` 简短引用，不再逐条重复完整来源。
 
 > 这一节把 31 篇研读里与 sofagent 架构**结构上对齐**的框架（Palantir Ontology / Action Type / AIP / Onyx）逐条印证——不是发明新架构，是验证已有架构选型的行业合理性。
 
@@ -814,13 +816,13 @@ a16z《你刚雇了一百万个糟糕员工》七法则（完整映射见 [PHILO
 
 > 💡 **铁路类比**：约束层 = 堤坝——1841 年铁路相撞（协调失误非技术故障）倒逼现代管理诞生，今天 AI 正复刻（模糊指令交给 agent，损失以秒计、指数扩散）。完整历史映射与 a16z 外部背书见 [PHILOSOPHY · §十 方法论印证](./PHILOSOPHY.md)。
 
-> 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）/ a16z（2026-07-15，[You Just Hired a Million Bad Employees](https://www.a16z.news/p/the-next-ai-goldrush-tokens-loops)）
+> 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）/ a16z（2026-07-15，[You Just Hired a Million Bad Employees](https://www.a16z.news/)（原文 URL 待核实））
 
-### 一粟 MoA 四层 ↔ sofagent 一底座·四引擎（2026-07 研读）
+### 钉钉 CTO 一粟 MoA 四层 ↔ sofagent 一底座·四引擎（2026-07 研读）
 
-一粟提出 MoA（Mixture-of-Agents）四层编排：路由 / 专家 / 聚合 / 反思。与 sofagent「一底座·四引擎」逐层同构：
+钉钉 CTO 一粟提出 MoA（Mixture-of-Agents）四层编排：路由 / 专家 / 聚合 / 反思。与 sofagent「一底座·四引擎」逐层同构：
 
-| MoA 四层（一粟）| sofagent 对应 | 说明 |
+| MoA 四层（钉钉 CTO 一粟）| sofagent 对应 | 说明 |
 |------|------|------|
 | 路由 Routing | 编排引擎 | 任务分发与依赖编排 |
 | 专家 Experts | 四引擎·专项 | 约束 / 审计 / 回溯 / 进化各司其职 |
@@ -829,11 +831,11 @@ a16z《你刚雇了一百万个糟糕员工》七法则（完整映射见 [PHILO
 
 > 同构点：MoA 的「反思」对应 sofagent 的「约束底座 + 审计」——概率性编排之外，确定性治理兜底。
 
-> 📖 来源：一粟 blog《MoA 四层编排》（2026，具体 URL 待核验）
+> 📖 来源：钉钉 CTO 一粟 blog《MoA 四层编排》（2026，具体 URL 待核验）
 
-### AI to B 三层基建：数据 / 连接 / AI Coding（2026-07 一粟 blog 研读）
+### AI to B 三层基建：数据 / 连接 / AI Coding（2026-07 钉钉 CTO 一粟 blog 研读）
 
-一粟将「AI 落地企业」拆为三层可替换基建，模型本身是最可被替换的一层：
+钉钉 CTO 一粟将「AI 落地企业」拆为三层可替换基建，模型本身是最可被替换的一层：
 
 | 基建层 | 职责 | sofagent 落点 |
 |------|------|------|
@@ -843,4 +845,4 @@ a16z《你刚雇了一百万个糟糕员工》七法则（完整映射见 [PHILO
 
 > 印证「模型吞噬一切」：文字约束会被投喂吞噬，唯有封装进代码级 Subagent + 防投喂机制能存活；模型选型（DeepSeek / GLM）可随场景替换，基建不动。
 
-> 📖 来源：一粟 blog《AI to B 三层基建》（2026，具体 URL 待核验）
+> 📖 来源：钉钉 CTO 一粟 blog《AI to B 三层基建》（2026，具体 URL 待核验）

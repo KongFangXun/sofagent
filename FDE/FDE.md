@@ -14,19 +14,19 @@
 
 > **目录**
 >
-> - [🎯 先读这段：如何正确理解 sofagent](#-先读这段如何正确理解-sofagent)
-> - [🚀 5 分钟读懂 FDE](#-5-分钟读懂-fde)
-> - [📋 这是什么](#-这是什么)
-> - [⚠️ 成熟度 & 范围](#成熟度--范围)
-> - [🏗️ 理论基础](#理论基础)
+> - [🎯 先读这段：如何正确理解 sofagent](#🎯-先读这段如何正确理解-sofagent)
+> - [🚀 5 分钟读懂 FDE](#🚀-5-分钟读懂-fde)
+> - [📋 这是什么](#📋-这是什么)
+> - [⚠️ 成熟度 & 范围](#⚠️-成熟度--范围)
+> - [🏗️ 理论基础](#🏗️-理论基础)
 > - [什么时候该上 FDE](#什么时候该上-fde)
 > - [FDE 四阶段流程](#fde-四阶段流程)
 > - [进场阶段](#进场阶段)
 > - [挖掘阶段](#挖掘阶段)
 > - [交付阶段](#交付阶段)
+>   - [交接清单（私有化评估 / Ontology 说明书 / River）](#9-交接清单)
 > - [检查离场](#检查离场)
 > - [13. 竣工后：持续存在感机制](#13-竣工后持续存在感机制)
-> - [交接清单（私有化评估 / Ontology 说明书 / River）](#9-交接清单)
 > - [隐性代价](#隐性代价)
 > - [研读印证：边界设计与渐进交付框架（2026-07）](#研读印证边界设计与渐进交付框架2026-07)
 > - [产品化护栏](#产品化护栏)
@@ -37,7 +37,7 @@
 
 ## 🎯 先读这段：如何正确理解 sofagent
 
-> **sofagent 是一个 FDE Agent——对外你看到的是一个常驻硅基员工（FDE Agent），底层是 sofagent 引擎（Harness 中间件）的一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）做问责底座。** 我们基于你自选的大厂 Agent 和大模型，不替代它们，而是帮企业梳理 workflow、搭建本体模型、部署专有 Sub Agent。
+> **sofagent 是一个 FDE Agent——对外你看到的是一个常驻硅基员工（FDE Agent），底层是 sofagent 引擎（Harness 中间件）的一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）做问责底座。** 我们基于你自选的大厂 Agent 和大模型，不替代它们，而是帮企业梳理 workflow、搭建本体模型、部署专有 SubAgent。
 
 一底座·四引擎是 FDE Agent 的**核心架构**，不是独立销售的产品。
 
@@ -53,7 +53,7 @@
 
 ```mermaid
 graph TD
-    A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent 引擎<br/>Harness 中间件 = 一底座·四引擎<br/>堤坝=约束底座 · 自来水厂=沙箱安全<br/>管网=编排引擎 · 水龙头=Sub Agent]
+    A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent 引擎<br/>Harness 中间件 = 一底座·四引擎<br/>堤坝=约束底座 · 自来水厂=沙箱安全<br/>管网=编排引擎 · 水龙头=SubAgent]
     B --> C[FDE Agent<br/>帮你梳理→部署→离场→AI 节点自己跑]
     C --> D[SMB · OPC 的每个人<br/>成为自己业务的 FDE]
 ```
@@ -408,7 +408,7 @@ Agent 是放大已标准化的能力，**不是替你管理混乱**。进场前�
 |----|------|--------|------|
 | 📄 文档层 | `nodes/[节点名].md` | 人读 + 编排引擎读（注入给 sofagent-orchestrator compose 拆任务） | `templates/nodes/node-template.md` |
 | 🧠 Skill 层 | `skills/[节点名]/SKILL.md` | AI 读（节点的大脑） | `templates/skills/skill-template/SKILL.md` |
-| 🔴 运行层 | 设备上的 session | 活的（sub-agent / AI 领航员） | 文档里 checklist 确认 |
+| 🔴 运行层 | 设备上的 session | 活的（SubAgent / AI 领航员） | 文档里 checklist 确认 |
 
 > 节点文档（.md）同时服务两个消费者：企业方人读（看懂这个节点是什么）+ 编排引擎读（Agent 把文档注入给 sofagent-orchestrator compose 拆任务）。配置信息用表格写在 .md 里，不再单独一个 .yaml。
 
@@ -448,8 +448,8 @@ Agent 是放大已标准化的能力，**不是替你管理混乱**。进场前�
 | 层 | 做什么 | 怎么跑 |
 |----|--------|--------|
 | **约束底座** | fde.md 规则注入 Agent 上下文 | install.sh 装完自动加载 |
-| **审计引擎** | git diff → A1-A11、A14-A19 规则 → exit code | git commit-msg hook，不挑 Agent，**0 token（纯正则引擎）** |
-| **编排引擎**（实验性）| 拆任务 → 编排 → 执行 | DeepAgents compose（CLI 入口或 OpenClaw 内部 API）；专有 Sub Agent 用 LangGraph 做图编排 |
+| **审计引擎** | git diff → A1-A11、A14-A19 + E1-E4（共 21 条）规则 → exit code | git commit-msg hook，不挑 Agent，**0 token（纯正则引擎）** |
+| **编排引擎**（实验性）| 拆任务 → 编排 → 执行 | DeepAgents compose（CLI 入口或 OpenClaw 内部 API）；专有 SubAgent 用 LangGraph 做图编排 |
 | **内置 Agent**（v1.0.7 引入，v1.0.8 起为基础设施 Agent）| FDE 部署工程师 + 合规审计员 | `sofagent-orchestrator subagent run fde --task "..."`、`@sofagent-fde` |
 
 > 💡 **审计引擎的双重价值**：工程层面是纪律工具（不改越界、不存盲改）；叙事层面是**轻量级 KYA（Know Your Agent）**——a16z 研判 Agent 经济瓶颈从「智力」转向「身份」，非人类身份:人类 = 96:1。sofagent 的审计引擎（约束行为 + 变更审计 + 责任归属）就是企业内部 Agent 的责任确权底座。用户可追溯每一次 Agent 行动——谁做的、改了什么、为什么、谁批准。
@@ -482,7 +482,7 @@ bash install.sh
 
 #### 逐节点部署
 
-1. **节点上线**：🔄 创建 sub-agent session 跑通一次；⚡ 配置 AI 领航员确认岗位人员会用
+1. **节点上线**：🔄 创建 SubAgent session 跑通一次；⚡ 配置 AI 领航员确认岗位人员会用
 2. **企业 Skill 注入**：每个节点创建专属 Skill，注入行业术语 / 业务规则 / 历史案例
 3. **交付手册落地**：交付手册（见 §9）落地到 §2 盘点的企业平台——让企业方随时翻得到
 4. **检查点配置**：每个 🔄/⚡ 输出端设检查点，默认抽检 10%。不合格 → 标记任务 → 反馈主人 → 记录异常 → 触发 Skill 优化分析
@@ -513,7 +513,7 @@ FDE 离场前打包交付给企业的一份文档。模板见 `templates/`。只
 
 每个节点的三层确认打勾，这个节点才算交付完成。
 
-> **企业 Skill 是 AI 节点的大脑。** FDE 在 §7 为每个节点定制专属 Skill——注入企业的行业术语、业务规则、历史案例。节点跑起来后，Skill 会基于 eval.md 的评分和 task/logs 的记录**自动迭代优化**（检查点不合格时触发），不需要 FDE 人工调。详见 ROADMAP「企业 Skill 自进化」。
+> **企业 Skill 是 AI 节点的大脑。** FDE 在 §7 为每个节点定制专属 Skill——注入企业的行业术语、业务规则、历史案例。节点跑起来后，Skill 会基于 eval.md 的评分和 task/logs 的记录**自动迭代优化**（检查点不合格时触发），不需要 FDE 人工调。详见 ROADMAP「skillopt 自动触发 / 失败清单驱动优化」。
 
 #### 📚 AI 知识库（AI 节点运行后自动积累）
 
@@ -593,7 +593,7 @@ Ontology 说明书是 FDE 离场交付物之一——不是一次性文档。企
 
 #### 9.6 River——大厂造河与企业用水
 
-FDE 交付的本质不是一个个独立 AI 节点，而是把节点间的**关联关系**梳理清楚，让企业 AI 能力流到业务侧。River 比喻完整映射见 [README §①](../README.md) 和 [ARCHITECTURE · River](../docs/ARCHITECTURE.md)——sofagent 做堤坝 + 自来水厂 + 管网 + 水龙头，不做河本身。
+FDE 交付的本质不是一个个独立 AI 节点，而是把节点间的**关联关系**梳理清楚，让企业 AI 能力流到业务侧。River 比喻完整映射见 [ARCHITECTURE · River — Workflow — Subagent 三层架构](../docs/ARCHITECTURE.md#river--workflow--subagent-三层架构)——sofagent 做堤坝 + 自来水厂 + 管网 + 水龙头，不做河本身。
 
 **战略判断（sofagent 的差异化根）**
 
@@ -724,9 +724,9 @@ sofagent 内置 **8 层 Prompt 注入防护**，FDE 部署完用以下方法验�
 
 ### 配置方法
 
-> ⚠️ **Webhook 推送为 v1.2.1 规划能力（已从 v1.2.2 上提）**：下方 `push_target: webhook://feishu/xxx` 的对外推送目前**尚未实装**。当前版本（v1.1.8）感知报告**仅本地存储**，不会经 Webhook 推送到飞书等外部渠道；该配置项先按规划保留，待 v1.2.1 落地后生效。
+> ⚠️ **Webhook 推送为 v1.2.1 规划能力（已从 v1.2.2 上提）**：下方 `push_target: webhook://feishu/xxx` 的对外推送目前**尚未实装**。当前版本（v1.2.0）感知报告**仅本地存储**，不会经 Webhook 推送到飞书等外部渠道；该配置项先按规划保留，待 v1.2.1 落地后生效。
 
-在 `.sofagent/config.yml` 中配置（v1.1.7 仅本地存储，不对外推送）：
+在 `.sofagent/config.yml` 中配置（v1.2.0 仅本地存储，不对外推送）：
 
 ```yaml
 perception:
@@ -850,19 +850,19 @@ F2 的「自动化程度四模式」与「架构复杂度四模式」（A 任务
 
 与 FDE 定位同频：FDE = Services-as-Software，交付「常驻 FDE Agent」而非工具包（见 §先读这段）。ROADMAP「市场信号验证」已有 4 条互证（Anthropic 收 Fractional AI / Accenture×Anthropic 3 万人 FDE 受训 / Blackstone+H&F+Goldman 共建企业 AI 服务 / Anthropic×Palantir FedStart）。Jevons 悖论亦呼应 §13 持续存在感机制（sustain）——转型不是一锤子买卖，是持续陪跑。
 
-### 一粟 FDE 交付四件套 + 交付标准（2026-07 研读）
+### 钉钉 CTO 一粟 FDE 交付四件套 + 交付标准（2026-07 研读）
 
-一粟现场交付物 = 可上线数字员工**四件套**：① SOP（工作流标准）② Skill（节点大脑）③ 权限模型（谁能干啥）④ MCP（工具接入）。四件套齐 = 可独立运行。
+钉钉 CTO 一粟现场交付物 = 可上线数字员工**四件套**：① SOP（工作流标准）② Skill（节点大脑）③ 权限模型（谁能干啥）④ MCP（工具接入）。四件套齐 = 可独立运行。
 
 **交付标准**：一天调研到上线（现场拆工作流 → 跑通 → 沉淀四件套）。
 
 **OPC 成本阶梯**（三个 FDE 项目实测，数字待核验）：标准项目 1x / 轻量 ≤0.5x / 极简 ≤0.25x——规模化后边际成本骤降。
 
-> 📖 来源：一粟 blog《三个 FDE》《三步上线》（2026，具体 URL 待核验）
+> 📖 来源：钉钉 CTO 一粟 blog《三个 FDE》《三步上线》（2026，具体 URL 待核验）
 
 ### 数字员工全生命周期八阶段（2026-07 研读）
 
-一粟定义数字员工从生到退的治理闭环：规划 → 创建 → 入职 → 培训 → 上岗 → 考核 → 调岗 → 下线。
+钉钉 CTO 一粟定义数字员工从生到退的治理闭环：规划 → 创建 → 入职 → 培训 → 上岗 → 考核 → 调岗 → 下线。
 
 - 前四阶段（规划→培训）由 FDE 主导落地
 - 上岗后进入编排引擎常态运行 + 审计引擎持续守护
@@ -870,7 +870,7 @@ F2 的「自动化程度四模式」与「架构复杂度四模式」（A 任务
 
 > 与 sofagent 现有 deploy → sustain 模式对齐，补齐「规划 / 入职 / 培训 / 考核」前置与「调岗 / 下线」退出机制。
 
-> 📖 来源：一粟 blog《2026 落地》（2026，具体 URL 待核验）
+> 📖 来源：钉钉 CTO 一粟 blog《2026 落地》（2026，具体 URL 待核验）
 
 ---
 
@@ -929,7 +929,7 @@ FDE 离场后，企业不是「装完就完了」——AI 落地是一个渐进�
 | 需求结构化 | GitHub Spec Kit | 将模糊需求转为 Spec → Plan → Tasks |
 | 知识图谱 | Graphiti / LinkML / **Ontoflow · OntoEK**（通用构建）/ **FIBO**（金融本体）· **BIAN**（银行业架构网络） | 构建企业本体模型（对应 §5） |
 | Agent 编码 | Claude Code / OpenHands | 主力编码 agent（内网用 OpenHands，MIT） |
-| Sub Agent 编排 | LangGraph + DeepAgents | 给客户搭建专有 Sub Agent 的图编排框架（DeepAgents compose 为编排入口） |
+| SubAgent 编排 | LangGraph + DeepAgents | 给客户搭建专有 SubAgent 的图编排框架（DeepAgents compose 为编排入口） |
 | RAG | Onyx（权限感知检索）/ RAGFlow | 企业知识库搭建 |
 | Eval | promptfoo / Ragas | AI 系统的正确率、幻觉率评估 |
 | 可观测 | Langfuse | prompt 版本管理 + 成本 dashboard + trace |
@@ -965,7 +965,7 @@ FDE 离场后，企业不是「装完就完了」——AI 落地是一个渐进�
 
 这是 v0.62 SKILL.md 扁平化背后的设计逻辑——避免上下文溢出。入口文件保持短小精悍，Agent 加载入口即可开始工作；需要深度知识时，再按 Skill 内部的调用链辐射到外挂文件。
 
-> 详见 SKILL.md 扁平化方案
+> 详见 [SKILL.md 扁平化方案](../SKILL/SKILL.md)（主入口文件）和 [DEVELOPMENT §Skill 文件结构](../docs/DEVELOPMENT.md#skill-文件结构)
 
 ### 失败清单驱动优化（v1.2.x 规划）
 

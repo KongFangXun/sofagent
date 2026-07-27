@@ -4,7 +4,7 @@
 
 ## 核心原则
 
-1. **零上下文每轮**：A 和 B 每一轮都用**全新 session**（DeepAgents 开 session，或刷新对话）。上一轮的记忆不在这一轮。这是 fresh-eyes 纪律的硬保障——作者在项目里待太久产生的"解释盲区"被结构性消解。
+1. **零上下文每轮**：A 和 B 每一轮都用**全新 session**（新建独立 session / 子进程，或刷新对话）。上一轮的记忆不在这一轮。这是 fresh-eyes 纪律的硬保障——作者在项目里待太久产生的"解释盲区"被结构性消解。
 2. **双盲独立**：A 和 B 跑的是**同一套 12 视角**，但互相不知道对方看到了什么。两人在不同 session 独立产出，合并时才对照。重叠 = 高置信问题；单方独特发现 = 也值得记。
 3. **driver 只 relay，不审查**：driver（"我"，当前会话）负责在 A/B 之间传文件、维护 `runs/`、判定停止。**driver 不替 A/B 做判断**。
 4. **不修改审查对象以外东西**：B 只修合并后的 findings 指向的问题，不顺手重构。
@@ -17,7 +17,7 @@
 | **B** | 工程师 | ① 独立跑 12 视角审查 ② 执行合并后的修复 | `check-b.md` → `summary.md` |
 | **driver** | 当前会话 | 中转文件、建 `runs/`、判定停止、写 `LEDGER.md` | `runs/` 目录 + LEDGER 行 |
 
-A/B 基于 `SKILL/agents/` 的 `reviewer` + `engineer` 两个 subagent 能力构建（同底座，不同行为指令）。
+A/B 基于 `SKILL/agents/` 的 `reviewer` + `engineer` 两个 SubAgent 能力构建（同底座，不同行为指令）。
 
 ## 目录约定（3 级分层）
 
@@ -67,11 +67,11 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 
 停止后 driver 向 `FORGE/LEDGER.md` 追加一行（见 `LEDGER.md` 列定义）。
 
-## DeepAgents 实现提示
+## createReactAgent 实现提示
 
 - A/B 由 Node driver（`FORGE/src/fresh-eyes-driver.mjs`）spawn 独立子进程实现真零上下文。
-- driver 把对应 `prompts/*.md` 作为 subagent 的 system/behavior 指令注入。
-- 12 视角正文不必塞进 prompt（太长）——prompt 里写"按 `FORGE/playbook/fresh-eyes-review.md` 的 12 视角跑"，让 subagent 自行读取。
+- driver 把对应 `prompts/*.md` 作为 SubAgent 的 system/behavior 指令注入。
+- 12 视角正文不必塞进 prompt（太长）——prompt 里写"按 `FORGE/playbook/fresh-eyes-review.md` 的 12 视角跑"，让 SubAgent 自行读取。
 
 ## 循环级演化（evolution.md）
 
