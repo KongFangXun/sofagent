@@ -479,8 +479,23 @@ async function runWorker(step, roundDir, target) {
   const promptTemplate = readFileSync(join(PROMPTS_DIR, stepDef.prompt), 'utf-8');
 
   // 3. 组装 user message：prompt 正文 + 路径注入 + target 注入
-  const inputPaths = stepDef.inputs.map(f => `  - ${join(roundDir, f)}`).join('\n');
-  const outputPaths = stepDef.outputs.map(f => `  - ${join(roundDir, f)}`).join('\n');
+  // 分片模式：环境变量 FORGE_BATCH_RESULT 覆盖 result.md 的文件名，
+  // FORGE_CUSTOM_OUTPUT 覆盖输出文件名（如 summary-batch-1.md）。
+  const batchResultName = process.env.FORGE_BATCH_RESULT || '';
+  const customOutputName = process.env.FORGE_CUSTOM_OUTPUT || '';
+
+  const inputPaths = stepDef.inputs
+    .map(f => {
+      const actualFile = (batchResultName && f === 'result.md') ? batchResultName : f;
+      return `  - ${join(roundDir, actualFile)}`;
+    })
+    .join('\n');
+  const outputPaths = stepDef.outputs
+    .map(f => {
+      const actualFile = (customOutputName && f === 'summary.md') ? customOutputName : f;
+      return `  - ${join(roundDir, actualFile)}`;
+    })
+    .join('\n');
 
   // 多产物步骤：注入分隔符约定（driver 按此切片分别写入文件）
   const multiOutputHint = stepDef.outputs.length > 1
@@ -537,14 +552,15 @@ async function runWorker(step, roundDir, target) {
   const t0 = Date.now();
 
   // recursionLimit 按步骤类型区分：
-  // - 审查类（a-check/b-check）：需要大量读文件+搜索，给 150（=75 轮工具调用）
-  // - 文本处理类（a-consolidate/a-verify/b-fix）：主要做合并/格式化，给 40 够了
+  // - 审查类（a-check/b-check）：需要大量读文件+搜索，给 200（=100 轮工具调用）
+  // - 文本处理类（a-consolidate/a-verify）：主要做合并/格式化，给 100 够了
+  // - b-fix：分片后每批 5 条 finding × 3 工具调用 = 15 步，给 100 是 6 倍余量
   //   太高会导致消息累积 OOM（exit 137）
   const STEP_RECURSION_LIMITS = {
     'a-check': 200,
     'b-check': 200,
     'a-consolidate': 100,
-    'b-fix': 60,
+    'b-fix': 100,
     'a-verify': 100,
   };
   const recursionLimit = STEP_RECURSION_LIMITS[step] ?? 50;
@@ -584,8 +600,12 @@ async function runWorker(step, roundDir, target) {
   //      约定 agent 返回文本用 `===FILE: <filename>===` 分隔多产物，
   //      driver 按分隔符切片分别写入对应文件。
   //      若找不到分隔符，fallback 把整个文本写入第一个产物（不丢内容）。
+  //    分片模式：环境变量 FORGE_CUSTOM_OUTPUT 覆盖输出文件名（如 summary-batch-1.md）。
   if (stepDef.outputs.length === 1) {
-    const outPath = join(roundDir, stepDef.outputs[0]);
+    const actualOutput = (customOutputName && stepDef.outputs[0] === 'summary.md')
+      ? customOutputName
+      : stepDef.outputs[0];
+    const outPath = join(roundDir, actualOutput);
     writeFileSync(outPath, text, 'utf-8');
     console.log(`[worker:${step}] 产物已写入 ${outPath}`);
   } else {
@@ -707,6 +727,129 @@ function resolveRunDir() {
   return { runDir, runId: `${y}${m}${d}-${String(runNum).padStart(2, '0')}`, dateStr: `${y}-${m}-${d}` };
 }
 
+// ─── b-fix 分片工具函数 ──────────────────────────────────────
+
+/**
+ * 将 result.md 按 finding 切片。
+ * 每个 finding 以 "### finding-NN" 或 "### finding-NN:" 开头。
+ *
+ * @param {string} resultText - result.md 全文
+ * @returns {Array<{id: string, content: string}>} - 每个 finding 的 id 和正文（含 ### 行）
+ */
+function splitFindings(resultText) {
+  const findings = [];
+  // 匹配 ### finding-01 / ### finding-01: / ### finding-01：
+  const re = /^### finding-(\d+)[：:]?/gm;
+  const marks = [];
+  let m;
+  while ((m = re.exec(resultText)) !== null) {
+    marks.push({ id: m[1], start: m.index });
+  }
+
+  for (let i = 0; i < marks.length; i++) {
+    const end = (i + 1 < marks.length) ? marks[i + 1].start : resultText.length;
+    const content = resultText.slice(marks[i].start, end).trimEnd();
+    findings.push({ id: marks[i].id, content });
+  }
+
+  return findings;
+}
+
+/**
+ * 将数组按指定大小分批。
+ *
+ * @param {Array} arr
+ * @param {number} size
+ * @returns {Array<Array>}
+ */
+function chunk(arr, size) {
+  const batches = [];
+  for (let i = 0; i < arr.length; i += size) {
+    batches.push(arr.slice(i, i + size));
+  }
+  return batches;
+}
+
+/**
+ * b-fix 分片执行：把 result.md 按 finding 切片，每批 BATCH_SIZE 条，
+ * 每批启动一个独立 worker（全新 agent session，零历史消息）。
+ *
+ * 每批 worker 只收到本批的 findings（写入 result-batch-N.md），
+ * 避免单 session 消息累积导致 recursionLimit 超限或 OOM。
+ *
+ * @param {string} roundDir - round 目录绝对路径
+ * @param {string} target   - 验证目标版本号
+ * @param {number} round    - 轮次号
+ */
+async function runBFixSharded(roundDir, target, round) {
+  const BATCH_SIZE = 5;
+
+  // 1. 读 result.md
+  const resultPath = join(roundDir, 'result.md');
+  const resultText = readFileSync(resultPath, 'utf-8');
+
+  // 2. 按 finding 切片
+  const findings = splitFindings(resultText);
+  console.log(`  [b-fix 分片] 共 ${findings.length} 条 finding，每批 ${BATCH_SIZE} 条`);
+
+  // 3. 边界情况：result.md 无法切出 finding → fallback 到单 session
+  if (findings.length === 0) {
+    console.log(`  [b-fix 分片] result.md 未找到 finding 切片，fallback 到单 session`);
+    await spawnWorker('b-fix', roundDir, target, round);
+    return;
+  }
+
+  // 4. 分批
+  const batches = chunk(findings, BATCH_SIZE);
+
+  // 5. 每批启动一个独立 worker
+  const batchSummaries = [];
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    const batchNum = i + 1;
+    console.log(`\n  [b-fix 分片 ${batchNum}/${batches.length}] 修复 finding: ${batch.map(f => f.id).join(', ')}`);
+
+    // 5a. 构造这批的临时 result 文件
+    const batchResultPath = join(roundDir, `result-batch-${batchNum}.md`);
+    const batchHeader =
+      `# result-batch-${batchNum}.md · B 的执行 prompt（分片 ${batchNum}/${batches.length}）\n\n` +
+      `> **给 B**：以下是本批 ${batch.length} 条修复指令。按顺序逐条修复。\n\n---\n\n`;
+    const batchContent = batch.map(f => f.content).join('\n\n---\n\n');
+    writeFileSync(batchResultPath, batchHeader + batchContent, 'utf-8');
+
+    // 5b. spawn worker（传入分片文件名作为 result.md 的替换）
+    try {
+      await spawnWorker('b-fix', roundDir, target, round, {
+        customInputs: { 'result.md': `result-batch-${batchNum}.md` },
+        customOutput: `summary-batch-${batchNum}.md`,
+      });
+      const summaryPath = join(roundDir, `summary-batch-${batchNum}.md`);
+      if (existsSync(summaryPath)) {
+        batchSummaries.push(readFileSync(summaryPath, 'utf-8'));
+      }
+    } catch (batchErr) {
+      console.warn(`\n  ⚠️  [b-fix 分片 ${batchNum}] 失败: ${batchErr.message}`);
+      batchSummaries.push(
+        `## 分片 ${batchNum} 失败\n\n` +
+        `错误: ${batchErr.message}\n\n` +
+        `涉及 finding: ${batch.map(f => f.id).join(', ')}\n`
+      );
+      // 继续下一批，不中断
+    }
+  }
+
+  // 6. 合并所有 batch 的 summary 为 summary.md
+  const mergedSummary = [
+    '# summary.md · b-fix 分片执行合并报告',
+    '',
+    `> 共 ${batches.length} 批，${findings.length} 条 finding`,
+    '',
+    ...batchSummaries,
+  ].join('\n');
+  writeFileSync(join(roundDir, 'summary.md'), mergedSummary, 'utf-8');
+  console.log(`\n  [b-fix 分片] 全部完成，${batchSummaries.length} 份 summary 已合并`);
+}
+
 /**
  * 起一个 worker 子进程（真·零上下文：独立 node 进程）。
  * 返回 Promise，resolve 时子进程已退出。
@@ -715,9 +858,21 @@ function resolveRunDir() {
  * @param {string} roundDir  本轮目录绝对路径
  * @param {string} target    审查目标版本号
  * @param {number} round     轮次号（通过 FORGE_ROUND 环境变量传给 worker）
+ * @param {object} [options] 可选：分片模式覆盖
+ * @param {object} [options.customInputs] 输入文件名映射（如 { 'result.md': 'result-batch-1.md' }）
+ * @param {string} [options.customOutput]  输出文件名覆盖（如 'summary-batch-1.md'）
  */
-function spawnWorker(step, roundDir, target, round) {
+function spawnWorker(step, roundDir, target, round, options = {}) {
   return new Promise((resolveP, rejectP) => {
+    const env = { ...process.env, FORGE_ROUND: String(round) };
+    // 分片模式：通过环境变量把覆盖项传给 worker
+    if (options.customInputs && options.customInputs['result.md']) {
+      env.FORGE_BATCH_RESULT = options.customInputs['result.md'];
+    }
+    if (options.customOutput) {
+      env.FORGE_CUSTOM_OUTPUT = options.customOutput;
+    }
+
     const child = spawn(process.execPath, [
       __filename,
       '--worker',
@@ -727,7 +882,7 @@ function spawnWorker(step, roundDir, target, round) {
     ], {
       cwd: REPO_ROOT,
       stdio: ['pipe', 'inherit', 'inherit'],
-      env: { ...process.env, FORGE_ROUND: String(round) },  // 继承环境变量 + 注入轮次号
+      env,
     });
 
     child.on('close', (code) => {
@@ -1009,9 +1164,9 @@ async function runRound(roundNum, runDir, target, dryRun) {
     writeFallbackFindings(roundDir);
   }
 
-  // 步骤 ④ B 修复
-  console.log('\n  [步骤 ④] B 按 result.md 修复...');
-  await spawnWorker('b-fix', roundDir, target, roundNum);
+  // 步骤 ④ B 修复（分片执行）
+  console.log('\n  [步骤 ④] B 按 result.md 修复（分片模式）...');
+  await runBFixSharded(roundDir, target, roundNum);
 
   // 步骤 ⑤ A 验证
   console.log('\n  [步骤 ⑤] A 验证修复，回填 verify 列...');
