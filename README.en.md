@@ -209,7 +209,7 @@ Four-layer loading chain: SKILL.md (constitution · immutable) → fde.md (norms
 
 Two layers implemented: ① **Task decomposition** — LangGraph createReactAgent turns task descriptions into orchestration plan YAML; ② **Multi-Agent collaboration** — supports serial orchestration of multiple Sub Agents, per-node checkpoint for interrupt recovery.
 
-> 🔶 Currently a **serial** state machine (not a parallel DAG scheduler). Full DAG parallel scheduling + sandbox execution is planned in [ROADMAP v1.3.0](./ROADMAP.md).
+> 🔶 Currently a **serial** state machine (not a parallel DAG scheduler). Full DAG parallel scheduling + sandbox execution is planned in [ROADMAP v1.3.1](./ROADMAP.md).
 
 ### 🔍 Audit Engine
 

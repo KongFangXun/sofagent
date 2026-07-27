@@ -245,7 +245,7 @@ compose 生成的编排方案 YAML 怎么真正跑起来——`dag-runner.ts`（
 | workflow-parser | `orchestrator/src/workflow-parser.ts` | YAML→SubAgent 映射（developer→ENGINEER / qa-engineer→REVIEWER / researcher→FDE sustain / technical-writer→内置）。DAG 悬空 / 自依赖 / 环校验 |
 | composer 改造 | `orchestrator/src/composer.ts` | `ComposeResult{ yaml, subagents }`——接 `enterpriseWorkflowYaml` + `variant` A/B/C/D 拆解策略 |
 
-> ⚠️ **当前是串行**：dag-runner 文件名暗示 DAG 并行，但实际是串行状态机（非并行调度）。完整的 DAG 并行规划在 [ROADMAP v1.3.0](../ROADMAP.md)。
+> ⚠️ **当前是串行**：dag-runner 文件名暗示 DAG 并行，但实际是串行状态机（非并行调度）。完整的 DAG 并行规划在 [ROADMAP v1.3.1](../ROADMAP.md)。
 
 #### A/B 自动调度器（v1.1.9+）
 

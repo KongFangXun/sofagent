@@ -174,7 +174,7 @@ Agent 不是装完就完事了——需要五个组件各管一摊。约束底�
 | **Context Engineering** | 怎么管理模型的上下文 | 四层加载链 + knowledge/ 知识注入 |
 | **Harness Engineering** | 怎么约束模型的行为 | **sofagent 整体**——约束 + 审计 + 回溯（核心价值层）|
 | **Loop Engineering** | 怎么让任务自动循环收敛 | FORGE workflow 驱动（fresh-eyes-loop）|
-| **Graph Engineering** | 怎么编排多个角色的协作 | v1.3.0 DAG 并行调度（控制图）|
+| **Graph Engineering** | 怎么编排多个角色的协作 | v1.3.1 DAG 并行调度（控制图）|
 
 sofagent 不做 Prompt（那是模型的事），在 Context 层有加载链，**核心价值在 Harness 层**（确定性边界），Loop/Graph 层是进化方向。模型越强，Harness 越值钱——因为 Agent 能做的事更多了，"做错了怎么办"的代价也更大。
 
@@ -452,7 +452,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 | 6 | 法则3 冗员 Token Bloat | 明确不做清单 / 防 scope 蔓延 + 审计拦改测试 | 已具备+可强化 | 印证 | 砍循环优于优化 |
 | 7 | 法则4 杠杆 100X Token | 90/10 分层 Harness 可靠性最值钱 | 已具备（叙事） | 印证 | 那 10% 即文章「管理杠杆」 |
 | 8 | 法则5 政治 上下文囤积 | 不投喂 / 数据主权 + 知识主权归客户 | 已具备（差异化） | 印证 | 叙事回应组织政治 |
-| 9 | 法则6 考核 Evals | 审计 A1-A11、A14-A19 + E1-E4（共 21 条）= Reality Anchor + Dream Cycle eval 驱动 | 已具备（底座）+ 缺口 | v1.3.0+ 产品化 | 企业专属 eval 套件缺口 |
+| 9 | 法则6 考核 Evals | 审计 A1-A11、A14-A19 + E1-E4（共 21 条）= Reality Anchor + Dream Cycle eval 驱动 | 已具备（底座）+ 缺口 | v1.3.1+ 产品化 | 企业专属 eval 套件缺口 |
 | 10 | 法则7 万亿转型服务 | FDE = Services-as-Software + 市场信号互证 | 已具备（核心背书） | 印证 + 规模化缺口 | a16z 最重磅外部背书；规模化交付进未来迭代 |
 
 ### 硅基员工论再印证：Org Graph 与 Ontology Runtime（2026-07 研报补充）
