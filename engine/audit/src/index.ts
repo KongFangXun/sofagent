@@ -38,6 +38,13 @@ import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-hist
 
 // Re-export for external consumers (P0-②: doctor needs checkHistoryChainIntegrity via require('@sofagent/audit'))
 export { checkHistoryChainIntegrity } from './audit-history';
+
+// v1.2.2: re-export P0 数据主权 + skill 安全审查，供 daemon/mcp/orchestrator/skillopt 消费
+export { DataSovereigntyLogger, resolveSovereigntyLogPath, resolveDateArg, sanitizeRecord } from './data-sovereignty';
+export type { DataSovereigntyRecord, SovereigntyLogEntry } from './data-sovereignty';
+export { generateDailyReport, generateWeeklyReport, generateMonthlyReport, generateReport, aggregateStats } from './report-generator';
+export { findFiles, scanFile } from './rules/skill-safety-engine';
+export type { SafetyResult, SafetyRule } from './rules/skill-safety-rules';
 import { analyzeRootCause } from './audit-root-cause';
 import { formatSuggestions } from './config-suggestion';
 import { runRegression, type DiffSnapshot } from './audit-regression';
