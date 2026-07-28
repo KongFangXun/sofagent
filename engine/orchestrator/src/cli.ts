@@ -21,6 +21,9 @@ async function main() {
     console.log('  loop --task <desc>               LOOP StateGraph 自动流转');
     console.log('       engineer (AI) → audit (CLI) → reviewer (AI) → human_confirm (HITL)');
     console.log('       --resume                     从最近 checkpoint 恢复续跑');
+    console.log('       --resolve <checkpointId> --decision approve|reject|aborted');
+    console.log('                                  对 awaiting_human 挂起的 HITL 写入人工决策并续跑');
+    console.log('       --data-dir <dir>             HITL pending/resolved 根路径（默认 {SOFAGENT_DATA}）');
     console.log('       --legacy                     使用旧版串行路径（v1.1.3 兼容）');
     console.log('  compare                          编排方案 A/B 对比');
     process.exit(0);
@@ -110,10 +113,33 @@ async function main() {
         break;
       }
 
-      // v1.1.3: StateGraph 路径
-      if (resumeMode) {
+      // v1.2.2 P3b：解析 --resolve / --decision / --data-dir
+      const resolveIdx = args.indexOf('--resolve');
+      const resolveCheckpointId = resolveIdx !== -1 ? args[resolveIdx + 1] : undefined;
+      const decisionIdx = args.indexOf('--decision');
+      const decisionArg = decisionIdx !== -1 ? args[decisionIdx + 1] : undefined;
+      const dataDirIdx = args.indexOf('--data-dir');
+      const dataDirArg = dataDirIdx !== -1 ? args[dataDirIdx + 1] : undefined;
+
+      // --resolve 模式：写入 HITL 响应 + 触发 resumeLoopGraph 续跑
+      if (resolveCheckpointId) {
+        const validDecisions = ['approve', 'reject', 'aborted'] as const;
+        type Decision = (typeof validDecisions)[number];
+        if (!decisionArg || !(validDecisions as readonly string[]).includes(decisionArg)) {
+          console.error(`❌ loop --resolve 需要 --decision <${validDecisions.join('|')}>`);
+          process.exit(1);
+        }
+        const { loadEnvConfig } = await import('@sofagent/core');
+        const { writeHITLResponse } = await import('./hitl');
         const { resumeLoopGraph } = await import('./loop/graph');
-        const result = await resumeLoopGraph();
+        const dataDir = dataDirArg ?? loadEnvConfig().dataDir;
+        writeHITLResponse(dataDir, {
+          checkpointId: resolveCheckpointId,
+          decision: decisionArg as Decision,
+          resolvedAt: new Date().toISOString(),
+        });
+        console.log(`📝 HITL 决策已写入: ${decisionArg}（checkpointId=${resolveCheckpointId}）`);
+        const result = await resumeLoopGraph({ dataDir });
         if (!result) {
           console.log('ℹ️ 未找到可恢复的 checkpoint');
           process.exit(2);
@@ -121,7 +147,22 @@ async function main() {
         console.log('');
         console.log(`终态: ${result.finalStatus}`);
         console.log(`重试次数: ${result.retryCount}`);
-        process.exit(result.finalStatus === 'completed' ? 0 : 1);
+        process.exit(result.finalStatus === 'completed' ? 0 : result.finalStatus === 'awaiting_human' ? 3 : 1);
+        break;
+      }
+
+      // v1.1.3: StateGraph 路径
+      if (resumeMode) {
+        const { resumeLoopGraph } = await import('./loop/graph');
+        const result = await resumeLoopGraph({ dataDir: dataDirArg });
+        if (!result) {
+          console.log('ℹ️ 未找到可恢复的 checkpoint');
+          process.exit(2);
+        }
+        console.log('');
+        console.log(`终态: ${result.finalStatus}`);
+        console.log(`重试次数: ${result.retryCount}`);
+        process.exit(result.finalStatus === 'completed' ? 0 : result.finalStatus === 'awaiting_human' ? 3 : 1);
         break;
       }
 
@@ -132,12 +173,13 @@ async function main() {
         process.exit(1);
       }
       const { runLoopGraph } = await import('./loop/graph');
-      const result = await runLoopGraph(taskDesc);
+      const result = await runLoopGraph(taskDesc, { dataDir: dataDirArg });
       console.log('');
       console.log(`终态: ${result.finalStatus}`);
       console.log(`重试次数: ${result.retryCount}`);
       console.log(`checkpointId: ${result.checkpointId}`);
-      process.exit(result.finalStatus === 'completed' ? 0 : result.finalStatus === 'blocked' ? 2 : 1);
+      // v1.2.2 P3b：awaiting_human 挂起态用独立退出码 3 标识，便于 daemon/脚本区分
+      process.exit(result.finalStatus === 'completed' ? 0 : result.finalStatus === 'blocked' ? 2 : result.finalStatus === 'awaiting_human' ? 3 : 1);
     }
     case 'compare': {
       const { extractMetrics, generateReport, promoteWorkflow } = await import('./orchestrator-compare');

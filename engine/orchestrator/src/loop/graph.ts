@@ -30,6 +30,7 @@ import {
   type LoopNodeName,
 } from './state';
 import { FileCheckpointer, type CheckpointRecord } from '../graph/checkpoint';
+import { readHITLResponse, type HITLDecision } from '../hitl';
 import {
   defaultDeps,
   makeEngineerNode,
@@ -60,6 +61,8 @@ export interface LoopGraphOptions {
   silent?: boolean;
   /** checkpoint 目录（默认 {SOFAGENT_DATA}/checkpoint，与 daemon 共享） */
   checkpointDir?: string;
+  /** 数据目录（v1.2.2 P3b）——HITL pending/resolved 根路径，默认 {SOFAGENT_DATA} */
+  dataDir?: string;
   /** 依赖注入覆盖（测试用） */
   deps?: Partial<LoopGraphDeps>;
 }
@@ -83,8 +86,12 @@ export function routeAfterAudit(state: LoopGraphState): 'engineer' | 'reviewer' 
 }
 
 /**
- * human_confirm 之后的条件路由：
- * completed/blocked/aborted → END；驳回（running）→ engineer
+ * human_confirm 之后的条件路由（异步/同步两条路径共享同一个函数）：
+ * completed/blocked/aborted/awaiting_human → END（挂起或收尾，都不推进）；
+ * 驳回（finalStatus 仍为 running）→ engineer
+ *
+ * v1.2.2 P3b 注：awaiting_human 走 END 分支——图 invoke 自然返回，
+ * 不路由到任何节点，等待外部信号触发 resumeLoopGraph() 续跑。
  */
 export function routeAfterHuman(state: LoopGraphState): 'engineer' | typeof END {
   if (state.finalStatus !== 'running') return END;
@@ -155,7 +162,14 @@ export function buildLoopGraph(deps: LoopGraphDeps) {
 function buildDeps(options: LoopGraphOptions): LoopGraphDeps {
   const checkpointer =
     options.deps?.checkpointer ?? new FileCheckpointer(resolveCheckpointDir(options.checkpointDir));
-  return { ...defaultDeps(checkpointer, options.silent ?? false), ...options.deps, checkpointer };
+  const merged: LoopGraphDeps = {
+    ...defaultDeps(checkpointer, options.silent ?? false),
+    ...options.deps,
+    checkpointer,
+  };
+  // v1.2.2 P3b：CLI --data-dir 显式覆盖优先于 env 解析（defaultDeps 注入的值）
+  if (options.dataDir) merged.dataDir = options.dataDir;
+  return merged;
 }
 
 /** 把图输出收敛为 LoopGraphResult */
@@ -237,6 +251,93 @@ export function resolveResumeNode(record: CheckpointRecord): LoopNodeName | null
 }
 
 /**
+ * v1.2.2 P3b：awaiting_human + 已有外部响应时的恢复路径。
+ *
+ * 与 CLI 同步模式 makeHumanConfirmNode 的决策分支严格一一对应：
+ *   approve → completed 终态（humanFeedback='approved'）
+ *   aborted → aborted 终态（humanFeedback='aborted'）
+ *   reject  → 上限内 retryCount+1 回 engineer（humanFeedback='rejected'）；
+ *             超限 blocked + recordBlocked
+ *
+ * 两条路径共享同一个 routeAfterHuman 路由函数——此处只负责把 decision
+ * 翻译成状态增量，路由判定（END / engineer）仍由 routeAfterHuman 承担。
+ */
+async function resumeAfterHumanDecision(
+  record: CheckpointRecord,
+  decision: HITLDecision,
+  comment: string | undefined,
+  deps: LoopGraphDeps,
+): Promise<LoopGraphResult> {
+  const state = record.state as unknown as LoopGraphState;
+  const feedback = comment ? `${decision}: ${comment}` : decision;
+
+  // approve → 直接 completed 终态，不重进图
+  if (decision === 'approve') {
+    deps.log(`✅ 人工确认通过（checkpointId=${record.checkpointId}）`);
+    const approved: LoopGraphState = {
+      ...state,
+      currentNode: 'human_confirm',
+      finalStatus: 'completed',
+      artifacts: { ...state.artifacts, humanFeedback: feedback === 'approve' ? 'approved' : feedback },
+      resumeFrom: null,
+    };
+    deps.checkpointer.save(approved as unknown as import('../graph/checkpoint').CheckpointState, 'human_confirm', 'after');
+    return toResult(approved);
+  }
+
+  // aborted → aborted 终态，checkpoint 保留可再次续跑
+  if (decision === 'aborted') {
+    deps.log(`⏸️ 人工中断（checkpointId=${record.checkpointId}）——checkpoint 已保存，可再次 resume`);
+    const aborted: LoopGraphState = {
+      ...state,
+      currentNode: 'human_confirm',
+      finalStatus: 'aborted',
+      artifacts: { ...state.artifacts, humanFeedback: feedback === 'aborted' ? 'aborted' : feedback },
+      resumeFrom: null,
+    };
+    deps.checkpointer.save(aborted as unknown as import('../graph/checkpoint').CheckpointState, 'human_confirm', 'after');
+    return toResult(aborted);
+  }
+
+  // reject → 与 CLI 同步模式一致：上限内回 engineer，超限 blocked
+  if (state.retryCount >= deps.maxRetries) {
+    deps.log(`⛔ 人工驳回且重试已达上限（${deps.maxRetries}）→ blocked`);
+    const blocked: LoopGraphState = {
+      ...state,
+      currentNode: 'human_confirm',
+      finalStatus: 'blocked',
+      artifacts: { ...state.artifacts, humanFeedback: 'rejected' },
+      resumeFrom: null,
+    };
+    await deps.recordBlocked(blocked);
+    deps.checkpointer.save(blocked as unknown as import('../graph/checkpoint').CheckpointState, 'human_confirm', 'after');
+    return toResult(blocked);
+  }
+
+  // reject 且未超限 → retryCount+1 回 engineer 重进图
+  deps.log(`🔄 人工驳回 · 回 engineer 修复（${state.retryCount + 1}/${deps.maxRetries}）`);
+  const resumedInitial: LoopGraphState = {
+    ...state,
+    currentNode: 'human_confirm',
+    retryCount: state.retryCount + 1,
+    artifacts: {
+      ...state.artifacts,
+      humanFeedback: feedback === 'reject' ? 'rejected' : feedback,
+    },
+    finalStatus: 'running',
+    resumeFrom: 'engineer',
+  };
+  deps.checkpointer.save(resumedInitial as unknown as import('../graph/checkpoint').CheckpointState, 'human_confirm', 'after');
+
+  const app = buildLoopGraph(deps);
+  const finalState = (await app.invoke(resumedInitial, {
+    recursionLimit: RECURSION_LIMIT,
+  })) as LoopGraphState;
+  deps.log(`🏁 LOOP 恢复运行结束 · 终态: ${finalState.finalStatus}`);
+  return toResult(finalState);
+}
+
+/**
  * 从最近一次 checkpoint 恢复续跑（交付二：中断恢复）。
  *
  * daemon 重启后的自动续跑同样复用本函数（v1.1.4 接入）——
@@ -254,9 +355,24 @@ export async function resumeLoopGraph(
     return null;
   }
 
-  if (record.state.finalStatus !== 'running') {
+  if (record.state.finalStatus !== 'running' && record.state.finalStatus !== 'awaiting_human') {
     deps.log(`ℹ️ 最近 checkpoint 已是终态（${record.state.finalStatus}），无需恢复`);
     return toResult(record.state as unknown as LoopGraphState);
+  }
+
+  // v1.2.2 P3b：awaiting_human 挂起态——先检查 resolved/ 是否已有外部信号
+  if (record.state.finalStatus === 'awaiting_human') {
+    const dataDir = deps.dataDir;
+    const response = dataDir ? readHITLResponse(dataDir, record.checkpointId) : null;
+    if (!response) {
+      deps.log(
+        `⏸️ HITL 仍在等待人工信号（checkpointId=${record.checkpointId}）——\n` +
+          `   Dashboard POST / daemon 轮询 / CLI: sofagent-orchestrator loop --resolve ${record.checkpointId} --decision approve|reject`
+      );
+      return toResult(record.state as unknown as LoopGraphState);
+    }
+    // 有响应：按 decision 映射终态/重试，复用 routeAfterHuman 单一路由判定
+    return resumeAfterHumanDecision(record, response.decision, response.comment, deps);
   }
 
   const entry = resolveResumeNode(record);

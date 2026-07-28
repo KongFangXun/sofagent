@@ -19,10 +19,11 @@ import { ENGINEER_AGENT, REVIEWER_AGENT } from '../builtin-agents';
 import { spawnSubAgent } from '../launcher';
 import { ENGINEER_TOOLS, REVIEWER_TOOLS, createToolGate, wrapToolsWithGate, convertToLangGraphTools, type ExecutableTool } from '../tools';
 import { buildConstrainedSystemPrompt } from '@sofagent/harness';
-import { loadConfig } from '@sofagent/core';
+import { loadConfig, loadEnvConfig } from '@sofagent/core';
 import type { AuditHistoryEntry } from '@sofagent/audit';
 import type { AuditVerdict, LoopArtifacts, LoopGraphState } from './state';
 import type { FileCheckpointer } from '../graph/checkpoint';
+import { HITL_OPTIONS, shouldUseAsyncHITL, writeHITLRequest } from '../hitl';
 import { ModelRouter } from '../model-router';
 import { DataSovereigntyMiddleware } from '../middleware/data-sovereignty-mw';
 import { ProgressMiddleware } from '../middleware/progress-mw';
@@ -190,6 +191,11 @@ export interface LoopGraphDeps {
   maxRetries: number;
   /** 日志输出 */
   log: (msg: string) => void;
+  /**
+   * 数据目录（v1.2.2 P3b）——HITL 异步模式检测与请求/响应文件读写根路径。
+   * 不设置时按 defaultDeps() 注入的 loadEnvConfig().dataDir 解析。
+   */
+  dataDir?: string;
 }
 
 // ────────────────────────────────
@@ -667,6 +673,8 @@ export function defaultDeps(checkpointer: FileCheckpointer, silent = false): Loo
     log: (msg: string) => {
       if (!silent) console.log(msg);
     },
+    // v1.2.2 P3b：HITL 异步模式根路径（pending/resolved 均落在此目录下）
+    dataDir: loadEnvConfig().dataDir,
   };
 }
 
@@ -759,13 +767,46 @@ export function makeReviewerNode(deps: LoopGraphDeps) {
 }
 
 /**
- * human_confirm 节点——HITL 确认（等待不限时）。
- * y → completed；n → 递增 retryCount 回 engineer（上限内）或 blocked；
- * abort → aborted 终态（checkpoint 可续跑）。
+ * human_confirm 节点——HITL 确认，双模式（v1.2.2 P3b）。
+ *
+ * 异步模式（{dataDir}/hitl/pending/ 目录存在）：
+ *   1. 写 HITL 请求文件到 pending/{checkpointId}.json
+ *      （checkpoint 已由 withCheckpoint 包装器在本节点前落盘 phase='before'）
+ *   2. 返回 finalStatus='awaiting_human' → routeAfterHuman 路由 END，图挂起
+ *   3. 外部信号写 resolved/{checkpointId}.json 后由 resumeLoopGraph() 续跑
+ *
+ * CLI 同步降级模式（目录不存在）：
+ *   保持 readline 阻塞等待 stdin y/n——行为与 v1.2.1 完全一致。
+ *   y → completed；n → 递增 retryCount 回 engineer（上限内）或 blocked；
+ *   abort → aborted 终态（checkpoint 可续跑）。
  */
 export function makeHumanConfirmNode(deps: LoopGraphDeps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return async (state: LoopGraphState): Promise<any> => {
+    // ── 异步模式：存储驱动挂起，不阻塞等待 stdin ──
+    const dataDir = deps.dataDir;
+    if (dataDir && shouldUseAsyncHITL(dataDir)) {
+      writeHITLRequest(dataDir, {
+        checkpointId: state.checkpointId,
+        createdAt: new Date().toISOString(),
+        task: state.artifacts.task,
+        reviewReport: state.artifacts.reviewReport,
+        auditResult: state.auditResult ?? '',
+        retryCount: state.retryCount,
+        options: [...HITL_OPTIONS],
+      });
+      deps.log(
+        `⏸️ HITL 异步挂起 · checkpointId=${state.checkpointId}\n` +
+          `   等待外部信号：Dashboard POST / daemon 轮询 /\n` +
+          `   CLI: sofagent-orchestrator loop --resolve ${state.checkpointId} --decision approve|reject`
+      );
+      return {
+        currentNode: 'human_confirm',
+        finalStatus: 'awaiting_human',
+      };
+    }
+
+    // ── CLI 同步降级模式：readline 阻塞等待（与 v1.2.1 一致）──
     const isAuto = process.env.LOOP_AUTO === '1';
     deps.log(isAuto ? '🤖 自动审核判定中...' : '🙋 等待人工确认（不限时）...');
     const decision = await deps.confirmHuman(state.artifacts.reviewReport);

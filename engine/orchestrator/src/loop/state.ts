@@ -18,8 +18,15 @@ export type AuditVerdict = 'PASS' | 'FAIL' | 'WARN';
 /** StateGraph 节点名 */
 export type LoopNodeName = 'engineer' | 'audit' | 'reviewer' | 'human_confirm';
 
-/** LOOP 终态：running=流转中 / completed=人工确认通过 / blocked=重试超限 / aborted=人工中断 */
-export type LoopFinalStatus = 'running' | 'completed' | 'blocked' | 'aborted';
+/**
+ * LOOP 终态：running=流转中 / completed=人工确认通过 / blocked=重试超限 /
+ * aborted=人工中断 / awaiting_human=图已挂起等待外部人工信号（v1.2.2 P3b）
+ *
+ * awaiting_human 语义：human_confirm 节点已写 checkpoint + HITL 请求文件，
+ * invoke 返回但不阻塞——外部信号（Dashboard POST / CLI --resolve / daemon
+ * 轮询）写入 resolved 响应后，由 resumeLoopGraph() 恢复续跑。
+ */
+export type LoopFinalStatus = 'running' | 'completed' | 'blocked' | 'aborted' | 'awaiting_human';
 
 /**
  * 跨节点传递的工作上下文（节点 I/O 汇集处）
