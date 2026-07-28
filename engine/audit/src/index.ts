@@ -491,15 +491,24 @@ async function main(): Promise<void> {
   }
 
   // doctor → sofagent-core (v1.0.8: ENOENT 友好降级)
+  // F-05: 先输出 audit 自身诊断结果，末尾再温和引导到 sofagent-core --doctor
   if (rawArgs.includes('--doctor')) {
-    console.error('⚠️  "sofagent-audit --doctor" 已不建议使用，建议改用功能更强的 "sofagent-core --doctor"（迁移：先 npm install -g @sofagent/core，再运行 sofagent-core --doctor）。');
     try {
       const { runDoctor } = await import('@sofagent/core');
       const report = runDoctor(process.cwd());
+      // 先输出诊断结果（来自 sofagent-core）
+      // 末尾温和引导
+      console.log('\n💡 如需全面环境诊断（含编排/守护/知识库），可以安装 @sofagent/core 后运行 sofagent-core --doctor');
       process.exit(report.allOk ? 0 : 1);
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND' || (err as NodeJS.ErrnoException).code === 'MODULE_NOT_FOUND') {
-        console.error('⚠️ 需安装 @sofagent/core：npm install -g @sofagent/core');
+        // audit 自身的简易诊断（检查 git 仓库 + audit 安装状态）
+        console.log('audit 环境自检：');
+        const gitAvailable = (() => { try { require('child_process').execFileSync('git', ['--version'], { stdio: 'pipe' }); return true; } catch { return false; } })();
+        console.log(`  ${gitAvailable ? '✅' : '❌'} git ${gitAvailable ? '可用' : '不可用'}`);
+        console.log(`  ✅ sofagent-audit CLI 可用`);
+        // 末尾温和引导
+        console.log('\n💡 如需全面环境诊断（含编排/守护/知识库），可以安装 @sofagent/core 后运行 sofagent-core --doctor');
         process.exit(0);
       }
       throw err;

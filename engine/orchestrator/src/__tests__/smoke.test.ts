@@ -45,9 +45,12 @@ describe('registration — Agent 注册主链路', () => {
 
   it('BUILTIN_AGENTS 所有 Agent 有完整定义', () => {
     for (const agent of BUILTIN_AGENTS) {
-      expect(agent.name).toBeTruthy();
-      expect(agent.type).toBeTruthy();
-      expect(agent.description).toBeTruthy();
+      expect(typeof agent.name).toBe('string');
+      expect(agent.name.length).toBeGreaterThan(0);
+      expect(typeof agent.type).toBe('string');
+      expect(agent.type.length).toBeGreaterThan(0);
+      expect(typeof agent.description).toBe('string');
+      expect(agent.description.length).toBeGreaterThan(0);
       expect(Array.isArray(agent.tools)).toBe(true);
       expect(agent.tools.length).toBeGreaterThan(0);
       expect(typeof agent.systemPrompt).toBe('string');

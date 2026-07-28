@@ -1,8 +1,9 @@
 # sofagent runtime data
 .sofagent/
 
-# v1.2.1 数据目录重构：用户可见运行时数据（根目录锚定，不影响 SKILL/harness/data/ 等源码模板目录）
-/data/
+# v1.2.1 数据目录迁移：仓库内 data/ 仅保留 README
+/data/*
+!/data/README.md
 
 # 编译产物
 dist/
@@ -18,6 +19,7 @@ engine/hooks/sofagent-load-chain/handler.ts
 .workbuddy/
 .codebuddy/
 .DS_Store
+**/.DS_Store
 *.swp
 *.swo
 *~
