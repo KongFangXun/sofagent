@@ -372,9 +372,9 @@ LangGraph createReactAgent 拆完任务
 
 复盘加权算出总分，分比上次高 → 覆盖 orchestrator/ 为最优配置。分比上次低 → 不动，标「待验证」。每次闭环只需回答三问：**用对了吗？更好了吗？Loop 起作用了吗？**
 
-### 轨迹优化闭环：Trajectory Store + LLM-Judge 蒸馏（2026-07 钉钉 CTO 一粟 blog 研读）
+### 轨迹优化闭环：Trajectory Store + LLM-Judge 蒸馏（2026-07 行业参考 blog 研读）
 
-进化引擎核心机制（钉钉 CTO 一粟「轨迹优化闭环」）：好轨迹经 LLM-Judge 评分 + Best-of-N 筛选，蒸馏成 Skill 沉淀。
+进化引擎核心机制（行业参考「轨迹优化闭环」）：好轨迹经 LLM-Judge 评分 + Best-of-N 筛选，蒸馏成 Skill 沉淀。
 
 - **Trajectory Store**：每条成功任务的全链路轨迹入库
 - **LLM-Judge**：对轨迹打分（质量 / 成本 / 合规）
@@ -384,7 +384,7 @@ LangGraph createReactAgent 拆完任务
 
 > 与 sofagent FORGE 进化引擎同源——好轨迹沉淀为 Skill，闭环驱动自迭代。
 
-> 📖 来源：钉钉 CTO 一粟 blog（2026，具体 URL 待核验）
+> 📖 来源：行业参考 blog（2026，具体 URL 待核验）
 
 ### 中间检查点
 
@@ -462,9 +462,9 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 ---
 
-### 记忆 ≠ RAG：分层状态管理（2026-07 钉钉 CTO 一粟 blog 研读）
+### 记忆 ≠ RAG：分层状态管理（2026-07 行业参考 blog 研读）
 
-钉钉 CTO 一粟区分：多数 Agent 的「记忆」只是当前对话上下文窗口，关掉归零——这是金鱼不是记忆。真记忆应分层：
+行业参考区分：多数 Agent 的「记忆」只是当前对话上下文窗口，关掉归零——这是金鱼不是记忆。真记忆应分层：
 
 | 层 | 内容 | 生命周期 | sofagent 落点 |
 |----|------|------|------|
@@ -475,7 +475,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 > 关键：「这不是 RAG。RAG 是『从文档里找答案』，记忆是『我自己经历过，我知道该怎么做』。」数字员工每次完成任务自动把关键决策与踩过的坑写入长期记忆——sofagent 的记忆观不依赖 RAG 式检索作为主记忆机制（knowledge/ 的检索式注入是另一回事），此区分加固反 RAG 立场。
 
-> 📖 来源：钉钉 CTO 一粟 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》（具体 URL 待核验）
+> 📖 来源：行业参考 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》（具体 URL 待核验）
 
 ## 七、数据文件架构
 
@@ -524,7 +524,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 ## 八、提交时审计 + 文件系统审计
 
-> 审计引擎的 CLI 使用和 exit code 约定。CI 集成例子见 [HANDBOOK §安装](./HANDBOOK.md#安装)。
+> 审计引擎的 CLI 使用和 exit code 约定。用户视角见 [HANDBOOK §提交后自动审计](./HANDBOOK.md#提交后自动审计)，CI 集成例子见 [HANDBOOK §CI 集成](./HANDBOOK.md#ci-集成)。
 
 sofagent-audit（v1.0.8）是 TypeScript CLI，支持两种审计触发模式：
 

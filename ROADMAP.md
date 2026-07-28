@@ -52,6 +52,8 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 设备端形态：安装时自动带 OpenClaw，审计结果通过 MCP server 推到企业协同平台。**数据主权在设备**——所有记忆、日志、决策记录永不离开本地。
 
+> 以下是方向落地为版本的具体拆解。v3.x 长期架构骨架见下方「探索方向」。
+
 ---
 
 ## 版本规划
@@ -207,9 +209,9 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 **分层落地中型蓝海**
 商业化切入上，孔老师倾向「分层落地」而非一刀切：先在中型客户（有真实 workflow、愿为成果付费、但养不起自建 AI 团队）的蓝海市场建立标杆，用 FDE 的「交付企业专有 skill」模式把单点打透，再向大型客户的标准化模块、小型客户的自助模板双向延伸。核心判断是——卖能力不卖工时，控制平面（sofagent 引擎）是底层，业务 workflow 的可约束性才是护城河。
 
-### 价值度量翻转：FDE vs 传统外包（2026-07 钉钉 CTO 一粟 blog 研读）
+### 价值度量翻转：FDE vs 传统外包（2026-07 行业参考 blog 研读）
 
-钉钉 CTO 一粟以「数字员工」重新定义 AI to B 的价值度量：传统外包按人·月计费，FDE 按成果·Token 计费，成本差可达三个数量级。
+行业参考以「数字员工」重新定义 AI to B 的价值度量：传统外包按人·月计费，FDE 按成果·Token 计费，成本差可达三个数量级。
 
 | 维度 | 传统外包团队 | 1 个 FDE Agent |
 |------|------|------|
@@ -219,7 +221,7 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 
 > 印证 sofagent 商业化判断「卖能力不卖工时」：护城河是可约束的业务 workflow，不是人头。
 
-> 📖 来源：钉钉 CTO 一粟 blog《价值度量翻转》（2026，具体 URL 待核验）
+> 📖 来源：行业参考 blog《价值度量翻转》（2026，具体 URL 待核验）
 
 ---
 
@@ -436,6 +438,8 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 | **ontology 组合约束图（v2.x · DataFlow 启发）** | 借鉴 DataFlow 的组合约束（算子兼容图：模态匹配/字段流约定），ontology 从"节点目录"升级为"节点兼容约束图"，显式声明哪些节点可前后衔接 |
 | **workflow 构建蓝图（v2.x · DataFlow 启发）** | 借鉴 DataFlow 的过程蓝图（推荐构建序列），将 SKILL 正式化为 workflow 构建蓝图——给定目标时推荐节点选择/参数配置/组装步骤序列，减少语义错误 |
 
+> 以下「分层模型架构」为探索方向的核心技术骨架展开——回答 v3.x "怎么做"，而非 "做什么"。
+
 ## 分层模型架构（v3.x 技术骨架 2026-07-25 定稿）
 
 > 核心驱动力：**数据主权**。企业数据进 API key 大模型 = 一定被拿去训练，沙盒也拦不住。分层让敏感数据只在本地处理。
@@ -542,40 +546,18 @@ graph TB
 
 ## 中期方向：FDE 节点注册表（Pattern Registry）
 
-loop-engineering 社区将 7 个生产模式全部编入机器可读的 `patterns/registry.yaml`，每个模式包含 id、cadence、risk、tools、skills、state file、phases、human_gates、token cost。这使得工具（loop-audit、loop-cost）能自动工作而不需要人工配置。
-
-**sofagent 可做的**：为 FDE 模板建立一个机器可读注册表（`fde-registry.yaml` 或 JSON），内容：
-- FDE 节点 ID + 名称 + 风险等级
-- 适用的企业岗位 / 场景
-- 所需 Skills + 审计规则列表
-- human gates（哪些操作必须人工确认）
-- 预估 token 成本 + 每日上限
-
-**价值**：audit 引擎可自动检测「当前 FDE 部署用了哪些节点、风险等级、覆盖了哪些 human gates」——从手动排查到机器可读。
+loop-engineering 社区将 7 个生产模式编入机器可读 `patterns/registry.yaml`（含 id/cadence/risk/skills/human_gates/token cost），使工具能自动工作。**sofagent 可做**：为 FDE 模板建 `fde-registry.yaml`，audit 引擎可直接读取——从手动排查到机器可读。
 
 > 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [patterns/registry.yaml](https://github.com/cobusgreyling/loop-engineering/blob/main/patterns/registry.yaml)
 
 ## 远期方向：执行层面隔离（Worktree 模式）
 
-loop-engineering 社区强制要求每个 code-change 实验跑在**隔离的 git worktree** 里——一次 fix 一个 worktree，验证者拒绝后丢弃，不会污染主工作树。对应的 CLI `loop-worktree` 机械化执行：创建 worktree → 追踪 manifest → 拒绝后标记 → 24h 后自动清理。
+loop-engineering 要求每个 code-change 跑在隔离 git worktree 里——一次 fix 一个 worktree，拒绝则丢弃。这是 sofagent **当前明确的差距**。实现路径：**短期（v1.x）** 在 DEVELOPMENT 中记录为推荐实践 → **中期（v2.x）** 编排引擎内置 `sofagent worktree create` → **远期（v3.x+）** L2+ 硬性要求。
 
-这是 sofagent 当前**明确的差距**：Agent 直接操作仓库主工作树，多个并行任务可能互相踩文件。
-
-**实现路径建议**：
-1. **短期（v1.x）**：在 `docs/DEVELOPMENT.md` 中记录 worktree 模式作为推荐实践——FDE 节点如果涉及代码变更，建议在隔离 worktree 中执行
-2. **中期（v2.x）**：在编排引擎中实现 worktree 管理——`sofagent worktree create --task-id <id>` → 执行 → 验证 → `commit or discard`
-3. **远期（v3.x+）**：worktree 隔离作为 L2+ 自主级别的硬性要求——无 worktree 则不允许自动修复
-
-> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [primitives.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/primitives.md)（Worktrees 条目）/ [anti-patterns.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/anti-patterns.md)（Parallel Collision 条目）
+> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [primitives.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/primitives.md) / [anti-patterns.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/anti-patterns.md)
 
 ## 远期方向：理解债务应对策略（Comprehension Debt）
 
-loop-engineering 社区的 Comprehension Debt Spiral（理解债务螺旋）被评为 S2 级（有害）故障模式：速度上升但无人能解释变更 → 审查变成橡皮图章 → 自动化成了黑箱。
+loop-engineering 的 Comprehension Debt Spiral（理解债务螺旋）被评为 S2 级故障模式：速度上升但无人能解释变更 → 自动化成了黑箱。sofagent 的应对：**审计已覆盖**「发生了什么」→ 需新增「为什么这么做」（auto-PR 描述中要求 Agent 解释决策）→ 需新增「本周摘要」（daemon 周报）。核心认知：理解债务是工具的边界，不是失败——自动化越高，人类判断责任越大。
 
-sofagent 的应对策略不应是「少用 Agent」，而是**结构化理解**：
-1. **审计引擎已覆盖**「发生了什么」——每次变更都有 git diff 证据
-2. **需新增**「为什么这么做」——在 auto-PR 的描述中要求 Agent 解释决策逻辑（已在 FDE 模板中预留）
-3. **需新增**「本周自动化摘要」——daemon 可生成周报：「本周自动 PR 3 个 / 修复 2 个 CI 问题 / 人类审批 1 个 / 拒绝 0 个」
-4. **长期**：理解债务是工具的边界，不是工具的失败。自动化越高，人类的判断责任越大——这与 sofagent 的「human gate」哲学完全一致。
-
-> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [failure-modes.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/failure-modes.md)（Comprehension Debt Spiral + Cognitive Surrender 条目）
+> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [failure-modes.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/failure-modes.md)
