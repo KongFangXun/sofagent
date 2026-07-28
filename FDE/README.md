@@ -98,7 +98,7 @@
 > ⏰ **版本提示（v1.1.x）**：**本地三态推送 v1.1.6 已接通**（PASS/WARN/FAIL，agent 自测可用）；**企业平台完整 Webhook 推送（钉钉/飞书/企业微信）在 v1.2.1**（原规划 v1.2.2，企业采购阻塞项）。
 > 当前版本审计结果可通过以下方式获取：
 > - **本地 Webhook 三态推送**（v1.1.6 起，配置 `config.yml` webhook 段）
-> - `daemon-notice.md`（daemon 自动写入本地通知文件）
+> - `daemon-health.json`（daemon 自动写入本地健康状态文件）
 > - 终端 stdout（实时审计输出）
 > - `sofagent-audit --timeline`（历史快照查看）
 > - 手动轮询 `.sofagent/audit/history.jsonl`（JSONL 明文，可用 filebeat/logstash 转发到 SIEM）

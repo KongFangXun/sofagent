@@ -388,7 +388,7 @@ Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown fr
 
 ### daemon 通知机制为轻量版
 
-v1.1.3 新增 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的统一通知接口。**本地三态推送（PASS/WARN/FAIL）v1.1.6 已接通**（`webhook.ts` + `push-target.ts`，agent 自测可用）。但**企业平台完整推送（飞书/钉钉/企微）在 v1.2.1 实现**（原规划 v1.2.2，企业采购阻塞项）——当前 daemon 的 cron 巡检和文件监听结果在企业场景仍依赖 stdout + `daemon-notice.md`，企业 IT 需自行轮询 `history.jsonl` 或等 v1.2.1。
+v1.1.3 新增 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的统一通知接口。**本地三态推送（PASS/WARN/FAIL）v1.1.6 已接通**（`webhook.ts` + `push-target.ts`，agent 自测可用）。但**企业平台完整推送（飞书/钉钉/企微）在 v1.2.1 实现**（原规划 v1.2.2，企业采购阻塞项）——当前 daemon 的 cron 巡检和文件监听结果在企业场景仍依赖 stdout + `daemon-health.json`，企业 IT 需自行轮询 `history.jsonl` 或等 v1.2.1。
 
 ## 九、v1.1.7-v1.1.9 新功能局限
 
