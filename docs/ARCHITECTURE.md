@@ -417,6 +417,49 @@ graph LR
     F --> A
 ```
 
+### 运行时数据层：引擎间数据流全景
+
+四个引擎运行时共同往 `data/` 目录读写数据。以下是生产者→数据文件→消费者的完整单向数据流（v1.2.1 补全 eval + ab-test 后的全景）：
+
+```
+                        写入侧（生产者）                          data/ 目录                          读取侧（消费者）
+┌─────────────────────────────────────────┐  ┌──────────────────────┐  ┌─────────────────────────────────────┐
+│ @sofagent/audit（审计引擎）               │  │ audit/               │  │ @sofagent/daemon（巡检器）            │
+│   每次 commit/变更 → runRules()          │→ │   history.jsonl      │→ │   warn-accumulator（WARN 聚合）      │
+│   会话结束 → buildSessionReport()        │→ │   session-report.json│→ │   audit-history-analyzer（趋势）     │
+│                                          │→ │   session-report.md  │→ │   qa-verify-warn-accumulator         │
+├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
+│ @sofagent/think（反思生成器）              │  │ think.md             │  │ @sofagent/harness（加载链第3层）      │
+│   generateThinkEntry() 基于 diff+审计结果 │→ │   （append-only）      │→ │   buildConstrainedSystemPrompt()     │
+│                                          │→ │                      │→ │ @sofagent/daemon（dream-cycle）       │
+│                                          │→ │                      │→ │   extract-facts() → knowledge/       │
+├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
+│ @sofagent/eval（评分引擎）⭐ v1.2.1 补全   │  │ eval/ ⭐              │  │ @sofagent/think（进化引擎）⭐ 接通    │
+│   runEval() 跑 golden set                │→ │   history.jsonl      │→ │   检测 passRate 下降→写 think.md      │
+│   eval-reporter 持久化                    │→ │   reports/*.md       │→ │ Dashboard（v1.2.2）质量趋势面板       │
+├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
+│ @sofagent/ab-test（A/B 框架）⭐ v1.2.1   │  │ ab-test/ ⭐           │  │ @sofagent/orchestrator（ab-scheduler）│
+│   runABTest() 对比方案                     │→ │   history.jsonl      │→ │   aggregateRecent() 方案判定          │
+│                                          │→ │   reports/*.md       │→ │ Dashboard（v1.2.2）A/B 对比面板       │
+├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
+│ @sofagent/daemon（守护进程）              │  │ dashboard/           │  │ Dashboard（v1.2.2）                  │
+│   health-reporter → runHealthReport()    │→ │   daemon-health.json │→ │   健康面板                            │
+│   dream-cycle → extract/synthesize       │→ ├──────────────────────┤  │ @sofagent/harness（加载链第4层）      │
+│                                          │→ │ knowledge/           │→ │   buildConstrainedSystemPrompt()     │
+├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
+│ FORGE driver                             │  │ forge-runs/          │  │ verdict.md（人类读）                  │
+│   fresh-eyes / release-gate              │→ │   <loop>/<date>/run/ │→ │                                     │
+└─────────────────────────────────────────┘  └──────────────────────┘  └─────────────────────────────────────┘
+```
+
+**数据流铁律**：
+- ✅ 生产者 → data/ → 消费者：合法（单向派生）
+- ✅ Ledger → Views：合法（Dream Cycle 从 think.md 派生 knowledge/）
+- ❌ Views → Ledger：禁止反向写回（代码级强制）
+- ❌ 任何层 → 历史条目覆写：禁止（append-only 不变量）
+
+> 📖 此图的 v1.2.1 原始出处及交付细节见 [changelog v1.2.1 §P0b](./changelog/v1.2/v1.2.1.md)。
+
 ---
 
 ## 三、部署与运行架构
