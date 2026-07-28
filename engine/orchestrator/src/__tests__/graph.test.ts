@@ -419,7 +419,36 @@ describe('runLoopGraph — 集成', () => {
     }
   });
 
-  it('audit 连续 FAIL ×4（retryCount 0..3）→ blocked（不超上限再进 engineer）', async () => {
+  // v1.2.2 P4：降级链开启（runLoopGraph 默认）后，audit 连续 FAIL 不再直接 blocked——
+  // 按 0→1→2 推进 degradationLevel，L2 低可信放行 reviewer → human_confirm → completed。
+  // 旧「FAIL×4 → blocked」语义在 degradationChainEnabled=false 时保留（见下一个用例）。
+  it('audit 连续 FAIL ×4（降级链开启）→ 0→1→2 推进，L2 放行 reviewer → completed', async () => {
+    const log: MockCall[] = [];
+    const deps = mockDeps(log, {
+      engineerOutputs: ['e1', 'e2', 'e3'],
+      auditOutcomes: [
+        { verdict: 'FAIL', report: 'fail1' },
+        { verdict: 'FAIL', report: 'fail2' },
+        { verdict: 'FAIL', report: 'fail3' },
+      ],
+    });
+    try {
+      const result = await runLoopGraph('修复', { deps, silent: true });
+      // P4 降级链：第3次 FAIL → degradationLevel=2 → reviewer → human_confirm(y) → completed
+      expect(result.finalStatus).toBe('completed');
+      expect(result.state.degradationLevel).toBe(2);
+      // engineer 3 次（初始 + 2 次重试），audit 3 次，reviewer/human 各 1 次
+      expect(log.filter((c) => c.type === 'engineer').length).toBe(3);
+      expect(log.filter((c) => c.type === 'audit').length).toBe(3);
+      expect(log.some((c) => c.type === 'reviewer')).toBe(true);
+      // blocked 不触发
+      expect(log.some((c) => c.type === 'blocked')).toBe(false);
+    } finally {
+      cleanupMockDeps(deps);
+    }
+  });
+
+  it('audit 连续 FAIL ×4（降级链关闭 degradationChainEnabled=false）→ 保留 v1.2.1 blocked 语义', async () => {
     const log: MockCall[] = [];
     const deps = mockDeps(log, {
       engineerOutputs: ['e1', 'e2', 'e3', 'e4'],
@@ -431,12 +460,13 @@ describe('runLoopGraph — 集成', () => {
       ],
     });
     try {
-      const result = await runLoopGraph('修复', { deps, silent: true });
+      const result = await runLoopGraph('修复', {
+        deps: { ...deps, degradationChainEnabled: false },
+        silent: true,
+      });
       expect(result.finalStatus).toBe('blocked');
-      // engineer 调用 4 次，audit 调用 4 次
       expect(log.filter((c) => c.type === 'engineer').length).toBe(4);
       expect(log.filter((c) => c.type === 'audit').length).toBe(4);
-      // blocked 回调触发
       expect(log.some((c) => c.type === 'blocked')).toBe(true);
     } finally {
       cleanupMockDeps(deps);

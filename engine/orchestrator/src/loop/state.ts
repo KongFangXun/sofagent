@@ -15,8 +15,24 @@ import { Annotation } from '@langchain/langgraph';
 /** 审计判定结果 */
 export type AuditVerdict = 'PASS' | 'FAIL' | 'WARN';
 
-/** StateGraph 节点名 */
-export type LoopNodeName = 'engineer' | 'audit' | 'reviewer' | 'human_confirm';
+/**
+ * StateGraph 节点名
+ * v1.2.2 P4：新增 'plan'（Planner 节点，START → plan → engineer）
+ */
+export type LoopNodeName = 'plan' | 'engineer' | 'audit' | 'reviewer' | 'human_confirm';
+
+/**
+ * Planner 产出的子任务（v1.2.2 P4）
+ * engineer 节点逐条执行 pending 子任务
+ */
+export interface Subtask {
+  /** 子任务标识（如 subtask-1） */
+  id: string;
+  /** 子任务描述 */
+  description: string;
+  /** 执行状态 */
+  status: 'pending' | 'done' | 'skipped';
+}
 
 /**
  * LOOP 终态：running=流转中 / completed=人工确认通过 / blocked=重试超限 /
@@ -52,6 +68,11 @@ export interface LoopArtifacts {
   reviewReports: string[];
   /** HITL 确认反馈：approved / rejected / aborted */
   humanFeedback: string;
+  /**
+   * Planner 分解的子任务列表（v1.2.2 P4）
+   * plan 节点写入，engineer 节点逐条消费（pending → done/skipped）
+   */
+  subtasks: Subtask[];
 }
 
 /**
@@ -72,6 +93,12 @@ export interface LoopGraphState {
   finalStatus: LoopFinalStatus;
   /** 恢复入口节点（从 checkpoint 续跑时由 resume 逻辑写入，正常启动为 null） */
   resumeFrom: LoopNodeName | null;
+  /**
+   * 降级等级（v1.2.2 P4 降级路由链）
+   * 0=正常 / 1=已降级任务范围（最小可行版本）/ 2=低可信（继续流转但标注）
+   * audit FAIL 第 2/3 次时由 routeAfterAudit 分别推进到 1/2
+   */
+  degradationLevel: number;
 }
 
 /** artifacts 初始值 */
@@ -85,6 +112,8 @@ export function emptyArtifacts(task: string): LoopArtifacts {
     reviewReport: '',
     reviewReports: [],
     humanFeedback: '',
+    // v1.2.2 P4：Planner 产出（plan 节点运行前为空数组）
+    subtasks: [],
   };
 }
 
@@ -120,5 +149,10 @@ export const LoopStateAnnotation = Annotation.Root({
   resumeFrom: Annotation<LoopNodeName | null>({
     reducer: (_prev, next) => next,
     default: () => null,
+  }),
+  // v1.2.2 P4：降级等级通道（0=正常 / 1=已降级范围 / 2=低可信）
+  degradationLevel: Annotation<number>({
+    reducer: (_prev, next) => next,
+    default: () => 0,
   }),
 });

@@ -15,6 +15,7 @@
 #   规则审计  $SOFAGENT_HOME/data/audit/history.jsonl
 #   工作状态  $SOFAGENT_HOME/data/audit/sub-progress-*.jsonl（自动发现）
 #            $SOFAGENT_HOME/data/dashboard/daemon-health.json
+#   Graph引擎 $SOFAGENT_HOME/data/dashboard/graph-state.json（v1.2.2 P4）
 #   最近报告  $SOFAGENT_HOME/data/{企业名}/审计报告/（fde-profile.json 定企业名）
 #
 # 环境变量：
@@ -45,6 +46,7 @@ AUDIT_DIR="$DATA_ROOT/audit"
 SOVEREIGNTY_DIR="$AUDIT_DIR/data-sovereignty"
 HISTORY_FILE="$AUDIT_DIR/history.jsonl"
 DAEMON_HEALTH="$DATA_ROOT/dashboard/daemon-health.json"
+GRAPH_STATE="$DATA_ROOT/dashboard/graph-state.json"
 REFRESH_INTERVAL=2
 
 # 依赖检查
@@ -548,6 +550,54 @@ render_status() {
 }
 
 # ────────────────────────────────
+# 区块 4：Graph Engine 状态（v1.2.2 · P4）
+# 数据源：data/dashboard/graph-state.json（plan/engineer 节点执行时写入）
+# 渲染：当前活跃节点名（ASCII 节点流转图高亮）+ Work Graph 任务数
+# ────────────────────────────────
+
+render_graph_engine() {
+  local w="$1"
+  emit "${C_BOLD}${C_BLUE}▌ Graph Engine（编排图状态）${C_RESET}"
+
+  if [ ! -f "$GRAPH_STATE" ]; then
+    emit "  ${C_DIM}（暂无 Graph 状态：$GRAPH_STATE 不存在）${C_RESET}"
+    emit "  ${C_DIM}plan → engineer → audit → reviewer → human_confirm${C_RESET}"
+    return 0
+  fi
+
+  local gs
+  gs="$(jq -r '"\(.activeNode // "unknown") \(.workGraphTasks // 0) \(.updatedAt // "")"' "$GRAPH_STATE" 2>/dev/null)"
+  local active_node="unknown" task_count="0" updated_at=""
+  if [ -n "$gs" ]; then
+    read -r active_node task_count updated_at <<< "$gs"
+  fi
+
+  # 数据新鲜度（updatedAt 距今）
+  local now_epoch updated_epoch age_secs age_text=""
+  now_epoch="$(date '+%s')"
+  updated_epoch="$(iso_to_epoch "$updated_at")"
+  if [ "$updated_epoch" -gt 0 ]; then
+    age_secs=$(( now_epoch - updated_epoch ))
+    if [ "$age_secs" -lt 0 ]; then age_secs=0; fi
+    age_text="（$(ago "$age_secs")更新）"
+  fi
+
+  # ASCII 节点流转图：当前活跃节点用 [ ] 高亮，其余裸名
+  local n_plan="plan" n_eng="engineer" n_aud="audit" n_rev="reviewer" n_hitl="human_confirm"
+  case "$active_node" in
+    plan)          n_plan="[${C_GREEN}plan${C_RESET}]" ;;
+    engineer)      n_eng="[${C_GREEN}engineer${C_RESET}]" ;;
+    audit)         n_aud="[${C_GREEN}audit${C_RESET}]" ;;
+    reviewer)      n_rev="[${C_GREEN}reviewer${C_RESET}]" ;;
+    human_confirm) n_hitl="[${C_GREEN}human_confirm${C_RESET}]" ;;
+  esac
+
+  emit "  活跃节点: ${C_BOLD}${active_node}${C_RESET} ${C_DIM}${age_text}${C_RESET}"
+  emit "  Work Graph 任务数: ${C_BOLD}${task_count}${C_RESET}"
+  emit "  ${n_plan} → ${n_eng} → ${n_aud} → ${n_rev} → ${n_hitl}"
+}
+
+# ────────────────────────────────
 # 整帧渲染
 # ────────────────────────────────
 
@@ -603,6 +653,10 @@ render_frame() {
     done
     rm -f "$f1" "$f2" "$f3" "$strip1" "$strip2" "$strip3"
   fi
+
+  # 区块 4：Graph Engine 状态（v1.2.2 P4）——三栏/堆叠布局之外追加的整宽区块
+  emit "$(printf '%*s' "$TERM_COLS" '' | tr ' ' '─')"
+  render_graph_engine "$TERM_COLS"
 
   emit "$(printf '%*s' "$TERM_COLS" '' | tr ' ' '─')"
   if [ "$WATCH" = "1" ]; then
