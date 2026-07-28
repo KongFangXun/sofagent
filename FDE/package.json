@@ -1,14 +1,11 @@
 {
-  "name": "sofagent-fde",
-  "version": "1.2.1",
-  "description": "FDE Agent——Forward Deployed Engineer 的企业部署技能。装上后 Agent 带你完成企业 AI 化全流程（四阶段十二步）。",
+  "name": "sofagent",
+  "version": "1.2.2",
+  "description": "企业 AI 落地的引导者。装上后 Agent 帮你逐岗位梳理工作流，用三问判定法识别哪些环节适合上 AI，算清每个节点的年节省金额，产出企业画像、节点方案、部署清单和交付手册。纯对话产出方案文档，零依赖。更多能力与完整文档见 GitHub kongfangxun/sofagent。",
   "private": true,
   "sofagent": {
     "type": "skill",
-    "skillId": "sofagent-fde",
-    "dependsOn": [
-      "sofagent-audit"
-    ],
+    "skillId": "sofagent",
     "platforms": [
       "openclaw",
       "workbuddy"
