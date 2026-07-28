@@ -9,7 +9,7 @@
 
 > 未来版本规划见 [ROADMAP.md](./ROADMAP.md)
 
-- **v1.2.1** — 数据目录重构 + Webhook 推送 + SubAgent 可见性 L2 + custom/ 闭环（.sofagent/ → data/ + 飞书/钉钉/企微推送 + ProgressMiddleware + 数据层清理）· 2026-07-27 · [开发日志](./docs/changelog/v1.2/v1.2.1.md)
+- **v1.2.1** — 数据目录重构 + Webhook 推送 + SubAgent 可见性 L2 + custom/ 闭环 + eval/ab-test 半成品补全（.sofagent/ → data/ + 飞书/钉钉/企微推送 + ProgressMiddleware + golden set 42 条 + CLI + 持久化）· 2026-07-28 · [开发日志](./docs/changelog/v1.2/v1.2.1.md)
 - **v1.2.0** — 物理结构大重构（/sofagent/→/engine/ + SKILL 收敛 + 发版工具链归 FORGE + install.sh 提根 + rules 独立包）· 2026-07-26 · [开发日志](./docs/changelog/v1.2/v1.2.0.md)
 - **v1.1.9** — 产品叙事收敛（FDE Agent）+ USB 完整运行时 + daemon A/B 自动调度器 + 控制图状态抽取 + v1.1.8 BugFix 42 项 · 2026-07-22 · [开发日志](./docs/changelog/v1.1/v1.1.9.md)
 - **v1.1.8** — 安全层加密配对 + 联邦查询 + Prompt 注入防护补齐 + 编排引擎串行版（DAG 并行规划在 v1.3.1） · 2026-07-22 · [开发日志](./docs/changelog/v1.1/v1.1.8.md)
