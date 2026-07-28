@@ -1,6 +1,6 @@
 # sofagent 版本开发 SOP
 
-> **十二阶段**：审查→开发→自测→代码审核→审查体系合并更新（含瘦身检查）→release-gate-loop 发版闸门→审查体系最终确认→文档收尾→工具脚本健康检查→确认关口→发布（含本地安装）→发布后。
+> **十二阶段**：审查→开发→自测→代码审核→审查体系合并更新（含瘦身检查）→release-gate-loop 发版闸门→审查体系最终确认→文档收尾→工具脚本健康检查→确认关口→发布（含设备端安装）→发布后。
 > 🔴 版本号操作用 `bump-version.sh` + `check-version.sh`，禁止手动 grep/sed。
 > 🔴 文档预算分层检查（A 用户文档 / B 开发者参考 / C 审查体系 / E 指南），见 `check-docs.sh`。
 > 🔴 回归检查已升格为**独立阶段**（阶段六）——需要全新 session，不再作为"审核"的子步骤。
@@ -769,6 +769,32 @@ sofagent-audit --doctor                     # 期望：与当前版本 doctor �
 bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二进制版本检查）
 ```
 
+### 🔴 设备端安装（每版本必做 · v1.2.1 起）
+
+> npm publish 成功后，必须在自己电脑上完成以下安装，确保设备端跑的是最新版本。
+
+```bash
+# 1. 全局 npm 包安装
+npm install -g @sofagent/audit@latest @sofagent/core@latest
+
+# 2. 验证版本
+sofagent-audit --version   # 期望：vX.Y.Z
+sofagent-core --doctor     # 期望：全部通过
+
+# 3. 本地 Skill 同步（WorkBuddy + OpenClaw 双平台）
+cp -r SKILL/harness/* ~/.workbuddy/skills/sofagent/
+cp -r SKILL/harness/* ~/.openclaw/skills/sofagent/
+cp SKILL/SKILL.md ~/.workbuddy/skills/sofagent-fde/
+
+# 4. Agent Skill 同步
+cp -r SKILL/agents/audit/ ~/.workbuddy/skills/sofagent-audit/
+cp -r SKILL/agents/audit/ ~/.openclaw/skills/sofagent-audit/
+cp -r SKILL/agents/fde/ ~/.workbuddy/skills/sofagent-fde/ 2>/dev/null || echo "FDE Agent 目录不存在（v1.2.x 后为产品文档，跳过）"
+
+# 5. 最终验证
+bash tools/check-version.sh   # 期望：全绿
+```
+
 ### 常见发布故障
 
 | 故障 | 现象 | 解决 |
@@ -835,7 +861,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 八 | 开发日志定稿 + 文档收尾 | 作者 | 否 | **开发日志定稿（含发布检查清单打勾）** + CHANGELOG/ROADMAP 五步/版本号/**发版日期同步**/测试数一致性/**🔴 文档同步闭环（D6 落地：changelog 功能点→项目文档覆盖率对照）**。涉及 CLI 迁移时 shellcheck 在此补跑 |
 | 九 | 发布前质量闸门 + 工具脚本健康检查 | 作者 | 是（步骤 22 开新 session 跑 fresh-eyes-loop） | loop 修复 + changelog 打勾 + check-version/bump-version/pre-push-check 覆盖同步 + 过时检查清理 |
 | 十 | 确认关口 | AI → **生成发布 prompt 交接** | 否 | git diff 确认 → 检查清单打勾 → 生成发布 prompt 交给负责人（可授权 AI 代执行） |
-| 十一 | 发布（含本地安装） | **🔴 项目负责人，或授权 AI 代执行** | 否 | 先装本地版本验证 → 再按依赖层分批 npm publish + git tag + gh release + Skill 分发。**网络降级**：tag 推上后 gh release/Skill 分发不依赖 main push |
+| 十一 | 发布（含设备端安装） | **🔴 项目负责人，或授权 AI 代执行** | 否 | 先装本地版本验证 → 再按依赖层分批 npm publish + git tag + gh release + Skill 分发 → **🔴 设备端安装（全局包 + Skill 同步）**。**网络降级**：tag 推上后 gh release/Skill 分发不依赖 main push |
 | 十二 | 发布后 | 作者 | 是（步骤 37 开新 session 读 `fresh-eyes-review.md` 做审查） | npm 验证 + CI 全绿检查（步骤 33）+ 流程漏洞吸收 + SOP 自我进化 + 生成下一版 prompt（步骤 36）→ 发布后审查（步骤 37）→ 自动进入下版本阶段一 |
 
 ---
