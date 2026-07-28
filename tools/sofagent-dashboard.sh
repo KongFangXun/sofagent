@@ -47,7 +47,7 @@ SOVEREIGNTY_DIR="$AUDIT_DIR/data-sovereignty"
 HISTORY_FILE="$AUDIT_DIR/history.jsonl"
 DAEMON_HEALTH="$DATA_ROOT/dashboard/daemon-health.json"
 GRAPH_STATE="$DATA_ROOT/dashboard/graph-state.json"
-REFRESH_INTERVAL=2
+REFRESH_INTERVAL=5
 
 # 依赖检查
 if ! command -v jq >/dev/null 2>&1; then
