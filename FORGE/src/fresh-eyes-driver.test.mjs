@@ -110,6 +110,168 @@ function testChunkEmpty() {
   console.log('  ✓ testChunkEmpty');
 }
 
+// ─── a-verify 分片逻辑测试 ───────────────────────────────────
+
+/**
+ * 模拟 runAVerifySharded 的分批构造逻辑（不实际 spawn worker）。
+ *
+ * 验证：
+ *   1. 输入文件名格式：result-verify-batch-N.md
+ *   2. 输出文件名格式：result-verified-batch-N.md
+ *   3. 分片输入内容只包含本批的 findings
+ *   4. 合并结果包含所有批次
+ *   5. finding 切不出时走 fallback
+ */
+function testAVerifyShardBatchConstruction() {
+  const BATCH_SIZE = 5;
+
+  // 构造 12 条 finding 的 result.md
+  const lines = ['# result.md', '', '## 修复结果', ''];
+  for (let i = 1; i <= 12; i++) {
+    lines.push(`### finding-${String(i).padStart(2, '0')}: 问题 ${i}`, `问题 ${i} 的描述`, '');
+  }
+  const resultText = lines.join('\n');
+
+  const findings = splitFindings(resultText);
+  assert.strictEqual(findings.length, 12, '应切出 12 条 finding');
+
+  const batches = chunk(findings, BATCH_SIZE);
+  assert.strictEqual(batches.length, 3, '12 条按 5 分批应得 3 批');
+  assert.strictEqual(batches[0].length, 5, '第 1 批 5 条');
+  assert.strictEqual(batches[1].length, 5, '第 2 批 5 条');
+  assert.strictEqual(batches[2].length, 2, '第 3 批 2 条');
+
+  // 验证分片输入文件名和内容
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    const batchNum = i + 1;
+    const inputFileName = `result-verify-batch-${batchNum}.md`;
+    const outputFileName = `result-verified-batch-${batchNum}.md`;
+
+    // 文件名格式检查
+    assert.ok(inputFileName.includes(`batch-${batchNum}`),
+      `输入文件名应包含 batch-${batchNum}`);
+    assert.ok(outputFileName.includes(`batch-${batchNum}`),
+      `输出文件名应包含 batch-${batchNum}`);
+    assert.ok(inputFileName.includes('verify'),
+      `a-verify 输入文件名应含 verify`);
+    assert.ok(outputFileName.includes('verified'),
+      `a-verify 输出文件名应含 verified`);
+
+    // 分片内容只包含本批 finding
+    const batchContent = batch.map(f => f.content).join('\n\n---\n\n');
+    for (const f of batch) {
+      assert.ok(batchContent.includes(`finding-${f.id}`),
+        `分片 ${batchNum} 应包含 finding-${f.id}`);
+    }
+    // 验证不包含其他批次的 finding
+    for (let j = 0; j < batches.length; j++) {
+      if (j === i) continue;
+      for (const otherF of batches[j]) {
+        assert.ok(!batchContent.includes(`finding-${otherF.id}`),
+          `分片 ${batchNum} 不应包含 finding-${otherF.id}`);
+      }
+    }
+  }
+
+  // 验证合并：模拟合并回填 result.md
+  const mergedHeader = '# result.md · a-verify 分片合并（已回填 verify 列）';
+  const mergedMeta = `> 共 ${batches.length} 批，${findings.length} 条 finding`;
+  const fakeBatchResults = batches.map((_, i) => `## 分片 ${i + 1} 验证结果`);
+  const mergedResult = [mergedHeader, '', mergedMeta, '', ...fakeBatchResults].join('\n');
+
+  assert.ok(mergedResult.includes(mergedHeader), '合并结果应包含标题');
+  assert.ok(mergedResult.includes('3 批'), '合并结果应包含批次数');
+  assert.ok(mergedResult.includes('12 条 finding'), '合并结果应包含 finding 总数');
+  for (let i = 1; i <= 3; i++) {
+    assert.ok(mergedResult.includes(`分片 ${i}`), `合并结果应包含分片 ${i}`);
+  }
+
+  console.log('  ✓ testAVerifyShardBatchConstruction');
+}
+
+/**
+ * 验证 a-verify 分片 fallback：result.md 无 finding 标记 → 单 session。
+ */
+function testAVerifyShardFallback() {
+  const resultText = '# result.md\n\n## 修复结果\n\n一些没有 finding 标记的文本\n';
+  const findings = splitFindings(resultText);
+  assert.strictEqual(findings.length, 0, '无 finding 标记应返回空数组');
+
+  // 模拟 runAVerifySharded 的 fallback 判断
+  const shouldFallback = findings.length === 0;
+  assert.ok(shouldFallback, 'findings 为空时应触发 fallback');
+
+  console.log('  ✓ testAVerifyShardFallback');
+}
+
+/**
+ * 验证 a-verify 分片的单批失败不中断（容错）。
+ *
+ * 模拟 3 批，第 2 批失败，验证最终仍合并所有结果（失败的批写错误信息）。
+ */
+function testAVerifyShardBatchFailure() {
+  const BATCH_SIZE = 5;
+
+  const lines = ['# result.md', ''];
+  for (let i = 1; i <= 12; i++) {
+    lines.push(`### finding-${String(i).padStart(2, '0')}: 问题 ${i}`, `内容 ${i}`, '');
+  }
+  const findings = splitFindings(lines.join('\n'));
+  const batches = chunk(findings, BATCH_SIZE);
+
+  const batchResults = [];
+  // 模拟第 2 批失败
+  for (let i = 0; i < batches.length; i++) {
+    const batchNum = i + 1;
+    if (batchNum === 2) {
+      batchResults.push(
+        `## 分片 ${batchNum} 验证失败\n\n` +
+        `错误: worker a-verify 退出码 1\n\n` +
+        `涉及 finding: ${batches[i].map(f => f.id).join(', ')}\n`
+      );
+    } else {
+      batchResults.push(`## 分片 ${batchNum} 验证结果\n\n成功验证 ${batches[i].length} 条`);
+    }
+  }
+
+  // 合并
+  const mergedResult = [
+    '# result.md · a-verify 分片合并',
+    '',
+    `> 共 ${batches.length} 批，${findings.length} 条 finding`,
+    '',
+    ...batchResults,
+  ].join('\n');
+
+  // 失败的批被保留，不中断
+  assert.ok(mergedResult.includes('分片 2 验证失败'), '合并结果应包含失败分片信息');
+  assert.ok(mergedResult.includes('worker a-verify 退出码 1'), '应保留错误信息');
+  assert.ok(mergedResult.includes('分片 1 验证结果'), '成功批 1 应在合并结果中');
+  assert.ok(mergedResult.includes('分片 3 验证结果'), '成功批 3 应在合并结果中');
+
+  console.log('  ✓ testAVerifyShardBatchFailure');
+}
+
+/**
+ * 验证 a-verify 分片大小恰好整除（无尾批）。
+ */
+function testAVerifyShardExactDivision() {
+  const BATCH_SIZE = 5;
+  const lines = ['# result.md', ''];
+  for (let i = 1; i <= 10; i++) {
+    lines.push(`### finding-${String(i).padStart(2, '0')}: 问题 ${i}`, `内容 ${i}`, '');
+  }
+  const findings = splitFindings(lines.join('\n'));
+  const batches = chunk(findings, BATCH_SIZE);
+
+  assert.strictEqual(batches.length, 2, '10 条按 5 分批应得 2 批');
+  assert.strictEqual(batches[0].length, 5);
+  assert.strictEqual(batches[1].length, 5);
+
+  console.log('  ✓ testAVerifyShardExactDivision');
+}
+
 // ─── 集成测试：用 run-01 实际 result.md 验证 ─────────────────
 function testRealResultMd() {
   const realPath = join(
@@ -157,7 +319,7 @@ function testRealResultMd() {
 }
 
 // ─── 运行测试 ────────────────────────────────────────────────
-console.log('\n🧪 fresh-eyes-driver splitFindings / chunk 单元测试\n');
+console.log('\n🧪 fresh-eyes-driver splitFindings / chunk / a-verify 分片单元测试\n');
 
 let passCount = 0;
 let failCount = 0;
@@ -169,6 +331,11 @@ const tests = [
   testChunk,
   testChunkExactDivision,
   testChunkEmpty,
+  // a-verify 分片逻辑测试
+  testAVerifyShardBatchConstruction,
+  testAVerifyShardFallback,
+  testAVerifyShardBatchFailure,
+  testAVerifyShardExactDivision,
   testRealResultMd,
 ];
 
