@@ -29,6 +29,27 @@ graph TD
 
 > **记忆法：环境、反馈、流程。** Harness 给 Agent 一个稳定的工作间（上下文/工具/权限/可观测性），Graph 告诉它任务流向哪（节点边界/路由条件/并行/汇合），Loop 让它出错后能基于证据自己改进（验证→反馈→修复→再验证）。三层缺一不可——再漂亮的 Graph 没有 Harness 就不可执行，再好的 Loop 没有 Graph 就不知道在哪个环节改进。
 
+### 核心概念层次：Graph > Workflow > Loop > Goal
+
+上面三层嵌套讲的是引擎视角（Harness / Graph / Loop）。换到**业务视角**，同样的概念体现为四个自外向内的嵌套层级：
+
+| 层级 | 定义 | sofagent 对应 | 例子 |
+|------|------|--------------|------|
+| **Graph** | 企业全部业务节点和关联关系的全局拓扑 | FDE §5 本体模型（objects / relations / knowledge-domain） | objects.yml + relations |
+| **Workflow** | Graph 上的一条完整业务链路——从输入到产出 | FDE §4 梳理出的工作流 | 采购审批流、财报生成流 |
+| **Loop** | Workflow 中的一个闭环执行单元，由 Goal 驱动 | FORGE loop / AI 节点跑起来 | fresh-eyes-loop、release-gate-loop |
+| **Goal** | Loop 的退出条件——达成即停，偏离即纠 | exit-gate 判定 | "所有 P0 修复完成" "审查全绿" |
+
+**Workflow 由 Loop 节点和 Human 节点交替组成**（对应 FDE §6 三问判定法）：
+
+- 🔄 **纯 Loop（自动执行）** — AI 跑完即退出，Goal 达成自动收工
+- ⚡ **Loop + Human（强化岗位）** — AI 跑 Loop，Human 在关键环节介入（审批 / 检查 / 兜底）
+- 👤 **纯 Human（暂不动）** — 当前不适合上 AI，保持人工
+
+> **Human-in-the-loop 不是"loop 里面塞了人"，而是 workflow 里 loop 节点和 human 节点的协同编排。** 一个 workflow = 一条由不同类型节点串联而成的路径。
+
+举例：采购审批流 = `[🔄 收集报价] → [⚡ 主管审批] → [🔄 生成合同] → [Human 签字]`
+
 ## 目录
 
 - [术语对照](#术语对照)
