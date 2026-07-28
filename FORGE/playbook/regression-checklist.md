@@ -66,7 +66,7 @@ for f in docs/changelog/v*.md; do v=$(basename $f .md); git rev-parse $v >/dev/n
 # 子项 c: CHANGELOG 索引含全部已发版 tag + 规划版独立分组
 grep -A1 "## 规划中" CHANGELOG.md | head -1   # 期望：有「规划中」独立标题
 # 子项 d: README 对核心文档链接可发现性
-grep -c "llm-wiki-mapping" README.md   # 期望: ≥ 1
+grep -c "ARCHITECTURE.md" README.md   # 期望: ≥ 1
 # 子项 e: 当前版本条目不含审查元信息（原维度 48e）
 LATEST_VER=$(grep -m1 "^### \[v" CHANGELOG.md | grep -oE 'v[0-9.]+'); sed -n "/^### \[$LATEST_VER\]/,/^### \[v/p" CHANGELOG.md | grep -qE "P[012]×|fresh-eyes|审查轮次" && echo "⚠️ CHANGELOG 当前版本含审查元信息"
 # 子项 f: ROADMAP 版本头描述与当前版本一致（原维度 48a）

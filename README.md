@@ -184,7 +184,6 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 | 安全声明 | [SECURITY](./SECURITY.md) |
 | 已知局限 | [LIMITATIONS](./LIMITATIONS.md) |
 | 版本路线图 | [ROADMAP](./ROADMAP.md) |
-| LLM 对标映射 | [llm-wiki-mapping](./docs/llm-wiki-mapping.md) |
 | 项目导航索引（AI 用） | [WIKI](./docs/WIKI.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
 
