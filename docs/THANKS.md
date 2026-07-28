@@ -48,8 +48,6 @@
 
 - **[Claude Opus 5 / 上下文工程](https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models)** · Anthropic（Thariq Shihipar）— 指令从 800 词精简至 164 词后性能反升，宣告提示词工程时代终结。底层逻辑转向「上下文工程」——设计信息架构（什么该给 / 何时给）。与 sofagent「约束进代码层而非 prompt 层」判断同源。
 
-- **Governed Autonomy / Loop Engineering** · AI酋长 Andy — 提出「受治理的自主性」是 Agent 竞争核心，给出 4 级能力成熟度模型（Copilot→Operator→Bonded Agent→Accountable System）。Accountable System（全流程留证据、可问责）与 sofagent 审计 + 控制平面治理目标态同构。
-
 ### 编排与架构
 
 - **[Managed Agents](https://www.anthropic.com/engineering/managed-agents)** · Anthropic — 四层编排架构，验证 OpenClaw（连接+行动）与 DeepAgents（深度思考）分工
