@@ -713,34 +713,17 @@ git log vX.Y.Z..HEAD --oneline
    - 末尾**必须有**开发日志链接——**🔴 v1.1.4 教训：必须用 markdown 链接语法 `[详细开发日志](./docs/changelog/vX.Y.Z.md)`，不要写成 `` `docs/changelog/vX.Y.Z.md` `` 反引号纯文本（后者在 GitHub 上不可点击）**
    - **不含**审查元信息（模型名、审查轮次、P0/P1 标签）——那是内部过程
 
-── Step 5: Skill 分发 + 本机升级 ──
+── Step 5: Skill 分发 ──
 > v1.2.2 起：对外只维护一个 skill `sofagent`（slug），发布源是 `./FDE` 目录（含 SKILL.md + FDE.md + templates）。
-> 不再单独发布 sofagent-fde / sofagent-audit / sofagent-engineer / sofagent-reviewer —— 这些是内部 Sub Agent，用户不需要单独安装。
-> 旧入口 sofagent-fde / sofagent-audit / sofagent-engineer / sofagent-reviewer 在 SkillHub/ClawHub 标 deprecated 或删除。
+> 不再单独发布 sofagent-fde / sofagent-audit / sofagent-engineer / sofagent-reviewer —— 这些是内部 Sub Agent，不对外。
 
 15. clawhub skill publish ./FDE --slug sofagent --owner KongFangXun --version X.Y.Z --changelog "vX.Y.Z: {简短变更}"
-16. skillhub publish ./FDE --version X.Y.Z
-17. **🔴 本机全局升级**（v1.0.7 教训——忘了更新本机安装，导致 QA 测试时跑的是旧版本）：
-    npm install -g /audit@latest
-    sofagent-audit --version                    # 验证版本号
-    sofagent-audit --doctor                     # 验证功能正常
-18. 本地 Skill 同步（v1.2.2 起：对外只维护 ./FDE → sofagent）：
-    # SkillHub/ClawHub 发布的 skill 同步到本机
-    cp FDE/SKILL.md ~/.workbuddy/skills/sofagent-fde/SKILL.md
-    cp FDE/FDE.md ~/.workbuddy/skills/sofagent-fde/FDE.md
-    # 内部底座（harness + agents）同步到本机 sofagent/
-    cp -r SKILL/harness/* ~/.workbuddy/skills/sofagent/
-    cp SKILL/SKILL.md ~/.workbuddy/skills/sofagent/SKILL.md
-    # Sub Agent 同步
-    for agent in fde audit engineer reviewer; do
-      mkdir -p ~/.workbuddy/skills/sofagent-${agent}
-      cp SKILL/agents/${agent}/SKILL.md ~/.workbuddy/skills/sofagent-${agent}/SKILL.md 2>/dev/null || true
-    done
+16. skillhub publish ./FDE --version X.Y.Z --changelog "vX.Y.Z: {简短变更}"
+17. 本机 Skill 同步：
+    cp -r FDE/* ~/.workbuddy/skills/sofagent/
 ```
 
-> **💡 WorkBuddy Skill 自动同步说明**：作者的 WorkBuddy 已安装 sofagent skill。每次 sofagent skill 文件更新并 cp 到 `~/.workbuddy/skills/` 后，WorkBuddy 客户端会自动同步本地 skill 内容——这是作者自己开发环境内的同步，**不影响 ClawHub/SkillHub 发布流程**。ClawHub（`clawhub skill publish`）和 SkillHub 仍然是每次发版必须执行的发布渠道，一个都不能少。
->
-> **📌 v1.2.2 起对外只维护一个 skill `sofagent`（发布源 `./FDE`）**。sofagent-fde / sofagent-audit / sofagent-engineer / sofagent-reviewer 是内部 Sub Agent，不再单独发布到 SkillHub/ClawHub。旧入口在平台上标 deprecated。
+> **📌 以后只维护一个对外 skill `sofagent`（发布源 `./FDE`）。** ClawHub 和 SkillHub 每次发版都要推，一个都不能少。
 
 ### 发布后验证
 
