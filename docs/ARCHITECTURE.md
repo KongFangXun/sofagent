@@ -148,9 +148,9 @@ OpenClaw 通过 Hook 精确注入，其他平台 Agent 主动 Read，v1.0.7+ Sub
 
 > **v1.1.8 加载链扩展**：联邦知识注入于 knowledge/ 层（加载链第 4 层，位于 think.md 第 3 层之后；目录 `knowledge/federation/`，daemon 联邦查询落盘的 peer 知识快照）——低于 SKILL.md 宪法层。联邦内容是外部来源，强制 `<untrusted source="federation">` 包裹（Prompt 注入防线层 1，详见 SECURITY.md 8 层映射表）。
 
-### 权限四原则与零凭证沙箱（2026-07 钉钉 CTO 一粟 blog 研读）
+### 权限四原则与零凭证沙箱（2026-07 行业参考 blog 研读）
 
-钉钉 CTO 一粟将 Agent 权限治理归纳为四条可操作原则，与 sofagent 审计引擎 + 约束底座同构：
+行业参考将 Agent 权限治理归纳为四条可操作原则，与 sofagent 审计引擎 + 约束底座同构：
 
 1. **最小权限**：每个 Agent 只拿当前任务必需的最小凭证集，不预置全量权限。
 2. **群维度隔离**：按组织 / 项目 / 环境维度隔离权限域，跨域调用需显式授权。
@@ -161,12 +161,12 @@ OpenClaw 通过 Hook 精确注入，其他平台 Agent 主动 Read，v1.0.7+ Sub
 
 **最坏情况反问**（权限模型必答题）：「如果这个 Agent 被 Prompt 注入了，最坏情况是什么？」答案应是它 profile 内那些权限能做的事，而非整个系统沦陷——权限不是限制 Agent，是保护组织。
 
-**动态治理三机制**（钉钉 CTO 一粟内部实践口径，待核验）：
+**动态治理三机制**（行业参考内部实践口径，待核验）：
 - 动态提权：任务触发、限时授权、到期自动回收（临时审批申请 → 批准 → 约 2 小时后过期，待核验）。
 - 熔断拦截：高危操作实时拦截、等待人类确认。
 - 红线制度：超阈值动作（如合同金额 > 10 万，待核验）须 VP 签字等边际审批。
 
-> 📖 来源：钉钉 CTO 一粟 blog《权限四原则》《零凭证沙箱》（2026，具体 URL 待核验）/ 钉钉 CTO 一粟 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》
+> 📖 来源：行业参考 blog《权限四原则》《零凭证沙箱》（2026，具体 URL 待核验）/ 行业参考 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》
 
 ### 联邦查询（v1.1.8）
 
@@ -533,9 +533,9 @@ FDE 用户关心的是「我公司 AI 化进度」——跑着哪些节点、审
 
 ---
 
-### 长驻运行时治理（对标 Managed Agent Runtime，2026-07 钉钉 CTO 一粟 blog 研读）
+### 长驻运行时治理（对标 Managed Agent Runtime，2026-07 行业参考 blog 研读）
 
-钉钉 CTO 一粟观点：Agent 不能「用的时候开、不用的时候关」，应作为**长驻微服务**治理（非脚本）。sofagent 的 daemon（cron.ts）已落地常驻，但尚缺下列运维模式——这些模式仅针对 sofagent 自派 SubAgent 的隔离运行时治理（§五 范围声明例外；主 Agent 运行于第三方平台，sofagent 不做其运维层），补齐即 daemon 完整的「7×24 工位」：
+行业参考观点：Agent 不能「用的时候开、不用的时候关」，应作为**长驻微服务**治理（非脚本）。sofagent 的 daemon（cron.ts）已落地常驻，但尚缺下列运维模式——这些模式仅针对 sofagent 自派 SubAgent 的隔离运行时治理（§五 范围声明例外；主 Agent 运行于第三方平台，sofagent 不做其运维层），补齐即 daemon 完整的「7×24 工位」：
 
 | 模式 | 作用 | sofagent 现状 |
 |------|------|------|
@@ -548,7 +548,7 @@ FDE 用户关心的是「我公司 AI 化进度」——跑着哪些节点、审
 
 > 关键认知：进程活着 ≠ 服务健康——卡死在死锁里的 Agent 进程 ps 看着正常，但已 30 分钟没处理消息。健康须靠心跳 + 恢复闭环证明。
 
-> 📖 来源：钉钉 CTO 一粟 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》（具体 URL 待核验）
+> 📖 来源：行业参考 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》（具体 URL 待核验）
 
 ## 四、核心设计决策
 
@@ -678,7 +678,7 @@ Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2
 
 ## 六、行业框架对齐：研究如何印证 sofagent 架构（2026-07 研读）
 
-> 📖 **源声明**：本节及正文多处引用的 `[行业笔记]` 均指同一来源——**31 篇行业笔记跨批研读（2026-07-20）**，涵盖 Palantir Ontology / Action Type / AIP / Onyx / a16z / 钉钉 CTO 一粟 blog 等行业框架与研报。以下各处仅用 `[行业笔记]` 简短引用，不再逐条重复完整来源。
+> 📖 **源声明**：本节及正文多处引用的 `[行业笔记]` 均指同一来源——**31 篇行业笔记跨批研读（2026-07-20）**，涵盖 Palantir Ontology / Action Type / AIP / Onyx / a16z / 行业参考 blog 等行业框架与研报。以下各处仅用 `[行业笔记]` 简短引用，不再逐条重复完整来源。
 
 > 这一节把 31 篇研读里与 sofagent 架构**结构上对齐**的框架（Palantir Ontology / Action Type / AIP / Onyx）逐条印证——不是发明新架构，是验证已有架构选型的行业合理性。
 
@@ -831,11 +831,11 @@ a16z《你刚雇了一百万个糟糕员工》七法则（完整映射见 [PHILO
 
 > 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）/ a16z（2026-07-15，[You Just Hired a Million Bad Employees](https://www.a16z.news/)（原文 URL 待核实））
 
-### 钉钉 CTO 一粟 MoA 四层 ↔ sofagent 一底座·四引擎（2026-07 研读）
+### 行业参考 MoA 四层 ↔ sofagent 一底座·四引擎（2026-07 研读）
 
-钉钉 CTO 一粟提出 MoA（Mixture-of-Agents）四层编排：路由 / 专家 / 聚合 / 反思。与 sofagent「一底座·四引擎」逐层同构：
+行业参考提出 MoA（Mixture-of-Agents）四层编排：路由 / 专家 / 聚合 / 反思。与 sofagent「一底座·四引擎」逐层同构：
 
-| MoA 四层（钉钉 CTO 一粟）| sofagent 对应 | 说明 |
+| MoA 四层（行业参考）| sofagent 对应 | 说明 |
 |------|------|------|
 | 路由 Routing | 编排引擎 | 任务分发与依赖编排 |
 | 专家 Experts | 四引擎·专项 | 约束 / 审计 / 回溯 / 进化各司其职 |
@@ -844,11 +844,11 @@ a16z《你刚雇了一百万个糟糕员工》七法则（完整映射见 [PHILO
 
 > 同构点：MoA 的「反思」对应 sofagent 的「约束底座 + 审计」——概率性编排之外，确定性治理兜底。
 
-> 📖 来源：钉钉 CTO 一粟 blog《MoA 四层编排》（2026，具体 URL 待核验）
+> 📖 来源：行业参考 blog《MoA 四层编排》（2026，具体 URL 待核验）
 
-### AI to B 三层基建：数据 / 连接 / AI Coding（2026-07 钉钉 CTO 一粟 blog 研读）
+### AI to B 三层基建：数据 / 连接 / AI Coding（2026-07 行业参考 blog 研读）
 
-钉钉 CTO 一粟将「AI 落地企业」拆为三层可替换基建，模型本身是最可被替换的一层：
+行业参考将「AI 落地企业」拆为三层可替换基建，模型本身是最可被替换的一层：
 
 | 基建层 | 职责 | sofagent 落点 |
 |------|------|------|
@@ -858,39 +858,23 @@ a16z《你刚雇了一百万个糟糕员工》七法则（完整映射见 [PHILO
 
 > 印证「模型吞噬一切」：文字约束会被投喂吞噬，唯有封装进代码级 Subagent + 防投喂机制能存活；模型选型（DeepSeek / GLM）可随场景替换，基建不动。
 
-> 📖 来源：钉钉 CTO 一粟 blog《AI to B 三层基建》（2026，具体 URL 待核验）
+> 📖 来源：行业参考 blog《AI to B 三层基建》（2026，具体 URL 待核验）
 
 ### 自主级别（L1→L2→L3）与配套约束（2026-07 loop-engineering 研读）
 
-loop-engineering 社区将 Agent 自主性拆为三级，每一级对应不同的约束强度。此模型与 sofagent 的「约束底座 → 审计 → 沉淀」逐级递进完全同构：
+loop-engineering 社区将 Agent 自主性拆为三级，L1→L2→L3 可升可降（安全降级是功能，不是倒退），与 sofagent「一底座·四引擎」逐层同构：
 
-| 自主级别 | Agent 能做什么 | 约束层要求 | sofagent 对应 |
+| 自主级别 | Agent 能做什么 | sofagent 对应 | 四引擎状态 |
 |---|---|---|---|
-| **L1 — Report** | 扫描 → 报告 → 写 STATE.md，不动代码 | 审计引擎只读旁路 | FDE 节点部署后第一周默认模式 |
-| **L2 — Assisted** | 在 worktree 里修复，验证者独立审核 | denylist + allowlist + 人工 gate | 审计引擎 A1-A21 全量规则 + human gate |
-| **L3 — Unattended** | 全自动 + 自愈，仅在升级条件触发时告警 | budget cap + kill switch + 碰撞检测 | 编排引擎全自动 + 审计兜底 + daemon 巡检 |
-
-**关键设计决策**：L1→L2→L3 不是线性升级，而是**可逆的**——L3 出现 incident 或成本飙升时，应能自动降级回 L2 甚至 L1（kill switch 触发）。这与 sofagent 的「约束底座不可绕过」一致：降级是安全功能，不是倒退。
-
-**与「一底座·四引擎」的映射**：
-- **约束底座**：L1-L3 全程生效，不随自主级别变化
-- **审计引擎**：L1 仅记录，L2 告警，L3 阻断
-- **编排引擎**：L1 仅报告，L2 辅助执行，L3 全自动调度
-- **回溯引擎**：L2+ 强制启用（每次自动修复需回溯证据）
+| **L1 — Report** | 扫描报告，不动代码 | FDE 首周默认模式 | 约束生效 · 审计记录 · 编排仅报告 · 回溯关闭 |
+| **L2 — Assisted** | worktree 里修复，独立验证 | 审计全量 + human gate | 约束生效 · 审计告警 · 编排辅助 · 回溯启用 |
+| **L3 — Unattended** | 全自动自愈，越界告警 | 编排全自动 + 审计兜底 | 约束生效 · 审计阻断 · 编排全自动 · 回溯全程 |
 
 > 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [concepts.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/concepts.md) / [loop-design-checklist.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/loop-design-checklist.md)
 
 ### 多 Agent 协调优先级（2026-07 loop-engineering 研读）
 
-当多个 Agent 节点同时运行时，需明确的冲突解决机制。loop-engineering 的多循环协调原则可直接适配 FDE 的多节点场景：
-
-**核心规则**：
-1. **一个所有者管一个分支** —— 同一时刻最多一个 Agent 修改同一工作区
-2. **分离的状态文件** —— 每个 Agent 节点有独立的 state，Triage 节点只有报告权
-3. **共享 denylist** —— 所有节点拷贝同一份路径黑名单
-4. **聚合 token 预算** —— 按节点优先级分配，CI 类最高、清理类最低
-
-**FDE 多节点优先级建议**：
+核心规则：一所有者一分支、分离状态文件、共享 denylist、聚合 token 预算。详见 [multi-loop.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/multi-loop.md)。FDE 多节点场景的优先级映射：
 
 | 优先级 | FDE 节点类型 | 原因 |
 |:--:|---|---|
