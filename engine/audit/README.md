@@ -50,7 +50,7 @@ sofagent-audit --diff origin/main..HEAD
 # JSON 输出（适合 CI/CD）
 sofagent-audit --diff HEAD~1..HEAD --json
 
-# CI 模式（= strict + silent，适合无 Agent 日志的 CI 环境）
+# CI 模式（= silent，紧凑输出。⚠️ 不隐含 --strict，如需严格模式请显式加 --strict）
 sofagent-audit --diff HEAD~1..HEAD --ci --json
 ```
 
@@ -70,8 +70,14 @@ sofagent-audit --diff HEAD~1..HEAD --ci --json
 | `--regression <dir>` | 对指定目录跑回归验证 | — |
 | `--install-hook` | 安装 git commit-msg hook | — |
 | `--mcp` | 启动 MCP Server 模式 | — |
+| `--revert <snapshot-sha>` | 恢复到指定快照（回溯引擎） | — |
+| `--timeline [N]` | 查看快照时间线（回溯引擎，N 为显示条数） | 10 |
+| `ontology view` | 本体人类可读视图 | — |
 | `--version` | 版本号 | — |
 | `--help` | 帮助 | — |
+| `--revert <snapshot-sha>` | 恢复到指定快照（回溯引擎） | — |
+| `--timeline [N]` | 查看快照时间线（回溯引擎） | — |
+| `ontology view` | 本体人类可读视图 | — |
 
 ### 退出码
 
@@ -112,6 +118,16 @@ sofagent-core doctor
 | `--json` | JSON 机器可读输出 | — |
 | `--platform <name>` | 手动指定平台 | 自动检测 |
 
+### 审计报告（session-report）
+
+每次审计后生成 `data/audit/session-report.md`（安装后位于 `~/.sofagent/data/audit/session-report.md`），包含：
+
+- 审计结果（通过/失败）与 exit code
+- 检查数（通过/警告/违规/跳过）、引擎版本
+- 变更文件列表与状态
+
+可用 `sofagent-audit --timeline [N]` 查看历史快照时间线（默认 10 条）。
+
 ### Git Hook 集成
 
 ```bash
@@ -122,6 +138,15 @@ sofagent-audit --install-hook
 ```
 
 > 💡 注意：sofagent-audit 进程自身 exit=2（FAIL 拦截），但经 git commit-msg hook 转发后，shell 看到的是 git 的 exit=1。测试拦截行为时以 sofagent-audit 直接调用的 exit code 为准。
+
+### 审计报告
+
+每次审计后生成 `data/audit/session-report.md`（或 `~/.sofagent/data/audit/session-report.md`），包含：
+- 审计结果（通过/失败）
+- 检查数、引擎版本
+- 变更文件列表
+
+可用 `sofagent-audit --timeline` 查看历史快照。
 
 ### CI/CD 集成（GitHub Actions 示例）
 
@@ -248,7 +273,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 | 规则 | 判定 | 严重度 | 分级 |
 |------|------|:--:|------|
 | A1 不碰敏感 | `.env` / `*.pem` / `id_rsa` / 密钥文件被修改 | FAIL | 业务底线 |
-| A2 不泄密钥 | 代码中出现 API Key / Token / Password 模式 | FAIL | 业务底线 |
+| A2 不泄密钥 | 代码中出现 API Key（OpenAI / Anthropic / DeepSeek）/ Token / Password 模式 | FAIL | 业务底线 |
 | A3 不改越界 | 修改文件路径与任务描述不匹配 | WARN | 业务底线 |
 | A4 不删配置 | 配置文件被删除 | FAIL | 业务底线 |
 | A5 不瞒真相 | commit message 为空或纯占位符（fix/update/wip 等） | WARN | 业务底线 |
@@ -262,6 +287,8 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 | A19 commit message 质量 | message 命中黑名单词或过短（防"add"/"test"/"fix" 等低质 message） | FAIL | 业务底线 |
 
 ### 扩展规则（A14-A17 + E1-E4，共 8 条）
+
+> ℹ️ E1-E4 内部规则 ID 为 201-204，预留 101-199 区间给未来默认规则扩展。
 
 A14-A17 + E1-E4 均需 `extendedRules: true` 启用（`DEFAULT_CONFIG=false`，opt-in）。仅当 config 解析失败走 `safeDefaults` 时 fail-closed 强制启用所有扩展规则——这是有意的保护性设计。
 

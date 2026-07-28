@@ -41,6 +41,20 @@ describe('A2 不泄密钥', () => {
     expect(result.status).toBe('FAIL');
   });
 
+  it('新增行含 Anthropic API Key (sk-ant-api03-) → FAIL', () => {
+    const antKey = 'sk-ant-api03-' + 'a'.repeat(43);
+    const ctx = makeCtx([makeDiffFile('src/ai.ts', [`+const apiKey = "${antKey}"`])]);
+    const result = checkRuleA2(ctx);
+    expect(result.status).toBe('FAIL');
+  });
+
+  it('新增行含 DeepSeek API Key (sk- 32位) → FAIL', () => {
+    const dsKey = 'sk-' + 'a'.repeat(32);
+    const ctx = makeCtx([makeDiffFile('src/ai.ts', [`+const apiKey = "${dsKey}"`])]);
+    const result = checkRuleA2(ctx);
+    expect(result.status).toBe('FAIL');
+  });
+
   it('无密钥 → PASS', () => {
     const ctx = makeCtx([makeDiffFile('src/index.ts', ['+const x = 1;'])]);
     const result = checkRuleA2(ctx);

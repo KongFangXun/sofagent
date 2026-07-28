@@ -7,14 +7,27 @@
 
 import type { AuditContext, RuleCheck } from './types';
 
-/** 密钥泄漏检测正则模式 */
+/**
+ * 密钥泄漏检测正则模式
+ *
+ * 注意：sk-ant- 规则在 sk-[a-zA-Z0-9] 通用规则之前，保证 Anthropic key
+ * 先被精确匹配而非被通用规则吞掉。聚合检测（groupedDetections）以 label
+ * 去重，同一文件同一 label 只显示一次。
+ *
+ * 未覆盖的 key 格式（误报风险高，保守不加正则）：
+ * - GLM（智谱）：格式为 id.secret 点分隔（如 8a3b1c2d9e7f4g5h.xxx），正则误报率高
+ * - 通义千问：格式不确定
+ * 以上规划在 v1.3.x 用 LLM 辅助检测。
+ */
 const SECRET_PATTERNS: { pattern: RegExp; label: string }[] = [
   { pattern: /AKIA[A-Z0-9]{16}/, label: 'AWS Access Key' },
   { pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/, label: 'Private Key' },
-  { pattern: /sk-[a-zA-Z0-9]{48}/, label: 'OpenAI API Key' },
+  { pattern: /sk-ant-(api03|api04)-[A-Za-z0-9_-]{40,}/, label: 'Anthropic API Key' },
   { pattern: /sk-proj-[a-zA-Z0-9_]{40,}/, label: 'OpenAI Project Key' },
   { pattern: /sk-svcacct-[a-zA-Z0-9_]{40,}/, label: 'OpenAI Service Account Key' },
   { pattern: /sk-admin-[a-zA-Z0-9_]{40,}/, label: 'OpenAI Admin Key' },
+  // 通用 sk- key（48 位匹配 OpenAI，32-47 位匹配 DeepSeek 等短 key 厂商）
+  { pattern: /sk-[a-zA-Z0-9]{32,}/, label: 'Possible API Key (OpenAI/DeepSeek)' },
   { pattern: /gh[ps]_[A-Za-z0-9]{36}/, label: 'GitHub Token' },
 ];
 
