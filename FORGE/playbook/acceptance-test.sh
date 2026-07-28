@@ -1604,6 +1604,34 @@ if $S145_OK; then
   $S145_OK && pass "WIKI.md 存在 + 7 节结构完整 + README 可发现"
 fi
 
+# ── 场景 146: data/ 不泄露到项目目录（v1.2.2 F-39） ──────────
+echo ""
+echo -e "${CYAN}── 场景 146: data/ 不泄露到项目目录（F-39） ──${NC}"
+S146_OK=true
+# 清理可能存在的残留
+rm -rf "$PROJECT_ROOT/data/" 2>/dev/null
+# 跑一次审计测试（会触发 writeSessionReport）
+NODE_OPTIONS="--max-old-space-size=4096" npx vitest run engine/audit/src/__tests__/session-report.test.ts >/dev/null 2>&1
+# 检查项目目录是否出现了 data/
+if [ -d "$PROJECT_ROOT/data/" ]; then
+  fail "data/ 泄露到项目目录——F-39 修复无效"; S146_OK=false
+else
+  pass "data/ 未泄露——session-report 正确写入 ~/.sofagent/data/audit/"
+fi
+
+# ── 场景 147: Dashboard 基本渲染（v1.2.2 P2 新增） ──────────
+echo ""
+echo -e "${CYAN}── 场景 147: Dashboard 基本渲染 ──${NC}"
+S147_OK=true
+DASH="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
+[ -f "$DASH" ] || { fail "sofagent-dashboard.sh 不存在"; S147_OK=false; }
+if $S147_OK; then
+  DASH_OUT=$(bash "$DASH" 2>&1) || true
+  echo "$DASH_OUT" | grep -q "数据主权" || { fail "Dashboard 缺少'数据主权'栏"; S147_OK=false; }
+  echo "$DASH_OUT" | grep -q "规则审计" || { fail "Dashboard 缺少'规则审计'栏"; S147_OK=false; }
+  $S147_OK && pass "Dashboard 两栏渲染正常（数据主权 + 规则审计）"
+fi
+
 # ── 总结 ──────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
