@@ -70,6 +70,7 @@
 - **[Agent Client Protocol (ACP)](https://github.com/Agent-Client-Protocol/spec)** · LSP 式开放协议（Omnigent 在用）— meta-harness 的开放接入标准。跟踪方向：标准化赢面大于厂商锁定，未来接入层可对齐 ACP 而非自造协议。；其中间件链（InputSanitization→TokenBudget→SafetyFinishReason 等 26 步有序流水线）、Skills 渐进式加载 + SkillScan 确定性安全扫描、Session Goals（会话完成条件 + 非思考模型评估）、ToolOutputBudget（工具输出预算）等设计启发了 v1.2.x-v1.3.x 编排引擎与产品化增强方向。它做运行时（River 比喻里的"河"），sofagent 做堤坝——不冲突，互补。
 - **[DataFlow](https://github.com/OpenDCAI/DataFlow)** · 北京大学 DCAI — operator-based 数据合成系统（Pipeline→Operator→Prompt 分层）；其论文 arXiv:2607.16617 独立用「Harness」一词命名 Agent 约束层，与 DeerFlow / Omnigent 同月、且来自顶尖高校，是 sofagent「Harness 品类」判断的第三方独立佐证，启发我们用「分层 + 约束底座」治理 Agent 产出的工件
 - **[ChatDemo](https://github.com/OpenFDEAI/ChatDemo)** · OpenFDEAI — 以 Forward Deployed Engineer 命名其售前"边聊边出 Demo"工作流，印证我们 FDE 术语同源（Palantir 脉络），并启发我们对 FDE 售前采集入口与分级降级梯队的理解
+- **行业参考（原 钉钉 CTO blog）** — 数字员工四跨越、MoA 四层编排、Agent 权限四原则、AI to B 三层基建、轨迹优化闭环、渐进信任与判断层等洞见，为 sofagent 的信任模型、自主级别、编排架构和进化机制提供了产业一线的操作性验证。正文中已隐去作者名、将思想融入内容，此处正式致敬。
 
 ### 认知与反馈
 
