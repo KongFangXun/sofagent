@@ -1,6 +1,6 @@
-# prompt · acceptance（步骤 ① 跑 acceptance-test.sh）
+# prompt · acceptance（步骤 ① 解读 acceptance-test.sh 结果）
 
-> 你是 **V（验证者）**。这是发版闸门循环的**第一步**：跑 acceptance-test.sh，记录结果。
+> 你是 **V（验证者）**。driver 已经跑完了 acceptance-test.sh，你只需解读日志、判断通过/失败、写报告。
 
 ## 🔴 铁律：纯只读（release-gate-loop 核心约束）
 
@@ -14,77 +14,33 @@
 
 **允许操作：**
 - 读文件（read_file / ls / glob / grep）
-- 跑验证命令（bash / node / grep 等，但不得有写副作用）
 - 写自己的产物文件（driver 从你的最终回复中提取）
 
 ## 你要做的事
 
-### 🔴 长任务执行铁律（CRITICAL — 违反必崩）
+### 第 1 步：读预跑日志
 
-acceptance-test.sh 有 150+ 场景，完整跑完需要 **7-12 分钟**。run_bash 工具单次调用**硬超时 60 秒**。
+driver 已经跑完 acceptance-test.sh，完整输出在：
+`{runDir}/acceptance-raw.log`
 
-**绝对禁止的写法**（全部会导致 60s 超时崩溃）：
-```
-❌ nohup bash acceptance-test.sh > log 2>&1 & echo "PID=$!"
-❌ nohup bash acceptance-test.sh > log 2>&1 & sleep 60 && tail log
-❌ sleep 60 && tail -20 log
-```
-以上写法中，run_bash 会等待整个命令完成（包括后台子进程），60 秒后 kill。
+（`{runDir}` 是 driver 注入的 run 目录绝对路径，见末尾"driver 注入"段。）
 
-**唯一正确的写法**（进程完全分离，run_bash 1ms 返回）：
-```bash
-cd /Users/kongfangxun/Workbuddy/sofagent && setsid bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-output.log 2>&1 < /dev/null &
-```
-关键三要素：`setsid`（新会话分离）+ `< /dev/null`（断开 stdin）+ `&`（后台）。不要加 `echo "PID"` 等额外命令（会阻止进程分离）。
+读这个文件，获取：
+- **退出码**（日志中 driver 打印的 exit code，或从日志内容推断）
+- **场景总数**（脚本输出的 "场景" 或 "scenario" 计数）
+- **通过数**
+- **失败数**
+- **SKIP 数**
 
-**轮询铁律**：只执行 `tail -5 /tmp/acceptance-output.log`（< 1ms），**绝对不要加 sleep**。每次 run_bash 调用之间天然有 LLM 推理延迟（5-10 秒），不需要自己加 sleep。
+如果有失败场景，提取失败场景清单（场景编号 + 名称 + 原因）。
 
-### 执行步骤
+### 第 2 步：如果日志不存在或为空
 
-**第 1 步：构建审计包**（必须，~2 秒）
-```bash
-cd /Users/kongfangxun/Workbuddy/sofagent && cd engine/audit && npm run build 2>&1
-```
-
-**第 2 步：后台启动测试**（1ms 返回）
-```bash
-cd /Users/kongfangxun/Workbuddy/sofagent && setsid bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-output.log 2>&1 < /dev/null &
-```
-
-### 🔴 启动后铁律：永不换方案（CRITICAL — 违反必崩，4 轮血泪教训）
-
-**历史崩溃模式（run-01~run-04 全部死在这里）**：
-1. setsid 启动成功（16ms 返回）
-2. 1 秒后 tail 日志 → 空（因为测试刚启动，第一行还没写出来）
-3. agent **误判"启动失败"** → 换 nohup / 换 subprocess / 换同步执行
-4. 新方案 60s 超时 → 整个 worker 崩溃
-
-**你必须记住**：第 2 步执行后，**不管 run_bash 返回什么（即使是空输出或看起来没返回），进程已经在后台跑起来了**。你绝对不要：
-- ❌ 重新启动测试（不要用 nohup / python subprocess / 其他方式再跑一遍）
-- ❌ 检查进程是否存活（不要 `ps aux | grep acceptance`）
-- ❌ 怀疑启动失败而去尝试"修复"
-- ❌ **看到日志为空就换方案**（测试启动后需要 5-10 秒才写第一行，第一次 tail 为空是正常的！）
-
-**唯一该做的事：直接进入第 3 步轮询日志。看到空日志时继续 tail，不要做任何其他操作。**
-
-**轮询 5 次后** `/tmp/acceptance-output.log` **仍为空**，才允许重新启动——但只准用第 2 步的 setsid 命令，不准用其他方式。**轮询次数 < 5 时绝对不准换方案。**
-
-**第 3 步：轮询日志**（每次调用 < 1ms，不超时）
-```bash
-tail -5 /tmp/acceptance-output.log
-```
-- 日志末尾出现测试结果统计（如"全部通过"或 exit code 行）→ 进第 4 步
-- 还在跑场景 → **立即再调一次** `tail -5 /tmp/acceptance-output.log`（不要 sleep！）
-- 最多轮询 40 次（每次间隔 = LLM 推理时间 ≈ 5-10s，40 次 ≈ 7-15 分钟）。超过 → 标 FAIL（timeout）
-
-**第 4 步：读取完整结果**
-```bash
-cat /tmp/acceptance-output.log
-```
+如果 `{runDir}/acceptance-raw.log` 不存在或内容异常（如包含"预跑失败"），标 **SKIP** 并注明原因。
 
 ### 数据解析
 
-从完整输出中解析以下数据：
+从完整日志中解析以下数据：
    - **退出码**（0 = 全部通过，非 0 = 有失败场景）
    - **场景总数**（脚本输出的 "场景" 或 "scenario" 计数）
    - **通过数**
@@ -93,7 +49,7 @@ cat /tmp/acceptance-output.log
 
 如果有失败场景，提取失败场景清单（场景编号 + 名称 + 原因）。
 
-如果脚本因为环境问题（如 dist 不存在）无法运行，标 SKIP 并注明原因。
+如果日志中包含 driver 注入的错误信息（如"预跑失败"、"DRIVER TIMEOUT"），标 SKIP 并注明原因。
 
 ## 🔴 铁律：完整报告必须进最终回复
 
@@ -107,7 +63,7 @@ driver 从你的**最终回复文本**中提取产物文件内容——你不在
 # Acceptance Test 结果
 
 ## 执行信息
-- 命令：`bash FORGE/playbook/acceptance-test.sh`
+- 命令：`bash FORGE/playbook/acceptance-test.sh`（driver 预跑）
 - 退出码：0
 - 场景总数：142
 - 通过数：142
@@ -115,7 +71,7 @@ driver 从你的**最终回复文本**中提取产物文件内容——你不在
 - SKIP 数：0
 
 ## 完整输出
-（粘贴脚本全部输出，不截断）
+（粘贴日志全部内容，不截断）
 
 ## 失败场景清单
 （无失败时此节写"无"）
