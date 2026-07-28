@@ -22,7 +22,7 @@
 # 🔗 编排契约：FDE 调用本脚本（--base-only 模式）作为底座安装入口。
 #    改动此文件前确认调用方不受影响：
 #    - FDE 通过 `bash install.sh --base-only --platform "$PLATFORM"` 安装底座
-#    - 删被依赖文件（如 SKILL/harness/data/fde.md）前确认无调用方引用
+#    - 删被依赖文件（如 SKILL/harness/fde-template.md）前确认无调用方引用
 # v0.98: 从 941 行拆分为 4 个 lib 模块 + 纯组装入口
 # v1.0.7: ao 退役，移除 agency-orchestrator 安装逻辑
 # v1.2.0: install.sh 吸收 FDE/fde-install.sh，成为主安装器+FDE 入口
@@ -251,7 +251,7 @@ echo "" >> "$INSTALL_LOG"
 echo "=== sofagent install $(date -u +'%Y-%m-%dT%H:%M:%SZ') ===" >> "$INSTALL_LOG"
 _log "TARGET=$TARGET"; _log "SCRIPT_DIR=$SCRIPT_DIR"
 
-RULES_SRC="${SCRIPT_DIR}/SKILL/harness/data/fde.md"
+RULES_SRC="${SCRIPT_DIR}/SKILL/harness/fde-template.md"
 if [ ! -f "$RULES_SRC" ]; then
   err "找不到 fde.md。请在 sofagent 项目根目录下运行此脚本。"
   err "  当前脚本位置: $SCRIPT_DIR"; err "  期望文件: $RULES_SRC"; exit 1

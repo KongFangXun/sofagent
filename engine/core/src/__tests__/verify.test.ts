@@ -23,7 +23,7 @@ describe('Verifier', () => {
 
   it('checkFail 添加失败记录', () => {
     const v = new Verifier(false, false);
-    v.checkFail('test failed');
+    v.checkFail('[EXPECTED FAILURE] test failed');
     const result = v.getResult();
     expect(result.fail).toBe(1);
     expect(result.checks[0]!.status).toBe('fail');

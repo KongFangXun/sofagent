@@ -1,8 +1,8 @@
 # fde.md · 企业约束层
 
-> ⚠️ **这是格式示例，不是运行时数据。** 展示实际文件会生成成什么样。
-> 实际文件位置：.sofagent 目录下对应路径（fde.md / think.md / task/logs/ / orchestrator/）
-> 运行时由系统自动创建和维护，不需要手动编辑。
+> 📦 **默认企业约束层模板。** install.sh 会将本文件复制为用户的初始 fde.md。
+> 部署后位置：`~/.openclaw/skills/sofagent/fde.md`（或对应平台路径）。
+> FDE Agent 部署时基于本模板生成实际约束，用户可在此基础上修改。
 >
 
 > 本文件由 FDE 在部署时编写，不是用户自己填。典型流程：FDE Agent 先根据企业 workflow 起草本文件，再由人类审查确认后落盘到 `.sofagent/fde.md`。

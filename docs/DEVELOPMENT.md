@@ -60,7 +60,7 @@
 | FDE 场景引导 | `SKILL/harness/engage-fde.md` |
 | 入境/每任务/离境闸门 | `SKILL/harness/entry-gate.md` / `task-aware.md` / `task-closure.md` |
 | 循环检查/评估/退出 | `SKILL/harness/loop-check.md` / `loop-evaluate.md` / `loop-exit.md` |
-| 数据模板 / 部署脚本 | `SKILL/harness/data/` / `engine/scripts/` |
+| FDE 模板 / 部署脚本 | `SKILL/harness/fde-template.md` / `engine/scripts/` |
 | FDE 交付物模板 | `FDE/templates/` |
 | FDE 部署知识文档 | `FDE/FDE.md`（含角色定义 + 步骤详解，唯一知识源） |
 | 加载链 Hook | `engine/hooks/sofagent-load-chain/` |
@@ -510,7 +510,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 1. `./tools/check-version.sh`——把输出的「N 项」数字抄进 CHANGELOG，确认无 FAIL
 2. `bash engine/scripts/verify.sh --quiet`——确认输出数字与文档中引用一致
 3. `cd engine/audit && npm test 2>&1 | grep "Tests"`——确认通过数
-4. `wc -m SKILL/SKILL.md SKILL/harness/data/fde.md`——确认 Skill 字数旁注准确
+4. `wc -m SKILL/SKILL.md SKILL/harness/fde-template.md`——确认 Skill 字数旁注准确
 5. 全文件类型术语扫描：`grep -rn "纪律层\|纪律底座\|工具箱\|FDE 工程师\|部署底座\|AI 控制节点" --include="*.md" --include="*.sh" --include="*.ps1" . | grep -v docs/changelog/ | grep -v docs/evidence/`（其中"FDE 工程师"是禁用词——FDE 的 E 已经是 Engineer，不叠叫）
 6. `./tools/check-version.sh > /dev/null 2>&1; echo $?`——必须为 0
 
