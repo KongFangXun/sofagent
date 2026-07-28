@@ -65,7 +65,7 @@ describe('parseDiff', () => {
     const files = parseDiff('HEAD~1..HEAD', tmpDir);
     expect(files.length).toBeGreaterThan(0);
     const file = files[0]!;
-    expect(file.path).toBeTruthy();
+    expect(file.path).toBe('src.ts');
     expect(['added', 'modified', 'deleted', 'renamed']).toContain(file.status);
     expect(Array.isArray(file.lines)).toBe(true);
   });

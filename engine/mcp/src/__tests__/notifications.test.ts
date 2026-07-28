@@ -9,6 +9,15 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// ── 动态读取 package.json 版本号（在 mock 之前读取真实 fs）──
+const pkgVersion = (() => {
+  // vi.mock 会在所有 import 之前执行，因此需要用 require 绕过 mock
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const realFs = require('fs');
+  const realPath = require('path');
+  return JSON.parse(realFs.readFileSync(realPath.join(__dirname, '../../package.json'), 'utf-8')).version;
+})();
+
 // ── Mock fs ──
 vi.mock('fs', () => ({
   existsSync: vi.fn(() => false),
@@ -27,7 +36,7 @@ vi.mock('@sofagent/audit', () => ({
   runRules: vi.fn(() => ({ exitCode: 0, rules: [] })),
   loadConfig: vi.fn(() => ({})),
   loadHistory: vi.fn(() => []),
-  VERSION: '1.1.5',
+  VERSION: pkgVersion,
 }));
 
 vi.mock('@sofagent/think', () => ({

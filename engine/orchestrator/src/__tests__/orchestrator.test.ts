@@ -64,8 +64,10 @@ describe('BUILTIN_AGENTS', () => {
 
   it('所有内置 Agent 有 name 和 description', () => {
     for (const agent of BUILTIN_AGENTS) {
-      expect(agent.name).toBeTruthy();
-      expect(agent.description).toBeTruthy();
+      expect(typeof agent.name).toBe('string');
+      expect(agent.name.length).toBeGreaterThan(0);
+      expect(typeof agent.description).toBe('string');
+      expect(agent.description.length).toBeGreaterThan(0);
     }
   });
 });

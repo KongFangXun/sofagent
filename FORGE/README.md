@@ -1,5 +1,7 @@
 # FORGE — sofagent 自迭代引擎
 
+> **FORGE = sofagent 的自迭代引擎���** 通过 workflow 驱动 Agent 审查/修复/验证自己的代码。这是给 sofagent 开发者的工具包——如果你是 sofagent 用户，不需要看这里。
+>
 > **FORGE 是 sofagent 项目的自迭代引擎**——终极目标是让 Agent 写代码、Agent 审计、Agent 审查。通过 `FORGE/SKILL/<loop>/` 定义可复用的 workflow，每个 workflow 是一步 toward 自迭代。当前已落地第一个 workflow：**fresh-eyes-loop**（A/B 双盲质量审查循环），由 driver（`fresh-eyes-driver.mjs`）自动编排执行。不面向终端用户。企业用户的入口是 [FDE Agent](../FDE/README.md)。
 
 ## 当前循环
@@ -7,6 +9,23 @@
 | 循环 | 路径 | 用途 |
 |------|------|------|
 | **fresh-eyes-loop** | `FORGE/SKILL/fresh-eyes-loop/` | 发布后独立质量循环——A/B 异构模型双盲 12 视角审查 + 修复 + 验证，每轮新进程保证零上下文，连续 2 轮无 P0/P1 即停 |
+| **release-gate-loop** | `FORGE/SKILL/release-gate-loop/` | 发版闸门循环——acceptance-test + regression + 审查报告，异步轮询长任务 |
+
+### Loop 七要素自检
+
+好的 Loop 不是「让 Agent 一直尝试」，而是让每一轮获得新证据并在明确边界内靠近终点。参考 Agent Engineering 中 Loop 设计的七个核心问题，对照检查两个 loop：
+
+| 要素 | 核心问题 | fresh-eyes-loop 现状 | release-gate-loop 现状 |
+|------|---------|---------------------|----------------------|
+| 触发 | 什么会启动下一轮？ | A 审查完成→B 修复→A 验证，driver 自动编排 | 发版前手动触发，异步轮询 |
+| 目标 | 什么状态才算成功？ | 连续 2 轮无 P0/P1 | acceptance-test + regression 全绿 |
+| 状态 | 下一轮需要保留什么？ | 审查报告 + 修复 diff + 验证结论 | 审查报告 + acceptance 结果 + regression 结果 |
+| 权限 | Agent 可以修改或调用什么？ | B 只读 A 的审查报告，只改指定文件 | 验证 Agent 只读产物、不写代码 |
+| 证据 | 用什么证明结果正确？ | A 验证 agent 重新审查 B 的修复 | acceptance-node-probes.js + regression-checklist.md |
+| 反馈 | 失败后返回什么信息？ | 审查报告标注 PASS/FAIL + 具体行号 | 门禁失败原因 + 指向具体检查项 |
+| 停止 | 何时成功、超时或交给人？ | 2 轮无 P0/P1 或达到 max-rounds | 门禁通过则放行，否则标注遗留问题人工决策 |
+
+> **核心原则**：不要围绕信心循环，要围绕证据循环。fresh-eyes-loop 的 A-verify 阶段和 release-gate-loop 的 acceptance-test 都是「证据」——不是让 Agent 自己说「我觉得好了」，而是让独立 Agent 基于硬证据判断「确实好了」。
 
 ## 快速开始（fresh-eyes-loop）
 

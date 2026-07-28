@@ -12,6 +12,14 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, rea
 import { join } from 'path';
 import { appendThinkEntry } from '@sofagent/core';
 
+// ── 动态读取 package.json 版本号（在 mock 之前读取真实 fs）──
+const pkgVersion = (() => {
+  // vi.mock 会在所有 import 之前执行，因此需要用 require 绕过 mock
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const realFs = require('fs');
+  return JSON.parse(realFs.readFileSync(join(__dirname, '../package.json'), 'utf-8')).version;
+})();
+
 // ── Mock fs module ──
 vi.mock('fs', () => ({
   existsSync: vi.fn(),
@@ -36,7 +44,7 @@ vi.mock('@sofagent/audit', () => ({
   loadConfig: vi.fn(() => ({})),
   generateThinkEntry: vi.fn(),
   loadHistory: vi.fn(() => []),
-  VERSION: '0.99.5',
+  VERSION: pkgVersion,
 }));
 
 // ── Mock @sofagent/core（记忆契约：getThinkPath / appendThinkEntry）──
