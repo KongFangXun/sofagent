@@ -46,7 +46,7 @@
 - **[Lost in the Middle](https://arxiv.org/abs/2307.03172)** — 长文档中段注意力衰减，500 字原则的理论源头
 - **[A Global Workspace in Language Models](https://www.anthropic.com/research/global-workspace)** · Anthropic — 模型输出前已形成未表达判断，为「审计必须外置」提供底层论证
 
-- **Claude Opus 5 / 上下文工程** · Claude 官方 — 指令从 800 词精简至 164 词后性能反升，宣告提示词工程时代终结。底层逻辑转向「上下文工程」——设计信息架构（什么该给 / 何时给）。与 sofagent「约束进代码层而非 prompt 层」判断同源。
+- **[Claude Opus 5 / 上下文工程](https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models)** · Anthropic（Thariq Shihipar）— 指令从 800 词精简至 164 词后性能反升，宣告提示词工程时代终结。底层逻辑转向「上下文工程」——设计信息架构（什么该给 / 何时给）。与 sofagent「约束进代码层而非 prompt 层」判断同源。
 
 - **Governed Autonomy / Loop Engineering** · AI酋长 Andy — 提出「受治理的自主性」是 Agent 竞争核心，给出 4 级能力成熟度模型（Copilot→Operator→Bonded Agent→Accountable System）。Accountable System（全流程留证据、可问责）与 sofagent 审计 + 控制平面治理目标态同构。
 
