@@ -6,7 +6,7 @@
 /** 巡检器配置 */
 export interface InspectorConfig {
   enabled: boolean;
-  schedule: '@daily' | '@weekly';
+  schedule: '@daily' | '@weekly' | '@monthly';
 }
 
 /** 巡检结果 */

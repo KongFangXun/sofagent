@@ -39,8 +39,9 @@ export const AUDIT_DIR = path.join(DATA_DIR, 'audit');
 export const AUDIT_HISTORY = path.join(AUDIT_DIR, 'history.jsonl');
 export const AUDIT_SESSION_REPORT = path.join(AUDIT_DIR, 'session-report.json');
 
-// ── 数据主权审计（v1.2.2 预留） ──
-export const SOVEREIGNTY_DIR = path.join(DATA_DIR, 'sovereignty');
+// ── 数据主权审计（v1.2.2 P0） ──
+// 与 history.jsonl 同在 audit/ 父目录下，Dashboard jq 单目录扫描（架构决策：对齐 dev-prompt L40）
+export const SOVEREIGNTY_DIR = path.join(AUDIT_DIR, 'data-sovereignty');
 
 // ── 任务数据（日志 + 计划） ──
 export const TASK_DIR = path.join(DATA_DIR, 'task');

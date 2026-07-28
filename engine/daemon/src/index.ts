@@ -47,8 +47,14 @@ export {
   runInspectors,
   runHealthReport,
   DEFAULT_INSPECTOR_CONFIG,
+  generateDataSovereigntyDaily,
+  generateDataSovereigntyWeekly,
+  generateDataSovereigntyMonthly,
 } from './inspectors';
 export type { InspectorConfig, InspectorResult, DaemonHealth } from './inspectors';
+
+// v1.2.2 P0：审计报告 webhook 推送
+export { pushAuditReport } from './webhook/audit-report-push';
 
 // USB Federation (v1.1.4)
 export { detectSofagentUsb } from './usb-detect';
