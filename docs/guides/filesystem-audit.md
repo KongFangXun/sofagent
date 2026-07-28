@@ -34,7 +34,7 @@ daemon 启动时自动遍历所有子目录并建独立 watcher，新目录创�
 | 出口 | 用途 |
 |------|------|
 | stdout | 实时终端输出 |
-| `daemon-notice.md` | 供审计引擎后续检查 |
+| `daemon-health.json` | 供审计引擎后续检查 |
 | `audit/history.jsonl` | `--timeline` 查看历史 |
 
 - **A16 非授权文件变更**：敏感目录（config/、.env、secrets/）和敏感类型（.xlsx、.pdf、.pem 等）的修改/删除 → WARN
