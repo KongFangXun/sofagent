@@ -46,7 +46,7 @@
 | 怎么装 | `bash install.sh`（FDE 主安装器，装底座 + FDE Agent）· `bash install.sh --base-only`（仅底座） | [落地：装好就能派活](#落地装好就能派活) |
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | [运行：每次变更都被管住](#运行每次变更都被管住) |
 | AI 节点怎么跑 | 开发者：git commit 自动审计。非开发者：v1.0.8+ daemon 监控文件变更自动审计 | [落地：装好就能派活](#落地装好就能派活) |
-| AI 知识库 | `.sofagent/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [进化：知识自动沉淀](#进化知识自动沉淀) |
+| AI 知识库 | `data/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [进化：知识自动沉淀](#进化知识自动沉淀) |
 | AI 成熟度 | 三级台阶（替换→增强→重构），FDE 帮企业从第二级跨到第三级——不只装 AI，还装上责任机制 | [FDE/FDE.md](../FDE/FDE.md#附录企业-ai-成熟度三级台阶) |
 | 已知局限 | 核心效果见 [evidence.md](./evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](../LIMITATIONS.md) |
 
@@ -283,14 +283,14 @@ exit code：0 = 通过 / 1 = 有警告 / 2 = 有违规。零 Agent 依赖——�
 
 ### daemon 后台进程
 
-安装时可选择安装 daemon（轻量后台进程，macOS launchd / Linux systemd）。daemon 做两件事：① 每 30 秒检查 `think.md`/`fde.md` hash 变化写入 `daemon-notice.md`；② v1.0.8+ 监控文件变更自动跑审计。commit 审计由 commit-msg hook 负责（见上方）。
+安装时可选择安装 daemon（轻量后台进程，macOS launchd / Linux systemd）。daemon 做两件事：① 每 30 秒检查 `think.md`/`fde.md` hash 变化写入 `daemon-health.json`；② v1.0.8+ 监控文件变更自动跑审计。commit 审计由 commit-msg hook 负责（见上方）。
 
 审计结果按严重级别处理：
 
 | 结果 | 用户看到什么 | 自动动作 |
 |------|------------|---------|
 | ✅ PASS | 静默 | 自动快照存档 |
-| ⚠️ WARN | daemon-notice.md 告警 + 可选 Webhook | 存档 + 标记 |
+| ⚠️ WARN | daemon-health.json 告警 + 可选 Webhook | 存档 + 标记 |
 | ❌ FAIL | Webhook 推送 + 终端标红 | 存档 + 建议回滚 |
 
 ```bash
@@ -353,7 +353,7 @@ jobs:
 
 ### 知识怎么长出来
 
-- **Dream Cycle**：daemon 周期性扫描 `task/logs/`，按 6 阶段 pipeline 抽取可复用经验，写入 `.sofagent/knowledge/`，并自动生成 Ontology 实体 / 关系 / 约束。
+- **Dream Cycle**：daemon 周期性扫描 `task/logs/`，按 6 阶段 pipeline 抽取可复用经验，写入 `data/knowledge/`，并自动生成 Ontology 实体 / 关系 / 约束。
 - **Ontology 本体**：企业世界模型——实体 + 关系 + 动作 + 约束，三层 YAML 自动生长，让 Agent 越用越懂你的业务语境。
 - **sensitivity 分级**：每条知识带 public / internal / restricted 分级，restricted 在跨设备联邦查询中默认不外发。
 
@@ -408,8 +408,8 @@ U 盘包含：Node.js 便携版 + sofagent 引擎 + knowledge/ 加密落盘 + �
 |------|------|
 | **交付手册** | 企业画像 + 部署方案 + fde.md + quick-start.md |
 | **AI 节点** | 文档层（.md）+ Skill 层（企业专属）+ 运行层（在跑的 session） |
-| **AI 知识库** | `.sofagent/knowledge/` — daemon 自动 Ingest，零手动维护 |
-| **私有化评估体系** | eval.md + Skill 迭代历史 + 知识库演变轨迹 |
+| **AI 知识库** | `data/knowledge/` — daemon 自动 Ingest，零手动维护 |
+| **私有化评估体系** | data/eval/ + Skill 迭代历史 + 知识库演变轨迹 |
 | **USB key**（v1.1.8+） | 烧录好的 U 盘——插上即用，换电脑身份不变 |
 
 FDE 离场后，两个内置 Agent 接手持续运维：合规审计员 `@sofagent-audit`（向下看——防退化）与 FDE 部署工程师 `@sofagent-fde`（向上看——推动进化），职责对照（双 Agent 定义详见 [ARCHITECTURE §双 Agent 定义](./ARCHITECTURE.md#agent-基础设施层v108)）。

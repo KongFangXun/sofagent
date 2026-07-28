@@ -93,7 +93,7 @@
 
 sofagent 一底座·四引擎各有分工。**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义，之后 Sub Agent 自加载约束执行。两种调用路径：OpenClaw 节点走内部 API，非 OpenClaw 节点走 CLI。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
 
-主 Agent 的日常：接活 → 看 `eval.md` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE 编排引擎](./ARCHITECTURE.md#⚙️-编排引擎)。
+主 Agent 的日常：接活 → 看 `data/eval/` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE 编排引擎](./ARCHITECTURE.md#⚙️-编排引擎)。
 
 ### Skill 设计哲学
 
@@ -173,7 +173,7 @@ FDE 部署 SOP 应遵循此顺序：
   - `SKILL.md`：主入口（宪法内联——4 底线 + 7 则铁律）
   - 子 Skill（9 个 .md）：`entry-gate.md` / `task-aware.md` / `task-closure.md` / `loop-check.md` / `loop-evaluate.md` / `loop-exit.md` / `engage.md` / `engage-fde.md` / `fde.md`
   - `fde.md`：规范文件（企业运行规范，部署时复制到目标项目）
-  - `data/`（6 个模板）：`think.md` / `orchestrator.md` / `task.md` / `eval.md` / `fde.md` / `IDENTITY.md`
+  - `data/`（4 个模板：think.md / orchestrator.md / task.md / fde.md）
 - `engine/scripts/`（核心 3 个）：`verify.sh` / `uninstall.sh` / `task-record.sh`
 - `install.sh`（仓库根目录）：多平台一键安装（v1.2.0 从 engine/scripts/ 提升到根目录）
 - `engine/hooks/sofagent-load-chain/`：`HOOK.md` + `handler.ts`（OpenClaw 内部 hook）
@@ -277,7 +277,7 @@ Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与
 
 ### 任务闭环
 
-子 Agent 销毁后 → ② 反思→think.md ③ 评分→eval.md ④ A/B→orchestrator/ ⑤ 口头汇报。外部 Skill 从 [ClawHub](https://clawhub.ai) 获取，岗位模板来自 [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh)。
+子 Agent 销毁后 → ② 反思→think.md ③ 评分→data/eval/ ④ A/B→orchestrator/ ⑤ 口头汇报。外部 Skill 从 [ClawHub](https://clawhub.ai) 获取，岗位模板来自 [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh)。
 
 > **Loop 五组件对照**：行业共识 Loop = Goals / Automations / Skills / Sub Agents / Worktraces。sofagent 对应：Goals = fde.md，Automations = daemon，Skills = skill/，Sub Agents = agents/，Worktraces = task/logs + think.md。gstack 的七步工作流进一步验证了这个结构。
 
@@ -362,7 +362,7 @@ LangGraph createReactAgent 拆完任务
 
 ### 四路反馈
 
-闭环后从四个角度反馈：① 编排对不对 → orchestrator/ | ② Skills 选得对不对 → eval.md | ③ A/B 有没有新结论 → orchestrator/ | ④ 模型选得值不值 → orchestrator/ 成本对比。四路汇总到 orchestrator/，下次直接用最优配置。
+闭环后从四个角度反馈：① 编排对不对 → orchestrator/ | ② Skills 选得对不对 → data/eval/ | ③ A/B 有没有新结论 → orchestrator/ | ④ 模型选得值不值 → orchestrator/ 成本对比。四路汇总到 orchestrator/，下次直接用最优配置。
 
 ### 复盘自评
 
@@ -447,7 +447,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 |------|------|:--:|
 | task/logs 当天文件 | 做了什么任务、拆了几个子任务、结果如何 | ✅ 必写 |
 | think.md 新增反思 | 反思标题 + 标签 + 置信度 | ✅ 有则写 |
-| eval.md | 哪个 Skill 使用次数变化、社区评分更新 | ✅ 有变化则写 |
+| data/eval/ | 哪个 Skill 使用次数变化、社区评分更新 | ✅ 有变化则写 |
 | orchestrator/ | 最优拆法或配置变化 | 🔶 有变化则写 |
 
 日摘要压缩原则：保留「变化」、省略「正常」、合并「重复」、标记「失效」。每条摘要末尾带来源标记。
@@ -488,7 +488,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 | `fde.md` | **编排引擎读** | 企业运行规范，含项目目标、验收标准、风险边界 | 全文 |
 | `task/plans/` | **编排引擎写** | 任务计划，第二轮澄清时生成 | 日期文件名 |
 | `orchestrator/` | **编排引擎核心数据** | 最优拆法决策树 | 树形 |
-| `eval.md` | **编排引擎辅助数据** | Skill 评分记录，闭环时更新 | 树形 |
+| `data/eval/` | **编排引擎辅助数据** | Skill 评分记录，闭环时更新 | 树形 |
 | `IDENTITY.md` | **编排引擎辅助** | 岗位匹配（agency-agents-zh） | 全文 |
 | `knowledge/` | **数据层（v1.0.1）** | AI 知识库：entities/（实体页）+ concepts/（概念页）+ comparisons/（对比页）+ log.md（变更日志）+ index.md（索引）| 按需注入 top-N |
 | | | **生产者**：daemon Ingest（task/logs → 知识提取）、knowledge-maintain Skill（session 结束时的结构化总结）| |
@@ -497,7 +497,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 ### 数据流向总结
 
-每次任务闭环：反思进 think.md → 评分更新 eval.md → 最优拆法覆写 orchestrator/ → 执行记录追加到 task/logs/（只追加）。task/logs 是所有数据的源头。think.md 由审计引擎基于 git diff 硬证据自动生成。
+每次任务闭环：反思进 think.md → 评分更新 data/eval/ → 最优拆法覆写 orchestrator/ → 执行记录追加到 task/logs/（只追加）。task/logs 是所有数据的源头。think.md 由审计引擎基于 git diff 硬证据自动生成。
 
 ### 维护规则
 

@@ -153,7 +153,7 @@
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 18 | **🔴 防膨胀轻量自检（每版本）**：更新完两份审查文档 + acceptance-test.sh 后，立即跑以下自检：<br>**① 行数警戒线**：`WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md)` 超 1000 → 触发深度瘦身；`WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)` 超 1500 → 触发深度瘦身<br>**② 声称一致性**（复用阶段四步骤15 Step D①）：regression-checklist 标题声称维度数 = 实际 `#### ` 数（当前 38）；acceptance-test.sh 文件头声称场景数 = 实际 `^scenario ` 数（当前 102）；不一致 = P0<br>**③ 公共函数复用**：acceptance-test.sh 中同一段 git 脚手架 / node -e 内联 / 多行 if-else 重复 ≥3 次且可抽为函数 → 标 P2 待瘦身 | 当前 session | 两份文件行数均在警戒线内 + 两项声称一致 |
+| 18 | **🔴 防膨胀轻量自检（每版本）**：更新完两份审查文档 + acceptance-test.sh 后，立即跑以下自检：<br>**① 行数警戒线**：`WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md)` 超 1000 → 触发深度瘦身；`WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)` 超 1500 → 触发深度瘦身<br>**② 声称一致性**（复用阶段四步骤15 Step D①）：regression-checklist 标题声称维度数 = 实际 `#### ` 数（当前 58，⚠️ 已超 1000 行警戒线）；acceptance-test.sh 文件头声称场景数 = 实际 `^scenario ` 数（当前 145，⚠️ 已超 1500 行警戒线）；不一致 = P0<br>**③ 公共函数复用**：acceptance-test.sh 中同一段 git 脚手架 / node -e 内联 / 多行 if-else 重复 ≥3 次且可抽为函数 → 标 P2 待瘦身 | 当前 session | 两份文件行数均在警戒线内 + 两项声称一致 |
 
 **Tier 2 — 深度瘦身（每版本，步骤 18 之后）**
 
@@ -528,7 +528,7 @@ sofagent-audit --doctor
 bash tools/pre-push-check.sh            # 全绿（全量 workspace）
 bash tools/check-docs.sh                # 文档死链 + 预算 + Skill 行数
 
-# 全部 13 包 .js.map 泄露检查 + 类型检查 + README 非空检查
+# 全部 12 包 .js.map 泄露检查 + 类型检查 + README 非空检查
 for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test skillopt rules; do
   echo "=== $pkg ==="
   (cd engine/$pkg && npm pack --dry-run 2>&1 | grep -c '\.js\.map')  # 期望: 0
@@ -797,7 +797,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 
 | # | 步骤 |
 |:--:|------|
-| 31 | **npm 13 包验证**：全部 13 包版本一致，无 MISSING |
+| 31 | **npm 12 包验证**：全部 12 包版本一致，无 MISSING |
 | 32 | npm README 验证：`npm view /audit readme` + `npm view /mcp readme` 均有内容 |
 | 33 | **🔴 CI 全绿检查（v1.2.0 教训）**：`gh run list -b main -L 10 --json conclusion,name,headSha` → 任一 failure 则 `gh run view --log-failed` 定位 → 修复 → push → 重查。v1.2.0 教训：4 轮 CI 挂全是 LOOP→FORGE 重构时 CI 配置未同步——代码写对不等于 CI 能过 |
 | 34 | 如果本次迭代暴露了新的流程漏洞，**直接吸收进本 SOP 对应阶段**——不要存到单独章节。每条新规则标注版本号（如 `vX.Y 教训`）以便追溯 |

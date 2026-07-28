@@ -235,7 +235,7 @@ graph LR
 | 结果 | 自动动作 | 用户看到什么 |
 |------|---------|------------|
 | ✅ PASS | 自动快照存档 | 静默 |
-| ⚠️ WARN | 存档 + 标记 | daemon-notice.md 告警 |
+| ⚠️ WARN | 存档 + 标记 | daemon-health.json 告警 |
 | ❌ FAIL | 存档 + 建议回滚 | Webhook + 终端标红 |
 
 ```bash
