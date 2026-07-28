@@ -5,9 +5,7 @@
 > **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量）
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。
-
-**行数警戒线（验收脚本联动，v1.1.7 起）**：两份验证文件任一行数越线即触发瘦身（releasing.md 阶段五 Tier 2）——`regression-checklist.md` ≤ 1000 行、`FORGE/playbook/acceptance-test.sh` ≤ 1500 行。越线不表示有 bug，只是提醒该做一轮精简，防止几版后回到 3000+ 行不可维护。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1000 行、`acceptance-test.sh` ≤ 1500 行，越线触发瘦身（releasing.md 阶段五 Tier 2）。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
@@ -16,39 +14,15 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 [ "$HEAD_VAL" = "$ACTUAL" ] && echo "✅ 维度数一致 ($HEAD_VAL)" || echo "❌ 标题声称 $HEAD_VAL ≠ 实际 $ACTUAL"
 
 # 行数警戒线自检（越线提醒瘦身，非失败）
-WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md)
-WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1000 ] && echo "✅ checklist 行数 $WC_CHK (≤1000)" || echo "⚠️ checklist 行数 $WC_CHK 超 1000，触发瘦身"
-[ "$WC_ACC" -le 1500 ] && echo "✅ acceptance-test 行数 $WC_ACC (≤1500)" || echo "⚠️ acceptance-test 行数 $WC_ACC 超 1500，触发瘦身"
+WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
+[ "$WC_CHK" -le 1000 ] && echo "✅ checklist $WC_CHK (≤1000)" || echo "⚠️ checklist $WC_CHK 超 1000"
+[ "$WC_ACC" -le 1500 ] && echo "✅ acceptance $WC_ACC (≤1500)" || echo "⚠️ acceptance $WC_ACC 超 1500"
 ```
 ## 你的身份
 
-你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。
+你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-**⏰ 时序**：回归检查在 releasing.md 阶段六跑，此时 git tag / npm registry 等还没到位——遇到这些检查项标 ⏳（待发版），不标 FAIL。
-
-> **🔍 环境依赖标注（v1.1.6+）**：维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查中标 `⏸️ 需人工环境`，人工审查时必跑。
-
-## 审查步骤
-
-**步骤 1：环境验证**
-```bash
-cd /Users/kongfangxun/Workbuddy/sofagent
-bash tools/pre-push-check.sh                    # 期望：N/N 全绿
-cd engine/audit && npm test && cd ../..        # 期望：全部 passed
-node engine/core/dist/verify.js 2>&1 | tail -10  # 期望：无 FAIL
-bash tools/check-docs.sh 2>&1 | tail -3 && bash tools/check-version.sh 2>&1 | tail -3
-grep -rn '建议\|应该\|尽量' SKILL/harness/*.md FDE/SKILL.md | grep -v 'not_when\|Gotcha\|场景\|如果\|注\|说明'  # 期望：无输出
-```
-
-**步骤 2：Fresh clone 体验**
-```bash
-git clone https://github.com/KongFangXun/sofagent.git /tmp/sofagent-v1-test
-cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.sh 2>&1 | tail -5  # 期望：7/7 全绿
-```
-
-**步骤 3：逐维度审查**
-## 审查维度（58 项 · 编号 1–61，含 3 个 v1.2.2 新增）
+## 审查维度（46 项 · 编号 1–61，15 个归并/移除项已转为 HTML 注释）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -77,9 +51,7 @@ grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 �
 SKILL_BC=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || echo 0); SKILL_BA=$(sed -n '/^### [0-9] 底线/,/^### /p' SKILL/SKILL.md | grep -cE "^- " || echo 0); [ "$SKILL_BC" != "$SKILL_BA" ] && echo "⚠️ SKILL.md 底线数 $SKILL_BC vs $SKILL_BA"
 ```
 
-#### 2. [v1.2.1 移除：被 check-docs.sh 维度 1b 死链扫描全量覆盖]
-
-> 移除原因：`check-docs.sh` 已实现全仓相对路径死链扫描 + 占位符豁免，人工巡检冗余。
+<!-- #2  [v1.2.1 移除：被 check-docs.sh 维度 1b 死链扫描全量覆盖] -->
 
 #### 3. 文档规范源与归属一致性
 
@@ -113,14 +85,8 @@ echo "index=$INDEX / README表=$TABLE（期望 TABLE≥INDEX）"   # v1.1.4：A1
 grep "run_audit" engine/mcp/src/mcp-server.ts | grep -oE "[0-9]+ 条规则"   # MCP 数字一致
 ```
 
-#### 5. [v1.2.1 归并至维度 33：审计输出链路检查重叠]
-
-> 归并原因：5（exit code + 签名）和 33（ActionGovernance schema）都检查 audit-history 写读链路 + 签名，合并后为"审计输出完整性"。
-> 归并去向：维度 33。
-
-#### 6. [v1.2.1 移除：被 check-version.sh 13 类位置全量覆盖]
-
-> 移除原因：`check-version.sh` 已覆盖 13 个结构性位置（含 .ts/.sh/.ps1/MD 头/README badge），手动 grep 冗余。
+<!-- #5  [v1.2.1 归并至维度 33：审计输出链路检查重叠] -->
+<!-- #6  [v1.2.1 移除：被 check-version.sh 13 类位置全量覆盖] -->
 
 #### 7. 感知层配置与推送链路
 
@@ -198,9 +164,7 @@ grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l   # 期望 4
 grep -cE "evidenceMode:" engine/audit/src/rules/index.ts   # 期望 21
 ```
 
-#### 10. [v1.2.1 移除：被 pre-push-check.sh 步骤 7+8 全量覆盖]
-
-> 移除原因：tag commit message 校验已在 pre-push-check.sh 步骤 7+8 自动化。
+<!-- #10 [v1.2.1 移除：被 pre-push-check.sh 步骤 7+8 全量覆盖] -->
 
 #### 11. 包依赖图循环检测
 
@@ -221,9 +185,7 @@ dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path 
 [ -z "$dup" ] && echo "OK" || echo "❌ 跨包重复: $dup"
 ```
 
-#### 13. [v1.2.1 移除：被 check-test-count.sh 一键校验全量覆盖]
-
-> 移除原因：`tools/check-test-count.sh` 已自动校验 CHANGELOG/ROADMAP/LIMITATIONS/evidence.md 声称数 vs 实际值，手动 grep 冗余。
+<!-- #13 [v1.2.1 移除：被 check-test-count.sh 一键校验全量覆盖] -->
 
 #### 14. enterprise-deploy 完整性
 
@@ -304,9 +266,7 @@ grep "\"WARN\"" $F18   # 只产生 WARN
 grep "A18" engine/audit/src/rules/runner.ts   # extended 优先级 A18 排在 A17 之后
 ```
 
-#### 19. [v1.2.1 归并至维度 18：A19+A18 结构平行，合并为扩展规则回归锁]
-
-> 归并去向：维度 18。
+<!-- #19 [v1.2.1 归并至维度 18：A19+A18 结构平行，合并为扩展规则回归锁] -->
 
 #### 20. daemon plist + watch.yml 正确性 + --init 覆盖防护（v1.2.1 归并 20+22）
 
@@ -348,9 +308,7 @@ grep -rl "sofagent-releaser\|releaser-skill" engine/scripts/lib/file-deploy.sh i
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · CHANGELOG 纯度 · 测试数一致 · 安全约束 fail-closed · npm 产物三方一致
 
-#### 22. [v1.2.1 归并至维度 20：plist 检查 grep 目标 100% 重叠]
-
-> 归并去向：维度 20 子项 b。
+<!-- #22 [v1.2.1 归并至维度 20：plist 检查 grep 目标 100% 重叠] -->
 
 #### 23. FDE/LOOP 跨产品声称一致性
 
@@ -378,7 +336,7 @@ grep -q "被 FDE/LOOP 依赖\|FDE/LOOP" install.sh 2>/dev/null && echo "✅ 主 
 grep -H "v[0-9]\+\.[0-9]\+\.[0-9]\+" install.sh | head -4   # 期望：所有版本号 = SSOT_VER
 ```
 
-#### 24. [v1.2.0 移除：被 SOP 步骤 13 Step D 覆盖]
+<!-- #24 [v1.2.0 移除：被 SOP 步骤 13 Step D 覆盖] -->
 #### 25. conflict-check 巡检器只读铁律 + schedule 正确性（v1.1.6 新增）
 
 ```bash
@@ -418,9 +376,7 @@ grep -c "WIKI" README.md   # ≥1
 grep -c "WIKI.md" docs/ARCHITECTURE.md   # ≥1（可选，ARCHITECTURE 已通过数据流图间接引用）
 ```
 
-#### 27. [v1.2.1 移除：被 pre-push-check.sh 步骤 1 + CI shellcheck.yml 全量覆盖]
-
-> 移除原因：CI 的 `.github/workflows/shellcheck.yml` 扫全仓，本地 pre-push-check.sh 步骤 1 也覆盖；此处检查检查器的元验证冗余。
+<!-- #27b [v1.2.1 移除：被 pre-push-check.sh 步骤 1 + CI shellcheck.yml 全量覆盖] -->
 
 #### 28. Skill 元数据完整性（v1.1.6 新增）
 
@@ -554,7 +510,7 @@ ACTUAL=$(bash tools/test-count.sh --quiet 2>&1 | grep -oE 'TOTAL_TESTS=[0-9]+' |
 # 子项 d: 三产品关系表述一致
 grep -c "独立产品\|按需选用\|独立安装" README.md FDE/README.md FORGE/README.md 2>/dev/null   # 每个文档 ≥1
 ```
-#### 35. [v1.2.0 归并至维度 34]
+<!-- #35 [v1.2.0 归并至维度 34] -->
 #### 36. 跨产品 install 契约 CI 验证（v1.1.7 新增 · BugFix 11）
 
 > FDE/LOOP 调用主 install.sh 的接口是跨产品契约——CI 应有专门 job 验证
@@ -572,10 +528,7 @@ grep -c "\-\-base-only" install.sh 2>/dev/null   # ≥1
 # 子项 d: 主 install.sh 标注被 FDE/LOOP 依赖
 grep -c "FDE/LOOP\|被.*依赖\|跨产品" install.sh 2>/dev/null   # ≥1
 ```
-#### 37. [v1.2.1 归并至维度 8：red-team 场景检查是 acceptance-test 健壮性的子集]
-
-> 归并原因：37 的子项全部是 grep acceptance-test.sh 检查场景存在性（a-f），本质是"acceptance-test 健壮性"（维度 8）的子集。
-> 归并去向：维度 8。
+<!-- #37 [v1.2.1 归并至维度 8：red-team 场景检查是 acceptance-test 健壮性的子集] -->
 
 #### 38. daemon 审计集中收集 workaround + 安全文档时效性（v1.1.7 新增 · BugFix 9+13）
 
@@ -697,10 +650,7 @@ grep -c "buildConstrainedSystemPrompt\|约束.*加载链" engine/orchestrator/sr
 grep -c "dag-runner\|detectFileConflicts\|compose.*DAG" FORGE/playbook/acceptance-test.sh   # ≥2
 ```
 
-#### 43. [v1.2.1 归并至维度 29：pushKnowledgeSummary 依赖 dream-cycle/knowledge-health 触发]
-
-> 归并原因：43b 明确依赖 dream-cycle + knowledge-health 触发，与维度 29（Dream Cycle 管道）目标文件重叠 state-machine.ts。
-> 归并去向：维度 29。
+<!-- #43 [v1.2.1 归并至维度 29：pushKnowledgeSummary 依赖 dream-cycle/knowledge-health 触发] -->
 
 #### 44. USB 完整运行时——HMAC 签名 + AES-256 加密 + fail-closed 验签（v1.1.9 新增 · 交付一）
 
@@ -758,7 +708,7 @@ grep -c "splitWaves\|mapNodeStates\|buildEvidenceChain" engine/orchestrator/src/
 grep -c "extractControlGraphState\|sanitizeLoopId\|路径穿越" FORGE/playbook/acceptance-test.sh   # ≥3
 ```
 
-#### 46. [v1.2.1 归并至维度 45：编排状态机 grep 目标重叠 ab-scheduler.ts]
+<!-- #46 [v1.2.1 归并至维度 45：编排状态机 grep 目标重叠 ab-scheduler.ts] -->
 
 > 归并去向：维度 45 子项 h-n。
 
@@ -787,9 +737,7 @@ grep -c "MAX_NODES = 20\|MAX_TASK_LENGTH = 2000" engine/orchestrator/src/workflo
 grep -c "FDE Agent\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODES" FORGE/playbook/acceptance-test.sh   # ≥4
 ```
 
-#### 48. [v1.2.0 归并至维度 1]
-
-> 维度 48 全部子项归并至维度 1（子项 e-h）。
+<!-- #48 [v1.2.0 归并至维度 1：子项 e-h 全部归入维度 1] -->
 
 ---
 
@@ -888,11 +836,7 @@ grep -q "byteLen < 16\|16.*字节\|>=.*16" engine/core/src/audit-history.ts && e
 
 ---
 
-#### 52. [v1.2.1 移除：方法论指导，非可执行巡检]
-
-> 移除原因：这是方法论指导（禁止管道取 $?），pre-push-check.sh 自身已用正确写法（`> log 2>&1; echo $?`），此维度无法发现新回退。
-
-> **PASS 标准**：发版验证脚本的 exit code 测量必须用 `> log 2>&1; echo $?`，禁止管道取 `$?`。
+<!-- #52 [v1.2.1 移除：方法论指导，非可执行巡检] -->
 
 ---
 
