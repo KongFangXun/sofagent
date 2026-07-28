@@ -113,6 +113,7 @@ bash install.sh
 sofagent-audit --help | head -5
 
 # 2. 跑审计——--init 已装好 pre-commit hook，每次 commit 都被拦
+# GIT_EDITOR=true 让 git commit 不弹编辑器（CI/自动化场景常用）
 echo "API_KEY=sk-123456" > .env && git add -f .env && GIT_EDITOR=true git commit -m "test"
 # → ⛔ A1 不碰敏感：.env 含密钥格式，提交被拦截（不会真的落库）
 
@@ -151,8 +152,8 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 ```bash
 # install.sh 全局安装的是 @sofagent/audit（其余引擎通过 monorepo 本地引用）
 npm uninstall -g @sofagent/audit 2>/dev/null || true
-# 如果手动装过其他发布包，一并清理（13 个 npm 发布包）
-npm uninstall -g @sofagent/core @sofagent/orchestrator @sofagent/daemon @sofagent/mcp @sofagent/harness @sofagent/rules @sofagent/eval @sofagent/ab-test @sofagent/ontology @sofagent/skillopt @sofagent/think 2>/dev/null || true
+# 清理其他可能手动全局安装的 sofagent 包（通配，不依赖固定列表）
+npm ls -g --depth=0 2>/dev/null | grep '@sofagent/' | awk '{print $2}' | xargs npm uninstall -g 2>/dev/null || true
 rm -f .git/hooks/commit-msg .git/hooks/post-commit
 ```
 </details>
@@ -234,7 +235,7 @@ flowchart LR
 | 🔵 流程合规 | A5 空消息 · A7 盲改 · A8 跳测试 · A19 消息质量 | 空 commit msg，不读就改，跳测试，低质量 msg |
 | ⚪ 工程质量 | A6 破构建 · A11 资源滥用 · A18 垃圾文件 | 构建配置异常，超大文件，临时文件提交 |
 
-**扩展规则（8 条，按需开启）**：A14 知识库跨域 · A15 盲动 · A16 非授权变更 · A17 异常批量 · E1-E4（测试文件 / 未声明 TODO / 批量删除 / 低注释率）。完整 21 条规则表（含严重度、分级、判定逻辑）见 [engine/audit/README.md · 审计规则](./engine/audit/README.md#审计规则)。
+**扩展规则（8 条，按需开启）**：A14 知识库跨域 · A15 盲动 · A16 非授权变更 · A17 异常批量（文件系统监控）· E1-E4（测试文件 / 未声明 TODO / 批量删除 / 低注释率）。完整 21 条规则表（含严重度、分级、判定逻辑）见 [engine/audit/README.md · 审计规则](./engine/audit/README.md#审计规则)。
 
 ### 🔄 回溯引擎
 
@@ -242,7 +243,7 @@ flowchart LR
 
 ### 🧬 进化引擎（实验性）
 
-FDE 周度巡检：读审计趋势（history.jsonl）→ 分析 think.md 反复出错 → 读 eval 看哪个节点退化 → 生成优化报告 / 标记稳定。
+FDE 周度巡检：读审计趋势（history.jsonl）→ 分析 think.md 反复出错 → 生成优化报告 / 标记稳定。
 
 </details>
 
