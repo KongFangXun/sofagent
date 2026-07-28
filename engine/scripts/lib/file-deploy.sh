@@ -61,6 +61,19 @@ deploy_skill_files() {
   if [ -f "$RULES_SRC" ]; then
     { [ -f "$dst" ] && cmp -s "$RULES_SRC" "$dst" 2>/dev/null; } || { cp "$RULES_SRC" "$dst"; ((copied++)) || true; }
   fi
+  # v1.2.2: agents/ Sub Agent 定义部署（fde / audit / engineer / reviewer）
+  local AGENTS_SRC="${SCRIPT_DIR}/SKILL/agents"
+  if [ -d "$AGENTS_SRC" ]; then
+    for agent_dir in "$AGENTS_SRC"/*/; do
+      [ -d "$agent_dir" ] || continue
+      local agent_name=$(basename "$agent_dir")
+      local agent_dst="${SKILL_DST}/agents/${agent_name}"; mkdir -p "$agent_dst"
+      if [ -f "${agent_dir}SKILL.md" ]; then
+        dst="${agent_dst}/SKILL.md"
+        { [ -f "$dst" ] && cmp -s "${agent_dir}SKILL.md" "$dst" 2>/dev/null; } || { cp "${agent_dir}SKILL.md" "$dst"; ((copied++)) || true; }
+      fi
+    done
+  fi
   if [ "$copied" -gt 0 ]; then
     ok "$copied 个 Skill/数据文件已部署到 $SKILL_DST"
   else

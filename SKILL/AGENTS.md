@@ -6,7 +6,7 @@
 |-----------|------|------|
 | `@sofagent-audit` | [`agents/audit/`](./agents/audit/) | 合规审计员——Workflow 巡检、铁律覆盖验证、知识库健康度检查 |
 | `@sofagent-engineer` | [`agents/engineer/`](./agents/engineer/) | 最小变更工程师——读代码 + 写代码 + 跑测试 + git commit |
-| `@sofagent-fde` | [`SKILL.md`](./SKILL.md) | 前线部署工程师——梳理工作流、识别 AI 节点、构建知识库、交付离场 |
+| `@sofagent-fde` | [`agents/fde/`](./agents/fde/) | 前线部署工程师——梳理工作流、识别 AI 节点、构建知识库、交付离场 |
 | `@sofagent-reviewer` | [`agents/reviewer/`](./agents/reviewer/) | 代码审查员——语义审查 + 影响分析 + 铁律合规 |
 
 > v1.0.7 起（当前 v1.2.1），预装 Agent 为 Skill 格式。Skill 是调用入口——第三方 Agent 平台（WorkBuddy/Codex/OpenClaw 等）加载 Skill 后，通过 CLI 命令把任务交给 DeepAgents 编排引擎执行。
@@ -15,7 +15,7 @@
 
 | Agent | Skill | CLI 命令 | 职责 |
 |------|------|------|------|
-| 部署工程师 | `@sofagent-fde` · `SKILL/SKILL.md` | `sofagent-orchestrator subagent run fde --task "..."` | 梳理工作流、识别 AI 节点、构建知识库、交付离场 |
+| 部署工程师 | `@sofagent-fde` · `SKILL/agents/fde/SKILL.md` | `sofagent-orchestrator subagent run fde --task "..."` | 梳理工作流、识别 AI 节点、构建知识库、交付离场 |
 | 合规审计员 | `@sofagent-audit` · `SKILL/agents/audit/SKILL.md` | `sofagent-orchestrator subagent run audit --task "..."` | Workflow 巡检、铁律覆盖验证、知识库健康度检查 |
 | 最小变更工程师 | `engineering-minimal-change-engineer.md` | FORGE 内层循环自动调用 | 读代码 + 写代码 + 跑测试 + git commit |
 | 代码审查员 | `engineering-code-reviewer.md` | FORGE 内层循环自动调用 | 语义审查 + 影响分析 + 铁律合规 |

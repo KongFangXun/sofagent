@@ -242,6 +242,25 @@ if (Test-Path $_rulesSrc2) {
     if ($_needCopy2) { Copy-Item $_rulesSrc2 $_rulesDst2 -Force; Write-Ok "fde.md → $SKILL_DST" }
 }
 
+# v1.2.2: agents/ Sub Agent 定义部署（fde / audit / engineer / reviewer）
+$_agentsSrc = Join-Path $PROJECT_ROOT "SKILL\agents"
+if (Test-Path $_agentsSrc) {
+    Get-ChildItem $_agentsSrc -Directory | ForEach-Object {
+        $_agentName = $_.Name
+        $_agentSkillSrc = Join-Path $_.FullName "SKILL.md"
+        if (Test-Path $_agentSkillSrc) {
+            $_agentDstDir = Join-Path $SKILL_DST "agents\$_agentName"
+            if (-not (Test-Path $_agentDstDir)) { New-Item -ItemType Directory -Path $_agentDstDir -Force | Out-Null }
+            $_agentDstFile = Join-Path $_agentDstDir "SKILL.md"
+            $_needCopyAgent = $true
+            if (Test-Path $_agentDstFile) {
+                if ((Get-FileHash $_agentSkillSrc -Algorithm SHA256).Hash -eq (Get-FileHash $_agentDstFile -Algorithm SHA256).Hash) { $_needCopyAgent = $false }
+            }
+            if ($_needCopyAgent) { Copy-Item $_agentSkillSrc $_agentDstFile -Force; $copied++ }
+        }
+    }
+}
+
 # constraints.md 同步到 skills/sofagent/（嵌入模式行为约束注入源，替代 SKILL.md 避免框架元指令干扰）
 $_constraintsSrc = Join-Path $SKILL_SRC_DIR "skills\sofagent\constraints.md"
 $_constraintsDst = Join-Path $SKILL_DST "constraints.md"
