@@ -519,6 +519,260 @@ install_cli
 install_skill_unified
 
 # ════════════════════════════════════════
+# Step 8.6: v1.2.2 P3 Skill 分层升级三策略
+# ════════════════════════════════════════
+# 引擎层 vs 用户层分离：
+#   引擎层（官方维护，升级可覆盖） = SKILL.md + sofagent/ + agents/
+#   用户层（用户私有，默认不动）  = custom/
+# 三策略：
+#   默认      → 只同步引擎层；custom/ 不动；引擎层备份到 .backup/{ts}/
+#   --force   → 警告确认后覆盖所有层（含 custom/）；备份所有层
+#   --merge   → 三路合并 custom/（git merge-file）；备份所有层
+# 幂等：重复执行安全；custom/ 不存在时三策略行为一致（直接安装）
+# 调用时机：install_skill_unified 已把 SKILL 复制到 ~/.sofagent/skill/ 并 symlink 到
+#   ~/.workbuddy/skills/sofagent/，因此本函数作用在用户层 symlink 指向的实体上。
+# ────────────────────────────────────────────────────────────────
+
+# 备份保留份数
+SOFAGENT_BACKUP_KEEP=5
+
+# 目标用户层根目录（~/.workbuddy/skills/sofagent，可能是 symlink 到 ~/.sofagent/skill/）
+# 注意：UPGRADE_ROOT 解析 symlink 拿到实体路径，避免在 symlink 上建 .backup 失败
+_resolve_upgrade_root() {
+  local root="${HOME}/.workbuddy/skills/sofagent"
+  if [ -L "$root" ]; then
+    # macOS readlink 无 -f；用 cd+pwd 解析
+    ( cd "$root" 2>/dev/null && pwd -P ) || echo "$root"
+  elif [ -d "$root" ]; then
+    echo "$root"
+  else
+    echo ""  # 用户层不存在
+  fi
+}
+
+# 备份指定路径列表到 .backup/{ts}/ 下（保留目录结构）
+# 用法：_backup_layers <backup_root> <path1> [path2 ...]
+_backup_layers() {
+  local backup_root="$1"; shift
+  local ts; ts="$(date +%Y-%m-%d-%H%M%S)"
+  local backup_dir="${backup_root}/${ts}"
+  local p rel
+  mkdir -p "$backup_dir"
+  for p in "$@"; do
+    [ -e "$p" ] || continue
+    rel="${p#"${UPGRADE_ROOT}/"}"
+    mkdir -p "$(dirname "${backup_dir}/${rel}")"
+    cp -R "$p" "${backup_dir}/${rel}" 2>/dev/null || true
+  done
+  echo "$backup_dir"
+}
+
+# 备份轮转：保留最近 SOFAGENT_BACKUP_KEEP 份，删最旧
+_rotate_backups() {
+  local backup_root="$1"
+  [ -d "$backup_root" ] || return 0
+  # 按名称排序（YYYY-MM-DD-HHMMSS 格式时间戳 → 字典序=时间序）
+  local count; count=$(find "$backup_root" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
+  if [ "$count" -gt "$SOFAGENT_BACKUP_KEEP" ]; then
+    local to_delete=$((count - SOFAGENT_BACKUP_KEEP))
+    find "$backup_root" -mindepth 1 -maxdepth 1 -type d | sort | head -n "$to_delete" | while read -r old; do
+      rm -rf "$old"
+    done
+    _log "backup rotated: removed ${to_delete} oldest"
+  fi
+}
+
+# 三路合并单个文件：base（上次备份）/ ours（用户当前）/ theirs（新官方）
+# 返回 0=合并成功写入，1=冲突（已生成 .merge-conflict 副本），2=无需合并
+_merge_one_file() {
+  local base="$1" ours="$2" theirs="$3"
+  # 内容一致 → 无需合并
+  if cmp -s "$ours" "$theirs" 2>/dev/null; then
+    return 2
+  fi
+  # base 缺失或等于 ours → 直接用官方版覆盖（用户没改过）
+  if [ ! -f "$base" ] || cmp -s "$base" "$ours" 2>/dev/null; then
+    cp "$theirs" "$ours"
+    return 0
+  fi
+  # 三方都有改动 → git merge-file
+  if command -v git >/dev/null 2>&1; then
+    local tmp_out; tmp_out="$(mktemp -t sofagent-merge.XXXXXX)"
+    cp "$ours" "$tmp_out"
+    if git merge-file -L "用户版本" -L "上次安装" -L "官方版本" "$tmp_out" "$base" "$theirs" >/dev/null 2>&1; then
+      cp "$tmp_out" "$ours"
+      rm -f "$tmp_out"
+      return 0
+    else
+      # 冲突：保留用户版，生成 .merge-conflict 副本（git merge-file 已把冲突标记写进 tmp_out）
+      cp "$tmp_out" "${ours}.merge-conflict"
+      rm -f "$tmp_out"
+      return 1
+    fi
+  else
+    # 无 git → 保守策略：保留用户版，复制官方版到 .merge-conflict 供手工比对
+    cp "$theirs" "${ours}.merge-conflict"
+    return 1
+  fi
+}
+
+# 递归合并目录：对 theirs（新官方）下所有文件，与 ours 做三路合并
+_merge_tree() {
+  local base_root="$1" ours_root="$2" theirs_root="$3"
+  local f rel base ours merged_count=0 conflict_count=0
+  # find 所有官方文件（排除 .backup / .DS_Store / .merge-conflict 自身）
+  while IFS= read -r -d '' f; do
+    rel="${f#"${theirs_root}/"}"
+    base="${base_root}/${rel}"
+    ours="${ours_root}/${rel}"
+    if [ ! -f "$ours" ]; then
+      # 用户本地没有 → 直接拷入
+      mkdir -p "$(dirname "$ours")"
+      cp "$f" "$ours"
+      merged_count=$((merged_count+1))
+      continue
+    fi
+    if _merge_one_file "$base" "$ours" "$f"; then
+      merged_count=$((merged_count+1))
+    else
+      local rc=$?
+      if [ "$rc" = "1" ]; then
+        conflict_count=$((conflict_count+1))
+        warn "  合并冲突：${rel} → 已生成 ${rel}.merge-conflict（用户版未动）"
+      fi
+    fi
+  done < <(find "$theirs_root" -type f \
+      ! -path '*/.backup/*' ! -name '.DS_Store' ! -name '*.merge-conflict' -print0)
+  echo "${merged_count}|${conflict_count}"
+}
+
+# 主入口：Skill 分层升级
+upgrade_skill() {
+  local SKILL_SRC="${SCRIPT_DIR}/SKILL"
+  UPGRADE_ROOT="$(_resolve_upgrade_root)"
+  if [ -z "$UPGRADE_ROOT" ] || [ ! -d "$UPGRADE_ROOT" ]; then
+    _log "upgrade_skill: 用户层不存在，三策略等同直接安装（install_skill_unified 已完成）"
+    return 0
+  fi
+  if [ ! -d "$SKILL_SRC" ]; then
+    warn "upgrade_skill: SKILL 源目录不存在: $SKILL_SRC，跳过"
+    return 0
+  fi
+
+  # 引擎层 / 用户层路径
+  local engine_paths=(
+    "${UPGRADE_ROOT}/SKILL.md"
+    "${UPGRADE_ROOT}/AGENTS.md"
+    "${UPGRADE_ROOT}/sofagent"
+    "${UPGRADE_ROOT}/agents"
+    "${UPGRADE_ROOT}/harness"
+  )
+  local user_layer="${UPGRADE_ROOT}/custom"
+  local backup_root="${UPGRADE_ROOT}/.backup"
+
+  # 计算策略名（避免在 $() 内嵌套引号——bash 解析器有 bug）
+  local strategy="safe"
+  if [ "${FORCE_MODE:-0}" = "1" ]; then
+    strategy="force"
+  elif [ "${MERGE_MODE:-0}" = "1" ]; then
+    strategy="merge"
+  fi
+  info "Step 8.6 · Skill 分层升级（策略: ${strategy}）"
+
+  # ── 策略 A：--force 强制覆盖（含 custom/）──
+  if [ "${FORCE_MODE:-0}" = "1" ]; then
+    # 高危警告：必须确认（除非 SOFAGENT_FORCE_YES=1 或 --yes/--quick）
+    if [ "${SOFAGENT_FORCE_YES:-0}" != "1" ] && [ "${YES_MODE:-0}" != "1" ] && [ "${QUICK_MODE:-0}" != "1" ]; then
+      warn "⚠️  --force 将覆盖你的 custom/ 目录（用户自定义），此操作不可恢复。"
+      if [ -t 0 ]; then
+        printf "继续？(y/N) "
+        local answer; read -r answer
+        case "$answer" in
+          y|Y|yes|YES) : ;;
+          *) warn "已取消——custom/ 保持原样"; return 0 ;;
+        esac
+      else
+        err "非交互环境检测到 --force——请设置 SOFAGENT_FORCE_YES=1 或加 --yes 跳过确认"
+        return 1
+      fi
+    fi
+    # 备份所有层
+    local bk; bk="$(_backup_layers "$backup_root" "${engine_paths[@]}" "$user_layer")"
+    ok "  已备份所有层到 ${bk}"
+    # 覆盖引擎层 + custom/
+    for src_item in "${SKILL_SRC}"/*; do
+      local base; base="$(basename "$src_item")"
+      [ "$base" = ".backup" ] && continue
+      [ "$base" = ".DS_Store" ] && continue
+      rm -rf "${UPGRADE_ROOT}/${base}"
+      cp -R "$src_item" "${UPGRADE_ROOT}/${base}"
+    done
+    _rotate_backups "$backup_root"
+    ok "  --force 完成：所有层已覆盖为官方版本（含 custom/）"
+    return 0
+  fi
+
+  # ── 策略 B：--merge 三路合并 ──
+  if [ "${MERGE_MODE:-0}" = "1" ]; then
+    # base = 最近一次备份的 custom/（若存在）；theirs = 新官方 custom/
+    local last_backup=""
+    if [ -d "$backup_root" ]; then
+      last_backup=$(find "$backup_root" -mindepth 1 -maxdepth 1 -type d | sort | tail -n 1)
+    fi
+    # 备份所有层（含 custom/）
+    local bk; bk="$(_backup_layers "$backup_root" "${engine_paths[@]}" "$user_layer")"
+    ok "  已备份所有层到 ${bk}"
+    # 引擎层：直接覆盖（引擎层官方维护，不做 merge）
+    for src_item in "${SKILL_SRC}"/*; do
+      local base; base="$(basename "$src_item")"
+      case "$base" in
+        custom|.backup|.DS_Store) continue ;;
+      esac
+      rm -rf "${UPGRADE_ROOT}/${base}"
+      cp -R "$src_item" "${UPGRADE_ROOT}/${base}"
+    done
+    # custom/：三路合并
+    if [ -d "${SKILL_SRC}/custom" ] && [ -d "$user_layer" ]; then
+      local base_dir="${last_backup:+${last_backup}/custom}"
+      [ -d "$base_dir" ] || base_dir="/dev/null"
+      # base 缺失场景：对 _merge_tree 传入空目录以触发"直接用官方版"路径
+      local empty_base=""
+      if [ "$base_dir" = "/dev/null" ]; then
+        empty_base="$(mktemp -d -t sofagent-merge-base.XXXXXX)"
+        base_dir="$empty_base"
+      fi
+      local result; result="$(_merge_tree "$base_dir" "$user_layer" "${SKILL_SRC}/custom")"
+      local merged_count="${result%%|*}"
+      local conflict_count="${result##*|}"
+      [ -n "$empty_base" ] && rm -rf "$empty_base"
+      ok "  --merge 完成：${merged_count} 个文件已合并/新增，${conflict_count} 个冲突（见 .merge-conflict）"
+    else
+      ok "  --merge：custom/ 源或目标不存在，跳过合并"
+    fi
+    _rotate_backups "$backup_root"
+    return 0
+  fi
+
+  # ── 策略 C：默认安全升级（只覆盖引擎层，custom/ 不动）──
+  local bk; bk="$(_backup_layers "$backup_root" "${engine_paths[@]}")"
+  ok "  引擎层已备份到 ${bk}"
+  for src_item in "${SKILL_SRC}"/*; do
+    local base; base="$(basename "$src_item")"
+    case "$base" in
+      custom|.backup|.DS_Store) continue ;;
+    esac
+    rm -rf "${UPGRADE_ROOT}/${base}"
+    cp -R "$src_item" "${UPGRADE_ROOT}/${base}"
+  done
+  _rotate_backups "$backup_root"
+  ok "  安全升级完成：引擎层已同步到官方版本，custom/ 保持原样"
+  return 0
+}
+
+# 调用升级策略（仅在用户层已存在时执行；首次安装由 install_skill_unified 完成）
+upgrade_skill
+
+# ════════════════════════════════════════
 # FDE 专属步骤（仅默认模式，--base-only 时跳过）
 # ════════════════════════════════════════
 if [ "${BASE_ONLY:-0}" = "0" ]; then
