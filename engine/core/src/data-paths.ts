@@ -66,6 +66,16 @@ export const IM_OUTBOX_DIR = path.join(DATA_DIR, 'im-outbox');
 export const DAEMON_JSON = path.join(DATA_DIR, 'daemon.json');
 export const DAEMON_LOG = path.join(DATA_DIR, 'daemon.log');
 
+// ── eval 质量评估数据 ──
+export const EVAL_DIR = path.join(DATA_DIR, 'eval');
+export const EVAL_HISTORY = path.join(EVAL_DIR, 'history.jsonl');
+export const EVAL_LATEST = path.join(EVAL_DIR, 'latest.json');
+
+// ── ab-test 实验数据（规范化路径） ──
+export const AB_TEST_DIR = path.join(DATA_DIR, 'ab-test');
+export const AB_TEST_HISTORY = path.join(AB_TEST_DIR, 'scheduler-history.jsonl');
+export const AB_TEST_LATEST = path.join(AB_TEST_DIR, 'latest.json');
+
 // ── FORGE 审查运行数据 ──
 // 结构：data/forge-runs/<workflow-name>/<YYYY-MM-DD>/run-NN/
 // 新 workflow 各自独立子目录，日期拍平（非 YYYY/MM/DD 三级嵌套）

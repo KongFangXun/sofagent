@@ -65,36 +65,56 @@ async function main() {
       console.log(`  EvalSet:   ${config.evalSet}`);
       console.log('');
 
-      // 从 eval-set 目录加载测试用例，或使用默认用例
-      type EvalTestCase = { id: string; description: string; input: Record<string, unknown>; expected: Record<string, unknown> };
+      // 从 golden-set YAML 加载测试用例
+      type EvalTestCase = { id: string; description: string; input: Record<string, unknown>; expected: Record<string, unknown>; tags?: string[] };
       const testCases: EvalTestCase[] = [];
 
-      if (existsSync(config.evalSet)) {
-        try {
-          const files = readdirSync(config.evalSet).filter((f) => f.endsWith('.json'));
-          for (const file of files) {
-            try {
-              const content = readFileSync(join(config.evalSet, file), 'utf-8');
-              const tc = JSON.parse(content) as EvalTestCase;
-              if (tc.id && tc.input) {
-                testCases.push(tc);
-              }
-            } catch {
-              // 跳过解析失败的文件
-            }
-          }
-        } catch {
-          // 目录不可读
+      // 优先读 golden-set YAML（@sofagent/eval 的 golden set）
+      const { load: yamlLoad } = await import('js-yaml');
+      const { existsSync: exists, readFileSync: read } = await import('fs');
+      const { join: joinPath } = await import('path');
+
+      // golden-set 路径解析：--eval-set 参数优先（兼容旧用法），否则默认 eval 包的 golden-set.yaml
+      let goldenSetPath: string;
+      if (exists(config.evalSet) && !config.evalSet.endsWith('.json')) {
+        goldenSetPath = config.evalSet;
+      } else {
+        // 默认路径：尝试从 @sofagent/eval 包目录下找 golden-set.yaml
+        goldenSetPath = joinPath(__dirname, '..', '..', 'eval', 'data', 'golden-set.yaml');
+        if (!exists(goldenSetPath)) {
+          // fallback：尝试 node_modules 中的路径
+          goldenSetPath = joinPath(__dirname, '..', '..', '..', 'engine', 'eval', 'data', 'golden-set.yaml');
         }
       }
 
+      if (exists(goldenSetPath)) {
+        try {
+          const yamlContent = read(goldenSetPath, 'utf-8');
+          const parsed = yamlLoad(yamlContent) as unknown;
+          if (Array.isArray(parsed)) {
+            for (const item of parsed) {
+              const tc = item as Record<string, unknown>;
+              if (tc && tc['id'] && tc['input'] && tc['expected']) {
+                testCases.push({
+                  id: String(tc['id']),
+                  description: String(tc['description'] ?? ''),
+                  input: tc['input'] as Record<string, unknown>,
+                  expected: tc['expected'] as Record<string, unknown>,
+                  tags: Array.isArray(tc['tags']) ? tc['tags'] as string[] : undefined,
+                });
+              }
+            }
+          }
+        } catch {
+          console.error(`⚠️  golden-set YAML 解析失败: ${goldenSetPath}`);
+        }
+      }
+
+      // 测试用例不足时报错退出（不再 fallback 硬编码默认用例）
       if (testCases.length < config.minSampleSize) {
-        console.log(`⚠️  测试用例不足（${testCases.length}/${config.minSampleSize}），使用默认用例。`);
-        testCases.push(
-          { id: 'default-1', description: '代码质量分析', input: { task: '分析当前项目的代码质量并给出改进建议' }, expected: {} },
-          { id: 'default-2', description: '安全检查', input: { task: '检查项目是否符合安全最佳实践' }, expected: {} },
-          { id: 'default-3', description: '文档生成', input: { task: '生成项目结构和依赖关系文档' }, expected: {} },
-        );
+        console.error(`❌ 测试用例不足（${testCases.length}/${config.minSampleSize}），请提供有效的 golden-set。`);
+        console.error(`   golden-set 路径: ${goldenSetPath}`);
+        process.exit(1);
       }
 
       try {
@@ -104,6 +124,11 @@ async function main() {
         console.log(`  Candidate 得分: ${result.candidateScore.overall.toFixed(2)}`);
         console.log(`  分差: ${result.margin.toFixed(4)}`);
         console.log(`  连续胜出次数: ${result.consecutiveWins}`);
+
+        // 持久化结果
+        const { persistABTestResult } = await import('./persistence');
+        persistABTestResult(result);
+        console.log(`  结果已保存到 latest.json`);
 
         if (result.winner === 'candidate' && result.consecutiveWins >= config.promoteThreshold) {
           console.log('  ✅ candidate 已达晋升阈值，可执行 promote');

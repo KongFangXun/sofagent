@@ -12,5 +12,5 @@ export type {
 } from './types';
 
 export { evalCase } from './eval-scorer';
-export { runEval } from './eval-runner';
+export { runEval, defaultRunFunction } from './eval-runner';
 export { generateEvalReport, printEvalReport } from './eval-reporter';
