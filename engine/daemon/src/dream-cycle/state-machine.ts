@@ -48,7 +48,9 @@ const STATE_FILENAME = 'state.md';
  * v1.2.1：数据根从 .sofagent/ 迁移到 data/
  */
 export function loadLedger(projectDir: string): Ledger {
-  const dataDir = resolveDataDir(projectDir);
+  // projectDir 保留用于 .sofagent/dream-cycle/state.md（loadState/saveState），
+  // 但 resolveDataDir 不传参——fallback 到 SOFAGENT_HOME（~/.sofagent/data/）
+  const dataDir = resolveDataDir();
 
   // think.md（Ledger 原始反思）
   let thinkContent = '';
@@ -152,7 +154,8 @@ function appendWeeklyLog(
   counts: DreamCycleResult['counts'],
   auditEntryCount: number,
 ): void {
-  const knowledgeDir = resolveKnowledgeDir(projectDir);
+  // resolveKnowledgeDir 不传 projectDir——fallback 到 SOFAGENT_HOME（~/.sofagent/data/knowledge/）
+  const knowledgeDir = resolveKnowledgeDir();
   mkdirSync(knowledgeDir, { recursive: true });
   const logPath = join(knowledgeDir, 'log.md');
   const now = new Date().toISOString().slice(0, 10);

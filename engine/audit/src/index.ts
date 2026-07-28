@@ -802,7 +802,7 @@ async function main(): Promise<void> {
   if (!args.noSession) {
     try {
       const report = buildSessionReport(results, diffFiles, { task: args.task, commitSha });
-      const { jsonPath, mdPath } = writeSessionReport(report, process.cwd());
+      const { jsonPath, mdPath } = writeSessionReport(report);
       // 不打扰终端，但 stderr 轻量提示产物位置（非 --ci 时）
       if (!args.ci && !args.silent) {
         process.stderr.write(`[sofagent] session 报告已写入: ${jsonPath}\n`);

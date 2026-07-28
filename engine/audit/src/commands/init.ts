@@ -298,7 +298,7 @@ exit 0
   // [3/5] 创建知识库目录骨架（v1.0.1 新增；v1.2.1 迁移到 data/knowledge/）
   console.log('');
   console.log('[3/5] 创建知识库目录...');
-  const knowledgeDir = resolveKnowledgeDir(cwd);
+  const knowledgeDir = resolveKnowledgeDir();
   if (existsSync(knowledgeDir)) {
     console.log('  → data/knowledge/ 已存在，跳过');
     stepSkipped++;

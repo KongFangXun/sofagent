@@ -31,12 +31,16 @@ describe('runDreamCycle 状态机 e2e', () => {
 
   beforeEach(() => {
     dir = tmpDir();
+    // v1.2.2 F-39：resolve*Dir 不再接收 projectDir 参数，fallback 到 SOFAGENT_HOME。
+    // 测试隔离：设 SOFAGENT_HOME=dir，使 data/ 挂在临时目录下。
+    process.env.SOFAGENT_HOME = dir;
     // v1.2.1：用户可见数据在 data/（think.md / audit / knowledge）；
     // state.md 断点游标留在 .sofagent/dream-cycle（引擎内部状态，saveState 自创建）
     fs.mkdirSync(path.join(dir, 'data'), { recursive: true });
   });
 
   afterEach(() => {
+    delete process.env.SOFAGENT_HOME;
     fs.rmSync(dir, { recursive: true, force: true });
   });
 

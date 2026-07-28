@@ -38,9 +38,13 @@ describe('Dream Cycle 6 阶段', () => {
 
   beforeEach(() => {
     dir = tmpDir();
+    // v1.2.2 F-39：resolve*Dir 不再接收 projectDir 参数，fallback 到 SOFAGENT_HOME。
+    // 测试隔离：设 SOFAGENT_HOME=dir，使 data/ 挂在临时目录下。
+    process.env.SOFAGENT_HOME = dir;
   });
 
   afterEach(() => {
+    delete process.env.SOFAGENT_HOME;
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
