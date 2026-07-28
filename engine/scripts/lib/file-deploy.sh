@@ -66,7 +66,8 @@ deploy_skill_files() {
   if [ -d "$AGENTS_SRC" ]; then
     for agent_dir in "$AGENTS_SRC"/*/; do
       [ -d "$agent_dir" ] || continue
-      local agent_name=$(basename "$agent_dir")
+      local agent_name
+      agent_name=$(basename "$agent_dir")
       local agent_dst="${SKILL_DST}/agents/${agent_name}"; mkdir -p "$agent_dst"
       if [ -f "${agent_dir}SKILL.md" ]; then
         dst="${agent_dst}/SKILL.md"

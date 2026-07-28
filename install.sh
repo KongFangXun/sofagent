@@ -184,6 +184,7 @@ info "Step 1.5 · 创建安装目录结构（v1.2.1 安装路径分离）..."
 
 # 安装根目录（resolve_data_dir 已解析 SOFAGENT_HOME）
 mkdir -p "$SOFAGENT_HOME"
+chmod 700 "$SOFAGENT_HOME"  # 安全铁律：安装目录仅属主可读写执行
 
 # 数据目录（用户可见数据）
 DATA_ROOT="$SOFAGENT_HOME/data"

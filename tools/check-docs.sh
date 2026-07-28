@@ -90,8 +90,9 @@ echo "  package.json: $VERSION_PKG"
 echo ""
 echo "=== 4. 文档分层预算 ==="
 
-# 公共排除条件（所有分层都排除的目录）
-COMMON_EXCLUDE='-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/SKILL/harness/*" -not -path "*/FDE/*"'
+# 公共排除条件（所有分层都排除的目录，手动展开到各层 find 命令）
+# shellcheck disable=SC2034  # 变量供文档参考，实际展开在各 LAYER find 命令中
+COMMON_EXCLUDE='node_modules .workbuddy .sofagent docs/changelog docs/evidence SKILL/harness FDE'
 
 # 计算函数：count_md <find_args>
 count_md() {
