@@ -678,20 +678,26 @@ async function runAcceptanceTestDirectly(runDir) {
   const scriptPath = join(REPO_ROOT, 'FORGE/playbook/acceptance-test.sh');
 
   // 第 1 步：构建审计包（acceptance-test.sh 依赖 dist 产物）
-  console.log('[driver] 预跑 acceptance-test.sh — 先构建审计包 (engine/audit)...');
-  try {
-    const buildResult = await runCommand(
-      'npm run build',
-      join(REPO_ROOT, 'engine/audit'),
-      30_000,
-    );
-    if (buildResult.code !== 0) {
-      console.warn(`[driver] 构建审计包退出码 ${buildResult.code}（继续尝试运行测试）`);
-    } else {
-      console.log('[driver] 审计包构建完成');
+  // 优化：dist/index.js 已存在时跳过 build，减少 driver 被 sandbox kill 的窗口
+  const auditDist = join(REPO_ROOT, 'engine/audit/dist/index.js');
+  if (existsSync(auditDist)) {
+    console.log('[driver] 审计包 dist 已存在，跳过 build');
+  } else {
+    console.log('[driver] 预跑 acceptance-test.sh — 先构建审计包 (engine/audit)...');
+    try {
+      const buildResult = await runCommand(
+        'npm run build',
+        join(REPO_ROOT, 'engine/audit'),
+        120_000,
+      );
+      if (buildResult.code !== 0) {
+        console.warn(`[driver] 构建审计包退出码 ${buildResult.code}（继续尝试运行测试）`);
+      } else {
+        console.log('[driver] 审计包构建完成');
+      }
+    } catch (buildErr) {
+      console.warn(`[driver] 审计包构建失败（继续尝试运行测试）: ${buildErr.message}`);
     }
-  } catch (buildErr) {
-    console.warn(`[driver] 审计包构建失败（继续尝试运行测试）: ${buildErr.message}`);
   }
 
   // 第 2 步：直接 spawn acceptance-test.sh，driver 等待完成
