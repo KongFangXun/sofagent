@@ -23,6 +23,8 @@ import { loadConfig } from '@sofagent/core';
 import type { AuditHistoryEntry } from '@sofagent/audit';
 import type { AuditVerdict, LoopArtifacts, LoopGraphState } from './state';
 import type { FileCheckpointer } from '../graph/checkpoint';
+import { ModelRouter } from '../model-router';
+import { DataSovereigntyMiddleware } from '../middleware/data-sovereignty-mw';
 
 /** 重试上限：第 3 轮重试后仍未过 → blocked 终态 */
 export const DEFAULT_MAX_RETRIES = 3;
@@ -222,6 +224,54 @@ export function gateToolsForRole(
   return wrapToolsWithGate(tools, gate);
 }
 
+// ════════════════════════════════════════
+// v1.2.2 P1：ModelRouter + 数据主权 middleware 接线
+// ════════════════════════════════════════
+
+/** 节点级共享实例（lazy init，测试可通过 setLoopRouterForTest 替换） */
+let sharedRouter: ModelRouter | null = null;
+let sharedSovereigntyMw: DataSovereigntyMiddleware | null = null;
+
+/** 获取/初始化 ModelRouter 单例 */
+export function getLoopRouter(): ModelRouter {
+  if (!sharedRouter) sharedRouter = new ModelRouter();
+  return sharedRouter;
+}
+
+/** 获取/初始化数据主权 middleware 单例 */
+export function getLoopSovereigntyMw(): DataSovereigntyMiddleware {
+  if (!sharedSovereigntyMw) sharedSovereigntyMw = new DataSovereigntyMiddleware();
+  return sharedSovereigntyMw;
+}
+
+/** 测试注入：替换 router/mw（用 null 重置） */
+export function setLoopRouterForTest(router: ModelRouter | null): void {
+  sharedRouter = router;
+}
+export function setLoopSovereigntyMwForTest(mw: DataSovereigntyMiddleware | null): void {
+  sharedSovereigntyMw = mw;
+}
+
+/**
+ * 通过 ModelRouter 评估任务路由 + 敏感度。
+ * 路由决策写日志（不阻断）；敏感度用于 middleware 上下文注入。
+ */
+function routeAndLog(role: 'engineer' | 'reviewer', task: string): {
+  sensitivity: 'public' | 'internal' | 'restricted' | 'confidential';
+  routeSummary: string;
+} {
+  try {
+    const router = getLoopRouter();
+    const route = router.route(task, { agentRole: role, userIntent: task.slice(0, 200) });
+    return {
+      sensitivity: route.sensitivity,
+      routeSummary: `[router] target=${route.target} reason=${route.reason} sensitivity=${route.sensitivity}`,
+    };
+  } catch {
+    return { sensitivity: 'internal', routeSummary: '[router] 路由评估失败，降级 internal' };
+  }
+}
+
 /**
  * 默认 engineer 实现——v1.1.4 升级为工具注入路径：
  * 用 createReactAgent + ENGINEER_TOOLS（6 个工具）启动，
@@ -247,6 +297,10 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
       : []),
   ].join('\n');
 
+  // v1.2.2 P1：ModelRouter 路由 + 敏感度评估
+  const { sensitivity, routeSummary } = routeAndLog('engineer', task);
+  const sovereigntyMw = getLoopSovereigntyMw();
+
   // v1.1.4：工具注入路径——createReactAgent + ENGINEER_TOOLS
   // SOFAGENT_LLM 未设置或解析失败时自动降级到 spawnSubAgent 零工具路径
   try {
@@ -256,7 +310,7 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
     // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
     const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
     const constrainedPrompt = buildConstrainedSystemPrompt(process.cwd());
-    const systemPrompt = `${constrainedPrompt}\n\n${ENGINEER_AGENT.systemPrompt}`;
+    const systemPrompt = `${constrainedPrompt}\n\n${ENGINEER_AGENT.systemPrompt}\n\n${routeSummary}`;
     // v1.2.0: ToolGate 事前拦截——每个 tool call 前过 @sofagent/rules 检查
     const gate = createToolGate({ agentName: 'engineer', taskDesc: task.slice(0, 500) });
     const gatedTools = wrapToolsWithGate(ENGINEER_TOOLS, gate);
@@ -270,9 +324,19 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
       tools: langGraphTools,
       prompt: systemPrompt,
     });
-    const result = await agent.invoke(
-      { messages: [{ role: 'user', content: fullTask }] },
-      { recursionLimit: resolveMaxTurns('engineer') * 2 },
+    // v1.2.2 P0：数据主权 middleware 包裹模型调用
+    const result = await sovereigntyMw.wrapModelCall(
+      {
+        provider: process.env.SOFAGENT_LLM?.split(':')[0] ?? 'unknown',
+        model: process.env.SOFAGENT_LLM?.split(':')[1] ?? 'unknown',
+        endpoint: 'loop-engineer',
+        purpose: 'engineer-loop',
+      },
+      () => agent.invoke(
+        { messages: [{ role: 'user', content: fullTask }] },
+        { recursionLimit: resolveMaxTurns('engineer') * 2 },
+      ),
+      { agentRole: 'engineer', userIntent: task.slice(0, 200), sensitivity },
     );
     const output = extractAgentText(result);
     return output || '[降级运行] createReactAgent 未返回内容，已回退';
@@ -394,6 +458,10 @@ async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
     '4. 输出判定：IS_PASS: YES 或 IS_PASS: NO',
   ].join('\n');
 
+  // v1.2.2 P1：ModelRouter 路由 + 敏感度评估
+  const { sensitivity, routeSummary } = routeAndLog('reviewer', reviewTask);
+  const sovereigntyMw = getLoopSovereigntyMw();
+
   // v1.1.4：工具注入路径——createReactAgent + REVIEWER_TOOLS
   // SOFAGENT_LLM 未设置或解析失败时自动降级到 spawnSubAgent 零工具路径
   try {
@@ -403,7 +471,7 @@ async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
     // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
     const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
     const constrainedPrompt = buildConstrainedSystemPrompt(process.cwd());
-    const systemPrompt = `${constrainedPrompt}\n\n${REVIEWER_AGENT.systemPrompt}`;
+    const systemPrompt = `${constrainedPrompt}\n\n${REVIEWER_AGENT.systemPrompt}\n\n${routeSummary}`;
     // v1.2.0: ToolGate 事前拦截——reviewer 工具也过 gate（只读工具通常 PASS，但保持一致性）
     const gate = createToolGate({ agentName: 'reviewer', taskDesc: 'code review'.slice(0, 500) });
     const gatedTools = wrapToolsWithGate(REVIEWER_TOOLS, gate);
@@ -417,9 +485,19 @@ async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
       tools: langGraphTools,
       prompt: systemPrompt,
     });
-    const result = await agent.invoke(
-      { messages: [{ role: 'user', content: reviewTask }] },
-      { recursionLimit: resolveMaxTurns('reviewer') * 2 },
+    // v1.2.2 P0：数据主权 middleware 包裹模型调用
+    const result = await sovereigntyMw.wrapModelCall(
+      {
+        provider: process.env.SOFAGENT_LLM?.split(':')[0] ?? 'unknown',
+        model: process.env.SOFAGENT_LLM?.split(':')[1] ?? 'unknown',
+        endpoint: 'loop-reviewer',
+        purpose: 'reviewer-loop',
+      },
+      () => agent.invoke(
+        { messages: [{ role: 'user', content: reviewTask }] },
+        { recursionLimit: resolveMaxTurns('reviewer') * 2 },
+      ),
+      { agentRole: 'reviewer', userIntent: reviewTask.slice(0, 200), sensitivity },
     );
     const output = extractAgentText(result);
     return output || '[降级运行] createReactAgent 未返回内容，已回退';

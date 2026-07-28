@@ -129,6 +129,12 @@ export type {
   RunOutcome,
 } from './ab-scheduler';
 
+// ModelRouter（v1.2.2 · P1 混合模型路由层）
+export { ModelRouter, createDefaultRouter, LOCAL_UNAVAILABLE_MSG } from './model-router';
+export type { ModelRoute, TaskContext, TaskComplexity, Sensitivity, RouteTarget, RouteReason, ModelRouterDeps } from './model-router';
+export { loadModelRouterConfig, resolveRouterConfigPath, DEFAULT_ROUTER_CONFIG, ModelRouterConfigError, ModelRouterConfigSchema } from './model-router-config';
+export type { ModelRouterConfig, FallbackPolicy } from './model-router-config';
+
 // Loop State Extractor（checkpoint → ControlGraphState 翻译 · v1.1.8 新增）
 export {
   extractControlGraphState,
