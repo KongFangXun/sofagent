@@ -165,11 +165,41 @@ async function main() {
 
       console.log(`sofagent-ab-test v1.1.0 — 晋升决策`);
       try {
-        const result = await runABTest(config, [
-          { id: 'auto-1', description: '代码质量分析', input: { task: '分析当前项目的代码质量并给出改进建议' }, expected: {} },
-          { id: 'auto-2', description: '安全检查', input: { task: '检查项目是否符合安全最佳实践' }, expected: {} },
-          { id: 'auto-3', description: '文档生成', input: { task: '生成项目结构和依赖关系文档' }, expected: {} },
-        ]);
+        // 从 golden-set YAML 加载测试用例（与 run 子命令一致）
+        type PEvalTestCase = { id: string; description: string; input: Record<string, unknown>; expected: Record<string, unknown>; tags?: string[] };
+        const pTestCases: PEvalTestCase[] = [];
+        const { load: pyamlLoad } = await import('js-yaml');
+        const { existsSync: pexists, readFileSync: pread } = await import('fs');
+        const { join: pjoin } = await import('path');
+        let pgoldenSetPath = pjoin(__dirname, '..', '..', 'eval', 'data', 'golden-set.yaml');
+        if (!pexists(pgoldenSetPath)) {
+          pgoldenSetPath = pjoin(__dirname, '..', '..', '..', 'engine', 'eval', 'data', 'golden-set.yaml');
+        }
+        if (pexists(pgoldenSetPath)) {
+          try {
+            const parsed = pyamlLoad(pread(pgoldenSetPath, 'utf-8')) as unknown;
+            if (Array.isArray(parsed)) {
+              for (const item of parsed) {
+                const tc = item as Record<string, unknown>;
+                if (tc && tc['id'] && tc['input'] && tc['expected']) {
+                  pTestCases.push({
+                    id: String(tc['id']),
+                    description: String(tc['description'] ?? ''),
+                    input: tc['input'] as Record<string, unknown>,
+                    expected: tc['expected'] as Record<string, unknown>,
+                  });
+                }
+              }
+            }
+          } catch {
+            console.error(`⚠️  golden-set YAML 解析失败: ${pgoldenSetPath}`);
+          }
+        }
+        if (pTestCases.length < config.minSampleSize) {
+          console.error(`❌ 测试用例不足（${pTestCases.length}/${config.minSampleSize}），请提供有效的 golden-set。`);
+          process.exit(1);
+        }
+        const result = await runABTest(config, pTestCases);
         const decision = decidePromotion(result, [], config);
         if (decision.shouldPromote) {
           console.log(`✅ 晋升决策: 通过 — ${decision.reason}`);

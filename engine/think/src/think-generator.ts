@@ -403,7 +403,7 @@ function generateEvalLesson(rulesTriggered: string[], error?: string): string {
         lessons.push('commit msg 质量低，应提供有意义的描述');
         break;
       case 'E1':
-        lessons.push('不应在源码目录提交测试文件');
+        lessons.push('修改了 src/ 源码但未同步修改测试文件，应补充对应测试');
         break;
       case 'E2':
         lessons.push('裸 TODO 无上下文，应标注负责人和计划');
