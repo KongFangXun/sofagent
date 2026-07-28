@@ -96,7 +96,7 @@
 | D3 | **acceptance-test 补场景** | 按 changelog 功能点逐条 grep `FORGE/playbook/acceptance-test.sh`，零覆盖 = 未交付。**Step D 覆盖率闭环判定三项全 PASS** | 工程师 |
 | D4 | **审查体系已更新** | `regression-checklist.md` 追加本版本新维度 + `fresh-eyes-review.md` 补充新盲区。**可留发版 session 阶段五补做**，但开发 session 须标注「待补」 | 工程师 |
 | D5 | **版本号状态标注** | changelog 头部标注「开发期 SSOT 仍为 vX.Y.Z，版本号 bump 留发版 SOP」或已 bump 完成 | 工程师 |
-| D6 | **项目文档同步清单**（v1.1.9 新增） | 从 `docs/changelog/vX.Y.md`「核心变更/交付」提取所有新功能关键词，列出「功能点 → 应在哪个文档出现」对照表。**归属原则**：详细机制写到权威文档（FDE.md / DEVELOPMENT.md / ARCHITECTURE.md），其他文档（HANDBOOK / README / PHILOSOPHY）一句话 + 链接引用，不重复展开。可留发版 session 阶段八执行，但开发 session 须产出清单 | 工程师 |
+| D6 | **项目文档同步清单**（v1.1.9 新增） | 从 `docs/changelog/vX.Y.md`「核心变更/交付」提取所有新功能关键词，列出「功能点 → 应在哪个文档出现」对照表。**归属原则**：详细机制写到权威文档（FDE.md / DEVELOPMENT.md / ARCHITECTURE.md），其他文档（HANDBOOK / README / PHILOSOPHY / WIKI）一句话 + 链接引用，不重复展开。可留发版 session 阶段八执行，但开发 session 须产出清单 | 工程师 |
 
 > **发版 session 接手检查**：D3/D4/D6 标「待补」→ 先补完才能进自测。绝不能跳过 D3（零覆盖新功能跑出全绿是假象）或 D6（文档零提及 = 用户不知道有这功能）。
 

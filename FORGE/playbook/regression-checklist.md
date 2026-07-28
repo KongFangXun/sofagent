@@ -400,24 +400,24 @@ if (r.severity !== 'info') throw new Error('Expected info');
 console.log('OK');"   # 期望：OK
 ```
 
-#### 26. llm-wiki-mapping.md 存在 + 内容完整性（v1.1.6 新增）
+#### 27. WIKI.md 存在 + 内容完整性（v1.2.1 新增）
 
 ```bash
 # 子项 a: 文档存在
-[ -f docs/llm-wiki-mapping.md ] && echo "EXISTS" || echo "MISSING"
+[ -f docs/WIKI.md ] && echo "EXISTS" || echo "MISSING"
 
-# 子项 b: 三层映射齐全
-grep -c "Ledger\|Views\|Policy" docs/llm-wiki-mapping.md   # ≥3
+# 子项 b: 七节结构完整
+WIKI_SECTIONS=$(grep -c "^## [一二三四五六七]、" docs/WIKI.md)
+[ "$WIKI_SECTIONS" -ge 7 ] || echo "⚠️ WIKI.md 节数不足（期望 7）"
 
-# 子项 c: 数据流图存在（mermaid）
-grep -c "mermaid\|flowchart" docs/llm-wiki-mapping.md   # ≥1
+# 子项 c: 版本号与当前版本一致
+grep -q "v1\\.2\\.[0-9]" docs/WIKI.md || echo "⚠️ WIKI.md 版本号缺失"
 
-# 子项 d: ROADMAP v1.1.6 行链接到文档
-grep -c "llm-wiki-mapping.md" ROADMAP.md   # ≥1
-
-# 子项 e: 文档不重新定义三层（引用 PHILOSOPHY §五 为权威源）
-grep -c "唯一权威\|不重新定义\|PHILOSOPHY.md.*§五" docs/llm-wiki-mapping.md   # ≥1
+# 子项 d: 核心文档引用链存在（README + ARCHITECTURE 可发现）
+grep -c "WIKI" README.md   # ≥1
+grep -c "WIKI.md" docs/ARCHITECTURE.md   # ≥1（可选，ARCHITECTURE 已通过数据流图间接引用）
 ```
+
 #### 27. [v1.2.1 移除：被 pre-push-check.sh 步骤 1 + CI shellcheck.yml 全量覆盖]
 
 > 移除原因：CI 的 `.github/workflows/shellcheck.yml` 扫全仓，本地 pre-push-check.sh 步骤 1 也覆盖；此处检查检查器的元验证冗余。

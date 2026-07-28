@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.2.1 · 156 个场景定义（含子断言）
+# v1.2.1 · 157 个场景定义（含子断言）
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
 # ============================================================
@@ -1592,6 +1592,16 @@ else
   else
     fail "eval/ab-test 补全缺少关键文件（CLI/golden-set/占位符/路径常量/think 接通之一）"
   fi
+fi
+
+scenario 145 "WIKI.md 存在且七节结构完整（v1.2.1 新增）"
+WIKI="$PROJECT_ROOT/docs/WIKI.md"; S145_OK=true
+[ -f "$WIKI" ] || { fail "WIKI.md 不存在"; S145_OK=false; }
+if $S145_OK; then
+  WIKI_SEC=$(grep -c "^## [一二三四五六七]、" "$WIKI" 2>/dev/null || echo 0)
+  [ "$WIKI_SEC" -ge 7 ] || { fail "WIKI.md 节数不足（期望 7，实际 $WIKI_SEC）"; S145_OK=false; }
+  grep -q "WIKI" "$PROJECT_ROOT/README.md" || { fail "README 未引用 WIKI.md"; S145_OK=false; }
+  $S145_OK && pass "WIKI.md 存在 + 7 节结构完整 + README 可发现"
 fi
 
 # ── 总结 ──────────────────────────────────────────────────────

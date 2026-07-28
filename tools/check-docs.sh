@@ -148,12 +148,12 @@ LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 LAYER_E=${LAYER_E:-0}
 
 # 上限定义
-LIMIT_A=5500  # v1.2.1: eval+ab-test + docs 中期方向落盘 + releasing.md 设备端安装，A 层 5405 行
-LIMIT_B=4500  # v1.2.1: FORGE 文档 + acceptance-test，B 层 4445 行，上调
+LIMIT_A=6000  # v1.2.1: WIKI.md（175行）+ 数据流全景图收入 ARCHITECTURE（+44行），A 层 5405→5500 偏紧，上调到 6000
+LIMIT_B=5000  # v1.2.1: FORGE 文档 + acceptance-test，B 层 4445 行，留余量
 LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
 LIMIT_D=2000  # v1.1.9: D 层纳入口径修正——docs/architecture（v1.1.9 设计 876 行）+ docs/prd（193 行）从 A 层归入 D 层（工程文档与设计文档同语义），700→2000 容纳
 LIMIT_E=2000  # v1.2.0: 从 1000 上调到 2000——react-agent-migration-plan(548行)+loop-development(449行)+multi-device-sync(167行) 等 E 层文档自然增长，原预算不现实
-LIMIT_TOTAL=10000  # v1.2.1: A+B 9850 行，同步上调
+LIMIT_TOTAL=11000  # v1.2.1: A+B 上调 6000+5000=11000
 
 # 输出各层
 echo "  A 用户文档:     ${LAYER_A} 行 / ${LIMIT_A} 上限"
