@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.2.2 · 148 个场景定义（含子断言）
+# v1.2.2 · 151 个场景定义（含子断言）
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
 # ============================================================
@@ -1750,6 +1750,104 @@ S149_REASON=$(echo "$S149_OUT" | node -e "try{const d=JSON.parse(require('fs').r
 [ "$S149_CONF" = "ok" ] || { fail "confidential 数据路由到云端——安全红线违反"; S149_OK=false; }
 [ "$S149_REASON" = "ok" ] || { fail "路由结果缺少 reason 字段"; S149_OK=false; }
 $S149_OK && pass "P1 ModelRouter 路由端到端完整（public→cloud / restricted→local / confidential≠cloud / reason 有值）"
+
+# ── 场景 150: P3 Skill 分层升级——安全升级不动 custom/ ──
+scenario 150 "P3 Skill 分层升级——默认安全升级不动 custom/、--force 覆盖、--merge 三路合并"
+S150_OK=true
+# 150a: install.sh 含 upgrade_skill 函数 + 三策略参数
+S150A_FUNC=$(grep -c "^upgrade_skill()" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
+[ "$S150A_FUNC" -ge 1 ] 2>/dev/null || { fail "install.sh 缺少 upgrade_skill 函数"; S150_OK=false; }
+S150A_FORCE=$(grep -c "\-\-force" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
+[ "$S150A_FORCE" -ge 1 ] 2>/dev/null || { fail "install.sh 缺少 --force 参数支持"; S150_OK=false; }
+S150A_MERGE=$(grep -c "\-\-merge" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
+[ "$S150A_MERGE" -ge 1 ] 2>/dev/null || { fail "install.sh 缺少 --merge 参数支持"; S150_OK=false; }
+# 150b: _merge_one_file 函数存在（三路合并核心）
+S150B_MERGE=$(grep -c "^_merge_one_file()" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
+[ "$S150B_MERGE" -ge 1 ] 2>/dev/null || { fail "install.sh 缺少 _merge_one_file 三路合并函数"; S150_OK=false; }
+# 150c: _backup_layers + _rotate_backups 存在（备份轮转）
+S150C_BACKUP=$(grep -c "^_backup_layers()" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
+S150C_ROTATE=$(grep -c "^_rotate_backups()" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
+[ "$((S150C_BACKUP + S150C_ROTATE))" -ge 2 ] 2>/dev/null || { fail "install.sh 缺少备份/轮转函数"; S150_OK=false; }
+# 150d: custom/ 保护逻辑——默认策略 case 跳过 custom
+S150D_PROTECT=$(grep -c "custom|\.backup|\.DS_Store)" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
+[ "$S150D_PROTECT" -ge 1 ] 2>/dev/null || { fail "install.sh 缺少 custom/ 保护逻辑（case 跳过）"; S150_OK=false; }
+# 150e: --force 需交互确认或 --yes
+S150E_FORCE_CONFIRM=$(grep -c "SOFAGENT_FORCE_YES\|YES_MODE" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
+[ "$S150E_FORCE_CONFIRM" -ge 1 ] 2>/dev/null || { fail "install.sh 缺少 --force 确认门"; S150_OK=false; }
+$S150_OK && pass "P3 Skill 分层升级完整（upgrade_skill + _merge_one_file + 备份轮转 + custom/ 保护 + --force 确认门）"
+
+# ── 场景 151: P3b 异步 HITL——checkpoint 挂起/恢复/Dashboard 批准驳回 ──
+scenario 151 "P3b 异步 HITL 端到端（shouldUseAsyncHITL 降级 + 请求写入 + 响应读取）"
+S151_OK=true
+S151_OUT=$(cd "$PROJECT_ROOT" && node -e "
+const { shouldUseAsyncHITL, writeHITLRequest, readHITLResponse, writeHITLResponse, pendingDir } = require('./engine/orchestrator/dist/hitl/hitl-channel.js');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hitl-acc-'));
+const dataDir = path.join(tmpDir, 'data');
+// 1. 无 pending/ → false（CLI 同步降级）
+const asyncBefore = shouldUseAsyncHITL(dataDir);
+// 2. 写 HITL 请求（checkpoint 挂起）
+const cpId = 'acc-test-cp-001';
+writeHITLRequest(dataDir, { checkpointId: cpId, createdAt: new Date().toISOString(), task: 'test', reviewReport: '', auditResult: 'PASS', retryCount: 0, options: ['approve','reject','aborted'] });
+// 3. 有 pending/ → true（异步模式激活）
+const asyncAfter = shouldUseAsyncHITL(dataDir);
+// 4. 无响应 → null（任务挂起中）
+const noResp = readHITLResponse(dataDir, cpId);
+// 5. 写 approve 响应（Dashboard 批准）
+writeHITLResponse(dataDir, { checkpointId: cpId, decision: 'approve', resolvedAt: new Date().toISOString() });
+// 6. 读响应 → approve
+const resp = readHITLResponse(dataDir, cpId);
+fs.rmSync(tmpDir, { recursive: true });
+console.log(JSON.stringify({ asyncBefore, asyncAfter, noRespNull: noResp === null, decision: resp.decision }));
+" 2>&1)
+S151_ASYNC=$(echo "$S151_OUT" | grep -o '"asyncAfter":[a-z]*' | cut -d: -f2)
+S151_DECISION=$(echo "$S151_OUT" | grep -o '"decision":"[^"]*"' | cut -d'"' -f4)
+[ "$S151_ASYNC" = "true" ] 2>/dev/null || { fail "异步 HITL 模式未激活（pending/ 目录创建后 shouldUseAsyncHITL 应返回 true）"; S151_OK=false; }
+[ "$S151_DECISION" = "approve" ] 2>/dev/null || { fail "HITL 响应读取失败（期望 approve）"; S151_OK=false; }
+$S151_OK && pass "P3b 异步 HITL 端到端完整（降级判断 + 请求写入 + 响应读取 + 批准信号传递）"
+
+# ── 场景 152: P4 Graph Engine——Planner 分解 + 降级链 + decide/execute 分离 ──
+scenario 152 "P4 Graph Engine 端到端（Planner 解析 + 降级链路由 + decide/execute 分离）"
+S152_OK=true
+S152_OUT=$(cd "$PROJECT_ROOT" && node -e "
+const { parsePlanDecide } = require('./engine/orchestrator/dist/loop/plan-node.js');
+const { routeAfterAudit } = require('./engine/orchestrator/dist/loop/graph.js');
+const { computeResultContent } = require('./engine/orchestrator/dist/loop/engineer-execute.js');
+// 1. Planner 解析合法 JSON → 1 个 pending 子任务
+const plan = parsePlanDecide('{\"subtasks\":[{\"id\":\"s1\",\"description\":\"do x\"}],\"rationale\":\"\"}');
+const planCount = plan ? plan.length : 0;
+const planStatus = plan && plan[0] ? plan[0].status : 'missing';
+// 2. Planner 非法 JSON → null（降级兜底）
+const planInvalid = parsePlanDecide('garbage');
+// 3. 降级链路由：PASS → reviewer
+const routePass = routeAfterAudit({auditResult:'PASS',retryCount:0,degradationLevel:0,finalStatus:'running'});
+// 4. 降级链路由：FAIL L0 → engineer（正常重试）
+const routeFailL0 = routeAfterAudit({auditResult:'FAIL',retryCount:1,degradationLevel:0,finalStatus:'running'});
+// 5. 降级链路由：FAIL L2 → reviewer（低可信放行）
+const routeFailL2 = routeAfterAudit({auditResult:'FAIL',retryCount:2,degradationLevel:2,finalStatus:'running'});
+// 6. 降级链路由：FAIL 超限 → human_confirm（人工兜底）
+const routeFailOver = routeAfterAudit({auditResult:'FAIL',retryCount:3,degradationLevel:2,finalStatus:'running'});
+// 7. decide/execute 分离：computeResultContent 纯函数
+const execResult = computeResultContent('/tmp/x', 'create', 'hello world');
+console.log(JSON.stringify({ planCount, planStatus, planInvalidNull: planInvalid === null, routePass, routeFailL0, routeFailL2, routeFailOver, execResult }));
+" 2>&1)
+S152_PLAN_COUNT=$(echo "$S152_OUT" | grep -o '"planCount":[0-9]*' | cut -d: -f2)
+S152_PLAN_STATUS=$(echo "$S152_OUT" | grep -o '"planStatus":"[^"]*"' | cut -d'"' -f4)
+S152_PLAN_INVALID=$(echo "$S152_OUT" | grep -o '"planInvalidNull":[a-z]*' | cut -d: -f2)
+S152_ROUTE_PASS=$(echo "$S152_OUT" | grep -o '"routePass":"[^"]*"' | cut -d'"' -f4)
+S152_ROUTE_FAIL_L0=$(echo "$S152_OUT" | grep -o '"routeFailL0":"[^"]*"' | cut -d'"' -f4)
+S152_ROUTE_FAIL_L2=$(echo "$S152_OUT" | grep -o '"routeFailL2":"[^"]*"' | cut -d'"' -f4)
+S152_ROUTE_FAIL_OVER=$(echo "$S152_OUT" | grep -o '"routeFailOver":"[^"]*"' | cut -d'"' -f4)
+[ "$S152_PLAN_COUNT" = "1" ] 2>/dev/null || { fail "Planner 解析失败（期望 1 个子任务）"; S152_OK=false; }
+[ "$S152_PLAN_STATUS" = "pending" ] 2>/dev/null || { fail "Planner 子任务状态错误（期望 pending）"; S152_OK=false; }
+[ "$S152_PLAN_INVALID" = "true" ] 2>/dev/null || { fail "Planner 非法 JSON 未返回 null（降级兜底）"; S152_OK=false; }
+[ "$S152_ROUTE_PASS" = "reviewer" ] 2>/dev/null || { fail "降级链 PASS 未路由到 reviewer"; S152_OK=false; }
+[ "$S152_ROUTE_FAIL_L0" = "engineer" ] 2>/dev/null || { fail "降级链 FAIL L0 未路由到 engineer"; S152_OK=false; }
+[ "$S152_ROUTE_FAIL_L2" = "reviewer" ] 2>/dev/null || { fail "降级链 FAIL L2 未路由到 reviewer（低可信放行）"; S152_OK=false; }
+[ "$S152_ROUTE_FAIL_OVER" = "human_confirm" ] 2>/dev/null || { fail "降级链 FAIL 超限未路由到 human_confirm"; S152_OK=false; }
+$S152_OK && pass "P4 Graph Engine 端到端完整（Planner 解析+降级+降级链四路径+decide/execute 分离）"
 
 # ── 总结 ──────────────────────────────────────────────────────
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"

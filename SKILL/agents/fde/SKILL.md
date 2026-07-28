@@ -31,7 +31,7 @@ color: "#16B8F3"
 
 ```bash
 # 部署模式（deploy）
-sofagent-orchestrator subagent run fde --task "<用户的任务描��，原样传入>"
+sofagent-orchestrator subagent run fde --task "<用户的任务描述，原样传入>"
 # 持续优化模式（sustain）
 sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点"
 ```
