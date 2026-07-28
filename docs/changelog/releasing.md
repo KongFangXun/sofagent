@@ -239,29 +239,12 @@ VIEWS=$(grep -c '^### ' FORGE/playbook/fresh-eyes-review.md)
 
 先读 FORGE/SKILL/release-gate-loop/SKILL.md 了解循环结构，然后：
 
-1. 后台启动 driver：
-   node FORGE/src/release-gate-driver.mjs --target vX.Y.Z > /tmp/release-gate.log 2>&1 &
+1. 后台启动 driver：node FORGE/src/release-gate-driver.mjs --target vX.Y.Z > /tmp/release-gate.log 2>&1 &
+2. 记住 runDir（启动日志打印的路径）
+3. 轮询监控：每 60 秒 tail /tmp/release-gate.log，有新进展就一句话汇报，没变化就静默；最长沉默不超过 3 分钟
+4. driver 退出后读 verdict.md，用 3-5 行汇报：acceptance + regression + coverage + 最终裁决
 
-2. 记住 runDir（启动日志中打印的路径，如 .../run-07/）
-
-3. 🔴 定期轮询铁律（体验要求——不要沉默超过 3 分钟）：
-   - 每 60 秒读一次 /tmp/release-gate.log 末尾（tail -5）
-   - 如果日志有新进展（步骤切换、完成、报错），用一句话汇报用户：
-     ✅ "步骤 1/5 acceptance：driver 正在预跑 acceptance-test.sh..."
-     ✅ "步骤 1/5 acceptance：预跑完成 exit=0，agent 正在解读日志..."
-     ✅ "步骤 2/5 regression：agent 正在跑 46 维度回归检查..."
-   - 如果日志没变化（同一行），不要汇报——静默继续等
-   - 最长沉默时间不超过 3 分钟（= 3 次轮询无变化后，主动说一句"还在跑步骤 X，预计还需 Y 分钟"）
-
-4. driver 进程退出后（日志出现 "release-gate-loop 完成"），读 verdict.md
-5. 用 3-5 行汇报最终结果：
-   - acceptance 结果（通过/失败 + 场景数）
-   - regression 结果（PASS/FAIL 维度数）
-   - 覆盖率（功能点覆盖 X/Y）
-   - 最终裁决（PASS/FAIL）
-   - 如果 FAIL，列出 P0 问题清单
-
-铁律：不要干涉 driver 内部、不要修改任何代码或文档、不要探索项目源码——你只做启动 + 定期汇报 + 最终结果汇报。
+铁律：不干涉 driver、不改代码、不探索源码——只做启动 + 定期汇报 + 最终汇报。
 ```
 
 > 新 session 的 AI 会自己读 SKILL.md 拿到循环结构（5 步：acceptance → regression → coverage → consolidate → verdict）。v1.2.2 起 acceptance 由 driver 直接 spawn（7-12 分钟），不再需要 LLM agent 通过 run_bash 管理长任务（4 轮崩溃血泪教训已根治）。整个 release-gate-loop 通常需要 15-25 分钟（acceptance 7-12 分 + regression 5-10 分 + 其他 3 分）。
