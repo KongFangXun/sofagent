@@ -20,7 +20,7 @@
 #      7. vi HANDBOOK.md                            # 改文件头 > v0.99.3 ·
 #      8. vi README.md README.en.md                 # 改 badge Version-v0.99.3
 #      9. vi SKILL/SKILL.md                          # 改 frontmatter + 正文标题
-#     10. vi SKILL/harness/data/*.md                # 改正文标题 · v0.99.3
+#     10. vi SKILL/harness/fde-template.md           # 改正文标题 · v0.99.3
 #     11. vi FORGE/SKILL/fresh-eyes-loop/SKILL.md    # 改 frontmatter（如有版本字段）
 #     12. 跑 ./tools/check-version.sh 确认一致性
 #

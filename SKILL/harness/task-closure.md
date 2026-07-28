@@ -20,7 +20,7 @@
 > ```powershell
 > powershell -File {OPENCLAW_SCRIPTS}/task-record.ps1 -Task "任务简述" -Result "成功|失败|部分完成" -Model "你使用的模型 id" -Tokens 4500 -Cost 0.15 -Skills "task-aware"
 > ```
-> 两者都不可用时降级为 LLM 直接追加写入 `{SOFAGENT_DATA}/task/logs/YYYY-MM/YYYY-MM-DD.md`（格式参考 `data/task.md`）。
+> 两者都不可用时降级为 LLM 直接追加写入 `{SOFAGENT_DATA}/task/logs/YYYY-MM/YYYY-MM-DD.md`（格式：## HH:MM 任务名 / 模型 / tokens / 结果 / 耗时）。
 
 ```
 ⬜ ① 写 task/logs（命令见上方引用块）

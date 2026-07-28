@@ -200,8 +200,9 @@ done
 echo -e "\n${BOLD}── 6. install.sh 关键路径 ──${NC}"
 # v0.99.8 教训：fde.md 从 skill/ 迁到 skill/data/，8 处引用需要同步。
 # pre-push-check 之前不覆盖 install.sh，路径断裂检测不到。此步补盲。
+# v1.2.2 更新：harness/data/ 目录取消，fde.md 提升为 harness/fde-template.md
 INSTALL_CRITICAL_FILES=(
-  "SKILL/harness/data/fde.md"
+  "SKILL/harness/fde-template.md"
   "SKILL/SKILL.md"
   "SKILL/harness/entry-gate.md"
   "SKILL/harness/task-aware.md"
@@ -222,7 +223,7 @@ done
 
 # 检查 install.sh 引用的路径和实际文件是否一致
 # v1.2.0: install.sh 已从 engine/scripts/ 提升到根目录，SCRIPT_DIR = 项目根目录
-# RULES_SRC 格式: "${SCRIPT_DIR}/SKILL/harness/data/fde.md" → 从项目根目录解析相对路径
+# RULES_SRC 格式: "${SCRIPT_DIR}/SKILL/harness/fde-template.md" → 从项目根目录解析相对路径
 INSTALL_RULES_SRC=$(grep 'RULES_SRC=' install.sh 2>/dev/null | head -1 | sed 's/.*="\${SCRIPT_DIR}\///;s/".*//')
 if [ -n "$INSTALL_RULES_SRC" ]; then
   if [ ! -f "$INSTALL_RULES_SRC" ]; then

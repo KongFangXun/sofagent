@@ -1,9 +1,8 @@
 # sofagent runtime data
 .sofagent/
 
-# v1.2.1 数据目录迁移：仓库内 data/ 仅保留 README
-/data/*
-!/data/README.md
+# v1.2.1 数据目录迁移：运行时数据全在 ~/.sofagent/data/，仓库内不保留
+/data/
 
 # 编译产物
 dist/
