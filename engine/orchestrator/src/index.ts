@@ -90,6 +90,18 @@ export {
   type CheckpointRecord,
 } from './graph';
 
+// HITL Channel（v1.2.2 P3b · Storage-backed 异步人工确认）
+export {
+  HITL_OPTIONS,
+  shouldUseAsyncHITL,
+  writeHITLRequest,
+  readHITLResponse,
+  writeHITLResponse,
+  type HITLDecision,
+  type HITLRequest,
+  type HITLResponse,
+} from './hitl';
+
 // Orchestrator Compare
 export { scanLogFiles, extractMetrics, generateReport, promoteWorkflow } from './orchestrator-compare';
 export type { Metric } from './orchestrator-compare';
