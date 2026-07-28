@@ -27,6 +27,9 @@
 
 set -uo pipefail
 
+# v1.2.2 F-03: 预防性内存限制——防止 node/shellcheck 进程 OOM (exit 137)
+export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=4096}"
+
 cd "$(dirname "$0")/.." || exit 1
 
 # ── 颜色 ──
@@ -365,11 +368,15 @@ fi
 echo -e "\n${BOLD}── 8. CHANGELOG 纯度扫描 ──${NC}"
 CHANGELOG_FILE="CHANGELOG.md"
 if [ -f "$CHANGELOG_FILE" ]; then
-  # 提取当前版本条目（最新 ### [vX.Y.Z] 到下一个 ### [v 之间的内容）
-  LATEST_VER=$(grep -m1 "^### \[v" "$CHANGELOG_FILE" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  # 提取当前版本号：优先从 package.json（SSOT），fallback 到 CHANGELOG
+  LATEST_VER=$(node -e "console.log(require('./package.json').version)" 2>/dev/null)
+  if [ -z "$LATEST_VER" ]; then
+    # fallback: 从 CHANGELOG 提取（兼容旧格式 ### [vX.Y.Z] 和新格式 - **vX.Y.Z**）
+    LATEST_VER=$(grep -m1E "^\- \*\*v|^\#\#\# \[v" "$CHANGELOG_FILE" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1 | sed 's/^v//')
+  fi
   if [ -n "$LATEST_VER" ]; then
-    # 提取当前版本条目段落
-    CHANGELOG_SECTION=$(sed -n "/^### \[${LATEST_VER}\]/,/^### \[v/p" "$CHANGELOG_FILE" | head -n -1)
+    # 提取当前版本���目段落（兼容两种 CHANGELOG 格式）
+    CHANGELOG_SECTION=$(sed -n "/\*\*v${LATEST_VER}\*\*\|^### \[v${LATEST_VER}\]/,/\*\*v\|^### \[v/p" "$CHANGELOG_FILE" | head -n -1)
     # 扫描审查元信息关键词（P0×N / P1×N 等带乘号计数模式 + fresh-eyes 审查描述）
     META_HITS=$(echo "$CHANGELOG_SECTION" | grep -cE "P[0-2]×|fresh-eyes 独立审查|审查轮次|审查发现 [0-9]+" || echo "0")
     if [ "$META_HITS" -gt 0 ] 2>/dev/null; then

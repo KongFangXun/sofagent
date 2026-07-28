@@ -8,7 +8,7 @@ deploy_hook() {  # Step 6: 部署加载链 Hook（仅 OpenClaw）
   [ "${LITE_MODE:-0}" = "1" ] && { info "Lite 模式：跳过 Hook 部署"; return 0; }
   [ "$PLATFORM" != "openclaw" ] && return 0
   info "Step 6/7 · 部署加载链 Hook（OpenClaw 2026.6.x 内部 hook 架构）..."
-  local HOOK_SRC_DIR="${SCRIPT_DIR}/../hooks/sofagent-load-chain"
+  local HOOK_SRC_DIR="${SCRIPT_DIR}/engine/hooks/sofagent-load-chain"
   local HOOK_DST_DIR="${TARGET}/hooks/sofagent-load-chain"
   # v1.2.1 (DP-4): hook 已提升为正式 workspace 包，源码在 src/handler.ts，
   # 构建产出 dist/handler.js + handler.ts（根目录副本，OpenClaw 声明式系统用）

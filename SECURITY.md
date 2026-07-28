@@ -1,6 +1,6 @@
 # 安全策略
 
-> v1.2.1 · 2026-07-27（UTC）· 孔放勋
+> v1.2.1 · 2026-07-28（UTC）· 孔放勋
 >
 > 按安全主题组织，版本号作为括号注释。企业 IT 可按主题快速定位。
 
@@ -20,6 +20,16 @@
 ## 已知风险（明文存储）
 
 sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（约束中间层），**数据不出本机**——但以下数据以**明文 Markdown** 存储，请评估风险：
+
+**安装后数据目录结构**（`~/.sofagent/`）：
+```
+~/.sofagent/
+├── data/          ← 用户可见运行时数据（审计/知识库/反思/任务日志）
+├── internal/      ← 引擎内部状态（checkpoint / .git-shadow / watch.yml）
+├── bin/           ← CLI 入口
+└── skill/         ← Skill 文件
+```
+
 
 | 文件 | 位置 | 可能含 |
 |------|------|------|
@@ -131,7 +141,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 
 2026-07 行业研报对「知识库作为 Agent 可信调用载体」提出的 4 道关卡，与 sofagent 安全模型同构：
 
-- **权限实时回连核验**：研报强调数据入口权限必须**实时回连**核验、不静态拷贝。对应 sofagent 审计 A14（知识库越权：事后审计而非运行时阻断，见 LIMITATIONS §五）——当前为事后发现，运行时阻断是 v2.x 方向。
+- **权限实时回连核验**：研报强调数据入口权限必须**实时回连**核验、不静态拷贝。对应 sofagent 审计 A14（知识库越权：事后审计而非运行时阻断，见 LIMITATIONS §五）——当前为事后发现，运行时阻断是 v2.x 方向（计划中，参见 ROADMAP.md）。
 - **受控 Action + 全链路审计**：研报的 Action（前置·权限·幂等·副作用·审计）与 sofagent「模型提建议、审计引擎控执行」同一原则（见 DEVELOPMENT §八 财务报销沙盒）。
 - **权限隔离（Entity Resolution）**：多源知识需先解析实体归属再授权，避免越权拼接——对应 knowledge/ 的实体归属与 A15 约束验证。
 
@@ -172,6 +182,14 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 
 ## 四、审计与存储安全
 
+```
+~/.sofagent/
+├── data/          ← 用户可见运行时数据（审计/知识库/反思/任务日志）
+├── internal/      ← 引擎内部状态（checkpoint / .git-shadow / watch.yml）
+├── bin/           ← CLI 入口
+└── skill/         ← Skill 文件
+```
+
 ### ActionGovernance 审计溯源（v1.1.7）
 
 审计记录升级为可问责的动作凭证：`ActionGovernance`（actor/timestamp/targetEntity/context）+ `DecisionProvenance` 决策溯源组，写入 `history.jsonl`。提供**事后可追溯性**，但不在运行时阻断——Agent 仍可伪造 actor 字段（信任模型同 §审计工具信任模型）。防篡改 HMAC 签名详见下方「HMAC 签名（v1.1.8+ 已落地）」。
@@ -200,7 +218,7 @@ history.jsonl 存储审计拦截记录（含被拦截的 diff 摘要）。以下
 | 写入 | ✅ 能 | Agent 可以追加/删除/篡改 history.jsonl |
 | 检测篡改 | ⚠️ --doctor 第 8 项检查 | 通过 hash chain 验证——但 Agent 可以在篡改后重新计算整条链 |
 
-**缓解**：sanitize() 管道在写入前对密钥/密码/手机号打码。但这不是加密——Agent 可以从原始 git diff 中直接读到敏感内容。根治方案（age 加密 + 独立审计存储）推到 v2.x。
+**缓解**：sanitize() 管道在写入前对密钥/密码/手机号打码。但这不是加密——Agent 可以从原始 git diff 中直接读到敏感内容。根治方案（age 加密 + 独立审计存储）推到 v2.x（计划中，参见 ROADMAP.md）。
 
 #### 审计日志脱敏与访问控制
 

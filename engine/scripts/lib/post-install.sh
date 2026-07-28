@@ -103,6 +103,20 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
   fi
   echo "  💡 运行 verify.sh 验证安装是否完整。"
 }
+# v1.2.2 F-09: 关键组件部署校验——安装后自检
+verify_component_integrity() {
+  local MISSING_COMPONENTS=""
+  for f in "${SOFAGENT_HOME}/bin/sofagent" "${TARGET}/scripts/task-record.sh" "${TARGET}/scripts/cleanup.sh"; do
+    [ -f "$f" ] || MISSING_COMPONENTS="${MISSING_COMPONENTS}  ${f}\n"
+  done
+  if [ -n "$MISSING_COMPONENTS" ]; then
+    echo ""
+    warn "以下关键组件未成功部署，请检查："
+    echo -e "${MISSING_COMPONENTS}"
+    warn "  可能原因：源文件路径错误或权限不足。请重新运行 bash install.sh"
+  fi
+}
+
 log_install_audit() {  # 审计：安装完成 + HMAC key 生成
   # v1.2.0 P0⑥ 修复：自动生成 HMAC 签名密钥（~/.sofagent-key，chmod 600）
   # 无此密钥时 history.jsonl 仅用 SHA-256 hash chain（可追溯非强防篡改），
