@@ -44,6 +44,9 @@ function sampleState(overrides: Partial<LoopGraphState> = {}): LoopGraphState {
     artifacts: emptyArtifacts('QA 测试任务'),
     finalStatus: 'running',
     resumeFrom: null,
+    // QA-FIX(v1.2.2 回归): P4 将 LoopGraphState.degradationLevel 设为必填（降级链初始值 0），
+    // 补齐 fixture 缺失字段（tsc TS2322）
+    degradationLevel: 0,
     ...overrides,
   };
 }

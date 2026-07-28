@@ -30,7 +30,9 @@ import {
 
 import { FileCheckpointer } from '../graph/checkpoint';
 import { runLoopGraph, resumeLoopGraph } from '../loop/graph';
-import type { LoopGraphDeps, AuditOutcome } from '../loop/graph';
+// QA-FIX(v1.2.2 回归): LoopGraphDeps/AuditOutcome 定义并导出于 ../loop/nodes，
+// graph.ts 未再导出——修正导入来源（tsc TS2459/TS2305）
+import type { LoopGraphDeps, AuditOutcome } from '../loop/nodes';
 
 // ════════════════════════════════════════
 // Helper

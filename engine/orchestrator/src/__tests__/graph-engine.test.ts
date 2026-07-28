@@ -20,7 +20,10 @@ import * as path from 'path';
 import * as os from 'os';
 
 import { emptyArtifacts, type LoopGraphState } from '../loop/state';
-import { routeAfterAudit, runLoopGraph, type LoopGraphDeps, type AuditOutcome } from '../loop/graph';
+import { routeAfterAudit, runLoopGraph } from '../loop/graph';
+// QA-FIX(v1.2.2 回归): LoopGraphDeps/AuditOutcome 定义并导出于 ../loop/nodes，
+// graph.ts 未再导出——按 qa-verify-nodes.test.ts 的既有约定修正导入来源（tsc TS2459/TS2305）
+import type { LoopGraphDeps, AuditOutcome } from '../loop/nodes';
 import { FileCheckpointer } from '../graph/checkpoint';
 import {
   makePlanNode,
