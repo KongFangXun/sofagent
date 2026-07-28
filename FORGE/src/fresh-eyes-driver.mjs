@@ -480,7 +480,7 @@ async function runWorker(step, roundDir, target) {
 
   // 3. 组装 user message：prompt 正文 + 路径注入 + target 注入
   // 分片模式：环境变量 FORGE_BATCH_RESULT 覆盖 result.md 的文件名，
-  // FORGE_CUSTOM_OUTPUT 覆盖输出文件名（如 summary-batch-1.md）。
+  // FORGE_CUSTOM_OUTPUT 覆盖输出文件名（如 summary-batch-1.md / result-verified-batch-1.md）。
   const batchResultName = process.env.FORGE_BATCH_RESULT || '';
   const customOutputName = process.env.FORGE_CUSTOM_OUTPUT || '';
 
@@ -492,7 +492,10 @@ async function runWorker(step, roundDir, target) {
     .join('\n');
   const outputPaths = stepDef.outputs
     .map(f => {
-      const actualFile = (customOutputName && f === 'summary.md') ? customOutputName : f;
+      // 分片模式：FORGE_CUSTOM_OUTPUT 覆盖首个输出文件名
+      // b-fix: summary.md → summary-batch-1.md
+      // a-verify: result.md → result-verified-batch-1.md
+      const actualFile = (customOutputName && f === stepDef.outputs[0]) ? customOutputName : f;
       return `  - ${join(roundDir, actualFile)}`;
     })
     .join('\n');
@@ -556,6 +559,7 @@ async function runWorker(step, roundDir, target) {
   // - 文本处理类（a-consolidate/a-verify）：主要做合并/格式化，给 100 够了
   // - b-fix：分片后每批 5 条 finding × 3 工具调用 = 15 步，给 100 是 6 倍余量
   //   太高会导致消息累积 OOM（exit 137）
+  // - a-verify：分片后每批 5 条 × 2 操作 = 10 步，给 100 是 10 倍余量
   const STEP_RECURSION_LIMITS = {
     'a-check': 200,
     'b-check': 200,
@@ -600,11 +604,9 @@ async function runWorker(step, roundDir, target) {
   //      约定 agent 返回文本用 `===FILE: <filename>===` 分隔多产物，
   //      driver 按分隔符切片分别写入对应文件。
   //      若找不到分隔符，fallback 把整个文本写入第一个产物（不丢内容）。
-  //    分片模式：环境变量 FORGE_CUSTOM_OUTPUT 覆盖输出文件名（如 summary-batch-1.md）。
+  //    分片模式：环境变量 FORGE_CUSTOM_OUTPUT 覆盖输出文件名（如 summary-batch-1.md / result-verified-batch-1.md）。
   if (stepDef.outputs.length === 1) {
-    const actualOutput = (customOutputName && stepDef.outputs[0] === 'summary.md')
-      ? customOutputName
-      : stepDef.outputs[0];
+    const actualOutput = customOutputName || stepDef.outputs[0];
     const outPath = join(roundDir, actualOutput);
     writeFileSync(outPath, text, 'utf-8');
     console.log(`[worker:${step}] 产物已写入 ${outPath}`);
@@ -848,6 +850,83 @@ async function runBFixSharded(roundDir, target, round) {
   ].join('\n');
   writeFileSync(join(roundDir, 'summary.md'), mergedSummary, 'utf-8');
   console.log(`\n  [b-fix 分片] 全部完成，${batchSummaries.length} 份 summary 已合并`);
+}
+
+/**
+ * a-verify 分片执行：把 result.md 按 finding 切片，每批 BATCH_SIZE 条，
+ * 每批启动一个独立 worker（全新 agent session，零历史消息）。
+ *
+ * 与 runBFixSharded 平行，区别：
+ *   - 每批输入文件名：result-verify-batch-N.md
+ *   - 每批输出文件名：result-verified-batch-N.md
+ *   - 最后合并覆盖回 result.md（a-verify 产物就是回填 verify 列的 result.md，
+ *     driver 的 parseStopCondition 读它判停止条件）
+ *
+ * @param {string} roundDir - round 目录绝对路径
+ * @param {string} target   - 验证目标版本号
+ * @param {number} round    - 轮次号
+ */
+async function runAVerifySharded(roundDir, target, round) {
+  const BATCH_SIZE = 5;
+
+  const resultPath = join(roundDir, 'result.md');
+  const resultText = readFileSync(resultPath, 'utf-8');
+
+  const findings = splitFindings(resultText);
+  console.log(`  [a-verify 分片] 共 ${findings.length} 条 finding，每批 ${BATCH_SIZE} 条`);
+
+  if (findings.length === 0) {
+    console.log(`  [a-verify 分片] result.md 未找到 finding 切片，fallback 到单 session`);
+    await spawnWorker('a-verify', roundDir, target, round);
+    return;
+  }
+
+  const batches = chunk(findings, BATCH_SIZE);
+  const batchResults = [];
+
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    const batchNum = i + 1;
+    console.log(`\n  [a-verify 分片 ${batchNum}/${batches.length}] 验证 finding: ${batch.map(f => f.id).join(', ')}`);
+
+    // 构造分片输入
+    const batchResultPath = join(roundDir, `result-verify-batch-${batchNum}.md`);
+    const batchHeader =
+      `# result-verify-batch-${batchNum}.md · A 验证（分片 ${batchNum}/${batches.length}）\n\n` +
+      `> 以下是本批 ${batch.length} 条的验证指令。\n\n---\n\n`;
+    const batchContent = batch.map(f => f.content).join('\n\n---\n\n');
+    writeFileSync(batchResultPath, batchHeader + batchContent, 'utf-8');
+
+    try {
+      await spawnWorker('a-verify', roundDir, target, round, {
+        customInputs: { 'result.md': `result-verify-batch-${batchNum}.md` },
+        customOutput: `result-verified-batch-${batchNum}.md`,
+      });
+      const verifiedPath = join(roundDir, `result-verified-batch-${batchNum}.md`);
+      if (existsSync(verifiedPath)) {
+        batchResults.push(readFileSync(verifiedPath, 'utf-8'));
+      }
+    } catch (batchErr) {
+      console.warn(`\n  ⚠️  [a-verify 分片 ${batchNum}] 失败: ${batchErr.message}`);
+      batchResults.push(
+        `## 分片 ${batchNum} 验证失败\n\n` +
+        `错误: ${batchErr.message}\n\n` +
+        `涉及 finding: ${batch.map(f => f.id).join(', ')}\n`
+      );
+      // 继续下一批，不中断
+    }
+  }
+
+  // 合并回填到 result.md
+  const mergedResult = [
+    '# result.md · a-verify 分片合并（已回填 verify 列）',
+    '',
+    `> 共 ${batches.length} 批，${findings.length} 条 finding`,
+    '',
+    ...batchResults,
+  ].join('\n');
+  writeFileSync(join(roundDir, 'result.md'), mergedResult, 'utf-8');
+  console.log(`\n  [a-verify 分片] 全部完成，已合并回填 result.md`);
 }
 
 /**
@@ -1140,7 +1219,7 @@ async function runRound(roundNum, runDir, target, dryRun) {
     console.log('    ② b-check   (B 独立审查)    → check-b.md   [与①并行]');
     console.log('    ③ a-consolidate (A 合并)    → findings.md + result.md');
     console.log('    ④ b-fix     (B 修复)        → summary.md');
-    console.log('    ⑤ a-verify  (A 验证)        → result.md 回填 verify');
+    console.log('    ⑤ a-verify  (A 验证·分片) → result.md 回填 verify');
     const counts = parseStopCondition(roundDir);
     return { roundDir, counts, isClean: true };
   }
@@ -1168,9 +1247,9 @@ async function runRound(roundNum, runDir, target, dryRun) {
   console.log('\n  [步骤 ④] B 按 result.md 修复（分片模式）...');
   await runBFixSharded(roundDir, target, roundNum);
 
-  // 步骤 ⑤ A 验证
-  console.log('\n  [步骤 ⑤] A 验证修复，回填 verify 列...');
-  await spawnWorker('a-verify', roundDir, target, roundNum);
+  // 步骤 ⑤ A 验证（分片执行）
+  console.log('\n  [步骤 ⑤] A 验证修复（分片模式）...');
+  await runAVerifySharded(roundDir, target, roundNum);
 
   // 判定停止条件
   const counts = parseStopCondition(roundDir);
