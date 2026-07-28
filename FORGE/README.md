@@ -1,6 +1,6 @@
 # FORGE — sofagent 自迭代引擎
 
-> **FORGE = sofagent 的自迭代引擎���** 通过 workflow 驱动 Agent 审查/修复/验证自己的代码。这是给 sofagent 开发者的工具包——如果你是 sofagent 用户，不需要看这里。
+> **FORGE = sofagent 的自迭代引擎。** 通过 workflow 驱动 Agent 审查/修复/验证自己的代码。这是给 sofagent 开发者的工具包——如果你是 sofagent 用户，不需要看这里。
 >
 > **FORGE 是 sofagent 项目的自迭代引擎**——终极目标是让 Agent 写代码、Agent 审计、Agent 审查。通过 `FORGE/SKILL/<loop>/` 定义可复用的 workflow，每个 workflow 是一步 toward 自迭代。当前已落地第一个 workflow：**fresh-eyes-loop**（A/B 双盲质量审查循环），由 driver（`fresh-eyes-driver.mjs`）自动编排执行。不面向终端用户。企业用户的入口是 [FDE Agent](../FDE/README.md)。
 

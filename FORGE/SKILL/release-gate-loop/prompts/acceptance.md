@@ -19,28 +19,45 @@
 
 ## 你要做的事
 
-### 🔴 异步轮询模式（acceptance-test.sh 有 100+ 场景，完整跑要 10-15 分钟）
+### 🔴 长任务执行铁律（CRITICAL — 违反必崩）
 
-run_bash 工具单次调用超时 60 秒。acceptance-test.sh 完整跑完需要 10-15 分钟，**直接同步调用必定超时失败**。必须用异步轮询模式：
+acceptance-test.sh 有 150+ 场景，完整跑完需要 **7-12 分钟**。run_bash 工具单次调用**硬超时 60 秒**。
 
-**第 1 步：先构建审计包**（v1.0.8 优化）
+**绝对禁止的写法**（全部会导致 60s 超时崩溃）：
+```
+❌ nohup bash acceptance-test.sh > log 2>&1 & echo "PID=$!"
+❌ nohup bash acceptance-test.sh > log 2>&1 & sleep 60 && tail log
+❌ sleep 60 && tail -20 log
+```
+以上写法中，run_bash 会等待整个命令完成（包括后台子进程），60 秒后 kill。
+
+**唯一正确的写法**（进程完全分离，run_bash 1ms 返回）：
+```bash
+cd /Users/kongfangxun/Workbuddy/sofagent && setsid bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-output.log 2>&1 < /dev/null &
+```
+关键三要素：`setsid`（新会话分离）+ `< /dev/null`（断开 stdin）+ `&`（后台）。不要加 `echo "PID"` 等额外命令（会阻止进程分离）。
+
+**轮询铁律**：只执行 `tail -5 /tmp/acceptance-output.log`（< 1ms），**绝对不要加 sleep**。每次 run_bash 调用之间天然有 LLM 推理延迟（5-10 秒），不需要自己加 sleep。
+
+### 执行步骤
+
+**第 1 步：构建审计包**（必须，~2 秒）
 ```bash
 cd /Users/kongfangxun/Workbuddy/sofagent && cd engine/audit && npm run build 2>&1
 ```
 
-**第 2 步：后台启动测试（立即返回，不等待）**
+**第 2 步：后台启动测试**（1ms 返回）
 ```bash
-cd /Users/kongfangxun/Workbuddy/sofagent && nohup bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-output.log 2>&1 & echo "PID=$!"
+cd /Users/kongfangxun/Workbuddy/sofagent && setsid bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-output.log 2>&1 < /dev/null &
 ```
-这一步会在几秒内返回 PID，测试在后台跑。
 
-**第 3 步：轮询日志（每次都 < 1 秒，不会超时）**
+**第 3 步：轮询日志**（每次调用 < 1ms，不超时）
 ```bash
 tail -5 /tmp/acceptance-output.log
 ```
-- 如果日志末尾出现测试结果统计或脚本退出标志 → 测试结束，进第 4 步
-- 如果还在跑 → **等 60 秒再 tail 一次**
-- **最多轮询 20 次**（20 × 60s = 20 分钟）。超过 20 分钟还没完成 → 标 FAIL（timeout）
+- 日志末尾出现测试结果统计（如"全部通过"或 exit code 行）→ 进第 4 步
+- 还在跑场景 → **立即再调一次** `tail -5 /tmp/acceptance-output.log`（不要 sleep！）
+- 最多轮询 40 次（每次间隔 = LLM 推理时间 ≈ 5-10s，40 次 ≈ 7-15 分钟）。超过 → 标 FAIL（timeout）
 
 **第 4 步：读取完整结果**
 ```bash
