@@ -12,8 +12,11 @@ import { checkKnowledgeHealth } from './knowledge-health';
 import { checkSkillStaleness } from './skill-staleness';
 import { accumulateWarnings } from './warn-accumulator';
 import { runHealthReport } from './health-reporter';
+import { generateDataSovereigntyDaily } from './data-sovereignty-daily';
+import { generateDataSovereigntyWeekly } from './data-sovereignty-weekly';
+import { generateDataSovereigntyMonthly } from './data-sovereignty-monthly';
 
-export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFreshness, checkKnowledgeHealth, checkSkillStaleness, accumulateWarnings, runHealthReport };
+export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFreshness, checkKnowledgeHealth, checkSkillStaleness, accumulateWarnings, runHealthReport, generateDataSovereigntyDaily, generateDataSovereigntyWeekly, generateDataSovereigntyMonthly };
 export type { InspectorConfig, InspectorResult } from './types';
 export type { DaemonHealth } from './health-reporter';
 
@@ -26,6 +29,10 @@ export const DEFAULT_INSPECTOR_CONFIG: Record<string, InspectorConfig> = {
   'knowledge-health': { enabled: true, schedule: '@weekly' },
   'skill-staleness': { enabled: false, schedule: '@weekly' },
   'warn-accumulator': { enabled: true, schedule: '@daily' },
+  // v1.2.2 P0：数据主权审计三档报告
+  'data-sovereignty-daily': { enabled: true, schedule: '@daily' },
+  'data-sovereignty-weekly': { enabled: true, schedule: '@weekly' },
+  'data-sovereignty-monthly': { enabled: true, schedule: '@monthly' },
 };
 
 /**

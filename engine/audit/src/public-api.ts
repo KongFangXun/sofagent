@@ -43,3 +43,11 @@ export {
   printError,
   showHelp,
 } from './rules/skill-safety-reporter';
+
+// ── 数据主权审计追踪（v1.2.2 · P0） ──
+export { DataSovereigntyLogger, resolveSovereigntyLogPath, resolveDateArg, sanitizeRecord } from './data-sovereignty';
+export type { DataSovereigntyRecord, SovereigntyLogEntry } from './data-sovereignty';
+export { generateDailyReport, generateWeeklyReport, generateMonthlyReport, generateReport, aggregateStats } from './report-generator';
+export type { GeneratedReport, ReportKind } from './report-generator';
+export { renderReport } from './report-template';
+export type { ReportStats } from './report-template';

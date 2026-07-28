@@ -46,6 +46,7 @@ import {
 import { generateThinkEntry } from '@sofagent/think';
 import { getThinkPath, appendThinkEntry } from '@sofagent/core';
 import type { AuditResult } from '@sofagent/audit';
+import { queryDataSovereigntyReport } from './tools/data-sovereignty-report';
 
 // ============================================================
 // 类型定义
@@ -405,6 +406,20 @@ class McpServer {
           description: '返回 sofagent MCP 完整能力清单（tools + resources + 描述）——Agent 首次连上时调用获取能力地图',
           inputSchema: { type: 'object' as const, properties: {} },
         },
+        {
+          name: 'data_sovereignty_report',
+          description: '查询数据主权审计报告摘要（v1.2.2 P0）。支持 date 参数：today / yesterday / YYYY-MM-DD。返回云端调用、本地执行、数据流出、敏感本地处理率、异常明细。',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              date: {
+                type: 'string',
+                description: '查询日期：today / yesterday / YYYY-MM-DD（默认 today）',
+                default: 'today',
+              },
+            },
+          },
+        },
       ],
     });
   }
@@ -459,6 +474,9 @@ class McpServer {
         break;
       case 'list_capabilities':
         this.toolListCapabilities(id);
+        break;
+      case 'data_sovereignty_report':
+        this.toolDataSovereigntyReport(id, args);
         break;
       default:
         this.sendError(id, -32602, `Unknown tool: ${toolName}`);
@@ -1039,6 +1057,24 @@ class McpServer {
     });
   }
 
+  /** Tool: data_sovereignty_report — 数据主权审计摘要（v1.2.2 P0） */
+  private toolDataSovereigntyReport(id: number | string | null, args: Record<string, unknown>): void {
+    try {
+      const result = queryDataSovereigntyReport({ date: args.date as string | undefined });
+      this.sendToolResult(id, {
+        type: 'text',
+        text: result.text,
+        data: result.data,
+      });
+    } catch (err) {
+      this.sendToolResult(id, {
+        type: 'text',
+        text: `[sofagent] 数据主权审计查询失败：${err instanceof Error ? err.message : String(err)}`,
+        data: { ok: false },
+      });
+    }
+  }
+
   /** Tool: list_capabilities — 完整能力清单（Agent 首次连接用） */
   private toolListCapabilities(id: number | string | null): void {
     const capabilities = {
@@ -1056,6 +1092,7 @@ class McpServer {
         { name: 'read_think_md', description: '读 think.md 完整内容（含 [sofagent] 前缀）' },
         { name: 'stats', description: 'knowledge 库统计' },
         { name: 'list_capabilities', description: '返回本能力清单' },
+        { name: 'data_sovereignty_report', description: '查询数据主权审计报告摘要（today/yesterday/YYYY-MM-DD）' },
       ],
       resources: [
         { uri: 'think://latest', description: 'think.md 最后一条条目' },
