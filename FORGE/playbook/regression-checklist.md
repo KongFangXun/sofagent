@@ -844,8 +844,10 @@ grep -q "byteLen < 16\|16.*字节\|>=.*16" engine/core/src/audit-history.ts && e
 
 > v1.2.1 教训：产品代码（非测试文件）出现 `join(cwd, 'data', ...)` / `join(projectDir, 'data', 'audit')` 等硬编码，绕过 SSOT。
 
+> ⚠️ **判定规则（防误报）**：data-paths.ts 管的是 `~/.sofagent/data/` **运行时数据路径**（resolveAuditDir/resolveDataDir 等）。包内自带的 fixture / golden-set 文件路径（如 `join(__dirname, '..', 'data', 'golden-set.yaml')`）是**随包发布的测试数据**，不是运行时数据，不适用此维度。仅当路径指向用户 home 下的运行时数据目录（如 `~/.sofagent/data/`、`data/audit/`）却绕过 data-paths.ts 时才算 FAIL。
+
 ```bash
-# 产品代码零硬编码检查（排除测试文件、data-paths.ts 自身、注释）
+# 产品代码零硬编码检查（排除测试文件、data-paths.ts 自身、注释、包内 fixture 路径）
 grep -rn "join(.*'data'" engine/ --include="*.ts" | grep -v "data-paths.ts" | grep -v "\.test\." | grep -v "__tests__" | grep -v "// " | grep -v "新的路径"
 # 期望：零命中或仅注释（注释需说明"原...迁移到..."）
 
@@ -853,7 +855,7 @@ grep -rn "join(.*'data'" engine/ --include="*.ts" | grep -v "data-paths.ts" | gr
 grep -c "resolveAuditDir\|resolveDataDir\|resolveTaskDir\|DATA_ROOT" engine/core/src/data-paths.ts   # ≥2
 ```
 
-> **PASS 标准**：产品代码零硬编码路径拼接，全部走 data-paths.ts 常量或 resolve* 函数。
+> **PASS 标准**：产品代码零硬编码**运行时数据**路径拼接，全���走 data-paths.ts 常量或 resolve* 函数。包内 fixture 路径（golden-set.yaml 等）不算违规。
 
 ---
 
@@ -939,12 +941,16 @@ grep -c 'PLACEHOLDER_MAP\|SK_PREFIX\|INJ_PHRASE' engine/eval/src/eval-runner.ts 
 
 #### 58. convertAuditResult 三态——WARN 不应当 FAIL（v1.2.1 P0b 新增）
 
-> v1.2.1 P0b 教训：eval-runner.ts 的 convertAuditResult 原版把 WARN（exitCode 1）当 FAIL（exitCode 2）是 bug。三态：exitCode 0=PASS, 1=WARN, 2=FAIL。
+> v1.2.1 P0b 教训：eval 的 convertAuditResult 原版把 WARN（exitCode 1）当 FAIL（exitCode 2）是 bug。三态：exitCode 0=PASS, 1=WARN, 2=FAIL。
+
+> ⚠️ **判定规则（防误报）**：convertAuditResult 函数可能在不同文件中（cli.ts / eval-runner.ts / reporter.ts）。**先 grep 函数名定位文件**，再检查三态逻辑，不要假定文件名。
 
 ```bash
-# 验证三态转换逻辑存在
-grep -A5 'convertAuditResult' engine/eval/src/eval-runner.ts | grep -E 'PASS|WARN|FAIL|exitCode'
-# 期望：3 种状态都有分支处理
+# 第一步：定位函数所在文件
+grep -rn 'export function convertAuditResult\|export const convertAuditResult' engine/eval/src/
+# 第二步：验证三态转换逻辑（用定位到的文件名替换 <file>）
+grep -A10 'convertAuditResult' engine/eval/src/cli.ts | grep -E 'PASS|WARN|FAIL|exitCode'
+# 期望：3 种状态都有分支处理（EXIT_CODE_TO_RESULT 含 0/1/2 三个映射）
 ```
 
 > **PASS 标准**：convertAuditResult 含 PASS/WARN/FAIL 三态分支，WARN 不映射为 FAIL。
@@ -974,13 +980,24 @@ grep -rn "resolveAuditDir(process\|resolveKnowledgeDir(process\|resolveDataDir(p
 
 > P0 数据主权导出只在 public-api.ts，audit/src/index.ts 没同步 re-export，导致 daemon/mcp/orchestrator 的 tsc 报 TS2305。
 
+> ⚠️ **判定规则（CRITICAL — 防误报）**：
+> - **先检查 `package.json` 的 `exports` 字段**：如果 `exports['.']` 已路由到 `public-api.ts`（或 `dist/public-api.js`），则 public-api.ts 的所有导出已对消费者暴露，**不需要在 index.ts 中重复 re-export**。
+> - `index.ts` 通常是 **CLI 二进制入口**（含 `if (require.main === module) main()`），不是 library barrel。
+> - **仅当** `package.json` 的 `exports['.']` 指向 `index.ts`（而非 public-api.ts），且 index.ts 缺失 public-api.ts 的导出时，才算 FAIL。
+> - type-only exports（`export type { ... }`）如果 public-api.ts 已导出且 package.json exports 指向 public-api.ts，不构成编译问题。
+
 ```bash
-# 对比 public-api.ts 和 index.ts 的 export 差异
+# 第一步：检查 package.json exports 指向哪个入口
+node -e "const p=require('./engine/audit/package.json'); console.log(p.exports?.['.']?.types || p.types || 'NOT_FOUND')"
+# 如果输出含 public-api → public-api.ts 是入口，PASS（不是 index.ts）
+# 如果输出含 index → 继续第二步
+
+# 第二步（仅 exports 指向 index.ts 时）：对比导出差异
 diff <(grep "^export " engine/audit/src/public-api.ts | sort) <(grep "^export " engine/audit/src/index.ts | sort) | grep "^<"
-# 期望：无差异行（或仅有 CLI-only 函数如 printResults 差异）
+# 期望：无差异行
 ```
 
-> **PASS 标准**：public-api.ts 的公共导出在 index.ts 中均有 re-export。
+> **PASS 标准**：package.json exports 指向 public-api.ts → 直接 PASS。或 exports 指向 index.ts 且两者导出一致。
 
 ---
 
