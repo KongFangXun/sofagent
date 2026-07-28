@@ -46,6 +46,21 @@
 └─────────────────────────────────────────────────┘
 ```
 
+### 运行时数据流
+
+每个引擎运行时往 `data/` 写数据，消费者从 `data/` 读数据：*（完整全景图见 [v1.2.1 changelog §P0b](./changelog/v1.2/v1.2.1.md)）*
+
+| 生产者（引擎） | → data/ 目录 | → 消费者 |
+|---|---|---|
+| audit（commit→runRules） | `audit/history.jsonl` | daemon（巡检）、think（反思生成） |
+| think（generateThinkEntry） | `think.md` | harness 加载链（注入上下文） |
+| eval（runEval）⭐ | `eval/history.jsonl` | think（进化引擎：passRate 下降→告警） |
+| daemon（health-reporter） | `daemon-health.json` | Dashboard（健康面板） |
+| daemon（dream-cycle） | `knowledge/` | harness 加载链（Skill 知识注入） |
+| FORGE driver（loop） | `forge-runs/` | 人类（verdict.md） |
+
+**数据流铁律**：生产者只写不读自己的输出，消费者只读不写——单向派生，不可逆。
+
 ---
 
 ## 四、文件地图
