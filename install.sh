@@ -800,15 +800,23 @@ if [ "${BASE_ONLY:-0}" = "0" ]; then
 
     # v1.0.7: 同时安装 FDE + Audit 两个内置 Agent 的 Skill
     # v1.2.0: Skill 收敛到 /SKILL/（agents/SKILL/ → SKILL/agents/）
+    # v1.2.2: 四 Agent 全装（fde / audit / engineer / reviewer）
     SKILL_SRC="${SCRIPT_DIR}/SKILL"
     SKILL_DIR="$(dirname "$FDE_MD_TARGET")"
     if [ -f "$SKILL_SRC/SKILL.md" ]; then
       cp "$SKILL_SRC/SKILL.md" "$SKILL_DIR/sofagent-fde/SKILL.md" 2>/dev/null || cp "$SKILL_SRC/SKILL.md" "$SKILL_DIR/SKILL.md"
       echo -e "${GREEN}✅ FDE Agent Skill 已安装（@sofagent-fde 可用）${NC}"
     fi
-    if [ -d "$SKILL_SRC/agents/audit" ]; then
-      cp -r "$SKILL_SRC/agents/audit" "$SKILL_DIR/sofagent-audit"
-      echo -e "${GREEN}✅ Audit Agent Skill 已安装（@sofagent-audit 可用）${NC}"
+    # 安装 agents/ 下所有 Sub Agent（audit / engineer / reviewer / fde）
+    if [ -d "$SKILL_SRC/agents" ]; then
+      for agent_dir in "$SKILL_SRC/agents"/*/; do
+        [ -d "$agent_dir" ] || continue
+        agent_name=$(basename "$agent_dir")
+        [ -f "${agent_dir}SKILL.md" ] || continue
+        mkdir -p "$SKILL_DIR/sofagent-${agent_name}"
+        cp "${agent_dir}SKILL.md" "$SKILL_DIR/sofagent-${agent_name}/SKILL.md"
+        echo -e "${GREEN}✅ ${agent_name} Agent Skill 已安装（@sofagent-${agent_name} 可用）${NC}"
+      done
     fi
   else
     echo -e "${CYAN}⚠️ 跳过 fde.md（模板或目标路径不存在）${NC}"
@@ -835,7 +843,7 @@ if [ "${BASE_ONLY:-0}" = "0" ]; then
     echo -e "  2. Agent 读完后按 FDE 流程引导你梳理工作流"
   fi
   echo ""
-  echo -e "  ${CYAN}内置 Agent：${NC}@sofagent-fde（部署工程师）+ @sofagent-audit（合规审计员）"
+  echo -e "  ${CYAN}内置 Agent：${NC}@sofagent-fde（部署）+ @sofagent-audit（合规）+ @sofagent-engineer（编码）+ @sofagent-reviewer（审查）"
   echo -e "  ${CYAN}详细指南见 FDE/README.md${NC}"
   echo ""
 

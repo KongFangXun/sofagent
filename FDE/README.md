@@ -1,114 +1,49 @@
-# FDE Agent — sofagent 的产品入口
+# FDE Agent — 企业 AI 落地的引导者
 
-> 🔖 **定位**：FDE 是 sofagent 的**部署产品入口**（非独立仓库）。需先 `git clone` sofagent 主仓库，FDE 依赖主仓库的 `install.sh`。
+> **装上这个 skill，你的 Agent 就变成简化版 FDE Agent**——帮你梳理企业工作流、识别 AI 节点、构建本体模型、产出可交付方案。不需要装引擎、不需要写代码。
 
-> **sofagent 是一个 FDE Agent**——进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。你通过 FDE 入口安装它，装完之后它就是你的常驻硅基员工：梳理 workflow、审计变更、持续优化。**人走 sofagent 不走。**
+## 这是什么
 
-> 内部由 4 个 Sub Agent 协作（`sofagent-fde` 部署 / `sofagent-audit` 合规审计 / `sofagent-engineer` 代码工程 / `sofagent-reviewer` 代码审查），对外用户只看到一个 FDE Agent 身份。Maker-Checker 分离在内部保持，用户不需要知道。
+FDE（Frontline Deployment Engineer）是一套企业 AI 落地方法论。这个 skill 把方法论装进 Agent——装完后 Agent 在对话里主动引导你走完四阶段十二步：
 
-> 🏞️ **River 比喻**：大厂造河（LLM=水，Agent 平台=河床）；**sofagent**（品牌名，本质上是一款 FDE Agent）是堤坝+自来水厂+管网，是你唯一打交道的入口（骑在引擎之上），引擎里的水龙头=Sub Agent 节点——拧开就有安全的 AI 能力流进业务。
+```
+进场（§1-§3）    → 摸清企业底子，建企业画像
+挖掘（§4-§6）    → 逐岗位梳理工作流，识别 AI 节点，量化价值
+交付（§7-§9）    → 每个节点出三层实体文档 + 部署清单 + 交付手册
+离场（§10-§12）  → 自检 + 稳定性观察 + 离场确认
+```
 
-> 💡 FDE 是什么、12 个关键步骤详解：[FDE.md](./FDE.md)。这里只讲怎么装、怎么用。
-
-> 🧭 **v1.2.0 结构重构（已完成）**：仓库已收敛为 `/engine/`（引擎层）+ `/SKILL/`（Skill 统一收敛）+ `install.sh` 提升到仓库根目录；**FDE 交付物已可见化**——按企业实例化落盘（`{企业名}/` 目录承载该企业的工作流梳理、AI 节点配置与交付记录），让企业看得见「我的 AI 化交付了什么」。
-
----
-
-## 前提条件
-
-- **Node.js** >= 18（`node --version` 确认）
-- **git**（`git --version` 确认）
-- **npm**（`npm --version` 确认）
-- **bash**（macOS/Linux 自带，Windows 用 Git Bash）
-
----
-
-## 安装（需 clone 主仓库）
-
-> ⚠️ 本脚本依赖主仓库的 `install.sh`，请确保已 clone 完整仓库后再从仓库根目录运行。
+## 怎么装
 
 | 平台 | 怎么装 | 怎么激活 |
-|------|------|------|
-| **OpenClaw** | `bash install.sh` | 装完直接打开 Agent，自动就绪 |
-| **WorkBuddy** | `bash install.sh --platform workbuddy` 或手动 `cp -r SKILL/SKILL.md ~/.workbuddy/skills/sofagent-fde/SKILL.md` | 在对话中输入 `@sofagent-fde` |
-| **其他平台** | 装 sofagent + 复制 SKILL.md 内容到 system prompt | Agent 读完后自动调用 CLI |
+|------|--------|---------|
+| **WorkBuddy** | 从 SkillHub 安装 `sofagent` | 对话中输入 `@sofagent` 或直接说"帮我做 FDE 部署" |
+| **OpenClaw** | `clawhub skill publish ./FDE --slug sofagent` | 装完直接打开 Agent |
+| **其他平台** | 把 `SKILL.md` 内容贴进 system prompt | Agent 读完后自动引导 |
 
-`install.sh` 安装完成后（默认模式），同时安装了两个内置 Agent Skill：`@sofagent-fde`（FDE 部署工程师）和 `@sofagent-audit`（合规审计员）。如仅需底座引擎，用 `bash install.sh --base-only`。
+## 装完能做什么
 
-### 装完之后做什么
-
-1. **激活 Skill** → 按上表对应平台的方法让 Agent 加载 FDE 工作台
-2. **Agent 引导** → Agent 会按 [FDE.md](./FDE.md) §1 开始，引导你描述企业基本信息，然后走完 12 个关键步骤
-3. **部署 sofagent 到设备**（核心步骤）→ 流程走完后，找一台闲置设备（服务器/旧电脑），`bash install.sh --base-only` 把 sofagent 一底座·四引擎装上去（注：此命令装**底层引擎底座**；FDE 入口用 `bash install.sh` 安装，见上方安装表）——约束底座 + 编排引擎 + 审计引擎 + 回溯引擎（git snapshot + revert）+ 进化引擎就绪，上面开始跑你的 workflow AI 节点
-
-### 种子指令（备选，非 OpenClaw/WorkBuddy 用户使用）
-
-把下面这段粘贴给你的 Agent：
-
-```
-请完整阅读 SKILL/SKILL.md、FDE/FDE.md。
-读完后按 FDE.md §1 开始引导我完成 FDE 部署。
-```
-
----
+| 能力 | 说明 |
+|------|------|
+| 梳理工作流 | 逐岗位追问五要素（输入/输出/负责人/耗时/痛点），产出工作流节点图 |
+| 识别 AI 节点 | 三问判定法 → 🔄 自动执行 / ⚡ 强化岗位 / 👤 暂不动 |
+| 构建本体模型 | 为每个节点补 domain / relations / knowledge-domain |
+| 量化价值 | 按"日耗时 × 时薪 × 年工作日"算年节省，按 ROI 排序 |
+| 产出三层实体 | 文档层 + Skill 层 + 运行层，每个 AI 节点都有 |
+| 交付手册 | 4 章交付文档：背景/架构/操作手册/维护指南 |
+| 持续优化 | 节点跑偏了、要加新节点、要评估 ROI——后续对话继续 |
 
 ## 文件
 
 | 文件 | 干什么 |
-|------|------|
-| `SKILL/SKILL.md` | Skill 入口（Agent 激活后自动加载，第一个说话引导你） |
-| `FDE.md` | 12 个关键步骤部署知识文档（4 个阶段：进场→挖掘→交付→检查离场）+ 角色定义 + 步骤详解 |
-| `templates/` | 交付物模板（企业画像 + 部署方案 + 工作流节点文档 + 企业 Skill），以 FDE 自身为案例 |
-| `install.sh` | 一键装 sofagent 底座 + 写入 fde.md（仓库根目录主安装器） |
+|------|--------|
+| `SKILL.md` | Agent 行为入口（加载后自动引导） |
+| `FDE.md` | 完整方法论（1062 行，Agent 按需读取详细追问话术） |
+| `templates/` | 交付物模板（企业画像 + 部署方案 + 节点文档 + Skill 模板） |
+| `quick-start.md` | 5 分钟快速上手 |
 
----
+## 前提条件
 
-## 部署验证
+**零依赖**。装了 skill 就能用全部能力。不需要 Node.js、不需要 git clone、不需要 install.sh。
 
-部署完成后，按以下步骤确认 sofagent 在工作：
-
-1. **hook 就位检查**：
-   ```bash
-   ls .git/hooks/commit-msg .git/hooks/post-commit
-   sofagent-audit --doctor
-   ```
-
-2. **审计拦截测试**（在测试仓库，非生产代码）：
-   ```bash
-   echo "API_KEY=sk-123456" > .env && git add -f .env && GIT_EDITOR=true git commit -m "test"
-   # 预期：A1 拦截提交
-   ```
-
-3. **daemon 运行确认**（如装了 daemon）：
-   ```bash
-   sofagent-daemon --doctor   # 或检查 launchd/systemd 状态
-   ```
-
-4. **审计历史查看**：
-   ```bash
-   sofagent-audit --timeline   # 应有快照记录
-   ```
-
-如果以上 4 步全绿，sofagent 已正常工作。
-
----
-
-## Webhook（部署完成后配置）
-
-> ⏰ **版本提示（v1.1.x）**：**本地三态推送 v1.1.6 已接通**（PASS/WARN/FAIL，agent 自测可用）；**企业平台完整 Webhook 推送（钉钉/飞书/企业微信）在 v1.2.1**（原规划 v1.2.2，企业采购阻塞项）。
-> 当前版本审计结果可通过以下方式获取：
-> - **本地 Webhook 三态推送**（v1.1.6 起，配置 `config.yml` webhook 段）
-> - `daemon-health.json`（daemon 自动写入本地健康状态文件）
-> - 终端 stdout（实时审计输出）
-> - `sofagent-audit --timeline`（历史快照查看）
-> - 手动轮询 `.sofagent/audit/history.jsonl`（JSONL 明文，可用 filebeat/logstash 转发到 SIEM）
->
-> 如需 Webhook 推送，请等待 v1.2.1 或使用 history.jsonl 手动转发方案。
-
-走完 [FDE.md](./FDE.md) 12 个关键步骤、设备上的 AI 节点开始运行之后，配置 webhook 让审计结果自动推送到公司群：
-
-```bash
-# 群设置 → 群机器人 → 复制 Webhook URL
-export SOFAGENT_WEBHOOK_URL="你的 URL"
-sofagent-audit --diff HEAD~1..HEAD --webhook dingtalk  # 或 feishu / wecom
-```
+产出物是 Markdown 文档——企业拿着文档自己决定怎么落地，用什么平台、什么模型都行。
