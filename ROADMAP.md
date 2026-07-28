@@ -237,114 +237,60 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 
 > 🔴 **落地纪律**：① 和 ② 是「用 Graph Engineering 术语框定已有/规划能力」，不新增能力范围；③ 是纯可视化，依赖 dashboard 产品化节奏（v1.2.x 起）。
 
-### 🔮 DeerFlow 参考清单（2026-07 · 行业印证 + 迭代参考）
+### 🔮 DeerFlow 参考清单
 
-> 📐 来源：[DeerFlow 2.0](https://github.com/bytedance/deer-flow) · 字节跳动 — 自称 "super agent **harness**"，与 sofagent Harness 中间件品类判断**字面一致**（详见 [PHILOSOPHY §十 · DeerFlow 印证](./docs/PHILOSOPHY.md#deerflow-20大厂用harness命名的活样本2026-07-行业印证)）。它做运行时（River 比喻的「河」），sofagent 做堤坝——定位互补。以下为设计启发清单，已按优先级 / 实现成本分配到版本：
+> 方法论印证见 [PHILOSOPHY §十 · DeerFlow](./docs/PHILOSOPHY.md#deerflow-20大厂用harness命名的活样本2026-07-行业印证)。以下仅保留版本分配：
 
-**已落版本（技术设计）**
-
-| # | DeerFlow 设计 | sofagent 痛点 | 落地版本 |
-|---|---|---|---|
-| 1 | `make support-bundle`（一键 issue 摘要 + 证据 zip）| 有 --doctor 但没"出问题怎么收集信息给维护者" | v1.2.6 储备 |
-| 2 | `make doctor` 可操作修复提示（不只红绿，还告诉怎么修）| --doctor 输出质量待提升 | v1.2.6 → v1.2.7 |
-| 3 | Session Goals（`/goal` + 非思考模型评估 + N 次续接上限）| FORGE fresh-eyes-loop 停止条件粗糙 | **v1.2.7** |
-| 4 | 手动上下文压缩（`/compact` 用户侧减压阀）| LangChain 消息只增不减的第四层解法 | **v1.2.7** |
-| 5 | Skill 渐进式加载（仅任务需要时加载）| SKILL.md 全量注入，加载链步进脆弱 | **v1.2.7** |
-| 6 | 记忆事实级分层（per-user memory.json + per-fact Markdown）| knowledge/ 目录级，Dream Cycle 缺事实级粒度 | **v1.2.8** |
-| 7 | Scheduled Tasks MVP（cron+once / 暂停/恢复/触发/历史）| daemon cron.ts 占位，LIMITATIONS 认「定时触发做不到」| **v1.2.8** |
-| 8 | ToolOutputBudget 中间件化（sf_read 500 行截断升级为分层中间件）| FORGE b-fix 上下文溢出三层修复的单点版 | **v1.2.8** |
-| 9 | 中间件链设计（InputSanitization→TokenBudget→SafetyFinishReason 26 步有序流水线）| Graph Engine Harness 层→Loop 层的工程化范式 | v1.2.2-v1.2.5（已在 Graph Engine 进化路线）|
-| 10 | Skill 质量门禁 + content-hash 校验 | skillopt 仅"冷启动保护 + LLM 自评×0.3"，缺 hash 完整性 | v1.2.4 知识进化 |
-| 11 | 多 worker 租约 + 原子 takeover + gap 事件 | v1.3.1 DAG 并行调度的多 worker 安全蓝图 | v1.3.1 |
-
-**长期参考（v1.4.x / v2.x 探索方向，落盘到 ROADMAP 探索表）**
-
-| # | DeerFlow 设计 | sofagent 对应 | 建议版本 |
-|---|---|---|---|
-| 12 | SkillScan 确定性安全扫描器（Phase 1 离线，无 Semgrep 依赖）| A9 注入检测局限的分层补充（纯正则覆盖不了 leet/编码绕过）| v1.4.x Checker 扩展 |
-| 13 | Agentic Browser（Playwright 全套 + SSRF 防护）| FDE Agent 做"网页审计巡检"AI 节点时的现成方案 | v1.4.x 工具层 |
-| 14 | TUI Terminal Workbench（嵌入式运行，键盘驱动 + slash 命令）| 补强"感知层"——用户不开 Agent 平台就能看审计历史/跑 doctor | v2.x 产品化 |
-| 15 | Web UI / Dashboard（流式 Markdown / 对话分支 / 工作区徽章）| 自有 Dashboard（保持轻量单页，不照抄 DeerFlow 重部署）| v2.x 产品化 |
-| 16 | 对话分支（完成回合可分支为新对话）| "Agent 走错路想从中间重来"——Dashboard 关键交互 | v2.x 前端 |
-
-**产品化方向参考（不照抄重部署，保持零依赖调性）**
-
-- DeerFlow 顶部嵌演示视频、One-Line Agent Setup、Deployment Sizing 表格——这些都是低成本高收益的产品化补强，已纳入 v1.2.6 储备项
-- 产品进化叙事（"一开始是 X，社区跑出了新玩法，所以重写成 Y"）——sofagent 有完整 v0.x→v1.2 进化史，可写成故事进 README 或 PHILOSOPHY
-
-> 🔴 **落地纪律**：DeerFlow 是 Python 运行时框架，代码级集成不可行。以上全部是**设计启发**（抄思路 + 拿背书），不是依赖引入。差异化铁律：DeerFlow 做运行时，sofagent 做审计——用 DeerFlow 的团队，仍然需要一个跨平台、本地留证、不改运行时的审计层。
-
-### 🔮 Omnigent 参考清单（2026-07 · meta-harness 印证 + 迭代参考）
-
-> 📐 来源：[Omnigent](https://github.com/omnigent-ai/omnigent) · Databricks 系团队（Apache-2.0，alpha，31 天 7091 star）— 开源 **meta-harness**（坐在 Claude Code / Codex / Pi 等 harness 之上的一层）。与 sofagent「Harness 中间件」品类判断同源（详见 [PHILOSOPHY §十 · Omnigent 印证](./docs/PHILOSOPHY.md#databricks-omnigentmeta-harness-把策略强制在基础设施层2026-07-行业印证)）。它做运行时（河），sofagent 做提交时（堤坝）——定位互补。以下为设计启发清单，分配到版本：
-
-**已实现 → 印证 sofagent 判断（不抄代码，拿背书）**
-
-| # | Omnigent 设计 | 印证 sofagent 什么 |
+| # | 设计启发 | 落地版本 |
 |---|---|---|
-| 1 | 策略在 meta-harness **基础设施层**强制（非 prompt）| 印证「约束必须永远在线 + 防投喂」铁律——同一结论的工程化版本 |
-| 2 | 装包后拦截 git push 需人批（状态化、动作前）| 与 commit gate（A1 不碰敏感）+ git hook **同源**，只是运行时版 |
-| 3 | egress proxy 注入密钥，Agent 不见明文 | 与 A2 不泄密钥同源；未来「安全定制层」可采此模式 |
-| 4 | OS 沙箱按平台（bwrap / seatbelt）| 对应「安全定制层 / SubAgent 沙箱」，标准开源可复用 |
-| 5 | YAML agent 跨 harness 一行切换 | 印证「约束底座 harness 无关」设计 |
+| 1 | `make support-bundle` | v1.2.6 |
+| 2 | `make doctor` 可操作修复 | v1.2.6→v1.2.7 |
+| 3 | Session Goals（`/goal`）| **v1.2.7** |
+| 4 | `/compact` 手动上下文压缩 | **v1.2.7** |
+| 5 | Skill 渐进式加载 | **v1.2.7** |
+| 6 | 记忆事实级分层 | **v1.2.8** |
+| 7 | Scheduled Tasks MVP | **v1.2.8** |
+| 8 | ToolOutputBudget 中间件化 | **v1.2.8** |
+| 9 | SkillScan 安全扫描器 | v1.4.x |
+| 10 | Agentic Browser（Playwright）| v1.4.x |
+| 11 | TUI / Dashboard / 对话分支 | v2.x |
 
-**未实现 / 路线图 → 有开源可借力（方便未来迭代）**
+> 🔴 落地纪律：DeerFlow 是 Python 运行时，以上全是设计启发（非依赖引入）。
 
-| # | 方向 | 可直接借力的开源 | 落点 |
-|---|---|---|---|
-| 6 | 成本追踪 / 预算 / 路由 / 护栏（控制平面）| **[LiteLLM](https://github.com/BerriAI/litellm)**（MIT，100+ LLM）| 控制平面 v1.4.x |
-| 7 | OS 沙箱（省得自研）| **[bubblewrap](https://github.com/containers/bubblewrap)** + macOS Seatbelt（Omnigent 同款）| SubAgent 沙箱 v1.4.0 |
-| 8 | agent 量化评估（LLM-as-Judge）| **[MLflow](https://github.com/mlflow/mlflow)** / promptfoo / ragas | FORGE 评估框架 v2.x |
-| 9 | **运行时审计精确接入点** | **[LangChain middleware](https://docs.langchain.com/oss/javascript/langchain/middleware/custom)**（wrapToolCall / wrapModelCall）— 咱们已用 createReactAgent，包一层即运行时审计 | v1.3.x 最小闭环 |
-| 10 | 现成运行时护栏库 | **[EnkryptAI Secure MCP Gateway](https://mintlify.wiki/enkryptai/secure-mcp-gateway)**（audit_only 模式）| v1.4.x 参考/集成 |
-| 11 | meta-harness 开放接入标准 | **[ACP](https://github.com/Agent-Client-Protocol/spec)**（LSP 式，Omnigent 在用）| 观察（不押注单一厂商）|
-| 12 | 轻量多 agent 编排验证 | **Conductor**（比 Omnigent 轻量）| 观察 |
-| 13 | 云端 runtime 与算力分离 | **Cloudflare Agent Runtime / Vercel** | 观察 |
+### 🔮 Omnigent 参考清单
 
-> 🔴 **落地纪律**：Omnigent 是 Python + 需 server + 沙箱（alpha）。以上全部是**设计启发 + 开源借力**（抄思路 + 拿背书 + 复用现成库），不是依赖引入。差异化铁律：Omnigent 做运行时，sofagent 做提交时——用 Omnigent 的团队，仍然需要一个跨平台、本地留证、不改运行时的审计层。
+> 方法论印证见 [PHILOSOPHY §十 · Omnigent](./docs/PHILOSOPHY.md#databricks-omnigentmeta-harness-把策略强制在基础设施层2026-07-行业印证)。
 
-### 🔮 DataFlow 参考清单（2026-07 · 行业印证 + 迭代参考）
+**已实现 → 印证 sofagent 判断**：策略在基础设施层强制 / git push 拦截需人批 / egress proxy 注入密钥 / OS 沙箱 / YAML agent 跨 harness 切换。
 
-> 📐 来源：[DataFlow](https://github.com/OpenDCAI/DataFlow) · 北京大学 DCAI — 论文 arXiv:2607.16617（HuggingFace Paper of the day）用「Harness」命名其 Agent 约束层，与 DeerFlow / Omnigent 同月，是**第三个独立佐证**（含顶尖高校）。它做「数据流水线」Harness，sofagent 做「FDE Agent 工作流」Harness——对象不同，约束范式同源。以下为印证 + 迭代参考，已按优先级 / 实现成本分配到版本：
+**可借力开源**：LiteLLM（成本路由 v1.4.x）、bubblewrap（沙箱 v1.4.0）、LangChain middleware（运行时审计 v1.3.x）、EnkryptAI（审计护栏 v1.4.x）。
 
-| # | DataFlow 设计 | 印证 sofagent 什么 |
+> 🔴 落地纪律：Omnigent 是 Python 运行时，以上是设计启发 + 开源借力，非依赖引入。
+
+### 🔮 DataFlow 参考清单
+
+> 方法论印证见 [PHILOSOPHY §十 · DataFlow](./docs/PHILOSOPHY.md#dataflow顶尖高校独立用harness命名做agent-约束2026-07-行业印证)。
+
+核心印证：Agent 经受控接口作业 / Request-Validate-Commit 受控变异 / Skills 程序化引导 / Validation Engine / 工件须可审计。可借鉴的 8 项具体落版本见下方「探索方向」表。
+
+> 🔴 DataFlow 只校验 pipeline 结构，不审计 Agent 行为——sofagent 差异化在 A1-A19 行为问责 + 常驻员工 + 控制平面治理。
+
+### 🔮 OpenFDE/ChatDemo 参考清单
+
+> 方法论印证见 [PHILOSOPHY §十 · OpenFDE](./docs/PHILOSOPHY.md#openfdechatdemofde-术语同源佐证2026-07-行业印证)。
+
+| # | 设计 | 优先级 |
 |---|---|---|
-| 1 | Agent 经受控接口（MCP）作业，禁自由写脚本 | scoped tool-gate + SKILL 约束底座——「关 Agent 边界」路线对 |
-| 2 | Request-Validate-Commit 受控变异（State Retrieval→Mediated Mutation→Validation→Commit） | FORGE session 监控 + audit A1-A19——受控变异+校验+提交是通用范式 |
-| 3 | DataFlow-Skills 程序化引导（过程蓝图 + 组合约束） | SKILL 约束底座——用结构化 SKILL 优于裸提示词 |
-| 4 | Validation Engine（DAG 无环 + schema 兼容） | ontology 业务节点本体模型——结构化约束 LLM 输出是共识 |
-| 5 | NL2Pipeline gap（工件须可检查 / 可编辑 / 可复用） | FDE Agent 核心价值——产出可审计工件，而非自由行动 |
+| 1 | spec-first 硬禁令：单一事实源，transcript 永不直驱代码 | **最高优先** |
+| 2 | decisions.jsonl 判断时刻日志 → 决策审计 v1.3.x | **最高优先** · 已成文 |
+| 3 | 分级降级梯队（console→TUI→spec，workflow never stops）| **最高优先** |
+| 4 | 产品化阈值 + 四类沉淀物硬护栏 | 参考 |
 
-> 🔴 **落地纪律**：DataFlow 治理「数据流水线」，sofagent 治理「FDE Agent 工作流 + 运行时审计（A1-A19 行为问责）」。它只校验 pipeline 结构与 schema，**不审计 Agent 行为问责、无常驻员工、无控制平面治理**——这些是我们的差异化地盘。以上全部是**设计启发 + 行业背书**，不是依赖引入。可借鉴的 8 项具体落版本见下方「探索方向」表（可视化 DAG 编辑 / ontology I/O schema 硬化 / 工作状态 per-node 遥测 / 分层模型多模型编排 / MCP 暴露 ontology-audit / 变异前读最新状态铁律 / ontology 组合约束图 / workflow 构建蓝图）。
+> 🔴 ChatDemo 是售前 POC，无 A1-A19 审计、无常驻员工——sofagent 差异化在行为问责 + 治理。
 
-### 🔮 OpenFDE/ChatDemo 参考清单（2026-07 · FDE 同源佐证 + 迭代参考）
+### 🔮 OpenFDE 主仓 对标借鉴
 
-> 📐 来源：[ChatDemo](https://github.com/OpenFDEAI/ChatDemo) · OpenFDEAI — 以 **Forward Deployed Engineer** 命名其售前"边聊边出 Demo"工作流（Claude Code Skill + localhost 控制台，回合制 start/turn/wrap）。与我们「前线部署工程师」**术语同源**（Palantir 脉络），但定位在售前采集入口，与 sofagent 常驻部署+治理方法论互补。以下为 FDE 同源佐证 + 优先借鉴项：
-
-| # | ChatDemo 设计 | 印证/借鉴 sofagent 什么 | 关系 | 落地优先级 |
-|---|---|---|---|---|
-| 1 | 回合制协议：FDE 控节拍，agent 不在客户说话时抢话；每回合 ≤3min、超预算占位不阻塞 | 人控节拍、Agent 不自由跑——我们已有同判断，它落成了可操作流程 | 印证+领先（执行更细）| — |
-| 2 | spec-first 硬禁令：DEMO_SPEC.md 单一事实源，transcript 永不直接驱动代码 | 对话/指令增量必须先进 workflow artifact 再驱动实现；补"触发直驱工件"的明文铁律 | 补缺 | **最高优先** |
-| 3 | decisions.jsonl 判断时刻日志：{kind, moment, why, spec_ref} 现场即时记，会后喂 FDE Loop→INDUCE→Judgment Unit | A1-A19 记行为，缺"决策理由链"；吸收该 schema 补行为问责；**架构设计已于 v1.3.0 / v1.3.1 开发日志成文（v1.3.x 决策审计专项·最高优先·排在 Graph Engine 前）** | 补缺 | **最高优先** · 已成文 |
-| 4 | 开源优先阶梯 + 预验证画廊（复用>组装>生成）+ License 标红 + 会前跑通 | 知识库/工件池升级为带合规标签、会前预验证、候选短名单隔离的"画廊"机制 | 印证+领先 | 参考 |
-| 5 | 双引擎无状态架构（claude/codex 可切，状态在文件，共享回合 prompt）| 印证 Harness 应 runtime-agnostic；借鉴 adapters/prompt.ts 协议-引擎解耦 | 印证 | 参考 |
-| 6 | 分级降级梯队：console→TUI、ASR→手敲、dev 挂→走 spec，workflow never stops | 为 7×24 常驻员工定义分级降级 SOP：模型不可用→规则兜底、工具断→占位、控制面断→本地自治 | 补缺 | **最高优先** |
-| 7 | 数据敏感度分层：转写按敏感度选云/本地、音频不存、API mock-first | 把默认 mock、敏感数据本地推理、凭证 0600 不入库固化为控制平面数据治理基线 | 印证+补缺 | 参考 |
-| 8 | 一键启动器 + 品牌化模板底座（theme.json 一文件换肤）| "安装 sofagent 底座" onboarding 借鉴自包含工作区骨架 + 一键拉起 + 单文件品牌化 | 补缺 | 参考 |
-
-> 🔴 **落地纪律**：ChatDemo 是售前 POC 工具（单 FDE、单场会议），sofagent 是常驻部署+治理的编排操作系统——定位互补不竞争。它**无 A1-A19 运行时行为审计、无常驻硅基员工、无控制平面治理、让 Agent 直接写应用代码**（约束在"何时/权限/来源"而非"禁写脚本"）；这些是我们的差异化地盘。以上全部是**设计启发 + FDE 同源背书**，不是依赖引入。
-
-### 🔮 OpenFDE 主仓 对标借鉴（2026-07 · FDE Loop / INDUC / Judgment Unit）
-
-> 📐 来源：[Open-FDE/OpenFDE](https://github.com/Open-FDE/OpenFDE) 主仓（知识库 + 工具地图**内容仓**，非运行时；FDE Loop 运行时实现 Open-FDE/FDEAgent 已移走 / 404 不可读）。重点对标三大模块：FDE Loop（五阶段 `OBSERVE→ELICIT→INDUC→ACT→EVOLVE + DEPLOY/ATTRIBUTION`）、INDUC（知识沉淀阶段，产出 Judgment Unit）、Judgment Unit（专家判断资产化、可开关规则）。以下为从**主仓**补充的借鉴项（ChatDemo 子项目未覆盖的部分）：
-
-| # | 主仓设计 | 印证/借鉴 sofagent 什么 | 关系 | 落地优先级 |
-|---|---|---|---|---|
-| 1 | **决策审计 / Judgment Unit（decisions.jsonl 判断时刻日志）**：吸收 `{kind, moment, why, spec_ref}` schema 补 A1-A19「决策理由链」缺失；新增 **kind-wise back** 向后追溯（kind→why→specRef→artifactRef↔A1-A19 双向交叉引用）；受控 `emitDecision()` API + 复用 history.jsonl 同套 HMAC 哈希链；蒸馏高复用 why 成可开关 Judgment Unit（对应 INDUC） | 补缺（行为问责→意图问责）：把"扫 git diff 的行为审计"升级为"运行时记决策理由链的意图审计" | 补缺 | **最高优先** |
-| 2 | **INDUC 阶段化知识归纳**：把"经验→判断"显式成 FDE Loop 的一个阶段，产出可开关的 Judgment Unit（专家判断资产化，规则可开可关、可版本化） | 我们的"蓄水池/知识库"目前是被动沉淀，缺"显式归纳阶段 + 可开关判断资产"；吸收 INDUC 把知识归纳提升为一等公民阶段，Judgment Unit 对应我们 A1-A19 判定层的可开关化 | 补缺 | 参考 |
-| 3 | **产品化阈值 / 四类沉淀物硬护栏**：前 1-3 客户高度定制，第 4 起定制度递减，每单 Day90 前沉淀≥1 能力回产品；四类沉淀物 = ①连接器/集成 playbook ②模板/加速器/框架 ③Eval 框架 ④产品需求 | 为"组织复利纪律"立硬护栏：避免每次交付从零定制、强制沉淀复用；补我们知识库缺的"产品化阈值 + 四类资产形态"定义 | 补缺 | 参考 |
-
-> 🔴 **落地纪律**：#4 分级降级梯队（console→TUI、ASR→手敲、dev 挂→走 spec，workflow never stops）已在上方「OpenFDE/ChatDemo 参考清单」第 6 行（**最高优先**）落盘，**本轮回不重复**。#1 决策审计 / Judgment Unit（**最高优先**）架构设计已于 **v1.3.0 / v1.3.1 开发日志成文**（v1.3.x 决策审计专项，排在 Graph Engine 之前；蒸馏落地 v1.3.1），本轮回不重复。**以上主仓项全部是**设计启发 + 行业背书**，不是依赖引入。FDE Loop 运行时实现不可读（FDEAgent 404），结论基于主仓 README 阶段定义 + ChatDemo 数据流（`decisions.jsonl`→INDUC→Judgment Unit）跨仓对齐，未编造。
+决策审计 Judgment Unit（`{kind, moment, why, spec_ref}` schema → v1.3.x 意图审计）+ INDUC 阶段化知识归纳 + 产品化阈值/四类沉淀物。详见上方 ChatDemo #2-4。
 
 ### 🔴 运行时审计演进路线（meta-harness 三问作答 · 2026-07）
 
