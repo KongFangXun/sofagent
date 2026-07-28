@@ -48,7 +48,7 @@ cd /tmp/sofagent-v1-test && npm ci 2>&1 | tail -3 && bash tools/pre-push-check.s
 ```
 
 **步骤 3：逐维度审查**
-## 审查维度（55 项 · 编号 1–55）
+## 审查维度（58 项 · 编号 1–61，含 3 个 v1.2.2 新增）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -988,6 +988,8 @@ grep -c 'PLACEHOLDER_MAP\|SK_PREFIX\|INJ_PHRASE' engine/eval/src/eval-runner.ts 
 ```
 
 > **PASS 标准**：golden set 零字面密钥/injection + 占位符替换机制存在 + audit 运行时检测有效。
+>
+> 🔴 **v1.2.2 再犯**：P0 补测试时 fixture 又写了字面量 `sk-abcdef...`，commit 被 A2 拦截 2 次。**此问题已复发两次（v1.2.1 eval + v1.2.2 P0 测试），铁律升级：测试文件中任何 secret-like 串（含 sk-/AKIA/ghp_ 前缀的假数据）必须运行时拼接（数组 join 或 base64 解码），绝不字面量。**
 
 ---
 
@@ -1007,3 +1009,48 @@ grep -A5 'convertAuditResult' engine/eval/src/eval-runner.ts | grep -E 'PASS|WAR
 
 ## 输出报告格式
 > 审查日期 / 范围 / 环境验证（pre-push-check/npm test/check-docs/check-version）→ 问题清单（P0/P1/P2 分级，维度/文件:行/问题/建议）→ 通过统计 → 最终建议（可发版/需修复P0/需重大修复）。追加维度前先 grep 同类。
+
+---
+
+#### 59. resolve*Dir 调用方传参——禁止传 process.cwd() 给 overrideHome 参数（v1.2.2 F-39 新增）
+
+> v1.2.1 把 data-paths.ts 的 resolveAuditDir/resolveKnowledgeDir/resolveDataDir 参数从 projectRoot 改为 overrideHome。6 个调用方没跟上，仍传 process.cwd()，导致运行时数据写进项目目录而非 ~/.sofagent/。
+
+```bash
+# 搜索所有传 process.cwd() 给 resolve*Dir 或 writeSessionReport 的地方（排除测试）
+grep -rn "resolveAuditDir(process\|resolveKnowledgeDir(process\|resolveDataDir(process\|writeSessionReport.*process" engine/ --include="*.ts" | grep -v node_modules | grep -v dist | grep -v __tests__
+# 期望：无输出（exit 1）
+```
+
+> **PASS 标准**：grep 结果为空，所有 resolve*Dir 调用方不传 process.cwd()。
+
+---
+
+#### 60. barrel re-export 一致性——新增导出 public-api.ts 和 index.ts 要同步（v1.2.2 F2 新增）
+
+> P0 数据主权导出只在 public-api.ts，audit/src/index.ts 没同步 re-export，导致 daemon/mcp/orchestrator 的 tsc 报 TS2305。
+
+```bash
+# 对比 public-api.ts 和 index.ts 的 export 差异
+diff <(grep "^export " engine/audit/src/public-api.ts | sort) <(grep "^export " engine/audit/src/index.ts | sort) | grep "^<"
+# 期望：无差异行（或仅有 CLI-only 函数如 printResults 差异）
+```
+
+> **PASS 标准**：public-api.ts 的公共导出在 index.ts 中均有 re-export。
+
+---
+
+#### 61. 新功能必须有自动化测试——禁止零覆盖交付（v1.2.2 F1 新增）
+
+> P0 数据主权 1504 行源码零测试交付，靠手动验证兜底。fresh-eyes 12 视角没覆盖"测试是否存在"这个维度。
+
+```bash
+# 对每个交付项，检查是否有对应测试文件
+for mod in data-sovereignty report-generator report-template model-router; do
+  count=$(find engine/ -name "${mod}*.test.ts" | grep -v node_modules | grep -v dist | wc -l)
+  echo "$mod: $count test files"
+done
+# 期望：每个模块 ≥1 test file
+```
+
+> **PASS 标准**：每个交付模块至少有 1 个 test file，核心逻辑（写入/解析/路由）有自动化断言。
