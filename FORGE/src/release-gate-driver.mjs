@@ -108,9 +108,11 @@ const STEPS = {
 const STEP_ORDER = ['acceptance', 'regression', 'coverage', 'consolidate', 'verdict'];
 
 // 每步的 recursionLimit
+// regression 调到 250：46 维度 × 批量执行(每维度1次tool call) ≈ 53 calls × 2 = 106
+// 留余量给环境验证轮询 + agent 思考轮次
 const STEP_RECURSION_LIMITS = {
   'acceptance':  100,
-  'regression':  150,
+  'regression':  250,
   'coverage':    100,
   'consolidate': 80,
   'verdict':     50,

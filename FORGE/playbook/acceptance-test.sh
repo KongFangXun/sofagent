@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# v1.2.2 · 146 个场景定义（含子断言）
+# v1.2.2 · 148 个场景定义（含子断言）
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
 # ============================================================
@@ -1632,9 +1632,126 @@ if $S147_OK; then
   $S147_OK && pass "Dashboard 两栏渲染正常（数据主权 + 规则审计）"
 fi
 
+# ── 场景 148: P0 数据主权审计追踪端到端（v1.2.2 P0） ──────────
+scenario 148 "P0 数据主权审计追踪端到端（JSONL→聚合→报告）"
+S148_OK=true
+# 端到端验证：DataSovereigntyLogger.append 写入 JSONL → aggregateStats 聚合 → generateDailyReport 报告
+S148_OUT=$(cd "$PROJECT_ROOT" && node -e "
+const { DataSovereigntyLogger } = require('./engine/audit/dist/data-sovereignty.js');
+const { generateDailyReport, aggregateStats } = require('./engine/audit/dist/report-generator.js');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+
+// 1. 写入一条完整的 DataSovereigntyRecord 到临时目录
+const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sof-ds-'));
+const today = new Date().toISOString().slice(0, 10);
+const logger = new DataSovereigntyLogger(tmpDir);
+logger.append({
+  cloudCall: {
+    timestamp: new Date().toISOString(),
+    provider: 'test-provider',
+    model: 'test-model',
+    endpoint: 'https://api.test.com/v1',
+    tokenCount: { input: 100, output: 50 },
+    purpose: 'testing',
+  },
+  localAction: {
+    type: 'tool-call',
+    target: 'test-tool',
+    description: 'acceptance test scenario 148',
+    auditResult: 'PASS',
+  },
+  dataFlow: {
+    direction: 'local-only',
+    sensitivity: 'restricted',
+    fields: ['test-field'],
+    destination: 'local-tool',
+    redacted: true,
+  },
+  taskContext: {
+    taskId: 'test-148',
+    userIntent: 'acceptance test',
+    workflowId: 'test-wf-148',
+  },
+});
+
+// 2. 验证 JSONL 文件已写入（路径：data/audit/data-sovereignty/YYYY/MM/）
+const now = new Date();
+const yyyy = String(now.getFullYear());
+const mm = String(now.getMonth() + 1).padStart(2, '0');
+const dd = String(now.getDate()).padStart(2, '0');
+const today = yyyy + '-' + mm + '-' + dd;
+const logPath = path.join(tmpDir, 'data', 'audit', 'data-sovereignty', yyyy, mm, today + '.jsonl');
+const logExists = fs.existsSync(logPath);
+const logContent = logExists ? fs.readFileSync(logPath, 'utf-8').trim() : '';
+const hasRecord = logContent.includes('test-148');
+
+// 3. aggregateStats 聚合统计
+const records = logContent ? logContent.split('\n').map(l => JSON.parse(l)) : [];
+const stats = aggregateStats(records);
+const hasStats = stats && typeof stats.total !== 'undefined';
+
+// 4. generateDailyReport 从日志目录生成报告
+const report = generateDailyReport(today, tmpDir);
+const hasReport = report && report.markdown && report.markdown.length > 0;
+
+console.log(JSON.stringify({ logExists, hasRecord, hasStats, hasReport }));
+" 2>&1) || { fail "P0 数据主权审计端到端执行失败: $S148_OUT"; S148_OK=false; }
+
+# 解析结果
+S148_LOGOK=$(echo "$S148_OUT" | node -e "try{const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));console.log(d.logExists&&d.hasRecord?'ok':'fail')}catch{console.log('parse-error')}" 2>/dev/null)
+S148_STATSOK=$(echo "$S148_OUT" | node -e "try{const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));console.log(d.hasStats?'ok':'fail')}catch{console.log('parse-error')}" 2>/dev/null)
+S148_RPTOK=$(echo "$S148_OUT" | node -e "try{const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));console.log(d.hasReport?'ok':'fail')}catch{console.log('parse-error')}" 2>/dev/null)
+
+[ "$S148_LOGOK" = "ok" ] || { fail "JSONL 记录写入/读取失败"; S148_OK=false; }
+[ "$S148_STATSOK" = "ok" ] || { fail "aggregateStats 聚合失败"; S148_OK=false; }
+[ "$S148_RPTOK" = "ok" ] || { fail "generateDailyReport 报告生成失败"; S148_OK=false; }
+$S148_OK && pass "P0 数据主权审计端到端完整（JSONL→聚合→报告）"
+
+# ── 场景 149: P1 ModelRouter 路由端到端（v1.2.2 P1） ──────────
+scenario 149 "P1 ModelRouter 路由端到端（public→cloud / restricted→local / confidential≠cloud）"
+S149_OK=true
+# 端到端验证：敏感数据路由到本地 + 公开数据路由到云端 + confidential 不出站
+S149_OUT=$(cd "$PROJECT_ROOT" && node -e "
+const { createDefaultRouter } = require('./engine/orchestrator/dist/model-router.js');
+const router = createDefaultRouter();
+
+// A: public 文本 → 应路由到 cloud
+const routePublic = router.route('hello world, how are you?', {});
+
+// B: restricted（frontmatter 标记）→ 应路由到 local
+const routeRestricted = router.route('analyze this data', { frontmatter: { sensitivity: 'restricted' } });
+
+// C: confidential（文件名含 confidential）→ 绝不 cloud
+const routeConfidential = router.route('check this', { filePath: 'report.confidential.md' });
+
+const publicToCloud = ['cloud-strong','cloud-fast'].includes(routePublic.target);
+const restrictedToLocal = ['local-executor','local-pipeline','block'].includes(routeRestricted.target);
+const confidentialNotCloud = !['cloud-strong','cloud-fast'].includes(routeConfidential.target);
+
+console.log(JSON.stringify({
+  publicToCloud, restrictedToLocal, confidentialNotCloud,
+  publicTarget: routePublic.target,
+  restrictedTarget: routeRestricted.target,
+  confidentialTarget: routeConfidential.target,
+  hasReason: !!routePublic.reason,
+}));
+" 2>&1) || { fail "P1 ModelRouter 端到端执行失败: $S149_OUT"; S149_OK=false; }
+
+# 解析结果
+S149_PUB=$(echo "$S149_OUT" | node -e "try{const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));console.log(d.publicToCloud?'ok':'fail')}catch{console.log('parse-error')}" 2>/dev/null)
+S149_RES=$(echo "$S149_OUT" | node -e "try{const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));console.log(d.restrictedToLocal?'ok':'fail')}catch{console.log('parse-error')}" 2>/dev/null)
+S149_CONF=$(echo "$S149_OUT" | node -e "try{const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));console.log(d.confidentialNotCloud?'ok':'fail')}catch{console.log('parse-error')}" 2>/dev/null)
+S149_REASON=$(echo "$S149_OUT" | node -e "try{const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));console.log(d.hasReason?'ok':'fail')}catch{console.log('parse-error')}" 2>/dev/null)
+
+[ "$S149_PUB" = "ok" ] || { fail "public 文本未路由到云端"; S149_OK=false; }
+[ "$S149_RES" = "ok" ] || { fail "restricted 数据未路由到本地"; S149_OK=false; }
+[ "$S149_CONF" = "ok" ] || { fail "confidential 数据路由到云端——安全红线违反"; S149_OK=false; }
+[ "$S149_REASON" = "ok" ] || { fail "路由结果缺少 reason 字段"; S149_OK=false; }
+$S149_OK && pass "P1 ModelRouter 路由端到端完整（public→cloud / restricted→local / confidential≠cloud / reason 有值）"
+
 # ── 总结 ──────────────────────────────────────────────────────
-echo ""
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 if [ "$FAILED" -gt 0 ]; then echo -e "${RED}❌ 有 $FAILED 个场景失败，请修复后再发版${NC}"; exit "$FAILED"
