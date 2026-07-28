@@ -539,3 +539,43 @@ graph TB
 编排引擎从 ao → DeepAgents → LangGraph 的升级史（v1.2.0 起 FORGE loop 已完全弃用 deepagents，改用 createReactAgent；历史编排引擎的 DeepAgents 调度原型见 v1.1.8 changelog）、Ontology 从实体关联到认知底座的渐进构建、外部框架对标（Palantir/gbrain/WeKnora/Runta）、Loop Engineering 全栈对照等详见 **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** 的「行业印证」+「编排引擎」+「Ontology 认知底座」章节，以及各版本 **[开发日志](./docs/changelog/)**。
 
 > 📖 多设备同步方案见 [多设备同步指南](./docs/guides/multi-device-sync.md)。
+
+## 中期方向：FDE 节点注册表（Pattern Registry）
+
+loop-engineering 社区将 7 个生产模式全部编入机器可读的 `patterns/registry.yaml`，每个模式包含 id、cadence、risk、tools、skills、state file、phases、human_gates、token cost。这使得工具（loop-audit、loop-cost）能自动工作而不需要人工配置。
+
+**sofagent 可做的**：为 FDE 模板建立一个机器可读注册表（`fde-registry.yaml` 或 JSON），内容：
+- FDE 节点 ID + 名称 + 风险等级
+- 适用的企业岗位 / 场景
+- 所需 Skills + 审计规则列表
+- human gates（哪些操作必须人工确认）
+- 预估 token 成本 + 每日上限
+
+**价值**：audit 引擎可自动检测「当前 FDE 部署用了哪些节点、风险等级、覆盖了哪些 human gates」——从手动排查到机器可读。
+
+> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [patterns/registry.yaml](https://github.com/cobusgreyling/loop-engineering/blob/main/patterns/registry.yaml)
+
+## 远期方向：执行层面隔离（Worktree 模式）
+
+loop-engineering 社区强制要求每个 code-change 实验跑在**隔离的 git worktree** 里——一次 fix 一个 worktree，验证者拒绝后丢弃，不会污染主工作树。对应的 CLI `loop-worktree` 机械化执行：创建 worktree → 追踪 manifest → 拒绝后标记 → 24h 后自动清理。
+
+这是 sofagent 当前**明确的差距**：Agent 直接操作仓库主工作树，多个并行任务可能互相踩文件。
+
+**实现路径建议**：
+1. **短期（v1.x）**：在 `docs/DEVELOPMENT.md` 中记录 worktree 模式作为推荐实践——FDE 节点如果涉及代码变更，建议在隔离 worktree 中执行
+2. **中期（v2.x）**：在编排引擎中实现 worktree 管理——`sofagent worktree create --task-id <id>` → 执行 → 验证 → `commit or discard`
+3. **远期（v3.x+）**：worktree 隔离作为 L2+ 自主级别的硬性要求——无 worktree 则不允许自动修复
+
+> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [primitives.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/primitives.md)（Worktrees 条目）/ [anti-patterns.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/anti-patterns.md)（Parallel Collision 条目）
+
+## 远期方向：理解债务应对策略（Comprehension Debt）
+
+loop-engineering 社区的 Comprehension Debt Spiral（理解债务螺旋）被评为 S2 级（有害）故障模式：速度上升但无人能解释变更 → 审查变成橡皮图章 → 自动化成了黑箱。
+
+sofagent 的应对策略不应是「少用 Agent」，而是**结构化理解**：
+1. **审计引擎已覆盖**「发生了什么」——每次变更都有 git diff 证据
+2. **需新增**「为什么这么做」——在 auto-PR 的描述中要求 Agent 解释决策逻辑（已在 FDE 模板中预留）
+3. **需新增**「本周自动化摘要」——daemon 可生成周报：「本周自动 PR 3 个 / 修复 2 个 CI 问题 / 人类审批 1 个 / 拒绝 0 个」
+4. **长期**：理解债务是工具的边界，不是工具的失败。自动化越高，人类的判断责任越大——这与 sofagent 的「human gate」哲学完全一致。
+
+> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [failure-modes.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/failure-modes.md)（Comprehension Debt Spiral + Cognitive Surrender 条目）

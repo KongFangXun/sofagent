@@ -572,3 +572,27 @@ v1.0.8 内嵌 `isomorphic-git`（纯 JS Git，~2MB）作为 diff 引擎——非
 - **上下文精简 = 低成本高通过**：研报发现 Pipe Agent 同模型下比原生工具便宜 1.2–2×、性能差距 <3pt，根因是初始提示 <1500 token（vs Claude Code 20k）。这从量化角度印证 sofagent「Harness 要轻」——约束底座零 token 运行（21 条规则 16 条纯 git-diff），把成本压在确定性引擎而非上下文堆料。
 
 > 📖 来源：温故知新 2026-07-21（行业研报《Databricks 真实代码库 AI 编程工具测评》）
+
+## 十、STATE.md 持久化外部记忆模式（2026-07 loop-engineering 研读）
+
+loop-engineering 社区将 STATE.md 定位为 **"对话外的持久化主干"**——Agent 每次任务启动时**必须先读**状态文件、结束时**必须写回**。这与 sofagent 的 `task/logs` 四字段（看到/改了/验证了/还剩）同构，但有两个增量值得吸收：
+
+### 先读后写纪律
+
+| 时机 | 动作 | 内容 |
+|---|---|---|
+| **任务启动** | 读 STATE.md | 上次做了什么、尝试了什么、什么在等人工 |
+| **任务执行中** | 更新进行中标记 | `acting_on: branch-or-task-id`（防冲突锁） |
+| **任务结束** | 写 STATE.md | 结果、时间戳、下一步、升级条件 |
+| **每次运行** | 清理过期条目 | 已合并/已关闭/已完成的自动移除 |
+
+### 防冲突：acting_on 字段
+
+当多 Agent 节点并行时，每个节点在 STATE.md 中写入 `acting_on: <target>`（分支/PR/任务 ID）。其他节点启动前扫描所有 state 文件的 `acting_on`——若目标已被占用，跳过并记录到运行日志。
+
+这在 sofagent 中的实现路径：
+- FDE 节点部署时，在 `fde.md` 中加一条 rule："启动前读取 `STATE.md` 中的 `acting_on`，若目标冲突则排队等待或升级"
+- daemon 巡检可检测「同一 target 被两个节点同时 acting_on」→ 告警
+- 此模式不需要额外基础设施——一个约定 + 一个 Markdown 表就够
+
+> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [primitives.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/primitives.md)（+ Memory / State 条目）/ [multi-loop.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/multi-loop.md)（Collision detection 条目）

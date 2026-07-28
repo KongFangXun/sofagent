@@ -859,3 +859,45 @@ a16z《你刚雇了一百万个糟糕员工》七法则（完整映射见 [PHILO
 > 印证「模型吞噬一切」：文字约束会被投喂吞噬，唯有封装进代码级 Subagent + 防投喂机制能存活；模型选型（DeepSeek / GLM）可随场景替换，基建不动。
 
 > 📖 来源：钉钉 CTO 一粟 blog《AI to B 三层基建》（2026，具体 URL 待核验）
+
+### 自主级别（L1→L2→L3）与配套约束（2026-07 loop-engineering 研读）
+
+loop-engineering 社区将 Agent 自主性拆为三级，每一级对应不同的约束强度。此模型与 sofagent 的「约束底座 → 审计 → 沉淀」逐级递进完全同构：
+
+| 自主级别 | Agent 能做什么 | 约束层要求 | sofagent 对应 |
+|---|---|---|---|
+| **L1 — Report** | 扫描 → 报告 → 写 STATE.md，不动代码 | 审计引擎只读旁路 | FDE 节点部署后第一周默认模式 |
+| **L2 — Assisted** | 在 worktree 里修复，验证者独立审核 | denylist + allowlist + 人工 gate | 审计引擎 A1-A21 全量规则 + human gate |
+| **L3 — Unattended** | 全自动 + 自愈，仅在升级条件触发时告警 | budget cap + kill switch + 碰撞检测 | 编排引擎全自动 + 审计兜底 + daemon 巡检 |
+
+**关键设计决策**：L1→L2→L3 不是线性升级，而是**可逆的**——L3 出现 incident 或成本飙升时，应能自动降级回 L2 甚至 L1（kill switch 触发）。这与 sofagent 的「约束底座不可绕过」一致：降级是安全功能，不是倒退。
+
+**与「一底座·四引擎」的映射**：
+- **约束底座**：L1-L3 全程生效，不随自主级别变化
+- **审计引擎**：L1 仅记录，L2 告警，L3 阻断
+- **编排引擎**：L1 仅报告，L2 辅助执行，L3 全自动调度
+- **回溯引擎**：L2+ 强制启用（每次自动修复需回溯证据）
+
+> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [concepts.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/concepts.md) / [loop-design-checklist.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/loop-design-checklist.md)
+
+### 多 Agent 协调优先级（2026-07 loop-engineering 研读）
+
+当多个 Agent 节点同时运行时，需明确的冲突解决机制。loop-engineering 的多循环协调原则可直接适配 FDE 的多节点场景：
+
+**核心规则**：
+1. **一个所有者管一个分支** —— 同一时刻最多一个 Agent 修改同一工作区
+2. **分离的状态文件** —— 每个 Agent 节点有独立的 state，Triage 节点只有报告权
+3. **共享 denylist** —— 所有节点拷贝同一份路径黑名单
+4. **聚合 token 预算** —— 按节点优先级分配，CI 类最高、清理类最低
+
+**FDE 多节点优先级建议**：
+
+| 优先级 | FDE 节点类型 | 原因 |
+|:--:|---|---|
+| 1 | CI / 安全扫描 | 红线阻塞一切 |
+| 2 | PR / 代码审查 | 活跃工作流是时间敏感的 |
+| 3 | 依赖更新 | 主流程中断时暂停 |
+| 4 | 技术债清理 | 非高峰期，最低紧急度 |
+| 5 | 日报 / 周报 | 仅报告，不参与竞争 |
+
+> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [multi-loop.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/multi-loop.md)

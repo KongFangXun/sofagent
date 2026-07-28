@@ -604,4 +604,30 @@ sofagent 的技术选型有明确的边界纪律：
 
 FORGE loop 的技术栈极其克制：LangChain Core（LLM 调用底座）+ LangGraph（createReactAgent 编排引擎）——不多不少。这种克制不是偷懒，是设计哲学——sofagent 的核心价值不在「用了多少技术」，而在「管住了多少行为」。
 
+### 意图债务（Intent Debt）
+
+loop-engineering 社区引入了一个精妙的概念：**每次 Agent 会话冷启动，缺失的意图被它自信地猜测填满。Skills（SKILL.md）是你还债的方式——把「我们不这么做」、构建步骤、约定写一次，每次运行都读到。**
+
+在 sofagent 中，这一概念直接解释了为什么 SKILL.md 不是可选项：
+- **无 Skill**：Agent 每次重新推导项目约定 → 意图债务累积 → 行为漂移
+- **有 Skill**：SKILL.md + fde.md + think.md 组成三层加载链 → 意图一次性编码、每次自动注入 → 零意图债务
+
+**类比**：Prompt 是现金——每次交易当面付清，下回重来。Skill 是定期存款——存一次，每次自动取息。意图债务就是你没存的那部分——每次 Agent 用猜测填补，利息越滚越大。
+
+> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [concepts.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/concepts.md)，概念原作者 Addy Osmani
+
+### 理解债务（Comprehension Debt）
+
+**自动化程度越高，理解债务越大。** 当 Agent 每天自动产出 10 个 PR、修复 5 个 CI 问题、更新 3 个依赖——而你不再读它交付的内容时，"这行代码为什么这么写"变成一个没人能回答的问题。
+
+loop-engineering 对此的处置不是「少用 Agent」，而是：
+1. **强制人类审阅非平凡 PR**（与 sofagent 的 human gate 同构）
+2. **每周"loop 消化"——** 由负责人读一遍本周所有自动变更的摘要
+3. **自动合并限制在真正平凡的路径**（typo、lint fix、import 排序）
+4. **理解债务不是你欠 AI 的，是你欠未来自己的**
+
+sofagent 的审计引擎已经覆盖了「做了什么」——每次变更都有 git diff 证据。但「为什么这么做」仍需人类判断。这是工具的边界，不是工具的失败。
+
+> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [concepts.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/concepts.md) / [failure-modes.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/failure-modes.md)（Comprehension Debt Spiral 条目）
+
 > 📖 deepagents 弃用决策的完整踩坑记录（FilesystemMiddleware 硬编码注入 / wrapToolCall 并行崩溃 / REQUIRED_MIDDLEWARE_NAMES 白名单）详见 [FORGE/LESSONS.md](../FORGE/LESSONS.md)。
