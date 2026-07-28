@@ -109,9 +109,15 @@ export const CONFIG_FILE = path.join(process.cwd(), '.sofagent', 'config.yml');
 //   overrideHome。已传 process.cwd() 的调用方无需修改即可工作。
 // ═══════════════════════════════════════════════════════════
 
-/** 解析安装根目录（参数化版本，测试隔离用） */
+/**
+ * 解析安装根目录（参数化版本，测试隔离用）
+ *
+ * v1.2.2：每次调用实时读 process.env.SOFAGENT_HOME（而非模块加载时缓存），
+ * 使测试可在 beforeEach 中动态设置临时 SOFAGENT_HOME 做隔离。
+ * 模块级常量（HOME_DIR / DATA_DIR 等）仍基于加载时快照——那些用于安装时确定的路径。
+ */
 export function resolveHomeDir(overrideHome?: string): string {
-  return overrideHome ?? SOFAGENT_HOME;
+  return overrideHome ?? process.env.SOFAGENT_HOME ?? SOFAGENT_HOME;
 }
 
 /**

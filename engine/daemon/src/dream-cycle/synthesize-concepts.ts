@@ -31,7 +31,7 @@ export async function synthesizeConcepts(
   const atomById = new Map<string, Atom>(atoms.map((a) => [a.id, a]));
   const concepts: Concept[] = [];
   // v1.2.1：knowledge/ 从 .sofagent/ 迁移到 data/
-  const entitiesDir = join(resolveKnowledgeDir(projectDir), 'entities');
+  const entitiesDir = join(resolveKnowledgeDir(), 'entities');
 
   for (const pattern of patterns) {
     const texts = pattern.atomIds
