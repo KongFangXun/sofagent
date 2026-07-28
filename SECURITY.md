@@ -38,7 +38,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 | `knowledge/` | `data/knowledge/` | 知识库 / 评估反馈（eval 体系；旧 `scoring/` 已废弃） |
 | `orchestrator/` | `data/orchestrator/` | 编排决策历史 |
 
-**当前状态（v1.2.0）**：
+**当前状态（v1.2.1）**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
@@ -260,7 +260,7 @@ sofagent daemon 是本地文件系统监控守护进程，其行为边界如下�
 | **权限** | 只读监听文件事件（hash 变化检测 + cron 定时巡检）。**不修改用户文件、不删除文件、不外传数据**。审计发现写入 `daemon-health.json` 和 `history.jsonl`。 |
 | **审计结果推送** | **v1.2.1 已支持 Webhook 推送**（飞书/钉钉/企微，`engine/audit/src/webhook.ts` + `engine/daemon/src/notify.ts` + `push-target.ts`）。企业 IT 可配置 `webhook` 字段实现实时告警推送。 |
 
-> 💡 **企业集中收集（v1.2.1）**：v1.2.1 已支持 Webhook 推送（飞书/钉钉/企微），企业 IT 可配置 `webhook` 字段实现实时告警推送。如仍需集中收集审计日志，可自行定时轮询 `data/audit/history.jsonl`（append-only、JSONL 明文），转发至 SIEM / 企业日志平台。注意 history.jsonl 为明文存储，转发前建议配合外部加密卷或 age 加密，避免敏感 diff 摘要外泄。
+> 💡 **企业集中收集（v1.2.1）**：v1.2.1 已支持 Webhook 推送（飞书/钉钉/企微），企业 IT 可配置 `webhook` 字段实现实时告警推送。如仍需集中收集审计日志（如用 Filebeat / Logstash / Fluentd 采集），可定时轮询 `data/audit/history.jsonl`（append-only、JSONL 明文），转发至 SIEM / 企业日志平台。注意 history.jsonl 为明文存储，转发前建议配合外部加密卷或 age 加密，避免敏感 diff 摘要外泄。
 
 > daemon 源码见 `engine/daemon/src/`：`fs-watch.ts`（文件监听）、`cron.ts`（定时巡检）、`snapshot.ts`（快照）、`usb-detect.ts`（USB federation 检测，v1.1.4+）、`dream-cycle/`（Dream Cycle 6 阶段管道，v1.1.7+）、`inspectors/knowledge-health.ts`（知识健康巡检，v1.1.7+）、`commands/knowledge-status.ts`（知识状态聚合命令，v1.1.7+）、`federation/`（联邦查询，v1.1.8+）、`usb-signature.ts`（USB HMAC 签名，v1.1.9+）、`usb-key.ts`（USB key 创建，v1.1.9+）、`usb-runtime.ts`（USB 运行时启动，v1.1.9+）、`notify.ts`（统一通知接口，v1.1.3+）。
 

@@ -51,6 +51,17 @@ cd /Users/kongfangxun/Workbuddy/sofagent && cd engine/audit && npm run build 2>&
 cd /Users/kongfangxun/Workbuddy/sofagent && setsid bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-output.log 2>&1 < /dev/null &
 ```
 
+### 🔴 启动后铁律：永不换方案（CRITICAL — 违反必崩）
+
+第 2 步执行后，**不管 run_bash 返回什么（即使是空输出或看起来没返回），进程已经在后台跑起来了**。你绝对不要：
+- ❌ 重新启动测试（不要用 nohup / python subprocess / 其他方式再跑一遍）
+- ❌ 检查进程是否存活（不要 `ps aux | grep acceptance`）
+- ❌ 怀疑启动失败而去尝试"修复"
+
+**唯一该做的事：直接进入第 3 步轮询日志。**
+
+如果轮询 5 次后 `/tmp/acceptance-output.log` 仍为空，才允许重新启动——但只准用第 2 步的 setsid 命令，不准用其他方式。
+
 **第 3 步：轮询日志**（每次调用 < 1ms，不超时）
 ```bash
 tail -5 /tmp/acceptance-output.log
