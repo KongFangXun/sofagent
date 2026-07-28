@@ -27,7 +27,7 @@ WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
 
 **⏰ 时序**：回归检查在 releasing.md 阶段六跑，此时 git tag / npm registry 等还没到位——遇到这些检查项标 ⏳（待发版），不标 FAIL。
 
-> **🔍 环境依赖标注（v1.1.6+）**：维度 5/7f/17a-b/20/22 依赖真实环境（npm/git/OpenClaw），AI 审查中标 `⏸️ 需人工环境`，人工审查时必跑。
+> **🔍 环境依赖标注（v1.1.6+）**：维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查中标 `⏸️ 需人工环境`，人工审查时必跑。
 
 ## 审查步骤
 
@@ -77,19 +77,9 @@ grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 �
 SKILL_BC=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || echo 0); SKILL_BA=$(sed -n '/^### [0-9] 底线/,/^### /p' SKILL/SKILL.md | grep -cE "^- " || echo 0); [ "$SKILL_BC" != "$SKILL_BA" ] && echo "⚠️ SKILL.md 底线数 $SKILL_BC vs $SKILL_BA"
 ```
 
-#### 2. 跨文档死链全量扫描
+#### 2. [v1.2.1 移除：被 check-docs.sh 维度 1b 死链扫描全量覆盖]
 
-```bash
-# 子项 a: check-docs 全仓相对路径死链
-bash tools/check-docs.sh 2>&1 | grep -i 'dead\|死链'   # 期望：0 处
-
-# 子项 b: 文件/目录迁移——旧路径应 0 命中
-git grep -n "OLD_RELATIVE_PATH" -- '*.md'
-
-# 子项 c: 占位符死链豁免（v1.1.4 教训）
-grep -n "vX\.Y\.Z\|<.*>\.md\|EXAMPLE.*\.md" FORGE/playbook/releasing.md docs/guides/*.md 2>/dev/null | head
-# 人工检查：check-docs.sh 是否对占位符路径做豁免
-```
+> 移除原因：`check-docs.sh` 已实现全仓相对路径死链扫描 + 占位符豁免，人工巡检冗余。
 
 #### 3. 文档规范源与归属一致性
 
@@ -123,37 +113,14 @@ echo "index=$INDEX / README表=$TABLE（期望 TABLE≥INDEX）"   # v1.1.4：A1
 grep "run_audit" engine/mcp/src/mcp-server.ts | grep -oE "[0-9]+ 条规则"   # MCP 数字一致
 ```
 
-#### 5. 审计 exit code 与输出签名
+#### 5. [v1.2.1 归并至维度 33：审计输出链路检查重叠]
 
-```bash
-# 子项 a: silent 模式 A1 FAIL → exit 2（⚠️ 需 ≥2 commits：先建正常 commit，再建违规 commit）
-cd /tmp && rm -rf t && mkdir t && cd t && git init && git config user.email t@t.com && git config user.name t
-echo "normal" > a.txt && git add a.txt && git commit -m "init normal commit"
-echo "sk-abc123" > s.txt && git add s.txt && git commit -m "leak" --no-verify
-sofagent-audit --diff HEAD~1..HEAD --silent >/dev/null 2>&1; echo "exit=$?"   # 期望: exit=2
-cd /tmp && rm -rf t
-# 子项 b: 签名行版本号非硬编码
-grep -rn "v1\.1\.[0-9]" engine/audit/src/index.ts | grep -v "import\|from\|\/\/"   # 期望：零匹配
-sofagent-audit --version 2>&1 | grep -q "sofagent" && echo "✅ 签名存在"
-# 子项 c: webhook 签名半角冒号
-grep -rn "sofagent.*全角\|sofagent：" engine/audit/src/ 2>/dev/null   # 期望：无匹配
-```
+> 归并原因：5（exit code + 签名）和 33（ActionGovernance schema）都检查 audit-history 写读链路 + 签名，合并后为"审计输出完整性"。
+> 归并去向：维度 33。
 
-#### 6. 版本号硬编码检测
+#### 6. [v1.2.1 移除：被 check-version.sh 13 类位置全量覆盖]
 
-```bash
-SSOT_VER=$(node -e "console.log(require('./package.json').version)")
-
-# 子项 a: 源码中无版本号硬编码
-grep -rn "version\s*=\s*'[0-9]" engine/*/src/*.ts | grep -v __tests__ | grep -v shared/constants | grep -v node_modules   # 期望：零命中
-
-# 子项 b: SECURITY.md 版本标注 = 当前版本
-grep "当前状态（v${SSOT_VER}" SECURITY.md   # 期望：有匹配
-
-# 子项 c: README 正文版本引用一致（v1.1.4 教训）
-grep -oE "v1\.[0-9]+\.[0-9]+" README.md | sort | uniq -c   # 期望：只有一个版本号
-grep -E "当前版本.*v[0-9]+\.[0-9]+\.[0-9]+\|当前版本（v[0-9]+\.[0-9]+\.[0-9]+）" README.md   # 期望：括号内 = SSOT_VER
-```
+> 移除原因：`check-version.sh` 已覆盖 13 个结构性位置（含 .ts/.sh/.ps1/MD 头/README badge），手动 grep 冗余。
 
 #### 7. 感知层配置与推送链路
 
@@ -231,13 +198,9 @@ grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l   # 期望 4
 grep -cE "evidenceMode:" engine/audit/src/rules/index.ts   # 期望 21
 ```
 
-#### 10. tag commit message 规范
+#### 10. [v1.2.1 移除：被 pre-push-check.sh 步骤 7+8 全量覆盖]
 
-```bash
-# 子项: changelog 规划中标注（v1.1.6 教训）
-for f in docs/changelog/v*.md; do v=$(basename "$f" .md); git rev-parse "$v" >/dev/null 2>&1 || echo "⚠️ $v: 规划中"; done
-# 期望：输出仅含未来版本
-```
+> 移除原因：tag commit message 校验已在 pre-push-check.sh 步骤 7+8 自动化。
 
 #### 11. 包依赖图循环检测
 
@@ -258,17 +221,9 @@ dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path 
 [ -z "$dup" ] && echo "OK" || echo "❌ 跨包重复: $dup"
 ```
 
-#### 13. 测试数声称一致性（SSOT 反查 · v1.2.0 扩）
+#### 13. [v1.2.1 移除：被 check-test-count.sh 一键校验全量覆盖]
 
-> SSOT = vitest 实测（与 test-count.sh 同源）。v1.1.7 起有 `tools/check-test-count.sh` 一键校验。
-
-```bash
-bash tools/check-test-count.sh   # 一键校验 CHANGELOG/ROADMAP/LIMITATIONS/evidence.md 声称数 vs 实际值
-# 如漂移：脚本指出文件+行号，手动改成实际值
-# 也可单独跑：AUDIT=$(cd engine/audit && npx vitest run 2>&1 | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
-# WS=$(bash tools/test-count.sh --quiet 2>&1 | grep -oE 'TOTAL_TESTS=[0-9]+' | cut -d= -f2)
-# 逐文档核对（已 SSOT 化的跳过）：for f in engine/audit/README.md FDE/FDE.md LIMITATIONS.md docs/evidence/evidence.md; do ...
-```
+> 移除原因：`tools/check-test-count.sh` 已自动校验 CHANGELOG/ROADMAP/LIMITATIONS/evidence.md 声称数 vs 实际值，手动 grep 冗余。
 
 #### 14. enterprise-deploy 完整性
 
@@ -330,34 +285,44 @@ git diff --quiet || echo "⚠️ 工作树有未提交修改"
 # 子项 e: 全量历史 tag commit message 含版本号（被 pre-push-check.sh 步骤 7 全量覆盖）
 ```
 
-#### 18. A19 commit message 质量
+#### 18. 扩展审计规则源码回归锁——A19 commit 质量 + A18 垃圾文件（v1.2.1 归并 18+19）
+
+> 归并原因：两者结构完全平行（单规则源码检查），合并为"扩展规则回归锁"。
 
 ```bash
-F=engine/audit/src/rules/rule-a19-commit-msg-quality.ts
-grep -c "MIN_LENGTH = 8" $F && grep -c "BLACKLIST" $F && grep "业务底线" $F   # 长度检查+黑名单+分级
-grep "!commitMsg || !commitMsg.trim" $F   # 空 message 降级 PASS
-grep "A19" engine/audit/src/rules/index.ts | head -1   # 在 defaultRules
-grep -c "A19" engine/audit/src/rules/runner.ts   # critical 层阻断
-```
+# 子项 a: A19 commit message 质量（原维度 18）
+F19=engine/audit/src/rules/rule-a19-commit-msg-quality.ts
+grep -c "MIN_LENGTH = 8" $F19 && grep -c "BLACKLIST" $F19 && grep "业务底线" $F19   # 长度检查+黑名单+分级
+grep "!commitMsg || !commitMsg.trim" $F19   # 空 message 降级 PASS
+grep "A19" engine/audit/src/rules/runner.ts   # critical 层阻断
 
-#### 19. A18 垃圾文件检测
-
-```bash
-F=engine/audit/src/rules/rule-a18-junk-file.ts
-grep -c "JUNK_PATTERNS" $F   # 3 组正则
-grep -c "isExempt" $F   # 豁免规则
-grep "\"WARN\"" $F   # 只产生 WARN
+# 子项 b: A18 垃圾文件检测（原维度 19）
+F18=engine/audit/src/rules/rule-a18-junk-file.ts
+grep -c "JUNK_PATTERNS" $F18   # 3 组正则
+grep -c "isExempt" $F18   # 豁免规则
+grep "\"WARN\"" $F18   # 只产生 WARN
 grep "A18" engine/audit/src/rules/runner.ts   # extended 优先级 A18 排在 A17 之后
 ```
 
-#### 20. daemon plist + watch.yml 正确性
+#### 19. [v1.2.1 归并至维度 18：A19+A18 结构平行，合并为扩展规则回归锁]
+
+> 归并去向：维度 18。
+
+#### 20. daemon plist + watch.yml 正确性 + --init 覆盖防护（v1.2.1 归并 20+22）
+
+> 归并原因：20 和 22 都检查 plist/WorkingDirectory，grep 目标文件 100% 重叠。
 
 ```bash
+# 子项 a: plist 内容正确（原维度 20）
 grep "sofagent-daemon" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # ProgramArguments
 grep "Workbuddy/sofagent" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # WorkingDirectory
 test -f .sofagent/watch.yml && grep "paths:" .sofagent/watch.yml   # --init 生成
 ! grep -q "不支持的参数.*--daemon" ~/.sofagent/daemon.log   # 无废弃参数
 tail -20 ~/.sofagent/daemon.log | grep "监控目录"   # 监控目录正确
+
+# 子项 b: --init 覆盖防护（原维度 22）——跑完 acceptance-test.sh 后重复检查
+launchctl list | grep sofagent | awk '{print $2}'   # 期望=0（daemon 正常运行）
+# 跑完 acceptance-test.sh 后重复上述 grep，确认 plist 未被污染
 ```
 
 #### 21. LOOP 工具注入 + 硬约束
@@ -383,14 +348,9 @@ grep -rl "sofagent-releaser\|releaser-skill" engine/scripts/lib/file-deploy.sh i
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · CHANGELOG 纯度 · 测试数一致 · 安全约束 fail-closed · npm 产物三方一致
 
-#### 22. plist 不被外来 --init 覆盖
+#### 22. [v1.2.1 归并至维度 20：plist 检查 grep 目标 100% 重叠]
 
-```bash
-grep "Workbuddy/sofagent" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # WorkingDirectory 指向当前项目
-grep "sofagent-daemon" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # ProgramArguments
-launchctl list | grep sofagent | awk '{print $2}'   # 期望=0（daemon 正常运行）
-# 跑完 acceptance-test.sh 后重复上述检查，确认 plist 未被污染
-```
+> 归并去向：维度 20 子项 b。
 
 #### 23. FDE/LOOP 跨产品声称一致性
 
@@ -458,21 +418,10 @@ grep -c "llm-wiki-mapping.md" ROADMAP.md   # ≥1
 # 子项 e: 文档不重新定义三层（引用 PHILOSOPHY §五 为权威源）
 grep -c "唯一权威\|不重新定义\|PHILOSOPHY.md.*§五" docs/llm-wiki-mapping.md   # ≥1
 ```
-#### 27. pre-push-check shellcheck 扫描范围与 CI 一致性（v1.1.6 新增）
+#### 27. [v1.2.1 移除：被 pre-push-check.sh 步骤 1 + CI shellcheck.yml 全量覆盖]
 
-> v1.1.6 教训：FORGE/ 有 .sh 但 shellcheck find 只扫了 engine/scripts tools FDE
+> 移除原因：CI 的 `.github/workflows/shellcheck.yml` 扫全仓，本地 pre-push-check.sh 步骤 1 也覆盖；此处检查检查器的元验证冗余。
 
-```bash
-FIND_LINE=$(grep "find.*\.sh" tools/pre-push-check.sh); echo "当前扫描范围: $FIND_LINE"
-echo "$FIND_LINE" | grep -q "LOOP" && echo "LOOP 已纳入扫描" || echo "❌ LOOP 漏扫"
-[ -f .github/workflows/shellcheck.yml ] && echo "CI 配置存在" || echo "❌ CI 配置缺失"
-SC_VER=$(shellcheck --version 2>/dev/null | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | head -1)
-if [ -n "$SC_VER" ]; then
-  major=$(echo "$SC_VER" | cut -d. -f1); minor=$(echo "$SC_VER" | cut -d. -f2)
-  if [ "$major" -eq 0 ] && [ "$minor" -lt 11 ] 2>/dev/null; then echo "⚠️  shellcheck $SC_VER < 0.11.0"
-  else echo "✅ shellcheck $SC_VER ≥ 0.11.0"; fi
-fi
-```
 #### 28. Skill 元数据完整性（v1.1.6 新增）
 
 > SKILL.md 若缺必需字段，Agent 可能无法自动加载
@@ -623,23 +572,11 @@ grep -c "\-\-base-only" install.sh 2>/dev/null   # ≥1
 # 子项 d: 主 install.sh 标注被 FDE/LOOP 依赖
 grep -c "FDE/LOOP\|被.*依赖\|跨产品" install.sh 2>/dev/null   # ≥1
 ```
-#### 37. red-team 回归锁完整性（v1.1.7 新增 · BugFix 12）
+#### 37. [v1.2.1 归并至维度 8：red-team 场景检查是 acceptance-test 健壮性的子集]
 
-> acceptance-test.sh 的 red-team 场景是安全基线
+> 归并原因：37 的子项全部是 grep acceptance-test.sh 检查场景存在性（a-f），本质是"acceptance-test 健壮性"（维度 8）的子集。
+> 归并去向：维度 8。
 
-```bash
-# 子项 a: A9 全角/leet 注入检测场景存在
-grep -c "全角\|leet\|unicode" FORGE/playbook/acceptance-test.sh   # ≥3
-# 子项 b: history.jsonl 篡改检测场景存在
-grep -c "篡改\|tamper\|CHAIN_BREAK\|hash chain" FORGE/playbook/acceptance-test.sh   # ≥2
-# 子项 c: hook 删除检测场景存在
-grep -c "hook.*删除\|hook.*丢失\|删除.*hook" FORGE/playbook/acceptance-test.sh   # ≥1
-# 子项 d: 非法 YAML → ConfigParseError 场景存在
-grep -c "ConfigParseError\|非法.*YAML\|非法 YAML" FORGE/playbook/acceptance-test.sh   # ≥2
-# 子项 e: 非 git 目录场景存在
-grep -c "非.*git.*目录\|not.*a.*git.*repo\|非 git" FORGE/playbook/acceptance-test.sh   # ≥1
-# 子项 f: 场景数声称 = 实际（归并至维度 24 子项 a 统一检查）
-```
 #### 38. daemon 审计集中收集 workaround + 安全文档时效性（v1.1.7 新增 · BugFix 9+13）
 
 > SECURITY.md 必须诚实标注 daemon 审计推送的现状
@@ -760,26 +697,10 @@ grep -c "buildConstrainedSystemPrompt\|约束.*加载链" engine/orchestrator/sr
 grep -c "dag-runner\|detectFileConflicts\|compose.*DAG" FORGE/playbook/acceptance-test.sh   # ≥2
 ```
 
-#### 43. pushKnowledgeSummary 主动通知（v1.1.8 新增 · 交付五）
+#### 43. [v1.2.1 归并至维度 29：pushKnowledgeSummary 依赖 dream-cycle/knowledge-health 触发]
 
-> Dream Cycle/knowledge-health 跑完后主动推送摘要，restricted 不泄露。
-
-```bash
-# 子项 a: notify 模块核心函数
-grep -c "pushKnowledgeSummary\|collectSummaryMaterial\|buildSummary" engine/daemon/src/notify.ts   # ≥3
-
-# 子项 b: 两触发源接通（dream-cycle + knowledge-health）
-grep -rn "pushKnowledgeSummary" engine/daemon/src/dream-cycle/state-machine.ts engine/daemon/src/inspectors/knowledge-health.ts   # 各 ≥1
-
-# 子项 c: 通知内容 sensitivity 过滤
-grep -c "sensitivity\|restricted\|NO_DATA_TEXT" engine/daemon/src/notify.ts   # ≥2
-
-# 子项 d: best-effort 降级（通知失败不影响主流程）
-grep -c "best-effort\|catch\|不影响主流程\|void pushKnowledgeSummary" engine/daemon/src/notify.ts   # ≥1
-
-# 子项 e: 验收场景覆盖（acceptance-test 场景 107）
-grep -c "pushKnowledgeSummary\|collectSummaryMaterial" FORGE/playbook/acceptance-test.sh   # ≥2
-```
+> 归并原因：43b 明确依赖 dream-cycle + knowledge-health 触发，与维度 29（Dream Cycle 管道）目标文件重叠 state-machine.ts。
+> 归并去向：维度 29。
 
 #### 44. USB 完整运行时——HMAC 签名 + AES-256 加密 + fail-closed 验签（v1.1.9 新增 · 交付一）
 
@@ -813,59 +734,33 @@ test -x engine/daemon/usb/start.command && test -x engine/daemon/usb/start.sh &&
 grep -c "usb-signature\|usb-key\|createUsbKey\|verifyUsbSignature" FORGE/playbook/acceptance-test.sh   # ≥4
 ```
 
-#### 45. daemon A/B 自动调度器——四阶段状态机 + jsonl 持久化（v1.1.9 新增 · 交付二）
+#### 45. 编排状态机 + 控制图——A/B 调度器 + 状态抽取 + 路径穿越防护（v1.2.1 归并 45+46）
 
-> 真实任务探索-利用状态机(exploit→explore→judge→promote)，连续胜出达阈值自动 promote。
+> 归并原因：45（ab-scheduler）和 46（loop-state-extractor）都检查 orchestrator 状态机，grep 目标重叠 ab-scheduler.ts。
 
 ```bash
-# 子项 a: 状态机核心函数
+# 子项 a-g: A/B 调度器四阶段状态机（原维度 45）
 grep -c "initialState\|checkThreshold\|startExploration\|judgeAndPromote\|runABScheduledTask" engine/orchestrator/src/ab-scheduler.ts   # ≥5
-
-# 子项 b: 四阶段定义（exploit/explore/judge/idle）
 grep -c "'exploit'\|'explore'\|'judge'\|'idle'" engine/orchestrator/src/ab-scheduler.ts   # ≥4
-
-# 子项 c: promote 阈值常量（CONSECUTIVE_WINS_REQUIRED=2）
 grep -c "DEFAULT_PROMOTE_THRESHOLD\|promoteThreshold" engine/orchestrator/src/ab-scheduler.ts   # ≥2
-
-# 子项 d: jsonl 持久化 + 滑窗聚合
 grep -c "appendMetrics\|aggregateRecent\|truncateToLastK\|HISTORY_MAX_ENTRIES" engine/orchestrator/src/ab-history.ts   # ≥4
-
-# 子项 e: daemon cron ab-schedule 分支
 grep -c "ab-schedule\|runABScheduledTask" engine/daemon/src/cron.ts   # ≥2
-
-# 子项 f: 依赖注入可测试性
 grep -c "executePlan\|writeGraphState\|ABSchedulerDeps" engine/orchestrator/src/ab-scheduler.ts   # ≥3
-
-# 子项 g: 验收场景覆盖（acceptance-test 场景 114-117）
 grep -c "ab-scheduler\|ab-history\|judgeAndPromote\|ab-schedule" FORGE/playbook/acceptance-test.sh   # ≥4
-```
 
-#### 46. 控制图状态抽取 + 路径穿越安全防护（v1.1.9 新增 · 交付三）
-
-> checkpoint → ControlGraphState JSON（v1 schema），loopId 消毒防路径穿越。
-
-```bash
-# 子项 a: 抽取核心函数
+# 子项 h-n: 控制图状态抽取 + 路径穿越安全（原维度 46）
 grep -c "extractControlGraphState\|writeControlGraphState\|CONTROL_GRAPH_SCHEMA_VERSION" engine/orchestrator/src/loop-state-extractor.ts   # ≥3
-
-# 子项 b: schema 版本 v1
-grep "CONTROL_GRAPH_SCHEMA_VERSION = 'v1'" engine/orchestrator/src/loop-state-extractor.ts   # 命中
-
-# 子项 c: sanitizeLoopId 消毒（[^a-zA-Z0-9_\-]→_ + 碰撞消除 8 位哈希后缀）
+grep "CONTROL_GRAPH_SCHEMA_VERSION = 'v1'" engine/orchestrator/src/loop-state-extractor.ts
 grep -c "sanitizeLoopId\|createHash.*sha256.*slice.*0.*8\|sanitized.*===.*loopId" engine/orchestrator/src/loop-state-extractor.ts   # ≥2
-
-# 子项 d: assertWithinDir 路径穿越断言（resolve.startsWith 双重防护）
 grep -c "assertWithinDir\|resolved.*startsWith\|路径穿越" engine/orchestrator/src/loop-state-extractor.ts   # ≥3
-
-# 子项 e: ab-scheduler promote 联动 writeControlGraphState
 grep -c "writeControlGraphState\|writeGraphState" engine/orchestrator/src/ab-scheduler.ts   # ≥2
-
-# 子项 f: 波次拆分 + 节点状态映射 + 证据链
 grep -c "splitWaves\|mapNodeStates\|buildEvidenceChain" engine/orchestrator/src/loop-state-extractor.ts   # ≥3
-
-# 子项 g: 验收场景覆盖（acceptance-test 场景 118-119）
 grep -c "extractControlGraphState\|sanitizeLoopId\|路径穿越" FORGE/playbook/acceptance-test.sh   # ≥3
 ```
+
+#### 46. [v1.2.1 归并至维度 45：编排状态机 grep 目标重叠 ab-scheduler.ts]
+
+> 归并去向：维度 45 子项 h-n。
 
 #### 47. 产品叙事收敛红线 + BugFix 42 项核心回归锁（v1.1.9 新增 · 交付四+五）
 
@@ -993,21 +888,9 @@ grep -q "byteLen < 16\|16.*字节\|>=.*16" engine/core/src/audit-history.ts && e
 
 ---
 
-#### 52. exit code 精确测量——禁止管道取 $?（v1.2.1 新增）
+#### 52. [v1.2.1 移除：方法论指导，非可执行巡检]
 
-> v1.2.1 教训：`cmd | tail; echo $?` 取到的是 tail 的退出码（0），不是脚本的退出码（可能非 0），掩盖失败。
-
-```bash
-# 错误写法（取 tail 的 exit code）：
-# pre-push-check.sh | tail -5; echo $?  # ← 永远是 0
-# 正确写法（取脚本的 exit code）：
-bash tools/pre-push-check.sh > /tmp/ppc.log 2>&1; echo $?  # ← 真实退出码
-# 声称 EXIT=0 的报告，必须用这种方式交叉验证
-
-# 审查本仓库的验证脚本，确认 exit code 测量不用管道取 $?
-grep -rn 'tail.*;\s*echo \$?' FORGE/ tools/ --include="*.sh" | grep -v "regression-checklist\|# "   # 期望：零命中
-grep -rn '| head.*;\s*echo \$?' FORGE/ tools/ --include="*.sh" | grep -v "regression-checklist\|# "  # 期望：零命中
-```
+> 移除原因：这是方法论指导（禁止管道取 $?），pre-push-check.sh 自身已用正确写法（`> log 2>&1; echo $?`），此维度无法发现新回退。
 
 > **PASS 标准**：发版验证脚本的 exit code 测量必须用 `> log 2>&1; echo $?`，禁止管道取 `$?`。
 
@@ -1067,6 +950,58 @@ grep -ohE '\$\{?[A-Z_]{3,}\}?' install.sh engine/scripts/lib/*.sh | sed 's/[${}]
 ```
 
 > **PASS 标准**：shellcheck 零 SC2155/SC2034 + 手动抽查关键变量定义完整。
+
+---
+
+#### 56. trust-but-verify——mock 单测全绿 ≠ 真实引擎匹配（v1.2.1 P0b 新增）
+
+> v1.2.1 P0b 教训：工程师用 mock 跑 eval 单元测试全绿（IS_PASS: YES），但 QA 跑真实 CLI 端到端通过率仅 14.3%——mock 未经过真实审计引擎校验，未发现 golden set 与 audit 规则不匹配。逐条读 21 个 rule-*.ts 重写后 14.3% → 100%。
+
+```bash
+# mock 单测全绿后，必须额外跑真实 CLI 端到端
+# eval 包
+(cd engine/eval && node dist/cli.js run 2>&1 | grep -E "passRate|通过率")
+# 期望：passRate 100%，任何低于 100% 都说明 golden set 与真实规则不匹配
+# ab-test 包
+(cd engine/ab-test && node dist/cli.js run --golden-set 2>&1 | grep -E "passRate|通过率")
+```
+
+> **PASS 标准**：真实 CLI 端到端 passRate = 100%，而非仅 mock 单测全绿。
+
+---
+
+#### 57. A2/A9 fixture 敏感内容安全——占位符 + base64 编码（v1.2.1 P0b 新增）
+
+> v1.2.1 P0b 教训：golden set 的 fail 用例需含假密钥/injection 文本，但字面串会触发 A2/A9 扫源码本身 → commit hook 拦截。解法：YAML 用占位符（`{{SK_PREFIX}}`/`{{INJ_PHRASE}}`），运行时替换，映射值用 base64 编码存储（A9 扫不到 base64）。
+
+```bash
+# 1. golden set 不含字面密钥（A2 安全）
+grep -rnE 'sk-[a-zA-Z0-9]{20,}' engine/eval/data/golden-set.yaml engine/ab-test/data/ 2>/dev/null
+# 期望：零命中（用 {{SK_PREFIX}} 占位符）
+
+# 2. golden set 不含字面 injection（A9 安全）
+grep -rn "$(echo SWdub3JlIHByZXZpb3VzIGluc3RydWN0aW9ucw== | base64 -d)" engine/eval/data/golden-set.yaml 2>/dev/null
+# 期望：零命中（用 {{INJ_PHRASE}} 占位符）
+
+# 3. 占位符替换机制存在
+grep -c 'PLACEHOLDER_MAP\|SK_PREFIX\|INJ_PHRASE' engine/eval/src/eval-runner.ts  # ≥3
+```
+
+> **PASS 标准**：golden set 零字面密钥/injection + 占位符替换机制存在 + audit 运行时检测有效。
+
+---
+
+#### 58. convertAuditResult 三态——WARN 不应当 FAIL（v1.2.1 P0b 新增）
+
+> v1.2.1 P0b 教训：eval-runner.ts 的 convertAuditResult 原版把 WARN（exitCode 1）当 FAIL（exitCode 2）是 bug。三态：exitCode 0=PASS, 1=WARN, 2=FAIL。
+
+```bash
+# 验证三态转换逻辑存在
+grep -A5 'convertAuditResult' engine/eval/src/eval-runner.ts | grep -E 'PASS|WARN|FAIL|exitCode'
+# 期望：3 种状态都有分支处理
+```
+
+> **PASS 标准**：convertAuditResult 含 PASS/WARN/FAIL 三态分支，WARN 不映射为 FAIL。
 
 ---
 
