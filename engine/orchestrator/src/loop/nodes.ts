@@ -27,6 +27,9 @@ import { HITL_OPTIONS, shouldUseAsyncHITL, writeHITLRequest } from '../hitl';
 import { ModelRouter } from '../model-router';
 import { DataSovereigntyMiddleware } from '../middleware/data-sovereignty-mw';
 import { ProgressMiddleware } from '../middleware/progress-mw';
+import { writeGraphState } from './plan-node';
+import { engineerDecide, defaultDecideCallLLM } from './engineer-decide';
+import { engineerExecute } from './engineer-execute';
 
 /** 重试上限：第 3 轮重试后仍未过 → blocked 终态 */
 export const DEFAULT_MAX_RETRIES = 3;
@@ -196,6 +199,18 @@ export interface LoopGraphDeps {
    * 不设置时按 defaultDeps() 注入的 loadEnvConfig().dataDir 解析。
    */
   dataDir?: string;
+  /**
+   * Planner LLM decide 调用（v1.2.2 P4）——plan 节点任务分解。
+   * 不设置时 buildLoopGraph 内部 fallback 到 defaultRunPlannerDecide。
+   */
+  runPlannerDecide?: (task: string) => Promise<string>;
+  /**
+   * 降级路由链开关（v1.2.2 P4）。
+   * true：audit FAIL 按 0→1→2 推进 degradationLevel（降级链语义）；
+   * false/缺省：保持 v1.2.1 纯 retry→blocked 语义（老测试/老调用方兼容）。
+   * runLoopGraph 默认开启。
+   */
+  degradationChainEnabled?: boolean;
 }
 
 // ────────────────────────────────
@@ -298,6 +313,12 @@ function routeAndLog(role: 'engineer' | 'reviewer', task: string): {
  * 约束通过工具 description 内嵌（A1-A17 边界），不做 hook 拦截。
  * systemPrompt = 四层约束链 + ENGINEER_AGENT.systemPrompt。
  *
+ * v1.2.2 P4 decide/execute 分层：在 createReactAgent 路径之前先跑
+ *   decide（LLM 结构化决策）→ execute（确定性文件编辑/git）。
+ *   decide 成功时其产出作为补充上下文拼入 systemPrompt；
+ *   decide 失败（schema 校验失败/LLM 不可用）→ 静默跳过，走原有工具注入路径
+ *   （降级链由 audit 节点按 degradationLevel 推进，不在此处阻断）。
+ *
  * 降级兜底：如果 createReactAgent import 失败，降级回 spawnSubAgent
  * （composer 零工具路径），并在输出前加 `[降级运行] ` 标注。
  */
@@ -323,6 +344,32 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
   const nodeStartedAt = Date.now();
   progressMw.nodeStart('engineer', task.slice(0, 120));
 
+  // v1.2.2 P4：decide/execute 分层——decide（LLM 决策）→ execute（确定性执行）
+  // decide 成功：决策摘要拼入 agent 上下文；decide 失败：静默跳过走原路径
+  let decideSummary = '';
+  try {
+    const decideResult = await engineerDecide(
+      { task, feedback: feedback || undefined },
+      { callLLM: defaultDecideCallLLM, router: getLoopRouter(), log: () => {} },
+    );
+    if (decideResult) {
+      decideSummary = [
+        '[decide] 结构化决策（经 ModelRouter 路由）：',
+        `rationale: ${decideResult.decide.rationale.slice(0, 200)}`,
+        ...decideResult.decide.changes.map((c) => `- ${c.action} ${c.file}: ${c.description.slice(0, 60)}`),
+      ].join('\n');
+      // execute 层：dryRun=false 真实执行（git 不可用时内部降级，不 throw）
+      const execResult = await engineerExecute(decideResult.decide, {
+        cwd: process.cwd(),
+        dryRun: false,
+        log: () => {},
+      });
+      decideSummary += `\n[execute] ${execResult.summary.split('\n')[0] ?? ''}`;
+    }
+  } catch {
+    // decide/execute 任何异常静默——降级走原有 createReactAgent 路径
+  }
+
   // v1.1.4：工具注入路径——createReactAgent + ENGINEER_TOOLS
   // SOFAGENT_LLM 未设置或解析失败时自动降级到 spawnSubAgent 零工具路径
   try {
@@ -332,7 +379,7 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
     // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
     const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
     const constrainedPrompt = buildConstrainedSystemPrompt(process.cwd());
-    const systemPrompt = `${constrainedPrompt}\n\n${ENGINEER_AGENT.systemPrompt}\n\n${routeSummary}`;
+    const systemPrompt = `${constrainedPrompt}\n\n${ENGINEER_AGENT.systemPrompt}\n\n${routeSummary}${decideSummary ? `\n\n${decideSummary}` : ''}`;
     // v1.2.0: ToolGate 事前拦截——每个 tool call 前过 @sofagent/rules 检查
     const gate = createToolGate({ agentName: 'engineer', taskDesc: task.slice(0, 500) });
     const gatedTools = wrapToolsWithGate(ENGINEER_TOOLS, gate);
@@ -683,23 +730,48 @@ export function defaultDeps(checkpointer: FileCheckpointer, silent = false): Loo
 // ────────────────────────────────
 
 /**
- * engineer 节点——执行任务（首轮）或按反馈修复（重试轮）
+ * engineer 节点——执行任务（首轮）或按反馈修复（重试轮）。
+ *
+ * v1.2.2 P4：
+ *   - 逐条消费 artifacts.subtasks（pending → done），当前子任务拼入任务描述
+ *   - 节点执行后写 graph-state.json（活跃节点 + Work Graph 任务数）
+ *   - decide/execute 分层在 defaultRunEngineer 内部顺序调用（图拓扑不变）
  */
 export function makeEngineerNode(deps: LoopGraphDeps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return async (state: LoopGraphState): Promise<any> => {
     deps.log(`👷 engineer 执行中...（第 ${state.retryCount + 1} 轮）`);
+
+    // P4：取当前 pending 子任务（Planner 产出），拼入任务上下文
+    const subtasks = state.artifacts.subtasks ?? [];
+    const currentSub = subtasks.find((s) => s.status === 'pending');
+    const taskWithSub = currentSub
+      ? `${state.artifacts.task}\n\n# 当前子任务（${currentSub.id}）\n${currentSub.description}`
+      : state.artifacts.task;
+
     const feedback =
       state.retryCount > 0
         ? [state.artifacts.auditReport, state.artifacts.reviewReport].filter(Boolean).join('\n\n')
         : '';
-    const output = await deps.runEngineer(state.artifacts.task, feedback);
+    const output = await deps.runEngineer(taskWithSub, feedback);
+
+    // P4：当前子任务标记 done
+    const updatedSubtasks = currentSub
+      ? subtasks.map((s) => (s.id === currentSub.id ? { ...s, status: 'done' as const } : s))
+      : subtasks;
+
+    // P4：Graph 状态落盘（Dashboard Graph Engine 区块数据源）
+    if (deps.dataDir) {
+      writeGraphState(deps.dataDir, 'engineer', updatedSubtasks.length);
+    }
+
     deps.log('✅ engineer 完成');
     return {
       currentNode: 'engineer',
       artifacts: {
         engineerOutput: output,
         engineerOutputs: [...state.artifacts.engineerOutputs, output],
+        subtasks: updatedSubtasks,
       },
     };
   };
@@ -707,7 +779,19 @@ export function makeEngineerNode(deps: LoopGraphDeps) {
 
 /**
  * audit 节点——审计 engineer 产出。
- * FAIL 时递增 retryCount；达到上限直接标记 blocked 终态 + 写 history。
+ *
+ * v1.2.2 P4 降级路由链（按 FAIL 累计次数推进，与 routeAfterAudit 五分支一一对应）：
+ *   FAIL 第 1 次：degradationLevel=0，retryCount+1 → 回 engineer 重试（现有语义）
+ *   FAIL 第 2 次：degradationLevel=0→1，auditReport 头部注入 [降级 L1]
+ *         "先做最小可行版本"，retryCount+1 → 回 engineer
+ *   FAIL 第 3 次：degradationLevel=1→2，auditReport 头部注入 [降级 L2]
+ *         低可信标注，retryCount 不再烧 → routeAfterAudit 放行 reviewer（不 blocked）
+ *   超限（degradationLevel=2 仍 FAIL 且 retryCount 已耗尽）：
+ *         → routeAfterAudit 路由 human_confirm 人工确认
+ *
+ * 兼容性：degradationLevel 推进只在 degradationChainEnabled 时生效——
+ * 老调用方（deps 未显式开启）保持 v1.2.1 纯 retry→blocked 语义；
+ * runLoopGraph 默认开启（见 graph.ts buildDeps）。
  */
 export function makeAuditNode(deps: LoopGraphDeps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -717,13 +801,30 @@ export function makeAuditNode(deps: LoopGraphDeps) {
     deps.log(`🛡️ audit 判定: ${outcome.verdict}`);
 
     // v1.1.4：WARN 标注透传——不阻断流转，但标记到 reviewer 输入
-    const auditReport = outcome.verdict === 'WARN'
+    let auditReport = outcome.verdict === 'WARN'
       ? `[审计告警] ${outcome.report}`
       : outcome.report;
+
+    // P4 降级链：FAIL 时按当前 degradationLevel 推进 0→1→2 并注入降级提示
+    let degradationLevel = state.degradationLevel;
+    if (outcome.verdict === 'FAIL' && deps.degradationChainEnabled) {
+      if (degradationLevel === 0 && state.retryCount > 0) {
+        // 第 2 次 FAIL（已 retry 过一次仍 FAIL）→ L1 降级任务范围
+        degradationLevel = 1;
+        auditReport = `[降级 L1] 先做最小可行版本——只实现核心路径，砍掉边缘情况与优化项。\n${auditReport}`;
+        deps.log('🔻 audit FAIL · 降级 L1：缩小任务范围（最小可行版本）');
+      } else if (degradationLevel === 1) {
+        // 第 3 次 FAIL（L1 降级后仍 FAIL）→ L2 低可信，不再烧 retryCount
+        degradationLevel = 2;
+        auditReport = `[降级 L2] 低可信模式——本产出未经审计背书，请人工重点复核。\n${auditReport}`;
+        deps.log('🔻 audit FAIL · 降级 L2：标记低可信，继续流转（不 blocked）');
+      }
+    }
 
     const base: Record<string, unknown> = {
       currentNode: 'audit',
       auditResult: outcome.verdict,
+      degradationLevel,
       artifacts: {
         auditReport,
         auditReports: [...state.artifacts.auditReports, auditReport],
@@ -734,12 +835,17 @@ export function makeAuditNode(deps: LoopGraphDeps) {
       return base; // PASS/WARN → 继续流转 reviewer
     }
 
+    // P4：L2 低可信——不再烧 retryCount，路由权交给 routeAfterAudit（→ reviewer）
+    if (deps.degradationChainEnabled && degradationLevel >= 2) {
+      return base;
+    }
+
     if (state.retryCount < deps.maxRetries) {
       deps.log(`🔄 audit FAIL · 回 engineer 重试（${state.retryCount + 1}/${deps.maxRetries}）`);
       return { ...base, retryCount: state.retryCount + 1 };
     }
 
-    // 重试已达上限仍 FAIL → blocked 终态
+    // 重试已达上限仍 FAIL（且未进 L2）→ blocked 终态
     deps.log(`⛔ audit FAIL 且重试已达上限（${deps.maxRetries}）→ blocked`);
     const blockedState: LoopGraphState = { ...state, ...base, finalStatus: 'blocked' } as LoopGraphState;
     await deps.recordBlocked(blockedState);

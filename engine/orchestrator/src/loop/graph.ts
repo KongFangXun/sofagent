@@ -3,11 +3,11 @@
 // v1.2.0 新增：编排控制从 compose（一次性生成 YAML）
 // 上提为 sofagent 直接掌握的 LangGraph StateGraph 节点级流转
 //
-// 流转图：
-//   START → engineer(AI) → audit(CLI) → reviewer(AI) → human_confirm(HITL) → END
-//                         ↓ FAIL（retryCount < 3）
-//                        engineer(AI)
-//   audit FAIL / HITL 驳回 且 retryCount 已达上限 → blocked 终态 → END
+// 流转图（v1.2.2 P4：新增 plan 节点 + 降级路由链）：
+//   START → plan(AI) → engineer(AI) → audit(CLI) → reviewer(AI) → human_confirm(HITL) → END
+//                                      ↓ FAIL
+//                        降级链：第1次 retry engineer → 第2次 降级范围(L1) →
+//                                第3次 低可信(L2) 继续 reviewer → 超限 人工确认
 //
 // Checkpoint：每个节点执行前后自动 snapshot 到 .sofagent/checkpoint/
 // （FileCheckpointer，与 daemon 共享路径）。中断后 resumeLoopGraph()
@@ -37,8 +37,10 @@ import {
   makeAuditNode,
   makeReviewerNode,
   makeHumanConfirmNode,
+  DEFAULT_MAX_RETRIES,
   type LoopGraphDeps,
 } from './nodes';
+import { makePlanNode, defaultRunPlannerDecide, writeGraphState } from './plan-node';
 
 /** 图执行步数上限：4 节点 × (1 + 3 重试) 轮 = 16 步，留足余量 */
 const RECURSION_LIMIT = 64;
@@ -76,12 +78,34 @@ export function resolveCheckpointDir(override?: string): string {
 }
 
 /**
- * audit 之后的条件路由：
- * blocked → END；FAIL（上限内，retryCount 已在节点内递增）→ engineer；PASS/WARN → reviewer
+ * audit 之后的条件路由（v1.2.2 P4 降级路由链·五分支）：
+ *
+ *   1. finalStatus='blocked'        → END（重试超限收尾）
+ *   2. FAIL & retryCount>=maxRetries & degradationLevel>=2
+ *                                   → 'human_confirm'（超限人工确认）
+ *   3. FAIL & degradationLevel>=2   → 'reviewer'（L2 低可信：不 blocked，继续流转）
+ *   4. FAIL（其余，含 degradationLevel 0→1→2 推进）→ 'engineer'
+ *   5. PASS / WARN                  → 'reviewer'
+ *
+ * 注：degradationLevel 的推进（0→1→2）与提示词注入在 audit 节点内完成；
+ * 本函数只做纯路由判定（degradationLevel>=2 只在降级链开启时由节点写入），
+ * 保证 resume 路径可复用同一规则。
  */
-export function routeAfterAudit(state: LoopGraphState): 'engineer' | 'reviewer' | typeof END {
+export function routeAfterAudit(
+  state: LoopGraphState
+): 'engineer' | 'reviewer' | 'human_confirm' | typeof END {
   if (state.finalStatus === 'blocked') return END;
-  if (state.auditResult === 'FAIL') return 'engineer';
+  if (state.auditResult === 'FAIL') {
+    // 超限人工确认：重试与降级通道都已耗尽
+    if (state.retryCount >= DEFAULT_MAX_RETRIES && state.degradationLevel >= 2) {
+      return 'human_confirm';
+    }
+    // L2 低可信：标记后继续流转 reviewer，不再回 engineer 烧重试
+    if (state.degradationLevel >= 2) {
+      return 'reviewer';
+    }
+    return 'engineer';
+  }
   return 'reviewer';
 }
 
@@ -99,10 +123,10 @@ export function routeAfterHuman(state: LoopGraphState): 'engineer' | typeof END 
 }
 
 /**
- * START 的条件路由：正常启动进 engineer；resume 时进 resumeFrom 指定节点
+ * START 的条件路由：正常启动进 plan（v1.2.2 P4）；resume 时进 resumeFrom 指定节点
  */
 function routeFromStart(state: LoopGraphState): LoopNodeName {
-  return state.resumeFrom ?? 'engineer';
+  return state.resumeFrom ?? 'plan';
 }
 
 /**
@@ -130,23 +154,32 @@ function withCheckpoint<S extends LoopGraphState>(
 
 /**
  * 组装 LOOP StateGraph（编译后的可执行图）
+ * v1.2.2 P4：新增 plan 节点（START → plan → engineer）+ audit 降级链五分支
  */
 export function buildLoopGraph(deps: LoopGraphDeps) {
   const graph = new StateGraph(LoopStateAnnotation)
+    .addNode('plan', withCheckpoint('plan', deps.checkpointer, makePlanNode({
+      runPlannerDecide: deps.runPlannerDecide ?? defaultRunPlannerDecide,
+      log: deps.log,
+      dataDir: deps.dataDir,
+    })))
     .addNode('engineer', withCheckpoint('engineer', deps.checkpointer, makeEngineerNode(deps)))
     .addNode('audit', withCheckpoint('audit', deps.checkpointer, makeAuditNode(deps)))
     .addNode('reviewer', withCheckpoint('reviewer', deps.checkpointer, makeReviewerNode(deps)))
     .addNode('human_confirm', withCheckpoint('human_confirm', deps.checkpointer, makeHumanConfirmNode(deps)))
     .addConditionalEdges(START, routeFromStart, {
+      plan: 'plan',
       engineer: 'engineer',
       audit: 'audit',
       reviewer: 'reviewer',
       human_confirm: 'human_confirm',
     })
+    .addEdge('plan', 'engineer')
     .addEdge('engineer', 'audit')
     .addConditionalEdges('audit', routeAfterAudit, {
       engineer: 'engineer',
       reviewer: 'reviewer',
+      human_confirm: 'human_confirm',
       [END]: END,
     })
     .addEdge('reviewer', 'human_confirm')
@@ -169,6 +202,8 @@ function buildDeps(options: LoopGraphOptions): LoopGraphDeps {
   };
   // v1.2.2 P3b：CLI --data-dir 显式覆盖优先于 env 解析（defaultDeps 注入的值）
   if (options.dataDir) merged.dataDir = options.dataDir;
+  // v1.2.2 P4：runLoopGraph 默认开启降级链（测试可显式传 false 关闭）
+  merged.degradationChainEnabled = options.deps?.degradationChainEnabled ?? true;
   return merged;
 }
 
@@ -211,6 +246,7 @@ export async function runLoopGraph(
     artifacts: emptyArtifacts(task),
     finalStatus: 'running',
     resumeFrom: null,
+    degradationLevel: 0,
   };
 
   const finalState = (await app.invoke(initial, {
@@ -233,6 +269,8 @@ export function resolveResumeNode(record: CheckpointRecord): LoopNodeName | null
   if (record.phase === 'before') return node;
 
   switch (node) {
+    case 'plan':
+      return 'engineer';
     case 'engineer':
       return 'audit';
     case 'audit': {
