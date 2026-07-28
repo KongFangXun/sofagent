@@ -94,7 +94,7 @@ sofagent install.sh v${VERSION} — 主安装器
   bash install.sh                       默认模式：底座 + FDE Agent Skill
   bash install.sh --base-only           仅装底座（约束层 + 四引擎）
   bash install.sh --platform <name>     指定平台：openclaw / workbuddy / claude / codex / hermes
-  bash install.sh --quick               快速模式
+  bash install.sh --quick               完整安装（静默模式，跳过交互确认）⚠️ 非预览，会写入文件
   bash install.sh --remote              远程安装模式（git clone）
   bash install.sh --force               升级时强制覆盖 custom/ 用户层（确认+备份）
   bash install.sh --merge               升级时三路合并 custom/ 用户层
@@ -322,6 +322,19 @@ deploy_scripts         # Step 5b: 部署配套脚本 + 数据目录
 # Step 6-7: Hook + 断路器
 # ════════════════════════════════════════
 deploy_hook            # Step 6: 部署加载链 Hook（仅 OpenClaw）
+
+# Step 6.5: 安装 git pre-commit hook（让 git commit 触发审计）
+# v1.2.2 F-28 修复：install.sh 只装 OpenClaw 平台 hook，不装 git pre-commit hook，
+# 导致 README 演示中的 commit 拦截跑不通。此处补装 git hook。
+if command -v sofagent-audit >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
+  info "Step 6.5 · 安装 git pre-commit hook..."
+  if sofagent-audit --install-hook 2>/dev/null; then
+    ok "  git pre-commit hook 已安装"
+  else
+    warn "  git hook 安装失败，请手动运行 sofagent-audit --init"
+  fi
+fi
+
 inject_loopdetect      # Step 7: 注入断路器配置（仅 OpenClaw）
 
 # ════════════════════════════════════════
@@ -329,6 +342,7 @@ inject_loopdetect      # Step 7: 注入断路器配置（仅 OpenClaw）
 # ════════════════════════════════════════
 write_seed_instructions
 print_completion_summary
+verify_component_integrity
 install_daemon
 log_install_audit
 
@@ -493,6 +507,9 @@ install_skill_unified() {
     for psd in "${platform_skill_dirs[@]}"; do
       mkdir -p "$(dirname "$psd")" 2>/dev/null || true
       ln -sfn "$SOFAGENT_HOME/skill" "$psd" 2>/dev/null || true
+      if [ ! -L "$psd" ]; then
+        warn "  Symlink 创建失败：$psd（可能已被普通目录占用）"
+      fi
     done
     ok "  Skill 统一路径已建立：$SOFAGENT_HOME/skill/ → 平台 symlink"
   fi

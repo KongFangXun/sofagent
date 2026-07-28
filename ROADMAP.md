@@ -1,11 +1,11 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.2.1 · 2026-07-27（UTC）· 数据目录重构（.sofagent/ → data/）+ ToolGate 运行时接入 + SubAgent 可见性 L2 + custom/ 闭环 · 规划：v1.2.2（数据主权 + Dashboard）→ v1.2.3（编排隔离 + 波次拓扑可视化）→ v1.3.1（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）
+> v1.2.1 · 2026-07-28（UTC）· 数据目录重构（.sofagent/ → data/）+ ToolGate 运行时接入 + SubAgent 可见性 L2 + custom/ 闭环 · 规划：v1.2.2（数据主权 + Dashboard）→ v1.2.3（编排隔离 + 波次拓扑可视化）→ v1.3.1（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
-## 现在在哪：v1.2.1（已发版 · 2026-07-27）
+## 现在在哪：v1.2.1（已发版 · 2026-07-28）
 
 > **数据目录重构 + custom/ 闭环 + ToolGate 接入 + SubAgent 可见性 L2（v1.2.1）**：`.sofagent/` 运行时数据统一迁移到 `data/` 可见目录——用户能直接打开、Dashboard 能直接消费、备份只需拷贝一个目录。ToolGate 运行时接入（wrapToolsWithGate + nodes.ts 双节点调用），engineer/reviewer 工具调用前过 RulesEngine 检查。SubAgent 可见性 L2（ProgressMiddleware：worker 工具调用序列 + LLM 心跳 → sub-progress jsonl）。custom/ README 重写（规则 vs 代码边界 + 加载链声明 + 安装保护逻辑待实施→移至 v1.2.2）。数据层清理（IDENTITY.md + eval.md 删除 + 模板标注 + daemon-health.json）。
 >
@@ -67,7 +67,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
 | **v1.1.9** | ✅ 开发完成 | **产品叙事收敛 + BugFix + USB + A/B + 控制图**：① 叙事收敛——对外从"Harness 中间件 + FDE 工具包"转为"FDE Agent（由 sofagent 引擎驱动）"；Harness 叙事降级为开发者文档里的实现说明；模板市场 已物理迁出至 商业仓库/模板市场/。② v1.1.8 发布后 42 条 BugFix（6 P0 + 15 P1 + 21 P2）。③ USB 完整运行时（Node 便携版 + 启动脚本 + HMAC 签名 + knowledge/ AES-256 磁盘加密 + 零残留）。④ daemon A/B 自动调度器（探索-利用循环，ab-scheduler 四阶段状态机 + ab-history jsonl + cron `ab-schedule` 分支）。⑤ 控制图状态抽取（checkpoint → ControlGraphState，version:'v1' schema 供 v1.2.x Dashboard 消费）。测试 863→909（11 包全绿，QA 第 1 轮 906 + BUG-1 修复回归 2 + POC-6 碰撞消除 1）；版本 bump 留 releasing SOP | [📖](./docs/changelog/v1.1/v1.1.9.md) |
-| **v1.2.1** | ✅ 已发版 | **数据目录重构 + Webhook 推送 + SubAgent 可见性 L2 + custom/ 闭环**：① 数据目录重构——`.sofagent/` 运行时数据统一迁移到 `data/` 可见目录（用户能打开、Dashboard 能消费、备份只需拷一个目录）。② ToolGate 运行时接入（wrapToolsWithGate + nodes.ts 双节点调用）。③ SubAgent 可见性 L2（ProgressMiddleware：worker 工具调用序列 + LLM 心跳 → sub-progress jsonl）。④ custom/ README 重写（规则 vs 代码边界）。⑤ 数据层清理（IDENTITY.md + eval.md 删除 + 模板标注 + daemon-health.json）。测试 984 tests（12 包全绿，audit 428） | [📖](./docs/changelog/v1.2/v1.2.1.md) |
+| **v1.2.1** | ✅ 已发版 | **数据目录重构 + Webhook 推送 + SubAgent 可见性 L2 + custom/ 闭环**：① 数据目录重构——`.sofagent/` 运行时数据统一迁移到 `data/` 可见目录（用户能打开、Dashboard 能消费、备份只需拷一个目录）。② ToolGate 运行时接入（wrapToolsWithGate + nodes.ts 双节点调用）。③ SubAgent 可见性 L2（ProgressMiddleware：worker 工具调用序列 + LLM 心跳 → sub-progress jsonl）。④ custom/ README 重写（规则 vs 代码边界）。⑤ 数据层清理（IDENTITY.md + eval.md 删除 + 模板标注 + daemon-health.json）。测试 1009 tests（12 包全绿，audit 428） | [📖](./docs/changelog/v1.2/v1.2.1.md) |
 | **v1.2.0** | ✅ 已发版 | **物理结构大重构（/sofagent/→/engine/ + SKILL 收敛 + 发版工具链拆散 + install.sh 提根 + rules 独立包）🎉**：① **结构重构**——`/sofagent/` 内层目录 → `/engine/`（底座引擎改名）；Skill 从 4 处散落收敛到根目录 `/SKILL/`（fde/audit/engineer/reviewer/releaser + sofagent 约束底座）；`install.sh` 提升到根目录；模板市场 物理移出 MIT scope 到商业产品目录；engine/rules/ 独立规则引擎包。② 端到端全功能验证（FORGE + Dream Cycle + 联邦查询 + 加密）+ gbrain 行业对标 + USB key 产品故事写入主文档 + 兜底修复。v1.2.x 完整多设备协同的起点 | [📖](./docs/changelog/v1.2/v1.2.0.md) |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同——**L2 团队协作协议**：共享态/意图广播/触发反应/冲突消解/反馈放大五大机制，从单人约束到团队协作；**L3 组织能力市场**：Skill/Agent/流程在企业内发布→发现→调用→评价，高频高价值自然胜出。+ Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界。**🔮 探索**：路由器式配网（边缘设备 WiFi 热点 + 手机端配置网页，仅用于初始配置，配置完成后回归纯 LUI）+ **协议中立**（审计层只走 MCP 等开放协议和 git diff/JSONL/Markdown 开放格式，不为任何单一平台写专属集成——不绑定平台，平台不绑定审计） + **编排隔离底座（git worktree 轻量形态）+ 波次拓扑可视化（控制图视角，随 dashboard 交付，详见子里程碑）** | — |
 
@@ -358,8 +358,8 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 | 规则文件独立只读（焊死的门 · v1.3.x） | 约束规则文件独立于 Agent 工作区，只读挂载，Agent 不可篡改——根治「AI 改测试掩盖错误」 |
 | **SkillScan 确定性安全扫描器（v1.4.x · DeerFlow 启发）** | A9 注入检测局限的分层补充——纯正则覆盖不了 leet speak（`1gn0r3`）/ Unicode 同形字 / Base64 编码绕过。DeerFlow 用确定性扫描器（Phase 1 离线，无 Semgrep 依赖）做第一道，语义分析留后续。sofagent 可借鉴：先做确定性扫描层，LLM 辅助检测推 v1.4.x+ |
 | **Agentic Browser 工具层（v1.4.x · DeerFlow 启发）** | FDE Agent 做"网页审计巡检"AI 节点时的现成方案——Playwright 全套（navigate/snapshot/click/type/screenshot）+ SSRF 防护默认开启。sofagent 可封装为 MCP tool，供 SubAgent 做网页内容审计 |
-| **TUI Terminal Workbench（v2.x 产品化 · DeerFlow 启发）** | 补强感知层——用户不开 Agent 平台就能看审计历史/跑 doctor/看知识库状态。DeerFlow 的 TUI 是嵌入式运行（不需要 Gateway/Docker），键盘驱动 + slash 命令面板。sofagent TUI 应更轻（纯 Node，读 `.sofagent/` 目录），符合零依赖调性。性价比最高的产品化补强 |
-| **轻量 Web UI / Dashboard（v2.x 产品化 · DeerFlow 启发但不照抄）** | DeerFlow Web UI 功能完整（流式 Markdown/对话分支/工作区徽章/设置面板），但部署重（Nginx+Gateway+Postgres 起步 8C16G）。sofagent Dashboard 保持轻量单页（Vite+React 读 `.sofagent/` 目录），不引入重部署依赖。对话分支（完成回合可分支为新对话）是关键交互 |
+| **TUI Terminal Workbench（v2.x 产品化 · DeerFlow 启发）** | 补强感知层——用户不开 Agent 平台就能看审计历史/跑 doctor/看知识库状态。DeerFlow 的 TUI 是嵌入式运行（不需要 Gateway/Docker），键盘驱动 + slash 命令面板。sofagent TUI 应更轻（纯 Node，读 `~/.sofagent/data/` 目录），符合零依赖调性。性价比最高的产品化补强 |
+| **轻量 Web UI / Dashboard（v2.x 产品化 · DeerFlow 启发但不照抄）** | DeerFlow Web UI 功能完整（流式 Markdown/对话分支/工作区徽章/设置面板），但部署重（Nginx+Gateway+Postgres 起步 8C16G）。sofagent Dashboard 保持轻量单页（Vite+React 读 `~/.sofagent/data/` 目录），不引入重部署依赖。对话分支（完成回合可分支为新对话）是关键交互 |
 | **产品进化叙事（产品化 · DeerFlow 启发）** | DeerFlow 专门写"一开始是 Deep Research 框架，社区跑出了新玩法，所以重写成 Harness"。sofagent 有完整 v0.x→v1.2 进化史（10+ 版本），可写成同样的故事进 README 或 PHILOSOPHY——感染力远胜功能列表 |
 | **Subagent 内置专精小模型（v3.x-v4.x+ 远景 · "自带净水设备的水龙头"）** | 四阶段：① v1.2.x 架构预留（Subagent 定义加 `inference` 字段支持调 Ollama）→ ② v3.x 工具链（`sofagent-model distill`，用 workflow 运行日志微调专属小模型）→ ③ v4.x 本地推理（业务 workflow 默认跑本地精调模型；代码/强推理等高价值智能任务直连云端最强 LLM，本地小模型只覆盖业务 workflow 场景）→ ④ v4.x+ 离线节点（USB key = 完整 AI 节点，不联网、不走大厂、零投喂——数据主权的终极形态）。详见 River 比喻概念体系（本地 Desktop 概念稿 `sofagent-river-比喻概念体系-2026-07-21.md`，未入仓）§3.2。为什么不是 v2.x 做工具链：微调是数据工程，需要足够多的真实 workflow 日志才有训练燃料；v2.x 还在铺多设备协同和 Dashboard，数据积累不够 · 🔴 术语纠正：这里不是「从 72B 大模型剪枝/蒸馏」——剪枝/蒸馏/量化是大厂造小基座的上游技术（Qwen2.5-0.5B 已是蒸馏+剪枝+量化后的开源产物，直接拿）。sofagent 做产业链下游最后一环：下载已开源小基座 → 用企业 workflow 数据 **QLoRA 微调**（4-bit 量化基座 + 低秩适配器；不动基座参数）→ 教它这一个 workflow。CLI 名 `distill` 是品牌叫法，实际动作是 QLoRA 精调 · 🔴 **后训练定位**：QLoRA 精调属「领域后训练（domain post-training）」的一环，是参数高效微调（PEFT）的一种；区别于基模厂商发布前的通用后训练（SFT + RLHF 等对齐），sofagent 做的是企业侧领域适配 · 🔴 **分层模型策略定稿（2026-07-25 孔老师拍板）**：不做"一个模型跑所有 workflow"，也不做"每个 workflow 一个专职小模型"——做 **Harness 分层路由**（三层模型 + 数据主权驱动）。核心洞察：云端大模型把自然语言 Prompt 翻译成标准化任务指令，摘出本地模型能做的部分交给本地执行，数据不出内网。0.5B 的甜区 = 约束完善后的管道执行（模板填充/格式转换/字段提取），不需要理解自然语言；7B 负责多步 workflow 执行（读写 Excel + 调工具）；32B/云端负责复杂规划推理。核心驱动力 = 数据主权：企业数据进 API key 大模型 = 一定被拿去训练，沙盒也拦不住（已有客户硬件代码出现在 AI 输出中的真实案例）。分层让敏感数据只在本地处理，通用知识才走云端 · 32B 量化后 ~32G 显存单台 RTX 5090 可推理；9B 微调一台 5090 够用；0.5B Mac Mini 可跑 · 🔴 **v3.x 优先级论证（2026-07-25 确认）**：阿里/钉钉会议验证 Skill 廉价化危机——豆包/Hermes 已能自动生成 Skill，以 Prompt 形式出现的产品形态将被模型吞噬。Skill 只是入口（初级交付，数千元），企业专属小模型才是护城河（高阶交付，数十万元）。v3.x 从"远景"应提升为"战略必争" · 工具链 TypeScript CLI（`sofagent-model`）封装 Python 训练引擎 + node-llama-cpp 推理，项目工程面保持 NodeJS
 

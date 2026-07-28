@@ -35,12 +35,22 @@ export function runQuickChecks(
   sofagentData: string,
 ): void {
   // 1. SKILL.md 存在且含宪法关键词
-  const skillQuick = join(openclawDir, 'skills', 'sofagent', 'SKILL.md');
+  // 多平台候选路径——install.sh 将 SKILL.md 部署到平台目录（~/.workbuddy/ 或 ~/.openclaw/）
+  const skillCandidates = [
+    join(openclawDir, 'skills', 'sofagent', 'SKILL.md'),
+    join(HOME, '.workbuddy', 'skills', 'sofagent', 'SKILL.md'),
+    join(HOME, '.openclaw', 'skills', 'sofagent', 'SKILL.md'),
+    join(HOME, '.sofagent', 'skill', 'SKILL.md'),
+  ];
+  let skillQuick = '';
+  for (const c of skillCandidates) {
+    if (existsSync(c)) { skillQuick = c; break; }
+  }
   const skillContent = readFileContent(skillQuick);
-  if (existsSync(skillQuick) && (/4.*底线|6.*铁律/.test(skillContent))) {
-    v.checkPass('SKILL.md 存在且含宪法（4底线+6则铁律）');
+  if (skillQuick && existsSync(skillQuick) && (/4.*底线|6.*铁律/.test(skillContent))) {
+    v.checkPass(`SKILL.md 存在且含宪法（4底线+6则铁律）— ${skillQuick}`);
   } else {
-    v.checkFail('SKILL.md 缺失或宪法关键词不全');
+    v.checkFail('SKILL.md 缺失或宪法关键词不全（已查找 ~/.workbuddy/skills/sofagent/ 和 ~/.openclaw/skills/sofagent/）');
   }
 
   // 2. data/ 数据目录存在（v1.2.1 起，原 .sofagent/）
@@ -72,6 +82,25 @@ export function runQuickChecks(
     catch { v.checkWarn('fde.md 未找到或不可读（未配置自定义规则）'); }
   } else {
     v.checkWarn('fde.md 未找到或不可读（未配置自定义规则）');
+  }
+
+  // 5. config.yml 完整性检查（v1.2.2 F-27 新增）
+  // 检查 .sofagent/config.yml 是否存在且包含关键字段（rules 数组）
+  const configYmlPath = join(sofagentData, 'config.yml');
+  if (existsSync(configYmlPath)) {
+    try {
+      const configContent = readFileSync(configYmlPath, 'utf-8');
+      if (configContent.includes('rules')) {
+        v.checkPass('config.yml 存在且含 rules 配置段');
+      } else {
+        v.checkWarn('config.yml 存在但缺少 rules 配置段');
+      }
+    } catch {
+      v.checkWarn('config.yml 不可读');
+    }
+  } else {
+    // config.yml 可选——不存在不是错误，使用默认配置
+    v.checkPass('config.yml 不存在（使用默认配置，无需创建）');
   }
 }
 
