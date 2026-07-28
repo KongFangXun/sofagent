@@ -1,6 +1,6 @@
 # sofagent 版本开发 SOP
 
-> **十二阶段**：审查→开发→自测→代码审核→审查体系合并更新（含瘦身检查）→OpenClaw 全面检查→审查体系最终确认→文档收尾→工具脚本健康检查→确认关口→发布（含本地安装）→发布后。
+> **十二阶段**：审查→开发→自测→代码审核→审查体系合并更新（含瘦身检查）→release-gate-loop 发版闸门→审查体系最终确认→文档收尾→工具脚本健康检查→确认关口→发布（含本地安装）→发布后。
 > 🔴 版本号操作用 `bump-version.sh` + `check-version.sh`，禁止手动 grep/sed。
 > 🔴 文档预算分层检查（A 用户文档 / B 开发者参考 / C 审查体系 / E 指南），见 `check-docs.sh`。
 > 🔴 回归检查已升格为**独立阶段**（阶段六）——需要全新 session，不再作为"审核"的子步骤。
@@ -145,7 +145,7 @@
 | 16 | **合并更新三份审查文档（三份逻辑不同，区分对待）**：<br>**① regression-checklist.md（加法）**：汇总本版本所有修复项，抽象为回归检查维度（编号递增）写入。每发现一个问题加一条——这是精确清单，膨胀靠瘦身控制<br>**② fresh-eyes-review.md（校准，不是加法）**：按下方「fresh-eyes-review 升级优化」决策树处理本版本审查中的预料外发现。**⚠️ 不要往 fresh-eyes-review 里加精确检查项**——它是留白式的直觉审查，加检查项会让它退化成第二个 regression-checklist（v1.2.0 刚从 826 行砍到 274 行修复了这个问题）<br>**③ acceptance-test.sh（可自动化验证的发现）**：如果 fresh eyes 审查报告中的 P0/P1 问题可以通过 CLI 命令/grep/bash 自动化验证，**同步追加到 `FORGE/playbook/acceptance-test.sh`**（追加场景，编号递增）。手法与阶段四·步骤 15 Step B 相同——`scenario` 编号 + 中文注释 + 断言。**为什么需要这一步**：regression-checklist 是人工巡检用的，acceptance-test 是机器跑的——如果一个 bug 可以被自动化检出，把它只放在 regression-checklist 里等于每次发版都要人工跑一遍。让它进 acceptance-test 才能让机器替你记住。 | 当前 session | `git diff` 显示三份文档均有更新（fresh-eyes 可能无变更，见下说明）；regression 新增维度 + acceptance-test 新增场景 ≥ 本版本修复数 |
 | 17 | **当前 session 逐项验证**：每条新增回归维度跑一遍命令确认可执行；确认 `fresh-eyes-review.md` 新维度与回归维度互相印证、无矛盾 | 当前 session | 所有新增维度可执行 + 两份文档互相印证 |
 
-> ✅ 完成 步骤 16 → 17 后，**开发 session 的文档工作已一气呵成**——回归清单 + 发布后审查全部在当前 session 更新完。接下来只有**阶段六需要开新 session 控制 OpenClaw**，到那时才停。
+> ✅ 完成 步骤 16 → 17 后，**开发 session 的文档工作已一气呵成**——回归清单 + 发布后审查全部在当前 session 更新完。接下来只有**阶段六需要开新 session 启动 release-gate-loop driver**，到那时才停。
 
 > 🔴 **防膨胀自检 + 瘦身检查（v1.1.7 起，覆盖回归清单 + 验收脚本两份验证文件，每版本执行）**：两份验证文件历史上都曾严重膨胀——回归清单曾达 288 维度（3686 行，2026-07-18 治理归并），验收脚本 `FORGE/playbook/acceptance-test.sh` 在 v1.1.7 优化前达 3207 行。为防止"每次单纯堆砌、几版就不可维护"，**每版本发版都做一轮瘦身**（既然每版都做，单次瘦身量小、负担可控）。流程：先跑轻量自检看两个数，再对越线或冗余处做深度瘦身。
 
@@ -168,7 +168,7 @@
 
 > 🔴 **核心认知**：fresh-eyes-review 和 regression-checklist 的更新逻辑**根本不同**。regression-checklist 是精确清单（加法：每发现一个问题加一条检查项）。fresh-eyes-review 是留白式的直觉审查（校准：每发现一个问题校准视角敏感度，不是加检查项）。过去十几个版本把两者混为一谈——每发现一个 bug 就往 fresh-eyes 对应维度加一条检查项，导致它从"凭直觉发现问题"膨胀成"第二个 regression-checklist"（826 行）。v1.2.0 重写为 274 行才修复。本 Tier 守住这条底线。
 
-本版本审查（阶段三代码审核 + 阶段六 OpenClaw 检查 + 上一版阶段十二 fresh-eyes 审查报告）中如果产生了**预料外的发现**（不在 regression-checklist 已有维度覆盖范围内、审查者凭直觉/意外发现的），走以下决策树：
+本版本审查（阶段三代码审核 + 阶段六 release-gate-loop 检查 + 上一版阶段十二 fresh-eyes 审查报告）中如果产生了**预料外的发现**（不在 regression-checklist 已有维度覆盖范围内、审查者凭直觉/意外发现的），走以下决策树：
 
 ```
 预料外发现
@@ -224,50 +224,41 @@ VIEWS=$(grep -c '^### ' FORGE/playbook/fresh-eyes-review.md)
 
 ---
 
-## 🔴 阶段六：OpenClaw 全面检查（开新 session 控制 OpenClaw）
+## 🔴 阶段六：release-gate-loop 发版闸门（开新 session 启动 driver）
 
-**操作模式**：开一个**全新的 Agent session**（不要从开发 session 继续），在其中控制 OpenClaw 执行全面检查。OpenClaw 有 Bash tool 跑 grep/shellcheck/npm test，也有审计环境跑验收场景。
+**操作模式**：开一个**全新的 Agent session**（不要从开发 session 继续），启动 release-gate-loop driver。driver 用 DeepSeek V4 Flash（V 角色）串行跑 5 步：acceptance-test → regression-checklist → 覆盖率交叉检查 → 合并报告 → PASS/FAIL 裁决。纯只读——只验证不改代码。
 
-> **统一执行入口**（v1.1.5 更新）：本阶段在一个全新 session 里**顺序跑完 acceptance-test + regression-checklist 两份检查**——先跑 acceptance-test.sh（端到端全场景），再跑 regression-checklist.md（文档级回归）。两检查串行有依赖：regression-checklist 的维度24（检查 acceptance-test 健康度）可以引用前一步的真实结果做对照，而不是干 grep。acceptance-test 不在开发 session 跑（避免确认偏差），统一在本阶段由独立审查者执行。
+> **统一执行入口**（v1.2.1 重构）：本阶段从"手动控制 OpenClaw 跑检查"升级为"启动 release-gate-loop driver 自动化执行"。driver 编排 V 角色（DeepSeek V4 Flash + thinking）完成 acceptance-test（端到端全场景，异步轮询模式）+ regression-checklist（文档级回归）+ 覆盖率交叉检查，自动生成合并报告和裁决。acceptance-test 不在开发 session 跑（避免确认偏差），统一在本阶段由独立 driver 执行。
 
-### OpenClaw 检查 Prompt（直接复制给新 session）
+### release-gate-loop 启动 Prompt（直接复制给新 session）
 
-> 这份 prompt 已内嵌在 SOP 中，开新 session 时直接整段复制粘贴即可，无需重新生成。把 `vX.Y` 替换为下一个待发布的实际版本号。
+> 这份 prompt 已内嵌在 SOP 中，开新 session 时直接整段复制粘贴即可。把 `vX.Y.Z` 替换为本版本号。
 
 ```
-# sofagent vX.Y 阶段六：OpenClaw 全面检查（独立 Session 执行）
+在 sofagent 项目（/Users/kongfangxun/Workbuddy/sofagent）中，执行 vX.Y.Z 的 release-gate-loop（发版闸门）。
 
-## 你的角色
-你是 sofagent vX.Y 的**独立发版审查者**。你对 vX.Y 的开发过程**一无所知**——没看过开发对话、dev-prompt、开发报告或审查记录。你只相信代码和文档的当前真实状态，以及亲手跑出来的命令结果。
+先读 FORGE/SKILL/release-gate-loop/SKILL.md 了解循环结构，然后：
 
-## 执行步骤（一个 session 顺序跑完，不拆分）
-1. 工作目录：/Users/kongfangxun/Workbuddy/sofagent（后续相对路径均基于此）
-2. 【v1.0.8 优化】构建审计包：在跑任何依赖 dist/ 的检查前，先 `cd engine/audit && npm run build`。否则 --version / --help banner / `ontology view` / `compose` 等基于 dist 的回归维度与验收场景会命中 stale dist 误报 FAIL
-3. **🔴 端到端验收测试** —— `bash FORGE/playbook/acceptance-test.sh`，跑完全部场景。记录结果：场景数 / 通过数 / 失败数 / 失败场景编号清单。⚠️ 涉及 CLI 命令迁移时 acceptance-test 可能大量 FAIL——如果是因为脚本引用了已废弃命令（如 `sofagent-audit --daemon`），标 SKIP 并说明原因，不算真 FAIL
-4. **回归检查** —— 读 `FORGE/playbook/regression-checklist.md`，用 Bash 跑全部维度验证命令，逐项输出 PASS/FAIL/SKIP。**维度24（验收测试覆盖率）此时可引用步骤3 acceptance-test 的真实结果做对照**，而不是干 grep。**维度 50（文档乱码扫描）必须跑**——v1.2.0 发版中在多个文档反复发现 UTF-8 损坏（U+FFFD/mojibake），这是编码系统性问题，不跑就发现不了
-5. **🔴 覆盖率交叉检查（v1.1.4 教训——acceptance-test 对新功能零覆盖）** —— 读 `docs/changelog/vX.Y.md`「核心变更/交付」章节，提取每条功能关键词（如新规则号 A18/A19、新模块 FORGE/USB/工具注入等）。逐条 grep `FORGE/playbook/acceptance-test.sh`，确认每条功能都有对应场景。**零覆盖 = FAIL**（回归测试无法发现该功能退化）
-6. 时序注意：
-   - regression-checklist 头部「⏰ 时序说明」标记的检查项（git tag / npm registry / 全局二进制版本），发版前必然不满足 → 标 ⏳（待发版），不标 FAIL
-   - 不在 OpenClaw 环境时，按验收文件降级说明跳过相应场景 → 标 SKIP，不标 FAIL
-   - 任何 FAIL 必须是真实跑命令得到的失败，不凭猜测
-7. **生成合并报告** —— 将步骤 3-5 的结果合并保存为 `~/Desktop/vX.Y-stage6-report.md`，分三节：① acceptance-test 结果 ② regression-checklist 结果 ③ 覆盖率交叉检查结果。综合判定：三项全 PASS（或 ⏳/SKIP 合理、无 FAIL）→ 回复"vX.Y 阶段六通过"。任何 FAIL → 不自行改代码，整理失败清单（维度/场景编号、现象、命令、期望vs实际）回复开发侧修复
+1. 后台启动 driver：node FORGE/src/release-gate-driver.mjs --target vX.Y.Z
+2. 记住 runDir（启动日志第一行打印的路径）
+3. 轮询监控：每 60 秒读一次 <runDir>/status.json，只在 phase 变化时一句话汇报——"步骤 N/5：xxx"，phase 不变就静默继续等
+4. phase 变成 completed 或 error 时，读 verdict.md，用 2-3 行汇报：acceptance 结果 + regression 结果 + 最终裁决（PASS/FAIL）
 
-## 纪律
-- 不创建/不修改任何代码或文档，只验证 + 生成报告
-- 任何模糊、跑不通、对不上的维度如实标 FAIL 或写疑问，绝不因"应该没问题"放行
-- 报告严格以对话形式执行验证，但最终报告必须保存到桌面文件——项目负责人在桌面上直接查看报告
+铁律：不要干涉 driver 内部、不要修改任何代码或文档、不要探索项目源码——你只做启动 + 监控 + 汇报。
 ```
+
+> 新 session 的 AI 会自己读 SKILL.md 拿到循环结构（5 步：acceptance → regression → coverage → consolidate → verdict），不需要手写进 prompt。driver 内置异步轮询模式（acceptance-test.sh 完整跑需要 10-15 分钟，60 秒间隔轮询，最多 20 次=20 分钟超时）。
 
 ### 判定与循环
 
 | 结果 | 下一步 |
 |------|--------|
-| **全 PASS**（acceptance-test + regression-checklist + 覆盖率交叉） | 进阶段七（最终确认两份审查文档） |
-| **有 FAIL** | 你把 stage6 合并报告带回开发 session → **回阶段五**（根据问题优化 `regression-checklist.md` + `fresh-eyes-review.md` 两个文档）→ 再开新 session 重跑本阶段 |
+| **verdict = PASS**（acceptance + regression + coverage 全 PASS） | 进阶段七（最终确认两份审查文档） |
+| **verdict = FAIL** | 把 driver 的 stage6-report.md 带回开发 session → **回阶段五**（根据问题优化 `regression-checklist.md` + `fresh-eyes-review.md` 两个文档）→ 再开新 session 重跑本阶段 |
 
-> 🔴 **循环测试机制**：阶段六任何 FAIL → 回**阶段五**（优化回归清单 `regression-checklist.md` + 发布后审查 `fresh-eyes-review.md` 两个文档）→ 再开新 session 控制 OpenClaw 重查。全部改完、阶段六全 PASS 后，进阶段七。最多循环 2 轮；2 轮仍不过则在报告中标注遗留问题，交开发侧决策。
+> 🔴 **循环测试机制**：阶段六裁决 FAIL → 回**阶段五**（优化回归清单 `regression-checklist.md` + 发布后审查 `fresh-eyes-review.md` 两个文档）→ 再开新 session 重跑 release-gate-loop。全部改完、阶段六 verdict=PASS 后，进阶段七。最多循环 2 轮；2 轮仍不过则在报告中标注遗留问题，交开发侧决策。
 
-> 时序说明已内嵌在 prompt 的步骤 5——回归清单中标注「⏰ 待发版」的检查项（git tag / npm registry / 全局二进制版本）在检查阶段必然不满足，这是正常的，不标 FAIL。
+> 时序说明：driver 的 regression 步骤会自动处理「⏰ 待发版」标注的检查项（git tag / npm registry / 全局二进制版本）——这些在检查阶段必然不满足，标 ⏳ 不标 FAIL。
 
 ---
 
@@ -436,7 +427,7 @@ ls docs/changelog/*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
 
 ### 🔴 CLI 迁移版本回归闸（v1.1.0 教训）
 
-> 如果本版本涉及 CLI 命令迁移（旧命令改名、上帝包子命令拆到新包二进制），阶段四跳过的 shellcheck（步骤 12）在**此处补跑**——文档收尾已完成，所有引用已更新，跑出来是真实结果。acceptance-test 不在此处补跑——它已挪到阶段6新 session 跑（由独立审查者执行）。
+> 如果本版本涉及 CLI 命令迁移（旧命令改名、上帝包子命令拆到新包二进制），阶段四跳过的 shellcheck（步骤 12）在**此处补跑**——文档收尾已完成，所有引用已更新，跑出来是真实结果。acceptance-test 不在此处补跑——它已挪到阶段6由 release-gate-loop driver 执行。
 
 ```bash
 # 补跑 shellcheck
@@ -839,7 +830,7 @@ bash tools/check-version.sh             # 期望: 全绿（含第 13 项 npm 二
 | 三 | 代码审核 | 当前 session | 否 | 逐项 PASS 或 FAIL→修复 |
 | 四 | 自测 | 工程师 | 否 | build/test 全绿 + 更新验收测试文件（acceptance-test 本身只更新不跑，跑在阶段6）。涉及 CLI 迁移时 shellcheck 延后到阶段八 |
 | 五 | 审查体系合并更新（含瘦身检查） | 当前 session | 否 | regression-checklist（加法）+ fresh-eyes-review（校准，Tier 3 守护留白风格）+ acceptance-test.sh（可自动化验证的发现追加入场景）+ 防膨胀瘦身 |
-| **六** | **acceptance-test + regression-checklist（开新 session）** | **审核者控制 OpenClaw** | **🔴 是（全新认知；FAIL 回阶段五循环）** | **stage6 合并报告全 PASS** |
+| **六** | **release-gate-loop 发版闸门（开新 session）** | **新 session 启动 driver** | **🔴 是（driver 自动跑 acceptance-test + regression + coverage；FAIL 回阶段五循环）** | **verdict = PASS** |
 | 七 | 审查体系最终确认 | 作者 | 否 | 两份审查文档状态一致、无遗漏（初版已在阶段五写入） |
 | 八 | 开发日志定稿 + 文档收尾 | 作者 | 否 | **开发日志定稿（含发布检查清单打勾）** + CHANGELOG/ROADMAP 五步/版本号/**发版日期同步**/测试数一致性/**🔴 文档同步闭环（D6 落地：changelog 功能点→项目文档覆盖率对照）**。涉及 CLI 迁移时 shellcheck 在此补跑 |
 | 九 | 发布前质量闸门 + 工具脚本健康检查 | 作者 | 是（步骤 22 开新 session 跑 fresh-eyes-loop） | loop 修复 + changelog 打勾 + check-version/bump-version/pre-push-check 覆盖同步 + 过时检查清理 |

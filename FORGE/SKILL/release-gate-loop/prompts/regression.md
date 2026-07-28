@@ -31,7 +31,7 @@ cd /Users/kongfangxun/Workbuddy/sofagent && nohup bash tools/pre-push-check.sh >
 
 # 轮询（每次 < 1 秒）
 tail -5 /tmp/prepush.log
-# 还没完成？等 15s 再 tail。最多轮询 20 次（5 分钟）。
+# 还没完成？等 60 秒再 tail。最多轮询 20 次（20 分钟）。
 
 # 完成后读结果
 cat /tmp/prepush.log

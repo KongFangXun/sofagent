@@ -19,9 +19,9 @@
 
 ## 你要做的事
 
-### 🔴 异步轮询模式（acceptance-test.sh 有 100+ 场景，完整跑要 3-5 分钟）
+### 🔴 异步轮询模式（acceptance-test.sh 有 100+ 场景，完整跑要 10-15 分钟）
 
-run_bash 工具单次调用超时 60 秒。acceptance-test.sh 完整跑完需要几分钟，**直接同步调用必定超时失败**。必须用异步轮询模式：
+run_bash 工具单次调用超时 60 秒。acceptance-test.sh 完整跑完需要 10-15 分钟，**直接同步调用必定超时失败**。必须用异步轮询模式：
 
 **第 1 步：先构建审计包**（v1.0.8 优化）
 ```bash
@@ -32,15 +32,15 @@ cd /Users/kongfangxun/Workbuddy/sofagent && cd engine/audit && npm run build 2>&
 ```bash
 cd /Users/kongfangxun/Workbuddy/sofagent && nohup bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-output.log 2>&1 & echo "PID=$!"
 ```
-这一步会在几秒内返�� PID，测试在后台跑。
+这一步会在几秒内返回 PID，测试在后台跑。
 
 **第 3 步：轮询日志（每次都 < 1 秒，不会超时）**
 ```bash
 tail -5 /tmp/acceptance-output.log
 ```
-- 如果日志末尾出现 "EXIT_CODE=" 或测试完成标志 → 测试结束，进第 4 步
-- 如果还在跑 → 等 15-20 秒再 tail 一次
-- **最多轮询 20 次**（20 × 15s = 5 分钟）。超过 5 分钟还没完成 → 标 FAIL（timeout）
+- 如果日志末尾出现测试结果统计或脚本退出标志 → 测试结束，进第 4 步
+- 如果还在跑 → **等 60 秒再 tail 一次**
+- **最多轮询 20 次**（20 × 60s = 20 分钟）。超过 20 分钟还没完成 → 标 FAIL（timeout）
 
 **第 4 步：读取完整结果**
 ```bash
