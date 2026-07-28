@@ -50,7 +50,6 @@ fi
 
 TC_OUT=$(bash tools/test-count.sh --quiet 2>/dev/null)
 TOTAL_TESTS=$(echo "$TC_OUT" | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+')
-PKGS=$(echo "$TC_OUT" | grep -oE 'PKGS=[0-9]+' | grep -oE '[0-9]+')
 
 if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
   echo -e "  ${RED}✗ 无法获取实际测试数（test-count.sh 失败）${NC}"

@@ -621,7 +621,6 @@ echo ""
 # 各包的 dependencies/optionalDependencies 中对其他 @sofagent/* 包的引用也需要同步
 BUMP_INTERNAL_DEPS_COUNT=0
 while IFS= read -r -d '' pkg_json; do
-  CHANGED=false
   NEW_CONTENT=$(node -e "
     const fs = require('fs');
     const pkg = JSON.parse(fs.readFileSync('$pkg_json', 'utf-8'));

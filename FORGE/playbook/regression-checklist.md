@@ -179,9 +179,11 @@ DAEMON_DEP=$(node -e "const p=require('./engine/daemon/package.json'); console.l
 
 #### 12. 跨包代码重复检测
 
+> ⚠️ **防误报**：`audit-history.ts` 是 v1.2.0 **有意下沉**到 core（消除 core→audit 反向依赖），audit 包通过 `import + re-export` 保持向后兼容。不是重复代码。已加入排除列表。
+
 ```bash
 dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path '*/__tests__/*' -not -path '*/test*/*' \
-  | sed 's#.*/##' | sort | uniq -d | grep -vE '^(index|cli|types|config-template|memory-sync|reporter|verify|skill-safety-.*)\.ts$')
+  | sed 's#.*/##' | sort | uniq -d | grep -vE '^(index|cli|types|config-template|memory-sync|reporter|verify|skill-safety-.*|audit-history)\.ts$')
 [ -z "$dup" ] && echo "OK" || echo "❌ 跨包重复: $dup"
 ```
 
@@ -215,8 +217,11 @@ grep -c "Agent 身份感知" FDE/FDE.md                      # 期望：≥ 1
 grep -n "nodesWithActions.length === 0\|nodesWithActions.length === 0" engine/audit/src/rules/rule-a15-action-constraint.ts
 grep -A2 "nodesWithActions.length === 0" engine/audit/src/rules/rule-a15-action-constraint.ts | grep -c "FAIL"   # 期望：≥ 1
 
-# 子项 b: .sofagent/ 子目录权限 700
-ls -ld .sofagent .sofagent/audit .sofagent/task 2>/dev/null   # 期望：drwx------（700）
+# 子项 b: ~/.sofagent/ 目录权限 700 + install.sh chmod 700（v1.2.1 路径迁移：.sofagent/ → ~/.sofagent/）
+# 检查 1：install.sh 是否有 chmod 700 SOFAGENT_HOME
+grep -c 'chmod 700.*SOFAGENT_HOME' install.sh   # 期望：≥ 1
+# 检查 2：已安装环境的 ~/.sofagent/ 权限（仅在本机已安装时检查）
+ls -ld ~/.sofagent 2>/dev/null | grep -c 'drwx------'   # 期望：1（700）
 
 # 子项 c: A/B promote 守卫——overallImprovement > 0
 grep -n "overallImprovement\|decidePromotion" engine/ab-test/src/*.ts 2>/dev/null
@@ -537,8 +542,8 @@ grep -c "FDE/LOOP\|被.*依赖\|跨产品" install.sh 2>/dev/null   # ≥1
 ```bash
 SSOT_VER=$(node -e "console.log(require('./package.json').version)")
 
-# 子项 a: SECURITY.md 有 filebeat/logstash workaround
-grep -c "filebeat\|logstash" SECURITY.md   # ≥1
+# 子项 a: SECURITY.md 有 filebeat/logstash workaround（大小写不敏感，文档中可能是 Filebeat/Logstash）
+grep -ci "filebeat\|logstash\|fluentd" SECURITY.md   # ≥1
 
 # 子项 b: Webhook 企业平台推送标企业采购阻塞（本地三态 v1.1.6 已通；企业平台 v1.2.1 才就绪）
 grep -c "v1.2.1\|不推送\|企业.*阻塞\|待落地\|本地三态.*已接通" SECURITY.md   # ≥1
@@ -855,7 +860,7 @@ grep -rn "join(.*'data'" engine/ --include="*.ts" | grep -v "data-paths.ts" | gr
 grep -c "resolveAuditDir\|resolveDataDir\|resolveTaskDir\|DATA_ROOT" engine/core/src/data-paths.ts   # ≥2
 ```
 
-> **PASS 标准**：产品代码零硬编码**运行时数据**路径拼接，全���走 data-paths.ts 常量或 resolve* 函数。包内 fixture 路径（golden-set.yaml 等）不算违规。
+> **PASS 标准**：产品代码零硬编码**运行时数据**路径拼接，全部走 data-paths.ts 常量或 resolve* 函数。包内 fixture 路径（golden-set.yaml 等）不算违规。
 
 ---
 
@@ -959,6 +964,20 @@ grep -A10 'convertAuditResult' engine/eval/src/cli.ts | grep -E 'PASS|WARN|FAIL|
 
 ## 输出报告格式
 > 审查日期 / 范围 / 环境验证（pre-push-check/npm test/check-docs/check-version）→ 问题清单（P0/P1/P2 分级，维度/文件:行/问题/建议）→ 通过统计 → 最终建议（可发版/需修复P0/需重大修复）。追加维度前先 grep 同类。
+
+---
+
+## 🔴 环境验证铁律（防误报）
+
+> **测试框架铁律**：本项目使用 **vitest**，不是 Jest。
+> - ✅ 正确命令：`cd engine/<pkg> && npx vitest run --reporter=dot`
+> - ✅ 或用 workspace 命令：`npm test --workspace=engine/audit`
+> - ❌ **绝对禁止**：`npx jest`、`npx jest --config jest.config.js`
+> - 判定：如果测试失败信息含 `from 'vitest'` 或 `import type` 解析错误 → 你用了 Jest，立刻换 vitest 重跑
+
+> **grep 匹配铁律**：检查文档是否包含某关键词时，**必须用 `-i`（大小写不敏感）**，因为文档中可能是 `Filebeat` 而不是 `filebeat`。漏匹配导致的误报会浪费修复轮次。
+
+> **路径迁移感知**：v1.2.1 起 `.sofagent/` 迁移到 `~/.sofagent/`，数据子目录从 `.sofagent/audit` 变为 `~/.sofagent/data/audit`。检查路径权限时认准 `~/.sofagent/`。
 
 ---
 

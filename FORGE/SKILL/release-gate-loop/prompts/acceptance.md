@@ -51,16 +51,23 @@ cd /Users/kongfangxun/Workbuddy/sofagent && cd engine/audit && npm run build 2>&
 cd /Users/kongfangxun/Workbuddy/sofagent && setsid bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-output.log 2>&1 < /dev/null &
 ```
 
-### 🔴 启动后铁律：永不换方案（CRITICAL — 违反必崩）
+### 🔴 启动后铁律：永不换方案（CRITICAL — 违反必崩，4 轮血泪教训）
 
-第 2 步执行后，**不管 run_bash 返回什么（即使是空输出或看起来没返回），进程已经在后台跑起来了**。你绝对不要：
+**历史崩溃模式（run-01~run-04 全部死在这里）**：
+1. setsid 启动成功（16ms 返回）
+2. 1 秒后 tail 日志 → 空（因为测试刚启动，第一行还没写出来）
+3. agent **误判"启动失败"** → 换 nohup / 换 subprocess / 换同步执行
+4. 新方案 60s 超时 → 整个 worker 崩溃
+
+**你必须记住**：第 2 步执行后，**不管 run_bash 返回什么（即使是空输出或看起来没返回），进程已经在后台跑起来了**。你绝对不要：
 - ❌ 重新启动测试（不要用 nohup / python subprocess / 其他方式再跑一遍）
 - ❌ 检查进程是否存活（不要 `ps aux | grep acceptance`）
 - ❌ 怀疑启动失败而去尝试"修复"
+- ❌ **看到日志为空就换方案**（测试启动后需要 5-10 秒才写第一行，第一次 tail 为空是正常的！）
 
-**唯一该做的事：直接进入第 3 步轮询日志。**
+**唯一该做的事：直接进入第 3 步轮询日志。看到空日志时继续 tail，不要做任何其他操作。**
 
-如果轮询 5 次后 `/tmp/acceptance-output.log` 仍为空，才允许重新启动——但只准用第 2 步的 setsid 命令，不准用其他方式。
+**轮询 5 次后** `/tmp/acceptance-output.log` **仍为空**，才允许重新启动——但只准用第 2 步的 setsid 命令，不准用其他方式。**轮询次数 < 5 时绝对不准换方案。**
 
 **第 3 步：轮询日志**（每次调用 < 1ms，不超时）
 ```bash
