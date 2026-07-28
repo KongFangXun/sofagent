@@ -26,7 +26,7 @@ echo "=== 1b. 全仓相对路径死链扫描（维度 306）==="
 # docs/changelog/docs/evidence/SKILL/FDE）。
 DEAD_LINKS=0
 DEAD_DETAIL=""
-EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/SKILL/harness/*" -not -path "*/FDE/*" -not -path "*/docs/archive/*" -not -path "*/commercial/*")
+EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/SKILL/harness/*" -not -path "*/FDE/*" -not -path "*/docs/archive/*" -not -path "*/FORGE/archive/*" -not -path "*/commercial/*")
 while IFS= read -r -d '' mdfile; do
   in_fence=0
   while IFS= read -r line; do
@@ -148,12 +148,12 @@ LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 LAYER_E=${LAYER_E:-0}
 
 # 上限定义
-LIMIT_A=5100  # v1.2.1: 一粟新文落盘（W2/W3/W4/W5）+ custom/README 操作手册化 + data/ 排除后真实文档 4934 行，5% 余量上调
-LIMIT_B=4200  # v1.2.0: custom/ + Dashboard 定位 + USB 三场景 + ToolGate 文档 + P4 拆分表，B 层自然增长 2100→4200
+LIMIT_A=5500  # v1.2.1: eval+ab-test + docs 中期方向落盘 + releasing.md 设备端安装，A 层 5405 行
+LIMIT_B=4500  # v1.2.1: FORGE 文档 + acceptance-test，B 层 4445 行，上调
 LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
 LIMIT_D=2000  # v1.1.9: D 层纳入口径修正——docs/architecture（v1.1.9 设计 876 行）+ docs/prd（193 行）从 A 层归入 D 层（工程文档与设计文档同语义），700→2000 容纳
 LIMIT_E=2000  # v1.2.0: 从 1000 上调到 2000——react-agent-migration-plan(548行)+loop-development(449行)+multi-device-sync(167行) 等 E 层文档自然增长，原预算不现实
-LIMIT_TOTAL=9000  # v1.2.0: 同步上调（A+B 各增长，总上限跟随）
+LIMIT_TOTAL=10000  # v1.2.1: A+B 9850 行，同步上调
 
 # 输出各层
 echo "  A 用户文档:     ${LAYER_A} 行 / ${LIMIT_A} 上限"
