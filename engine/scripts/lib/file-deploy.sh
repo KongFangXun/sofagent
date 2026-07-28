@@ -218,11 +218,11 @@ deploy_scripts() {
   info "Step 5b/7 · 部署配套脚本 + 数据目录 → $TARGET"
   local SCRIPTS_DST="${TARGET}/scripts"; mkdir -p "$SCRIPTS_DST"; local script src dst
   for script in task-record.sh cleanup.sh audit.sh; do
-    src="${SCRIPT_DIR}/${script}"; dst="${SCRIPTS_DST}/${script}"
+    src="${SCRIPT_DIR}/engine/scripts/${script}"; dst="${SCRIPTS_DST}/${script}"
     if [ -f "$src" ]; then cp "$src" "$dst"; chmod +x "$dst"; ok "配套脚本已部署: $dst"
     else warn "找不到 ${script}，跳过"; fi
   done
-  src="${SCRIPT_DIR}/lib/config.sh"; dst="${SCRIPTS_DST}/lib/config.sh"  # 部署共享配置加载器
+  src="${SCRIPT_DIR}/engine/scripts/lib/config.sh"; dst="${SCRIPTS_DST}/lib/config.sh"  # 部署共享配置加载器
   if [ -f "$src" ]; then mkdir -p "$(dirname "$dst")"; cp "$src" "$dst"; ok "配置加载器已部署: $dst"
   else warn "找不到 lib/config.sh，跳过"; fi
   if [ ! -d "$SOFAGENT_DATA" ]; then  # 创建 .sofagent/ 数据目录

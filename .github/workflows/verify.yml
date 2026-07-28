@@ -17,22 +17,23 @@ jobs:
 
       - name: Setup minimal sofagent environment
         run: |
-          bash install.sh --platform openclaw --quick 2>/dev/null || {
-            # install.sh fallback 到手动部署
-            echo "[CI] install.sh failed, fallback to manual setup"
-            mkdir -p ~/.openclaw/skills/sofagent
-            for f in engage.md engage-fde.md entry-gate.md task-aware.md task-closure.md loop-check.md loop-evaluate.md loop-exit.md knowledge-maintain.md; do
-              [ -f "SKILL/harness/$f" ] && cp "SKILL/harness/$f" ~/.openclaw/skills/sofagent/
-            done
-            cp SKILL/SKILL.md ~/.openclaw/skills/sofagent/SKILL.md 2>/dev/null || true
-            mkdir -p ~/.openclaw/skills/sofagent/data
-            cp SKILL/harness/data/*.md ~/.openclaw/skills/sofagent/data/ 2>/dev/null || true
-            cp -r engine/scripts ~/.openclaw/
-            chmod +x ~/.openclaw/scripts/*.sh
-            mkdir -p ~/.openclaw/hooks/sofagent-load-chain
-            cp engine/hooks/sofagent-load-chain/HOOK.md ~/.openclaw/hooks/sofagent-load-chain/
-            cp engine/hooks/sofagent-load-chain/src/handler.ts ~/.openclaw/hooks/sofagent-load-chain/
-          }
+          bash install.sh --platform openclaw --quick --yes
+
+      - name: Verify install integrity
+        run: |
+          echo "Checking installed components..."
+          MISSING=0
+          for f in ~/.sofagent/bin/sofagent ~/.openclaw/hooks/sofagent-load-chain/hook.js; do
+            if [ ! -f "$f" ]; then
+              echo "❌ Missing: $f"
+              MISSING=1
+            fi
+          done
+          if [ $MISSING -eq 1 ]; then
+            echo "❌ Install integrity check failed"
+            exit 1
+          fi
+          echo "✅ All components present"
 
       - name: Run verify.sh
         run: |

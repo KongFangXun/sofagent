@@ -20,11 +20,20 @@
   <a href="#装上就能用"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>当前版本：v1.2.1</strong> · 2026-07-27 · 数据目录重构 + custom/ 闭环 + ToolGate 接入 + SubAgent 可见性 L2</p>
+<p align="center"><strong>当前版本：v1.2.1</strong> · 2026-07-28 · 数据目录重构 + custom/ 闭环 + ToolGate 接入 + SubAgent 可见性 L2</p>
 
 <p align="center">
   <a href="#这是什么">这是什么</a> · <a href="#sofagent-能帮你做什么">能帮你做什么</a> · <a href="#三种部署方式覆盖所有场景">部署方式</a> · <a href="#装上就能用">安装</a> · <a href="#延伸阅读">文档</a>
 </p>
+
+---
+
+## ⚡ 30 秒快速开始
+
+```bash
+bash install.sh          # 安装
+sofagent-audit --init    # 初始化（装 git hook）
+```
 
 ---
 
@@ -41,7 +50,7 @@
 | 工具 | 它们管什么 | sofagent 管什么 |
 |------|:--------|:----------------|
 | pre-commit / husky | 代码质量（lint / format）| **Agent 行为**（密钥泄漏 / 越界编辑 / 注入攻击 / 盲改）|
-| detect-secrets / gitleaks | 密钥扫描 | 密钥只是 21 条规则中的一条 |
+| detect-secrets / gitleaks | 密钥扫描 | 密钥扫描是 gitleaks 的核心场景（做得好）；sofagent 的 A2 覆盖同类场景，同时增加 20 条 Agent 行为规则 |
 | Cursor Rules / Claude hooks | 单平台 IDE 约束 | 审计层全平台可用（git diff）；约束层按平台分层（OpenClaw 最深 → WorkBuddy SKILL → 其他种子指令） |
 | Agent 平台（OpenClaw 等）| Agent 调度——「会不会做」| Agent 治理——「能不能每次都做对」|
 
@@ -69,7 +78,7 @@
 | 你想解决什么 | sofagent 怎么做 |
 |------|------|
 | **想让 AI 自动跑日常任务** | 进场梳理工作流，把能自动化的环节变成 AI 节点，部署完自己跑 |
-| **Agent 越界了怎么办** | 21 条规则自动审计每次变更——越界编辑、密钥泄漏、注入攻击，commit 时自动拦截（注：`git commit --no-verify` 可绕过 hook，是已知架构限制。企业场景建议配合 CI 侧 `sofagent-audit --diff` 兜底，详见 [LIMITATIONS](./LIMITATIONS.md)） |
+| **Agent 越界了怎么办** | 21 条规则（13 默认 + 8 扩展）自动审计每次变更——越界编辑、密钥泄漏、注入攻击，commit 时自动拦截（注：`git commit --no-verify` 可绕过 hook，是已知架构限制。企业场景建议配合 CI 侧 `sofagent-audit --diff` 兜底，详见 [LIMITATIONS](./LIMITATIONS.md)）（注：13 条默认规则装上就生效，8 条扩展规则按需开启。详见下方规则表。） |
 | **出了事能回滚吗** | 每次变更自动 git snapshot，一键回到任意安全状态 |
 | **换了 Agent / 模型怎么办** | 审计引擎全平台可用（只看 git diff）；约束层按平台分层（OpenClaw 最深，其他平台核心约束可用） |
 | **越用越好吗** | 经验自动沉淀，FDE Agent 周度巡检持续优化规则与知识 |
@@ -109,10 +118,13 @@ bash install.sh
 > ⚠️ 需在 git 仓库中运行（`git init` 初始化一个）。
 
 ```bash
+# 0. 初始化——装 git hook，让审计引擎能拦截 commit
+sofagent-audit --init
+
 # 1. 看规则——Agent 会带着这些红线干活
 sofagent-audit --help | head -5
 
-# 2. 跑审计——--init 已装好 pre-commit hook，每次 commit 都被拦
+# 2. 跑审计——第 0 步的 --init 已装好 pre-commit hook，每次 commit 都被拦
 # GIT_EDITOR=true 让 git commit 不弹编辑器（CI/自动化场景常用）
 echo "API_KEY=sk-123456" > .env && git add -f .env && GIT_EDITOR=true git commit -m "test"
 # → ⛔ A1 不碰敏感：.env 含密钥格式，提交被拦截（不会真的落库）
@@ -166,7 +178,7 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 |:---------|:--------|
 | FDE Agent 进场四阶段、企业落地 | [FDE.md](./FDE/FDE.md) |
 | 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
-| 引擎架构、21 条规则、内部机制 | [↓ 引擎架构（开发者段）](#引擎架构开发者段) |
+| 引擎架构、21 条规则、内部机制 | [↓ 引擎架构（开发者段）](#engine-architecture) |
 | 为什么这么设计 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | 安全声明 | [SECURITY](./SECURITY.md) |
@@ -178,7 +190,7 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 
 ---
 
-## 引擎架构（开发者段）
+## <a id="engine-architecture"></a>引擎架构（开发者段）
 
 > [!NOTE]
 > **品牌与描述**：**sofagent** 是产品品牌名；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent（进场梳理工作流、把可自动化环节变成 AI 节点、构建本体、部署专属小模型的常驻硅基员工）。底层技术实现是一套约束 Agent 行为的 Harness 中间件（一底座·四引擎），开源在 `@sofagent/*`。下面这段是给开发者看的。

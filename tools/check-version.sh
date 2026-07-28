@@ -49,6 +49,9 @@
 set -uo pipefail
 # 注意: 不用 set -e，因为我们要收集所有错误后统一报告
 
+# v1.2.2 F-03: 预防性内存限制——防止 node 进程 OOM (exit 137)
+export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=4096}"
+
 # ── 颜色 ──────────────────────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -320,6 +323,9 @@ done < <(find "${PROJECT_ROOT}" \
   -not -path '*/docs/changelog/*' \
   -not -path '*/docs/archive/*' \
   -not -path '*/_archive/*' \
+  -not -path '*/.sofagent/*' \
+  -not -path '*/.workbuddy/*' \
+  -not -path '*/engine/daemon/data/*' \
   -type f)
 echo -e "  ${GREEN}✓${NC} ${md_checked} 个 MD 版本头一致（共检查 $((md_checked + md_mismatch)) 个）"
 echo ""
@@ -388,6 +394,9 @@ done < <(find "${PROJECT_ROOT}" \
   -not -path '*/.git/*' \
   -not -path '*/dist/*' \
   -not -path '*/templates/*' \
+  -not -path '*/.sofagent/*' \
+  -not -path '*/.workbuddy/*' \
+  -not -path '*/engine/daemon/data/*' \
   -type f)
 echo ""
 
@@ -628,7 +637,7 @@ echo ""
 # 同步修改下方 EXPECTED_DOC_DATE 与 bump-version.sh。
 echo "=== 14. 文档头日期一致性扫描（> vX.Y · YYYY-MM-DD）==="
 DOC_DATE_OK=true
-EXPECTED_DOC_DATE="2026-07-27"
+EXPECTED_DOC_DATE="2026-07-28"
 while IFS= read -r md; do
   match=$(grep -m1 -nE "^> v[0-9]+\.[0-9]+(\.[0-9]+)? · [0-9]{4}-[0-9]{2}-[0-9]{2}" "$md" 2>/dev/null)
   if [ -n "$match" ]; then
@@ -647,6 +656,9 @@ done < <(find "${PROJECT_ROOT}" \
   -not -path '*/docs/changelog/*' \
   -not -path '*/docs/archive/*' \
   -not -path '*/_archive/*' \
+  -not -path '*/.sofagent/*' \
+  -not -path '*/.workbuddy/*' \
+  -not -path '*/engine/daemon/data/*' \
   -type f)
 if $DOC_DATE_OK; then
   echo -e "  ${GREEN}✓${NC} 文档头日期一致（发版日期 ${EXPECTED_DOC_DATE}）"

@@ -1,7 +1,7 @@
 # sofagent Architecture
 
 > 设计决策记录——从为什么存在、一底座·四引擎如何协作，到每个关键决策的工程理由。
-> v1.2.1 · 2026-07-27（UTC）· 孔放勋
+> v1.2.1 · 2026-07-28（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -15,6 +15,19 @@ graph TD
     B --> C[FDE Agent<br/>帮你梳理→部署→离场→AI 节点自己跑]
     C --> D[SMB · OPC 的每个人<br/>成为自己业务的 FDE]
 ```
+### Agent 工程三层嵌套
+
+一底座·四引擎不是并列关系——它们按「环境 → 流程 → 反馈」三层嵌套：
+
+```mermaid
+graph TD
+    H[Harness 层 · 工作环境<br/>约束底座 + 审计引擎 + 回溯引擎<br/>daemon + SKILL 加载链 + data/ 状态持久<br/>——决定模型「能做什么」]
+    H --> G[Graph 层 · 流程拓扑<br/>编排引擎 LangGraph ReactAgent<br/>多 Agent 协作 · 任务拆解<br/>——决定「下一步去哪」]
+    G --> L[Loop 层 · 反馈改进<br/>FORGE fresh-eyes-loop + release-gate-loop<br/>进化引擎 sustain · eval 反馈闭环<br/>——决定「怎么越做越好」]
+    L -.->|审计趋势回流| H
+```
+
+> **记忆法：环境、反馈、流程。** Harness 给 Agent 一个稳定的工作间（上下文/工具/权限/可观测性），Graph 告诉它任务流向哪（节点边界/路由条件/并行/汇合），Loop 让它出错后能基于证据自己改进（验证→反馈→修复→再验证）。三层缺一不可——再漂亮的 Graph 没有 Harness 就不可执行，再好的 Loop 没有 Graph 就不知道在哪个环节改进。
 
 ## 目录
 
