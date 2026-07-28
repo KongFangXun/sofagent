@@ -25,6 +25,7 @@ import type { AuditVerdict, LoopArtifacts, LoopGraphState } from './state';
 import type { FileCheckpointer } from '../graph/checkpoint';
 import { ModelRouter } from '../model-router';
 import { DataSovereigntyMiddleware } from '../middleware/data-sovereignty-mw';
+import { ProgressMiddleware } from '../middleware/progress-mw';
 
 /** 重试上限：第 3 轮重试后仍未过 → blocked 终态 */
 export const DEFAULT_MAX_RETRIES = 3;
@@ -231,6 +232,8 @@ export function gateToolsForRole(
 /** 节点级共享实例（lazy init，测试可通过 setLoopRouterForTest 替换） */
 let sharedRouter: ModelRouter | null = null;
 let sharedSovereigntyMw: DataSovereigntyMiddleware | null = null;
+/** v1.2.2 P2b：SubAgent 进度遥测 middleware 共享实例 */
+let sharedProgressMw: ProgressMiddleware | null = null;
 
 /** 获取/初始化 ModelRouter 单例 */
 export function getLoopRouter(): ModelRouter {
@@ -244,12 +247,21 @@ export function getLoopSovereigntyMw(): DataSovereigntyMiddleware {
   return sharedSovereigntyMw;
 }
 
+/** 获取/初始化进度遥测 middleware 单例（v1.2.2 P2b） */
+export function getLoopProgressMw(): ProgressMiddleware {
+  if (!sharedProgressMw) sharedProgressMw = new ProgressMiddleware();
+  return sharedProgressMw;
+}
+
 /** 测试注入：替换 router/mw（用 null 重置） */
 export function setLoopRouterForTest(router: ModelRouter | null): void {
   sharedRouter = router;
 }
 export function setLoopSovereigntyMwForTest(mw: DataSovereigntyMiddleware | null): void {
   sharedSovereigntyMw = mw;
+}
+export function setLoopProgressMwForTest(mw: ProgressMiddleware | null): void {
+  sharedProgressMw = mw;
 }
 
 /**
@@ -300,6 +312,10 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
   // v1.2.2 P1：ModelRouter 路由 + 敏感度评估
   const { sensitivity, routeSummary } = routeAndLog('engineer', task);
   const sovereigntyMw = getLoopSovereigntyMw();
+  // v1.2.2 P2b：进度遥测——node-start（失败静默，不阻断 LOOP）
+  const progressMw = getLoopProgressMw();
+  const nodeStartedAt = Date.now();
+  progressMw.nodeStart('engineer', task.slice(0, 120));
 
   // v1.1.4：工具注入路径——createReactAgent + ENGINEER_TOOLS
   // SOFAGENT_LLM 未设置或解析失败时自动降级到 spawnSubAgent 零工具路径
@@ -324,6 +340,8 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
       tools: langGraphTools,
       prompt: systemPrompt,
     });
+    // v1.2.2 P2b：LLM 调用期间发心跳（3s 节流，Dashboard 心跳检测数据源）
+    progressMw.heartbeat('engineer');
     // v1.2.2 P0：数据主权 middleware 包裹模型调用
     const result = await sovereigntyMw.wrapModelCall(
       {
@@ -339,9 +357,11 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
       { agentRole: 'engineer', userIntent: task.slice(0, 200), sensitivity },
     );
     const output = extractAgentText(result);
+    progressMw.nodeEnd('engineer', { durationMs: Date.now() - nodeStartedAt, success: true });
     return output || '[降级运行] createReactAgent 未返回内容，已回退';
   } catch {
     // 降级兜底：模型解析失败 / createReactAgent import 失败 → spawnSubAgent 零工具路径
+    progressMw.nodeEnd('engineer', { durationMs: Date.now() - nodeStartedAt, success: false });
     const fallback = await spawnSubAgent(ENGINEER_AGENT, fullTask);
     return `[降级运行] ${fallback}`;
   }
@@ -461,6 +481,10 @@ async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
   // v1.2.2 P1：ModelRouter 路由 + 敏感度评估
   const { sensitivity, routeSummary } = routeAndLog('reviewer', reviewTask);
   const sovereigntyMw = getLoopSovereigntyMw();
+  // v1.2.2 P2b：进度遥测——node-start（失败静默，不阻断 LOOP）
+  const progressMw = getLoopProgressMw();
+  const nodeStartedAt = Date.now();
+  progressMw.nodeStart('reviewer', 'code review');
 
   // v1.1.4：工具注入路径——createReactAgent + REVIEWER_TOOLS
   // SOFAGENT_LLM 未设置或解析失败时自动降级到 spawnSubAgent 零工具路径
@@ -485,6 +509,8 @@ async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
       tools: langGraphTools,
       prompt: systemPrompt,
     });
+    // v1.2.2 P2b：LLM 调用期间发心跳（3s 节流，Dashboard 心跳检测数据源）
+    progressMw.heartbeat('reviewer');
     // v1.2.2 P0：数据主权 middleware 包裹模型调用
     const result = await sovereigntyMw.wrapModelCall(
       {
@@ -500,9 +526,11 @@ async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
       { agentRole: 'reviewer', userIntent: reviewTask.slice(0, 200), sensitivity },
     );
     const output = extractAgentText(result);
+    progressMw.nodeEnd('reviewer', { durationMs: Date.now() - nodeStartedAt, success: true });
     return output || '[降级运行] createReactAgent 未返回内容，已回退';
   } catch {
     // 降级兜底：模型解析失败 / createReactAgent import 失败 → spawnSubAgent 零工具路径
+    progressMw.nodeEnd('reviewer', { durationMs: Date.now() - nodeStartedAt, success: false });
     const fallback = await spawnSubAgent(REVIEWER_AGENT, reviewTask);
     return `[降级运行] ${fallback}`;
   }
