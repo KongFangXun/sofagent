@@ -185,7 +185,7 @@ FDE 部署 SOP 应遵循此顺序：
 
 | 域 | 文档 | 说明 |
 |----|------|------|
-| **Architecture**（架构） | `ARCHITECTURE.md`、`llm-wiki-mapping.md` | 系统设计、技术选型、能力清单 |
+| **Architecture**（架构） | `ARCHITECTURE.md` | 系统设计、技术选型、能力清单 |
 | **Handover**（交接/上手） | `HANDBOOK.md`、`DEVELOPMENT.md`、`COMMUNITY.md`、`THANKS.md`、`guides/` | 开发者上手、贡献指南 |
 | **Delivery**（交付/发版） | `changelog/`、根 `ROADMAP.md`、根 `CHANGELOG.md` | 版本记录、路线图 |
 | **Evidence**（证据/归档） | `evidence/`、`archive/` | 实验数据、历史归档 |

@@ -107,11 +107,10 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 |------|---------|
 | `docs/WIKI.md` | **你正在读的这个**——项目导航索引 |
 | `docs/PHILOSOPHY.md` | 产品哲学十三节：为什么做、三层治理、FDE 定义、行业方法论印证 |
-| `docs/ARCHITECTURE.md` | 架构详解：四引擎、数据流、部署模式、文件结构 |
+| `docs/ARCHITECTURE.md` | 架构详解：四引擎、数据流、部署模式、文件结构（含 Ledger-Views-Policy ↔ LLM Wiki 三层同构对照） |
 | `docs/DEVELOPMENT.md` | 开发指南：本地环境、包结构、测试、发版流程 |
 | `docs/HANDBOOK.md` | FDE 操作手册：进场流程、节点部署、持续维护 |
 | `docs/THANKS.md` | 致谢——谁启发了哪个设计决策 |
-| `docs/llm-wiki-mapping.md` | Karpathy LLM Wiki 三层 ↔ sofagent 三层治理的同构对照 |
 | `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/`） |
 | `docs/changelog/releasing.md` | **发版 SOP**——十二阶段全流程 |
 | `docs/evidence/` | 效果证据：案例、基准测试、反例 |

@@ -843,18 +843,18 @@ printf '| 页面 | 域 | 备注 |\n|------|----|------|\n| entities/ghost.md | -
 CC82_OUT=$(node -e "const {checkConflict} = require('$PROJECT_ROOT/engine/daemon/dist/inspectors/conflict-check.js'); console.log(JSON.stringify(checkConflict('$TMP82')));" 2>/dev/null)
 echo "$CC82_OUT" | grep -q '"triggered":true' && echo "$CC82_OUT" | grep -q '"severity":"warning"' && echo "$CC82_OUT" | grep -q "孤儿" && echo "$CC82_OUT" | grep -q "死链" && pass || fail "孤儿+死链期望 warning"
 rm -rf "$TMP82"
-scenario 83 "llm-wiki-mapping.md 存在且含三层映射"
-LLW="$PROJECT_ROOT/docs/llm-wiki-mapping.md"; S83_OK=true
-[ -f "$LLW" ] || { fail "llm-wiki-mapping.md 不存在"; S83_OK=false; }
+scenario 83 "ARCHITECTURE.md 含 Ledger-Views-Policy 三层映射"
+ARCH="$PROJECT_ROOT/docs/ARCHITECTURE.md"; S83_OK=true
+[ -f "$ARCH" ] || { fail "ARCHITECTURE.md 不存在"; S83_OK=false; }
 if $S83_OK; then
-  S83_MAP=$(grep -c "Ledger\|Views\|Policy" "$LLW" 2>/dev/null || echo 0)
-  S83_FLOW=$(grep -c "派生\|mermaid" "$LLW" 2>/dev/null || echo 0)
-  S83_V17=$(grep -c "v1.1.7\|Dream Cycle" "$LLW" 2>/dev/null || echo 0)
-  [ "$S83_MAP" -ge 3 ] && [ "$S83_FLOW" -ge 1 ] && [ "$S83_V17" -ge 1 ] || { fail "llm-wiki-mapping.md 内容不完整"; S83_OK=false; }
+  S83_MAP=$(grep -c "Ledger\|Views\|Policy" "$ARCH" 2>/dev/null || echo 0)
+  S83_FLOW=$(grep -c "派生\|单向" "$ARCH" 2>/dev/null || echo 0)
+  S83_WIKI=$(grep -c "LLM Wiki\|raw materials\|Wiki entries\|spec norms" "$ARCH" 2>/dev/null || echo 0)
+  [ "$S83_MAP" -ge 3 ] && [ "$S83_FLOW" -ge 1 ] && [ "$S83_WIKI" -ge 1 ] || { fail "ARCHITECTURE.md 缺三层映射内容"; S83_OK=false; }
 fi
 $S83_OK && pass
-scenario 84 "ROADMAP v1.1.6 链接到 llm-wiki-mapping.md"
-grep -q "llm-wiki-mapping.md" "$PROJECT_ROOT/ROADMAP.md" && pass || fail "ROADMAP.md 缺少 llm-wiki-mapping.md 链接"
+scenario 84 "llm-wiki-mapping.md 已合并删除（不再独立存在）"
+[ ! -f "$PROJECT_ROOT/docs/llm-wiki-mapping.md" ] && pass || fail "llm-wiki-mapping.md 应已合并到 ARCHITECTURE.md 并删除"
 scenario 85 "daemon 注册 conflict-check（@weekly）"
 INSPECTOR_INDEX="$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts"; S85_OK=true
 grep -q "'conflict-check'.*'@weekly'" "$INSPECTOR_INDEX" || { fail "DEFAULT_INSPECTOR_CONFIG 缺 conflict-check @weekly"; S85_OK=false; }
