@@ -34,13 +34,13 @@
 ### Loop → Harness → Graph
 
 - **[Loop Engineering](https://addyo.substack.com/p/loop-engineering)** · Addy Osmani — 正式命名了 Context → Harness → Loop 三层框架
-- **[From Loop to Graph Engineering](https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c)** · Carlos E. Perez — 单闭环四类失效及 Graph 拓扑解法；核心洞察：拓扑不解决 grounding，没 Anchor 的 Graph 只是更贵的 Loop。sofagent 审计引擎即独立审计闭环。详见 [ARCHITECTURE §Graph Engineering](./ARCHITECTURE.md#graph-engineering-视角控制图-stategraph)
+- **[From Loop to Graph Engineering](https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c)** · Carlos E. Perez — 单闭环四类失效及 Graph 拓扑解法；没 Anchor 的 Graph 只是更贵的 Loop。sofagent 审计引擎即独立审计闭环
 - **[OpenAI Harness Engineering](https://openai.com/index/harness-engineering/)** — Harness 概念的系统化参考
 - **[Anthropic Effective Harnesses](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)** · Anthropic — 长时间运行 Agent 的有效治理
 
 ### 实验与证据
 
-- **[Don't Train the Model, Evolve the Harness](https://huggingface.co/spaces/joelniklaus/harness-optimization)** · Joel Niklaus — 不改权重、仅优化 Harness，让 DeepSeek-v4-pro 从 3.5% 升至 80.1%。sofagent 存在理由的外部证据（run-09 审查时该 HF Space 返回 502，可能为临时故障；稳定镜像：[GitHub 仓库](https://github.com/JoelNiklaus/harness-optimization)）
+- **[Don't Train the Model, Evolve the Harness](https://huggingface.co/spaces/joelniklaus/harness-optimization)** · Joel Niklaus — 不改权重、仅优化 Harness，让 DeepSeek-v4-pro 从 3.5% 升至 80.1%。sofagent 存在理由的外部证据
 - **[AutoResearch](https://github.com/karpathy/autoresearch)** · Andrej Karpathy — 约束文档 + 锁定评估脚本 + 自动循环，与 sofagent 的 fde.md + audit + loop 高度对应
 - **[Bilevel Autoresearch](https://arxiv.org/abs/2603.23420)** — 双层循环论文，外层强制探索回避方向可实现 5 倍性能提升
 - **[Lost in the Middle](https://arxiv.org/abs/2307.03172)** — 长文档中段注意力衰减，500 字原则的理论源头
@@ -53,23 +53,22 @@
 ### 编排与架构
 
 - **[Managed Agents](https://www.anthropic.com/engineering/managed-agents)** · Anthropic — 四层编排架构，验证 OpenClaw（连接+行动）与 DeepAgents（深度思考）分工
-- **[Deep Agents](https://github.com/langchain-ai/deepagentsjs)** · LangChain — LangGraph 状态底座 + Harness 范式 + HITL，验证 v1.x 技术选型
-  > 注：sofagent v1.2.0 已从 deepagents 迁移至 LangGraph createReactAgent（详见 [FORGE/LESSONS.md](../FORGE/LESSONS.md)），但 deepagents 的 Harness 范式 + HITL 设计思想在 v1.x 阶段提供了重要的架构参考。
+- **[Deep Agents](https://github.com/langchain-ai/deepagentsjs)** · LangChain — LangGraph 状态底座 + Harness 范式 + HITL，验证 v1.x 技术选型（v1.2.0 已迁移至 LangGraph createReactAgent）
 - **[Claude Code Agent Loop](https://docs.anthropic.com/en/docs/claude-code/how-claude-code-works)** · Anthropic — 三阶段循环 + 三档工具权限，与 sofagent HITL 🟢🟡🔴 同构
 - **[Palantir AIP Ontology](https://www.palantir.com/platforms/aip/)** · Palantir — 数据+逻辑+动作+安全四合一的数字孪生层，Harness 定义与 sofagent 一致
 - **[The Path to Recursively Self-Improving Harnesses](https://lilianweng.github.io/posts/2026-07-04-harness-rsl/)** · 翁荔（Lilian Weng）— 六层 Harness 优化框架
 - **[The Anatomy of an Agent Harness](https://x.com/i/article/2040732084843782144)** · Akshay Pachaar — Harness 即 LLM 的操作系统，12 个核心组件
 - **[Three Key Loops](https://www.deeplearning.ai/the-batch/three-key-loops-for-building-great-software)** · Andrew Ng — 分钟→小时→天-周三层嵌套循环；开发者留在循环的理由是上下文优势而非品味
 - **[DeerFlow](https://github.com/bytedance/deer-flow)** · 字节跳动 — 用 "super agent **harness**" 命名其运行时框架，印证了 Harness 作为 Agent 工程化品类的行业站住
-- **[Omnigent](https://github.com/omnigent-ai/omnigent)** · Databricks 系团队（omnigent-ai 组织，Apache-2.0，alpha，7091 star/31天）— 开源 **meta-harness**（坐在 Claude Code / Codex / Pi 等 harness 之上的一层）：把策略强制在基础设施层（状态化、上下文感知、动作前拦截），而非 prompt。与 sofagent「文字约束被吞噬 → 封装进代码层 + 防投喂」判断同源。它做运行时（河），sofagent 做提交时（堤坝），互补。
-- **[LiteLLM](https://github.com/BerriAI/litellm)** · BerriAI（MIT，100+ LLM，240M+ 拉取）— 开源 LLM gateway：成本追踪 / 预算 / 路由 / 护栏。未来「控制平面」成本与路由层可站在这上面，不必自研网关。
-- **[bubblewrap](https://github.com/containers/bubblewrap)** · containers 项目（GPL-2.0，Linux）+ macOS seatbelt — Omnigent 同款 OS 级沙箱原语。未来 SubAgent 沙箱执行环境（v1.4.0「工具调用中介 + 虚拟 key 边界」）可直接复用，省得自研沙箱底座。
-- **[LangChain middleware](https://docs.langchain.com/oss/javascript/langchain/middleware/custom)** · LangChain 1.0+ — create_agent / create_react_agent 的 middleware 系统：node-style hooks（beforeAgent/beforeModel/afterModel/afterAgent）+ wrap-style hooks（**wrapToolCall 绕每次工具调用** / wrapModelCall）。**wrapToolCall 是运行时审计的精确接入点**——咱们已用 createReactAgent，只需包一层 middleware 把 engine/rules 的 tool-gate 规则升级为运行时拦截 + 审计日志。
-- **[EnkryptAI Secure MCP Gateway](https://mintlify.wiki/enkryptai/secure-mcp-gateway)** · EnkryptAI — LangChain/LangGraph 的 pre_model_hook / post_model_hook 安全护栏，支持 **audit_only 模式（只记录不阻断）**。现成的运行时审计/护栏库，可作 v1.4.x 运行时审计层参考或集成。
-- **[Agent Client Protocol (ACP)](https://github.com/Agent-Client-Protocol/spec)** · LSP 式开放协议（Omnigent 在用）— meta-harness 的开放接入标准。跟踪方向：标准化赢面大于厂商锁定，未来接入层可对齐 ACP 而非自造协议。；其中间件链（InputSanitization→TokenBudget→SafetyFinishReason 等 26 步有序流水线）、Skills 渐进式加载 + SkillScan 确定性安全扫描、Session Goals（会话完成条件 + 非思考模型评估）、ToolOutputBudget（工具输出预算）等设计启发了 v1.2.x-v1.3.x 编排引擎与产品化增强方向。它做运行时（River 比喻里的"河"），sofagent 做堤坝——不冲突，互补。
-- **[DataFlow](https://github.com/OpenDCAI/DataFlow)** · 北京大学 DCAI — operator-based 数据合成系统（Pipeline→Operator→Prompt 分层）；其论文 arXiv:2607.16617 独立用「Harness」一词命名 Agent 约束层，与 DeerFlow / Omnigent 同月、且来自顶尖高校，是 sofagent「Harness 品类」判断的第三方独立佐证，启发我们用「分层 + 约束底座」治理 Agent 产出的工件
-- **[ChatDemo](https://github.com/OpenFDEAI/ChatDemo)** · OpenFDEAI — 以 Forward Deployed Engineer 命名其售前"边聊边出 Demo"工作流，印证我们 FDE 术语同源（Palantir 脉络），并启发我们对 FDE 售前采集入口与分级降级梯队的理解
-- **钉钉 CTO 一粟（微信公众号：hugozhu.site）** — 数字员工四跨越、MoA 四层编排、Agent 权限四原则、AI to B 三层基建、轨迹优化闭环、渐进信任与判断层等洞见，为 sofagent 的信任模型、自主级别、编排架构和进化机制提供了产业一线的操作性验证。正文中已隐去作者名、将思想融入内容，此处正式致敬。
+- **[Omnigent](https://github.com/omnigent-ai/omnigent)** · Databricks 系 — 开源 meta-harness：策略强制在基础设施层而非 prompt。与 sofagent「约束进代码层」判断同源
+- **[LiteLLM](https://github.com/BerriAI/litellm)** · BerriAI — 开源 LLM gateway，未来控制平面成本与路由层可站在上面
+- **[bubblewrap](https://github.com/containers/bubblewrap)** · containers 项目 — OS 级沙箱原语，未来 SubAgent 沙箱可直接复用
+- **[LangChain middleware](https://docs.langchain.com/oss/javascript/langchain/middleware/custom)** · LangChain 1.0+ — wrapToolCall 是运行时审计的精确接入点
+- **[EnkryptAI Secure MCP Gateway](https://mintlify.wiki/enkryptai/secure-mcp-gateway)** · EnkryptAI — 安全护栏 + audit_only 模式，可作运行时审计参考
+- **[Agent Client Protocol (ACP)](https://github.com/Agent-Client-Protocol/spec)** — LSP 式开放协议，未来接入层可对齐而非自造
+- **[DataFlow](https://github.com/OpenDCAI/DataFlow)** · 北京大学 DCAI — 独立用「Harness」命名 Agent 约束层，sofagent「Harness 品类」的第三方佐证
+- **[ChatDemo](https://github.com/OpenFDEAI/ChatDemo)** · OpenFDEAI — 以 Forward Deployed Engineer 命名售前工作流，印证 FDE 术语同源
+- **钉钉 CTO 一粟（微信公众号：hugozhu.site）** — 数字员工、MoA 四层编排、Agent 权限治理等洞见，为 sofagent 信任模型与自主级别提供了产业一线的操作性验证
 
 ### 认知与反馈
 
