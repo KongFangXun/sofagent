@@ -625,6 +625,120 @@ function spawnWorker(step, runDir, target) {
 }
 
 /**
+ * 运行一个 shell 命令并等待完成（用于 driver 直接执行，无 run_bash 60s 限制）。
+ *
+ * @param {string} command    shell 命令
+ * @param {string} cwd        工作目录
+ * @param {number} timeoutMs  超时（毫秒）
+ * @returns {Promise<{ stdout: string, stderr: string, code: number }>}
+ */
+function runCommand(command, cwd, timeoutMs) {
+  return new Promise((resolveP, rejectP) => {
+    const child = spawn('bash', ['-c', command], {
+      cwd,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => { stdout += d; });
+    child.stderr.on('data', (d) => { stderr += d; });
+
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL');
+      rejectP(new Error(`命令超时 (${timeoutMs}ms): ${command}`));
+    }, timeoutMs);
+
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      resolveP({ stdout, stderr, code });
+    });
+    child.on('error', (err) => {
+      clearTimeout(timer);
+      rejectP(err);
+    });
+  });
+}
+
+/**
+ * driver 直接预跑 acceptance-test.sh（绕过 LLM agent 的 60s 限制）。
+ *
+ * 流程：
+ *   1. 先 cd engine/audit && npm run build（acceptance-test.sh 依赖 dist 产物）
+ *   2. spawn bash acceptance-test.sh，等待完成（Node.js 没有 60s 限制）
+ *   3. 完整输出写入 {runDir}/acceptance-raw.log
+ *
+ * 即使预跑失败也不中断——把错误写入 acceptance-raw.log，让 worker 从错误日志生成报告。
+ *
+ * @param {string} runDir   run 目录绝对路径
+ * @returns {Promise<{ exitCode: number, logPath: string, stdout: string }>}
+ */
+async function runAcceptanceTestDirectly(runDir) {
+  const logPath = join(runDir, 'acceptance-raw.log');
+  const scriptPath = join(REPO_ROOT, 'FORGE/playbook/acceptance-test.sh');
+
+  // 第 1 步：构建审计包（acceptance-test.sh 依赖 dist 产物）
+  console.log('[driver] 预跑 acceptance-test.sh — 先构建审计包 (engine/audit)...');
+  try {
+    const buildResult = await runCommand(
+      'npm run build',
+      join(REPO_ROOT, 'engine/audit'),
+      30_000,
+    );
+    if (buildResult.code !== 0) {
+      console.warn(`[driver] 构建审计包退出码 ${buildResult.code}（继续尝试运行测试）`);
+    } else {
+      console.log('[driver] 审计包构建完成');
+    }
+  } catch (buildErr) {
+    console.warn(`[driver] 审计包构建失败（继续尝试运行测试）: ${buildErr.message}`);
+  }
+
+  // 第 2 步：直接 spawn acceptance-test.sh，driver 等待完成
+  console.log(`[driver] 开始运行 acceptance-test.sh（超时 20 分钟）...`);
+  const startTime = Date.now();
+
+  const result = await new Promise((resolveP, rejectP) => {
+    const child = spawn('bash', [scriptPath], {
+      cwd: REPO_ROOT,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => { stdout += d; });
+    child.stderr.on('data', (d) => { stderr += d; });
+
+    // 20 分钟超时——极端情况也不被 kill
+    const timer = setTimeout(() => {
+      child.kill('SIGTERM');
+      const timeoutMsg = `\n--- DRIVER TIMEOUT (1200000ms) ---\n`;
+      stdout += timeoutMsg;
+      rejectP(new Error(`acceptance-test.sh 超时 (1200000ms)`));
+    }, 1_200_000);
+
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      const fullLog = stdout + (stderr ? '\n--- STDERR ---\n' + stderr : '');
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      console.log(`[driver] acceptance-test.sh 完成，exit code = ${code}，耗时 ${elapsed}s`);
+      resolveP({ exitCode: code, logPath, stdout: fullLog });
+    });
+
+    child.on('error', (err) => {
+      clearTimeout(timer);
+      rejectP(err);
+    });
+  });
+
+  // 写入日志
+  writeFileSync(logPath, result.stdout, 'utf-8');
+  console.log(`[driver] 日志已写入 ${logPath}`);
+
+  return result;
+}
+
+/**
  * 从 verdict.md 解析最终裁决（PASS/FAIL）。
  * driver 用于 LEDGER 记录和最终输出。
  *
@@ -877,6 +991,22 @@ async function main() {
     console.log(`\n${'═'.repeat(60)}`);
     console.log(`  步骤 ${stepIndex}/5 — ${step}`);
     console.log(`${'═'.repeat(60)}`);
+
+    // acceptance 特殊处理：driver 先预跑脚本，worker 只解读日志
+    if (step === 'acceptance') {
+      console.log(`  [driver] acceptance 特殊处理：driver 直接预跑 acceptance-test.sh`);
+      try {
+        await runAcceptanceTestDirectly(runDir);
+      } catch (e) {
+        console.warn(`  [driver] acceptance-test.sh 预跑失败: ${e.message}`);
+        // 即使预跑失败也继续 spawnWorker，让 agent 从错误日志中生成报告
+        writeFileSync(
+          join(runDir, 'acceptance-raw.log'),
+          `acceptance-test.sh 预跑失败: ${e.message}\n${e.stack || ''}`,
+          'utf-8',
+        );
+      }
+    }
 
     try {
       await spawnWorker(step, runDir, args.target);
