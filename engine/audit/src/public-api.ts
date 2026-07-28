@@ -11,7 +11,7 @@ export { checkLogs } from '@sofagent/core';
 export type { LogEntry } from '@sofagent/core';
 
 export { runRules } from './reporter';
-export type { AuditResult } from './reporter';
+export type { AuditResult, RuleCheck } from './reporter';
 
 export { loadConfig } from '@sofagent/core';
 export type { AuditConfig } from '@sofagent/core';

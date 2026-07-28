@@ -164,13 +164,31 @@ export function resolveStatePath(statePath?: string): string {
   return resolvedPath;
 }
 
-/** historyPath 缺省解析：{SOFAGENT_DATA}/ab-history.jsonl */
+/** historyPath 缺省解析：{SOFAGENT_DATA}/ab-test/scheduler-history.jsonl（v1.2.4 规范化路径，含自动迁移） */
 export function resolveHistoryPath(historyPath?: string): string {
-  const resolvedPath = historyPath ?? join(loadEnvConfig().dataDir, 'ab-history.jsonl');
-  if (historyPath === undefined) {
-    assertWithinDataDir(resolvedPath, 'ab-history.jsonl');
+  // 显式传入的路径直接返回（调用方负责路径安全）
+  if (historyPath !== undefined) {
+    return historyPath;
   }
-  return resolvedPath;
+
+  // 新路径：data/ab-test/scheduler-history.jsonl
+  const newDataDir = loadEnvConfig().dataDir;
+  const newPath = join(newDataDir, 'ab-test', 'scheduler-history.jsonl');
+  assertWithinDataDir(newPath, 'ab-history.jsonl');
+
+  // 旧路径：data/ab-history.jsonl（自动迁移）
+  const oldPath = join(newDataDir, 'ab-history.jsonl');
+
+  // 自动迁移：新路径不存在但旧路径存在 → rename
+  if (!existsSync(newPath) && existsSync(oldPath)) {
+    const targetDir = dirname(newPath);
+    if (!existsSync(targetDir)) {
+      mkdirSync(targetDir, { recursive: true });
+    }
+    renameSync(oldPath, newPath);
+  }
+
+  return newPath;
 }
 
 /** 路径穿越断言：filePath 解析后必须仍位于 dataDir 内，否则抛错 */

@@ -5,8 +5,9 @@
 // ============================================================
 
 import { existsSync, readFileSync, mkdirSync } from 'fs';
+import { join } from 'path';
 import type { DiffFile, AuditResult } from '@sofagent/core';
-import { VERSION, getThinkPath, appendThinkEntry, DATA_DIR } from '@sofagent/core';
+import { VERSION, getThinkPath, appendThinkEntry, DATA_DIR, EVAL_LATEST } from '@sofagent/core';
 /**
  * think.md 条目生成选项
  */
@@ -209,4 +210,232 @@ function readThinkForCache(thinkPath: string): string {
     console.warn(`[think-generator] 读取 think.md 缓存失败，高频检测降级为空: ${e instanceof Error ? e.message : String(e)}`);
     return '';
   }
+}
+
+// ============================================================
+// v1.2.4 新增：从 eval latest.json 生成 think.md 反思条目
+// ============================================================
+
+/** latest.json 中失败用例的结构 */
+interface EvalFailedCase {
+  testId: string;
+  description: string;
+  overallScore: number;
+  expected: Record<string, unknown>;
+  actual: Record<string, unknown>;
+  error?: string;
+}
+
+/** latest.json 的结构 */
+interface EvalLatestJson {
+  timestamp: string;
+  total: number;
+  passed: number;
+  failed: number;
+  passRate: number;
+  duration: number;
+  failures: EvalFailedCase[];
+}
+
+/**
+ * 从 eval latest.json 失败用例生成 think.md 反思条目
+ *
+ * 流程：
+ * 1. 读 data/eval/latest.json
+ * 2. 提取 failures 数组（passed=false 的用例）
+ * 3. 为每条失败用例生成 think.md 反思条目
+ * 4. latest.json 不存在时静默跳过（eval 尚未运行过）
+ * 5. latest.json 存在但 failures 为空时跳过（全通过无需反思）
+ * 6. 幂等检查（同一 testId + 同一分钟不重复写入）
+ *
+ * @param opts 可选配置（dataDir / now）
+ */
+export function generateThinkFromEval(opts?: ThinkEntryOptions): void {
+  const latestPath = opts?.dataDir
+    ? join(opts.dataDir, 'eval', 'latest.json')
+    : EVAL_LATEST;
+
+  // latest.json 不存在 → 静默跳过
+  if (!existsSync(latestPath)) {
+    return;
+  }
+
+  let latest: EvalLatestJson;
+  try {
+    latest = JSON.parse(readFileSync(latestPath, 'utf-8')) as EvalLatestJson;
+  } catch {
+    // JSON 解析失败 → 静默跳过
+    return;
+  }
+
+  // failures 为空 → 跳过（全通过无需反思）
+  if (!latest.failures || latest.failures.length === 0) {
+    return;
+  }
+
+  const now = opts?.now ?? new Date();
+  const dataDir = opts?.dataDir ?? getSofagentDataDir();
+  const thinkPath = getThinkPath(dataDir);
+
+  // 确保 dataDir 存在
+  if (!existsSync(dataDir)) {
+    mkdirSync(dataDir, { recursive: true });
+  }
+
+  for (const failure of latest.failures) {
+    const entry = formatEvalFailure(failure, now);
+
+    // 幂等检查
+    if (existsSync(thinkPath) && isEvalDuplicateEntry(thinkPath, failure.testId, now)) {
+      continue;
+    }
+
+    appendThinkEntry(thinkPath, entry);
+  }
+}
+
+/**
+ * 格式化单条 eval 失败用例为 think.md 反思条目
+ *
+ * 格式：## {timestamp} eval 失败: {testId}
+ *       - #期望: {expected 摘要}
+ *       - #实际: {actual 摘要}
+ *       - #综合得分: {score}%
+ *       - #教训: {基于 rules_triggered 生成}
+ */
+function formatEvalFailure(failure: EvalFailedCase, now: Date): string {
+  const timestamp = formatTimestamp(now);
+  const score = Math.round(failure.overallScore * 100);
+
+  // 提取 expected / actual 摘要（截取关键信息，避免过长）
+  const expectedSummary = summarizeRecord(failure.expected);
+  const actualSummary = summarizeRecord(failure.actual);
+
+  // 基于 actual 中的 rules_triggered 生成教训
+  const rulesTriggered = (failure.actual['rules_triggered'] as string[]) ?? [];
+  const lesson = generateEvalLesson(rulesTriggered, failure.error);
+
+  let entry = `\n## ${timestamp} eval 失败: ${failure.testId}\n`;
+  entry += `- #期望: ${expectedSummary}\n`;
+  entry += `- #实际: ${actualSummary}\n`;
+  entry += `- #综合得分: ${score}%\n`;
+  entry += `- #教训: ${lesson}\n`;
+  entry += '\n';
+
+  return entry;
+}
+
+/**
+ * 将 Record 简化为可读摘要（避免 think.md 条目过长）
+ */
+function summarizeRecord(rec: Record<string, unknown>): string {
+  const parts: string[] = [];
+  for (const [key, value] of Object.entries(rec)) {
+    if (Array.isArray(value)) {
+      parts.push(`${key}=[${value.join(',')}]`);
+    } else {
+      parts.push(`${key}=${String(value)}`);
+    }
+  }
+  return parts.join(', ');
+}
+
+/**
+ * 基于 eval 失败用例触发的规则生成教训
+ */
+function generateEvalLesson(rulesTriggered: string[], error?: string): string {
+  if (rulesTriggered.length === 0) {
+    return error ? `eval 未匹配预期，错误: ${error}` : 'eval 未匹配预期，需检查 golden set 用例定义';
+  }
+
+  const lessons: string[] = [];
+  for (const ruleId of rulesTriggered) {
+    switch (ruleId) {
+      case 'A1':
+        lessons.push('触碰了敏感文件，应严格避免 .env / *.pem 等文件变更');
+        break;
+      case 'A2':
+        lessons.push('泄漏了密钥，严禁硬编码 API Key / Secret');
+        break;
+      case 'A3':
+        lessons.push('改了任务范围外的文件，应聚焦任务相关文件');
+        break;
+      case 'A4':
+        lessons.push('删除了配置文件，应保护关键配置不被删除');
+        break;
+      case 'A5':
+        lessons.push('commit msg 质量不足，应如实描述变更内容');
+        break;
+      case 'A6':
+        lessons.push('破坏了构建配置，应保护 tsconfig / package.json 不被误删');
+        break;
+      case 'A7':
+        lessons.push('盲改无日志，应先读取文件并记录操作日志');
+        break;
+      case 'A8':
+        lessons.push('逃验证，不应跳过 CI 测试流程');
+        break;
+      case 'A9':
+        lessons.push('代码含 prompt 注入模式，应过滤危险指令');
+        break;
+      case 'A10':
+        lessons.push('引入了非官方依赖源，应使用官方 npm registry');
+        break;
+      case 'A11':
+        lessons.push('滥资源，应避免提交大文件或 node_modules');
+        break;
+      case 'A14':
+        lessons.push('知识库越权访问，应限制在任务相关范围内');
+        break;
+      case 'A15':
+        lessons.push('盲动操作，应先规划再执行');
+        break;
+      case 'A16':
+        lessons.push('非授权文件变更，应避免修改敏感目录如 .github/workflows');
+        break;
+      case 'A17':
+        lessons.push('异常批量变更，应控制单次变更文件数量');
+        break;
+      case 'A18':
+        lessons.push('提交了垃圾文件，应过滤 .DS_Store / *.log 等');
+        break;
+      case 'A19':
+        lessons.push('commit msg 质量低，应提供有意义的描述');
+        break;
+      case 'E1':
+        lessons.push('不应在源码目录提交测试文件');
+        break;
+      case 'E2':
+        lessons.push('裸 TODO 无上下文，应标注负责人和计划');
+        break;
+      case 'E3':
+        lessons.push('大段删除代码，应拆分或保留有价值的实现');
+        break;
+      case 'E4':
+        lessons.push('注释率过低，应为公开函数添加文档注释');
+        break;
+      default:
+        lessons.push(`触发规则 ${ruleId}，需关注`);
+        break;
+    }
+  }
+
+  return lessons.join('；');
+}
+
+/**
+ * 幂等检查：同一 testId + 同一分钟不重复写入
+ */
+function isEvalDuplicateEntry(thinkPath: string, testId: string, now: Date): boolean {
+  let content: string;
+  try {
+    content = readFileSync(thinkPath, 'utf-8');
+  } catch {
+    return false;
+  }
+
+  const timestamp = formatTimestamp(now);
+  const expectedHeader = `## ${timestamp} eval 失败: ${testId}`;
+
+  return content.includes(expectedHeader);
 }
