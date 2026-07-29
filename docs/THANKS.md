@@ -57,6 +57,8 @@
 - **[The Path to Recursively Self-Improving Harnesses](https://lilianweng.github.io/posts/2026-07-04-harness-rsl/)** · 翁荔（Lilian Weng）— 六层 Harness 优化框架
 - **[The Anatomy of an Agent Harness](https://x.com/i/article/2040732084843782144)** · Akshay Pachaar — Harness 即 LLM 的操作系统，12 个核心组件
 - **[Three Key Loops](https://www.deeplearning.ai/the-batch/three-key-loops-for-building-great-software)** · Andrew Ng — 分钟→小时→天-周三层嵌套循环；开发者留在循环的理由是上下文优势而非品味
+- **[OpenWorker](https://github.com/andrewyng/openworker)** · Andrew Ng 团队 — 开源桌面 AI 代理（7.3k stars, MIT）。四级权限模型（plan/interactive/auto/custom）和无人值守收件箱设计，为 FDE sustain 模式的 daemon 审批机制提供参考。"Ask for an outcome, not just an answer"的产品叙事与 sofagent「交付文档而非建议」同源
+- **[aisuite](https://github.com/andrewyng/aisuite)** · Andrew Ng 团队 — OpenWorker 的底层引擎，`<provider>:<model>` 统一接口 + Agents API + tool policies。与 sofagent 11 模型供应商定位重叠，国产模型覆盖面印证统一接口方向的行业共识
 - **[DeerFlow](https://github.com/bytedance/deer-flow)** · 字节跳动 — 用 "super agent **harness**" 命名其运行时框架，印证了 Harness 作为 Agent 工程化品类的行业站住
 - **[Omnigent](https://github.com/omnigent-ai/omnigent)** · Databricks 系 — 开源 meta-harness：策略强制在基础设施层而非 prompt。与 sofagent「约束进代码层」判断同源
 - **[LiteLLM](https://github.com/BerriAI/litellm)** · BerriAI — 开源 LLM gateway，未来控制平面成本与路由层可站在上面
