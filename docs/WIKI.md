@@ -1,4 +1,4 @@
-# sofagent WIKI · v1.2.1
+# sofagent WIKI · v1.2.2
 
 > **这是给 AI Agent 看的项目导航索引。** 新 session 先读这个（3 分钟扫完），再按需深入具体文档。
 > 人类开发者请读 [README.md](../README.md)。

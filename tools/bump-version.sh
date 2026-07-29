@@ -92,7 +92,7 @@ else
 fi
 
 # ── 项目根目录（脚本在 tools/ 下，根在上一级）────────
-PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 # 从实际 SSOT 读取 3 段版本号（audit/package.json），而非 .0 补零
 PJ_SSOT="${PROJECT_ROOT}/engine/audit/package.json"

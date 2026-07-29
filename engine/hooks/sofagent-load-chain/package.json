@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/load-chain",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "sofagent 加载链 Hook——agent:bootstrap 时注入 fde.md + think.md（OpenClaw 2026.6.x 声明式内部 hook）",
   "main": "dist/handler.js",
   "types": "dist/handler.d.ts",
