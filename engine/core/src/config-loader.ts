@@ -509,8 +509,9 @@ export interface SofaEnvConfig {
 
 /** 环境变量默认值 */
 export const ENV_DEFAULTS: Omit<SofaEnvConfig, 'dataDir'> = {
-  sanitizeEnabled: false,
-  sanitizeIpsEnabled: false,
+  // P1-16: 数据主权产品的脱敏不应是 opt-in——默认开启
+  sanitizeEnabled: true,
+  sanitizeIpsEnabled: true,
   retentionDays: 90,
   retentionMax: 500,
   cleanupOnRecord: false,

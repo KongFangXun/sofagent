@@ -234,9 +234,15 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
         .digest('hex').slice(0, 32);
       if (curr.hmacSig !== expectedHmac) {
         if (curr.hmacAlgo === 'stable') {
-          // stable 条目：写入侧用 stableStringify 签名，读侧可正确复现，
-          // HMAC 不匹配只能是内容被篡改（红）
-          return { status: 'tampered', index: i, detail: `历史条目 ${i} HMAC 签名不匹配（stable 条目签名验证失败），疑似内容被篡改` };
+          // P0-1 修复：stable 条目 HMAC 不匹配时需进一步区分——
+          // hashVersion===2（带环境指纹）：fingerprint 漂移（hostname/git路径/dataDir 变化）
+          //   也会导致 HMAC 不匹配，属假阳性 → 归为 unverifiable（黄）
+          // hashVersion 未定义/非2（无指纹但用了 stable 签名）：环境无关，HMAC 不匹配 = 内容被改 → tampered（红）
+          if (currUseFingerprint) {
+            foundUnverifiable = true;
+          } else {
+            return { status: 'tampered', index: i, detail: `历史条目 ${i} HMAC 签名不匹配（stable 条目，无环境指纹），疑似内容被篡改` };
+          }
         }
         // 旧条目（无 hmacAlgo）：写入侧用内存 key 顺序签名，读侧无法复现 → 归为不可复验（黄）
         foundUnverifiable = true;

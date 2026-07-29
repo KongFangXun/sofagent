@@ -11,6 +11,41 @@ import { getAddedLines } from '@sofagent/core';
 import type { AuditContext, RuleCheck } from './types';
 
 /**
+ * P0-3: 脱敏 A9 details 中的命中行——防止密钥外泄。
+ *
+ * A9 命中时把命中行原文写入 details，如果注入指令写在含密钥的行中，
+ * 密钥会被写入 history.jsonl 和 webhook 推送——与 A2 的脱敏设计自相矛盾。
+ *
+ * 处理策略：
+ * 1. 截断过长行（>80 字符只显示前后各 30 字符，中间 ...[truncated]...）
+ * 2. 脱敏已知密钥格式（sk- 开头的 key、AKIA 开头的 AWS key、手机号等）
+ *
+ * @param line 原始命中行
+ * @returns 脱敏+截断后的安全行
+ */
+const DETAIL_MAX_LENGTH = 80;
+const DETAIL_HEAD = 30;
+const DETAIL_TAIL = 30;
+
+const SECRET_REDACTION_PATTERNS: { pattern: RegExp; replacement: string }[] = [
+  { pattern: /sk-[a-zA-Z0-9_\-]{16,}/g, replacement: 'sk-***REDACTED***' },
+  { pattern: /AKIA[0-9A-Z]{16}/g, replacement: 'AKIA***REDACTED***' },
+  { pattern: /\b1[3-9]\d{9}\b/g, replacement: '1**REDACTED***' },
+  { pattern: /gh[ps]_[a-zA-Z0-9]{36,}/g, replacement: 'gh***REDACTED***' },
+];
+
+export function sanitizeDetailLine(line: string): string {
+  let sanitized = line;
+  for (const { pattern, replacement } of SECRET_REDACTION_PATTERNS) {
+    sanitized = sanitized.replace(pattern, replacement);
+  }
+  if (sanitized.length > DETAIL_MAX_LENGTH) {
+    sanitized = sanitized.slice(0, DETAIL_HEAD) + '...[truncated]...' + sanitized.slice(-DETAIL_TAIL);
+  }
+  return sanitized;
+}
+
+/**
  * 说明：splitCodeContext 采用启发式正则拆分，并非完整 parser。
  * 其唯一用途是把一行代码拆成「代码/正文」与「字符串字面量 + 注释文本」，
  * 以便注入扫描在字符串/注释语境下降级（关闭 MEDIUM 模糊档），降低误报。
@@ -247,20 +282,20 @@ export function checkRuleA9(ctx: AuditContext): RuleCheck {
     rule.status = 'FAIL';
     rule.details.push(
       `检测到 ${failHits.length} 处高置信度 prompt injection 模式: ` +
-      failHits.map((h) => `${h.file}: "${h.line}" (${h.pattern}, score=${h.score.toFixed(1)})`).join('; ')
+      failHits.map((h) => `${h.file}: "${sanitizeDetailLine(h.line)}" (${h.pattern}, score=${h.score.toFixed(1)})`).join('; ')
     );
   }
   if (warnHits.length > 0 && rule.status === 'PASS') {
     rule.status = 'WARN';
     rule.details.push(
       `检测到 ${warnHits.length} 处可疑注入模式（建议人工审查）: ` +
-      warnHits.map((h) => `${h.file}: "${h.line}" (${h.pattern}, score=${h.score.toFixed(1)})`).join('; ')
+      warnHits.map((h) => `${h.file}: "${sanitizeDetailLine(h.line)}" (${h.pattern}, score=${h.score.toFixed(1)})`).join('; ')
     );
   } else if (warnHits.length > 0) {
     // 已有 FAIL，WARN 追加为详情
     rule.details.push(
       `另有 ${warnHits.length} 处可疑注入模式（建议人工审查）: ` +
-      warnHits.map((h) => `${h.file}: "${h.line}" (${h.pattern}, score=${h.score.toFixed(1)})`).join('; ')
+      warnHits.map((h) => `${h.file}: "${sanitizeDetailLine(h.line)}" (${h.pattern}, score=${h.score.toFixed(1)})`).join('; ')
     );
   }
 

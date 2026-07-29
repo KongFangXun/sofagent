@@ -328,9 +328,10 @@ describe('audit-history', () => {
       expect(checkHistoryChainIntegrity(testDir)).toBe(false);
     });
 
-    it('R-02: stable 条目被篡改 → checkHistoryChainDetailed 返回 tampered（红）', () => {
-      // stable 新条目用 stableStringify 签名，读侧可正确复现
-      // 篡改内容后 HMAC 不匹配 → 应判 tampered（红），而非 unverifiable（黄）
+    it('P0-1: stable 条目 + hashVersion=2 + HMAC 不匹配 → unverifiable（指纹漂移假阳性修复）', () => {
+      // appendHistory 写入 hashVersion:2 + hmacAlgo:'stable'
+      // 篡改后 HMAC 不匹配，但因 hashVersion=2 含环境指纹，无法区分「篡改」与「指纹漂移」
+      // → 应归为 unverifiable（黄），而非 tampered（红）
       writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
       appendHistory(makeEntry('2026-04-01T00:00:00Z', 0), testDir);
       appendHistory(makeEntry('2026-04-02T00:00:00Z', 0), testDir);
@@ -346,6 +347,61 @@ describe('audit-history', () => {
       tampered.exitCode = 2;
       writeFileSync(histPath, lines.slice(0, -1).concat(JSON.stringify(tampered)).join('\n') + '\n');
 
+      // hashVersion=2 → 无法区分篡改与指纹漂移 → unverifiable（黄）
+      const result = checkHistoryChainDetailed(testDir);
+      expect(result.status).toBe('unverifiable');
+    });
+
+    it('P0-1: stable 条目 + hashVersion 未定义 + HMAC 不匹配 → tampered（环境无关确为篡改）', () => {
+      // 手动构造：hmacAlgo='stable' 但 hashVersion 未定义（无环境指纹）
+      // 链 + HMAC 均用无指纹算法，篡改后 HMAC 不匹配 → 环境无关，确为内容被改 → tampered（红）
+      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      const key = 'test-hmac-key-1234567890';
+
+      const { createHash: chHash, createHmac: chHmac } = require('crypto');
+      const { stableStringify: ss } = require('@sofagent/core');
+
+      // 第一条条目（链起点，无 prevHash 要求）
+      const baseEntry1 = {
+        timestamp: '2026-05-01T00:00:00Z',
+        diffRange: 'HEAD~1..HEAD',
+        exitCode: 0,
+        ruleResults: [],
+        diffFileCount: 1,
+        commitMsg: 'test',
+      };
+      // 计算 e1 的 HMAC（stable 签名，无指纹）
+      const recForSig1 = { ...baseEntry1, prevHash: undefined, hashVersion: undefined, hmacSig: undefined, hmacAlgo: undefined };
+      const sig1 = chHmac('sha256', key).update(ss(recForSig1)).digest('hex').slice(0, 32);
+      const e1 = { ...baseEntry1, prevHash: 'unknown', hashVersion: undefined, hmacAlgo: 'stable', hmacSig: sig1 };
+
+      // 第二条条目：prevHash 用无指纹算法 = SHA-256(e1 without prevHash/hashVersion)
+      const e1ForHash = { ...e1, prevHash: undefined, hashVersion: undefined };
+      const prevHash2 = chHash('sha256').update(JSON.stringify(e1ForHash)).digest('hex').slice(0, 16);
+      const baseEntry2 = {
+        timestamp: '2026-05-02T00:00:00Z',
+        diffRange: 'HEAD~2..HEAD~1',
+        exitCode: 0,
+        ruleResults: [],
+        diffFileCount: 1,
+        commitMsg: 'test2',
+        prevHash: prevHash2,
+      };
+      const recForSig2 = { ...baseEntry2, prevHash: undefined, hashVersion: undefined, hmacSig: undefined, hmacAlgo: undefined };
+      const sig2 = chHmac('sha256', key).update(ss(recForSig2)).digest('hex').slice(0, 32);
+      const e2 = { ...baseEntry2, hashVersion: undefined, hmacAlgo: 'stable', hmacSig: sig2 };
+
+      mkdirSync(join(testDir, 'audit'), { recursive: true });
+      const histPath = getHistoryFilePath(testDir);
+      writeFileSync(histPath, JSON.stringify(e1) + '\n' + JSON.stringify(e2) + '\n');
+
+      // 篡改最后一条（exitCode 0→2）→ prevHash 链仍通过，但 HMAC 验签失败
+      const lines = readFileSync(histPath, 'utf-8').trim().split('\n');
+      const tampered = JSON.parse(lines[lines.length - 1]!);
+      tampered.exitCode = 2;
+      writeFileSync(histPath, lines.slice(0, -1).concat(JSON.stringify(tampered)).join('\n') + '\n');
+
+      // hashVersion 未定义 = 无指纹，stable HMAC 不匹配 = 内容被改 → tampered（红）
       const result = checkHistoryChainDetailed(testDir);
       expect(result.status).toBe('tampered');
     });

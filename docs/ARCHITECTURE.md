@@ -239,7 +239,7 @@ graph LR
 
 **「确定性与概率性分离」原则**——Palantir OAG 五层架构的核心理念，与 sofagent 审计引擎完全同构：刚性安全边界由确定性系统保障，不受 LLM 概率性输出影响。sofagent 的 16/21 条规则为纯 git-diff（不依赖 Agent 配合）正是这一原则的工程实现。
 
-> 💡 **规则编号说明**：A1–A11 + A18/A19 为默认规则（13 条），A14–A17 + E1–E4 为扩展规则（8 条，需 opt-in），全量 21 条。A12/A13 为预留编号（当前未启用）。
+> 💡 **规则编号说明**：A1–A11 + A18/A19 为默认规则（13 条），A14–A17 + E1–E4 为扩展规则（8 条，需 opt-in），全量 21 条。A12/A13 已在 v0.99.4 合并入 A11，编号不再使用。
 
 **审计引擎的双重定位**：
 
@@ -720,14 +720,14 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计引擎，21 条规则硬证据扫描 + 快照/回滚/webhook | ✅ 已实现（428 测试） |
+| audit | 提交时审计引擎，21 条规则硬证据扫描 + 快照/回滚/webhook | ✅ 已实现（495 测试） |
 | core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor | ✅ 已实现（153 测试） |
 | harness | 四层约束加载链 `buildConstrainedSystemPrompt()` | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 fs/git 依赖），编排层 tool-call 事前拦截 | ✅ 已实现 |
 | eval | 质量评估引擎：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
-| orchestrator | 编排引擎：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 | ✅ 已实现（171 测试） |
-| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 | ✅ 已实现（104 测试） |
+| orchestrator | 编排引擎：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 | ✅ 已实现（264 测试） |
+| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 | ✅ 已实现（117 测试） |
 | mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | skillopt | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填 | ✅ 已实现 |

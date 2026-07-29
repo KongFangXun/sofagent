@@ -51,7 +51,7 @@ sofagent-audit --init    # 初始化（装 git hook）
 | 工具 | 它们管什么 | sofagent 管什么 |
 |------|:--------|:----------------|
 | pre-commit / husky | 代码质量（lint / format）| **Agent 行为**（密钥泄漏 / 越界编辑 / 注入攻击 / 盲改）|
-| detect-secrets / gitleaks | 密钥扫描 | 密钥扫描是 gitleaks 的核心场景（做得好）；sofagent 的 A2 覆盖同类场景，同时增加 20 条 Agent 行为规则 |
+| detect-secrets / gitleaks | 密钥扫描 | 密钥扫描是 gitleaks 的核心场景（做得好）；sofagent 的 A2 覆盖同类场景，同时增加 21 条 Agent 行为规则 |
 | Cursor Rules / Claude hooks | 单平台 IDE 约束 | 审计层全平台可用（git diff）；约束层按平台分层（OpenClaw 最深 → WorkBuddy SKILL → 其他种子指令） |
 | Agent 平台（OpenClaw 等）| Agent 调度——「会不会做」| Agent 治理——「能不能每次都做对」|
 
@@ -139,7 +139,7 @@ sofagent-dashboard --watch   # 2s 自动刷新（实时监控）
 | 方式 | 谁用 | 怎么用 |
 |------|------|--------|
 | 💻 **装电脑** | 技术人员 / 开发者 | `bash install.sh` 正常安装 |
-| 🔌 **U 盘** | 普通员工（SMB 核心场景）| 插上即用，拔掉零残留，不需要安装、不需要专业知识 |
+| 🔌 **U 盘** | 普通员工（SMB 核心场景）| 插上即用，拔掉零残留，不需要安装、不需要专业知识 🔶 规划中 |
 | 🖥️ **无头设备** | 服务器 / 工控机（OPC 场景）| 插 U 盘别拔，Agent 7×24 在联邦里跑 |
 
 > 💡 **USB 一键烧录**：搭好 workflow → 烧一批 U 盘 → 发给团队。企业叙事：「买 U 盘 → 下载 sofagent → 写盘 → 发给员工」。详见 [FDE/FDE.md](./FDE/FDE.md)。
@@ -172,7 +172,7 @@ sofagent-audit --help | head -5
 
 # 2. 跑审计——第 0 步的 --init 已装好 pre-commit hook，每次 commit 都被拦
 # GIT_EDITOR=true 让 git commit 不弹编辑器（CI/自动化场景常用）
-echo "API_KEY=sk-123456" > .env && git add -f .env && GIT_EDITOR=true git commit -m "test"
+echo "API_KEY=sk-123456" > .env && git add -f .env && GIT_EDITOR=true git commit -m "add env config"
 # → ⛔ A1 不碰敏感：.env 含密钥格式，提交被拦截（不会真的落库）
 
 # 3. 看快照——每次审计后自动存档

@@ -187,6 +187,102 @@ if [ -n "$EVIDENCE_AUDIT" ] && [ -n "$EVIDENCE_TOTAL" ]; then
   fi
 fi
 
+# WIKI.md — "NNN 测试 / NN 包全绿" 格式
+WIKI_LINE=$(grep -nE '[0-9]+ 测试 / [0-9]+ 包全绿' docs/WIKI.md 2>/dev/null | head -1)
+if [ -n "$WIKI_LINE" ]; then
+  WIKI_CLAIMED=$(echo "$WIKI_LINE" | grep -oE '[0-9]+ 测试' | grep -oE '[0-9]+')
+  WIKI_LINENO=$(echo "$WIKI_LINE" | cut -d: -f1)
+  if [ "$QUIET" = false ]; then
+    echo -e "  校验 docs/WIKI.md（行 ${WIKI_LINENO}）..."
+  fi
+  if [ "$WIKI_CLAIMED" = "$TOTAL_TESTS" ]; then
+    if [ "$QUIET" = false ]; then
+      echo -e "  ${GREEN}✓ WIKI.md：${WIKI_CLAIMED}${NC}"
+    fi
+    ((PASS++)) || true
+  else
+    echo -e "  ${RED}✗ WIKI.md（行 ${WIKI_LINENO}）：声称 ${WIKI_CLAIMED}，实际 ${TOTAL_TESTS}${NC}"
+    ((FAIL++)) || true
+  fi
+fi
+
+# ARCHITECTURE.md — "audit ✅ 已实现（NNN 测试）" 逐包校验
+# 获取各包实际测试数
+for pkg in audit core orchestrator daemon; do
+  PKG_LINE=$(grep -nE "\| ${pkg} \|.*已实现（[0-9]+ 测试）" docs/ARCHITECTURE.md 2>/dev/null | head -1)
+  if [ -n "$PKG_LINE" ]; then
+    PKG_CLAIMED=$(echo "$PKG_LINE" | grep -oE '已实现（[0-9]+ 测试' | grep -oE '[0-9]+')
+    PKG_LINENO=$(echo "$PKG_LINE" | cut -d: -f1)
+    PKG_ACTUAL=$(echo "$TC_OUT" | grep "${pkg}:" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
+    if [ -z "$PKG_ACTUAL" ]; then
+      PKG_ACTUAL=0
+    fi
+    if [ "$QUIET" = false ]; then
+      echo -e "  校验 ARCHITECTURE.md ${pkg}（行 ${PKG_LINENO}）..."
+    fi
+    if [ "$PKG_CLAIMED" = "$PKG_ACTUAL" ]; then
+      if [ "$QUIET" = false ]; then
+        echo -e "  ${GREEN}✓ ARCHITECTURE.md ${pkg}：${PKG_CLAIMED}${NC}"
+      fi
+      ((PASS++)) || true
+    else
+      echo -e "  ${RED}✗ ARCHITECTURE.md（行 ${PKG_LINENO}）：${pkg} 声称 ${PKG_CLAIMED}，实际 ${PKG_ACTUAL}${NC}"
+      ((FAIL++)) || true
+    fi
+  fi
+done
+
+# DEVELOPMENT.md — "acceptance-test.sh（NNN 场景）" 格式
+DEV_LINE=$(grep -nE 'acceptance-test\.sh.*[0-9]+ 场景' docs/DEVELOPMENT.md 2>/dev/null | head -1)
+if [ -n "$DEV_LINE" ]; then
+  DEV_CLAIMED=$(echo "$DEV_LINE" | grep -oE '[0-9]+ 场景' | grep -oE '[0-9]+')
+  DEV_LINENO=$(echo "$DEV_LINE" | cut -d: -f1)
+  # 从 acceptance-test.sh 头部获取声明数
+  ACCEPTANCE_ACTUAL=$(head -5 FORGE/playbook/acceptance-test.sh 2>/dev/null | grep -oE '[0-9]+ 个场景' | grep -oE '[0-9]+' || echo "")
+  if [ -n "$ACCEPTANCE_ACTUAL" ]; then
+    if [ "$QUIET" = false ]; then
+      echo -e "  校验 DEVELOPMENT.md（行 ${DEV_LINENO}）..."
+    fi
+    if [ "$DEV_CLAIMED" = "$ACCEPTANCE_ACTUAL" ]; then
+      if [ "$QUIET" = false ]; then
+        echo -e "  ${GREEN}✓ DEVELOPMENT.md：${DEV_CLAIMED} 场景${NC}"
+      fi
+      ((PASS++)) || true
+    else
+      echo -e "  ${RED}✗ DEVELOPMENT.md（行 ${DEV_LINENO}）：声称 ${DEV_CLAIMED} 场景，脚本声明 ${ACCEPTANCE_ACTUAL}${NC}"
+      ((FAIL++)) || true
+    fi
+  fi
+fi
+
+# LIMITATIONS.md — 多行检查（"审计核心 NNN 个、全 workspace NNN 个" 可能出现多次）
+LIMITATIONS_ALL=$(grep -nE '审计核心 [0-9]+ 个、全 workspace [0-9]+ 个' LIMITATIONS.md 2>/dev/null)
+if [ -n "$LIMITATIONS_ALL" ]; then
+  while IFS= read -r line_info; do
+    [ -z "$line_info" ] && continue
+    LIM_LINENO=$(echo "$line_info" | cut -d: -f1)
+    LIM_AUDIT=$(echo "$line_info" | grep -oE '审计核心 [0-9]+' | grep -oE '[0-9]+')
+    LIM_TOTAL=$(echo "$line_info" | grep -oE '全 workspace [0-9]+' | grep -oE '[0-9]+')
+    LIM_FAIL=0
+    if [ "$LIM_AUDIT" != "$AUDIT_TESTS" ]; then
+      echo -e "  ${RED}✗ LIMITATIONS.md（行 ${LIM_LINENO}）：audit 声称 ${LIM_AUDIT}，实际 ${AUDIT_TESTS}${NC}"
+      LIM_FAIL=1
+    fi
+    if [ "$LIM_TOTAL" != "$TOTAL_TESTS" ]; then
+      echo -e "  ${RED}✗ LIMITATIONS.md（行 ${LIM_LINENO}）：workspace 声称 ${LIM_TOTAL}，实际 ${TOTAL_TESTS}${NC}"
+      LIM_FAIL=1
+    fi
+    if [ "$LIM_FAIL" = "0" ]; then
+      if [ "$QUIET" = false ]; then
+        echo -e "  ${GREEN}✓ LIMITATIONS.md（行 ${LIM_LINENO}）：audit ${LIM_AUDIT} / workspace ${LIM_TOTAL}${NC}"
+      fi
+      ((PASS++)) || true
+    else
+      ((FAIL++)) || true
+    fi
+  done <<< "$LIMITATIONS_ALL"
+fi
+
 # ── 结果汇总 ──
 if [ "$QUIET" = false ]; then
   echo ""

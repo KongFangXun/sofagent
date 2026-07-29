@@ -90,7 +90,7 @@ export interface RuleCheck {
 export interface AuditContext {
   /** git diff 解析出的文件变更列表 */
   diffFiles: DiffFile[];
-  /** .sofagent/task/logs/ 解析出的任务日志条目 */
+  /** data/task/logs/ 解析出的任务日志条目 */
   logEntries: LogEntry[];
   /** --task 参数传入的任务描述（用于 A3 不改越界） */
   task?: string;

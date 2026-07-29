@@ -164,7 +164,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 | 7 | 高危动作强制人工确认 | entry-gate 🔴 高风险审批 | ✅ 已有 |
 | 8 | 全链路日志 + 红队测试 | 审计 history.jsonl + daemon WARN 累积（v1.1.4）；联邦查询 `federation_query` 审计条目 | ✅ 已有 |
 
-> ⚠️ **A9 注入检测局限——leet speak / 编码绕过**：A9 正则检测覆盖常见中文“忽略类”指令与英文“ignore 类”指令等模式，但不覆盖：① leet speak 变体（`1gn0r3` / `!gnore`）；② Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；③ Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），规划在 v1.3.x 评估 LLM 辅助检测。
+> ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文"忽略类"指令、英文"ignore 类"指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），规划在 v1.3.x 评估 LLM 辅助检测。
 
 ### Sub Agent 工具集零重叠（v1.1.0）
 
@@ -181,6 +181,8 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 ---
 
 ## 四、审计与存储安全
+
+> ⚠️ **审计日志全局共享**：当前版本审计日志写入全局 `~/.sofagent/data/audit/history.jsonl`，不做项目级隔离。多项目场景下审计记录会混合存储。按 git 仓库隔离计划在 v1.3.x 落地。
 
 ```
 ~/.sofagent/
@@ -296,15 +298,15 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 
 install.sh 拆分为以下模块，便于逐模块审查：
 
-| 模块 | 行数 | 职责 |
-|------|------|------|
-| `install.sh` | 160 | 主入口（组装 + 参数解析） |
-| `lib/config.sh` | 143 | 配置加载 + 常量定义 |
-| `lib/daemon-lib.sh` | 142 | daemon 公共函数库 |
-| `lib/daemon-register.sh` | 115 | Hook + daemon 注册 |
-| `lib/file-deploy.sh` | 109 | 文件部署 |
-| `lib/platform-detect.sh` | 102 | 平台探测 + 参数解析 |
-| `lib/post-install.sh` | 97 | 安装后检查 + 输出 |
+| 模块 | 职责 |
+|------|------|
+| `install.sh` | 主入口（组装 + 参数解析） |
+| `lib/config.sh` | 配置加载 + 常量定义 |
+| `lib/daemon-lib.sh` | daemon 公共函数库 |
+| `lib/daemon-register.sh` | Hook + daemon 注册 |
+| `lib/file-deploy.sh` | 文件部署 |
+| `lib/platform-detect.sh` | 平台探测 + 参数解析 |
+| `lib/post-install.sh` | 安装后检查 + 输出 |
 
 ### 第三方依赖供应链
 

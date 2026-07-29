@@ -7,9 +7,13 @@
 
 ## 现在在哪：v1.2.2（已发版 · 2026-07-29）
 
-> **数据目录重构 + custom/ 闭环 + ToolGate 接入 + SubAgent 可见性 L2（v1.2.1）**：`.sofagent/` 运行时数据统一迁移到 `data/` 可见目录——用户能直接打开、Dashboard 能直接消费、备份只需拷贝一个目录。ToolGate 运行时接入（wrapToolsWithGate + nodes.ts 双节点调用），engineer/reviewer 工具调用前过 RulesEngine 检查。SubAgent 可见性 L2（ProgressMiddleware：worker 工具调用序列 + LLM 心跳 → sub-progress jsonl）。custom/ README 重写（规则 vs 代码边界 + 加载链声明 + 安装保护逻辑待实施→移至 v1.2.2）。数据层清理（IDENTITY.md + eval.md 删除 + 模板标注 + daemon-health.json）。
+> **数据主权审计 + 混合模型路由 + FDE Dashboard + Graph Engine + 异步 HITL + Skill 升级三策略（v1.2.2）**：
+> 4 维审计追踪（云端调用/本地执行/数据流向/任务类型）+ 敏感度路由（restricted→本地模型 / confidential→本地小模型，Ollama API）+
+> 终端三栏 Dashboard（bash 脚本，零前端依赖）+ Planner 降级链（retry→L1→L2→人工）+
+> checkpoint 挂起恢复（异步 HITL）+ Skill 分层升级三策略（默认安全 / --force 覆盖 / --merge 三路合并）+
+> v1.2.1 BugFix 38 项。
 >
-> 📖 [v1.2.1 开发日志](./docs/changelog/v1.2/v1.2.1.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [v1.2.2 开发日志](./docs/changelog/v1.2/v1.2.2.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 > ✅ **企业采购阻塞项 · Webhook 推送已于 v1.2.1 交付**：v1.1.6 接通 webhook **PASS/WARN/FAIL 三态推送**（本地 agent 自测），v1.2.1 补齐企业协同平台（飞书/钉钉/企微）完整 Webhook 推送能力（见 SECURITY.md「审计结果推送」）。采购阻塞项已解除。
 
@@ -21,6 +25,7 @@
 
 | 版本 | 核心交付 |
 |------|------|
+| **v1.2.2** | 数据主权审计（4 维追踪 + HMAC 链 + 日/周/月报告）+ 混合模型路由（ModelRouter + Ollama 接入）+ FDE Dashboard（终端三栏）+ Graph Engine（Planner + 降级链 + decide/execute 分层）+ 异步 HITL + Skill 升级三策略 + v1.2.1 BugFix 38 项 |
 | **v1.2.1** | 数据目录重构（.sofagent/ → data/）+ Webhook 推送 + SubAgent 可见性 L2 + custom/ 闭环 |
 | **v1.2.0** | 物理结构大重构（/sofagent/→/engine/ + SKILL 收敛 + 发版工具链拆散 + install.sh 提根 + rules 独立包） |
 | **v1.1.9** | 产品叙事收敛（FDE Agent）+ USB 完整运行时 + daemon A/B 自动调度器 + 控制图状态抽取 + v1.1.8 BugFix 42 项 |
@@ -88,7 +93,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.2.7** | **编排引擎增强（DeerFlow 启发）** | ① **Session Goals**（`/goal` 给线程附完成条件 + 非思考模型评估 + N 次续接上限）— 改进 FORGE fresh-eyes-loop 停止条件（当前仅"连续2轮无发现"）② **手动上下文压缩**（`/compact` 用户侧减压阀，聊天可见但后续调用用摘要）— 直击 LangChain 消息只增不减痛点 ③ **Skill 渐进式加载**（仅任务需要时加载，非全量注入 SKILL.md）— 直击加载链步进脆弱性 ④ **`make doctor` / `--doctor` 可操作修复提示**（从 v1.2.6 储备提升，若 v1.2.6 已做则此条作废）⑤ **FORGE driver 三方抽象**：当前 fresh-eyes-driver 和 release-gate-driver 各有独立 driver（~560 行/个），第 3 个 loop 出现时提取公共层 `forge-base-driver.mjs`（路径解析/worker 编排/LEDGER 写入/usage 提取），各 loop driver 只保留步骤定义和模型配置（详见 [开发日志](./docs/changelog/v1.2/v1.2.7.md)）|
 | **v1.2.8** | **记忆分层 + 定时任务（DeerFlow 启发）** | ① **记忆事实级分层**（per-user memory.json + per-fact Markdown + `__default__` 桶）— Dream Cycle 缺事实级粒度 ② **Scheduled Tasks MVP**（cron+once / 暂停/恢复/触发/历史/删除）— daemon cron.ts 从占位升级为一级定时任务（LIMITATIONS §七「定时触发做不到」的解法）③ **ToolOutputBudget 中间件化**（把 sf_read 500 行截断从单点提升为分层中间件，参考 DeerFlow ToolOutputBudget）（Workspace 变更摘要已提前至 v1.2.3）（详见 [开发日志](./docs/changelog/v1.2/v1.2.8.md)）|
 | **v1.2.9** | **🔒 弹性预留** | 紧急修复 / 探索项按需取用 |
-| **v1.3.0** | 📋 规划中 | **运行时审计最小闭环（LangGraph middleware 启发）**：把 engine/rules 的 3 条 tool-gate 规则从「编排层静态 gate」升级为「运行时动态拦截 + 审计日志」——在 createReactAgent 外面包一层 wrapToolCall middleware，拦截每个工具调用、记录审计日志、危险操作前要求人工批准。复用 FORGE fresh-eyes-loop 已跑的 createReactAgent，只加 middleware 层，可行性高 | [📖](./docs/changelog/v1.3/v1.3.0.md) |
+| **v1.3.0** | 📋 规划中 | **运行时审计最小闭环（LangGraph middleware 启发）**：把 engine/rules 的 3 条 tool-gate 规则从「编排层静态 gate」升级为「运行时动态拦截 + 审计日志」——在 createReactAgent 外面包一层 wrapToolCall middleware，拦截每个工具调用、记录审计日志、危险操作前要求人工批准。复用 FORGE fresh-eyes-loop 已跑的 createReactAgent，只加 middleware 层，可行性高。**审计日志按 git 仓库隔离**：将 `history.jsonl` 从全局 `~/.sofagent/data/audit/` 迁移到 per-repo 隔离存储，多项目场景下审计记录不再混合 | [📖](./docs/changelog/v1.3/v1.3.0.md) |
 | **v1.3.1** | 📋 规划中 | **Ontology 认知底座 + 国标对齐 + 并行编排**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + E1-E4（共 21 条）+ 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **编排引擎并行调度（Graph Engineering 视角：控制图多循环 DAG 波次并行）**：基于 v1.1.8 的编排引擎调度原型（已从 DeepAgents 迁移至 LangGraph createReactAgent），新增 DAG 依赖解析（Kahn 波次拓扑）+ 并行扇出/扇入（LangGraph `Send` API）+ 循环依赖检测 + 失败传播策略 + 超时熔断；每波次经 audit 节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供 | [📖](./docs/changelog/v1.3/v1.3.1.md) |
 | **v1.4.0** | 📋 规划中 | **SubAgent 完整沙箱执行环境 + 生产级编排**：将 orchestrator 内置为完整的沙箱运行时——虚拟文件系统隔离（FilesystemBackend + virtualMode）、网络出站白名单、**工具调用中介（前置 allow/deny，非仅审计追踪）**、**虚拟 key 凭证边界注入（真实凭证 host 边界注入，SubAgent 只拿临时虚拟 key）**、AsyncSubAgent（远程 Agent Protocol 服务端）+ 真·实时 A/B 双跑（候选方案并行执行实时对比，替代当前日志统计法）。**并行 SubAgent 文件隔离**：git worktree 轻量形态已于 v1.2.x 落地，v1.4.0 升级为完整沙箱隔离 + 多 SubAgent 文件竞争检测。审计引擎从「事后」扩展到「运行时」（**范围限定 SubAgent，主 Agent 仍事后审计**） | — |
 
@@ -98,7 +103,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 主题 | 核心交付 |
 |------|------|------|
-| **v1.3.0** | **运行时审计最小闭环（LangGraph middleware）** | ① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent（详见 [开发日志](./docs/changelog/v1.3/v1.3.0.md)）|
+| **v1.3.0** | **运行时审计最小闭环（LangGraph middleware）** | ① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离（详见 [开发日志](./docs/changelog/v1.3/v1.3.0.md)）|
 | **v1.3.1** | **Ontology 认知底座 + 国标对齐 + 并行编排** | 见上方主表：本体认知底座 + GB/T 48000.3-2026 国标对齐 + 控制图多循环 DAG 波次并行 |
 | **v1.3.2-v1.3.9** | 🔒 弹性预留 | 紧急修复 / 探索项按需取用（智能 E2E 测试 Agent、规则文件独立只读焊死门、Agent 执行层实时治理等 v1.3+ 探索项可在此落位）|
 

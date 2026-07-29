@@ -6,7 +6,7 @@
   "types": "dist/handler.d.ts",
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "npm run clean && tsc && cp src/handler.ts handler.ts",
+    "build": "npm run clean && tsc",
     "prepublishOnly": "npm run build && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete"
   },
   "keywords": [
@@ -36,7 +36,6 @@
   "files": [
     "dist/",
     "HOOK.md",
-    "handler.ts",
     "!dist/**/*.js.map",
     "!dist/**/*.d.ts.map"
   ]

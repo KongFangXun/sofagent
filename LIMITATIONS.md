@@ -175,14 +175,16 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 ### 🔒 数据存储安全
 
+> ⚠️ **审计日志全局共享**：当前版本审计日志写入全局 `~/.sofagent/data/audit/history.jsonl`，不做项目级隔离。多项目场景下审计记录会混合存储。按 git 仓库隔离计划在 v1.3.x 落地。
+
 task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。v0.90 不实现加密，只做诚实声明——age 加密推到 v1.x。
 - history.jsonl 存审计判定详情，A2/A9 已脱敏，其他规则 details 可能含代码片段或文件路径，敏感场景请配合外部加密卷
 
 ---
 
-### A9 注入检测局限——leet speak / 编码绕过
+### A9 注入检测局限——编码绕过
 
-> **A9 注入检测局限——leet speak / 编码绕过**：A9 正则检测覆盖常见中文“忽略类”指令与英文“ignore 类”指令等模式，但不覆盖：① leet speak 变体（`1gn0r3` / `!gnore`）；② Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；③ Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），规划在 v1.3.x 评估 LLM 辅助检测。
+> ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文"忽略类"指令、英文"ignore 类"指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），规划在 v1.3.x 评估 LLM 辅助检测。
 
 ---
 
@@ -269,7 +271,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 491 个、全 workspace 1156 个测试全绿（实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 495 个、全 workspace 1160 个测试全绿（实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -333,10 +335,10 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](FDE/FDE.md)）已在作�
 
 ### 端到端验收测试覆盖
 
-v1.0 新增 `FORGE/playbook/acceptance-test.sh`（134 个场景，含子断言合计 147 个 pass 判定），覆盖范围持续扩展：
+v1.0 新增 `FORGE/playbook/acceptance-test.sh`（151 个场景，含子断言），覆盖范围持续扩展：
 
-- **CI 已覆盖**：单元测试审计核心 428 个、全 workspace 1009 个全绿（函数级，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
-- **发版前手动覆盖**：acceptance-test.sh 134 场景（含子断言，合计 147 个 pass 判定，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
+- **CI 已覆盖**：单元测试审计核心 495 个、全 workspace 1160 个全绿（函数级，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
+- **发版前手动覆盖**：acceptance-test.sh 151 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
 
@@ -344,9 +346,9 @@ v1.0 新增 `FORGE/playbook/acceptance-test.sh`（134 个场景，含子断言�
 
 ---
 
-### acceptance-test 数字口径（v1.1.9 澄清）
+### acceptance-test 数字口径（v1.2.2 澄清）
 
-> **acceptance-test 数字口径（v1.2.0 更新）**：v1.2.0 版本 acceptance-test.sh 为 128 场景（含子断言，合计 141 个 pass 判定）。v1.1.9 曾为 109 场景 / 122 断言。"4 处 check-test-count 一致"指 4 个关键文件（CHANGELOG / 版本开发日志 / README / acceptance-test.sh）的测试数字声明一致；历史上曾写"5 处"，实际 check-test-count 脚本只校验 4 处。
+> **acceptance-test 数字口径（v1.2.2 更新）**：v1.2.2 版本 acceptance-test.sh 为 151 场景（含子断言）。"4 处 check-test-count 一致"指 4 个关键文件（CHANGELOG / 版本开发日志 / README / acceptance-test.sh）的测试数字声明一致；历史上曾写"5 处"，实际 check-test-count 脚本只校验 4 处。
 
 ---
 
