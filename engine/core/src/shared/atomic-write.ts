@@ -60,7 +60,10 @@ export function atomicAppendSync(filePath: string, line: string): void {
     const stat = require('fs').statSync(filePath);
     if (stat.size > MAX_ATOMIC_SIZE) {
       // 大文件退化为普通追加（风险：多进程并发可能交错）
-      // TODO: v1.x 加 file lock 或改为单 writer 模式
+      // TODO(v1.3.0): 加 file lock（flock 或 lockfile）保护并发写入。
+      // 当前风险：多 Agent 并发写入同一文件时可能交错损坏。
+      // 临时缓解：sofagent 审计频率通常 < 1次/分钟，并发概率低但非零。
+      // 相关：LIMITATIONS.md §原子写入
       const { appendFileSync } = require('fs');
       appendFileSync(filePath, line + '\n', 'utf-8');
       return;

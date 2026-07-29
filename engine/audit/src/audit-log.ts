@@ -10,6 +10,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSy
 import { join } from 'path';
 import { VERSION, DATA_DIR } from '@sofagent/core';
 import type { ActionGovernance } from './rules/types';
+import { log } from './logger';
 
 export interface AuditEntry {
   operation: string;
@@ -23,7 +24,7 @@ export interface AuditEntry {
 }
 
 function getDataBase(): string {
-  // v1.2.1：默认数据根从 ~/.sofagent 迁移到 data/（SOFAGENT_DATA 环境变量仍可覆盖）
+  // v1.2.2：默认数据根从 ~/.sofagent 迁移到 data/（SOFAGENT_DATA 环境变量仍可覆盖）
   return process.env.SOFAGENT_DATA || DATA_DIR;
 }
 
@@ -138,15 +139,15 @@ function main(): void {
   const args = process.argv.slice(2);
 
   if (args.includes('--help')) {
-    console.log(`sofagent audit-log v${VERSION}`);
-    console.log('  审计日志引擎——从 task/logs 提取关键字段追加到 audit.md');
-    console.log('');
-    console.log('  用法:');
-    console.log('    node audit-log.js --operation install --target "开始" --result "成功"');
-    console.log('    node audit-log.js --sync               批量同步 task/logs → audit.md');
-    console.log('');
-    console.log('  配置:');
-    console.log('    SOFA_AUDIT_ENABLED=true 启用（默认关闭）');
+    log.info(`sofagent audit-log v${VERSION}`);
+    log.info('  审计日志引擎——从 task/logs 提取关键字段追加到 audit.md');
+    log.info('');
+    log.info('  用法:');
+    log.info('    node audit-log.js --operation install --target "开始" --result "成功"');
+    log.info('    node audit-log.js --sync               批量同步 task/logs → audit.md');
+    log.info('');
+    log.info('  配置:');
+    log.info('    SOFA_AUDIT_ENABLED=true 启用（默认关闭）');
     process.exit(0);
   }
 
@@ -162,19 +163,19 @@ function main(): void {
       case '--result': result = args[++i]!; break;
       case '--sync':
         const stats = syncLogsToAudit();
-        console.log(`同步完成: ${stats.synced}/${stats.total} 条`);
+        log.info(`同步完成: ${stats.synced}/${stats.total} 条`);
         process.exit(0);
     }
   }
 
   if (!operation) {
-    console.error('错误: --operation 为必填参数');
+    log.error('错误: --operation 为必填参数');
     process.exit(1);
   }
 
   const success = appendAuditLog({ operation, target, result });
   if (!success) {
-    console.log('审计未启用（SOFA_AUDIT_ENABLED != true）');
+    log.info('审计未启用（SOFA_AUDIT_ENABLED != true）');
   }
 }
 

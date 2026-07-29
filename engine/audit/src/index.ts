@@ -48,7 +48,7 @@ export type { SafetyResult, SafetyRule } from './rules/skill-safety-rules';
 import { analyzeRootCause } from './audit-root-cause';
 import { formatSuggestions } from './config-suggestion';
 import { runRegression, type DiffSnapshot } from './audit-regression';
-import { defaultRules } from './rules';
+import { defaultRules, extendedRules } from './rules';
 import type { RuleCheck } from './rules/types';
 import { pushAuditResult, type WebhookPlatform } from './webhook';
 import { getFixSuggestion } from './fix-suggestions';
@@ -918,9 +918,12 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
     const failN = results.rules.filter((r) => r.status === 'FAIL').length;
     const warnN = results.rules.filter((r) => r.status === 'WARN').length;
     const n = results.rules.length;
+    const defaultCnt = defaultRules.length;
+    const extendedCnt = extendedRules.length;
+    const totalCnt = defaultCnt + extendedCnt;
     const line =
       c === 0
-        ? `✅ [sofagent] 审计通过 · ${n} 项检查 · exit 0`
+        ? `✅ [sofagent] 审计通过 · ${n} 项检查 · ${totalCnt} 条规则 (${defaultCnt} 默认 + ${extendedCnt} 扩展) · exit 0`
         : c === 1
           ? `⚠️ [sofagent] 审计 ${warnN} 警告 · exit 1`
           : `❌ [sofagent] 审计拦截 ${failN} 违规 · exit 2`;
@@ -970,7 +973,10 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   console.log('');
   console.log(bannerTop());
   console.log(bannerLine(`sofagent-audit · FDE Agent · v${VERSION}`));
-  console.log(bannerLine(`扫描 ${diffFiles.length} 文件 · ${totalRules} 项检查 · ${issueWord}`));
+  const defaultCnt = defaultRules.length;
+  const extendedCnt = extendedRules.length;
+  const totalCnt = defaultCnt + extendedCnt;
+  console.log(bannerLine(`扫描 ${diffFiles.length} 文件 · ${totalRules} 项检查 · ${totalCnt} 条规则 (${defaultCnt} 默认 + ${extendedCnt} 扩展) · ${issueWord}`));
   console.log(bannerLine(`${statusLabel}  ·  ${actionLabel}`));
   console.log(bannerBottom());
 

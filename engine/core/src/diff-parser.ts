@@ -33,7 +33,8 @@ export function isInGitRepo(cwd?: string): boolean {
       stdio: ['pipe', 'pipe', 'pipe'], // 静默 stderr
     });
     return true;
-  } catch {
+  } catch (err) {
+    console.error('[diff-parser] 检测 git 工作区失败:', err);
     return false;
   }
 }
@@ -91,7 +92,8 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
           cwd,
           stdio: ['pipe', 'pipe', 'pipe'],
         });
-      } catch {
+      } catch (err) {
+        console.error('[diff-parser] 验证 git ref 失败:', err);
         console.log('首次提交，无需审计（没有前一个版本可对比）。审计引擎已就绪，下次提交生效。');
         return files;
       }
@@ -162,8 +164,8 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
             maxBuffer: 5 * 1024 * 1024,
           });
           diffLines = diffContent.split('\n');
-        } catch {
-          // 文件可能无法读取差异
+        } catch (err) {
+          console.error('[diff-parser] 读取文件差异失败:', err);
         }
 
         files.push({ path, status, oldPath, lines: diffLines });
@@ -247,8 +249,8 @@ export function parseStagedDiff(): DiffFile[] {
             maxBuffer: 5 * 1024 * 1024,
           });
           diffLines = diffContent.split('\n');
-        } catch {
-          // 文件可能无法读取差异
+        } catch (err) {
+          console.error('[diff-parser] 读取暂存文件差异失败:', err);
         }
 
         files.push({ path, status, oldPath, lines: diffLines });

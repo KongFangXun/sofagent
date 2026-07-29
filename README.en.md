@@ -28,6 +28,18 @@
 
 ---
 
+## 🚀 30-Second Quick Start
+
+```bash
+bash install.sh
+source ~/.bashrc   # or source ~/.zshrc / restart terminal
+sofagent-audit --init
+```
+
+> After setup, every `git commit` triggers an audit automatically. See [中文快速开始](README.md) for details.
+
+---
+
 ## What is this
 
 Companies don't lack LLMs and Agents — they lack the ability to turn AI into daily work.

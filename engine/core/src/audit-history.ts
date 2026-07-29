@@ -43,8 +43,8 @@ export function getEnvFingerprint(dataDir?: string): string {
   let gitDir = 'unknown';
   try {
     gitDir = execSync('git rev-parse --git-dir 2>/dev/null || echo "unknown"', { encoding: 'utf-8' }).trim();
-  } catch {
-    // git 不可用或不在 git 仓库中，使用 unknown
+  } catch (err) {
+    console.error('[audit-history] 获取环境指纹失败（git 不可用）:', err);
   }
   const base = `${hostname()}-${userInfo().username}-${gitDir}-${dataDir ?? ''}`;
   return createHash('sha256').update(base).digest('hex').slice(0, 8);
@@ -65,7 +65,8 @@ export function getHmacKey(): string | null {
   try {
     if (!existsSync(SOFAGENT_KEY_PATH)) return null;
     return readFileSync(SOFAGENT_KEY_PATH, 'utf-8').trim();
-  } catch {
+  } catch (err) {
+    console.error('[audit-history] 读取 HMAC 密钥失败:', err);
     return null;
   }
 }
@@ -150,7 +151,8 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
   let content: string;
   try {
     content = readFileSync(filePath, 'utf-8');
-  } catch {
+  } catch (err) {
+    console.error('[audit-history] 读取审计历史文件失败:', err);
     return { status: 'tampered', detail: 'history.jsonl 读取失败（疑似权限/损坏）' };
   }
 
@@ -164,8 +166,8 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
     try {
       const parsed = JSON.parse(trimmed) as ChainEntry;
       entries.push(parsed);
-    } catch {
-      // 跳过解析失败的行
+    } catch (err) {
+      console.error('[audit-history] 解析审计条目 JSON 失败:', err);
     }
   }
 

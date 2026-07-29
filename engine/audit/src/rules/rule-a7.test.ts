@@ -53,7 +53,7 @@ describe('A7 不存盲改', () => {
       { logEntries: [makeReadEntry('lib/utils/config.ts')] }
     );
     const result = checkRuleA7(ctx);
-    // v1.2.1: 改用相对路径匹配——src/utils/config.ts ≠ lib/utils/config.ts，应 FAIL
+    // v1.2.2: 改用相对路径匹配——src/utils/config.ts ≠ lib/utils/config.ts，应 FAIL
     expect(result.status).toBe('FAIL');
   });
 

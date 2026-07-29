@@ -221,9 +221,11 @@ export function runInit(): void {
     // v1.0.7: 安装 post-commit hook（timestamp 近邻匹配替代 SHA 精确匹配）
     const postCommitPath = join(hooksDir, 'post-commit');
     const POST_COMMIT_TEMPLATE = `#!/bin/bash
-# sofagent post-commit hook v1.2.1
+# sofagent post-commit hook v1.2.2
 # 检测策略：检查 history.jsonl 最后一条记录的 timestamp 是否在 300 秒内
 # 如果 300 秒内有审计记录，认为 commit 通过了审计；否则可能是 --no-verify 绕过
+# 注意：git commit --no-verify 会绕过本 hook。
+# 如果怀疑审计被绕过，检查 CI 侧的 sofagent-audit 校验步骤。
 # post-commit 是 best-effort 检测——不保证 100% 覆盖，建议配合 CI 侧 sofagent-audit --diff 兜底
 
 if ! command -v node &>/dev/null; then exit 0; fi
@@ -295,7 +297,7 @@ exit 0
     }
   }
 
-  // [3/5] 创建知识库目录骨架（v1.0.1 新增；v1.2.1 迁移到 data/knowledge/）
+  // [3/5] 创建知识库目录骨架（v1.0.1 新增；v1.2.2 迁移到 data/knowledge/）
   console.log('');
   console.log('[3/5] 创建知识库目录...');
   const knowledgeDir = resolveKnowledgeDir();

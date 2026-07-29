@@ -13,7 +13,7 @@
 //   8. 路径 C：非法 JSON → 拒绝
 // ============================================================
 
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import crypto from 'node:crypto';
 
 import {
@@ -43,8 +43,18 @@ const loadKey = (): Buffer => TEST_SECRET;
 /** 测试用长 token（≥ MIN_TOKEN_LENGTH） */
 const TEST_TOKEN = 'tok-' + crypto.randomBytes(32).toString('hex');
 
+let originalTokenEnv: string | undefined;
+
+beforeEach(() => {
+  originalTokenEnv = process.env[FEDERATION_TOKEN_ENV];
+});
+
 afterEach(() => {
-  delete process.env[FEDERATION_TOKEN_ENV];
+  if (originalTokenEnv === undefined) {
+    delete process.env[FEDERATION_TOKEN_ENV];
+  } else {
+    process.env[FEDERATION_TOKEN_ENV] = originalTokenEnv;
+  }
 });
 
 describe('路径 A · 6 位码 + y/N 确认', () => {
@@ -102,7 +112,6 @@ describe('路径 B · token 配对', () => {
     process.env[FEDERATION_TOKEN_ENV] = TEST_TOKEN;
     const peer = await pairByToken(undefined, alice.privateKey, bob.publicKey, tag);
     expect(peer.via).toBe('token');
-    delete process.env[FEDERATION_TOKEN_ENV];
     // token 过短
     expect(MIN_TOKEN_LENGTH).toBeGreaterThan(0);
     await expect(pairByToken('short', alice.privateKey, bob.publicKey, tag))

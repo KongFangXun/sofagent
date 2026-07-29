@@ -178,7 +178,7 @@ function renderMarkdown(report: SessionReport): string {
 
 /**
  * 把报告写入 SOFAGENT_HOME/data/audit/（session-report.json + session-report.md）
- * v1.2.1：从 .sofagent/audit/ 迁移到 data/audit/
+ * v1.2.2：从 .sofagent/audit/ 迁移到 data/audit/
  * @param overrideHome 覆盖 SOFAGENT_HOME（测试隔离用）；缺省 fallback 到 SOFAGENT_HOME
  * @returns 两个文件的绝对路径
  */
