@@ -4,6 +4,7 @@
 > 🔴 版本号操作用 `bump-version.sh` + `check-version.sh`，禁止手动 grep/sed。
 > 🔴 文档预算分层检查（A 用户文档 / B 开发者参考 / C 审查体系 / E 指南），见 `check-docs.sh`。
 > 🔴 回归检查已升格为**独立阶段**（阶段六）——在本 session 直接跑，不再作为"审核"的子步骤。v1.2.2 起 acceptance step 先直连跑脚本再启 driver（sandbox 杀后台进程的 10 轮血泪已根治），driver 只负责 regression + coverage + consolidate + verdict。
+> 🔴 **CI 绿灯闸门（v1.2.2 教训）**：release 过程中任何 push（代码修复、文档微调、CI 配置修正）后，都必须等 CI 全绿再继续下一步。push 前先本地模拟 CI 会跑的检查（`pre-push-check.sh` + `npm test` + `npm run build`），避免 push 上去 GitHub 打红叉再回头修。v1.2.2 教训：3 个 CI workflow 在发版后才暴露失败，每次都 push→红叉→修→push→红叉循环。
 
 ---
 
@@ -536,10 +537,18 @@ sofagent-audit --doctor
 
 ### 发布前检查（npm 包洁净度 + 推前预检）
 
+> 🔴 **v1.2.2 教训**：push 前不模拟 CI 跑的检查 = 每次都 push→红叉→修→push 循环。以下三步是 CI 会跑的核心检查，**本地先跑一遍全绿再 push**。
+
 ```bash
 # 🔴 推前预检必须全绿
 bash tools/pre-push-check.sh            # 全绿（全量 workspace）
 bash tools/check-docs.sh                # 文档死链 + 预算 + Skill 行数
+
+# 🔴 CI 核心检查本地模拟（v1.2.2 新增）
+# CI 会跑 npm test + npm run build + shellcheck，本地也要先跑一遍
+npm test                                # CI pr-check workflow
+npm run build                           # CI verify workflow 依赖 build 产物
+shellcheck engine/scripts/*.sh tools/*.sh install.sh  # CI shellcheck workflow
 
 # 全部 12 包 .js.map 泄露检查 + 类型检查 + README 非空检查
 for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test skillopt rules; do
@@ -621,6 +630,34 @@ echo "✅ 全部 12 包版本一致 = $NEW_VER"
 12.7 🔴 tag 必须指向最终发布提交（v1.1.8 起）：tag 不得提前打好再回头补丁——必须等本版全部改动（含文档 / 测试）合入、且 `bash tools/check-version.sh` / `bash tools/check-docs.sh` / 各包 `npm test` 全绿后，才在**最后一个本版提交**上打 tag。提前打 tag 会导致补丁提交游离在 tag 之外、版本号与代码不一致，破坏可回溯性。
 13. git tag vX.Y.Z && git tag -l "vX.Y.Z" --format='%(subject)' | grep "vX.Y.Z" || echo "⚠️ tag message 不匹配，建议重新打 tag"
 14. git push origin vX.Y.Z
+```
+
+**🔴 push 后 CI 绿灯等待（v1.2.2 教训）**：
+
+git push（tag 和 main）后，**必须等 CI 全绿再继续后续步骤**（gh release / Skill 分发）。不要假设 push 成功 = CI 会过——v1.2.2 教训：3 个 workflow 挂了才发现 CI 配置路径过时。
+
+```bash
+# 等 push 触发的 CI 全部完成，确认全绿
+# ⏳ 通常需要 2-5 分钟，轮询等待
+sleep 30  # 给 GitHub 一个启动 CI 的时间窗口
+gh run list -b main -L 5 --json conclusion,name,headSha,displayTitle | python3 -c "
+import json, sys
+runs = json.load(sys.stdin)
+all_green = True
+for r in runs:
+    status = r['conclusion'] or 'running'
+    name = r['name']
+    icon = '✅' if status == 'success' else '🔴' if status in ('failure','cancelled') else '⏳'
+    print(f'{icon} {name}: {status}')
+    if status != 'success':
+        all_green = False
+if all_green:
+    print('\\n✅ CI 全绿，可以继续发布步骤')
+else:
+    print('\\n🔴 CI 未全绿，先修复再继续')
+    sys.exit(1)
+"
+# 🔴 如果 CI 有 failure → gh run view --log-failed 定位 → 修复 → 重新 push → 重新等待
 ```
 
 **🔴 tag 后零 commit 校验（v1.1.9 fresh-eyes 教训）**：
@@ -888,7 +925,7 @@ bash tools/check-version.sh   # 期望：全绿
 | 八 | 开发日志定稿 + 文档收尾 | 作者 | 否 | **开发日志定稿（含发布检查清单打勾）** + CHANGELOG/ROADMAP 五步/版本号/**发版日期同步**/测试数一致性/**🔴 文档同步闭环（D6 落地：changelog 功能点→项目文档覆盖率对照）**。涉及 CLI 迁移时 shellcheck 在此补跑 |
 | 九 | 工具脚本健康检查 | 作者 | 是（dist 重建 + 脚本覆盖同步 + 过时检查清理） | check-version/bump-version/pre-push-check 覆盖同步 + 过时检查清理 + npm run build |
 | 十 | 确认关口 | AI → **生成发布 prompt 交接** | 否 | git diff 确认 → 检查清单打勾 → 生成发布 prompt 交给负责人（可授权 AI 代执行） |
-| 十一 | 发布（含设备端安装） | **🔴 项目负责人，或授权 AI 代执行** | 否 | 先装本地版本验证 → 再按依赖层分批 npm publish + git tag + gh release + Skill 分发 → **🔴 设备端安装（全局包 + Skill 同步）**。**网络降级**：tag 推上后 gh release/Skill 分发不依赖 main push |
+| 十一 | 发布（含设备��安装） | **🔴 项目负责人，或授权 AI 代执行** | 否 | 先装本地版本验证 → 再按依赖层分批 npm publish + **🔴 push 前本地模拟 CI（test+build+shellcheck）** → git tag + push + **🔴 push 后等 CI 全绿再继续** → gh release + Skill 分发 → **🔴 设备端安装（全局包 + Skill 同步）**。**网络降级**：tag 推上后 gh release/Skill 分发不依赖 main push |
 | 十二 | 发布后 | 作者 | 是（步骤 37 开新 session 读 `fresh-eyes-review.md` 做审查） | npm 验证 + CI 全绿检查（步骤 33）+ 流程漏洞吸收 + SOP 自我进化 + 生成下一版 prompt（步骤 36）→ 发布后审查（步骤 37）→ 自动进入下版本阶段一 |
 
 ---
@@ -933,6 +970,7 @@ bash tools/check-version.sh   # 期望：全绿
 | v1.2.2 | ClawHub merge 后 publish 返回 ok 但版本不进列表（fingerprint 相同=内容未变=静默跳过） | 阶段十一 |
 | v1.2.2 | CI verify.yml 检查 hook.js 但实际文件在 dist/handler.js（路径过时）+ daemon-macos-ci 环境无 daemon | 阶段十二 |
 | v1.2.2 | pr-check data-sovereignty.test.ts vi.doMock 在 CI 不生效（本地过 CI 挂，模块解析差异） | 阶段十二 |
+| v1.2.2 | push 前不模拟 CI 检查 + push 后不等 CI 绿灯 = 反复 push→红叉→修循环 | 阶段十一 |
 | v1.0.7 | 忘了更新本机全局安装（QA 测试时跑旧版本） | 阶段十一 |
 | v1.0.4 | dist 与 src 同步验证 | 阶段四 |
 | v1.0.4 | 审查文档自身也会过时（每版本审视数字/路径/维度有效性） | 阶段七 |
