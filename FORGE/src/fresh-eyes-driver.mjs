@@ -35,6 +35,12 @@ import { createProgressMiddleware } from './progress-middleware.mjs';
 // 模块级引用——让 catch 块也能写可见性事件（失败场景覆盖）
 let globalVisibility = null;
 
+// 模块级快照——让 main().catch() 能保留已完成轮的数据，不清零。
+// 🔴 v1.2.2 教训（run-07）：fatal-error 时 actualRounds/counts 归零，
+// 导致 Round 1 的审查成果全部消失。
+let preservedActualRounds = 0;
+let preservedFinalCounts   = { p0: 0, p1: 0, p2: 0 };
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
 const REPO_ROOT  = resolve(__dirname, '../..');
@@ -1241,12 +1247,30 @@ async function runRound(roundNum, runDir, target, dryRun) {
   }
 
   // 步骤 ④ B 修复（分片执行）
+  // 如果 b-fix 整体崩溃（模型错误/API 超时/未预期异常），降级写一个最小 summary.md，
+  // 让循环能继续走到 a-verify。findings/result 保留不丢——是审查成果。
   console.log('\n  [步骤 ④] B 按 result.md 修复（分片模式）...');
-  await runBFixSharded(roundDir, target, roundNum);
+  try {
+    await runBFixSharded(roundDir, target, roundNum);
+  } catch (fixErr) {
+    console.warn(`\n  ⚠️  b-fix 失败: ${fixErr.message}`);
+    console.warn(`     降级：写最小 summary.md，标记 b-fix 未完成，findings/result 保留`);
+    writeFileSync(
+      join(roundDir, 'summary.md'),
+      `# summary.md · b-fix 降级（未完成）\n\n> ⚠️ b-fix 整体失败: ${fixErr.message}\n> findings.md 和 result.md 已保留，可人工介入修复。\n`,
+      'utf-8'
+    );
+  }
 
   // 步骤 ⑤ A 验证（分片执行）
+  // 如果 a-verify 崩溃，降级跳过验证——parseStopCondition 仍能从 findings/result 判停止。
   console.log('\n  [步骤 ⑤] A 验证修复（分片模式）...');
-  await runAVerifySharded(roundDir, target, roundNum);
+  try {
+    await runAVerifySharded(roundDir, target, roundNum);
+  } catch (verifyErr) {
+    console.warn(`\n  ⚠️  a-verify 失败: ${verifyErr.message}`);
+    console.warn(`     降级：跳过验证，result.md verify 列不回填`);
+  }
 
   // 判定停止条件
   const counts = parseStopCondition(roundDir);
@@ -1368,6 +1392,9 @@ async function main() {
     visibility.emit(EVENTS.ROUND_START, { round, target: args.target });
     const { roundDir, counts, isClean } = await runRound(round, runDir, args.target, args.dryRun);
     finalCounts = counts;
+    // 快照——如果后续轮 fatal-error，catch 块用这组数据，不清零
+    preservedActualRounds = actualRounds;
+    preservedFinalCounts   = { ...finalCounts };
 
     // 可见性：每轮结束 emit（含停止判定结果）
     visibility.emit(EVENTS.ROUND_END, {
@@ -1437,16 +1464,19 @@ async function main() {
 main().catch(err => {
   console.error(`\n💥 致命错误: ${err.message}`);
   console.error(err.stack);
-  // 可见性：失败路径也要写事件——否则 Dashboard 看到"永远在跑"
+  // 可见性：失败路径也要写事件——否则 Dashboard 看到"永远在跑"。
+  // 🔴 v1.2.2 教训（run-07）：catch 块曾把 actualRounds/counts 归零，
+  // 导致明明跑完 Round 1（5 P0 + 11 P1）的成果全部消失。
+  // 现在保留 main() 的 finalCounts——如果一轮都没跑完才为 0。
   if (globalVisibility) {
     globalVisibility.emit(EVENTS.ERROR, {
       message: err.message,
       stack: err.stack?.split('\n').slice(0, 3).join(' | '),
     });
     globalVisibility.emit(EVENTS.LOOP_END, {
-      actualRounds: 0,
+      actualRounds: preservedActualRounds,
       stopReason: 'fatal-error',
-      counts: { p0: 0, p1: 0, p2: 0 },
+      counts: preservedFinalCounts,
     });
   }
   process.exit(1);
