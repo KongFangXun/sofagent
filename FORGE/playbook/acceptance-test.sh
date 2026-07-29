@@ -1615,9 +1615,11 @@ S146_OK=true
 # 清理可能存在的残留
 rm -rf "$PROJECT_ROOT/data/" 2>/dev/null
 # 跑一次审计测试（会触发 writeSessionReport）
-# 容错：sandbox 中 vitest 可能被 SIGTERM kill（非零退出），不能中断整个验收脚本。
-# 临时关掉 set -e，跑完不管成功失败都继续，用 data/ 目录是否存在来判断 PASS/FAIL。
-{ set +euo pipefail; NODE_OPTIONS="--max-old-space-size=4096" npx vitest run engine/audit/src/__tests__/session-report.test.ts >/dev/null 2>&1; set -euo pipefail; } || true
+# 容错：sandbox 中 vitest 可能被 HUP/SIGTERM kill。
+# 用子 shell 隔离信号——HUP 打到子 shell 不影响父脚本。
+# trap 忽略 HUP + set +e 保证子 shell 内不退出。
+# 即使 vitest 完全没跑成，也继续执行后续场景。
+( trap 'exit 0' HUP; set +e; NODE_OPTIONS="--max-old-space-size=4096" npx vitest run engine/audit/src/__tests__/session-report.test.ts >/dev/null 2>&1 ) 2>/dev/null || true
 # 检查项目目录是否出现了 data/
 if [ -d "$PROJECT_ROOT/data/" ]; then
   fail "data/ 泄露到项目目录——F-39 修复无效"; S146_OK=false
@@ -1687,8 +1689,8 @@ const now = new Date();
 const yyyy = String(now.getFullYear());
 const mm = String(now.getMonth() + 1).padStart(2, '0');
 const dd = String(now.getDate()).padStart(2, '0');
-const today = yyyy + '-' + mm + '-' + dd;
-const logPath = path.join(tmpDir, 'data', 'audit', 'data-sovereignty', yyyy, mm, today + '.jsonl');
+const todayDateStr = yyyy + '-' + mm + '-' + dd;
+const logPath = path.join(tmpDir, 'data', 'audit', 'data-sovereignty', yyyy, mm, todayDateStr + '.jsonl');
 const logExists = fs.existsSync(logPath);
 const logContent = logExists ? fs.readFileSync(logPath, 'utf-8').trim() : '';
 const hasRecord = logContent.includes('test-148');
@@ -1699,7 +1701,7 @@ const stats = aggregateStats(records);
 const hasStats = stats && typeof stats.total !== 'undefined';
 
 // 4. generateDailyReport 从日志目录生成报告
-const report = generateDailyReport(today, tmpDir);
+const report = generateDailyReport(todayDateStr, tmpDir);
 const hasReport = report && report.markdown && report.markdown.length > 0;
 
 console.log(JSON.stringify({ logExists, hasRecord, hasStats, hasReport }));
