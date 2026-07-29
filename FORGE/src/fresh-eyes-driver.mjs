@@ -791,10 +791,10 @@ async function runBFixSharded(roundDir, target, round) {
   const findings = splitFindings(resultText);
   console.log(`  [b-fix 分片] 共 ${findings.length} 条 finding，每批 ${BATCH_SIZE} 条`);
 
-  // 3. 边界情况：result.md 无法切出 finding → fallback 到单 session
+  // 3. 边界情况：0 finding → 不需要修复，直接跳过
   if (findings.length === 0) {
-    console.log(`  [b-fix 分片] result.md 未找到 finding 切片，fallback 到单 session`);
-    await spawnWorker('b-fix', roundDir, target, round);
+    console.log(`  [b-fix 分片] 0 条 finding，跳过修复`);
+    writeFileSync(join(roundDir, 'summary.md'), '# summary.md · 本轮无 finding，跳过修复\n', 'utf-8');
     return;
   }
 
@@ -873,8 +873,8 @@ async function runAVerifySharded(roundDir, target, round) {
   console.log(`  [a-verify 分片] 共 ${findings.length} 条 finding，每批 ${BATCH_SIZE} 条`);
 
   if (findings.length === 0) {
-    console.log(`  [a-verify 分片] result.md 未找到 finding 切片，fallback 到单 session`);
-    await spawnWorker('a-verify', roundDir, target, round);
+    console.log(`  [a-verify 分片] 0 条 finding，跳过验证`);
+    writeFileSync(join(roundDir, 'verify.md'), '# verify.md · 本轮无 finding，跳过验证\n', 'utf-8');
     return;
   }
 
