@@ -112,7 +112,7 @@ const STEP_ORDER = ['acceptance', 'regression', 'coverage', 'consolidate', 'verd
 // 留余量给环境验证轮询 + agent 思考轮次
 const STEP_RECURSION_LIMITS = {
   'acceptance':  100,
-  'regression':  250,
+  'regression':  400,
   'coverage':    100,
   'consolidate': 80,
   'verdict':     50,
@@ -999,18 +999,24 @@ async function main() {
     console.log(`${'═'.repeat(60)}`);
 
     // acceptance 特殊处理：driver 先预跑脚本，worker 只解读日志
+    // 如果 acceptance-raw.log 已存在（sandbox 绕行：手动预跑后），跳过预跑
     if (step === 'acceptance') {
-      console.log(`  [driver] acceptance 特殊处理：driver 直接预跑 acceptance-test.sh`);
-      try {
-        await runAcceptanceTestDirectly(runDir);
-      } catch (e) {
-        console.warn(`  [driver] acceptance-test.sh 预跑失败: ${e.message}`);
-        // 即使预跑失败也继续 spawnWorker，让 agent 从错误日志中生成报告
-        writeFileSync(
-          join(runDir, 'acceptance-raw.log'),
-          `acceptance-test.sh 预跑失败: ${e.message}\n${e.stack || ''}`,
-          'utf-8',
-        );
+      const preRunLog = join(runDir, 'acceptance-raw.log');
+      if (existsSync(preRunLog)) {
+        console.log(`  [driver] acceptance-raw.log 已存在，跳过预跑（sandbox 绕行模式）`);
+      } else {
+        console.log(`  [driver] acceptance 特殊处理：driver 直接预跑 acceptance-test.sh`);
+        try {
+          await runAcceptanceTestDirectly(runDir);
+        } catch (e) {
+          console.warn(`  [driver] acceptance-test.sh 预跑失败: ${e.message}`);
+          // 即使预跑失败也继续 spawnWorker，让 agent 从错误日志中生成报告
+          writeFileSync(
+            join(runDir, 'acceptance-raw.log'),
+            `acceptance-test.sh 预跑失败: ${e.message}\n${e.stack || ''}`,
+            'utf-8',
+          );
+        }
       }
     }
 
