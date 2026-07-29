@@ -184,7 +184,7 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 | 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | 安全声明 | [SECURITY](./SECURITY.md) |
 | 已知局限 | [LIMITATIONS](./LIMITATIONS.md) |
-| 数据存储安全 | ⚠️ 当前版本审计数据以明文 Markdown 存储于 `~/.sofagent/data/`。生产环境部署前请务必阅读 [SECURITY.md](docs/SECURITY.md) 了解数据安全与加密路线图。 |
+| 数据存储安全 | ⚠️ 当前版本审计数据以明文 Markdown 存储于 `~/.sofagent/data/`。生产环境部署前请务必阅读 [SECURITY.md](./SECURITY.md) 了解数据安全与加密路线图。 |
 | 版本路线图 | [ROADMAP](./ROADMAP.md) |
 | 项目导航索引（AI 用） | [WIKI](./docs/WIKI.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |

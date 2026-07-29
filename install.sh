@@ -705,7 +705,8 @@ upgrade_skill() {
       local base; base="$(basename "$src_item")"
       [ "$base" = ".backup" ] && continue
       [ "$base" = ".DS_Store" ] && continue
-      rm -rf "${UPGRADE_ROOT}/${base}"
+      # shellcheck disable=SC2115 # UPGRADE_ROOT 已在第 654 行做空值守卫
+      rm -rf "${UPGRADE_ROOT:?}/${base}"
       cp -R "$src_item" "${UPGRADE_ROOT}/${base}"
     done
     _rotate_backups "$backup_root"
@@ -729,7 +730,8 @@ upgrade_skill() {
       case "$base" in
         custom|.backup|.DS_Store) continue ;;
       esac
-      rm -rf "${UPGRADE_ROOT}/${base}"
+      # shellcheck disable=SC2115 # UPGRADE_ROOT 已在第 654 行做空值守卫
+      rm -rf "${UPGRADE_ROOT:?}/${base}"
       cp -R "$src_item" "${UPGRADE_ROOT}/${base}"
     done
     # custom/：三路合并
@@ -762,7 +764,8 @@ upgrade_skill() {
     case "$base" in
       custom|.backup|.DS_Store) continue ;;
     esac
-    rm -rf "${UPGRADE_ROOT}/${base}"
+    # shellcheck disable=SC2115 # UPGRADE_ROOT 已在第 654 行做空值守卫
+    rm -rf "${UPGRADE_ROOT:?}/${base}"
     cp -R "$src_item" "${UPGRADE_ROOT}/${base}"
   done
   _rotate_backups "$backup_root"
