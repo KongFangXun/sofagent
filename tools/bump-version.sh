@@ -619,6 +619,8 @@ echo ""
 
 # 9b. v1.1.3: bump 子包 package.json 中 @sofagent/* 依赖版本
 # 各包的 dependencies/optionalDependencies 中对其他 @sofagent/* 包的引用也需要同步
+# 🔴 v1.2.2 教训：这段 node 脚本必须受 DRY_RUN 守卫——之前 fs.writeFileSync 无条件写盘，
+#    导致 --dry-run 实际修改了 9 个 package.json 的依赖版本号
 BUMP_INTERNAL_DEPS_COUNT=0
 while IFS= read -r -d '' pkg_json; do
   NEW_CONTENT=$(node -e "
@@ -642,7 +644,7 @@ while IFS= read -r -d '' pkg_json; do
       }
     }
     if (changed) {
-      fs.writeFileSync('$pkg_json', JSON.stringify(pkg, null, 2) + '\n');
+      $(if ! $DRY_RUN; then echo "fs.writeFileSync('$pkg_json', JSON.stringify(pkg, null, 2) + '\\n');" fi)
       console.log('CHANGED');
     }
   ")

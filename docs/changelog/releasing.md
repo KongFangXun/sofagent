@@ -92,11 +92,11 @@
 | # | 交付物 | 验证方式 | 谁负责 |
 |:--:|------|---------|:--:|
 | D1 | **代码实现完成** | `npm run build` exit 0 + `npm test` 全绿 | 工程师 |
-| D2 | **changelog 草稿持续更新** | `docs/changelog/vX.Y.md` 在开发期间随功能点 + 新增测试数持续追加（活文档）；**最终定稿在阶段八**，不在阶段一写 | 工程师 |
+| D2 | **changelog 草稿持续更新** | `docs/changelog/v<major>.<minor>/vX.Y.md` 在开发期间随功能点 + 新增测试数持续追加（活文档）；**最终定稿在阶段八**，不在阶段一写 | 工程师 |
 | D3 | **acceptance-test 补场景** | 按 changelog 功能点逐条 grep `FORGE/playbook/acceptance-test.sh`，零覆盖 = 未交付。**Step D 覆盖率闭环判定三项全 PASS** | 工程师 |
 | D4 | **审查体系已更新** | `regression-checklist.md` 追加本版本新维度 + `fresh-eyes-review.md` 补充新盲区。**可留发版 session 阶段五补做**，但开发 session 须标注「待补」 | 工程师 |
 | D5 | **版本号状态标注** | changelog 头部标注「开发期 SSOT 仍为 vX.Y.Z，版本号 bump 留发版 SOP」或已 bump 完成 | 工程师 |
-| D6 | **项目文档同步清单**（v1.1.9 新增） | 从 `docs/changelog/vX.Y.md`「核心变更/交付」提取所有新功能关键词，列出「功能点 → 应在哪个文档出现」对照表。**归属原则**：详细机制写到权威文档（FDE.md / DEVELOPMENT.md / ARCHITECTURE.md），其他文档（HANDBOOK / README / PHILOSOPHY / WIKI）一句话 + 链接引用，不重复展开。可留发版 session 阶段八执行，但开发 session 须产出清单 | 工程师 |
+| D6 | **项目文档同步清单**（v1.1.9 新增） | 从 `docs/changelog/v<major>.<minor>/vX.Y.md`「核心变更/交付」提取所有新功能关键词，列出「功能点 → 应在哪个文档出现」对照表。**归属原则**：详细机制写到权威文档（FDE.md / DEVELOPMENT.md / ARCHITECTURE.md），其他文档（HANDBOOK / README / PHILOSOPHY / WIKI）一句话 + 链接引用，不重复展开。可留发版 session 阶段八执行，但开发 session 须产出清单 | 工程师 |
 
 > **发版 session 接手检查**：D3/D4/D6 标「待补」→ 先补完才能进自测。绝不能跳过 D3（零覆盖新功能跑出全绿是假象）或 D6（文档零提及 = 用户不知道有这功能）。
 
@@ -133,7 +133,7 @@
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 9 | **🔴 汇总 fresh-eyes-loop 修复并整合 changelog（human-in-the-loop）**：loop（步骤 8）跑完后，用户以 `fresh-eyes-review.md` 方法论为参考**人肉**复核，① 汇总 loop 所有的 bug 修改，整合到本版本 changelog 开发日志（`docs/changelog/vX.Y.Z.md`）；② 将 loop 全部修复计入本版本 changelog 并打勾——此时所有修复仍本地未推，这是设计内正确状态 | 本版本 changelog 的「发布检查清单」含 loop 全部修复项且全部 `[x]`，开发日志已整合 loop 全部 bug 修改 |
+| 9 | **🔴 汇总 fresh-eyes-loop 修复并整合 changelog（human-in-the-loop）**：loop（步骤 8）跑完后，用户以 `fresh-eyes-review.md` 方法论为参考**人肉**复核，① 汇总 loop 所有的 bug 修改，整合到本版本 changelog 开发日志（`docs/changelog/v<major>.<minor>/vX.Y.Z.md`）；② 将 loop 全部修复计入本版本 changelog 并打勾——此时所有修复仍本地未推，这是设计内正确状态 | 本版本 changelog 的「发布检查清单」含 loop 全部修复项且全部 `[x]`，开发日志已整合 loop 全部 bug 修改 |
 | 10 | **逐项核对 changelog 每一项**（含 fresh-eyes-loop 修复项） | 当前 session | 逐文件读源码/diff，逐项确认改动存在且正确，标记 PASS/FAIL |
 | 11 | FAIL 项修复 | 当前 session（切回开发者角色） | build + test 全绿 |
 
@@ -154,7 +154,7 @@
 | 14 | `shellcheck engine/scripts/*.sh tools/*.sh install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段八之后 |
 | 15 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
 | 16 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
-| 17 | **🔴 更新 `FORGE/playbook/acceptance-test.sh`**<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `FORGE/playbook/acceptance-test.sh`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `FORGE/playbook/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n FORGE/playbook/acceptance-test.sh` 确认语法<br><br>**Step C — 同步 `FORGE/playbook/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增）<br><br>**🔴 Step D — 覆盖率闭环判定**：<br>① **场景数声称 vs 实际对齐**：`DECLARED=$(head -5 FORGE/playbook/acceptance-test.sh \| grep -oE "[0-9]+ 个端到端" \| grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " FORGE/playbook/acceptance-test.sh); [ "$DECLARED" = "$ACTUAL" ]` 不一致 = P0<br>② **功能点逐条对照**：从 changelog「核心变更/交付」提取功能关键词，逐条 grep `FORGE/playbook/acceptance-test.sh`——零覆盖 = P0（回归测试无法发现该功能退化）<br>③ **失效场景清理**：`grep -rn "sofagent-audit --daemon" FORGE/playbook/acceptance-test.sh` 期望零命中 | `bash -n FORGE/playbook/acceptance-test.sh` 通过；**Step D 三项判定全 PASS** |
+| 17 | **🔴 更新 `FORGE/playbook/acceptance-test.sh`**<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/v<major>.<minor>/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `FORGE/playbook/acceptance-test.sh`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `FORGE/playbook/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n FORGE/playbook/acceptance-test.sh` 确认语法<br><br>**Step C — 同步 `FORGE/playbook/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增）<br><br>**🔴 Step D — 覆盖率闭环判定**：<br>① **场景数声称 vs 实际对齐**：`DECLARED=$(head -5 FORGE/playbook/acceptance-test.sh \| grep -oE "[0-9]+ 个端到端" \| grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " FORGE/playbook/acceptance-test.sh); [ "$DECLARED" = "$ACTUAL" ]` 不一致 = P0<br>② **功能点逐条对照**：从 changelog「核心变更/交付」提取功能关键词，逐条 grep `FORGE/playbook/acceptance-test.sh`——零覆盖 = P0（回归测试无法发现该功能退化）<br>③ **失效场景清理**：`grep -rn "sofagent-audit --daemon" FORGE/playbook/acceptance-test.sh` 期望零命中 | `bash -n FORGE/playbook/acceptance-test.sh` 通过；**Step D 三项判定全 PASS** |
 
 ---
 
@@ -311,7 +311,7 @@ VIEWS=$(grep -c '^### ' FORGE/playbook/fresh-eyes-review.md)
 
 ### 开发日志定稿（🔴 本版本核心文档动作，原在阶段一，现移至此处）
 
-开发/审查/测试全部完成后，在此**正式定稿** `docs/changelog/vX.Y.md`：
+开发/审查/测试全部完成后，在此**正式定稿** `docs/changelog/v<major>.<minor>/vX.Y.md`：
 
 - 把开发期活文档草稿（阶段二~四随写的功能点 + 测试数）与**阶段三/五/六审查中涌现的全部 bug 修复**汇总归位到「开发日志标准结构」骨架
 - 补上本轮 `npm test` / `acceptance-test` / `shellcheck` / `check-version` 的实际结果（不要留占位符）
@@ -322,18 +322,18 @@ VIEWS=$(grep -c '^### ' FORGE/playbook/fresh-eyes-review.md)
 
 ### 根 CHANGELOG.md 索引维护（目录，非详情）
 
-根 `CHANGELOG.md` 是 `docs/changelog/` 的**纯目录索引**，每个版本只占一行，不重复「核心变更 / 质量验证」等细节（那些在 `docs/changelog/vX.Y.Z.md`）。
+根 `CHANGELOG.md` 是 `docs/changelog/` 的**纯目录索引**，每个版本只占一行，不重复「核心变更 / 质量验证」等细节（那些在 `docs/changelog/v<major>.<minor>/vX.Y.Z.md`）。
 
 索引条目固定格式（一句话摘要 + 日期 + 链接，**不写状态**）：
 
 ```
-- **vX.Y.Z** — 一句话摘要 · 2026-07-22 · [开发日志](./docs/changelog/vX.Y.Z.md)
+- **vX.Y.Z** — 一句话摘要 · 2026-07-22 · [开发日志](./docs/changelog/v<major>.<minor>/vX.Y.Z.md)
 ```
 
 发版时（阶段八）动作：
 - 本版本若还在「规划中」章节，将其条目**移至「正式版」章节**（去掉「规划中」字样，只留日期）
 - 若索引里还没有本版本条目，按上面格式补一条
-- 不改写条目内容细节——详情永远在 `docs/changelog/vX.Y.Z.md`
+- 不改写条目内容细节——详情永远在 `docs/changelog/v<major>.<minor>/vX.Y.Z.md`
 
 > 约定来源：2026-07-23 定，用户要求根 CHANGELOG.md 只做目录索引，避免与 docs/changelog/ 内容重复。
 
@@ -425,7 +425,7 @@ ls docs/changelog/*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
 
 ### CHANGELOG 两步
 
-- [ ] 新增版本条目（摘要一句话 + 链接到 `docs/changelog/vX.Y.Z.md`）
+- [ ] 新增版本条目（摘要一句话 + 链接到 `docs/changelog/v<major>.<minor>/vX.Y.Z.md`）
 - [ ] 索引列表按时间倒序排列，版本号与日期正确
 - [ ] 🔴 **只写产品变更**——不含审查元信息（维度编号、模型名、轮次、维度数等）。这些属于内部过程，外部用户不关心
 
@@ -453,7 +453,7 @@ ls docs/changelog/*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
 | `COMMUNITY.md` | contributor 数据、社区状态有变化 |
 | `ROADMAP.md` | 五步更新（见上）。不要在「现在在哪」堆积历史版本详细表 |
 | `CHANGELOG.md` | 新增版本索引条目。版本历史的**唯一权威入口** |
-| `docs/changelog/vX.Y.md` | 完整开发日志：问题背景 + 逐项修复方案 + 质量验证数据 + 发布检查清单 |
+| `docs/changelog/v<major>.<minor>/vX.Y.md` | 完整开发日志：问题背景 + 逐项修复方案 + 质量验证数据 + 发布检查清单 |
 
 ### 🔴 CLI 迁移版本回归闸（v1.1.0 教训）
 
@@ -683,7 +683,7 @@ git log vX.Y.Z..HEAD --oneline
 ── Step 5: gh release create ──
 15. gh release create vX.Y.Z
    🔴 Release body **必须**包含开发日志链接（**必须用 markdown 链接语法**，不要用反引号包裹的纯文本路径——后者在 GitHub 上不可点击）：
-   📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)
+   📖 [详细开发日志](./docs/changelog/v<major>.<minor>/vX.Y.Z.md)
 
    🔴 Release Notes 标准格式：
 
@@ -708,7 +708,7 @@ git log vX.Y.Z..HEAD --oneline
    | pre-push-check | {N}/{N} 全绿 ✅ |
    | 回归检查 | {N}/{N} 全绿 ✅ |
 
-   📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)
+   📖 [详细开发日志](./docs/changelog/v<major>.<minor>/vX.Y.Z.md)
    ```
 
    **Emoji 规范**：
@@ -723,7 +723,7 @@ git log vX.Y.Z..HEAD --oneline
    - 每个变更点用 `-` 列表，一句话说清楚做了什么（不写"为什么"——那在开发日志里）
    - 质量验证表格**固定 6 项**：npm test / acceptance-test / OpenClaw 验收 / shellcheck / pre-push-check / 回归检查
    - 测试数字写**实际值**（从 `npm test 2>&1 | tail -5` 获取），不写约数
-   - 末尾**必须有**开发日志链接——**🔴 v1.1.4 教训：必须用 markdown 链接语法 `[详细开发日志](./docs/changelog/vX.Y.Z.md)`，不要写成 `` `docs/changelog/vX.Y.Z.md` `` 反引号纯文本（后者在 GitHub 上不可点击）**
+   - 末尾**必须有**开发日志链接——**🔴 v1.1.4 教训：必须用 markdown 链接语法 `[详细开发日志](./docs/changelog/v<major>.<minor>/vX.Y.Z.md)`，不要写成 `` `docs/changelog/v<major>.<minor>/vX.Y.Z.md` `` 反引号纯文本（后者在 GitHub 上不可点击）**
    - **不含**审查元信息（模型名、审查轮次、P0/P1 标签）——那是内部过程
 
 ── Step 5: Skill 分发 ──
@@ -747,7 +747,7 @@ gh release view vX.Y.Z
 
 # 🔴 Release Notes 完整性检查（v1.0.3 教训）
 # 1. body 不为空
-# 2. 包含 📖 [详细开发日志](./docs/changelog/vX.Y.Z.md) 链接——🔴 v1.1.4 教训：
+# 2. 包含 📖 [详细开发日志](./docs/changelog/v<major>.<minor>/vX.Y.Z.md) 链接——🔴 v1.1.4 教训：
 #    必须是 markdown 链接语法（`[...](...)`），不是反引号包裹的纯文本路径
 # 3. 不是 Draft 状态
 gh release view vX.Y.Z --json isDraft,body -q '.body | length'  # 期望 > 100
@@ -811,7 +811,7 @@ bash tools/check-version.sh   # 期望：全绿
 | **npm install -g . 权限问题（v1.1.4）** | 本地源码全局安装后 `sofagent-audit` 报 Permission denied | v1.1.4 已修：`chmod +x dist/*.js` 从 `prepublishOnly` 挪到 `build` 脚本。**npm registry 装的包无此问题**，只影响 `npm install -g .` 本地自装场景 |
 | **release.yml publish-audit 失败（v1.1.1-v1.1.3，v1.1.4 修）** | GitHub Actions Release job 失败：`Failed to resolve entry for package "/core"` 17 suites FAIL | 根因：publish-audit job 只在 engine/audit 目录跑 npm ci+test，漏 build /core。v1.1.4 已修：改为根目录 workspace 构建（对齐 publish-mcp）。**每个 npm 包有 runtime 依赖其他 /* 包时，CI 必须 workspace 模式 build** |
 | **ClawHub 版本号显示错误（v1.1.4）** | ClawHub 显示 1.0.11 而非 1.1.4 | clawhub 默认 1.0.0 自增，不走 SKILL.md version。必须 `--version X.Y.Z --changelog "简短说明"` |
-| **Release notes 链接不可点击（v1.1.4）** | `` 📖 详细开发日志：`docs/changelog/vX.Y.Z.md` `` 在 GitHub 不可点击 | 必须用 markdown 链接语法：`📖 [详细开发日志](./docs/changelog/vX.Y.Z.md)` |
+| **Release notes 链接不可点击（v1.1.4）** | `` 📖 详细开发日志：`docs/changelog/v<major>.<minor>/vX.Y.Z.md` `` 在 GitHub 不可点击 | 必须用 markdown 链接语法：`📖 [详细开发日志](./docs/changelog/v<major>.<minor>/vX.Y.Z.md)` |
 | **workspace 新增包后 npm ci 失败（v1.2.0）** | `npm ci` 报 Missing: @sofagent/load-chain | 新增 workspace 包后必须 `npm install` 更新 lock file，否则 CI 的 `npm ci` 找不到新包 |
 | **scoped 新包 npm publish E402（v1.2.0）** | `npm publish` 报 402 Payment Required | scoped 新包（如 @sofagent/load-chain）首次发布需 `--access public` |
 | **重构后 CI 配置路径未同步（v1.2.0）** | CI 连续挂：handler.ts 找不到、LOOP/loop-install.sh 不存在 | 目录重构（如 handler.ts→src/、LOOP→FORGE）后必须 grep 全仓旧路径更新 CI 配置——CI 配置是代码的一部分 |
@@ -827,7 +827,7 @@ bash tools/check-version.sh   # 期望：全绿
 | 36 | **🔴 CI 全绿检查（v1.2.0 教训）**：`gh run list -b main -L 10 --json conclusion,name,headSha` → 任一 failure 则 `gh run view --log-failed` 定位 → 修复 → push → 重查。v1.2.0 教训：4 轮 CI 挂全是 LOOP→FORGE 重构时 CI 配置未同步——代码写对不等于 CI 能过 |
 | 37 | 如果本次迭代暴露了新的流程漏洞，**直接吸收进本 SOP 对应阶段**——不要存到单独章节。每条新规则标注版本号（如 `vX.Y 教训`）以便追溯 |
 | 38 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 直接吸收进对应阶段，标注版本号<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 FORGE/archive/self-evolution-design.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
-| 39 | **生成「下一版本开发 Prompt」到桌面**：综合 `ROADMAP.md`（未来规划）+ `CHANGELOG.md` + 下一版本 `docs/changelog/vX.Y.md`（若存在），生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`。<br>**若下一版本 changelog 尚未创建**：先 ① 写新版本需求并产出 `docs/changelog/vX.Y.md`；再 ② 生成桌面开发 prompt |
+| 39 | **生成「下一版本开发 Prompt」到桌面**：综合 `ROADMAP.md`（未来规划）+ `CHANGELOG.md` + 下一版本 `docs/changelog/v<major>.<minor>/vX.Y.md`（若存在），生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`。<br>**若下一版本 changelog 尚未创建**：先 ① 写新版本需求并产出 `docs/changelog/v<major>.<minor>/vX.Y.md`；再 ② 生成桌面开发 prompt |
 | 40 | **🔴 审查闭环——发布后审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `FORGE/playbook/fresh-eyes-review.md`（已在本版本阶段五中更新），对已发布版本做独立审查<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，作为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的视角和敏感度。⚠️ 这里的"锋利"指 fresh-eyes-review 的直觉校准（见阶段五 Tier 3），不是加检查项——检查项归 regression-checklist 管 |
 
 ### 下一版本开发 Prompt 生成说明（步骤 39）
@@ -837,11 +837,11 @@ bash tools/check-version.sh   # 期望：全绿
 **生成流程**：
 1. 读 `ROADMAP.md` 的「未来去哪」节，提取下一版本规划方向
 2. 读 `CHANGELOG.md` 确认下一版本号与索引条目
-3. 读 `docs/changelog/vX.Y.md`（下一版本开发日志，若存在）—— 这是开发 prompt 的主体来源
+3. 读 `docs/changelog/v<major>.<minor>/vX.Y.md`（下一版本开发日志，若存在）—— 这是开发 prompt 的主体来源
 4. 综合上述，生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`（结构：问题描述 → 修复方案 → 验证方式 → 发布检查清单）
 
 **若下一版本 changelog 尚未创建**（开发到下一版本时文件还不存在）：
-1. 先写新版本需求，产出 `docs/changelog/vX.Y.md`（含问题描述 → 修复方案 → 验证方式 → 发布检查清单）
+1. 先写新版本需求，产出 `docs/changelog/v<major>.<minor>/vX.Y.md`（含问题描述 → 修复方案 → 验证方式 → 发布检查清单）
 2. 再执行上方「生成流程」生成桌面开发 prompt
 
 ---
