@@ -760,8 +760,11 @@ git log vX.Y.Z..HEAD --oneline
    - 每个变更点用 `-` 列表，一句话说清楚做了什么（不写"为什么"——那在开发日志里）
    - 质量验证表格**固定 6 项**：npm test / acceptance-test / OpenClaw 验收 / shellcheck / pre-push-check / 回归检查
    - 测试数字写**实际值**（从 `npm test 2>&1 | tail -5` 获取），不写约数
-   - 末尾**必须有**开发日志链接——**🔴 v1.1.4 教训：必须用 markdown 链接语法 `[详细开发日志](./docs/changelog/v<major>.<minor>/vX.Y.Z.md)`，不要写成 `` `docs/changelog/v<major>.<minor>/vX.Y.Z.md` `` 反引号纯文本（后者在 GitHub 上不可点击）**
+   - 末尾**必须有**开发���志链接——**🔴 v1.1.4 教训：必须用 markdown 链接语法 `[详细开发日志](./docs/changelog/v<major>.<minor>/vX.Y.Z.md)`，不要写成 `` `docs/changelog/v<major>.<minor>/vX.Y.Z.md` `` 反引号纯文本（后者在 GitHub 上不可点击）**
    - **不含**审查元信息（模型名、审查轮次、P0/P1 标签）——那是内部过程
+   - 🔴 **v1.2.2 教训·body 不重复标题**：`gh release create` 的 `--title` 参数已包含版本标题，body 内**不要再写** `# vX.Y.Z — ...` 的 H1 标题——会导致 GitHub Release 页面标题出现两次
+   - 🔴 **v1.2.2 教训·body 不附 npm 包表格**：npm 包版本信息在开发日志中有详细记录，Release Notes **不需要重复**——body 只含三节（核心变更 + 质量验证 + 日志链接），不追加其他内容
+   - 🔴 **v1.2.2 教训·功能领域标题必须带 emoji 前缀**：每个 `###` 标题**必须**带对应 emoji（如 `### 🔧 编排引擎` / `### 🛡️ 安全加固`），裸标题（`### 编排引擎`）不符合规范
 
 ── Step 5: Skill 分发 ──
 > 唯一对外 skill，发布源是 `./FDE` 目录（含 SKILL.md + FDE.md + templates）。
