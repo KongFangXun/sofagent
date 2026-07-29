@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.2.2 · 2026-07-29（UTC）· 数据目录重构（.sofagent/ → data/）+ ToolGate 运行时接入 + SubAgent 可见性 L2 + custom/ 闭环 · 规划：v1.2.2（数据主权 + Dashboard）→ v1.2.3（编排隔离 + 波次拓扑可视化）→ v1.3.1（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）
+> v1.2.2 · 2026-07-29 · 数据主权审计 + 混合模型路由 + FDE Dashboard + Graph Engine
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
