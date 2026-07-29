@@ -730,13 +730,35 @@ git log vX.Y.Z..HEAD --oneline
 > v1.2.2 起：对外只维护一个 skill `sofagent`（slug），发布源是 `./FDE` 目录（含 SKILL.md + FDE.md + templates）。
 > 不再单独发布 sofagent-fde / sofagent-audit / sofagent-engineer / sofagent-reviewer —— 这些是内部 Sub Agent，不对外。
 
-15. clawhub skill publish ./FDE --slug sofagent --owner KongFangXun --version X.Y.Z --changelog "vX.Y.Z: {简短变更}"
-16. skillhub publish ./FDE --version X.Y.Z --changelog "vX.Y.Z: {简短变更}"
-17. 本机 Skill 同步：
-    cp -r FDE/* ~/.workbuddy/skills/sofagent/
+```bash
+# 15. ClawHub 发布（slug = sofagent）
+clawhub skill publish ./FDE \
+  --slug sofagent \
+  --owner KongFangXun \
+  --version X.Y.Z \
+  --changelog "vX.Y.Z: {简短变更}" \
+  --source-repo "KongFangXun/sofagent" \
+  --source-ref "vX.Y.Z"
+
+# 16. SkillHub 发布（slug = sofagent）
+#     🔴 v1.2.2 教训：SkillHub 上已注册的 slug 是 `sofagent`，不是 `sofagent-fde`。
+#     如果 FDE/SKILL.md 的 slug 字段不匹配，publish 会返回 409 "skill already exists"。
+#     发布前确认 slug 字段：
+head -3 FDE/SKILL.md    # 期望：slug: sofagent
+#     确认无误后发布：
+skillhub publish ./FDE --version X.Y.Z --changelog "vX.Y.Z: {简短变更}"
+#     新版本有平台审核流程（reviewStatus=pending），审核通过后搜索索引才更新。
+
+# 17. 本机 Skill 同步
+cp -r FDE/* ~/.workbuddy/skills/sofagent/
 ```
 
-> **📌 以后只维护一个对外 skill `sofagent`（发布源 `./FDE`）。** ClawHub 和 SkillHub 每次发版都要推，一个都不能少。
+> **📌 Skill 分发铁律**：
+> 1. **两个平台 slug 统一为 `sofagent`**（不是 `sofagent-fde`）
+> 2. **发布源是 `./FDE` 目录**（不是 `./SKILL` 目录——后者是引擎内部约束链）
+> 3. **FDE/SKILL.md 的 slug 字段必须 = `sofagent`**，否则 SkillHub 返回 409
+> 4. ClawHub 和 SkillHub 每次发版都要推，一个都不能少
+> 5. SkillHub 新版本有审核延迟，搜索结果不会立即更新（正常现象）
 
 ### 发布后验证
 
@@ -804,7 +826,7 @@ bash tools/check-version.sh   # 期望：全绿
 | npm publish 403 | `npm publish` E403 | 版本号已存在或 NPM_TOKEN 过期 |
 | npm ENOTEMPTY（v1.0.9） | `npm install -g` 报 ENOTEMPTY rename 失败 | 清理全局 `node_modules//.audit-*` 残留目录后重试 |
 | gh release TLS timeout（v1.0.9） | `gh release create` 报 TLS handshake timeout | 加 `--repo KongFangXun/sofagent` flag 重试 |
-| ClawHub slug 冲突（v1.0.9） | `clawhub skill publish ./FDE` 报 Ambiguous slug | 加 `--slug sofagent-fde` |
+| ClawHub slug 冲突（v1.0.9） | `clawhub skill publish ./FDE` 报 Ambiguous slug | 加 `--slug sofagent`（v1.2.2 起统一为 sofagent） |
 | skillhub 语法错误（v1.0.9） | `skillhub skill publish` 报 invalid choice | skillhub 无 `skill` 子命令，直接 `skillhub publish <path> --version X` |
 | A9 测试文件误报（v1.0.9） | commit-msg hook 拦截：测试文件中的注入向量被误报 | A9 已在 v1.0.9+post-release 跳过 `.test.`/`__tests__/`/`.fixture`；旧版本用 `--no-verify` |
 | 全局二进制版本落后 | `sofagent-audit --version` 显示旧版本号 | npm registry 已更新但本地未重装。`npm install -g /audit@latest` |
@@ -898,7 +920,8 @@ bash tools/check-version.sh   # 期望：全绿
 | v1.1.0 | 12 包按依赖层分批发布（npm workspace symlink 在 publish 时不生效） | 阶段十一 |
 | v1.1.0 | CLI 迁移版本回归闸（shellcheck 跳过本阶段，延后到阶段八补跑） | 阶段八 |
 | v1.0.9 | skillhub CLI 语法与 clawhub 不同（无 `skill` 子命令） | 阶段十一 |
-| v1.0.9 | FDE ClawHub slug "fde" 冲突（必须用 `--slug sofagent-fde`） | 阶段十一 |
+| v1.2.2 | SkillHub slug 不一致：平台注册 `sofagent`，SKILL.md 写 `sofagent-fde` 导致 409 | 阶段十一 |
+| v1.0.9 | ClawHub slug "fde" 冲突（必须用 `--slug sofagent`） | 阶段十一 |
 | v1.0.7 | 忘了更新本机全局安装（QA 测试时跑旧版本） | 阶段十一 |
 | v1.0.4 | dist 与 src 同步验证 | 阶段四 |
 | v1.0.4 | 审查文档自身也会过时（每版本审视数字/路径/维度有效性） | 阶段七 |

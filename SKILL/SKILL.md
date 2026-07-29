@@ -1,6 +1,6 @@
 ---
-name: sofagent-fde
-slug: sofagent-fde
+name: sofagent
+slug: sofagent
 version: 1.2.2
 displayName: FDE Agent
 description: >
