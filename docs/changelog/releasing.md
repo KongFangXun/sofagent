@@ -3,7 +3,7 @@
 > **十二阶段**：审查→开发→自测→代码审核→审查体系合并更新（含瘦身检查）→release-gate-loop 发版闸门→审查体系最终确认→文档收尾→工具脚本健康检查→确认关口→发布（含设备端安装）→发布后。
 > 🔴 版本号操作用 `bump-version.sh` + `check-version.sh`，禁止手动 grep/sed。
 > 🔴 文档预算分层检查（A 用户文档 / B 开发者参考 / C 审查体系 / E 指南），见 `check-docs.sh`。
-> 🔴 回归检查已升格为**独立阶段**（阶段六）——建议在全新 session 启动，不再作为"审核"的子步骤。v1.2.2 起 acceptance step 由 driver 预跑（Node.js spawn，无 60s 限制），不再需要 LLM agent 管理长任务。
+> 🔴 回归检查已升格为**独立阶段**（阶段六）——在本 session 直接跑，不再作为"审核"的子步骤。v1.2.2 起 acceptance step 先直连跑脚本再启 driver（sandbox 杀后台进程的 10 轮血泪已根治），driver 只负责 regression + coverage + consolidate + verdict。
 
 ---
 
@@ -145,7 +145,7 @@
 | 16 | **合并更新三份审查文档（三份逻辑不同，区分对待）**：<br>**① regression-checklist.md（加法）**：汇总本版本所有修复项，抽象为回归检查维度（编号递增）写入。每发现一个问题加一条——这是精确清单，膨胀靠瘦身控制<br>**② fresh-eyes-review.md（校准，不是加法）**：按下方「fresh-eyes-review 升级优化」决策树处理本版本审查中的预料外发现。**⚠️ 不要往 fresh-eyes-review 里加精确检查项**——它是留白式的直觉审查，加检查项会让它退化成第二个 regression-checklist（v1.2.0 刚从 826 行砍到 274 行修复了这个问题）<br>**③ acceptance-test.sh（可自动化验证的发现）**：如果 fresh eyes 审查报告中的 P0/P1 问题可以通过 CLI 命令/grep/bash 自动化验证，**同步追加到 `FORGE/playbook/acceptance-test.sh`**（追加场景，编号递增）。手法与阶段四·步骤 15 Step B 相同——`scenario` 编号 + 中文注释 + 断言。**为什么需要这一步**：regression-checklist 是人工巡检用的，acceptance-test 是机器跑的——如果一个 bug 可以被自动化检出，把它只放在 regression-checklist 里等于每次发版都要人工跑一遍。让它进 acceptance-test 才能让机器替你记住。 | 当前 session | `git diff` 显示三份文档均有更新（fresh-eyes 可能无变更，见下说明）；regression 新增维度 + acceptance-test 新增场景 ≥ 本版本修复数 |
 | 17 | **当前 session 逐项验证**：每条新增回归维度跑一遍命令确认可执行；确认 `fresh-eyes-review.md` 新维度与回归维度互相印证、无矛盾 | 当前 session | 所有新增维度可执行 + 两份文档互相印证 |
 
-> ✅ 完成 步骤 16 → 17 后，**开发 session 的文档工作已一气呵成**——回归清单 + 发布后审查全部在当前 session 更新完。接下来只有**阶段六启动 release-gate-loop driver**（v1.2.2 起可在当前 session 直接 `node FORGE/src/release-gate-driver.mjs --target vX.Y.Z`，acceptance 由 driver 预跑）。
+> ✅ 完成 步骤 16 → 17 后，**开发 session 的文档工作已一气呵成**——回归清单 + 发布后审查全部在当前 session 更新完。接下来**阶段六在本 session 直连跑 acceptance-test.sh 后启动 driver**（acceptance 直连绕过 sandbox kill，driver 只跑 regression/coverage/consolidate/verdict）。
 
 > 🔴 **防膨胀自检 + 瘦身检查（v1.1.7 起，覆盖回归清单 + 验收脚本两份验证文件，每版本执行）**：两份验证文件历史上都曾严重膨胀——回归清单曾达 288 维度（3686 行，2026-07-18 治理归并），验收脚本 `FORGE/playbook/acceptance-test.sh` 在 v1.1.7 优化前达 3207 行。为防止"每次单纯堆砌、几版就不可维护"，**每版本发版都做一轮瘦身**（既然每版都做，单次瘦身量小、负担可控）。流程：先跑轻量自检看两个数，再对越线或冗余处做深度瘦身。
 
@@ -224,39 +224,45 @@ VIEWS=$(grep -c '^### ' FORGE/playbook/fresh-eyes-review.md)
 
 ---
 
-## 🔴 阶段六：release-gate-loop 发版闸门（开新 session 启动 driver）
+## 🔴 阶段六：release-gate-loop 发版闸门（本 session 直接跑）
 
-**操作模式**：开一个**全新的 Agent session**（不要从开发 session 继续），启动 release-gate-loop driver。driver 用 DeepSeek V4 Flash（V 角色）串行跑 5 步：acceptance-test → regression-checklist → 覆盖率交叉检查 → 合并报告 → PASS/FAIL 裁决。纯只读——只验证不改代码。
+**操作模式**：在**当前开发 session** 中直接启动 release-gate-loop driver。driver 用 DeepSeek V4 Flash（V 角色）串行跑 5 步：acceptance-test → regression-checklist → 覆盖率交叉检查 → 合并报告 → PASS/FAIL 裁决。纯只读——只验证不改代码。
 
-> **统一执行入口**（v1.2.1 重构 · v1.2.2 acceptance 架构改造）：本阶段从"手动控制 OpenClaw 跑检查"升级为"启动 release-gate-loop driver 自动化执行"。v1.2.2 起 acceptance step 由 **driver 预跑**（Node.js spawn，无 60s 限制），LLM agent 只解读日志。driver 编排 V 角色（DeepSeek V4 Flash + thinking）完成 acceptance（driver 预跑→agent 解读）+ regression-checklist（文档级回归）+ 覆盖率交叉检查，自动生成合并报告和裁决。
+> **统一执行入口**（v1.2.1 重构 · v1.2.2 acceptance 架构改造 · v1.2.2 本 session 直跑）：v1.2.2 起 acceptance step 由 **driver 预跑**（Node.js spawn，无 60s 限制），LLM agent 只解读日志。但 sandbox 会 kill 长时间运行的后台子进程——10 轮崩溃后确认：**acceptance-test.sh 须在 driver 启动前直连跑**，driver 检测到已有日志后跳过预跑，只跑 regression + coverage + consolidate + verdict。整个 release-gate-loop 通常需要 15-20 分钟（acceptance ~1.5 分直连 + regression 8-12 分 + 其他 2 分）。
 
-### release-gate-loop 启动 Prompt（直接复制给新 session）
+### release-gate-loop 执行步骤（在本 session 逐条执行）
 
-> 这份 prompt 已内嵌在 SOP 中，开新 session 时直接整段复制粘贴即可。把 `vX.Y.Z` 替换为本版本号。
+> 把 `vX.Y.Z` 替换为本版本号。以下步骤在**当前 session** 中直接逐条执行，不需要开新 session。
 
 ```
-在 sofagent 项目（/Users/kongfangxun/Workbuddy/sofagent）中，执行 vX.Y.Z 的 release-gate-loop（发版闸门）。
+1. 直连跑验收脚本（约 90 秒，165 场景）：
+   bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-raw.log 2>&1
+   确认 exit code = 0 且末尾显示"全部通过"
 
-先读 FORGE/SKILL/release-gate-loop/SKILL.md 了解循环结构，然后：
+2. 预建 run 目录并把日志放进去：
+   RUN_DIR=~/.sofagent/data/forge-runs/release-gate-loop/$(date +%Y-%m-%d)/run-$(printf "%02d" $(ls ~/.sofagent/data/forge-runs/release-gate-loop/$(date +%Y-%m-%d)/ 2>/dev/null | grep -c run-))
+   mkdir -p "$RUN_DIR"
+   cp /tmp/acceptance-raw.log "$RUN_DIR/acceptance-raw.log"
 
-1. 后台启动 driver：node FORGE/src/release-gate-driver.mjs --target vX.Y.Z > /tmp/release-gate.log 2>&1 &
-2. 记住 runDir（启动日志打印的路径）
-3. 轮询监控：每 60 秒 tail /tmp/release-gate.log，有新进展就一句话汇报，没变化就静默；最长沉默不超过 3 分钟
-4. driver 退出后读 verdict.md，用 3-5 行汇报：acceptance + regression + coverage + 最终裁决
+3. 后台启动 driver（跳过 acceptance 预跑，直接进 regression）：
+   node FORGE/src/release-gate-driver.mjs --target vX.Y.Z > /tmp/release-gate.log 2>&1 &
+
+4. 轮询监控：每 60 秒 tail /tmp/release-gate.log，有新进展就一句话汇报，没变化就静默；最长沉默不超过 3 分钟
+
+5. driver 退出后读 verdict.md，用 3-5 行汇报：acceptance + regression + coverage + 最终裁决
 
 铁律：不干涉 driver、不改代码、不探索源码——只做启动 + 定期汇报 + 最终汇报。
 ```
-
-> 新 session 的 AI 会自己读 SKILL.md 拿到循环结构（5 步：acceptance → regression → coverage → consolidate → verdict）。v1.2.2 起 acceptance 由 driver 直接 spawn（7-12 分钟），不再需要 LLM agent 通过 run_bash 管理长任务（4 轮崩溃血泪教训已根治）。整个 release-gate-loop 通常需要 15-25 分钟（acceptance 7-12 分 + regression 5-10 分 + 其他 3 分）。
+> **执行过程**：步骤 1-2 在本 session 的 bash 里直连跑（不走 driver spawn，sandbox 不杀），步骤 3 启动 driver 后只需轮询等结果。acceptance 通过子 shell signal 隔离（HUP 不传导）+ S148 `const today` 去重后稳定跑通。v1.2.2 实测：acceptance 165/165 全绿、regression 40/44 PASS（2 ⚠️ 非阻塞）、coverage 8/10 覆盖。
 
 ### 判定与循环
 
 | 结果 | 下一步 |
 |------|--------|
 | **verdict = PASS**（acceptance + regression + coverage 全 PASS） | 进阶段七（最终确认两份审查文档） |
-| **verdict = FAIL** | 把 driver 的 stage6-report.md 带回开发 session → **回阶段五**（根据问题优化 `regression-checklist.md` + `fresh-eyes-review.md` 两个文档）→ 再开新 session 重跑本阶段 |
+| **verdict = FAIL** | 根据报告定位问题 → **回阶段五**（根据问题优化 `regression-checklist.md` + `fresh-eyes-review.md` 两个文档）→ 修复后重跑本阶段 |
 
-> 🔴 **循环测试机制**：阶段六裁决 FAIL → 回**阶段五**（优化回归清单 `regression-checklist.md` + 发布后审查 `fresh-eyes-review.md` 两个文档）→ 再开新 session 重跑 release-gate-loop。全部改完、阶段六 verdict=PASS 后，进阶段七。最多循环 2 轮；2 轮仍不过则在报告中标注遗留问题，交开发侧决策。
+> 🔴 **循环测试机制**：阶段六裁决 FAIL → 回**阶段五**（优化回归清单 `regression-checklist.md` + 发布后审查 `fresh-eyes-review.md` 两个文档）→ 修复后重跑 release-gate-loop。全部改完、阶段六 verdict=PASS 后，进阶段七。最多循环 2 轮；2 轮仍不过则在报告中标注遗留问题，交开发侧决策。
 
 > 时序说明：driver 的 regression 步骤会自动处理「⏰ 待发版」标注的检查项（git tag / npm registry / 全局二进制版本）——这些在检查阶段必然不满足，标 ⏳ 不标 FAIL。
 
