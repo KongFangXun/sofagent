@@ -436,7 +436,7 @@ case "$COMMAND" in
     cat "$SOFAGENT_HOME/VERSION" 2>/dev/null || echo "unknown"
     ;;
   dashboard)
-    # 启动 Dashboard（v1.2.2 实现，v1.2.1 先占位）
+    # 启动 Dashboard（v1.2.2 已实现，install 时自动软链到 $SOFAGENT_HOME/bin/sofagent-dashboard）
     if [ -x "$SOFAGENT_HOME/bin/sofagent-dashboard" ]; then
       exec "$SOFAGENT_HOME/bin/sofagent-dashboard" "$@"
     else
@@ -468,6 +468,18 @@ case "$COMMAND" in
 esac
 CLIEOF
   chmod +x "$bin_dir/sofagent"
+
+  # Dashboard 入口软链（v1.2.2 真实实现 tools/sofagent-dashboard.sh，零前端依赖 bash+jq）
+  # wrapper dashboard 分支检查 -x "$SOFAGENT_HOME/bin/sofagent-dashboard"，故软链目标不带 .sh 后缀
+  local dashboard_src="${SCRIPT_DIR}/tools/sofagent-dashboard.sh"
+  local dashboard_link="$bin_dir/sofagent-dashboard"
+  if [ -f "$dashboard_src" ]; then
+    ln -sf "$dashboard_src" "$dashboard_link" 2>/dev/null || true
+    chmod +x "$dashboard_link" 2>/dev/null || true
+    ok "  Dashboard 入口已注册：sofagent-dashboard → $bin_dir/sofagent-dashboard"
+  else
+    warn "  Dashboard 实现脚本缺失（$dashboard_src），跳过软链；wrapper 占位分支兜底"
+  fi
 
   # symlink 到 PATH（优先 /usr/local/bin，fallback ~/.local/bin）
   local target="/usr/local/bin/sofagent"
