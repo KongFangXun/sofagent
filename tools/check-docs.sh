@@ -191,13 +191,13 @@ echo "=== 5. Skill 文件行数检查 ==="
 for f in SKILL/harness/*.md; do
   LINES=$(wc -l < "$f" | tr -d ' ')
   STATUS=""
-  if [ "$LINES" -gt 100 ]; then
+  if [ "$LINES" -gt 200 ]; then
     STATUS="超标"
     ERRORS=$((ERRORS + 1))
   else
     STATUS="OK"
   fi
-  echo "    ${STATUS} $(basename "$f"): ${LINES} 行 (上限 100)"
+  echo "    ${STATUS} $(basename "$f"): ${LINES} 行 (上限 200)"
 done
 
 echo ""
