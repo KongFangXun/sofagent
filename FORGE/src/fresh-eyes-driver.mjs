@@ -554,15 +554,15 @@ async function runWorker(step, roundDir, target) {
   // recursionLimit 按步骤类型区分：
   // - 审查类（a-check/b-check）：需要大量读文件+搜索，给 200（=100 轮工具调用）
   // - 文本处理类（a-consolidate/a-verify）：主要做合并/格式化，给 100 够了
-  // - b-fix：分片后每批 5 条 finding × 3 工具调用 = 15 步，给 100 是 6 倍余量
+  // - b-fix：分片后每批 5 条 finding × 5 工具调用 = 25 步，给 150 是 6 倍余量
   //   太高会导致消息累积 OOM（exit 137）
-  // - a-verify：分片后每批 5 条 × 2 操作 = 10 步，给 100 是 10 倍余量
+  // - a-verify：分片后每批 5 条 × 2 操作 = 10 步，给 150 是 15 倍余量
   const STEP_RECURSION_LIMITS = {
     'a-check': 200,
     'b-check': 200,
     'a-consolidate': 100,
-    'b-fix': 100,
-    'a-verify': 100,
+    'b-fix': 150,
+    'a-verify': 150,
   };
   const recursionLimit = STEP_RECURSION_LIMITS[step] ?? 50;
 
@@ -1355,8 +1355,8 @@ async function main() {
   console.log(`   max-rounds = ${args.maxRounds}`);
   console.log(`   run-dir    = ${runDir}`);
   console.log(`   dry-run    = ${args.dryRun}`);
-  console.log(`   A          = GLM-5.2 (${MODEL_CONFIGS.A.baseURL})`);
-  console.log(`   B          = DeepSeek V4 Pro (${MODEL_CONFIGS.B.baseURL})`);
+  console.log(`   A          = ${MODEL_CONFIGS.A.model} (${MODEL_CONFIGS.A.baseURL})`);
+  console.log(`   B          = ${MODEL_CONFIGS.B.model} (${MODEL_CONFIGS.B.baseURL})`);
 
   let cleanStreak   = 0;
   let stopReason    = 'max-rounds';

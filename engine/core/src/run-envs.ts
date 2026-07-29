@@ -122,7 +122,8 @@ export function detectTools(): Record<string, { available: boolean; version?: st
 
   for (const [cmd, expectedPattern] of toolDefs) {
     const available = commandExists(cmd);
-    const version = available ? tryVersion(cmd, ['--version']) : undefined;
+    const versionArgs = cmd === 'openssl' ? ['version'] : ['--version'];
+    const version = available ? tryVersion(cmd, versionArgs) : undefined;
 
     // 如果 --version 不工作，尝试 -V
     const finalVersion = version || (available ? tryVersion(cmd, ['-V']) : undefined);

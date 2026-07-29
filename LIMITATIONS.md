@@ -35,6 +35,18 @@
 | 6 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#单平台用户建议)
 
 > ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。
+>
+> **建议缓解措施**：
+> 1. **CI 侧兜底（推荐）**：在 CI pipeline 中加入 `sofagent-audit --diff HEAD~1..HEAD`，
+>    确保即使开发者本地用了 `--no-verify`，CI 仍会拦截。
+>    ```yaml
+>    # GitHub Actions 示例
+>    - name: sofagent 审计检查
+>      run: |
+>        npx @sofagent/audit --diff HEAD~1..HEAD
+>    ```
+> 2. **定期自动 doctor**：配置 cron job 每周运行 `sofagent-core --doctor`，
+>    并将结果发送到监控频道，检测 hooks 是否被意外移除。
 
 ---
 

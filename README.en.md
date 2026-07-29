@@ -20,7 +20,7 @@
   <a href="#install-and-get-going"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>Current version: v1.2.1</strong> · 2026-07-28 · Data directory refactor + custom/ closure + ToolGate integration + SubAgent visibility L2</p>
+<p align="center"><strong>Current version: v1.2.2</strong> · 2026-07-29 · Data sovereignty audit + hybrid model routing + FDE Dashboard + Graph Engine</p>
 
 <p align="center">
   <a href="#what-is-this">What is this</a> · <a href="#what-sofagent-can-do-for-you">Features</a> · <a href="#three-deployment-options">Deployment</a> · <a href="#install-and-get-going">Install</a> · <a href="#further-reading">Docs</a>
