@@ -12,8 +12,8 @@
 //   node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>
 //
 // 异构模型（孔老师 2026-07-25 定稿）：
-//   A（审查者）= GLM-5.2     baseURL https://open.bigmodel.cn/api/coding/paas/v4/ (Coding Plan 端点)  temp=1.0
-//   B（工程师）= DeepSeek V4  baseURL https://api.deepseek.com/             thinking+reasoning_effort=high
+//   A（审查者）= DeepSeek V4 Pro  baseURL https://api.deepseek.com/  thinking+reasoning_effort=high
+//   B（工程师）= DeepSeek V4 Pro  baseURL https://api.deepseek.com/  thinking+reasoning_effort=high
 // ============================================================
 
 import { spawn } from 'child_process';
@@ -55,15 +55,16 @@ const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 // ─── 异构模型配置 ────────────────────────────────────────────
 const MODEL_CONFIGS = {
   A: {
-    baseURL:         'https://open.bigmodel.cn/api/coding/paas/v4/',
-    model:           'glm-5.2',
-    temperature:     1.0,
+    baseURL:         'https://api.deepseek.com/',
+    model:           'deepseek-v4-pro',
+    thinking:        { type: 'enabled' },
+    reasoningEffort: 'high',
     maxTokens:       16000,  // 限制输出 token，防止 thinking 模式无限消耗
     apiKeyEnv:       'SOFAGENT_LLM_A_API_KEY',
     specEnv:         'SOFAGENT_LLM_A',
     agentSkillPath:  join(AGENTS_DIR, 'reviewer/SKILL.md'),
     toolsKey:        'REVIEWER_TOOLS',
-    billing:         'subscription',   // Coding Plan 订阅制，不按 token 扣费
+    billing:         'pay-as-you-go',  // 按量计费
   },
   B: {
     baseURL:         'https://api.deepseek.com/',
@@ -83,18 +84,13 @@ const MODEL_CONFIGS = {
 // 数据来源：各厂商官方定价页（2026-07-25 查证）
 //
 // ⚠️ 计费模式区分（2026-07-25 确认）：
-//   A (glm-5.2) = Coding Plan 订阅制 → cost_cny 记 null，不适用本表计价
-//   B (deepseek-v4-pro) = 按量计费 → 适用本表计价
-// 本表仅用于 B 的成本估算。A 的真实成本见 Coding Plan 后台额度消耗。
+//   A/B (deepseek-v4-pro) = 按量计费 → 适用本表计价
+// 本表用于成本估算。缓存命中率、账号促销、套餐折扣会影响最终费用。
 //
 // ⚠️ 这是「估算」不是「账单」：
 //   官方标价 ≠ 实际扣费。缓存命中率、账号促销、套餐折扣都会影响最终费用。
 //   driver 算出的 cost_cny 仅供成本感知（「这轮大概花了多少」），
 //   真实账单请到各厂商 API 后台查看。
-//
-// GLM-5.2（智谱 2026-06 旗舰，744B MoE，1M 上下文）：
-//   https://open.bigmodel.cn/pricing
-//   input 8元 / output 28元 / 缓存命中 input 2元
 //
 // DeepSeek V4 Pro（DeepSeek 2026-07 旗舰，1.6T MoE，1M 上下文）：
 //   https://api-docs.deepseek.com/quick_start/pricing
@@ -103,14 +99,6 @@ const MODEL_CONFIGS = {
 //   峰谷定价曾有新闻提及但未正式实施，若后续上线需更新本表。
 //   → 本表按「缓存未命中」计价（成本上界，缓存命中时实际账单更低）
 const MODEL_PRICING = {
-  'glm-5.2': {
-    input: 8,
-    output: 28,
-    currency: 'CNY',
-    source: 'https://open.bigmodel.cn/pricing',
-    note: '缓存命中 input 2元/M。官方标价，实际账单以 API 后台为准',
-    billing: 'subscription',   // Coding Plan 订阅制，本表定价仅供参考
-  },
   'deepseek-v4-pro': {
     input: 3,
     output: 6,
@@ -194,10 +182,8 @@ function buildSystemPrompt(skillPath) {
 /**
  * 为指定角色创建 LLM 模型实例。
  *
- * GLM (A)：标准 ChatOpenAI，temperature=1.0。
- * DeepSeek (B)：ChatOpenAI + reasoningEffort='high'；thinking 参数通过
- *   modelKwargs 注入——若 @langchain/openai 版本不支持 modelKwargs，
- *   会走 catch 分支退到原生 fetch（仅影响 B，不影响 A）。
+ * 两角色均使用 DeepSeek V4 Pro（ChatOpenAI + reasoningEffort='high'）。
+ * thinking 参数通过 modelKwargs 注入。
  */
 async function createModel(role) {
   const cfg = MODEL_CONFIGS[role];
@@ -1195,7 +1181,7 @@ function appendUsageSummary(runDir, rounds) {
     total_cost_cny: Number(totalCost.toFixed(6)),
     rounds:         rounds,
     by_role:        byRole,
-    a_billing:      'subscription',  // A (glm-5.2) = Coding Plan 订阅制，cost_cny 不适用
+    a_billing:      MODEL_CONFIGS.A.billing,
   };
 
   appendFileSync(usagePath, JSON.stringify(summary) + '\n', 'utf-8');
