@@ -622,6 +622,9 @@ echo ""
 # 🔴 v1.2.2 教训：这段 node 脚本必须受 DRY_RUN 守卫——之前 fs.writeFileSync 无条件写盘，
 #    导致 --dry-run 实际修改了 9 个 package.json 的依赖版本号
 BUMP_INTERNAL_DEPS_COUNT=0
+# v1.2.2: 用环境变量传递 DRY_RUN 状态给 node 脚本（避免 shellcheck SC1046 误报）
+export SOFAGENT_BUMP_WRITE="0"
+if ! $DRY_RUN; then SOFAGENT_BUMP_WRITE="1"; fi
 while IFS= read -r -d '' pkg_json; do
   NEW_CONTENT=$(node -e "
     const fs = require('fs');
@@ -644,7 +647,9 @@ while IFS= read -r -d '' pkg_json; do
       }
     }
     if (changed) {
-      $(if ! $DRY_RUN; then echo "fs.writeFileSync('$pkg_json', JSON.stringify(pkg, null, 2) + '\\n');" fi)
+      if (process.env.SOFAGENT_BUMP_WRITE === '1') {
+        fs.writeFileSync('$pkg_json', JSON.stringify(pkg, null, 2) + '\\n');
+      }
       console.log('CHANGED');
     }
   ")
