@@ -66,6 +66,9 @@ jobs:
 
       - name: Verify daemon-status.sh --json output
         run: |
+          # config.sh resolves data dir: SOFAGENT_HOME/data > PWD/data > PWD/.sofagent
+          # CI env has no ~/.sofagent/data, so set SOFAGENT_DATA explicitly
+          export SOFAGENT_DATA="${PWD}/.sofagent"
           STATUS_JSON=$(bash engine/scripts/daemon-status.sh --json 2>/dev/null || true)
           echo "$STATUS_JSON"
           echo "$STATUS_JSON" | grep -q '"status"' && echo "JSON output valid" || { echo "JSON output invalid"; exit 1; }
