@@ -52,9 +52,9 @@ export interface ModelMessage {
  * 获取 API 配置（从环境变量读取）
  */
 function getAPIConfig(): { apiKey: string; baseUrl: string; modelName: string } {
-  const apiKey = process.env.SOAGENT_MODEL_API_KEY || '';
-  const baseUrl = process.env.SOAGENT_MODEL_BASE_URL || 'https://api.openai.com/v1';
-  const modelName = process.env.SOAGENT_MODEL_NAME || 'gpt-3.5-turbo';
+  const apiKey = process.env.SOFAGENT_MODEL_API_KEY || '';
+  const baseUrl = process.env.SOFAGENT_MODEL_BASE_URL || 'https://api.openai.com/v1';
+  const modelName = process.env.SOFAGENT_MODEL_NAME || 'gpt-3.5-turbo';
   return { apiKey, baseUrl, modelName };
 }
 
@@ -75,7 +75,7 @@ export async function callModelAPI(
 
   if (!apiKey) {
     throw new Error(
-      'SOAGENT_MODEL_API_KEY 环境变量未设置。请设置 API key 后重试。'
+      'SOFAGENT_MODEL_API_KEY 环境变量未设置。请设置 API key 后重试。'
     );
   }
 
