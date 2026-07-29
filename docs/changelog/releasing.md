@@ -930,6 +930,9 @@ bash tools/check-version.sh   # 期望：全绿
 | v1.2.2 | SkillHub slug 不一致：平台注册 `sofagent`，SKILL.md 写 `sofagent-fde` 导致 409 | 阶段十一 |
 | v1.2.2 | ClawHub slug 从 sofagent-fde merge 到 sofagent（undelete 幽灵 + merge 两步） | 阶段十一 |
 | v1.2.2 | ClawHub latest tag 不随 publish 自动更新（平台审核机制） | 阶段十一 |
+| v1.2.2 | ClawHub merge 后 publish 返回 ok 但版本不进列表（fingerprint 相同=内容未变=静默跳过） | 阶段十一 |
+| v1.2.2 | CI verify.yml 检查 hook.js 但实际文件在 dist/handler.js（路径过时）+ daemon-macos-ci 环境无 daemon | 阶段十二 |
+| v1.2.2 | pr-check data-sovereignty.test.ts vi.doMock 在 CI 不生效（本地过 CI 挂，模块解析差异） | 阶段十二 |
 | v1.0.7 | 忘了更新本机全局安装（QA 测试时跑旧版本） | 阶段十一 |
 | v1.0.4 | dist 与 src 同步验证 | 阶段四 |
 | v1.0.4 | 审查文档自身也会过时（每版本审视数字/路径/维度有效性） | 阶段七 |
