@@ -23,7 +23,7 @@ jobs:
         run: |
           echo "Checking installed components..."
           MISSING=0
-          for f in ~/.sofagent/bin/sofagent ~/.openclaw/hooks/sofagent-load-chain/dist/handler.js; do
+          for f in ~/.sofagent/bin/sofagent ~/.openclaw/hooks/sofagent-load-chain/handler.ts; do
             if [ ! -f "$f" ]; then
               echo "❌ Missing: $f"
               MISSING=1
