@@ -53,8 +53,8 @@ const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
 const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 
 // v1.2.2：A/B 双角色统一 DeepSeek 同账号。
-// 若 A 的 key 未设（如从 GLM 迁移后），自动 fallback 到 B 的 key。
-if (!process.env.SOFAGENT_LLM_A_API_KEY && process.env.SOFAGENT_LLM_B_API_KEY) {
+// A 原为 GLM-5.2 现在也走 DeepSeek——统一用 B 的 key 防止旧 key 残留。
+if (process.env.SOFAGENT_LLM_B_API_KEY) {
   process.env.SOFAGENT_LLM_A_API_KEY = process.env.SOFAGENT_LLM_B_API_KEY;
 }// ─── 异构模型配置 ────────────────────────────────────────────
 const MODEL_CONFIGS = {
