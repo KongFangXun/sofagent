@@ -13,7 +13,7 @@
 //
 // 异构模型（孔老师 2026-07-25 定稿）：
 //   A（审查者）= DeepSeek V4 Pro  baseURL https://api.deepseek.com/  thinking+reasoning_effort=high
-//   B（工程师）= DeepSeek V4 Pro  baseURL https://api.deepseek.com/  thinking+reasoning_effort=high
+//   B（工程师）= DeepSeek V4 Flash baseURL https://api.deepseek.com/  thinking+reasoning_effort=high
 // ============================================================
 
 import { spawn } from 'child_process';
@@ -68,7 +68,7 @@ const MODEL_CONFIGS = {
   },
   B: {
     baseURL:         'https://api.deepseek.com/',
-    model:           'deepseek-v4-pro',
+    model:           'deepseek-v4-flash',
     thinking:        { type: 'enabled' },
     reasoningEffort: 'high',
     apiKeyEnv:       'SOFAGENT_LLM_B_API_KEY',
@@ -105,6 +105,13 @@ const MODEL_PRICING = {
     currency: 'CNY',
     source: 'https://api-docs.deepseek.com/quick_start/pricing',
     note: '缓存命中 input 0.025元/M（120x 价差）。本表按未命中算（成本上界）',
+  },
+  'deepseek-v4-flash': {
+    input: 0.5,
+    output: 8,
+    currency: 'CNY',
+    source: 'https://api-docs.deepseek.com/quick_start/pricing',
+    note: 'Flash 版定价（缓存未命中）。缓存命中 input 0.025元/M',
   },
 };
 
