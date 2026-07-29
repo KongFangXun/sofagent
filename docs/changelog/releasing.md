@@ -361,7 +361,7 @@ bash tools/check-test-count.sh
 
 详见 [FORGE/playbook/version-bump.md](../../FORGE/playbook/version-bump.md)——bump-version.sh 13 类位置、package-lock 同步、npm 铁律、手动排查。
 
-核心四步：① `./tools/bump-version.sh <旧> <新>` ② `./tools/check-version.sh` ③ `npm install --package-lock-only` ④ **🔴 `npm run build`（重建 dist 产物）**——bump-version.sh 只改源码不改 dist/，不重建则 CLI --help 显示旧版本号（v1.2.2 P0-01 教训）
+核心四步（顺序不能乱）：① `./tools/bump-version.sh <旧> <新>` ② `./tools/check-version.sh` ③ **🔴 `npm run build`（重建 dist 产物——必须在版本号改好之后、package-lock 之前）** ④ `npm install --package-lock-only`——bump-version.sh 只改源码不改 dist/，不重建则 CLI --help 显示旧版本号（v1.2.2 P0-01 教训）。build 必须放在 npm 之前否则 package-lock 引用的 dist 版本号不一致
 
 ### 文档同步 + LIMITATIONS + 内容新鲜度
 
