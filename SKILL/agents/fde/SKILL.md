@@ -1,7 +1,7 @@
 ---
 name: sofagent-fde
 slug: sofagent-fde
-version: 1.2.1
+version: 1.2.2
 displayName: FDE Agent
 description: >
   前线部署与知识工程专家。梳理企业工作流、识别 AI 节点、构建本体模型、交付离场。

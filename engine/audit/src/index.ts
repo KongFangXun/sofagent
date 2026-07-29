@@ -452,7 +452,7 @@ function confirm(question: string): Promise<boolean> {
 }
 
 /**
- * v1.2.1 (DP-1) 版本一致性自检——检测陈旧全局安装。
+ * v1.2.2 (DP-1) 版本一致性自检——检测陈旧全局安装。
  *
  * 原理：运行中的产物有自己的 package.json（与 dist/index.js 同级上层目录），
  * 读取其实际 version，与编译进代码的 VERSION 常量（来自 @sofagent/core/constants.ts）比对。
@@ -805,7 +805,7 @@ async function main(): Promise<void> {
     process.stderr.write('[sofagent-audit] 警告: 审计历史写入失败，跳过（不影响审计结果）\n');
   }
 
-  // 8.5 session 产物（P0：审计结果 session 可见性）——v1.2.1
+  // 8.5 session 产物（P0：审计结果 session 可见性）——v1.2.2
   if (!args.noSession) {
     try {
       const report = buildSessionReport(results, diffFiles, { task: args.task, commitSha });

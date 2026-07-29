@@ -1,11 +1,11 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.2.1 · 2026-07-28（UTC）· 数据目录重构（.sofagent/ → data/）+ ToolGate 运行时接入 + SubAgent 可见性 L2 + custom/ 闭环 · 规划：v1.2.2（数据主权 + Dashboard）→ v1.2.3（编排隔离 + 波次拓扑可视化）→ v1.3.1（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）
+> v1.2.2 · 2026-07-29（UTC）· 数据目录重构（.sofagent/ → data/）+ ToolGate 运行时接入 + SubAgent 可见性 L2 + custom/ 闭环 · 规划：v1.2.2（数据主权 + Dashboard）→ v1.2.3（编排隔离 + 波次拓扑可视化）→ v1.3.1（并行编排 / 控制图波次并行）→ v1.4.0（完整沙箱执行 + 生产级编排）
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
-## 现在在哪：v1.2.1（已发版 · 2026-07-28）
+## 现在在哪：v1.2.2（已发版 · 2026-07-29）
 
 > **数据目录重构 + custom/ 闭环 + ToolGate 接入 + SubAgent 可见性 L2（v1.2.1）**：`.sofagent/` 运行时数据统一迁移到 `data/` 可见目录——用户能直接打开、Dashboard 能直接消费、备份只需拷贝一个目录。ToolGate 运行时接入（wrapToolsWithGate + nodes.ts 双节点调用），engineer/reviewer 工具调用前过 RulesEngine 检查。SubAgent 可见性 L2（ProgressMiddleware：worker 工具调用序列 + LLM 心跳 → sub-progress jsonl）。custom/ README 重写（规则 vs 代码边界 + 加载链声明 + 安装保护逻辑待实施→移至 v1.2.2）。数据层清理（IDENTITY.md + eval.md 删除 + 模板标注 + daemon-health.json）。
 >

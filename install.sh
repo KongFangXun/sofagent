@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent install.sh · 主安装器 / FDE 入口 · v1.2.1
+# sofagent install.sh · 主安装器 / FDE 入口 · v1.2.2
 # ============================================================
 # 将 sofagent 约束层部署到目标平台，让 Agent 获得治理能力。
 #
@@ -44,7 +44,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.2.1"
+VERSION="1.2.2"
 
 # ── 颜色输出（合并两套）──
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'
@@ -407,7 +407,7 @@ install_cli() {
   # 写入主入口脚本
   cat > "$bin_dir/sofagent" << 'CLIEOF'
 #!/bin/bash
-# sofagent CLI · v1.2.1 安装路径分离新增
+# sofagent CLI · v1.2.2 安装路径分离新增
 # 用户感知入口——数据藏在 ~/.sofagent/，通过这个命令操作
 
 SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
