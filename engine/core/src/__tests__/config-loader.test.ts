@@ -116,7 +116,7 @@ describe('config-loader', () => {
   });
 
   describe('loadEnvConfig', () => {
-    it('默认值全部关闭', () => {
+    it('P1-16: sanitize 默认开启（数据主权产品 opt-in→opt-out）', () => {
       // Clear all sofagent env vars
       delete process.env.SOFA_SANITIZE;
       delete process.env.SOFA_SANITIZE_IPS;
@@ -129,8 +129,9 @@ describe('config-loader', () => {
 
       const config = loadEnvConfig();
 
-      expect(config.sanitizeEnabled).toBe(false);
-      expect(config.sanitizeIpsEnabled).toBe(false);
+      // P1-16: sanitize 默认开启（opt-out，非 opt-in）
+      expect(config.sanitizeEnabled).toBe(true);
+      expect(config.sanitizeIpsEnabled).toBe(true);
       expect(config.retentionDays).toBe(90);
       expect(config.retentionMax).toBe(500);
       expect(config.cleanupOnRecord).toBe(false);

@@ -75,9 +75,6 @@ sofagent-audit --diff HEAD~1..HEAD --ci --json
 | `ontology view` | 本体人类可读视图 | — |
 | `--version` | 版本号 | — |
 | `--help` | 帮助 | — |
-| `--revert <snapshot-sha>` | 恢复到指定快照（回溯引擎） | — |
-| `--timeline [N]` | 查看快照时间线（回溯引擎） | — |
-| `ontology view` | 本体人类可读视图 | — |
 
 ### 退出码
 
@@ -138,15 +135,6 @@ sofagent-audit --install-hook
 ```
 
 > 💡 注意：sofagent-audit 进程自身 exit=2（FAIL 拦截），但经 git commit-msg hook 转发后，shell 看到的是 git 的 exit=1。测试拦截行为时以 sofagent-audit 直接调用的 exit code 为准。
-
-### 审计报告
-
-每次审计后生成 `data/audit/session-report.md`（或 `~/.sofagent/data/audit/session-report.md`），包含：
-- 审计结果（通过/失败）
-- 检查数、引擎版本
-- 变更文件列表
-
-可用 `sofagent-audit --timeline` 查看历史快照。
 
 ### CI/CD 集成（GitHub Actions 示例）
 
@@ -216,7 +204,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
   "mcpServers": {
     "sofagent": {
       "command": "npx",
-      "args": ["-y", "Aengine/audit", "--mcp"]
+      "args": ["-y", "@sofagent/audit", "--mcp"]
     }
   }
 }

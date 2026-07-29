@@ -207,7 +207,8 @@ export class DataSovereigntyLogger {
               .update(JSON.stringify(forHash) + '|' + fingerprint)
               .digest('hex')
               .slice(0, 16);
-          } catch {
+          } catch (err) {
+            console.warn('[sofagent] data-sovereignty: prevHash 计算失败:', err instanceof Error ? err.message : String(err));
             prevHash = 'unknown';
           }
         }
@@ -232,12 +233,14 @@ export class DataSovereigntyLogger {
       if (!fileExists) {
         try {
           chmodSync(filePath, 0o600);
-        } catch {
-          // chmod 失败不影响写入
+        } catch (err) {
+          // chmod 失败不影响写入，但记录告警
+          console.warn('[sofagent] data-sovereignty: chmod 600 失败:', err instanceof Error ? err.message : String(err));
         }
       }
-    } catch {
-      // 写日志失败静默——审计是辅助通道，绝不阻断业务
+    } catch (err) {
+      // 写日志失败不阻断业务，但记录告警供排查
+      console.warn('[sofagent] data-sovereignty: 审计日志写入失败:', err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -256,7 +259,9 @@ export class DataSovereigntyLogger {
     let content: string;
     try {
       content = readFileSync(filePath, 'utf-8');
-    } catch {
+    } catch (err) {
+      // [sofagent] 审计辅助通道：读取失败不阻断业务，但记录告警
+      console.warn('[sofagent] data-sovereignty: 读取历史记录失败:', err instanceof Error ? err.message : String(err));
       return [];
     }
 

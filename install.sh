@@ -324,13 +324,13 @@ deploy_scripts         # Step 5b: 部署配套脚本 + 数据目录
 # ════════════════════════════════════════
 deploy_hook            # Step 6: 部署加载链 Hook（仅 OpenClaw）
 
-# Step 6.5: 安装 git pre-commit hook（让 git commit 触发审计）
-# v1.2.2 F-28 修复：install.sh 只装 OpenClaw 平台 hook，不装 git pre-commit hook，
+# Step 6.5: 安装 git commit-msg + post-commit hook（让 git commit 触发审计）
+# v1.2.2 F-28 修复：install.sh 只装 OpenClaw 平台 hook，不装 git commit-msg + post-commit hook，
 # 导致 README 演示中的 commit 拦截跑不通。此处补装 git hook。
 if command -v sofagent-audit >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
-  info "Step 6.5 · 安装 git pre-commit hook..."
+  info "Step 6.5 · 安装 git commit-msg + post-commit hook..."
   if sofagent-audit --install-hook 2>/dev/null; then
-    ok "  git pre-commit hook 已安装"
+    ok "  git commit-msg + post-commit hook 已安装"
   else
     warn "  git hook 安装失败，请手动运行 sofagent-audit --init"
   fi

@@ -25,6 +25,6 @@
     "@langchain/anthropic": "^1.5.2"
   },
   "dependencies": {
-    "@sofagent/rules": "^1.2.1"
+    "@sofagent/rules": "^1.2.2"
   }
 }

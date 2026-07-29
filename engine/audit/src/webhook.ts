@@ -84,8 +84,9 @@ export async function pushAuditResult(payload: WebhookPayload): Promise<boolean>
       signal: AbortSignal.timeout(5000),
     });
     return response.ok;
-  } catch {
-    // 超时或网络错误：silently fail，不阻塞审计流程
+  } catch (err) {
+    // 超时或网络错误：不阻塞审计流程，但记录告警供排查
+    console.warn('[sofagent] webhook 推送失败（非致命）:', err instanceof Error ? err.message : String(err));
     return false;
   }
 }

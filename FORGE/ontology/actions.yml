@@ -15,7 +15,7 @@ actions:
     domain: "指挥模型"
     range: "develop-prompt"
     action_type: "需审批"
-    description: "阶段零：指挥模型 基于下一版本开发日志编写 develop prompt，需作者确认方向后才能进入开发"
+    description: "阶段零：指挥模型 基于下一版本开发日志编写 develop prompt，需作者确认方向后才能进入开发。证据闸门：check-dev-prompt.sh 校验 prompt 中引用的文件路径/函数名/目录与实际代码库一致（有 ❌ = A0 不放行）"
 
   # ===== 阶段一 =====
   - id: A1-independent-review

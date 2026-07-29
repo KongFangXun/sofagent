@@ -125,15 +125,19 @@ _parse_conf() {
 # 修复：先读 fde.md，仅在 fde.md 有明确值时覆盖；否则保留已有环境变量。
 
 # 日志脱敏
+# P1-16: 数据主权产品的脱敏不应是 opt-in——默认开启
 if [ -n "$(_parse_conf "log_sanitize" "")" ]; then
   SOFA_SANITIZE="$(_parse_conf "log_sanitize" "")"
 fi
+SOFA_SANITIZE="${SOFA_SANITIZE:-true}"
 export SOFA_SANITIZE
 
 # 内网 IP 脱敏
+# P1-16: 同上——默认开启
 if [ -n "$(_parse_conf "log_sanitize_ips" "")" ]; then
   SOFA_SANITIZE_IPS="$(_parse_conf "log_sanitize_ips" "")"
 fi
+SOFA_SANITIZE_IPS="${SOFA_SANITIZE_IPS:-true}"
 export SOFA_SANITIZE_IPS
 
 # 数据保留天数
