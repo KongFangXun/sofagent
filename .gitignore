@@ -39,4 +39,6 @@ FORGE/SKILL/*/runs/
 
 # 运行时数据 / 临时文件（不进版本库，v1.2.1 后 daemon 运行时产生）
 engine/daemon/data/
+# daemon 运行时发件箱（不进入版本控制）
+engine/daemon/.sofagent/im-outbox/
 *.tmp.sh

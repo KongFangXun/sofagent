@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.2.2 · 2026-07-29 · 数据主权审计 + 混合模型路由 + FDE Dashboard + Graph Engine
+> v1.2.2 · 2026-07-29 · Fresh-Eyes · 数据主权审计 + 混合模型路由 + FDE Dashboard + Graph Engine + 异步 HITL + Skill 升级三策略
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 

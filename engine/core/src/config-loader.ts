@@ -207,7 +207,8 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
   let content: string;
   try {
     content = readFileSync(filePath, 'utf-8');
-  } catch {
+  } catch (err) {
+    console.error('[config-loader] 读取 YAML 配置文件失败:', err);
     return null;
   }
 
@@ -271,9 +272,9 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
  *   - 加载时用与审计一致的 HMAC-SHA256 + stableStringify（去除 signature 后）
  *     对整份配置计算签名并与字段比对。
  *   - 不匹配 → 告警（warn）但不阻断启动（避免把已有用户配置搞崩）。
- *     ⚠️ TODO(v1.3.0): 签名不匹配应升级为 fail-closed 阻断启动（当前仅告警，
- *        Agent 篡改 config 后审计引擎仍照常运行）。本次不改签名逻辑，
- *        与安全架构决策（F-16/H-01）一并提供。
+ *     ⚠️ FIXED(v1.2.2-hotfix): 签名不匹配已升级为 fail-closed 阻断启动。
+ *         当前抛出 Error 拒绝启动，不再静默继续（原 TODO 已闭环）。
+ *         如需降级为告警（不阻断），可删除下方 throw 并恢复 console.warn。
  *   - 不带 signature 字段 → 向后兼容，不强制。
  *   - 无 ~/.sofagent-key 时无法校验 → 跳过（warn 提示，不阻断）。
  *
@@ -316,11 +317,11 @@ function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath:
     provided.length === expected.length &&
     timingSafeEqual(Buffer.from(provided, 'utf-8'), Buffer.from(expected, 'utf-8'));
   if (!matched) {
-    // 不匹配：告警但不阻断（FLAG-3 要求避免把已有配置搞崩）
-    // TODO(v1.3.0): F-16——签名不匹配应升级为 fail-closed 阻断启动。
-    //   当前仅告警，Agent 篡改 config 后审计引擎仍照常运行（等于没有防护）。
-    //   需与 H-01（密钥分发安全）一并提供完整安全架构方案。
-    console.warn(`⚠️ config.yml signature 不匹配——内容可能被篡改或密钥不匹配。为兼容未阻断启动，但请核查: ${filePath}`);
+    // FIXED(v1.2.2-hotfix): 签名不匹配已升级为 fail-closed 阻断启动。
+    //   原为 console.warn 后继续（等于没有防护），现抛 Error 拒绝启动。
+    //   降级方案：删除下方 throw 并恢复 console.warn 即可回到 fail-open。
+    console.error(`❌ config.yml signature 不匹配——内容可能被篡改或密钥不匹配。拒绝启动: ${filePath}`);
+    throw new Error(`配置文件签名校验失败，拒绝启动。请检查 config.yml 完整性: ${filePath}`);
   }
 }
 
@@ -563,7 +564,9 @@ function resolveDataDir(home: string): string {
       try {
         const path = readFileSync(marker, 'utf-8').trim();
         if (path && existsSync(path)) return path;
-      } catch { /* */ }
+      } catch (err) {
+        console.error('[config-loader] 读取标记文件失败:', err);
+      }
     }
   }
 
