@@ -82,7 +82,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.2.1** | **数据目录重构 + ✅ Webhook + SubAgent 可见性 L2（已发版）** | **数据目录重构**：`.sofagent/` 669 个运行时数据文件统一迁移到 `data/` 可见目录——用户能直接打开、Dashboard 直接消费、备份只需拷贝一个目录（v1.2.2 Dashboard 前置基础设施）· ✅ **Webhook 推送完整能力（飞书/钉钉/企微）— 采购阻塞项已解除** · **SubAgent 可见性 L2**（ProgressMiddleware：worker 内部工具调用序列 + LLM 心跳 → sub-progress jsonl，Dashboard 实时面板数据前置）· custom/ README 重写（加载链声明 + 安装保护逻辑移至 v1.2.2）· 数据层清理（IDENTITY.md + eval.md 删除 + 模板标注 + daemon-health.json）（详见 [开发日志](./docs/changelog/v1.2/v1.2.1.md)）|
 | **v1.2.2** | **数据主权 + 路由 + Dashboard（数据主权 + SubAgent 实时面板）** | ① 数据主权审计追踪（4 维审计日志 + 年/月目录 + 每日/周/月报告 + 四路分发闭环）② 混合模型路由层（ModelRouter 敏感度×任务类型路由 + Ollama 接入）③ FDE Dashboard 第一版（数据主权视图 + **SubAgent 实时面板 L3**：消费 v1.2.1 L2 数据，双 agent 状态卡 + 工具调用流 + 成本曲线 + 心跳检测）④ Skill 分层升级三策略 install.sh 实现（详见 [开发日志](./docs/changelog/v1.2/v1.2.2.md)）|
 | **v1.2.3** | **Dashboard 产品化 + Fresh-Eyes 可见性** | ① **Fresh-Eyes Dashboard 集成**（fresh-eyes-driver 的 A/B sub agent 写入 sub-progress-*.jsonl 至 `~/.sofagent/data/forge-runs/`，Dashboard `--watch` 模式实时显示 loop 审查进度——每轮发现数、当前审查文件、A/B 双盲状态）② Dashboard 波次拓扑可视化（控制图渲染 + 节点/边/波次分层实时状态）③ 编排隔离底座（git worktree 四子里程碑：隔离原语→审计合并卡关→冲突消解→filesValue 边界）④ Dashboard 用户可读性（面向非开发者的语言化呈现）（详见 [开发日志](./docs/changelog/v1.2/v1.2.3.md)）|
-| **v1.2.4** | **Fresh-Eyes 前置 + 知识进化** | ① **Fresh-Eyes-Loop 移至阶段一**（v1.2.3 验证 Dashboard 可见性后，将 releasing.md 流程重组——新版本开发第一步即跑 fresh-eyes-loop 审查上版本代码，找到所有 bug 再开发新功能，替代人工 review）② 分层巡检 L1/L2/L3（@daily/@weekly/@monthly 三级 + 读写回路对标）③ skillopt 自动触发（失败模式 3 次自动优化）④ 失败清单��动优化（负面样本为主要燃料）⑤ conflict-check CLI + 联邦蒸馏 ⑥ **进化引擎接通 eval**（think-generator 读 eval failures → 写 think.md，前置 eval 补全在 v1.2.1 P0b）（详见 [开发日志](./docs/changelog/v1.2/v1.2.4.md)）|
+| **v1.2.4** | **Fresh-Eyes 前置 + 知识进化** | ① **Fresh-Eyes-Loop 移至阶段一**（v1.2.3 验证 Dashboard 可见性后，将 releasing.md 流程重组——新版本开发第一步即跑 fresh-eyes-loop 审查上版本代码，找到所有 bug 再开发新功能，替代人工 review）② 分层巡检 L1/L2/L3（@daily/@weekly/@monthly 三级 + 读写回路对标）③ skillopt 自动触发（失败模式 3 次自动优化）④ 失败清单自动优化（负面样本为主要燃料）⑤ conflict-check CLI + 联邦蒸馏 ⑥ **进化引擎接通 eval**（think-generator 读 eval failures → 写 think.md，前置 eval 补全在 v1.2.1 P0b）（详见 [开发日志](./docs/changelog/v1.2/v1.2.4.md)）|
 | **v1.2.5** | **多设备协同 L2/L3** | ① L2 团队协作协议（共享态/意图广播/触发反应/冲突消解/反馈放大五大机制）② Agent 独立身份码 + KYA 轻量版 ③ L3 组织能力市场（Skill/Agent/流程发布→发现→调用→评价）④ 跨设备审计轨迹聚合 ⑤ 场景驱动权限体系 + 代理网关硬边界 ⑥ ATTRIBUTION 归因引擎（审计决策→业务价值因果链）⑦ 协议中立审计（只走 MCP + 开放格式）（详见 [开发日志](./docs/changelog/v1.2/v1.2.5.md)）|
 | **v1.2.6** | **🔒 弹性预留 + 产品化快速补强** | 紧急修复 / 探索项按需取用。**储备项（不阻塞主线，有空间就做）**：① `sofagent-audit --support-bundle`（一键生成 issue 摘要 + 证据 zip，参考 DeerFlow `make support-bundle`）② `--doctor` 输出增强（可操作修复提示，不只报红绿，参考 DeerFlow `make doctor`）③ README Deployment Sizing 表格（企业 IT 必问资源规格）④ One-Line Agent Setup（给 Claude Code/Codex 一句话自动安装）。如果 v1.2.1-v1.2.5 中间有紧急修复，占用此版本号（详见 [开发日志](./docs/changelog/v1.2/v1.2.6.md)）|
 | **v1.2.7** | **编排引擎增强（DeerFlow 启发）** | ① **Session Goals**（`/goal` 给线程附完成条件 + 非思考模型评估 + N 次续接上限）— 改进 FORGE fresh-eyes-loop 停止条件（当前仅"连续2轮无发现"）② **手动上下文压缩**（`/compact` 用户侧减压阀，聊天可见但后续调用用摘要）— 直击 LangChain 消息只增不减痛点 ③ **Skill 渐进式加载**（仅任务需要时加载，非全量注入 SKILL.md）— 直击加载链步进脆弱性 ④ **`make doctor` / `--doctor` 可操作修复提示**（从 v1.2.6 储备提升，若 v1.2.6 已做则此条作废）⑤ **FORGE driver 三方抽象**：当前 fresh-eyes-driver 和 release-gate-driver 各有独立 driver（~560 行/个），第 3 个 loop 出现时提取公共层 `forge-base-driver.mjs`（路径解析/worker 编排/LEDGER 写入/usage 提取），各 loop driver 只保留步骤定义和模型配置（详见 [开发日志](./docs/changelog/v1.2/v1.2.7.md)）|
@@ -294,6 +294,23 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 
 决策审计 Judgment Unit（`{kind, moment, why, spec_ref}` schema → v1.3.x 意图审计）+ INDUC 阶段化知识归纳 + 产品化阈值/四类沉淀物。详见上方 ChatDemo #2-4。
 
+### 🔮 OpenWorker / aisuite 参考清单（2026-07 · 吴恩达团队）
+
+> 📐 来源：[OpenWorker](https://github.com/andrewyng/openworker)（7.3k stars, MIT）+ 底层引擎 [aisuite](https://github.com/andrewyng/aisuite)。定位 = 桌面 AI 代理（个人单机），与 sofagent（企业约束+审计层）**不在同一层面**，不构成 OpenClaw 替代关系。
+
+**核心印证**：「交付成果而非对话」（outcome not answer）与 sofagent「交付文档而非建议」同源；aisuite `<provider>:<model>` 统一接口 + 国产模型全覆盖，与 sofagent 11 模型供应商方向重叠。
+
+**不构成 OpenClaw 替代**——OpenClaw 承担 sofagent 三个不可替代职能：① 硬安全（加载链/断路器）② Sub Agent 运行时调度 ③ channel 联邦（多设备配对查 knowledge/）。OpenWorker 是单 agent 串行桌面应用，没有这些基础设施层。
+
+| # | 设计启发 | 落地版本 |
+|---|---|---|
+| 1 | 四级权限模型（plan→interactive→auto→custom）+ `allowed_commands` / `auto_allow` 双白名单 | v1.3.x · FDE sustain daemon 审批机制参考 |
+| 2 | 无人值守收件箱：consequential 操作不执行也不阻塞，暂存等批量审核 | v1.2.8 · Scheduled Tasks 配合 daemon 审批 |
+| 3 | Tauri 桌面壳（React + Rust，比 Electron 轻量） | v2.x · FDE Dashboard 桌面版评估 |
+| 4 | aisuite Agents API：Tool Policies（RequireApprovalPolicy）+ State Stores + Artifacts | 参考 · 运行时审计层设计参考 |
+
+> 🔴 落地纪律：OpenWorker/aisuite 是 Python 生态，以上是设计启发，非依赖引入。
+
 ### 🔴 运行时审计演进路线（meta-harness 三问作答 · 2026-07）
 
 > 用户三问：① harness 层能否升级 meta-harness？② 何时能做运行时审计？③ 用 LangGraph create_react_agent 时是否就能做到运行时审计？
@@ -372,6 +389,7 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 | **运行时审计接入点（v1.3.x · LangGraph middleware 启发）** | LangChain 1.0+「create_agent」/「create_react_agent」的 middleware 系统：**wrapToolCall**（绕每次工具调用）是运行时审计精确接入点；node-style hooks（beforeAgent/beforeModel/afterModel/afterAgent）做粗粒度拦截。咱们已用 createReactAgent，包一层 middleware 即可把 engine/rules 的 tool-gate 升级为运行时拦截 + 审计日志 |
 | **EnkryptAI Secure MCP Gateway（v1.4.x · 现成护栏库）** | LangChain/LangGraph 的 pre_model_hook / post_model_hook 安全护栏，支持 **audit_only 模式（只记录不阻断）**。可作为 v1.4.x 运行时审计层的参考或集成，省得自研护栏 |
 | **LiteLLM 控制平面（v1.4.x · 开源借力）** | BerriAI 开源 LLM gateway（MIT，100+ LLM，240M+ 拉取）：成本追踪 / 预算 / 路由 / 护栏。未来「控制平面」成本与路由层站在这上面，不必自研网关 |
+| **OpenWorker 权限模型（v1.3.x · 设计启发）** | 吴恩达团队的四级权限（plan/interactive/auto/custom）+ `allowed_commands` 命令白名单 + `auto_allow` 工具白名单。FDE sustain 模式 daemon 审批可直接参考这套分级；无人值守收件箱（consequential 操作暂存等批量审核）配合 Scheduled Tasks v1.2.8 |
 | **bubblewrap / seatbelt 沙箱（v1.4.0 · 开源借力）** | Omnigent 同款 OS 级沙箱原语（Linux bwrap+seccomp / macOS seatbelt）。SubAgent 沙箱执行环境的「工具调用中介 + 虚拟 key 边界」可直接复用，省得自研沙箱底座 |
 | **ACP 开放协议（观察 · 不押注）** | Agent Client Protocol（LSP 式，Omnigent 在用）— meta-harness 开放接入标准。标准化赢面大于厂商锁定，未来接入层可对齐 ACP 而非自造协议 |
 | **Conductor 轻量多 agent 编排（观察）** | 比 Omnigent 轻量的多 agent 编排验证方案，先于完整 meta-harness 验证「多 agent 并行」价值 |
