@@ -9,14 +9,19 @@ import { existsSync, readFileSync, writeFileSync, rmSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir, homedir } from 'os';
 import { randomBytes } from 'crypto';
-import {
-  DataSovereigntyLogger,
-  sanitizeRecord,
-  resolveDateArg,
-  resolveSovereigntyLogPath,
-  type DataSovereigntyRecord,
-  type SovereigntyLogEntry,
-} from '../data-sovereignty';
+// vi.mock 会被 vitest hoist 到所有 import 之前，确保 CI 环境也生效
+vi.mock('@sofagent/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@sofagent/core')>();
+  return {
+    ...actual,
+    getHmacKey: () => 'test-hmac-key-for-vitest',
+  };
+});
+
+// 必须在 mock 之后 import（vitest hoist 保证顺序）
+const { DataSovereigntyLogger, sanitizeRecord, resolveDateArg, resolveSovereigntyLogPath } =
+  await import('../data-sovereignty');
+import type { DataSovereigntyRecord, SovereigntyLogEntry } from '../data-sovereignty';
 
 // ── 测试工具 ──
 
@@ -244,18 +249,9 @@ describe('DataSovereigntyLogger', () => {
 
   beforeEach(() => {
     tmpHome = makeTmpDir();
-    // mock getHmacKey 返回一个测试密钥，使 hmacSig 字段被写入
-    vi.doMock('@sofagent/core', async (importOriginal) => {
-      const actual = await importOriginal<typeof import('@sofagent/core')>();
-      return {
-        ...actual,
-        getHmacKey: () => 'test-hmac-key-for-vitest',
-      };
-    });
   });
 
   afterEach(() => {
-    vi.doUnmock('@sofagent/core');
     try { rmSync(tmpHome, { recursive: true, force: true }); } catch { /* */ }
   });
 
