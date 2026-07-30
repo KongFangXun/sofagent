@@ -25,7 +25,7 @@
 - [六、反思工程](#六反思工程)
 - [七、数据文件架构](#七数据文件架构)
 - [八、提交时审计 + 文件系统审计](#八提交时审计--文件系统审计)
-- [九、验证方法论](#九验证方法论)
+- [九、验证方法论](#九验证方法论2026-07-研报印证)
 
 ---
 
@@ -54,7 +54,7 @@
 | 审计规则代码 | `engine/audit/src/rules/` |
 | 审计 CLI 入口 | `engine/audit/src/index.ts` |
 | 审计报告生成 | `engine/audit/src/reporter.ts` |
-| think.md 自动生成 | `engine/audit/src/think-generator.ts` |
+| think.md 自动生成 | `engine/think/src/think-generator.ts` |
 | Skill 主入口（宪法内联） | `SKILL/SKILL.md` |
 | 编排引擎 | `SKILL/harness/engage.md` |
 | FDE 场景引导 | `SKILL/harness/engage-fde.md` |

@@ -27,12 +27,12 @@
 
 | # | 局限 | 详见 |
 |:--:|------|------|
-| 1 | ~~**audit ↔ daemon 循环依赖**~~ —— **已于 v1.2.3 消除**：snapshot helpers 从 `@sofagent/daemon` 迁移到 `@sofagent/core`，`audit` 不再依赖 `daemon`（含 `optionalDependencies`），依赖图恢复为单向 `daemon → audit → core`。 | [八、v1.1.3 新增局限 → audit ↔ daemon 循环依赖（v1.2.3 已解决）](#八v113-新增局限) |
+| 1 | ~~**audit ↔ daemon 循环依赖**~~ —— **已于 v1.2.3 消除**：snapshot helpers 从 `@sofagent/daemon` 迁移到 `@sofagent/core`，`audit` 不再依赖 `daemon`（含 `optionalDependencies`），依赖图恢复为单向 `daemon → audit → core`。 | [八、包依赖与编排局限 → audit ↔ daemon 循环依赖（v1.2.3 已解决）](#八包依赖与编排局限v113-起) |
 | 2 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
 | 3 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
 | 4 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排引擎稳定性](#五审计与工程局限) |
 | 5 | **数据明文存储无加密**——`~/.sofagent/data/` 下所有数据为明文 Markdown，无传输加密、无静态加密。age 加密已纳入 v1.3.0 roadmap（见 ROADMAP.md 和 SECURITY.md）。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
-| 6 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#单平台用户建议)
+| 6 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#-单平台用户建议)
 
 > ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。
 >
