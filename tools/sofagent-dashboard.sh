@@ -1,28 +1,33 @@
 #!/usr/bin/env bash
 # ============================================================
-# sofagent-dashboard.sh · FDE Dashboard 终端三栏（v1.2.2 · P2+P2b）
+# sofagent-dashboard.sh · FDE Dashboard 终端三栏（v1.2.3）
 # ============================================================
 #
 # 零前端依赖：bash + jq + tput。图表从 JSONL 实时渲染，绝不读 MD 报告
 # （MD 是人读备份）。
 #
-# 两种模式：
-#   sofagent-dashboard           跑一次看完关掉——两栏（数据主权 + 规则审计）
-#   sofagent-dashboard --watch   2s 自动刷新——三栏（追加工作状态栏）
+# 三种用法：
+#   sofagent-dashboard              跑一次看完关掉——两栏（数据主权 + 规则审计）
+#   sofagent-dashboard --watch      2s 自动刷新——三栏（追加工作状态栏）
+#   sofagent-dashboard --technical  状态词用技术术语（默认用户可读，交付六）
 #
 # 数据源：
 #   数据主权  $SOFAGENT_HOME/data/audit/data-sovereignty/{年}/{月}/*.jsonl
 #   规则审计  $SOFAGENT_HOME/data/audit/history.jsonl
 #   工作状态  $SOFAGENT_HOME/data/audit/sub-progress-*.jsonl（自动发现）
 #            $SOFAGENT_HOME/data/dashboard/daemon-health.json
-#   Graph引擎 $SOFAGENT_HOME/data/dashboard/graph-state.json（v1.2.2 P4）
+#   Graph引擎 $SOFAGENT_HOME/data/dashboard/graph-state.json（v1.2.3 完整控制图）
+#   FORGE    $SOFAGENT_HOME/data/forge-runs/fresh-eyes-loop/latest.json（交付三）
+#   最近变更  $SOFAGENT_HOME/data/dashboard/workspace-changes.jsonl（交付五）
 #   最近报告  $SOFAGENT_HOME/data/{企业名}/审计报告/（fde-profile.json 定企业名）
 #
 # 环境变量：
 #   SOFAGENT_HOME   数据根目录（默认 ~/.sofagent；测试可指向 fixture）
 #   SOFAGENT_DASHBOARD_NO_COLOR=1   关闭颜色（测试断言友好）
+#   SOFAGENT_DASHBOARD_RECENT_N     最近变更面板条数（默认 5）
 #
 # 工程规范：不用 set -e + glob（铁律：glob 无匹配即崩），错误显式判断。
+# bash 兼容：macOS 自带 bash 3.2——不用 declare -A / mapfile 等 4.x 特性。
 # ============================================================
 
 set -u
@@ -33,9 +38,14 @@ set -o pipefail
 # ────────────────────────────────
 
 WATCH=0
-if [ "${1:-}" = "--watch" ]; then
-  WATCH=1
-fi
+# 交付六：--technical 切回技术状态词（默认用户可读）
+TECHNICAL=0
+for arg in "$@"; do
+  case "$arg" in
+    --watch) WATCH=1 ;;
+    --technical) TECHNICAL=1 ;;
+  esac
+done
 
 # 非 watch 模式输出到临时文件再一次性 cat——便于测试捕获 + 避免半屏残留
 BUFFER_FILE="$(mktemp -t sofagent-dashboard.XXXXXX)"
@@ -47,7 +57,14 @@ SOVEREIGNTY_DIR="$AUDIT_DIR/data-sovereignty"
 HISTORY_FILE="$AUDIT_DIR/history.jsonl"
 DAEMON_HEALTH="$DATA_ROOT/dashboard/daemon-health.json"
 GRAPH_STATE="$DATA_ROOT/dashboard/graph-state.json"
-REFRESH_INTERVAL=5
+# 交付三：FORGE latest.json 指针（driver 原子维护，Q4）
+FORGE_LATEST="$DATA_ROOT/forge-runs/fresh-eyes-loop/latest.json"
+# 交付五：workspace 变更摘要（daemon workspace-summary 写入）
+WORKSPACE_CHANGES="$DATA_ROOT/dashboard/workspace-changes.jsonl"
+# 最近变更面板条数（默认 5，可配）
+RECENT_N="${SOFAGENT_DASHBOARD_RECENT_N:-5}"
+case "$RECENT_N" in ''|*[!0-9]*) RECENT_N=5 ;; esac
+REFRESH_INTERVAL=2
 
 # 依赖检查
 if ! command -v jq >/dev/null 2>&1; then
@@ -159,6 +176,59 @@ iso_to_epoch() {
 # 输出一行到缓冲区
 emit() {
   printf '%s\n' "$1" >> "$BUFFER_FILE"
+}
+
+# ────────────────────────────────
+# 交付六：humanize_status——技术术语 → 用户可读语言
+#
+# 映射表（与架构 spec 一致；用 case 实现而非 declare -A 关联数组——
+# macOS 自带 bash 3.2 不支持 declare -A，运行时必崩）：
+#   running→正在执行  completed→已完成  awaiting_human→等待你的确认
+#   pending→等待中    failed→失败      skipped→已跳过
+#   audit FAIL→审计未通过  audit PASS→审计通过  audit WARN→审计有警告
+#   worktree→隔离工作区  sub-progress→子任务进度
+#   degradationLevel:0→正常  :1→已简化任务范围（核心功能优先）
+#   :2→低可信度（结果需人工复核）
+#   idle→空闲（spec 映射表扩展——FORGE agent 步骤间隙态）
+#
+# 只翻状态词，不碰 A1-A21 规则名（架构师裁决 Q5）。
+# --technical 时原样返回技术状态。
+# ────────────────────────────────
+humanize_status() {
+  local key="$1"
+  if [ "$TECHNICAL" = "1" ]; then
+    printf '%s' "$key"
+    return 0
+  fi
+  case "$key" in
+    running)            printf '正在执行' ;;
+    completed)          printf '已完成' ;;
+    awaiting_human)     printf '等待你的确认' ;;
+    pending)            printf '等待中' ;;
+    idle)               printf '空闲' ;;
+    failed)             printf '失败' ;;
+    skipped)            printf '已跳过' ;;
+    "audit FAIL")       printf '审计未通过' ;;
+    "audit PASS")       printf '审计通过' ;;
+    "audit WARN")       printf '审计有警告' ;;
+    worktree)           printf '隔离工作区' ;;
+    sub-progress)       printf '子任务进度' ;;
+    degradationLevel:0) printf '正常' ;;
+    degradationLevel:1) printf '已简化任务范围（核心功能优先）' ;;
+    degradationLevel:2) printf '低可信度（结果需人工复核）' ;;
+    *)                  printf '%s' "$key" ;;
+  esac
+}
+
+# 节点状态 → 图标（graph 控制图 / FORGE 面板共用，5 种状态一一对应）
+status_icon() {
+  case "$1" in
+    completed) printf '✅' ;;
+    running)   printf '🔵' ;;
+    failed)    printf '🔴' ;;
+    skipped)   printf '⏭️' ;;
+    *)         printf '⏳' ;;   # pending 兜底
+  esac
 }
 
 # ────────────────────────────────
@@ -550,21 +620,105 @@ render_status() {
 }
 
 # ────────────────────────────────
-# 区块 4：Graph Engine 状态（v1.2.2 · P4）
-# 数据源：data/dashboard/graph-state.json（plan/engineer 节点执行时写入）
-# 渲染：当前活跃节点名（ASCII 节点流转图高亮）+ Work Graph 任务数
+# 区块 4：Graph Engine 控制图（v1.2.3 · 交付二 bash）
+# 数据源：data/dashboard/graph-state.json
+#   v1.2.3 新格式：nodes/edges/wave/degradationLevel + 旧三字段
+#   v1.2.2 旧格式：activeNode/workGraphTasks/updatedAt（jq // 兜底不崩溃）
+# 拓扑写死 5 节点链（plan → engineer → audit → reviewer → confirm）——
+# 简化 bash 复杂度，不渲染动态节点数。
 # ────────────────────────────────
+
+# 状态行辅助：图标 + 用户可读（或 --technical 技术词）
+graph_node_status_text() {
+  local st="$1"
+  printf '%s %s' "$(status_icon "$st")" "$(humanize_status "$st")"
+}
 
 render_graph_engine() {
   local w="$1"
-  emit "${C_BOLD}${C_BLUE}▌ Graph Engine（编排图状态）${C_RESET}"
+  emit "${C_BOLD}${C_BLUE}▌ Graph Engine（编排控制图）${C_RESET}"
 
   if [ ! -f "$GRAPH_STATE" ]; then
-    emit "  ${C_DIM}（暂无 Graph 状态：$GRAPH_STATE 不存在）${C_RESET}"
-    emit "  ${C_DIM}plan → engineer → audit → reviewer → human_confirm${C_RESET}"
+    emit "  ${C_DIM}控制图数据不可用（编排引擎未运行）${C_RESET}"
     return 0
   fi
 
+  # 新格式判定：nodes 是非空数组 → v1.2.3 控制图；否则旧三字段兜底
+  local has_nodes
+  has_nodes="$(jq -r 'if (.nodes? | type) == "array" and (.nodes | length) > 0 then "1" else "0" end' "$GRAPH_STATE" 2>/dev/null)"
+  if [ "$has_nodes" = "1" ]; then
+    render_graph_engine_v2 "$w"
+  else
+    render_graph_engine_legacy "$w"
+  fi
+}
+
+# v1.2.3 完整控制图渲染
+render_graph_engine_v2() {
+  local w="$1"
+
+  # 一次性 jq 提取：id → status 映射行（TSV）
+  local nodes_tsv
+  nodes_tsv="$(jq -r '.nodes[] | "\(.id)\t\(.status // "pending")"' "$GRAPH_STATE" 2>/dev/null)"
+
+  local st_plan="pending" st_eng="pending" st_aud="pending" st_rev="pending" st_hum="pending"
+  local nid nst
+  while IFS=$'\t' read -r nid nst; do
+    case "$nid" in
+      plan)        st_plan="$nst" ;;
+      engineer-1)  st_eng="$nst" ;;
+      audit-1)     st_aud="$nst" ;;
+      reviewer-1)  st_rev="$nst" ;;
+      human-1)     st_hum="$nst" ;;
+    esac
+  done <<< "$nodes_tsv"
+
+  # 链式流转图（拓扑写死，confirm = human_confirm 缩写）
+  emit "  ${C_DIM}[plan] ──→ [engineer] ──→ [audit] ──→ [reviewer] ──→ [confirm]${C_RESET}"
+  # 状态行：图标 + 可读状态（--technical 时为英文技术词）
+  emit "  $(graph_node_status_text "$st_plan") plan · $(graph_node_status_text "$st_eng") engineer · $(graph_node_status_text "$st_aud") audit · $(graph_node_status_text "$st_rev") reviewer · $(graph_node_status_text "$st_hum") confirm"
+
+  # engineer 子任务列表（有则展开）
+  local subtasks
+  subtasks="$(jq -r '.nodes[] | select(.id == "engineer-1") | .subtasks[]? | "\(.id)\t\(.status // "pending")\t\(.desc // "")"' "$GRAPH_STATE" 2>/dev/null)"
+  if [ -n "$subtasks" ]; then
+    local sub_count sub_line_num=0
+    sub_count="$(printf '%s\n' "$subtasks" | wc -l | tr -d ' ')"
+    local sid sst sdesc branch
+    while IFS=$'\t' read -r sid sst sdesc; do
+      sub_line_num=$((sub_line_num + 1))
+      branch="├─"
+      if [ "$sub_line_num" = "$sub_count" ]; then branch="└─"; fi
+      emit "  ${branch} ${sid} $(status_icon "$sst") $(trunc "$sdesc" $((w - 16)))"
+    done <<< "$subtasks"
+  fi
+
+  # 降级等级 + wave + 新鲜度
+  local wave dlevel updated_at
+  wave="$(jq -r '.wave // 1' "$GRAPH_STATE" 2>/dev/null)"
+  dlevel="$(jq -r '.degradationLevel // 0' "$GRAPH_STATE" 2>/dev/null)"
+  updated_at="$(jq -r '.updatedAt // ""' "$GRAPH_STATE" 2>/dev/null)"
+
+  local age_text=""
+  local updated_epoch age_secs
+  updated_epoch="$(iso_to_epoch "$updated_at")"
+  if [ "$updated_epoch" -gt 0 ]; then
+    age_secs=$(( $(date '+%s') - updated_epoch ))
+    if [ "$age_secs" -lt 0 ]; then age_secs=0; fi
+    age_text=" · $(ago "$age_secs")更新"
+  fi
+
+  # degradationLevel > 0 时附人类可读说明（--technical 只给 L 等级）
+  local deg_text="L${dlevel}"
+  if [ "$TECHNICAL" != "1" ]; then
+    deg_text="L${dlevel}（$(humanize_status "degradationLevel:${dlevel}")）"
+  fi
+  emit "  降级: ${deg_text} · Wave: ${wave}${C_DIM}${age_text}${C_RESET}"
+}
+
+# v1.2.2 旧三字段格式兜底渲染（向后兼容）
+render_graph_engine_legacy() {
+  local w="$1"
   local gs
   gs="$(jq -r '"\(.activeNode // "unknown") \(.workGraphTasks // 0) \(.updatedAt // "")"' "$GRAPH_STATE" 2>/dev/null)"
   local active_node="unknown" task_count="0" updated_at=""
@@ -595,6 +749,152 @@ render_graph_engine() {
   emit "  活跃节点: ${C_BOLD}${active_node}${C_RESET} ${C_DIM}${age_text}${C_RESET}"
   emit "  Work Graph 任务数: ${C_BOLD}${task_count}${C_RESET}"
   emit "  ${n_plan} → ${n_eng} → ${n_aud} → ${n_rev} → ${n_hitl}"
+}
+
+# ────────────────────────────────
+# 区块 5：FORGE 审查进度（v1.2.3 · 交付三）
+# 数据源：data/forge-runs/fresh-eyes-loop/latest.json（driver 原子维护，Q4）
+#   + 当前轮 round 目录的 sub-progress-A/B.jsonl（v1.2.1 L2 schema）取当前文件
+# Dashboard 只读不写。
+# ────────────────────────────────
+
+# 取 agent 当前审查文件：当前轮 sub-progress-<role>.jsonl 最后一条带 target
+# 的事件 → basename；取不到回退 latest.json 的 currentFile 字段
+forge_current_file() {
+  local round_dir="$1" role="$2" fallback="$3"
+  local progress_file="$round_dir/sub-progress-${role}.jsonl"
+  local target=""
+  if [ -f "$progress_file" ]; then
+    target="$(
+      jq -r 'select(.target != null) | .target' "$progress_file" 2>/dev/null | tail -1
+    )"
+    if [ -n "$target" ]; then
+      target="$(basename "$target")"
+    fi
+  fi
+  if [ -z "$target" ]; then target="$fallback"; fi
+  printf '%s' "${target:--}"
+}
+
+# agent 行渲染：图标 + 状态 + 当前文件 + 本轮发现 + 累计
+render_forge_agent_line() {
+  local label="$1" role="$2" w="$3" round_dir="$4"
+  local status findings cumulative last_file
+  status="$(jq -r ".agent${role}.status // \"idle\"" "$FORGE_LATEST" 2>/dev/null)"
+  findings="$(jq -r ".agent${role}.findings // 0" "$FORGE_LATEST" 2>/dev/null)"
+  cumulative="$(jq -r ".agent${role}.cumulative // \"P0×0 P1×0\"" "$FORGE_LATEST" 2>/dev/null)"
+  last_file="$(jq -r ".agent${role}.currentFile // \"\"" "$FORGE_LATEST" 2>/dev/null)"
+  local cur_file
+  cur_file="$(forge_current_file "$round_dir" "$role" "$last_file")"
+  emit "  ${label} $(status_icon "$status") $(humanize_status "$status") · 当前: $(trunc "$cur_file" $((w - 40))) · 本轮发现: ${findings} · 累计: ${cumulative}"
+}
+
+render_forge_progress() {
+  local w="$1"
+  emit "${C_BOLD}${C_MAGENTA}▌ FORGE 审查（fresh-eyes-loop）${C_RESET}"
+
+  if [ ! -f "$FORGE_LATEST" ]; then
+    emit "  ${C_DIM}无正在运行的 FORGE 审查${C_RESET}"
+    return 0
+  fi
+
+  # latest.json 解析（jq // 兜底——半截/旧版字段缺失不崩溃）
+  local run_dir_rel round total updated_at stop_reason
+  run_dir_rel="$(jq -r '.runDir // ""' "$FORGE_LATEST" 2>/dev/null)"
+  round="$(jq -r '.round // 0' "$FORGE_LATEST" 2>/dev/null)"
+  total="$(jq -r '.totalRounds // 0' "$FORGE_LATEST" 2>/dev/null)"
+  updated_at="$(jq -r '.updatedAt // ""' "$FORGE_LATEST" 2>/dev/null)"
+  stop_reason="$(jq -r '.stopReason // ""' "$FORGE_LATEST" 2>/dev/null)"
+
+  # run 标识：run-NN → #NN（runDir 相对 data/ 根；绝对路径也兼容）
+  local run_tag="fresh-eyes-loop"
+  local run_base
+  run_base="$(basename "$run_dir_rel")"
+  case "$run_base" in
+    run-*) run_tag="fresh-eyes-loop #${run_base#run-}" ;;
+  esac
+
+  # 新鲜度
+  local age_text=""
+  local updated_epoch age_secs
+  updated_epoch="$(iso_to_epoch "$updated_at")"
+  if [ "$updated_epoch" -gt 0 ]; then
+    age_secs=$(( $(date '+%s') - updated_epoch ))
+    if [ "$age_secs" -lt 0 ]; then age_secs=0; fi
+    age_text=" · $(ago "$age_secs")更新"
+  fi
+
+  emit "  ${run_tag} · 第 ${round} 轮 / 共 ${total} 轮${C_DIM}${age_text}${C_RESET}"
+
+  # 当前轮 round 目录（round-NN，NN 两位补齐）
+  local round_dir=""
+  if [ -n "$run_dir_rel" ] && [ "$round" -gt 0 ] 2>/dev/null; then
+    local abs_run_dir="$run_dir_rel"
+    case "$run_dir_rel" in
+      /*) abs_run_dir="$run_dir_rel" ;;
+      *)  abs_run_dir="$DATA_ROOT/$run_dir_rel" ;;
+    esac
+    round_dir="$(printf '%s/round-%02d' "$abs_run_dir" "$round")"
+  fi
+
+  render_forge_agent_line "Agent A（审查模型）" "A" "$w" "$round_dir"
+  render_forge_agent_line "Agent B（工程模型）" "B" "$w" "$round_dir"
+
+  # 双盲状态行：双 running = 双盲审查中；单 running = 单方执行；其余按终态
+  local a_status b_status
+  a_status="$(jq -r '.agentA.status // "idle"' "$FORGE_LATEST" 2>/dev/null)"
+  b_status="$(jq -r '.agentB.status // "idle"' "$FORGE_LATEST" 2>/dev/null)"
+  local phase_text="已完成"
+  if [ -n "$stop_reason" ] && [ "$stop_reason" != "null" ]; then
+    phase_text="已完成（${stop_reason}）"
+  fi
+  if [ "$a_status" = "running" ] && [ "$b_status" = "running" ]; then
+    phase_text="A/B 双盲中（互不可见）"
+  elif [ "$a_status" = "running" ] || [ "$b_status" = "running" ]; then
+    phase_text="单方执行中"
+  fi
+  emit "  状态: ${phase_text}"
+}
+
+# ────────────────────────────────
+# 区块 6：最近变更（v1.2.3 · 交付五 bash）
+# 数据源：data/dashboard/workspace-changes.jsonl（daemon workspace-summary）
+# 显示最近 N 次（SOFAGENT_DASHBOARD_RECENT_N，默认 5）
+# ────────────────────────────────
+
+render_workspace_changes() {
+  local w="$1"
+  emit "${C_BOLD}${C_YELLOW}▌ 最近变更（workspace）${C_RESET}"
+
+  if [ ! -f "$WORKSPACE_CHANGES" ]; then
+    emit "  ${C_DIM}无变更记录${C_RESET}"
+    return 0
+  fi
+
+  # 取最后 N 条（倒序：最新在前；jq -s reverse——macOS 无 tac）
+  local rows
+  rows="$(
+    tail -n "$RECENT_N" "$WORKSPACE_CHANGES" 2>/dev/null \
+    | jq -r -s 'reverse | .[] | "\(.runId // "?")\t\((.created // []) | length)\t\((.modified // []) | length)\t\((.deleted // []) | length)\t\(.timestamp // "")"' 2>/dev/null
+  )"
+  if [ -z "$rows" ]; then
+    emit "  ${C_DIM}无变更记录${C_RESET}"
+    return 0
+  fi
+
+  local run_id n_created n_modified n_deleted ts
+  while IFS=$'\t' read -r run_id n_created n_modified n_deleted ts; do
+    local age_text=""
+    local epoch age_secs
+    epoch="$(iso_to_epoch "$ts")"
+    if [ "$epoch" -gt 0 ]; then
+      age_secs=$(( $(date '+%s') - epoch ))
+      if [ "$age_secs" -lt 0 ]; then age_secs=0; fi
+      age_text=" · $(ago "$age_secs")"
+    fi
+    emit "  run: $(trunc "$run_id" $((w - 10)))"
+    emit "  ✚ 新建 ${n_created} 个文件 · ✎ 修改 ${n_modified} 个文件 · ✗ 删除 ${n_deleted} 个文件${C_DIM}${age_text}${C_RESET}"
+  done <<< "$rows"
 }
 
 # ────────────────────────────────
@@ -654,9 +954,17 @@ render_frame() {
     rm -f "$f1" "$f2" "$f3" "$strip1" "$strip2" "$strip3"
   fi
 
-  # 区块 4：Graph Engine 状态（v1.2.2 P4）——三栏/堆叠布局之外追加的整宽区块
+  # 区块 4：Graph Engine 控制图（v1.2.3）——三栏/堆叠布局之外追加的整宽区块
   emit "$(printf '%*s' "$TERM_COLS" '' | tr ' ' '─')"
   render_graph_engine "$TERM_COLS"
+
+  # 区块 5：FORGE 审查进度（v1.2.3 · 交付三）
+  emit "$(printf '%*s' "$TERM_COLS" '' | tr ' ' '─')"
+  render_forge_progress "$TERM_COLS"
+
+  # 区块 6：最近变更（v1.2.3 · 交付五 bash）
+  emit "$(printf '%*s' "$TERM_COLS" '' | tr ' ' '─')"
+  render_workspace_changes "$TERM_COLS"
 
   emit "$(printf '%*s' "$TERM_COLS" '' | tr ' ' '─')"
   if [ "$WATCH" = "1" ]; then
@@ -665,26 +973,29 @@ render_frame() {
 }
 
 # ────────────────────────────────
-# 主入口
+# 主入口（SOFAGENT_DASHBOARD_LIB_ONLY=1 时跳过——测试脚本 source 本文件
+# 复用 render_* / humanize_status 等函数，不触发渲染主流程）
 # ────────────────────────────────
 
-if [ "$WATCH" = "1" ]; then
-  # --watch 模式：tput cup 光标定位重绘（不清屏，防闪烁）
-  tput civis 2>/dev/null || true
-  first=1
-  while true; do
+if [ "${SOFAGENT_DASHBOARD_LIB_ONLY:-}" != "1" ]; then
+  if [ "$WATCH" = "1" ]; then
+    # --watch 模式：tput cup 光标定位重绘（不清屏，防闪烁）
+    tput civis 2>/dev/null || true
+    first=1
+    while true; do
+      render_frame
+      if [ "$first" = "1" ]; then
+        clear
+        first=0
+      fi
+      tput cup 0 0 2>/dev/null || true
+      cat "$BUFFER_FILE"
+      # 清掉上一帧可能比本帧长的残留行
+      tput ed 2>/dev/null || true
+      sleep "$REFRESH_INTERVAL"
+    done
+  else
     render_frame
-    if [ "$first" = "1" ]; then
-      clear
-      first=0
-    fi
-    tput cup 0 0 2>/dev/null || true
     cat "$BUFFER_FILE"
-    # 清掉上一帧可能比本帧长的残留行
-    tput ed 2>/dev/null || true
-    sleep "$REFRESH_INTERVAL"
-  done
-else
-  render_frame
-  cat "$BUFFER_FILE"
+  fi
 fi

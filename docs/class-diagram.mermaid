@@ -1,0 +1,119 @@
+classDiagram
+    %% ============================================================
+    %% sofagent v1.2.3 类图 — 编排隔离底座 + Dashboard 数据通道
+    %% ============================================================
+
+    %% ── 交付一：worktree 隔离原语 ──
+    class WorktreeHandle {
+        <<interface>>
+        +string path
+        +string branch
+        +string agentId
+        +create() Promise~void~
+        +cleanup() Promise~void~
+        +diff() Promise~string~
+    }
+
+    class GitWorktreeHandle {
+        -string repoDir
+        -string baseBranch
+        -AuditWriter registry
+        +create() Promise~void~
+        +cleanup() Promise~void~
+        +diff() Promise~string~
+        +sweepStaleWorktrees(repoDir)$ Promise~number~
+    }
+
+    class WorktreeMergeGate {
+        -runAudit diffPromise~AuditVerdict~
+        +evaluate(handle WorktreeHandle) Promise~MergeDecision~
+    }
+
+    class MergeDecision {
+        <<union>>
+        +action merge|discard
+        +string diff
+        +string report
+        +string evidencePath
+    }
+
+    class ConflictResolver {
+        +detect(handles WorktreeHandle[]) Promise~ConflictSet~
+        +resolve(conflicts ConflictSet) Resolution[]
+        -strategies ConflictStrategy[]
+    }
+
+    class ConflictStrategy {
+        <<enumeration>>
+        scope-priority
+        first-come
+        hitl
+    }
+
+    %% ── 交付二：graph-state v2 ──
+    class GraphStateFileV2 {
+        +int version
+        +string activeNode
+        +int workGraphTasks
+        +string updatedAt
+        +int wave
+        +int degradationLevel
+        +GraphNodeState[] nodes
+        +GraphEdge[] edges
+        +SubtaskState[] subtasks
+    }
+
+    class GraphNodeState {
+        +LoopNodeName name
+        +NodeStatus status
+        +WorktreeRef worktree
+    }
+
+    class GraphEdge {
+        +string from
+        +string to
+    }
+
+    class LoopGraphDeps {
+        <<existing·extended>>
+        +string dataDir
+        +string dashboardDir 新增(AD-2)
+        +WorktreeFactory worktreeFactory 新增(AD-4·可选)
+        +runEngineer()
+        +runAudit()
+        +recordBlocked()
+    }
+
+    %% ── 交付五：workspace 摘要 ──
+    class WorkspaceSummary {
+        <<module>>
+        +captureWorkspaceStatus(projectDir)$ WorkspaceChange
+        +appendWorkspaceSummary(dataRoot, record)$ void
+    }
+
+    class WorkspaceChangeRecord {
+        +string timestamp
+        +string runId
+        +string[] created
+        +string[] modified
+        +string[] deleted
+    }
+
+    %% ── 交付三：FORGE 指针 ──
+    class ForgeLatestPointer {
+        +string runDir
+        +string phase
+        +string updatedAt
+    }
+
+    %% ── 关系 ──
+    WorktreeHandle <|.. GitWorktreeHandle : 实现
+    WorktreeMergeGate ..> WorktreeHandle : evaluate(diff)
+    WorktreeMergeGate ..> MergeDecision : 产出
+    ConflictResolver ..> WorktreeHandle : 检测多棵树冲突
+    ConflictResolver ..> ConflictStrategy : 按序仲裁
+    GraphStateFileV2 *-- GraphNodeState : nodes[]
+    GraphStateFileV2 *-- GraphEdge : edges[]
+    GraphNodeState o-- WorktreeHandle : 可选引用(v1.2.3恒null)
+    LoopGraphDeps ..> GraphStateFileV2 : writeGraphState落盘
+    WorkspaceSummary ..> WorkspaceChangeRecord : 追加jsonl(留100)

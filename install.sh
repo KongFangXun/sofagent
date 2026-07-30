@@ -44,7 +44,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.2.2"
+VERSION="1.2.3"
 
 # ── 颜色输出（合并两套）──
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'
@@ -862,10 +862,22 @@ if [ "${BASE_ONLY:-0}" = "0" ]; then
   echo -e "  ${CYAN}内置 Agent：${NC}@sofagent-fde（部署）+ @sofagent-audit（合规）+ @sofagent-engineer（编码）+ @sofagent-reviewer（审查）"
   echo -e "  ${CYAN}详细指南见 FDE/README.md${NC}"
   echo ""
+  echo -e "  ${YELLOW}提示：${NC}如果 sofagent 命令找不到，请重载 shell 配置："
+  echo -e "    bash:  source ~/.bashrc"
+  echo -e "    zsh:   source ~/.zshrc"
+  echo -e "    fish:  source ~/.config/fish/config.fish"
+  echo -e "    或直接重启终端。"
+  echo ""
 
 else
   # ── 底座-only 完成输出 ──
   echo ""
   echo -e "${GREEN}✅ sofagent 底座安装完成（--base-only 模式）${NC}"
+  echo ""
+  echo -e "  ${YELLOW}提示：${NC}如果 sofagent 命令找不到，请重载 shell 配置："
+  echo -e "    bash:  source ~/.bashrc"
+  echo -e "    zsh:   source ~/.zshrc"
+  echo -e "    fish:  source ~/.config/fish/config.fish"
+  echo -e "    或直接重启终端。"
   echo ""
 fi

@@ -2,7 +2,7 @@
 
 > **sofagent 是一个 FDE Agent——进场梳理你的工作流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent（WorkBuddy / Codex / Claude Code）里说一句话，它就帮你干活——审计每次变更、沉淀每次经验、越用越好。下面从装到用到查问题，全流程走一遍。
 >
-> v1.2.2 · 2026-07-29（UTC）· 孔放勋
+> v1.2.3 · 2026-07-30（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -64,7 +64,7 @@
 - **平台无关、即挂即用**：骑在你自选的大厂 Agent（Claude Code / Codex / Cursor / WorkBuddy / 扣子 / OpenClaw）之上，不替代模型，只补「可靠执行」。
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
 
-**现在还干不了的事（规划中，暂无代码）**：Dashboard 可视化前端、完整多设备协同、飞书 / 钉钉 / 企微完整 Webhook 推送、并行编排、SubAgent 生产级沙箱、本地推理小模型——路线见 [ROADMAP](../ROADMAP.md)。
+**现在还干不了的事（规划中，暂无代码）**：完整多设备协同、并行编排、SubAgent 生产级沙箱、本地推理小模型——路线见 [ROADMAP](../ROADMAP.md)。
 
 ---
 

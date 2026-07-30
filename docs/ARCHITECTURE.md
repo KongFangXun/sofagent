@@ -1,7 +1,7 @@
 # sofagent Architecture
 
 > 设计决策记录——从为什么存在、一底座·四引擎如何协作，到每个关键决策的工程理由。
-> v1.2.2 · 2026-07-29（UTC）· 孔放勋
+> v1.2.3 · 2026-07-30（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -377,7 +377,7 @@ sofagent 的编排引擎天然就是一张**控制图（Control Graph）**——
 | **可审计状态文件**（状态落盘可复核） | `FileCheckpointer` 每节点前后 snapshot 到 `.sofagent/checkpoint/`，`resumeLoopGraph()` 断点续跑 | `engine/orchestrator/src/graph/checkpoint.ts` |
 | **数据图 Data Graph**（知识图谱/血缘） | 蓄水池（知识库 `knowledge/`） + 市政规划（Ontology，Ledger-Views-Policy）——与编排控制图正交 | `knowledge/` + Ontology 层 |
 | **Org Graph（稳定角色）** | 四节点（engineer/audit/reviewer/human_confirm）是稳定角色——不随任务变化；变动的是节点内的 Work Graph 子拓扑 | `engine/orchestrator/src/loop/graph.ts:128-132` |
-| **Work Graph（临时拓扑）** | 每个任务的子任务拆分 + 并行 engineer 实例 = 任务结束即解散的工作图；v1.2.2 Planner 节点落地后显式生成 | 规划中（v1.2.2+） |
+| **Work Graph（临时拓扑）** | 每个任务的子任务拆分 + 并行 engineer 实例 = 任务结束即解散的工作图；v1.2.3 Planner 节点落地后显式生成 | 规划中（v1.2.2+） |
 
 **控制图 vs 数据图二分天然具备**：管网（Workflow / StateGraph）= 控制图，决定"先干什么后干什么"；蓄水池 + 市政规划 = 数据图，承载"知道什么、怎么理解"。两者解耦——控制图无知识库也能跑（纯编排），数据图无控制图也能沉淀（Dream Cycle 独立跑）。
 
@@ -392,7 +392,7 @@ sofagent 的编排引擎天然就是一张**控制图（Control Graph）**——
 | **reviewer** | AI 语义审查 | `auditReport` + `engineerOutput` | `reviewReport` | 只读上下文 | 审查完成→human_confirm |
 | **human_confirm** | HITL 人工确认 | `reviewReport` + 全量上下文 | `humanFeedback` | 人工决策 | 确认→END；驳回→engineer |
 
-**Work Graph 示例**（行业调研任务，v1.2.2 Planner 落地后自动生成）：
+**Work Graph 示例**（行业调研任务，v1.2.3 Planner 落地后自动生成）：
 
 ```
 START → plan（拆解："调研 AI 笔记产品"）
@@ -410,7 +410,7 @@ START → plan（拆解："调研 AI 笔记产品"）
 
 **五类边契约**（行业共识）：当前实现仅有 **数据流**（`artifacts` 传递）和 **控制流**（`routeAfterAudit`/`routeAfterHuman`）——**缺权限流、证据流、失败流**。v1.2.5 将形式化全部五类边。
 
-**可学习的未来迭代（落盘见 [ROADMAP](../ROADMAP.md)「v1.2.x Graph Engine 进化路线」）**：① **Planner 节点**——任务分解（v1.2.2）；② **降级路由链**——retry→降级→标记→人工（v1.2.2）；③ **engineer-decide/execute 分层**——LLM 层 + 代码层（v1.2.2）；④ **并行子图执行**——worktree 隔离 + 多 engineer 并发（v1.2.3）；⑤ **Dashboard React Flow 控制图**——Org Graph + Work Graph 同屏 + 边类型标注（v1.2.3）；⑥ **多类型 Checker**——format/fact/source-validator（v1.2.4）；⑦ **受控循环升级**——补信息→重规划 + 降级通过（v1.2.4）；⑧ **五类边契约形式化** + Anchor 配置（v1.2.5）；⑨ 控制图多循环 DAG 波次并行（v1.3.0）。
+**可学习的未来迭代（落盘见 [ROADMAP](../ROADMAP.md)「v1.2.x Graph Engine 进化路线」）**：① **Planner 节点**——任务分解（v1.2.3）；② **降级路由链**——retry→降级→标记→人工（v1.2.2）；③ **engineer-decide/execute 分层**——LLM 层 + 代码层（v1.2.2）；④ **并行子图执行**——worktree 隔离 + 多 engineer 并发（v1.2.3）；⑤ **Dashboard React Flow 控制图**——Org Graph + Work Graph 同屏 + 边类型标注（v1.2.3）；⑥ **多类型 Checker**——format/fact/source-validator（v1.2.4）；⑦ **受控循环升级**——补信息→重规划 + 降级通过（v1.2.4）；⑧ **五类边契约形式化** + Anchor 配置（v1.2.5）；⑨ 控制图多循环 DAG 波次并行（v1.3.0）。
 
 #### 重试语义：统一计数器
 
@@ -470,13 +470,13 @@ graph LR
 ├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
 │ @sofagent/eval（评分引擎）⭐ v1.2.1 补全   │  │ eval/ ⭐              │  │ @sofagent/think（进化引擎）⭐ 接通    │
 │   runEval() 跑 golden set                │→ │   history.jsonl      │→ │   检测 passRate 下降→写 think.md      │
-│   eval-reporter 持久化                    │→ │   reports/*.md       │→ │ Dashboard（v1.2.2）质量趋势面板       │
+│   eval-reporter 持久化                    │→ │   reports/*.md       │→ │ Dashboard（v1.2.3）质量趋势面板       │
 ├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
 │ @sofagent/ab-test（A/B 框架）⭐ v1.2.1   │  │ ab-test/ ⭐           │  │ @sofagent/orchestrator（ab-scheduler）│
 │   runABTest() 对比方案                     │→ │   history.jsonl      │→ │   aggregateRecent() 方案判定          │
-│                                          │→ │   reports/*.md       │→ │ Dashboard（v1.2.2）A/B 对比面板       │
+│                                          │→ │   reports/*.md       │→ │ Dashboard（v1.2.3）A/B 对比面板       │
 ├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ @sofagent/daemon（守护进程）              │  │ dashboard/           │  │ Dashboard（v1.2.2）                  │
+│ @sofagent/daemon（守护进程）              │  │ dashboard/           │  │ Dashboard（v1.2.3）                  │
 │   health-reporter → runHealthReport()    │→ │   daemon-health.json │→ │   健康面板                            │
 │   dream-cycle → extract/synthesize       │→ ├──────────────────────┤  │ @sofagent/harness（加载链第4层）      │
 │                                          │→ │ knowledge/           │→ │   buildConstrainedSystemPrompt()     │
@@ -726,8 +726,8 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 | rules | 规则引擎纯函数包（零 fs/git 依赖），编排层 tool-call 事前拦截 | ✅ 已实现 |
 | eval | 质量评估引擎：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
-| orchestrator | 编排引擎：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 | ✅ 已实现（264 测试） |
-| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 | ✅ 已实现（117 测试） |
+| orchestrator | 编排引擎：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 | ✅ 已实现（297 测试） |
+| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 | ✅ 已实现（128 测试） |
 | mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | skillopt | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填 | ✅ 已实现 |
@@ -736,7 +736,7 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 ### 对外核心能力（FDE Agent 给用户什么）
 
-✅ 已发布可用（v1.2.0）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 21 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关（Claude Code / Codex / Cursor / WorkBuddy / OpenClaw 即挂即用）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 企业本体模型 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
+✅ 已发布可用（v1.2.0 - v1.2.3）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 21 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关（Claude Code / Codex / Cursor / WorkBuddy / OpenClaw 即挂即用）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 企业本体模型 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
 
 > **v1.2.0 审计链安全加固**（BugFix 批次）：`--doctor` hash chain 三态判定（ok / tampered / unverifiable，`checkHistoryChainDetailed`）· HMAC key ≥16 字节强校验（`validateHmacKey`）· HMAC 签名改为基于脱敏记录（先 sanitize 再签名，写读一致）· config 可选签名校验（`verifyConfigSignature` + `signConfig` CLI）· CLI 版本一致性自检（`checkVersionConsistency`）。详见 `engine/core/src/audit-history.ts`、`engine/core/src/config-loader.ts`。
 
@@ -764,6 +764,8 @@ Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2
 - **v1.2.x**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界
 - **v2.x**：组织级共享记忆 + 协同层 + **分层模型路由**（Harness 按任务复杂度路由到云端大模型/本地 7B/本地 0.5B，数据主权驱动——敏感数据不出内网）
 - **v3.x-v4.x+**：企业专属小模型精调（`sofagent-model distill` QLoRA）+ 本地推理 + 离线 USB 节点。详见 [ROADMAP · 分层模型架构](../ROADMAP.md#分层模型架构v3x-技术骨架-2026-07-25-定稿)
+- **远期护城河演进方向（非当前能力 · 2026-07-30 战略讨论）**：当前护城河 = 约束底座 + 审计能力（模型越强越值钱）。更远的演进方向：把「帮 sofagent 自身进化」的 Harness + 进化引擎能力，泛化为「**自动帮企业部署后训练模型**」的引擎。届时护城河从「约束能力」升维为「**后训练模型的自动化部署能力**」——交付物是部署在企业侧的定制模型（基于企业自有/通用基座后训练，非 sofagent 自制大模型），使用者是企业客户而非 sofagent 自身；ontology 在此既是企业数字孪生（语义层），也是后训练规格来源（每个 workflow 节点 → 一个专精模型）。**此为长期目标蓝图，当前完全不具备该能力**，仅作演进方向记录，不视为现状或近期计划。> 来源：产品战略讨论 2026-07-30（尚未实现）
+> **远期部署形态与数据逻辑（非当前能力 · 2026-07-30 战略讨论）**：引擎作为**软件**部署在**企业侧信任边界内**（独立控制节点或容器内），由其**驱动训练流水线**——加载企业自带 license/key 的开源基座 + 企业私有数据，训练产出定制模型；全程**数据不出域**、sofagent 不碰原始数据、企业用自有 GPU/key（BYOK）。训练主体是**软件/引擎跑脚本**，模型不"自训练"。此为长期目标蓝图，当前不具备。> 来源：产品战略讨论 2026-07-30（尚未实现）
 
 **daemon 主动巡检清单**（`engine/daemon/src/inspectors/`，注册于 `runInspectors()`）：
 

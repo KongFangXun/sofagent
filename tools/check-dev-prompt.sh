@@ -144,7 +144,7 @@ check_prefix() {
 
 is_runtime() {
   case "$1" in
-    data/*|.sofagent/*|data/audit/*|data/dashboard/*|data/forge-runs/*|data/reports/*|dashboard/*)
+    data/audit/*|data/dashboard/*|data/forge-runs/*|data/reports/*|dashboard/*|data/*|.sofagent/*)
       return 0 ;;
     *)
       return 1 ;;

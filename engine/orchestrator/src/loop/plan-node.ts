@@ -20,7 +20,7 @@
 import { z } from 'zod';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import type { LoopGraphState, Subtask } from './state';
+import type { AuditVerdict, LoopGraphState, Subtask } from './state';
 import { ModelRouter } from '../model-router';
 
 // ============================================================
@@ -43,37 +43,159 @@ export type PlanDecide = z.infer<typeof PlanDecideSchema>;
 
 // ============================================================
 // Graph 状态落盘（data/dashboard/graph-state.json）
+// v1.2.3：三字段升级为完整控制图（nodes/edges/wave/degradationLevel），
+//         旧三字段（activeNode/workGraphTasks/updatedAt）保留——
+//         Dashboard bash v1.2.2 读侧（jq // 兜底）不崩溃
 // ============================================================
 
-/** graph-state.json schema（Dashboard Graph Engine 区块数据源） */
-export interface GraphStateFile {
-  /** 当前活跃节点名（plan / engineer / audit / reviewer / human_confirm） */
-  activeNode: string;
-  /** Work Graph 任务数（当前 subtasks 总数） */
-  workGraphTasks: number;
-  /** ISO 8601 更新时间 */
-  updatedAt: string;
+/** 节点执行状态 */
+export type GraphNodeStatus = 'pending' | 'running' | 'completed' | 'failed';
+
+/** graph-state.json 子任务（engineer 节点进度明细） */
+export interface GraphStateSubtask {
+  id: string;
+  desc: string;
+  status: 'pending' | 'done' | 'skipped';
+}
+
+/** graph-state.json 节点 */
+export interface GraphStateNode {
+  /** 节点实例 id（plan / engineer-1 / audit-1 / reviewer-1 / human-1） */
+  id: string;
+  /** 节点类型 */
+  type: 'planner' | 'engineer' | 'audit' | 'reviewer' | 'human';
+  /** 展示名 */
+  label: string;
+  status: GraphNodeStatus;
+  /** engineer 节点的子任务进度（其余节点无此字段） */
+  subtasks?: GraphStateSubtask[];
+}
+
+/** graph-state.json 边 */
+export interface GraphStateEdge {
+  from: string;
+  to: string;
+  type: 'data-flow';
 }
 
 /**
- * 写 graph-state.json（原子写：tmp + rename 风格简化为直接覆盖写——
- * Dashboard 读侧 jq 解析失败时有兜底，不阻断主流程）。
- * 写失败静默：落盘是观测辅助通道，绝不 throw。
- *
- * @param dataDir 数据根目录（{SOFAGENT_DATA}，其下 dashboard/ 子目录）
- * @param activeNode 当前活跃节点名
- * @param workGraphTasks Work Graph 任务数
+ * graph-state.json schema（Dashboard Graph Engine 区块数据源）。
+ * v1.2.3 完整控制图结构 + 旧三字段保留（向后兼容）。
  */
-export function writeGraphState(dataDir: string, activeNode: string, workGraphTasks: number): void {
+export interface GraphStateFile {
+  /** 控制图节点列表（按图拓扑顺序） */
+  nodes: GraphStateNode[];
+  /** 控制图边列表（data-flow） */
+  edges: GraphStateEdge[];
+  /** 波次 = retryCount + 1（架构师裁决 Q2） */
+  wave: number;
+  /** 降级等级：0=正常 / 1=范围降级 / 2=低可信 */
+  degradationLevel: number;
+  /** 当前活跃节点名（旧字段，保留） */
+  activeNode: string;
+  /** Work Graph 任务数（旧字段，保留） */
+  workGraphTasks: number;
+  /** ISO 8601 更新时间（旧字段，保留；每次状态变更刷新） */
+  updatedAt: string;
+}
+
+/** writeGraphState 输入——各节点调用点按当前状态传入 */
+export interface GraphStateInput {
+  /** 当前活跃节点名（plan / engineer / audit / reviewer / human_confirm） */
+  activeNode: string;
+  /** 重试次数（wave = retryCount + 1，缺省 0） */
+  retryCount?: number;
+  /** 降级等级（缺省 0） */
+  degradationLevel?: number;
+  /** 子任务列表（engineer 节点进度 + workGraphTasks 数据源） */
+  subtasks?: Subtask[];
+  /** audit 判定（audit 节点完成后回写：PASS/WARN → completed，FAIL → failed） */
+  auditResult?: AuditVerdict | null;
+  /** 终态（completed → 全部节点 completed；blocked → 活跃节点 failed） */
+  finalStatus?: string;
+}
+
+/**
+ * 控制图节点定义——顺序与 graph.ts 拓扑一致：
+ * plan → engineer → audit → reviewer → human_confirm
+ */
+const GRAPH_NODE_DEFS = [
+  { name: 'plan', id: 'plan', type: 'planner', label: 'Planner' },
+  { name: 'engineer', id: 'engineer-1', type: 'engineer', label: 'Engineer' },
+  { name: 'audit', id: 'audit-1', type: 'audit', label: 'Audit' },
+  { name: 'reviewer', id: 'reviewer-1', type: 'reviewer', label: 'Reviewer' },
+  { name: 'human_confirm', id: 'human-1', type: 'human', label: 'Human Confirm' },
+] as const;
+
+/**
+ * 由当前 LOOP 状态推导完整控制图文件内容（纯函数，可单测）。
+ *
+ * 节点状态推导：
+ * - 活跃节点之前的节点 → completed；活跃节点 → running；之后 → pending
+ * - finalStatus='completed' → 全部 completed
+ * - finalStatus='blocked' → 活跃节点 failed
+ * - audit 节点携带 auditResult 时覆盖：PASS/WARN → completed，FAIL → failed
+ */
+export function buildGraphStateFile(input: GraphStateInput): GraphStateFile {
+  const activeIdx = GRAPH_NODE_DEFS.findIndex((d) => d.name === input.activeNode);
+
+  const nodes: GraphStateNode[] = GRAPH_NODE_DEFS.map((def, i) => {
+    let status: GraphNodeStatus;
+    if (input.finalStatus === 'completed') {
+      status = 'completed';
+    } else if (activeIdx === -1) {
+      // 未知活跃节点——兜底全 pending，不崩溃
+      status = 'pending';
+    } else if (i < activeIdx) {
+      status = 'completed';
+    } else if (i === activeIdx) {
+      status = input.finalStatus === 'blocked' ? 'failed' : 'running';
+    } else {
+      status = 'pending';
+    }
+    // audit 节点完成后回写判定结果
+    if (def.name === 'audit' && input.auditResult) {
+      status = input.auditResult === 'FAIL' ? 'failed' : 'completed';
+    }
+    const node: GraphStateNode = { id: def.id, type: def.type, label: def.label, status };
+    if (def.name === 'engineer' && input.subtasks) {
+      node.subtasks = input.subtasks.map((s) => ({ id: s.id, desc: s.description, status: s.status }));
+    }
+    return node;
+  });
+
+  const edges: GraphStateEdge[] = [];
+  for (let i = 0; i < GRAPH_NODE_DEFS.length - 1; i++) {
+    edges.push({ from: GRAPH_NODE_DEFS[i]!.id, to: GRAPH_NODE_DEFS[i + 1]!.id, type: 'data-flow' });
+  }
+
+  return {
+    nodes,
+    edges,
+    // wave 语义 = retryCount + 1（架构师裁决 Q2）
+    wave: (input.retryCount ?? 0) + 1,
+    degradationLevel: input.degradationLevel ?? 0,
+    // 旧三字段保留（Dashboard bash v1.2.2 读侧 jq // 兜底兼容）
+    activeNode: input.activeNode,
+    workGraphTasks: input.subtasks?.length ?? 0,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * 写 graph-state.json（覆盖写——Dashboard 读侧 jq 解析失败时有兜底，
+ * 不阻断主流程）。写失败静默：落盘是观测辅助通道，绝不 throw。
+ *
+ * @param dashboardDir Dashboard 数据根目录（v1.2.3 AD-2 路径修复：
+ *   $SOFAGENT_HOME/data，其下 dashboard/ 子目录；由 LoopGraphDeps.dashboardDir
+ *   注入，不再使用 loadEnvConfig 的仓库内 fallback 路径）
+ * @param input 当前 LOOP 状态快照
+ */
+export function writeGraphState(dashboardDir: string, input: GraphStateInput): void {
   try {
-    const dir = join(dataDir, 'dashboard');
+    const dir = join(dashboardDir, 'dashboard');
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-    const payload: GraphStateFile = {
-      activeNode,
-      workGraphTasks,
-      updatedAt: new Date().toISOString(),
-    };
-    writeFileSync(join(dir, 'graph-state.json'), JSON.stringify(payload, null, 2), 'utf-8');
+    writeFileSync(join(dir, 'graph-state.json'), JSON.stringify(buildGraphStateFile(input), null, 2), 'utf-8');
   } catch {
     // 观测落盘失败静默——不阻塞 LOOP 主流程
   }
@@ -94,8 +216,13 @@ export interface PlanNodeDeps {
   runPlannerDecide: (task: string) => Promise<string>;
   /** 日志输出 */
   log: (msg: string) => void;
-  /** 数据目录（graph-state.json 落盘根路径）；不设置则跳过落盘 */
+  /** 数据目录（旧注点，dashboardDir 未设置时兜底）；不设置则跳过落盘 */
   dataDir?: string;
+  /**
+   * Dashboard 数据目录（v1.2.3 AD-2 路径修复注点：$SOFAGENT_HOME/data）。
+   * 优先级高于 dataDir——graph-state.json 写到 Dashboard bash 实际读取的位置。
+   */
+  dashboardDir?: string;
 }
 
 /**
@@ -242,8 +369,16 @@ export function makePlanNode(deps: PlanNodeDeps) {
     }
 
     // Graph 状态落盘（供 Dashboard Graph Engine 区块渲染）
-    if (deps.dataDir) {
-      writeGraphState(deps.dataDir, 'plan', finalSubtasks.length);
+    // v1.2.3：dashboardDir 优先（AD-2 路径修复），dataDir 兜底（向后兼容）；
+    // plan 完成 → 写入 plan completed + engineer running（活跃节点前移）
+    const dashDir = deps.dashboardDir ?? deps.dataDir;
+    if (dashDir) {
+      writeGraphState(dashDir, {
+        activeNode: 'engineer',
+        retryCount: state.retryCount,
+        degradationLevel: state.degradationLevel,
+        subtasks: finalSubtasks,
+      });
     }
 
     return {

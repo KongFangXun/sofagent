@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/ab-test",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "sofagent A/B 测试框架 — 对比实验 / 指标显著性 / 实验报告",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -102,6 +102,50 @@ export {
   type HITLResponse,
 } from './hitl';
 
+// Worktree Isolation（v1.2.3 · 并行 SubAgent 文件级隔离底座 · AD-4）
+export {
+  createWorktree,
+  sweepStaleWorktrees,
+  pidAlive,
+  appendWorktreeRegistry,
+  readWorktreeRegistry,
+  listActiveWorktrees,
+  resolveRegistryPath,
+  WORKTREE_BASE_DIR,
+  WORKTREE_BRANCH_PREFIX,
+  WORKTREE_REGISTRY_REL,
+} from './worktree-isolation';
+export type {
+  WorktreeHandle,
+  CreateWorktreeOptions,
+  WorktreeRegistryEntry,
+  SweepOptions,
+  SweepResult,
+} from './worktree-isolation';
+
+// Worktree Merge Gate（v1.2.3 · 审计合并卡关）
+export { runMergeGate } from './worktree-merge-gate';
+export type { MergeGateOptions, MergeGateResult, MergeGateStatus } from './worktree-merge-gate';
+
+// Conflict Resolver（v1.2.3 · merge 文本冲突仲裁）
+export {
+  resolveWorktreeConflict,
+  fileInScope,
+  appendConflictRecord,
+  readConflictRecords,
+  resolveConflictsPath,
+  WORKTREE_CONFLICTS_REL,
+} from './conflict-resolver';
+export type {
+  ConflictParty,
+  MergeConflictInput,
+  ConflictResolution,
+  ConflictRecord,
+  ConflictFileVerdict,
+  ConflictWinner,
+  ConflictRule,
+} from './conflict-resolver';
+
 // Orchestrator Compare
 export { scanLogFiles, extractMetrics, generateReport, promoteWorkflow } from './orchestrator-compare';
 export type { Metric } from './orchestrator-compare';

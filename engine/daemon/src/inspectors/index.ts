@@ -15,6 +15,7 @@ import { runHealthReport } from './health-reporter';
 import { generateDataSovereigntyDaily } from './data-sovereignty-daily';
 import { generateDataSovereigntyWeekly } from './data-sovereignty-weekly';
 import { generateDataSovereigntyMonthly } from './data-sovereignty-monthly';
+import { runWorkspaceSummary } from '../workspace-summary';
 
 export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFreshness, checkKnowledgeHealth, checkSkillStaleness, accumulateWarnings, runHealthReport, generateDataSovereigntyDaily, generateDataSovereigntyWeekly, generateDataSovereigntyMonthly };
 export type { InspectorConfig, InspectorResult } from './types';
@@ -33,7 +34,43 @@ export const DEFAULT_INSPECTOR_CONFIG: Record<string, InspectorConfig> = {
   'data-sovereignty-daily': { enabled: true, schedule: '@daily' },
   'data-sovereignty-weekly': { enabled: true, schedule: '@weekly' },
   'data-sovereignty-monthly': { enabled: true, schedule: '@monthly' },
+  // v1.2.3 交付五：workspace 变更摘要（checkpoint 联动触发 · AD-6）
+  'workspace-summary': { enabled: true, schedule: '@daily' },
 };
+
+/**
+ * workspace-summary 巡检适配（v1.2.3 · 交付五）。
+ * AD-6：checkpoint 联动——发现新 checkpoint 才记一条变更摘要
+ * （runId = checkpointId）；无新 checkpoint / 写失败都不告警。
+ */
+function workspaceSummaryInspector(projectDir: string): InspectorResult {
+  try {
+    const record = runWorkspaceSummary({ projectDir });
+    if (!record) {
+      return {
+        name: 'workspace-summary',
+        triggered: false,
+        message: '无新 checkpoint，跳过 workspace 变更记录',
+        severity: 'info',
+      };
+    }
+    return {
+      name: 'workspace-summary',
+      triggered: true,
+      message:
+        `runId=${record.runId} · created=${record.created.length} ` +
+        `modified=${record.modified.length} deleted=${record.deleted.length}`,
+      severity: 'info',
+    };
+  } catch (err) {
+    return {
+      name: 'workspace-summary',
+      triggered: false,
+      message: `workspace 摘要失败：${err instanceof Error ? err.message : String(err)}`,
+      severity: 'warning',
+    };
+  }
+}
 
 /**
  * 运行所有启用的巡检器
@@ -54,5 +91,7 @@ export function runInspectors(
     checkKnowledgeHealth(projectDir),
     checkSkillStaleness(projectDir),
     accumulateWarnings(projectDir),
+    // v1.2.3 交付五：workspace 变更摘要（checkpoint 联动）
+    workspaceSummaryInspector(projectDir),
   ];
 }

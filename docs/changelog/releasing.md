@@ -1,6 +1,6 @@
 # sofagent 版本开发 SOP
 
-> **十二阶段**：审查→开发→自测→fresh-eyes-loop 质量循环+代码审核→审查体系合并更新（含瘦身检查）→release-gate-loop 发版闸门→审查体系最终确认→文档收尾→工具脚本健康检查→确认关口→发布（含设备端安装）→发布后。
+> **十二阶段**：审查（fresh-eyes-loop 找齐上版本 bug）→开发（先修上版本 bug，再做新功能）→fresh-eyes-loop 质量循环+代码审核→自测→审查体系合并更新（含瘦身检查）→release-gate-loop 发版闸门→审查体系最终确认→文档收尾→工具脚本健康检查→确认关口→发布（含设备端安装）→发布后（含独立审查）。
 > 🔴 版本号操作用 `bump-version.sh` + `check-version.sh`，禁止手动 grep/sed。
 > 🔴 文档预算分层检查（A 用户文档 / B 开发者参考 / C 审查体系 / E 指南），见 `check-docs.sh`。
 > 🔴 回归检查已升格为**独立阶段**（阶段六）——在本 session 直接跑，不再作为"审核"的子步骤。v1.2.2 起 acceptance step 先直连跑脚本再启 driver（sandbox 杀后台进程的 10 轮血泪已根治），driver 只负责 regression + coverage + consolidate + verdict。
@@ -8,13 +8,16 @@
 
 ---
 
-## 阶段一：审查（上一版本发布后问题收敛）
+## 阶段一：审查（fresh-eyes-loop 自动审查 · 找齐上版本 bug 再开发新功能）
 
-上一版本发布后，由发布后审查（fresh-eyes-review.md）驱动新版本的开发方向。**本阶段只做审查，不写开发日志**——开发日志的正式定稿移到阶段八（开发完、审查完、测试完之后），因为开发/审查/测试过程中会涌现大量 bug 修复，提前写必然漏。开发期间 changelog 作为活文档随改随记（见阶段八），但定稿与「发布检查清单打勾」统一在阶段八完成。
+> **v1.2.3 流程优化**：阶段一由人工审查改为 **fresh-eyes-loop 自动化审查循环**驱动——上一版本发布后、本版本新功能开发前，先在全新 session 对上一版本跑 fresh-eyes-loop（v1.2.2 已验证工具：`FORGE/src/fresh-eyes-driver.mjs` + 12 视角审查；A 审查模型双盲并行审查 → B 工程模型修复 → A 验证，连续 2 轮 findings 无 P0/P1 即停）。**先把上版本 bug 找齐修完，再开发本版本新功能。** 原人工审查（`fresh-eyes-review.md` 留白式直觉审查）保留为**可选补充**（架构师裁决 Q6）——loop 覆盖可判定的问题，人工补直觉才嗅得到的盲区。
+
+**本阶段只做审查与上版本 bug 收敛，不写开发日志**——开发日志的正式定稿移到阶段八（开发完、审查完、测试完之后），因为开发/审查/测试过程中会涌现大量 bug 修复，提前写必然漏。开发期间 changelog 作为活文档随改随记（见阶段八），但定稿与「发布检查清单打勾」统一在阶段八完成。
 
 | # | 步骤 | 谁做 | 产物 |
 |:--:|------|:--:|------|
-| 1 | 上一版本接受独立审查（审查模型 + 工程模型），产出 P0/P1/P2 清单 | 作者 | 审查报告（→ 本版本 BugFix 批次来源） |
+| 1 | 全新 session 启动 fresh-eyes-loop 审查上一版本：`node FORGE/src/fresh-eyes-driver.mjs --target <上一版本号> --max-rounds 10`，按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md`「Session 监控协议」轮询 `status.json`（启动与监控手法同阶段三步骤 8 的一键复制 prompt，仅 target 换为上一版本号）。loop 产出 P0/P1/P2 清单，loop 内修复即本版本 BugFix 批次主体；修复只本地 commit、不 push | 作者启动 driver（新 session） | 审查报告 + loop 修复（→ 本版本 BugFix 批次来源） |
+| 2 | （可选）人工审查补充：以 `fresh-eyes-review.md` 方法论人肉复核 loop 报告，直觉盲区发现并入 P0/P1/P2 清单；loop 未自动修复的 P0/P1 项进阶段二首批修复，先于一切新功能 | 作者（可选） | 补充发现（并入 BugFix 批次） |
 
 > **🔴 changelog 章节顺序铁律（v1.1.7 教训）**：合并版本（新功能 + BugFix 同版）时，**新功能在前、BugFix 在后**。用户读 changelog 第一眼看到的应该是「这个版本带来了什么新价值」，而不是「修了上个版本的哪些坑」。BugFix 放前面会让用户觉得这只是个补丁版，掩盖了新功能的价值传达。背景段的两行概述同理——先写新功能一句话，再写 BugFix。
 
@@ -70,7 +73,7 @@
 
 ## 阶段二：开发
 
-按优先级分三批，每批独立派发/回报/核实，禁止合并批次。
+**顺序铁律（v1.2.3 起）：阶段一 fresh-eyes-loop 产出的上版本 bug 全部修完，再启动本版本新功能开发。** 按优先级分三批，每批独立派发/回报/核实，禁止合并批次。
 
 | # | 优先级 | 谁做 | 说明 |
 |:--:|:--:|:--:|------|
@@ -193,7 +196,7 @@
 
 > 🔴 **核心认知**：fresh-eyes-review 和 regression-checklist 的更新逻辑**根本不同**。regression-checklist 是精确清单（加法：每发现一个问题加一条检查项）。fresh-eyes-review 是留白式的直觉审查（校准：每发现一个问题校准视角敏感度，不是加检查项）。过去十几个版本把两者混为一谈——每发现一个 bug 就往 fresh-eyes 对应维度加一条检查项，导致它从"凭直觉发现问题"膨胀成"第二个 regression-checklist"（826 行）。v1.2.0 重写为 274 行才修复。本 Tier 守住这条底线。
 
-本版本审查（阶段三代码审核 + 阶段六 release-gate-loop 检查 + 上一版阶段十二 fresh-eyes 审查报告）中如果产生了**预料外的发现**（不在 regression-checklist 已有维度覆盖范围内、审查者凭直觉/意外发现的），走以下决策树：
+本版本审查（阶段一 fresh-eyes-loop 上版本审查 + 阶段三代码审核 + 阶段六 release-gate-loop 检查 + 上一版阶段十二 fresh-eyes 审查报告）中如果产生了**预料外的发现**（不在 regression-checklist 已有维度覆盖范围内、审查者凭直觉/意外发现的），走以下决策树：
 
 ```
 预料外发现
@@ -897,7 +900,7 @@ bash tools/check-version.sh   # 期望：全绿
 | 38 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 直接吸收进对应阶段，标注版本号<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 FORGE/archive/self-evolution-design.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
 | 39 | **生成「下一版本开发 Prompt」到桌面**：综合 `ROADMAP.md`（未来规划）+ `CHANGELOG.md` + 下一版本 `docs/changelog/v<major>.<minor>/vX.Y.md`（若存在），生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`。<br>**若下一版本 changelog 尚未创建**：先 ① 写新版本需求并产出 `docs/changelog/v<major>.<minor>/vX.Y.md`；再 ② 生成桌面开发 prompt |
 | 40 | **🔴 开发 Prompt 校验循环**（v1.2.2 教训）：生成 dev prompt 后，按以下循环规则执行——<br>**循环体**：<br>① 跑 `./tools/check-dev-prompt.sh ~/Desktop/vX.Y-dev-prompt.md`<br>② 输出零 ❌ → 循环结束，prompt 定稿，进入步骤 41<br>③ 输出有 ❌ → 逐条修正 prompt 中的错误引用（改路径/改函数名/删不存在的引用），**只改 prompt 文件、不改代码库**<br>④ 回到 ① 重跑 check<br>**终止条件**：零 ❌ 或最多 5 轮（5 轮仍有 ❌ 说明开发日志本身有结构性问题，需人工介入）<br><br>输出含义：<br>❌ 错误 = 引用了不存在的已有文件/函数（必须修）<br>📋 待新建 = prompt 描述的新文件（正常，不算错误）<br>🔄 运行时 = `~/.sofagent/` 等运行时目录（跳过） |
-| 41 | **🔴 审查闭环——发布后审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `FORGE/playbook/fresh-eyes-review.md`（已在本版本阶段五中更新），对已发布版本做独立审查<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，作为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的视角和敏感度。⚠️ 这里的"锋利"指 fresh-eyes-review 的直觉校准（见阶段五 Tier 3），不是加检查项——检查项归 regression-checklist 管 |
+| 41 | **🔴 审查闭环——发布后独立审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `FORGE/playbook/fresh-eyes-review.md`（已在本版本阶段五中更新），对已发布版本做**独立审查**——完全零上下文。⚠️ **与下一版阶段一的分工（v1.2.3 起）**：阶段一 fresh-eyes-loop 是"系统性找齐上版本 bug"（driver 驱动、12 视角、自动修复）；本步骤是"零先验的独立审查"——审查者不知道开发过程、不看 loop 报告，专抓系统性方法想不到的意外盲区。两者目的不同，都保留<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，与 fresh-eyes-loop 产出合并为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的视角和敏感度。⚠️ 这里的"锋利"指 fresh-eyes-review 的直觉校准（见阶段五 Tier 3），不是加检查项——检查项归 regression-checklist 管 |
 
 ### 下一版本开发 Prompt 生成说明（步骤 39）
 
@@ -920,7 +923,7 @@ bash tools/check-version.sh   # 期望：全绿
 
 | 阶段 | 名称 | 谁做 | 需要新 session？ | 产出 |
 |:--:|------|:--:|:--:|------|
-| 一 | 审查（问题收敛） | 作者 | 是（阶段三 fresh-eyes-loop 开发后循环 + 阶段十二发布后审查） | 审查报告（→ 本版本 BugFix 批次） |
+| 一 | 审查（fresh-eyes-loop 找齐上版本 bug） | 作者启动 driver（新 session）+ 可选人工补充 | 是（全新 session 跑 fresh-eyes-driver.mjs 审查上一版本） | 审查报告 + loop 修复（→ 本版本 BugFix 批次） |
 | 二 | 开发 | 工程师 | 否 | 代码 + 随修随记的回归维度 |
 | 三 | fresh-eyes-loop 质量循环 + 代码审核 | 新 session（loop）→ 当前 session（审核） | **🔴 是（步骤 8 开新 session 跑 fresh-eyes-loop）** | loop 修复 + changelog 汇总打勾 + 逐项 PASS 或 FAIL→修复 |
 | 四 | 自测 | 工程师 | 否 | build/test 全绿 + 更新验收测试文件（acceptance-test 本身只更新不跑，跑在阶段6）。涉及 CLI 迁移时 shellcheck 延后到阶段八 |
@@ -931,7 +934,7 @@ bash tools/check-version.sh   # 期望：全绿
 | 九 | 工具脚本健康检查 | 作者 | 是（dist 重建 + 脚本覆盖同步 + 过时检查清理） | check-version/bump-version/pre-push-check 覆盖同步 + 过时检查清理 + npm run build |
 | 十 | 确认关口 | AI → **生成发布 prompt 交接** | 否 | git diff 确认 → 检查清单打勾 → 生成发布 prompt 交给负责人（可授权 AI 代执行） |
 | 十一 | 发布（含设备端安装） | **🔴 项目负责人，或授权 AI 代执行** | 否 | 先装本地版本验证 → 再按依赖层分批 npm publish + **🔴 push 前本地模拟 CI（test+build+shellcheck）** → git tag + push + **🔴 push 后等 CI 全绿再继续** → gh release + Skill 分发 → **🔴 设备端安装（全局包 + Skill 同步）**。**网络降级**：tag 推上后 gh release/Skill 分发不依赖 main push |
-| 十二 | 发布后 | 作者 | 是（步骤 37 开新 session 读 `fresh-eyes-review.md` 做审查） | npm 验证 + CI 全绿检查（步骤 33）+ 流程漏洞吸收 + SOP 自我进化 + 生成下一版 prompt（步骤 36）→ 发布后审查（步骤 37）→ 自动进入下版本阶段一 |
+| 十二 | 发布后（含独立审查） | 作者 | 是（步骤 41 开新 session 读 `fresh-eyes-review.md` 做独立审查——零上下文，与下版阶段一 loop 目的不同） | npm 验证 + CI 全绿检查（步骤 36）+ 流程漏洞吸收 + SOP 自我进化 + 生成下一版 prompt（步骤 39）→ 发布后独立审查（步骤 41）→ 自动进入下版本阶段一 |
 
 ---
 

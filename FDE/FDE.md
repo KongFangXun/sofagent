@@ -1,6 +1,6 @@
 # FDE.md · FDE 能力模型
 
-> v1.2.2 · 2026-07-29（UTC）· 孔放勋
+> v1.2.3 · 2026-07-30（UTC）· 孔放勋
 
 > **Agent 按需读取导航**：本文件 1062 行，**不要一次性全读**。SKILL.md 已内联日常引导所需的全部指令。以下场景才需要读对应章节：
 >
@@ -617,6 +617,9 @@ FDE 交付的本质不是一个个独立 AI 节点，而是把节点间的**关�
 - **水龙头长出净水能力——选小基座 + QLoRA 精调**：不做大模型剪枝，直接下载开源小基座（0.5B-3B），用企业 workflow 数据做 QLoRA 微调（4-bit 量化 + 低秩适配器，Mac Mini 可跑，适配器几 MB），只干这一个 workflow。详见 ROADMAP「Subagent 内置专精小模型」。
 - **任务价值分流**：本地小模型（Qwen2.5-0.5B / Llama-3.2-1B，≤1B）只覆盖业务 workflow（省钱、数据不出域、零投喂）；代码 / 强推理 / 多步规划等高价值任务直接走云端最强 LLM（Claude / GPT / Gemini）。私有部署铁律针对业务数据，与高价值任务走云端不冲突。
 
+> **远期设想（非当前能力 · 2026-07-30 战略讨论）**：当前 FDE 交付 = 咨询 + Harness 挂载 + USB 烧录（模型仍由企业自选/通用基座）。更远终态：FDE 梳理出的 **workflow → graph → ontology 链路本身即后训练规格来源**——每个 workflow 节点自动成为后训练专精模型的规格，sofagent 自动帮企业部署后训练模型，企业成为定制模型的真正使用者（模型基于企业自有/通用基座后训练，非 sofagent 自制大模型）。此为长期演进方向，**当前完全不具备该能力**，仅作蓝图记录。> 来源：产品战略讨论 2026-07-30（尚未实现）。
+> **远期 FDE 交付形态（非当前能力 · 2026-07-30 战略讨论）**：FDE 梳理的 **workflow → graph → ontology** 链路即后训练规格来源，每个节点 → 一个专精模型规格；引擎**部署在企业侧**，用开源基座 + 企业数据在域内跑训练，产出定制模型留企内，数据不出域。此为长期演进方向，当前不具备。> 来源：产品战略讨论 2026-07-30（尚未实现）。
+
 > Dashboard 的 River 模块（v1.1.0+）展示流向图——哪些 Workflow 互联、数据怎么回流、任务怎么从入口分发再汇总。不是聊天窗口，是河流流向图。
 
 ---
@@ -756,9 +759,9 @@ sofagent 内置 **8 层 Prompt 注入防护**，FDE 部署完用以下方法验�
 
 ### 配置方法
 
-> ⚠️ **Webhook 推送为 v1.2.1 规划能力（已从 v1.2.2 上提）**：下方 `push_target: webhook://feishu/xxx` 的对外推送目前**尚未实装**。当前版本（v1.2.0）感知报告**仅本地存储**，不会经 Webhook 推送到飞书等外部渠道；该配置项先按规划保留，待 v1.2.1 落地后生效。
+> ✅ **Webhook 推送已支持（v1.2.1+）**：下方 `push_target: webhook://feishu/xxx` 配置项生效于 v1.2.1 及以上版本。当前版本支持飞书、钉钉、企微渠道的感知报告推送，推送内容包括日报、周报、月报等定期报告。配置后无需额外操作，系统在生成报告后自动推送到对应 Webhook 地址。
 
-在 `.sofagent/config.yml` 中配置（v1.2.0 仅本地存储，不对外推送）：
+在 `.sofagent/config.yml` 中配置：
 
 ```yaml
 perception:
@@ -766,8 +769,9 @@ perception:
   fde:
     name: "孔放勋"               # FDE 团队联系人
     deployed_at: "2026-07-15"     # 部署日期
-  push_target: "webhook://feishu/xxx"  # v1.2.1：Webhook 推送目标（已支持飞书/钉钉/企微）
+  push_target: "webhook://feishu/xxx"  # Webhook 推送目标（已支持飞书/钉钉/企微）
   reports:
+    weekly_audit: true            # 每周审计守护报告
     weekly_audit: true            # 每周审计守护报告
     monthly_growth: true          # 每月知识库增长报告
     quarterly_comparison: true    # 每季度无 FDE 对照报告

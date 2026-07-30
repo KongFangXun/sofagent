@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/think",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "sofagent 思考链分析 — 推理路径追踪 / 决策可视化 / 思维审计",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

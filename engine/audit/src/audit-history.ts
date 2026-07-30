@@ -125,7 +125,8 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
         prevHash = createHash('sha256')
           .update(JSON.stringify(lastRecordForHash) + '|' + fingerprint)
           .digest('hex').slice(0, 16);
-      } catch {
+      } catch (e) {
+        console.error(`[sofagent] 审计历史 JSON 解析失败: ${e instanceof Error ? e.message : String(e)}`);
         prevHash = 'unknown';
       }
     }
@@ -172,8 +173,8 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   if (!fileExists) {
     try {
       chmodSync(filePath, 0o600);
-    } catch {
-      // chmod 失败不影响审计记录写入
+    } catch (e) {
+      console.error(`[sofagent] 审计历史文件权限设置失败: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 }
@@ -195,7 +196,8 @@ export function loadHistory(limit?: number, dataDir?: string): AuditHistoryEntry
   let content: string;
   try {
     content = readFileSync(filePath, 'utf-8');
-  } catch {
+  } catch (e) {
+    console.error(`[sofagent] 审计历史文件读取失败: ${e instanceof Error ? e.message : String(e)}`);
     return [];
   }
 
@@ -209,8 +211,8 @@ export function loadHistory(limit?: number, dataDir?: string): AuditHistoryEntry
     try {
       const parsed = JSON.parse(trimmed) as AuditHistoryEntry;
       entries.push(parsed);
-    } catch {
-      // 跳过解析失败的行（容错）
+    } catch (e) {
+      console.error(`[sofagent] 审计历史行解析失败（跳过）: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 

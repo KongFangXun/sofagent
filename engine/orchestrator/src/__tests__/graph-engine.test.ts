@@ -134,7 +134,7 @@ describe('Planner 节点（plan-node）', () => {
     expect(extractJsonBlock('无 JSON')).toBe('无 JSON');
   });
 
-  it('plan 节点写 graph-state.json（activeNode=plan + workGraphTasks）', async () => {
+  it('plan 节点写 graph-state.json（plan completed + engineer running，v1.2.3 完整控制图）', async () => {
     const deps: PlanNodeDeps = {
       runPlannerDecide: async () => JSON.stringify({
         subtasks: [{ id: 's1', description: 'A' }, { id: 's2', description: 'B' }],
@@ -147,9 +147,20 @@ describe('Planner 节点（plan-node）', () => {
     const stateFile = path.join(dir, 'dashboard', 'graph-state.json');
     expect(fs.existsSync(stateFile)).toBe(true);
     const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf-8'));
-    expect(parsed.activeNode).toBe('plan');
+    // v1.2.3：plan 完成 → 活跃节点前移为 engineer（旧字段保留）
+    expect(parsed.activeNode).toBe('engineer');
     expect(parsed.workGraphTasks).toBe(2);
     expect(typeof parsed.updatedAt).toBe('string');
+    // 新控制图结构
+    expect(parsed.nodes).toHaveLength(5);
+    expect(parsed.nodes[0]).toMatchObject({ id: 'plan', type: 'planner', status: 'completed' });
+    expect(parsed.nodes[1]).toMatchObject({ id: 'engineer-1', type: 'engineer', status: 'running' });
+    expect(parsed.nodes[1].subtasks).toHaveLength(2);
+    expect(parsed.nodes[2]).toMatchObject({ id: 'audit-1', status: 'pending' });
+    expect(parsed.edges).toHaveLength(4);
+    expect(parsed.edges[0]).toEqual({ from: 'plan', to: 'engineer-1', type: 'data-flow' });
+    expect(parsed.wave).toBe(1);
+    expect(parsed.degradationLevel).toBe(0);
   });
 });
 
@@ -436,20 +447,79 @@ describe('graph-state.json（Dashboard Graph Engine 区块数据源）', () => {
   beforeEach(() => { dir = tmpDir(); });
   afterEach(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* */ } });
 
-  it('用例 9：writeGraphState 落盘 → 三字段完整（activeNode/workGraphTasks/updatedAt）', () => {
-    writeGraphState(dir, 'engineer', 5);
+  it('用例 9：writeGraphState 落盘 → 完整控制图结构 + 旧三字段保留（向后兼容）', () => {
+    writeGraphState(dir, {
+      activeNode: 'engineer',
+      retryCount: 0,
+      subtasks: [
+        { id: 'st-1', description: '实现 worktree 隔离', status: 'done' },
+        { id: 'st-2', description: '实现 merge gate', status: 'pending' },
+      ],
+    });
     const file = path.join(dir, 'dashboard', 'graph-state.json');
     expect(fs.existsSync(file)).toBe(true);
     const parsed = JSON.parse(fs.readFileSync(file, 'utf-8'));
+
+    // ── 旧三字段保留（Dashboard bash v1.2.2 jq // 兜底读侧不崩溃）──
     expect(parsed.activeNode).toBe('engineer');
-    expect(parsed.workGraphTasks).toBe(5);
+    expect(parsed.workGraphTasks).toBe(2);
     // ISO 8601 可解析
     expect(Number.isNaN(Date.parse(parsed.updatedAt))).toBe(false);
+
+    // ── 新控制图结构（v1.2.3）──
+    expect(Array.isArray(parsed.nodes)).toBe(true);
+    expect(parsed.nodes).toHaveLength(5);
+    expect(parsed.nodes.map((n: { id: string }) => n.id)).toEqual([
+      'plan', 'engineer-1', 'audit-1', 'reviewer-1', 'human-1',
+    ]);
+    // engineer running → plan completed，audit/reviewer/human pending
+    expect(parsed.nodes[0].status).toBe('completed');
+    expect(parsed.nodes[1].status).toBe('running');
+    expect(parsed.nodes[2].status).toBe('pending');
+    // engineer 子任务进度
+    expect(parsed.nodes[1].subtasks).toEqual([
+      { id: 'st-1', desc: '实现 worktree 隔离', status: 'done' },
+      { id: 'st-2', desc: '实现 merge gate', status: 'pending' },
+    ]);
+    // 边：拓扑序 4 条 data-flow
+    expect(parsed.edges).toHaveLength(4);
+    expect(parsed.edges[1]).toEqual({ from: 'engineer-1', to: 'audit-1', type: 'data-flow' });
+    // wave = retryCount + 1；degradationLevel 缺省 0
+    expect(parsed.wave).toBe(1);
+    expect(parsed.degradationLevel).toBe(0);
+  });
+
+  it('wave 语义 = retryCount + 1；degradationLevel 透传', () => {
+    writeGraphState(dir, { activeNode: 'engineer', retryCount: 2, degradationLevel: 1 });
+    const parsed = JSON.parse(fs.readFileSync(path.join(dir, 'dashboard', 'graph-state.json'), 'utf-8'));
+    expect(parsed.wave).toBe(3);
+    expect(parsed.degradationLevel).toBe(1);
+  });
+
+  it('auditResult 回写：FAIL → audit 节点 failed；PASS → completed', () => {
+    writeGraphState(dir, { activeNode: 'audit', auditResult: 'FAIL' });
+    let parsed = JSON.parse(fs.readFileSync(path.join(dir, 'dashboard', 'graph-state.json'), 'utf-8'));
+    expect(parsed.nodes[2]).toMatchObject({ id: 'audit-1', status: 'failed' });
+
+    writeGraphState(dir, { activeNode: 'audit', auditResult: 'PASS' });
+    parsed = JSON.parse(fs.readFileSync(path.join(dir, 'dashboard', 'graph-state.json'), 'utf-8'));
+    expect(parsed.nodes[2]).toMatchObject({ id: 'audit-1', status: 'completed' });
+  });
+
+  it('finalStatus=completed → 全部节点 completed；blocked → 活跃节点 failed', () => {
+    writeGraphState(dir, { activeNode: 'human_confirm', finalStatus: 'completed' });
+    let parsed = JSON.parse(fs.readFileSync(path.join(dir, 'dashboard', 'graph-state.json'), 'utf-8'));
+    expect(parsed.nodes.every((n: { status: string }) => n.status === 'completed')).toBe(true);
+
+    writeGraphState(dir, { activeNode: 'audit', finalStatus: 'blocked' });
+    parsed = JSON.parse(fs.readFileSync(path.join(dir, 'dashboard', 'graph-state.json'), 'utf-8'));
+    expect(parsed.nodes[2].status).toBe('failed');
+    expect(parsed.nodes[3].status).toBe('pending');
   });
 
   it('目录不存在时自动创建；重复写覆盖（Dashboard 读最新）', () => {
-    writeGraphState(dir, 'plan', 2);
-    writeGraphState(dir, 'audit', 2);
+    writeGraphState(dir, { activeNode: 'plan' });
+    writeGraphState(dir, { activeNode: 'audit' });
     const parsed = JSON.parse(fs.readFileSync(path.join(dir, 'dashboard', 'graph-state.json'), 'utf-8'));
     expect(parsed.activeNode).toBe('audit');
   });
@@ -458,7 +528,7 @@ describe('graph-state.json（Dashboard Graph Engine 区块数据源）', () => {
     // 传入文件路径作为 dir（mkdir 必失败）→ 静默
     const fileAsDir = path.join(dir, 'a-file');
     fs.writeFileSync(fileAsDir, 'x', 'utf-8');
-    expect(() => writeGraphState(fileAsDir, 'plan', 1)).not.toThrow();
+    expect(() => writeGraphState(fileAsDir, { activeNode: 'plan' })).not.toThrow();
   });
 });
 
@@ -484,6 +554,8 @@ describe('engineer 节点消费 subtasks（plan → engineer 串联）', () => {
       maxRetries: 3,
       log: () => {},
       dataDir: dir,
+      // v1.2.3 AD-2：显式注入 dashboardDir（否则 defaultDeps 注入真实 $SOFAGENT_HOME/data）
+      dashboardDir: dir,
       degradationChainEnabled: true,
     };
     try {
@@ -500,6 +572,42 @@ describe('engineer 节点消费 subtasks（plan → engineer 串联）', () => {
       expect(fs.existsSync(path.join(dir, 'dashboard', 'graph-state.json'))).toBe(true);
     } finally {
       try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* */ }
+    }
+  });
+
+  it('dashboardDir 注点优先于 dataDir（AD-2 路径修复）', async () => {
+    const dataDir = tmpDir();
+    const dashDir = tmpDir();
+    const deps: LoopGraphDeps = {
+      runPlannerDecide: async () => JSON.stringify({
+        subtasks: [{ id: 's1', description: '唯一子任务' }],
+        rationale: '',
+      }),
+      runEngineer: async () => 'done',
+      runAudit: async () => ({ verdict: 'PASS', report: 'ok' }),
+      runReviewer: async () => 'IS_PASS: YES',
+      confirmHuman: async () => 'y',
+      recordBlocked: async () => {},
+      checkpointer: new FileCheckpointer(tmpDir()) as never,
+      maxRetries: 3,
+      log: () => {},
+      dataDir,
+      dashboardDir: dashDir,
+      degradationChainEnabled: true,
+    };
+    try {
+      const result = await runLoopGraph('路径修复验证任务', { deps, silent: true });
+      expect(result.finalStatus).toBe('completed');
+      // graph-state.json 写到 dashboardDir/dashboard/，不是 dataDir/dashboard/
+      const stateFile = path.join(dashDir, 'dashboard', 'graph-state.json');
+      expect(fs.existsSync(stateFile)).toBe(true);
+      const parsed = JSON.parse(fs.readFileSync(stateFile, 'utf-8'));
+      // 终态：audit PASS 后写 audit completed
+      expect(parsed.nodes).toHaveLength(5);
+      expect(Number.isNaN(Date.parse(parsed.updatedAt))).toBe(false);
+    } finally {
+      try { fs.rmSync(dataDir, { recursive: true, force: true }); } catch { /* */ }
+      try { fs.rmSync(dashDir, { recursive: true, force: true }); } catch { /* */ }
     }
   });
 });

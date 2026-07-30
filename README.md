@@ -9,18 +9,18 @@
 </p>
 
 <p align="center">
-  <strong>进场梳理 · 部署 AI 节点 · 离场后 7×24 自己跑</strong><br/>
+  <strong>进场梳理 · 部署 AI 节点 · 离场后控制层常驻</strong><br/>
   <em>让中小企业拥有把 AI 变成日常工作的能力。</em>
 </p>
 
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.2-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.3-16B8F3" alt="Version" /></a>
   <a href="#装上就能用"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>当前版本：v1.2.2</strong> · 2026-07-29 · 数据主权审计 + 混合模型路由 + FDE Dashboard + Graph Engine</p>
+<p align="center"><strong>当前版本：v1.2.3</strong> · 2026-07-30 · Dashboard 产品化 + 编排隔离底座 + Fresh-Eyes 流程化</p>
 
 <p align="center">
   <a href="#这是什么">这是什么</a> · <a href="#sofagent-能帮你做什么">能帮你做什么</a> · <a href="#三种部署方式覆盖所有场景">部署方式</a> · <a href="#装上就能用">安装</a> · <a href="#延伸阅读">文档</a>
@@ -29,6 +29,8 @@
 ---
 
 ## ⚡ 30 秒快速开始
+
+> **前提**：请在 git 仓库根目录下执行以下命令。如果还没有仓库，先运行 `git init`。
 
 ```bash
 bash install.sh          # 安装
@@ -42,7 +44,7 @@ sofagent-audit --init    # 初始化（装 git hook）
 
 企业不缺大模型与 Agent——缺的是把 AI 变成日常工作的能力。
 
-**sofagent 做的就是这件事。** 它是一个 FDE Agent——进场梳理你的工作流，把能自动化的环节变成 AI 节点，部署到设备上，然后离场。离场后这些节点 7×24 自己跑，你留下的是一套能持续维护的 AI 化资产。
+**sofagent 做的就是这件事。** 它是一个 FDE Agent——进场梳理你的工作流，把能自动化的环节变成 AI 节点，部署到设备上，然后离场。离场后，模型能力内化不了的控制层持续在跑——审计链、防篡改、合规留痕——你留下的是一套能持续维护的 AI 化资产。
 
 大厂造了江（LLM 是水），但企业不敢直接舀。sofagent 做的是堤坝 + 自来水厂 + 管网 + 水龙头——把原水变成直饮水。完整类比见 [ARCHITECTURE](./docs/ARCHITECTURE.md)。
 
@@ -51,7 +53,7 @@ sofagent-audit --init    # 初始化（装 git hook）
 | 工具 | 它们管什么 | sofagent 管什么 |
 |------|:--------|:----------------|
 | pre-commit / husky | 代码质量（lint / format）| **Agent 行为**（密钥泄漏 / 越界编辑 / 注入攻击 / 盲改）|
-| detect-secrets / gitleaks | 密钥扫描 | 密钥扫描是 gitleaks 的核心场景（做得好）；sofagent 的 A2 覆盖同类场景，同时增加 21 条 Agent 行为规则 |
+| detect-secrets / gitleaks | 密钥扫描 ✅ 全量 git 历史扫描 + 100+ 内置秘钥模式 | 密钥扫描是 gitleaks 的核心场景（✅ 扫描整个 git 历史、✅ 支持 100+ 种内置秘钥模式）；sofagent A2 覆盖常见 API key 模式（⚠️ 仅增量扫描），同时增加 21 条 Agent 行为规则 |
 | Cursor Rules / Claude hooks | 单平台 IDE 约束 | 审计层全平台可用（git diff）；约束层按平台分层（OpenClaw 最深 → WorkBuddy SKILL → 其他种子指令） |
 | Agent 平台（OpenClaw 等）| Agent 调度——「会不会做」| Agent 治理——「能不能每次都做对」|
 
@@ -68,7 +70,7 @@ sofagent-audit --init    # 初始化（装 git hook）
 | AI 节点 | 在跑的 Agent，自动执行日常任务（财务对账、审计巡检、数据分析…）|
 | AI 知识库 | 持续积累的实体、概念、对比页（Dream Cycle 自动沉淀）|
 | 私有化评估体系 | eval 反馈 + Skill 迭代历史——无法复制的企业 IP |
-| **FDE Agent 本身** | 7×24 在跑——管上面四样东西的生命周期，人离场了它留下 |
+| **FDE Agent 本身** | 控制层常驻——管审计 / 约束 / 知识的生命周期，人离场了它留下 |
 
 </details>
 
@@ -81,6 +83,7 @@ sofagent-audit --init    # 初始化（装 git hook）
 
 **Agent 越界了怎么办？**
 21 条规则（13 默认 + 8 扩展）自动审计每次变更——越界编辑、密钥泄漏、注入攻击，commit 时自动拦截。
+> 13 条默认规则中 A12/A13 为预留编号，当前活跃默认规则 11 条。8 条扩展规则（E1-E4 等）全部活跃。合计 21 条规则（含预留共 23 个编号）。
 > `git commit --no-verify` 可绕过 hook，是已知架构限制。企业场景建议配合 CI 侧 `sofagent-audit --diff` 兜底，详见 [LIMITATIONS](./LIMITATIONS.md)。13 条默认规则装上就生效，8 条扩展规则按需开启，详见下方规则表。
 
 **出了事能回滚吗？**
@@ -97,7 +100,7 @@ sofagent-audit --init    # 初始化（装 git hook）
 
 ---
 
-## 🆕 v1.2.2 新特性
+## 🆕 v1.2.3 新特性
 
 ### 终端 Dashboard：三栏看清 AI 在干什么
 
@@ -106,7 +109,7 @@ sofagent-dashboard           # 日报告（跑一次看完关掉）
 sofagent-dashboard --watch   # 2s 自动刷新（实时监控）
 ```
 
-一个 bash 脚本，零前端依赖，终端打开就是三栏：
+一个 bash 脚本（位于 `tools/sofagent-dashboard.sh`），零前端依赖，终端打开就是三栏：
 
 ```
 ┌───────────────────┬───────────────────┬──────────────────────────────┐
@@ -130,7 +133,7 @@ sofagent-dashboard --watch   # 2s 自动刷新（实时监控）
 
 按数据敏感度 × 任务复杂度自动路由：restricted 数据走本地 7B 模型，confidential 走本地 0.5B——不出内网。通过 Ollama API 调用本地模型。
 
-> 详细设计见 [ARCHITECTURE](./docs/ARCHITECTURE.md) · 完整开发日志见 [v1.2.2](./docs/changelog/v1.2/v1.2.2.md)
+> 详细设计见 [ARCHITECTURE](./docs/ARCHITECTURE.md) · 完整开发日志见 [v1.2.3](./docs/changelog/v1.2/v1.2.3.md)
 
 ---
 
@@ -140,7 +143,7 @@ sofagent-dashboard --watch   # 2s 自动刷新（实时监控）
 |------|------|--------|
 | 💻 **装电脑** | 技术人员 / 开发者 | `bash install.sh` 正常安装 |
 | 🔌 **U 盘** | 普通员工（SMB 核心场景）| 插上即用，拔掉零残留，不需要安装、不需要专业知识 🔶 规划中 |
-| 🖥️ **无头设备** | 服务器 / 工控机（OPC 场景）| 插 U 盘别拔，Agent 7×24 在联邦里跑 |
+| 🖥️ **无头设备** | 服务器 / 工控机（OPC 场景）| 插 U 盘别拔，控制层在联邦里常驻 |
 
 > 💡 **USB 一键烧录**：搭好 workflow → 烧一批 U 盘 → 发给团队。企业叙事：「买 U 盘 → 下载 sofagent → 写盘 → 发给员工」。详见 [FDE/FDE.md](./FDE/FDE.md)。
 
@@ -241,7 +244,7 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 > [!NOTE]
 > **品牌与描述**：**sofagent** 是产品品牌名；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent（进场梳理工作流、把可自动化环节变成 AI 节点、构建本体、部署专属小模型的常驻硅基员工）。底层技术实现是一套约束 Agent 行为的 Harness 中间件（一底座·四引擎），开源在 `@sofagent/*`。下面这段是给开发者看的。
 
-sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，一底座·四引擎覆盖全生命周期。
+sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，一底座·四引擎覆盖全生命周期。一底座 = 约束底座（开工前注入规则）；四引擎 = 审计引擎（21 条规则拦截）+ 回溯引擎（自动快照回滚）+ 编排引擎（多 Agent 协作）+ 进化引擎（周度自优化）。
 
 <details>
 <summary>📖 一底座·四引擎架构（开发者参考）</summary>
