@@ -230,7 +230,7 @@ TECHNICAL=0
 
 # --technical e2e：整脚本以 --technical 运行 → 技术词而非用户可读词
 # 注意：env -u 去掉 LIB_ONLY（本测试进程 export 了它，不清掉子进程会跳过主入口）
-OUT="$(env -u SOFAGENT_DASHBOARD_LIB_ONLY SOFAGENT_HOME="$SOFAGENT_HOME" bash "$DASHBOARD_DIR/sofagent-dashboard.sh" --technical 2>/dev/null)"
+OUT="$(env -u SOFAGENT_DASHBOARD_LIB_ONLY SOFAGENT_HOME="$SOFAGENT_HOME" bash "$DASHBOARD_DIR/sofagent-dashboard.sh" --technical --full 2>/dev/null)"
 assert_contains "--technical e2e：技术状态词 completed" "$OUT" "completed"
 assert_not_contains "--technical e2e：不出现用户可读词 已完成" "$OUT" "已完成"
 
@@ -238,10 +238,18 @@ assert_not_contains "--technical e2e：不出现用户可读词 已完成" "$OUT
 # 9. 整帧渲染不崩溃（fixture 数据全量）
 # ════════════════════════════════════════
 
+# 默认视图：仅核心三栏
 OUT="$(render_to render_frame)"
-assert_contains "整帧：Graph Engine 区块存在" "$OUT" "Graph Engine"
-assert_contains "整帧：FORGE 区块存在" "$OUT" "FORGE 审查"
-assert_contains "整帧：最近变更区块存在" "$OUT" "最近变更"
+assert_contains "整帧（默认）：数据主权存在" "$OUT" "数据主权"
+assert_contains "整帧（默认）：规则审计存在" "$OUT" "规则审计"
+
+# --full 视图：展开完整区块
+FULL=1
+OUT="$(render_to render_frame)"
+assert_contains "整帧（--full）：Graph Engine 区块存在" "$OUT" "编排状态"
+assert_contains "整帧（--full）：FORGE 区块存在" "$OUT" "质量审查"
+assert_contains "整帧（--full）：最近变更区块存在" "$OUT" "最近变更"
+FULL=0
 
 # ════════════════════════════════════════
 # 汇总

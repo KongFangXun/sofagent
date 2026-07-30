@@ -17,9 +17,10 @@ fi
 # 零前端依赖：bash + jq + tput。图表从 JSONL 实时渲染，绝不读 MD 报告
 # （MD 是人读备份）。
 #
-# 三种用法：
-#   sofagent-dashboard              跑一次看完关掉——两栏（数据主权 + 规则审计）
-#   sofagent-dashboard --watch      2s 自动刷新——三栏（追加工作状态栏）
+# 用法：
+#   sofagent-dashboard              跑一次看完关掉——核心视图（数据主权 + 规则审计 + 工作状态）
+#   sofagent-dashboard --watch      2s 自动刷新
+#   sofagent-dashboard --full       显示完整视图（追加编排控制图 / FORGE 审查 / 最近变更）
 #   sofagent-dashboard --technical  状态词用技术术语（默认用户可读，交付六）
 #
 # 数据源：
@@ -51,10 +52,13 @@ set -o pipefail
 WATCH=0
 # 交付六：--technical 切回技术状态词（默认用户可读）
 TECHNICAL=0
+# --full：显示全部区块（默认仅核心三栏）
+FULL=0
 for arg in "$@"; do
   case "$arg" in
     --watch) WATCH=1 ;;
     --technical) TECHNICAL=1 ;;
+    --full) FULL=1 ;;
   esac
 done
 
@@ -83,16 +87,19 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
-# 数据文件预检查：全新安装用户友好提示
-if [ ! -f "$DAEMON_HEALTH" ] && [ ! -f "$GRAPH_STATE" ]; then
-  echo ""
-  echo "  ⚠️  Dashboard 数据尚未生成。"
-  echo "  运行一次审计以生成 Dashboard 数据："
-  echo "    sofagent-audit --diff"
-  echo "  或启动 daemon 持续采集："
-  echo "    sofagent-daemon start"
-  echo ""
-  exit 0
+# 数据文件预检查：全新安装用户友好提示（仅主入口执行，LIB_ONLY 模式跳过）
+# Data pre-check only runs in main entry, not when sourced as library
+if [ "${SOFAGENT_DASHBOARD_LIB_ONLY:-}" != "1" ]; then
+  if [ ! -f "$DAEMON_HEALTH" ] && [ ! -f "$GRAPH_STATE" ]; then
+    echo ""
+    echo "  ⚠️  Dashboard 数据尚未生成。"
+    echo "  运行一次审计以生成 Dashboard 数据："
+    echo "    sofagent-audit --diff"
+    echo "  或启动 daemon 持续采集："
+    echo "    sofagent-daemon start"
+    echo ""
+    exit 0
+  fi
 fi
 
 # ────────────────────────────────
@@ -1026,17 +1033,20 @@ render_frame() {
     rm -f "$f1" "$f2" "$f3" "$strip1" "$strip2" "$strip3"
   fi
 
-  # 区块 4：Graph Engine 控制图（v1.2.3）——三栏/堆叠布局之外追加的整宽区块
-  emit "$(printf '%*s' "$TERM_COLS" '' | tr ' ' '─')"
-  render_graph_engine "$TERM_COLS"
+  # 区块 4/5/6：仅 --full 模式显示
+  if [ "$FULL" = "1" ]; then
+    # 区块 4：Graph Engine 控制图（v1.2.3）——三栏/堆叠布局之外追加的整宽区块
+    emit "$(printf '%*s' "$TERM_COLS" '' | tr ' ' '─')"
+    render_graph_engine "$TERM_COLS"
 
-  # 区块 5：FORGE 审查进度（v1.2.3 · 交付三）
-  emit "$(printf '%*s' "$TERM_COLS" '' | tr ' ' '─')"
-  render_forge_progress "$TERM_COLS"
+    # 区块 5：FORGE 审查进度（v1.2.3 · 交付三）
+    emit "$(printf '%*s' "$TERM_COLS" '' | tr ' ' '─')"
+    render_forge_progress "$TERM_COLS"
 
-  # 区块 6：最近变更（v1.2.3 · 交付五 bash）
-  emit "$(printf '%*s' "$TERM_COLS" '' | tr ' ' '─')"
-  render_workspace_changes "$TERM_COLS"
+    # 区块 6：最近变更（v1.2.3 · 交付五 bash）
+    emit "$(printf '%*s' "$TERM_COLS" '' | tr ' ' '─')"
+    render_workspace_changes "$TERM_COLS"
+  fi
 
   emit "$(printf '%*s' "$TERM_COLS" '' | tr ' ' '─')"
   if [ "$WATCH" = "1" ]; then

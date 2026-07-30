@@ -127,60 +127,45 @@ sofagent-audit --doctor
 
 ## 🆕 v1.2.3 新特性
 
-### 终端 Dashboard：三栏看清 AI 在干什么
-
-一个 bash 脚本（位于 `tools/sofagent-dashboard.sh`），零前端依赖，终端打开就是六栏：
-
-```
-┌───────────────────┬───────────────────┬──────────────────────────────┐
-│  数据主权          │  规则审计          │  工作状态                     │
-│                   │                   │                              │
-│  云端 3 / 本地 12  │  A2  A3  A7       │  ● 审计巡检（运行中）         │
-│  流出 0           │   0   1   0       │  ○ 财务对账（空闲）           │
-│  敏感率 100%      │  通过率 95%       │  daemon ● 正常 · 0 告警       │
-└───────────────────┴───────────────────┴──────────────────────────────┘
-```
-
-- **数据主权**：云端调用几次、本地执行几次、敏感数据有没有出内网
-- **规则审计**：21 条规则通过率 + 本周违规 TOP3
-- **工作状态**：每个 SubAgent 一张状态卡（活跃/空闲 + 心跳检测）
-- **编排状态**：工作流控制图可视化（plan→engineer→audit→reviewer→confirm）
-- **质量审查**：Fresh-Eyes 双盲审查进度 + stall 事件实时警告
-- **最近变更**：workspace 文件变动摘要
-
-#### 启动
+### 终端 Dashboard：一眼看清 AI 在干什么
 
 ```bash
-sofagent-dashboard           # 跑一次看当前状态
-sofagent-dashboard --watch   # 2s 自动刷新（看护审查时用）
+sofagent-dashboard           # 看当前状态
+sofagent-dashboard --watch   # 实时刷新（看护审查时用）
 ```
 
-> 💡 `bash install.sh` 会自动配置 PATH。如果找不到命令，见下方展开。
+打开后你会看到三个核心面板：
+
+- **数据去哪了**（数据主权）——你的敏感数据有没有偷偷发给云端？
+- **AI 犯规了吗**（规则审计）——AI 有没有越权改文件、存数据？
+- **任务跑到哪了**（工作状态）——后台 daemon 和 sub-agent 是活的还是挂了？
+
+需要看更多？加 `--full` 展开完整视图：
+
+```bash
+sofagent-dashboard --full    # 追加：编排控制图 + FORGE 审查进度 + 最近文件变更
+```
+
+> 前置依赖：需要 `jq`（`brew install jq` / `apt install jq`）
 
 <details>
-<summary>找不到命令？手动配置 PATH</summary>
+<summary>找不到 sofagent-dashboard 命令？</summary>
+
+`bash install.sh` 安装时会自动配置 PATH。如果找不到命令：
 
 ```bash
+# 方式 1：手动加入 PATH
 mkdir -p ~/.sofagent/bin
 ln -sf /你的sofagent路径/tools/sofagent-dashboard.sh ~/.sofagent/bin/sofagent-dashboard
 echo 'export PATH="$HOME/.sofagent/bin:$PATH"' >> ~/.zshrc   # macOS
 echo 'export PATH="$HOME/.sofagent/bin:$PATH"' >> ~/.bashrc  # Linux
 source ~/.zshrc  # 或 source ~/.bashrc
+
+# 方式 2：直接跑源码（无需任何配置）
+bash tools/sofagent-dashboard.sh
 ```
 
-或直接跑源码：`bash tools/sofagent-dashboard.sh`
-
 </details>
-
-#### 运行模式
-
-| 命令 | 说明 |
-|------|------|
-| `sofagent-dashboard` | 跑一次看当前状态 |
-| `sofagent-dashboard --watch` | 2s 刷新，看护审查用 |
-| `sofagent-dashboard --technical` | 状态词用英文术语（开发者用） |
-
-> 前置依赖：需要 `jq`（`brew install jq` / `apt install jq`）
 
 ### 数据主权审计：你的数据安全不安全，看得见
 
