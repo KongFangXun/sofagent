@@ -1608,7 +1608,7 @@ done
 node -e "const fs=require('fs'),path=require('path');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=0;for(const fp of files){const c=fs.readFileSync(fp,'utf8'),dir=path.dirname(fp);const re=/\]\(((?:\.\.?\/)?[^)]+\.md(?:#[^)]*)?)\)/g;let m;while((m=re.exec(c))){const href=m[1].split('#')[0];if(href.startsWith('http'))continue;if(!fs.existsSync(path.resolve(dir,href))){console.log('断链:',fp,'->',m[1]);bad++;}}}process.exit(bad?1:0);" >/dev/null 2>&1 || { fail "存在指向不存在文件的跨文档 Markdown 链接"; S164_OK=false; }
 $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接无死链）"
 
-scenario 165 "关键数字跨文档一致性——测试数 1207 / 规则数 21 / acceptance 163"
+scenario 165 "关键数字跨文档一致性——测试数 1207 / 规则数 21 / acceptance 166"
 S165_OK=true
 # 子项 a: 全 workspace 测试数 1207 在 README/WIKI/evidence 三处一致
 for f in README.md docs/WIKI.md docs/evidence/evidence.md; do
@@ -1618,9 +1618,9 @@ done
 for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do
   grep -q "21 条\|21 个\|21 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 21（数字漂移）"; S165_OK=false; }
 done
-# 子项 c: acceptance 场景数 163 在 DEVELOPMENT/LIMITATIONS 一致
+# 子项 c: acceptance 场景数 166 在 DEVELOPMENT/LIMITATIONS 一致
 for f in docs/DEVELOPMENT.md LIMITATIONS.md; do
-  grep -q "163" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 163"; S165_OK=false; }
+  grep -q "166" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 166"; S165_OK=false; }
 done
 $S165_OK && pass "关键数字跨文档一致（1207 / 21 / 163）"
 
