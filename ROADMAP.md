@@ -94,7 +94,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.2.8** | **记忆分层 + 定时任务（DeerFlow 启发）** | ① **记忆事实级分层**（per-user memory.json + per-fact Markdown + `__default__` 桶）— Dream Cycle 缺事实级粒度 ② **Scheduled Tasks MVP**（cron+once / 暂停/恢复/触发/历史/删除）— daemon cron.ts 从占位升级为一级定时任务（LIMITATIONS §七「定时触发做不到」的解法）③ **ToolOutputBudget 中间件化**（把 sf_read 500 行截断从单点提升为分层中间件，参考 DeerFlow ToolOutputBudget）（Workspace 变更摘要已提前至 v1.2.3）（详见 [开发日志](./docs/changelog/v1.2/v1.2.8.md)）|
 | **v1.2.9** | **🔒 弹性预留** | 紧急修复 / 探索项按需取用 |
 | **v1.3.0** | 📋 规划中 | **运行时审计最小闭环（LangGraph middleware 启发）**：把 engine/rules 的 3 条 tool-gate 规则从「编排层静态 gate」升级为「运行时动态拦截 + 审计日志」——在 createReactAgent 外面包一层 wrapToolCall middleware，拦截每个工具调用、记录审计日志、危险操作前要求人工批准。复用 FORGE fresh-eyes-loop 已跑的 createReactAgent，只加 middleware 层，可行性高。**审计日志按 git 仓库隔离**：将 `history.jsonl` 从全局 `~/.sofagent/data/audit/` 迁移到 per-repo 隔离存储，多项目场景下审计记录不再混合 | [📖](./docs/changelog/v1.3/v1.3.0.md) |
-| **v1.3.1** | 📋 规划中 | **Ontology 认知底座 + 国标对齐 + 并行编排**：① 本体即认知底座——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + E1-E4（共 21 条）+ 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **编排引擎并行调度（Graph Engineering 视角：控制图多循环 DAG 波次并行）**：基于 v1.1.8 的编排引擎调度原型（已从 DeepAgents 迁移至 LangGraph createReactAgent），新增 DAG 依赖解析（Kahn 波次拓扑）+ 并行扇出/扇入（LangGraph `Send` API）+ 循环依赖检测 + 失败传播策略 + 超时熔断；每波次经 audit 节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供 | [📖](./docs/changelog/v1.3/v1.3.1.md) |
+| **v1.3.1** | 📋 规划中 | **Ontology 本体结构 + 国标对齐 + 并行编排**：① 本体即本体结构——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + E1-E4（共 21 条）+ 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **编排引擎并行调度（Graph Engineering 视角：控制图多循环 DAG 波次并行）**：基于 v1.1.8 的编排引擎调度原型（已从 DeepAgents 迁移至 LangGraph createReactAgent），新增 DAG 依赖解析（Kahn 波次拓扑）+ 并行扇出/扇入（LangGraph `Send` API）+ 循环依赖检测 + 失败传播策略 + 超时熔断；每波次经 audit 节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供 | [📖](./docs/changelog/v1.3/v1.3.1.md) |
 | **v1.4.0** | 📋 规划中 | **SubAgent 完整沙箱执行环境 + 生产级编排**：将 orchestrator 内置为完整的沙箱运行时——虚拟文件系统隔离（FilesystemBackend + virtualMode）、网络出站白名单、**工具调用中介（前置 allow/deny，非仅审计追踪）**、**虚拟 key 凭证边界注入（真实凭证 host 边界注入，SubAgent 只拿临时虚拟 key）**、AsyncSubAgent（远程 Agent Protocol 服务端）+ 真·实时 A/B 双跑（候选方案并行执行实时对比，替代当前日志统计法）。**并行 SubAgent 文件隔离**：git worktree 轻量形态已于 v1.2.x 落地，v1.4.0 升级为完整沙箱隔离 + 多 SubAgent 文件竞争检测。审计引擎从「事后」扩展到「运行时」（**范围限定 SubAgent，主 Agent 仍事后审计**） | — |
 
 #### v1.3.x 里程碑拆分
@@ -104,7 +104,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | 版本 | 主题 | 核心交付 |
 |------|------|------|
 | **v1.3.0** | **运行时审计最小闭环（LangGraph middleware）** | ① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离（详见 [开发日志](./docs/changelog/v1.3/v1.3.0.md)）|
-| **v1.3.1** | **Ontology 认知底座 + 国标对齐 + 并行编排** | 见上方主表：本体认知底座 + GB/T 48000.3-2026 国标对齐 + 控制图多循环 DAG 波次并行 |
+| **v1.3.1** | **Ontology 本体结构 + 国标对齐 + 并行编排** | 见上方主表：本体本体结构 + GB/T 48000.3-2026 国标对齐 + 控制图多循环 DAG 波次并行 |
 | **v1.3.2-v1.3.9** | 🔒 弹性预留 | 紧急修复 / 探索项按需取用（智能 E2E 测试 Agent、规则文件独立只读焊死门、Agent 执行层实时治理等 v1.3+ 探索项可在此落位）|
 
 ### v1.2.x Graph Engine 进化路线
@@ -119,7 +119,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.2.5** | **五类边契约形式化**（数据流/控制流/权限流/证据流/失败流）+ **Anchor 配置**（冻结验收标准防自洽）+ Graph Engine 归因 | ⑧边契约 / ⑨Anchor |
 | **v1.3.1** | 控制图多循环 DAG 波次并行（Kahn 拓扑 + `Send` API + ★Reality Anchor git diff guard edge） | ①并行（完整 DAG） |
 
-### v1.2.0 — 记忆/知识层升级（认知底座铺垫）
+### v1.2.0 — 记忆/知识层升级（本体结构铺垫）
 
 > 💡 **v1.2.0 是 v1.2.x 主题线的第一刀**：把 gbrain / LLM Wiki / Palantir 操作型本体论的外部验证吸收为「方法」（分阶段记忆整合、分层巡检、读写回路对标），不吸收其「定位」（不变成 agent runtime，不走集中式 Ontology OS）。详细 scope / 交付拆分（P0/P1/P2）/ 边界见 [v1.2.0 开发日志](./docs/changelog/v1.2/v1.2.0.md)。
 
@@ -176,11 +176,11 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 **交付组织探索（v1.2.x 储备）**
 规模化交付 FDE 时，孔老师设想一种「阿米巴三人组」的最小交付单元——一个可独立核算、快速组合的小队结构，对应 FDE 在企业侧落地的部署 / 合规 / 工程 / 审查等角色。配套的技能分级采用 S / A / B / C 四档：S 级为经生产验证、可独立上线的成熟技能；A 级为已对齐标准、需轻量监督；B 级为可用但需人工兜底；C 级为实验性、仅内部验证。该分级旨在让交付质量可度量、可定价，是 v1.2.x 商业化规模化的方法储备，非当前版本范围。
 
-### v1.3.1 — Ontology 认知底座（操作型本体论落地）
+### v1.3.1 — Ontology 本体结构（操作型本体论落地）
 
 > 💡 来自 Palantir 操作型本体论系列研报（2026-07）的启发。Palantir 4000 亿美元市值的核心护城河不是"本体论"概念包装，而是 **Action Types 作为类型系统一等公民**——操作语义与数据定义同层建模，LLM 所有调用必须经过本体层定义的 Action 执行，无法绕过直接写库。
 
-sofagent v1.3.1 的 Ontology 认知底座方向与之高度同构，但走**分布式路线**——不建中央本体操作系统，让每个 Agent 自建本体（Ledger-Views-Policy），联邦查询跨设备共享，git diff + audit history 做硬证据链：
+sofagent v1.3.1 的 Ontology 本体结构方向与之高度同构，但走**分布式路线**——不建中央本体操作系统，让每个 Agent 自建本体（Ledger-Views-Policy），联邦查询跨设备共享，git diff + audit history 做硬证据链：
 
 | Palantir 做法 | sofagent 做法 | 差异化 |
 |------|------|------|
@@ -347,7 +347,7 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 ### 行业研报印证：动态 Agent 组织与 5 阶段风险收敛（2026-07）
 
 - **动态 Agent 组织（Graph 自我改写）**：研报把「Prompt → Loop → Graph」的下一跳定义为「动态 Agent 组织」——图结构能自行改写自身（增删节点/重排依赖）。这是 sofagent 编排层（graph.ts + 进化引擎）的远期探索方向，但需与「约束底座永远在线」共存——动态只在编排层发生，约束/审计层不动。
-- **5 阶段落地节奏对照**：研报给出「只读对象层 → 统一状态关系 → 挂载 Method → 开放低风险 Action → 高风险 Action」的渐进路径，核心是**不要一上来就 Agent 自动闭环**。与 sofagent「分阶段风险收敛 + human-in-the-loop 按风险分级」同构，可作为 v1.3.1 Ontology 认知底座落地的节奏参考。
+- **5 阶段落地节奏对照**：研报给出「只读对象层 → 统一状态关系 → 挂载 Method → 开放低风险 Action → 高风险 Action」的渐进路径，核心是**不要一上来就 Agent 自动闭环**。与 sofagent「分阶段风险收敛 + human-in-the-loop 按风险分级」同构，可作为 v1.3.1 Ontology 本体结构落地的节奏参考。
 
 > 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）
 
@@ -514,7 +514,7 @@ graph TB
 > sofagent 的终局：**Ontology（业务世界模型）+ SkillHub（跨岗能力）+ 审计引擎（责任确权）= 让单人 + 硅基构成的最小闭环单元，替代传统多部门协作。**
 ## 历史架构演进
 
-编排引擎从 ao → DeepAgents → LangGraph 的升级史（v1.2.0 起 FORGE loop 已完全弃用 deepagents，改用 createReactAgent；历史编排引擎的 DeepAgents 调度原型见 v1.1.8 changelog）、Ontology 从实体关联到认知底座的渐进构建、外部框架对标（Palantir/gbrain/WeKnora/Runta）、Loop Engineering 全栈对照等详见 **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** 的「行业印证」+「编排引擎」+「Ontology 认知底座」章节，以及各版本 **[开发日志](./docs/changelog/)**。
+编排引擎从 ao → DeepAgents → LangGraph 的升级史（v1.2.0 起 FORGE loop 已完全弃用 deepagents，改用 createReactAgent；历史编排引擎的 DeepAgents 调度原型见 v1.1.8 changelog）、Ontology 从实体关联到本体结构的渐进构建、外部框架对标（Palantir/gbrain/WeKnora/Runta）、Loop Engineering 全栈对照等详见 **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** 的「行业印证」+「编排引擎」+「Ontology 本体结构」章节，以及各版本 **[开发日志](./docs/changelog/)**。
 
 > 📖 多设备同步方案见 [多设备同步指南](./docs/guides/multi-device-sync.md)。
 
