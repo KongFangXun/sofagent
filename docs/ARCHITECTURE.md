@@ -73,7 +73,7 @@ graph TD
 | ⚙️ 编排引擎 | Orchestration Engine | 任务拆解 + Sub Agent 并行 + A/B 优化 |
 | 🧬 进化引擎 | Evolution Engine | FDE 周度巡检 + 自动优化，v1.0.8+ |
 | 加载链 | Load Chain | Agent 启动时注入的约束文件 |
-| FDE | 一种能力（非岗位 title）——前线部署工程能力模型：掌握完整上下文、打破岗位边界、对结果负责 |
+| FDE | Forward Deployed Engineer | 一种能力（非岗位 title）——前线部署工程能力模型：掌握完整上下文、打破岗位边界、对结果负责 |
 | Harness | Harness 中间层 | 挂在 Agent 之上的行为约束层（约束底座）：约束 + 审计 + 回溯 + 迭代 |
 | Gateway | Gateway | 企业级 AI 统一入口（OpenClaw/WorkBuddy 等大厂平台），sofagent 不替代它 |
 | Sub Agent | Sub Agent | 用 LangGraph createReactAgent 搭的专有执行节点 |
