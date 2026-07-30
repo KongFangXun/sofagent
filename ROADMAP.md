@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.2.3 · 2026-07-30 · Fresh-Eyes · 数据主权审计 + 混合模型路由 + FDE Dashboard + Graph Engine + 异步 HITL + Skill 升级三策略
+> v1.2.3 · 2026-07-30（UTC）· 📊 Dashboard 产品化 + 🌿 编排隔离底座 + 👁️ Fresh-Eyes 流程化 + v1.2.2 BugFix 31 项
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
@@ -25,6 +25,7 @@
 
 | 版本 | 核心交付 |
 |------|------|
+| **v1.2.3** | Dashboard 产品化（控制图波次渲染 + 用户可读状态映射 + Fresh-Eyes 审查进度 + Workspace 变更摘要）+ 编排隔离底座（git worktree 三原语 + 审计合并卡关）+ Fresh-Eyes-Loop 移至阶段一 + v1.2.2 BugFix 31 项 + 裁决解析健壮性加固 |
 | **v1.2.2** | 数据主权审计（4 维追踪 + HMAC 链 + 日/周/月报告）+ 混合模型路由（ModelRouter + Ollama 接入）+ FDE Dashboard（终端三栏）+ Graph Engine（Planner + 降级链 + decide/execute 分层）+ 异步 HITL + Skill 升级三策略 + v1.2.1 BugFix 38 项 |
 | **v1.2.1** | 数据目录重构（.sofagent/ → data/）+ Webhook 推送 + SubAgent 可见性 L2 + custom/ 闭环 |
 | **v1.2.0** | 物理结构大重构（/sofagent/→/engine/ + SKILL 收敛 + 发版工具链拆散 + install.sh 提根 + rules 独立包） |
@@ -73,9 +74,6 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.1.9** | ✅ 开发完成 | **产品叙事收敛 + BugFix + USB + A/B + 控制图**：① 叙事收敛——对外从"Harness 中间件 + FDE 工具包"转为"FDE Agent（由 sofagent 引擎驱动）"；Harness 叙事降级为开发者文档里的实现说明；FlowHub 已物理迁出至 sofagent-commercial/FLOWHUB/。② v1.1.8 发布后 42 条 BugFix（6 P0 + 15 P1 + 21 P2）。③ USB 完整运行时（Node 便携版 + 启动脚本 + HMAC 签名 + knowledge/ AES-256 磁盘加密 + 零残留）。④ daemon A/B 自动调度器（探索-利用循环，ab-scheduler 四阶段状态机 + ab-history jsonl + cron `ab-schedule` 分支）。⑤ 控制图状态抽取（checkpoint → ControlGraphState，version:'v1' schema 供 v1.2.x Dashboard 消费）。测试 863→909（11 包全绿，QA 第 1 轮 906 + BUG-1 修复回归 2 + POC-6 碰撞消除 1）；版本 bump 留 releasing SOP | [📖](./docs/changelog/v1.1/v1.1.9.md) |
-| **v1.2.1** | ✅ 已发版 | **数据目录重构 + Webhook 推送 + SubAgent 可见性 L2 + custom/ 闭环**：① 数据目录重构——`.sofagent/` 运行时数据统一迁移到 `data/` 可见目录（用户能打开、Dashboard 能消费、备份只需拷一个目录）。② ToolGate 运行时接入（wrapToolsWithGate + nodes.ts 双节点调用）。③ SubAgent 可见性 L2（ProgressMiddleware：worker 工具调用序列 + LLM 心跳 → sub-progress jsonl）。④ custom/ README 重写（规则 vs 代码边界）。⑤ 数据层清理（IDENTITY.md + eval.md 删除 + 模板标注 + daemon-health.json）。测试 1009 tests（12 包全绿，audit 428） | [📖](./docs/changelog/v1.2/v1.2.1.md) |
-| **v1.2.0** | ✅ 已发版 | **物理结构大重构（/sofagent/→/engine/ + SKILL 收敛 + 发版工具链拆散 + install.sh 提根 + rules 独立包）🎉**：① **结构重构**——`/sofagent/` 内层目录 → `/engine/`（底座引擎改名）；Skill 从 4 处散落收敛到根目录 `/SKILL/`（fde/audit/engineer/reviewer/releaser + sofagent 约束底座）；`install.sh` 提升到根目录；FlowHub 物理移出 MIT scope 到商业产品目录；engine/rules/ 独立规则引擎包。② 端到端全功能验证（FORGE + Dream Cycle + 联邦查询 + 加密）+ gbrain 行业对标 + USB key 产品故事写入主文档 + 兜底修复。v1.2.x 完整多设备协同的起点 | [📖](./docs/changelog/v1.2/v1.2.0.md) |
 | **v1.2.x** | 📋 规划中 | 完整多设备协同——**L2 团队协作协议**：共享态/意图广播/触发反应/冲突消解/反馈放大五大机制，从单人约束到团队协作；**L3 组织能力市场**：Skill/Agent/流程在企业内发布→发现→调用→评价，高频高价值自然胜出。+ Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界。**🔮 探索**：路由器式配网（边缘设备 WiFi 热点 + 手机端配置网页，仅用于初始配置，配置完成后回归纯 LUI）+ **协议中立**（审计层只走 MCP 等开放协议和 git diff/JSONL/Markdown 开放格式，不为任何单一平台写专属集成——不绑定平台，平台不绑定审计） + **编排隔离底座（git worktree 轻量形态）+ 波次拓扑可视化（控制图视角，随 dashboard 交付，详见子里程碑）** | — |
 
 #### v1.2.x 里程碑拆分
