@@ -57,15 +57,9 @@ let signConfig;
 try {
   const core = await import('@sofagent/core');
   signConfig = core.signConfig;
-} catch {
-  // 开发模式下 @sofagent/core 可能未 link，尝试直接从 dist 加载
-  try {
-    const core = await import(new URL('../engine/core/dist/index.js', import.meta.url).href);
-    signConfig = core.signConfig;
-  } catch {
-    console.error('❌ 无法加载 @sofagent/core。请先构建: npm run build --workspace=engine/core');
-    process.exit(1);
-  }
+} catch (err) {
+  console.error('[sofagent] 配置文件签名失败', err);
+  process.exit(1);
 }
 
 if (typeof signConfig !== 'function') {

@@ -1,7 +1,7 @@
-# sofagent WIKI · v1.2.3
+# sofagent 项目导航索引（WIKI）
 
-> **这是给 AI Agent 看的项目导航索引。** 新 session 先读这个（3 分钟扫完），再按需深入具体文档。
-> 人类开发者请读 [README.md](../README.md)。
+> **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
+> 如果你是 AI Agent 且需要查找具体实现路径，请直接跳转到"## 代码地图"段。
 
 > **3 分钟建立全景理解**：核心文档 221KB 太长？先看这 3 句：
 > - **[ARCHITECTURE.md](./ARCHITECTURE.md)**（85KB）：四层架构设计（Harness → Graph → Loop → Rule），关键技术决策记录。**3 秒版**：Harness 中间件接 Agent · Graph 控制图分波次 · Loop 自迭代闭环。
