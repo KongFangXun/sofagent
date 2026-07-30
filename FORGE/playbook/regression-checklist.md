@@ -22,7 +22,7 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（41 项 · 编号 1–61，20 个归并/移除项已转为 HTML 注释）
+## 审查维度（42 项 · 编号 1–62，20 个归并/移除项已转为 HTML 注释）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -988,3 +988,26 @@ done
 ```
 
 > **PASS 标准**：每个交付模块至少有 1 个 test file，核心逻辑（写入/解析/路由）有自动化断言。
+
+---
+
+#### 62. 发版闸门裁决解析健壮性——禁止「全文含 FAIL 即判 FAIL」脆弱兜底（v1.2.3 阶段六新盲区）
+
+> v1.2.3 阶段六教训：release-gate-driver.mjs 的 parseVerdict / parseStepResults 曾有脆弱兜底——「报告全文含 \bFAIL\b 字样就判 FAIL」。但发版验证报告的真实结论是 PASS，正文却**必然**提到 FAIL（负向测试场景的预期输出 / 覆盖率表的 ❌ 标记 / 「无 FAIL 条目」这类措辞）。结果一次真实通过的验证被自动化误标成 FAIL，写进 LEDGER.md 和 status.json，靠读 verdict.md 权威产物才还原真相。根因：结论 PASS 的报告正文必然含 FAIL 字样，脆弱兜底把 PASS 误判 FAIL。**读发版裁决以 verdict.md 权威产物为准，别被 LEDGER / status.json 的自动化解析带偏。**
+
+```bash
+# 1. 断言「全文含 FAIL 即判 FAIL」式脆弱兜底已删除（期望零命中，exit 1）
+grep -nE "includes\('FAIL'\)|includes\(\"FAIL\"\)" FORGE/src/release-gate-driver.mjs
+# 期望：无输出（exit 1）
+
+# 2. 断言已采用「判定/结论」标记行窗口提取（期望 ≥2，parseVerdict + parseStepResults 各一份）
+grep -c 'extractVerdictKeyword' FORGE/src/release-gate-driver.mjs   # ≥2
+
+# 3. 断言标记行窗口大小（标记行 + 后续 3 行，期望 ≥2）
+grep -c 'slice(i, i + 4)' FORGE/src/release-gate-driver.mjs   # ≥2
+
+# 4. 断言已先剥离 ``` 围栏代码块再解析（-F 固定串，避免正则转义歧义；期望 ≥2）
+grep -Fc 'replace(/```[\s\S]*?```/g' FORGE/src/release-gate-driver.mjs   # ≥2
+```
+
+> **PASS 标准**：子项 1 零命中（脆弱兜底已删）；子项 2/3/4 均 ≥2（parseVerdict 与 parseStepResults 都已剥离代码块 + 标记行窗口提取）。读裁决以 verdict.md 权威产物为准。
