@@ -777,6 +777,20 @@ forge_current_file() {
 }
 
 # agent 行渲染：图标 + 状态 + 当前文件 + 本轮发现 + 累计
+# 统计 stall 事件数量（从 sub-progress-*.jsonl 中读取）
+# 参数: $1=round_dir, $2=role (A/B)
+# 返回: stall 事件数量
+count_stall_events() {
+  local round_dir="$1" role="$2"
+  local progress_file="$round_dir/sub-progress-${role}.jsonl"
+  if [ ! -f "$progress_file" ]; then
+    echo "0"
+    return
+  fi
+  # 统计 event=stall-detected 的行数
+  jq -c 'select(.event == "stall-detected")' "$progress_file" 2>/dev/null | wc -l | tr -d ' '
+}
+
 render_forge_agent_line() {
   local label="$1" role="$2" w="$3" round_dir="$4"
   local status findings cumulative last_file
@@ -786,7 +800,20 @@ render_forge_agent_line() {
   last_file="$(jq -r ".agent${role}.currentFile // \"\"" "$FORGE_LATEST" 2>/dev/null)"
   local cur_file
   cur_file="$(forge_current_file "$round_dir" "$role" "$last_file")"
-  emit "  ${label} $(status_icon "$status") $(humanize_status "$status") · 当前: $(trunc "$cur_file" $((w - 40))) · 本轮发现: ${findings} · 累计: ${cumulative}"
+
+  # 统计 stall 事件
+  local stall_count
+  stall_count="$(count_stall_events "$round_dir" "$role")"
+
+  # 构建输出行
+  local output="  ${label} $(status_icon "$status") $(humanize_status "$status") · 当前: $(trunc "$cur_file" $((w - 40))) · 本轮发现: ${findings} · 累计: ${cumulative}"
+
+  # 如果有 stall 事件，添加警告标记
+  if [ "$stall_count" -gt 0 ] 2>/dev/null; then
+    output="${output} · ${C_RED}⚠️ stall×${stall_count}${C_RESET}"
+  fi
+
+  emit "$output"
 }
 
 render_forge_progress() {
@@ -805,6 +832,12 @@ render_forge_progress() {
   total="$(jq -r '.totalRounds // 0' "$FORGE_LATEST" 2>/dev/null)"
   updated_at="$(jq -r '.updatedAt // ""' "$FORGE_LATEST" 2>/dev/null)"
   stop_reason="$(jq -r '.stopReason // ""' "$FORGE_LATEST" 2>/dev/null)"
+
+  # 读取 stall 状态（v1.2.4 新增）
+  local stall_count stall_last_time stall_last_gap
+  stall_count="$(jq -r '.stallCount // 0' "$FORGE_LATEST" 2>/dev/null)"
+  stall_last_time="$(jq -r '.stallLastTime // ""' "$FORGE_LATEST" 2>/dev/null)"
+  stall_last_gap="$(jq -r '.stallLastGap // 0' "$FORGE_LATEST" 2>/dev/null)"
 
   # run 标识：run-NN → #NN（runDir 相对 data/ 根；绝对路径也兼容）
   local run_tag="fresh-eyes-loop"
@@ -825,6 +858,16 @@ render_forge_progress() {
   fi
 
   emit "  ${run_tag} · 第 ${round} 轮 / 共 ${total} 轮${C_DIM}${age_text}${C_RESET}"
+
+  # 如果有 stall 事件，显示警告
+  if [ "$stall_count" -gt 0 ] 2>/dev/null; then
+    local stall_warn="  ${C_RED}⚠️ 检测到 ${stall_count} 次事件循环冻结（stall）"
+    if [ -n "$stall_last_time" ] && [ "$stall_last_gap" -gt 0 ] 2>/dev/null; then
+      stall_warn="${stall_warn} · 最近一次: ${stall_last_gap}ms @ ${stall_last_time}"
+    fi
+    stall_warn="${stall_warn}${C_RESET}"
+    emit "$stall_warn"
+  fi
 
   # 当前轮 round 目录（round-NN，NN 两位补齐）
   local round_dir=""
@@ -854,6 +897,12 @@ render_forge_progress() {
     phase_text="单方执行中"
   fi
   emit "  状态: ${phase_text}"
+
+  # Stall 状态行（v1.2.4 新增）
+  if [ -n "$stall_last_time" ] && [ "$stall_count" -gt 0 ] 2>/dev/null; then
+    local stall_info="  ${C_RED}⚠️ 最近一次停顿: ${stall_last_gap}ms @ ${stall_last_time}${C_RESET}"
+    emit "$stall_info"
+  fi
 }
 
 # ────────────────────────────────
