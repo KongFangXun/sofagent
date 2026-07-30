@@ -6,7 +6,7 @@
 
 ## 双层循环架构
 
-FORGE 的自迭代不是单一循环，而���**外环 + 内环**的双层结构：
+FORGE 的自迭代不是单一循环，而是**外环 + 内环**的双层结构：
 
 ### 外环 · 项目级（每轮 = 一个版本的生命周期）
 
@@ -35,7 +35,7 @@ FORGE 的自迭代不是单一循环，而���**外环 + 内环**的双层�
 
 | 节点 | 证据工具 | 有 ❌ 的后果 |
 |------|---------|------------|
-| A0（��写 dev prompt） | `tools/check-dev-prompt.sh` | 循环修正 prompt 直到零 ❌，否则不许进开发 |
+| A0（编写 dev prompt） | `tools/check-dev-prompt.sh` | 循环修正 prompt 直到零 ❌，否则不许进开发 |
 | A5-d3（D3 闸门） | `FORGE/playbook/acceptance-test.sh` | 零覆盖 = 不许进下一阶段 |
 | A6（release-gate-loop） | `FORGE/src/release-gate-driver.mjs` | verdict = FAIL = 回阶段五 |
 | VERSION-check | `tools/check-version.sh` | 版本号不一致 = 阻断发布 |
