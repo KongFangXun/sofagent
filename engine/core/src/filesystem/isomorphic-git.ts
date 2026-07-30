@@ -49,7 +49,7 @@ export interface SnapshotEntry {
 export function createShadowRepo(dir: string): string {
   const shadowDir = join(dir, '.sofagent', '.git-shadow');
   if (!existsSync(shadowDir)) {
-    mkdirSync(shadowDir, { recursive: true });
+    mkdirSync(shadowDir, { recursive: true, mode: 0o700 });
   }
 
   // 写入仓库配置文件
@@ -294,7 +294,7 @@ export function revertToSnapshot(dir: string, sha: string): string[] {
       // 确保父目录存在
       const parentDir = dirname(fullPath);
       if (!existsSync(parentDir)) {
-        mkdirSync(parentDir, { recursive: true });
+        mkdirSync(parentDir, { recursive: true, mode: 0o700 });
       }
       writeFileSync(fullPath, content, 'utf-8');
       restored.push(relativePath);

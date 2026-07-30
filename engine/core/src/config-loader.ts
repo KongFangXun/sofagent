@@ -476,7 +476,7 @@ export function safeDefaults(): AuditConfig {
 export function writeConfig(filePath: string, config: string): void {
   const dir = dirname(filePath);
   if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
+    mkdirSync(dir, { recursive: true, mode: 0o700 });
   }
   atomicWriteSync(filePath, config);
 }
