@@ -794,16 +794,28 @@ function chunk(arr, size) {
  * @param {string} target   - 验证目标版本号
  * @param {number} round    - 轮次号
  */
+/**
+ * 动态计算 batch size（#7 优化）：finding 越多，每批越小，
+ * 保证单 worker 工具调用数不撞 recursionLimit（150 步）。
+ * 经验公式：每批 ≤ 5 条，总量 > 20 降到 3，> 35 降到 2。
+ */
+function computeBatchSize(findingCount) {
+  if (findingCount <= 20) return 5;
+  if (findingCount <= 35) return 3;
+  return 2;
+}
+
 async function runBFixSharded(roundDir, target, round) {
-  const BATCH_SIZE = 5;
+  // BATCH_SIZE 在 splitFindings 之后动态计算
 
   // 1. 读 result.md
   const resultPath = join(roundDir, 'result.md');
   const resultText = readFileSync(resultPath, 'utf-8');
 
-  // 2. 按 finding 切片
+  // 2. 按 finding 切片 + 动态 batch（#7）
   const findings = splitFindings(resultText);
-  console.log(`  [b-fix 分片] 共 ${findings.length} 条 finding，每批 ${BATCH_SIZE} 条`);
+  const BATCH_SIZE = computeBatchSize(findings.length);
+  console.log(`  [b-fix 分片] 共 ${findings.length} 条 finding，动态 batch=${BATCH_SIZE}`);
 
   // 防回归：切出 0 条 finding 但 result.md 中 P0+P1 计数 > 0 时报警
   // Anti-regression: warn when 0 findings are parsed but P0/P1 markers exist
@@ -905,13 +917,12 @@ async function runBFixSharded(roundDir, target, round) {
  * @param {number} round    - 轮次号
  */
 async function runAVerifySharded(roundDir, target, round) {
-  const BATCH_SIZE = 5;
-
   const resultPath = join(roundDir, 'result.md');
   const resultText = readFileSync(resultPath, 'utf-8');
 
   const findings = splitFindings(resultText);
-  console.log(`  [a-verify 分片] 共 ${findings.length} 条 finding，每批 ${BATCH_SIZE} 条`);
+  const BATCH_SIZE = computeBatchSize(findings.length);  // #7 动态 batch
+  console.log(`  [a-verify 分片] 共 ${findings.length} 条 finding，动态 batch=${BATCH_SIZE}`);
 
   // 防回归：切出 0 条 finding 但 result.md 中 P0+P1 计数 > 0 时报警
   // Anti-regression: warn when 0 findings are parsed but P0/P1 markers exist
@@ -1207,6 +1218,39 @@ function parseStopCondition(roundDir) {
   const isClean = (p0 === 0 && p1 === 0 && p2 === 0 && !hasFail);
 
   return { p0, p1, p2, hasFail, isClean };
+}
+
+/**
+ * #13 加权收敛检测：finding 数在轮次间波动（R1=10→R2=32→R3=16→R4=11）时，
+ * 单纯"连续 2 轮干净"过于保守。本函数在 severity 历史足够长时，
+ * 用「近窗加权平均 + 趋势判断」提前收敛，避免无意义的继续轮转。
+ *
+ * 收敛条件（全部满足）：
+ *   1. 至少有 3 轮历史
+ *   2. 最新一轮 severity（P0+P1）<= 2（已接近干净）
+ *   3. 近 3 轮加权平均 <= 4（整体低位）
+ *   4. 趋势非上升（最新轮 <= 近 3 轮加权平均，没在反弹）
+ *
+ * 权重：越近权重越高（1 / 2 / 3，最新轮权重 3）。
+ *
+ * @param {number[]} history 每轮 (P0+P1) 的数组
+ * @returns {boolean} 是否应提前收敛停止
+ */
+function detectWeightedConvergence(history) {
+  if (history.length < 3) return false;
+  const latest = history[history.length - 1];
+  if (latest > 2) return false;
+
+  // 近 3 轮，权重 1/2/3（最新轮权重最高）
+  const window = history.slice(-3);
+  const weights = [1, 2, 3];
+  const weightSum = weights.reduce((a, b) => a + b, 0);
+  const weightedAvg = window.reduce((acc, v, i) => acc + v * weights[i], 0) / weightSum;
+
+  if (weightedAvg > 4) return false;   // 整体还不够低
+  if (latest > weightedAvg) return false;  // 最新轮在反弹，不收
+
+  return true;
 }
 
 /**
@@ -1725,12 +1769,36 @@ async function main() {
   let stopReason    = 'max-rounds';
   let actualRounds  = 0;
   let finalCounts   = { p0: 0, p1: 0, p2: 0 };
+  let severityHistory = [];  // #13 每轮 (P0+P1) 趋势，用于加权收敛检测
 
   for (let round = 1; round <= args.maxRounds; round++) {
     actualRounds = round;
     visibility.emit(EVENTS.ROUND_START, { round, target: args.target });
-    const { roundDir, counts, isClean } = await runRound(round, runDir, args.target, args.dryRun);
+
+    // #14 轮内实时刷新：轮执行期间每 30s 刷一次 latest.json，
+    // 让 Dashboard 不用等轮结束就能看到 stall / agent 状态变化。
+    // 轮结束（runRound resolve）后自动清理定时器。
+    const intraRoundTimer = setInterval(() => {
+      try {
+        updateLatestPointer(runDir, {
+          round,
+          totalRounds: args.maxRounds,
+          counts: finalCounts,
+        });
+      } catch { /* 刷新失败不中断主流程 */ }
+    }, 30_000);
+
+    let runRoundResult;
+    try {
+      runRoundResult = await runRound(round, runDir, args.target, args.dryRun);
+    } finally {
+      clearInterval(intraRoundTimer);
+    }
+
+    const { roundDir, counts, isClean } = runRoundResult;
     finalCounts = counts;
+    // #13 记录本轮 severity 趋势
+    severityHistory.push(counts.p0 + counts.p1);
     // 快照——如果后续轮 fatal-error，catch 块用这组数据，不清零
     preservedActualRounds = actualRounds;
     preservedFinalCounts   = { ...finalCounts };
@@ -1764,6 +1832,12 @@ async function main() {
       }
     } else {
       cleanStreak = 0;
+      // #13 加权收敛：不干净但趋势已收敛到极低位时，提前停止
+      if (detectWeightedConvergence(severityHistory)) {
+        console.log(`\n  📉 加权收敛：近 3 轮 severity=${severityHistory.slice(-3).join('→')}，已收敛到极低位，提前停止`);
+        stopReason = 'weighted-convergence';
+        break;
+      }
       console.log(`\n  ❌ 本轮有 P0/P1/FAIL，进入下一轮`);
     }
   }
