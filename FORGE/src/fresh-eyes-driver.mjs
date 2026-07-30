@@ -30,7 +30,8 @@ import os from 'os';
 import { createVisibility, EVENTS } from './visibility.mjs';
 
 // v1.2.1 L2：SubAgent 内部可观测（工具调用序列 + 模型推理心跳）
-import { createProgressMiddleware } from './progress-middleware.mjs';
+// v1.2.4 新增 StallError 导出（watchdog 停顿检测错误类）
+import { createProgressMiddleware, StallError } from './progress-middleware.mjs';
 
 // 模块级引用——让 catch 块也能写可见性事件（失败场景覆盖）
 let globalVisibility = null;
@@ -935,44 +936,88 @@ async function runAVerifySharded(roundDir, target, round) {
 /**
  * 起一个 worker 子进程（真·零上下文：独立 node 进程）。
  * 返回 Promise，resolve 时子进程已退出。
+ * v1.2.4：StallError 重试——检测 stderr 中的 [stall-watchdog] 标记，
+ * 最多重试 STALL_RETRY_MAX 次（默认 2）。
  *
  * @param {string} step      步骤名
  * @param {string} roundDir  本轮目录绝对路径
  * @param {string} target    审查目标版本号
  * @param {number} round     轮次号（通过 FORGE_ROUND 环境变量传给 worker）
  * @param {object} [options] 可选：分片模式覆盖
- * @param {object} [options.customInputs] 输入文件名映射（如 { 'result.md': 'result-batch-1.md' }）
- * @param {string} [options.customOutput]  输出文件名覆盖（如 'summary-batch-1.md'）
+ * @param {object} [options.customInputs] 输入文件名映射
+ * @param {string} [options.customOutput]  输出文件名覆盖
  */
+/** v1.2.4 StallError 重试次数上限 / StallError retry limit */
+const STALL_RETRY_MAX = parseInt(process.env.FORGE_STALL_RETRY_MAX || '2', 10);
+
 function spawnWorker(step, roundDir, target, round, options = {}) {
-  return new Promise((resolveP, rejectP) => {
-    const env = { ...process.env, FORGE_ROUND: String(round) };
-    // 分片模式：通过环境变量把覆盖项传给 worker
-    if (options.customInputs && options.customInputs['result.md']) {
-      env.FORGE_BATCH_RESULT = options.customInputs['result.md'];
-    }
-    if (options.customOutput) {
-      env.FORGE_CUSTOM_OUTPUT = options.customOutput;
-    }
+  /** 单次执行 worker 子进程 */
+  function runOnce() {
+    return new Promise((resolveP, rejectP) => {
+      const env = { ...process.env, FORGE_ROUND: String(round) };
+      // 分片模式：通过环境变量把覆盖项传给 worker
+      if (options.customInputs && options.customInputs['result.md']) {
+        env.FORGE_BATCH_RESULT = options.customInputs['result.md'];
+      }
+      if (options.customOutput) {
+        env.FORGE_CUSTOM_OUTPUT = options.customOutput;
+      }
 
-    const child = spawn(process.execPath, [
-      __filename,
-      '--worker',
-      '--step', step,
-      '--round-dir', roundDir,
-      '--target', target,
-    ], {
-      cwd: REPO_ROOT,
-      stdio: ['pipe', 'inherit', 'inherit'],
-      env,
-    });
+      // 捕获 stderr 以检测 StallError（worker 进程打印 [stall-watchdog] 标记）
+      // Capture stderr to detect StallError marker from worker process
+      let stderrBuf = '';
+      const child = spawn(process.execPath, [
+        __filename,
+        '--worker',
+        '--step', step,
+        '--round-dir', roundDir,
+        '--target', target,
+      ], {
+        cwd: REPO_ROOT,
+        stdio: ['pipe', 'inherit', 'pipe'],
+        env,
+      });
 
-    child.on('close', (code) => {
-      if (code === 0) resolveP();
-      else rejectP(new Error(`worker ${step} 退出码 ${code}`));
+      child.stderr.on('data', (chunk) => {
+        stderrBuf += chunk.toString();
+        process.stderr.write(chunk); // 保持实时可见
+      });
+
+      child.on('close', (code) => {
+        if (code === 0) {
+          resolveP();
+        } else {
+          // 检测 StallError（watchdog 中止标记）
+          // Detect StallError (watchdog abort marker)
+          const isStall = stderrBuf.includes('[stall-watchdog]') ||
+                          stderrBuf.includes('StallError');
+          const err = new Error(`worker ${step} 退出码 ${code}`);
+          err.isStallError = isStall;
+          rejectP(err);
+        }
+      });
+      child.on('error', rejectP);
     });
-    child.on('error', rejectP);
-  });
+  }
+
+  // v1.2.4：StallError 重试逻辑（最多 STALL_RETRY_MAX 次）
+  // v1.2.4: StallError retry logic (up to STALL_RETRY_MAX times)
+  return (async () => {
+    for (let attempt = 0; attempt <= STALL_RETRY_MAX; attempt++) {
+      try {
+        return await runOnce();
+      } catch (err) {
+        if (err.isStallError && attempt < STALL_RETRY_MAX) {
+          console.warn(
+            `\n  ⚠️  [worker:${step}] StallError — watchdog 检测到事件循环冻结，` +
+            `重试 ${attempt + 1}/${STALL_RETRY_MAX}`
+          );
+          continue; // 重试
+        }
+        throw err; // 非 StallError 或重试已耗尽，上抛
+      }
+    }
+  })();
 }
 
 /**
@@ -1345,6 +1390,30 @@ async function main() {
   if (!args.target) {
     console.error('用法: node FORGE/src/fresh-eyes-driver.mjs --target vX.Y.Z [--max-rounds N] [--dry-run]');
     process.exit(1);
+  }
+
+  // ─── 防 macOS 后台节流（v1.2.4 · P0）───
+  // 背景：run-03 Round 5 在 macOS 后台被节流冻结 2h44m，driver 零感知。
+  // 根因：macOS App Nap / timer throttling 挂起后台 node 进程。
+  // 方案：darwin 平台下用 caffeinate -dimsu -w <pid> 绑定自身 pid，
+  // 防止系统空闲休眠与 App Nap 冻结定时器。非 darwin 平台跳过。
+  // caffeinate 以子进程方式启动（unref），driver 退出时操作系统自动回收。
+  //
+  // Anti-macOS background throttle (v1.2.4 · P0).
+  // Bind caffeinate -dimsu -w <pid> to prevent App Nap timer freeze.
+  // Non-darwin: skip. caffeinate auto-reaped on driver exit.
+  if (process.platform === 'darwin' && !args.dryRun) {
+    try {
+      const caf = spawn('caffeinate', ['-dimsu', '-w', String(process.pid)], {
+        stdio: 'ignore',
+      });
+      caf.unref(); // driver 退出即自动解除 / auto-released on driver exit
+      console.log(`   防休眠     = caffeinate 已绑定 pid=${process.pid}`);
+    } catch (err) {
+      // caffeinate 不可用时降级为警告，不阻断主流程
+      // Fallback to warning if caffeinate unavailable, do not block
+      console.warn(`   防休眠     = ⚠️ caffeinate 不可用（${err.message}），降级运行`);
+    }
   }
 
   // 验证环境变量
