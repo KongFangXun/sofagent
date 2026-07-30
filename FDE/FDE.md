@@ -886,6 +886,8 @@ F2 的「自动化程度四模式」与「架构复杂度四模式」（A 任务
 
 与 FDE 定位同频：FDE = Services-as-Software，交付「常驻 FDE Agent」而非工具包（见 §先读这段）。ROADMAP「市场信号验证」已有 4 条互证（Anthropic 收 Fractional AI / Accenture×Anthropic 3 万人 FDE 受训 / Blackstone+H&F+Goldman 共建企业 AI 服务 / Anthropic×Palantir FedStart）。Jevons 悖论亦呼应 §13 持续存在感机制（sustain）——转型不是一锤子买卖，是持续陪跑。
 
+**OpenFDE 🎯2 市场结构级补证（2026-07-30 温故知新）**：在上述 4 条之外新增 2 条量化互证——① **HFS Research《Anthropic 吞噬 IT 服务》**：分析师侧首次系统论证 **Services-as-Software 拐点**，强化「FDE 通用能力化 + 受监管护城河」是市场结构级趋势而非个别案例；② **Perspective AI《State of FDE 2026》1500 人普查**：FDE **47% 工时花在客户面访**（印证 §先读这段「FDE 在现场」的第一性）、薪资较同级 **+30~50%**——为 FDE 能力模型与组织模式提供可量化参照。> 来源：学习笔记 OpenFDE 🎯2（2026-07-30）。
+
 ### 钉钉 CTO 一粟 FDE 交付四件套 + 交付标准（2026-07 研读）
 
 钉钉 CTO 一粟现场交付物 = 可上线数字员工**四件套**：① SOP（工作流标准）② Skill（节点大脑）③ 权限模型（谁能干啥）④ MCP（工具接入）。四件套齐 = 可独立运行。
