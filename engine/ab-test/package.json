@@ -23,10 +23,10 @@
   "author": "KongFangXun",
   "dependencies": {
     "@langchain/langgraph": "^1.4.7",
-    "@sofagent/harness": "1.2.2",
-    "@sofagent/eval": "1.2.2",
-    "@sofagent/core": "1.2.2",
-    "@sofagent/orchestrator": "1.2.2"
+    "@sofagent/harness": "1.2.3",
+    "@sofagent/eval": "1.2.3",
+    "@sofagent/core": "1.2.3",
+    "@sofagent/orchestrator": "1.2.3"
   },
   "exports": {
     ".": {
