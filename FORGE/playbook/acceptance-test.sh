@@ -1182,7 +1182,7 @@ scenario 120 "v1.1.9 叙事收敛 + BugFix 回归锁"
 S120_OK=true; README="$PROJECT_ROOT/README.md"
 FDE_COUNT=$(grep -c "FDE Agent" "$README" 2>/dev/null || echo 0)
 [ "$FDE_COUNT" -ge 5 ] || { fail "README 'FDE Agent' 出现 $FDE_COUNT 次（期望 ≥5）"; S120_OK=false; }
-grep -q "审计引擎零 token" "$README" || { fail "README 缺 '审计引擎零 token'"; S120_OK=false; }
+grep -q "审计引擎核心规则零 token" "$README" || { fail "README 缺 '审计引擎核心规则零 token'"; S120_OK=false; }
 grep -q "v1.1.8" "$README" || { fail "README 缺 'v1.1.8' 版本标记"; S120_OK=false; }
 $S120_OK && pass
 S121_OK=true; DAG_RUNNER="$PROJECT_ROOT/engine/orchestrator/src/dag-runner.ts"
