@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固
+# + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
@@ -1481,6 +1481,39 @@ S153_NOMODE=$({ grep -rn "mkdirSync(" "$PROJECT_ROOT/engine/core/src/" --include
 S153_SECURE=$({ grep -rn "mkdirSync(.*mode: 0o700" "$PROJECT_ROOT/engine/core/src/" --include="*.ts" 2>/dev/null | grep -v "__tests__" || true; } | wc -l | tr -d ' ')
 [ "$S153_SECURE" -ge 5 ] 2>/dev/null || { fail "core 包 mode:0o700 加固仅 $S153_SECURE 处（期望 ≥5）"; S153_OK=false; }
 $S153_OK && pass "core 包数据目录创建全部加固为 0o700（$S153_SECURE 处，0 处遗漏）"
+scenario 154 "v1.2.3 Dashboard 波次拓扑可视化——graph-state.json 写入 → --full 控制图渲染"
+S154_OK=true; DASH154="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
+[ -f "$DASH154" ] || { fail "sofagent-dashboard.sh 不存在"; S154_OK=false; }
+if $S154_OK; then
+  # 构造临时 SOFAGENT_HOME，注入 v2 格式 graph-state.json（nodes/wave/degradationLevel/updatedAt）
+  S154_HOME=$(mktemp -d /tmp/sofagent-acc-dash154-XXXX)
+  mkdir -p "$S154_HOME/data/dashboard"
+  cat > "$S154_HOME/data/dashboard/graph-state.json" <<'EOF154'
+{"nodes":[{"id":"plan","status":"done"},{"id":"engineer-1","status":"running","subtasks":[{"id":"s1","status":"done","desc":"write module"},{"id":"s2","status":"running","desc":"add tests"}]},{"id":"audit-1","status":"pending"},{"id":"reviewer-1","status":"pending"},{"id":"human-1","status":"pending"}],"wave":2,"degradationLevel":1,"updatedAt":"2026-07-30T12:00:00Z"}
+EOF154
+  S154_OUT=$(SOFAGENT_HOME="$S154_HOME" bash "$DASH154" --full 2>&1) || true
+  rm -rf "$S154_HOME"
+  # 断言：控制图链路拓扑（plan→engineer→audit→reviewer→confirm）
+  echo "$S154_OUT" | grep -q "plan" || { fail "Dashboard --full 缺少 plan 节点"; S154_OK=false; }
+  echo "$S154_OUT" | grep -q "engineer" || { fail "Dashboard --full 缺少 engineer 节点"; S154_OK=false; }
+  echo "$S154_OUT" | grep -q "reviewer" || { fail "Dashboard --full 缺少 reviewer 节点"; S154_OK=false; }
+  # 断言：wave + 降级等级渲染
+  echo "$S154_OUT" | grep -q "Wave: 2" || { fail "Dashboard --full 未渲染 Wave: 2"; S154_OK=false; }
+  echo "$S154_OUT" | grep -q "L1" || { fail "Dashboard --full 未渲染降级 L1"; S154_OK=false; }
+  # 断言：engineer 子任务展开
+  echo "$S154_OUT" | grep -q "write module" || { fail "Dashboard --full 未展开子任务"; S154_OK=false; }
+  $S154_OK && pass "Dashboard 波次拓扑端到端（graph-state→--full 控制图：5 节点链路 + Wave + 降级 + 子任务）"
+fi
+scenario 155 "v1.2.3 编排隔离底座——WorktreeHandle create/cleanup 幂等"
+S155_OK=true
+S155_OUT=$(node "$SCRIPT_DIR/acceptance-node-probes.js" s155 2>&1) || true
+echo "$S155_OUT" | grep -q "^OK" || { fail "WorktreeHandle 幂等失败: $S155_OUT"; S155_OK=false; }
+$S155_OK && pass "WorktreeHandle create/cleanup 幂等（重复调用不报错 + worktree 生命周期正确）"
+scenario 156 "v1.2.3 编排隔离底座——审计合并卡关（audit PASS→merge / audit FAIL→reject）"
+S156_OK=true
+S156_OUT=$(node "$SCRIPT_DIR/acceptance-node-probes.js" s156 2>&1) || true
+echo "$S156_OUT" | grep -q "^OK" || { fail "审计合并卡关失败: $S156_OUT"; S156_OK=false; }
+$S156_OK && pass "审计合并卡关双向（PASS→merge 主分支可见 + FAIL→reject 不泄漏）"
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 if [ "$FAILED" -gt 0 ]; then echo -e "${RED}❌ 有 $FAILED 个场景失败，请修复后再发版${NC}"; exit "$FAILED"
