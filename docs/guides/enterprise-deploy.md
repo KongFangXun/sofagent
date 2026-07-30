@@ -43,8 +43,8 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对�
 | 检查项 | 状态 | 说明 |
 |------|:--:|------|
 | 数据存储位置 | ✅ 本地 | 不上云，不调外部 API（离线模式） |
-| 数据脱敏 | ✅ A2/A9 命中行脱敏后存储 |
-| 数据加密 | ❌ 本地存储为明文（如需加密，用 OS 级全盘加密） |
+| 数据脱敏 | ✅ | A2/A9 命中行脱敏后存储 |
+| 数据加密 | ❌ | 本地存储为明文（如需加密，用 OS 级全盘加密） |
 | 权限控制 | ✅ 700 | install.sh 自动设置 |
 | 数据保留策略 | ✅ 已完成 | v0.71 落地 cleanup.sh 自动清理，支持 --purge --before |
 | 审计日志 | ✅ 已完成 | v0.71 落地 task-record.sh 独立审计日志 + task/logs 追溯双通道 |
@@ -163,7 +163,7 @@ sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，�
 | **ELK (Elasticsearch + Logstash + Kibana)** | Filebeat 配置 `input.path: /path/to/.sofagent/data/audit/history.jsonl`，Logstash 解析 JSONL 后索引到 Elasticsearch |
 | **Splunk** | Universal Forwarder 配置 monitor 监听 `history.jsonl`，自动解析结构化日志 |
 | **Grafana Loki** | Promtail 配置 scrape_config 指向 `history.jsonl`，label 按 `rule`/`status` 维度 |
-| **自家 SIEM** | `tail -f .sofagent/data/audit/history.jsonl | your-pipe` 实时消费 |
+| **自家 SIEM** | `tail -f .sofagent/data/audit/history.jsonl \| your-pipe` 实时消费 |
 
 > `--json` 输出模式可配合 jq 做实时过滤：`sofagent-audit --diff HEAD~1..HEAD --json | jq 'select(.status == "FAIL")'`
 

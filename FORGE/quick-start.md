@@ -37,7 +37,7 @@ export SOFAGENT_LLM_B=<provider>:<model-name>
 export SOFAGENT_LLM_B_API_KEY=your-key
 ```
 
-> **为什么是异构**：如果 A 和 B 用同一个模型，该模型在训练时遗漏的 bug 类型会在自审中被再次遗漏——"fresh eyes"的前提就是审查者换了一双不同的眼睛。A 审 B 写的代码、B 审 A 写的代码，交叉视角才能覆盖单模型盲区。
+> **为什么是异构**：如果 A 和 B 用同一个模型，该模型在训练时遗漏的 bug 类型会在自审中被再次遗漏——"fresh-eyes"的前提就是审查者换了一双不同的眼睛。A 审 B 写的代码、B 审 A 写的代码，交叉视角才能覆盖单模型盲区。
 
 ### 模型参数
 

@@ -10,15 +10,15 @@
 
 > 我们不替你回答。以下是装了 sofagent 的人自己记录的。
 
-> ⚠️ **诚实声明**：以下数据含作者自测。复盘评分为 LLM 自评（非 OpenClaw 平台无工程隔离）。企业级评估需配合外部审计 + 独立评估器；age 加密预计 v1.3.0 落地（详见 [SECURITY](../SECURITY.md)）。当前数据适合探索性评估，不适用于生产决策。
+> ⚠️ **诚实声明**：以下数据含作者自测。复盘评分为 LLM 自评（非 OpenClaw 平台无工程隔离）。企业级评估需配合外部审计 + 独立评估器；age 加密预计 v1.3.0 落地（详见 [SECURITY](../../SECURITY.md)）。当前数据适合探索性评估，不适用于生产决策。
 
 > 📊 **历史 A/B benchmark 数据**（v0.92-v0.93 期间实验记录，存档参考）：
 >
-> **v0.93 OpenClaw 10 组对照实验**：4 任务 × 2 条件（有/无 sofagent）× 独立 session。结论：**约束底座增量 = f(陷阱难度)**。在高难度「同名语义混淆」场景（Task 1 camelCase→snake_case），sofagent 组变量名误伤率 0%（0/7），裸 Agent 100%（7/7）。在精确指令场景（Task 3/4）无显著差异。Task 2（代码分析）sof-1 异常漏报（1/4 bugs）需更大样本确认。⚠️ 方法论诚实：本次实验 sofagent 条件为 prompt 前缀注入 4 条核心规则（非真实 Skill 加载链），可能低估实际效果。详见 [Task 2-4 实验总览](./benchmark/2026-06-26-openclaw-task2-4-summary.md)。
+> **v0.93 OpenClaw 10 组对照实验**：4 任务 × 2 条件（有/无 sofagent）× 独立 session。结论：**约束底座增量 = f(陷阱难度)**。在高难度「同名语义混淆」场景（Task 1 camelCase→snake_case），sofagent 组变量名误伤率 0%（0/7），裸 Agent 100%（7/7）。在精确指令场景（Task 3/4）无显著差异。Task 2（代码分析）sof-1 异常漏报（1/4 bugs）需更大样本确认。⚠️ 方法论诚实：本次实验 sofagent 条件为 prompt 前缀注入 4 条核心规则（非真实 Skill 加载链），可能低估实际效果。详见 Task 2-4 实验总览（原始实验记录已归档）。
 >
-> **v0.92 OpenClaw 对照实验**：同一模型在独立 session 中跑 Task 1（camelCase → snake_case），sofagent 组变量名误伤率 0%（0/7），裸 Agent 组误伤率 100%（7/7）。纪律性 +2，首次通过率持平。详见 [OpenClaw Task 1 对照](./benchmark/2026-06-25-openclaw-task1-control.md)。
+> **v0.92 OpenClaw 对照实验**：同一模型在独立 session 中跑 Task 1（camelCase → snake_case），sofagent 组变量名误伤率 0%（0/7），裸 Agent 组误伤率 100%（7/7）。纪律性 +2，首次通过率持平。详见 OpenClaw Task 1 对照实验（原始实验记录已归档）。
 >
-> **v0.81-v0.83 历史数据**：五组 A/B。约束层在 WorkBuddy 对话模式仅 1/10 明确增量，CLI 一击 0/16 全失效（见 [反案例 002](./anti-cases/002-cli-one-shot-ineffective.md)）。独立测试者代码重构 A/B 测出约束底座增量：纪律性 8→10（+2），首次通过率 60%→100%（+40%），但存在知识传递效应未排除的方法论局限（见 [反案例 001](./anti-cases/001-benchmark-self-test-circularity.md) 和 [WorkBuddy A/B 警告](./benchmark/2026-06-23-workbuddy-ab.md)）。
+> **v0.81-v0.83 历史数据**：五组 A/B。约束层在 WorkBuddy 对话模式仅 1/10 明确增量，CLI 一击 0/16 全失效（见 [反案例 002](./anti-cases/002-cli-one-shot-ineffective.md)）。独立测试者代码重构 A/B 测出约束底座增量：纪律性 8→10（+2），首次通过率 60%→100%（+40%），但存在知识传递效应未排除的方法论局限（见 [反案例 001](./anti-cases/001-benchmark-self-test-circularity.md) 和 WorkBuddy A/B 实验记录（已归档））。
 
 ---
 
