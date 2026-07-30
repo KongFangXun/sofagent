@@ -148,63 +148,39 @@ sofagent-audit --doctor
 - **质量审查**：Fresh-Eyes 双盲审查进度 + stall 事件实时警告
 - **最近变更**：workspace 文件变动摘要
 
-#### 启动方式
-
-**方式 1：直接用源码路径（无需安装）**
+#### 启动
 
 ```bash
-bash tools/sofagent-dashboard.sh           # 单次查看
-bash tools/sofagent-dashboard.sh --watch   # 2s 自动刷新
+sofagent-dashboard           # 跑一次看当前状态
+sofagent-dashboard --watch   # 2s 自动刷新（看护审查时用）
 ```
 
-**方式 2：创建软链 + 加入 PATH（推荐，一劳永逸）**
+> 💡 `bash install.sh` 会自动配置 PATH。如果找不到命令，见下方展开。
+
+<details>
+<summary>找不到命令？手动配置 PATH</summary>
 
 ```bash
-# 1. 创建软链
 mkdir -p ~/.sofagent/bin
-ln -sf /绝对路径/sofagent/tools/sofagent-dashboard.sh ~/.sofagent/bin/sofagent-dashboard
-chmod +x ~/.sofagent/bin/sofagent-dashboard
-
-# 2. 加入 PATH（写入 shell 配置文件）
-echo 'export PATH="$HOME/.sofagent/bin:$PATH"' >> ~/.zshrc   # macOS/zsh
-echo 'export PATH="$HOME/.sofagent/bin:$PATH"' >> ~/.bashrc  # Linux/bash
+ln -sf /你的sofagent路径/tools/sofagent-dashboard.sh ~/.sofagent/bin/sofagent-dashboard
+echo 'export PATH="$HOME/.sofagent/bin:$PATH"' >> ~/.zshrc   # macOS
+echo 'export PATH="$HOME/.sofagent/bin:$PATH"' >> ~/.bashrc  # Linux
 source ~/.zshrc  # 或 source ~/.bashrc
-
-# 3. 之后直接用短命令
-sofagent-dashboard
 ```
 
-> 💡 `bash install.sh` 安装时会自动完成上述步骤。如果安装后找不到命令，检查 `~/.sofagent/bin` 是否在 PATH 中。
+或直接跑源码：`bash tools/sofagent-dashboard.sh`
 
-**方式 3：创建别名（喜欢简短命令的用户）**
-
-```bash
-echo 'alias dashboard="~/.sofagent/bin/sofagent-dashboard"' >> ~/.zshrc
-source ~/.zshrc
-# 之后用：dashboard
-```
+</details>
 
 #### 运行模式
 
-| 命令 | 说明 | 适用场景 |
-|------|------|---------|
-| `sofagent-dashboard` | 跑一次输出当前状态 | 看一眼就走 |
-| `sofagent-dashboard --watch` | 每 2 秒自动刷新 | 看护 FORGE 审查、监控 stall |
-| `sofagent-dashboard --technical` | 状态词用英文技术术语 | 开发者调试 |
-| `sofagent-dashboard --watch --technical` | 组合使用 | 开发者实时监控 |
+| 命令 | 说明 |
+|------|------|
+| `sofagent-dashboard` | 跑一次看当前状态 |
+| `sofagent-dashboard --watch` | 2s 刷新，看护审查用 |
+| `sofagent-dashboard --technical` | 状态词用英文术语（开发者用） |
 
-#### 前置依赖
-
-Dashboard 需要 `jq`（JSON 处理工具）：
-
-```bash
-# macOS
-brew install jq
-
-# Linux
-sudo apt install jq    # Debian/Ubuntu
-sudo yum install jq    # CentOS/RHEL
-```
+> 前置依赖：需要 `jq`（`brew install jq` / `apt install jq`）
 
 ### 数据主权审计：你的数据安全不安全，看得见
 
