@@ -83,7 +83,9 @@ while IFS= read -r pkg_dir; do
   # 在包目录内跑该包的 test script（通常与 npm test --workspaces 同源）
   out=$(cd "$pkg_dir" && npm test 2>&1) || true
   # 取该包最后的 Tests 汇总行（vitest 每包仅一行 Tests 汇总，无跨包 grand-total）
-  line=$(echo "$out" | grep -E '^\s*Tests\s+' | tail -1)
+  # v1.2.3 修复：CI 环境（GitHub Actions）vitest 即使在非 TTY 下也输出 ANSI 颜色码，
+  # 行首 \033[2m 导致 ^\s*Tests 永远不匹配。先 strip ANSI 再 grep。
+  line=$(echo "$out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^\s*Tests\s+' | tail -1)
   if [ -z "$line" ]; then
     [ "$QUIET" = false ] && echo -e "  ${YELLOW}⚠${NC} ${pkg_name}: 无 Tests 输出（跳过）"
     continue
