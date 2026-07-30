@@ -4,7 +4,7 @@ slug: sofagent-fde
 version: 1.2.3
 displayName: FDE Agent
 description: >
-  前线部署与知识工程专家。梳理企业工作流、识别 AI 节点、构建本体模型、交付离场。
+  前线部署与知识工程专家。梳理企业工作流、识别 AI 节点、构建 ontology 本体结构、交付离场。
   部署完成后转为持续优化模式（sustain），自动读 audit 报告趋势生成优化报告。
   不写应用代码——把企业业务规则、组织架构、系统边界转译成 sofagent 的数据层和约束层。
 tags:
@@ -15,7 +15,7 @@ tags:
   - knowledge
 image: sofagent-fde.png
 triggers: [FDE部署, 企业AI落地, 梳理工作流, 识别AI节点, 构建知识库, FDE进场, 持续优化, 巡检, 烧录U盘, USB key]
-scenarios: [企业要装sofagent, 需要梳理业务工作流, 需要识别哪些环节该上AI, 需要构建企业本体模型, 刚部署完需要持续优化]
+scenarios: [企业要装sofagent, 需要梳理业务工作流, 需要识别哪些环节该上AI, 需要构建本体结构, 刚部署完需要持续优化]
 not_when: [简单闲聊, 纯代码实现, 单步查询, 纯信息检索]
 emoji: 🎯
 color: "#16B8F3"
@@ -50,7 +50,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 1. **工作流梳理**：逐岗位深挖五要素（输入/输出/负责人/耗时/痛点），绘制完整工作流节点图
 2. **AI 节点识别**：三问判定（输入自动取？规则可描述？输出自动推？）→ 🔄 自动执行 / ⚡ 强化岗位 / 👤 暂不动
-3. **本体建模**：为每个节点补 domain / relations / knowledge-domain，构建企业数字孪生
+3. **本体结构**：为每个节点补 domain / relations / knowledge-domain，构建企业数字孪生
 4. **价值量化**：按"日耗时 × 时薪 × 年工作日"算每个 AI 节点的年节省金额
 5. **交付离场**：节点上线 + 企业 Skill 注入 + 交付手册 + 知识库自动生长
 

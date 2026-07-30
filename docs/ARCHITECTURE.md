@@ -35,7 +35,7 @@ graph TD
 
 | 层级 | 定义 | sofagent 对应 | 例子 |
 |------|------|--------------|------|
-| **Graph** | 企业全部业务节点和关联关系的全局拓扑 | FDE §5 本体模型（objects / relations / knowledge-domain） | objects.yml + relations |
+| **Graph** | 企业全部业务节点和关联关系的全局拓扑 | FDE §5 本体结构（objects / relations / knowledge-domain） | objects.yml + relations |
 | **Workflow** | Graph 上的一条完整业务链路——从输入到产出 | FDE §4 梳理出的工作流 | 采购审批流、财报生成流 |
 | **Loop** | Workflow 中的一个闭环执行单元，由 Goal 驱动 | FORGE loop / AI 节点跑起来 | fresh-eyes-loop、release-gate-loop |
 | **Goal** | Loop 的退出条件——达成即停，偏离即纠 | exit-gate 判定 | "所有 P0 修复完成" "审查全绿" |
@@ -77,7 +77,7 @@ graph TD
 | Harness | Harness 中间层 | 挂在 Agent 之上的行为约束层（约束底座）：约束 + 审计 + 回溯 + 迭代 |
 | Gateway | Gateway | 企业级 AI 统一入口（OpenClaw/WorkBuddy 等大厂平台），sofagent 不替代它 |
 | Sub Agent | Sub Agent | 用 LangGraph createReactAgent 搭的专有执行节点 |
-| Ontology | 本体模型 | 企业的业务世界模型，FDE 帮你搭建并持续维护 |
+| Ontology | 本体结构 | 企业的业务世界模型，FDE 帮你搭建并持续维护 |
 | River | FDE 交接清单 | FDE 离场时交接的产物集合：私有化评估 / Ontology 说明书 / 持续巡检配置 |
 | SMB | 中小企业（Small & Medium Business） | 没有专职 AI 部署团队、想低成本具备 FDE 能力的企业 |
 | OPC | 一人公司（One Person Company） | 个人或小团队，用自己的 Agent + 模型自主完成部署，不愿被单一厂商锁定 |
@@ -736,7 +736,7 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 ### 对外核心能力（FDE Agent 给用户什么）
 
-✅ 已发布可用（v1.2.0 - v1.2.3）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 21 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关（Claude Code / Codex / Cursor / WorkBuddy / OpenClaw 即挂即用）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 企业本体模型 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
+✅ 已发布可用（v1.2.0 - v1.2.3）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 21 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关（Claude Code / Codex / Cursor / WorkBuddy / OpenClaw 即挂即用）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 本体结构 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
 
 > **v1.2.0 审计链安全加固**（BugFix 批次）：`--doctor` hash chain 三态判定（ok / tampered / unverifiable，`checkHistoryChainDetailed`）· HMAC key ≥16 字节强校验（`validateHmacKey`）· HMAC 签名改为基于脱敏记录（先 sanitize 再签名，写读一致）· config 可选签名校验（`verifyConfigSignature` + `signConfig` CLI）· CLI 版本一致性自检（`checkVersionConsistency`）。详见 `engine/core/src/audit-history.ts`、`engine/core/src/config-loader.ts`。
 
@@ -791,7 +791,7 @@ Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2
 
 ### Ontology = 共同理解层 / 翻译层（A1）
 
-Ontology 的本质是「**翻译而非统一**」——在多个异构 Agent / 系统之上建立共同参照系，让彼此能对话，同时保留各系统内部语境独立；它 ≠ 数据模型 / ≠ ER 图 / ≠ 知识图谱（知识图谱只能查不能操作，Ontology 还能在对象上**触发操作**）。核心关键词是「操作」而非「数据」。保留现有「本体即认知底座」比喻，新增：「本体 = 运行时语义层」——它是在 Agent 跑任务时实时提供「谁依赖谁、谁能看什么、能触发什么」的语义上下文，是介于模型与业务系统之间的**活的中间层**。
+Ontology 的本质是「**翻译而非统一**」——在多个异构 Agent / 系统之上建立共同参照系，让彼此能对话，同时保留各系统内部语境独立；它 ≠ 数据模型 / ≠ ER 图 / ≠ 知识图谱（知识图谱只能查不能操作，Ontology 还能在对象上**触发操作**）。核心关键词是「操作」而非「数据」。保留现有「本体即本体结构」比喻，新增：「本体 = 运行时语义层」——它是在 Agent 跑任务时实时提供「谁依赖谁、谁能看什么、能触发什么」的语义上下文，是介于模型与业务系统之间的**活的中间层**。
 
 > 📖 [行业笔记]
 
@@ -884,7 +884,7 @@ sofagent 自有三层：
 | 层 | 是什么 | 行业五层中对应 |
 |----|--------|----------------|
 | **约束底座（Harness / Constraint Base）** | 四层加载链（SKILL.md→fde.md→think.md→knowledge/）+ 审计 / 回溯能力（本质：git snapshot） | 配置 + 指令 + 校验 |
-| **知识层（Knowledge / Ontology）** | knowledge/ + 本体模型（FDE 在客户侧交付的业务资产，见 FDE/FDE.md 知识层归属） | 知识 |
+| **知识层（Knowledge / Ontology）** | knowledge/ + 本体结构（FDE 在客户侧交付的业务资产，见 FDE/FDE.md 知识层归属） | 知识 |
 | **编排层（Orchestration / Loop）** | 编排引擎 + 进化引擎 + 外层 FORGE | 编排 |
 
 逐层映射：
@@ -892,7 +892,7 @@ sofagent 自有三层：
 | 行业五层 | 数据流口诀 | 落到 sofagent 哪一层 / 哪部分 |
 |----------|------------|-------------------------------|
 | 配置 Config（决定用什么） | 配置决定用什么 | 约束底座 · `.sofagent/config.yml` + SKILL.md / fde.md 的配置约束 |
-| 知识 Knowledge（知道什么） | 知识知道什么 | 知识层 · knowledge/ + 本体模型（FDE 交付，Harness 只挂载 / 校验） |
+| 知识 Knowledge（知道什么） | 知识知道什么 | 知识层 · knowledge/ + 本体结构（FDE 交付，Harness 只挂载 / 校验） |
 | 指令 Instruction（怎么说） | 指令怎么说 | 约束底座 · 四层加载链即「指令」载体（prompt 注入 Agent 上下文） |
 | 校验 Validation（对不对） | 校验对不对 | 约束底座 · 审计引擎 + 约束规则（硬约束，AI 绕不过） |
 | 编排 Orchestration（先干什么后干什么） | 编排先干什么后干什么 | 编排层 · 编排引擎 + 进化引擎 + FORGE |
