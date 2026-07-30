@@ -131,7 +131,7 @@ export function syncPersona(dataDir?: string): { synced: boolean; sourcePath?: s
     try {
       const targetDir = join(targetPath, '..');
       if (!existsSync(targetDir)) {
-        mkdirSync(targetDir, { recursive: true });
+        mkdirSync(targetDir, { recursive: true, mode: 0o700 });
       }
       writeFileSync(targetPath, content, 'utf-8');
     } catch (err) {

@@ -27,7 +27,7 @@
 
 | # | 局限 | 详见 |
 |:--:|------|------|
-| 1 | **audit ↔ daemon 循环依赖**——两个包互相引用（`optionalDependencies` + `dependencies`），违反四层单向依赖原则。npm install 不阻塞，但逻辑上存在张力。 | [八、v1.1.3 新增局限 → audit ↔ daemon 循环依赖](#八v113-新增局限) |
+| 1 | ~~**audit ↔ daemon 循环依赖**~~ —— **已于 v1.2.3 消除**：snapshot helpers 从 `@sofagent/daemon` 迁移到 `@sofagent/core`，`audit` 不再依赖 `daemon`（含 `optionalDependencies`），依赖图恢复为单向 `daemon → audit → core`。 | [八、v1.1.3 新增局限 → audit ↔ daemon 循环依赖（v1.2.3 已解决）](#八v113-新增局限) |
 | 2 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
 | 3 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
 | 4 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排引擎稳定性](#五审计与工程局限) |
@@ -425,14 +425,15 @@ Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown fr
 
 ## 八、包依赖与编排局限（v1.1.3 起）
 
-### audit ↔ daemon 循环依赖
+### audit ↔ daemon 循环依赖（v1.2.3 已解决）
 
-`@sofagent/audit` 的 `optionalDependencies` 包含 `@sofagent/daemon`，而 `@sofagent/daemon` 的 `dependencies` 包含 `@sofagent/audit`，形成逻辑上的循环依赖。虽然 optional dependency 不会强制安装，但分层架构上存在张力：daemon（运行层）依赖 audit（纯审计层），违反了"四层单向依赖"的架构原则。
+> **状态：已解决（v1.2.3）**。历史上 `@sofagent/audit` 的 `optionalDependencies` 曾包含 `@sofagent/daemon`（snapshot helpers），形成逻辑循环依赖。
 
-**影响**：npm install 不阻塞（optional 不强制），但逻辑上两个包互相引用，单独修改一方时需验证另一方不受影响。
+**v1.2.3 修复**：snapshot helpers（`restoreSnapshot` / `listAllSnapshots`）从 `@sofagent/daemon` 迁移到 `@sofagent/core`，`audit` 包的 `package.json` 不再含任何 `daemon` 引用（含 `optionalDependencies`），源码中仅保留 `types/daemon.d.ts` 类型 shim（无 runtime import）。依赖图恢复为单向：`daemon → audit → core`，符合四层单向依赖原则。
 
-**计划**：v1.3.0 重构为单向依赖（抽取共享类型到 @sofagent/core）。
-当前版本 npm 可正常解析（workspace 协议），不会造成运行时错误，但会增加构建复杂度。
+**验证**：`grep -rn "@sofagent/daemon" engine/audit/package.json` 无命中；`grep -rn "from '@sofagent/daemon'" engine/audit/src/` 无命中（仅 `declare module` 类型声明）。
+
+**历史记录**：此局限在 v1.1.3 引入（audit 需调用 daemon 的 snapshot 能力），v1.2.0 物理重构时已规划迁移，v1.2.3 随编排隔离底座一并完成。
 
 ### daemon 通知机制为轻量版
 

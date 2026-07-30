@@ -168,7 +168,7 @@ function main(): void {
   }
 
   const dataBase = getDataBase();
-  mkdirSync(dataBase, { recursive: true });
+  mkdirSync(dataBase, { recursive: true, mode: 0o700 });
 
   if (summaryOnly) {
     const summary = extractSummary(dataBase);

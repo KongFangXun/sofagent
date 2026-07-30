@@ -77,7 +77,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 
 | 项 | 语义 |
 |------|------|
-| **三条配对路径** | A：6 位码 + 公钥指纹 y/N 人工确认（防中间人）· B：`SOFAGENT_FEDERATION_TOKEN` 环境变量带外交换 + token-HMAC 公钥认证（CI/无人值守）· C：复用 v1.1.5 federation.json + HMAC `.sig` sidecar 验签（timingSafeEqual 恒定时间比较，缺失/篡改拒绝） |
+| **三条配对路径** | A：6 位码 + 公钥指纹 y/N 人工确认（防中间人）· B：`~/.sofagent/federation.token` 文件带外交换（权限 600，v1.2.3 起，原环境变量方式已废弃）+ token-HMAC 公钥认证（CI/无人值守）· C：复用 v1.1.5 federation.json + HMAC `.sig` sidecar 验签（timingSafeEqual 恒定时间比较，缺失/篡改拒绝） |
 | **key 存储** | ECDH(prime256v1) + HKDF-SHA256 派生的 32 字节 AES key **只存内存**，不落盘明文；持久化（OS keychain / age）留 v1.1.9 |
 | **IV/nonce 管理** | 每条消息随机 12 字节 IV，绝不复用；GCM 16 字节认证标签校验失败即拒绝 |
 | **密钥轮换** | 24h 过渡窗口内旧 key 只解不加，过窗口销毁强制重新协商 |
