@@ -87,7 +87,7 @@ export function renderReport(
 
   lines.push('---');
   lines.push('');
-  lines.push('*本报告由 sofagent 数据主权审计引擎自动生成（v1.2.2 · P0）。*');
+  lines.push('*本报告由 sofagent 数据主权审计引擎自动生成（v1.2.3 · P0）。*');
   return lines.join('\n');
 }
 

@@ -1,6 +1,6 @@
 // ============================================================
 // data-paths.ts · 数据目录路径单一事实来源（SSOT）
-// v1.2.2 安装路径分离：代码仓库与运行时数据物理分离
+// v1.2.3 安装路径分离：代码仓库与运行时数据物理分离
 // ============================================================
 //
 // 核心原则：
@@ -39,7 +39,7 @@ export const AUDIT_DIR = path.join(DATA_DIR, 'audit');
 export const AUDIT_HISTORY = path.join(AUDIT_DIR, 'history.jsonl');
 export const AUDIT_SESSION_REPORT = path.join(AUDIT_DIR, 'session-report.json');
 
-// ── 数据主权审计（v1.2.2 P0） ──
+// ── 数据主权审计（v1.2.3 P0） ──
 // 与 history.jsonl 同在 audit/ 父目录下，Dashboard jq 单目录扫描（架构决策：对齐 dev-prompt L40）
 export const SOVEREIGNTY_DIR = path.join(AUDIT_DIR, 'data-sovereignty');
 
@@ -92,7 +92,7 @@ export const SHADOW_GIT_DIR = path.join(INTERNAL_DIR, '.git-shadow');
 // CONFIG_FILE 保留为常量（基于 process.cwd()），向后兼容已有调用方。
 // 但需要 cwd 参数化的场景应使用 getConfigFile(cwd) 函数——避免硬编码 cwd 导致
 // 测试隔离失败（loadConfig(tmpDir) 需要读 tmpDir 下的 config.yml）。
-// TODO(v1.3.0): monorepo 场景下 process.cwd() 可能不是项目根（如 git commit 在子目录执行时），
+// TODO(v1.4.0): monorepo 场景下 process.cwd() 可能不是项目根（如 git commit 在子目录执行时），
 // 导致读取错误配置。届时应引入 git 仓库根查找逻辑（findGitRoot），或改为向上遍历查找
 // .sofagent/config.yml 直到找到或到达文件系统根。
 // 当前权宜之计：用户可在 .bashrc 中 cd 到项目根再执行 git commit，或使用
@@ -118,7 +118,7 @@ export const CONFIG_FILE = path.join(process.cwd(), '.sofagent', 'config.yml');
 /**
  * 解析安装根目录（参数化版本，测试隔离用）
  *
- * v1.2.2：每次调用实时读 process.env.SOFAGENT_HOME（而非模块加载时缓存），
+ * v1.2.3：每次调用实时读 process.env.SOFAGENT_HOME（而非模块加载时缓存），
  * 使测试可在 beforeEach 中动态设置临时 SOFAGENT_HOME 做隔离。
  * 模块级常量（HOME_DIR / DATA_DIR 等）仍基于加载时快照——那些用于安装时确定的路径。
  */

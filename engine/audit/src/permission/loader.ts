@@ -14,7 +14,7 @@ function loadConfig(filePath: string): PermissionConfig | null {
 }
 
 export function loadPermission(projectDir: string): MergedPermission {
-  const sofData = process.env.SOFAGENT_DATA || path.join(projectDir, '.sofagent');
+  const sofData = process.env.SOFAGENT_DATA || path.join(projectDir, '.sofagent', 'data');
   const globalPath = path.join(sofData, 'permission.json');
   const localPath = path.join(projectDir, '.sofagent', 'permission.local.json');
 

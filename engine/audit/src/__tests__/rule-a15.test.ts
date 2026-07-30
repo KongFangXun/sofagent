@@ -28,12 +28,12 @@ describe('A15 不盲动', () => {
   let savedDataDir: string | undefined;
 
   beforeEach(() => {
-    if (existsSync(testDir)) rmSync(testDir, { recursive: true });
+    try { if (existsSync(testDir)) rmSync(testDir, { recursive: true }); } catch {}
     savedDataDir = process.env.SOFAGENT_DATA;
   });
 
   afterEach(() => {
-    if (existsSync(testDir)) rmSync(testDir, { recursive: true });
+    try { if (existsSync(testDir)) rmSync(testDir, { recursive: true }); } catch {}
     if (savedDataDir !== undefined) {
       process.env.SOFAGENT_DATA = savedDataDir;
     } else {

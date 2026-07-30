@@ -13,6 +13,12 @@
   <em>让中小企业拥有把 AI 变成日常工作的能力。</em>
 </p>
 
+> **sofagent 是一个 AI Agent 行为审计引擎**——它像 git hook 一样工作，
+> 在每次 AI 生成的 commit 进入仓库之前检查 Agent 是否越界、泄漏密钥或盲目修改。
+> 附带 FDE 方法论（企业 AI 治理咨询）和 FORGE（自迭代编排工具）两个独立产品。
+>
+> **FDE Agent** = 进场梳理工作流 → 在 AI 开发节点上部署审计引擎 → 离场后治理规则持续生效。
+
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
@@ -34,9 +40,23 @@
 
 ```bash
 bash install.sh          # 安装
-source ~/.bashrc         # 重载 shell 配置（或 source ~/.zshrc / 重启终端）
+# 自动检测你的 shell 配置文件
+if [ -n "$ZSH_VERSION" ]; then
+  source ~/.zshrc
+elif [ -n "$BASH_VERSION" ]; then
+  source ~/.bashrc
+fi
+> 💡 如果 `sofagent-audit` 仍然提示 command not found，请**新开一个终端窗口**再试。
+# 或者直接重新打开终端
 sofagent-audit --init    # 初始化（装 git hook）
+# 验证环境是否就绪（可选但推荐）
+sofagent-audit --doctor
 ```
+
+> 💡 **不需要装引擎？** 如果你只需要 FDE 方法论（给 Agent 装治理 Skill），
+> 直接看 [FDE/README.md](./FDE/README.md)——零依赖，不需要 Node.js。
+
+> 💡 **下一步**：安装完成后，运行 `sofagent-audit --doctor` 检查环境状态，或查看 [完整使用指南 →](./docs/WIKI.md)
 
 ---
 
@@ -44,20 +64,25 @@ sofagent-audit --init    # 初始化（装 git hook）
 
 企业不缺大模型与 Agent——缺的是把 AI 变成日常工作的能力。
 
-**sofagent 做的就是这件事。** 它是一个 FDE Agent——进场梳理你的工作流，把能自动化的环节变成 AI 节点，部署到设备上，然后离场。离场后，模型能力内化不了的控制层持续在跑——审计链、防篡改、合规留痕——你留下的是一套能持续维护的 AI 化资产。
-
-大厂造了江（LLM 是水），但企业不敢直接舀。sofagent 做的是堤坝 + 自来水厂 + 管网 + 水龙头——把原水变成直饮水。完整类比见 [ARCHITECTURE](./docs/ARCHITECTURE.md)。
+**sofagent 做的就是这件事。** 它是一个 FDE Agent——进场梳理你的工作流，把能自动化的环节变成 AI 节点，部署到设备上，然后离场。离场后，模型能力内化不了的控制层持续在跑——审计链、防篡改、合规留痕——你留下的是一套能持续维护的 AI 化资产。完整类比见 [ARCHITECTURE](./docs/ARCHITECTURE.md)。
 
 ### 为什么不是现有工具
 
 | 工具 | 它们管什么 | sofagent 管什么 |
 |------|:--------|:----------------|
 | pre-commit / husky | 代码质量（lint / format）| **Agent 行为**（密钥泄漏 / 越界编辑 / 注入攻击 / 盲改）|
-| detect-secrets / gitleaks | 密钥扫描 ✅ 全量 git 历史扫描 + 100+ 内置秘钥模式 | 密钥扫描是 gitleaks 的核心场景（✅ 扫描整个 git 历史、✅ 支持 100+ 种内置秘钥模式）；sofagent A2 覆盖常见 API key 模式（⚠️ 仅增量扫描），同时增加 21 条 Agent 行为规则 |
+| detect-secrets / gitleaks | 密钥扫描 ✅ 全量历史扫描 + pre-commit 模式 + 100+ 内置秘钥模式 | 密钥扫描是 gitleaks 的核心场景（✅ 全量历史扫描、✅ pre-commit hook 模式、✅ 100+ 种内置秘钥模式）；sofagent A2 覆盖常见 API key 模式（⚠️ 仅增量扫描，差异化价值在于 **Agent 行为审计**而非密钥扫描覆盖率），同时增加 21 条 Agent 行为规则 |
 | Cursor Rules / Claude hooks | 单平台 IDE 约束 | 审计层全平台可用（git diff）；约束层按平台分层（OpenClaw 最深 → WorkBuddy SKILL → 其他种子指令） |
 | Agent 平台（OpenClaw 等）| Agent 调度——「会不会做」| Agent 治理——「能不能每次都做对」|
 
 现有工具查"代码写得对不对"；sofagent 查"Agent 行为对不对"。这些是 LLM Agent 特有的失败模式，通用工具不覆盖。
+
+### 两个入口
+
+| 如果你… | 走这里 |
+|---------|--------|
+| 是开发者，想给团队装审计引擎 | → 继续往下看，30 秒快速开始 |
+| 是企业用户，想用 FDE 方法论管 Agent | → [FDE Agent 入口](./FDE/README.md)（零代码、零依赖） |
 
 <details>
 <summary>📦 FDE 离场后，企业留下五样东西</summary>
@@ -83,7 +108,7 @@ sofagent-audit --init    # 初始化（装 git hook）
 
 **Agent 越界了怎么办？**
 21 条规则（13 默认 + 8 扩展）自动审计每次变更——越界编辑、密钥泄漏、注入攻击，commit 时自动拦截。
-> 13 条默认规则中 A12/A13 为预留编号，当前活跃默认规则 11 条。8 条扩展规则（E1-E4 等）全部活跃。合计 21 条规则（含预留共 23 个编号）。
+> **21 条规则（13 条默认规则 + 8 条扩展规则）**，覆盖敏感文件、密钥泄漏、注入攻击、越界修改等场景。
 > `git commit --no-verify` 可绕过 hook，是已知架构限制。企业场景建议配合 CI 侧 `sofagent-audit --diff` 兜底，详见 [LIMITATIONS](./LIMITATIONS.md)。13 条默认规则装上就生效，8 条扩展规则按需开启，详见下方规则表。
 
 **出了事能回滚吗？**
@@ -137,15 +162,13 @@ sofagent-dashboard --watch   # 2s 自动刷新（实时监控）
 
 ---
 
-## 三种部署方式，覆盖所有场景
+## 三种安装方式，适配所有场景
 
 | 方式 | 谁用 | 怎么用 |
 |------|------|--------|
-| 💻 **装电脑** | 技术人员 / 开发者 | `bash install.sh` 正常安装 |
-| 🔌 **U 盘** | 普通员工（SMB 核心场景）| 插上即用，拔掉零残留，不需要安装、不需要专业知识 🔶 规划中 |
-| 🖥️ **无头设备** | 服务器 / 工控机（OPC 场景）| 插 U 盘别拔，控制层在联邦里常驻 |
-
-> 💡 **USB 一键烧录**：搭好 workflow → 烧一批 U 盘 → 发给团队。企业叙事：「买 U 盘 → 下载 sofagent → 写盘 → 发给员工」。详见 [FDE/FDE.md](./FDE/FDE.md)。
+| 🚀 **npx 零安装** | 快速体验 / CI 环境 | `npx @sofagent/audit --init`（即装即用，不需下载） |
+| 💻 **install.sh 全量安装** | 技术人员 / 开发者 | `bash install.sh`（底座 + FDE Agent） |
+| ⚡ **install.sh 最小安装** | 开发者 / 企业 IT | `bash install.sh --base-only`（仅底座引擎） |
 
 ---
 
@@ -159,7 +182,7 @@ bash install.sh
 ```
 
 > [!NOTE]
-> 需要 Node.js ≥ 18 + bash + git。macOS / Linux 全功能，Windows 实验性。
+> 需要 Node.js ≥ 18 + bash + git。macOS / Linux 全功能，Windows 实验性。Dashboard 依赖 jq（macOS 请 `brew install jq`，Linux 请 `apt install jq` / `yum install jq`）。
 
 <details>
 <summary>🚀 装完三步体验</summary>
@@ -190,6 +213,8 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 
 > ⚠️ **关于 commit 拦截**：`git commit --no-verify` 可以绕过本地 hook。sofagent 的设计初衷是"诚实 Agent 的护栏"而非"恶意攻击者的防线"。企业高安全场景建议在 CI/CD pipeline 侧再加一道 `sofagent-audit --diff` 审计（hook 可绕，CI 不可绕）。详见 [LIMITATIONS](./LIMITATIONS.md) §一·已知架构限制。
 
+> **推荐**：新用户使用 `bash install.sh`（一键安装全套）。高级用户/CI 环境使用 `npm install -g @sofagent/audit`（仅安装审计引擎）。
+
 **两种安装模式**：
 
 | 模式 | 命令 | 装什么 |
@@ -218,6 +243,25 @@ npm ls -g --depth=0 2>/dev/null | grep '@sofagent/' | awk '{print $2}' | xargs n
 rm -f .git/hooks/commit-msg .git/hooks/post-commit
 ```
 </details>
+
+⚠️ **数据存储说明**：sofagent 当前版本将审计数据以 Markdown 明文存储在 `~/.sofagent/data/`。内置加密（age）计划在 v1.3.0 引入。在生产环境使用前，建议：
+- macOS：将 `~/.sofagent/` 放在 APFS 加密卷中
+- Linux：使用 LUKS 加密分区挂载 `~/.sofagent/`
+- 详见 [SECURITY.md](./SECURITY.md#已知风险明文存储)
+
+---
+
+### 运行测试
+
+```bash
+# 全量测试（所有 workspace + Dashboard）
+npm test
+
+# 仅核心引擎测试
+npm test --workspace=engine/audit
+
+# 预期：1207 tests passed（少量 safe-delete 相关测试可能在特定环境预期失败）
+```
 
 ---
 
@@ -264,7 +308,7 @@ flowchart LR
 |:------|:--------|:--:|
 | 🧭 约束底座 | 开工前规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
 | ⚙️ 编排引擎 | 多 Agent 协作 + 任务拆解 | 🔶 部分 |
-| 🔍 审计引擎 | 21 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计引擎零 token**（纯 git-diff 规则零 token，4 条混合规则需 Agent 日志）——不调用 LLM（0 token），不消耗任何 LLM 额度 | ✅ 稳定 |
+| 🔍 审计引擎 | 21 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计引擎核心规则零 token**（16 条纯 git-diff 规则不调用 LLM + 1 条文件系统监控，4 条混合规则需 Agent 日志）——不调用 LLM（0 token），不消耗任何 LLM 额度 | ✅ 稳定 |
 | 🔄 回溯引擎 | 每次审计后自动 git snapshot，违规一键回滚 | ✅ 稳定 |
 | 🧬 进化引擎 | FDE 周度巡检审计趋势 + 反思日志 | ⚠️ 实验性 |
 

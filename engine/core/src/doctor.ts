@@ -89,11 +89,12 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
           }
         }
       }
-    } catch {
-      fail('.sofagent/config.yml 读取失败');
+    } catch (err) {
+      fail(`.sofagent/config.yml 读取失败: ${err instanceof Error ? err.message : String(err)}`);
     }
   } else {
-    warn('.sofagent/config.yml 不存在（将使用默认配置）');
+    warn('.sofagent/config.yml 不存在（将使用默认配置，功能正常）');
+    configOk = true;  // 新装场景，使用默认配置，功能正常
   }
 
   // 3. 数据目录结构（v1.2.1：用户可见数据迁移到 data/，引擎内部状态留在 .sofagent/）
@@ -127,8 +128,8 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
         try {
           const files = readdirSync(dirPath).filter((f) => !f.startsWith('.'));
           ok(`${rootLabel}/${dir}/ (${files.length} 文件)`);
-        } catch {
-          warn(`${rootLabel}/${dir}/ (无法读取)`);
+        } catch (err) {
+          warn(`${rootLabel}/${dir}/ (无法读取): ${err instanceof Error ? err.message : String(err)}`);
           dirsOk = false;
         }
       }
@@ -160,8 +161,8 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
         } else {
           warn('commit-msg hook 存在但不包含 sofagent 标识');
         }
-      } catch {
-        warn('commit-msg hook 存在但无法读取');
+      } catch (err) {
+        warn(`commit-msg hook 存在但无法读取: ${err instanceof Error ? err.message : String(err)}`);
       }
     } else {
       info('commit-msg hook 未安装（运行 sofagent-audit --install-hook 安装）');
@@ -174,8 +175,8 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     } else {
       info('post-commit hook 未安装（运行 sofagent-audit --init 自动安装）');
     }
-  } catch {
-    info('非 git 仓库，跳过 hook 检查');
+  } catch (err) {
+    info(`非 git 仓库，跳过 hook 检查（${err instanceof Error ? err.message : String(err)}）`);
   }
 
   // 5. 依赖检查
@@ -228,9 +229,14 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
       // ① 篡改检测（红）：确为伪造
       auditLogOk = false;
       fail(`审计日志 hash chain 断裂——检测到篡改痕迹（${result.detail ?? ''}），请检查 data/audit/history.jsonl`);
+      console.log(`
+     可能原因：
+     1. secret key 发生变更（如更换机器/重装系统）→ 运行 sofagent-audit --init --reset-chain
+     2. 审计日志文件损坏（并发写入冲突）→ 检查 ~/.sofagent/data/audit/history.jsonl 是否有损坏行
+     3. 审计日志确实被篡改 → 检查 ~/.sofagent/data/audit/history.jsonl 的修改时间`);
     } else {
       // ② 历史不可复验（黄）：key/环境漂移，非篡改——不报「链断裂/篡改」，不判失败
-      warn(`审计日志 hash chain 不可复验（黄色提示，非篡改）：${result.detail ?? ''}。如确为本人环境/密钥变更，可忽略；如非本人操作，请核查 ~/.sofagent-key 与运行环境`);
+      warn(`审计日志 hash chain 不可复验（黄色提示，非篡改）：${result.detail ?? ''}。这是由于 secret key 轮换或环境指纹漂移导致的预期断裂，非安全事件。如确为本人密钥变更，可忽略此警告；如需重置 hash chain，运行 sofagent-audit --init --reset-chain。如非本人操作，请核查 ~/.sofagent-key 与运行环境`);
     }
   } catch (chainErr) {
     // 链校验异常（极少）：不影响其余检查，但记录以便排查，

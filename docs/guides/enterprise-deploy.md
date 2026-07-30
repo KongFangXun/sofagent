@@ -133,3 +133,60 @@ jobs:
 ### 当前局限
 
 - 没有 org-level 自动推送机制，每个 repo 需独立 `--init`。企业版集中管控规划在 v2.x
+
+---
+
+## AD/LDAP 集成
+
+> 当前 sofagent 不直接支持 AD/LDAP 认证集成。
+
+- **现状**：sofagent 的用户身份基于本地 OS 用户（`~/.sofagent/` 目录权限 700），没有集中用户目录概念
+- **替代方案**：通过系统级 git hook 模板部署实现组织范围策略下发——将 `sofagent-audit --install-hook` 嵌入 git 模板目录（`git config --global init.templateDir`），新 clone 的仓库自动带 hook
+- **权限映射**：可通过组织级脚本控制哪些用户组有权修改 `.sofagent/config.yml`（文件 ACL：`chmod 640` + `chown :engineering`）
+- **路线图**：企业级 SSO/LDAP 集成规划在 v2.x，当前建议结合 OS 级权限 + git hook 模板实现等效控制
+
+## 审计日志对接
+
+sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，每行一个审计事件对象。
+
+### 日志格式（核心字段）
+
+```jsonl
+{"timestamp":"2026-07-30T10:00:00Z","rule":"A1","status":"PASS","file":"src/main.ts","detail":"no secret found"}
+{"timestamp":"2026-07-30T10:00:01Z","rule":"A3","status":"FAIL","file":"src/utils.ts","detail":"modified files outside scope"}
+```
+
+### SIEM 对接方案
+
+| 工具 | 接入方式 |
+|------|---------|
+| **ELK (Elasticsearch + Logstash + Kibana)** | Filebeat 配置 `input.path: /path/to/.sofagent/data/audit/history.jsonl`，Logstash 解析 JSONL 后索引到 Elasticsearch |
+| **Splunk** | Universal Forwarder 配置 monitor 监听 `history.jsonl`，自动解析结构化日志 |
+| **Grafana Loki** | Promtail 配置 scrape_config 指向 `history.jsonl`，label 按 `rule`/`status` 维度 |
+| **自家 SIEM** | `tail -f .sofagent/data/audit/history.jsonl | your-pipe` 实时消费 |
+
+> `--json` 输出模式可配合 jq 做实时过滤：`sofagent-audit --diff HEAD~1..HEAD --json | jq 'select(.status == "FAIL")'`
+
+## 联邦部署（多设备 Token 管理）
+
+当 sofagent 在多台设备上部署时，需统一管理联邦 token 和跨设备审计追溯。
+
+### Token 管理
+
+- **`SOFAGENT_FEDERATION_TOKEN`**：通过环境变量传递联邦身份，每台设备使用独立 token
+- **安全注意**：`ps e` 可读环境变量明文，建议在 CI/受控环境中使用。生产环境考虑通过密钥管理服务（Vault / AWS Secrets Manager）注入
+- **轮换策略**：定期更换 token，配合审计日志中 `federation_id` 字段追溯设备身份
+
+### 审计追溯
+
+- 每台设备的审计日志独立存储于本地 `data/audit/history.jsonl`
+- 集中查看：通过 rsync 等工具汇总各设备日志到中央节点，使用 `sofagent-audit --history --from-file <merged>` 聚合分析
+- **跨设备一致性**：每个事件包含 `hostname` 和 `federation_id` 字段，可按设备维度过滤
+
+### 安全建议
+
+| 措施 | 说明 |
+|------|------|
+| token 最小化 | 每台设备用独立 token，避免单 token 泄露影响全集群 |
+| 定期轮换 | 建议 90 天轮换一次，token 变更后更新各设备环境变量 |
+| 日志隔离 | 设备间 audit log 不自动同步——需通过中央管道做聚合，避免单设备被控后污染全量日志 |

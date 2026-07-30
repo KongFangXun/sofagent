@@ -34,6 +34,8 @@ jobs:
         run: npm run build
       - name: Test (workspace 全量)
         run: npm run test
+      - name: Check test count drift
+        run: npm run test:count
 
   cross-product-contract:
     # 验证主 install.sh 的 --base-only 契约不被破坏。

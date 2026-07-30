@@ -22,8 +22,8 @@
   "license": "MIT",
   "author": "KongFangXun",
   "dependencies": {
-    "@sofagent/audit": "1.2.2",
-    "@sofagent/core": "1.2.2",
+    "@sofagent/audit": "1.2.3",
+    "@sofagent/core": "1.2.3",
     "js-yaml": "^5.2.0"
   },
   "exports": {

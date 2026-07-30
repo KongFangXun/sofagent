@@ -2,6 +2,17 @@
 # ============================================================
 # sofagent-dashboard.sh · FDE Dashboard 终端三栏（v1.2.3）
 # ============================================================
+
+# 依赖检查
+if ! command -v jq &> /dev/null; then
+  echo "❌ sofagent Dashboard 需要 jq（JSON 处理工具）"
+  echo ""
+  echo "安装方法："
+  echo "  macOS:  brew install jq"
+  echo "  Ubuntu: sudo apt install jq"
+  echo "  CentOS: sudo yum install jq"
+  exit 1
+fi
 #
 # 零前端依赖：bash + jq + tput。图表从 JSONL 实时渲染，绝不读 MD 报告
 # （MD 是人读备份）。
@@ -70,6 +81,18 @@ REFRESH_INTERVAL=2
 if ! command -v jq >/dev/null 2>&1; then
   echo "错误：sofagent-dashboard 依赖 jq，请先安装（brew install jq / apt install jq）" >&2
   exit 1
+fi
+
+# 数据文件预检查：全新安装用户友好提示
+if [ ! -f "$DAEMON_HEALTH" ] && [ ! -f "$GRAPH_STATE" ]; then
+  echo ""
+  echo "  ⚠️  Dashboard 数据尚未生成。"
+  echo "  运行一次审计以生成 Dashboard 数据："
+  echo "    sofagent-audit --diff"
+  echo "  或启动 daemon 持续采集："
+  echo "    sofagent-daemon start"
+  echo ""
+  exit 0
 fi
 
 # ────────────────────────────────
@@ -636,7 +659,7 @@ graph_node_status_text() {
 
 render_graph_engine() {
   local w="$1"
-  emit "${C_BOLD}${C_BLUE}▌ Graph Engine（编排控制图）${C_RESET}"
+  emit "${C_BOLD}${C_BLUE}▌ 编排状态（工作流控制图）${C_RESET}"
 
   if [ ! -f "$GRAPH_STATE" ]; then
     emit "  ${C_DIM}控制图数据不可用（编排引擎未运行）${C_RESET}"
@@ -818,7 +841,7 @@ render_forge_agent_line() {
 
 render_forge_progress() {
   local w="$1"
-  emit "${C_BOLD}${C_MAGENTA}▌ FORGE 审查（fresh-eyes-loop）${C_RESET}"
+  emit "${C_BOLD}${C_MAGENTA}▌ 质量审查（Fresh-Eyes 双盲审查）${C_RESET}"
 
   if [ ! -f "$FORGE_LATEST" ]; then
     emit "  ${C_DIM}无正在运行的 FORGE 审查${C_RESET}"

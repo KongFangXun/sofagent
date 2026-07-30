@@ -30,7 +30,12 @@ import { checkRuleE4 } from './rule-e4-low-comment-ratio';
 /** 默认规则（A1-A11 + A18/A19）——始终生效
  * v1.1.5: A18 从 extendedRules 提升为 defaultRules
  *        评估：在 sofagent 自身仓库根目录跑 A18（排除 node_modules/.git/dist/.workbuddy/docs/archive）
- *        扫描 513 个文件 → 误报 0 个 < 阈值 3 → 提升为基线能力 */
+ *        扫描 513 个文件 → 误报 0 个 < 阈值 3 → 提升为基线能力
+ *
+ * @see engine/audit/src/rules/runner.ts  AUDIT_PRIORITY 分组——新增规则时需同时在两处注册：
+ *      ① 在此处的 defaultRules 或 extendedRules 数组中添加规则对象；
+ *      ② 在 runner.ts 的 AUDIT_PRIORITY 分组中添加对应的规则 ID。
+ *      两边顺序一致才能保证优先级分组正确。 */
 export const defaultRules: Rule[] = [
   { name: 'A1 不碰敏感', number: 1, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA1 },
   { name: 'A2 不泄密钥', number: 2, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA2 },
@@ -43,11 +48,16 @@ export const defaultRules: Rule[] = [
   { name: 'A9 不纳注入', number: 9, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA9 },
   { name: 'A10 不引毒源', number: 10, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA10 },
   { name: 'A11 不滥资源', number: 11, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA11 },
+  // A12-A17 为预留/扩展编号：A12（供应链安全）和 A13（文件权限）已永久跳号——v1.1.0 合并入 A11（不滥资源），语义有重叠但不完全等价，A12/A13 独立规则留待未来版本恢复；A14-A17 见 extendedRules
   { name: 'A18 垃圾文件', number: 18, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleA18 },
   { name: 'A19 msg 质量', number: 19, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA19 },
 ];
 
-/** 扩展规则（E1-E4 + A14-A17）——默认不生效，需 config.extendedRulesEnabled = true */
+/** 扩展规则（E1-E4 + A14-A17）——默认不生效，需 config.extendedRulesEnabled = true
+ *
+ * 编号规则：
+ * - A14-A17：行为类扩展规则（沿用 A 系列编号，number = 规则号，与 defaultRules 同 namespace 但 A12-A13 已永久跳号，合并入 A11（语义部分重叠但不完全等价））
+ * - E1-E4：引擎增强类扩展规则（E 系列，number = 200 + 序号，避免与 A 系列冲突） */
 export const extendedRules: Rule[] = [
   { name: 'E1 不落测试', number: 201, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE1 },
   { name: 'E2 不空标记', number: 202, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE2 },

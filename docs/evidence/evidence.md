@@ -1,6 +1,10 @@
 # Evidence.md — sofagent 真的有用吗？
 
-> 当前单元测试数：见 `tools/test-count.sh` 实跑（audit 包 / 全 workspace 汇总）。v1.2.1：audit 包 428、全 workspace 984（v1.2.1 acceptance-test 场景扩展 + 审查维度新增）。v1.2.0：audit 包 423、全 workspace 957（物理结构重构不增测试 + rules-engine 新增 28 + DP-2 signConfig 回归测试）。
+> ⚠️ **版本说明**：以下实验数据基于 v0.92-v0.93（prompt 前缀注入，4 条核心规则）。
+> 当前 v1.2.3 已升级为 SKILL 文件加载链 + 21 条规则体系。
+> v1.2.3 的对照实验数据待补充（计划在 v1.3.0 前完成）。
+
+> 当前单元测试数：见 `tools/test-count.sh` 实跑（audit 包 / 全 workspace 汇总）。v1.2.3：audit 包 498、全 workspace 1207 测试（共 1207，16 因 safe-delete 环境限制预期失败）。v1.2.1：audit 包 428、全 workspace 984（v1.2.1 acceptance-test 场景扩展 + 审查维度新增）。v1.2.0：audit 包 423、全 workspace 957（物理结构重构不增测试 + rules-engine 新增 28 + DP-2 signConfig 回归测试）。
 
 > ⚠️ **中文版为完整版（截至 Case 025，2026-07-06）。** 英文版同步至 Case 025。
 
@@ -20,7 +24,10 @@
 
 ## 实证仪表盘
 
-> 持续使用 >1 周的用户数：1 家。FDE 部署完成但尚未进入持续使用的：3 家。如果你在用——不是测试，是日常在用——请告诉我们用了多久。
+- **持续使用 >1 周的用户数**：1 家（截至 2026-07-30）
+- **FDE 部署完成但尚未进入持续使用的**：3 家
+> 此数据随每次发版更新。预计 v1.3.0（age 加密上线后）启动正式用户增长计划。
+> 如果你在用——不是测试，是日常在用——请告诉我们用了多久。
 >
 > （注：Case 016-019 原始部署报告/workflow.yaml 在部署企业内网，联系维护者获取。）
 

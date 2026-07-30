@@ -5,7 +5,7 @@
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
-## 现在在哪：v1.2.3（开发完成 · 待发版 · 2026-07-30）
+## 现在在哪：v1.2.3（已发版 · 2026-07-30）
 
 > **Fresh-Eyes 流程化 + Dashboard 产品化 + 编排隔离底座 + 数据主权审计 + 混合模型路由 + 异步 HITL（v1.2.3）**：
 > 4 维审计追踪（云端调用/本地执行/数据流向/任务类型）+ 敏感度路由（restricted→本地模型 / confidential→本地小模型，Ollama API）+
@@ -13,7 +13,7 @@
 > checkpoint 挂起恢复（异步 HITL）+ Skill 分层升级三策略（默认安全 / --force 覆盖 / --merge 三路合并）+
 > v1.2.1 BugFix 38 项。
 >
-> 📖 [v1.2.2 开发日志](./docs/changelog/v1.2/v1.2.2.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [v1.2.3 开发日志](./docs/changelog/v1.2/v1.2.3.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 > ✅ **企业采购阻塞项 · Webhook 推送已于 v1.2.1 交付**：v1.1.6 接通 webhook **PASS/WARN/FAIL 三态推送**（本地 agent 自测），v1.2.1 补齐企业协同平台（飞书/钉钉/企微）完整 Webhook 推送能力（见 SECURITY.md「审计结果推送」）。采购阻塞项已解除。
 
@@ -188,6 +188,8 @@ sofagent v1.3.1 的 Ontology 本体结构方向与之高度同构，但走**分�
 | OAG 五层确定性架构 | Harness 约束底座 + MCP + FORGE 双 Agent | 同构轻量，无需五层就位即可工作 |
 | 集中式 Ontology OS，重度物化索引 | 分布式 knowledge/，联邦查询按需获取 | MIT 开源、零锁定、数据主权本地 |
 | Markings + CBAC 本体级安全 | sensitivity frontmatter + 跨设备联邦过滤 | 渐进式演进 |
+
+> 💡 **核心设计原则**：本体结构 = GitHub 生长树——树干 = 本体结构本身，分支 = 单个 ontology 节点新增，护栏 = 审计引擎，根系 = 每个节点的强制 frontmatter（输入 / 产出 / 通过标准 / 哪些数据禁用），养护 = 本体变更的 review + rollback。完整映射与 v2.x「ontology I/O schema 硬化」的契合见 [ARCHITECTURE.md · 本体结构 = GitHub 生长树](../docs/ARCHITECTURE.md)。
 
 ---
 

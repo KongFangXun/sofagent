@@ -263,8 +263,8 @@ export function generateThinkFromEval(opts?: ThinkEntryOptions): void {
   let latest: EvalLatestJson;
   try {
     latest = JSON.parse(readFileSync(latestPath, 'utf-8')) as EvalLatestJson;
-  } catch {
-    // JSON 解析失败 → 静默跳过
+  } catch (err) {
+    console.error(`[think] JSON 解析失败: ${err instanceof Error ? err.message : String(err)}`);
     return;
   }
 
@@ -430,7 +430,8 @@ function isEvalDuplicateEntry(thinkPath: string, testId: string, now: Date): boo
   let content: string;
   try {
     content = readFileSync(thinkPath, 'utf-8');
-  } catch {
+  } catch (err) {
+    console.error(`[think] 读取 think.md 失败: ${err instanceof Error ? err.message : String(err)}`);
     return false;
   }
 

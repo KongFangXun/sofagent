@@ -1,31 +1,50 @@
 /**
  * @sofagent/core · crypto/pairing —— 联邦配对三条路径
+ * v1.2.3 路径 B token 从环境变量迁移至 ~/.sofagent/federation.token 文件（权限 600）
  * v1.2.0 新增
  *
  * 三条配对路径覆盖全部场景：
  *   - 路径 A（6 位码 + y/N 确认）：一台生成 6 位配对码 + 公钥指纹，另一台输入码 →
  *     双方显示对方指纹 → 各自 y/N 确认 → ECDH 协商。适合人在场的双机配对。
- *   - 路径 B（token）：长 token 带外交换（SOFAGENT_FEDERATION_TOKEN 环境变量），
+ *   - 路径 B（token）：长 token 从 ~/.sofagent/federation.token 文件读取（权限 600），
  *     适合 CI / 无人值守自动化场景。
  *   - 路径 C（预制 federation.json）：手动放置或 USB 携带，复用 v1.1.5 usb-detect
  *     的 HMAC-SHA256 .sig sidecar 验签——验签通过即信任。
  *
  * 安全约束：
  *   - 协商出的 AES key 只存内存（PairedPeer.sharedKey），不落盘明文
- *   - 路径 B 的 token 只经环境变量传入，不写文件、不进命令行参数（防 ps 泄露）
+ *   - 路径 B 的 token 从文件读取（权限 600），非环境变量——防 ps e 泄露
  *   - 路径 C 的验签复用 usb-detect 同范式（HMAC-SHA256 + timingSafeEqual），
  *     core 包不依赖 daemon 包，故验签函数经参数注入（依赖倒置）
  */
 
 import crypto from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
 import {
   generateKeyPair,
   deriveSharedKey,
   publicKeyFingerprint,
 } from './ecdh';
 
-/** 路径 B 的环境变量名（token 带外交换的唯一入口） */
-export const FEDERATION_TOKEN_ENV = 'SOFAGENT_FEDERATION_TOKEN';
+/** 联邦 token 文件路径（~/.sofagent/federation.token，权限 600） */
+export const FEDERATION_TOKEN_PATH = join(homedir(), '.sofagent', 'federation.token');
+
+/**
+ * 从文件读取联邦 token。
+ * 文件不存在或无权限时返回 undefined（由上层处理缺失错误）。
+ */
+function readTokenFromFile(): string | undefined {
+  try {
+    if (existsSync(FEDERATION_TOKEN_PATH)) {
+      return readFileSync(FEDERATION_TOKEN_PATH, 'utf-8').trim();
+    }
+  } catch {
+    // 文件不可读——返回 undefined 由上层处理
+  }
+  return undefined;
+}
 
 /** 路径 A 配对码长度（6 位数字） */
 export const PAIRING_CODE_LENGTH = 6;
@@ -111,15 +130,16 @@ export async function pairByCode(
 /**
  * 路径 B：token 配对（自动化场景）
  *
- * token 经 SOFAGENT_FEDERATION_TOKEN 环境变量带外交换——
- * 不写文件、不进命令行参数。token 本身作为 ECDH 的"预认证"：
+ * token 从 ~/.sofagent/federation.token 文件读取（权限 600）——
+ * 不走环境变量、不进命令行参数（防 ps e/历史记录泄露）。
+ * token 本身作为 ECDH 的"预认证"：
  * 双方各自生成密钥对后，用 token 派生公钥交换的认证标签（HMAC），
  * 防 token 持有者之外的第三方注入假公钥。
  *
  * 为保持 core 零 IO，本函数接收"对端公钥 + 其 HMAC 标签"，
  * 传输由 daemon 层负责。
  *
- * @param token 配对 token（缺省读 SOFAGENT_FEDERATION_TOKEN）
+ * @param token 配对 token（缺省从 ~/.sofagent/federation.token 读取）
  * @param myPrivateKey 己方私钥
  * @param peerPublicKey 对端公钥
  * @param peerTag 对端公钥的 HMAC 标签（对端用同一 token 计算）
@@ -132,9 +152,9 @@ export async function pairByToken(
   peerPublicKey: Buffer,
   peerTag: string,
 ): Promise<PairedPeer> {
-  const resolved = token ?? process.env[FEDERATION_TOKEN_ENV];
+  const resolved = token ?? readTokenFromFile();
   if (!resolved) {
-    throw new Error(`路径 B 配对失败：未提供 token（环境变量 ${FEDERATION_TOKEN_ENV} 未设置）`);
+    throw new Error(`路径 B 配对失败：未提供 token（~/.sofagent/federation.token 不存在或为空）`);
   }
   if (resolved.length < MIN_TOKEN_LENGTH) {
     throw new Error(`路径 B 配对失败：token 长度不足 ${MIN_TOKEN_LENGTH} 字符`);

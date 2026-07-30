@@ -1,2 +1,3 @@
 # build 产物——由 cp src/handler.ts handler.ts 生成，不进版本控制
-handler.ts
+# 仅忽略根目录的 handler.ts，不误伤 src/handler.ts（源码已跟踪）
+/handler.ts

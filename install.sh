@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent install.sh · 主安装器 / FDE 入口 · v1.2.2
+# sofagent install.sh · 主安装器 / FDE 入口 · v1.2.3
 # ============================================================
 # 将 sofagent 约束层部署到目标平台，让 Agent 获得治理能力。
 #
@@ -55,7 +55,7 @@ warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
 err()   { echo -e "${RED}[✗]${NC} $1"; }
 
 # ── 确定脚本所在目录（支持符号链接）──
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # v1.2.0: install.sh 提升到根目录，lib/ 仍在 engine/scripts/lib/
 LIB_DIR="${SCRIPT_DIR}/engine/scripts/lib"
 # 项目根目录（install.sh 位于仓库根，SCRIPT_DIR 即根）。
@@ -407,7 +407,7 @@ install_cli() {
   # 写入主入口脚本
   cat > "$bin_dir/sofagent" << 'CLIEOF'
 #!/bin/bash
-# sofagent CLI · v1.2.2 安装路径分离新增
+# sofagent CLI · v1.2.3 安装路径分离新增
 # 用户感知入口——数据藏在 ~/.sofagent/，通过这个命令操作
 
 SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
@@ -440,7 +440,7 @@ case "$COMMAND" in
     if [ -x "$SOFAGENT_HOME/bin/sofagent-dashboard" ]; then
       exec "$SOFAGENT_HOME/bin/sofagent-dashboard" "$@"
     else
-      echo "Dashboard coming in v1.2.2. Current data:"
+      echo "Dashboard v1.2.3 · 数据面板:"
       ls -la "$SOFAGENT_HOME/data/" 2>/dev/null
     fi
     ;;
@@ -461,7 +461,7 @@ case "$COMMAND" in
     echo "  sofagent status     Show version + daemon status + data location"
     echo "  sofagent where      Show all install paths"
     echo "  sofagent version    Show version only"
-    echo "  sofagent dashboard  Open dashboard (v1.2.2)"
+    echo "  sofagent dashboard  Open dashboard (v1.2.3)"
     echo "  sofagent data       Open data directory in Finder"
     echo "  sofagent help       Show this help"
     ;;
@@ -844,6 +844,11 @@ if [ "${BASE_ONLY:-0}" = "0" ]; then
   bash "${SCRIPT_DIR}/engine/scripts/verify.sh" --quick --platform "$PLATFORM" 2>&1 | tail -3
   echo ""
 
+  # ── 设置 data 目录权限 ──
+  if [ -d "$HOME/.sofagent/data" ]; then
+    chmod 700 "$HOME/.sofagent/data" 2>/dev/null || true
+  fi
+
   # ── FDE 完成输出 ──
   echo -e "${BOLD}${GREEN}═══════════════════════════════════════════════════════════${NC}"
   echo -e "${BOLD}${GREEN}  ✅ 你的电脑现在是一个 FDE 节点了${NC}"
@@ -870,6 +875,11 @@ if [ "${BASE_ONLY:-0}" = "0" ]; then
   echo ""
 
 else
+  # ── 设置 data 目录权限 ──
+  if [ -d "$HOME/.sofagent/data" ]; then
+    chmod 700 "$HOME/.sofagent/data" 2>/dev/null || true
+  fi
+
   # ── 底座-only 完成输出 ──
   echo ""
   echo -e "${GREEN}✅ sofagent 底座安装完成（--base-only 模式）${NC}"

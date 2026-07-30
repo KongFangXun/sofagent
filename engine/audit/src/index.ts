@@ -55,6 +55,12 @@ import { getFixSuggestion } from './fix-suggestions';
 import { buildSessionReport, writeSessionReport } from './session-report';
 import { loadPermission, checkPermission } from './permission';
 
+/** 统一退出函数——确保退出码契约（0=全绿，1=警告，2=违规）执行一致性 */
+function exit(code: 0 | 1 | 2, message?: string): never {
+  if (message) console.error(message);
+  process.exit(code);
+}
+
 interface Args {
   diffRange: string;
   task?: string;
@@ -122,7 +128,7 @@ function parseArgs(argv: string[]): Args {
       if (!argv[i + 1] || argv[i + 1]!.startsWith('--')) {
         console.error('❌ sofagent 提示：缺少快照 SHA 参数，用法: sofagent-audit --revert <snapshot-sha>');
         console.error('   查看可用快照：sofagent-audit --timeline');
-        process.exit(2);
+        exit(2);
       }
       i++;
       args.revertSha = argv[i] as string;
@@ -142,7 +148,7 @@ function parseArgs(argv: string[]): Args {
         args.webhook = platform;
       } else {
         console.error(`❌ sofagent 提示：不支持的 webhook 平台 "${platform}"（可用: dingtalk / feishu / wecom）`);
-        process.exit(1);
+        exit(1);
       }
     } else if (argv[i] === '--webhook-url' && argv[i + 1]) {
       i++;
@@ -210,23 +216,23 @@ function parseArgs(argv: string[]): Args {
       } else {
         console.log('\n完整参数列表: sofagent-audit --help --verbose');
       }
-      process.exit(0);
+      exit(0);
     } else if (argv[i] === '--version') {
       console.log(`sofagent-audit v${VERSION}`);
-      process.exit(0);
+      exit(0);
     } else {
       const arg = argv[i];
       if (arg && arg.startsWith('--')) {
         console.error(`❌ sofagent 提示：不支持的参数 "${arg}"`);
         console.error('   使用 --help 查看可用参数');
-        process.exit(1);
+        exit(1);
       } else if (arg && !arg.startsWith('-')) {
         // v1.0.8: 未知子命令报错
         const SUBCOMMANDS = ['ontology'];
         if (!SUBCOMMANDS.includes(arg)) {
           console.error(`未知子命令: ${arg}`);
           console.error(`可用子命令: ${SUBCOMMANDS.join(', ')}`);
-          process.exit(1);
+          exit(1);
         }
       }
     }
@@ -260,7 +266,7 @@ function installHook(): void {
 
   if (!gitDir) {
     console.error('❌ sofagent 提示：当前目录不是 git 仓库。请在 git 仓库内运行此命令，或先 git init。');
-    process.exit(1);
+    exit(1);
   }
 
   // 定位 commit-msg 模板
@@ -269,7 +275,7 @@ function installHook(): void {
 
   if (!existsSync(hookTemplate)) {
     console.error(`❌ sofagent 内部错误：commit-msg 模板文件缺失——${hookTemplate}`);
-    process.exit(1);
+    exit(1);
   }
 
   // 确保目标目录存在
@@ -301,7 +307,7 @@ function installHook(): void {
 
   console.log(`✅ commit-msg hook 已安装到 ${destPath}`);
   console.log('   每次 git commit 时会自动运行 sofagent-audit 检查。');
-  process.exit(0);
+  exit(0);
 }
 
 /**
@@ -312,14 +318,14 @@ function runRootCauseAnalysis(): void {
 
   if (history.length === 0) {
     console.log('无历史数据。运行 sofagent-audit --diff <range> 后会自动记录审计历史。');
-    process.exit(0);
+    exit(0);
   }
 
   const report = analyzeRootCause(history);
   const output = formatSuggestions(report);
   console.log(output);
 
-  process.exit(0);
+  exit(0);
 }
 
 /**
@@ -330,7 +336,7 @@ function runRootCauseAnalysis(): void {
 function runRegressionMode(dir: string): void {
   if (!existsSync(dir)) {
     console.error(`❌ sofagent 提示：目录不存在——${dir}`);
-    process.exit(1);
+    exit(1);
   }
 
   // 从 fixture 目录加载 snapshots
@@ -340,7 +346,7 @@ function runRegressionMode(dir: string): void {
   if (snapshots.length === 0) {
     console.log(`目录 ${dir} 中没有找到快照文件。`);
     console.log('快照文件格式：JSON，包含 timestamp / diffFiles / logEntries / previousResults 字段。');
-    process.exit(0);
+    exit(0);
   }
 
   const report = runRegression(snapshots, defaultRules);
@@ -360,7 +366,7 @@ function runRegressionMode(dir: string): void {
   }
 
   console.log('\n=== 报告结束 ===\n');
-  process.exit(0);
+  exit(0);
 }
 
 /**
@@ -426,7 +432,7 @@ function printTimeline(limit: number, json: boolean): void {
     console.log('  回滚：sofagent-audit --revert <SHA>');
   } catch (err) {
     console.error('❌ sofagent 获取快照时间线时遇到问题:', (err as Error).message);
-    process.exit(1);
+    exit(1);
   }
 }
 
@@ -494,7 +500,7 @@ async function main(): Promise<void> {
     console.error('⚠️  "sofagent-audit compose" 已弃用，将在 v1.3.0 移除，请尽快迁移到 "sofagent-orchestrator compose"。');
     console.error('   请直接运行：sofagent-orchestrator compose');
     console.error('   安装：npm install -g @sofagent/orchestrator');
-    process.exit(1);
+    exit(1);
   }
 
   // doctor → sofagent-core (v1.0.8: ENOENT 友好降级)
@@ -506,7 +512,7 @@ async function main(): Promise<void> {
       // 先输出诊断结果（来自 sofagent-core）
       // 末尾温和引导
       console.log('\n💡 如需全面环境诊断（含编排/守护/知识库），可以安装 @sofagent/core 后运行 sofagent-core --doctor');
-      process.exit(report.allOk ? 0 : 1);
+      exit(report.allOk ? 0 : 1);
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND' || (err as NodeJS.ErrnoException).code === 'MODULE_NOT_FOUND') {
         // audit 自身的简易诊断（检查 git 仓库 + audit 安装状态）
@@ -516,7 +522,7 @@ async function main(): Promise<void> {
         console.log(`  ✅ sofagent-audit CLI 可用`);
         // 末尾温和引导
         console.log('\n💡 如需全面环境诊断（含编排/守护/知识库），可以安装 @sofagent/core 后运行 sofagent-core --doctor');
-        process.exit(0);
+        exit(0);
       }
       throw err;
     }
@@ -527,7 +533,7 @@ async function main(): Promise<void> {
     console.error('⚠️  "sofagent-audit verify" 已弃用，将在 v1.3.0 移除，请尽快迁移到 "sofagent-core verify"。');
     console.error('   请直接运行：sofagent-core verify');
     console.error('   安装：npm install -g @sofagent/core');
-    process.exit(1);
+    exit(1);
   }
 
   const args = parseArgs(process.argv);
@@ -549,7 +555,7 @@ async function main(): Promise<void> {
     console.log('      }');
     console.log('    }');
     console.log('  }');
-    process.exit(0);
+    exit(0);
   }
 
   // --init 模式：一键初始化 config + hook + 冒烟测试
@@ -566,10 +572,10 @@ async function main(): Promise<void> {
       const output = generateOntologyView(process.cwd());
       process.stdout.write(output);
       process.stdout.write('\n');
-      process.exit(0);
+      exit(0);
     } catch (err) {
       process.stderr.write(`❌ ontology view 失败: ${(err as Error).message}\n`);
-      process.exit(1);
+      exit(1);
     }
   }
 
@@ -607,7 +613,7 @@ async function main(): Promise<void> {
       const snapshots = listAllSnapshots(projectDir);
       if (snapshots.length === 0) {
         console.error('❌ 没有可用的快照。请先运行审计以创建快照。');
-        process.exit(1);
+        exit(1);
       }
 
       console.log('可用快照:');
@@ -620,7 +626,7 @@ async function main(): Promise<void> {
       const confirmed = await confirm(`⚠️  即将恢复到快照 ${args.revertSha}。此操作将覆盖当前文件。确认？`);
       if (!confirmed) {
         console.log('已取消恢复操作。');
-        process.exit(0);
+        exit(0);
       }
 
       const restored = restoreSnapshot(projectDir, args.revertSha);
@@ -632,7 +638,7 @@ async function main(): Promise<void> {
       console.log('💡 建议运行 npm run build && npm test 验证恢复结果。');
     } catch (err) {
       console.error(`❌ 恢复失败: ${(err as Error).message}`);
-      process.exit(1);
+      exit(1);
     }
     return;
   }
@@ -644,7 +650,7 @@ async function main(): Promise<void> {
     } else {
       console.error('错误：当前目录不在 git 仓库内。sofagent-audit 需要 git 仓库才能运行。');
     }
-    process.exit(2);
+    exit(2);
   }
 
   // 2. 解析 git diff（--cached 模式用于首次提交场景）
@@ -656,7 +662,7 @@ async function main(): Promise<void> {
     } else {
       console.log('✅ 没有文件变更，无需审计。');
     }
-    process.exit(0);
+    exit(0);
   }
 
   // 2. 读取任务日志
@@ -699,13 +705,26 @@ async function main(): Promise<void> {
       const msg = `config.yml 解析错误: ${err.message}`;
       if (args.json) {
         console.log(JSON.stringify({ exitCode: args.strict ? 2 : 1, rules: [], error: 'CONFIG_PARSE_ERROR', detail: msg }, null, 2));
-        process.exit(args.strict ? 2 : 1);
+        exit(args.strict ? 2 : 1);
       }
       console.error(`❌ ${msg}`);
       // --strict / --ci 模式下阻断（exit 2），默认模式 WARN（exit 1）
-      process.exit(args.strict ? 2 : 1);
+      exit(args.strict ? 2 : 1);
     }
     throw err;
+  }
+
+  // 4.3 配置完整性检查：检测 config.yml 中是否关闭了过多规则（防篡改）
+  if (config?.rules) {
+    const ALL_RULE_KEYS = ['a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a14','a15','a16','a17','a18','a19','e1','e2','e3','e4'];
+    const BASELINE_KEYS = new Set(['a1','a2','a9','a10','a11']);
+    const disabledCount = Object.entries(config.rules)
+      .filter(([key, val]) => val === false && !BASELINE_KEYS.has(key) && ALL_RULE_KEYS.includes(key))
+      .length;
+    const totalActive = ALL_RULE_KEYS.length;
+    if (disabledCount > 3) {
+      console.warn(`\u26a0\ufe0f  当前有 ${disabledCount} 条规则被关闭（默认 ${totalActive} 条中仅 ${totalActive - disabledCount} 条生效）。如果这不是你主动配置的，config.yml 可能已被篡改。`);
+    }
   }
 
   // 4.5 权限检查（v1.0.8：权限作用域化）
@@ -838,7 +857,7 @@ async function main(): Promise<void> {
   // 其内部经 @sofagent/core 的 appendThinkEntry 契约写入，保证 append-only 不变量。
   // audit 包不直接写 think.md（避免反向依赖 think 生成器）。
 
-  process.exit(results.exitCode);
+  exit(results.exitCode as 0 | 1 | 2);
 }
 
 // ============================================================
@@ -1055,6 +1074,6 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
 if (require.main === module) {
   main().catch((err) => {
     console.error('sofagent-audit 内部错误:', err.message);
-    process.exit(2);
+    exit(2);
   });
 }

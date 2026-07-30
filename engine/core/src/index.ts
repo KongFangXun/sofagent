@@ -205,7 +205,7 @@ export {
   pairByToken,
   computeTokenTag,
   pairByFederationFile,
-  FEDERATION_TOKEN_ENV,
+  FEDERATION_TOKEN_PATH,
   PAIRING_CODE_LENGTH,
   MIN_TOKEN_LENGTH,
 } from './crypto/pairing';

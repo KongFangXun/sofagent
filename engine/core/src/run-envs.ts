@@ -30,7 +30,7 @@ function commandExists(cmd: string): boolean {
 
 function tryVersion(cmd: string, args: string[]): string | undefined {
   try {
-    return execFileSync(cmd, args, { encoding: 'utf-8', timeout: 5000 }).trim().split('\n')[0];
+    return execFileSync(cmd, args, { encoding: 'utf-8', timeout: 5000, stdio: 'ignore' }).trim().split('\n')[0];
   } catch {
     return undefined;
   }

@@ -44,10 +44,10 @@ export const KNOWLEDGE_DIR_LAYER: MemoryLayer = 'views';
  * 单一事实来源（single source of truth）——所有读写 think.md 的代码都应经此函数，
  * 不得各自硬编码 `path.join(dir, 'think.md')`。
  *
- * @param dataBase 数据目录（默认 SOFAGENT_DATA 环境变量，再退化为 data/——v1.2.1 起）
+ * @param dataBase 数据目录（默认由 data-paths.ts 统一解析——基于 SOFAGENT_HOME 环境变量，fallback 到 ~/.sofagent/data）
  */
 export function getThinkPath(dataBase?: string): string {
-  const base = dataBase || process.env.SOFAGENT_DATA || DATA_DIR;
+  const base = dataBase || DATA_DIR;
   return join(base, THINK_MD_FILENAME);
 }
 
