@@ -170,7 +170,7 @@
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 18 | **合并更新三份审查文档（三份逻辑不同，区分对待）**：<br>**① regression-checklist.md（加法）**：汇总本版本所有修复项，抽象为回归检查维度（编号递增）写入。每发现一个问题加一条——这是精确清单，膨胀靠瘦身控制<br>**② fresh-eyes-review.md（校准，不是加法）**：按下方「fresh-eyes-review 升级优化」决策树处理本版本审查中的预料外发现。**⚠️ 不要往 fresh-eyes-review 里加精确检查项**——它是留白式的直觉审查，加检查项会让它退化成第二个 regression-checklist（v1.2.0 刚从 826 行砍到 274 行修复了这个问题）<br>**③ acceptance-test.sh（可自动化验证的发现）**：如果 fresh eyes 审查报告中的 P0/P1 问题可以通过 CLI 命令/grep/bash 自动化验证，**同步追加到 `FORGE/playbook/acceptance-test.sh`**（追加场景，编号递增）。手法与阶段四·步骤 17 Step B 相同——`scenario` 编号 + 中文注释 + 断言。**为什么需要这一步**：regression-checklist 是人工巡检用的，acceptance-test 是机器跑的——如果一个 bug 可以被自动化检出，把它只放在 regression-checklist 里等于每次发版都要人工跑一遍。让它进 acceptance-test 才能让机器替你记住。 | 当前 session | `git diff` 显示三份文档均有更新（fresh-eyes 可能无变更，见下说明）；regression 新增维度 + acceptance-test 新增场景 ≥ 本版本修复数 |
+| 18 | **合并更新三份审查文档（三份逻辑不同，区分对待）**：<br>**① regression-checklist.md（加法）**：汇总本版本所有修复项，抽象为回归检查维度（编号递增）写入。每发现一个问题加一条——这是精确清单，膨胀靠瘦身控制<br>**② fresh-eyes-review.md（校准，不是加法）**：按下方「fresh-eyes-review 升级优化」决策树处理本版本审查中的预料外发现。**⚠️ 不要往 fresh-eyes-review 里加精确检查项**——它是留白式的直觉审查，加检查项会让它退化成第二个 regression-checklist（v1.2.0 刚从 826 行砍到 274 行修复了这个问题）<br>**③ acceptance-test.sh（可自动化验证的发现）**：如果 fresh-eyes 审查报告中的 P0/P1 问题可以通过 CLI 命令/grep/bash 自动化验证，**同步追加到 `FORGE/playbook/acceptance-test.sh`**（追加场景，编号递增）。手法与阶段四·步骤 17 Step B 相同——`scenario` 编号 + 中文注释 + 断言。**为什么需要这一步**：regression-checklist 是人工巡检用的，acceptance-test 是机器跑的——如果一个 bug 可以被自动化检出，把它只放在 regression-checklist 里等于每次发版都要人工跑一遍。让它进 acceptance-test 才能让机器替你记住。 | 当前 session | `git diff` 显示三份文档均有更新（fresh-eyes 可能无变更，见下说明）；regression 新增维度 + acceptance-test 新增场景 ≥ 本版本修复数 |
 | 19 | **当前 session 逐项验证**：每条新增回归维度跑一遍命令确认可执行；确认 `fresh-eyes-review.md` 新维度与回归维度互相印证、无矛盾 | 当前 session | 所有新增维度可执行 + 两份文档互相印证 |
 
 > ✅ 完成 步骤 16 → 17 后，**开发 session 的文档工作已一气呵成**——回归清单 + 发布后审查全部在当前 session 更新完。接下来**阶段六在本 session 直连跑 acceptance-test.sh 后启动 driver**（acceptance 直连绕过 sandbox kill，driver 只跑 regression/coverage/consolidate/verdict）。
@@ -768,6 +768,7 @@ git log vX.Y.Z..HEAD --oneline
    - 🔴 **v1.2.2 教训·body 不重复标题**：`gh release create` 的 `--title` 参数已包含版本标题，body 内**不要再写** `# vX.Y.Z — ...` 的 H1 标题——会导致 GitHub Release 页面标题出现两次
    - 🔴 **v1.2.2 教训·body 不附 npm 包表格**：npm 包版本信息在开发日志中有详细记录，Release Notes **不需要重复**——body 只含三节（核心变更 + 质量验证 + 日志链接），不追加其他内容
    - 🔴 **v1.2.2 教训·功能领域标题必须带 emoji 前缀**：每个 `###` 标题**必须**带对应 emoji（如 `### 🔧 编排引擎` / `### 🛡️ 安全加固`），裸标题（`### 编排引擎`）不符合规范
+```
 
 ── Step 5: Skill 分发 ──
 > 唯一对外 skill，发布源是 `./FDE` 目录（含 SKILL.md + FDE.md + templates）。
