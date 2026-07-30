@@ -306,8 +306,74 @@ function s152() {
   console.log('OK Planner解析+降级+降级链四路径+decide/execute分离');
 }
 
+// ── S155 · v1.2.3 编排隔离底座——WorktreeHandle create/cleanup 幂等──
+async function s155() {
+  const { createWorktree } = require(process.env.PROJECT_ROOT + '/engine/orchestrator/dist/worktree-isolation.js');
+  const fs = require('fs'), os = require('os'), path = require('path');
+  const { execFileSync } = require('child_process');
+  const git = (a, cwd) => execFileSync('git', a, { cwd, encoding: 'utf-8' });
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-acc-wt-'));
+  git(['init', '-q'], tmpDir);
+  git(['config', 'user.email', 't@t.com'], tmpDir);
+  git(['config', 'user.name', 'T'], tmpDir);
+  fs.writeFileSync(path.join(tmpDir, 'README.md'), '# T\n');
+  git(['add', '.'], tmpDir);
+  git(['commit', '-q', '-m', 'init'], tmpDir);
+  const h = createWorktree({ repoRoot: tmpDir, agentId: 'acc-155' });
+  await h.create();
+  await h.create(); // 幂等：重复调用不报错
+  if (!fs.existsSync(h.path)) { console.log('worktree 未创建'); process.exit(1); }
+  await h.cleanup();
+  await h.cleanup(); // 幂等：重复调用不报错
+  if (fs.existsSync(h.path)) { console.log('worktree 未清理'); process.exit(1); }
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+  console.log('OK create/cleanup 幂等（重复调用不报错）');
+}
+
+// ── S156 · v1.2.3 编排隔离底座——审计合并卡关（PASS→merge / FAIL→reject）──
+async function s156() {
+  const { createWorktree } = require(process.env.PROJECT_ROOT + '/engine/orchestrator/dist/worktree-isolation.js');
+  const { runMergeGate } = require(process.env.PROJECT_ROOT + '/engine/orchestrator/dist/worktree-merge-gate.js');
+  const fs = require('fs'), os = require('os'), path = require('path');
+  const { execFileSync } = require('child_process');
+  const git = (a, cwd) => execFileSync('git', a, { cwd, encoding: 'utf-8' });
+  const mkRepo = () => {
+    const d = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-acc-gate-'));
+    git(['init', '-q'], d);
+    git(['config', 'user.email', 't@t.com'], d);
+    git(['config', 'user.name', 'T'], d);
+    fs.writeFileSync(path.join(d, 'README.md'), '# T\n');
+    git(['add', '.'], d);
+    git(['commit', '-q', '-m', 'init'], d);
+    return d;
+  };
+  // 场景 A：audit PASS → 合并成功，主分支可见产出文件 + merge commit
+  const repoA = mkRepo();
+  const hA = createWorktree({ repoRoot: repoA, agentId: 'eng-pass' });
+  await hA.create();
+  fs.mkdirSync(path.join(hA.path, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(hA.path, 'src', 'feature.ts'), 'export const answer = 42;\n');
+  const rA = await runMergeGate(hA, { repoRoot: repoA, task: 'add src/feature.ts module' });
+  if (rA.status !== 'merged') { console.log('PASS 场景未合并: status=' + rA.status + ' reason=' + (rA.rejectionReason || '')); process.exit(1); }
+  if (!fs.existsSync(path.join(repoA, 'src', 'feature.ts'))) { console.log('合并后主分支不可见产出文件'); process.exit(1); }
+  const logA = git(['log', '--oneline', '-3'], repoA);
+  if (!logA.includes('merge')) { console.log('主分支无 merge commit'); process.exit(1); }
+  // 场景 B：audit FAIL → 不合并（提交 .env 触发 A1 底线拒绝）
+  const repoB = mkRepo();
+  const hB = createWorktree({ repoRoot: repoB, agentId: 'eng-fail' });
+  await hB.create();
+  fs.writeFileSync(path.join(hB.path, '.env'), 'SECRET_KEY=abc123\n');
+  const rB = await runMergeGate(hB, { repoRoot: repoB, task: 'add .env' });
+  if (rB.status !== 'rejected') { console.log('FAIL 场景未拒绝: status=' + rB.status); process.exit(1); }
+  if (rB.auditVerdict !== 'FAIL') { console.log('audit 判定非 FAIL: ' + rB.auditVerdict); process.exit(1); }
+  if (fs.existsSync(path.join(repoB, '.env'))) { console.log('被拒产出泄漏到主分支——安全红线'); process.exit(1); }
+  fs.rmSync(repoA, { recursive: true, force: true });
+  fs.rmSync(repoB, { recursive: true, force: true });
+  console.log('OK PASS→merge + FAIL→reject（审计卡关双向）');
+}
+
 // ── 调度器 ──────────────────────────────────────────────────
-const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152 };
+const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156 };
 
 async function main() {
   const name = process.argv[2];
