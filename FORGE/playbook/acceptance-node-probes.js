@@ -189,8 +189,125 @@ async function s115() {
   console.log('OK promoted-to=' + s.currentPlan);
 }
 
+// ── S101 · v1.1.8 安全层——AES-GCM 往返 + ECDH 共享密钥 + fingerprint 确定性──
+function s101() {
+  const { encryptPayload, decryptPayload } = require(process.env.PROJECT_ROOT + '/engine/core/dist/crypto/aes-gcm.js');
+  const { generateKeyPair, deriveSharedKey, publicKeyFingerprint } = require(process.env.PROJECT_ROOT + '/engine/core/dist/crypto/ecdh.js');
+  const key = require('crypto').randomBytes(32);
+  const pt = Buffer.from('sofagent v1.1.8 secret payload', 'utf8');
+  const enc = encryptPayload(key, pt);
+  const dec = decryptPayload(key, enc.iv, enc.ciphertext, enc.tag);
+  if (dec.toString('utf8') !== pt.toString('utf8')) { console.log('AES 往返失败'); process.exit(1); }
+  const alice = generateKeyPair();
+  const bob = generateKeyPair();
+  const aliceShared = deriveSharedKey(alice.privateKey, bob.publicKey);
+  const bobShared = deriveSharedKey(bob.privateKey, alice.publicKey);
+  if (!aliceShared.equals(bobShared)) { console.log('ECDH 双方共享密钥不一致'); process.exit(1); }
+  const fp1 = publicKeyFingerprint(alice.publicKey);
+  const fp2 = publicKeyFingerprint(alice.publicKey);
+  if (fp1 !== fp2 || fp1.length < 8) { console.log('fingerprint 非确定性或过短'); process.exit(1); }
+  console.log('OK');
+}
+
+// ── S103 · v1.1.8 安全层——联邦 trustWeightOf sensitivity 过滤（restricted 零权重 / public 正权重）──
+function s103() {
+  const { trustWeightOf } = require(process.env.PROJECT_ROOT + '/engine/daemon/dist/federation/query-router.js');
+  const restrictedItem = { content: 'restricted-secret', sensitivity: 'restricted', trust: 'federation', source: 'peer-a' };
+  const publicItem = { content: 'public-info', sensitivity: 'public', trust: 'official', source: 'peer-b' };
+  const wRestricted = trustWeightOf(restrictedItem);
+  const wPublic = trustWeightOf(publicItem);
+  if (wRestricted > 0) { console.log('restricted entity 有正权重 ' + wRestricted + '，安全边界失效'); process.exit(1); }
+  if (wPublic <= 0) { console.log('public/official item 权重异常: ' + wPublic); process.exit(1); }
+  console.log('OK ' + wRestricted + '/' + wPublic);
+}
+
+// ── S148 · v1.2.2 P0 数据主权审计追踪端到端（JSONL→聚合→报告）──
+function s148() {
+  const { DataSovereigntyLogger } = require(process.env.PROJECT_ROOT + '/engine/audit/dist/data-sovereignty.js');
+  const { generateDailyReport, aggregateStats } = require(process.env.PROJECT_ROOT + '/engine/audit/dist/report-generator.js');
+  const fs = require('fs'), os = require('os'), path = require('path');
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sof-ds-'));
+  const logger = new DataSovereigntyLogger(tmpDir);
+  logger.append({
+    cloudCall: { timestamp: new Date().toISOString(), provider: 'test-provider', model: 'test-model', endpoint: 'https://api.test.com/v1', tokenCount: { input: 100, output: 50 }, purpose: 'testing' },
+    localAction: { type: 'tool-call', target: 'test-tool', description: 'acceptance test scenario 148', auditResult: 'PASS' },
+    dataFlow: { direction: 'local-only', sensitivity: 'restricted', fields: ['test-field'], destination: 'local-tool', redacted: true },
+    taskContext: { taskId: 'test-148', userIntent: 'acceptance test', workflowId: 'test-wf-148' },
+  });
+  const now = new Date();
+  const yyyy = String(now.getFullYear());
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const todayDateStr = yyyy + '-' + mm + '-' + dd;
+  const logPath = path.join(tmpDir, 'data', 'audit', 'data-sovereignty', yyyy, mm, todayDateStr + '.jsonl');
+  const logExists = fs.existsSync(logPath);
+  const logContent = logExists ? fs.readFileSync(logPath, 'utf-8').trim() : '';
+  if (!logExists || !logContent.includes('test-148')) { console.log('JSONL 记录写入/读取失败'); process.exit(1); }
+  const records = logContent.split('\n').map(l => JSON.parse(l));
+  const stats = aggregateStats(records);
+  if (!stats || typeof stats.total === 'undefined') { console.log('aggregateStats 聚合失败'); process.exit(1); }
+  const report = generateDailyReport(todayDateStr, tmpDir);
+  if (!report || !report.markdown || report.markdown.length === 0) { console.log('generateDailyReport 报告生成失败'); process.exit(1); }
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+  console.log('OK JSONL→聚合→报告');
+}
+
+// ── S149 · v1.2.2 P1 ModelRouter 路由端到端（public→cloud / restricted→local / confidential≠cloud）──
+function s149() {
+  const { createDefaultRouter } = require(process.env.PROJECT_ROOT + '/engine/orchestrator/dist/model-router.js');
+  const router = createDefaultRouter();
+  const routePublic = router.route('hello world, how are you?', {});
+  const routeRestricted = router.route('analyze this data', { frontmatter: { sensitivity: 'restricted' } });
+  const routeConfidential = router.route('check this', { filePath: 'report.confidential.md' });
+  if (!['cloud-strong', 'cloud-fast'].includes(routePublic.target)) { console.log('public 文本未路由到云端: ' + routePublic.target); process.exit(1); }
+  if (!['local-executor', 'local-pipeline', 'block'].includes(routeRestricted.target)) { console.log('restricted 数据未路由到本地: ' + routeRestricted.target); process.exit(1); }
+  if (['cloud-strong', 'cloud-fast'].includes(routeConfidential.target)) { console.log('confidential 数据路由到云端——安全红线违反: ' + routeConfidential.target); process.exit(1); }
+  if (!routePublic.reason) { console.log('路由结果缺少 reason 字段'); process.exit(1); }
+  console.log('OK public=' + routePublic.target + ' restricted=' + routeRestricted.target + ' confidential=' + routeConfidential.target);
+}
+
+// ── S151 · v1.2.2 P3b 异步 HITL 端到端（shouldUseAsyncHITL 降级 + 请求写入 + 响应读取）──
+function s151() {
+  const { shouldUseAsyncHITL, writeHITLRequest, readHITLResponse, writeHITLResponse } = require(process.env.PROJECT_ROOT + '/engine/orchestrator/dist/hitl/hitl-channel.js');
+  const fs = require('fs'), os = require('os'), path = require('path');
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hitl-acc-'));
+  const dataDir = path.join(tmpDir, 'data');
+  const cpId = 'acc-test-cp-001';
+  writeHITLRequest(dataDir, { checkpointId: cpId, createdAt: new Date().toISOString(), task: 'test', reviewReport: '', auditResult: 'PASS', retryCount: 0, options: ['approve', 'reject', 'aborted'] });
+  const asyncAfter = shouldUseAsyncHITL(dataDir);
+  if (asyncAfter !== true) { console.log('异步 HITL 模式未激活（pending/ 目录创建后 shouldUseAsyncHITL 应返回 true）'); process.exit(1); }
+  writeHITLResponse(dataDir, { checkpointId: cpId, decision: 'approve', resolvedAt: new Date().toISOString() });
+  const resp = readHITLResponse(dataDir, cpId);
+  if (!resp || resp.decision !== 'approve') { console.log('HITL 响应读取失败（期望 approve）'); process.exit(1); }
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+  console.log('OK 降级判断+请求写入+响应读取+批准信号');
+}
+
+// ── S152 · v1.2.2 P4 Graph Engine 端到端（Planner 解析 + 降级链路由 + decide/execute 分离）──
+function s152() {
+  const { parsePlanDecide } = require(process.env.PROJECT_ROOT + '/engine/orchestrator/dist/loop/plan-node.js');
+  const { routeAfterAudit } = require(process.env.PROJECT_ROOT + '/engine/orchestrator/dist/loop/graph.js');
+  const { computeResultContent } = require(process.env.PROJECT_ROOT + '/engine/orchestrator/dist/loop/engineer-execute.js');
+  const plan = parsePlanDecide('{"subtasks":[{"id":"s1","description":"do x"}],"rationale":""}');
+  const planCount = plan ? plan.length : 0;
+  const planStatus = plan && plan[0] ? plan[0].status : 'missing';
+  if (planCount !== 1) { console.log('Planner 解析失败（期望 1 个子任务）'); process.exit(1); }
+  if (planStatus !== 'pending') { console.log('Planner 子任务状态错误（期望 pending）'); process.exit(1); }
+  if (parsePlanDecide('garbage') !== null) { console.log('Planner 非法 JSON 未返回 null（降级兜底）'); process.exit(1); }
+  const routePass = routeAfterAudit({ auditResult: 'PASS', retryCount: 0, degradationLevel: 0, finalStatus: 'running' });
+  const routeFailL0 = routeAfterAudit({ auditResult: 'FAIL', retryCount: 1, degradationLevel: 0, finalStatus: 'running' });
+  const routeFailL2 = routeAfterAudit({ auditResult: 'FAIL', retryCount: 2, degradationLevel: 2, finalStatus: 'running' });
+  const routeFailOver = routeAfterAudit({ auditResult: 'FAIL', retryCount: 3, degradationLevel: 2, finalStatus: 'running' });
+  if (routePass !== 'reviewer') { console.log('降级链 PASS 未路由到 reviewer'); process.exit(1); }
+  if (routeFailL0 !== 'engineer') { console.log('降级链 FAIL L0 未路由到 engineer'); process.exit(1); }
+  if (routeFailL2 !== 'reviewer') { console.log('降级链 FAIL L2 未路由到 reviewer（低可信放行）'); process.exit(1); }
+  if (routeFailOver !== 'human_confirm') { console.log('降级链 FAIL 超限未路由到 human_confirm'); process.exit(1); }
+  computeResultContent('/tmp/x', 'create', 'hello world'); // decide/execute 分离：纯函数调用不抛即通过
+  console.log('OK Planner解析+降级+降级链四路径+decide/execute分离');
+}
+
 // ── 调度器 ──────────────────────────────────────────────────
-const CASES = { s102, s106, s107, s108, s109, s111, s115 };
+const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152 };
 
 async function main() {
   const name = process.argv[2];
