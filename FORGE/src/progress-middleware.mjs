@@ -183,8 +183,8 @@ export function createProgressMiddleware(options) {
     try {
       mkdirSync(roundDir, { recursive: true });
       appendFileSync(eventFile, `${JSON.stringify(event)}\n`, 'utf-8');
-    } catch {
-      // 观测层写失败不阻断主流程
+    } catch (err) {
+      console.error('[sofagent:forge] progress-middleware 步骤失败', err);
     }
   }
 
@@ -304,9 +304,8 @@ export function createProgressMiddleware(options) {
           }
 
           lastTickTime = now;
-        } catch {
-          // 观测层异常绝不逃逸 setInterval（铁律）
-          // Observer exceptions never escape setInterval (iron rule)
+        } catch (err) {
+          console.error('[sofagent:forge] progress-middleware 清理失败', err);
         }
       }, heartbeatMs);
 

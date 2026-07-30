@@ -1252,7 +1252,7 @@ function summarizeRoundCost(runDir, roundNum) {
   const lines = readFileSync(usagePath, 'utf-8').split('\n').filter(Boolean);
   for (const line of lines) {
     let rec;
-    try { rec = JSON.parse(line); } catch { continue; }
+    try { rec = JSON.parse(line); } catch (err) { console.error('[sofagent:forge] JSON 解析失败，行已跳过', { line: line.substring(0, 100), error: err.message }); continue; }
     if (rec._summary) continue;
     if (rec.round !== roundNum) continue;
     if (!rec.role || !(rec.role in summary)) continue;
@@ -1283,7 +1283,7 @@ function appendUsageSummary(runDir, rounds) {
     const lines = readFileSync(usagePath, 'utf-8').split('\n').filter(Boolean);
     for (const line of lines) {
       let rec;
-      try { rec = JSON.parse(line); } catch { continue; }
+      try { rec = JSON.parse(line); } catch (err) { console.error('[sofagent:forge] JSON 解析失败，行已跳过', { line: line.substring(0, 100), error: err.message }); continue; }
       if (rec._summary) continue;
       if (!rec.role || !(rec.role in byRole)) continue;
 
@@ -1352,7 +1352,7 @@ function aggregateStallEvents(runDir) {
       const lines = readFileSync(join(runDir, file), 'utf-8').split('\n').filter(Boolean);
       for (const line of lines) {
         let rec;
-        try { rec = JSON.parse(line); } catch { continue; }
+        try { rec = JSON.parse(line); } catch (err) { console.error('[sofagent:forge] JSON 解析失败，行已跳过', { line: line.substring(0, 100), error: err.message }); continue; }
         if (rec.event === 'stall-detected') {
           stallEvents.push({
             ts: rec.ts || '',
@@ -1400,7 +1400,7 @@ function extractAgentStatus(runDir, currentRound) {
       let lastTarget = '';
       for (const line of lines) {
         let rec;
-        try { rec = JSON.parse(line); } catch { continue; }
+        try { rec = JSON.parse(line); } catch (err) { console.error('[sofagent:forge] JSON 解析失败，行已跳过', { line: line.substring(0, 100), error: err.message }); continue; }
         if (rec.target) lastTarget = rec.target;
       }
       if (lastTarget) {
@@ -1411,7 +1411,7 @@ function extractAgentStatus(runDir, currentRound) {
       // 判断 status：最近事件是否有 end 标记
       let lastRec = null;
       for (let i = lines.length - 1; i >= 0; i--) {
-        try { lastRec = JSON.parse(lines[i]); break; } catch { continue; }
+        try { lastRec = JSON.parse(lines[i]); break; } catch (err) { console.error('[sofagent:forge] JSON 解析失败，行已跳过', { line: lines[i].substring(0, 100), error: err.message }); continue; }
       }
       if (lastRec?.phase === 'end') {
         info.status = 'idle';

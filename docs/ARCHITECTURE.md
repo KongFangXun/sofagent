@@ -239,7 +239,7 @@ graph LR
 
 **「确定性与概率性分离」原则**——Palantir OAG 五层架构的核心理念，与 sofagent 审计引擎完全同构：刚性安全边界由确定性系统保障，不受 LLM 概率性输出影响。sofagent 的 16/21 条规则为纯 git-diff（不依赖 Agent 配合）正是这一原则的工程实现。
 
-> 💡 **规则编号说明**：A1–A11 + A18/A19 为默认规则（13 条），A14–A17 + E1–E4 为扩展规则（8 条，需 opt-in），全量 21 条。A12/A13 已在 v0.99.4 合并入 A11，编号不再使用。
+> 💡 **规则编号说明**：A1–A11 + A18/A19 为默认规则（13 条），A14–A17 + E1–E4 为扩展规则（8 条，需 opt-in），全量 21 条（13 默认 + 8 扩展，详见 WIKI.md）。A12/A13 已在 v0.99.4 合并入 A11，编号不再使用。
 
 **审计引擎的双重定位**：
 
@@ -261,6 +261,14 @@ graph LR
 | Gate（决策管控） | 基于 Review+Verification 结果判断能否合并 | exit code 0/1/2 → 放行/WARN/阻断 commit |
 
 > **设计原则**：Review Agent 默认不配代码执行权限——纯静态分析避免执行逻辑干扰审查客观性。sofagent 审计引擎同样零执行权限，只看 git diff 硬证据。
+
+### 已知技术债：双规则系统重叠
+
+`engine/rules/`（tool-level 规则，3 条）和 `engine/audit/src/rules/`（git-diff 规则，21 条）
+均包含 secret-leak 检测功能。当前两者并行维护，存在行为不一致风险。
+
+计划在 v1.2.4 中统一为单一规则引擎：tool-level 规则将作为 audit 规则的子集，
+通过 `ruleType: 'tool' | 'diff'` 字段区分。
 
 ### 🔄 回溯能力（本质：git snapshot + revert 包装）
 
@@ -720,7 +728,7 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计引擎，21 条规则硬证据扫描 + 快照/回滚/webhook | ✅ 已实现（498 测试） |
+| audit | 提交时审计引擎，21 条规则（13 默认 + 8 扩展，详见 WIKI.md）硬证据扫描 + 快照/回滚/webhook | ✅ 已实现（498 测试） |
 | core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor | ✅ 已实现（151 测试） |
 | harness | 四层约束加载链 `buildConstrainedSystemPrompt()` | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 fs/git 依赖），编排层 tool-call 事前拦截 | ✅ 已实现 |
