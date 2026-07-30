@@ -238,6 +238,57 @@ describe('sanitizeRecord', () => {
     const result = sanitizeRecord(record);
     expect(result.dataFlow.redacted).toBe(true);
   });
+
+  it('脱敏 fields 中的 IPv4 地址', () => {
+    // 测试：IPv4 地址被替换为 [IP]
+    const record = makeRecord({
+      dataFlow: {
+        direction: 'outbound',
+        sensitivity: 'internal',
+        fields: ['server 192.168.1.100 连接超时'],
+        destination: 'cloud-api',
+        redacted: false,
+      },
+    });
+    const result = sanitizeRecord(record);
+    expect(result.dataFlow.fields[0]).toContain('[IP]');
+    expect(result.dataFlow.fields[0]).not.toContain('192.168.1.100');
+    expect(result.dataFlow.redacted).toBe(true);
+  });
+
+  it('脱敏 fields 中的 macOS 用户路径', () => {
+    // 测试：/Users/xxx/ 路径被替换为 [USER_PATH]
+    const record = makeRecord({
+      dataFlow: {
+        direction: 'local-only',
+        sensitivity: 'internal',
+        fields: ['路径 /Users/kongfangxun/WorkBuddy/ 包含用户名'],
+        destination: 'local-file',
+        redacted: false,
+      },
+    });
+    const result = sanitizeRecord(record);
+    expect(result.dataFlow.fields[0]).toContain('[USER_PATH]');
+    expect(result.dataFlow.fields[0]).not.toContain('/Users/kongfangxun/');
+    expect(result.dataFlow.redacted).toBe(true);
+  });
+
+  it('脱敏 fields 中的 Linux 用户路径', () => {
+    // 测试：/home/xxx/ 路径被替换为 [USER_PATH]
+    const record = makeRecord({
+      dataFlow: {
+        direction: 'local-only',
+        sensitivity: 'internal',
+        fields: ['路径 /home/admin/.ssh/ 包含用户名'],
+        destination: 'local-file',
+        redacted: false,
+      },
+    });
+    const result = sanitizeRecord(record);
+    expect(result.dataFlow.fields[0]).toContain('[USER_PATH]');
+    expect(result.dataFlow.fields[0]).not.toContain('/home/admin/');
+    expect(result.dataFlow.redacted).toBe(true);
+  });
 });
 
 // ============================================================

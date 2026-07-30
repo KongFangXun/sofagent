@@ -17,6 +17,7 @@ import type { DiffFile } from '@sofagent/core';
 import type { LogEntry } from '@sofagent/core';
 import type { AuditConfig } from '@sofagent/core';
 import type { AuditContext, RuleCheck } from './rules/types';
+import type { AuditHistoryEntry } from './audit-history';
 import { runRules as runRulesWithFastFail } from './rules/runner';
 
 // 向后兼容：re-export RuleCheck（index.ts 等模块通过 reporter 导入此类型）
@@ -40,6 +41,7 @@ export interface AuditResult {
  * @param silent 沉默模式（跳过日志依赖规则，走 diff 启发式）
  * @param commitMsg commit message（用于 E2/A5 规则及 #10 回退）
  * @param config 审计配置（.sofagent/config.yml 加载，三级 fallback）
+ * @param history 历史审计记录（可选；不传则 runner 自动从文件加载）
  */
 export function runRules(
   diffFiles: DiffFile[],
@@ -48,7 +50,8 @@ export function runRules(
   strict?: boolean,
   silent?: boolean,
   commitMsg?: string,
-  config?: AuditConfig
+  config?: AuditConfig,
+  history?: AuditHistoryEntry[]
 ): AuditResult {
-  return runRulesWithFastFail(diffFiles, logEntries, task, strict, silent, commitMsg, config);
+  return runRulesWithFastFail(diffFiles, logEntries, task, strict, silent, commitMsg, config, history);
 }

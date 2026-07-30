@@ -23,7 +23,7 @@ import {
   pairByToken,
   computeTokenTag,
   pairByFederationFile,
-  FEDERATION_TOKEN_ENV,
+  FEDERATION_TOKEN_PATH,
   MIN_TOKEN_LENGTH,
   PAIRING_CODE_LENGTH,
 } from '../pairing';
@@ -42,20 +42,6 @@ const loadKey = (): Buffer => TEST_SECRET;
 
 /** 测试用长 token（≥ MIN_TOKEN_LENGTH） */
 const TEST_TOKEN = 'tok-' + crypto.randomBytes(32).toString('hex');
-
-let originalTokenEnv: string | undefined;
-
-beforeEach(() => {
-  originalTokenEnv = process.env[FEDERATION_TOKEN_ENV];
-});
-
-afterEach(() => {
-  if (originalTokenEnv === undefined) {
-    delete process.env[FEDERATION_TOKEN_ENV];
-  } else {
-    process.env[FEDERATION_TOKEN_ENV] = originalTokenEnv;
-  }
-});
 
 describe('路径 A · 6 位码 + y/N 确认', () => {
   // 用例 1：配对码格式 + 会话创建
@@ -101,17 +87,13 @@ describe('路径 B · token 配对', () => {
   });
 
   // 用例 4：token 缺失/过短/标签调包 → 抛错
-  it('token 缺失（env 未设置）/过短/标签不匹配 → 抛错', async () => {
+  it('token 缺失（文件不存在）/过短/标签不匹配 → 抛错', async () => {
     const alice = generateKeyPair();
     const bob = generateKeyPair();
     const tag = computeTokenTag(TEST_TOKEN, bob.publicKey);
-    // token 缺失（显式 undefined 且 env 未设置）
+    // token 缺失（显式 undefined 且文件不存在）
     await expect(pairByToken(undefined, alice.privateKey, bob.publicKey, tag))
       .rejects.toThrow(/未提供 token/);
-    // env 兜底：设置后可用
-    process.env[FEDERATION_TOKEN_ENV] = TEST_TOKEN;
-    const peer = await pairByToken(undefined, alice.privateKey, bob.publicKey, tag);
-    expect(peer.via).toBe('token');
     // token 过短
     expect(MIN_TOKEN_LENGTH).toBeGreaterThan(0);
     await expect(pairByToken('short', alice.privateKey, bob.publicKey, tag))

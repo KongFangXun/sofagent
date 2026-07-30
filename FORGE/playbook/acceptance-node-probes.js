@@ -16,12 +16,11 @@
 
 // ── S102 · v1.1.8 安全层——ECDH 配对路径 B（token 带外交换）──
 async function s102() {
-  const { createPairingSession, pairByToken, computeTokenTag, FEDERATION_TOKEN_ENV, MIN_TOKEN_LENGTH } = require(process.env.PAIRING_DIR + '/pairing.js');
+  const { createPairingSession, pairByToken, computeTokenTag, MIN_TOKEN_LENGTH } = require(process.env.PAIRING_DIR + '/pairing.js');
   const { deriveSharedKey } = require(process.env.PAIRING_DIR + '/ecdh.js');
   const initiator = createPairingSession();
   const responder = createPairingSession();
   const token = 'a'.repeat(MIN_TOKEN_LENGTH + 8);
-  process.env[FEDERATION_TOKEN_ENV] = token;
   const initiatorTag = computeTokenTag(token, initiator.publicKey);
   try {
     const paired = await pairByToken(token, responder.privateKey, initiator.publicKey, initiatorTag);

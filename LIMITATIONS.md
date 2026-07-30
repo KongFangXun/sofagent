@@ -47,6 +47,15 @@
 >    ```
 > 2. **定期自动 doctor**：配置 cron job 每周运行 `sofagent-core --doctor`，
 >    并将结果发送到监控频道，检测 hooks 是否被意外移除。
+> 3. **推荐操作**：安装后立即执行 `chmod 400 .sofagent/config.yml` 使文件只读（需 root 或当前用户），
+>    阻止 Agent 写入篡改。CI 中可增加 `sofagent-audit --diff` 校验步骤做双重保障。
+
+### 本地开发紧急缓解措施
+
+在 CI 侧兜底尚未就绪之前，本地开发建议：
+1. **`chmod 400 ~/.sofagent/config.yml`**——Agent 无法写入篡改，推荐安装后立即执行。
+2. **设置 git hooksPath**——在 `~/.gitconfig` 中设置 `[core] hooksPath = ...` 确保 hook 路径不可被 Agent 覆盖。
+3. **定期运行 doctor**——`sofagent-audit --doctor` 检查审计规则完整性，检测 hooks 是否被意外移除或 config 被篡改。
 
 ---
 
@@ -169,7 +178,24 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 ## 三、安全与信任模型局限
 
-> **企业 DevOps 集成路径**：当前 `history.jsonl` 为 append-only JSONL 明文，企业 IT 如需接入 SIEM / 企业日志平台，可通过 filebeat / logstash 等采集 agent 定时轮询 `~/.sofagent/data/audit/history.jsonl` 转发（见 SECURITY.md「审计结果推送」）。**本地三态 Webhook 推送 v1.1.6 已接通**（PASS/WARN/FAIL）；**企业平台推送（飞书/钉钉/企微）已在 v1.2.1 落地**（采购阻塞项已解除）。CI 集成方面，各包提供 `npm test` 与 `FORGE/playbook/acceptance-test.sh` 可接入现有流水线做门禁；`sofagent-audit --install-hook` 提供的 commit-msg hook 可作为 pre-commit / pre-push 关卡。
+> **企业 DevOps 集成路径**：当前 `history.jsonl` 为 append-only JSONL 明文，企业 IT 如需接入 SIEM / 企业日志平台，可通过 filebeat / logstash 等采集 agent 定时轮询 `~/.sofagent/data/audit/history.jsonl` 转发（见 SECURITY.md「审计结果推送」）。**本地三态 Webhook 推送 v1.1.6 已接通**（PASS/WARN/FAIL）；**企业平台推送（飞书/钉钉/企微）已在 v1.2.1 落地**（采购阻塞项已解除）。CI 集成方面，各包提供 `npm test` 与 `FORGE/playbook/acceptance-test.sh` 可接入现有流水线做门禁；`sofagent-audit --install-hook` 提供的 commit-msg hook 可作为 pre-commit / pre-push 关卡。以下是一个完整的 GitHub Actions CI 兜底示例（在 CI 中跑 `sofagent-audit --diff`，确保 `--no-verify` 绕过 hook 后仍有防线）：
+>
+> ```yaml
+> # .github/workflows/sofagent-audit.yml
+> name: sofagent 审计检查
+> on: [pull_request]
+> jobs:
+>   audit:
+>     runs-on: ubuntu-latest
+>     steps:
+>       - uses: actions/checkout@v4
+>         with:
+>           fetch-depth: 0  # 需要完整 git 历史用于 --diff
+>       - name: 安装 sofagent-audit
+>         run: npm install -g @sofagent/audit
+>       - name: 审计最近一次提交
+>         run: sofagent-audit --diff HEAD~1..HEAD --ci
+> ```
 
 > **审计日志防篡改检测边界**：`history.jsonl` 的完整性依赖 hash chain（`audit-history.ts`），Agent 可在篡改后重算整条链——hash chain 仅提供事后可追溯性，非强防篡改。v1.1.8 起已支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`），有密钥时强防篡改，无密钥时降级为 SHA-256 hash chain。`--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainIntegrity()` 校验链完整性。当前版本仍依赖「Agent 自觉 + 定期 --doctor」的信任模型。
 
@@ -271,7 +297,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 495 个、全 workspace 1204 个测试全绿（实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 498 个、全 workspace 1207 个测试（共 1207 个，其中 16 个因 safe-delete 环境限制预期失败。实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -337,7 +363,7 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](FDE/FDE.md)）已在作�
 
 v1.0 新增 `FORGE/playbook/acceptance-test.sh`（151 个场景，含子断言），覆盖范围持续扩展：
 
-- **CI 已覆盖**：单元测试审计核心 495 个、全 workspace 1204 个全绿（函数级，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 498 个、全 workspace 1207 个测试（共 1207 个，其中 16 个因 safe-delete 环境限制预期失败。函数级，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 151 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
@@ -351,6 +377,13 @@ v1.0 新增 `FORGE/playbook/acceptance-test.sh`（151 个场景，含子断言�
 > **acceptance-test 数字口径（v1.2.3 更新）**：v1.2.2 版本 acceptance-test.sh 为 151 场景（含子断言）。"4 处 check-test-count 一致"指 4 个关键文件（CHANGELOG / 版本开发日志 / README / acceptance-test.sh）的测试数字声明一致；历史上曾写"5 处"，实际 check-test-count 脚本只校验 4 处。
 
 ---
+
+### safe-delete 环境下的测试预期失败（16 个）
+
+- **影响包**：engine/audit（config-loader 2 + audit-history 7 + session-report 1 + usb-detect 3）
+- **原因**：WorkBuddy.app 内嵌的 genie-safe-delete.cjs shim 拦截 fs.rmSync 调用，测试清理临时文件被误判为大规模删除
+- **缓解**：在无 safe-delete shim 的环境中运行测试可全绿；或使用 `--no-safe-delete` 标志（如适用）
+- **计划修复**：v1.3.0 考虑使用 mock fs 隔离测试清理逻辑
 
 ### 组织记忆维护风险 / 模型依赖维护风险
 
@@ -398,7 +431,8 @@ Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown fr
 
 **影响**：npm install 不阻塞（optional 不强制），但逻辑上两个包互相引用，单独修改一方时需验证另一方不受影响。
 
-**计划**：v1.2.x 评估解耦方案——将 daemon 对 audit 的直接依赖改为事件驱动或共享接口。
+**计划**：v1.3.0 重构为单向依赖（抽取共享类型到 @sofagent/core）。
+当前版本 npm 可正常解析（workspace 协议），不会造成运行时错误，但会增加构建复杂度。
 
 ### daemon 通知机制为轻量版
 

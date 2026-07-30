@@ -206,7 +206,7 @@ flowchart LR
 |:------|:--------|:--:|
 | 🧭 Constraint Base | Injects rules into Agent context before work starts (SKILL.md + fde.md + think.md + knowledge/) | ✅ stable |
 | ⚙️ Orchestration | Multi-Agent collaboration + task decomposition | 🔶 partial |
-| 🔍 Audit Engine | 21 rules on every git commit / file change, blocks + logs violations. **Zero-token audit** — pure static analysis, no LLM cost | ✅ stable |
+| 🔍 Audit Engine | 21 rules on every git commit / file change, blocks + logs violations. **Core audit rules zero-token** (17 pure git-diff rules don't call LLM, 4 hybrid rules need Agent logs) — pure static analysis, no LLM cost | ✅ stable |
 | 🔄 Restore Engine | Auto git snapshot after every audit, one-click revert | ✅ stable |
 | 🧬 Evolution | FDE weekly inspection of audit trends + reflection logs | ⚠️ experimental |
 

@@ -88,6 +88,9 @@ export interface SovereigntyLogEntry extends DataSovereigntyRecord {
 /** 敏感模式：密钥-like 串 / token-like 串（对齐 A2 思路，运行时再匹配） */
 const SECRET_PATTERNS: RegExp[] = [
   /[a-zA-Z0-9_-]{32,}/g, // 长随机串（API key / token 形态）
+  /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, // IPv4 地址 → [IP]
+  /\/Users\/[^/]+\//g, // macOS 用户路径 → [USER_PATH]
+  /\/home\/[^/]+\//g, // Linux 用户路径 → [USER_PATH]
 ];
 
 /**
@@ -97,7 +100,13 @@ const SECRET_PATTERNS: RegExp[] = [
 function sanitizeText(text: string): string {
   let out = text;
   for (const pattern of SECRET_PATTERNS) {
-    out = out.replace(pattern, (m) => `[REDACTED:${m.length}字符]`);
+    if (pattern.source === '\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b') {
+      out = out.replace(pattern, '[IP]');
+    } else if (pattern.source === '\\/Users\\/[^/]+\\/' || pattern.source === '\\/home\\/[^/]+\\/') {
+      out = out.replace(pattern, '[USER_PATH]');
+    } else {
+      out = out.replace(pattern, (m) => `[REDACTED:${m.length}字符]`);
+    }
   }
   return out;
 }
@@ -208,7 +217,7 @@ export class DataSovereigntyLogger {
               .digest('hex')
               .slice(0, 16);
           } catch (err) {
-            console.warn('[sofagent] data-sovereignty: prevHash 计算失败:', err instanceof Error ? err.message : String(err));
+            console.error('[sofagent] data-sovereignty: prevHash 计算失败:', err instanceof Error ? err.message : String(err));
             prevHash = 'unknown';
           }
         }
@@ -235,12 +244,12 @@ export class DataSovereigntyLogger {
           chmodSync(filePath, 0o600);
         } catch (err) {
           // chmod 失败不影响写入，但记录告警
-          console.warn('[sofagent] data-sovereignty: chmod 600 失败:', err instanceof Error ? err.message : String(err));
+          console.error('[sofagent] data-sovereignty: chmod 600 失败:', err instanceof Error ? err.message : String(err));
         }
       }
     } catch (err) {
       // 写日志失败不阻断业务，但记录告警供排查
-      console.warn('[sofagent] data-sovereignty: 审计日志写入失败:', err instanceof Error ? err.message : String(err));
+      console.error('[sofagent] data-sovereignty: 审计日志写入失败:', err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -261,7 +270,7 @@ export class DataSovereigntyLogger {
       content = readFileSync(filePath, 'utf-8');
     } catch (err) {
       // [sofagent] 审计辅助通道：读取失败不阻断业务，但记录告警
-      console.warn('[sofagent] data-sovereignty: 读取历史记录失败:', err instanceof Error ? err.message : String(err));
+      console.error('[sofagent] data-sovereignty: 读取历史记录失败:', err instanceof Error ? err.message : String(err));
       return [];
     }
 
@@ -271,8 +280,8 @@ export class DataSovereigntyLogger {
       if (!trimmed) continue;
       try {
         entries.push(JSON.parse(trimmed) as DataSovereigntyRecord);
-      } catch {
-        // 跳过解析失败的行（容错）
+      } catch (err) {
+        console.error('[sofagent] data-sovereignty: 日志行解析失败:', err instanceof Error ? err.message : String(err));
       }
     }
     entries.sort((a, b) => a.cloudCall.timestamp.localeCompare(b.cloudCall.timestamp));
@@ -298,7 +307,8 @@ export class DataSovereigntyLogger {
     let years: string[] = [];
     try {
       years = readdirSync(base).filter((f) => /^\d{4}$/.test(f));
-    } catch {
+    } catch (err) {
+      console.error('[sofagent] data-sovereignty: 读取年份目录失败:', err instanceof Error ? err.message : String(err));
       return [];
     }
 
@@ -307,7 +317,8 @@ export class DataSovereigntyLogger {
       let months: string[] = [];
       try {
         months = readdirSync(yearDir).filter((f) => /^\d{2}$/.test(f));
-      } catch {
+      } catch (err) {
+        console.error('[sofagent] data-sovereignty: 读取月份目录失败:', err instanceof Error ? err.message : String(err));
         continue;
       }
       for (const month of months) {
@@ -315,7 +326,8 @@ export class DataSovereigntyLogger {
         let files: string[] = [];
         try {
           files = readdirSync(monthDir).filter((f) => /^\d{4}-\d{2}-\d{2}\.jsonl$/.test(f));
-        } catch {
+        } catch (err) {
+          console.error('[sofagent] data-sovereignty: 读取文件列表失败:', err instanceof Error ? err.message : String(err));
           continue;
         }
         for (const file of files) {
@@ -329,12 +341,12 @@ export class DataSovereigntyLogger {
               if (!trimmed) continue;
               try {
                 out.push(JSON.parse(trimmed) as DataSovereigntyRecord);
-              } catch {
-                // 跳过坏行
+              } catch (err) {
+                console.error('[sofagent] data-sovereignty: 查询区间日志行解析失败:', err instanceof Error ? err.message : String(err));
               }
             }
-          } catch {
-            // 跳过读失败的文件
+          } catch (err) {
+            console.error('[sofagent] data-sovereignty: 查询区间日志文件读取失败:', err instanceof Error ? err.message : String(err));
           }
         }
       }

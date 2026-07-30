@@ -36,8 +36,6 @@
 
 ---
 
----
-
 ## 实验版（v0.x）
 
 > ⚠️ 以下为实验/测试版，产品形态与技术方案多次重大调整。正式版从 v1.0.0 开始。完整日志在 [`docs/archive/changelog-experimental/`](./docs/archive/changelog-experimental/)。

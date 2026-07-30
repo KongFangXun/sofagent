@@ -110,7 +110,7 @@ export function rotateBackups(dataBase?: string): string | null {
     .sort((a, b) => b.mtime - a.mtime);
 
   for (let i = 3; i < backupFiles.length; i++) {
-    try { unlinkSync(backupFiles[i]!.path); } catch { /* */ }
+    try { unlinkSync(backupFiles[i]!.path); } catch (e) { console.debug('cleanup: failed to unlink', e); }
   }
 
   return backupPath;

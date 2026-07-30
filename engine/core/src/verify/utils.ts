@@ -18,7 +18,8 @@ export function tryExec(cmd: string, args: string[]): string | null {
   try {
     const out = execFileSync(cmd, args, { encoding: 'utf-8', timeout: 10000, stdio: ['pipe', 'pipe', 'pipe'] });
     return out.trim();
-  } catch {
+  } catch (err) {
+    console.error(`[verify] 命令执行失败: ${err instanceof Error ? err.message : String(err)}`);
     return null;
   }
 }
@@ -35,7 +36,8 @@ export function countChars(filePath: string): number {
   try {
     const content = readFileSync(filePath, 'utf-8');
     return content.length;
-  } catch {
+  } catch (err) {
+    console.error(`[verify] 读取文件字符数失败: ${err instanceof Error ? err.message : String(err)}`);
     return 0;
   }
 }
@@ -45,7 +47,8 @@ export function countLines(filePath: string): number {
   try {
     const content = readFileSync(filePath, 'utf-8');
     return content.split('\n').length;
-  } catch {
+  } catch (err) {
+    console.error(`[verify] 计算文件行数失败: ${err instanceof Error ? err.message : String(err)}`);
     return 0;
   }
 }
@@ -55,7 +58,8 @@ export function getFileMode(filePath: string): string {
   try {
     const stat = statSync(filePath);
     return (stat.mode & 0o777).toString(8);
-  } catch {
+  } catch (err) {
+    console.error(`[verify] 获取文件权限失败: ${err instanceof Error ? err.message : String(err)}`);
     return '???';
   }
 }
@@ -65,7 +69,8 @@ export function countFilesInDir(dir: string, suffix: string): number {
   try {
     const entries = readdirSync(dir, { withFileTypes: true });
     return entries.filter((e: Dirent) => e.isFile() && e.name.endsWith(suffix)).length;
-  } catch {
+  } catch (err) {
+    console.error(`[verify] 统计目录文件数失败: ${err instanceof Error ? err.message : String(err)}`);
     return 0;
   }
 }
@@ -75,7 +80,8 @@ export function isExecutable(filePath: string): boolean {
   try {
     const stat = statSync(filePath);
     return (stat.mode & 0o111) !== 0; // 任意 x 位
-  } catch {
+  } catch (err) {
+    console.error(`[verify] 检查可执行权限失败: ${err instanceof Error ? err.message : String(err)}`);
     return false;
   }
 }
@@ -95,12 +101,12 @@ export function findRecentFiles(dir: string, matchPattern: RegExp, days: number)
         if (stat.mtimeMs >= cutoff) {
           results.push(fullPath);
         }
-      } catch {
-        // 跳过不可读文件
+      } catch (err) {
+        console.error(`[verify] 读取文件元信息失败: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
-  } catch {
-    // 目录不存在
+  } catch (err) {
+    console.error(`[verify] 扫描目录失败: ${err instanceof Error ? err.message : String(err)}`);
   }
   return results;
 }
@@ -109,7 +115,8 @@ export function findRecentFiles(dir: string, matchPattern: RegExp, days: number)
 export function readFileContent(filePath: string): string {
   try {
     return readFileSync(filePath, 'utf-8');
-  } catch {
+  } catch (err) {
+    console.error(`[verify] 读取文件失败: ${err instanceof Error ? err.message : String(err)}`);
     return '';
   }
 }

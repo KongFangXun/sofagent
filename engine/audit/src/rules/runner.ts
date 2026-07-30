@@ -12,6 +12,18 @@ import type { AuditHistoryEntry } from '../audit-history';
 import { defaultRules, rules } from './index';
 
 /**
+ * 规则分组（21 条 = 13 默认 + 8 扩展）
+ * 
+ * 默认规则（13 条，config.yml 中 enabled: true）：
+ *   A1-A11, A14, A15
+ * 
+ * 扩展规则（8 条，需主动开启 extensions.enabled: true）：
+ *   A16-A19, E1-E4
+ * 
+ * 注：A12/A13 已在 v1.2.0 合并入 A11，不再独立存在。
+ */
+
+/**
  * 基线规则——安全底线，不可通过 config.yml 关闭。
  * 即使 config.rules.a1 = false，A1 仍然生效。
  */
@@ -32,6 +44,11 @@ export interface AuditResult {
  * v1.1.4 后：
  *   critical: A1→A2→A9→A4→A19  (A19 message 质量排在 A4 之后，早于 A3)
  *   extended: A14→A15→A16→A17→A18→E1→E2→E3→E4  (A 组优先，正序排列)
+ *
+ * @see engine/audit/src/rules/index.ts  defaultRules/extendedRules 数组——新增规则时需同时在两处注册：
+ *      ① 在 index.ts 的 defaultRules 或 extendedRules 数组中添加规则对象；
+ *      ② 在此处的 AUDIT_PRIORITY 分组中添加对应的规则 ID。
+ *      两边顺序一致才能保证优先级分组正确。
  */
 export const AUDIT_PRIORITY = {
   critical: ['A1', 'A2', 'A9', 'A4', 'A19'],

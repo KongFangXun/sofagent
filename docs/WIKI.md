@@ -3,11 +3,16 @@
 > **这是给 AI Agent 看的项目导航索引。** 新 session 先读这个（3 分钟扫完），再按需深入具体文档。
 > 人类开发者请读 [README.md](../README.md)。
 
+> **3 分钟建立全景理解**：核心文档 221KB 太长？先看这 3 句：
+> - **[ARCHITECTURE.md](./ARCHITECTURE.md)**（85KB）：四层架构设计（Harness → Graph → Loop → Rule），关键技术决策记录。**3 秒版**：Harness 中间件接 Agent · Graph 控制图分波次 · Loop 自迭代闭环。
+> - **[PHILOSOPHY.md](./PHILOSOPHY.md)**（67KB）：设计哲学与产品方法论。"不替代 Agent，做 Agent 的控制面"。
+> - **[ROADMAP.md](./ROADMAP.md)**（69KB）：版本路线图 + 已发布版本记录。当前目标 v1.3.0（age 加密 + 规则 50+）。
+
 ---
 
 ## 一、一句话
 
-**sofagent = FDE Agent**，进场梳理工作流、把能自动化的环节变成 AI 节点、部署到设备上 7×24 自己跑。底层是 **sofagent 引擎（Harness 中间件）**——约束 Agent 行为、审计每次变更、沉淀经验。
+**sofagent 是一个 AI Agent 行为审计引擎（同时也是 FDE 方法论的参考实现）**，进场梳理工作流、把能自动化的环节变成 AI 节点、部署到设备上 7×24 自己跑。底层是 **sofagent 引擎（Harness 中间件）**——约束 Agent 行为、审计每次变更、沉淀经验。
 
 ---
 
@@ -23,7 +28,7 @@
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | **FORGE** | 自迭代引擎——通过 workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ sofagent/（约束底座）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |
-| **data/** | v1.2.1 确立的 SSOT 数据目录（原 .sofagent/ 已迁移）：history.jsonl、knowledge/、audit/、config/ | [DEVELOPMENT §数据目录](./DEVELOPMENT.md) |
+| **data/** | ~/.sofagent/data/ v1.2.1 确立的 SSOT 数据目录（原 .sofagent/ 已迁移）：history.jsonl、knowledge/、audit/、config/ | [DEVELOPMENT §数据目录](./DEVELOPMENT.md) |
 
 ---
 
@@ -152,7 +157,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | 下一版本 | v1.3.0（规划中，参见 ROADMAP.md） |
 </new_string>
 </invoke>
-| 测试覆盖 | 1204 测试 / 12 包全绿 |
+| 测试覆盖 | 1207 测试 / 12 包（共 1207，16 因 safe-delete 环境限制预期失败） |
 | 审计规则 | 21 条（13 默认 + 8 扩展），活跃编号 A1-A11 + A14-A19 + E1-E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |

@@ -43,7 +43,15 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
 - ⚠️ 明文存储：`data/` 下文件仍为 Markdown 明文，未做加密
-- ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**预计 v1.3.0 落地**。合规审查员请注意：v1.2.x 版本不适合直接用于强合规场景，需配合外部加密卷（gpg / disk encryption）。
+- ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**预计 v1.3.0（目标 2026 年 Q3）落地**。合规审查员请注意：v1.2.x 版本不适合直接用于强合规场景，需配合外部加密卷（gpg / disk encryption）。
+
+### 当前版本（v1.2.3）临时缓解措施
+
+在 age 加密（目标 v1.3.0）交付之前，建议：
+1. **设置 `~/.sofagent/data/` 目录权限为 700**：`chmod 700 ~/.sofagent/data/`
+2. **将 `~/.sofagent/` 父目录放在加密文件系统上**（如 macOS APFS 加密卷）
+3. **定期轮换 `~/.sofagent/data/` 中的历史审计数据**
+
 - data/ 目录权限建议 700（用户可见运行时数据）；`~/.sofagent/internal/` 目录权限 700（引擎内部状态）。同一服务器其他用户若有 root 权限可读
 
 **企业环境建议**：
@@ -74,7 +82,15 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 | **IV/nonce 管理** | 每条消息随机 12 字节 IV，绝不复用；GCM 16 字节认证标签校验失败即拒绝 |
 | **密钥轮换** | 24h 过渡窗口内旧 key 只解不加，过窗口销毁强制重新协商 |
 
-> ⚠️ **`SOFAGENT_FEDERATION_TOKEN` 泄露防护**（v1.1.8）：该环境变量在 `ps e` / `/proc/*/environ` 中可见（Unix），且可能被写入 shell history。建议 CI 环境使用 secret 注入（不走 .env 文件），本地测试后清理 history。token 泄露不会导致数据泄露（还需 ECDH 私钥），但攻击者可用泄露 token 冒充已配对设备发起配对请求。
+### 🔴 SOFAGENT_FEDERATION_TOKEN 进程可见（高危）— ✅ 已修复 v1.2.3
+
+**风险（已修复）**：联邦配对使用的 `SOFAGENT_FEDERATION_TOKEN` 曾通过环境变量传递，
+在进程列表（`ps e`、`/proc/*/environ`）中明文可见。
+
+**修复**：v1.2.3 已将 token 从环境变量迁移至 `~/.sofagent/federation.token` 文件读取（权限 600），
+不再在进程列表中暴露。详见 `engine/core/src/crypto/pairing.ts` 的 `readTokenFromFile()`。
+
+**影响范围**：v1.1.0 - v1.2.2（已修复于 v1.2.3）
 
 > ⚠️ **HMAC key 分发安全**（v1.1.8）：路径 C 的 HMAC 签名密钥如与 federation.json 同放在 USB 等可移动介质上，攻击者获取介质即可伪造 `.sig` 文件。建议 HMAC key 通过独立渠道（如密码管理器 / 加密邮件）分发，不与 federation.json 同介质存储。
 
@@ -250,6 +266,23 @@ sanitize() 管道在写入 history.jsonl、think.md、task/logs 等文件前自�
 > ⚠️ 以上绕过路径均依赖 Agent 的"自觉"——这是 sofagent 架构级别的信任模型选择：审计工具是**协助**人类监督，不是**替代**人类监督。已知绕过路径详见 LIMITATIONS 已有信任模型描述。
 
 > ⚠️ **企业高安全场景**：`config.yml` 篡改可绕过审计规则（如关闭规则、放宽阈值）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。
+
+### 详细缓解步骤
+
+1. **CI 侧兜底（推荐）**：在 CI/CD pipeline 中独立运行 `sofagent-audit --all`，
+   使用 CI 环境内受保护的 config.yml 副本，不依赖开发机上的配置文件。
+2. **文件权限加固**：`chmod 444 .sofagent/config.yml` 将配置设为只读。
+   注意：此方法不能防止 Agent 以 root/同用户身份强制写入，
+   但能防止意外修改。
+3. **完整性校验**：使用 `tools/sign-config.mjs` 对 config.yml 签名，
+   定期运行 `sofagent-audit --doctor` 检查配置完整性。
+
+> 💡 更多本地开发缓解措施详见 [LIMITATIONS.md → 本地开发紧急缓解措施](./LIMITATIONS.md#本地开发紧急缓解措施)（chmod 400、git hooksPath、定期 doctor）。
+
+**受影响场景**：
+- 不上 CI 的小团队或个人项目（风险最高）
+- Agent 具有文件系统写入权限的任何场景
+- `sofagent-audit --init` 后未额外加固配置权限的场景
 
 ### Daemon 监控边界
 

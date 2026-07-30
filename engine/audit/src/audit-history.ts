@@ -167,7 +167,27 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
 
   const sanitizedEntry = { ...baseSanitized, hmacSig: hmacSig ?? undefined };
   // v1.0.5: 使用原子追加（先读+追加+原子写），避免并发写入导致的行交错
-  atomicAppendSync(filePath, JSON.stringify(sanitizedEntry));
+  // v1.2.3 最小缓解：写入后读回校验最后一行是否为完整 JSON（防并发写入损坏）
+  const jsonLine = JSON.stringify(sanitizedEntry);
+  atomicAppendSync(filePath, jsonLine);
+  for (let retry = 0; retry < 3; retry++) {
+    const content = readFileSync(filePath, 'utf-8');
+    const lines = content.trim().split('\n').filter(Boolean);
+    if (lines.length > 0) {
+      try {
+        JSON.parse(lines[lines.length - 1]!);
+        break; // 最后一行解析成功 → 写入完整
+      } catch {
+        // 最后一行被截断（并发写入损坏）→ 重写
+        console.warn("[sofagent] 审计历史最后一行不完整（可能并发写入损坏），正在重试写入");
+        atomicAppendSync(filePath, jsonLine);
+        if (retry < 2) {
+          const t = Date.now();
+          while (Date.now() - t < 50) { /* busy-wait 50ms */ }
+        }
+      }
+    }
+  }
 
   // 文件首次创建时收紧权限为 0o600（仅当前用户可读写）
   if (!fileExists) {

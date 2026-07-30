@@ -38,12 +38,12 @@
   },
   "homepage": "https://github.com/KongFangXun/sofagent#readme",
   "dependencies": {
-    "@sofagent/audit": "1.2.2",
-    "@sofagent/core": "1.2.2",
-    "@sofagent/think": "1.2.2"
+    "@sofagent/audit": "1.2.3",
+    "@sofagent/core": "1.2.3",
+    "@sofagent/think": "1.2.3"
   },
   "optionalDependencies": {
-    "@sofagent/daemon": "1.2.2"
+    "@sofagent/daemon": "1.2.3"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

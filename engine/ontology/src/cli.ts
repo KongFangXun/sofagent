@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// ontology CLI · v1.2.2
+// ontology CLI · v1.2.3
 
 const args = process.argv.slice(2);
 const subcommand = args[0];

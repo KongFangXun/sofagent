@@ -35,13 +35,13 @@ metadata:
 | 层 | 文件 | 加载方式 | 读什么 | 不存在时 |
 |:--:|------|---------|------|------|
 | 1 | **本文件** | skill 调用自动注入 | 4 底线 + 7 则铁律 + FDE 身份 | — |
-| 2 | `{SOFAGENT_DATA}/think.md` | Agent 主动 Read | 反思区（上次踩了什么坑）| 任务完成后创建 |
+| 2 | `{SOFAGENT_HOME}/data/think.md` | Agent 主动 Read | 反思区（上次踩了什么坑）| 任务完成后创建 |
 | 3 | `~/.openclaw/skills/sofagent/fde.md` | Agent 主动 Read | 企业规范（FDE 制定，最高优先级）| 跳过（未配置）|
-| 4 | `{SOFAGENT_DATA}/knowledge/index.md` | Agent 主动 Read | AI 知识库目录（top-3 摘要）| 跳过（空知识库）|
+| 4 | `{SOFAGENT_HOME}/data/knowledge/index.md` | Agent 主动 Read | AI 知识库目录（top-3 摘要）| 跳过（空知识库）|
 
-> 💡 第 4 层：index.md 与 task/logs 关键词匹配 → top-3 摘要（≤500 token）。`{SOFAGENT_DATA}` = `${PWD}/data`
+> 💡 第 4 层：index.md 与 task/logs 关键词匹配 → top-3 摘要（≤500 token）。`{SOFAGENT_HOME}` = `~/.sofagent`（即 `$HOME/.sofagent`），data 子目录存 think.md / knowledge / 审计记录等运行时数据
 >
-> 🔧 **custom/ 用户层（v1.2.1+）**：四层加载后 Read `skills/sofagent/custom/*-overrides.md`（FDE）与 `{SOFAGENT_DATA}/custom/*-overrides.md`（Sub Agent 自动注入）。后加载 = 优先级更高。详见 `custom/README.md`。
+> 🔧 **custom/ 用户层（v1.2.1+）**：四层加载后 Read `skills/sofagent/custom/*-overrides.md`（FDE）与 `{SOFAGENT_HOME}/data/custom/*-overrides.md`（Sub Agent 自动注入）。后加载 = 优先级更高。详见 `custom/README.md`。
 
 ---
 

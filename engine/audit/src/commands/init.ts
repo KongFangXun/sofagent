@@ -221,7 +221,7 @@ export function runInit(): void {
     // v1.0.7: 安装 post-commit hook（timestamp 近邻匹配替代 SHA 精确匹配）
     const postCommitPath = join(hooksDir, 'post-commit');
     const POST_COMMIT_TEMPLATE = `#!/bin/bash
-# sofagent post-commit hook v1.2.2
+# sofagent post-commit hook v1.2.3
 # 检测策略：检查 history.jsonl 最后一条记录的 timestamp 是否在 300 秒内
 # 如果 300 秒内有审计记录，认为 commit 通过了审计；否则可能是 --no-verify 绕过
 # 注意：git commit --no-verify 会绕过本 hook。
