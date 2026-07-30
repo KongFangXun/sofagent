@@ -305,7 +305,7 @@ VIEWS=$(grep -c '^### ' FORGE/playbook/fresh-eyes-review.md)
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
 | 24 | **最终确认两份审查文档**：regression 维度与 fresh-eyes 维度互相印证，循环修复中暴露的新盲区已补入 | 两份文档最终状态见于文件 diff |
-| 25 | **🔴 确认 acceptance test 的审查维度已同步**（v1.1.4 教训）：`regression-checklist.md` 维度 8「acceptance-test 健壮性」+ 维度 61「新功能零覆盖禁止」+ `fresh-eyes-review.md` v1.2.2 三条教训（F-39/F2/F1）——三处配合本版本 acceptance-test.sh 场景 147–152 构成完整验证链 | 对照三份文件确认：regression 维度 → acceptance 场景 → fresh-eyes 教训形成闭环 |
+| 25 | **🔴 确认 acceptance test 的审查维度已同步**（v1.1.4 教训）：`regression-checklist.md` 维度 8「acceptance-test 健壮性」+ 维度 61「新功能零覆盖禁止」+ `fresh-eyes-review.md` v1.2.2 三条教训（F-39/F2/F1）——三处配合本版本 acceptance-test.sh 场景 153–163 构成完整验证链 | 对照三份文件确认：regression 维度 → acceptance 场景 → fresh-eyes 教训形成闭环 |
 
 **审查体系闭环**（v1.0.4 教训）：审查文档自身也会过时——每次发版后审视 `fresh-eyes-review.md` 和 `regression-checklist.md` 的数字、路径、维度是否还有效。**验收测试同理**（v1.1.4 教训）——`acceptance-test.sh` 的场景数和覆盖范围必须与 changelog 功能点对齐，否则回归测试形同虚设。
 
