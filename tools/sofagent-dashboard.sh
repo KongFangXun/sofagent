@@ -842,7 +842,8 @@ render_forge_agent_line() {
   stall_count="$(count_stall_events "$round_dir" "$role")"
 
   # 构建输出行
-  local output="  ${label} $(status_icon "$status") $(humanize_status "$status") · 当前: $(trunc "$cur_file" $((w - 40))) · 本轮发现: ${findings} · 累计: ${cumulative}"
+  local output
+  output="  ${label} $(status_icon "$status") $(humanize_status "$status") · 当前: $(trunc "$cur_file" $((w - 40))) · 本轮发现: ${findings} · 累计: ${cumulative}"
 
   # 如果有 stall 事件，添加警告标记
   if [ "$stall_count" -gt 0 ] 2>/dev/null; then
