@@ -741,15 +741,18 @@ function resolveRunDir() {
 
 /**
  * 将 result.md 按 finding 切片。
- * 每个 finding 以 "### finding-NN" 或 "### finding-NN:" 开头。
+ * 每个 finding 以 "### finding-NN" / "### finding-P0-NN" 或带冒号开头。
+ * Slice result.md by finding. Each finding starts with
+ * "### finding-NN" / "### finding-P0-NN" (with optional colon).
  *
- * @param {string} resultText - result.md 全文
+ * @param {string} resultText - result.md 全文 / full text
  * @returns {Array<{id: string, content: string}>} - 每个 finding 的 id 和正文（含 ### 行）
  */
 function splitFindings(resultText) {
   const findings = [];
-  // 匹配 ### finding-01 / ### finding-01: / ### finding-01：
-  const re = /^### finding-(\d+)[：:]?/gm;
+  // 匹配 ### finding-01 / ### finding-P0-01 / ### finding-P1-02 等格式
+  // Accept: pure digits (01) or level-prefixed (P0-01, P1-02)
+  const re = /^### finding-([A-Z0-9-]+)[：:]?/gm;
   const marks = [];
   let m;
   while ((m = re.exec(resultText)) !== null) {
@@ -801,6 +804,33 @@ async function runBFixSharded(roundDir, target, round) {
   // 2. 按 finding 切片
   const findings = splitFindings(resultText);
   console.log(`  [b-fix 分片] 共 ${findings.length} 条 finding，每批 ${BATCH_SIZE} 条`);
+
+  // 防回归：切出 0 条 finding 但 result.md 中 P0+P1 计数 > 0 时报警
+  // Anti-regression: warn when 0 findings are parsed but P0/P1 markers exist
+  if (findings.length === 0 && resultText.length > 0) {
+    const p0Matches = resultText.match(/### finding-P0-/g) || [];
+    const p1Matches = resultText.match(/### finding-P1-/g) || [];
+    if (p0Matches.length > 0 || p1Matches.length > 0) {
+      console.warn(
+        `\n  ⚠️  [splitFindings] 切出 0 条 finding，但 result.md 中含 ${p0Matches.length} 个 P0 + ${p1Matches.length} 个 P1。\n` +
+        `      可能原因：finding 标题格式不符（应为 ### finding-NN 或 ### finding-P0-NN）。\n` +
+        `      跳过修复环节——请检查 a-consolidate 输出格式。`
+      );
+      // 写 stall 类警示事件到 sub-progress jsonl
+      // Write stall-class warning event to sub-progress jsonl
+      const warningEvent = {
+        ts: new Date().toISOString(),
+        role: 'system',
+        event: 'split-findings-empty-warning',
+        p0Count: p0Matches.length,
+        p1Count: p1Matches.length,
+        resultLength: resultText.length,
+      };
+      if (typeof visibility !== 'undefined' && typeof visibility.emit === 'function') {
+        visibility.emit('split-findings-empty-warning', warningEvent);
+      }
+    }
+  }
 
   // 3. 边界情况：0 finding → 不需要修复，直接跳过
   if (findings.length === 0) {
@@ -882,6 +912,33 @@ async function runAVerifySharded(roundDir, target, round) {
 
   const findings = splitFindings(resultText);
   console.log(`  [a-verify 分片] 共 ${findings.length} 条 finding，每批 ${BATCH_SIZE} 条`);
+
+  // 防回归：切出 0 条 finding 但 result.md 中 P0+P1 计数 > 0 时报警
+  // Anti-regression: warn when 0 findings are parsed but P0/P1 markers exist
+  if (findings.length === 0 && resultText.length > 0) {
+    const p0Matches = resultText.match(/### finding-P0-/g) || [];
+    const p1Matches = resultText.match(/### finding-P1-/g) || [];
+    if (p0Matches.length > 0 || p1Matches.length > 0) {
+      console.warn(
+        `\n  ⚠️  [splitFindings] 切出 0 条 finding，但 result.md 中含 ${p0Matches.length} 个 P0 + ${p1Matches.length} 个 P1。\n` +
+        `      可能原因：finding 标题格式不符（应为 ### finding-NN 或 ### finding-P0-NN）。\n` +
+        `      跳过验证环节——请检查 a-consolidate 输出格式。`
+      );
+      // 写 stall 类警示事件到 sub-progress jsonl
+      // Write stall-class warning event to sub-progress jsonl
+      const warningEvent = {
+        ts: new Date().toISOString(),
+        role: 'system',
+        event: 'split-findings-empty-warning',
+        p0Count: p0Matches.length,
+        p1Count: p1Matches.length,
+        resultLength: resultText.length,
+      };
+      if (typeof visibility !== 'undefined' && typeof visibility.emit === 'function') {
+        visibility.emit('split-findings-empty-warning', warningEvent);
+      }
+    }
+  }
 
   if (findings.length === 0) {
     console.log(`  [a-verify 分片] 0 条 finding，跳过验证`);
