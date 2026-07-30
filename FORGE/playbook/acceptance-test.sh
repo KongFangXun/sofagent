@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座
+# + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
@@ -1514,6 +1514,89 @@ S156_OK=true
 S156_OUT=$(node "$SCRIPT_DIR/acceptance-node-probes.js" s156 2>&1) || true
 echo "$S156_OUT" | grep -q "^OK" || { fail "审计合并卡关失败: $S156_OUT"; S156_OK=false; }
 $S156_OK && pass "审计合并卡关双向（PASS→merge 主分支可见 + FAIL→reject 不泄漏）"
+scenario 157 "v1.2.3 Fresh-Eyes Dashboard 集成——latest.json + sub-progress → --full FORGE 审查区块"
+S157_OK=true; DASH157="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
+[ -f "$DASH157" ] || { fail "sofagent-dashboard.sh 不存在"; S157_OK=false; }
+if $S157_OK; then
+  S157_HOME=$(mktemp -d /tmp/sofagent-acc-dash157-XXXX)
+  mkdir -p "$S157_HOME/data/dashboard" "$S157_HOME/data/forge-runs/fresh-eyes-loop/2026-07-31/run-99/round-01"
+  echo '{}' > "$S157_HOME/data/dashboard/graph-state.json"
+  cat > "$S157_HOME/data/forge-runs/fresh-eyes-loop/latest.json" <<'EOF157'
+{"runDir":"forge-runs/fresh-eyes-loop/2026-07-31/run-99","round":2,"totalRounds":10,"updatedAt":"2026-07-30T12:00:00Z","stopReason":"","stallCount":0}
+EOF157
+  echo '{"type":"llm-start","role":"A","ts":"2026-07-30T12:00:01Z","file":"check-a.md"}' > "$S157_HOME/data/forge-runs/fresh-eyes-loop/2026-07-31/run-99/round-01/sub-progress-A.jsonl"
+  S157_OUT=$(SOFAGENT_HOME="$S157_HOME" bash "$DASH157" --full 2>&1) || true
+  rm -rf "$S157_HOME"
+  echo "$S157_OUT" | grep -q "质量审查" || { fail "Dashboard --full 缺少 FORGE 审查区块标题"; S157_OK=false; }
+  echo "$S157_OUT" | grep -q "第 2 轮 / 共 10 轮" || { fail "Dashboard --full 未渲染轮次信息"; S157_OK=false; }
+  $S157_OK && pass "Fresh-Eyes Dashboard 集成端到端（latest.json→--full FORGE 审查区块：标题+轮次）"
+fi
+scenario 158 "v1.2.3 Workspace 变更摘要——workspace-changes.jsonl → --full 最近变更区块"
+S158_OK=true; DASH158="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
+[ -f "$DASH158" ] || { fail "sofagent-dashboard.sh 不存在"; S158_OK=false; }
+if $S158_OK; then
+  S158_HOME=$(mktemp -d /tmp/sofagent-acc-dash158-XXXX)
+  mkdir -p "$S158_HOME/data/dashboard"
+  echo '{}' > "$S158_HOME/data/dashboard/graph-state.json"
+  echo '{"runId":"acc-test-run","created":["a.ts","b.ts"],"modified":["c.ts"],"deleted":[],"timestamp":"2026-07-30T12:00:00Z"}' > "$S158_HOME/data/dashboard/workspace-changes.jsonl"
+  S158_OUT=$(SOFAGENT_HOME="$S158_HOME" bash "$DASH158" --full 2>&1) || true
+  rm -rf "$S158_HOME"
+  echo "$S158_OUT" | grep -q "最近变更" || { fail "Dashboard --full 缺少最近变更区块标题"; S158_OK=false; }
+  echo "$S158_OUT" | grep -q "新建 2 个文件" || { fail "Dashboard --full 未渲染新建文件数"; S158_OK=false; }
+  echo "$S158_OUT" | grep -q "修改 1 个文件" || { fail "Dashboard --full 未渲染修改文件数"; S158_OK=false; }
+  $S158_OK && pass "Workspace 变更摘要端到端（jsonl→--full 最近变更：新建+修改计数）"
+fi
+scenario 159 "v1.2.3 Dashboard 用户可读性——humanize_status 中文映射 + --technical 切回英文"
+S159_OK=true; DASH159="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
+[ -f "$DASH159" ] || { fail "sofagent-dashboard.sh 不存在"; S159_OK=false; }
+if $S159_OK; then
+  S159_HOME=$(mktemp -d /tmp/sofagent-acc-dash159-XXXX)
+  mkdir -p "$S159_HOME/data/dashboard"
+  echo '{"nodes":[{"id":"plan","status":"done"},{"id":"engineer-1","status":"running"},{"id":"audit-1","status":"pending"}],"wave":1,"degradationLevel":1,"updatedAt":"2026-07-30T12:00:00Z"}' > "$S159_HOME/data/dashboard/graph-state.json"
+  # 默认模式：humanize_status 翻译为中文
+  S159_CN=$(SOFAGENT_HOME="$S159_HOME" bash "$DASH159" --full 2>&1) || true
+  echo "$S159_CN" | grep -q "正在执行" || { fail "默认模式未翻译 running→正在执行"; S159_OK=false; }
+  echo "$S159_CN" | grep -q "已简化任务范围" || { fail "默认模式未翻译 degradationLevel:1→已简化任务范围"; S159_OK=false; }
+  # --technical 模式：原样返回英文技术词
+  S159_EN=$(SOFAGENT_HOME="$S159_HOME" bash "$DASH159" --full --technical 2>&1) || true
+  echo "$S159_EN" | grep -q "running" || { fail "--technical 模式未保留英文 running"; S159_OK=false; }
+  echo "$S159_EN" | grep -q "正在执行" && { fail "--technical 模式不应出现中文翻译"; S159_OK=false; }
+  rm -rf "$S159_HOME"
+  $S159_OK && pass "Dashboard 用户可读性（默认中文映射 + --technical 切回英文）"
+fi
+scenario 160 "v1.2.3 install.sh Dashboard 软链——ln -sf 注册 sofagent-dashboard 入口"
+S160_OK=true
+grep -q "sofagent-dashboard" "$PROJECT_ROOT/install.sh" || { fail "install.sh 未包含 sofagent-dashboard 入口"; S160_OK=false; }
+grep -q "ln -sf" "$PROJECT_ROOT/install.sh" || { fail "install.sh 缺少 ln -sf 软链逻辑"; S160_OK=false; }
+grep -q "dashboard_link" "$PROJECT_ROOT/install.sh" || { fail "install.sh 缺少 dashboard_link 变量"; S160_OK=false; }
+$S160_OK && pass "install.sh Dashboard 软链（sofagent-dashboard + ln -sf + dashboard_link）"
+scenario 161 "v1.2.3 规则名可读性——render_rules TOP3 中文名（非旧 A3 A3 双编码格式）"
+S161_OK=true; DASH161="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
+[ -f "$DASH161" ] || { fail "sofagent-dashboard.sh 不存在"; S161_OK=false; }
+if $S161_OK; then
+  S161_HOME=$(mktemp -d /tmp/sofagent-acc-dash161-XXXX)
+  mkdir -p "$S161_HOME/data/dashboard" "$S161_HOME/data/audit"
+  echo '{}' > "$S161_HOME/data/dashboard/graph-state.json"
+  printf '{"timestamp":"2026-07-30T12:00:00Z","ruleResults":[{"name":"A3 不改越界","number":3,"status":"FAIL"},{"name":"A3 不改越界","number":3,"status":"FAIL"},{"name":"A1 不碰敏感","number":1,"status":"WARN"}]}\n' > "$S161_HOME/data/audit/history.jsonl"
+  S161_OUT=$(SOFAGENT_HOME="$S161_HOME" bash "$DASH161" 2>&1) || true
+  rm -rf "$S161_HOME"
+  echo "$S161_OUT" | grep -q "不改越界" || { fail "规则审计栏未渲染中文名'不改越界'"; S161_OK=false; }
+  echo "$S161_OUT" | grep -q "（A3）" || { fail "规则审计栏未渲染编码括号（A3）"; S161_OK=false; }
+  echo "$S161_OUT" | grep -q "次" || { fail "规则审计栏未渲染次数后缀"; S161_OK=false; }
+  echo "$S161_OUT" | grep -q "A3 A3" && { fail "规则审计栏仍有旧双编码格式 A3 A3"; S161_OK=false; }
+  $S161_OK && pass "规则名可读性（TOP3 中文名+编码括号+次数，无旧双编码）"
+fi
+scenario 162 "v1.2.3 Fresh-Eyes-Loop 移至阶段一——releasing.md 阶段一由 loop 驱动"
+S162_OK=true
+grep -q "阶段一" "$PROJECT_ROOT/docs/changelog/releasing.md" || { fail "releasing.md 缺少阶段一章节"; S162_OK=false; }
+grep -q "fresh-eyes-loop" "$PROJECT_ROOT/docs/changelog/releasing.md" || { fail "releasing.md 未提及 fresh-eyes-loop"; S162_OK=false; }
+grep -q "自动化审查循环" "$PROJECT_ROOT/docs/changelog/releasing.md" || { fail "releasing.md 阶段一未标注自动化审查循环驱动"; S162_OK=false; }
+$S162_OK && pass "Fresh-Eyes-Loop 移至阶段一（releasing.md 阶段一 = loop 自动化驱动）"
+scenario 163 "v1.2.3 术语统一——WIKI.md + ARCHITECTURE.md 行业标准术语对齐"
+S163_OK=true
+grep -q "harness" "$PROJECT_ROOT/docs/WIKI.md" || { fail "WIKI.md 缺少行业标准术语 harness"; S163_OK=false; }
+grep -q "harness" "$PROJECT_ROOT/docs/ARCHITECTURE.md" || { fail "ARCHITECTURE.md 缺少行业标准术语 harness"; S163_OK=false; }
+$S163_OK && pass "术语统一（WIKI + ARCHITECTURE 含行业标准术语 harness）"
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 if [ "$FAILED" -gt 0 ]; then echo -e "${RED}❌ 有 $FAILED 个场景失败，请修复后再发版${NC}"; exit "$FAILED"
