@@ -94,20 +94,24 @@ export class StallError extends Error {
 const DEFAULT_HEARTBEAT_MS = 1000;
 
 /**
- * 读取心跳停顿检测阈值（毫秒）——默认 3 分钟。
- * 为什么 3 分钟：macOS App Nap 节流周期 ~10s，正常心跳 1s 一次，
- * 如果连续 3 分钟没有 tick，说明事件循环被冻结而非 API 慢。
+ * 读取心跳停顿检测阈值（毫秒）——默认 5 分钟。
+ * 为什么 5 分钟：macOS App Nap 节流周期 ~10s，正常心跳 1s 一次，
+ * 如果连续 5 分钟没有 tick，说明事件循环被冻结而非 API 慢。
+ * 实测正常心跳间隔上界 176s，180s 阈值仅 4s 余量存在边缘误报，
+ * 300s 远离正常上界（留 124s 余量），同时仍能捕获真实冻结。
  * 可由 FORGE_STALL_THRESHOLD_MS 环境变量覆盖。
  *
- * Stall detection threshold (ms) — default 3 min.
+ * Stall detection threshold (ms) — default 5 min.
  * Rationale: macOS App Nap throttle cycle ~10s, normal heartbeat 1s.
- * 3 min without tick = event loop frozen, not slow API.
+ * 5 min without tick = event loop frozen, not slow API.
+ * Measured normal heartbeat upper bound 176s; 300s leaves 124s margin
+ * vs. only 4s with the old 180s threshold.
  * Override via FORGE_STALL_THRESHOLD_MS env var.
  *
  * 注意：在函数调用时读取（而非模块顶层），以支持测试时动态设置环境变量。
  */
 function getStallThreshold() {
-  return parseInt(process.env.FORGE_STALL_THRESHOLD_MS || '180000', 10);
+  return parseInt(process.env.FORGE_STALL_THRESHOLD_MS || '300000', 10);
 }
 
 /**
@@ -121,6 +125,20 @@ function getStallThreshold() {
  */
 function getStallMax() {
   return parseInt(process.env.FORGE_STALL_MAX || '3', 10);
+}
+
+/**
+ * 读取单次停顿立即中止阈值（毫秒）——默认 10 分钟。
+ * 当单次心跳间隔超过此值，判定为"极端严重 stall"，立即 abort 当前调用，
+ * 不等 STALL_MAX 累计。平时零噪声，仅极端场景触发。
+ *
+ * Immediate abort threshold for extreme single stall (ms) — default 10 min.
+ * When a single heartbeat gap exceeds this, abort immediately without waiting
+ * for STALL_MAX accumulation. Zero noise normally, only triggers on extremes.
+ * Override via FORGE_STALL_ABORT_MS env var.
+ */
+function getStallAbortMs() {
+  return parseInt(process.env.FORGE_STALL_ABORT_MS || '600000', 10);
 }
 
 // ────────────────────────────────
@@ -229,6 +247,7 @@ export function createProgressMiddleware(options) {
       // Read thresholds at call entry (each call can have independent config, supports test overrides)
       const STALL_THRESHOLD_MS = getStallThreshold();
       const STALL_MAX = getStallMax();
+      const STALL_ABORT_MS = getStallAbortMs();
 
       const timer = setInterval(() => {
         try {
@@ -257,6 +276,25 @@ export function createProgressMiddleware(options) {
               `间隔 ${actualGap}ms > 阈值 ${STALL_THRESHOLD_MS}ms ` +
               `(${stallCount}/${STALL_MAX})`
             );
+
+            // 自愈层：单次 stall 极端严重（>10min）立即 abort
+            // Self-heal: extreme single stall (>10min) triggers immediate abort
+            if (actualGap > STALL_ABORT_MS) {
+              clearInterval(timer);
+              console.warn(
+                `[watchdog] 极端停顿: 间隔 ${actualGap}ms > 自愈阈值 ${STALL_ABORT_MS}ms，` +
+                `立即 abort 当前调用`
+              );
+              emit({
+                ts: new Date().toISOString(),
+                role,
+                event: 'stall-abort-immediate',
+                gapMs: actualGap,
+                thresholdMs: STALL_ABORT_MS,
+              });
+              controller.abort(new StallError(1, [actualGap]));
+              return; // 退出 setInterval 回调
+            }
 
             // 累计达上限：通过 AbortController 中止
             if (stallCount >= STALL_MAX) {
