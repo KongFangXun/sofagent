@@ -48,11 +48,19 @@ if [ "$QUIET" = false ]; then
   echo "  跑 test-count.sh 获取实际测试数..."
 fi
 
+# v1.2.3 修复：test-count.sh 非 quiet 模式的「总计」行带 ANSI BOLD 码（总计: \033[1m1207 tests），
+# 在 CI 非 TTY 环境下 grep '总计: [0-9]+' 恒失败。优先信任 test-count.sh 末尾的机器可读行
+# TOTAL_TESTS=NNN（该行不受 ANSI/quiet 守卫影响，恒输出），再回退到 quiet 模式与「总计」行。
 TC_OUT=$(bash tools/test-count.sh 2>/dev/null)
-TOTAL_TESTS=$(echo "$TC_OUT" | grep -oE '总计: [0-9]+ tests' | grep -oE '[0-9]+' || echo "0")
-# Fallback: if full output parse fails, try quiet mode
+# 主路径：机器可读行 TOTAL_TESTS=NNN（strip ANSI 后 grep，最鲁棒）
+TOTAL_TESTS=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+' || echo "0")
+# 回退 1：quiet 模式（同样有机器可读行）
 if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
-  TOTAL_TESTS=$(bash tools/test-count.sh --quiet 2>/dev/null | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+')
+  TOTAL_TESTS=$(bash tools/test-count.sh --quiet 2>/dev/null | sed $'s/\033\[[0-9;]*m//g' | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+' || echo "0")
+fi
+# 回退 2：非 quiet 的「总计: NNN tests」人读行（strip ANSI 后再匹配）
+if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
+  TOTAL_TESTS=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep -oE '总计: [0-9]+ tests' | grep -oE '[0-9]+' || echo "0")
 fi
 
 if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
@@ -60,9 +68,11 @@ if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
   exit 1
 fi
 
-# audit 包单独数（从 test-count.sh 全量输出提取，--quiet 没有逐包明细，用 npm test 取）
-AUDIT_OUT=$(cd engine/audit && npm test 2>&1 || true)
-AUDIT_TESTS=$(echo "$AUDIT_OUT" | grep -E '^\s*Tests\s+' | tail -1 | grep -oE '\([0-9]+\)' | grep -oE '[0-9]+' || echo "0")
+# audit 包单独数（从 test-count.sh 全量输出的逐包明细行提取，格式「✓ audit: 498 passed (498 tests)」）。
+# v1.2.3 修复：不再单独跑 engine/audit && npm test —— 该路径的 vitest 输出同样带 ANSI 码，
+# 在 CI 非 TTY 下 grep '^\s*Tests\s+' 恒失败。复用 TC_OUT 的明细行，strip ANSI 后提取。
+AUDIT_TESTS=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep -E 'audit:.*passed' | grep -oE '\([0-9]+ tests\)' | grep -oE '[0-9]+' | head -1 || echo "0")
+[ -z "$AUDIT_TESTS" ] && AUDIT_TESTS=0
 
 if [ "$QUIET" = false ]; then
   echo -e "  实际值：workspace ${TOTAL_TESTS} / audit ${AUDIT_TESTS}"
