@@ -22,7 +22,7 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（42 项 · 编号 1–62，20 个归并/移除项已转为 HTML 注释）
+## 审查维度（43 项 · 编号 1–63，20 个归并/移除项已转为 HTML 注释）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -1011,3 +1011,18 @@ grep -Fc 'replace(/```[\s\S]*?```/g' FORGE/src/release-gate-driver.mjs   # ≥2
 ```
 
 > **PASS 标准**：子项 1 零命中（脆弱兜底已删）；子项 2/3/4 均 ≥2（parseVerdict 与 parseStepResults 都已剥离代码块 + 标记行窗口提取）。读裁决以 verdict.md 权威产物为准。
+
+#### 63. Worker 批量输出 U+FFFD 零污染——每次批量修复后必扫（v1.2.3 新盲区）
+
+> v1.2.3 教训：fresh-eyes-loop 的批量修复 worker 多次产出含 U+FFFD（替换字符）的文件——LLM 输出编码损坏时把无法表示的字节写成 U+FFFD，混进文档/代码。这类污染肉眼难辨（显示为 ▯ 或空白），但会污染 grep 结果、破坏锚点、影响 npm 产物。v1.2.2 曾复发过一次。**规则：任何 Agent 批量写入文件后，提交前必须扫一遍 U+FFFD，零容忍。**
+
+```bash
+# 1. 全仓活跃文档 U+FFFD 扫描（期望零命中）
+node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}if(bad.length){console.log('FAIL:',bad.join(','));process.exit(1);}console.log('CLEAN');"
+# 期望：CLEAN，exit 0
+
+# 2. 引擎源码 U+FFFD 扫描（期望零命中）
+grep -rlP '\x{FFFD}' engine/*/src/ 2>/dev/null | grep -v node_modules   # 期望：无输出
+```
+
+> **PASS 标准**：子项 1 输出 CLEAN（活跃文档零 U+FFFD）；子项 2 无输出（引擎源码零 U+FFFD）。发现污染 → 定位 LLM 输出环节修复根因，不要只删字符了事。

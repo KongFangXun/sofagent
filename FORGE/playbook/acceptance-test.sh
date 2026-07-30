@@ -1597,6 +1597,44 @@ S163_OK=true
 grep -q "harness" "$PROJECT_ROOT/docs/WIKI.md" || { fail "WIKI.md 缺少行业标准术语 harness"; S163_OK=false; }
 grep -q "harness" "$PROJECT_ROOT/docs/ARCHITECTURE.md" || { fail "ARCHITECTURE.md 缺少行业标准术语 harness"; S163_OK=false; }
 $S163_OK && pass "术语统一（WIKI + ARCHITECTURE 含行业标准术语 harness）"
+
+scenario 164 "文档锚点与跨文件链接可达性——TOC 锚点/代码路径/跨文件引用真实存在"
+S164_OK=true
+# 子项 a: 关键代码路径引用真实存在（v1.2.3 审查教训：文档写死路径漂移）
+for p in install.sh engine/think/src/think-generator.ts; do
+  test -e "$PROJECT_ROOT/$p" || { fail "文档引用的代码路径不存在: $p"; S164_OK=false; }
+done
+# 子项 b: 活跃文档无指向不存在文件的相对链接（排除 archive/node_modules）
+node -e "const fs=require('fs'),path=require('path');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=0;for(const fp of files){const c=fs.readFileSync(fp,'utf8'),dir=path.dirname(fp);const re=/\]\(((?:\.\.?\/)?[^)]+\.md(?:#[^)]*)?)\)/g;let m;while((m=re.exec(c))){const href=m[1].split('#')[0];if(href.startsWith('http'))continue;if(!fs.existsSync(path.resolve(dir,href))){console.log('断链:',fp,'->',m[1]);bad++;}}}process.exit(bad?1:0);" >/dev/null 2>&1 || { fail "存在指向不存在文件的跨文档 Markdown 链接"; S164_OK=false; }
+$S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接无死链）"
+
+scenario 165 "关键数字跨文档一致性——测试数 1207 / 规则数 21 / acceptance 163"
+S165_OK=true
+# 子项 a: 全 workspace 测试数 1207 在 README/WIKI/evidence 三处一致
+for f in README.md docs/WIKI.md docs/evidence/evidence.md; do
+  grep -q "1207" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 1207（数字漂移）"; S165_OK=false; }
+done
+# 子项 b: 审计规则 21 条在 README/ARCHITECTURE/HANDBOOK 一致
+for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do
+  grep -q "21 条\|21 个\|21 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 21（数字漂移）"; S165_OK=false; }
+done
+# 子项 c: acceptance 场景数 163 在 DEVELOPMENT/LIMITATIONS 一致
+for f in docs/DEVELOPMENT.md LIMITATIONS.md; do
+  grep -q "163" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 163"; S165_OK=false; }
+done
+$S165_OK && pass "关键数字跨文档一致（1207 / 21 / 163）"
+
+scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
+S166_OK=true
+# 子项 a: 活跃文档 U+FFFD 零污染（v1.2.3 worker 批量修复教训）
+node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}process.exit(bad.length?(console.log('U+FFFD:',bad.join(',')),1):0);" >/dev/null 2>&1 || { fail "活跃文档存在 U+FFFD 编码污染"; S166_OK=false; }
+# 子项 b: 核心文档代码围栏成对闭合（fence 数为偶数）
+for f in docs/changelog/releasing.md README.md docs/ARCHITECTURE.md; do
+  N=$(grep -c '^\`\`\`' "$PROJECT_ROOT/$f" 2>/dev/null || echo 0)
+  [ $((N % 2)) -eq 0 ] || { fail "$f 代码围栏未闭合（$N 个 fence 为奇数）"; S166_OK=false; }
+done
+$S166_OK && pass "Markdown 格式完整（无 U+FFFD + 代码块闭合）"
+
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 if [ "$FAILED" -gt 0 ]; then echo -e "${RED}❌ 有 $FAILED 个场景失败，请修复后再发版${NC}"; exit "$FAILED"
