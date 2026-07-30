@@ -1,5 +1,6 @@
 // ============================================================
 // progress-middleware.mjs · SubAgent 可见性 L2（v1.2.1 · P3）
+// + 心跳停顿 watchdog（v1.2.4 · P0）
 // ============================================================
 // L1（driver 层 progress.jsonl + status.json）已交付，但 worker（SubAgent）
 // 内部是黑盒——A 正在读哪些文件、B 正在改哪行、模型推理是否卡死，driver
@@ -9,6 +10,13 @@
 //   {"ts":"...","role":"A","tool":"sf_read","target":"README.md","phase":"start"}
 //   {"ts":"...","role":"A","tool":"sf_read","target":"README.md","phase":"end","duration":120}
 //   {"ts":"...","role":"B","event":"llm-chunk"}
+//
+// v1.2.4 新增 stall watchdog：run-03 Round 5 在 macOS 后台被节流冻结 2h44m，
+// setInterval 心跳 14 段完全静默 140 分钟，driver 零感知。watchdog 通过比对
+// tick 的实际墙钟间隔检测节流/挂起，超 STALL_THRESHOLD_MS（默认 3 分钟）即
+// 落 stall-detected 事件；累计达 STALL_MAX 次则抛 StallError 中止当前 agent
+// 调用，由 driver 层捕获做 step 级重试。阈值可由 FORGE_STALL_THRESHOLD_MS
+// 环境变量覆盖。
 //
 // 文件格式说明（v1.2.1）：本文件是 .mjs 而非 .ts——fresh-eyes-driver.mjs
 // 在裸 node（>=18）下运行，无法 import TypeScript；vitest 解析
@@ -22,10 +30,38 @@
 //   1. 事件即调即写——不攒批（Dashboard 靠事件时间戳判断 worker 心跳）
 //   2. middleware 自身任何异常（磁盘写失败等）不得阻断 worker 主流程
 //   3. 工具 handler 抛错时 end 事件仍落盘（start/end 严格配对），原错误上抛
+//   4. watchdog 是观测层延伸：检测/记录不阻断正常路径，仅累计到阈值时
+//      通过 AbortController 中止（让 driver 知道"我被冻住了"而非无限等）
 // ============================================================
 
 import { appendFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
+
+// ────────────────────────────────
+// StallError（v1.2.4 · watchdog 专用错误类）
+// ────────────────────────────────
+
+/**
+ * StallError：心跳停顿超阈值时抛出，由 driver 捕获做 step 级重试。
+ * Thrown when heartbeat stall count exceeds STALL_MAX.
+ * Caught by driver for step-level retry (max 2 attempts).
+ */
+export class StallError extends Error {
+  /**
+   * @param {number} stallCount  累计停顿次数 / cumulative stall count
+   * @param {number[]} gapMsArr  每次停顿间隔（毫秒）/ per-stall gap array
+   */
+  constructor(stallCount, gapMsArr) {
+    const maxGap = Math.max(...gapMsArr);
+    super(
+      `[stall-watchdog] ${stallCount} stalls detected, max gap ${maxGap}ms` +
+      ` — event loop frozen, aborting`
+    );
+    this.name = 'StallError';
+    this.stallCount = stallCount;
+    this.gapMsArr = gapMsArr;
+  }
+}
 
 // ────────────────────────────────
 // 类型约定（JSDoc）
@@ -54,8 +90,38 @@ import { join } from 'path';
  *   包模型调用：handler 执行期间按 heartbeatMs 间隔写 llm-chunk 心跳事件
  */
 
-/** 默认 LLM 心跳间隔（毫秒） */
+/** 默认 LLM 心跳间隔（毫秒） / Default heartbeat interval (ms) */
 const DEFAULT_HEARTBEAT_MS = 1000;
+
+/**
+ * 读取心跳停顿检测阈值（毫秒）——默认 3 分钟。
+ * 为什么 3 分钟：macOS App Nap 节流周期 ~10s，正常心跳 1s 一次，
+ * 如果连续 3 分钟没有 tick，说明事件循环被冻结而非 API 慢。
+ * 可由 FORGE_STALL_THRESHOLD_MS 环境变量覆盖。
+ *
+ * Stall detection threshold (ms) — default 3 min.
+ * Rationale: macOS App Nap throttle cycle ~10s, normal heartbeat 1s.
+ * 3 min without tick = event loop frozen, not slow API.
+ * Override via FORGE_STALL_THRESHOLD_MS env var.
+ *
+ * 注意：在函数调用时读取（而非模块顶层），以支持测试时动态设置环境变量。
+ */
+function getStallThreshold() {
+  return parseInt(process.env.FORGE_STALL_THRESHOLD_MS || '180000', 10);
+}
+
+/**
+ * 读取累计停顿次数上限——达到后抛 StallError 中止当前 agent 调用。
+ * 默认 3 次（= 9 分钟无响应），可由 FORGE_STALL_MAX 覆盖。
+ *
+ * Max stall count before aborting. Default 3 (= ~9 min unresponsive).
+ * Override via FORGE_STALL_MAX env var.
+ *
+ * 注意：在函数调用时读取（而非模块顶层），以支持测试时动态设置环境变量。
+ */
+function getStallMax() {
+  return parseInt(process.env.FORGE_STALL_MAX || '3', 10);
+}
 
 // ────────────────────────────────
 // 内部实现
@@ -139,11 +205,83 @@ export function createProgressMiddleware(options) {
     async wrapModelCall(_request, handler) {
       // 心跳意义是「推理没卡死」——长推理零心跳 = Dashboard 误判卡死。
       // 心跳回调内任何异常都不得影响 interval 与 handler。
+      //
+      // v1.2.4 stall watchdog:
+      //   setInterval 每次 tick 记录 Date.now() 到 lastTickTime。
+      //   下一次 tick 对比 now - lastTickTime：若 > STALL_THRESHOLD_MS，
+      //   说明中间发生了事件循环冻结（macOS App Nap / timer throttling）。
+      //   累计达 STALL_MAX 次通过 AbortController 中止 handler。
+      //
+      //   为什么 setInterval 能检测到自己的冻结：
+      //   macOS 冻结 setInterval 回调时，回调不触发，lastTickTime 停止更新。
+      //   冻结解除后，setInterval 立即 catch-up 触发下一次回调，
+      //   此时 Date.now() - lastTickTime = 冻结时长 + heartbeatMs，
+      //   远超 STALL_THRESHOLD_MS → 检测到 stall。
+      //
+      //   为什么用 AbortController：setInterval 回调里 throw 会变成
+      //   unhandled rejection，无法被外层 await 捕获。AbortController
+      //   是 Node.js 标准中止机制，abort 信号触发 stallPromise reject。
+      const controller = new AbortController();
+      let lastTickTime = Date.now();
+      let stallCount = 0;
+      const gapMsArr = [];
+      // 在 wrapModelCall 入口处读取阈值（每次调用可独立配置，支持测试动态覆盖）
+      // Read thresholds at call entry (each call can have independent config, supports test overrides)
+      const STALL_THRESHOLD_MS = getStallThreshold();
+      const STALL_MAX = getStallMax();
+
       const timer = setInterval(() => {
-        emit({ ts: new Date().toISOString(), role, event: 'llm-chunk' });
+        try {
+          const now = Date.now();
+          const actualGap = now - lastTickTime;
+
+          // 发心跳事件（即使检测到 stall 也照常发——stall 已过去，心跳恢复正常）
+          // Emit heartbeat (even if stall detected — stall has passed, heartbeat resumes)
+          emit({ ts: new Date().toISOString(), role, event: 'llm-chunk' });
+
+          // watchdog：检测停顿
+          if (actualGap > STALL_THRESHOLD_MS) {
+            stallCount++;
+            gapMsArr.push(actualGap);
+
+            // 落 stall-detected 事件（Dashboard 可见 / visible to Dashboard）
+            emit({
+              ts: new Date().toISOString(),
+              role,
+              event: 'stall-detected',
+              gapMs: actualGap,
+            });
+
+            console.warn(
+              `[watchdog] 心跳停顿 #${stallCount}: ` +
+              `间隔 ${actualGap}ms > 阈值 ${STALL_THRESHOLD_MS}ms ` +
+              `(${stallCount}/${STALL_MAX})`
+            );
+
+            // 累计达上限：通过 AbortController 中止
+            if (stallCount >= STALL_MAX) {
+              clearInterval(timer);
+              controller.abort(new StallError(stallCount, gapMsArr));
+            }
+          }
+
+          lastTickTime = now;
+        } catch {
+          // 观测层异常绝不逃逸 setInterval（铁律）
+          // Observer exceptions never escape setInterval (iron rule)
+        }
       }, heartbeatMs);
+
+      // stallPromise：监听 AbortController 的 abort 信号，reject 触发 Promise.race
+      // stallPromise: listen for abort signal, reject triggers Promise.race
+      const stallPromise = new Promise((_, reject) => {
+        controller.signal.addEventListener('abort', () => {
+          reject(controller.signal.reason);
+        });
+      });
+
       try {
-        return await handler();
+        return await Promise.race([handler(), stallPromise]);
       } finally {
         clearInterval(timer);
       }
