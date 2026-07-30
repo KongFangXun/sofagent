@@ -1,7 +1,7 @@
 ---
 name: sofagent
 slug: sofagent
-version: 1.2.2
+version: 1.2.3
 displayName: FDE Agent
 description: >
   企业 AI 落地的引导者。装上后 Agent 帮你逐岗位梳理工作流，
