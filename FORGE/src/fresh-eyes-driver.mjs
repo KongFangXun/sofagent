@@ -20,9 +20,9 @@ import { spawn } from 'child_process';
 import { createRequire } from 'module';
 import {
   readFileSync, writeFileSync, mkdirSync, existsSync,
-  appendFileSync, readdirSync,
+  appendFileSync, readdirSync, renameSync,
 } from 'fs';
-import { join, resolve, dirname } from 'path';
+import { join, resolve, dirname, relative, sep } from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
 
@@ -41,6 +41,10 @@ let globalVisibility = null;
 // 导致 Round 1 的审查成果全部消失。
 let preservedActualRounds = 0;
 let preservedFinalCounts   = { p0: 0, p1: 0, p2: 0 };
+// 模块级 latest.json 指针上下文——让 main().catch() 在 fatal-error 时也能更新指针
+let preservedRunDir       = null;
+let preservedStopReason   = null;
+let preservedTotalRounds  = 0;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -1250,6 +1254,197 @@ function appendUsageSummary(runDir, rounds) {
   return summary;
 }
 
+// ─── latest.json 指针维护（Dashboard 可见性）─────────────────
+
+/** 指针文件相对路径（用于 JSON 内的 runDir 字段，Dashboard 据此找 round 目录） */
+function relativeRunDir(runDir) {
+  // 优先相对于 SOFAGENT_HOME/data，fallback 到 REPO_ROOT
+  const dataRoot = join(SOFAGENT_HOME, 'data');
+  if (runDir.startsWith(dataRoot)) {
+    return runDir.replace(dataRoot + sep, '').split(sep).join('/');
+  }
+  return relative(REPO_ROOT, runDir).split(sep).join('/');
+}
+
+/**
+ * 聚合 sub-progress-*.jsonl 中的 stall-detected 事件。
+ *
+ * 扫描 runDir 下所有 sub-progress-<role>.jsonl 文件，提取 event == "stall-detected"
+ * 的行，统计总次数，取最后一条的 ts 和 gapMs。
+ *
+ * @param {string} runDir  run 根目录
+ * @returns {{ stallCount:number, stallLastTime:string|null, stallLastGap:number|null }}
+ */
+function aggregateStallEvents(runDir) {
+  const result = { stallCount: 0, stallLastTime: null, stallLastGap: null };
+  if (!existsSync(runDir)) return result;
+
+  let subFiles;
+  try {
+    subFiles = readdirSync(runDir)
+      .filter(n => n.startsWith('sub-progress-') && n.endsWith('.jsonl'));
+  } catch {
+    return result;
+  }
+  if (subFiles.length === 0) return result;
+
+  // 收集所有 stall-detected 事件（带时间戳以便排序）
+  const stallEvents = [];
+  for (const file of subFiles) {
+    try {
+      const lines = readFileSync(join(runDir, file), 'utf-8').split('\n').filter(Boolean);
+      for (const line of lines) {
+        let rec;
+        try { rec = JSON.parse(line); } catch { continue; }
+        if (rec.event === 'stall-detected') {
+          stallEvents.push({
+            ts: rec.ts || '',
+            gapMs: typeof rec.gapMs === 'number' ? rec.gapMs : 0,
+          });
+        }
+      }
+    } catch {
+      // 单文件解析失败不影响整体
+    }
+  }
+
+  if (stallEvents.length === 0) return result;
+
+  // 按时间戳排序取最后一条
+  stallEvents.sort((a, b) => a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : 0);
+  result.stallCount = stallEvents.length;
+  result.stallLastTime = stallEvents[stallEvents.length - 1].ts;
+  result.stallLastGap = stallEvents[stallEvents.length - 1].gapMs;
+
+  return result;
+}
+
+/**
+ * 从 runDir 下各轮 round 目录提取最新轮的 A/B 进度信息。
+ *
+ * @param {string} runDir  run 根目录
+ * @param {number} currentRound  当前轮次
+ * @returns {{ agentA: object, agentB: object }}
+ */
+function extractAgentStatus(runDir, currentRound) {
+  const roundDir = join(runDir, `round-${String(currentRound).padStart(2, '0')}`);
+
+  function agentInfo(role) {
+    const subFile = join(roundDir, `sub-progress-${role}.jsonl`);
+    const info = { status: 'idle', currentFile: '', findings: 0, cumulative: 'P0×0 P1×0' };
+
+    if (!existsSync(subFile)) return info;
+
+    try {
+      const lines = readFileSync(subFile, 'utf-8').split('\n').filter(Boolean);
+      if (lines.length === 0) return info;
+
+      // 取最后一条带 target 的事件 → currentFile
+      let lastTarget = '';
+      for (const line of lines) {
+        let rec;
+        try { rec = JSON.parse(line); } catch { continue; }
+        if (rec.target) lastTarget = rec.target;
+      }
+      if (lastTarget) {
+        // basename（兼容 POSIX 和 Windows）
+        info.currentFile = lastTarget.split('/').pop().split(sep).pop() || lastTarget;
+      }
+
+      // 判断 status：最近事件是否有 end 标记
+      let lastRec = null;
+      for (let i = lines.length - 1; i >= 0; i--) {
+        try { lastRec = JSON.parse(lines[i]); break; } catch { continue; }
+      }
+      if (lastRec?.phase === 'end') {
+        info.status = 'idle';
+      } else if (lastRec?.event === 'llm-chunk') {
+        info.status = 'running';
+      } else {
+        info.status = 'running';
+      }
+    } catch {
+      // 解析失败保持默认
+    }
+
+    return info;
+  }
+
+  return { agentA: agentInfo('A'), agentB: agentInfo('B') };
+}
+
+/**
+ * 原子写入 latest.json 指针文件。
+ *
+ * 写到 SOFAGENT_HOME/data/forge-runs/fresh-eyes-loop/latest.json，
+ * Dashboard 通过此文件实时展示 FORGE 审查进度。
+ *
+ * 原子策略：先写 .latest.json.tmp，再 rename 到 latest.json。
+ * Dashboard 不会读到半截文件。
+ *
+ * @param {string} runDir      run 根目录（绝对路径）
+ * @param {object} opts        可选覆盖
+ * @param {number} [opts.round]         当前轮次
+ * @param {number} [opts.totalRounds]   总轮次
+ * @param {string|null} [opts.stopReason]  停止原因
+ * @param {string} [opts.statusOverride]  覆盖 agent 状态（启动/结束阶段）
+ */
+function updateLatestPointer(runDir, opts = {}) {
+  try {
+    const loopDir = join(SOFAGENT_HOME, 'data', 'forge-runs', 'fresh-eyes-loop');
+    mkdirSync(loopDir, { recursive: true });
+
+    const latestPath = join(loopDir, 'latest.json');
+    const tmpPath = join(loopDir, '.latest.json.tmp');
+
+    const {
+      round = 0,
+      totalRounds = 0,
+      stopReason = null,
+      statusOverride = null,
+    } = opts;
+
+    // stall 事件聚合（从当前 runDir 下所有 sub-progress-*.jsonl）
+    const stallData = aggregateStallEvents(runDir);
+
+    // agent 状态提取（仅运行中有意义——round > 0 时）
+    let agentA, agentB;
+    if (round > 0 && !statusOverride) {
+      const agents = extractAgentStatus(runDir, round);
+      agentA = agents.agentA;
+      agentB = agents.agentB;
+    } else {
+      agentA = { status: statusOverride || 'idle', currentFile: '', findings: 0, cumulative: 'P0×0 P1×0' };
+      agentB = { status: statusOverride || 'idle', currentFile: '', findings: 0, cumulative: 'P0×0 P1×0' };
+    }
+
+    // 从当前轮的 roundDir 提取 P0/P1 累计（parseStopCondition 的结果由调用者传入）
+    const counts = opts.counts || { p0: 0, p1: 0, p2: 0 };
+    agentA.cumulative = `P0×${counts.p0} P1×${counts.p1}`;
+    agentB.cumulative = `P0×${counts.p0} P1×${counts.p1}`;
+
+    const payload = {
+      runDir:      relativeRunDir(runDir),
+      round,
+      totalRounds,
+      stopReason,
+      agentA,
+      agentB,
+      stallCount:   stallData.stallCount,
+      stallLastTime: stallData.stallLastTime,
+      stallLastGap:  stallData.stallLastGap,
+      updatedAt:    new Date().toISOString(),
+    };
+
+    // 原子写入：先 tmp 再 rename
+    writeFileSync(tmpPath, JSON.stringify(payload, null, 2) + '\n', 'utf-8');
+    renameSync(tmpPath, latestPath);
+  } catch (err) {
+    // latest.json 是观测层，写失败不阻断主流程
+    console.warn(`[driver] latest.json 写入失败（不影响主流程）: ${err.message}`);
+  }
+}
+
 /**
  * 执行一轮（5 步）。
  * @returns {Promise<{roundDir:string, counts:object, isClean:boolean}>}
@@ -1451,6 +1646,18 @@ async function main() {
   console.log(`   A          = ${MODEL_CONFIGS.A.model} (${MODEL_CONFIGS.A.baseURL})`);
   console.log(`   B          = ${MODEL_CONFIGS.B.model} (${MODEL_CONFIGS.B.baseURL})`);
 
+  // latest.json 指针：启动时写一次（Dashboard 立即看到 driver 已启动）
+  updateLatestPointer(runDir, {
+    round: 0,
+    totalRounds: args.maxRounds,
+    statusOverride: 'starting',
+  });
+
+  // 为 fatal-error catch 块保留 latest.json 上下文
+  preservedRunDir       = runDir;
+  preservedTotalRounds  = args.maxRounds;
+  preservedStopReason   = null;
+
   let cleanStreak   = 0;
   let stopReason    = 'max-rounds';
   let actualRounds  = 0;
@@ -1470,6 +1677,13 @@ async function main() {
       round,
       counts,
       isClean,
+    });
+
+    // latest.json 指针：每轮结束更新（Dashboard 实时刷新进度）
+    updateLatestPointer(runDir, {
+      round,
+      totalRounds: args.maxRounds,
+      counts,
     });
 
     if (args.dryRun) {
@@ -1527,6 +1741,14 @@ async function main() {
     counts: finalCounts,
   });
 
+  // latest.json 指针：driver 结束时更新（标记停止原因，Dashboard 不再显示"运行中"）
+  updateLatestPointer(runDir, {
+    round: actualRounds,
+    totalRounds: args.maxRounds,
+    stopReason,
+    counts: finalCounts,
+  });
+
   console.log('\n✅ fresh-eyes-loop 完成\n');
 }
 
@@ -1548,5 +1770,16 @@ main().catch(err => {
       counts: preservedFinalCounts,
     });
   }
+
+  // latest.json 指针：fatal-error 时也更新（Dashboard 能看到最终状态）
+  if (preservedRunDir) {
+    updateLatestPointer(preservedRunDir, {
+      round: preservedActualRounds,
+      totalRounds: preservedTotalRounds,
+      stopReason: 'fatal-error',
+      counts: preservedFinalCounts,
+    });
+  }
+
   process.exit(1);
 });
