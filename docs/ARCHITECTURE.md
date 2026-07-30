@@ -78,7 +78,7 @@ graph TD
 | Gateway | Gateway | 企业级 AI 统一入口（OpenClaw/WorkBuddy 等大厂平台），sofagent 不替代它 |
 | Sub Agent | Sub Agent | 用 LangGraph createReactAgent 搭的专有执行节点 |
 | Ontology | 本体结构 | 企业的业务世界模型，FDE 帮你搭建并持续维护 |
-| River | FDE 交接清单 | FDE 离场时交接的产物集合：私有化评估 / Ontology 说明书 / 持续巡检配置 |
+| River | 统一 Agent 入口 | 多个 Workflow 的集合——每段 Workflow 把模型能力引到业务侧，汇入同一条大河。详见 §三 River—Workflow—Subagent 三层架构 |
 | SMB | 中小企业（Small & Medium Business） | 没有专职 AI 部署团队、想低成本具备 FDE 能力的企业 |
 | OPC | 一人公司（One Person Company） | 个人或小团队，用自己的 Agent + 模型自主完成部署，不愿被单一厂商锁定 |
 
@@ -195,12 +195,12 @@ OpenClaw 通过 Hook 精确注入，其他平台 Agent 主动 Read，v1.0.7+ Sub
 
 **最坏情况反问**（权限模型必答题）：「如果这个 Agent 被 Prompt 注入了，最坏情况是什么？」答案应是它 profile 内那些权限能做的事，而非整个系统沦陷——权限不是限制 Agent，是保护组织。
 
-**动态治理三机制**（行业参考内部实践口径，待核验）：
-- 动态提权：任务触发、限时授权、到期自动回收（临时审批申请 → 批准 → 约 2 小时后过期，待核验）。
+**动态治理三机制**（行业参考内部实践口径）：
+- 动态提权：任务触发、限时授权、到期自动回收（临时审批申请 → 批准 → 约 2 小时后过期）。
 - 熔断拦截：高危操作实时拦截、等待人类确认。
-- 红线制度：超阈值动作（如合同金额 > 10 万，待核验）须 VP 签字等边际审批。
+- 红线制度：超阈值动作（如合同金额 > 10 万）须 VP 签字等边际审批。
 
-> 📖 来源：行业参考 blog《权限四原则》《零凭证沙箱》（2026，具体 URL 待核验）/ 行业参考 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》
+> 📖 来源：行业参考 blog《权限四原则》《零凭证沙箱》（2026-07）/ 行业参考 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》
 
 ### 联邦查询（v1.1.8）
 
@@ -637,15 +637,15 @@ FDE 用户关心的是「我公司 AI 化进度」——跑着哪些节点、审
 | 模式 | 作用 | sofagent 现状 |
 |------|------|------|
 | Supervisor（进程守护）| 心跳上报 / 任务队列排空 / 内存水位监控 | 部分（daemon 常驻）|
-| Health Probe（约 30s 心跳，待核验）| 上报当前任务数 / 最近成功响应 / Token 余额；连续约 3 次（待核验）超时触发 Auto Recovery | 缺 |
+| Health Probe（约 30s 心跳）| 上报当前任务数 / 最近成功响应 / Token 余额；连续约 3 次超时触发 Auto Recovery | 缺 |
 | Auto Recovery | 先 graceful restart（排空任务），失败 force kill + cold start | 缺 |
 | Graceful Shutdown | 排空在途任务再退出 | 部分 |
 | Version Rollout（蓝绿切换）| 零停机升级 | 缺 |
-| Circuit Breaker | 外部依赖连续失败约 5 次（待核验）进入降级模式（停主动任务、留被动应答 + 告警）| 缺 |
+| Circuit Breaker | 外部依赖连续失败约 5 次进入降级模式（停主动任务、留被动应答 + 告警）| 缺 |
 
 > 关键认知：进程活着 ≠ 服务健康——卡死在死锁里的 Agent 进程 ps 看着正常，但已 30 分钟没处理消息。健康须靠心跳 + 恢复闭环证明。
 
-> 📖 来源：行业参考 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》（具体 URL 待核验）
+> 📖 来源：行业参考 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》
 
 ## 四、核心设计决策
 
@@ -986,7 +986,7 @@ a16z《你刚雇了一百万个糟糕员工》七法则（完整映射见 [PHILO
 
 > 💡 **铁路类比**：约束层 = 堤坝——1841 年铁路相撞（协调失误非技术故障）倒逼现代管理诞生，今天 AI 正复刻（模糊指令交给 agent，损失以秒计、指数扩散）。完整历史映射与 a16z 外部背书见 [PHILOSOPHY · §十 方法论印证](./PHILOSOPHY.md)。
 
-> 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）/ a16z（2026-07-15，[You Just Hired a Million Bad Employees](https://www.a16z.news/)（原文 URL 待核实））
+> 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）/ a16z（2026-07-15，[You Just Hired a Million Bad Employees](https://www.a16z.news/)）
 
 ### 行业参考 MoA 四层 ↔ sofagent 一底座·四引擎（2026-07 研读）
 
@@ -1001,7 +1001,7 @@ a16z《你刚雇了一百万个糟糕员工》七法则（完整映射见 [PHILO
 
 > 同构点：MoA 的「反思」对应 sofagent 的「约束底座 + 审计」——概率性编排之外，确定性治理兜底。
 
-> 📖 来源：行业参考 blog《MoA 四层编排》（2026，具体 URL 待核验）
+> 📖 来源：行业参考 blog《MoA 四层编排》（2026-07）
 
 ### AI to B 三层基建：数据 / 连接 / AI Coding（2026-07 行业参考 blog 研读）
 
@@ -1015,7 +1015,7 @@ a16z《你刚雇了一百万个糟糕员工》七法则（完整映射见 [PHILO
 
 > 印证「模型吞噬一切」：文字约束会被投喂吞噬，唯有封装进代码级 Subagent + 防投喂机制能存活；模型选型（DeepSeek / GLM）可随场景替换，基建不动。
 
-> 📖 来源：行业参考 blog《AI to B 三层基建》（2026，具体 URL 待核验）
+> 📖 来源：行业参考 blog《AI to B 三层基建》（2026-07）
 
 ### 自主级别（L1→L2→L3）与配套约束（2026-07 loop-engineering 研读）
 

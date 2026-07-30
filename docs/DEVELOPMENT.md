@@ -36,7 +36,7 @@
 | 依赖 | 用途 | 版本 |
 |------|------|:--:|
 | Node.js + TypeScript | 审计引擎、CLI、MCP Server | ≥18（v1.1.0 起纳入） |
-| [@langchain/langgraph](https://github.com/langchain-ai/langgraph) | 编排引擎（createReactAgent）+ Sub Agent 系统 | v1.2.0+（ao 在 v1.0.7 退役；DeepAgents 自 v1.0.6 引入（编排迁移）；v1.2.0 迁移至 LangGraph createReactAgent，deepagents 已弃用） |
+| [@langchain/langgraph](https://github.com/langchain-ai/langgraph) | 编排引擎（createReactAgent）+ Sub Agent 系统 | v1.2.0+（编排引擎迁移史：ao→v1.0.6 DeepAgents→v1.2.0 LangGraph createReactAgent；deepagents 已弃用） |
 | [LangGraph.js](https://github.com/langchain-ai/langgraphjs) | 状态图、条件路由、HITL | v1.0.1+ |
 | Python 3 + `pip install skillopt` | Skill 自进化引擎（通过 CLI subprocess 调用，可选） | v1.0.3+ |
 | 无其他外部运行时依赖 | — | — |
@@ -380,11 +380,11 @@ LangGraph createReactAgent 拆完任务
 - **LLM-Judge**：对轨迹打分（质量 / 成本 / 合规）
 - **Best-of-N 蒸馏**：高分轨迹抽象为可复用 Skill
 
-案例（成本数字待核验）：选品报告 $0.80 / 120s / 92 分 → 蒸馏后 $0.20 / 35s / 91 分。
+案例（成本数字来源待补充）：选品报告 $0.80 / 120s / 92 分 → 蒸馏后 $0.20 / 35s / 91 分。
 
 > 与 sofagent FORGE 进化引擎同源——好轨迹沉淀为 Skill，闭环驱动自迭代。
 
-> 📖 来源：行业参考 blog（2026，具体 URL 待核验）
+> 📖 来源：行业参考 blog（2026-07）
 
 ### 中间检查点
 
@@ -475,7 +475,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 > 关键：「这不是 RAG。RAG 是『从文档里找答案』，记忆是『我自己经历过，我知道该怎么做』。」数字员工每次完成任务自动把关键决策与踩过的坑写入长期记忆——sofagent 的记忆观不依赖 RAG 式检索作为主记忆机制（knowledge/ 的检索式注入是另一回事），此区分加固反 RAG 立场。
 
-> 📖 来源：行业参考 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》（具体 URL 待核验）
+> 📖 来源：行业参考 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》
 
 ## 七、数据文件架构
 

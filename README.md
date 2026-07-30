@@ -71,7 +71,7 @@ sofagent-audit --doctor
 | 工具 | 它们管什么 | sofagent 管什么 |
 |------|:--------|:----------------|
 | pre-commit / husky | 代码质量（lint / format）| **Agent 行为**（密钥泄漏 / 越界编辑 / 注入攻击 / 盲改）|
-| detect-secrets / gitleaks | 密钥扫描 ✅ 全量历史扫描 + pre-commit 模式 + 100+ 内置秘钥模式 | 密钥扫描是 gitleaks 的核心场景（✅ 全量历史扫描、✅ pre-commit hook 模式、✅ 100+ 种内置秘钥模式）；sofagent A2 覆盖常见 API key 模式（⚠️ 仅增量扫描，差异化价值在于 **Agent 行为审计**而非密钥扫描覆盖率），同时增加 21 条 Agent 行为规则 |
+| detect-secrets / gitleaks | 密钥扫描（✅ 全量历史 + pre-commit + 100+ 模式）| A2 覆盖常见 API key（⚠️ 仅增量）；差异化 = **Agent 行为审计**而非密钥覆盖率 |
 | Cursor Rules / Claude hooks | 单平台 IDE 约束 | 审计层全平台可用（git diff）；约束层按平台分层（OpenClaw 最深 → WorkBuddy SKILL → 其他种子指令） |
 | Agent 平台（OpenClaw 等）| Agent 调度——「会不会做」| Agent 治理——「能不能每次都做对」|
 
@@ -277,7 +277,7 @@ npm test
 # 仅核心引擎测试
 npm test --workspace=engine/audit
 
-# 预期：1207 tests passed（少量 safe-delete 相关测试可能在特定环境预期失败）
+# 预期：1207 tests passed（16 个 safe-delete 相关测试在特定环境预期失败，详见 LIMITATIONS §四）
 ```
 
 ---
