@@ -429,19 +429,25 @@ render_rules() {
   emit "  ${C_DIM}本周违规 TOP3${C_RESET}"
   local week_ago
   week_ago="$(date -u -v-7d '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || date -u -d '7 days ago' '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || echo '')"
+  # name 字段本身已含编码前缀（形如 "A3 不改越界"）：在 jq 内剥离前缀得到纯中文名，
+  # 并由 number 单独派生编码；用制表符分隔输出，避免中文名内空格导致 bash 按空格切分错位。
   local top3
   top3="$(
     jq -r -s --arg since "$week_ago" '
       [.[] | select(.timestamp >= $since) | .ruleResults[]? | select(.status == "FAIL" or .status == "WARN")]
       | group_by(.number)
-      | map({num: .[0].number, name: .[0].name, count: length})
+      | map({
+          code: ("A" + (.[0].number | tostring)),
+          name: (.[0].name | sub("^A[0-9]+[ ]+"; "")),
+          count: length
+        })
       | sort_by(-.count) | .[0:3][]
-      | "\(.num) \(.name) \(.count)"' "$HISTORY_FILE" 2>/dev/null
+      | "\(.name)\t\(.code)\t\(.count)"' "$HISTORY_FILE" 2>/dev/null
   )"
   if [ -n "$top3" ]; then
     local i=1
-    while read -r num name count; do
-      emit "  ${C_YELLOW}${i}.${C_RESET} A${num} $(trunc "$name" $((w - 14))) ${C_RED}${count}次${C_RESET}"
+    while IFS=$'\t' read -r zhname code count; do
+      emit "  ${C_YELLOW}${i}.${C_RESET} $(trunc "$zhname" $((w - 20)))${C_DIM}（${code}）${C_RESET}${C_RED}· ${count} 次${C_RESET}"
       i=$((i + 1))
     done <<< "$top3"
   else
