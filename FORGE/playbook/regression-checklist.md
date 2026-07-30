@@ -145,6 +145,13 @@ grep -E "\-\-json.*2>&1|2>&1.*\-\-json" FORGE/playbook/acceptance-test.sh   # �
 # 子项 f: init.ts 禁止硬编码规则条数常量（v1.1.8 教训）
 grep -nE "expectedDefaultRules\s*=\s*[0-9]+|expectedDefault\s*=\s*[0-9]+" engine/audit/src/commands/init.ts   # 期望：零命中
 grep -c "defaultRules\.length\|defaultRules\[.length\]" engine/audit/src/commands/init.ts   # 期望：≥ 1
+
+# 子项 g: acceptance-test.sh 绝不能与 npm run build 并发执行（v1.2.3 血泪教训）
+# 教训：build 首步 rm -rf dist 清空产物，acceptance-test 此刻读 dist/*.js 会误报 6-7 个「文件不存在」假失败。
+# 本项主体是人工巡检铁律（无法用单条 grep 干净断言「并发」——2>&1 / & 等会误报）：
+#   自测流程必须串行——先 build 完成、dist 稳定，再单独跑 acceptance-test.sh。
+# 辅助自动检查：确认没有脚本把两者用 nohup/后台符号显式并发拉起
+grep -rnE "nohup.*(build|acceptance-test)|npm run build[^&]*&[[:space:]]*$" tools/ .github/workflows/ 2>/dev/null   # 期望：零命中
 ```
 
 #### 9. 动态规则禁用逻辑 + 文档侧规则数声称一致性
@@ -215,6 +222,12 @@ ls -ld ~/.sofagent 2>/dev/null | grep -c 'drwx------'   # 期望：1（700）
 # 子项 c: A/B promote 守卫——overallImprovement > 0
 grep -n "overallImprovement\|decidePromotion" engine/ab-test/src/*.ts 2>/dev/null
 # 人工检查：decidePromotion() 必须有 overallImprovement > 0 守卫
+
+# 子项 d: core 包 mkdirSync 权限加固——所有数据目录创建必须带 mode: 0o700（v1.2.3 新增）
+# 教训：fresh-eyes P0「数据明文存储」过渡防线——目录默认 755 时同机其他用户可读审计数据
+# 注意：grep 须排除 import 行（import { mkdirSync } 也含关键词但非调用）
+grep -rn "mkdirSync(" engine/core/src/ --include="*.ts" | grep -v "__tests__" | grep -v "mode:"   # 期望：零命中（所有 mkdirSync( 调用都带 mode）
+grep -rc "mkdirSync(.*mode: 0o700" engine/core/src/ --include="*.ts" | grep -v ":0"               # 期望：≥ 5 处
 ```
 
 #### 17. npm 产物 + bin 权限 + tag commit message

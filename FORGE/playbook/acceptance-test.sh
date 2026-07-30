@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染
+# + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
@@ -951,24 +951,7 @@ scenario 101 "v1.1.8 安全层三合一（AES+ECDH+配对+联邦过滤）"
 S101_OK=true; require_dist "engine/core/dist/crypto/aes-gcm.js" || S101_OK=false
 require_dist "engine/core/dist/crypto/ecdh.js" || S101_OK=false
 if $S101_OK; then
-  S101_RESULT=$(CRYPTO_DIR="$PROJECT_ROOT/engine/core/dist/crypto" node -e "
-    const { encryptPayload, decryptPayload } = require(process.env.CRYPTO_DIR + '/aes-gcm.js');
-    const { generateKeyPair, deriveSharedKey, publicKeyFingerprint } = require(process.env.CRYPTO_DIR + '/ecdh.js');
-    const key = require('crypto').randomBytes(32);
-    const pt = Buffer.from('sofagent v1.1.8 secret payload', 'utf8');
-    const enc = encryptPayload(key, pt);
-    const dec = decryptPayload(key, enc.iv, enc.ciphertext, enc.tag);
-    if (dec.toString('utf8') !== pt.toString('utf8')) { console.log('AES 往返失败'); process.exit(1); }
-    const alice = generateKeyPair();
-    const bob = generateKeyPair();
-    const aliceShared = deriveSharedKey(alice.privateKey, bob.publicKey);
-    const bobShared = deriveSharedKey(bob.privateKey, alice.publicKey);
-    if (!aliceShared.equals(bobShared)) { console.log('ECDH 双方共享密钥不一致'); process.exit(1); }
-    const fp1 = publicKeyFingerprint(alice.publicKey);
-    const fp2 = publicKeyFingerprint(alice.publicKey);
-    if (fp1 !== fp2 || fp1.length < 8) { console.log('fingerprint 非确定性或过短'); process.exit(1); }
-    console.log('OK');
-  " 2>&1) || true
+  S101_RESULT=$(node "$SCRIPT_DIR/acceptance-node-probes.js" s101 2>&1) || true
   echo "$S101_RESULT" | grep -q "^OK$" || { fail "AES/ECDH 验证失败: $S101_RESULT"; S101_OK=false; }
 fi
 $S101_OK && pass
@@ -981,16 +964,7 @@ $S102_OK && pass
 S103_OK=true; require_dist "engine/daemon/dist/federation/query-router.js" || S103_OK=false
 require_dist "engine/core/dist/security/trust-grading.js" || S103_OK=false
 if $S103_OK; then
-  S103_RESULT=$(QR_DIR="$PROJECT_ROOT/engine/daemon/dist/federation" node -e "
-    const { trustWeightOf } = require(process.env.QR_DIR + '/query-router.js');
-    const restrictedItem = { content: 'restricted-secret', sensitivity: 'restricted', trust: 'federation', source: 'peer-a' };
-    const publicItem = { content: 'public-info', sensitivity: 'public', trust: 'official', source: 'peer-b' };
-    const wRestricted = trustWeightOf(restrictedItem);
-    const wPublic = trustWeightOf(publicItem);
-    if (wRestricted > 0) { console.log('restricted entity 有正权重 ' + wRestricted + '，安全边界失效'); process.exit(1); }
-    if (wPublic <= 0) { console.log('public/official item 权重异常: ' + wPublic); process.exit(1); }
-    console.log('OK ' + wRestricted + '/' + wPublic);
-  " 2>&1) || true
+  S103_RESULT=$(node "$SCRIPT_DIR/acceptance-node-probes.js" s103 2>&1) || true
   echo "$S103_RESULT" | grep -q "^OK " || { fail "联邦 sensitivity 过滤验证失败: $S103_RESULT"; S103_OK=false; }
 fi
 $S103_OK && pass
@@ -1458,98 +1432,14 @@ if $S147_OK; then
   $S147_OK && pass "Dashboard 两栏渲染正常（数据主权 + 规则审计）"
 fi
 scenario 148 "P0 数据主权审计追踪端到端（JSONL→聚合→报告）"
-S148_OK=true; # 端到端验证：DataSovereigntyLogger.append 写入 JSONL → aggregateStats 聚合 → generateDailyReport 报告
-S148_OUT=$(cd "$PROJECT_ROOT" && node -e "
-const { DataSovereigntyLogger } = require('./engine/audit/dist/data-sovereignty.js');
-const { generateDailyReport, aggregateStats } = require('./engine/audit/dist/report-generator.js');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-// 1. 写入一条完整的 DataSovereigntyRecord 到临时目录
-const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sof-ds-'));
-const today = new Date().toISOString().slice(0, 10);
-const logger = new DataSovereigntyLogger(tmpDir);
-logger.append({
-  cloudCall: {
-    timestamp: new Date().toISOString(),
-    provider: 'test-provider',
-    model: 'test-model',
-    endpoint: 'https://api.test.com/v1',
-    tokenCount: { input: 100, output: 50 },
-    purpose: 'testing',
-  },
-  localAction: {
-    type: 'tool-call',
-    target: 'test-tool',
-    description: 'acceptance test scenario 148',
-    auditResult: 'PASS',
-  },
-  dataFlow: {
-    direction: 'local-only',
-    sensitivity: 'restricted',
-    fields: ['test-field'],
-    destination: 'local-tool',
-    redacted: true,
-  },
-  taskContext: {
-    taskId: 'test-148',
-    userIntent: 'acceptance test',
-    workflowId: 'test-wf-148',
-  },
-});
-// 2. 验证 JSONL 文件已写入（路径：data/audit/data-sovereignty/YYYY/MM/）
-const now = new Date();
-const yyyy = String(now.getFullYear());
-const mm = String(now.getMonth() + 1).padStart(2, '0');
-const dd = String(now.getDate()).padStart(2, '0');
-const todayDateStr = yyyy + '-' + mm + '-' + dd;
-const logPath = path.join(tmpDir, 'data', 'audit', 'data-sovereignty', yyyy, mm, todayDateStr + '.jsonl');
-const logExists = fs.existsSync(logPath);
-const logContent = logExists ? fs.readFileSync(logPath, 'utf-8').trim() : '';
-const hasRecord = logContent.includes('test-148');
-// 3. aggregateStats 聚合统计
-const records = logContent ? logContent.split('\n').map(l => JSON.parse(l)) : [];
-const stats = aggregateStats(records);
-const hasStats = stats && typeof stats.total !== 'undefined';
-// 4. generateDailyReport 从日志目录生成报告
-const report = generateDailyReport(todayDateStr, tmpDir);
-const hasReport = report && report.markdown && report.markdown.length > 0;
-console.log(JSON.stringify({ logExists, hasRecord, hasStats, hasReport }));
-" 2>&1) || { fail "P0 数据主权审计端到端执行失败: $S148_OUT"; S148_OK=false; }
-S148_LOGOK=$(echo "$S148_OUT" | node -e "try{const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));console.log(d.logExists&&d.hasRecord?'ok':'fail')}catch{console.log('parse-error')}" 2>/dev/null)
-S148_STATSOK=$(echo "$S148_OUT" | node -e "try{const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));console.log(d.hasStats?'ok':'fail')}catch{console.log('parse-error')}" 2>/dev/null)
-S148_RPTOK=$(echo "$S148_OUT" | node -e "try{const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));console.log(d.hasReport?'ok':'fail')}catch{console.log('parse-error')}" 2>/dev/null)
-[ "$S148_LOGOK" = "ok" ] || { fail "JSONL 记录写入/读取失败"; S148_OK=false; }
-[ "$S148_STATSOK" = "ok" ] || { fail "aggregateStats 聚合失败"; S148_OK=false; }
-[ "$S148_RPTOK" = "ok" ] || { fail "generateDailyReport 报告生成失败"; S148_OK=false; }
+S148_OK=true; # 端到端验证：DataSovereigntyLogger.append 写入 JSONL → aggregateStats 聚合 → generateDailyReport 报告（v1.2.3 瘦身：探针化）
+S148_OUT=$(node "$SCRIPT_DIR/acceptance-node-probes.js" s148 2>&1) || true
+echo "$S148_OUT" | grep -q "^OK" || { fail "P0 数据主权审计端到端失败: $S148_OUT"; S148_OK=false; }
 $S148_OK && pass "P0 数据主权审计端到端完整（JSONL→聚合→报告）"
 scenario 149 "P1 ModelRouter 路由端到端（public→cloud / restricted→local / confidential≠cloud）"
-S149_OK=true; # 端到端验证：敏感数据路由到本地 + 公开数据路由到云端 + confidential 不出站
-S149_OUT=$(cd "$PROJECT_ROOT" && node -e "
-const { createDefaultRouter } = require('./engine/orchestrator/dist/model-router.js');
-const router = createDefaultRouter();
-const routePublic = router.route('hello world, how are you?', {});
-const routeRestricted = router.route('analyze this data', { frontmatter: { sensitivity: 'restricted' } });
-const routeConfidential = router.route('check this', { filePath: 'report.confidential.md' });
-const publicToCloud = ['cloud-strong','cloud-fast'].includes(routePublic.target);
-const restrictedToLocal = ['local-executor','local-pipeline','block'].includes(routeRestricted.target);
-const confidentialNotCloud = !['cloud-strong','cloud-fast'].includes(routeConfidential.target);
-console.log(JSON.stringify({
-  publicToCloud, restrictedToLocal, confidentialNotCloud,
-  publicTarget: routePublic.target,
-  restrictedTarget: routeRestricted.target,
-  confidentialTarget: routeConfidential.target,
-  hasReason: !!routePublic.reason,
-}));
-" 2>&1) || { fail "P1 ModelRouter 端到端执行失败: $S149_OUT"; S149_OK=false; }
-S149_PUB=$(echo "$S149_OUT" | node -e "try{const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));console.log(d.publicToCloud?'ok':'fail')}catch{console.log('parse-error')}" 2>/dev/null)
-S149_RES=$(echo "$S149_OUT" | node -e "try{const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));console.log(d.restrictedToLocal?'ok':'fail')}catch{console.log('parse-error')}" 2>/dev/null)
-S149_CONF=$(echo "$S149_OUT" | node -e "try{const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));console.log(d.confidentialNotCloud?'ok':'fail')}catch{console.log('parse-error')}" 2>/dev/null)
-S149_REASON=$(echo "$S149_OUT" | node -e "try{const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));console.log(d.hasReason?'ok':'fail')}catch{console.log('parse-error')}" 2>/dev/null)
-[ "$S149_PUB" = "ok" ] || { fail "public 文本未路由到云端"; S149_OK=false; }
-[ "$S149_RES" = "ok" ] || { fail "restricted 数据未路由到本地"; S149_OK=false; }
-[ "$S149_CONF" = "ok" ] || { fail "confidential 数据路由到云端——安全红线违反"; S149_OK=false; }
-[ "$S149_REASON" = "ok" ] || { fail "路由结果缺少 reason 字段"; S149_OK=false; }
+S149_OK=true; # 端到端验证：敏感数据路由到本地 + 公开数据路由到云端 + confidential 不出站（v1.2.3 瘦身：探针化）
+S149_OUT=$(node "$SCRIPT_DIR/acceptance-node-probes.js" s149 2>&1) || true
+echo "$S149_OUT" | grep -q "^OK" || { fail "P1 ModelRouter 端到端失败: $S149_OUT"; S149_OK=false; }
 $S149_OK && pass "P1 ModelRouter 路由端到端完整（public→cloud / restricted→local / confidential≠cloud / reason 有值）"
 scenario 150 "P3 Skill 分层升级——默认安全升级不动 custom/、--force 覆盖、--merge 三路合并"
 S150_OK=true; # 150a: install.sh 含 upgrade_skill 函数 + 三策略参数
@@ -1570,72 +1460,27 @@ S150E_FORCE_CONFIRM=$(grep -c "SOFAGENT_FORCE_YES\|YES_MODE" "$PROJECT_ROOT/inst
 [ "$S150E_FORCE_CONFIRM" -ge 1 ] 2>/dev/null || { fail "install.sh 缺少 --force 确认门"; S150_OK=false; }
 $S150_OK && pass "P3 Skill 分层升级完整（upgrade_skill + _merge_one_file + 备份轮转 + custom/ 保护 + --force 确认门）"
 scenario 151 "P3b 异步 HITL 端到端（shouldUseAsyncHITL 降级 + 请求写入 + 响应读取）"
-S151_OK=true; S151_OUT=$(cd "$PROJECT_ROOT" && node -e "
-const { shouldUseAsyncHITL, writeHITLRequest, readHITLResponse, writeHITLResponse, pendingDir } = require('./engine/orchestrator/dist/hitl/hitl-channel.js');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hitl-acc-'));
-const dataDir = path.join(tmpDir, 'data');
-// 1. 无 pending/ → false（CLI 同步降级）
-const asyncBefore = shouldUseAsyncHITL(dataDir);
-// 2. 写 HITL 请求（checkpoint 挂起）
-const cpId = 'acc-test-cp-001';
-writeHITLRequest(dataDir, { checkpointId: cpId, createdAt: new Date().toISOString(), task: 'test', reviewReport: '', auditResult: 'PASS', retryCount: 0, options: ['approve','reject','aborted'] });
-// 3. 有 pending/ → true（异步模式激活）
-const asyncAfter = shouldUseAsyncHITL(dataDir);
-// 4. 无响应 → null（任务挂起中）
-const noResp = readHITLResponse(dataDir, cpId);
-// 5. 写 approve 响应（Dashboard 批准）
-writeHITLResponse(dataDir, { checkpointId: cpId, decision: 'approve', resolvedAt: new Date().toISOString() });
-// 6. 读响应 → approve
-const resp = readHITLResponse(dataDir, cpId);
-fs.rmSync(tmpDir, { recursive: true });
-console.log(JSON.stringify({ asyncBefore, asyncAfter, noRespNull: noResp === null, decision: resp.decision }));
-" 2>&1)
-S151_ASYNC=$(echo "$S151_OUT" | grep -o '"asyncAfter":[a-z]*' | cut -d: -f2)
-S151_DECISION=$(echo "$S151_OUT" | grep -o '"decision":"[^"]*"' | cut -d'"' -f4)
-[ "$S151_ASYNC" = "true" ] 2>/dev/null || { fail "异步 HITL 模式未激活（pending/ 目录创建后 shouldUseAsyncHITL 应返回 true）"; S151_OK=false; }
-[ "$S151_DECISION" = "approve" ] 2>/dev/null || { fail "HITL 响应读取失败（期望 approve）"; S151_OK=false; }
+S151_OK=true; # v1.2.3 瘦身：探针化（shouldUseAsyncHITL 降级 + 请求写入 + 响应读取）
+S151_OUT=$(node "$SCRIPT_DIR/acceptance-node-probes.js" s151 2>&1) || true
+echo "$S151_OUT" | grep -q "^OK" || { fail "P3b 异步 HITL 端到端失败: $S151_OUT"; S151_OK=false; }
 $S151_OK && pass "P3b 异步 HITL 端到端完整（降级判断 + 请求写入 + 响应读取 + 批准信号传递）"
 scenario 152 "P4 Graph Engine 端到端（Planner 解析 + 降级链路由 + decide/execute 分离）"
-S152_OK=true; S152_OUT=$(cd "$PROJECT_ROOT" && node -e "
-const { parsePlanDecide } = require('./engine/orchestrator/dist/loop/plan-node.js');
-const { routeAfterAudit } = require('./engine/orchestrator/dist/loop/graph.js');
-const { computeResultContent } = require('./engine/orchestrator/dist/loop/engineer-execute.js');
-// 1. Planner 解析合法 JSON → 1 个 pending 子任务
-const plan = parsePlanDecide('{\"subtasks\":[{\"id\":\"s1\",\"description\":\"do x\"}],\"rationale\":\"\"}');
-const planCount = plan ? plan.length : 0;
-const planStatus = plan && plan[0] ? plan[0].status : 'missing';
-// 2. Planner 非法 JSON → null（降级兜底）
-const planInvalid = parsePlanDecide('garbage');
-// 3. 降级链路由：PASS → reviewer
-const routePass = routeAfterAudit({auditResult:'PASS',retryCount:0,degradationLevel:0,finalStatus:'running'});
-// 4. 降级链路由：FAIL L0 → engineer（正常重试）
-const routeFailL0 = routeAfterAudit({auditResult:'FAIL',retryCount:1,degradationLevel:0,finalStatus:'running'});
-// 5. 降级链路由：FAIL L2 → reviewer（低可信放行）
-const routeFailL2 = routeAfterAudit({auditResult:'FAIL',retryCount:2,degradationLevel:2,finalStatus:'running'});
-// 6. 降级链路由：FAIL 超限 → human_confirm（人工兜底）
-const routeFailOver = routeAfterAudit({auditResult:'FAIL',retryCount:3,degradationLevel:2,finalStatus:'running'});
-// 7. decide/execute 分离：computeResultContent 纯函数
-const execResult = computeResultContent('/tmp/x', 'create', 'hello world');
-console.log(JSON.stringify({ planCount, planStatus, planInvalidNull: planInvalid === null, routePass, routeFailL0, routeFailL2, routeFailOver, execResult }));
-" 2>&1)
-S152_PLAN_COUNT=$(echo "$S152_OUT" | grep -o '"planCount":[0-9]*' | cut -d: -f2)
-S152_PLAN_STATUS=$(echo "$S152_OUT" | grep -o '"planStatus":"[^"]*"' | cut -d'"' -f4)
-S152_PLAN_INVALID=$(echo "$S152_OUT" | grep -o '"planInvalidNull":[a-z]*' | cut -d: -f2)
-S152_ROUTE_PASS=$(echo "$S152_OUT" | grep -o '"routePass":"[^"]*"' | cut -d'"' -f4)
-S152_ROUTE_FAIL_L0=$(echo "$S152_OUT" | grep -o '"routeFailL0":"[^"]*"' | cut -d'"' -f4)
-S152_ROUTE_FAIL_L2=$(echo "$S152_OUT" | grep -o '"routeFailL2":"[^"]*"' | cut -d'"' -f4)
-S152_ROUTE_FAIL_OVER=$(echo "$S152_OUT" | grep -o '"routeFailOver":"[^"]*"' | cut -d'"' -f4)
-[ "$S152_PLAN_COUNT" = "1" ] 2>/dev/null || { fail "Planner 解析失败（期望 1 个子任务）"; S152_OK=false; }
-[ "$S152_PLAN_STATUS" = "pending" ] 2>/dev/null || { fail "Planner 子任务状态错误（期望 pending）"; S152_OK=false; }
-[ "$S152_PLAN_INVALID" = "true" ] 2>/dev/null || { fail "Planner 非法 JSON 未返回 null（降级兜底）"; S152_OK=false; }
-[ "$S152_ROUTE_PASS" = "reviewer" ] 2>/dev/null || { fail "降级链 PASS 未路由到 reviewer"; S152_OK=false; }
-[ "$S152_ROUTE_FAIL_L0" = "engineer" ] 2>/dev/null || { fail "降级链 FAIL L0 未路由到 engineer"; S152_OK=false; }
-[ "$S152_ROUTE_FAIL_L2" = "reviewer" ] 2>/dev/null || { fail "降级链 FAIL L2 未路由到 reviewer（低可信放行）"; S152_OK=false; }
-[ "$S152_ROUTE_FAIL_OVER" = "human_confirm" ] 2>/dev/null || { fail "降级链 FAIL 超限未路由到 human_confirm"; S152_OK=false; }
+S152_OK=true; # v1.2.3 瘦身：探针化（Planner 解析 + 降级链路由 + decide/execute 分离）
+S152_OUT=$(node "$SCRIPT_DIR/acceptance-node-probes.js" s152 2>&1) || true
+echo "$S152_OUT" | grep -q "^OK" || { fail "P4 Graph Engine 端到端失败: $S152_OUT"; S152_OK=false; }
 $S152_OK && pass "P4 Graph Engine 端到端完整（Planner 解析+降级+降级链四路径+decide/execute 分离）"
+scenario 153 "v1.2.3 权限加固——core 包所有 mkdirSync 必须带 mode: 0o700"
+# fresh-eyes P0「数据明文存储」过渡防线：目录默认 755 时同机其他用户可读审计数据，
+# 收紧为 0o700（仅属主可访问），age 加密（v1.3.0）落地前的纵深防御。
+S153_OK=true
+# 断言 1：无 mode 的 mkdirSync 调用必须零命中（排除 import 行 + 测试文件）
+# v1.2.3 修复：0o700 加固后 grep -v "mode:" 过滤掉全部行 → 退出码 1 → pipefail 炸脚本，用 { ||true; } 兜底
+S153_NOMODE=$({ grep -rn "mkdirSync(" "$PROJECT_ROOT/engine/core/src/" --include="*.ts" 2>/dev/null | grep -v "__tests__" | grep -v "mode:" || true; } | wc -l | tr -d ' ')
+[ "$S153_NOMODE" = "0" ] || { fail "core 包有 $S153_NOMODE 处 mkdirSync 未带 mode（期望 0）"; S153_OK=false; }
+# 断言 2：带 0o700 的 mkdirSync 至少 5 处（compress-memory/config-loader/isomorphic-git×2/memory-sync）
+S153_SECURE=$({ grep -rn "mkdirSync(.*mode: 0o700" "$PROJECT_ROOT/engine/core/src/" --include="*.ts" 2>/dev/null | grep -v "__tests__" || true; } | wc -l | tr -d ' ')
+[ "$S153_SECURE" -ge 5 ] 2>/dev/null || { fail "core 包 mode:0o700 加固仅 $S153_SECURE 处（期望 ≥5）"; S153_OK=false; }
+$S153_OK && pass "core 包数据目录创建全部加固为 0o700（$S153_SECURE 处，0 处遗漏）"
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 if [ "$FAILED" -gt 0 ]; then echo -e "${RED}❌ 有 $FAILED 个场景失败，请修复后再发版${NC}"; exit "$FAILED"
