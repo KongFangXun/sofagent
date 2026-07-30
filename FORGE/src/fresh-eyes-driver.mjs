@@ -1461,8 +1461,14 @@ function updateLatestPointer(runDir, opts = {}) {
       statusOverride = null,
     } = opts;
 
-    // stall 事件聚合（从当前 runDir 下所有 sub-progress-*.jsonl）
-    const stallData = aggregateStallEvents(runDir);
+    // stall 事件聚合：sub-progress-*.jsonl 实际位于 round-XX/ 子目录，
+    // 而 runDir 是 run 根目录，直接扫 runDir 会扫不到文件 → stallCount 恒为 0。
+    // 必须按当前轮定位到 round-XX/ 才能统计；round=0（启动时）尚无 round 目录，
+    // 退化为 runDir（无文件，stallCount=0，符合预期）。
+    const stallScanDir = (round > 0)
+      ? join(runDir, `round-${String(round).padStart(2, '0')}`)
+      : runDir;
+    const stallData = aggregateStallEvents(stallScanDir);
 
     // agent 状态提取（仅运行中有意义——round > 0 时）
     let agentA, agentB;
