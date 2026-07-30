@@ -4,7 +4,7 @@
 > 如果你是 AI Agent 且需要查找具体实现路径，请直接跳转到"## 代码地图"段。
 
 > **3 分钟建立全景理解**：核心文档 221KB 太长？先看这 3 句：
-> - **[ARCHITECTURE.md](./ARCHITECTURE.md)**（85KB）：四层架构设计（Harness → Graph → Loop → Rule），关键技术决策记录。**3 秒版**：Harness 中间件接 Agent · Graph 控制图分波次 · Loop 自迭代闭环。
+> - **[ARCHITECTURE.md](./ARCHITECTURE.md)**（85KB）：三层嵌套架构设计（Harness → Graph → Loop），关键技术决策记录。**3 秒版**：Harness 中间件接 Agent · Graph 控制图分波次 · Loop 自迭代闭环。
 > - **[PHILOSOPHY.md](./PHILOSOPHY.md)**（67KB）：设计哲学与产品方法论。"不替代 Agent，做 Agent 的控制面"。
 > - **[ROADMAP.md](../ROADMAP.md)**（69KB）：版本路线图 + 已发布版本记录。当前目标 v1.3.0（age 加密 + 规则 50+）。
 
@@ -152,11 +152,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | 项 | 值 |
 |----|-----|
 | 当前版本 | **v1.2.3**（2026-07-30） |
-</new_string>
-</invoke>
 | 下一版本 | v1.3.0（规划中，参见 ROADMAP.md） |
-</new_string>
-</invoke>
 | 测试覆盖 | 1207 测试 / 12 包（共 1207，16 因 safe-delete 环境限制预期失败） |
 | 审计规则 | 21 条（13 默认 + 8 扩展），活跃编号 A1-A11 + A14-A19 + E1-E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |

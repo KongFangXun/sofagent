@@ -428,8 +428,8 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 
 如发现安全漏洞，请通过以下方式**私下**报告（不要在公开 Issue 中披露）：
 
-1. **邮箱**：security@sofagent.dev（待配置）
-2. **GitHub Security Advisory**：[提交私有报告](https://github.com/sofagent/sofagent/security/advisories/new)
+1. **邮箱**：kong.yao@evfrey.com
+2. **GitHub Security Advisory**：[提交私有报告](https://github.com/KongFangXun/sofagent/security/advisories/new)
 3. **响应时间**：我们承诺在 72 小时内确认收到报告，7 天内提供初步评估。
 
 <details>
