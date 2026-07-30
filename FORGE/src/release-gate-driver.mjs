@@ -760,18 +760,45 @@ function parseVerdict(runDir) {
 
   const text = readFileSync(verdictPath, 'utf-8');
 
-  // 匹配 "判定：PASS" / "判定：FAIL" / "判定: PASS" 等
-  const match = text.match(/判定[：:]\s*(PASS|FAIL)/i);
-  if (match) {
-    return { verdict: match[1].toUpperCase(), reason: 'verdict.md 裁决' };
+  /**
+   * 从文本中提取裁决关键词（PASS/FAIL/SKIP）。
+   *
+   * 健壮性要点：
+   *  1. 先剥离 ``` 围栏代码块——报告正文的日志转储/负向测试输出常含 FAIL 字样，
+   *     它们不是裁决结论，必须先去除以免污染解析。
+   *  2. 只在「判定」「结论」标记所在行及其紧邻窗口内提取结论词，
+   *     绝不做「全文含 FAIL 即判 FAIL」这类脆弱兜底。
+   *  3. 标记与结论词之间允许夹杂 emoji（✅/❌）、标点（：:）、空白与 markdown 符号；
+   *     一旦出现中文或英文字母（如「判定理由」「判定为」）即中断匹配，
+   *     防止误抓「无 FAIL 条目」「全部判定 PASS」这类无关句子。
+   *
+   * @param {string} raw 原始文本
+   * @returns {string|null} 'PASS' | 'FAIL' | 'SKIP' | null
+   */
+  function extractVerdictKeyword(raw) {
+    const stripped = raw.replace(/```[\s\S]*?```/g, '\n');
+    const lines = stripped.split(/\r?\n/);
+    const markers = ['判定', '结论'];
+    for (const marker of markers) {
+      for (let i = 0; i < lines.length; i++) {
+        const col = lines[i].indexOf(marker);
+        if (col === -1) continue;
+        // 窗口 = 标记行剩余部分 + 后续 3 行
+        const windowText = lines.slice(i, i + 4).join('\n').slice(col + marker.length);
+        const m = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(PASS|FAIL|SKIP)/i);
+        if (m) return m[1].toUpperCase();
+      }
+    }
+    return null;
   }
 
-  // fallback: 文本中出现 FAIL → FAIL，否则 PASS
-  if (/\bFAIL\b/i.test(text)) {
-    return { verdict: 'FAIL', reason: 'verdict.md 含 FAIL 标记' };
+  const keyword = extractVerdictKeyword(text);
+  if (keyword === 'PASS' || keyword === 'FAIL') {
+    return { verdict: keyword, reason: 'verdict.md 裁决' };
   }
 
-  return { verdict: 'PASS', reason: 'verdict.md 无 FAIL 标记' };
+  // 兜底：找不到可判定的结论标记。不再用「全文含 FAIL」误判，直接报 ERROR。
+  return { verdict: 'ERROR', reason: 'verdict.md 未能从「判定/结论」行解析出 PASS/FAIL' };
 }
 
 /**
@@ -782,16 +809,40 @@ function parseVerdict(runDir) {
  * @returns {{ acceptance: string, regression: string, coverage: string }}
  */
 function parseStepResults(runDir) {
+  /**
+   * 从单份报告文本中提取结论关键词（PASS/FAIL/SKIP）。
+   * 解析策略与 parseVerdict 完全一致：剥离代码块 → 定位「判定/结论」标记行 →
+   * 仅在标记行窗口内取结论词，杜绝「全文含 FAIL 即判 FAIL」的系统性误判
+   * （负向测试场景、覆盖率表的 ❌ 都会让旧兜底把 PASS 报告误读成 FAIL）。
+   *
+   * @param {string} raw 原始文本
+   * @returns {string|null} 'PASS' | 'FAIL' | 'SKIP' | null
+   */
+  function extractVerdictKeyword(raw) {
+    const stripped = raw.replace(/```[\s\S]*?```/g, '\n');
+    const lines = stripped.split(/\r?\n/);
+    const markers = ['判定', '结论'];
+    for (const marker of markers) {
+      for (let i = 0; i < lines.length; i++) {
+        const col = lines[i].indexOf(marker);
+        if (col === -1) continue;
+        // 窗口 = 标记行剩余部分 + 后续 3 行
+        const windowText = lines.slice(i, i + 4).join('\n').slice(col + marker.length);
+        const m = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(PASS|FAIL|SKIP)/i);
+        if (m) return m[1].toUpperCase();
+      }
+    }
+    return null;
+  }
+
   function extractResult(filename) {
     const filePath = join(runDir, filename);
     if (!existsSync(filePath)) return 'SKIP';
     const text = readFileSync(filePath, 'utf-8');
-    // 找结论行
-    const conclusionMatch = text.match(/结论[：:]\s*(PASS|FAIL|SKIP)/i);
-    if (conclusionMatch) return conclusionMatch[1].toUpperCase();
-    // fallback
-    if (/\bFAIL\b/i.test(text)) return 'FAIL';
-    if (/\bPASS\b/i.test(text)) return 'PASS';
+    const keyword = extractVerdictKeyword(text);
+    if (keyword) return keyword;
+    // 兜底：报告缺少可识别的结论标记 → 记为 SKIP（未知），
+    // 不再用「全文含 FAIL」把 PASS 报告误判成 FAIL。
     return 'SKIP';
   }
 
