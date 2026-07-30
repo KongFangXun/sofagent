@@ -256,7 +256,10 @@ try {
     console.log('  可能使用了 --no-verify 绕过审计 hook。');
     console.log('  运行 sofagent-audit --doctor 查看详情。');
   }
-} catch { process.exit(0); }
+} catch (e) {
+  console.error('[sofagent] init 失败: ' + (e instanceof Error ? e.message : String(e)));
+  process.exit(1);
+}
 " 2>/dev/null
 
 exit 0

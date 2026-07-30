@@ -115,8 +115,8 @@ function resolveVisibleRoot(overrideHome?: string): string {
       if (typeof company === 'string' && company.trim()) {
         return join(dataDir, company.trim());
       }
-    } catch {
-      // 解析失败走降级
+    } catch (e) {
+      console.warn(`[sofagent] 无法读取 fde-profile.json，报告路径降级为默认: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
   return join(dataDir, 'reports');
@@ -141,8 +141,9 @@ function writeVisibleReport(
     const filePath = join(dir, `${kind}-${label}.md`);
     writeFileSync(filePath, markdown, 'utf-8');
     return filePath;
-  } catch {
-    return undefined; // 可见目录写入失败不阻断
+  } catch (e) {
+    console.warn(`[sofagent] 可见目录写入失败，报告降级为仅返回 undefined: ${e instanceof Error ? e.message : String(e)}`);
+    return undefined;
   }
 }
 

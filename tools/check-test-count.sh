@@ -48,8 +48,12 @@ if [ "$QUIET" = false ]; then
   echo "  跑 test-count.sh 获取实际测试数..."
 fi
 
-TC_OUT=$(bash tools/test-count.sh --quiet 2>/dev/null)
-TOTAL_TESTS=$(echo "$TC_OUT" | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+')
+TC_OUT=$(bash tools/test-count.sh 2>/dev/null)
+TOTAL_TESTS=$(echo "$TC_OUT" | grep -oE '总计: [0-9]+ tests' | grep -oE '[0-9]+' || echo "0")
+# Fallback: if full output parse fails, try quiet mode
+if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
+  TOTAL_TESTS=$(bash tools/test-count.sh --quiet 2>/dev/null | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+')
+fi
 
 if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
   echo -e "  ${RED}✗ 无法获取实际测试数（test-count.sh 失败）${NC}"
@@ -213,7 +217,7 @@ for pkg in audit core orchestrator daemon; do
   if [ -n "$PKG_LINE" ]; then
     PKG_CLAIMED=$(echo "$PKG_LINE" | grep -oE '已实现（[0-9]+ 测试' | grep -oE '[0-9]+')
     PKG_LINENO=$(echo "$PKG_LINE" | cut -d: -f1)
-    PKG_ACTUAL=$(echo "$TC_OUT" | grep "${pkg}:" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
+    PKG_ACTUAL=$(echo "$TC_OUT" | grep "${pkg}:.*passed" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
     if [ -z "$PKG_ACTUAL" ]; then
       PKG_ACTUAL=0
     fi

@@ -19,8 +19,9 @@ import { ENGINEER_AGENT, REVIEWER_AGENT } from '../builtin-agents';
 import { spawnSubAgent } from '../launcher';
 import { ENGINEER_TOOLS, REVIEWER_TOOLS, createToolGate, wrapToolsWithGate, convertToLangGraphTools, type ExecutableTool } from '../tools';
 import { buildConstrainedSystemPrompt } from '@sofagent/harness';
-import { loadConfig, loadEnvConfig } from '@sofagent/core';
+import { loadConfig, loadEnvConfig, resolveDataDir } from '@sofagent/core';
 import type { AuditHistoryEntry } from '@sofagent/audit';
+import type { WorktreeHandle } from '../worktree-isolation';
 import type { AuditVerdict, LoopArtifacts, LoopGraphState } from './state';
 import type { FileCheckpointer } from '../graph/checkpoint';
 import { HITL_OPTIONS, shouldUseAsyncHITL, writeHITLRequest } from '../hitl';
@@ -201,6 +202,12 @@ export interface LoopGraphDeps {
    */
   dataDir?: string;
   /**
+   * Dashboard 数据目录（可选，默认 $SOFAGENT_HOME/data，v1.2.3 AD-2 路径修复注点）。
+   * graph-state.json 写到 {dashboardDir}/dashboard/——Dashboard bash 实际读取的位置。
+   * 未设置时节点兜底使用 dataDir（向后兼容）。
+   */
+  dashboardDir?: string;
+  /**
    * Planner LLM decide 调用（v1.2.2 P4）——plan 节点任务分解。
    * 不设置时 buildLoopGraph 内部 fallback 到 defaultRunPlannerDecide。
    */
@@ -212,6 +219,13 @@ export interface LoopGraphDeps {
    * runLoopGraph 默认开启。
    */
   degradationChainEnabled?: boolean;
+  /**
+   * worktree 隔离工厂（可选，v1.2.3 隔离底座注点，默认不激活）。
+   * 未来并行 SubAgent 调度（v1.3.0）通过此工厂为每个 SubAgent 创建
+   * 独立 git worktree 实现文件级隔离；当前串行 LOOP 不使用——
+   * 缺省 undefined 时行为与 v1.2.2 完全一致。
+   */
+  worktreeFactory?: () => WorktreeHandle;
 }
 
 // ────────────────────────────────
@@ -729,6 +743,9 @@ export function defaultDeps(checkpointer: FileCheckpointer, silent = false): Loo
     },
     // v1.2.2 P3b：HITL 异步模式根路径（pending/resolved 均落在此目录下）
     dataDir: loadEnvConfig().dataDir,
+    // v1.2.3 AD-2：Dashboard 数据目录——$SOFAGENT_HOME/data（路径 bug 修复：
+    // graph-state.json 写到 Dashboard bash 实际读取的位置，而非仓库内 fallback）
+    dashboardDir: resolveDataDir(),
   };
 }
 
@@ -768,8 +785,15 @@ export function makeEngineerNode(deps: LoopGraphDeps) {
       : subtasks;
 
     // P4：Graph 状态落盘（Dashboard Graph Engine 区块数据源）
-    if (deps.dataDir) {
-      writeGraphState(deps.dataDir, 'engineer', updatedSubtasks.length);
+    // v1.2.3：dashboardDir 优先（AD-2 路径修复），dataDir 兜底；写入完整控制图
+    const dashDir = deps.dashboardDir ?? deps.dataDir;
+    if (dashDir) {
+      writeGraphState(dashDir, {
+        activeNode: 'engineer',
+        retryCount: state.retryCount,
+        degradationLevel: state.degradationLevel,
+        subtasks: updatedSubtasks,
+      });
     }
 
     deps.log('✅ engineer 完成');
@@ -826,6 +850,18 @@ export function makeAuditNode(deps: LoopGraphDeps) {
         auditReport = `[降级 L2] 低可信模式——本产出未经审计背书，请人工重点复核。\n${auditReport}`;
         deps.log('🔻 audit FAIL · 降级 L2：标记低可信，继续流转（不 blocked）');
       }
+    }
+
+    // v1.2.3：audit 完成后写 graph-state（判定结果回写 Dashboard 控制图）
+    const dashDir = deps.dashboardDir ?? deps.dataDir;
+    if (dashDir) {
+      writeGraphState(dashDir, {
+        activeNode: 'audit',
+        retryCount: state.retryCount,
+        degradationLevel,
+        subtasks: state.artifacts.subtasks,
+        auditResult: outcome.verdict,
+      });
     }
 
     const base: Record<string, unknown> = {

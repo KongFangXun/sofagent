@@ -92,9 +92,11 @@ export const SHADOW_GIT_DIR = path.join(INTERNAL_DIR, '.git-shadow');
 // CONFIG_FILE 保留为常量（基于 process.cwd()），向后兼容已有调用方。
 // 但需要 cwd 参数化的场景应使用 getConfigFile(cwd) 函数——避免硬编码 cwd 导致
 // 测试隔离失败（loadConfig(tmpDir) 需要读 tmpDir 下的 config.yml）。
-// TODO(v1.2.3): monorepo 场景下 process.cwd() 可能不是项目根（如 git commit 在子目录执行时），
+// TODO(v1.3.0): monorepo 场景下 process.cwd() 可能不是项目根（如 git commit 在子目录执行时），
 // 导致读取错误配置。届时应引入 git 仓库根查找逻辑（findGitRoot），或改为向上遍历查找
 // .sofagent/config.yml 直到找到或到达文件系统根。
+// 当前权宜之计：用户可在 .bashrc 中 cd 到项目根再执行 git commit，或使用
+// `git -C /path/to/repo commit` 确保 process.cwd() 为项目根。
 export const CONFIG_FILE = path.join(process.cwd(), '.sofagent', 'config.yml');
 
 // ═══════════════════════════════════════════════════════════

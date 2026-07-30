@@ -1,0 +1,69 @@
+sequenceDiagram
+    %% ============================================================
+    %% sofagent v1.2.3 调用流 — 三条主链
+    %% ============================================================
+
+    %% ── 链 ①：LOOP 运行 + graph-state v2 落盘（交付二 TS 侧） ──
+    autonumber
+    participant CLI as sofagent-orchestrator
+    participant G as loop/graph.ts
+    participant D as LoopGraphDeps
+    participant PN as loop/plan-node.ts
+    participant ND as loop/nodes.ts
+    participant FS as $SOFAGENT_HOME/data/dashboard/
+
+    CLI->>G: runLoopGraph(task)
+    G->>D: buildDeps() 注入 dashboardDir=resolveDashboardDir()
+    Note over D: AD-2: $SOFAGENT_HOME/data<br/>(不再用 cwd/.sofagent)
+    G->>PN: plan 节点执行
+    PN->>FS: writeGraphState(dashboardDir, v2快照)
+    Note over FS: 保旧3字段 + version/nodes/<br/>edges/wave/degradationLevel
+    loop 每个节点 (engineer/audit/reviewer/human_confirm)
+        G->>ND: withCheckpoint 包装执行
+        ND->>FS: writeGraphState(dashboardDir, 增量状态)
+    end
+
+    %% ── 链 ②：worktree 全生命周期（交付一原语 + 单测模拟并行） ──
+    participant T as vitest 单测
+    participant WI as worktree-isolation.ts
+    participant MG as worktree-merge-gate.ts
+    participant CR as conflict-resolver.ts
+    participant AU as @sofagent/audit
+    participant GIT as git CLI
+
+    T->>WI: sweepStaleWorktrees(repoDir)
+    WI->>GIT: worktree prune + 注册表比对
+    GIT-->>WI: 回收残留(有create无cleanup)
+    par 模拟两个并行 SubAgent
+        T->>WI: handleA.create() → wt-{uuidA}
+        WI->>GIT: worktree add .sofagent/worktrees/wt-A
+    and
+        T->>WI: handleB.create() → wt-{uuidB}
+        WI->>GIT: worktree add .sofagent/worktrees/wt-B
+    end
+    T->>WI: handleA.diff()
+    WI->>MG: evaluate(handleA)
+    MG->>AU: 21 条规则审计(diff 硬证据)
+    alt audit PASS
+        MG->>GIT: merge --no-ff sofagent/wt-A
+    else audit FAIL
+        MG->>FS: 丢弃 + 证据落 data/audit/
+    end
+    T->>CR: detect([handleA, handleB])
+    CR-->>T: scope优先→先到先得→HITL
+    CR->>FS: worktree-conflicts.jsonl
+
+    %% ── 链 ③：Dashboard 整帧渲染（交付二/三/五/六 bash 侧） ──
+    participant U as 用户终端
+    participant SH as sofagent-dashboard.sh
+    participant FR as forge-runs/latest.json
+    participant WS as workspace-changes.jsonl
+
+    U->>SH: sofagent-dashboard --watch [--technical]
+    loop 每 2s
+        SH->>FS: jq graph-state.json (// empty 兜底旧格式)
+        SH->>FR: jq latest.json → status.json + sub-progress
+        SH->>WS: tail workspace-changes.jsonl
+        Note over SH: humanize_status() 翻译状态词<br/>(--technical 时跳过)
+        SH-->>U: 三栏 + 全宽控制图/FORGE/最近变更
+    end

@@ -56,6 +56,18 @@ export type { InspectorConfig, InspectorResult, DaemonHealth } from './inspector
 // v1.2.2 P0：审计报告 webhook 推送
 export { pushAuditReport } from './webhook/audit-report-push';
 
+// Workspace 变更摘要（v1.2.3 · 交付五 · checkpoint 联动 AD-6）
+export {
+  runWorkspaceSummary,
+  collectWorkspaceChanges,
+  appendWorkspaceChange,
+  readWorkspaceChanges,
+  readLatestCheckpointId,
+  resolveWorkspaceChangesPath,
+  WORKSPACE_CHANGES_MAX_ENTRIES,
+} from './workspace-summary';
+export type { WorkspaceChangeRecord, WorkspaceSummaryOptions } from './workspace-summary';
+
 // USB Federation (v1.1.4)
 export { detectSofagentUsb } from './usb-detect';
 export type { UsbDetectResult } from './usb-detect';

@@ -162,6 +162,8 @@ export function buildLoopGraph(deps: LoopGraphDeps) {
       runPlannerDecide: deps.runPlannerDecide ?? defaultRunPlannerDecide,
       log: deps.log,
       dataDir: deps.dataDir,
+      // v1.2.3 AD-2：Dashboard 数据目录注点透传（$SOFAGENT_HOME/data）
+      dashboardDir: deps.dashboardDir,
     })))
     .addNode('engineer', withCheckpoint('engineer', deps.checkpointer, makeEngineerNode(deps)))
     .addNode('audit', withCheckpoint('audit', deps.checkpointer, makeAuditNode(deps)))

@@ -291,13 +291,42 @@ const runBashTool: ExecutableTool = {
       return `拒绝执行（高危命令黑名单）：${blocked}`;
     }
 
+    // 🔴 v1.2.3 护栏（fresh-eyes-loop run-02 教训）：
+    // 拦截已知大文件的读取命令（node_modules、package-lock.json、*.map、dist/）
+    // 这些文件单次输出就可能灌入数十万 tokens。
+    const LARGE_FILE_PATTERNS = [
+      /node_modules\//,
+      /package-lock\.json/,
+      /yarn\.lock/,
+      /pnpm-lock\.yaml/,
+      /\.map(\s|$|["'])/,      // .map 文件（source map）
+      /\.min\.js/,              // minified JS
+      /\/dist\//,               // 编译产物
+      /\.next\//,               // Next.js 构建
+    ];
+    for (const pattern of LARGE_FILE_PATTERNS) {
+      if (pattern.test(command) && (command.includes('cat ') || command.includes('head ') || command.includes('tail ') || command.includes('less ') || command.includes('more '))) {
+        return `拒绝执行（大文件读取拦截）：命令可能读取大文件（匹配 ${pattern}）。请使用 sf_read + offset/limit 读特定片段，或 grep 搜索关键词。`;
+      }
+    }
+
     try {
       const stdout = execSync(command, {
         encoding: 'utf-8',
         maxBuffer: 16 * 1024 * 1024,
         timeout: 60_000,
       });
-      return stdout || '(命令执行完成，无 stdout 输出)';
+      if (!stdout) return '(命令执行完成，无 stdout 输出)';
+      // 🔴 v1.2.3 护栏（fresh-eyes-loop run-01 教训）：
+      // run_bash 输出无截断 → worker 用 cat package-lock.json 灌入 416 万 tokens → ContextOverflowError
+      // 硬截断：超过 BASH_OUTPUT_MAX_LINES 行时只返回前 N 行 + 省略提示
+      const BASH_OUTPUT_MAX_LINES = 200;
+      const outLines = stdout.split('\n');
+      if (outLines.length > BASH_OUTPUT_MAX_LINES) {
+        return outLines.slice(0, BASH_OUTPUT_MAX_LINES).join('\n')
+          + `\n\n... [TRUNCATED: 输出共 ${outLines.length} 行，已截断至前 ${BASH_OUTPUT_MAX_LINES} 行。如需读特定位置请用 sf_read + offset/limit]`;
+      }
+      return stdout;
     } catch (err: unknown) {
       const e = err as { stderr?: string | Buffer; message?: string; status?: number };
       const stderr = e.stderr ? (typeof e.stderr === 'string' ? e.stderr : e.stderr.toString()) : '';

@@ -22,7 +22,7 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（46 项 · 编号 1–61，15 个归并/移除项已转为 HTML 注释）
+## 审查维度（41 项 · 编号 1–61，20 个归并/移除项已转为 HTML 注释）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -63,6 +63,12 @@ grep -rn "think\.md.* Views\|think\.md.*派生视图\|think\.md（Views" docs/AR
 
 # 子项 b: canonical source 一致性
 grep -rn "Ledger-Views-Policy" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md | head   # 期望：各文档描述一致
+
+# 子项 f: WIKI.md 存在 + 七节结构完整（原维度 27，v1.2.3 归并）
+[ -f docs/WIKI.md ] && echo "✅ WIKI.md 存在" || echo "❌ WIKI.md 缺失"
+WIKI_SECTIONS=$(grep -c "^## [一二三四五六七]、" docs/WIKI.md 2>/dev/null || echo 0)
+[ "$WIKI_SECTIONS" -ge 7 ] || echo "⚠️ WIKI.md 节数不足（期望 7，实际 $WIKI_SECTIONS）"
+grep -c "WIKI" README.md   # ≥1
 ```
 
 #### 4. 审计规则分级与 ruleClass 一致性
@@ -166,26 +172,9 @@ grep -cE "evidenceMode:" engine/audit/src/rules/index.ts   # 期望 21
 
 <!-- #10 [v1.2.1 移除：被 pre-push-check.sh 步骤 7+8 全量覆盖] -->
 
-#### 11. 包依赖图循环检测
+<!-- #11 [v1.2.3 移除：被 pre-push-check.sh 步骤 8 依赖图循环检测全量覆盖] -->
 
-```bash
-# 子项 a: audit↔daemon 循环依赖
-AUDIT_OPT=$(node -e "const p=require('./engine/audit/package.json'); console.log(p.optionalDependencies?.['/daemon'] ? 'OPTIONAL_DAEMON' : 'NONE')")
-DAEMON_DEP=$(node -e "const p=require('./engine/daemon/package.json'); console.log(p.dependencies?.['/audit'] ? 'DEP_AUDIT' : 'NONE')")
-[ "$AUDIT_OPT" = "OPTIONAL_DAEMON" ] && [ "$DAEMON_DEP" = "DEP_AUDIT" ] && echo "⚠️ 循环依赖（已知债务）" || echo "✅ 无循环依赖"
-
-# 子项 b: 循环依赖 + tag message 校验（被 pre-push-check.sh 步骤 7+8 全量覆盖）
-```
-
-#### 12. 跨包代码重复检测
-
-> ⚠️ **防误报**：`audit-history.ts` 是 v1.2.0 **有意下沉**到 core（消除 core→audit 反向依赖），audit 包通过 `import + re-export` 保持向后兼容。不是重复代码。已加入排除列表。
-
-```bash
-dup=$(find sofagent -path '*/src/*.ts' -not -path '*/node_modules/*' -not -path '*/__tests__/*' -not -path '*/test*/*' \
-  | sed 's#.*/##' | sort | uniq -d | grep -vE '^(index|cli|types|config-template|memory-sync|reporter|verify|skill-safety-.*|audit-history)\.ts$')
-[ -z "$dup" ] && echo "OK" || echo "❌ 跨包重复: $dup"
-```
+<!-- #12 [v1.2.3 移除：低频且有排除列表误报风险，由 fresh-eyes-review 覆盖] -->
 
 <!-- #13 [v1.2.1 移除：被 check-test-count.sh 一键校验全量覆盖] -->
 
@@ -339,6 +328,9 @@ grep -q "被 FDE/LOOP 依赖\|FDE/LOOP" install.sh 2>/dev/null && echo "✅ 主 
 
 # 子项 e: install 脚本版本号 = SSOT（v1.1.4 暴露——install.sh 版本号漂移）
 grep -H "v[0-9]\+\.[0-9]\+\.[0-9]\+" install.sh | head -4   # 期望：所有版本号 = SSOT_VER
+
+# 子项 f: 跨产品 install CI 验证（原维度 36，v1.2.3 归并）
+grep -c "cross-product-contract\|cross_product_contract" .github/workflows/*.yml 2>/dev/null   # ≥1
 ```
 
 <!-- #24 [v1.2.0 移除：被 SOP 步骤 13 Step D 覆盖] -->
@@ -363,23 +355,7 @@ if (r.severity !== 'info') throw new Error('Expected info');
 console.log('OK');"   # 期望：OK
 ```
 
-#### 27. WIKI.md 存在 + 内容完整性（v1.2.1 新增）
-
-```bash
-# 子项 a: 文档存在
-[ -f docs/WIKI.md ] && echo "EXISTS" || echo "MISSING"
-
-# 子项 b: 七节结构完整
-WIKI_SECTIONS=$(grep -c "^## [一二三四五六七]、" docs/WIKI.md)
-[ "$WIKI_SECTIONS" -ge 7 ] || echo "⚠️ WIKI.md 节数不足（期望 7）"
-
-# 子项 c: 版本号与当前版本一致
-grep -q "v1\\.2\\.[0-9]" docs/WIKI.md || echo "⚠️ WIKI.md 版本号缺失"
-
-# 子项 d: 核心文档引用链存在（README + ARCHITECTURE 可发现）
-grep -c "WIKI" README.md   # ≥1
-grep -c "WIKI.md" docs/ARCHITECTURE.md   # ≥1（可选，ARCHITECTURE 已通过数据流图间接引用）
-```
+<!-- #27 [v1.2.3 归并至维度 3 子项 f：WIKI.md 存在性+结构+引用链检查] -->
 
 <!-- #27b [v1.2.1 移除：被 pre-push-check.sh 步骤 1 + CI shellcheck.yml 全量覆盖] -->
 
@@ -516,23 +492,7 @@ ACTUAL=$(bash tools/test-count.sh --quiet 2>&1 | grep -oE 'TOTAL_TESTS=[0-9]+' |
 grep -c "独立产品\|按需选用\|独立安装" README.md FDE/README.md FORGE/README.md 2>/dev/null   # 每个文档 ≥1
 ```
 <!-- #35 [v1.2.0 归并至维度 34] -->
-#### 36. 跨产品 install 契约 CI 验证（v1.1.7 新增 · BugFix 11）
-
-> FDE/LOOP 调用主 install.sh 的接口是跨产品契约——CI 应有专门 job 验证
-
-```bash
-# 子项 a: CI 有 cross-product-contract job
-grep -c "cross-product-contract\|cross_product_contract" .github/workflows/*.yml 2>/dev/null   # ≥1
-
-# 子项 b: install.sh 是主安装器（含 FDE 逻辑）
-grep -c "\-\-base-only" install.sh 2>/dev/null   # ≥1
-
-# 子项 c: LOOP 无独立 install 脚本（v1.2.0——已由 SKILL/<loop>/ 驱动）
-[ -f FORGE/loop-install.sh ] && echo "⚠️ FORGE/loop-install.sh 仍存在" || echo "✅ LOOP 无独立 install 脚本"
-
-# 子项 d: 主 install.sh 标注被 FDE/LOOP 依赖
-grep -c "FDE/LOOP\|被.*依赖\|跨产品" install.sh 2>/dev/null   # ≥1
-```
+<!-- #36 [v1.2.3 归并至维度 23 子项 e：跨产品 install CI 验证检查] -->
 <!-- #37 [v1.2.1 归并至维度 8：red-team 场景检查是 acceptance-test 健壮性的子集] -->
 
 #### 38. daemon 审计集中收集 workaround + 安全文档时效性（v1.1.7 新增 · BugFix 9+13）
@@ -881,26 +841,7 @@ grep -rc "SOFAGENT_HOME\|SOFAGENT_DATA" engine/scripts/lib/platform-detect.sh en
 
 ---
 
-#### 55. 未定义变量检查——set -euo pipefail 陷阱（v1.2.1 新增）
-
-> v1.2.1 教训：shell 脚本在 `set -u` 下引用未定义变量会立即退出。install.sh 曾引用未定义的 PROJECT_DIR（只定义了 PROJECT_ROOT）。
-
-```bash
-# shellcheck 覆盖（已在 pre-push-check.sh 步骤 1）
-shellcheck install.sh engine/scripts/*.sh tools/*.sh 2>&1 | grep "SC2155\|SC2034"
-# SC2155 = 声明并赋值同一条命令 declare 并 assign
-# 额外检查：手动 grep 可能未定义的变量
-grep -rn '\$PROJECT_DIR\b' install.sh  # 期望零命中（只有 PROJECT_ROOT）
-# 更通用：bash -u 模式跑脚本 --dry-run
-bash -n install.sh  # 语法检查
-
-# 交叉验证：确认定义的变量名与引用的变量名一致
-grep -oE '\b[A-Z_]{3,}=' install.sh engine/scripts/lib/*.sh | sort -u   # 定义侧
-grep -ohE '\$\{?[A-Z_]{3,}\}?' install.sh engine/scripts/lib/*.sh | sed 's/[${}]//g' | sort -u   # 引用侧
-# 人工核对：引用侧不应出现定义侧没有的变量名
-```
-
-> **PASS 标准**：shellcheck 零 SC2155/SC2034 + 手动抽查关键变量定义完整。
+<!-- #55 [v1.2.3 移除：被 pre-push-check.sh 步骤 1 shellcheck 全量覆盖] -->
 
 ---
 

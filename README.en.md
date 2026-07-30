@@ -9,18 +9,18 @@
 </p>
 
 <p align="center">
-  <strong>Onboard · Deploy AI nodes · Leave them running 24/7</strong><br/>
+  <strong>Onboard · Deploy AI nodes · Control layer stays resident</strong><br/>
   <em>Give SMBs the ability to turn AI into daily work.</em>
 </p>
 
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.2-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.3-16B8F3" alt="Version" /></a>
   <a href="#install-and-get-going"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>Current version: v1.2.2</strong> · 2026-07-29 · Data sovereignty audit + hybrid model routing + FDE Dashboard + Graph Engine</p>
+<p align="center"><strong>Current version: v1.2.3</strong> · 2026-07-30 · Dashboard production-ready + Orchestration isolation + Fresh-Eyes pipeline</p>
 
 <p align="center">
   <a href="#what-is-this">What is this</a> · <a href="#what-sofagent-can-do-for-you">Features</a> · <a href="#three-deployment-options">Deployment</a> · <a href="#install-and-get-going">Install</a> · <a href="#further-reading">Docs</a>
@@ -44,7 +44,7 @@ sofagent-audit --init
 
 Companies don't lack LLMs and Agents — they lack the ability to turn AI into daily work.
 
-**That's what sofagent does.** It's an FDE Agent — it onboards with a four-phase process: map your workflows, turn automatable steps into AI nodes, deploy them onto devices, then leave. After departure, those nodes run 24/7 on their own. What you keep is a set of self-sustaining AI assets.
+**That's what sofagent does.** It's an FDE Agent — it onboards with a four-phase process: map your workflows, turn automatable steps into AI nodes, deploy them onto devices, then leave. After departure, the control layer keeps running — audit chain, tamper-proof, compliance trail. What you keep is a set of self-sustaining AI assets.
 
 Big vendors built the river — LLM is the water, Agent platforms are the riverbed. But enterprises don't dare drink straight from it. sofagent builds the dam + water treatment plant + pipe network + faucet — turning raw water into drinkable water for everyone. Full analogy: [ARCHITECTURE · River](./docs/ARCHITECTURE.md).
 
@@ -70,7 +70,7 @@ The first four are assets, the fifth is sofagent itself — the FDE Agent that s
 | AI nodes | Running Agents that auto-execute daily tasks (financial reconciliation, audit inspection, data analysis...) |
 | AI knowledge base | Continuously accumulated entities, concepts, comparison pages (Dream Cycle auto-sedimentation) |
 | Private evaluation system | eval feedback + Skill iteration history — non-copyable enterprise IP |
-| **sofagent itself** | The FDE Agent running 24/7 — manages the lifecycle of the above four; the human leaves, it stays |
+| **sofagent itself** | The FDE Agent: control layer resident — manages lifecycle of audit/constraints/knowledge; the human leaves, it stays |
 
 </details>
 
@@ -80,7 +80,7 @@ The first four are assets, the fifth is sofagent itself — the FDE Agent that s
 
 | What you want to solve | How sofagent does it |
 |------|------|
-| **Want AI to auto-run daily tasks** | Onboard, map workflows, turn automatable steps into AI nodes — they run on their own after deployment |
+| **Want AI to auto-run daily tasks** | Onboard, map workflows, turn automatable steps into AI nodes — the control layer stays resident after deployment |
 | **What if the Agent goes out of bounds** | 21 rules auto-audit every change — out-of-scope edits, secret leaks, injection attacks, blocked on the spot |
 | **Can I roll back if something goes wrong** | Auto git snapshot after every change, one-click revert to any safe state |
 | **What if I switch Agent / model** | Platform-agnostic — Claude Code / Codex / Cursor / WorkBuddy, plug and play |
@@ -97,7 +97,7 @@ The first four are assets, the fifth is sofagent itself — the FDE Agent that s
 |------|------|--------|
 | 💻 **Install on computer** | Technical staff / developers | `bash install.sh` normal install |
 | 🔌 **USB key** | Regular employees (SMB core scenario) | Plug and play, zero residue on unplug, no installation or expertise needed |
-| 🖥️ **Headless device** | Server / industrial PC (OPC scenario) | Plug USB and leave it, Agent runs 24/7 in the federation |
+| 🖥️ **Headless device** | Server / industrial PC (OPC scenario) | Plug USB and leave it, control layer stays resident in the federation |
 
 > 💡 **USB one-click burn**: build a workflow → burn a batch of USB keys → distribute to the team. Enterprise narrative: "buy USB → download sofagent → write to disk → distribute to employees". See [FDE/FDE.md](./FDE/FDE.md).
 
