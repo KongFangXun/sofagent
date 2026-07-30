@@ -18,7 +18,9 @@ const __dirname  = dirname(__filename);
 // 如果 driver 的 splitFindings 变了，这里也要同步。
 function splitFindings(resultText) {
   const findings = [];
-  const re = /^### finding-(\d+)[：:]?/gm;
+  // 匹配 ### finding-01 / ### finding-P0-01 / ### finding-P1-02 等格式
+  // Accept: pure digits (01) or level-prefixed (P0-01, P1-02)
+  const re = /^### finding-([A-Z0-9-]+)[：:]?/gm;
   const marks = [];
   let m;
   while ((m = re.exec(resultText)) !== null) {
@@ -71,6 +73,33 @@ function testBasicSplit() {
   assert.ok(findings[1].content.includes('内容 B'), 'finding-02 content 应包含正文');
   assert.ok(!findings[0].content.includes('内容 B'), 'finding-01 content 不应包含 finding-02 内容');
   console.log('  ✓ testBasicSplit');
+}
+
+/**
+ * 测试 splitFindings 支持 finding-P0-01 / finding-P1-02 带级别前缀格式。
+ * Test that splitFindings accepts level-prefixed formats like finding-P0-01.
+ * 这是 R2-R4 实际产出的格式，修复前会导致切出 0 条 finding。
+ */
+function testPrefixedFindingFormat() {
+  const resultText = `
+### finding-P0-01: 问题一
+内容一
+
+### finding-P1-02: 问题二
+内容二
+
+### finding-03: 问题三
+内容三
+`;
+  const findings = splitFindings(resultText);
+  assert.strictEqual(findings.length, 3, '应切出 3 条 finding（含 P0/P1 前缀和纯数字）');
+  assert.strictEqual(findings[0].id, 'P0-01', '第 1 条 id 应为 P0-01');
+  assert.strictEqual(findings[1].id, 'P1-02', '第 2 条 id 应为 P1-02');
+  assert.strictEqual(findings[2].id, '03', '第 3 条 id 应为 03（纯数字）');
+  assert.ok(findings[0].content.includes('内容一'), 'finding-P0-01 content 应包含正文');
+  assert.ok(findings[1].content.includes('内容二'), 'finding-P1-02 content 应包含正文');
+  assert.ok(!findings[0].content.includes('内容二'), 'finding-P0-01 content 不应包含 finding-P1-02 内容');
+  console.log('  ✓ testPrefixedFindingFormat');
 }
 
 function testEmptyInput() {
@@ -326,6 +355,7 @@ let failCount = 0;
 
 const tests = [
   testBasicSplit,
+  testPrefixedFindingFormat,
   testEmptyInput,
   testNoFindings,
   testChunk,
