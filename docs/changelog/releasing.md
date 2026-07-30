@@ -385,6 +385,8 @@ bash tools/check-test-count.sh
 
 脚本自动跑 `test-count.sh --quiet` 拿 SSOT 真值，再逐文档 grep 最新版本段声称的数字。**如果漂移**：打开脚本指出的文件+行号，把旧数字改成脚本输出中的实际值。
 
+> 🔴 **v1.2.3 教训·CI 解析要 strip ANSI**：vitest 在 CI 非 TTY 环境（GitHub Actions）仍输出颜色码，`Tests` 汇总行行首是 `\033[2m` 而非空格，导致 `grep '^\s*Tests\s+'` 恒不匹配 → `TOTAL_TESTS=0` → check-test-count.sh 报「无法获取实际测试数」exit 1。**本地非 TTY 不出颜色码故无法复现**——必须用 `script -q /dev/null bash -c '...'` 强制 TTY 才能模拟。修复铁律：test-count.sh / check-test-count.sh 所有对 vitest 输出的 grep **必须先 `sed $'s/\033\[[0-9;]*m//g'` strip ANSI**；优先信任 test-count.sh 末尾机器可读行 `TOTAL_TESTS=NNN`（不受 quiet/ANSI 守卫影响，恒输出），再回退人读「总计」行。
+
 ### 全项目版本号扫描
 
 详见 [FORGE/playbook/version-bump.md](../../FORGE/playbook/version-bump.md)——bump-version.sh 13 类位置、package-lock 同步、npm 铁律、手动排查。
@@ -608,10 +610,13 @@ npm run build
 🔴 第五层·收官（mcp 依赖 audit+orchestrator+think）：
 11. (cd engine/mcp  && npm publish --access public)
 
-── Step 3: 验证全部 11 包（🔴 v1.1.3 教训强化——只 echo 不判 FAIL 是虚假绿色） ──
+── Step 3: 验证全部 12 包（🔴 v1.1.3 教训强化——只 echo 不判 FAIL 是虚假绿色） ──
 NEW_VER="1.1.X"  # 替换为实际新版本号
 FAILED=""
-for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test skillopt; do
+# 🔴 v1.2.3 教训：for 循环漏了 rules 包（只列 11 个），导致 rules 滞留旧版本不被检出
+#    （v1.2.3 发布时 rules 实际停在 1.2.1，其余 11 包 1.2.3，循环却报「全部一致」= 虚假绿色）。
+#    包清单必须与 engine/ 下全部非私有包一致，新增包后同步追加。
+for pkg in harness ontology eval rules core audit think mcp orchestrator daemon ab-test skillopt; do
   ver=$(npm view "/$pkg" version 2>/dev/null)
   if [ "$ver" != "$NEW_VER" ]; then
     echo "❌ /$pkg: $ver（期望 $NEW_VER）"
@@ -703,6 +708,23 @@ GIT_HTTP_LOW_SPEED_LIMIT=1000 GIT_HTTP_LOW_SPEED_TIME=15 git push origin main
 ```
 
 **关键认知**：gh release 只依赖 tag 存在于远端，**不依赖 main push 完成**。tag push 成功后就可以做 release + Skill 分发，main push 可以后台慢慢重试。
+
+**🔴 sandbox 代理拦截 git HTTPS（v1.2.3 教训）**：
+
+在 WorkBuddy/CodeBuddy 沙箱内代执行发布时，git HTTPS 请求常被本地代理（如 `HTTP_PROXY=127.0.0.1:57119`）拦截：`git push` 反复 **exit 137（SIGKILL）**，加 `--no-thin` 也无效。gh CLI 走独立 API 通道，不受此代理影响。应对：
+
+```bash
+# ① main push：剥离代理环境变量 + --no-thin（实测可绕过）
+env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy git push --no-thin origin main
+
+# ② tag push 仍被 SIGKILL 时，改用 gh api 创建 tag 对象 + ref（前提：commit 已在远端）
+#    先确保目标 commit 已随 main push 到达远端，否则 gh api 建 tag 会报 422 "Could not verify object"
+gh api repos/KongFangXun/sofagent/git/tags -X POST \
+  -f tag=vX.Y.Z -f message="vX.Y.Z" \
+  -f object="$(git rev-parse HEAD)" -f type=commit
+gh api repos/KongFangXun/sofagent/git/refs -X POST \
+  -f ref="refs/tags/vX.Y.Z" -f sha="$(git rev-parse HEAD)"
+```
 
 ### 🔴 tag 后 commit 校验（F-10 / fresh-eyes F-03 教训）
 
@@ -806,6 +828,12 @@ cp -r FDE/* ~/.workbuddy/skills/sofagent/
 > **📌 Skill 分发铁律**：
 > 1. **唯一对外发布源 = `./FDE` 目录**（不是 `./SKILL` 目录——后者是引擎内部约束链）
 > 2. **两个平台 slug 统一 = `sofagent`**（v1.2.2 起 ClawHub 从 `sofagent-fde` merge 过来）
+> 3. **🔴 SkillHub 不接受图片文件（v1.2.3 教训）**：`./FDE` 目录若含 `.png`（如 `sofagent-fde.png`），`skillhub publish` 返回 `400 不允许的文件类型`。发布前必须排除图片——复制到临时目录删掉 png 再 publish：
+>    ```bash
+>    TMPDIR=$(mktemp -d) && cp -r FDE/* "$TMPDIR/" && rm -f "$TMPDIR"/*.png
+>    skillhub publish "$TMPDIR" --version X.Y.Z --changelog "vX.Y.Z: {简短变更}"
+>    ```
+>    ClawHub 接受 png，无此问题；仅 SkillHub 受限。
 > 3. **FDE/SKILL.md slug 字段 = `sofagent`**（SSOT）
 > 4. ClawHub 同版本号不可覆盖，需递增 patch 号
 > 5. 两个平台每次发版都要推，一个都不能少
@@ -945,6 +973,10 @@ bash tools/check-version.sh   # 期望：全绿
 
 | 版本 | 教训摘要 | 所在阶段 |
 |------|---------|---------|
+| v1.2.3 | **npm 发包漏 rules 包**：Step 3 验证循环只列 11 个包（漏 `rules`），导致 rules 滞留 1.2.1、其余 11 包 1.2.3 却报「全部一致」= 虚假绿色（v1.1.3 教训的重演）。修法：验证/发布清单必须与 `engine/` 全部非私有包一致，新增包同步追加；步骤 38 数字核查时发现并补发 rules@1.2.3 | 阶段十一 |
+| v1.2.3 | **CI test:count 解析在 ANSI 环境失败**：vitest 在 CI 非 TTY 也输出颜色码，`Tests` 行首 `\033[2m` 使 `grep '^\s*Tests\s+'` 恒不匹配 → TOTAL_TESTS=0 → 报「无法获取实际测试数」。本地非 TTY 不出颜色码无法复现，须 `script -q /dev/null` 强制 TTY 模拟。修法：grep 前必须 `sed $'s/\033\[[0-9;]*m//g'` strip ANSI，优先信任机器可读行 `TOTAL_TESTS=NNN` | 阶段八 |
+| v1.2.3 | **SkillHub 拒绝 .png 文件**：`skillhub publish ./FDE` 含 png 报 400 不允许的文件类型；ClawHub 不受限。修法：mktemp 临时目录排除 `*.png` 后再 publish | 阶段十一 |
+| v1.2.3 | **sandbox 代理拦截 git HTTPS**：`git push` 反复 exit 137（SIGKILL），`--no-thin` 无效；gh CLI 走独立 API 通道不受影响。修法：main push 用 `env -u HTTP_PROXY ...`；tag 被杀则 `gh api` 建 tag 对象+ref（commit 须先到远端） | 阶段十一 |
 | v1.2.2 | bump-version.sh --dry-run 不是纯只读——node 脚本段无条件 fs.writeFileSync 写盘（阶段九发现并修复） | 阶段九 |
 | v1.2.2 | pre-push-check shellcheck 漏根目录 install.sh；CI shellcheck.yml paths 引用过时 LOOP/ | 阶段九 |
 | v1.2.2 | releasing.md changelog 路径写 vX.Y.Z.md，实际有版本子目录 v<major>.<minor>/ | 阶段九 |
