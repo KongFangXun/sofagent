@@ -12,7 +12,7 @@
 //   node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>
 //
 // 异构模型（孔老师 2026-07-25 定稿）：
-//   A（审查者）= DeepSeek V4 Pro  baseURL https://api.deepseek.com/  thinking+reasoning_effort=high
+//   A（审查者）= DeepSeek V4 Flash baseURL https://api.deepseek.com/  thinking+reasoning_effort=high
 //   B（工程师）= DeepSeek V4 Flash baseURL https://api.deepseek.com/  thinking+reasoning_effort=high
 // ============================================================
 
@@ -71,7 +71,7 @@ if (process.env.SOFAGENT_LLM_B_API_KEY) {
 const MODEL_CONFIGS = {
   A: {
     baseURL:         'https://api.deepseek.com/',
-    model:           'deepseek-v4-pro',
+    model:           'deepseek-v4-flash',
     thinking:        { type: 'enabled' },
     reasoningEffort: 'high',
     maxTokens:       16000,  // 限制输出 token，防止 thinking 模式无限消耗
@@ -99,7 +99,7 @@ const MODEL_CONFIGS = {
 // 数据来源：各厂商官方定价页（2026-07-25 查证）
 //
 // ⚠️ 计费模式区分（2026-07-25 确认）：
-//   A/B (deepseek-v4-pro) = 按量计费 → 适用本表计价
+//   A/B (deepseek-v4-flash) = 按量计费 → 适用本表计价
 // 本表用于成本估算。缓存命中率、账号促销、套餐折扣会影响最终费用。
 //
 // ⚠️ 这是「估算」不是「账单」：
@@ -107,12 +107,13 @@ const MODEL_CONFIGS = {
 //   driver 算出的 cost_cny 仅供成本感知（「这轮大概花了多少」），
 //   真实账单请到各厂商 API 后台查看。
 //
-// DeepSeek V4 Pro（DeepSeek 2026-07 旗舰，1.6T MoE，1M 上下文）：
+// DeepSeek V4 Flash（A/B 当前实际使用，按量计费）：
 //   https://api-docs.deepseek.com/quick_start/pricing
-//   input 3元（缓存未命中）/ output 6元 / 缓存命中 input 0.025元
+//   input 0.5元（缓存未命中）/ output 8元 / 缓存命中 input 0.025元
 //   注：DeepSeek 官方定价页未提及峰谷定价（截至 2026-07-25）。
-//   峰谷定价曾有新闻提及但未正式实施，若后续上线需更新本表。
 //   → 本表按「缓存未命中」计价（成本上界，缓存命中时实际账单更低）
+//   MODEL_PRICING 同时保留 deepseek-v4-pro 条目做参考；recordUsage 按 model 名查表，
+//   A 改为 flash 后自动命中 flash 价。
 const MODEL_PRICING = {
   'deepseek-v4-pro': {
     input: 3,
@@ -204,7 +205,7 @@ function buildSystemPrompt(skillPath) {
 /**
  * 为指定角色创建 LLM 模型实例。
  *
- * 两角色均使用 DeepSeek V4 Pro（ChatOpenAI + reasoningEffort='high'）。
+ * 两角色均使用 DeepSeek V4 Flash（ChatOpenAI + reasoningEffort='high'）。
  * thinking 参数通过 modelKwargs 注入。
  */
 async function createModel(role) {
@@ -399,7 +400,7 @@ function extractUsage(result) {
  * @param {string} step       步骤名（如 'a-check'）
  * @param {number} round      轮次（从 1 开始）
  * @param {string} role       角色 'A' 或 'B'
- * @param {string} model      模型名（如 'glm-5.2'）
+ * @param {string} model      模型名（如 'deepseek-v4-flash'）
  * @param {object} result     DeepAgent invoke 返回值
  * @param {number} latencyMs  本次 invoke 耗时（毫秒）
  * @param {string} target     审查目标版本号
@@ -1625,8 +1626,8 @@ async function runRound(roundNum, runDir, target, dryRun) {
 
   // 打印本轮成本摘要
   const costSummary = summarizeRoundCost(runDir, roundNum);
-  const aModel = costSummary.A.model || 'glm-5.2';
-  const bModel = costSummary.B.model || 'deepseek-v4-pro';
+  const aModel = costSummary.A.model || 'deepseek-v4-flash';
+  const bModel = costSummary.B.model || 'deepseek-v4-flash';
   console.log(
     `  [Round ${roundNum} 成本] A(${aModel}): ${costSummary.A.tokens.toLocaleString()} tokens / ¥${costSummary.A.cost.toFixed(4)}  |  ` +
     `B(${bModel}): ${costSummary.B.tokens.toLocaleString()} tokens / ¥${costSummary.B.cost.toFixed(4)}  |  ` +
@@ -1851,11 +1852,11 @@ async function main() {
       `(A 订阅 + B 按量 ¥${usageSummary.total_cost_cny.toFixed(4)})`
     );
     console.log(
-      `           A(${usageSummary.by_role.A.model || 'glm-5.2'}):       ` +
+      `           A(${usageSummary.by_role.A.model || 'deepseek-v4-flash'}):       ` +
       `${usageSummary.by_role.A.total_tokens.toLocaleString()} tokens  [Coding Plan 订阅额度]`
     );
     console.log(
-      `           B(${usageSummary.by_role.B.model || 'deepseek-v4-pro'}):   ` +
+      `           B(${usageSummary.by_role.B.model || 'deepseek-v4-flash'}):   ` +
       `${usageSummary.by_role.B.total_tokens.toLocaleString()} tokens  ` +
       `¥${usageSummary.by_role.B.cost_cny.toFixed(4)} [按量计费]`
     );
