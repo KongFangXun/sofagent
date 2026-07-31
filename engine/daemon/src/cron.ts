@@ -24,7 +24,7 @@ export interface ABCronConfig {
 
 /** 定时任务配置 */
 export interface CronJob {
-  schedule: '@weekly' | '@daily' | '@hourly';
+  schedule: '@weekly' | '@daily' | '@hourly' | '@monthly';
   /** Sub Agent 名称，默认 'fde' */
   agent?: string;
   /** 运行模式，默认 'sustain' */
@@ -65,6 +65,7 @@ function scheduleToMs(alias: string): number {
     '@hourly': 3600_000,
     '@daily': 86400_000,
     '@weekly': 604800_000,
+    '@monthly': 2_592_000_000,
   };
   return map[alias] || 0;
 }
