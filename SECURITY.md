@@ -153,15 +153,13 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 
 素材仅 `log.md` + `health-report.md`（restricted 在生产侧已被 sensitivity 过滤，不进通知）；通道复用 push-target（daemon:notice + openclaw:im outbox），仅本机/联邦内通知，非 v1.2.1 规划的对外 Webhook/飞书推送；失败静默不阻塞 dream-cycle / health 主流程。
 
-### 知识库与工具网关安全边界（2026-07 研报印证）
+### 知识库与工具网关安全边界
 
-2026-07 行业研报对「知识库作为 Agent 可信调用载体」提出的 4 道关卡，与 sofagent 安全模型同构：
+知识库作为 Agent 可信调用载体，sofagent 的对应机制（F-10：去掉研报背书修辞，只留可验证的技术对应）：
 
-- **权限实时回连核验**：研报强调数据入口权限必须**实时回连**核验、不静态拷贝。对应 sofagent 审计 A14（知识库越权：事后审计而非运行时阻断，见 LIMITATIONS §五）——当前为事后发现，运行时阻断是 v2.x 方向（计划中，参见 ROADMAP.md）。
-- **受控 Action + 全链路审计**：研报的 Action（前置·权限·幂等·副作用·审计）与 sofagent「模型提建议、审计引擎控执行」同一原则（见 DEVELOPMENT §八 财务报销沙盒）。
-- **权限隔离（Entity Resolution）**：多源知识需先解析实体归属再授权，避免越权拼接——对应 knowledge/ 的实体归属与 A15 约束验证。
-
-> 📖 来源：温故知新 2026-07-21（行业研报《企业知识库进阶》《Ontology Runtime 企业级架构落地》）
+- **权限核验**：审计 A14 检测知识库越权访问——当前为**事后审计**而非运行时阻断（见 LIMITATIONS §五）；运行时阻断列入 v2.x（ROADMAP.md）。
+- **受控 Action + 全链路审计**：「模型提建议、审计引擎控执行」——Action 经权限·副作用·审计后才落地（见 DEVELOPMENT §八）。
+- **权限隔离（Entity Resolution）**：多源知识先解析实体归属再授权，避免越权拼接——对应 knowledge/ 实体归属与 A15 约束验证。
 
 ---
 
@@ -254,6 +252,23 @@ sanitize() 管道在写入 history.jsonl、think.md、task/logs 等文件前自�
 
 审计拦截记录以 JSONL 明文存储在 `data/audit/history.jsonl`，目录权限 0o700、文件权限 0o600（v1.1.3 起收紧）。仅追加写入（`appendFileSync`），不覆盖、不删除。历史记录供编排引擎和进化引擎本地读取。
 
+### 威胁模型：`SOFAGENT_DATA` 环境变量的信任边界（F-23 · 本版声明为已知风险）
+
+`getHistoryFilePath()`（`engine/core/src/audit-history.ts`）解析审计历史路径时优先级为：**显式 dataDir 参数 > `SOFAGENT_DATA` 环境变量 > 默认 `data/audit/history.jsonl`**。写入侧（`appendHistory`）与校验侧（`checkHistoryChainDetailed`）均走此函数。
+
+**设计初衷**：`SOFAGENT_DATA` 用于测试隔离（如 `loader.test.ts` 用 `vi.stubEnv('SOFAGENT_DATA', '')` 切换数据目录），属合理需求。
+
+**信任边界与风险分级**：能设置目标进程环境变量的攻击者，可将审计历史重定向到任意路径——「写到别处 + 校验读别处」使篡改表面看起来正常。该风险**完全取决于部署场景**：
+
+| 部署场景 | 风险等级 | 说明 |
+|---------|:--:|------|
+| 本地开发机 | 🟢 低 | 攻击者已能在本机设置环境变量 = 已拥有本机用户权限，游戏结束，审计重定向不构成额外提权 |
+| CI / 共享服务器 | 🟡 中 | 同机其他用户/作业可能注入环境变量，审计历史可被悄悄重定向 |
+
+**本版决策（方案 C · 声明而非改码）**：本版**不修改** `audit-history.ts` 的路径解析逻辑，仅在此明确声明信任边界。理由：① 本地低风险场景下白名单/固定路径会损害测试隔离与多实例部署的灵活性；② 共享服务器场景的正确防线是**环境隔离**（每用户独立 `~/.sofagent/`、CI 作业独立容器/沙箱、`env -i` 清洗环境），而非在审计工具内做路径白名单（白名单本身也可被同权限攻击者绕过）。
+
+**共享服务器缓解建议**：① CI 作业运行在独立容器/沙箱，环境变量不可跨作业注入；② 启动入口用 `env -i` 或显式白名单透传环境变量；③ 对 `history.jsonl` 所在卷做完整性监控（文件路径 + mtime 基线告警）。路径白名单校验（方案 A）与审计路径固定（方案 B）作为可选加固，列入 ROADMAP 评估。
+
 ### 已知绕过路径
 
 | 绕过方式 | 检测手段 | 缓解 |
@@ -269,7 +284,7 @@ sanitize() 管道在写入 history.jsonl、think.md、task/logs 等文件前自�
 
 ### 详细缓解步骤
 
-1. **CI 侧兜底（推荐）**：在 CI/CD pipeline 中独立运行 `sofagent-audit --all`，
+1. **CI 侧兜底（推荐）**：在 CI/CD pipeline 中独立运行 `sofagent-audit --diff HEAD~1..HEAD`（审最近一次 commit；审整个分支区间用 `--diff main..HEAD`），
    使用 CI 环境内受保护的 config.yml 副本，不依赖开发机上的配置文件。
 2. **文件权限加固**：`chmod 444 .sofagent/config.yml` 将配置设为只读。
    注意：此方法不能防止 Agent 以 root/同用户身份强制写入，
@@ -432,19 +447,9 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 2. **GitHub Security Advisory**：[提交私有报告](https://github.com/KongFangXun/sofagent/security/advisories/new)
 3. **响应时间**：我们承诺在 72 小时内确认收到报告，7 天内提供初步评估。
 
-<details>
-<summary>PGP 公钥</summary>
-
-```
------BEGIN PGP PUBLIC KEY BLOCK-----
-（待安全团队补充实际公钥）
------END PGP PUBLIC KEY BLOCK-----
-```
-</details>
-
 ## 响应承诺
 
-- **确认**：7 天内确认收到报告
+- **确认**：72 小时内确认收到报告
 - **初步评估**：30 天内给出初步评估和影响范围
 - **修复**：根据严重程度排期——高危（数据泄露/权限提升）优先修复并发布补丁版本
 

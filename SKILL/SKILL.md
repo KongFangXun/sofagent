@@ -5,7 +5,7 @@ version: 1.2.3
 displayName: FDE Agent
 description: >
   FDE Agent——约束 Agent 行为、审计每次变更、沉淀经验。对外统一身份是 FDE Agent（用户面对的唯一入口），
-  底层实现叫 sofagent 引擎（Harness 中间件）。四引擎：编排/审计/回溯/进化。
+  底层实现叫 sofagent 引擎（Harness 中间件）。三引擎：审计/回溯/进化。FORGE 自迭代工具链是内部开发工具。
   内置持续优化模式（sustain），自动读 audit 报告趋势生成优化报告。
 tags:
   - fde

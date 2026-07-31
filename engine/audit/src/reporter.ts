@@ -31,6 +31,25 @@ export interface AuditResult {
 }
 
 /**
+ * 产品签名行（F-05：感知层——让用户明确知道「这是 sofagent 的审计结果」）。
+ *
+ * 仅用于 text/table 等**人类可读**输出格式的头部；`--json` 输出绝不使用
+ * （保持机器可读纯净，不破坏 acceptance scenario 6 的 JSON 结构断言）。
+ *
+ * 判定映射与 printResults 保持一致：exit 0=PASS / 1=WARN / 2=FAIL。
+ * FAIL（拦截）时使用 ❌ 前缀，让用户明确知道「是 sofagent 拦的」。
+ *
+ * @param exitCode 审计退出码（0/1/2）
+ * @param ruleCount 参与本次审计的规则数
+ * @returns 形如「━━━ sofagent 审计 · 21 规则 · PASS ━━━」的签名行
+ */
+export function productSignature(exitCode: number, ruleCount: number): string {
+  const verdict = exitCode === 0 ? 'PASS' : exitCode === 1 ? 'WARN' : 'FAIL';
+  const icon = exitCode === 0 ? '✅' : exitCode === 1 ? '⚠️ ' : '❌';
+  return `${icon} ━━━ sofagent 审计 · ${ruleCount} 规则 · ${verdict} ━━━`;
+}
+
+/**
  * 运行全部审计规则（fast-fail 模式，v1.0.7）
  * 委托到 rules/runner.ts 的 runRules，内部按 AUDIT_PRIORITY 分组执行。
  *

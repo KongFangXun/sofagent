@@ -487,6 +487,12 @@ export function writeConfig(filePath: string, config: string): void {
 
 /**
  * 运行时配置——由环境变量加载（对应 lib/config.sh 导出项）
+ *
+ * 命名约定说明（F-06）：`Sofa*` 是 TS 接口/类型的驼峰命名，仅存在于 TypeScript
+ * 层；它对应的**所有**环境变量均为 `SOFAGENT_` 全大写 + 下划线（SOFAGENT_HOME /
+ * SOFAGENT_DATA / SOFAGENT_KEY_PATH …），符合 Unix 环境变量约定。shell↔TS 边界
+ * 只通过 `process.env.SOFAGENT_*`（见 resolveDataDir）传递，不存在驼峰环境变量，
+ * 故无 shell 注入/边界风险——此处保留驼峰类型名即可，无需重命名。
  */
 export interface SofaEnvConfig {
   /** 数据目录路径 */

@@ -246,26 +246,58 @@ for pkg in audit core orchestrator daemon; do
   fi
 done
 
-# DEVELOPMENT.md — "acceptance-test.sh（NNN 场景）" 格式
-DEV_LINE=$(grep -nE 'acceptance-test\.sh.*[0-9]+ 场景' docs/DEVELOPMENT.md 2>/dev/null | head -1)
-if [ -n "$DEV_LINE" ]; then
-  DEV_CLAIMED=$(echo "$DEV_LINE" | grep -oE '[0-9]+ 场景' | grep -oE '[0-9]+')
-  DEV_LINENO=$(echo "$DEV_LINE" | cut -d: -f1)
-  # 从 acceptance-test.sh 头部获取声明数
-  ACCEPTANCE_ACTUAL=$(head -5 FORGE/playbook/acceptance-test.sh 2>/dev/null | grep -oE '[0-9]+ 个场景' | grep -oE '[0-9]+' || echo "")
-  if [ -n "$ACCEPTANCE_ACTUAL" ]; then
-    if [ "$QUIET" = false ]; then
-      echo -e "  校验 DEVELOPMENT.md（行 ${DEV_LINENO}）..."
-    fi
-    if [ "$DEV_CLAIMED" = "$ACCEPTANCE_ACTUAL" ]; then
+# ── acceptance-test.sh 场景数守卫（F-01/F-02）──
+# SSOT = acceptance-test.sh 头部「NNN 个场景」声明。三处文档
+# （DEVELOPMENT.md / LIMITATIONS.md / changelog v1.2.3.md）必须与之一致。
+# 绝不允许静默跳过：头部声明缺失 → 黄色 WARN（不骗绿）；
+# 文档数字与 SSOT 不一致 → exit 1 并列出文件+行号。
+ACCEPTANCE_ACTUAL=$(head -10 FORGE/playbook/acceptance-test.sh 2>/dev/null | grep -oE '[0-9]+ 个场景' | head -1 | grep -oE '[0-9]+' || echo "")
+if [ -z "$ACCEPTANCE_ACTUAL" ]; then
+  echo -e "  ${YELLOW}⚠ acceptance-test.sh 头部未找到「NNN 个场景」声明，场景守卫跳过（请在脚本头部补 SSOT 声明）${NC}"
+else
+  if [ "$QUIET" = false ]; then
+    echo -e "  场景数 SSOT：acceptance-test.sh 头部声明 ${ACCEPTANCE_ACTUAL} 个场景"
+  fi
+
+  # 逐个校验三处文档的场景数声称值
+  check_scenario_doc() {
+    local label="$1" file="$2" lineno="$3" claimed="$4"
+    if [ "$claimed" = "$ACCEPTANCE_ACTUAL" ]; then
       if [ "$QUIET" = false ]; then
-        echo -e "  ${GREEN}✓ DEVELOPMENT.md：${DEV_CLAIMED} 场景${NC}"
+        echo -e "  ${GREEN}✓ ${label}（行 ${lineno}）：${claimed} 场景${NC}"
       fi
       ((PASS++)) || true
     else
-      echo -e "  ${RED}✗ DEVELOPMENT.md（行 ${DEV_LINENO}）：声称 ${DEV_CLAIMED} 场景，脚本声明 ${ACCEPTANCE_ACTUAL}${NC}"
+      echo -e "  ${RED}✗ ${label}（行 ${lineno}）：声称 ${claimed} 场景，SSOT 声明 ${ACCEPTANCE_ACTUAL}${NC}"
+      echo -e "    文件：${file}"
       ((FAIL++)) || true
     fi
+  }
+
+  # ① DEVELOPMENT.md — "acceptance-test.sh（NNN 场景）"
+  DEV_LINE=$(grep -nE 'acceptance-test\.sh.*[0-9]+ 场景' docs/DEVELOPMENT.md 2>/dev/null | head -1)
+  if [ -n "$DEV_LINE" ]; then
+    check_scenario_doc "DEVELOPMENT.md" "docs/DEVELOPMENT.md" \
+      "$(echo "$DEV_LINE" | cut -d: -f1)" \
+      "$(echo "$DEV_LINE" | grep -oE '[0-9]+ 场景' | grep -oE '[0-9]+')"
+  fi
+
+  # ② LIMITATIONS.md — "acceptance-test.sh NNN 场景"（当前版本口径，取「发版前手动覆盖」行）
+  # 注意：该行同时含「OpenClaw 验收 63 场景」，必须 head -1 只取 acceptance 的紧邻数字，
+  # 否则 grep -oE 会连带捕获 63 造成误报。
+  LIM_SCN_LINE=$(grep -nE 'acceptance-test\.sh [0-9]+ 场景' LIMITATIONS.md 2>/dev/null | head -1)
+  if [ -n "$LIM_SCN_LINE" ]; then
+    check_scenario_doc "LIMITATIONS.md" "LIMITATIONS.md" \
+      "$(echo "$LIM_SCN_LINE" | cut -d: -f1)" \
+      "$(echo "$LIM_SCN_LINE" | grep -oE 'acceptance-test\.sh [0-9]+ 场景' | head -1 | grep -oE '[0-9]+')"
+  fi
+
+  # ③ changelog v1.2.3.md — "NNN/NNN 场景 PASS" 或 "NNN 场景"（取当前版本质量表行）
+  CHG_SCN_LINE=$(grep -nE '[0-9]+/[0-9]+ 场景 PASS' docs/changelog/v1.2/v1.2.3.md 2>/dev/null | head -1)
+  if [ -n "$CHG_SCN_LINE" ]; then
+    check_scenario_doc "changelog v1.2.3.md" "docs/changelog/v1.2/v1.2.3.md" \
+      "$(echo "$CHG_SCN_LINE" | cut -d: -f1)" \
+      "$(echo "$CHG_SCN_LINE" | grep -oE '[0-9]+/[0-9]+ 场景' | head -1 | grep -oE '^[0-9]+')"
   fi
 fi
 

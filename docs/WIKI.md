@@ -24,7 +24,7 @@
 | **Harness 中间件** | 对内的技术身份：约束 Agent 行为的「缰绳」，四引擎（审计/编排/回溯/进化） | [ARCHITECTURE §二](./ARCHITECTURE.md) |
 | **Harness 七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——四引擎各自覆盖其中哪些维度 | [ARCHITECTURE §一·心智模型](./ARCHITECTURE.md) |
 | **Harness 构成（企业视角）** | 黄仁勋定义：企业专属 Harness = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
-| **审计引擎** | git diff 驱动，21 条规则（13 默认 + 8 扩展），A1→A19 为活跃规则（A12/A13 已在 v0.99.4 合并入 A11，编号不再使用），每次 commit 自动跑 | [ARCHITECTURE §三](./ARCHITECTURE.md) |
+| **审计引擎** | git diff 驱动，21 条规则（13 默认 + 8 扩展），A1→A19 为活跃规则（A12/A13 已在 v1.1.0 合并入 A11，编号不再使用），每次 commit 自动跑 | [ARCHITECTURE §三](./ARCHITECTURE.md) |
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | **FORGE** | 自迭代引擎——通过 workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ sofagent/（约束底座）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |
@@ -49,7 +49,7 @@
 │  │ 21条规则  │ReactAgent│ 防篡改   │sustain   │  │
 │  └──────────┴──────────┴──────────┴──────────┘  │
 ├─────────────────────────────────────────────────┤
-│  data/（运行时数据） │ engine/（12 个 npm 包）     │
+│  data/（运行时数据） │ engine/（13 个 npm 包）     │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -122,7 +122,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |
 | `docs/guides/` | 专题指南：部署、测试、MCP 使用、Loop 开发等 |
 
-### engine/（12 个 npm 包）
+### engine/（13 个 npm 包）
 
 | 包 | 职责 |
 |----|------|
@@ -132,8 +132,9 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | `engine/daemon/` | @sofagent/daemon — 后台守护进程（cron 巡检 + 文件监听） |
 | `engine/harness/` | @sofagent/harness — SKILL 加载链（上下文注入） |
 | `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool） |
+| `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（v1.2.x 新增，第 13 个包） |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
-| 其余 5 包 | 详见 `docs/DEVELOPMENT.md §包结构` |
+| 其余 6 包（ontology/eval/think/ab-test/skillopt/rules） | 详见 `docs/DEVELOPMENT.md §包结构` |
 
 ### 关键数据路径（`data/`）
 

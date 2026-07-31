@@ -236,7 +236,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
      3. 审计日志确实被篡改 → 检查 ~/.sofagent/data/audit/history.jsonl 的修改时间`);
     } else {
       // ② 历史不可复验（黄）：key/环境漂移，非篡改——不报「链断裂/篡改」，不判失败
-      warn(`审计日志 hash chain 不可复验（黄色提示，非篡改）：${result.detail ?? ''}。这是由于 secret key 轮换或环境指纹漂移导致的预期断裂，非安全事件。如确为本人密钥变更，可忽略此警告；如需重置 hash chain，运行 sofagent-audit --init --reset-chain。如非本人操作，请核查 ~/.sofagent-key 与运行环境`);
+      warn(`审计日志 hash chain 不可复验（黄色提示，非篡改）：${result.detail ?? ''}。这是由于密钥轮换，或运行环境变化（如更换设备/用户/仓库路径）导致的预期断裂，非安全事件。如确为本人密钥变更，可忽略此警告；如需重置 hash chain，运行 sofagent-audit --init --reset-chain。如非本人操作，请核查 ~/.sofagent-key 与运行环境`);
     }
   } catch (chainErr) {
     // 链校验异常（极少）：不影响其余检查，但记录以便排查，

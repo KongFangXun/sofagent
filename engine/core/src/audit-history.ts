@@ -11,6 +11,17 @@
 //
 // These functions depend only on node builtins + @sofagent/core,
 // so they live naturally in core.
+//
+// ⚠️ F-24 双副本说明（勿混淆）：本仓库有两份同名 audit-history.ts，职责不同、**不可合并**：
+//   - 【本文件】engine/core/src/audit-history.ts —— 底层「哈希链完整性」原语层。
+//     零上层依赖（只用 node 内置 + core 自身），提供 getHistoryFilePath /
+//     getEnvFingerprint / getHmacKey / stableStringify / checkHistoryChainDetailed /
+//     checkHistoryChainIntegrity / validateHmacKey。供 doctor、daemon 等任意包直接复用。
+//   - engine/audit/src/audit-history.ts —— 业务「审计历史持久化」层。re-export 本文件
+//     的原语，并叠加 AuditHistoryEntry 类型 + appendHistory/loadHistory/clearHistory
+//     （依赖 audit 域的规则结果类型与 sanitize 管道）。
+//   依赖方向单向：audit → core（core 绝不反向依赖 audit）。若把业务持久化下沉到 core，
+//   会把 audit 的规则结果域类型拖进底座，违反 core「零上层依赖」分层契约，故保持两份。
 // ============================================================
 
 import { existsSync, readFileSync } from 'fs';
@@ -229,6 +240,9 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
     if (curr.hmacSig && keyAvailable && hmacKey) {
       // hmacAlgo 仅作标记，不参与 HMAC 计算（写入侧 recordForSig 也不含它），保证两侧一致
       const recordForSig = { ...curr, prevHash: undefined, hashVersion: undefined, hmacSig: undefined, hmacAlgo: undefined };
+      // F-08：.slice(0, 32) 截断到 128bit——必须与写侧（audit/audit-history.ts appendHistory
+      // 的 hmacSig 生成）使用**同一**截断长度，否则验签恒不匹配。128bit 防篡改强度充分
+      // （伪造需 2^128 尝试），截断同时节省每条记录的存储空间。
       const expectedHmac = createHmac('sha256', hmacKey)
         .update(stableStringify(recordForSig) + '|' + fingerprint)
         .digest('hex').slice(0, 32);
