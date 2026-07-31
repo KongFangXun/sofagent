@@ -13,11 +13,10 @@
   <em>让中小企业拥有把 AI 变成日常工作的能力。</em>
 </p>
 
-> **sofagent 是一个 AI Agent 行为审计引擎**——它像 git hook 一样工作，
-> 在每次 AI 生成的 commit 进入仓库之前检查 Agent 是否越界、泄漏密钥或盲目修改。
-> 附带 FDE 方法论（企业 AI 治理咨询）和 FORGE（自迭代编排工具）两个独立产品。
+> **sofagent 是一个 FDE Agent**——进场梳理工作流、把能自动化的环节变成 AI 节点、部署后 7×24 自己跑。
+> 底层引擎（Harness 中间件）一底座·三引擎覆盖全生命周期，审计引擎已独立交付。
 >
-> **FDE Agent** = 进场梳理工作流 → 在 AI 开发节点上部署审计引擎 → 离场后治理规则持续生效。
+> **FDE Agent** = 进场梳理工作流 → 部署 AI 节点 + 引擎 → 离场后控制层常驻。
 
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
@@ -36,7 +35,12 @@
 
 ## ⚡ 30 秒快速开始
 
-> **前提**：请在 git 仓库根目录下执行以下命令。如果还没有仓库，先运行 `git init`。
+| 你是… | 第一步 | 需要什么 |
+|------|------|------|
+| **企业用户** | 装 [FDE Skill](./FDE/README.md) → 对话引导你梳理工作流 | 零依赖、不需要 Node.js |
+| **开发者** | `bash install.sh` → `sofagent-audit --init` → 装 git hook 审计 | Node.js ≥ 18 + git |
+
+> **前提**：开发者路径请在 git 仓库根目录下执行。如果还没有仓库，先运行 `git init`。
 
 ```bash
 bash install.sh          # 安装
@@ -46,12 +50,13 @@ if [ -n "$ZSH_VERSION" ]; then
 elif [ -n "$BASH_VERSION" ]; then
   source ~/.bashrc
 fi
-> 💡 如果 `sofagent-audit` 仍然提示 command not found，请**新开一个终端窗口**再试。
 # 或者直接重新打开终端
 sofagent-audit --init    # 初始化（装 git hook）
 # 验证环境是否就绪（可选但推荐）
 sofagent-audit --doctor
 ```
+
+> 💡 如果 `sofagent-audit` 仍然提示 command not found，请**新开一个终端窗口**再试。
 
 > 💡 **不需要装引擎？** 如果你只需要 FDE 方法论（给 Agent 装治理 Skill），
 > 直接看 [FDE/README.md](./FDE/README.md)——零依赖，不需要 Node.js。
@@ -70,10 +75,11 @@ sofagent-audit --doctor
 
 | 工具 | 它们管什么 | sofagent 管什么 |
 |------|:--------|:----------------|
+| AI Agent 平台（OpenClaw 等）| Agent 调度——「会不会做」 | Agent 治理——「能不能每次都做对」 |
+| 企业 AI 咨询服务 | 一次性交付，人走茶凉 | 工具 + 常驻引擎，可复用、可维护 |
 | pre-commit / husky | 代码质量（lint / format）| **Agent 行为**（密钥泄漏 / 越界编辑 / 注入攻击 / 盲改）|
-| detect-secrets / gitleaks | 密钥扫描（✅ 全量历史 + pre-commit + 100+ 模式）| A2 覆盖常见 API key（⚠️ 仅增量）；差异化 = **Agent 行为审计**而非密钥覆盖率 |
+| detect-secrets / gitleaks | 密钥扫描（全量历史 + pre-commit；gitleaks 内置 100+ 规则）| A2 覆盖常见 API key（⚠️ 仅增量）；差异化 = **Agent 行为审计**而非密钥覆盖率 |
 | Cursor Rules / Claude hooks | 单平台 IDE 约束 | 审计层全平台可用（git diff）；约束层按平台分层（OpenClaw 最深 → WorkBuddy SKILL → 其他种子指令） |
-| Agent 平台（OpenClaw 等）| Agent 调度——「会不会做」| Agent 治理——「能不能每次都做对」|
 
 现有工具查"代码写得对不对"；sofagent 查"Agent 行为对不对"。这些是 LLM Agent 特有的失败模式，通用工具不覆盖。
 
@@ -245,7 +251,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 |------|------|
 | `@sofagent/audit` | 审计引擎（21 条规则，git diff 硬证据）|
 | `@sofagent/core` | 运行时诊断（doctor / verify）|
-| `@sofagent/orchestrator` | 编排引擎（多 Agent 协作）|
+| `@sofagent/orchestrator` | FORGE 自迭代工具链（LOOP 流水线 + 任务编排）|
 | `@sofagent/daemon` | 守护进程（文件监控 / 定时巡检）|
 | `@sofagent/mcp` | MCP Server（JSON-RPC 2.0）|
 
@@ -277,7 +283,7 @@ npm test
 # 仅核心引擎测试
 npm test --workspace=engine/audit
 
-# 预期：1207 tests passed（16 个 safe-delete 相关测试在特定环境预期失败，详见 LIMITATIONS §四）
+# 预期：1207 tests passed（12 包全绿）
 ```
 
 ---
@@ -303,31 +309,29 @@ npm test --workspace=engine/audit
 ## <a id="engine-architecture"></a>引擎架构（开发者段）
 
 > [!NOTE]
-> **品牌与描述**：**sofagent** 是产品品牌名；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent（进场梳理工作流、把可自动化环节变成 AI 节点、构建本体、部署专属小模型的常驻硅基员工）。底层技术实现是一套约束 Agent 行为的 Harness 中间件（一底座·四引擎），开源在 `@sofagent/*`。下面这段是给开发者看的。
+> **品牌与描述**：**sofagent** 是产品品牌名；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent（进场梳理工作流、把可自动化环节变成 AI 节点、构建本体、部署专属小模型的常驻硅基员工）。底层技术实现是一套约束 Agent 行为的 Harness 中间件（一底座·三引擎），开源在 `@sofagent/*`。下面这段是给开发者看的。
 
-sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，一底座·四引擎覆盖全生命周期。一底座 = 约束底座（开工前注入规则）；四引擎 = 审计引擎（21 条规则拦截）+ 回溯引擎（自动快照回滚）+ 编排引擎（多 Agent 协作）+ 进化引擎（周度自优化）。
+sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，一底座·三引擎覆盖全生命周期。一底座 = 约束底座（开工前注入规则）；三引擎 = 审计引擎（21 条规则拦截）+ 回溯引擎（自动快照回滚）+ 进化引擎（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化）。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，不作为对外引擎宣称。
 
 <details>
-<summary>📖 一底座·四引擎架构（开发者参考）</summary>
+<summary>📖 一底座·三引擎架构（开发者参考）</summary>
 
 ```mermaid
 flowchart LR
-    CB[🧭 约束底座<br/>开工前注入红线] --> OR[⚙️ 编排引擎<br/>多 Agent 协作·任务拆解]
-    OR --> AU[🔍 审计引擎<br/>每次变更硬证据审查]
+    CB[🧭 约束底座<br/>开工前注入红线] --> AU[🔍 审计引擎<br/>每次变更硬证据审查]
     AU --> RE[🔄 回溯引擎<br/>git snapshot·一键回滚]
-    RE --> EV[🧬 进化引擎<br/>周度巡检·越用越好]
+    RE --> EV[🧬 进化引擎<br/>think.md 反思 + Dream Cycle + skillopt]
     EV -.-> CB
 ```
 
-> 下表 5 项 = 1 底座 + 4 引擎。
+> 下表 4 项 = 1 底座 + 3 引擎。
 
 | 组件 | 作用 | 状态 |
 |:------|:--------|:--:|
 | 🧭 约束底座 | 开工前规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
-| ⚙️ 编排引擎 | 多 Agent 协作 + 任务拆解 | 🔶 部分 |
 | 🔍 审计引擎 | 21 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计引擎核心规则零 token**（16 条纯 git-diff 规则不调用 LLM + 1 条文件系统监控，4 条混合规则需 Agent 日志）——不调用 LLM（0 token），不消耗任何 LLM 额度 | ✅ 稳定 |
 | 🔄 回溯引擎 | 每次审计后自动 git snapshot，违规一键回滚 | ✅ 稳定 |
-| 🧬 进化引擎 | FDE 周度巡检审计趋势 + 反思日志 | ⚠️ 实验性 |
+| 🧬 进化引擎 | think.md 反思（✅ 已交付）+ Dream Cycle 知识回灌（🔧 轻量态）+ skillopt Skill 优化（⚠️ 需外部 SkillOpt CLI）| 🔧 部分可用 |
 
 </details>
 
@@ -338,11 +342,11 @@ flowchart LR
 
 四层加载链：SKILL.md（宪法·不可改）→ fde.md（规范·可改）→ think.md（反思·自动生成）→ knowledge/（知识·自动积累）。v1.0.7+ SubAgent 启动时自加载（`buildConstrainedSystemPrompt`），不依赖任何 Agent 平台的 Skill 系统。
 
-### ⚙️ 编排引擎
+### ⚙️ FORGE 自迭代工具链（内部工具）
 
-两层已实现：① **任务拆解**——LangGraph createReactAgent 把任务描述变成编排方案 YAML；② **多 Agent 协作**——支持多 SubAgent 串行编排，每节点有 checkpoint 支持中断恢复。
+> ⚠️ FORGE LOOP 流水线（plan→engineer→audit→review→confirm）是 **sofagent 项目自身自迭代用的开发工具**（fresh-eyes-loop / release-gate-loop），不作为面向用户的编排引擎。真正的任务编排由你使用的 AI Agent 平台（WorkBuddy / Claude / Cursor 等）完成，sofagent 在编排过程中提供约束 + 审计 + 经验沉淀。
 
-> 🔶 当前是**串行**状态机（非并行 DAG 调度）。完整 DAG 并行调度 + 沙箱执行规划在 [ROADMAP v1.3.1](./ROADMAP.md)。
+LOOP 内部使用 LangGraph StateGraph 组装节点流转 + 6 个内置工具（read/write/edit/bash/search/test）+ ToolGate 事前拦截。代码在 `@sofagent/orchestrator` 包中开源，供参考和二次开发。
 
 ### 🔍 审计引擎
 
@@ -364,9 +368,15 @@ flowchart LR
 
 每次审计后自动 git snapshot（本质是对工作树的轻量快照，不是 git commit——不产生历史污染）。违规时推送通知 + 建议回滚。`sofagent-audit --revert <sha>` 一键回到任意快照。
 
-### 🧬 进化引擎（实验性）
+### 🧬 进化引擎
 
-FDE 周度巡检：读审计趋势（history.jsonl）→ 分析 think.md 反复出错 → 生成优化报告 / 标记稳定。
+进化引擎不是单一组件，而是三层闭环：
+
+| 层 | 机制 | 状态 | 怎么跑 |
+|------|------|:---:|------|
+| **think.md 反思** | 每次审计自动写教训（哪个规则触发了、改了哪些文件、下次注意什么），Agent 下次启动时通过 harness 加载链读到——不犯同样的错 | ✅ 已交付 | 审计引擎每次跑自动触发，无需配置 |
+| **Dream Cycle 知识回灌** | daemon 后台合成概念 → 回灌 skillopt 待优化队列，积累知识供后续优化周期消费 | 🔧 轻量态 | daemon 后台运行，当前为内存态队列（重启即丢），完整持久消费链路在 v1.2.4 交付 |
+| **skillopt Skill 优化** | 失败模式聚类（≥3 次同类失败）→ 自动触发外部 SkillOpt CLI 优化 Skill 质量 → 校验候选（行数 ±30% + 变化率 ≥5%）| ⚠️ 需外部依赖 | 需安装 [Microsoft SkillOpt](https://github.com/microsoft/SkillOpt)（`skillopt-sleep` CLI）。未安装时自动降级为仅记录失败清单，不执行优化 |
 
 </details>
 

@@ -33,7 +33,7 @@ import { VERSION } from '@sofagent/core';
 import { resolveDiffEndpoint } from './diff-ref';
 import { checkLogs } from '@sofagent/core';
 import { createShadowRepo, commitSnapshot, hasShadowRepo } from '@sofagent/core';
-import { runRules, type AuditResult } from './reporter';
+import { runRules, productSignature, type AuditResult } from './reporter';
 import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-history';
 
 // Re-export for external consumers (P0-②: doctor needs checkHistoryChainIntegrity via require('@sofagent/audit'))
@@ -665,6 +665,11 @@ async function main(): Promise<void> {
     exit(0);
   }
 
+  // F-22：超大 diff（>5MB）被跳过内容审计的文件 → 注入 WARN 级发现，消除审计盲区。
+  // 作为一条合成 WARN 规则追加到审计结果，使其在 text/table 报告与 --json 输出中
+  // 均可见。WARN 不拦截提交（不改 exit code 判定），但明确告知「这些文件未被审计」。
+  const oversizedPaths = diffFiles.filter((f) => f.oversized).map((f) => f.path);
+
   // 2. 读取任务日志
   const logEntries = checkLogs();
 
@@ -744,6 +749,18 @@ async function main(): Promise<void> {
   if (permissionDenials.length > 0) {
     results.permissionDenials = permissionDenials;
   }
+
+  // F-22：超大 diff 审计盲区 → 注入 WARN 级发现（报告中可见，不拦截提交）。
+  // text/table 人类可读格式：打印醒目 WARN 行；--json 输出绝不掺入（保持机器可读纯净）。
+  if (oversizedPaths.length > 0 && !args.json) {
+    console.log('');
+    console.log(`  ⚠️  [sofagent] 审计盲区（WARN）：以下 ${oversizedPaths.length} 个文件的 diff 超过 5MB，已跳过内容审计`);
+    for (const p of oversizedPaths) {
+      console.log(`       - ${p}`);
+    }
+    console.log('       可能为二进制/lock/minified 文件，请人工确认这些文件无密钥泄漏/越界改动。');
+  }
+
   printResults(results, diffFiles, args.json, args.ci, args.silent);
 
   // 7. webhook 推送（fire-and-forget，配置了 webhook 时 PASS/WARN/FAIL 三态都推送）
@@ -932,6 +949,8 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
 
   // 静默 / CI 模式——只抑制输出，不改 exit code 判定
   if (ci || silent) {
+    // F-05：产品签名（text 人类可读输出头部；--json 已在上方提前 return，绝不加签名）
+    console.log(productSignature(results.exitCode, results.rules.length));
     // ★ v1.2.0: 无条件向 stdout 输出一行结论（session 可见性核心）
     const c = results.exitCode;
     const failN = results.rules.filter((r) => r.status === 'FAIL').length;
@@ -990,6 +1009,8 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   const issueWord = failCount > 0 ? `${failCount} 违规` : warnCount > 0 ? `${warnCount} 警告` : '0 违规';
 
   console.log('');
+  // F-05：产品签名行（人类可读输出头部，FAIL 拦截时醒目，让用户知道是 sofagent 拦的）
+  console.log('  ' + productSignature(exitCode, totalRules));
   console.log(bannerTop());
   console.log(bannerLine(`sofagent-audit · FDE Agent · v${VERSION}`));
   const defaultCnt = defaultRules.length;

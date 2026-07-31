@@ -1,28 +1,28 @@
 # sofagent Architecture
 
-> 设计决策记录——从为什么存在、一底座·四引擎如何协作，到每个关键决策的工程理由。
+> 设计决策记录——从为什么存在、一底座·三引擎如何协作，到每个关键决策的工程理由。
 > v1.2.3 · 2026-07-30（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
 ## 心智模型（先读这个）
 
-> **sofagent 是一个 FDE Agent**（开源 MIT）——对外帮你进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎是一套约束 Agent 行为的 Harness 中间件，一底座·四引擎（约束底座 + 编排/审计/回溯/进化引擎）保证每次变更可审计、可回滚、可进化。
+> **sofagent 是一个 FDE Agent**（开源 MIT）——对外帮你进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎是一套约束 Agent 行为的 Harness 中间件，一底座·三引擎（约束底座 + 审计/回溯/进化引擎）。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具保证每次变更可审计、可回滚、可进化。
 
 ```mermaid
 graph TD
-    A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent 引擎<br/>Harness 中间件 = 一底座·四引擎<br/>堤坝=约束底座 · 自来水厂=沙箱安全<br/>管网=编排引擎 · 水龙头=Sub Agent]
+    A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent 引擎<br/>Harness 中间件 = 一底座·三引擎<br/>堤坝=约束底座 · 自来水厂=沙箱安全<br/>管网=审计引擎 · 水龙头=Sub Agent]
     B --> C[FDE Agent<br/>帮你梳理→部署→离场→AI 节点自己跑]
     C --> D[SMB · OPC 的每个人<br/>成为自己业务的 FDE]
 ```
 ### Agent 工程三层嵌套
 
-一底座·四引擎不是并列关系——它们按「环境 → 流程 → 反馈」三层嵌套：
+一底座·三引擎不是并列关系——它们按「环境 → 流程 → 反馈」三层嵌套：
 
 ```mermaid
 graph TD
     H[Harness 层 · 工作环境<br/>约束底座 + 审计引擎 + 回溯引擎<br/>daemon + SKILL 加载链 + data/ 状态持久<br/>——决定模型「能做什么」]
-    H --> G[Graph 层 · 流程拓扑<br/>编排引擎 LangGraph ReactAgent<br/>多 Agent 协作 · 任务拆解<br/>——决定「下一步去哪」]
+    H --> G[Graph 层 · 流程拓扑<br/>FORGE 内部工具（LOOP 流水线）<br/>LangGraph StateGraph<br/>——项目自迭代用·不对外宣称]
     G --> L[Loop 层 · 反馈改进<br/>FORGE fresh-eyes-loop + release-gate-loop<br/>进化引擎 sustain · eval 反馈闭环<br/>——决定「怎么越做越好」]
     L -.->|审计趋势回流| H
 ```
@@ -54,7 +54,7 @@ graph TD
 
 - [术语对照](#术语对照)
 - [一、核心理念与架构全景](#一核心理念与架构全景)
-- [二、一底座·四引擎设计](#二一底座四引擎设计)
+- [二、一底座·三引擎设计](#二一底座三引擎设计)
 - [三、部署与运行架构](#三部署与运行架构)
 - [四、核心设计决策](#四核心设计决策)
 - [能力与状态总览（v1.2.0）](#能力与状态总览v120)
@@ -70,7 +70,7 @@ graph TD
 | 🧭 约束底座 | Constraint Base | 四层加载链，Agent 启动前注入红线 |
 | 🔍 审计引擎 | Audit Engine | git diff + 文件变更硬证据审计（v1.1.0 拆独立包） |
 | 🔄 回溯能力 | Restore Capability | 每次审计自动快照，`--revert` 一键回滚 |
-| ⚙️ 编排引擎 | Orchestration Engine | 任务拆解 + Sub Agent 并行 + A/B 优化 |
+| ⚙️ FORGE 工具链 | FORGE Toolchain | LOOP 流水线（内部自迭代用，非对外引擎） |
 | 🧬 进化引擎 | Evolution Engine | FDE 周度巡检 + 自动优化，v1.0.8+ |
 | 加载链 | Load Chain | Agent 启动时注入的约束文件 |
 | FDE | Forward Deployed Engineer | 一种能力（非岗位 title）——前线部署工程能力模型：掌握完整上下文、打破岗位边界、对结果负责 |
@@ -101,11 +101,11 @@ sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent �
 
 > 理论基础及行业验证见 [THANKS.md](./THANKS.md) 和 [PHILOSOPHY §四 信任模型](./PHILOSOPHY.md#四怎么管信任模型)。
 
-### 治理架构（一底座·四引擎）
+### 治理架构（一底座·三引擎）
 
 ```mermaid
 graph LR
-    A["🧭 约束底座<br/>启动前注入红线"] --> B["⚙️ 编排引擎<br/>拆任务·并行·A/B"]
+    A["🧭 约束底座<br/>启动前注入红线"] --> B["🔍 审计引擎<br/>21 条规则·拦截违规"]
     B --> C["🔍 审计引擎<br/>每次变更自动扫描"]
     C --> D["🔄 回溯能力<br/>快照存档·一键回滚"]
     D --> E["🧬 进化引擎<br/>周度巡检·自动优化"]
@@ -117,10 +117,10 @@ graph LR
 | 🧭 约束底座 | 四层加载链永远在线 | @sofagent/harness |
 | 🔍 审计引擎 | 只看 git diff 硬证据 | @sofagent/audit |
 | 🔄 回溯能力 | 事后快照 + `--revert` | @sofagent/core |
-| ⚙️ 编排引擎 | StateGraph 四节点循环 + 任务拆解（v1.1.3+） | @sofagent/orchestrator |
+| ⚙️ FORGE 工具链 | StateGraph LOOP 流水线（内部自迭代用） | @sofagent/orchestrator |
 | 🧬 进化引擎 | daemon cron @weekly | @sofagent/daemon + @sofagent/skillopt |
 
-> 一底座·四引擎的完整设计哲学见 [PHILOSOPHY §三 架构全景](./PHILOSOPHY.md#三怎么跑架构全景)。
+> 一底座·三引擎的完整设计哲学见 [PHILOSOPHY §三 架构全景](./PHILOSOPHY.md#三怎么跑架构全景)。
 
 ### 输出签名机制（v1.1.3）
 
@@ -165,7 +165,7 @@ Harness 中间件最大的挑战是存在感——引擎在正常工作，但用
 
 ---
 
-## 二、一底座·四引擎设计
+## 二、一底座·三引擎设计
 
 ### 🧭 约束底座
 
@@ -287,7 +287,7 @@ sofagent-audit --revert SHA   # 回滚到任意快照
 
 daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml`。
 
-### ⚙️ 编排引擎
+### ⚙️ FORGE 自迭代工具链（内部）
 
 大任务拆小、多 Sub Agent 并行、A/B 对比找更优方案。基于 LangGraph createReactAgent，`sofagent-orchestrator compose --task` CLI 入口——任何 Agent 平台都能用。
 
@@ -746,13 +746,13 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 ## 能力与状态总览（v1.2.0）
 
-> 这份清单是「现在能干什么」的单一索引。引擎内部设计见 [二、一底座·四引擎设计](#二一底座四引擎设计)；未来方向见 [五、已知局限与未来方向](#五已知局限与未来方向)。
+> 这份清单是「现在能干什么」的单一索引。引擎内部设计见 [二、一底座·三引擎设计](#二一底座三引擎设计)；未来方向见 [五、已知局限与未来方向](#五已知局限与未来方向)。
 
 ### 13 个 workspace 包（全部 @sofagent/* · v1.2.0，其中 12 个发布到 npm）
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计引擎，21 条规则（13 默认 + 8 扩展，详见 WIKI.md）硬证据扫描 + 快照/回滚/webhook | ✅ 已实现（498 测试） |
+| audit | 提交时审计引擎，21 条规则（13 默认 + 8 扩展，详见 WIKI.md）硬证据扫描 + 快照/回滚/webhook | ✅ 已实现（504 测试） |
 | core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor | ✅ 已实现（153 测试） |
 | harness | 四层约束加载链 `buildConstrainedSystemPrompt()` | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 fs/git 依赖），编排层 tool-call 事前拦截 | ✅ 已实现 |
@@ -777,7 +777,7 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 | 安装器 | 装什么 | 不装 | 适用 |
 |---|---|---|---|
 | `install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（@sofagent-fde / @sofagent-audit）+ hook | FORGE | 企业 / FDE：要常驻硅基员工 |
-| `install.sh --base-only` | 仅底座（四引擎） | FDE / FORGE | 开发者 / 企业 IT：只要核心治理引擎 |
+| `install.sh --base-only` | 仅底座（三引擎） | FDE / FORGE | 开发者 / 企业 IT：只要核心治理引擎 |
 
 > 最小可用：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）；五包全装才是完整 Harness 中间件。
 > 注：v1.2.0 起 `install.sh`（根目录）成为主安装器并新增 `--base-only`，详见发版说明。

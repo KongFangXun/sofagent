@@ -53,7 +53,7 @@ Big vendors built the river — LLM is the water, Agent platforms are the riverb
 | Tool | What they check | What sofagent checks |
 |------|:---------|:----------------|
 | pre-commit / husky | Code quality (lint / format) | **Agent behavior** (secret leaks / out-of-scope edits / injection attacks / blind edits) |
-| detect-secrets / gitleaks | Secret scanning | Secrets are just A1; sofagent has 20 more rules for Agent failure modes |
+| detect-secrets / gitleaks | Secret scanning (full history + pre-commit; gitleaks ships 100+ rules) | A2 covers common API keys (⚠️ incremental diff only); the difference is **Agent behavior auditing**, not secret coverage |
 | Cursor Rules / Claude Code hooks | Single-platform IDE constraints | Platform-agnostic — any Agent + git repo |
 | Agent platforms (OpenClaw etc.) | Agent scheduling — "can it do it" | Agent governance — "can it do it right every time" |
 
@@ -149,7 +149,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 |------|------|
 | `@sofagent/audit` | Audit engine (21 rules, git diff hard evidence) |
 | `@sofagent/core` | Runtime diagnostics (doctor / verify) |
-| `@sofagent/orchestrator` | Orchestration engine (multi-Agent collaboration) |
+| `@sofagent/orchestrator` | FORGE self-iteration toolchain (LOOP pipeline + task composition) |
 | `@sofagent/daemon` | Daemon process (file monitoring / scheduled inspection) |
 | `@sofagent/mcp` | MCP Server (JSON-RPC 2.0) |
 
@@ -200,15 +200,14 @@ npm test --workspace=engine/audit
 > [!NOTE]
 > **Two names, one thing**: the product you interact with is called **FDE Agent** (helps you map workflows and deploy AI nodes); the underlying engine is called **sofagent** (open-source repo + npm packages `@sofagent/*`). Regular users only need to remember **FDE Agent** — the following section is for developers.
 
-The sofagent engine is a Harness middleware that constrains Agent behavior, with one base and four engines covering the full lifecycle.
+The sofagent engine is a Harness middleware that constrains Agent behavior, with one base and three engines covering the full lifecycle. FORGE LOOP pipeline is an internal development tool, not marketed as a user-facing engine.
 
 <details>
-<summary>📖 One base · four engines architecture (developer reference)</summary>
+<summary>📖 One base · three engines architecture (developer reference)</summary>
 
 ```mermaid
 flowchart LR
-    CB[🧭 Constraint Base<br/>inject red lines before work] --> OR[⚙️ Orchestration<br/>multi-Agent collaboration · task decomposition]
-    OR --> AU[🔍 Audit Engine<br/>hard evidence per change]
+    CB[🧭 Constraint Base<br/>inject red lines before work] --> AU[🔍 Audit Engine<br/>hard evidence per change]
     AU --> RE[🔄 Restore Engine<br/>auto-snapshot · one-click revert]
     RE --> EV[🧬 Evolution<br/>weekly inspection · improves with use]
     EV -.-> CB
@@ -217,10 +216,9 @@ flowchart LR
 | Engine | What it does | Status |
 |:------|:--------|:--:|
 | 🧭 Constraint Base | Injects rules into Agent context before work starts (SKILL.md + fde.md + think.md + knowledge/) | ✅ stable |
-| ⚙️ Orchestration | Multi-Agent collaboration + task decomposition | 🔶 partial |
 | 🔍 Audit Engine | 21 rules on every git commit / file change, blocks + logs violations. **Core audit rules zero-token** (17 pure git-diff rules don't call LLM, 4 hybrid rules need Agent logs) — pure static analysis, no LLM cost | ✅ stable |
 | 🔄 Restore Engine | Auto git snapshot after every audit, one-click revert | ✅ stable |
-| 🧬 Evolution | FDE weekly inspection of audit trends + reflection logs | ⚠️ experimental |
+| 🧬 Evolution | think.md reflection (✅ shipped) + Dream Cycle knowledge feedback (🔧 lightweight) + skillopt Skill optimization (⚠️ needs external SkillOpt CLI) | 🔧 partial |
 
 </details>
 
@@ -231,11 +229,11 @@ flowchart LR
 
 Four-layer loading chain: SKILL.md (constitution · immutable) → fde.md (norms · editable) → think.md (reflection · auto-generated) → knowledge/ (knowledge · auto-accumulated). v1.0.7+ Sub Agents self-load on startup (`buildConstrainedSystemPrompt`), independent of any Agent platform's Skill system.
 
-### ⚙️ Orchestration Engine
+### ⚙️ FORGE Self-Iteration Toolchain (Internal)
 
-Two layers implemented: ① **Task decomposition** — LangGraph createReactAgent turns task descriptions into orchestration plan YAML; ② **Multi-Agent collaboration** — supports serial orchestration of multiple Sub Agents, per-node checkpoint for interrupt recovery.
+> ⚠️ The FORGE LOOP pipeline (plan→engineer→audit→review→confirm) is an **internal development tool** for sofagent project self-iteration (fresh-eyes-loop / release-gate-loop). It is not marketed as a user-facing orchestration engine. Real task orchestration is done by your AI Agent platform (WorkBuddy / Claude / Cursor etc.); sofagent provides constraints + audit + experience sedimentation during the orchestration process.
 
-> 🔶 Currently a **serial** state machine (not a parallel DAG scheduler). Full DAG parallel scheduling + sandbox execution is planned in [ROADMAP v1.3.1](./ROADMAP.md).
+Internally uses LangGraph StateGraph for node flow + 6 built-in tools (read/write/edit/bash/search/test) + ToolGate pre-call interception. Code is in the `@sofagent/orchestrator` package, open-source for reference and secondary development.
 
 ### 🔍 Audit Engine
 
@@ -257,9 +255,15 @@ Of the 21 rules, 16 are pure git-diff (don't need Agent cooperation), 4 are hybr
 
 Auto git snapshot after every audit (a lightweight snapshot of the working tree, not a git commit — no history pollution). Pushes notification + suggests rollback on violation. `sofagent-audit --revert <sha>` reverts to any snapshot.
 
-### 🧬 Evolution Engine (experimental)
+### 🧬 Evolution Engine
 
-FDE weekly inspection: read audit trends (history.jsonl) → analyze think.md repeated errors → read eval for node degradation → generate optimization report / mark stable.
+The evolution engine is not a single component, but a three-layer closed loop:
+
+| Layer | Mechanism | Status | How it runs |
+|------|------|:---:|------|
+| **think.md reflection** | Auto-writes lessons after each audit (which rule triggered, what files changed, what to watch for next time). Agent reads it via harness loading chain on next run — avoids repeating mistakes | ✅ shipped | Triggered automatically when audit engine runs, no config needed |
+| **Dream Cycle knowledge feedback** | Daemon synthesizes concepts in background → feeds skillopt optimization queue, accumulating knowledge for later optimization cycles | 🔧 lightweight | Daemon background process, currently in-memory queue (lost on restart), full persistence in v1.2.4 |
+| **skillopt Skill optimization** | Failure pattern clustering (≥3 same-type failures) → auto-triggers external SkillOpt CLI to optimize Skill quality → validates candidates (line count ±30% + change rate ≥5%) | ⚠️ needs external dep | Requires [Microsoft SkillOpt](https://github.com/microsoft/SkillOpt) (`skillopt-sleep` CLI). Falls back to recording failure list only when not installed |
 
 </details>
 

@@ -80,12 +80,24 @@ const MEDIUM_CONFIDENCE_PATTERNS: { pattern: RegExp; name: string }[] = [
 ];
 
 /**
- * NFKC 归一化 + leet speak 反转（供两处评分复用）
+ * NFKC 归一化 + 零宽字符剥离 + leet speak 反转（供两处评分复用）
  * P1-6: 全角字符转半角；P1-7: leet 字符反转（1→i, 0→o, 3→e 等）
+ *
+ * F-25: NFKC 归一化按 Unicode 标准**不映射**零宽/格式控制符（它们不是兼容字符），
+ * 故攻击者可在 payload 中插入 U+200B（零宽空格）等不可见字符绕过字符串匹配
+ * （如 `sk\u200B-abc123` 匹配不到密钥模式）。需在 NFKC 之后、leet 反转之前
+ * **显式剥离**这些格式控制符。只剥离不可见控制符，不动有意义的 Unicode
+ * （CJK / emoji 等保留）。
+ *
+ * 处理顺序：NFKC 归一化 → 零宽字符剥离 → leet 反转
  * @returns 归一化后的字符串
  */
 export function normalizeLine(line: string): string {
   let normalized = line.normalize('NFKC');
+  // F-25: 剥离不可见格式控制符（NFKC 不处理这些，需显式移除）
+  // U+200B 零宽空格 / U+200C 零宽非连接符 / U+200D 零宽连接符 /
+  // U+200E·200F 方向标记 / U+FEFF BOM·零宽不换行空格 / U+00AD 软连字符
+  normalized = normalized.replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF\u00AD]/g, '');
   normalized = normalized
     .replace(/1/gi, 'i')
     .replace(/0/g, 'o')

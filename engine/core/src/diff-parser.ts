@@ -10,6 +10,12 @@ export interface DiffFile {
   status: 'added' | 'modified' | 'deleted' | 'renamed';
   oldPath?: string;
   lines: string[];
+  /**
+   * F-22：该文件的 diff 超过 maxBuffer（5MB）被跳过审计的标记。
+   * 置位时 lines 为空数组，调用方（audit/index.ts）据此注入 WARN 级发现，
+   * 避免「超大 diff 静默跳过」造成的审计盲区。
+   */
+  oversized?: boolean;
 }
 
 /**
@@ -156,6 +162,7 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
         // v1.2.0 修复：rename 文件必须同时传 oldPath 和 path 作为 pathspec，
         // 否则 git 无法配对 rename，R100 纯改名会被当成全新文件输出全量 diff
         let diffLines: string[] = [];
+        let oversized = false;
         try {
           const pathspec = (status === 'renamed' && oldPath) ? [oldPath, path] : [path];
           const diffContent = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', range, '--', ...pathspec], {
@@ -165,10 +172,19 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
           });
           diffLines = diffContent.split('\n');
         } catch (err) {
-          console.error('[diff-parser] 读取文件差异失败:', err);
+          // F-22：maxBuffer（5MB）溢出 = 超大 diff（二进制误入 / lock / minified bundle）。
+          // 不再静默跳过——置 oversized 标记，调用方注入 WARN 级发现，让审计盲区可见。
+          const isBufOverflow = (err as NodeJS.ErrnoException)?.code === 'ENOBUFS'
+            || /maxBuffer/i.test((err as Error)?.message ?? '');
+          if (isBufOverflow) {
+            oversized = true;
+            console.error(`[diff-parser] 文件 ${path} 的 diff 超过 5MB，已跳过内容审计（将注入 WARN）`);
+          } else {
+            console.error('[diff-parser] 读取文件差异失败:', err);
+          }
         }
 
-        files.push({ path, status, oldPath, lines: diffLines });
+        files.push({ path, status, oldPath, lines: diffLines, ...(oversized ? { oversized: true } : {}) });
       }
     }
   } catch (err) {
@@ -242,6 +258,7 @@ export function parseStagedDiff(): DiffFile[] {
         // v1.2.0 修复：rename 文件必须同时传 oldPath 和 path 作为 pathspec，
         // 否则 git 无法配对 rename，R100 纯改名会被当成全新文件输出全量 diff
         let diffLines: string[] = [];
+        let oversized = false;
         try {
           const pathspec = (status === 'renamed' && oldPath) ? [oldPath, path] : [path];
           const diffContent = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', '--cached', '--', ...pathspec], {
@@ -250,10 +267,18 @@ export function parseStagedDiff(): DiffFile[] {
           });
           diffLines = diffContent.split('\n');
         } catch (err) {
-          console.error('[diff-parser] 读取暂存文件差异失败:', err);
+          // F-22：同 parseDiff——maxBuffer 溢出置 oversized 标记，注入 WARN，消除审计盲区
+          const isBufOverflow = (err as NodeJS.ErrnoException)?.code === 'ENOBUFS'
+            || /maxBuffer/i.test((err as Error)?.message ?? '');
+          if (isBufOverflow) {
+            oversized = true;
+            console.error(`[diff-parser] 暂存文件 ${path} 的 diff 超过 5MB，已跳过内容审计（将注入 WARN）`);
+          } else {
+            console.error('[diff-parser] 读取暂存文件差异失败:', err);
+          }
         }
 
-        files.push({ path, status, oldPath, lines: diffLines });
+        files.push({ path, status, oldPath, lines: diffLines, ...(oversized ? { oversized: true } : {}) });
       }
     }
   } catch (err) {

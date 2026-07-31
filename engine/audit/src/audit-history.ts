@@ -3,6 +3,17 @@
 // v1.2.0 env fingerprint: hash chain 加环境指纹防 Agent 重算整链
 // ============================================================
 //
+// ⚠️ F-24 双副本说明（勿混淆）：本仓库有两份同名 audit-history.ts，职责不同、**不可合并**：
+//   - 【本文件】engine/audit/src/audit-history.ts —— 业务「审计历史持久化」层。
+//     提供 AuditHistoryEntry 类型 + appendHistory/loadHistory/clearHistory/
+//     isHmacKeyConfigured，依赖 audit 域的规则结果类型与 sanitize 管道；
+//     并 re-export core 的哈希链原语（见下方 import/export）。
+//   - engine/core/src/audit-history.ts —— 底层「哈希链完整性」原语层（零上层依赖）：
+//     getHistoryFilePath / getEnvFingerprint / getHmacKey / stableStringify /
+//     checkHistoryChainDetailed / checkHistoryChainIntegrity / validateHmacKey。
+//   依赖方向单向：audit → core（core 绝不反向依赖 audit）。业务持久化含 audit 规则
+//   结果域类型，不能下沉到 core 底座（会违反 core「零上层依赖」分层契约），故保持两份。
+//
 // 并发安全说明：appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的。
 // 审计历史条目通常 < 1KB，单次写入安全。多进程同时写入可能导致行交错，
 // 但概率极低（审计触发频率 < 1次/分钟）。TODO(v1.3.0): 加 file lock 或改为单 writer 模式。
@@ -161,6 +172,11 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   // 签名输入排除 prevHash/hashVersion/hmacSig/hmacAlgo（与读侧 recordForSig 一致）；
   // 用 stableStringify（递归按 key 字典序排序）消除 key 顺序敏感。
   const recordForSig = { ...baseSanitized, prevHash: undefined, hashVersion: undefined, hmacSig: undefined, hmacAlgo: undefined };
+  // F-08：HMAC-SHA256 完整输出 64 hex（256bit），此处 .slice(0, 32) 截断到 128bit。
+  // 截断理由：① 每条 history.jsonl 记录都存 hmacSig，截断省约一半存储空间；
+  // ② 128bit 防篡改强度充分（伪造需 2^128 次尝试，远超可行算力）；
+  // ③ 写侧（此处）与读侧（core/audit-history.ts recordForSig 验签）必须用**同一**
+  //    截断长度，否则验签恒不匹配——两侧统一 slice(0, 32)。
   const hmacSig = hmacKey
     ? createHmac('sha256', hmacKey).update(stableStringify(recordForSig) + '|' + fingerprint).digest('hex').slice(0, 32)
     : undefined;
