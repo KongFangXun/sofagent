@@ -7,7 +7,7 @@
 
 ## 现在在哪：v1.2.4（已发版 · 2026-08-01）
 
-> **知识进化 + 知识健康 + Skill 分包 + Graph Engine Checker（v1.2.4）**：
+> **知识进化 + 知识健康 + Skill 分包（v1.2.4）**：
 > 分层巡检 L1/L2/L3（@daily/@weekly/@monthly 三级）+ skillopt 自动触发（失败模式 3 次自动优化）+
 > 失败清单自动优化（负面样本为主要燃料）+ conflict-check CLI + 联邦蒸馏 +
 > 进化引擎接通 eval（think-generator 读 eval failures → 写 think.md）+
