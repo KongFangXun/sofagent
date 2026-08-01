@@ -9,7 +9,7 @@
 
 > 未来版本规划见 [ROADMAP.md](./ROADMAP.md)
 
-- **v1.2.4** — 知识进化（分层巡检 L1/L2/L3 + skillopt 自动触发 + 失败清单 + 联邦蒸馏 + 进化引擎接通 eval + Dashboard 历史趋势 + Graph Engine Checker）· 2026-08-01 · [开发日志](./docs/changelog/v1.2/v1.2.4.md)
+- **v1.2.4** — 知识进化（分层巡检 L1/L2/L3 + skillopt 自动触发 + 失败清单 + 联邦蒸馏 + 进化引擎接通 eval + Dashboard 历史趋势）· 2026-08-01 · [开发日志](./docs/changelog/v1.2/v1.2.4.md)
 - **v1.2.3** — Dashboard 产品化 + 编排隔离底座 + Fresh-Eyes 流程化（git worktree 隔离三原语 + 控制图波次渲染 + FORGE 审查进度实时显示 + 用户可读状态映射 + releasing.md 阶段一重组 + v1.2.2 BugFix 31 项）· 2026-07-30 · [开发日志](./docs/changelog/v1.2/v1.2.3.md)
 - **v1.2.2** — 数据主权审计 + 混合模型路由 + FDE Dashboard + Graph Engine + 异步 HITL + Skill 升级三策略（4 维审计追踪 + 敏感度路由 + bash 三栏 + Planner 降级链 + checkpoint 挂起）— 38 项修复详见 git log v1.2.2...v1.2.1 --oneline · 2026-07-29 · [开发日志](./docs/changelog/v1.2/v1.2.2.md)
 - **v1.2.1** — 数据目录重构 + Webhook 推送 + SubAgent 可见性 L2 + custom/ 闭环 + eval/ab-test 半成品补全（.sofagent/ → data/ + 飞书/钉钉/企微推送 + ProgressMiddleware + golden set 42 条 + CLI + 持久化）· 2026-07-28 · [开发日志](./docs/changelog/v1.2/v1.2.1.md)
@@ -76,7 +76,7 @@
 
 ## v0.47–v0.80 — 早期开发期（摘要）
 
-> 这段时间每个版本间隔 1-3 天，改动密集。只保留摘要，详细日志在 [docs/changelog/](./docs/changelog/) 下。
+> 这段时间每个版本间隔 1-3 天，改动密集。只保留摘要，详细日志在 [`docs/archive/changelog-experimental/`](./docs/archive/changelog-experimental/) 下。
 
 | 版本区间 | 主题 |
 |---------|------|
@@ -87,4 +87,4 @@
 | v0.47–v0.50 | 项目首次发布 + 安装断裂修复 |
 
 > ℹ️ 以上区间涵盖此时期所有 git tag（含 v0.62, v0.63.1, v0.64, v0.70.0, v0.70.1, v0.71, v0.72, v0.73, v0.74, v0.75 等子版本），子版本无单独索引条目。
-> 早期版本的完整日志在 [docs/changelog/](./docs/changelog/) 目录下。
+> 早期版本的完整日志在 [`docs/archive/changelog-experimental/`](./docs/archive/changelog-experimental/) 目录下。

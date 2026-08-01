@@ -170,20 +170,19 @@ th{font-weight:700;color:var(--brand)}td{color:var(--text-sec);line-height:1.6}
   <div class="bq" style="text-align:center;">OpenClaw = <strong>高速公路</strong>（路由调度）。sofagent = <strong>交规+测速摄像头+驾校教练</strong>。</div>
 </div></div>
 
-<!-- 11.一底座·四引擎 -->
+<!-- 11.一底座·三引擎 -->
 <div class="slide"><div class="slide-inner" style="text-align:center;">
-  <h1>一底座·四引擎<span class="hl">治理闭环</span></h1>
-  <p class="subtitle">一条流水线上的五道工序——一圈走完，下一圈更锋利</p>
-  <div class="flow"><div class="flow-node">🧭约束</div><div class="flow-arrow">→</div><div class="flow-node">⚙️编排</div><div class="flow-arrow">→</div><div class="flow-node">🔍审计</div><div class="flow-arrow">→</div><div class="flow-node">🔄回溯</div><div class="flow-arrow">→</div><div class="flow-node">🧬进化</div><div class="flow-arrow">↩</div></div>
+  <h1>一底座·三引擎<span class="hl">治理闭环</span></h1>
+  <p class="subtitle">一条流水线上的四道工序——一圈走完，下一圈更锋利</p>
+  <div class="flow"><div class="flow-node">🧭约束</div><div class="flow-arrow">→</div><div class="flow-node">🔍审计</div><div class="flow-arrow">→</div><div class="flow-node">🔄回溯</div><div class="flow-arrow">→</div><div class="flow-node">🧬进化</div><div class="flow-arrow">↩</div></div>
   <table style="max-width:960px;margin:8px auto;">
     <tr><th>组件</th><th>做什么</th><th>哲学</th></tr>
     <tr><td>🧭 约束底座</td><td>Agent 启动前就知道不能碰什么</td><td>不知道红线就不会守</td></tr>
-    <tr><td>⚙️ 编排引擎</td><td>大任务自动拆给对的 Agent</td><td>专业的 Agent 干专业的事</td></tr>
     <tr><td>🔍 审计引擎</td><td>每次改动自动扫描、留证据</td><td>不信任自我报告，看硬证据</td></tr>
     <tr><td>🔄 回溯引擎</td><td>出问题回到上一个正常版本</td><td>行车记录仪，不是安检门</td></tr>
     <tr><td>🧬 进化引擎</td><td>定期巡检，自动优化约束规则</td><td>约束本身也在进化</td></tr>
   </table>
-  <p style="margin-top:10px;">一底座·四引擎 = <strong>配置 + 安装</strong>：fde.md 写规则、git hook 自动挂、daemon 常驻快照、CLI 编排入口、cron 周度进化。全部 MD 文件和自动脚本，不是重型工程。</p>
+  <p style="margin-top:10px;">一底座·三引擎 = <strong>配置 + 安装</strong>：fde.md 写规则、git hook 自动挂、daemon 常驻快照、cron 周度进化。全部 MD 文件和自动脚本，不是重型工程。</p>
 </div></div>
 
 <!-- 12.加载链 + Ralph循环 -->
@@ -242,7 +241,7 @@ th{font-weight:700;color:var(--brand)}td{color:var(--text-sec);line-height:1.6}
   <table style="max-width:960px;margin:8px auto;">
     <tr><th>层级</th><th>定义</th><th>比喻</th><th>谁负责</th></tr>
     <tr><td><strong>River</strong></td><td>统一 Agent 入口</td><td>大河——只有一个入口</td><td>OpenClaw + sofagent + Channel</td></tr>
-    <tr><td><strong>Workflow</strong></td><td>任务拆解与编排</td><td>管网——引水到业务</td><td>sofagent 编排引擎</td></tr>
+    <tr><td><strong>Workflow</strong></td><td>任务拆解与编排</td><td>管网——引水到业务</td><td>sofagent 内部编排工具</td></tr>
     <tr><td><strong>Subagent</strong></td><td>具体执行单元</td><td>水龙头——让水作用</td><td>sofagent Sub Agent 定义</td></tr>
   </table>
   <div class="card-grid c3" style="max-width:960px;margin:8px auto;">
