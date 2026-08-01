@@ -48,20 +48,21 @@ jobs:
           # 否则 config.sh _sofa_find_data_dir 返回空 → daemon.json 写到 /daemon.json → 权限失败
           mkdir -p .sofagent
           export SOFAGENT_DATA="${PWD}/.sofagent"
-          # bash -x 跟踪执行轨迹（set -e 退出时 bash 不打印错误行 → trace 是唯一排查手段）
-          bash -x engine/scripts/daemon.sh --foreground > .sofagent/daemon-trace.log 2>&1 &
+          engine/scripts/daemon.sh --foreground > .sofagent/daemon-stdout.log 2>&1 &
           DAEMON_PID=$!
           echo "started daemon foreground PID=$DAEMON_PID"
           sleep 35
           kill $DAEMON_PID 2>/dev/null || true
           wait $DAEMON_PID 2>/dev/null || true
-          # 输出 trace 日志（最后 50 行——前半段是函数定义，错误总在尾部）
-          echo "=== daemon trace (last 50 lines) ==="
-          tail -50 .sofagent/daemon-trace.log 2>/dev/null || echo "(no trace captured)"
-          echo "=== daemon.json ==="
-          cat .sofagent/daemon.json 2>/dev/null || echo "(daemon.json not found)"
-          echo "=== .sofagent contents ==="
-          ls -la .sofagent/ 2>/dev/null || echo "(.sofagent not found)"
+          # 输出 daemon 日志供调试（后台进程输出不会自动出现在 CI 日志）
+          if [ ! -f .sofagent/daemon.json ]; then
+            echo "=== daemon stdout/stderr ==="
+            cat .sofagent/daemon-stdout.log 2>/dev/null || echo "(no output)"
+            echo "=== daemon.log ==="
+            cat .sofagent/daemon.log 2>/dev/null || echo "(no daemon.log)"
+            echo "🔴 daemon.json not found after 35s wait"
+            exit 1
+          fi
 
       - name: Verify daemon.json has required fields
         run: |
