@@ -6,7 +6,7 @@
 // 单角色 V（验证者），纯只读，不修改任何代码或文档。
 //
 // 用法：
-//   node FORGE/src/release-gate-driver.mjs --target v1.2.1 [--dry-run]
+//   node FORGE/src/release-gate-driver.mjs --target v1.2.1 [--dry-run] [--skip-acceptance]
 //
 // 自 forks 为 worker：
 //   node FORGE/src/release-gate-driver.mjs --worker --step <step> --run-dir <abs> --target <ver>
@@ -135,14 +135,16 @@ const STEP_RECURSION_LIMITS = {
 // ═══════════════════════════════════════════════════════════
 function parseArgs(argv) {
   const args = { target: null, dryRun: false,
-                 worker: false, step: null, runDir: null };
+                 worker: false, step: null, runDir: null,
+                 skipAcceptance: false };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--target')        args.target  = argv[++i];
-    else if (a === '--dry-run')  args.dryRun  = true;
-    else if (a === '--worker')   args.worker  = true;
-    else if (a === '--step')     args.step    = argv[++i];
-    else if (a === '--run-dir')  args.runDir  = argv[++i];
+    if (a === '--target')           args.target         = argv[++i];
+    else if (a === '--dry-run')     args.dryRun         = true;
+    else if (a === '--worker')      args.worker         = true;
+    else if (a === '--step')        args.step           = argv[++i];
+    else if (a === '--run-dir')     args.runDir         = argv[++i];
+    else if (a === '--skip-acceptance') args.skipAcceptance = true;
   }
   return args;
 }
@@ -1131,7 +1133,7 @@ async function main() {
 
   // ─── Driver 模式 ───
   if (!args.target) {
-    console.error('用法: node FORGE/src/release-gate-driver.mjs --target vX.Y.Z [--dry-run]');
+    console.error('用法: node FORGE/src/release-gate-driver.mjs --target vX.Y.Z [--dry-run] [--skip-acceptance]');
     process.exit(1);
   }
 
@@ -1165,11 +1167,16 @@ async function main() {
   console.log(`   target    = sofagent ${args.target}`);
   console.log(`   run-dir    = ${runDir}`);
   console.log(`   dry-run    = ${args.dryRun}`);
+  if (args.skipAcceptance) {
+    console.log(`   skip-acc   = true（跳过 acceptance 预跑，复用手动预跑日志）`);
+  }
   console.log(`   V          = ${MODEL_CONFIGS.V.model} (${MODEL_CONFIGS.V.baseURL})`);
 
   if (args.dryRun) {
     console.log(`\n  [dry-run] 将执行以下 5 步：`);
-    console.log('    ① acceptance  (跑 acceptance-test.sh)     → acceptance.md');
+    console.log(args.skipAcceptance
+      ? '    ① acceptance  (--skip-acceptance，跳过预跑)  → acceptance.md'
+      : '    ① acceptance  (跑 acceptance-test.sh)     → acceptance.md');
     console.log('    ② regression  (跑 regression-checklist)   → regression.md');
     console.log('    ③ coverage    (覆盖率交叉检查)             → coverage.md');
     console.log('    ④ consolidate (合并三份结果)               → stage6-report.md');
@@ -1195,11 +1202,20 @@ async function main() {
     console.log(`${'═'.repeat(60)}`);
 
     // acceptance 特殊处理：driver 先预跑脚本，worker 只解读日志
-    // 如果 acceptance-raw.log 已存在（sandbox 绕行：手动预跑后），跳过预跑
+    // 三种跳过预跑的情况：
+    //   1. --skip-acceptance 显式指定（sandbox 环境 kill 窗口太短时用）
+    //   2. acceptance-raw.log 已存在（手动预跑后复用，sandbox 绕行模式）
     if (step === 'acceptance') {
       const preRunLog = join(runDir, 'acceptance-raw.log');
-      if (existsSync(preRunLog)) {
-        console.log(`  [driver] acceptance-raw.log 已存在，跳过预跑（sandbox 绕行模式）`);
+      if (args.skipAcceptance && !existsSync(preRunLog)) {
+        console.log(`  [driver] --skip-acceptance 已指定，跳过预跑`);
+        console.log(`  [driver] 请确保 acceptance-raw.log 存在（手动预跑：bash FORGE/playbook/acceptance-test.sh > runDir/acceptance-raw.log 2>&1）`);
+        writeFileSync(preRunLog,
+          `--skip-acceptance 模式：未预跑 acceptance-test.sh。\n` +
+          `请手动预跑后把日志放到此文件，或去掉 --skip-acceptance 参数让 driver 自动预跑。\n`,
+          'utf-8');
+      } else if (existsSync(preRunLog)) {
+        console.log(`  [driver] acceptance-raw.log 已存在，跳过预跑（复用模式）`);
       } else {
         console.log(`  [driver] acceptance 特殊处理：driver 直接预跑 acceptance-test.sh`);
         try {
