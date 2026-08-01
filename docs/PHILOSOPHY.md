@@ -650,6 +650,20 @@ sofagent 是**跨层约束**——不管企业用 WorkBuddy（L1）还是 LangGr
 
 这三件事，LangGraph 不做（它是编排框架，不是约束层），WorkBuddy 不做（它是 Agent 平台，利益冲突——平台不会自己审自己），deepagents 也不做（它聚焦 Agent 编排，不管审计和沉淀）。**这个生态位空着，sofagent 填它。**
 
+> 💡 **云厂商治理的三块短板 = sofagent 的主战场**（2026-08 外部背书）
+>
+> 云厂商已内化治理能力（Vertex AI Agent Engine 内置可观测性看板 + evaluation 层 + Model Armor 防注入），但行业分析师明确指出了三块补不上的短板，恰好对位 sofagent 的差异化价值：
+>
+> | 云厂商短板（Forrester/IDC） | sofagent 怎么补 |
+> |---|---|
+> | **跨栈深度归因**——多云可观测性不成熟，多 Agent 深度关联需第三方遥测 | 审计引擎做 git diff 深度归因——跨平台中立，不绑定任何云厂商 |
+> | **回溯能力缺位**——云平台只看实时指标，不存历史快照 | 回溯引擎做 commit 级快照 + revert——行车记录仪，不是仪表盘 |
+> | **治理闭环缺位**——云治理止于「告警」，缺「反思→进化」闭环 | Dream Cycle 闭环：审计→反思→知识沉淀→下一轮优化 |
+>
+> 精确定位：不是"我们也有治理"，是**"我们补巨头补不上的缺口"**——巨头做平台内治理（绑定自家云），sofagent 做平台外治理（不管你用哪个云）。
+>
+> 📖 来源：InfoWorld（2025-11，Vertex AI Agent Builder 分析）+ Forrester Charlie Dai + IDC Dhiraj Badgujar·温故知新 2026-08-01 扫描
+
 ### 技术选型原则——用什么、不用什么
 
 sofagent 的技术选型有明确的边界纪律：
