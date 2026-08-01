@@ -235,6 +235,17 @@ export type {
   Args,
 } from './verify/types';
 
+// ── 数据变更审计（v1.2.4 P3 S4）──
+export {
+  diffDataChange,
+  runDataRules,
+} from './data-diff';
+export type {
+  DataChange,
+  DataRuleViolation,
+  DataAuditResult,
+} from './data-diff';
+
 // ── 文件系统 / 记忆层 ──
 export { getPersonaContent } from './filesystem/memory-sync';
 

@@ -793,6 +793,7 @@ Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2
 **已知局限**：详见 [LIMITATIONS.md](../LIMITATIONS.md)（按主题分章，含 Key Limitations 速览）。核心：Harness 层自身在上下文里、加载链步进脆弱性、Skill 自进化处于经验记录阶段。
 
 **未来方向**：
+- **v1.2.5-v1.3.0**：**🔗 FDE 激活链**——从静态交付到自运转企业 Agent。FDE 诊断交付了 ontology + workflow.yml + skills/，但交付物躺在磁盘上没人"点燃"。激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）解决这个大断裂带：读交付物 → 注册企业 SubAgent → 构建 LangGraph StateGraph → DAG 运行 + HITL + 审计 → 持续优化自运转。详见 [激活链设计文档](./guides/fde-activation-chain.md)
 - **v1.2.x**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界
 - **v2.x**：组织级共享记忆 + 协同层 + **分层模型路由**（Harness 按任务复杂度路由到云端大模型/本地 7B/本地 0.5B，数据主权驱动——敏感数据不出内网）
 - **v3.x-v4.x+**：企业专属小模型精调（`sofagent-model distill` QLoRA）+ 本地推理 + 离线 USB 节点。详见 [ROADMAP · 分层模型架构](../ROADMAP.md#分层模型架构v3x-技术骨架-2026-07-25-定稿)

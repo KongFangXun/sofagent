@@ -2,8 +2,9 @@
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
-# 场景数：105 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
+# 场景数：102 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
 #   口径 = 纯数字编号去重数（scenario 34b/34c 子场景不计入此总数；最大编号 171 为编号上限，非场景数）
+#   计数命令（精确口径，排除 echo 探针假阳性）：grep -oE 'scenario [0-9]+ "' FORGE/playbook/acceptance-test.sh | grep -oE '[0-9]+' | sort -un | wc -l
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
 RUN_MODE="all"
@@ -1610,7 +1611,7 @@ done
 node -e "const fs=require('fs'),path=require('path');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=0;for(const fp of files){const c=fs.readFileSync(fp,'utf8'),dir=path.dirname(fp);const re=/\]\(((?:\.\.?\/)?[^)]+\.md(?:#[^)]*)?)\)/g;let m;while((m=re.exec(c))){const href=m[1].split('#')[0];if(href.startsWith('http'))continue;if(!fs.existsSync(path.resolve(dir,href))){console.log('断链:',fp,'->',m[1]);bad++;}}}process.exit(bad?1:0);" >/dev/null 2>&1 || { fail "存在指向不存在文件的跨文档 Markdown 链接"; S164_OK=false; }
 $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接无死链）"
 
-scenario 165 "关键数字跨文档一致性——测试数 1277 / 规则数 21 / acceptance 105"
+scenario 165 "关键数字跨文档一致性——测试数 1277 / 规则数 21 / acceptance 102"
 S165_OK=true
 # 子项 a: 全 workspace 测试数 1277 在 README/WIKI/evidence 三处一致
 for f in README.md docs/WIKI.md docs/evidence/evidence.md; do
@@ -1620,11 +1621,11 @@ done
 for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do
   grep -q "21 条\|21 个\|21 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 21（数字漂移）"; S165_OK=false; }
 done
-# 子项 c: acceptance 场景数 105 在 DEVELOPMENT/LIMITATIONS 一致
+# 子项 c: acceptance 场景数 102 在 DEVELOPMENT/LIMITATIONS 一致
 for f in docs/DEVELOPMENT.md LIMITATIONS.md; do
-  grep -q "105" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 105"; S165_OK=false; }
+  grep -q "102" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 102"; S165_OK=false; }
 done
-$S165_OK && pass "关键数字跨文档一致（1277 / 21 / 105）"
+$S165_OK && pass "关键数字跨文档一致（1277 / 21 / 102）"
 
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
 S166_OK=true

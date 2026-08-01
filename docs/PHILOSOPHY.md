@@ -34,6 +34,8 @@ Agent 越聪明，企业越不敢让它碰真活——真出事了，谁负责�
 
 sofagent 不替代大厂 Agent，而是建在它们之上——用 River 比喻说就是：做河的堤坝与约束层，不做河本身（详见 [README（项目概览）](../README.md)）。FDE 进场四阶段：梳理→挖掘→交付→离场。离场后 AI 节点自己跑。
 
+> **🔗 激活链——从"交付"到"自运转"**：FDE 交付了 ontology + workflow.yml + skills/ 等静态文件后，交付物和"企业工作流自动运行"之间曾有一道**大断裂带**——企业 IT 拿到一堆 .md 和 .yml 不知道怎么跑起来。v1.2.5 起的**激活链**（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）解决这个问题：读交付物 → 注册企业 SubAgent → 构建 LangGraph StateGraph → DAG 运行 + HITL + 审计 → 持续优化自运转。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
+
 **③ 底层引擎：sofagent 的 Harness 中间件保证每次变更可审计、可回滚、可进化。**
 
 约束底座是骨架里的钢筋，审计引擎是质检——开发者才需要往下看。审计引擎零 token（纯正则，不调 LLM）；一底座·三引擎（约束底座 + 审计/回溯/进化引擎）覆盖全生命周期。FORGE 自迭代工具链是项目内部开发工具。本文档以下十章讲的就是这套底层引擎的设计哲学。

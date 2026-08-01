@@ -18,6 +18,8 @@
 - [八、包依赖与编排局限（v1.1.3 起）](#八包依赖与编排局限v113-起)
 - [九、v1.1.7-v1.1.9 新功能局限](#九v117-v119-新功能局限)
 - [十、行业研报印证的新增局限（2026-07）](#十行业研报印证的新增局限2026-07)
+- [十一、架构反模式：五种常见 Agent 工程错误](#十一架构反模式五种常见-agent-工程错误)
+- [十二、FDE 交付物激活断裂带（v1.2.5+ 解决中）](#十二fde-交付物激活断裂带v125-解决中)
 
 ---
 
@@ -361,10 +363,10 @@ FDE 完整四阶段十二步部署流程（[FDE/FDE.md](FDE/FDE.md)）已在作�
 
 ### 端到端验收测试覆盖
 
-v1.0 新增 `FORGE/playbook/acceptance-test.sh`（105 个场景，含子断言），覆盖范围持续扩展：
+v1.0 新增 `FORGE/playbook/acceptance-test.sh`（102 个场景，含子断言），覆盖范围持续扩展：
 
 - **CI 已覆盖**：单元测试审计核心 504 个、全 workspace 1277 个测试（共 1277 个，全绿；含 v1.2.4 新增 64 个知识进化测试。函数级，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
-- **发版前手动覆盖**：acceptance-test.sh 105 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
+- **发版前手动覆盖**：acceptance-test.sh 102 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
 
@@ -490,3 +492,49 @@ ab-scheduler 连续 2 轮更好即 promote。如果 eval 场景偏窄（只测�
 | 5 | **用 Graph 掩盖 Harness 缺陷** | 流程图无法修复陈旧数据、不可靠工具和缺少权限控制的问题 | 审计引擎的「硬证据」原则（16/21 条纯 git-diff）不依赖 Agent 意愿——这就是 Harness 的底线 |
 
 > **核心教训**：Architecture complexity should come from observed real needs, not from imagining "advanced agents"。sofagent 的三引擎不是同时做的——先有审计（Harness 层），再有 think.md 反思（回溯/进化），最后才到 skillopt 自优化。FORGE 工具链是项目自迭代过程中逐步长出来的内部工具。这个顺序本身就是对反模式 1 和 5 的预防。
+
+---
+
+## 十二、FDE 交付物激活断裂带（v1.2.5+ 解决中）
+
+### 大断裂带
+
+FDE 诊断完成后，交付了一堆**静态文件**（ontology 本体结构 + workflow.yml + skills/ + nodes/），但没人把它们"点燃"——企业 IT 拿到一堆 .md 和 .yml，不知道怎么跑起来。
+
+这是 FDE 四阶段十二步流程中的**交付到运行之间的断裂带**：
+
+```
+FDE §7 交付（静态文件就绪）
+  ↓
+  🔴 大断裂带：交付物躺在磁盘上
+  ↓
+理想终态：企业工作流自动运行（v1.2.5+ 激活链解决）
+```
+
+### 现有零件
+
+轨道铺好了（registry.ts 从 v1.0.8 起就支持从 `.sofagent/subagents/` 动态注册），但只有 4 节自有车厢，企业车厢造好了没挂上去——缺的是往 registry 里写企业 Agent 的自动化流程。
+
+| 零件 | 已有能力 | 缺什么 | 解决版本 |
+|------|---------|--------|---------|
+| registry.ts | 动态注册 `.sofagent/subagents/*.yml` | 没人往里写企业 Agent | v1.2.5 activate.ts |
+| workflow-parser.ts | YAML → SubAgent 映射 | 映射表写死 4 个内置 Agent | v1.2.6 扩展 enterprise 类型 |
+| composer.ts | LangGraph createReactAgent 通用拆解 | 缺"读 FDE 交付物 → 企业专属编排" | v1.2.7 composeEnterpriseWorkflow |
+| dag-runner.ts | 按 DAG 依赖跑 SubAgent | 只跑内置 Agent，缺 HITL | v1.2.8-v1.2.9 企业 Agent + HITL |
+
+### 解决方案：激活链四阶段
+
+| Phase | 版本 | 核心交付 |
+|-------|------|---------|
+| ACTIVATE | v1.2.5 | activate.ts：读交付物 → 注册企业 SubAgent |
+| ORCHESTRATE | v1.2.6-v1.2.7 | 映射表扩展 + composeEnterpriseWorkflow + StateGraph |
+| EXECUTE | v1.2.8-v1.2.9 | dag-runner 企业 Agent + HITL + 审计集成 |
+| SUSTAIN | v1.3.0 | 全闭环验证 + wrapToolCall 联动 |
+
+> 详见 [激活链设计文档](./docs/guides/fde-activation-chain.md)。
+
+### 当前状态
+
+- **v1.2.5 前**：大断裂带存在，FDE 交付物需人工解读
+- **v1.2.5 后**：activate 命令可注册企业 Agent，但编排和执行尚未就绪
+- **v1.3.0 后**：全链路打通，企业工作流自运转

@@ -40,7 +40,10 @@
   "dependencies": {
     "@sofagent/audit": "1.2.3",
     "@sofagent/core": "1.2.3",
-    "@sofagent/think": "1.2.3"
+    "@sofagent/think": "1.2.3",
+    "@sofagent/ontology": "1.2.3",
+    "@sofagent/eval": "1.2.3",
+    "@sofagent/skillopt": "1.2.3"
   },
   "optionalDependencies": {
     "@sofagent/daemon": "1.2.3"
