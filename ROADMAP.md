@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.2.4 · 2026-08-01（UTC）· 📊 Dashboard 产品化 + 🌿 编排隔离底座 + 👁️ Fresh-Eyes 流程化 + v1.2.2 BugFix 31 项
+> v1.2.4 · 2026-08-01（UTC）· 🧠 知识进化（分层巡检 L1/L2/L3 + skillopt 自动触发 + 失败清单 + 联邦蒸馏 + 进化引擎接通 eval）+ 📈 Dashboard 历史趋势 + 🔍 Graph Engine Checker
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
