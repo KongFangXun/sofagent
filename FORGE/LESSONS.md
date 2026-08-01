@@ -496,6 +496,48 @@ child.stdout.on('data', (d) => {
 
 **标准**：Driver 内部超时设为脚本预估时长的 3-5 倍（acceptance-test.sh 约 2-3 分钟，超时设 15 分钟）。不要设太长（20 分钟）——如果脚本真卡住，等 20 分钟才发现毫无意义。同时接受一个现实：**sandbox kill 不可防，只能靠流式日志让杀伤力最小化**。
 
+#### 4.5.6 SOFAGENT_SKIP_HOOK 环境变量旁路
+
+**标准**：`sofagent-audit --init` 在入口处设置 `process.env.SOFAGENT_SKIP_HOOK = '1'`，commit-msg hook 模板检测到此变量时直接 `exit 0`。
+
+**防护场景**：
+1. `--init` 内部的 git 命令（如 `git rev-parse`）不会触发刚安装的 hook
+2. 测试脚本中 `--install-hook` → `--init` → `git commit` 的连续操作不会产生意外递归
+3. CI/CD 环境中 init 流程被 git 操作包裹时不受 hook 干扰
+
+```ts
+// init.ts
+export function runInit(): void {
+  process.env.SOFAGENT_SKIP_HOOK = '1';  // 防递归
+  // ...
+}
+```
+
+```bash
+# commit-msg hook 模板（config-template.ts HOOK_TEMPLATE）
+if [ -n "$SOFAGENT_SKIP_HOOK" ]; then
+  exit 0
+fi
+```
+
+> **注意**：此旁路仅用于 init 内部流程。用户正常 `git commit` 时不会设置此变量，hook 照常运行。如果需要临时跳过 hook，用户应使用 `git commit --no-verify`（hook 本就无法拦截 `--no-verify`，post-commit hook 做了 best-effort 检测）。
+
+#### 4.5.7 Driver --skip-acceptance 参数
+
+**标准**：release-gate-driver 支持 `--skip-acceptance` 参数，跳过 acceptance-test.sh 预跑，直接复用手动预跑的日志。
+
+**使用场景**：sandbox 环境 kill 窗口 < acceptance-test.sh 执行时间（~2-3 分钟）时，手动预跑日志后用此参数让 driver 跳过预跑。
+
+```bash
+# 手动预跑（在非 sandbox 环境中）
+bash FORGE/playbook/acceptance-test.sh > run-00/acceptance-raw.log 2>&1
+
+# driver 用 --skip-acceptance 复用日志
+node FORGE/src/release-gate-driver.mjs --target v1.2.5 --skip-acceptance
+```
+
+> **与 run-00 复用模式的区别**：run-00 模式需要手动把 `acceptance-raw.log` 放到 runDir 中，driver 自动检测到文件存在则跳过。`--skip-acceptance` 是显式声明——即使日志不存在也跳过（写入占位日志让 worker 知道是 skip 模式）。
+
 ---
 
 ## 五、stream 迁移规范（P0 级铁律）

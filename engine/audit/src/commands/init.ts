@@ -88,9 +88,15 @@ function classifyRepo(): { state: RepoState; hint: string } {
 /**
  * 运行初始化
  * 幂等：已存在的配置不覆盖，已安装的 hook 不重复写入
+ *
+ * v1.2.5: 设置 SOFAGENT_SKIP_HOOK=1 防止 init 内部的 git 操作触发刚安装的 hook
+ * （hook 模板检测到此环境变量时直接 exit 0）
  */
 export function runInit(): void {
   const cwd = process.cwd();
+
+  // v1.2.5: 防止 init 流程中的 git 操作触发 commit-msg hook（递归保护）
+  process.env.SOFAGENT_SKIP_HOOK = '1';
 
   console.log('');
   console.log(`sofagent v${VERSION} · 孔放勋`);

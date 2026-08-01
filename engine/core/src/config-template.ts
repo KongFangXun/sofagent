@@ -89,11 +89,16 @@ perception:
  * 与 hooks/commit-msg 保持一致（含 v1.0 无声失败保护）
  */
 export const HOOK_TEMPLATE = `#!/bin/bash
-# sofagent commit-msg hook v1.1.4
+# sofagent commit-msg hook v1.2.5
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # commit-msg hook 接收 $1 = commit message 文件路径
 
-# 0. 读取 commit message（commit-msg hook 独有优势——A3 越界检查依赖此参数）
+# 0a. 环境变量旁路——init/acceptance-test 等内部流程设置此变量时跳过 hook
+if [ -n "$SOFAGENT_SKIP_HOOK" ]; then
+  exit 0
+fi
+
+# 0b. 读取 commit message（commit-msg hook 独有优势——A3 越界检查依赖此参数）
 COMMIT_MSG_FILE="$1"
 COMMIT_SUBJECT=""
 if [ -f "$COMMIT_MSG_FILE" ]; then
