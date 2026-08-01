@@ -31,17 +31,17 @@ jobs:
           # 否则 config.sh _sofa_find_data_dir 返回空 → daemon.json 写到 /daemon.json → 权限失败
           mkdir -p .sofagent
           export SOFAGENT_DATA="${PWD}/.sofagent"
-          # 在 CI 环境中 daemon-install.sh 可能已启动
-          # 如果没有 PID 文件，手动启动前台模式 35 秒
-          if [ ! -f .sofagent/daemon.pid ] || ! kill -0 $(cat .sofagent/daemon.pid) 2>/dev/null; then
-            engine/scripts/daemon.sh --foreground &
-            DAEMON_PID=$!
-            echo "started daemon foreground PID=$DAEMON_PID"
-            sleep 35
-            kill $DAEMON_PID 2>/dev/null || true
-          else
-            echo "daemon already running"
-            sleep 35
+          engine/scripts/daemon.sh --foreground > .sofagent/daemon-stdout.log 2>&1 &
+          DAEMON_PID=$!
+          echo "started daemon foreground PID=$DAEMON_PID"
+          sleep 35
+          kill $DAEMON_PID 2>/dev/null || true
+          wait $DAEMON_PID 2>/dev/null || true
+          if [ ! -f .sofagent/daemon.json ]; then
+            echo "=== daemon stdout/stderr ==="
+            cat .sofagent/daemon-stdout.log 2>/dev/null || echo "(no output)"
+            echo "🔴 daemon.json not found after 35s wait"
+            exit 1
           fi
 
       - name: Verify daemon.json has required fields

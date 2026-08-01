@@ -95,7 +95,7 @@ _find_rules() {
   return 1
 }
 
-SOFA_RULES_FILE="$(_find_rules)"
+SOFA_RULES_FILE="$(_find_rules || true)"
 
 # ── 辅助函数：从 fde.md 提取 key: value ──
 # 匹配行格式：(可选 # )key: value（# 表示注释，未启用）
