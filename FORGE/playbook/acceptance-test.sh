@@ -1444,8 +1444,8 @@ $S171_OK && pass "Checker 三节点完整（format/fact/source + makeCheckerNode
 
 scenario 172 "v1.2.4 P3 S2 — MCP tools/list 返回 22 个 tools"
 # 直接检查 mcp-server.ts 源码中的 tool 注册数（name: 'xxx' 去重计数）
-MCP_REGISTERED=$(node -e "const fs=require('fs');const s=fs.readFileSync(process.argv[1],'utf-8');const m=s.match(/name:\s*['\"][^'\"]+['\"]/g)||[];console.log(new Set(m).size)" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" 2>/dev/null || echo "0")
-[ "$MCP_REGISTERED" -ge 22 ] && pass "MCP tools/list 注册数 ≥22（实测 $MCP_REGISTERED）" || fail "MCP tools/list 注册数不足（$MCP_REGISTERED < 22）"
+MCP_REGISTERED=$(grep -oE "name:\s*'[^']+'" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" 2>/dev/null | sort -u | wc -l | tr -d ' ')
+[ "${MCP_REGISTERED:-0}" -ge 22 ] && pass "MCP tools/list 注册数 ≥22（实测 $MCP_REGISTERED）" || fail "MCP tools/list 注册数不足（$MCP_REGISTERED < 22）"
 
 scenario 173 "v1.2.4 P3 S2 — 新增 6 个 tool handler 文件存在"
 S173_OK=true
