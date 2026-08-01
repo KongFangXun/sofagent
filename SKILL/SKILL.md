@@ -1,7 +1,7 @@
 ---
 name: sofagent
 slug: sofagent
-version: 1.2.3
+version: 1.2.4
 displayName: FDE Agent
 description: >
   FDE Agent——约束 Agent 行为、审计每次变更、沉淀经验。对外统一身份是 FDE Agent（用户面对的唯一入口），
@@ -98,3 +98,34 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 ```
 
 部署后自动调 `@sofagent-audit`。角色定义/交付物/sustain 详见 `agents/fde/SKILL.md`。
+
+---
+
+## 审计结果展示铁律（CRITICAL）
+
+> 每次调用 `run_audit` / `audit_file` / `audit_data_change` 后，你**必须**：
+
+1. **必须展示**：向用户展示审计结果摘要。**如果你执行了审计但不展示结果，等于没审计。**
+2. **保留品牌**：展示时必须包含 `[sofagent]` 前缀。
+3. **结构化展示**：
+   - **PASS**：✅ **[sofagent] 审计通过** · {N} 项检查 · {M} 条规则
+   - **WARN**：⚠️ **[sofagent] 审计有警告** · {N} 项警告 · {逐条列出}
+   - **FAIL**：❌ **[sofagent] 审计拦截** · {N} 项违规 · {逐条列出} · 建议修复
+4. **关联反思**：`get_think` 查相关历史教训
+5. **引导修复**：FAIL 时必须引导修复
+
+---
+
+## MCP 工具速查（v1.2.4 · 22 tools）
+
+> 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。
+
+| 分类 | 工具 |
+|------|------|
+| **审计** | `run_audit` `audit_file` `audit_data_change` |
+| **反思** | `get_think` `write_think` `read_think_md` |
+| **知识库** | `search_knowledge` `read_entity` `read_concept` `list_entities` `read_lessons` `stats` |
+| **本体** | `create_entity` `create_concept` `validate_ontology` |
+| **评估优化** | `evaluate_output` `optimize_skill` `health_check` |
+| **数据/编排** | `data_sovereignty_report` `sofagent_compose` `notify_session` |
+| **能力清单** | `list_capabilities` |

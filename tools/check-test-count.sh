@@ -259,6 +259,24 @@ else
     echo -e "  场景数 SSOT：acceptance-test.sh 头部声明 ${ACCEPTANCE_ACTUAL} 个场景"
   fi
 
+  # ── 回数控件（v1.2.4 修复）：实测文件真实 scenario 调用数 vs SSOT 声明 ──
+  # 这是守卫的核心，此前完全缺失——只比对"头部↔文档"，从不回数文件里的真实调用，
+  # 导致 v1.2.3/v1.2.4 用带 bug 的裸 grep（把 echo 探针 "scenario 48/49" 误当声明）
+  # 数出脏数 100/105 仍一路骗绿。精确口径：'scenario N "'（数字后紧跟空格+引号），
+  # 真实场景调用恒为此格式；echo 探针为 'scenario 48"'（引号紧贴数字、前有空格），天然可区分。
+  SCENARIO_REAL=$(grep -oE 'scenario [0-9]+ "' FORGE/playbook/acceptance-test.sh 2>/dev/null | grep -oE '[0-9]+' | sort -un | wc -l | tr -d ' ')
+  if [ "$SCENARIO_REAL" = "$ACCEPTANCE_ACTUAL" ]; then
+    if [ "$QUIET" = false ]; then
+      echo -e "  ${GREEN}✓ acceptance-test.sh 实测 ${SCENARIO_REAL} 个真实场景调用，与 SSOT 声明一致${NC}"
+    fi
+    ((PASS++)) || true
+  else
+    echo -e "  ${RED}✗ acceptance-test.sh 实测 ${SCENARIO_REAL} 个真实场景调用，SSOT 声明 ${ACCEPTANCE_ACTUAL} —— 头部数字与文件实际不符${NC}"
+    echo -e "    计数命令：grep -oE 'scenario [0-9]+ \"' FORGE/playbook/acceptance-test.sh | grep -oE '[0-9]+' | sort -un | wc -l"
+    echo -e "    提示：勿用裸 grep 'scenario [0-9]+'（会把 echo 探针文本误算进去）"
+    ((FAIL++)) || true
+  fi
+
   # 逐个校验三处文档的场景数声称值
   check_scenario_doc() {
     local label="$1" file="$2" lineno="$3" claimed="$4"
