@@ -32,24 +32,27 @@ jobs:
             exit 1
           fi
 
+      - name: Unload launchd service to avoid daemon conflict
+        run: |
+          # macOS CI 特有：daemon-install.sh 注册的 plist 有 RunAtLoad + KeepAlive，
+          # launchd 会在 load 时立即启动一个后台 daemon——该进程不继承 SOFAGENT_DATA，
+          # 写到 ~/.sofagent/data/ 而非 $PWD/.sofagent/，与后续手动启动的 foreground daemon 冲突。
+          # Linux CI 无此问题（systemd user service 在无 logind session 的 CI 中无法启动）。
+          # 解法：验证 plist 注册成功后立即 unload，后续手动 foreground 启动（与 Linux CI 对齐）。
+          launchctl unload ~/Library/LaunchAgents/com.sofagent.daemon.plist 2>/dev/null || true
+          echo "launchd service unloaded for isolated foreground test"
+
       - name: Start daemon and wait one cycle
         run: |
           # CI 环境没有 ~/.sofagent/data，需创建本地数据目录并显式指定
           # 否则 config.sh _sofa_find_data_dir 返回空 → daemon.json 写到 /daemon.json → 权限失败
           mkdir -p .sofagent
           export SOFAGENT_DATA="${PWD}/.sofagent"
-          # daemon-install.sh may have already loaded via launchd
-          # If not running, start manually
-          if [ ! -f .sofagent/daemon.pid ] || ! kill -0 $(cat .sofagent/daemon.pid) 2>/dev/null; then
-            engine/scripts/daemon.sh --foreground &
-            DAEMON_PID=$!
-            echo "started daemon foreground PID=$DAEMON_PID"
-            sleep 35
-            kill $DAEMON_PID 2>/dev/null || true
-          else
-            echo "daemon already running"
-            sleep 35
-          fi
+          engine/scripts/daemon.sh --foreground &
+          DAEMON_PID=$!
+          echo "started daemon foreground PID=$DAEMON_PID"
+          sleep 35
+          kill $DAEMON_PID 2>/dev/null || true
 
       - name: Verify daemon.json has required fields
         run: |
