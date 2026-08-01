@@ -377,6 +377,125 @@ function parseStopCondition(roundDir) {
 - 基础：连续 2 轮干净（`cleanStreak >= 2`）
 - 加权收敛（commit #13）：severity 历史足够长时（≥3 轮），用近窗加权平均 + 趋势判断提前收敛
 
+### 4.5 外部脚本 spawn 生存规范
+
+**标准**：Driver 调用外部 shell 脚本（如 `acceptance-test.sh`）时，必须遵循三条铁律：**流式写日志、处理 signal、禁用 head 管道**。
+
+> **坑源**（commit 35cfb22）：release-gate-loop driver 的 `runAcceptanceTestDirectly()` spawn `bash acceptance-test.sh`，在 sandbox 环境中 ~20s 被 kill。原实现等 `close` 事件后才 `writeFileSync`，进程被 kill 时已捕获的 stdout 全丢——driver 拿到空日志，下游 worker 无法生成报告。同时 acceptance-test.sh 场景 1/2 用 `| head -N` 截断输出，在 `set -o pipefail` 下是定时炸弹。
+
+#### 4.5.1 禁用 `| head -N` 管道（shell 脚本侧）
+
+**根因**：`acceptance-test.sh` 开头是 `set -euo pipefail`（L9）。脚本中任何 `cmd | head -N` 在 head 读够 N 行关闭管道后，cmd 进程收到 SIGPIPE。在 `pipefail` 模式下管道退出码 = 最后一个失败的命令的码 → `set -e` 可能直接退出整个脚本。
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail   # ← pipefail 开启
+
+# ❌ 危险：head -10 关闭管道 → node 收 SIGPIPE → pipefail 判非 0 → set -e 退出脚本
+$CLI --init 2>&1 | head -10
+
+# ✅ 正确：静默运行，验证靠文件检查
+$CLI --init > /dev/null 2>&1 || true
+[ -f "$TMP_REPO/.sofagent/config.yml" ] && pass || fail "config.yml 未生成"
+```
+
+**标准写法**：
+
+| 场景 | ❌ 危险 | ✅ 安全 |
+|------|---------|---------|
+| 只关心副作用（文件创建/退出码） | `cmd \| head -N` | `cmd > /dev/null 2>&1 \|\| true` |
+| 需要截取部分输出做断言 | `cmd \| head -N` | `OUT=$(cmd 2>&1 \|\| true); echo "$OUT" \| head -N` |
+| 需要检查输出包含某关键词 | `cmd \| head -N \| grep` | `cmd > /tmp/log 2>&1 \|\| true; grep -q "keyword" /tmp/log` |
+
+> **实测细节**：Node.js 默认捕获 SIGPIPE 不 crash（写 stdout 时收到 EPIPE 抛异常但被 catch），所以当前没有实际触发 `set -e` 退出。但这是环境依赖的脆弱平衡——换一个运行时（Python / Ruby / Go）或换一个 Node 版本就可能爆炸。**标准不是"现在能不能跑"，是"设计上有没有炸弹"。**
+
+#### 4.5.2 流式写入日志（Driver 侧）
+
+**标准**：spawn 外部脚本时，stdout/stderr 必须**实时写入文件**，不能等 `close` 事件后一次性写入。
+
+```js
+import { createWriteStream } from 'fs';
+
+const child = spawn('bash', [scriptPath], {
+  cwd: REPO_ROOT,
+  stdio: ['ignore', 'pipe', 'pipe'],
+});
+
+// ✅ 流式写入：收到数据即写文件
+const writeStream = createWriteStream(logPath, { flags: 'w' });
+
+child.stdout.on('data', (d) => {
+  stdout += d;
+  writeStream.write(d);  // ← 实时落盘
+});
+child.stderr.on('data', (d) => {
+  stderr += d;
+  writeStream.write(d);
+});
+
+child.on('close', (code, signal) => {
+  writeStream.end(stderr ? `\n--- STDERR ---\n${stderr}` : '');
+  // ...
+});
+
+// ❌ 危险：等 close 后才写——被 kill 时全丢
+// child.on('close', (code) => {
+//   writeFileSync(logPath, stdout + stderr);  // ← kill 时 stdout 只在内存
+// });
+```
+
+**原因**：sandbox 环境（WorkBuddy Agent 工具、CI runner、容器编排）可能在任意时刻 kill 整个进程树。Driver 的 20 分钟内部超时毫无意义——父进程（sandbox）在 ~20s 就 kill 了。流式写入保证即使被 kill，已捕获的日志也在磁盘上，下游 worker 可以从部分日志生成报告。
+
+#### 4.5.3 child.on('close') 的 signal 参数
+
+**标准**：`close` 回调签名是 `(code, signal)`——正常退出时 `signal = null`，被 kill 时 `code = null, signal = 'SIGTERM' / 'SIGKILL'`。必须处理两种情况。
+
+```js
+child.on('close', (code, signal) => {
+  if (signal) {
+    // 被外部 kill（sandbox / 手动 / OOM killer）
+    console.warn(`acceptance-test.sh 被信号终止: ${signal}，已捕获 ${stdout.length} bytes`);
+  } else {
+    // 正常退出
+    console.log(`acceptance-test.sh 完成，exit code = ${code}`);
+  }
+  resolveP({ exitCode: code ?? -1, logPath, stdout: fullLog });
+});
+```
+
+> **坑源**：原实现只读 `code`，被 kill 时 `code = null` 传入 `exitCode: null` → 下游 `if (exitCode !== 0)` 判断 `null !== 0` 为 true → 误判为"测试失败"而非"进程被杀"。区分这两种情况对诊断至关重要。
+
+#### 4.5.4 progress 日志（长时间脚本必备）
+
+**标准**：spawn 运行时间超过 30s 的外部脚本时，必须每 30s 输出一次进度日志。
+
+```js
+let lastProgressLog = Date.now();
+
+child.stdout.on('data', (d) => {
+  stdout += d;
+  writeStream.write(d);
+  if (Date.now() - lastProgressLog > 30_000) {
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
+    const lastLine = stdout.trim().split('\n').pop()?.slice(0, 80) || '(empty)';
+    console.log(`[driver] 运行中... ${elapsed}s, ${stdout.length} bytes, 末行: ${lastLine}`);
+    lastProgressLog = Date.now();
+  }
+});
+```
+
+**作用**：当脚本卡住或被 kill 时，progress 日志的最后一行直接告诉你卡在哪个场景/步骤——不用翻日志文件。
+
+#### 4.5.5 超时设置原则
+
+| 超时来源 | 典型值 | 作用 |
+|---------|--------|------|
+| Driver 内部超时 | 脚本预估时长的 3-5 倍 | 兜底防死循环 |
+| Sandbox 环境 kill | ~20s - 300s（不可控） | 父进程的耐心 |
+| 脚本实际运行 | 线性增长 | 取决于场景数 |
+
+**标准**：Driver 内部超时设为脚本预估时长的 3-5 倍（acceptance-test.sh 约 2-3 分钟，超时设 15 分钟）。不要设太长（20 分钟）——如果脚本真卡住，等 20 分钟才发现毫无意义。同时接受一个现实：**sandbox kill 不可防，只能靠流式日志让杀伤力最小化**。
+
 ---
 
 ## 五、stream 迁移规范（P0 级铁律）
@@ -631,6 +750,10 @@ if (process.platform === 'darwin' && !args.dryRun) {
 - [ ] **driver catch 块写 ERROR + LOOP_END 事件**（模块级 globalVisibility 引用）（§4.2）
 - [ ] **finding >10 条时分片执行**（computeBatchSize 动态分批）（§4.3）
 - [ ] **停止条件只数标记不做语义判断**（§4.4）
+- [ ] **spawn 外部脚本时流式写入日志**（createWriteStream，不等 close）（§4.5.2）
+- [ ] **child.on('close') 处理 signal 参数**（被 kill 时 code=null）（§4.5.3）
+- [ ] **shell 脚本中禁用 `| head -N`**（pipefail + SIGPIPE 定时炸弹）（§4.5.1）
+- [ ] **长脚本每 30s 输出 progress 日志**（§4.5.4）
 
 ### 🔴 stream 迁移（如做 invoke→stream 改造时必查）
 
@@ -673,6 +796,7 @@ if (process.platform === 'darwin' && !args.dryRun) {
 | 08-01 | 63b130d | 步骤级 maxTokens 覆盖（consolidate 32000） | P1 | §2.3 |
 | 08-01 | da1039a | 四项 ReAct 性能优化（截断+裁剪+铁律+stream） | P1 | §3.1 §3.2 §3.3 |
 | 08-01 | a0571a4 | stream 迁移 finalState 数据丢失 | P0 | §5 |
+| 08-01 | 35cfb22 | 外部脚本 spawn 生存（流式日志+signal+head 管道） | P1 | §4.5 |
 
 ### B. 历史坑位索引
 
@@ -695,6 +819,7 @@ if (process.platform === 'darwin' && !args.dryRun) {
 | 13 | Agent 过度探索——910 次工具调用 | §3.2 |
 | 14 | invoke → stream 迁移的 P0 数据丢失 | §5 |
 | 15 | a-consolidate maxTokens 被截断 | §2.3 |
+| 16 | 外部脚本 spawn 生存——流式日志+signal+head 管道 | §4.5 |
 
 ### C. 关键设计决策速查
 
