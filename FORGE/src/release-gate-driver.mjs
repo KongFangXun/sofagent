@@ -7,6 +7,8 @@
 //
 // 用法：
 //   node FORGE/src/release-gate-driver.mjs --target v1.2.1 [--dry-run] [--skip-acceptance]
+//   node FORGE/src/release-gate-driver.mjs --step acceptance --target v1.2.1 [--run-dir <dir>]
+//   node FORGE/src/release-gate-driver.mjs --help
 //
 // 自 forks 为 worker：
 //   node FORGE/src/release-gate-driver.mjs --worker --step <step> --run-dir <abs> --target <ver>
@@ -136,10 +138,11 @@ const STEP_RECURSION_LIMITS = {
 function parseArgs(argv) {
   const args = { target: null, dryRun: false,
                  worker: false, step: null, runDir: null,
-                 skipAcceptance: false };
+                 skipAcceptance: false, help: false };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--target')           args.target         = argv[++i];
+    if (a === '--help' || a === '-h') args.help             = true;
+    else if (a === '--target')           args.target         = argv[++i];
     else if (a === '--dry-run')     args.dryRun         = true;
     else if (a === '--worker')      args.worker         = true;
     else if (a === '--step')        args.step           = argv[++i];
@@ -1097,12 +1100,87 @@ async function detectReporters() {
   return [];
 }
 
+/**
+ * 确保 acceptance 步骤的预跑日志存在。
+ *
+ * 三种情况：
+ *   1. --skip-acceptance 且日志不存在 → 写占位文件，提示手动预跑
+ *   2. 日志已存在 → 跳过预跑（复用模式）
+ *   3. 其他 → driver 直接预跑 acceptance-test.sh
+ *
+ * @param {object} args   解析后的 CLI 参数
+ * @param {string} runDir run 目录绝对路径
+ */
+async function ensureAcceptancePreRun(args, runDir) {
+  const preRunLog = join(runDir, 'acceptance-raw.log');
+  if (args.skipAcceptance && !existsSync(preRunLog)) {
+    console.log('  [driver] --skip-acceptance 已指定，跳过预跑');
+    console.log('  [driver] 请确保 acceptance-raw.log 存在（手动预跑：bash FORGE/playbook/acceptance-test.sh > runDir/acceptance-raw.log 2>&1）');
+    writeFileSync(preRunLog,
+      '--skip-acceptance 模式：未预跑 acceptance-test.sh。\n' +
+      '请手动预跑后把日志放到此文件，或去掉 --skip-acceptance 参数让 driver 自动预跑。\n',
+      'utf-8');
+  } else if (existsSync(preRunLog)) {
+    console.log('  [driver] acceptance-raw.log 已存在，跳过预跑（复用模式）');
+  } else {
+    console.log('  [driver] acceptance 特殊处理：driver 直接预跑 acceptance-test.sh');
+    try {
+      await runAcceptanceTestDirectly(runDir);
+    } catch (e) {
+      console.warn(`  [driver] acceptance-test.sh 预跑失败: ${e.message}`);
+      // 即使预跑失败也继续 spawnWorker，让 agent 从错误日志中生成报告
+      writeFileSync(
+        preRunLog,
+        `acceptance-test.sh 预跑失败: ${e.message}\n${e.stack || ''}`,
+        'utf-8',
+      );
+    }
+  }
+}
+
 // ═══════════════════════════════════════════════════════════
 //  主入口
 // ═══════════════════════════════════════════════════════════
 
+/**
+ * 打印用法帮助。
+ */
+function printHelp() {
+  console.log(`
+release-gate-driver.mjs - FORGE release-gate-loop Driver
+
+用法:
+  node FORGE/src/release-gate-driver.mjs --target <version> [options]
+  node FORGE/src/release-gate-driver.mjs --step <step> --target <version> [options]
+  node FORGE/src/release-gate-driver.mjs --worker --step <step> --run-dir <dir> --target <version>
+
+参数:
+  --target <ver>            验证目标版本号 (如 v1.2.4)
+  --step <stepName>         只执行单个步骤然后退出 (单步模式)
+                            stepName: acceptance | regression | coverage | consolidate | verdict
+  --run-dir <dir>           指定 run 目录绝对路径 (单步模式下用于多步共享同一目录)
+  --skip-acceptance         跳过 acceptance 预跑 (复用手动预跑的 acceptance-raw.log)
+  --dry-run                 只打印将执行的步骤，不实际运行
+  --worker                  内部 worker 模式 (由 driver spawn，一般不手动使用)
+  --help, -h                显示此帮助信息
+
+模式说明:
+  全量模式 (默认):  串行执行全部 5 步，每步 spawn 独立 worker 子进程
+  单步模式 (--step): 只执行指定步骤，执行完后进程退出 (exit 0)
+                    stdout 打印: [driver] STEP_DONE: <stepName> EXIT_CODE=0
+                    与全量模式使用相同的 run 目录逻辑，确保产物写到正确位置
+                    适合外层 bash 脚本编排，每步一个全新进程，内存归零
+`);
+}
+
 async function main() {
   const args = parseArgs(process.argv);
+
+  // ─── 帮助 ───
+  if (args.help) {
+    printHelp();
+    return;
+  }
 
   // ─── Worker 模式 ───
   if (args.worker) {
@@ -1134,6 +1212,8 @@ async function main() {
   // ─── Driver 模式 ───
   if (!args.target) {
     console.error('用法: node FORGE/src/release-gate-driver.mjs --target vX.Y.Z [--dry-run] [--skip-acceptance]');
+    console.error('      node FORGE/src/release-gate-driver.mjs --step <acceptance|regression|coverage|consolidate|verdict> --target vX.Y.Z');
+    console.error('      node FORGE/src/release-gate-driver.mjs --help');
     process.exit(1);
   }
 
@@ -1148,6 +1228,43 @@ async function main() {
     console.error(`缺少环境变量: ${missingEnvs.join(', ')}`);
     console.error('请在 ~/.zshrc 中设置后 source ~/.zshrc');
     process.exit(1);
+  }
+
+  // ─── 单步模式 (--step，非 worker) ───
+  // 只执行指定步骤，然后进程退出。每步一个全新进程，内存归零。
+  // 适合外层 bash 编排脚本逐步调用。
+  if (args.step && !args.worker) {
+    if (!STEP_ORDER.includes(args.step)) {
+      console.error(`未知步骤: ${args.step}，可选: ${STEP_ORDER.join(', ')}`);
+      process.exit(1);
+    }
+
+    // run 目录：优先使用 --run-dir，否则自动发现最新 run 目录或新建
+    let stepRunDir = args.runDir;
+    if (!stepRunDir) {
+      const resolved = resolveRunDir();
+      stepRunDir = resolved.runDir;
+    }
+    if (!existsSync(stepRunDir)) {
+      mkdirSync(stepRunDir, { recursive: true });
+    }
+
+    console.log(`[driver] 单步模式: step=${args.step} target=${args.target}`);
+    console.log(`[driver] run-dir = ${stepRunDir}`);
+
+    // acceptance 特殊处理：单步模式下也执行预跑逻辑
+    if (args.step === 'acceptance') {
+      await ensureAcceptancePreRun(args, stepRunDir);
+    }
+
+    try {
+      await runWorker(args.step, stepRunDir, args.target);
+      console.log(`[driver] STEP_DONE: ${args.step} EXIT_CODE=0`);
+      process.exit(0);
+    } catch (err) {
+      console.error(`[driver] STEP_DONE: ${args.step} EXIT_CODE=1 ERROR=${err.message}`);
+      process.exit(1);
+    }
   }
 
   // 建 run 目录
@@ -1202,34 +1319,8 @@ async function main() {
     console.log(`${'═'.repeat(60)}`);
 
     // acceptance 特殊处理：driver 先预跑脚本，worker 只解读日志
-    // 三种跳过预跑的情况：
-    //   1. --skip-acceptance 显式指定（sandbox 环境 kill 窗口太短时用）
-    //   2. acceptance-raw.log 已存在（手动预跑后复用，sandbox 绕行模式）
     if (step === 'acceptance') {
-      const preRunLog = join(runDir, 'acceptance-raw.log');
-      if (args.skipAcceptance && !existsSync(preRunLog)) {
-        console.log(`  [driver] --skip-acceptance 已指定，跳过预跑`);
-        console.log(`  [driver] 请确保 acceptance-raw.log 存在（手动预跑：bash FORGE/playbook/acceptance-test.sh > runDir/acceptance-raw.log 2>&1）`);
-        writeFileSync(preRunLog,
-          `--skip-acceptance 模式：未预跑 acceptance-test.sh。\n` +
-          `请手动预跑后把日志放到此文件，或去掉 --skip-acceptance 参数让 driver 自动预跑。\n`,
-          'utf-8');
-      } else if (existsSync(preRunLog)) {
-        console.log(`  [driver] acceptance-raw.log 已存在，跳过预跑（复用模式）`);
-      } else {
-        console.log(`  [driver] acceptance 特殊处理：driver 直接预跑 acceptance-test.sh`);
-        try {
-          await runAcceptanceTestDirectly(runDir);
-        } catch (e) {
-          console.warn(`  [driver] acceptance-test.sh 预跑失败: ${e.message}`);
-          // 即使预跑失败也继续 spawnWorker，让 agent 从错误日志中生成报告
-          writeFileSync(
-            join(runDir, 'acceptance-raw.log'),
-            `acceptance-test.sh 预跑失败: ${e.message}\n${e.stack || ''}`,
-            'utf-8',
-          );
-        }
-      }
+      await ensureAcceptancePreRun(args, runDir);
     }
 
     try {
