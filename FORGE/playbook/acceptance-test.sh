@@ -1358,7 +1358,6 @@ S163_OK=true
 grep -q "harness" "$PROJECT_ROOT/docs/WIKI.md" || { fail "WIKI.md 缺少行业标准术语 harness"; S163_OK=false; }
 grep -q "harness" "$PROJECT_ROOT/docs/ARCHITECTURE.md" || { fail "ARCHITECTURE.md 缺少行业标准术语 harness"; S163_OK=false; }
 $S163_OK && pass "术语统一（WIKI + ARCHITECTURE 含行业标准术语 harness）"
-
 scenario 164 "文档锚点与跨文件链接可达性——TOC 锚点/代码路径/跨文件引用真实存在"
 S164_OK=true
 # 子项 a: 关键代码路径引用真实存在（v1.2.3 审查教训：文档写死路径漂移）
@@ -1368,7 +1367,6 @@ done
 # 子项 b: 活跃文档无指向不存在文件的相对链接（排除 archive/node_modules）
 node -e "const fs=require('fs'),path=require('path');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=0;for(const fp of files){const c=fs.readFileSync(fp,'utf8'),dir=path.dirname(fp);const re=/\]\(((?:\.\.?\/)?[^)]+\.md(?:#[^)]*)?)\)/g;let m;while((m=re.exec(c))){const href=m[1].split('#')[0];if(href.startsWith('http'))continue;if(!fs.existsSync(path.resolve(dir,href))){console.log('断链:',fp,'->',m[1]);bad++;}}}process.exit(bad?1:0);" >/dev/null 2>&1 || { fail "存在指向不存在文件的跨文档 Markdown 链接"; S164_OK=false; }
 $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接无死链）"
-
 scenario 165 "关键数字跨文档一致性——测试数 1317 / 规则数 21 / acceptance 111"
 S165_OK=true
 # 子项 a: 全 workspace 测试数 1317 在 README/WIKI/evidence 三处一致
@@ -1384,7 +1382,6 @@ for f in docs/DEVELOPMENT.md LIMITATIONS.md; do
   grep -q "111" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 111"; S165_OK=false; }
 done
 $S165_OK && pass "关键数字跨文档一致（1317 / 21 / 111）"
-
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
 S166_OK=true
 # 子项 a: 活跃文档 U+FFFD 零污染（v1.2.3 worker 批量修复教训）
