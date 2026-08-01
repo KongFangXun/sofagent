@@ -208,7 +208,7 @@ Agent 连上来第一件事就是 `list_capabilities`，然后自己知道能调
 sofagent 用**能力底座（一底座·三引擎）× 生命周期（诊断→激活→编排→执行→进化）**的双层架构组织产品——能力底座回答"怎么保证每次做对"，生命周期回答"企业 AI 从诊断到自运转怎么走"。完整的层级定义、状态机图与"双层 vs 三层嵌套"消歧见 **[ARCHITECTURE §心智模型](./ARCHITECTURE.md#心智模型先读这个)**（权威源），操作视角的角色表与触发方式见 [HANDBOOK §心智模型](./HANDBOOK.md#心智模型能力底座与生命周期)。以下仅补充**哲学视角**：
 
 **演进视角：从「脑力自动化四阶段」看三引擎的来路**
-孔老师把行业对「脑力自动化」的认知归纳为四个阶段——提示词自动化、上下文工程、驾驭（agent 自主执行）、循环自动化（自驱动迭代）。sofagent 的**一底座·三引擎**，正是对这四个阶段的逐层回应：审计引擎承接「提示词 / 规则」的确定性沉淀，编排引擎与约束底座承接「上下文工程 + 驾驭」的掌控执行，进化引擎承接「循环自动化」的自迭代闭环。底层不变的是约束底座——无论 AI 能力涨到哪一阶段，确定性边界始终由 Harness 兜住。这不是外部理论的移植，而是我们自己在做产品时反复验证过的演进逻辑。
+孔老师把行业对「脑力自动化」的认知归纳为四个阶段——提示词自动化、上下文工程、驾驭（agent 自主执行）、循环自动化（自驱动迭代）。sofagent 的**一底座·三引擎**，正是对这四个阶段的逐层回应：审计引擎承接「提示词 / 规则」的确定性沉淀，约束底座承接「上下文工程 + 驾驭」的掌控执行，进化引擎承接「循环自动化」的自迭代闭环。底层不变的是约束底座——无论 AI 能力涨到哪一阶段，确定性边界始终由 Harness 兜住。这不是外部理论的移植，而是我们自己在做产品时反复验证过的演进逻辑。
 
 **从 Prompt 到 Graph：五个尺度，一个系统**
 
@@ -368,7 +368,7 @@ FDE 入场时，不搭交互页面。做的事是：梳理 workflow 节点 → �
 
 ### 产品化哲学——控制平面与 MCP + dashboard
 
-> sofagent 内核（审计引擎 + 编排引擎 + FDE 能力）是给开发者用的。产品化交给非技术买家时，需要一层不同的外壳——这层外壳的哲学，和"持续存在感是设计需求"同构：只是场景从 Agent 自己，扩到 buyer 看 Agent。
+> sofagent 内核（约束底座 + 审计引擎 + FDE 能力）是给开发者用的。产品化交给非技术买家时，需要一层不同的外壳——这层外壳的哲学，和"持续存在感是设计需求"同构：只是场景从 Agent 自己，扩到 buyer 看 Agent。
 
 - **卖能力，不卖工时**：FDE 不是一种岗位 / 驻场服务，而是企业该有的一种能力，用 Agent / sub-agent / 产品化封装交给企业，企业自己用、自己落地 AI 化（见本节 FDE 视角）。营收从"顾问工时"变成"企业数 × 订阅"，可规模化。
 - **为什么需要 dashboard**：sofagent 自身 LUI-first（语言即界面）——但 Agent 的 LUI + LLM 会"吞噬一切"，非专家买家看不到持久状态、没有成就感锚点。所以产品化必须带一个**轻量 dashboard** 作为自有视图（审计状态 / AI 化进度 / 合规月报），让买家随时看得见"我公司 AI 化到哪了"。这与"持续存在感是设计需求"一致——只是这次是 buyer 的持续存在感。
@@ -413,7 +413,7 @@ sofagent 的版本演进不是拍脑袋排的——它遵循 Agent 工程的生�
    → 让每次失败获得新证据，在明确边界内接近终点
 
 第三步：将稳定的复杂路径固化为 Graph（v1.3+）
-   → 编排引擎 DAG 并行调度 + 多 Agent 协作 + 检查点恢复
+   → 约束底座（内部为 LangGraph DAG）并行调度 + 多 Agent 协作 + 检查点恢复
    → 把分支、并行、审批、恢复路径变成可检查的系统结构
 ```
 
@@ -628,12 +628,12 @@ Agent 生态自然分化为三层，每层服务不同人群、解决不同问�
 
 ### deepagents 是被上下夹击的中间层
 
-deepagents 在 v1.0.1-v1.1.x 阶段启发了 sofagent 的编排引擎设计（Harness 范式 + HITL 机制功不可没），但 v1.2.0 起被彻底弃用。原因不在于 deepagents 本身「不好」，而在于它**没有独占领地**：
+deepagents 在 v1.0.1-v1.1.x 阶段启发了 sofagent 的 DAG 编排设计（Harness 范式 + HITL 机制功不可没），但 v1.2.0 起被彻底弃用。原因不在于 deepagents 本身「不好」，而在于它**没有独占领地**：
 
 - **往上看——简单任务大厂平台够了**。WorkBuddy / OpenClaw 免费好用、开箱即用、带 UI + 会话 + 记忆 + 插件生态。当一个终端用户只需要「帮我写段代码」或「帮我分析数据」，直接在大厂平台里说一句话就行——不需要 deepagents 这层抽象。
 - **往下看——精细控制只能上 LangGraph**。deepagents 把编排逻辑封装在黑盒里（FilesystemMiddleware 硬编码注入、wrapToolCall 并行调用崩溃、REQUIRED_MIDDLEWARE_NAMES 白名单禁止排除），当你需要并行 SubAgent、自定义工具注入、精细控制循环路由时，黑盒成了枷锁。LangGraph 的 StateGraph + createReactAgent 把每个节点、每条边都暴露给开发者——黑盒 vs 白盒，精细控制只能选后者。
 
-deepagents 的处境像极了 jQuery：它教会了一代人用更优雅的方式做 DOM 操作和 AJAX，但今天没人用它做生产了——因为浏览器原生 API 追上来了（Layer 1 大厂平台成熟），而需要精细控制的场景有了更好的框架（Layer 2 的 React / Vue / LangGraph）。deepagents 的历史贡献值得感谢（详见 [THANKS](./THANKS.md)），但它不是 sofagent 编排引擎的未来。
+deepagents 的处境像极了 jQuery：它教会了一代人用更优雅的方式做 DOM 操作和 AJAX，但今天没人用它做生产了——因为浏览器原生 API 追上来了（Layer 1 大厂平台成熟），而需要精细控制的场景有了更好的框架（Layer 2 的 React / Vue / LangGraph）。deepagents 的历史贡献值得感谢（详见 [THANKS](./THANKS.md)），但它的使命已经结束——sofagent 的编排能力已全面迁移到 LangGraph createReactAgent（v1.2.0 起），不再是独立引擎。
 
 ### sofagent 不是开发者框架的竞争者
 
@@ -671,13 +671,13 @@ sofagent 的技术选型有明确的边界纪律：
 | LangChain 生态组件 | sofagent 是否使用 | 理由 |
 |---|:---:|---|
 | **LangChain Core** | ✅ 使用 | LLM 调用底座——模型接口抽象、消息格式标准化，这是基础设施 |
-| **LangGraph** | ✅ 使用 | 编排引擎——StateGraph 状态机 + createReactAgent 编排，白盒可控 |
+| **LangGraph** | ✅ 使用 | DAG 编排底座——StateGraph 状态机 + createReactAgent 编排，白盒可控 |
 | **LangChain 全家桶**（Document Loader / Vector Store / RAG pipeline） | ❌ 不使用 | RAG / 向量检索 / Document Loader 是 LangChain 全家桶的事，sofagent 不做——知识管理用干净 Markdown + YAML + Git，不需要向量数据库 |
 | **LangSmith** | ? 开发者可选 | 可观测性平台——开发调试工具，不是产品组成部分（SDK MIT 开源，平台闭源收费） |
 
 **不做 RAG、不做向量检索、不做 Document Loader**——这是设计禁区（详见 §八），不是能力不足。sofagent 的知识管理哲学是 [Don't Do RAG](https://arxiv.org/abs/2412.15605) 论文验证的 CAG（编译式 RAG）方向：干净 Markdown 就够了，知识格式标准化 + 加载链按需注入比向量检索更可审计、更透明。
 
-FORGE loop 的技术栈极其克制：LangChain Core（LLM 调用底座）+ LangGraph（createReactAgent 编排引擎）——不多不少。这种克制不是偷懒，是设计哲学——sofagent 的核心价值不在「用了多少技术」，而在「管住了多少行为」。
+FORGE loop 的技术栈极其克制：LangChain Core（LLM 调用底座）+ LangGraph（createReactAgent DAG 编排）——不多不少。这种克制不是偷懒，是设计哲学——sofagent 的核心价值不在「用了多少技术」，而在「管住了多少行为」。
 
 ### 意图债务（Intent Debt）
 
