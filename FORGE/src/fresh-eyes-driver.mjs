@@ -645,20 +645,28 @@ async function runWorker(step, roundDir, target) {
   const recursionLimit = STEP_RECURSION_LIMITS[step] ?? 50;
 
   // v1.2.5：流式执行——实时打印工具调用，用户不再盯着空白等 5 分钟
+  //
+  // 🔴 stream 数据结构适配（P0 bugfix da1039a → 本 commit）：
+  //   agent.stream(streamMode:'updates') 的 chunk 格式是 { [nodeName]: stateDelta }，
+  //   不是 invoke() 的扁平 { messages: [...] }。直接赋 finalState = chunk 会导致
+  //   下游 extractAgentText / extractUsage 找 result.messages 拿到 undefined。
+  //
+  //   正确做法：累积所有 chunk 的 delta.messages 到一个扁平数组，模拟 invoke 返回格式。
   const invokeAgent = async () => {
     const stream = await agent.stream(
       { messages: [{ role: 'user', content: userMessage }] },
       { recursionLimit, streamMode: 'updates' }
     );
 
-    let finalState = null;
+    const allMessages = [];  // 累积所有 delta.messages，模拟 invoke 返回的扁平结构
     let toolCallCount = 0;
     for await (const chunk of stream) {
-      // chunk 是 { nodeName: stateDelta }
-      for (const [nodeName, delta] of Object.entries(chunk)) {
+      // chunk 是 { nodeName: stateDelta }——解包每个节点的 delta
+      for (const [, delta] of Object.entries(chunk)) {
         const msgs = delta?.messages;
         if (!Array.isArray(msgs)) continue;
         for (const msg of msgs) {
+          allMessages.push(msg);
           // 工具调用消息（AI 发起 tool_call）
           if (msg?._getType?.() === 'ai' && msg.tool_calls?.length > 0) {
             for (const tc of msg.tool_calls) {
@@ -668,9 +676,9 @@ async function runWorker(step, roundDir, target) {
           }
         }
       }
-      finalState = chunk;
     }
-    return finalState;
+    // 返回扁平结构——与 invoke() 返回格式兼容，下游 extractAgentText / extractUsage 正常工作
+    return { messages: allMessages };
   };
 
   // v1.2.1 L2：模型推理心跳。LangGraph 1.4.7 的 createReactAgent 无
