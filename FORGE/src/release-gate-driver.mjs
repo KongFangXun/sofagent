@@ -12,7 +12,8 @@
 //   node FORGE/src/release-gate-driver.mjs --worker --step <step> --run-dir <abs> --target <ver>
 //
 // 模型配置（单角色 V）：
-//   V（验证者）= DeepSeek V4 Flash   baseURL https://api.deepseek.com/   thinking=enabled  reasoning_effort=high
+//   V（验证者）= Qwen3.8-max-preview  阿里百炼 Token Plan 订阅制（OpenAI 兼容接口）
+//   thinking-only 模型——始终思考、无需（也不应传）thinking/reasoningEffort 参数
 //
 // 与 fresh-eyes-driver 的差异：
 //   - 单角色 V（无 A/B 双角色）
@@ -58,32 +59,40 @@ const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
 const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 
 // ─── 单角色模型配置（V = 验证者）────────────────────────────
-// V 用 DeepSeek V4 Flash：thinking + reasoning_effort=high
-// 比 GLM-5.2 工具调用更聪明（能自主想出异步轮询策略），
-// 且推理速度快、支持 thinking 模式的深度推理。
+// V 用 Qwen3.8-max-preview：阿里百炼 Token Plan 订阅制，thinking-only 模型。
+// 始终思考、无法关闭，不需要（也不应传）thinking/reasoningEffort 参数——
+// Qwen 也没有 reasoningEffort（那是 DeepSeek 专属）。maxTokens 保留以限制输出。
 // toolsKey 仍为 REVIEWER_TOOLS（纯只读）。
 const MODEL_CONFIGS = {
   V: {
-    baseURL:         'https://api.deepseek.com/',
-    model:           'deepseek-v4-flash',
-    thinking:        { type: 'enabled' },
-    reasoningEffort: 'high',
-    maxTokens:       16000,
+    baseURL:         'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
+    model:           'qwen3.8-max-preview',
+    maxTokens:       16000,  // 限制输出 token，防止 thinking 模式无限消耗
     apiKeyEnv:       'SOFAGENT_LLM_B_API_KEY',
     specEnv:         'SOFAGENT_LLM_B',
     agentSkillPath:  join(AGENTS_DIR, 'reviewer/SKILL.md'),
     toolsKey:        'REVIEWER_TOOLS',
-    billing:         'pay-as-you-go',
+    billing:         'subscription',  // Token Plan 订阅制
   },
 };
 
 // ─── 模型定价（usage.jsonl 成本估算基础）─────────────────────
 // 单位：CNY per 1M tokens（百万 token 计价）
-// V 用 DeepSeek V4 Flash（按量计费）
-// DeepSeek 官方定价：input 0.5元/M（缓存未命中）、output 8元/M
-// Flash 版为 Pro 版的轻量快速版，定价更低
-// https://api-docs.deepseek.com/quick_start/pricing
+// V 用 Qwen3.8-max-preview = 阿里百炼 Token Plan 订阅制 → 不按 token 计价。
+// 订阅制按周期固定付费，与 token 消耗无关，MODEL_PRICING 的成本估算对
+// 订阅账号意义有限，仅供参考（recordUsage 的 subscription 分支输出 cost_cny = null）。
+// DeepSeek V4 Flash 条目保留做历史参考（V 曾按量计费使用：
+//   input 0.5元/M（缓存未命中）、output 8元/M
+//   https://api-docs.deepseek.com/quick_start/pricing）。
 const MODEL_PRICING = {
+  'qwen3.8-max-preview': {
+    input: 0,
+    output: 0,
+    currency: 'CNY',
+    source: 'https://help.aliyun.com/zh/model-studio/deep-thinking',
+    note: 'Token Plan 订阅制，不按量计价，此处置 0；成本估算对订阅账号不适用',
+    billing: 'subscription',
+  },
   'deepseek-v4-flash': {
     input: 0.5,
     output: 8,
@@ -94,13 +103,16 @@ const MODEL_PRICING = {
   },
 };
 
-// ─── 步骤定义（prompt / output / inputs）─────────────────────
+// ─── 步骤定义（prompt / output / inputs / maxTokens）─────────────────────
 // 单角色 V，无 role 字段。5 步全串行。
+// maxTokens：步骤级输出 token 上限覆盖。未定义时回退到 MODEL_CONFIGS[role].maxTokens。
+// consolidate 需合并 acceptance/regression/coverage 三份完整报告为单份 stage6-report，输出超长，
+// 单独调高到 32000，避免顶格 16000 被截断生成不了合法报告（整轮降级根因）。
 const STEPS = {
   'acceptance':  { prompt: 'acceptance.md',  outputs: ['acceptance.md'],  inputs: [] },
   'regression':  { prompt: 'regression.md',  outputs: ['regression.md'],  inputs: [] },
   'coverage':    { prompt: 'coverage.md',    outputs: ['coverage.md'],    inputs: ['acceptance.md'] },
-  'consolidate': { prompt: 'consolidate.md', outputs: ['stage6-report.md'], inputs: ['acceptance.md', 'regression.md', 'coverage.md'] },
+  'consolidate': { prompt: 'consolidate.md', outputs: ['stage6-report.md'], inputs: ['acceptance.md', 'regression.md', 'coverage.md'], maxTokens: 32000 },
   'verdict':     { prompt: 'verdict.md',     outputs: ['verdict.md'],     inputs: ['stage6-report.md'] },
 };
 
@@ -201,11 +213,15 @@ function buildSystemPrompt(skillPath) {
 /**
  * 为角色 V 创建 LLM 模型实例。
  *
- * DeepSeek V4 Flash：ChatOpenAI + reasoningEffort='high'；thinking 参数通过
- *   modelKwargs 注入——若 @langchain/openai 版本不支持 modelKwargs，
- *   会走 catch 分支退到原生 fetch。
+ * Qwen3.8-max-preview：阿里百炼 Token Plan（OpenAI 兼容接口）。thinking-only
+ *   模型，不需要传 thinking/reasoningEffort——MODEL_CONFIGS 未定义这两个字段，
+ *   下方条件注入分支（cfg.thinking / cfg.reasoningEffort）与退化逻辑永不触发
+ *   （无害保留）。
+ *
+ * @param {string} role 角色名（本 driver 固定为 'V'）
+ * @param {number} [maxTokensOverride] 步骤级输出 token 上限覆盖，优先于 cfg.maxTokens
  */
-async function createModel(role) {
+async function createModel(role, maxTokensOverride) {
   const cfg = MODEL_CONFIGS[role];
   const apiKey = process.env[cfg.apiKeyEnv];
   if (!apiKey) {
@@ -222,8 +238,10 @@ async function createModel(role) {
   };
 
   // 限制输出 token（防止 thinking 模式无限消耗）
-  if (cfg.maxTokens) {
-    ctorArgs.maxTokens = cfg.maxTokens;
+  // 步骤级 maxTokensOverride 优先于角色默认值 cfg.maxTokens
+  const effectiveMaxTokens = maxTokensOverride ?? cfg.maxTokens;
+  if (effectiveMaxTokens) {
+    ctorArgs.maxTokens = effectiveMaxTokens;
   }
 
   // DeepSeek 特殊参数
@@ -440,7 +458,8 @@ async function runWorker(step, runDir, target) {
   ].filter(Boolean).join('\n');
 
   // 4. 创建 model + tools + agent
-  const model = await createModel(role);
+  // 步骤级 maxTokens 覆盖（如 consolidate=32000）优先于角色默认值
+  const model = await createModel(role, stepDef.maxTokens);
 
   // L2：ProgressMiddleware 注入
   // 单角色，文件名 sub-progress.jsonl（不带角色字母）
