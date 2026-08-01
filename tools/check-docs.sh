@@ -22,11 +22,18 @@ fi
 echo ""
 echo "=== 1b. 全仓相对路径死链扫描（维度 306）==="
 # 遍历所有 .md，提取 markdown 链接并校验目标文件是否存在。
-# 排除项与 section 4 公共排除保持一致（node_modules/.workbuddy/.sofagent/
-# docs/changelog/docs/evidence/SKILL/FDE）。
+# 排除项说明：
+#   - 本段是"全仓死链扫描"，排除的是【不产出文档链接的目录】：
+#     node_modules/.workbuddy/.sofagent/（非文档）、docs/changelog（历史冻结）、
+#     docs/evidence（证据快照）、docs/archive + FORGE/archive（归档）、commercial（商务）
+#   - SKILL/harness 排除：harness 模板含运行时动态路径占位（非真实链接）
+#   - 🔴 v1.2.4 P4：FDE/ 不再排除！FDE/GUIDE.md + FDE/README.md + FDE/templates/
+#     是核心人读文档，链接必须纳入自动检查（此前整目录排除 = 死链盲区）。
+#     ⚠️ 注意：section 4 文档预算仍排除 FDE（预算口径，FDE 目录行数单独管理），
+#     与本段死链检查的排除解耦——此处只考虑"链接有效性"，不考虑"预算归属"。
 DEAD_LINKS=0
 DEAD_DETAIL=""
-EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/SKILL/harness/*" -not -path "*/FDE/*" -not -path "*/docs/archive/*" -not -path "*/FORGE/archive/*" -not -path "*/commercial/*")
+EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/SKILL/harness/*" -not -path "*/docs/archive/*" -not -path "*/FORGE/archive/*" -not -path "*/commercial/*")
 while IFS= read -r -d '' mdfile; do
   in_fence=0
   while IFS= read -r line; do
@@ -404,8 +411,16 @@ while IFS= read -r -d '' mdfile; do
       anchor_lower=$(echo "$anchor_part" | tr '[:upper:]' '[:lower:]')
       found_match=false
       while IFS= read -r heading; do
-        # 模拟 GitHub 锚点生成：去 # 前缀 → 小写 → 空格转 - → 删特殊字符
-        norm=$(echo "$heading" | sed 's/^#\+ *//' | tr '[:upper:]' '[:lower:]' | sed 's/[[:space:]]/-/g; s/[，。、（）()【】\[\]：:，,。！？?！]/-/g; s/--*/-/g' | sed 's/^-//;s/-$//')
+        # 模拟 GitHub 锚点生成：去 # 前缀 → 小写 → 保留中文/字母/数字/emoji → 空格/连字符归一
+        # ⚠️ 用 node 实现（非 sed）：① \{1,\} 替代 \+（BSD sed 不支持）；② emoji（🪟🔄🔮）
+        #    是 GitHub 锚点的一部分必须保留，sed 的字符类删标点会误删 emoji
+        norm=$(printf '%s' "$heading" | node -e '
+let h = require("fs").readFileSync(0, "utf8").replace(/\n$/, "");
+let a = h.replace(/^#{1,6}\s+/, "").trim().toLowerCase();
+a = a.replace(/[^\p{L}\p{N}\p{Emoji}\s-]/gu, "");
+a = a.replace(/[-\s]+/g, "-");
+a = a.replace(/^-+|-+$/g, "");
+console.log(a);')
         if [ "$norm" = "$anchor_lower" ]; then
           found_match=true
           break

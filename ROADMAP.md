@@ -276,7 +276,7 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 
 ### 🔮 DataFlow 参考清单
 
-> 方法论印证见 [PHILOSOPHY §十 · DataFlow](./docs/PHILOSOPHY.md#dataflow顶尖高校独立用harness命名做agent-约束2026-07-行业印证)。
+> 方法论印证见 [PHILOSOPHY §十 · DataFlow](./docs/PHILOSOPHY.md#dataflow顶尖高校独立用harness命名做-agent-约束2026-07-行业印证)。
 
 核心印证：Agent 经受控接口作业 / Request-Validate-Commit 受控变异 / Skills 程序化引导 / Validation Engine / 工件须可审计。可借鉴的 8 项具体落版本见下方「探索方向」表。
 

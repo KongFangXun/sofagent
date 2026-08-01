@@ -93,7 +93,7 @@
 
 sofagent **能力底座（一底座·三引擎）** 各有分工。**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义，之后 Sub Agent 自加载约束执行。两种调用路径：OpenClaw 节点走内部 API，非 OpenClaw 节点走 CLI。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
 
-主 Agent 的日常：接活 → 看 `data/eval/` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE 编排引擎](./ARCHITECTURE.md#⚙️-编排引擎)。
+主 Agent 的日常：接活 → 看 `data/eval/` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE 编排收敛](./ARCHITECTURE.md#编排收敛与-ab-测试)。
 
 ### Skill 设计哲学
 
