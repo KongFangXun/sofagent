@@ -2,9 +2,28 @@
 
 > **开发 FORGE Loop（fresh-eyes / release-gate）过程中沉淀的完整方法论。**
 >
-> 这不是"踩坑参考"，是**开发参照**——下次开发新的 loop 或 sub-agent 时，必须逐条对照本文档执行。
+> 这不是"踩坑参考"，是**开发参照**——下次开发新的 loop 或 sub-agent 时，必须逐条对照本文档执行。每条标准都来自真实 debug 会话（附 commit hash + 根因 + 代码片段），不是理论推演。
 >
-> 每条标准都来自真实 debug 会话（附 commit hash + 根因 + 代码片段），不是理论推演。
+> v1.2.5 · 2026-08-01（UTC）· 孔放勋
+
+## 目录
+
+- [〇、本文档定位](#〇本文档定位)
+- [一、架构设计原则](#一架构设计原则)
+  - [1.1 框架选型](#11-框架选型createreactagent-禁用-createdeepagent)
+  - [1.2 Driver-Worker 编排模式](#12-driver-worker-编排模式)
+  - [1.3 步骤定义模式](#13-步骤定义模式)
+  - [1.4 目录架构](#14-目录架构每个-loop-自包含)
+- [二、模型配置规范](#二模型配置规范)
+- [三、性能优化基线](#三性能优化基线v125)
+- [四、Driver 编排规范](#四driver-编排规范)
+  - [4.5 外部脚本 spawn 生存规范](#45-外部脚本-spawn-生存规范)
+- [五、stream 迁移规范](#五stream-迁移规范p0-级铁律)
+- [六、Prompt 设计规范](#六prompt-设计规范)
+- [七、工具开发规范](#七工具开发规范)
+- [八、可观测性规范](#八可观测性规范)
+- [九、Sub-Agent 开发完整检查清单](#九sub-agent-开发完整检查清单)
+- [十、附录](#十附录)
 
 ---
 
@@ -17,17 +36,17 @@
 | **维护方式** | 每次踩到新坑或做出架构决策后，更新对应章节 + commit hash |
 | **不替代** | LangGraph / deepagents 官方文档——本文档讲"我们怎么用"，不讲"它是什么" |
 
+> **与其他文档的关系**：架构全景看 [ARCHITECTURE.md](../docs/ARCHITECTURE.md)，产品哲学看 [PHILOSOPHY.md](../docs/PHILOSOPHY.md)，FORGE 双层循环架构看 [FORGE/README.md](README.md)。本文档聚焦**开发层面**——具体怎么写代码、怎么配模型、怎么编排 driver。
+
 ---
 
 ## 一、架构设计原则
 
 ### 1.1 框架选型：createReactAgent，禁用 createDeepAgent
 
-**标准**：所有 FORGE loop 的 sub-agent 必须使用 `@langchain/langgraph/prebuilt` 的 `createReactAgent`，禁止使用 `deepagents` 的 `createDeepAgent`。
+所有 FORGE loop 的 sub-agent 必须使用 `@langchain/langgraph/prebuilt` 的 `createReactAgent`，禁止使用 `deepagents` 的 `createDeepAgent`。
 
-**决策依据**（commit 9a9c5dc）：
-
-`createDeepAgent` 硬编码注入 `FilesystemMiddleware`，无法通过参数禁用：
+原因很简单——`createDeepAgent` 硬编码注入了 `FilesystemMiddleware`，你没法通过参数禁用它：
 
 ```js
 // deepagents 源码（dist/langsmith-DjCMSywL.js:5879-5895）
@@ -40,47 +59,44 @@ const middleware = [
 // REQUIRED_MIDDLEWARE_NAMES = Set(["FilesystemMiddleware","SubAgentMiddleware"])
 ```
 
-FilesystemMiddleware 的 `wrapToolCall` 在**并行工具调用**时触发 `undefined.length` 崩溃。DeepSeek 偶然不触发并行调用所以能跑，GLM-5.2 / Qwen 在 superstep 5 触发即崩。
+FilesystemMiddleware 的 `wrapToolCall` 在**并行工具调用**时触发 `undefined.length` 崩溃。DeepSeek 偶然不触发并行调用所以能跑，GLM-5.2 / Qwen 在 superstep 5 触发即崩（commit 9a9c5dc）。
 
-**正确做法**：
+**正确做法**——用 createReactAgent，同一套 React 模式但不带 FilesystemMiddleware，我们有自己的 `sf_read` / `sf_write` / `run_bash`：
 
 ```js
 const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
 const agent = createReactAgent({ llm: model, tools, stateModifier });
 ```
 
-createReactAgent 是同一套 React 模式（ToolNode + agent loop），但不带 FilesystemMiddleware——我们有自己的 `sf_read` / `sf_write` / `run_bash`。
-
 > **教训**：`middleware:[]` 看起来像"禁用 middleware"，实际是"追加空数组"。required 的东西就是 required，读源码确认 API 语义，别靠猜。
 
 ### 1.2 Driver-Worker 编排模式
 
-**标准**：Driver 是纯编排层，不做任何语义判断；Worker 在独立子进程中执行单个步骤，零上下文继承。
+FORGE 的进程模型是 **Driver + N 个独立 Worker 子进程**——Driver 是纯编排层，不做任何语义判断；Worker 在独立子进程中执行单个步骤，零上下文继承。
 
-```
-Driver（main process）
-  ├── 解析 CLI 参数
-  ├── 建 run 目录 + 初始化可见性
-  ├── 按步骤顺序 spawn Worker 子进程
-  │     ├── Worker ① (独立 node 进程)
-  │     │     ├── 读 prompt → 建 model + tools → createReactAgent → stream
-  │     │     ├── 写产物文件到 roundDir
-  │     │     └── 进程退出（结果通过文件传递，不走 IPC）
-  │     ├── Worker ② ...
-  │     └── ...
-  ├── 解析产物判停止条件（只数标记，不读语义）
-  └── 写 LEDGER + latest.json
+```mermaid
+graph TD
+    DRV["Driver（main process）<br/>解析 CLI → 建 run 目录 → 按步骤 spawn Worker"]
+    DRV -->|"spawn"| W1["Worker ①（独立 node 进程）<br/>读 prompt → 建 model+tools<br/>→ createReactAgent → stream"]
+    DRV -->|"spawn"| W2["Worker ②（独立 node 进程）<br/>零上下文——不继承 ① 的内存状态"]
+    DRV -->|"spawn"| W3["Worker ③ ..."]
+    W1 -->|"写产物文件"| F1["check-a.md"]
+    W2 -->|"读输入 / 写产物"| F2["findings.md / result.md"]
+    W3 -->|"读输入 / 写产物"| F3["summary.md"]
+    DRV -->|"解析产物判停止条件<br/>只数标记，不读语义"| LEDGER["LEDGER + latest.json"]
 ```
 
-**设计原则**：
+三个设计原则支撑这个架构：
 
 1. **Worker 零上下文**：每个 Worker 是全新 node 进程，不继承前序 Worker 的内存状态。步骤间通过**文件**传递数据（check-a.md → findings.md → result.md）。这避免了 LangGraph state 跨进程序列化的复杂性。
 2. **Driver 不审查**：Driver 只做 spawn + 判停止条件（数 P0/P1 标记）。不读审查内容做语义判断——这是 Agent 的职责。
 3. **文件即接口**：Worker 的输入/输出都是文件路径，Driver 注入到 user message 中。多产物用 `===FILE: filename===` 分隔符切片。
 
+> **为什么不用 in-process**：曾经考虑过在同一个 LangGraph 图里跑所有步骤（in-process），但跨步骤的状态管理太复杂——每个 Worker 需要全新 agent session（清空上下文），在同一个图里做这个需要复杂的 state 重置逻辑。spawn 子进程是最简单可靠的方案——进程退出即天然清空一切。
+
 ### 1.3 步骤定义模式
 
-**标准**：每个 loop 的步骤在 `STEPS` 常量中定义，包含 role / prompt / outputs / inputs / maxTokens（可选覆盖）。
+每个 loop 的步骤在 `STEPS` 常量中集中定义，包含 role / prompt / outputs / inputs / maxTokens（可选覆盖）：
 
 ```js
 const STEPS = {
@@ -98,7 +114,7 @@ const STEPS = {
 
 ### 1.4 目录架构：每个 loop 自包含
 
-**标准**：每个 loop 的 prompts / specs / runs 独立存放，不共享目录。
+每个 loop 的 prompts / specs / runs 独立存放，不共享目录：
 
 ```
 FORGE/SKILL/
@@ -120,9 +136,9 @@ FORGE/SKILL/
 
 ## 二、模型配置规范
 
-### 2.1 异构模型配置
+### 2.1 模型配置
 
-**标准**：每个角色在 `MODEL_CONFIGS` 中定义完整的模型配置：
+每个角色在 `MODEL_CONFIGS` 中定义完整的模型配置——这不是可选项，driver 启动时校验所有字段齐全：
 
 ```js
 const MODEL_CONFIGS = {
@@ -139,7 +155,7 @@ const MODEL_CONFIGS = {
 };
 ```
 
-**当前配置**（2026-08-06 定稿）：
+**当前配置**（2026-08-01 定稿）：
 
 | 角色 | 模型 | 计费 | 用途 |
 |------|------|------|------|
@@ -147,20 +163,21 @@ const MODEL_CONFIGS = {
 | B（工程师） | qwen3.8-max-preview | Token Plan 订阅制 | 审查 / 修复 |
 | V（验证者） | qwen3.8-max-preview | Token Plan 订阅制 | release-gate 全流程 |
 
+> **从异构到单模型的演进**：早期版本（v1.2.3 之前）A/B 用不同厂商模型做"异构双盲"（减少同模型盲区）。v1.2.4 起改为 Qwen3.8-max-preview 单模型——该模型 thinking 能力足够强，fresh-eyes 纪律的核心保障是**零上下文每步**（结构隔离），而非模型差异。`MODEL_CONFIGS` 仍保留多模型配置能力，未来可随时切回异构模式。
+
 ### 2.2 Thinking-only 模型特殊处理
 
-**标准**：Qwen3.8-max-preview 是 thinking-only 模型——始终思考、无法关闭。
+Qwen3.8-max-preview 是 thinking-only 模型——始终思考、无法关闭。这带来三个关键约束：
 
-**关键约束**：
 1. **不传 thinking/reasoningEffort 参数**：MODEL_CONFIGS 不定义这两个字段，下方条件注入分支天然不触发。不需要也不应该传——Qwen 没有 reasoningEffort（那是 DeepSeek 专属）。
 2. **maxTokens 包含 thinking tokens**：thinking-only 模型的 maxTokens 里包含思考 token，留给实际输出的更少。因此合并步骤需要单独调高 maxTokens（见 §2.3）。
 3. **退化逻辑保留无害**：createModel 的 thinking 退化分支（ChatOpenAI 不接受 thinking 参数时去掉重试）对 Qwen 天然不触发（cfg.thinking 未定义），保留做历史参考。
 
 ### 2.3 步骤级 maxTokens 覆盖
 
-**标准**：合并/汇总类步骤的输出量远大于普通步骤，必须在 STEPS 定义中单独配置更高的 maxTokens。
+合并/汇总类步骤的输出量远大于普通步骤，必须在 STEPS 定义中单独配置更高的 maxTokens——这条教训价值一个完整版本的质量降级（commit 63b130d）。
 
-**决策依据**（commit 63b130d）：全局 `maxTokens: 16000` 对 a-consolidate（合并 A/B 两份完整 12 视角报告）不够。thinking-only 模型 16000 里还包含 thinking tokens → 精确顶到上限被截断 → 无法生成合法 result.md → 整轮降级摘要模式 → b-fix 收到"无 finding" → 跳过修复。审出的问题一个都没修。
+全局 `maxTokens: 16000` 对 a-consolidate（合并 A/B 两份完整 12 视角报告）不够。thinking-only 模型 16000 里还包含 thinking tokens → 精确顶到上限被截断 → 无法生成合法 result.md → 整轮降级摘要模式 → b-fix 收到"无 finding" → 跳过修复。审出的问题一个都没修。
 
 ```js
 const STEPS = {
@@ -184,7 +201,7 @@ const model = await createModel(role, stepDef.maxTokens);
 
 ### 2.4 计费模式与成本追踪
 
-**标准**：usage.jsonl 记录每次 invoke 的 token 消耗，但成本估算区分计费模式：
+usage.jsonl 记录每次 invoke 的 token 消耗，但成本估算区分计费模式：
 
 - `subscription`（订阅制）：cost_cny = null，不硬凑按量成本。订阅制按周期固定付费，与 token 消耗无关。
 - `pay-as-you-go`（按量）：按 MODEL_PRICING 表估算，标注 `price_confidence: 'estimated'`。
@@ -197,14 +214,28 @@ const model = await createModel(role, stepDef.maxTokens);
 
 ### 3.1 上下文管理：stateModifier + 工具输出截断
 
-**标准**：所有 sub-agent 必须实现两层上下文管理，防止"上下文雪球"导致 prompt 膨胀。
+所有 sub-agent 必须实现**两层上下文管理**，防止"上下文雪球"导致 prompt 膨胀。
 
-**根因数据**（usage.jsonl 实测）：未做裁剪时，fresh-eyes-loop 单轮审查 7-8 分钟。b-check 第一步 prompt_tokens 就 102k，到 b-fix round-4 出现单次 **296k tokens** 的怪物调用。原因：LangGraph ReAct 把所有工具调用的完整输出追加到 messages，从不裁剪。
+这个问题有多严重？看实测数据（usage.jsonl）：未做裁剪时，fresh-eyes-loop 单轮审查 7-8 分钟。b-check 第一步 prompt_tokens 就 102k，到 b-fix round-4 出现单次 **296k tokens** 的怪物调用。原因：LangGraph ReAct 把所有工具调用的完整输出追加到 messages，**从不裁剪**。
 
 ```
 第 1 次调用：  prompt=15k  → LLM 处理 15k
 第 50 次调用： prompt=50k  → LLM 处理 50k
 第 100 次调用：prompt=90k  → LLM 处理 90k（每次推理时间翻倍）
+```
+
+两层裁剪协同工作——第一层在工具返回时截断，第二层在送入 LLM 前裁剪消息窗口：
+
+```mermaid
+graph LR
+    subgraph "第一层：工具输出截断"
+        TOOL["工具返回 2000+ 行"] -->|"truncateToolOutput()"| TRUNC["截断为 200 行<br/>头 100 + 尾 100"]
+    end
+    subgraph "第二层：上下文窗口裁剪"
+        MSGS["messages 累积 100+ 条"] -->|"stateModifier()"| WINDOW["只保留 system + 首条 + 最后 30 条"]
+    end
+    TRUNC --> MSGS
+    WINDOW --> LLM["送入 LLM<br/>prompt 稳定 ~30k"]
 ```
 
 **第一层：工具输出截断** `truncateToolOutput()`
@@ -255,9 +286,9 @@ const agent = createReactAgent({
 
 ### 3.2 Agent 行为约束：SKILL.md 效率铁律
 
-**标准**：每个 sub-agent 的 SKILL.md（systemPrompt 来源）必须包含"效率铁律"段落，明确工具调用次数目标。
+每个 sub-agent 的 SKILL.md（systemPrompt 来源）必须包含"效率铁律"段落，明确工具调用次数目标。
 
-**根因数据**（sub-progress.jsonl 实测）：未约束时，A（Reviewer）一轮调了 910 次工具（332 次 sf_read + 563 次 run_bash），B（Engineer）更夸张 1555 次（850 次 bash）。同一文件读 3-4 遍、同一命令反复跑确认——这是 LLM 的通病，不约束就无限探索。
+为什么需要这个？看实测数据（sub-progress.jsonl）：未约束时，A（Reviewer）一轮调了 **910 次**工具（332 次 sf_read + 563 次 run_bash），B（Engineer）更夸张 **1555 次**（850 次 bash）。同一文件读 3-4 遍、同一命令反复跑确认——这是 LLM 的通病，不约束就无限探索。
 
 **Reviewer 效率铁律**（目标 50 步以内）：
 - 禁止重复读同一文件——读过的结论直接用
@@ -276,9 +307,9 @@ const agent = createReactAgent({
 
 ### 3.3 流式输出：stream 替代 invoke
 
-**标准**：所有 sub-agent 使用 `agent.stream(streamMode: 'updates')` 替代 `agent.invoke()`，实现实时工具调用进度打印。
+所有 sub-agent 使用 `agent.stream(streamMode: 'updates')` 替代 `agent.invoke()`，实现实时工具调用进度打印。
 
-**原因**：`invoke()` 阻塞等待完整结果，审查类步骤跑 5-8 分钟用户只能盯着空白。stream 模式实时打印每次工具调用（`→ [step#role] tool #N: name`），体感提升 ×2-3。
+原因很直接——`invoke()` 阻塞等待完整结果，审查类步骤跑 5-8 分钟用户只能盯着空白。stream 模式实时打印每次工具调用（`→ [step#role] tool #N: name`），体感提升 ×2-3。
 
 > **🔴 stream 迁移铁律见 §五**——格式差异是 P0 级陷阱，必须严格按检查清单执行。
 
@@ -288,7 +319,7 @@ const agent = createReactAgent({
 
 ### 4.1 recursionLimit 按步骤区分
 
-**标准**：禁止统一 recursionLimit。按步骤类型区分，经验值如下：
+禁止统一 recursionLimit。按步骤类型区分，经验值如下：
 
 | 步骤类型 | recursionLimit | 理由 |
 |---------|---------------|------|
@@ -304,7 +335,7 @@ const agent = createReactAgent({
 
 ### 4.2 失败路径容错
 
-**标准**：每个步骤必须 try/catch + 降级兜底。一个 Worker 崩溃不能拖死整条链。
+每个步骤必须 try/catch + 降级兜底。一个 Worker 崩溃不能拖死整条链。
 
 ```js
 try {
@@ -316,12 +347,12 @@ try {
 }
 ```
 
-**降级原则**：
+降级三原则：
 1. 降级产物质量肯定不如正常流程，但"有"比"没有"强
 2. 降级时只提取 P0/P1 摘要，不传完整正文（避免下游上下文溢出）
 3. driver 的 catch 块也要写可见性事件（失败路径覆盖）
 
-**Driver 致命错误处理**（commit 4a4a143）：
+**Driver 致命错误处理**（commit 4a4a143）——worker 失败时 driver 如果抛 uncaught exception，status.json 会停在 `round-1-running`，Dashboard 看到"永远在跑"。模块级 globalVisibility 引用让 catch 块也能写终态事件：
 
 ```js
 let globalVisibility = null;  // 模块级引用
@@ -336,11 +367,11 @@ main().catch(err => {
 });
 ```
 
-> **坑源**：worker 失败时 driver 抛 uncaught exception，但 status.json 停在 `round-1-running`，Dashboard 看到"永远在跑"。模块级 globalVisibility 引用让 catch 块也能写终态事件。
-
 ### 4.3 分片执行模式
 
-**标准**：当单个步骤的输入 finding 数量较大（>10 条）时，必须分片执行——每批启动独立 Worker（全新 agent session，零历史消息）。
+当单个步骤的输入 finding 数量较大（>10 条）时，必须分片执行——每批启动独立 Worker（全新 agent session，零历史消息）。
+
+> **适用范围**：仅 **fresh-eyes-loop** 的 b-fix 步骤。release-gate-loop 不产出 finding，不做分片。新 loop 如果有"多 finding 修复"步骤，参照本节实现。
 
 ```js
 function computeBatchSize(findingCount) {
@@ -350,7 +381,7 @@ function computeBatchSize(findingCount) {
 }
 ```
 
-**设计原理**：
+设计原理：
 - 每批 Worker 只收到本批的 findings（写入 `result-batch-N.md`）
 - 避免单 session 消息累积导致 recursionLimit 超限或 OOM
 - 单批失败不中断——继续下一批，最后合并所有 batch 的 summary
@@ -359,7 +390,7 @@ function computeBatchSize(findingCount) {
 
 ### 4.4 停止条件判定
 
-**标准**：Driver 唯一做语义判断的地方——读 findings.md 数 P0/P1/P2 标记，读 result.md 数 FAIL。
+这是 Driver 唯一做语义判断的地方——读 findings.md 数 P0/P1/P2 标记，读 result.md 数 FAIL。
 
 ```js
 function parseStopCondition(roundDir) {
@@ -373,19 +404,31 @@ function parseStopCondition(roundDir) {
 }
 ```
 
-**收敛策略**：
+收敛策略：
 - 基础：连续 2 轮干净（`cleanStreak >= 2`）
 - 加权收敛（commit #13）：severity 历史足够长时（≥3 轮），用近窗加权平均 + 趋势判断提前收敛
 
 ### 4.5 外部脚本 spawn 生存规范
 
-**标准**：Driver 调用外部 shell 脚本（如 `acceptance-test.sh`）时，必须遵循三条铁律：**流式写日志、处理 signal、禁用 head 管道**。
+Driver 调用外部 shell 脚本（如 `acceptance-test.sh`）时，必须遵循三条铁律：**流式写日志、处理 signal、禁用 head 管道**。
 
-> **坑源**（commit 35cfb22）：release-gate-loop driver 的 `runAcceptanceTestDirectly()` spawn `bash acceptance-test.sh`，在 sandbox 环境中 ~20s 被 kill。原实现等 `close` 事件后才 `writeFileSync`，进程被 kill 时已捕获的 stdout 全丢——driver 拿到空日志，下游 worker 无法生成报告。同时 acceptance-test.sh 场景 1/2 用 `| head -N` 截断输出，在 `set -o pipefail` 下是定时炸弹。
+这个问题是在 release-gate-loop 调 acceptance-test.sh 时暴露的（commit 35cfb22）：sandbox 环境在 ~20s kill 了整个进程树，而原实现等 `close` 事件后才 `writeFileSync`——进程被 kill 时已捕获的 stdout 全丢，driver 拿到空日志，下游 worker 无法生成报告。
+
+```mermaid
+graph TD
+    START["Driver spawn bash acceptance-test.sh"] --> STREAM["stdout/stderr 实时流入"]
+    STREAM -->|"createWriteStream"| DISK["日志文件实时落盘"]
+    STREAM -->|"累积到内存"| MEM["stdout 变量（兜底）"]
+    DISK --> KILL{"sandbox kill?"}
+    KILL -->|"是（~20s）"| SIGNAL["child.on('close', code=null, signal='SIGTERM')<br/>日志已在磁盘——下游可从部分日志生成报告"]
+    KILL -->|"否"| NORMAL["child.on('close', code=0, signal=null)<br/>正常完成"]
+    SIGNAL --> DONE["resolve({ exitCode: -1, logPath })"]
+    NORMAL --> DONE2["resolve({ exitCode: 0, logPath })"]
+```
 
 #### 4.5.1 禁用 `| head -N` 管道（shell 脚本侧）
 
-**根因**：`acceptance-test.sh` 开头是 `set -euo pipefail`（L9）。脚本中任何 `cmd | head -N` 在 head 读够 N 行关闭管道后，cmd 进程收到 SIGPIPE。在 `pipefail` 模式下管道退出码 = 最后一个失败的命令的码 → `set -e` 可能直接退出整个脚本。
+`acceptance-test.sh` 开头是 `set -euo pipefail`（L9）。脚本中任何 `cmd | head -N` 在 head 读够 N 行关闭管道后，cmd 进程收到 SIGPIPE。在 `pipefail` 模式下管道退出码 = 最后一个失败的命令的码 → `set -e` 可能直接退出整个脚本。
 
 ```bash
 #!/usr/bin/env bash
@@ -411,7 +454,7 @@ $CLI --init > /dev/null 2>&1 || true
 
 #### 4.5.2 流式写入日志（Driver 侧）
 
-**标准**：spawn 外部脚本时，stdout/stderr 必须**实时写入文件**，不能等 `close` 事件后一次性写入。
+spawn 外部脚本时，stdout/stderr 必须**实时写入文件**，不能等 `close` 事件后一次性写入。
 
 ```js
 import { createWriteStream } from 'fs';
@@ -444,11 +487,11 @@ child.on('close', (code, signal) => {
 // });
 ```
 
-**原因**：sandbox 环境（WorkBuddy Agent 工具、CI runner、容器编排）可能在任意时刻 kill 整个进程树。Driver 的 20 分钟内部超时毫无意义——父进程（sandbox）在 ~20s 就 kill 了。流式写入保证即使被 kill，已捕获的日志也在磁盘上，下游 worker 可以从部分日志生成报告。
+原因：sandbox 环境（WorkBuddy Agent 工具、CI runner、容器编排）可能在任意时刻 kill 整个进程树。Driver 的 20 分钟内部超时毫无意义——父进程（sandbox）在 ~20s 就 kill 了。流式写入保证即使被 kill，已捕获的日志也在磁盘上，下游 worker 可以从部分日志生成报告。
 
 #### 4.5.3 child.on('close') 的 signal 参数
 
-**标准**：`close` 回调签名是 `(code, signal)`——正常退出时 `signal = null`，被 kill 时 `code = null, signal = 'SIGTERM' / 'SIGKILL'`。必须处理两种情况。
+`close` 回调签名是 `(code, signal)`——正常退出时 `signal = null`，被 kill 时 `code = null, signal = 'SIGTERM' / 'SIGKILL'`。必须处理两种情况。
 
 ```js
 child.on('close', (code, signal) => {
@@ -467,7 +510,7 @@ child.on('close', (code, signal) => {
 
 #### 4.5.4 progress 日志（长时间脚本必备）
 
-**标准**：spawn 运行时间超过 30s 的外部脚本时，必须每 30s 输出一次进度日志。
+spawn 运行时间超过 30s 的外部脚本时，必须每 30s 输出一次进度日志。
 
 ```js
 let lastProgressLog = Date.now();
@@ -484,7 +527,7 @@ child.stdout.on('data', (d) => {
 });
 ```
 
-**作用**：当脚本卡住或被 kill 时，progress 日志的最后一行直接告诉你卡在哪个场景/步骤——不用翻日志文件。
+作用：当脚本卡住或被 kill 时，progress 日志的最后一行直接告诉你卡在哪个场景/步骤——不用翻日志文件。
 
 #### 4.5.5 超时设置原则
 
@@ -494,13 +537,13 @@ child.stdout.on('data', (d) => {
 | Sandbox 环境 kill | ~20s - 300s（不可控） | 父进程的耐心 |
 | 脚本实际运行 | 线性增长 | 取决于场景数 |
 
-**标准**：Driver 内部超时设为脚本预估时长的 3-5 倍（acceptance-test.sh 约 2-3 分钟，超时设 15 分钟）。不要设太长（20 分钟）——如果脚本真卡住，等 20 分钟才发现毫无意义。同时接受一个现实：**sandbox kill 不可防，只能靠流式日志让杀伤力最小化**。
+Driver 内部超时设为脚本预估时长的 3-5 倍（acceptance-test.sh 约 2-3 分钟，超时设 15 分钟）。不要设太长（20 分钟）——如果脚本真卡住，等 20 分钟才发现毫无意义。同时接受一个现实：**sandbox kill 不可防，只能靠流式日志让杀伤力最小化**。
 
 #### 4.5.6 SOFAGENT_SKIP_HOOK 环境变量旁路
 
-**标准**：`sofagent-audit --init` 在入口处设置 `process.env.SOFAGENT_SKIP_HOOK = '1'`，commit-msg hook 模板检测到此变量时直接 `exit 0`。
+`sofagent-audit --init` 在入口处设置 `process.env.SOFAGENT_SKIP_HOOK = '1'`，commit-msg hook 模板检测到此变量时直接 `exit 0`。
 
-**防护场景**：
+防护场景：
 1. `--init` 内部的 git 命令（如 `git rev-parse`）不会触发刚安装的 hook
 2. 测试脚本中 `--install-hook` → `--init` → `git commit` 的连续操作不会产生意外递归
 3. CI/CD 环境中 init 流程被 git 操作包裹时不受 hook 干扰
@@ -520,13 +563,13 @@ if [ -n "$SOFAGENT_SKIP_HOOK" ]; then
 fi
 ```
 
-> **注意**：此旁路仅用于 init 内部流程。用户正常 `git commit` 时不会设置此变量，hook 照常运行。如果需要临时跳过 hook，用户应使用 `git commit --no-verify`（hook 本就无法拦截 `--no-verify`，post-commit hook 做了 best-effort 检测）。
+> **注意**：此旁路仅用于 init 内部流程。用户正常 `git commit` 时不会设置此变量，hook 照常运行。如果需要临时跳过 hook，用户应使用 `git commit --no-verify`。
 
 #### 4.5.7 Driver --skip-acceptance 参数
 
-**标准**：release-gate-driver 支持 `--skip-acceptance` 参数，跳过 acceptance-test.sh 预跑，直接复用手动预跑的日志。
+release-gate-driver 支持 `--skip-acceptance` 参数，跳过 acceptance-test.sh 预跑，直接复用手动预跑的日志。
 
-**使用场景**：sandbox 环境 kill 窗口 < acceptance-test.sh 执行时间（~2-3 分钟）时，手动预跑日志后用此参数让 driver 跳过预跑。
+使用场景：sandbox 环境 kill 窗口 < acceptance-test.sh 执行时间（~2-3 分钟）时，手动预跑日志后用此参数让 driver 跳过预跑。
 
 ```bash
 # 手动预跑（在非 sandbox 环境中）
@@ -544,14 +587,14 @@ node FORGE/src/release-gate-driver.mjs --target v1.2.5 --skip-acceptance
 
 ### 5.1 API 返回格式差异
 
-**标准**：从 `invoke()` 迁移到 `stream()` 时，必须处理返回格式差异。
+从 `invoke()` 迁移到 `stream()` 时，最隐蔽的陷阱是返回格式的结构性差异——不处理这个，上游工具调用打印一切正常，下游产物却变成 `[object Object]`。
 
 ```
 invoke()  返回 → { messages: [...] }              ← 扁平，下游直接用
 stream()   返回 → { agent: { messages: [...] } }   ← 外面包了一层节点名
 ```
 
-**正确适配**：累积所有 chunk 的 delta.messages 到扁平数组，返回 `{ messages: allMessages }` 模拟 invoke 返回格式：
+正确适配：累积所有 chunk 的 delta.messages 到扁平数组，返回 `{ messages: allMessages }` 模拟 invoke 返回格式：
 
 ```js
 const invokeAgent = async () => {
@@ -584,7 +627,7 @@ const invokeAgent = async () => {
 
 ### 5.2 stream 迁移检查清单
 
-**标准**：做 invoke → stream 改造时，必须逐条确认：
+做 invoke → stream 改造时，必须逐条确认：
 
 - [ ] **chunk 结构确认**：stream(streamMode:'updates') 返回 `{ [nodeName]: delta }` 不是扁平 `{ messages: [] }`。打 `console.log(chunk)` 确认。
 - [ ] **下游消费函数验证**：extractAgentText / extractUsage / 所有读 `result.messages` 的函数，拿到的数据形状对吗？
@@ -599,9 +642,9 @@ const invokeAgent = async () => {
 
 ### 6.1 macOS BSD 工具约束（必加）
 
-**标准**：所有 sub-agent 的 systemPrompt 末尾必须追加 macOS BSD 工具约束段。
+所有 sub-agent 的 systemPrompt 末尾必须追加 macOS BSD 工具约束段。
 
-**根因**（commit 3248395）：LLM 训练数据以 Linux 为主，默认用 GNU 语法。macOS 是 BSD 工具，行为不同。不约束就浪费 recursionLimit 步数在重试错误命令上。
+原因（commit 3248395）：LLM 训练数据以 Linux 为主，默认用 GNU 语法。macOS 是 BSD 工具，行为不同。不约束就浪费 recursionLimit 步数在重试错误命令上。
 
 ```js
 const shellConstraints = [
@@ -625,9 +668,9 @@ const shellConstraints = [
 
 ### 6.2 systemPrompt 注入方式
 
-**标准**：systemPrompt 从 SKILL.md 构建（剥离 frontmatter + 提取身份标签），通过 stateModifier 注入。
+systemPrompt 从 SKILL.md 构建（剥离 frontmatter + 提取身份标签），通过 stateModifier 注入。
 
-**禁止**：直接用 `prompt: systemPrompt` 参数（与 stateModifier 互斥，见 §3.1）。
+**禁止**直接用 `prompt: systemPrompt` 参数（与 stateModifier 互斥，见 §3.1）。
 
 ```js
 function buildSystemPrompt(skillPath) {
@@ -664,7 +707,7 @@ const readOnlyRule = [
 
 ### 7.1 工具格式转换
 
-**标准**：dist/tools.js 中的工具是手写 ExecutableTool 格式（`{name, description, schema, func}`），但 LangGraph ToolNode 期望 `@langchain/core/tools` 的 `tool()` 函数创建的 DynamicStructuredTool。loadTools() 必须加转换层。
+dist/tools.js 中的工具是手写 ExecutableTool 格式（`{name, description, schema, func}`），但 LangGraph ToolNode 期望 `@langchain/core/tools` 的 `tool()` 函数创建的 DynamicStructuredTool。loadTools() 必须加转换层。
 
 ```js
 const { tool } = require('@langchain/core/tools');
@@ -696,7 +739,7 @@ return rawTools.map((rawTool) => {
 
 ### 7.2 工具命名
 
-**标准**：自定义工具加前缀（如 `sf_`），避免与 LangGraph 生态保留名冲突。
+自定义工具加前缀（如 `sf_`），避免与 LangGraph 生态保留名冲突。
 
 > **坑源**：`ls` / `read_file` / `write_file` / `edit_file` / `glob` / `grep` 是 deepagents 保留名。用 createReactAgent 后不再是硬性问题，但仍建议加前缀避免未来冲突。
 
@@ -731,7 +774,7 @@ const wrappedTool = tool(
 | L1 | visibility | 循环级事件（RUN_START / ROUND_START / ROUND_END / STEP_DONE / ERROR / LOOP_END） | progress.jsonl + status.json |
 | L2 | progressMw | 工具调用级事件（start / end + duration）+ 模型推理心跳（llm-chunk） | sub-progress-<role>.jsonl |
 
-**容错原则**：观测层创建/写入失败绝不阻断主流程。与 L1 visibility 容错策略一致。
+观测层创建/写入失败绝不阻断主流程。与 L1 visibility 容错策略一致。
 
 ### 8.2 latest.json 指针
 
@@ -747,7 +790,7 @@ function updateLatestPointer(runDir, opts) {
 
 ### 8.3 macOS 后台节流防护
 
-**标准**（v1.2.4 P0）：darwin 平台下用 `caffeinate -dimsu -w <pid>` 绑定自身 pid，防止系统空闲休眠与 App Nap 冻结定时器。
+darwin 平台下用 `caffeinate -dimsu -w <pid>` 绑定自身 pid，防止系统空闲休眠与 App Nap 冻结定时器（v1.2.4 P0）。
 
 > **坑源**（run-03 Round 5）：macOS App Nap / timer throttling 挂起后台 node 进程，driver 零感知冻结 2h44m。
 
@@ -761,6 +804,8 @@ if (process.platform === 'darwin' && !args.dryRun) {
 ---
 
 ## 九、Sub-Agent 开发完整检查清单
+
+> 开发新 loop 或 sub-agent 前，逐条对照。每条都对应上方正文的详细说明。
 
 ### 🔰 架构与框架
 
@@ -841,7 +886,9 @@ if (process.platform === 'darwin' && !args.dryRun) {
 | 08-01 | da1039a | 四项 ReAct 性能优化（截断+裁剪+铁律+stream） | P1 | §3.1 §3.2 §3.3 |
 | 08-01 | a0571a4 | stream 迁移 finalState 数据丢失 | P0 | §5 |
 | 08-01 | 35cfb22 | 外部脚本 spawn 生存（流式日志+signal+head 管道） | P1 | §4.5 |
+| 08-01 | ae6f1c0 | LESSONS.md §4.5.1-4.5.5 沉淀（spawn 生存规范文档化） | P2 | §4.5 |
 | 08-01 | 0d3c36e | SOFAGENT_SKIP_HOOK 防递归 + driver --skip-acceptance | P2 | §4.5.6 §4.5.7 |
+| 08-01 | c1fab22 | LESSONS.md 检查清单+附录同步 + SKILL.md --skip-acceptance 用法 | P2 | §4.5.7 |
 
 ### B. 历史坑位索引
 
@@ -857,7 +904,7 @@ if (process.platform === 'darwin' && !args.dryRun) {
 | 6 | a-consolidate 失败 = 整个循环崩溃 | §4.2 |
 | 7 | worker catch 块没写可见性事件 | §4.2 |
 | 8 | runs 目录放错位置 | §1.4 |
-| 9 | GLM 和 DeepSeek 工具调用行为不同 | §2.1 |
+| 9 | 异构模型工具调用行为差异（历史：GLM/DeepSeek） | §2.1（历史背景）+ §1.1（FilesystemMiddleware 对不同模型的触发差异） |
 | 10 | prompt 文件名和产物名不一致 | §1.3 |
 | 11 | 12 视角太重需要分层 | §4.1（recursionLimit）+ §3.2（效率铁律） |
 | 12 | 上下文雪球——工具输出不裁剪 | §3.1 |
