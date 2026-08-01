@@ -494,24 +494,10 @@ AI 节点跑起来后，自动生成这些文件：
 **激活链 = 把 FDE 交付物"点燃"的自动化流程**：
 
 ```
-FDE 交付物（静态文件）                    企业工作流自动跑（v1.2.5+）
-────────────────────                    ────────────────────
-ontology/objects.yml      ──┐
-workflows/节点A.yml         ├──→ ACTIVATE: activate.ts 读交付物
-skills/节点A/SKILL.md       │              → 写 .sofagent/subagents/*.yml
-nodes/节点A.md             ──┘              → 注册企业 SubAgent
-                                         │
-                                         ↓
-                                         ORCHESTRATE: composeEnterpriseWorkflow()
-                                         → 多个 Agent → LangGraph StateGraph
-                                         │
-                                         ↓
-                                         EXECUTE: dag-runner + HITL + 审计集成
-                                         → 带人工审批地自动跑
-                                         │
-                                         ↓
-                                         SUSTAIN: wrapToolCall 联动
-                                         → 执行 → 审计 → 反思 → 进化完整循环
+FDE 交付物（静态文件）         →  ACTIVATE（v1.2.5）: 读交付物 → 注册企业 SubAgent
+ontology/ + workflows/ +        →  ORCHESTRATE（v1.2.6-7）: 多 Agent → StateGraph 编排
+skills/ + nodes/               →  EXECUTE（v1.2.8-9）: DAG 执行 + HITL 审批 + 审计
+                               →  SUSTAIN（v1.3.0）: 执行 → 审计 → 反思 → 进化循环
 ```
 
 | 阶段 | 版本 | 做什么 | 对 FDE 的意义 |
@@ -535,11 +521,15 @@ nodes/节点A.md             ──┘              → 注册企业 SubAgent
 
 **知识组织 Stage 0-4 成熟度（F4）**——判断客户知识库起点：S0 纯 Prompt → S1 YAML 文件 → S2 统一文件库 → S3 数据库+Web → S4 图库+自动进化。大部分团队终身停在 S1/S2，不是越高越好。
 
+**渐进交付的行业共识**——不是 sofagent 独有：Palantir 的 Ontology 也是"先建最小可用模型，随客户使用逐层加深"；钉钉一粟的"数字员工"同样要求 SOP + Skill + 权限 + MCP 四件套齐备才可独立运行。FDE 的三问判定、五要素深挖，本质是把这套共识转译成可对话的提问框架。
+
 **外部对标**：
 
 - a16z《你刚雇了一百万个糟糕员工》——面向存量传统企业的 AI 转型服务市场 = Neofirm 的 10 倍；Palantir 卖转型非卖工具；Jevons 悖论：每落地 1 个 AI 用例暴露 10 个新需求
 - 钉钉 CTO 一粟 FDE 交付四件套——可上线数字员工 = SOP + Skill + 权限模型 + MCP，四件套齐 = 可独立运行
 - 国标 GB/T 48000.3-2026 本体建模——「实体类型」「责任到人」「不可追溯即不可信任」对齐
+
+> **一句话总结**：FDE 不是拍脑袋发明的方法论——它把 Palantir 的交付纪律、行业对数字员工的操作性定义、国标的本体建模要求，转译成一套企业能用大白话聊完的诊断流程。信它，是因为每一条都有出处可查。
 
 → 深挖链接：[PHILOSOPHY.md](../docs/PHILOSOPHY.md) · [THANKS.md](../docs/THANKS.md)
 
