@@ -266,6 +266,24 @@ async function createModel(role, maxTokensOverride) {
   }
 }
 
+// ─── 工具输出截断（v1.2.5 性能优化）────────────────────────────
+// Agent 跑一次 run_bash（如 npm test）输出可能 2000+ 行，完整输出被追加到
+// messages 列表后每一次 LLM 调用都要重新处理它。截断到头尾各 100 行，
+// 砍掉中间重复内容，可将单步 prompt_tokens 从 100k+ 降到 30-40k。
+const TOOL_OUTPUT_MAX_LINES = 200;
+
+function truncateToolOutput(text, maxLines = TOOL_OUTPUT_MAX_LINES) {
+  const str = String(text);
+  const lines = str.split('\n');
+  if (lines.length <= maxLines) return str;
+  const half = maxLines / 2;
+  return [
+    ...lines.slice(0, half),
+    `\n... [${lines.length - maxLines} lines truncated by FORGE driver — head ${half} + tail ${half}] ...\n`,
+    ...lines.slice(-half),
+  ].join('\n');
+}
+
 /**
  * 从 dist 导入工具集（REVIEWER_TOOLS）。
  * 转换 ExecutableTool → DynamicStructuredTool（与 fresh-eyes-driver 同逻辑）。
@@ -306,14 +324,18 @@ function loadTools(role, progressMw = null) {
 
     const wrappedTool = tool(
       async (input) => {
+        // v1.2.5：工具输出截断——超过 200 行的输出只保留头尾，防止上下文膨胀
+        const execFn = async () => {
+          const raw = await rawTool.func(input);
+          return truncateToolOutput(raw);
+        };
         if (progressMw) {
           return await progressMw.wrapToolCall(
             { tool: rawTool.name, args: input },
-            async () => await rawTool.func(input),
+            execFn,
           );
         }
-        const result = rawTool.func(input);
-        return await result;
+        return await execFn();
       },
       {
         name: rawTool.name,
@@ -472,21 +494,60 @@ async function runWorker(step, runDir, target) {
   const tools = loadTools(role, progressMw);
 
   const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
+  const { SystemMessage } = await import('@langchain/core/messages');
+
+  // v1.2.5 性能优化：stateModifier 同时实现「system prompt 注入」+「上下文裁剪」。
+  // prompt 和 stateModifier 互斥（LangGraph 源码 _getPrompt 强校验），
+  // 所以把 systemPrompt 移到 stateModifier 内部以 SystemMessage 形式注入。
+  // 上下文裁剪：保留 system + 第一条 user + 最后 30 条，中间旧消息裁掉。
+  const MAX_CONTEXT_MESSAGES = 30;
+  const systemMsg = new SystemMessage(systemPrompt);
   const agent = createReactAgent({
     llm: model,
     tools,
-    prompt: systemPrompt,
+    stateModifier: (state) => {
+      const messages = state.messages ?? [];
+      if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
+        return [systemMsg, ...messages];
+      }
+      const first = messages[0];
+      const recent = messages.slice(-MAX_CONTEXT_MESSAGES);
+      return [systemMsg, first, ...recent];
+    },
   });
 
-  // 5. invoke（计时）
+  // 5. stream（计时）—— v1.2.5 改为流式输出
   console.log(`[worker:${step}] 开始执行（role=V, model=${cfg.model}）`);
   const t0 = Date.now();
 
   const recursionLimit = STEP_RECURSION_LIMITS[step] ?? 50;
 
-  const invokeAgent = () => agent.invoke({
-    messages: [{ role: 'user', content: userMessage }],
-  }, { recursionLimit });
+  // v1.2.5：流式执行——实时打印工具调用
+  const invokeAgent = async () => {
+    const stream = await agent.stream(
+      { messages: [{ role: 'user', content: userMessage }] },
+      { recursionLimit, streamMode: 'updates' }
+    );
+
+    let finalState = null;
+    let toolCallCount = 0;
+    for await (const chunk of stream) {
+      for (const [, delta] of Object.entries(chunk)) {
+        const msgs = delta?.messages;
+        if (!Array.isArray(msgs)) continue;
+        for (const msg of msgs) {
+          if (msg?._getType?.() === 'ai' && msg.tool_calls?.length > 0) {
+            for (const tc of msg.tool_calls) {
+              toolCallCount++;
+              console.log(`  → [${step}#V] tool #${toolCallCount}: ${tc.name}`);
+            }
+          }
+        }
+      }
+      finalState = chunk;
+    }
+    return finalState;
+  };
 
   const result = progressMw
     ? await progressMw.wrapModelCall({ step, role: 'V', model: cfg.model }, invokeAgent)

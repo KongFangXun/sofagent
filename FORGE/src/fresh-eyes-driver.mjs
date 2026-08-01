@@ -296,6 +296,26 @@ async function createModel(role, maxTokensOverride) {
  * start/end 事件到 sub-progress-<role>.jsonl。middleware 内部容错，
  * 观测失败绝不影响工具执行（与 L1 visibility 容错策略一致）。
  */
+// ─── 工具输出截断（v1.2.5 性能优化）────────────────────────────
+// Agent 跑一次 run_bash（如 npm test）输出可能 2000+ 行，完整输出被追加到
+// messages 列表后每一次 LLM 调用都要重新处理它。截断到头尾各 100 行，
+// 砍掉中间重复内容，可将单步 prompt_tokens 从 100k+ 降到 30-40k。
+const TOOL_OUTPUT_MAX_LINES = 200;
+
+function truncateToolOutput(text, maxLines = TOOL_OUTPUT_MAX_LINES) {
+  const str = String(text);
+  const lines = str.split('\n');
+  if (lines.length <= maxLines) return str;
+  const half = maxLines / 2;
+  const head = lines.slice(0, half);
+  const tail = lines.slice(-half);
+  return [
+    ...head,
+    `\n... [${lines.length - maxLines} lines truncated by FORGE driver — head ${half} + tail ${half}] ...\n`,
+    ...tail,
+  ].join('\n');
+}
+
 function loadTools(role, progressMw = null) {
   const cfg = MODEL_CONFIGS[role];
   const toolsModule = require('../../engine/orchestrator/dist/tools.js');
@@ -340,15 +360,18 @@ function loadTools(role, progressMw = null) {
     const wrappedTool = tool(
       async (input) => {
         // v1.2.1 L2：工具调用埋点（start → handler → end，含 duration）
+        // v1.2.5：工具输出截断——超过 200 行的输出只保留头尾，防止上下文膨胀
+        const execFn = async () => {
+          const raw = await rawTool.func(input);
+          return truncateToolOutput(raw);
+        };
         if (progressMw) {
           return await progressMw.wrapToolCall(
             { tool: rawTool.name, args: input },
-            async () => await rawTool.func(input),
+            execFn,
           );
         }
-        const result = rawTool.func(input);
-        // func 可能返回 string 或 Promise<string>
-        return await result;
+        return await execFn();
       },
       {
         name: rawTool.name,
@@ -574,14 +597,35 @@ async function runWorker(step, roundDir, target) {
   //
   // createReactAgent 是同一套 LangGraph React 模式，但不带 FilesystemMiddleware——
   // 我们有自己的 sf_read/sf_write/run_bash，不需要 deepagents 的内置文件工具。
+  // v1.2.5 性能优化：stateModifier 同时实现「system prompt 注入」+「上下文裁剪」。
+  // prompt 和 stateModifier 互斥（LangGraph 源码 _getPrompt 强校验），
+  // 所以把 systemPrompt 移到 stateModifier 内部以 SystemMessage 形式注入。
+  //
+  // 上下文裁剪：保留 system + 第一条 user（原始任务）+ 最后 MAX_CONTEXT_MESSAGES 条。
+  // 中间被裁掉的旧工具调用结果，其关键信息已被 Agent 提取到后续推理中，
+  // 无需在每次 LLM 调用时重复处理（这是 prompt_tokens 从 30k→100k+ 膨胀的根因）。
+  const { SystemMessage } = await import('@langchain/core/messages');
+  const MAX_CONTEXT_MESSAGES = 30; // 最后 15 轮工具交互（调用+结果各 1 条）
+
   const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
+  const systemMsg = new SystemMessage(systemPrompt);
   const agent = createReactAgent({
     llm: model,
     tools,
-    prompt: systemPrompt,
+    // v1.2.5：stateModifier = system prompt + 上下文窗口裁剪（替代 prompt 参数）
+    stateModifier: (state) => {
+      const messages = state.messages ?? [];
+      if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
+        return [systemMsg, ...messages];
+      }
+      // 保留第一条（原始任务 prompt）+ 最后 N 条（近期工具交互）
+      const first = messages[0];
+      const recent = messages.slice(-MAX_CONTEXT_MESSAGES);
+      return [systemMsg, first, ...recent];
+    },
   });
 
-  // 5. invoke（计时）
+  // 5. stream（计时）—— v1.2.5 改为流式输出，实时打印工具调用进度
   console.log(`[worker:${step}] 开始执行（role=${role}, model=${cfg.model}）`);
   const t0 = Date.now();
 
@@ -600,9 +644,34 @@ async function runWorker(step, roundDir, target) {
   };
   const recursionLimit = STEP_RECURSION_LIMITS[step] ?? 50;
 
-  const invokeAgent = () => agent.invoke({
-    messages: [{ role: 'user', content: userMessage }],
-  }, { recursionLimit });
+  // v1.2.5：流式执行——实时打印工具调用，用户不再盯着空白等 5 分钟
+  const invokeAgent = async () => {
+    const stream = await agent.stream(
+      { messages: [{ role: 'user', content: userMessage }] },
+      { recursionLimit, streamMode: 'updates' }
+    );
+
+    let finalState = null;
+    let toolCallCount = 0;
+    for await (const chunk of stream) {
+      // chunk 是 { nodeName: stateDelta }
+      for (const [nodeName, delta] of Object.entries(chunk)) {
+        const msgs = delta?.messages;
+        if (!Array.isArray(msgs)) continue;
+        for (const msg of msgs) {
+          // 工具调用消息（AI 发起 tool_call）
+          if (msg?._getType?.() === 'ai' && msg.tool_calls?.length > 0) {
+            for (const tc of msg.tool_calls) {
+              toolCallCount++;
+              console.log(`  → [${step}#${role}] tool #${toolCallCount}: ${tc.name}`);
+            }
+          }
+        }
+      }
+      finalState = chunk;
+    }
+    return finalState;
+  };
 
   // v1.2.1 L2：模型推理心跳。LangGraph 1.4.7 的 createReactAgent 无
   // middleware 参数（deepagents 的 middleware 链又硬编码 FilesystemMiddleware
