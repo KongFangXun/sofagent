@@ -8,16 +8,11 @@
 
 ## 目录
 
-- [〇、本文档定位](#〇本文档定位)
+- [本文档定位](#本文档定位)
 - [一、架构设计原则](#一架构设计原则)
-  - [1.1 框架选型](#11-框架选型createreactagent-禁用-createdeepagent)
-  - [1.2 Driver-Worker 编排模式](#12-driver-worker-编排模式)
-  - [1.3 步骤定义模式](#13-步骤定义模式)
-  - [1.4 目录架构](#14-目录架构每个-loop-自包含)
 - [二、模型配置规范](#二模型配置规范)
 - [三、性能优化基线](#三性能优化基线v125)
 - [四、Driver 编排规范](#四driver-编排规范)
-  - [4.5 外部脚本 spawn 生存规范](#45-外部脚本-spawn-生存规范)
 - [五、stream 迁移规范](#五stream-迁移规范p0-级铁律)
 - [六、Prompt 设计规范](#六prompt-设计规范)
 - [七、工具开发规范](#七工具开发规范)
@@ -27,7 +22,7 @@
 
 ---
 
-## 〇、本文档定位
+## 本文档定位
 
 | 属性 | 说明 |
 |------|------|
@@ -42,7 +37,7 @@
 
 ## 一、架构设计原则
 
-### 1.1 框架选型：createReactAgent，禁用 createDeepAgent
+### 框架选型：createReactAgent，禁用 createDeepAgent
 
 所有 FORGE loop 的 sub-agent 必须使用 `@langchain/langgraph/prebuilt` 的 `createReactAgent`，禁止使用 `deepagents` 的 `createDeepAgent`。
 
@@ -70,7 +65,7 @@ const agent = createReactAgent({ llm: model, tools, stateModifier });
 
 > **教训**：`middleware:[]` 看起来像"禁用 middleware"，实际是"追加空数组"。required 的东西就是 required，读源码确认 API 语义，别靠猜。
 
-### 1.2 Driver-Worker 编排模式
+### Driver-Worker 编排模式
 
 FORGE 的进程模型是 **Driver + N 个独立 Worker 子进程**——Driver 是纯编排层，不做任何语义判断；Worker 在独立子进程中执行单个步骤，零上下文继承。
 
@@ -94,7 +89,7 @@ graph TD
 
 > **为什么不用 in-process**：曾经考虑过在同一个 LangGraph 图里跑所有步骤（in-process），但跨步骤的状态管理太复杂——每个 Worker 需要全新 agent session（清空上下文），在同一个图里做这个需要复杂的 state 重置逻辑。spawn 子进程是最简单可靠的方案——进程退出即天然清空一切。
 
-### 1.3 步骤定义模式
+### 步骤定义模式
 
 每个 loop 的步骤在 `STEPS` 常量中集中定义，包含 role / prompt / outputs / inputs / maxTokens（可选覆盖）：
 
@@ -112,7 +107,7 @@ const STEPS = {
 
 > **坑源**（历史）：曾出现 prompt 名 `b-check.md` 与产物名 `check-b.md` 不一致导致调试困难。统一为上述约定后消除。
 
-### 1.4 目录架构：每个 loop 自包含
+### 目录架构：每个 loop 自包含
 
 每个 loop 的 prompts / specs / runs 独立存放，不共享目录：
 
@@ -136,7 +131,7 @@ FORGE/SKILL/
 
 ## 二、模型配置规范
 
-### 2.1 模型配置
+### 模型配置
 
 每个角色在 `MODEL_CONFIGS` 中定义完整的模型配置——这不是可选项，driver 启动时校验所有字段齐全：
 
@@ -165,15 +160,15 @@ const MODEL_CONFIGS = {
 
 > **从异构到单模型的演进**：早期版本（v1.2.3 之前）A/B 用不同厂商模型做"异构双盲"（减少同模型盲区）。v1.2.4 起改为 Qwen3.8-max-preview 单模型——该模型 thinking 能力足够强，fresh-eyes 纪律的核心保障是**零上下文每步**（结构隔离），而非模型差异。`MODEL_CONFIGS` 仍保留多模型配置能力，未来可随时切回异构模式。
 
-### 2.2 Thinking-only 模型特殊处理
+### Thinking-only 模型特殊处理
 
 Qwen3.8-max-preview 是 thinking-only 模型——始终思考、无法关闭。这带来三个关键约束：
 
 1. **不传 thinking/reasoningEffort 参数**：MODEL_CONFIGS 不定义这两个字段，下方条件注入分支天然不触发。不需要也不应该传——Qwen 没有 reasoningEffort（那是 DeepSeek 专属）。
-2. **maxTokens 包含 thinking tokens**：thinking-only 模型的 maxTokens 里包含思考 token，留给实际输出的更少。因此合并步骤需要单独调高 maxTokens（见 §2.3）。
+2. **maxTokens 包含 thinking tokens**：thinking-only 模型的 maxTokens 里包含思考 token，留给实际输出的更少。因此合并步骤需要单独调高 maxTokens（见下文「步骤级 maxTokens 覆盖」）。
 3. **退化逻辑保留无害**：createModel 的 thinking 退化分支（ChatOpenAI 不接受 thinking 参数时去掉重试）对 Qwen 天然不触发（cfg.thinking 未定义），保留做历史参考。
 
-### 2.3 步骤级 maxTokens 覆盖
+### 步骤级 maxTokens 覆盖
 
 合并/汇总类步骤的输出量远大于普通步骤，必须在 STEPS 定义中单独配置更高的 maxTokens——这条教训价值一个完整版本的质量降级（commit 63b130d）。
 
@@ -199,7 +194,7 @@ const model = await createModel(role, stepDef.maxTokens);
 - 合并/汇总步骤（a-consolidate / consolidate）：maxTokens = 32000
 - 未来新增合并步骤时，默认配 32000，实测不够再调
 
-### 2.4 计费模式与成本追踪
+### 计费模式与成本追踪
 
 usage.jsonl 记录每次 invoke 的 token 消耗，但成本估算区分计费模式：
 
@@ -212,7 +207,7 @@ usage.jsonl 记录每次 invoke 的 token 消耗，但成本估算区分计费�
 
 ## 三、性能优化基线（v1.2.5+）
 
-### 3.1 上下文管理：stateModifier + 工具输出截断
+### 上下文管理：stateModifier + 工具输出截断
 
 所有 sub-agent 必须实现**两层上下文管理**，防止"上下文雪球"导致 prompt 膨胀。
 
@@ -284,7 +279,7 @@ const agent = createReactAgent({
 
 **实测效果**：prompt tokens 峰值从 296k → 稳定 ~30k。预计总执行时间 **-50~60%**。
 
-### 3.2 Agent 行为约束：SKILL.md 效率铁律
+### Agent 行为约束：SKILL.md 效率铁律
 
 每个 sub-agent 的 SKILL.md（systemPrompt 来源）必须包含"效率铁律"段落，明确工具调用次数目标。
 
@@ -305,19 +300,19 @@ const agent = createReactAgent({
 
 > **核心认知**：LLM 的工具调用行为是可塑的——prompt 里明确说"目标 50 步以内，禁止重复读"，它就会克制。不说就默认无限探索。
 
-### 3.3 流式输出：stream 替代 invoke
+### 流式输出：stream 替代 invoke
 
 所有 sub-agent 使用 `agent.stream(streamMode: 'updates')` 替代 `agent.invoke()`，实现实时工具调用进度打印。
 
 原因很直接——`invoke()` 阻塞等待完整结果，审查类步骤跑 5-8 分钟用户只能盯着空白。stream 模式实时打印每次工具调用（`→ [step#role] tool #N: name`），体感提升 ×2-3。
 
-> **🔴 stream 迁移铁律见 §五**——格式差异是 P0 级陷阱，必须严格按检查清单执行。
+> **🔴 stream 迁移铁律见第五章**——格式差异是 P0 级陷阱，必须严格按检查清单执行。
 
 ---
 
 ## 四、Driver 编排规范
 
-### 4.1 recursionLimit 按步骤区分
+### recursionLimit 按步骤区分
 
 禁止统一 recursionLimit。按步骤类型区分，经验值如下：
 
@@ -333,7 +328,7 @@ const agent = createReactAgent({
 
 **换算公式**：每次工具调用 = 2 步（model call + tool node）。25 步 ≈ 12 轮工具调用 → 只够简单问答。超过 200 → OOM 风险。
 
-### 4.2 失败路径容错
+### 失败路径容错
 
 每个步骤必须 try/catch + 降级兜底。一个 Worker 崩溃不能拖死整条链。
 
@@ -367,7 +362,7 @@ main().catch(err => {
 });
 ```
 
-### 4.3 分片执行模式
+### 分片执行模式
 
 当单个步骤的输入 finding 数量较大（>10 条）时，必须分片执行——每批启动独立 Worker（全新 agent session，零历史消息）。
 
@@ -388,7 +383,7 @@ function computeBatchSize(findingCount) {
 
 **防回归检查**：切出 0 条 finding 但 result.md 中 P0+P1 计数 > 0 时报警（finding 标题格式不符的信号）。
 
-### 4.4 停止条件判定
+### 停止条件判定
 
 这是 Driver 唯一做语义判断的地方——读 findings.md 数 P0/P1/P2 标记，读 result.md 数 FAIL。
 
@@ -408,7 +403,7 @@ function parseStopCondition(roundDir) {
 - 基础：连续 2 轮干净（`cleanStreak >= 2`）
 - 加权收敛（commit #13）：severity 历史足够长时（≥3 轮），用近窗加权平均 + 趋势判断提前收敛
 
-### 4.5 外部脚本 spawn 生存规范
+### 外部脚本 spawn 生存规范
 
 Driver 调用外部 shell 脚本（如 `acceptance-test.sh`）时，必须遵循三条铁律：**流式写日志、处理 signal、禁用 head 管道**。
 
@@ -426,7 +421,7 @@ graph TD
     NORMAL --> DONE2["resolve({ exitCode: 0, logPath })"]
 ```
 
-#### 4.5.1 禁用 `| head -N` 管道（shell 脚本侧）
+#### 禁用 `| head -N` 管道（shell 脚本侧）
 
 `acceptance-test.sh` 开头是 `set -euo pipefail`（L9）。脚本中任何 `cmd | head -N` 在 head 读够 N 行关闭管道后，cmd 进程收到 SIGPIPE。在 `pipefail` 模式下管道退出码 = 最后一个失败的命令的码 → `set -e` 可能直接退出整个脚本。
 
@@ -452,7 +447,7 @@ $CLI --init > /dev/null 2>&1 || true
 
 > **实测细节**：Node.js 默认捕获 SIGPIPE 不 crash（写 stdout 时收到 EPIPE 抛异常但被 catch），所以当前没有实际触发 `set -e` 退出。但这是环境依赖的脆弱平衡——换一个运行时（Python / Ruby / Go）或换一个 Node 版本就可能爆炸。**标准不是"现在能不能跑"，是"设计上有没有炸弹"。**
 
-#### 4.5.2 流式写入日志（Driver 侧）
+#### 流式写入日志（Driver 侧）
 
 spawn 外部脚本时，stdout/stderr 必须**实时写入文件**，不能等 `close` 事件后一次性写入。
 
@@ -489,7 +484,7 @@ child.on('close', (code, signal) => {
 
 原因：sandbox 环境（WorkBuddy Agent 工具、CI runner、容器编排）可能在任意时刻 kill 整个进程树。Driver 的 20 分钟内部超时毫无意义——父进程（sandbox）在 ~20s 就 kill 了。流式写入保证即使被 kill，已捕获的日志也在磁盘上，下游 worker 可以从部分日志生成报告。
 
-#### 4.5.3 child.on('close') 的 signal 参数
+#### child.on('close') 的 signal 参数
 
 `close` 回调签名是 `(code, signal)`——正常退出时 `signal = null`，被 kill 时 `code = null, signal = 'SIGTERM' / 'SIGKILL'`。必须处理两种情况。
 
@@ -508,7 +503,7 @@ child.on('close', (code, signal) => {
 
 > **坑源**：原实现只读 `code`，被 kill 时 `code = null` 传入 `exitCode: null` → 下游 `if (exitCode !== 0)` 判断 `null !== 0` 为 true → 误判为"测试失败"而非"进程被杀"。区分这两种情况对诊断至关重要。
 
-#### 4.5.4 progress 日志（长时间脚本必备）
+#### progress 日志（长时间脚本必备）
 
 spawn 运行时间超过 30s 的外部脚本时，必须每 30s 输出一次进度日志。
 
@@ -529,7 +524,7 @@ child.stdout.on('data', (d) => {
 
 作用：当脚本卡住或被 kill 时，progress 日志的最后一行直接告诉你卡在哪个场景/步骤——不用翻日志文件。
 
-#### 4.5.5 超时设置原则
+#### 超时设置原则
 
 | 超时来源 | 典型值 | 作用 |
 |---------|--------|------|
@@ -539,7 +534,7 @@ child.stdout.on('data', (d) => {
 
 Driver 内部超时设为脚本预估时长的 3-5 倍（acceptance-test.sh 约 2-3 分钟，超时设 15 分钟）。不要设太长（20 分钟）——如果脚本真卡住，等 20 分钟才发现毫无意义。同时接受一个现实：**sandbox kill 不可防，只能靠流式日志让杀伤力最小化**。
 
-#### 4.5.6 SOFAGENT_SKIP_HOOK 环境变量旁路
+#### SOFAGENT_SKIP_HOOK 环境变量旁路
 
 `sofagent-audit --init` 在入口处设置 `process.env.SOFAGENT_SKIP_HOOK = '1'`，commit-msg hook 模板检测到此变量时直接 `exit 0`。
 
@@ -565,7 +560,7 @@ fi
 
 > **注意**：此旁路仅用于 init 内部流程。用户正常 `git commit` 时不会设置此变量，hook 照常运行。如果需要临时跳过 hook，用户应使用 `git commit --no-verify`。
 
-#### 4.5.7 Driver --skip-acceptance 参数
+#### Driver --skip-acceptance 参数
 
 release-gate-driver 支持 `--skip-acceptance` 参数，跳过 acceptance-test.sh 预跑，直接复用手动预跑的日志。
 
@@ -581,11 +576,41 @@ node FORGE/src/release-gate-driver.mjs --target v1.2.5 --skip-acceptance
 
 > **与 run-00 复用模式的区别**：run-00 模式需要手动把 `acceptance-raw.log` 放到 runDir 中，driver 自动检测到文件存在则跳过。`--skip-acceptance` 是显式声明——即使日志不存在也跳过（写入占位日志让 worker 知道是 skip 模式）。
 
+#### Driver --step 单步执行模式
+
+release-gate-driver 支持 `--step <stepName>` 参数，指定后只执行该步骤然后 `exit(0)`，每步一个独立 Node 进程，内存归零。
+
+**三种执行模式的关系**：
+
+| 模式 | 触发方式 | 进程模型 | 适用场景 |
+|------|---------|---------|---------|
+| 全量模式（默认） | `--target vX.Y.Z` | driver 内部 spawn 5 个 worker 子进程 | 正常发版，有足够内存空间 |
+| 单步模式 | `--step acceptance --target vX.Y.Z` | 外层编排脚本逐步调用，每次一个全新进程 | WorkBuddy 沙箱 OOM、CI 内存受限 |
+| worker 模式 | `--worker --step <name> --run-dir <dir>` | 被 driver spawn 的子进程入口 | 内部机制，不手动使用 |
+
+**为什么需要单步模式**：全量模式虽然每步已经 fork 子进程，但 driver 主进程自身也在累积内存（5 步的编排状态 + 可见性事件）。在 WorkBuddy 沙箱等受限环境中，driver 主进程 + worker 子进程的内存叠加可能触发 OOM。单步模式让外层 bash 脚本逐步调用——每步是全新进程，执行完即退，内存彻底归零。
+
+```bash
+# 单步执行示例：外层 bash 脚本逐步编排
+RUN_DIR="FORGE/SKILL/release-gate-loop/runs/$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$RUN_DIR"
+
+node FORGE/src/release-gate-driver.mjs --step acceptance  --target v1.2.5 --run-dir "$RUN_DIR"
+node FORGE/src/release-gate-driver.mjs --step regression  --target v1.2.5 --run-dir "$RUN_DIR"
+node FORGE/src/release-gate-driver.mjs --step coverage     --target v1.2.5 --run-dir "$RUN_DIR"
+node FORGE/src/release-gate-driver.mjs --step consolidate  --target v1.2.5 --run-dir "$RUN_DIR"
+node FORGE/src/release-gate-driver.mjs --step verdict       --target v1.2.5 --run-dir "$RUN_DIR"
+```
+
+每步完成后 stdout 打印 `[driver] STEP_DONE: <stepName> EXIT_CODE=0`，外层脚本据此判断是否继续下一步。
+
+> **设计要点**：单步模式与全量模式共享相同的 `runWorker()` 和 `ensureAcceptancePreRun()` 逻辑——不是两套代码，是同一套执行引擎的不同入口。`--run-dir` 让多步共享同一个产物目录，确保步骤间文件传递正确。
+
 ---
 
 ## 五、stream 迁移规范（P0 级铁律）
 
-### 5.1 API 返回格式差异
+### API 返回格式差异
 
 从 `invoke()` 迁移到 `stream()` 时，最隐蔽的陷阱是返回格式的结构性差异——不处理这个，上游工具调用打印一切正常，下游产物却变成 `[object Object]`。
 
@@ -625,7 +650,7 @@ const invokeAgent = async () => {
 };
 ```
 
-### 5.2 stream 迁移检查清单
+### stream 迁移检查清单
 
 做 invoke → stream 改造时，必须逐条确认：
 
@@ -640,7 +665,7 @@ const invokeAgent = async () => {
 
 ## 六、Prompt 设计规范
 
-### 6.1 macOS BSD 工具约束（必加）
+### macOS BSD 工具约束（必加）
 
 所有 sub-agent 的 systemPrompt 末尾必须追加 macOS BSD 工具约束段。
 
@@ -666,11 +691,11 @@ const shellConstraints = [
 
 > **验证效果**：加上约束后，a-consolidate 从"40步不收敛"变成"完美产出 49 行 findings.md"。
 
-### 6.2 systemPrompt 注入方式
+### systemPrompt 注入方式
 
 systemPrompt 从 SKILL.md 构建（剥离 frontmatter + 提取身份标签），通过 stateModifier 注入。
 
-**禁止**直接用 `prompt: systemPrompt` 参数（与 stateModifier 互斥，见 §3.1）。
+**禁止**直接用 `prompt: systemPrompt` 参数（与 stateModifier 互斥，见第三章「上下文管理」）。
 
 ```js
 function buildSystemPrompt(skillPath) {
@@ -684,7 +709,7 @@ function buildSystemPrompt(skillPath) {
 }
 ```
 
-### 6.3 纯只读约束（release-gate 特有）
+### 纯只读约束（release-gate 特有）
 
 release-gate-loop 的 V 角色 systemPrompt 额外追加纯只读铁律：
 
@@ -705,7 +730,7 @@ const readOnlyRule = [
 
 ## 七、工具开发规范
 
-### 7.1 工具格式转换
+### 工具格式转换
 
 dist/tools.js 中的工具是手写 ExecutableTool 格式（`{name, description, schema, func}`），但 LangGraph ToolNode 期望 `@langchain/core/tools` 的 `tool()` 函数创建的 DynamicStructuredTool。loadTools() 必须加转换层。
 
@@ -737,13 +762,13 @@ return rawTools.map((rawTool) => {
 });
 ```
 
-### 7.2 工具命名
+### 工具命名
 
 自定义工具加前缀（如 `sf_`），避免与 LangGraph 生态保留名冲突。
 
 > **坑源**：`ls` / `read_file` / `write_file` / `edit_file` / `glob` / `grep` 是 deepagents 保留名。用 createReactAgent 后不再是硬性问题，但仍建议加前缀避免未来冲突。
 
-### 7.3 工具输出截断埋点
+### 工具输出截断埋点
 
 工具 wrapper 内同时做三件事：
 1. 执行原始 func
@@ -767,7 +792,7 @@ const wrappedTool = tool(
 
 ## 八、可观测性规范
 
-### 8.1 两层可观测
+### 两层可观测
 
 | 层级 | 数据源 | 内容 | 文件 |
 |------|--------|------|------|
@@ -776,7 +801,7 @@ const wrappedTool = tool(
 
 观测层创建/写入失败绝不阻断主流程。与 L1 visibility 容错策略一致。
 
-### 8.2 latest.json 指针
+### latest.json 指针
 
 Driver 每轮结束 + 轮内每 30s 刷新 latest.json，Dashboard 据此实时展示进度。
 
@@ -788,7 +813,7 @@ function updateLatestPointer(runDir, opts) {
 }
 ```
 
-### 8.3 macOS 后台节流防护
+### macOS 后台节流防护
 
 darwin 平台下用 `caffeinate -dimsu -w <pid>` 绑定自身 pid，防止系统空闲休眠与 App Nap 冻结定时器（v1.2.4 P0）。
 
@@ -809,117 +834,119 @@ if (process.platform === 'darwin' && !args.dryRun) {
 
 ### 🔰 架构与框架
 
-- [ ] **用 `createReactAgent`，禁用 `createDeepAgent`**（§1.1）
-- [ ] **Driver-Worker 分离**：Driver 纯编排不审查，Worker 零上下文独立进程（§1.2）
-- [ ] **步骤在 STEPS 常量中定义**，含 role / prompt / outputs / inputs / maxTokens（§1.3）
-- [ ] **runs 目录放在 loop 自己目录下**（自包含），`.gitignore` 加 `FORGE/SKILL/*/runs/`（§1.4）
+- [ ] **用 `createReactAgent`，禁用 `createDeepAgent`**（第一章「框架选型」）
+- [ ] **Driver-Worker 分离**：Driver 纯编排不审查，Worker 零上下文独立进程（第一章「Driver-Worker 编排模式」）
+- [ ] **步骤在 STEPS 常量中定义**，含 role / prompt / outputs / inputs / maxTokens（第一章「步骤定义模式」）
+- [ ] **runs 目录放在 loop 自己目录下**（自包含），`.gitignore` 加 `FORGE/SKILL/*/runs/`（第一章「目录架构」）
 - [ ] **LEDGER.md 追加一行记录**（git 跟踪）
 
 ### 🤖 模型配置
 
-- [ ] **MODEL_CONFIGS 定义完整字段**（baseURL / model / maxTokens / apiKeyEnv / agentSkillPath / toolsKey / billing）（§2.1）
-- [ ] **Thinking-only 模型不传 thinking/reasoningEffort**（§2.2）
-- [ ] **合并/汇总步骤 maxTokens = 32000**（普通步骤用角色默认 16000）（§2.3）
-- [ ] **计费模式标注**（subscription / pay-as-you-go），subscription 的 cost_cny = null（§2.4）
+- [ ] **MODEL_CONFIGS 定义完整字段**（baseURL / model / maxTokens / apiKeyEnv / agentSkillPath / toolsKey / billing）（第二章「模型配置」）
+- [ ] **Thinking-only 模型不传 thinking/reasoningEffort**（第二章「Thinking-only 模型特殊处理」）
+- [ ] **合并/汇总步骤 maxTokens = 32000**（普通步骤用角色默认 16000）（第二章「步骤级 maxTokens 覆盖」）
+- [ ] **计费模式标注**（subscription / pay-as-you-go），subscription 的 cost_cny = null（第二章「计费模式与成本追踪」）
 
 ### ⚡ 性能优化（v1.2.5+）
 
-- [ ] **工具输出截断**：loadTools 的 tool wrapper 里加 `truncateToolOutput(text, 200)`（§3.1）
-- [ ] **上下文窗口裁剪**：用 `stateModifier` 替代 `prompt`（互斥！），保留 system + 首条 + 最后 30 条（§3.1）
-- [ ] **stateModifier 内注入 SystemMessage**：`prompt` 和 `stateModifier` 不能同时传（§3.1）
-- [ ] **SKILL.md 加效率铁律**：reviewer 目标 ≤50 步，engineer 目标 ≤30 步（§3.2）
-- [ ] **stream 替代 invoke**：实时打印工具调用进度（§3.3 + §5）
+- [ ] **工具输出截断**：loadTools 的 tool wrapper 里加 `truncateToolOutput(text, 200)`（第三章「上下文管理」）
+- [ ] **上下文窗口裁剪**：用 `stateModifier` 替代 `prompt`（互斥！），保留 system + 首条 + 最后 30 条（第三章「上下文管理」）
+- [ ] **stateModifier 内注入 SystemMessage**：`prompt` 和 `stateModifier` 不能同时传（第三章「上下文管理」）
+- [ ] **SKILL.md 加效率铁律**：reviewer 目标 ≤50 步，engineer 目标 ≤30 步（第三章「Agent 行为约束」）
+- [ ] **stream 替代 invoke**：实时打印工具调用进度（第三章「流式输出」+ 第五章）
 
 ### 🔧 Driver 编排
 
-- [ ] **recursionLimit 按步骤区分**（审查类 150-200，处理类 50-100，修复类 100-150）（§4.1）
-- [ ] **每个步骤 try/catch + 降级兜底**（§4.2）
-- [ ] **driver catch 块写 ERROR + LOOP_END 事件**（模块级 globalVisibility 引用）（§4.2）
-- [ ] **finding >10 条时分片执行**（computeBatchSize 动态分批）（§4.3）
-- [ ] **停止条件只数标记不做语义判断**（§4.4）
-- [ ] **spawn 外部脚本时流式写入日志**（createWriteStream，不等 close）（§4.5.2）
-- [ ] **child.on('close') 处理 signal 参数**（被 kill 时 code=null）（§4.5.3）
-- [ ] **shell 脚本中禁用 `| head -N`**（pipefail + SIGPIPE 定时炸弹）（§4.5.1）
-- [ ] **长脚本每 30s 输出 progress 日志**（§4.5.4）
-- [ ] **init 内部设 SOFAGENT_SKIP_HOOK=1**（防 hook 递归）（§4.5.6）
-- [ ] **driver 支持 --skip-acceptance**（sandbox kill 窗口短时复用预跑日志）（§4.5.7）
+- [ ] **recursionLimit 按步骤区分**（审查类 150-200，处理类 50-100，修复类 100-150）（第四章「recursionLimit 按步骤区分」）
+- [ ] **每个步骤 try/catch + 降级兜底**（第四章「失败路径容错」）
+- [ ] **driver catch 块写 ERROR + LOOP_END 事件**（模块级 globalVisibility 引用）（第四章「失败路径容错」）
+- [ ] **finding >10 条时分片执行**（computeBatchSize 动态分批）（第四章「分片执行模式」）
+- [ ] **停止条件只数标记不做语义判断**（第四章「停止条件判定」）
+- [ ] **spawn 外部脚本时流式写入日志**（createWriteStream，不等 close）（第四章「流式写入日志」）
+- [ ] **child.on('close') 处理 signal 参数**（被 kill 时 code=null）（第四章「child.on('close') 的 signal 参数」）
+- [ ] **shell 脚本中禁用 `| head -N`**（pipefail + SIGPIPE 定时炸弹）（第四章「禁用 | head -N 管道」）
+- [ ] **长脚本每 30s 输出 progress 日志**（第四章「progress 日志」）
+- [ ] **init 内部设 SOFAGENT_SKIP_HOOK=1**（防 hook 递归）（第四章「SOFAGENT_SKIP_HOOK 环境变量旁路」）
+- [ ] **driver 支持 --skip-acceptance**（sandbox kill 窗口短时复用预跑日志）（第四章「Driver --skip-acceptance 参数」）
+- [ ] **driver 支持 --step 单步模式**（沙箱 OOM 时外层编排逐步调用，内存归零）（第四章「Driver --step 单步执行模式」）
 
 ### 🔴 stream 迁移（如做 invoke→stream 改造时必查）
 
-- [ ] **chunk 格式确认**：stream 返回 `{ [nodeName]: delta }` 不是扁平 `{ messages: [] }`（§5.1）
-- [ ] **下游消费函数验证**：extractAgentText / extractUsage 拿到的数据形状对吗？（§5.2）
-- [ ] **格式适配层**：累积 delta.messages 到扁平数组，返回 `{ messages: allMessages }`（§5.1）
-- [ ] **端到端验证**：检查下游产物文件内容 + usage.jsonl 有正常数据（§5.2）
+- [ ] **chunk 格式确认**：stream 返回 `{ [nodeName]: delta }` 不是扁平 `{ messages: [] }`（第五章「API 返回格式差异」）
+- [ ] **下游消费函数验证**：extractAgentText / extractUsage 拿到的数据形状对吗？（第五章「stream 迁移检查清单」）
+- [ ] **格式适配层**：累积 delta.messages 到扁平数组，返回 `{ messages: allMessages }`（第五章「API 返回格式差异」）
+- [ ] **端到端验证**：检查下游产物文件内容 + usage.jsonl 有正常数据（第五章「stream 迁移检查清单」）
 
 ### 📝 Prompt 设计
 
-- [ ] **systemPrompt 末尾加 macOS BSD 工具约束段**（§6.1）
-- [ ] **systemPrompt 通过 stateModifier 注入**（不用 prompt 参数）（§6.2）
-- [ ] **纯只读场景加只读铁律**（release-gate 特有）（§6.3）
+- [ ] **systemPrompt 末尾加 macOS BSD 工具约束段**（第六章「macOS BSD 工具约束」）
+- [ ] **systemPrompt 通过 stateModifier 注入**（不用 prompt 参数）（第六章「systemPrompt 注入方式」）
+- [ ] **纯只读场景加只读铁律**（release-gate 特有）（第六章「纯只读约束」）
 
 ### 🔧 工具开发
 
-- [ ] **ExecutableTool → DynamicStructuredTool 转换**（loadTools 加 tool() 包装 + zod schema）（§7.1）
-- [ ] **工具名加前缀**（sf_read / sf_write 等）（§7.2）
-- [ ] **工具 wrapper 内做截断 + 埋点**（§7.3）
+- [ ] **ExecutableTool → DynamicStructuredTool 转换**（loadTools 加 tool() 包装 + zod schema）（第七章「工具格式转换」）
+- [ ] **工具名加前缀**（sf_read / sf_write 等）（第七章「工具命名」）
+- [ ] **工具 wrapper 内做截断 + 埋点**（第七章「工具输出截断埋点」）
 
 ### 📊 可观测性
 
-- [ ] **L1 visibility + L2 progressMw 双层可观测**（§8.1）
-- [ ] **latest.json 指针每轮 + 轮内 30s 刷新**（原子写入：先 tmp 再 rename）（§8.2）
-- [ ] **darwin 平台绑 caffeinate 防后台节流**（§8.3）
+- [ ] **L1 visibility + L2 progressMw 双层可观测**（第八章「两层可观测」）
+- [ ] **latest.json 指针每轮 + 轮内 30s 刷新**（原子写入：先 tmp 再 rename）（第八章「latest.json 指针」）
+- [ ] **darwin 平台绑 caffeinate 防后台节流**（第八章「macOS 后台节流防护」）
 
 ---
 
 ## 十、附录
 
-### A. 修复时间线
+### 修复时间线
 
-| 时间 | commit | 问题 | 级别 | 对应标准 |
+| 时间 | commit | 问题 | 级别 | 对应章节 |
 |------|--------|------|------|---------|
-| 07-25 | 4a4a143 | 失败路径可见性缺口 | P1 | §4.2 |
-| 07-25 | e4ba836 | middleware:[] 假修复 | P0（假修复） | §1.1 |
-| 07-26 | 9a9c5dc | createDeepAgent → createReactAgent | P0 | §1.1 |
-| 07-26 | 3248395 | recursionLimit 按步骤 + macOS 约束 + 降级 | P1 | §4.1 §6.1 |
-| 07-26 | 8cd7b23 | runs 目录迁回原位（架构纠偏） | P2 | §1.4 |
-| 08-01 | 63b130d | 步骤级 maxTokens 覆盖（consolidate 32000） | P1 | §2.3 |
-| 08-01 | da1039a | 四项 ReAct 性能优化（截断+裁剪+铁律+stream） | P1 | §3.1 §3.2 §3.3 |
-| 08-01 | a0571a4 | stream 迁移 finalState 数据丢失 | P0 | §5 |
-| 08-01 | 35cfb22 | 外部脚本 spawn 生存（流式日志+signal+head 管道） | P1 | §4.5 |
-| 08-01 | ae6f1c0 | LESSONS.md §4.5.1-4.5.5 沉淀（spawn 生存规范文档化） | P2 | §4.5 |
-| 08-01 | 0d3c36e | SOFAGENT_SKIP_HOOK 防递归 + driver --skip-acceptance | P2 | §4.5.6 §4.5.7 |
-| 08-01 | c1fab22 | LESSONS.md 检查清单+附录同步 + SKILL.md --skip-acceptance 用法 | P2 | §4.5.7 |
+| 07-25 | 4a4a143 | 失败路径可见性缺口 | P1 | 四·失败路径容错 |
+| 07-25 | e4ba836 | middleware:[] 假修复 | P0（假修复） | 一·框架选型 |
+| 07-26 | 9a9c5dc | createDeepAgent → createReactAgent | P0 | 一·框架选型 |
+| 07-26 | 3248395 | recursionLimit 按步骤 + macOS 约束 + 降级 | P1 | 四·recursionLimit / 六·BSD 约束 |
+| 07-26 | 8cd7b23 | runs 目录迁回原位（架构纠偏） | P2 | 一·目录架构 |
+| 08-01 | 63b130d | 步骤级 maxTokens 覆盖（consolidate 32000） | P1 | 二·步骤级 maxTokens |
+| 08-01 | da1039a | 四项 ReAct 性能优化（截断+裁剪+铁律+stream） | P1 | 三·上下文管理 / 效率铁律 / 流式输出 |
+| 08-01 | a0571a4 | stream 迁移 finalState 数据丢失 | P0 | 五·stream 迁移 |
+| 08-01 | 35cfb22 | 外部脚本 spawn 生存（流式日志+signal+head 管道） | P1 | 四·外部脚本 spawn 生存 |
+| 08-01 | ae6f1c0 | spawn 生存规范文档化（7 个子节沉淀） | P2 | 四·外部脚本 spawn 生存 |
+| 08-01 | 0d3c36e | SOFAGENT_SKIP_HOOK 防递归 + driver --skip-acceptance | P2 | 四·SKIP_HOOK / --skip-acceptance |
+| 08-01 | c1fab22 | 检查清单+附录同步 + SKILL.md --skip-acceptance 用法 | P2 | 四·--skip-acceptance |
 
-### B. 历史坑位索引
+### 历史坑位索引
 
 以下坑位已整合进上方标准章节，保留索引便于溯源：
 
 | 坑号 | 原标题 | 整合位置 |
 |------|--------|---------|
-| 1 | createDeepAgent 硬编码 FilesystemMiddleware | §1.1 |
-| 2 | 工具格式必须用 tool() 创建 | §7.1 |
-| 3 | 工具名 BUILTIN 冲突 | §7.2 |
-| 4 | 统一 recursionLimit 导致 OOM | §4.1 |
-| 5 | GLM/DeepSeek 反复用 GNU 语法 | §6.1 |
-| 6 | a-consolidate 失败 = 整个循环崩溃 | §4.2 |
-| 7 | worker catch 块没写可见性事件 | §4.2 |
-| 8 | runs 目录放错位置 | §1.4 |
-| 9 | 异构模型工具调用行为差异（历史：GLM/DeepSeek） | §2.1（历史背景）+ §1.1（FilesystemMiddleware 对不同模型的触发差异） |
-| 10 | prompt 文件名和产物名不一致 | §1.3 |
-| 11 | 12 视角太重需要分层 | §4.1（recursionLimit）+ §3.2（效率铁律） |
-| 12 | 上下文雪球——工具输出不裁剪 | §3.1 |
-| 13 | Agent 过度探索——910 次工具调用 | §3.2 |
-| 14 | invoke → stream 迁移的 P0 数据丢失 | §5 |
-| 15 | a-consolidate maxTokens 被截断 | §2.3 |
-| 16 | 外部脚本 spawn 生存——流式日志+signal+head 管道 | §4.5 |
-| 17 | init → hook 递归防护（SOFAGENT_SKIP_HOOK）+ sandbox 复用（--skip-acceptance） | §4.5.6 §4.5.7 |
+| 1 | createDeepAgent 硬编码 FilesystemMiddleware | 一·框架选型 |
+| 2 | 工具格式必须用 tool() 创建 | 七·工具格式转换 |
+| 3 | 工具名 BUILTIN 冲突 | 七·工具命名 |
+| 4 | 统一 recursionLimit 导致 OOM | 四·recursionLimit 按步骤区分 |
+| 5 | GLM/DeepSeek 反复用 GNU 语法 | 六·BSD 工具约束 |
+| 6 | a-consolidate 失败 = 整个循环崩溃 | 四·失败路径容错 |
+| 7 | worker catch 块没写可见性事件 | 四·失败路径容错 |
+| 8 | runs 目录放错位置 | 一·目录架构 |
+| 9 | 异构模型工具调用行为差异（历史：GLM/DeepSeek） | 二·模型配置（历史背景）+ 一·框架选型（FilesystemMiddleware 触发差异） |
+| 10 | prompt 文件名和产物名不一致 | 一·步骤定义模式 |
+| 11 | 12 视角太重需要分层 | 四·recursionLimit + 三·效率铁律 |
+| 12 | 上下文雪球——工具输出不裁剪 | 三·上下文管理 |
+| 13 | Agent 过度探索——910 次工具调用 | 三·Agent 行为约束 |
+| 14 | invoke → stream 迁移的 P0 数据丢失 | 五·stream 迁移 |
+| 15 | a-consolidate maxTokens 被截断 | 二·步骤级 maxTokens |
+| 16 | 外部脚本 spawn 生存——流式日志+signal+head 管道 | 四·外部脚本 spawn 生存 |
+| 17 | init → hook 递归防护（SOFAGENT_SKIP_HOOK）+ sandbox 复用（--skip-acceptance） | 四·SKIP_HOOK / --skip-acceptance |
 
-### C. 关键设计决策速查
+### 关键设计决策速查
 
 | 决策 | 选择 | 理由 |
 |------|------|------|
 | Agent 框架 | createReactAgent | createDeepAgent 硬编码 FilesystemMiddleware 不可禁用 |
 | 进程模型 | spawn 子进程（非 in-process） | 零上下文继承，步骤间通过文件传递数据 |
+| 沙箱执行 | --step 单步模式 + 外层编排 | 每步全新进程退出，避免 driver 主进程内存累积触发 OOM |
 | 上下文注入 | stateModifier（非 prompt） | 互斥约束 + 可同时做上下文裁剪 |
 | 执行模式 | stream（非 invoke） | 实时进度打印，体感提升 ×2-3 |
 | 输出截断 | 200 行（头尾各 100） | 平衡信息保留与上下文膨胀 |
