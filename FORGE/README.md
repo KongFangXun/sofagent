@@ -2,7 +2,7 @@
 
 > **FORGE = sofagent 的自迭代引擎。** 双层循环架构——外环（项目级，每轮 = 一个版本生命周期）套内环（阶段级，质量循环 + 发版闸门）。终极目标是外环能自转：人给出 `/goal` → Agent 自动走完 A0→A12 → 回到 A0。当前内环已可 driver 自转，外环的关键节点逐步补上证据闸门。
 >
-> 这是给 sofagent 开发者的工具包——如果你是 sofagent 用户，不需要看这里。企业用户的入口是 [FDE Agent](../FDE/README.md)。
+> 这是给 sofagent 开发者的工具包——如果你是 sofagent 用户，不需要看这里。企业用户的入口是 [FDE Agent](../SKILL/SKILL.md)。
 
 ## 双层循环架构
 
@@ -26,7 +26,7 @@ FORGE 的自迭代不是单一循环，而是**外环 + 内环**的双层结构�
 
 | 内环 | 嵌套在外环哪个阶段 | 路径 | 用途 |
 |------|------------------|------|------|
-| **fresh-eyes-loop** | 阶段三（开发后质量循环） | `FORGE/SKILL/fresh-eyes-loop/` | A/B 异构模型双盲 12 视角审查 + 修复 + 验证，连续 2 轮无 P0/P1 即停 |
+| **fresh-eyes-loop** | 阶段三（开发后质量循环） | `FORGE/SKILL/fresh-eyes-loop/` | A/B 双角色零上下文 12 视角审查 + 修复 + 验证，连续 2 轮无 P0/P1 即停 |
 | **release-gate-loop** | 阶段六（发版闸门） | `FORGE/SKILL/release-gate-loop/` | acceptance-test + regression + coverage + verdict，异步轮询长任务 |
 
 ### 证据闸门（外环节点的放行条件）
@@ -78,32 +78,27 @@ fresh-eyes-loop 由 driver（`fresh-eyes-driver.mjs`）自动编排——driver 
 # 1. 确保 sofagent 底座已装
 sofagent-audit --version
 
-# 2. 配置 A/B 异构模型（详见 quick-start.md）
-export SOFAGENT_LLM_A=<provider>:<model-name>      # 审查类模型
-export SOFAGENT_LLM_A_API_KEY=your-key
-export SOFAGENT_LLM_B=<provider>:<model-name>      # 工程类模型（异构）
+# 2. 配置模型 key（详见 quick-start.md）
+#    A/B 共用单个 API Key（Qwen3.8-max-preview，阿里百炼 Token Plan 订阅制）
 export SOFAGENT_LLM_B_API_KEY=your-key
+export SOFAGENT_LLM_B="qwen3.8-max-preview"
 
 # 3. 一键启动（driver 自动起 A/B 子进程）
-node FORGE/src/fresh-eyes-driver.mjs --target v1.2.0 --max-rounds 10
+node FORGE/src/fresh-eyes-driver.mjs --target v1.2.4 --max-rounds 10
 
 # 4. 先 dry-run 看流程
-node FORGE/src/fresh-eyes-driver.mjs --target v1.2.0 --dry-run
+node FORGE/src/fresh-eyes-driver.mjs --target v1.2.4 --dry-run
 ```
 
-**环境变量**（A/B 异构模型）：
+**环境变量**（单模型，A/B 共用 key）：
 
 ```bash
-# A（审查者）= 你选的审查类模型
-export SOFAGENT_LLM_A=<provider>:<model-name>
-export SOFAGENT_LLM_A_API_KEY=your-key
-
-# B（工程师）= 你选的工程类模型（必须与 A 不同厂商）
-export SOFAGENT_LLM_B=<provider>:<model-name>
+# API Key（A/B 共用——driver 自动把 B 的 key 同步给 A）
 export SOFAGENT_LLM_B_API_KEY=your-key
+export SOFAGENT_LLM_B="qwen3.8-max-preview"
 ```
 
-> A 和 B 用不同厂商的模型（异构），这是 fresh-eyes-loop 的设计——审查和修复用不同模型减少同模型盲区。详见 [`quick-start.md`](quick-start.md)。
+> fresh-eyes 纪律通过每步独立子进程（零上下文）+ 独立 prompt 实现，不依赖模型差异。driver 仍保留多模型配置能力（`MODEL_CONFIGS`），未来可切回异构模式。详见 [`quick-start.md`](quick-start.md)。
 
 ## 内置 Agent
 
@@ -122,7 +117,7 @@ fresh-eyes-loop 的 A/B 即基于 reviewer + engineer 构建（同底座，不�
 ```
 FORGE/
   README.md                     ← 你在这里
-  quick-start.md                ← A/B 异构模型接入与环境配置
+  quick-start.md                ← 模型接入与环境配置
   LEDGER.md                     ← 跨 run 永久索引（git 跟踪）
   LESSONS.md                    ← 跨版本经验教训
   ontology/                     ← 开发本体（dogfooding FDE §5）
