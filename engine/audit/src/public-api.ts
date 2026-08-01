@@ -51,3 +51,9 @@ export { generateDailyReport, generateWeeklyReport, generateMonthlyReport, gener
 export type { GeneratedReport, ReportKind } from './report-generator';
 export { renderReport } from './report-template';
 export type { ReportStats } from './report-template';
+
+// ── v1.2.4 P2：矛盾检测 + 联邦蒸馏 CLI ──
+export { runConflictCheckCli, parseConflictCheckArgs } from './cli/conflict-check';
+export type { ConflictCheckArgs, ConflictCheckResult, ConflictCheckFn } from './cli/conflict-check';
+export { runFederationDistillCli, parseFederationDistillArgs } from './cli/federation-distill';
+export type { FederationDistillArgs, DistillResult, MergeFn } from './cli/federation-distill';

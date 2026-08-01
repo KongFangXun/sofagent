@@ -41,6 +41,16 @@ import {
   type LoopGraphDeps,
 } from './nodes';
 import { makePlanNode, defaultRunPlannerDecide, writeGraphState } from './plan-node';
+import {
+  makeFormatCheckerNode,
+  makeFactCheckerNode,
+  makeSourceValidatorNode,
+  makeCheckerNode,
+  resolveLoopMode,
+  recordCheckerFailures,
+  type CheckerResult,
+  type ControlledLoopMode,
+} from './checker-nodes';
 
 /** 图执行步数上限：4 节点 × (1 + 3 重试) 轮 = 16 步，留足余量 */
 const RECURSION_LIMIT = 64;
@@ -85,7 +95,7 @@ export function resolveCheckpointDir(override?: string): string {
  *                                   → 'human_confirm'（超限人工确认）
  *   3. FAIL & degradationLevel>=2   → 'reviewer'（L2 低可信：不 blocked，继续流转）
  *   4. FAIL（其余，含 degradationLevel 0→1→2 推进）→ 'engineer'
- *   5. PASS / WARN                  → 'reviewer'
+ *   5. PASS / WARN                  → 'checker'（v1.2.4 P2b：先过 checker 再进 reviewer）
  *
  * 注：degradationLevel 的推进（0→1→2）与提示词注入在 audit 节点内完成；
  * 本函数只做纯路由判定（degradationLevel>=2 只在降级链开启时由节点写入），
@@ -93,20 +103,21 @@ export function resolveCheckpointDir(override?: string): string {
  */
 export function routeAfterAudit(
   state: LoopGraphState
-): 'engineer' | 'reviewer' | 'human_confirm' | typeof END {
+): 'engineer' | 'checker' | 'reviewer' | 'human_confirm' | typeof END {
   if (state.finalStatus === 'blocked') return END;
   if (state.auditResult === 'FAIL') {
     // 超限人工确认：重试与降级通道都已耗尽
     if (state.retryCount >= DEFAULT_MAX_RETRIES && state.degradationLevel >= 2) {
       return 'human_confirm';
     }
-    // L2 低可信：标记后继续流转 reviewer，不再回 engineer 烧重试
+    // L2 低可信：标记后继续流转 checker→reviewer，不再回 engineer 烧重试
     if (state.degradationLevel >= 2) {
-      return 'reviewer';
+      return 'checker';
     }
     return 'engineer';
   }
-  return 'reviewer';
+  // PASS / WARN → checker（v1.2.4 P2b：先过 checker 质量门再进 reviewer）
+  return 'checker';
 }
 
 /**
@@ -155,6 +166,7 @@ function withCheckpoint<S extends LoopGraphState>(
 /**
  * 组装 LOOP StateGraph（编译后的可执行图）
  * v1.2.2 P4：新增 plan 节点（START → plan → engineer）+ audit 降级链五分支
+ * v1.2.4 P2b：新增 checker 节点（audit PASS/WARN → checker → reviewer）
  */
 export function buildLoopGraph(deps: LoopGraphDeps) {
   const graph = new StateGraph(LoopStateAnnotation)
@@ -169,10 +181,13 @@ export function buildLoopGraph(deps: LoopGraphDeps) {
     .addNode('audit', withCheckpoint('audit', deps.checkpointer, makeAuditNode(deps)))
     .addNode('reviewer', withCheckpoint('reviewer', deps.checkpointer, makeReviewerNode(deps)))
     .addNode('human_confirm', withCheckpoint('human_confirm', deps.checkpointer, makeHumanConfirmNode(deps)))
+    // v1.2.4 P2b：checker 节点（format/fact/source 三合一）
+    .addNode('checker', withCheckpoint('checker', deps.checkpointer, makeCheckerNode(deps)))
     .addConditionalEdges(START, routeFromStart, {
       plan: 'plan',
       engineer: 'engineer',
       audit: 'audit',
+      checker: 'checker',
       reviewer: 'reviewer',
       human_confirm: 'human_confirm',
     })
@@ -180,10 +195,13 @@ export function buildLoopGraph(deps: LoopGraphDeps) {
     .addEdge('engineer', 'audit')
     .addConditionalEdges('audit', routeAfterAudit, {
       engineer: 'engineer',
+      checker: 'checker',
       reviewer: 'reviewer',
       human_confirm: 'human_confirm',
       [END]: END,
     })
+    // checker → reviewer（checker 通过后进 reviewer）
+    .addEdge('checker', 'reviewer')
     .addEdge('reviewer', 'human_confirm')
     .addConditionalEdges('human_confirm', routeAfterHuman, {
       engineer: 'engineer',
@@ -279,6 +297,8 @@ export function resolveResumeNode(record: CheckpointRecord): LoopNodeName | null
       const next = routeAfterAudit(record.state as unknown as LoopGraphState);
       return next === END ? null : next;
     }
+    case 'checker':
+      return 'reviewer';
     case 'reviewer':
       return 'human_confirm';
     case 'human_confirm': {

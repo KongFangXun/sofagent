@@ -174,7 +174,7 @@ npm test
 # Core engine tests only
 npm test --workspace=engine/audit
 
-# Expected: 1207 tests passed (16 safe-delete related tests may fail in certain environments, see LIMITATIONS §四)
+# Expected: 1213 tests passed (16 safe-delete related tests may fail in certain environments, see LIMITATIONS §四)
 ```
 
 ---

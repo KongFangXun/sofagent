@@ -53,6 +53,33 @@ export {
 } from './inspectors';
 export type { InspectorConfig, InspectorResult, DaemonHealth } from './inspectors';
 
+// v1.2.4 P0：分层巡检（L1/L2/L3）+ L3 新 inspector
+export {
+  runLayeredInspection,
+  runAllLayers,
+  getLayerInspectorNames,
+  LAYER_SCHEDULE,
+} from './inspector-layers';
+export type { InspectorLayer, LayeredInspectionResult } from './inspector-layers';
+export { runFederationDistillation } from './inspectors/federation-distillation';
+export { runFailurePattern, getFailureClusters } from './inspectors/failure-pattern';
+export type { FailureCluster } from './inspectors/failure-pattern';
+export { runOntologyCoverage } from './inspectors/ontology-coverage';
+
+// v1.2.4 P0b：eval 失败检测（进化引擎核心闭环）
+export { runEvalFailuresCheck } from './inspectors/eval-failures';
+
+// v1.2.4 P1：skillopt 自动触发 inspector
+export { runSkilloptTrigger } from './inspectors/skillopt-trigger';
+
+// v1.2.4 P1b：Dashboard 历史趋势 + 任务统计
+export { runDailySnapshot } from './inspectors/daily-snapshot';
+export type { DailySnapshot } from './inspectors/daily-snapshot';
+export { runTrendAggregator } from './inspectors/trend-aggregator';
+export type { WeeklyTrendReport } from './inspectors/trend-aggregator';
+export { runTaskStats } from './inspectors/task-stats';
+export type { TaskStatsReport } from './inspectors/task-stats';
+
 // v1.2.2 P0：审计报告 webhook 推送
 export { pushAuditReport } from './webhook/audit-report-push';
 

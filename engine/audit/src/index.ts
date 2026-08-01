@@ -85,6 +85,10 @@ interface Args {
   timelineJson?: boolean;
   /** v1.0.9: ontology 子命令 */
   ontologyCommand?: string;
+  /** v1.2.4 P2: conflict-check 子命令 */
+  conflictCheckCommand?: boolean;
+  /** v1.2.4 P2: federation-distill 子命令 */
+  federationDistillCommand?: boolean;
   /** v1.2.0: 审计 session 产物（默认开启，--no-session 关闭） */
   noSession: boolean;
   /** v1.2.0: --commit-msg 完整 commit message（hook 场景传完整 body 供 A9 扫描） */
@@ -93,7 +97,7 @@ interface Args {
 
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, cached: false, noSession: false };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff' && argv[i + 1]) {
       i++;
@@ -163,6 +167,12 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === 'ontology' && argv[i + 1]) {
       i++;
       args.ontologyCommand = argv[i] as string;
+    } else if (argv[i] === 'conflict-check') {
+      // v1.2.4 P2: conflict-check 子命令
+      args.conflictCheckCommand = true;
+    } else if (argv[i] === 'federation-distill') {
+      // v1.2.4 P2: federation-distill 子命令
+      args.federationDistillCommand = true;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       const verbose = argv.includes('--verbose');
       console.log(`sofagent-audit v${VERSION} · FDE Agent 的审计引擎\n`);
@@ -228,7 +238,7 @@ function parseArgs(argv: string[]): Args {
         exit(1);
       } else if (arg && !arg.startsWith('-')) {
         // v1.0.8: 未知子命令报错
-        const SUBCOMMANDS = ['ontology'];
+        const SUBCOMMANDS = ['ontology', 'conflict-check', 'federation-distill'];
         if (!SUBCOMMANDS.includes(arg)) {
           console.error(`未知子命令: ${arg}`);
           console.error(`可用子命令: ${SUBCOMMANDS.join(', ')}`);
@@ -575,6 +585,44 @@ async function main(): Promise<void> {
       exit(0);
     } catch (err) {
       process.stderr.write(`❌ ontology view 失败: ${(err as Error).message}\n`);
+      exit(1);
+    }
+  }
+
+  // v1.2.4 P2：conflict-check 子命令（知识矛盾检测 CLI）
+  if (args.conflictCheckCommand) {
+    const { runConflictCheckCli, parseConflictCheckArgs } = await import('./cli/conflict-check');
+    const cliArgs = parseConflictCheckArgs(rawArgs);
+    try {
+      // 动态 import daemon 的 checkConflict（分层边界：参数注入避免反向依赖）
+      // 用变量名规避 TypeScript 模块解析（audit 不声明 daemon 依赖）
+      const daemonModuleName = '@sofagent/daemon';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const daemon: any = await import(/* @vite-ignore */ daemonModuleName);
+      const exitCode = runConflictCheckCli(cliArgs, daemon.checkConflict);
+      exit(exitCode as 0 | 1 | 2);
+    } catch (err) {
+      console.error(`❌ conflict-check 失败: ${(err as Error).message}`);
+      console.error('   提示：conflict-check 需要 @sofagent/daemon 包（npm install @sofagent/daemon）');
+      exit(1);
+    }
+  }
+
+  // v1.2.4 P2：federation-distill 子命令（联邦蒸馏 CLI）
+  if (args.federationDistillCommand) {
+    const { runFederationDistillCli, parseFederationDistillArgs } = await import('./cli/federation-distill');
+    const cliArgs = parseFederationDistillArgs(rawArgs);
+    try {
+      // 动态 import daemon 的 mergeFederationResults（分层边界：参数注入）
+      // 用变量名规避 TypeScript 模块解析（audit 不声明 daemon 依赖）
+      const daemonModuleName = '@sofagent/daemon';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const daemon: any = await import(/* @vite-ignore */ daemonModuleName);
+      const exitCode = runFederationDistillCli(cliArgs, daemon.mergeFederationResults);
+      exit(exitCode as 0 | 1 | 2);
+    } catch (err) {
+      console.error(`❌ federation-distill 失败: ${(err as Error).message}`);
+      console.error('   提示：federation-distill 需要 @sofagent/daemon 包（npm install @sofagent/daemon）');
       exit(1);
     }
   }

@@ -292,12 +292,22 @@ else
       "$(echo "$LIM_SCN_LINE" | grep -oE 'acceptance-test\.sh [0-9]+ 场景' | head -1 | grep -oE '[0-9]+')"
   fi
 
-  # ③ changelog v1.2.3.md — "NNN/NNN 场景 PASS" 或 "NNN 场景"（取当前版本质量表行）
+  # ③ changelog v1.2.3.md — 历史冻结文档，场景数不随当前 SSOT 变化（v1.2.3 发版时 SSOT=100）
+  #    仅校验文档内部自洽（分母=分子），不与当前 SSOT 比对
   CHG_SCN_LINE=$(grep -nE '[0-9]+/[0-9]+ 场景 PASS' docs/changelog/v1.2/v1.2.3.md 2>/dev/null | head -1)
   if [ -n "$CHG_SCN_LINE" ]; then
-    check_scenario_doc "changelog v1.2.3.md" "docs/changelog/v1.2/v1.2.3.md" \
-      "$(echo "$CHG_SCN_LINE" | cut -d: -f1)" \
-      "$(echo "$CHG_SCN_LINE" | grep -oE '[0-9]+/[0-9]+ 场景' | head -1 | grep -oE '^[0-9]+')"
+    CHG_CLAIMED="$(echo "$CHG_SCN_LINE" | grep -oE '[0-9]+/[0-9]+ 场景' | head -1 | grep -oE '^[0-9]+')"
+    CHG_DENOM="$(echo "$CHG_SCN_LINE" | grep -oE '[0-9]+/[0-9]+ 场景' | head -1 | grep -oE '/[0-9]+' | tr -d '/')"
+    CHG_LINENO=$(echo "$CHG_SCN_LINE" | cut -d: -f1)
+    if [ "$CHG_CLAIMED" = "$CHG_DENOM" ]; then
+      if [ "$QUIET" = false ]; then
+        echo -e "  ${GREEN}✓ changelog v1.2.3.md（行 ${CHG_LINENO}）：历史冻结 ${CHG_CLAIMED}/${CHG_DENOM}（内部自洽，不与当前 SSOT 比对）${NC}"
+      fi
+      ((PASS++)) || true
+    else
+      echo -e "  ${RED}✗ changelog v1.2.3.md（行 ${CHG_LINENO}）：${CHG_CLAIMED}/${CHG_DENOM} 分母分子不自洽${NC}"
+      ((FAIL++)) || true
+    fi
   fi
 fi
 

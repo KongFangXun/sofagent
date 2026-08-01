@@ -17,7 +17,7 @@ import { generateDataSovereigntyWeekly } from './data-sovereignty-weekly';
 import { generateDataSovereigntyMonthly } from './data-sovereignty-monthly';
 import { runWorkspaceSummary } from '../workspace-summary';
 
-export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFreshness, checkKnowledgeHealth, checkSkillStaleness, accumulateWarnings, runHealthReport, generateDataSovereigntyDaily, generateDataSovereigntyWeekly, generateDataSovereigntyMonthly };
+export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFreshness, checkKnowledgeHealth, checkSkillStaleness, accumulateWarnings, runHealthReport, generateDataSovereigntyDaily, generateDataSovereigntyWeekly, generateDataSovereigntyMonthly, workspaceSummaryInspector };
 export type { InspectorConfig, InspectorResult } from './types';
 export type { DaemonHealth } from './health-reporter';
 
@@ -93,5 +93,9 @@ export function runInspectors(
     accumulateWarnings(projectDir),
     // v1.2.3 交付五：workspace 变更摘要（checkpoint 联动）
     workspaceSummaryInspector(projectDir),
+    // v1.2.4 P0 修复预存 bug：data-sovereignty 三档报告之前只注册不执行，补入执行数组
+    generateDataSovereigntyDaily(projectDir),
+    generateDataSovereigntyWeekly(projectDir),
+    generateDataSovereigntyMonthly(projectDir),
   ];
 }

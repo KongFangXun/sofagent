@@ -47,3 +47,17 @@ export {
   type LoopGraphResult,
   type LoopGraphOptions,
 } from './graph';
+
+// v1.2.4 P2b：Checker 节点
+export {
+  makeFormatCheckerNode,
+  makeFactCheckerNode,
+  makeSourceValidatorNode,
+  makeCheckerNode,
+  resolveLoopMode,
+  recordCheckerFailures,
+  DEFAULT_LOOP_CONTROL,
+  type CheckerResult,
+  type ControlledLoopMode,
+  type LoopControlConfig,
+} from './checker-nodes';
