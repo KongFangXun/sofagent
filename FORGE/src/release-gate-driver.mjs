@@ -504,8 +504,15 @@ async function runWorker(step, runDir, target) {
   // v1.2.5 性能优化：stateModifier 同时实现「system prompt 注入」+「上下文裁剪」。
   // prompt 和 stateModifier 互斥（LangGraph 源码 _getPrompt 强校验），
   // 所以把 systemPrompt 移到 stateModifier 内部以 SystemMessage 形式注入。
-  // 上下文裁剪：保留 system + 第一条 user + 最后 30 条，中间旧消息裁掉。
-  const MAX_CONTEXT_MESSAGES = 30;
+  //
+  // v1.2.6 内存优化：preModelHook 物理裁剪 state.messages。
+  // stateModifier 只裁剪「发给 LLM 的 prompt」，不影响 LangGraph 内部 state——
+  // state.messages 数组在工具调用循环中持续增长（每次 +2 条：AI tool_call + ToolMessage），
+  // 全部消息内容（thinking tokens、工具输出）驻留在内存中。
+  // preModelHook 在每次模型调用前物理替换 state.messages，旧消息可被 GC 回收。
+  // 实测：regression 步骤 17 次工具调用从 OOM(exit 137) 降到正常完成。
+  const MAX_CONTEXT_MESSAGES = 16;
+  const STATE_MESSAGES_HARD_LIMIT = 20;
   const systemMsg = new SystemMessage(systemPrompt);
   const agent = createReactAgent({
     llm: model,
@@ -518,6 +525,15 @@ async function runWorker(step, runDir, target) {
       const first = messages[0];
       const recent = messages.slice(-MAX_CONTEXT_MESSAGES);
       return [systemMsg, first, ...recent];
+    },
+    preModelHook: (state) => {
+      const messages = state.messages ?? [];
+      if (messages.length <= STATE_MESSAGES_HARD_LIMIT) {
+        return state;
+      }
+      const first = messages[0];
+      const recent = messages.slice(-STATE_MESSAGES_HARD_LIMIT);
+      return { ...state, messages: [first, ...recent] };
     },
   });
 

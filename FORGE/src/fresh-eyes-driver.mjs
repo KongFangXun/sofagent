@@ -605,7 +605,8 @@ async function runWorker(step, roundDir, target) {
   // 中间被裁掉的旧工具调用结果，其关键信息已被 Agent 提取到后续推理中，
   // 无需在每次 LLM 调用时重复处理（这是 prompt_tokens 从 30k→100k+ 膨胀的根因）。
   const { SystemMessage } = await import('@langchain/core/messages');
-  const MAX_CONTEXT_MESSAGES = 30; // 最后 15 轮工具交互（调用+结果各 1 条）
+  const MAX_CONTEXT_MESSAGES = 16; // 最后 8 轮工具交互（调用+结果各 1 条）
+  const STATE_MESSAGES_HARD_LIMIT = 20;
 
   const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
   const systemMsg = new SystemMessage(systemPrompt);
@@ -613,6 +614,7 @@ async function runWorker(step, roundDir, target) {
     llm: model,
     tools,
     // v1.2.5：stateModifier = system prompt + 上下文窗口裁剪（替代 prompt 参数）
+    // v1.2.6：preModelHook 物理裁剪 state.messages，防止内存累积 OOM
     stateModifier: (state) => {
       const messages = state.messages ?? [];
       if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
@@ -622,6 +624,15 @@ async function runWorker(step, roundDir, target) {
       const first = messages[0];
       const recent = messages.slice(-MAX_CONTEXT_MESSAGES);
       return [systemMsg, first, ...recent];
+    },
+    preModelHook: (state) => {
+      const messages = state.messages ?? [];
+      if (messages.length <= STATE_MESSAGES_HARD_LIMIT) {
+        return state;
+      }
+      const first = messages[0];
+      const recent = messages.slice(-STATE_MESSAGES_HARD_LIMIT);
+      return { ...state, messages: [first, ...recent] };
     },
   });
 
