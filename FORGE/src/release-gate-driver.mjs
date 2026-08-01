@@ -26,7 +26,7 @@ import { spawn } from 'child_process';
 import { createRequire } from 'module';
 import {
   readFileSync, writeFileSync, mkdirSync, existsSync,
-  appendFileSync, readdirSync, copyFileSync,
+  appendFileSync, readdirSync, copyFileSync, createWriteStream,
 } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -822,7 +822,9 @@ async function runAcceptanceTestDirectly(runDir) {
   }
 
   // 第 2 步：直接 spawn acceptance-test.sh，driver 等待完成
-  console.log(`[driver] 开始运行 acceptance-test.sh（超时 20 分钟）...`);
+  // v1.2.5 加固：流式写入日志（sandbox kill 时已捕获部分不丢失）+ progress 日志 + signal 处理
+  const ACCEPTANCE_TIMEOUT_MS = 900_000; // 15 分钟（比 sandbox kill 窗口长，但不至于等太久）
+  console.log(`[driver] 开始运行 acceptance-test.sh（超时 ${ACCEPTANCE_TIMEOUT_MS / 60_000} 分钟）...`);
   const startTime = Date.now();
 
   const result = await new Promise((resolveP, rejectP) => {
@@ -833,34 +835,56 @@ async function runAcceptanceTestDirectly(runDir) {
 
     let stdout = '';
     let stderr = '';
-    child.stdout.on('data', (d) => { stdout += d; });
-    child.stderr.on('data', (d) => { stderr += d; });
+    let lastProgressLog = Date.now();
 
-    // 20 分钟超时——极端情况也不被 kill
+    // 流式写入：收到数据就追加到日志文件（sandbox kill 时已捕获部分不丢失）
+    const writeStream = createWriteStream(logPath, { flags: 'w' });
+
+    child.stdout.on('data', (d) => {
+      stdout += d;
+      writeStream.write(d);
+      // 每 30s 输出一次进度（便于诊断卡住位置）
+      if (Date.now() - lastProgressLog > 30_000) {
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
+        const lastLine = stdout.trim().split('\n').pop()?.slice(0, 80) || '(empty)';
+        console.log(`[driver] acceptance-test.sh 运行中... ${elapsed}s, 已捕获 ${stdout.length} bytes, 末行: ${lastLine}`);
+        lastProgressLog = Date.now();
+      }
+    });
+    child.stderr.on('data', (d) => {
+      stderr += d;
+      writeStream.write(d);
+    });
+
+    // 超时处理
     const timer = setTimeout(() => {
       child.kill('SIGTERM');
-      const timeoutMsg = `\n--- DRIVER TIMEOUT (1200000ms) ---\n`;
-      stdout += timeoutMsg;
-      rejectP(new Error(`acceptance-test.sh 超时 (1200000ms)`));
-    }, 1_200_000);
+      writeStream.end(`\n--- DRIVER TIMEOUT (${ACCEPTANCE_TIMEOUT_MS}ms) ---\n`);
+      rejectP(new Error(`acceptance-test.sh 超时 (${ACCEPTANCE_TIMEOUT_MS}ms)`));
+    }, ACCEPTANCE_TIMEOUT_MS);
 
-    child.on('close', (code) => {
+    child.on('close', (code, signal) => {
       clearTimeout(timer);
+      writeStream.end(stderr ? `\n--- STDERR ---\n${stderr}` : '');
       const fullLog = stdout + (stderr ? '\n--- STDERR ---\n' + stderr : '');
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-      console.log(`[driver] acceptance-test.sh 完成，exit code = ${code}，耗时 ${elapsed}s`);
-      resolveP({ exitCode: code, logPath, stdout: fullLog });
+      // v1.2.5: 处理 signal——被 sandbox kill 时 code=null, signal='SIGTERM'/'SIGKILL'
+      if (signal) {
+        console.warn(`[driver] acceptance-test.sh 被信号终止: ${signal}（可能是 sandbox kill），耗时 ${elapsed}s，已捕获 ${stdout.length} bytes`);
+      } else {
+        console.log(`[driver] acceptance-test.sh 完成，exit code = ${code}，耗时 ${elapsed}s`);
+      }
+      resolveP({ exitCode: code ?? -1, logPath, stdout: fullLog });
     });
 
     child.on('error', (err) => {
       clearTimeout(timer);
+      writeStream.end();
       rejectP(err);
     });
   });
 
-  // 写入日志
-  writeFileSync(logPath, result.stdout, 'utf-8');
-  console.log(`[driver] 日志已写入 ${logPath}`);
+  console.log(`[driver] 日志已流式写入 ${logPath}`);
 
   return result;
 }
