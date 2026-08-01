@@ -775,25 +775,21 @@ node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL',
 #### 51. v1.2.0 审计链安全加固回归——HMAC 写读一致 + doctor 三态 + config 签名 + 版本自检 + key 强度（v1.2.0 BugFix 批次新增）
 
 ```bash
-# 子项 a: HMAC 写读一致性——写入侧先 sanitize 再签名（P0-3 教训：改了写入侧没改读取侧→永久验签失败）
+# a: HMAC 写读对称（写入侧先 sanitize 再签名）
 grep -n "stableStringify\|sanitize\|脱敏" engine/core/src/audit-history.ts | grep -i "sign\|hmac\|签" && echo "✅ HMAC 写读对称" || echo "❌ HMAC 写读不对称"
 grep -n "stableStringify\|sanitize" engine/audit/src/audit-history.ts | grep -i "sign\|hmac\|verify" && echo "✅ audit 包 HMAC 对称" || echo "⚠️ 检查 audit 包 HMAC"
-
-# 子项 b: doctor 三态判定——ok/tampered/unverifiable（不可复验 ≠ 篡改）
+# b: doctor 三态（ok/tampered/unverifiable）+ 使用 detailed 版本
 grep -q "tampered" engine/core/src/doctor.ts && grep -q "unverifiable" engine/core/src/doctor.ts && echo "✅ 三态判定存在" || echo "❌ 缺少三态判定"
-grep -q "checkHistoryChainDetailed" engine/core/src/doctor.ts && echo "✅ 使用 detailed 版本" || echo "❌ 未使用 detailed 版本"
-
-# 子项 c: config 签名位置——signature 只允许顶层，audit 段内误放要 warn
-grep -q "audit 段含 signature" engine/core/src/config-loader.ts && echo "✅ audit 段签名检测存在" || echo "❌ 缺少 audit 段签名检测"
-grep -q "function verifyConfigSignature" engine/core/src/config-loader.ts && echo "✅ verifyConfigSignature 存在" || echo "❌ 缺少 verifyConfigSignature"
-
-# 子项 d: 版本一致性自检（advisory only，不阻断主流程）
+grep -q "checkHistoryChainDetailed" engine/core/src/doctor.ts && echo "✅ detailed 版本" || echo "❌ 未使用 detailed 版本"
+# c: config 签名（audit 段误放检测 + verifyConfigSignature）
+grep -q "audit 段含 signature" engine/core/src/config-loader.ts && echo "✅ audit 段签名检测" || echo "❌ 缺少检测"
+grep -q "function verifyConfigSignature" engine/core/src/config-loader.ts && echo "✅ verifyConfigSignature" || echo "❌ 缺少 verifyConfigSignature"
+# d: 版本自检（advisory only，不阻断）
 grep -q "checkVersionConsistency" engine/audit/src/index.ts && echo "✅ 版本自检存在" || echo "❌ 缺少版本自检"
 grep -A3 "checkVersionConsistency" engine/audit/src/index.ts | grep -q "catch\|不阻断\|advisory" && echo "✅ 自检不阻断" || echo "⚠️ 检查是否阻断"
-
-# 子项 e: HMAC key 强度校验——≥16 字节
-grep -q "validateHmacKey" engine/core/src/audit-history.ts && echo "✅ validateHmacKey 存在" || echo "❌ 缺少 validateHmacKey"
-grep -q "byteLen < 16\|16.*字节\|>=.*16" engine/core/src/audit-history.ts && echo "✅ 16 字节阈值存在" || echo "❌ 缺少 16 字节阈值"
+# e: HMAC key 强度（≥16 字节）
+grep -q "validateHmacKey" engine/core/src/audit-history.ts && echo "✅ validateHmacKey" || echo "❌ 缺少 validateHmacKey"
+grep -q "byteLen < 16\|16.*字节\|>=.*16" engine/core/src/audit-history.ts && echo "✅ 16 字节阈值" || echo "❌ 缺少阈值"
 ```
 
 
@@ -817,11 +813,7 @@ grep -c "resolveAuditDir\|resolveDataDir\|resolveTaskDir\|DATA_ROOT" engine/core
 #### 54. 环境变量命名 Unix 全大写——禁止驼峰（v1.2.1 新增）
 
 ```bash
-# 全仓搜索驼峰环境变量（shell/ts/mjs 文件）
-grep -rn "SOFAgent_" install.sh engine/ FORGE/ --include="*.sh" --include="*.ts" --include="*.mjs"
-# 期望：零命中
-
-# 确认正确命名已就位
+grep -rn "SOFAgent_" install.sh engine/ FORGE/ --include="*.sh" --include="*.ts" --include="*.mjs"   # 期望：零命中
 grep -rc "SOFAGENT_HOME\|SOFAGENT_DATA" engine/scripts/lib/platform-detect.sh engine/scripts/lib/config.sh   # ≥2
 ```
 
@@ -849,13 +841,9 @@ grep -rc "SOFAGENT_HOME\|SOFAGENT_DATA" engine/scripts/lib/platform-detect.sh en
 
 ```bash
 # 1. golden set 不含字面密钥（A2 安全）
-grep -rnE 'sk-[a-zA-Z0-9]{20,}' engine/eval/data/golden-set.yaml engine/ab-test/data/ 2>/dev/null
-# 期望：零命中（用 {{SK_PREFIX}} 占位符）
-
+grep -rnE 'sk-[a-zA-Z0-9]{20,}' engine/eval/data/golden-set.yaml engine/ab-test/data/ 2>/dev/null   # 期望零命中
 # 2. golden set 不含字面 injection（A9 安全）
-grep -rn "$(echo SWdub3JlIHByZXZpb3VzIGluc3RydWN0aW9ucw== | base64 -d)" engine/eval/data/golden-set.yaml 2>/dev/null
-# 期望：零命中（用 {{INJ_PHRASE}} 占位符）
-
+grep -rn "$(echo SWdub3JlIHByZXZpb3VzIGluc3RydWN0aW9ucw== | base64 -d)" engine/eval/data/golden-set.yaml 2>/dev/null   # 期望零命中
 # 3. 占位符替换机制存在
 grep -c 'PLACEHOLDER_MAP\|SK_PREFIX\|INJ_PHRASE' engine/eval/src/eval-runner.ts  # ≥3
 ```
@@ -911,21 +899,14 @@ grep -rn "resolveAuditDir(process\|resolveKnowledgeDir(process\|resolveDataDir(p
 
 > P0 数据主权导出只在 public-api.ts，audit/src/index.ts 没同步 re-export，导致 daemon/mcp/orchestrator 的 tsc 报 TS2305。
 
-> ⚠️ **判定规则（CRITICAL — 防误报）**：
-> - **先检查 `package.json` 的 `exports` 字段**：如果 `exports['.']` 已路由到 `public-api.ts`（或 `dist/public-api.js`），则 public-api.ts 的所有导出已对消费者暴露，**不需要在 index.ts 中重复 re-export**。
-> - `index.ts` 通常是 **CLI 二进制入口**（含 `if (require.main === module) main()`），不是 library barrel。
-> - **仅当** `package.json` 的 `exports['.']` 指向 `index.ts`（而非 public-api.ts），且 index.ts 缺失 public-api.ts 的导出时，才算 FAIL。
-> - type-only exports（`export type { ... }`）如果 public-api.ts 已导出且 package.json exports 指向 public-api.ts，不构成编译问题。
+> ⚠️ **判定规则（CRITICAL — 防误报）**：先检查 `package.json` 的 `exports` 字段——如果 `exports['.']` 已路由到 `public-api.ts`，则所有导出已对消费者暴露，**不需要在 index.ts 中重复 re-export**。`index.ts` 通常是 CLI 入口（含 `require.main === module`）。仅当 exports 指向 index.ts 且缺失 public-api.ts 导出时才算 FAIL。
 
 ```bash
 # 第一步：检查 package.json exports 指向哪个入口
 node -e "const p=require('./engine/audit/package.json'); console.log(p.exports?.['.']?.types || p.types || 'NOT_FOUND')"
-# 如果输出含 public-api → public-api.ts 是入口，PASS（不是 index.ts）
-# 如果输出含 index → 继续第二步
-
+# 含 public-api → PASS；含 index → 继续第二步
 # 第二步（仅 exports 指向 index.ts 时）：对比导出差异
-diff <(grep "^export " engine/audit/src/public-api.ts | sort) <(grep "^export " engine/audit/src/index.ts | sort) | grep "^<"
-# 期望：无差异行
+diff <(grep "^export " engine/audit/src/public-api.ts | sort) <(grep "^export " engine/audit/src/index.ts | sort) | grep "^<"   # 期望：无差异行
 ```
 
 
@@ -948,31 +929,25 @@ done
 > v1.2.3 阶段六教训：release-gate-driver.mjs 的 parseVerdict / parseStepResults 曾有脆弱兜底——「报告全文含 \bFAIL\b 字样就判 FAIL」。但发版验证报告的真实结论是 PASS，正文却**必然**提到 FAIL（负向测试场景的预期输出 / 覆盖率表的 ❌ 标记 / 「无 FAIL 条目」这类措辞）。结果一次真实通过的验证被自动化误标成 FAIL，写进 LEDGER.md 和 status.json，靠读 verdict.md 权威产物才还原真相。根因：结论 PASS 的报告正文必然含 FAIL 字样，脆弱兜底把 PASS 误判 FAIL。**读发版裁决以 verdict.md 权威产物为准，别被 LEDGER / status.json 的自动化解析带偏。**
 
 ```bash
-# 1. 断言「全文含 FAIL 即判 FAIL」式脆弱兜底已删除（期望零命中，exit 1）
-grep -nE "includes\('FAIL'\)|includes\(\"FAIL\"\)" FORGE/src/release-gate-driver.mjs
-# 期望：无输出（exit 1）
-
-# 2. 断言已采用「判定/结论」标记行窗口提取（期望 ≥2，parseVerdict + parseStepResults 各一份）
+# 1. 断言「全文含 FAIL 即判 FAIL」式脆弱兜底已删除（期望零命中）
+grep -nE "includes\('FAIL'\)|includes\(\"FAIL\"\)" FORGE/src/release-gate-driver.mjs   # 期望：无输出
+# 2. 已采用「判定/结论」标记行窗口提取（期望 ≥2）
 grep -c 'extractVerdictKeyword' FORGE/src/release-gate-driver.mjs   # ≥2
-
-# 3. 断言标记行窗口大小（标记行 + 后续 3 行，期望 ≥2）
+# 3. 标记行窗口大小（标记行 + 后续 3 行，期望 ≥2）
 grep -c 'slice(i, i + 4)' FORGE/src/release-gate-driver.mjs   # ≥2
-
-# 4. 断言已先剥离 ``` 围栏代码块再解析（-F 固定串，避免正则转义歧义；期望 ≥2）
+# 4. 已先剥离围栏代码块再解析（期望 ≥2）
 grep -Fc 'replace(/```[\s\S]*?```/g' FORGE/src/release-gate-driver.mjs   # ≥2
 ```
 
 #### 63. Worker 批量输出 U+FFFD 零污染——每次批量修复后必扫（v1.2.3 新盲区）
 
-> v1.2.3 教训：fresh-eyes-loop 的批量修复 worker 多次产出含 U+FFFD（替换字符）的文件——LLM 输出编码损坏时把无法表示的字节写成 U+FFFD，混进文档/代码。这类污染肉眼难辨（显示为 ▯ 或空白），但会污染 grep 结果、破坏锚点、影响 npm 产物。v1.2.2 曾复发过一次。**规则：任何 Agent 批量写入文件后，提交前必须扫一遍 U+FFFD，零容忍。**
+> v1.2.3 教训：fresh-eyes-loop 批量修复 worker 多次产出含 U+FFFD 的文件——LLM 输出编码损坏时把无法表示的字节写成 U+FFFD。肉眼难辨（显示为 ▯ 或空白），但污染 grep、破坏锚点、影响 npm 产物。**任何 Agent 批量写入文件后，提交前必须扫一遍 U+FFFD，零容忍。**
 
 ```bash
-# 1. 全仓活跃文档 U+FFFD 扫描（期望零命中）
+# 1. 全仓活跃文档 U+FFFD 扫描（期望 CLEAN）
 node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}if(bad.length){console.log('FAIL:',bad.join(','));process.exit(1);}console.log('CLEAN');"
-# 期望：CLEAN，exit 0
-
-# 2. 引擎源码 U+FFFD 扫描（期望零命中）
-grep -rlP '\x{FFFD}' engine/*/src/ 2>/dev/null | grep -v node_modules   # 期望：无输出
+# 2. 引擎源码 U+FFFD 扫描（期望无输出）
+grep -rlP '\x{FFFD}' engine/*/src/ 2>/dev/null | grep -v node_modules
 ```
 
 #### 64. GitHub 锚点剥除规则——跨文档链接须匹配渲染后锚点（v1.2.4 新盲区）
@@ -989,4 +964,35 @@ grep -rnE "^#{1,4} .*(🔮|🔄|🪟|✨|[+/（）():：])" docs/ README.md SECU
 ```
 
 > **PASS 标准**：所有跨文档 `#锚点` 链接指向的标题，按 GitHub 渲染规则（剥 emoji/标点、空格→`-`）推算的锚点与链接一致。标题含特殊字符者重点核对。
+
+#### 65. FORGE stream 迁移——finalState 须累积 delta 而非存原始 chunk（v1.2.4 新盲区）
+
+> v1.2.4 教训：FORGE ReAct Agent 从 `invoke()` 迁移到 `stream(streamMode: 'updates')` 时，`invoke` 返回扁平 `{ messages: [...] }`，但 `stream` 的 chunk 是 `{ nodeName: stateDelta }`。直接 `finalState = chunk` 会把整个 `{ nodeName: delta }` 赋给 finalState，下游 `extractAgentText(result)` 找不到 `result.messages` → fallback `String(result)` → 产物写入 `[object Object]`。**迁移到 stream 必须遍历 `Object.entries(chunk)` 累积 delta。**
+
+```bash
+# 验证两个 driver 的 stream chunk 处理含 Object.entries 解包（而非裸赋值）
+grep -c 'Object.entries(chunk)' FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gate-driver.mjs   # 期望：各 ≥1
+grep 'finalState = chunk$' FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gate-driver.mjs        # 期望：零命中（裸赋值是 bug）
+```
+
+#### 66. extractAgentText 防御对象 content——嵌套对象须递归提取（v1.2.4 新盲区）
+
+> v1.2.4 教训：LangGraph message 的 content 可能是 `string`（普通文本）也可能是 `Array<{type, text}>`（工具调用块）或嵌套对象。`extractAgentText` 只做 `typeof content === 'string'` 判断时，遇到 Array/Object content 会 fallback 到 `String(message)` → 输出 `[object Object]`。**提取 Agent 输出文本时须处理 content 为数组和嵌套对象的情况。**
+
+```bash
+# 验证 extractAgentText 含数组检测 + 对象防御
+grep -c 'Array.isArray(content)' FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gate-driver.mjs   # 期望：各 ≥1
+grep -c 'typeof content.*object' FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gate-driver.mjs   # 期望：各 ≥1
+```
+
+#### 67. FORGE ReAct 步骤预算——reviewer ≤50 步 / engineer ≤30 步（v1.2.4 效率铁律）
+
+> v1.2.4 教训：FORGE ReAct Agent 在无步数约束时容易陷入重复读取循环——reviewer 反复读同一个文件、engineer 反复跑同一个测试。在 SKILL.md 中加入效率铁律（目标步数 + 禁止重复读取）后，平均执行步数下降 50-60%。**每个 sub-agent SKILL.md 必须有明确步数预算。**
+
+```bash
+# 验证 reviewer/engineer SKILL.md 含效率铁律
+grep -q "效率铁律" SKILL/agents/reviewer/SKILL.md && echo "✓ reviewer" || echo "✗ reviewer"
+grep -q "效率铁律" SKILL/agents/engineer/SKILL.md && echo "✓ engineer" || echo "✗ engineer"
+```
+
 
