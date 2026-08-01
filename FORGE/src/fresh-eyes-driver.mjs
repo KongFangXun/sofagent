@@ -790,17 +790,53 @@ function sliceMultiOutput(text, outputs) {
  */
 function extractAgentText(result) {
   if (typeof result === 'string') return result;
-  if (result?.content) return typeof result.content === 'string'
-    ? result.content
-    : Array.isArray(result.content)
-      ? result.content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('')
-      : String(result.content);
-  if (result?.messages) {
-    const last = result.messages[result.messages.length - 1];
-    if (typeof last?.content === 'string') return last.content;
-    if (Array.isArray(last?.content)) {
-      return last.content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
+  // 直接有 content 字段（非 messages 结构）
+  if (result?.content) {
+    const content = result.content;
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+      return content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
     }
+    if (content && typeof content === 'object') {
+      if (typeof content.text === 'string') return content.text;
+      if (typeof content.content === 'string') return content.content;
+      return JSON.stringify(content);
+    }
+  }
+  // messages 数组结构（LangGraph stream 返回格式）
+  if (result?.messages) {
+    // 从后往前找最后一条 AI 消息（跳过 tool/human 消息）
+    for (let i = result.messages.length - 1; i >= 0; i--) {
+      const msg = result.messages[i];
+      const isAI = msg?._getType?.() === 'ai' || (msg?.tool_calls !== undefined && msg?.content !== undefined);
+      if (!isAI) continue;
+
+      const content = msg?.content;
+      if (typeof content === 'string') return content;
+      if (Array.isArray(content)) {
+        return content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
+      }
+      if (content && typeof content === 'object') {
+        if (typeof content.text === 'string') return content.text;
+        if (typeof content.content === 'string') return content.content;
+        return JSON.stringify(content);
+      }
+    }
+    // 所有消息都不是 AI 类型——尝试最后一条的 content
+    const last = result.messages[result.messages.length - 1];
+    const content = last?.content;
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+      return content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
+    }
+    if (content && typeof content === 'object') {
+      if (typeof content.text === 'string') return content.text;
+      return JSON.stringify(content);
+    }
+  }
+  // 最终 fallback——避免 String(object) 产出 "[object Object]"
+  if (result && typeof result === 'object') {
+    return JSON.stringify(result);
   }
   return String(result ?? '');
 }
