@@ -44,6 +44,14 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
    # 再加 --skip-acceptance 启动：
    node FORGE/src/release-gate-driver.mjs --target <版本号> --skip-acceptance
 
+   # 沙箱 OOM 环境（driver 主进程 + worker 内存叠加触发 OOM 时）：
+   # 用 --step 单步模式，外层脚本逐步调用，每步全新进程退出：
+   node FORGE/src/release-gate-driver.mjs --step acceptance  --target <版本号> --run-dir <runDir>
+   node FORGE/src/release-gate-driver.mjs --step regression  --target <版本号> --run-dir <runDir>
+   node FORGE/src/release-gate-driver.mjs --step coverage     --target <版本号> --run-dir <runDir>
+   node FORGE/src/release-gate-driver.mjs --step consolidate  --target <版本号> --run-dir <runDir>
+   node FORGE/src/release-gate-driver.mjs --step verdict       --target <版本号> --run-dir <runDir>
+
 2. 记住 runDir（driver 启动日志第一行会打印）
 
 3. 循环（最多 20 次，防 turn 超限）:
