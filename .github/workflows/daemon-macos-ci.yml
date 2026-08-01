@@ -48,11 +48,19 @@ jobs:
           # 否则 config.sh _sofa_find_data_dir 返回空 → daemon.json 写到 /daemon.json → 权限失败
           mkdir -p .sofagent
           export SOFAGENT_DATA="${PWD}/.sofagent"
-          engine/scripts/daemon.sh --foreground &
+          # 捕获 daemon stderr 到文件 + 终端（后台进程 stderr 默认丢失）
+          engine/scripts/daemon.sh --foreground > .sofagent/daemon-stdout.log 2>&1 &
           DAEMON_PID=$!
           echo "started daemon foreground PID=$DAEMON_PID"
           sleep 35
           kill $DAEMON_PID 2>/dev/null || true
+          # 输出 daemon stdout/stderr 供调试（后台进程输出不会自动出现在 CI 日志）
+          echo "=== daemon stdout/stderr ==="
+          cat .sofagent/daemon-stdout.log 2>/dev/null || echo "(no output captured)"
+          echo "=== daemon.json ==="
+          cat .sofagent/daemon.json 2>/dev/null || echo "(daemon.json not found)"
+          echo "=== .sofagent contents ==="
+          ls -la .sofagent/ 2>/dev/null || echo "(.sofagent not found)"
 
       - name: Verify daemon.json has required fields
         run: |
