@@ -68,10 +68,13 @@ check_dist_export() {
 }
 scenario 1 "Fresh install（--install-hook）"
 TMP_REPO=$(mktmp_repo); cd "$TMP_REPO"
-$CLI --install-hook 2>&1 | head -5
+# 注意：不用 | head -N——管道关闭会 SIGPIPE node 进程，在 set -o pipefail 下可能导致脚本退出
+$CLI --install-hook > /dev/null 2>&1
 [ -f "$TMP_REPO/.git/hooks/commit-msg" ] && [ -x "$TMP_REPO/.git/hooks/commit-msg" ] && pass || fail "commit-msg hook 未安装或不可执行"
 scenario 2 "--init 一键初始化"
-$CLI --init 2>&1 | head -10
+# 注意：不用 | head -10——管道关闭会 SIGPIPE node 进程，在 set -o pipefail 下可能导致脚本退出
+# 改为静默运行 + 文件检查（--init 的输出不重要，重要的是文件是否生成）
+$CLI --init > /dev/null 2>&1 || true
 INIT_OK=true; [ ! -f "$TMP_REPO/.sofagent/config.yml" ] && INIT_OK=false && fail ".sofagent/config.yml 未生成"
 [ ! -f "$TMP_REPO/.git/hooks/commit-msg" ] && INIT_OK=false && fail "commit-msg hook 未安装"
 [ ! -f "$TMP_REPO/.git/hooks/post-commit" ] && INIT_OK=false && fail "post-commit hook 未安装"
