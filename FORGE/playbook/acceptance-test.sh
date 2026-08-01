@@ -2,8 +2,8 @@
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
-# 场景数：102 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
-#   口径 = 纯数字编号去重数（scenario 34b/34c 子场景不计入此总数；最大编号 171 为编号上限，非场景数）
+# 场景数：111 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
+#   口径 = 纯数字编号去重数（scenario 34b/34c/167a/167b 子场景不计入此总数；最大编号 180 为编号上限，非场景数）
 #   计数命令（精确口径，排除 echo 探针假阳性）：grep -oE 'scenario [0-9]+ "' FORGE/playbook/acceptance-test.sh | grep -oE '[0-9]+' | sort -un | wc -l
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
@@ -1611,21 +1611,21 @@ done
 node -e "const fs=require('fs'),path=require('path');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=0;for(const fp of files){const c=fs.readFileSync(fp,'utf8'),dir=path.dirname(fp);const re=/\]\(((?:\.\.?\/)?[^)]+\.md(?:#[^)]*)?)\)/g;let m;while((m=re.exec(c))){const href=m[1].split('#')[0];if(href.startsWith('http'))continue;if(!fs.existsSync(path.resolve(dir,href))){console.log('断链:',fp,'->',m[1]);bad++;}}}process.exit(bad?1:0);" >/dev/null 2>&1 || { fail "存在指向不存在文件的跨文档 Markdown 链接"; S164_OK=false; }
 $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接无死链）"
 
-scenario 165 "关键数字跨文档一致性——测试数 1277 / 规则数 21 / acceptance 102"
+scenario 165 "关键数字跨文档一致性——测试数 1317 / 规则数 21 / acceptance 111"
 S165_OK=true
-# 子项 a: 全 workspace 测试数 1277 在 README/WIKI/evidence 三处一致
+# 子项 a: 全 workspace 测试数 1317 在 README/WIKI/evidence 三处一致
 for f in README.md docs/WIKI.md docs/evidence/evidence.md; do
-  grep -q "1277" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 1277（数字漂移）"; S165_OK=false; }
+  grep -q "1317" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 1317（数字漂移）"; S165_OK=false; }
 done
 # 子项 b: 审计规则 21 条在 README/ARCHITECTURE/HANDBOOK 一致
 for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do
   grep -q "21 条\|21 个\|21 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 21（数字漂移）"; S165_OK=false; }
 done
-# 子项 c: acceptance 场景数 102 在 DEVELOPMENT/LIMITATIONS 一致
+# 子项 c: acceptance 场景数 111 在 DEVELOPMENT/LIMITATIONS 一致
 for f in docs/DEVELOPMENT.md LIMITATIONS.md; do
-  grep -q "102" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 102"; S165_OK=false; }
+  grep -q "111" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 111"; S165_OK=false; }
 done
-$S165_OK && pass "关键数字跨文档一致（1277 / 21 / 102）"
+$S165_OK && pass "关键数字跨文档一致（1317 / 21 / 111）"
 
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
 S166_OK=true
@@ -1682,6 +1682,70 @@ node -e "const m=require('$PROJECT_ROOT/engine/orchestrator/dist/loop/checker-no
 # routeAfterAudit PASS → checker（非 reviewer）
 node -e "const{routeAfterAudit}=require('$PROJECT_ROOT/engine/orchestrator/dist/loop/graph.js');if(routeAfterAudit({auditResult:'PASS',retryCount:0,degradationLevel:0,finalStatus:'running'})!=='checker'){console.log('PASS 未路由到 checker');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "routeAfterAudit PASS 未路由到 checker"; S171_OK=false; }
 $S171_OK && pass "Checker 三节点完整（format/fact/source + makeCheckerNode + routeAfterAudit PASS→checker）"
+
+# ============================================================
+# v1.2.4 P3 Skill × MCP 集成验收（S2/S4/S5）
+# ============================================================
+
+scenario 172 "v1.2.4 P3 S2 — MCP tools/list 返回 22 个 tools"
+TOOL_COUNT=$(node -e "const s=require('$PROJECT_ROOT/engine/mcp/dist/mcp-server.js'); " 2>/dev/null || true)
+# 直接检查 mcp-server.ts 源码中的 tool 注册数
+MCP_TOOLS=$(grep -c "name: '" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" 2>/dev/null || echo 0)
+# 更精确：检查 handleToolsList 中的 tool 定义
+MCP_REGISTERED=$(node -e "
+const fs = require('fs');
+const src = fs.readFileSync('$PROJECT_ROOT/engine/mcp/src/mcp-server.ts', 'utf-8');
+// 计算_tools数组中的 name: 'xxx' 数量
+const matches = src.match(/name:\s*'[^']+'/g) || [];
+// 去重（list_capabilities 中也有 name: 引用）
+const toolDefs = new Set(matches);
+console.log(toolDefs.size);
+" 2>/dev/null || echo "0")
+[ "$MCP_REGISTERED" -ge 22 ] && pass "MCP tools/list 注册数 ≥22（实测 $MCP_REGISTERED）" || fail "MCP tools/list 注册数不足（$MCP_REGISTERED < 22）"
+
+scenario 173 "v1.2.4 P3 S2 — 新增 6 个 tool handler 文件存在"
+S173_OK=true
+for f in create-entity.ts create-concept.ts validate-ontology.ts evaluate-output.ts optimize-skill.ts health-check.ts; do
+  [ -f "$PROJECT_ROOT/engine/mcp/src/tools/$f" ] || { fail "缺失 tool handler: $f"; S173_OK=false; }
+done
+$S173_OK && pass "6 个 S2 tool handler 文件全部存在"
+
+scenario 174 "v1.2.4 P3 S4 — data-diff.ts D1-D5 规则引擎存在 + diffDataChange/runDataRules 可调用"
+S174_OK=true
+node -e "const m=require('$PROJECT_ROOT/engine/core/dist/data-diff.js');if(typeof m.diffDataChange!=='function'){console.log('diffDataChange missing');process.exit(1);}if(typeof m.runDataRules!=='function'){console.log('runDataRules missing');process.exit(1);}const dc=m.diffDataChange('entity','test',{a:1},{a:2});if(dc.action!=='update'){console.log('action wrong: '+dc.action);process.exit(1);}const r=m.runDataRules([dc]);if(typeof r.hasFail==='undefined'){console.log('result malformed');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "data-diff D1-D5 引擎不可用"; S174_OK=false; }
+$S174_OK && pass "data-diff.ts D1-D5 引擎完整（diffDataChange + runDataRules）"
+
+scenario 175 "v1.2.4 P3 S4 — audit-data-change + generateDataThink 存在"
+S175_OK=true
+[ -f "$PROJECT_ROOT/engine/mcp/src/tools/audit-data-change.ts" ] || { fail "缺失 audit-data-change.ts"; S175_OK=false; }
+node -e "const m=require('$PROJECT_ROOT/engine/think/dist/think-generator.js');if(typeof m.generateDataThink!=='function'){console.log('generateDataThink missing');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "generateDataThink 不存在"; S175_OK=false; }
+$S175_OK && pass "S4 数据审计闭环完整（audit-data-change tool + generateDataThink 回溯）"
+
+scenario 176 "v1.2.4 P3 S5 — notify-session tool 返回 [sofagent] 前缀"
+S176_OK=true
+node -e "const m=require('$PROJECT_ROOT/engine/mcp/dist/tools/notify-session.js');const r=m.notifySession({audit_type:'code',verdict:'PASS',summary:'test pass'});if(!r.text.startsWith('[sofagent]')){console.log('no prefix: '+r.text.substring(0,20));process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "notify-session 返回值无 [sofagent] 前缀"; S176_OK=false; }
+$S176_OK && pass "notify_session 返回值首行含 [sofagent] 前缀"
+
+scenario 177 "v1.2.4 P3 S5 L3 — isError 标记：run_audit FAIL 时 isError=true"
+S177_OK=true
+# 检查 mcp-server.ts 中 toolRunAudit 含 isError 逻辑
+grep -q "isError.*verdict.*FAIL\|isError.*FAIL\|verdict === 'FAIL'" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" 2>/dev/null || { fail "mcp-server.ts 中 run_audit 未设 isError 标记"; S177_OK=false; }
+# 检查 create-entity 含 isError
+grep -q "isError" "$PROJECT_ROOT/engine/mcp/src/tools/create-entity.ts" 2>/dev/null || { fail "create-entity.ts 未含 isError"; S177_OK=false; }
+# 检查 audit-data-change 含 isError
+grep -q "isError" "$PROJECT_ROOT/engine/mcp/src/tools/audit-data-change.ts" 2>/dev/null || { fail "audit-data-change.ts 未含 isError"; S177_OK=false; }
+$S177_OK && pass "S5 L3 isError 协议标记完整（run_audit / create_entity / audit_data_change）"
+
+scenario 178 "v1.2.4 P3 S5 — FDE/SKILL.md 审计结果展示铁律段落存在"
+grep -q "审计结果展示铁律" "$PROJECT_ROOT/FDE/SKILL.md" 2>/dev/null && pass "FDE/SKILL.md 含审计结果展示铁律段落" || fail "FDE/SKILL.md 缺失审计结果展示铁律段落"
+
+scenario 179 "v1.2.4 P3 S5 — FDE/SKILL.md MCP tool 引用 ≥7 处"
+MCP_REFS=$(grep -oE '\b(run_audit|get_think|write_think|audit_file|search_knowledge|read_entity|read_concept|list_entities|read_lessons|read_think_md|stats|list_capabilities|data_sovereignty_report|create_entity|create_concept|validate_ontology|evaluate_output|optimize_skill|health_check|audit_data_change|notify_session)\b' "$PROJECT_ROOT/FDE/SKILL.md" 2>/dev/null | sort -u | wc -l | tr -d ' ')
+[ "$MCP_REFS" -ge 7 ] && pass "FDE/SKILL.md MCP tool 引用 ≥7（实测 $MCP_REFS 个独立 tool）" || fail "FDE/SKILL.md MCP tool 引用不足（$MCP_REFS < 7）"
+
+scenario 180 "v1.2.4 P3 S5 — FDE/SKILL.md 行数 ≤250"
+SKILL_LINES=$(wc -l < "$PROJECT_ROOT/FDE/SKILL.md" | tr -d ' ')
+[ "$SKILL_LINES" -le 250 ] && pass "FDE/SKILL.md 行数达标（$SKILL_LINES ≤ 250）" || fail "FDE/SKILL.md 行数超标（$SKILL_LINES > 250）"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

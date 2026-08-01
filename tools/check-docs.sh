@@ -153,7 +153,7 @@ LIMIT_A=6100  # v1.2.3: v1.2.3 功能开发文档自然增长（A 层 6019 行�
 LIMIT_B=5000  # v1.2.1: FORGE 文档 + acceptance-test，B 层 4445 行，留余量
 LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
 LIMIT_D=2000  # v1.1.9: D 层纳入口径修正——docs/architecture（v1.1.9 设计 876 行）+ docs/prd（193 行）从 A 层归入 D 层（工程文档与设计文档同语义），700→2000 容纳
-LIMIT_E=2100  # v1.2.3: E 层 2018 行贴近上限，上调 2000→2100 留余量
+LIMIT_E=2700  # v1.2.4: E 层 2632 行（LIMITATIONS 测试数更新），上调 2100→2700 留余量
 LIMIT_TOTAL=11100  # v1.2.3: 随 LIMIT_A 6000→6100 同步上调（A+B=6100+5000）
 
 # 输出各层

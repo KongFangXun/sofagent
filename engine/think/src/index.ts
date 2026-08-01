@@ -4,5 +4,5 @@
  * 思考链分析 — 推理路径追踪 / 决策可视化 / 思维审计
  */
 
-export { generateThinkEntry, generateThinkFromEval } from './think-generator';
+export { generateThinkEntry, generateThinkFromEval, generateDataThink } from './think-generator';
 export type { ThinkEntryOptions } from './think-generator';

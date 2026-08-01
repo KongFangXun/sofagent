@@ -47,6 +47,14 @@ import { generateThinkEntry } from '@sofagent/think';
 import { getThinkPath, appendThinkEntry } from '@sofagent/core';
 import type { AuditResult } from '@sofagent/audit';
 import { queryDataSovereigntyReport } from './tools/data-sovereignty-report';
+import { createEntity } from './tools/create-entity';
+import { createConcept } from './tools/create-concept';
+import { validateOntology } from './tools/validate-ontology';
+import { evaluateOutput } from './tools/evaluate-output';
+import { optimizeSkill } from './tools/optimize-skill';
+import { healthCheck } from './tools/health-check';
+import { auditDataChange } from './tools/audit-data-change';
+import { notifySession } from './tools/notify-session';
 
 // ============================================================
 // 类型定义
@@ -420,6 +428,103 @@ class McpServer {
             },
           },
         },
+        {
+          name: 'create_entity',
+          description: '在知识库中创建/更新一个 entity 页（knowledge/entities/<name>.md）。写入前跑 D1-D5 数据审计，FAIL 时拒绝写入。',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              name: { type: 'string', description: 'entity 名称（不含 .md 后缀，将作为文件名）' },
+              domain: { type: 'string', description: '业务域归属（如 财务/人事/供应链）' },
+              content: { type: 'string', description: 'entity 页面内容（Markdown 格式，含 frontmatter）' },
+              relations: { type: 'string', description: 'JSON 格式的关联关系（belongs_to / has_many），可选' },
+            },
+            required: ['name', 'domain', 'content'],
+          },
+        },
+        {
+          name: 'create_concept',
+          description: '在知识库中创建/更新一个 concept 页（knowledge/concepts/<name>.md）。用于沉淀业务概念定义。',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              name: { type: 'string', description: 'concept 名称' },
+              content: { type: 'string', description: 'concept 内容（Markdown）' },
+            },
+            required: ['name', 'content'],
+          },
+        },
+        {
+          name: 'validate_ontology',
+          description: '检查本体结构完整性——实体数、关联断裂、孤儿实体、死链。复用 ontology merge-engine 逻辑。',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              fix: { type: 'boolean', description: '是否自动修复可修复的问题（如孤儿实体标记），默认 false' },
+            },
+          },
+        },
+        {
+          name: 'evaluate_output',
+          description: '用 golden set 评估 Agent 产出质量。复用 eval 引擎逻辑。返回评分 + 失败用例。',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              golden_set_path: { type: 'string', description: 'golden set 文件路径（默认使用内置 golden set）' },
+              verbose: { type: 'boolean', description: '是否输出详细报告', default: false },
+            },
+          },
+        },
+        {
+          name: 'optimize_skill',
+          description: '优化指定 Skill 文件——调用 skillopt 引擎分析并生成优化建议。复用 skillopt 逻辑。',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              skill_path: { type: 'string', description: 'Skill 文件路径（必填）' },
+              check_only: { type: 'boolean', description: '仅做安全扫描不优化，默认 false' },
+            },
+            required: ['skill_path'],
+          },
+        },
+        {
+          name: 'health_check',
+          description: '运行 sofagent 环境健康检查——环境/配置/数据目录/Hook/依赖。复用 core doctor/verify 逻辑。',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              mode: { type: 'string', enum: ['doctor', 'verify'], description: '检查模式：doctor（基础健康）/ verify（装后验证），默认 doctor' },
+              platform: { type: 'string', description: '平台（workbuddy/openclaw/claude/codex/hermes），仅 verify 模式使用' },
+            },
+          },
+        },
+        {
+          name: 'audit_data_change',
+          description: '对知识库结构化数据变更跑审计（D1-D5 数据规则）。可审计最近 N 次数据变更，或指定 entity/concept 名称。',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              scope: { type: 'string', enum: ['recent', 'entity', 'concept', 'all'], description: '审计范围', default: 'recent' },
+              name: { type: 'string', description: 'entity/concept 名称（scope 为 entity/concept 时必填）' },
+              count: { type: 'number', description: '最近 N 次变更（scope 为 recent 时），默认 10' },
+            },
+          },
+        },
+        {
+          name: 'notify_session',
+          description: '向当前 Agent session 推送审计结果摘要。用于审计完成后主动告知用户审计状态，确保"结果可见"。',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              audit_type: { type: 'string', enum: ['code', 'data', 'file'], description: '审计类型' },
+              verdict: { type: 'string', enum: ['PASS', 'WARN', 'FAIL'], description: '审计判定' },
+              summary: { type: 'string', description: '审计摘要（1-2 句话）' },
+              details: { type: 'array', items: { type: 'string' }, description: '违规/警告详情列表' },
+              think_ref: { type: 'boolean', description: '是否附带相关历史反思（默认 true）', default: true },
+            },
+            required: ['audit_type', 'verdict', 'summary'],
+          },
+        },
       ],
     });
   }
@@ -477,6 +582,30 @@ class McpServer {
         break;
       case 'data_sovereignty_report':
         this.toolDataSovereigntyReport(id, args);
+        break;
+      case 'create_entity':
+        this.toolCreateEntity(id, args);
+        break;
+      case 'create_concept':
+        this.toolCreateConcept(id, args);
+        break;
+      case 'validate_ontology':
+        this.toolValidateOntology(id, args);
+        break;
+      case 'evaluate_output':
+        this.toolEvaluateOutput(id, args);
+        break;
+      case 'optimize_skill':
+        this.toolOptimizeSkill(id, args);
+        break;
+      case 'health_check':
+        this.toolHealthCheck(id, args);
+        break;
+      case 'audit_data_change':
+        this.toolAuditDataChange(id, args);
+        break;
+      case 'notify_session':
+        this.toolNotifySession(id, args);
         break;
       default:
         this.sendError(id, -32602, `Unknown tool: ${toolName}`);
@@ -567,7 +696,16 @@ class McpServer {
           status: r.status,
         })),
       },
+      // S5 L3: FAIL 时设 isError=true（协议级强制冒泡）
+      isError: verdict === 'FAIL',
     });
+
+    // S5 L4: webhook 推送（WARN/FAIL 时触发，推送失败不阻断审计）
+    if (verdict !== 'PASS') {
+      this.pushAuditWebhook(verdict, task, results).catch(() => {
+        // webhook 推送失败非致命——静默忽略
+      });
+    }
   }
 
   /**
@@ -747,7 +885,16 @@ class McpServer {
         auditEngine: `sofagent-audit v${SERVER_VERSION}`,
         scope: Array.from(scopeRuleNumbers).sort((a, b) => a - b).map((n) => `A${n}`),
       },
+      // S5 L3: FAIL 时设 isError=true
+      isError: status === 'FAIL',
     });
+
+    // S5 L4: webhook 推送（WARN/FAIL 时触发）
+    if (status !== 'PASS') {
+      this.pushAuditWebhook(status, task, results).catch(() => {
+        // webhook 推送失败非致命
+      });
+    }
   }
 
   /**
@@ -1075,6 +1222,137 @@ class McpServer {
     }
   }
 
+  // ============================================================
+  // v1.2.4 P3 S2/S4/S5 新增 tools
+  // ============================================================
+
+  /** Tool: create_entity — 创建/更新 entity（含 S4 数据审计 + S5 isError） */
+  private toolCreateEntity(id: number | string | null, args: Record<string, unknown>): void {
+    const name = args.name as string | undefined;
+    const domain = args.domain as string | undefined;
+    const content = args.content as string | undefined;
+    if (!name || !domain || !content) {
+      this.sendError(id, -32602, 'Missing required argument: name, domain, and content are required');
+      return;
+    }
+    const result = createEntity({
+      name,
+      domain,
+      content,
+      ...(args.relations ? { relations: args.relations as string } : {}),
+    });
+    this.sendToolResultWithFlag(id, result.text, result.data, result.data.isError);
+  }
+
+  /** Tool: create_concept — 创建/更新 concept（含 S4 数据审计 + S5 isError） */
+  private toolCreateConcept(id: number | string | null, args: Record<string, unknown>): void {
+    const name = args.name as string | undefined;
+    const content = args.content as string | undefined;
+    if (!name || !content) {
+      this.sendError(id, -32602, 'Missing required argument: name and content are required');
+      return;
+    }
+    const result = createConcept({ name, content });
+    this.sendToolResultWithFlag(id, result.text, result.data, result.data.isError);
+  }
+
+  /** Tool: validate_ontology — 本体结构完整性校验 */
+  private toolValidateOntology(id: number | string | null, args: Record<string, unknown>): void {
+    const result = validateOntology({
+      ...(args.fix !== undefined ? { fix: args.fix as boolean } : {}),
+    });
+    this.sendToolResult(id, {
+      type: 'text',
+      text: result.text,
+      data: result.data,
+    });
+  }
+
+  /** Tool: evaluate_output — golden set 评估 */
+  private async toolEvaluateOutput(id: number | string | null, args: Record<string, unknown>): Promise<void> {
+    const result = await evaluateOutput({
+      ...(args.golden_set_path ? { golden_set_path: args.golden_set_path as string } : {}),
+      ...(args.verbose !== undefined ? { verbose: args.verbose as boolean } : {}),
+    });
+    this.sendToolResult(id, {
+      type: 'text',
+      text: result.text,
+      data: result.data,
+    });
+  }
+
+  /** Tool: optimize_skill — Skill 优化 */
+  private toolOptimizeSkill(id: number | string | null, args: Record<string, unknown>): void {
+    const skillPath = args.skill_path as string | undefined;
+    if (!skillPath) {
+      this.sendError(id, -32602, 'Missing required argument: skill_path');
+      return;
+    }
+    const result = optimizeSkill({
+      skill_path: skillPath,
+      ...(args.check_only !== undefined ? { check_only: args.check_only as boolean } : {}),
+    });
+    this.sendToolResult(id, {
+      type: 'text',
+      text: result.text,
+      data: result.data,
+    });
+  }
+
+  /** Tool: health_check — 环境健康检查 */
+  private toolHealthCheck(id: number | string | null, args: Record<string, unknown>): void {
+    try {
+      const result = healthCheck({
+        ...(args.mode ? { mode: args.mode as 'doctor' | 'verify' } : {}),
+        ...(args.platform ? { platform: args.platform as string } : {}),
+      });
+      this.sendToolResult(id, {
+        type: 'text',
+        text: result.text,
+        data: result.data,
+      });
+    } catch (err) {
+      this.sendToolResult(id, {
+        type: 'text',
+        text: `[sofagent] 健康检查失败: ${err instanceof Error ? err.message : String(err)}`,
+        data: { allOk: false, checks: [], mode: args.mode ?? 'doctor' },
+      });
+    }
+  }
+
+  /** Tool: audit_data_change — 数据变更审计（S4 + S5 isError） */
+  private toolAuditDataChange(id: number | string | null, args: Record<string, unknown>): void {
+    const result = auditDataChange({
+      ...(args.scope ? { scope: args.scope as 'recent' | 'entity' | 'concept' | 'all' } : {}),
+      ...(args.name ? { name: args.name as string } : {}),
+      ...(args.count !== undefined ? { count: args.count as number } : {}),
+    });
+    this.sendToolResultWithFlag(id, result.text, result.data, result.data.isError);
+  }
+
+  /** Tool: notify_session — 审计结果汇报（S5） */
+  private toolNotifySession(id: number | string | null, args: Record<string, unknown>): void {
+    const auditType = args.audit_type as 'code' | 'data' | 'file' | undefined;
+    const verdict = args.verdict as 'PASS' | 'WARN' | 'FAIL' | undefined;
+    const summary = args.summary as string | undefined;
+    if (!auditType || !verdict || !summary) {
+      this.sendError(id, -32602, 'Missing required arguments: audit_type, verdict, and summary are required');
+      return;
+    }
+    const result = notifySession({
+      audit_type: auditType,
+      verdict,
+      summary,
+      ...(args.details ? { details: args.details as string[] } : {}),
+      ...(args.think_ref !== undefined ? { think_ref: args.think_ref as boolean } : {}),
+    });
+    this.sendToolResult(id, {
+      type: 'text',
+      text: result.text,
+      data: result.data,
+    });
+  }
+
   /** Tool: list_capabilities — 完整能力清单（Agent 首次连接用） */
   private toolListCapabilities(id: number | string | null): void {
     const capabilities = {
@@ -1093,6 +1371,15 @@ class McpServer {
         { name: 'stats', description: 'knowledge 库统计' },
         { name: 'list_capabilities', description: '返回本能力清单' },
         { name: 'data_sovereignty_report', description: '查询数据主权审计报告摘要（today/yesterday/YYYY-MM-DD）' },
+        // v1.2.4 P3 新增
+        { name: 'create_entity', description: '创建/更新 entity（含 D1-D5 数据审计）' },
+        { name: 'create_concept', description: '创建/更新 concept（含 D1-D5 数据审计）' },
+        { name: 'validate_ontology', description: '本体结构完整性校验' },
+        { name: 'evaluate_output', description: '用 golden set 评估 Agent 产出质量' },
+        { name: 'optimize_skill', description: '优化 Skill 文件（skillopt 引擎）' },
+        { name: 'health_check', description: '环境健康检查（doctor/verify）' },
+        { name: 'audit_data_change', description: '数据变更审计（D1-D5 规则）' },
+        { name: 'notify_session', description: '审计结果汇报（预格式化 [sofagent] 返回）' },
       ],
       resources: [
         { uri: 'think://latest', description: 'think.md 最后一条条目' },
@@ -1370,7 +1657,7 @@ class McpServer {
   /**
    * 发送 Tool 调用结果
    */
-  private sendToolResult(id: number | string | null, payload: { type: string; text: string; data?: unknown }): void {
+  private sendToolResult(id: number | string | null, payload: { type: string; text: string; data?: unknown; isError?: boolean }): void {
     this.sendResult(id, {
       content: [
         {
@@ -1378,8 +1665,56 @@ class McpServer {
           text: payload.text,
         },
       ],
+      ...(payload.isError ? { isError: true } : {}),
       ...(payload.data !== undefined ? { _meta: { data: payload.data } } : {}),
     });
+  }
+
+  /**
+   * 发送 Tool 调用结果（支持 L3 isError 标记 · v1.2.4 S5 新增）
+   *
+   * MCP 协议中 isError: true 的 tool 结果会被大多数 Agent 框架自动展示给用户。
+   * 用于审计 FAIL / 数据写入被拦截时强制冒泡。
+   */
+  private sendToolResultWithFlag(id: number | string | null, text: string, data: unknown, isError: boolean): void {
+    this.sendResult(id, {
+      content: [
+        {
+          type: 'text',
+          text,
+        },
+      ],
+      ...(data !== undefined ? { _meta: { data } } : {}),
+      ...(isError ? { isError: true } : {}),
+    });
+  }
+
+  /**
+   * S5 L4: webhook 推送（双通道留痕）
+   *
+   * 从 config.yml 读取 webhook 配置，WARN/FAIL 时推送到企业 IM。
+   * 推送失败不阻断审计（非致命降级）。
+   */
+  private async pushAuditWebhook(verdict: string, task: string | undefined, results: AuditResult): Promise<void> {
+    try {
+      const config = loadConfig();
+      const webhookConfig = (config as unknown as Record<string, unknown>)?.['webhook'] as
+        | { enabled?: boolean; platform?: string; url?: string }
+        | undefined;
+
+      if (!webhookConfig?.enabled || !webhookConfig.url) return;
+
+      const { pushAuditResult } = await import('@sofagent/audit');
+      await pushAuditResult({
+        platform: (webhookConfig.platform as 'dingtalk' | 'feishu' | 'wecom') ?? 'dingtalk',
+        url: webhookConfig.url,
+        task,
+        rules: results.rules,
+        exitCode: results.exitCode,
+      });
+    } catch {
+      // webhook 推送失败非致命——静默忽略
+    }
   }
 
   /**

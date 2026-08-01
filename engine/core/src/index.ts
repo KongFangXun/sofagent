@@ -235,15 +235,13 @@ export type {
   Args,
 } from './verify/types';
 
-// ── 数据变更审计（v1.2.4 P3 S4）──
+// ── 数据变更审计（D1-D5 规则引擎 · v1.2.4 S4 新增）──
 export {
+  type DataChange,
+  type DataViolation,
+  type DataAuditResult,
   diffDataChange,
   runDataRules,
-} from './data-diff';
-export type {
-  DataChange,
-  DataRuleViolation,
-  DataAuditResult,
 } from './data-diff';
 
 // ── 文件系统 / 记忆层 ──

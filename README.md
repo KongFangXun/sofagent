@@ -283,7 +283,7 @@ npm test
 # 仅核心引擎测试
 npm test --workspace=engine/audit
 
-# 预期：1277 tests passed（12 包全绿）
+# 预期：1317 tests passed（12 包全绿）
 ```
 
 ---
