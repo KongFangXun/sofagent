@@ -298,9 +298,9 @@ function s152() {
   const routeFailL0 = routeAfterAudit({ auditResult: 'FAIL', retryCount: 1, degradationLevel: 0, finalStatus: 'running' });
   const routeFailL2 = routeAfterAudit({ auditResult: 'FAIL', retryCount: 2, degradationLevel: 2, finalStatus: 'running' });
   const routeFailOver = routeAfterAudit({ auditResult: 'FAIL', retryCount: 3, degradationLevel: 2, finalStatus: 'running' });
-  if (routePass !== 'reviewer') { console.log('降级链 PASS 未路由到 reviewer'); process.exit(1); }
+  if (routePass !== 'checker') { console.log('降级链 PASS 未路由到 checker（v1.2.4 P2b）'); process.exit(1); }
   if (routeFailL0 !== 'engineer') { console.log('降级链 FAIL L0 未路由到 engineer'); process.exit(1); }
-  if (routeFailL2 !== 'reviewer') { console.log('降级链 FAIL L2 未路由到 reviewer（低可信放行）'); process.exit(1); }
+  if (routeFailL2 !== 'checker') { console.log('降级链 FAIL L2 未路由到 checker（v1.2.4 P2b 低可信放行）'); process.exit(1); }
   if (routeFailOver !== 'human_confirm') { console.log('降级链 FAIL 超限未路由到 human_confirm'); process.exit(1); }
   computeResultContent('/tmp/x', 'create', 'hello world'); // decide/execute 分离：纯函数调用不抛即通过
   console.log('OK Planner解析+降级+降级链四路径+decide/execute分离');

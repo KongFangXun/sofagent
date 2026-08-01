@@ -244,12 +244,12 @@ describe('routeAfterAudit', () => {
     expect(routeAfterAudit(sampleState({ auditResult: 'FAIL', finalStatus: 'running' }))).toBe('engineer');
   });
 
-  it('PASS → reviewer', () => {
-    expect(routeAfterAudit(sampleState({ auditResult: 'PASS' }))).toBe('reviewer');
+  it('PASS → checker', () => {
+    expect(routeAfterAudit(sampleState({ auditResult: 'PASS' }))).toBe('checker');
   });
 
-  it('WARN → reviewer', () => {
-    expect(routeAfterAudit(sampleState({ auditResult: 'WARN' }))).toBe('reviewer');
+  it('WARN → checker', () => {
+    expect(routeAfterAudit(sampleState({ auditResult: 'WARN' }))).toBe('checker');
   });
 });
 
@@ -299,8 +299,8 @@ describe('resolveResumeNode', () => {
     expect(resolveResumeNode(record('audit', 'before'))).toBe('audit');
   });
 
-  it('audit after PASS → reviewer', () => {
-    expect(resolveResumeNode(record('audit', 'after', { auditResult: 'PASS' }))).toBe('reviewer');
+  it('audit after PASS → checker', () => {
+    expect(resolveResumeNode(record('audit', 'after', { auditResult: 'PASS' }))).toBe('checker');
   });
 
   it('audit after FAIL → engineer', () => {

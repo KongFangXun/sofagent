@@ -30,6 +30,7 @@
     "@sofagent/core": "1.2.3",
     "@sofagent/harness": "1.2.3",
     "@sofagent/rules": "1.2.3",
+    "@sofagent/skillopt": "1.2.3",
     "js-yaml": "^5.2.0",
     "zod": "^4.4.3"
   },

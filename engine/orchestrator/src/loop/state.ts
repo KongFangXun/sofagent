@@ -18,8 +18,9 @@ export type AuditVerdict = 'PASS' | 'FAIL' | 'WARN';
 /**
  * StateGraph 节点名
  * v1.2.2 P4：新增 'plan'（Planner 节点，START → plan → engineer）
+ * v1.2.4 P2b：新增 'checker'（多类型 Checker 节点，audit → checker → reviewer）
  */
-export type LoopNodeName = 'plan' | 'engineer' | 'audit' | 'reviewer' | 'human_confirm';
+export type LoopNodeName = 'plan' | 'engineer' | 'audit' | 'checker' | 'reviewer' | 'human_confirm';
 
 /**
  * Planner 产出的子任务（v1.2.2 P4）

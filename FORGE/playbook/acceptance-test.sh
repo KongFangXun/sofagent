@@ -2,8 +2,8 @@
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
-# 场景数：100 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
-#   口径 = 纯数字编号去重数（scenario 34b/34c 子场景不计入此总数；最大编号 166 为编号上限，非场景数）
+# 场景数：105 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
+#   口径 = 纯数字编号去重数（scenario 34b/34c 子场景不计入此总数；最大编号 171 为编号上限，非场景数）
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
 RUN_MODE="all"
@@ -1610,21 +1610,21 @@ done
 node -e "const fs=require('fs'),path=require('path');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=0;for(const fp of files){const c=fs.readFileSync(fp,'utf8'),dir=path.dirname(fp);const re=/\]\(((?:\.\.?\/)?[^)]+\.md(?:#[^)]*)?)\)/g;let m;while((m=re.exec(c))){const href=m[1].split('#')[0];if(href.startsWith('http'))continue;if(!fs.existsSync(path.resolve(dir,href))){console.log('断链:',fp,'->',m[1]);bad++;}}}process.exit(bad?1:0);" >/dev/null 2>&1 || { fail "存在指向不存在文件的跨文档 Markdown 链接"; S164_OK=false; }
 $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接无死链）"
 
-scenario 165 "关键数字跨文档一致性——测试数 1207 / 规则数 21 / acceptance 166"
+scenario 165 "关键数字跨文档一致性——测试数 1277 / 规则数 21 / acceptance 105"
 S165_OK=true
-# 子项 a: 全 workspace 测试数 1207 在 README/WIKI/evidence 三处一致
+# 子项 a: 全 workspace 测试数 1277 在 README/WIKI/evidence 三处一致
 for f in README.md docs/WIKI.md docs/evidence/evidence.md; do
-  grep -q "1207" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 1207（数字漂移）"; S165_OK=false; }
+  grep -q "1277" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 1277（数字漂移）"; S165_OK=false; }
 done
 # 子项 b: 审计规则 21 条在 README/ARCHITECTURE/HANDBOOK 一致
 for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do
   grep -q "21 条\|21 个\|21 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 21（数字漂移）"; S165_OK=false; }
 done
-# 子项 c: acceptance 场景数 166 在 DEVELOPMENT/LIMITATIONS 一致
+# 子项 c: acceptance 场景数 105 在 DEVELOPMENT/LIMITATIONS 一致
 for f in docs/DEVELOPMENT.md LIMITATIONS.md; do
-  grep -q "166" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 166"; S165_OK=false; }
+  grep -q "105" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 105"; S165_OK=false; }
 done
-$S165_OK && pass "关键数字跨文档一致（1207 / 21 / 163）"
+$S165_OK && pass "关键数字跨文档一致（1277 / 21 / 105）"
 
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
 S166_OK=true
@@ -1636,6 +1636,51 @@ for f in docs/changelog/releasing.md README.md docs/ARCHITECTURE.md; do
   [ $((N % 2)) -eq 0 ] || { fail "$f 代码围栏未闭合（$N 个 fence 为奇数）"; S166_OK=false; }
 done
 $S166_OK && pass "Markdown 格式完整（无 U+FFFD + 代码块闭合）"
+
+# ────────────────────────────────────────────────────────────
+# v1.2.4 新增验收场景（知识进化：分层巡检 + skillopt + 失败清单 + 联邦蒸馏 + Checker）
+# ────────────────────────────────────────────────────────────
+
+scenario 167a "v1.2.4 P0 分层巡检——inspector-layers 三层调度器存在 + L1/L2/L3 名称列表"
+S167A_OK=true
+[ -f "$PROJECT_ROOT/engine/daemon/dist/inspector-layers.js" ] || { fail "inspector-layers.js 不存在"; S167A_OK=false; }
+node -e "const m=require('$PROJECT_ROOT/engine/daemon/dist/inspector-layers.js');const l1=m.getLayerInspectorNames('L1');const l2=m.getLayerInspectorNames('L2');const l3=m.getLayerInspectorNames('L3');if(!l1.includes('audit-history')||!l1.includes('eval-failures')||!l1.includes('daily-snapshot')){console.log('L1 缺少 inspector');process.exit(1);}if(!l2.includes('skillopt-trigger')||!l2.includes('trend-aggregator')){console.log('L2 缺少 inspector');process.exit(1);}if(!l3.includes('federation-distillation')||!l3.includes('failure-pattern')||!l3.includes('ontology-coverage')){console.log('L3 缺少 inspector');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "分层巡检 inspector 列表不完整"; S167A_OK=false; }
+$S167A_OK && pass "分层巡检 L1/L2/L3 三层调度器完整（含 eval-failures/daily-snapshot/skillopt-trigger/trend-aggregator/L3 三新）"
+
+scenario 167b "v1.2.4 P0 修复预存 bug——runInspectors 含 data-sovereignty 三档"
+S167B_OK=true
+node -e "const m=require('$PROJECT_ROOT/engine/daemon/dist/inspectors/index.js');const src=require('fs').readFileSync('$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts','utf8');if(!src.includes('generateDataSovereigntyDaily(projectDir)')||!src.includes('generateDataSovereigntyWeekly(projectDir)')||!src.includes('generateDataSovereigntyMonthly(projectDir)')){console.log('runInspectors 未调 data-sovereignty');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "runInspectors 未修复 data-sovereignty 漏调"; S167B_OK=false; }
+$S167B_OK && pass "runInspectors 修复 data-sovereignty 三档漏调（v1.2.4 P0 预存 bug）"
+
+scenario 168 "v1.2.4 P1 skillopt optimize() API 存在 + failure-ledger 导出"
+S168_OK=true
+node -e "const m=require('$PROJECT_ROOT/engine/skillopt/dist/index.js');if(typeof m.optimize!=='function'){console.log('optimize 不存在');process.exit(1);}if(typeof m.recordFailure!=='function'){console.log('recordFailure 不存在');process.exit(1);}if(typeof m.getFailurePatterns!=='function'){console.log('getFailurePatterns 不存在');process.exit(1);}if(typeof m.getRepeatedFailures!=='function'){console.log('getRepeatedFailures 不存在');process.exit(1);}if(m.AUTO_TRIGGER_THRESHOLD!==3){console.log('阈值不对');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "skillopt optimize()/failure-ledger API 不完整"; S168_OK=false; }
+$S168_OK && pass "skillopt optimize() + failure-ledger API 完整（optimize/recordFailure/getRepeatedFailures/阈值=3）"
+
+scenario 169 "v1.2.4 P1b Dashboard --trend 模式——参数解析 + trend 渲染函数"
+S169_OK=true
+DASH169="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
+grep -q '\-\-trend' "$DASH169" || { fail "sofagent-dashboard.sh 缺少 --trend 参数"; S169_OK=false; }
+grep -q 'render_trend' "$DASH169" || { fail "sofagent-dashboard.sh 缺少 render_trend 函数"; S169_OK=false; }
+# 验证 --trend 模式可执行（临时 HOME + 空数据不报错）
+S169_HOME=$(mktemp -d /tmp/sofagent-acc-trend169-XXXX)
+S169_OUT=$(SOFAGENT_HOME="$S169_HOME" bash "$DASH169" --trend 2>&1) || true
+rm -rf "$S169_HOME"
+echo "$S169_OUT" | grep -q "趋势" || { fail "Dashboard --trend 未输出趋势内容"; S169_OK=false; }
+$S169_OK && pass "Dashboard --trend 模式（参数解析 + 渲染 + 优雅降级空数据）"
+
+scenario 170 "v1.2.4 P2 conflict-check + federation-distill CLI 子命令注册"
+S170_OK=true
+node -e "const m=require('$PROJECT_ROOT/engine/audit/dist/cli/conflict-check.js');if(typeof m.runConflictCheckCli!=='function'){console.log('runConflictCheckCli 不存在');process.exit(1);}if(typeof m.parseConflictCheckArgs!=='function'){console.log('parseConflictCheckArgs 不存在');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "conflict-check CLI 不完整"; S170_OK=false; }
+node -e "const m=require('$PROJECT_ROOT/engine/audit/dist/cli/federation-distill.js');if(typeof m.runFederationDistillCli!=='function'){console.log('runFederationDistillCli 不存在');process.exit(1);}if(typeof m.parseFederationDistillArgs!=='function'){console.log('parseFederationDistillArgs 不存在');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "federation-distill CLI 不完整"; S170_OK=false; }
+$S170_OK && pass "conflict-check + federation-distill CLI 子命令完整（参数注入分层边界）"
+
+scenario 171 "v1.2.4 P2b Checker 三节点——graph.ts 含 checker 节点 + routeAfterAudit PASS→checker"
+S171_OK=true
+node -e "const m=require('$PROJECT_ROOT/engine/orchestrator/dist/loop/checker-nodes.js');if(typeof m.makeCheckerNode!=='function'){console.log('makeCheckerNode 不存在');process.exit(1);}if(typeof m.makeFormatCheckerNode!=='function'){console.log('makeFormatCheckerNode 不存在');process.exit(1);}if(typeof m.makeFactCheckerNode!=='function'){console.log('makeFactCheckerNode 不存在');process.exit(1);}if(typeof m.makeSourceValidatorNode!=='function'){console.log('makeSourceValidatorNode 不存在');process.exit(1);}if(typeof m.resolveLoopMode!=='function'){console.log('resolveLoopMode 不存在');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "Checker 三节点不完整"; S171_OK=false; }
+# routeAfterAudit PASS → checker（非 reviewer）
+node -e "const{routeAfterAudit}=require('$PROJECT_ROOT/engine/orchestrator/dist/loop/graph.js');if(routeAfterAudit({auditResult:'PASS',retryCount:0,degradationLevel:0,finalStatus:'running'})!=='checker'){console.log('PASS 未路由到 checker');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "routeAfterAudit PASS 未路由到 checker"; S171_OK=false; }
+$S171_OK && pass "Checker 三节点完整（format/fact/source + makeCheckerNode + routeAfterAudit PASS→checker）"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

@@ -54,11 +54,14 @@ WATCH=0
 TECHNICAL=0
 # --full：显示全部区块（默认仅核心三栏）
 FULL=0
+# --trend：历史趋势模式（周对比 / 月趋势 / 任务统计）
+TREND=0
 for arg in "$@"; do
   case "$arg" in
     --watch) WATCH=1 ;;
     --technical) TECHNICAL=1 ;;
     --full) FULL=1 ;;
+    --trend) TREND=1 ;;
   esac
 done
 
@@ -88,8 +91,9 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 # 数据文件预检查：全新安装用户友好提示（仅主入口执行，LIB_ONLY 模式跳过）
+# --trend 模式有自己的数据检查（weekly-*.json 不存在时优雅降级），跳过此预检
 # Data pre-check only runs in main entry, not when sourced as library
-if [ "${SOFAGENT_DASHBOARD_LIB_ONLY:-}" != "1" ]; then
+if [ "${SOFAGENT_DASHBOARD_LIB_ONLY:-}" != "1" ] && [ "$TREND" != "1" ]; then
   if [ ! -f "$DAEMON_HEALTH" ] && [ ! -f "$GRAPH_STATE" ]; then
     echo ""
     echo "  ⚠️  Dashboard 数据尚未生成。"
@@ -1062,12 +1066,116 @@ render_frame() {
 }
 
 # ────────────────────────────────
-# 主入口（SOFAGENT_DASHBOARD_LIB_ONLY=1 时跳过——测试脚本 source 本文件
-# 复用 render_* / humanize_status 等函数，不触发渲染主流程）
+# v1.2.4 P1b：--trend 模式（历史趋势 + 任务统计）
+# ────────────────────────────────
+
+# 找到最新的 weekly-*.json
+find_latest_weekly() {
+  local dir="$DATA_ROOT/dashboard"
+  if [ ! -d "$dir" ]; then return; fi
+  ls -1 "$dir"/weekly-*.json 2>/dev/null | sort -r | head -1
+}
+
+# 找到最新的 task-stats-*.json
+find_latest_task_stats() {
+  local dir="$DATA_ROOT/dashboard"
+  if [ ! -d "$dir" ]; then return; fi
+  ls -1 "$dir"/task-stats-*.json 2>/dev/null | sort -r | head -1
+}
+
+render_trend() {
+  local width="${1:-$TERM_COLS}"
+
+  emit ""
+  emit "${C_BOLD}${C_CYAN}═══════════════════════════════════════════${C_RESET}"
+  emit "${C_BOLD}${C_CYAN}  📊 历史趋势（v1.2.4 P1b）${C_RESET}"
+  emit "${C_BOLD}${C_CYAN}═══════════════════════════════════════════${C_RESET}"
+  emit ""
+
+  # ── 周对比 ──
+  local weekly_file
+  weekly_file=$(find_latest_weekly)
+  if [ -n "$weekly_file" ] && [ -f "$weekly_file" ]; then
+    local week_label this_violations last_violations this_tasks last_tasks trend delta_v
+    week_label=$(jq -r '.weekLabel // "N/A"' "$weekly_file" 2>/dev/null)
+    this_tasks=$(jq -r '.thisWeek.taskCount // 0' "$weekly_file" 2>/dev/null)
+    this_violations=$(jq -r '.thisWeek.violations // 0' "$weekly_file" 2>/dev/null)
+    last_tasks=$(jq -r '.lastWeek.taskCount // "N/A"' "$weekly_file" 2>/dev/null)
+    last_violations=$(jq -r '.lastWeek.violations // "N/A"' "$weekly_file" 2>/dev/null)
+    trend=$(jq -r '.trend // "stable"' "$weekly_file" 2>/dev/null)
+    delta_v=$(jq -r '.delta.violations // "N/A"' "$weekly_file" 2>/dev/null)
+
+    local trend_icon="➡️"
+    local trend_label="持平"
+    if [ "$trend" = "improving" ]; then trend_icon="📉"; trend_label="改善"
+    elif [ "$trend" = "degrading" ]; then trend_icon="📈"; trend_label="恶化"; fi
+
+    emit "  ${C_BOLD}周对比（${week_label}）${C_RESET} ${trend_icon} ${trend_label}"
+    emit ""
+    printf "  %-12s %12s %12s\n" "" "${C_BOLD}本周${C_RESET}" "${C_BOLD}上周${C_RESET}"
+    printf "  %-12s %12s %12s\n" "任务数" "$this_tasks" "$last_tasks"
+    printf "  %-12s %12s %12s\n" "违规数" "$this_violations" "$last_violations"
+    if [ "$delta_v" != "null" ] && [ "$delta_v" != "N/A" ]; then
+      local delta_sign=""
+      if [ "$delta_v" -gt 0 ] 2>/dev/null; then delta_sign="+"; fi
+      emit ""
+      emit "  违规变化：${delta_sign}${delta_v}（${trend_label}）"
+    fi
+    emit ""
+
+    # TOP5 违规规则
+    local top5
+    top5=$(jq -r '.violationTop5[]? | "  \(.rule): \(.count) 次"' "$weekly_file" 2>/dev/null)
+    if [ -n "$top5" ]; then
+      emit "  ${C_DIM}最常违规 TOP5：${C_RESET}"
+      echo "$top5" >> "$BUFFER_FILE"
+      emit ""
+    fi
+  else
+    emit "  ${C_DIM}暂无周趋势数据（需等待 trend-aggregator 产出 weekly-*.json）${C_RESET}"
+    emit ""
+  fi
+
+  # ── 任务统计 ──
+  local stats_file
+  stats_file=$(find_latest_task_stats)
+  if [ -n "$stats_file" ] && [ -f "$stats_file" ]; then
+    local stats_date total pass_rate warn_rate fail_rate fail_count
+    stats_date=$(jq -r '.date // "N/A"' "$stats_file" 2>/dev/null)
+    total=$(jq -r '.totalTasks // 0' "$stats_file" 2>/dev/null)
+    pass_rate=$(jq -r '.passRate // 0' "$stats_file" 2>/dev/null)
+    warn_rate=$(jq -r '.warnRate // 0' "$stats_file" 2>/dev/null)
+    fail_rate=$(jq -r '.failRate // 0' "$stats_file" 2>/dev/null)
+    fail_count=$(jq -r '.failedTasks | length' "$stats_file" 2>/dev/null)
+
+    emit "  ${C_BOLD}任务统计（${stats_date}）${C_RESET}"
+    emit ""
+    printf "  %-12s %8s\n" "总任务" "$total"
+    printf "  %-12s %8s%%\n" "通过率" "$pass_rate"
+    printf "  %-12s %8s%%\n" "警告率" "$warn_rate"
+    printf "  %-12s %8s%%\n" "失败率" "$fail_rate"
+    if [ "$fail_count" != "0" ] && [ -n "$fail_count" ]; then
+      emit ""
+      emit "  ${C_YELLOW}失败任务 ${fail_count} 条：${C_RESET}"
+      jq -r '.failedTasks[]? | "    - \(.task | .[0:60])"' "$stats_file" 2>/dev/null >> "$BUFFER_FILE"
+    fi
+  else
+    emit "  ${C_DIM}暂无任务统计数据${C_RESET}"
+  fi
+
+  emit ""
+  emit "${C_DIM}数据源：dashboard/daily-*.json + history.jsonl · 刷新：@daily/@weekly${C_RESET}"
+}
+
+# ────────────────────────────────
+# --trend 模式主入口
 # ────────────────────────────────
 
 if [ "${SOFAGENT_DASHBOARD_LIB_ONLY:-}" != "1" ]; then
-  if [ "$WATCH" = "1" ]; then
+  if [ "$TREND" = "1" ]; then
+    render_trend "$TERM_COLS"
+    cat "$BUFFER_FILE"
+  elif [ "$WATCH" = "1" ]; then
     # --watch 模式：tput cup 光标定位重绘（不清屏，防闪烁）
     tput civis 2>/dev/null || true
     first=1

@@ -246,17 +246,17 @@ describe('降级路由链（routeAfterAudit + makeAuditNode 集成）', () => {
     expect(routeAfterAudit(state)).toBe('human_confirm');
   });
 
-  it('路由矩阵：L2 未超限 FAIL → reviewer；L0/L1 FAIL → engineer；blocked → END', () => {
-    // L2 低可信（retryCount 未超限）→ reviewer 继续流转
-    expect(routeAfterAudit(sampleState({ auditResult: 'FAIL', retryCount: 1, degradationLevel: 2 }))).toBe('reviewer');
+  it('路由矩阵：L2 未超限 FAIL → checker；L0/L1 FAIL → engineer；blocked → END', () => {
+    // L2 低可信（retryCount 未超限）→ checker 继续流转（v1.2.4 P2b：先过 checker 再进 reviewer）
+    expect(routeAfterAudit(sampleState({ auditResult: 'FAIL', retryCount: 1, degradationLevel: 2 }))).toBe('checker');
     // L0 正常 FAIL → engineer
     expect(routeAfterAudit(sampleState({ auditResult: 'FAIL', retryCount: 0, degradationLevel: 0 }))).toBe('engineer');
     // L1 降级 FAIL → engineer
     expect(routeAfterAudit(sampleState({ auditResult: 'FAIL', retryCount: 1, degradationLevel: 1 }))).toBe('engineer');
     // blocked → END
     expect(routeAfterAudit(sampleState({ auditResult: 'FAIL', finalStatus: 'blocked' }))).toBe(END);
-    // PASS → reviewer
-    expect(routeAfterAudit(sampleState({ auditResult: 'PASS' }))).toBe('reviewer');
+    // PASS → checker（v1.2.4 P2b）
+    expect(routeAfterAudit(sampleState({ auditResult: 'PASS' }))).toBe('checker');
   });
 });
 
