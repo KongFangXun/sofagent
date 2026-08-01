@@ -1157,3 +1157,13 @@ loop-engineering 社区将 Agent 自主性拆为三级，L1→L2→L3 可升可�
 | 5 | 日报 / 周报 | 仅报告，不参与竞争 |
 
 > 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [multi-loop.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/multi-loop.md)
+
+### 贝恩首证：Agent 控制面 = 独立市场类目（2026-08 外部背书）
+
+> ⚠️ **外部参考 / 非当前能力**——以下为行业研判背书，不改变 sofagent 当前架构。
+
+贝恩（Bain，[Google Cloud Next 2026: The Agentic Enterprise Control Plane Comes into View](https://bain.com)，2026-04）首证 Agent 控制面（Control Plane）为**独立市场类目**——企业难题已从「怎么造 Agent」转为「怎么管住成千上万个 Agent」。Google 将 Agent Identity / Registry / Gateway / Simulation / Evaluation / Observability 六件套做成平台原生治理能力，格局「边缘开放、中心收敛治理」。
+
+**与 sofagent 的对位**：sofagent 的约束底座 = Identity + Gateway（加载链 + 权限），审计引擎 = Evaluation + Observability（git diff 硬证据），回溯引擎 = Simulation 的轻量替代（快照 + revert）。核心差异：大厂控制面绑定自家平台（GCP），sofagent 是平台中立的 MIT 开源 Harness——不管企业用什么 Agent 平台，治理底线都在。
+
+> 📖 来源：贝恩 Chris Green & Dale Pedzinski·2026-04·温故知新 2026-08-01 扫描

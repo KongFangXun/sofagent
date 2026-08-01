@@ -4,7 +4,7 @@
 >
 > 这不是"踩坑参考"，是**开发参照**——下次开发新的 loop 或 sub-agent 时，必须逐条对照本文档执行。每条标准都来自真实 debug 会话（附 commit hash + 根因 + 代码片段），不是理论推演。
 >
-> v1.2.5 · 2026-08-01（UTC）· 孔放勋
+> v1.2.4 · 2026-08-01（UTC）· 孔放勋
 
 ## 目录
 
@@ -207,11 +207,15 @@ usage.jsonl 记录每次 invoke 的 token 消耗，但成本估算区分计费�
 
 ## 三、性能优化基线（v1.2.5+）
 
-### 上下文管理：stateModifier + 工具输出截断
+### 上下文管理：三层裁剪（截断 + stateModifier + preModelHook）
 
-所有 sub-agent 必须实现**两层上下文管理**，防止"上下文雪球"导致 prompt 膨胀。
+所有 sub-agent 必须实现**三层上下文管理**，防止"上下文雪球"导致 prompt 膨胀和 OOM。
 
-这个问题有多严重？看实测数据（usage.jsonl）：未做裁剪时，fresh-eyes-loop 单轮审查 7-8 分钟。b-check 第一步 prompt_tokens 就 102k，到 b-fix round-4 出现单次 **296k tokens** 的怪物调用。原因：LangGraph ReAct 把所有工具调用的完整输出追加到 messages，**从不裁剪**。
+这个问题有多严重？看实测数据。两个层面都有数据：
+
+**prompt 膨胀**（usage.jsonl）：未做裁剪时，fresh-eyes-loop 单轮审查 7-8 分钟。b-check 第一步 prompt_tokens 就 102k，到 b-fix round-4 出现单次 **296k tokens** 的怪物调用。
+
+**内存 OOM**（exit 137）：release-gate-loop 在 WorkBuddy 沙箱中从 run-01 到 run-09 全部 OOM。单独跑步骤 2（regression），17 次工具调用后即崩——state.messages 数组在工具调用循环中无限增长，所有消息内容（Qwen3.8 的 thinking tokens + 工具输出）驻留在 V8 old space 中无法回收。
 
 ```
 第 1 次调用：  prompt=15k  → LLM 处理 15k
@@ -219,19 +223,25 @@ usage.jsonl 记录每次 invoke 的 token 消耗，但成本估算区分计费�
 第 100 次调用：prompt=90k  → LLM 处理 90k（每次推理时间翻倍）
 ```
 
-两层裁剪协同工作——第一层在工具返回时截断，第二层在送入 LLM 前裁剪消息窗口：
+三层裁剪协同工作——各自解决不同层面的问题：
 
 ```mermaid
-graph LR
-    subgraph "第一层：工具输出截断"
+graph TD
+    subgraph "第一层：工具输出截断（防 prompt 膨胀）"
         TOOL["工具返回 2000+ 行"] -->|"truncateToolOutput()"| TRUNC["截断为 200 行<br/>头 100 + 尾 100"]
     end
-    subgraph "第二层：上下文窗口裁剪"
-        MSGS["messages 累积 100+ 条"] -->|"stateModifier()"| WINDOW["只保留 system + 首条 + 最后 30 条"]
+    subgraph "第二层：stateModifier（防 prompt 膨胀）"
+        MSGS1["state.messages 累积"] -->|"stateModifier()"| WINDOW["发给 LLM 时只取<br/>system + 首条 + 最后 N 条"]
     end
-    TRUNC --> MSGS
-    WINDOW --> LLM["送入 LLM<br/>prompt 稳定 ~30k"]
+    subgraph "第三层：preModelHook（防内存 OOM）"
+        MSGS2["state.messages 物理增长"] -->|"preModelHook()"| HARD["物理替换 state.messages<br/>旧消息被 GC 回收"]
+    end
+    TRUNC --> MSGS1
+    MSGS1 --> MSGS2
+    MSGS2 -->|"messages 总量可控"| GC["V8 GC 可回收旧消息<br/>RSS 不再无限增长"]
 ```
+
+> **关键区分**：stateModifier 只影响"LLM 看到多少历史"（prompt 层面），**不影响 LangGraph 内部的 state.messages 数组**——旧消息仍在内存里。preModelHook 在每次模型调用前**物理替换** state.messages——旧消息真正被丢弃，V8 可 GC。只有 preModelHook 能解决 OOM，stateModifier 解决不了。
 
 **第一层：工具输出截断** `truncateToolOutput()`
 
@@ -256,7 +266,7 @@ function truncateToolOutput(text, maxLines = TOOL_OUTPUT_MAX_LINES) {
 **第二层：上下文窗口裁剪** `stateModifier`
 
 ```js
-const MAX_CONTEXT_MESSAGES = 30; // 最后 15 轮工具交互（调用+结果各 1 条）
+const MAX_CONTEXT_MESSAGES = 16; // 最后 8 轮工具交互（调用+结果各 1 条）
 const systemMsg = new SystemMessage(systemPrompt);
 
 const agent = createReactAgent({
@@ -277,7 +287,49 @@ const agent = createReactAgent({
 
 > **🔴 关键坑：`prompt` 和 `stateModifier` 互斥**。LangGraph 源码 `_getPrompt()` 强校验——同时传两个会直接报错。如果之前用 `prompt: systemPrompt`，迁移到 `stateModifier` 时必须把 systemPrompt 移到 stateModifier 内部以 `SystemMessage` 形式注入。
 
-**实测效果**：prompt tokens 峰值从 296k → 稳定 ~30k。预计总执行时间 **-50~60%**。
+**第三层：preModelHook 物理裁剪（防 OOM）**
+
+stateModifier 做了 prompt 裁剪，但 state.messages 数组本身还在——每次工具调用追加 2 条消息（AI tool_call + ToolMessage），全部消息内容驻留在 V8 old space。沙箱环境内存受限时，跑到 17 次工具调用就 exit 137。
+
+preModelHook 在每次模型调用前**物理替换** state.messages——旧消息被丢弃，V8 可 GC（commit 95583e2）：
+
+```js
+const STATE_MESSAGES_HARD_LIMIT = 20; // 物理层面：state 里保留多少条
+
+const agent = createReactAgent({
+  llm: model,
+  tools,
+  stateModifier: (state) => { /* 第二层：裁剪发给 LLM 的 prompt */ },
+  // 第三层：物理替换 state.messages——旧消息可被 GC
+  preModelHook: (state) => {
+    const messages = state.messages ?? [];
+    if (messages.length <= STATE_MESSAGES_HARD_LIMIT) return state;
+    const first = messages[0];        // 保留第一条（初始任务）
+    const recent = messages.slice(-STATE_MESSAGES_HARD_LIMIT);
+    return { ...state, messages: [first, ...recent] };
+  },
+});
+```
+
+**参数值对照**：
+
+| 参数 | 作用 | 推荐值 |
+|------|------|--------|
+| `MAX_CONTEXT_MESSAGES`（stateModifier） | 发给 LLM 的消息条数 | 16（最后 8 轮工具交互） |
+| `STATE_MESSAGES_HARD_LIMIT`（preModelHook） | state 内物理保留的消息条数 | 20（比 stateModifier 大 4 条，留缓冲） |
+| `TOOL_OUTPUT_MAX_LINES`（truncateToolOutput） | 单条工具输出行数 | 200（头尾各 100） |
+
+**实测效果**（release-gate-loop regression 步骤）：
+
+| 配置 | 工具调用次数到 OOM | 结果 |
+|------|:--:|------|
+| 优化前（无 preModelHook） | 17 | ❌ OOM |
+| preModelHook hard_limit=30 | 69 | ❌ OOM |
+| preModelHook hard_limit=20 | 132 | ❌ OOM |
+| hard_limit=20 + heap=768MB | 198 | ❌ OOM（但 11.6× 提升） |
+| 全链路（acceptance+coverage+consolidate+verdict） | 2+81+6+2 | ✅ 全 PASS |
+
+> **效果总结**：三层裁剪 + heap 限制让 prompt tokens 峰值从 296k → 稳定 ~30k，内存承受力 17→198 次工具调用（11.6×）。但 regression 步骤因 agent prompt 设计需要 50-130 次调用仍不够——这是 prompt 层面的遗留问题（见第三章「Agent 行为约束」）。
 
 ### Agent 行为约束：SKILL.md 效率铁律
 
@@ -297,6 +349,8 @@ const agent = createReactAgent({
 - 精准定位——result.md 给的路径和行号就是围栏
 - 禁止重复读——已读文件结论直接用
 - 验证一次——测试通过就进入下一个
+
+> **遗留问题**（release-gate-loop regression 步骤）：prompt 预期 ~53 次工具调用（46 维度 × 1 call + 7 次开销），但 Qwen3.8 agent 实际跑了 130-198 次——不遵循「每维度 1 次 run_bash」策略，大量 sf_read 重复读文件。三层上下文裁剪把 OOM 阈值提到了 198 次，但 regression 的实际需求量可能更高。这是 agent 行为问题（prompt 层面），不是内存优化能解决的。后续方向：① prompt 中更强调批量执行策略 + 示例 ② regression 的 recursionLimit 从 400 降到 100 强制高效 ③ 或拆分 regression 步骤为 2-3 个子步骤。
 
 > **核心认知**：LLM 的工具调用行为是可塑的——prompt 里明确说"目标 50 步以内，禁止重复读"，它就会克制。不说就默认无限探索。
 
@@ -606,6 +660,24 @@ node FORGE/src/release-gate-driver.mjs --step verdict       --target v1.2.5 --ru
 
 > **设计要点**：单步模式与全量模式共享相同的 `runWorker()` 和 `ensureAcceptancePreRun()` 逻辑——不是两套代码，是同一套执行引擎的不同入口。`--run-dir` 让多步共享同一个产物目录，确保步骤间文件传递正确。
 
+#### V8 heap 限制：--max-old-space-size（反直觉优化）
+
+Node.js 默认 V8 old space 限制约 2GB。反直觉的发现是：在沙箱环境中**主动限制到 768MB 效果更好**（commit 95583e2）。
+
+```bash
+# ❌ 默认 2GB——V8 延迟 GC，old space 膨胀到 macOS jetsam 阈值后被 kill
+node driver.mjs --step regression --target v1.2.5
+
+# ✅ 768MB——V8 更频繁 GC，实际 RSS 更低
+node --max-old-space-size=768 driver.mjs --step regression --target v1.2.5
+```
+
+**为什么**：较大的 heap 让 V8 延迟 GC——old space 持续增长直到触及 macOS jetsam 内存阈值（约 1-2GB），然后整个进程被 kill。较小的 heap（768MB）迫使 V8 更频繁地 GC，实际 RSS（常驻内存）反而更低——每次 GC 把旧消息（已被 preModelHook 标记为可回收的）清掉。
+
+**适用场景**：沙箱 / CI / 容器等内存受限环境。非受限环境（本地开发、服务器）用默认值即可。
+
+> **三层防御**：preModelHook（让旧消息可 GC）+ `--max-old-space-size=768`（迫使 V8 更频繁 GC）+ `--step` 单步模式（每步退出彻底归零）——三者协同把 OOM 阈值从 17 次提升到 198 次工具调用。缺任何一层都会提前崩。
+
 ---
 
 ## 五、stream 迁移规范（P0 级铁律）
@@ -850,8 +922,9 @@ if (process.platform === 'darwin' && !args.dryRun) {
 ### ⚡ 性能优化（v1.2.5+）
 
 - [ ] **工具输出截断**：loadTools 的 tool wrapper 里加 `truncateToolOutput(text, 200)`（第三章「上下文管理」）
-- [ ] **上下文窗口裁剪**：用 `stateModifier` 替代 `prompt`（互斥！），保留 system + 首条 + 最后 30 条（第三章「上下文管理」）
+- [ ] **上下文窗口裁剪**：用 `stateModifier` 替代 `prompt`（互斥！），保留 system + 首条 + 最后 16 条（第三章「上下文管理」）
 - [ ] **stateModifier 内注入 SystemMessage**：`prompt` 和 `stateModifier` 不能同时传（第三章「上下文管理」）
+- [ ] **preModelHook 物理裁剪**：stateModifier 只裁剪 prompt，preModelHook 才物理替换 state.messages 防 OOM（第三章「上下文管理」）
 - [ ] **SKILL.md 加效率铁律**：reviewer 目标 ≤50 步，engineer 目标 ≤30 步（第三章「Agent 行为约束」）
 - [ ] **stream 替代 invoke**：实时打印工具调用进度（第三章「流式输出」+ 第五章）
 
@@ -869,6 +942,7 @@ if (process.platform === 'darwin' && !args.dryRun) {
 - [ ] **init 内部设 SOFAGENT_SKIP_HOOK=1**（防 hook 递归）（第四章「SOFAGENT_SKIP_HOOK 环境变量旁路」）
 - [ ] **driver 支持 --skip-acceptance**（sandbox kill 窗口短时复用预跑日志）（第四章「Driver --skip-acceptance 参数」）
 - [ ] **driver 支持 --step 单步模式**（沙箱 OOM 时外层编排逐步调用，内存归零）（第四章「Driver --step 单步执行模式」）
+- [ ] **沙箱环境加 --max-old-space-size=768**（迫使 V8 更频繁 GC，实际 RSS 更低）（第四章「V8 heap 限制」）
 
 ### 🔴 stream 迁移（如做 invoke→stream 改造时必查）
 
@@ -915,6 +989,8 @@ if (process.platform === 'darwin' && !args.dryRun) {
 | 08-01 | ae6f1c0 | spawn 生存规范文档化（7 个子节沉淀） | P2 | 四·外部脚本 spawn 生存 |
 | 08-01 | 0d3c36e | SOFAGENT_SKIP_HOOK 防递归 + driver --skip-acceptance | P2 | 四·SKIP_HOOK / --skip-acceptance |
 | 08-01 | c1fab22 | 检查清单+附录同步 + SKILL.md --skip-acceptance 用法 | P2 | 四·--skip-acceptance |
+| 08-01 | 3530200 | 单步模式 + bash 编排脚本（跨步骤 OOM） | P0 | 四·Driver --step |
+| 08-01 | 95583e2 | preModelHook 物理裁剪 + --max-old-space-size=768 | P0 | 三·上下文管理 / 四·V8 heap |
 
 ### 历史坑位索引
 
@@ -939,6 +1015,7 @@ if (process.platform === 'darwin' && !args.dryRun) {
 | 15 | a-consolidate maxTokens 被截断 | 二·步骤级 maxTokens |
 | 16 | 外部脚本 spawn 生存——流式日志+signal+head 管道 | 四·外部脚本 spawn 生存 |
 | 17 | init → hook 递归防护（SOFAGENT_SKIP_HOOK）+ sandbox 复用（--skip-acceptance） | 四·SKIP_HOOK / --skip-acceptance |
+| 18 | 沙箱 OOM 三层解决方案——stateModifier 不够，preModelHook 物理裁剪 + heap 限制 + 单步模式 | 三·上下文管理（preModelHook）+ 四·V8 heap + 四·--step |
 
 ### 关键设计决策速查
 
@@ -947,9 +1024,12 @@ if (process.platform === 'darwin' && !args.dryRun) {
 | Agent 框架 | createReactAgent | createDeepAgent 硬编码 FilesystemMiddleware 不可禁用 |
 | 进程模型 | spawn 子进程（非 in-process） | 零上下文继承，步骤间通过文件传递数据 |
 | 沙箱执行 | --step 单步模式 + 外层编排 | 每步全新进程退出，避免 driver 主进程内存累积触发 OOM |
+| 沙箱内存 | --max-old-space-size=768 | 迫使 V8 更频繁 GC，实际 RSS 更低（反直觉但有效） |
 | 上下文注入 | stateModifier（非 prompt） | 互斥约束 + 可同时做上下文裁剪 |
+| 上下文物理裁剪 | preModelHook（非仅 stateModifier） | stateModifier 只裁 prompt，preModelHook 才物理替换 state.messages 防 OOM |
 | 执行模式 | stream（非 invoke） | 实时进度打印，体感提升 ×2-3 |
 | 输出截断 | 200 行（头尾各 100） | 平衡信息保留与上下文膨胀 |
-| 上下文窗口 | 最后 30 条消息 | 最后 15 轮工具交互，覆盖大多数推理场景 |
+| prompt 窗口 | 最后 16 条消息（stateModifier） | 最后 8 轮工具交互，发给 LLM |
+| 物理消息窗口 | 最后 20 条消息（preModelHook） | state.messages 保留上限，旧消息可被 GC |
 | 合并步骤 maxTokens | 32000 | thinking-only 模型 16000 含 thinking tokens 不够 |
 | 分片 batch | 动态（≤20→5, ≤35→3, >35→2） | finding 越多每批越小，防撞 recursionLimit |
