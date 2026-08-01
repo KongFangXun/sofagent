@@ -796,6 +796,8 @@ if (process.platform === 'darwin' && !args.dryRun) {
 - [ ] **child.on('close') 处理 signal 参数**（被 kill 时 code=null）（§4.5.3）
 - [ ] **shell 脚本中禁用 `| head -N`**（pipefail + SIGPIPE 定时炸弹）（§4.5.1）
 - [ ] **长脚本每 30s 输出 progress 日志**（§4.5.4）
+- [ ] **init 内部设 SOFAGENT_SKIP_HOOK=1**（防 hook 递归）（§4.5.6）
+- [ ] **driver 支持 --skip-acceptance**（sandbox kill 窗口短时复用预跑日志）（§4.5.7）
 
 ### 🔴 stream 迁移（如做 invoke→stream 改造时必查）
 
@@ -839,6 +841,7 @@ if (process.platform === 'darwin' && !args.dryRun) {
 | 08-01 | da1039a | 四项 ReAct 性能优化（截断+裁剪+铁律+stream） | P1 | §3.1 §3.2 §3.3 |
 | 08-01 | a0571a4 | stream 迁移 finalState 数据丢失 | P0 | §5 |
 | 08-01 | 35cfb22 | 外部脚本 spawn 生存（流式日志+signal+head 管道） | P1 | §4.5 |
+| 08-01 | 0d3c36e | SOFAGENT_SKIP_HOOK 防递归 + driver --skip-acceptance | P2 | §4.5.6 §4.5.7 |
 
 ### B. 历史坑位索引
 
@@ -862,6 +865,7 @@ if (process.platform === 'darwin' && !args.dryRun) {
 | 14 | invoke → stream 迁移的 P0 数据丢失 | §5 |
 | 15 | a-consolidate maxTokens 被截断 | §2.3 |
 | 16 | 外部脚本 spawn 生存——流式日志+signal+head 管道 | §4.5 |
+| 17 | init → hook 递归防护（SOFAGENT_SKIP_HOOK）+ sandbox 复用（--skip-acceptance） | §4.5.6 §4.5.7 |
 
 ### C. 关键设计决策速查
 

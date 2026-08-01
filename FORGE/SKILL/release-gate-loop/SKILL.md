@@ -39,6 +39,11 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
 1. Bash run_in_background:
    node FORGE/src/release-gate-driver.mjs --target <版本号>
 
+   # sandbox 环境（acceptance-test.sh 预跑会被 kill 时）：
+   # 先手动预跑：bash FORGE/playbook/acceptance-test.sh > <runDir>/acceptance-raw.log 2>&1
+   # 再加 --skip-acceptance 启动：
+   node FORGE/src/release-gate-driver.mjs --target <版本号> --skip-acceptance
+
 2. 记住 runDir（driver 启动日志第一行会打印）
 
 3. 循环（最多 20 次，防 turn 超限）:
