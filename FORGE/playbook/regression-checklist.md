@@ -59,7 +59,7 @@ SKILL_BC=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || 
 # 子项 a: think.md 始终为 Ledger/source（非 Views/派生视图）
 # 注意：grep 须精确匹配"think.md 被标为 Views"，而非"think.md 和 Views 出现在同一行"
 # 正确模式：think.md 后跟 Views/派生（think.md = Views）→ 误标；think.md 后跟 Ledger/source → 正确
-grep -rn "think\.md.* Views\|think\.md.*派生视图\|think\.md（Views" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md FDE/FDE.md   # 期望：无匹配
+grep -rn "think\.md.* Views\|think\.md.*派生视图\|think\.md（Views" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md FDE/GUIDE.md   # 期望：无匹配
 
 # 子项 b: canonical source 一致性
 grep -rn "Ledger-Views-Policy" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md | head   # 期望：各文档描述一致
@@ -201,7 +201,7 @@ test -f docs/guides/enterprise-deploy.md && echo "✅ 文件存在"
 grep -c "露个脸就够了" SKILL/SKILL.md          # 期望：≥ 1
 grep -c "质量搭档" SKILL/harness/engage.md              # 期望：≥ 1
 grep -c "sofagent 已就绪" engine/scripts/lib/post-install.sh  # 期望：≥ 1
-grep -c "Agent 身份感知" FDE/FDE.md                      # 期望：≥ 1
+grep -c "引擎身份提示" SKILL/SKILL.md                      # 期望：≥ 1
 ```
 
 #### 16. 安全约束 fail-closed 与权限加固
@@ -325,7 +325,7 @@ grep -rl "sofagent-releaser\|releaser-skill" engine/scripts/lib/file-deploy.sh i
 SSOT_VER=$(node -e "console.log(require('./package.json').version)")
 
 # 子项 a: FDE 步数跨文档一致（v1.1.4 已修复，固化防回退）
-grep -oE "[0-9]+ 个阶段|[0-9]+ 个关键步骤|[0-9]+ 步" FDE/SKILL.md FDE/README.md FDE/FDE.md 2>/dev/null | sort | uniq -c   # 期望：一致
+grep -oE "[0-9]+ 个阶段|[0-9]+ 个关键步骤|[0-9]+ 步" SKILL/SKILL.md SKILL/skills/*.md FDE/README.md FDE/GUIDE.md 2>/dev/null | sort | uniq -c   # 期望：一致
 
 # 子项 b: LOOP Agent 数跨文档一致（v1.1.4 暴露）
 ACTUAL_AGENTS=$(ls SKILL/agents/*/SKILL.md 2>/dev/null | wc -l); echo "实际安装 Agent 数: $ACTUAL_AGENTS"
@@ -335,7 +335,7 @@ grep -oE "[0-9]+ 个内置 Agent\|[0-9]+ 个 Agent" FORGE/README.md FORGE/quick-
 [ -f FORGE/loop-install.sh ] && echo "⚠️ FORGE/loop-install.sh 仍存在（应删除）" || echo "✅ LOOP 无独立 install 脚本"
 
 # 子项 d: 独立 install 闭环（FDE 仍依赖主 install.sh）
-CLONE_NOTE=$(grep -rliE "完整 clone|完整仓库|需要.*sofagent.*仓库|clone.*完整" FDE/README.md FDE/SKILL.md FORGE/README.md 2>/dev/null | head -1 || true)
+CLONE_NOTE=$(grep -rliE "完整 clone|完整仓库|需要.*sofagent.*仓库|clone.*完整" FDE/README.md FDE/GUIDE.md FORGE/README.md 2>/dev/null | head -1 || true)
 [ -n "$CLONE_NOTE" ] && echo "✅ 文档已标注完整 clone 要求" || echo "⚠️ 未找到标注"
 grep -q "被 FDE/LOOP 依赖\|FDE/LOOP" install.sh 2>/dev/null && echo "✅ 主 install.sh 已标注" || echo "⚠️ 未标注"
 
@@ -377,7 +377,7 @@ console.log('OK');"   # 期望：OK
 > SKILL.md 若缺必需字段，Agent 可能无法自动加载
 
 ```bash
-for f in SKILL/agents/*/SKILL.md FDE/SKILL.md SKILL/SKILL.md; do
+for f in SKILL/agents/*/SKILL.md SKILL/skills/*.md SKILL/SKILL.md; do
   [ -f "$f" ] || continue
   miss=$(grep -cE "name:|slug:|displayName:|description:|version:|tags:|image:|triggers:|scenarios:|not_when:" "$f")
   echo "$f: 命中必需字段 $miss/9"

@@ -677,6 +677,7 @@ upgrade_skill() {
     "${UPGRADE_ROOT}/SKILL.md"
     "${UPGRADE_ROOT}/AGENTS.md"
     "${UPGRADE_ROOT}/sofagent"
+    "${UPGRADE_ROOT}/skills"
     "${UPGRADE_ROOT}/agents"
     "${UPGRADE_ROOT}/harness"
   )

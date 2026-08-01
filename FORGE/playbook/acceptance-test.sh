@@ -1736,16 +1736,16 @@ grep -q "isError" "$PROJECT_ROOT/engine/mcp/src/tools/create-entity.ts" 2>/dev/n
 grep -q "isError" "$PROJECT_ROOT/engine/mcp/src/tools/audit-data-change.ts" 2>/dev/null || { fail "audit-data-change.ts 未含 isError"; S177_OK=false; }
 $S177_OK && pass "S5 L3 isError 协议标记完整（run_audit / create_entity / audit_data_change）"
 
-scenario 178 "v1.2.4 P3 S5 — FDE/SKILL.md 审计结果展示铁律段落存在"
-grep -q "审计结果展示铁律" "$PROJECT_ROOT/FDE/SKILL.md" 2>/dev/null && pass "FDE/SKILL.md 含审计结果展示铁律段落" || fail "FDE/SKILL.md 缺失审计结果展示铁律段落"
+scenario 178 "v1.2.4 P3 S5 — SKILL/skills/04-deliver.md 审计结果展示铁律段落存在"
+grep -q "审计结果展示铁律" "$PROJECT_ROOT/SKILL/skills/04-deliver.md" 2>/dev/null && pass "SKILL/skills/04-deliver.md 含审计结果展示铁律段落" || fail "SKILL/skills/04-deliver.md 缺失审计结果展示铁律段落"
 
-scenario 179 "v1.2.4 P3 S5 — FDE/SKILL.md MCP tool 引用 ≥7 处"
-MCP_REFS=$(grep -oE '\b(run_audit|get_think|write_think|audit_file|search_knowledge|read_entity|read_concept|list_entities|read_lessons|read_think_md|stats|list_capabilities|data_sovereignty_report|create_entity|create_concept|validate_ontology|evaluate_output|optimize_skill|health_check|audit_data_change|notify_session)\b' "$PROJECT_ROOT/FDE/SKILL.md" 2>/dev/null | sort -u | wc -l | tr -d ' ')
-[ "$MCP_REFS" -ge 7 ] && pass "FDE/SKILL.md MCP tool 引用 ≥7（实测 $MCP_REFS 个独立 tool）" || fail "FDE/SKILL.md MCP tool 引用不足（$MCP_REFS < 7）"
+scenario 179 "v1.2.4 P3 S5 — SKILL/SKILL.md MCP tool 引用 ≥7 处"
+MCP_REFS=$(grep -oE '\b(run_audit|get_think|write_think|audit_file|search_knowledge|read_entity|read_concept|list_entities|read_lessons|read_think_md|stats|list_capabilities|data_sovereignty_report|create_entity|create_concept|validate_ontology|evaluate_output|optimize_skill|health_check|audit_data_change|notify_session)\b' "$PROJECT_ROOT/SKILL/SKILL.md" 2>/dev/null | sort -u | wc -l | tr -d ' ')
+[ "$MCP_REFS" -ge 7 ] && pass "SKILL/SKILL.md MCP tool 引用 ≥7（实测 $MCP_REFS 个独立 tool）" || fail "SKILL/SKILL.md MCP tool 引用不足（$MCP_REFS < 7）"
 
-scenario 180 "v1.2.4 P3 S5 — FDE/SKILL.md 行数 ≤250"
-SKILL_LINES=$(wc -l < "$PROJECT_ROOT/FDE/SKILL.md" | tr -d ' ')
-[ "$SKILL_LINES" -le 250 ] && pass "FDE/SKILL.md 行数达标（$SKILL_LINES ≤ 250）" || fail "FDE/SKILL.md 行数超标（$SKILL_LINES > 250）"
+scenario 180 "v1.2.4 P3 S5 — SKILL/SKILL.md 行数 ≤180"
+SKILL_LINES=$(wc -l < "$PROJECT_ROOT/SKILL/SKILL.md" | tr -d ' ')
+[ "$SKILL_LINES" -le 180 ] && pass "SKILL/SKILL.md 行数达标（$SKILL_LINES ≤ 180）" || fail "SKILL/SKILL.md 行数超标（$SKILL_LINES > 180）"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

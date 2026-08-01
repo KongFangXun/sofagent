@@ -8,7 +8,7 @@
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
-> 💡 **行业背景**：sofagent 是一个 FDE Agent——进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎（Harness 中间件）的一底座·四引擎覆盖全生命周期。不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/FDE.md](../FDE/FDE.md)。
+> 💡 **行业背景**：sofagent 是一个 FDE Agent——进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎（Harness 中间件）**能力底座 × 生命周期**双层架构：能力底座 = 一底座·三引擎（约束底座 + 审计/回溯/进化引擎），生命周期 = 激活链四阶段（诊断→激活→编排→执行→进化，v1.2.5+）。不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/GUIDE.md](../FDE/GUIDE.md)。
 
 > 💬 **开发铁律**：sofagent 不建图形界面。所有能力必须通过 MCP 协议暴露。Agent 首次连接时主动推送 `list_capabilities`。开发任何新功能前，先回答三个问题：（1）用户怎么通过对话发现这个能力？（2）结果推到哪？（3）用户怎么知道这个结果是 sofagent 做的，不是模型做的？——任何面向用户的输出必须带 `[sofagent]` 签名标注来源。详见 [设计哲学](./PHILOSOPHY.md)。MCP 完整 resource 清单见 [MCP 使用指南](./guides/mcp-usage.md)。
 
@@ -62,7 +62,7 @@
 | 循环检查/评估/退出 | `SKILL/harness/loop-check.md` / `loop-evaluate.md` / `loop-exit.md` |
 | FDE 模板 / 部署脚本 | `SKILL/harness/fde-template.md` / `engine/scripts/` |
 | FDE 交付物模板 | `FDE/templates/` |
-| FDE 部署知识文档 | `FDE/FDE.md`（含角色定义 + 步骤详解，唯一知识源） |
+| FDE 部署知识文档 | `FDE/GUIDE.md`（完整方法论 + 案例，人读学习手册） |
 | 加载链 Hook | `engine/hooks/sofagent-load-chain/` |
 
 ---
@@ -80,7 +80,7 @@
 | 文件 | 何时加载 | 干什么 |
 |------|------|------|
 | engage | 🔴 复杂任务确认后 | 入口引擎：平台检测→安装→加载链→种子指令 |
-| engage-fde | FDE 部署场景检测到后 | FDE 场景引导，与 FDE/FDE.md 互补 |
+| engage-fde | FDE 部署场景检测到后 | FDE 场景引导，与 FDE/GUIDE.md 互补 |
 | entry-gate | 入口流程结束后 | 硬出口检查：加载链确认 + 能力注册 |
 | task-aware | 收到任何用户任务时 | 每任务闸门：边界→语义→健康度→判级→澄清 |
 | task-closure | 闭环信号出现时 | 离境闸门：调 Loop Agent → 反思/评分/A/B/汇报 |
@@ -91,7 +91,7 @@
 
 > 三层闸门 + 一条回环：入境 → 每任务 → Loop → 离境。四个全走才能保证 `.sofagent/` 数据层被激活。
 
-sofagent 一底座·四引擎各有分工。**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义，之后 Sub Agent 自加载约束执行。两种调用路径：OpenClaw 节点走内部 API，非 OpenClaw 节点走 CLI。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
+sofagent **能力底座（一底座·三引擎）** 各有分工。**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义，之后 Sub Agent 自加载约束执行。两种调用路径：OpenClaw 节点走内部 API，非 OpenClaw 节点走 CLI。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
 
 主 Agent 的日常：接活 → 看 `data/eval/` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE 编排引擎](./ARCHITECTURE.md#⚙️-编排引擎)。
 
@@ -216,7 +216,7 @@ USB key 不是简单的文件复制——它是一个完整的便携式运行时
 
 CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写入侧）+ `sofagent-daemon start --usb-root`（运行侧）。启动脚本：`daemon/usb/start.command`（macOS）/ `start.sh`（Linux）/ `start.bat`（Windows）。
 
-> 💡 USB 功能的用户侧使用见 [HANDBOOK §USB 烧录](./HANDBOOK.md#usb-烧录三种部署场景全覆盖v118-v120-叙事收口) 和 [FDE/FDE.md §部署场景](../FDE/FDE.md)。这里只讲代码层架构。
+> 💡 USB 功能的用户侧使用见 [HANDBOOK §USB 烧录](./HANDBOOK.md#usb-烧录三种部署场景全覆盖v118-v120-叙事收口) 和 [FDE/GUIDE.md](../FDE/GUIDE.md)。这里只讲代码层架构。
 
 ---
 
@@ -596,3 +596,34 @@ loop-engineering 社区将 STATE.md 定位为 **"对话外的持久化主干"**�
 - 此模式不需要额外基础设施——一个约定 + 一个 Markdown 表就够
 
 > 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [primitives.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/primitives.md)（+ Memory / State 条目）/ [multi-loop.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/multi-loop.md)（Collision detection 条目）
+
+---
+
+## 十一、激活链扩展指南（v1.2.5+ 前瞻）
+
+> 激活链代码尚未实现，以下为给贡献者的架构前瞻——等 v1.2.5 代码落地后，按实际实现更新本节。
+
+### 激活链要解决的工程问题
+
+当前 orchestrator 包（318 测试）和 registry.ts（v1.0.8 动态注册）已经能跑——但只有开发者手动写 `.sofagent/subagents/*.yml` 才能注册自定义 Agent。激活链做的事：**让 FDE 诊断交付物自动变成 `.sofagent/subagents/*.yml`**，不需要人手写。
+
+### 扩展点
+
+| 扩展什么 | 在哪 | 怎么做 |
+|---------|------|--------|
+| 新增 activate 步骤 | `engine/core/src/activate.ts`（新建） | 在 `activateWorkflow()` 的 7 步流程中插入新的处理逻辑 |
+| 新增节点类型 | `engine/orchestrator/src/workflow-parser.ts` | 扩展映射表：workflow.yml 的节点 type → StateGraph node |
+| 写一个 HITL 节点 | `engine/orchestrator/src/node-executor.ts`（新建） | 用 LangGraph `interrupt_before` 在高风险节点前暂停 |
+| 接入审计 hook | `engine/orchestrator/src/dag-runner.ts` | 在 node 执行后调 `@sofagent/audit` 的 `runRules()` |
+
+### 文件清单（按版本）
+
+| 文件 | 版本 | 说明 |
+|------|------|------|
+| `engine/core/src/activate.ts` | v1.2.5 | 激活链入口：读交付物 → 注册企业 SubAgent |
+| `engine/orchestrator/src/workflow-parser.ts` | v1.2.6 | 扩展：支持企业 workflow.yml 的 HITL/审计字段 |
+| `engine/orchestrator/src/compose-enterprise.ts` | v1.2.7 | `composeEnterpriseWorkflow()`：多 Agent → StateGraph |
+| `engine/orchestrator/src/node-executor.ts` | v1.2.8 | DAG 节点执行器 + HITL interrupt |
+| `engine/orchestrator/src/dag-runner.ts` | v1.2.8 | 扩展：审计 hook 集成 + 异常兜底 |
+
+> 详见 [激活链设计文档](./guides/fde-activation-chain.md)。

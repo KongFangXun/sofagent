@@ -206,6 +206,6 @@ nodes:
 部署后累计运行 X 天 · 审计引擎 21 条规则全部在线
 ```
 
-配置方式见 [FDE §13 持续存在感机制](../../FDE/FDE.md#13-竣工后持续存在感机制)。
+配置方式见 [FDE/GUIDE.md §5.9 离场](../../FDE/GUIDE.md#59-离场五大能力)。
 
-> 📖 更多见 [PHILOSOPHY §二 交互范式](../PHILOSOPHY.md#二怎么用交互范式) · [FDE 部署手册](../../FDE/FDE.md)
+> 📖 更多见 [PHILOSOPHY §二 交互范式](../PHILOSOPHY.md#二怎么用交互范式) · [FDE/GUIDE.md](../../FDE/GUIDE.md)

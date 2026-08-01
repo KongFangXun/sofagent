@@ -199,11 +199,24 @@ for f in SKILL/harness/*.md; do
   fi
   echo "    ${STATUS} $(basename "$f"): ${LINES} 行 (上限 200)"
 done
+# v1.2.4 P4: 子 Skill 包 80-120 行/个
+for f in SKILL/skills/*.md; do
+  [ -f "$f" ] || continue
+  LINES=$(wc -l < "$f" | tr -d ' ')
+  STATUS=""
+  if [ "$LINES" -lt 80 ] || [ "$LINES" -gt 120 ]; then
+    STATUS="超标"
+    ERRORS=$((ERRORS + 1))
+  else
+    STATUS="OK"
+  fi
+  echo "    ${STATUS} $(basename "$f"): ${LINES} 行 (预算 80-120)"
+done
 
 echo ""
 echo "=== 6. 铁律措辞检查 ==="
 IRON_FAIL=0
-for f in SKILL/harness/*.md FDE/SKILL.md; do
+for f in SKILL/harness/*.md SKILL/skills/*.md; do
   if [ -f "$f" ]; then
     WEAK=$(grep -n '建议\|应该\|尽量' "$f" 2>/dev/null | grep -v 'not_when\|Gotcha\|场景\|如果\|注\|说明\|这不是' || true)
     if [ -n "$WEAK" ]; then
@@ -305,7 +318,7 @@ echo ""
 echo "=== 9. River 比喻跨文档计数（F-09）==="
 # River 比喻词（堤坝/自来水厂/管网）在非 README 文档中应 ≤4 处
 # README.md 是锚点，不限制
-RIVER_DOCS="docs/ARCHITECTURE.md docs/PHILOSOPHY.md FDE/FDE.md"
+RIVER_DOCS="docs/ARCHITECTURE.md docs/PHILOSOPHY.md FDE/GUIDE.md"
 RIVER_WARN=0
 for doc in $RIVER_DOCS; do
   if [ -f "$doc" ]; then
