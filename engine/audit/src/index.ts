@@ -838,10 +838,20 @@ async function main(): Promise<void> {
   let commitSha: string | undefined;
   try {
     // P1-15: 获取当前 HEAD SHA
+    // 注：isInGitRepo() 已在入口处确认处于 git 仓库，因此 rev-parse HEAD 失败
+    // 只可能是「unborn HEAD」（首次提交，尚无任何 commit）——而非"非 git 环境"。
+    // 此时用空树 SHA 作为 diff 基准（git hash-object -t tree /dev/null），
+    // 给出准确提示，避免误导性的"非 git 环境"警告。
     try {
       commitSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
     } catch {
-      console.warn('[sofagent] 警告：非 git 环境，git 相关审计已跳过');
+      // 计算空树 SHA 作为首次提交的 diff 基准（失败时回退到众所周知的常量）
+      try {
+        commitSha = execFileSync('git', ['hash-object', '-t', 'tree', '/dev/null'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+      } catch {
+        commitSha = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'; // 空树 SHA-1 常量
+      }
+      console.warn('[sofagent] 提示：首次提交（unborn HEAD），对比空树进行审计');
     }
 
     // A4 研读落地：Action Governance 审计 5 字段 schema + 决策溯源组

@@ -13,14 +13,15 @@ import { defaultRules, rules } from './index';
 
 /**
  * 规则分组（21 条 = 13 默认 + 8 扩展）
- * 
+ *
  * 默认规则（13 条，config.yml 中 enabled: true）：
- *   A1-A11, A14, A15
- * 
+ *   A1-A11, A18, A19
+ *
  * 扩展规则（8 条，需主动开启 extensions.enabled: true）：
- *   A16-A19, E1-E4
- * 
+ *   A14-A17, E1-E4
+ *
  * 注：A12/A13 已在 v1.2.0 合并入 A11，不再独立存在。
+ * @see engine/audit/src/rules/index.ts defaultRules/extendedRules ——以实际注册表为准。
  */
 
 /**

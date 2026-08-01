@@ -16,11 +16,11 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.3-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.4-16B8F3" alt="Version" /></a>
   <a href="#install-and-get-going"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>Current version: v1.2.3</strong> · 2026-07-30 · Dashboard production-ready + Orchestration isolation + Fresh-Eyes pipeline</p>
+<p align="center"><strong>Current version: v1.2.4</strong> · 2026-07-30 · Dashboard production-ready + Orchestration isolation + Fresh-Eyes pipeline</p>
 
 <p align="center">
   <a href="#what-is-this">What is this</a> · <a href="#what-sofagent-can-do-for-you">Features</a> · <a href="#three-deployment-options">Deployment</a> · <a href="#install-and-get-going">Install</a> · <a href="#further-reading">Docs</a>
@@ -216,7 +216,7 @@ flowchart LR
 | Engine | What it does | Status |
 |:------|:--------|:--:|
 | 🧭 Constraint Base | Injects rules into Agent context before work starts (SKILL.md + fde.md + think.md + knowledge/) | ✅ stable |
-| 🔍 Audit Engine | 21 rules on every git commit / file change, blocks + logs violations. **Core audit rules zero-token** (17 pure git-diff rules don't call LLM, 4 hybrid rules need Agent logs) — pure static analysis, no LLM cost | ✅ stable |
+| 🔍 Audit Engine | 21 rules on every git commit / file change, blocks + logs violations. **Core audit rules zero-token** (16 pure git-diff rules don't call LLM + 1 filesystem monitoring rule, 4 hybrid rules need Agent logs) — pure static analysis, no LLM cost | ✅ stable |
 | 🔄 Restore Engine | Auto git snapshot after every audit, one-click revert | ✅ stable |
 | 🧬 Evolution | think.md reflection (✅ shipped) + Dream Cycle knowledge feedback (🔧 lightweight) + skillopt Skill optimization (⚠️ needs external SkillOpt CLI) | 🔧 partial |
 

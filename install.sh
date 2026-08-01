@@ -1,19 +1,19 @@
 #!/bin/bash
 # ============================================================
-# sofagent install.sh · 主安装器 / FDE 入口 · v1.2.3
+# sofagent install.sh · 主安装器 / FDE 入口 · v1.2.4
 # ============================================================
 # 将 sofagent 约束层部署到目标平台，让 Agent 获得治理能力。
 #
 # 🧭 路径声明（v1.2.0）：本脚本在仓库根目录，是主安装器。
 #    默认模式 = FDE 模式（底座 + FDE Agent Skill）。
-#    --base-only 模式 = 仅装底座（约束层 + 审计 + 编排）。
+#    --base-only 模式 = 仅装底座（约束层 + 三引擎：审计/回溯/进化）。
 #
 # 📦 安装包边界（v1.2.0）：
 #    ┌─────────────────────────┬──────────┬──────────────────────┐
 #    │ 脚本                    │ 给谁     │ 装什么               │
 #    ├─────────────────────────┼──────────┼──────────────────────┤
 #    │ install.sh              │ 所有用户 │ 底座+FDE Agent Skill │
-#    │ install.sh --base-only  │ 所有用户 │ 约束底座+四引擎      │
+#    │ install.sh --base-only  │ 所有用户 │ 约束底座+三引擎      │
 #    └─────────────────────────┴──────────┴──────────────────────┘
 #    原则：FORGE 由 `FORGE/SKILL/<loop>/` 定义驱动，无需单独安装脚本——
 #    FORGE 是 sofagent 项目的自迭代开发工具包（管理代码变更，给开发者用），
@@ -28,7 +28,8 @@
 # v1.2.0: install.sh 吸收 FDE/fde-install.sh，成为主安装器+FDE 入口
 #
 # 平台：openclaw（完整）/ workbuddy / claude / codex / hermes / 自动探测
-# 编排引擎：LangGraph createReactAgent（@langchain/langgraph，正式依赖）
+# 三引擎：审计 / 回溯 / 进化（FORGE 是内部开发工具，非交付引擎）。
+# 编排引擎为独立可选包 @sofagent/orchestrator，需单独安装（npm install -g @sofagent/orchestrator）。
 #
 # ── 调用契约（v1.2.0）──
 # FDE 通过以下方式调用本脚本安装底座：
@@ -44,7 +45,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.2.3"
+VERSION="1.2.4"
 
 # ── 颜色输出（合并两套）──
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'
@@ -92,7 +93,7 @@ sofagent install.sh v${VERSION} — 主安装器
 
 用法:
   bash install.sh                       默认模式：底座 + FDE Agent Skill
-  bash install.sh --base-only           仅装底座（约束层 + 四引擎）
+  bash install.sh --base-only           仅装底座（约束层 + 三引擎：审计/回溯/进化）
   bash install.sh --platform <name>     指定平台：openclaw / workbuddy / claude / codex / hermes
   bash install.sh --quick               完整安装（静默模式，跳过交互确认）⚠️ 非预览，会写入文件
   bash install.sh --remote              远程安装模式（git clone）
@@ -134,7 +135,7 @@ if [ "$QUICK_MODE" = "0" ]; then
   # Windows 原生 bash（非 WSL）提示使用 PowerShell 脚本
   if [[ "$RUNTIME_ENV" == "Windows (native bash)" ]] && [ -z "${WSL_DISTRO_NAME:-}" ]; then
     warn "检测到 Windows 原生 bash 环境"
-    warn "  建议使用 PowerShell 脚本: .\\install.ps1 -Platform workbuddy"
+    warn "  建议使用 PowerShell 脚本: engine\\scripts\\windows\\install.ps1 -Platform workbuddy"
     warn "  bash 脚本在 Windows 上可能遇到 CRLF 换行符问题"
     warn "  如坚持使用 bash，请确保脚本已转换为 LF 换行符"; echo ""
   fi
@@ -266,7 +267,7 @@ info "Step 2/8 · 检查运行环境..."
 if command -v node &>/dev/null; then
   NODE_VER=$(node --version); ok "Node.js 已安装: $NODE_VER"; _log "node=$NODE_VER"
 else
-  warn "Node.js 未安装。编排引擎（LangGraph createReactAgent）需要 Node.js >= 18"; warn "请先安装 Node.js: https://nodejs.org/"
+  warn "Node.js 未安装。审计引擎（@sofagent/audit）需要 Node.js >= 18"; warn "请先安装 Node.js: https://nodejs.org/"
 fi
 if command -v npm &>/dev/null; then
   NPM_VER=$(npm --version); ok "npm 已安装: v$NPM_VER"
@@ -279,9 +280,9 @@ if command -v npm &>/dev/null; then
 else warn "npm 未安装"; fi
 
 # ════════════════════════════════════════
-# Step 3: 编排引擎（v1.2.0：LangGraph createReactAgent，正式依赖）
+# Step 3: 审计引擎（@sofagent/audit）
 # ════════════════════════════════════════
-info "Step 3/8 · 编排引擎: LangGraph createReactAgent（@sofagent/audit 正式依赖）"
+info "Step 3/8 · 审计引擎: @sofagent/audit（约束底座三引擎之一）"
 # 优先使用仓库本地的 engine/audit/dist/（避免 npm @latest 版本漂移）
 # 仓库本地版本与用户 clone 的版本一致，npm registry 可能滞后
 LOCAL_AUDIT_DIST="$PROJECT_ROOT/engine/audit/dist/index.js"
@@ -301,7 +302,7 @@ WRAPPER_EOF
   else
     info "  执行: npm install -g @sofagent/audit@latest"
     if npm install -g "@sofagent/audit@latest" 2>&1 | tail -1; then
-      ok "  @sofagent/audit 已全局安装（含 LangGraph 编排引擎）"
+      ok "  @sofagent/audit 已全局安装"
     else
       warn "  npm install -g @sofagent/audit 失败（网络/权限问题）"
       warn "  请手动安装: npm install -g @sofagent/audit"
@@ -362,8 +363,8 @@ echo "  npm install -g @sofagent/daemon          # 守护进程"
 echo "  npm install -g @sofagent/core            # 基础设施（doctor/verify）"
 echo "  npm install -g @sofagent/ontology        # 本体模型"
 
-# LangGraph Sub Agent 引擎（正式依赖——npm install @sofagent/audit 自动安装）
-echo "  💡 Sub Agent 引擎: LangGraph createReactAgent（@sofagent/audit 正式依赖，npm install 自动安装）"
+# 编排引擎为独立可选包（不随 @sofagent/audit 自动安装，需按需单独安装）
+echo "  💡 编排引擎为独立可选包 @sofagent/orchestrator，需单独安装（npm install -g @sofagent/orchestrator）"
 
 # ── v1.1.0: TencentDB Memory 集成（--with-memory flag）──
 if [[ "${WITH_MEMORY:-0}" == "1" ]]; then
@@ -440,7 +441,7 @@ case "$COMMAND" in
     if [ -x "$SOFAGENT_HOME/bin/sofagent-dashboard" ]; then
       exec "$SOFAGENT_HOME/bin/sofagent-dashboard" "$@"
     else
-      echo "Dashboard v1.2.3 · 数据面板:"
+      echo "Dashboard v1.2.4 · 数据面板:"
       ls -la "$SOFAGENT_HOME/data/" 2>/dev/null
     fi
     ;;
@@ -461,7 +462,7 @@ case "$COMMAND" in
     echo "  sofagent status     Show version + daemon status + data location"
     echo "  sofagent where      Show all install paths"
     echo "  sofagent version    Show version only"
-    echo "  sofagent dashboard  Open dashboard (v1.2.3)"
+    echo "  sofagent dashboard  Open dashboard (v1.2.4)"
     echo "  sofagent data       Open data directory in Finder"
     echo "  sofagent help       Show this help"
     ;;

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent daemon.sh · daemon 主进程 · v1.2.3
+# sofagent daemon.sh · daemon 主进程 · v1.2.4
 # ============================================================
 # 命令行接口：start / stop / status / --foreground
 # 主循环每 30 秒：检测平台进程 + 文件 hash 变化 → 更新 daemon.json
@@ -13,13 +13,25 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.2.3"
+VERSION="1.2.4"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." 2>/dev/null && pwd || echo "$PWD")"
 
-# daemon 在项目根目录运行，数据目录也在根目录下
-SOFAGENT_DATA="${REPO_ROOT}/.sofagent"
+# ── 数据目录：source config.sh 统一解析（v1.2.1 安装路径分离）──
+# P1 修复：此前硬编码 ${REPO_ROOT}/.sofagent 写 daemon.json/log/pid，
+# 但 daemon-status.sh（source config.sh）读的是 ~/.sofagent/data/，
+# 写读路径不对称——status 永远查不到 daemon 状态。
+# 现统一 source config.sh，与 daemon-status.sh 走同一权威解析（SOFAGENT_HOME/data）。
+if [ -f "$SCRIPT_DIR/lib/config.sh" ]; then
+  # shellcheck disable=SC1091
+  source "$SCRIPT_DIR/lib/config.sh" 2>/dev/null || true
+fi
+# 兜底：config.sh 缺失或解析失败时，对齐 config.sh 的权威 fallback（SOFAGENT_HOME/data）
+if [ -z "${SOFAGENT_DATA:-}" ]; then
+  SOFAGENT_DATA="${SOFAGENT_HOME:-$HOME/.sofagent}/data"
+fi
+
 DAEMON_JSON="${SOFAGENT_DATA}/daemon.json"
 DAEMON_LOG="${SOFAGENT_DATA}/daemon.log"
 DAEMON_PID_FILE="${SOFAGENT_DATA}/daemon.pid"
@@ -90,9 +102,13 @@ JSONEOF
 }
 
 # ── 查找 think.md 和 fde.md ──
+# think.md 权威位置 = SOFAGENT_DATA/think.md（对齐 core/data-paths.ts 的 THINK_MD）。
+# 旧安装 fallback 到仓库内 .sofagent/think.md（兼容未迁移环境）。
 _find_think() {
-  local f="${REPO_ROOT}/.sofagent/think.md"
-  [ -f "$f" ] && { echo "$f"; return 0; }
+  local f
+  for f in "${SOFAGENT_DATA}/think.md" "${REPO_ROOT}/.sofagent/think.md"; do
+    [ -f "$f" ] && { echo "$f"; return 0; }
+  done
   echo ""
 }
 
@@ -189,7 +205,7 @@ _main_loop() {
     _trigger_skillopt() {
       # TODO-v1.3.0: eval.md 已在 v1.2.1 删除，SkillOpt 评分数据源待重新设计
       # 读取 eval.md，检查累积评分条目数是否到阈值
-      local scoring_file="${SOFAGENT_DATA}/../SKILL/harness/data/eval.md"
+      local scoring_file="${REPO_ROOT}/SKILL/harness/data/eval.md"
       local threshold=20  # 累积 20 条评分后触发
       if [ ! -f "$scoring_file" ]; then
         return
@@ -223,7 +239,7 @@ _main_loop() {
       # 真正调用——通过 npx @sofagent/audit skillopt-run
       # v1.2.1：不再追加到 daemon-notice.md，改写 daemon.log
       daemon_log "SkillOpt: eval.md 累积 ${score_count} 条，触发自进化"
-      npx @sofagent/audit skillopt-run --input "${SOFAGENT_DATA}/../SKILL/SKILL.md" --output "${SOFAGENT_DATA}/skill-candidate.md" --scoring "$scoring_file" 2>>"$DAEMON_LOG"
+      npx @sofagent/audit skillopt-run --input "${REPO_ROOT}/SKILL/SKILL.md" --output "${SOFAGENT_DATA}/skill-candidate.md" --scoring "$scoring_file" 2>>"$DAEMON_LOG"
       date +%s > "$last_trigger"
     }
     _trigger_skillopt

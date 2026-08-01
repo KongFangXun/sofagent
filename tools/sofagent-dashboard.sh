@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# sofagent-dashboard.sh · FDE Dashboard 终端三栏（v1.2.3）
+# sofagent-dashboard.sh · FDE Dashboard 终端三栏（v1.2.4）
 # ============================================================
 
 # 依赖检查

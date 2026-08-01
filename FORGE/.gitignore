@@ -1,0 +1,3 @@
+# FORGE loop 环境变量（含真实 API key，绝不进 git）
+# 模板 env.local.template 不忽略，可安全提交
+env.local

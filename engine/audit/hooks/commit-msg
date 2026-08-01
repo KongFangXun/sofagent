@@ -31,8 +31,6 @@ if [ -f "engine/audit/dist/index.js" ]; then
   AUDIT_CMD="node engine/audit/dist/index.js"
 elif command -v sofagent-audit &>/dev/null; then
   AUDIT_CMD="sofagent-audit"
-elif [ -f "engine/audit/dist/index.js" ]; then
-  AUDIT_CMD="node engine/audit/dist/index.js"
 else
   echo "❌ sofagent-audit 未安装，审计未运行"
   echo "   请运行: npm install -g @sofagent/audit"

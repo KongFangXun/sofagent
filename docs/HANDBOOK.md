@@ -2,7 +2,7 @@
 
 > **sofagent 是一个 FDE Agent——进场梳理你的工作流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent（WorkBuddy / Codex / Claude Code）里说一句话，它就帮你干活——审计每次变更、沉淀每次经验、越用越好。下面从装到用到查问题，全流程走一遍。
 >
-> v1.2.3 · 2026-07-30（UTC）· 孔放勋
+> v1.2.4 · 2026-08-01（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -161,7 +161,7 @@ cd sofagent && bash install.sh
 | `sofagent-audit: Node.js 未找到` | Node.js 未安装或版本过低 | 安装 Node.js ≥18：`node --version` 确认 |
 | commit 时没有审计输出 | commit-msg hook 未安装 | `sofagent-audit --init` 或 `sofagent-audit --install-hook` |
 | 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
-| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计引擎可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](../LIMITATIONS.md#🪟-windows-支持是实验性的) |
+| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计引擎可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](../LIMITATIONS.md#windows-支持是实验性的) |
 | hook 装了但静默跳过 | Node.js 或 sofagent-audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
 | `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（默认 13 条（A1–A11 + A18/A19）全启用，扩展 8 条（A14–A17 + E1–E4）需开启，全量 21 条） |
 
@@ -300,7 +300,7 @@ node dist/index.js --diff HEAD~1..HEAD --task "修复登录页 bug"
 
 exit code：0 = 通过 / 1 = 有警告 / 2 = 有违规。零 Agent 依赖——看的是已发生的 git diff。
 
-> 审计规则的完整实现（绿灯路径检测、架构漂移检测、状态账本）见 [DEVELOPMENT §八 提交时审计](./DEVELOPMENT.md#八提交时审计-文件系统审计)。
+> 审计规则的完整实现（绿灯路径检测、架构漂移检测、状态账本）见 [DEVELOPMENT §八 提交时审计](./DEVELOPMENT.md#八提交时审计--文件系统审计)。
 
 ### daemon 后台进程
 
@@ -319,7 +319,7 @@ sofagent-audit --history              # 查看审计快照
 sofagent-audit --revert <sha>         # 回滚到某次审计前
 ```
 
-Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#🔄-回溯能力本质git-snapshot-revert-包装)。
+Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#回溯能力本质git-snapshot-revert-包装)。
 
 ### 终端 Dashboard：一眼看清 AI 在干什么
 
@@ -519,7 +519,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 ### 审计规则
 
-当前共 21 条审计规则（A1-A11、A14-A19 + E1-E4），源码在 `engine/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计-文件系统审计)。
+当前共 21 条审计规则（A1-A11、A14-A19 + E1-E4），源码在 `engine/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计--文件系统审计)。
 
 ### 概念速查
 

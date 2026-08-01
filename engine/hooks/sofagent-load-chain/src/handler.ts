@@ -54,9 +54,14 @@ const handler = async (event: LoadChainEvent) => {
     }
 
     // ── 第 2 层：反思区（think.md）──
-    // 从 .sofagent/ 数据目录读取。优先 SOFAGENT_DATA 环境变量，其次 process.cwd()。
+    // v1.2.1 安装路径分离后，think.md 权威位置 = SOFAGENT_HOME/data/think.md
+    // （对齐 core/data-paths.ts 的 THINK_MD）。install.sh 不导出 SOFAGENT_DATA，
+    // 旧 fallback 到 cwd/.sofagent/think.md 会落到不存在的 cwd 路径，第 2 层静默失效。
+    // 解析优先级：SOFAGENT_DATA（显式）→ SOFAGENT_HOME/data → ~/.sofagent/data。
+    const sofagentHome =
+      process.env.SOFAGENT_HOME || path.join(home, ".sofagent");
     const sofagentData =
-      process.env.SOFAGENT_DATA || path.join(process.cwd(), ".sofagent");
+      process.env.SOFAGENT_DATA || path.join(sofagentHome, "data");
     const thinkFile = path.join(sofagentData, "think.md");
     if (fs.existsSync(thinkFile)) {
       let content = fs.readFileSync(thinkFile, "utf-8");
