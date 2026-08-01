@@ -321,6 +321,24 @@ sofagent-audit --revert <sha>         # 回滚到某次审计前
 
 Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#🔄-回溯能力本质git-snapshot-revert-包装)。
 
+### 终端 Dashboard：一眼看清 AI 在干什么
+
+`sofagent-dashboard` 把 daemon 收集的状态变成三个核心面板——不用翻日志，一眼看清：
+
+```bash
+sofagent-dashboard           # 看当前状态
+sofagent-dashboard --watch   # 实时刷新（看护审查时用）
+sofagent-dashboard --full    # 展开：编排控制图 + FORGE 审查进度 + 最近文件变更
+```
+
+| 面板 | 看什么 | 数据来源 |
+|------|--------|---------|
+| **数据去哪了**（数据主权） | 敏感数据有没有偷偷发给云端？ | 4 维审计日志（模型/操作/流向/任务） |
+| **AI 犯规了吗**（规则审计） | AI 有没有越权改文件、存数据？ | 审计引擎 21 条规则结果 |
+| **任务跑到哪了**（工作状态） | 后台 daemon 和 sub-agent 是活的还是挂了？ | daemon-health.json |
+
+> 前置依赖：需要 `jq`（`brew install jq` / `apt install jq`）。`--full` 追加编排控制图（Org Graph + Work Graph）、FORGE 审查进度、最近文件变更三个扩展面板。
+
 ### CI 集成
 
 在 GitHub Actions 中自动运行审计（静默模式 + CI 严格模式）：

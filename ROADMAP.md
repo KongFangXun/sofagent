@@ -86,14 +86,17 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.2.2** | **数据主权 + 路由 + Dashboard（数据主权 + SubAgent 实时面板）** | ① 数据主权审计追踪（4 维审计日志 + 年/月目录 + 每日/周/月报告 + 四路分发闭环）② 混合模型路由层（ModelRouter 敏感度×任务类型路由 + Ollama 接入）③ FDE Dashboard 第一版（数据主权视图 + **SubAgent 实时面板 L3**：消费 v1.2.1 L2 数据，双 agent 状态卡 + 工具调用流 + 成本曲线 + 心跳检测）④ Skill 分层升级三策略 install.sh 实现（详见 [开发日志](./docs/changelog/v1.2/v1.2.2.md)）|
 | **v1.2.3** | **Dashboard 产品化 + 编排隔离底座 + Fresh-Eyes 流程化** | ① **Fresh-Eyes Dashboard 集成**（fresh-eyes-driver 的 A/B sub agent 写入 sub-progress-*.jsonl 至 `data/forge-runs/`，Dashboard `--watch` 模式实时显示 loop 审查进度——每轮发现数、当前审查文件、A/B 双盲状态）② Dashboard 波次拓扑可视化（bash + jq ASCII art 渲染控制图：节点/边/波次分层实时状态，延续 v1.2.2 零依赖路线）③ 编排隔离底座（git worktree 四子里程碑：隔离原语→审计合并卡关→冲突消解→filesValue 边界）④ Fresh-Eyes-Loop 移至阶段一（releasing.md SOP 重组——新版本第一步跑 fresh-eyes-loop 审查上版本，提前自 v1.2.4）⑤ Workspace 变更摘要（每次运行后记录创建/修改/删除文件清单 → Dashboard 消费，提前自 v1.2.8）⑥ Dashboard 用户可读性（技术状态→用户可读映射 + --technical 切回）（详见 [开发日志](./docs/changelog/v1.2/v1.2.3.md)）|
 | **v1.2.4** | **知识进化 + 知识健康** | ① 分层巡检 L1/L2/L3（@daily/@weekly/@monthly 三级 + 读写回路对标）② skillopt 自动触发（失败模式 3 次自动优化）③ 失败清单自动优化（负面样本为主要燃料）④ conflict-check CLI + 联邦蒸馏 ⑤ **进化引擎接通 eval**（think-generator 读 eval failures → 写 think.md，前置 eval 补全在 v1.2.1 P0b）⑥ **Dashboard 历史趋势 + 任务统计**（v1.2.2 每日快照 → 周对比/月趋势/任务成功率/TOP5 违规，v1.2.4 补齐）⑦ **Skill × MCP 集成**（P3 独立开发线：S1 Skill 引用 MCP 工具 / S2 新增 6 tools / S3 Skill 精简 / S4 数据变更审计 D1-D5 / S5 审计结果汇报 + 品牌可见化五层兜底）⑧ **FDE 人机分离 + Skill 分包**（P4 独立开发线：README 门面 / GUIDE 学习手册 / SKILL/SKILL.md 升格唯一主入口 / 子 Skill 分包 01-05 / 删除 FDE/SKILL.md+FDE.md+quick-start.md，发布源 ./FDE→./SKILL）（Fresh-Eyes-Loop 移至阶段一已提前至 v1.2.3）（详见开发日志 `docs/changelog/v1.2/v1.2.4.md`，发版时补充）|
-| **v1.2.5** | **多设备协同 L2/L3 + 🔗 激活链 Phase 1** | ① L2 团队协作协议（共享态/意图广播/触发反应/冲突消解/反馈放大五大机制）② Agent 独立身份码 + KYA 轻量版 ③ L3 组织能力市场（Skill/Agent/流程发布→发现→调用→评价）④ 跨设备审计轨迹聚合 ⑤ 场景驱动权限体系 + 代理网关硬边界 ⑥ ATTRIBUTION 归因引擎（审计决策→业务价值因果链）⑦ 协议中立审计（只走 MCP + 开放格式）⑧ **🔗 激活链 Phase 1 ACTIVATE**——新增 `activate.ts`，读 FDE 交付物 → 注册企业 SubAgent → 写入 `.sofagent/subagents/*.yml`（registry.ts 动态注册机制已有，缺的是往里写企业 Agent 的自动化流程）+ MCP `activate_workflow` tool（详见 [开发日志](./docs/changelog/v1.2/v1.2.5.md) + [激活链设计](./docs/guides/fde-activation-chain.md)）|
+| **v1.2.5** | **🔗 激活链 Phase 1 + 多设备前置** | **🔗 激活链 Phase 1 ACTIVATE**——新增 `activate.ts`，读 FDE 交付物 → 注册企业 SubAgent → 写入 `.sofagent/subagents/*.yml`（registry.ts 动态注册机制已有，缺的是往里写企业 Agent 的自动化流程）+ MCP `activate_workflow` tool。**多设备前置（轻量）**：① Agent 独立身份码 + KYA 轻量版（企业 SubAgent 注册即带身份）② 跨设备审计轨迹聚合 ③ 协议中立审计（只走 MCP + 开放格式）。⚠️ **原多设备 L2/L3 大项已拆**：L2 协作协议 → v1.3.3、L3 能力市场 → v1.3.4、权限体系+代理网关 → v1.4.0、归因引擎 → v2.x（详见 [开发日志](./docs/changelog/v1.2/v1.2.5.md) + [激活链设计](./docs/guides/fde-activation-chain.md)）|
 | **v1.2.6** | **🔒 弹性预留 + 🔗 激活链 Phase 2 前半** | **储备项**：① `sofagent-audit --support-bundle` ② `--doctor` 输出增强 ③ README Deployment Sizing 表格 ④ One-Line Agent Setup。**🔗 激活链 Phase 2 前半**：workflow-parser 扩展支持 `agent: enterprise` 类型 + registry.ts 的 SubAgentDefinition 增加 hitl/hitlConfig/knowledgeDomain 字段——为 v1.2.7 StateGraph 构建打基础（详见 [开发日志](./docs/changelog/v1.2/v1.2.6.md)）|
 | **v1.2.7** | **编排引擎增强（DeerFlow 启发）+ 🔗 激活链 Phase 2 后半** | ① **Session Goals**（`/goal`）② **手动上下文压缩**（`/compact`）③ **Skill 渐进式加载** ④ **`--doctor` 可操作修复提示** ⑤ **FORGE driver 三方抽象** ⑥ **🔗 激活链 Phase 2 后半**——新增 `enterprise-graph.ts` + `composeEnterpriseWorkflow()`：从 FDE 交付物构建企业专属 LangGraph StateGraph（不调 LLM 拆任务，直接用 workflow.yml）+ 数据流三层设计（State 实时 + entity 持久化 + 双写）（详见 [开发日志](./docs/changelog/v1.2/v1.2.7.md)）|
 | **v1.2.8** | **记忆分层 + 定时任务（DeerFlow 启发）+ 🔗 激活链 Phase 3 前半** | ① **记忆事实级分层** ② **Scheduled Tasks MVP**（cron+once / 暂停/恢复/触发/历史/删除）③ **ToolOutputBudget 中间件化** ④ **🔗 激活链 Phase 3 前半**——dag-runner 扩展支持企业 Agent + 新增 `node-executor.ts` + `run-enterprise` CLI 子命令（详见 [开发日志](./docs/changelog/v1.2/v1.2.8.md)）|
 | **v1.2.9** | **🔒 弹性预留 + 🔗 激活链 Phase 3 后半** | **🔗 激活链 Phase 3 后半**：① HITL 中断处理（`hitl-handler.ts`——⚡ 节点执行前暂停等人确认）② 每节点执行后自动审计 + think.md 回溯 ③ 异常处理（exceptions 队列 + 重试/跳过策略）。紧急修复 / 探索项按需取用（详见 [开发日志](./docs/changelog/v1.2/v1.2.9.md)）|
 | **v1.3.0** | 📋 规划中 | **运行时审计最小闭环 + 🔗 激活链 Phase 4 收尾（SUSTAIN）**：① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离 ⑥ 决策审计 Judgment Unit（emitDecision + kind-wise back）⑦ **🔗 激活链收尾**：全链路验证（activate→compose→run→HITL→audit→sustain）+ wrapToolCall 自动覆盖企业 Agent + FDE SKILL.md 新增 activate 引导（详见 [开发日志](./docs/changelog/v1.3/v1.3.0.md) + [激活链设计](./docs/guides/fde-activation-chain.md)）|
 | **v1.3.1** | 📋 规划中 | **Ontology 本体结构 + 国标对齐 + 并行编排**：① 本体即本体结构——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + E1-E4（共 21 条）+ 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **编排引擎并行调度（Graph Engineering 视角：控制图多循环 DAG 波次并行）**：基于 v1.1.8 的编排引擎调度原型（已从 DeepAgents 迁移至 LangGraph createReactAgent），新增 DAG 依赖解析（Kahn 波次拓扑）+ 并行扇出/扇入（LangGraph `Send` API）+ 循环依赖检测 + 失败传播策略 + 超时熔断；每波次经 audit 节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供（详见 [开发日志](./docs/changelog/v1.3/v1.3.1.md)）|
-| **v1.4.0** | 📋 规划中 | **SubAgent 完整沙箱执行环境 + 生产级编排**：将 orchestrator 内置为完整的沙箱运行时——虚拟文件系统隔离（FilesystemBackend + virtualMode）、网络出站白名单、**工具调用中介（前置 allow/deny，非仅审计追踪）**、**虚拟 key 凭证边界注入（真实凭证 host 边界注入，SubAgent 只拿临时虚拟 key）**、AsyncSubAgent（远程 Agent Protocol 服务端）+ 真·实时 A/B 双跑（候选方案并行执行实时对比，替代当前日志统计法）。**并行 SubAgent 文件隔离**：git worktree 轻量形态已于 v1.2.x 落地，v1.4.0 升级为完整沙箱隔离 + 多 SubAgent 文件竞争检测。审计引擎从「事后」扩展到「运行时」（**范围限定 SubAgent，主 Agent 仍事后审计**）|
+| **v1.3.2** | 📋 规划中 | **多设备协同第一刀：Agent 身份码 + 跨设备审计聚合**：① Agent 独立身份码 + KYA 完整版（Ed25519 签发/验证，绑定委托人/约束/责任，身份与审计双签名）② 跨设备审计轨迹聚合（按 agentId 合并完整轨迹，复用安全联邦加密通道）③ MCP `agent_identity` + `audit_trail` tool。**这是 L2/L3 的地基**——没有身份就没有"谁在协作"（原 v1.2.5 拆入）（详见 [开发日志](./docs/changelog/v1.3/v1.3.2.md)）|
+| **v1.3.3** | 📋 规划中 | **L2 团队协作协议（五大机制）**：共享态（CRDT 合并）/ 意图广播 / 触发反应 / 冲突消解（trust 优先）/ 反馈放大（团队级 think.md 沉淀）+ 团队状态管理（team.yml + 团队会话持久化 + 团队审计）。让多个有身份的 Agent 从"各自为战"变成"一个团队"（原 v1.2.5 拆入，依赖 v1.3.2 身份码）（详见 [开发日志](./docs/changelog/v1.3/v1.3.3.md)）|
+| **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价）**：Skill / Agent / 流程打包发布（market/ 目录）+ 目录检索（复用 search_knowledge）+ 调用挂载（复用 registry）+ 评分聚合（评分 × 调用量加权自然选择）+ 全程审计。高频高价值能力自然胜出（原 v1.2.5 拆入，依赖 v1.3.3 L2 协议）（详见 [开发日志](./docs/changelog/v1.3/v1.3.4.md)）|
+| **v1.4.0** | 📋 规划中 | **SubAgent 完整沙箱执行环境 + 场景驱动权限体系 + 代理网关硬边界**：① **沙箱**——虚拟文件系统隔离（FilesystemBackend + virtualMode）、网络出站白名单、**工具调用中介（前置 allow/deny，非仅审计追踪）**、**虚拟 key 凭证边界注入**、AsyncSubAgent（远程 Agent Protocol 服务端）+ 真·实时 A/B 双跑；② **场景驱动权限体系**（原 v1.2.5 拆入）——权限按"场景"（任务类型 × 数据域 × 动作风险等级）动态判定，判定链 = 身份（v1.3.2）→ 场景匹配 → 风险等级 → 放行，含团队场景权限 + 市场调用权限 + 动态提权到期回收；③ **代理网关硬边界**（原 v1.2.5 拆入）——SubAgent 所有外部请求经网关（唯一出入口），allow/deny + 风险分级 + 超阈值人工批准。审计从「事后」扩展到「运行时」（**范围限定 SubAgent，主 Agent 仍事后审计**）（详见 [开发日志](./docs/changelog/v1.4/v1.4.0.md)）|
 
 #### v1.3.x 里程碑拆分
 
@@ -103,7 +106,10 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 |------|------|------|
 | **v1.3.0** | **运行时审计最小闭环（LangGraph middleware）** | ① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离（详见 [开发日志](./docs/changelog/v1.3/v1.3.0.md)）|
 | **v1.3.1** | **Ontology 本体结构 + 国标对齐 + 并行编排** | 见上方主表：本体本体结构 + GB/T 48000.3-2026 国标对齐 + 控制图多循环 DAG 波次并行 |
-| **v1.3.2-v1.3.9** | 🔒 弹性预留 | 紧急修复 / 探索项按需取用（智能 E2E 测试 Agent、规则文件独立只读焊死门、Agent 执行层实时治理等 v1.3+ 探索项可在此落位）|
+| **v1.3.2** | **多设备第一刀：身份码 + 审计聚合** | Agent 独立身份码（Ed25519）+ 跨设备审计轨迹聚合 + `agent_identity`/`audit_trail` MCP tool（详见 [开发日志](./docs/changelog/v1.3/v1.3.2.md)）|
+| **v1.3.3** | **L2 团队协作协议** | 共享态/意图广播/触发反应/冲突消解/反馈放大五大机制 + 团队状态管理（详见 [开发日志](./docs/changelog/v1.3/v1.3.3.md)）|
+| **v1.3.4** | **L3 组织能力市场** | 发布→发现→调用→评价 + 评分聚合自然选择 + 全程审计（详见 [开发日志](./docs/changelog/v1.3/v1.3.4.md)）|
+| **v1.3.5-v1.3.9** | 🔒 弹性预留 | 紧急修复 / 探索项按需取用（智能 E2E 测试 Agent、规则文件独立只读焊死门、Agent 执行层实时治理等 v1.3+ 探索项可在此落位）|
 
 ### v1.2.x Graph Engine 进化路线
 
@@ -123,11 +129,11 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 🛡️ **差异化铁律（对标时必守）**：gbrain 是「agent 自己的脑」，Palantir Ontology 是「企业级操作层」，sofagent 是「约束中间件」（数据主权 + 第三方独立 + MIT 可审计）。吸收方法，不吸收定位；不建自动化 diff 任务，发版前由架构评审顺带 diff 一次 gbrain 的 dream-cycle / skillopt / Palantir 的 OAG 进展，结论进当版 changelog「行业对标」小节。
 
-### v1.2.x — 完整多设备协同（规划中）
+### 多设备协同（规划中，已拆分至 v1.3.x / v1.4.x）
 
-> 💡 **多 Agent 协同已在 v1.x 完成**：v1.0.3 FDE SubAgent + Audit SubAgent 并存 → v1.0.4 A/B 自动优化双 Agent 对比。**轻量多设备在 v1.1.0 起步**（经验共享 + 权限作用域化 + daemon 主动巡检）。v1.2.x 做完整版——两件事：**完整多设备协同**（每个 AI 节点独立身份、跨设备审计轨迹可追溯、场景驱动权限体系、代理网关硬边界）和 **Workflow Hub 前端**（Web catalog + 社区贡献仪表盘 + 模板 marketplace）。
+> 💡 **多 Agent 协同已在 v1.x 完成**：v1.0.3 FDE SubAgent + Audit SubAgent 并存 → v1.0.4 A/B 自动优化双 Agent 对比。**轻量多设备在 v1.1.0 起步**（经验共享 + 权限作用域化 + daemon 主动巡检）。完整版按依赖链拆分：**v1.3.2 身份码+审计聚合 → v1.3.3 L2 协作协议 → v1.3.4 L3 能力市场 → v1.4.0 权限体系+代理网关**（原 v1.2.5 过重拆分，详见各版本开发日志）。
 
-**ATTRIBUTION 归因引擎（v1.2.x 探索）**：审计能告诉你 Agent 违规了，但不能告诉你哪次正确的审计干预带来了业务价值。ATTRIBUTION 需要在多设备、多客户、长时间尺度上追踪审计决策→业务指标的因果链。
+**ATTRIBUTION 归因引擎（v2.x 探索区）**：审计能告诉你 Agent 违规了，但不能告诉你哪次正确的审计干预带来了业务价值。ATTRIBUTION 需要在多设备、多客户、长时间尺度上追踪审计决策→业务指标的因果链。**挂 v2.x 探索区**——依赖 v1.3.2 跨设备审计聚合数据积累（v1.3.4 市场调用数据也可作输入），执行层能力（沙箱/权限/网关）落地后再做分析层。
 
 **失败清单驱动 skillopt（v1.2.x 探索）**：积累负面样本——每个 Skill 跑失败时记录失败场景 + 原因 + 正确做法，以负面样本为主要燃料驱动优化。"告诉模型什么做法是错的"比"什么是对的"信息量更大。
 

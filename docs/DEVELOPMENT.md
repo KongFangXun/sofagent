@@ -494,6 +494,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 | | | **生产者**：daemon Ingest（task/logs → 知识提取）、knowledge-maintain Skill（session 结束时的结构化总结）| |
 | | | **消费者**：加载链第 4 层（上下文注入）、Agent 决策前自主检索 | |
 | | | **Lint**：loop-evaluate（每周扫描：矛盾/过期/孤立页面）| |
+| `dashboard/` | **daemon 产出（v1.2.3）** | 终端 Dashboard 数据：`daemon-health.json`（工作状态）+ 4 维审计日志聚合（数据主权/规则审计）+ 趋势快照（周对比/月趋势）。消费方：`tools/sofagent-dashboard.sh`（bash + jq 渲染，无 Node 依赖）| 按需读 |
 
 ### 数据流向总结
 
@@ -611,19 +612,20 @@ loop-engineering 社区将 STATE.md 定位为 **"对话外的持久化主干"**�
 
 | 扩展什么 | 在哪 | 怎么做 |
 |---------|------|--------|
-| 新增 activate 步骤 | `engine/core/src/activate.ts`（新建） | 在 `activateWorkflow()` 的 7 步流程中插入新的处理逻辑 |
+| 新增 activate 步骤 | `engine/orchestrator/src/activate.ts`（新建） | 在 `activateWorkflow()` 的 7 步流程中插入新的处理逻辑 |
 | 新增节点类型 | `engine/orchestrator/src/workflow-parser.ts` | 扩展映射表：workflow.yml 的节点 type → StateGraph node |
-| 写一个 HITL 节点 | `engine/orchestrator/src/node-executor.ts`（新建） | 用 LangGraph `interrupt_before` 在高风险节点前暂停 |
+| 写一个 HITL 节点 | `engine/orchestrator/src/node-executor.ts`（v1.2.8 新建） | 用 LangGraph `interrupt_before` 在高风险节点前暂停（v1.2.9 hitl-handler.ts 承接） |
 | 接入审计 hook | `engine/orchestrator/src/dag-runner.ts` | 在 node 执行后调 `@sofagent/audit` 的 `runRules()` |
 
 ### 文件清单（按版本）
 
 | 文件 | 版本 | 说明 |
 |------|------|------|
-| `engine/core/src/activate.ts` | v1.2.5 | 激活链入口：读交付物 → 注册企业 SubAgent |
+| `engine/orchestrator/src/activate.ts` | v1.2.5 | 激活链入口：读交付物 → 注册企业 SubAgent |
 | `engine/orchestrator/src/workflow-parser.ts` | v1.2.6 | 扩展：支持企业 workflow.yml 的 HITL/审计字段 |
-| `engine/orchestrator/src/compose-enterprise.ts` | v1.2.7 | `composeEnterpriseWorkflow()`：多 Agent → StateGraph |
-| `engine/orchestrator/src/node-executor.ts` | v1.2.8 | DAG 节点执行器 + HITL interrupt |
-| `engine/orchestrator/src/dag-runner.ts` | v1.2.8 | 扩展：审计 hook 集成 + 异常兜底 |
+| `engine/orchestrator/src/enterprise-graph.ts` | v1.2.7 | `composeEnterpriseWorkflow()`：多 Agent → StateGraph |
+| `engine/orchestrator/src/node-executor.ts` | v1.2.8 | 企业节点执行器（新建） |
+| `engine/orchestrator/src/hitl-handler.ts` | v1.2.9 | HITL 中断处理 + 每节点审计集成 |
+| `engine/orchestrator/src/dag-runner.ts` | v1.2.8 | 扩展：支持企业 Agent 执行 + 审计 hook |
 
 > 详见 [激活链设计文档](./guides/fde-activation-chain.md)。

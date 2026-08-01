@@ -89,14 +89,14 @@ FDE 诊断完成（交付物就绪）
 
 | 版本 | 原有主题 | 激活链增量 | 对应 Phase |
 |------|---------|-----------|-----------|
-| **v1.2.5** | 多设备协同 L2/L3 | activate.ts + workflow.yml 扩展 + subagents/*.yml 写入 + dry-run + MCP tool | Phase 1 完整 |
+| **v1.2.5** | 多设备前置（身份码轻量版 + 审计聚合 + 协议中立） | activate.ts + workflow.yml 扩展 + subagents/*.yml 写入 + dry-run + MCP tool | Phase 1 完整 |
 | **v1.2.6** | 弹性预留 | workflow-parser 扩展支持 enterprise agent + registry 扩展 hitl 字段 | Phase 2 前半 |
 | **v1.2.7** | 编排引擎增强 | composeEnterpriseWorkflow + LangGraph StateGraph 构建 + 数据流设计 | Phase 2 后半 |
 | **v1.2.8** | 记忆分层+定时任务 | dag-runner 扩展 + run-enterprise CLI + 节点执行器 | Phase 3 前半 |
 | **v1.2.9** | 弹性预留 | HITL interrupt + 审计集成 + 异常处理 | Phase 3 后半 |
 | **v1.3.0** | 运行时审计最小闭环 | 激活链收尾——全闭环验证 + wrapToolCall 联动 + 企业工作流审计 | Phase 4 收尾 |
 
-> 开发每个版本时读本文档作为设计指引。桌面拆分的 3 个 Prompt（Phase 1 / Phase 2 / Phase 3+4）为开发细节参考。
+> 开发每个版本时读本文档作为设计指引。桌面拆分的 3 个 Prompt（Phase 1 / Phase 2 / Phase 3+4）已迁至 `~/Desktop/sofagent-dev-prompts/` 为开发细节参考。
 
 ---
 
@@ -542,9 +542,11 @@ async function executeNode(node, state) {
 |------|------|------|
 | `engine/orchestrator/src/activate.ts` | v1.2.5 | **核心**：Phase 1 激活逻辑 |
 | `engine/orchestrator/src/enterprise-graph.ts` | v1.2.7 | Phase 2 企业编排图构建 |
+| `engine/orchestrator/src/node-executor.ts` | v1.2.8 | Phase 3 企业节点执行器（新建）；v1.2.9 接入 HITL/审计集成 |
 | `engine/orchestrator/src/hitl-handler.ts` | v1.2.9 | Phase 3 HITL 中断处理 |
 | `engine/orchestrator/src/__tests__/activate.test.ts` | v1.2.5 | 单测 |
 | `engine/orchestrator/src/__tests__/enterprise-graph.test.ts` | v1.2.7 | 单测 |
+| `engine/orchestrator/src/__tests__/node-executor.test.ts` | v1.2.8 | 单测 |
 | `engine/mcp/src/tools/activate-workflow.ts` | v1.2.5 | MCP `activate_workflow` tool |
 
 ### 修改文件
@@ -606,6 +608,46 @@ dag-runner.ts（修改）
 | **Skill 分包（README/GUIDE/SKILL/skills/）** | FDE 分包后，skills/04-deliver.md 中应加入 activate 引导——交付后不是结束，activate 才是 |
 | **v1.3.0 运行时审计** | v1.3.0 的 LangGraph middleware wrapToolCall 与激活链的"每个节点执行后审计"互补。v1.3.0 是通用拦截，激活链是企业专属 |
 | **v1.4.0 沙箱** | 激活链生成的企业 Agent 最终也需要沙箱隔离 |
+
+---
+
+## 企业 SubAgent = 引擎公民，不是独立脚本
+
+> **激活链注册的企业 SubAgent 自动继承一底座·三引擎**——因为注册后与内置 4 个 SubAgent（@sofagent-fde / @sofagent-audit / engineer / reviewer）**跑在同一个运行时**：同一条四层加载链、同一个审计 hook、同一个 data/ 状态层。不是"给企业 Agent 装引擎"，是企业 Agent 本来就在引擎里。这就是"轨道从早期就铺好了"的真正含义。
+
+```mermaid
+flowchart TD
+    DELIV[FDE 交付物<br/>ontology + workflow.yml + skills/] --> ACT[激活链 ACTIVATE<br/>v1.2.5+ 注册]
+    ACT --> SA[企业 SubAgent<br/>与内置 Agent 同运行时<br/>同加载链 · 同审计 · 同 data/]
+    SA --> CB[约束底座<br/>四层加载链自动生效]
+    SA --> AU[审计引擎<br/>每步 21 条规则]
+    SA --> RE[回溯引擎<br/>快照一键回滚]
+    SA --> EV[进化引擎<br/>反思 + 知识 + 优化]
+
+    EV --> LOOP1[执行]
+    LOOP1 --> LOOP2[审计 git diff 硬证据]
+    LOOP2 --> LOOP3[反思 think.md 写教训]
+    LOOP3 --> LOOP4[进化 知识回灌 + Skill 优化]
+    LOOP4 -.->|喂下一轮：更懂企业 · 不犯错| LOOP1
+```
+
+### 继承是自动的，不是配置出来的
+
+| 引擎 | 企业 SubAgent 怎么继承 | 触发点 |
+|------|----------------------|--------|
+| 🧭 **约束底座** | `buildConstrainedSystemPrompt()` 注册即生效，走 SKILL.md → fde.md → think.md → knowledge/ 四层加载链 | 启动时自动 |
+| 🔍 **审计引擎** | EXECUTE 阶段 `on_step: true`，每步执行后自动跑 21 条规则 | 每步执行后 |
+| 🔄 **回溯引擎** | 审计后自动 git snapshot，违规一键回滚 | 审计完成后自动 |
+| 🧬 **进化引擎** | think.md 反思 + Dream Cycle 吃 task/logs + skillopt 优化企业 Skill | daemon 定时/事件 |
+
+### 自我进化的两层边界
+
+| 进化层级 | 机制 | 状态 | 企业 SubAgent 能得到吗 |
+|---------|------|:--:|----------------------|
+| **行为级进化** | think.md 反思（不犯同样错）+ Dream Cycle 知识回灌（越跑越懂企业）+ skillopt Skill 优化（失败 3 次自动改） | ✅ 已交付/轻量态 | **能，自动获得**——"越用越好" |
+| **模型级进化** | QLoRA 后训练小模型（workflow 数据训练进权重） | ⚠️ v3.x-v4.x 远期 | 远期蓝图，当前不具备 |
+
+> 🔒 **进化不碰宪法**：进化引擎优化的是 Skill / 知识 / 反思，**不碰加载链第 1 层 SKILL.md 宪法**（4 底线 + 7 铁律，`❌ 不可修改`）。企业 SubAgent 会越用越好，但不会"越用越不守规矩"——**自主性只给到能力层，宪法层永远不可改**。这是"受控自主"的设计哲学。
 
 ---
 
