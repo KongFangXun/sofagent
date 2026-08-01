@@ -11,9 +11,12 @@
 // 自 forks 为 worker：
 //   node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>
 //
-// 异构模型（孔老师 2026-07-25 定稿）：
-//   A（审查者）= DeepSeek V4 Flash baseURL https://api.deepseek.com/  thinking+reasoning_effort=high
-//   B（工程师）= DeepSeek V4 Flash baseURL https://api.deepseek.com/  thinking+reasoning_effort=high
+// 模型（2026-08-06 切换，孔老师定稿）：
+//   A（审查者）= Qwen3.8-max-preview  阿里百炼 Token Plan 订阅制
+//   B（工程师）= Qwen3.8-max-preview  阿里百炼 Token Plan 订阅制
+//   baseURL = https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1（OpenAI 兼容）
+//   Qwen3.8-max-preview 是 thinking-only 模型——始终思考、无法关闭，
+//   不需要（也不应传）enable_thinking/thinking 参数，也没有 reasoningEffort（DeepSeek 专属）。
 // ============================================================
 
 import { spawn } from 'child_process';
@@ -63,58 +66,64 @@ const RUNS_DIR    = join(SOFAGENT_HOME, 'data', 'forge-runs');
 const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
 const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 
-// v1.2.2：A/B 双角色统一 DeepSeek 同账号。
-// A 原为 GLM-5.2 现在也走 DeepSeek——统一用 B 的 key 防止旧 key 残留。
+// Qwen Token Plan 单 key，A/B 共用。
+// 若设置了 SOFAGENT_LLM_B_API_KEY，强制 A 的 key 与 B 一致，确保双角色使用同一 Token Plan key。
 if (process.env.SOFAGENT_LLM_B_API_KEY) {
   process.env.SOFAGENT_LLM_A_API_KEY = process.env.SOFAGENT_LLM_B_API_KEY;
-}// ─── 异构模型配置 ────────────────────────────────────────────
+}// ─── 模型配置（A/B 共用 Qwen3.8-max-preview） ────────────────────────────────────────────
 const MODEL_CONFIGS = {
   A: {
-    baseURL:         'https://api.deepseek.com/',
-    model:           'deepseek-v4-flash',
-    thinking:        { type: 'enabled' },
-    reasoningEffort: 'high',
+    baseURL:         'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
+    model:           'qwen3.8-max-preview',
     maxTokens:       16000,  // 限制输出 token，防止 thinking 模式无限消耗
     apiKeyEnv:       'SOFAGENT_LLM_A_API_KEY',
     specEnv:         'SOFAGENT_LLM_A',
     agentSkillPath:  join(AGENTS_DIR, 'reviewer/SKILL.md'),
     toolsKey:        'REVIEWER_TOOLS',
-    billing:         'pay-as-you-go',  // 按量计费
+    billing:         'subscription',  // Token Plan 订阅制
   },
   B: {
-    baseURL:         'https://api.deepseek.com/',
-    model:           'deepseek-v4-flash',
-    thinking:        { type: 'enabled' },
-    reasoningEffort: 'high',
+    baseURL:         'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
+    model:           'qwen3.8-max-preview',
+    maxTokens:       16000,  // 限制输出 token，防止 thinking 模式无限消耗（与 A 对齐）
     apiKeyEnv:       'SOFAGENT_LLM_B_API_KEY',
     specEnv:         'SOFAGENT_LLM_B',
     agentSkillPath:  join(AGENTS_DIR, 'engineer/SKILL.md'),
     toolsKey:        'ENGINEER_TOOLS',
-    billing:         'pay-as-you-go',  // 按量计费
+    billing:         'subscription',  // Token Plan 订阅制
   },
 };
 
 // ─── 模型定价（usage.jsonl 成本估算基础）─────────────────────
 // 单位：CNY per 1M tokens（百万 token 计价）
-// 数据来源：各厂商官方定价页（2026-07-25 查证）
 //
-// ⚠️ 计费模式区分（2026-07-25 确认）：
-//   A/B (deepseek-v4-flash) = 按量计费 → 适用本表计价
-// 本表用于成本估算。缓存命中率、账号促销、套餐折扣会影响最终费用。
+// ⚠️ 计费模式区分（2026-08-06 确认）：
+//   A/B (qwen3.8-max-preview) = 阿里百炼 Token Plan 订阅制 → 不按 token 计价。
+//   订阅制按周期固定付费，与 token 消耗无关，因此 MODEL_PRICING 的按 token
+//   成本估算对订阅账号意义有限，仅供参考。
+//   recordUsage 的 billing === 'subscription' 分支输出 cost_cny = null，不硬凑按量成本。
 //
 // ⚠️ 这是「估算」不是「账单」：
-//   官方标价 ≠ 实际扣费。缓存命中率、账号促销、套餐折扣都会影响最终费用。
-//   driver 算出的 cost_cny 仅供成本感知（「这轮大概花了多少」），
-//   真实账单请到各厂商 API 后台查看。
+//   即便是按量计费模型，官方标价 ≠ 实际扣费。缓存命中率、账号促销、
+//   套餐折扣都会影响最终费用。driver 算出的 cost_cny 仅供成本感知
+//   （「这轮大概花了多少」），真实账单请到各厂商 API 后台查看。
 //
-// DeepSeek V4 Flash（A/B 当前实际使用，按量计费）：
-//   https://api-docs.deepseek.com/quick_start/pricing
-//   input 0.5元（缓存未命中）/ output 8元 / 缓存命中 input 0.025元
-//   注：DeepSeek 官方定价页未提及峰谷定价（截至 2026-07-25）。
-//   → 本表按「缓存未命中」计价（成本上界，缓存命中时实际账单更低）
-//   MODEL_PRICING 同时保留 deepseek-v4-pro 条目做参考；recordUsage 按 model 名查表，
-//   A 改为 flash 后自动命中 flash 价。
+// Qwen3.8-max-preview（A/B 当前实际使用，Token Plan 订阅制）：
+//   https://help.aliyun.com/zh/model-studio/deep-thinking
+//   订阅制无按量单价，input/output 置 0。
+//
+// DeepSeek 条目（deepseek-v4-pro / deepseek-v4-flash）保留做历史参考：
+//   A/B 曾使用 DeepSeek V4 Flash 按量计费——input 0.5元（缓存未命中）/ output 8元 /
+//   缓存命中 input 0.025元。https://api-docs.deepseek.com/quick_start/pricing
+//   切换 Qwen 后 recordUsage 按 model 名查表自动命中 qwen 条目；DeepSeek 条目不删，供回溯。
 const MODEL_PRICING = {
+  'qwen3.8-max-preview': {
+    input: 0,
+    output: 0,
+    currency: 'CNY',
+    source: 'https://help.aliyun.com/zh/model-studio/deep-thinking',
+    note: 'Token Plan 订阅制，不按量计价，此处置 0；成本估算对订阅账号不适用',
+  },
   'deepseek-v4-pro': {
     input: 3,
     output: 6,
@@ -131,11 +140,14 @@ const MODEL_PRICING = {
   },
 };
 
-// ─── 步骤定义（role / prompt / output / extraInputs）────────
+// ─── 步骤定义（role / prompt / output / extraInputs / maxTokens）────────
+// maxTokens：步骤级输出 token 上限覆盖。未定义时回退到 MODEL_CONFIGS[role].maxTokens。
+// a-consolidate 需合并 A/B 两份完整 12 视角报告为单份 findings，输出超长，
+// 单独调高到 32000，避免顶格 16000 被截断生成不了合法 result.md（整轮降级根因）。
 const STEPS = {
   'a-check':       { role: 'A', prompt: 'a-check.md',       outputs: ['check-a.md'],             inputs: [] },
   'b-check':       { role: 'B', prompt: 'b-check.md',       outputs: ['check-b.md'],             inputs: [] },
-  'a-consolidate': { role: 'A', prompt: 'a-consolidate.md', outputs: ['findings.md','result.md'],inputs: ['check-a.md','check-b.md'] },
+  'a-consolidate': { role: 'A', prompt: 'a-consolidate.md', outputs: ['findings.md','result.md'],inputs: ['check-a.md','check-b.md'], maxTokens: 32000 },
   'b-fix':         { role: 'B', prompt: 'b-fix.md',         outputs: ['summary.md'],             inputs: ['result.md','findings.md'] },
   'a-verify':      { role: 'A', prompt: 'a-verify.md',      outputs: ['result.md'],              inputs: ['findings.md','result.md','summary.md'] },
 };
@@ -205,10 +217,17 @@ function buildSystemPrompt(skillPath) {
 /**
  * 为指定角色创建 LLM 模型实例。
  *
- * 两角色均使用 DeepSeek V4 Flash（ChatOpenAI + reasoningEffort='high'）。
- * thinking 参数通过 modelKwargs 注入。
+ * 两角色均使用 Qwen3.8-max-preview（阿里百炼 Token Plan，OpenAI 兼容接口）。
+ * Qwen3.8-max-preview 是 thinking-only 模型——始终思考、无法关闭，
+ * 不需要传 thinking/reasoningEffort 参数：MODEL_CONFIGS 未定义这两个字段，
+ * 下方条件注入分支（cfg.thinking / cfg.reasoningEffort）天然不会触发。
+ *
+ * @param {string} role              角色 'A' / 'B'
+ * @param {number} [maxTokensOverride]  步骤级输出 token 上限覆盖（如 a-consolidate
+ *                                      需合并两份完整报告，输出超长，单独调高）。
+ *                                      未传时回退到 MODEL_CONFIGS[role].maxTokens。
  */
-async function createModel(role) {
+async function createModel(role, maxTokensOverride) {
   const cfg = MODEL_CONFIGS[role];
   const apiKey = process.env[cfg.apiKeyEnv];
   if (!apiKey) {
@@ -230,8 +249,10 @@ async function createModel(role) {
   }
 
   // 限制输出 token（防止 thinking 模式无限消耗）
-  if (cfg.maxTokens) {
-    ctorArgs.maxTokens = cfg.maxTokens;
+  // 步骤级覆盖优先（如 a-consolidate 合并双份完整报告需 32000），否则用角色默认值
+  const effectiveMaxTokens = maxTokensOverride ?? cfg.maxTokens;
+  if (effectiveMaxTokens) {
+    ctorArgs.maxTokens = effectiveMaxTokens;
   }
 
   // DeepSeek 特殊参数
@@ -527,7 +548,8 @@ async function runWorker(step, roundDir, target) {
   ].filter(Boolean).join('\n');
 
   // 4. 创建 model + tools + agent
-  const model = await createModel(role);
+  // 步骤级 maxTokens 覆盖（如 a-consolidate=32000）优先于角色默认值
+  const model = await createModel(role, stepDef.maxTokens);
 
   // v1.2.1 L2：ProgressMiddleware 注入（SubAgent 内部可观测）。
   // 事件写 <roundDir>/sub-progress-<role>.jsonl——Dashboard 靠它看到
@@ -1626,8 +1648,8 @@ async function runRound(roundNum, runDir, target, dryRun) {
 
   // 打印本轮成本摘要
   const costSummary = summarizeRoundCost(runDir, roundNum);
-  const aModel = costSummary.A.model || 'deepseek-v4-flash';
-  const bModel = costSummary.B.model || 'deepseek-v4-flash';
+  const aModel = costSummary.A.model || 'qwen3.8-max-preview';
+  const bModel = costSummary.B.model || 'qwen3.8-max-preview';
   console.log(
     `  [Round ${roundNum} 成本] A(${aModel}): ${costSummary.A.tokens.toLocaleString()} tokens / ¥${costSummary.A.cost.toFixed(4)}  |  ` +
     `B(${bModel}): ${costSummary.B.tokens.toLocaleString()} tokens / ¥${costSummary.B.cost.toFixed(4)}  |  ` +
@@ -1846,19 +1868,18 @@ async function main() {
   // usage.jsonl 全量摘要（非 dry-run）
   if (!args.dryRun) {
     const usageSummary = appendUsageSummary(runDir, actualRounds);
-    // token 为主的展示格式——A 标订阅制（不硬凑成本），B 标按量
+    // token 为主的展示格式——A/B 均为 Qwen Token Plan 订阅制，不硬凑按量成本
     console.log(
       `\n  [总用量] tokens: ${usageSummary.total_tokens.toLocaleString()}  ` +
-      `(A 订阅 + B 按量 ¥${usageSummary.total_cost_cny.toFixed(4)})`
+      `(A/B 均 Qwen Token Plan 订阅制，不按量计价)`
     );
     console.log(
-      `           A(${usageSummary.by_role.A.model || 'deepseek-v4-flash'}):       ` +
-      `${usageSummary.by_role.A.total_tokens.toLocaleString()} tokens  [Coding Plan 订阅额度]`
+      `           A(${usageSummary.by_role.A.model || 'qwen3.8-max-preview'}):       ` +
+      `${usageSummary.by_role.A.total_tokens.toLocaleString()} tokens  [Token Plan 订阅额度]`
     );
     console.log(
-      `           B(${usageSummary.by_role.B.model || 'deepseek-v4-flash'}):   ` +
-      `${usageSummary.by_role.B.total_tokens.toLocaleString()} tokens  ` +
-      `¥${usageSummary.by_role.B.cost_cny.toFixed(4)} [按量计费]`
+      `           B(${usageSummary.by_role.B.model || 'qwen3.8-max-preview'}):   ` +
+      `${usageSummary.by_role.B.total_tokens.toLocaleString()} tokens  [Token Plan 订阅额度]`
     );
   }
 
