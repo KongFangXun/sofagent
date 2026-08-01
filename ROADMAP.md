@@ -1,21 +1,18 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.2.4 · 2026-08-01（UTC）· 🧠 知识进化（分层巡检 L1/L2/L3 + skillopt 自动触发 + 失败清单 + 联邦蒸馏 + 进化引擎接通 eval）+ 📈 Dashboard 历史趋势
+> v1.2.4 · 2026-08-02（UTC）· 🧠 知识进化（分层巡检 + skillopt 自动触发 + Skill×MCP 集成 + FDE 人机分离 + FORGE LESSONS 方法论）
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
-## 现在在哪：v1.2.4（已发版 · 2026-08-01）
+## 现在在哪：v1.2.5（规划中 · 激活链 Phase 1）
 
-> **知识进化 + 知识健康 + Skill 分包（v1.2.4）**：
-> 分层巡检 L1/L2/L3（@daily/@weekly/@monthly 三级）+ skillopt 自动触发（失败模式 3 次自动优化）+
-> 失败清单自动优化（负面样本为主要燃料）+ conflict-check CLI + 联邦蒸馏 +
-> 进化引擎接通 eval（think-generator 读 eval failures → 写 think.md）+
-> Dashboard 历史趋势 + 任务统计 +
-> Skill × MCP 集成（P3 独立开发线：S1-S5 五子项）+
-> FDE 人机分离 + Skill 分包（P4：README 门面 / GUIDE 学习手册 / SKILL.md 升格唯一主入口 / 子 Skill 分包 01-05）。
+> **🔗 激活链 ACTIVATE + 多设备前置（v1.2.5）**：
+> 新增 `activate.ts`，读 FDE 交付物（ontology + workflow.yml + skills/）→ 注册企业 SubAgent → 写入 `.sofagent/subagents/*.yml`。
+> 解决"FDE 交付后断裂带"——交付物躺在文件里没人消费，需要手动接线才能跑起来。
+> 多设备前置（轻量）：Agent 独立身份码 + 跨设备审计轨迹聚合 + 协议中立审计。
 >
-> 📖 [v1.2.4 开发日志](./docs/changelog/v1.2/v1.2.4.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [v1.2.5 开发日志](./docs/changelog/v1.2/v1.2.5.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 > ✅ **企业采购阻塞项 · Webhook 推送已于 v1.2.1 交付**：v1.1.6 接通 webhook **PASS/WARN/FAIL 三态推送**（本地 agent 自测），v1.2.1 补齐企业协同平台（飞书/钉钉/企微）完整 Webhook 推送能力（见 SECURITY.md「审计结果推送」）。采购阻塞项已解除。
 
@@ -27,6 +24,7 @@
 
 | 版本 | 核心交付 |
 |------|------|
+| **v1.2.4** | 知识进化（分层巡检 L1/L2/L3 + skillopt 自动触发 + 失败清单 + 联邦蒸馏 + 进化引擎接通 eval）+ Dashboard 历史趋势 + Skill × MCP 集成（S1-S5）+ FDE 人机分离（README/GUIDE/SKILL.md 升格 + 子 Skill 分包 01-05）+ FORGE stream 迁移 + LESSONS 方法论 |
 | **v1.2.3** | Dashboard 产品化（控制图波次渲染 + 用户可读状态映射 + Fresh-Eyes 审查进度 + Workspace 变更摘要）+ 编排隔离底座（git worktree 三原语 + 审计合并卡关）+ Fresh-Eyes-Loop 移至阶段一 + v1.2.2 BugFix 31 项 + 裁决解析健壮性加固 |
 | **v1.2.2** | 数据主权审计（4 维追踪 + HMAC 链 + 日/周/月报告）+ 混合模型路由（ModelRouter + Ollama 接入）+ FDE Dashboard（终端三栏）+ Graph Engine（Planner + 降级链 + decide/execute 分层）+ 异步 HITL + Skill 升级三策略 + v1.2.1 BugFix 38 项 |
 | **v1.2.1** | 数据目录重构（.sofagent/ → data/）+ Webhook 推送 + SubAgent 可见性 L2 + custom/ 闭环 |
@@ -137,7 +135,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 **ATTRIBUTION 归因引擎（v2.x 探索区）**：审计能告诉你 Agent 违规了，但不能告诉你哪次正确的审计干预带来了业务价值。ATTRIBUTION 需要在多设备、多客户、长时间尺度上追踪审计决策→业务指标的因果链。**挂 v2.x 探索区**——依赖 v1.3.2 跨设备审计聚合数据积累（v1.3.4 市场调用数据也可作输入），执行层能力（沙箱/权限/网关）落地后再做分析层。
 
-**失败清单驱动 skillopt（v1.2.x 探索）**：积累负面样本——每个 Skill 跑失败时记录失败场景 + 原因 + 正确做法，以负面样本为主要燃料驱动优化。"告诉模型什么做法是错的"比"什么是对的"信息量更大。
+**失败清单驱动 skillopt（✅ v1.2.4 已实现）**：积累负面样本——每个 Skill 跑失败时记录失败场景 + 原因 + 正确做法，以负面样本为主要燃料驱动优化。"告诉模型什么做法是错的"比"什么是对的"信息量更大。v1.2.4 落地为 `engine/skillopt/src/auto-trigger.ts`（连续 3 次失败自动触发）+ `failure-ledger.ts`（失败清单管理）+ 新建 `optimize()` API。
 
 **KYA 身份确权（v1.2.x 探索）**：a16z 研判非人类身份:人类 = 96:1，急需 KYA（Know Your Agent）——加密签名凭证将 Agent 与委托人/约束/法律责任深度绑定。sofagent 审计引擎（约束 + 审计 + 归属）本质是轻量版 KYA。
 
