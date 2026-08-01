@@ -793,7 +793,7 @@ git log vX.Y.Z..HEAD --oneline
 ```
 
 ── Step 5: Skill 分发 ──
-> 唯一对外 skill，发布源是 `./FDE` 目录（含 SKILL.md + FDE.md + templates）。
+> 唯一对外 skill，发布源是 `./SKILL` 目录（v1.2.4 起从 `./FDE` 改为 `./SKILL`——含 SKILL.md + skills/ + agents + harness + custom）。
 > 其他 skill 已全部删除/合并——内部 Sub Agent 不对外发布。
 
 > **🔴 slug 统一为 `sofagent`**（ClawHub + SkillHub 两平台一致）。
@@ -803,7 +803,7 @@ git log vX.Y.Z..HEAD --oneline
 # 15. ClawHub 发布（slug = sofagent）
 #     --source-repo 和 --source-commit 必须同时提供
 #     🔴 同版本号不可覆盖，需递增 patch 号
-clawhub skill publish ./FDE \
+clawhub skill publish ./SKILL \
   --slug sofagent \
   --owner KongFangXun \
   --version X.Y.Z \
@@ -814,27 +814,27 @@ clawhub skill publish ./FDE \
 
 # 16. SkillHub 发布（slug = sofagent）
 #     🔴 SkillHub 上已注册的 slug 是 `sofagent`。
-#     FDE/SKILL.md 的 slug 字段必须 = `sofagent`，否则 publish 返回 409。
+#     SKILL/SKILL.md 的 slug 字段必须 = `sofagent`，否则 publish 返回 409。
 #     发布前确认：
-head -3 FDE/SKILL.md    # 期望：slug: sofagent
+head -3 SKILL/SKILL.md    # 期望：slug: sofagent
 #     发布：
-skillhub publish ./FDE --version X.Y.Z --changelog "vX.Y.Z: {简短变更}"
+skillhub publish ./SKILL --version X.Y.Z --changelog "vX.Y.Z: {简短变更}"
 #     新版本有平台审核流程（reviewStatus=pending），审核通过后搜索索引才更新。
 
 # 17. 本机 Skill 同步
-cp -r FDE/* ~/.workbuddy/skills/sofagent/
+cp -r SKILL/* ~/.workbuddy/skills/sofagent/
 ```
 
 > **📌 Skill 分发铁律**：
-> 1. **唯一对外发布源 = `./FDE` 目录**（不是 `./SKILL` 目录——后者是引擎内部约束链）
+> 1. **唯一对外发布源 = `./SKILL` 目录**（v1.2.4 起从 `./FDE` 改为 `./SKILL`——含完整引擎层 + 子 Skill 包）
 > 2. **两个平台 slug 统一 = `sofagent`**（v1.2.2 起 ClawHub 从 `sofagent-fde` merge 过来）
-> 3. **🔴 SkillHub 不接受图片文件（v1.2.3 教训）**：`./FDE` 目录若含 `.png`（如 `sofagent-fde.png`），`skillhub publish` 返回 `400 不允许的文件类型`。发布前必须排除图片——复制到临时目录删掉 png 再 publish：
+> 3. **🔴 SkillHub 不接受图片文件（v1.2.3 教训）**：发布目录若含 `.png`（如 `sofagent-fde.png`），`skillhub publish` 返回 `400 不允许的文件类型`。`./SKILL` 目录本身不含 png（frontmatter 引用 `FDE/sofagent-fde.png`），发布时无需处理；若目录内出现 png 则复制到临时目录删掉再 publish：
 >    ```bash
->    TMPDIR=$(mktemp -d) && cp -r FDE/* "$TMPDIR/" && rm -f "$TMPDIR"/*.png
+>    TMPDIR=$(mktemp -d) && cp -r SKILL/* "$TMPDIR/" && rm -f "$TMPDIR"/*.png
 >    skillhub publish "$TMPDIR" --version X.Y.Z --changelog "vX.Y.Z: {简短变更}"
 >    ```
 >    ClawHub 接受 png，无此问题；仅 SkillHub 受限。
-> 3. **FDE/SKILL.md slug 字段 = `sofagent`**（SSOT）
+> 3. **SKILL/SKILL.md slug 字段 = `sofagent`**（SSOT）
 > 4. ClawHub 同版本号不可覆盖，需递增 patch 号
 > 5. 两个平台每次发版都要推，一个都不能少
 

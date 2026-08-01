@@ -9,59 +9,28 @@
 </p>
 
 <p align="center">
-  <strong>进场梳理 · 部署 AI 节点 · 离场后控制层常驻</strong><br/>
+  <strong>企业 AI 自运转平台——从诊断到 7×24 自动干活</strong><br/>
   <em>让中小企业拥有把 AI 变成日常工作的能力。</em>
 </p>
 
 > **sofagent 是一个 FDE Agent**——进场梳理工作流、把能自动化的环节变成 AI 节点、部署后 7×24 自己跑。
-> 底层引擎（Harness 中间件）一底座·三引擎覆盖全生命周期，审计引擎已独立交付。
+> 底层引擎（Harness 中间件）**能力底座 × 生命周期**双层架构：层 1 一底座·三引擎（约束 + 审计/回溯/进化）保证每次执行做对；层 2 生命周期（诊断 → 激活 → 编排 → 执行 → 进化）让企业 AI 从诊断走向自运转。
 >
 > **FDE Agent** = 进场梳理工作流 → 部署 AI 节点 + 引擎 → 离场后控制层常驻。
+> **🔗 激活链（v1.2.5+ 规划中）** = 生命周期第 2-4 环：从"交付一堆 .md / .yml"到"企业工作流自动跑起来"——读交付物 → 注册企业 SubAgent → 编排 + 执行 + 审计 → 持续自运转。
 
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.3-16B8F3" alt="Version" /></a>
-  <a href="#装上就能用"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
+  <a href="#快速开始"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
 <p align="center"><strong>当前版本：v1.2.3</strong> · 2026-07-30 · Dashboard 产品化 + 编排隔离底座 + Fresh-Eyes 流程化</p>
 
 <p align="center">
-  <a href="#这是什么">这是什么</a> · <a href="#sofagent-能帮你做什么">能帮你做什么</a> · <a href="#三种部署方式覆盖所有场景">部署方式</a> · <a href="#装上就能用">安装</a> · <a href="#延伸阅读">文档</a>
+  <a href="#这是什么">这是什么</a> · <a href="#sofagent-能帮你做什么">能帮你做什么</a> · <a href="#为什么不是现有工具">为什么不是现有工具</a> · <a href="#快速开始">快速开始</a> · <a href="#延伸阅读">文档</a>
 </p>
-
----
-
-## ⚡ 30 秒快速开始
-
-| 你是… | 第一步 | 需要什么 |
-|------|------|------|
-| **企业用户** | 装 [FDE Skill](./FDE/README.md) → 对话引导你梳理工作流 | 零依赖、不需要 Node.js |
-| **开发者** | `bash install.sh` → `sofagent-audit --init` → 装 git hook 审计 | Node.js ≥ 18 + git |
-
-> **前提**：开发者路径请在 git 仓库根目录下执行。如果还没有仓库，先运行 `git init`。
-
-```bash
-bash install.sh          # 安装
-# 自动检测你的 shell 配置文件
-if [ -n "$ZSH_VERSION" ]; then
-  source ~/.zshrc
-elif [ -n "$BASH_VERSION" ]; then
-  source ~/.bashrc
-fi
-# 或者直接重新打开终端
-sofagent-audit --init    # 初始化（装 git hook）
-# 验证环境是否就绪（可选但推荐）
-sofagent-audit --doctor
-```
-
-> 💡 如果 `sofagent-audit` 仍然提示 command not found，请**新开一个终端窗口**再试。
-
-> 💡 **不需要装引擎？** 如果你只需要 FDE 方法论（给 Agent 装治理 Skill），
-> 直接看 [FDE/README.md](./FDE/README.md)——零依赖，不需要 Node.js。
-
-> 💡 **下一步**：安装完成后，运行 `sofagent-audit --doctor` 检查环境状态，或查看 [项目导航索引（WIKI）→](./docs/WIKI.md)
 
 ---
 
@@ -71,7 +40,43 @@ sofagent-audit --doctor
 
 **sofagent 做的就是这件事。** 它是一个 FDE Agent——进场梳理你的工作流，把能自动化的环节变成 AI 节点，部署到设备上，然后离场。离场后，模型能力内化不了的控制层持续在跑——审计链、防篡改、合规留痕——你留下的是一套能持续维护的 AI 化资产。完整类比见 [ARCHITECTURE](./docs/ARCHITECTURE.md)。
 
-### 为什么不是现有工具
+**sofagent 的完整生命周期（能力底座 × 生命周期双层架构）**：
+
+```
+诊断（FDE 四阶段）→ 激活（交付物→SubAgent）→ 编排（多 Agent→工作流）
+→ 执行（带审批和审计地跑）→ 进化（反思 + 回灌，喂下一轮诊断）
+```
+
+> 当前已交付：诊断 + 部署 + 离场常驻（控制层）。v1.2.5+ 激活链补齐 激活 → 编排 → 执行 → 进化 四环，从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。详见 [激活链设计文档](./docs/guides/fde-activation-chain.md)。
+
+---
+
+## sofagent 能帮你做什么
+
+**想让 AI 自动跑日常任务？**
+进场梳理工作流，把能自动化的环节变成 AI 节点，部署完自己跑。
+
+**Agent 越界了怎么办？**
+21 条规则（13 默认 + 8 扩展）自动审计每次变更——越界编辑、密钥泄漏、注入攻击，commit 时自动拦截。
+> `git commit --no-verify` 可绕过 hook，是已知架构限制。企业场景建议配合 CI 侧 `sofagent-audit --diff` 兜底，详见 [LIMITATIONS](./LIMITATIONS.md)。13 条默认规则装上就生效，8 条扩展规则按需开启。
+
+**出了事能回滚吗？**
+每次变更自动 git snapshot，一键回到任意安全状态。
+
+**换了 Agent / 模型怎么办？**
+审计引擎全平台可用（只看 git diff）；约束层按平台分层（OpenClaw 最深，其他平台核心约束可用）。
+
+**越用越好吗？**
+经验自动沉淀，FDE Agent 周度巡检持续优化规则与知识。
+
+> [!TIP]
+> **90/10 价值分层**：模型给 90% 的智力，sofagent 补 10% 的可靠执行——越往后这 10% 越值钱。不是造更聪明的模型，是给已有的聪明加一套闸门。
+
+> 🔗 **激活链（v1.2.5+ 规划中）**：FDE 诊断出的 ontology + workflow.yml + skills/ 现在是静态文件——企业 IT 拿到不知道怎么跑。激活链解决这个"大断裂带"：自动读交付物 → 注册企业 SubAgent → 编排成可运行工作流 → 带审批和审计地自动跑起来。详见 [激活链设计文档](./docs/guides/fde-activation-chain.md)。
+
+---
+
+## 为什么不是现有工具
 
 | 工具 | 它们管什么 | sofagent 管什么 |
 |------|:--------|:----------------|
@@ -82,13 +87,6 @@ sofagent-audit --doctor
 | Cursor Rules / Claude hooks | 单平台 IDE 约束 | 审计层全平台可用（git diff）；约束层按平台分层（OpenClaw 最深 → WorkBuddy SKILL → 其他种子指令） |
 
 现有工具查"代码写得对不对"；sofagent 查"Agent 行为对不对"。这些是 LLM Agent 特有的失败模式，通用工具不覆盖。
-
-### 两个入口
-
-| 如果你… | 走这里 |
-|---------|--------|
-| 是开发者，想给团队装审计引擎 | → 继续往下看，30 秒快速开始 |
-| 是企业用户，想用 FDE 方法论管 Agent | → [FDE Agent 入口](./FDE/README.md)（零代码、零依赖） |
 
 <details>
 <summary>📦 FDE 离场后，企业留下五样东西</summary>
@@ -105,33 +103,8 @@ sofagent-audit --doctor
 
 </details>
 
----
-
-## sofagent 能帮你做什么
-
-**想让 AI 自动跑日常任务？**
-进场梳理工作流，把能自动化的环节变成 AI 节点，部署完自己跑。
-
-**Agent 越界了怎么办？**
-21 条规则（13 默认 + 8 扩展）自动审计每次变更——越界编辑、密钥泄漏、注入攻击，commit 时自动拦截。
-> **21 条规则（13 条默认规则 + 8 条扩展规则）**，覆盖敏感文件、密钥泄漏、注入攻击、越界修改等场景。
-> `git commit --no-verify` 可绕过 hook，是已知架构限制。企业场景建议配合 CI 侧 `sofagent-audit --diff` 兜底，详见 [LIMITATIONS](./LIMITATIONS.md)。13 条默认规则装上就生效，8 条扩展规则按需开启，详见下方规则表。
-
-**出了事能回滚吗？**
-每次变更自动 git snapshot，一键回到任意安全状态。
-
-**换了 Agent / 模型怎么办？**
-审计引擎全平台可用（只看 git diff）；约束层按平台分层（OpenClaw 最深，其他平台核心约束可用）。
-
-**越用越好吗？**
-经验自动沉淀，FDE Agent 周度巡检持续优化规则与知识。
-
-> [!TIP]
-> **90/10 价值分层**：模型给 90% 的智力，sofagent 补 10% 的可靠执行——越往后这 10% 越值钱。不是造更聪明的模型，是给已有的聪明加一套闸门。
-
----
-
-## 🆕 v1.2.3 新特性
+<details>
+<summary>🆕 v1.2.3 新特性：Dashboard 产品化 + 数据主权 + 混合模型路由</summary>
 
 ### 终端 Dashboard：一眼看清 AI 在干什么
 
@@ -183,26 +156,38 @@ bash tools/sofagent-dashboard.sh
 
 > 详细设计见 [ARCHITECTURE](./docs/ARCHITECTURE.md) · 完整开发日志见 [v1.2.3](./docs/changelog/v1.2/v1.2.3.md)
 
+</details>
+
 ---
 
-## 三种安装方式，适配所有场景
+## 快速开始
+
+装完后，你在自己的 Agent（WorkBuddy / Codex / Claude Code）里说一句话，sofagent 就开始干活。没有界面——语言就是界面。
+
+| 你是… | 第一步 | 需要什么 |
+|------|------|------|
+| **企业用户** | 装 [FDE Skill](./FDE/README.md) → 对话引导你梳理工作流 | 零依赖、不需要 Node.js |
+| **开发者** | `bash install.sh` → `sofagent-audit --init` → 装 git hook 审计 | Node.js ≥ 18 + git |
+
+> **前提**：开发者路径请在 git 仓库根目录下执行。如果还没有仓库，先运行 `git init`。
+
+```bash
+bash install.sh          # 安装（自动检测 shell 配置文件，装完新开终端或 source）
+sofagent-audit --init    # 初始化（装 git hook）
+sofagent-audit --doctor  # 验证环境是否就绪（可选但推荐）
+```
+
+> 💡 如果 `sofagent-audit` 仍然提示 command not found，请**新开一个终端窗口**再试。
+> 💡 **不需要装引擎？** 如果你只需要 FDE 方法论（给 Agent 装治理 Skill），直接看 [FDE/README.md](./FDE/README.md)——零依赖，不需要 Node.js。
+> 💡 **下一步**：安装完成后，运行 `sofagent-audit --doctor` 检查环境状态，或查看 [项目导航索引（WIKI）→](./docs/WIKI.md)
+
+### 三种安装方式，适配所有场景
 
 | 方式 | 谁用 | 怎么用 |
 |------|------|--------|
 | 🚀 **npx 零安装** | 快速体验 / CI 环境 | `npx @sofagent/audit --init`（即装即用，不需下载） |
 | 💻 **install.sh 全量安装** | 技术人员 / 开发者 | `bash install.sh`（底座 + FDE Agent） |
 | ⚡ **install.sh 最小安装** | 开发者 / 企业 IT | `bash install.sh --base-only`（仅底座引擎） |
-
----
-
-## 装上就能用
-
-装完后，你在自己的 Agent（WorkBuddy / Codex / Claude Code）里说一句话，sofagent 就开始干活。没有界面——语言就是界面。
-
-```bash
-# sofagent 一键部署（主安装器 = 底座 + FDE Agent）
-bash install.sh
-```
 
 > [!NOTE]
 > 需要 Node.js ≥ 18 + bash + git。macOS / Linux 全功能，Windows 实验性。Dashboard 依赖 jq（macOS 请 `brew install jq`，Linux 请 `apt install jq` / `yum install jq`）。
@@ -232,18 +217,9 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
 </details>
 
-> 💡 **单包测试需先 build**：monorepo 中各包通过 `dist/` 互相引用，跑单包 `npm test` 前需先 `npm run build --workspaces` 构建依赖包（全量 `npm test` 会自动处理）。
-
 > ⚠️ **关于 commit 拦截**：`git commit --no-verify` 可以绕过本地 hook。sofagent 的设计初衷是"诚实 Agent 的护栏"而非"恶意攻击者的防线"。企业高安全场景建议在 CI/CD pipeline 侧再加一道 `sofagent-audit --diff` 审计（hook 可绕，CI 不可绕）。详见 [LIMITATIONS](./LIMITATIONS.md) §一·已知架构限制。
 
 > **推荐**：新用户使用 `bash install.sh`（一键安装全套）。高级用户/CI 环境使用 `npm install -g @sofagent/audit`（仅安装审计引擎）。
-
-**两种安装模式**：
-
-| 模式 | 命令 | 装什么 |
-|------|------|--------|
-| 全量安装 | `bash install.sh` | 底座 + FDE Agent（所有人） |
-| 仅底座 | `bash install.sh --base-only` | 仅底座引擎（开发者 / 企业 IT） |
 
 **按需安装**：
 
@@ -272,8 +248,6 @@ rm -f .git/hooks/commit-msg .git/hooks/post-commit
 - Linux：使用 LUKS 加密分区挂载 `~/.sofagent/`
 - 详见 [SECURITY.md](./SECURITY.md#已知风险明文存储)
 
----
-
 ### 运行测试
 
 ```bash
@@ -286,13 +260,16 @@ npm test --workspace=engine/audit
 # 预期：1317 tests passed（12 包全绿）
 ```
 
+> 💡 **单包测试需先 build**：monorepo 中各包通过 `dist/` 互相引用，跑单包 `npm test` 前需先 `npm run build --workspaces` 构建依赖包（全量 `npm test` 会自动处理）。
+
 ---
 
 ## 延伸阅读
 
 | 你想了解 | 看哪里 |
 |:---------|:--------|
-| FDE Agent 进场四阶段、企业落地 | [FDE.md](./FDE/FDE.md) |
+| FDE 诊断方法论（四阶段十二步） | [GUIDE.md](./FDE/GUIDE.md) |
+| 🔗 激活链设计（交付物→自运转） | [激活链设计文档](./docs/guides/fde-activation-chain.md) |
 | 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
 | 引擎架构、21 条规则、内部机制 | [↓ 引擎架构（开发者段）](#engine-architecture) |
 | 为什么这么设计 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
@@ -309,9 +286,9 @@ npm test --workspace=engine/audit
 ## <a id="engine-architecture"></a>引擎架构（开发者段）
 
 > [!NOTE]
-> **品牌与描述**：**sofagent** 是产品品牌名；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent（进场梳理工作流、把可自动化环节变成 AI 节点、构建本体、部署专属小模型的常驻硅基员工）。底层技术实现是一套约束 Agent 行为的 Harness 中间件（一底座·三引擎），开源在 `@sofagent/*`。下面这段是给开发者看的。
+> **品牌与描述**：**sofagent** 是产品品牌名；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent（进场梳理工作流、把可自动化环节变成 AI 节点、构建本体、部署专属小模型的常驻硅基员工）。底层技术实现是一套约束 Agent 行为的 Harness 中间件（**能力底座 × 生命周期**双层架构：层 1 一底座·三引擎 + 层 2 激活链四阶段），开源在 `@sofagent/*`。下面这段是给开发者看的。
 
-sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，一底座·三引擎覆盖全生命周期。一底座 = 约束底座（开工前注入规则）；三引擎 = 审计引擎（21 条规则拦截）+ 回溯引擎（自动快照回滚）+ 进化引擎（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化）。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，不作为对外引擎宣称。
+sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，**能力底座 × 生命周期**双层架构。**层 1 能力底座 = 一底座·三引擎**：一底座 = 约束底座（开工前注入规则）；三引擎 = 审计引擎（21 条规则拦截）+ 回溯引擎（自动快照回滚）+ 进化引擎（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化）。**层 2 生命周期 = 激活链四阶段**（v1.2.5+）：诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，不作为对外引擎宣称。
 
 <details>
 <summary>📖 一底座·三引擎架构（开发者参考）</summary>

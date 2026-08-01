@@ -9,7 +9,7 @@
 - [阅读指南](#阅读指南)
 - [5 分钟速览](#5-分钟速览)
 - [FDE Agent 能替你干什么](#fde-agent-能替你干什么)
-- [心智模型：一底座·三引擎](#心智模型一底座三引擎)
+- [心智模型：能力底座与生命周期](#心智模型能力底座与生命周期)
 - [落地：装好就能派活](#落地装好就能派活)
 - [运行：每次变更都被管住](#运行每次变更都被管住)
 - [进化：知识自动沉淀](#进化知识自动沉淀)
@@ -28,7 +28,7 @@
 | 刚装上 | 落地 → 运行 |
 | 日常干活 | 运行 → 排查与自定义 |
 | 想改规矩 | 排查与自定义（改写 fde.md） |
-| FDE 部署 / 持续优化 | 落地 → 常驻（完整方法论见 [FDE/FDE.md](../FDE/FDE.md)） |
+| FDE 部署 / 持续优化 | 落地 → 常驻（完整方法论见 [FDE/GUIDE.md](../FDE/GUIDE.md)） |
 | 想理解内部机制 | [开发文档](./DEVELOPMENT.md) |
 | 想理解设计哲学 | [设计文档](./ARCHITECTURE.md) |
 | 想理解为什么这么做 | [设计哲学](./PHILOSOPHY.md)（**强烈推荐，读 5 分钟**） |
@@ -47,7 +47,8 @@
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | [运行：每次变更都被管住](#运行每次变更都被管住) |
 | AI 节点怎么跑 | 开发者：git commit 自动审计。非开发者：v1.0.8+ daemon 监控文件变更自动审计 | [落地：装好就能派活](#落地装好就能派活) |
 | AI 知识库 | `data/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [进化：知识自动沉淀](#进化知识自动沉淀) |
-| AI 成熟度 | 三级台阶（替换→增强→重构），FDE 帮企业从第二级跨到第三级——不只装 AI，还装上责任机制 | [FDE/FDE.md](../FDE/FDE.md#附录企业-ai-成熟度三级台阶) |
+| 交付后怎么自动跑 | 🔗 激活链（v1.2.5+）：读交付物 → 注册 SubAgent → 编排 → 带审批和审计地自动跑 | [常驻：长期自跑与持续优化](#常驻长期自跑与持续优化) |
+| AI 成熟度 | 三级台阶（替换→增强→重构），FDE 帮企业从第二级跨到第三级——不只装 AI，还装上责任机制 | [FDE/GUIDE.md](../FDE/GUIDE.md#18-企业-ai-成熟度三级台阶) |
 | 已知局限 | 核心效果见 [evidence.md](./evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](../LIMITATIONS.md) |
 
 ---
@@ -63,12 +64,13 @@
 - **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
 - **平台无关、即挂即用**：骑在你自选的大厂 Agent（Claude Code / Codex / Cursor / WorkBuddy / 扣子 / OpenClaw）之上，不替代模型，只补「可靠执行」。
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
+- **🔗 激活链（v1.2.5+ 规划中）**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 **现在还干不了的事（规划中，暂无代码）**：完整多设备协同、并行编排、SubAgent 生产级沙箱、本地推理小模型——路线见 [ROADMAP](../ROADMAP.md)。
 
 ---
 
-## 心智模型：一底座·三引擎
+## 心智模型：能力底座与生命周期
 
 把 sofagent 想成**骑在你选好的大模型之上的一层约束**——不自己造模型，只把每次执行管得可靠、可审计。
 
@@ -83,7 +85,14 @@
   - 🚰 **水龙头（业务 Sub Agent）**——具体干活的节点，随业务接不同的「水龙头」
   - 📊 **水表（审计）**——每次变更看得见、可回滚（终端 Dashboard v1.2.3 已落地）
 
-落到代码就是 **一底座·三引擎**：
+落到代码就是 **能力底座 × 生命周期** 双层架构：
+
+| 层 | 是什么 | 一句话 | 状态 |
+|:--:|------|------|:--:|
+| **层 1 · 能力底座** | 一底座·三引擎（约束底座 + 审计/回溯/进化引擎） | 怎么保证每次执行都做对 | ✅ 已交付 |
+| **层 2 · 生命周期** | 诊断 → 激活 → 编排 → 执行 → 进化 | 企业 AI 从诊断到自运转怎么走 | 🔗 v1.2.5+ 规划中 |
+
+**层 1 · 能力底座（一底座·三引擎）**：
 
 | 角色 | 引擎 | 管什么 | 触发方式 |
 |------|------|------|------|
@@ -93,7 +102,17 @@
 | ⚙️ 内部工具 | **FORGE 工具链**（orchestrator） | LOOP 流水线（项目自迭代用，非对外引擎） | CLI compose tool |
 | 🧬 引擎④ | **进化引擎**（eval + ab-test + skillopt + think + ontology；由 daemon 定时驱动） | 知识沉淀 + 反思 + A/B 自优化，越用越好 | daemon cron / 手动触发 |
 
-> 一底座（约束）＋ 三引擎（审计 / 回溯 / 进化）＝ 全生命周期**可审计、可回滚、可进化**。FORGE 自迭代工具链是项目内部开发工具。完整设计见 [ARCHITECTURE · 一底座·三引擎](./ARCHITECTURE.md#二一底座三引擎设计)。
+**层 2 · 生命周期（激活链，v1.2.5+ 规划中）**：
+
+| 环 | 阶段 | 做什么 |
+|:--:|------|--------|
+| ① | **诊断**（FDE 四阶段） | 梳理工作流、判定 AI 节点、交付三层实体（✅ 已交付） |
+| ② | **激活** ACTIVATE（v1.2.5） | 读交付物 → 注册企业 SubAgent |
+| ③ | **编排** ORCHESTRATE（v1.2.6-7） | 多 Agent → StateGraph 工作流 |
+| ④ | **执行** EXECUTE（v1.2.8-9） | DAG 运行 + 人工审批（HITL）+ 审计集成 |
+| ⑤ | **进化** SUSTAIN（v1.3.0） | 反思 + 回灌，喂下一轮诊断 |
+
+> 一底座（约束）＋ 三引擎（审计 / 回溯 / 进化）＝ 全生命周期**可审计、可回滚、可进化**。激活链在此基础上让企业 AI 从"诊断完交付一堆文档"走向"自运转"。FORGE 自迭代工具链是项目内部开发工具。完整设计见 [ARCHITECTURE · 双层架构](./ARCHITECTURE.md#双层架构能力底座与生命周期) 和 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 ---
 
@@ -101,7 +120,7 @@
 
 > 💬 **sofagent 没有界面。** 装完之后，你不会看到任何窗口或网页。你通过你的 Agent（WorkBuddy / Codex / Claude Code）和 sofagent 对话——说一句话，它做完了告诉你结果在哪。语言就是界面，MCP 就是入口。详见 [设计哲学](./PHILOSOPHY.md)。
 
-> 📊 **部署后你会自动收到这些**：每周审计守护报告（拦截了多少次违规）、每月知识库增长报告（AI 掌握了多少实体）、每季度无 FDE 对照报告（裸模型 vs sofagent 回答对比）、扩容预警。这些是 sofagent 持续存在感的证明——由引擎自动生成推送，不需要人工干预。详见 [FDE §13 持续存在感机制](../FDE/FDE.md#13-竣工后持续存在感机制)。
+> 📊 **部署后你会自动收到这些**：每周审计守护报告（拦截了多少次违规）、每月知识库增长报告（AI 掌握了多少实体）、每季度无 FDE 对照报告（裸模型 vs sofagent 回答对比）、扩容预警。这些是 sofagent 持续存在感的证明——由引擎自动生成推送，不需要人工干预。详见 [FDE/GUIDE.md §5.9 离场](../FDE/GUIDE.md#59-离场五大能力)。
 
 ### 两种装法（v1.2.0）
 
@@ -345,10 +364,10 @@ jobs:
 
 | 功能 | 版本 | 一句话 | 详见 |
 |------|:--:|------|------|
-| Dream Cycle | v1.1.7 | knowledge/ 自动沉淀——daemon 6 阶段 pipeline 从 task/logs 提取知识，不再靠散点脚本 | [FDE §知识治理体系](../FDE/FDE.md) |
-| sensitivity 分级 | v1.1.7 | 每条知识带 public/internal/restricted 分级，缺省 internal——restricted 在联邦查询中不外发 | [FDE §知识治理体系](../FDE/FDE.md) |
-| knowledge status | v1.1.7 | `sofagent-daemon knowledge status` 一条命令看知识全貌（Dream Cycle 周报 + 健康度 + sensitivity 计数） | [FDE §知识治理体系](../FDE/FDE.md) |
-| 安全联邦 | v1.1.8 | 两台配对设备互查 knowledge/，AES-256-GCM 全链路加密 + sensitivity 双重过滤 | [FDE §部署场景·安全联邦](../FDE/FDE.md) |
+| Dream Cycle | v1.1.7 | knowledge/ 自动沉淀——daemon 6 阶段 pipeline 从 task/logs 提取知识，不再靠散点脚本 | [FDE/GUIDE.md §5.6 经验怎么沉淀](../FDE/GUIDE.md#56-经验怎么沉淀) |
+| sensitivity 分级 | v1.1.7 | 每条知识带 public/internal/restricted 分级，缺省 internal——restricted 在联邦查询中不外发 | [FDE/GUIDE.md §5.7 数据主权](../FDE/GUIDE.md#57-数据主权审计为什么重要) |
+| knowledge status | v1.1.7 | `sofagent-daemon knowledge status` 一条命令看知识全貌（Dream Cycle 周报 + 健康度 + sensitivity 计数） | [FDE/GUIDE.md §5.6 经验怎么沉淀](../FDE/GUIDE.md#56-经验怎么沉淀) |
+| 安全联邦 | v1.1.8 | 两台配对设备互查 knowledge/，AES-256-GCM 全链路加密 + sensitivity 双重过滤 | [FDE/GUIDE.md §5.7 数据主权](../FDE/GUIDE.md#57-数据主权审计为什么重要) |
 | Prompt 注入防护 | v1.1.8 | 8 层纵深防御——外部内容包裹 + 脱敏 + 知识可信分级 | [SECURITY.md](../SECURITY.md) |
 | USB 一键烧录 | v1.1.8 | workflow 烧进 U 盘 → 发给员工 → 插上即用，拔掉零残留 | [常驻：长期自跑与持续优化](#常驻长期自跑与持续优化) |
 | A/B 自动调度 | v1.1.9 | daemon 后台跑探索-利用——当前方案攒数据 → 自动切候选方案对比 → 赢家自动 promote | [ARCHITECTURE 编排引擎](./ARCHITECTURE.md) |
@@ -359,7 +378,7 @@ jobs:
 - **Ontology 本体**：企业世界模型——实体 + 关系 + 动作 + 约束，三层 YAML 自动生长，让 Agent 越用越懂你的业务语境。
 - **sensitivity 分级**：每条知识带 public / internal / restricted 分级，restricted 在跨设备联邦查询中默认不外发。
 
-> 知识库不是数据库，是会「长」的资产。完整治理机制见 [FDE §知识治理体系](../FDE/FDE.md)。
+> 知识库不是数据库，是会「长」的资产。完整治理机制见 [FDE/GUIDE.md §5.6 经验怎么沉淀](../FDE/GUIDE.md#56-经验怎么沉淀)。
 
 ### 进化引擎（越用越好）
 
@@ -371,11 +390,11 @@ jobs:
 
 ## 常驻：长期自跑与持续优化
 
-> 这一幕讲「离场常驻」——FDE 梳理完 workflow 后，AI 节点怎么 7×24 自己跑、自己优化，人不用盯着。**完整四阶段十二步部署方法论 + 五份模板 + quick-start 见 [FDE/FDE.md](../FDE/FDE.md)**，这里只讲结果和你能直接敲的命令。
+> 这一幕讲「离场常驻」——FDE 梳理完 workflow 后，AI 节点怎么 7×24 自己跑、自己优化，人不用盯着。**完整方法论（四阶段十二步 + 模板 + 上手）见 [FDE/GUIDE.md](../FDE/GUIDE.md) 与 [FDE/README.md](../FDE/README.md)**，这里只讲结果和你能直接敲的命令。
 
 ### 部署：装上 sofagent
 
-没有 sofagent，梳理的 workflow 就是一份 PPT。引擎装到设备上，AI 节点才有纪律和审计。完整引擎对照表与部署步骤见 [FDE/FDE.md §装上 sofagent](../FDE/FDE.md#装上-sofagent整个部署的核心)。
+没有 sofagent，梳理的 workflow 就是一份 PPT。引擎装到设备上，AI 节点才有纪律和审计。完整引擎对照表与部署步骤见 [FDE/GUIDE.md §5.3 部署流程](../FDE/GUIDE.md#53-部署流程人怎么看懂)。
 
 **节点类型选择**：自动运行节点（需 OpenClaw 全栈）vs 个人增强节点（WorkBuddy / Codex，无需 OpenClaw）。完整对照表见 [ARCHITECTURE 双节点架构](./ARCHITECTURE.md#双节点架构)。
 
@@ -400,7 +419,7 @@ sofagent-daemon create-usb-key \
   --platform macos   # 或 linux / win
 ```
 
-U 盘包含：Node.js 便携版 + sofagent 引擎 + knowledge/ 加密落盘 + 启动脚本 + HMAC 防篡改签名。员工双击 `start.command`/`.sh`/`.bat` → 验签 → 内存解密 → daemon 启动 → 联邦在线。拔掉零残留。完整部署场景见 [FDE/FDE.md §部署场景](../FDE/FDE.md#三种部署场景)。
+U 盘包含：Node.js 便携版 + sofagent 引擎 + knowledge/ 加密落盘 + 启动脚本 + HMAC 防篡改签名。员工双击 `start.command`/`.sh`/`.bat` → 验签 → 内存解密 → daemon 启动 → 联邦在线。拔掉零残留。完整部署场景与烧录命令见 [SKILL/agents/fde/SKILL.md §USB 烧录](../SKILL/agents/fde/SKILL.md)。
 
 > 💡 跟你的 Agent 说"帮我烧一个 XX 节点的 U 盘"也行——Agent 会通过 FDE Skill 触发 `create-usb-key`。
 
@@ -408,7 +427,7 @@ U 盘包含：Node.js 便携版 + sofagent 引擎 + knowledge/ 加密落盘 + �
 
 | 产物 | 说明 |
 |------|------|
-| **交付手册** | 企业画像 + 部署方案 + fde.md + quick-start.md |
+| **交付手册** | 企业画像 + 部署方案 + 运行规范 + 上手文档 |
 | **AI 节点** | 文档层（.md）+ Skill 层（企业专属）+ 运行层（在跑的 session） |
 | **AI 知识库** | `data/knowledge/` — daemon 自动 Ingest，零手动维护 |
 | **私有化评估体系** | data/eval/ + Skill 迭代历史 + 知识库演变轨迹 |
@@ -424,6 +443,21 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 审计 Agent 管"刹车是不是还在"，FDE Agent 管"能不能换更好的轮胎"。两者合在一起，企业的 AI 节点不需要人盯着。
 
 > sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。sofagent 本质上是一款 FDE Agent：对外你用的是品牌名 sofagent（它正是一款 FDE Agent 在帮你干活），对内是 sofagent 引擎（Harness 中间件）在跑。
+
+### 🔗 激活链：从"交付文档"到"自动运转"（v1.2.5+ 规划中）
+
+> **当前的断裂带**：FDE 离场后留下交付手册、节点 .md、workflow.yml、Skill 文件——这些都是静态文件，企业 IT 拿到后还得手动搭运行环境、手动配编排、手动接审批。
+
+激活链解决的就是这个断裂带——**让交付物自己变成可运行的系统**：
+
+| 阶段 | 做什么 | 什么时候 |
+|------|--------|---------|
+| ACTIVATE 激活 | 读交付物（ontology + workflow.yml + skills/）→ 写 `.sofagent/subagents/*.yml` → 注册企业 SubAgent | v1.2.5 |
+| ORCHESTRATE 编排 | 把多个企业 Agent 串联成 LangGraph StateGraph 工作流 | v1.2.6-v1.2.7 |
+| EXECUTE 执行 | DAG 运行 + 人工审批节点（HITL）+ 每步审计集成 + 异常兜底 | v1.2.8-v1.2.9 |
+| SUSTAIN 闭环 | 全链路验证 + wrapToolCall 联动（执行→审计→反思→进化完整循环） | v1.3.0 |
+
+> 简单说：现在 FDE 离场后你拿到的是"图纸"，激活链完成后你拿到的是"按图纸自动造好且自己跑着的工厂"。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 ---
 
@@ -471,7 +505,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 ### 概念速查
 
-上述术语（Harness 中间件、一底座·四引擎、审计/回溯/进化引擎（+ FORGE 内部工具链）、铁律、审计规则、Skill、think.md、daemon、OpenClaw、FDE 等）已在上方各幕详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。核心 = **一底座·三引擎覆盖全生命周期**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
+上述术语（Harness 中间件、能力底座 × 生命周期双层架构、一底座·三引擎（约束底座 + 审计/回溯/进化引擎）、激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）、FORGE 内部工具链、铁律、审计规则、Skill、think.md、daemon、OpenClaw、FDE 等）已在上方各幕详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。核心 = **能力底座（一底座·三引擎）× 生命周期（诊断→激活→编排→执行→进化）**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 ---
 

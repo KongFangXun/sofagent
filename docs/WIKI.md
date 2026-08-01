@@ -21,8 +21,8 @@
 | 概念 | 一句话 | 详情 |
 |------|--------|------|
 | **FDE Agent** | 对外的产品身份：「Forward Deployed Engineer」——进场→部署→离场，留一套能持续维护的 AI 化资产 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
-| **Harness 中间件** | 对内的技术身份：约束 Agent 行为的「缰绳」，四引擎（审计/编排/回溯/进化） | [ARCHITECTURE §二](./ARCHITECTURE.md) |
-| **Harness 七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——四引擎各自覆盖其中哪些维度 | [ARCHITECTURE §一·心智模型](./ARCHITECTURE.md) |
+| **Harness 中间件** | 对内的技术身份：约束 Agent 行为的「缰绳」，一底座·三引擎（审计/回溯/进化），编排（FORGE）为内部工具不对外宣称 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
+| **Harness 七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——三引擎各自覆盖其中哪些维度 | [ARCHITECTURE §一·心智模型](./ARCHITECTURE.md) |
 | **Harness 构成（企业视角）** | 黄仁勋定义：企业专属 Harness = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
 | **审计引擎** | git diff 驱动，21 条规则（13 默认 + 8 扩展），A1→A19 为活跃规则（A12/A13 已在 v1.1.0 合并入 A11，编号不再使用），每次 commit 自动跑 | [ARCHITECTURE §三](./ARCHITECTURE.md) |
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
@@ -70,7 +70,7 @@
 
 ### 三层嵌套：Harness → Graph → Loop
 
-上述架构全景中，四引擎之间不是并列关系——它们按 Agent 工程三层架构嵌套：
+上述架构全景中，一底座·三引擎（审计/回溯/进化）与 FORGE 内部编排不是并列关系——它们按 Agent 工程三层架构嵌套：
 
 ```
 Harness（工作环境）        Graph（流程拓扑）         Loop（反馈改进）
@@ -112,9 +112,10 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 |------|---------|
 | `docs/WIKI.md` | **你正在读的这个**——项目导航索引 |
 | `docs/PHILOSOPHY.md` | 产品哲学十三节：为什么做、三层治理、FDE 定义、行业方法论印证 |
-| `docs/ARCHITECTURE.md` | 架构详解：四引擎、数据流、部署模式、文件结构（含 Ledger-Views-Policy ↔ LLM Wiki 三层同构对照） |
+| `docs/ARCHITECTURE.md` | 架构详解：一底座·三引擎、数据流、部署模式、文件结构（含 Ledger-Views-Policy ↔ LLM Wiki 三层同构对照） |
 | `docs/DEVELOPMENT.md` | 开发指南：本地环境、包结构、测试、发版流程 |
 | `docs/HANDBOOK.md` | FDE 操作手册：进场流程、节点部署、持续维护 |
+| `docs/guides/fde-activation-chain.md` | 🔗 激活链设计（v1.2.5+）：FDE 交付物 → 企业工作流自动运转（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN） |
 | `docs/THANKS.md` | 致谢——谁启发了哪个设计决策 |
 | `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/`） |
 | `docs/changelog/releasing.md` | **发版 SOP**——十二阶段全流程 |
@@ -192,6 +193,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | 了解 FORGE 自迭代 | [FORGE/README.md](../FORGE/README.md) |
 | 了解 SKILL 约束体系 | [SKILL/SKILL.md](../SKILL/SKILL.md) |
 | 作为 FDE 进场部署 | [HANDBOOK.md](./HANDBOOK.md) |
+| 交付物怎么自动跑起来（激活链） | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md)（v1.2.5+） |
 | 找效果证据/案例 | [docs/evidence/](./evidence/) |
 | 添加新审计规则 | `engine/audit/src/rules/` → 对照现有规则模式（defaultRules / extendedRules） |
 | 新建 Sub Agent | `SKILL/agents/` → 参照 `agents/engineer/SKILL.md` |

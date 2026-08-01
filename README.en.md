@@ -99,7 +99,7 @@ The first four are assets, the fifth is sofagent itself — the FDE Agent that s
 | 🔌 **USB key** | Regular employees (SMB core scenario) | Plug and play, zero residue on unplug, no installation or expertise needed |
 | 🖥️ **Headless device** | Server / industrial PC (OPC scenario) | Plug USB and leave it, control layer stays resident in the federation |
 
-> 💡 **USB one-click burn**: build a workflow → burn a batch of USB keys → distribute to the team. Enterprise narrative: "buy USB → download sofagent → write to disk → distribute to employees". See [FDE/FDE.md](./FDE/FDE.md).
+> 💡 **USB one-click burn**: build a workflow → burn a batch of USB keys → distribute to the team. Enterprise narrative: "buy USB → download sofagent → write to disk → distribute to employees". See [FDE/GUIDE.md](./FDE/GUIDE.md).
 
 ---
 
@@ -183,7 +183,7 @@ npm test --workspace=engine/audit
 
 | Want to learn | Where |
 |:---------|:--------|
-| FDE Agent four-phase onboarding, enterprise deployment | [FDE.md](./FDE/FDE.md) |
+| FDE Agent four-phase onboarding, enterprise deployment | [GUIDE.md](./FDE/GUIDE.md) |
 | Install, usage, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
 | Engine architecture, 21 rules, internal mechanisms | [↓ Engine architecture (developers)](#engine-architecture-developers) |
 | Why designed this way | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
