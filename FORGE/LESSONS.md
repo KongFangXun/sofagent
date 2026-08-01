@@ -286,6 +286,167 @@ FORGE/SKILL/
 | 07-26 | 9a9c5dc | createDeepAgent → createReactAgent | P0（真修复） |
 | 07-26 | 3248395 | recursionLimit 按步骤 + macOS 约束 + 降级 | P1 |
 | 07-26 | 8cd7b23 | runs 目录迁回原位（架构纠偏） | P2 |
+| 08-01 | 63b130d | 步骤级 maxTokens 覆盖（consolidate 32000） | P1 |
+| 08-01 | da1039a | 四项 ReAct 性能优化 | P1 |
+| 08-01 | a0571a4 | stream 迁移 finalState 数据丢失 | P0 |
+
+---
+
+## 八、性能优化：ReAct Agent 慢的四根因（da1039a）
+
+### 坑 12：上下文雪球——工具输出不裁剪导致 prompt 膨胀
+
+**现象**：fresh-eyes-loop 单轮审查 7-8 分钟。usage.jsonl 显示 b-check 第一步 prompt_tokens 就 102k，到 b-fix round-4 出现单次 296k tokens 的怪物调用。
+
+**根因**：LangGraph ReAct 把**所有工具调用的完整输出**追加到 messages 列表，从不裁剪。Agent 跑一次 `npm test` 输出 2000 行，这个完整输出在之后每一次 LLM 调用时都被重新处理：
+
+```
+第 1 次调用：  prompt=15k  → LLM 处理 15k
+第 50 次调用： prompt=50k  → LLM 处理 50k
+第 100 次调用：prompt=90k  → LLM 处理 90k（每次推理时间翻倍）
+```
+
+**修复**（commit da1039a）：两层裁剪——
+
+**第一层：工具输出截断** `truncateToolOutput()`。工具返回超过 200 行只保留头尾各 100 行：
+
+```js
+function truncateToolOutput(text, maxLines = 200) {
+  const lines = String(text).split('\n');
+  if (lines.length <= maxLines) return text;
+  const half = maxLines / 2;
+  return [
+    ...lines.slice(0, half),
+    `\n... [${lines.length - maxLines} lines truncated] ...\n`,
+    ...lines.slice(-half),
+  ].join('\n');
+}
+```
+
+**第二层：上下文窗口裁剪** `stateModifier`。替代 `prompt` 参数（两者互斥），每次 LLM 调用前保留 system + 首条 user + 最后 30 条消息：
+
+```js
+const agent = createReactAgent({
+  llm: model, tools,
+  // v1.2.5：stateModifier = system prompt 注入 + 上下文裁剪（替代 prompt）
+  stateModifier: (state) => {
+    const messages = state.messages ?? [];
+    if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
+      return [systemMsg, ...messages];
+    }
+    return [systemMsg, messages[0], ...messages.slice(-MAX_CONTEXT_MESSAGES)];
+  },
+});
+```
+
+**⚠️ 关键坑：`prompt` 和 `stateModifier` 互斥**。LangGraph 源码 `_getPrompt()` 强校验——同时传两个会直接报错。如果之前用 `prompt: systemPrompt`，迁移到 `stateModifier` 时必须把 systemPrompt 移到 stateModifier 内部以 `SystemMessage` 形式注入。
+
+**实测效果**：prompt tokens 峰值从 296k → 稳定 ~30k。预计总执行时间 **-50~60%**。
+
+**教训**：ReAct Agent 的 messages 列表是只增不减的"雪球"。不做上下文管理，跑 100 步后每次推理要处理 10 倍于初始的 token 量。
+
+---
+
+### 坑 13：Agent 过度探索——910 次工具调用里大半是重复
+
+**现象**：sub-progress 日志显示 A（Reviewer）一轮调了 910 次工具（332 次 sf_read + 563 次 run_bash），B（Engineer）更夸张 1555 次（850 次 bash）。同一文件读 3-4 遍、同一命令反复跑确认。
+
+**根因**：Agent 有"再看一遍确认下"的强迫症——这是 LLM 的通病，不是某个模型的问题。不约束就会无限制探索。
+
+**修复**（commit da1039a）：在 SKILL.md（systemPrompt 来源）里加效率铁律——
+
+reviewer 加的目标 50 步以内：
+- 禁止重复读同一文件——读过的结论直接用
+- 禁止连续跑同一命令——结果不对换方案
+- 批量读取——一步提多个 read_file 调用
+- 先看目录再看细节——不要盲扫
+- 结论优先——发现问题立即记录，不要无限扩展
+
+engineer 加的目标 30 步以内：
+- Read → Edit → Test 三步循环，每个修复点走一遍够
+- 精准定位——result.md 给的路径和行号就是围栏
+
+**教训**：LLM 的工具调用行为是可塑的——prompt 里明确说"目标 50 步以内，禁止重复读"，它就会克制。不说就默认无限探索。
+
+---
+
+### 坑 14：invoke → stream 迁移的 P0 数据丢失（a0571a4）
+
+**现象**：四项性能优化里把 `agent.invoke()` 改成 `agent.stream(streamMode:'updates')`。语法检查通过、审计全绿。但如果真跑一轮，**所有产物文件内容会变成 `[object Object]`，usage 成本追踪全部丢失**。
+
+**根因**：两个 API 返回格式不同：
+
+```
+invoke()  返回 → { messages: [...] }              ← 扁平，下游直接用
+stream()   返回 → { agent: { messages: [...] } }   ← 外面包了一层节点名
+```
+
+代码里 `finalState = chunk` 直接赋了原始 chunk，没有解包。下游 `extractAgentText(result)` 找 `result.messages` 时拿到 undefined → 穿透到 fallback `String(result)` → 输出 `"[object Object]"`。`extractUsage(result)` 同理 → usage 全记 null。
+
+**修复**（commit a0571a4）：累积所有 chunk 的 delta.messages 到扁平数组，返回 `{ messages: allMessages }` 模拟 invoke 返回格式：
+
+```js
+const invokeAgent = async () => {
+  const stream = await agent.stream(
+    { messages: [...] },
+    { recursionLimit, streamMode: 'updates' }
+  );
+
+  const allMessages = [];
+  for await (const chunk of stream) {
+    // chunk 是 { nodeName: stateDelta } —— 解包
+    for (const [, delta] of Object.entries(chunk)) {
+      const msgs = delta?.messages;
+      if (!Array.isArray(msgs)) continue;
+      for (const msg of msgs) {
+        allMessages.push(msg);
+        // 实时打印工具调用...
+      }
+    }
+  }
+  // 返回扁平结构——与 invoke() 返回格式兼容
+  return { messages: allMessages };
+};
+```
+
+**为什么语法检查和审计没拦住**：语法检查只验证 JS 可解析，审计检查的是代码安全/规范——都不做 API 返回值结构验证。这个 bug 只有在 agent 实际跑完一轮后写产物时才暴露。
+
+**教训（stream 迁移检查清单）**：
+1. ✅ chunk 结构跟 invoke 返回值一样吗？（查文档或打 `console.log(chunk)` 确认）
+2. ✅ 下游所有消费 result 的函数（extractAgentText、extractUsage）拿到的数据形状对吗？
+3. ✅ 如果不一样，在哪里做格式适配？
+
+> **核心反思**：只验证了自己改的那一段（上游：工具调用实时打印✅），没验证接口契约（下游：extractAgentText/extractUsage 数据形状❌）。这是典型的"只看了自己那段，没看整条链"。
+
+---
+
+## 九、步骤级 maxTokens：合并步骤的隐形截断（63b130d）
+
+### 坑 15：a-consolidate maxTokens=16000 被截断导致整轮降级
+
+**现象**：fresh-eyes-loop 的 a-consolidate（合并 A/B 双份 12 视角报告）和 release-gate 的 consolidate（合并三份验证报告），completion_tokens 精确顶到 maxTokens=16000 上限被截断 → 无法生成合法 result.md → 整轮降级摘要模式 → b-fix 收到"无 finding" → 跳过修复。审出的问题一个都没修。
+
+**根因**：全局 `maxTokens: 16000` 对所有步骤共用。Qwen3.8-max-preview 是 thinking-only 模型，16000 里还包含 thinking tokens，留给实际输出的更少。
+
+**修复**（commit 63b130d）：步骤级 maxTokens 覆盖——
+
+```js
+const STEPS = {
+  // ...
+  'a-consolidate': { ..., maxTokens: 32000 },  // 合并步骤单独调高
+};
+
+// createModel 支持覆盖参数
+async function createModel(role, maxTokensOverride) {
+  const effectiveMaxTokens = maxTokensOverride ?? cfg.maxTokens;
+  if (effectiveMaxTokens) ctorArgs.maxTokens = effectiveMaxTokens;
+}
+
+// runWorker 传入 stepDef.maxTokens
+const model = await createModel(role, stepDef.maxTokens);
+```
+
+**教训**：合并/汇总类步骤的输出量远大于普通步骤。如果用 thinking-only 模型，maxTokens 里还有 thinking 的份——给合并步骤单独配更高的 maxTokens。
 
 ---
 
@@ -293,13 +454,30 @@ FORGE/SKILL/
 
 开发新 loop 前，对照这份 checklist 确认：
 
+### 基础架构（坑 1-8）
+
 - [ ] **用 `createReactAgent`，不用 `createDeepAgent`**
 - [ ] **工具用 `tool()` 创建**，JSON Schema → zod 转换
 - [ ] **工具名加前缀**（避免 BUILTIN 冲突）
-- [ ] **recursionLimit 按步骤区分**（审查类 150，处理类 50）
+- [ ] **recursionLimit 按步骤区分**（审查类 150-200，处理类 50-100）
 - [ ] **systemPrompt 加 macOS BSD 约束**
 - [ ] **每个步骤 try/catch + 降级兜底**
 - [ ] **driver catch 块写 ERROR + LOOP_END 事件**
 - [ ] **runs 目录放在 loop 自己目录下**（自包含）
 - [ ] **.gitignore 加 `FORGE/SKILL/*/runs/`**
 - [ ] **LEDGER.md 追加一行记录**（git 跟踪）
+
+### 性能优化（坑 12-13，v1.2.5+）
+
+- [ ] **工具输出截断**：loadTools 的 tool wrapper 里加 `truncateToolOutput(text, 200)`——超过 200 行只留头尾
+- [ ] **上下文窗口裁剪**：用 `stateModifier` 替代 `prompt`（互斥！），保留 system + 首条 + 最后 30 条
+- [ ] **stateModifier 内注入 SystemMessage**：`prompt` 和 `stateModifier` 不能同时传，systemPrompt 移到 stateModifier 内
+- [ ] **SKILL.md 加效率铁律**：reviewer 目标 ≤50 步，engineer 目标 ≤30 步，禁止重复读/跑命令
+- [ ] **合并步骤单独配 maxTokens**：a-consolidate / consolidate 等汇总步骤 maxTokens=32000（thinking-only 模型 16000 含 thinking tokens 不够）
+
+### stream 迁移（坑 14，如做 invoke→stream 改造时必查）
+
+- [ ] **chunk 格式确认**：stream(streamMode:'updates') 返回 `{ [nodeName]: delta }` 不是扁平 `{ messages: [] }`
+- [ ] **下游消费函数验证**：extractAgentText / extractUsage / 所有读 result.messages 的函数，拿到的数据形状对吗？
+- [ ] **格式适配层**：累积 delta.messages 到扁平数组，返回 `{ messages: allMessages }` 兼容 invoke 格式
+- [ ] **端到端验证**：不只看上游日志（工具调用打印），必须检查下游产物文件内容 + usage.jsonl 有正常数据
