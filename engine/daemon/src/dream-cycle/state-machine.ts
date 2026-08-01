@@ -59,7 +59,8 @@ export function loadLedger(projectDir: string): Ledger {
     if (existsSync(thinkPath)) {
       thinkContent = readFileSync(thinkPath, 'utf-8');
     }
-  } catch {
+  } catch (err) {
+    process.stderr.write(`[dream-cycle] warn: think.md 读取失败: ${(err as Error).message}\n`);
     thinkContent = '';
   }
 
@@ -72,13 +73,15 @@ export function loadLedger(projectDir: string): Ledger {
       for (const line of lines) {
         try {
           auditEntries.push(JSON.parse(line) as AuditEntry);
-        } catch {
+        } catch (err) {
           // 坏行跳过（宽松）
+          process.stderr.write(`[dream-cycle] warn: history 坏行跳过: ${(err as Error).message}\n`);
         }
       }
     }
-  } catch {
+  } catch (err) {
     // history 不可读 → 空
+    process.stderr.write(`[dream-cycle] warn: history 文件不可读: ${(err as Error).message}\n`);
   }
 
   return { thinkContent, auditEntries };
@@ -125,7 +128,8 @@ export function loadState(projectDir: string): DreamCycleState {
         initial.lastRunAt = value;
       }
     }
-  } catch {
+  } catch (err) {
+    process.stderr.write(`[dream-cycle] warn: 状态文件解析失败: ${(err as Error).message}\n`);
     return initial;
   }
   return initial;

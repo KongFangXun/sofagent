@@ -20,7 +20,7 @@
   <a href="#install-and-get-going"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>Current version: v1.2.4</strong> · 2026-07-30 · Dashboard production-ready + Orchestration isolation + Fresh-Eyes pipeline</p>
+<p align="center"><strong>Current version: v1.2.4</strong> · 2026-08-01 · Knowledge Evolution (Layered inspection L1/L2/L3 + skillopt auto-trigger + Failure ledger + Federated distillation + Evolution engine eval integration + Dashboard history trends + Graph Engine Checker)</p>
 
 <p align="center">
   <a href="#what-is-this">What is this</a> · <a href="#what-sofagent-can-do-for-you">Features</a> · <a href="#three-deployment-options">Deployment</a> · <a href="#install-and-get-going">Install</a> · <a href="#further-reading">Docs</a>
@@ -262,7 +262,7 @@ The evolution engine is not a single component, but a three-layer closed loop:
 | Layer | Mechanism | Status | How it runs |
 |------|------|:---:|------|
 | **think.md reflection** | Auto-writes lessons after each audit (which rule triggered, what files changed, what to watch for next time). Agent reads it via harness loading chain on next run — avoids repeating mistakes | ✅ shipped | Triggered automatically when audit engine runs, no config needed |
-| **Dream Cycle knowledge feedback** | Daemon synthesizes concepts in background → feeds skillopt optimization queue, accumulating knowledge for later optimization cycles | 🔧 lightweight | Daemon background process, currently in-memory queue (lost on restart), full persistence in v1.2.4 |
+| **Dream Cycle knowledge feedback** | Daemon synthesizes concepts in background → feeds skillopt optimization queue, accumulating knowledge for later optimization cycles | 🔧 lightweight | Daemon background process, currently in-memory queue (lost on restart), full persistence planned for v1.3.0 |
 | **skillopt Skill optimization** | Failure pattern clustering (≥3 same-type failures) → auto-triggers external SkillOpt CLI to optimize Skill quality → validates candidates (line count ±30% + change rate ≥5%) | ⚠️ needs external dep | Requires [Microsoft SkillOpt](https://github.com/microsoft/SkillOpt) (`skillopt-sleep` CLI). Falls back to recording failure list only when not installed |
 
 </details>

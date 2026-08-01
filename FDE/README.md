@@ -2,7 +2,7 @@
 
 ## 一句话
 
-sofagent FDE（Frontline Deployment Engineer）帮你的企业梳理 AI 该在哪些岗位干、怎么干、干了之后怎么审计——从"AI 很强"到"AI 在替我干活且干得对"。
+sofagent FDE（Forward Deployed Engineer）帮你的企业梳理 AI 该在哪些岗位干、怎么干、干了之后怎么审计——从"AI 很强"到"AI 在替我干活且干得对"。
 
 ## 解决什么问题
 

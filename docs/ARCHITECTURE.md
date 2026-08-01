@@ -352,8 +352,7 @@ graph LR
 `engine/rules/`（tool-level 规则，3 条）和 `engine/audit/src/rules/`（git-diff 规则，21 条）
 均包含 secret-leak 检测功能。当前两者并行维护，存在行为不一致风险。
 
-计划在 v1.2.4 中统一为单一规则引擎：tool-level 规则将作为 audit 规则的子集，
-通过 `ruleType: 'tool' | 'diff'` 字段区分。
+> 原计划 v1.2.4 统一为单一规则引擎（`ruleType: 'tool' | 'diff'`），未落地。已推迟——两套规则触发时机不同（tool-level 在调用前拦截、audit 在 commit 后审计），当前各自独立演进成本可接受。后续若不一致问题暴露再合并。
 
 ### 🔄 回溯能力（本质：git snapshot + revert 包装）
 
@@ -383,7 +382,7 @@ daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml
 | 机械操作（文件读写、API） | 脚本（bash） | 确定性操作 |
 | 硬安全（加载链、断路器） | Runtime（OpenClaw） | Agent 失控时没法自己管自己 |
 
-**编排收敛条件**：目标必须可验证（有量化标准）+ 模型可自主判断。Maker-Checker 分离是收敛前提——同一 Agent 自验覆盖仅 7-33%，分离为独立审查后提升至 73%。
+**编排收敛条件**：目标必须可验证（有量化标准）+ 模型可自主判断。Maker-Checker 分离是收敛前提——详见下文「解题/验证分离」及 [§四 编排收敛与 A/B 测试](#编排收敛与-ab-测试)。
 
 > 💡 **Loop 和 Graph 不是替代关系**
 >
@@ -419,7 +418,7 @@ daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml
 >
 > **④ 五问检验真工程还是花架子**：每个节点交什么？边上传递什么？并行后怎么汇合？失败从哪里继续？哪一步会扩大权限？答得出来才是能稳定运行的图，答不出来就是一张看起来很忙的组织架构图。
 >
-> 📖 来源：学习笔记《Graph Engineering 深度拆解》2026-07-30（Frank，得到大脑）。注：本文的五层工程谱系、「Loop 是带回边的 Graph」、控制权分配等已见于本文件「Loop 和 Graph 不是替代关系」段及 DEVELOPMENT「控制权分配」段，不重复。
+> 📖 来源：学习笔记《Graph Engineering 深度拆解》2026-07-30（Frank，得到大脑）。注：五层工程谱系、「Loop 是带回边的 Graph」、控制权分配等已见于本文件上方「Loop 和 Graph 不是替代关系」段及 [DEVELOPMENT.md「控制权分配」](./DEVELOPMENT.md)，不重复。
 
 #### 四节点状态机（v1.1.3+）
 
@@ -468,6 +467,16 @@ flowchart LR
 | `humanFeedback` | string | human_confirm | 路由判定 |
 
 > 这张表对应的源码是 `engine/orchestrator/src/loop/state.ts` 的 `LoopArtifacts` 接口。
+
+> 💡 **节点交接三件套：接口契约 + 共享状态 + 上下文隔离**
+>
+> Graph 的节点之间怎么交接是真正的工程难点——光有共享状态不够，三件事缺一不可：
+>
+> - **接口契约**：每个节点必须明确输入输出（少一项不算完成）。sofagent 的 LoopArtifacts 表就是契约——engineer 交 `engineerOutput` + 追加 `engineerOutputs`，audit 交 `auditReport`，字段缺失则路由判定直接 FAIL。**别只给 Agent 分岗位，还要规定他怎么交差。**
+> - **共享状态**：整张图有一份持续更新的公共记事本（任务 ID、版本、证据、修改记录、当前步骤）。LoopArtifacts 的浅合并 reducer 就是这个公共记事本。
+> - **上下文隔离**：不是所有节点都能看全部信息——前端调查 Agent 不需要生产数据库凭证。sofagent v1.4.0 的 SubAgent 沙箱（文件系统隔离 + 虚拟 key 边界注入）正是上下文隔离的工程落地。Graph 决定信息往哪儿走，Context Engineering 决定每个节点具体看到什么。
+>
+> 📖 来源：学习笔记《Graph Engineering 深度拆解》2026-07-30（Frank，得到大脑）
 
 #### Graph Engineering 视角（控制图 = StateGraph）
 
@@ -1059,7 +1068,7 @@ sofagent 自有三层：
 
 ### AI 原生操作系统（AOS）四大基础设施映射（B0）
 
-2026-07 行业研判将「AI 原生操作系统」的核心竞争力归结为四大基础设施，而非更聪明的聊天窗口。sofagent 五层架构与之逐层同构——这正是「约束层 = Harness 中间件」在产业坐标系里的位置：
+2026-07 行业研判将「AI 原生操作系统」的核心竞争力归结为四大基础设施，而非更聪明的聊天窗口。sofagent 在五层工程谱系（Prompt→Context→Harness→Loop→Graph）中的对应与之逐层同构——这正是「约束层 = Harness 中间件」在产业坐标系里的位置：
 
 | AOS 基础设施 | 定义 | sofagent 落点 |
 |---|---|---|
@@ -1070,9 +1079,9 @@ sofagent 自有三层：
 
 > 📖 来源：温故知新 2026-07-22（AOS 范式解析）
 
-### 脑力自动化四阶段 ↔ sofagent 五层映射（B1）
+### 脑力自动化四阶段 ↔ sofagent 工程谱系映射（B1）
 
-行业将「AI 对应脑力自动化」的演进概括为四阶段——提示词工程 → 上下文工程 → 驾驭工程 → 循环自动化。sofagent 五层（Prompt → Context → Harness → Loop → Graph）恰好是这条主线的工程化落地：
+行业将「AI 对应脑力自动化」的演进概括为四阶段——提示词工程 → 上下文工程 → 驾驭工程 → 循环自动化。sofagent 在五层工程谱系（Prompt → Context → Harness → Loop → Graph）中的对应恰好是这条主线的工程化落地：
 
 | 脑力自动化阶段 | 含义 | sofagent 对应层 |
 |---|---|---|

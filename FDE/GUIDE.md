@@ -19,7 +19,7 @@
 
 ### 1.2 FDE 是什么
 
-FDE 全称 Frontline Deployment Engineer（前线部署工程师），源自 Palantir 的交付纪律——工程师驻场客户，把通用产品变成客户能用的方案。
+FDE 全称 Forward Deployed Engineer（前线部署工程师），源自 Palantir 的交付纪律——工程师驻场客户，把通用产品变成客户能用的方案。
 
 sofagent 把它从岗位 title 升级为能力模型，再升级为**常驻 FDE Agent**：
 
@@ -589,7 +589,7 @@ skills/ + nodes/               →  EXECUTE（v1.2.8-9）: DAG 执行 + HITL 审
 
 | 术语 | 含义 |
 |------|------|
-| FDE | Frontline Deployment Engineer（前线部署工程师），四阶段诊断方法论 |
+| FDE | Forward Deployed Engineer（前线部署工程师），四阶段诊断方法论 |
 | 本体结构 | 企业知识的结构化模型，含实体/概念/关系（ontology 本体结构） |
 | entity | 业务实体（如「客户」「订单」「员工」） |
 | concept | 业务概念（如「审批流」「权限矩阵」） |

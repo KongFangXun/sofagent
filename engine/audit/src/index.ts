@@ -390,7 +390,8 @@ function loadSnapshotsFromDir(dir: string): DiffSnapshot[] {
   let files: string[];
   try {
     files = readdirSync(dir).filter((f) => f.endsWith('.json'));
-  } catch {
+  } catch (err) {
+    process.stderr.write(`[sofagent-audit] warn: snapshot 目录不可读: ${(err as Error).message}\n`);
     return snapshots;
   }
 
@@ -406,8 +407,9 @@ function loadSnapshotsFromDir(dir: string): DiffSnapshot[] {
         task: data.task,
         previousResults: (data.previousResults || []) as RuleCheck[],
       });
-    } catch {
+    } catch (err) {
       // 跳过解析失败的文件
+      process.stderr.write(`[sofagent-audit] warn: snapshot 解析失败: ${(err as Error).message}\n`);
     }
   }
 
@@ -492,8 +494,9 @@ function checkVersionConsistency(): void {
         `   全局安装可能陈旧，建议刷新：npm i -g @sofagent/audit@latest`
       );
     }
-  } catch {
+  } catch (err) {
     // 读取失败不阻断运行——自检是 advisory，绝不能影响主流程
+    process.stderr.write(`[sofagent-audit] warn: 版本自检读取失败: ${(err as Error).message}\n`);
   }
 }
 
