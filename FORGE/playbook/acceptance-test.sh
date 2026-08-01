@@ -33,10 +33,7 @@ chmod +x "$WRAPPER_DIR/bin/sofagent-audit"
 export PATH="$WRAPPER_DIR/bin:$PATH"
 WRAPPER_CLEANUP="$WRAPPER_DIR"
 scenario() {
-  if [ -n "$TMP_REPO" ] && [ -d "$TMP_REPO" ]; then
-    cd "$TMP_REPO" 2>/dev/null || true; git reset --hard HEAD 2>/dev/null || true
-    git rm --cached -f .env 2>/dev/null || true; rm -f .env 2>/dev/null || true
-  fi
+  if [ -n "$TMP_REPO" ] && [ -d "$TMP_REPO" ]; then cd "$TMP_REPO" 2>/dev/null || true; git reset --hard HEAD 2>/dev/null || true; git rm --cached -f .env 2>/dev/null || true; rm -f .env 2>/dev/null || true; fi
   echo ""; echo -e "${CYAN}━━━ 场景 $1: $2 ━━━${NC}"
 }
 git_log_has() { set +o pipefail; git log --oneline 2>/dev/null | grep -q "$1"; local rc=$?; set -o pipefail; return $rc; }
@@ -49,11 +46,7 @@ require_dist() { [ ! -f "$PROJECT_ROOT/$1" ] && { fail "$1 不存在（需先 bu
 assert_js() {
   local dist_rel="$1"; local js_code="$2"; local dist_abs="$PROJECT_ROOT/$dist_rel"
   [ ! -f "$dist_abs" ] && { fail "$dist_rel 不存在"; return 1; }
-  local result; result=$(ABSPATH="$dist_abs" node -e "
-    const ABSPATH=process.env.ABSPATH;
-    global.eq=(a,b)=>{if(JSON.stringify(a)!==JSON.stringify(b)){console.log('ASSERT_FAIL: '+JSON.stringify(a)+' !== '+JSON.stringify(b));process.exit(1);}};
-    global.ok=(c,m)=>{if(!c){console.log('ASSERT_FAIL: '+(m||'falsy'));process.exit(1);}};
-    $js_code;console.log('ASSERT_OK');" 2>&1) || true
+  local result; result=$(ABSPATH="$dist_abs" node -e "const ABSPATH=process.env.ABSPATH; global.eq=(a,b)=>{if(JSON.stringify(a)!==JSON.stringify(b)){console.log('ASSERT_FAIL: '+JSON.stringify(a)+' !== '+JSON.stringify(b));process.exit(1);}}; global.ok=(c,m)=>{if(!c){console.log('ASSERT_FAIL: '+(m||'falsy'));process.exit(1);}}; $js_code;console.log('ASSERT_OK');" 2>&1) || true
   echo "$result" | grep -q "ASSERT_OK" && return 0 || { fail "$dist_rel 断言失败: $(echo "$result" | grep ASSERT_FAIL | head -1 || true)"; return 1; }
 }
 assert_rc() { local expected="$1"; shift; set +e; "$@" >/dev/null 2>&1; local actual=$?; set -e; [ "$actual" = "$expected" ] && return 0 || { fail "exit code 期望 $expected 实际 $actual"; return 1; }; }
@@ -195,22 +188,7 @@ elif [ -f "engine/audit/dist/index.js" ]; then AUDIT_CMD="node engine/audit/dist
 else exit 0; fi
 HISTORY_FILE=".sofagent/audit/history.jsonl"
 if [ ! -f "$HISTORY_FILE" ]; then exit 0; fi
-node -e "
-const fs = require('fs');
-const lines = fs.readFileSync('$HISTORY_FILE', 'utf-8').trim().split('\\n').filter(Boolean);
-if (lines.length === 0) process.exit(0);
-try {
-  const last = JSON.parse(lines[lines.length - 1]);
-  if (!last.timestamp) process.exit(0);
-  const age = Date.now() - new Date(last.timestamp).getTime();
-  if (age > 60000) {
-    console.log('');
-    console.log('  sofagent: 最近一次审计记录在 ' + Math.round(age/1000) + ' 秒前，当前 commit 可能未经过审计。');
-    console.log('  可能使用了 --no-verify 绕过审计 hook。');
-    console.log('  运行 sofagent-core doctor 查看详情。');
-  }
-} catch { process.exit(0); }
-" 2>/dev/null
+node -e "const fs = require('fs'); const lines = fs.readFileSync('$HISTORY_FILE', 'utf-8').trim().split('\\n').filter(Boolean); if (lines.length === 0) process.exit(0); try { const last = JSON.parse(lines[lines.length - 1]); if (!last.timestamp) process.exit(0); const age = Date.now() - new Date(last.timestamp).getTime(); if (age > 60000) { console.log(''); console.log('  sofagent: 最近一次审计记录在 ' + Math.round(age/1000) + ' 秒前，当前 commit 可能未经过审计。'); console.log('  可能使用了 --no-verify 绕过审计 hook。'); console.log('  运行 sofagent-core doctor 查看详情。'); } } catch { process.exit(0); } " 2>/dev/null
 exit 0
 POSTHOOK
 chmod +x "$TMP_REPO/.git/hooks/post-commit"
@@ -234,14 +212,10 @@ entry = json.loads(open('$HISTORY').readline().strip())
 entry.pop('prevHash', None); entry.pop('hashVersion', None)
 print(hashlib.sha256(json.dumps(entry).encode()).hexdigest()[:16])")
 echo "{\"timestamp\":\"2026-07-02T00:00:00Z\",\"diffRange\":\"HEAD~2..HEAD~1\",\"exitCode\":0,\"ruleResults\":[],\"diffFileCount\":1,\"prevHash\":\"$OLD_HASH\",\"hashVersion\":2}" >> "$HISTORY"
-CHAIN_OK=true; NODE_CHECK=$(cd "$TMP_REPO" && node -e "
-try { const { checkHistoryChainIntegrity } = require('$PWD/engine/audit/dist/audit-history.js'); console.log(checkHistoryChainIntegrity('$TMP_REPO/.sofagent/audit') ? 'CHAIN_OK' : 'CHAIN_BREAK'); }
-catch(e) { console.log('CHAIN_ERROR'); }" 2>/dev/null)
+CHAIN_OK=true; NODE_CHECK=$(cd "$TMP_REPO" && node -e "try { const { checkHistoryChainIntegrity } = require('$PWD/engine/audit/dist/audit-history.js'); console.log(checkHistoryChainIntegrity('$TMP_REPO/.sofagent/audit') ? 'CHAIN_OK' : 'CHAIN_BREAK'); } catch(e) { console.log('CHAIN_ERROR'); }" 2>/dev/null)
 echo "$NODE_CHECK" | grep -q "CHAIN_BREAK" && CHAIN_OK=false
 sed -i.bak '2s/prevHash":"[a-f0-9]*"/prevHash":"tampered99"/' "$HISTORY"
-TAMPER_CHECK=$(cd "$TMP_REPO" && node -e "
-try { const { checkHistoryChainIntegrity } = require('$PWD/engine/audit/dist/audit-history.js'); console.log(checkHistoryChainIntegrity('$TMP_REPO/.sofagent/audit') ? 'CHAIN_OK' : 'CHAIN_BREAK'); }
-catch(e) { console.log('CHAIN_ERROR'); }" 2>/dev/null)
+TAMPER_CHECK=$(cd "$TMP_REPO" && node -e "try { const { checkHistoryChainIntegrity } = require('$PWD/engine/audit/dist/audit-history.js'); console.log(checkHistoryChainIntegrity('$TMP_REPO/.sofagent/audit') ? 'CHAIN_OK' : 'CHAIN_BREAK'); } catch(e) { console.log('CHAIN_ERROR'); }" 2>/dev/null)
 TAMPER_DETECTED=true; echo "$TAMPER_CHECK" | grep -q "CHAIN_OK" && TAMPER_DETECTED=false
 mv "$HISTORY.bak" "$HISTORY" 2>/dev/null || true
 if $CHAIN_OK && $TAMPER_DETECTED; then pass
@@ -361,9 +335,7 @@ NEW_PKG_OK=true; for pkg in orchestrator daemon core ontology ab-test think skil
   CLI_JS="engine/$pkg/dist/cli.js"
   if [ -f "$PROJECT_ROOT/$CLI_JS" ]; then
     if node "$PROJECT_ROOT/$CLI_JS" --help >/dev/null 2>&1; then echo "  ✅ sofagent-$pkg --help"
-      if [ "$pkg" = "orchestrator" ]; then
-        node "$PROJECT_ROOT/$CLI_JS" --help 2>&1 | grep -q "loop" && echo "  ✅ sofagent-orchestrator --help 含 loop" || { echo "  ❌ 缺 loop"; NEW_PKG_OK=false; }
-      fi
+      if [ "$pkg" = "orchestrator" ]; then node "$PROJECT_ROOT/$CLI_JS" --help 2>&1 | grep -q "loop" && echo "  ✅ sofagent-orchestrator --help 含 loop" || { echo "  ❌ 缺 loop"; NEW_PKG_OK=false; }; fi
     else echo "  ❌ sofagent-$pkg --help"; NEW_PKG_OK=false; fi
   else echo "  ⚠️ sofagent-$pkg CLI 未构建"; fi
 done
@@ -428,18 +400,12 @@ ORCH_INDEX="$PROJECT_ROOT/engine/orchestrator/dist/index.js"
 if [ -f "$ORCH_CLI" ]; then
   node "$ORCH_CLI" --help 2>&1 | grep -q "loop" && pass || fail "orchestrator --help 未列出 loop 子命令"
   node "$ORCH_CLI" --help 2>&1 | grep -qE "engineer|reviewer" && pass || fail "orchestrator --help 未列出 engineer/reviewer"
-  BUILTIN_CHECK=$(node -e "
-const {BUILTIN_AGENTS, ENGINEER_AGENT, REVIEWER_AGENT} = require('$ORCH_INDEX');
-const names = BUILTIN_AGENTS.map(a=>a.name);
-const allFour = names.includes('fde') && names.includes('audit') && names.includes('engineer') && names.includes('reviewer');
-console.log(allFour ? 'PASS: 4 agents' : 'FAIL: missing agents');" 2>&1)
+  BUILTIN_CHECK=$(node -e "const {BUILTIN_AGENTS, ENGINEER_AGENT, REVIEWER_AGENT} = require('$ORCH_INDEX'); const names = BUILTIN_AGENTS.map(a=>a.name); const allFour = names.includes('fde') && names.includes('audit') && names.includes('engineer') && names.includes('reviewer'); console.log(allFour ? 'PASS: 4 agents' : 'FAIL: missing agents');" 2>&1)
   echo "$BUILTIN_CHECK" | grep -q "PASS: 4 agents" && pass || fail "BUILTIN_AGENTS 不完整"
 else echo "  ⚠️ orchestrator CLI 未构建"; fi
 LOOP_RUNNER="$PROJECT_ROOT/engine/orchestrator/src/loop-runner.ts"; LOOP_OK=true
 [ -f "$LOOP_RUNNER" ] && pass || { LOOP_OK=false; fail "loop-runner.ts 不存在"; }
-if [ -f "$LOOP_RUNNER" ]; then
-  grep -c "maxIterations.*3" "$LOOP_RUNNER" | grep -q "[1-9]" && pass || { LOOP_OK=false; fail "loop-runner.ts 未包含 maxIterations.*3 保护"; }
-fi
+if [ -f "$LOOP_RUNNER" ]; then grep -c "maxIterations.*3" "$LOOP_RUNNER" | grep -q "[1-9]" && pass || { LOOP_OK=false; fail "loop-runner.ts 未包含 maxIterations.*3 保护"; }; fi
 if [ -f "$ORCH_CLI" ]; then
   LOOP_OUT=$(timeout 30 node "$ORCH_CLI" loop --task "echo test" 2>&1 || true)
   if [ "$(echo "$LOOP_OUT" | wc -c | tr -d ' ')" -gt 1 ]; then
@@ -450,16 +416,11 @@ if [ -f "$ORCH_CLI" ]; then
     PASSED=$((PASSED + 1))
   fi
 fi
-if [ -f "$ORCH_INDEX" ]; then
-  node -e "const m = require('$ORCH_INDEX'); console.log(typeof m.runLOOPIteration);" 2>&1 | grep -q "function" && pass || fail "runLOOPIteration 未作为 function 导出"
-fi
+if [ -f "$ORCH_INDEX" ]; then node -e "const m = require('$ORCH_INDEX'); console.log(typeof m.runLOOPIteration);" 2>&1 | grep -q "function" && pass || fail "runLOOPIteration 未作为 function 导出"; fi
 scenario 37 "MCP [sofagent] 前缀 + 审查报告签名"
 MCP_SRC="$PROJECT_ROOT/engine/mcp/src/mcp-server.ts"
 MCP_DIST="$PROJECT_ROOT/engine/mcp/dist/mcp-server.js"
-if [ -f "$MCP_SRC" ]; then
-  SOFAGENT_COUNT=$(grep -c '\[sofagent\]' "$MCP_SRC" || true)
-  [ "$SOFAGENT_COUNT" -ge 6 ] && pass || fail "[sofagent] 前缀出现 $SOFAGENT_COUNT 次（期望 ≥ 6）"
-fi
+if [ -f "$MCP_SRC" ]; then SOFAGENT_COUNT=$(grep -c '\[sofagent\]' "$MCP_SRC" || true); [ "$SOFAGENT_COUNT" -ge 6 ] && pass || fail "[sofagent] 前缀出现 $SOFAGENT_COUNT 次（期望 ≥ 6）"; fi
 if [ -f "$MCP_DIST" ]; then
   # 用 node --check 验证语法正确性（不执行模块，避免 MCP server 启动副作用导致事件循环阻塞）
   node --check "$MCP_DIST" 2>/dev/null && pass || fail "MCP server dist 语法错误"
@@ -469,9 +430,7 @@ if [ -f "$REVIEW_FILE" ]; then
   SIGN_BEFORE=$(grep -B3 "^# 代码审查报告" "$REVIEW_FILE" || true)
   echo "$SIGN_BEFORE" | grep -q "sofagent-audit" && echo "$SIGN_BEFORE" | grep -q "sofagent-orchestrator" && pass || { SIGN_OK=false; fail "审查报告签名模板缺少 sofagent-audit 或 sofagent-orchestrator"; }
 else SIGN_OK=false; fail "reviewer/SKILL.md 不存在"; fi
-if [ -f "$REVIEW_FILE" ]; then
-  [ -n "$(grep -A2 "代码审查报告" "$REVIEW_FILE" 2>/dev/null | head -3 || true)" ] && pass || fail "审查报告标题行不存在"
-fi
+if [ -f "$REVIEW_FILE" ]; then [ -n "$(grep -A2 "代码审查报告" "$REVIEW_FILE" 2>/dev/null | head -3 || true)" ] && pass || fail "审查报告标题行不存在"; fi
 FS_AUDIT_OK=true; grep -r "isomorphic-git\|isomorphicGit" "$PROJECT_ROOT/engine/core/src/" --include="*.ts" -l > /dev/null 2>&1 || FS_AUDIT_OK=false
 [ -f "$PROJECT_ROOT/engine/daemon/src/fs-watch.ts" ] || FS_AUDIT_OK=false
 $FS_AUDIT_OK && pass || fail "isomorphic-git 或 daemon fs-watch 模块缺失"
@@ -610,10 +569,7 @@ if [ -f "$PUSH_TARGET" ]; then
   for t in "webhook:dingtalk" "webhook:feishu" "webhook:wecom" "openclaw:im" "daemon:notice"; do grep -q "$t" "$PUSH_TARGET" || PUSH_OK=false; done
   grep -q "throwOnError" "$PUSH_TARGET" && grep -qE "catch.*err.*\{" "$PUSH_TARGET" || PUSH_OK=false
   PUSHDIST="$PROJECT_ROOT/engine/daemon/dist/push-target.js"
-  if $PUSH_OK && [ -f "$PUSHDIST" ]; then
-    PUSH_RUN=$(SOFAGENT_WEBHOOK_FEISHU="http://localhost:19999/invalid" node -e "(async()=>{try{const{pushToTarget}=require('$PUSHDIST');console.log('RETURNED:',await pushToTarget({target:'webhook:feishu',title:'t',message:'m'}))}catch(e){console.log('THREW:',e.message)}})()" 2>&1 || true)
-    echo "$PUSH_RUN" | grep -q "THREW:" && PUSH_OK=false || true
-  fi
+  if $PUSH_OK && [ -f "$PUSHDIST" ]; then PUSH_RUN=$(SOFAGENT_WEBHOOK_FEISHU="http://localhost:19999/invalid" node -e "(async()=>{try{const{pushToTarget}=require('$PUSHDIST');console.log('RETURNED:',await pushToTarget({target:'webhook:feishu',title:'t',message:'m'}))}catch(e){console.log('THREW:',e.message)}})()" 2>&1 || true); echo "$PUSH_RUN" | grep -q "THREW:" && PUSH_OK=false || true; fi
   $PUSH_OK && pass || fail "push-target 缺 target 路由或异常处理"
 else fail "push-target.ts 不存在"; fi
 scenario 61 "USB federation HMAC（签名 + timingSafeEqual + 0600 + schema）"
@@ -638,10 +594,7 @@ CLI_ARGS="$PROJECT_ROOT/engine/orchestrator/src/cli-args.ts"
 CLI_ARGS_DIST="$PROJECT_ROOT/engine/orchestrator/dist/cli-args.js"
 ORCH_CLI_62="$PROJECT_ROOT/engine/orchestrator/dist/cli.js"; MODE_OK=true
 [ ! -f "$CLI_ARGS" ] && { MODE_OK=false; fail "cli-args.ts 不存在"; }
-if $MODE_OK && [ -f "$CLI_ARGS_DIST" ]; then
-  PARSE_RUN=$(CLI_ARGS_DIST="$CLI_ARGS_DIST" node -e "const{parseSubagentRunArgs}=require(process.env.CLI_ARGS_DIST);const r1=parseSubagentRunArgs(['fde','--task','x']);const r2=parseSubagentRunArgs(['fde','--mode','sustain','--task','x']);const r3=parseSubagentRunArgs(['fde','--mode','deploy','--task','x']);let r4='',r5='';try{parseSubagentRunArgs(['fde','--mode','bad','--task','x'])}catch(e){r4=e.message}try{parseSubagentRunArgs(['fde'])}catch(e){r5=e.message}console.log(JSON.stringify({defaultDeploy:r1.mode==='deploy',sustain:r2.mode==='sustain',deployExplicit:r3.mode==='deploy',invalidThrows:/--mode/.test(r4),missingTaskThrows:/--task/.test(r5)}))" 2>&1 || true)
-  echo "$PARSE_RUN" | grep -q '"defaultDeploy":true' && echo "$PARSE_RUN" | grep -q '"sustain":true' && echo "$PARSE_RUN" | grep -q '"deployExplicit":true' && echo "$PARSE_RUN" | grep -q '"invalidThrows":true' && echo "$PARSE_RUN" | grep -q '"missingTaskThrows":true' || { MODE_OK=false; fail "parseSubagentRunArgs 行为不符: $PARSE_RUN"; }
-fi
+if $MODE_OK && [ -f "$CLI_ARGS_DIST" ]; then PARSE_RUN=$(CLI_ARGS_DIST="$CLI_ARGS_DIST" node -e "const{parseSubagentRunArgs}=require(process.env.CLI_ARGS_DIST);const r1=parseSubagentRunArgs(['fde','--task','x']);const r2=parseSubagentRunArgs(['fde','--mode','sustain','--task','x']);const r3=parseSubagentRunArgs(['fde','--mode','deploy','--task','x']);let r4='',r5='';try{parseSubagentRunArgs(['fde','--mode','bad','--task','x'])}catch(e){r4=e.message}try{parseSubagentRunArgs(['fde'])}catch(e){r5=e.message}console.log(JSON.stringify({defaultDeploy:r1.mode==='deploy',sustain:r2.mode==='sustain',deployExplicit:r3.mode==='deploy',invalidThrows:/--mode/.test(r4),missingTaskThrows:/--task/.test(r5)}))" 2>&1 || true); echo "$PARSE_RUN" | grep -q '"defaultDeploy":true' && echo "$PARSE_RUN" | grep -q '"sustain":true' && echo "$PARSE_RUN" | grep -q '"deployExplicit":true' && echo "$PARSE_RUN" | grep -q '"invalidThrows":true' && echo "$PARSE_RUN" | grep -q '"missingTaskThrows":true' || { MODE_OK=false; fail "parseSubagentRunArgs 行为不符: $PARSE_RUN"; }; fi
 if $MODE_OK && [ -f "$ORCH_CLI_62" ]; then
   HELP_OUT=$(node "$ORCH_CLI_62" --help 2>&1 || true)
   echo "$HELP_OUT" | grep -q "\-\-mode" || { MODE_OK=false; fail "orchestrator --help 未含 --mode"; }
@@ -687,11 +640,7 @@ S67_OK=true; LAUNCHER_DIST="$PROJECT_ROOT/engine/orchestrator/dist/launcher.js"
 require_dist "engine/orchestrator/dist/launcher.js" || S67_OK=false
 if $S67_OK; then
   RT_DIR_67=$(mktemp -d /tmp/s67-rt-XXXX)
-  S67_RESULT=$(SOFAGENT_DATA="$RT_DIR_67" NODE_PATH="$DEEPAGENTS_MODULES" node -e "
-    const { writeRuntimeState, readRuntimeState } = require('$LAUNCHER_DIST');
-    writeRuntimeState({agents:[{name:'qa', status:'running', startedAt:new Date().toISOString(), lastActive:new Date().toISOString(), pid:12345}]});
-    const state = readRuntimeState();
-    console.log('pid:' + state.agents[0].pid + '|status:' + state.agents[0].status);" 2>&1 || true)
+  S67_RESULT=$(SOFAGENT_DATA="$RT_DIR_67" NODE_PATH="$DEEPAGENTS_MODULES" node -e "const { writeRuntimeState, readRuntimeState } = require('$LAUNCHER_DIST'); writeRuntimeState({agents:[{name:'qa', status:'running', startedAt:new Date().toISOString(), lastActive:new Date().toISOString(), pid:12345}]}); const state = readRuntimeState(); console.log('pid:' + state.agents[0].pid + '|status:' + state.agents[0].status);" 2>&1 || true)
   rm -rf "$RT_DIR_67"
   echo "$S67_RESULT" | grep -q "pid:12345" && echo "$S67_RESULT" | grep -q "status:running" || { fail "writeRuntimeState/readRuntimeState 回读不一致"; S67_OK=false; }
 fi
@@ -720,65 +669,35 @@ fi
 $S71_OK && pass
 scenario 72 "daemon 导出（runFilesystemAudit + startCron）"
 S72_OK=true; require_dist "engine/daemon/dist/run-fs-audit.js" || S72_OK=false
-if $S72_OK; then
-  S72_RESULT=$(node -e "const mod = require('$DAEMON_DIST/run-fs-audit'); console.log(typeof mod.runFilesystemAudit);" 2>&1 || true)
-  echo "$S72_RESULT" | grep -q "function" || { fail "runFilesystemAudit 未导出"; S72_OK=false; }
-fi
+if $S72_OK; then S72_RESULT=$(node -e "const mod = require('$DAEMON_DIST/run-fs-audit'); console.log(typeof mod.runFilesystemAudit);" 2>&1 || true); echo "$S72_RESULT" | grep -q "function" || { fail "runFilesystemAudit 未导出"; S72_OK=false; }; fi
 $S72_OK && pass
 S73_OK=true; require_dist "engine/daemon/dist/cron.js" || S73_OK=false
-if $S73_OK; then
-  S73_RESULT=$(node -e "const mod = require('$DAEMON_DIST/cron'); console.log(typeof mod.startCron);" 2>&1 || true)
-  echo "$S73_RESULT" | grep -q "function" || { fail "startCron 未导出"; S73_OK=false; }
-fi
+if $S73_OK; then S73_RESULT=$(node -e "const mod = require('$DAEMON_DIST/cron'); console.log(typeof mod.startCron);" 2>&1 || true); echo "$S73_RESULT" | grep -q "function" || { fail "startCron 未导出"; S73_OK=false; }; fi
 $S73_OK && pass
 scenario 74 "EvidenceMode + 经验共享"
 S74_OK=true; [ ! -f "$AUDIT_RULES_TYPES" ] && { fail "audit/src/rules/types.ts 不存在"; S74_OK=false; }
-if $S74_OK; then
-  grep "filesystem" "$AUDIT_RULES_TYPES" 2>/dev/null | head -1 | grep -q "filesystem" || true
-  grep -q "filesystem" "$AUDIT_RULES_TYPES" 2>/dev/null || { fail "EvidenceMode 不含 filesystem"; S74_OK=false; }
-fi
-if $S74_OK; then
-  S74_A17=$(grep "A17" "$AUDIT_RULES_INDEX" | grep -c "filesystem" || echo "0")
-  [ "$S74_A17" -ge 1 ] || { fail "A17 未使用 filesystem evidenceMode"; S74_OK=false; }
-fi
+if $S74_OK; then grep "filesystem" "$AUDIT_RULES_TYPES" 2>/dev/null | head -1 | grep -q "filesystem" || true; grep -q "filesystem" "$AUDIT_RULES_TYPES" 2>/dev/null || { fail "EvidenceMode 不含 filesystem"; S74_OK=false; }; fi
+if $S74_OK; then S74_A17=$(grep "A17" "$AUDIT_RULES_INDEX" | grep -c "filesystem" || echo "0"); [ "$S74_A17" -ge 1 ] || { fail "A17 未使用 filesystem evidenceMode"; S74_OK=false; }; fi
 $S74_OK && pass
 S75_OK=true; THINK_DIST="$PROJECT_ROOT/engine/think/dist/index.js"
 require_dist "engine/think/dist/index.js" || S75_OK=false
-if $S75_OK; then
-  S75_RESULT=$(node -e "const t = require('$THINK_DIST'); console.log('generateThinkEntry:' + typeof t.generateThinkEntry);" 2>&1 || true)
-  echo "$S75_RESULT" | grep -q "function" || { fail "generateThinkEntry 未导出"; S75_OK=false; }
-fi
-if $S75_OK; then
-  S75_MC=$(grep -c "knowledge.*Views\|knowledge/.*派生" "$PROJECT_ROOT/engine/core/src/memory-contract.ts" 2>/dev/null || echo "0")
-  [ "$S75_MC" -ge 1 ] || { fail "memory-contract.ts 无 knowledge Views 定义"; S75_OK=false; }
-fi
+if $S75_OK; then S75_RESULT=$(node -e "const t = require('$THINK_DIST'); console.log('generateThinkEntry:' + typeof t.generateThinkEntry);" 2>&1 || true); echo "$S75_RESULT" | grep -q "function" || { fail "generateThinkEntry 未导出"; S75_OK=false; }; fi
+if $S75_OK; then S75_MC=$(grep -c "knowledge.*Views\|knowledge/.*派生" "$PROJECT_ROOT/engine/core/src/memory-contract.ts" 2>/dev/null || echo "0"); [ "$S75_MC" -ge 1 ] || { fail "memory-contract.ts 无 knowledge Views 定义"; S75_OK=false; }; fi
 $S75_OK && pass
 scenario 76 "harness 约束自加载 + A14+A15 规则"
 S76_OK=true; HARNESS_DIST="$PROJECT_ROOT/engine/harness/dist/index.js"
 require_dist "engine/harness/dist/index.js" || S76_OK=false
-if $S76_OK; then
-  S76_RESULT=$(node -e "try { const h = require('$HARNESS_DIST'); console.log('buildConstrainedSystemPrompt:' + typeof h.buildConstrainedSystemPrompt); } catch(e) { console.log('error:' + e.message); }" 2>&1 || true)
-  echo "$S76_RESULT" | grep -q "function" || { fail "buildConstrainedSystemPrompt 未导出"; S76_OK=false; }
-fi
-if $S76_OK; then
-  S76_HARNESS=$(grep -c "harness" "$PROJECT_ROOT/engine/orchestrator/src/launcher.ts" 2>/dev/null || echo "0")
-  [ "$S76_HARNESS" -ge 1 ] || { fail "launcher.ts 未引用 harness"; S76_OK=false; }
-fi
+if $S76_OK; then S76_RESULT=$(node -e "try { const h = require('$HARNESS_DIST'); console.log('buildConstrainedSystemPrompt:' + typeof h.buildConstrainedSystemPrompt); } catch(e) { console.log('error:' + e.message); }" 2>&1 || true); echo "$S76_RESULT" | grep -q "function" || { fail "buildConstrainedSystemPrompt 未导出"; S76_OK=false; }; fi
+if $S76_OK; then S76_HARNESS=$(grep -c "harness" "$PROJECT_ROOT/engine/orchestrator/src/launcher.ts" 2>/dev/null || echo "0"); [ "$S76_HARNESS" -ge 1 ] || { fail "launcher.ts 未引用 harness"; S76_OK=false; }; fi
 $S76_OK && pass
 S77_OK=true; S77_REG=$(grep -c "A14" "$AUDIT_RULES_INDEX" 2>/dev/null || echo "0")
 [ "$S77_REG" -ge 2 ] || { fail "A14 规则未注册"; S77_OK=false; }
-if $S77_OK; then
-  S77_HYBRID=$(grep "A14" "$AUDIT_RULES_INDEX" | grep -c "hybrid" || echo "0")
-  [ "$S77_HYBRID" -ge 1 ] || { fail "A14 未使用 hybrid evidenceMode"; S77_OK=false; }
-fi
+if $S77_OK; then S77_HYBRID=$(grep "A14" "$AUDIT_RULES_INDEX" | grep -c "hybrid" || echo "0"); [ "$S77_HYBRID" -ge 1 ] || { fail "A14 未使用 hybrid evidenceMode"; S77_OK=false; }; fi
 $S77_OK && [ -f "$PROJECT_ROOT/engine/audit/src/rules/rule-a14-kb-cross-domain.ts" ] || { fail "rule-a14-kb-cross-domain.ts 不存在"; S77_OK=false; }
 $S77_OK && pass
 S78_OK=true; S78_REG=$(grep -c "A15" "$AUDIT_RULES_INDEX" 2>/dev/null || echo "0")
 [ "$S78_REG" -ge 2 ] || { fail "A15 规则未注册"; S78_OK=false; }
-if $S78_OK; then
-  S78_HYBRID=$(grep "A15" "$AUDIT_RULES_INDEX" | grep -c "hybrid" || echo "0")
-  [ "$S78_HYBRID" -ge 1 ] || { fail "A15 未使用 hybrid evidenceMode"; S78_OK=false; }
-fi
+if $S78_OK; then S78_HYBRID=$(grep "A15" "$AUDIT_RULES_INDEX" | grep -c "hybrid" || echo "0"); [ "$S78_HYBRID" -ge 1 ] || { fail "A15 未使用 hybrid evidenceMode"; S78_OK=false; }; fi
 $S78_OK && [ -f "$PROJECT_ROOT/engine/audit/src/rules/rule-a15-action-constraint.ts" ] || { fail "rule-a15-action-constraint.ts 不存在"; S78_OK=false; }
 $S78_OK && pass
 scenario 80 "cron + conflict-check 三态"
@@ -953,92 +872,35 @@ $S100_OK && pass
 scenario 101 "v1.1.8 安全层三合一（AES+ECDH+配对+联邦过滤）"
 S101_OK=true; require_dist "engine/core/dist/crypto/aes-gcm.js" || S101_OK=false
 require_dist "engine/core/dist/crypto/ecdh.js" || S101_OK=false
-if $S101_OK; then
-  S101_RESULT=$(node "$SCRIPT_DIR/acceptance-node-probes.js" s101 2>&1) || true
-  echo "$S101_RESULT" | grep -q "^OK$" || { fail "AES/ECDH 验证失败: $S101_RESULT"; S101_OK=false; }
-fi
+if $S101_OK; then S101_RESULT=$(node "$SCRIPT_DIR/acceptance-node-probes.js" s101 2>&1) || true; echo "$S101_RESULT" | grep -q "^OK$" || { fail "AES/ECDH 验证失败: $S101_RESULT"; S101_OK=false; }; fi
 $S101_OK && pass
 S102_OK=true; require_dist "engine/core/dist/crypto/pairing.js" || S102_OK=false
-if $S102_OK; then
-  S102_RESULT=$(PAIRING_DIR="$PROJECT_ROOT/engine/core/dist/crypto" node "$SCRIPT_DIR/acceptance-node-probes.js" s102 2>&1) || true
-  echo "$S102_RESULT" | grep -q "^OK$" || { fail "ECDH 配对路径 B 验证失败: $S102_RESULT"; S102_OK=false; }
-fi
+if $S102_OK; then S102_RESULT=$(PAIRING_DIR="$PROJECT_ROOT/engine/core/dist/crypto" node "$SCRIPT_DIR/acceptance-node-probes.js" s102 2>&1) || true; echo "$S102_RESULT" | grep -q "^OK$" || { fail "ECDH 配对路径 B 验证失败: $S102_RESULT"; S102_OK=false; }; fi
 $S102_OK && pass
 S103_OK=true; require_dist "engine/daemon/dist/federation/query-router.js" || S103_OK=false
 require_dist "engine/core/dist/security/trust-grading.js" || S103_OK=false
-if $S103_OK; then
-  S103_RESULT=$(node "$SCRIPT_DIR/acceptance-node-probes.js" s103 2>&1) || true
-  echo "$S103_RESULT" | grep -q "^OK " || { fail "联邦 sensitivity 过滤验证失败: $S103_RESULT"; S103_OK=false; }
-fi
+if $S103_OK; then S103_RESULT=$(node "$SCRIPT_DIR/acceptance-node-probes.js" s103 2>&1) || true; echo "$S103_RESULT" | grep -q "^OK " || { fail "联邦 sensitivity 过滤验证失败: $S103_RESULT"; S103_OK=false; }; fi
 $S103_OK && pass
 scenario 104 "v1.1.8 Prompt 注入防护（wrap+redact+trust 分级）"
 S104_OK=true; require_dist "engine/core/dist/security/prompt-sanitizer.js" || S104_OK=false
-if $S104_OK; then
-  S104_RESULT=$(SANITIZER="$PROJECT_ROOT/engine/core/dist/security/prompt-sanitizer.js" node -e "
-    const { wrapUntrusted, redactForPrompt, RESTRICTED_PLACEHOLDER } = require(process.env.SANITIZER);
-    const wrapped = wrapUntrusted('user uploaded code', 'web');
-    if (!wrapped.includes('<untrusted') || !wrapped.includes('user uploaded code')) {
-      console.log('wrapUntrusted 未正确包裹: ' + wrapped); process.exit(1);
-    }
-    const redacted = redactForPrompt('secret-api-key=xxx', 'restricted');
-    if (!redacted.includes(RESTRICTED_PLACEHOLDER) || redacted.includes('xxx')) {
-      console.log('redactForPrompt 未正确脱敏: ' + redacted); process.exit(1);
-    }
-    const passthrough = redactForPrompt('public info', 'public');
-    if (passthrough !== 'public info') {
-      console.log('public 内容被错误脱敏: ' + passthrough); process.exit(1);
-    }
-    console.log('OK');
-  " 2>&1) || true
-  echo "$S104_RESULT" | grep -q "^OK$" || { fail "wrapUntrusted/redactForPrompt 验证失败: $S104_RESULT"; S104_OK=false; }
-fi
+if $S104_OK; then S104_RESULT=$(SANITIZER="$PROJECT_ROOT/engine/core/dist/security/prompt-sanitizer.js" node -e "const { wrapUntrusted, redactForPrompt, RESTRICTED_PLACEHOLDER } = require(process.env.SANITIZER); const wrapped = wrapUntrusted('user uploaded code', 'web'); if (!wrapped.includes('<untrusted') || !wrapped.includes('user uploaded code')) { console.log('wrapUntrusted 未正确包裹: ' + wrapped); process.exit(1); } const redacted = redactForPrompt('secret-api-key=xxx', 'restricted'); if (!redacted.includes(RESTRICTED_PLACEHOLDER) || redacted.includes('xxx')) { console.log('redactForPrompt 未正确脱敏: ' + redacted); process.exit(1); } const passthrough = redactForPrompt('public info', 'public'); if (passthrough !== 'public info') { console.log('public 内容被错误脱敏: ' + passthrough); process.exit(1); } console.log('OK'); " 2>&1) || true; echo "$S104_RESULT" | grep -q "^OK$" || { fail "wrapUntrusted/redactForPrompt 验证失败: $S104_RESULT"; S104_OK=false; }; fi
 $S104_OK && pass
 S105_OK=true; require_dist "engine/core/dist/security/trust-grading.js" || S105_OK=false
-if $S105_OK; then
-  S105_RESULT=$(TG_DIR="$PROJECT_ROOT/engine/core/dist/security/trust-grading.js" node -e "
-    const { isTrustEntryUsable, sortByTrust } = require(process.env.TG_DIR);
-    const webRestricted = { trust: 'web', sensitivity: 'restricted', content: 'should-not-leak' };
-    if (isTrustEntryUsable(webRestricted)) {
-      console.log('web+restricted 被判为可用，安全红线失效'); process.exit(1);
-    }
-    const officialPublic = { trust: 'official', sensitivity: 'public', content: 'safe' };
-    if (!isTrustEntryUsable(officialPublic)) {
-      console.log('official+public 被判为不可用'); process.exit(1);
-    }
-    const sorted = sortByTrust([webRestricted, officialPublic]);
-    if (sorted[0].trust !== 'official') {
-      console.log('sortByTrust 排序异常: official 未优先'); process.exit(1);
-    }
-    console.log('OK');
-  " 2>&1) || true
-  echo "$S105_RESULT" | grep -q "^OK$" || { fail "trust 分级验证失败: $S105_RESULT"; S105_OK=false; }
-fi
+if $S105_OK; then S105_RESULT=$(TG_DIR="$PROJECT_ROOT/engine/core/dist/security/trust-grading.js" node -e "const { isTrustEntryUsable, sortByTrust } = require(process.env.TG_DIR); const webRestricted = { trust: 'web', sensitivity: 'restricted', content: 'should-not-leak' }; if (isTrustEntryUsable(webRestricted)) { console.log('web+restricted 被判为可用，安全红线失效'); process.exit(1); } const officialPublic = { trust: 'official', sensitivity: 'public', content: 'safe' }; if (!isTrustEntryUsable(officialPublic)) { console.log('official+public 被判为不可用'); process.exit(1); } const sorted = sortByTrust([webRestricted, officialPublic]); if (sorted[0].trust !== 'official') { console.log('sortByTrust 排序异常: official 未优先'); process.exit(1); } console.log('OK'); " 2>&1) || true; echo "$S105_RESULT" | grep -q "^OK$" || { fail "trust 分级验证失败: $S105_RESULT"; S105_OK=false; }; fi
 $S105_OK && pass
 scenario 106 "v1.1.8 编排+通知（DAG+pushKnowledge）"
 S106_OK=true; require_dist "engine/orchestrator/dist/dag-runner.js" || S106_OK=false
-if $S106_OK; then
-  S106_RESULT=$(ORCH_DIR="$PROJECT_ROOT/engine/orchestrator/dist" node "$SCRIPT_DIR/acceptance-node-probes.js" s106 2>&1) || true
-  echo "$S106_RESULT" | grep -q "^OK$" || { fail "compose DAG 冲突检测验证失败: $S106_RESULT"; S106_OK=false; }
-fi
+if $S106_OK; then S106_RESULT=$(ORCH_DIR="$PROJECT_ROOT/engine/orchestrator/dist" node "$SCRIPT_DIR/acceptance-node-probes.js" s106 2>&1) || true; echo "$S106_RESULT" | grep -q "^OK$" || { fail "compose DAG 冲突检测验证失败: $S106_RESULT"; S106_OK=false; }; fi
 $S106_OK && pass
 S107_OK=true; require_dist "engine/daemon/dist/notify.js" || S107_OK=false
-if $S107_OK; then
-  S107_RESULT=$(NOTIFY="$PROJECT_ROOT/engine/daemon/dist/notify.js" node "$SCRIPT_DIR/acceptance-node-probes.js" s107 2>&1) || true
-  echo "$S107_RESULT" | grep -q "^OK " || { fail "pushKnowledgeSummary 验证失败: $S107_RESULT"; S107_OK=false; }
-fi
+if $S107_OK; then S107_RESULT=$(NOTIFY="$PROJECT_ROOT/engine/daemon/dist/notify.js" node "$SCRIPT_DIR/acceptance-node-probes.js" s107 2>&1) || true; echo "$S107_RESULT" | grep -q "^OK " || { fail "pushKnowledgeSummary 验证失败: $S107_RESULT"; S107_OK=false; }; fi
 $S107_OK && pass
 scenario 108 "v1.1.9 USB 签名（确定性+fail-closed）"
 S108_OK=true; require_dist "engine/daemon/dist/usb-signature.js" || S108_OK=false
-if $S108_OK; then
-  S108_RESULT=$(USB_SIG="$PROJECT_ROOT/engine/daemon/dist/usb-signature.js" node "$SCRIPT_DIR/acceptance-node-probes.js" s108 2>&1) || true
-  echo "$S108_RESULT" | grep -q "^OK " || { fail "USB 签名确定性验证失败: $S108_RESULT"; S108_OK=false; }
-fi
+if $S108_OK; then S108_RESULT=$(USB_SIG="$PROJECT_ROOT/engine/daemon/dist/usb-signature.js" node "$SCRIPT_DIR/acceptance-node-probes.js" s108 2>&1) || true; echo "$S108_RESULT" | grep -q "^OK " || { fail "USB 签名确定性验证失败: $S108_RESULT"; S108_OK=false; }; fi
 $S108_OK && pass
 S109_OK=true; require_dist "engine/daemon/dist/usb-signature.js" || S109_OK=false
-if $S109_OK; then
-  S109_RESULT=$(USB_SIG="$PROJECT_ROOT/engine/daemon/dist/usb-signature.js" node "$SCRIPT_DIR/acceptance-node-probes.js" s109 2>&1) || true
-  echo "$S109_RESULT" | grep -q "^OK " || { fail "verifyUsbSignature fail-closed 验证失败: $S109_RESULT"; S109_OK=false; }
-fi
+if $S109_OK; then S109_RESULT=$(USB_SIG="$PROJECT_ROOT/engine/daemon/dist/usb-signature.js" node "$SCRIPT_DIR/acceptance-node-probes.js" s109 2>&1) || true; echo "$S109_RESULT" | grep -q "^OK " || { fail "verifyUsbSignature fail-closed 验证失败: $S109_RESULT"; S109_OK=false; }; fi
 $S109_OK && pass
 S110_OK=true; USB_KEY_SRC="$PROJECT_ROOT/engine/daemon/src/usb-key.ts"
 USB_KEY_DIST="$PROJECT_ROOT/engine/daemon/dist/usb-key.js"
@@ -1049,15 +911,10 @@ if $S110_OK; then
     [ -f "$PROJECT_ROOT/engine/daemon/usb/$f" ] || { fail "启动脚本缺失: $f"; S110_OK=false; }
   done
 fi
-if $S110_OK; then
-  grep -q "createUsbKey\|encryptKnowledgeFile\|ENC_FRAME_MAGIC" "$USB_KEY_SRC" || { fail "usb-key.ts 缺核心函数"; S110_OK=false; }
-fi
+if $S110_OK; then grep -q "createUsbKey\|encryptKnowledgeFile\|ENC_FRAME_MAGIC" "$USB_KEY_SRC" || { fail "usb-key.ts 缺核心函数"; S110_OK=false; }; fi
 $S110_OK && pass
 S111_OK=true; require_dist "engine/daemon/dist/usb-key.js" || S111_OK=false
-if $S111_OK; then
-  S111_RESULT=$(USB_KEY="$PROJECT_ROOT/engine/daemon/dist/usb-key.js" node "$SCRIPT_DIR/acceptance-node-probes.js" s111 2>&1) || true
-  echo "$S111_RESULT" | grep -q "^OK " || { fail "AES-256-GCM 加密验证失败: $S111_RESULT"; S111_OK=false; }
-fi
+if $S111_OK; then S111_RESULT=$(USB_KEY="$PROJECT_ROOT/engine/daemon/dist/usb-key.js" node "$SCRIPT_DIR/acceptance-node-probes.js" s111 2>&1) || true; echo "$S111_RESULT" | grep -q "^OK " || { fail "AES-256-GCM 加密验证失败: $S111_RESULT"; S111_OK=false; }; fi
 $S111_OK && pass
 S112_OK=true; CLI_DAEMON="$PROJECT_ROOT/engine/daemon/dist/cli.js"
 [ -f "$CLI_DAEMON" ] || { fail "daemon/dist/cli.js 不存在"; S112_OK=false; }
@@ -1074,86 +931,25 @@ done
 $S113_OK && pass
 scenario 114 "v1.1.9 ab-scheduler 三合一"
 S114_OK=true; require_dist "engine/orchestrator/dist/ab-scheduler.js" || S114_OK=false
-if $S114_OK; then
-  S114_RESULT=$(AB_SCH="$PROJECT_ROOT/engine/orchestrator/dist/ab-scheduler.js" node -e "
-    const { initialState, checkThreshold, startExploration, DEFAULT_THRESHOLD, DEFAULT_PROMOTE_THRESHOLD } = require(process.env.AB_SCH);
-    let s = initialState({ threshold: 2 });
-    if (s.currentPlan !== 'A-step-by-step' || s.candidatePlan !== null) { console.log('初始状态错误: ' + JSON.stringify({cp:s.currentPlan,ca:s.candidatePlan})); process.exit(1); }
-    if (s.threshold !== 2 || s.promoteThreshold !== DEFAULT_PROMOTE_THRESHOLD) { console.log('阈值错误'); process.exit(1); }
-    s = { ...s, currentRunCount: 2 };
-    s = checkThreshold(s, '2025-01-01T00:00:00Z');
-    if (s.candidatePlan === null || s.lastPhase !== 'explore') { console.log('checkThreshold 未触发探索: ' + JSON.stringify({ca:s.candidatePlan,lp:s.lastPhase})); process.exit(1); }
-    console.log('OK phase=' + s.lastPhase + ' candidate=' + s.candidatePlan);
-  " 2>&1) || true
-  echo "$S114_RESULT" | grep -q "^OK " || { fail "ab-scheduler 状态机验证失败: $S114_RESULT"; S114_OK=false; }
-fi
+if $S114_OK; then S114_RESULT=$(AB_SCH="$PROJECT_ROOT/engine/orchestrator/dist/ab-scheduler.js" node -e "const { initialState, checkThreshold, startExploration, DEFAULT_THRESHOLD, DEFAULT_PROMOTE_THRESHOLD } = require(process.env.AB_SCH); let s = initialState({ threshold: 2 }); if (s.currentPlan !== 'A-step-by-step' || s.candidatePlan !== null) { console.log('初始状态错误: ' + JSON.stringify({cp:s.currentPlan,ca:s.candidatePlan})); process.exit(1); } if (s.threshold !== 2 || s.promoteThreshold !== DEFAULT_PROMOTE_THRESHOLD) { console.log('阈值错误'); process.exit(1); } s = { ...s, currentRunCount: 2 }; s = checkThreshold(s, '2025-01-01T00:00:00Z'); if (s.candidatePlan === null || s.lastPhase !== 'explore') { console.log('checkThreshold 未触发探索: ' + JSON.stringify({ca:s.candidatePlan,lp:s.lastPhase})); process.exit(1); } console.log('OK phase=' + s.lastPhase + ' candidate=' + s.candidatePlan); " 2>&1) || true; echo "$S114_RESULT" | grep -q "^OK " || { fail "ab-scheduler 状态机验证失败: $S114_RESULT"; S114_OK=false; }; fi
 $S114_OK && pass
 S115_OK=true; require_dist "engine/orchestrator/dist/ab-scheduler.js" || S115_OK=false
-if $S115_OK; then
-  S115_RESULT=$(AB_SCH="$PROJECT_ROOT/engine/orchestrator/dist/ab-scheduler.js" node "$SCRIPT_DIR/acceptance-node-probes.js" s115 2>&1) || true
-  echo "$S115_RESULT" | grep -q "^OK " || { fail "judgeAndPromote 验证失败: $S115_RESULT"; S115_OK=false; }
-fi
+if $S115_OK; then S115_RESULT=$(AB_SCH="$PROJECT_ROOT/engine/orchestrator/dist/ab-scheduler.js" node "$SCRIPT_DIR/acceptance-node-probes.js" s115 2>&1) || true; echo "$S115_RESULT" | grep -q "^OK " || { fail "judgeAndPromote 验证失败: $S115_RESULT"; S115_OK=false; }; fi
 $S115_OK && pass
 S116_OK=true; require_dist "engine/orchestrator/dist/ab-history.js" || S116_OK=false
-if $S116_OK; then
-  S116_RESULT=$(AB_HIST="$PROJECT_ROOT/engine/orchestrator/dist/ab-history.js" node -e "
-    const { appendMetrics, aggregateRecent, readAll } = require(process.env.AB_HIST);
-    const fs = require('fs'), os = require('os'), path = require('path');
-    const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 's116-')), 'ab-history.jsonl');
-    for (let i = 0; i < 3; i++) appendMetrics(tmp, { plan: 'A', task: 't', timestamp: new Date().toISOString(), passed: 8, failed: 2, duration: 100, qualityScore: 80 });
-    appendMetrics(tmp, { plan: 'B', task: 't', timestamp: new Date().toISOString(), passed: 2, failed: 8, duration: 100, qualityScore: 20 });
-    const all = readAll(tmp);
-    if (all.length !== 4) { console.log('readAll 条数错误: ' + all.length); process.exit(1); }
-    const aggA = aggregateRecent(tmp, 'A', 3);
-    if (aggA.sampleSize !== 3 || aggA.avgPassRate < 70) { console.log('aggregateRecent A 错误: ' + JSON.stringify(aggA)); process.exit(1); }
-    const aggB = aggregateRecent(tmp, 'B', 3);
-    if (aggB.sampleSize !== 1 || aggB.avgPassRate > 30) { console.log('aggregateRecent B 错误: ' + JSON.stringify(aggB)); process.exit(1); }
-    fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
-    console.log('OK A.avg=' + aggA.avgPassRate + ' B.avg=' + aggB.avgPassRate);
-  " 2>&1) || true
-  echo "$S116_RESULT" | grep -q "^OK " || { fail "ab-history 持久化验证失败: $S116_RESULT"; S116_OK=false; }
-fi
+if $S116_OK; then S116_RESULT=$(AB_HIST="$PROJECT_ROOT/engine/orchestrator/dist/ab-history.js" node -e "const { appendMetrics, aggregateRecent, readAll } = require(process.env.AB_HIST); const fs = require('fs'), os = require('os'), path = require('path'); const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 's116-')), 'ab-history.jsonl'); for (let i = 0; i < 3; i++) appendMetrics(tmp, { plan: 'A', task: 't', timestamp: new Date().toISOString(), passed: 8, failed: 2, duration: 100, qualityScore: 80 }); appendMetrics(tmp, { plan: 'B', task: 't', timestamp: new Date().toISOString(), passed: 2, failed: 8, duration: 100, qualityScore: 20 }); const all = readAll(tmp); if (all.length !== 4) { console.log('readAll 条数错误: ' + all.length); process.exit(1); } const aggA = aggregateRecent(tmp, 'A', 3); if (aggA.sampleSize !== 3 || aggA.avgPassRate < 70) { console.log('aggregateRecent A 错误: ' + JSON.stringify(aggA)); process.exit(1); } const aggB = aggregateRecent(tmp, 'B', 3); if (aggB.sampleSize !== 1 || aggB.avgPassRate > 30) { console.log('aggregateRecent B 错误: ' + JSON.stringify(aggB)); process.exit(1); } fs.rmSync(path.dirname(tmp), { recursive: true, force: true }); console.log('OK A.avg=' + aggA.avgPassRate + ' B.avg=' + aggB.avgPassRate); " 2>&1) || true; echo "$S116_RESULT" | grep -q "^OK " || { fail "ab-history 持久化验证失败: $S116_RESULT"; S116_OK=false; }; fi
 $S116_OK && pass
 scenario 117 "v1.1.9 daemon cron + loop-state-extractor"
 S117_OK=true; CRON_SRC="$PROJECT_ROOT/engine/daemon/src/cron.ts"
 CRON_DIST="$PROJECT_ROOT/engine/daemon/dist/cron.js"
 [ -f "$CRON_SRC" ] || { fail "cron.ts 不存在"; S117_OK=false; }
-if $S117_OK; then
-  grep -q "ab-schedule" "$CRON_SRC" || { fail "cron.ts 缺 ab-schedule 分支"; S117_OK=false; }
-  grep -q "runABScheduledTask" "$CRON_SRC" || { fail "cron.ts 缺 runABScheduledTask 调用"; S117_OK=false; }
-fi
+if $S117_OK; then grep -q "ab-schedule" "$CRON_SRC" || { fail "cron.ts 缺 ab-schedule 分支"; S117_OK=false; }; grep -q "runABScheduledTask" "$CRON_SRC" || { fail "cron.ts 缺 runABScheduledTask 调用"; S117_OK=false; }; fi
 $S117_OK && pass
 S118_OK=true; require_dist "engine/orchestrator/dist/loop-state-extractor.js" || S118_OK=false
-if $S118_OK; then
-  S118_RESULT=$(LSE="$PROJECT_ROOT/engine/orchestrator/dist/loop-state-extractor.js" node -e "
-    const { extractControlGraphState, CONTROL_GRAPH_SCHEMA_VERSION } = require(process.env.LSE);
-    const state = extractControlGraphState('nonexistent-loop', '/tmp/nonexistent-checkpoint-dir');
-    if (state.version !== CONTROL_GRAPH_SCHEMA_VERSION || state.version !== 'v1') { console.log('version 错误: ' + state.version); process.exit(1); }
-    if (state.loopId !== 'nonexistent-loop') { console.log('loopId 错误: ' + state.loopId); process.exit(1); }
-    if (state.waves.length !== 0 || state.nodes.length !== 0) { console.log('空骨架应无 waves/nodes'); process.exit(1); }
-    if (state.finalStatus !== 'running') { console.log('空骨架 finalStatus 应 running: ' + state.finalStatus); process.exit(1); }
-    console.log('OK version=' + state.version);
-  " 2>&1) || true
-  echo "$S118_RESULT" | grep -q "^OK " || { fail "extractControlGraphState 骨架验证失败: $S118_RESULT"; S118_OK=false; }
-fi
+if $S118_OK; then S118_RESULT=$(LSE="$PROJECT_ROOT/engine/orchestrator/dist/loop-state-extractor.js" node -e "const { extractControlGraphState, CONTROL_GRAPH_SCHEMA_VERSION } = require(process.env.LSE); const state = extractControlGraphState('nonexistent-loop', '/tmp/nonexistent-checkpoint-dir'); if (state.version !== CONTROL_GRAPH_SCHEMA_VERSION || state.version !== 'v1') { console.log('version 错误: ' + state.version); process.exit(1); } if (state.loopId !== 'nonexistent-loop') { console.log('loopId 错误: ' + state.loopId); process.exit(1); } if (state.waves.length !== 0 || state.nodes.length !== 0) { console.log('空骨架应无 waves/nodes'); process.exit(1); } if (state.finalStatus !== 'running') { console.log('空骨架 finalStatus 应 running: ' + state.finalStatus); process.exit(1); } console.log('OK version=' + state.version); " 2>&1) || true; echo "$S118_RESULT" | grep -q "^OK " || { fail "extractControlGraphState 骨架验证失败: $S118_RESULT"; S118_OK=false; }; fi
 $S118_OK && pass
 S119_OK=true; require_dist "engine/orchestrator/dist/loop-state-extractor.js" || S119_OK=false
-if $S119_OK; then
-  S119_RESULT=$(LSE="$PROJECT_ROOT/engine/orchestrator/dist/loop-state-extractor.js" node -e "
-    const { extractControlGraphState, writeControlGraphState } = require(process.env.LSE);
-    const evil = '../../../etc/passwd';
-    const state = extractControlGraphState(evil, '/tmp/nonexistent');
-    if (state.loopId.includes('/') || state.loopId.includes('..')) { console.log('消毒失败 loopId=' + state.loopId); process.exit(1); }
-    const fs = require('fs'), os = require('os'), path = require('path');
-    const tmpOut = fs.mkdtempSync(path.join(os.tmpdir(), 's119-'));
-    const written = writeControlGraphState(evil, '/tmp/nonexistent', tmpOut);
-    const resolved = path.resolve(written);
-    if (!resolved.startsWith(path.resolve(tmpOut) + path.sep)) { console.log('落盘路径越界: ' + resolved); process.exit(1); }
-    fs.rmSync(tmpOut, { recursive: true, force: true });
-    console.log('OK sanitized=' + state.loopId.slice(0, 12));
-  " 2>&1) || true
-  echo "$S119_RESULT" | grep -q "^OK " || { fail "路径穿越防护验证失败: $S119_RESULT"; S119_OK=false; }
-fi
+if $S119_OK; then S119_RESULT=$(LSE="$PROJECT_ROOT/engine/orchestrator/dist/loop-state-extractor.js" node -e "const { extractControlGraphState, writeControlGraphState } = require(process.env.LSE); const evil = '../../../etc/passwd'; const state = extractControlGraphState(evil, '/tmp/nonexistent'); if (state.loopId.includes('/') || state.loopId.includes('..')) { console.log('消毒失败 loopId=' + state.loopId); process.exit(1); } const fs = require('fs'), os = require('os'), path = require('path'); const tmpOut = fs.mkdtempSync(path.join(os.tmpdir(), 's119-')); const written = writeControlGraphState(evil, '/tmp/nonexistent', tmpOut); const resolved = path.resolve(written); if (!resolved.startsWith(path.resolve(tmpOut) + path.sep)) { console.log('落盘路径越界: ' + resolved); process.exit(1); } fs.rmSync(tmpOut, { recursive: true, force: true }); console.log('OK sanitized=' + state.loopId.slice(0, 12)); " 2>&1) || true; echo "$S119_RESULT" | grep -q "^OK " || { fail "路径穿越防护验证失败: $S119_RESULT"; S119_OK=false; }; fi
 $S119_OK && pass
 scenario 120 "v1.1.9 叙事收敛 + BugFix 回归锁"
 S120_OK=true; README="$PROJECT_ROOT/README.md"
@@ -1185,10 +981,7 @@ S123_OK=true; [ -f "$PROJECT_ROOT/SKILL/SKILL.md" ] || { fail "SKILL/SKILL.md �
 [ -d "$PROJECT_ROOT/SKILL/harness" ] || { fail "SKILL/harness/ 不存在"; S123_OK=false; }
 [ -d "$PROJECT_ROOT/SKILL/agents" ] || { fail "SKILL/agents/ 不存在"; S123_OK=false; }
 [ -d "$PROJECT_ROOT/SKILL/custom" ] || { fail "SKILL/custom/ 不存在"; S123_OK=false; }
-if $S123_OK; then
-  SKILL_AGENTS=$(find "$PROJECT_ROOT/SKILL/agents" -name "SKILL.md" 2>/dev/null | wc -l | tr -d ' ')
-  [ "$SKILL_AGENTS" -ge 2 ] || { fail "SKILL/agents/ 下 SKILL.md 数 $SKILL_AGENTS（期望 ≥2）"; S123_OK=false; }
-fi
+if $S123_OK; then SKILL_AGENTS=$(find "$PROJECT_ROOT/SKILL/agents" -name "SKILL.md" 2>/dev/null | wc -l | tr -d ' '); [ "$SKILL_AGENTS" -ge 2 ] || { fail "SKILL/agents/ 下 SKILL.md 数 $SKILL_AGENTS（期望 ≥2）"; S123_OK=false; }; fi
 $S123_OK && pass
 S124_OK=true; # v1.2.1 路径调整：releasing.md → docs/changelog/，bump-version.sh → tools/
 for f in acceptance-test.sh regression-checklist.md fresh-eyes-review.md; do
@@ -1208,16 +1001,7 @@ S125_OK=true; [ -f "$PROJECT_ROOT/install.sh" ] || { fail "根目录 install.sh 
 $S125_OK && pass
 S126_OK=true; RULES_DIST="$PROJECT_ROOT/engine/rules/dist/index.js"
 [ -f "$RULES_DIST" ] || { fail "engine/rules/dist/index.js 不存在"; S126_OK=false; }
-if $S126_OK; then
-  S126_RESULT=$(RULES="$RULES_DIST" node -e "
-    const m = require(process.env.RULES);
-    if (!m || typeof m !== 'object') { console.log('导出非 object'); process.exit(1); }
-    const fns = Object.keys(m).filter(k => typeof m[k] === 'function');
-    if (fns.length < 1) { console.log('无函数导出'); process.exit(1); }
-    console.log('OK exports=' + fns.length);
-  " 2>&1) || true
-  echo "$S126_RESULT" | grep -q "^OK " || { fail "rules 引擎导出验证失败: $S126_RESULT"; S126_OK=false; }
-fi
+if $S126_OK; then S126_RESULT=$(RULES="$RULES_DIST" node -e "const m = require(process.env.RULES); if (!m || typeof m !== 'object') { console.log('导出非 object'); process.exit(1); } const fns = Object.keys(m).filter(k => typeof m[k] === 'function'); if (fns.length < 1) { console.log('无函数导出'); process.exit(1); } console.log('OK exports=' + fns.length); " 2>&1) || true; echo "$S126_RESULT" | grep -q "^OK " || { fail "rules 引擎导出验证失败: $S126_RESULT"; S126_OK=false; }; fi
 $S126_OK && pass
 scenario 127 "v1.2.0 FDE 交付物 + DP-1 版本自检 + DP-2 签名 CLI"
 S127_OK=true; [ -f "$PROJECT_ROOT/FDE/templates/enterprise-profile.md" ] || { fail "FDE/templates/enterprise-profile.md 不存在"; S127_OK=false; }
@@ -1250,9 +1034,7 @@ CORE_DIST_JS="$PROJECT_ROOT/engine/core/dist/audit-history.js"
 $S131_OK && pass
 S132_OK=true; HOOKS_PKG="$PROJECT_ROOT/engine/hooks/sofagent-load-chain/package.json"
 [ -f "$HOOKS_PKG" ] || { fail "engine/hooks/sofagent-load-chain/package.json 不存在"; S132_OK=false; }
-if [ -f "$HOOKS_PKG" ]; then
-  assert_grep "@sofagent/load-chain" "$HOOKS_PKG" || S132_OK=false
-fi
+if [ -f "$HOOKS_PKG" ]; then assert_grep "@sofagent/load-chain" "$HOOKS_PKG" || S132_OK=false; fi
 [ -f "$PROJECT_ROOT/engine/hooks/sofagent-load-chain/src/handler.ts" ] || { fail "handler.ts 不存在"; S132_OK=false; }
 [ -f "$PROJECT_ROOT/engine/hooks/sofagent-load-chain/dist/handler.js" ] || { fail "dist/handler.js 不存在（需先 build）"; S132_OK=false; }
 assert_grep "sofagent-load-chain\|hooks/sofagent-load-chain" "$PROJECT_ROOT/package.json" || S132_OK=false
@@ -1305,11 +1087,7 @@ else
   _S137_FAKE_EXIT=42
   _S137_CAPTURED=0
   { set +euo pipefail; bash -c "exit $_S137_FAKE_EXIT" > /dev/null 2>&1 || _S137_CAPTURED=$?; set -euo pipefail; }
-  if [ "${_S137_CAPTURED:-1}" = "$_S137_FAKE_EXIT" ]; then
-    pass
-  else
-    fail "退出码捕获失败: 期望 $_S137_FAKE_EXIT, 实际 ${_S137_CAPTURED:-unset}"
-  fi
+  if [ "${_S137_CAPTURED:-1}" = "$_S137_FAKE_EXIT" ]; then pass; else fail "退出码捕获失败: 期望 $_S137_FAKE_EXIT, 实际 ${_S137_CAPTURED:-unset}"; fi
 fi
 if [ ! -d "$PROJECT_ROOT/data" ]; then
   echo "  ⏭ 项目根目录 data/ 不存在，跳过"; PASSED=$((PASSED + 1))
@@ -1337,22 +1115,14 @@ if [ ! -d "$_S140_SRC" ]; then
   echo "  ⏭ engine/orchestrator/src 不存在，跳过"; PASSED=$((PASSED + 1))
 else
   S140_COUNT=$(grep -rl "createToolGate" "$_S140_SRC" 2>/dev/null | wc -l | tr -d ' ' || true)
-  if [ "$S140_COUNT" -ge 1 ]; then
-    pass
-  else
-    fail "engine/orchestrator 源码中未找到 createToolGate 调用"
-  fi
+  if [ "$S140_COUNT" -ge 1 ]; then pass; else fail "engine/orchestrator 源码中未找到 createToolGate 调用"; fi
 fi
 _S141_ENGINE="$PROJECT_ROOT/engine"
 if [ ! -d "$_S141_ENGINE" ]; then
   echo "  ⏭ engine/ 目录不存在，跳过"; PASSED=$((PASSED + 1))
 else
   S141_COUNT=$(grep -rli "visibility\|可见性\|L2\|observab" "$_S141_ENGINE" 2>/dev/null | wc -l | tr -d ' ' || true)
-  if [ "$S141_COUNT" -ge 1 ]; then
-    pass
-  else
-    fail "engine/ 中未找到 SubAgent 可见性/L2/可观测性相关字段"
-  fi
+  if [ "$S141_COUNT" -ge 1 ]; then pass; else fail "engine/ 中未找到 SubAgent 可见性/L2/可观测性相关字段"; fi
 fi
 scenario 142 "release-gate-loop + daemon-health"
 _S142_DRIVER="$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs"
@@ -1380,11 +1150,7 @@ else
   grep -q "daemon-health" "$_S143_HEALTH" 2>/dev/null || S143_OK=false
   # health-reporter 含结构化字段（lastRun / status / uptime）
   grep -qE "lastRun|status|uptime" "$_S143_HEALTH" 2>/dev/null || S143_OK=false
-  if $S143_OK; then
-    pass "daemon health-reporter 存在，写结构化 daemon-health.json"
-  else
-    fail "daemon health-reporter 缺失或未含结构化字段"
-  fi
+  if $S143_OK; then pass "daemon health-reporter 存在，写结构化 daemon-health.json"; else fail "daemon health-reporter 缺失或未含结构化字段"; fi
 fi
 scenario 144 "eval CLI + WIKI.md"
 _S144_EVAL="$PROJECT_ROOT/engine/eval"
@@ -1404,11 +1170,7 @@ else
   grep -q "EVAL_DIR\|AB_TEST_DIR" "$_S144_CORE" 2>/dev/null || S144_OK=false
   # think 进化引擎接通
   grep -q "generateThinkFromEval" "$PROJECT_ROOT/engine/think/src/think-generator.ts" 2>/dev/null || S144_OK=false
-  if $S144_OK; then
-    pass "eval CLI + golden set + 占位符 + 路径常量 + think 接通全部存在"
-  else
-    fail "eval/ab-test 补全缺少关键文件（CLI/golden-set/占位符/路径常量/think 接通之一）"
-  fi
+  if $S144_OK; then pass "eval CLI + golden set + 占位符 + 路径常量 + think 接通全部存在"; else fail "eval/ab-test 补全缺少关键文件（CLI/golden-set/占位符/路径常量/think 接通之一）"; fi
 fi
 WIKI="$PROJECT_ROOT/docs/WIKI.md"; S145_OK=true
 [ -f "$WIKI" ] || { fail "WIKI.md 不存在"; S145_OK=false; }
@@ -1421,11 +1183,7 @@ fi
 S146_OK=true; # 清理可能存在的残留
 rm -rf "$PROJECT_ROOT/data/" 2>/dev/null
 ( trap 'exit 0' HUP; set +e; NODE_OPTIONS="--max-old-space-size=4096" npx vitest run engine/audit/src/__tests__/session-report.test.ts >/dev/null 2>&1 ) 2>/dev/null || true
-if [ -d "$PROJECT_ROOT/data/" ]; then
-  fail "data/ 泄露到项目目录——F-39 修复无效"; S146_OK=false
-else
-  pass "data/ 未泄露——session-report 正确写入 ~/.sofagent/data/audit/"
-fi
+if [ -d "$PROJECT_ROOT/data/" ]; then fail "data/ 泄露到项目目录——F-39 修复无效"; S146_OK=false; else pass "data/ 未泄露——session-report 正确写入 ~/.sofagent/data/audit/"; fi
 S147_OK=true; DASH="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
 [ -f "$DASH" ] || { fail "sofagent-dashboard.sh 不存在"; S147_OK=false; }
 if $S147_OK; then
@@ -1474,7 +1232,7 @@ echo "$S152_OUT" | grep -q "^OK" || { fail "P4 Graph Engine 端到端失败: $S1
 $S152_OK && pass "P4 Graph Engine 端到端完整（Planner 解析+降级+降级链四路径+decide/execute 分离）"
 scenario 153 "v1.2.3 权限加固——core 包所有 mkdirSync 必须带 mode: 0o700"
 # fresh-eyes P0「数据明文存储」过渡防线：目录默认 755 时同机其他用户可读审计数据，
-# 收紧为 0o700（仅属主可访问），age 加密（v1.3.0）落地前的纵深防御。
+# 收紧为 0o700（仅属主可访问），age 加密（v1.4.0）落地前的纵深防御。
 S153_OK=true
 # 断言 1：无 mode 的 mkdirSync 调用必须零命中（排除 import 行 + 测试文件）
 # v1.2.3 修复：0o700 加固后 grep -v "mode:" 过滤掉全部行 → 退出码 1 → pipefail 炸脚本，用 { ||true; } 兜底
@@ -1692,15 +1450,7 @@ TOOL_COUNT=$(node -e "const s=require('$PROJECT_ROOT/engine/mcp/dist/mcp-server.
 # 直接检查 mcp-server.ts 源码中的 tool 注册数
 MCP_TOOLS=$(grep -c "name: '" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" 2>/dev/null || echo 0)
 # 更精确：检查 handleToolsList 中的 tool 定义
-MCP_REGISTERED=$(node -e "
-const fs = require('fs');
-const src = fs.readFileSync('$PROJECT_ROOT/engine/mcp/src/mcp-server.ts', 'utf-8');
-// 计算_tools数组中的 name: 'xxx' 数量
-const matches = src.match(/name:\s*'[^']+'/g) || [];
-// 去重（list_capabilities 中也有 name: 引用）
-const toolDefs = new Set(matches);
-console.log(toolDefs.size);
-" 2>/dev/null || echo "0")
+MCP_REGISTERED=$(node -e "const fs = require('fs'); const src = fs.readFileSync('$PROJECT_ROOT/engine/mcp/src/mcp-server.ts', 'utf-8'); // 计算_tools数组中的 name: 'xxx' 数量; const matches = src.match(/name:\s*'[^']+'/g) || []; // 去重（list_capabilities 中也有 name: 引用）; const toolDefs = new Set(matches); console.log(toolDefs.size); " 2>/dev/null || echo "0")
 [ "$MCP_REGISTERED" -ge 22 ] && pass "MCP tools/list 注册数 ≥22（实测 $MCP_REGISTERED）" || fail "MCP tools/list 注册数不足（$MCP_REGISTERED < 22）"
 
 scenario 173 "v1.2.4 P3 S2 — 新增 6 个 tool handler 文件存在"

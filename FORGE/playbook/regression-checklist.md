@@ -22,15 +22,13 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（43 项 · 编号 1–63，20 个归并/移除项已转为 HTML 注释）
+## 审查维度（44 项 · 编号 1–64，20 个归并/移除项已转为 HTML 注释）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · 测试数一致（维度 13 SSOT 反查） · git status 零未提交修改
 
 #### 1. CHANGELOG 纯度与完整性
-
-> 归并自维度 48（v1.2.0 瘦身）。子项 a-d 原维度 1 + 子项 e-h 原维度 48。
 
 ```bash
 # 子项 a: 纯度——不含审查元信息
@@ -69,6 +67,15 @@ grep -rn "Ledger-Views-Policy" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVE
 WIKI_SECTIONS=$(grep -c "^## [一二三四五六七]、" docs/WIKI.md 2>/dev/null || echo 0)
 [ "$WIKI_SECTIONS" -ge 7 ] || echo "⚠️ WIKI.md 节数不足（期望 7，实际 $WIKI_SECTIONS）"
 grep -c "WIKI" README.md   # ≥1
+
+# 子项 g: 归档内容旧术语口径声明——archive/ + changelog/v1.0-v1.1 含旧术语（四引擎/认知底座），WIKI.md 须有免责声明
+grep -q "历史快照\|旧术语\|不代表现行设计" docs/WIKI.md   # 期望：命中
+
+# 子项 h: 版本归属级联一致性——活文档引用的 feature 版本须与 ROADMAP 权威表一致（v1.2.4 教训：age 挂错版本 5 处）
+grep -rn "v1\.[0-9]\.[0-9]" docs/ SECURITY.md LIMITATIONS.md README.md --include="*.md" 2>/dev/null | grep -v changelog | grep -v archive   # 人工核对：与 ROADMAP 版本表一致
+
+# 子项 i: 被引用权威源自含性——所有"见 ROADMAP"引用的 feature，ROADMAP 自身须含该项（v1.2.4 教训：引用处写 age 但 ROADMAP 权威表缺此条）
+grep -rn "见.*ROADMAP\|详见.*ROADMAP" docs/ SECURITY.md LIMITATIONS.md --include="*.md" 2>/dev/null | grep -v changelog   # 人工核对：ROADMAP 含对应条目
 ```
 
 #### 4. 审计规则分级与 ruleClass 一致性
@@ -256,8 +263,6 @@ git diff --quiet || echo "⚠️ 工作树有未提交修改"
 
 #### 18. 扩展审计规则源码回归锁——A19 commit 质量 + A18 垃圾文件（v1.2.1 归并 18+19）
 
-> 归并原因：两者结构完全平行（单规则源码检查），合并为"扩展规则回归锁"。
-
 ```bash
 # 子项 a: A19 commit message 质量（原维度 18）
 F19=engine/audit/src/rules/rule-a19-commit-msg-quality.ts
@@ -276,8 +281,6 @@ grep "A18" engine/audit/src/rules/runner.ts   # extended 优先级 A18 排在 A1
 <!-- #19 [v1.2.1 归并至维度 18：A19+A18 结构平行，合并为扩展规则回归锁] -->
 
 #### 20. daemon plist + watch.yml 正确性 + --init 覆盖防护（v1.2.1 归并 20+22）
-
-> 归并原因：20 和 22 都检查 plist/WorkingDirectory，grep 目标文件 100% 重叠。
 
 ```bash
 # 子项 a: plist 内容正确（原维度 20）
@@ -491,8 +494,6 @@ grep -c "  it(" engine/audit/src/audit-history.test.ts   # ≥11
 ```
 #### 34. 文档头日期 + 文档数字 SSOT 一致性（v1.2.0 归并自 34+35）
 
-> v1.2.0 瘦身：原维度 34（日期门禁）+ 35（数字 SSOT）合并。
-
 ```bash
 # 子项 a: check-version.sh 有日期扫描 + 跑 check-version 全绿
 grep -c "日期一致性扫描\|文档头日期" tools/check-version.sh   # ≥1
@@ -664,8 +665,6 @@ grep -c "usb-signature\|usb-key\|createUsbKey\|verifyUsbSignature" FORGE/playboo
 
 #### 45. 编排状态机 + 控制图——A/B 调度器 + 状态抽取 + 路径穿越防护（v1.2.1 归并 45+46）
 
-> 归并原因：45（ab-scheduler）和 46（loop-state-extractor）都检查 orchestrator 状态机，grep 目标重叠 ab-scheduler.ts。
-
 ```bash
 # 子项 a-g: A/B 调度器四阶段状态机（原维度 45）
 grep -c "initialState\|checkThreshold\|startExploration\|judgeAndPromote\|runABScheduledTask" engine/orchestrator/src/ab-scheduler.ts   # ≥5
@@ -687,8 +686,6 @@ grep -c "extractControlGraphState\|sanitizeLoopId\|路径穿越" FORGE/playbook/
 ```
 
 <!-- #46 [v1.2.1 归并至维度 45：编排状态机 grep 目标重叠 ab-scheduler.ts] -->
-
-> 归并去向：维度 45 子项 h-n。
 
 #### 47. 产品叙事收敛红线 + BugFix 42 项核心回归锁（v1.1.9 新增 · 交付四+五）
 
@@ -717,7 +714,6 @@ grep -c "FDE Agent\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODE
 
 <!-- #48 [v1.2.0 归并至维度 1：子项 e-h 全部归入维度 1] -->
 
----
 
 #### 49. v1.2.0 物理结构大重构——旧路径零残留 + 新结构就位（v1.2.0 新增 · fresh-eyes 三轮审查）
 
@@ -755,13 +751,8 @@ grep -c 'sofagent-key' engine/scripts/lib/post-install.sh   # ≥2
 grep -c 'chmod 600' engine/scripts/lib/post-install.sh       # ≥1
 ```
 
-> **fresh-eyes 教训**：物理结构大重构最容易在边缘文件留下旧路径残留（install.sh 写 A，handler.ts 读 B → 约束层静默失效）。
-
----
 
 #### 50. 文档乱码扫描——U+FFFD + null byte + UTF-8 损坏检测（v1.2.0 新增）
-
-> v1.2.0 发版中反复发现 UTF-8 损坏（U+FFFD 乱码 + null byte 嵌入）。bsd grep 无法检测，必须 node 逐字符扫描。
 
 ```bash
 # 子项 a: U+FFFD 替换字符全仓扫描（核心——编码损坏的直接证据）
@@ -780,13 +771,8 @@ node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL',
 node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL','FDE','FORGE','tools'];const rootFiles=['README.md','README.en.md','CHANGELOG.md','ROADMAP.md','SECURITY.md','LIMITATIONS.md','CONTRIBUTING.md','install.sh'];const skips=['node_modules','dist','target','.workbuddy','.sofagent','archive','changelog'];let hits=[];function scan(f){try{const buf=fs.readFileSync(f);let line=1;for(let i=0;i<buf.length;i++){if(buf[i]===10)line++;if(buf[i]===0){const ctx=buf.slice(Math.max(0,i-10),Math.min(buf.length,i+10)).toString('utf8').replace(/\x00/g,'<NUL>');hits.push(f+':'+line+': null byte 上下文 ...'+ctx+'...');if(hits.length>20)break}}}catch(e){}}function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(skips.includes(e.name))continue;const f=path.join(dir,e.name);if(e.isDirectory())walk(f);else if(/\.(md|ts|sh|json|yml)$/.test(e.name))scan(f)}}dirs.forEach(d=>{if(fs.existsSync(d))walk(d)});rootFiles.forEach(f=>{if(fs.existsSync(f))scan(f)});console.log(hits.length===0?'✅ 零 null byte':'❌ FOUND '+hits.length);hits.forEach(h=>console.log('  '+h))"
 ```
 
-> **修复指南**：发现乱码后不要手删——找到原始未损坏版本（git show）整文件覆盖恢复，再跑维度 50 确认。
-
----
 
 #### 51. v1.2.0 审计链安全加固回归——HMAC 写读一致 + doctor 三态 + config 签名 + 版本自检 + key 强度（v1.2.0 BugFix 批次新增）
-
-> v1.2.0 BugFix 批次锁定 5 个 HMAC/审计链回归点——写侧与读侧对称性（改了签名逻辑忘了改验签→永久不可复验）。
 
 ```bash
 # 子项 a: HMAC 写读一致性——写入侧先 sanitize 再签名（P0-3 教训：改了写入侧没改读取侧→永久验签失败）
@@ -810,17 +796,11 @@ grep -q "validateHmacKey" engine/core/src/audit-history.ts && echo "✅ validate
 grep -q "byteLen < 16\|16.*字节\|>=.*16" engine/core/src/audit-history.ts && echo "✅ 16 字节阈值存在" || echo "❌ 缺少 16 字节阈值"
 ```
 
-> **HMAC 写读一致性教训**（v1.2.0 P0-3）：改了签名算法的一侧**必须同时改另一侧**，否则写入的记录永久「不可复验」。
-
----
 
 <!-- #52 [v1.2.1 移除：方法论指导，非可执行巡检] -->
 
----
 
 #### 53. SSOT 零硬编码——产品代码不得绕过 data-paths.ts 拼路径（v1.2.1 新增）
-
-> v1.2.1 教训：产品代码（非测试文件）出现 `join(cwd, 'data', ...)` / `join(projectDir, 'data', 'audit')` 等硬编码，绕过 SSOT。
 
 > ⚠️ **判定规则（防误报）**：data-paths.ts 管的是 `~/.sofagent/data/` **运行时数据路径**（resolveAuditDir/resolveDataDir 等）。包内自带的 fixture / golden-set 文件路径（如 `join(__dirname, '..', 'data', 'golden-set.yaml')`）是**随包发布的测试数据**，不是运行时数据，不适用此维度。仅当路径指向用户 home 下的运行时数据目录（如 `~/.sofagent/data/`、`data/audit/`）却绕过 data-paths.ts 时才算 FAIL。
 
@@ -833,13 +813,8 @@ grep -rn "join(.*'data'" engine/ --include="*.ts" | grep -v "data-paths.ts" | gr
 grep -c "resolveAuditDir\|resolveDataDir\|resolveTaskDir\|DATA_ROOT" engine/core/src/data-paths.ts   # ≥2
 ```
 
-> **PASS 标准**：产品代码零硬编码**运行时数据**路径拼接，全部走 data-paths.ts 常量或 resolve* 函数。包内 fixture 路径（golden-set.yaml 等）不算违规。
-
----
 
 #### 54. 环境变量命名 Unix 全大写——禁止驼峰（v1.2.1 新增）
-
-> v1.2.1 教训：`SOFAgent_HOME`（驼峰）违反 Unix 环境变量全大写+下划线约定，应为 `SOFAGENT_HOME`。
 
 ```bash
 # 全仓搜索驼峰环境变量（shell/ts/mjs 文件）
@@ -850,13 +825,9 @@ grep -rn "SOFAgent_" install.sh engine/ FORGE/ --include="*.sh" --include="*.ts"
 grep -rc "SOFAGENT_HOME\|SOFAGENT_DATA" engine/scripts/lib/platform-detect.sh engine/scripts/lib/config.sh   # ≥2
 ```
 
-> **PASS 标准**：零驼峰环境变量命中。
-
----
 
 <!-- #55 [v1.2.3 移除：被 pre-push-check.sh 步骤 1 shellcheck 全量覆盖] -->
 
----
 
 #### 56. trust-but-verify——mock 单测全绿 ≠ 真实引擎匹配（v1.2.1 P0b 新增）
 
@@ -871,9 +842,6 @@ grep -rc "SOFAGENT_HOME\|SOFAGENT_DATA" engine/scripts/lib/platform-detect.sh en
 (cd engine/ab-test && node dist/cli.js run --golden-set 2>&1 | grep -E "passRate|通过率")
 ```
 
-> **PASS 标准**：真实 CLI 端到端 passRate = 100%，而非仅 mock 单测全绿。
-
----
 
 #### 57. A2/A9 fixture 敏感内容安全——占位符 + base64 编码（v1.2.1 P0b 新增）
 
@@ -892,11 +860,9 @@ grep -rn "$(echo SWdub3JlIHByZXZpb3VzIGluc3RydWN0aW9ucw== | base64 -d)" engine/e
 grep -c 'PLACEHOLDER_MAP\|SK_PREFIX\|INJ_PHRASE' engine/eval/src/eval-runner.ts  # ≥3
 ```
 
-> **PASS 标准**：golden set 零字面密钥/injection + 占位符替换机制存在 + audit 运行时检测有效。
 >
 > 🔴 **v1.2.2 再犯**：P0 补测试时 fixture 又写了字面量 `sk-abcdef...`，commit 被 A2 拦截 2 次。**此问题已复发两次（v1.2.1 eval + v1.2.2 P0 测试），铁律升级：测试文件中任何 secret-like 串（含 sk-/AKIA/ghp_ 前缀的假数据）必须运行时拼接（数组 join 或 base64 解码），绝不字面量。**
 
----
 
 #### 58. convertAuditResult 三态——WARN 不应当 FAIL（v1.2.1 P0b 新增）
 
@@ -911,8 +877,6 @@ grep -rn 'export function convertAuditResult\|export const convertAuditResult' e
 grep -A10 'convertAuditResult' engine/eval/src/cli.ts | grep -E 'PASS|WARN|FAIL|exitCode'
 # 期望：3 种状态都有分支处理（EXIT_CODE_TO_RESULT 含 0/1/2 三个映射）
 ```
-
-> **PASS 标准**：convertAuditResult 含 PASS/WARN/FAIL 三态分支，WARN 不映射为 FAIL。
 
 ---
 
@@ -933,11 +897,8 @@ grep -A10 'convertAuditResult' engine/eval/src/cli.ts | grep -E 'PASS|WARN|FAIL|
 
 > **路径迁移感知**：v1.2.1 起 `.sofagent/` 迁移到 `~/.sofagent/`，数据子目录从 `.sofagent/audit` 变为 `~/.sofagent/data/audit`。检查路径权限时认准 `~/.sofagent/`。
 
----
 
 #### 59. resolve*Dir 调用方传参——禁止传 process.cwd() 给 overrideHome 参数（v1.2.2 F-39 新增）
-
-> v1.2.1 把 data-paths.ts 的 resolveAuditDir/resolveKnowledgeDir/resolveDataDir 参数从 projectRoot 改为 overrideHome。6 个调用方没跟上，仍传 process.cwd()，导致运行时数据写进项目目录而非 ~/.sofagent/。
 
 ```bash
 # 搜索所有传 process.cwd() 给 resolve*Dir 或 writeSessionReport 的地方（排除测试）
@@ -945,9 +906,6 @@ grep -rn "resolveAuditDir(process\|resolveKnowledgeDir(process\|resolveDataDir(p
 # 期望：无输出（exit 1）
 ```
 
-> **PASS 标准**：grep 结果为空，所有 resolve*Dir 调用方不传 process.cwd()。
-
----
 
 #### 60. barrel re-export 一致性——新增导出 public-api.ts 和 index.ts 要同步（v1.2.2 F2 新增）
 
@@ -970,9 +928,6 @@ diff <(grep "^export " engine/audit/src/public-api.ts | sort) <(grep "^export " 
 # 期望：无差异行
 ```
 
-> **PASS 标准**：package.json exports 指向 public-api.ts → 直接 PASS。或 exports 指向 index.ts 且两者导出一致。
-
----
 
 #### 61. 新功能必须有自动化测试——禁止零覆盖交付（v1.2.2 F1 新增）
 
@@ -987,9 +942,6 @@ done
 # 期望：每个模块 ≥1 test file
 ```
 
-> **PASS 标准**：每个交付模块至少有 1 个 test file，核心逻辑（写入/解析/路由）有自动化断言。
-
----
 
 #### 62. 发版闸门裁决解析健壮性——禁止「全文含 FAIL 即判 FAIL」脆弱兜底（v1.2.3 阶段六新盲区）
 
@@ -1010,8 +962,6 @@ grep -c 'slice(i, i + 4)' FORGE/src/release-gate-driver.mjs   # ≥2
 grep -Fc 'replace(/```[\s\S]*?```/g' FORGE/src/release-gate-driver.mjs   # ≥2
 ```
 
-> **PASS 标准**：子项 1 零命中（脆弱兜底已删）；子项 2/3/4 均 ≥2（parseVerdict 与 parseStepResults 都已剥离代码块 + 标记行窗口提取）。读裁决以 verdict.md 权威产物为准。
-
 #### 63. Worker 批量输出 U+FFFD 零污染——每次批量修复后必扫（v1.2.3 新盲区）
 
 > v1.2.3 教训：fresh-eyes-loop 的批量修复 worker 多次产出含 U+FFFD（替换字符）的文件——LLM 输出编码损坏时把无法表示的字节写成 U+FFFD，混进文档/代码。这类污染肉眼难辨（显示为 ▯ 或空白），但会污染 grep 结果、破坏锚点、影响 npm 产物。v1.2.2 曾复发过一次。**规则：任何 Agent 批量写入文件后，提交前必须扫一遍 U+FFFD，零容忍。**
@@ -1025,4 +975,18 @@ node -e "const fs=require('fs');const{execSync}=require('child_process');const f
 grep -rlP '\x{FFFD}' engine/*/src/ 2>/dev/null | grep -v node_modules   # 期望：无输出
 ```
 
-> **PASS 标准**：子项 1 输出 CLEAN（活跃文档零 U+FFFD）；子项 2 无输出（引擎源码零 U+FFFD）。发现污染 → 定位 LLM 输出环节修复根因，不要只删字符了事。
+#### 64. GitHub 锚点剥除规则——跨文档链接须匹配渲染后锚点（v1.2.4 新盲区）
+
+> v1.2.4 教训：7 处断链全因 GitHub 渲染剥除标题特殊字符——emoji 被整段剥除、`+` 被剥后相邻空格合并为双连字符 `--`、`/`/括号/冒号被剥除。链接作者按"看到的标题"写锚点，渲染后锚点不同→死链。**断言链接时须按 GitHub 规则推算锚点，不能照抄标题。**
+
+```bash
+# 子项 a: 扫描跨文档 markdown 链接的锚点，对照目标文件实际标题推算渲染锚点
+# 规则：转小写→剥 emoji/标点→空格转连字符→连续连字符保留（剥除产生的双连字符不合并）
+grep -rn "](\./\?[A-Za-z0-9_/.-]*\.md#" docs/ README.md SECURITY.md LIMITATIONS.md ROADMAP.md --include="*.md" 2>/dev/null | grep -v changelog | grep -v archive   # 人工核对：每条 # 后锚点 = 目标标题按 GitHub 规则渲染结果
+
+# 子项 b: 标题含 emoji/+///括号/冒号 的高危锚点目标——这类标题最易产生断链
+grep -rnE "^#{1,4} .*(🔮|🔄|🪟|✨|[+/（）():：])" docs/ README.md SECURITY.md LIMITATIONS.md ROADMAP.md --include="*.md" 2>/dev/null | grep -v changelog | grep -v archive   # 人工核对：引用这些标题的链接锚点是否已按剥除规则调整
+```
+
+> **PASS 标准**：所有跨文档 `#锚点` 链接指向的标题，按 GitHub 渲染规则（剥 emoji/标点、空格→`-`）推算的锚点与链接一致。标题含特殊字符者重点核对。
+

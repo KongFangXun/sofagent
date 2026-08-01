@@ -1,6 +1,6 @@
 # 团队落地 Checklist
 
-> 给想落地的人看的简单 checklist——不用读完 436 行 Handbook。
+> 给想落地的人看的简单 checklist——不用读完 593 行 Handbook。
 
 ## 📦 第 1 天：装上
 
