@@ -4,7 +4,7 @@
 > 🔴 版本号操作用 `bump-version.sh` + `check-version.sh`，禁止手动 grep/sed。
 > 🔴 文档预算分层检查（A 用户文档 / B 开发者参考 / C 审查体系 / E 指南），见 `check-docs.sh`。
 > 🔴 回归检查已升格为**独立阶段**（阶段六）——开发 session 直连预跑 acceptance-test，然后**开新监控 session** 启动 driver（sandbox 杀后台进程的 10 轮血泪已根治），driver 只负责 regression + coverage + consolidate + verdict。
-> 🔴 **CI 绿灯闸门（v1.2.2 教训）**：release 过程中任何 push（代码修复、文档微调、CI 配置修正）后，都必须等 CI 全绿再继续下一步。push 前先本地模拟 CI 会跑的检查（`pre-push-check.sh` + `npm test` + `npm run build`），避免 push 上去 GitHub 打红叉再回头修。v1.2.2 教训：3 个 CI workflow 在发版后才暴露失败，每次都 push→红叉→修→push→红叉循环。
+> 🔴 **CI 绿灯闸门（v1.2.2 教训，v1.2.4 追加 daemon CI 模拟）**：release 过程中任何 push（代码修复、文档微调、CI 配置修正）后，都必须等 CI 全绿再继续下一步。push 前先本地模拟 CI 会跑的检查（`pre-push-check.sh` + `npm test` + `npm run build` + **daemon CI 模拟**），避免 push 上去 GitHub 打红叉再回头修。v1.2.2 教训：3 个 CI workflow 在发版后才暴露失败；v1.2.4 教训：daemon CI 漏模拟，config.sh `set -e` 崩溃在 push 后才暴露，又多走 4 轮 push→红叉→修循环。
 
 ---
 
@@ -584,11 +584,31 @@ sofagent-audit --doctor
 bash tools/pre-push-check.sh            # 全绿（全量 workspace）
 bash tools/check-docs.sh                # 文档死链 + 预算 + Skill 行数
 
-# 🔴 CI 核心检查本地模拟（v1.2.2 新增）
-# CI 会跑 npm test + npm run build + shellcheck，本地也要先跑一遍
+# 🔴 CI 核心检查本地模拟（v1.2.2 新增，v1.2.4 追加 daemon CI 模拟）
+# CI 会跑 npm test + npm run build + shellcheck + daemon CI，本地也要先跑一遍
 npm test                                # CI pr-check workflow
 npm run build                           # CI verify workflow 依赖 build 产物
 shellcheck engine/scripts/*.sh tools/*.sh install.sh  # CI shellcheck workflow
+
+# 🔴 daemon CI 本地模拟（v1.2.4 教训新增）
+# daemon-linux-ci / daemon-macos-ci 在 engine/scripts/daemon* 路径变更时触发。
+# CI runner 无 fde.md、无 ~/.sofagent/data → config.sh / daemon.sh 可能静默崩溃（set -e）。
+# 本地模拟：用 fake HOME 跑一轮 foreground daemon，确认 daemon.json 能正常生成。
+_DAEMON_TEST_DIR=$(mktemp -d)
+mkdir -p "$_DAEMON_TEST_DIR/.sofagent"
+env -i HOME="$_DAEMON_TEST_DIR" SOFAGENT_DATA="$_DAEMON_TEST_DIR/.sofagent" \
+  PATH="$PATH" bash engine/scripts/daemon.sh --foreground &
+_DAEMON_PID=$!
+sleep 5
+kill $_DAEMON_PID 2>/dev/null; wait $_DAEMON_PID 2>/dev/null
+if [ -f "$_DAEMON_TEST_DIR/.sofagent/daemon.json" ]; then
+  echo "✅ daemon CI 模拟通过——daemon.json 正常生成"
+else
+  echo "🔴 daemon CI 模拟失败——daemon.json 未生成（检查 config.sh set -e 崩溃）"
+  rm -rf "$_DAEMON_TEST_DIR"
+  exit 1
+fi
+rm -rf "$_DAEMON_TEST_DIR"
 
 # 全部 12 包 .js.map 泄露检查 + 类型检查 + README 非空检查
 for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test skillopt rules; do
@@ -997,7 +1017,7 @@ bash tools/check-version.sh   # 期望：全绿
 | 八 | 开发日志定稿 + 文档收尾 | 作者 | 否 | **开发日志定稿（含发布检查清单打勾）** + CHANGELOG/ROADMAP 五步/版本号/**发版日期同步**/测试数一致性/**🔴 文档同步闭环（D6 落地：changelog 功能点→项目文档覆盖率对照）**。涉及 CLI 迁移时 shellcheck 在此补跑 |
 | 九 | 工具脚本健康检查 | 作者 | 是（dist 重建 + 脚本覆盖同步 + 过时检查清理） | check-version/bump-version/pre-push-check 覆盖同步 + 过时检查清理 + npm run build |
 | 十 | 确认关口 | AI → **生成发布 prompt 交接** | 否 | git diff 确认 → 检查清单打勾 → 生成发布 prompt 交给负责人（可授权 AI 代执行） |
-| 十一 | 发布（含设备端安装） | **🔴 项目负责人，或授权 AI 代执行** | 否 | 先装本地版本验证 → 再按依赖层分批 npm publish + **🔴 push 前本地模拟 CI（test+build+shellcheck）** → git tag + push + **🔴 push 后等 CI 全绿再继续** → gh release + Skill 分发 → **🔴 设备端安装（全局包 + Skill 同步）**。**网络降级**：tag 推上后 gh release/Skill 分发不依赖 main push |
+| 十一 | 发布（含设备端安装） | **🔴 项目负责人，或授权 AI 代执行** | 否 | 先装本地版本验证 → 再按依赖层分批 npm publish + **🔴 push 前本地模拟 CI（test+build+shellcheck+daemon CI 模拟）** → git tag + push + **🔴 push 后等 CI 全绿再继续** → gh release + Skill 分发 → **🔴 设备端安装（全局包 + Skill 同步）**。**网络降级**：tag 推上后 gh release/Skill 分发不依赖 main push |
 | 十二 | 发布后（含独立审查） | 作者 | 是（步骤 42 开新 session 读 `fresh-eyes-review.md` 做独立审查——零上下文，与下版阶段一 loop 目的不同） | npm 验证 + CI 全绿检查（步骤 37）+ 流程漏洞吸收 + SOP 自我进化 + 生成下一版 prompt（步骤 40）→ 发布后独立审查（步骤 42）→ 自动进入下版本阶段一 |
 
 ---
@@ -1008,6 +1028,8 @@ bash tools/check-version.sh   # 期望：全绿
 
 | 版本 | 教训摘要 | 所在阶段 |
 |------|---------|---------|
+| v1.2.4 | **daemon CI 在无 fde.md 环境静默崩溃**：config.sh `SOFA_RULES_FILE="$(_find_rules)"` 在 CI runner（无任何 fde.md 路径）触发 `set -e` → daemon 在 `_init_json()` 前静默退出 → `daemon.json` 不生成 → CI 验证失败。bash `-x` trace 是唯一排查手段（`set -e` 不打印错误行）。修法：`"$(_find_rules || true)"`；阶段十一推前预检新增 daemon CI 本地模拟（fake HOME 跑 foreground daemon 验证 daemon.json 生成） | 阶段十一 |
+| v1.2.4 | **macOS daemon CI launchd 冲突**：daemon-install.sh 注册的 plist 有 `RunAtLoad=true + KeepAlive=true`，launchd load 时立即启动后台 daemon，该进程不继承 `SOFAGENT_DATA` → 与手动 foreground daemon 竞争写 daemon.json。Linux CI 无此问题（systemd user service 在无 logind session 的 CI 中无法启动）。修法：验证 plist 注册后立即 `launchctl unload`，后续只跑 foreground（与 Linux CI 路径对齐） | 阶段十一 |
 | v1.2.3 | **npm 发包漏 rules 包**：Step 3 验证循环只列 11 个包（漏 `rules`），导致 rules 滞留 1.2.1、其余 11 包 1.2.3 却报「全部一致」= 虚假绿色（v1.1.3 教训的重演）。修法：验证/发布清单必须与 `engine/` 全部非私有包一致，新增包同步追加；步骤 39 数字核查时发现并补发 rules@1.2.3 | 阶段十一 |
 | v1.2.3 | **CI test:count 解析在 ANSI 环境失败**：vitest 在 CI 非 TTY 也输出颜色码，`Tests` 行首 `\033[2m` 使 `grep '^\s*Tests\s+'` 恒不匹配 → TOTAL_TESTS=0 → 报「无法获取实际测试数」。本地非 TTY 不出颜色码无法复现，须 `script -q /dev/null` 强制 TTY 模拟。修法：grep 前必须 `sed $'s/\033\[[0-9;]*m//g'` strip ANSI，优先信任机器可读行 `TOTAL_TESTS=NNN` | 阶段八 |
 | v1.2.3 | **SkillHub 拒绝 .png 文件**：`skillhub publish ./FDE` 含 png 报 400 不允许的文件类型；ClawHub 不受限。修法：mktemp 临时目录排除 `*.png` 后再 publish | 阶段十一 |
