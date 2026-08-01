@@ -14,8 +14,8 @@ engine/hooks/sofagent-load-chain/handler.ts
 # 只忽略仓库根目录的 workflows/，不影响 .github/workflows/
 /workflows/
 
-# IDE / editor —— memory/ 为 WorkBuddy 私有记忆，不进仓库
-.workbuddy/memory/
+# IDE / editor —— WorkBuddy 运行时产物，不进仓库
+.workbuddy/
 .codebuddy/
 .DS_Store
 **/.DS_Store

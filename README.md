@@ -22,7 +22,7 @@
   <a href="#快速开始"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>当前版本：v1.2.4</strong> · 2026-07-30 · Dashboard 产品化 + 编排隔离底座 + Fresh-Eyes 流程化</p>
+<p align="center"><strong>当前版本：v1.2.4</strong> · 2026-08-01 · 知识进化（分层巡检 L1/L2/L3 + skillopt 自动触发 + 失败清单 + 联邦蒸馏 + 进化引擎接通 eval + Dashboard 历史趋势 + Graph Engine Checker）</p>
 
 <p align="center">
   <a href="#这是什么">这是什么</a> · <a href="#sofagent-能帮你做什么">能帮你做什么</a> · <a href="#为什么不是现有工具">为什么不是现有工具</a> · <a href="#快速开始">快速开始</a> · <a href="#延伸阅读">文档</a>
@@ -258,7 +258,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 > [!NOTE]
 > **品牌与描述**：**sofagent** 是产品品牌名；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent（进场梳理工作流、把可自动化环节变成 AI 节点、构建本体、部署专属小模型的常驻硅基员工）。底层技术实现是一套约束 Agent 行为的 Harness 中间件（**能力底座 × 生命周期**双层架构：层 1 一底座·三引擎 + 层 2 激活链四阶段），开源在 `@sofagent/*`。下面这段是给开发者看的。
 
-sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，**能力底座 × 生命周期**双层架构。**层 1 能力底座 = 一底座·三引擎**：一底座 = 约束底座（开工前注入规则）；三引擎 = 审计引擎（21 条规则拦截）+ 回溯引擎（自动快照回滚）+ 进化引擎（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化）。**层 2 生命周期 = 激活链四阶段**（v1.2.5+）：诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，不作为对外引擎宣称。
+sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，**能力底座 × 生命周期**双层架构。**层 1 能力底座 = 一底座·三引擎**：一底座 = 约束底座（开工前注入规则）；三引擎 = 审计引擎（21 条规则拦截）+ 回溯引擎（自动快照回滚）+ 进化引擎（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化）。**层 2 生命周期 = 激活链四阶段**（v1.2.5+）：激活 → 编排 → 执行 → 闭环。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，不作为对外引擎宣称。
 
 <details>
 <summary>📖 一底座·三引擎架构（开发者参考）</summary>
@@ -322,7 +322,7 @@ LOOP 内部使用 LangGraph StateGraph 组装节点流转 + 6 个内置工具（
 | 层 | 机制 | 状态 | 怎么跑 |
 |------|------|:---:|------|
 | **think.md 反思** | 每次审计自动写教训（哪个规则触发了、改了哪些文件、下次注意什么），Agent 下次启动时通过 harness 加载链读到——不犯同样的错 | ✅ 已交付 | 审计引擎每次跑自动触发，无需配置 |
-| **Dream Cycle 知识回灌** | daemon 后台合成概念 → 回灌 skillopt 待优化队列，积累知识供后续优化周期消费 | 🔧 轻量态 | daemon 后台运行，当前为内存态队列（重启即丢），完整持久消费链路计划 v1.2.4 交付 |
+| **Dream Cycle 知识回灌** | daemon 后台合成概念 → 回灌 skillopt 待优化队列，积累知识供后续优化周期消费 | 🔧 轻量态 | daemon 后台运行，当前为内存态队列（重启即丢），完整持久消费链路计划 v1.3.0 交付 |
 | **skillopt Skill 优化** | 失败模式聚类（≥3 次同类失败）→ 自动触发外部 SkillOpt CLI 优化 Skill 质量 → 校验候选（行数 ±30% + 变化率 ≥5%）| ⚠️ 需外部依赖 | 需安装 [Microsoft SkillOpt](https://github.com/microsoft/SkillOpt)（`skillopt-sleep` CLI）。未安装时自动降级为仅记录失败清单，不执行优化 |
 
 </details>

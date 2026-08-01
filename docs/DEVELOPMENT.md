@@ -216,7 +216,7 @@ USB key 不是简单的文件复制——它是一个完整的便携式运行时
 
 CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写入侧）+ `sofagent-daemon start --usb-root`（运行侧）。启动脚本：`daemon/usb/start.command`（macOS）/ `start.sh`（Linux）/ `start.bat`（Windows）。
 
-> 💡 USB 功能的用户侧使用见 [HANDBOOK §USB 烧录](./HANDBOOK.md#usb-烧录三种部署场景全覆盖v118-v120-叙事收口) 和 [FDE/GUIDE.md](../FDE/GUIDE.md)。这里只讲代码层架构。
+> 💡 USB 功能的用户侧使用见 [HANDBOOK §USB 烧录](./HANDBOOK.md#usb-烧录三种部署场景全覆盖v118--v120-叙事收口) 和 [FDE/GUIDE.md](../FDE/GUIDE.md)。这里只讲代码层架构。
 
 ---
 
