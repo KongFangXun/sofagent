@@ -1,171 +1,310 @@
-# FORGE Loop 开发踩坑大全
+# FORGE Sub-Agent 开发参照标准
 
-> **第一次用 LangGraph + 异构 LLM 构建 fresh-eyes-loop 的全部血泪教训。**
+> **开发 FORGE Loop（fresh-eyes / release-gate）过程中沉淀的完整方法论。**
 >
-> 每个坑都来自真实 debug 会话，附根因 + 修复 + 验证。
-> 开发新 loop / 新 sub-agent 前必读——犯过的错不用再犯。
+> 这不是"踩坑参考"，是**开发参照**——下次开发新的 loop 或 sub-agent 时，必须逐条对照本文档执行。
+>
+> 每条标准都来自真实 debug 会话（附 commit hash + 根因 + 代码片段），不是理论推演。
 
 ---
 
-## 一、框架选型：弃用 deepagents，直接用 LangGraph
+## 〇、本文档定位
 
-### 坑 1：createDeepAgent 硬编码注入 FilesystemMiddleware（P0 级阻塞）
+| 属性 | 说明 |
+|------|------|
+| **适用对象** | FORGE 新 loop 开发者、sub-agent 架构设计、driver 编排层开发 |
+| **权威性** | 参照标准——开发前必读，设计决策必须与本文档一致或给出明确理由偏离 |
+| **维护方式** | 每次踩到新坑或做出架构决策后，更新对应章节 + commit hash |
+| **不替代** | LangGraph / deepagents 官方文档——本文档讲"我们怎么用"，不讲"它是什么" |
 
-**现象**：worker 跑到并行工具调用时报 `Multiple errors occurred during superstep N` + `Cannot read properties of undefined (reading 'length')`。DeepSeek 偶然没触发，GLM-5.2 必崩。
+---
 
-**假修复**（commit e4ba836）：`createDeepAgent({ middleware: [] })`——以为这能禁用 FilesystemMiddleware。
+## 一、架构设计原则
 
-**根因**（源码级定位，`deepagents/dist/langsmith-DjCMSywL.js:5879-5895`）：
+### 1.1 框架选型：createReactAgent，禁用 createDeepAgent
+
+**标准**：所有 FORGE loop 的 sub-agent 必须使用 `@langchain/langgraph/prebuilt` 的 `createReactAgent`，禁止使用 `deepagents` 的 `createDeepAgent`。
+
+**决策依据**（commit 9a9c5dc）：
+
+`createDeepAgent` 硬编码注入 `FilesystemMiddleware`，无法通过参数禁用：
 
 ```js
+// deepagents 源码（dist/langsmith-DjCMSywL.js:5879-5895）
 const middleware = [
   todoMiddleware,
-  fsMiddleware,           // ← 硬编码注入，无法通过参数禁用
+  fsMiddleware,           // ← 硬编码注入，无法禁用
   subagentMiddleware,     // ← REQUIRED，也不能排除
-  ...customMiddleware,    // ← 你的 middleware:[] 只追加到这
+  ...customMiddleware,    // ← 你的 middleware:[] 只追加到这里
 ];
+// REQUIRED_MIDDLEWARE_NAMES = Set(["FilesystemMiddleware","SubAgentMiddleware"])
 ```
 
-- `REQUIRED_MIDDLEWARE_NAMES = Set(["FilesystemMiddleware","SubAgentMiddleware"])`
-- `validateExcludedMiddlewareName()` 明确禁止排除这两个
-- `middleware:[]` 的语义是"追加空数组到链尾"，不是"替换整个链"
+FilesystemMiddleware 的 `wrapToolCall` 在**并行工具调用**时触发 `undefined.length` 崩溃。DeepSeek 偶然不触发并行调用所以能跑，GLM-5.2 / Qwen 在 superstep 5 触发即崩。
 
-**最终修复**（commit 9a9c5dc）：用 `@langchain/langgraph/prebuilt` 的 `createReactAgent` 替代 `createDeepAgent`。
+**正确做法**：
 
 ```js
 const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
-const agent = createReactAgent({ llm: model, tools, prompt: systemPrompt });
+const agent = createReactAgent({ llm: model, tools, stateModifier });
 ```
 
-- createReactAgent 是同一套 React 模式（ToolNode + agent loop）
-- 但不带 FilesystemMiddleware——你有自己的 sf_read/sf_write/run_bash
-- DeepSeek 不需要 deepagents 的文件工具抽象层
+createReactAgent 是同一套 React 模式（ToolNode + agent loop），但不带 FilesystemMiddleware——我们有自己的 `sf_read` / `sf_write` / `run_bash`。
 
-**教训**：
-1. 读源码！不要靠猜 API 语义。`middleware:[]` 看起来像"禁用 middleware"，实际是"追加"
-2. required 的东西就是 required，别浪费时间找绕过方法——换框架
-3. "修了但偶尔还崩" = 根因没找对，DeepSeek 跑通只是运气好
+> **教训**：`middleware:[]` 看起来像"禁用 middleware"，实际是"追加空数组"。required 的东西就是 required，读源码确认 API 语义，别靠猜。
 
----
+### 1.2 Driver-Worker 编排模式
 
-### 坑 2：工具格式必须用 `tool()` 创建
+**标准**：Driver 是纯编排层，不做任何语义判断；Worker 在独立子进程中执行单个步骤，零上下文继承。
 
-**现象**：ToolNode 报 `Cannot read properties of undefined (reading 'length')`。
-
-**根因**：dist/tools.js 用手写 ExecutableTool 格式（`{name, description, schema, func}`），但 LangGraph ToolNode 期望 `@langchain/core/tools` 的 `tool()` 函数创建的 DynamicStructuredTool。
-
-**修复**：loadTools() 加转换层，JSON Schema → zod，用 `tool()` 包装：
-
-```js
-const { tool } = require('@langchain/core/tools');
-const { z } = require('zod');
-
-return rawTools.map((rawTool) => {
-  if (rawTool.lc_namespace) return rawTool;  // 已转换过
-
-  const properties = rawTool.schema?.properties || {};
-  const zodShape = {};
-  for (const [key, prop] of Object.entries(properties)) {
-    let zodField;
-    if (prop.type === 'string') zodField = z.string();
-    else if (prop.type === 'number' || prop.type === 'integer') zodField = z.number();
-    else if (prop.type === 'boolean') zodField = z.boolean();
-    else zodField = z.string();
-    if (prop.description) zodField = zodField.describe(prop.description);
-    if (!(rawTool.schema?.required || []).includes(key)) zodField = zodField.optional();
-    zodShape[key] = zodField;
-  }
-
-  return tool(
-    async (input) => await rawTool.func(input),
-    { name: rawTool.name, description: rawTool.description, schema: z.object(zodShape) }
-  );
-});
+```
+Driver（main process）
+  ├── 解析 CLI 参数
+  ├── 建 run 目录 + 初始化可见性
+  ├── 按步骤顺序 spawn Worker 子进程
+  │     ├── Worker ① (独立 node 进程)
+  │     │     ├── 读 prompt → 建 model + tools → createReactAgent → stream
+  │     │     ├── 写产物文件到 roundDir
+  │     │     └── 进程退出（结果通过文件传递，不走 IPC）
+  │     ├── Worker ② ...
+  │     └── ...
+  ├── 解析产物判停止条件（只数标记，不读语义）
+  └── 写 LEDGER + latest.json
 ```
 
----
+**设计原则**：
 
-### 坑 3：工具名 BUILTIN 冲突
+1. **Worker 零上下文**：每个 Worker 是全新 node 进程，不继承前序 Worker 的内存状态。步骤间通过**文件**传递数据（check-a.md → findings.md → result.md）。这避免了 LangGraph state 跨进程序列化的复杂性。
+2. **Driver 不审查**：Driver 只做 spawn + 判停止条件（数 P0/P1 标记）。不读审查内容做语义判断——这是 Agent 的职责。
+3. **文件即接口**：Worker 的输入/输出都是文件路径，Driver 注入到 user message 中。多产物用 `===FILE: filename===` 分隔符切片。
 
-**现象**：工具调用失败，报 tool name collision。
+### 1.3 步骤定义模式
 
-**根因**：`ls` / `read_file` / `write_file` / `edit_file` / `glob` / `grep` 是 deepagents 保留名。
-
-**修复**：自定义工具加前缀——`sf_read` / `sf_write` / `sf_edit`。
-
-**教训**：如果你用自己的工具集替代 deepagents 内置工具（用 createReactAgent 后这不再是问题），仍然要避免和 LangGraph 生态的其他工具撞名。
-
----
-
-## 二、recursionLimit：按步骤区分，不能一刀切
-
-### 坑 4：统一 recursionLimit=150 导致 OOM
-
-**现象**：a-consolidate worker 报 exit 137（SIGKILL / OOM）。
-
-**根因**：recursionLimit=150 对文本处理类步骤太高——消息在内存里累积，Node.js 内存爆炸。
-
-**修复**（commit 3248395）：按步骤类型区分：
+**标准**：每个 loop 的步骤在 `STEPS` 常量中定义，包含 role / prompt / outputs / inputs / maxTokens（可选覆盖）。
 
 ```js
-const STEP_RECURSION_LIMITS = {
-  'a-check':       150,  // 审查类：需要大量读文件+搜索
-  'b-check':       150,
-  'a-consolidate': 50,   // 文本处理类：合并/格式化
-  'b-fix':         60,
-  'a-verify':      50,
+const STEPS = {
+  'a-check':       { role: 'A', prompt: 'a-check.md',       outputs: ['check-a.md'],             inputs: [] },
+  'a-consolidate': { role: 'A', prompt: 'a-consolidate.md', outputs: ['findings.md','result.md'],inputs: ['check-a.md','check-b.md'], maxTokens: 32000 },
+  // ...
 };
 ```
 
-**经验值**：
-- 每次工具调用 = 2 步（model call + tool node）
-- 25 步 ≈ 12 轮工具调用 → 只够简单问答
-- 50 步 ≈ 25 轮工具调用 → 够文本处理
-- 150 步 ≈ 75 轮工具调用 → 够完整代码审查（12 视角）
-- 超过 150 → OOM 风险
+**命名约定**：
+- Prompt 文件：`<role>-<action>.md`（如 `a-check.md`、`b-fix.md`）
+- 产物文件：`<action>-<role>.md`（如 `check-a.md`、`summary.md`）
 
----
+> **坑源**（历史）：曾出现 prompt 名 `b-check.md` 与产物名 `check-b.md` 不一致导致调试困难。统一为上述约定后消除。
 
-## 三、macOS BSD 工具兼容性：LLM 的隐形杀手
+### 1.4 目录架构：每个 loop 自包含
 
-### 坑 5：GLM/DeepSeek 反复用 GNU 语法导致命令报错
+**标准**：每个 loop 的 prompts / specs / runs 独立存放，不共享目录。
 
-**现象**：循环日志里大量 `grep: invalid option -- P`、`sed: illegal option -- -`、`openssl:Error: '--version' is an invalid command`。LLM 浪费 recursionLimit 步数在重试错误命令上。
-
-**根因**：LLM 训练数据以 Linux 为主，默认用 GNU 语法。macOS 是 BSD 工具，行为不同。
-
-**修复**（commit 3248395）：buildSystemPrompt 追加 macOS 约束段：
-
-```js
-const shellConstraints = [
-  '',
-  '## 运行环境约束（macOS BSD 工具）',
-  '',
-  '你在 macOS 上运行，shell 是 BSD 版本，不是 GNU/Linux：',
-  '- grep：不支持 -P（PCRE），用 grep -E 代替',
-  '- sed：不支持 --version/-V；-i 必须带后缀',
-  '- cat：不支持 -A，用 cat -v 或 od -c',
-  '- stat：不支持 --format，用 stat -f',
-  '- 不支持 <(...）process substitution（/bin/sh 没有）',
-  '- 不支持 ${var} 之外的字符串操作',
-  '',
-  '命令报错时，不要反复重试同一命令——换一种方式或跳过。',
-].join('\n');
+```
+FORGE/SKILL/
+├── fresh-eyes-loop/
+│   ├── prompts/           ← prompt 模板
+│   ├── specs/             ← 规格文档
+│   └── runs/              ← 运行产物（gitignore）
+├── release-gate-loop/
+│   ├── prompts/
+│   └── runs/
+└── ...（未来新 loop）
 ```
 
-**验证效果**：加上约束后，a-consolidate 从"40步不收敛"变成"完美产出 49 行 findings.md"。
+`.gitignore` 通配：`FORGE/SKILL/*/runs/`（覆盖所有 loop）。
 
-**教训**：LLM 不知道你的运行环境，必须在 systemPrompt 里显式告诉它。
+> **教训**（commit 8cd7b23）：曾把 `runs/` 从 4 层深挪到 2 层深觉得"好找"。纠正回原位——"找文件方便"是工具层问题（加 `--last-run` 参数），不能为此破坏架构边界。
 
 ---
 
-## 四、失败路径：不能让一个 worker 崩掉整个循环
+## 二、模型配置规范
 
-### 坑 6：a-consolidate 失败 = 整个循环崩溃
+### 2.1 异构模型配置
 
-**现象**：a-consolidate OOM 崩溃后，driver 的 main() catch 虽然写了 ERROR + LOOP_END 事件，但整个循环还是退出了，后面的 b-fix / a-verify 都没跑。
+**标准**：每个角色在 `MODEL_CONFIGS` 中定义完整的模型配置：
 
-**修复**（commit 3248395）：步骤 ③ 加 try/catch 降级：
+```js
+const MODEL_CONFIGS = {
+  A: {
+    baseURL,           // OpenAI 兼容端点
+    model,             // 模型名
+    maxTokens,         // 默认输出 token 上限
+    apiKeyEnv,         // 环境变量名（API Key）
+    specEnv,           // 环境变量名（模型规格）
+    agentSkillPath,    // SKILL.md 路径（systemPrompt 来源）
+    toolsKey,          // dist/tools.js 中的工具集名
+    billing,           // 'subscription' | 'pay-as-you-go'
+  },
+};
+```
+
+**当前配置**（2026-08-06 定稿）：
+
+| 角色 | 模型 | 计费 | 用途 |
+|------|------|------|------|
+| A（审查者） | qwen3.8-max-preview | Token Plan 订阅制 | 审查 / 合并 / 验证 |
+| B（工程师） | qwen3.8-max-preview | Token Plan 订阅制 | 审查 / 修复 |
+| V（验证者） | qwen3.8-max-preview | Token Plan 订阅制 | release-gate 全流程 |
+
+### 2.2 Thinking-only 模型特殊处理
+
+**标准**：Qwen3.8-max-preview 是 thinking-only 模型——始终思考、无法关闭。
+
+**关键约束**：
+1. **不传 thinking/reasoningEffort 参数**：MODEL_CONFIGS 不定义这两个字段，下方条件注入分支天然不触发。不需要也不应该传——Qwen 没有 reasoningEffort（那是 DeepSeek 专属）。
+2. **maxTokens 包含 thinking tokens**：thinking-only 模型的 maxTokens 里包含思考 token，留给实际输出的更少。因此合并步骤需要单独调高 maxTokens（见 §2.3）。
+3. **退化逻辑保留无害**：createModel 的 thinking 退化分支（ChatOpenAI 不接受 thinking 参数时去掉重试）对 Qwen 天然不触发（cfg.thinking 未定义），保留做历史参考。
+
+### 2.3 步骤级 maxTokens 覆盖
+
+**标准**：合并/汇总类步骤的输出量远大于普通步骤，必须在 STEPS 定义中单独配置更高的 maxTokens。
+
+**决策依据**（commit 63b130d）：全局 `maxTokens: 16000` 对 a-consolidate（合并 A/B 两份完整 12 视角报告）不够。thinking-only 模型 16000 里还包含 thinking tokens → 精确顶到上限被截断 → 无法生成合法 result.md → 整轮降级摘要模式 → b-fix 收到"无 finding" → 跳过修复。审出的问题一个都没修。
+
+```js
+const STEPS = {
+  'a-consolidate': { ..., maxTokens: 32000 },  // 合并步骤单独调高
+};
+
+// createModel 支持步骤级覆盖
+async function createModel(role, maxTokensOverride) {
+  const effectiveMaxTokens = maxTokensOverride ?? cfg.maxTokens;
+  if (effectiveMaxTokens) ctorArgs.maxTokens = effectiveMaxTokens;
+}
+
+// runWorker 传入 stepDef.maxTokens
+const model = await createModel(role, stepDef.maxTokens);
+```
+
+**规则**：
+- 普通步骤（审查/修复/验证）：用角色默认 maxTokens（16000）
+- 合并/汇总步骤（a-consolidate / consolidate）：maxTokens = 32000
+- 未来新增合并步骤时，默认配 32000，实测不够再调
+
+### 2.4 计费模式与成本追踪
+
+**标准**：usage.jsonl 记录每次 invoke 的 token 消耗，但成本估算区分计费模式：
+
+- `subscription`（订阅制）：cost_cny = null，不硬凑按量成本。订阅制按周期固定付费，与 token 消耗无关。
+- `pay-as-you-go`（按量）：按 MODEL_PRICING 表估算，标注 `price_confidence: 'estimated'`。
+
+> **重要**：driver 算出的 cost_cny 仅供成本感知（"这轮大概花了多少"），真实账单请到各厂商 API 后台查看。缓存命中率、账号促销、套餐折扣都会影响最终费用。
+
+---
+
+## 三、性能优化基线（v1.2.5+）
+
+### 3.1 上下文管理：stateModifier + 工具输出截断
+
+**标准**：所有 sub-agent 必须实现两层上下文管理，防止"上下文雪球"导致 prompt 膨胀。
+
+**根因数据**（usage.jsonl 实测）：未做裁剪时，fresh-eyes-loop 单轮审查 7-8 分钟。b-check 第一步 prompt_tokens 就 102k，到 b-fix round-4 出现单次 **296k tokens** 的怪物调用。原因：LangGraph ReAct 把所有工具调用的完整输出追加到 messages，从不裁剪。
+
+```
+第 1 次调用：  prompt=15k  → LLM 处理 15k
+第 50 次调用： prompt=50k  → LLM 处理 50k
+第 100 次调用：prompt=90k  → LLM 处理 90k（每次推理时间翻倍）
+```
+
+**第一层：工具输出截断** `truncateToolOutput()`
+
+```js
+const TOOL_OUTPUT_MAX_LINES = 200;
+
+function truncateToolOutput(text, maxLines = TOOL_OUTPUT_MAX_LINES) {
+  const str = String(text);
+  const lines = str.split('\n');
+  if (lines.length <= maxLines) return str;
+  const half = maxLines / 2;
+  return [
+    ...lines.slice(0, half),
+    `\n... [${lines.length - maxLines} lines truncated by FORGE driver — head ${half} + tail ${half}] ...\n`,
+    ...lines.slice(-half),
+  ].join('\n');
+}
+```
+
+在 loadTools 的 tool wrapper 里调用——工具返回超过 200 行只保留头尾各 100 行。
+
+**第二层：上下文窗口裁剪** `stateModifier`
+
+```js
+const MAX_CONTEXT_MESSAGES = 30; // 最后 15 轮工具交互（调用+结果各 1 条）
+const systemMsg = new SystemMessage(systemPrompt);
+
+const agent = createReactAgent({
+  llm: model,
+  tools,
+  stateModifier: (state) => {
+    const messages = state.messages ?? [];
+    if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
+      return [systemMsg, ...messages];
+    }
+    // 保留第一条（原始任务 prompt）+ 最后 N 条（近期工具交互）
+    const first = messages[0];
+    const recent = messages.slice(-MAX_CONTEXT_MESSAGES);
+    return [systemMsg, first, ...recent];
+  },
+});
+```
+
+> **🔴 关键坑：`prompt` 和 `stateModifier` 互斥**。LangGraph 源码 `_getPrompt()` 强校验——同时传两个会直接报错。如果之前用 `prompt: systemPrompt`，迁移到 `stateModifier` 时必须把 systemPrompt 移到 stateModifier 内部以 `SystemMessage` 形式注入。
+
+**实测效果**：prompt tokens 峰值从 296k → 稳定 ~30k。预计总执行时间 **-50~60%**。
+
+### 3.2 Agent 行为约束：SKILL.md 效率铁律
+
+**标准**：每个 sub-agent 的 SKILL.md（systemPrompt 来源）必须包含"效率铁律"段落，明确工具调用次数目标。
+
+**根因数据**（sub-progress.jsonl 实测）：未约束时，A（Reviewer）一轮调了 910 次工具（332 次 sf_read + 563 次 run_bash），B（Engineer）更夸张 1555 次（850 次 bash）。同一文件读 3-4 遍、同一命令反复跑确认——这是 LLM 的通病，不约束就无限探索。
+
+**Reviewer 效率铁律**（目标 50 步以内）：
+- 禁止重复读同一文件——读过的结论直接用
+- 禁止连续跑同一命令——结果不对换方案
+- 批量读取——一步提多个 read_file 调用
+- 先看目录再看细节——不要盲扫
+- 结论优先——发现问题立即记录，不要无限扩展
+
+**Engineer 效率铁律**（目标 30 步以内）：
+- Read → Edit → Test 三步循环，每个修复点走一遍够
+- 精准定位——result.md 给的路径和行号就是围栏
+- 禁止重复读——已读文件结论直接用
+- 验证一次——测试通过就进入下一个
+
+> **核心认知**：LLM 的工具调用行为是可塑的——prompt 里明确说"目标 50 步以内，禁止重复读"，它就会克制。不说就默认无限探索。
+
+### 3.3 流式输出：stream 替代 invoke
+
+**标准**：所有 sub-agent 使用 `agent.stream(streamMode: 'updates')` 替代 `agent.invoke()`，实现实时工具调用进度打印。
+
+**原因**：`invoke()` 阻塞等待完整结果，审查类步骤跑 5-8 分钟用户只能盯着空白。stream 模式实时打印每次工具调用（`→ [step#role] tool #N: name`），体感提升 ×2-3。
+
+> **🔴 stream 迁移铁律见 §五**——格式差异是 P0 级陷阱，必须严格按检查清单执行。
+
+---
+
+## 四、Driver 编排规范
+
+### 4.1 recursionLimit 按步骤区分
+
+**标准**：禁止统一 recursionLimit。按步骤类型区分，经验值如下：
+
+| 步骤类型 | recursionLimit | 理由 |
+|---------|---------------|------|
+| 审查类（a-check/b-check） | 150-200 | 需要大量读文件+搜索，12 视角 |
+| 文本处理类（a-consolidate） | 50-100 | 主要做合并/格式化 |
+| 修复类（b-fix） | 100-150 | 每个修复点 Read→Edit→Test 三步 |
+| 验证类（a-verify） | 50-150 | 简单验证给低，复杂验证给高 |
+| regression（release-gate） | 250-400 | 46 维度 × 批量执行 |
+
+> **坑源**（commit 3248395）：统一 recursionLimit=150 导致 a-consolidate OOM（exit 137）。消息在内存里累积，Node.js 内存爆炸。
+
+**换算公式**：每次工具调用 = 2 步（model call + tool node）。25 步 ≈ 12 轮工具调用 → 只够简单问答。超过 200 → OOM 风险。
+
+### 4.2 失败路径容错
+
+**标准**：每个步骤必须 try/catch + 降级兜底。一个 Worker 崩溃不能拖死整条链。
 
 ```js
 try {
@@ -173,27 +312,19 @@ try {
 } catch (consolidateErr) {
   console.warn(`⚠️ a-consolidate 失败: ${consolidateErr.message}`);
   console.warn(`   降级：直接拼接 check-a + check-b 作为 findings.md`);
-  writeFallbackFindings(roundDir);
+  writeFallbackFindings(roundDir);  // 拼接两份 check 报告的 P0/P1 摘要
 }
 ```
 
-writeFallbackFindings() 直接拼接两份 check 报告作为 findings.md，让循环继续走到 b-fix。
-
-**教训**：
-1. 循环编排必须做容错——一个步骤崩不能拖死整条链
-2. 降级产物质量肯定不如正常流程，但"有"比"没有"强
+**降级原则**：
+1. 降级产物质量肯定不如正常流程，但"有"比"没有"强
+2. 降级时只提取 P0/P1 摘要，不传完整正文（避免下游上下文溢出）
 3. driver 的 catch 块也要写可见性事件（失败路径覆盖）
 
----
-
-### 坑 7：worker catch 块没写可见性事件
-
-**现象**（commit 4a4a143）：worker 失败时 driver 抛 uncaught exception，但 status.json 停在 `round-1-running`，Dashboard 看到"永远在跑"。
-
-**修复**：模块级 `globalVisibility` 引用 + catch 块 emit ERROR + LOOP_END：
+**Driver 致命错误处理**（commit 4a4a143）：
 
 ```js
-let globalVisibility = null;
+let globalVisibility = null;  // 模块级引用
 
 main().catch(err => {
   console.error(`💥 致命错误: ${err.message}`);
@@ -205,279 +336,375 @@ main().catch(err => {
 });
 ```
 
----
+> **坑源**：worker 失败时 driver 抛 uncaught exception，但 status.json 停在 `round-1-running`，Dashboard 看到"永远在跑"。模块级 globalVisibility 引用让 catch 块也能写终态事件。
 
-## 五、目录架构：每个 loop 自包含
+### 4.3 分片执行模式
 
-### 坑 8：runs 目录放错位置（已纠正）
-
-**经历**：一度把 `runs/` 从 `FORGE/SKILL/fresh-eyes-loop/runs/`（4 层深）挪到 `FORGE/runs/`（2 层深），觉得"好找"。
-
-**纠正**（commit 8cd7b23）：迁回原位。原因——未来会有多个 loop（fresh-eyes/releaser/...），最终连成 graph。每个 loop 必须自包含：各自的 prompts/specs/runs 独立。
-
-```
-FORGE/SKILL/
-├── fresh-eyes-loop/
-│   ├── prompts/
-│   ├── specs/
-│   └── runs/            ← 自己的产物自己管
-├── releaser-loop/       ← 未来
-│   └── runs/
-└── ...
-```
-
-`.gitignore` 用通配：`FORGE/SKILL/*/runs/`（覆盖所有 loop）。
-
-**教训**："找文件方便"是工具层问题（加个 `--last-run` 参数就行），不能为此破坏架构边界。
-
----
-
-## 六、异构模型配置：GLM vs DeepSeek 行为差异
-
-### 坑 9：GLM-5.2 和 DeepSeek 的工具调用行为不同
-
-**观察**：
-- DeepSeek 更"保守"——倾向串行调用工具，不太触发并行 bug
-- GLM-5.2 更"激进"——经常同一步并行调多个工具（读文件+搜索+跑测试），容易触发 FilesystemMiddleware 的并行 bug
-- GLM-5.2 在 macOS 上更容易踩 BSD 工具坑（可能训练数据中 Linux 占比更高）
-
-**配置差异**（MODEL_CONFIGS）：
-
-| 维度 | A (GLM-5.2) | B (DeepSeek V4 Pro) |
-|------|-------------|---------------------|
-| baseURL | Coding Plan 端点 | api.deepseek.com |
-| 计费 | 订阅制 | 按量 |
-| 特殊参数 | temperature 1.0 | thinking:{type:enabled} + reasoning_effort:high |
-| token 消耗 | 高（~85万/轮） | 低（~9万/轮） |
-| 适用步骤 | 审查/合并/验证 | 审查/修复 |
-
-**教训**：异构模型不只是"用不同模型"，还要理解它们的工具调用行为差异，据此调 recursionLimit 和 prompt 约束。
-
----
-
-### 坑 10：prompt 文件名和产物名不一致
-
-**经历**：调试时写 `--step a-check` 读 `check-b.md`，实际 prompt 文件叫 `b-check.md`（prompt 名），产物叫 `check-b.md`（产物名）。
-
-**教训**：prompt 和产物命名要统一规则。我们的约定：prompt 用 `<role>-<action>.md`（a-check.md），产物用 `check-<role>.md`（check-a.md）。
-
----
-
-## 七、prompt 设计：12 视角太重，需要分层
-
-### 坑 11：GLM-5.2 跑 12 视角审查需要 7 分钟
-
-**现象**：fresh-eyes 要求 12 个视角逐一审查，每个视角都要读文件+搜索+分析。GLM-5.2 跑 150 步、7 分钟才完成。
-
-**当前状态**：能跑通但偏慢。未来优化方向：
-- 12 视角拆成 3-4 个 sub-agent 并行（每个跑 3-4 个视角）
-- 或者按视角优先级分两轮（先跑 P0 视角，有发现再深入）
-
-**教训**：一个 agent 做太多事 = 慢 + 容易超 recursionLimit。复杂任务要考虑拆分。
-
----
-
-## 附录：完整修复时间线
-
-| 时间 | commit | 问题 | 级别 |
-|------|--------|------|------|
-| 07-25 | 4a4a143 | 失败路径可见性缺口 | P1 |
-| 07-25 | e4ba836 | 工具格式 + middleware:[] 假修复 | P0（假修复） |
-| 07-26 | 9a9c5dc | createDeepAgent → createReactAgent | P0（真修复） |
-| 07-26 | 3248395 | recursionLimit 按步骤 + macOS 约束 + 降级 | P1 |
-| 07-26 | 8cd7b23 | runs 目录迁回原位（架构纠偏） | P2 |
-| 08-01 | 63b130d | 步骤级 maxTokens 覆盖（consolidate 32000） | P1 |
-| 08-01 | da1039a | 四项 ReAct 性能优化 | P1 |
-| 08-01 | a0571a4 | stream 迁移 finalState 数据丢失 | P0 |
-
----
-
-## 八、性能优化：ReAct Agent 慢的四根因（da1039a）
-
-### 坑 12：上下文雪球——工具输出不裁剪导致 prompt 膨胀
-
-**现象**：fresh-eyes-loop 单轮审查 7-8 分钟。usage.jsonl 显示 b-check 第一步 prompt_tokens 就 102k，到 b-fix round-4 出现单次 296k tokens 的怪物调用。
-
-**根因**：LangGraph ReAct 把**所有工具调用的完整输出**追加到 messages 列表，从不裁剪。Agent 跑一次 `npm test` 输出 2000 行，这个完整输出在之后每一次 LLM 调用时都被重新处理：
-
-```
-第 1 次调用：  prompt=15k  → LLM 处理 15k
-第 50 次调用： prompt=50k  → LLM 处理 50k
-第 100 次调用：prompt=90k  → LLM 处理 90k（每次推理时间翻倍）
-```
-
-**修复**（commit da1039a）：两层裁剪——
-
-**第一层：工具输出截断** `truncateToolOutput()`。工具返回超过 200 行只保留头尾各 100 行：
+**标准**：当单个步骤的输入 finding 数量较大（>10 条）时，必须分片执行——每批启动独立 Worker（全新 agent session，零历史消息）。
 
 ```js
-function truncateToolOutput(text, maxLines = 200) {
-  const lines = String(text).split('\n');
-  if (lines.length <= maxLines) return text;
-  const half = maxLines / 2;
-  return [
-    ...lines.slice(0, half),
-    `\n... [${lines.length - maxLines} lines truncated] ...\n`,
-    ...lines.slice(-half),
-  ].join('\n');
+function computeBatchSize(findingCount) {
+  if (findingCount <= 20) return 5;
+  if (findingCount <= 35) return 3;
+  return 2;
 }
 ```
 
-**第二层：上下文窗口裁剪** `stateModifier`。替代 `prompt` 参数（两者互斥），每次 LLM 调用前保留 system + 首条 user + 最后 30 条消息：
+**设计原理**：
+- 每批 Worker 只收到本批的 findings（写入 `result-batch-N.md`）
+- 避免单 session 消息累积导致 recursionLimit 超限或 OOM
+- 单批失败不中断——继续下一批，最后合并所有 batch 的 summary
+
+**防回归检查**：切出 0 条 finding 但 result.md 中 P0+P1 计数 > 0 时报警（finding 标题格式不符的信号）。
+
+### 4.4 停止条件判定
+
+**标准**：Driver 唯一做语义判断的地方——读 findings.md 数 P0/P1/P2 标记，读 result.md 数 FAIL。
 
 ```js
-const agent = createReactAgent({
-  llm: model, tools,
-  // v1.2.5：stateModifier = system prompt 注入 + 上下文裁剪（替代 prompt）
-  stateModifier: (state) => {
-    const messages = state.messages ?? [];
-    if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
-      return [systemMsg, ...messages];
-    }
-    return [systemMsg, messages[0], ...messages.slice(-MAX_CONTEXT_MESSAGES)];
-  },
-});
+function parseStopCondition(roundDir) {
+  // 数 findings.md 里的 P0/P1/P2 标记
+  const p0Matches = text.match(/\bP0\b/g);
+  // ...
+  // 读 result.md verify 列，数 FAIL
+  const hasFail = /\bFAIL\b/i.test(text);
+  const isClean = (p0 === 0 && p1 === 0 && p2 === 0 && !hasFail);
+  return { p0, p1, p2, hasFail, isClean };
+}
 ```
 
-**⚠️ 关键坑：`prompt` 和 `stateModifier` 互斥**。LangGraph 源码 `_getPrompt()` 强校验——同时传两个会直接报错。如果之前用 `prompt: systemPrompt`，迁移到 `stateModifier` 时必须把 systemPrompt 移到 stateModifier 内部以 `SystemMessage` 形式注入。
-
-**实测效果**：prompt tokens 峰值从 296k → 稳定 ~30k。预计总执行时间 **-50~60%**。
-
-**教训**：ReAct Agent 的 messages 列表是只增不减的"雪球"。不做上下文管理，跑 100 步后每次推理要处理 10 倍于初始的 token 量。
+**收敛策略**：
+- 基础：连续 2 轮干净（`cleanStreak >= 2`）
+- 加权收敛（commit #13）：severity 历史足够长时（≥3 轮），用近窗加权平均 + 趋势判断提前收敛
 
 ---
 
-### 坑 13：Agent 过度探索——910 次工具调用里大半是重复
+## 五、stream 迁移规范（P0 级铁律）
 
-**现象**：sub-progress 日志显示 A（Reviewer）一轮调了 910 次工具（332 次 sf_read + 563 次 run_bash），B（Engineer）更夸张 1555 次（850 次 bash）。同一文件读 3-4 遍、同一命令反复跑确认。
+### 5.1 API 返回格式差异
 
-**根因**：Agent 有"再看一遍确认下"的强迫症——这是 LLM 的通病，不是某个模型的问题。不约束就会无限制探索。
-
-**修复**（commit da1039a）：在 SKILL.md（systemPrompt 来源）里加效率铁律——
-
-reviewer 加的目标 50 步以内：
-- 禁止重复读同一文件——读过的结论直接用
-- 禁止连续跑同一命令——结果不对换方案
-- 批量读取——一步提多个 read_file 调用
-- 先看目录再看细节——不要盲扫
-- 结论优先——发现问题立即记录，不要无限扩展
-
-engineer 加的目标 30 步以内：
-- Read → Edit → Test 三步循环，每个修复点走一遍够
-- 精准定位——result.md 给的路径和行号就是围栏
-
-**教训**：LLM 的工具调用行为是可塑的——prompt 里明确说"目标 50 步以内，禁止重复读"，它就会克制。不说就默认无限探索。
-
----
-
-### 坑 14：invoke → stream 迁移的 P0 数据丢失（a0571a4）
-
-**现象**：四项性能优化里把 `agent.invoke()` 改成 `agent.stream(streamMode:'updates')`。语法检查通过、审计全绿。但如果真跑一轮，**所有产物文件内容会变成 `[object Object]`，usage 成本追踪全部丢失**。
-
-**根因**：两个 API 返回格式不同：
+**标准**：从 `invoke()` 迁移到 `stream()` 时，必须处理返回格式差异。
 
 ```
 invoke()  返回 → { messages: [...] }              ← 扁平，下游直接用
 stream()   返回 → { agent: { messages: [...] } }   ← 外面包了一层节点名
 ```
 
-代码里 `finalState = chunk` 直接赋了原始 chunk，没有解包。下游 `extractAgentText(result)` 找 `result.messages` 时拿到 undefined → 穿透到 fallback `String(result)` → 输出 `"[object Object]"`。`extractUsage(result)` 同理 → usage 全记 null。
-
-**修复**（commit a0571a4）：累积所有 chunk 的 delta.messages 到扁平数组，返回 `{ messages: allMessages }` 模拟 invoke 返回格式：
+**正确适配**：累积所有 chunk 的 delta.messages 到扁平数组，返回 `{ messages: allMessages }` 模拟 invoke 返回格式：
 
 ```js
 const invokeAgent = async () => {
   const stream = await agent.stream(
-    { messages: [...] },
+    { messages: [{ role: 'user', content: userMessage }] },
     { recursionLimit, streamMode: 'updates' }
   );
 
   const allMessages = [];
+  let toolCallCount = 0;
   for await (const chunk of stream) {
-    // chunk 是 { nodeName: stateDelta } —— 解包
+    // chunk 是 { nodeName: stateDelta }——解包每个节点的 delta
     for (const [, delta] of Object.entries(chunk)) {
       const msgs = delta?.messages;
       if (!Array.isArray(msgs)) continue;
       for (const msg of msgs) {
         allMessages.push(msg);
-        // 实时打印工具调用...
+        if (msg?._getType?.() === 'ai' && msg.tool_calls?.length > 0) {
+          for (const tc of msg.tool_calls) {
+            toolCallCount++;
+            console.log(`  → [${step}#${role}] tool #${toolCallCount}: ${tc.name}`);
+          }
+        }
       }
     }
   }
-  // 返回扁平结构——与 invoke() 返回格式兼容
-  return { messages: allMessages };
+  return { messages: allMessages };  // 与 invoke() 返回格式兼容
 };
 ```
 
-**为什么语法检查和审计没拦住**：语法检查只验证 JS 可解析，审计检查的是代码安全/规范——都不做 API 返回值结构验证。这个 bug 只有在 agent 实际跑完一轮后写产物时才暴露。
+### 5.2 stream 迁移检查清单
 
-**教训（stream 迁移检查清单）**：
-1. ✅ chunk 结构跟 invoke 返回值一样吗？（查文档或打 `console.log(chunk)` 确认）
-2. ✅ 下游所有消费 result 的函数（extractAgentText、extractUsage）拿到的数据形状对吗？
-3. ✅ 如果不一样，在哪里做格式适配？
+**标准**：做 invoke → stream 改造时，必须逐条确认：
 
-> **核心反思**：只验证了自己改的那一段（上游：工具调用实时打印✅），没验证接口契约（下游：extractAgentText/extractUsage 数据形状❌）。这是典型的"只看了自己那段，没看整条链"。
+- [ ] **chunk 结构确认**：stream(streamMode:'updates') 返回 `{ [nodeName]: delta }` 不是扁平 `{ messages: [] }`。打 `console.log(chunk)` 确认。
+- [ ] **下游消费函数验证**：extractAgentText / extractUsage / 所有读 `result.messages` 的函数，拿到的数据形状对吗？
+- [ ] **格式适配层**：累积 delta.messages 到扁平数组，返回 `{ messages: allMessages }` 兼容 invoke 格式。
+- [ ] **端到端验证**：不只看上游日志（工具调用打印✅），必须检查下游产物文件内容 + usage.jsonl 有正常数据。
+
+> **核心反思**（commit da1039a → a0571a4）：写流式迁移时只测了"工具调用能实时打印"（上游），没测"最终结果能不能被下游正确消费"（下游）。这是典型的"只看了自己那段，没看整条链"。**语法检查和审计都不做 API 返回值结构验证——这个 bug 只有在 agent 实际跑完一轮后写产物时才暴露。**
 
 ---
 
-## 九、步骤级 maxTokens：合并步骤的隐形截断（63b130d）
+## 六、Prompt 设计规范
 
-### 坑 15：a-consolidate maxTokens=16000 被截断导致整轮降级
+### 6.1 macOS BSD 工具约束（必加）
 
-**现象**：fresh-eyes-loop 的 a-consolidate（合并 A/B 双份 12 视角报告）和 release-gate 的 consolidate（合并三份验证报告），completion_tokens 精确顶到 maxTokens=16000 上限被截断 → 无法生成合法 result.md → 整轮降级摘要模式 → b-fix 收到"无 finding" → 跳过修复。审出的问题一个都没修。
+**标准**：所有 sub-agent 的 systemPrompt 末尾必须追加 macOS BSD 工具约束段。
 
-**根因**：全局 `maxTokens: 16000` 对所有步骤共用。Qwen3.8-max-preview 是 thinking-only 模型，16000 里还包含 thinking tokens，留给实际输出的更少。
-
-**修复**（commit 63b130d）：步骤级 maxTokens 覆盖——
+**根因**（commit 3248395）：LLM 训练数据以 Linux 为主，默认用 GNU 语法。macOS 是 BSD 工具，行为不同。不约束就浪费 recursionLimit 步数在重试错误命令上。
 
 ```js
-const STEPS = {
-  // ...
-  'a-consolidate': { ..., maxTokens: 32000 },  // 合并步骤单独调高
-};
-
-// createModel 支持覆盖参数
-async function createModel(role, maxTokensOverride) {
-  const effectiveMaxTokens = maxTokensOverride ?? cfg.maxTokens;
-  if (effectiveMaxTokens) ctorArgs.maxTokens = effectiveMaxTokens;
-}
-
-// runWorker 传入 stepDef.maxTokens
-const model = await createModel(role, stepDef.maxTokens);
+const shellConstraints = [
+  '',
+  '## 🔴 铁律：macOS BSD 工具约束（违反必崩）',
+  '',
+  '你在 macOS 上运行，shell 是 BSD 版本，**不是 GNU/Linux**。以下命令在此环境会报错：',
+  '- `grep -P` → 不存在，用 `grep -E`',
+  '- `sed --version` / `sed -V` → 不存在，`sed -i` 必须带后缀 `sed -i ""`',
+  '- `openssl --version` / `openssl -V` → 用 `openssl version`（无横杠）',
+  '- `cat -A` → 用 `cat -v` 或 `od -c`',
+  '- `stat --format` → 用 `stat -f`',
+  '- `readlink -f` → 用 `python3 -c "import os; print(os.path.realpath(\'...\'))`"',
+  '- `<(...)` process substitution → 不支持',
+  '',
+  '**铁律：命令报错时立即换方案或跳过，禁止用相同语法重试。**',
+].join('\n');
 ```
 
-**教训**：合并/汇总类步骤的输出量远大于普通步骤。如果用 thinking-only 模型，maxTokens 里还有 thinking 的份——给合并步骤单独配更高的 maxTokens。
+> **验证效果**：加上约束后，a-consolidate 从"40步不收敛"变成"完美产出 49 行 findings.md"。
+
+### 6.2 systemPrompt 注入方式
+
+**标准**：systemPrompt 从 SKILL.md 构建（剥离 frontmatter + 提取身份标签），通过 stateModifier 注入。
+
+**禁止**：直接用 `prompt: systemPrompt` 参数（与 stateModifier 互斥，见 §3.1）。
+
+```js
+function buildSystemPrompt(skillPath) {
+  const raw = readFileSync(skillPath, 'utf-8');
+  const parts = raw.split('---');
+  const fm = parts[1];
+  const body = parts.slice(2).join('---').trim();
+  // 提取 frontmatter 的 name / description / triggers 作为身份标签
+  const header = `[Agent: ${val('name')}]\n[描述: ${val('description')}]`;
+  return header + '\n\n' + body + shellConstraints;
+}
+```
+
+### 6.3 纯只读约束（release-gate 特有）
+
+release-gate-loop 的 V 角色 systemPrompt 额外追加纯只读铁律：
+
+```js
+const readOnlyRule = [
+  '',
+  '## 🔴 铁律：纯只读（release-gate-loop 核心约束）',
+  '',
+  '你**不得创建或修改任何代码或文档文件**。你的任务是验证 + 生成报告，不是修复。',
+  '**禁止操作：**',
+  '- 禁止使用 write_file / edit_file 等写工具',
+  '- 禁止 git commit / git push',
+  '- 禁止 npm publish / npm install',
+].join('\n');
+```
 
 ---
 
-## 新 Loop 开发 Checklist
+## 七、工具开发规范
 
-开发新 loop 前，对照这份 checklist 确认：
+### 7.1 工具格式转换
 
-### 基础架构（坑 1-8）
+**标准**：dist/tools.js 中的工具是手写 ExecutableTool 格式（`{name, description, schema, func}`），但 LangGraph ToolNode 期望 `@langchain/core/tools` 的 `tool()` 函数创建的 DynamicStructuredTool。loadTools() 必须加转换层。
 
-- [ ] **用 `createReactAgent`，不用 `createDeepAgent`**
-- [ ] **工具用 `tool()` 创建**，JSON Schema → zod 转换
-- [ ] **工具名加前缀**（避免 BUILTIN 冲突）
-- [ ] **recursionLimit 按步骤区分**（审查类 150-200，处理类 50-100）
-- [ ] **systemPrompt 加 macOS BSD 约束**
-- [ ] **每个步骤 try/catch + 降级兜底**
-- [ ] **driver catch 块写 ERROR + LOOP_END 事件**
-- [ ] **runs 目录放在 loop 自己目录下**（自包含）
-- [ ] **.gitignore 加 `FORGE/SKILL/*/runs/`**
+```js
+const { tool } = require('@langchain/core/tools');
+const { z } = require('zod');
+
+return rawTools.map((rawTool) => {
+  if (rawTool.lc_namespace) return rawTool;  // 已转换过
+
+  // JSON Schema → zod 简化转换
+  const properties = rawTool.schema?.properties || {};
+  const zodShape = {};
+  for (const [key, prop] of Object.entries(properties)) {
+    let zodField;
+    if (prop.type === 'string') zodField = z.string();
+    else if (prop.type === 'number' || prop.type === 'integer') zodField = z.number();
+    else if (prop.type === 'boolean') zodField = z.boolean();
+    else zodField = z.string();
+    if (prop.description) zodField = zodField.describe(prop.description);
+    if (!requiredFields.includes(key)) zodField = zodField.optional();
+    zodShape[key] = zodField;
+  }
+
+  return tool(
+    async (input) => { /* 工具执行 + 截断 + 埋点 */ },
+    { name: rawTool.name, description: rawTool.description, schema: z.object(zodShape) }
+  );
+});
+```
+
+### 7.2 工具命名
+
+**标准**：自定义工具加前缀（如 `sf_`），避免与 LangGraph 生态保留名冲突。
+
+> **坑源**：`ls` / `read_file` / `write_file` / `edit_file` / `glob` / `grep` 是 deepagents 保留名。用 createReactAgent 后不再是硬性问题，但仍建议加前缀避免未来冲突。
+
+### 7.3 工具输出截断埋点
+
+工具 wrapper 内同时做三件事：
+1. 执行原始 func
+2. 截断输出（truncateToolOutput）
+3. 进度埋点（progressMw.wrapToolCall）——观测层，失败不影响工具执行
+
+```js
+const wrappedTool = tool(
+  async (input) => {
+    const execFn = async () => truncateToolOutput(await rawTool.func(input));
+    if (progressMw) {
+      return await progressMw.wrapToolCall({ tool: rawTool.name, args: input }, execFn);
+    }
+    return await execFn();
+  },
+  { name: rawTool.name, description: rawTool.description, schema: z.object(zodShape) }
+);
+```
+
+---
+
+## 八、可观测性规范
+
+### 8.1 两层可观测
+
+| 层级 | 数据源 | 内容 | 文件 |
+|------|--------|------|------|
+| L1 | visibility | 循环级事件（RUN_START / ROUND_START / ROUND_END / STEP_DONE / ERROR / LOOP_END） | progress.jsonl + status.json |
+| L2 | progressMw | 工具调用级事件（start / end + duration）+ 模型推理心跳（llm-chunk） | sub-progress-<role>.jsonl |
+
+**容错原则**：观测层创建/写入失败绝不阻断主流程。与 L1 visibility 容错策略一致。
+
+### 8.2 latest.json 指针
+
+Driver 每轮结束 + 轮内每 30s 刷新 latest.json，Dashboard 据此实时展示进度。
+
+```js
+function updateLatestPointer(runDir, opts) {
+  // 原子写入：先写 .latest.json.tmp，再 rename 到 latest.json
+  writeFileSync(tmpPath, JSON.stringify(payload, null, 2) + '\n', 'utf-8');
+  renameSync(tmpPath, latestPath);
+}
+```
+
+### 8.3 macOS 后台节流防护
+
+**标准**（v1.2.4 P0）：darwin 平台下用 `caffeinate -dimsu -w <pid>` 绑定自身 pid，防止系统空闲休眠与 App Nap 冻结定时器。
+
+> **坑源**（run-03 Round 5）：macOS App Nap / timer throttling 挂起后台 node 进程，driver 零感知冻结 2h44m。
+
+```js
+if (process.platform === 'darwin' && !args.dryRun) {
+  const caf = spawn('caffeinate', ['-dimsu', '-w', String(process.pid)], { stdio: 'ignore' });
+  caf.unref(); // driver 退出即自动解除
+}
+```
+
+---
+
+## 九、Sub-Agent 开发完整检查清单
+
+### 🔰 架构与框架
+
+- [ ] **用 `createReactAgent`，禁用 `createDeepAgent`**（§1.1）
+- [ ] **Driver-Worker 分离**：Driver 纯编排不审查，Worker 零上下文独立进程（§1.2）
+- [ ] **步骤在 STEPS 常量中定义**，含 role / prompt / outputs / inputs / maxTokens（§1.3）
+- [ ] **runs 目录放在 loop 自己目录下**（自包含），`.gitignore` 加 `FORGE/SKILL/*/runs/`（§1.4）
 - [ ] **LEDGER.md 追加一行记录**（git 跟踪）
 
-### 性能优化（坑 12-13，v1.2.5+）
+### 🤖 模型配置
 
-- [ ] **工具输出截断**：loadTools 的 tool wrapper 里加 `truncateToolOutput(text, 200)`——超过 200 行只留头尾
-- [ ] **上下文窗口裁剪**：用 `stateModifier` 替代 `prompt`（互斥！），保留 system + 首条 + 最后 30 条
-- [ ] **stateModifier 内注入 SystemMessage**：`prompt` 和 `stateModifier` 不能同时传，systemPrompt 移到 stateModifier 内
-- [ ] **SKILL.md 加效率铁律**：reviewer 目标 ≤50 步，engineer 目标 ≤30 步，禁止重复读/跑命令
-- [ ] **合并步骤单独配 maxTokens**：a-consolidate / consolidate 等汇总步骤 maxTokens=32000（thinking-only 模型 16000 含 thinking tokens 不够）
+- [ ] **MODEL_CONFIGS 定义完整字段**（baseURL / model / maxTokens / apiKeyEnv / agentSkillPath / toolsKey / billing）（§2.1）
+- [ ] **Thinking-only 模型不传 thinking/reasoningEffort**（§2.2）
+- [ ] **合并/汇总步骤 maxTokens = 32000**（普通步骤用角色默认 16000）（§2.3）
+- [ ] **计费模式标注**（subscription / pay-as-you-go），subscription 的 cost_cny = null（§2.4）
 
-### stream 迁移（坑 14，如做 invoke→stream 改造时必查）
+### ⚡ 性能优化（v1.2.5+）
 
-- [ ] **chunk 格式确认**：stream(streamMode:'updates') 返回 `{ [nodeName]: delta }` 不是扁平 `{ messages: [] }`
-- [ ] **下游消费函数验证**：extractAgentText / extractUsage / 所有读 result.messages 的函数，拿到的数据形状对吗？
-- [ ] **格式适配层**：累积 delta.messages 到扁平数组，返回 `{ messages: allMessages }` 兼容 invoke 格式
-- [ ] **端到端验证**：不只看上游日志（工具调用打印），必须检查下游产物文件内容 + usage.jsonl 有正常数据
+- [ ] **工具输出截断**：loadTools 的 tool wrapper 里加 `truncateToolOutput(text, 200)`（§3.1）
+- [ ] **上下文窗口裁剪**：用 `stateModifier` 替代 `prompt`（互斥！），保留 system + 首条 + 最后 30 条（§3.1）
+- [ ] **stateModifier 内注入 SystemMessage**：`prompt` 和 `stateModifier` 不能同时传（§3.1）
+- [ ] **SKILL.md 加效率铁律**：reviewer 目标 ≤50 步，engineer 目标 ≤30 步（§3.2）
+- [ ] **stream 替代 invoke**：实时打印工具调用进度（§3.3 + §5）
+
+### 🔧 Driver 编排
+
+- [ ] **recursionLimit 按步骤区分**（审查类 150-200，处理类 50-100，修复类 100-150）（§4.1）
+- [ ] **每个步骤 try/catch + 降级兜底**（§4.2）
+- [ ] **driver catch 块写 ERROR + LOOP_END 事件**（模块级 globalVisibility 引用）（§4.2）
+- [ ] **finding >10 条时分片执行**（computeBatchSize 动态分批）（§4.3）
+- [ ] **停止条件只数标记不做语义判断**（§4.4）
+
+### 🔴 stream 迁移（如做 invoke→stream 改造时必查）
+
+- [ ] **chunk 格式确认**：stream 返回 `{ [nodeName]: delta }` 不是扁平 `{ messages: [] }`（§5.1）
+- [ ] **下游消费函数验证**：extractAgentText / extractUsage 拿到的数据形状对吗？（§5.2）
+- [ ] **格式适配层**：累积 delta.messages 到扁平数组，返回 `{ messages: allMessages }`（§5.1）
+- [ ] **端到端验证**：检查下游产物文件内容 + usage.jsonl 有正常数据（§5.2）
+
+### 📝 Prompt 设计
+
+- [ ] **systemPrompt 末尾加 macOS BSD 工具约束段**（§6.1）
+- [ ] **systemPrompt 通过 stateModifier 注入**（不用 prompt 参数）（§6.2）
+- [ ] **纯只读场景加只读铁律**（release-gate 特有）（§6.3）
+
+### 🔧 工具开发
+
+- [ ] **ExecutableTool → DynamicStructuredTool 转换**（loadTools 加 tool() 包装 + zod schema）（§7.1）
+- [ ] **工具名加前缀**（sf_read / sf_write 等）（§7.2）
+- [ ] **工具 wrapper 内做截断 + 埋点**（§7.3）
+
+### 📊 可观测性
+
+- [ ] **L1 visibility + L2 progressMw 双层可观测**（§8.1）
+- [ ] **latest.json 指针每轮 + 轮内 30s 刷新**（原子写入：先 tmp 再 rename）（§8.2）
+- [ ] **darwin 平台绑 caffeinate 防后台节流**（§8.3）
+
+---
+
+## 十、附录
+
+### A. 修复时间线
+
+| 时间 | commit | 问题 | 级别 | 对应标准 |
+|------|--------|------|------|---------|
+| 07-25 | 4a4a143 | 失败路径可见性缺口 | P1 | §4.2 |
+| 07-25 | e4ba836 | middleware:[] 假修复 | P0（假修复） | §1.1 |
+| 07-26 | 9a9c5dc | createDeepAgent → createReactAgent | P0 | §1.1 |
+| 07-26 | 3248395 | recursionLimit 按步骤 + macOS 约束 + 降级 | P1 | §4.1 §6.1 |
+| 07-26 | 8cd7b23 | runs 目录迁回原位（架构纠偏） | P2 | §1.4 |
+| 08-01 | 63b130d | 步骤级 maxTokens 覆盖（consolidate 32000） | P1 | §2.3 |
+| 08-01 | da1039a | 四项 ReAct 性能优化（截断+裁剪+铁律+stream） | P1 | §3.1 §3.2 §3.3 |
+| 08-01 | a0571a4 | stream 迁移 finalState 数据丢失 | P0 | §5 |
+
+### B. 历史坑位索引
+
+以下坑位已整合进上方标准章节，保留索引便于溯源：
+
+| 坑号 | 原标题 | 整合位置 |
+|------|--------|---------|
+| 1 | createDeepAgent 硬编码 FilesystemMiddleware | §1.1 |
+| 2 | 工具格式必须用 tool() 创建 | §7.1 |
+| 3 | 工具名 BUILTIN 冲突 | §7.2 |
+| 4 | 统一 recursionLimit 导致 OOM | §4.1 |
+| 5 | GLM/DeepSeek 反复用 GNU 语法 | §6.1 |
+| 6 | a-consolidate 失败 = 整个循环崩溃 | §4.2 |
+| 7 | worker catch 块没写可见性事件 | §4.2 |
+| 8 | runs 目录放错位置 | §1.4 |
+| 9 | GLM 和 DeepSeek 工具调用行为不同 | §2.1 |
+| 10 | prompt 文件名和产物名不一致 | §1.3 |
+| 11 | 12 视角太重需要分层 | §4.1（recursionLimit）+ §3.2（效率铁律） |
+| 12 | 上下文雪球——工具输出不裁剪 | §3.1 |
+| 13 | Agent 过度探索——910 次工具调用 | §3.2 |
+| 14 | invoke → stream 迁移的 P0 数据丢失 | §5 |
+| 15 | a-consolidate maxTokens 被截断 | §2.3 |
+
+### C. 关键设计决策速查
+
+| 决策 | 选择 | 理由 |
+|------|------|------|
+| Agent 框架 | createReactAgent | createDeepAgent 硬编码 FilesystemMiddleware 不可禁用 |
+| 进程模型 | spawn 子进程（非 in-process） | 零上下文继承，步骤间通过文件传递数据 |
+| 上下文注入 | stateModifier（非 prompt） | 互斥约束 + 可同时做上下文裁剪 |
+| 执行模式 | stream（非 invoke） | 实时进度打印，体感提升 ×2-3 |
+| 输出截断 | 200 行（头尾各 100） | 平衡信息保留与上下文膨胀 |
+| 上下文窗口 | 最后 30 条消息 | 最后 15 轮工具交互，覆盖大多数推理场景 |
+| 合并步骤 maxTokens | 32000 | thinking-only 模型 16000 含 thinking tokens 不够 |
+| 分片 batch | 动态（≤20→5, ≤35→3, >35→2） | finding 越多每批越小，防撞 recursionLimit |

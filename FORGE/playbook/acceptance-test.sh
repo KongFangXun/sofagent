@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一
+# + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
-# 场景数：111 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
-#   口径 = 纯数字编号去重数（scenario 34b/34c/167a/167b 子场景不计入此总数；最大编号 180 为编号上限，非场景数）
+# 场景数：115 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
+#   口径 = 纯数字编号去重数（scenario 34b/34c/167a/167b 子场景不计入此总数；最大编号 184 为编号上限，非场景数）
 #   计数命令（精确口径，排除 echo 探针假阳性）：grep -oE 'scenario [0-9]+ "' FORGE/playbook/acceptance-test.sh | grep -oE '[0-9]+' | sort -un | wc -l
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
@@ -1360,37 +1360,19 @@ grep -q "harness" "$PROJECT_ROOT/docs/ARCHITECTURE.md" || { fail "ARCHITECTURE.m
 $S163_OK && pass "术语统一（WIKI + ARCHITECTURE 含行业标准术语 harness）"
 scenario 164 "文档锚点与跨文件链接可达性——TOC 锚点/代码路径/跨文件引用真实存在"
 S164_OK=true
-# 子项 a: 关键代码路径引用真实存在（v1.2.3 审查教训：文档写死路径漂移）
-for p in install.sh engine/think/src/think-generator.ts; do
-  test -e "$PROJECT_ROOT/$p" || { fail "文档引用的代码路径不存在: $p"; S164_OK=false; }
-done
-# 子项 b: 活跃文档无指向不存在文件的相对链接（排除 archive/node_modules）
+for p in install.sh engine/think/src/think-generator.ts; do test -e "$PROJECT_ROOT/$p" || { fail "文档引用的代码路径不存在: $p"; S164_OK=false; }; done
 node -e "const fs=require('fs'),path=require('path');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=0;for(const fp of files){const c=fs.readFileSync(fp,'utf8'),dir=path.dirname(fp);const re=/\]\(((?:\.\.?\/)?[^)]+\.md(?:#[^)]*)?)\)/g;let m;while((m=re.exec(c))){const href=m[1].split('#')[0];if(href.startsWith('http'))continue;if(!fs.existsSync(path.resolve(dir,href))){console.log('断链:',fp,'->',m[1]);bad++;}}}process.exit(bad?1:0);" >/dev/null 2>&1 || { fail "存在指向不存在文件的跨文档 Markdown 链接"; S164_OK=false; }
 $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接无死链）"
-scenario 165 "关键数字跨文档一致性——测试数 1317 / 规则数 21 / acceptance 111"
+scenario 165 "关键数字跨文档一致性——测试数 1317 / 规则数 21 / acceptance 115"
 S165_OK=true
-# 子项 a: 全 workspace 测试数 1317 在 README/WIKI/evidence 三处一致
-for f in README.md docs/WIKI.md docs/evidence/evidence.md; do
-  grep -q "1317" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 1317（数字漂移）"; S165_OK=false; }
-done
-# 子项 b: 审计规则 21 条在 README/ARCHITECTURE/HANDBOOK 一致
-for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do
-  grep -q "21 条\|21 个\|21 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 21（数字漂移）"; S165_OK=false; }
-done
-# 子项 c: acceptance 场景数 111 在 DEVELOPMENT/LIMITATIONS 一致
-for f in docs/DEVELOPMENT.md LIMITATIONS.md; do
-  grep -q "111" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 111"; S165_OK=false; }
-done
-$S165_OK && pass "关键数字跨文档一致（1317 / 21 / 111）"
+for f in README.md docs/WIKI.md docs/evidence/evidence.md; do grep -q "1317" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 1317（数字漂移）"; S165_OK=false; }; done
+for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do grep -q "21 条\|21 个\|21 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 21（数字漂移）"; S165_OK=false; }; done
+for f in docs/DEVELOPMENT.md LIMITATIONS.md; do grep -q "115" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 115"; S165_OK=false; }; done
+$S165_OK && pass "关键数字跨文档一致（1317 / 21 / 115）"
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
 S166_OK=true
-# 子项 a: 活跃文档 U+FFFD 零污染（v1.2.3 worker 批量修复教训）
 node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}process.exit(bad.length?(console.log('U+FFFD:',bad.join(',')),1):0);" >/dev/null 2>&1 || { fail "活跃文档存在 U+FFFD 编码污染"; S166_OK=false; }
-# 子项 b: 核心文档代码围栏成对闭合（fence 数为偶数）
-for f in docs/changelog/releasing.md README.md docs/ARCHITECTURE.md; do
-  N=$(grep -c '^\`\`\`' "$PROJECT_ROOT/$f" 2>/dev/null || echo 0)
-  [ $((N % 2)) -eq 0 ] || { fail "$f 代码围栏未闭合（$N 个 fence 为奇数）"; S166_OK=false; }
-done
+for f in docs/changelog/releasing.md README.md docs/ARCHITECTURE.md; do N=$(grep -c '^\`\`\`' "$PROJECT_ROOT/$f" 2>/dev/null || echo 0); [ $((N % 2)) -eq 0 ] || { fail "$f 代码围栏未闭合（$N 个 fence 为奇数）"; S166_OK=false; }; done
 $S166_OK && pass "Markdown 格式完整（无 U+FFFD + 代码块闭合）"
 
 # ────────────────────────────────────────────────────────────
@@ -1445,7 +1427,7 @@ $S171_OK && pass "Checker 三节点完整（format/fact/source + makeCheckerNode
 scenario 172 "v1.2.4 P3 S2 — MCP tools/list 返回 22 个 tools"
 # 直接检查 mcp-server.ts 源码中的 tool 注册数（name: 'xxx' 去重计数）
 MCP_REGISTERED=$(grep -oE "name:\s*'[^']+'" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" 2>/dev/null | sort -u | wc -l | tr -d ' ')
-[ "${MCP_REGISTERED:-0}" -ge 22 ] && pass "MCP tools/list 注册数 ≥22（实测 $MCP_REGISTERED）" || fail "MCP tools/list 注册数不足（$MCP_REGISTERED < 22）"
+[ "${MCP_REGISTERED:-0}" -ge 22 ] && pass "MCP tools/list 注册数 ≥22（实测 ${MCP_REGISTERED}）" || fail "MCP tools/list 注册数不足（${MCP_REGISTERED} < 22）"
 
 scenario 173 "v1.2.4 P3 S2 — 新增 6 个 tool handler 文件存在"
 S173_OK=true
@@ -1490,6 +1472,31 @@ MCP_REFS=$(grep -oE '\b(run_audit|get_think|write_think|audit_file|search_knowle
 scenario 180 "v1.2.4 P3 S5 — SKILL/SKILL.md 行数 ≤180"
 SKILL_LINES=$(wc -l < "$PROJECT_ROOT/SKILL/SKILL.md" | tr -d ' ')
 [ "$SKILL_LINES" -le 180 ] && pass "SKILL/SKILL.md 行数达标（$SKILL_LINES ≤ 180）" || fail "SKILL/SKILL.md 行数超标（$SKILL_LINES > 180）"
+
+# v1.2.4 P4 验收场景（FDE 人机分离 + Skill 分包）
+
+scenario 181 "v1.2.4 P4 R1-R2 — FDE/README.md ≤80 行 + FDE/GUIDE.md 存在"
+S181_OK=true
+[ -f "$PROJECT_ROOT/FDE/README.md" ] || { fail "FDE/README.md 不存在"; S181_OK=false; }
+README_LINES=$(wc -l < "$PROJECT_ROOT/FDE/README.md" 2>/dev/null | tr -d ' ')
+[ "$README_LINES" -le 80 ] || { fail "FDE/README.md 行数超标（$README_LINES > 80）"; S181_OK=false; }
+[ -f "$PROJECT_ROOT/FDE/GUIDE.md" ] || { fail "FDE/GUIDE.md 不存在"; S181_OK=false; }
+$S181_OK && pass "FDE 人读门面完整（README $README_LINES 行 + GUIDE 存在）"
+
+scenario 182 "v1.2.4 P4 R3-R4 — SKILL/SKILL.md 主入口 + 子 Skill 01-05 完整"
+S182_OK=true
+SKILL_MD="$PROJECT_ROOT/SKILL/SKILL.md"
+[ -f "$SKILL_MD" ] || { fail "SKILL/SKILL.md 不存在"; S182_OK=false; }
+for f in 01-entry.md 02-discovery.md 03-quantify.md 04-deliver.md 05-exit.md; do
+  [ -f "$PROJECT_ROOT/SKILL/skills/$f" ] || { fail "SKILL/skills/$f 不存在"; S182_OK=false; }
+done
+$S182_OK && pass "SKILL/SKILL.md 主入口 + 5 个子 Skill 完整（01-entry ~ 05-exit）"
+
+scenario 183 "v1.2.4 P4 R5 — FDE/SKILL.md 已删除（内容合并到 SKILL/SKILL.md）"
+[ -f "$PROJECT_ROOT/FDE/SKILL.md" ] && fail "FDE/SKILL.md 应已删除（R5 收敛）" || pass "FDE/SKILL.md 已删除，发布源切换到 ./SKILL"
+
+scenario 184 "v1.2.4 P0 预存 bug — data-sovereignty×3 补入分层执行列表"
+node -e "const m=require('$PROJECT_ROOT/engine/daemon/dist/inspector-layers.js');const l1=m.getLayerInspectorNames('L1');const l2=m.getLayerInspectorNames('L2');const l3=m.getLayerInspectorNames('L3');if(!l1.includes('data-sovereignty-daily')){console.log('L1 缺 data-sovereignty-daily');process.exit(1);}if(!l2.includes('data-sovereignty-weekly')){console.log('L2 缺 data-sovereignty-weekly');process.exit(1);}if(!l3.includes('data-sovereignty-monthly')){console.log('L3 缺 data-sovereignty-monthly');process.exit(1);}console.log('OK');" >/dev/null 2>&1 && pass "data-sovereignty×3 已补入 L1/L2/L3 执行列表" || fail "data-sovereignty×3 未补入分层执行列表（预存 bug 未修复）"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
