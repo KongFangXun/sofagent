@@ -753,7 +753,7 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 | 包 | 职责 | 状态 |
 |---|---|---|
 | audit | 提交时审计引擎，21 条规则（13 默认 + 8 扩展，详见 WIKI.md）硬证据扫描 + 快照/回滚/webhook | ✅ 已实现（504 测试） |
-| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor | ✅ 已实现（153 测试） |
+| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor | ✅ 已实现（172 测试） |
 | harness | 四层约束加载链 `buildConstrainedSystemPrompt()` | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 fs/git 依赖），编排层 tool-call 事前拦截 | ✅ 已实现 |
 | eval | 质量评估引擎：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |

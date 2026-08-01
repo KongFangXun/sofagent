@@ -8,6 +8,7 @@ import { existsSync, readFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import type { DiffFile, AuditResult } from '@sofagent/core';
 import { VERSION, getThinkPath, appendThinkEntry, DATA_DIR, EVAL_LATEST } from '@sofagent/core';
+import type { DataChange, DataAuditResult } from '@sofagent/core';
 /**
  * think.md 条目生成选项
  */
@@ -439,4 +440,56 @@ function isEvalDuplicateEntry(thinkPath: string, testId: string, now: Date): boo
   const expectedHeader = `## ${timestamp} eval 失败: ${testId}`;
 
   return content.includes(expectedHeader);
+}
+
+// ============================================================
+// v1.2.4 P3 S4：数据变更回溯——从结构化 DataChange 生成 think.md 条目
+// ============================================================
+
+/**
+ * 从结构化数据变更生成回溯条目（区别于代码变更的 generateThinkEntry）
+ *
+ * @param changes 数据变更记录数组
+ * @param results 数据审计结果
+ * @param task 任务描述
+ */
+export function generateDataThink(
+  changes: Array<{ type: string; name: string; action: string }>,
+  results: { hasFail: boolean; hasWarn: boolean; failCount: number; warnCount: number; violations: Array<{ rule: string; severity: string; detail: string }> },
+  task?: string,
+): void {
+  if (changes.length === 0) return;
+
+  const now = new Date();
+  const date = now.toISOString().split('T')[0] ?? '';
+  const dataDir = getSofagentDataDir();
+  const thinkPath = getThinkPath(dataDir);
+
+  // 确保 dataDir 存在
+  if (!existsSync(dataDir)) {
+    mkdirSync(dataDir, { recursive: true });
+  }
+
+  const lines: string[] = [];
+  lines.push('');
+  lines.push(`--- ${date} · sofagent-audit v${VERSION} · 数据变更回溯 ---`);
+  lines.push(`任务: ${task ?? '(未指定)'}`);
+  lines.push(`变更: ${changes.length} 项（${changes.map((c) => `${c.action} ${c.type}:${c.name}`).join(', ')}）`);
+
+  if (results.hasFail || results.hasWarn) {
+    lines.push(`审计: ${results.failCount} FAIL / ${results.warnCount} WARN`);
+    for (const v of results.violations) {
+      lines.push(`  - [${v.severity}] ${v.rule}: ${v.detail}`);
+    }
+    if (results.hasFail) {
+      lines.push(`教训: 数据写入被审计拦截，需修正后重试`);
+    } else {
+      lines.push(`教训: 数据写入有警告，关注关联完整性和格式一致性`);
+    }
+  } else {
+    lines.push(`审计: ✅ 全部数据规则通过`);
+  }
+
+  lines.push('');
+  appendThinkEntry(thinkPath, lines.join('\n') + '\n');
 }

@@ -57,3 +57,7 @@ export { runConflictCheckCli, parseConflictCheckArgs } from './cli/conflict-chec
 export type { ConflictCheckArgs, ConflictCheckResult, ConflictCheckFn } from './cli/conflict-check';
 export { runFederationDistillCli, parseFederationDistillArgs } from './cli/federation-distill';
 export type { FederationDistillArgs, DistillResult, MergeFn } from './cli/federation-distill';
+
+// ── webhook 推送（v1.2.4 P3 S5：供 @sofagent/mcp L4 双通道使用） ──
+export { pushAuditResult } from './webhook';
+export type { WebhookPayload, WebhookPlatform } from './webhook';
