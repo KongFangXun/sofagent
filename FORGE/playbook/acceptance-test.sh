@@ -1443,7 +1443,6 @@ $S171_OK && pass "Checker 三节点完整（format/fact/source + makeCheckerNode
 # ============================================================
 
 scenario 172 "v1.2.4 P3 S2 — MCP tools/list 返回 22 个 tools"
-TOOL_COUNT=$(node -e "const s=require('$PROJECT_ROOT/engine/mcp/dist/mcp-server.js'); " 2>/dev/null || true)
 # 直接检查 mcp-server.ts 源码中的 tool 注册数
 MCP_TOOLS=$(grep -c "name: '" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" 2>/dev/null || echo 0)
 # 更精确：检查 handleToolsList 中的 tool 定义
