@@ -300,7 +300,7 @@ node dist/index.js --diff HEAD~1..HEAD --task "修复登录页 bug"
 
 exit code：0 = 通过 / 1 = 有警告 / 2 = 有违规。零 Agent 依赖——看的是已发生的 git diff。
 
-> 审计规则的完整实现（绿灯路径检测、架构漂移检测、状态账本）见 [DEVELOPMENT §八 提交时审计](./DEVELOPMENT.md#八提交时审计--文件系统审计)。
+> 审计规则的完整实现（绿灯路径检测、架构漂移检测、状态账本）见 [DEVELOPMENT §八 提交时审计](./DEVELOPMENT.md#八提交时审计-文件系统审计)。
 
 ### daemon 后台进程
 
