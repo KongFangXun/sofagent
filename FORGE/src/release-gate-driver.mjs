@@ -523,19 +523,25 @@ async function runWorker(step, runDir, target) {
   const recursionLimit = STEP_RECURSION_LIMITS[step] ?? 50;
 
   // v1.2.5：流式执行——实时打印工具调用
+  //
+  // 🔴 stream 数据结构适配（P0 bugfix da1039a → 本 commit）：
+  //   agent.stream(streamMode:'updates') 的 chunk 是 { [nodeName]: stateDelta }，
+  //   不是 invoke() 的扁平 { messages: [...] }。累积 delta.messages 到扁平数组，
+  //   返回格式兼容 invoke()，确保下游 extractAgentText / extractUsage 正常工作。
   const invokeAgent = async () => {
     const stream = await agent.stream(
       { messages: [{ role: 'user', content: userMessage }] },
       { recursionLimit, streamMode: 'updates' }
     );
 
-    let finalState = null;
+    const allMessages = [];
     let toolCallCount = 0;
     for await (const chunk of stream) {
       for (const [, delta] of Object.entries(chunk)) {
         const msgs = delta?.messages;
         if (!Array.isArray(msgs)) continue;
         for (const msg of msgs) {
+          allMessages.push(msg);
           if (msg?._getType?.() === 'ai' && msg.tool_calls?.length > 0) {
             for (const tc of msg.tool_calls) {
               toolCallCount++;
@@ -544,9 +550,8 @@ async function runWorker(step, runDir, target) {
           }
         }
       }
-      finalState = chunk;
     }
-    return finalState;
+    return { messages: allMessages };
   };
 
   const result = progressMw
