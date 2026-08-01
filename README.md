@@ -22,7 +22,7 @@
   <a href="#快速开始"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>当前版本：v1.2.4</strong> · 2026-08-01 · 知识进化（分层巡检 L1/L2/L3 + skillopt 自动触发 + 失败清单 + 联邦蒸馏 + 进化引擎接通 eval + Dashboard 历史趋势 + Graph Engine Checker）</p>
+<p align="center"><strong>当前版本：v1.2.4</strong> · 2026-08-01 · 知识进化（分层巡检 L1/L2/L3 + skillopt 自动触发 + 失败清单 + 联邦蒸馏 + 进化引擎接通 eval + Dashboard 历史趋势）</p>
 
 <p align="center">
   <a href="#这是什么">这是什么</a> · <a href="#sofagent-能帮你做什么">能帮你做什么</a> · <a href="#为什么不是现有工具">为什么不是现有工具</a> · <a href="#快速开始">快速开始</a> · <a href="#延伸阅读">文档</a>
@@ -297,7 +297,7 @@ LOOP 内部使用 LangGraph StateGraph 组装节点流转 + 6 个内置工具（
 
 ### 🔍 审计引擎
 
-21 条规则中 16 条纯 git-diff（不依赖 Agent 配合），4 条混合（A7/A8/A14/A15 需 Agent 日志），1 条文件系统（A17 异常批量变更）。v1.0.8+ 内嵌 isomorphic-git + daemon 文件监控，**不需要 git commit 也能审计**。自 v1.1.8 起加入 Prompt 注入防护（A9 扩展）+ 联邦查询加密，审计能力从本地扩展到跨设备。全 workspace 测试覆盖 **1317 测试 / 12 包**。
+21 条规则中 16 条纯 git-diff（不依赖 Agent 配合），4 条混合（A7/A8/A14/A15 需 Agent 日志），1 条文件系统（A17 异常批量变更）。v1.0.8+ 内嵌 isomorphic-git + daemon 文件监控，**不需要 git commit 也能审计**。自 v1.1.8 起加入 Prompt 注入防护（A9 扩展）+ 联邦查询加密，审计能力从本地扩展到跨设备。全 workspace 测试覆盖 **1317 测试 / 13 包**。
 
 **默认规则（13 条，装上就生效）**：
 

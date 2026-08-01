@@ -101,9 +101,9 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 | 维度 | v1.1.4（基础检测，无签名） | v1.1.5+（HMAC 签名，当前） |
 |------|:--|:--|
 | 检测条件 | USB 卷标 = `SOFAGENT` + 存在 `federation.json` | 同左 + HMAC 签名校验（`.sig` sidecar） |
-| 配置应用 | 写入 `~/.sofagent/federation.json`，**不自动分发到各目录**（applyFederation 未实现） | 自动 nodes → orchestrator/nodes/、policies → audit/policies/（v1.1.6+ 计划） |
+| 配置应用 | 写入 `~/.sofagent/federation.json`，**不自动分发到各目录**（applyFederation 未实现） | 自动 nodes → orchestrator/nodes/、policies → audit/policies/（✅ v1.1.5 已落地，`applyFederation()`） |
 | 注入风险 | 🔴 **任何人制作的 SOFAGENT 卷标 U 盘可注入任意 federation 配置** | ✅ 签名不匹配则拒绝导入 |
-| Schema 校验 | ❌ JSON.parse 后直接序列化写入，不校验字段 | ✅ 按 FederationConfig schema 校验（v1.1.6+ 计划） |
+| Schema 校验 | ❌ JSON.parse 后直接序列化写入，不校验字段 | ✅ 按 FederationConfig schema 校验（✅ v1.1.5 已落地，`validateFederationSchema()`） |
 
 **企业部署建议（v1.1.6）**：
 - 不要在共享/公共设备上启用 USB federation 自动检测

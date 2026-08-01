@@ -109,8 +109,8 @@ export function extractLogEntries(dataBase?: string): AuditEntry[] {
           result,
           timestamp,
         });
-      } catch {
-        // 跳过无法解析的文件
+      } catch (err) {
+        process.stderr.write(`[sofagent-audit] warn: 跳过无法解析的日志文件 ${filePath}: ${err instanceof Error ? err.message : String(err)}\n`);
       }
     }
   }

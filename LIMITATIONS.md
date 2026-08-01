@@ -37,7 +37,7 @@
 | 6 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#单平台用户建议)
 | 7 | **FDE 交付物激活断裂带（v1.2.5 解决中）**——FDE 诊断交付的 ontology + workflow.yml + skills/ 是静态文件，企业 IT 拿到不知道怎么跑起来，交付物与"工作流自动运行"之间有断裂带。激活链（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）正在解决，v1.2.5 起逐个版本落地。 | [十二、FDE 交付物激活断裂带（v1.2.5+ 解决中）](#十二fde-交付物激活断裂带v125-解决中) |
 
-> ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。
+> ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。config.yml 有两个有效位置——项目级 `${cwd}/.sofagent/config.yml` 和全局级 `~/.sofagent/config.yml`（config-loader.ts 三级 fallback，项目级优先）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 ~/.sofagent/config.yml` 和 `chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。
 >
 > **建议缓解措施**：
 > 1. **CI 侧兜底（推荐）**：在 CI pipeline 中加入 `sofagent-audit --diff HEAD~1..HEAD`，
@@ -50,7 +50,7 @@
 >    ```
 > 2. **定期自动 doctor**：配置 cron job 每周运行 `sofagent-core --doctor`，
 >    并将结果发送到监控频道，检测 hooks 是否被意外移除。
-> 3. **推荐操作**：安装后立即执行 `chmod 400 .sofagent/config.yml` 使文件只读（需 root 或当前用户），
+> 3. **推荐操作**：安装后立即执行 `chmod 400 ~/.sofagent/config.yml`（全局级）和 `chmod 400 .sofagent/config.yml`（项目级）使文件只读（需 root 或当前用户），
 >    阻止 Agent 写入篡改。CI 中可增加 `sofagent-audit --diff` 校验步骤做双重保障。
 
 ### 本地开发紧急缓解措施

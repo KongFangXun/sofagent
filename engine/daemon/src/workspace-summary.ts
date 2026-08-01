@@ -173,8 +173,8 @@ export function readWorkspaceChanges(outputPath?: string): WorkspaceChangeRecord
     if (!trimmed) continue;
     try {
       records.push(JSON.parse(trimmed) as WorkspaceChangeRecord);
-    } catch {
-      // 跳过坏行
+    } catch (err) {
+      process.stderr.write(`[sofagent-daemon] warn: 跳过无法解析的 workspace-changes 行: ${err instanceof Error ? err.message : String(err)}\n`);
     }
   }
   return records;
@@ -213,7 +213,8 @@ export function readLatestCheckpointId(checkpointDir: string): string | null {
     files = readdirSync(checkpointDir)
       .filter((f) => f.startsWith('checkpoint-') && f.endsWith('.json'))
       .sort();
-  } catch {
+  } catch (err) {
+    process.stderr.write(`[sofagent-daemon] warn: 读取 checkpoint 目录失败 ${checkpointDir}: ${err instanceof Error ? err.message : String(err)}\n`);
     return null;
   }
   const latest = files[files.length - 1];
@@ -221,7 +222,8 @@ export function readLatestCheckpointId(checkpointDir: string): string | null {
   try {
     const record = JSON.parse(readFileSync(join(checkpointDir, latest), 'utf-8')) as { checkpointId?: unknown };
     return typeof record.checkpointId === 'string' && record.checkpointId ? record.checkpointId : null;
-  } catch {
+  } catch (err) {
+    process.stderr.write(`[sofagent-daemon] warn: 解析 checkpoint 文件失败 ${latest}: ${err instanceof Error ? err.message : String(err)}\n`);
     return null;
   }
 }
@@ -232,7 +234,8 @@ function readSummaryState(statePath: string): WorkspaceSummaryState | null {
   try {
     const parsed = JSON.parse(readFileSync(statePath, 'utf-8')) as Partial<WorkspaceSummaryState>;
     return typeof parsed.lastCheckpointId === 'string' ? (parsed as WorkspaceSummaryState) : null;
-  } catch {
+  } catch (err) {
+    process.stderr.write(`[sofagent-daemon] warn: 读取 workspace-summary 状态文件失败 ${statePath}: ${err instanceof Error ? err.message : String(err)}\n`);
     return null;
   }
 }
@@ -243,8 +246,9 @@ function writeSummaryState(statePath: string, checkpointId: string): void {
     mkdirSync(dirname(statePath), { recursive: true });
     const state: WorkspaceSummaryState = { lastCheckpointId: checkpointId, updatedAt: new Date().toISOString() };
     writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf-8');
-  } catch {
-    // 状态写入失败静默——下次巡检会重复判定一次（幂等，不丢数据）
+  } catch (err) {
+    // 状态写入失败不阻断——下次巡检会重复判定一次（幂等，不丢数据）
+    process.stderr.write(`[sofagent-daemon] warn: workspace-summary 状态写入失败 ${statePath}: ${err instanceof Error ? err.message : String(err)}\n`);
   }
 }
 
@@ -271,8 +275,9 @@ export function runWorkspaceSummary(opts: WorkspaceSummaryOptions = {}): Workspa
   let changes = { created: [] as string[], modified: [] as string[], deleted: [] as string[] };
   try {
     changes = collectWorkspaceChanges(projectDir);
-  } catch {
+  } catch (err) {
     // 非 git 环境——记录空清单（runId 追溯性保留），不 throw
+    process.stderr.write(`[sofagent-daemon] warn: workspace 变更采集失败（非 git 环境？）: ${err instanceof Error ? err.message : String(err)}\n`);
   }
 
   const record: WorkspaceChangeRecord = {
@@ -283,8 +288,9 @@ export function runWorkspaceSummary(opts: WorkspaceSummaryOptions = {}): Workspa
 
   try {
     appendWorkspaceChange(record, resolveWorkspaceChangesPath(opts.outputPath));
-  } catch {
-    // jsonl 写入失败静默——观测通道不阻断巡检
+  } catch (err) {
+    // jsonl 写入失败不阻断——观测通道不阻断巡检
+    process.stderr.write(`[sofagent-daemon] warn: workspace-changes.jsonl 写入失败: ${err instanceof Error ? err.message : String(err)}\n`);
     return null;
   }
   writeSummaryState(statePath, latestId);
