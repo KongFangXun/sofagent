@@ -23,7 +23,7 @@ import { spawn } from 'child_process';
 import { createRequire } from 'module';
 import {
   readFileSync, writeFileSync, mkdirSync, existsSync,
-  appendFileSync, readdirSync, renameSync,
+  appendFileSync, readdirSync, renameSync, statSync,
 } from 'fs';
 import { join, resolve, dirname, relative, sep } from 'path';
 import { fileURLToPath } from 'url';
@@ -102,7 +102,11 @@ const MODEL_CONFIGS = {
 // 数值关系：50(劝) → 60(拽) → 130(杀)，L2 和 L3 之间留 10 superstep 稳定窗口。
 const TOOL_SOFT_LIMIT  = 50;  // stateModifier：超此值注入"立即写报告"HumanMessage
 const TOOL_HARD_LIMIT  = 60;  // stream loop：超此值进入"写报告窗口"（不再 break）
-const TOOL_GRACE_STEPS = 5;   // L2 触发后给模型的写报告窗口（superstep 数）
+// 审查类步骤（a-check/b-check）探索深度高（12 视角 × 30-60 文件），需要更长切换时间
+// 修复/验证类步骤（b-fix/a-verify）是有限任务，5 步够用
+// run-07 教训：统一 5 步在审查步骤上 0% 成功率，改 10 步后审查步骤能完成写报告
+const REVIEW_GRACE_STEPS  = 10;  // 审查步骤写报告窗口（superstep 数）
+const DEFAULT_GRACE_STEPS = 5;   // 其他步骤写报告窗口（superstep 数）
 
 // ─── 模型定价（usage.jsonl 成本估算基础）─────────────────────
 // 单位：CNY per 1M tokens（百万 token 计价）
@@ -767,6 +771,19 @@ async function runWorker(step, roundDir, target) {
   //   下游 extractAgentText / extractUsage 找 result.messages 拿到 undefined。
   //
   //   正确做法：累积所有 chunk 的 delta.messages 到一个扁平数组，模拟 invoke 返回格式。
+
+  // P2-1：报告质量门控——非空 content 不一定是报告（可能是中间思考碎片）
+  // run-07 Round 5：155 字节一句话（"Rule count checks out. Now let me verify..."）
+  // 在窗口期被当"报告捕获" → gotReport=true → 流提前结束。
+  // 真报告至少含 1 个 ## 标题行 或 ≥ 500 字符。
+  const REPORT_MIN_CHARS = 500;
+  function isReportText(text) {
+    if (!text || !text.trim()) return false;
+    if (text.length >= REPORT_MIN_CHARS) return true;       // 长度够
+    if (/^#{1,3}\s/m.test(text)) return true;               // 含 ## 标题行
+    return false;
+  }
+
   const invokeAgent = async () => {
     const stream = await agent.stream(
       { messages: [{ role: 'user', content: userMessage }] },
@@ -778,7 +795,7 @@ async function runWorker(step, roundDir, target) {
     let graceStepCount = 0;        // L2 写报告窗口的 superstep 计数
     let inGraceWindow = false;     // 是否在写报告窗口期
     // v1.2.6：stream 层硬熔断——stateModifier 软熔断(50)兜底。
-    // v1.2.7：L2 改两阶段——撞硬上限后进入写报告窗口(TOOL_GRACE_STEPS 步)，
+    // v1.2.7：L2 改两阶段——撞硬上限后进入写报告窗口(graceSteps 步)，
     // 不立即 break。窗口期内 stateModifier 每步注入更强的写报告指令，
     // 如果模型输出了非空 content（写报告了）则正常结束；
     // 窗口耗尽模型仍在调工具才真正 hardBreak。
@@ -787,6 +804,14 @@ async function runWorker(step, roundDir, target) {
     // 都没有 → throw → 产物全部丢失。
     let hardBreak = false;
     let gotReport = false;         // 模型在窗口期输出了文本
+
+    // P1-1：窗口步数按步骤类型区分——审查类(a-check/b-check)探索深度高，
+    // 需要更多步切换到"报告模式"；修复/验证类是有限任务，5 步够用。
+    // run-07 教训：统一 5 步在审查步骤上 0% 成功率。
+    const graceSteps = (step === 'a-check' || step === 'b-check')
+      ? REVIEW_GRACE_STEPS
+      : DEFAULT_GRACE_STEPS;
+
     for await (const chunk of stream) {
       // chunk 是 { nodeName: stateDelta }——解包每个节点的 delta
       for (const [, delta] of Object.entries(chunk)) {
@@ -800,7 +825,10 @@ async function runWorker(step, roundDir, target) {
             let textContent = '';
             if (typeof c === 'string') textContent = c;
             else if (Array.isArray(c)) textContent = c.map(x => typeof x === 'string' ? x : x?.text ?? '').join('');
-            if (textContent.trim() && inGraceWindow) {
+            // P2-1：报告质量门控——非空 content 不一定是报告（可能是中间思考碎片）
+            // run-07 Round 5：155 字节一句话（"Rule count checks out. Now let me verify..."）
+            // 被当"报告捕获"。真报告至少含 ## 标题行 或 ≥ 500 字符。
+            if (inGraceWindow && isReportText(textContent)) {
               gotReport = true;
               console.log(`  ✅ [${step}#${role}] 写报告窗口内捕获到报告文本（${textContent.length} 字符）`);
             }
@@ -810,21 +838,23 @@ async function runWorker(step, roundDir, target) {
             for (const tc of msg.tool_calls) {
               toolCallCount++;
               console.log(`  → [${step}#${role}] tool #${toolCallCount}: ${tc.name}`);
-              // L2 硬熔断：进入写报告窗口（不立即 break）
-              if (toolCallCount >= TOOL_HARD_LIMIT && !inGraceWindow && !hardBreak) {
-                inGraceWindow = true;
-                console.warn(`  ⏳ [${step}#${role}] 工具调用 ${toolCallCount} 次撞硬上限，进入 ${TOOL_GRACE_STEPS} 步写报告窗口`);
-              }
             }
           }
         }
       }
+      // P2-2：撞硬上限日志提前到 grace window 检查处——确保日志时序正确
+      // run-07 教训：原代码在工具计数循环内设置 inGraceWindow，日志可能与
+      // gotReport 日志交错，导致"报告已捕获"出现在"撞硬上限"之前。
+      if (toolCallCount >= TOOL_HARD_LIMIT && !inGraceWindow && !hardBreak) {
+        inGraceWindow = true;
+        console.warn(`  ⏳ [${step}#${role}] 工具调用 ${toolCallCount} 次撞硬上限，进入 ${graceSteps} 步写报告窗口`);
+      }
       // 写报告窗口期检查
       if (inGraceWindow && !gotReport && !hardBreak) {
         graceStepCount++;
-        if (graceStepCount >= TOOL_GRACE_STEPS) {
+        if (graceStepCount >= graceSteps) {
           hardBreak = true;
-          console.warn(`  🛑 [${step}#${role}] 写报告窗口耗尽（${TOOL_GRACE_STEPS} 步），模型仍未输出文本，强制中断`);
+          console.warn(`  🛑 [${step}#${role}] 写报告窗口耗尽（${graceSteps} 步），模型仍未输出文本，强制中断`);
           break;
         }
       }
@@ -1406,6 +1436,7 @@ function spawnWorker(step, roundDir, target, round, options = {}) {
       // Capture stderr to detect StallError marker from worker process
       let stderrBuf = '';
       const child = spawn(process.execPath, [
+        '--max-old-space-size=1536',   // run-07 教训：768MB 默认在 6 轮长循环中不够，主进程静默 OOM
         __filename,
         '--worker',
         '--step', step,
@@ -1623,6 +1654,22 @@ function parseStopCondition(roundDir) {
       }
     }
     if (isDegraded) break;
+  }
+
+  // P1-2：碎片内容假阳性干净——check 产物最小内容阈值检查
+  // run-07 教训：兜底合成产出的碎片内容（155 字节一句话中间思考）
+  // 不含 P0/P1 标记也不含降级标记词 → 数标记得到 0/0/0 → isClean=true → 假阳性。
+  // 补充检查：check 产物太短说明审查不完整，强制不干净。
+  const CHECK_MIN_BYTES = 500;  // 审查报告至少 500 字节才算真实产物
+  for (const checkFile of ['check-a.md', 'check-b.md']) {
+    const checkPath = join(roundDir, checkFile);
+    if (existsSync(checkPath)) {
+      const stat = statSync(checkPath);
+      if (stat.size < CHECK_MIN_BYTES) {
+        isDegraded = true;
+        break;
+      }
+    }
   }
 
   // 干净轮 = 无 P0 无 P1 无 P2 闭环失败 且 非降级产物
