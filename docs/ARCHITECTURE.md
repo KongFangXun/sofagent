@@ -1,7 +1,7 @@
 # sofagent Architecture
 
 > 设计决策记录——从为什么存在、一底座·三引擎如何协作，到每个关键决策的工程理由。
-> v1.2.4 · 2026-08-02（UTC）· 孔放勋
+> v1.2.5 · 2026-08-02（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -93,7 +93,7 @@ graph TD
 - [四、核心设计决策](#四核心设计决策)
 - [五、激活链架构（v1.2.5+ 规划中）](#五激活链架构v125-规划中)
 - [六、已知局限与未来方向](#六已知局限与未来方向)
-- [七、行业框架对齐](./ARCHITECTURE.md#七行业框架对齐研究如何印证-sofagent-架构2026-07-研读)
+- [七、架构设计决策的行业锚点](#七架构设计决策的行业锚点)
 
 ---
 
@@ -928,17 +928,11 @@ audit:
 
 ---
 
-## 七、行业框架对齐：研究如何印证 sofagent 架构（2026-07 研读）
+## 七、架构设计决策的行业锚点
 
-> 📖 **源声明**：本节及正文多处引用的 `[行业笔记]` 均指同一来源——**31 篇行业笔记跨批研读（2026-07-20）**，涵盖 Palantir Ontology / Action Type / AIP / Onyx / a16z / 行业参考 blog 等行业框架与研报。以下各处仅用 `[行业笔记]` 简短引用，不再逐条重复完整来源。
+> 本节保留 sofagent 自有的架构设计决策（借行业术语表达），纯行业印证分析（Palantir OAG 五层映射 / Apache Ossie / Onyx / AOS / 脑力自动化四阶段 / 行业五层骨架映射等）已移至 [VALIDATION §十二](./VALIDATION.md)。
 
-> 这一节把 31 篇研读里与 sofagent 架构**结构上对齐**的框架（Palantir Ontology / Action Type / AIP / Onyx）逐条印证——不是发明新架构，是验证已有架构选型的行业合理性。
-
-### Ontology = 共同理解层 / 翻译层（A1）
-
-Ontology 的本质是「**翻译而非统一**」——在多个异构 Agent / 系统之上建立共同参照系，让彼此能对话，同时保留各系统内部语境独立；它 ≠ 数据模型 / ≠ ER 图 / ≠ 知识图谱（知识图谱只能查不能操作，Ontology 还能在对象上**触发操作**）。核心关键词是「操作」而非「数据」。保留现有「本体即本体结构」比喻，新增：「本体 = 运行时语义层」——它是在 Agent 跑任务时实时提供「谁依赖谁、谁能看什么、能触发什么」的语义上下文，是介于模型与业务系统之间的**活的中间层**。
-
-> 📖 [行业笔记]
+> 📖 **源声明**：本节引用的 `[行业笔记]` 均指同一来源——**31 篇行业笔记跨批研读（2026-07-20）**，涵盖 Palantir Ontology / Action Type / AIP / Onyx / a16z / 行业参考 blog 等行业框架与研报。
 
 ### 本体结构 = GitHub 生长树（核心设计原则）
 
@@ -1000,94 +994,3 @@ Action Type = 一个**有身份的变更请求**：携带参数 + 校验 + 权�
 这三条注入 sofagent 的 Policy 层，避免「语义层想管一切」导致的权限失控。
 
 > 📖 [行业笔记]
-
-### 语义层交换标准：Apache Ossie（A7·2026-07 增补）
-
-数据格式的标准化历史一再重演同一剧本：数据文件靠 Parquet 统一、表靠 Iceberg、目录靠 Iceberg REST + Polaris——每一轮都是「别去统一工具，去统一交换格式」。**Apache Ossie（incubating，2026-01 v0.1 发布、2026-07 进 Apache 孵化器）** 是把同一剧本应用到「业务语义本身」：一份厂商中性的 YAML/JSON 语义模型（指标 / 维度 / 实体 / 关系 / 业务规则 + `ai_context` 字段），让 BI、数据平台、Agent 共享同一套"业务定义真相源"，消除指标漂移与 Agent 幻觉式接地。
-
-对 sofagent 的三点印证：
-1. **语义层 ≠ 数据层，但必须可被执行**：Ossie 模型是声明式 YAML，本身不存数据、不查数据，只描述"营收怎么算、谁能看"——与 A3「Backend as Source of Truth」完全一致：语义层只映射视图，不替代后端。
-2. **AI-Ready Context 即运行时语义层**：Ossie 的 `ai_context` 字段显式给 LLM 喂"回答收入问题时只用已认证指标 / 同义词映射（营收=销售额）"——这正是 A1「本体 = 运行时语义层」的工业级实例化：Agent 跑任务时实时拿到的语义上下文，由中立标准而非各家私有格式承载。
-3. **Hub-and-Spoke 去中心化**：N 个平台经 Ossie 互转只需 2N 条路径（而非 N×(N-1)），系统从数据源头自读语义元数据、不维护点对点映射——与 X7「协议 Adapter 封装、上层语义层不感知底层」同构，也呼应 sofagent「合的框架」定位（企业换 Agent 平台，约束与审计不动）。
-
-> ⚠️ 克制说明：Ossie 仍是 2026 年初生标准（v0.1/v0.2.dev），sofagent 当前以自有 Ontology 层 + Ledger-Views-Policy 承载语义，**不引入 Ossie 依赖**；此处仅作"语义层交换协议"的演进参照记录，待其生态成熟再评估 Adapter 级对接。
-
-> 📖 来源：温故知新 2026-07-27 IMA Ontology 笔记 + Apache Ossie 官网 [ossie.apache.org](https://ossie.apache.org/)（2026-07 进 Apache 孵化器）+ 掘金《Apache Ossie 进入 Apache 孵化器：50+ 企业支持的语义数据标准》[juejin.cn/post/7663683553181777947](https://juejin.cn/post/7663683553181777947) + dev.to《Meet Apache Ossie》[dev.to/alexmercedcoder/meet-apache-ossie-the-open-semantic-interchange-finds-its-home-at-the-asf-2mio](https://dev.to/alexmercedcoder/meet-apache-ossie-the-open-semantic-interchange-finds-its-home-at-the-asf-2mio)
-
-### Notification 事件驱动协作（A6）
-
-多 Agent 经**事件总线 / Notification 接力**协作，而非直接点对点互相调用。这与「一条河事件总线」天然契合——River 是统一入口，节点之间通过 Workflow 拓扑的数据回流（事件）传递，不直接硬连调用路径。好处：调用路径不动态化，治理不失控（谁触发了谁、谁该被审计，始终在总线上可见）。
-
-> 📖 [行业笔记]
-
-### 外层 FORGE 的节奏与护栏（L1 / L2）
-
-Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人类审批双模式（L2：高风险人工确认 / 常规受信自动执行）是 31 篇研读里外层 Loop 的两个关键印证——前者给出闭环叙事节奏，后者给出「按风险分级放行」的 human 节点策略。详细展开与 sofagent 对应见 [FORGE §行业框架印证](../FORGE/archive/self-evolution-design.md)。
-
-> 📖 [行业笔记]
-
-> 💡 **协议 Adapter 封装（X7）**：中间件应在底层封装 MCP / A2A / ACP 协议差异，上层语义层（Ontology / Action Type）不感知底层协议——对齐 sofagent「合的框架」定位：企业换 Agent 平台，约束与审计不动。
->
-> 📖 [行业笔记]
-
-> 💡 **产品化视角（控制平面）**：上面「企业换 Agent 平台，约束与审计不动」就是产品化时 **控制平面打法** 的技术根——底层 Agent 智能随便换（OpenClaw / 客户自选 / 大厂），治理与真相（策略谁配、审计链长啥样、Agent 注册在哪）永远在 sofagent 一侧。产品化时这层真相源表现为一个**自有 dashboard**（只读可见视图：审计状态 / AI 采用进度 / 合规月报），靠 **MCP** 作向外接的桥把数据喂进来；MCP 是桥、不是唯一入口，dashboard 必须自己拥有。详见 [设计哲学](./PHILOSOPHY.md) 与 [README](../README.md)。
-
-> 💡 **实现参考（X9）**：指令层用 Jinja2 变量槽渲染 `prompts/`（把企业规则注入为可填充模板）；校验层用 JSON Schema 三步校验（格式 → 完整性 → 约束）；经验法则——首次因 AI 格式问题排查超 1 小时，就该上校验层（把概率性输出收口到确定性 schema）。
->
-> 📖 [行业笔记]
-
-### 行业五层骨架 → sofagent 三层架构映射（A5）
-
-对外主叙事用 sofagent 自有**三层架构**；行业「五层骨架」（配置 / 知识 / 指令 / 校验 / 编排）作为映射并存，吸收其「确定性迁移」哲学，但**不对齐为强制模板**（研读批3 明确「选入口而非复制后删减」，避免空目录技术债务）。
-
-sofagent 自有三层：
-
-| 层 | 是什么 | 行业五层中对应 |
-|----|--------|----------------|
-| **约束底座（Harness / Constraint Base）** | 四层加载链（SKILL.md→fde.md→think.md→knowledge/）+ 审计 / 回溯能力（本质：git snapshot） | 配置 + 指令 + 校验 |
-| **知识层（Knowledge / Ontology）** | knowledge/ + 本体结构（FDE 在客户侧交付的业务资产，见 FDE/GUIDE.md 第三章 本体结构构建） | 知识 |
-| **编排层（Orchestration / Loop）** | 编排引擎 + 进化引擎 + 外层 FORGE | 编排 |
-
-逐层映射：
-
-| 行业五层 | 数据流口诀 | 落到 sofagent 哪一层 / 哪部分 |
-|----------|------------|-------------------------------|
-| 配置 Config（决定用什么） | 配置决定用什么 | 约束底座 · `.sofagent/config.yml` + SKILL.md / fde.md 的配置约束 |
-| 知识 Knowledge（知道什么） | 知识知道什么 | 知识层 · knowledge/ + 本体结构（FDE 交付，Harness 只挂载 / 校验） |
-| 指令 Instruction（怎么说） | 指令怎么说 | 约束底座 · 四层加载链即「指令」载体（prompt 注入 Agent 上下文） |
-| 校验 Validation（对不对） | 校验对不对 | 约束底座 · 审计引擎 + 约束规则（硬约束，AI 绕不过） |
-| 编排 Orchestration（先干什么后干什么） | 编排先干什么后干什么 | 编排层 · 编排引擎 + 进化引擎 + FORGE |
-
-**同构点**：五层里**仅指令层直接调 AI**，其余四层为 AI 铺路；sofagent 亦然——只有「知识 / 指令」承载概率性 AI，约束 / 校验 / 编排全部落在确定性引擎。这正是「约束层 = Harness 中间件」的骨架级印证：对外讲我们自己的三层，行业五层做映射而不喧宾夺主。
-
-> 📖 [行业笔记]
-
-### AI 原生操作系统（AOS）四大基础设施映射（B0）
-
-2026-07 行业研判将「AI 原生操作系统」的核心竞争力归结为四大基础设施，而非更聪明的聊天窗口。sofagent 在五层工程谱系（Prompt→Context→Harness→Loop→Graph）中的对应与之逐层同构——这正是「约束层 = Harness 中间件」在产业坐标系里的位置：
-
-| AOS 基础设施 | 定义 | sofagent 落点 |
-|---|---|---|
-| 数据接口层 | Agent 连接企业库 / 个人 / IoT / 实时数据 | CloudBase / OpenClaw 集成（Gateway 只桥接、不替代）|
-| 上下文理解层 | AI 理解数据背后的业务语义 / 规则 / 偏好 | Ontology（运行时语义层，翻译而非统一）|
-| 权限管理系统 | 身份认证 · 权限控制 · 行为审计 · 安全边界 | 审计引擎（git diff 硬证据）+ Harness 约束底座 + entry-gate 风险分级 |
-| Skill 生态 | 开发者输出专项 Skill（类比 App Store） | `/SKILL/` 统一入口 + 引擎层 / 用户层分离 |
-
-> 📖 来源：温故知新 2026-07-22（AOS 范式解析）
-
-### 脑力自动化四阶段 ↔ sofagent 工程谱系映射（B1）
-
-行业将「AI 对应脑力自动化」的演进概括为四阶段——提示词工程 → 上下文工程 → 驾驭工程 → 循环自动化。sofagent 在五层工程谱系（Prompt → Context → Harness → Loop → Graph）中的对应恰好是这条主线的工程化落地：
-
-| 脑力自动化阶段 | 含义 | sofagent 对应层 |
-|---|---|---|
-| 提示词工程 | 教会模型「怎么说」 | Prompt 层（SKILL.md / fde.md 指令载体）|
-| 上下文工程 | 给模型「什么背景」 | Context 层（knowledge/ + Ontology 运行时语义）|
-| 驾驭工程 | 约束模型「不能乱来」 | Harness 层（约束底座 + 审计 + 回溯，七步 Action 管线）|
-| 循环自动化 | 让模型「自己跑闭环」 | Loop / Graph 层（编排引擎 + 进化引擎 + FORGE 外层循环）|
-
-> 📖 来源：温故知新 2026-07-22（FDE 行业实战研报）
-
-### 行业印证
-
-> 完整行业对标（a16z 七法则 / Ontology Runtime 六组件 / 工具网关 / MoA 四层 / AI to B 三层基建 / 自主级别 L1-L3 / 贝恩控制面）统一见 [VALIDATION](./VALIDATION.md) 和 [ROADMAP · 行业印证](../ROADMAP.md#行业印证)。
