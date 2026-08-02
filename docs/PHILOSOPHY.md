@@ -2,7 +2,7 @@
 
 > **本文档是 sofagent 最核心的一份「为什么」。** 读完你能回答：sofagent 是什么、怎么用、怎么跑、怎么管、怎么记、怎么装、怎么进化、以及不做什么。
 >
-> v1.2.4 · 2026-08-02（UTC）· 孔放勋
+> v1.2.5 · 2026-08-02（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -70,7 +70,7 @@ OpenClaw/WorkBuddy 等大厂 Agent 平台管路由调度——「会不会做」
 
 **一条河的比喻**：大厂造河，我们做河的约束层——不做河，做河的堤坝 + 自来水厂 + 管网 + 水龙头（详见 [README（项目概览）](../README.md)）。这把「做平台/中间件、不做外包/服务」具象化。
 
-**模型层**：强模型时代，人工工作流的边际收益从 30 分降到 5 分——甚至负收益（人工结构 = 设计者认知上限，限制模型找最优解）。历史规律反复验证：RAG 流水线被长上下文吃掉 → Prompt Chain 被 agentic 模型取代 → MoT Agent 编排被 sub-agent/plan 覆盖。但三件事的价值**反升**：上下文工程、可追踪验收标准、安全护栏（Harness）。转折点：从告诉 AI "怎么做"(How) → 定义 "做什么 + 做完的判定"(What + Done)。**通用模型越强，Harness 越值钱——这是 90%/10% 价值分层（知行合一框架见 §十）的外部验证。**
+**模型层**：强模型时代，人工工作流的边际收益从 30 分降到 5 分——甚至负收益（人工结构 = 设计者认知上限，限制模型找最优解）。历史规律反复验证：RAG 流水线被长上下文吃掉 → Prompt Chain 被 agentic 模型取代 → MoT Agent 编排被 sub-agent/plan 覆盖。但三件事的价值**反升**：上下文工程、可追踪验收标准、安全护栏（Harness）。转折点：从告诉 AI "怎么做"(How) → 定义 "做什么 + 做完的判定"(What + Done)。**通用模型越强，Harness 越值钱——这是 90%/10% 价值分层（知行合一框架见 [VALIDATION](./VALIDATION.md)）的外部验证。**
 
 **商业层**：36 氪警示——盲目 Palantir 化是服务陷阱。Palantir 的护城河 = 平台优先（可复用原语）+ 主见 + 耐心资本。没核心平台只会沦为咨询/外包公司。sofagent 做的是审计标准中间件——独立、可审计、MIT 开源——不是穿西装的埃森哲。
 
@@ -449,4 +449,3 @@ sofagent 的版本演进不是拍脑袋排的——它遵循 Agent 工程的生�
 ---
 
 > **行业印证与生态定位** — sofagent 的设计直觉如何被行业验证（Palantir Ontology / Harness Engineering / a16z 七法则 / DeerFlow / Omnigent / OpenFDE 等），以及 Agent 生态三层模型中 sofagent 的位置，详见独立文档 [VALIDATION.md](./VALIDATION.md)。
-
