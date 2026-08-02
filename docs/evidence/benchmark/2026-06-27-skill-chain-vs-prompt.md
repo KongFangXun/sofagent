@@ -7,7 +7,7 @@
 
 ## 0. 为什么需要这个实验
 
-v0.84–v0.93 的对照实验（[2026-06-25-openclaw-task1-control.md](./2026-06-25-openclaw-task1-control.md)、[2026-06-25-cross.md](./2026-06-25-cross.md)）有一个未回答的质疑：
+v0.84–v0.93 的对照实验（[2026-06-25-openclaw-task1-control.md](../../archive/evidence/2026-06-25-openclaw-task1-control.md)、[2026-06-25-cross.md](../../archive/evidence/2026-06-25-cross.md)）有一个未回答的质疑：
 
 > **sofagent 条件到底是「真实加载链」还是「prompt 前缀注入」？两者效果差异多大？**
 
@@ -54,7 +54,7 @@ v0.94 要补上这个缺口：**同一任务、同一模型，在三种条件下
 | 陷阱 | 4 个（`dateFormatter`/`newOrder`/`userId`/`orderId`/`adminId`/`newEmail`） |
 | 测试套件源码 | [github.com/cedric123123](https://github.com/cedric123123)，baseline `56160e1` |
 
-完整定义见 [2026-06-23-sofagent-test-suite.md](./2026-06-23-sofagent-test-suite.md#task-1--camelcase--snake_case)。
+完整定义见 [2026-06-23-sofagent-test-suite.md](../../archive/evidence/2026-06-23-sofagent-test-suite.md#task-1--camelcase--snake_case)。
 
 ### 2.3 模型与样本
 
@@ -205,8 +205,8 @@ v0.94 要补上这个缺口：**同一任务、同一模型，在三种条件下
 
 | 数据源 | 条件 | Task 1 误伤数 | 来源 |
 |---|---|:---:|---|
-| v0.81 A/B | A 裸 / B WorkBuddy 加载链 | 7+ / 0 | [2026-06-23-independent-refactor-ab.md](./2026-06-23-independent-refactor-ab.md) |
-| v0.92 Task 1 | A OpenClaw --local / B WorkBuddy 加载链 | 7+ / 0 | [2026-06-25-openclaw-task1-control.md](./2026-06-25-openclaw-task1-control.md) |
+| v0.81 A/B | A 裸 / B WorkBuddy 加载链 | 7+ / 0 | [2026-06-23-independent-refactor-ab.md](../../archive/evidence/2026-06-23-independent-refactor-ab.md) |
+| v0.92 Task 1 | A OpenClaw --local / B WorkBuddy 加载链 | 7+ / 0 | [2026-06-25-openclaw-task1-control.md](../../archive/evidence/2026-06-25-openclaw-task1-control.md) |
 | **v0.94 本实验** | **A 裸 / B prompt 注入 / C 加载链** | **待测 / 待测 / 待测** | 本文 |
 
 如果 v0.94 C 组误伤数 ≈ v0.92 的 0，说明 WorkBuddy 加载链稳定有效。如果 C 组 ≈ B 组，说明 prompt 注入是加载链的合理近似（v0.84 数据可信）。

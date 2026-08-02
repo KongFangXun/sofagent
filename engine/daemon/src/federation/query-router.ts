@@ -84,6 +84,30 @@ export function decodeFrame<T>(key: Buffer, frame: Buffer): T {
 }
 
 // ────────────────────────────────────────────────────────────
+// P0-9: peer trust 本地白名单——trust 字段不能来自 peer 自报
+// ────────────────────────────────────────────────────────────
+
+/** 本地维护的 peer trust 白名单（peerId → trust）。空 = 无白名单记录。 */
+const LOCAL_PEER_TRUST = new Map<string, Trust>();
+
+/**
+ * 设置 peer 的本地信任等级（本地管理员显式配置，peer 无法自报）。
+ * @param peerId peer 标识
+ * @param trust 信任等级（official/internal/user/web）
+ */
+export function setLocalPeerTrust(peerId: string, trust: Trust): void {
+  LOCAL_PEER_TRUST.set(peerId, trust);
+}
+
+/**
+ * 读取 peer 的本地信任等级。
+ * 默认 'user'（低可信）——除非本地显式提升，否则远端内容一律按不可信源处理。
+ */
+export function getLocalPeerTrust(peerId: string): Trust {
+  return LOCAL_PEER_TRUST.get(peerId) ?? 'user';
+}
+
+// ────────────────────────────────────────────────────────────
 // sensitivity 双重保护（本地端校验）
 // ────────────────────────────────────────────────────────────
 
@@ -99,17 +123,22 @@ const SENSITIVE_CONTENT_PATTERNS: RegExp[] = [
  * 本地端二次校验单条结果：
  *   - restricted 条目 → 丢弃（peer 违约返回）
  *   - 标签可疑（标 public 但内容命中敏感模式）→ trust 降为 web + WARN（不丢弃）
+ *   - P0-9: trust 一律采用本地白名单等级（localTrust ?? getLocalPeerTrust(peerId)），
+ *     绝不采信 peer 自报的 trust 字段——peer 自称 'official' 不再能覆盖本地知识。
  *
  * @returns { result, warning } —— result 为 null 表示丢弃
  */
 export function validateRemoteResult(
   peerId: string,
   item: KnowledgeQueryResult,
+  localTrust?: Trust,
 ): { result: KnowledgeQueryResult | null; warning: string | null } {
   // 防线一：restricted 不接收（与 peer 端过滤呼应的双重保护）
   if (!isSensitivityVisible(item.sensitivity, 'internal')) {
     return { result: null, warning: null };
   }
+  // P0-9 防线三：trust 来自本地白名单（默认 user），peer 自报的 trust 被忽略
+  const effectiveTrust: Trust = localTrust ?? getLocalPeerTrust(peerId);
   // 防线二：篡改标签降权——标 public 但内容疑似敏感
   if (item.sensitivity === 'public') {
     const hit = SENSITIVE_CONTENT_PATTERNS.some((re) => re.test(item.content));
@@ -120,7 +149,7 @@ export function validateRemoteResult(
       };
     }
   }
-  return { result: item, warning: null };
+  return { result: { ...item, trust: effectiveTrust }, warning: null };
 }
 
 // ────────────────────────────────────────────────────────────
@@ -176,7 +205,8 @@ export async function broadcastQuery(
       const warnings: string[] = [];
       const validated: KnowledgeQueryResult[] = [];
       for (const item of raw) {
-        const { result, warning } = validateRemoteResult(peer.peerId, item);
+        // P0-9: 本地白名单 trust 注入——peer 自报的 trust 一律被本地等级覆盖
+        const { result, warning } = validateRemoteResult(peer.peerId, item, getLocalPeerTrust(peer.peerId));
         if (warning) {
           warnings.push(warning);
           onWarning(warning);

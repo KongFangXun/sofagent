@@ -27,6 +27,7 @@ import {
   encodeFrame,
   decodeFrame,
   validateRemoteResult,
+  setLocalPeerTrust,
   type KnowledgeQuery,
   type KnowledgeQueryResult,
 } from '../query-router';
@@ -58,9 +59,11 @@ beforeEach(() => clearPeers());
 
 describe('联邦查询 · 帧编解码与双 peer 互查', () => {
   // 用例 1：两台 mock peer 互查（加密帧往返 + 合并）
-  it('双 peer 各自返回结果，广播后合并成功', async () => {
+  it('双 peer 各自返回结果，广播后合并成功（trust 按本地白名单，不采信 peer 自报）', async () => {
     const { peerA, peerB, keyA, keyB } = makePeerPair();
-    // peer-a 应答：解帧 → 回结果帧
+    // P0-9: peer-a 本地白名单提升为 official——peer 自报的 trust 一律被本地等级覆盖
+    setLocalPeerTrust('peer-a', 'official');
+    // peer-a 应答：解帧 → 回结果帧（即使自报 official，也以本地白名单为准）
     const channelA = createMemoryChannel(async (_peerId, frame) => {
       const req = decodeFrame<KnowledgeQuery>(keyA, frame);
       expect(req.text).toBe('部署');
@@ -68,7 +71,7 @@ describe('联邦查询 · 帧编解码与双 peer 互查', () => {
     });
     const channelB = createMemoryChannel(async (_peerId, frame) => {
       decodeFrame<KnowledgeQuery>(keyB, frame);
-      return encodeFrame(keyB, { results: [item('b-1', { trust: 'user', mtime: 900 })] });
+      return encodeFrame(keyB, { results: [item('b-1', { trust: 'official', mtime: 900 })] });
     });
     // 合并 channel：按 peerId 路由
     const channel: FederationChannel = {
@@ -77,8 +80,10 @@ describe('联邦查询 · 帧编解码与双 peer 互查', () => {
     };
     const remote = await broadcastQuery(QUERY, [peerA, peerB], channel);
     expect(remote.length).toBe(2);
+    // P0-9: peer-b 未在本地白名单 → 自报 official 被强制降为 user
+    expect(remote.find((r) => r.peerId === 'peer-b')!.results[0]!.trust).toBe('user');
     const merged = mergeFederationResults([item('local-1', { mtime: 100 })], remote);
-    // trust 排序：official(peer-a) > internal(local) > user(peer-b)
+    // trust 排序：official(peer-a 本地白名单) > internal(local) > user(peer-b 未白名单)
     expect(merged.map((m) => m.id)).toEqual(['a-1', 'local-1', 'b-1']);
     expect(merged.find((m) => m.id === 'a-1')?.source).toBe('peer-a');
   });
@@ -128,9 +133,9 @@ describe('联邦查询 · sensitivity 双重保护', () => {
     expect(result!.trust).toBe('web');
     expect(warning).toContain('降权');
     expect(warning).toContain('evil-1');
-    // 标 public 且内容干净 → 原样通过
+    // 标 public 且内容干净 → 通过，trust 取本地白名单默认 user（P0-9：不采信 peer 自报 internal）
     const clean = validateRemoteResult('peer-x', item('ok-1', { sensitivity: 'public', content: '公开文档' }));
-    expect(clean.result!.trust).toBe('internal');
+    expect(clean.result!.trust).toBe('user');
     expect(clean.warning).toBeNull();
   });
 

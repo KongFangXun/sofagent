@@ -89,6 +89,8 @@ interface ChainEntry {
   hmacSig?: unknown;
   /** P0-3: 写入侧签名算法标记。'stable' = 用 stableStringify 签名（新条目，可正确验签/检测篡改）；缺省 = 旧条目（内存 key 顺序签名，读侧不可复现，HMAC 不匹配不判篡改） */
   hmacAlgo?: unknown;
+  /** P0-3 (2026-08-02 复核修正)：写入时记录的环境指纹。HMAC 不匹配时用它区分「真篡改（指纹一致）」与「环境漂移（指纹不一致）」 */
+  envFingerprint?: unknown;
 }
 
 /**
@@ -115,16 +117,15 @@ function sortKeys(input: unknown): unknown {
 }
 
 /**
- * 链校验结果状态（FLAG-2 修复）
+ * 链校验结果状态（FLAG-2 修复 + P0-3 2026-08-02 复核修正）
  * - 'ok'：链完整且可验签（或降级 SHA-256 通过）
- * - 'tampered'：检测到篡改（红色告警）——仅当「无环境指纹的旧算法 prevHash 不匹配」
- *   时判定（环境无关、密钥无关，确为内容被改），属真·伪造
- * - 'unverifiable'：历史段不可复验（黄色提示）——HMAC 验签不匹配（可能密钥轮换 /
- *   写入侧 key 顺序 / 环境指纹漂移，当前侧无法区分「篡改」与「漂移」）或 v2 段
- *   （含环境指纹）因 hostname/username/git 路径或 ~/.sofagent-key 漂移无法复现签名，
- *   属历史证据不可复验，非篡改，不应报「链断裂/篡改」
+ * - 'tampered'：检测到篡改（红色告警）——「无环境指纹的旧算法 prevHash 不匹配」
+ *   或「stable 条目 HMAC 不匹配且环境指纹一致」（环境无关、确为内容被改）
+ * - 'unverifiable'：历史段不可复验（黄色提示）——HMAC 验签不匹配且环境指纹不一致
+ *   （密钥轮换 / 环境指纹漂移）或旧条目（无法区分「篡改」与「漂移」）
+ * - 'insufficient'：历史不存在或不足 2 条（P0-3：删除/单条不再报 ok，报不可信）
  */
-export type ChainCheckStatus = 'ok' | 'tampered' | 'unverifiable';
+export type ChainCheckStatus = 'ok' | 'tampered' | 'unverifiable' | 'insufficient';
 
 export interface ChainCheckResult {
   status: ChainCheckStatus;
@@ -135,19 +136,25 @@ export interface ChainCheckResult {
 }
 
 /**
- * P0-5: 验证 history.jsonl 的 hash chain 完整性（详细判定版，FLAG-2 修复）
+ * P0-5: 验证 history.jsonl 的 hash chain 完整性（详细判定版，FLAG-2 修复 + P0-3 复核修正）
  *
- * 区分两类异常（篡改优先于不可复验）：
- *   ① 篡改检测（tampered，红）：仅「无环境指纹的旧算法 prevHash 不匹配」
- *      时判定——环境无关、密钥无关，确为内容被改，属真·伪造。
- *   ② 不可复验（unverifiable，黄）：HMAC 验签不匹配（写入侧 key 顺序 /
- *      密钥轮换 / 环境指纹漂移，当前侧无法区分「篡改」与「漂移」）或
- *      v2 段（含环境指纹）因 key/环境漂移无法复现签名，属历史证据不可复验，
- *      非篡改，不报「链断裂/篡改」。
- *   （注：stable 新条目（hmacAlgo==='stable'）的 HMAC 验签不匹配判为①篡改（红）——
- *      因 stableStringify 签名读侧可正确复现，不匹配只能是内容被改。
- *      旧条目（无 hmacAlgo）HMAC 不匹配仍归为②不可复验（黄）——写入侧用
- *      内存 key 顺序签名，读侧无法复现，无法区分「篡改」与「密钥轮换」。）
+ * 区分三类异常（篡改优先于不可复验）：
+ *   ① 篡改检测（tampered，红）：
+ *      - 「无环境指纹的旧算法 prevHash 不匹配」——环境无关、确为内容被改。
+ *      - 「stable 条目（hashVersion=2 且记录 envFingerprint）HMAC 不匹配且
+ *        envFingerprint 与当前指纹一致」——指纹一致说明运行环境未变，HMAC 不匹配
+ *        只能是内容在签名后被改（2026-08-02 复核修正：原方案一刀切判黄导致
+ *        v2 条目篡改检测不到，P0-3 核心缺陷）。
+ *      - 「stable 条目（hashVersion 未定义/非 2，无指纹）HMAC 不匹配」——环境无关。
+ *   ② 不可复验（unverifiable，黄）：
+ *      - stable 条目（hashVersion=2）HMAC 不匹配但 envFingerprint 与当前指纹不一致
+ *        （密钥轮换 / hostname / username / git 路径 / dataDir 漂移）——无法区分
+ *        「篡改」与「漂移」，属历史证据不可复验，不报「链断裂/篡改」。
+ *      - stable 条目（hashVersion=2）HMAC 不匹配但条目未记录 envFingerprint
+ *        （旧版写入的 v2 条目）——无法区分，归黄。
+ *      - 旧条目（无 hmacAlgo）HMAC 不匹配——写入侧用内存 key 顺序签名，读侧无法复现。
+ *   ③ 不可信（insufficient，黄/灰）：history.jsonl 不存在或仅 1 条——无法构成
+ *      可验证的防篡改链（P0-3：删除/单条不再报 ok）。
  *
  * @param dataDir 可选的数据目录覆盖
  * @returns ChainCheckResult
@@ -156,7 +163,8 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
   const filePath = getHistoryFilePath(dataDir);
 
   if (!existsSync(filePath)) {
-    return { status: 'ok' }; // 无历史文件 = 未受损
+    // P0-3：无历史文件 = 无法验证（不是「未受损」）。删除整个审计历史不再报 ok。
+    return { status: 'insufficient', detail: '审计历史文件不存在，无法验证防篡改链' };
   }
 
   let content: string;
@@ -182,7 +190,10 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
     }
   }
 
-  if (entries.length <= 1) return { status: 'ok' }; // 0 或 1 条记录无需验证
+  // P0-3：0 或 1 条记录无法构成可验证链 → insufficient（不再报 ok）
+  if (entries.length <= 1) {
+    return { status: 'insufficient', detail: '审计历史不足 2 条，无法构成可验证的防篡改链' };
+  }
 
   // v1.0.6: 逐条判断 hashVersion——支持新旧格式混合
   // 旧用户升级后 history.jsonl 可能混合旧条目（无 hashVersion）和新条目（hashVersion:2）
@@ -233,8 +244,9 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
     }
 
     // 2) HMAC 验签（仅当条目带 hmacSig 且有密钥时）
-    // v1.2.1: hmacAlgo==='stable' 的条目用 stableStringify 签名，读侧可正确复现，
-    //   HMAC 不匹配 = 内容在签名后被篡改（红）。
+    // v1.2.1: hmacAlgo==='stable' 的条目用 stableStringify 签名，读侧可正确复现。
+    // P0-3 (2026-08-02 复核修正)：HMAC 不匹配时先用「条目记录的环境指纹」与当前指纹比对——
+    //   fingerprint 一致但 HMAC 不匹配 = 真篡改（红）；fingerprint 不一致（环境漂移） = 不可复验（黄）。
     //   旧条目（无 hmacAlgo）写入侧用内存 key 顺序签名，读侧无法复现，
     //   HMAC 不匹配归为不可复验（黄）——无法区分「篡改」与「密钥轮换」。
     if (curr.hmacSig && keyAvailable && hmacKey) {
@@ -248,18 +260,30 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
         .digest('hex').slice(0, 32);
       if (curr.hmacSig !== expectedHmac) {
         if (curr.hmacAlgo === 'stable') {
-          // P0-1 修复：stable 条目 HMAC 不匹配时需进一步区分——
-          // hashVersion===2（带环境指纹）：fingerprint 漂移（hostname/git路径/dataDir 变化）
-          //   也会导致 HMAC 不匹配，属假阳性 → 归为 unverifiable（黄）
-          // hashVersion 未定义/非2（无指纹但用了 stable 签名）：环境无关，HMAC 不匹配 = 内容被改 → tampered（红）
           if (currUseFingerprint) {
-            foundUnverifiable = true;
+            // hashVersion===2（带环境指纹）：HMAC 不匹配可能因「篡改」或「环境指纹漂移」。
+            // 用条目记录的环境指纹区分：
+            const recordedFingerprint = curr.envFingerprint;
+            if (typeof recordedFingerprint === 'string' && recordedFingerprint.length > 0) {
+              if (recordedFingerprint === fingerprint) {
+                // 指纹一致 + HMAC 不匹配 → 运行环境未变，只能是内容在签名后被改 → 真篡改（红）
+                return { status: 'tampered', index: i, detail: `历史条目 ${i} HMAC 签名不匹配（环境指纹一致，确为内容被篡改）` };
+              }
+              // 指纹不一致（hostname/git 路径/dataDir/密钥漂移）→ 不可复验（黄）
+              foundUnverifiable = true;
+            } else {
+              // hashVersion=2 但条目未记录 envFingerprint（旧版写入的 v2 条目）：
+              // 无法区分「篡改」与「漂移」→ 不可复验（黄）
+              foundUnverifiable = true;
+            }
           } else {
+            // hashVersion 未定义/非2（无指纹但用了 stable 签名）：环境无关，HMAC 不匹配 = 内容被改 → tampered（红）
             return { status: 'tampered', index: i, detail: `历史条目 ${i} HMAC 签名不匹配（stable 条目，无环境指纹），疑似内容被篡改` };
           }
+        } else {
+          // 旧条目（无 hmacAlgo）：写入侧用内存 key 顺序签名，读侧无法复现 → 归为不可复验（黄）
+          foundUnverifiable = true;
         }
-        // 旧条目（无 hmacAlgo）：写入侧用内存 key 顺序签名，读侧无法复现 → 归为不可复验（黄）
-        foundUnverifiable = true;
       }
     }
   }
@@ -276,13 +300,13 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
 
 /**
  * P0-5: 验证 history.jsonl 的 hash chain 完整性（boolean 兼容版）
- * @deprecated 布尔语义无法区分「篡改」与「历史不可复验」，新代码请用 checkHistoryChainDetailed
- * @returns true = 链完整（含可降级），false = 存在篡改或不可复验段
+ * @deprecated 布尔语义无法区分「篡改」「历史不可复验」与「不可信」，新代码请用 checkHistoryChainDetailed
+ * @returns true = 链完整（含可降级），false = 存在篡改、不可复验段或历史不足（insufficient）
  */
 export function checkHistoryChainIntegrity(dataDir?: string): boolean {
   // 向后兼容：保留 boolean 契约（audit 包外部 API / acceptance-test.sh 依赖）。
-  // 注：'unverifiable' 也返回 false——历史不可复验段同样视为「非完整」，
-  //     但 doctor 已改用 checkHistoryChainDetailed 单独归类为黄色提示而非红色篡改。
+  // 注：'unverifiable' 与 'insufficient' 均返回 false——不可复验段 / 历史不足同样
+  //     视为「非完整」，但 doctor 已改用 checkHistoryChainDetailed 单独归类为黄色提示而非红色篡改。
   return checkHistoryChainDetailed(dataDir).status === 'ok';
 }
 

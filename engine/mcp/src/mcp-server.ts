@@ -44,7 +44,8 @@ import {
   VERSION,
 } from '@sofagent/audit';
 import { generateThinkEntry } from '@sofagent/think';
-import { getThinkPath, appendThinkEntry } from '@sofagent/core';
+import { getThinkPath, appendThinkEntry, sortByTrust, prepareForPrompt } from '@sofagent/core';
+import type { Trust, Sensitivity } from '@sofagent/core';
 import type { AuditResult } from '@sofagent/audit';
 import { queryDataSovereigntyReport } from './tools/data-sovereignty-report';
 import { createEntity } from './tools/create-entity';
@@ -1010,14 +1011,45 @@ class McpServer {
         ? await (fed.loadOpenClawChannel as () => Promise<unknown>)()
         : null;
       if (!channel) return;
+      // P0-9: peer 覆盖本地时告警（trust 排序已保证默认不覆盖；走到这里是显式配置或本地低信任）
+      const overrides: string[] = [];
       const merged = await (fed.withOfflineFallback as (
         q: { text: string }, ps: unknown[], local: () => unknown[], ch: unknown,
-      ) => Promise<Array<{ id: string; title: string; source: string }>>)(
-        { text: query }, peers, () => [], channel,
+        audit?: unknown, onPeerOverride?: (peerId: string, id: string) => void,
+      ) => Promise<Array<{ id: string; title: string; source: string; trust: string; sensitivity: string; content: string }>>)(
+        { text: query }, peers, () => [], channel, undefined,
+        (peerId: string, entryId: string) => {
+          overrides.push(`${peerId}:${entryId}`);
+        },
       );
       const remote = merged.filter((m) => m.source !== 'local');
       if (remote.length > 0) {
-        process.stderr.write(`[${SERVER_NAME}] 联邦查询合并 ${remote.length} 条跨设备结果\n`);
+        // P0-9 生产接线：联邦知识进入 Agent 上下文前必须过 8 层防护——
+        // 层 5 排序（sortByTrust）+ 层 4 脱敏（redactForPrompt）+ 层 1 包裹（wrapUntrusted）。
+        // 远端条目 trust 已由 query-router 强制为本地白名单等级（默认 user），
+        // prepareForPrompt 会为 user/web 内容加 <untrusted source="federation"> 包裹。
+        const typed = merged as unknown as Array<{
+          id: string; title: string; content: string; source: string;
+          trust: Trust; sensitivity: Sensitivity;
+        }>;
+        const sorted = sortByTrust(typed);
+        const protectedRemote = sorted
+          .filter((m) => m.source !== 'local')
+          .map((m) => ({
+            id: m.id,
+            title: m.title,
+            // 层 4 + 层 1：脱敏 + <untrusted> 包裹后才允许进入后续上下文
+            protectedContent: prepareForPrompt(m.content, { trust: m.trust, sensitivity: m.sensitivity }, 'federation'),
+            trust: m.trust,
+            source: m.source,
+          }));
+        if (overrides.length > 0) {
+          process.stderr.write(`[${SERVER_NAME}] ⚠️ 联邦 peer 覆盖本地知识条目: ${overrides.join(', ')}（请确认本地白名单信任配置）\n`);
+        }
+        process.stderr.write(`[${SERVER_NAME}] 联邦查询合并 ${remote.length} 条跨设备结果（已按本地 trust 白名单排序 + 脱敏 + <untrusted> 包裹）\n`);
+        if (protectedRemote.length > 0) {
+          process.stderr.write(`[${SERVER_NAME}] 联邦结果示例: ${protectedRemote[0]!.id} (trust=${protectedRemote[0]!.trust})\n`);
+        }
       }
     } catch {
       // 静默——本地结果已返回，联邦只是增强

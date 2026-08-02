@@ -94,6 +94,8 @@ export interface AuditHistoryEntry {
   hashVersion?: number;
   /** v1.1.8+: HMAC-SHA256 签名（密钥来自 ~/.sofagent-key，chmod 600）。无密钥时缺省（降级 SHA-256，向后兼容）。用于强防篡改。 */
   hmacSig?: string;
+  /** v1.2.5 P0-3: 写入时记录的环境指纹——读侧 HMAC 不匹配时用它区分「真篡改（指纹一致）」与「环境漂移（指纹不一致）」 */
+  envFingerprint?: string;
   /** v1.1.3+: 审计引擎标识，用于追溯记录来源 */
   engine?: string;
   /** Action Governance 审计 5 字段 schema + 决策溯源组（A4 研读落地）。可选项——旧记录无此字段时向后兼容。 */
@@ -163,6 +165,9 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     ...entry,
     prevHash,
     hashVersion: 2,
+    // P0-3 (2026-08-02 复核修正): 记录写入时的环境指纹——读侧 HMAC 不匹配时
+    // 用它区分「真篡改（指纹一致）」与「环境漂移（指纹不一致）」。
+    envFingerprint: fingerprint,
     // P0-3: 标记写入侧用 stableStringify 签名（新条目）。读侧据此区分
     // 「旧条目 key 顺序不可复现（HMAC 不匹配不判篡改）」与「新条目被篡改（判链断裂）」。
     hmacAlgo: hmacKey ? 'stable' : undefined,
