@@ -218,7 +218,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 
 sofagent-audit（v0.92+）是 TypeScript CLI，执行 `execFileSync('git', ...)` 读取 git diff 和文件系统。不使用 eval、不 spawn shell、不执行外部脚本。命令参数使用数组传入（`['diff', '--unified=3', range]`），range 参数经过正则校验 `[a-zA-Z0-9~^.\-]`，无命令注入风险。
 
-**数据访问**：审计工具只读取 git diff 输出和 `data/task/logs/` 目录下的 Markdown 文件，不发起网络请求，不写入任何文件。
+**数据访问**：审计引擎核心不发起网络请求（webhook 为可选功能，需显式配置 URL 后才启用）；写入仅限 `~/.sofagent/data/` 目录（审计历史、session 报告、快照等）。
 
 **信任边界**：审计工具本身是确定性的——给定相同的 git diff 和日志，输出相同。但审计 A7/A8 的结果依赖 Agent 日志的真实性（Agent 可以伪造日志）。这不是审计工具的安全漏洞，是架构级别的信任模型选择。详见 [LIMITATIONS.md](./LIMITATIONS.md)（「审计工具信任模型：Agent 自我报告」节）。
 

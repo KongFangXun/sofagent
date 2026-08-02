@@ -42,3 +42,16 @@ jobs:
             exit 1
           }
           echo "✅ verify.sh passed"
+
+      # P1-35: verify 徽章此前不跑测试（README 顶部徽章 + "1317 测试" 易被误读为 CI 全绿）。
+      # 补上 npm ci + build + test，让徽章真实反映测试状态。
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build workspace
+        run: npm run build
+
+      - name: Run workspace tests
+        run: npm test
+        env:
+          CI: true

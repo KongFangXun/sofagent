@@ -55,7 +55,7 @@ if ($Help) {
     Write-Host "参数:"
     Write-Host "  -Platform        目标平台 (workbuddy|openclaw|claude|codex|hermes)"
     Write-Host "  -ProjectDir      项目工作目录（.sofagent/ 数据目录位置）"
-    Write-Host "  -NoAO            跳过 agency-orchestrator 安装（仅 openclaw 相关）"
+    Write-Host "  -NoAO            预留兼容参数（agency-orchestrator 已退役，P1-32 移除安装）"
     Write-Host "  -NoConfigInject  跳过 OpenClaw 断路器 loopDetection 注入"
     Write-Host "  -NoDaemon        跳过 daemon 安装（默认行为；需 daemon 时用 -WithDaemon）"
     Write-Host "  -WithDaemon      安装后台 daemon（Windows 计划任务，监控 think.md/fde.md）"
@@ -391,39 +391,10 @@ if (-not (Test-Path $SOFAGENT_DATA)) {
 }
 
 # ════════════════════════════════════════
-# Step 5a（仅 OpenClaw）：安装 ao 编排引擎（对齐 install.sh Step 3，受 -NoAO 控）
+# Step 5a（已移除 · P1-32）：agency-orchestrator 已退役
+# install.sh v1.0.7 已删除 ao 安装逻辑，install.ps1 同步移除（原装已退役的编排引擎包）。
+# 保留 -NoAO 参数仅为兼容旧脚本调用（无害 no-op）。
 # ════════════════════════════════════════
-if ($Platform -eq "openclaw" -and -not $NoAO -and -not $Lite) {
-    Write-Info "OpenClaw · 安装编排引擎 agency-orchestrator..."
-    if (Get-Command ao -ErrorAction SilentlyContinue) {
-        $aoVer = (& ao --version 2>$null); if (-not $aoVer) { $aoVer = "unknown" }
-        Write-Ok "agency-orchestrator 已安装: $aoVer"
-    } elseif (Get-Command npm -ErrorAction SilentlyContinue) {
-        Write-Info "正在安装 agency-orchestrator@0.7.5（npm -g）..."
-        & npm install -g agency-orchestrator@0.7.5 2>&1 | Select-Object -Last 1
-        if (-not (Get-Command ao -ErrorAction SilentlyContinue)) {
-            & npm install -g agency-orchestrator@0.7.5 --registry=https://registry.npmmirror.com 2>&1 | Select-Object -Last 1
-        }
-        if (Get-Command ao -ErrorAction SilentlyContinue) {
-            Write-Ok "agency-orchestrator 安装成功"
-        } else {
-            Write-Warn "ao 未在 PATH 找到——可能需重开终端。编排引擎不可用，地基约束层不受影响。"
-        }
-    } else {
-        Write-Warn "npm 不可用，跳过 ao 安装。编排引擎不可用，地基约束层（宪法/反思/规则）正常。"
-    }
-    # API Key 检查
-    if (Get-Command ao -ErrorAction SilentlyContinue) {
-        $keyFound = if ($env:DEEPSEEK_API_KEY) { "DeepSeek" } elseif ($env:ANTHROPIC_API_KEY) { "Claude" } elseif ($env:OPENAI_API_KEY) { "OpenAI" } else { "" }
-        if ($keyFound) { Write-Ok "AO API Key 已配置 ($keyFound)" }
-        else {
-            Write-Warn "AO 已装但未配置模型 API Key——编排功能不可用"
-            Write-Warn '  设置（任选其一）: $env:DEEPSEEK_API_KEY / $env:ANTHROPIC_API_KEY / $env:OPENAI_API_KEY'
-        }
-    }
-} elseif ($Platform -eq "openclaw" -and $NoAO) {
-    Write-Warn "(-NoAO) 跳过 agency-orchestrator 安装。编排引擎不可用，地基约束层不受影响。"
-}
 
 # ════════════════════════════════════════
 # Step 5（仅 OpenClaw）：部署加载链 Hook + 注入断路器（对齐 install.sh Step 6/7）

@@ -21,7 +21,8 @@ import { defaultRules, rules } from './index';
  * 扩展规则（8 条，需主动开启 extensions.enabled: true）：
  *   A14-A17, E1-E4
  *
- * 注：A12/A13 已在 v1.2.0 合并入 A11，不再独立存在。
+ * 注：A12/A13 已在 v0.99.4 合并入 A11，不再独立存在（P1-21 统一：以 v1.1.4 changelog 为准，
+ * README 与代码此前 v0.99.4/v1.2.0 不一致，真实版本为 v0.99.4）。
  * @see engine/audit/src/rules/index.ts defaultRules/extendedRules ——以实际注册表为准。
  */
 

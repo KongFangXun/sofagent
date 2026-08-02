@@ -352,7 +352,7 @@ cd engine/sofagent/audit
 
 npm ci           # 安装依赖
 npm run build    # 编译 TypeScript
-npm test         # 运行测试（405 tests）
+npm test         # 运行测试（504 tests，P1-20 修正：原写 405 与实际漂移）
 npm run check    # 类型检查（tsc --noEmit）
 ```
 
