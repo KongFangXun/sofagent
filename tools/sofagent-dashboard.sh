@@ -272,6 +272,8 @@ status_icon() {
 render_sovereignty() {
   local w="$1"
   emit "${C_BOLD}${C_CYAN}▌ 数据主权（数据去哪了）${C_RESET}"
+  # P1-23: 首次显示加解释行——以下数据均在本地存储，未上传任何远端
+  emit "  ${C_DIM}以下数据均在本地存储，未上传任何远端${C_RESET}"
 
   # 聚合近 7 天：云端 / 本地 / 流出 / 敏感记录数
   local summary
@@ -305,12 +307,13 @@ render_sovereignty() {
   emit "  │ ${C_BLUE}${cloud}$(printf '%*s' $((cell - ${#cloud} - 1)) '')${C_RESET}│ ${C_GREEN}${local_n}$(printf '%*s' $((cell - ${#local_n} - 1)) '')${C_RESET}│ ${C_YELLOW}${outbound}$(printf '%*s' $((cell - ${#outbound} - 1)) '')${C_RESET}│"
   emit "  └${hr}┴${hr}┴${hr}┘"
 
-  # 敏感数据率
-  local rate=0
+  # 本地化率（P1-23：原"敏感度百分比 100%"措辞引发恐慌——575/575 实际含义是
+  # "数据全部留在本地未外传"（好消息），改为直接说数据本地留存的措辞）
+  local local_rate=0
   if [ "$total" -gt 0 ]; then
-    rate=$(( sensitive * 100 / total ))
+    local_rate=$(( local_n * 100 / total ))
   fi
-  emit "  敏感率 $(bar "$rate" 100 $((w / 2))) ${rate}%（${sensitive}/${total}）"
+  emit "  本地化率 $(bar "$local_rate" 100 $((w / 2))) ${local_rate}%（${local_n}/${total}）"
 
   # 近 7 天流向（按天聚合云端 / 本地）
   emit "  ${C_DIM}近 7 天流向${C_RESET}"

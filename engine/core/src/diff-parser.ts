@@ -39,8 +39,9 @@ export function isInGitRepo(cwd?: string): boolean {
       stdio: ['pipe', 'pipe', 'pipe'], // 静默 stderr
     });
     return true;
-  } catch (err) {
-    console.error('[diff-parser] 检测 git 工作区失败:', err);
+  } catch {
+    // P1-12: 吞掉 stack trace（非 git 目录是正常场景，不该打原生 Node 堆栈）；
+    // 调用方（parseDiff/parseStagedDiff）会给出友好的"不在 git 仓库"提示
     return false;
   }
 }

@@ -101,11 +101,19 @@ interface Args {
 function parseArgs(argv: string[]): Args {
   const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false };
   for (let i = 2; i < argv.length; i++) {
-    if (argv[i] === '--diff' && argv[i + 1]) {
-      i++;
-      args.diffRange = argv[i] as string;
-      if (args.diffRange === '--cached') {
+    if (argv[i] === '--diff') {
+      // P1-12: --diff 无显式值（末尾或后跟其他 flag）→ 用默认 HEAD~1..HEAD，
+      // 不再落进「不支持的参数 --diff」矛盾报错
+      const next = argv[i + 1];
+      if (next === '--cached') {
+        i++;
+        args.diffRange = '--cached';
         args.cached = true;
+      } else if (next && !next.startsWith('-')) {
+        i++;
+        args.diffRange = next as string;
+      } else {
+        args.diffRange = 'HEAD~1..HEAD';
       }
     } else if (argv[i] === '--task' && argv[i + 1]) {
       i++;
@@ -219,7 +227,7 @@ function parseArgs(argv: string[]): Args {
         console.log('  --root-cause       根因分析');
         console.log('  --regression <dir> 回归验证');
         console.log('  --init             一键初始化');
-        console.log('  --doctor           环境健康检查（已迁移至 sofagent-core --doctor）');
+        console.log('  --doctor           环境健康检查（内置完整诊断）');
         console.log('  --no-session      不写入 session 报告文件');
         console.log('  --webhook <p>      webhook 推送（dingtalk/feishu/wecom）');
         console.log('  --webhook-url <u>  webhook URL');
@@ -518,15 +526,13 @@ async function main(): Promise<void> {
     exit(1);
   }
 
-  // doctor → sofagent-core (v1.0.8: ENOENT 友好降级)
-  // F-05: 先输出 audit 自身诊断结果，末尾再温和引导到 sofagent-core --doctor
+  // doctor → @sofagent/core 内置健康检查（P1-34: 移除对 core CLI 的 doctor 错误推荐——
+  // core CLI 只支持子命令形式，flag 形式不合法；且 audit --doctor 已直接调用 core 的
+  // runDoctor，本就是完整诊断，无需再引导到别的命令）
   if (rawArgs.includes('--doctor')) {
     try {
       const { runDoctor } = await import('@sofagent/core');
       const report = runDoctor(process.cwd());
-      // 先输出诊断结果（来自 sofagent-core）
-      // 末尾温和引导
-      console.log('\n💡 如需全面环境诊断（含编排/守护/知识库），可以安装 @sofagent/core 后运行 sofagent-core --doctor');
       exit(report.allOk ? 0 : 1);
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND' || (err as NodeJS.ErrnoException).code === 'MODULE_NOT_FOUND') {
@@ -535,8 +541,6 @@ async function main(): Promise<void> {
         const gitAvailable = (() => { try { require('child_process').execFileSync('git', ['--version'], { stdio: 'pipe' }); return true; } catch { return false; } })();
         console.log(`  ${gitAvailable ? '✅' : '❌'} git ${gitAvailable ? '可用' : '不可用'}`);
         console.log(`  ✅ sofagent-audit CLI 可用`);
-        // 末尾温和引导
-        console.log('\n💡 如需全面环境诊断（含编排/守护/知识库），可以安装 @sofagent/core 后运行 sofagent-core --doctor');
         exit(0);
       }
       throw err;

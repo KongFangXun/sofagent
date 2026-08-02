@@ -25,14 +25,15 @@ describe('A3 不改越界', () => {
     expect(result.status).toBe('PASS');
   });
 
-  it('任务描述含中文关键词 + diff 文件路径含英文 → 中文关键词无法匹配英文路径，触发 WARN', () => {
+  it('短中文任务（<10 字符）→ 不触发盲改告警（P1-29：修复中文短句 100% 误报）', () => {
+    // 旧行为：中文短句不含文件名 → 中文关键词无法匹配英文路径 → 无条件 WARN（13.9% commit 被误标）
+    // P1-29 修正：<10 字符且含中文的短 commit 不触发盲改告警
     const ctx = makeCtx(
       [makeDiffFile('src/auth/session.ts')],
       { task: '修复登录认证逻辑' }
     );
     const result = checkRuleA3(ctx);
-    expect(result.status).toBe('WARN');
-    expect(result.details[0]).toContain('1/1');
+    expect(result.status).toBe('PASS');
   });
 
   it('20% 阈值：5 个文件中 1 个不匹配 → PASS（20% 不超过阈值）', () => {
