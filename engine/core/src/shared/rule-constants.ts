@@ -8,9 +8,12 @@
 /**
  * 基线规则（安全底线）——不可通过 config.yml 关闭。
  * runner 强制启用；config-loader 对禁用基线规则告警。
- * 权威源：engine/audit/src/rules/runner.ts AUDIT_PRIORITY（A1/A2/A9/A10/A11）
+ *
+ * v1.2.5: 扩展为 9 条——A20-A23 作为 critical 层安全红线加入基线保护，
+ * 企业 IT 在 config.yml 写 `a20: false` 无法关闭网络外联检测。
+ * 权威源：engine/audit/src/rules/runner.ts AUDIT_PRIORITY（critical 层）
  */
-export const BASELINE_RULE_KEYS = ['a1', 'a2', 'a9', 'a10', 'a11'] as const;
+export const BASELINE_RULE_KEYS = ['a1', 'a2', 'a9', 'a10', 'a11', 'a20', 'a21', 'a22', 'a23'] as const;
 
 export type BaselineRuleKey = (typeof BASELINE_RULE_KEYS)[number];
 
