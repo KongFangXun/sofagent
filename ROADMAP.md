@@ -1,11 +1,11 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.2.4 · 2026-08-02（UTC）· 🧠 知识进化（分层巡检 + skillopt 自动触发 + Skill×MCP 集成 + FDE 人机分离 + FORGE LESSONS 方法论）
+> v1.2.5 · 2026-08-02（UTC）· 🔗 激活链 Phase 1 + 🛡️ 审计引擎加固（A20-A23）+ 🔧 daemon 可靠性 + 多设备前置
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
-## 现在在哪：v1.2.5（规划中 · 激活链 + 审计加固 + daemon 可靠性）
+## 现在在哪：v1.2.5（已开发完成 · 激活链 + 审计加固 + daemon 可靠性）
 
 > **🔗 激活链 ACTIVATE + 🛡️ 审计引擎加固 + 🔧 daemon 可靠性 + 多设备前置（v1.2.5）**：
 > 新增 `activate.ts`，读 FDE 交付物（ontology + workflow.yml + skills/）→ 注册企业 SubAgent → 写入 `.sofagent/subagents/*.yml`。
@@ -280,6 +280,7 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 | **spec-first 硬禁令（OpenFDE 启发 · 最高优先）** | 单一事实源——transcript 永不直驱代码，spec 才是唯一驱动（设计约束） |
 | **decisions.jsonl 判断时刻日志（OpenFDE 启发 · 最高优先）** | 每次判断落 `{kind, moment, why, spec_ref}`，决策审计底座（v1.3.x 意图审计） |
 | **分级降级梯队（OpenFDE 启发 · 最高优先）** | console→TUI→spec 逐级降级，workflow never stops（韧性设计） |
+| **Durable Execution（Pydantic AI 启发）** | 长任务 checkpoint 续跑——与回溯引擎互补（回溯=向后回滚，Durable=向前续跑），v1.3.1-1.4.0 窗口评估 |
 
 > 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./docs/VALIDATION.md)；已被主版本表收纳的 DeerFlow 项（Session Goals `/goal`、`/compact`、Skill 渐进加载、记忆分层、Scheduled Tasks、ToolOutputBudget、`--doctor`）见 v1.2.7 / v1.2.8，不在此重复。
 
