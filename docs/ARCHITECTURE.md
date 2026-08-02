@@ -354,7 +354,7 @@ graph LR
 
 > 原计划 v1.2.4 统一为单一规则引擎（`ruleType: 'tool' | 'diff'`），未落地。已推迟——两套规则触发时机不同（tool-level 在调用前拦截、audit 在 commit 后审计），当前各自独立演进成本可接受。后续若不一致问题暴露再合并。
 
-### 🔄 回溯能力（本质：git snapshot + revert 包装）
+### 回溯能力（本质：git snapshot + revert 包装）
 
 行车记录仪，不是安检——事后快照，不依赖任何平台：
 

@@ -540,13 +540,15 @@ export function loadEnvConfig(): SofaEnvConfig {
 
   return {
     dataDir,
-    sanitizeEnabled: resolveBoolEnv('SOFA_SANITIZE', ENV_DEFAULTS.sanitizeEnabled),
-    sanitizeIpsEnabled: resolveBoolEnv('SOFA_SANITIZE_IPS', ENV_DEFAULTS.sanitizeIpsEnabled),
-    retentionDays: resolveNumberEnv('SOFA_RETENTION_DAYS', ENV_DEFAULTS.retentionDays),
-    retentionMax: resolveNumberEnv('SOFA_RETENTION_MAX', ENV_DEFAULTS.retentionMax),
-    cleanupOnRecord: resolveBoolEnv('SOFA_CLEANUP_ON_RECORD', ENV_DEFAULTS.cleanupOnRecord),
-    cleanupFrequency: resolveNumberEnv('SOFA_CLEANUP_FREQUENCY', ENV_DEFAULTS.cleanupFrequency),
-    auditEnabled: resolveBoolEnv('SOFA_AUDIT_ENABLED', ENV_DEFAULTS.auditEnabled),
+    // P2-3: 前缀统一为 SOFAGENT_*；旧 SOFA_* 保留为向后兼容别名
+    // （resolveEnv 内部先读 SOFAGENT_*，未设置再读 SOFA_*）
+    sanitizeEnabled: resolveBoolEnv('SOFAGENT_SANITIZE', 'SOFA_SANITIZE', ENV_DEFAULTS.sanitizeEnabled),
+    sanitizeIpsEnabled: resolveBoolEnv('SOFAGENT_SANITIZE_IPS', 'SOFA_SANITIZE_IPS', ENV_DEFAULTS.sanitizeIpsEnabled),
+    retentionDays: resolveNumberEnv('SOFAGENT_RETENTION_DAYS', 'SOFA_RETENTION_DAYS', ENV_DEFAULTS.retentionDays),
+    retentionMax: resolveNumberEnv('SOFAGENT_RETENTION_MAX', 'SOFA_RETENTION_MAX', ENV_DEFAULTS.retentionMax),
+    cleanupOnRecord: resolveBoolEnv('SOFAGENT_CLEANUP_ON_RECORD', 'SOFA_CLEANUP_ON_RECORD', ENV_DEFAULTS.cleanupOnRecord),
+    cleanupFrequency: resolveNumberEnv('SOFAGENT_CLEANUP_FREQUENCY', 'SOFA_CLEANUP_FREQUENCY', ENV_DEFAULTS.cleanupFrequency),
+    auditEnabled: resolveBoolEnv('SOFAGENT_AUDIT_ENABLED', 'SOFA_AUDIT_ENABLED', ENV_DEFAULTS.auditEnabled),
   };
 }
 
@@ -586,14 +588,22 @@ function resolveDataDir(home: string): string {
   return join(process.cwd(), '.sofagent');
 }
 
-function resolveBoolEnv(key: string, defaultValue: boolean): boolean {
-  const val = process.env[key];
+/**
+ * 读取布尔环境变量（P2-3：支持主名 + 别名，主名优先）。
+ * @param key 当前命名（SOFAGENT_*）
+ * @param legacyKey 向后兼容别名（SOFA_*）
+ */
+function resolveBoolEnv(key: string, legacyKey: string | null, defaultValue: boolean): boolean {
+  const val = process.env[key] ?? (legacyKey ? process.env[legacyKey] : undefined);
   if (val === undefined || val === '') return defaultValue;
   return val.toLowerCase() === 'true' || val === '1' || val.toLowerCase() === 'yes';
 }
 
-function resolveNumberEnv(key: string, defaultValue: number): number {
-  const val = process.env[key];
+/**
+ * 读取数字环境变量（P2-3：支持主名 + 别名，主名优先）。
+ */
+function resolveNumberEnv(key: string, legacyKey: string | null, defaultValue: number): number {
+  const val = process.env[key] ?? (legacyKey ? process.env[legacyKey] : undefined);
   if (val === undefined || val === '') return defaultValue;
   const num = parseInt(val, 10);
   return isNaN(num) ? defaultValue : num;

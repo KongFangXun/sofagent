@@ -1,5 +1,5 @@
 #!/bin/bash
-# sofagent commit-msg hook v1.1.0
+# sofagent commit-msg hook v1.2.5（P2-2：版本标记从 v1.1.0 同步到当前版本）
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # commit-msg hook 接收 $1 = commit message 文件路径
 
@@ -47,10 +47,11 @@ AUDIT_DIFF_ARG="--cached"
 # 4. 正常运行审计
 # --task 传 subject（A3 越界检查用）
 # --commit-msg 传完整 message（A9 注入检查用）——两个参数都传
+# P2-5: $AUDIT_CMD 加引号——仓库路径含空格时（如 /Users/foo/my repo/）不炸
 if [ -n "$COMMIT_SUBJECT" ]; then
-  $AUDIT_CMD --diff "$AUDIT_DIFF_ARG" --silent --ci --task "$COMMIT_SUBJECT" --commit-msg "$COMMIT_FULL_MSG"
+  "$AUDIT_CMD" --diff "$AUDIT_DIFF_ARG" --silent --ci --task "$COMMIT_SUBJECT" --commit-msg "$COMMIT_FULL_MSG"
 else
-  $AUDIT_CMD --diff "$AUDIT_DIFF_ARG" --silent --ci
+  "$AUDIT_CMD" --diff "$AUDIT_DIFF_ARG" --silent --ci
 fi
 EXIT_CODE=$?
 
