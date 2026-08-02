@@ -173,8 +173,14 @@ sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，�
 
 ### Token 管理
 
-- **`SOFAGENT_FEDERATION_TOKEN`**：通过环境变量传递联邦身份，每台设备使用独立 token
-- **安全注意**：`ps e` 可读环境变量明文，建议在 CI/受控环境中使用。生产环境考虑通过密钥管理服务（Vault / AWS Secrets Manager）注入
+> ⚠️ v1.2.3 起通过环境变量传递联邦身份的机制已废弃（环境变量可被 `ps e` 读取明文，属高危已修复）。请改用文件机制：
+
+- **文件机制**：将联邦 token 写入 `~/.sofagent/federation.token`（权限 600），每台设备使用独立 token：
+  ```bash
+  echo "xxx" > ~/.sofagent/federation.token
+  chmod 600 ~/.sofagent/federation.token
+  ```
+- **安全注意**：文件权限必须收紧为 600（仅当前用户可读写），防止同机其他用户读取
 - **轮换策略**：定期更换 token，配合审计日志中 `federation_id` 字段追溯设备身份
 
 ### 审计追溯

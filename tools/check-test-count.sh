@@ -68,6 +68,10 @@ if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
   exit 1
 fi
 
+# P0-13: 实际包数（有 test script 的 workspace 包，SSOT 口径 "12 包"）——机器可读行 PKGS=NNN
+PKG_COUNT=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep -oE 'PKGS=[0-9]+' | grep -oE '[0-9]+' | head -1 || echo "0")
+[ -z "$PKG_COUNT" ] && PKG_COUNT=0
+
 # audit 包单独数（从 test-count.sh 全量输出的逐包明细行提取，格式「✓ audit: 498 passed (498 tests)」）。
 # v1.2.3 修复：不再单独跑 engine/audit && npm test —— 该路径的 vitest 输出同样带 ANSI 码，
 # 在 CI 非 TTY 下 grep '^\s*Tests\s+' 恒失败。复用 TC_OUT 的明细行，strip ANSI 后提取。
@@ -202,22 +206,66 @@ if [ -n "$EVIDENCE_AUDIT" ] && [ -n "$EVIDENCE_TOTAL" ]; then
 fi
 
 # WIKI.md — "NNN 测试 / NN 包全绿" 格式
-WIKI_LINE=$(grep -nE '[0-9]+ 测试 / [0-9]+ 包全绿' docs/WIKI.md 2>/dev/null | head -1)
+# P0-13: grep 未命中 → FAIL（不再静默跳过——正则失配说明检查正则有 bug 或文档缺失声明）
+WIKI_LINE=$(grep -nE '[0-9]+ 测试 / [0-9]+ 包' docs/WIKI.md 2>/dev/null | head -1)
 if [ -n "$WIKI_LINE" ]; then
   WIKI_CLAIMED=$(echo "$WIKI_LINE" | grep -oE '[0-9]+ 测试' | grep -oE '[0-9]+')
+  WIKI_PKGS=$(echo "$WIKI_LINE" | grep -oE '[0-9]+ 包' | grep -oE '[0-9]+')
   WIKI_LINENO=$(echo "$WIKI_LINE" | cut -d: -f1)
   if [ "$QUIET" = false ]; then
     echo -e "  校验 docs/WIKI.md（行 ${WIKI_LINENO}）..."
   fi
-  if [ "$WIKI_CLAIMED" = "$TOTAL_TESTS" ]; then
+  local_fail=0
+  if [ "$WIKI_CLAIMED" != "$TOTAL_TESTS" ]; then
+    echo -e "  ${RED}✗ WIKI.md（行 ${WIKI_LINENO}）：声称 ${WIKI_CLAIMED}，实际 ${TOTAL_TESTS}${NC}"
+    local_fail=1
+  fi
+  if [ -n "$WIKI_PKGS" ] && [ "$WIKI_PKGS" != "$PKG_COUNT" ]; then
+    echo -e "  ${RED}✗ WIKI.md（行 ${WIKI_LINENO}）：声称 ${WIKI_PKGS} 包，实际 ${PKG_COUNT} 包${NC}"
+    local_fail=1
+  fi
+  if [ "$local_fail" = "0" ]; then
     if [ "$QUIET" = false ]; then
-      echo -e "  ${GREEN}✓ WIKI.md：${WIKI_CLAIMED}${NC}"
+      echo -e "  ${GREEN}✓ WIKI.md：${WIKI_CLAIMED} 测试 / ${WIKI_PKGS} 包${NC}"
     fi
     ((PASS++)) || true
   else
-    echo -e "  ${RED}✗ WIKI.md（行 ${WIKI_LINENO}）：声称 ${WIKI_CLAIMED}，实际 ${TOTAL_TESTS}${NC}"
     ((FAIL++)) || true
   fi
+else
+  echo -e "  ${RED}✗ docs/WIKI.md 未找到「N 测试 / N 包全绿」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  ((FAIL++)) || true
+fi
+
+# README.md — "NNN 测试 / NN 包" 格式（P0-13: grep 未命中 → FAIL）
+README_PKG_LINE=$(grep -nE '[0-9]+ 测试 / [0-9]+ 包' README.md 2>/dev/null | head -1)
+if [ -n "$README_PKG_LINE" ]; then
+  README_CLAIMED=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 测试' | grep -oE '[0-9]+')
+  README_PKGS=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 包' | grep -oE '[0-9]+')
+  README_LINENO=$(echo "$README_PKG_LINE" | cut -d: -f1)
+  if [ "$QUIET" = false ]; then
+    echo -e "  校验 README.md（行 ${README_LINENO}）..."
+  fi
+  local_fail=0
+  if [ "$README_CLAIMED" != "$TOTAL_TESTS" ]; then
+    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_CLAIMED} 测试，实际 ${TOTAL_TESTS}${NC}"
+    local_fail=1
+  fi
+  if [ -n "$README_PKGS" ] && [ "$README_PKGS" != "$PKG_COUNT" ]; then
+    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PKGS} 包，实际 ${PKG_COUNT} 包${NC}"
+    local_fail=1
+  fi
+  if [ "$local_fail" = "0" ]; then
+    if [ "$QUIET" = false ]; then
+      echo -e "  ${GREEN}✓ README.md：${README_CLAIMED} 测试 / ${README_PKGS} 包${NC}"
+    fi
+    ((PASS++)) || true
+  else
+    ((FAIL++)) || true
+  fi
+else
+  echo -e "  ${RED}✗ README.md 未找到「N 测试 / N 包」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  ((FAIL++)) || true
 fi
 
 # ARCHITECTURE.md — "audit ✅ 已实现（NNN 测试）" 逐包校验

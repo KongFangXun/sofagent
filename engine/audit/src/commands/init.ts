@@ -5,12 +5,19 @@
 //   2. 安装 git commit-msg hook
 //   3. 冒烟测试——验证审计引擎可用
 // v1.2.0: 新增仓库状态分类器（gstack 首次运行引导）
+// v1.2.5 P0-1: daemon 注册改为「确认后注册」——默认不装、非 TTY 不挂起、
+//   已有 plist 询问不静默覆盖、npx 场景如实报错（不生成坏 plist、不打印假成功）、
+//   修正 plist 路径前缀 sofagent/daemon/ → engine/daemon/。
+// v1.2.5 P1-24: --init 自动生成 HMAC 密钥（~/.sofagent-key，权限 600），
+//   审计历史默认启用 HMAC-SHA256 强校验。
 // ============================================================
 
-import { existsSync, writeFileSync, mkdirSync, chmodSync, readFileSync, appendFileSync } from 'fs';
+import { existsSync, writeFileSync, mkdirSync, chmodSync, readFileSync, appendFileSync, readSync } from 'fs';
 import { join, dirname } from 'path';
 import { execFileSync, execSync } from 'child_process';
 import { homedir, platform } from 'os';
+import { randomBytes } from 'crypto';
+import { isatty } from 'tty';
 import { CONFIG_TEMPLATE, HOOK_TEMPLATE, VERSION, generateWatchTemplate, resolveKnowledgeDir, resolveDaemonLog } from '@sofagent/core';
 import { writeConfig } from '@sofagent/core';
 import { defaultRules } from '../rules';
@@ -85,6 +92,189 @@ function classifyRepo(): { state: RepoState; hint: string } {
   };
 }
 
+// ────────────────────────────────────────────────────────────
+// P0-1: 交互式确认（非 TTY 默认 N，不挂起）
+// ────────────────────────────────────────────────────────────
+
+/** 是否处于可交互终端（stdin 与 stdout 均为 TTY 才提示，避免脚本/CI 挂起） */
+function isInteractive(): boolean {
+  try {
+    return process.stdin.isTTY === true && process.stdout.isTTY === true && isatty(0);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 同步 y/N 确认。
+ * 非交互（脚本/CI/npx 管道）→ 直接返回默认值，绝不等待 stdin。
+ * @param question 提示语
+ * @param defaultValue 默认值（'y' | 'n'）
+ */
+function promptYesNoSync(question: string, defaultValue: 'y' | 'n'): boolean {
+  if (!isInteractive()) return defaultValue === 'y';
+  process.stdout.write(`${question}（${defaultValue === 'y' ? 'Y/n' : 'y/N'}，默认 ${defaultValue === 'y' ? '是' : '否'}）: `);
+  try {
+    const buf = Buffer.alloc(64);
+    const n = readSync(0, buf, 0, buf.length, null);
+    const answer = buf.toString('utf-8', 0, n).trim().toLowerCase();
+    if (answer === '') return defaultValue === 'y';
+    return answer === 'y' || answer === 'yes';
+  } catch {
+    return defaultValue === 'y';
+  }
+}
+
+/** 从 plist XML 中提取首个 <string> 内容（展示旧 daemon 指向用） */
+function extractFirstPlistString(plistContent: string): string | null {
+  const m = plistContent.match(/<string>([^<]*)<\/string>/);
+  return m?.[1] ?? null;
+}
+
+// ────────────────────────────────────────────────────────────
+// P0-1: daemon 注册（确认后注册 + 路径修正 + 已有 plist 询问 + npx 如实报错）
+// ────────────────────────────────────────────────────────────
+
+/**
+ * 解析 daemon 可执行入口。
+ * 解析链：全局 sofagent-daemon → sofagent-audit 同 bin 目录下的 sofagent-daemon
+ * → 项目内 engine/daemon/dist/cli.js（v1.2.5 修正：旧前缀 sofagent/daemon/ 已废弃）。
+ * @returns { cliPath, args }——cliPath 为可执行文件绝对路径或 'node'（配合 args[0] 指向 dist）
+ *         解析失败返回 null（npx 等未安装场景 → 如实报错，不生成坏 plist）
+ */
+function resolveDaemonEntry(cwd: string): { cliPath: string; args: string[] } | null {
+  const candidates: string[] = [];
+
+  // 1. 全局 sofagent-daemon
+  try {
+    const p = execSync('which sofagent-daemon', { encoding: 'utf-8' }).trim();
+    if (p) candidates.push(p);
+  } catch { /* 未安装 */ }
+
+  // 2. sofagent-audit 同 bin 目录下的 sofagent-daemon
+  try {
+    const auditPath = execSync('which sofagent-audit', { encoding: 'utf-8' }).trim();
+    const auditBinDir = auditPath.substring(0, auditPath.lastIndexOf('/'));
+    const candidateDaemon = `${auditBinDir}/sofagent-daemon`;
+    if (existsSync(candidateDaemon)) candidates.push(candidateDaemon);
+  } catch { /* 未安装 */ }
+
+  // 3. 项目内 engine/daemon/dist/cli.js（v1.2.5 修正前缀：旧结构 sofagent/daemon/ 已搬迁到 engine/daemon/）
+  const projectDaemonEntry = join(cwd, 'engine', 'daemon', 'dist', 'cli.js');
+  if (existsSync(projectDaemonEntry)) {
+    const nodeBinDir = dirname(process.execPath);
+    return {
+      cliPath: nodeBinDir ? join(nodeBinDir, 'node') : 'node',
+      args: [projectDaemonEntry, 'start'],
+    };
+  }
+
+  // 4. 全局入口存在 → 用其绝对路径 + 'start'
+  const globalEntry = candidates.find((p) => existsSync(p));
+  if (globalEntry) {
+    return { cliPath: globalEntry, args: ['start'] };
+  }
+
+  // 全部落空 → daemon 未安装（npx / 未全局安装场景）
+  return null;
+}
+
+/**
+ * 注册 macOS LaunchAgent（P0-1 修复版）：
+ *  - 已有 plist 时先询问是否覆盖（默认不覆盖，不静默卸载）
+ *  - daemon 未安装（npx 场景）时如实报错，不生成坏 plist、不打印假成功
+ */
+function registerDaemon(cwd: string): void {
+  const launchAgentsDir = join(homedir(), 'Library', 'LaunchAgents');
+  if (!existsSync(launchAgentsDir)) {
+    mkdirSync(launchAgentsDir, { recursive: true });
+  }
+
+  const plistPath = join(launchAgentsDir, 'com.sofagent.daemon.plist');
+  const projectWorkingDir = cwd;
+
+  // 已有 plist → 询问是否覆盖（P0-1：单例互踩根因——不再静默卸载覆盖）
+  if (existsSync(plistPath)) {
+    let oldTarget = '(无法读取)';
+    try {
+      const oldContent = readFileSync(plistPath, 'utf-8');
+      const prog = extractFirstPlistString(oldContent);
+      if (prog) oldTarget = prog;
+    } catch { /* 读不了就按未知处理 */ }
+    if (!promptYesNoSync(`  已有 daemon 注册（指向 ${oldTarget}），是否覆盖为当前项目？`, 'n')) {
+      console.log('  → 已保留现有 daemon 注册（如需重新注册请先手动删除 ~/Library/LaunchAgents/com.sofagent.daemon.plist）');
+      return;
+    }
+    try {
+      execFileSync('launchctl', ['unload', plistPath], { stdio: 'pipe' });
+      console.log('  → 已卸载旧 daemon 注册');
+    } catch {
+      // 可能没有在运行，忽略
+    }
+  }
+
+  // 解析 daemon 入口——未安装时如实报错（npx 场景：不生成坏 plist、不打印假成功）
+  const entry = resolveDaemonEntry(cwd);
+  if (!entry) {
+    console.log('  ⚠️ daemon 未安装，跳过常驻服务注册');
+    console.log('  → 如需 7×24 常驻监控，请先全局安装 daemon: npm install -g @sofagent/daemon');
+    console.log('  → git commit 审计不受影响（hook 已安装）');
+    return;
+  }
+
+  // PATH 兜底：确保 node bin 目录可用
+  const nodeBinDir = dirname(process.execPath);
+  const safeNodeBinDir = nodeBinDir || '/usr/local/bin';
+  const envPath = `${safeNodeBinDir}:/usr/local/bin:/usr/bin:/bin`;
+
+  const plistContent = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.sofagent.daemon</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>${entry.cliPath}</string>
+${entry.args.map((a) => `        <string>${a}</string>`).join('\n')}
+    </array>
+    <key>WorkingDirectory</key>
+    <string>${projectWorkingDir}</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>${resolveDaemonLog(cwd)}</string>
+    <key>StandardErrorPath</key>
+    <string>${resolveDaemonLog(cwd)}</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>${envPath}</string>
+    </dict>
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+</dict>
+</plist>
+`;
+
+  writeFileSync(plistPath, plistContent, 'utf-8');
+  chmodSync(plistPath, 0o644);
+
+  // 加载 LaunchAgent——如实报告结果
+  try {
+    execFileSync('launchctl', ['load', plistPath], { stdio: 'pipe' });
+    console.log('  ✅ daemon 已注册并启动（下次开机自动运行）');
+    console.log(`  → 监控项目: ${projectWorkingDir}`);
+    console.log(`  → 日志: data/daemon.log`);
+    console.log('  → 如需停用: launchctl unload ~/Library/LaunchAgents/com.sofagent.daemon.plist');
+  } catch (err) {
+    console.log(`  ⚠️ daemon 注册文件已创建，但启动失败: ${(err as Error).message}`);
+    console.log('  → 手动启动: launchctl load ~/Library/LaunchAgents/com.sofagent.daemon.plist');
+  }
+}
+
 /**
  * 运行初始化
  * 幂等：已存在的配置不覆盖，已安装的 hook 不重复写入
@@ -146,6 +336,24 @@ export function runInit(): void {
 
   // P1-1: 确保 .sofagent/ 被 gitignore
   ensureGitignore(cwd);
+
+  // P1-24: 自动生成 HMAC 密钥（~/.sofagent-key，权限 600）
+  // 配合 P0-3 修复形成完整防篡改链路：默认启用 HMAC-SHA256 强校验
+  const hmacKeyPath = join(homedir(), '.sofagent-key');
+  if (existsSync(hmacKeyPath)) {
+    console.log('  → ~/.sofagent-key 已存在，不覆盖（审计历史继续使用现有密钥）');
+  } else {
+    try {
+      const key = randomBytes(32).toString('hex');
+      writeFileSync(hmacKeyPath, key + '\n', { mode: 0o600 });
+      chmodSync(hmacKeyPath, 0o600);
+      console.log('  ✅ HMAC 密钥已自动生成（~/.sofagent-key，权限 600）');
+      console.log('  ℹ️  审计历史已启用 HMAC-SHA256 签名，篡改可检测');
+      console.log('  ⚠️  请备份密钥文件，密钥丢失后历史记录将变为不可复验');
+    } catch (err) {
+      console.log(`  ⚠️ HMAC 密钥生成失败: ${(err as Error).message}（审计历史降级为 SHA-256）`);
+    }
+  }
 
   // [2/5] 安装 git commit-msg hook
   console.log('');
@@ -382,129 +590,26 @@ exit 0
 
   if (smokeOk) stepOk++;
 
-  // [5/5] 注册 daemon 文件系统监控（v1.0.8 新增）
+  // [5/5] 注册 daemon 文件系统监控（v1.0.8 新增；v1.2.5 P0-1 改为确认后注册）
   console.log('');
   console.log('[5/5] 注册 daemon 文件系统监控...');
 
   const isMacOS = platform() === 'darwin';
   if (isMacOS) {
-    try {
-      const launchAgentsDir = join(homedir(), 'Library', 'LaunchAgents');
-      if (!existsSync(launchAgentsDir)) {
-        mkdirSync(launchAgentsDir, { recursive: true });
-      }
-
-      // 获取 sofagent-daemon 的绝对路径和 node 的 bin 目录
-      // v1.1.4 修复：daemon 已从 audit 拆出，入口是 sofagent-daemon（不是 sofagent-audit --daemon）
-      let cliPath = 'sofagent-daemon';
-      let nodeBinDir = '';
+    // P0-1: 默认不装——询问用户是否注册 daemon 常驻服务。
+    // 非 TTY（脚本/CI/npx）默认 N，绝不挂起等待输入；也可用 --no-daemon 显式跳过。
+    if (process.argv.includes('--no-daemon')) {
+      console.log('  → 已指定 --no-daemon，跳过 daemon 常驻服务注册');
+    } else if (!promptYesNoSync('  是否注册 daemon 常驻服务（后台监控文件变更，开机自启）？', 'n')) {
+      console.log('  → 已跳过 daemon 注册（git commit 审计不受影响）');
+      console.log('  → 如需常驻监控，重新运行 sofagent-audit --init 并选择注册');
+    } else {
       try {
-        // 优先找 sofagent-daemon（v1.1.3 拆包后的独立入口）
-        try {
-          cliPath = execSync('which sofagent-daemon', { encoding: 'utf-8' }).trim();
-        } catch {
-          // fallback：找 sofagent-audit 所在 bin 目录，拼出 sofagent-daemon（通常 link 在同目录）
-          try {
-            const auditPath = execSync('which sofagent-audit', { encoding: 'utf-8' }).trim();
-            const auditBinDir = auditPath.substring(0, auditPath.lastIndexOf('/'));
-            const candidateDaemon = `${auditBinDir}/sofagent-daemon`;
-            if (existsSync(candidateDaemon)) {
-              cliPath = candidateDaemon;
-            } else {
-              // 项目内 fallback：直接用 daemon dist 入口
-              cliPath = 'node';
-            }
-          } catch {
-            cliPath = 'sofagent-daemon';
-          }
-        }
-        nodeBinDir = dirname(process.execPath);
-      } catch {
-        // fallback 到 PATH 中的 sofagent-daemon
-      }
-
-      // v1.1.4 修复：WorkingDirectory 用项目 cwd，不是 $HOME
-      // daemon 启动后以 cwd 为 projectDir，监控的就是这个项目
-      const projectWorkingDir = cwd;
-
-      // v1.1.4 修复：cliPath 兜底——如果没找到 sofagent-daemon 二进制，
-      // 用项目内 daemon dist 入口 + node 绝对路径
-      let finalCliPath = cliPath;
-      let finalProgArgs: string[];
-      if (cliPath === 'node') {
-        // node + 项目内 daemon/dist/cli.js
-        const daemonEntry = join(cwd, 'sofagent', 'daemon', 'dist', 'cli.js');
-        finalCliPath = nodeBinDir ? join(nodeBinDir, 'node') : 'node';
-        finalProgArgs = [daemonEntry, 'start'];
-      } else {
-        finalProgArgs = ['start'];
-      }
-
-      // PATH 兜底：确保 nodeBinDir 不为空
-      const safeNodeBinDir = nodeBinDir || '/usr/local/bin';
-      const envPath = `${safeNodeBinDir}:/usr/local/bin:/usr/bin:/bin`;
-
-      const plistPath = join(launchAgentsDir, 'com.sofagent.daemon.plist');
-
-      if (existsSync(plistPath)) {
-        console.log('  → LaunchAgent 已存在，先卸载旧版本...');
-        try {
-          execFileSync('launchctl', ['unload', plistPath], { stdio: 'pipe' });
-        } catch {
-          // 可能没有在运行，忽略
-        }
-      }
-
-      const plistContent = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.sofagent.daemon</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>${finalCliPath}</string>
-${finalProgArgs.map((a) => `        <string>${a}</string>`).join('\n')}
-    </array>
-    <key>WorkingDirectory</key>
-    <string>${projectWorkingDir}</string>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <true/>
-    <key>StandardOutPath</key>
-    <string>${resolveDaemonLog(cwd)}</string>
-    <key>StandardErrorPath</key>
-    <string>${resolveDaemonLog(cwd)}</string>
-    <key>EnvironmentVariables</key>
-    <dict>
-        <key>PATH</key>
-        <string>${envPath}</string>
-    </dict>
-    <key>ThrottleInterval</key>
-    <integer>5</integer>
-</dict>
-</plist>
-`;
-
-      writeFileSync(plistPath, plistContent, 'utf-8');
-      chmodSync(plistPath, 0o644);
-
-      // 加载 LaunchAgent
-      try {
-        execFileSync('launchctl', ['load', plistPath], { stdio: 'pipe' });
-        console.log('  ✅ daemon 已注册并启动（下次开机自动运行）');
-        console.log(`  → 监控项目: ${projectWorkingDir}`);
-        console.log(`  → 日志: data/daemon.log`);
-        console.log('  → 如需停用: launchctl unload ~/Library/LaunchAgents/com.sofagent.daemon.plist');
-        stepOk++;
+        registerDaemon(cwd);
       } catch (err) {
-        console.log(`  ⚠️ daemon 注册文件已创建，但启动失败: ${(err as Error).message}`);
-        console.log('  → 手动启动: launchctl load ~/Library/LaunchAgents/com.sofagent.daemon.plist');
+        console.log(`  ⚠️ daemon 注册失败: ${(err as Error).message}`);
+        console.log('  → git hooks 仍可用，如需 daemon 请手动安装: npm install -g @sofagent/daemon');
       }
-    } catch (err) {
-      console.log(`  ⚠️ daemon 注册失败: ${(err as Error).message}`);
-      console.log('  → 手动安装: sofagent-audit --install-hook（git hooks 仍可用）');
     }
   } else {
     console.log('  ⓘ 非 macOS 系统，跳过 LaunchAgent 注册');
@@ -515,7 +620,7 @@ ${finalProgArgs.map((a) => `        <string>${a}</string>`).join('\n')}
   console.log('');
   console.log('╔══════════════════════════════════════════╗');
   console.log('║  sofagent-audit 初始化完成               ║');
-  console.log('║  git commit 审计 + daemon 文件监控已就绪   ║');
+  console.log('║  git commit 审计已就绪                   ║');
   console.log('╚══════════════════════════════════════════╝');
   console.log('');
   console.log('  💡 首次使用？先 cd 到你的项目目录跑 `sofagent-audit --init` 初始化审计。');

@@ -282,7 +282,9 @@ describe('audit-history', () => {
     });
 
     it('无 HMAC 密钥：降级 SHA-256，append + check 通过且不含 hmacSig', () => {
+      // P0-3: 单条不足 2 条 → insufficient（不可信）；≥2 条才能验证链
       appendHistory(makeEntry('2026-02-01T00:00:00Z', 0), testDir);
+      appendHistory(makeEntry('2026-02-01T00:00:01Z', 0), testDir);
       expect(checkHistoryChainIntegrity(testDir)).toBe(true);
       const lines = readFileSync(getHistoryFilePath(testDir), 'utf-8').trim().split('\n');
       const parsed = JSON.parse(lines[0]!);
@@ -292,6 +294,7 @@ describe('audit-history', () => {
     it('有 HMAC 密钥：写入 hmacSig 且 append + check 通过', () => {
       writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
       appendHistory(makeEntry('2026-02-02T00:00:00Z', 0), testDir);
+      appendHistory(makeEntry('2026-02-02T00:00:01Z', 0), testDir);
       expect(checkHistoryChainIntegrity(testDir)).toBe(true);
       const lines = readFileSync(getHistoryFilePath(testDir), 'utf-8').trim().split('\n');
       const parsed = JSON.parse(lines[0]!);
@@ -328,10 +331,10 @@ describe('audit-history', () => {
       expect(checkHistoryChainIntegrity(testDir)).toBe(false);
     });
 
-    it('P0-1: stable 条目 + hashVersion=2 + HMAC 不匹配 → unverifiable（指纹漂移假阳性修复）', () => {
-      // appendHistory 写入 hashVersion:2 + hmacAlgo:'stable'
-      // 篡改后 HMAC 不匹配，但因 hashVersion=2 含环境指纹，无法区分「篡改」与「指纹漂移」
-      // → 应归为 unverifiable（黄），而非 tampered（红）
+    it('P0-3(2026-08-02 复核修正): stable 条目 + hashVersion=2 + HMAC 不匹配且环境指纹一致 → tampered', () => {
+      // appendHistory 写入 hashVersion:2 + hmacAlgo:'stable' + envFingerprint（当前环境指纹）
+      // 篡改后 HMAC 不匹配，但 envFingerprint 与当前指纹一致（运行环境未变）→
+      // 只能是内容被改 → tampered（红）。这是 P0-3 修复的核心：v2 条目篡改不再检测不到。
       writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
       appendHistory(makeEntry('2026-04-01T00:00:00Z', 0), testDir);
       appendHistory(makeEntry('2026-04-02T00:00:00Z', 0), testDir);
@@ -347,9 +350,9 @@ describe('audit-history', () => {
       tampered.exitCode = 2;
       writeFileSync(histPath, lines.slice(0, -1).concat(JSON.stringify(tampered)).join('\n') + '\n');
 
-      // hashVersion=2 → 无法区分篡改与指纹漂移 → unverifiable（黄）
+      // hashVersion=2 + 环境指纹一致 → HMAC 不匹配 = 确为篡改（红），不再是「无法区分」的黄
       const result = checkHistoryChainDetailed(testDir);
-      expect(result.status).toBe('unverifiable');
+      expect(result.status).toBe('tampered');
     });
 
     it('P0-1: stable 条目 + hashVersion 未定义 + HMAC 不匹配 → tampered（环境无关确为篡改）', () => {

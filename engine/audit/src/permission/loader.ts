@@ -1,6 +1,8 @@
 // ============================================================
 // permission/loader.ts · 权限配置加载与合并
 // v1.2.0 新增
+// v1.2.5 P0-10: 配置解析容错——JSON 解析失败 / 缺少 rules 数组时
+//   WARN 并按空配置处理，不让权限配置 DoS 崩溃审计进程。
 // ============================================================
 
 import * as fs from 'fs';
@@ -9,8 +11,21 @@ import type { PermissionConfig, PermissionRule, MergedPermission } from './types
 
 function loadConfig(filePath: string): PermissionConfig | null {
   if (!fs.existsSync(filePath)) return null;
-  const raw = fs.readFileSync(filePath, 'utf-8');
-  return JSON.parse(raw) as PermissionConfig;
+  try {
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    const parsed = JSON.parse(raw) as Partial<PermissionConfig>;
+    // P0-10: 缺少 rules 数组（如 {"deny":[...]} 错误 schema）→ WARN + 空配置，不崩溃
+    if (!Array.isArray(parsed.rules)) {
+      console.warn(`[sofagent] 权限配置缺少 rules 数组（已忽略）: ${filePath}`);
+      return { rules: [] };
+    }
+    return parsed as PermissionConfig;
+  } catch (err) {
+    console.warn(
+      `[sofagent] 权限配置解析失败（已忽略该文件，不阻断审计）: ${filePath} → ${err instanceof Error ? err.message : String(err)}`
+    );
+    return { rules: [] };
+  }
 }
 
 export function loadPermission(projectDir: string): MergedPermission {

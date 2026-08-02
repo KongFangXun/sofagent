@@ -42,13 +42,21 @@ export function pickWinner(a: KnowledgeQueryResult, b: KnowledgeQueryResult): Kn
 /**
  * 合并本地 + 联邦结果：CRDT 收敛 + 去重 + trust/mtime 排序
  *
+ * P0-9: peer 结果覆盖本地条目时触发 onPeerOverride 告警。
+ * 「默认不覆盖」由 trust 排序天然保证：本地知识缺省 internal（trust=2），
+ * 远端 peer 缺省 user（trust=1，见 query-router getLocalPeerTrust）——
+ * 同 id 冲突时 pickWinner 按 trust 优先，本地 internal 恒胜远端 user，
+ * 除非本地显式把 peer 提升为 internal/official 或本地条目本身是 user/web。
+ *
  * @param local 本地 knowledge 查询结果（source 标 'local'）
  * @param remote 各 peer 的返回（已经过 query-router 双重校验）
+ * @param onPeerOverride 可选告警回调（peerId, id, localTrust, peerTrust）
  * @returns 合并去重后的条目，按 trust 降序 → mtime 降序排列
  */
 export function mergeFederationResults(
   local: KnowledgeQueryResult[],
   remote: FederationResult[],
+  onPeerOverride?: (peerId: string, id: string, localTrust: Trust, peerTrust: Trust) => void,
 ): MergedKnowledge[] {
   // 1. 裁决预计算（change 回调外）：id → 胜出版本 + 来源
   const winners = new Map<string, KnowledgeQueryResult>();
@@ -62,7 +70,18 @@ export function mergeFederationResults(
       const existing = winners.get(item.id);
       const winner = existing ? pickWinner(existing, item) : item;
       winners.set(item.id, winner);
-      if (winner === item) sourceOf.set(item.id, fedResult.peerId);
+      if (winner === item) {
+        // P0-9: 远端结果覆盖了本地条目 → 告警（trust 排序已保证默认不覆盖，走到这里是显式配置了高信任或本地低信任）
+        if (sourceOf.get(item.id) === 'local') {
+          onPeerOverride?.(
+            fedResult.peerId,
+            item.id,
+            existing?.trust ?? 'internal',
+            item.trust ?? 'user',
+          );
+        }
+        sourceOf.set(item.id, fedResult.peerId);
+      }
     }
   }
 

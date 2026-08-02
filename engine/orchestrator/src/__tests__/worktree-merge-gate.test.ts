@@ -84,7 +84,7 @@ describe('audit PASS → merge --no-ff', () => {
     // 注册表记录了 merge 事件
     const events = readWorktreeRegistry(resolveRegistryPath(tmpDir)).map((e) => e.event);
     expect(events).toContain('merge');
-  });
+  }, 30000 /* P0-11: 真实 git 合并耗时长，vitest 默认 5000ms 会 50% 超时假绿 */);
 });
 
 // ════════════════════════════════════════
@@ -130,7 +130,7 @@ describe('audit FAIL → 拒绝合并', () => {
     expect(retries).toHaveLength(1);
     expect(retries[0]!.agentId).toBe('eng-fail');
     expect(retries[0]!.reason).toContain('A1');
-  });
+  }, 30000 /* P0-11: 真实 git 合并不设超时会 50% 超时假绿 */);
 });
 
 // ════════════════════════════════════════
@@ -148,7 +148,7 @@ describe('分支无新提交 → noop', () => {
     expect(fs.existsSync(h.path)).toBe(true);
     expect(branchList(h.branch, tmpDir)).toBe(h.branch);
     await h.cleanup();
-  });
+  }, 30000 /* P0-11: 真实 git 合并不设超时会 50% 超时假绿 */);
 });
 
 // ════════════════════════════════════════
@@ -191,5 +191,5 @@ describe('文本冲突 + incoming scope 声明 → 自动仲裁合并', () => {
     expect(records[0]!.status).toBe('resolved');
     expect(records[0]!.files).toContain('README.md');
     expect(records[0]!.incoming.agentId).toBe('eng-conflict');
-  });
+  }, 30000 /* P0-11: 真实 git 合并不设超时会 50% 超时假绿 */);
 });

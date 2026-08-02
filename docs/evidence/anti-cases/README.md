@@ -9,7 +9,7 @@
 | 003 | [正向组测试方法论陷阱（满分但不可信）](./003-test-methodology-pitfalls.md) | 2026-06-24 |
 | 004 | [纪律层实验两次 100 次对照仍无法验证（实验设计天花板）](./004-discipline-experiment-inconclusive.md) | 2026-06-30 |
 
-> 反面教材但不在本目录：benchmark 的 [WorkBuddy A/B](../benchmark/2026-06-23-workbuddy-ab.md) — 同 session 固定顺序测试，知识传递效应未排除，已被 v0.85 降级。
+> 反面教材但不在本目录：benchmark 的 [WorkBuddy A/B](../../archive/evidence/2026-06-23-workbuddy-ab.md) — 同 session 固定顺序测试，知识传递效应未排除，已被 v0.85 降级。
 
 ---
 

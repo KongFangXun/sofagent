@@ -128,18 +128,70 @@ async function pushWebhook(
   }
 }
 
+/** im-outbox 保留天数——超过自动清理（P0-2） */
+const OUTBOX_RETENTION_DAYS = 7;
+
+/** im-outbox 单目录文件数上限——超过告警并停止写入（P0-2） */
+const OUTBOX_MAX_FILES = 100;
+
 async function pushOpenClawIM(title: string, message: string): Promise<boolean> {
   // OpenClaw IM channel——通过本地 socket / 配置文件桥接
   // v1.1.5 最小实现：写入 im-outbox/ 由 OpenClaw 端拉取
   // v1.2.1：默认输出目录从 .sofagent/im-outbox/ 迁移到 data/im-outbox/
-  const { writeFileSync, mkdirSync, existsSync } = await import('fs');
+  // v1.2.5 P0-2：im-outbox 数据爆炸修复——加保留策略 + 上限 + 去重：
+  //   ① 写入前清理超过 7 天的旧文件（保留策略）
+  //   ② 单目录文件数达上限（100）时告警并停止写入（上限）
+  //   ③ 同内容文件已存在则跳过写入（去重——知识沉淀周报不再重复落盘）
+  const { writeFileSync, mkdirSync, existsSync, readdirSync, readFileSync, rmSync, statSync } = await import('fs');
   const { join } = await import('path');
   const dataDir = process.env.SOFAGENT_DATA || DATA_DIR;
   const outboxDir = join(dataDir, 'im-outbox');
   try {
     if (!existsSync(outboxDir)) mkdirSync(outboxDir, { recursive: true });
+
+    const now = Date.now();
+    const retentionMs = OUTBOX_RETENTION_DAYS * 24 * 3600 * 1000;
+    let fileList = readdirSync(outboxDir).filter((f) => f.endsWith('.md'));
+
+    // ① 保留策略：清理超过保留期的旧文件
+    const survivors: string[] = [];
+    for (const f of fileList) {
+      try {
+        const st = statSync(join(outboxDir, f));
+        if (now - st.mtimeMs > retentionMs) {
+          rmSync(join(outboxDir, f), { force: true });
+        } else {
+          survivors.push(f);
+        }
+      } catch {
+        survivors.push(f); // 读不了状态的不删（保守）
+      }
+    }
+    fileList = survivors;
+
+    // ② 上限：超过阈值告警并停止写入（防数据爆炸）
+    if (fileList.length >= OUTBOX_MAX_FILES) {
+      notify(
+        `im-outbox 文件数达上限（${fileList.length}/${OUTBOX_MAX_FILES}），停止写入——请检查 OpenClaw 端是否正常拉取`,
+        { source: 'push-target', level: 'warn' },
+      );
+      return false;
+    }
+
+    // ③ 去重：同内容已存在则跳过（幂等，不再重复落盘）
+    const body = `# ${title}\n\n${message}\n`;
+    for (const f of fileList) {
+      try {
+        if (readFileSync(join(outboxDir, f), 'utf-8') === body) {
+          return true; // 已存在相同内容——跳过写入
+        }
+      } catch {
+        // 单个文件读不了不影响去重流程
+      }
+    }
+
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.md`;
-    writeFileSync(join(outboxDir, filename), `# ${title}\n\n${message}\n`);
+    writeFileSync(join(outboxDir, filename), body);
     return true;
   } catch (err) {
     notify(`openclaw:im 写入失败: ${(err as Error).message}`, { source: 'push-target', level: 'warn' });

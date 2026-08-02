@@ -46,6 +46,7 @@ const defaultAudit: AuditWriter = (entry) => {
  * @param localFallback 本地查询函数（search_knowledge 的本地路径）
  * @param channel 传输 channel（可选；缺省/为空时按"无联邦能力"本地查）
  * @param audit 审计写入回调
+ * @param onPeerOverride P0-9: 远端结果覆盖本地条目时的告警回调（默认静默）
  * @returns 合并结果（纯本地时 source 全为 'local'）
  */
 export async function withOfflineFallback(
@@ -54,18 +55,19 @@ export async function withOfflineFallback(
   localFallback: () => KnowledgeQueryResult[],
   channel?: FederationChannel,
   audit: AuditWriter = defaultAudit,
+  onPeerOverride?: (peerId: string, id: string) => void,
 ): Promise<MergedKnowledge[]> {
   const localResults = safeLocal(localFallback);
 
   // 无联邦能力（无 channel / 无 peer）→ 直接本地查
   if (!channel || peers.length === 0) {
     audit({ action: 'federation_query', peers: [], merged: localResults.length, onlinePeers: 0, at: new Date().toISOString() });
-    return mergeFederationResults(localResults, []);
+    return mergeFederationResults(localResults, [], onPeerOverride);
   }
 
   try {
     const remote = await broadcastQuery(query, peers, channel);
-    const merged = mergeFederationResults(localResults, remote);
+    const merged = mergeFederationResults(localResults, remote, onPeerOverride);
     audit({
       action: 'federation_query',
       peers: peers.map((p) => p.peerId),
@@ -77,7 +79,7 @@ export async function withOfflineFallback(
   } catch {
     // federation 整块失败 → 退化纯本地（故障静默，不影响 MCP server）
     audit({ action: 'federation_query', peers: peers.map((p) => p.peerId), merged: localResults.length, onlinePeers: 0, at: new Date().toISOString() });
-    return mergeFederationResults(localResults, []);
+    return mergeFederationResults(localResults, [], onPeerOverride);
   }
 }
 

@@ -211,7 +211,9 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   console.log('\n── 审计日志完整性 ──');
   const keyStatus = validateHmacKey();
   if (!keyStatus.configured) {
-    warn('无 HMAC 签名，完整性校验强度降低：审计日志仅 SHA-256 校验（Agent 可重算整链）。配置 ~/.sofagent-key 可启用 HMAC-SHA256 强校验');
+    // P0-3 (2026-08-02 复核修正)：--init-hmac 命令不存在，提示语指向 P1-24 的 --init 入口
+    // （--init 已实现自动生成 ~/.sofagent-key）
+    warn('无 HMAC 签名，完整性校验强度降低：审计日志仅 SHA-256 校验（Agent 可重算整链）。运行 sofagent-audit --init 可自动生成 HMAC 密钥（~/.sofagent-key）启用 HMAC-SHA256 强校验');
   } else if (!keyStatus.strong) {
     // FLAG-4：弱密钥明确告警，不静默稀释强校验
     warn(`HMAC 密钥强度不足（${keyStatus.reason}）——审计日志强校验被弱密钥稀释，建议重新生成 ≥16 字节强密钥（如：openssl rand -hex 32 > ~/.sofagent-key && chmod 600 ~/.sofagent-key）`);
@@ -219,7 +221,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     ok('已配置 HMAC 密钥（~/.sofagent-key，≥16 字节），审计日志使用 HMAC-SHA256 强校验');
   }
 
-  // 实际校验链完整性（v1.2.0: checkHistoryChainDetailed 已下沉到 core，区分篡改 vs 历史不可复验）
+  // 实际校验链完整性（v1.2.0: checkHistoryChainDetailed 已下沉到 core，区分篡改 vs 历史不可复验 vs 不可信）
   let auditLogOk = true;
   try {
     const result = checkHistoryChainDetailed();
@@ -234,6 +236,10 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
      1. secret key 发生变更（如更换机器/重装系统）→ 运行 sofagent-audit --init --reset-chain
      2. 审计日志文件损坏（并发写入冲突）→ 检查 ~/.sofagent/data/audit/history.jsonl 是否有损坏行
      3. 审计日志确实被篡改 → 检查 ~/.sofagent/data/audit/history.jsonl 的修改时间`);
+    } else if (result.status === 'insufficient') {
+      // ③ 历史不可信（黄，P0-3）：删除/单条不再报 ok——显式声明防篡改链不可验证
+      auditLogOk = false;
+      warn(`审计日志 hash chain 不可验证（${result.detail ?? '审计历史不足'}）——审计历史不存在或不足 2 条，无法构成可验证的防篡改链。如非全新安装，请核查审计历史是否被删除`);
     } else {
       // ② 历史不可复验（黄）：key/环境漂移，非篡改——不报「链断裂/篡改」，不判失败
       warn(`审计日志 hash chain 不可复验（黄色提示，非篡改）：${result.detail ?? ''}。这是由于密钥轮换，或运行环境变化（如更换设备/用户/仓库路径）导致的预期断裂，非安全事件。如确为本人密钥变更，可忽略此警告；如需重置 hash chain，运行 sofagent-audit --init --reset-chain。如非本人操作，请核查 ~/.sofagent-key 与运行环境`);

@@ -5,11 +5,12 @@
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
-## 现在在哪：v1.2.5（规划中 · 激活链 Phase 1）
+## 现在在哪：v1.2.5（规划中 · 激活链 + 审计加固）
 
-> **🔗 激活链 ACTIVATE + 多设备前置（v1.2.5）**：
+> **🔗 激活链 ACTIVATE + 🛡️ 审计引擎加固 + 多设备前置（v1.2.5）**：
 > 新增 `activate.ts`，读 FDE 交付物（ontology + workflow.yml + skills/）→ 注册企业 SubAgent → 写入 `.sofagent/subagents/*.yml`。
 > 解决"FDE 交付后断裂带"——交付物躺在文件里没人消费，需要手动接线才能跑起来。
+> **🛡️ 审计引擎加固**：AUDIT_PRIORITY 四层重构（安全红线/业务底线/能力拐杖/工程规范）+ 新增 A20-A23 四条安全规则（不泄外联/不植后门/不越权限/不逃路径）+ E3 并入 A11 精简规则数 + A2/A3 缺陷修复。
 > 多设备前置（轻量）：Agent 独立身份码 + 跨设备审计轨迹聚合 + 协议中立审计。
 >
 > 📖 [v1.2.5 开发日志](./docs/changelog/v1.2/v1.2.5.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
@@ -86,7 +87,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.2.2** | **数据主权 + 路由 + Dashboard（数据主权 + SubAgent 实时面板）** | ① 数据主权审计追踪（4 维审计日志 + 年/月目录 + 每日/周/月报告 + 四路分发闭环）② 混合模型路由层（ModelRouter 敏感度×任务类型路由 + Ollama 接入）③ FDE Dashboard 第一版（数据主权视图 + **SubAgent 实时面板 L3**：消费 v1.2.1 L2 数据，双 agent 状态卡 + 工具调用流 + 成本曲线 + 心跳检测）④ Skill 分层升级三策略 install.sh 实现（详见 [开发日志](./docs/changelog/v1.2/v1.2.2.md)）|
 | **v1.2.3** | **Dashboard 产品化 + 编排隔离底座 + Fresh-Eyes 流程化** | ① **Fresh-Eyes Dashboard 集成**（fresh-eyes-driver 的 A/B sub agent 写入 sub-progress-*.jsonl 至 `data/forge-runs/`，Dashboard `--watch` 模式实时显示 loop 审查进度——每轮发现数、当前审查文件、A/B 双盲状态）② Dashboard 波次拓扑可视化（bash + jq ASCII art 渲染控制图：节点/边/波次分层实时状态，延续 v1.2.2 零依赖路线）③ 编排隔离底座（git worktree 四子里程碑：隔离原语→审计合并卡关→冲突消解→filesValue 边界）④ Fresh-Eyes-Loop 移至阶段一（releasing.md SOP 重组——新版本第一步跑 fresh-eyes-loop 审查上版本，提前自 v1.2.4）⑤ Workspace 变更摘要（每次运行后记录创建/修改/删除文件清单 → Dashboard 消费，提前自 v1.2.8）⑥ Dashboard 用户可读性（技术状态→用户可读映射 + --technical 切回）（详见 [开发日志](./docs/changelog/v1.2/v1.2.3.md)）|
 | **v1.2.4** | **知识进化 + 知识健康** | ① 分层巡检 L1/L2/L3（@daily/@weekly/@monthly 三级 + 读写回路对标）② skillopt 自动触发（失败模式 3 次自动优化）③ 失败清单自动优化（负面样本为主要燃料）④ conflict-check CLI + 联邦蒸馏 ⑤ **进化引擎接通 eval**（think-generator 读 eval failures → 写 think.md，前置 eval 补全在 v1.2.1 P0b）⑥ **Dashboard 历史趋势 + 任务统计**（v1.2.2 每日快照 → 周对比/月趋势/任务成功率/TOP5 违规，v1.2.4 补齐）⑦ **Skill × MCP 集成**（P3 独立开发线：S1 Skill 引用 MCP 工具 / S2 新增 6 tools / S3 Skill 精简 / S4 数据变更审计 D1-D5 / S5 审计结果汇报 + 品牌可见化五层兜底）⑧ **FDE 人机分离 + Skill 分包**（P4 独立开发线：README 门面 / GUIDE 学习手册 / SKILL/SKILL.md 升格唯一主入口 / 子 Skill 分包 01-05 / 删除 FDE/SKILL.md+FDE.md+quick-start.md，发布源 ./FDE→./SKILL）（Fresh-Eyes-Loop 移至阶段一已提前至 v1.2.3）（详见 [开发日志](./docs/changelog/v1.2/v1.2.4.md)）|
-| **v1.2.5** | **🔗 激活链 Phase 1 + 多设备前置** | **🔗 激活链 Phase 1 ACTIVATE**——新增 `activate.ts`，读 FDE 交付物 → 注册企业 SubAgent → 写入 `.sofagent/subagents/*.yml`（registry.ts 动态注册机制已有，缺的是往里写企业 Agent 的自动化流程）+ MCP `activate_workflow` tool。**多设备前置（轻量）**：① Agent 独立身份码 + KYA 轻量版（企业 SubAgent 注册即带身份）② 跨设备审计轨迹聚合 ③ 协议中立审计（只走 MCP + 开放格式）。⚠️ **原多设备 L2/L3 大项已拆**：L2 协作协议 → v1.3.3、L3 能力市场 → v1.3.4、权限体系+代理网关 → v1.4.0、归因引擎 → v2.x（详见 [开发日志](./docs/changelog/v1.2/v1.2.5.md) + [激活链设计](./docs/guides/fde-activation-chain.md)）|
+| **v1.2.5** | **🔗 激活链 Phase 1 + 🛡️ 审计引擎加固 + 多设备前置** | **🔗 激活链 Phase 1 ACTIVATE**——新增 `activate.ts`，读 FDE 交付物 → 注册企业 SubAgent → 写入 `.sofagent/subagents/*.yml`（registry.ts 动态注册机制已有，缺的是往里写企业 Agent 的自动化流程）+ MCP `activate_workflow` tool。**🛡️ 审计引擎加固**——AUDIT_PRIORITY 四层重构（安全红线 fast-fail / 业务底线 / 能力拐杖 / 工程规范）+ 新增 A20 不泄外联·A21 不植后门·A22 不越权限·A23 不逃路径四条安全规则（填补网络外传/持久化/提权/路径穿越四大盲区）+ E3 并入 A11 精简规则数 + A2 编码绕过修复 + A3 中文 commit 误报修复 + ToolGate/A2 正则统一。**多设备前置（轻量）**：① Agent 独立身份码 + KYA 轻量版 ② 跨设备审计轨迹聚合 ③ 协议中立审计。⚠️ **原多设备 L2/L3 大项已拆**：L2 协作协议 → v1.3.3、L3 能力市场 → v1.3.4、权限体系+代理网关 → v1.4.0、归因引擎 → v2.x（详见 [开发日志](./docs/changelog/v1.2/v1.2.5.md) + [激活链设计](./docs/guides/fde-activation-chain.md)）|
 | **v1.2.6** | **🔒 弹性预留 + 🔗 激活链 Phase 2 前半** | **储备项**：① `sofagent-audit --support-bundle` ② `--doctor` 输出增强 ③ README Deployment Sizing 表格 ④ One-Line Agent Setup。**🔗 激活链 Phase 2 前半**：workflow-parser 扩展支持 `agent: enterprise` 类型 + registry.ts 的 SubAgentDefinition 增加 hitl/hitlConfig/knowledgeDomain 字段——为 v1.2.7 StateGraph 构建打基础（详见 [开发日志](./docs/changelog/v1.2/v1.2.6.md)）|
 | **v1.2.7** | **编排引擎增强（DeerFlow 启发）+ 🔗 激活链 Phase 2 后半** | ① **Session Goals**（`/goal`）② **手动上下文压缩**（`/compact`）③ **Skill 渐进式加载** ④ **`--doctor` 可操作修复提示** ⑤ **FORGE driver 三方抽象** ⑥ **🔗 激活链 Phase 2 后半**——新增 `enterprise-graph.ts` + `composeEnterpriseWorkflow()`：从 FDE 交付物构建企业专属 LangGraph StateGraph（不调 LLM 拆任务，直接用 workflow.yml）+ 数据流三层设计（State 实时 + entity 持久化 + 双写）（详见 [开发日志](./docs/changelog/v1.2/v1.2.7.md)）|
 | **v1.2.8** | **记忆分层 + 定时任务（DeerFlow 启发）+ 🔗 激活链 Phase 3 前半** | ① **记忆事实级分层** ② **Scheduled Tasks MVP**（cron+once / 暂停/恢复/触发/历史/删除）③ **ToolOutputBudget 中间件化** ④ **🔗 激活链 Phase 3 前半**——dag-runner 扩展支持企业 Agent + 新增 `node-executor.ts` + `run-enterprise` CLI 子命令（详见 [开发日志](./docs/changelog/v1.2/v1.2.8.md)）|
@@ -120,7 +121,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.2.2** | **Planner 节点**（任务分解）+ **降级路由链**（retry→降级→标记→人工）+ **engineer-decide/execute 分层**（LLM 层 + 代码层）+ Dashboard Graph Engine 状态卡片 | ③Planner / ④降级 / ⑤LLM vs 代码 |
 | **v1.2.3** | **并行子图执行**（worktree 隔离 + 多 engineer 并发）+ **Dashboard ASCII 控制图**（节点/边/波次分层，bash + jq 渲染）+ **Fresh-Eyes 进度可视化** + **Workspace 变更摘要** | ①并行 / Dashboard 图视图 |
 | **v1.2.4** | ⚠️ 早期规划，**实际交付已调整**——v1.2.4 真实范围为「**知识进化 + 知识健康**」（分层巡检 L1/L2/L3 · skillopt 自动触发 · 失败清单自动优化 · 进化引擎接通 eval · Skill × MCP 集成 · FDE 人机分离，以 L88 迭代历程为准）。本行原「多类型 Checker + 受控循环升级」未随 v1.2.4 交付，相关 Graph Engine 能力归入后续版本规划 | ②Checker 扩展 / ⑥受控循环（未交付） |
-| **v1.2.5** | **五类边契约形式化**（数据流/控制流/权限流/证据流/失败流）+ **Anchor 配置**（冻结验收标准防自洽）+ Graph Engine 归因 | ⑧边契约 / ⑨Anchor |
+| **v1.2.5** | ⚠️ 早期规划，**实际交付已调整**——v1.2.5 真实范围为「**激活链 Phase 1 + 审计引擎加固**」（activate.ts 注册企业 SubAgent · AUDIT_PRIORITY 四层重构 · A20-A23 四条新安全规则 · E3 并入 A11 · A2/A3 缺陷修复 · 多设备前置轻量版）。本行原「边契约形式化 / Anchor 配置」未随 v1.2.5 交付，相关 Graph Engine 能力归入 v1.3.x 规划 | ⑧边契约 / ⑨Anchor（未交付） |
 | **v1.3.1** | 控制图多循环 DAG 波次并行（Kahn 拓扑 + `Send` API + ★Reality Anchor git diff guard edge） | ①并行（完整 DAG） |
 
 ### v1.2.0 — 记忆/知识层升级（本体结构铺垫）
@@ -327,7 +328,7 @@ sofagent 的编排引擎天然就是「控制图」——`engine/orchestrator/sr
 > 用户三问：① harness 层能否升级 meta-harness？② 何时能做运行时审计？③ 用 LangGraph create_react_agent 时是否就能做到运行时审计？
 
 **问题①：能否升级 meta-harness？** 能，但分两阶段——
-- 当前 harness 层 = SKILL.md 约束底座（注入层）+ 提交时 git diff 21 条规则。与 Omnigent 的本质差异：咱们管「提交时」，meta-harness 管「运行时」。
+- 当前 harness 层 = SKILL.md 约束底座（注入层）+ 提交时 git diff 24 条规则（v1.2.5 起：原 21 条 + A20-A23 四条安全规则）。与 Omnigent 的本质差异：咱们管「提交时」，meta-harness 管「运行时」。
 - 阶段一（运行时审计）：把「提交时审计」延伸为「运行时拦截 + 审计日志」——不替换 harness，而是在 createReactAgent 外面包一层 middleware。
 - 阶段二（meta-harness）：多 harness 编排 + 跨会话协作 + 统一策略治理（参考 Omnigent 的 server/agent/session 三档策略）。这是 **v1.5.0** 的事——承接 v1.4.0 沙箱底座（单 SubAgent 沙箱 → 多 harness 统一编排更连贯），不必拖到 v2.x。
 

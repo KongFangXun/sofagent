@@ -25,7 +25,9 @@ echo "=== 1b. 全仓相对路径死链扫描（维度 306）==="
 # 排除项说明：
 #   - 本段是"全仓死链扫描"，排除的是【不产出文档链接的目录】：
 #     node_modules/.workbuddy/.sofagent/（非文档）、docs/changelog（历史冻结）、
-#     docs/evidence（证据快照）、docs/archive + FORGE/archive（归档）、commercial（商务）
+#     docs/archive + FORGE/archive（归档）、commercial（商务）
+#   - 🔴 v1.2.5 P0-13/P0-14：docs/evidence 不再排除！此前 evidence/ 的 12 条死链
+#     因排除而漏检（假绿根因之一）。evidence/ 是核心证据文档，链接必须纳入检查。
 #   - SKILL/harness 排除：harness 模板含运行时动态路径占位（非真实链接）
 #   - 🔴 v1.2.4 P4：FDE/ 不再排除！FDE/GUIDE.md + FDE/README.md + FDE/templates/
 #     是核心人读文档，链接必须纳入自动检查（此前整目录排除 = 死链盲区）。
@@ -33,7 +35,7 @@ echo "=== 1b. 全仓相对路径死链扫描（维度 306）==="
 #     与本段死链检查的排除解耦——此处只考虑"链接有效性"，不考虑"预算归属"。
 DEAD_LINKS=0
 DEAD_DETAIL=""
-EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/docs/evidence/*" -not -path "*/SKILL/harness/*" -not -path "*/docs/archive/*" -not -path "*/FORGE/archive/*" -not -path "*/commercial/*")
+EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/SKILL/harness/*" -not -path "*/docs/archive/*" -not -path "*/FORGE/archive/*" -not -path "*/commercial/*")
 while IFS= read -r -d '' mdfile; do
   in_fence=0
   while IFS= read -r line; do
@@ -98,6 +100,13 @@ echo ""
 echo "=== 4. 文档分层预算 ==="
 
 # 公共排除条件（所有分层都排除的目录，手动展开到各层 find 命令）
+# ⚠️ P0-13 排除理由（明确化，非静默漏洞）：
+#   - docs/changelog + docs/archive + docs/evidence：历史冻结文档（发版后不再改），
+#     预算约束的是「当前维护中的活文档」体量——历史文档只增不减，纳入预算会让
+#     预算随版本累积线性爆炸，失去约束意义。archive/changelog 的体量由
+#     releasing.md 阶段五的归档瘦身流程单独管理。
+#   - SKILL/harness：模板目录，行数在 section 5 单独预算。
+#   - FDE：独立产品目录，行数由 FDE 侧单独管理。
 # shellcheck disable=SC2034  # 变量供文档参考，实际展开在各 LAYER find 命令中
 COMMON_EXCLUDE='node_modules .workbuddy .sofagent docs/changelog docs/evidence SKILL/harness FDE'
 
@@ -381,9 +390,12 @@ else
 fi
 
 echo ""
-echo "=== 11. 跨文档 #锚点 死链扫描（F-20，WARN 级）==="
+echo "=== 11. 跨文档 #锚点 死链扫描（F-20 · P0-13 起纳入 ERRORS）==="
 # 扫描 .md 中的跨文档锚点引用 [text](path.md#anchor)，检查目标文件和锚点是否存在
-# 排除 archive/changelog/node_modules
+# P0-13: 锚点告警不再只是 echo——纳入 ERRORS 计数（假绿根因之一：告警不阻断）。
+# 算法按 GitHub sanitize_anchor_name 修正（此前 [-\s]+ 折叠连字符 + 保留 emoji 导致
+# 11 条 100% 误报）：\p{Word}=字母/数字/下划线；保留空格/连字符；其余删除（含 emoji）；
+# 空格转连字符（不折叠已有连字符）。
 ANCHOR_WARN=0
 while IFS= read -r -d '' mdfile; do
   in_fence=0
@@ -402,32 +414,35 @@ while IFS= read -r -d '' mdfile; do
       resolved="$(dirname "$mdfile")/$file_part"
       resolved="$(cd "$(dirname "$resolved")" >/dev/null 2>&1 && echo "$(pwd)/$(basename "$resolved")" || echo "$resolved")"
       if [ ! -f "$resolved" ]; then
-        echo "  ⚠ ${mdfile}: 目标文件不存在 → ${target}"
+        echo "  ❌ ${mdfile}: 目标文件不存在 → ${target}"
         ANCHOR_WARN=$((ANCHOR_WARN + 1))
         continue
       fi
-      # 粗略检查锚点是否对应标题（GitHub 规则：小写+空格转-+去标点）
-      # 提取标题行，转成锚点格式，与 anchor_part 比对
-      anchor_lower=$(echo "$anchor_part" | tr '[:upper:]' '[:lower:]')
+      # 用同一算法归一化链接锚点与标题锚点后比对（GitHub sanitize_anchor_name 语义）
+      anchor_norm=$(printf '%s' "$anchor_part" | node -e '
+let s = require("fs").readFileSync(0, "utf8").replace(/\n$/, "").trim().toLowerCase();
+s = s.replace(/[^\p{L}\p{N}_\s-]/gu, "");
+s = s.trim();
+s = s.replace(/\t/g, " ");
+s = s.replace(/ /g, "-");
+console.log(s);')
       found_match=false
       while IFS= read -r heading; do
-        # 模拟 GitHub 锚点生成：去 # 前缀 → 小写 → 保留中文/字母/数字/emoji → 空格/连字符归一
-        # ⚠️ 用 node 实现（非 sed）：① \{1,\} 替代 \+（BSD sed 不支持）；② emoji（🪟🔄🔮）
-        #    是 GitHub 锚点的一部分必须保留，sed 的字符类删标点会误删 emoji
         norm=$(printf '%s' "$heading" | node -e '
 let h = require("fs").readFileSync(0, "utf8").replace(/\n$/, "");
 let a = h.replace(/^#{1,6}\s+/, "").trim().toLowerCase();
-a = a.replace(/[^\p{L}\p{N}\p{Emoji}\s-]/gu, "");
-a = a.replace(/[-\s]+/g, "-");
-a = a.replace(/^-+|-+$/g, "");
+a = a.replace(/[^\p{L}\p{N}_\s-]/gu, "");
+a = a.trim();
+a = a.replace(/\t/g, " ");
+a = a.replace(/ /g, "-");
 console.log(a);')
-        if [ "$norm" = "$anchor_lower" ]; then
+        if [ "$norm" = "$anchor_norm" ]; then
           found_match=true
           break
         fi
       done < <(grep -E '^#{1,6} ' "$resolved" 2>/dev/null)
       if ! $found_match; then
-        echo "  ⚠ ${mdfile}: 锚点可能失效 → ${target}"
+        echo "  ⚠ ${mdfile}: 锚点失效 → ${target}"
         ANCHOR_WARN=$((ANCHOR_WARN + 1))
       fi
     done
@@ -436,7 +451,8 @@ done < <(find . -name "*.md" "${EXCLUDE[@]}" -print0)
 if [ "$ANCHOR_WARN" -eq 0 ]; then
   echo "  ✓ 跨文档锚点无死链"
 else
-  echo "  共 ${ANCHOR_WARN} 处可能死链（人工确认）"
+  echo "  共 ${ANCHOR_WARN} 处锚点死链（已计入 ERRORS）"
+  ERRORS=$((ERRORS + ANCHOR_WARN))
 fi
 
 echo ""
