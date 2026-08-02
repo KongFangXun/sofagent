@@ -1478,7 +1478,7 @@ function writeFallbackFindings(roundDir) {
  * 读 findings.md 数 P0/P1/P2 标记；读 result.md verify 列数 FAIL。
  * 只解析机器可读信号，不读审查内容做语义判断。
  *
- * @returns {{ p0:number, p1:number, p2:number, hasFail:boolean, isClean:boolean }}
+ * @returns {{ p0:number, p1:number, p2:number, hasFail:boolean, isClean:boolean, isDegraded:boolean }}
  */
 function parseStopCondition(roundDir) {
   const findingsPath = join(roundDir, 'findings.md');
@@ -1506,10 +1506,34 @@ function parseStopCondition(roundDir) {
     hasFail = /\bFAIL\b/i.test(text);
   }
 
-  // 干净轮 = 无 P0 无 P1 无 P2 闭环失败（P2 全量修，未闭环也计入不干净）
-  const isClean = (p0 === 0 && p1 === 0 && p2 === 0 && !hasFail);
+  // 降级检测：findings/result 是降级占位文件时强制不干净。
+  // run-05 教训：4 个 worker 全崩 → 降级写 3 行模板占位 →
+  // parseStopCondition 数正则标记全是 0 → isClean=true → 连续 2 轮误判"成功完成"。
+  // 占位文件内容特征：包含"崩溃""降级占位""worker 异常终止""a-consolidate 失败"等标记。
+  let isDegraded = false;
+  const degradedMarkers = [
+    '崩溃（降级占位）',
+    'worker 异常终止',
+    '降级生成——a-consolidate 失败',
+    'b-fix 降级（未完成）',
+    '降级占位',
+  ];
+  for (const filePath of [findingsPath, resultPath]) {
+    if (!existsSync(filePath)) continue;
+    const text = readFileSync(filePath, 'utf-8');
+    for (const marker of degradedMarkers) {
+      if (text.includes(marker)) {
+        isDegraded = true;
+        break;
+      }
+    }
+    if (isDegraded) break;
+  }
 
-  return { p0, p1, p2, hasFail, isClean };
+  // 干净轮 = 无 P0 无 P1 无 P2 闭环失败 且 非降级产物
+  const isClean = !isDegraded && (p0 === 0 && p1 === 0 && p2 === 0 && !hasFail);
+
+  return { p0, p1, p2, hasFail, isClean, isDegraded };
 }
 
 /**
@@ -1931,7 +1955,7 @@ async function runRound(roundNum, runDir, target, dryRun) {
 
   // 判定停止条件
   const counts = parseStopCondition(roundDir);
-  console.log(`\n  [停止判定] P0=${counts.p0} P1=${counts.p1} P2=${counts.p2} FAIL=${counts.hasFail} → ${counts.isClean ? 'CLEAN' : 'NOT-CLEAN'}`);
+  console.log(`\n  [停止判定] P0=${counts.p0} P1=${counts.p1} P2=${counts.p2} FAIL=${counts.hasFail}${counts.isDegraded ? ' DEGRADED' : ''} → ${counts.isClean ? 'CLEAN' : 'NOT-CLEAN'}`);
 
   // 打印本轮成本摘要
   const costSummary = summarizeRoundCost(runDir, roundNum);
