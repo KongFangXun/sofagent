@@ -121,7 +121,7 @@ FORGE/
   README.md                     ← 你在这里
   quick-start.md                ← 模型接入与环境配置
   LEDGER.md                     ← 跨 run 永久索引（git 跟踪）
-  LESSONS.md                    ← 跨版本经验教训
+  lessons/                      ← 跨版本经验教训（index.md + 分章）
   ontology/                     ← 开发本体（dogfooding FDE §5）
     README.md                    ← 本体全景：六阶段闭环 + 多模型分工 + 文档分级
     objects.yml / actions.yml / constraints.yml
