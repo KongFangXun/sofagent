@@ -32,6 +32,7 @@ import { loadConfig, ConfigLoadError, ConfigParseError } from '@sofagent/core';
 import { VERSION } from '@sofagent/core';
 import { BASELINE_RULE_KEYS } from '@sofagent/core';
 import { checkConflict, mergeFederationResults } from '@sofagent/core';
+import { generateOntologyView } from '@sofagent/ontology';
 import { resolveDiffEndpoint } from './diff-ref';
 import { checkLogs } from '@sofagent/core';
 import { createShadowRepo, commitSnapshot, hasShadowRepo } from '@sofagent/core';
@@ -585,8 +586,8 @@ async function main(): Promise<void> {
   }
 
   // ontology 子命令（v1.0.9 新增，v1.0.8 改用 @sofagent/ontology）
+  // P2-9: audit 已声明 @sofagent/ontology 依赖——改静态 import 获类型安全（此前动态 import 运行时才报错）
   if (args.ontologyCommand === 'view') {
-    const { generateOntologyView } = await import('@sofagent/ontology');
     try {
       const output = generateOntologyView(process.cwd());
       process.stdout.write(output);
@@ -1139,11 +1140,12 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
     console.log('  扩展规则   未启用（E1 E2 E3 E4，config 中开启）');
   }
 
-  // 历史拦截统计
+  // 历史拦截统计（P2-7: loadHistory(500) 是"最近 500 条"截断语义，不是全量统计——
+  // 措辞明确"最近"，避免被误读为历史全量拦截数）
   const stats = getHistoryStats();
   if (stats) {
     console.log('');
-    console.log(`  历史拦截：${stats.total} 次审计记录（本月 ${stats.thisMonth} 次）`);
+    console.log(`  历史拦截：最近 ${stats.total} 条审计记录（本月 ${stats.thisMonth} 条；loadHistory 截断 500 条上限）`);
   }
 
   // 判定行

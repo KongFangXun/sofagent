@@ -189,4 +189,44 @@ describe('webhook', () => {
     expect(body.text.content).toContain('⚠️ sofagent 审计警告');
     expect(body.text.content).toContain('A3 不改越界');
   });
+
+  // ── P2-4: SSRF 防护 ──
+  it('P2-4: 内网/本机 webhook URL 被拒绝且不发起请求', async () => {
+    const mockFetch = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    const payload: WebhookPayload = {
+      platform: 'feishu',
+      url: 'http://127.0.0.1:8080/admin',
+      rules: [failRule],
+      exitCode: 2,
+    };
+    const result = await pushAuditResult(payload);
+    expect(result).toBe(false);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('P2-4: 私网 IP（10.x/192.168.x）被拒绝', async () => {
+    const mockFetch = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    const payload: WebhookPayload = {
+      platform: 'dingtalk',
+      url: 'http://192.168.1.10/hook',
+      rules: [failRule],
+      exitCode: 2,
+    };
+    const result = await pushAuditResult(payload);
+    expect(result).toBe(false);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('P2-4: 公网 webhook（oapi.dingtalk.com）正常放行', async () => {
+    const mockFetch = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    const payload: WebhookPayload = {
+      platform: 'dingtalk',
+      url: 'https://oapi.dingtalk.com/robot/send?access_token=abc',
+      rules: [failRule],
+      exitCode: 2,
+    };
+    const result = await pushAuditResult(payload);
+    expect(result).toBe(true);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
 });

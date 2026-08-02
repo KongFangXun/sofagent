@@ -6,6 +6,8 @@
 
 import type { RuleCheck } from './rules/types';
 import { VERSION } from '@sofagent/core';
+import { URL } from 'url';
+import { isIP } from 'net';
 
 export type WebhookPlatform = 'dingtalk' | 'feishu' | 'wecom';
 
@@ -15,6 +17,43 @@ export interface WebhookPayload {
   task?: string;
   rules: RuleCheck[];
   exitCode: number;
+}
+
+/**
+ * P2-4: SSRF 防护——webhook URL 指向本机/内网时拒绝推送。
+ * 审计数据（可能含文件路径/代码片段）不应被投递到内网服务：
+ * 恶意 Agent 若可写 config.yml 的 webhook.url，就能把审计数据 POST 到
+ * 内网管理端口（如 http://127.0.0.1:8080/admin）。
+ * 规则：http/https + 非回环/非私网/非链路本地/非内网域名后缀。
+ */
+export function isPrivateWebhookUrl(rawUrl: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return true; // 无法解析 → 拒绝
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return true;
+  const host = parsed.hostname;
+  if (/^localhost$/i.test(host)) return true;
+  if (/\.(local|internal|lan|intranet|home)$/i.test(host)) return true;
+  const ipType = isIP(host);
+  if (ipType === 0) return false; // 公共域名（钉钉/飞书/企微官方域名都是公网）放行
+  // IP 字面量
+  if (host === '127.0.0.1' || host === '::1' || host === '0.0.0.0') return true;
+  if (ipType === 4) {
+    const parts = host.split('.').map(Number);
+    const a = parts[0] ?? 0;
+    const b = parts[1] ?? 0;
+    if (a === 10) return true;                      // 10.0.0.0/8
+    if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12
+    if (a === 192 && b === 168) return true;        // 192.168.0.0/16
+    if (a === 169 && b === 254) return true;        // 169.254.0.0/16 链路本地
+    if (a === 127) return true;                     // 127.0.0.0/8
+  }
+  // IPv6 私网/链路本地简判
+  if (host.startsWith('fc') || host.startsWith('fd') || host.startsWith('fe80')) return true;
+  return false;
 }
 
 /**
@@ -67,6 +106,12 @@ function buildRequestBody(platform: WebhookPlatform, content: string): Record<st
  * @returns true 推送成功, false 推送失败
  */
 export async function pushAuditResult(payload: WebhookPayload): Promise<boolean> {
+  // P2-4: SSRF 防护——内网/本机 URL 直接拒绝，不发起请求
+  if (isPrivateWebhookUrl(payload.url)) {
+    console.warn(`[sofagent] webhook URL 指向本机/内网地址，已拒绝推送（SSRF 防护）: ${payload.url}`);
+    return false;
+  }
+
   // v1.1.3: 过滤 FAIL/WARN 规则用于消息构建，但 PASS 也推送
   const failedRules = payload.rules.filter(
     (r) => r.status === 'FAIL' || r.status === 'WARN'

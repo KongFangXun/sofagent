@@ -7,6 +7,12 @@
 # 编译产物
 dist/
 
+# 依赖（P2-38: 显式声明——此前仅靠全局 gitignore 兜底，clone 到无全局规则的环境会误提交）
+# ⚠️ P2-13 说明：仓库根 node_modules/ 是 npm workspace 依赖提升（hoisting）产生的物理目录，
+#    由 npm install 生成、不入库；各 engine/* 子包内也可能有局部 node_modules（仅个别包的
+#    本地依赖），同样不入库。
+node_modules/
+
 # hooks 包构建产物（由 src/handler.ts 生成，OpenClaw 声明式 hook 部署用）
 engine/hooks/sofagent-load-chain/handler.ts
 
