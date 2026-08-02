@@ -222,6 +222,15 @@ function registerDaemon(cwd: string): void {
     return;
   }
 
+  // v1.2.5 §8.3 plist 路径校验——写入前确认 daemon 入口文件确实存在
+  // resolveDaemonEntry 已做候选筛选，但 node 路径可能解析为非标准路径，
+  // 此处做最终防线：cliPath 不存在则 WARN 不注册（不打印假成功）
+  if (entry.cliPath !== 'node' && !existsSync(entry.cliPath)) {
+    console.log(`  ⚠️ daemon 入口不存在: ${entry.cliPath}，跳过 plist 写入（§8.3 路径校验）`);
+    console.log('  → 请检查 daemon 安装是否完整，或手动注册 LaunchAgent');
+    return;
+  }
+
   // PATH 兜底：确保 node bin 目录可用
   const nodeBinDir = dirname(process.execPath);
   const safeNodeBinDir = nodeBinDir || '/usr/local/bin';

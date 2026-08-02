@@ -18,6 +18,7 @@ async function main() {
     console.log('  snapshot list                列出所有快照');
     console.log('  snapshot restore <sha>       恢复到指定快照');
     console.log('  knowledge status             聚合知识库状态（Dream Cycle / 健康 / sensitivity）');
+    console.log('  doctor                       检查 daemon 健康状态（v1.2.5 §8.4）');
     process.exit(0);
   }
 
@@ -196,9 +197,37 @@ async function main() {
       console.log('  员工使用：插上 U 盘 → 双击 start（macOS 用 start.command）→ 联邦在线');
       break;
     }
+    case 'doctor': {
+      // v1.2.5 §8.4：健康自检——读 daemon-health.json 报告 daemon 状态
+      const { checkDaemonHealth } = await import('./daemon-health');
+      const result = checkDaemonHealth();
+      if (result.healthy) {
+        console.log(`💚 ${result.message}`);
+        if (result.details) {
+          console.log(`  PID: ${result.details.pid}`);
+          console.log(`  启动时间: ${result.details.startTime}`);
+          console.log(`  最后心跳: ${result.details.lastHeartbeat}`);
+          console.log(`  最后推送: ${result.details.lastPush ?? '无'}`);
+          if (result.details.lastError) {
+            console.log(`  最近错误: ${result.details.lastError}`);
+          }
+        }
+      } else {
+        console.log(`⚠️ ${result.message}`);
+        if (result.details) {
+          console.log(`  PID: ${result.details.pid}`);
+          console.log(`  最后心跳: ${result.details.lastHeartbeat}`);
+          if (result.details.lastError) {
+            console.log(`  最近错误: ${result.details.lastError}`);
+          }
+        }
+        process.exit(1);
+      }
+      break;
+    }
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Usage: sofagent-daemon <start|create-usb-key|snapshot|knowledge> [options]');
+      console.error('Usage: sofagent-daemon <start|create-usb-key|snapshot|knowledge|doctor> [options]');
       process.exit(1);
   }
 }
