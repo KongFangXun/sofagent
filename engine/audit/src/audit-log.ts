@@ -29,7 +29,8 @@ function getDataBase(): string {
 }
 
 function getAuditEnabled(): boolean {
-  return process.env.SOFA_AUDIT_ENABLED === 'true';
+  // P2-36: SOFAGENT_* 主名优先，SOFA_* 别名兜底
+  return (process.env.SOFAGENT_AUDIT_ENABLED ?? process.env.SOFA_AUDIT_ENABLED) === 'true';
 }
 
 function escapePipe(s: string): string {

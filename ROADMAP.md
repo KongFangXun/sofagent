@@ -114,7 +114,17 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 ### v1.2.x Graph Engine 进化路线
 
-> 编排引擎直接使用 LangGraph 原生能力（StateGraph + createReactAgent），不自建 DAG 调度。审计节点（★Reality Anchor）作为 guard edge 嵌入 LangGraph 工作流——这是 sofagent 在 Graph Engineering 中的唯一定位。理论框架详见 [PHILOSOPHY §十](./docs/PHILOSOPHY.md)。
+> 编排引擎直接使用 LangGraph 原生能力（StateGraph + createReactAgent），不自建 DAG 调度。审计节点（★Reality Anchor）作为 guard edge 嵌入 LangGraph 工作流——这是 sofagent 在 Graph Engineering 中的唯一定位。理论框架详见 [PHILOSOPHY §十](./docs/PHILOSOPHY.md) 和 [ARCHITECTURE §Graph Engineering 视角](./docs/ARCHITECTURE.md#graph-engineering-视角控制图--stategraph)。
+
+**sofagent 已经在做 Graph Engineering**——`engine/orchestrator/src/loop/graph.ts` 用 LangGraph StateGraph 实现 `START→engineer→audit→reviewer→human_confirm→END`，`audit` 节点即 ★Reality Anchor（真实 git diff 21 条规则作 guard edge），`FileCheckpointer` 快照到 `.sofagent/checkpoint/` 即可审计状态文件。数据图天然对应蓄水池（知识库）+ 市政规划（Ontology）。后续迭代用 Graph Engineering 术语框定「并行编排」与「可视化」，不引入新能力。
+
+| 版本 | Graph Engine 交付 | 状态 |
+|------|---------|:--:|
+| **v1.2.2-v1.2.4** | Planner 节点 + 降级路由链 + engineer-decide/execute 分层 + 并行子图执行（worktree 隔离）+ Dashboard ASCII 控制图 + 知识进化 | ✅ 已交付 |
+| **v1.2.5** | 五类边契约形式化（数据流/控制流/权限流/证据流/失败流）+ Anchor 配置（冻结验收标准防自洽）+ Graph Engine 归因 | 🔗 规划中 |
+| **v1.3.1** | 控制图多循环 DAG 波次并行——使用 LangGraph 原生 DAG 并行能力（StateGraph + Send API），每波次经 audit 节点（★Reality Anchor）卡关 | 📋 规划中 |
+
+> 🔴 **落地纪律**：上表是「用 Graph Engineering 术语框定已有/规划能力」，不新增能力范围。理论基础：Carlos E. Perez·[From Loop Engineering to Graph Engineering](https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c)（单闭环四类失效→Graph 拓扑解法+grounding）。
 
 ### v1.2.0 — 记忆/知识层升级（本体结构铺垫）
 
@@ -258,6 +268,15 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 | 异步长任务自治 | daemon 从文件监控升级为长任务自主运行 |
 | 双闸验证 | 工具执行前 gate + 执行后副作用复查 |
 | Agent 疲劳度检测 | 监控上下文窗口污染和决策质量衰减信号 |
+| **make support-bundle（DeerFlow 启发）** | 一键打包诊断信息（环境/日志/审计快照），降低用户报障门槛（v1.2.6 储备） |
+| **SkillScan 安全扫描器（DeerFlow 启发）** | 安装第三方 Skill 前静态扫描注入/越权风险（v1.4.x） |
+| **Agentic Browser / Playwright（DeerFlow 启发）** | Agent 驱动浏览器做端到端操作，与「智能 E2E 测试 Agent」探索同源（v1.4.x） |
+| **TUI / Dashboard / 对话分支（DeerFlow 启发）** | 终端 UI + 可视化面板 + 对话分支回溯（v2.x 远景） |
+| **spec-first 硬禁令（OpenFDE 启发 · 最高优先）** | 单一事实源——transcript 永不直驱代码，spec 才是唯一驱动（设计约束） |
+| **decisions.jsonl 判断时刻日志（OpenFDE 启发 · 最高优先）** | 每次判断落 `{kind, moment, why, spec_ref}`，决策审计底座（v1.3.x 意图审计） |
+| **分级降级梯队（OpenFDE 启发 · 最高优先）** | console→TUI→spec 逐级降级，workflow never stops（韧性设计） |
+
+> 📖 DeerFlow / OpenFDE 方法论印证见 [PHILOSOPHY §十](./docs/PHILOSOPHY.md)；已被主版本表收纳的 DeerFlow 项（Session Goals `/goal`、`/compact`、Skill 渐进加载、记忆分层、Scheduled Tasks、ToolOutputBudget、`--doctor`）见 v1.2.7 / v1.2.8，不在此重复。
 
 ---
 

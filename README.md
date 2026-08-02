@@ -22,7 +22,7 @@
   <a href="#快速开始"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>当前版本：v1.2.4</strong> · 2026-08-01 · 知识进化（分层巡检 + skillopt 自动触发 + 失败清单 + 联邦蒸馏；P1-19 摘要以 CHANGELOG 为权威源对齐）</p>
+<p align="center"><strong>当前版本：v1.2.4</strong> · 2026-08-02 · 知识进化（分层巡检 + skillopt 自动触发 + 失败清单 + 联邦蒸馏；P1-19 摘要以 CHANGELOG 为权威源对齐）</p>
 
 > ⚖️ **正式版边界声明**（P0-8）：本项目的「正式版」指 API 稳定、测试覆盖完整、核心流程经多轮验证。**不代表所有已知局限已解决**——详见 [LIMITATIONS.md](./LIMITATIONS.md)。强合规场景请等待 v1.4.0 静态加密落地。
 
@@ -51,12 +51,7 @@ sofagent 就是解决这个问题的：**它帮你把 AI 管起来，让 AI 干�
 | **AI 乱来怎么办？** | 每次 AI 改东西都自动检查一遍 | AI 干的活有人盯着，越界立刻拦住 |
 | **AI 闯祸了怎么办？** | 每次改动自动存档，一键回滚 | 出事能一键回到安全状态 |
 
-<details>
-<summary>🏞️ 打个比方：一条河（点开）</summary>
-
-大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是**堤坝 + 自来水厂 + 管网 + 水龙头**——不让水泛滥（约束 AI 不乱来）、把水变成直饮水（安全沙箱）、把水送到该去的地方（工作流编排）。简单说：**让 AI 从"能用"变成"敢用"。**
-
-</details>
+**🏞️ 打个比方：一条河（P2-28 前置首屏）**——大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是**堤坝 + 自来水厂 + 管网 + 水龙头**——不让水泛滥（约束 AI 不乱来）、把水变成直饮水（安全沙箱）、把水送到该去的地方（工作流编排）。简单说：**让 AI 从"能用"变成"敢用"。**
 
 > 🎯 **90/10 价值分层**：模型给 90% 的智力，sofagent 补 10% 的可靠执行——越往后这 10% 越值钱。不是造更聪明的模型，是给已有的聪明加一套闸门。
 
@@ -136,6 +131,8 @@ sofagent-dashboard --full    # 展开完整视图
 |------|:--------|:----------------|
 | detect-secrets / gitleaks | 密钥扫描（全量历史 + 100+ 模式）| A2 覆盖常见 API key；差异化 = **Agent 行为审计**而非密钥覆盖率 |
 | Cursor Rules / Claude hooks | 单平台 IDE 约束 | 审计层全平台可用（git diff）；约束层按平台分层（OpenClaw 最深 → WorkBuddy SKILL → 其他种子指令）|
+
+> ⚠️ **对比快照时间戳（P2-21/P2-35 声明）**：以上对比基于 2026-08-02 各工具的公开能力快照；工具迭代快，条款可能过时。差异化的核心论点（sofagent 审计「AI 行为」而非「代码质量」）不随工具版本变化。
 
 </details>
 
@@ -228,7 +225,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 |------|------|
 | `@sofagent/audit` | 审计引擎（21 条规则，git diff 硬证据）|
 | `@sofagent/core` | 运行时诊断（doctor / verify）|
-| `@sofagent/orchestrator` | FORGE 自迭代工具链（LOOP 流水线 + 任务编排）|
+| `@sofagent/orchestrator` | FORGE 自迭代工具链（LOOP 流水线 + 任务编排；P2-37：编排能力保留但**不对用户宣传**——任务编排由你使用的 Agent 平台完成，sofagent 只在其过程中提供约束/审计/经验沉淀）|
 | `@sofagent/daemon` | 守护进程（文件监控 / 定时巡检）|
 | `@sofagent/mcp` | MCP Server（JSON-RPC 2.0）|
 
@@ -258,6 +255,9 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
 
 ---
+
+<details>
+<summary>🔧 引擎架构（开发者段，P2-28 收折叠——非开发者 3 屏内无需展开）</summary>
 
 ## <a id="engine-architecture"></a>引擎架构（开发者段）
 
@@ -330,6 +330,8 @@ LOOP 内部使用 LangGraph StateGraph 组装节点流转 + 6 个内置工具（
 | **think.md 反思** | 每次审计自动写教训（哪个规则触发了、改了哪些文件、下次注意什么），Agent 下次启动时通过 harness 加载链读到——不犯同样的错 | ✅ 已交付 | 审计引擎每次跑自动触发，无需配置 |
 | **Dream Cycle 知识回灌** | daemon 后台合成概念 → 回灌 skillopt 待优化队列，积累知识供后续优化周期消费 | 🔧 轻量态 | daemon 后台运行，当前为内存态队列（重启即丢），完整持久消费链路计划 v1.3.0 交付。⚠️ P1-10：Dream Cycle **默认使用 MockLLM（确定性伪输出）**——接入真实 LLM 需配置 API Key |
 | **skillopt Skill 优化** | 失败模式聚类（≥3 次同类失败）→ 自动触发外部 SkillOpt CLI 优化 Skill 质量 → 校验候选（行数 ±30% + 变化率 ≥5%）| ⚠️ 需外部依赖 | 需安装 [Microsoft SkillOpt](https://github.com/microsoft/SkillOpt)（`skillopt-sleep` CLI）。未安装时自动降级为仅记录失败清单，不执行优化 |
+
+</details>
 
 </details>
 

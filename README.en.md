@@ -20,7 +20,7 @@
   <a href="#install-and-get-going"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>Current version: v1.2.4</strong> · 2026-08-01 · Knowledge Evolution (Layered inspection L1/L2/L3 + skillopt auto-trigger + Failure ledger + Federated distillation + Evolution engine eval integration + Dashboard history trends + Graph Engine Checker)</p>
+<p align="center"><strong>Current version: v1.2.4</strong> · 2026-08-02 · Knowledge Evolution (Layered inspection + skillopt auto-trigger + Failure ledger + Federated distillation; summary aligned to CHANGELOG, P2-16 removes stale "Graph Engine Checker" mention)</p>
 
 <p align="center">
   <a href="#what-is-this">What is this</a> · <a href="#what-sofagent-can-do-for-you">Features</a> · <a href="#three-deployment-options">Deployment</a> · <a href="#install-and-get-going">Install</a> · <a href="#further-reading">Docs</a>
