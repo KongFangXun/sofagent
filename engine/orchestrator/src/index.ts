@@ -185,6 +185,10 @@ export type {
   RunOutcome,
 } from './ab-scheduler';
 
+// Activate（激活链 Phase 1 · v1.2.5 新增）
+export { activateWorkflow, resolveTools, extractSkillBody, assembleSystemPrompt } from './activate';
+export type { EnterpriseAgentConfig, ActivateResult, ActivateOptions } from './activate';
+
 // ModelRouter（v1.2.2 · P1 混合模型路由层）
 export { ModelRouter, createDefaultRouter, LOCAL_UNAVAILABLE_MSG } from './model-router';
 export type { ModelRoute, TaskContext, TaskComplexity, Sensitivity, RouteTarget, RouteReason, ModelRouterDeps } from './model-router';

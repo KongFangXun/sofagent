@@ -56,6 +56,7 @@ import { optimizeSkill } from './tools/optimize-skill';
 import { healthCheck } from './tools/health-check';
 import { auditDataChange } from './tools/audit-data-change';
 import { notifySession } from './tools/notify-session';
+import { activateWorkflowTool } from './tools/activate-workflow';
 
 // ============================================================
 // 类型定义
@@ -526,6 +527,17 @@ class McpServer {
             required: ['audit_type', 'verdict', 'summary'],
           },
         },
+        {
+          name: 'activate_workflow',
+          description: '读取 FDE 交付物（workflow.yml + skills/ + entities/），注册企业 SubAgent 到 .sofagent/subagents/*.yml。激活后 registry.listAgents() 可发现企业 Agent。',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              dry_run: { type: 'boolean', description: '只预览不真正注册，默认 false' },
+              node_filter: { type: 'array', items: { type: 'string' }, description: '只激活指定节点（默认全部）' },
+            },
+          },
+        },
       ],
     });
   }
@@ -607,6 +619,9 @@ class McpServer {
         break;
       case 'notify_session':
         this.toolNotifySession(id, args);
+        break;
+      case 'activate_workflow':
+        await this.toolActivateWorkflow(id, args);
         break;
       default:
         this.sendError(id, -32602, `Unknown tool: ${toolName}`);
@@ -1385,6 +1400,19 @@ class McpServer {
     });
   }
 
+  /** Tool: activate_workflow — 激活企业工作流（v1.2.5 新增） */
+  private async toolActivateWorkflow(id: number | string | null, args: Record<string, unknown>): Promise<void> {
+    const result = await activateWorkflowTool({
+      ...(args.dry_run !== undefined ? { dry_run: args.dry_run as boolean } : {}),
+      ...(args.node_filter !== undefined ? { node_filter: args.node_filter as string[] } : {}),
+    });
+    this.sendToolResult(id, {
+      type: 'text',
+      text: result.text,
+      data: result.data,
+    });
+  }
+
   /** Tool: list_capabilities — 完整能力清单（Agent 首次连接用） */
   private toolListCapabilities(id: number | string | null): void {
     const capabilities = {
@@ -1412,6 +1440,8 @@ class McpServer {
         { name: 'health_check', description: '环境健康检查（doctor/verify）' },
         { name: 'audit_data_change', description: '数据变更审计（D1-D5 规则）' },
         { name: 'notify_session', description: '审计结果汇报（预格式化 [sofagent] 返回）' },
+        // v1.2.5 新增
+        { name: 'activate_workflow', description: '激活 FDE 交付物，注册企业 SubAgent' },
       ],
       resources: [
         { uri: 'think://latest', description: 'think.md 最后一条条目' },
