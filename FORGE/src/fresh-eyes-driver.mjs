@@ -211,7 +211,29 @@ function buildSystemPrompt(skillPath) {
     '你已经浪费了大量步数在 BSD 命令报错上——从现在起，任何命令第一次报错就放弃该路径。',
   ].join('\n');
 
-  return header + '\n\n' + body + shellConstraints;
+  // v1.2.5：工具调用预算——防止 worker 陷入"找不到文件→换路径再找"的死循环，
+  // 最终撞上 LangGraph recursionLimit（200 supersteps）导致零产出崩溃。
+  // run-01 教训：A worker 调了 1119 次工具仍未收敛写报告，GraphRecursionError 终止整个循环。
+  const toolBudget = [
+    '',
+    '## 🔴 铁律：工具调用预算（超限必崩）',
+    '',
+    '你有**最多 60 次工具调用**的硬预算。超过后进程会被强制终止，你写不出任何报告。',
+    '',
+    '**节奏要求**：',
+    '- 第 1-40 次：自由探索（读文件、跑命令、搜索）',
+    '- 第 40-50 次：停止探索新方向，整理已发现的问题，准备写报告',
+    '- 第 50-60 次：写报告，把发现写入产物文件',
+    '',
+    '**禁止行为**：',
+    '- 禁止对同一个文件用不同路径反复 cat（`No such file` = 不存在，记下来继续）',
+    '- 禁止对同一问题反复验证（验证一次够用，进入下一个）',
+    '- 禁止"我再看看"式的无效探索——你已经知道得够多了，去写报告',
+    '',
+    '**铁律：`No such file or directory` = 该文件不存在。记录为"缺失"，立即继续，禁止换路径重试。**',
+  ].join('\n');
+
+  return header + '\n\n' + body + shellConstraints + toolBudget;
 }
 
 /**
@@ -641,14 +663,16 @@ async function runWorker(step, roundDir, target) {
   const t0 = Date.now();
 
   // recursionLimit 按步骤类型区分：
-  // - 审查类（a-check/b-check）：需要大量读文件+搜索，给 200（=100 轮工具调用）
+  // - 审查类（a-check/b-check）：需要读文件+搜索，给 120（=60 轮工具调用）
+  //   v1.2.5 run-01 教训：200 让 worker 有空间调 1119 次工具陷入死循环。
+  //   配合 systemPrompt 里的「60 次工具预算」铁律，120 步够用且能更早熔断。
   // - 文本处理类（a-consolidate/a-verify）：主要做合并/格式化，给 100 够了
   // - b-fix：分片后每批 5 条 finding × 5 工具调用 = 25 步，给 150 是 6 倍余量
   //   太高会导致消息累积 OOM（exit 137）
   // - a-verify：分片后每批 5 条 × 2 操作 = 10 步，给 150 是 15 倍余量
   const STEP_RECURSION_LIMITS = {
-    'a-check': 200,
-    'b-check': 200,
+    'a-check': 120,
+    'b-check': 120,
     'a-consolidate': 100,
     'b-fix': 150,
     'a-verify': 150,
