@@ -26,7 +26,7 @@
 | **Harness 中间件** | 对内的技术身份：约束 Agent 行为的「缰绳」，一底座·三引擎（审计/回溯/进化），编排（FORGE）为内部工具不对外宣称 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
 | **Harness 七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——三引擎各自覆盖其中哪些维度 | [ARCHITECTURE §一·心智模型](./ARCHITECTURE.md) |
 | **Harness 构成（企业视角）** | 黄仁勋定义：企业专属 Harness = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
-| **审计引擎** | git diff 驱动，21 条规则（13 默认 + 8 扩展），A1→A19 为活跃规则（A12/A13 已在 v1.1.0 合并入 A11，编号不再使用），每次 commit 自动跑 | [ARCHITECTURE §三](./ARCHITECTURE.md) |
+| **审计引擎** | git diff 驱动，24 条规则（17 默认 + 7 扩展），A1→A23 为活跃规则（A12/A13 已在 v1.1.0 合并入 A11，编号不再使用；v1.2.5 新增 A20-A23），每次 commit 自动跑 | [ARCHITECTURE §三](./ARCHITECTURE.md) |
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | **FORGE** | 自迭代引擎——通过 workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ sofagent/（约束底座）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |
@@ -49,7 +49,7 @@
 │  ┌──────────┬──────────┬──────────┐            │
 │  │ 审计引擎  │ 回溯引擎  │ 进化引擎  │  ← 三引擎    │
 │  │ git diff  │ HMAC 链  │知识蒸馏  │  （对外叙事） │
-│  │ 21条规则  │ 防篡改   │sustain   │            │
+│  │ 24条规则  │ 防篡改   │sustain   │            │
 │  └──────────┴──────────┴──────────┘            │
 │  内部：编排引擎 @sofagent/orchestrator            │
 │        （LangGraph ReactAgent，非对外产品引擎）   │
@@ -132,7 +132,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 
 | 包 | 职责 |
 |----|------|
-| `engine/audit/` | @sofagent/audit — 审计引擎（git diff + 21 条规则） |
+| `engine/audit/` | @sofagent/audit — 审计引擎（git diff + 24 条规则） |
 | `engine/core/` | @sofagent/core — 核心类型、HMAC 工具、memory-contract |
 | `engine/orchestrator/` | @sofagent/orchestrator — LangGraph createReactAgent 编排 |
 | `engine/daemon/` | @sofagent/daemon — 后台守护进程（cron 巡检 + 文件监听） |

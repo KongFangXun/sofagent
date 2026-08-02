@@ -151,7 +151,7 @@ graph TD
 
 ### 对外核心能力（FDE Agent 给用户什么）
 
-✅ 已发布可用（v1.2.0 - v1.2.4）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 21 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关（Claude Code / Codex / Cursor / WorkBuddy / OpenClaw 即挂即用）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 本体结构 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
+✅ 已发布可用（v1.2.0 - v1.2.4）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 24 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关（Claude Code / Codex / Cursor / WorkBuddy / OpenClaw 即挂即用）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 本体结构 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
 
 > **v1.2.0 审计链安全加固**（BugFix 批次）：`--doctor` hash chain 三态判定（ok / tampered / unverifiable，`checkHistoryChainDetailed`）· HMAC key ≥16 字节强校验（`validateHmacKey`）· HMAC 签名改为基于脱敏记录（先 sanitize 再签名，写读一致）· config 可选签名校验（`verifyConfigSignature` + `signConfig` CLI）· CLI 版本一致性自检（`checkVersionConsistency`）。详见 `engine/core/src/audit-history.ts`、`engine/core/src/config-loader.ts`。
 
@@ -190,7 +190,7 @@ sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent �
 
 ```mermaid
 graph LR
-    A["🧭 约束底座<br/>启动前注入红线"] --> B["🔍 审计引擎<br/>21 条规则·拦截违规"]
+    A["🧭 约束底座<br/>启动前注入红线"] --> B["🔍 审计引擎<br/>24 条规则·拦截违规"]
     B --> C["🔍 审计引擎<br/>每次变更自动扫描"]
     C --> D["🔄 回溯能力<br/>快照存档·一键回滚"]
     D --> E["🧬 进化引擎<br/>周度巡检·自动优化"]
@@ -322,9 +322,9 @@ graph LR
 
 **Palantir 操作型本体论 ↔ sofagent 三层映射**：Palantir 的核心命题「语义必须与动力学配对」——本体不能只是知识库，必须是能干预世界的操作系统——与 sofagent 的 Ledger-Views-Policy 高度同构：数据集成 = Ledger 层（think.md append-only + audit history）、逻辑层 = Views 层（knowledge/ entities/concepts/comparisons/summaries）、操作层 = Policy 层（fde.md + SKILL.md）、读写回路 = Dream Cycle（v1.1.7 规划）、OAG 语义锚定 = Harness 约束底座。**核心差异**：Palantir 是集中式 SaaS 闭源操作系统，sofagent 是分布式 MIT 开源 Harness 中间件——让 Agent 自建本体，不由中央统一定义。
 
-**「确定性与概率性分离」原则**——Palantir OAG 五层架构的核心理念，与 sofagent 审计引擎完全同构：刚性安全边界由确定性系统保障，不受 LLM 概率性输出影响。sofagent 的 16/21 条规则为纯 git-diff（不依赖 Agent 配合）正是这一原则的工程实现。
+**「确定性与概率性分离」原则**——Palantir OAG 五层架构的核心理念，与 sofagent 审计引擎完全同构：刚性安全边界由确定性系统保障，不受 LLM 概率性输出影响。sofagent 的 19/24 条规则为纯 git-diff（不依赖 Agent 配合）正是这一原则的工程实现。
 
-> 💡 **规则编号说明**：A1–A11 + A18/A19 为默认规则（13 条），A14–A17 + E1–E4 为扩展规则（8 条，需 opt-in），全量 21 条（13 默认 + 8 扩展，详见 WIKI.md）。A12/A13 已在 v0.99.4 合并入 A11，编号不再使用。
+> 💡 **规则编号说明**：A1–A11 + A18–A23 为默认规则（17 条），A14–A17 + E1/E2/E4 为扩展规则（7 条，需 opt-in），全量 24 条（17 默认 + 7 扩展，详见 WIKI.md）。A12/A13 已在 v0.99.4 合并入 A11，E3 已在 v1.2.5 并入 A11，编号不再使用。
 
 **审计引擎的双重定位**：
 
@@ -349,7 +349,7 @@ graph LR
 
 ### 已知技术债：双规则系统重叠
 
-`engine/rules/`（tool-level 规则，3 条）和 `engine/audit/src/rules/`（git-diff 规则，21 条）
+`engine/rules/`（tool-level 规则，3 条）和 `engine/audit/src/rules/`（git-diff 规则，24 条）
 均包含 secret-leak 检测功能。当前两者并行维护，存在行为不一致风险。
 
 > 原计划 v1.2.4 统一为单一规则引擎（`ruleType: 'tool' | 'diff'`），未落地。已推迟——两套规则触发时机不同（tool-level 在调用前拦截、audit 在 commit 后审计），当前各自独立演进成本可接受。后续若不一致问题暴露再合并。
@@ -388,13 +388,13 @@ daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml
 >
 > 行业从 Loop Engineering 热到 Graph Engineering，但 Loop 没有被淘汰——**Loop 是带回边的 Graph**，复杂 Graph 内部嵌套大量局部 Loop。sofagent 的 fresh-eyes-loop（A/B 双盲审查 5 步循环）就是一个 Loop，它未来会成为 v1.3.1 控制图里的一个子图节点。演进路径是"Loop 跑通一个 → 编排进 Graph"，不是"丢掉 Loop 换成 Graph"。
 >
-> Graph 的价值在于把**不可合并的独立角色 + 交接点**直接写进系统里——实现→测试→独立审查、合规审批强制节点、多来源并行检索后合并冲突。sofagent 的审计引擎（21 条规则，其中 16 条纯确定性 git-diff，其余需 LLM 语义判断）= "必须走固定流程"；编排引擎（createReactAgent）= "让模型自由判断"——这正是 Graph Engineering 真正的工程难点：**控制权分配**。
+> Graph 的价值在于把**不可合并的独立角色 + 交接点**直接写进系统里——实现→测试→独立审查、合规审批强制节点、多来源并行检索后合并冲突。sofagent 的审计引擎（24 条规则，其中 19 条纯确定性 git-diff，其余需 LLM 语义判断）= "必须走固定流程"；编排引擎（createReactAgent）= "让模型自由判断"——这正是 Graph Engineering 真正的工程难点：**控制权分配**。
 
 > 💡 **「翻译官不应该有决策权」——智能与控制分离**
 >
 > 受控智能体引擎的实践验证了一个核心判断：**模型负责理解，不负责执行。** LLM 的不可替代价值是把模糊的自然语言翻译成结构化意图（意图识别、参数提取、歧义消解）；但写操作的确认、权限校验、状态流转——所有需要确定性的控制——必须握在系统代码手里，不交给概率性的模型。你永远无法 100% 确定模型不会在某个奇怪的上下文里，把一句模棱两可的话判定为"用户确认了"。
 >
-> 这正是 sofagent 审计引擎的设计逻辑：21 条规则中 16 条是纯 git-diff（零 token、不调 LLM、100% 确定性），不是因为模型不够聪明，而是因为**确认这件事，必须由系统代码硬判断**——"是就是，不是就不是"，没有概率空间。模型产出意图（工程师 Agent 写代码），系统决定能不能放行（审计引擎跑规则）——这就是"智能属于模型，控制属于系统"在 sofagent 的工程落地。
+> 这正是 sofagent 审计引擎的设计逻辑：24 条规则中 19 条是纯 git-diff（零 token、不调 LLM、100% 确定性），不是因为模型不够聪明，而是因为**确认这件事，必须由系统代码硬判断**——"是就是，不是就不是"，没有概率空间。模型产出意图（工程师 Agent 写代码），系统决定能不能放行（审计引擎跑规则）——这就是"智能属于模型，控制属于系统"在 sofagent 的工程落地。
 >
 > 📖 来源：受控智能体引擎设计实践（2026-07）·「智能属于模型，控制属于系统」
 
@@ -449,7 +449,7 @@ flowchart LR
 | `routeAfterHuman` | 非 running→END；running（驳回）→engineer | engineer / END |
 | `routeFromStart` | 正常→engineer；resume→指定节点 | 四节点之一 |
 
-**为什么 audit 是程序不是 AI**：audit 节点调 `@sofagent/audit` 跑 A1-A11、A14-A19 + E1-E4（共 21 条）规则——只看 `git diff HEAD` 硬证据，标准是硬的、可复现的，不随模型波动。reviewer 才是 AI 语义审查。这正是上文"解题/验证分离"在编排层的产品化落地——audit 做确定性验证，reviewer 做概率性语义验证，两者物理隔离。
+**为什么 audit 是程序不是 AI**：audit 节点调 `@sofagent/audit` 跑 A1-A11、A14-A23 + E1-E2/E4（共 24 条）规则——只看 `git diff HEAD` 硬证据，标准是硬的、可复现的，不随模型波动。reviewer 才是 AI 语义审查。这正是上文"解题/验证分离"在编排层的产品化落地——audit 做确定性验证，reviewer 做概率性语义验证，两者物理隔离。
 
 #### 状态契约：LoopArtifacts
 
@@ -487,7 +487,7 @@ sofagent 的编排引擎天然就是一张**控制图（Control Graph）**——
 | Graph Engineering 构件 | sofagent 对应实现 | 源码位置 |
 |------|------|------|
 | **控制图 Control Graph**（node=state, edge=transition, guard edge 守门） | `StateGraph` 四节点 `START→engineer→audit→reviewer→human_confirm→END`，`routeAfterAudit`/`routeAfterHuman` 条件路由，WARN 透传为 guard 放行 | `engine/orchestrator/src/loop/graph.ts` |
-| **★Reality Anchor**（无锚点 = 披 PM 外衣的幻觉） | `audit` 节点——只看 `git diff HEAD` 硬证据（A1-A11、A14-A19 + E1-E4，共 21 条），不信任 Agent 自报，比"只看 PR 号"更硬。**Grounding 三必要条件**（Carlos E. Perez）：① audit 规则不可篡改 = ground-truth ② `acceptance-test.sh` = 冻结验收标准 ③ 用户 task 来自系统外部 | `@sofagent/audit` |
+| **★Reality Anchor**（无锚点 = 披 PM 外衣的幻觉） | `audit` 节点——只看 `git diff HEAD` 硬证据（A1-A11、A14-A23 + E1-E2/E4，共 24 条），不信任 Agent 自报，比"只看 PR 号"更硬。**Grounding 三必要条件**（Carlos E. Perez）：① audit 规则不可篡改 = ground-truth ② `acceptance-test.sh` = 冻结验收标准 ③ 用户 task 来自系统外部 | `@sofagent/audit` |
 | **可审计状态文件**（状态落盘可复核） | `FileCheckpointer` 每节点前后 snapshot 到 `.sofagent/checkpoint/`，`resumeLoopGraph()` 断点续跑 | `engine/orchestrator/src/graph/checkpoint.ts` |
 | **数据图 Data Graph**（知识图谱/血缘） | 蓄水池（知识库 `knowledge/`） + 市政规划（Ontology，Ledger-Views-Policy）——与编排控制图正交 | `knowledge/` + Ontology 层 |
 | **Org Graph（稳定角色）** | 四节点（engineer/audit/reviewer/human_confirm）是稳定角色——不随任务变化；变动的是节点内的 Work Graph 子拓扑 | `engine/orchestrator/src/loop/graph.ts:128-132` |
@@ -810,7 +810,7 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 | 层 | 主要读取方 | 主要写入方 | 审计/巡检方 | 现有引擎 |
 |------|------|------|------|------|
-| **Ledger** | 编排引擎 / daemon（lessons-extract）/ Harness 加载链 / 人类 | 审计引擎（git diff 自动反思）+ 主 Agent（write_think）+ FDE/loop 陪跑 | audit 引擎（每次 commit 跑 21 条规则） | `@sofagent/audit` · `@sofagent/core`（memory-contract） |
+| **Ledger** | 编排引擎 / daemon（lessons-extract）/ Harness 加载链 / 人类 | 审计引擎（git diff 自动反思）+ 主 Agent（write_think）+ FDE/loop 陪跑 | audit 引擎（每次 commit 跑 24 条规则） | `@sofagent/audit` · `@sofagent/core`（memory-contract） |
 | **Views** | Agent + MCP tools（7 个 knowledge tool） | Dream Cycle 自动派生 | daemon 巡检（`conflict-check` 矛盾/孤儿/死链 · `knowledge-freshness` 新鲜度） | `@sofagent/daemon` · `@sofagent/mcp` |
 | **Policy** | Agent 启动时经 Harness 加载链注入 | 人 + FDE 维护（deploy 初次建 + sustain 每周迭代） | A15 约束验证（Agent 是否违反 SKILL 铁律） | `@sofagent/audit`（rule A15）· `@sofagent/harness`（加载链） |
 
@@ -866,11 +866,11 @@ flowchart TD
 | 阶段 | 版本 | 核心交付 | 依赖已有能力 |
 |------|------|---------|-------------|
 | ① ACTIVATE | v1.2.5 | `activate.ts` + MCP `activate_workflow` tool + workflow.yml 扩展 | registry.ts 动态注册（v1.0.8）+ MCP Server（22 tools） |
-| ② ORCHESTRATE | v1.2.6-v1.2.7 | workflow-parser 扩展 + `composeEnterpriseWorkflow()` + StateGraph 构建 | orchestrator（318 测试）+ LangGraph StateGraph |
-| ③ EXECUTE | v1.2.8-v1.2.9 | dag-runner node-executor + HITL interrupt + 审计集成 + 异常兜底 | audit（507 测试）+ daemon 文件监控 |
+| ② ORCHESTRATE | v1.2.6-v1.2.7 | workflow-parser 扩展 + `composeEnterpriseWorkflow()` + StateGraph 构建 | orchestrator（336 测试）+ LangGraph StateGraph |
+| ③ EXECUTE | v1.2.8-v1.2.9 | dag-runner node-executor + HITL interrupt + 审计集成 + 异常兜底 | audit（568 测试）+ daemon 文件监控 |
 | ④ SUSTAIN | v1.3.0 | 全链路验证 + `wrapToolCall` 联动 | think（反思引擎）+ eval + skillopt |
 
-> **关键认知**：底座（引擎）已经全绿（12 包 1320 测试，实测见 `tools/test-count.sh`），激活链不是造新引擎，是往已有引擎上放车厢——"轨道从早期就铺好了，一直没人往上面放车厢"。
+> **关键认知**：底座（引擎）已经全绿（12 包 1438 测试，实测见 `tools/test-count.sh`），激活链不是造新引擎，是往已有引擎上放车厢——"轨道从早期就铺好了，一直没人往上面放车厢"。
 
 ### 企业 SubAgent YML 格式（v1.2.5 新增）
 

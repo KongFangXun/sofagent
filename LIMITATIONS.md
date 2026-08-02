@@ -301,7 +301,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 | 步骤 | 成熟度 | 说明 |
 |------|:--:|------|
 | 1. git diff 扫描 | ✅ 生产可用 | 纯 git 操作，确定性输出 |
-| 2. 规则检查 A1-A11、A14-A19 | ✅ 生产可用 | 21 条规则（A1-A11、A14-A19 + E1-E4）全部有测试覆盖 |
+| 2. 规则检查 A1-A11、A14-A23 | ✅ 生产可用 | 24 条规则（A1-A11、A14-A23 + E1-E2/E4）全部有测试覆盖 |
 | 3. 审计报告生成 | ✅ 生产可用 | JSON/text/table 三种格式 |
 | 4. think.md 自动更新 | ⚠️ 实验性 | LLM 生成，质量依赖模型 |
 | 5. MCP 推送 | ⚠️ 实验性 | MCP Server 已实现，端到端链路未验证 |
@@ -503,7 +503,7 @@ ab-scheduler 连续 2 轮更好即 promote。如果 eval 场景偏窄（只测�
 | 2 | **让同一个模型既写又评** | 执行者和审查者用同一个 LLM，自评不客观 | FORGE fresh-eyes-loop 要求 A/B 用不同厂商模型（异构） |
 | 3 | **把「继续尝试」当作 Loop** | 无限重试无新证据，只是费用泄漏 | Loop 围绕「证据」设计——sustain 的 eval 反馈闭环需要明确 passRate 阈值 |
 | 4 | **把 Harness 变成工具垃圾场** | 工具过多增加选择错误，宽泛权限扩大事故范围 | ToolGate 限定了 Agent 工具调用的前置门禁，不是所有工具都能随便调用 |
-| 5 | **用 Graph 掩盖 Harness 缺陷** | 流程图无法修复陈旧数据、不可靠工具和缺少权限控制的问题 | 审计引擎的「硬证据」原则（16/21 条纯 git-diff）不依赖 Agent 意愿——这就是 Harness 的底线 |
+| 5 | **用 Graph 掩盖 Harness 缺陷** | 流程图无法修复陈旧数据、不可靠工具和缺少权限控制的问题 | 审计引擎的「硬证据」原则（19/24 条纯 git-diff）不依赖 Agent 意愿——这就是 Harness 的底线 |
 
 > **核心教训**：Architecture complexity should come from observed real needs, not from imagining "advanced agents"。sofagent 的三引擎不是同时做的——先有审计（Harness 层），再有 think.md 反思（回溯/进化），最后才到 skillopt 自优化。FORGE 工具链是项目自迭代过程中逐步长出来的内部工具。这个顺序本身就是对反模式 1 和 5 的预防。
 
