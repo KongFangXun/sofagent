@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>sofagent · FDE Agent 控制台</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand:#16B8F3;--brand-d:#0C447C;--brand-l:#E6F1FB;
+  --red:#E24B4A;--green:#1D9E75;--amber:#EF9F27;--purple:#7F77DD;
+  --bg:#F6F8FA;--card:#fff;--border:#E1E4E8;--text:#24292E;--text-s:#57606A;--text-t:#8B949E;
+  --radius:12px;--radius-s:8px;--shadow:0 1px 3px rgba(0,0,0,.08);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  --mono:"SF Mono",SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;
+  --nav-h:64px;
+}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;font-size:14px}
+a{color:var(--brand);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* === Header / Nav === */
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;position:sticky;top:0;z-index:200;box-shadow:var(--shadow);height:var(--nav-h);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-left img{width:36px;height:36px;border-radius:8px}
+.logo-text{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+.logo-version{font-size:11px;color:var(--brand-d);background:var(--brand-l);padding:2px 8px;border-radius:10px;font-weight:600;line-height:1.4;display:inline-flex;align-items:center}
+
+.nav{display:flex;gap:2px;justify-content:center;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav-item{padding:8px 14px;font-size:13px;color:var(--text-s);cursor:pointer;border-radius:var(--radius-s);white-space:nowrap;transition:all .15s;border:none;background:none;font-family:var(--font);font-weight:500}
+.nav-item:hover{color:var(--text);background:var(--bg)}
+.nav-item.active{color:var(--brand);background:var(--brand-l)}
+
+.header-right{display:flex;gap:6px;justify-content:flex-end}
+.star-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);text-decoration:none;line-height:1.4}
+.star-btn:hover{border-color:#1F2328;color:#1F2328;background:var(--bg);text-decoration:none}
+.star-btn svg{width:14px;height:14px;flex-shrink:0}
+.star-count{background:var(--amber);color:#fff;font-size:11px;padding:1px 6px;border-radius:8px;font-weight:700}
+
+/* === Layout === */
+.container{max-width:1200px;margin:0 auto;padding:20px}
+.page{display:none}
+.page.active{display:block}
+
+.section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden;display:flex;flex-direction:column}
+.section-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.section-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+.section-title .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-emoji{font-size:14px;line-height:1;flex-shrink:0}
+.section-sub{font-size:12px;color:var(--text-s);font-weight:400;margin-left:4px}
+.section-body{padding:20px;flex:1}
+
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
+.metric-value{font-size:28px;font-weight:700;line-height:1.2}
+.metric-label{font-size:12px;color:var(--text-s);margin-top:4px}
+.metric-sub{font-size:11px;color:var(--text-t);margin-top:2px}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}
+/* grid 容器内 section 不设 margin（gap 已负责间距），避免与容器 margin 叠加 */
+.grid-2 > .section,.grid-3 > .section{margin-bottom:0}
+
+.chart-box{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:16px}
+.chart-box h4{font-size:13px;font-weight:500;color:var(--text-s);margin-bottom:12px}
+
+/* Data status */
+.data-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500}
+.ds-live{background:#E1F5EE;color:var(--green)}
+.ds-sample{background:#FAEEDA;color:#854F0B}
+.data-status .pulse{width:8px;height:8px;border-radius:50%;animation:pulse 2s infinite}
+.ds-live .pulse{background:var(--green)}
+.ds-sample .pulse{background:var(--amber)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Architecture */
+.arch-layer{border-radius:var(--radius-s);padding:12px;margin-bottom:8px}
+.arch-layer h5{font-size:13px;font-weight:600;margin-bottom:4px}
+
+/* Timeline */
+.timeline{position:relative;padding-left:24px}
+.timeline::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:var(--border)}
+.tl-item{position:relative;padding-bottom:14px}
+.tl-item:last-child{padding-bottom:0}
+.tl-dot{position:absolute;left:-20px;top:2px;width:12px;height:12px;border-radius:50%;border:2px solid var(--card)}
+.tl-dot.done{background:var(--green)}
+.tl-dot.current{background:var(--brand);box-shadow:0 0 0 3px rgba(22,184,243,.2)}
+.tl-dot.planned{background:var(--card);border-color:var(--border)}
+.tl-title{font-size:13px;font-weight:500}
+.tl-version{font-family:var(--mono);font-size:11px;color:var(--text-t);margin-left:6px}
+.tl-desc{font-size:12px;color:var(--text-s);margin-top:2px}
+
+/* Rules */
+.rule-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.rule-item{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:8px 10px;font-size:12px;transition:border-color .15s}
+.rule-item:hover{border-color:var(--brand)}
+.rule-code{font-family:var(--mono);font-weight:600;font-size:11px}
+.rule-name{color:var(--text-s);margin-top:2px}
+.rule-cat-red .rule-code{color:var(--red)}
+.rule-cat-yellow .rule-code{color:var(--amber)}
+.rule-cat-blue .rule-code{color:var(--brand)}
+.rule-cat-green .rule-code{color:var(--green)}
+.rule-cat-purple .rule-code{color:var(--purple)}
+.rule-cat-gray .rule-code{color:var(--text-s)}
+
+.node-card{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:14px}
+.node-status{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500}
+.node-status .icon{width:8px;height:8px;border-radius:50%}
+.status-running .icon{background:var(--green);animation:pulse 2s infinite}
+.status-pending .icon{background:var(--amber)}
+.node-meta{font-size:12px;color:var(--text-s);margin-top:6px}
+.node-stats{display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--text-t)}
+
+.audit-log{font-size:12px}
+.audit-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
+.audit-row:last-child{border-bottom:none}
+.audit-time{color:var(--text-t);font-family:var(--mono);font-size:11px;min-width:110px}
+.audit-badge{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;font-family:var(--mono)}
+.badge-pass{background:#E1F5EE;color:var(--green)}
+.badge-warn{background:#FAEEDA;color:var(--amber)}
+.badge-fail{background:#FCEBEB;color:var(--red)}
+.audit-rule{font-family:var(--mono);font-size:11px;color:var(--text-s);min-width:80px}
+.audit-task{color:var(--text-s);font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.prompt-box{background:#0D1117;border-radius:var(--radius-s);padding:14px;margin-top:8px}
+.prompt-box code{display:block;font-family:var(--mono);font-size:12px;color:#C9D1D9;white-space:pre-wrap;word-break:break-all;line-height:1.5}
+.prompt-action{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.prompt-label{font-size:11px;color:#8B949E;font-weight:500}
+.copy-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#C9D1D9;padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:4px;transition:all .15s}
+.copy-btn:hover{background:rgba(255,255,255,.12)}
+.copy-btn.copied{background:var(--green);border-color:var(--green);color:#fff}
+.copy-btn svg{width:12px;height:12px}
+.copy-btn.light{background:var(--card);border:1px solid var(--border);color:var(--text-s)}
+.copy-btn.light:hover{border-color:var(--brand);color:var(--brand)}
+
+.fde-stage{display:flex;align-items:flex-start;gap:12px;padding:12px;background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);margin-bottom:8px}
+.fde-num{width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.fde-content{flex:1}
+.fde-title{font-size:13px;font-weight:500}
+.fde-desc{font-size:12px;color:var(--text-s);margin-top:2px}
+.node-type{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500}
+.nt-ai{background:#E6F1FB;color:var(--brand)}
+.nt-auto{background:#E1F5EE;color:var(--green)}
+.nt-human{background:#FAEEDA;color:var(--amber)}
+
+.doc-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.doc-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-s);font-size:13px;color:var(--text);transition:all .15s}
+.doc-item:hover{border-color:var(--brand);background:var(--brand-l);text-decoration:none}
+.doc-item svg{width:14px;height:14px;color:var(--text-t);flex-shrink:0}
+.doc-item .ext{margin-left:auto;color:var(--text-t);font-size:11px}
+
+.think-entry{background:#FAFBFC;border-left:3px solid var(--amber);padding:10px 12px;border-radius:0 var(--radius-s) var(--radius-s) 0;margin-bottom:8px}
+.think-entry .t-rule{font-family:var(--mono);font-size:11px;color:var(--amber);font-weight:600}
+.think-entry .t-text{font-size:12px;color:var(--text-s);margin-top:2px}
+
+.install-box{background:#0D1117;border-radius:var(--radius-s);padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.install-box code{font-family:var(--mono);font-size:13px;color:#7EE787}
+
+.mcp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.mcp-item{background:#FAFBFC;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px}
+.mcp-item code{font-family:var(--mono);font-size:11px;color:var(--brand-d);font-weight:600}
+.mcp-item .mcp-desc{color:var(--text-s);margin-top:2px;font-size:11px}
+
+.npm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.npm-item{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 12px}
+.npm-item code{font-family:var(--mono);font-size:12px;color:var(--brand-d);font-weight:600}
+.npm-item .npm-desc{font-size:11px;color:var(--text-s);margin-top:3px}
+
+.step-card{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:14px;margin-bottom:8px}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;font-size:11px;font-weight:600;margin-right:8px}
+.step-title{font-size:13px;font-weight:500;display:flex;align-items:center}
+.step-desc{font-size:12px;color:var(--text-s);margin-top:6px;margin-left:28px}
+
+.lvp-row{display:flex;gap:0;margin:8px 0}
+.lvp-col{flex:1;padding:10px 14px;border:1px solid var(--border);font-size:12px}
+.lvp-col:first-child{border-radius:var(--radius-s) 0 0 var(--radius-s)}
+.lvp-col:last-child{border-radius:0 var(--radius-s) var(--radius-s) 0}
+.lvp-col.l{background:#FAEEDA;border-color:var(--amber)}
+.lvp-col.v{background:#EEEDFE;border-color:var(--purple)}
+.lvp-col.p{background:#E1F5EE;border-color:var(--green)}
+.lvp-label{font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.lvp-arrow{display:flex;align-items:center;padding:0 8px;color:var(--text-t);font-size:16px}
+
+.ont-card{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:16px;transition:border-color .15s}
+.ont-card:hover{border-color:var(--brand)}
+.ont-card h4{font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.ont-card p{font-size:12px;color:var(--text-s);margin-bottom:8px}
+.ont-list{font-size:12px;color:var(--text-s);padding-left:16px}
+.ont-list li{margin-bottom:3px}
+
+.info-note{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-s);padding:12px 16px;font-size:12px;color:var(--text-s);margin-top:16px}
+.info-note strong{color:var(--text)}
+.info-note a{color:var(--brand)}
+
+.footer{text-align:center;padding:24px;color:var(--text-t);font-size:12px}
+.footer a{color:var(--brand)}
+
+.refresh-bar{display:flex;align-items:center;gap:12px;margin-bottom:16px;font-size:12px;color:var(--text-s);flex-wrap:wrap}
+.refresh-bar select{padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;font-family:var(--font)}
+
+/* 刷新间隔分段控件 */
+.seg-group{display:inline-flex;border:1px solid var(--border);border-radius:16px;background:var(--bg);overflow:hidden;padding:2px}
+.seg-btn{border:none;background:transparent;color:var(--text-s);font-size:11px;font-weight:500;padding:3px 10px;border-radius:13px;cursor:pointer;font-family:var(--font);transition:all .15s;min-height:22px;line-height:1.2}
+.seg-btn:hover{color:var(--text)}
+.seg-btn.active{background:var(--brand);color:#fff;box-shadow:0 1px 3px rgba(22,184,243,.35)}
+/* 手动刷新按钮：纯圆形 icon，与胶囊同高 */
+.seg-refresh{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:50%;background:var(--card);color:var(--brand);width:26px;height:26px;padding:0;font-size:11px;font-weight:600;transition:all .15s}
+.seg-refresh:hover{border-color:var(--brand);background:var(--brand-l);color:var(--brand-d)}
+.seg-refresh svg{width:14px;height:14px}
+.seg-refresh.refreshing{border-color:var(--green);color:var(--green);background:#E1F5EE}
+.seg-refresh.refreshing svg{animation:spin .6s linear}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:768px){
+  :root{--nav-h:auto}
+  .container{padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
+  .metrics{grid-template-columns:repeat(2,1fr);gap:16px}
+  .metric-value{font-size:24px}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  /* header 两行：第一行 logo+star，第二行导航 */
+  .header{padding:8px 8px 0;gap:6px;display:flex;flex-direction:column;height:auto;align-items:stretch}
+  .header-left{gap:8px;min-width:0;flex:1}
+  .header-left img{width:26px;height:26px}
+  .logo-text{font-size:14px}
+  .logo-version{display:none}
+  .header-right{justify-content:flex-end}
+  .header-right .star-btn{padding:6px 10px;min-height:36px}
+  .header-right .star-btn span:not(.star-count){display:none}
+  /* 导航独占一行横向滚动 + 隐藏滚动条 */
+  .nav{justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;padding-bottom:8px}
+  .nav-item{padding:8px 12px;font-size:12px;min-height:36px;flex-shrink:0}
+  .section-body{padding:14px}
+  .rule-grid,.doc-list,.mcp-grid,.npm-grid{grid-template-columns:1fr}
+  .lvp-col{border-radius:var(--radius-s)!important;margin-bottom:4px}
+  .lvp-arrow{transform:rotate(90deg);justify-content:center;padding:2px}
+  /* 移动端触控区 ≥44px（Apple HIG） */
+  .copy-btn{padding:7px 12px;min-height:44px;margin-top:2px}
+  .seg-group{width:100%;display:flex}
+  .seg-btn{flex:1;min-height:36px;font-size:13px}
+  .seg-refresh{flex:0 0 auto;width:34px;height:34px}
+  .fde-stage{gap:8px;padding:10px}
+  .fde-num{width:26px;height:26px;font-size:12px}
+  /* 表格/图表容器横向滚动，防溢出 */
+  .chart-box{overflow-x:auto}
+  /* 审计记录行窄屏紧凑 */
+  .audit-row{flex-wrap:wrap;gap:4px 8px}
+  .audit-time{min-width:auto;font-size:10px}
+  .audit-task{flex-basis:100%;order:3}
+  .rule-grid{display:flex;flex-wrap:wrap}
+  .rule-item{flex:1 1 calc(50% - 8px);min-width:0}
+  /* 编排控制图等宽 SVG 手机不缩放（可横滑看全），文字保持可读 */
+  .chart-box svg.graph-wide{min-width:520px}
+  .timeline{padding-left:20px}
+  .hero{padding:16px}
+  .hero-tagline{font-size:17px}
+}
+
+/* iPhone 底部安全区兜底 */
+@media(max-width:768px){
+  .footer{padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER / NAV ============ -->
+<div class="header">
+  <div class="header-left">
+    <img src="assets/sofagent.png" alt="sofagent" onerror="this.style.display='none'">
+    <span class="logo-text">sofagent</span>
+    <span class="logo-version">v1.2.5</span>
+  </div>
+  <nav class="nav" id="nav">
+    <button class="nav-item active" onclick="goPage('cockpit')">驾驶舱</button>
+    <button class="nav-item" onclick="goPage('fde')">FDE 引导</button>
+    <button class="nav-item" onclick="goPage('nodes')">AI 节点</button>
+    <button class="nav-item" onclick="goPage('ontology')">本体结构</button>
+    <button class="nav-item" onclick="goPage('knowledge')">知识库</button>
+    <button class="nav-item" onclick="goPage('resources')">工具箱</button>
+  </nav>
+  <div class="header-right">
+    <a href="https://github.com/KongFangXun/sofagent" target="_blank" class="star-btn">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+      <span>Stars</span>
+      <span class="star-count" id="starCount">···</span>
+    </a>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ================================================== -->
+<!-- PAGE: 驾驶舱 (Live Dashboard) -->
+<!-- ================================================== -->
+<div class="page active" id="page-cockpit">
+  <div class="refresh-bar">
+    <span class="data-status ds-sample" id="dataStatus">
+      <span class="pulse"></span>
+      <span id="dataStatusText">使用示例数据</span>
+    </span>
+    <button class="copy-btn light" id="connectDirBtn" onclick="connectDataDir()" style="display:none" title="Chrome 可直接选目录连接 ~/.sofagent/data">连接数据目录</button>
+    <span style="margin-left:auto"></span>
+    <span id="lastRefresh" style="color:var(--text-t)"></span>
+    <button class="seg-btn seg-refresh" onclick="manualRefresh()" title="立即刷新一次" aria-label="立即刷新">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:block"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+    </button>
+    <div class="seg-group" id="refreshSeg" role="radiogroup" aria-label="自动刷新间隔">
+      <button class="seg-btn active" data-val="5" onclick="changeRefresh('5')">5s</button>
+      <button class="seg-btn" data-val="10" onclick="changeRefresh('10')">10s</button>
+      <button class="seg-btn" data-val="30" onclick="changeRefresh('30')">30s</button>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric-card">
+      <div class="metric-value" style="color:var(--green)" id="m-audit">—</div>
+      <div class="metric-label">审计通过率</div>
+      <div class="metric-sub" id="m-audit-sub">24 条规则</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" style="color:var(--brand)" id="m-nodes">—</div>
+      <div class="metric-label">审计记录</div>
+      <div class="metric-sub" id="m-nodes-sub">总执行次数</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" style="color:var(--amber)" id="m-violations">—</div>
+      <div class="metric-label">违规次数</div>
+      <div class="metric-sub" id="m-violations-sub">FAIL + WARN</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" style="color:var(--purple)" id="m-localrate">—</div>
+      <div class="metric-label">数据本地化率</div>
+      <div class="metric-sub" id="m-localrate-sub">数据不出域</div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title"><span class="dot-emoji">✅</span>审计通过率</div>
+      </div>
+      <div class="section-body">
+        <div style="display:flex;align-items:center;justify-content:center;padding:8px 0">
+          <svg width="160" height="160" viewBox="0 0 160 160" id="auditRing">
+            <circle cx="80" cy="80" r="64" fill="none" stroke="#E1E4E8" stroke-width="12"/>
+            <circle cx="80" cy="80" r="64" fill="none" stroke="#1D9E75" stroke-width="12" stroke-dasharray="402" stroke-dashoffset="402" stroke-linecap="round" transform="rotate(-90 80 80)" id="auditRingFill"/>
+            <text x="80" y="76" text-anchor="middle" font-size="32" font-weight="700" fill="#1D9E75" id="auditRingText">—</text>
+            <text x="80" y="100" text-anchor="middle" font-size="12" fill="#57606A">PASS</text>
+          </svg>
+        </div>
+        <div style="text-align:center;font-size:12px;color:var(--text-s)" id="auditBreakdown">加载中...</div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title"><span class="dot-emoji">📉</span>违规趋势（近 7 天）</div>
+      </div>
+      <div class="section-body">
+        <svg width="100%" height="170" viewBox="0 0 320 170" id="trendChart">
+          <text x="160" y="85" text-anchor="middle" font-size="13" fill="#8B949E">加载中...</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title"><span class="dot-emoji">📋</span>最近审计记录</div>
+      </div>
+      <div class="section-body">
+        <div class="audit-log" id="liveAuditLog">
+          <div style="color:var(--text-t);font-size:12px;text-align:center;padding:20px">加载中...</div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title"><span class="dot-emoji">🔐</span>数据主权</div>
+      </div>
+      <div class="section-body" id="sovereigntyBox">
+        <div style="color:var(--text-t);font-size:12px;text-align:center;padding:20px">加载中...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- PAGE: 节点 -->
+<!-- ================================================== -->
+<div class="page" id="page-nodes">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji">🤖</span>企业 AI 节点</div>
+      <span style="font-size:11px;color:var(--text-t)" id="aiNodesUpdatedAt">加载中...</span>
+    </div>
+    <div class="section-body">
+      <div id="aiNodeList" style="font-size:12px;color:var(--text-s)">
+        <div style="text-align:center;color:var(--text-t);padding:12px">加载中...</div>
+      </div>
+      <div class="info-note" style="margin-top:12px">
+        这里显示你<strong>通过 FDE 部署的企业 AI 节点</strong>（🔄 自动执行 / ⚡ 强化岗位）。当前展示的是 FDE 十步流程模板；部署节点后会自动出现在这里（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/</code>）。
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji">🔀</span>编排控制图</div>
+      <span style="font-size:11px;color:var(--text-t)" id="graphUpdatedAt">加载中...</span>
+    </div>
+    <div class="section-body">
+      <div class="chart-box" id="graphBox">
+        <div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">🧩</span>节点详情</div></div>
+    <div class="section-body">
+      <div class="grid-3" id="nodeList">
+        <div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">🛠️</span>怎么设置自己的 AI 节点</div></div>
+    <div class="section-body">
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">1</span>梳理工作流，识别可自动化环节</div>
+        <div class="step-desc">用五要素法（输入/输出/负责人/耗时/痛点）盘点每个岗位，找出重复频率高、规则明确的环节。</div>
+      </div>
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">2</span>三问判定节点类型</div>
+        <div class="step-desc">
+          <span class="node-type nt-auto">🔄 自动执行</span> 输入能自动取 + 规则能写清 + 输出能自动推<br>
+          <span class="node-type nt-ai">⚡ 强化岗位</span> 两问满足——AI 辅助人完成<br>
+          <span class="node-type nt-human">👤 暂不动</span> 一问满足——暂不上 AI
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">3</span>在你的 Agent 中加载 sofagent Skill</div>
+        <div class="step-desc">WorkBuddy 搜索 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">sofagent</code> · 或 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">bash install.sh</code></div>
+      </div>
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">4</span>用 Prompt 让 Agent 帮你创建节点</div>
+        <div class="step-desc">复制下方 Prompt → Agent 会调 create_entity / validate_ontology 等 MCP 工具帮你建节点</div>
+      </div>
+      <div class="grid-2" style="margin-top:12px">
+        <div class="prompt-box" style="margin-top:0">
+          <div class="prompt-action"><span class="prompt-label">创建 AI 节点</span><button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Agent，帮我梳理工作流。先了解我的业务，盘点现有平台和系统，把能自动化的环节变成 AI 节点。')">复制</button></div>
+          <code>作为 sofagent FDE Agent，
+帮我梳理工作流。先了解我的业务，
+盘点现有平台和系统，
+把能自动化的环节变成 AI 节点。</code>
+        </div>
+        <div class="prompt-box" style="margin-top:0">
+          <div class="prompt-action"><span class="prompt-label">查看节点状态</span><button class="copy-btn" onclick="copyPrompt(this, '用 sofagent 查看 AI 节点运行状态，有没有挂起的、失败的、需要我确认的任务。')">复制</button></div>
+          <code>用 sofagent 查看 AI 节点运行状态，
+有没有挂起的、失败的、
+需要我确认的任务。</code>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="info-note">
+    节点部署后 7×24 自动执行。节点类型分三种：<strong>🔄 自动执行</strong>（AI 自主完成）、<strong>⚡ 强化岗位</strong>（AI 辅助人）、<strong>👤 暂不动</strong>。详见 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md 第四章</a>
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- PAGE: 知识库 -->
+<!-- ================================================== -->
+<div class="page" id="page-knowledge">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji">📚</span>你的知识库</div>
+      <span style="font-size:11px;color:var(--text-t)" id="kbUpdatedAt">加载中...</span>
+    </div>
+    <div class="section-body">
+      <div id="kbStats" class="grid-3" style="margin-bottom:16px">
+        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">—</div><div style="font-size:11px;color:var(--text-s)">知识页面</div></div>
+        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">—</div><div style="font-size:11px;color:var(--text-s)">概念目录</div></div>
+        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">—</div><div style="font-size:11px;color:var(--text-s)">更新日志</div></div>
+      </div>
+      <div id="kbEntries" style="font-size:12px;color:var(--text-s)">加载中...</div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">💡</span>最近经验教训（自动沉淀）</div></div>
+    <div class="section-body">
+      <div class="grid-2" id="thinkList">
+        <div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
+      </div>
+      <div class="prompt-box" style="margin-top:12px">
+        <div class="prompt-action"><span class="prompt-label">在 Agent 中查询知识库</span><button class="copy-btn" onclick="copyPrompt(this, '用 sofagent 知识库查一下：上次踩了什么坑？有没有相关的实体或概念？帮我避免重蹈覆辙。')">复制</button></div>
+        <code>用 sofagent 知识库查一下：
+上次踩了什么坑？
+有没有相关的实体或概念？
+帮我避免重蹈覆辙。</code>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji">🏛️</span>Ledger-Views-Policy 三层治理</div>
+      <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/PHILOSOPHY.md" target="_blank" class="copy-btn light">PHILOSOPHY §五 →</a>
+    </div>
+    <div class="section-body">
+      <div class="lvp-row">
+        <div class="lvp-col l"><div class="lvp-label">Ledger · 发生了什么</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">原始数据 · append-only · 不可改</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">task/logs · think.md · 审计历史</div></div>
+        <div class="lvp-arrow">→</div>
+        <div class="lvp-col v"><div class="lvp-label">Views · 这代表什么</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">知识提炼 · 单向派生</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">knowledge/ entities · concepts · comparisons</div></div>
+        <div class="lvp-arrow">→</div>
+        <div class="lvp-col p"><div class="lvp-label">Policy · 该怎么办</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">约束规则 · 启动时注入</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">SKILL.md 铁律 · fde.md 业务底线</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="info-note">
+    知识库是 FDE 离场后企业留下的<strong>知识资产</strong>。三层治理保证数据单向流动、经验自动积累。<strong>数据主权</strong>（本地化率、数据流向）已在驾驶舱展示，此处不再重复。
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- PAGE: 本体 -->
+<!-- ================================================== -->
+<div class="page" id="page-ontology">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji">🗺️</span>你的本体结构</div>
+      <span style="font-size:11px;color:var(--text-t)" id="ontUpdatedAt">加载中...</span>
+    </div>
+    <div class="section-body">
+      <div id="ontStats" class="grid-3" style="margin-bottom:16px">
+        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">—</div><div style="font-size:11px;color:var(--text-s)">实体 Entities</div></div>
+        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">—</div><div style="font-size:11px;color:var(--text-s)">概念 Concepts</div></div>
+        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">—</div><div style="font-size:11px;color:var(--text-s)">经验教训 think.md</div></div>
+      </div>
+      <div id="ontEntries" style="font-size:12px;color:var(--text-s)">加载中...</div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji">📖</span>什么是本体结构（ontology）</div>
+      <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank" class="copy-btn light">FDE/GUIDE 第三章 →</a>
+    </div>
+    <div class="section-body">
+      <p style="font-size:13px;color:var(--text-s);margin-bottom:12px">类比城市规划中的<strong>「用地性质图」</strong>——每块地是住宅/商业/工业，决定了这块地能干什么、归谁管。本体结构 = 企业知识的「用地性质图」——每个知识节点是什么类型、归哪个业务域、能看什么不能看什么。</p>
+      <div class="grid-3" style="margin-bottom:16px">
+        <div class="ont-card">
+          <h4 style="color:var(--brand-d)">实体 Entity</h4>
+          <p>业务对象（如「客户」「订单」「员工」）</p>
+          <ul class="ont-list">
+            <li>业务可命名</li>
+            <li>系统可查询</li>
+            <li>有独立生命周期</li>
+          </ul>
+        </div>
+        <div class="ont-card">
+          <h4 style="color:var(--green)">概念 Concept</h4>
+          <p>业务规则（如「审批流」「权限矩阵」）</p>
+          <ul class="ont-list">
+            <li>抽象规则定义</li>
+            <li>跨实体复用</li>
+            <li>约束行为边界</li>
+          </ul>
+        </div>
+        <div class="ont-card">
+          <h4 style="color:var(--amber)">关系 Relations</h4>
+          <p>实体/概念间关联</p>
+          <ul class="ont-list">
+            <li>belongs_to（属于）</li>
+            <li>has_many（拥有多个）</li>
+            <li>depends_on（依赖）</li>
+          </ul>
+        </div>
+      </div>
+      <div class="info-note" style="margin-top:0">
+        <strong>本体 ≠ 知识图谱数据库</strong>：本体的核心是<strong>业务刻画</strong>——完整呈现业务领域的客观事实与关联关系。知识图谱只是它的一种技术实现。
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">❓</span>业务四问（入场必填）</div></div>
+    <div class="section-body">
+      <p style="font-size:13px;color:var(--text-s);margin-bottom:12px">建本体前先用四问把「企业到底在做什么业务」钉死：</p>
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">1</span>关键业务对象有哪些？</div>
+        <div class="step-desc">客户 / 商品 / 订单 / 供应商……列清实体类型</div>
+      </div>
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">2</span>每个对象的归属负责人是谁？</div>
+        <div class="step-desc">谁对这个结果负责</div>
+      </div>
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">3</span>权威数据来源系统是哪个？</div>
+        <div class="step-desc">ERP / CRM / 自研 / Excel——避免 Agent 从非权威源编造</div>
+      </div>
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">4</span>动作风险等级？</div>
+        <div class="step-desc">低（查询/只读）/ 中高（写操作/审批/对外发）</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">🎯</span>Object Type 五条筛选标准</div></div>
+    <div class="section-body">
+      <p style="font-size:13px;color:var(--text-s);margin-bottom:12px">业务四问列出的名词不是全部都能当 Object Type——<strong>数据库表 ≠ 业务对象</strong>。五条标准缺两三条就要谨慎：</p>
+      <div class="grid-3">
+        <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">1. 业务可命名</h4><p style="font-size:11px;margin:0">业务人员叫得出这个名字吗？</p></div>
+        <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">2. 系统可查询</h4><p style="font-size:11px;margin:0">系统里能稳定查到它吗？</p></div>
+        <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">3. AI 可推理</h4><p style="font-size:11px;margin:0">AI 能围绕它做推理吗？</p></div>
+        <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">4. 动作可落地</h4><p style="font-size:11px;margin:0">业务动作能落在它身上吗？</p></div>
+        <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">5. 责任可绑定</h4><p style="font-size:11px;margin:0">权限和责任能绑定到它吗？</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-body">
+      <div class="prompt-box">
+        <div class="prompt-action"><span class="prompt-label">让 Agent 帮你构建本体结构</span>
+          <button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Agent，帮我构建本体结构。先用业务四问梳理关键业务对象，然后筛选 Object Type，建立 entity / concept / relations。最后用 validate_ontology 验证完整性。')">复制 Prompt</button>
+        </div>
+        <code>作为 sofagent FDE Agent，
+帮我构建本体结构。
+先用业务四问梳理关键业务对象，
+然后筛选 Object Type，
+建立 entity / concept / relations。
+最后用 validate_ontology 验证完整性。</code>
+      </div>
+    </div>
+  </div>
+  <div class="info-note">
+    <strong>适配性判断</strong>：多数中小企业不必建全量本体结构。如果不需要业务域级 Agent Runtime、也不是一号位工程推进，用<strong>轻量 Agent + 企业 Skill</strong>即可。详见 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md §3.2</a>
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- PAGE: FDE 引导 -->
+<!-- ================================================== -->
+<div class="page" id="page-fde">
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">🚀</span>怎么用 sofagent 做 FDE</div>
+      <a href="https://clawhub.ai/skill/sofagent" target="_blank" class="copy-btn light">ClawHub Skill →</a>
+    </div>
+    <div class="section-body">
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">A</span>方法论路径（零依赖，不需要 Node.js）</div>
+        <div class="step-desc">
+          只想了解方法论 → 读 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">GUIDE.md</a>（半天精读）→ 用你喜欢的工具按手册逐步梳理<br>
+          <span style="color:var(--text-t);font-size:11px">方法论本身不依赖工具——五要素 + 三问判定法纯对话/纸笔即可完成</span>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">B</span>工具路径（在你的 Agent 中加载 Skill）</div>
+        <div class="step-desc">
+          <strong>方式 1 · WorkBuddy</strong>：搜索 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">sofagent</code> → 点击安装 → Agent 自动加载 FDE Skill<br>
+          <strong>方式 2 · OpenClaw</strong>：<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">bash install.sh</code> → 自动配置 Skill 加载链<br>
+          <strong>方式 3 · npm 全局安装</strong>：<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">npm i -g @sofagent/audit && sofagent-audit --init</code>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">→</span>加载后怎么开始</div>
+        <div class="step-desc">
+          安装完成后，在你的 Agent 里直接对话：<br>
+          <span style="color:var(--brand)">"帮我做 FDE 诊断"</span> → Agent 会从 §1 进场开始引导你<br>
+          <span style="color:var(--brand)">"帮我梳理工作流"</span> → Agent 从当前阶段开始
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">🧭</span>FDE 五阶段 Prompt</div>
+      <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank" class="copy-btn light">FDE/GUIDE.md →</a>
+    </div>
+    <div class="section-body">
+      <div class="fde-stage">
+        <div class="fde-num">1</div>
+        <div class="fde-content"><div class="fde-title">进场 · 确定场景 + 盘点平台 + 建档</div><div class="fde-desc">摸清企业底子：业务、协同平台、业务系统、数据可达性。</div></div>
+        <button class="copy-btn light" onclick="copyPrompt(this, '作为 sofagent FDE Agent 进入进场阶段。先了解我的企业：名称、行业、规模、主要业务。然后盘点协同平台和业务系统，帮我建企业画像。')">复制</button>
+      </div>
+      <div class="fde-stage">
+        <div class="fde-num">2</div>
+        <div class="fde-content"><div class="fde-title">深挖 · 五要素 + 本体结构</div><div class="fde-desc">梳理输入/输出/负责人/耗时/痛点，构建 ontology 本体结构。</div></div>
+        <button class="copy-btn light" onclick="copyPrompt(this, '进入 FDE 深挖阶段。帮我梳理关键岗位的工作流：输入是什么、输出是什么、谁负责、耗多少时间、痛点在哪。然后构建本体结构。')">复制</button>
+      </div>
+      <div class="fde-stage">
+        <div class="fde-num">3</div>
+        <div class="fde-content"><div class="fde-title">量化 · 三问判定 + 价值计算</div><div class="fde-desc">三问判定类型，计算年节省金额。</div>
+          <div style="margin-top:6px"><span class="node-type nt-auto">AI 自主</span> <span class="node-type nt-ai">AI 辅助</span> <span class="node-type nt-human">人工确认</span></div>
+        </div>
+        <button class="copy-btn light" onclick="copyPrompt(this, '进入 FDE 量化阶段。对每个工作流节点做三问判定：能全自动吗？需要人确认吗？适合 AI 辅助吗？然后计算每个 AI 节点的年节省金额。')">复制</button>
+      </div>
+      <div class="fde-stage">
+        <div class="fde-num">4</div>
+        <div class="fde-content"><div class="fde-title">交付 · 三层实体 + 部署引导</div><div class="fde-desc">文档层 + Skill 层 + 运行层，部署到企业平台。</div></div>
+        <button class="copy-btn light" onclick="copyPrompt(this, '进入 FDE 交付阶段。帮我生成三层交付物：文档层操作手册、Skill 层行为约束、运行层可执行节点。然后引导部署。')">复制</button>
+      </div>
+      <div class="fde-stage">
+        <div class="fde-num">5</div>
+        <div class="fde-content"><div class="fde-title">离场 · 自检 + 观察期 + 确认</div><div class="fde-desc">审计自检、反思沉淀、设置观察期。</div></div>
+        <button class="copy-btn light" onclick="copyPrompt(this, '进入 FDE 离场阶段。做自检清单：审计有没有遗漏、反思有没有沉淀、知识库有没有更新。然后设置观察期。')">复制</button>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji">📋</span>FDE Agent 十步流程（内置 Workflow 模板）</div>
+      <span style="font-size:11px;color:var(--text-t)" id="fdeWfUpdatedAt">加载中...</span>
+    </div>
+    <div class="section-body">
+      <div id="fdeWorkflowBox" style="font-size:12px;color:var(--text-s)">
+        <div style="text-align:center;color:var(--text-t);padding:12px">加载中...</div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">⚡</span>持续优化场景速查</div></div>
+    <div class="section-body">
+      <div class="grid-2">
+        <div class="prompt-box" style="margin-top:0">
+          <div class="prompt-action"><span class="prompt-label">查询上次踩坑</span><button class="copy-btn" onclick="copyPrompt(this, '用 sofagent 查一下最近踩了什么坑，帮我回顾一下，避免重蹈覆辙。')">复制</button></div>
+          <code>用 sofagent 查一下最近踩了什么坑，
+帮我回顾一下，避免重蹈覆辙。</code>
+        </div>
+        <div class="prompt-box" style="margin-top:0">
+          <div class="prompt-action"><span class="prompt-label">系统健康检查</span><button class="copy-btn" onclick="copyPrompt(this, '用 sofagent 做一次系统健康检查，看看节点状态、审计趋势、知识库健康度。')">复制</button></div>
+          <code>用 sofagent 做一次系统健康检查，
+看看节点状态、审计趋势、知识库健康度。</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- PAGE: 工具箱 -->
+<!-- ================================================== -->
+<div class="page" id="page-resources">
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">⚙️</span>快速安装</div></div>
+    <div class="section-body">
+      <div class="install-box" style="margin-bottom:8px">
+        <code>bash install.sh &amp;&amp; sofagent-audit --init</code>
+        <button class="copy-btn" onclick="copyPrompt(this, 'bash install.sh && sofagent-audit --init')">复制</button>
+      </div>
+      <div style="font-size:12px;color:var(--text-t)">或 npx 零安装：<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">npx @sofagent/audit --init</code> · 需要 Node.js ≥ 18 + git</div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji">🏗️</span>能力底座 · 一底座三引擎</div>
+      <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="copy-btn light">ARCHITECTURE.md →</a>
+    </div>
+    <div class="section-body">
+      <div class="arch-layer" style="background:#E6F1FB;border:1px solid var(--brand)">
+        <h5 style="color:var(--brand-d)">约束底座</h5>
+        <div style="font-size:12px;color:var(--text-s)">开工前注入红线 · 四层加载链 · SKILL.md → fde.md → think.md → knowledge/</div>
+      </div>
+      <div class="arch-layer" style="background:#FCEBEB;border:1px solid var(--red)">
+        <h5 style="color:#791F1F">审计引擎</h5>
+        <div style="font-size:12px;color:var(--text-s)">每次变更硬证据 · 24 条规则 · 19 条零 token · 违规当场拦截</div>
+      </div>
+      <div class="arch-layer" style="background:#E1F5EE;border:1px solid var(--green)">
+        <h5 style="color:#085041">回溯引擎</h5>
+        <div style="font-size:12px;color:var(--text-s)">自动快照 · 一键回滚 · git snapshot 不污染历史</div>
+      </div>
+      <div class="arch-layer" style="background:#EEEDFE;border:1px solid var(--purple)">
+        <h5 style="color:#3C3489">进化引擎</h5>
+        <div style="font-size:12px;color:var(--text-s)">think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化</div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji">🔗</span>生命周期 · 激活链（v1.2.5+）</div>
+      <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/guides/fde-activation-chain.md" target="_blank" class="copy-btn light">激活链设计 →</a>
+    </div>
+    <div class="section-body">
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot done"></div><div class="tl-title">诊断 FDE 四阶段<span class="tl-version">v1.0+ ✅</span></div><div class="tl-desc">进场→深挖→量化→交付→离场，五阶段十二步方法论</div></div>
+        <div class="tl-item"><div class="tl-dot current"></div><div class="tl-title">激活 ACTIVATE<span class="tl-version">v1.2.5 ✅</span></div><div class="tl-desc">读交付物 → 注册企业 SubAgent → 写入 .sofagent/subagents/</div></div>
+        <div class="tl-item"><div class="tl-dot planned"></div><div class="tl-title">编排 ORCHESTRATE<span class="tl-version">v1.2.6-v1.2.7</span></div><div class="tl-desc">构建企业专属 LangGraph StateGraph</div></div>
+        <div class="tl-item"><div class="tl-dot planned"></div><div class="tl-title">执行 EXECUTE<span class="tl-version">v1.2.8-v1.2.9</span></div><div class="tl-desc">DAG 运行 + 人工确认（HITL）+ 每步审计</div></div>
+        <div class="tl-item"><div class="tl-dot planned"></div><div class="tl-title">进化 SUSTAIN<span class="tl-version">v1.3.0</span></div><div class="tl-desc">持续优化 · think.md 回写 · 越跑越好</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">🛡️</span>审计规则全览（24 条）</div>
+      <a href="https://github.com/KongFangXun/sofagent/blob/main/SECURITY.md" target="_blank" class="copy-btn light">SECURITY.md →</a>
+    </div>
+    <div class="section-body">
+      <div class="rule-grid">
+        <div class="rule-item rule-cat-red"><div class="rule-code">A1 敏感文件</div><div class="rule-name">.env / *.pem 拦截</div></div>
+        <div class="rule-item rule-cat-red"><div class="rule-code">A2 密钥泄漏</div><div class="rule-name">硬编码 API Key</div></div>
+        <div class="rule-item rule-cat-yellow"><div class="rule-code">A3 越界编辑</div><div class="rule-name">改任务范围外文件</div></div>
+        <div class="rule-item rule-cat-yellow"><div class="rule-code">A4 删配置</div><div class="rule-name">删除关键配置</div></div>
+        <div class="rule-item rule-cat-blue"><div class="rule-code">A5 空消息</div><div class="rule-name">空 commit msg</div></div>
+        <div class="rule-item rule-cat-gray"><div class="rule-code">A6 破构建</div><div class="rule-name">构建配置异常</div></div>
+        <div class="rule-item rule-cat-blue"><div class="rule-code">A7 盲改</div><div class="rule-name">不读就改</div></div>
+        <div class="rule-item rule-cat-blue"><div class="rule-code">A8 跳测试</div><div class="rule-name">绕过测试</div></div>
+        <div class="rule-item rule-cat-yellow"><div class="rule-code">A9 注入防御</div><div class="rule-name">命令 + Prompt 注入</div></div>
+        <div class="rule-item rule-cat-yellow"><div class="rule-code">A10 恶意来源</div><div class="rule-name">typosquatting 依赖</div></div>
+        <div class="rule-item rule-cat-gray"><div class="rule-code">A11 资源滥用</div><div class="rule-name">超大文件</div></div>
+        <div class="rule-item rule-cat-gray"><div class="rule-code">A18 垃圾文件</div><div class="rule-name">临时文件提交</div></div>
+        <div class="rule-item rule-cat-blue"><div class="rule-code">A19 消息质量</div><div class="rule-name">低质量 commit msg</div></div>
+        <div class="rule-item rule-cat-red"><div class="rule-code">A20 数据外传</div><div class="rule-name">curl 外传数据</div></div>
+        <div class="rule-item rule-cat-red"><div class="rule-code">A21 后门</div><div class="rule-name">LaunchAgent/systemd</div></div>
+        <div class="rule-item rule-cat-red"><div class="rule-code">A22 权限提升</div><div class="rule-name">全权限 chmod</div></div>
+        <div class="rule-item rule-cat-red"><div class="rule-code">A23 路径穿越</div><div class="rule-name">目录穿越序列</div></div>
+        <div class="rule-item rule-cat-purple"><div class="rule-code">A14 跨域越权</div><div class="rule-name">知识库跨域</div></div>
+        <div class="rule-item rule-cat-purple"><div class="rule-code">A15 盲动</div><div class="rule-name">无意图空操作</div></div>
+        <div class="rule-item rule-cat-purple"><div class="rule-code">A16 未授权变更</div><div class="rule-name">非授权修改</div></div>
+        <div class="rule-item rule-cat-purple"><div class="rule-code">A17 异常批量</div><div class="rule-name">文件系统监控</div></div>
+        <div class="rule-item rule-cat-green"><div class="rule-code">E1 测试规范</div><div class="rule-name">测试文件检查</div></div>
+        <div class="rule-item rule-cat-green"><div class="rule-code">E2 遗留 TODO</div><div class="rule-name">未声明 TODO</div></div>
+        <div class="rule-item rule-cat-green"><div class="rule-code">E4 注释率</div><div class="rule-name">注释覆盖率</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-t);margin-top:12px">24 条规则（17 默认 + 7 扩展），每次 git commit / 文件变更自动触发。<b>19 条纯 git-diff 规则零 token 不调 LLM</b>。颜色分级：红=安全红线 · 黄=行为约束 · 蓝=质量规范 · 紫=知识域约束 · 绿=测试规范 · 灰=工程治理</div>
+      <div class="grid-2" style="margin-top:12px">
+        <div class="prompt-box" style="margin-top:0">
+          <div class="prompt-action"><span class="prompt-label">触发审计检查</span><button class="copy-btn" onclick="copyPrompt(this, '帮我审计这次变更，检查有没有越界改文件、密钥泄漏、盲目修改。使用 sofagent 的审计规则。')">复制</button></div>
+          <code>帮我审计这次变更，
+检查有没有越界改文件、密钥泄漏、
+盲目修改。
+使用 sofagent 的审计规则。</code>
+        </div>
+        <div class="prompt-box" style="margin-top:0">
+          <div class="prompt-action"><span class="prompt-label">回滚到安全状态</span><button class="copy-btn" onclick="copyPrompt(this, '用 sofagent 回溯引擎查看最近的快照，如果上一次变更有问题，帮我一键回滚到安全状态。')">复制</button></div>
+          <code>用 sofagent 回溯引擎查看最近的快照，
+如果上一次变更有问题，
+帮我一键回滚到安全状态。</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+<div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">🔌</span>MCP 工具（22 个）</div></div>
+    <div class="section-body">
+      <div class="mcp-grid">
+        <div class="mcp-item"><code>run_audit</code><div class="mcp-desc">执行审计检查</div></div>
+        <div class="mcp-item"><code>audit_file</code><div class="mcp-desc">审计指定文件</div></div>
+        <div class="mcp-item"><code>audit_data_change</code><div class="mcp-desc">审计数据变更</div></div>
+        <div class="mcp-item"><code>get_think</code><div class="mcp-desc">读取反思教训</div></div>
+        <div class="mcp-item"><code>write_think</code><div class="mcp-desc">写入经验教训</div></div>
+        <div class="mcp-item"><code>search_knowledge</code><div class="mcp-desc">搜索知识库</div></div>
+        <div class="mcp-item"><code>read_entity</code><div class="mcp-desc">读取实体详情</div></div>
+        <div class="mcp-item"><code>read_concept</code><div class="mcp-desc">读取概念解释</div></div>
+        <div class="mcp-item"><code>list_entities</code><div class="mcp-desc">列出所有实体</div></div>
+        <div class="mcp-item"><code>create_entity</code><div class="mcp-desc">创建实体</div></div>
+        <div class="mcp-item"><code>create_concept</code><div class="mcp-desc">创建概念</div></div>
+        <div class="mcp-item"><code>validate_ontology</code><div class="mcp-desc">验证本体结构</div></div>
+        <div class="mcp-item"><code>read_lessons</code><div class="mcp-desc">读取踩坑记录</div></div>
+        <div class="mcp-item"><code>stats</code><div class="mcp-desc">知识库统计</div></div>
+        <div class="mcp-item"><code>evaluate_output</code><div class="mcp-desc">评估输出质量</div></div>
+        <div class="mcp-item"><code>optimize_skill</code><div class="mcp-desc">优化 Skill 质量</div></div>
+        <div class="mcp-item"><code>health_check</code><div class="mcp-desc">系统健康检查</div></div>
+        <div class="mcp-item"><code>data_sovereignty_report</code><div class="mcp-desc">数据主权报告</div></div>
+        <div class="mcp-item"><code>sofagent_compose</code><div class="mcp-desc">编排任务</div></div>
+        <div class="mcp-item"><code>notify_session</code><div class="mcp-desc">会话通知</div></div>
+        <div class="mcp-item"><code>activate_workflow</code><div class="mcp-desc">激活工作流（v1.2.5+）</div></div>
+        <div class="mcp-item"><code>list_capabilities</code><div class="mcp-desc">获取完整能力清单</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">📦</span>npm 包（13 个）</div></div>
+    <div class="section-body">
+      <div class="npm-grid">
+        <div class="npm-item"><code>@sofagent/audit</code><div class="npm-desc">审计引擎（24 条规则）</div></div>
+        <div class="npm-item"><code>@sofagent/core</code><div class="npm-desc">核心类型 · HMAC · 诊断</div></div>
+        <div class="npm-item"><code>@sofagent/orchestrator</code><div class="npm-desc">LangGraph 编排引擎</div></div>
+        <div class="npm-item"><code>@sofagent/daemon</code><div class="npm-desc">守护进程 · cron 巡检</div></div>
+        <div class="npm-item"><code>@sofagent/harness</code><div class="npm-desc">SKILL 加载链</div></div>
+        <div class="npm-item"><code>@sofagent/mcp</code><div class="npm-desc">MCP Server</div></div>
+        <div class="npm-item"><code>@sofagent/load-chain</code><div class="npm-desc">SKILL 加载 git hook</div></div>
+        <div class="npm-item"><code>@sofagent/ontology</code><div class="npm-desc">本体结构建模</div></div>
+        <div class="npm-item"><code>@sofagent/eval</code><div class="npm-desc">评估反馈闭环</div></div>
+        <div class="npm-item"><code>@sofagent/think</code><div class="npm-desc">反思教训生成</div></div>
+        <div class="npm-item"><code>@sofagent/ab-test</code><div class="npm-desc">A/B 测试</div></div>
+        <div class="npm-item"><code>@sofagent/skillopt</code><div class="npm-desc">Skill 自动优化</div></div>
+        <div class="npm-item"><code>@sofagent/rules</code><div class="npm-desc">审计规则定义</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">📄</span>文档直达</div></div>
+    <div class="section-body">
+      <div class="doc-list">
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/README.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>README<span class="ext">介绍 + 安装</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/PHILOSOPHY.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>PHILOSOPHY<span class="ext">设计哲学</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>ARCHITECTURE<span class="ext">架构详解</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/VALIDATION.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>VALIDATION<span class="ext">行业印证</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/ROADMAP.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>ROADMAP<span class="ext">路线图</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/HANDBOOK.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>HANDBOOK<span class="ext">操作手册</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/SECURITY.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>SECURITY<span class="ext">安全策略</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/LIMITATIONS.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>LIMITATIONS<span class="ext">已知局限</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>FDE GUIDE<span class="ext">诊断方法论</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/THANKS.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>THANKS<span class="ext">致谢</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/WIKI.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>WIKI<span class="ext">导航索引</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/CONTRIBUTING.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>CONTRIBUTING<span class="ext">贡献指南</span></a>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji">🔬</span>FORGE · 自迭代质量审查工具链</div>
+      <a href="https://github.com/KongFangXun/sofagent/blob/main/FORGE/README.md" target="_blank" class="copy-btn light">FORGE README →</a>
+    </div>
+    <div class="section-body">
+      <p style="font-size:13px;color:var(--text-s);margin-bottom:16px">FORGE 是 sofagent <strong>项目内部的开发工具链</strong>（不是 FDE 方法论的一部分），用 sofagent 自己的审计能力审 sofagent 自己的代码——"用 AI 审 AI"。两条循环：<strong>fresh-eyes-loop</strong>（双盲质量审查）与 <strong>release-gate-loop</strong>（发版门禁，十二阶段 SOP）。</p>
+
+      <div class="step-card" style="margin-bottom:12px">
+        <div class="step-title"><span class="step-num">1</span>fresh-eyes-loop · 双盲质量审查</div>
+        <div class="step-desc">两个 Agent 互不可见：A（审查模型）不带前置上下文独立找问题，B（工程模型）收到报告独立修复，多轮迭代直到收敛（默认 5 轮）。</div>
+      </div>
+      <div class="chart-box" id="forgeBox">
+        <div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
+      </div>
+      <div class="prompt-box" style="margin-top:12px">
+        <div class="prompt-action"><span class="prompt-label">在你的项目中运行 fresh-eyes-loop</span>
+          <button class="copy-btn" onclick="copyPrompt(this, '用 sofagent FORGE fresh-eyes-loop 对当前项目做双盲质量审查。Agent A 找问题，Agent B 修复，多轮迭代直到收敛。')">复制 Prompt</button>
+        </div>
+        <code>用 sofagent FORGE fresh-eyes-loop
+对当前项目做双盲质量审查。
+Agent A 找问题，Agent B 修复，
+多轮迭代直到收敛。</code>
+      </div>
+
+      <div class="step-card" style="margin:16px 0 12px">
+        <div class="step-title"><span class="step-num">2</span>release-gate-loop · 发版门禁</div>
+        <div class="step-desc">发版前按十二阶段 SOP 逐门禁验收（build → acceptance → regression → coverage…），任一环节 FAIL 即卡关，全部通过才允许打 tag 发版。</div>
+      </div>
+      <div class="chart-box" id="releaseGateBox">
+        <div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
+      </div>
+      <div class="prompt-box" style="margin-top:12px">
+        <div class="prompt-action"><span class="prompt-label">运行 release-gate 门禁</span>
+          <button class="copy-btn" onclick="copyPrompt(this, '用 sofagent FORGE release-gate-loop 跑发版门禁：build → acceptance → regression → coverage，全部通过再报告。')">复制 Prompt</button>
+        </div>
+        <code>用 sofagent FORGE release-gate-loop
+跑发版门禁：
+build → acceptance → regression → coverage，
+全部通过再报告。</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <div class="footer">
+    <p>sofagent · FDE Agent — 梳理工作流 · 部署 AI 节点 · 审计每次变更</p>
+    <p style="margin-top:4px"><a href="https://github.com/KongFangXun/sofagent" target="_blank">GitHub</a> · MIT License · 孔放勋 · v1.2.5</p>
+  </div>
+</div>
+
+<script>
+/* ===== Page Navigation ===== */
+function goPage(name){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active')});
+  document.getElementById('page-'+name).classList.add('active');
+  var navBtns=document.querySelectorAll('.nav-item');
+  for(var i=0;i<navBtns.length;i++){
+    if(navBtns[i].textContent.trim().indexOf(name)>=0||navBtns[i].getAttribute('onclick').indexOf("'"+name+"'")>=0){
+      navBtns[i].classList.add('active');break;
+    }
+  }
+  window.scrollTo(0,0);
+  if(name==='cockpit') loadLiveData();
+  if(name==='nodes'){loadAiNodesData();loadGraphData();}
+  if(name==='knowledge') loadKnowledgeData();
+  if(name==='ontology') loadOntologyData();
+  if(name==='fde') loadFdeWorkflowData();
+  if(name==='resources'){loadForgeData();loadReleaseGateData();}
+}
+
+/* ===== Copy Prompt ===== */
+function copyPrompt(btn,text){
+  function done(){btn.classList.add('copied');var o=btn.innerHTML;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>已复制';setTimeout(function(){btn.classList.remove('copied');btn.innerHTML=o},2000)}
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(done)}
+  else{var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);done()}
+}
+
+/* ===== Live Data ===== */
+var refreshTimer=null;
+var DATA_ROOTS=[
+  '/data',
+  '../data',
+  '../../data',
+  'data',
+  localStorage.getItem('sofagent_data_root')||''
+].filter(Boolean);
+
+function tryFetch(path){
+  return fetch(path).then(function(r){if(!r.ok)throw new Error(r.status);return r.text()}).catch(function(){return null});
+}
+
+function parseJSONL(text){
+  if(!text)return [];
+  return text.trim().split('\n').filter(Boolean).map(function(line){
+    try{return JSON.parse(line)}catch(e){return null}
+  }).filter(Boolean);
+}
+
+var liveDataConnected=false;
+
+async function loadLiveData(){
+  // 优先走 /api/summary（复用 bash dashboard jq 口径，数据与终端一致）
+  var apiSummary=await tryFetch('/api/summary');
+  if(apiSummary){
+    var summary=null;
+    try{summary=JSON.parse(apiSummary)}catch(e){}
+    if(summary&&summary.rules){
+      liveDataConnected=true;
+      updateDataStatus(true);
+      renderSummaryData(summary);
+      document.getElementById('lastRefresh').textContent='更新于 '+new Date().toLocaleTimeString('zh-CN');
+      return;
+    }
+  }
+
+  // 降级：直接读原始 JSONL
+  var auditHistory=null,daemonHealth=null,graphState=null,sovereigntyData=null;
+  var dataRoot='';
+
+  for(var i=0;i<DATA_ROOTS.length;i++){
+    var root=DATA_ROOTS[i];
+    var test=await tryFetch(root+'/audit/history.jsonl');
+    if(test!==null&&test!==''){dataRoot=root;auditHistory=test;break}
+  }
+
+  if(auditHistory){
+    liveDataConnected=true;
+    updateDataStatus(true);
+    var records=parseJSONL(auditHistory);
+    processAuditData(records);
+    var dh=await tryFetch(dataRoot+'/dashboard/daemon-health.json');
+    if(dh)try{daemonHealth=JSON.parse(dh)}catch(e){}
+    // data-sovereignty 按 年/月/*.jsonl 分目录，取最近的
+    var sovReport=null;
+    var now=new Date();
+    var y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0');
+    var d=String(now.getDate()).padStart(2,'0');
+    sovReport=await tryFetch(dataRoot+'/audit/data-sovereignty/'+y+'/'+m+'/'+y+'-'+m+'-'+d+'.jsonl');
+    if(!sovReport){ // fallback 最近一条
+      sovReport=await tryFetch(dataRoot+'/audit/data-sovereignty.json');
+    }
+    var sovRecords=sovReport?parseJSONL(sovReport):[];
+    if(sovRecords.length){sovereigntyData={localExecutions:0,cloudCalls:0,dataOutflow:0}}
+    sovRecords.forEach(function(sr){
+      if(sr.localAction)sovereigntyData.localExecutions++;
+      if(sr.cloudCall)sovereigntyData.cloudCalls++;
+      if(sr.dataFlow&&sr.dataFlow.direction&&sr.dataFlow.direction!=='local-only')sovereigntyData.dataOutflow++;
+    });
+    renderSovereignty(sovereigntyData,daemonHealth);
+    var local=sovereigntyData?sovereigntyData.localExecutions:575;
+    var cloud=sovereigntyData?sovereigntyData.cloudCalls:12;
+    var lr=Math.round(local*100/(local+cloud||1));
+    document.getElementById('m-localrate').textContent=lr+'%';
+    document.getElementById('m-localrate-sub').textContent=local+'/'+(local+cloud)+' 本地';
+  }else{
+    liveDataConnected=false;
+    updateDataStatus(false);
+    loadSampleData();
+  }
+
+  document.getElementById('lastRefresh').textContent='更新于 '+new Date().toLocaleTimeString('zh-CN');
+}
+
+/* 用 /api/summary（bash 同口径）渲染驾驶舱 */
+function renderSummaryData(s){
+  var r=s.rules;
+  // 指标卡
+  document.getElementById('m-audit').textContent=r.passRate+'%';
+  document.getElementById('m-audit-sub').textContent='24 条规则';
+  document.getElementById('m-nodes').textContent=(r.total||0);
+  document.getElementById('m-nodes-sub').textContent='规则判定总数';
+  document.getElementById('m-violations').textContent=((r.warn||0)+(r.fail||0));
+  document.getElementById('m-violations-sub').textContent='WARN '+r.warn+' / FAIL '+r.fail;
+  // 主权
+  if(s.sovereignty){
+    document.getElementById('m-localrate').textContent=(s.sovereignty.localRate||0)+'%';
+    document.getElementById('m-localrate-sub').textContent=(s.sovereignty.local||0)+'/'+(s.sovereignty.total||0)+' 本地';
+    renderSovereigntyFromSummary(s.sovereignty);
+  }
+  // 环形图
+  var circ=2*Math.PI*64;
+  var offset=circ*(1-r.passRate/100);
+  document.getElementById('auditRingFill').setAttribute('stroke-dasharray',circ);
+  document.getElementById('auditRingFill').setAttribute('stroke-dashoffset',offset);
+  document.getElementById('auditRingText').textContent=r.passRate+'%';
+  document.getElementById('auditBreakdown').textContent='PASS '+r.pass+' / WARN '+r.warn+' / FAIL '+r.fail;
+  // 最近审计记录
+  if(s.recent&&s.recent.length){
+    var html=s.recent.map(function(rec){
+      var verdict=rec.exitCode===0?'PASS':(rec.exitCode===1?'WARN':'FAIL');
+      var cls=verdict==='PASS'?'badge-pass':(verdict==='WARN'?'badge-warn':'badge-fail');
+      // rule 列：FAIL/WARN 显示触发的规则码，PASS 显示 ✓
+      var ruleCell=rec.rule
+        ? '<span class="audit-rule" style="color:var(--'+(verdict==='FAIL'?'red':'amber')+')">'+rec.rule+'</span>'
+        : '<span class="audit-rule" style="color:var(--green)">✓</span>';
+      return '<div class="audit-row"><span class="audit-time">'+(rec.time||'')+'</span><span class="audit-badge '+cls+'">'+verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(rec.task||'')+'</span></div>';
+    }).join('');
+    document.getElementById('liveAuditLog').innerHTML=html;
+  }
+  // 趋势图：从 summary 无法还原每日分布，用 TOP3 画柱状
+  if(s.top3&&s.top3.length){
+    var t=s.top3;
+    var max=Math.max.apply(null,t.map(function(x){return x.count||0}).concat([1]));
+    var sw=320/t.length;
+    var svg='<line x1="20" y1="20" x2="300" y2="20" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
+    svg+='<line x1="20" y1="130" x2="300" y2="130" stroke="#E1E4E8" stroke-width="1"/>';
+    t.forEach(function(item,i){
+      var h=Math.max(3,(item.count||0)/max*100);
+      var x=30+i*sw;
+      svg+='<rect x="'+x+'" y="'+(130-h)+'" width="'+(sw-20)+'" height="'+h+'" rx="3" fill="#E24B4A"/>';
+      svg+='<text x="'+(x+(sw-20)/2)+'" y="145" text-anchor="middle" font-size="9" fill="#8B949E">'+item.code+'</text>';
+      svg+='<text x="'+(x+(sw-20)/2)+'" y="'+(130-h-4)+'" text-anchor="middle" font-size="9" fill="#E24B4A">'+(item.count||0)+'</text>';
+    });
+    svg+='<text x="2" y="20" font-size="9" fill="#8B949E">'+max+'</text>';
+    document.getElementById('trendChart').innerHTML=svg;
+    // 更新标题下的小注
+    var note=document.createElement('div');
+    note.style.cssText='font-size:11px;color:var(--text-t);text-align:center;margin-top:4px';
+    note.textContent='近 7 天违规 TOP3（bash 口径）';
+    var parent=document.getElementById('trendChart').parentNode;
+    var old=parent.querySelector('.top3-note');
+    if(old)parent.removeChild(old);
+    parent.appendChild(note);
+    note.className='top3-note';
+  }
+}
+
+function renderSovereigntyFromSummary(sov){
+  var el=document.getElementById('sovereigntyBox');
+  if(!el)return;
+  el.innerHTML='<div class="chart-box" style="display:flex;flex-direction:column;justify-content:center">'+
+    '<div style="display:flex;justify-content:space-around;align-items:stretch;text-align:center;margin-bottom:12px">'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--brand)">'+sov.cloud+'</div><div style="font-size:11px;color:var(--text-s)">云端调用</div></div>'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--green)">'+sov.local+'</div><div style="font-size:11px;color:var(--text-s)">本地执行</div></div>'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--amber)">'+sov.outbound+'</div><div style="font-size:11px;color:var(--text-s)">数据流出</div></div>'+
+    '</div>'+
+    '<div style="font-size:12px;color:var(--text-s)">本地化率：<b style="color:var(--green)">'+sov.localRate+'%</b>（'+sov.local+'/'+sov.total+'）</div>'+
+    '<div style="font-size:11px;color:var(--text-t);margin-top:4px">近 7 天 · 敏感记录 '+sov.sensitive+' 条 · 审计证据永远在本地</div>'+
+    '</div>';
+}
+
+function updateDataStatus(connected){
+  var el=document.getElementById('dataStatus');
+  var txt=document.getElementById('dataStatusText');
+  if(connected){el.className='data-status ds-live';txt.textContent='实时数据已连接（~/.sofagent/data）'}
+  else{el.className='data-status ds-sample';txt.textContent='示例数据 · 用 node tools/serve-dashboard.mjs 启动看实时数据'}
+}
+
+function processAuditData(records){
+  if(!records.length){loadSampleData();return}
+  var pass=0,warn=0,fail=0;
+  records.forEach(function(r){
+    if(r.ruleResults){
+      r.ruleResults.forEach(function(rr){
+        if(rr.status==='PASS')pass++;
+        else if(rr.status==='WARN')warn++;
+        else if(rr.status==='FAIL')fail++;
+      })
+    }
+  });
+  var total=pass+warn+fail;
+  var rate=total>0?Math.round(pass*100/total):0;
+  document.getElementById('m-audit').textContent=rate+'%';
+  document.getElementById('m-audit-sub').textContent='24 条规则';
+  document.getElementById('m-nodes').textContent=records.length;
+  document.getElementById('m-nodes-sub').textContent='审计次数';
+  document.getElementById('m-violations').textContent=(warn+fail);
+  document.getElementById('m-violations-sub').textContent='WARN '+warn+' / FAIL '+fail;
+  var circumference=2*Math.PI*64;
+  var offset=circumference*(1-rate/100);
+  document.getElementById('auditRingFill').setAttribute('stroke-dasharray',circumference);
+  document.getElementById('auditRingFill').setAttribute('stroke-dashoffset',offset);
+  document.getElementById('auditRingText').textContent=rate+'%';
+  document.getElementById('auditBreakdown').textContent='PASS '+pass+' / WARN '+warn+' / FAIL '+fail;
+  var recent=records.slice(-8).reverse();
+  renderLiveAuditLog(recent);
+  renderTrendChart(records);
+}
+
+function renderLiveAuditLog(records){
+  var html=records.map(function(r){
+    var verdict='PASS',verdictClass='badge-pass',rule='';
+    if(r.exitCode===1){verdict='WARN';verdictClass='badge-warn'}
+    else if(r.exitCode&&r.exitCode>1){verdict='FAIL';verdictClass='badge-fail'}
+    if(r.ruleResults){
+      var failed=r.ruleResults.find(function(rr){return rr.status==='FAIL'||rr.status==='WARN'});
+      if(failed)rule='A'+failed.number;
+    }
+    // rule 列：FAIL/WARN 显示触发规则码（红/橙），PASS 显示绿色 ✓
+    var ruleCell=rule
+      ? '<span class="audit-rule" style="color:var(--'+(verdict==='FAIL'?'red':'amber')+')">'+rule+'</span>'
+      : '<span class="audit-rule" style="color:var(--green)">✓</span>';
+    var ts=(r.timestamp||'').slice(5,16);
+    var task=(r.task||r.commitMsg||'').slice(0,50);
+    return '<div class="audit-row"><span class="audit-time">'+ts+'</span><span class="audit-badge '+verdictClass+'">'+verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(task)+'</span></div>';
+  }).join('');
+  document.getElementById('liveAuditLog').innerHTML=html||'<div style="color:var(--text-t);font-size:12px;text-align:center;padding:20px">暂无记录</div>';
+}
+
+function renderTrendChart(records){
+  var byDay={};
+  records.forEach(function(r){
+    if(!r.timestamp)return;
+    var day=r.timestamp.slice(0,10);
+    var violations=0;
+    if(r.ruleResults){
+      r.ruleResults.forEach(function(rr){
+        if(rr.status==='FAIL'||rr.status==='WARN')violations++;
+      })
+    }
+    byDay[day]=(byDay[day]||0)+violations;
+  });
+  var days=Object.keys(byDay).sort().slice(-7);
+  var values=days.map(function(d){return byDay[d]});
+  var max=Math.max.apply(null,values.concat([1]));
+  var points=values.map(function(v,i){
+    var x=40+i*40;var y=130-(v/max*100);
+    return x+','+y;
+  }).join(' ');
+  var svg='<line x1="30" y1="30" x2="310" y2="30" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
+  svg+='<line x1="30" y1="80" x2="310" y2="80" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
+  svg+='<line x1="30" y1="130" x2="310" y2="130" stroke="#E1E4E8" stroke-width="1"/>';
+  if(values.length>1){
+    svg+='<polyline points="'+points+'" fill="none" stroke="#E24B4A" stroke-width="2" stroke-linejoin="round"/>';
+    values.forEach(function(v,i){
+      var x=40+i*40;var y=130-(v/max*100);
+      svg+='<circle cx="'+x+'" cy="'+y+'" r="3" fill="#E24B4A"/>';
+    });
+  }
+  days.forEach(function(d,i){
+    svg+='<text x="'+(40+i*40)+'" y="148" text-anchor="middle" font-size="9" fill="#8B949E">'+d.slice(5)+'</text>';
+  });
+  svg+='<text x="2" y="34" font-size="9" fill="#8B949E">'+max+'</text>';
+  document.getElementById('trendChart').innerHTML=svg;
+}
+
+function renderSovereignty(sData,dh){
+  var el=document.getElementById('sovereigntyBox');
+  if(!el)return;
+  var local=sData?sData.localExecutions:575;
+  var cloud=sData?sData.cloudCalls:12;
+  var outflow=sData?sData.dataOutflow:0;
+  var lr=Math.round(local*100/(local+cloud||1));
+  var daemonStatus=dh&&dh.status?dh.status:'运行中';
+  var daemonColor=dh&&dh.status==='healthy'?'var(--green)':(dh&&dh.status==='degraded'?'var(--amber)':'var(--green)');
+  el.innerHTML='<div class="chart-box" style="display:flex;flex-direction:column;justify-content:center">'+
+    '<div style="display:flex;justify-content:space-around;align-items:stretch;text-align:center;margin-bottom:12px">'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--brand)">'+cloud+'</div><div style="font-size:11px;color:var(--text-s)">云端调用</div></div>'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--green)">'+local+'</div><div style="font-size:11px;color:var(--text-s)">本地执行</div></div>'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--amber)">'+outflow+'</div><div style="font-size:11px;color:var(--text-s)">数据流出</div></div>'+
+    '</div>'+
+    '<div style="font-size:12px;color:var(--text-s)">本地化率：<b style="color:var(--green)">'+lr+'%</b>（'+local+'/'+(local+cloud)+'）</div>'+
+    '<div style="font-size:11px;color:var(--text-t);margin-top:4px">审计证据永远在本地 · 不送云端 · MIT 开源可审计</div>'+
+    '<div style="font-size:11px;margin-top:4px;color:'+daemonColor+'">● 守护进程：'+daemonStatus+'</div>'+
+    '</div>';
+}
+
+function loadSampleData(){
+  document.getElementById('m-audit').textContent='92%';
+  document.getElementById('m-audit-sub').textContent='示例数据';
+  document.getElementById('m-nodes').textContent='1204';
+  document.getElementById('m-nodes-sub').textContent='示例';
+  document.getElementById('m-violations').textContent='96';
+  document.getElementById('m-violations-sub').textContent='WARN 72 / FAIL 24';
+  document.getElementById('m-localrate').textContent='98%';
+  document.getElementById('m-localrate-sub').textContent='575/587 本地';
+  var circ=2*Math.PI*64;var offset=circ*0.08;
+  document.getElementById('auditRingFill').setAttribute('stroke-dasharray',circ);
+  document.getElementById('auditRingFill').setAttribute('stroke-dashoffset',offset);
+  document.getElementById('auditRingText').textContent='92%';
+  document.getElementById('auditBreakdown').textContent='PASS 1108 / WARN 72 / FAIL 24';
+  var samples=[
+    {time:'08-03 00:42',verdict:'PASS',rule:'',task:'feat: 添加 A22 权限提升审计规则'},
+    {time:'08-02 23:18',verdict:'WARN',rule:'A19',task:'fix: 修复 daemon 启动顺序'},
+    {time:'08-02 21:05',verdict:'PASS',rule:'',task:'refactor: 重构 sparkline 渲染'},
+    {time:'08-02 18:30',verdict:'FAIL',rule:'A7',task:'update: 修改配置（未先读取）'},
+    {time:'08-02 15:12',verdict:'PASS',rule:'',task:'test: 新增文件系统审计测试'},
+    {time:'08-02 14:00',verdict:'WARN',rule:'A3',task:'feat: 跨目录修改（越界）'},
+    {time:'08-02 11:28',verdict:'PASS',rule:'',task:'docs: 更新 WIKI 导航'},
+    {time:'08-02 09:15',verdict:'PASS',rule:'',task:'chore: 升级依赖版本'}
+  ];
+  document.getElementById('liveAuditLog').innerHTML=samples.map(function(r){
+    var ruleCell=r.rule
+      ? '<span class="audit-rule" style="color:var(--'+(r.verdict==='FAIL'?'red':'amber')+')">'+r.rule+'</span>'
+      : '<span class="audit-rule" style="color:var(--green)">✓</span>';
+    return '<div class="audit-row"><span class="audit-time">'+r.time+'</span><span class="audit-badge badge-'+r.verdict.toLowerCase()+'">'+r.verdict+'</span>'+ruleCell+'<span class="audit-task">'+r.task+'</span></div>';
+  }).join('');
+  renderTrendChart([]);
+  var sampleDays=['07/28','07/29','07/30','07/31','08/01','08/02','08/03'];
+  var sampleVals=[9,7,11,5,8,4,6];
+  var max=15;var pts=sampleVals.map(function(v,i){var x=40+i*40;var y=130-(v/max*100);return x+','+y}).join(' ');
+  var svg='<line x1="30" y1="30" x2="310" y2="30" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
+  svg+='<line x1="30" y1="80" x2="310" y2="80" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
+  svg+='<line x1="30" y1="130" x2="310" y2="130" stroke="#E1E4E8" stroke-width="1"/>';
+  svg+='<polyline points="'+pts+'" fill="none" stroke="#E24B4A" stroke-width="2" stroke-linejoin="round"/>';
+  sampleVals.forEach(function(v,i){var x=40+i*40;var y=130-(v/max*100);svg+='<circle cx="'+x+'" cy="'+y+'" r="3" fill="#E24B4A"/>'});
+  sampleDays.forEach(function(d,i){svg+='<text x="'+(40+i*40)+'" y="148" text-anchor="middle" font-size="9" fill="#8B949E">'+d+'</text>'});
+  svg+='<text x="2" y="34" font-size="9" fill="#8B949E">15</text>';
+  document.getElementById('trendChart').innerHTML=svg;
+  renderSovereignty(null,null);
+}
+
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+
+function changeRefresh(val){
+  val=parseInt(val||0,10);
+  // 更新分段按钮选中态
+  document.querySelectorAll('.seg-btn').forEach(function(b){
+    b.classList.toggle('active',parseInt(b.getAttribute('data-val'),10)===val);
+  });
+  if(refreshTimer){clearInterval(refreshTimer);refreshTimer=null}
+  if(val>0){refreshTimer=setInterval(loadLiveData,val*1000)}
+}
+
+/* 手动刷新一次（不清自动刷新定时器） */
+function manualRefresh(){
+  loadLiveData();
+  var btn=document.querySelector('.seg-refresh');
+  if(btn){
+    btn.classList.add('refreshing'); // 短暂反馈：变绿 + 旋转
+    setTimeout(function(){btn.classList.remove('refreshing')},800);
+  }
+}
+
+/* ===== File System Access API（Chrome 直连数据目录，免服务器） ===== */
+var fsRootHandle=null; // FileSystemDirectoryHandle
+var fsDataConnected=false;
+
+function detectFsApi(){
+  // 仅 Chrome/Edge 支持 showDirectoryPicker；Safari 不支持 → 不显示按钮
+  if(window.showDirectoryPicker){
+    document.getElementById('connectDirBtn').style.display='inline-flex';
+  }
+}
+
+async function connectDataDir(){
+  if(!window.showDirectoryPicker){
+    alert('当前浏览器不支持直连目录（需 Chrome / Edge）。\n请改用：node tools/serve-dashboard.mjs 启动服务器。');
+    return;
+  }
+  try{
+    fsRootHandle=await window.showDirectoryPicker({id:'sofagent-data',mode:'read'});
+    // 校验：目录下应有 audit/history.jsonl
+    var hasAudit=false;
+    for await (const entry of fsRootHandle.values()){
+      if(entry.name==='audit'&&entry.kind==='directory')hasAudit=true;
+    }
+    if(!hasAudit){
+      alert('选择的目录里没有 audit/ 子目录。\n请选择 ~/.sofagent/data 目录。');
+      fsRootHandle=null;
+      return;
+    }
+    fsDataConnected=true;
+    updateDataStatus(true);
+    document.getElementById('dataStatusText').textContent='已连接数据目录（'+fsRootHandle.name+'）';
+    await loadLiveDataFs();
+  }catch(e){
+    if(e&&e.name!=='AbortError')alert('连接失败：'+e.message);
+  }
+}
+
+async function fsReadFile(dirHandle,relPath){
+  try{
+    var parts=relPath.split('/');
+    var h=dirHandle;
+    for(var i=0;i<parts.length-1;i++){
+      h=await h.getDirectoryHandle(parts[i]);
+    }
+    var fh=await h.getFileHandle(parts[parts.length-1]);
+    var file=await fh.getFile();
+    return await file.text();
+  }catch(e){return null}
+}
+
+async function loadLiveDataFs(){
+  var history=await fsReadFile(fsRootHandle,'audit/history.jsonl');
+  if(!history){document.getElementById('dataStatusText').textContent='目录中无 audit/history.jsonl';return}
+  var lines=history.trim().split('\n').slice(-500);
+  var records=lines.map(function(l){try{return JSON.parse(l)}catch(e){return null}}).filter(Boolean);
+  processAuditData(records);
+  // sovereignty 聚合（简化）
+  var sov=await fsReadFile(fsRootHandle,'audit/data-sovereignty.json');
+  var local=575,cloud=12,out=0;
+  if(sov){
+    var recs=sov.trim().split('\n').map(function(l){try{return JSON.parse(l)}catch(e){return null}}).filter(Boolean);
+    local=0;cloud=0;
+    recs.forEach(function(r){
+      if(r.localAction)local++;
+      if(r.cloudCall)cloud++;
+    });
+  }
+  var lr=Math.round(local*100/(local+cloud||1));
+  document.getElementById('m-localrate').textContent=lr+'%';
+  document.getElementById('m-localrate-sub').textContent=local+'/'+(local+cloud)+' 本地';
+  renderSovereignty({localExecutions:local,cloudCalls:cloud,dataOutflow:out},null);
+  document.getElementById('lastRefresh').textContent='更新于 '+new Date().toLocaleTimeString('zh-CN');
+}
+
+/* ===== GitHub Star Count ===== */
+function loadStarCount(){
+  fetch('https://api.github.com/repos/KongFangXun/sofagent')
+    .then(function(r){return r.json()})
+    .then(function(d){
+      if(d.stargazers_count!==undefined){
+        var el=document.getElementById('starCount');
+        el.textContent=d.stargazers_count>=1000?(d.stargazers_count/1000).toFixed(1)+'k':d.stargazers_count;
+      }
+    })
+    .catch(function(){document.getElementById('starCount').textContent='★'});
+}
+
+function fmtUpdatedAt(raw){
+  // 统一右上角时间戳格式：更新于 HH:MM:SS
+  if(raw){
+    var s=String(raw).replace('T',' ').slice(11,19);
+    return '更新于 '+s;
+  }
+  return '更新于 '+new Date().toLocaleTimeString('zh-CN',{hour12:false});
+}
+
+/* ===== FDE Workflow (十步流程模板) ===== */
+function loadFdeWorkflowData(){
+  var box=document.getElementById('fdeWorkflowBox');
+  var updated=document.getElementById('fdeWfUpdatedAt');
+  if(!box)return;
+  fetch('/api/ai-nodes')
+    .then(function(r){
+      if(!r.ok)throw new Error(r.status);
+      return r.json();
+    })
+    .then(function(d){
+      if(updated)updated.textContent=fmtUpdatedAt(d.generatedAt);
+      var wfs=d.workflow||[];
+      if(!wfs.length){
+        box.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到 FDE workflow 模板（<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/</code>）</div>';
+        return;
+      }
+      var typeMap={analyst:'⚡ 强化岗位',planner:'🔄 自动执行',engineer:'🔄 自动执行',deployer:'🔄 自动执行',reviewer:'👤 人工确认'};
+      var html='';
+      wfs.forEach(function(wf){
+        html+='<div style="font-weight:600;font-size:13px;margin-bottom:10px">'+wf.name+'（'+(wf.file||'')+'）</div>';
+        html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
+        wf.steps.forEach(function(s,i){
+          var typeCn=typeMap[s.agent]||'⚡ 强化岗位';
+          var bg=s.agent==='analyst'?'#E6F1FB':(s.agent==='engineer'||s.agent==='planner'?'#E1F5EE':'#FAEEDA');
+          var border=s.agent==='analyst'?'var(--brand)':(s.agent==='engineer'||s.agent==='planner'?'var(--green)':'var(--amber)');
+          html+='<div style="flex:1;min-width:180px;max-width:220px;background:'+bg+';border:1px solid '+border+';border-radius:var(--radius-s);padding:10px 12px">'+
+            '<div style="font-size:10px;color:var(--text-t);font-family:var(--mono)">STEP '+(i+1)+'</div>'+
+            '<div style="font-size:12px;font-weight:600;margin-top:2px">'+s.name+'</div>'+
+            '<div style="font-size:11px;color:var(--text-s);margin-top:3px">'+typeCn+(s.loop?' · 循环':'')+'</div>'+
+            '<div style="font-size:10px;color:var(--text-t);margin-top:3px">'+s.id+'</div>'+
+            '</div>';
+        });
+        html+='</div>';
+      });
+      box.innerHTML=html;
+    })
+    .catch(function(){
+      box.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到 FDE workflow 模板</div>';
+    });
+}
+
+/* ===== AI Nodes (企业 AI 节点) ===== */
+function loadAiNodesData(){
+  var list=document.getElementById('aiNodeList');
+  var updated=document.getElementById('aiNodesUpdatedAt');
+  if(!list)return;
+  fetch('/api/ai-nodes')
+    .then(function(r){
+      if(!r.ok)throw new Error(r.status);
+      return r.json();
+    })
+    .then(function(d){
+      if(updated)updated.textContent=fmtUpdatedAt(d.generatedAt);
+      var deployed=d.deployed||[];
+      var html='';
+      if(deployed.length){
+        var total=d.deployedTotal||deployed.length;
+        var showCount=Math.min(deployed.length,12); // 一屏最多 12 个，避免长列表
+        html+='<div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:8px">✅ 已部署 '+total+' 个企业节点</div>';
+        html+='<div class="grid-3">'+deployed.slice(0,showCount).map(function(nd){
+          return '<div class="node-card status-running"><div class="node-status"><span class="icon"></span>'+nd.name+'</div><div class="node-meta">'+(nd.description||nd.file||'')+'</div></div>';
+        }).join('')+'</div>';
+        if(total>showCount){
+          html+='<div style="font-size:11px;color:var(--text-t);margin-top:8px">共 '+total+' 个节点，仅显示前 '+showCount+' 个——完整列表见 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/subagents/</code></div>';
+        }
+      }else{
+        html='<div style="font-size:12px;color:var(--text-s)">尚未部署企业 AI 节点。</div>'+
+          '<div style="font-size:12px;color:var(--text-s);margin-top:6px">在 <a href="javascript:void(0)" onclick="goPage(\'fde\')" style="color:var(--brand)">FDE 引导</a> 页复制 Prompt 开始部署，部署完成后节点会自动出现在这里（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/subagents/</code>）。</div>';
+      }
+      list.innerHTML=html;
+    })
+    .catch(function(){
+      list.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到节点数据（通过 tools/serve-dashboard.mjs 启动可看）</div>';
+    });
+}
+
+/* ===== Graph Data (AI 节点) ===== */
+function loadGraphData(){
+  var box=document.getElementById('graphBox');
+  var list=document.getElementById('nodeList');
+  var updated=document.getElementById('graphUpdatedAt');
+  fetch('/data/dashboard/graph-state.json')
+    .then(function(r){
+      if(!r.ok)throw new Error(r.status);
+      return r.json();
+    })
+    .then(function(g){
+      var nodes=g.nodes||[];
+      var edges=g.edges||[];
+      if(updated)updated.textContent=fmtUpdatedAt(g.updatedAt);
+      // === 编排控制图 (SVG 横向流水线) ===
+      var total=nodes.length;
+      var boxW=Math.max(500,total*130+20);
+      var nodeW=110,nodeH=34,gap=20;
+      var svg='<svg class="graph-wide" width="100%" viewBox="0 0 '+boxW+' 90" style="display:block;max-width:'+boxW+'px;margin:0 auto">';
+      // colors by status
+      var colMap={completed:'#E1F5EE',running:'#E6F1FB',pending:'#FAFBFC',blocked:'#FCEBEB',failed:'#FCEBEB'};
+      var strokeMap={completed:'#1D9E75',running:'#16B8F3',pending:'#E1E4E8',blocked:'#E24B4A',failed:'#E24B4A'};
+      var textMap={completed:'#085041',running:'#0C447C',pending:'#57606A',blocked:'#791F1F',failed:'#791F1F'};
+      // edges first (behind)
+      edges.forEach(function(e){
+        var fi=nodes.findIndex(function(n){return n.id===e.from});
+        var ti=nodes.findIndex(function(n){return n.id===e.to});
+        if(fi<0||ti<0)return;
+        var x1=30+fi*(nodeW+gap)+nodeW;
+        var x2=30+ti*(nodeW+gap);
+        var y=45;
+        svg+='<line x1="'+x1+'" y1="'+y+'" x2="'+(x2-4)+'" y2="'+y+'" stroke="'+(strokeMap[e.type]||'#8B949E')+'" stroke-width="1.5" marker-end="url(#arrG)"/>';
+      });
+      nodes.forEach(function(n,i){
+        var x=30+i*(nodeW+gap);
+        var fill=colMap[n.status]||'#FAFBFC';
+        var stroke=strokeMap[n.status]||'#E1E4E8';
+        var tc=textMap[n.status]||'#57606A';
+        // pulse animation for running
+        if(n.status==='running'){
+          svg+='<rect x="'+(x+nodeW-14)+'" y="'+14+'" width="8" height="8" rx="4" fill="#16B8F3" class="pulse-svg"/>';
+        }
+        svg+='<rect x="'+x+'" y="28" width="'+nodeW+'" height="'+nodeH+'" rx="6" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1"/>';
+        var label=(n.label||n.id||n.type||'').replace(/-1$/,'');
+        svg+='<text x="'+(x+nodeW/2)+'" y="49" text-anchor="middle" font-size="11" font-weight="500" fill="'+tc+'">'+label+'</text>';
+        svg+='<text x="'+(x+nodeW/2)+'" y="76" text-anchor="middle" font-size="9" fill="#8B949E">'+n.status+'</text>';
+      });
+      svg+='<defs><marker id="arrG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8B949E" stroke-width="1.5"/></marker></defs>';
+      svg+='</svg>';
+      box.innerHTML=svg+
+        '<div style="margin-top:10px;font-size:12px;color:var(--text-s)">Wave '+(g.wave||1)+' · 降级等级 '+(g.degradationLevel||0)+' · 激活节点 '+(g.activeNode||'-')+' · 任务数 '+(g.workGraphTasks||0)+'</div>';
+      // === 节点卡片列表 ===
+      var html=nodes.map(function(n){
+        var st=n.status||'unknown';
+        var cls=st==='completed'?'status-running':(st==='pending'?'status-pending':'status-pending');
+        var statusCn={'completed':'已完成','running':'运行中','pending':'等待中','blocked':'已阻断','failed':'失败'}[st]||st;
+        var typeCn={'planner':'规划器','engineer':'工程师','audit':'审计','reviewer':'审查','human':'人工确认'}[n.type]||n.type||'-';
+        var subtaskHtml='';
+        if(n.subtasks&&n.subtasks.length){
+          subtaskHtml='<div class="node-stats"><span>子任务 '+(n.subtasks.length)+' 个</span></div>';
+        }
+        return '<div class="node-card '+cls+'"><div class="node-status"><span class="icon"></span>'+(n.label||n.id||'')+'</div>'+
+          '<div class="node-meta">类型：'+typeCn+' · id: '+(n.id||'')+'</div>'+
+          '<div class="node-stats"><span>状态：'+statusCn+'</span></div>'+subtaskHtml+'</div>';
+      }).join('');
+      list.innerHTML=html||'<div style="grid-column:1/-1;text-align:center;color:var(--text-t);padding:12px">暂无节点</div>';
+    })
+    .catch(function(){
+      box.innerHTML='<div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">未检测到 graph-state.json（通过 tools/serve-dashboard.mjs 启动可看真实数据）</div>';
+      if(updated)updated.textContent=fmtUpdatedAt();
+      list.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">—</div>';
+    });
+}
+
+/* ===== Knowledge Data (知识库) ===== */
+function loadKnowledgeData(){
+  var stats=document.getElementById('kbStats');
+  var entries=document.getElementById('kbEntries');
+  var updated=document.getElementById('kbUpdatedAt');
+  // 并行读 index.md + log.md + think.md + ontology 结构
+  Promise.all([
+    fetch('/data/knowledge/index.md').then(function(r){return r.ok?r.text():null}).catch(function(){return null}),
+    fetch('/data/knowledge/log.md').then(function(r){return r.ok?r.text():null}).catch(function(){return null}),
+    fetch('/data/think.md').then(function(r){return r.ok?r.text():null}).catch(function(){return null}),
+    fetch('/api/ontology').then(function(r){return r.ok?r.json():null}).catch(function(){return null})
+  ]).then(function(res){
+    var index=res[0]||'';
+    var log=res[1]||'';
+    var think=res[2]||'';
+    var ont=res[3]||null;
+    // 统计知识页面数（index.md 表格行）
+    var pageCount=0;
+    index.split('\n').forEach(function(line){
+      if(line.trim().startsWith('|')&&line.indexOf('[[')>=0)pageCount++;
+    });
+    // 概念数：优先用 ontology API 的真实 concepts 数
+    var conceptCount=ont&&ont.concepts?ont.concepts.length:0;
+    if(conceptCount===0){
+      index.split('\n').forEach(function(line){
+        if(line.toLowerCase().indexOf('concept')>=0)conceptCount++;
+      });
+    }
+    if(stats){
+      stats.innerHTML=
+        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">'+(pageCount>0?pageCount:'0')+'</div><div style="font-size:11px;color:var(--text-s)">知识页面</div></div>'+
+        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">'+(conceptCount>0?conceptCount:'0')+'</div><div style="font-size:11px;color:var(--text-s)">概念条目</div></div>'+
+        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">'+(think?think.split('##').length-1:0)+'</div><div style="font-size:11px;color:var(--text-s)">经验教训</div></div>';
+    }
+    // 条目列表：index.md 表格行
+    var rows=[];
+    index.split('\n').forEach(function(line){
+      var m=line.match(/\|.*?\[\[([^\]]+)\]\]\s*\|\s*([^|]*)\|\s*([^|]*)\|/);
+      if(m)rows.push({name:m[1],domain:m[2].trim(),nodes:m[3].trim()});
+    });
+    if(entries){
+      if(rows.length){
+        entries.innerHTML='<div style="font-size:12px;color:var(--text-s);margin-bottom:8px"><b>知识页面 '+(pageCount)+' 个</b>，来自 index.md（daemon Ingest 自动维护）：</div>'+
+          rows.map(function(r){
+            return '<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">'+
+              '<span style="font-family:var(--mono);color:var(--brand-d);font-weight:600">'+r.name+'</span>'+
+              '<span style="color:var(--text-t)">域：'+(r.domain||'-')+'</span>'+
+              '<span style="margin-left:auto;color:var(--text-t)">节点：'+(r.nodes||'-')+'</span></div>';
+          }).join('');
+      }else{
+        entries.innerHTML='<div style="font-size:12px;color:var(--text-s)">知识库目前为空——运行 FDE 或在 Agent 中执行知识沉淀后会自动写入 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/data/knowledge/</code></div>';
+      }
+    }
+    if(updated)updated.textContent=fmtUpdatedAt();
+  }).catch(function(){
+    if(stats)stats.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">未连接数据源</div>';
+    if(entries)entries.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到知识库（通过 tools/serve-dashboard.mjs 启动可看真实数据）</div>';
+  });
+}
+
+/* ===== Ontology Data (本体结构) ===== */
+function loadOntologyData(){
+  var stats=document.getElementById('ontStats');
+  var entries=document.getElementById('ontEntries');
+  var updated=document.getElementById('ontUpdatedAt');
+  if(!stats)return;
+  fetch('/api/ontology')
+    .then(function(r){
+      if(!r.ok)throw new Error(r.status);
+      return r.json();
+    })
+    .then(function(d){
+      if(updated)updated.textContent=fmtUpdatedAt(d.generatedAt);
+      var entities=d.entities||[];
+      var concepts=d.concepts||[];
+      var relations=d.relations||[];
+      var thinkCount=d.thinkCount||0;
+      if(stats){
+        stats.innerHTML=
+          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">'+entities.length+'</div><div style="font-size:11px;color:var(--text-s)">实体 Entities</div></div>'+
+          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">'+concepts.length+'</div><div style="font-size:11px;color:var(--text-s)">概念 Concepts</div></div>'+
+          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">'+thinkCount+'</div><div style="font-size:11px;color:var(--text-s)">经验教训 think.md</div></div>';
+      }
+      if(entries){
+        var html='';
+        var any=false;
+        function renderGroup(title,color,items,key){
+          if(!items.length)return'';
+          any=true;
+          var h='<div style="font-size:13px;font-weight:600;color:'+color+';margin:10px 0 6px">'+title+'（'+items.length+'）</div>';
+          h+='<div style="display:flex;flex-wrap:wrap;gap:6px">'+items.map(function(it){
+            return '<div style="background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:6px 10px;font-size:12px"><span style="font-family:var(--mono);color:var(--brand-d);font-weight:600">'+it.title+'</span></div>';
+          }).join('')+'</div>';
+          return h;
+        }
+        html+=renderGroup('实体 Entities', '#7F77DD', entities);
+        html+=renderGroup('概念 Concepts', '#1D9E75', concepts);
+        html+=renderGroup('关系 Relations', '#EF9F27', relations);
+        if(!any){
+          html='<div style="font-size:12px;color:var(--text-s)">尚未建立本体结构——在 <a href="javascript:void(0)" onclick="goPage(\'fde\')" style="color:var(--brand)">FDE 引导</a> 页复制 Prompt 执行深挖阶段，或运行 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">create_entity / create_concept</code> 构建。实体/概念文件写入 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/data/knowledge/</code> 后自动显示。</div>';
+        }
+        entries.innerHTML=html;
+      }
+    })
+    .catch(function(){
+      if(stats)stats.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">未连接数据源</div>';
+      if(entries)entries.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到本体数据（通过 tools/serve-dashboard.mjs 启动可看）</div>';
+    });
+}
+
+/* ===== Forge Data (工具箱 FORGE) ===== */
+function loadForgeData(){
+  var box=document.getElementById('forgeBox');
+  if(!box)return;
+  fetch('/data/forge-runs/fresh-eyes-loop/latest.json')
+    .then(function(r){
+      if(!r.ok)throw new Error(r.status);
+      return r.json();
+    })
+    .then(function(f){
+      var a=f.agentA||{},b=f.agentB||{};
+      var statusCn={running:'运行中',idle:'空闲',done:'完成',failed:'失败'};
+      var html='<div style="display:flex;gap:16px;flex-wrap:wrap">';
+      html+='<div style="flex:1;min-width:200px"><div style="font-size:13px;font-weight:500;color:var(--brand)">Agent A · 审查模型</div>'+
+        '<div style="font-size:12px;color:var(--text-s);margin-top:4px">状态：'+(statusCn[a.status]||a.status||'-')+' · 当前文件：'+(a.currentFile||'-')+'</div>'+
+        '<div style="font-size:11px;color:var(--text-t);margin-top:2px">本轮发现：'+(a.findings||0)+' · 累计：'+(a.cumulative||'-')+'</div></div>';
+      html+='<div style="flex:1;min-width:200px"><div style="font-size:13px;font-weight:500;color:var(--green)">Agent B · 工程模型</div>'+
+        '<div style="font-size:12px;color:var(--text-s);margin-top:4px">状态：'+(statusCn[b.status]||b.status||'-')+' · 当前文件：'+(b.currentFile||'-')+'</div>'+
+        '<div style="font-size:11px;color:var(--text-t);margin-top:2px">本轮发现：'+(b.findings||0)+' · 累计：'+(b.cumulative||'-')+'</div></div>';
+      html+='</div>';
+      html+='<div style="margin-top:12px;padding:8px 12px;background:var(--brand-l);border-radius:var(--radius-s);font-size:12px;color:var(--brand-d)">第 '+(f.round||0)+' 轮 / 共 '+(f.totalRounds||0)+' 轮 · '+(f.stopReason||'A/B 双盲中（互不可见）')+'</div>';
+      box.innerHTML=html;
+    })
+    .catch(function(){
+      box.innerHTML='<div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">未检测到 FORGE 运行记录（latest.json）</div>';
+    });
+}
+
+/* ===== Release Gate Data (发版门禁) ===== */
+function loadReleaseGateData(){
+  var box=document.getElementById('releaseGateBox');
+  if(!box)return;
+  fetch('/api/release-gate')
+    .then(function(r){
+      if(!r.ok)throw new Error(r.status);
+      return r.json();
+    })
+    .then(function(g){
+      if(!g.runs||!g.runs.length){
+        box.innerHTML='<div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">暂无 release-gate 运行记录</div>';
+        return;
+      }
+      var latest=g.runs[0];
+      var st=latest.status||{};
+      var stepCn={'build':'构建','acceptance':'验收测试','regression':'回归检查','coverage':'覆盖率','review':'审查','publish':'发布'}[st.step]||st.step||'-';
+      var eventCn={'run-start':'运行开始','step-done':'步骤完成','step-fail':'步骤失败','gate-fail':'门禁失败','all-pass':'全部通过'}[st.event]||st.event||'-';
+      var html='<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
+      // 目标版本
+      html+='<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--brand-d)">'+(st.target||'-')+'</div><div style="font-size:11px;color:var(--text-s)">目标版本</div></div>';
+      // 当前步骤
+      html+='<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--amber)">'+stepCn+'</div><div style="font-size:11px;color:var(--text-s)">当前步骤 '+((st.stepIndex||0)+1)+'/'+(st.totalSteps||'-')+'</div></div>';
+      // 事件
+      html+='<div style="text-align:center"><div style="font-size:16px;font-weight:600;color:var(--text-s)">'+eventCn+'</div><div style="font-size:11px;color:var(--text-t)">最近事件</div></div>';
+      html+='</div>';
+      // 步骤进度条
+      var total=st.totalSteps||5;
+      var done=st.stepIndex||0;
+      var pct=Math.round(done*100/total);
+      html+='<div style="margin-top:12px;font-size:12px;color:var(--text-s)">十二阶段门禁进度（当前运行）：</div>';
+      html+='<div style="background:var(--bg);border-radius:6px;height:10px;margin-top:6px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:var(--green);border-radius:6px;transition:width .3s"></div></div>';
+      html+='<div style="margin-top:6px;font-size:11px;color:var(--text-t)">'+(latest.date||'')+' · '+(latest.run||'')+' · 更新于 '+String(st.lastUpdate||'').replace('T',' ').slice(0,16)+'</div>';
+      box.innerHTML=html;
+    })
+    .catch(function(){
+      box.innerHTML='<div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">未检测到 release-gate 数据</div>';
+    });
+}
+
+/* ===== Init ===== */
+detectFsApi();
+loadLiveData();
+loadStarCount();
+// 默认 5s 自动刷新（HTML 里 5s 按钮带 active class）
+var initVal=5;
+document.querySelectorAll('.seg-btn').forEach(function(b){
+  if(b.classList.contains('active'))initVal=parseInt(b.getAttribute('data-val'),10);
+});
+if(initVal>0){refreshTimer=setInterval(loadLiveData,initVal*1000)}
+</script>
+</body>
+</html>

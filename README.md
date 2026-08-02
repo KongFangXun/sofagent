@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>FDE Agent——梳理工作流 · 部署 AI 节点 · 审计每次变更</strong><br/>
+  <strong>FDE（Field Delivery Engineer）Agent——梳理工作流 · 部署 AI 节点 · 审计每次变更</strong><br/>
   <em>让 AI 替你干活，且每次都干得对。</em>
 </p>
 
@@ -18,13 +18,13 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.4-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.5-16B8F3" alt="Version" /></a>
   <a href="#快速开始"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>当前版本：v1.2.4</strong> · 2026-08-02 · 知识进化（分层巡检 + skillopt 自动触发 + 失败清单 + 联邦蒸馏；P1-19 摘要以 CHANGELOG 为权威源对齐）</p>
+<p align="center"><strong>当前版本：v1.2.5</strong> · 2026-08-02 · 激活链 Phase 1 + 审计引擎加固 + daemon 可靠性 + 多设备前置</p>
 
-> ⚖️ **正式版边界声明**（P0-8）：本项目的「正式版」指 API 稳定、测试覆盖完整、核心流程经多轮验证。**不代表所有已知局限已解决**——详见 [LIMITATIONS.md](./LIMITATIONS.md)。强合规场景请等待 v1.4.0 静态加密落地。
+> ⚖️ **正式版边界声明**：本项目的「正式版」指 API 稳定、测试覆盖完整、核心流程经多轮验证。**不代表所有已知局限已解决**——详见 [LIMITATIONS.md](./LIMITATIONS.md)。强合规场景请等待 v1.4.0 静态加密落地。
 
 <p align="center">
   <a href="#这是什么">这是什么</a> · <a href="#sofagent-能帮你做什么">能帮你做什么</a> · <a href="#为什么不是现有工具">为什么不是现有工具</a> · <a href="#快速开始">快速开始</a> · <a href="#延伸阅读">文档</a>
@@ -51,7 +51,7 @@ sofagent 就是解决这个问题的：**它帮你把 AI 管起来，让 AI 干�
 | **AI 乱来怎么办？** | 每次 AI 改东西都自动检查一遍 | AI 干的活有人盯着，越界立刻拦住 |
 | **AI 闯祸了怎么办？** | 每次改动自动存档，一键回滚 | 出事能一键回到安全状态 |
 
-**🏞️ 打个比方：一条河（P2-28 前置首屏）**——大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是**堤坝 + 自来水厂 + 管网 + 水龙头**——不让水泛滥（约束 AI 不乱来）、把水变成直饮水（安全沙箱）、把水送到该去的地方（工作流编排）。简单说：**让 AI 从"能用"变成"敢用"。**
+**🏞️ 打个比方：一条河**——大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是**堤坝 + 自来水厂 + 管网 + 水龙头**——不让水泛滥（约束 AI 不乱来）、把水变成直饮水（安全沙箱）、把水送到该去的地方（工作流编排）。简单说：**让 AI 从"能用"变成"敢用"。**
 
 > 🎯 **90/10 价值分层**：模型给 90% 的智力，sofagent 补 10% 的可靠执行——越往后这 10% 越值钱。不是造更聪明的模型，是给已有的聪明加一套闸门。
 
@@ -60,7 +60,7 @@ sofagent 就是解决这个问题的：**它帮你把 AI 管起来，让 AI 干�
 <details>
 <summary>🔧 技术细节（给开发者）</summary>
 
-底层是 **Harness 中间件**——每次 Agent 改完代码自动跑审计规则（24 条注册：17 条默认启用 + 7 条扩展需显式开启；git diff 硬证据，零 token），违规当场拦截、合规存快照。四层加载链（SKILL.md → fde.md → think.md → knowledge/）在 Agent 启动时注入行为底线。完整架构见 [ARCHITECTURE.md](./docs/ARCHITECTURE.md)。
+底层是 **Harness 中间件**——每次 Agent 改完代码自动跑审计规则（24 条注册：17 条默认启用 + 7 条扩展需显式开启，含 9 条基线不可禁用；git diff 硬证据，零 token），违规当场拦截、合规存快照。四层加载链（SKILL.md → fde.md → think.md → knowledge/）在 Agent 启动时注入行为底线。完整架构见 [ARCHITECTURE.md](./docs/ARCHITECTURE.md)。
 
 </details>
 
@@ -100,7 +100,18 @@ AI 每次被拦下的毛病、每次成功的经验，都沉淀成"教训库"—
 </details>
 
 **怎么知道 AI 在干什么？**
-终端面板一眼看清：数据去哪了（有没有偷偷外传）、AI 犯规了吗（有没有越权）、任务跑到哪了（是活的还是挂了）：
+两种面板一眼看清：数据去哪了（有没有偷偷外传）、AI 犯规了吗（有没有越权）、任务跑到哪了（是活的还是挂了）：
+
+**🖥️ HTML Dashboard（网页版，推荐）**——7 页可视化控制台：驾驶舱（实时指标）/ FDE 引导 / AI 节点 / 本体结构 / 知识库 / 引擎 / 工具箱，全部真实数据驱动：
+
+```bash
+node tools/serve-dashboard.mjs    # 启动（自动打开浏览器）
+# → http://localhost:3780
+```
+
+> 打开方式：通过服务器打开才能读到 `~/.sofagent/data` 的实时数据（浏览器安全限制）。Chrome/Edge 用户也可在页面里点「连接数据目录」直接选目录，免服务器。静态打开 HTML 仅显示示例数据。
+
+**💻 终端面板（bash）**——轻量、零依赖（需 jq）：
 
 ```bash
 sofagent-dashboard           # 看当前状态
@@ -116,10 +127,10 @@ FDE 交付了 ontology + workflow.yml + skills/ 之后，v1.2.5 起分四步让�
 
 | 阶段 | 做什么 | 版本 |
 |------|--------|:----:|
-| **ACTIVATE** | 读交付物 → 注册企业 SubAgent | v1.2.5 |
-| **ORCHESTRATE** | 构建企业专属工作流图 | v1.2.7 |
-| **EXECUTE** | 运行 + 人工确认 + 每步审计 | v1.2.8-v1.2.9 |
-| **SUSTAIN** | 持续优化，越跑越好 | v1.3.0 |
+| **ACTIVATE** | 读交付物 → 注册企业 SubAgent | v1.2.5 ✅ |
+| **ORCHESTRATE** | 构建企业专属工作流图 | v1.2.7（规划中） |
+| **EXECUTE** | 运行 + 人工确认 + 每步审计 | v1.2.8-v1.2.9（规划中） |
+| **SUSTAIN** | 持续优化，越跑越好 | v1.3.0（规划中） |
 
 设计详情：[激活链文档](./docs/guides/fde-activation-chain.md)
 
@@ -143,7 +154,7 @@ FDE 交付了 ontology + workflow.yml + skills/ 之后，v1.2.5 起分四步让�
 | detect-secrets / gitleaks | 密钥扫描（全量历史 + 100+ 模式）| A2 覆盖常见 API key；差异化 = **Agent 行为审计**而非密钥覆盖率 |
 | Cursor Rules / Claude hooks | 单平台 IDE 约束 | 审计层全平台可用（git diff）；约束层按平台分层（OpenClaw 最深 → WorkBuddy SKILL → 其他种子指令）|
 
-> ⚠️ **对比快照时间戳（P2-21/P2-35 声明）**：以上对比基于 2026-08-02 各工具的公开能力快照；工具迭代快，条款可能过时。差异化的核心论点（sofagent 审计「AI 行为」而非「代码质量」）不随工具版本变化。
+> ⚠️ **对比快照时间戳**：以上对比基于 2026-08-02 各工具的公开能力快照；工具迭代快，条款可能过时。差异化的核心论点（sofagent 审计「AI 行为」而非「代码质量」）不随工具版本变化。
 
 </details>
 
@@ -162,6 +173,15 @@ FDE 交付了 ontology + workflow.yml + skills/ 之后，v1.2.5 起分四步让�
 
 </details>
 
+### 与同类方案的区别
+
+| 维度 | sofagent | LangSmith | Guardrails AI |
+|------|----------|-----------|---------------|
+| 定位 | Agent 行为约束层（审计+编排） | LLM 可观测性平台 | LLM 输出校验 |
+| 部署 | 本地优先、零云依赖 | SaaS | 库集成 |
+| 核心能力 | git hook 审计 + 规则拦截 + 编排 | trace/eval | 输出格式约束 |
+| 适用场景 | 企业 AI 治理合规 | 开发调试 | 单点输出校验 |
+
 ---
 
 ## 快速开始
@@ -177,7 +197,7 @@ FDE 交付了 ontology + workflow.yml + skills/ 之后，v1.2.5 起分四步让�
 > **前提**：开发者路径请在 git 仓库根目录下执行。如果还没有仓库，先运行 `git init`。
 
 ```bash
-# 第 0 步：获取仓库（P1-33：安装入口前置，陌生人不再卡在"在哪 clone"）
+# 第 0 步：获取仓库
 git clone https://github.com/KongFangXun/sofagent.git && cd sofagent
 # 或：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/install.sh | bash
 
@@ -199,7 +219,7 @@ sofagent-audit --doctor  # 验证环境是否就绪（可选但推荐）
 | ⚡ **install.sh 最小安装** | 开发者 / 企业 IT | `bash install.sh --base-only`（仅底座引擎） |
 
 > [!NOTE]
-> 需要 Node.js ≥ 18 + bash + git。macOS / Linux 全功能，Windows 实验性。Dashboard 依赖 jq（macOS 请 `brew install jq`，Linux 请 `apt install jq` / `yum install jq`）。
+> 需要 Node.js ≥ 18 + bash + git。macOS / Linux 全功能，Windows 实验性。终端版 Dashboard 依赖 jq（macOS 请 `brew install jq`，Linux 请 `apt install jq` / `yum install jq`）；HTML 网页版 Dashboard 不需要 jq。
 
 <details>
 <summary>🚀 装完三步体验</summary>
@@ -236,7 +256,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 |------|------|
 | `@sofagent/audit` | 审计引擎（24 条规则，git diff 硬证据）|
 | `@sofagent/core` | 运行时诊断（doctor / verify）|
-| `@sofagent/orchestrator` | FORGE 自迭代工具链（LOOP 流水线 + 任务编排；P2-37：编排能力保留但**不对用户宣传**——任务编排由你使用的 Agent 平台完成，sofagent 只在其过程中提供约束/审计/经验沉淀）|
+| `@sofagent/orchestrator` | FORGE 自迭代工具链（LOOP 流水线 + 任务编排；编排能力保留但**不对用户宣传**——任务编排由你使用的 Agent 平台完成，sofagent 只在其过程中提供约束/审计/经验沉淀）|
 | `@sofagent/daemon` | 守护进程（文件监控 / 定时巡检）|
 | `@sofagent/mcp` | MCP Server（JSON-RPC 2.0）|
 
@@ -253,6 +273,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 
 | 你想了解 | 看哪里 |
 |:---------|:--------|
+| 🖥️ Dashboard（HTML 网页版 + 终端版） | [↑ 怎么知道 AI 在干什么](#怎么知道-ai-在干什么) · 或直接打开仓库根目录 [`dashboard.html`](./dashboard.html) |
 | FDE 诊断方法论（四阶段十二步） | [GUIDE.md](./FDE/GUIDE.md) |
 | 🔗 激活链设计（交付物→自动运转） | [激活链设计文档](./docs/guides/fde-activation-chain.md) |
 | 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
@@ -269,14 +290,14 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 ---
 
 <details>
-<summary>🔧 引擎架构（开发者段，P2-28 收折叠——非开发者 3 屏内无需展开）</summary>
+<summary>🔧 引擎架构（开发者段——非开发者 3 屏内无需展开）</summary>
 
 ## <a id="engine-architecture"></a>引擎架构（开发者段）
 
 > [!NOTE]
 > **品牌与描述**：**sofagent** 是产品品牌名；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent（进场梳理工作流、把可自动化环节变成 AI 节点、构建本体、部署专属小模型的常驻硅基员工）。底层技术实现是一套约束 Agent 行为的 Harness 中间件（**能力底座 × 生命周期**双层架构：层 1 一底座·三引擎 + 层 2 激活链四阶段），开源在 `@sofagent/*`。下面这段是给开发者看的。
 
-sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，**能力底座 × 生命周期**双层架构。**层 1 能力底座 = 一底座·三引擎**：一底座 = 约束底座（开工前注入规则）；三引擎 = 审计引擎（24 条规则拦截）+ 回溯引擎（自动快照回滚）+ 进化引擎（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化）。**层 2 生命周期 = 激活链四阶段**（v1.2.5+，P1-18 口径统一）：激活（ACTIVATE）→ 编排（ORCHESTRATE）→ 执行（EXECUTE）→ 持续（SUSTAIN）。完整生命周期在诊断（FDE）与进化（EVOLVE）两端延伸为五阶段：诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，不作为对外引擎宣称。
+sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，**能力底座 × 生命周期**双层架构。**层 1 能力底座 = 一底座·三引擎**：一底座 = 约束底座（开工前注入规则）；三引擎 = 审计引擎（24 条规则拦截）+ 回溯引擎（自动快照回滚）+ 进化引擎（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化）。**层 2 生命周期 = 激活链四阶段**（v1.2.5+）：激活（ACTIVATE）→ 编排（ORCHESTRATE）→ 执行（EXECUTE）→ 持续（SUSTAIN）。完整生命周期在诊断（FDE）与进化（EVOLVE）两端延伸为五阶段：诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，不作为对外引擎宣称。
 
 <details>
 <summary>📖 一底座·三引擎架构（开发者参考）</summary>
@@ -341,7 +362,7 @@ LOOP 内部使用 LangGraph StateGraph 组装节点流转 + 6 个内置工具（
 | 层 | 机制 | 状态 | 怎么跑 |
 |------|------|:---:|------|
 | **think.md 反思** | 每次审计自动写教训（哪个规则触发了、改了哪些文件、下次注意什么），Agent 下次启动时通过 harness 加载链读到——不犯同样的错 | ✅ 已交付 | 审计引擎每次跑自动触发，无需配置 |
-| **Dream Cycle 知识回灌** | daemon 后台合成概念 → 回灌 skillopt 待优化队列，积累知识供后续优化周期消费 | 🔧 轻量态 | daemon 后台运行，当前为内存态队列（重启即丢），完整持久消费链路计划 v1.3.0 交付。⚠️ P1-10：Dream Cycle **默认使用 MockLLM（确定性伪输出）**——接入真实 LLM 需配置 API Key |
+| **Dream Cycle 知识回灌** | daemon 后台合成概念 → 回灌 skillopt 待优化队列，积累知识供后续优化周期消费 | 🔧 轻量态 | daemon 后台运行，当前为内存态队列（重启即丢），完整持久消费链路计划 v1.3.0 交付。⚠️ Dream Cycle **默认使用 MockLLM（确定性伪输出）**——接入真实 LLM 需配置 API Key |
 | **skillopt Skill 优化** | 失败模式聚类（≥3 次同类失败）→ 自动触发外部 SkillOpt CLI 优化 Skill 质量 → 校验候选（行数 ±30% + 变化率 ≥5%）| ⚠️ 需外部依赖 | 需安装 [Microsoft SkillOpt](https://github.com/microsoft/SkillOpt)（`skillopt-sleep` CLI）。未安装时自动降级为仅记录失败清单，不执行优化 |
 
 </details>
