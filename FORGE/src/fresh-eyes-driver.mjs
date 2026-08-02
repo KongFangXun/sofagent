@@ -326,16 +326,29 @@ const TOOL_OUTPUT_MAX_LINES = 200;
 
 function truncateToolOutput(text, maxLines = TOOL_OUTPUT_MAX_LINES) {
   const str = String(text);
+
+  // No such file 检测——在工具输出末尾追加系统提示。
+  // run-01/run-02 教训：模型看到 "No such file" 后反复换路径重试，
+  // 构成死循环主体。提示紧跟在输出后面，模型更容易遵守。
+  const hasNoSuchFile = /No such file or directory/i.test(str);
+
   const lines = str.split('\n');
-  if (lines.length <= maxLines) return str;
+  if (lines.length <= maxLines) {
+    return hasNoSuchFile
+      ? str + '\n\n[系统提示] 该文件不存在，请记录为缺失并继续下一步，禁止换路径重试。'
+      : str;
+  }
   const half = maxLines / 2;
   const head = lines.slice(0, half);
   const tail = lines.slice(-half);
-  return [
+  const truncated = [
     ...head,
     `\n... [${lines.length - maxLines} lines truncated by FORGE driver — head ${half} + tail ${half}] ...\n`,
     ...tail,
   ].join('\n');
+  return hasNoSuchFile
+    ? truncated + '\n\n[系统提示] 该文件不存在，请记录为缺失并继续下一步，禁止换路径重试。'
+    : truncated;
 }
 
 function loadTools(role, progressMw = null) {
@@ -626,7 +639,10 @@ async function runWorker(step, roundDir, target) {
   // 上下文裁剪：保留 system + 第一条 user（原始任务）+ 最后 MAX_CONTEXT_MESSAGES 条。
   // 中间被裁掉的旧工具调用结果，其关键信息已被 Agent 提取到后续推理中，
   // 无需在每次 LLM 调用时重复处理（这是 prompt_tokens 从 30k→100k+ 膨胀的根因）。
-  const { SystemMessage } = await import('@langchain/core/messages');
+  // HumanMessage 用于 stateModifier 内的工具预算软熔断注入——
+  // prompt 层纪律（铁律文本）对 qwen3.8-max-preview 无效，必须在代码层做硬熔断。
+  // run-01 教训：A worker 调了 1119 次工具仍未收敛，撞 GraphRecursionError 零产出。
+  const { SystemMessage, HumanMessage } = await import('@langchain/core/messages');
   const MAX_CONTEXT_MESSAGES = 16; // 最后 8 轮工具交互（调用+结果各 1 条）
   const STATE_MESSAGES_HARD_LIMIT = 20;
 
@@ -637,8 +653,39 @@ async function runWorker(step, roundDir, target) {
     tools,
     // v1.2.5：stateModifier = system prompt + 上下文窗口裁剪（替代 prompt 参数）
     // v1.2.6：preModelHook 物理裁剪 state.messages，防止内存累积 OOM
+    // v1.2.6：stateModifier 加工具调用计数 + 软熔断注入。
+    // run-01/run-02 教训：qwen3.8-max-preview 无视 prompt 铁律，
+    // 陷入"找不到文件→换路径重试"死循环（1119 次工具调用）。
+    // 这里在代码层做硬兜底：累计 tool_calls 超过 TOOL_SOFT_LIMIT(50)
+    // 时注入 HumanMessage 强制要求写报告——HumanMessage 比 SystemMessage
+    // 优先级更高，模型更容易遵从。
+    // 50 = 12 视角 × 4 次调用 = 48，给充分探索空间后强制收敛。
     stateModifier: (state) => {
       const messages = state.messages ?? [];
+
+      // 统计历史消息中所有 AI tool_calls 总数
+      let toolCallCount = 0;
+      for (const msg of messages) {
+        if (msg?._getType?.() === 'ai' && msg.tool_calls?.length > 0) {
+          toolCallCount += msg.tool_calls.length;
+        }
+      }
+      const TOOL_SOFT_LIMIT = 50;
+      if (toolCallCount >= TOOL_SOFT_LIMIT) {
+        const forceReport = new HumanMessage({
+          content: '【系统强制指令】你已经调用了 ' + toolCallCount + ' 次工具，超过软上限。' +
+            '立即停止所有探索，用已掌握的信息写报告并写入产物文件。不要再调任何工具。'
+        });
+        console.warn(`  ⚡ [${step}#${role}] 工具调用 ${toolCallCount} 次超软上限，注入强制收尾指令`);
+        if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
+          return [systemMsg, forceReport, ...messages];
+        }
+        // 保留第一条 + 最后 N 条，同时插入强制指令
+        const first = messages[0];
+        const recent = messages.slice(-MAX_CONTEXT_MESSAGES);
+        return [systemMsg, forceReport, first, ...recent];
+      }
+
       if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
         return [systemMsg, ...messages];
       }
@@ -695,6 +742,12 @@ async function runWorker(step, roundDir, target) {
 
     const allMessages = [];  // 累积所有 delta.messages，模拟 invoke 返回的扁平结构
     let toolCallCount = 0;
+    // v1.2.6：stream 层硬熔断——stateModifier 软熔断(50)兜底。
+    // run-01/run-02 教训：即使注入了强制收尾指令，qwen3.8-max-preview 仍可能
+    // 无视 HumanMessage 继续调工具。这里是最后防线：到 TOOL_HARD_LIMIT(60)
+    // 直接 break stream 循环，用已累积的 messages 抢救部分产物。
+    const TOOL_HARD_LIMIT = 60;
+    let hardBreak = false;
     for await (const chunk of stream) {
       // chunk 是 { nodeName: stateDelta }——解包每个节点的 delta
       for (const [, delta] of Object.entries(chunk)) {
@@ -707,13 +760,25 @@ async function runWorker(step, roundDir, target) {
             for (const tc of msg.tool_calls) {
               toolCallCount++;
               console.log(`  → [${step}#${role}] tool #${toolCallCount}: ${tc.name}`);
+              if (toolCallCount >= TOOL_HARD_LIMIT && !hardBreak) {
+                hardBreak = true;
+                console.warn(`  🛑 [${step}#${role}] 工具调用 ${toolCallCount} 次撞硬上限，强制中断 stream`);
+                break;
+              }
             }
           }
+          if (hardBreak) break;
         }
+        if (hardBreak) break;
       }
+      if (hardBreak) break;
+    }
+    if (hardBreak) {
+      console.warn(`  🛑 [${step}#${role}] stream 已中断，从 ${allMessages.length} 条消息抢救产物`);
     }
     // 返回扁平结构——与 invoke() 返回格式兼容，下游 extractAgentText / extractUsage 正常工作
-    return { messages: allMessages };
+    // _hardBreak flag 让写产物逻辑能给报告加标记头
+    return { messages: allMessages, _hardBreak: hardBreak };
   };
 
   // v1.2.1 L2：模型推理心跳。LangGraph 1.4.7 的 createReactAgent 无
@@ -726,6 +791,9 @@ async function runWorker(step, roundDir, target) {
     : await invokeAgent();
   const latencyMs = Date.now() - t0;
 
+  // v1.2.6：从 result 解包 _hardBreak flag——stream 硬熔断时标记部分报告
+  const hardBreakFlag = result?._hardBreak || false;
+
   // 5b. 记录 usage（try/catch 包住——usage 记录失败不能中断主流程）
   try {
     // 从 roundDir 推导 runDir（roundDir = runDir/round-NN）
@@ -736,9 +804,14 @@ async function runWorker(step, roundDir, target) {
   }
 
   // 6. 提取文本输出
-  const text = extractAgentText(result);
+  let text = extractAgentText(result);
   if (!text) {
     throw new Error(`[worker:${step}] DeepAgent 未返回内容`);
+  }
+
+  // v1.2.6：stream 硬熔断时给报告加标记头，让下游知道这是部分报告
+  if (hardBreakFlag) {
+    text = `<!-- ⚠️ 工具预算耗尽，此为部分报告——worker 被强制中断 -->\n\n` + text;
   }
 
   // 7. 写产物
@@ -1270,7 +1343,27 @@ function spawnWorker(step, roundDir, target, round, options = {}) {
  * @param {number} round  轮次号（透传给 spawnWorker）
  */
 function spawnParallel(workers, round) {
-  return Promise.all(workers.map(([step, roundDir, target]) => spawnWorker(step, roundDir, target, round)));
+  // v1.2.6：allSettled 替代 all——一方崩溃不拖累另一方。
+  // run-01/run-02 教训：a-check 崩溃导致 Promise.all reject，
+  // b-check 的成果也随之丢弃（虽然 b-check 可能已成功写出 check-b.md）。
+  // 返回 { results, failures } 让调用方做降级判定。
+  return (async () => {
+    const settled = await Promise.allSettled(
+      workers.map(([step, roundDir, target]) => spawnWorker(step, roundDir, target, round))
+    );
+    const results = [];
+    const failures = [];
+    settled.forEach((s, i) => {
+      const [step] = workers[i];
+      if (s.status === 'fulfilled') {
+        results.push({ step, value: s.value });
+      } else {
+        results.push({ step, value: null });
+        failures.push({ step, reason: s.reason });
+      }
+    });
+    return { results, failures };
+  })();
 }
 
 /**
@@ -1745,12 +1838,30 @@ async function runRound(roundNum, runDir, target, dryRun) {
     return { roundDir, counts, isClean: true };
   }
 
-  // 步骤 ①② 双盲独立审查——并行
+  // 步骤 ①② 双盲独立审查——并行（allSettled：一方崩不拖累另一方）
   console.log('\n  [步骤 ①②] A/B 双盲独立审查（并行）...');
-  await spawnParallel([
+  const { failures: checkFailures } = await spawnParallel([
     ['a-check', roundDir, target],
     ['b-check', roundDir, target],
   ], roundNum);
+  // 降级：a-check/b-check 崩溃时写部分报告占位，让后续步骤能继续。
+  // run-01/run-02 教训：一方 worker 死循环崩溃后，另一方的审查报告也被丢弃，
+  // 导致整轮零产出。占位文件让 a-consolidate 至少有输入可处理。
+  for (const f of checkFailures) {
+    console.warn(`\n  ⚠️  ${f.step} 失败: ${f.reason?.message || f.reason}`);
+    const outFile = f.step === 'a-check' ? 'check-a.md' : 'check-b.md';
+    const outPath = join(roundDir, outFile);
+    if (!existsSync(outPath)) {
+      writeFileSync(outPath,
+        `# ${outFile} · ${f.step} 崩溃（降级占位）\n\n` +
+        `> ⚠️ worker 异常终止: ${f.reason?.message || f.reason}\n` +
+        `> 对方的审查报告仍可用。后续合并步骤会标注此部分缺失。\n`,
+        'utf-8');
+      console.warn(`     降级：写最小占位 ${outFile}，循环继续`);
+    } else {
+      console.warn(`     产物 ${outFile} 已存在（stream 抢救成功），保留不覆盖`);
+    }
+  }
 
   // 步骤 ③ A 合并
   // 如果 a-consolidate 失败（OOM/recursionLimit/模型错误），降级用两份 check
