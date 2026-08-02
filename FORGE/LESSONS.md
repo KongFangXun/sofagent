@@ -23,11 +23,11 @@
 
 | 章 | 文件 | 核心内容 |
 |---|------|---------|
-| 一·架构设计 | [LESSONS/architecture.md](LESSONS/architecture.md) | createReactAgent 禁用 createDeepAgent · Driver-Worker 编排 · 步骤定义 · 目录架构 |
-| 二·模型配置 | [LESSONS/models.md](LESSONS/models.md) | MODEL_CONFIGS · Thinking-only 模型 · 步骤级 maxTokens · 计费模式 |
-| 三·性能优化 | [LESSONS/performance.md](LESSONS/performance.md) | 三层上下文裁剪（截断+stateModifier+preModelHook）· 效率铁律 · stream |
-| 四·Driver 编排 | [LESSONS/driver.md](LESSONS/driver.md) | recursionLimit · **三层熔断死循环防护** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step |
-| 五~八·Stream/Prompt/工具/可观测 | [LESSONS/stream-prompt-tools.md](LESSONS/stream-prompt-tools.md) | stream 迁移 P0 铁律 · BSD 约束 · 工具格式转换 · 两层可观测 |
+| 一·架构设计 | [lessons/architecture.md](lessons/architecture.md) | createReactAgent 禁用 createDeepAgent · Driver-Worker 编排 · 步骤定义 · 目录架构 |
+| 二·模型配置 | [lessons/models.md](lessons/models.md) | MODEL_CONFIGS · Thinking-only 模型 · 步骤级 maxTokens · 计费模式 |
+| 三·性能优化 | [lessons/performance.md](lessons/performance.md) | 三层上下文裁剪（截断+stateModifier+preModelHook）· 效率铁律 · stream |
+| 四·Driver 编排 | [lessons/driver.md](lessons/driver.md) | recursionLimit · **三层熔断死循环防护** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step |
+| 五~八·Stream/Prompt/工具/可观测 | [lessons/stream-prompt-tools.md](lessons/stream-prompt-tools.md) | stream 迁移 P0 铁律 · BSD 约束 · 工具格式转换 · 两层可观测 |
 
 ---
 
@@ -37,75 +37,75 @@
 
 ### 🔰 架构与框架
 
-- [ ] **用 `createReactAgent`，禁用 `createDeepAgent`**（[一·框架选型](LESSONS/architecture.md#框架选型crelereactagent禁用-createdeepagent)）
-- [ ] **Driver-Worker 分离**：Driver 纯编排不审查，Worker 零上下文独立进程（[一·Driver-Worker](LESSONS/architecture.md#driver-worker-编排模式)）
-- [ ] **步骤在 STEPS 常量中定义**，含 role / prompt / outputs / inputs / maxTokens（[一·步骤定义](LESSONS/architecture.md#步骤定义模式)）
-- [ ] **runs 目录放在 loop 自己目录下**，`.gitignore` 加 `FORGE/SKILL/*/runs/`（[一·目录架构](LESSONS/architecture.md#目录架构每个-loop-自包含)）
+- [ ] **用 `createReactAgent`，禁用 `createDeepAgent`**（[一·框架选型](lessons/architecture.md#框架选型crelereactagent禁用-createdeepagent)）
+- [ ] **Driver-Worker 分离**：Driver 纯编排不审查，Worker 零上下文独立进程（[一·Driver-Worker](lessons/architecture.md#driver-worker-编排模式)）
+- [ ] **步骤在 STEPS 常量中定义**，含 role / prompt / outputs / inputs / maxTokens（[一·步骤定义](lessons/architecture.md#步骤定义模式)）
+- [ ] **runs 目录放在 loop 自己目录下**，`.gitignore` 加 `FORGE/SKILL/*/runs/`（[一·目录架构](lessons/architecture.md#目录架构每个-loop-自包含)）
 - [ ] **LEDGER.md 追加一行记录**
 
 ### 🤖 模型配置
 
-- [ ] **MODEL_CONFIGS 定义完整字段**（[二·模型配置](LESSONS/models.md#模型配置)）
-- [ ] **Thinking-only 模型不传 thinking/reasoningEffort**（[二·Thinking-only](LESSONS/models.md#thinking-only-模型特殊处理)）
-- [ ] **合并/汇总步骤 maxTokens = 32000**（[二·步骤级 maxTokens](LESSONS/models.md#步骤级-maxtokens-覆盖)）
+- [ ] **MODEL_CONFIGS 定义完整字段**（[二·模型配置](lessons/models.md#模型配置)）
+- [ ] **Thinking-only 模型不传 thinking/reasoningEffort**（[二·Thinking-only](lessons/models.md#thinking-only-模型特殊处理)）
+- [ ] **合并/汇总步骤 maxTokens = 32000**（[二·步骤级 maxTokens](lessons/models.md#步骤级-maxtokens-覆盖)）
 - [ ] **计费模式标注**（subscription 的 cost_cny = null）
 
 ### ⚡ 性能优化（v1.2.5+）
 
-- [ ] **工具输出截断**：truncateToolOutput(text, 200)（[三·上下文管理](LESSONS/performance.md#上下文管理三层裁剪截断--statemodifier--premodelhook)）
-- [ ] **上下文窗口裁剪**：stateModifier 保留 system + 首条 + 最后 16 条（[三·上下文管理](LESSONS/performance.md#上下文管理三层裁剪截断--statemodifier--premodelhook)）
-- [ ] **preModelHook 物理裁剪**：state.messages hard_limit=20（[三·上下文管理](LESSONS/performance.md#上下文管理三层裁剪截断--statemodifier--premodelhook)）
-- [ ] **SKILL.md 加效率铁律**：reviewer ≤50 步，engineer ≤30 步（[三·效率铁律](LESSONS/performance.md#agent-行为约束skillmd-效率铁律)）
-- [ ] **stream 替代 invoke**（[三·流式输出](LESSONS/performance.md#流式输出stream-替代-invoke)）
+- [ ] **工具输出截断**：truncateToolOutput(text, 200)（[三·上下文管理](lessons/performance.md#上下文管理三层裁剪截断--statemodifier--premodelhook)）
+- [ ] **上下文窗口裁剪**：stateModifier 保留 system + 首条 + 最后 16 条（[三·上下文管理](lessons/performance.md#上下文管理三层裁剪截断--statemodifier--premodelhook)）
+- [ ] **preModelHook 物理裁剪**：state.messages hard_limit=20（[三·上下文管理](lessons/performance.md#上下文管理三层裁剪截断--statemodifier--premodelhook)）
+- [ ] **SKILL.md 加效率铁律**：reviewer ≤50 步，engineer ≤30 步（[三·效率铁律](lessons/performance.md#agent-行为约束skillmd-效率铁律)）
+- [ ] **stream 替代 invoke**（[三·流式输出](lessons/performance.md#流式输出stream-替代-invoke)）
 
 ### 🔧 Driver 编排
 
-- [ ] **recursionLimit 按步骤区分**（审查类 130）（[四·recursionLimit](LESSONS/driver.md#recursionlimit-按步骤区分)）
-- [ ] **三层熔断防护**（L1 软 50 + L2 硬 60 写报告窗口 5 + L3 recursionLimit 130）（[四·三层熔断](LESSONS/driver.md#worker-工具调用死循环防护三层熔断)）
-- [ ] **L2 用两阶段写报告窗口**（不 break，进 5 superstep 窗口）（[四·L2 两阶段](LESSONS/driver.md#l2-两阶段写报告窗口关键设计)）
-- [ ] **extractAgentText 跳过空 content**（createReactAgent 中间消息全空）（[四·兜底报告](LESSONS/driver.md#兜底报告合成)）
-- [ ] **并行 Worker 用 allSettled**（[四·allSettled](LESSONS/driver.md#allsettled-并行降级)）
-- [ ] **parseStopCondition 做降级检测**（占位报告不算干净轮）（[四·降级检测](LESSONS/driver.md#降级检测防假阳性干净)）
-- [ ] **连续 2 轮降级直接 error 退出**（[四·连续降级](LESSONS/driver.md#连续降级-error-退出)）
-- [ ] **硬熔断 break 后 stream.return()**（防幽灵请求）（[四·stream.return](LESSONS/driver.md#streamreturn-防幽灵-api-请求)）
-- [ ] **每个步骤 try/catch + 降级兜底**（[四·失败路径容错](LESSONS/driver.md#失败路径容错)）
-- [ ] **driver catch 块写 ERROR + LOOP_END 事件**（模块级 globalVisibility）（[四·失败路径容错](LESSONS/driver.md#失败路径容错)）
-- [ ] **finding >10 条时分片执行**（[四·分片执行](LESSONS/driver.md#分片执行模式)）
-- [ ] **停止条件只数标记不做语义判断**（[四·停止条件](LESSONS/driver.md#停止条件判定)）
-- [ ] **spawn 外部脚本时流式写入日志**（[四·外部脚本](LESSONS/driver.md#外部脚本-spawn-生存规范)）
-- [ ] **child.on('close') 处理 signal 参数**（被 kill 时 code=null）（[四·外部脚本](LESSONS/driver.md#外部脚本-spawn-生存规范)）
-- [ ] **shell 脚本中禁用 `| head -N`**（pipefail + SIGPIPE）（[四·外部脚本](LESSONS/driver.md#外部脚本-spawn-生存规范)）
-- [ ] **长脚本每 30s 输出 progress 日志**（[四·外部脚本](LESSONS/driver.md#外部脚本-spawn-生存规范)）
-- [ ] **init 内部设 SOFAGENT_SKIP_HOOK=1**（[四·SKIP_HOOK](LESSONS/driver.md#sofagent_skip_hook---skip-acceptance---step)）
-- [ ] **driver 支持 --skip-acceptance**（[四·--skip-acceptance](LESSONS/driver.md#sofagent_skip_hook---skip-acceptance---step)）
-- [ ] **driver 支持 --step 单步模式**（[四·--step](LESSONS/driver.md#sofagent_skip_hook---skip-acceptance---step)）
-- [ ] **沙箱环境加 --max-old-space-size=768**（[四·V8 heap](LESSONS/driver.md#v8-heap-限制-max-old-space-size反直觉优化)）
+- [ ] **recursionLimit 按步骤区分**（审查类 130）（[四·recursionLimit](lessons/driver.md#recursionlimit-按步骤区分)）
+- [ ] **三层熔断防护**（L1 软 50 + L2 硬 60 写报告窗口 5 + L3 recursionLimit 130）（[四·三层熔断](lessons/driver.md#worker-工具调用死循环防护三层熔断)）
+- [ ] **L2 用两阶段写报告窗口**（不 break，进 5 superstep 窗口）（[四·L2 两阶段](lessons/driver.md#l2-两阶段写报告窗口关键设计)）
+- [ ] **extractAgentText 跳过空 content**（createReactAgent 中间消息全空）（[四·兜底报告](lessons/driver.md#兜底报告合成)）
+- [ ] **并行 Worker 用 allSettled**（[四·allSettled](lessons/driver.md#allsettled-并行降级)）
+- [ ] **parseStopCondition 做降级检测**（占位报告不算干净轮）（[四·降级检测](lessons/driver.md#降级检测防假阳性干净)）
+- [ ] **连续 2 轮降级直接 error 退出**（[四·连续降级](lessons/driver.md#连续降级-error-退出)）
+- [ ] **硬熔断 break 后 stream.return()**（防幽灵请求）（[四·stream.return](lessons/driver.md#streamreturn-防幽灵-api-请求)）
+- [ ] **每个步骤 try/catch + 降级兜底**（[四·失败路径容错](lessons/driver.md#失败路径容错)）
+- [ ] **driver catch 块写 ERROR + LOOP_END 事件**（模块级 globalVisibility）（[四·失败路径容错](lessons/driver.md#失败路径容错)）
+- [ ] **finding >10 条时分片执行**（[四·分片执行](lessons/driver.md#分片执行模式)）
+- [ ] **停止条件只数标记不做语义判断**（[四·停止条件](lessons/driver.md#停止条件判定)）
+- [ ] **spawn 外部脚本时流式写入日志**（[四·外部脚本](lessons/driver.md#外部脚本-spawn-生存规范)）
+- [ ] **child.on('close') 处理 signal 参数**（被 kill 时 code=null）（[四·外部脚本](lessons/driver.md#外部脚本-spawn-生存规范)）
+- [ ] **shell 脚本中禁用 `| head -N`**（pipefail + SIGPIPE）（[四·外部脚本](lessons/driver.md#外部脚本-spawn-生存规范)）
+- [ ] **长脚本每 30s 输出 progress 日志**（[四·外部脚本](lessons/driver.md#外部脚本-spawn-生存规范)）
+- [ ] **init 内部设 SOFAGENT_SKIP_HOOK=1**（[四·SKIP_HOOK](lessons/driver.md#sofagent_skip_hook---skip-acceptance---step)）
+- [ ] **driver 支持 --skip-acceptance**（[四·--skip-acceptance](lessons/driver.md#sofagent_skip_hook---skip-acceptance---step)）
+- [ ] **driver 支持 --step 单步模式**（[四·--step](lessons/driver.md#sofagent_skip_hook---skip-acceptance---step)）
+- [ ] **沙箱环境加 --max-old-space-size=768**（[四·V8 heap](lessons/driver.md#v8-heap-限制-max-old-space-size反直觉优化)）
 
 ### 🔴 stream 迁移（如做 invoke→stream 改造时必查）
 
-- [ ] **chunk 格式确认**：`{ [nodeName]: delta }`（[五·stream](LESSONS/stream-prompt-tools.md#五stream-迁移规范p0-级铁律)）
-- [ ] **下游消费函数验证**（[五·stream](LESSONS/stream-prompt-tools.md#stream-迁移检查清单)）
-- [ ] **格式适配层**：累积 delta.messages → `{ messages: allMessages }`（[五·stream](LESSONS/stream-prompt-tools.md#api-返回格式差异)）
-- [ ] **端到端验证**（产物文件 + usage.jsonl）（[五·stream](LESSONS/stream-prompt-tools.md#stream-迁移检查清单)）
+- [ ] **chunk 格式确认**：`{ [nodeName]: delta }`（[五·stream](lessons/stream-prompt-tools.md#五stream-迁移规范p0-级铁律)）
+- [ ] **下游消费函数验证**（[五·stream](lessons/stream-prompt-tools.md#stream-迁移检查清单)）
+- [ ] **格式适配层**：累积 delta.messages → `{ messages: allMessages }`（[五·stream](lessons/stream-prompt-tools.md#api-返回格式差异)）
+- [ ] **端到端验证**（产物文件 + usage.jsonl）（[五·stream](lessons/stream-prompt-tools.md#stream-迁移检查清单)）
 
 ### 📝 Prompt 设计
 
-- [ ] **systemPrompt 末尾加 macOS BSD 工具约束段**（[六·BSD 约束](LESSONS/stream-prompt-tools.md#六prompt-设计规范)）
-- [ ] **systemPrompt 通过 stateModifier 注入**（[六·注入方式](LESSONS/stream-prompt-tools.md#systemprompt-注入方式)）
-- [ ] **纯只读场景加只读铁律**（release-gate 特有）（[六·只读约束](LESSONS/stream-prompt-tools.md#纯只读约束release-gate-特有)）
+- [ ] **systemPrompt 末尾加 macOS BSD 工具约束段**（[六·BSD 约束](lessons/stream-prompt-tools.md#六prompt-设计规范)）
+- [ ] **systemPrompt 通过 stateModifier 注入**（[六·注入方式](lessons/stream-prompt-tools.md#systemprompt-注入方式)）
+- [ ] **纯只读场景加只读铁律**（release-gate 特有）（[六·只读约束](lessons/stream-prompt-tools.md#纯只读约束release-gate-特有)）
 
 ### 🔧 工具开发
 
-- [ ] **ExecutableTool → DynamicStructuredTool 转换**（[七·工具格式](LESSONS/stream-prompt-tools.md#七工具开发规范)）
-- [ ] **工具名加前缀**（sf_read / sf_write）（[七·工具命名](LESSONS/stream-prompt-tools.md#工具命名)）
-- [ ] **工具输出截断埋点**（[七·截断埋点](LESSONS/stream-prompt-tools.md#工具输出截断埋点)）
+- [ ] **ExecutableTool → DynamicStructuredTool 转换**（[七·工具格式](lessons/stream-prompt-tools.md#七工具开发规范)）
+- [ ] **工具名加前缀**（sf_read / sf_write）（[七·工具命名](lessons/stream-prompt-tools.md#工具命名)）
+- [ ] **工具输出截断埋点**（[七·截断埋点](lessons/stream-prompt-tools.md#工具输出截断埋点)）
 
 ### 📊 可观测性
 
-- [ ] **两层可观测**（L1 visibility + L2 progressMw）（[八·两层可观测](LESSONS/stream-prompt-tools.md#八可观测性规范)）
-- [ ] **观测层失败不阻断主流程**（[八·两层可观测](LESSONS/stream-prompt-tools.md#两层可观测)）
-- [ ] **latest.json 原子写入**（先 .tmp 再 rename）（[八·latest.json](LESSONS/stream-prompt-tools.md#latestjson-指针)）
-- [ ] **darwin 平台绑 caffeinate 防后台节流**（[八·caffeinate](LESSONS/stream-prompt-tools.md#macos-后台节流防护)）
+- [ ] **两层可观测**（L1 visibility + L2 progressMw）（[八·两层可观测](lessons/stream-prompt-tools.md#八可观测性规范)）
+- [ ] **观测层失败不阻断主流程**（[八·两层可观测](lessons/stream-prompt-tools.md#两层可观测)）
+- [ ] **latest.json 原子写入**（先 .tmp 再 rename）（[八·latest.json](lessons/stream-prompt-tools.md#latestjson-指针)）
+- [ ] **darwin 平台绑 caffeinate 防后台节流**（[八·caffeinate](lessons/stream-prompt-tools.md#macos-后台节流防护)）
 
 ---
 
