@@ -283,7 +283,7 @@ Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与
 
 > **Loop 落地前置条件**：① 任务重复发生 ② 支持自动化核验 ③ Token 预算覆盖 ④ AI 具备适配工具。核心原则——**自己不能当自己裁判**：生成与核验的模型必须独立，与 sofagent「审计与编排分离」同源。
 
-> **比收敛更难的，是控制权分配。** 哪一段让模型自由判断（编排引擎 createReactAgent），哪一段必须由代码强制执行（审计引擎 21 条规则），哪一步失败可以重试（b-fix），哪一步必须停下来问人（human_confirm）——sofagent 的确定性与概率性分离，就是对这个问题的工程回答。这也是从 Loop Engineering 走向 Graph Engineering 的核心工程挑战：Graph 的真正难点不是画框连线，而是决定**每条边上的控制权归谁**。
+> **比收敛更难的，是控制权分配。** 哪一段让模型自由判断（编排引擎 createReactAgent），哪一段必须由代码强制执行（审计引擎 24 条规则），哪一步失败可以重试（b-fix），哪一步必须停下来问人（human_confirm）——sofagent 的确定性与概率性分离，就是对这个问题的工程回答。这也是从 Loop Engineering 走向 Graph Engineering 的核心工程挑战：Graph 的真正难点不是画框连线，而是决定**每条边上的控制权归谁**。
 
 > 一句话锚点：**「翻译官不应该有决策权。」** 模型负责理解（翻译模糊需求→结构化意图），系统负责控制（确认、权限、状态流转）。sofagent 的确定性与概率性分离，就是这条原则的工程落地——审计规则不看模型说什么，只看 diff 改了什么。
 
@@ -534,7 +534,7 @@ sofagent-audit（v1.0.8）是 TypeScript CLI，支持两种审计触发模式：
 | git commit 审计 | v0.92+ | `git commit` → commit-msg hook | 开发者 | ✅ |
 | 文件系统审计 | v1.0.8+ | daemon 监控文件变更 | 开发者 + 非开发者 | ❌（内嵌 isomorphic-git） |
 
-两种模式共用同一套审计规则（A1-A11、A14-A19 + E1-E4，共 21 条）和 exit code（0=PASS / 1=WARN / 2=FAIL）。差异在于触发时机和拦截能力：git commit 审计能阻断 commit，文件系统审计只能事后告警 + 快照回溯。
+两种模式共用同一套审计规则（A1-A11、A14-A23 + E1-E2/E4，共 24 条）和 exit code（0=PASS / 1=WARN / 2=FAIL）。差异在于触发时机和拦截能力：git commit 审计能阻断 commit，文件系统审计只能事后告警 + 快照回溯。
 
 v1.0.8 内嵌 `isomorphic-git`（纯 JS Git，~2MB）作为 diff 引擎——非 git 目录也能做行级 diff。daemon 用 `chokidar` 监控文件变更，5 秒防抖后触发审计。每次审计后自动做 git 快照，用户可 `sofagent-audit --revert <sha>` 回滚。
 
@@ -570,7 +570,7 @@ v1.0.8 内嵌 `isomorphic-git`（纯 JS Git，~2MB）作为 diff 引擎——非
 行业测评揭示的「防刷分验证法」与 sofagent 验证体系同构：
 
 - **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（47 维）+ `acceptance-test.sh`（115 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
-- **上下文精简 = 低成本高通过**：研报发现 Pipe Agent 同模型下比原生工具便宜 1.2–2×、性能差距 <3pt，根因是初始提示 <1500 token（vs Claude Code 20k）。这从量化角度印证 sofagent「Harness 要轻」——约束底座零 token 运行（21 条规则 16 条纯 git-diff），把成本压在确定性引擎而非上下文堆料。
+- **上下文精简 = 低成本高通过**：研报发现 Pipe Agent 同模型下比原生工具便宜 1.2–2×、性能差距 <3pt，根因是初始提示 <1500 token（vs Claude Code 20k）。这从量化角度印证 sofagent「Harness 要轻」——约束底座零 token 运行（24 条规则 19 条纯 git-diff），把成本压在确定性引擎而非上下文堆料。
 
 > 📖 来源：温故知新 2026-07-21（行业研报《Databricks 真实代码库 AI 编程工具测评》）
 

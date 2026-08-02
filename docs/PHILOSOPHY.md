@@ -38,7 +38,7 @@ sofagent 不替代大厂 Agent，而是建在它们之上——做河的约束�
 
 **③ 底层引擎：sofagent 的 Harness 中间件保证每次变更可审计、可回滚、可进化。**
 
-约束底座是骨架里的钢筋，审计引擎是质检——开发者才需要往下看。审计引擎 21 条规则中 16 条纯 git-diff（零 token、不调 LLM），4 条混合需 Agent 日志；**能力底座（一底座·三引擎：约束底座 + 审计/回溯/进化引擎）× 生命周期（诊断→激活→编排→执行→进化）**双层架构覆盖从治理到自运转。FORGE 自迭代工具链是项目内部开发工具。本文档以下十章讲的就是这套底层引擎的设计哲学。
+约束底座是骨架里的钢筋，审计引擎是质检——开发者才需要往下看。审计引擎 24 条规则中 19 条纯 git-diff（零 token、不调 LLM），4 条混合需 Agent 日志；**能力底座（一底座·三引擎：约束底座 + 审计/回溯/进化引擎）× 生命周期（诊断→激活→编排→执行→进化）**双层架构覆盖从治理到自运转。FORGE 自迭代工具链是项目内部开发工具。本文档以下十章讲的就是这套底层引擎的设计哲学。
 
 ---
 
@@ -334,7 +334,7 @@ RAG（检索增强生成）检索的是文本片段，不是业务语义。"订�
 
 这个哲学反映在 sofagent 的设计中：**Harness 约束底座 = Agent 的世界模型**。SKILL.md + fde.md + knowledge/ 构成了一个微型的、可演进的本体结构——它告诉 Agent"你在什么组织里、有什么红线、过去踩过什么坑"。Agent 的可靠性不是来自它自己知道多少，而是来自这套约束底座锚定了多少业务现实。
 
-**确定性与概率性分离**是这一原则的工程落地方式：刚性安全边界（审计、权限、数据一致性）由确定性引擎保障，LLM 仅在意图理解、参数组装等环节发挥自主性。sofagent 的 16/21 条纯 git-diff 规则，正是因为这个原则——不看 Agent 说什么，看 diff 里实际改了什么。
+**确定性与概率性分离**是这一原则的工程落地方式：刚性安全边界（审计、权限、数据一致性）由确定性引擎保障，LLM 仅在意图理解、参数组装等环节发挥自主性。sofagent 的 19/24 条纯 git-diff 规则，正是因为这个原则——不看 Agent 说什么，看 diff 里实际改了什么。
 
 ---
 
@@ -480,7 +480,7 @@ Loop 真正的瓶颈是 **Verifier**（定义什么是合格、何时算完成�
 
 Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不可用 / 不可靠 / 被降级时，确定性规则引擎（纯 git-diff 正则 + 配置化约束）照常运行，以 **deterministic guardrails** 身份兜底接管——Agent 的「智力」可以暂时离线，但「纪律」不能停。
 
-行业五层里「纯规则校验可脱离 AI 运行（模式 D）」直接支撑这点：部分「智能体」只需约束规则、不需要大模型。sofagent 21 条规则中 16 条纯 git-diff、零 token、不调 LLM，正是「AI 不可用时，纪律仍在」的工程实例——这与「约束层 = Harness 中间件」互为表里：Harness 的价值不绑定任何单一模型的可用性。
+行业五层里「纯规则校验可脱离 AI 运行（模式 D）」直接支撑这点：部分「智能体」只需约束规则、不需要大模型。sofagent 24 条规则中 19 条纯 git-diff、零 token、不调 LLM，正是「AI 不可用时，纪律仍在」的工程实例——这与「约束层 = Harness 中间件」互为表里：Harness 的价值不绑定任何单一模型的可用性。
 
 ### 去人化口径：human-in-the-loop 是「可靠优先」价值点（L3）
 
@@ -511,7 +511,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 这与 sofagent 底层定位同频：**Harness 中间件 = 管住 Agent 行为的那一层**（River 比喻里的约束层）。a16z 七法则中 Loops / 100X / 冗员 / Evals / 转型 五条，sofagent 已原生具备对应物。完整映射见下方表格；其中最关键的三条：
 
 - **空转 Loops → guard edge**：`graph.ts` 的 `retryCount<3` 条件路由天然防 loops 失控——这是 Loops 治理的工程化答案。
-- **考核 Evals → Reality Anchor**：审计引擎 A1-A11、A14-A19 + E1-E4（共 21 条）把「可评估性」硬编码为真实 git diff，而非 Agent 自报完成。
+- **考核 Evals → Reality Anchor**：审计引擎 A1-A11、A14-A23 + E1-E2/E4（共 24 条）把「可评估性」硬编码为真实 git diff，而非 Agent 自报完成。
 - **万亿转型 → FDE 卖转型**：FDE = Services-as-Software，交付「常驻 FDE Agent」而非工具包；ROADMAP 已有 4 条市场信号互证。
 
 **a16z 十项映射（七法则 + 三项规模化缺口）完整映射**（a16z 概念 → sofagent 对应 → 现状 → 落地版本 → 说明）：
@@ -526,7 +526,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 | 6 | 法则3 冗员 Token Bloat | 明确不做清单 / 防 scope 蔓延 + 审计拦改测试 | 已具备+可强化 | 印证 | 砍循环优于优化 |
 | 7 | 法则4 杠杆 100X Token | 90/10 分层 Harness 可靠性最值钱 | 已具备（叙事） | 印证 | 那 10% 即文章「管理杠杆」 |
 | 8 | 法则5 政治 上下文囤积 | 不投喂 / 数据主权 + 知识主权归客户 | 已具备（差异化） | 印证 | 叙事回应组织政治 |
-| 9 | 法则6 考核 Evals | 审计 A1-A11、A14-A19 + E1-E4（共 21 条）= Reality Anchor + Dream Cycle eval 驱动 | 已具备（底座）+ 缺口 | v1.3.1+ 产品化 | 企业专属 eval 套件缺口 |
+| 9 | 法则6 考核 Evals | 审计 A1-A11、A14-A23 + E1-E2/E4（共 24 条）= Reality Anchor + Dream Cycle eval 驱动 | 已具备（底座）+ 缺口 | v1.3.1+ 产品化 | 企业专属 eval 套件缺口 |
 | 10 | 法则7 万亿转型服务 | FDE = Services-as-Software + 市场信号互证 | 已具备（核心背书） | 印证 + 规模化缺口 | a16z 最重磅外部背书；规模化交付进未来迭代 |
 
 ### 硅基员工论再印证：Org Graph 与 Ontology Runtime（2026-07 研报补充）
@@ -559,7 +559,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 |------|---------|---------|
 | 本质 | Super Agent 运行时框架 | Harness 中间件 |
 | 语言/栈 | Python (FastAPI + LangGraph + uv) | TypeScript/Node |
-| 安全在哪 | 运行时（沙箱 + fail-closed + 中间件链 26 步）| 提交时（git diff 21 条规则）+ 运行时约束（SKILL.md）|
+| 安全在哪 | 运行时（沙箱 + fail-closed + 中间件链 26 步）| 提交时（git diff 24 条规则）+ 运行时约束（SKILL.md）|
 | 部署重量 | Nginx + Gateway + Postgres，起步 8C16G | `bash install.sh`，零依赖 |
 | 约束方式 | 需 Agent 跑在它的框架里 | 看 git diff，Agent 在哪跑都行 |
 
@@ -574,7 +574,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 1. **策略在基础设施层强制，不在 prompt**：原文——*stateful, contextual policies ... enforced at the meta-harness layer, not via prompts*。它的权限策略能「在 Agent 刚装了未审查的 npm 包后，拦截下一次 git push 要求人工批准」——因为 prompt 指令无法知道 Agent 刚装了包，而基础设施层可以追踪动态状态、在动作发生**前**拦截。这与 sofagent「文字约束每次注入=投喂 → 必然被吞噬 → 生存位=封装进 SubAgent（代码层）+ 防投喂机制」**是同一个结论，只是人家的工程化版本**。
 2. **密钥不进 Agent 进程**：OS 级沙箱（Omnibox：Linux bwrap+seccomp / macOS seatbelt）锁文件系统，egress proxy 在 approved 出站请求时才注入 GitHub token / API key，Agent 进程永远看不到明文凭证。这是「架构级强制」，不是「别泄露凭证」的指令。
 
-**与 sofagent 的边界（互补，不冲突）**：Omnigent 管**运行时**（坐在 harness 之上，拦截工具调用）；sofagent 管**提交时**（git diff 21 条规则 + 运行时 SKILL.md 约束）。它的策略越重，越反衬「跨平台、本地留证、零依赖、提交时审计」是咱们的地盘。其路线图（GEPA 自动优化 / MemEx 持久记忆 / RLM 强化学习 / Server MCP 跨会话）尚未实现，但方向值得在 v2.x 评估框架参考。
+**与 sofagent 的边界（互补，不冲突）**：Omnigent 管**运行时**（坐在 harness 之上，拦截工具调用）；sofagent 管**提交时**（git diff 24 条规则 + 运行时 SKILL.md 约束）。它的策略越重，越反衬「跨平台、本地留证、零依赖、提交时审计」是咱们的地盘。其路线图（GEPA 自动优化 / MemEx 持久记忆 / RLM 强化学习 / Server MCP 跨会话）尚未实现，但方向值得在 v2.x 评估框架参考。
 
 **给我们的演进启示（落盘 ROADMAP）**：① 运行时审计可借 LangGraph middleware 的 wrapToolCall 接入点（咱们已用 createReactAgent）；② 密钥边界可借 bubblewrap/seatbelt + egress proxy 模式；③ 控制平面成本/路由层可借 LiteLLM。详见 [ROADMAP · 行业印证](../ROADMAP.md#行业印证)。
 

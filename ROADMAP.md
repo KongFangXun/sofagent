@@ -119,7 +119,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 > 编排引擎直接使用 LangGraph 原生能力（StateGraph + createReactAgent），不自建 DAG 调度。审计节点（★Reality Anchor）作为 guard edge 嵌入 LangGraph 工作流——这是 sofagent 在 Graph Engineering 中的唯一定位。理论框架详见 [PHILOSOPHY §十](./docs/PHILOSOPHY.md) 和 [ARCHITECTURE §Graph Engineering 视角](./docs/ARCHITECTURE.md#graph-engineering-视角控制图--stategraph)。
 
-**sofagent 已经在做 Graph Engineering**——`engine/orchestrator/src/loop/graph.ts` 用 LangGraph StateGraph 实现 `START→engineer→audit→reviewer→human_confirm→END`，`audit` 节点即 ★Reality Anchor（真实 git diff 21 条规则作 guard edge），`FileCheckpointer` 快照到 `.sofagent/checkpoint/` 即可审计状态文件。数据图天然对应蓄水池（知识库）+ 市政规划（Ontology）。后续迭代用 Graph Engineering 术语框定「并行编排」与「可视化」，不引入新能力。
+**sofagent 已经在做 Graph Engineering**——`engine/orchestrator/src/loop/graph.ts` 用 LangGraph StateGraph 实现 `START→engineer→audit→reviewer→human_confirm→END`，`audit` 节点即 ★Reality Anchor（真实 git diff 24 条规则作 guard edge），`FileCheckpointer` 快照到 `.sofagent/checkpoint/` 即可审计状态文件。数据图天然对应蓄水池（知识库）+ 市政规划（Ontology）。后续迭代用 Graph Engineering 术语框定「并行编排」与「可视化」，不引入新能力。
 
 | 版本 | Graph Engine 交付 | 状态 |
 |------|---------|:--:|

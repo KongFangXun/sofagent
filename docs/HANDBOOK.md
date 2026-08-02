@@ -60,7 +60,7 @@
 **已经能替你干的事（v1.2.0 开发完成）**：
 
 - **进场梳理 → 部署 AI 节点 → 离场常驻**：FDE 帮你盘清工作流、识别可自动化环节、把重复业务变成自动跑的 Agent，离场后 7×24 自己巡检、自己优化。
-- **每次变更都被管住**：21 条规则硬证据审计，密钥泄漏 / 越界编辑 / 注入攻击 / 盲改当场拦截；出事一键回滚到任意安全状态。
+- **每次变更都被管住**：24 条规则硬证据审计，密钥泄漏 / 越界编辑 / 注入攻击 / 盲改当场拦截；出事一键回滚到任意安全状态。
 - **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
 - **平台无关、即挂即用**：骑在你自选的大厂 Agent（Claude Code / Codex / Cursor / WorkBuddy / 扣子 / OpenClaw）之上，不替代模型，只补「可靠执行」。
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
@@ -81,7 +81,7 @@
 - **sofagent 引擎 = 堤坝 + 自来水厂 + 管网 + 水龙头（4 项核心已实现）+ 水表（审计已实现，终端 Dashboard v1.2.3 已落地）**：
   - 🧱 **堤坝（约束底座）**——四层加载链，把行为底线焊死在每次对话里
   - 🏭 **自来水厂（沙箱安全）**——让原水变「直饮水」，危险操作隔离在沙箱
-  - 🔧 **管网（审计引擎）**——每次变更过 21 条规则审查
+  - 🔧 **管网（审计引擎）**——每次变更过 24 条规则审查
   - 🚰 **水龙头（业务 Sub Agent）**——具体干活的节点，随业务接不同的「水龙头」
   - 📊 **水表（审计）**——每次变更看得见、可回滚（终端 Dashboard v1.2.3 已落地）
 
@@ -97,7 +97,7 @@
 | 角色 | 引擎 | 管什么 | 触发方式 |
 |------|------|------|------|
 | 🧱 底座 | **约束底座**（harness） | 四层加载链注入规则，Agent 启动即生效 | OpenClaw Hook / Sub Agent 自加载 |
-| 🔍 引擎① | **审计引擎**（audit） | git diff → 21 条规则硬扫描，违规当场拦 | git commit / daemon 文件变更 |
+| 🔍 引擎① | **审计引擎**（audit） | git diff → 24 条规则硬扫描，违规当场拦 | git commit / daemon 文件变更 |
 | 🔄 引擎② | **回溯引擎**（core） | 审计后自动快照，出事一键回滚 | 审计完成后自动 |
 | ⚙️ 内部工具 | **FORGE 工具链**（orchestrator） | LOOP 流水线（项目自迭代用，非对外引擎） | CLI compose tool |
 | 🧬 引擎③ | **进化引擎**（eval + ab-test + skillopt + think + ontology；由 daemon 定时驱动） | 知识沉淀 + 反思 + A/B 自优化，越用越好 | daemon cron / 手动触发 |
@@ -163,7 +163,7 @@ cd sofagent && bash install.sh
 | 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
 | Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计引擎可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](../LIMITATIONS.md#windows-支持是实验性的) |
 | hook 装了但静默跳过 | Node.js 或 sofagent-audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
-| `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（默认 13 条（A1–A11 + A18/A19）全启用，扩展 8 条（A14–A17 + E1–E4）需开启，全量 21 条） |
+| `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（默认 17 条（A1–A11 + A18–A23）全启用，扩展 7 条（A14–A17 + E1/E2/E4）需开启，全量 24 条） |
 
 ### 验证装好了
 
@@ -334,7 +334,7 @@ sofagent-dashboard --full    # 展开：编排控制图 + FORGE 审查进度 + �
 | 面板 | 看什么 | 数据来源 |
 |------|--------|---------|
 | **数据去哪了**（数据主权） | 敏感数据有没有偷偷发给云端？ | 4 维审计日志（模型/操作/流向/任务） |
-| **AI 犯规了吗**（规则审计） | AI 有没有越权改文件、存数据？ | 审计引擎 21 条规则结果 |
+| **AI 犯规了吗**（规则审计） | AI 有没有越权改文件、存数据？ | 审计引擎 24 条规则结果 |
 | **任务跑到哪了**（工作状态） | 后台 daemon 和 sub-agent 是活的还是挂了？ | daemon-health.json |
 
 > 前置依赖：需要 `jq`（`brew install jq` / `apt install jq`）。`--full` 追加编排控制图（Org Graph + Work Graph）、FORGE 审查进度、最近文件变更三个扩展面板。
@@ -519,7 +519,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 ### 审计规则
 
-当前共 21 条审计规则（A1-A11、A14-A19 + E1-E4），源码在 `engine/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计--文件系统审计)。
+当前共 24 条审计规则（A1-A11、A14-A23 + E1-E2/E4），源码在 `engine/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计--文件系统审计)。
 
 ### 概念速查
 
