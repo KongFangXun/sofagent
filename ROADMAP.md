@@ -120,9 +120,11 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | Graph Engine 交付 | 状态 |
 |------|---------|:--:|
-| **v1.2.2-v1.2.4** | Planner 节点 + 降级路由链 + engineer-decide/execute 分层 + 并行子图执行（worktree 隔离）+ Dashboard ASCII 控制图 + 知识进化 | ✅ 已交付 |
-| **v1.2.5** | 五类边契约形式化（数据流/控制流/权限流/证据流/失败流）+ Anchor 配置（冻结验收标准防自洽）+ Graph Engine 归因 | 🔗 规划中 |
+| **v1.2.2** | Planner 节点（任务分解）+ 降级路由链（retry→降级→标记→人工）+ engineer-decide/execute 分层（LLM 层 + 代码层）+ Dashboard Graph Engine 状态卡片 | ✅ 已交付 |
+| **v1.2.3** | 并行子图执行（worktree 隔离 + 多 engineer 并发）+ Dashboard ASCII 控制图（节点/边/波次分层）+ Fresh-Eyes 进度可视化 | ✅ 已交付 |
 | **v1.3.1** | 控制图多循环 DAG 波次并行——使用 LangGraph 原生 DAG 并行能力（StateGraph + Send API），每波次经 audit 节点（★Reality Anchor）卡关 | 📋 规划中 |
+
+> 📝 **v1.2.5-v1.2.9 聚焦激活链**（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN），不含 Graph Engine 新增交付。v1.2.4 的 Graph Engine Checker 扩展（P2b）因知识进化主线优先而降级，相关能力归入 v1.3.1。
 
 > 🔴 **落地纪律**：上表是「用 Graph Engineering 术语框定已有/规划能力」，不新增能力范围。理论基础：Carlos E. Perez·[From Loop Engineering to Graph Engineering](https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c)（单闭环四类失效→Graph 拓扑解法+grounding）。
 
