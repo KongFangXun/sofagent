@@ -37,7 +37,7 @@ FORGE 的自迭代不是单一循环，而是**外环 + 内环**的双层结构�
 
 | 节点 | 证据工具 | 有 ❌ 的后果 |
 |------|---------|------------|
-| A0（编写 dev prompt） | `tools/check-dev-prompt.sh` | 循环修正 prompt 直到零 ❌，否则不许进开发 |
+| A0（编写 dev prompt） | ① `tools/check-dev-prompt.sh`（查存在性）+ ② `FORGE/playbook/dev-prompt-checklist.md`（查签名/注册点/已完成区等软错误） | 两层都过才许进开发 |
 | A5-d3（D3 闸门） | `FORGE/playbook/acceptance-test.sh` | 零覆盖 = 不许进下一阶段 |
 | A6（release-gate-loop） | `FORGE/src/release-gate-driver.mjs` | verdict = FAIL = 回阶段五 |
 | VERSION-check | `tools/check-version.sh` | 版本号不一致 = 阻断发布 |
@@ -129,6 +129,7 @@ FORGE/
     acceptance-test.sh           ← A5-d3 闸门证据
     regression-checklist.md      ← 回归检查维度
     fresh-eyes-review.md         ← 留白式直觉审查（12 视角）
+    dev-prompt-checklist.md      ← A0 闸门人脑补充层（check-dev-prompt.sh 拦不住的软错误）
     acceptance-node-probes.js    ← release-gate-loop 探针
     version-bump.md / doc-sync.md
   SKILL/

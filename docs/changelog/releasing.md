@@ -984,7 +984,7 @@ bash tools/check-version.sh   # 期望：全绿
 | 38 | 如果本次迭代暴露了新的流程漏洞，**直接吸收进本 SOP 对应阶段**——不要存到单独章节。每条新规则标注版本号（如 `vX.Y 教训`）以便追溯 |
 | 39 | **SOP 自我进化**（FDE 提议 → 作者确认）：FDE 发版后自动跑一轮，生成 releasing.md 更新建议（diff 格式），作者确认后 apply。检查项：<br>① 本版本发布过程中遇到的流程漏洞 → 直接吸收进对应阶段，标注版本号<br>② 检查本 SOP 中的数字是否过期（维度数、检查项数、doctor 项数等）<br>③ 本版本新增的工具/脚本是否已纳入对应阶段（如 pre-push-check.sh、check-docs.sh）<br>④ 把更新后的 releasing.md 同步到 FORGE/archive/self-evolution-design.md 的映射表<br>⑤ 如果 FDE 未发现需更新项，输出"无需更新"报告——零变更也是有效结果 |
 | 40 | **生成「下一版本开发 Prompt」到桌面**：综合 `ROADMAP.md`（未来规划）+ `CHANGELOG.md` + 下一版本 `docs/changelog/v<major>.<minor>/vX.Y.md`（若存在），生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`。<br>**若下一版本 changelog 尚未创建**：先 ① 写新版本需求并产出 `docs/changelog/v<major>.<minor>/vX.Y.md`；再 ② 生成桌面开发 prompt |
-| 41 | **🔴 开发 Prompt 校验循环**（v1.2.2 教训）：生成 dev prompt 后，按以下循环规则执行——<br>**循环体**：<br>① 跑 `./tools/check-dev-prompt.sh ~/Desktop/vX.Y-dev-prompt.md`<br>② 输出零 ❌ → 循环结束，prompt 定稿，进入步骤 42（发布后独立审查）<br>③ 输出有 ❌ → 逐条修正 prompt 中的错误引用（改路径/改函数名/删不存在的引用），**只改 prompt 文件、不改代码库**<br>④ 回到 ① 重跑 check<br>**终止条件**：零 ❌ 或最多 5 轮（5 轮仍有 ❌ 说明开发日志本身有结构性问题，需人工介入）<br><br>输出含义：<br>❌ 错误 = 引用了不存在的已有文件/函数（必须修）<br>📋 待新建 = prompt 描述的新文件（正常，不算错误）<br>🔄 运行时 = `~/.sofagent/` 等运行时目录（跳过） |
+| 41 | **🔴 开发 Prompt 校验循环**（v1.2.2 教训 + v1.2.5 教训）：生成 dev prompt 后，按以下循环规则执行——<br>**循环体**：<br>① 跑 `./tools/check-dev-prompt.sh ~/Desktop/vX.Y-dev-prompt.md`（查"引用的东西存不存在"）<br>② 脚本输出零 ❌ 后，**再过一遍 `FORGE/playbook/dev-prompt-checklist.md` 的 5 条自查**（查"写法对不对 / 全不全 / 新不新"——脚本结构上拦不住的：函数签名准确性、注册点/数组归属、改造代码的保留声明、已完成区剥离、强动词名副其实）<br>③ 两项都过 → 循环结束，prompt 定稿，进入步骤 42（发布后独立审查）<br>④ 任一项发现问题 → 逐条修正 prompt，**只改 prompt 文件、不改代码库**<br>⑤ 回到 ① 重跑 check 确认无回归<br>**终止条件**：脚本零 ❌ 且 checklist 5 条全过，或最多 5 轮（5 轮仍不过说明开发日志本身有结构性问题，需人工介入）<br><br>脚本输出含义：<br>❌ 错误 = 引用了不存在的已有文件/函数（必须修）<br>📋 待新建 = prompt 描述的新文件（正常，不算错误）<br>🔄 运行时 = `~/.sofagent/` 等运行时目录（跳过）<br><br>> **v1.2.5 教训**：`check-dev-prompt.sh` 零 ❌ 的 prompt 交付后仍被评审发现 5🔴 / 5🟡——因为脚本只查"存在性"，拦不住"函数签名虚构（🔴-4）、新规则没写进哪个数组（🔴-1）、重写代码漏掉尾部（🔴-2）、已完工 bugfix 当成待开发（🟡-6）"。checklist 就是补这道软闸门。 |
 | 42 | **🔴 审查闭环——发布后独立审查**：<br>① **全新 session**：开一个对开发过程完全不知情的 Agent session，让它读取 `FORGE/playbook/fresh-eyes-review.md`（已在本版本阶段五中更新），对已发布版本做**独立审查**——完全零上下文。⚠️ **与下一版阶段一的分工（v1.2.3 起）**：阶段一 fresh-eyes-loop 是"系统性找齐上版本 bug"（driver 驱动、12 视角、自动修复）；本步骤是"零先验的独立审查"——审查者不知道开发过程、不看 loop 报告，专抓系统性方法想不到的意外盲区。两者目的不同，都保留<br>② **产出审查报告**：报告中的问题不阻塞当前版本——它们进入**下一版本的阶段一**，与 fresh-eyes-loop 产出合并为驱动下一版开发方向的 P0/P1/P2 清单<br>③ **如果发现新问题** → 自动成为下一版 releasing 的输入（回到阶段一开始新的迭代）<br>④ **审查体系持续自我进化**：每版积累"下轮会更锋利"的视角和敏感度。⚠️ 这里的"锋利"指 fresh-eyes-review 的直觉校准（见阶段五 Tier 3），不是加检查项——检查项归 regression-checklist 管 |
 
 ### 下一版本开发 Prompt 生成说明（步骤 40）
@@ -996,7 +996,7 @@ bash tools/check-version.sh   # 期望：全绿
 2. 读 `CHANGELOG.md` 确认下一版本号与索引条目
 3. 读 `docs/changelog/v<major>.<minor>/vX.Y.md`（下一版本开发日志，若存在）—— 这是开发 prompt 的主体来源
 4. 综合上述，生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`（结构：问题描述 → 修复方案 → 验证方式 → 发布检查清单）
-5. **跑 `./tools/check-dev-prompt.sh ~/Desktop/vX.Y-dev-prompt.md`——有 ❌ → 修正 prompt → 重跑 check → 循环直到零 ❌**（📋 待新建不算错误）
+5. **跑 `./tools/check-dev-prompt.sh ~/Desktop/vX.Y-dev-prompt.md`——有 ❌ → 修正 prompt → 重跑 check → 循环直到零 ❌**（📋 待新建不算错误）；脚本零 ❌ 后，**再按 `FORGE/playbook/dev-prompt-checklist.md` 逐条自查**（查签名准确性/注册点/已完成区等脚本拦不住的软错误），两项都过才算定稿（完整循环体见阶段十二步骤 41）
 
 **若下一版本 changelog 尚未创建**（开发到下一版本时文件还不存在）：
 1. 先写新版本需求，产出 `docs/changelog/v<major>.<minor>/vX.Y.md`（含问题描述 → 修复方案 → 验证方式 → 发布检查清单）

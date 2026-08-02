@@ -26,6 +26,10 @@ async function main() {
     console.log('       --data-dir <dir>             HITL pending/resolved 根路径（默认 {SOFAGENT_DATA}）');
     console.log('       --legacy                     使用旧版串行路径（v1.1.3 兼容）');
     console.log('  compare                          编排方案 A/B 对比');
+    console.log('  activate [--dry-run] [--node-filter id1,id2]');
+    console.log('                                   激活 FDE 交付物 → 注册企业 SubAgent');
+    console.log('                                   --dry-run 只预览不写文件');
+    console.log('                                   --node-filter 只激活指定节点');
     process.exit(0);
   }
 
@@ -212,9 +216,44 @@ async function main() {
       }
       break;
     }
+    case 'activate': {
+      const dryRun = args.includes('--dry-run');
+      const filterIdx = args.indexOf('--node-filter');
+      const nodeFilter = filterIdx !== -1
+        ? args[filterIdx + 1]?.split(',').map(s => s.trim()).filter(Boolean)
+        : undefined;
+      const { activateWorkflow } = await import('./activate');
+      const { loadEnvConfig } = await import('@sofagent/core');
+      const dataDir = loadEnvConfig().dataDir;
+      try {
+        const result = await activateWorkflow({ dataDir, dryRun, nodeFilter });
+        console.log('');
+        console.log(dryRun ? '🔍 激活预览（dry-run，未写入文件）' : '✅ 激活完成');
+        console.log('');
+        console.log(`注册的 Agent (${result.registeredAgents.length}):`);
+        for (const name of result.registeredAgents) {
+          const hitlTag = result.hitlNodes.includes(name) ? ' [HITL]' : '';
+          console.log(`  - ${name}${hitlTag}`);
+        }
+        if (result.skippedNodes.length > 0) {
+          console.log('');
+          console.log(`跳过的节点 (${result.skippedNodes.length}):`);
+          for (const s of result.skippedNodes) {
+            console.log(`  - ${s.name}: ${s.reason}`);
+          }
+        }
+        console.log('');
+        console.log('拓扑描述:');
+        console.log(result.workflowGraph);
+        process.exit(0);
+      } catch (err) {
+        console.error(`❌ 激活失败: ${(err as Error).message}`);
+        process.exit(1);
+      }
+    }
     default:
       console.error(`❌ sofagent 提示：不支持的子命令 "${subcommand}"`);
-      console.error('   可用子命令: compose | subagent | loop | compare');
+      console.error('   可用子命令: compose | subagent | loop | compare | activate');
       process.exit(1);
   }
 }
