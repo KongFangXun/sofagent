@@ -368,7 +368,7 @@ echo ""
 echo "=== 9. River 比喻跨文档计数（F-09）==="
 # River 比喻词（堤坝/自来水厂/管网）在非 README 文档中应 ≤4 处
 # README.md 是锚点，不限制
-RIVER_DOCS="docs/ARCHITECTURE.md docs/PHILOSOPHY.md FDE/GUIDE.md"
+RIVER_DOCS="docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/VALIDATION.md FDE/GUIDE.md"
 RIVER_WARN=0
 for doc in $RIVER_DOCS; do
   if [ -f "$doc" ]; then

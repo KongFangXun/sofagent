@@ -259,6 +259,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 | 引擎架构、24 条规则、内部机制 | [↓ 引擎架构（开发者段）](#engine-architecture) |
 | 为什么这么设计 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
+| 行业印证与生态定位 | [VALIDATION](./docs/VALIDATION.md) |
 | 安全声明（含数据存储说明） | [SECURITY](./SECURITY.md) |
 | 已知局限 | [LIMITATIONS](./LIMITATIONS.md) |
 | 版本路线图 | [ROADMAP](./ROADMAP.md) |
