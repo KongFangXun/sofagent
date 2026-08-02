@@ -493,7 +493,7 @@ sofagent 的编排引擎天然就是一张**控制图（Control Graph）**——
 | **Org Graph（稳定角色）** | 四节点（engineer/audit/reviewer/human_confirm）是稳定角色——不随任务变化；变动的是节点内的 Work Graph 子拓扑 | `engine/orchestrator/src/loop/graph.ts:128-132` |
 | **Work Graph（临时拓扑）** | 每个任务的子任务拆分 + 并行 engineer 实例 = 任务结束即解散的工作图；v1.2.3 Planner 节点落地后显式生成 | 规划中（v1.2.2+） |
 
-**控制图 vs 数据图二分天然具备**：管网（Workflow / StateGraph）= 控制图，决定"先干什么后干什么"；蓄水池 + 市政规划 = 数据图，承载"知道什么、怎么理解"。两者解耦——控制图无知识库也能跑（纯编排），数据图无控制图也能沉淀（Dream Cycle 独立跑）。
+**控制图 vs 数据图二分天然具备**：管道（Workflow / StateGraph）= 控制图，决定"先干什么后干什么"；蓄水池 + 市政规划 = 数据图，承载"知道什么、怎么理解"。两者解耦——控制图无知识库也能跑（纯编排），数据图无控制图也能沉淀（Dream Cycle 独立跑）。
 
 **Org Graph vs Work Graph 双图模型**（行业前沿框架）：Org Graph = 长期稳定的角色节点（engineer/audit/reviewer/human_confirm），变动慢，像公司组织架构；Work Graph = 为当前任务动态拼装的协作拓扑（子任务 engineer 实例 + 并行扇出），任务结束即解散。两者分离——长期能力与短期任务解耦，避免每次任务都重建整套组织。
 
@@ -894,7 +894,7 @@ audit:
 | River 比喻 | 激活链对应 |
 |-----------|-----------|
 | 自来水厂（沙箱安全） | EXECUTE 的沙箱隔离 |
-| 管网（审计引擎） | EXECUTE 的 `on_step: true` 审计集成 |
+| 管道（审计引擎） | EXECUTE 的 `on_step: true` 审计集成 |
 | 水龙头（Sub Agent） | ACTIVATE 注册的企业 SubAgent |
 | 水表（审计 Dashboard） | SUSTAIN 的 wrapToolCall 可观测 |
 
@@ -910,7 +910,7 @@ audit:
 - **v1.2.5-v1.3.0**：**🔗 FDE 激活链**——从静态交付到自运转企业 Agent。FDE 诊断交付了 ontology + workflow.yml + skills/，但交付物躺在磁盘上没人"点燃"。激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）解决这个大断裂带：读交付物 → 注册企业 SubAgent → 构建 LangGraph StateGraph → DAG 运行 + HITL + 审计 → 持续优化自运转。详见 [激活链设计文档](./guides/fde-activation-chain.md)
 - **v1.2.x**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界
 - **v2.x**：组织级共享记忆 + 协同层 + **分层模型路由**（Harness 按任务复杂度路由到云端大模型/本地 7B/本地 0.5B，数据主权驱动——敏感数据不出内网）
-- **v3.x-v4.x+**：企业专属小模型精调（`sofagent-model distill` QLoRA）+ 本地推理 + 离线 USB 节点。详见 [ROADMAP · 分层模型架构](../ROADMAP.md#分层模型架构v3x-技术骨架-2026-07-25-定稿)
+- **v3.x-v4.x+**：企业专属小模型精调（`sofagent-model distill` QLoRA）+ 本地推理 + 离线 USB 节点。详见 [ROADMAP · 分层模型架构](../ROADMAP.md#分层模型架构v3x-远景概述)
 - **远期护城河演进方向（非当前能力 · 2026-07-30 战略讨论）**：当前护城河 = 约束底座 + 审计能力（模型越强越值钱）。更远的演进方向：把「帮 sofagent 自身进化」的 Harness + 进化引擎能力，泛化为「**自动帮企业部署后训练模型**」的引擎。届时护城河从「约束能力」升维为「**后训练模型的自动化部署能力**」——交付物是部署在企业侧的定制模型（基于企业自有/通用基座后训练，非 sofagent 自制大模型），使用者是企业客户而非 sofagent 自身；ontology 在此既是企业数字孪生（语义层），也是后训练规格来源（每个 workflow 节点 → 一个专精模型）。**此为长期目标蓝图，当前完全不具备该能力**，仅作演进方向记录，不视为现状或近期计划。> 来源：产品战略讨论 2026-07-30（尚未实现）
 > **远期部署形态与数据逻辑（非当前能力 · 2026-07-30 战略讨论）**：引擎作为**软件**部署在**企业侧信任边界内**（独立控制节点或容器内），由其**驱动训练流水线**——加载企业自带 license/key 的开源基座 + 企业私有数据，训练产出定制模型；全程**数据不出域**、sofagent 不碰原始数据、企业用自有 GPU/key（BYOK）。训练主体是**软件/引擎跑脚本**，模型不"自训练"。此为长期目标蓝图，当前不具备。> 来源：产品战略讨论 2026-07-30（尚未实现）
 
@@ -1092,78 +1092,6 @@ sofagent 自有三层：
 
 > 📖 来源：温故知新 2026-07-22（FDE 行业实战研报）
 
-### 外部研究印证：a16z 与 2026-07 研报
+### 行业印证
 
-a16z《你刚雇了一百万个糟糕员工》七法则（完整映射见 [PHILOSOPHY · a16z 印证](./PHILOSOPHY.md#a16z你刚雇了一百万个糟糕员工印证2026-07)）、以及 2026-07 三篇研报（Prompt→Loop→Graph 范式 / Ontology Runtime / 工具网关）如何印证 sofagent 的架构选型，已统一整理到 [ROADMAP · 行业印证](../ROADMAP.md#行业印证)（动态 Agent 组织与 5 阶段风险收敛）。本节仅保留与架构选型直接相关的两点补充：
-
-- **Ontology Runtime 六组件补全**：Object（业务语义单元≠表/DTO）/ Link（语义路径≠外键）/ State（统一生命周期）/ Method（确定性计算，AI 调用不替代）/ Action（受控动作：前置·权限·幂等·副作用·审计）/ Policy-Audit-Lineage（全链路治理）。其中 **Method 与 Action 的二分**直接对齐「刚性规则进代码、概率性判断留 LLM」——AI 调用 Method 拿确定性结果，只在 Action 边界受控。
-- **工具网关 = 统一受控 MCP 入口**：研报将「工具网关」定义为统一受控入口（身份·路由·重试·审计集中），与 sofagent 的 MCP 桥 + 审计引擎同构——MCP 是受控入口而非任意调用通道。
-
-> 💡 **铁路类比**：约束层 = 堤坝——1841 年铁路相撞（协调失误非技术故障）倒逼现代管理诞生，今天 AI 正复刻（模糊指令交给 agent，损失以秒计、指数扩散）。完整历史映射与 a16z 外部背书见 [PHILOSOPHY · §十 方法论印证](./PHILOSOPHY.md)。
-
-> 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）/ a16z（2026-07-15，[You Just Hired a Million Bad Employees](https://www.a16z.news/)）
-
-### 行业参考 MoA 四层 ↔ sofagent 能力底座（2026-07 研读）
-
-行业参考提出 MoA（Mixture-of-Agents）四层编排：路由 / 专家 / 聚合 / 反思。与 sofagent「一底座·三引擎 + FORGE 内部编排」逐层同构：
-
-| MoA 四层（行业参考）| sofagent 对应 | 说明 |
-|------|------|------|
-| 路由 Routing | FORGE 编排（内部工具） | 任务分发与依赖编排 |
-| 专家 Experts | 三引擎·专项 | 审计 / 回溯 / 进化各司其职 |
-| 聚合 Aggregation | 进化引擎 | 多轮产出加权择优 |
-| 反思 Reflection | 约束底座 + 审计 | 硬约束兜底、回溯留痕 |
-
-> 同构点：MoA 的「反思」对应 sofagent 的「约束底座 + 审计」——概率性编排之外，确定性治理兜底。
-
-> 📖 来源：行业参考 blog《MoA 四层编排》（2026-07）
-
-### AI to B 三层基建：数据 / 连接 / AI Coding（2026-07 行业参考 blog 研读）
-
-行业参考将「AI 落地企业」拆为三层可替换基建，模型本身是最可被替换的一层：
-
-| 基建层 | 职责 | sofagent 落点 |
-|------|------|------|
-| 数据层 | 企业知识 / 业务语义沉淀 | knowledge/ + Ontology 运行时 |
-| 连接层 | 接系统 / 接流程 / 接人 | MCP 桥 + Gateway（桥接不替代）|
-| AI Coding 层 | 把流程写成可运行代码 | Skill + 审计引擎（代码级封装防投喂）|
-
-> 印证「模型吞噬一切」：文字约束会被投喂吞噬，唯有封装进代码级 Subagent + 防投喂机制能存活；模型选型（DeepSeek / GLM）可随场景替换，基建不动。
-
-> 📖 来源：行业参考 blog《AI to B 三层基建》（2026-07）
-
-### 自主级别（L1→L2→L3）与配套约束（2026-07 loop-engineering 研读）
-
-loop-engineering 社区将 Agent 自主性拆为三级，L1→L2→L3 可升可降（安全降级是功能，不是倒退），与 sofagent「一底座·三引擎 + FORGE 内部编排」逐层同构：
-
-| 自主级别 | Agent 能做什么 | sofagent 对应 | 引擎状态 |
-|---|---|---|---|
-| **L1 — Report** | 扫描报告，不动代码 | FDE 首周默认模式 | 约束生效 · 审计记录 · 编排仅报告 · 回溯关闭 |
-| **L2 — Assisted** | worktree 里修复，独立验证 | 审计全量 + human gate | 约束生效 · 审计告警 · 编排辅助 · 回溯启用 |
-| **L3 — Unattended** | 全自动自愈，越界告警 | 编排全自动 + 审计兜底 | 约束生效 · 审计阻断 · 编排全自动 · 回溯全程 |
-
-> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [concepts.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/concepts.md) / [loop-design-checklist.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/loop-design-checklist.md)
-
-### 多 Agent 协调优先级（2026-07 loop-engineering 研读）
-
-核心规则：一所有者一分支、分离状态文件、共享 denylist、聚合 token 预算。详见 [multi-loop.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/multi-loop.md)。FDE 多节点场景的优先级映射：
-
-| 优先级 | FDE 节点类型 | 原因 |
-|:--:|---|---|
-| 1 | CI / 安全扫描 | 红线阻塞一切 |
-| 2 | PR / 代码审查 | 活跃工作流是时间敏感的 |
-| 3 | 依赖更新 | 主流程中断时暂停 |
-| 4 | 技术债清理 | 非高峰期，最低紧急度 |
-| 5 | 日报 / 周报 | 仅报告，不参与竞争 |
-
-> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [multi-loop.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/multi-loop.md)
-
-### 贝恩首证：Agent 控制面 = 独立市场类目（2026-08 外部背书）
-
-> ⚠️ **外部参考 / 非当前能力**——以下为行业研判背书，不改变 sofagent 当前架构。
-
-贝恩（Bain，[Google Cloud Next 2026: The Agentic Enterprise Control Plane Comes into View](https://bain.com)，2026-04）首证 Agent 控制面（Control Plane）为**独立市场类目**——企业难题已从「怎么造 Agent」转为「怎么管住成千上万个 Agent」。Google 将 Agent Identity / Registry / Gateway / Simulation / Evaluation / Observability 六件套做成平台原生治理能力，格局「边缘开放、中心收敛治理」。
-
-**与 sofagent 的对位**：sofagent 的约束底座 = Identity + Gateway（加载链 + 权限），审计引擎 = Evaluation + Observability（git diff 硬证据），回溯引擎 = Simulation 的轻量替代（快照 + revert）。核心差异：大厂控制面绑定自家平台（GCP），sofagent 是平台中立的 MIT 开源 Harness——不管企业用什么 Agent 平台，治理底线都在。
-
-> 📖 来源：贝恩 Chris Green & Dale Pedzinski·2026-04·温故知新 2026-08-01 扫描
+> 完整行业对标（a16z 七法则 / Ontology Runtime 六组件 / 工具网关 / MoA 四层 / AI to B 三层基建 / 自主级别 L1-L3 / 贝恩控制面）统一见 [PHILOSOPHY §十](./PHILOSOPHY.md) 和 [ROADMAP · 行业印证](../ROADMAP.md#行业印证)。
