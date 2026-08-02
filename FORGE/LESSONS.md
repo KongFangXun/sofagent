@@ -4,7 +4,7 @@
 >
 > 这不是"踩坑参考"，是**开发参照**——下次开发新的 loop 或 sub-agent 时，必须逐条对照本文档执行。每条标准都来自真实 debug 会话（附 commit hash + 根因 + 代码片段），不是理论推演。
 >
-> v1.2.4 · 2026-08-02（UTC）· 孔放勋
+> v1.2.5 · 2026-08-02（UTC）· 孔放勋
 
 ## 目录
 
@@ -372,7 +372,7 @@ const agent = createReactAgent({
 
 | 步骤类型 | recursionLimit | 理由 |
 |---------|---------------|------|
-| 审查类（a-check/b-check） | 150-200 | 需要大量读文件+搜索，12 视角 |
+| 审查类（a-check/b-check） | 130 | 需要大量读文件+搜索，但 L2 硬熔断在 60 次工具调用时触发（≈superstep 120），留 10 步稳定窗口 |
 | 文本处理类（a-consolidate） | 50-100 | 主要做合并/格式化 |
 | 修复类（b-fix） | 100-150 | 每个修复点 Read→Edit→Test 三步 |
 | 验证类（a-verify） | 50-150 | 简单验证给低，复杂验证给高 |
@@ -380,7 +380,191 @@ const agent = createReactAgent({
 
 > **坑源**（commit 3248395）：统一 recursionLimit=150 导致 a-consolidate OOM（exit 137）。消息在内存里累积，Node.js 内存爆炸。
 
+> **🔴 死循环坑源**（run-01 ~ run-06，commit 95cd74a → 701582a）：审查类 worker 用 Qwen3.8-max-preview 时会陷入死循环——1119 次工具调用打爆 recursionLimit 零产出。prompt 层铁律对 Qwen 无效，必须在代码层做三层熔断。详见下方 §Worker 工具调用死循环防护。
+
 **换算公式**：每次工具调用 = 2 步（model call + tool node）。25 步 ≈ 12 轮工具调用 → 只够简单问答。超过 200 → OOM 风险。
+
+### Worker 工具调用死循环防护（三层熔断）
+
+> **来源**：run-01 ~ run-06 六轮实跑调试（commit 95cd74a → ca9e329 → a610d5d → dd5dde2 → f240594 → 701582a）
+>
+> **根因**：Qwen3.8-max-preview 在"开放审查"场景下会无限探索——反复 `sf_read` 同一批文件、循环调 `run_bash grep`。prompt 层写铁律（commit 95cd74a）证明无效，模型会无视指令继续调工具，最终打爆 recursionLimit 触发 GraphRecursionError，**整轮零产出**。
+
+#### LangGraph createReactAgent 消息模式（必知）
+
+理解死循环问题前必须知道一件事——createReactAgent 的消息序列长这样：
+
+```
+superstep 1: AIMessage(content="", tool_calls=[{name:"sf_read", ...}])
+superstep 2: ToolMessage(content="文件内容...")
+superstep 3: AIMessage(content="", tool_calls=[{name:"run_bash", ...}])
+superstep 4: ToolMessage(content="命令输出...")
+...
+superstep N: AIMessage(content="这是我的审查报告...", tool_calls=[])  ← 唯一有文本的
+```
+
+**中间所有 superstep 的 AI message 全是纯 tool_call**（content 为空字符串）。只有最后决定停止调工具时，AI message 才有文本 content。这意味着：
+
+- 硬熔断如果在最后一条消息上触发，可能**所有消息都没有文本**——agent 从头到尾没写过报告
+- `extractAgentText` 不能只看最后一条消息，必须跳过空 content 继续往前找
+- 如果全空，需要从 ToolMessage 提取文件路径拼兜底报告
+
+#### 三层熔断架构
+
+```
+L0 prompt 铁律（commit 95cd74a，对 Qwen 无效但保留——DeepSeek/GLM 仍受益）
+  ↓ 被无视
+L1 软熔断 TOOL_SOFT_LIMIT=50（stateModifier 注入 HumanMessage）
+  ↓ 被无视
+L2 硬熔断 TOOL_HARD_LIMIT=60 + 写报告窗口 TOOL_GRACE_STEPS=5（stream loop 两阶段）
+  ↓ 仍未产出
+L3 框架兜底 recursionLimit=130（GraphRecursionError 兜底）
+```
+
+**阈值设计**（模块顶层常量，禁止 magic number）：
+
+```js
+const TOOL_SOFT_LIMIT  = 50;  // stateModifier：超此值注入"立即写报告"HumanMessage
+const TOOL_HARD_LIMIT  = 60;  // stream loop：超此值进入"写报告窗口"
+const TOOL_GRACE_STEPS = 5;   // L2 触发后给模型的写报告窗口（superstep 数）
+// a-check/b-check recursionLimit = 130（≈65 次工具调用，给 L2 留 10 步稳定窗口）
+```
+
+#### L2 两阶段写报告窗口（关键设计）
+
+> **来源**：run-06 暴露的致命问题——L1 单阶段硬熔断会打断"写报告"动作本身。
+
+最初的 L1 硬熔断（commit ca9e329）在 `toolCallCount >= HARD_LIMIT` 时直接 break stream——但此时模型可能正准备写报告，break 掉就什么都没有了。run-06 验证发现：85-102 条消息全是 tool_call/tool_result 对，一条 AI 文本都没有。
+
+**两阶段方案**（commit 701582a）：
+
+```js
+// stream loop 中
+let inGraceWindow = false;   // 是否进入写报告窗口
+let gotReport = false;        // 窗口内是否已拿到报告
+let graceStepCount = 0;       // 窗口内已过的 superstep 数
+
+for await (const chunk of stream) {
+  // 阶段一：正常执行 + 检测是否该进入写报告窗口
+  if (!inGraceWindow && toolCallCount >= TOOL_HARD_LIMIT) {
+    inGraceWindow = true;     // 进入写报告窗口
+  }
+
+  // 阶段二：写报告窗口内——检测 AI message 非空 content = 报告完成
+  if (inGraceWindow) {
+    graceStepCount++;
+    if (aiMessageHasContent(lastMessage)) {
+      gotReport = true;       // 拿到报告，正常结束
+      break;
+    }
+    if (graceStepCount >= TOOL_GRACE_STEPS) {
+      break;                  // 5 步耗尽，强制结束（hardBreak）
+    }
+  }
+}
+```
+
+**核心思路**：L2 触发后不立即 break，而是进入一个 5 superstep 的"写报告窗口"——给模型最后的机会输出文本。窗口内每次都检测 AI message 是否有非空 content，有就正常结束，5 步耗尽才强制 break。
+
+#### 兜底报告合成
+
+> **来源**：run-06 证明两阶段窗口仍可能拿不到 AI 文本（所有消息全空 content）。
+
+当两阶段窗口耗尽仍无 AI 文本时，从 ToolMessage 中提取信息合成最小可用报告（commit 701582a）：
+
+```js
+function synthesizeReportFromMessages(messages) {
+  // 从 ToolMessage 中提取文件路径行（sf_read 的参数）
+  const filePaths = messages
+    .filter(m => m instanceof ToolMessage)
+    .map(m => extractFilePaths(m.content))
+    .flat();
+  return `# 降级报告（工具调用超限自动合成）\n\n## 已审查文件\n${filePaths.map(p => `- ${p}`).join('\n')}`;
+}
+```
+
+`extractAgentText` 也需要兼容空 content——跳过空继续往前找：
+
+```js
+function extractAgentText(messages) {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const text = messages[i].content;
+    if (typeof text === 'string' && text.trim()) return text;  // ← 跳过空 content
+  }
+  return synthesizeReportFromMessages(messages);  // 全空，兜底合成
+}
+```
+
+#### allSettled 并行降级
+
+> **来源**：commit ca9e329。
+
+check-a / check-b 并行执行时，一方崩溃不能拖死另一方。用 `Promise.allSettled` 替代 `Promise.all`：
+
+```js
+const results = await Promise.allSettled([checkA, checkB]);
+const failures = results.filter(r => r.status === 'rejected');
+if (failures.length > 0) {
+  // 降级：为每个失败的 worker 写占位报告
+  for (const f of failures) writePlaceholderReport(f.reason);
+}
+```
+
+**占位报告规则**：用 `existsSync` 判断不覆盖已有产物——万一降级逻辑和正常产出竞争，不破坏真实报告。
+
+#### 降级检测防假阳性干净
+
+> **来源**：run-05 暴露的致命问题——4 个 worker 全崩 → 降级占位被 parseStopCondition 当"审查通过干净轮"。
+
+```js
+const DEGRADATION_MARKERS = [
+  '降级报告',           // synthesizeReportFromMessages 的标题
+  '工具调用超限',        // stateModifier 注入消息中的措辞
+  'DEGRADED',           // 降级标记常量
+  '自动合成',           // 兜底报告措辞
+  '占位报告',           // 占位文件措辞
+];
+
+function parseStopCondition(roundDir) {
+  // ... 原有 P0/P1/P2 计数 ...
+  const isDegraded = DEGRADATION_MARKERS.some(m => text.includes(m));
+  const isClean = !isDegraded && (p0 === 0 && p1 === 0 && p2 === 0 && !hasFail);
+  return { p0, p1, p2, hasFail, isClean, isDegraded };
+}
+```
+
+**核心原则**：占位/降级产物**永远不算干净轮**。`isClean` 前提是 `!isDegraded`。
+
+#### 连续降级 error 退出
+
+> **来源**：commit 701582a。
+
+如果连续 2 轮都是降级轮，说明三层熔断都在被打穿——继续跑只会浪费 token：
+
+```js
+if (result.isDegraded) {
+  consecutiveDegraded++;
+  if (consecutiveDegraded >= 2) {
+    stopReason = 'fatal-error';
+    break;  // 直接 error 退出
+  }
+} else {
+  consecutiveDegraded = 0;
+}
+```
+
+#### stream.return() 防"幽灵"API 请求
+
+> **来源**：commit dd5dde2（P2 修复）。
+
+硬熔断 break 后如果不显式清理 generator，LangGraph 的 stream 可能继续在后台发 API 请求（"幽灵请求"）：
+
+```js
+if (hardBreak) {
+  await stream.return();  // 显式清理 generator
+  break;
+}
+```
 
 ### 失败路径容错
 
@@ -400,6 +584,8 @@ try {
 1. 降级产物质量肯定不如正常流程，但"有"比"没有"强
 2. 降级时只提取 P0/P1 摘要，不传完整正文（避免下游上下文溢出）
 3. driver 的 catch 块也要写可见性事件（失败路径覆盖）
+
+**并行 Worker 用 allSettled**（commit ca9e329）——`Promise.all` 一方 reject 会让另一个正常完成的 Worker 结果也丢失。改用 `Promise.allSettled`，返回 `{results, failures}`，失败的 Worker 写降级占位，成功的正常消费。详见上方 §Worker 工具调用死循环防护 → allSettled 并行降级。
 
 **Driver 致命错误处理**（commit 4a4a143）——worker 失败时 driver 如果抛 uncaught exception，status.json 会停在 `round-1-running`，Dashboard 看到"永远在跑"。模块级 globalVisibility 引用让 catch 块也能写终态事件：
 
@@ -448,14 +634,19 @@ function parseStopCondition(roundDir) {
   // ...
   // 读 result.md verify 列，数 FAIL
   const hasFail = /\bFAIL\b/i.test(text);
-  const isClean = (p0 === 0 && p1 === 0 && p2 === 0 && !hasFail);
-  return { p0, p1, p2, hasFail, isClean };
+  // 降级检测——占位报告不算干净（commit f240594）
+  const isDegraded = DEGRADATION_MARKERS.some(m => text.includes(m));
+  const isClean = !isDegraded && (p0 === 0 && p1 === 0 && p2 === 0 && !hasFail);
+  return { p0, p1, p2, hasFail, isClean, isDegraded };
 }
 ```
+
+> **🔴 假阳性干净**（run-05 暴露）：4 个 check worker 全崩 → 降级占位文件没有 P0/P1/FAIL → 被当"审查通过干净轮"→ driver 判收敛停止。**必须在 parseStopCondition 里做降级标记检测**，降级轮的 `isClean` 永远为 false。详见 §Worker 工具调用死循环防护 → 降级检测防假阳性干净。
 
 收敛策略：
 - 基础：连续 2 轮干净（`cleanStreak >= 2`）
 - 加权收敛（commit #13）：severity 历史足够长时（≥3 轮），用近窗加权平均 + 趋势判断提前收敛
+- **连续降级 error 退出**（commit 701582a）：连续 2 轮 `isDegraded=true` → 直接 `fatal-error` 退出，不浪费 token 跑无意义循环
 
 ### 外部脚本 spawn 生存规范
 
@@ -930,7 +1121,14 @@ if (process.platform === 'darwin' && !args.dryRun) {
 
 ### 🔧 Driver 编排
 
-- [ ] **recursionLimit 按步骤区分**（审查类 150-200，处理类 50-100，修复类 100-150）（第四章「recursionLimit 按步骤区分」）
+- [ ] **recursionLimit 按步骤区分**（审查类 130，处理类 50-100，修复类 100-150）（第四章「recursionLimit 按步骤区分」）
+- [ ] **三层熔断防护**（L1 软熔断 50 + L2 硬熔断 60 写报告窗口 5 + L3 recursionLimit 130）（第四章「Worker 工具调用死循环防护」）
+- [ ] **L2 用两阶段写报告窗口**（不 break，进入 5 superstep 窗口等 AI 文本）（第四章「L2 两阶段写报告窗口」）
+- [ ] **extractAgentText 跳过空 content**（createReactAgent 中间消息全空）（第四章「兜底报告合成」）
+- [ ] **并行 Worker 用 allSettled**（一方崩溃不拖死另一方）（第四章「allSettled 并行降级」）
+- [ ] **parseStopCondition 做降级检测**（占位报告不算干净轮）（第四章「降级检测防假阳性干净」）
+- [ ] **连续 2 轮降级直接 error 退出**（不浪费 token）（第四章「连续降级 error 退出」）
+- [ ] **硬熔断 break 后 stream.return()**（防幽灵 API 请求）（第四章「stream.return() 防幽灵请求」）
 - [ ] **每个步骤 try/catch + 降级兜底**（第四章「失败路径容错」）
 - [ ] **driver catch 块写 ERROR + LOOP_END 事件**（模块级 globalVisibility 引用）（第四章「失败路径容错」）
 - [ ] **finding >10 条时分片执行**（computeBatchSize 动态分批）（第四章「分片执行模式」）
@@ -991,6 +1189,12 @@ if (process.platform === 'darwin' && !args.dryRun) {
 | 08-01 | c1fab22 | 检查清单+附录同步 + SKILL.md --skip-acceptance 用法 | P2 | 四·--skip-acceptance |
 | 08-01 | 3530200 | 单步模式 + bash 编排脚本（跨步骤 OOM） | P0 | 四·Driver --step |
 | 08-01 | 95583e2 | preModelHook 物理裁剪 + --max-old-space-size=768 | P0 | 三·上下文管理 / 四·V8 heap |
+| 08-02 | 95cd74a | worker 工具调用预算 prompt 铁律 + recursionLimit 熔断 | P1 | 四·Worker 工具调用死循环防护（L0） |
+| 08-02 | ca9e329 | stateModifier 工具计数硬熔断 + allSettled 降级 + No such file 检测 | P0 | 四·Worker 工具调用死循环防护（L1/L2） |
+| 08-02 | a610d5d | recursionLimit 130 + extractAgentText 空内容抢救 | P1 | 四·recursionLimit / 四·兜底报告合成 |
+| 08-02 | dd5dde2 | P2 审查修复 × 3（注释措辞 + magic number 顶层化 + stream.return） | P2 | 四·Worker 工具调用死循环防护 |
+| 08-02 | f240594 | parseStopCondition 降级检测——占位文件不算干净轮 | P0 | 四·降级检测防假阳性干净 |
+| 08-02 | 701582a | L2 改两阶段写报告窗口 + 连续降级 error 退出 + 兜底合成报告 | P0 | 四·L2 两阶段写报告窗口 / 四·兜底报告合成 |
 
 ### 历史坑位索引
 
@@ -1016,6 +1220,9 @@ if (process.platform === 'darwin' && !args.dryRun) {
 | 16 | 外部脚本 spawn 生存——流式日志+signal+head 管道 | 四·外部脚本 spawn 生存 |
 | 17 | init → hook 递归防护（SOFAGENT_SKIP_HOOK）+ sandbox 复用（--skip-acceptance） | 四·SKIP_HOOK / --skip-acceptance |
 | 18 | 沙箱 OOM 三层解决方案——stateModifier 不够，preModelHook 物理裁剪 + heap 限制 + 单步模式 | 三·上下文管理（preModelHook）+ 四·V8 heap + 四·--step |
+| 19 | Worker 工具调用死循环——Qwen3.8 无视 prompt 铁律 1119 次工具调用打爆 recursionLimit 零产出 | 四·Worker 工具调用死循环防护（三层熔断） |
+| 20 | 硬熔断打断写报告动作——所有消息全空 content，break 丢掉唯一报告窗口 | 四·L2 两阶段写报告窗口 + 四·兜底报告合成 |
+| 21 | 假阳性干净——降级占位文件无 P0/P1 被当"审查通过"导致 driver 误收敛 | 四·降级检测防假阳性干净 |
 
 ### 关键设计决策速查
 
@@ -1033,3 +1240,6 @@ if (process.platform === 'darwin' && !args.dryRun) {
 | 物理消息窗口 | 最后 20 条消息（preModelHook） | state.messages 保留上限，旧消息可被 GC |
 | 合并步骤 maxTokens | 32000 | thinking-only 模型 16000 含 thinking tokens 不够 |
 | 分片 batch | 动态（≤20→5, ≤35→3, >35→2） | finding 越多每批越小，防撞 recursionLimit |
+| 死循环防护 | 三层熔断（L0 prompt → L1 软熔断 50 → L2 硬熔断 60 写报告窗口 5 → L3 recursionLimit 130） | prompt 管不住 Qwen3.8，代码层兜底；L2 用两阶段窗口不 break 防丢报告 |
+| 降级检测 | DEGRADATION_MARKERS 5 个标记词 + isClean 前置 !isDegraded | 占位报告不算干净轮，防 driver 误收敛 |
+| 连续降级策略 | 连续 2 轮降级直接 fatal-error 退出 | 三层熔断全被打穿时继续跑只浪费 token |
