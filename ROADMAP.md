@@ -12,6 +12,7 @@
 > 解决"FDE 交付后断裂带"——交付物躺在文件里没人消费，需要手动接线才能跑起来。
 > **🛡️ 审计引擎加固**：AUDIT_PRIORITY 规则归属调整（层名不变，只调规则在 critical/warning/crutch/extended 各层的分配）+ 新增 A20-A23 四条安全规则（不泄外联/不植后门/不越权限/不逃路径）+ E3 并入 A11 精简规则数 + A2/A3 缺陷修复 + **结构性地基加固**（BASELINE 扩展至 9 条 + critical 层全量收集 + 审计引擎源码自保护）+ **检测盲区补全**（A10 postinstall 注入检测 + A9 动态执行告警 + shared/patterns.ts 收敛）。
 > **🔧 daemon 可靠性**：推送重试上限（maxRetries=3 + 指数退避）+ plist 路径校验（防假成功）+ 健康自检（daemon-health.json + heartbeat）+ im-outbox 生命周期管理。
+> **🖥️ HTML Dashboard**：与 bash Dashboard 并存的新实现（`dashboard.html` 仓库根目录 + `tools/serve-dashboard.mjs`）——7 页导航化 SPA，驾驶舱走 `/api/summary`（复用 bash 同口径 jq 聚合），AI 节点/本体/知识库/FORGE 全部真实数据驱动，支持 File System Access API 直连数据目录（Chrome），右上角 GitHub Stars。
 > 多设备前置（轻量）：Agent 独立身份码 + 跨设备审计轨迹聚合 + 协议中立审计。
 >
 > 📖 [v1.2.5 开发日志](./docs/changelog/v1.2/v1.2.5.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
@@ -26,6 +27,7 @@
 
 | 版本 | 核心交付 |
 |------|------|
+| **v1.2.5** | 激活链 Phase 1 ACTIVATE（activate.ts + MCP activate_workflow tool）+ 审计引擎加固（A20-A23 + 结构性地基加固 + 检测盲区补全）+ daemon 可靠性（推送重试 + plist 校验 + 健康自检）+ 多设备前置（Agent 身份码 + 跨设备审计聚合 + 协议中立） |
 | **v1.2.4** | 知识进化（分层巡检 L1/L2/L3 + skillopt 自动触发 + 失败清单 + 联邦蒸馏 + 进化引擎接通 eval）+ Dashboard 历史趋势 + Skill × MCP 集成（S1-S5）+ FDE 人机分离（README/GUIDE/SKILL.md 升格 + 子 Skill 分包 01-05）+ FORGE stream 迁移 + LESSONS 方法论 |
 | **v1.2.3** | Dashboard 产品化（控制图波次渲染 + 用户可读状态映射 + Fresh-Eyes 审查进度 + Workspace 变更摘要）+ 编排隔离底座（git worktree 三原语 + 审计合并卡关）+ Fresh-Eyes-Loop 移至阶段一 + v1.2.2 BugFix 31 项 + 裁决解析健壮性加固 |
 | **v1.2.2** | 数据主权审计（4 维追踪 + HMAC 链 + 日/周/月报告）+ 混合模型路由（ModelRouter + Ollama 接入）+ FDE Dashboard（终端三栏）+ Graph Engine（Planner + 降级链 + decide/execute 分层）+ 异步 HITL + Skill 升级三策略 + v1.2.1 BugFix 38 项 |
