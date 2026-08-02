@@ -110,7 +110,7 @@ FORGE 的 sub-agent 定义在 `SKILL/agents/` 下：
 |-------|------|------|
 | `sofagent-engineer` | 软件工程师——写代码、修复 | `SKILL/agents/engineer/SKILL.md` |
 | `sofagent-reviewer` | 代码审查员——审查 + 自动门控 | `SKILL/agents/reviewer/SKILL.md` |
-| `sofagent-audit` | 合规审计员——A1-A21 规则检查 | `SKILL/agents/audit/SKILL.md` |
+| `sofagent-audit` | 合规审计员——A1-A23 规则检查 | `SKILL/agents/audit/SKILL.md` |
 
 fresh-eyes-loop 的 A/B 即基于 reviewer + engineer 构建（同底座，不同行为指令——见 `prompts/`）。
 

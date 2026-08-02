@@ -323,7 +323,6 @@ function serializeToYml(config: EnterpriseAgentConfig): string {
     indent: 2,
     lineWidth: -1, // 不换行长字符串（systemPrompt）
     noRefs: true,
-    quotingType: '"',
   });
 }
 
