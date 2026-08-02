@@ -40,14 +40,25 @@ export interface AuditResult {
 
 /**
  * 审计优先级分组
- * - critical: FAIL 规则——命中即停，后续全部 SKIPPED
- * - warning:  WARN 规则——全部跑完
+ * - critical: 安全红线——全量跑完收集所有 FAIL，统一 fast-fail 后续层（v1.2.5 变更）
+ * - warning:  业务底线——全部跑完
  * - crutch:   拐杖规则——依赖日志，最慢
  * - extended: 扩展规则——A 组核心扩展优先，E 组工程规范补充；各组内按编号正序
  *
- * v1.1.4 后：
- *   critical: A1→A2→A9→A4→A19  (A19 message 质量排在 A4 之后，早于 A3)
- *   extended: A14→A15→A16→A17→A18→E1→E2→E3→E4  (A 组优先，正序排列)
+ * v1.2.5 重构：
+ *   critical: A1→A2→A9→A10→A20→A21→A22→A23  (安全红线，fast-fail)
+ *   warning:  A3→A4→A5→A11→A19                (业务底线 + msg 质量)
+ *   crutch:   A6→A7→A8→A18                     (能力拐杖)
+ *   extended: A14→A15→A16→A17→E1→E2→E4         (E3 已并入 A11)
+ *
+ * 变更明细：
+ *   - A19 从 critical 移到 warning（msg 质量不是安全红线，不该阻断安全检查）
+ *   - A10 从 warning 移到 critical（恶意源 = 安全红线）
+ *   - A4 从 critical 移到 warning（配置删除是业务底线）
+ *   - A6 从 warning 移到 crutch（构建完整性是能力拐杖）
+ *   - A20-A23 新增到 critical（网络外传/后门/提权/路径穿越）
+ *   - E3 已并入 A11，从 extended 删除
+ *   - critical 层从"命中即停"改为"全量收集所有 FAIL 后统一 fast-fail"（§4.9.2）
  *
  * @see engine/audit/src/rules/index.ts  defaultRules/extendedRules 数组——新增规则时需同时在两处注册：
  *      ① 在 index.ts 的 defaultRules 或 extendedRules 数组中添加规则对象；
@@ -55,10 +66,10 @@ export interface AuditResult {
  *      两边顺序一致才能保证优先级分组正确。
  */
 export const AUDIT_PRIORITY = {
-  critical: ['A1', 'A2', 'A9', 'A4', 'A19'],
-  warning:  ['A3', 'A5', 'A6', 'A10', 'A11'],
-  crutch:   ['A7', 'A8'],
-  extended: ['A14', 'A15', 'A16', 'A17', 'A18', 'E1', 'E2', 'E3', 'E4'],
+  critical: ['A1', 'A2', 'A9', 'A10', 'A20', 'A21', 'A22', 'A23'],
+  warning:  ['A3', 'A4', 'A5', 'A11', 'A19'],
+  crutch:   ['A6', 'A7', 'A8', 'A18'],
+  extended: ['A14', 'A15', 'A16', 'A17', 'E1', 'E2', 'E4'],
 } as const;
 
 /**
@@ -80,9 +91,9 @@ function getAllRuleIds(activeRules: Rule[]): string[] {
  * 运行全部审计规则（fast-fail 模式）
  *
  * 按 AUDIT_PRIORITY 定义的顺序分组执行：
- * 1. critical 层：任一 FAIL → 立即返回，后续规则标 SKIPPED
+ * 1. critical 层：v1.2.5 变更——全部跑完收集所有 FAIL，统一 fast-fail 后续层
  * 2. warning 层：全部跑完
- * 3. crutch 层：拐杖规则（A7/A8 hybrid 模式）
+ * 3. crutch 层：拐杖规则（A6/A7/A8/A18 hybrid 模式）
  * 4. extended 层：扩展规则
  *
  * @param diffFiles git diff 解析出的文件变更列表
@@ -139,18 +150,32 @@ export function runRules(
   }
 
   // 按优先级分组执行
+  // v1.2.5 §4.9.2: critical 层从"命中即停"改为"全量收集所有 FAIL"
+  // 设计理由：一个被注入的 Agent 可能同时碰了 .env（A1 FAIL）+
+  // 偷偷 curl 外传（A20 FAIL）+ 建了后门（A21 FAIL）——旧逻辑只报 A1。
+  // 新逻辑：critical 8 条全跑完，收集所有 FAIL，审计报告展示完整安全画像。
+  let criticalFailCount = 0;
+
   for (const priority of ['critical', 'warning', 'crutch', 'extended'] as const) {
     const ruleIds = AUDIT_PRIORITY[priority];
-    for (const ruleId of ruleIds) {
-      const rule = ruleMap.get(ruleId);
-      if (!rule) continue;
 
-      const result = rule.check(ctx);
-      results.push(result);
+    if (priority === 'critical') {
+      // critical 层：全部跑完，收集所有 FAIL
+      for (const ruleId of ruleIds) {
+        const rule = ruleMap.get(ruleId);
+        if (!rule) continue;
 
-      // fast-fail: critical 层命中 FAIL → 立即返回
-      if (priority === 'critical' && result.status === 'FAIL') {
-        // 把后续未跑的规则标记为 SKIPPED
+        const result = rule.check(ctx);
+        results.push(result);
+
+        if (result.status === 'FAIL') {
+          criticalFailCount++;
+        }
+      }
+
+      // critical 全部跑完后，如果有 FAIL → fast-fail 后续层
+      if (criticalFailCount > 0) {
+        // 标记后续层规则为 SKIPPED
         const seenIds = new Set(results.map(r => ruleToId({ name: r.name, number: r.number } as Rule)));
         for (const id of allRuleIds) {
           if (!seenIds.has(id)) {
@@ -158,7 +183,7 @@ export function runRules(
               name: id,
               number: id.startsWith('E') ? 200 + parseInt(id.slice(1)) : parseInt(id.slice(1)),
               status: 'SKIPPED',
-              details: ['critical 层已命中 FAIL，跳过后续规则'],
+              details: [`critical 层 ${criticalFailCount} 条规则命中 FAIL，跳过后续层规则`],
             });
           }
         }
@@ -174,6 +199,17 @@ export function runRules(
         // 汇总判定（有 FAIL 直接 exit 2）
         return { rules: results, exitCode: 2 };
       }
+      // critical 全部 PASS → 进入下一层
+      continue;
+    }
+
+    // warning/crutch/extended 层：原有逻辑不变
+    for (const ruleId of ruleIds) {
+      const rule = ruleMap.get(ruleId);
+      if (!rule) continue;
+
+      const result = rule.check(ctx);
+      results.push(result);
     }
   }
 

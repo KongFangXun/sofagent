@@ -22,9 +22,13 @@ import { checkRuleA16 } from './rule-a16-unauthorized-change';
 import { checkRuleA17 } from './rule-a17-bulk-change';
 import { checkRuleA18 } from './rule-a18-junk-file';
 import { checkRuleA19 } from './rule-a19-commit-msg-quality';
+import { checkRuleA20 } from './rule-a20-network-exfiltration';
+import { checkRuleA21 } from './rule-a21-persistence';
+import { checkRuleA22 } from './rule-a22-privilege-escalation';
+import { checkRuleA23 } from './rule-a23-path-traversal';
 import { checkRuleE1 } from './rule-e1-no-test-files';
 import { checkRuleE2 } from './rule-e2-todo-undeclared';
-import { checkRuleE3 } from './rule-e3-large-deletion';
+// E3 已在 v1.2.5 并入 A11（行数维度），不再独立存在
 import { checkRuleE4 } from './rule-e4-low-comment-ratio';
 
 /** 默认规则（A1-A11 + A18/A19）——始终生效
@@ -50,7 +54,13 @@ export const defaultRules: Rule[] = [
   { name: 'A11 不滥资源', number: 11, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA11 },
   // A12-A17 为预留/扩展编号：A12（供应链安全）和 A13（文件权限）已永久跳号——v1.1.0 合并入 A11（不滥资源），语义有重叠但不完全等价，A12/A13 独立规则留待未来版本恢复；A14-A17 见 extendedRules
   { name: 'A18 垃圾文件', number: 18, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleA18 },
-  { name: 'A19 msg 质量', number: 19, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA19 },
+  // v1.2.5: A19 ruleClass 从 '业务底线' 改为 '工程规范'（msg 质量是工程规范，不是安全红线）
+  { name: 'A19 msg 质量', number: 19, evidenceMode: 'git-diff', ruleClass: '工程规范', check: checkRuleA19 },
+  // v1.2.5 新增：A20-A23 四条安全红线规则（必须在 defaultRules，不能放 extendedRules）
+  { name: 'A20 不泄外联', number: 20, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA20 },
+  { name: 'A21 不植后门', number: 21, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA21 },
+  { name: 'A22 不越权限', number: 22, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA22 },
+  { name: 'A23 不逃路径', number: 23, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA23 },
 ];
 
 /** 扩展规则（E1-E4 + A14-A17）——默认不生效，需 config.extendedRulesEnabled = true
@@ -61,7 +71,7 @@ export const defaultRules: Rule[] = [
 export const extendedRules: Rule[] = [
   { name: 'E1 不落测试', number: 201, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE1 },
   { name: 'E2 不空标记', number: 202, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE2 },
-  { name: 'E3 不滥删除', number: 203, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE3 },
+  // E3 已在 v1.2.5 并入 A11（行数维度），编号跳号
   { name: 'E4 不低注释', number: 204, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE4 },
   { name: 'A14 知识库越权', number: 14, evidenceMode: 'hybrid', ruleClass: '能力拐杖', check: checkRuleA14 },
   { name: 'A15 不盲动', number: 15, evidenceMode: 'hybrid', ruleClass: '能力拐杖', check: checkRuleA15 },

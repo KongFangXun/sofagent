@@ -426,6 +426,7 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
 
     // ⚠️ 同步要求：新增 A 类规则时，此处必须同步追加
     //    权威源见 sofagent/audit/src/rules/runner.ts AUDIT_PRIORITY
+    //    v1.2.5: A20-A23 加入 knownKeys（BASELINE_RULE_KEYS 已含 a20-a23）
     const knownKeys = new Set([
       ...BASELINE_RULE_KEYS,
       'a3', 'a4', 'a5', 'a6', 'a7', 'a8',
@@ -434,7 +435,7 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     ]);
     for (const key of Object.keys(merged.rules)) {
       if (!knownKeys.has(key.toLowerCase())) {
-        console.warn(`⚠️ config.yml: 未知规则名 "${key}" → 已忽略（已知: a1-a11, a14-a19, e1-e4）`);
+        console.warn(`⚠️ config.yml: 未知规则名 "${key}" → 已忽略（已知: a1-a11, a14-a23, e1-e4）`);
       }
     }
   }

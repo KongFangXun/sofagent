@@ -7,7 +7,8 @@ import { describe, it, expect } from 'vitest';
 import { checkRuleA3 } from './rules/rule-a3-careful-modify';
 import { checkRuleE1 } from './rules/rule-e1-no-test-files';
 import { checkRuleE2 } from './rules/rule-e2-todo-undeclared';
-import { checkRuleE3 } from './rules/rule-e3-large-deletion';
+// v1.2.5: E3 已并入 A11，不再独立存在
+import { checkRuleA11 } from './rules/rule-a11-no-abuse';
 import { checkRuleA5 } from './rules/rule-a5-honest-report';
 import { checkRuleA1 } from './rules/rule-a1-sensitive-files';
 import { checkRuleE4 } from './rules/rule-e4-low-comment-ratio';
@@ -125,7 +126,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
     });
   });
 
-  describe('R4 大量删除', () => {
+  describe('R4 大量删除（v1.2.5: 原 E3 并入 A11）', () => {
     it('单文件删 > 100 行 + 与 task 无关 → WARN', () => {
       // 生成 101 行删除
       const deletedLines = Array.from({ length: 101 }, () => '-some code line');
@@ -133,9 +134,9 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
         [makeDiffFile('src/legacy.ts', deletedLines)],
         { task: 'login feature' }
       );
-      const result = checkRuleE3(ctx);
+      const result = checkRuleA11(ctx);
       expect(result.status).toBe('WARN');
-      expect(result.details[0]).toContain('101');
+      expect(result.details.some(d => d.includes('101'))).toBe(true);
     });
 
     it('单文件删 > 100 行 + 与 task 相关 → PASS', () => {
@@ -144,7 +145,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
         [makeDiffFile('src/login.ts', deletedLines)],
         { task: 'login feature' }
       );
-      const result = checkRuleE3(ctx);
+      const result = checkRuleA11(ctx);
       expect(result.status).toBe('PASS');
     });
 
@@ -153,7 +154,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
       const ctx = makeCtx(
         [makeDiffFile('src/legacy.ts', deletedLines)]
       );
-      const result = checkRuleE3(ctx);
+      const result = checkRuleA11(ctx);
       expect(result.status).toBe('PASS');
     });
 
@@ -163,7 +164,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
         [makeDiffFile('src/legacy.ts', deletedLines)],
         { task: 'login feature' }
       );
-      const result = checkRuleE3(ctx);
+      const result = checkRuleA11(ctx);
       expect(result.status).toBe('PASS');
     });
   });

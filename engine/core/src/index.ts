@@ -15,7 +15,8 @@ export { BASELINE_RULE_KEYS, BASELINE_RULE_NUMBERS } from './shared/rule-constan
 export type { BaselineRuleKey } from './shared/rule-constants';
 
 // ── P1-27: 密钥检测正则单一事实源（A2 + ToolGate 共用）──
-export { SECRET_PATTERNS } from './shared/secret-patterns';
+// v1.2.5: 扩展为全规则共享库——新增 REDACTION_PATTERNS / DOMAIN_WHITELIST / DANGEROUS_SCRIPT_CMDS
+export { SECRET_PATTERNS, REDACTION_PATTERNS, DOMAIN_WHITELIST, DANGEROUS_SCRIPT_CMDS } from './shared/secret-patterns';
 
 // ── P2-36: 环境变量统一读取（SOFAGENT_* 主名 + 旧名别名兜底）──
 export { resolveEnvVar, resolveEnvBool, resolveEnvNumber } from './shared/env';

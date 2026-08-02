@@ -69,4 +69,51 @@ describe('A16 非授权文件变更', () => {
     const result = checkRuleA16(ctx);
     expect(result.status).toBe('PASS');
   });
+
+  // v1.2.5 §4.9.3: 审计引擎源码自保护
+  it('diff 修改 engine/audit/src/rules/runner.ts → WARN（审计引擎源码）', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('engine/audit/src/rules/runner.ts', ['+const x = 1;'], 'modified')],
+      { config: defaultConfig as any }
+    );
+    const result = checkRuleA16(ctx);
+    expect(result.status).toBe('WARN');
+    expect(result.details[0]).toContain('审计引擎源码被修改');
+  });
+
+  it('diff 修改 rule-a1-sensitive-files.ts → WARN', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('engine/audit/src/rules/rule-a1-sensitive-files.ts', ['+modified'], 'modified')],
+      { config: defaultConfig as any }
+    );
+    const result = checkRuleA16(ctx);
+    expect(result.status).toBe('WARN');
+  });
+
+  it('diff 修改 engine/core/src/shared/secret-patterns.ts → WARN', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('engine/core/src/shared/secret-patterns.ts', ['+modified'], 'modified')],
+      { config: defaultConfig as any }
+    );
+    const result = checkRuleA16(ctx);
+    expect(result.status).toBe('WARN');
+  });
+
+  it('diff 修改 engine/audit/src/reporter.ts → PASS（不在保护范围）', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('engine/audit/src/reporter.ts', ['+modified'], 'modified')],
+      { config: defaultConfig as any }
+    );
+    const result = checkRuleA16(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('diff 修改 engine/core/src/data-paths.ts → PASS（非 audit/）', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('engine/core/src/data-paths.ts', ['+modified'], 'modified')],
+      { config: defaultConfig as any }
+    );
+    const result = checkRuleA16(ctx);
+    expect(result.status).toBe('PASS');
+  });
 });

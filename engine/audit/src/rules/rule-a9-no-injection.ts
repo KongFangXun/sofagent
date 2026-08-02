@@ -77,6 +77,11 @@ const MEDIUM_CONFIDENCE_PATTERNS: { pattern: RegExp; name: string }[] = [
   // v1.1.0: 中文注入检测（中等置信度）
   { pattern: /越狱|jailbreak|开发者模式|developer mode/i, name: '越狱/开发者模式关键词' },
   { pattern: /(绕过|跳过|关闭|禁用).{0,4}(审计|检查|规则|限制|安全)/i, name: '中文：绕过审计/检查' },
+  // v1.2.5 §4.10.1: 动态执行模式告警（补一层告警，非完整防护）
+  { pattern: /\beval\s*\(/i, name: 'eval 动态执行' },
+  { pattern: /new\s+Function\s*\(/i, name: 'Function 构造器动态执行' },
+  { pattern: /require\s*\(\s*['"]child_process['"]/, name: 'child_process 引入' },
+  { pattern: /\bexec\s*\(.*?(?:rm|curl|wget|bash|sh)\b/i, name: 'exec 执行危险命令' },
 ];
 
 /**
