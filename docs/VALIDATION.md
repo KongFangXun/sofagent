@@ -363,3 +363,21 @@ sofagent 自有三层：
 ### 综合行业对标
 
 > 完整行业对标（a16z 七法则 / Ontology Runtime 六组件 / 工具网关 / MoA 四层 / AI to B 三层基建 / 自主级别 L1-L3 / 贝恩控制面）统一见本文件 §十 及 [ROADMAP · 行业印证](../ROADMAP.md#行业印证)。
+
+### OLAF-I 五块骨架：Ontology 的最小不可再分集（2026-08）
+
+Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object Type / Link Type / Action Type / Function / Interface**（缩写 OLAF-I）。不是 3 块不是 7 块，5 块是数字孪生的最小够用集。
+
+| 块 | 角色 | sofagent 对应 |
+|---|------|-------------|
+| **Object Type** | 业务实体的 schema 定义（如一口井、一笔订单） | `knowledge/entities/` Markdown frontmatter（实体 + 属性 + 关系） |
+| **Link Type** | 实体间的类型化关系（带命名/方向/权限，非数据库外键） | `relations` frontmatter 字段（实体间语义关系，非技术引用） |
+| **Action Type** | 对 Object/Link 的合法改动定义（入参 + 规则 + 提交条件 + 副作用） | **审计引擎 Action 七步管线**（参数→校验→权限→执行→审计→回滚→副作用） |
+| **Function** | 派生计算（源变化自动重算，非定时 ETL 快照） | daemon Dream Cycle 知识提取 + think.md 反思自动生成 |
+| **Interface** | 同一份 Ontology 暴露给多类用户（Workshop/API/AIP/OSDK） | MCP Server + CLI + Hook + SKILL.md（同一份约束，多入口访问） |
+
+**合并检验法**——5 块任意两块都不能无损合并：Object↔Link（Link 依附 Object）、Action↔Function（Action 改状态有事务 / Function 算值不改状态）、Function↔Interface（计算 vs 暴露）、Link↔Action（关系 vs 改动）。再加新块也能被现有 5 块吸收（Metric = Function 输出、Workflow = Action 组合、Notification = Action Side Effect、Version = Global Branching）。
+
+**sofagent 印证**：sofagent 的「一底座·三引擎」遵循同一不可合并原则——审计引擎（看 diff 不改状态）与回溯引擎（改状态有快照）与进化引擎（算值不改状态）各有独立职责，合并任两者都会丧失核心能力。Palantir 的「Action 默认 staged，等人工 review 才 commit」与 sofagent 的 human_confirm 节点（[ARCHITECTURE human_confirm](./ARCHITECTURE.md#human_confirm)）完全同构——LLM 调用 Action 不能直接写库，必须在沙盒里等审批。
+
+> 📖 来源：公众号「AI 风起兮」2026-08-01《Ontology 的五大构建块: Object / Link / Action / Function / Interface》（Palantir Ontology 深度拆解 系列第 2 篇）
