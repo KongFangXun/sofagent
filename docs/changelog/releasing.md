@@ -447,6 +447,7 @@ grep -rn "$DATE" *.md docs/archive/design/*.md | grep -v "docs/changelog/" | gre
 ```
 
 重点检查（bump-version.sh 不覆盖的）：
+- `docs/VALIDATION.md` 文件头日期
 - `LIMITATIONS.md` 文件头日期
 - `docs/archive/design/audit-design.md` 文件头日期
 - `docs/archive/design/daemon-design.md` 文件头日期
