@@ -156,7 +156,7 @@ a-verify      → A 验证修复结果，判定本轮是否 PASS
 | reviewer 每轮都驳回 | 审查标准太严 | 改 `SKILL/agents/reviewer/SKILL.md` 的判定标准 |
 | API key 报 401 | key 过期或额度耗尽 | 去对应厂商控制台检查 key 状态和余额 |
 | usage.jsonl 中 `price_confidence: no-pricing` | 该模型不在 `MODEL_PRICING` 表里 | 查阅厂商官方定价页，在 driver 内补上 |
-| a-consolidate 产物为空或降级 | maxTokens 截断（合并步骤输出超长） | 确认 STEPS 中 a-consolidate 的 maxTokens=32000（见 LESSONS.md §2.3） |
+| a-consolidate 产物为空或降级 | maxTokens 截断（合并步骤输出超长） | 确认 STEPS 中 a-consolidate 的 maxTokens=32000（见 lessons/models.md） |
 | sofagent-audit 命令未找到 | 底座没装 | `bash install.sh` |
 
-> 📖 详细设计见 `FORGE/SKILL/fresh-eyes-loop/loop.md`（循环协议）和 `FORGE/LESSONS.md`（Sub-Agent 开发参照标准）。
+> 📖 详细设计见 `FORGE/SKILL/fresh-eyes-loop/loop.md`（循环协议）和 `FORGE/lessons/index.md`（Sub-Agent 开发参照标准）。

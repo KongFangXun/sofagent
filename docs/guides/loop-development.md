@@ -2,7 +2,7 @@
 
 > **想给 FORGE 加新 loop？这份文档告诉你怎么搭。** 从 driver 脚本结构到三个必踩的坑，每条都来自真实 debug 会话。
 >
-> v1.2.4 · 2026-08-02（UTC）
+> v1.2.5 · 2026-08-02（UTC）
 
 <img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -29,7 +29,7 @@ const agent = createReactAgent({ llm: model, tools, prompt: systemPrompt });
 
 这一行替代了 deepagents 的 `createDeepAgent({ middleware, subagents })` 全套——更简单、更可控、不崩。
 
-> 完整踩坑记录（为什么从 deepagents 迁移到 LangGraph）见 [FORGE/LESSONS.md](../../FORGE/LESSONS.md)。
+> 完整踩坑记录（为什么从 deepagents 迁移到 LangGraph）见 [FORGE/lessons/index.md](../../FORGE/lessons/index.md)。
 
 ---
 
@@ -444,6 +444,6 @@ FORGE/SKILL/fresh-eyes-loop/
 
 ---
 
-> **完整踩坑记录**（11 个坑 + 修复时间线）见 [FORGE/LESSONS.md](../../FORGE/LESSONS.md)。
+> **完整踩坑记录**（11 个坑 + 修复时间线）见 [FORGE/lessons/index.md](../../FORGE/lessons/index.md)。
 >
 > **跨 run 运行历史**（永久索引）见 [FORGE/LEDGER.md](../../FORGE/LEDGER.md)。

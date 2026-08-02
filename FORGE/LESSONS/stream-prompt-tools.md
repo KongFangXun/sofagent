@@ -1,6 +1,6 @@
 # 五~八、Stream 迁移 / Prompt 设计 / 工具开发 / 可观测性
 
-> [← 返回索引](../LESSONS.md)
+> [← 返回索引](./index.md)
 
 ---
 

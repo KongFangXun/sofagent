@@ -1,6 +1,6 @@
 # 一、架构设计原则
 
-> [← 返回索引](../LESSONS.md)
+> [← 返回索引](./index.md)
 
 ### 框架选型：createReactAgent，禁用 createDeepAgent
 

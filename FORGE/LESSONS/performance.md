@@ -1,6 +1,6 @@
 # 三、性能优化基线（v1.2.5+）
 
-> [← 返回索引](../LESSONS.md)
+> [← 返回索引](./index.md)
 
 ### 上下文管理：三层裁剪（截断 + stateModifier + preModelHook）
 

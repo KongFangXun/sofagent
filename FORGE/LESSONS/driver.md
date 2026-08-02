@@ -1,6 +1,6 @@
 # 四、Driver 编排规范
 
-> [← 返回索引](../LESSONS.md)
+> [← 返回索引](./index.md)
 
 ### recursionLimit 按步骤区分
 

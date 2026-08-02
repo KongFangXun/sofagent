@@ -45,7 +45,7 @@ deepagents FilesystemMiddleware 提供的内置工具：
   read_file, write_file, edit_file, glob, grep, execute
 
 sofagent ENGINEER_TOOLS 已包含的自定义工具（tools.ts）：
-  sf_read    → 等价 read_file（改名避开 BUILTIN 冲突，见 LESSONS.md 坑 3）
+  sf_read    → 等价 read_file（改名避开 BUILTIN 冲突，见 lessons/index.md 坑 3）
   sf_write   → 等价 write_file
   sf_edit    → 等价 edit_file
   search_code → 等价 glob+grep（grep -rn 实现）
