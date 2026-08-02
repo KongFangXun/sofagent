@@ -23,9 +23,9 @@ echo ""
 echo "=== 1b. 全仓相对路径死链扫描（维度 306）==="
 # 遍历所有 .md，提取 markdown 链接并校验目标文件是否存在。
 # 排除项说明：
-#   - 本段是"全仓死链扫描"，排除的是【不产出文档链接的目录】：
+#   - 本段是"全仓死链扫描"（阻断），排除的是【不产出文档链接的目录】：
 #     node_modules/.workbuddy/.sofagent/（非文档）、docs/changelog（历史冻结）、
-#     docs/archive + FORGE/archive（归档）、commercial（商务）
+#     docs/archive + FORGE/archive（归档·冻结历史，改由下方"归档区告警扫描"非阻断覆盖）、commercial（商务）
 #   - 🔴 v1.2.5 P0-13/P0-14：docs/evidence 不再排除！此前 evidence/ 的 12 条死链
 #     因排除而漏检（假绿根因之一）。evidence/ 是核心证据文档，链接必须纳入检查。
 #   - SKILL/harness 排除：harness 模板含运行时动态路径占位（非真实链接）
@@ -77,6 +77,40 @@ if [ "$DEAD_LINKS" -gt 0 ]; then
   ERRORS=$((ERRORS + 1))
 else
   echo "  全仓相对路径死链: 0"
+fi
+
+# 归档区告警扫描（非阻断）——docs/archive + FORGE/archive 是冻结历史，链接腐烂不阻断发版，
+# 但必须可见。v1.2.5 教训：archive 排除 = 死链盲区（planning 文件指向已删的 ROADMAP 锚点
+# CI 永远抓不到）。此处只告警不计 ERRORS，保持归档冻结性的同时消除盲区。
+ARCHIVE_DEAD=0
+ARCHIVE_DETAIL=""
+while IFS= read -r -d '' mdfile; do
+  in_fence=0
+  while IFS= read -r line; do
+    if [[ "$line" =~ ^[[:space:]]*\`\`\` ]] || [[ "$line" =~ ^[[:space:]]*~~~ ]]; then
+      in_fence=$((1 - in_fence)); continue
+    fi
+    [ "$in_fence" -eq 1 ] && continue
+    targets=$(printf '%s\n' "$line" | grep -oE '\]\(([^)]+)\)' | sed -E 's/^\]\(//; s/\)$//' || true)
+    for target in $targets; do
+      case "$target" in ''|'#'*|'http://'*|'https://'*|'mailto:'*) continue ;; esac
+      path_part="${target%%#*}"
+      [ -z "$path_part" ] && continue
+      case "$path_part" in *'://'*|*'/vX.Y'*|*'vX.Y.Z'*|*'vX.Y.md'*) continue ;;
+        /*) resolved=".${path_part}" ;; *) resolved="$(dirname "$mdfile")/$path_part" ;; esac
+      resolved="${resolved%/}"
+      resolved="$(cd "$(dirname "$resolved")" >/dev/null 2>&1 && echo "$(pwd)/$(basename "$resolved")" || echo "$resolved")"
+      if [ ! -e "$resolved" ]; then
+        ARCHIVE_DEAD=$((ARCHIVE_DEAD + 1))
+        ARCHIVE_DETAIL="${ARCHIVE_DETAIL}  ${mdfile}: ${target}\n"
+      fi
+    done
+  done < "$mdfile"
+done < <(find docs/archive FORGE/archive -name "*.md" -print0 2>/dev/null)
+if [ "$ARCHIVE_DEAD" -gt 0 ]; then
+  echo "  ⚠ 归档区死链: ${ARCHIVE_DEAD} 处（冻结历史，不阻断发版，仅供参考）"
+else
+  echo "  归档区死链: 0"
 fi
 
 echo ""
