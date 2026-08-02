@@ -19,12 +19,13 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { loadEnvConfig } from '@sofagent/core';
+import type { KnowledgeQueryResult, FederationResult, MergedKnowledge } from '@sofagent/core';
 
-/** 注入的合并函数签名（与 daemon mergeFederationResults 对齐） */
+/** 注入的合并函数签名（P1-3: 与 core mergeFederationResults 类型对齐——静态 import 后不再 any） */
 export type MergeFn = (
-  local: Array<{ id: string; [key: string]: unknown }>,
-  remote: Array<{ peerId: string; results: Array<{ id: string; [key: string]: unknown }> }>,
-) => Array<{ id: string; source: string; [key: string]: unknown }>;
+  local: KnowledgeQueryResult[],
+  remote: FederationResult[],
+) => MergedKnowledge[];
 
 /** federation-distill CLI 参数 */
 export interface FederationDistillArgs {
@@ -76,11 +77,11 @@ export function runFederationDistillCli(
   }
 
   // 2. 从各对端设备加载知识（从 USB/配对通道已同步的数据）
-  const remote: Array<{ peerId: string; results: typeof local }> = [];
+  const remote: FederationResult[] = [];
   for (const peerId of args.peers) {
     const peerData = loadPeerKnowledge(peerId, env.dataDir);
     if (peerData.length > 0) {
-      remote.push({ peerId, results: peerData });
+      remote.push({ peerId, results: peerData, warnings: [] });
     }
   }
 
@@ -179,9 +180,9 @@ export function runFederationDistillCli(
  */
 function loadLocalKnowledge(
   projectDir: string,
-): Array<{ id: string; [key: string]: unknown }> {
+): KnowledgeQueryResult[] {
   const knowledgeDir = join(projectDir, '.sofagent', 'knowledge');
-  const items: Array<{ id: string; [key: string]: unknown }> = [];
+  const items: KnowledgeQueryResult[] = [];
 
   if (!existsSync(knowledgeDir)) return items;
 
@@ -195,7 +196,8 @@ function loadLocalKnowledge(
       entries = readdirSync(subdirAbs).filter(
         (n: string) => n.endsWith('.md') && n !== 'index.md',
       );
-    } catch {
+    } catch (err) {
+      console.warn(`[sofagent] 读取本地 knowledge 子目录失败（跳过）: ${subdirAbs} → ${err instanceof Error ? err.message : String(err)}`);
       continue;
     }
 
@@ -206,14 +208,14 @@ function loadLocalKnowledge(
         const id = `${subdir}/${slug}`;
         items.push({
           id,
-          slug,
-          subdir,
+          title: slug,
+          sensitivity: 'internal',
           trust: 'internal',
           mtime: Date.now(),
           content: content.slice(0, 500), // 只取摘要
         });
-      } catch {
-        // skip
+      } catch (err) {
+        console.warn(`[sofagent] 读取本地 knowledge 页面失败（跳过）: ${subdirAbs}/${name} → ${err instanceof Error ? err.message : String(err)}`);
       }
     }
   }
@@ -230,9 +232,9 @@ function loadLocalKnowledge(
 function loadPeerKnowledge(
   peerId: string,
   dataDir: string,
-): Array<{ id: string; [key: string]: unknown }> {
+): KnowledgeQueryResult[] {
   const peerDir = join(dataDir, 'federation', 'peers', peerId, 'knowledge');
-  const items: Array<{ id: string; [key: string]: unknown }> = [];
+  const items: KnowledgeQueryResult[] = [];
 
   if (!existsSync(peerDir)) return items;
 
@@ -246,7 +248,8 @@ function loadPeerKnowledge(
       entries = readdirSync(subdirAbs).filter(
         (n: string) => n.endsWith('.md') && n !== 'index.md',
       );
-    } catch {
+    } catch (err) {
+      console.warn(`[sofagent] 读取 peer 知识子目录失败（跳过）: ${subdirAbs} → ${err instanceof Error ? err.message : String(err)}`);
       continue;
     }
 
@@ -257,14 +260,14 @@ function loadPeerKnowledge(
         const id = `${subdir}/${slug}`;
         items.push({
           id,
-          slug,
-          subdir,
-          trust: 'peer',
+          title: slug,
+          sensitivity: 'internal',
+          trust: 'user',
           mtime: Date.now(),
           content: content.slice(0, 500),
         });
-      } catch {
-        // skip
+      } catch (err) {
+        console.warn(`[sofagent] 读取 peer 知识页面失败（跳过）: ${subdirAbs}/${name} → ${err instanceof Error ? err.message : String(err)}`);
       }
     }
   }

@@ -6,6 +6,7 @@
 import type { DiffFile } from '@sofagent/core';
 import type { LogEntry } from '@sofagent/core';
 import type { AuditConfig } from '@sofagent/core';
+import { BASELINE_RULE_NUMBERS } from '@sofagent/core';
 import type { AuditContext, RuleCheck, Rule } from './types';
 import { loadHistory } from '../audit-history';
 import type { AuditHistoryEntry } from '../audit-history';
@@ -27,8 +28,9 @@ import { defaultRules, rules } from './index';
 /**
  * 基线规则——安全底线，不可通过 config.yml 关闭。
  * 即使 config.rules.a1 = false，A1 仍然生效。
+ * P1-6: 单一事实源 = @sofagent/core BASELINE_RULE_KEYS（a1/a2/a9/a10/a11）
  */
-const BASELINE_RULE_NUMBERS = new Set([1, 2, 9, 10, 11]); // A1 敏感文件, A2 密钥泄漏, A9 注入防御, A10 恶意来源依赖, A11 资源滥用
+// 注：数字编号由 BASELINE_RULE_KEYS 派生，避免与 config-loader 的 key 集合漂移
 
 export interface AuditResult {
   rules: RuleCheck[];

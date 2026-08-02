@@ -30,6 +30,8 @@ import { createInterface } from 'readline';
 import { parseDiff, parseStagedDiff, isInGitRepo, type DiffFile } from '@sofagent/core';
 import { loadConfig, ConfigLoadError, ConfigParseError } from '@sofagent/core';
 import { VERSION } from '@sofagent/core';
+import { BASELINE_RULE_KEYS } from '@sofagent/core';
+import { checkConflict, mergeFederationResults } from '@sofagent/core';
 import { resolveDiffEndpoint } from './diff-ref';
 import { checkLogs } from '@sofagent/core';
 import { createShadowRepo, commitSnapshot, hasShadowRepo } from '@sofagent/core';
@@ -597,16 +599,12 @@ async function main(): Promise<void> {
     const { runConflictCheckCli, parseConflictCheckArgs } = await import('./cli/conflict-check');
     const cliArgs = parseConflictCheckArgs(rawArgs);
     try {
-      // 动态 import daemon 的 checkConflict（分层边界：参数注入避免反向依赖）
-      // 用变量名规避 TypeScript 模块解析（audit 不声明 daemon 依赖）
-      const daemonModuleName = '@sofagent/daemon';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const daemon: any = await import(/* @vite-ignore */ daemonModuleName);
-      const exitCode = runConflictCheckCli(cliArgs, daemon.checkConflict);
+      // P1-3: checkConflict 已下沉到 core——静态 import，类型安全（此前 any + 变量名动态 import）
+      const exitCode = runConflictCheckCli(cliArgs, checkConflict);
       exit(exitCode as 0 | 1 | 2);
     } catch (err) {
       console.error(`❌ conflict-check 失败: ${(err as Error).message}`);
-      console.error('   提示：conflict-check 需要 @sofagent/daemon 包（npm install @sofagent/daemon）');
+      console.error('   提示：conflict-check 需要 knowledge/ 目录存在（运行 --init 创建）');
       exit(1);
     }
   }
@@ -616,12 +614,8 @@ async function main(): Promise<void> {
     const { runFederationDistillCli, parseFederationDistillArgs } = await import('./cli/federation-distill');
     const cliArgs = parseFederationDistillArgs(rawArgs);
     try {
-      // 动态 import daemon 的 mergeFederationResults（分层边界：参数注入）
-      // 用变量名规避 TypeScript 模块解析（audit 不声明 daemon 依赖）
-      const daemonModuleName = '@sofagent/daemon';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const daemon: any = await import(/* @vite-ignore */ daemonModuleName);
-      const exitCode = runFederationDistillCli(cliArgs, daemon.mergeFederationResults);
+      // P1-3: mergeFederationResults 已下沉到 core——静态 import，类型安全
+      const exitCode = runFederationDistillCli(cliArgs, mergeFederationResults);
       exit(exitCode as 0 | 1 | 2);
     } catch (err) {
       console.error(`❌ federation-distill 失败: ${(err as Error).message}`);
@@ -771,15 +765,19 @@ async function main(): Promise<void> {
   }
 
   // 4.3 配置完整性检查：检测 config.yml 中是否关闭了过多规则（防篡改）
+  let configDisabledTooMany = false;
   if (config?.rules) {
     const ALL_RULE_KEYS = ['a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a14','a15','a16','a17','a18','a19','e1','e2','e3','e4'];
-    const BASELINE_KEYS = new Set(['a1','a2','a9','a10','a11']);
+    // P1-6: 基线规则集合与 core 共享常量统一（单一事实源）
+    const BASELINE_KEYS = new Set<string>(BASELINE_RULE_KEYS);
     const disabledCount = Object.entries(config.rules)
       .filter(([key, val]) => val === false && !BASELINE_KEYS.has(key) && ALL_RULE_KEYS.includes(key))
       .length;
     const totalActive = ALL_RULE_KEYS.length;
     if (disabledCount > 3) {
       console.warn(`\u26a0\ufe0f  当前有 ${disabledCount} 条规则被关闭（默认 ${totalActive} 条中仅 ${totalActive - disabledCount} 条生效）。如果这不是你主动配置的，config.yml 可能已被篡改。`);
+      // P1-5: 非基线规则全关 → 阻断（exit 1 WARN），不再「全绿 PASS」
+      configDisabledTooMany = true;
     }
   }
 
@@ -796,6 +794,11 @@ async function main(): Promise<void> {
   // 5. 运行规则
   const results = runRules(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config);
 
+  // P1-5: 非基线规则全关（disabledCount>3）→ 阻断（exit 1 WARN）
+  if (configDisabledTooMany && results.exitCode === 0) {
+    results.exitCode = 1;
+  }
+
   // 6. 输出结果
   if (permissionDenials.length > 0) {
     results.permissionDenials = permissionDenials;
@@ -810,6 +813,10 @@ async function main(): Promise<void> {
       console.log(`       - ${p}`);
     }
     console.log('       可能为二进制/lock/minified 文件，请人工确认这些文件无密钥泄漏/越界改动。');
+  }
+  // P1-1: 超大 diff 审计盲区 → exit=1（WARN 而非 0），「13 项检查 PASS」不再误导
+  if (oversizedPaths.length > 0 && results.exitCode === 0) {
+    results.exitCode = 1;
   }
 
   printResults(results, diffFiles, args.json, args.ci, args.silent);
@@ -919,7 +926,8 @@ async function main(): Promise<void> {
   // 审计通过（PASS）后自动创建 shadow repo 快照，供 --timeline/--revert 使用
   // 设计原则：只有 PASS 才快照（WARN/FAIL 不快照，符合「审计通过后自动快照」契约）
   // v1.2.0：snapshot helpers 已从 @sofagent/daemon 迁移到 @sofagent/core，循环依赖已消除
-  if (results.exitCode !== 2 && isInGitRepo()) {
+  // P1-14: 拦截后也存 snapshot——拦截记录比通过记录更有审计价值（--timeline 应可见被拦截的变更）
+  if (isInGitRepo()) {
     try {
       if (!hasShadowRepo(process.cwd())) {
         createShadowRepo(process.cwd());
@@ -1004,7 +1012,16 @@ function getHistoryStats(): { total: number; thisMonth: number } | null {
 export function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean, ci: boolean, silent?: boolean): void {
   // JSON 输出模式——输出结构化 JSON，适合 CI 系统解析
   if (json) {
-    console.log(JSON.stringify({ exitCode: results.exitCode, rules: results.rules }, null, 2));
+    // P1-13: JSON 顶层补产品签名——此前只有 exitCode+rules，CI/CD 无法区分 sofagent 产出
+    console.log(JSON.stringify({
+      engine: 'sofagent-audit',
+      version: VERSION,
+      verdict: results.exitCode === 0 ? 'PASS' : results.exitCode === 1 ? 'WARN' : 'FAIL',
+      timestamp: new Date().toISOString(),
+      signature: productSignature(results.exitCode, results.rules.length),
+      exitCode: results.exitCode,
+      rules: results.rules,
+    }, null, 2));
     return;
   }
 
@@ -1140,11 +1157,13 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   }
 
   // 失败时输出"下一步"指引
+  // P1-7: 移除「git commit --no-verify」教程式绕过提示——审计引擎不应教用户关掉自己。
+  // 如需临时跳过请咨询安全管理员并在 CI 侧补审。
   if (exitCode > 0) {
     console.log('');
     console.log('  ┌─ 下一步 ─────────────────────────────────────────────┐');
     console.log('  │ 1. 修复上述问题后重新 git add + git commit            │');
-    console.log('  │ 2. 如需临时跳过（不推荐）：git commit --no-verify     │');
+    console.log('  │ 2. 如确需临时跳过，请咨询安全管理员并在 CI 侧补审     │');
     console.log('  │ 3. 查看完整文档：sofagent-audit --help                │');
     console.log('  └──────────────────────────────────────────────────────┘');
   }

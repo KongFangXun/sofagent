@@ -26,5 +26,8 @@
     "!dist/**/*.d.ts.map",
     "!dist/**/*.test.*",
     "README.md"
-  ]
+  ],
+  "dependencies": {
+    "@sofagent/core": "^1.2.4"
+  }
 }

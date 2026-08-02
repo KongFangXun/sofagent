@@ -64,8 +64,11 @@ export function getEnvFingerprint(dataDir?: string): string {
 /**
  * HMAC 密钥路径（v1.1.8+）
  * 来自 ~/.sofagent-key（建议 chmod 600，Agent 默认不读取）。
+ * P1-4: 支持 SOFAGENT_KEY_PATH 环境变量覆盖（测试隔离用，避免测试触碰真实密钥）。
  */
-const SOFAGENT_KEY_PATH = join(homedir(), '.sofagent-key');
+function getSofagentKeyPath(): string {
+  return process.env.SOFAGENT_KEY_PATH || join(homedir(), '.sofagent-key');
+}
 
 /**
  * 读取 HMAC 密钥（v1.1.8+）。
@@ -74,8 +77,9 @@ const SOFAGENT_KEY_PATH = join(homedir(), '.sofagent-key');
  */
 export function getHmacKey(): string | null {
   try {
-    if (!existsSync(SOFAGENT_KEY_PATH)) return null;
-    return readFileSync(SOFAGENT_KEY_PATH, 'utf-8').trim();
+    const keyPath = getSofagentKeyPath();
+    if (!existsSync(keyPath)) return null;
+    return readFileSync(keyPath, 'utf-8').trim();
   } catch (err) {
     console.error('[audit-history] 读取 HMAC 密钥失败:', err);
     return null;

@@ -1,18 +1,8 @@
 // ============================================================
-// inspectors/types.ts · 巡检器共享类型
-// v1.2.0 新增
+// inspectors/types.ts · 巡检器共享类型（re-export shim · P1-3）
+// v1.2.5 P1-3: InspectorResult/InspectorConfig 下沉到 @sofagent/core/federation.ts，
+//   本文件 re-export 保持 daemon 全部 inspector 的既有 import 兼容。
 // ============================================================
 
-/** 巡检器配置 */
-export interface InspectorConfig {
-  enabled: boolean;
-  schedule: '@daily' | '@weekly' | '@monthly';
-}
-
-/** 巡检结果 */
-export interface InspectorResult {
-  name: string;
-  triggered: boolean;
-  message: string;
-  severity: 'info' | 'warning' | 'critical';
-}
+export { InspectorConfig, InspectorResult } from '@sofagent/core';
+export type { InspectorResult as InspectorResultType } from '@sofagent/core';

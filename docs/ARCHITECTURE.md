@@ -706,7 +706,7 @@ v1.0.8+ daemon 监控文件变更，非开发者也能用审计：
 |------|------|------|
 | 触发 | 用户主动 commit | daemon 自动检测 |
 | 拦截 | ✅ 阻断 commit | ❌ 事后告警（已改完） |
-| 需要 git | ✅ | ❌ 内嵌 isomorphic-git |
+| 需要 git | ✅ | ❌ 自研 git-shadow diff 解析（isomorphic-git 风格，非内嵌第三方包） |
 
 事后审计是平台无关性的前提——实时拦截需深度集成平台，一旦集成丧失第三方独立性。v1.0.8 daemon 让事后审计达到准实时（fs.watch → 2 秒防抖 → 立即审计）。因此**实时拦截 / 运行时治理仅限 sofagent 自派 SubAgent**（sofagent 起环境又发凭证、天然拥有执行边界）；主 Agent 由第三方平台运行，sofagent 不进其执行环，保持事后审计（详见 ROADMAP「范围铁律」）。
 
