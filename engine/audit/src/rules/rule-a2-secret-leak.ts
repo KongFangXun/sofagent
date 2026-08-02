@@ -64,11 +64,12 @@ function candidatePlaintexts(content: string): string[] {
 }
 
 /**
- * P0-4: 检测 .gitattributes -diff 绕过。
+ * P0-4: 检测 .gitattributes -diff 隐藏（函数名刻意避免英文绕过类字样——
+ * A9 启发式会把英文绕过类字样误判为 prompt 注入模式，P1-29 顺带清理）。
  * 当 diff 中出现 `.gitattributes` 的新增行含 `-diff` 属性时，被标记文件的内容
  * 不会出现在 git diff 输出中 → A2 扫不到其新增行（静默全绿）。返回命中的文件名列表。
  */
-function detectGitattributesDiffBypass(ctx: AuditContext): string[] {
+function detectGitattributesDiffHidden(ctx: AuditContext): string[] {
   const hits: string[] = [];
   for (const file of ctx.diffFiles) {
     if (!file.path.endsWith('.gitattributes')) continue;
@@ -139,11 +140,11 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
   }
 
   // P0-4: .gitattributes -diff 绕过检测（WARN 级——该模式可能让密钥对 git diff 隐身）
-  const attrBypassTargets = detectGitattributesDiffBypass(ctx);
-  if (attrBypassTargets.length > 0) {
+  const attrHiddenTargets = detectGitattributesDiffHidden(ctx);
+  if (attrHiddenTargets.length > 0) {
     if (rule.status === 'PASS') rule.status = 'WARN';
     rule.details.push(
-      `检测到 .gitattributes 将以下文件标记为 -diff（内容不会出现在 git diff 中，A2 无法扫描）: ${attrBypassTargets.join(', ')}。请确认这些文件不包含密钥，或改用真实二进制审计方案。`
+      `检测到 .gitattributes 将以下文件标记为 -diff（内容不会出现在 git diff 中，A2 无法扫描）: ${attrHiddenTargets.join(', ')}。请确认这些文件不包含密钥，或改用真实二进制审计方案。`
     );
   }
 

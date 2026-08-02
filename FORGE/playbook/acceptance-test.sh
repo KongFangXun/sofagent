@@ -36,6 +36,13 @@ scenario() {
   if [ -n "$TMP_REPO" ] && [ -d "$TMP_REPO" ]; then cd "$TMP_REPO" 2>/dev/null || true; git reset --hard HEAD 2>/dev/null || true; git rm --cached -f .env 2>/dev/null || true; rm -f .env 2>/dev/null || true; fi
   echo ""; echo -e "${CYAN}━━━ 场景 $1: $2 ━━━${NC}"
 }
+# P1-37(补充): --init 在真实 HOME 跑会写 ~/.sofagent-key（P1-24 自动生成）与
+# ~/Library/LaunchAgents（daemon 注册）——用临时 HOME 隔离，不碰真实 HOME。
+init_isolated() { # 用法: init_isolated <command...>
+  local iso_home; iso_home=$(mktemp -d /tmp/sofagent-init-home-XXXX)
+  HOME="$iso_home" "$@"
+  rm -rf "$iso_home"
+}
 git_log_has() { set +o pipefail; git log --oneline 2>/dev/null | grep -q "$1"; local rc=$?; set -o pipefail; return $rc; }
 pass() { echo -e "${GREEN}  ✅ PASS${NC}"; PASSED=$((PASSED + 1)); }
 fail() { echo -e "${RED}  ❌ FAIL: $1${NC}"; FAILED=$((FAILED + 1)); }
@@ -74,7 +81,7 @@ $CLI --install-hook > /dev/null 2>&1
 scenario 2 "--init 一键初始化"
 # 注意：不用 | head -10——管道关闭会 SIGPIPE node 进程，在 set -o pipefail 下可能导致脚本退出
 # 改为静默运行 + 文件检查（--init 的输出不重要，重要的是文件是否生成）
-$CLI --init > /dev/null 2>&1 || true
+init_isolated $CLI --init > /dev/null 2>&1 || true
 INIT_OK=true; [ ! -f "$TMP_REPO/.sofagent/config.yml" ] && INIT_OK=false && fail ".sofagent/config.yml 未生成"
 [ ! -f "$TMP_REPO/.git/hooks/commit-msg" ] && INIT_OK=false && fail "commit-msg hook 未安装"
 [ ! -f "$TMP_REPO/.git/hooks/post-commit" ] && INIT_OK=false && fail "post-commit hook 未安装"
@@ -502,7 +509,7 @@ if [ -n "$_WATCH_YML" ]; then
 else fail "watch.yml 不存在（已检查 .sofagent/ 和 ~/.sofagent/）"; fi
 scenario 51 "A18 垃圾文件检测（单字母 + tmp 前缀）"
 A18_TEST_DIR=$(mktemp -d /tmp/sofagent-a18-XXXX); cd "$A18_TEST_DIR"
-git init --quiet && git config user.email "t@t.com" && git config user.name "T"; $CLI --init > /dev/null 2>&1
+git init --quiet && git config user.email "t@t.com" && git config user.name "T"; init_isolated $CLI --init > /dev/null 2>&1
 mkdir -p .sofagent; printf 'audit:\n  extendedRulesEnabled: true\n' > .sofagent/config.yml
 echo "junk" > a.txt; echo "junk" > tmp.test.ts; git add a.txt tmp.test.ts 2>/dev/null
 A18_OUT=$(git commit -m "add junk files" 2>&1 || true)
@@ -510,7 +517,7 @@ echo "$A18_OUT" | grep -q "A18\|垃圾文件" && pass || fail "A18 未告警垃�
 cd "$PROJECT_ROOT" && rm -rf "$A18_TEST_DIR"
 scenario 52 "A18 豁免规则（正规测试文件不误报）"
 A18_EXEMPT_DIR=$(mktemp -d /tmp/sofagent-a18-exempt-XXXX); cd "$A18_EXEMPT_DIR"
-git init --quiet && git config user.email "t@t.com" && git config user.name "T"; $CLI --init > /dev/null 2>&1
+git init --quiet && git config user.email "t@t.com" && git config user.name "T"; init_isolated $CLI --init > /dev/null 2>&1
 mkdir -p .sofagent; printf 'audit:\n  extendedRulesEnabled: true\n' > .sofagent/config.yml
 mkdir -p src; echo "test" > src/foo.test.ts; echo "test" > src/bar.spec.ts; git add src/ 2>/dev/null
 A18_EXEMPT_OUT=$(git commit -m "add real test files" 2>&1 || true)
@@ -858,7 +865,7 @@ fi
 $S99_OK && pass
 S100_OK=true; S100_REPO=$(mktemp -d /tmp/sofagent-s100-XXXXXX); cd "$S100_REPO"
 git init --quiet; git config user.email "s100@test.com"; git config user.name "S100"
-node "$AUDIT_DIR/dist/index.js" --init > /dev/null 2>&1
+init_isolated node "$AUDIT_DIR/dist/index.js" --init > /dev/null 2>&1
 echo "# base" > README.md; git add README.md
 GIT_EDITOR=true git commit --quiet -m "base commit for action governance test" 2>&1 || true
 echo "# modified content" > README.md; git add README.md

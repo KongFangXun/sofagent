@@ -170,6 +170,12 @@ export function checkRuleA3(ctx: AuditContext): RuleCheck {
     .split(/[\s,，。、；;:：()（）+]+/)
     .filter((w) => w.length >= 3 && !STOP_WORDS.has(w));
 
+  // P1-29: 短中文 commit（<10 字符且含中文）不触发盲改告警——
+  // 中文短句通常不含文件名/路径（如「修复bug」「改配置」），A3 关键词匹配
+  // 必然失败 → 对任意文件变更 100% 误报（本项目历史 13.9% commit 被标 [底线]）。
+  const cjkCount = (searchText.match(/[\u4e00-\u9fff]/g) ?? []).length;
+  const isShortChineseTask = cjkCount > 0 && searchText.trim().length < 10;
+
   const unexpectedFiles: string[] = [];
 
   for (const file of diffFiles) {
@@ -203,7 +209,7 @@ export function checkRuleA3(ctx: AuditContext): RuleCheck {
     return !allLowRiskPatterns.some((p) => p.test(name));
   }).length;
 
-  if (totalFiles > 0 && unexpectedFiles.length > totalFiles * threshold) {
+  if (!isShortChineseTask && totalFiles > 0 && unexpectedFiles.length > totalFiles * threshold) {
     rule.status = 'WARN';
     rule.details.push(
       `${unexpectedFiles.length}/${totalFiles} 个文件不在任务描述 ("${task}") 范围内: ${unexpectedFiles.slice(0, 3).join(', ')}${unexpectedFiles.length > 3 ? ` 等` : ''}`

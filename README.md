@@ -169,6 +169,10 @@ sofagent-dashboard --full    # 展开完整视图
 > **前提**：开发者路径请在 git 仓库根目录下执行。如果还没有仓库，先运行 `git init`。
 
 ```bash
+# 第 0 步：获取仓库（P1-33：安装入口前置，陌生人不再卡在"在哪 clone"）
+git clone https://github.com/KongFangXun/sofagent.git && cd sofagent
+# 或：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/install.sh | bash
+
 bash install.sh          # 安装（自动检测 shell 配置文件，装完新开终端或 source）
 sofagent-audit --init    # 初始化（装 git hook）
 sofagent-audit --doctor  # 验证环境是否就绪（可选但推荐）
