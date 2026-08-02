@@ -49,7 +49,7 @@ FDE 支持两种使用方式——根据你的需求选择：
 ## 深入了解
 
 - 📖 **完整方法论手册**：[GUIDE.md](./GUIDE.md)（半天精读，读完能独立做 FDE + 判断客户成熟度）
-- 🤖 **给 AI 用的操作手册**：[SKILL/SKILL.md](../SKILL/SKILL.md)（唯一主入口，含阶段路由 + 浓缩兜底）
-- 🔗 **激活链设计**：[docs/guides/fde-activation-chain.md](../docs/guides/fde-activation-chain.md)（v1.2.5+：交付物 → 企业工作流自动运转）
-- 🏗️ **架构原理**：[docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)（能力底座 × 生命周期双层架构）
+- 🤖 **给 AI 用的操作手册**：SKILL.md（唯一主入口，含阶段路由 + 浓缩兜底；仓库路径 SKILL/SKILL.md，FDE 独立部署时随包分发）
+- 🔗 **激活链设计**：docs/guides/fde-activation-chain.md（v1.2.5+：交付物 → 企业工作流自动运转；仓库内路径，FDE 独立部署时不随包分发）
+- 🏗️ **架构原理**：docs/ARCHITECTURE.md（能力底座 × 生命周期双层架构；仓库内路径，FDE 独立部署时不随包分发）
 - 🧭 **交付物模板**：[templates/](./templates/)（企业画像 + 部署方案 + 节点文档 + Skill 模板）

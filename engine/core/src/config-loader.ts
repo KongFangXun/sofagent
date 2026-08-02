@@ -26,6 +26,7 @@ import { atomicWriteSync } from './shared/atomic-write';
 import { getHmacKey, stableStringify } from './audit-history';
 import { getConfigFile } from './data-paths';
 import { BASELINE_RULE_KEYS } from './shared/rule-constants';
+import { resolveEnvBool, resolveEnvNumber } from './shared/env';
 
 /**
  * 审计配置——由 .sofagent/config.yml 加载
@@ -588,23 +589,11 @@ function resolveDataDir(home: string): string {
   return join(process.cwd(), '.sofagent');
 }
 
-/**
- * 读取布尔环境变量（P2-3：支持主名 + 别名，主名优先）。
- * @param key 当前命名（SOFAGENT_*）
- * @param legacyKey 向后兼容别名（SOFA_*）
- */
+// P2-36: 布尔/数字环境变量读取统一走 shared/env（SOFAGENT_* 主名 + SOFA_* 别名兜底）
 function resolveBoolEnv(key: string, legacyKey: string | null, defaultValue: boolean): boolean {
-  const val = process.env[key] ?? (legacyKey ? process.env[legacyKey] : undefined);
-  if (val === undefined || val === '') return defaultValue;
-  return val.toLowerCase() === 'true' || val === '1' || val.toLowerCase() === 'yes';
+  return resolveEnvBool(key, legacyKey ?? undefined, defaultValue);
 }
 
-/**
- * 读取数字环境变量（P2-3：支持主名 + 别名，主名优先）。
- */
 function resolveNumberEnv(key: string, legacyKey: string | null, defaultValue: number): number {
-  const val = process.env[key] ?? (legacyKey ? process.env[legacyKey] : undefined);
-  if (val === undefined || val === '') return defaultValue;
-  const num = parseInt(val, 10);
-  return isNaN(num) ? defaultValue : num;
+  return resolveEnvNumber(key, legacyKey ?? undefined, defaultValue);
 }

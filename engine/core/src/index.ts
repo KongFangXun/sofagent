@@ -17,6 +17,9 @@ export type { BaselineRuleKey } from './shared/rule-constants';
 // ── P1-27: 密钥检测正则单一事实源（A2 + ToolGate 共用）──
 export { SECRET_PATTERNS } from './shared/secret-patterns';
 
+// ── P2-36: 环境变量统一读取（SOFAGENT_* 主名 + 旧名别名兜底）──
+export { resolveEnvVar, resolveEnvBool, resolveEnvNumber } from './shared/env';
+
 // ── P1-3: 联邦/巡检共用实现（从 daemon 下沉，audit 静态 import）──
 export {
   checkConflict,

@@ -3,7 +3,7 @@
 > v1.2.4 · 孔放勋 · 面向想系统掌握 FDE 方法论的人。读完你能独立做一次 FDE 诊断，并能判断客户的 AI 成熟度。
 > 本文档是学习手册（人读）。给 AI Agent 的操作指令见 `SKILL/SKILL.md` 与 `SKILL/skills/01-05`。
 >
-> **本文档的定位：FDE 诊断方法论。** 它讲清楚一件事——怎么把企业的 workflow 梳理好、判定 AI 节点、交付可运行的交付物。**诊断是起点，不是终点**：诊断交付的 ontology + workflow.yml + skills/ 会通过激活链（v1.2.5+，ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）自动注册为企业 SubAgent、编排成可运行工作流。本文档专注"把诊断做对"，激活链部分见 [激活链设计文档](../docs/guides/fde-activation-chain.md) 和 [5.11 交付之后](#511-交付之后激活链从交付物到自动运转v125-规划中)。
+> **本文档的定位：FDE 诊断方法论。** 它讲清楚一件事——怎么把企业的 workflow 梳理好、判定 AI 节点、交付可运行的交付物。**诊断是起点，不是终点**：诊断交付的 ontology + workflow.yml + skills/ 会通过激活链（v1.2.5+，ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）自动注册为企业 SubAgent、编排成可运行工作流。本文档专注"把诊断做对"，激活链部分见 [5.11 交付之后](#511-交付之后激活链从交付物到自动运转v125-规划中)（完整设计见仓库内 docs/guides/fde-activation-chain.md，FDE 独立部署时不随包分发）。
 
 ---
 
@@ -568,7 +568,7 @@ skills/ + nodes/               →  EXECUTE（v1.2.8-9）: DAG 执行 + HITL 审
 | EXECUTE | v1.2.8-v1.2.9 | dag-runner node-executor + HITL interrupt + 审计集成 + 异常兜底 | 工作流跑起来时自动带审批和审计 |
 | SUSTAIN | v1.3.0 | 全链路验证 + `wrapToolCall` 联动 | 跑完一轮自动反思 + 进化，喂下一轮 |
 
-> **简单说**：现在 FDE 离场后留下的是"图纸 + 说明书"，激活链完成后留下的是"按图纸自动造好且自己跑着的工厂"。现有 `registry.ts` 的动态注册机制（v1.0.8 起支持从 `.sofagent/subagents/*.yml` 加载自定义 Agent）早就铺好了轨道——激活链是往轨道上放车厢。详见 [激活链设计文档](../docs/guides/fde-activation-chain.md)。
+> **简单说**：现在 FDE 离场后留下的是"图纸 + 说明书"，激活链完成后留下的是"按图纸自动造好且自己跑着的工厂"。现有 `registry.ts` 的动态注册机制（v1.0.8 起支持从 `.sofagent/subagents/*.yml` 加载自定义 Agent）早就铺好了轨道——激活链是往轨道上放车厢。详见仓库内 docs/guides/fde-activation-chain.md（FDE 独立部署时不随包分发）。
 
 ---
 
@@ -592,7 +592,7 @@ skills/ + nodes/               →  EXECUTE（v1.2.8-9）: DAG 执行 + HITL 审
 
 > **一句话总结**：FDE 不是拍脑袋发明的方法论——它把 Palantir 的交付纪律、行业对数字员工的操作性定义、国标的本体建模要求，转译成一套企业能用大白话聊完的诊断流程。信它，是因为每一条都有出处可查。
 
-→ 深挖链接：[PHILOSOPHY.md](../docs/PHILOSOPHY.md) · [THANKS.md](../docs/THANKS.md)
+→ 深挖：仓库内 docs/PHILOSOPHY.md · docs/THANKS.md（FDE 独立部署时不随包分发）
 
 ---
 

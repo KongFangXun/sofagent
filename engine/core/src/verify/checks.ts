@@ -5,6 +5,7 @@
 // 从 verify.ts main() 函数中提取的检查逻辑。
 // 每个函数接收 Verifier 实例和上下文参数，调用 v.checkPass/Fail/Warn。
 
+import { resolveEnvVar } from '../shared/env';
 import { existsSync, readFileSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { VERSION } from '../shared/constants.js';
@@ -674,9 +675,10 @@ export function runAllChecks(
 
   // 10.5 默认关闭确认
   {
-    const sofaSanitize = process.env.SOFA_SANITIZE;
-    const sofaAuditEnabled = process.env.SOFA_AUDIT_ENABLED;
-    const sofaCleanupOnRecord = process.env.SOFA_CLEANUP_ON_RECORD;
+    // P2-36: SOFAGENT_* 主名优先，SOFA_* 别名兜底
+    const sofaSanitize = resolveEnvVar('SOFAGENT_SANITIZE', 'SOFA_SANITIZE');
+    const sofaAuditEnabled = resolveEnvVar('SOFAGENT_AUDIT_ENABLED', 'SOFA_AUDIT_ENABLED');
+    const sofaCleanupOnRecord = resolveEnvVar('SOFAGENT_CLEANUP_ON_RECORD', 'SOFA_CLEANUP_ON_RECORD');
 
     if (sofaSanitize !== 'true' && sofaAuditEnabled !== 'true' && sofaCleanupOnRecord !== 'true') {
       v.checkPass('默认关闭: 合规功能全部关闭（向后兼容）');

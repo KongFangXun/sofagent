@@ -48,11 +48,9 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 ### 当前版本（v1.2.4）临时缓解措施
 
 在 age 加密（目标 v1.4.0）交付之前，建议：
-1. **设置 `~/.sofagent/data/` 目录权限为 700**：`chmod 700 ~/.sofagent/data/`
+1. **设置 `~/.sofagent/data/` 目录权限为 700**：`chmod 700 ~/.sofagent/data/`（用户可见运行时数据；`~/.sofagent/internal/` 引擎内部状态同样 700）
 2. **将 `~/.sofagent/` 父目录放在加密文件系统上**（如 macOS APFS 加密卷）
-3. **定期轮换 `~/.sofagent/data/` 中的历史审计数据**
-
-- data/ 目录权限建议 700（用户可见运行时数据）；`~/.sofagent/internal/` 目录权限 700（引擎内部状态）。同一服务器其他用户若有 root 权限可读
+3. **定期轮换 `~/.sofagent/data/` 中的历史审计数据**（P2-31：合并原重复的权限提示段）
 
 **企业环境建议**：
 - 对 `data/` 目录做 gpg 加密或放在加密卷上

@@ -55,10 +55,8 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     else ok(`Node.js ${env.node.version}`);
     if (!env.git.available) fail('git 不可用');
     else ok('git 可用');
-    if (!env.npm.available) fail('npm 不可用');
-    else ok('npm 可用');
-    if (env.disk.freeMB <= 1024) warn(`磁盘空间不足: ${env.disk.freeMB} MB`);
-    else ok(`磁盘空间: ${(env.disk.freeMB / 1024).toFixed(1)} GB`);
+    // P2-23: 移除凑数检查项——npm 可用/磁盘空间与 sofagent 健康无因果（npm 装过即可，
+    // 磁盘 342GB ✅ 只是噪音）。npm/disk 仍在 checkEnv() 内部计算，只是不再作为健康信号展示。
     if (!env.openclaw.exists) warn('~/.openclaw 不存在');
     if (!env.sofagent.exists) warn('~/.sofagent 不存在（将自动创建）');
   }
@@ -258,7 +256,9 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   if (allOk) {
     console.log('  ✅ 全部通过\n');
   } else {
-    console.log('  ⚠️  存在问题，详见上方检查项\n');
+    // P2-24: 未通过不一定"存在问题"——可能只是黄色提示（如历史链不可复验/依赖缺失）
+    // 用 ℹ️ 中性措辞，避免把轻微警告误报成红色"存在问题"
+    console.log('  ℹ️  存在告警项，详见上方检查项（不影响核心审计功能则无需处理）\n');
   }
 
   return {

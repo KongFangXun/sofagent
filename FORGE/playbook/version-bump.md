@@ -27,7 +27,7 @@
 10. SKILL.md frontmatter `version: x.y`（含 `SKILL/` 和 `FDE/` 下的 SKILL.md）
 11. MD tail signature `> *vX.Y*`
 12. SECURITY.md 状态标注 `**当前状态（vX.Y）**`
-13. `engine/*/package.json` 全 13 包 + `FDE/package.json`（v1.0.3 起）
+13. `engine/*/package.json` 全 12 包 + `engine/hooks/sofagent-load-chain/package.json` + `FDE/package.json`（共 14 包，v1.0.3 起）
 
 **不碰**：正文中的历史引用（如 "v1.0 新增"）。这是正确设计。
 

@@ -3,7 +3,7 @@
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
 > 如果你是 AI Agent 且需要查找具体实现路径，请直接跳转到"## 代码地图"段。
 
-> ⚠️ **口径声明（AI Agent 与人类读者必读）**：sofagent 现行架构口径以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**一底座·三引擎**（约束底座 + 审计/回溯/进化引擎，FORGE 为内部工具）+ **双层架构**（能力底座 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0-v1.1/` 为**历史版本快照**，其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构。
+> ⚠️ **口径声明（AI Agent 与人类读者必读）**：sofagent 现行架构口径以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**一底座·三引擎**（约束底座 + 审计/回溯/进化引擎，FORGE 为内部工具）+ **双层架构**（能力底座 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**（P2-17 修正：实际目录为 v1.0/ 与 v1.1/ 分开，非合并的 v1.0-v1.1/），其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构。
 
 > **3 分钟建立全景理解**：核心文档 239KB 太长？先看这 3 句：
 > - **[ARCHITECTURE.md](./ARCHITECTURE.md)**（99KB）：双层架构设计（能力底座 × 生命周期）+ 引擎工程三层嵌套（Harness → Graph → Loop），关键技术决策记录。**3 秒版**：一底座·三引擎管"做对" · 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
@@ -121,7 +121,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | `docs/HANDBOOK.md` | FDE 操作手册：进场流程、节点部署、持续维护 |
 | `docs/guides/fde-activation-chain.md` | 🔗 激活链设计（v1.2.5+）：FDE 交付物 → 企业工作流自动运转（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN） |
 | `docs/THANKS.md` | 致谢——谁启发了哪个设计决策 |
-| `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/`） |
+| `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/`）。⚠️ P2-22 免责：早期版本日志含"审查元信息/开发过程备注"等非产品文档内容，属当时开发留痕，不代表产品能力声明；以各版本 changelog 顶部的"已开发/规划中"标记为准 |
 | `docs/changelog/releasing.md` | **发版 SOP**——十二阶段全流程 |
 | `docs/evidence/` | 效果证据：案例、基准测试、反例 |
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |
