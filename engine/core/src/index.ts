@@ -18,6 +18,15 @@ export type { BaselineRuleKey } from './shared/rule-constants';
 // v1.2.5: 扩展为全规则共享库——新增 REDACTION_PATTERNS / DOMAIN_WHITELIST / DANGEROUS_SCRIPT_CMDS
 export { SECRET_PATTERNS, REDACTION_PATTERNS, DOMAIN_WHITELIST, DANGEROUS_SCRIPT_CMDS } from './shared/secret-patterns';
 
+// ── v1.2.5 §3.1: Agent 身份码轻量版 ──
+export {
+  generateAgentIdentity,
+  computeFingerprint,
+  computeShortCode,
+  extractConstraintsFromPrompt,
+} from './agent-identity';
+export type { AgentIdentity } from './agent-identity';
+
 // ── P2-36: 环境变量统一读取（SOFAGENT_* 主名 + 旧名别名兜底）──
 export { resolveEnvVar, resolveEnvBool, resolveEnvNumber } from './shared/env';
 
