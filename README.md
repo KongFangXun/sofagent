@@ -22,7 +22,7 @@
   <a href="#快速开始"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>当前版本：v1.2.4</strong> · 2026-08-01 · 知识进化（分层巡检 L1/L2/L3 + skillopt 自动触发 + 失败清单 + 联邦蒸馏 + 进化引擎接通 eval + Dashboard 历史趋势）</p>
+<p align="center"><strong>当前版本：v1.2.4</strong> · 2026-08-01 · 知识进化（分层巡检 + skillopt 自动触发 + 失败清单 + 联邦蒸馏；P1-19 摘要以 CHANGELOG 为权威源对齐）</p>
 
 > ⚖️ **正式版边界声明**（P0-8）：本项目的「正式版」指 API 稳定、测试覆盖完整、核心流程经多轮验证。**不代表所有已知局限已解决**——详见 [LIMITATIONS.md](./LIMITATIONS.md)。强合规场景请等待 v1.4.0 静态加密落地。
 
@@ -47,9 +47,9 @@ sofagent 就是解决这个问题的：**它帮你把 AI 管起来，让 AI 干�
 
 | 你担心的 | sofagent 怎么做 | 用人话说 |
 |---------|----------------|---------|
+| **想让 AI 自动跑？** | 先梳理你的工作流，把能自动化的环节变成 AI 节点，部署完自己跑 | 从"你干活"变成"你派活"——AI 节点 7×24 自己跑 |
 | **AI 乱来怎么办？** | 每次 AI 改东西都自动检查一遍 | AI 干的活有人盯着，越界立刻拦住 |
 | **AI 闯祸了怎么办？** | 每次改动自动存档，一键回滚 | 出事能一键回到安全状态 |
-| **AI 干了啥不知道？** | 终端面板一眼看清 AI 的一举一动 | 数据去哪了、有没有犯规、任务跑到哪，都看得见 |
 
 <details>
 <summary>🏞️ 打个比方：一条河（点开）</summary>
@@ -65,7 +65,7 @@ sofagent 就是解决这个问题的：**它帮你把 AI 管起来，让 AI 干�
 <details>
 <summary>🔧 技术细节（给开发者）</summary>
 
-底层是 **Harness 中间件**——每次 Agent 改完代码自动跑 21 条规则（git diff 硬证据，零 token），违规当场拦截、合规存快照。四层加载链（SKILL.md → fde.md → think.md → knowledge/）在 Agent 启动时注入行为底线。完整架构见 [ARCHITECTURE.md](./docs/ARCHITECTURE.md)。
+底层是 **Harness 中间件**——每次 Agent 改完代码自动跑审计规则（21 条注册：13 条默认启用 + 8 条扩展需显式开启；git diff 硬证据，零 token），违规当场拦截、合规存快照。四层加载链（SKILL.md → fde.md → think.md → knowledge/）在 Agent 启动时注入行为底线。完整架构见 [ARCHITECTURE.md](./docs/ARCHITECTURE.md)。
 
 </details>
 
@@ -264,7 +264,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 > [!NOTE]
 > **品牌与描述**：**sofagent** 是产品品牌名；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent（进场梳理工作流、把可自动化环节变成 AI 节点、构建本体、部署专属小模型的常驻硅基员工）。底层技术实现是一套约束 Agent 行为的 Harness 中间件（**能力底座 × 生命周期**双层架构：层 1 一底座·三引擎 + 层 2 激活链四阶段），开源在 `@sofagent/*`。下面这段是给开发者看的。
 
-sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，**能力底座 × 生命周期**双层架构。**层 1 能力底座 = 一底座·三引擎**：一底座 = 约束底座（开工前注入规则）；三引擎 = 审计引擎（21 条规则拦截）+ 回溯引擎（自动快照回滚）+ 进化引擎（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化）。**层 2 生命周期 = 激活链四阶段**（v1.2.5+）：激活 → 编排 → 执行 → 闭环。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，不作为对外引擎宣称。
+sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，**能力底座 × 生命周期**双层架构。**层 1 能力底座 = 一底座·三引擎**：一底座 = 约束底座（开工前注入规则）；三引擎 = 审计引擎（21 条规则拦截）+ 回溯引擎（自动快照回滚）+ 进化引擎（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化）。**层 2 生命周期 = 激活链四阶段**（v1.2.5+，P1-18 口径统一）：激活（ACTIVATE）→ 编排（ORCHESTRATE）→ 执行（EXECUTE）→ 持续（SUSTAIN）。完整生命周期在诊断（FDE）与进化（EVOLVE）两端延伸为五阶段：诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，不作为对外引擎宣称。
 
 <details>
 <summary>📖 一底座·三引擎架构（开发者参考）</summary>

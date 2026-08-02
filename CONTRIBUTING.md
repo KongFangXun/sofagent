@@ -44,6 +44,21 @@ bash install.sh && bash engine/scripts/verify.sh
 
 > ⚠️ **本地测试用 `node dist/index.js` 而非全局二进制**——全局 `sofagent-audit` 可能是旧版本（npm publish 后才更新）。改代码后先 `npm run build`，再用 `node engine/audit/dist/index.js --diff HEAD~1..HEAD` 测试。
 
+### 仓库目录结构（P1-38 新增——新贡献者先看文件放哪）
+
+| 目录 | 内容 |
+|------|------|
+| `engine/` | 12 个 npm 子包（`audit` 审计引擎 / `core` 底座 / `daemon` 守护 / `orchestrator` 编排 / `mcp` / `rules` / `eval` / `think` / `skillopt` / `ontology` / `harness` / `ab-test`）+ `hooks/sofagent-load-chain` |
+| `engine/audit/src/rules/` | 审计规则实现（`rule-a*.ts` + `skill-safety-engine.ts`） |
+| `engine/audit/src/permission/` | 权限配置加载与检查 |
+| `engine/core/src/` | 底座：配置加载 / 原子写入 / 审计历史哈希链 / 联邦合并 / 安全脱敏 |
+| `engine/daemon/src/` | 守护进程：cron / fs 监听 / 联邦查询 / Dream Cycle / 巡检器 |
+| `tools/` | 门禁脚本（`check-docs.sh` / `check-test-count.sh` / `pre-push-check.sh` / `sofagent-dashboard.sh`） |
+| `FORGE/` | 项目自迭代工具链（LOOP 流水线 / playbook / fresh-eyes 审查体系） |
+| `FDE/` | 前线部署方法论（GUIDE + templates） |
+| `SKILL/` | 技能文件（SKILL.md 宪法 + harness 模板 + 子 Skill） |
+| `docs/` | 文档（ARCHITECTURE / HANDBOOK / WIKI / changelog / evidence / guides） |
+
 ### 微任务清单（5-15 分钟）
 
 | # | 任务 | 文件 | 难度 | 时间 |

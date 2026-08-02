@@ -22,8 +22,8 @@
 | **跨平台测试** | 在 Windows/WSL/Linux 上跑 install.sh + verify.sh，报告结果 | ★ |
 | **FAQ 补充** | HANDBOOK §三（场景三：排查问题）需要更多真实场景的回答 | ★ |
 | **文档翻译** | README 已有英文版，需要维护和更新 | ★★ |
-| **安全审计** | 审查 install.sh / skill-safety-check.sh 的安全性 | ★★★ |
-| **规则优化** | 改进 skill-safety-check.sh 的正则规则，减少误报 | ★★★ |
+| **安全审计** | 审查 install.sh / 审计规则（`engine/audit/src/rules/`）的安全性 | ★★★ |
+| **规则优化** | 改进审计规则（`engine/audit/src/rules/rule-a*.ts` + `skill-safety-engine.ts`）的正则，减少误报 | ★★★ |
 
 ## 公开数据
 
