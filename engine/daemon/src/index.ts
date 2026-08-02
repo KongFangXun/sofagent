@@ -135,3 +135,19 @@ export { mergeFederationResults, pickWinner } from './federation/merge';
 export type { MergedKnowledge } from './federation/merge';
 export { withOfflineFallback } from './federation/offline-fallback';
 export type { FederationAuditEntry, AuditWriter } from './federation/offline-fallback';
+
+// v1.2.5 §8.2 daemon 可靠性——推送重试 + 健康自检 + outbox 生命周期
+export { withRetry, withRetryBestEffort, computeBackoff } from './with-retry';
+export type { RetryOptions } from './with-retry';
+export {
+  writeHealthFile,
+  readHealthFile,
+  checkDaemonHealth,
+  resolveHealthFilePath,
+} from './daemon-health';
+export type { DaemonHealthFile } from './daemon-health';
+export {
+  deleteOutboxFile,
+  moveOutboxToFailed,
+  cleanupFailedOutbox,
+} from './push-target';
