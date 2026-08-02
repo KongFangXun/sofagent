@@ -32,11 +32,9 @@ Agent 越聪明，企业越不敢让它碰真活——真出事了，谁负责�
 
 **② sofagent 的答案：一个常驻你企业的 FDE Agent，帮你把工作流梳理成 AI 节点，部署完它自己跑。**
 
-sofagent 不替代大厂 Agent，而是建在它们之上——用 River 比喻说就是：做河的堤坝与约束层，不做河本身（详见 [README（项目概览）](../README.md)）。FDE 进场四阶段：梳理→挖掘→交付→离场。离场后 AI 节点自己跑。
+sofagent 不替代大厂 Agent，而是建在它们之上——做河的约束层，不做河本身（River 比喻详见 [README（项目概览）](../README.md)）。FDE 进场四阶段：梳理→挖掘→交付→离场。离场后 AI 节点自己跑。
 
 > **🔗 激活链——从"交付"到"自运转"**：FDE 交付了 ontology + workflow.yml + skills/ 等静态文件后，交付物和"企业工作流自动运行"之间曾有一道**大断裂带**——企业 IT 拿到一堆 .md 和 .yml 不知道怎么跑起来。v1.2.5 起的**激活链**（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，规划中）解决这个问题：读交付物 → 注册企业 SubAgent → 构建 LangGraph StateGraph → DAG 运行 + HITL + 审计 → 持续优化自运转。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
-
-> **激活链 × River 比喻**：用 River 的话说——FDE 帮企业画好了"用水规划图"（交付物），但水厂的水还没接到水管里。激活链 = 把规划图变成真在流的自来水：ACTIVATE 打开水龙头（注册 Agent），ORCHESTRATE 接通管网（编排工作流），EXECUTE 加装水表（审计每一步），SUSTAIN 根据用水数据优化整个系统（反思 + 进化）。不是建新水厂，是把已有的水接到该去的地方。
 
 **③ 底层引擎：sofagent 的 Harness 中间件保证每次变更可审计、可回滚、可进化。**
 
@@ -510,7 +508,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 > 📐 来源：a16z（2026-07-15，Hebbia 创始人 George Sivulka）[《You Just Hired a Million Bad Employees》](https://www.a16z.news/) 核心判断——「人类历史上第一次，人比软件便宜」；每家公司在雇「一百万个糟糕的硅基员工」，80% 的 token 在空转浪费。解法不是更强的模型、也不是更多算力，而是 185 年前诞生的老手艺：**管理**。
 
-这与 sofagent 底层定位同频：**Harness 中间件 = 管住 Agent 行为的那一层**（River 比喻里「堤坝」）。a16z 七法则中 Loops / 100X / 冗员 / Evals / 转型 五条，sofagent 已原生具备对应物。完整映射见下方表格；其中最关键的三条：
+这与 sofagent 底层定位同频：**Harness 中间件 = 管住 Agent 行为的那一层**（River 比喻里的约束层）。a16z 七法则中 Loops / 100X / 冗员 / Evals / 转型 五条，sofagent 已原生具备对应物。完整映射见下方表格；其中最关键的三条：
 
 - **空转 Loops → guard edge**：`graph.ts` 的 `retryCount<3` 条件路由天然防 loops 失控——这是 Loops 治理的工程化答案。
 - **考核 Evals → Reality Anchor**：审计引擎 A1-A11、A14-A19 + E1-E4（共 21 条）把「可评估性」硬编码为真实 git diff，而非 Agent 自报完成。
@@ -522,7 +520,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 |---|------|------|:--:|------|------|
 | 1 | 事实1 成本倒挂（人比软件便宜） | 90/10 价值分层 | 已具备（叙事） | 叙事支撑 | Harness = 把 p90 拉回 p10 的管理杠杆 |
 | 2 | 事实2 增员非裁员（AI 放大组织） | FDE 卖转型 + sustain | 已具备（定位） | 叙事支撑 | AI 放大组织，sofagent 管放大后的队伍 |
-| 3 | 1841 铁路事故 → 现代管理 | guard edge + Reality Anchor + River 堤坝 | 已具备 | 叙事背书 | 直接引用作 Harness 必要性历史背书 |
+| 3 | 1841 铁路事故 → 现代管理 | guard edge + Reality Anchor + River 约束层 | 已具备 | 叙事背书 | 直接引用作 Harness 必要性历史背书 |
 | 4 | 法则1 挥霍 Tokenmaxxing | 约束底座 + 明确不做 + FDE 讲清流程 + Ontology | 已具备+可强化 | 印证 | FDE 把模糊流程讲清即抗 Tokenmaxxing |
 | 5 | 法则2 空转 Loops | graph.ts guard edge retryCount<3 | 已原生具备（核心） | 印证 | Loops 治理工程答案 |
 | 6 | 法则3 冗员 Token Bloat | 明确不做清单 / 防 scope 蔓延 + 审计拦改测试 | 已具备+可强化 | 印证 | 砍循环优于优化 |
@@ -555,7 +553,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 字节跳动开源的 [DeerFlow 2.0](https://github.com/bytedance/deer-flow) 自称 **"super agent harness"**——与 sofagent 的 **Harness 中间件**品类判断**字面一致**。这是继 OpenAI《Harness Engineering》、Anthropic《Effective Harnesses》之后，**又一家头部厂商用 Harness 命名 Agent 运行时框架**，说明这个品类词已经站住。
 
-但 DeerFlow 是 River 比喻里的**「河」**（运行时框架，让 Agent 跑起来的基础设施），sofagent 是**「堤坝」**（让 Agent 别跑偏 + 审计它跑过什么）——两者定位互补，不冲突：
+但 DeerFlow 是 River 比喻里的**「河」**（运行时框架，让 Agent 跑起来的基础设施），sofagent 是**约束层**（让 Agent 别跑偏 + 审计它跑过什么）——两者定位互补，不冲突：
 
 | 维度 | DeerFlow | sofagent |
 |------|---------|---------|
@@ -565,7 +563,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 | 部署重量 | Nginx + Gateway + Postgres，起步 8C16G | `bash install.sh`，零依赖 |
 | 约束方式 | 需 Agent 跑在它的框架里 | 看 git diff，Agent 在哪跑都行 |
 
-**给我们的背书**：① Harness 品类被字节用真金白银验证；② LangGraph createReactAgent 是编排事实标准（双方都选）；③ 控制平面打法（runtime 内嵌 gateway = 控制平面）是行业共识。**给我们的启发**（进 ROADMAP 与开发日志）：中间件链设计、Skill 质量门禁 + content-hash、Session Goals、ToolOutputBudget、多 worker 租约安全语义——详见 [ROADMAP · DeerFlow 参考清单](../ROADMAP.md#deerflow-参考清单)。
+**给我们的背书**：① Harness 品类被字节用真金白银验证；② LangGraph createReactAgent 是编排事实标准（双方都选）；③ 控制平面打法（runtime 内嵌 gateway = 控制平面）是行业共识。**给我们的启发**（进 ROADMAP 与开发日志）：中间件链设计、Skill 质量门禁 + content-hash、Session Goals、ToolOutputBudget、多 worker 租约安全语义——详见 [ROADMAP · 行业印证](../ROADMAP.md#行业印证)。
 
 > 📖 来源：DeerFlow 2.0 README（github.com/bytedance/deer-flow），2026-02-28 登顶 GitHub Trending #1
 
@@ -578,7 +576,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 **与 sofagent 的边界（互补，不冲突）**：Omnigent 管**运行时**（坐在 harness 之上，拦截工具调用）；sofagent 管**提交时**（git diff 21 条规则 + 运行时 SKILL.md 约束）。它的策略越重，越反衬「跨平台、本地留证、零依赖、提交时审计」是咱们的地盘。其路线图（GEPA 自动优化 / MemEx 持久记忆 / RLM 强化学习 / Server MCP 跨会话）尚未实现，但方向值得在 v2.x 评估框架参考。
 
-**给我们的演进启示（落盘 ROADMAP）**：① 运行时审计可借 LangGraph middleware 的 wrapToolCall 接入点（咱们已用 createReactAgent）；② 密钥边界可借 bubblewrap/seatbelt + egress proxy 模式；③ 控制平面成本/路由层可借 LiteLLM。详见 [ROADMAP · Omnigent 参考清单](../ROADMAP.md#omnigent-参考清单)。
+**给我们的演进启示（落盘 ROADMAP）**：① 运行时审计可借 LangGraph middleware 的 wrapToolCall 接入点（咱们已用 createReactAgent）；② 密钥边界可借 bubblewrap/seatbelt + egress proxy 模式；③ 控制平面成本/路由层可借 LiteLLM。详见 [ROADMAP · 行业印证](../ROADMAP.md#行业印证)。
 
 > 📖 来源：Databricks blog《Introducing Omnigent》(2026-06) + 技术解析（techtimes / chatforest / aixq.cc），GitHub omnigent-ai/omnigent
 
@@ -588,7 +586,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 它治理的是「数据流水线」（从噪声源生成 / 精炼 / 评估 / 过滤高质量 AI 数据），与 sofagent 治理「企业 AI 数字员工（FDE Agent）工作流」对象不同，但**约束范式同源**：Agent 经 MCP server 作业而非自由写脚本、受控变异走 Request-Validate-Commit、用 DataFlow-Skills 结构化约束而非裸提示词——每一条都独立复现了 sofagent 的 scoped tool-gate / SKILL 约束底座 / audit 判断。
 
-其**独特点**是可借鉴方向：① **可视化 DAG 画布 + 双模态共享状态**（会话 Agent 与 DAG 画布实时同步同一 pipeline 表示）——补 sofagent Dashboard 缺的「workflow 可视图」，建议 v2.x 引入；② **MCP server 集成**（暴露算子注册表 / serving / pipeline 状态给 Agent）——印证「对外 MCP 暴露 ontology/audit」是合理路线，建议 v2.x+；③ **Validation Engine（DAG 无环 + schema 兼容）**——印证 ontology 从目录级升级为带 JSON Schema 校验的约束图，建议 v2.x 硬化节点 I/O。以上可借鉴项已落入 [ROADMAP · DataFlow 参考清单](../ROADMAP.md#dataflow-参考清单) 与探索方向表。
+其**独特点**是可借鉴方向：① **可视化 DAG 画布 + 双模态共享状态**（会话 Agent 与 DAG 画布实时同步同一 pipeline 表示）——补 sofagent Dashboard 缺的「workflow 可视图」，建议 v2.x 引入；② **MCP server 集成**（暴露算子注册表 / serving / pipeline 状态给 Agent）——印证「对外 MCP 暴露 ontology/audit」是合理路线，建议 v2.x+；③ **Validation Engine（DAG 无环 + schema 兼容）**——印证 ontology 从目录级升级为带 JSON Schema 校验的约束图，建议 v2.x 硬化节点 I/O。以上可借鉴项已落入 [ROADMAP · 行业印证](../ROADMAP.md#行业印证)。
 
 **给我们的背书**：① Harness 品类被顶尖高校用真金白银验证（同月三家，含高校）；② 「约束 Agent 经受控接口、不自由写脚本」是跨团队共识；③ 我们的差异化仍在——DataFlow 只校验 pipeline 结构与 schema，**不审计 Agent 行为问责（无 append-only A1-A19）**，也无 7×24 常驻 FDE Agent 与「控制平面治理」定位。
 
@@ -600,7 +598,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 但两者**范围差一个数量级、且互补**：ChatDemo 的 FDE 是售前 POC 共创工具（Claude Code Skill + localhost 控制台，回合制 start/turn/wrap），散会即结束、无常驻员工；sofagent 的 FDE 是售后常驻部署+治理方法论（四阶段十二步→交付离场→sustain）。它做"漏斗前端"（拿 POC），我们做"漏斗后端"（常驻、可审计、受治理的硅基员工）——定位不冲突。
 
-其**独特点**是可借鉴方向（落盘 [ROADMAP · OpenFDE/ChatDemo 参考清单](../ROADMAP.md#openfdechatdemo-参考清单)）:① 回合制协议 + FDE 控节拍（人控 Agent 不抢跑，我们已有同判断、它执行更细）；② **spec-first 硬禁令**（transcript 永不直接驱动代码——补我们"触发直驱工件"的明文铁律，最高优先）；③ **decisions.jsonl 判断时刻日志**（{kind, moment, why, spec_ref} 现场即时记，会后喂 FDE Loop→INDUCE→Judgment Unit——补 A1-A19 缺的"决策理由链"，最高优先）；④ 分级降级梯队（console→TUI、ASR→手敲、dev 挂→走 spec，workflow never stops——为 7×24 常驻员工补分级降级 SOP，最高优先）；⑤ 开源优先阶梯 + 预验证画廊 + 双引擎无状态 + 数据敏感度分层 + 一键启动器品牌化模板。
+其**独特点**是可借鉴方向（落盘 [ROADMAP · 行业印证](../ROADMAP.md#行业印证)）:① 回合制协议 + FDE 控节拍（人控 Agent 不抢跑，我们已有同判断、它执行更细）；② **spec-first 硬禁令**（transcript 永不直接驱动代码——补我们"触发直驱工件"的明文铁律，最高优先）；③ **decisions.jsonl 判断时刻日志**（{kind, moment, why, spec_ref} 现场即时记，会后喂 FDE Loop→INDUCE→Judgment Unit——补 A1-A19 缺的"决策理由链"，最高优先）；④ 分级降级梯队（console→TUI、ASR→手敲、dev 挂→走 spec，workflow never stops——为 7×24 常驻员工补分级降级 SOP，最高优先）；⑤ 开源优先阶梯 + 预验证画廊 + 双引擎无状态 + 数据敏感度分层 + 一键启动器品牌化模板。
 
 **给我们的背书**：① FDE 作为"前线部署工程师"的方法论术语，已被 OpenFDE 以 Forward Deployed Engineer 独立命名并工程化，与我们同源、互为第三方佐证；② "约束 Agent 经受控接口"的同源判断在售前侧也成立（ChatDemo 约束在"何时/权限/来源"）；③ 我们的差异化仍在——ChatDemo **无 A1-A19 运行时行为审计、无 7×24 常驻 FDE Agent、无控制平面治理、让 Agent 直接写应用代码**，这些是我们的地盘。
 
