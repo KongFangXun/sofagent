@@ -110,7 +110,18 @@ sofagent-dashboard --full    # 展开完整视图
 
 > 前置依赖：需要 `jq`（`brew install jq` / `apt install jq`）。
 
-> 🔗 **给企业的完整闭环（v1.2.5+ 规划中）**：现在梳理完工作流后，交付物还需要人工配置才能跑起来。后续版本将自动化这一步——诊断完，企业工作流自动注册、自动编排、自动跑。详见 [激活链设计文档](./docs/guides/fde-activation-chain.md)。
+### 从交付到自转（激活链）
+
+FDE 交付了 ontology + workflow.yml + skills/ 之后，v1.2.5 起分四步让交付物自己跑起来：
+
+| 阶段 | 做什么 | 版本 |
+|------|--------|:----:|
+| **ACTIVATE** | 读交付物 → 注册企业 SubAgent | v1.2.5 |
+| **ORCHESTRATE** | 构建企业专属工作流图 | v1.2.7 |
+| **EXECUTE** | 运行 + 人工确认 + 每步审计 | v1.2.8-v1.2.9 |
+| **SUSTAIN** | 持续优化，越跑越好 | v1.3.0 |
+
+设计详情：[激活链文档](./docs/guides/fde-activation-chain.md)
 
 ---
 

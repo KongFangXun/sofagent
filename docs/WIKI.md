@@ -30,6 +30,7 @@
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | **FORGE** | 自迭代引擎——通过 workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ sofagent/（约束底座）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |
+| **激活链** | FDE 交付物→企业工作流自运转的四阶段生命周期：ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN（v1.2.5-v1.3.0） | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md) |
 | **data/** | ~/.sofagent/data/ v1.2.1 确立的 SSOT 数据目录（原 .sofagent/ 已迁移）：history.jsonl、knowledge/、audit/、config/ | [DEVELOPMENT §数据目录](./DEVELOPMENT.md) |
 
 ---
@@ -183,25 +184,40 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 
 ---
 
-## 七、导航：遇到 X 问题 → 读 Y 文档
+## 七、导航：按你的意图选路
+
+### 了解 FDE Agent（产品 → 理念 → 路线）
 
 | 你想…… | 读这个 |
 |---------|--------|
-| 了解项目是什么、为什么做 | [PHILOSOPHY.md](./PHILOSOPHY.md) |
+| 3 分钟搞懂它是什么、能干什么 | [README.md](../README.md) |
+| 理解设计哲学（为什么这么做） | [PHILOSOPHY.md](./PHILOSOPHY.md) |
+| 看版本路线图和下一步 | [ROADMAP.md](../ROADMAP.md) |
+| 了解激活链（交付物怎么自己跑起来） | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md)（v1.2.5+） |
+| 作为 FDE 进场部署 | [HANDBOOK.md](./HANDBOOK.md) |
+| 找效果证据/案例 | [docs/evidence/](./evidence/) |
+
+### 部署 / 集成 / 开发
+
+| 你想…… | 读这个 |
+|---------|--------|
 | 了解系统怎么设计的 | [ARCHITECTURE.md](./ARCHITECTURE.md) |
 | 搭建本地开发环境 | [DEVELOPMENT.md](./DEVELOPMENT.md) |
-| 知道当前版本、下一步做什么 | [ROADMAP.md](../ROADMAP.md) |
 | 查某个版本改了什么 | [CHANGELOG.md](../CHANGELOG.md) → `docs/changelog/vX.Y/vX.Y.Z.md` |
-| 走发版流程 | [docs/changelog/releasing.md](./changelog/releasing.md) |
 | 了解审计规则 | [SECURITY.md](../SECURITY.md) + [ARCHITECTURE §三](./ARCHITECTURE.md) |
-| 了解 FORGE 自迭代 | [FORGE/README.md](../FORGE/README.md) |
 | 了解 SKILL 约束体系 | [SKILL/SKILL.md](../SKILL/SKILL.md) |
-| 作为 FDE 进场部署 | [HANDBOOK.md](./HANDBOOK.md) |
-| 交付物怎么自动跑起来（激活链） | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md)（v1.2.5+） |
-| 找效果证据/案例 | [docs/evidence/](./evidence/) |
 | 添加新审计规则 | `engine/audit/src/rules/` → 对照现有规则模式（defaultRules / extendedRules） |
 | 新建 Sub Agent | `SKILL/agents/` → 参照 `agents/engineer/SKILL.md` |
 | 运行测试 | `npm test`（根目录） |
+
+### 贡献 / 审查 / 发版（内部工程）
+
+| 你想…… | 读这个 |
+|---------|--------|
+| 了解 FORGE 自迭代工具链 | [FORGE/README.md](../FORGE/README.md) |
+| 走发版流程（十二阶段 SOP） | [docs/changelog/releasing.md](./changelog/releasing.md) |
+| 跑独立审查 | [FORGE/playbook/fresh-eyes-review.md](../FORGE/playbook/fresh-eyes-review.md) |
+| 贡献代码 | [CONTRIBUTING.md](../CONTRIBUTING.md) |
 
 ---
 
