@@ -112,7 +112,7 @@ const MODEL_PRICING = {
 // 单独调高到 32000，避免顶格 16000 被截断生成不了合法报告（整轮降级根因）。
 const STEPS = {
   'acceptance':  { prompt: 'acceptance.md',  outputs: ['acceptance.md'],  inputs: [] },
-  'regression':  { prompt: 'regression.md',  outputs: ['regression.md'],  inputs: [] },
+  'regression':  { prompt: 'regression.md',  outputs: ['regression.md'],  inputs: ['regression-precheck.json'], precheck: true },
   'coverage':    { prompt: 'coverage.md',    outputs: ['coverage.md'],    inputs: ['acceptance.md'] },
   'consolidate': { prompt: 'consolidate.md', outputs: ['stage6-report.md'], inputs: ['acceptance.md', 'regression.md', 'coverage.md'], maxTokens: 32000 },
   'verdict':     { prompt: 'verdict.md',     outputs: ['verdict.md'],     inputs: ['stage6-report.md'] },
@@ -122,11 +122,12 @@ const STEPS = {
 const STEP_ORDER = ['acceptance', 'regression', 'coverage', 'consolidate', 'verdict'];
 
 // 每步的 recursionLimit
-// regression 调到 250：46 维度 × 批量执行(每维度1次tool call) ≈ 53 calls × 2 = 106
-// 留余量给环境验证轮询 + agent 思考轮次
+// v1.2.5+ 优化：regression 改用 driver 预执行器（parseRegressionDimensions + runRegressionPrecheck），
+// 命令执行从 LLM 手里剥离。worker 只读 regression-precheck.json 判定结果，工具调用 ≤ 5 次，
+// recursionLimit 从 400 降到 50（不再需要模型逐维度跑命令，也消除了 GraphRecursionError）。
 const STEP_RECURSION_LIMITS = {
   'acceptance':  100,
-  'regression':  400,
+  'regression':  50,
   'coverage':    100,
   'consolidate': 80,
   'verdict':     50,
@@ -910,6 +911,138 @@ async function runAcceptanceTestDirectly(runDir) {
   return result;
 }
 
+// ═══════════════════════════════════════════════════════════
+// v1.2.5+ 性能优化：regression 预执行器（方案 A：执行层从 LLM 剥离）
+// ═══════════════════════════════════════════════════════════
+// 背景：run-02 实测 regression worker 跑了 1665 个工具调用、耗时 ~50 分钟，
+//   worker 在模型写完报告前被 GraphRecursionError(limit=400) 截断崩溃。
+//   根因：regression-checklist.md 的命令是确定性的，但 LLM 逐维度探索执行，
+//   大量重复读文件/乱试命令/失败重试，把「确定性检查」跑成了「探索型任务」。
+// 方案：driver 直接解析 checklist 的 ```bash 代码块并按维度批量执行（零 LLM），
+//   结果写入 {runDir}/regression-precheck.json。worker 只读该文件判定 PASS/FAIL，
+//   工具调用从 1665 次降到 ~5 次，消除递归超限 + 大幅提速。
+
+/**
+ * 解析 regression-checklist.md，提取每个维度的 bash 代码块。
+ * 锚点：`#### N. 维度标题`；块：维度内所有 ```bash ... ``` 代码块。
+ * 跳过维度外的代码块（如「清单自身健康度自校验」）。
+ *
+ * @returns {Array<{ num: number, title: string, script: string }>}
+ */
+function parseRegressionDimensions() {
+  const checklistPath = join(REPO_ROOT, 'FORGE/playbook/regression-checklist.md');
+  const md = readFileSync(checklistPath, 'utf-8');
+  const lines = md.split('\n');
+
+  const dims = [];
+  let current = null;       // { num, title, blocks: [] }
+  let inCode = false;
+  let codeBuf = [];
+
+  const flushCode = () => {
+    if (current && codeBuf.length > 0) {
+      current.script = (current.script || '') + codeBuf.join('\n') + '\n';
+    }
+    codeBuf = [];
+  };
+
+  for (const line of lines) {
+    const dimMatch = line.match(/^####\s+(\d+)\.\s+(.*)$/);
+    if (dimMatch) {
+      flushCode();
+      current = { num: parseInt(dimMatch[1], 10), title: dimMatch[2].trim(), script: '' };
+      dims.push(current);
+      continue;
+    }
+    if (/^```bash\s*$/.test(line)) {
+      flushCode();           // 上一个块收尾（如有）
+      inCode = true;
+      codeBuf = [];
+      continue;
+    }
+    if (/^```\s*$/.test(line)) {
+      flushCode();
+      inCode = false;
+      continue;
+    }
+    if (inCode && current) {
+      codeBuf.push(line);
+    }
+    // 维度外的代码块（current === null 或不在维度内）忽略
+  }
+  flushCode();
+
+  return dims.filter(d => d.script.trim().length > 0);
+}
+
+/**
+ * 执行一个维度的 bash 脚本（单次 runCommand，无 60s 限制），捕获输出。
+ * 失败不中断——exitCode 和 output 都记录，交给 worker 判定。
+ *
+ * @param {string} script  维度 bash 脚本
+ * @param {number} timeoutMs 超时（毫秒），默认 60s
+ * @returns {Promise<{ exitCode: number|null, output: string }>}
+ */
+async function execRegressionDim(script, timeoutMs = 60_000) {
+  try {
+    const { stdout, stderr, code } = await runCommand(script, REPO_ROOT, timeoutMs);
+    const output = `${stdout}\n${stderr}`.trim();
+    return { exitCode: code ?? null, output: output.slice(0, 8000) };
+  } catch (err) {
+    return { exitCode: null, output: `[driver] 执行异常: ${err.message}` };
+  }
+}
+
+/**
+ * 预执行全部 regression 维度，写 {runDir}/regression-precheck.json。
+ *
+ * 文件格式：
+ * {
+ *   "meta": { "source": "FORGE/playbook/regression-checklist.md", "dims": 49, "runAt": "..." },
+ *   "dims": {
+ *     "1": { "num": 1, "title": "CHANGELOG 纯度与完整性", "exitCode": 0, "output": "..." },
+ *     ...
+ *   }
+ * }
+ *
+ * worker 依据 exitCode + output 判定 PASS/FAIL/⏰/⏸️，不再自己跑命令。
+ *
+ * @param {string} runDir  run 目录
+ */
+async function runRegressionPrecheck(runDir) {
+  console.log('[driver] 预执行 regression-checklist（方案 A：命令执行从 LLM 剥离）...');
+  const t0 = Date.now();
+  const dims = parseRegressionDimensions();
+  console.log(`[driver] 解析到 ${dims.length} 个维度（含 bash 代码块）`);
+
+  const payload = {
+    meta: {
+      source: 'FORGE/playbook/regression-checklist.md',
+      dims: dims.length,
+      runAt: new Date().toISOString(),
+      note: '由 driver 预执行生成（v1.2.5+ 方案 A）。worker 只读此文件判定，禁止重新执行命令。',
+    },
+    dims: {},
+  };
+
+  // 顺序执行（维度间无依赖；串行以复用 runCommand 简单实现）
+  for (const dim of dims) {
+    const { exitCode, output } = await execRegressionDim(dim.script);
+    payload.dims[String(dim.num)] = {
+      num: dim.num,
+      title: dim.title,
+      exitCode,
+      output,
+    };
+    console.log(`  [precheck] 维度 ${dim.num} ${dim.title.slice(0, 24)}... exit=${exitCode ?? 'ERR'} (${output.length}B)`);
+  }
+
+  const outPath = join(runDir, 'regression-precheck.json');
+  writeFileSync(outPath, JSON.stringify(payload, null, 2), 'utf-8');
+  console.log(`[driver] regression-precheck.json 已写入 ${outPath}（${dims.length} 维度，耗时 ${((Date.now() - t0) / 1000).toFixed(1)}s）`);
+  return outPath;
+}
+
 /**
  * 从 verdict.md 解析最终裁决（PASS/FAIL）。
  * driver 用于 LEDGER 记录和最终输出。
@@ -1337,6 +1470,15 @@ async function main() {
     // acceptance 特殊处理：driver 先预跑脚本，worker 只解读日志
     if (step === 'acceptance') {
       await ensureAcceptancePreRun(args, runDir);
+    }
+
+    // regression 特殊处理（v1.2.5+）：driver 预执行 checklist，worker 只读结果判定
+    if (step === 'regression' && STEPS.regression.precheck) {
+      try {
+        await runRegressionPrecheck(runDir);
+      } catch (preErr) {
+        console.warn(`[driver] regression 预执行失败（worker 将回退到自行执行）: ${preErr.message}`);
+      }
     }
 
     try {
