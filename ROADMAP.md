@@ -117,7 +117,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 ### v1.2.x Graph Engine 进化路线
 
-> 编排引擎直接使用 LangGraph 原生能力（StateGraph + createReactAgent），不自建 DAG 调度。审计节点（★Reality Anchor）作为 guard edge 嵌入 LangGraph 工作流——这是 sofagent 在 Graph Engineering 中的唯一定位。理论框架详见 [PHILOSOPHY §十](./docs/PHILOSOPHY.md) 和 [ARCHITECTURE §Graph Engineering 视角](./docs/ARCHITECTURE.md#graph-engineering-视角控制图--stategraph)。
+> 编排引擎直接使用 LangGraph 原生能力（StateGraph + createReactAgent），不自建 DAG 调度。审计节点（★Reality Anchor）作为 guard edge 嵌入 LangGraph 工作流——这是 sofagent 在 Graph Engineering 中的唯一定位。理论框架详见 [VALIDATION](./docs/VALIDATION.md) 和 [ARCHITECTURE §Graph Engineering 视角](./docs/ARCHITECTURE.md#graph-engineering-视角控制图--stategraph)。
 
 **sofagent 已经在做 Graph Engineering**——`engine/orchestrator/src/loop/graph.ts` 用 LangGraph StateGraph 实现 `START→engineer→audit→reviewer→human_confirm→END`，`audit` 节点即 ★Reality Anchor（真实 git diff 24 条规则作 guard edge），`FileCheckpointer` 快照到 `.sofagent/checkpoint/` 即可审计状态文件。数据图天然对应蓄水池（知识库）+ 市政规划（Ontology）。后续迭代用 Graph Engineering 术语框定「并行编排」与「可视化」，不引入新能力。
 
@@ -250,7 +250,7 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 
 ### 🔮 行业印证
 
-> 完整行业对标（DeerFlow / Omnigent / DataFlow / OpenWorker / OpenFDE / a16z 七法则 / Graph Engineering / 5 阶段风险收敛）统一见 [PHILOSOPHY §十](./docs/PHILOSOPHY.md)。以下仅保留与版本规划直接相关的结论。
+> 完整行业对标（DeerFlow / Omnigent / DataFlow / OpenWorker / OpenFDE / a16z 七法则 / Graph Engineering / 5 阶段风险收敛）统一见 [VALIDATION](./docs/VALIDATION.md)。以下仅保留与版本规划直接相关的结论。
 
 **运行时审计演进路线**（meta-harness 三问作答）：
 - **v1.3.x**：最小运行时审计——wrapToolCall middleware 包 createReactAgent（FORGE 已跑 createReactAgent，加 middleware 即可）
@@ -281,7 +281,7 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 | **decisions.jsonl 判断时刻日志（OpenFDE 启发 · 最高优先）** | 每次判断落 `{kind, moment, why, spec_ref}`，决策审计底座（v1.3.x 意图审计） |
 | **分级降级梯队（OpenFDE 启发 · 最高优先）** | console→TUI→spec 逐级降级，workflow never stops（韧性设计） |
 
-> 📖 DeerFlow / OpenFDE 方法论印证见 [PHILOSOPHY §十](./docs/PHILOSOPHY.md)；已被主版本表收纳的 DeerFlow 项（Session Goals `/goal`、`/compact`、Skill 渐进加载、记忆分层、Scheduled Tasks、ToolOutputBudget、`--doctor`）见 v1.2.7 / v1.2.8，不在此重复。
+> 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./docs/VALIDATION.md)；已被主版本表收纳的 DeerFlow 项（Session Goals `/goal`、`/compact`、Skill 渐进加载、记忆分层、Scheduled Tasks、ToolOutputBudget、`--doctor`）见 v1.2.7 / v1.2.8，不在此重复。
 
 ---
 
@@ -290,7 +290,7 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 | **运行时审计接入点（v1.3.x · LangGraph middleware）** | wrapToolCall middleware 包 createReactAgent，把 tool-gate 规则升级为运行时拦截 + 审计日志 |
 | **EnkryptAI Secure MCP Gateway（v1.4.x · 开源借力）** | pre_model_hook / post_model_hook 安全护栏，audit_only 模式 |
 | **LiteLLM 控制平面（v1.4.x · 开源借力）** | 开源 LLM gateway：成本追踪 / 预算 / 路由 / 护栏 |
-| **OpenWorker 权限模型（v1.3.x · 设计启发）** | 四级权限 + 命令白名单 + 无人值守收件箱（详见 [PHILOSOPHY §十](./docs/PHILOSOPHY.md)）|
+| **OpenWorker 权限模型（v1.3.x · 设计启发）** | 四级权限 + 命令白名单 + 无人值守收件箱（详见 [VALIDATION](./docs/VALIDATION.md)）|
 | **bubblewrap / seatbelt 沙箱（v1.4.0 · 开源借力）** | OS 级沙箱原语（Linux bwrap+seccomp / macOS seatbelt），SubAgent 沙箱底座 |
 | **MLflow agent 评估（v2.x · 开源借力）** | 50+ agent 评估指标 + LLM-as-Judge，FORGE 评估框架参考 |
 

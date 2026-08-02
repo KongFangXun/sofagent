@@ -20,7 +20,7 @@
 
 **FORGE loop = LangChain Core（LLM 调用底座）+ LangGraph `createReactAgent`（编排引擎）。**
 
-不多不少。不用 deepagents 全家桶，不用 LangChain 全家桶（Document Loader / Vector Store / RAG pipeline 都不碰）。完整技术选型原则见 [PHILOSOPHY §十一](../PHILOSOPHY.md#十一agent-生态三层模型与-sofagent-的位置)。
+不多不少。不用 deepagents 全家桶，不用 LangChain 全家桶（Document Loader / Vector Store / RAG pipeline 都不碰）。完整技术选型原则见 [VALIDATION](../VALIDATION.md#技术选型原则用什么不用什么)。
 
 ```js
 const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
