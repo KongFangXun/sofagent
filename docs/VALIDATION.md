@@ -383,3 +383,7 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 > 📖 来源：公众号「AI 风起兮」2026-08-01《Ontology 的五大构建块: Object / Link / Action / Function / Interface》（Palantir Ontology 深度拆解 系列第 2 篇）
 
 **框架级对等印证**：Pydantic AI（Python Agent 框架，2026-06 V2）独立演化收敛到同一组原语——HITL 工具审批门 = `human_confirm` 节点、Capabilities 可组合能力包 = SKILL.md + registry 动态注册、Evals = `data/eval/` 评分、Graph 编排 = LangGraph StateGraph。跨语言（Python vs TS）、跨范式（runtime 框架 vs harness 约束层）独立收敛到同一组原语，说明 sofagent 的原语选择经受住了独立性检验。
+
+**学术实证印证**：本体抽取（Ontology Extraction）已被学术界作为正式 NLP 任务量化研究——一篇覆盖 36 篇论文的 A 级综述报告，基于 LLM 的本体抽取任务 F1 最高达 72.78%，说明「用 LLM 从非结构化文本抽取结构化本体」不是工程伪命题，而是有公开学术基线、可量化评估的研究方向。sofagent 的 Ontology 本体结构（v1.3.1 规划）走的是同一方向——从企业非结构化文档（SOP / 会议纪要 / 操作手册）抽取实体、关系、动作，落地为可运行的 knowledge/ 节点。
+
+> 📖 来源：《大模型×本体工程：36 篇论文系统性综述》（A 级综述，2026），本体抽取任务 F1 = 72.78%
