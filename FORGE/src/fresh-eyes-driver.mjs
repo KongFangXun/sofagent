@@ -94,6 +94,15 @@ const MODEL_CONFIGS = {
   },
 };
 
+// ─── 三层熔断阈值（模块级常量，避免散落在不同函数作用域） ──────────
+// 三层防线协同设计（run-01/run-02 事故修复）：
+//   L1 软熔断(TOOL_SOFT_LIMIT=50)：stateModifier 注入 HumanMessage 强制收尾
+//   L2 硬熔断(TOOL_HARD_LIMIT=60)：stream 循环物理 break，抢救部分产物
+//   L3 框架兜底(STEP_RECURSION_LIMITS)：LangGraph recursionLimit 最终防线
+// 数值关系：50(劝) → 60(拽) → 130(杀)，L2 和 L3 之间留 10 superstep 稳定窗口。
+const TOOL_SOFT_LIMIT  = 50;  // stateModifier：超此值注入"立即写报告"HumanMessage
+const TOOL_HARD_LIMIT  = 60;  // stream loop：超此值物理 break（L2 硬熔断）
+
 // ─── 模型定价（usage.jsonl 成本估算基础）─────────────────────
 // 单位：CNY per 1M tokens（百万 token 计价）
 //
@@ -327,9 +336,10 @@ const TOOL_OUTPUT_MAX_LINES = 200;
 function truncateToolOutput(text, maxLines = TOOL_OUTPUT_MAX_LINES) {
   const str = String(text);
 
-  // No such file 检测——在工具输出末尾追加系统提示。
-  // run-01/run-02 教训：模型看到 "No such file" 后反复换路径重试，
-  // 构成死循环主体。提示紧跟在输出后面，模型更容易遵守。
+  // No such file 检测——辅助手段，在工具输出末尾追加系统提示。
+  // 本质是 prompt 层措施（模型可能无视），不构成死循环的核心修复——
+  // 真正的防线是 stateModifier 软熔断(50) + stream 硬熔断(60)。
+  // 价值在于减少模型对错误信息的误判，明确告诉它"文件不存在"。
   const hasNoSuchFile = /No such file or directory/i.test(str);
 
   const lines = str.split('\n');
@@ -670,7 +680,6 @@ async function runWorker(step, roundDir, target) {
           toolCallCount += msg.tool_calls.length;
         }
       }
-      const TOOL_SOFT_LIMIT = 50;
       if (toolCallCount >= TOOL_SOFT_LIMIT) {
         const forceReport = new HumanMessage({
           content: '【系统强制指令】你已经调用了 ' + toolCallCount + ' 次工具，超过软上限。' +
@@ -753,7 +762,6 @@ async function runWorker(step, roundDir, target) {
     // run-01/run-02 教训：即使注入了强制收尾指令，qwen3.8-max-preview 仍可能
     // 无视 HumanMessage 继续调工具。这里是最后防线：到 TOOL_HARD_LIMIT(60)
     // 直接 break stream 循环，用已累积的 messages 抢救部分产物。
-    const TOOL_HARD_LIMIT = 60;
     let hardBreak = false;
     for await (const chunk of stream) {
       // chunk 是 { nodeName: stateDelta }——解包每个节点的 delta
@@ -782,6 +790,14 @@ async function runWorker(step, roundDir, target) {
     }
     if (hardBreak) {
       console.warn(`  🛑 [${step}#${role}] stream 已中断，从 ${allMessages.length} 条消息抢救产物`);
+      // 显式通知 generator 终止——break 会触发 return()，但某些实现可能
+      // 不在 return() 时取消底层 HTTP 请求。显式调用确保资源清理。
+      // 审查 P2 修复：避免 break 后的"幽灵"API 请求继续消耗 Token Plan 额度。
+      try {
+        await stream.return(undefined);
+      } catch {
+        // generator 已关闭或不可返回——忽略
+      }
     }
     // 返回扁平结构——与 invoke() 返回格式兼容，下游 extractAgentText / extractUsage 正常工作
     // _hardBreak flag 让写产物逻辑能给报告加标记头
