@@ -101,7 +101,8 @@ const MODEL_CONFIGS = {
 //   L3 框架兜底(STEP_RECURSION_LIMITS)：LangGraph recursionLimit 最终防线
 // 数值关系：50(劝) → 60(拽) → 130(杀)，L2 和 L3 之间留 10 superstep 稳定窗口。
 const TOOL_SOFT_LIMIT  = 50;  // stateModifier：超此值注入"立即写报告"HumanMessage
-const TOOL_HARD_LIMIT  = 60;  // stream loop：超此值物理 break（L2 硬熔断）
+const TOOL_HARD_LIMIT  = 60;  // stream loop：超此值进入"写报告窗口"（不再 break）
+const TOOL_GRACE_STEPS = 5;   // L2 触发后给模型的写报告窗口（superstep 数）
 
 // ─── 模型定价（usage.jsonl 成本估算基础）─────────────────────
 // 单位：CNY per 1M tokens（百万 token 计价）
@@ -680,6 +681,22 @@ async function runWorker(step, roundDir, target) {
           toolCallCount += msg.tool_calls.length;
         }
       }
+      if (toolCallCount >= TOOL_HARD_LIMIT) {
+        // L2 写报告窗口期：更强制的指令。run-06 教训：模型在 50 次注入后
+        // 仍无视普通指令继续调工具，这里用更严厉的措辞 + 每步重复注入。
+        const forceReport = new HumanMessage({
+          content: '【🔴 系统最终警告 🔴】你已调用 ' + toolCallCount + ' 次工具，远超预算。' +
+            '现在必须立即输出审查报告文本。禁止再调用任何工具。' +
+            '直接在回复中写出完整的 12 视角审查发现，格式：[视角] 路径 · 描述 · 优先级(P0|P1|P2)。'
+        });
+        if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
+          return [systemMsg, forceReport, ...messages];
+        }
+        const first = messages[0];
+        const recent = messages.slice(-MAX_CONTEXT_MESSAGES);
+        return [systemMsg, forceReport, first, ...recent];
+      }
+
       if (toolCallCount >= TOOL_SOFT_LIMIT) {
         const forceReport = new HumanMessage({
           content: '【系统强制指令】你已经调用了 ' + toolCallCount + ' 次工具，超过软上限。' +
@@ -758,11 +775,18 @@ async function runWorker(step, roundDir, target) {
 
     const allMessages = [];  // 累积所有 delta.messages，模拟 invoke 返回的扁平结构
     let toolCallCount = 0;
+    let graceStepCount = 0;        // L2 写报告窗口的 superstep 计数
+    let inGraceWindow = false;     // 是否在写报告窗口期
     // v1.2.6：stream 层硬熔断——stateModifier 软熔断(50)兜底。
-    // run-01/run-02 教训：即使注入了强制收尾指令，qwen3.8-max-preview 仍可能
-    // 无视 HumanMessage 继续调工具。这里是最后防线：到 TOOL_HARD_LIMIT(60)
-    // 直接 break stream 循环，用已累积的 messages 抢救部分产物。
+    // v1.2.7：L2 改两阶段——撞硬上限后进入写报告窗口(TOOL_GRACE_STEPS 步)，
+    // 不立即 break。窗口期内 stateModifier 每步注入更强的写报告指令，
+    // 如果模型输出了非空 content（写报告了）则正常结束；
+    // 窗口耗尽模型仍在调工具才真正 hardBreak。
+    // run-06 教训：直接 break 时所有 AI message 的 content 都是空的（模型
+    // 还没到写报告阶段），extractAgentText 从后往前找遍全部消息一条非空 content
+    // 都没有 → throw → 产物全部丢失。
     let hardBreak = false;
+    let gotReport = false;         // 模型在窗口期输出了文本
     for await (const chunk of stream) {
       // chunk 是 { nodeName: stateDelta }——解包每个节点的 delta
       for (const [, delta] of Object.entries(chunk)) {
@@ -770,23 +794,45 @@ async function runWorker(step, roundDir, target) {
         if (!Array.isArray(msgs)) continue;
         for (const msg of msgs) {
           allMessages.push(msg);
+          // 检测 AI message 是否有非空 content（模型开始写报告）
+          if (msg?._getType?.() === 'ai') {
+            const c = msg?.content;
+            let textContent = '';
+            if (typeof c === 'string') textContent = c;
+            else if (Array.isArray(c)) textContent = c.map(x => typeof x === 'string' ? x : x?.text ?? '').join('');
+            if (textContent.trim() && inGraceWindow) {
+              gotReport = true;
+              console.log(`  ✅ [${step}#${role}] 写报告窗口内捕获到报告文本（${textContent.length} 字符）`);
+            }
+          }
           // 工具调用消息（AI 发起 tool_call）
           if (msg?._getType?.() === 'ai' && msg.tool_calls?.length > 0) {
             for (const tc of msg.tool_calls) {
               toolCallCount++;
               console.log(`  → [${step}#${role}] tool #${toolCallCount}: ${tc.name}`);
-              if (toolCallCount >= TOOL_HARD_LIMIT && !hardBreak) {
-                hardBreak = true;
-                console.warn(`  🛑 [${step}#${role}] 工具调用 ${toolCallCount} 次撞硬上限，强制中断 stream`);
-                break;
+              // L2 硬熔断：进入写报告窗口（不立即 break）
+              if (toolCallCount >= TOOL_HARD_LIMIT && !inGraceWindow && !hardBreak) {
+                inGraceWindow = true;
+                console.warn(`  ⏳ [${step}#${role}] 工具调用 ${toolCallCount} 次撞硬上限，进入 ${TOOL_GRACE_STEPS} 步写报告窗口`);
               }
             }
           }
-          if (hardBreak) break;
         }
-        if (hardBreak) break;
       }
-      if (hardBreak) break;
+      // 写报告窗口期检查
+      if (inGraceWindow && !gotReport && !hardBreak) {
+        graceStepCount++;
+        if (graceStepCount >= TOOL_GRACE_STEPS) {
+          hardBreak = true;
+          console.warn(`  🛑 [${step}#${role}] 写报告窗口耗尽（${TOOL_GRACE_STEPS} 步），模型仍未输出文本，强制中断`);
+          break;
+        }
+      }
+      // 窗口期内拿到报告 → 正常结束（stream 自然完成或我们主动 break）
+      if (gotReport) {
+        console.log(`  📝 [${step}#${role}] 报告已捕获，正常结束`);
+        break;
+      }
     }
     if (hardBreak) {
       console.warn(`  🛑 [${step}#${role}] stream 已中断，从 ${allMessages.length} 条消息抢救产物`);
@@ -829,7 +875,13 @@ async function runWorker(step, roundDir, target) {
   // 6. 提取文本输出
   let text = extractAgentText(result);
   if (!text) {
-    throw new Error(`[worker:${step}] DeepAgent 未返回内容`);
+    // 硬熔断后模型未输出文本——从工具结果合成最小报告
+    // run-06 教训：直接 throw 会让抢救的消息全部白费
+    console.warn(`  ⚠️ [${step}] 模型未输出文本，从工具结果合成最小报告`);
+    text = synthesizeReportFromMessages(result?.messages ?? [], step, role);
+    if (!text) {
+      throw new Error(`[worker:${step}] DeepAgent 未返回内容且无法合成报告`);
+    }
   }
 
   // v1.2.6：stream 硬熔断时给报告加标记头，让下游知道这是部分报告
@@ -975,6 +1027,49 @@ function extractAgentText(result) {
     return JSON.stringify(result);
   }
   return String(result ?? '');
+}
+
+/**
+ * 从工具调用结果合成最小报告（硬熔断兜底）。
+ *
+ * 当模型在写报告窗口内仍未输出文本时，从 ToolMessage 里提取
+ * 关键信息（文件路径、搜索结果摘要），拼成一个占位报告。
+ * 质量不如模型自己写的，但比 throw 后全部丢失好。
+ *
+ * @param {Array} messages  agent 返回的消息数组
+ * @param {string} step      步骤名
+ * @param {string} role      角色 A/B
+ * @returns {string}         合成的报告文本
+ */
+function synthesizeReportFromMessages(messages, step, role) {
+  const findings = [];
+  for (const msg of messages) {
+    // 从 ToolMessage 提取内容
+    if (msg?._getType?.() === 'tool') {
+      const content = typeof msg.content === 'string' ? msg.content : '';
+      // 从工具输出里提取文件路径行（cat/grep/find 的输出常含路径）
+      const pathLines = content.split('\n')
+        .filter(l => /\.(ts|md|sh|js|mjs|json)\b/.test(l))
+        .slice(0, 3);  // 每个工具结果最多取 3 行
+      if (pathLines.length > 0) {
+        findings.push(...pathLines);
+      }
+    }
+  }
+  if (findings.length === 0) return '';
+  // 取前 30 条去重，拼成最小报告
+  const unique = [...new Set(findings)].slice(0, 30);
+  return [
+    `<!-- ⚠️ 硬熔断兜底报告——模型未输出文本，此内容由 driver 从工具结果自动合成 -->`,
+    `<!-- step=${step} role=${role} 工具结果摘要 ${unique.length} 条 -->`,
+    '',
+    '## 审查发现（自动合成——质量有限）',
+    '',
+    ...unique.map((f, i) => `${i + 1}. ${f.trim()}`),
+    '',
+    '## 总评',
+    `本报告由 driver 从 ${messages.length} 条消息中的工具结果自动合成。模型在硬熔断后未输出文本。`,
+  ].join('\n');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2104,6 +2199,9 @@ async function main() {
   let actualRounds  = 0;
   let finalCounts   = { p0: 0, p1: 0, p2: 0 };
   let severityHistory = [];  // #13 每轮 (P0+P1) 趋势，用于加权收敛检测
+  // v1.2.7：连续降级检测——run-06 教训：3 轮全降级消耗 132k tokens 零产出。
+  // 连续 2 轮 isDegraded=true → 直接 error 退出，不浪费 token 跑无意义的循环。
+  let consecutiveDegraded = 0;
 
   for (let round = 1; round <= args.maxRounds; round++) {
     actualRounds = round;
@@ -2155,6 +2253,20 @@ async function main() {
       // dry-run 只跑一轮示意
       stopReason = 'dry-run';
       break;
+    }
+
+    // v1.2.7：连续 2 轮降级 → 直接 error 退出
+    // run-06 教训：3 轮全降级消耗 132k tokens 零产出
+    if (counts.isDegraded) {
+      consecutiveDegraded++;
+      if (consecutiveDegraded >= 2) {
+        console.error(`\n💥 连续 ${consecutiveDegraded} 轮降级，循环无产出意义，直接退出`);
+        stopReason = 'consecutive-degraded-error';
+        preservedStopReason = stopReason;
+        break;
+      }
+    } else {
+      consecutiveDegraded = 0;
     }
 
     if (isClean) {
