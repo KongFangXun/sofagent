@@ -60,7 +60,7 @@ sofagent 就是解决这个问题的：**它帮你把 AI 管起来，让 AI 干�
 <details>
 <summary>🔧 技术细节（给开发者）</summary>
 
-底层是 **Harness 中间件**——每次 Agent 改完代码自动跑审计规则（21 条注册：13 条默认启用 + 8 条扩展需显式开启；git diff 硬证据，零 token），违规当场拦截、合规存快照。四层加载链（SKILL.md → fde.md → think.md → knowledge/）在 Agent 启动时注入行为底线。完整架构见 [ARCHITECTURE.md](./docs/ARCHITECTURE.md)。
+底层是 **Harness 中间件**——每次 Agent 改完代码自动跑审计规则（24 条注册：17 条默认启用 + 7 条扩展需显式开启；git diff 硬证据，零 token），违规当场拦截、合规存快照。四层加载链（SKILL.md → fde.md → think.md → knowledge/）在 Agent 启动时注入行为底线。完整架构见 [ARCHITECTURE.md](./docs/ARCHITECTURE.md)。
 
 </details>
 
@@ -234,7 +234,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 
 | 包 | 用途 |
 |------|------|
-| `@sofagent/audit` | 审计引擎（21 条规则，git diff 硬证据）|
+| `@sofagent/audit` | 审计引擎（24 条规则，git diff 硬证据）|
 | `@sofagent/core` | 运行时诊断（doctor / verify）|
 | `@sofagent/orchestrator` | FORGE 自迭代工具链（LOOP 流水线 + 任务编排；P2-37：编排能力保留但**不对用户宣传**——任务编排由你使用的 Agent 平台完成，sofagent 只在其过程中提供约束/审计/经验沉淀）|
 | `@sofagent/daemon` | 守护进程（文件监控 / 定时巡检）|
@@ -256,7 +256,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 | FDE 诊断方法论（四阶段十二步） | [GUIDE.md](./FDE/GUIDE.md) |
 | 🔗 激活链设计（交付物→自动运转） | [激活链设计文档](./docs/guides/fde-activation-chain.md) |
 | 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
-| 引擎架构、21 条规则、内部机制 | [↓ 引擎架构（开发者段）](#engine-architecture) |
+| 引擎架构、24 条规则、内部机制 | [↓ 引擎架构（开发者段）](#engine-architecture) |
 | 为什么这么设计 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | 安全声明（含数据存储说明） | [SECURITY](./SECURITY.md) |
@@ -275,7 +275,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 > [!NOTE]
 > **品牌与描述**：**sofagent** 是产品品牌名；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent（进场梳理工作流、把可自动化环节变成 AI 节点、构建本体、部署专属小模型的常驻硅基员工）。底层技术实现是一套约束 Agent 行为的 Harness 中间件（**能力底座 × 生命周期**双层架构：层 1 一底座·三引擎 + 层 2 激活链四阶段），开源在 `@sofagent/*`。下面这段是给开发者看的。
 
-sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，**能力底座 × 生命周期**双层架构。**层 1 能力底座 = 一底座·三引擎**：一底座 = 约束底座（开工前注入规则）；三引擎 = 审计引擎（21 条规则拦截）+ 回溯引擎（自动快照回滚）+ 进化引擎（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化）。**层 2 生命周期 = 激活链四阶段**（v1.2.5+，P1-18 口径统一）：激活（ACTIVATE）→ 编排（ORCHESTRATE）→ 执行（EXECUTE）→ 持续（SUSTAIN）。完整生命周期在诊断（FDE）与进化（EVOLVE）两端延伸为五阶段：诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，不作为对外引擎宣称。
+sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，**能力底座 × 生命周期**双层架构。**层 1 能力底座 = 一底座·三引擎**：一底座 = 约束底座（开工前注入规则）；三引擎 = 审计引擎（24 条规则拦截）+ 回溯引擎（自动快照回滚）+ 进化引擎（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化）。**层 2 生命周期 = 激活链四阶段**（v1.2.5+，P1-18 口径统一）：激活（ACTIVATE）→ 编排（ORCHESTRATE）→ 执行（EXECUTE）→ 持续（SUSTAIN）。完整生命周期在诊断（FDE）与进化（EVOLVE）两端延伸为五阶段：诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，不作为对外引擎宣称。
 
 <details>
 <summary>📖 一底座·三引擎架构（开发者参考）</summary>
@@ -293,14 +293,14 @@ flowchart LR
 | 组件 | 作用 | 状态 |
 |:------|:--------|:--:|
 | 🧭 约束底座 | 开工前规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
-| 🔍 审计引擎 | 21 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计引擎核心规则零 token**（16 条纯 git-diff 规则不调用 LLM + 1 条文件系统监控，4 条混合规则需 Agent 日志）——不调用 LLM（0 token），不消耗任何 LLM 额度 | ✅ 稳定 |
+| 🔍 审计引擎 | 24 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计引擎核心规则零 token**（19 条纯 git-diff 规则不调用 LLM + 1 条文件系统监控，4 条混合规则需 Agent 日志）——不调用 LLM（0 token），不消耗任何 LLM 额度 | ✅ 稳定 |
 | 🔄 回溯引擎 | 每次审计后自动 git snapshot，违规一键回滚 | ✅ 稳定 |
 | 🧬 进化引擎 | think.md 反思（✅ 已交付）+ Dream Cycle 知识回灌（🔧 轻量态）+ skillopt Skill 优化（⚠️ 需外部 SkillOpt CLI）| 🔧 部分可用 |
 
 </details>
 
 <details>
-<summary>📖 引擎细节 + 21 条规则</summary>
+<summary>📖 引擎细节 + 24 条规则</summary>
 
 ### 🧭 约束底座
 
@@ -314,19 +314,20 @@ LOOP 内部使用 LangGraph StateGraph 组装节点流转 + 6 个内置工具（
 
 ### 🔍 审计引擎
 
-21 条规则中 16 条纯 git-diff（不依赖 Agent 配合），4 条混合（A7/A8/A14/A15 需 Agent 日志），1 条文件系统（A17 异常批量变更）。v1.0.8+ 自研 git-shadow diff 解析（isomorphic-git 风格，非内嵌第三方包）+ daemon 文件监控，**不需要 git commit 也能审计**。自 v1.1.8 起加入 Prompt 注入防护（A9 扩展）+ 联邦查询加密，审计能力从本地扩展到跨设备。全 workspace 测试覆盖 **1320 测试 / 12 包**。
+24 条规则中 19 条纯 git-diff（不依赖 Agent 配合），4 条混合（A7/A8/A14/A15 需 Agent 日志），1 条文件系统（A17 异常批量变更）。v1.0.8+ 自研 git-shadow diff 解析（isomorphic-git 风格，非内嵌第三方包）+ daemon 文件监控，**不需要 git commit 也能审计**。自 v1.1.8 起加入 Prompt 注入防护（A9 扩展）+ 联邦查询加密，审计能力从本地扩展到跨设备。全 workspace 测试覆盖 **1438 测试 / 12 包**。
 
-**默认规则（13 条，装上就生效）**：
+**默认规则（17 条，装上就生效）**：
 
 | 类别 | 规则 | 拦截什么 |
 |------|------|--------|
 | 🔴 密钥安全 | A1 敏感文件 · A2 密钥泄漏 | `.env` / `*.pem` 提交，硬编码 API Key |
 | 🟡 行为边界 | A3 越界编辑 · A4 删配置 | 改任务范围外的文件，删配置 |
-| 🟠 注入防御 | A9 注入 · A10 恶意来源 | 命令注入模式，非官方来源依赖 |
+| 🟠 注入防御 | A9 注入 · A10 恶意来源 | 命令注入模式，非官方来源依赖，typosquatting |
 | 🔵 流程合规 | A5 空消息 · A7 盲改 · A8 跳测试 · A19 消息质量 | 空 commit msg，不读就改，跳测试，低质量 msg |
 | ⚪ 工程质量 | A6 破构建 · A11 资源滥用 · A18 垃圾文件 | 构建配置异常，超大文件，临时文件提交 |
+| 🔴 安全红线 | A20 数据外传 · A21 持久化后门 · A22 权限提升 · A23 路径穿越 | curl 外传数据，LaunchAgent/systemd 后门，全权限 chmod，目录穿越序列 |
 
-**扩展规则（8 条，按需开启）**：A14 知识库跨域 · A15 盲动 · A16 非授权变更 · A17 异常批量（文件系统监控）· E1-E4（测试文件 / 未声明 TODO / 批量删除 / 低注释率）。完整 21 条规则表（含严重度、分级、判定逻辑）见 [engine/audit/README.md · 审计规则](./engine/audit/README.md#审计规则)。
+**扩展规则（7 条，按需开启）**：A14 知识库跨域 · A15 盲动 · A16 非授权变更 · A17 异常批量（文件系统监控）· E1-E2/E4（测试文件 / 未声明 TODO / 低注释率）。完整 24 条规则表（含严重度、分级、判定逻辑）见 [engine/audit/README.md · 审计规则](./engine/audit/README.md#审计规则)。
 
 ### 🔄 回溯引擎
 

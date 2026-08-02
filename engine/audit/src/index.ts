@@ -773,7 +773,7 @@ async function main(): Promise<void> {
   let configDisabledTooMany = false;
   if (config?.rules) {
     // v1.2.5: 追加 a20-a23（A20-A23 新增安全红线规则）
-    const ALL_RULE_KEYS = ['a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a14','a15','a16','a17','a18','a19','a20','a21','a22','a23','e1','e2','e3','e4'];
+    const ALL_RULE_KEYS = ['a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a14','a15','a16','a17','a18','a19','a20','a21','a22','a23','e1','e2','e4'];
     // P1-6: 基线规则集合与 core 共享常量统一（单一事实源）
     const BASELINE_KEYS = new Set<string>(BASELINE_RULE_KEYS);
     const disabledCount = Object.entries(config.rules)

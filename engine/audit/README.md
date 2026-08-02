@@ -214,7 +214,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 
 | Tool | 说明 | 参数 |
 |------|------|------|
-| `run_audit` | 对 git diff 跑全量审计规则（A1-A11、A14-A19 + E1-E4，共 21 条），返回结构化报告 | `diff`（git range）、`task`（任务描述）、`strict`（布尔）、`silent`（布尔） |
+| `run_audit` | 对 git diff 跑全量审计规则（A1-A11、A14-A23 + E1-E2/E4，共 24 条），返回结构化报告 | `diff`（git range）、`task`（任务描述）、`strict`（布尔）、`silent`（布尔） |
 | `get_think` | 读取 think.md 最近 N 条反思条目 | `count`（默认 1） |
 | `write_think` | 向 think.md 追加一条反思记录 | `lesson`（必填）、`task`（可选） |
 
@@ -256,7 +256,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 
 ## 审计规则
 
-### 默认规则（A1-A11 + A18/A19，共 13 条）
+### 默认规则（A1-A11 + A18-A23，共 17 条）
 
 | 规则 | 判定 | 严重度 | 分级 |
 |------|------|:--:|------|
@@ -269,16 +269,20 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 | A7 不存盲改 | 被修改文件无读取记录（依赖 `.sofagent/task/logs/`） | FAIL/WARN | 能力拐杖 |
 | A8 不逃验证 | 构建文件变更后无测试记录 | FAIL/WARN | 能力拐杖 |
 | A9 不纳注入 | 代码中存在命令注入风险模式 | FAIL | 业务底线 |
-| A10 不引毒源 | 依赖包黑名单检测 | WARN | 业务底线 |
-| A11 不滥资源 | 资源滥用检测（超大文件等） | WARN | 业务底线 |
+| A10 不引毒源 | 依赖包黑名单检测 + typosquatting + postinstall 脚本注入 | WARN | 业务底线 |
+| A11 不滥资源 | 资源滥用检测（超大文件、大行数删除等，v1.2.5 合并原 E3） | WARN | 业务底线 |
 | A18 垃圾文件 | 临时文件名模式的垃圾文件（v1.1.5 起提升为默认规则，评估误报率 0/513） | WARN | 能力拐杖 |
-| A19 commit message 质量 | message 命中黑名单词或过短（防"add"/"test"/"fix" 等低质 message） | FAIL | 业务底线 |
+| A19 commit message 质量 | message 命中黑名单词或过短（防"add"/"test"/"fix" 等低质 message） | FAIL | 工程规范 |
+| A20 不泄外联 | 数据外传检测（curl/wget POST 外传、WebSocket 外联、DNS 隧道） | FAIL | 业务底线 |
+| A21 不植后门 | 持久化后门检测（LaunchAgent plist、systemd service、crontab、注册表自启） | FAIL | 业务底线 |
+| A22 不越权限 | 权限提升检测（全权限 chmod、sudoers 修改、setuid/setgid、owner 变更为特权用户） | FAIL | 业务底线 |
+| A23 不逃路径 | 路径穿越检测（三级以上目录穿越序列、symlink 逃逸） | FAIL | 业务底线 |
 
-### 扩展规则（A14-A17 + E1-E4，共 8 条）
+### 扩展规则（A14-A17 + E1/E2/E4，共 7 条）
 
-> ℹ️ E1-E4 内部规则 ID 为 201-204，预留 101-199 区间给未来默认规则扩展。
+> ℹ️ E1-E4 内部规则 ID 为 201-204，预留 101-199 区间给未来默认规则扩展。E3 已在 v1.2.5 并入 A11（行数维度），编号跳号。
 
-A14-A17 + E1-E4 均需 `extendedRules: true` 启用（`DEFAULT_CONFIG=false`，opt-in）。仅当 config 解析失败走 `safeDefaults` 时 fail-closed 强制启用所有扩展规则——这是有意的保护性设计。
+A14-A17 + E1/E2/E4 均需 `extendedRules: true` 启用（`DEFAULT_CONFIG=false`，opt-in）。仅当 config 解析失败走 `safeDefaults` 时 fail-closed 强制启用所有扩展规则——这是有意的保护性设计。
 
 | 规则 | 判定 | 严重度 | 分级 |
 |------|------|:--:|------|
@@ -288,7 +292,6 @@ A14-A17 + E1-E4 均需 `extendedRules: true` 启用（`DEFAULT_CONFIG=false`，o
 | A17 异常批量变更 | 单次提交变更文件数超阈值（行为级检测，变更数量，evidenceMode=filesystem） | WARN | 工程规范 |
 | E1 不含测试文件 | 测试文件被提交到生产目录 | WARN | 能力拐杖 |
 | E2 TODO 未声明 | 新增 TODO 未在任务中声明 | WARN | 能力拐杖 |
-| E3 大量删除 | 单次提交删除行数 > 阈值 | WARN | 能力拐杖 |
 | E4 低注释率 | 新增 >200 行且注释率 < 5% | WARN | 能力拐杖 |
 
 > ⚠️ **A15 说明**：v1.1.3 起 A15 升级为 FAIL——workflow.yml 节点未声明 actions 时 FAIL（防 Agent 不声明 actions 绕过所有约束）。原 WARN 设计已废弃。
