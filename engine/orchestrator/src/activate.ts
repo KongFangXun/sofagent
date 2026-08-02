@@ -19,6 +19,8 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { load as yamlLoad, dump as yamlDump } from 'js-yaml';
 import { loadDefinition } from './registry';
+import { generateAgentIdentity, extractConstraintsFromPrompt } from '@sofagent/core';
+import type { AgentIdentity } from '@sofagent/core';
 
 // ============================================================
 // 类型定义
@@ -44,6 +46,8 @@ export interface EnterpriseAgentConfig {
   hitl: boolean;
   /** HITL 配置 */
   hitlConfig?: { interruptBefore: boolean; prompt?: string };
+  /** v1.2.5 §3.1: Agent 身份码 */
+  identity?: AgentIdentity;
 }
 
 /** activateWorkflow 返回值 */
@@ -310,6 +314,11 @@ function serializeToYml(config: EnterpriseAgentConfig): string {
     ymlObj['hitlConfig'] = config.hitlConfig;
   }
 
+  // v1.2.5 §3.1: 写入身份码
+  if (config.identity) {
+    ymlObj['identity'] = config.identity;
+  }
+
   return yamlDump(ymlObj, {
     indent: 2,
     lineWidth: -1, // 不换行长字符串（systemPrompt）
@@ -524,6 +533,14 @@ export async function activateWorkflow(opts: ActivateOptions): Promise<ActivateR
       hitl,
     };
 
+    // v1.2.5 §3.1: 生成 Agent 身份码（确定性 fingerprint）
+    const constraints = extractConstraintsFromPrompt(systemPrompt);
+    config.identity = generateAgentIdentity(nodeId, {
+      systemPrompt,
+      tools,
+      constraints,
+    });
+
     // hitlConfig（仅 ⚡ 节点或显式声明时）
     if (node.hitl_config) {
       config.hitlConfig = {
@@ -573,4 +590,4 @@ export async function activateWorkflow(opts: ActivateOptions): Promise<ActivateR
 // 导出辅助函数（供测试和外部调用）
 // ============================================================
 
-export { resolveTools, extractSkillBody, extractKnowledgeDomain, assembleSystemPrompt, serializeToYml };
+export { resolveTools, extractSkillBody, extractKnowledgeDomain, assembleSystemPrompt, serializeToYml, generateTopologyDescription };
