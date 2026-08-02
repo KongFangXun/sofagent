@@ -381,3 +381,5 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 **sofagent 印证**：sofagent 的「一底座·三引擎」遵循同一不可合并原则——审计引擎（看 diff 不改状态）与回溯引擎（改状态有快照）与进化引擎（算值不改状态）各有独立职责，合并任两者都会丧失核心能力。Palantir 的「Action 默认 staged，等人工 review 才 commit」与 sofagent 的 human_confirm 节点（[ARCHITECTURE human_confirm](./ARCHITECTURE.md#human_confirm)）完全同构——LLM 调用 Action 不能直接写库，必须在沙盒里等审批。
 
 > 📖 来源：公众号「AI 风起兮」2026-08-01《Ontology 的五大构建块: Object / Link / Action / Function / Interface》（Palantir Ontology 深度拆解 系列第 2 篇）
+
+**框架级对等印证**：Pydantic AI（Python Agent 框架，2026-06 V2）独立演化收敛到同一组原语——HITL 工具审批门 = `human_confirm` 节点、Capabilities 可组合能力包 = SKILL.md + registry 动态注册、Evals = `data/eval/` 评分、Graph 编排 = LangGraph StateGraph。跨语言（Python vs TS）、跨范式（runtime 框架 vs harness 约束层）独立收敛到同一组原语，说明 sofagent 的原语选择经受住了独立性检验。
