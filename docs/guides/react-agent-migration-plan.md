@@ -1,5 +1,7 @@
 # 迁移架构方案：createDeepAgent → createReactAgent
 
+> ⚠️ **v1.2.0 迁移已完成，本文档仅保留作历史参考。** deepagents 已于 v1.2.0 彻底弃用，编排引擎全面迁移至 LangGraph createReactAgent。以下内容反映的是迁移决策过程，不代表当前架构。
+>
 > 架构师 Bob 出品 · 2026-07-26
 > 目标：代码追上文档声明——v1.2.0 已声称弃用 deepagents，迁移至 LangGraph createReactAgent
 

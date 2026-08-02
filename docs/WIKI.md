@@ -158,7 +158,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 
 | 项 | 值 |
 |----|-----|
-| 当前版本 | **v1.2.4**（2026-08-01） |
+| 当前版本 | **v1.2.4**（2026-08-02） |
 | 下一版本 | v1.2.5（激活链 Phase 1，参见 ROADMAP.md） |
 | 测试覆盖 | 1438 测试 / 12 包（共 1438，16 因 safe-delete 环境限制预期失败） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1-E2/E4，每次 commit 自动跑 |
@@ -206,6 +206,14 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | 查某个版本改了什么 | [CHANGELOG.md](../CHANGELOG.md) → `docs/changelog/vX.Y/vX.Y.Z.md` |
 | 了解审计规则 | [SECURITY.md](../SECURITY.md) + [ARCHITECTURE §三](./ARCHITECTURE.md) |
 | 了解 SKILL 约束体系 | [SKILL/SKILL.md](../SKILL/SKILL.md) |
+| 配置 MCP 调用 | [guides/mcp-usage.md](./guides/mcp-usage.md) |
+| 配置 GitHub Actions CI | [guides/github-action.md](./guides/github-action.md) |
+| 了解文件系统审计 | [guides/filesystem-audit.md](./guides/filesystem-audit.md) |
+| 企业部署指南 | [guides/enterprise-deploy.md](./guides/enterprise-deploy.md) |
+| 多设备联邦同步 | [guides/multi-device-sync.md](./guides/multi-device-sync.md) |
+| 团队批量部署 | [guides/team-deploy.md](./guides/team-deploy.md) |
+| 了解插件机制 | [guides/plugins.md](./guides/plugins.md) |
+| 运行测试 / 验证效果 | [guides/testing.md](./guides/testing.md) |
 | 添加新审计规则 | `engine/audit/src/rules/` → 对照现有规则模式（defaultRules / extendedRules） |
 | 新建 Sub Agent | `SKILL/agents/` → 参照 `agents/engineer/SKILL.md` |
 | 运行测试 | `npm test`（根目录） |
@@ -215,10 +223,11 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | 你想…… | 读这个 |
 |---------|--------|
 | 了解 FORGE 自迭代工具链 | [FORGE/README.md](../FORGE/README.md) |
+| 给 FORGE 加新 Loop | [guides/loop-development.md](./guides/loop-development.md) |
 | 走发版流程（十二阶段 SOP） | [docs/changelog/releasing.md](./changelog/releasing.md) |
 | 跑独立审查 | [FORGE/playbook/fresh-eyes-review.md](../FORGE/playbook/fresh-eyes-review.md) |
 | 贡献代码 | [CONTRIBUTING.md](../CONTRIBUTING.md) |
 
 ---
 
-> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.2.4 · 孔放勋 · 2026-08-01。
+> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.2.4 · 孔放勋 · 2026-08-02。

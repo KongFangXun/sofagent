@@ -353,6 +353,8 @@ LOOP 内部使用 LangGraph StateGraph 组装节点流转 + 6 个内置工具（
 
 欢迎提 Issue 和 PR，尤其较真的那种。[CONTRIBUTING.md](./CONTRIBUTING.md) · [致谢](./docs/THANKS.md)
 
+**作者**：[孔放勋](https://github.com/KongFangXun) · MIT License
+
 ---
 
 <p align="center">
