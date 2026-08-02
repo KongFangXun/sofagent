@@ -372,7 +372,12 @@ RIVER_DOCS="docs/ARCHITECTURE.md docs/PHILOSOPHY.md FDE/GUIDE.md"
 RIVER_WARN=0
 for doc in $RIVER_DOCS; do
   if [ -f "$doc" ]; then
-    RIVER_COUNT=$(grep -c "堤坝\|自来水厂\|管网" "$doc" 2>/dev/null || echo "0")
+    # 🔴 v1.2.5 修复整数比较 bug：grep -c 无匹配时输出 "0" 且退出码 1，
+    #    原 `|| echo "0"` 会再补一个 "0" 使 RIVER_COUNT="0\n0"，
+    #    导致下方 `[ -gt ]` 报 "integer expression expected"。
+    #    改用 `|| true`（只稳退出码、不追加输出）+ 默认值兜底文件不可读(exit 2)的空值。
+    RIVER_COUNT=$(grep -c "堤坝\|自来水厂\|管网" "$doc" 2>/dev/null || true)
+    RIVER_COUNT=${RIVER_COUNT:-0}
     if [ "$RIVER_COUNT" -gt 4 ]; then
       echo "  ⚠ $doc River 比喻 ${RIVER_COUNT} 处（建议 ≤4）"
       RIVER_WARN=$((RIVER_WARN + 1))
