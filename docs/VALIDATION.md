@@ -387,3 +387,16 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 **学术实证印证**：本体抽取（Ontology Extraction）已被学术界作为正式 NLP 任务量化研究——一篇覆盖 36 篇论文的 A 级综述报告，基于 LLM 的本体抽取任务 F1 最高达 72.78%，说明「用 LLM 从非结构化文本抽取结构化本体」不是工程伪命题，而是有公开学术基线、可量化评估的研究方向。sofagent 的 Ontology 本体结构（v1.3.1 规划）走的是同一方向——从企业非结构化文档（SOP / 会议纪要 / 操作手册）抽取实体、关系、动作，落地为可运行的 knowledge/ 节点。
 
 > 📖 来源：《大模型×本体工程：36 篇论文系统性综述》（A 级综述，2026），本体抽取任务 F1 = 72.78%
+
+**Harness Engineering 方法论印证**：GStark（YC 总裁 Gary Tan 开源，GitHub 近 5 万 Star）独立演化出三条 Harness 设计哲学，与 sofagent 已有能力逐条同构：
+
+| GStark 设计哲学 | sofagent 对应 | 同构关系 |
+|------|------|------|
+| **机械化架构约束**（别跟 AI 讲道理，把护栏焊死） | 审计引擎 24 条规则 + BASELINE_RULE_KEYS 不可 config 关闭 | 完全同构——审计引擎就是焊死的护栏 |
+| **角色级约束**（每个 Skill 开头自检「这活是不是我该干的」） | knowledge-domain include/exclude + SubAgent 角色定义 | 完全同构——knowledge-domain 边界即角色级约束 |
+| **多轮生成再筛选**（AI 跑一次成本趋零 → 多跑几轮挑最好） | A/B 双跑 + fresh-eyes 12 视角独立审查 | 完全同构——FORGE fresh-eyes-loop 即多轮再筛选 |
+| **动手前先搜索**（设计前搜方法论、审查前搜安全清单） | Ontology knowledge/ + search_knowledge MCP tool | 完全同构——知识库 + MCP 搜索即先搜索后动手 |
+
+顶尖团队用 Harness 的工业级验证数据：OpenAI Codex 团队 3-7 人 5 个月产出 100 万行生产级代码；LangChain + Deep Agents 在 Terminal 基准测试排名从 30 名升到前五。不改底层模型，只加 Harness 就能大幅提效——与 sofagent「能力长在代码里不长在 prompt 里」的产品哲学一致。
+
+> 📖 来源：得到大脑《Harness Engineering 深度解析》2026-08-01（GStark / OpenAI Codex / LangChain Deep Agents 公开数据）
