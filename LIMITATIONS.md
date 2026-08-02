@@ -206,6 +206,8 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 > ⚠️ **审计日志全局共享**：当前版本审计日志写入全局 `~/.sofagent/data/audit/history.jsonl`，不做项目级隔离。多项目场景下审计记录会混合存储。按 git 仓库隔离计划在 v1.3.x 落地。
 
+> ⚠️ **知识库同样全局共享（P1-31 披露）**：`~/.sofagent/data/knowledge/` 单目录遍历、无租户/项目维度隔离——多项目、多 Agent 的知识沉淀（entities/concepts/comparisons/summaries）混合存储，查询时全局命中。财务与人事等不同域 Agent 的数据会串。按项目/Agent 隔离计划在 v1.3.x 落地。
+
 task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。age 加密已纳入 v1.4.0 roadmap（见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](./SECURITY.md)）。
 - history.jsonl 存审计判定详情，A2/A9 已脱敏，其他规则 details 可能含代码片段或文件路径，敏感场景请配合外部加密卷
 

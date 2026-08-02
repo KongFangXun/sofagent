@@ -25,6 +25,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { atomicWriteSync } from './shared/atomic-write';
 import { getHmacKey, stableStringify } from './audit-history';
 import { getConfigFile } from './data-paths';
+import { BASELINE_RULE_KEYS } from './shared/rule-constants';
 
 /**
  * 审计配置——由 .sofagent/config.yml 加载
@@ -300,7 +301,12 @@ function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath:
   }
 
   const sig = parsed['signature'];
-  if (typeof sig !== 'string' || sig.trim().length === 0) return; // 无顶层 signature → 向后兼容
+  if (typeof sig !== 'string' || sig.trim().length === 0) {
+    // P1-5: 签名缺失不再静默接受——明确 WARN（防篡改签名是可选字段，删 signature 即静默接受的洞）
+    // 仅当配置存在且非空时提示，避免全新安装（无配置）时刷屏
+    console.warn(`⚠️ config.yml 无防篡改签名（signature 字段缺失）——配置可被任意修改且不被发现。如需强校验，运行 sofagent-audit --init 后可用 signConfig 签名（见 docs/guides/enterprise-deploy.md）`);
+    return;
+  }
 
   // 从待验内容中剔除顶层 signature 字段（计算签名时不应包含签名自身）
   delete parsed['signature'];
@@ -409,20 +415,19 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
 
   // 校验 rules key——未知规则名输出警告
   // v1.1.5: P0-1 补全 a18/a19（v1.1.4 新增 A18/A19 规则后此处遗漏）
-  // P1-16: 安全规则被禁用时告警
+  // P1-6: 基线规则集合与 runner 统一（共享常量 BASELINE_RULE_KEYS = a1/a2/a9/a10/a11）
   if (merged.rules) {
-    const securityRules = ['a1', 'a2'];
-    for (const key of securityRules) {
+    for (const key of BASELINE_RULE_KEYS) {
       if (merged.rules[key] === false) {
-        console.warn(`⚠️ 安全规则 ${key.toUpperCase()} 已被禁用——审计将不拦截${key === 'a1' ? '敏感文件' : '密钥泄漏'}`);
+        console.warn(`⚠️ 基线规则 ${key.toUpperCase()} 已被禁用——审计将不拦截该安全底线（runner 仍会强制启用）`);
       }
     }
 
     // ⚠️ 同步要求：新增 A 类规则时，此处必须同步追加
     //    权威源见 sofagent/audit/src/rules/runner.ts AUDIT_PRIORITY
     const knownKeys = new Set([
-      ...securityRules,
-      'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11',
+      ...BASELINE_RULE_KEYS,
+      'a3', 'a4', 'a5', 'a6', 'a7', 'a8',
       'a14', 'a15', 'a16', 'a17', 'a18', 'a19',
       'e1', 'e2', 'e3', 'e4',
     ]);

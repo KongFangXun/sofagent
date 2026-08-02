@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { existsSync, readFileSync, writeFileSync, rmSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { tmpdir, homedir } from 'os';
 import { createHash, randomBytes } from 'crypto';
 import {
@@ -260,25 +260,21 @@ describe('audit-history', () => {
   });
 
   describe('P2-6: HMAC-SHA256 签名（v1.1.8）', () => {
-    const KEY_PATH = join(homedir(), '.sofagent-key');
-    let backupKey: string | null = null;
+    // P1-4: 用 SOFAGENT_KEY_PATH 指向临时目录——绝不触碰真实 ~/.sofagent-key
+    // （此前 beforeEach 删真实密钥、afterEach 恢复，中途 kill -9 会丢用户密钥）
+    let KEY_PATH: string;
+    let savedKeyPath: string | undefined;
 
     beforeEach(() => {
-      // 备份真实密钥（若存在），避免测试污染；确保初始无密钥（降级模式）
-      if (existsSync(KEY_PATH)) {
-        backupKey = readFileSync(KEY_PATH, 'utf-8');
-        rmSync(KEY_PATH);
-      }
+      savedKeyPath = process.env.SOFAGENT_KEY_PATH;
+      KEY_PATH = join(tmpDir(), '.sofagent-key');
+      process.env.SOFAGENT_KEY_PATH = KEY_PATH;
     });
 
     afterEach(() => {
-      // 恢复真实密钥或清理测试密钥
-      if (backupKey !== null) {
-        writeFileSync(KEY_PATH, backupKey, 'utf-8');
-      } else if (existsSync(KEY_PATH)) {
-        rmSync(KEY_PATH);
-      }
-      backupKey = null;
+      try { rmSync(dirname(KEY_PATH), { recursive: true, force: true }); } catch { /* */ }
+      if (savedKeyPath === undefined) delete process.env.SOFAGENT_KEY_PATH;
+      else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
     });
 
     it('无 HMAC 密钥：降级 SHA-256，append + check 通过且不含 hmacSig', () => {

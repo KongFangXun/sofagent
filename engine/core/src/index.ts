@@ -10,6 +10,27 @@
 // ── 常量 ──
 export { VERSION } from './shared/constants';
 
+// ── P1-6: 基线规则常量（单一事实源）──
+export { BASELINE_RULE_KEYS, BASELINE_RULE_NUMBERS } from './shared/rule-constants';
+export type { BaselineRuleKey } from './shared/rule-constants';
+
+// ── P1-27: 密钥检测正则单一事实源（A2 + ToolGate 共用）──
+export { SECRET_PATTERNS } from './shared/secret-patterns';
+
+// ── P1-3: 联邦/巡检共用实现（从 daemon 下沉，audit 静态 import）──
+export {
+  checkConflict,
+  mergeFederationResults,
+  pickWinner,
+} from './federation';
+export type {
+  InspectorConfig,
+  InspectorResult,
+  KnowledgeQueryResult,
+  FederationResult,
+  MergedKnowledge,
+} from './federation';
+
 // ── 原子写入 ──
 export { atomicWriteSync, atomicAppendSync } from './shared/atomic-write';
 

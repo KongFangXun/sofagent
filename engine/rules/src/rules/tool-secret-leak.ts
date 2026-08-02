@@ -1,20 +1,12 @@
 // ============================================================
 // tool-secret-leak.ts · 移植 audit rule-a2（密钥泄漏检测）
 // v1.2.0：tool 视角——扫 args 字面量里的密钥模式
+// v1.2.5 P1-27: SECRET_PATTERNS 抽到 @sofagent/core 共享——此前本文件用严格
+//   48 位 sk- 模式导致 32-47 位密钥被 ToolGate 放行（与 A2 漂移互补成洞）。
 // ============================================================
 
 import type { ToolRule, ToolCallContext, InterceptVerdict } from '../types';
-
-/** 密钥泄漏检测正则模式（与 audit rule-a2 对齐） */
-const SECRET_PATTERNS: { pattern: RegExp; label: string }[] = [
-  { pattern: /AKIA[A-Z0-9]{16}/, label: 'AWS Access Key' },
-  { pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/, label: 'Private Key' },
-  { pattern: /sk-[a-zA-Z0-9]{48}/, label: 'OpenAI API Key' },
-  { pattern: /sk-proj-[a-zA-Z0-9_]{40,}/, label: 'OpenAI Project Key' },
-  { pattern: /sk-svcacct-[a-zA-Z0-9_]{40,}/, label: 'OpenAI Service Account Key' },
-  { pattern: /sk-admin-[a-zA-Z0-9_]{40,}/, label: 'OpenAI Admin Key' },
-  { pattern: /gh[ps]_[A-Za-z0-9]{36}/, label: 'GitHub Token' },
-];
+import { SECRET_PATTERNS } from '@sofagent/core';
 
 /**
  * 从 tool call args 中提取所有字符串值（递归）

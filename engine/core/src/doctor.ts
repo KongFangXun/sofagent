@@ -180,22 +180,23 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   }
 
   // 5. 依赖检查
+  // P1-8: 依赖解析从引擎自身路径（__dirname → 仓库根 node_modules）找，
+  //   不再从 cwd 找（此前在非仓库目录跑 --doctor 会误报 js-yaml 未安装）；
+  //   移除对 @langchain/langgraph 的无意义检查（不在 audit/core 运行时依赖内）。
   console.log('\n── 依赖检查 ──');
   let depsOk = true;
-  const workspaceDir = join(projectDir, 'node_modules');
-  const rootNodeModules = join(
-    projectDir.split('/engine/')[0] || projectDir,
-    'node_modules'
-  );
+  // dist/doctor.js → engine/core/dist → engine → 仓库根
+  const rootNodeModules = join(__dirname, '..', '..', '..', 'node_modules');
+  const workspaceNodeModules = join(projectDir, 'node_modules');
 
-  const criticalDeps = ['js-yaml', '@langchain/langgraph'];
+  const criticalDeps = ['js-yaml'];
   for (const dep of criticalDeps) {
     const depPath = join(rootNodeModules, dep);
     if (existsSync(depPath)) {
       ok(`${dep} 已安装`);
     } else {
       // 检查 workspace node_modules
-      const wsPath = join(projectDir, 'node_modules', dep);
+      const wsPath = join(workspaceNodeModules, dep);
       if (existsSync(wsPath)) {
         ok(`${dep} 已安装 (workspace)`);
       } else {

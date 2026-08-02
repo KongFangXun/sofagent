@@ -51,8 +51,11 @@ export { checkHistoryChainIntegrity, checkHistoryChainDetailed, getHistoryFilePa
  * 对 ruleResult 做脱敏处理——避免审计工具自身成为第二泄漏点。
  * A2（密钥泄漏，number=2）和 A9（prompt injection，number=9）的 details
  * 移除命中行原文，替换为脱敏占位文本。
+ * P1-26: 只在规则真正命中（details 非空）时覆写——此前无条件覆写导致
+ *   干净提交也被标"检测到密钥泄漏"（1589 条假告警，SIEM 噪声 100%）。
  */
 function sanitizeRuleResult(rule: RuleCheck): RuleCheck {
+  if (rule.details.length === 0) return rule; // 未命中 → 原样保留（不写假告警）
   if (rule.number === 2) {
     return {
       ...rule,
@@ -188,26 +191,19 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
 
   const sanitizedEntry = { ...baseSanitized, hmacSig: hmacSig ?? undefined };
   // v1.0.5: 使用原子追加（先读+追加+原子写），避免并发写入导致的行交错
-  // v1.2.3 最小缓解：写入后读回校验最后一行是否为完整 JSON（防并发写入损坏）
+  // v1.2.5 P1-2: atomicAppendSync 已内置文件锁互斥（O_EXCL + 过期回收），
+  //   读-改-写跨进程串行化——不再需要 busy-wait 重试循环（原 189-206 行已移除）。
   const jsonLine = JSON.stringify(sanitizedEntry);
   atomicAppendSync(filePath, jsonLine);
-  for (let retry = 0; retry < 3; retry++) {
+  // 单次读回校验（best-effort——锁已保证互斥，最后一行必然完整；校验失败仅告警）
+  try {
     const content = readFileSync(filePath, 'utf-8');
     const lines = content.trim().split('\n').filter(Boolean);
     if (lines.length > 0) {
-      try {
-        JSON.parse(lines[lines.length - 1]!);
-        break; // 最后一行解析成功 → 写入完整
-      } catch {
-        // 最后一行被截断（并发写入损坏）→ 重写
-        console.warn("[sofagent] 审计历史最后一行不完整（可能并发写入损坏），正在重试写入");
-        atomicAppendSync(filePath, jsonLine);
-        if (retry < 2) {
-          const t = Date.now();
-          while (Date.now() - t < 50) { /* busy-wait 50ms */ }
-        }
-      }
+      JSON.parse(lines[lines.length - 1]!);
     }
+  } catch {
+    console.warn('[sofagent] 审计历史最后一行读回校验失败（请检查 history.jsonl 完整性）');
   }
 
   // 文件首次创建时收紧权限为 0o600（仅当前用户可读写）
