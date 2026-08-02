@@ -128,7 +128,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |
 | `docs/guides/` | 专题指南：部署、测试、MCP 使用、Loop 开发等 |
 
-### engine/（13 个 npm 包）
+### engine/（13 个 workspace 包，12 个发布到 npm）
 
 | 包 | 职责 |
 |----|------|
