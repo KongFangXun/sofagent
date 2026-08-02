@@ -710,16 +710,23 @@ async function runWorker(step, roundDir, target) {
   const t0 = Date.now();
 
   // recursionLimit 按步骤类型区分：
-  // - 审查类（a-check/b-check）：需要读文件+搜索，给 120（=60 轮工具调用）
+  // - 审查类（a-check/b-check）：需要读文件+搜索，给 130（=65 轮工具调用）
   //   v1.2.5 run-01 教训：200 让 worker 有空间调 1119 次工具陷入死循环。
-  //   配合 systemPrompt 里的「60 次工具预算」铁律，120 步够用且能更早熔断。
+  //   配合 systemPrompt 里的「60 次工具预算」铁律，130 步够用且能更早熔断。
+  //   审查 P1 修复：原 120 与 L2 硬熔断的 superstep 119 仅差 1 步，
+  //   LangGraph 隐含 superstep（路由/条件边）可能导致 L3 先触发，
+  //   使 L2 的产物抢救功能失效。+10 步给 L2 稳定的优先窗口。
   // - 文本处理类（a-consolidate/a-verify）：主要做合并/格式化，给 100 够了
   // - b-fix：分片后每批 5 条 finding × 5 工具调用 = 25 步，给 150 是 6 倍余量
   //   太高会导致消息累积 OOM（exit 137）
   // - a-verify：分片后每批 5 条 × 2 操作 = 10 步，给 150 是 15 倍余量
   const STEP_RECURSION_LIMITS = {
-    'a-check': 120,
-    'b-check': 120,
+    // a-check/b-check: 130 = L2 硬熔断(60次×2superstep=120) + 10步缓冲。
+    // 审查 P1 修复：原 120 与 L2 硬熔断的 superstep 119 仅差 1 步，
+    // LangGraph 隐含 superstep（路由/条件边）可能导致 L3 先触发，
+    // 使 L2 的产物抢救功能失效。+10 步给 L2 稳定的优先窗口。
+    'a-check': 130,
+    'b-check': 130,
     'a-consolidate': 100,
     'b-fix': 150,
     'a-verify': 150,
@@ -913,22 +920,27 @@ function extractAgentText(result) {
   }
   // messages 数组结构（LangGraph stream 返回格式）
   if (result?.messages) {
-    // 从后往前找最后一条 AI 消息（跳过 tool/human 消息）
+    // 从后往前找最后一条「有非空 content 的」AI 消息。
+    // 审查 P1 修复：硬熔断(_hardBreak)时最后一条 AI message 可能只有 tool_calls
+    // 没有 content（qwen3.8 纯函数调用模式），直接 return 空字符串会导致
+    // throw → allSettled rejected → 走降级占位，抢救的部分报告白丢。
+    // 改为：跳过空 content 的 AI 消息，继续往前找有内容的。
     for (let i = result.messages.length - 1; i >= 0; i--) {
       const msg = result.messages[i];
       const isAI = msg?._getType?.() === 'ai' || (msg?.tool_calls !== undefined && msg?.content !== undefined);
       if (!isAI) continue;
 
       const content = msg?.content;
-      if (typeof content === 'string') return content;
-      if (Array.isArray(content)) {
-        return content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
+      // 提取文本——如果为空字符串则跳过继续往前找（硬熔断抢救场景）
+      let text = '';
+      if (typeof content === 'string') text = content;
+      else if (Array.isArray(content)) text = content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
+      else if (content && typeof content === 'object') {
+        if (typeof content.text === 'string') text = content.text;
+        else if (typeof content.content === 'string') text = content.content;
+        else text = JSON.stringify(content);
       }
-      if (content && typeof content === 'object') {
-        if (typeof content.text === 'string') return content.text;
-        if (typeof content.content === 'string') return content.content;
-        return JSON.stringify(content);
-      }
+      if (text.trim()) return text;  // 非空才返回，空则继续往前找
     }
     // 所有消息都不是 AI 类型——尝试最后一条的 content
     const last = result.messages[result.messages.length - 1];
