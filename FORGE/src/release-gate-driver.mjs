@@ -113,7 +113,7 @@ const MODEL_PRICING = {
 const STEPS = {
   'acceptance':  { prompt: 'acceptance.md',  outputs: ['acceptance.md'],  inputs: [] },
   'regression':  { prompt: 'regression.md',  outputs: ['regression.md'],  inputs: ['regression-precheck.json'], precheck: true },
-  'coverage':    { prompt: 'coverage.md',    outputs: ['coverage.md'],    inputs: ['acceptance.md'] },
+  'coverage':    { prompt: 'coverage.md',    outputs: ['coverage.md'],    inputs: ['acceptance.md', 'coverage-precheck.json'], precheck: true },
   'consolidate': { prompt: 'consolidate.md', outputs: ['stage6-report.md'], inputs: ['acceptance.md', 'regression.md', 'coverage.md'], maxTokens: 32000 },
   'verdict':     { prompt: 'verdict.md',     outputs: ['verdict.md'],     inputs: ['stage6-report.md'] },
 };
@@ -121,17 +121,34 @@ const STEPS = {
 // 步骤执行顺序（driver 按此顺序串行执行）
 const STEP_ORDER = ['acceptance', 'regression', 'coverage', 'consolidate', 'verdict'];
 
-// 每步的 recursionLimit
+// 每步的 recursionLimit（L3 框架兜底——L1/L2 熔断应在此之前触发）
 // v1.2.5+ 优化：regression 改用 driver 预执行器（parseRegressionDimensions + runRegressionPrecheck），
 // 命令执行从 LLM 手里剥离。worker 只读 regression-precheck.json 判定结果，工具调用 ≤ 5 次，
 // recursionLimit 从 400 降到 50（不再需要模型逐维度跑命令，也消除了 GraphRecursionError）。
+// v1.2.5+ coverage：同样加预执行器（runCoveragePrecheck），recursionLimit 100→40，
+// worker 只读 coverage-precheck.json 交叉判定。
 const STEP_RECURSION_LIMITS = {
   'acceptance':  100,
   'regression':  50,
-  'coverage':    100,
+  'coverage':    40,
   'consolidate': 80,
   'verdict':     50,
 };
+
+// ═══════════════════════════════════════════════════════════
+//  三层熔断常量（移植自 fresh-eyes-driver，适配 release-gate 单角色 V 架构）
+// ═══════════════════════════════════════════════════════════
+// L1 软熔断：stateModifier 注入 HumanMessage 强制写报告
+// L2 硬熔断：stream 循环物理 break + grace window 报告抢救
+// L3 框架兜底：LangGraph recursionLimit（上面的 STEP_RECURSION_LIMITS）
+//
+// 数值关系：30(劝) → 40(拽) → L3(杀)
+// release-gate 任务比 fresh-eyes 简单（读预执行结果 + 分析文档），
+// 所以阈值比 fresh-eyes(50/60) 更低，更早收敛。
+const TOOL_SOFT_LIMIT = 30;   // L1：超过此数注入"立即写报告"HumanMessage
+const TOOL_HARD_LIMIT = 40;   // L2：超过此数进入 grace window
+const GRACE_STEPS_DEFAULT = 5;    // 默认 grace window 步数
+const GRACE_STEPS_ANALYSIS = 10;  // 分析型步骤（coverage/consolidate）需要更多步切换到报告模式
 
 // ═══════════════════════════════════════════════════════════
 //  CLI 参数解析
@@ -452,6 +469,41 @@ function recordUsage(runDir, step, role, model, result, latencyMs, target) {
 }
 
 /**
+ * 解析 changelog 文件路径（相对 REPO_ROOT）。
+ *
+ * changelog 目录结构（v1.2.5 实测）：
+ *   docs/changelog/v1.2/v1.2.5.md   ← 按大版本嵌套子目录
+ * 顶层 docs/changelog/v1.2.5.md 不存在。
+ *
+ * 解析顺序：
+ *   1. docs/changelog/TARGET.md        （顶层——部分老版本在此）
+ *   2. docs/changelog/v-子目录/TARGET.md（扫 v1.x 等嵌套目录，取第一个命中）
+ * 均未命中 → 返回 null（调用方回退到顶层路径字符串，模型自行处理）。
+ *
+ * @param {string} target 版本号，如 "v1.2.5"
+ * @returns {string|null} 相对路径（/ 分隔），未找到返回 null
+ */
+function resolveChangelogPath(target) {
+  const topLevel = `docs/changelog/${target}.md`;
+  if (existsSync(join(REPO_ROOT, topLevel))) {
+    return topLevel;
+  }
+  // 递归扫 docs/changelog/ 下的 v1.x 等子目录，找 TARGET.md
+  const changelogDir = join(REPO_ROOT, 'docs/changelog');
+  if (existsSync(changelogDir)) {
+    for (const sub of readdirSync(changelogDir, { withFileTypes: true })) {
+      if (!sub.isDirectory() || !sub.name.startsWith('v')) continue;
+      const candidate = `docs/changelog/${sub.name}/${target}.md`;
+      if (existsSync(join(REPO_ROOT, candidate))) {
+        return candidate;
+      }
+    }
+  }
+  console.warn(`[driver] changelog 未找到（顶层+嵌套均无）: ${target}，回退到顶层路径字符串`);
+  return topLevel;
+}
+
+/**
  * Worker 主逻辑：读 prompt → 建 model+tools → invoke → 写产物。
  */
 async function runWorker(step, runDir, target) {
@@ -472,7 +524,10 @@ async function runWorker(step, runDir, target) {
   const outputPaths = stepDef.outputs.map(f => `  - ${join(runDir, f)}`).join('\n');
 
   // 注入 changelog 路径（步骤③ coverage 需要）
-  const changelogPath = `docs/changelog/${target}.md`;
+  // v1.2.5 bugfix：changelog 按版本号嵌套在 docs/changelog/v1.2/v1.2.5.md，
+  // 顶层 docs/changelog/v1.2.5.md 不存在 → 模型陷入找文件死循环（run-06 coverage 崩溃根因）。
+  // 修复：先试顶层，不存在则扫 v1.x 等子目录匹配。
+  const changelogPath = resolveChangelogPath(target);
 
   const userMessage = [
     promptTemplate.trim(),
@@ -500,7 +555,7 @@ async function runWorker(step, runDir, target) {
   const tools = loadTools(role, progressMw);
 
   const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
-  const { SystemMessage } = await import('@langchain/core/messages');
+  const { SystemMessage, HumanMessage } = await import('@langchain/core/messages');
 
   // v1.2.5 性能优化：stateModifier 同时实现「system prompt 注入」+「上下文裁剪」。
   // prompt 和 stateModifier 互斥（LangGraph 源码 _getPrompt 强校验），
@@ -520,12 +575,47 @@ async function runWorker(step, runDir, target) {
     tools,
     stateModifier: (state) => {
       const messages = state.messages ?? [];
-      if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
-        return [systemMsg, ...messages];
+
+      // 统计历史消息中所有 AI tool_calls 总数
+      let toolCallCount = 0;
+      for (const msg of messages) {
+        if (msg?._getType?.() === 'ai' && msg.tool_calls?.length > 0) {
+          toolCallCount += msg.tool_calls.length;
+        }
       }
-      const first = messages[0];
-      const recent = messages.slice(-MAX_CONTEXT_MESSAGES);
-      return [systemMsg, first, ...recent];
+
+      // 上下文裁剪辅助函数：保留 system + 第一条 user + 最后 N 条
+      const trimmed = (extra) => {
+        if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
+          return extra ? [systemMsg, extra, ...messages] : [systemMsg, ...messages];
+        }
+        const first = messages[0];
+        const recent = messages.slice(-MAX_CONTEXT_MESSAGES);
+        return extra ? [systemMsg, extra, first, ...recent] : [systemMsg, first, ...recent];
+      };
+
+      // L2 硬熔断：更强制的"最终警告"
+      if (toolCallCount >= TOOL_HARD_LIMIT) {
+        const forceReport = new HumanMessage({
+          content: '【🔴 系统最终警告 🔴】你已调用 ' + toolCallCount + ' 次工具，远超预算。' +
+            '现在必须立即输出完整的分析报告文本。禁止再调用任何工具。' +
+            '直接在回复中写出你的完整分析结果。'
+        });
+        return trimmed(forceReport);
+      }
+
+      // L1 软熔断：强制收尾指令
+      if (toolCallCount >= TOOL_SOFT_LIMIT) {
+        const forceReport = new HumanMessage({
+          content: '【系统强制指令】你已经调用了 ' + toolCallCount + ' 次工具，超过软上限。' +
+            '立即停止所有探索，用已掌握的信息写报告并写入产物文件。不要再调任何工具。'
+        });
+        console.warn(`  ⚡ [${step}#V] 工具调用 ${toolCallCount} 次超软上限，注入强制收尾指令`);
+        return trimmed(forceReport);
+      }
+
+      // 正常：只做上下文裁剪
+      return trimmed(null);
     },
     preModelHook: (state) => {
       const messages = state.messages ?? [];
@@ -558,12 +648,41 @@ async function runWorker(step, runDir, target) {
 
     const allMessages = [];
     let toolCallCount = 0;
+
+    // L2 硬熔断状态（移植自 fresh-eyes-driver）
+    let inGraceWindow = false;   // 是否进入写报告窗口期
+    let graceStepCount = 0;      // 窗口期 superstep 计数
+    let hardBreak = false;       // 窗口耗尽，强制中断
+    let gotReport = false;       // 窗口期内捕获到报告文本
+
+    // 报告质量门控：非空 content 不一定是报告（可能是中间思考碎片）
+    // 真报告至少含 ## 标题行 或 ≥ 300 字符
+    const isReportText = (text) => {
+      if (!text || text.length < 10) return false;
+      return /^##\s+/m.test(text) || text.length >= 300;
+    };
+
     for await (const chunk of stream) {
       for (const [, delta] of Object.entries(chunk)) {
         const msgs = delta?.messages;
         if (!Array.isArray(msgs)) continue;
         for (const msg of msgs) {
           allMessages.push(msg);
+
+          // 检测 AI 消息是否有非空 content（报告文本）
+          if (msg?._getType?.() === 'ai') {
+            const c = msg?.content;
+            let textContent = '';
+            if (typeof c === 'string') textContent = c;
+            else if (Array.isArray(c)) textContent = c.map(x => typeof x === 'string' ? x : x?.text ?? '').join('');
+            // 窗口期内检测报告质量
+            if (inGraceWindow && isReportText(textContent)) {
+              gotReport = true;
+              console.log(`  ✅ [${step}#V] 写报告窗口内捕获到报告文本（${textContent.length} 字符）`);
+            }
+          }
+
+          // 工具调用计数
           if (msg?._getType?.() === 'ai' && msg.tool_calls?.length > 0) {
             for (const tc of msg.tool_calls) {
               toolCallCount++;
@@ -572,7 +691,33 @@ async function runWorker(step, runDir, target) {
           }
         }
       }
+
+      // L2：撞硬上限 → 进入 grace window
+      // 分析型步骤（coverage/consolidate）给 10 步 grace，其他给 5 步
+      const graceSteps = (step === 'coverage' || step === 'consolidate')
+        ? GRACE_STEPS_ANALYSIS : GRACE_STEPS_DEFAULT;
+      if (toolCallCount >= TOOL_HARD_LIMIT && !inGraceWindow && !hardBreak) {
+        inGraceWindow = true;
+        console.warn(`  ⏳ [${step}#V] 工具调用 ${toolCallCount} 次撞硬上限，进入 ${graceSteps} 步写报告窗口`);
+      }
+
+      // Grace window 倒计时
+      if (inGraceWindow && !gotReport && !hardBreak) {
+        graceStepCount++;
+        if (graceStepCount >= graceSteps) {
+          hardBreak = true;
+          console.warn(`  🛑 [${step}#V] 写报告窗口耗尽（${graceSteps} 步），模型仍未输出文本，强制中断`);
+          break;
+        }
+      }
+
+      // 窗口期内拿到报告 → 正常结束
+      if (gotReport) {
+        console.log(`  📝 [${step}#V] 报告已捕获，正常结束`);
+        break;
+      }
     }
+
     return { messages: allMessages };
   };
 
@@ -1043,6 +1188,102 @@ async function runRegressionPrecheck(runDir) {
   return outPath;
 }
 
+// ═══════════════════════════════════════════════════════════
+// v1.2.5+ 性能优化：coverage 预执行器（方案 A 扩展到步骤③）
+// ═══════════════════════════════════════════════════════════
+// 背景：run-06 coverage worker 因注入的 changelog 路径错误（docs/changelog/v1.2.5.md
+//   不存在，实际在 docs/changelog/v1.2/v1.2.5.md）陷入找文件死循环，39 个工具调用
+//   后撞硬上限，写报告窗口耗尽被强杀（"Agent 未返回内容"）。
+// 方案：driver 预解析 changelog 功能模块标题 + acceptance-test.sh 场景索引，
+//   写入 coverage-precheck.json。worker 只读该文件做交叉判定，不再自行 find/grep。
+
+/**
+ * 解析 acceptance-test.sh 的场景索引（编号 + 标题）。
+ * 格式：`scenario N "标题"`（可跨多行——标题在下一行；用正则宽松匹配）。
+ *
+ * @returns {Array<{ num: number, title: string }>}
+ */
+function parseAcceptanceScenarios() {
+  const accPath = join(REPO_ROOT, 'FORGE/playbook/acceptance-test.sh');
+  const src = readFileSync(accPath, 'utf-8');
+  const scenarios = [];
+  // 匹配 scenario <num> "<title>..."> 或 scenario <num> 换行 "<title>"
+  const re = /scenario\s+(\d+)\s*(?:\([^)]*\))?\s*"([^"]{0,120})/g;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    const title = m[2].trim();
+    if (title.length > 0) {
+      scenarios.push({ num: parseInt(m[1], 10), title });
+    }
+  }
+  return scenarios;
+}
+
+/**
+ * 解析 changelog 的功能模块标题（## 开头的一级模块）。
+ *
+ * @param {string} changelogRelPath changelog 相对路径（resolveChangelogPath 结果）
+ * @returns {Array<{ title: string }>}
+ */
+function parseChangelogModules(changelogRelPath) {
+  const absPath = join(REPO_ROOT, changelogRelPath);
+  if (!existsSync(absPath)) {
+    console.warn(`[driver] changelog 不存在，模块解析为空: ${changelogRelPath}`);
+    return [];
+  }
+  const md = readFileSync(absPath, 'utf-8');
+  const modules = [];
+  for (const line of md.split('\n')) {
+    const m = line.match(/^##\s+(.+)$/);
+    if (m && !/^##\s+(背景|前置依赖|状态)/.test(line)) {
+      modules.push({ title: m[1].trim() });
+    }
+  }
+  return modules;
+}
+
+/**
+ * 预执行 coverage 交叉检查的数据准备，写 {runDir}/coverage-precheck.json。
+ *
+ * 文件格式：
+ * {
+ *   "meta": { "changelogPath": "docs/changelog/v1.2/v1.2.5.md", "modules": N, "scenarios": M, "runAt": "..." },
+ *   "changelog": [ { "title": "🔗 激活链 Phase 1：ACTIVATE" }, ... ],
+ *   "scenarios": [ { "num": 1, "title": "..." }, ... ]
+ * }
+ *
+ * worker 依据 changelog 模块 + 场景索引交叉判定覆盖情况，不再自行探索文件。
+ *
+ * @param {string} runDir  run 目录
+ * @param {string} target  版本号
+ * @returns {string} 产物路径
+ */
+async function runCoveragePrecheck(runDir, target) {
+  console.log('[driver] 预执行 coverage（方案 A：场景索引 + changelog 模块从 LLM 剥离）...');
+  const t0 = Date.now();
+
+  const changelogRel = resolveChangelogPath(target);
+  const changelogModules = parseChangelogModules(changelogRel);
+  const scenarios = parseAcceptanceScenarios();
+
+  const payload = {
+    meta: {
+      changelogPath: changelogRel,
+      modules: changelogModules.length,
+      scenarios: scenarios.length,
+      runAt: new Date().toISOString(),
+      note: '由 driver 预执行生成（v1.2.5+ 方案 A）。worker 只读此文件做覆盖交叉判定，禁止重新探索文件。',
+    },
+    changelog: changelogModules,
+    scenarios,
+  };
+
+  const outPath = join(runDir, 'coverage-precheck.json');
+  writeFileSync(outPath, JSON.stringify(payload, null, 2), 'utf-8');
+  console.log(`[driver] coverage-precheck.json 已写入 ${outPath}（${changelogModules.length} 模块 / ${scenarios.length} 场景，耗时 ${((Date.now() - t0) / 1000).toFixed(1)}s）`);
+  return outPath;
+}
+
 /**
  * 从 verdict.md 解析最终裁决（PASS/FAIL）。
  * driver 用于 LEDGER 记录和最终输出。
@@ -1478,6 +1719,15 @@ async function main() {
         await runRegressionPrecheck(runDir);
       } catch (preErr) {
         console.warn(`[driver] regression 预执行失败（worker 将回退到自行执行）: ${preErr.message}`);
+      }
+    }
+
+    // coverage 特殊处理（v1.2.5+）：driver 预解析场景索引 + changelog 模块，worker 只读判定
+    if (step === 'coverage' && STEPS.coverage.precheck) {
+      try {
+        await runCoveragePrecheck(runDir, args.target);
+      } catch (preErr) {
+        console.warn(`[driver] coverage 预执行失败（worker 将回退到自行执行）: ${preErr.message}`);
       }
     }
 

@@ -1,6 +1,7 @@
-# prompt · coverage（步骤 ③ 覆盖率交叉检查）
+# prompt · coverage（步骤 ③ 读 coverage-precheck.json 交叉判定）
 
-> 你是 **V（验证者）**。这是发版闸门循环的**第三步**：读 changelog 功能点，逐条交叉检查 acceptance-test 是否覆盖。
+> 你是 **V（验证者）**。这是发版闸门循环的**第三步**：基于 driver 已准备的覆盖索引做交叉检查判定。
+> 🔴 **v1.2.5+ 模式变更**：场景索引和 changelog 模块已由 driver 预执行（方案 A），**你不再需要探索文件**——只读 `coverage-precheck.json`，逐模块判定覆盖情况并生成报告。
 
 ## 🔴 铁律：纯只读（release-gate-loop 核心约束）
 
@@ -14,35 +15,42 @@
 
 **允许操作：**
 - 读文件（read_file / ls / glob / grep）
-- 跑验证命令（bash / node / grep 等，但不得有写副作用）
 - 写自己的产物文件（driver 从你的最终回复中提取）
 
-## 输入（driver 已中转给你）
+## 🔴 铁律：禁止自行探索文件（v1.2.5+ 方案 A 核心）
 
-- `acceptance.md` —— 步骤①的 acceptance-test 结果（driver 注入路径）
+`coverage-precheck.json` 已包含判定所需的全部数据：
+- `changelog`：本版本 changelog 的功能模块标题（每个 `## ` 模块一条）
+- `scenarios`：acceptance-test.sh 的全部场景索引（编号 + 标题）
+- `meta`：changelog 路径、模块数、场景数
+
+因此：
+
+**禁止操作：**
+- ❌ 禁止运行 find / ls / grep 探索 changelog 或 acceptance-test.sh——索引已全部在 precheck JSON 里
+- ❌ 禁止重复读取 acceptance.md（可选读 1 次看验收结果，但非必须）
+- ❌ 禁止尝试自己定位 changelog 文件（driver 已用 resolveChangelogPath 解析，路径在 meta.changelogPath）
+
+**判定依据以 `coverage-precheck.json` 为准。** 你的工具调用预算 ≤ 5 次：读 precheck（1 次）+ 可选读 acceptance.md（1 次）+ 写报告（1 次）。
 
 ## 你要做的事
 
-1. 读 driver 注入的 changelog 路径（`docs/changelog/vX.Y.md`），提取本版本的所有**功能点**。
+1. **读 `coverage-precheck.json`**（1 次 tool call）。
 
-2. 读 `FORGE/playbook/acceptance-test.sh`，理解测试场景覆盖范围。
+2. **逐模块交叉判定**：对 changelog 每个功能模块，看 scenarios 索引里有没有能覆盖它的场景（用模块标题里的关键词 vs 场景标题做语义匹配）：
 
-3. 逐条功能点交叉检查：
-   - 功能关键词是什么？
-   - acceptance-test.sh 里有没有覆盖该功能的场景？
-   - 用 `grep` 搜 acceptance-test.sh 确认覆盖（如 `grep -n "关键词" FORGE/playbook/acceptance-test.sh`）
-   - 命中 = 覆盖（PASS），零命中 = 零覆盖（FAIL）
+| 判定 | 条件 |
+|------|------|
+| **PASS（已覆盖）** | 场景标题含模块核心关键词（如模块"激活链 Phase 1" ↔ 场景"activate.ts 存在"） |
+| **FAIL（零覆盖）** | 模块功能点没有任何场景提及——标注风险等级 |
+| **⏸️（需人工）** | 模块属于文档/配置类或依赖真实环境，难以用 acceptance 场景覆盖 |
 
-4. 对每个零覆盖的功能点，标注风险等级：
+3. **零覆盖功能点标注风险**：
    - **高风险**：核心功能零覆盖（必须补测试再发版）
    - **中风险**：辅助功能零覆盖（建议补但可发版）
    - **低风险**：文档/配置类零覆盖（可接受）
 
-## 🔴 铁律：完整报告必须进最终回复
-
-driver 从你的**最终回复文本**中提取产物文件内容——你不在回复里写的内容，系统就永远丢失。
-
-**因此：** 你的最终回复必须是完整的 coverage.md 内容，逐条列出覆盖检查。
+4. **生成报告**（最终回复 = 完整 coverage.md 内容）。
 
 ## 产物格式
 
@@ -50,17 +58,17 @@ driver 从你的**最终回复文本**中提取产物文件内容——你不在
 # 覆盖率交叉检查结果
 
 ## Changelog 功能点提取
-- 来源：`docs/changelog/vX.Y.md`
-- 功能点数：N
+- 来源：<meta.changelogPath>
+- 功能模块数：N
+- acceptance 场景总数：M
 
-## 逐条覆盖检查
+## 逐模块覆盖检查
 
-| # | 功能关键词 | acceptance-test 覆盖 | 状态 | 风险 |
-|---|-----------|---------------------|------|------|
-| 1 | HMAC 写读一致性 | 场景 #101-102 | PASS | |
-| 2 | doctor 三态判定 | grep 命中 L245 | PASS | |
-| 3 | exit code 精确测量 | 场景 #130 | PASS | |
-| 4 | xxx 新功能 | grep 零命中 | FAIL | 高风险 |
+| # | 功能模块 | 匹配场景 | 状态 | 风险 |
+|---|---------|---------|------|------|
+| 1 | 激活链 Phase 1：ACTIVATE | 场景 #185-190 | PASS | |
+| 2 | 多设备协同前置 | 场景 #190 | PASS | |
+| 3 | xxx 新功能 | 无匹配 | FAIL | 高风险 |
 
 ## 零覆盖功能点清单
 （无零覆盖时此节写"无"）
@@ -72,3 +80,8 @@ driver 从你的**最终回复文本**中提取产物文件内容——你不在
 ## 结论
 PASS（N/N 覆盖） / FAIL（X 条零覆盖）
 ```
+
+## 🔴 铁律：完整报告必须进最终回复
+
+driver 从你的**最终回复文本**中提取产物文件内容——你不在回复里写的内容，系统就永远丢失。
+**因此：** 你的最终回复必须是完整的 coverage.md 内容，逐模块列出覆盖检查。
