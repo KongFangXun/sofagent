@@ -620,7 +620,7 @@ flowchart TD
     DELIV[FDE 交付物<br/>ontology + workflow.yml + skills/] --> ACT[激活链 ACTIVATE<br/>v1.2.5+ 注册]
     ACT --> SA[企业 SubAgent<br/>与内置 Agent 同运行时<br/>同加载链 · 同审计 · 同 data/]
     SA --> CB[约束底座<br/>四层加载链自动生效]
-    SA --> AU[审计引擎<br/>每步 21 条规则]
+    SA --> AU[审计引擎<br/>每步 24 条规则]
     SA --> RE[回溯引擎<br/>快照一键回滚]
     SA --> EV[进化引擎<br/>反思 + 知识 + 优化]
 
@@ -636,7 +636,7 @@ flowchart TD
 | 引擎 | 企业 SubAgent 怎么继承 | 触发点 |
 |------|----------------------|--------|
 | 🧭 **约束底座** | `buildConstrainedSystemPrompt()` 注册即生效，走 SKILL.md → fde.md → think.md → knowledge/ 四层加载链 | 启动时自动 |
-| 🔍 **审计引擎** | EXECUTE 阶段 `on_step: true`，每步执行后自动跑 21 条规则 | 每步执行后 |
+| 🔍 **审计引擎** | EXECUTE 阶段 `on_step: true`，每步执行后自动跑 24 条规则 | 每步执行后 |
 | 🔄 **回溯引擎** | 审计后自动 git snapshot，违规一键回滚 | 审计完成后自动 |
 | 🧬 **进化引擎** | think.md 反思 + Dream Cycle 吃 task/logs + skillopt 优化企业 Skill | daemon 定时/事件 |
 
