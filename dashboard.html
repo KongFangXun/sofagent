@@ -356,6 +356,11 @@ a:hover{text-decoration:underline}
   <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">📉</span>违规趋势（近 7 天）</div>
+      <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-s)">
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:#1D9E75;border-radius:2px"></span>PASS</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:#EF9F27;border-radius:2px"></span>WARN</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:#E24B4A;border-radius:2px"></span>FAIL</span>
+      </div>
     </div>
     <div class="section-body">
       <svg width="100%" height="180" viewBox="0 0 920 180" preserveAspectRatio="xMidYMid meet" id="trendChart">
@@ -1110,54 +1115,43 @@ function renderSummaryData(s){
   }
 }
 
-/* 通栏趋势图：近 7 天每日任务级 PASS/WARN/FAIL 堆叠柱 + 违规率折线 */
+/* 通栏趋势图：近 7 天每日任务级 PASS/WARN/FAIL 折线（图例在标题右侧） */
 function renderDailyTrend(days){
-  var max=Math.max.apply(null,days.map(function(d){return (d.audits!==undefined?d.audits:(d.pass||0)+(d.warn||0)+(d.fail||0))}).concat([1]));
-  var W=920,padL=40,padR=20,top=26,base=140;
-  var bw=(W-padL-padR)/days.length;
+  var max=Math.max.apply(null,days.map(function(d){return Math.max(d.pass||0,d.warn||0,d.fail||0)}).concat([1]));
+  var W=920,padL=40,padR=24,top=20,base=142;
+  var step=(W-padL-padR)/(days.length-1||1);
   var mid=Math.round((top+base)/2);
   var svg='<line x1="'+padL+'" y1="'+top+'" x2="'+(W-padR)+'" y2="'+top+'" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
   svg+='<line x1="'+padL+'" y1="'+mid+'" x2="'+(W-padR)+'" y2="'+mid+'" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
   svg+='<line x1="'+padL+'" y1="'+base+'" x2="'+(W-padR)+'" y2="'+base+'" stroke="#E1E4E8" stroke-width="1"/>';
-  var ratePts=[];
-  days.forEach(function(d,i){
-    var p=d.pass||0,w=d.warn||0,f=d.fail||0;
-    var total=p+w+f;
-    var x=padL+i*bw+bw*0.25;
-    var wBar=bw*0.5;
-    var cx=x+wBar/2;
-    // 堆叠：PASS 在底（绿）→ WARN（琥珀）→ FAIL（红）在顶
-    var acc=0;
-    var segs=[[p,'#1D9E75'],[w,'#EF9F27'],[f,'#E24B4A']];
-    segs.forEach(function(s){
-      var val=s[0];if(val<=0)return;
-      var h0=acc/max*(base-top);
-      var h1=(acc+val)/max*(base-top);
-      svg+='<rect x="'+x+'" y="'+(base-h1)+'" width="'+wBar+'" height="'+(h1-h0)+'" fill="'+s[1]+'"/>';
-      acc+=val;
+  function y(v){return base-(v/max)*(base-top)}
+  var series=[
+    {key:'pass',color:'#1D9E75'},
+    {key:'warn',color:'#EF9F27'},
+    {key:'fail',color:'#E24B4A'}
+  ];
+  series.forEach(function(s){
+    var pts=days.map(function(d,i){
+      var v=d[s.key]||0;
+      return [padL+i*step,v];
     });
-    var hTotal=Math.max(2,total/max*(base-top));
-    svg+='<rect x="'+x+'" y="'+(base-hTotal)+'" width="'+wBar+'" height="2" rx="1" fill="#24292E" opacity="0.15"/>';
-    svg+='<text x="'+cx+'" y="'+(base-hTotal-6)+'" text-anchor="middle" font-size="11" fill="#57606A" font-weight="600">'+total+'</text>';
-    svg+='<text x="'+cx+'" y="'+(base+16)+'" text-anchor="middle" font-size="10" fill="#8B949E">'+String(d.day).slice(5)+'</text>';
-    var rate=(d.rate!==undefined)?d.rate:(total>0?Math.round((w+f)*100/total):0);
-    ratePts.push([cx,rate]);
+    var line=pts.map(function(p){return p[0]+','+y(p[1])}).join(' ');
+    svg+='<polyline points="'+line+'" fill="none" stroke="'+s.color+'" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>';
+    pts.forEach(function(p){
+      svg+='<circle cx="'+p[0]+'" cy="'+y(p[1])+'" r="3.5" fill="#fff" stroke="'+s.color+'" stroke-width="2"/>';
+    });
+    // FAIL 数值标注（最关心的指标才标数字，避免杂乱）
+    if(s.key==='fail'){
+      pts.forEach(function(p){
+        svg+='<text x="'+p[0]+'" y="'+(y(p[1])-9)+'" text-anchor="middle" font-size="10" fill="#E24B4A" font-weight="600">'+p[1]+'</text>';
+      });
+    }
   });
-  // 违规率折线（映射到右侧 0-100%，用蓝线叠加在顶部区域）
-  var rateTop=top,rateBase=base;
-  var linePts=ratePts.map(function(pt){return pt[0]+','+(rateBase-(pt[1]/100)*(rateBase-rateTop))}).join(' ');
-  if(ratePts.length>1){
-    svg+='<polyline points="'+linePts+'" fill="none" stroke="#16B8F3" stroke-width="2" stroke-linejoin="round" opacity="0.85"/>';
-    ratePts.forEach(function(pt){
-      svg+='<circle cx="'+pt[0]+'" cy="'+(rateBase-(pt[1]/100)*(rateBase-rateTop))+'" r="3" fill="#16B8F3"/>';
-    });
-  }
+  days.forEach(function(d,i){
+    svg+='<text x="'+(padL+i*step)+'" y="'+(base+17)+'" text-anchor="middle" font-size="10" fill="#8B949E">'+String(d.day).slice(5)+'</text>';
+  });
   svg+='<text x="4" y="'+(top+4)+'" font-size="10" fill="#8B949E">'+max+'</text>';
-  // 图例
-  svg+='<rect x="'+(W-330)+'" y="8" width="10" height="10" rx="2" fill="#1D9E75"/><text x="'+(W-316)+'" y="17" font-size="10" fill="#8B949E">PASS</text>';
-  svg+='<rect x="'+(W-270)+'" y="8" width="10" height="10" rx="2" fill="#EF9F27"/><text x="'+(W-256)+'" y="17" font-size="10" fill="#8B949E">WARN</text>';
-  svg+='<rect x="'+(W-210)+'" y="8" width="10" height="10" rx="2" fill="#E24B4A"/><text x="'+(W-196)+'" y="17" font-size="10" fill="#8B949E">FAIL</text>';
-  svg+='<line x1="'+(W-140)+'" y1="13" x2="'+(W-120)+'" y2="13" stroke="#16B8F3" stroke-width="2"/><text x="'+(W-114)+'" y="17" font-size="10" fill="#8B949E">违规率</text>';
+  svg+='<text x="4" y="'+(base+4)+'" font-size="10" fill="#8B949E">0</text>';
   document.getElementById('trendChart').innerHTML=svg;
 }
 
