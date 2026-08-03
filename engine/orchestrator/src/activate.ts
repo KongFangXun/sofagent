@@ -48,6 +48,8 @@ export interface EnterpriseAgentConfig {
   hitlConfig?: { interruptBefore: boolean; prompt?: string };
   /** v1.2.5 §3.1: Agent 身份码 */
   identity?: AgentIdentity;
+  /** v1.2.6: 知识域（用于约束 Agent 的知识访问范围） */
+  knowledgeDomain?: string;
 }
 
 /** activateWorkflow 返回值 */
@@ -314,6 +316,11 @@ function serializeToYml(config: EnterpriseAgentConfig): string {
     ymlObj['hitlConfig'] = config.hitlConfig;
   }
 
+  // v1.2.6: 写入 knowledgeDomain（camelCase，与 displayName/hitl/hitlConfig 一致）
+  if (config.knowledgeDomain) {
+    ymlObj['knowledgeDomain'] = config.knowledgeDomain;
+  }
+
   // v1.2.5 §3.1: 写入身份码
   if (config.identity) {
     ymlObj['identity'] = config.identity;
@@ -414,11 +421,23 @@ export async function activateWorkflow(opts: ActivateOptions): Promise<ActivateR
   let workflow: FdeWorkflow;
   try {
     const content = readFileSync(workflowPath, 'utf-8');
-    const parsed = yamlLoad(content) as FdeWorkflow | null;
+    const parsed = yamlLoad(content) as Record<string, unknown> | FdeWorkflow | null;
     if (!parsed || typeof parsed !== 'object') {
       throw new Error('workflow.yml 解析结果为空或非对象');
     }
-    workflow = parsed;
+    // v1.2.6: 兼容平铺（旧）和嵌套（新标准）两种格式
+    // 嵌套格式：{ workflow: { name, description, nodes } }
+    // 平铺格式：{ name, description, nodes }
+    const root = (parsed as Record<string, unknown>)['workflow'] as Record<string, unknown> | undefined;
+    if (root && typeof root === 'object') {
+      workflow = {
+        name: (root['name'] as string) || ((parsed as Record<string, unknown>)['name'] as string),
+        description: (root['description'] as string) || ((parsed as Record<string, unknown>)['description'] as string),
+        nodes: (root['nodes'] as FdeWorkflowNode[]) || ((parsed as Record<string, unknown>)['nodes'] as FdeWorkflowNode[]),
+      };
+    } else {
+      workflow = parsed as FdeWorkflow;
+    }
   } catch (err) {
     if (err instanceof Error && err.message.includes('不存在')) {
       throw err;
@@ -530,6 +549,10 @@ export async function activateWorkflow(opts: ActivateOptions): Promise<ActivateR
       tools,
       modelName: null,
       hitl,
+      // v1.2.6: 知识域作为字符串写入 YML（include/exclude 序列化为逗号分隔）
+      knowledgeDomain: knowledgeDomain.include.length > 0 || knowledgeDomain.exclude.length > 0
+        ? `include: ${knowledgeDomain.include.join(', ')}; exclude: ${knowledgeDomain.exclude.join(', ')}`
+        : undefined,
     };
 
     // v1.2.5 §3.1: 生成 Agent 身份码（确定性 fingerprint）

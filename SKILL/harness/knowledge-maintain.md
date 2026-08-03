@@ -42,7 +42,7 @@ relations:                              # 可选（v1.0.1 Ontology）：实体�
 
 新建页面后**必须**同步加 index 条目：
 ```markdown
-| [示例供应商](entities/供应商-示例.md) | 采购/供应商 | AP-审批, AP-执行 |
+| [示例供应商](entities/示例供应商) | 采购/供应商 | AP-审批, AP-执行 |
 ```
 
 ## log.md 追加

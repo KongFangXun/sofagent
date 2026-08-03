@@ -3,7 +3,7 @@
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
 > v1.2.5 · 2026-08-02（UTC）· 🔗 激活链 Phase 1 + 🛡️ 审计引擎加固（A20-A23）+ 🔧 daemon 可靠性 + 多设备前置
 
-产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
+产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
 ## 现在在哪：v1.2.6（规划中 · 🔗 激活链 Phase 2 前半）
 
@@ -13,7 +13,7 @@
 > **🔌 MCP 交付链路修补（弹性位交付）**：4 个 P0 MCP tool——`daemon_status`（只读状态查询）/ `list_agents` / `list_concepts` / `hitl_resolve`（MCP 覆盖度审计缺口补全）。
 > v1.2.5 已交付激活链 Phase 1（ACTIVATE），v1.2.6 起进入 Phase 2（ORCHESTRATE）准备期。
 >
-> 📖 [v1.2.6 开发日志](./docs/changelog/v1.2/v1.2.6.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [v1.2.6 开发日志](./changelog/v1.2/v1.2.6.md) · 完整版本历史见 [CHANGELOG](../CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 > ✅ **企业采购阻塞项 · Webhook 推送已于 v1.2.1 交付**：v1.1.6 接通 webhook **PASS/WARN/FAIL 三态推送**（本地 agent 自测），v1.2.1 补齐企业协同平台（飞书/钉钉/企微）完整 Webhook 推送能力（见 SECURITY.md「审计结果推送」）。采购阻塞项已解除。
 
@@ -21,7 +21,7 @@
 
 ## 迭代历程
 
-完整版本历史见 [CHANGELOG](./CHANGELOG.md)。v0.x 为实验/测试版，v1.0.0 起为正式版。
+完整版本历史见 [CHANGELOG](../CHANGELOG.md)。v0.x 为实验/测试版，v1.0.0 起为正式版。
 
 | 版本 | 核心交付 |
 |------|------|
@@ -34,7 +34,7 @@
 | **v1.1.9** | 产品叙事收敛（FDE Agent）+ USB 完整运行时 + daemon A/B 自动调度器 + 控制图状态抽取 + v1.1.8 BugFix 42 项 |
 | **v1.1.8** | 安全层加密配对 + 联邦查询 + Prompt 注入防护补齐 + 编排引擎串行版（DAG 并行规划在 v1.3.1） |
 | **v1.1.7** | Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级（缺省 internal）+ knowledge-health 5 项检查（@weekly）+ `knowledge status` 聚合命令 |
-| **v1.1.6** | BugFix 21 项 + LLM Wiki 3 层分层 + conflict-check：v1.1.5 遗留全数修复 + Ledger-Views-Policy 显式化（详见 [ARCHITECTURE §文件系统架构](./docs/ARCHITECTURE.md#文件系统架构)）+ daemon 知识健康巡检（矛盾/孤儿/死链） |
+| **v1.1.6** | BugFix 21 项 + LLM Wiki 3 层分层 + conflict-check：v1.1.5 遗留全数修复 + Ledger-Views-Policy 显式化（详见 [ARCHITECTURE §文件系统架构](./ARCHITECTURE.md#文件系统架构)）+ daemon 知识健康巡检（矛盾/孤儿/死链） |
 
 ## 未来去哪
 
@@ -72,7 +72,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 ### 规划版本
 
-> 🔗 **激活链进度框架**：v1.2.5-v1.3.0 按激活链四阶段推进（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN），每个版本对应一个阶段或阶段内子步骤。详见 [激活链设计文档](./docs/guides/fde-activation-chain.md)。
+> 🔗 **激活链进度框架**：v1.2.5-v1.3.0 按激活链四阶段推进（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN），每个版本对应一个阶段或阶段内子步骤。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 > 🔴 **阻塞项占位纪律**：任何 🔴 采购 / 合规阻塞项必须在下表占据一个**明确的版本单元格**（标注具体版本号，如 v1.2.1），不得仅写在散文备注里。散文式「建议优先排期」会悄然过时——v1.2.0 时 Webhook 阻塞项就曾因只写在备注、未落版本格，导致建议过期却仍未排期。教训：**阻塞项 = 版本格，不是建议**。
 
@@ -86,22 +86,22 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 主题 | 核心交付 |
 |------|------|------|
-| **v1.2.1** | **数据目录重构 + ✅ Webhook + SubAgent 可见性 L2（已发版）** | **数据目录重构**：`.sofagent/` 669 个运行时数据文件统一迁移到 `data/` 可见目录——用户能直接打开、Dashboard 直接消费、备份只需拷贝一个目录（v1.2.2 Dashboard 前置基础设施）· ✅ **Webhook 推送完整能力（飞书/钉钉/企微）— 采购阻塞项已解除** · **SubAgent 可见性 L2**（ProgressMiddleware：worker 内部工具调用序列 + LLM 心跳 → sub-progress jsonl，Dashboard 实时面板数据前置）· custom/ README 重写（加载链声明 + 安装保护逻辑移至 v1.2.2）· 数据层清理（IDENTITY.md + eval.md 删除 + 模板标注 + daemon-health.json）（详见 [开发日志](./docs/changelog/v1.2/v1.2.1.md)）|
-| **v1.2.2** | **数据主权 + 路由 + Dashboard（数据主权 + SubAgent 实时面板）** | ① 数据主权审计追踪（4 维审计日志 + 年/月目录 + 每日/周/月报告 + 四路分发闭环）② 混合模型路由层（ModelRouter 敏感度×任务类型路由 + Ollama 接入）③ FDE Dashboard 第一版（数据主权视图 + **SubAgent 实时面板 L3**：消费 v1.2.1 L2 数据，双 agent 状态卡 + 工具调用流 + 成本曲线 + 心跳检测）④ Skill 分层升级三策略 install.sh 实现（详见 [开发日志](./docs/changelog/v1.2/v1.2.2.md)）|
-| **v1.2.3** | **Dashboard 产品化 + 编排隔离底座 + Fresh-Eyes 流程化** | ① **Fresh-Eyes Dashboard 集成**（fresh-eyes-driver 的 A/B sub agent 写入 sub-progress-*.jsonl 至 `data/forge-runs/`，Dashboard `--watch` 模式实时显示 loop 审查进度——每轮发现数、当前审查文件、A/B 双盲状态）② Dashboard 波次拓扑可视化（bash + jq ASCII art 渲染控制图：节点/边/波次分层实时状态，延续 v1.2.2 零依赖路线）③ 编排隔离底座（git worktree 四子里程碑：隔离原语→审计合并卡关→冲突消解→filesValue 边界）④ Fresh-Eyes-Loop 移至阶段一（releasing.md SOP 重组——新版本第一步跑 fresh-eyes-loop 审查上版本，提前自 v1.2.4）⑤ Workspace 变更摘要（每次运行后记录创建/修改/删除文件清单 → Dashboard 消费，提前自 v1.2.8）⑥ Dashboard 用户可读性（技术状态→用户可读映射 + --technical 切回）（详见 [开发日志](./docs/changelog/v1.2/v1.2.3.md)）|
-| **v1.2.4** | **知识进化 + 知识健康** | ① 分层巡检 L1/L2/L3（@daily/@weekly/@monthly 三级 + 读写回路对标）② skillopt 自动触发（失败模式 3 次自动优化）③ 失败清单自动优化（负面样本为主要燃料）④ conflict-check CLI + 联邦蒸馏 ⑤ **进化引擎接通 eval**（think-generator 读 eval failures → 写 think.md，前置 eval 补全在 v1.2.1 P0b）⑥ **Dashboard 历史趋势 + 任务统计**（v1.2.2 每日快照 → 周对比/月趋势/任务成功率/TOP5 违规，v1.2.4 补齐）⑦ **Skill × MCP 集成**（P3 独立开发线：S1 Skill 引用 MCP 工具 / S2 新增 6 tools / S3 Skill 精简 / S4 数据变更审计 D1-D5 / S5 审计结果汇报 + 品牌可见化五层兜底）⑧ **FDE 人机分离 + Skill 分包**（P4 独立开发线：README 门面 / GUIDE 学习手册 / SKILL/SKILL.md 升格唯一主入口 / 子 Skill 分包 01-05 / 删除 FDE/SKILL.md+FDE.md+quick-start.md，发布源 ./FDE→./SKILL）（Fresh-Eyes-Loop 移至阶段一已提前至 v1.2.3）（详见 [开发日志](./docs/changelog/v1.2/v1.2.4.md)）|
-| **v1.2.5** | **🔗 激活链 Phase 1 + 🛡️ 审计引擎加固 + 🔧 daemon 可靠性 + 多设备前置** | **🔗 激活链 Phase 1 ACTIVATE**——新增 `activate.ts`，读 FDE 交付物 → 注册企业 SubAgent → 写入 `.sofagent/subagents/*.yml`（registry.ts 动态注册机制已有，缺的是往里写企业 Agent 的自动化流程）+ MCP `activate_workflow` tool。**🛡️ 审计引擎加固**——AUDIT_PRIORITY 规则归属调整（层名 critical/warning/crutch/extended 不变，只调规则在各层的分配：A19 从 critical 移到 warning、A10 从 warning 提升到 critical、A6 从 warning 移到 crutch）+ 新增 A20 不泄外联·A21 不植后门·A22 不越权限·A23 不逃路径四条安全规则（填补网络外传/持久化/提权/路径穿越四大盲区）+ E3 并入 A11 精简规则数 + A2 编码绕过修复 + A3 中文 commit 误报修复 + ToolGate/A2 正则统一 + **结构性地基加固**（BASELINE_RULE_KEYS 扩展至 9 条：安全红线不可 config 关闭 + critical 层全量收集：多条同时 FAIL 全部报告 + 审计引擎源码自保护：A16 保护 rules/ 目录）+ **检测盲区补全**（A10 postinstall 脚本注入检测 + A9 动态执行模式告警 + shared/patterns.ts 收敛为全规则共享库）。**🔧 daemon 可靠性**——推送重试上限（maxRetries=3 + 指数退避）+ plist 路径校验（existsSync 防假成功）+ 健康自检（daemon-health.json + 5min heartbeat）+ im-outbox 生命周期（成功删除 / 失败移 failed/ / 7 天清理）。**多设备前置（轻量）**：① Agent 独立身份码 + KYC 轻量版 ② 跨设备审计轨迹聚合 ③ 协议中立审计。⚠️ **原多设备 L2/L3 大项已拆**：L2 协作协议 → v1.3.3、L3 能力市场 → v1.3.4、权限体系+代理网关 → v1.4.0、归因引擎 → v2.x（详见 [开发日志](./docs/changelog/v1.2/v1.2.5.md) + [激活链设计](./docs/guides/fde-activation-chain.md)）|
-| **v1.2.6** | **🔒 弹性预留 + 🔗 激活链 Phase 2 前半** | **储备项**：① `sofagent-audit --support-bundle` ② `--doctor` 输出增强 ③ README Deployment Sizing 表格 ④ One-Line Agent Setup。**🔗 激活链 Phase 2 前半**：workflow-parser 扩展支持 `agent: enterprise` 类型 + registry.ts 的 SubAgentDefinition 增加 hitl/hitlConfig/knowledgeDomain 字段——为 v1.2.7 StateGraph 构建打基础。**🔌 MCP 交付链路修补**（弹性位交付）：4 个 P0 MCP tool（`daemon_status`/`list_agents`/`list_concepts`/`hitl_resolve`，覆盖度审计缺口补全）（详见 [开发日志](./docs/changelog/v1.2/v1.2.6.md)）|
-| **v1.2.7** | **编排引擎增强（DeerFlow 启发）+ 🔗 激活链 Phase 2 后半** | ① **Session Goals**（`/goal`）② **手动上下文压缩**（`/compact`）③ **Skill 渐进式加载** ④ **`--doctor` 可操作修复提示** ⑤ **FORGE driver 三方抽象** ⑥ **🔗 激活链 Phase 2 后半**——新增 `enterprise-graph.ts` + `composeEnterpriseWorkflow()`：从 FDE 交付物构建企业专属 LangGraph StateGraph（不调 LLM 拆任务，直接用 workflow.yml）+ 数据流三层设计（State 实时 + entity 持久化 + 双写）（详见 [开发日志](./docs/changelog/v1.2/v1.2.7.md)）|
-| **v1.2.8** | **记忆分层 + 定时任务（DeerFlow 启发）+ 🔗 激活链 Phase 3 前半** | ① **记忆事实级分层** ② **Scheduled Tasks MVP**（cron+once / 暂停/恢复/触发/历史/删除）③ **ToolOutputBudget 中间件化** ④ **🔗 激活链 Phase 3 前半**——dag-runner 扩展支持企业 Agent + 新增 `node-executor.ts` + `run-enterprise` CLI 子命令（详见 [开发日志](./docs/changelog/v1.2/v1.2.8.md)）|
-| **v1.2.9** | **🔒 弹性预留 + 🔗 激活链 Phase 3 后半** | **🔗 激活链 Phase 3 后半**：① HITL 中断处理（`hitl-handler.ts`——⚡ 节点执行前暂停等人确认）② 每节点执行后自动审计 + think.md 回溯 ③ 异常处理（exceptions 队列 + 重试/跳过策略）。紧急修复 / 探索项按需取用（详见 [开发日志](./docs/changelog/v1.2/v1.2.9.md)）|
-| **v1.3.0** | 📋 规划中 | **运行时审计最小闭环 + 🔗 激活链 Phase 4 收尾（SUSTAIN）**：① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离 ⑥ 决策审计 Judgment Unit（emitDecision + kind-wise back）⑦ **🔗 激活链收尾**：全链路验证（activate→compose→run→HITL→audit→sustain）+ wrapToolCall 自动覆盖企业 Agent + FDE SKILL.md 新增 activate 引导 ⑧ **list_rules** MCP tool（tool-gate 规则透明化，覆盖度审计缺口补全）（详见 [开发日志](./docs/changelog/v1.3/v1.3.0.md) + [激活链设计](./docs/guides/fde-activation-chain.md)）|
-| **v1.3.1** | 📋 规划中 | **Ontology 本体结构 + 国标对齐 + 并行编排**：① 本体结构——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + E1-E4（共 21 条，v1.2.5 起含 A20-A23 共 24 条，E3 并入 A11）+ 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **并行编排**——使用 LangGraph 原生 DAG 并行能力（StateGraph + Send API），每波次经审计节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供；恢复时**幂等性保证**（任务 ID 查重，避免 SubAgent 恢复后重复执行外部动作如重复创建 PR）；⑤ **Ontology CRUD 补全**——`update_entity` / `delete_entity` / `delete_concept` 三个 MCP tool（覆盖度审计缺口补全，删除类强制人审）（详见 [开发日志](./docs/changelog/v1.3/v1.3.1.md)）|
-| **v1.3.2** | 📋 规划中 | **多设备协同第一刀：Agent 身份码 + 跨设备审计聚合**：① Agent 独立身份码 + KYA 完整版（Ed25519 签发/验证，绑定委托人/约束/责任，身份与审计双签名）② 跨设备审计轨迹聚合（按 agentId 合并完整轨迹，复用安全联邦加密通道）③ MCP `agent_identity` + `audit_trail` tool。**这是 L2/L3 的地基**——没有身份就没有"谁在协作"（原 v1.2.5 拆入）（详见 [开发日志](./docs/changelog/v1.3/v1.3.2.md)）|
-| **v1.3.3** | 📋 规划中 | **L2 团队协作协议（五大机制）**：共享态（CRDT 合并）/ 意图广播 / 触发反应 / 冲突消解（trust 优先）/ 反馈放大（团队级 think.md 沉淀）+ 团队状态管理（team.yml + 团队会话持久化 + 团队审计）。让多个有身份的 Agent 从"各自为战"变成"一个团队"（原 v1.2.5 拆入，依赖 v1.3.2 身份码）（详见 [开发日志](./docs/changelog/v1.3/v1.3.3.md)）|
-| **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价）**：Skill / Agent / 流程打包发布（market/ 目录）+ 目录检索（复用 search_knowledge）+ 调用挂载（复用 registry）+ 评分聚合（评分 × 调用量加权自然选择）+ 全程审计。高频高价值能力自然胜出（原 v1.2.5 拆入，依赖 v1.3.3 L2 协议）（详见 [开发日志](./docs/changelog/v1.3/v1.3.4.md)）|
-| **v1.3.5** | 📋 规划中 | **自进化与运维闭环（MCP 覆盖度审计缺口补全）**：4 个 MCP tool——`run_ab_test` / `promote_ab`（ab-test 自进化闭环，晋升强制人审）+ `snapshot_list` / `snapshot_restore`（daemon 运维快照，恢复强制人审）（详见 [开发日志](./docs/changelog/v1.3/v1.3.5.md)）|
-| **v1.4.0** | 📋 规划中 | **SubAgent 完整沙箱执行环境 + 场景驱动权限体系 + 代理网关硬边界 + 数据静态加密**：① **沙箱**——虚拟文件系统隔离（FilesystemBackend + virtualMode）、网络出站白名单、**工具调用中介（前置 allow/deny，非仅审计追踪）**、**虚拟 key 凭证边界注入**、AsyncSubAgent（远程 Agent Protocol 服务端）+ 真·实时 A/B 双跑；② **场景驱动权限体系**（原 v1.2.5 拆入）——权限按"场景"（任务类型 × 数据域 × 动作风险等级）动态判定，判定链 = 身份（v1.3.2）→ 场景匹配 → 风险等级 → 放行，含团队场景权限 + 市场调用权限 + 动态提权到期回收；③ **代理网关硬边界**（原 v1.2.5 拆入）——SubAgent 所有外部请求经网关（唯一出入口），allow/deny + 风险分级 + 超阈值人工批准；④ **数据静态加密（age）**——`~/.sofagent/data/` 审计数据 age 加密落盘（原计划 v1.3.0，随安全加固批次后移），解决明文存储合规短板。审计从「事后」扩展到「运行时」（**范围限定 SubAgent，主 Agent 仍事后审计**）。**v1.4.x backlog**：`eval_history` MCP tool（eval 包——查询历史评估报告，P2 锦上添花，视本版容量顺带或砍，不单独建版本）（详见 [开发日志](./docs/changelog/v1.4/v1.4.0.md)）|
+| **v1.2.1** | **数据目录重构 + ✅ Webhook + SubAgent 可见性 L2（已发版）** | **数据目录重构**：`.sofagent/` 669 个运行时数据文件统一迁移到 `data/` 可见目录——用户能直接打开、Dashboard 直接消费、备份只需拷贝一个目录（v1.2.2 Dashboard 前置基础设施）· ✅ **Webhook 推送完整能力（飞书/钉钉/企微）— 采购阻塞项已解除** · **SubAgent 可见性 L2**（ProgressMiddleware：worker 内部工具调用序列 + LLM 心跳 → sub-progress jsonl，Dashboard 实时面板数据前置）· custom/ README 重写（加载链声明 + 安装保护逻辑移至 v1.2.2）· 数据层清理（IDENTITY.md + eval.md 删除 + 模板标注 + daemon-health.json）（详见 [开发日志](./changelog/v1.2/v1.2.1.md)）|
+| **v1.2.2** | **数据主权 + 路由 + Dashboard（数据主权 + SubAgent 实时面板）** | ① 数据主权审计追踪（4 维审计日志 + 年/月目录 + 每日/周/月报告 + 四路分发闭环）② 混合模型路由层（ModelRouter 敏感度×任务类型路由 + Ollama 接入）③ FDE Dashboard 第一版（数据主权视图 + **SubAgent 实时面板 L3**：消费 v1.2.1 L2 数据，双 agent 状态卡 + 工具调用流 + 成本曲线 + 心跳检测）④ Skill 分层升级三策略 install.sh 实现（详见 [开发日志](./changelog/v1.2/v1.2.2.md)）|
+| **v1.2.3** | **Dashboard 产品化 + 编排隔离底座 + Fresh-Eyes 流程化** | ① **Fresh-Eyes Dashboard 集成**（fresh-eyes-driver 的 A/B sub agent 写入 sub-progress-*.jsonl 至 `data/forge-runs/`，Dashboard `--watch` 模式实时显示 loop 审查进度——每轮发现数、当前审查文件、A/B 双盲状态）② Dashboard 波次拓扑可视化（bash + jq ASCII art 渲染控制图：节点/边/波次分层实时状态，延续 v1.2.2 零依赖路线）③ 编排隔离底座（git worktree 四子里程碑：隔离原语→审计合并卡关→冲突消解→filesValue 边界）④ Fresh-Eyes-Loop 移至阶段一（releasing.md SOP 重组——新版本第一步跑 fresh-eyes-loop 审查上版本，提前自 v1.2.4）⑤ Workspace 变更摘要（每次运行后记录创建/修改/删除文件清单 → Dashboard 消费，提前自 v1.2.8）⑥ Dashboard 用户可读性（技术状态→用户可读映射 + --technical 切回）（详见 [开发日志](./changelog/v1.2/v1.2.3.md)）|
+| **v1.2.4** | **知识进化 + 知识健康** | ① 分层巡检 L1/L2/L3（@daily/@weekly/@monthly 三级 + 读写回路对标）② skillopt 自动触发（失败模式 3 次自动优化）③ 失败清单自动优化（负面样本为主要燃料）④ conflict-check CLI + 联邦蒸馏 ⑤ **进化引擎接通 eval**（think-generator 读 eval failures → 写 think.md，前置 eval 补全在 v1.2.1 P0b）⑥ **Dashboard 历史趋势 + 任务统计**（v1.2.2 每日快照 → 周对比/月趋势/任务成功率/TOP5 违规，v1.2.4 补齐）⑦ **Skill × MCP 集成**（P3 独立开发线：S1 Skill 引用 MCP 工具 / S2 新增 6 tools / S3 Skill 精简 / S4 数据变更审计 D1-D5 / S5 审计结果汇报 + 品牌可见化五层兜底）⑧ **FDE 人机分离 + Skill 分包**（P4 独立开发线：README 门面 / GUIDE 学习手册 / SKILL/SKILL.md 升格唯一主入口 / 子 Skill 分包 01-05 / 删除 FDE/SKILL.md+FDE.md+quick-start.md，发布源 ./FDE→./SKILL）（Fresh-Eyes-Loop 移至阶段一已提前至 v1.2.3）（详见 [开发日志](./changelog/v1.2/v1.2.4.md)）|
+| **v1.2.5** | **🔗 激活链 Phase 1 + 🛡️ 审计引擎加固 + 🔧 daemon 可靠性 + 多设备前置** | **🔗 激活链 Phase 1 ACTIVATE**——新增 `activate.ts`，读 FDE 交付物 → 注册企业 SubAgent → 写入 `.sofagent/subagents/*.yml`（registry.ts 动态注册机制已有，缺的是往里写企业 Agent 的自动化流程）+ MCP `activate_workflow` tool。**🛡️ 审计引擎加固**——AUDIT_PRIORITY 规则归属调整（层名 critical/warning/crutch/extended 不变，只调规则在各层的分配：A19 从 critical 移到 warning、A10 从 warning 提升到 critical、A6 从 warning 移到 crutch）+ 新增 A20 不泄外联·A21 不植后门·A22 不越权限·A23 不逃路径四条安全规则（填补网络外传/持久化/提权/路径穿越四大盲区）+ E3 并入 A11 精简规则数 + A2 编码绕过修复 + A3 中文 commit 误报修复 + ToolGate/A2 正则统一 + **结构性地基加固**（BASELINE_RULE_KEYS 扩展至 9 条：安全红线不可 config 关闭 + critical 层全量收集：多条同时 FAIL 全部报告 + 审计引擎源码自保护：A16 保护 rules/ 目录）+ **检测盲区补全**（A10 postinstall 脚本注入检测 + A9 动态执行模式告警 + shared/patterns.ts 收敛为全规则共享库）。**🔧 daemon 可靠性**——推送重试上限（maxRetries=3 + 指数退避）+ plist 路径校验（existsSync 防假成功）+ 健康自检（daemon-health.json + 5min heartbeat）+ im-outbox 生命周期（成功删除 / 失败移 failed/ / 7 天清理）。**多设备前置（轻量）**：① Agent 独立身份码 + KYC 轻量版 ② 跨设备审计轨迹聚合 ③ 协议中立审计。⚠️ **原多设备 L2/L3 大项已拆**：L2 协作协议 → v1.3.3、L3 能力市场 → v1.3.4、权限体系+代理网关 → v1.4.0、归因引擎 → v2.x（详见 [开发日志](./changelog/v1.2/v1.2.5.md) + [激活链设计](./guides/fde-activation-chain.md)）|
+| **v1.2.6** | **🔒 弹性预留 + 🔗 激活链 Phase 2 前半** | **储备项**：① `sofagent-audit --support-bundle` ② `--doctor` 输出增强 ③ README Deployment Sizing 表格 ④ One-Line Agent Setup。**🔗 激活链 Phase 2 前半**：workflow-parser 扩展支持 `agent: enterprise` 类型 + registry.ts 的 SubAgentDefinition 增加 hitl/hitlConfig/knowledgeDomain 字段——为 v1.2.7 StateGraph 构建打基础。**🔌 MCP 交付链路修补**（弹性位交付）：4 个 P0 MCP tool（`daemon_status`/`list_agents`/`list_concepts`/`hitl_resolve`，覆盖度审计缺口补全）（详见 [开发日志](./changelog/v1.2/v1.2.6.md)）|
+| **v1.2.7** | **编排引擎增强（DeerFlow 启发）+ 🔗 激活链 Phase 2 后半** | ① **Session Goals**（`/goal`）② **手动上下文压缩**（`/compact`）③ **Skill 渐进式加载** ④ **`--doctor` 可操作修复提示** ⑤ **FORGE driver 三方抽象** ⑥ **🔗 激活链 Phase 2 后半**——新增 `enterprise-graph.ts` + `composeEnterpriseWorkflow()`：从 FDE 交付物构建企业专属 LangGraph StateGraph（不调 LLM 拆任务，直接用 workflow.yml）+ 数据流三层设计（State 实时 + entity 持久化 + 双写）（详见 [开发日志](./changelog/v1.2/v1.2.7.md)）|
+| **v1.2.8** | **记忆分层 + 定时任务（DeerFlow 启发）+ 🔗 激活链 Phase 3 前半** | ① **记忆事实级分层** ② **Scheduled Tasks MVP**（cron+once / 暂停/恢复/触发/历史/删除）③ **ToolOutputBudget 中间件化** ④ **🔗 激活链 Phase 3 前半**——dag-runner 扩展支持企业 Agent + 新增 `node-executor.ts` + `run-enterprise` CLI 子命令（详见 [开发日志](./changelog/v1.2/v1.2.8.md)）|
+| **v1.2.9** | **🔒 弹性预留 + 🔗 激活链 Phase 3 后半** | **🔗 激活链 Phase 3 后半**：① HITL 中断处理（`hitl-handler.ts`——⚡ 节点执行前暂停等人确认）② 每节点执行后自动审计 + think.md 回溯 ③ 异常处理（exceptions 队列 + 重试/跳过策略）。紧急修复 / 探索项按需取用（详见 [开发日志](./changelog/v1.2/v1.2.9.md)）|
+| **v1.3.0** | 📋 规划中 | **运行时审计最小闭环 + 🔗 激活链 Phase 4 收尾（SUSTAIN）**：① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离 ⑥ 决策审计 Judgment Unit（emitDecision + kind-wise back）⑦ **🔗 激活链收尾**：全链路验证（activate→compose→run→HITL→audit→sustain）+ wrapToolCall 自动覆盖企业 Agent + FDE SKILL.md 新增 activate 引导 ⑧ **list_rules** MCP tool（tool-gate 规则透明化，覆盖度审计缺口补全）（详见 [开发日志](./changelog/v1.3/v1.3.0.md) + [激活链设计](./guides/fde-activation-chain.md)）|
+| **v1.3.1** | 📋 规划中 | **Ontology 本体结构 + 国标对齐 + 并行编排**：① 本体结构——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + E1-E4（共 21 条，v1.2.5 起含 A20-A23 共 24 条，E3 并入 A11）+ 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **并行编排**——使用 LangGraph 原生 DAG 并行能力（StateGraph + Send API），每波次经审计节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供；恢复时**幂等性保证**（任务 ID 查重，避免 SubAgent 恢复后重复执行外部动作如重复创建 PR）；⑤ **Ontology CRUD 补全**——`update_entity` / `delete_entity` / `delete_concept` 三个 MCP tool（覆盖度审计缺口补全，删除类强制人审）（详见 [开发日志](./changelog/v1.3/v1.3.1.md)）|
+| **v1.3.2** | 📋 规划中 | **多设备协同第一刀：Agent 身份码 + 跨设备审计聚合**：① Agent 独立身份码 + KYA 完整版（Ed25519 签发/验证，绑定委托人/约束/责任，身份与审计双签名）② 跨设备审计轨迹聚合（按 agentId 合并完整轨迹，复用安全联邦加密通道）③ MCP `agent_identity` + `audit_trail` tool。**这是 L2/L3 的地基**——没有身份就没有"谁在协作"（原 v1.2.5 拆入）（详见 [开发日志](./changelog/v1.3/v1.3.2.md)）|
+| **v1.3.3** | 📋 规划中 | **L2 团队协作协议（五大机制）**：共享态（CRDT 合并）/ 意图广播 / 触发反应 / 冲突消解（trust 优先）/ 反馈放大（团队级 think.md 沉淀）+ 团队状态管理（team.yml + 团队会话持久化 + 团队审计）。让多个有身份的 Agent 从"各自为战"变成"一个团队"（原 v1.2.5 拆入，依赖 v1.3.2 身份码）（详见 [开发日志](./changelog/v1.3/v1.3.3.md)）|
+| **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价）**：Skill / Agent / 流程打包发布（market/ 目录）+ 目录检索（复用 search_knowledge）+ 调用挂载（复用 registry）+ 评分聚合（评分 × 调用量加权自然选择）+ 全程审计。高频高价值能力自然胜出（原 v1.2.5 拆入，依赖 v1.3.3 L2 协议）（详见 [开发日志](./changelog/v1.3/v1.3.4.md)）|
+| **v1.3.5** | 📋 规划中 | **自进化与运维闭环（MCP 覆盖度审计缺口补全）**：4 个 MCP tool——`run_ab_test` / `promote_ab`（ab-test 自进化闭环，晋升强制人审）+ `snapshot_list` / `snapshot_restore`（daemon 运维快照，恢复强制人审）（详见 [开发日志](./changelog/v1.3/v1.3.5.md)）|
+| **v1.4.0** | 📋 规划中 | **SubAgent 完整沙箱执行环境 + 场景驱动权限体系 + 代理网关硬边界 + 数据静态加密**：① **沙箱**——虚拟文件系统隔离（FilesystemBackend + virtualMode）、网络出站白名单、**工具调用中介（前置 allow/deny，非仅审计追踪）**、**虚拟 key 凭证边界注入**、AsyncSubAgent（远程 Agent Protocol 服务端）+ 真·实时 A/B 双跑；② **场景驱动权限体系**（原 v1.2.5 拆入）——权限按"场景"（任务类型 × 数据域 × 动作风险等级）动态判定，判定链 = 身份（v1.3.2）→ 场景匹配 → 风险等级 → 放行，含团队场景权限 + 市场调用权限 + 动态提权到期回收；③ **代理网关硬边界**（原 v1.2.5 拆入）——SubAgent 所有外部请求经网关（唯一出入口），allow/deny + 风险分级 + 超阈值人工批准；④ **数据静态加密（age）**——`~/.sofagent/data/` 审计数据 age 加密落盘（原计划 v1.3.0，随安全加固批次后移），解决明文存储合规短板。审计从「事后」扩展到「运行时」（**范围限定 SubAgent，主 Agent 仍事后审计**）。**v1.4.x backlog**：`eval_history` MCP tool（eval 包——查询历史评估报告，P2 锦上添花，视本版容量顺带或砍，不单独建版本）（详见 [开发日志](./changelog/v1.4/v1.4.0.md)）|
 
 #### v1.3.x 里程碑拆分
 
@@ -109,17 +109,17 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 主题 | 核心交付 |
 |------|------|------|
-| **v1.3.0** | **运行时审计最小闭环（LangGraph middleware）** | ① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离 ⑥ **list_rules** MCP tool（tool-gate 规则透明化，覆盖度审计缺口补全）（详见 [开发日志](./docs/changelog/v1.3/v1.3.0.md)）|
+| **v1.3.0** | **运行时审计最小闭环（LangGraph middleware）** | ① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离 ⑥ **list_rules** MCP tool（tool-gate 规则透明化，覆盖度审计缺口补全）（详见 [开发日志](./changelog/v1.3/v1.3.0.md)）|
 | **v1.3.1** | **Ontology 本体结构 + 国标对齐 + 并行编排** | 见上方主表：Ontology 本体结构 + GB/T 48000.3-2026 国标对齐 + 控制图多循环 DAG 波次并行 |
-| **v1.3.2** | **多设备第一刀：身份码 + 审计聚合** | Agent 独立身份码（Ed25519）+ 跨设备审计轨迹聚合 + `agent_identity`/`audit_trail` MCP tool（详见 [开发日志](./docs/changelog/v1.3/v1.3.2.md)）|
-| **v1.3.3** | **L2 团队协作协议** | 共享态/意图广播/触发反应/冲突消解/反馈放大五大机制 + 团队状态管理（详见 [开发日志](./docs/changelog/v1.3/v1.3.3.md)）|
-| **v1.3.4** | **L3 组织能力市场** | 发布→发现→调用→评价 + 评分聚合自然选择 + 全程审计（详见 [开发日志](./docs/changelog/v1.3/v1.3.4.md)）|
-| **v1.3.5** | **自进化与运维闭环（MCP 覆盖度审计缺口补全）** | `run_ab_test` / `promote_ab`（晋升强制人审）+ `snapshot_list` / `snapshot_restore`（恢复强制人审）四个 MCP tool（详见 [开发日志](./docs/changelog/v1.3/v1.3.5.md)）|
+| **v1.3.2** | **多设备第一刀：身份码 + 审计聚合** | Agent 独立身份码（Ed25519）+ 跨设备审计轨迹聚合 + `agent_identity`/`audit_trail` MCP tool（详见 [开发日志](./changelog/v1.3/v1.3.2.md)）|
+| **v1.3.3** | **L2 团队协作协议** | 共享态/意图广播/触发反应/冲突消解/反馈放大五大机制 + 团队状态管理（详见 [开发日志](./changelog/v1.3/v1.3.3.md)）|
+| **v1.3.4** | **L3 组织能力市场** | 发布→发现→调用→评价 + 评分聚合自然选择 + 全程审计（详见 [开发日志](./changelog/v1.3/v1.3.4.md)）|
+| **v1.3.5** | **自进化与运维闭环（MCP 覆盖度审计缺口补全）** | `run_ab_test` / `promote_ab`（晋升强制人审）+ `snapshot_list` / `snapshot_restore`（恢复强制人审）四个 MCP tool（详见 [开发日志](./changelog/v1.3/v1.3.5.md)）|
 | **v1.3.6-v1.3.9** | 🔒 弹性预留 | 紧急修复 / 探索项按需取用（智能 E2E 测试 Agent、规则文件独立只读焊死门、Agent 执行层实时治理等 v1.3+ 探索项可在此落位）|
 
 ### v1.2.x Graph Engine 进化路线
 
-> 编排引擎直接使用 LangGraph 原生能力（StateGraph + createReactAgent），不自建 DAG 调度。审计节点（★Reality Anchor）作为 guard edge 嵌入 LangGraph 工作流——这是 sofagent 在 Graph Engineering 中的唯一定位。理论框架详见 [VALIDATION](./docs/VALIDATION.md) 和 [ARCHITECTURE §Graph Engineering 视角](./docs/ARCHITECTURE.md#graph-engineering-视角控制图--stategraph)。
+> 编排引擎直接使用 LangGraph 原生能力（StateGraph + createReactAgent），不自建 DAG 调度。审计节点（★Reality Anchor）作为 guard edge 嵌入 LangGraph 工作流——这是 sofagent 在 Graph Engineering 中的唯一定位。理论框架详见 [VALIDATION](./VALIDATION.md) 和 [ARCHITECTURE §Graph Engineering 视角](./ARCHITECTURE.md#graph-engineering-视角控制图--stategraph)。
 
 **sofagent 已经在做 Graph Engineering**——`engine/orchestrator/src/loop/graph.ts` 用 LangGraph StateGraph 实现 `START→engineer→audit→reviewer→human_confirm→END`，`audit` 节点即 ★Reality Anchor（真实 git diff 24 条规则作 guard edge），`FileCheckpointer` 快照到 `.sofagent/checkpoint/` 即可审计状态文件。数据图天然对应蓄水池（知识库）+ 市政规划（Ontology）。后续迭代用 Graph Engineering 术语框定「并行编排」与「可视化」，不引入新能力。
 
@@ -135,7 +135,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 ### v1.2.0 — 记忆/知识层升级（本体结构铺垫）
 
-> 💡 **v1.2.0 是 v1.2.x 主题线的第一刀**：把 gbrain / LLM Wiki / Palantir 操作型本体论的外部验证吸收为「方法」（分阶段记忆整合、分层巡检、读写回路对标），不吸收其「定位」（不变成 agent runtime，不走集中式 Ontology OS）。详细 scope / 交付拆分（P0/P1/P2）/ 边界见 [v1.2.0 开发日志](./docs/changelog/v1.2/v1.2.0.md)。
+> 💡 **v1.2.0 是 v1.2.x 主题线的第一刀**：把 gbrain / LLM Wiki / Palantir 操作型本体论的外部验证吸收为「方法」（分阶段记忆整合、分层巡检、读写回路对标），不吸收其「定位」（不变成 agent runtime，不走集中式 Ontology OS）。详细 scope / 交付拆分（P0/P1/P2）/ 边界见 [v1.2.0 开发日志](./changelog/v1.2/v1.2.0.md)。
 
 🛡️ **差异化铁律（对标时必守）**：gbrain 是「agent 自己的脑」，Palantir Ontology 是「企业级操作层」，sofagent 是「约束中间件」（数据主权 + 第三方独立 + MIT 可审计）。吸收方法，不吸收定位；不建自动化 diff 任务，发版前由架构评审顺带 diff 一次 gbrain 的 dream-cycle / skillopt / Palantir 的 OAG 进展，结论进当版 changelog「行业对标」小节。
 
@@ -162,7 +162,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | 内层 | 秒-分钟 | Agent 执行 + 审计 + 反思 + 自动纠偏 | ✅ v1.0+ |
 | 外层 | 天-周 | Skill 优化 + 知识库沉淀 | v1.2.x 规划 |
 
-**Dream Sandbox 沙盒审计（v2.x 探索）**：Agent 操作先在平行空间模拟运行，人类审批后点「合并」才生效——将约束从事后升级为事前。来源：Palantir AIP，详见 [THANKS](./docs/THANKS.md)。
+**Dream Sandbox 沙盒审计（v2.x 探索）**：Agent 操作先在平行空间模拟运行，人类审批后点「合并」才生效——将约束从事后升级为事前。来源：Palantir AIP，详见 [THANKS](./THANKS.md)。
 
 **v1.2.x 子里程碑 · 编排隔离底座 + 波次拓扑可视化（Graph Engineering 印证）**
 
@@ -203,7 +203,7 @@ sofagent v1.3.1 的 Ontology 本体结构方向与之高度同构，但走**分�
 | 集中式 Ontology OS，重度物化索引 | 分布式 knowledge/，联邦查询按需获取 | MIT 开源、零锁定、数据主权本地 |
 | Markings + CBAC 本体级安全 | sensitivity frontmatter + 跨设备联邦过滤 | 渐进式演进 |
 
-> 💡 **核心设计原则**：本体结构 = GitHub 生长树——树干 = 本体结构本身，分支 = 单个 ontology 节点新增，护栏 = 审计引擎，根系 = 每个节点的强制 frontmatter（输入 / 产出 / 通过标准 / 哪些数据禁用），养护 = 本体变更的 review + rollback。完整映射与 v2.x「ontology I/O schema 硬化」的契合见 [ARCHITECTURE.md · 本体结构 = GitHub 生长树](./docs/ARCHITECTURE.md)。
+> 💡 **核心设计原则**：本体结构 = GitHub 生长树——树干 = 本体结构本身，分支 = 单个 ontology 节点新增，护栏 = 审计引擎，根系 = 每个节点的强制 frontmatter（输入 / 产出 / 通过标准 / 哪些数据禁用），养护 = 本体变更的 review + rollback。完整映射与 v2.x「ontology I/O schema 硬化」的契合见 [ARCHITECTURE.md · 本体结构 = GitHub 生长树](./ARCHITECTURE.md)。
 
 ---
 
@@ -252,7 +252,7 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 
 ### 🔮 行业印证
 
-> 完整行业对标（DeerFlow / Omnigent / DataFlow / OpenWorker / OpenFDE / a16z 七法则 / Graph Engineering / 5 阶段风险收敛）统一见 [VALIDATION](./docs/VALIDATION.md)。以下仅保留与版本规划直接相关的结论。
+> 完整行业对标（DeerFlow / Omnigent / DataFlow / OpenWorker / OpenFDE / a16z 七法则 / Graph Engineering / 5 阶段风险收敛）统一见 [VALIDATION](./VALIDATION.md)。以下仅保留与版本规划直接相关的结论。
 
 **运行时审计演进路线**（meta-harness 三问作答）：
 - **v1.3.x**：最小运行时审计——wrapToolCall middleware 包 createReactAgent（FORGE 已跑 createReactAgent，加 middleware 即可）
@@ -284,7 +284,7 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 | **分级降级梯队（OpenFDE 启发 · 最高优先）** | console→TUI→spec 逐级降级，workflow never stops（韧性设计） |
 | **Durable Execution（Pydantic AI 启发）** | 长任务 checkpoint 续跑——与回溯引擎互补（回溯=向后回滚，Durable=向前续跑），v1.3.1-1.4.0 窗口评估 |
 
-> 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./docs/VALIDATION.md)；已被主版本表收纳的 DeerFlow 项（Session Goals `/goal`、`/compact`、Skill 渐进加载、记忆分层、Scheduled Tasks、ToolOutputBudget、`--doctor`）见 v1.2.7 / v1.2.8，不在此重复。
+> 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./VALIDATION.md)；已被主版本表收纳的 DeerFlow 项（Session Goals `/goal`、`/compact`、Skill 渐进加载、记忆分层、Scheduled Tasks、ToolOutputBudget、`--doctor`）见 v1.2.7 / v1.2.8，不在此重复。
 
 ---
 
@@ -293,7 +293,7 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 | **运行时审计接入点（v1.3.x · LangGraph middleware）** | wrapToolCall middleware 包 createReactAgent，把 tool-gate 规则升级为运行时拦截 + 审计日志 |
 | **EnkryptAI Secure MCP Gateway（v1.4.x · 开源借力）** | pre_model_hook / post_model_hook 安全护栏，audit_only 模式 |
 | **LiteLLM 控制平面（v1.4.x · 开源借力）** | 开源 LLM gateway：成本追踪 / 预算 / 路由 / 护栏 |
-| **OpenWorker 权限模型（v1.3.x · 设计启发）** | 四级权限 + 命令白名单 + 无人值守收件箱（详见 [VALIDATION](./docs/VALIDATION.md)）|
+| **OpenWorker 权限模型（v1.3.x · 设计启发）** | 四级权限 + 命令白名单 + 无人值守收件箱（详见 [VALIDATION](./VALIDATION.md)）|
 | **bubblewrap / seatbelt 沙箱（v1.4.0 · 开源借力）** | OS 级沙箱原语（Linux bwrap+seccomp / macOS seatbelt），SubAgent 沙箱底座 |
 | **MLflow agent 评估（v2.x · 开源借力）** | 50+ agent 评估指标 + LLM-as-Judge，FORGE 评估框架参考 |
 
@@ -301,13 +301,13 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 
 ## 分层模型架构（v3.x 远景概述）
 
-核心驱动力 = **数据主权**（企业数据进 API key 大模型 = 一定被拿去训练）。三层模型 + Harness 路由：云端 32B+ 负责规划推理 → 翻译成标准化指令 → 本地 7B 执行多步 workflow → 本地 0.5B 跑管道层（模板/格式/字段提取）。敏感数据只在本地处理，通用知识才走云端。路由层可提前到 v2.x 做（不依赖精调模型），QLoRA 精调 pipeline 和离线 USB 节点是 v3.x-v4.x+ 的工作。完整技术骨架（Mermaid 图 + 选型表 + 实现难度 + 后训练闸门）见 [产品战略讨论记录 2026-07-25/30](./docs/PHILOSOPHY.md)。
+核心驱动力 = **数据主权**（企业数据进 API key 大模型 = 一定被拿去训练）。三层模型 + Harness 路由：云端 32B+ 负责规划推理 → 翻译成标准化指令 → 本地 7B 执行多步 workflow → 本地 0.5B 跑管道层（模板/格式/字段提取）。敏感数据只在本地处理，通用知识才走云端。路由层可提前到 v2.x 做（不依赖精调模型），QLoRA 精调 pipeline 和离线 USB 节点是 v3.x-v4.x+ 的工作。完整技术骨架（Mermaid 图 + 选型表 + 实现难度 + 后训练闸门）见 [产品战略讨论记录 2026-07-25/30](./PHILOSOPHY.md)。
 
 ---
 
 ## 不需要的
 
-以下认真考虑过但决定不做。完整设计禁区见 [PHILOSOPHY §八](./docs/PHILOSOPHY.md#八不做什么设计禁区)。
+以下认真考虑过但决定不做。完整设计禁区见 [PHILOSOPHY §八](./PHILOSOPHY.md#八不做什么设计禁区)。
 
 ---
 
@@ -322,7 +322,7 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 | 安全审计 | 不限 | 给 SECURITY.md 较真 |
 | 企业场景反馈 | 30 min | 你们团队怎么用 Agent？直接开 Issue |
 
-→ [CONTRIBUTING.md](./CONTRIBUTING.md)
+→ [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ---
 
@@ -335,9 +335,9 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 > sofagent 的终局：**Ontology（业务世界模型）+ SkillHub（跨岗能力）+ 审计引擎（责任确权）= 让单人 + 硅基构成的最小闭环单元，替代传统多部门协作。**
 ## 历史架构演进
 
-编排引擎从 ao → DeepAgents → LangGraph 的升级史（v1.2.0 起 FORGE loop 已完全弃用 deepagents，改用 createReactAgent；历史编排引擎的 DeepAgents 调度原型见 v1.1.8 changelog）、Ontology 从实体关联到本体结构的渐进构建、外部框架对标（Palantir/gbrain/WeKnora/Runta）、Loop Engineering 全栈对照等详见 **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** 的「行业印证」+「编排引擎」+「Ontology 本体结构」章节，以及各版本 **[开发日志](./docs/changelog/)**。
+编排引擎从 ao → DeepAgents → LangGraph 的升级史（v1.2.0 起 FORGE loop 已完全弃用 deepagents，改用 createReactAgent；历史编排引擎的 DeepAgents 调度原型见 v1.1.8 changelog）、Ontology 从实体关联到本体结构的渐进构建、外部框架对标（Palantir/gbrain/WeKnora/Runta）、Loop Engineering 全栈对照等详见 **[ARCHITECTURE.md](./ARCHITECTURE.md)** 的「行业印证」+「编排引擎」+「Ontology 本体结构」章节，以及各版本 **[开发日志](./changelog/)**。
 
-> 📖 多设备同步方案见 [多设备同步指南](./docs/guides/multi-device-sync.md)。
+> 📖 多设备同步方案见 [多设备同步指南](./guides/multi-device-sync.md)。
 
 ## 中期方向：FDE 节点注册表（Pattern Registry）
 

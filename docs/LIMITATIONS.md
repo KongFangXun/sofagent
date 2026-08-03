@@ -62,7 +62,7 @@
 2. **设置 git hooksPath**——在 `~/.gitconfig` 中设置 `[core] hooksPath = ...` 确保 hook 路径不可被 Agent 覆盖。
 3. **定期运行 doctor**——`sofagent-audit --doctor` 检查审计规则完整性，检测 hooks 是否被意外移除或 config 被篡改。
 
-> 📌 data 目录整体权限加固（chmod 700）见 [SECURITY.md](./SECURITY.md) "临时缓解措施"段。
+> 📌 data 目录整体权限加固（chmod 700）见 [SECURITY.md](../SECURITY.md) "临时缓解措施"段。
 
 ---
 
@@ -210,7 +210,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 > ⚠️ **知识库同样全局共享（P1-31 披露）**：`~/.sofagent/data/knowledge/` 单目录遍历、无租户/项目维度隔离——多项目、多 Agent 的知识沉淀（entities/concepts/comparisons/summaries）混合存储，查询时全局命中。财务与人事等不同域 Agent 的数据会串。按项目/Agent 隔离计划在 v1.3.x 落地。
 
-task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。age 加密已纳入 v1.4.0 roadmap（见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](./SECURITY.md)）。
+task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。age 加密已纳入 v1.4.0 roadmap（见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](../SECURITY.md)）。
 - history.jsonl 存审计判定详情，A2/A9 已脱敏，其他规则 details 可能含代码片段或文件路径，敏感场景请配合外部加密卷
 
 ---
@@ -244,7 +244,7 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 #### OpenClaw 的两种角色
 
-> 完整设计描述见 [ARCHITECTURE § 地基与引擎](docs/ARCHITECTURE.md#地基与引擎)。此处只记录与局限相关的点。
+> 完整设计描述见 [ARCHITECTURE § 地基与引擎](./ARCHITECTURE.md#地基与引擎)。此处只记录与局限相关的点。
 
 **模式 B 的关键约束**：企业 Agent 不跑在 OpenClaw session 里。OpenClaw 不拦截 Agent 的 API 调用、不提供 Docker。sofagent 对企业 Agent 的审计走的是**文件系统层 + git hook**——Agent 在设备上正常安装、正常运行，代码仓库在设备文件系统上，`git commit` 时 commit-msg hook 自动触发 sofagent-audit。不需要"控制"Agent，不需要 Agent 配合，只需要 hook 它们的 git 仓库。
 
@@ -298,7 +298,7 @@ A14 规则在 commit 时检查 Agent 是否访问了超出工作流声明范围�
 
 ### 审计闭环成熟度
 
-sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARCHITECTURE.md](docs/ARCHITECTURE.md)），但各步骤的成熟度不同：
+sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARCHITECTURE.md](./ARCHITECTURE.md)），但各步骤的成熟度不同：
 
 | 步骤 | 成熟度 | 说明 |
 |------|:--:|------|
@@ -371,12 +371,12 @@ A20 定位为"审计信号"而非"安全屏障"，企业高安全场景应叠加
 
 ### FDE 端到端验证状态
 
-FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](FDE/GUIDE.md)）已在作者自有企业（投资/科技/电商等公司）中实际部署使用。
+FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已在作者自有企业（投资/科技/电商等公司）中实际部署使用。
 
 但以下两点影响外部信任：
 
-1. **缺乏第三方独立验证**：v1.0.0 发版时硬性截止日期 #7 达标了 3 名外部用户验证（见 [v1.0.0 changelog](./docs/changelog/v1.0/v1.0.0.md)），但无持续的、来自独立机构的验证数据。外部审查者只能看到「作者说它工作了」+「3 名用户时点验证过」，看不到「机构级持续验证」或公开的 case study。
-2. **缺乏公开案例**：没有可公开引用的 case study 文档——包括部署规模、使用的具体功能、遇到的问题、量化效果。已有 [case study 模板](docs/evidence/case-study-template.md)，等待真实用户填写。
+1. **缺乏第三方独立验证**：v1.0.0 发版时硬性截止日期 #7 达标了 3 名外部用户验证（见 [v1.0.0 changelog](./changelog/v1.0/v1.0.0.md)），但无持续的、来自独立机构的验证数据。外部审查者只能看到「作者说它工作了」+「3 名用户时点验证过」，看不到「机构级持续验证」或公开的 case study。
+2. **缺乏公开案例**：没有可公开引用的 case study 文档——包括部署规模、使用的具体功能、遇到的问题、量化效果。已有 [case study 模板](./evidence/case-study-template.md)，等待真实用户填写。
 
 缓解：如果你在真实环境中使用了 sofagent，欢迎提交 case study——这比任何内部测试都更有说服力。模板在 `docs/evidence/case-study-template.md`。
 
@@ -558,7 +558,7 @@ FDE §7 交付（静态文件就绪）
 | EXECUTE | v1.2.8-v1.2.9 | dag-runner 企业 Agent + HITL + 审计集成 |
 | SUSTAIN | v1.3.0 | 全闭环验证 + wrapToolCall 联动 |
 
-> 详见 [激活链设计文档](./docs/guides/fde-activation-chain.md)。
+> 详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 ### 当前状态
 
