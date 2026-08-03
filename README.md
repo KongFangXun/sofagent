@@ -104,8 +104,10 @@ AI 每次被拦下的毛病、每次成功的经验，都沉淀成"教训库"—
 
 **🖥️ HTML Dashboard（网页版，推荐）**——6 页可视化控制台：驾驶舱（实时指标）/ FDE 引导 / AI 节点 / 本体结构 / 知识库 / 工具箱（安装·架构·审计规则·MCP·npm·文档·FORGE），全部真实数据驱动：
 
+**一键启动**：macOS 用户直接双击仓库根目录的 [`start-dashboard.command`](./start-dashboard.command)（自动开浏览器，关窗口即停）。
+
 ```bash
-node tools/serve-dashboard.mjs    # 启动（自动打开浏览器）
+node tools/serve-dashboard.mjs    # 命令行启动（跨平台，自动打开浏览器）
 # → http://localhost:3780
 ```
 

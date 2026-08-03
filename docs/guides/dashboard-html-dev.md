@@ -34,6 +34,7 @@
 | 文件 | 职责 |
 |------|------|
 | `dashboard.html`（仓库根目录） | 单文件零依赖 SPA，6 页导航：驾驶舱 / FDE引导 / AI节点 / 本体结构 / 知识库 / 工具箱 |
+| `start-dashboard.command`（仓库根目录） | macOS 一键启动快捷指令（双击即开，关窗口即停；本质是 `node tools/serve-dashboard.mjs` 包装） |
 | `tools/serve-dashboard.mjs` | 本地 HTTP 服务器：页面 + `/data/*` 原始数据 + 4 个聚合 API |
 | `tools/gen-weekly-report.mjs` | 手动生成持续优化周报（daily + weekly） |
 | `docs/assets/` | logo/favicon 等静态资源（dashboard 用 `docs/assets/` 相对路径引用，不建软链） |
@@ -219,7 +220,8 @@ AI 节点页不能塞 FDE workflow 模板（那是项目内置方法论），否
 
 ```bash
 # 启动
-node tools/serve-dashboard.mjs        # → http://localhost:3780（自动开浏览器）
+./start-dashboard.command             # macOS 一键启动（根目录，双击即开；关窗口即停）
+node tools/serve-dashboard.mjs        # 命令行启动 → http://localhost:3780（自动开浏览器）
 
 # 生成持续优化周报（手动触发）
 node tools/gen-weekly-report.mjs      # 从 audit/history.jsonl 生成 daily + weekly
