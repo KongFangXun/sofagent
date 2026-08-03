@@ -334,7 +334,7 @@ a:hover{text-decoration:underline}
     <div class="metric-card">
       <div class="metric-value" style="color:var(--green)" id="m-audit">—</div>
       <div class="metric-label">规则通过率</div>
-      <div class="metric-sub" id="m-audit-sub">24 条规则逐项检查（规则级）</div>
+      <div class="metric-sub" id="m-audit-sub">通过的规则检查 ÷ 全部检查</div>
     </div>
     <div class="metric-card">
       <div class="metric-value" style="color:var(--purple)" id="m-today">—</div>
@@ -344,12 +344,12 @@ a:hover{text-decoration:underline}
     <div class="metric-card">
       <div class="metric-value" style="color:var(--brand)" id="m-nodes">—</div>
       <div class="metric-label">审计任务</div>
-      <div class="metric-sub" id="m-nodes-sub">审计任务总数（任务级）</div>
+      <div class="metric-sub" id="m-nodes-sub">任务级 · 每次提交审计 1 次</div>
     </div>
     <div class="metric-card">
-      <div class="metric-value" style="color:var(--amber)" id="m-violations">—</div>
-      <div class="metric-label">违规任务</div>
-      <div class="metric-sub" id="m-violations-sub">任务级 · WARN + FAIL</div>
+      <div class="metric-value" style="color:var(--purple)" id="m-violations">—</div>
+      <div class="metric-label">规则检查</div>
+      <div class="metric-sub" id="m-violations-sub">= 任务数 × 每任务规则数</div>
     </div>
   </div>
 
@@ -357,16 +357,16 @@ a:hover{text-decoration:underline}
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">📉</span>违规趋势（近 7 天）</div>
       <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-s);flex-wrap:wrap;justify-content:flex-end">
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#7F77DD;border-radius:3px"></span>审计量</span>
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#EF9F27;border-radius:3px"></span>违规次数</span>
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:#1D9E75;border-radius:2px"></span>任务通过率</span>
-        <span style="color:var(--text-t)">任务通过率 = 1 − 违规÷审计量（任务级口径，与左上方「规则通过率」不同）</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#7F77DD;border-radius:3px"></span>审计任务</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#EF9F27;border-radius:3px"></span>违规任务</span>
+        <span style="color:var(--text-t)">任务级数量（规则集与任务集算法不同，见下方说明）</span>
       </div>
     </div>
     <div class="section-body">
       <svg width="100%" height="180" viewBox="0 0 920 180" preserveAspectRatio="xMidYMid meet" id="trendChart">
         <text x="460" y="90" text-anchor="middle" font-size="13" fill="#8B949E">加载中...</text>
       </svg>
+      <div id="caliberNote" style="margin-top:12px;padding:10px 12px;background:var(--bg-s,#F6F8FA);border:1px solid var(--border);border-radius:8px;font-size:11px;line-height:1.6;color:var(--text-s)"></div>
     </div>
   </div>
 
@@ -1086,16 +1086,17 @@ async function loadLiveData(){
 /* 用 /api/summary（bash 同口径）渲染驾驶舱 */
 function renderSummaryData(s){
   var r=s.rules;
-  // 指标卡：第 1 张为规则级口径，其余全部任务级口径（与趋势图一致）
+  // 指标卡：任务数与规则检查次数分开展示（用户口径：两个数摆出来就明白）
   var t=s.tasks||{};
+  var avgRules=t.total>0?Math.round(r.total/t.total):24;
   document.getElementById('m-audit').textContent=r.passRate+'%';
-  document.getElementById('m-audit-sub').textContent='24 条规则逐项检查（规则级）';
+  document.getElementById('m-audit-sub').textContent='通过的规则检查 ÷ 全部检查';
   document.getElementById('m-today').textContent=(s.todayCount||0);
-  document.getElementById('m-today-sub').textContent='当日审计任务';
+  document.getElementById('m-today-sub').textContent='当日任务数';
   document.getElementById('m-nodes').textContent=(t.total||s.auditTotal||0);
-  document.getElementById('m-nodes-sub').textContent='审计任务总数（任务级）';
-  document.getElementById('m-violations').textContent=(t.violations!==undefined?t.violations:((t.warn||0)+(t.fail||0)));
-  document.getElementById('m-violations-sub').textContent='任务级 · WARN '+(t.warn||0)+' / FAIL '+(t.fail||0);
+  document.getElementById('m-nodes-sub').textContent='任务级 · 每次提交审计 1 次';
+  document.getElementById('m-violations').textContent=(r.total||0);
+  document.getElementById('m-violations-sub').textContent=(t.total||0)+' 任务 × 每任务约 '+avgRules+' 条规则';
   // 审计记录卡：总数 + 测试过滤说明
   var cnt=document.getElementById('auditRecordCount');
   if(cnt){cnt.textContent='共 '+(s.auditTotal||r.total)+' 条'+(s.filteredTestRecords?(' · 已过滤 '+s.filteredTestRecords+' 条测试'):'')}
@@ -1124,10 +1125,11 @@ function renderSummaryData(s){
   }
 }
 
-/* 通栏趋势图：双轴——紫柱审计量+黄柱违规次数（左轴次数），绿线通过率（右轴比率） */
+/* 通栏趋势图：任务级——紫柱审计任务 + 黄柱违规任务（左轴次数）
+ * 规则集与任务集是两个不同集合，此图只展示任务级数量，不混入规则级通过率（规则通过率见左上指标卡） */
 function renderDailyTrend(days){
   var maxCount=Math.max.apply(null,days.map(function(d){return d.audits||((d.pass||0)+(d.warn||0)+(d.fail||0))}).concat([1]));
-  var W=920,padL=44,padR=44,top=24,base=142;
+  var W=920,padL=44,padR=20,top=24,base=142;
   var bw=(W-padL-padR)/days.length;
   var svg='';
   // 左轴：次数 0-maxCount（4 格）
@@ -1135,20 +1137,18 @@ function renderDailyTrend(days){
     var yy=base-(g/4)*(base-top);
     svg+='<line x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
     svg+='<text x="'+(padL-6)+'" y="'+(yy+3)+'" text-anchor="end" font-size="10" fill="#8B949E">'+Math.round(maxCount*g/4)+'</text>';
-    // 右轴：比率 0-100%（同步 4 格，灰色刻度）
-    svg+='<text x="'+(W-padR+6)+'" y="'+(yy+3)+'" text-anchor="start" font-size="10" fill="#8B949E">'+(g*25)+'%</text>';
   }
-  var ratePts=[];
+  var sumTasks=0,sumChecks=0;   // 口径说明用的累计值
   days.forEach(function(d,i){
     var p=d.pass||0,w=d.warn||0,f=d.fail||0;
     var total=d.audits||(p+w+f);
     var vio=d.violations!==undefined?d.violations:(w+f);
-    // 绿线=任务级通过率（= (审计量-违规)/审计量，与两根柱子同口径，一眼可验算）
-    var rate=total>0?Math.round(p*100/total):0;
+    sumTasks+=total;
+    sumChecks+=(d.ruleAll||0);
     var cx=padL+i*bw+bw/2;
     var barW=Math.min(bw*0.26,34);
     var gap=4;
-    // 紫柱：审计量；黄柱：违规次数（并排）
+    // 紫柱：审计任务；黄柱：违规任务（并排）
     var h1=Math.max(2,total/maxCount*(base-top));
     var h2=Math.max(2,vio/maxCount*(base-top));
     svg+='<rect x="'+(cx-barW-gap/2)+'" y="'+(base-h1)+'" width="'+barW+'" height="'+h1+'" rx="3" fill="#7F77DD"/>';
@@ -1156,18 +1156,22 @@ function renderDailyTrend(days){
     svg+='<text x="'+(cx-barW/2-gap/2)+'" y="'+(base-h1-5)+'" text-anchor="middle" font-size="9" fill="#7F77DD">'+total+'</text>';
     svg+='<text x="'+(cx+barW/2+gap/2)+'" y="'+(base-h2-5)+'" text-anchor="middle" font-size="9" fill="#EF9F27">'+vio+'</text>';
     svg+='<text x="'+cx+'" y="'+(base+17)+'" text-anchor="middle" font-size="10" fill="#8B949E">'+String(d.day).slice(5)+'</text>';
-    ratePts.push([cx,rate]);
-  });
-  // 绿线：通过率（右轴 0-100%）
-  var line=ratePts.map(function(pt){return pt[0]+','+(base-(pt[1]/100)*(base-top))}).join(' ');
-  if(ratePts.length>1){
-    svg+='<polyline points="'+line+'" fill="none" stroke="#1D9E75" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>';
-  }
-  ratePts.forEach(function(pt){
-    var yy=base-(pt[1]/100)*(base-top);
-    svg+='<circle cx="'+pt[0]+'" cy="'+yy+'" r="4" fill="#fff" stroke="#1D9E75" stroke-width="2.4"/>';
   });
   document.getElementById('trendChart').innerHTML=svg;
+  // 口径说明：讲清「任务」与「规则检查」两套数字怎么来的
+  fillCaliberNote(days,sumTasks,sumChecks);
+}
+
+/* 口径说明：规则集≠任务集，分别讲清怎么算，消除通过率误解 */
+function fillCaliberNote(days,sumTasks,sumChecks){
+  var el=document.getElementById('caliberNote');
+  if(!el)return;
+  var avg=sumTasks>0?Math.round(sumChecks/sumTasks):0;
+  el.innerHTML='<span style="color:var(--text);font-weight:600">两套不同的集合，算法不同：</span>'+
+    '<span style="margin-top:4px;display:block"><b style="color:#7F77DD">任务集</b>：每次提交触发 1 次审计，近 7 天共 <b>'+sumTasks+'</b> 次任务。'+
+    '<b style="color:#EF9F27">违规任务</b>＝其中至少触犯 1 条规则的任务。</span>'+
+    '<span style="margin-top:4px;display:block"><b style="color:var(--green)">规则集</b>：每个任务都要逐条过约 <b>'+avg+'</b> 条规则，所以规则检查次数＝任务数 × 每任务规则数（近 7 天约 <b>'+sumChecks+'</b> 次检查）。'+
+    '<b style="color:var(--green)">规则通过率</b>＝通过的检查 ÷ 全部检查。因为每个任务的绝大多数规则都是通过的，违规只是少数几条，所以规则通过率稳定在 90%+ —— 它衡量的是「规则检查的通过比例」，和「多少任务零违规」是<b>两回事</b>。</span>';
 }
 
 /* 降级：summary 无 daily 时用 TOP3 画柱状（通栏版） */
@@ -1271,19 +1275,27 @@ function renderTrendChart(records){
   records.forEach(function(r){
     if(!r.timestamp)return;
     var day=r.timestamp.slice(0,10);
-    if(!byDay[day])byDay[day]={pass:0,warn:0,fail:0};
+    if(!byDay[day])byDay[day]={pass:0,warn:0,fail:0,rulePass:0,ruleAll:0};
     var ec=r.exitCode||0;
     if(ec===0)byDay[day].pass++;
     else if(ec===1)byDay[day].warn++;
     else byDay[day].fail++;
+    // 规则级：逐条统计（蓝线用）
+    if(r.ruleResults){
+      r.ruleResults.forEach(function(rr){
+        if(rr.status==='SKIPPED')return;
+        byDay[day].ruleAll++;
+        if(rr.status==='PASS')byDay[day].rulePass++;
+      });
+    }
   });
   // 补齐最近 7 天（缺失日补 0），再画通栏柱状图
   var days=[];
   for(var i=6;i>=0;i--){
     var dt=new Date(Date.now()-i*24*3600*1000);
     var key=dt.toISOString().slice(0,10);
-    var d=byDay[key]||{pass:0,warn:0,fail:0};
-    days.push({day:key,pass:d.pass,warn:d.warn,fail:d.fail});
+    var d=byDay[key]||{pass:0,warn:0,fail:0,rulePass:0,ruleAll:0};
+    days.push({day:key,pass:d.pass,warn:d.warn,fail:d.fail,rulePass:d.rulePass,ruleAll:d.ruleAll,ruleRate:d.ruleAll>0?Math.round(d.rulePass*100/d.ruleAll):0});
   }
   renderDailyTrend(days);
 }
@@ -1325,14 +1337,16 @@ function loadSampleData(){
       : '<span class="audit-rule" style="color:var(--green)">✓</span>';
     return '<div class="audit-row"><span class="audit-time">'+r.time+'</span><span class="audit-badge badge-'+r.verdict.toLowerCase()+'">'+r.verdict+'</span>'+ruleCell+'<span class="audit-task">'+r.task+'</span></div>';
   }).join('');
-  // 示例趋势：近 7 天每日 PASS/WARN/FAIL（堆叠柱 + 违规率折线）
+  // 示例趋势：近 7 天每日 PASS/WARN/FAIL + 规则级通过率
   var samplePass=[19,17,20,13,18,11,16];
   var sampleWarn=[6,5,8,3,5,2,4];
   var sampleFail=[3,2,3,2,3,2,2];
   var sampleDays=[];
   for(var i=6;i>=0;i--){
     var dt=new Date(Date.now()-i*24*3600*1000);
-    sampleDays.push({day:dt.toISOString().slice(0,10),pass:samplePass[6-i],warn:sampleWarn[6-i],fail:sampleFail[6-i]});
+    var t=samplePass[6-i],w=sampleWarn[6-i],f=sampleFail[6-i];
+    var tasks=t+w+f, checks=tasks*22, rulePass=checks-(w+f)*2; // 每个违规任务平均触 2 条规则
+    sampleDays.push({day:dt.toISOString().slice(0,10),pass:t,warn:w,fail:f,ruleAll:checks,rulePass:rulePass,ruleRate:Math.round(rulePass*100/checks)});
   }
   renderDailyTrend(sampleDays);
   renderSovereignty(null,null);
