@@ -93,22 +93,31 @@ const LLM_PROVIDERS: Record<string, LLMProviderConfig> = {
 };
 
 /**
- * 按角色解析 API key（v1.1.5）。
- * 三级回退：SOFAGENT_LLM_{ROLE}_API_KEY > SOFAGENT_LLM_API_KEY > OPENAI_API_KEY
+ * 按角色解析 API key（v1.1.5 · v1.2.6 FORGE A/B 兜底）。
+ * 四级回退：SOFAGENT_LLM_{ROLE}_API_KEY > SOFAGENT_LLM_API_KEY > SOFAGENT_LLM_A_API_KEY > OPENAI_API_KEY
  */
 function resolveApiKey(role: 'engineer' | 'reviewer' | null = null): string | undefined {
   if (role) {
     const roleKey = process.env[`SOFAGENT_LLM_${role.toUpperCase()}_API_KEY`];
     if (roleKey) return roleKey;
   }
-  return process.env.SOFAGENT_LLM_API_KEY ?? process.env.OPENAI_API_KEY;
+  return process.env.SOFAGENT_LLM_API_KEY
+    ?? process.env.SOFAGENT_LLM_A_API_KEY   // v1.2.6 FORGE A 角色兜底
+    ?? process.env.OPENAI_API_KEY;
 }
 
 export async function resolveLLMModel(role: 'engineer' | 'reviewer' | null = null): Promise<Record<string, unknown> | null> {
   const llmEnv = process.env.SOFAGENT_LLM;
-  if (!llmEnv) return null;
+  // v1.2.6: 打通 FORGE A/B 环境变量回退
+  // 有 role 时：SOFAGENT_LLM_{ROLE} > SOFAGENT_LLM_A（兜底）
+  // 无 role 时：SOFAGENT_LLM_A > SOFAGENT_LLM_B（兜底）
+  const effectiveLlmEnv = llmEnv
+    ?? (role
+      ? (process.env[`SOFAGENT_LLM_${role.toUpperCase()}`] ?? process.env.SOFAGENT_LLM_A)
+      : (process.env.SOFAGENT_LLM_A ?? process.env.SOFAGENT_LLM_B));
+  if (!effectiveLlmEnv) return null;
 
-  const [provider, modelName] = llmEnv.split(':');
+  const [provider, modelName] = effectiveLlmEnv.split(':');
   const providerKey = provider ?? '';
 
   // 解析 baseURL：custom 走 env，预置 provider 走查表

@@ -57,6 +57,10 @@ import { healthCheck } from './tools/health-check';
 import { auditDataChange } from './tools/audit-data-change';
 import { notifySession } from './tools/notify-session';
 import { activateWorkflowTool } from './tools/activate-workflow';
+import { daemonStatus } from './tools/daemon-status';
+import { listAgentsTool } from './tools/list-agents';
+import { listConcepts } from './tools/list-concepts';
+import { hitlResolve } from './tools/hitl-resolve';
 
 // ============================================================
 // 类型定义
@@ -246,7 +250,7 @@ class McpServer {
       tools: [
         {
           name: 'run_audit',
-          description: '对 git diff 运行全量审计规则（sofagent 审计引擎 · 24 条规则 · 0 token 纯正则）。返回结构化审计报告。',
+          description: '对 git diff 运行全量审计规则（sofagent 审计引擎 · 24 条审计规则，静态规则扫描为主，复杂项可走 LLM 辅助）。返回结构化审计报告。',
           inputSchema: {
             type: 'object' as const,
             properties: {
@@ -538,6 +542,34 @@ class McpServer {
             },
           },
         },
+        {
+          name: 'daemon_status',
+          description: '查询 sofagent daemon 的运行状态（PID/启动时间/心跳/错误）。只读操作，不启动或停止 daemon。',
+          inputSchema: { type: 'object' as const, properties: {} },
+        },
+        {
+          name: 'list_agents',
+          description: '列出已注册的 Agent（内置 + 企业 SubAgent），含 name/type/description/hitl/knowledgeDomain。',
+          inputSchema: { type: 'object' as const, properties: {} },
+        },
+        {
+          name: 'list_concepts',
+          description: '列出 knowledge/concepts/ 下所有 concept（业务概念页）。',
+          inputSchema: { type: 'object' as const, properties: {} },
+        },
+        {
+          name: 'hitl_resolve',
+          description: 'HITL 异步决议——对挂起等待人工确认的 LOOP checkpoint 提交决策（approve/reject/aborted），触发 LOOP 恢复运行。',
+          inputSchema: {
+            type: 'object' as const,
+            properties: {
+              checkpoint_id: { type: 'string', description: 'HITL checkpoint ID（必填）' },
+              decision: { type: 'string', enum: ['approve', 'reject', 'aborted'], description: '人工决策（必填）' },
+              comment: { type: 'string', description: '可选备注（如驳回原因）' },
+            },
+            required: ['checkpoint_id', 'decision'],
+          },
+        },
       ],
     });
   }
@@ -622,6 +654,18 @@ class McpServer {
         break;
       case 'activate_workflow':
         await this.toolActivateWorkflow(id, args);
+        break;
+      case 'daemon_status':
+        await this.toolDaemonStatus(id);
+        break;
+      case 'list_agents':
+        await this.toolListAgents(id);
+        break;
+      case 'list_concepts':
+        this.toolListConcepts(id);
+        break;
+      case 'hitl_resolve':
+        await this.toolHitlResolve(id, args);
         break;
       default:
         this.sendError(id, -32602, `Unknown tool: ${toolName}`);
@@ -1412,6 +1456,50 @@ class McpServer {
     });
   }
 
+  /** Tool: daemon_status — 查询 daemon 运行状态（v1.2.6 新增） */
+  private async toolDaemonStatus(id: number | string | null): Promise<void> {
+    const result = await daemonStatus();
+    this.sendToolResult(id, {
+      type: 'text',
+      text: result.text,
+      data: result.data,
+    });
+  }
+
+  /** Tool: list_agents — 列出已注册的 Agent（v1.2.6 新增） */
+  private async toolListAgents(id: number | string | null): Promise<void> {
+    const result = await listAgentsTool();
+    this.sendToolResult(id, {
+      type: 'text',
+      text: result.text,
+      data: result.data,
+    });
+  }
+
+  /** Tool: list_concepts — 列出所有 concept（v1.2.6 新增） */
+  private toolListConcepts(id: number | string | null): void {
+    const result = listConcepts();
+    this.sendToolResult(id, {
+      type: 'text',
+      text: result.text,
+      data: result.data,
+    });
+  }
+
+  /** Tool: hitl_resolve — HITL 异步决议（v1.2.6 新增） */
+  private async toolHitlResolve(id: number | string | null, args: Record<string, unknown>): Promise<void> {
+    const result = await hitlResolve({
+      checkpoint_id: args.checkpoint_id as string,
+      decision: args.decision as 'approve' | 'reject' | 'aborted',
+      ...(args.comment ? { comment: args.comment as string } : {}),
+    });
+    this.sendToolResult(id, {
+      type: 'text',
+      text: result.text,
+      data: result.data,
+    });
+  }
+
   /** Tool: list_capabilities — 完整能力清单（Agent 首次连接用） */
   private toolListCapabilities(id: number | string | null): void {
     const capabilities = {
@@ -1441,6 +1529,11 @@ class McpServer {
         { name: 'notify_session', description: '审计结果汇报（预格式化 [sofagent] 返回）' },
         // v1.2.5 新增
         { name: 'activate_workflow', description: '激活 FDE 交付物，注册企业 SubAgent' },
+        // v1.2.6 新增
+        { name: 'daemon_status', description: '查询 daemon 运行状态（只读）' },
+        { name: 'list_agents', description: '列出已注册 Agent（内置 + 企业）' },
+        { name: 'list_concepts', description: '列出 knowledge/concepts/ 下所有 concept' },
+        { name: 'hitl_resolve', description: 'HITL 异步决议——提交决策触发 LOOP 恢复' },
       ],
       resources: [
         { uri: 'think://latest', description: 'think.md 最后一条条目' },

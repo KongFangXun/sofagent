@@ -12,7 +12,7 @@ import { BUILTIN_AGENTS } from './builtin-agents';
 export interface SubAgentDefinition {
   /** 唯一标识名称 */
   name: string;
-  /** 类型：development | audit */
+  /** 类型：development | audit | enterprise */
   type: string;
   /** 描述 */
   description: string;
@@ -28,6 +28,12 @@ export interface SubAgentDefinition {
   _sourcePath?: string;
   /** v1.0.8: FDE Agent 运行模式 */
   mode?: 'deploy' | 'sustain';
+  /** v1.2.6: 是否需要 Human-in-the-Loop 确认 */
+  hitl?: boolean;
+  /** v1.2.6: HITL 配置（触发条件 + 描述） */
+  hitlConfig?: { trigger: string; description?: string };
+  /** v1.2.6: 知识域（用于约束 Agent 的知识访问范围） */
+  knowledgeDomain?: string;
 }
 
 /**
@@ -56,6 +62,10 @@ export function loadDefinition(ymlPath: string): SubAgentDefinition | null {
       modelName: parsed.modelName ? String(parsed.modelName) : null,
       triggerOn: Array.isArray(parsed.triggerOn) ? parsed.triggerOn.map(String) : undefined,
       _sourcePath: ymlPath,
+      // v1.2.6: 解析 enterprise agent 扩展字段（camelCase）
+      hitl: parsed.hitl as boolean | undefined,
+      hitlConfig: parsed.hitlConfig as { trigger: string; description?: string } | undefined,
+      knowledgeDomain: parsed.knowledgeDomain as string | undefined,
     };
   } catch {
     return null;

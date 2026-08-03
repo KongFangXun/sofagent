@@ -18,6 +18,7 @@ export {
   toSubAgentConfigs,
   parseWorkflowToSubAgents,
   mapAgentType,
+  resolveAgent,
   WorkflowParseError,
 } from './workflow-parser';
 export type { WorkflowNode, ParsedWorkflow, SubAgentConfig } from './workflow-parser';

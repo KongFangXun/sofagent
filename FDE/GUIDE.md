@@ -601,6 +601,28 @@ skills/ + nodes/               →  EXECUTE（v1.2.8-9）: DAG 执行 + HITL 审
 
 > **简单说**：现在 FDE 离场后留下的是"图纸 + 说明书"，激活链完成后留下的是"按图纸自动造好且自己跑着的工厂"。现有 `registry.ts` 的动态注册机制（v1.0.8 起支持从 `.sofagent/subagents/*.yml` 加载自定义 Agent）早就铺好了轨道——激活链是往轨道上放车厢。详见仓库内 docs/guides/fde-activation-chain.md（FDE 独立部署时不随包分发）。
 
+> **workflow.yml 标准格式（v1.2.6+）**：FDE 交付的 `workflow.yml` 使用**嵌套格式**——`workflow:` 根节点下包含 `name`、`description`、`nodes`。激活链同时兼容旧版平铺格式（无 `workflow:` 包裹层），但新交付物应使用嵌套标准：
+>
+> ```yaml
+> workflow:
+>   name: 客户接单流程
+>   description: 从客户接单到发货的全流程
+>   nodes:
+>     - id: customer-intake
+>       name: 客户接单
+>       agent: enterprise
+>       type: "🔄"
+>       task: 接收客户订单并录入系统
+>       actions: [read, write]
+>     - id: order-review
+>       name: 订单审核
+>       agent: enterprise
+>       type: "⚡"
+>       task: 审核订单金额和客户信用
+>       depends_on: [customer-intake]
+>       actions: [read]
+> ```
+
 ---
 
 ## 第六章：理论底座（为什么信这套）

@@ -21,6 +21,7 @@ import {
   BUILTIN_AGENTS,
 } from './builtin-agents';
 import type { SubAgentDefinition } from './registry';
+import { listAgents } from './registry';
 
 // ────────────────────────────────────────────────────────────
 // 类型定义
@@ -101,6 +102,51 @@ const AGENT_MAP: Record<string, SubAgentDefinition> = {
 export function mapAgentType(agentType: string): { definition: SubAgentDefinition; fallback: boolean } {
   const hit = AGENT_MAP[agentType];
   if (hit) return { definition: hit, fallback: false };
+  return { definition: TECHNICAL_WRITER_AGENT, fallback: true };
+}
+
+/**
+ * v1.2.6: 解析 agent 类型 → SubAgentDefinition（含 enterprise 动态查找）
+ *
+ * - 内置 4 个（developer/qa-engineer/researcher/technical-writer）走 AGENT_MAP
+ * - `enterprise` 类型：调 listAgents(dataDir) 动态查找 YML 中 name 匹配的 Agent
+ *   - 找到 → 返回该 Agent 定义
+ *   - 未找到 → 抛错提示「enterprise Agent 未注册，请先运行 activate」
+ * - 未知类型：仍降级到 TECHNICAL_WRITER_AGENT（现有行为不变）
+ *
+ * @param node workflow 节点
+ * @param dataDir .sofagent 数据目录（用于 listAgents 查找企业 Agent）
+ * @returns { definition, fallback }
+ * @throws Error 当 enterprise agent 未注册时
+ */
+export function resolveAgent(
+  node: WorkflowNode,
+  dataDir?: string,
+): { definition: SubAgentDefinition; fallback: boolean } {
+  // 内置 agent 走 AGENT_MAP
+  const hit = AGENT_MAP[node.agent];
+  if (hit) return { definition: hit, fallback: false };
+
+  // enterprise agent 动态查找
+  if (node.agent === 'enterprise') {
+    if (!dataDir) {
+      throw new Error(
+        `enterprise Agent 解析需要 dataDir，但未提供。请确保 workflow-parser 收到 dataDir 参数。`,
+      );
+    }
+    // 节点 name 就是 enterprise agent 的注册名（FDE 激活后写入 subagents/*.yml）
+    // 在 workflow.yml 中，enterprise 节点的 name 字段映射到节点 id
+    const agents = listAgents(dataDir);
+    const found = agents.find((a) => a.name === node.id);
+    if (!found) {
+      throw new Error(
+        `enterprise Agent '${node.id}' 未注册，请先运行 activate`,
+      );
+    }
+    return { definition: found, fallback: false };
+  }
+
+  // 未知类型降级到 technical-writer
   return { definition: TECHNICAL_WRITER_AGENT, fallback: true };
 }
 
@@ -231,12 +277,13 @@ function assertAcyclic(nodes: WorkflowNode[]): void {
  * 保证 task tool 的名字唯一。
  *
  * @param parsed 已解析的 workflow
+ * @param dataDir .sofagent 数据目录（v1.2.6: 用于 resolveAgent 查找 enterprise Agent）
  * @returns SubAgentConfig 数组（每个节点一个 SubAgent）
  */
-export function toSubAgentConfigs(parsed: ParsedWorkflow): SubAgentConfig[] {
+export function toSubAgentConfigs(parsed: ParsedWorkflow, dataDir?: string): SubAgentConfig[] {
   const seenAgent = new Map<string, number>();
   return parsed.nodes.map((node) => {
-    const { definition, fallback } = mapAgentType(node.agent);
+    const { definition, fallback } = resolveAgent(node, dataDir);
     const count = (seenAgent.get(node.agent) ?? 0) + 1;
     seenAgent.set(node.agent, count);
     // 同类型第二个起加节点 id 后缀保唯一
@@ -256,7 +303,8 @@ export function toSubAgentConfigs(parsed: ParsedWorkflow): SubAgentConfig[] {
 /**
  * 一站式入口：YAML 文本 → SubAgent 配置数组
  * @param workflowYaml compose 产出的 YAML 文本
+ * @param dataDir .sofagent 数据目录（v1.2.6: 用于 resolveAgent 查找 enterprise Agent）
  */
-export function parseWorkflowToSubAgents(workflowYaml: string): SubAgentConfig[] {
-  return toSubAgentConfigs(parseWorkflowYaml(workflowYaml));
+export function parseWorkflowToSubAgents(workflowYaml: string, dataDir?: string): SubAgentConfig[] {
+  return toSubAgentConfigs(parseWorkflowYaml(workflowYaml), dataDir);
 }
