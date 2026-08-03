@@ -1,8 +1,8 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
-> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。
-> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量）
+> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。
+> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：50 维（v1.2.6）
 ## 🔒 维护公约（防膨胀铁律）
 
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1050 行（v1.2.5 起从 1000 上调，49 维度自然增长）、`acceptance-test.sh` ≤ 1600 行（v1.2.5 起从 1500 上调），越线触发瘦身（releasing.md 阶段四 Tier 2）。
@@ -1023,6 +1023,19 @@ EN=$(grep 'Current version' README.en.md | head -1)
 grep -q "Current version" tools/check-version.sh && echo "✓ 英文检查已覆盖" || echo "✗ 缺英文检查"
 # 实跑验证
 bash tools/check-version.sh 2>&1 | grep "中英文"
+```
+
+#### 70. MCP tool 注册三处一致性——新增 tool 必须在 tools 数组 + case dispatch + capabilities 三处都注册（v1.2.6 新盲区）
+
+> v1.2.6 教训：新增 4 个 MCP tool（daemon_status / list_agents / list_concepts / hitl_resolve）时，每个 tool 必须在 mcp-server.ts 的三个位置同步注册：① `import` 行 + tools 数组 `name:` 声明 ② `case` dispatch 分支 ③ `toolListCapabilities` 描述。漏任一处 → tool 对外不可见或调用报 not found。验收测试 scenario 192 已覆盖此检查。
+
+```bash
+# 验证三处注册点数量一致
+IMPORTS=$(grep -cE "import.*from.*'./(tools/)?" engine/mcp/src/mcp-server.ts | head -1)
+TOOLS_ARRAY=$(grep -cE "name:\s*'" engine/mcp/src/mcp-server.ts)
+CASES=$(grep -cE "case '" engine/mcp/src/mcp-server.ts)
+echo "imports=$IMPORTS tools_array=$TOOLS_ARRAY cases=$CASES"
+# 期望：三者数量接近一致（tools_array 含历史 tool，但不应有 import 的 tool 缺 case）
 ```
 
 

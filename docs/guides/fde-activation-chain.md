@@ -90,10 +90,10 @@ FDE 诊断完成（交付物就绪）
 | 版本 | 原有主题 | 激活链增量 | 对应 Phase |
 |------|---------|-----------|-----------|
 | **v1.2.5** | 多设备前置（身份码轻量版 + 审计聚合 + 协议中立） | activate.ts + workflow.yml 扩展 + subagents/*.yml 写入 + dry-run + MCP tool | Phase 1 完整 |
-| **v1.2.6** | 弹性预留 | workflow-parser 扩展支持 enterprise agent + registry 扩展 hitl 字段 | Phase 2 前半 |
+| **v1.2.6** | 激活链 Phase 2 前半 + MCP 修补 + 死链清零 | workflow-parser 扩展支持 enterprise agent + registry 扩展 hitl 字段 | Phase 2 前半 |
 | **v1.2.7** | 编排引擎增强 | composeEnterpriseWorkflow + LangGraph StateGraph 构建 + 数据流设计 | Phase 2 后半 |
 | **v1.2.8** | 记忆分层+定时任务 | dag-runner 扩展 + run-enterprise CLI + 节点执行器 | Phase 3 前半 |
-| **v1.2.9** | 弹性预留 | HITL interrupt + 审计集成 + 异常处理 | Phase 3 后半 |
+| **v1.2.9** | HITL + 审计集成 | HITL interrupt + 审计集成 + 异常处理 | Phase 3 后半 |
 | **v1.3.0** | 运行时审计最小闭环 | 激活链收尾——全闭环验证 + wrapToolCall 联动 + 企业工作流审计 | Phase 4 收尾 |
 
 > 开发每个版本时读本文档作为设计指引。桌面拆分的 3 个 Prompt（Phase 1 / Phase 2 / Phase 3+4）已迁至 `~/Desktop/sofagent-dev-prompts/` 为开发细节参考。

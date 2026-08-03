@@ -2,8 +2,8 @@
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离 + v1.2.5 激活链Phase1 + v1.2.5 审计加固A20-A23 + v1.2.5 daemon可靠性 + v1.2.5 多设备前置
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
-# 场景数：126 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
-#   口径 = 纯数字编号去重数（scenario 34b/34c/167a/167b 子场景不计入此总数；最大编号 191 为编号上限，非场景数）
+# 场景数：133 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
+#   口径 = 纯数字编号去重数（scenario 34b/34c/167a/167b 子场景不计入此总数；最大编号 197 为编号上限，非场景数）
 #   计数命令（精确口径，排除 echo 探针假阳性）：grep -oE 'scenario [0-9]+ "' FORGE/playbook/acceptance-test.sh | grep -oE '[0-9]+' | sort -un | wc -l
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
@@ -1377,7 +1377,7 @@ S164_OK=true
 for p in install.sh engine/think/src/think-generator.ts; do test -e "$PROJECT_ROOT/$p" || { fail "文档引用的代码路径不存在: $p"; S164_OK=false; }; done
 node -e "const fs=require('fs'),path=require('path');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=0;for(const fp of files){const c=fs.readFileSync(fp,'utf8'),dir=path.dirname(fp);const re=/\]\(((?:\.\.?\/)?[^)]+\.md(?:#[^)]*)?)\)/g;let m;while((m=re.exec(c))){const href=m[1].split('#')[0];if(href.startsWith('http'))continue;if(!fs.existsSync(path.resolve(dir,href))){console.log('断链:',fp,'->',m[1]);bad++;}}}process.exit(bad?1:0);" >/dev/null 2>&1 || { fail "存在指向不存在文件的跨文档 Markdown 链接"; S164_OK=false; }
 $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接无死链）"
-scenario 165 "关键数字跨文档一致性——测试数 / 规则数 24 / acceptance 126"
+scenario 165 "关键数字跨文档一致性——测试数 / 规则数 24 / acceptance 133"
 S165_OK=true
 TEST_COUNT=""
 if [ -f "$PROJECT_ROOT/tools/test-count.sh" ]; then
@@ -1387,8 +1387,8 @@ if [ -n "$TEST_COUNT" ] && [ "$TEST_COUNT" -gt 0 ] 2>/dev/null; then
   for f in README.md docs/WIKI.md; do grep -q "$TEST_COUNT" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 $TEST_COUNT（数字漂移）"; S165_OK=false; }; done
 fi
 for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do grep -q "24 条\|24 个\|24 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 24（数字漂移）"; S165_OK=false; }; done
-for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "126" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 126"; S165_OK=false; }; done
-$S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / 126）"
+for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "133" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 133"; S165_OK=false; }; done
+$S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / 133）"
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
 S166_OK=true
 node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}process.exit(bad.length?(console.log('U+FFFD:',bad.join(',')),1):0);" >/dev/null 2>&1 || { fail "活跃文档存在 U+FFFD 编码污染"; S166_OK=false; }
@@ -1550,6 +1550,61 @@ if [ "${IDENTITY_EXPORT_OK:-false}" = "true" ] && [ "${TRAIL_EXPORT_OK:-false}" 
 scenario 191 "v1.2.5 副线 — protocol-neutrality 协议中立声明"
 check_dist_export "engine/audit/dist/protocol-neutrality.js" "assertProtocolNeutrality" "PROTONEUT" || true
 if [ "${PROTONEUT_EXPORT_OK:-false}" = "true" ]; then pass "protocol-neutrality 导出 assertProtocolNeutrality"; else fail "protocol-neutrality 导出缺失"; fi
+
+scenario 192 "v1.2.6 MCP — 4 个新 tool handler 文件存在 + mcp-server.ts 三处注册"
+S192_OK=true
+for f in daemon-status.ts list-agents.ts list-concepts.ts hitl-resolve.ts; do
+  [ -f "$PROJECT_ROOT/engine/mcp/src/tools/$f" ] || { fail "缺失 v1.2.6 tool handler: $f"; S192_OK=false; }
+done
+# 三处注册点：import 行 + tools 数组 name: + case dispatch + toolListCapabilities
+MCP_V126_IMPORTS=$(grep -cE "import.*from.*'./(tools/)?(daemon-status|list-agents|list-concepts|hitl-resolve)'" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" 2>/dev/null || echo 0)
+MCP_V126_CASES=$(grep -cE "case '(daemon_status|list_agents|list_concepts|hitl_resolve)'" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" 2>/dev/null || echo 0)
+[ "$MCP_V126_IMPORTS" -ge 4 ] && [ "$MCP_V126_CASES" -ge 4 ] || { fail "mcp-server.ts 注册点不足（import=${MCP_V126_IMPORTS} case=${MCP_V126_CASES}，期望各≥4）"; S192_OK=false; }
+$S192_OK && pass "v1.2.6 MCP 4 tool 完整（handler 文件 + import + case dispatch）"
+
+scenario 193 "v1.2.6 激活链 Phase 2 — resolveAgent 支持 enterprise 类型动态查找"
+S193_OK=true
+grep -q "export function resolveAgent" "$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts" 2>/dev/null || { fail "resolveAgent 函数不存在"; S193_OK=false; }
+grep -q "enterprise" "$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts" 2>/dev/null || { fail "workflow-parser.ts 缺少 enterprise 类型支持"; S193_OK=false; }
+grep -q "listAgents" "$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts" 2>/dev/null || { fail "resolveAgent 未调 listAgents 动态查找"; S193_OK=false; }
+$S193_OK && pass "resolveAgent 支持 enterprise 类型（listAgents 动态查找，不静默降级）"
+
+scenario 194 "v1.2.6 激活链 Phase 2 — registry SubAgentDefinition 扩展 hitl/hitlConfig/knowledgeDomain"
+S194_OK=true
+for field in hitl hitlConfig knowledgeDomain; do
+  grep -q "$field" "$PROJECT_ROOT/engine/orchestrator/src/registry.ts" 2>/dev/null || { fail "registry.ts 缺少字段: $field"; S194_OK=false; }
+done
+$S194_OK && pass "registry SubAgentDefinition 扩展 hitl/hitlConfig/knowledgeDomain 三字段"
+
+scenario 195 "v1.2.6 2A — activate.ts 嵌套/平铺 workflow.yml 格式兼容"
+S195_OK=true
+grep -q "doc\['workflow'\]" "$PROJECT_ROOT/engine/orchestrator/src/activate.ts" 2>/dev/null || { fail "activate.ts 缺少嵌套格式兼容（doc['workflow'] ?? doc）"; S195_OK=false; }
+$S195_OK && pass "activate.ts 支持嵌套 + 平铺双格式（const root = doc['workflow'] ?? doc）"
+
+scenario 196 "v1.2.6 2B — SOFAGENT_LLM 环境变量四级回退链"
+S196_OK=true
+grep -q "SOFAGENT_LLM_A" "$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts" 2>/dev/null || { fail "nodes.ts 缺少 SOFAGENT_LLM_A 回退"; S196_OK=false; }
+grep -q "SOFAGENT_LLM_B" "$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts" 2>/dev/null || { fail "nodes.ts 缺少 SOFAGENT_LLM_B 回退"; S196_OK=false; }
+$S196_OK && pass "resolveLLMModel/resolveApiKey 四级回退（SOFAGENT_LLM → _ROLE → _A → _B）"
+
+scenario 197 "v1.2.6 — 文档死链清零（docs/ 下 .md 互链全部可达）"
+# 复用 scenario 164 同款逻辑，扫 docs/ 下所有 .md 的相对链接是否指向真实文件
+S197_OK=true
+TOTAL_BROKEN=0
+while IFS= read -r mdfile; do
+  dir=$(dirname "$mdfile")
+  while IFS= read -r link; do
+    # 提取 [text](url) 中的 url，只处理 ./ 或 ../ 开头的相对链接
+    target=$(echo "$link" | grep -oE '\]\((\.\./|\./)[^)]+\)' | sed 's/]((//;s/)//')
+    [ -z "$target" ] && continue
+    # 去 anchor
+    target=$(echo "$target" | sed 's/#.*//')
+    [ -z "$target" ] && continue
+    resolved="$dir/$target"
+    [ -f "$resolved" ] || { TOTAL_BROKEN=$((TOTAL_BROKEN + 1)); }
+  done < <(grep -oE '\]\((\.\./|\./)[^)]+\)' "$mdfile" 2>/dev/null)
+done < <(find "$PROJECT_ROOT/docs" -name "*.md" -not -path "*/archive/*" 2>/dev/null)
+[ "$TOTAL_BROKEN" -eq 0 ] && pass "docs/ 下文档死链清零（TOTAL_BROKEN=0）" || { fail "docs/ 下仍有 ${TOTAL_BROKEN} 处死链"; S197_OK=false; }
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
