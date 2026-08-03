@@ -1,6 +1,6 @@
 # 安全策略
 
-> v1.2.4 · 2026-08-02（UTC）· 孔放勋
+> v1.2.5 · 2026-08-02（UTC）· 孔放勋
 >
 > 按安全主题组织，版本号作为括号注释。企业 IT 可按主题快速定位。
 
@@ -38,19 +38,21 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 | `knowledge/` | `data/knowledge/` | 知识库 / 评估反馈（eval 体系；旧 `scoring/` 已废弃） |
 | `orchestrator/` | `data/orchestrator/` | 编排决策历史 |
 
-**当前状态（v1.2.4）**：
+**当前状态（v1.2.5）**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
 - ⚠️ 明文存储：`data/` 下文件仍为 Markdown 明文，未做加密
 - ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**预计 v1.4.0（与沙箱/权限/网关同批安全加固）落地**。合规审查员请注意：v1.2.x 版本不适合直接用于强合规场景，需配合外部加密卷（gpg / disk encryption）。
 
-### 当前版本（v1.2.4）临时缓解措施
+### 当前版本（v1.2.5）临时缓解措施
 
 在 age 加密（目标 v1.4.0）交付之前，建议：
 1. **设置 `~/.sofagent/data/` 目录权限为 700**：`chmod 700 ~/.sofagent/data/`（用户可见运行时数据；`~/.sofagent/internal/` 引擎内部状态同样 700）
 2. **将 `~/.sofagent/` 父目录放在加密文件系统上**（如 macOS APFS 加密卷）
 3. **定期轮换 `~/.sofagent/data/` 中的历史审计数据**（P2-31：合并原重复的权限提示段）
+
+> 📌 config.yml 的权限加固（chmod 400）见 [LIMITATIONS.md](./LIMITATIONS.md) "config.yml 可被篡改"段。
 
 **企业环境建议**：
 - 对 `data/` 目录做 gpg 加密或放在加密卷上

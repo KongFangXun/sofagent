@@ -1,6 +1,6 @@
 // ============================================================
 // migration.ts · ab-history 路径迁移逻辑
-// v1.2.4 新增
+// v1.2.5 新增
 //
 // 旧路径：data/ab-history.jsonl
 // 新路径：data/ab-test/scheduler-history.jsonl

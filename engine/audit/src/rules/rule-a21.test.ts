@@ -86,4 +86,35 @@ describe('A21 不植后门', () => {
     const result = checkRuleA21(ctx);
     expect(result.status).toBe('FAIL');
   });
+
+  // v1.2.5 误报回归：daemon inspectors 的 @daily 巡检注释曾被误判为 crontab 后门
+  it('TS 注释中的 @daily 巡检标记 → PASS（注释不可执行，非后门）', () => {
+    const ctx = makeCtx([
+      makeDiffFile('engine/daemon/src/inspectors/daily-snapshot.ts', [
+        '+// daily-snapshot.ts · @daily 结构化快照生成器（v1.2.5）',
+      ]),
+    ]);
+    const result = checkRuleA21(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('shell 注释中的 @reboot → PASS（注释豁免）', () => {
+    const ctx = makeCtx([
+      makeDiffFile('scripts/setup.sh', [
+        '+# @reboot 说明：本工具不注册自启，仅文档示例',
+      ]),
+    ]);
+    const result = checkRuleA21(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('可执行代码里写 crontab @daily → 仍 FAIL（非注释行不豁免）', () => {
+    const ctx = makeCtx([
+      makeDiffFile('scripts/setup.sh', [
+        '+echo "@daily /usr/local/bin/evil" >> /tmp/crontab',
+      ]),
+    ]);
+    const result = checkRuleA21(ctx);
+    expect(result.status).toBe('FAIL');
+  });
 });

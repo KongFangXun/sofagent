@@ -236,10 +236,33 @@ node driver.mjs --step regression  --target v1.2.5 --run-dir "$RUN_DIR"
 #### V8 heap 限制：--max-old-space-size（反直觉优化）
 
 ```bash
-# ✅ 768MB——V8 更频繁 GC，实际 RSS 更低
-node --max-old-space-size=768 driver.mjs --step regression
+# ✅ 1536MB——v1.2.5 run-07 教训：768MB 在 6 轮长循环中主进程静默 OOM
+node --max-old-space-size=1536 driver.mjs --step regression
 ```
 
-较大 heap 让 V8 延迟 GC → old space 膨胀到 macOS jetsam 阈值被 kill。768MB 迫使频繁 GC，RSS 反而更低。
+**演进史**：最初用 768MB 迫使 V8 频繁 GC（old space 膨胀到 macOS jetsam 阈值被 kill），RSS 反而更低。但 v1.2.5 run-07 实测：6 轮 30+ worker 并发时 768MB 不够主进程自身用，静默 OOM（exit 137）。改为 1536MB 后稳定。单步短循环（release-gate）可容忍 768，但为统一不再区分。
 
-> **三层防御**：preModelHook（旧消息可 GC）+ `--max-old-space-size=768`（频繁 GC）+ `--step`（每步归零）—— OOM 阈值从 17→198 次工具调用。
+> **三层防御**：preModelHook（旧消息可 GC）+ `--max-old-space-size=1536`（v1.2.5 起从 768 上调）+ `--step`（每步归零）—— OOM 阈值从 17→198 次工具调用。
+
+---
+
+### 🔴 零信任复核：worker 的 FAIL 判定不可全信（v1.2.5 run-06~08 教训）
+
+**背景**：release-gate regression worker 读 precheck JSON 做判定时，连续三轮（run-06/07/08）报出的 FAIL 经人工复核**全部是检查命令自身缺陷导致的误报**，没有一个是产品代码真实 bug。
+
+**四个典型案例**（regression-checklist.md 检查命令缺陷）：
+
+| 缺陷类型 | 案例 | 表现 |
+|------|------|------|
+| 期望值过期 | #4 | 规则数期望写死 21，实际 v1.2.0 起已是 24 |
+| 环境假设错误 | #7 | 把 .gitignore 的运行时文件（config.yml）缺失判为 FAIL，干净 clone 必然"失败" |
+| 比对格式不归一 | #4 | TS 源码 vs README 表格行直接 diff，两种格式永远有差异 |
+| 子串误匹配 | #49 | 扫旧路径残留时 `sofagent/skill/` 匹配到正确路径 `~/.sofagent/skill/` 的子串 |
+
+**铁律**：
+1. **FAIL ≠ 真实 bug**。worker/报告判的 FAIL 必须亲手实跑检查命令复核后才能定性
+2. 复核动作：把 checklist 里该维度的命令原样复制执行 → 看输出 → 判断是产品缺陷还是命令缺陷
+3. 确认是命令缺陷 → 修 checklist（加豁免/归一化/前置判断），**绝不修产品代码迁就错误检查**
+4. 检查命令的豁免逻辑（历史文档目录、运行时文件、HOME 部署路径）是误报最高发区，新增检查项时先想豁免
+
+> **判定流程**：release-gate FAIL → 零信任复核（亲手跑）→ 产品 bug？修代码 ：命令 bug？修 checklist → 重跑验证全绿

@@ -133,7 +133,7 @@ for step in "${STEPS[@]}"; do
   # 启动 driver 单步模式（限制 V8 heap 到 768MB，触发更积极的 GC）
   step_start=$(date +%s)
   set +e
-  eval "node --max-old-space-size=768 '${DRIVER}' --target '${TARGET}' --step '${step}' --run-dir '${RUN_DIR}' ${EXTRA_ARGS}"
+  eval "node --max-old-space-size=1536 '${DRIVER}' --target '${TARGET}' --step '${step}' --run-dir '${RUN_DIR}' ${EXTRA_ARGS}"
   EXIT_CODE=$?
   set -e
   step_end=$(date +%s)

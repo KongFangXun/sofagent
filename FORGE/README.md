@@ -72,35 +72,16 @@ FORGE 的自迭代不是单一循环，而是**外环 + 内环**的双层结构�
 
 > **核心原则**：不要围绕信心循环，要围绕证据循环。fresh-eyes-loop 的 A-verify 阶段和 release-gate-loop 的 acceptance-test 都是「证据」——不是让 Agent 自己说「我觉得好了」，而是让独立 Agent 基于硬证据判断「确实好了」。
 
-## 快速开始（fresh-eyes-loop）
+## 快速开始
 
-fresh-eyes-loop 由 driver（`fresh-eyes-driver.mjs`）自动编排——driver 会 spawn 独立子进程跑每个 step，无需手动在 A/B 之间 relay。
+FORGE 有两个内环，共用同一套模型配置（详见 [`quick-start.md`](quick-start.md)）：
 
-```bash
-# 1. 确保 sofagent 底座已装
-sofagent-audit --version
+| 内环 | 阶段 | 命令 |
+|------|------|------|
+| **fresh-eyes-loop**（质量循环） | 阶段三（开发后） | `node FORGE/src/fresh-eyes-driver.mjs --target v1.2.4 --max-rounds 10` |
+| **release-gate-loop**（发版闸门） | 阶段六（发版前） | `node FORGE/src/release-gate-driver.mjs --target v1.2.4` |
 
-# 2. 配置模型 key（详见 quick-start.md）
-#    A/B 共用单个 API Key（Qwen3.8-max-preview，阿里百炼 Token Plan 订阅制）
-export SOFAGENT_LLM_B_API_KEY=your-key
-export SOFAGENT_LLM_B="qwen3.8-max-preview"
-
-# 3. 一键启动（driver 自动起 A/B 子进程）
-node FORGE/src/fresh-eyes-driver.mjs --target v1.2.4 --max-rounds 10
-
-# 4. 先 dry-run 看流程
-node FORGE/src/fresh-eyes-driver.mjs --target v1.2.4 --dry-run
-```
-
-**环境变量**（单模型，A/B 共用 key）：
-
-```bash
-# API Key（A/B 共用——driver 自动把 B 的 key 同步给 A）
-export SOFAGENT_LLM_B_API_KEY=your-key
-export SOFAGENT_LLM_B="qwen3.8-max-preview"
-```
-
-> fresh-eyes 纪律通过每步独立子进程（零上下文）+ 独立 prompt 实现，不依赖模型差异。driver 仍保留多模型配置能力（`MODEL_CONFIGS`），未来可切回异构模式。详见 [`quick-start.md`](quick-start.md)。
+两个 driver 都支持 `--dry-run`（只打印 step 序列不调 LLM）。release-gate-loop 在 sandbox/OOM 环境下有 `--skip-acceptance` 和 `--step` 单步模式（详见 [`quick-start.md`](quick-start.md)）。
 
 ## 内置 Agent
 

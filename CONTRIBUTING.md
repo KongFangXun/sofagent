@@ -42,6 +42,8 @@ bash install.sh && bash engine/scripts/verify.sh
 # 或 TS 版：cd engine/audit && npm run build && node dist/verify.js
 ```
 
+> 💡 **首次 clone 后**：先 `npm install && npm run build`，再 `npm test`。测试依赖构建产物（`dist/`），未 build 直接跑测试会报模块找不到。
+
 > ⚠️ **本地测试用 `node dist/index.js` 而非全局二进制**——全局 `sofagent-audit` 可能是旧版本（npm publish 后才更新）。改代码后先 `npm run build`，再用 `node engine/audit/dist/index.js --diff HEAD~1..HEAD` 测试。
 
 ### 仓库目录结构（P1-38 新增——新贡献者先看文件放哪）
@@ -49,10 +51,12 @@ bash install.sh && bash engine/scripts/verify.sh
 | 目录 | 内容 |
 |------|------|
 | `engine/` | 12 个 npm 子包（`audit` 审计引擎 / `core` 底座 / `daemon` 守护 / `orchestrator` 编排 / `mcp` / `rules` / `eval` / `think` / `skillopt` / `ontology` / `harness` / `ab-test`）+ `hooks/sofagent-load-chain` |
-| `engine/audit/src/rules/` | 审计规则实现（`rule-a*.ts` + `skill-safety-engine.ts`） |
+| `engine/audit/src/rules/` | 审计规则实现（`rule-a*.ts` A1-A23 + `skill-safety-engine.ts`）；A20 网络外传 / A21 持久化后门 / A22 权限提升 / A23 路径穿越（v1.2.5 新增） |
+| `engine/audit/src/` | 审计核心：`audit-trail.ts` 审计轨迹聚合 + `protocol-neutrality.ts` 协议中立声明（v1.2.5 新增） |
 | `engine/audit/src/permission/` | 权限配置加载与检查 |
-| `engine/core/src/` | 底座：配置加载 / 原子写入 / 审计历史哈希链 / 联邦合并 / 安全脱敏 |
-| `engine/daemon/src/` | 守护进程：cron / fs 监听 / 联邦查询 / Dream Cycle / 巡检器 |
+| `engine/core/src/` | 底座：配置加载 / 原子写入 / 审计历史哈希链 / 联邦合并 / 安全脱敏；`agent-identity.ts` Agent 身份码（v1.2.5 新增） |
+| `engine/daemon/src/` | 守护进程：cron / fs 监听 / 联邦查询 / Dream Cycle / 巡检器；`with-retry.ts` 推送重试 + `daemon-health.ts` 健康自检（v1.2.5 新增） |
+| `engine/orchestrator/src/` | 编排引擎：`activate.ts` 激活链 Phase 1（v1.2.5 新增——读 FDE 交付物 → 注册企业 SubAgent） |
 | `tools/` | 门禁脚本（`check-docs.sh` / `check-test-count.sh` / `pre-push-check.sh` / `sofagent-dashboard.sh`） |
 | `FORGE/` | 项目自迭代工具链（LOOP 流水线 / playbook / fresh-eyes 审查体系） |
 | `FDE/` | 前线部署方法论（GUIDE + templates） |

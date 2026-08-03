@@ -44,7 +44,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 行业一派主张「去掉人」（L4 Hill-Climbing 去人化）。sofagent 反其道——human-in-the-loop 不是能力缺陷，而是**可靠优先于自主**的差异化优势。
 
-人在 loop 中可尽量简单（高风险才人工确认，常规受信自动执行，见 [ARCHITECTURE human_confirm 节点](./ARCHITECTURE.md#human_confirm)），但**必须存在**——主体性护栏不可外包（PHILOSOPHY §四）。这与「约束层永远在线 + 审计硬证据」同源：可靠不是靠更聪明的模型，靠「人在关键处 + 机器在每处」。
+人在 loop 中可尽量简单（高风险才人工确认，常规受信自动执行，见 [ARCHITECTURE 四节点状态机](./ARCHITECTURE.md#四节点状态机v113)），但**必须存在**——主体性护栏不可外包（PHILOSOPHY §四）。这与「约束层永远在线 + 审计硬证据」同源：可靠不是靠更聪明的模型，靠「人在关键处 + 机器在每处」。
 
 ### 90/10 价值分层 → 知行合一框架（N4）
 
@@ -378,7 +378,7 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 
 **合并检验法**——5 块任意两块都不能无损合并：Object↔Link（Link 依附 Object）、Action↔Function（Action 改状态有事务 / Function 算值不改状态）、Function↔Interface（计算 vs 暴露）、Link↔Action（关系 vs 改动）。再加新块也能被现有 5 块吸收（Metric = Function 输出、Workflow = Action 组合、Notification = Action Side Effect、Version = Global Branching）。
 
-**sofagent 印证**：sofagent 的「一底座·三引擎」遵循同一不可合并原则——审计引擎（看 diff 不改状态）与回溯引擎（改状态有快照）与进化引擎（算值不改状态）各有独立职责，合并任两者都会丧失核心能力。Palantir 的「Action 默认 staged，等人工 review 才 commit」与 sofagent 的 human_confirm 节点（[ARCHITECTURE human_confirm](./ARCHITECTURE.md#human_confirm)）完全同构——LLM 调用 Action 不能直接写库，必须在沙盒里等审批。
+**sofagent 印证**：sofagent 的「一底座·三引擎」遵循同一不可合并原则——审计引擎（看 diff 不改状态）与回溯引擎（改状态有快照）与进化引擎（算值不改状态）各有独立职责，合并任两者都会丧失核心能力。Palantir 的「Action 默认 staged，等人工 review 才 commit」与 sofagent 的 human_confirm 节点（[ARCHITECTURE 四节点状态机](./ARCHITECTURE.md#四节点状态机v113)）完全同构——LLM 调用 Action 不能直接写库，必须在沙盒里等审批。
 
 > 📖 来源：公众号「AI 风起兮」2026-08-01《Ontology 的五大构建块: Object / Link / Action / Function / Interface》（Palantir Ontology 深度拆解 系列第 2 篇）
 

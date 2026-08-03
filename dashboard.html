@@ -110,6 +110,15 @@ a:hover{text-decoration:underline}
 .node-status{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500}
 .node-status .icon{width:8px;height:8px;border-radius:50%}
 .status-running .icon{background:var(--green);animation:pulse 2s infinite}
+/* Agent 类型统一色点（FDE 引导 + AI 节点共用） */
+.agent-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;animation:pulse 2s infinite}
+.agent-dot.analyst{background:#16B8F3}
+.agent-dot.audit{background:#E24B4A}
+.agent-dot.planner{background:#1D9E75}
+.agent-dot.deployer{background:#EF9F27}
+.agent-dot.engineer{background:#E0A800}
+.agent-dot.reviewer{background:#7F77DD}
+.agent-dot.human{background:#8B949E}
 .status-pending .icon{background:var(--amber)}
 .node-meta{font-size:12px;color:var(--text-s);margin-top:6px}
 .node-stats{display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--text-t)}
@@ -136,11 +145,11 @@ a:hover{text-decoration:underline}
 .copy-btn.light{background:var(--card);border:1px solid var(--border);color:var(--text-s)}
 .copy-btn.light:hover{border-color:var(--brand);color:var(--brand)}
 
-.fde-stage{display:flex;align-items:flex-start;gap:12px;padding:12px;background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);margin-bottom:8px}
-.fde-num{width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
-.fde-content{flex:1}
-.fde-title{font-size:13px;font-weight:500}
-.fde-desc{font-size:12px;color:var(--text-s);margin-top:2px}
+.fde-stage{display:flex;align-items:center;gap:12px;padding:10px 12px;background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);margin-bottom:8px}
+.fde-num{width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.fde-content{flex:1;display:flex;align-items:baseline;gap:8px;min-width:0}
+.fde-title{font-size:13px;font-weight:500;white-space:nowrap;flex-shrink:0}
+.fde-desc{font-size:12px;color:var(--text-s);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .node-type{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500}
 .nt-ai{background:#E6F1FB;color:var(--brand)}
 .nt-auto{background:#E1F5EE;color:var(--green)}
@@ -242,8 +251,10 @@ a:hover{text-decoration:underline}
   .seg-group{width:100%;display:flex}
   .seg-btn{flex:1;min-height:36px;font-size:13px}
   .seg-refresh{flex:0 0 auto;width:34px;height:34px}
-  .fde-stage{gap:8px;padding:10px}
-  .fde-num{width:26px;height:26px;font-size:12px}
+  .fde-stage{gap:8px;padding:10px;flex-wrap:wrap}
+  .fde-num{width:20px;height:20px;font-size:11px}
+  .fde-content{flex-wrap:wrap}
+  .fde-desc{white-space:normal;overflow:visible}
   /* FDE 步骤卡：移动端单列 */
   .fde-step{flex:1 1 100%!important}
   /* 表格/图表容器横向滚动，防溢出 */
@@ -423,8 +434,9 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🧩</span>节点详情</div></div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">🧩</span>编排流水线节点</div></div>
     <div class="section-body">
+      <div style="font-size:11px;color:var(--text-t);margin-bottom:10px">这里是 <b>sofagent 引擎内部执行流水线</b>（planner → engineer → audit → reviewer → human），每次 AI 任务自动走的五步。业务角色节点（分析师/规划师/部署专家）见 <a href="javascript:void(0)" onclick="goPage('fde')" style="color:var(--brand)">FDE 引导</a> 页。</div>
       <div class="grid-3" id="nodeList">
         <div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
       </div>
@@ -487,8 +499,8 @@ a:hover{text-decoration:underline}
     <div class="section-body">
       <div id="kbStats" class="grid-3" style="margin-bottom:16px">
         <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">—</div><div style="font-size:11px;color:var(--text-s)">知识页面</div></div>
-        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">—</div><div style="font-size:11px;color:var(--text-s)">概念目录</div></div>
         <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">—</div><div style="font-size:11px;color:var(--text-s)">更新日志</div></div>
+        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--brand)">—</div><div style="font-size:11px;color:var(--text-s)">知识域</div></div>
       </div>
       <div id="kbEntries" style="font-size:12px;color:var(--text-s)">加载中...</div>
     </div>
@@ -541,7 +553,7 @@ a:hover{text-decoration:underline}
       <div id="ontStats" class="grid-3" style="margin-bottom:16px">
         <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">—</div><div style="font-size:11px;color:var(--text-s)">实体 Entities</div></div>
         <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">—</div><div style="font-size:11px;color:var(--text-s)">概念 Concepts</div></div>
-        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">—</div><div style="font-size:11px;color:var(--text-s)">经验教训 think.md</div></div>
+        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">—</div><div style="font-size:11px;color:var(--text-s)">关系 Relations</div></div>
       </div>
       <div id="ontEntries" style="font-size:12px;color:var(--text-s)">加载中...</div>
     </div>
@@ -697,8 +709,8 @@ a:hover{text-decoration:underline}
       </div>
       <div class="fde-stage">
         <div class="fde-num">3</div>
-        <div class="fde-content"><div class="fde-title">量化 · 三问判定 + 价值计算</div><div class="fde-desc">三问判定类型，计算年节省金额。</div>
-          <div style="margin-top:6px"><span class="node-type nt-auto">AI 自主</span> <span class="node-type nt-ai">AI 辅助</span> <span class="node-type nt-human">人工确认</span></div>
+        <div class="fde-content"><div class="fde-title">量化 · 三问判定 + 价值计算</div><div class="fde-desc">三问判定类型，计算年节省金额。
+          <span class="node-type nt-auto" style="margin-left:4px">AI 自主</span><span class="node-type nt-ai">AI 辅助</span><span class="node-type nt-human">人工确认</span></div>
         </div>
         <button class="copy-btn light" onclick="copyPrompt(this, '进入 FDE 量化阶段。对每个工作流节点做三问判定：能全自动吗？需要人确认吗？适合 AI 辅助吗？然后计算每个 AI 节点的年节省金额。')">复制</button>
       </div>
@@ -1155,7 +1167,8 @@ function renderSovereigntyFromSummary(sov){
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--amber)">'+sov.outbound+'</div><div style="font-size:11px;color:var(--text-s)">数据流出</div></div>'+
     '</div>'+
     '<div style="font-size:12px;color:var(--text-s)">本地化率：<b style="color:var(--green)">'+sov.localRate+'%</b>（'+sov.local+'/'+sov.total+'）</div>'+
-    '<div style="font-size:11px;color:var(--text-t);margin-top:4px">近 7 天 · 敏感记录 '+sov.sensitive+' 条 · 审计证据永远在本地</div>'+
+    '<div style="font-size:11px;color:var(--text-t);margin-top:4px">近 7 天 · 敏感记录 '+sov.sensitive+' 条</div>'+
+    '<div style="font-size:11px;color:var(--text-t);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)">🔒 审计证据、知识库、反思记录全部保存在本地 <code style="background:var(--brand-l);padding:1px 5px;border-radius:4px;font-size:10px">~/.sofagent/data/</code>，不送云端。</div>'+
     '</div>';
 }
 
@@ -1270,7 +1283,7 @@ function renderSovereignty(sData,dh){
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--amber)">'+outflow+'</div><div style="font-size:11px;color:var(--text-s)">数据流出</div></div>'+
     '</div>'+
     '<div style="font-size:12px;color:var(--text-s)">本地化率：<b style="color:var(--green)">'+lr+'%</b>（'+local+'/'+(local+cloud)+'）</div>'+
-    '<div style="font-size:11px;color:var(--text-t);margin-top:4px">审计证据永远在本地 · 不送云端 · MIT 开源可审计</div>'+
+    '<div style="font-size:11px;color:var(--text-t);margin-top:4px">MIT 开源可审计 · 审计证据不送云端</div>'+
     '<div style="font-size:11px;margin-top:4px;color:'+daemonColor+'">● 守护进程：'+daemonStatus+'</div>'+
     '</div>';
 }
@@ -1460,7 +1473,7 @@ function loadFdeWorkflowData(){
         analyst:{bg:'#E6F1FB',border:'var(--brand)',label:'⚡ 强化岗位',role:'分析师',dot:'🔵'},
         planner:{bg:'#E1F5EE',border:'var(--green)',label:'🔄 自动执行',role:'规划师',dot:'🟢'},
         deployer:{bg:'#FAEEDA',border:'var(--amber)',label:'🔄 自动执行',role:'部署专家',dot:'🟠'},
-        engineer:{bg:'#E1F5EE',border:'var(--green)',label:'🔄 自动执行',role:'工程',dot:'🟢'},
+        engineer:{bg:'#FFF8E1',border:'#E0A800',label:'🔄 自动执行',role:'工程',dot:'🟡'},
         reviewer:{bg:'#F3E8FF',border:'var(--purple)',label:'👤 人工确认',role:'审查',dot:'🟣'}
       };
       var html='';
@@ -1473,7 +1486,7 @@ function loadFdeWorkflowData(){
         wf.steps.forEach(function(s,i){
           var ac=agentColor[s.agent]||agentColor.analyst;
           html+='<div class="fde-step" style="flex:0 0 calc(20% - 7px);box-sizing:border-box;background:'+ac.bg+';border:1px solid '+ac.border+';border-radius:var(--radius-s);padding:10px 12px">'+
-            '<div style="font-size:10px;color:var(--text-t);font-family:var(--mono)"><span style="font-size:8px;line-height:1">'+ac.dot+'</span> STEP '+(i+1)+' · <span style="color:var(--brand-d)">'+ac.role+' · '+s.agent+'</span></div>'+
+            '<div style="font-size:10px;color:var(--text-t);font-family:var(--mono);display:flex;align-items:center;gap:5px"><span class="agent-dot '+s.agent+'"></span> STEP '+(i+1)+' · <span style="color:var(--brand-d)">'+ac.role+' · '+s.agent+'</span></div>'+
             '<div style="font-size:12px;font-weight:600;margin-top:4px;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap"><span>'+s.name+'</span><span style="font-size:10px;font-weight:400;color:var(--text-t)">'+ac.label+(s.loop?' · 循环':'')+'</span></div>'+
             '</div>';
         });
@@ -1485,9 +1498,13 @@ function loadFdeWorkflowData(){
           var trendCn={improving:'📈 改善',degrading:'📉 恶化',stable:'➡️ 平稳'}[wr.trend]||wr.trend||'-';
           var top5=(wr.violationTop5||[]).slice(0,3).map(function(v){return v.rule+'×'+v.count}).join(' · ');
           html+='<div style="margin-top:12px;background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 14px;font-size:12px;color:var(--text-s)">'+
-            '📊 <b style="color:var(--text)">'+wr.weekLabel+' 持续优化周报</b>（由 <code style="background:var(--brand-l);padding:1px 6px;border-radius:4px;font-size:11px">tools/gen-weekly-report.mjs</code> 生成）<br>'+
-            '本周 '+tw.taskCount+' 任务 · '+tw.passes+' 通过 · '+tw.warnings+' 警告 · <b style="color:var(--red)">'+tw.violations+' 违规</b> · 趋势 '+trendCn+
-            (top5?'<br>违规 TOP3：'+top5:'')+
+            // 第一行：标题 + 右上角链接 + 统计
+            '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
+              '<b style="color:var(--text)">📊 '+wr.weekLabel+' 持续优化周报</b>'+
+              '<span>本周 '+tw.taskCount+' 任务 · '+tw.passes+' 通过 · '+tw.warnings+' 警告 · <b style="color:var(--red)">'+tw.violations+' 违规</b> · 趋势 '+trendCn+'</span>'+
+              '<a href="data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(wr))+'" download="weekly-'+wr.weekLabel+'.json" title="下载周报 JSON" style="margin-left:auto;color:var(--brand);text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:3px">⬇️ 周报 JSON</a>'+
+            '</div>'+
+            (top5?'<div style="margin-top:6px;font-size:11px;color:var(--text-t)">违规 TOP3：'+top5+'</div>':'')+
             '</div>';
         }
       });
@@ -1552,10 +1569,8 @@ function loadGraphData(){
       var boxW=Math.max(500,total*130+20);
       var nodeW=110,nodeH=34,gap=20;
       var svg='<svg class="graph-wide" width="100%" viewBox="0 0 '+boxW+' 90" style="display:block;max-width:'+boxW+'px;margin:0 auto">';
-      // colors by status
-      var colMap={completed:'#E1F5EE',running:'#E6F1FB',pending:'#FAFBFC',blocked:'#FCEBEB',failed:'#FCEBEB'};
-      var strokeMap={completed:'#1D9E75',running:'#16B8F3',pending:'#E1E4E8',blocked:'#E24B4A',failed:'#E24B4A'};
-      var textMap={completed:'#085041',running:'#0C447C',pending:'#57606A',blocked:'#791F1F',failed:'#791F1F'};
+      // 节点按类型着色（与 FDE/卡片统一）；状态用文字标注
+      var typeColMap={planner:{fill:'#E1F5EE',stroke:'#1D9E75'},engineer:{fill:'#FFF8E1',stroke:'#E0A800'},audit:{fill:'#FCEBEB',stroke:'#E24B4A'},reviewer:{fill:'#F3E8FF',stroke:'#7F77DD'},human:{fill:'#F1F3F4',stroke:'#8B949E'}};
       // edges first (behind)
       edges.forEach(function(e){
         var fi=nodes.findIndex(function(n){return n.id===e.from});
@@ -1564,20 +1579,21 @@ function loadGraphData(){
         var x1=30+fi*(nodeW+gap)+nodeW;
         var x2=30+ti*(nodeW+gap);
         var y=45;
-        svg+='<line x1="'+x1+'" y1="'+y+'" x2="'+(x2-4)+'" y2="'+y+'" stroke="'+(strokeMap[e.type]||'#8B949E')+'" stroke-width="1.5" marker-end="url(#arrG)"/>';
+        svg+='<line x1="'+x1+'" y1="'+y+'" x2="'+(x2-4)+'" y2="'+y+'" stroke="#8B949E" stroke-width="1.5" marker-end="url(#arrG)"/>';
       });
       nodes.forEach(function(n,i){
         var x=30+i*(nodeW+gap);
-        var fill=colMap[n.status]||'#FAFBFC';
-        var stroke=strokeMap[n.status]||'#E1E4E8';
-        var tc=textMap[n.status]||'#57606A';
+        var tc=typeColMap[n.type]||{fill:'#FAFBFC',stroke:'#E1E4E8'};
+        var fill=tc.fill;
+        var stroke=tc.stroke;
+        var textCol=stroke;
         // pulse animation for running
         if(n.status==='running'){
           svg+='<rect x="'+(x+nodeW-14)+'" y="'+14+'" width="8" height="8" rx="4" fill="#16B8F3" class="pulse-svg"/>';
         }
         svg+='<rect x="'+x+'" y="28" width="'+nodeW+'" height="'+nodeH+'" rx="6" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1"/>';
         var label=(n.label||n.id||n.type||'').replace(/-1$/,'');
-        svg+='<text x="'+(x+nodeW/2)+'" y="49" text-anchor="middle" font-size="11" font-weight="500" fill="'+tc+'">'+label+'</text>';
+        svg+='<text x="'+(x+nodeW/2)+'" y="49" text-anchor="middle" font-size="11" font-weight="500" fill="'+textCol+'">'+label+'</text>';
         svg+='<text x="'+(x+nodeW/2)+'" y="76" text-anchor="middle" font-size="9" fill="#8B949E">'+n.status+'</text>';
       });
       svg+='<defs><marker id="arrG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8B949E" stroke-width="1.5"/></marker></defs>';
@@ -1585,16 +1601,18 @@ function loadGraphData(){
       box.innerHTML=svg+
         '<div style="margin-top:10px;font-size:12px;color:var(--text-s)">Wave '+(g.wave||1)+' · 降级等级 '+(g.degradationLevel||0)+' · 激活节点 '+(g.activeNode||'-')+' · 任务数 '+(g.workGraphTasks||0)+'</div>';
       // === 节点卡片列表 ===
+      var typeDot={'planner':'planner','engineer':'engineer','audit':'audit','reviewer':'reviewer','human':'human'};
       var html=nodes.map(function(n){
         var st=n.status||'unknown';
         var cls=st==='completed'?'status-running':(st==='pending'?'status-pending':'status-pending');
         var statusCn={'completed':'已完成','running':'运行中','pending':'等待中','blocked':'已阻断','failed':'失败'}[st]||st;
         var typeCn={'planner':'规划器','engineer':'工程师','audit':'审计','reviewer':'审查','human':'人工确认'}[n.type]||n.type||'-';
+        var dotClass=typeDot[n.type]||'human';
         var subtaskHtml='';
         if(n.subtasks&&n.subtasks.length){
           subtaskHtml='<div class="node-stats"><span>子任务 '+(n.subtasks.length)+' 个</span></div>';
         }
-        return '<div class="node-card '+cls+'"><div class="node-status"><span class="icon"></span>'+(n.label||n.id||'')+'</div>'+
+        return '<div class="node-card '+cls+'"><div class="node-status"><span class="agent-dot '+dotClass+'"></span>'+(n.label||n.id||'')+'</div>'+
           '<div class="node-meta">类型：'+typeCn+' · id: '+(n.id||'')+'</div>'+
           '<div class="node-stats"><span>状态：'+statusCn+'</span></div>'+subtaskHtml+'</div>';
       }).join('');
@@ -1612,34 +1630,37 @@ function loadKnowledgeData(){
   var stats=document.getElementById('kbStats');
   var entries=document.getElementById('kbEntries');
   var updated=document.getElementById('kbUpdatedAt');
-  // 并行读 index.md + log.md + think.md + ontology 结构
+  // 并行读 index.md + log.md + think.md
   Promise.all([
     fetch('/data/knowledge/index.md').then(function(r){return r.ok?r.text():null}).catch(function(){return null}),
     fetch('/data/knowledge/log.md').then(function(r){return r.ok?r.text():null}).catch(function(){return null}),
-    fetch('/data/think.md').then(function(r){return r.ok?r.text():null}).catch(function(){return null}),
-    fetch('/api/ontology').then(function(r){return r.ok?r.json():null}).catch(function(){return null})
+    fetch('/data/think.md').then(function(r){return r.ok?r.text():null}).catch(function(){return null})
   ]).then(function(res){
     var index=res[0]||'';
     var log=res[1]||'';
     var think=res[2]||'';
-    var ont=res[3]||null;
     // 统计知识页面数（index.md 表格行）
     var pageCount=0;
     index.split('\n').forEach(function(line){
       if(line.trim().startsWith('|')&&line.indexOf('[[')>=0)pageCount++;
     });
-    // 概念数：优先用 ontology API 的真实 concepts 数
-    var conceptCount=ont&&ont.concepts?ont.concepts.length:0;
-    if(conceptCount===0){
-      index.split('\n').forEach(function(line){
-        if(line.toLowerCase().indexOf('concept')>=0)conceptCount++;
-      });
-    }
+    // 更新日志数（log.md 非空行，去掉表头/分隔线）
+    var logCount=log.split('\n').filter(function(l){
+      var t=l.trim();
+      return t&&!t.startsWith('|--')&&!t.startsWith('#');
+    }).length;
+    // 知识域数（index.md 表格第二列的域，去重）
+    var domains={};
+    index.split('\n').forEach(function(line){
+      var m=line.match(/\|.*?\[\[[^\]]+\]\]\s*\|\s*([^|]*)\|/);
+      if(m){var d=m[1].trim();if(d)domains[d]=1;}
+    });
+    var domainCount=Object.keys(domains).length;
     if(stats){
       stats.innerHTML=
         '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">'+(pageCount>0?pageCount:'0')+'</div><div style="font-size:11px;color:var(--text-s)">知识页面</div></div>'+
-        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">'+(conceptCount>0?conceptCount:'0')+'</div><div style="font-size:11px;color:var(--text-s)">概念条目</div></div>'+
-        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">'+(think?think.split('##').length-1:0)+'</div><div style="font-size:11px;color:var(--text-s)">经验教训</div></div>';
+        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">'+(logCount>0?logCount:'0')+'</div><div style="font-size:11px;color:var(--text-s)">更新日志</div></div>'+
+        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--brand)">'+(domainCount>0?domainCount:'0')+'</div><div style="font-size:11px;color:var(--text-s)">知识域</div></div>';
     }
     // 条目列表：index.md 表格行
     var rows=[];
@@ -1683,12 +1704,11 @@ function loadOntologyData(){
       var entities=d.entities||[];
       var concepts=d.concepts||[];
       var relations=d.relations||[];
-      var thinkCount=d.thinkCount||0;
       if(stats){
         stats.innerHTML=
           '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">'+entities.length+'</div><div style="font-size:11px;color:var(--text-s)">实体 Entities</div></div>'+
           '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">'+concepts.length+'</div><div style="font-size:11px;color:var(--text-s)">概念 Concepts</div></div>'+
-          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">'+thinkCount+'</div><div style="font-size:11px;color:var(--text-s)">经验教训 think.md</div></div>';
+          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">'+relations.length+'</div><div style="font-size:11px;color:var(--text-s)">关系 Relations</div></div>';
       }
       if(entries){
         var html='';

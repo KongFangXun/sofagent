@@ -5,17 +5,14 @@
 
 产品定位详见 [设计哲学](./docs/PHILOSOPHY.md) 和 [README](./README.md)。
 
-## 现在在哪：v1.2.5（已开发完成 · 激活链 + 审计加固 + daemon 可靠性）
+## 现在在哪：v1.2.6（规划中 · 🔗 激活链 Phase 2 前半）
 
-> **🔗 激活链 ACTIVATE + 🛡️ 审计引擎加固 + 🔧 daemon 可靠性 + 多设备前置（v1.2.5）**：
-> 新增 `activate.ts`，读 FDE 交付物（ontology + workflow.yml + skills/）→ 注册企业 SubAgent → 写入 `.sofagent/subagents/*.yml`。
-> 解决"FDE 交付后断裂带"——交付物躺在文件里没人消费，需要手动接线才能跑起来。
-> **🛡️ 审计引擎加固**：AUDIT_PRIORITY 规则归属调整（层名不变，只调规则在 critical/warning/crutch/extended 各层的分配）+ 新增 A20-A23 四条安全规则（不泄外联/不植后门/不越权限/不逃路径）+ E3 并入 A11 精简规则数 + A2/A3 缺陷修复 + **结构性地基加固**（BASELINE 扩展至 9 条 + critical 层全量收集 + 审计引擎源码自保护）+ **检测盲区补全**（A10 postinstall 注入检测 + A9 动态执行告警 + shared/patterns.ts 收敛）。
-> **🔧 daemon 可靠性**：推送重试上限（maxRetries=3 + 指数退避）+ plist 路径校验（防假成功）+ 健康自检（daemon-health.json + heartbeat）+ im-outbox 生命周期管理。
-> **🖥️ HTML Dashboard**：与 bash Dashboard 并存的新实现（`dashboard.html` 仓库根目录 + `tools/serve-dashboard.mjs`）——7 页导航化 SPA，驾驶舱走 `/api/summary`（复用 bash 同口径 jq 聚合），AI 节点/本体/知识库/FORGE 全部真实数据驱动，支持 File System Access API 直连数据目录（Chrome），右上角 GitHub Stars。
-> 多设备前置（轻量）：Agent 独立身份码 + 跨设备审计轨迹聚合 + 协议中立审计。
+> **🔒 弹性预留 + 🔗 激活链 Phase 2 前半（v1.2.6）**：
+> **储备项**：① `sofagent-audit --support-bundle`（一键诊断包）② `--doctor` 输出增强 ③ README Deployment Sizing 表格 ④ One-Line Agent Setup。
+> **🔗 激活链 Phase 2 前半**：workflow-parser 扩展支持 `agent: enterprise` 类型 + registry.ts 的 SubAgentDefinition 增加 hitl/hitlConfig/knowledgeDomain 字段——为 v1.2.7 StateGraph 构建打基础。
+> v1.2.5 已交付激活链 Phase 1（ACTIVATE），v1.2.6 起进入 Phase 2（ORCHESTRATE）准备期。
 >
-> 📖 [v1.2.5 开发日志](./docs/changelog/v1.2/v1.2.5.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [v1.2.6 开发日志](./docs/changelog/v1.2/v1.2.6.md) · 完整版本历史见 [CHANGELOG](./CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 > ✅ **企业采购阻塞项 · Webhook 推送已于 v1.2.1 交付**：v1.1.6 接通 webhook **PASS/WARN/FAIL 三态推送**（本地 agent 自测），v1.2.1 补齐企业协同平台（飞书/钉钉/企微）完整 Webhook 推送能力（见 SECURITY.md「审计结果推送」）。采购阻塞项已解除。
 
@@ -80,7 +77,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.2.x** | 📋 规划中 | 完整多设备协同——**L2 团队协作协议**：共享态/意图广播/触发反应/冲突消解/反馈放大五大机制，从单人约束到团队协作；**L3 组织能力市场**：Skill/Agent/流程在企业内发布→发现→调用→评价，高频高价值自然胜出。+ Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界。**🔮 探索**：路由器式配网（边缘设备 WiFi 热点 + 手机端配置网页，仅用于初始配置，配置完成后回归纯 LUI）+ **协议中立**（审计层只走 MCP 等开放协议和 git diff/JSONL/Markdown 开放格式，不为任何单一平台写专属集成——不绑定平台，平台不绑定审计） + **编排隔离底座（git worktree 轻量形态）+ 波次拓扑可视化（控制图视角，随 dashboard 交付，详见子里程碑）** | — |
+| **v1.2.x** | 📋 规划中 | 完整多设备协同——**L2 团队协作协议**：共享态/意图广播/触发反应/冲突消解/反馈放大五大机制，从单人约束到团队协作；**L3 组织能力市场**：Skill/Agent/流程在企业内发布→发现→调用→评价，高频高价值自然胜出。+ Agent 独立身份码 + 跨设备审计轨迹聚合 + 场景驱动权限体系 + 代理网关硬边界（✅ 其中轻量三项已在 v1.2.5 提前交付：Agent 身份码 + KYA 轻量版、跨设备审计聚合轻量版、协议中立审计声明）。**🔮 探索**：路由器式配网（边缘设备 WiFi 热点 + 手机端配置网页，仅用于初始配置，配置完成后回归纯 LUI）+ **协议中立**（审计层只走 MCP 等开放协议和 git diff/JSONL/Markdown 开放格式，不为任何单一平台写专属集成——不绑定平台，平台不绑定审计） + **编排隔离底座（git worktree 轻量形态）+ 波次拓扑可视化（控制图视角，随 dashboard 交付，详见子里程碑）** | — |
 
 #### v1.2.x 里程碑拆分
 

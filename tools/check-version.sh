@@ -557,9 +557,25 @@ if [[ $inline_checked -eq 0 ]]; then
 elif [[ $inline_errors -eq 0 ]]; then
   echo -e "  ${GREEN}✓${NC} ${inline_checked} 处正文版本号引用一致"
 fi
+
+# v1.2.5: 英文版 "Current version: vX.Y" 检查（P1-4/L-1 根因：原脚本只查中文不查英文）
+while IFS=: read -r file line_num rest; do
+  found_ver=$(echo "$rest" | grep -oE 'Current version: v[0-9]+\.[0-9]+(\.[0-9]+)?' | sed 's/Current version: v//' | head -1)
+  if [[ -z "$found_ver" ]]; then
+    continue
+  fi
+  inline_checked=$((inline_checked + 1))
+  if [[ "$found_ver" != "$SSOT_VERSION" ]]; then
+    report_error "${file}:${line_num}" "Current version: v${found_ver}" "Current version: v${SSOT_VERSION}"
+    inline_errors=$((inline_errors + 1))
+  fi
+done < <(grep -rn "Current version: v[0-9]" --include="*.md" . 2>/dev/null | grep -v node_modules | grep -v ".workbuddy/" | grep -v "docs/changelog/" || true)
+if [[ $inline_errors -eq 0 ]]; then
+  echo -e "  ${GREEN}✓${NC} ${inline_checked} 处中英文正文版本号引用全部一致"
+fi
 echo ""
 
-# ── 12. 检查全局 npm 二进制版本与 SSOT 是否一致 ─────────
+# ── 12. 检查全局 npm 二进制版本与 SSOT 是否一致 ─
 echo -e "${BOLD}── [14/14] 全局 npm 二进制版本 ──${NC}"
 if command -v sofagent-audit >/dev/null 2>&1; then
   bin_ver=$(sofagent-audit --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
@@ -673,10 +689,11 @@ echo ""
 echo "=== 15. ROADMAP 版本头描述 vs CHANGELOG 标题一致性 ==="
 ROADMAP_HEADER=$(sed -n '4p' "${ROADMAP}" 2>/dev/null || echo "")
 if [[ -n "${ROADMAP_HEADER}" ]]; then
-  # 提取 ROADMAP 版本头中的关键词（· 分隔段）
-  ROADMAP_KEYWORDS=$(echo "${ROADMAP_HEADER}" | tr '·' '\n' | grep -vE '^\s*(v[0-9]|规划|.*→.*)' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -vE '^$' | head -5)
+  # 提取 ROADMAP 版本头中的关键词（· 与 + 均为分隔段——v1.2.5 头部用 + 连接多个交付项）
+  ROADMAP_KEYWORDS=$(echo "${ROADMAP_HEADER}" | sed 's/[·+]/\n/g' | grep -vE '^\s*(>?[[:space:]]*v[0-9]|规划|.*→.*|[0-9]{4}-[0-9]{2}-[0-9]{2})' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -vE '^$' | head -8)
   # 提取 CHANGELOG 当前版本标题
-  CHANGELOG_TITLE=$(grep -m1 "^### \[v" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null || echo "")
+  # v1.2.5 起 CHANGELOG.md 改为纯目录索引格式（- **vX.Y.Z** — 摘要），旧格式 ### [vX.Y.Z] 已废弃
+  CHANGELOG_TITLE=$(grep -m1 -E "^(- \*\*|### \[)v" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null || echo "")
   ROADMAP_WARN=true
   while IFS= read -r kw; do
     [[ -z "${kw}" ]] && continue

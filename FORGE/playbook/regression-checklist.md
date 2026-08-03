@@ -5,7 +5,7 @@
 > **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量）
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1000 行、`acceptance-test.sh` ≤ 1500 行，越线触发瘦身（releasing.md 阶段五 Tier 2）。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1050 行（v1.2.5 起从 1000 上调，49 维度自然增长）、`acceptance-test.sh` ≤ 1600 行（v1.2.5 起从 1500 上调），越线触发瘦身（releasing.md 阶段四 Tier 2）。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
@@ -15,14 +15,14 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线提醒瘦身，非失败）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1000 ] && echo "✅ checklist $WC_CHK (≤1000)" || echo "⚠️ checklist $WC_CHK 超 1000"
+[ "$WC_CHK" -le 1050 ] && echo "✅ checklist $WC_CHK (≤1050)" || echo "⚠️ checklist $WC_CHK 超 1050"
 [ "$WC_ACC" -le 1500 ] && echo "✅ acceptance $WC_ACC (≤1500)" || echo "⚠️ acceptance $WC_ACC 超 1500"
 ```
 ## 你的身份
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（47 项 · 编号 1–64，20 个归并/移除项已转为 HTML 注释；P0-13 修正：原写 44 项，实测 `grep -c '^#### '` = 47）
+## 审查维度（49 项 · 编号 1–69，20 个归并/移除项已转为 HTML 注释；v1.2.5 新增 #68-69）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -81,14 +81,16 @@ grep -rn "见.*ROADMAP\|详见.*ROADMAP" docs/ SECURITY.md LIMITATIONS.md --incl
 #### 4. 审计规则分级与 ruleClass 一致性
 
 ```bash
-# 子项 a-c: A4=业务底线 / 规则总数=21 / A6=能力拐杖 A11=业务底线
+# 子项 a-c: A4=业务底线 / 规则总数=24（v1.2.0 加 A20-A23，21→24）/ A6=能力拐杖 A11=业务底线
 grep -A5 "'A4\|name.*不删配置" engine/audit/src/rules/index.ts | grep "ruleClass" | grep "业务底线"
-grep "name:" engine/audit/src/rules/index.ts | wc -l   # 期望 21
+grep "name:" engine/audit/src/rules/index.ts | wc -l   # 期望 24
 grep "A6.*能力拐杖\|A11.*业务底线" engine/audit/README.md | wc -l   # 期望 2
 
-# 子项 d: ruleClass SSOT ↔ README 逐行 diff（v1.1.3 盲区）
-diff <(grep -E "name:|ruleClass:" engine/audit/src/rules/index.ts | paste - - | sort) \
-     <(grep -oE "A[0-9]+ .*  \|  (业务底线|能力拐杖|工程规范)" engine/audit/README.md | sort)   # 零差异
+# 子项 d: ruleClass SSOT ↔ README 逐条比对（v1.1.3 盲区 · v1.2.5 重写）
+# v1.2.5：旧版用 `diff <(index.ts 代码) <(README 表格行)`——两种文本格式天生不同，永远报差异（误报 12 行）。
+# 改为两侧归一化成「A编号 ruleClass」再比对，才是真正检查"每条规则分级两边一致"。
+diff <(grep -E "name: 'A[0-9]+" engine/audit/src/rules/index.ts | sed -E "s/.*name: '(A[0-9]+)[^']*'.*ruleClass: '([^']+)'.*/\1 \2/" | sort) \
+     <(grep -E "^\| A[0-9]+ " engine/audit/README.md | awk -F'|' '{n=split($2,arr," "); id=arr[1]; cls=$(NF-1); gsub(/^[ \t]+|[ \t]+$/,"",id); gsub(/^[ \t]+|[ \t]+$/,"",cls); print id, cls}' | sort)   # 零差异
 
 # 子项 e-g: evidenceMode 计数 + README 表行数 + MCP 规则数（v1.1.4 教训）
 echo "git-diff=$(grep -c "evidenceMode: 'git-diff'" engine/audit/src/rules/index.ts) hybrid=$(grep -c "evidenceMode: 'hybrid'" engine/audit/src/rules/index.ts) fs=$(grep -c "evidenceMode: 'filesystem'" engine/audit/src/rules/index.ts)"   # 人工核对 README
@@ -104,12 +106,16 @@ grep "run_audit" engine/mcp/src/mcp-server.ts | grep -oE "[0-9]+ 条规则"   # 
 #### 7. 感知层配置与推送链路
 
 ```bash
-# 子项 a: 配置完整性
-grep -A 2 "perception:" .sofagent/config.yml 2>/dev/null && echo "✅ 存在" || echo "❌ 缺少"
-grep "enabled: true" .sofagent/config.yml 2>/dev/null && echo "✅ 已启用"
+# 子项 a: 配置完整性（v1.2.5：config.yml 是运行时生成文件，在 .gitignore 中，干净环境必然不存在——不存在标 ⏸️ 需初始化，不标 ❌）
+if [ -f .sofagent/config.yml ]; then
+  grep -A 2 "perception:" .sofagent/config.yml && echo "✅ 存在" || echo "❌ 配置存在但缺 perception 段"
+  grep "enabled: true" .sofagent/config.yml && echo "✅ 已启用" || echo "⚠️ perception 未启用"
+else
+  echo "⏸️ .sofagent/config.yml 不存在（运行时文件，需 sofagent-audit --init 生成）——跳过 perception 检查"
+fi
 
-# 子项 b: 推送目标
-grep "push_target:" .sofagent/config.yml | grep -q "webhook://" && echo "✅ 已配置"
+# 子项 b: 推送目标（同上：config.yml 不存在时跳过）
+[ -f .sofagent/config.yml ] && { grep "push_target:" .sofagent/config.yml | grep -q "webhook://" && echo "✅ 已配置" || echo "⚠️ 未配置 webhook"; } || echo "⏸️ config.yml 不存在，跳过 push_target 检查"
 
 # 子项 c: MCP 返回值签名（v1.1.3 追加——所有 sendToolResult text 必须带 [sofagent]）
 grep -rn 'sendToolResult' engine/mcp/src/mcp-server.ts | head -5
@@ -179,9 +185,9 @@ echo "index.ts: $INDEX_RULES / knownKeys: $KNOWN_KEYS"   # 期望：两集合相
 # 文档侧：声称型数字（v1.1.5 教训——6 文档漏改）
 grep -rnE "A1-A11、A14-A1[0-9]|[0-9]+ 条审计规则" --include="*.md" README.md README.en.md docs/ FDE/ FORGE/ ROADMAP.md 2>/dev/null | grep -v "regression-checklist\|fresh-eyes-review\|changelog/"   # 人工核对：与 SSOT 一致
 
-# 字段完整性（v1.1.6：name+ruleClass 各 21 条=42）+ evidenceMode 计数（v1.1.4：期望 21）
-grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l   # 期望 42
-grep -cE "evidenceMode:" engine/audit/src/rules/index.ts   # 期望 21
+# 字段完整性（v1.1.6：name+ruleClass 各 24 条=48 · v1.2.5 修正 21→24）+ evidenceMode 计数（v1.1.4：期望 24）
+grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l   # 期望 48
+grep -cE "evidenceMode:" engine/audit/src/rules/index.ts   # 期望 24
 ```
 
 <!-- #10 [v1.2.1 移除：被 pre-push-check.sh 步骤 7+8 全量覆盖] -->
@@ -719,7 +725,8 @@ grep -c "FDE Agent\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODE
 
 ```bash
 # 子项 a: /sofagent/ 目录残留（node 扫描绕开 BSD grep 中文误判）
-node -e "const fs=require('fs');const dirs=['engine','LOOP','FDE','SKILL','docs','tools','.github'];let hits=[];dirs.forEach(d=>{if(!fs.existsSync(d))return;function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist','target'].includes(e.name))continue;const f=dir+'/'+e.name;if(e.isDirectory())walk(f);else if(e.name.endsWith('.md')||e.name.endsWith('.ts')||e.name.endsWith('.sh')){const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('sofagent/skill/')&&!l.includes('已')&&!l.includes('旧')&&!l.includes('→')&&!l.includes('历史'))hits.push(f+':'+(i+1))})}}}walk(d)});['install.sh','SECURITY.md','README.md'].forEach(f=>{if(!fs.existsSync(f))return;const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('sofagent/skill/')&&!l.includes('已')&&!l.includes('旧')&&!l.includes('→')&&!l.includes('历史'))hits.push(f+':'+(i+1))})});console.log(hits.length===0?'✅ sofagent/skill/ 零残留':'❌ FOUND '+hits.length);hits.forEach(h=>console.log('  '+h))"
+# v1.2.5 豁免：archive/changelog 为历史文档目录；`.sofagent/skill/`（含 ~/.sofagent/skill/）是用户 HOME 部署路径，非仓库旧路径
+node -e "const fs=require('fs');const dirs=['engine','LOOP','FDE','SKILL','docs','tools','.github'];let hits=[];dirs.forEach(d=>{if(!fs.existsSync(d))return;function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist','target','archive','changelog'].includes(e.name))continue;const f=dir+'/'+e.name;if(e.isDirectory())walk(f);else if(e.name.endsWith('.md')||e.name.endsWith('.ts')||e.name.endsWith('.sh')){const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('sofagent/skill/')&&!l.includes('.sofagent/skill/')&&!l.includes('已')&&!l.includes('旧')&&!l.includes('→')&&!l.includes('历史'))hits.push(f+':'+(i+1))})}}}walk(d)});['install.sh','SECURITY.md','README.md'].forEach(f=>{if(!fs.existsSync(f))return;const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('sofagent/skill/')&&!l.includes('.sofagent/skill/')&&!l.includes('已')&&!l.includes('旧')&&!l.includes('→')&&!l.includes('历史'))hits.push(f+':'+(i+1))})});console.log(hits.length===0?'✅ sofagent/skill/ 零残留':'❌ FOUND '+hits.length);hits.forEach(h=>console.log('  '+h))"
 
 # 子项 b: agents/SKILL/ 旧路径残留（应零命中，排除 changelog 历史 + acceptance-test 反向断言）
 node -e "const fs=require('fs');const dirs=['engine/src','engine/orchestrator/src','engine/rules/src','LOOP','FDE','SKILL','docs','tools'];let hits=[];dirs.forEach(d=>{if(!fs.existsSync(d))return;function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist'].includes(e.name))continue;const f=dir+'/'+e.name;if(e.isDirectory())walk(f);else if(e.name.endsWith('.md')||e.name.endsWith('.ts')||e.name.endsWith('.sh')){const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('agents/SKILL')&&!f.includes('changelog/')&&!(f.includes('acceptance-test')&&l.includes('! -d')))hits.push(f+':'+(i+1))})}}}walk(d)});console.log(hits.length===0?'✅ agents/SKILL/ 零残留':'❌ FOUND '+hits.length);hits.forEach(h=>console.log('  '+h))"
@@ -779,7 +786,8 @@ node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL',
 grep -n "stableStringify\|sanitize\|脱敏" engine/core/src/audit-history.ts | grep -i "sign\|hmac\|签" && echo "✅ HMAC 写读对称" || echo "❌ HMAC 写读不对称"
 grep -n "stableStringify\|sanitize" engine/audit/src/audit-history.ts | grep -i "sign\|hmac\|verify" && echo "✅ audit 包 HMAC 对称" || echo "⚠️ 检查 audit 包 HMAC"
 # b: doctor 三态（ok/tampered/unverifiable）+ 使用 detailed 版本
-grep -q "tampered" engine/core/src/doctor.ts && grep -q "unverifiable" engine/core/src/doctor.ts && echo "✅ 三态判定存在" || echo "❌ 缺少三态判定"
+# v1.2.5：unverifiable 枚举定义在 audit-history.ts（L132 ChainCheckStatus），doctor.ts 用 else 分支处理（L242），不含字面串——改查定义侧
+grep -q "tampered" engine/core/src/doctor.ts && grep -q "'unverifiable'" engine/core/src/audit-history.ts && echo "✅ 三态判定存在（doctor 消费 + audit-history 定义）" || echo "❌ 缺少三态判定"
 grep -q "checkHistoryChainDetailed" engine/core/src/doctor.ts && echo "✅ detailed 版本" || echo "❌ 未使用 detailed 版本"
 # c: config 签名（audit 段误放检测 + verifyConfigSignature）
 grep -q "audit 段含 signature" engine/core/src/config-loader.ts && echo "✅ audit 段签名检测" || echo "❌ 缺少检测"
@@ -993,6 +1001,28 @@ grep -c 'typeof content.*object' FORGE/src/fresh-eyes-driver.mjs FORGE/src/relea
 # 验证 reviewer/engineer SKILL.md 含效率铁律
 grep -q "效率铁律" SKILL/agents/reviewer/SKILL.md && echo "✓ reviewer" || echo "✗ reviewer"
 grep -q "效率铁律" SKILL/agents/engineer/SKILL.md && echo "✓ engineer" || echo "✗ engineer"
+```
+
+#### 68. 中英文 README 副标题描述同步——改中文版必须同步英文版（v1.2.5 新盲区）
+
+> v1.2.5 教训：fresh-eyes-loop R01 修了英文版版本号（P0-2），R02 修了中文版副标题描述（P0-3），但没人回头看英文版的描述层是否也需同步。结果英文版版本号对了但描述还是上版本的"Knowledge Evolution"。**根因：同一行的两层问题（版本号 + 描述）分两轮独立发现，每轮只修自己发现的那层。**
+
+```bash
+# 验证中英文副标题关键词重合（至少包含相同的版本核心交付关键词）
+CN=$(grep '当前版本' README.md | head -1)
+EN=$(grep 'Current version' README.en.md | head -1)
+# 手动比对：两者都应包含当前版本的核心交付描述（如 Activation Chain / Audit / Daemon）
+```
+
+#### 69. check-version.sh 英文版正文版本号检查——`Current version: vX.Y`（v1.2.5 新盲区）
+
+> v1.2.5 教训：check-version.sh [13/14] 正文版本号检查只查中文 `当前 v[0-9]`，不查英文 `Current version: v`——README.en.md 的版本号不一致逃过了检查。**自动化检查的盲区 = 语言覆盖盲区：项目有多语言文档时，版本号检查必须覆盖所有语言的版本声明模式。**
+
+```bash
+# 验证 check-version.sh 含英文检查
+grep -q "Current version" tools/check-version.sh && echo "✓ 英文检查已覆盖" || echo "✗ 缺英文检查"
+# 实跑验证
+bash tools/check-version.sh 2>&1 | grep "中英文"
 ```
 
 

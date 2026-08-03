@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离
+# + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离 + v1.2.5 激活链Phase1 + v1.2.5 审计加固A20-A23 + v1.2.5 daemon可靠性 + v1.2.5 多设备前置
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
-# 场景数：115 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
-#   口径 = 纯数字编号去重数（scenario 34b/34c/167a/167b 子场景不计入此总数；最大编号 184 为编号上限，非场景数）
+# 场景数：126 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
+#   口径 = 纯数字编号去重数（scenario 34b/34c/167a/167b 子场景不计入此总数；最大编号 191 为编号上限，非场景数）
 #   计数命令（精确口径，排除 echo 探针假阳性）：grep -oE 'scenario [0-9]+ "' FORGE/playbook/acceptance-test.sh | grep -oE '[0-9]+' | sort -un | wc -l
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
@@ -375,6 +375,9 @@ if echo "$SIG_FAIL_OUT" | grep -q "审计引擎: sofagent-audit" && echo "$SIG_F
 else fail "FAIL/WARN 场景签名行不正确"; fi
 git reset HEAD . 2>/dev/null || true; rm -f .env
 rm -f /tmp/sofagent-wh.*.log 2>/dev/null || true
+# 测试豁免：webhook 场景 34/34b/34c 用 localhost mock server 接收推送，
+# 需显式开启豁免开关绕过产品代码的 SSRF 内网拦截（默认生产行为不受影响）
+export SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1
 WEBHOOK_LOG=$(mktemp /tmp/sofagent-wh.XXXXXXXX.log)
 WEBHOOK_PORT=$(( (RANDOM % 8000) + 12000 ))
 WEBHOOK_URL="http://localhost:${WEBHOOK_PORT}/test"
@@ -403,6 +406,7 @@ echo "TOKEN=webhook-fail" > .env; git add -f .env
 GIT_EDITOR=true git commit -m "webhook fail test" 2>&1 || true
 webhook_assert "FAIL"; git reset HEAD . 2>/dev/null || true; rm -f .env
 kill "$WEBHOOK_PID" 2>/dev/null || true
+unset SOFAGENT_WEBHOOK_ALLOW_LOCALHOST
 write_config
 scenario 35 "BUILTIN_AGENTS 4 Agent + loop-runner"
 ORCH_CLI="$PROJECT_ROOT/engine/orchestrator/dist/cli.js"
@@ -1373,12 +1377,12 @@ S164_OK=true
 for p in install.sh engine/think/src/think-generator.ts; do test -e "$PROJECT_ROOT/$p" || { fail "文档引用的代码路径不存在: $p"; S164_OK=false; }; done
 node -e "const fs=require('fs'),path=require('path');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=0;for(const fp of files){const c=fs.readFileSync(fp,'utf8'),dir=path.dirname(fp);const re=/\]\(((?:\.\.?\/)?[^)]+\.md(?:#[^)]*)?)\)/g;let m;while((m=re.exec(c))){const href=m[1].split('#')[0];if(href.startsWith('http'))continue;if(!fs.existsSync(path.resolve(dir,href))){console.log('断链:',fp,'->',m[1]);bad++;}}}process.exit(bad?1:0);" >/dev/null 2>&1 || { fail "存在指向不存在文件的跨文档 Markdown 链接"; S164_OK=false; }
 $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接无死链）"
-scenario 165 "关键数字跨文档一致性——测试数 1317 / 规则数 21 / acceptance 115"
+scenario 165 "关键数字跨文档一致性——测试数 1438 / 规则数 24 / acceptance 126"
 S165_OK=true
-for f in README.md docs/WIKI.md docs/evidence/evidence.md; do grep -q "1317" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 1317（数字漂移）"; S165_OK=false; }; done
-for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do grep -q "21 条\|21 个\|21 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 21（数字漂移）"; S165_OK=false; }; done
-for f in docs/DEVELOPMENT.md LIMITATIONS.md; do grep -q "115" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 115"; S165_OK=false; }; done
-$S165_OK && pass "关键数字跨文档一致（1317 / 21 / 115）"
+for f in README.md docs/WIKI.md; do grep -q "1438" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 1438（数字漂移）"; S165_OK=false; }; done
+for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do grep -q "24 条\|24 个\|24 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 24（数字漂移）"; S165_OK=false; }; done
+for f in docs/DEVELOPMENT.md LIMITATIONS.md; do grep -q "126" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 126"; S165_OK=false; }; done
+$S165_OK && pass "关键数字跨文档一致（1438 / 24 / 126）"
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
 S166_OK=true
 node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}process.exit(bad.length?(console.log('U+FFFD:',bad.join(',')),1):0);" >/dev/null 2>&1 || { fail "活跃文档存在 U+FFFD 编码污染"; S166_OK=false; }
@@ -1507,6 +1511,39 @@ scenario 183 "v1.2.4 P4 R5 — FDE/SKILL.md 已删除（内容合并到 SKILL/SK
 
 scenario 184 "v1.2.4 P0 预存 bug — data-sovereignty×3 补入分层执行列表"
 node -e "const m=require('$PROJECT_ROOT/engine/daemon/dist/inspector-layers.js');const l1=m.getLayerInspectorNames('L1');const l2=m.getLayerInspectorNames('L2');const l3=m.getLayerInspectorNames('L3');if(!l1.includes('data-sovereignty-daily')){console.log('L1 缺 data-sovereignty-daily');process.exit(1);}if(!l2.includes('data-sovereignty-weekly')){console.log('L2 缺 data-sovereignty-weekly');process.exit(1);}if(!l3.includes('data-sovereignty-monthly')){console.log('L3 缺 data-sovereignty-monthly');process.exit(1);}console.log('OK');" >/dev/null 2>&1 && pass "data-sovereignty×3 已补入 L1/L2/L3 执行列表" || fail "data-sovereignty×3 未补入分层执行列表（预存 bug 未修复）"
+
+# ═══ v1.2.5 验收场景（185-191）═══
+
+scenario 185 "v1.2.5 主线A — activate.ts 存在且导出 activateWorkflow"
+check_dist_export "engine/orchestrator/dist/activate.js" "activateWorkflow" "ACTIVATE" || true
+if [ "${ACTIVATE_EXPORT_OK:-false}" = "true" ]; then pass "activate.ts 导出 activateWorkflow"; else fail "activate.ts 未导出 activateWorkflow"; fi
+
+scenario 186 "v1.2.5 主线B — A20-A23 四条新规则文件存在 + runner AUDIT_PRIORITY 注册"
+A20_OK=true
+for r in rule-a20-network-exfiltration rule-a21-persistence rule-a22-privilege-escalation rule-a23-path-traversal; do
+  [ -f "$PROJECT_ROOT/engine/audit/src/rules/${r}.ts" ] || { A20_OK=false; fail "$r.ts 不存在"; }
+done
+node -e "const m=require('$PROJECT_ROOT/engine/audit/dist/rules/runner.js');const c=m.AUDIT_PRIORITY.critical;if(!c.includes('A20')||!c.includes('A21')||!c.includes('A22')||!c.includes('A23')){console.log('AUDIT_PRIORITY.critical 缺 A20-A23');process.exit(1);}console.log('OK');" >/dev/null 2>&1 && pass "A20-A23 文件 + AUDIT_PRIORITY critical 注册" || { [ "$A20_OK" = "true" ] && fail "AUDIT_PRIORITY.critical 未含 A20-A23"; }
+
+scenario 187 "v1.2.5 主线B — BASELINE_RULE_KEYS 扩展到 9 条（含 a20-a23）"
+node -e "const m=require('$PROJECT_ROOT/engine/core/dist/shared/rule-constants.js');const k=m.BASELINE_RULE_KEYS;if(k.length!==9){console.log('BASELINE_RULE_KEYS 长度='+k.length+'（期望 9）');process.exit(1);}for(const x of ['a20','a21','a22','a23']){if(!k.includes(x)){console.log('缺 '+x);process.exit(1);}}console.log('OK');" >/dev/null 2>&1 && pass "BASELINE_RULE_KEYS=9 条（a1/a2/a9/a10/a11/a20/a21/a22/a23）" || fail "BASELINE_RULE_KEYS 未扩展到 9 条"
+
+scenario 188 "v1.2.5 主线B — E3 已从 extendedRules 移除"
+node -e "const m=require('$PROJECT_ROOT/engine/audit/dist/rules/index.js');const ext=m.extendedRules;if(ext.some(r=>r.number===203)){console.log('E3(number=203) 仍在 extendedRules');process.exit(1);}console.log('OK');" >/dev/null 2>&1 && pass "E3 已移除（extendedRules 无 number=203）" || fail "E3 未从 extendedRules 移除"
+
+scenario 189 "v1.2.5 主线C — with-retry + daemon-health dist 产物存在"
+check_dist_export "engine/daemon/dist/with-retry.js" "withRetry" "RETRY" || true
+check_dist_export "engine/daemon/dist/daemon-health.js" "writeHealthFile" "HEALTH" || true
+if [ "${RETRY_EXPORT_OK:-false}" = "true" ] && [ "${HEALTH_EXPORT_OK:-false}" = "true" ]; then pass "with-retry 导出 withRetry + daemon-health 导出 writeHealthFile"; else fail "daemon 可靠性模块导出缺失"; fi
+
+scenario 190 "v1.2.5 副线 — agent-identity 身份码 + audit-trail 审计轨迹"
+check_dist_export "engine/core/dist/agent-identity.js" "generateAgentIdentity" "IDENTITY" || true
+check_dist_export "engine/audit/dist/audit-trail.js" "appendAuditTrail" "TRAIL" || true
+if [ "${IDENTITY_EXPORT_OK:-false}" = "true" ] && [ "${TRAIL_EXPORT_OK:-false}" = "true" ]; then pass "agent-identity 导出 generateAgentIdentity + audit-trail 导出 appendAuditTrail"; else fail "多设备前置模块导出缺失"; fi
+
+scenario 191 "v1.2.5 副线 — protocol-neutrality 协议中立声明"
+check_dist_export "engine/audit/dist/protocol-neutrality.js" "assertProtocolNeutrality" "PROTONEUT" || true
+if [ "${PROTONEUT_EXPORT_OK:-false}" = "true" ]; then pass "protocol-neutrality 导出 assertProtocolNeutrality"; else fail "protocol-neutrality 导出缺失"; fi
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

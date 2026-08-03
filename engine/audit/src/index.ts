@@ -88,9 +88,9 @@ interface Args {
   timelineJson?: boolean;
   /** v1.0.9: ontology 子命令 */
   ontologyCommand?: string;
-  /** v1.2.4 P2: conflict-check 子命令 */
+  /** v1.2.5 P2: conflict-check 子命令 */
   conflictCheckCommand?: boolean;
-  /** v1.2.4 P2: federation-distill 子命令 */
+  /** v1.2.5 P2: federation-distill 子命令 */
   federationDistillCommand?: boolean;
   /** v1.2.0: 审计 session 产物（默认开启，--no-session 关闭） */
   noSession: boolean;
@@ -179,10 +179,10 @@ function parseArgs(argv: string[]): Args {
       i++;
       args.ontologyCommand = argv[i] as string;
     } else if (argv[i] === 'conflict-check') {
-      // v1.2.4 P2: conflict-check 子命令
+      // v1.2.5 P2: conflict-check 子命令
       args.conflictCheckCommand = true;
     } else if (argv[i] === 'federation-distill') {
-      // v1.2.4 P2: federation-distill 子命令
+      // v1.2.5 P2: federation-distill 子命令
       args.federationDistillCommand = true;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       const verbose = argv.includes('--verbose');
@@ -599,7 +599,7 @@ async function main(): Promise<void> {
     }
   }
 
-  // v1.2.4 P2：conflict-check 子命令（知识矛盾检测 CLI）
+  // v1.2.5 P2：conflict-check 子命令（知识矛盾检测 CLI）
   if (args.conflictCheckCommand) {
     const { runConflictCheckCli, parseConflictCheckArgs } = await import('./cli/conflict-check');
     const cliArgs = parseConflictCheckArgs(rawArgs);
@@ -614,7 +614,7 @@ async function main(): Promise<void> {
     }
   }
 
-  // v1.2.4 P2：federation-distill 子命令（联邦蒸馏 CLI）
+  // v1.2.5 P2：federation-distill 子命令（联邦蒸馏 CLI）
   if (args.federationDistillCommand) {
     const { runFederationDistillCli, parseFederationDistillArgs } = await import('./cli/federation-distill');
     const cliArgs = parseFederationDistillArgs(rawArgs);

@@ -58,6 +58,9 @@ export function checkRuleA21(ctx: AuditContext): RuleCheck {
 
     const addedLines = getAddedLines(file);
     for (const line of addedLines) {
+      // 跳过纯注释行（// · * · #）——注释不可执行，@daily 等巡检调度标记不是后门。
+      // v1.2.5 教训：daemon inspectors 的 @daily 注释曾被误判为 crontab 后门。
+      if (/^\s*(\/\/|\*|#)/.test(line)) continue;
       for (const { pattern, name } of PERSISTENCE_PATTERNS) {
         if (pattern.test(line)) {
           hits.push({

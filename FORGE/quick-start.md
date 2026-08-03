@@ -1,6 +1,6 @@
 # FORGE 快速入门 · 环境配置与模型接入
 
-> 本文覆盖模型接入、环境变量、driver 启动——这些是 FORGE fresh-eyes-loop 的运行基础。循环协议详见 `FORGE/SKILL/fresh-eyes-loop/loop.md`。
+> 本文覆盖模型接入、环境变量、driver 启动——这些是 FORGE 两个内环（fresh-eyes-loop 质量循环 + release-gate-loop 发版闸门）的运行基础。循环协议详见各自 `FORGE/SKILL/<loop>/loop.md`。
 
 ---
 
@@ -16,7 +16,7 @@ bash install.sh
 
 ## 第二步：配置模型
 
-fresh-eyes-loop 由 A（审查者）和 B（工程师）两个角色组成。两者由 driver 用**同一个模型**（`qwen3.8-max-preview`，阿里百炼 Token Plan 订阅制）驱动——fresh-eyes 纪律通过**每步独立子进程（零上下文）+ 独立 prompt** 实现，不依赖模型差异。
+fresh-eyes-loop 和 release-gate-loop **共用同一套模型配置**——只需配一次，两个循环都能跑。fresh-eyes-loop 由 A（审查者）和 B（工程师）两个角色组成；release-gate-loop 由 V（验证者）单角色组成。三者由 driver 用**同一个模型**（`qwen3.8-max-preview`，阿里百炼 Token Plan 订阅制）驱动——fresh-eyes 纪律通过**每步独立子进程（零上下文）+ 独立 prompt** 实现，不依赖模型差异。
 
 | 角色 | 职责 | 行为指令 | 工具集 |
 |:--:|------|------|------|
@@ -82,6 +82,10 @@ source FORGE/env.local
 
 ## 第三步：跑循环
 
+FORGE 有两个内环，共用第二步配置的环境变量，各自有独立的 driver。
+
+### fresh-eyes-loop（质量循环 · 阶段三）
+
 driver（`FORGE/src/fresh-eyes-driver.mjs`）会自动 spawn 独立子进程跑每个 step——每个 step 都是全新的 Node 进程，**真零上下文**（不是同一 session 内换 prompt，而是彻底重启进程）。
 
 ```bash
@@ -112,6 +116,53 @@ a-verify      → A 验证修复结果，判定本轮是否 PASS
 ```
 
 产物写到 `~/.sofagent/data/forge-runs/fresh-eyes-loop/YYYY-MM-DD/run-NN/` 目录下。
+
+### release-gate-loop（发版闸门 · 阶段六）
+
+driver（`FORGE/src/release-gate-driver.mjs`）驱动单角色（V = 验证者）跑 5 步线性验证，跑完即出 PASS/FAIL 裁决。纯只读——不做任何修复。
+
+```bash
+# 一键启动
+node FORGE/src/release-gate-driver.mjs --target v1.2.4
+
+# 先 dry-run 看流程
+node FORGE/src/release-gate-driver.mjs --target v1.2.4 --dry-run
+
+# sandbox 环境（acceptance-test.sh 预跑会被 kill 时）：
+# 先手动预跑，再 --skip-acceptance 启动
+bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-raw.log 2>&1
+node FORGE/src/release-gate-driver.mjs --target v1.2.4 --skip-acceptance
+
+# 沙箱 OOM 环境（driver + worker 内存叠加触发 OOM 时）：
+# 用 --step 单步模式，逐步调用，每步全新进程退出
+node FORGE/src/release-gate-driver.mjs --step acceptance --target v1.2.4 --run-dir <runDir>
+node FORGE/src/release-gate-driver.mjs --step regression  --target v1.2.4 --run-dir <runDir>
+node FORGE/src/release-gate-driver.mjs --step coverage     --target v1.2.4 --run-dir <runDir>
+node FORGE/src/release-gate-driver.mjs --step consolidate  --target v1.2.4 --run-dir <runDir>
+node FORGE/src/release-gate-driver.mjs --step verdict       --target v1.2.4 --run-dir <runDir>
+```
+
+**driver 参数**：
+
+| 参数 | 说明 | 默认值 |
+|------|------|------|
+| `--target` | 目标版本号 | 必填 |
+| `--dry-run` | 只打印 step 序列，不调用 LLM | `false` |
+| `--skip-acceptance` | 跳过 acceptance-test 步骤（需手动预跑） | `false` |
+| `--step` | 单步模式（OOM 环境用） | 不设 = 全量跑 |
+| `--run-dir` | 单步模式指定的 run 目录 | 单步模式必填 |
+
+**5 步协议**（driver 自动编排）：
+
+```
+acceptance  → V 跑 acceptance-test.sh（115 场景），输出 acceptance 报告
+regression  → V 跑 regression-checklist 检查，输出 regression 报告
+coverage    → V 交叉检查覆盖率，输出 coverage 报告
+consolidate → V 合并三份报告，输出综合报告
+verdict     → V 出最终裁决（PASS / FAIL），写入 verdict.md
+```
+
+产物写到 `~/.sofagent/data/forge-runs/release-gate-loop/YYYY-MM-DD/run-NN/` 目录下。
 
 ### Usage 成本透明
 
@@ -158,5 +209,8 @@ a-verify      → A 验证修复结果，判定本轮是否 PASS
 | usage.jsonl 中 `price_confidence: no-pricing` | 该模型不在 `MODEL_PRICING` 表里 | 查阅厂商官方定价页，在 driver 内补上 |
 | a-consolidate 产物为空或降级 | maxTokens 截断（合并步骤输出超长） | 确认 STEPS 中 a-consolidate 的 maxTokens=32000（见 lessons/models.md） |
 | sofagent-audit 命令未找到 | 底座没装 | `bash install.sh` |
+| release-gate acceptance 步骤被 kill | sandbox 限制长时间子进程 | 手动预跑 `bash FORGE/playbook/acceptance-test.sh > /tmp/log 2>&1`，再 `--skip-acceptance` 启动 |
+| release-gate driver OOM | driver + worker 内存叠加（沙箱环境） | 用 `--step` 单步模式逐步调用（见上方命令） |
+| release-gate verdict 误判 PASS/FAIL | driver parseVerdict 解析 bug | 以 `verdict.md` 权威产物为准，不信 LEDGER 中间状态（v1.2.5 已修 commit a845ed8） |
 
-> 📖 详细设计见 `FORGE/SKILL/fresh-eyes-loop/loop.md`（循环协议）和 `FORGE/lessons/index.md`（Sub-Agent 开发参照标准）。
+> 📖 详细设计见各自 `FORGE/SKILL/<loop>/loop.md`（循环协议）和 `FORGE/lessons/index.md`（Sub-Agent 开发参照标准）。
