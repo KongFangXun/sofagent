@@ -271,6 +271,18 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 
 ---
 
+## Deployment Sizing（企业 IT 参考）
+
+| 部署规模 | 并发 Agent | CPU | 内存 | 磁盘 | 适用场景 |
+|---------|:---:|:---:|:---:|:---:|---------|
+| 个人 / 小团队 | 1-3 | 1 核 | 512 MB | 500 MB | 单人开发，git commit hook 审计 |
+| 中型团队 | 5-10 | 2 核 | 1 GB | 2 GB | 多人协作，daemon 常驻 + webhook 推送 |
+| 企业级 | 10+ | 4 核 | 2 GB | 5 GB+ | 多仓库联邦，A/B 审查 + 知识库 + Dashboard |
+
+> 磁盘主要消耗：`~/.sofagent/data/`（审计历史 + 快照 + 知识库，日均 ~5 MB/仓库）。内存主要消耗：daemon 常驻进程（~50 MB）+ Node.js 运行时（~200 MB/并发 Agent）。网络：仅 LLM API 出站，无入站端口需求。
+
+---
+
 ## 延伸阅读
 
 | 你想了解 | 看哪里 |
