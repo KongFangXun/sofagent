@@ -267,6 +267,27 @@ function aggregateAiNodes() {
   if (out.deployed.length > 12) {
     out.deployed = out.deployed.slice(0, 12);
   }
+  // 4) sustain 持续优化状态（诚实呈现：能力存在但数据可能未生成）
+  out.sustain = { mode: 'sustain', implemented: true, weeklyReport: null, active: false };
+  try {
+    const dashDir = join(SOFAGENT_DATA, 'dashboard');
+    if (fsDirExists(dashDir)) {
+      const weekly = readdirSync(dashDir).filter((f) => f.startsWith('weekly-')).sort().reverse();
+      if (weekly.length) {
+        try {
+          const w = JSON.parse(readFileSync(join(dashDir, weekly[0]), 'utf8'));
+          out.sustain.weeklyReport = w;
+          out.sustain.active = true;
+        } catch {}
+      }
+    }
+    // daemon 健康状态（巡检是否在跑）
+    const healthFile = join(SOFAGENT_DATA, 'dashboard', 'daemon-health.json');
+    try {
+      const h = JSON.parse(readFileSync(healthFile, 'utf8'));
+      out.sustain.daemon = h.status || h.state || null;
+    } catch {}
+  } catch {}
   return out;
 }
 
