@@ -21,7 +21,8 @@ a{color:var(--brand);text-decoration:none}
 a:hover{text-decoration:underline}
 
 /* === Header / Nav === */
-.header{background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;position:sticky;top:0;z-index:200;box-shadow:var(--shadow);height:var(--nav-h);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;position:sticky;top:0;z-index:200;box-shadow:var(--shadow);height:var(--nav-h)}
+.header-inner{max-width:1200px;margin:0 auto;height:100%;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;padding:0 20px}
 .header-left{display:flex;align-items:center;gap:12px}
 .header-left img{width:36px;height:36px;border-radius:8px}
 .logo-text{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.3px}
@@ -207,7 +208,7 @@ a:hover{text-decoration:underline}
 .seg-btn.active{background:var(--brand);color:#fff;box-shadow:0 1px 3px rgba(22,184,243,.35)}
 /* 手动刷新按钮：纯圆形 icon，与胶囊同高 */
 .seg-refresh{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:50%;background:var(--card);color:var(--brand);width:26px;height:26px;padding:0;font-size:11px;font-weight:600;transition:all .15s}
-.seg-refresh:hover{border-color:var(--brand);background:var(--brand-l);color:var(--brand-d)}
+.seg-refresh:hover{border-color:var(--brand);background:var(--brand-l);color:var(--brand)}
 .seg-refresh svg{width:14px;height:14px}
 .seg-refresh.refreshing{border-color:var(--green);color:var(--green);background:#E1F5EE}
 .seg-refresh.refreshing svg{animation:spin .6s linear}
@@ -221,6 +222,7 @@ a:hover{text-decoration:underline}
   .grid-2,.grid-3{grid-template-columns:1fr}
   /* header 两行：第一行 logo+star，第二行导航 */
   .header{padding:8px 8px 0;gap:6px;display:flex;flex-direction:column;height:auto;align-items:stretch}
+  .header-inner{display:flex;flex-direction:column;height:auto;padding:0;gap:6px;width:100%}
   .header-left{gap:8px;min-width:0;flex:1}
   .header-left img{width:26px;height:26px}
   .logo-text{font-size:14px}
@@ -242,6 +244,8 @@ a:hover{text-decoration:underline}
   .seg-refresh{flex:0 0 auto;width:34px;height:34px}
   .fde-stage{gap:8px;padding:10px}
   .fde-num{width:26px;height:26px;font-size:12px}
+  /* FDE 步骤卡：移动端单列 */
+  .fde-step{flex:1 1 100%!important}
   /* 表格/图表容器横向滚动，防溢出 */
   .chart-box{overflow-x:auto}
   /* 审计记录行窄屏紧凑 */
@@ -267,25 +271,27 @@ a:hover{text-decoration:underline}
 
 <!-- ============ HEADER / NAV ============ -->
 <div class="header">
-  <div class="header-left">
-    <img src="assets/sofagent.png" alt="sofagent" onerror="this.style.display='none'">
-    <span class="logo-text">sofagent</span>
-    <span class="logo-version">v1.2.5</span>
-  </div>
-  <nav class="nav" id="nav">
-    <button class="nav-item active" onclick="goPage('cockpit')">驾驶舱</button>
-    <button class="nav-item" onclick="goPage('fde')">FDE 引导</button>
-    <button class="nav-item" onclick="goPage('nodes')">AI 节点</button>
-    <button class="nav-item" onclick="goPage('ontology')">本体结构</button>
-    <button class="nav-item" onclick="goPage('knowledge')">知识库</button>
-    <button class="nav-item" onclick="goPage('resources')">工具箱</button>
-  </nav>
-  <div class="header-right">
-    <a href="https://github.com/KongFangXun/sofagent" target="_blank" class="star-btn">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
-      <span>Stars</span>
-      <span class="star-count" id="starCount">···</span>
-    </a>
+  <div class="header-inner">
+    <div class="header-left">
+      <img src="assets/sofagent.png" alt="sofagent" onerror="this.style.display='none'">
+      <span class="logo-text">sofagent</span>
+      <span class="logo-version">v1.2.5</span>
+    </div>
+    <nav class="nav" id="nav">
+      <button class="nav-item active" onclick="goPage('cockpit')">驾驶舱</button>
+      <button class="nav-item" onclick="goPage('fde')">FDE 引导</button>
+      <button class="nav-item" onclick="goPage('nodes')">AI 节点</button>
+      <button class="nav-item" onclick="goPage('ontology')">本体结构</button>
+      <button class="nav-item" onclick="goPage('knowledge')">知识库</button>
+      <button class="nav-item" onclick="goPage('resources')">工具箱</button>
+    </nav>
+    <div class="header-right">
+      <a href="https://github.com/KongFangXun/sofagent" target="_blank" class="star-btn">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+        <span>Stars</span>
+        <span class="star-count" id="starCount">···</span>
+      </a>
+    </div>
   </div>
 </div>
 
@@ -710,7 +716,7 @@ a:hover{text-decoration:underline}
   </div>
   <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">📋</span>FDE Agent 十步流程（内置 Workflow 模板）</div>
+      <div class="section-title"><span class="dot-emoji">📋</span>FDE Agent（内置 Workflow 模板）</div>
       <span style="font-size:11px;color:var(--text-t)" id="fdeWfUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
@@ -1449,23 +1455,41 @@ function loadFdeWorkflowData(){
         box.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到 FDE workflow 模板（<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/</code>）</div>';
         return;
       }
-      var typeMap={analyst:'⚡ 强化岗位',planner:'🔄 自动执行',engineer:'🔄 自动执行',deployer:'🔄 自动执行',reviewer:'👤 人工确认'};
+      // agent 类型 → 颜色 + 角色名（明确分配，不靠兜底）
+      var agentColor={
+        analyst:{bg:'#E6F1FB',border:'var(--brand)',label:'⚡ 强化岗位',role:'分析师',dot:'🔵'},
+        planner:{bg:'#E1F5EE',border:'var(--green)',label:'🔄 自动执行',role:'规划师',dot:'🟢'},
+        deployer:{bg:'#FAEEDA',border:'var(--amber)',label:'🔄 自动执行',role:'部署专家',dot:'🟠'},
+        engineer:{bg:'#E1F5EE',border:'var(--green)',label:'🔄 自动执行',role:'工程',dot:'🟢'},
+        reviewer:{bg:'#F3E8FF',border:'var(--purple)',label:'👤 人工确认',role:'审查',dot:'🟣'}
+      };
       var html='';
+      var sustain=d.sustain||null;
       wfs.forEach(function(wf){
-        html+='<div style="font-weight:600;font-size:13px;margin-bottom:10px">'+wf.name+'（'+(wf.file||'')+'）</div>';
-        html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
+        var dispName=(wf.name||wf.file||'').replace('template.yaml','').trim();
+        html+='<div style="font-weight:600;font-size:13px;margin-bottom:10px">FDE 执行流程（template.yaml）</div>';
+        // 每行 5 个卡片（flex 5 列），不足 5 个自动靠左；移动端单列见 .fde-steps
+        html+='<div class="fde-steps" style="display:flex;flex-wrap:wrap;gap:8px">';
         wf.steps.forEach(function(s,i){
-          var typeCn=typeMap[s.agent]||'⚡ 强化岗位';
-          var bg=s.agent==='analyst'?'#E6F1FB':(s.agent==='engineer'||s.agent==='planner'?'#E1F5EE':'#FAEEDA');
-          var border=s.agent==='analyst'?'var(--brand)':(s.agent==='engineer'||s.agent==='planner'?'var(--green)':'var(--amber)');
-          html+='<div style="flex:1;min-width:180px;max-width:220px;background:'+bg+';border:1px solid '+border+';border-radius:var(--radius-s);padding:10px 12px">'+
-            '<div style="font-size:10px;color:var(--text-t);font-family:var(--mono)">STEP '+(i+1)+'</div>'+
-            '<div style="font-size:12px;font-weight:600;margin-top:2px">'+s.name+'</div>'+
-            '<div style="font-size:11px;color:var(--text-s);margin-top:3px">'+typeCn+(s.loop?' · 循环':'')+'</div>'+
-            '<div style="font-size:10px;color:var(--text-t);margin-top:3px">'+s.id+'</div>'+
+          var ac=agentColor[s.agent]||agentColor.analyst;
+          html+='<div class="fde-step" style="flex:0 0 calc(20% - 7px);box-sizing:border-box;background:'+ac.bg+';border:1px solid '+ac.border+';border-radius:var(--radius-s);padding:10px 12px">'+
+            '<div style="font-size:10px;color:var(--text-t);font-family:var(--mono)"><span style="font-size:8px;line-height:1">'+ac.dot+'</span> STEP '+(i+1)+' · <span style="color:var(--brand-d)">'+ac.role+' · '+s.agent+'</span></div>'+
+            '<div style="font-size:12px;font-weight:600;margin-top:4px;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap"><span>'+s.name+'</span><span style="font-size:10px;font-weight:400;color:var(--text-t)">'+ac.label+(s.loop?' · 循环':'')+'</span></div>'+
             '</div>';
         });
         html+='</div>';
+        // 第 10 步"持续优化"的周报摘要（真实数据，卡片下方展示）
+        if(sustain&&sustain.active&&sustain.weeklyReport){
+          var wr=sustain.weeklyReport;
+          var tw=wr.thisWeek||{};
+          var trendCn={improving:'📈 改善',degrading:'📉 恶化',stable:'➡️ 平稳'}[wr.trend]||wr.trend||'-';
+          var top5=(wr.violationTop5||[]).slice(0,3).map(function(v){return v.rule+'×'+v.count}).join(' · ');
+          html+='<div style="margin-top:12px;background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 14px;font-size:12px;color:var(--text-s)">'+
+            '📊 <b style="color:var(--text)">'+wr.weekLabel+' 持续优化周报</b>（由 <code style="background:var(--brand-l);padding:1px 6px;border-radius:4px;font-size:11px">tools/gen-weekly-report.mjs</code> 生成）<br>'+
+            '本周 '+tw.taskCount+' 任务 · '+tw.passes+' 通过 · '+tw.warnings+' 警告 · <b style="color:var(--red)">'+tw.violations+' 违规</b> · 趋势 '+trendCn+
+            (top5?'<br>违规 TOP3：'+top5:'')+
+            '</div>';
+        }
       });
       box.innerHTML=html;
     })
