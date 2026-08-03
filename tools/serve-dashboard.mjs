@@ -77,6 +77,14 @@ function runJq(program, input) {
   }
 }
 
+/* 测试记录过滤：fixture 泛化任务名（规则测试的故意违规/故意通过样本）
+ * ⚠️ 不能用 envFingerprint 字段判断——它是近期真实记录也带的常规字段，会误杀全部近期数据
+ * 同名任务出现上百次（"add code" 476 次、"initial commit" 121 次）即 fixture 循环 */
+const TEST_TASK_RE = /^(add (env|api|code|dependency|config|file|data)( config)?|fix: update README( title)?|update (config|code|file)|remove file|init: project setup|initial commit|test: rules filtering|test: json scenario|test)$/i;
+function isTestRecord(rec) {
+  return TEST_TASK_RE.test(String(rec.task || '').trim());
+}
+
 function aggregateSummary() {
   const out = { ok: true, generatedAt: new Date().toISOString(), rules: null, sovereignty: null, top3: [], recent: [] };
 
@@ -85,13 +93,24 @@ function aggregateSummary() {
     try { return readFileSync(HISTORY_FILE, 'utf8'); } catch { return ''; }
   })();
   if (historyRaw) {
+    // 过滤测试记录——驾驶舱反映真实开发质量，不掺故意违规的 fixture
+    const allRecs = [];
+    for (const line of historyRaw.trim().split('\n')) {
+      try { allRecs.push(JSON.parse(line)); } catch {}
+    }
+    const cleanRecs = allRecs.filter((r) => !isTestRecord(r));
+    out.totalRecords = allRecs.length;
+    out.filteredTestRecords = allRecs.length - cleanRecs.length;
+    out.auditTotal = cleanRecs.length;
+    const filteredRaw = cleanRecs.map((r) => JSON.stringify(r)).join('\n') + '\n';
+
     const passFail = runJq(
       '[.[] | .ruleResults[]? | select(.status != "SKIPPED")] as $all' +
       ' | { pass: ([$all[] | select(.status == "PASS")] | length),' +
       '     warn: ([$all[] | select(.status == "WARN")] | length),' +
       '     fail: ([$all[] | select(.status == "FAIL")] | length) }' +
       ' | "\\(.pass) \\(.warn) \\(.fail)"',
-      historyRaw
+      filteredRaw
     );
     const parts = passFail.split(/\s+/);
     const pass = parseInt(parts[0] || 0, 10);
@@ -103,6 +122,19 @@ function aggregateSummary() {
       passRate: total > 0 ? Math.round((pass * 100) / total) : 0,
     };
 
+    // ── 任务级聚合（与趋势图同口径：exitCode 0=PASS/1=WARN/>1=FAIL，一任务一条）──
+    let tPass = 0, tWarn = 0, tFail = 0;
+    for (const r of cleanRecs) {
+      const ec = r.exitCode || 0;
+      if (ec === 0) tPass++; else if (ec === 1) tWarn++; else tFail++;
+    }
+    const tTotal = tPass + tWarn + tFail;
+    out.tasks = {
+      pass: tPass, warn: tWarn, fail: tFail, total: tTotal,
+      violations: tWarn + tFail,
+      passRate: tTotal > 0 ? Math.round((tPass * 100) / tTotal) : 0,
+    };
+
     // ── 本周违规 TOP3（bash render_rules 同一 jq）──
     const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 19);
     const top3Raw = runJq(
@@ -111,7 +143,7 @@ function aggregateSummary() {
       ' | map({ code: ("A" + (.[0].number | tostring)), name: (.[0].name | sub("^A[0-9]+[ ]+"; "")), count: length })' +
       ' | sort_by(-.count) | .[0:3][]' +
       ' | "\\(.name)\t\\(.code)\t\\(.count)"',
-      historyRaw
+      filteredRaw
     );
     out.top3 = top3Raw.split('\n').filter(Boolean).map((line) => {
       const [name, code, count] = line.split('\t');
@@ -123,7 +155,7 @@ function aggregateSummary() {
       'sort_by(.timestamp) | .[-5:] | reverse[]' +
       ' | [(.ruleResults[]? | select(.status == "FAIL" or .status == "WARN") | "A" + (.number | tostring))] as $violated' +
       ' | "\\(.timestamp[5:16])\t\\(.exitCode)\t\\($violated[0] // "")\t\\((.task // .commitMsg // "")[0:40])"',
-      historyRaw
+      filteredRaw
     );
     out.recent = recentRaw.split('\n').filter(Boolean).map((line) => {
       const parts = line.split('\t');
@@ -135,33 +167,40 @@ function aggregateSummary() {
       };
     });
 
-    // ── 近 7 天每日任务级 PASS/WARN/FAIL（通栏趋势图）──
-    // 按任务计：exitCode 0=PASS / 1=WARN / >1=FAIL，一次审计只算 1 条
+    // ── 近 7 天每日任务级 PASS/WARN/FAIL + 规则级通过率（通栏趋势图）──
+    // 任务级：exitCode 0=PASS / 1=WARN / >1=FAIL，一次审计只算 1 条（→ 紫黄柱）
+    // 规则级：ruleResults 逐条 PASS/非PASS（→ 绿线，与顶部"审计通过率"同口径）
     const dailyRaw = runJq(
       '[.[] | select(.timestamp)]' +
       ' | group_by(.timestamp[0:10])' +
       ' | map({ day: .[0].timestamp[0:10],' +
       '     pass: ([.[] | select((.exitCode // 0) == 0)] | length),' +
       '     warn: ([.[] | select(.exitCode == 1)] | length),' +
-      '     fail: ([.[] | select((.exitCode // 0) > 1)] | length) })' +
-      ' | .[] | "\\(.day)\t\\(.pass)\t\\(.warn)\t\\(.fail)"',
-      historyRaw
+      '     fail: ([.[] | select((.exitCode // 0) > 1)] | length),' +
+      '     rulePass: ([.[] | .ruleResults[]? | select(.status == "PASS")] | length),' +
+      '     ruleAll: ([.[] | .ruleResults[]? | select(.status != "SKIPPED")] | length) })' +
+      ' | .[] | "\\(.day)\t\\(.pass)\t\\(.warn)\t\\(.fail)\t\\(.rulePass)\t\\(.ruleAll)"',
+      filteredRaw
     );
     const byDay = {};
     dailyRaw.split('\n').filter(Boolean).forEach((line) => {
-      const [day, p, w, f] = line.split('\t');
-      byDay[day] = { pass: parseInt(p || 0, 10), warn: parseInt(w || 0, 10), fail: parseInt(f || 0, 10) };
+      const [day, p, w, f, rp, ra] = line.split('\t');
+      byDay[day] = {
+        pass: parseInt(p || 0, 10), warn: parseInt(w || 0, 10), fail: parseInt(f || 0, 10),
+        rulePass: parseInt(rp || 0, 10), ruleAll: parseInt(ra || 0, 10),
+      };
     });
     out.daily = [];
     for (let i = 6; i >= 0; i--) {
       const key = new Date(Date.now() - i * 24 * 3600 * 1000).toISOString().slice(0, 10);
-      const d = byDay[key] || { pass: 0, warn: 0, fail: 0 };
+      const d = byDay[key] || { pass: 0, warn: 0, fail: 0, rulePass: 0, ruleAll: 0 };
       const total = d.pass + d.warn + d.fail;
       const violations = d.warn + d.fail;
       out.daily.push({
         day: key, ...d,
         audits: total, violations,
         rate: total > 0 ? Math.round((violations * 100) / total) : 0,
+        ruleRate: d.ruleAll > 0 ? Math.round((d.rulePass * 100) / d.ruleAll) : 0,
       });
     }
     out.todayCount = (out.daily[out.daily.length - 1] || { audits: 0 }).audits;
@@ -410,6 +449,22 @@ const server = createServer(async (req, res) => {
     const s = aggregateOntology();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(s));
+    return;
+  }
+
+  // /api/export-history → 下载完整审计历史（原始全量，含测试记录，不截断）
+  if (urlPath === '/api/export-history') {
+    const raw = await tryRead(HISTORY_FILE);
+    if (raw === null) {
+      res.writeHead(404);
+      res.end('Not found: ' + HISTORY_FILE);
+      return;
+    }
+    res.writeHead(200, {
+      'Content-Type': 'application/x-ndjson',
+      'Content-Disposition': 'attachment; filename="audit-history.jsonl"',
+    });
+    res.end(raw);
     return;
   }
 

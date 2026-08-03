@@ -333,8 +333,8 @@ a:hover{text-decoration:underline}
   <div class="metrics">
     <div class="metric-card">
       <div class="metric-value" style="color:var(--green)" id="m-audit">—</div>
-      <div class="metric-label">审计通过率</div>
-      <div class="metric-sub" id="m-audit-sub">24 条规则</div>
+      <div class="metric-label">规则通过率</div>
+      <div class="metric-sub" id="m-audit-sub">24 条规则逐项检查（规则级）</div>
     </div>
     <div class="metric-card">
       <div class="metric-value" style="color:var(--purple)" id="m-today">—</div>
@@ -343,23 +343,24 @@ a:hover{text-decoration:underline}
     </div>
     <div class="metric-card">
       <div class="metric-value" style="color:var(--brand)" id="m-nodes">—</div>
-      <div class="metric-label">审计记录</div>
-      <div class="metric-sub" id="m-nodes-sub">总执行次数</div>
+      <div class="metric-label">审计任务</div>
+      <div class="metric-sub" id="m-nodes-sub">审计任务总数（任务级）</div>
     </div>
     <div class="metric-card">
       <div class="metric-value" style="color:var(--amber)" id="m-violations">—</div>
-      <div class="metric-label">违规次数</div>
-      <div class="metric-sub" id="m-violations-sub">FAIL + WARN</div>
+      <div class="metric-label">违规任务</div>
+      <div class="metric-sub" id="m-violations-sub">任务级 · WARN + FAIL</div>
     </div>
   </div>
 
   <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">📉</span>违规趋势（近 7 天）</div>
-      <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-s)">
+      <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-s);flex-wrap:wrap;justify-content:flex-end">
         <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#7F77DD;border-radius:3px"></span>审计量</span>
         <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#EF9F27;border-radius:3px"></span>违规次数</span>
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:#1D9E75;border-radius:2px"></span>通过率</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:#1D9E75;border-radius:2px"></span>任务通过率</span>
+        <span style="color:var(--text-t)">任务通过率 = 1 − 违规÷审计量（任务级口径，与左上方「规则通过率」不同）</span>
       </div>
     </div>
     <div class="section-body">
@@ -372,7 +373,11 @@ a:hover{text-decoration:underline}
   <div class="grid-2">
     <div class="section">
       <div class="section-header">
-        <div class="section-title"><span class="dot-emoji">📋</span>最近审计记录</div>
+        <div class="section-title"><span class="dot-emoji">📋</span>最近审计记录<span id="auditRecordCount" style="font-size:11px;color:var(--text-t);font-weight:400;margin-left:6px"></span></div>
+        <a href="/api/export-history" download="audit-history.jsonl" title="下载完整审计历史（原始 JSONL）" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--brand);text-decoration:none;border:1px solid var(--border);border-radius:14px;padding:3px 10px;background:var(--bg)">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 1.5v9M8 10.5 4.5 7M8 10.5 11.5 7M2.5 13.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          全量历史
+        </a>
       </div>
       <div class="section-body">
         <div class="audit-log" id="liveAuditLog">
@@ -1081,15 +1086,19 @@ async function loadLiveData(){
 /* 用 /api/summary（bash 同口径）渲染驾驶舱 */
 function renderSummaryData(s){
   var r=s.rules;
-  // 指标卡
+  // 指标卡：第 1 张为规则级口径，其余全部任务级口径（与趋势图一致）
+  var t=s.tasks||{};
   document.getElementById('m-audit').textContent=r.passRate+'%';
-  document.getElementById('m-audit-sub').textContent='24 条规则';
-  document.getElementById('m-nodes').textContent=(r.total||0);
-  document.getElementById('m-nodes-sub').textContent='规则判定总数';
-  document.getElementById('m-violations').textContent=((r.warn||0)+(r.fail||0));
-  document.getElementById('m-violations-sub').textContent='WARN '+r.warn+' / FAIL '+r.fail;
+  document.getElementById('m-audit-sub').textContent='24 条规则逐项检查（规则级）';
   document.getElementById('m-today').textContent=(s.todayCount||0);
   document.getElementById('m-today-sub').textContent='当日审计任务';
+  document.getElementById('m-nodes').textContent=(t.total||s.auditTotal||0);
+  document.getElementById('m-nodes-sub').textContent='审计任务总数（任务级）';
+  document.getElementById('m-violations').textContent=(t.violations!==undefined?t.violations:((t.warn||0)+(t.fail||0)));
+  document.getElementById('m-violations-sub').textContent='任务级 · WARN '+(t.warn||0)+' / FAIL '+(t.fail||0);
+  // 审计记录卡：总数 + 测试过滤说明
+  var cnt=document.getElementById('auditRecordCount');
+  if(cnt){cnt.textContent='共 '+(s.auditTotal||r.total)+' 条'+(s.filteredTestRecords?(' · 已过滤 '+s.filteredTestRecords+' 条测试'):'')}
   // 主权
   if(s.sovereignty){
     renderSovereigntyBox(s.sovereignty,s.daemon?s.daemon.status:null);
@@ -1126,14 +1135,15 @@ function renderDailyTrend(days){
     var yy=base-(g/4)*(base-top);
     svg+='<line x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
     svg+='<text x="'+(padL-6)+'" y="'+(yy+3)+'" text-anchor="end" font-size="10" fill="#8B949E">'+Math.round(maxCount*g/4)+'</text>';
-    // 右轴：比率 0-100%（同步 4 格）
-    svg+='<text x="'+(W-padR+6)+'" y="'+(yy+3)+'" text-anchor="start" font-size="10" fill="#1D9E75">'+(g*25)+'%</text>';
+    // 右轴：比率 0-100%（同步 4 格，灰色刻度）
+    svg+='<text x="'+(W-padR+6)+'" y="'+(yy+3)+'" text-anchor="start" font-size="10" fill="#8B949E">'+(g*25)+'%</text>';
   }
   var ratePts=[];
   days.forEach(function(d,i){
     var p=d.pass||0,w=d.warn||0,f=d.fail||0;
     var total=d.audits||(p+w+f);
     var vio=d.violations!==undefined?d.violations:(w+f);
+    // 绿线=任务级通过率（= (审计量-违规)/审计量，与两根柱子同口径，一眼可验算）
     var rate=total>0?Math.round(p*100/total):0;
     var cx=padL+i*bw+bw/2;
     var barW=Math.min(bw*0.26,34);
@@ -1156,7 +1166,6 @@ function renderDailyTrend(days){
   ratePts.forEach(function(pt){
     var yy=base-(pt[1]/100)*(base-top);
     svg+='<circle cx="'+pt[0]+'" cy="'+yy+'" r="4" fill="#fff" stroke="#1D9E75" stroke-width="2.4"/>';
-    svg+='<text x="'+pt[0]+'" y="'+(yy-9)+'" text-anchor="middle" font-size="10" fill="#1D9E75" font-weight="700">'+pt[1]+'%</text>';
   });
   document.getElementById('trendChart').innerHTML=svg;
 }
