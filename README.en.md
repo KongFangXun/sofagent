@@ -81,7 +81,7 @@ The first four are assets, the fifth is sofagent itself — the FDE Agent that s
 | What you want to solve | How sofagent does it |
 |------|------|
 | **Want AI to auto-run daily tasks** | Onboard, map workflows, turn automatable steps into AI nodes — the control layer stays resident after deployment |
-| **What if the Agent goes out of bounds** | 21 rules auto-audit every change — out-of-scope edits, secret leaks, injection attacks, blocked on the spot |
+| **What if the Agent goes out of bounds** | 24 rules auto-audit every change — out-of-scope edits, secret leaks, injection attacks, blocked on the spot |
 | **Can I roll back if something goes wrong** | Auto git snapshot after every change, one-click revert to any safe state |
 | **What if I switch Agent / model** | Platform-agnostic — Claude Code / Codex / Cursor / WorkBuddy, plug and play |
 | **Does it get better over time** | Experience auto-sedimented, FDE weekly inspection continuously optimizes rules and knowledge |
@@ -147,7 +147,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 
 | Package | Purpose |
 |------|------|
-| `@sofagent/audit` | Audit engine (21 rules, git diff hard evidence) |
+| `@sofagent/audit` | Audit engine (24 rules, git diff hard evidence) |
 | `@sofagent/core` | Runtime diagnostics (doctor / verify) |
 | `@sofagent/orchestrator` | FORGE self-iteration toolchain (LOOP pipeline + task composition) |
 | `@sofagent/daemon` | Daemon process (file monitoring / scheduled inspection) |
@@ -174,7 +174,7 @@ npm test
 # Core engine tests only
 npm test --workspace=engine/audit
 
-# Expected: 1213 tests passed (16 safe-delete related tests may fail in certain environments, see LIMITATIONS §四)
+# Expected: 1441 tests passed (16 may fail in certain environments, see LIMITATIONS §四)
 ```
 
 ---
@@ -185,7 +185,7 @@ npm test --workspace=engine/audit
 |:---------|:--------|
 | FDE Agent four-phase onboarding, enterprise deployment | [GUIDE.md](./FDE/GUIDE.md) |
 | Install, usage, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
-| Engine architecture, 21 rules, internal mechanisms | [↓ Engine architecture (developers)](#engine-architecture-developers) |
+| Engine architecture, 24 rules, internal mechanisms | [↓ Engine architecture (developers)](#engine-architecture-developers) |
 | Why designed this way | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | Design philosophy | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | Security statement | [SECURITY](./SECURITY.md) |
@@ -216,14 +216,14 @@ flowchart LR
 | Engine | What it does | Status |
 |:------|:--------|:--:|
 | 🧭 Constraint Base | Injects rules into Agent context before work starts (SKILL.md + fde.md + think.md + knowledge/) | ✅ stable |
-| 🔍 Audit Engine | 21 rules on every git commit / file change, blocks + logs violations. **Core audit rules zero-token** (16 pure git-diff rules don't call LLM + 1 filesystem monitoring rule, 4 hybrid rules need Agent logs) — pure static analysis, no LLM cost | ✅ stable |
+| 🔍 Audit Engine | 24 rules on every git commit / file change, blocks + logs violations. **Core audit rules zero extra-token** (19 pure git-diff rules don't call LLM + 1 filesystem monitoring rule, 4 hybrid rules need Agent logs) — pure static analysis, no LLM cost | ✅ stable |
 | 🔄 Restore Engine | Auto git snapshot after every audit, one-click revert | ✅ stable |
 | 🧬 Evolution | think.md reflection (✅ shipped) + Dream Cycle knowledge feedback (🔧 lightweight) + skillopt Skill optimization (⚠️ needs external SkillOpt CLI) | 🔧 partial |
 
 </details>
 
 <details>
-<summary>📖 Engine details + 21 rules</summary>
+<summary>📖 Engine details + 24 rules</summary>
 
 ### 🧭 Constraint Base
 
@@ -237,9 +237,9 @@ Internally uses LangGraph StateGraph for node flow + 6 built-in tools (read/writ
 
 ### 🔍 Audit Engine
 
-Of the 21 rules, 16 are pure git-diff (don't need Agent cooperation), 4 are hybrid (A7/A8/A14/A15 need Agent logs), 1 is filesystem (A17 abnormal batch change). v1.0.8+ embeds isomorphic-git + daemon file monitoring, **audits without git commit**. Since v1.1.8, Prompt injection defense (A9 extended) + federated query encryption extend audit capability from local to cross-device.
+Of the 24 rules, 19 are pure git-diff (don't need Agent cooperation), 4 are hybrid (A7/A8/A14/A15 need Agent logs), 1 is filesystem (A17 abnormal batch change). v1.0.8+ embeds isomorphic-git + daemon file monitoring, **audits without git commit**. Since v1.1.8, Prompt injection defense (A9 extended) + federated query encryption extend audit capability from local to cross-device.
 
-**Default rules (13, active on install)**:
+**Default rules (17, active on install)**:
 
 | Category | Rules | What they block |
 |------|------|--------|
@@ -248,8 +248,9 @@ Of the 21 rules, 16 are pure git-diff (don't need Agent cooperation), 4 are hybr
 | 🟠 Injection defense | A9 injection · A10 malicious sources | Prompt injection patterns, unofficial source deps |
 | 🔵 Process compliance | A5 empty message · A7 blind edit · A8 skip tests · A19 message quality | Empty commit msg, edit-without-read, skip tests, low-quality msg |
 | ⚪ Engineering quality | A6 build break · A11 resource abuse · A18 junk files | Build config anomalies, oversized files, temp file commits |
+| 🆕 Security hardening (v1.2.5) | A20 network exfiltration · A21 persistence · A22 privilege escalation · A23 path traversal | curl/wget to external URLs, LaunchAgent/cron backdoors, chmod 777/sudoers, path traversal escapes |
 
-**Extended rules (8, opt-in)**: A14 KB cross-domain · A15 blind action · A16 unauthorized change · A17 batch change · E1-E4 (test files / undeclared TODO / mass deletion / low comment ratio). Full 21-rule table (with severity, grading, logic) at [engine/audit/README.md](./engine/audit/README.md).
+**Extended rules (7, opt-in)**: A14 KB cross-domain · A15 blind action · A16 unauthorized change · A17 batch change · E1-E2/E4 (test files / undeclared TODO / low comment ratio). Full 24-rule table (with severity, grading, logic) at [engine/audit/README.md](./engine/audit/README.md).
 
 ### 🔄 Restore Engine
 

@@ -861,12 +861,12 @@ flowchart TD
 
 | 阶段 | 版本 | 核心交付 | 依赖已有能力 |
 |------|------|---------|-------------|
-| ① ACTIVATE | v1.2.5 | `activate.ts` + MCP `activate_workflow` tool + workflow.yml 扩展 | registry.ts 动态注册（v1.0.8）+ MCP Server（22 tools） |
+| ① ACTIVATE | v1.2.5 | `activate.ts` + MCP `activate_workflow` tool + workflow.yml 扩展 | registry.ts 动态注册（v1.0.8）+ MCP Server（23 tools） |
 | ② ORCHESTRATE | v1.2.6-v1.2.7 | workflow-parser 扩展 + `composeEnterpriseWorkflow()` + StateGraph 构建 | orchestrator（336 测试）+ LangGraph StateGraph |
 | ③ EXECUTE | v1.2.8-v1.2.9 | dag-runner node-executor + HITL interrupt + 审计集成 + 异常兜底 | audit（568 测试）+ daemon 文件监控 |
 | ④ SUSTAIN | v1.3.0 | 全链路验证 + `wrapToolCall` 联动 | think（反思引擎）+ eval + skillopt |
 
-> **关键认知**：底座（引擎）已经全绿（12 包 1438 测试，实测见 `tools/test-count.sh`），激活链不是造新引擎，是往已有引擎上放车厢——"轨道从早期就铺好了，一直没人往上面放车厢"。
+> **关键认知**：底座（引擎）已经全绿（12 包 1441 测试，实测见 `tools/test-count.sh`），激活链不是造新引擎，是往已有引擎上放车厢——"轨道从早期就铺好了，一直没人往上面放车厢"。
 
 ### 企业 SubAgent YML 格式（v1.2.5 新增）
 

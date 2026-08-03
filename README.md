@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>FDE（Field Delivery Engineer）Agent——梳理工作流 · 部署 AI 节点 · 审计每次变更</strong><br/>
+  <strong>FDE（Forward Deployed Engineer）Agent——梳理工作流 · 部署 AI 节点 · 审计每次变更</strong><br/>
   <em>让 AI 替你干活，且每次都干得对。</em>
 </p>
 
@@ -317,7 +317,7 @@ flowchart LR
 | 组件 | 作用 | 状态 |
 |:------|:--------|:--:|
 | 🧭 约束底座 | 开工前规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
-| 🔍 审计引擎 | 24 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计引擎核心规则零 token**（19 条纯 git-diff 规则不调用 LLM + 1 条文件系统监控，4 条混合规则需 Agent 日志）——不调用 LLM（0 token），不消耗任何 LLM 额度 | ✅ 稳定 |
+| 🔍 审计引擎 | 24 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计引擎核心规则零额外 token**（19 条纯 git-diff 规则不调用 LLM + 1 条文件系统监控，4 条混合规则需 Agent 日志）——不调用 LLM（0 token），不消耗任何 LLM 额度 | ✅ 稳定 |
 | 🔄 回溯引擎 | 每次审计后自动 git snapshot，违规一键回滚 | ✅ 稳定 |
 | 🧬 进化引擎 | think.md 反思（✅ 已交付）+ Dream Cycle 知识回灌（🔧 轻量态）+ skillopt Skill 优化（⚠️ 需外部 SkillOpt CLI）| 🔧 部分可用 |
 

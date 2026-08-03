@@ -1,4 +1,4 @@
-# sofagent eval golden set — 21 条审计规则 × 2 用例（1 正常 + 1 违规）
+# sofagent eval golden set — 24 条审计规则 × 2 用例（1 正常 + 1 违规）
 # v1.2.1 P0b — 基于 QA 端到端 CLI 验证重写，确保每个用例真正触发目标规则
 #
 # 设计原则：

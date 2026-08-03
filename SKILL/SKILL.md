@@ -134,7 +134,7 @@ metadata:
 
 ---
 
-## MCP 工具速查（v1.2.4 · 22 tools）
+## MCP 工具速查（v1.2.5 · 23 tools）
 
 > 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。
 

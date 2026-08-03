@@ -246,7 +246,7 @@ class McpServer {
       tools: [
         {
           name: 'run_audit',
-          description: '对 git diff 运行全量审计规则（sofagent 审计引擎 · 21 条规则 · 0 token 纯正则）。返回结构化审计报告。',
+          description: '对 git diff 运行全量审计规则（sofagent 审计引擎 · 24 条规则 · 0 token 纯正则）。返回结构化审计报告。',
           inputSchema: {
             type: 'object' as const,
             properties: {
@@ -845,8 +845,7 @@ class McpServer {
       config = undefined;
     }
 
-    // 跑规则——通过 MCP pipe 单文件即时审计
-    // runRules 返回完整 21 条规则结果，我们只关心 MCP pipe 作用域内的
+    // runRules 返回完整 24 条规则结果，我们只关心 MCP pipe 作用域内的
     const results = runRules(diffFiles, [], task, false, true /* silent */, undefined, config);
 
     // 过滤 MCP pipe 作用域：A3 / A7 / A11 / A18 (+ A14 当传 task)
@@ -1417,7 +1416,7 @@ class McpServer {
   private toolListCapabilities(id: number | string | null): void {
     const capabilities = {
       tools: [
-        { name: 'run_audit', description: '对 git diff 跑全量审计规则（21 条）' },
+        { name: 'run_audit', description: '对 git diff 跑全量审计规则（24 条）' },
         { name: 'get_think', description: '读取 think.md 最近 N 条反思条目' },
         { name: 'write_think', description: '向 think.md 追加反思记录' },
         { name: 'sofagent_compose', description: '编排引擎——产出 Sub Agent 编排方案 YAML' },
@@ -1450,7 +1449,7 @@ class McpServer {
         { uri: 'orchestrator://latest-comparison', description: '最新 A/B 对比报告' },
       ],
       auditEngine: `sofagent-audit v${SERVER_VERSION}`,
-      rulesCount: 21,
+      rulesCount: 24,
     };
     const lines: string[] = ['[sofagent] 能力清单:', ''];
     lines.push('Tools:');

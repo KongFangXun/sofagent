@@ -662,6 +662,37 @@ if $DOC_DRIFT_OK; then
 fi
 echo ""
 
+# ── WIKI/README 表格数字漂移扫描（v1.2.6 新增）──────────────
+# 维度 13 只扫描 engine/audit/src 中的「N 条规则」文案，不覆盖 WIKI.md / README.md
+# 表格行中的数字（如 "21 rules"、"13 个发布到 npm" 等）。本维度补上表格行扫描。
+echo "=== 13b. WIKI/README 表格数字漂移扫描 ==="
+TABLE_DRIFT_OK=true
+# 扫描 WIKI.md 和 README*.md 中的「N rules」「N 条规则」「N 个发布到 npm」
+# 与 SSOT（TOTAL_RULES_COUNT / 13）对账
+WIKI_DRIFT_FILES="docs/WIKI.md README.md README.en.md"
+while IFS= read -r line; do
+  # 提取行中的数字 + 单位模式
+  num_rules=$(echo "$line" | grep -oE "[0-9]+ (rules|条规则)" | grep -oE "^[0-9]+" | head -1)
+  if [ -n "$num_rules" ] && [ "$num_rules" != "$TOTAL_RULES_COUNT" ]; then
+    echo "  ❌ $line （规则数 $num_rules ≠ SSOT $TOTAL_RULES_COUNT）"
+    TABLE_DRIFT_OK=false
+    ERRORS=$((ERRORS + 1))
+  fi
+done < <(grep -rnE "[0-9]+ (rules|条规则)" $WIKI_DRIFT_FILES 2>/dev/null | grep -v "node_modules" | grep -v "changelog")
+# 检查「N 个发布到 npm」——SSOT 为 13
+while IFS= read -r line; do
+  num_npm=$(echo "$line" | grep -oE "[0-9]+ 个发布到 npm" | grep -oE "^[0-9]+" | head -1)
+  if [ -n "$num_npm" ] && [ "$num_npm" != "13" ]; then
+    echo "  ❌ $line （npm 包数 $num_npm ≠ SSOT 13）"
+    TABLE_DRIFT_OK=false
+    ERRORS=$((ERRORS + 1))
+  fi
+done < <(grep -rnE "[0-9]+ 个发布到 npm" $WIKI_DRIFT_FILES 2>/dev/null)
+if $TABLE_DRIFT_OK; then
+  echo "  [OK] WIKI/README 表格数字无漂移"
+fi
+echo ""
+
 # ── 文档头日期一致性扫描（v1.1.7 新增 · 修复一）──────────────
 # 所有 `> vX.Y · YYYY-MM-DD` 文档头日期应与发版日期一致。
 # bump-version.sh 只改版本号不改日期，反复出现文档头日期漂移；

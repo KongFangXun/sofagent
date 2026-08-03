@@ -5,7 +5,7 @@
 // ============================================================
 
 import type { RuleCheck } from './rules/types';
-import { VERSION } from '@sofagent/core';
+import { VERSION, REDACTION_PATTERNS } from '@sofagent/core';
 import { URL } from 'url';
 import { isIP } from 'net';
 
@@ -38,7 +38,19 @@ export function isPrivateWebhookUrl(rawUrl: string): boolean {
   if (/^localhost$/i.test(host)) return true;
   if (/\.(local|internal|lan|intranet|home)$/i.test(host)) return true;
   const ipType = isIP(host);
-  if (ipType === 0) return false; // 公共域名（钉钉/飞书/企微官方域名都是公网）放行
+  if (ipType === 0) {
+    // v1.2.6: fail-closed——虽然 isIP 判定为非 IP（公共域名），但仍需防
+    // 十进制/八进制/十六进制 IP 伪装（如 0x7f.0x0.0x0.0x1 或 2130706433）。
+    // 这类 host 被 isIP 判为 0（非标准 IP 字面量），但实际解析为内网地址。
+    // 含纯数字段或 0x 开头段的 host 一律拒绝（return true = 拦截）。
+    const segments = host.split('.');
+    for (const seg of segments) {
+      if (/^\d+$/.test(seg) || /^0[xX][0-9a-fA-F]+$/.test(seg)) {
+        return true; // fail-closed：疑似数字编码 IP，拦截
+      }
+    }
+    return false; // 公共域名（钉钉/飞书/企微官方域名都是公网）放行
+  }
   // IP 字面量
   if (host === '127.0.0.1' || host === '::1' || host === '0.0.0.0') return true;
   if (ipType === 4) {
@@ -57,8 +69,21 @@ export function isPrivateWebhookUrl(rawUrl: string): boolean {
 }
 
 /**
+ * v1.2.6: 脱敏辅助——webhook 推送到第三方平台前，对审计详情做敏感信息脱敏。
+ * 复用 @sofagent/core 的 REDACTION_PATTERNS（与审计引擎内部脱敏口径一致）。
+ */
+function redactDetail(detail: string): string {
+  let redacted = detail;
+  for (const { pattern, replacement } of REDACTION_PATTERNS) {
+    redacted = redacted.replace(pattern, replacement);
+  }
+  return redacted;
+}
+
+/**
  * 构建消息文本内容
  * v1.1.3: PASS 也推送；所有消息以 sofagent 开头
+ * v1.2.6: 推送前对审计详情脱敏（防止密钥/凭证泄露到钉钉/飞书/企微）
  */
 function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass: boolean): string {
   const version = VERSION;
@@ -78,7 +103,7 @@ function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass:
     lines.push(`任务：${payload.task}`);
   }
   for (const rule of failedRules) {
-    lines.push(`A${rule.number} ${rule.name}：${rule.details.join('；')}`);
+    lines.push(`A${rule.number} ${rule.name}：${rule.details.map(redactDetail).join('；')}`);
   }
   lines.push(`详情：exit code ${payload.exitCode}`);
   lines.push(`审计引擎: sofagent-audit v${version}`);

@@ -13,13 +13,13 @@ import type { AuditHistoryEntry } from '../audit-history';
 import { defaultRules, rules } from './index';
 
 /**
- * 规则分组（21 条 = 13 默认 + 8 扩展）
+ * 规则分组（24 条 = 17 默认 + 7 扩展）
  *
- * 默认规则（13 条，config.yml 中 enabled: true）：
- *   A1-A11, A18, A19
+ * 默认规则（17 条，config.yml 中 enabled: true）：
+ *   A1-A11, A18-A23
  *
- * 扩展规则（8 条，需主动开启 extensions.enabled: true）：
- *   A14-A17, E1-E4
+ * 扩展规则（7 条，需主动开启 extensions.enabled: true）：
+ *   A14-A17, E1-E2, E4
  *
  * 注：A12/A13 已在 v0.99.4 合并入 A11，不再独立存在（P1-21 统一：以 v1.1.4 changelog 为准，
  * README 与代码此前 v0.99.4/v1.2.0 不一致，真实版本为 v0.99.4）。
