@@ -357,8 +357,9 @@ a:hover{text-decoration:underline}
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">📉</span>违规趋势（近 7 天）</div>
       <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-s)">
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#E4E8EC;border-radius:3px"></span>审计量</span>
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:#E24B4A;border-radius:2px"></span>违规率</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#7F77DD;border-radius:3px"></span>审计量</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#EF9F27;border-radius:3px"></span>违规次数</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:#1D9E75;border-radius:2px"></span>通过率</span>
       </div>
     </div>
     <div class="section-body">
@@ -1114,42 +1115,48 @@ function renderSummaryData(s){
   }
 }
 
-/* 通栏趋势图：灰柱=每日审计量（看工作量）+ 红线=违规率（看质量），双量纲不重叠 */
+/* 通栏趋势图：双轴——紫柱审计量+黄柱违规次数（左轴次数），绿线通过率（右轴比率） */
 function renderDailyTrend(days){
-  var maxAudit=Math.max.apply(null,days.map(function(d){return d.audits||((d.pass||0)+(d.warn||0)+(d.fail||0))}).concat([1]));
-  var W=920,padL=44,padR=24,top=24,base=142;
+  var maxCount=Math.max.apply(null,days.map(function(d){return d.audits||((d.pass||0)+(d.warn||0)+(d.fail||0))}).concat([1]));
+  var W=920,padL=44,padR=44,top=24,base=142;
   var bw=(W-padL-padR)/days.length;
   var svg='';
-  // 左轴：违规率 0-100% 网格
-  [0,50,100].forEach(function(p){
-    var yy=base-(p/100)*(base-top);
+  // 左轴：次数 0-maxCount（4 格）
+  for(var g=0;g<=4;g++){
+    var yy=base-(g/4)*(base-top);
     svg+='<line x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
-    svg+='<text x="4" y="'+(yy+3)+'" font-size="10" fill="#8B949E">'+p+'%</text>';
-  });
+    svg+='<text x="'+(padL-6)+'" y="'+(yy+3)+'" text-anchor="end" font-size="10" fill="#8B949E">'+Math.round(maxCount*g/4)+'</text>';
+    // 右轴：比率 0-100%（同步 4 格）
+    svg+='<text x="'+(W-padR+6)+'" y="'+(yy+3)+'" text-anchor="start" font-size="10" fill="#1D9E75">'+(g*25)+'%</text>';
+  }
   var ratePts=[];
   days.forEach(function(d,i){
     var p=d.pass||0,w=d.warn||0,f=d.fail||0;
     var total=d.audits||(p+w+f);
-    var rate=(d.rate!==undefined)?d.rate:(total>0?Math.round((w+f)*100/total):0);
-    var x=padL+i*bw+bw*0.22;
-    var wBar=bw*0.56;
-    var cx=x+wBar/2;
-    // 灰柱：审计量（按自身最大值缩放）
-    var h=Math.max(3,total/maxAudit*(base-top));
-    svg+='<rect x="'+x+'" y="'+(base-h)+'" width="'+wBar+'" height="'+h+'" rx="4" fill="#E4E8EC"/>';
-    svg+='<text x="'+cx+'" y="'+(base-h-6)+'" text-anchor="middle" font-size="10" fill="#57606A">'+total+'</text>';
+    var vio=d.violations!==undefined?d.violations:(w+f);
+    var rate=total>0?Math.round(p*100/total):0;
+    var cx=padL+i*bw+bw/2;
+    var barW=Math.min(bw*0.26,34);
+    var gap=4;
+    // 紫柱：审计量；黄柱：违规次数（并排）
+    var h1=Math.max(2,total/maxCount*(base-top));
+    var h2=Math.max(2,vio/maxCount*(base-top));
+    svg+='<rect x="'+(cx-barW-gap/2)+'" y="'+(base-h1)+'" width="'+barW+'" height="'+h1+'" rx="3" fill="#7F77DD"/>';
+    svg+='<rect x="'+(cx+gap/2)+'" y="'+(base-h2)+'" width="'+barW+'" height="'+h2+'" rx="3" fill="#EF9F27"/>';
+    svg+='<text x="'+(cx-barW/2-gap/2)+'" y="'+(base-h1-5)+'" text-anchor="middle" font-size="9" fill="#7F77DD">'+total+'</text>';
+    svg+='<text x="'+(cx+barW/2+gap/2)+'" y="'+(base-h2-5)+'" text-anchor="middle" font-size="9" fill="#EF9F27">'+vio+'</text>';
     svg+='<text x="'+cx+'" y="'+(base+17)+'" text-anchor="middle" font-size="10" fill="#8B949E">'+String(d.day).slice(5)+'</text>';
     ratePts.push([cx,rate]);
   });
-  // 红线：违规率（0-100% 映射到绘图区）
+  // 绿线：通过率（右轴 0-100%）
   var line=ratePts.map(function(pt){return pt[0]+','+(base-(pt[1]/100)*(base-top))}).join(' ');
   if(ratePts.length>1){
-    svg+='<polyline points="'+line+'" fill="none" stroke="#E24B4A" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>';
+    svg+='<polyline points="'+line+'" fill="none" stroke="#1D9E75" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>';
   }
   ratePts.forEach(function(pt){
     var yy=base-(pt[1]/100)*(base-top);
-    svg+='<circle cx="'+pt[0]+'" cy="'+yy+'" r="4" fill="#fff" stroke="#E24B4A" stroke-width="2.4"/>';
-    svg+='<text x="'+pt[0]+'" y="'+(yy-10)+'" text-anchor="middle" font-size="11" fill="#E24B4A" font-weight="700">'+pt[1]+'%</text>';
+    svg+='<circle cx="'+pt[0]+'" cy="'+yy+'" r="4" fill="#fff" stroke="#1D9E75" stroke-width="2.4"/>';
+    svg+='<text x="'+pt[0]+'" y="'+(yy-9)+'" text-anchor="middle" font-size="10" fill="#1D9E75" font-weight="700">'+pt[1]+'%</text>';
   });
   document.getElementById('trendChart').innerHTML=svg;
 }
