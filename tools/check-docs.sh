@@ -203,7 +203,7 @@ LIMIT_A=6100  # v1.2.3: v1.2.3 功能开发文档自然增长（A 层 6019 行�
 LIMIT_B=6000  # v1.2.5: B 层 5461 行（v1.2.5 功能开发自然增长），上调 5400→6000 留余量
 LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
 LIMIT_D=2000  # v1.1.9: D 层纳入口径修正——docs/architecture（v1.1.9 设计 876 行）+ docs/prd（193 行）从 A 层归入 D 层（工程文档与设计文档同语义），700→2000 容纳
-LIMIT_E=2700  # v1.2.4: E 层 2632 行（LIMITATIONS 测试数更新），上调 2100→2700 留余量
+LIMIT_E=3100  # v1.2.5: E 层 2905 行（新增 dashboard-html-dev.md 219 行 + enterprise-deploy 扩展），上调 2700→3100 留余量
 LIMIT_TOTAL=12100  # v1.2.5: 随 LIMIT_B 5400→6000 同步上调（A+B=6100+6000）
 
 # 输出各层
