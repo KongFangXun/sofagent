@@ -18,11 +18,11 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.5-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.6-16B8F3" alt="Version" /></a>
   <a href="#快速开始"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>当前版本：v1.2.5</strong> · 2026-08-02 · 激活链 Phase 1 + 审计引擎加固 + daemon 可靠性 + 多设备前置</p>
+<p align="center"><strong>当前版本：v1.2.6</strong> · 2026-08-03 · 激活链 Phase 2 前半（映射表+注册扩展）+ MCP 交付链路修补 + 文档死链清零</p>
 
 > ⚖️ **正式版边界声明**：本项目的「正式版」指 API 稳定、测试覆盖完整、核心流程经多轮验证。**不代表所有已知局限已解决**——详见 [LIMITATIONS.md](./docs/LIMITATIONS.md)。强合规场景请等待 v1.4.0 静态加密落地。
 
@@ -130,7 +130,7 @@ FDE 交付了 ontology + workflow.yml + skills/ 之后，v1.2.5 起分四步让�
 | 阶段 | 做什么 | 版本 |
 |------|--------|:----:|
 | **ACTIVATE** | 读交付物 → 注册企业 SubAgent | v1.2.5 ✅ |
-| **ORCHESTRATE** | 构建企业专属工作流图 | v1.2.7（规划中） |
+| **ORCHESTRATE** | 构建企业专属工作流图（Phase 2 前半：映射表+注册扩展） | v1.2.6 ✅ · v1.2.7（规划中） |
 | **EXECUTE** | 运行 + 人工确认 + 每步审计 | v1.2.8-v1.2.9（规划中） |
 | **SUSTAIN** | 持续优化，越跑越好 | v1.3.0（规划中） |
 
@@ -350,7 +350,7 @@ LOOP 内部使用 LangGraph StateGraph 组装节点流转 + 6 个内置工具（
 
 ### 🔍 审计引擎
 
-24 条规则中 19 条纯 git-diff（不依赖 Agent 配合），4 条混合（A7/A8/A14/A15 需 Agent 日志），1 条文件系统（A17 异常批量变更）。v1.0.8+ 自研 git-shadow diff 解析（isomorphic-git 风格，非内嵌第三方包）+ daemon 文件监控，**不需要 git commit 也能审计**。自 v1.1.8 起加入 Prompt 注入防护（A9 扩展）+ 联邦查询加密，审计能力从本地扩展到跨设备。全 workspace 测试覆盖 **1441 测试 / 12 包**。
+24 条规则中 19 条纯 git-diff（不依赖 Agent 配合），4 条混合（A7/A8/A14/A15 需 Agent 日志），1 条文件系统（A17 异常批量变更）。v1.0.8+ 自研 git-shadow diff 解析（isomorphic-git 风格，非内嵌第三方包）+ daemon 文件监控，**不需要 git commit 也能审计**。自 v1.1.8 起加入 Prompt 注入防护（A9 扩展）+ 联邦查询加密，审计能力从本地扩展到跨设备。全 workspace 测试覆盖 **1464 测试 / 12 包**。
 
 **默认规则（17 条，装上就生效）**：
 
