@@ -24,7 +24,7 @@
 
 <p align="center"><strong>当前版本：v1.2.5</strong> · 2026-08-02 · 激活链 Phase 1 + 审计引擎加固 + daemon 可靠性 + 多设备前置</p>
 
-> ⚖️ **正式版边界声明**：本项目的「正式版」指 API 稳定、测试覆盖完整、核心流程经多轮验证。**不代表所有已知局限已解决**——详见 [LIMITATIONS.md](./LIMITATIONS.md)。强合规场景请等待 v1.4.0 静态加密落地。
+> ⚖️ **正式版边界声明**：本项目的「正式版」指 API 稳定、测试覆盖完整、核心流程经多轮验证。**不代表所有已知局限已解决**——详见 [LIMITATIONS.md](./docs/LIMITATIONS.md)。强合规场景请等待 v1.4.0 静态加密落地。
 
 <p align="center">
   <a href="#这是什么">这是什么</a> · <a href="#sofagent-能帮你做什么">能帮你做什么</a> · <a href="#为什么不是现有工具">为什么不是现有工具</a> · <a href="#快速开始">快速开始</a> · <a href="#延伸阅读">文档</a>
@@ -248,7 +248,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
 </details>
 
-> ⚠️ **关于 commit 拦截**：`git commit --no-verify` 可以绕过本地 hook。sofagent 的设计初衷是"诚实 Agent 的护栏"而非"恶意攻击者的防线"。企业高安全场景建议在 CI/CD pipeline 侧再加一道 `sofagent-audit --diff` 审计（hook 可绕，CI 不可绕）。详见 [LIMITATIONS](./LIMITATIONS.md) §一·已知架构限制。
+> ⚠️ **关于 commit 拦截**：`git commit --no-verify` 可以绕过本地 hook。sofagent 的设计初衷是"诚实 Agent 的护栏"而非"恶意攻击者的防线"。企业高安全场景建议在 CI/CD pipeline 侧再加一道 `sofagent-audit --diff` 审计（hook 可绕，CI 不可绕）。详见 [LIMITATIONS](./docs/LIMITATIONS.md) §一·已知架构限制。
 
 > **推荐**：新用户使用 `bash install.sh`（一键安装全套）。高级用户/CI 环境使用 `npm install -g @sofagent/audit`（仅安装审计引擎）。
 
@@ -284,8 +284,8 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 | 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | 行业印证与生态定位 | [VALIDATION](./docs/VALIDATION.md) |
 | 安全声明（含数据存储说明） | [SECURITY](./SECURITY.md) |
-| 已知局限 | [LIMITATIONS](./LIMITATIONS.md) |
-| 版本路线图 | [ROADMAP](./ROADMAP.md) |
+| 已知局限 | [LIMITATIONS](./docs/LIMITATIONS.md) |
+| 版本路线图 | [ROADMAP](./docs/ROADMAP.md) |
 | 项目导航索引（AI 用） | [WIKI](./docs/WIKI.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
 

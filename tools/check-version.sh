@@ -471,7 +471,7 @@ echo ""
 
 # ── 10c. 检查 ROADMAP「现在在哪」节标题版本号 ─
 echo -e "${BOLD}── [11/14] ROADMAP 节标题 ──${NC}"
-ROADMAP="${PROJECT_ROOT}/ROADMAP.md"
+ROADMAP="${PROJECT_ROOT}/docs/ROADMAP.md"
 if [[ -f "${ROADMAP}" ]]; then
   roadmap_ver=$(grep '^## 现在在哪：v' "${ROADMAP}" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
   if [[ -z "${roadmap_ver}" ]]; then

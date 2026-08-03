@@ -132,7 +132,7 @@ if [ -n "$CHANGELOG_LINE" ]; then
 fi
 
 # ROADMAP.md — "质量验证：NNN tests" 格式（最新版本段）
-ROADMAP_LINE=$(grep -nE '质量验证：[0-9]+ tests' ROADMAP.md | head -1)
+ROADMAP_LINE=$(grep -nE '质量验证：[0-9]+ tests' docs/ROADMAP.md | head -1)
 if [ -n "$ROADMAP_LINE" ]; then
   ROADMAP_CLAIMED=$(echo "$ROADMAP_LINE" | grep -oE '[0-9]+ tests' | head -1 | grep -oE '[0-9]+')
   ROADMAP_LINENO=$(echo "$ROADMAP_LINE" | cut -d: -f1)
@@ -151,7 +151,7 @@ if [ -n "$ROADMAP_LINE" ]; then
 fi
 
 # LIMITATIONS.md — "审计核心 NNN 个、全 workspace NNN 个" 格式
-LIMITATIONS_LINE=$(grep -nE '审计核心 [0-9]+ 个、全 workspace [0-9]+ 个' LIMITATIONS.md | head -1)
+LIMITATIONS_LINE=$(grep -nE '审计核心 [0-9]+ 个、全 workspace [0-9]+ 个' docs/LIMITATIONS.md | head -1)
 if [ -n "$LIMITATIONS_LINE" ]; then
   LIMITATIONS_AUDIT=$(echo "$LIMITATIONS_LINE" | grep -oE '审计核心 [0-9]+' | grep -oE '[0-9]+')
   LIMITATIONS_TOTAL=$(echo "$LIMITATIONS_LINE" | grep -oE '全 workspace [0-9]+' | grep -oE '[0-9]+')
@@ -352,9 +352,9 @@ else
   # ② LIMITATIONS.md — "acceptance-test.sh NNN 场景"（当前版本口径，取「发版前手动覆盖」行）
   # 注意：该行同时含「OpenClaw 验收 63 场景」，必须 head -1 只取 acceptance 的紧邻数字，
   # 否则 grep -oE 会连带捕获 63 造成误报。
-  LIM_SCN_LINE=$(grep -nE 'acceptance-test\.sh [0-9]+ 场景' LIMITATIONS.md 2>/dev/null | head -1)
+  LIM_SCN_LINE=$(grep -nE 'acceptance-test\.sh [0-9]+ 场景' docs/LIMITATIONS.md 2>/dev/null | head -1)
   if [ -n "$LIM_SCN_LINE" ]; then
-    check_scenario_doc "LIMITATIONS.md" "LIMITATIONS.md" \
+    check_scenario_doc "docs/LIMITATIONS.md" "docs/LIMITATIONS.md" \
       "$(echo "$LIM_SCN_LINE" | cut -d: -f1)" \
       "$(echo "$LIM_SCN_LINE" | grep -oE 'acceptance-test\.sh [0-9]+ 场景' | head -1 | grep -oE '[0-9]+')"
   fi
@@ -379,7 +379,7 @@ else
 fi
 
 # LIMITATIONS.md — 多行检查（"审计核心 NNN 个、全 workspace NNN 个" 可能出现多次）
-LIMITATIONS_ALL=$(grep -nE '审计核心 [0-9]+ 个、全 workspace [0-9]+ 个' LIMITATIONS.md 2>/dev/null)
+LIMITATIONS_ALL=$(grep -nE '审计核心 [0-9]+ 个、全 workspace [0-9]+ 个' docs/LIMITATIONS.md 2>/dev/null)
 if [ -n "$LIMITATIONS_ALL" ]; then
   while IFS= read -r line_info; do
     [ -z "$line_info" ] && continue
