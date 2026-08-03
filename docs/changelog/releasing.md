@@ -959,6 +959,10 @@ bash tools/check-version.sh   # 期望：全绿
 | **workspace 新增包后 npm ci 失败（v1.2.0）** | `npm ci` 报 Missing: @sofagent/load-chain | 新增 workspace 包后必须 `npm install` 更新 lock file，否则 CI 的 `npm ci` 找不到新包 |
 | **scoped 新包 npm publish E402（v1.2.0）** | `npm publish` 报 402 Payment Required | scoped 新包（如 @sofagent/load-chain）首次发布需 `--access public` |
 | **重构后 CI 配置路径未同步（v1.2.0）** | CI 连续挂：handler.ts 找不到、LOOP/loop-install.sh 不存在 | 目录重构（如 handler.ts→src/、LOOP→FORGE）后必须 grep 全仓旧路径更新 CI 配置——CI 配置是代码的一部分 |
+| **npm install -g 报 EISDIR（v1.2.5）** | `npm install -g @sofagent/audit` 报 `EISDIR: illegal operation on a directory, rename ...@sofagent/audit -> ...@sofagent/.audit-xxx` | 全局目录存在指向本地源码的旧 symlink（npm link / `npm install -g .` 残留）时 npm 无法 rename。先删 symlink + `.audit-*` 残留目录（`rm <global>/node_modules/@sofagent/audit <global>/node_modules/@sofagent/.audit-*`）再重装。比 ENOTEMPTY（v1.0.9）多一步删 symlink |
+| **verify CI 缺 rollup native binary（v1.2.5）** | Linux CI 报 `Cannot find module @rollup/rollup-linux-x64-gnu`（npm/cli#4828：macOS 生成的 lock 在 Linux 缺 optional deps） | verify.yml 在 `npm ci` 后加 `npm install @rollup/rollup-linux-x64-gnu --no-save \|\| true`。注意单纯 `npm install` 无效（仍读 lock 的 darwin resolved） |
+| **根 build 链拓扑序错误（v1.2.5）** | CI 报 orchestrator `TS2307 Cannot find module '@sofagent/skillopt'`，本地构建正常 | 根 package.json 的 build 链式构建顺序必须按依赖序（被依赖方在前）；本地 dist 残留会掩盖拓扑序错误，CI 全新环境才暴露。修法：skillopt 移到 orchestrator 前 |
+| **Node 18 全局 crypto 缺失（v1.2.5）** | verify CI orchestrator 集成测试报 `ReferenceError: crypto is not defined` | @langchain/core uuid rng.ts 依赖 `globalThis.crypto`（Node 19+ 才 flag-free）。verify.yml node 18→22 对齐 pr-check。教训：CI 失败先看真实 ReferenceError/AssertionError，别凭步骤顺序猜测根因（本次一度误诊为 SOFAGENT_DATA 数据污染） |
 
 ---
 
@@ -1059,6 +1063,9 @@ bash tools/check-version.sh   # 期望：全绿
 | v1.2.2 | pr-check data-sovereignty.test.ts vi.doMock 在 CI 不生效（本地过 CI 挂，模块解析差异） | 阶段十一 |
 | v1.2.2 | push 前不模拟 CI 检查 + push 后不等 CI 绿灯 = 反复 push→红叉→修循环 | 阶段十 |
 | v1.2.5 | publish/验证清单漏 load-chain（engine/hooks/ 子目录非一级目录），远端滞留 1.2.1 两个版本不被检出——v1.2.3 漏 rules 虚假绿色教训的重演；包清单必须穷举 engine/ 下全部非私有包，含 hooks/ 子目录 | 阶段十 |
+| v1.2.5 | verify CI 三连修：① npm/cli#4828 缺 rollup-linux-x64-gnu（npm ci 后显式装）② 根 build 链拓扑序错误（skillopt 被 orchestrator 依赖却排在其后，本地 dist 残留掩盖、CI 全新环境暴露）③ Node 18 无全局 crypto（@langchain/core uuid rng.ts 依赖 globalThis.crypto，Node 19+ 才 flag-free）→ verify node 18→22 对齐 pr-check | 阶段十 |
+| v1.2.5 | CI 失败诊断方法：先看真实 ReferenceError/AssertionError，别凭步骤顺序猜测根因——本次一度误诊为 SOFAGENT_DATA 数据目录污染，提取全日志才发现真错误是 crypto is not defined | 阶段十一 |
+| v1.2.5 | 设备端安装 EISDIR：全局目录有指向本地源码的旧 symlink（npm link 残留）时 `npm install -g` rename 失败——先删 symlink + `.audit-*` 残留再重装（ENOTEMPTY v1.0.9 的变体，多一步删 symlink） | 阶段十 |
 | v1.0.7 | 忘了更新本机全局安装（QA 测试时跑旧版本） | 阶段十 |
 | v1.0.4 | dist 与 src 同步验证 | 阶段三 |
 | v1.0.4 | 审查文档自身也会过时（每版本审视数字/路径/维度有效性） | 阶段六 |
