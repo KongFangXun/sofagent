@@ -45,11 +45,14 @@ jobs:
 
       # P1-35: verify 徽章此前不跑测试（README 顶部徽章 + "1317 测试" 易被误读为 CI 全绿）。
       # 补上 npm ci + build + test，让徽章真实反映测试状态。
-      # 🔴 v1.2.5 教训：npm ci 遇到 rollup optional deps 跨平台 bug（npm/cli#4828），
-      # macOS 生成的 lock 文件在 Linux CI 上缺 @rollup/rollup-linux-x64-gnu。
-      # 改用 npm install（不依赖 lock 严格匹配，自动解析当前平台 optional deps）。
+      # 🔴 v1.2.5 教训：npm 跨平台 optional deps bug（npm/cli#4828）——
+      # macOS 生成的 lock 文件在 Linux CI 缺 @rollup/rollup-linux-x64-gnu。
+      # 解法：npm ci 后显式重装 rollup native binary。
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Fix rollup native binary (npm/cli#4828)
+        run: npm install @rollup/rollup-linux-x64-gnu --no-save || true
 
       - name: Build workspace
         run: npm run build
