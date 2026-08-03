@@ -48,11 +48,14 @@ export async function daemonStatus(): Promise<DaemonStatusResult> {
   };
 
   try {
-    const daemon = await import('@sofagent/daemon');
-    if (typeof daemon.checkDaemonHealth !== 'function') {
+    // daemon 包的 cli.ts 在 monorepo 联合编译时有重复声明问题（const args 冲突），
+    // 导致 TS 无法推导完整导出签名。用类型断言绕过——runtime 有 typeof guard 保安全。
+    const daemon = (await import('@sofagent/daemon')) as Record<string, unknown>;
+    const fn = daemon.checkDaemonHealth;
+    if (typeof fn !== 'function') {
       throw new Error('checkDaemonHealth 不可用');
     }
-    checkDaemonHealth = daemon.checkDaemonHealth;
+    checkDaemonHealth = fn as typeof checkDaemonHealth;
   } catch {
     return {
       text: '[sofagent] daemon 状态查询失败：@sofagent/daemon 未安装或不可用',

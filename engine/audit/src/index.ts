@@ -42,12 +42,24 @@ import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-hist
 // Re-export for external consumers (P0-②: doctor needs checkHistoryChainIntegrity via require('@sofagent/audit'))
 export { checkHistoryChainIntegrity } from './audit-history';
 
+// Re-export core 审计原语——daemon/mcp/orchestrator 通过 @sofagent/audit 消费（v1.2.6）
+export { runRules, productSignature } from './reporter';
+export type { AuditResult } from './reporter';
+export { loadHistory, appendHistory } from './audit-history';
+export type { AuditHistoryEntry } from './audit-history';
+// Re-export core diff/log/config 原语（mcp-server.ts 从 audit 消费 parseDiff/checkLogs/loadConfig/VERSION）
+export { parseDiff, checkLogs, loadConfig, VERSION } from '@sofagent/core';
+
 // v1.2.2: re-export P0 数据主权 + skill 安全审查，供 daemon/mcp/orchestrator/skillopt 消费
 export { DataSovereigntyLogger, resolveSovereigntyLogPath, resolveDateArg, sanitizeRecord } from './data-sovereignty';
 export type { DataSovereigntyRecord, SovereigntyLogEntry } from './data-sovereignty';
 export { generateDailyReport, generateWeeklyReport, generateMonthlyReport, generateReport, aggregateStats } from './report-generator';
+export type { GeneratedReport, ReportKind } from './report-generator';
 export { findFiles, scanFile } from './rules/skill-safety-engine';
 export type { SafetyResult, SafetyRule } from './rules/skill-safety-rules';
+// Re-export webhook 推送（mcp-server.ts 从 audit 消费 pushAuditResult）
+export { pushAuditResult } from './webhook';
+export type { WebhookPlatform } from './webhook';
 import { analyzeRootCause } from './audit-root-cause';
 import { formatSuggestions } from './config-suggestion';
 import { runRegression, type DiffSnapshot } from './audit-regression';
