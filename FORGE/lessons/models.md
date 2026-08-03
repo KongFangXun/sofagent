@@ -14,19 +14,21 @@ const MODEL_CONFIGS = {
 
 | 角色 | 模型 | 计费 | 用途 |
 |------|------|------|------|
-| A（审查者） | qwen3.8-max-preview | Token Plan 订阅制 | 审查 / 合并 / 验证 |
-| B（工程师） | qwen3.8-max-preview | Token Plan 订阅制 | 审查 / 修复 |
-| V（验证者） | qwen3.8-max-preview | Token Plan 订阅制 | release-gate 全流程 |
+| A（审查者） | qwen3.8-max | Qwen Token Plan 订阅制 | 审查 / 合并 / 验证 |
+| B（工程师） | glm-5.2 | GLM Coding Plan 订阅制 | 审查 / 修复 |
+| V（验证者） | glm-5.2 | GLM Coding Plan 订阅制 | release-gate 全流程 |
 
-> **从异构到单模型**：v1.2.3 前用不同厂商做"异构双盲"，v1.2.4 起改 Qwen 单模型——thinking 能力够强，fresh-eyes 纪律的核心保障是**零上下文每步**（结构隔离），而非模型差异。
+> **异构双模型**：A 用 Qwen3.8-max（深度推理强项），B/V 用 GLM-5.2（代码编写强项）。
+> fresh-eyes 纪律的核心保障是**零上下文每步**（结构隔离），而非模型差异。
 
-### Thinking-only 模型特殊处理
+### Thinking 模型特殊处理
 
-Qwen3.8-max-preview 是 thinking-only 模型（始终思考、无法关闭），三个约束：
+A（Qwen3.8-max）是 thinking-only 模型（始终思考、无法关闭），B（GLM-5.2）通过参数显式启用 thinking：
 
-1. **不传 thinking/reasoningEffort**：MODEL_CONFIGS 不定义这两个字段（reasoningEffort 是 DeepSeek 专属）
-2. **maxTokens 包含 thinking tokens**：留给实际输出的更少 → 合并步骤需单独调高（见下文）
-3. **退化逻辑保留无害**：thinking 退化分支对 Qwen 天然不触发，保留做参考
+1. **Qwen 不传 thinking/reasoningEffort**：MODEL_CONFIGS.A 不定义这两个字段（reasoningEffort 是 DeepSeek/GLM 专属）
+2. **GLM 传 thinking + reasoningEffort**：MODEL_CONFIGS.B 定义 `thinking={type:'enabled'}` + `reasoningEffort='max'` + `temperature=1.0`
+3. **maxTokens 包含 thinking tokens**：留给实际输出的更少 → 合并步骤需单独调高（见下文）
+4. **退化逻辑保留无害**：thinking 退化分支对 Qwen 天然不触发，保留做参考
 
 ### 步骤级 maxTokens 覆盖
 
