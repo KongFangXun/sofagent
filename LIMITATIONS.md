@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v1.2.4 · 2026-08-02（UTC）· 孔放勋
+> v1.2.5 · 2026-08-02（UTC）· 孔放勋
 
 > 🧭 **阅读引导（P2-33）**：本文档按严重度分节——**安全/合规局限**（一、二节）面向强合规选型，**能力边界**（三节起）是设计取舍而非缺陷。通读一遍即可建立心智模型：**大多数局限有明确版本路线（v1.3.x / v1.4.0），不是"永远做不到"**。首次阅读建议先看目录 + 每节第一段，无需逐条读完。
 
@@ -61,6 +61,8 @@
 1. **`chmod 400 ~/.sofagent/config.yml`**——Agent 无法写入篡改，推荐安装后立即执行。
 2. **设置 git hooksPath**——在 `~/.gitconfig` 中设置 `[core] hooksPath = ...` 确保 hook 路径不可被 Agent 覆盖。
 3. **定期运行 doctor**——`sofagent-audit --doctor` 检查审计规则完整性，检测 hooks 是否被意外移除或 config 被篡改。
+
+> 📌 data 目录整体权限加固（chmod 700）见 [SECURITY.md](./SECURITY.md) "临时缓解措施"段。
 
 ---
 
@@ -313,7 +315,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 568 个、全 workspace 1438 个测试（共 1438 个，全绿；含 v1.2.4 新增 64 个知识进化测试。实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 571 个、全 workspace 1441 个测试（共 1441 个，全绿；含 v1.2.4 新增 64 个知识进化测试 + v1.2.5 审计加固测试。实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -348,6 +350,17 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `~/.sofagent/data/tas
 
 ---
 
+### 网络外传检测（A20）为启发式规则
+
+A20 基于域名白名单 + 动作/敏感数据双条件匹配，**非完备检测**。以下场景可绕过：
+- base64/加密编码的 payload（内容层不可见）
+- 通过合法 SaaS（如 pastebin、GitHub Gist）的外传
+- 非 HTTP 协议通道（DNS tunneling、ICMP）
+
+A20 定位为"审计信号"而非"安全屏障"，企业高安全场景应叠加网络层 DLP。
+
+---
+
 ### 编排引擎稳定性
 
 编排引擎依赖 LangGraph createReactAgent（@langchain/langgraph，npm 包）做任务拆解——本质上是 prompt 驱动，没有确定性 fallback。编排效果完全依赖模型质量：模型换了或者降级了，任务拆解和 Loop 检查就可能失效。Agent 变弱，编排跟着变弱；如果 @langchain/langgraph 停更或 API break，编排层直接不可用。方案 C（完整 LangGraph Agent）超时 5min/次，复杂任务可能超时；multi-step Agent loop 消耗更多 token。
@@ -379,8 +392,8 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](FDE/GUIDE.md)）已在
 
 v1.0 新增 `FORGE/playbook/acceptance-test.sh`（102 个场景，含子断言），覆盖范围持续扩展：
 
-- **CI 已覆盖**：单元测试审计核心 568 个、全 workspace 1438 个测试（共 1438 个，全绿；含 v1.2.4 新增 64 个知识进化测试。函数级，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
-- **发版前手动覆盖**：acceptance-test.sh 115 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
+- **CI 已覆盖**：单元测试审计核心 571 个、全 workspace 1441 个测试（共 1441 个，全绿；含 v1.2.4 新增 64 个知识进化测试 + v1.2.5 审计加固测试。函数级，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
+- **发版前手动覆盖**：acceptance-test.sh 126 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
 

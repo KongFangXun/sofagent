@@ -47,10 +47,14 @@ function readSofagentKey(): string {
     if (existsSync(keyPath)) {
       return readFileSync(keyPath, 'utf-8').trim();
     }
-  } catch {
-    // 读取失败——使用 fallback
+  } catch (err) {
+    // 密钥文件缺失或不可读，降级到 hostname 弱标识
+    console.warn(
+      `[sofagent] agent-identity: 密钥文件读取失败，降级到 hostname 弱标识。` +
+      `fingerprint 安全强度降低。原因: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
-  // fallback：hostname 作为弱标识（没有密钥文件时）
+  // ⚠️ 弱标识路径：hostname 可预测/可伪造，仅用于开发环境降级
   return hostname();
 }
 

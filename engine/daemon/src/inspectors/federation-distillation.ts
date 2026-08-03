@@ -1,5 +1,5 @@
 // ============================================================
-// federation-distillation.ts · L3 跨设备知识蒸馏趋势（v1.2.4 · P0）
+// federation-distillation.ts · L3 跨设备知识蒸馏趋势（v1.2.5 · P0）
 // ============================================================
 //
 // @monthly：分析联邦查询日志，统计跨设备知识蒸馏趋势。
@@ -7,7 +7,6 @@
 //   - 统计本月各来源的知识条目数 + 合并去重率 + 矛盾标记数
 //   - 无联邦日志 → info（联邦功能未启用）
 // ============================================================
-
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { loadEnvConfig } from '@sofagent/core';

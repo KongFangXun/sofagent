@@ -1,5 +1,5 @@
 // ============================================================
-// create-concept.ts · MCP tool：创建/更新 concept 页（v1.2.4 S2 新增）
+// create-concept.ts · MCP tool：创建/更新 concept 页（v1.2.5 S2 新增）
 // ============================================================
 //
 // 写入 knowledge/concepts/<name>.md

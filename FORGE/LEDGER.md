@@ -93,3 +93,13 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-07-31     | 20260731-05    | release-gate | 5    | FAIL       | FAIL       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-07-31/run-05
 
 2026-07-31     | 20260731-05*   | release-gate | 5    | PASS       | PASS       | PASS     | PASS    | 勘误：run-05 真实裁决 PASS（verdict.md 权威）。上行为 driver parseVerdict/parseStepResults 解析 bug（commit a845ed8 已修）导致的误标，特此补正。run-01/run-04 的 FAIL 为真实裁决（coverage 零覆盖 + regression U+FFFD），未受此 bug 影响。
+
+2026-08-02     | 20260802-05    | fresh-eyes  | 2    | 0   | 0   | 0   | 2-rounds-clean  | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-02/run-05
+
+2026-08-02     | 20260802-06    | fresh-eyes  | 3    | 0   | 0   | 0   | weighted-convergence | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-02/run-06
+
+2026-08-03     | 20260803-02    | release-gate | 3    | PASS       | SKIP       | SKIP     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-03/run-02
+
+2026-08-03     | 20260803-06    | release-gate | 4    | PASS       | FAIL       | SKIP     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-03/run-06
+
+2026-08-03     | 20260803-08    | release-gate | 5    | PASS       | FAIL       | PASS     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-03/run-08

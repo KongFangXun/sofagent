@@ -312,7 +312,8 @@ else
   # 导致 v1.2.3/v1.2.4 用带 bug 的裸 grep（把 echo 探针 "scenario 48/49" 误当声明）
   # 数出脏数 100/105 仍一路骗绿。精确口径：'scenario N "'（数字后紧跟空格+引号），
   # 真实场景调用恒为此格式；echo 探针为 'scenario 48"'（引号紧贴数字、前有空格），天然可区分。
-  SCENARIO_REAL=$(grep -oE 'scenario [0-9]+ "' FORGE/playbook/acceptance-test.sh 2>/dev/null | grep -oE '[0-9]+' | sort -un | wc -l | tr -d ' ')
+  # v1.2.5: 正则扩展支持字母后缀（34b/34c/167a/167b），[0-9]+ → [0-9]+[a-z]?
+  SCENARIO_REAL=$(grep -oE 'scenario [0-9]+[a-z]? "' FORGE/playbook/acceptance-test.sh 2>/dev/null | wc -l | tr -d ' ')
   if [ "$SCENARIO_REAL" = "$ACCEPTANCE_ACTUAL" ]; then
     if [ "$QUIET" = false ]; then
       echo -e "  ${GREEN}✓ acceptance-test.sh 实测 ${SCENARIO_REAL} 个真实场景调用，与 SSOT 声明一致${NC}"
@@ -320,7 +321,7 @@ else
     ((PASS++)) || true
   else
     echo -e "  ${RED}✗ acceptance-test.sh 实测 ${SCENARIO_REAL} 个真实场景调用，SSOT 声明 ${ACCEPTANCE_ACTUAL} —— 头部数字与文件实际不符${NC}"
-    echo -e "    计数命令：grep -oE 'scenario [0-9]+ \"' FORGE/playbook/acceptance-test.sh | grep -oE '[0-9]+' | sort -un | wc -l"
+    echo -e "    计数命令：grep -oE 'scenario [0-9]+[a-z]? \"' FORGE/playbook/acceptance-test.sh | wc -l"
     echo -e "    提示：勿用裸 grep 'scenario [0-9]+'（会把 echo 探针文本误算进去）"
     ((FAIL++)) || true
   fi

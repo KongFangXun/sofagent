@@ -106,10 +106,20 @@ function buildRequestBody(platform: WebhookPlatform, content: string): Record<st
  * @returns true 推送成功, false 推送失败
  */
 export async function pushAuditResult(payload: WebhookPayload): Promise<boolean> {
-  // P2-4: SSRF 防护——内网/本机 URL 直接拒绝，不发起请求
-  if (isPrivateWebhookUrl(payload.url)) {
+  // 测试豁免开关：仅供测试环境使用。
+  // 验收测试（acceptance-test.sh 场景 34/34b/34c）用 localhost mock server 接收
+  // webhook 推送做断言，而该地址会被下方 SSRF 防护拦截。显式设置
+  // SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1 时跳过 SSRF 检查，便于测试环境放行 localhost。
+  // 默认（未设置该变量）行为不变，生产环境 SSRF 防护不受影响。
+  const allowLocalhost = process.env.SOFAGENT_WEBHOOK_ALLOW_LOCALHOST === '1';
+
+  // P2-4: SSRF 防护——内网/本机 URL 直接拒绝，不发起请求（测试豁免模式下跳过）
+  if (!allowLocalhost && isPrivateWebhookUrl(payload.url)) {
     console.warn(`[sofagent] webhook URL 指向本机/内网地址，已拒绝推送（SSRF 防护）: ${payload.url}`);
     return false;
+  }
+  if (allowLocalhost && isPrivateWebhookUrl(payload.url)) {
+    console.warn(`[sofagent] 测试豁免模式（SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1）：放行本机/内网 webhook 推送: ${payload.url}`);
   }
 
   // v1.1.3: 过滤 FAIL/WARN 规则用于消息构建，但 PASS 也推送

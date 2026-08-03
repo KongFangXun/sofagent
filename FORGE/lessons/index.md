@@ -26,7 +26,7 @@
 | 一·架构设计 | [./architecture.md](./architecture.md) | createReactAgent 禁用 createDeepAgent · Driver-Worker 编排 · 步骤定义 · 目录架构 |
 | 二·模型配置 | [./models.md](./models.md) | MODEL_CONFIGS · Thinking-only 模型 · 步骤级 maxTokens · 计费模式 |
 | 三·性能优化 | [./performance.md](./performance.md) | 三层上下文裁剪（截断+stateModifier+preModelHook）· 效率铁律 · stream |
-| 四·Driver 编排 | [./driver.md](./driver.md) | recursionLimit · **三层熔断死循环防护** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step |
+| 四·Driver 编排 | [./driver.md](./driver.md) | recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step |
 | 五~八·Stream/Prompt/工具/可观测 | [./stream-prompt-tools.md](./stream-prompt-tools.md) | stream 迁移 P0 铁律 · BSD 约束 · 工具格式转换 · 两层可观测 |
 
 ---
@@ -37,7 +37,7 @@
 
 ### 🔰 架构与框架
 
-- [ ] **用 `createReactAgent`，禁用 `createDeepAgent`**（[一·框架选型](./architecture.md#框架选型crelereactagent禁用-createdeepagent)）
+- [ ] **用 `createReactAgent`，禁用 `createDeepAgent`**（[一·框架选型](./architecture.md#框架选型createreactagent禁用-createdeepagent)）
 - [ ] **Driver-Worker 分离**：Driver 纯编排不审查，Worker 零上下文独立进程（[一·Driver-Worker](./architecture.md#driver-worker-编排模式)）
 - [ ] **步骤在 STEPS 常量中定义**，含 role / prompt / outputs / inputs / maxTokens（[一·步骤定义](./architecture.md#步骤定义模式)）
 - [ ] **runs 目录放在 loop 自己目录下**，`.gitignore` 加 `FORGE/SKILL/*/runs/`（[一·目录架构](./architecture.md#目录架构每个-loop-自包含)）
@@ -67,19 +67,20 @@
 - [ ] **并行 Worker 用 allSettled**（[四·allSettled](./driver.md#allsettled-并行降级)）
 - [ ] **parseStopCondition 做降级检测**（占位报告不算干净轮）（[四·降级检测](./driver.md#降级检测防假阳性干净)）
 - [ ] **连续 2 轮降级直接 error 退出**（[四·连续降级](./driver.md#连续降级-error-退出)）
-- [ ] **硬熔断 break 后 stream.return()**（防幽灵请求）（[四·stream.return](./driver.md#streamreturn-防幽灵-api-请求)）
+- [ ] **硬熔断 break 后 stream.return()**（防幽灵请求）（[四·stream.return](./driver.md#streamreturn-防幽灵api-请求)）
 - [ ] **每个步骤 try/catch + 降级兜底**（[四·失败路径容错](./driver.md#失败路径容错)）
 - [ ] **driver catch 块写 ERROR + LOOP_END 事件**（模块级 globalVisibility）（[四·失败路径容错](./driver.md#失败路径容错)）
 - [ ] **finding >10 条时分片执行**（[四·分片执行](./driver.md#分片执行模式)）
 - [ ] **停止条件只数标记不做语义判断**（[四·停止条件](./driver.md#停止条件判定)）
 - [ ] **spawn 外部脚本时流式写入日志**（[四·外部脚本](./driver.md#外部脚本-spawn-生存规范)）
+- [ ] **FAIL 判定必须零信任复核**（亲手实跑检查命令，FAIL≠真实 bug；命令缺陷修 checklist 不修产品代码）（[四·零信任复核](./driver.md#零信任复核worker-的-fail-判定不可全信v125-run-0608-教训)）
 - [ ] **child.on('close') 处理 signal 参数**（被 kill 时 code=null）（[四·外部脚本](./driver.md#外部脚本-spawn-生存规范)）
 - [ ] **shell 脚本中禁用 `| head -N`**（pipefail + SIGPIPE）（[四·外部脚本](./driver.md#外部脚本-spawn-生存规范)）
 - [ ] **长脚本每 30s 输出 progress 日志**（[四·外部脚本](./driver.md#外部脚本-spawn-生存规范)）
-- [ ] **init 内部设 SOFAGENT_SKIP_HOOK=1**（[四·SKIP_HOOK](./driver.md#sofagent_skip_hook---skip-acceptance---step)）
-- [ ] **driver 支持 --skip-acceptance**（[四·--skip-acceptance](./driver.md#sofagent_skip_hook---skip-acceptance---step)）
-- [ ] **driver 支持 --step 单步模式**（[四·--step](./driver.md#sofagent_skip_hook---skip-acceptance---step)）
-- [ ] **沙箱环境加 --max-old-space-size=768**（[四·V8 heap](./driver.md#v8-heap-限制-max-old-space-size反直觉优化)）
+- [ ] **init 内部设 SOFAGENT_SKIP_HOOK=1**（[四·SKIP_HOOK](./driver.md#sofagent_skip_hook----skip-acceptance----step)）
+- [ ] **driver 支持 --skip-acceptance**（[四·--skip-acceptance](./driver.md#sofagent_skip_hook----skip-acceptance----step)）
+- [ ] **driver 支持 --step 单步模式**（[四·--step](./driver.md#sofagent_skip_hook----skip-acceptance----step)）
+- [ ] **沙箱环境加 --max-old-space-size=1536**（v1.2.5 run-07 教训：768 在长循环 OOM）（[四·V8 heap](./driver.md#v8-heap-限制--max-old-space-size反直觉优化)）
 
 ### 🔴 stream 迁移（如做 invoke→stream 改造时必查）
 
@@ -128,7 +129,7 @@
 | 08-01 | 0d3c36e | SOFAGENT_SKIP_HOOK 防递归 + driver --skip-acceptance | P2 | 四·SKIP_HOOK |
 | 08-01 | c1fab22 | 检查清单+附录同步 | P2 | 四·--skip-acceptance |
 | 08-01 | 3530200 | 单步模式 + bash 编排脚本（跨步骤 OOM） | P0 | 四·--step |
-| 08-01 | 95583e2 | preModelHook 物理裁剪 + --max-old-space-size=768 | P0 | 三·上下文管理 / 四·V8 heap |
+| 08-01 | 95583e2 | preModelHook 物理裁剪 + --max-old-space-size=768（v1.2.5 起上调 1536） | P0 | 三·上下文管理 / 四·V8 heap |
 | 08-02 | 95cd74a | worker 工具调用预算 prompt 铁律 + recursionLimit 熔断 | P1 | 四·死循环防护（L0） |
 | 08-02 | ca9e329 | stateModifier 工具计数硬熔断 + allSettled 降级 + No such file 检测 | P0 | 四·死循环防护（L1/L2） |
 | 08-02 | a610d5d | recursionLimit 130 + extractAgentText 空内容抢救 | P1 | 四·recursionLimit / 四·兜底报告 |
@@ -169,7 +170,7 @@
 | Agent 框架 | createReactAgent | createDeepAgent 硬编码 FilesystemMiddleware |
 | 进程模型 | spawn 子进程 | 零上下文继承，步骤间文件传递 |
 | 沙箱执行 | --step 单步模式 + 外层编排 | 每步全新进程退出，内存归零 |
-| 沙箱内存 | --max-old-space-size=768 | 迫使 V8 更频繁 GC，RSS 更低 |
+| 沙箱内存 | --max-old-space-size=1536 | v1.2.5 起 768→1536（长循环 OOM 教训） |
 | 上下文注入 | stateModifier（非 prompt） | 互斥约束 + 可同时做裁剪 |
 | 上下文物理裁剪 | preModelHook | stateModifier 只裁 prompt，preModelHook 物理替换 messages |
 | 执行模式 | stream（非 invoke） | 实时进度打印 |

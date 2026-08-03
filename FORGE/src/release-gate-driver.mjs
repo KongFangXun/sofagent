@@ -150,6 +150,12 @@ const TOOL_HARD_LIMIT = 40;   // L2：超过此数进入 grace window
 const GRACE_STEPS_DEFAULT = 5;    // 默认 grace window 步数
 const GRACE_STEPS_ANALYSIS = 10;  // 分析型步骤（coverage/consolidate）需要更多步切换到报告模式
 
+// 维度级超时覆盖（默认 60s；重遍历/全仓扫描类维度给更长时间）
+// v1.2.5：维度 49（旧路径零残留 node 递归遍历 7 目录）实测 60s 超时 → 上调 120s
+const DIM_TIMEOUT_OVERRIDE = {
+  49: 120_000,
+};
+
 // ═══════════════════════════════════════════════════════════
 //  CLI 参数解析
 // ═══════════════════════════════════════════════════════════
@@ -1172,7 +1178,8 @@ async function runRegressionPrecheck(runDir) {
 
   // 顺序执行（维度间无依赖；串行以复用 runCommand 简单实现）
   for (const dim of dims) {
-    const { exitCode, output } = await execRegressionDim(dim.script);
+    const timeout = DIM_TIMEOUT_OVERRIDE[dim.num] ?? 60_000;
+    const { exitCode, output } = await execRegressionDim(dim.script, timeout);
     payload.dims[String(dim.num)] = {
       num: dim.num,
       title: dim.title,

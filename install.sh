@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent install.sh · 主安装器 / FDE 入口 · v1.2.4
+# sofagent install.sh · 主安装器 / FDE 入口 · v1.2.5
 # ============================================================
 # 将 sofagent 约束层部署到目标平台，让 Agent 获得治理能力。
 #
@@ -45,7 +45,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.2.4"
+VERSION="1.2.5"
 
 # ── 颜色输出（合并两套）──
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'
@@ -142,6 +142,7 @@ if [ "$QUICK_MODE" = "0" ]; then
 fi
 
 # ── 远程安装模式（curl pipe bash 场景）──
+# 安全说明：remote 模式仅从 GitHub 官方域名（github.com/KongFangXun/sofagent）git clone，URL 硬编码，不接受外部输入
 if [ "${REMOTE_MODE}" = "1" ]; then
   info "远程安装模式——克隆仓库..."
   REMOTE_TMP="$(mktemp -d /tmp/sofagent-remote-XXXXXX)"

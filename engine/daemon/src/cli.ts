@@ -2,7 +2,7 @@
 // daemon CLI · v1.2.3
 const args = process.argv.slice(2);
 const subcommand = args[0];
-const VERSION = '1.2.4';
+const VERSION = '1.2.5';
 
 async function main() {
   if (!subcommand || subcommand === '--help') {

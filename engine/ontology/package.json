@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/ontology",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "sofagent 领域本体定义 — 场景类型 / 约束类型 / 审计规则注册表",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
