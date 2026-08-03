@@ -1,7 +1,7 @@
 # 🖥️ HTML Dashboard 开发指南（dashboard-html-dev）
 
 > 单文件零依赖 SPA 的设计原则、数据链路、视觉规范与踩坑记录。
-> **版本：V1.0（第一版沉淀，2026-08-03）** —— 覆盖 V4 → V9.8 全部迭代经验
+> **版本：V1.1（2026-08-03）** —— 覆盖 V4 → V10 全部迭代经验（V10 = 驾驶舱统计口径统一）
 > 维护者：孔放勋
 
 ---
@@ -21,8 +21,9 @@
 | V7.6 | **引擎页并入工具箱**，导航 7→6 | 引擎内容是参考/资源，与 FORGE 同理 |
 | V8.4 | sustain 周报真实落地（gen-weekly-report.mjs） | 诚实呈现 + 手动触发补数据 |
 | V9.x | 颜色体系统一（agent 色板 / 统计卡规则 / 实体绿） | 颜色必须写进规则，勿拍脑袋 |
+| **V10** | **驾驶舱统计口径统一**：测试记录过滤 + 全部统一到「规则检查级」（蓝柱审计次数 + 黄柱问题次数 + 绿线通过率），四指标卡改「今日值 + 总量」，新增 `/api/export-history` 全量导出 | 同名指标不同口径 = 用户眼中的 bug；图内每个数字必须可自验算 |
 
-**当前稳定形态（V1.0 快照）**：6 页导航 · 单文件零依赖 · 4 API · 全站统一色板 · 移动端适配。
+**当前稳定形态（V1.1 快照）**：6 页导航 · 单文件零依赖 · 5 API（含导出）· 全站统一色板 · 驾驶舱规则检查口径 · 移动端适配。
 
 ---
 
@@ -42,14 +43,18 @@
 ### 1.2 数据链路（关键设计）
 
 ```
-浏览器 → /api/summary     ← 复用 bash dashboard 同口径 jq 聚合（PASS/WARN/FAIL + TOP3 + 数据主权）
-      → /api/release-gate ← forge-runs/release-gate-loop/{日期}/{run}/status.json + progress.jsonl
-      → /api/ai-nodes     ← fde/workflow/*.yaml（模板）+ subagents/*.yml（已部署）+ sustain 状态
-      → /api/ontology     ← knowledge/{entities,concepts,relations}/ 目录扫描
-      → /data/*           ← 映射 ~/.sofagent/data/*（history.jsonl 截断最近 500 条防卡死）
+浏览器 → /api/summary         ← 复用 bash dashboard 同口径 jq 聚合（PASS/WARN/FAIL + TOP3 + 数据主权）
+                                 + 测试记录过滤 + 规则级 daily 统计（rulePass/ruleAll/ruleRate）
+      → /api/export-history   ← 原始全量 history.jsonl attachment 下载（含测试记录，不截断）
+      → /api/release-gate     ← forge-runs/release-gate-loop/{日期}/{run}/status.json + progress.jsonl
+      → /api/ai-nodes         ← fde/workflow/*.yaml（模板）+ subagents/*.yml（已部署）+ sustain 状态
+      → /api/ontology         ← knowledge/{entities,concepts,relations}/ 目录扫描
+      → /data/*               ← 映射 ~/.sofagent/data/*（history.jsonl 截断最近 500 条防卡死）
 ```
 
 - **/api/summary 复用 bash 口径**（V6.1 核心设计）：执行与 `tools/sofagent-dashboard.sh` 完全相同的 jq 聚合（`dataFlow.destination=="cloud-api"` / `direction=="outbound"` 判定）——HTML 与终端看到的是同一份数据
+- **测试记录过滤**（V10）：fixture 泛化任务名（"add code" 重复 476 次等）会被统计成几百条"违规"污染趋势。服务器用 `TEST_TASK_RE` 正则过滤后聚合，`/api/summary` 返回 `totalRecords/filteredTestRecords/auditTotal` 三个计数保持透明。⚠️ **只用任务名过滤，不用 `envFingerprint` 字段**——那是审计引擎给所有记录（含真实记录）打的常规字段，不是测试标记（详见 §4.12）
+- **/api/export-history**（V10）：审计记录卡右上角「全量历史」按钮直接下载原始全量（5000+ 行不截断）。决策：原始数据本就在 `~/.sofagent/data/audit/history.jsonl`，**不在 data/ 目录重复存一份**，下载原始全量最诚实
 - **File System Access API**：Chrome/Edge 用户可直接点「连接数据目录」选 `~/.sofagent/data` 免服务器（Safari 不支持，按钮自动隐藏）
 - **双数据通道**：服务器模式（全浏览器）+ FS Access（Chrome/Edge）——双击打开 HTML 只显示示例数据 + 提示
 - **诚实呈现原则**：数据源没数据就显示"未建立/待生成"引导，绝不假装有数据（见 §四·sustain 案例）
@@ -89,7 +94,7 @@
 | 动态/记录 | 🟡 琥珀 | 更新日志、经验教训 |
 | 具体业务对象 | 🟢 绿 | **实体**（从紫拆出，用户指定归类） |
 
-> 驾驶舱指标卡（绿=通过率/蓝=记录/琥珀=违规/紫=本地化）是**状态语义**，另一套规则，勿混。
+> 驾驶舱四指标卡（V10 定稿）：**绿=规则通过率 / 紫=审计任务（今日+总）/ 蓝=审计次数（今日+总）/ 琥珀=问题次数（今日+总）**，是**状态语义**，另一套规则，勿混。四卡均为「今日值大字 + 总量小字」双数结构。
 
 ### 2.3 间距规范（两级）
 
@@ -111,6 +116,36 @@
 - 刷新间隔：**分段按钮组**（关/5s/10s/30s → 后改为 手动刷新按钮 + 5s/10s/30s 胶囊），不用原生 select（视觉简陋 + iOS 缩放问题）
 - 右上角时间戳：统一 `fmtUpdatedAt()` 公共函数（"更新于 HH:MM:SS"），禁止各处写不同文案
 - 审计记录 rule 列：FAIL/WARN 显示规则码（红/橙），PASS 显示 ✓（绿）——**不用占位符 '-'**
+- 审计记录卡右上角：「全量历史」下载按钮（`/api/export-history`）+ 标题旁记录计数
+- 趋势图柱顶标数值，**折线点不标数字**（会与柱子重叠，视觉差）；右轴百分比刻度用灰色弱化
+
+### 2.6 驾驶舱统计口径（V10 定稿，核心规范）
+
+**一句话**：驾驶舱所有数字统一到**规则检查级**（24 条规则逐条检查的统计），不算任务级通过率。
+
+**两种口径的区别**（曾经同页并存被用户当 bug，教训见 §4.13）：
+
+| 口径 | 算法 | 天然量级 | 用不用 |
+|------|------|:--:|:--:|
+| 规则级 | 每条规则每次运行算一次检查，PASS 占比 | 90%+（每任务仅少数规则违规） | ✅ 全站唯一口径 |
+| 任务级 | 任一规则 FAIL/WARN 即任务失败 | 40% 左右 | ❌ 只摆任务数，不算通过率 |
+
+**趋势图（双量纲双轴）**：蓝柱 `#16B8F3`=审计次数（ruleAll）+ 黄柱 `#EF9F27`=问题次数（ruleAll−rulePass）走左轴；绿线 `#1D9E75`=通过率走右轴（0-100% 灰色刻度）。
+
+**图内自洽公式**（用户可自验算，这是铁要求）：
+```
+绿线通过率 = 1 − 黄柱问题次数 ÷ 蓝柱审计次数
+审计次数   = 任务数 × 每任务规则数（约 24）
+例：今日蓝柱 560、黄柱 20 → 绿线 (560−20)/560 = 96% ✓
+验算锚点：39473 次检查 ≈ 3164 任务 × ~24 规则
+```
+
+**口径说明**：图表下方一行公式（`fillCaliberNote`）：「审计次数＝任务数×每任务规则数；问题次数＝其中 WARN/FAIL 的检查；通过率＝1−问题次数÷审计次数」。**不写长段解释**——用户明确反馈冗长说明影响视觉体验。
+
+**数据字段语义**（改驾驶舱前必读）：
+- 任务级：`exitCode` 0=PASS / 1=WARN / >1=FAIL
+- 规则级：`ruleResults[].status` PASS/WARN/FAIL/SKIPPED（SKIPPED 不计入分母）
+- daily 聚合字段：`rulePass`（PASS 的检查数）/ `ruleAll`（非 SKIPPED 的检查数）/ `ruleRate`（百分比）
 
 ---
 
@@ -168,6 +203,16 @@ AI 节点未来可能几百个，渲染不能卡。方案：**服务器端截断
 ### 4.11 内置模板与用户数据分离（V6.4）
 AI 节点页不能塞 FDE workflow 模板（那是项目内置方法论），否则用户数据一多就混乱。原则：**AI 节点页 = 用户业务节点（部署态）；FDE 引导页 = 项目内置模板（方法论）**——模板与用户数据分开展示。
 
+### 4.12 envFingerprint 不是测试标记——过滤字段想当然的代价（V10）
+测试记录过滤最初用「`envFingerprint !== undefined`」当判据，结果 **08-02 之后所有真实记录被误杀**——该字段是审计引擎升级后给所有记录（含真实审计）加的常规字段，根本不是测试标记。修复：只保留泛化任务名正则（`TEST_TASK_RE`）。**教训：过滤条件必须用真实记录实证过（抽几条近期真实记录验证字段分布），不能凭字段名猜语义。**
+
+### 4.13 同名指标两套口径 = 用户眼中的 bug（V10，四轮迭代）
+驾驶舱通过率被用户连续质疑四轮：① 左上角 92% vs 趋势图 30% 矛盾（规则级 vs 任务级同名混淆）② 绿线 94% 与紫黄柱图内算不平 ③ 双口径标注仍被指"40% 太低、两套数字不该硬凑" ④ 最终拍板全部统一规则检查级。**教训**：
+- 一个页面里**同名指标只能有一套口径**，不同集合（规则集 vs 任务集）要么分开展示、要么只摆数量不算比率
+- **图内每个数字必须可自验算**（柱÷柱=线），用户会拿真实数据手算挑战你
+- 比率口径的选择听用户的：规则级数字"好看"（90%+），任务级太低（40%）会让用户怀疑系统有问题
+- 视觉优先：折线点不加数字（与柱重叠）、口径说明一行公式不写长文
+
 ---
 
 ## 五、开发工作流
@@ -185,9 +230,10 @@ node tools/gen-weekly-report.mjs      # 从 audit/history.jsonl 生成 daily + w
 # 验证（改完必跑）
 # 1. div 配平：opens===closes
 # 2. 新增 id 有渲染函数（防 thinkList 式隐藏 bug）
-# 3. /api/* 四个端点 curl 通
+# 3. /api/* 五个端点 curl 通（summary/export-history/release-gate/ai-nodes/ontology）
 # 4. 颜色/间距符合 §二规范（全局 grep 该元素所有出现位置）
 # 5. 中文字符无 U+FFFD 乱码
+# 6. 驾驶舱数字可自验算：绿线 = 1 − 黄柱 ÷ 蓝柱（拿 /api/summary 的 rulePass/ruleAll 手算一遍）
 ```
 
 ---
@@ -196,7 +242,7 @@ node tools/gen-weekly-report.mjs      # 从 audit/history.jsonl 生成 daily + w
 
 | 页面 | 数据源 | 职责 |
 |------|--------|------|
-| 驾驶舱 | /api/summary + daemon-health | 实时指标 + 审计趋势 + 数据主权 |
+| 驾驶舱 | /api/summary + daemon-health | 四指标卡（今日+总量）+ 审计趋势（规则检查口径）+ 全量导出 + 数据主权 |
 | FDE 引导 | workflow 模板（10 步）+ 五阶段 Prompt | 方法论 + 部署入口 |
 | AI 节点 | /api/ai-nodes + graph-state | 业务节点 + 编排流水线 |
 | 本体结构 | /api/ontology | 实体/概念/关系三要素 |
@@ -217,3 +263,6 @@ node tools/gen-weekly-report.mjs      # 从 audit/history.jsonl 生成 daily + w
 | dashboard.html 在根目录 | 用户 clone 一眼可见 |
 | 内置模板与用户数据分离 | AI 节点页=用户业务节点；FDE 引导页=方法论模板，避免"死的介绍页"混淆 |
 | 数据源没数据→诚实显示"待生成" | 不吹牛；数据驱动胜过话术 |
+| 驾驶舱统一规则检查口径（V10） | 任务级 40% 太低会被疑系统有问题；规则级 90%+ 且图内可自验算；同名指标禁双口径 |
+| 测试过滤只认任务名正则 | envFingerprint 是常规字段不是测试标记（误杀真实数据教训，§4.12） |
+| 全量数据下载而非复制到 data/ | 原始数据已在 ~/.sofagent/data/audit/history.jsonl，不重复存储，下载最诚实 |
