@@ -57,9 +57,17 @@ export function checkEnv(): EnvResult {
   let bashVer: string | null = null, bashOk = false;
   try {
     const out = execFileSync('bash', ['--version'], { encoding: 'utf-8' });
-    const m = out.match(/version\s+(\d+)\./);
+    const m = out.match(/version\s+(\d+)\.(\d+)/);
     bashVer = out.split('\n')[0]!.trim();
-    bashOk = m ? parseInt(m[1]!, 10) >= 4 : false;
+    // 🔴 v1.2.6 修复：阈值从 >=4 降为 >=3.2。
+    // 项目全部 .sh 脚本刻意兼容 bash 3.2（cleanup.sh / sofagent-dashboard.sh /
+    // test-count.sh 均有明确注释"macOS 自带 bash 3.2 不支持 declare -A/mapfile"），
+    // 要求 >=4 与实际约束自相矛盾，导致 macOS 系统 bash 3.2 被误杀 → doctor EXIT=1。
+    if (m) {
+      const major = parseInt(m[1]!, 10);
+      const minor = parseInt(m[2]!, 10);
+      bashOk = major > 3 || (major === 3 && minor >= 2);
+    }
   } catch { /* */ }
 
   const allOk = nodeMajor >= 18 && gitAvail && npmAvail && freeMB > 1024 && bashOk;
@@ -80,8 +88,8 @@ function formatTable(r: EnvResult): string {
     ['Disk free', gb, r.disk.freeMB > 1024 ? `${G}✓${N}` : `${Y}⚠ low${N}`],
     ['OpenClaw', r.openclaw.exists ? '已安装' : '未安装', C(r.openclaw.exists)],
     ['.sofagent', r.sofagent.exists ? '存在' : '不存在', C(r.sofagent.exists)],
-    ['bash', r.bash.version || 'N/A', C(r.bash.ok) + (r.bash.ok ? ' (≥4)' :
-      r.bash.version ? ` ${R}(<4)${N}` : '')],
+    ['bash', r.bash.version || 'N/A', C(r.bash.ok) + (r.bash.ok ? ' (≥3.2)' :
+      r.bash.version ? ` ${R}(<3.2)${N}` : '')],
   ];
   const w = Math.max(...rows.map(r => r[0].length)) + 2;
   return [
