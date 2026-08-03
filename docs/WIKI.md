@@ -212,6 +212,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | 配置 MCP 调用 | [guides/mcp-usage.md](./guides/mcp-usage.md) |
 | 配置 GitHub Actions CI | [guides/github-action.md](./guides/github-action.md) |
 | 了解文件系统审计 | [guides/filesystem-audit.md](./guides/filesystem-audit.md) |
+| 开发/维护 HTML Dashboard | [guides/dashboard-dev.md](./guides/dashboard-dev.md)（设计原则 · 数据链路 · 视觉规范 · 踩坑记录） |
 | 企业部署指南 | [guides/enterprise-deploy.md](./guides/enterprise-deploy.md) |
 | 多设备联邦同步 | [guides/multi-device-sync.md](./guides/multi-device-sync.md) |
 | 团队批量部署 | [guides/team-deploy.md](./guides/team-deploy.md) |
