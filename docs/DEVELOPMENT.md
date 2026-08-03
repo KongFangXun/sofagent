@@ -187,7 +187,7 @@ FDE 部署 SOP 应遵循此顺序：
 |----|------|------|
 | **Architecture**（架构） | `ARCHITECTURE.md` | 系统设计、技术选型、能力清单 |
 | **Handover**（交接/上手） | `HANDBOOK.md`、`DEVELOPMENT.md`、`COMMUNITY.md`、`THANKS.md`、`guides/` | 开发者上手、贡献指南 |
-| **Delivery**（交付/发版） | `changelog/`、根 `ROADMAP.md`、根 `CHANGELOG.md` | 版本记录、路线图 |
+| **Delivery**（交付/发版） | `changelog/`、`docs/ROADMAP.md`、根 `CHANGELOG.md` | 版本记录、路线图 |
 | **Evidence**（证据/归档） | `evidence/`、`archive/` | 实验数据、历史归档 |
 
 新增文档请归入对应域；跨文档引用保持相对路径，CI 的 `check-docs` 会校验。本仓未强制物理迁移历史文档，仅以本说明固化约定。
@@ -245,7 +245,7 @@ compose 生成的编排方案 YAML 怎么真正跑起来——`dag-runner.ts`（
 | workflow-parser | `orchestrator/src/workflow-parser.ts` | YAML→SubAgent 映射（developer→ENGINEER / qa-engineer→REVIEWER / researcher→FDE sustain / technical-writer→内置）。DAG 悬空 / 自依赖 / 环校验 |
 | composer 改造 | `orchestrator/src/composer.ts` | `ComposeResult{ yaml, subagents }`——接 `enterpriseWorkflowYaml` + `variant` A/B/C/D 拆解策略 |
 
-> ⚠️ **当前是串行**：dag-runner 文件名暗示 DAG 并行，但实际是串行状态机（非并行调度）。完整的 DAG 并行规划在 [ROADMAP v1.3.1](../ROADMAP.md)。
+> ⚠️ **当前是串行**：dag-runner 文件名暗示 DAG 并行，但实际是串行状态机（非并行调度）。完整的 DAG 并行规划在 [ROADMAP v1.3.1](./ROADMAP.md)。
 
 #### A/B 自动调度器（v1.1.9+）
 
@@ -368,7 +368,7 @@ LangGraph createReactAgent 拆完任务
 
 主 Agent 切换到 Loop Agent 视角，从九维评估（编排准确性、Skill 匹配度、模型经济性、执行流畅度、结果完整性、复用潜力、流程合规、Loop 有效性，外加判断力独立计分）：
 
-> ⚠️ 工程边界：Loop Agent 不是独立进程，是主 Agent 切换 prompt 以顾问身份输出建议。评分是 LLM 自评，无客观基准，仅供横向对比参考。详见 [LIMITATIONS.md](../LIMITATIONS.md#复盘评分是-llm-自评评审者与执行者不分离)。
+> ⚠️ 工程边界：Loop Agent 不是独立进程，是主 Agent 切换 prompt 以顾问身份输出建议。评分是 LLM 自评，无客观基准，仅供横向对比参考。详见 [LIMITATIONS.md](./LIMITATIONS.md#复盘评分是-llm-自评评审者与执行者不分离)。
 
 复盘加权算出总分，分比上次高 → 覆盖 orchestrator/ 为最优配置。分比上次低 → 不动，标「待验证」。每次闭环只需回答三问：**用对了吗？更好了吗？Loop 起作用了吗？**
 

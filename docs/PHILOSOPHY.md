@@ -441,7 +441,7 @@ sofagent 的版本演进不是拍脑袋排的——它遵循 Agent 工程的生�
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | 架构设计——怎么设计 |
 | [DEVELOPMENT.md](./DEVELOPMENT.md) | 开发者文档——怎么参与 |
 | [MCP 使用指南](./guides/mcp-usage.md) | MCP 调用 + push target 配置 + 输出说明 |
-| [ROADMAP.md](../ROADMAP.md) | 路线图——过去和未来 |
+| [ROADMAP.md](./ROADMAP.md) | 路线图——过去和未来 |
 | [CHANGELOG.md](../CHANGELOG.md) | 版本历史——每个版本做了什么 |
 
 > 读完这份文档，你应该能回答：**sofagent 为什么存在、它为谁服务、它的边界在哪。** 如果还有疑问——不是你的问题，是这份文档没写好。提 Issue。

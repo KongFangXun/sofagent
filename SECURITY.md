@@ -52,7 +52,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 2. **将 `~/.sofagent/` 父目录放在加密文件系统上**（如 macOS APFS 加密卷）
 3. **定期轮换 `~/.sofagent/data/` 中的历史审计数据**（P2-31：合并原重复的权限提示段）
 
-> 📌 config.yml 的权限加固（chmod 400）见 [LIMITATIONS.md](./LIMITATIONS.md) "config.yml 可被篡改"段。
+> 📌 config.yml 的权限加固（chmod 400）见 [LIMITATIONS.md](./docs/LIMITATIONS.md) "config.yml 可被篡改"段。
 
 **企业环境建议**：
 - 对 `data/` 目录做 gpg 加密或放在加密卷上
@@ -220,7 +220,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，执行 `execFileSync('git', ...)`
 
 **数据访问**：审计引擎核心不发起网络请求（webhook 为可选功能，需显式配置 URL 后才启用）；写入仅限 `~/.sofagent/data/` 目录（审计历史、session 报告、快照等）。
 
-**信任边界**：审计工具本身是确定性的——给定相同的 git diff 和日志，输出相同。但审计 A7/A8 的结果依赖 Agent 日志的真实性（Agent 可以伪造日志）。这不是审计工具的安全漏洞，是架构级别的信任模型选择。详见 [LIMITATIONS.md](./LIMITATIONS.md)（「审计工具信任模型：Agent 自我报告」节）。
+**信任边界**：审计工具本身是确定性的——给定相同的 git diff 和日志，输出相同。但审计 A7/A8 的结果依赖 Agent 日志的真实性（Agent 可以伪造日志）。这不是审计工具的安全漏洞，是架构级别的信任模型选择。详见 [LIMITATIONS.md](./docs/LIMITATIONS.md)（「审计工具信任模型：Agent 自我报告」节）。
 
 > ⚠️ **A14/A15 是 commit 时审计，不是运行时阻断。** Agent 在 commit 前仍可能访问受限数据——审计只能事后发现。这不是运行时沙箱。
 
@@ -292,7 +292,7 @@ sanitize() 管道在写入 history.jsonl、think.md、task/logs 等文件前自�
 3. **完整性校验**：使用 `tools/sign-config.mjs` 对 config.yml 签名，
    定期运行 `sofagent-audit --doctor` 检查配置完整性。
 
-> 💡 更多本地开发缓解措施详见 [LIMITATIONS.md → 本地开发紧急缓解措施](./LIMITATIONS.md#本地开发紧急缓解措施)（chmod 400、git hooksPath、定期 doctor）。
+> 💡 更多本地开发缓解措施详见 [LIMITATIONS.md → 本地开发紧急缓解措施](./docs/LIMITATIONS.md#本地开发紧急缓解措施)（chmod 400、git hooksPath、定期 doctor）。
 
 **受影响场景**：
 - 不上 CI 的小团队或个人项目（风险最高）

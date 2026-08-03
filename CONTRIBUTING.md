@@ -25,7 +25,7 @@
 |:--:|------|------|:--:|
 | 1 | [SKILL.md](./SKILL/SKILL.md) | 4 底线 + 7 则铁律 | 3 min |
 | 2 | [CHANGELOG.md](./CHANGELOG.md) | 最新版本的变更 | 5 min |
-| 3 | [LIMITATIONS.md](./LIMITATIONS.md) | 已知局限 | 2 min |
+| 3 | [LIMITATIONS.md](./docs/LIMITATIONS.md) | 已知局限 | 2 min |
 
 **先改 2 个脚本（最低门槛）**：
 
