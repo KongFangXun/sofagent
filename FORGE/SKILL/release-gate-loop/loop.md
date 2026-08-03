@@ -68,7 +68,7 @@ driver 向 `FORGE/LEDGER.md` 追加一行（见 `LEDGER.md` 列定义）。
 
 - V 由 Node driver（`FORGE/src/release-gate-driver.mjs`）spawn 独立子进程实现真零上下文。
 - driver 把对应 `prompts/*.md` 作为 SubAgent 的 user message 注入，systemPrompt 从 `reviewer/SKILL.md` 构建。
-- 5 步全部使用 `REVIEWER_TOOLS`（只读工具集）+ `qwen3.8-max-preview` 模型（阿里百炼 Token Plan 订阅制，thinking-only）。
+- 5 步全部使用 `REVIEWER_TOOLS`（只读工具集）+ `glm-5.2` 模型（智谱 Coding Plan 订阅制，支持 thinking）。
 
 ## 循环级演化（evolution.md）
 

@@ -16,28 +16,33 @@ bash install.sh
 
 ## 第二步：配置模型
 
-fresh-eyes-loop 和 release-gate-loop **共用同一套模型配置**——只需配一次，两个循环都能跑。fresh-eyes-loop 由 A（审查者）和 B（工程师）两个角色组成；release-gate-loop 由 V（验证者）单角色组成。三者由 driver 用**同一个模型**（`qwen3.8-max-preview`，阿里百炼 Token Plan 订阅制）驱动——fresh-eyes 纪律通过**每步独立子进程（零上下文）+ 独立 prompt** 实现，不依赖模型差异。
+fresh-eyes-loop 和 release-gate-loop **共用同一套模型配置**——只需配一次，两个循环都能跑。fresh-eyes-loop 由 A（审查者）和 B（工程师）两个角色组成；release-gate-loop 由 V（验证者）单角色组成。
 
-| 角色 | 职责 | 行为指令 | 工具集 |
-|:--:|------|------|------|
-| **A**（审查者） | 12 视角审查 + 合并 + 验证 | `prompts/a-check.md` / `a-consolidate.md` / `a-verify.md` | `REVIEWER_TOOLS`（只读） |
-| **B**（工程师） | 修复缺陷 | `prompts/b-check.md` / `b-fix.md` | `ENGINEER_TOOLS`（含写工具） |
+**异构双模型**（2026-08-03 定稿）：A 用 Qwen3.8-max（深度推理强项），B/V 用 GLM-5.2（代码编写 + 测试验证强项）。fresh-eyes 纪律通过**每步独立子进程（零上下文）+ 独立 prompt** 实现，不依赖模型差异。
 
-> 💡 **关于异构模型**：早期版本用不同厂商的模型做 A/B（减少同模型盲区）。v1.2.4 起改为 Qwen3.8-max-preview 单模型——该模型的 thinking 能力足够强，fresh-eyes 纪律的核心保障是零上下文每步（结构隔离）而非模型差异。driver 仍保留多模型配置能力（`MODEL_CONFIGS`），未来可随时切回异构模式。
+| 角色 | 职责 | 模型 | 行为指令 | 工具集 |
+|:--:|------|------|------|------|
+| **A**（审查者） | 12 视角审查 + 合并 + 验证 | qwen3.8-max | `prompts/a-check.md` / `a-consolidate.md` / `a-verify.md` | `REVIEWER_TOOLS`（只读） |
+| **B**（工程师） | 修复缺陷 | glm-5.2 | `prompts/b-check.md` / `b-fix.md` | `ENGINEER_TOOLS`（含写工具） |
+| **V**（验证者） | release-gate 全流程 | glm-5.2 | `prompts/*.md` | `REVIEWER_TOOLS`（只读） |
+
+> 💡 **异构模型策略**：A（审查者）需要最强推理能力 → Qwen3.8-max（阿里百炼 Token Plan）；B（工程师）+ V（验证者）侧重代码编写和测试执行 → GLM-5.2（智谱 Coding Plan）。driver 的 `MODEL_CONFIGS` 支持每个角色独立配置模型/baseURL/apiKey。
 
 ### 配置环境变量
 
-driver 使用**单个 API Key**（A/B 共用）。只需设置两个环境变量：
+driver 使用**异构双模型**，A/B 各需独立的 API Key：
 
 ```bash
-# API Key（A/B 共用同一个 key）
-export SOFAGENT_LLM_B_API_KEY=your-key
+# A 角色 API Key（阿里百炼 Qwen Token Plan）
+export SOFAGENT_LLM_A_API_KEY=your-qwen-key
+
+# B/V 角色 API Key（智谱 GLM Coding Plan）—— B 和 V 共用同一个 key
+export SOFAGENT_LLM_B_API_KEY=your-glm-key
 
 # 模型规格标识（driver 启动检查要求非空，内容不影响模型选择——模型由 MODEL_CONFIGS 硬编码）
-export SOFAGENT_LLM_B="qwen3.8-max-preview"
+export SOFAGENT_LLM_A="qwen3.8-max"
+export SOFAGENT_LLM_B="glm-5.2"
 ```
-
-> driver 启动时若检测到 `SOFAGENT_LLM_B_API_KEY`，会自动把它同步给 A（`process.env.SOFAGENT_LLM_A_API_KEY = process.env.SOFAGENT_LLM_B_API_KEY`），确保双角色使用同一 key。
 
 也可以用 `env.local` 模板（见 `FORGE/env.local.template`）：
 
@@ -49,7 +54,9 @@ source FORGE/env.local
 
 ### 模型参数
 
-当前使用 Qwen3.8-max-preview（thinking-only 模型）——始终思考、无法关闭。driver 不传 `thinking` / `reasoningEffort` 参数（Qwen 没有 `reasoningEffort`，那是 DeepSeek 专属），只设 `maxTokens` 限制输出。
+**A（Qwen3.8-max）**：thinking-only 模型——始终思考、无法关闭。driver 不传 `thinking` / `reasoningEffort` 参数，只设 `maxTokens` 限制输出。
+
+**B/V（GLM-5.2）**：driver 传 `thinking={type:'enabled'}` + `reasoning_effort='max'` + `temperature=1.0`，启用最强推理模式。
 
 | 参数 | 值 | 说明 |
 |------|:--:|------|
@@ -64,7 +71,8 @@ source FORGE/env.local
 
 | 模型类型 | 计费模式 | 说明 |
 |------|:--:|------|
-| **Qwen3.8-max-preview**（当前使用） | 📦 订阅制 | Token Plan 按月固定费用 + 额度，**不按 token 扣费**。driver 只记录 token 用量，`cost_cny` 记为 `null`，`price_confidence` 标为 `subscription` |
+| **Qwen3.8-max**（A 使用） | 📦 订阅制 | 阿里百炼 Token Plan，按月固定费用 + 额度，**不按 token 扣费**。driver 只记录 token 用量，`cost_cny` 记为 `null`，`price_confidence` 标为 `subscription` |
+| **GLM-5.2**（B/V 使用） | 📦 订阅制 | 智谱 Coding Plan，按月固定费用 + 额度，**不按 token 扣费**。同上 |
 | **按量计费模型**（如需切换） | 💧 按量计费 | driver 按「官方标价 × token 用量」算出 `cost_cny` 估算值。实际账单受**缓存命中率**影响，以厂商 API 后台为准 |
 
 > ⚠️ **计费模式区分（重要）**：
@@ -175,7 +183,7 @@ verdict     → V 出最终裁决（PASS / FAIL），写入 verdict.md
   "round": 1,
   "step": "a-check",
   "role": "A",
-  "model": "qwen3.8-max-preview",
+  "model": "qwen3.8-max",
   "prompt_tokens": 12450,
   "completion_tokens": 1820,
   "total_tokens": 14270,
@@ -202,7 +210,7 @@ verdict     → V 出最终裁决（PASS / FAIL），写入 verdict.md
 
 | 问题 | 原因 | 解决 |
 |------|------|------|
-| `SOFAGENT_LLM_B_API_KEY` 未设 | 没配 key | `export SOFAGENT_LLM_B_API_KEY=your-key` |
+| `SOFAGENT_LLM_A_API_KEY` 或 `SOFAGENT_LLM_B_API_KEY` 未设 | 没配 key | A key：`export SOFAGENT_LLM_A_API_KEY=your-qwen-key`；B key：`export SOFAGENT_LLM_B_API_KEY=your-glm-key` |
 | driver 找不到 `node` 命令 | Node.js 未安装或不在 PATH | 装 Node.js ≥ 18（`brew install node` / `nvm install 18`） |
 | reviewer 每轮都驳回 | 审查标准太严 | 改 `SKILL/agents/reviewer/SKILL.md` 的判定标准 |
 | API key 报 401 | key 过期或额度耗尽 | 去对应厂商控制台检查 key 状态和余额 |

@@ -14,8 +14,8 @@
 //   node FORGE/src/release-gate-driver.mjs --worker --step <step> --run-dir <abs> --target <ver>
 //
 // 模型配置（单角色 V）：
-//   V（验证者）= Qwen3.8-max-preview  阿里百炼 Token Plan 订阅制（OpenAI 兼容接口）
-//   thinking-only 模型——始终思考、无需（也不应传）thinking/reasoningEffort 参数
+//   V（验证者）= GLM-5.2  智谱 Coding Plan 订阅制（OpenAI 兼容接口）
+//   支持 thinking + reasoning_effort 参数（启用思考 + 最高推理强度）
 //
 // 与 fresh-eyes-driver 的差异：
 //   - 单角色 V（无 A/B 双角色）
@@ -60,50 +60,18 @@ const RUNS_DIR    = join(SOFAGENT_HOME, 'data', 'forge-runs');
 const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
 const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 
-// ─── 单角色模型配置（V = 验证者）────────────────────────────
-// V 用 Qwen3.8-max-preview：阿里百炼 Token Plan 订阅制，thinking-only 模型。
-// 始终思考、无法关闭，不需要（也不应传）thinking/reasoningEffort 参数——
-// Qwen 也没有 reasoningEffort（那是 DeepSeek 专属）。maxTokens 保留以限制输出。
-// toolsKey 仍为 REVIEWER_TOOLS（纯只读）。
-const MODEL_CONFIGS = {
-  V: {
-    baseURL:         'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
-    model:           'qwen3.8-max-preview',
-    maxTokens:       16000,  // 限制输出 token，防止 thinking 模式无限消耗
-    apiKeyEnv:       'SOFAGENT_LLM_B_API_KEY',
-    specEnv:         'SOFAGENT_LLM_B',
-    agentSkillPath:  join(AGENTS_DIR, 'reviewer/SKILL.md'),
-    toolsKey:        'REVIEWER_TOOLS',
-    billing:         'subscription',  // Token Plan 订阅制
-  },
-};
+// ─── 单角色模型配置（V = 验证者，从 FORGE/models/ 加载）──────
+// V 用 GLM-5.2：智谱 Coding Plan 订阅制（OpenAI 兼容接口）。
+// 换模型改 FORGE/models/profile.mjs 即可，不需要改 driver 代码。
+import { resolveConfigs, resolvePricing } from '../models/index.mjs';
+const MODEL_CONFIGS = resolveConfigs(AGENTS_DIR);
 
-// ─── 模型定价（usage.jsonl 成本估算基础）─────────────────────
+// ─── 模型定价（从 FORGE/models/ 加载）─────────────────────
 // 单位：CNY per 1M tokens（百万 token 计价）
-// V 用 Qwen3.8-max-preview = 阿里百炼 Token Plan 订阅制 → 不按 token 计价。
+// V 用 GLM-5.2 = 智谱 Coding Plan 订阅制 → 不按 token 计价。
 // 订阅制按周期固定付费，与 token 消耗无关，MODEL_PRICING 的成本估算对
 // 订阅账号意义有限，仅供参考（recordUsage 的 subscription 分支输出 cost_cny = null）。
-// DeepSeek V4 Flash 条目保留做历史参考（V 曾按量计费使用：
-//   input 0.5元/M（缓存未命中）、output 8元/M
-//   https://api-docs.deepseek.com/quick_start/pricing）。
-const MODEL_PRICING = {
-  'qwen3.8-max-preview': {
-    input: 0,
-    output: 0,
-    currency: 'CNY',
-    source: 'https://help.aliyun.com/zh/model-studio/deep-thinking',
-    note: 'Token Plan 订阅制，不按量计价，此处置 0；成本估算对订阅账号不适用',
-    billing: 'subscription',
-  },
-  'deepseek-v4-flash': {
-    input: 0.5,
-    output: 8,
-    currency: 'CNY',
-    source: 'https://api-docs.deepseek.com/quick_start/pricing',
-    note: 'Flash 版定价（缓存未命中）。缓存命中 input 0.025元/M',
-    billing: 'pay-as-you-go',
-  },
-};
+const MODEL_PRICING = resolvePricing();
 
 // ─── 步骤定义（prompt / output / inputs / maxTokens）─────────────────────
 // 单角色 V，无 role 字段。5 步全串行。
@@ -242,10 +210,13 @@ function buildSystemPrompt(skillPath) {
 /**
  * 为角色 V 创建 LLM 模型实例。
  *
- * Qwen3.8-max-preview：阿里百炼 Token Plan（OpenAI 兼容接口）。thinking-only
- *   模型，不需要传 thinking/reasoningEffort——MODEL_CONFIGS 未定义这两个字段，
- *   下方条件注入分支（cfg.thinking / cfg.reasoningEffort）与退化逻辑永不触发
- *   （无害保留）。
+ * 模型配置从 FORGE/models/ 加载（profile.mjs 定义角色→模型映射）。
+ * 当前配置：V = GLM-5.2（智谱 Coding Plan，OpenAI 兼容接口，coding 专用端点）。
+ * 换模型只改 FORGE/models/profile.mjs，不需要改 driver 代码。
+ *
+ * GLM-5.2 支持 thinking + reasoning_effort 参数：MODEL_CONFIGS.V 定义了
+ * thinking={type:'enabled'} + reasoningEffort='max' + temperature=1.0，
+ * 下方条件注入分支自动带上这些参数。
  *
  * @param {string} role 角色名（本 driver 固定为 'V'）
  * @param {number} [maxTokensOverride] 步骤级输出 token 上限覆盖，优先于 cfg.maxTokens
@@ -273,7 +244,7 @@ async function createModel(role, maxTokensOverride) {
     ctorArgs.maxTokens = effectiveMaxTokens;
   }
 
-  // DeepSeek 特殊参数
+  // GLM-5.2 / DeepSeek 特殊参数（thinking + reasoningEffort）
   if (cfg.reasoningEffort) {
     ctorArgs.reasoningEffort = cfg.reasoningEffort;
   }
