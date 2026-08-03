@@ -51,6 +51,14 @@ fi
 TMPFILE=$(mktemp /tmp/check-dev-prompt.XXXXXX)
 trap 'rm -f "$TMPFILE"' EXIT
 
+# 🔴 v1.2.6 修复：NODE 未设置时 "$NODE" 展开为空 → node 步骤静默失败 →
+# TMPFILE 为空 → 三项检查全跳过 = 虚假绿色（零 ❌ 但实际什么都没查）。
+NODE="${NODE:-node}"
+if ! command -v "$NODE" &>/dev/null; then
+  echo "❌ 找不到 node 可执行文件（NODE=${NODE}）——无法校验引用"
+  exit 1
+fi
+
 "$NODE" -e '
 var fs = require("fs");
 var c = fs.readFileSync(process.argv[1], "utf8");
@@ -144,7 +152,7 @@ check_prefix() {
 
 is_runtime() {
   case "$1" in
-    data/audit/*|data/dashboard/*|data/forge-runs/*|data/reports/*|dashboard/*|data/*|.sofagent/*)
+    data/audit/*|data/dashboard/*|data/forge-runs/*|data/reports/*|dashboard/*|data/*|.sofagent/*|knowledge/*)
       return 0 ;;
     *)
       return 1 ;;
