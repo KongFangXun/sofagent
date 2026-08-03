@@ -137,7 +137,7 @@ describe('A9 不纳注入', () => {
   });
 
   // ============================================================
-  // 安全文档白名单：SECURITY.md / LIMITATIONS.md 职责是描述
+  // 安全文档白名单：SECURITY.md / docs/LIMITATIONS.md 职责是描述
   // 安全风险与绕过路径，对它们跑注入检测是 false positive 源泉
   // ============================================================
 
@@ -149,9 +149,9 @@ describe('A9 不纳注入', () => {
     expect(result.status).toBe('PASS');
   });
 
-  it('LIMITATIONS.md 含「绕过审计规则」→ PASS（安全文档白名单豁免）', () => {
+  it('docs/LIMITATIONS.md 含「绕过审计规则」→ PASS（安全文档白名单豁免）', () => {
     const ctx = makeCtx([
-      makeDiffFile('LIMITATIONS.md', ['+已知限制：无法完全防止绕过审计的行为']),
+      makeDiffFile('docs/LIMITATIONS.md', ['+已知限制：无法完全防止绕过审计的行为']),
     ]);
     const result = checkRuleA9(ctx);
     expect(result.status).toBe('PASS');

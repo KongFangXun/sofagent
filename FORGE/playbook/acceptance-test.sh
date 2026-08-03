@@ -1381,7 +1381,7 @@ scenario 165 "关键数字跨文档一致性——测试数 1438 / 规则数 24 
 S165_OK=true
 for f in README.md docs/WIKI.md; do grep -q "1438" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 1438（数字漂移）"; S165_OK=false; }; done
 for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do grep -q "24 条\|24 个\|24 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 24（数字漂移）"; S165_OK=false; }; done
-for f in docs/DEVELOPMENT.md LIMITATIONS.md; do grep -q "126" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 126"; S165_OK=false; }; done
+for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "126" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 126"; S165_OK=false; }; done
 $S165_OK && pass "关键数字跨文档一致（1438 / 24 / 126）"
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
 S166_OK=true

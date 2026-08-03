@@ -15,7 +15,7 @@
 #      2. vi engine/audit/src/index.ts           # 改 v0.99.3 → v0.99.4
 #      3. vi engine/scripts/*.sh                 # 改 VERSION="0.99.3"
 #      4. vi engine/scripts/windows/*.ps1        # 改 $VERSION = "0.99.3"
-#      5. vi ROADMAP.md                             # 改文件头 > v0.99.3 ·
+#      5. vi docs/ROADMAP.md                          # 改文件头 > v0.99.3 ·
 #      6. vi ARCHITECTURE.md                        # 改文件头 > v0.99.3 ·
 #      7. vi HANDBOOK.md                            # 改文件头 > v0.99.3 ·
 #      8. vi README.md README.en.md                 # 改 badge Version-v0.99.3
@@ -720,9 +720,9 @@ echo -e "${BOLD}${CYAN}═══════════════════
 if ! $DRY_RUN; then
   echo ""
   echo -e "  ${YELLOW}⚠️  手动检查提醒（bump-version.sh 只改版本号，不碰正文叙事）：${NC}"
-  echo "    1. ROADMAP.md「现在在哪」段落的叙事内容是否已更新为新版本？"
-  echo "    2. ROADMAP.md「现在在哪」的开发日志链接是否指向新版本？"
+  echo "    1. docs/ROADMAP.md「现在在哪」段落的叙事内容是否已更新为新版本？"
+  echo "    2. docs/ROADMAP.md「现在在哪」的开发日志链接是否指向新版本？"
   echo "    3. CHANGELOG.md 是否已新增新版本的索引条目？"
-  echo "    4. ROADMAP.md 迭代历程表是否已新增新版本行？"
+  echo "    4. docs/ROADMAP.md 迭代历程表是否已新增新版本行？"
   echo ""
 fi

@@ -253,7 +253,7 @@ export function checkRuleA9(ctx: AuditContext): RuleCheck {
     // 跳过文档目录——changelog/设计文档等会合法引用注入模式作为案例
     if (file.path.startsWith('docs/')) continue;
     // 安全文档本职是描述风险和绕过路径，注入检测对它们是 false positive 源泉
-    if (file.path === 'SECURITY.md' || file.path === 'LIMITATIONS.md') continue;
+    if (file.path === 'SECURITY.md' || file.path === 'docs/LIMITATIONS.md') continue;
     if (file.path.startsWith('.sofagent/')) continue;
     // 跳过测试文件——测试用例合法包含注入向量作为 fixture
     if (file.path.includes('.test.') || file.path.includes('__tests__/') || file.path.endsWith('.fixture')) continue;

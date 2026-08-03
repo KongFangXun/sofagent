@@ -134,7 +134,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
 </details>
 
-> ⚠️ **About commit blocking**: `git commit --no-verify` can bypass the local hook. sofagent is designed as a "guardrail for honest Agents", not a "defense against malicious attackers". For high-security enterprise scenarios, add a `sofagent-audit --diff` check in your CI/CD pipeline (hooks can be bypassed, CI cannot). See [LIMITATIONS](./LIMITATIONS.md).
+> ⚠️ **About commit blocking**: `git commit --no-verify` can bypass the local hook. sofagent is designed as a "guardrail for honest Agents", not a "defense against malicious attackers". For high-security enterprise scenarios, add a `sofagent-audit --diff` check in your CI/CD pipeline (hooks can be bypassed, CI cannot). See [LIMITATIONS](./docs/LIMITATIONS.md).
 
 **Two install modes**:
 
@@ -189,8 +189,8 @@ npm test --workspace=engine/audit
 | Why designed this way | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | Design philosophy | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | Security statement | [SECURITY](./SECURITY.md) |
-| Known limitations | [LIMITATIONS](./LIMITATIONS.md) |
-| Version roadmap | [ROADMAP](./ROADMAP.md) |
+| Known limitations | [LIMITATIONS](./docs/LIMITATIONS.md) |
+| Version roadmap | [ROADMAP](./docs/ROADMAP.md) |
 | Contributing | [CONTRIBUTING](./CONTRIBUTING.md) |
 
 ---

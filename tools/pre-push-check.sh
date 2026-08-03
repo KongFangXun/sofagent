@@ -265,7 +265,7 @@ if [ -n "$SSOT_VERSION" ] && git tag -l "v${SSOT_VERSION}" | grep -q "v${SSOT_VE
   #   - tag 指向的 commit == HEAD（当前发版刚打的 tag）：commit message 不含版本号 → FAIL（阻断）
   #   - tag 指向的 commit != HEAD（历史 tag）：静默豁免，不再报 WARN
   # 理由：历史 commit message 不可改（rebase 重写会级联影响 52 个 tag），
-  #   pre-push-check 的职责是预防未来，不是追溯历史。历史污点在 LIMITATIONS.md 标注即可。
+  #   pre-push-check 的职责是预防未来，不是追溯历史。历史污点在 docs/LIMITATIONS.md 标注即可。
   TAG_COMMIT_MSG=$(git log -1 "v${SSOT_VERSION}^{commit}" --format=%s 2>/dev/null || true)
   if [ -n "$TAG_COMMIT_MSG" ]; then
     if echo "$TAG_COMMIT_MSG" | grep -q "${SSOT_VERSION}"; then
@@ -304,7 +304,7 @@ if [ -n "$SSOT_VERSION" ] && git tag -l "v${SSOT_VERSION}" | grep -q "v${SSOT_VE
     else
       # 历史 commit message 不可改（rebase 重写会级联影响 50+ tag）
       # 只有指向当前 HEAD 的 tag（= 本轮发版的 tag）commit message 不含版本号才 FAIL，
-      # 其余所有历史 tag 一律 WARN 豁免，并在 LIMITATIONS.md 记录。
+      # 其余所有历史 tag 一律 WARN 豁免，并在 docs/LIMITATIONS.md 记录。
       TAG_COMMIT_HASH=$(git rev-parse "$t^{commit}" 2>/dev/null || true)
       HEAD_COMMIT_HASH=$(git rev-parse HEAD 2>/dev/null || true)
       if [ "$TAG_COMMIT_HASH" = "$HEAD_COMMIT_HASH" ]; then
