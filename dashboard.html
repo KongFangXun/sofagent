@@ -1180,12 +1180,12 @@ function renderSovereigntyBox(sov,daemonStatus){
     : localInfo+' · '+sensInfo;
   el.innerHTML='<div class="chart-box" style="display:flex;flex-direction:column;justify-content:center;height:100%">'+
     '<div style="display:flex;justify-content:space-around;align-items:stretch;text-align:center;margin-bottom:10px">'+
-    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--brand)">'+sov.cloud+'</div><div style="font-size:11px;color:var(--text-s)">云端调用</div></div>'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--green)">'+sov.local+'</div><div style="font-size:11px;color:var(--text-s)">本地执行</div></div>'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--brand)">'+sov.cloud+'</div><div style="font-size:11px;color:var(--text-s)">云端调用</div></div>'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--amber)">'+(sov.outbound||0)+'</div><div style="font-size:11px;color:var(--text-s)">数据流出</div></div>'+
     '</div>'+
-    '<div style="font-size:12px;color:var(--text-s);text-align:center;margin-top:4px">'+summaryLine+'</div>'+
-    '<div style="font-size:11px;color:var(--text-t);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)">🔒 审计证据、知识库、反思记录全部保存在本地 <code style="background:var(--brand-l);padding:1px 5px;border-radius:4px;font-size:10px">~/.sofagent/data/</code>，不送云端。</div>'+
+    '<div style="font-size:12px;color:var(--text-s);text-align:center;padding-top:8px;border-top:1px dashed var(--border)">'+summaryLine+'</div>'+
+    '<div style="font-size:11px;color:var(--text-t);text-align:center;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)">🔒 审计证据、知识库、反思记录全部保存在本地 <code style="background:var(--brand-l);padding:1px 5px;border-radius:4px;font-size:10px">~/.sofagent/data/</code>，不送云端。</div>'+
     '</div>';
 }
 
