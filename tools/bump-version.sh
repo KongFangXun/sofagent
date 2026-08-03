@@ -527,10 +527,9 @@ for readme in \
 done
 echo ""
 
-# 8. index.html hero badge version
-echo -e "${BOLD}[10/13] index.html hero badge${NC}"
-# index.html 是 landing page，不含版本号标签——此步骤为设计预期的无匹配
-# 如果未来 index.html 加了版本号标签，此步骤会自动替换
+# 8. index.html / dashboard.html 版本号
+echo -e "${BOLD}[10/13] index.html + dashboard.html 版本号${NC}"
+# index.html 是 landing page（当前不存在，保留兼容逻辑）
 index_html="$PROJECT_ROOT/index.html"
 if [[ -f "$index_html" ]]; then
   html_content=$(cat "$index_html")
@@ -550,7 +549,30 @@ if [[ -f "$index_html" ]]; then
     echo -e "  ${YELLOW}没有匹配到 v$OLD_2SEG 或 v$OLD_3SEG${NC}"
   fi
 else
-  echo -e "  ${YELLOW}跳过（文件不存在）${NC}"
+  echo -e "  ${YELLOW}index.html 跳过（文件不存在）${NC}"
+fi
+
+# v1.2.5 阶段八① 补：dashboard.html 是当前版本活引用文件（v1.2.5 新增），
+# 此前 bump/check 均未覆盖（结构性盲区）。只替换两处"当前版本"锚点：
+# ① logo-version 徽章 ② 页脚署名行。激活链里程碑标记（v1.2.5+ / ✅ 历史）不 bump。
+dash_html="$PROJECT_ROOT/dashboard.html"
+if [[ -f "$dash_html" ]]; then
+  dash_content=$(cat "$dash_html")
+  dash_new=$(cat "$dash_html")
+  dash_new="${dash_new//class=\"logo-version\">v$OLD_3SEG</class=\"logo-version\">v$NEW_3SEG<}"
+  dash_new="${dash_new//孔放勋 · v$OLD_3SEG</孔放勋 · v$NEW_3SEG<}"
+  if [[ "$dash_new" != "$dash_content" ]]; then
+    echo -e "  ${GREEN}✓${NC} dashboard.html: v$OLD_3SEG → v$NEW_3SEG（logo + 页脚）"
+    echo -e "    ${CYAN}$dash_html${NC}"
+    if ! $DRY_RUN; then
+      printf '%s\n' "$dash_new" > "$dash_html"
+    fi
+    TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
+  else
+    echo -e "  ${YELLOW}dashboard.html 没有匹配到 v$OLD_3SEG${NC}"
+  fi
+else
+  echo -e "  ${YELLOW}dashboard.html 跳过（文件不存在）${NC}"
 fi
 echo ""
 

@@ -35,7 +35,7 @@
 | `dashboard.html`（仓库根目录） | 单文件零依赖 SPA，6 页导航：驾驶舱 / FDE引导 / AI节点 / 本体结构 / 知识库 / 工具箱 |
 | `tools/serve-dashboard.mjs` | 本地 HTTP 服务器：页面 + `/data/*` 原始数据 + 4 个聚合 API |
 | `tools/gen-weekly-report.mjs` | 手动生成持续优化周报（daily + weekly） |
-| `assets` | 软链 → `docs/assets/`（logo） |
+| `docs/assets/` | logo/favicon 等静态资源（dashboard 用 `docs/assets/` 相对路径引用，不建软链） |
 
 > ⚠️ **dashboard.html 必须在仓库根目录**（不在 docs/）——用户 clone 后一眼可见。历史教训（V6.5）：放 docs/ 里"藏身"了，用户找不到。
 
