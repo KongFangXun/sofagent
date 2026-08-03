@@ -75,16 +75,18 @@ const MODEL_CONFIGS = resolveConfigs(AGENTS_DIR);
 
 // ─── 三层熔断阈值（模块级常量，避免散落在不同函数作用域） ──────────
 // 三层防线协同设计（run-01/run-02 事故修复）：
-//   L1 软熔断(TOOL_SOFT_LIMIT=50)：stateModifier 注入 HumanMessage 强制收尾
-//   L2 硬熔断(TOOL_HARD_LIMIT=60)：stream 循环物理 break，抢救部分产物
+//   L1 软熔断(TOOL_SOFT_LIMIT)：stateModifier 注入 HumanMessage 强制收尾
+//   L2 硬熔断(TOOL_HARD_LIMIT)：stream 循环物理 break，抢救部分产物
 //   L3 框架兜底(STEP_RECURSION_LIMITS)：LangGraph recursionLimit 最终防线
-// 数值关系：50(劝) → 60(拽) → 130(杀)，L2 和 L3 之间留 10 superstep 稳定窗口。
-const TOOL_SOFT_LIMIT  = 50;  // stateModifier：超此值注入"立即写报告"HumanMessage
-const TOOL_HARD_LIMIT  = 60;  // stream loop：超此值进入"写报告窗口"（不再 break）
+// 数值关系：200(劝) → 200(拽) → 500(杀)，给足冗余让审查者完成取证+写报告。
+// run-07 教训：v1.2.6 版本范围大，50/60 步不够审查者完成取证，
+// 产物全是 grep/cat 原始转储，无审查结论。
+const TOOL_SOFT_LIMIT  = 100;  // stateModifier：超此值注入"立即写报告"HumanMessage
+const TOOL_HARD_LIMIT  = 100;  // stream loop：超此值进入"写报告窗口"（不再 break）
 // 审查类步骤（a-check/b-check）探索深度高（12 视角 × 30-60 文件），需要更长切换时间
 // 修复/验证类步骤（b-fix/a-verify）是有限任务，5 步够用
 // run-07 教训：统一 5 步在审查步骤上 0% 成功率，改 10 步后审查步骤能完成写报告
-const REVIEW_GRACE_STEPS  = 10;  // 审查步骤写报告窗口（superstep 数）
+const REVIEW_GRACE_STEPS  = 50;  // 审查步骤写报告窗口（superstep 数）
 const DEFAULT_GRACE_STEPS = 5;   // 其他步骤写报告窗口（superstep 数）
 
 // ─── 模型定价（从 FORGE/models/ 加载）──────────────────────
@@ -175,18 +177,19 @@ function buildSystemPrompt(skillPath) {
   ].join('\n');
 
   // v1.2.5：工具调用预算——防止 worker 陷入"找不到文件→换路径再找"的死循环，
-  // 最终撞上 LangGraph recursionLimit（200 supersteps）导致零产出崩溃。
+  // 最终撞上 LangGraph recursionLimit 导致零产出崩溃。
   // run-01 教训：A worker 调了 1119 次工具仍未收敛写报告，GraphRecursionError 终止整个循环。
+  // run-07 教训：v1.2.6 大版本审查，60 次预算不够取证，提到 200 次。
   const toolBudget = [
     '',
     '## 🔴 铁律：工具调用预算（超限必崩）',
     '',
-    '你有**最多 60 次工具调用**的硬预算。超过后进程会被强制终止，你写不出任何报告。',
+    '你有**最多 100 次工具调用**的硬预算。超过后进程会被强制终止，你写不出任何报告。',
     '',
     '**节奏要求**：',
-    '- 第 1-40 次：自由探索（读文件、跑命令、搜索）',
-    '- 第 40-50 次：停止探索新方向，整理已发现的问题，准备写报告',
-    '- 第 50-60 次：写报告，把发现写入产物文件',
+    '- 第 1-70 次：自由探索（读文件、跑命令、搜索）',
+    '- 第 70-85 次：停止探索新方向，整理已发现的问题，准备写报告',
+    '- 第 85-100 次：写报告，把发现写入产物文件',
     '',
     '**禁止行为**：',
     '- 禁止对同一个文件用不同路径反复 cat（`No such file` = 不存在，记下来继续）',
@@ -627,10 +630,10 @@ async function runWorker(step, roundDir, target) {
     // v1.2.6：stateModifier 加工具调用计数 + 软熔断注入。
     // run-01/run-02 教训：模型无视 prompt 铁律，
     // 陷入"找不到文件→换路径重试"死循环（1119 次工具调用）。
-    // 这里在代码层做硬兜底：累计 tool_calls 超过 TOOL_SOFT_LIMIT(50)
+    // 这里在代码层做硬兜底：累计 tool_calls 超过 TOOL_SOFT_LIMIT(200)
     // 时注入 HumanMessage 强制要求写报告——HumanMessage 比 SystemMessage
     // 优先级更高，模型更容易遵从。
-    // 50 = 12 视角 × 4 次调用 = 48，给充分探索空间后强制收敛。
+    // 200 = 给 v1.2.6 大版本审查充足的取证空间。
     stateModifier: (state) => {
       const messages = state.messages ?? [];
 
@@ -696,26 +699,21 @@ async function runWorker(step, roundDir, target) {
   const t0 = Date.now();
 
   // recursionLimit 按步骤类型区分：
-  // - 审查类（a-check/b-check）：需要读文件+搜索，给 130（=65 轮工具调用）
-  //   v1.2.5 run-01 教训：200 让 worker 有空间调 1119 次工具陷入死循环。
-  //   配合 systemPrompt 里的「60 次工具预算」铁律，130 步够用且能更早熔断。
-  //   审查 P1 修复：原 120 与 L2 硬熔断的 superstep 119 仅差 1 步，
-  //   LangGraph 隐含 superstep（路由/条件边）可能导致 L3 先触发，
-  //   使 L2 的产物抢救功能失效。+10 步给 L2 稳定的优先窗口。
+  // - 审查类（a-check/b-check）：需要读文件+搜索，给 500（=250 轮工具调用）
+  //   v1.2.5 run-01 教训：原 200 让 worker 有空间调 1119 次工具陷入死循环，
+  //   但现在 L1/L2 熔断(200)会先介入，不会回到死循环。
+  //   run-07 教训：50/60 步不够 v1.2.6 大范围审查取证，调到 200/200/500 给足冗余。
   // - 文本处理类（a-consolidate/a-verify）：主要做合并/格式化，给 100 够了
   // - b-fix：分片后每批 5 条 finding × 5 工具调用 = 25 步，给 150 是 6 倍余量
   //   太高会导致消息累积 OOM（exit 137）
   // - a-verify：分片后每批 5 条 × 2 操作 = 10 步，给 150 是 15 倍余量
   const STEP_RECURSION_LIMITS = {
-    // a-check/b-check: 130 = L2 硬熔断(60次×2superstep=120) + 10步缓冲。
-    // 审查 P1 修复：原 120 与 L2 硬熔断的 superstep 119 仅差 1 步，
-    // LangGraph 隐含 superstep（路由/条件边）可能导致 L3 先触发，
-    // 使 L2 的产物抢救功能失效。+10 步给 L2 稳定的优先窗口。
-    'a-check': 130,
-    'b-check': 130,
-    'a-consolidate': 100,
-    'b-fix': 150,
-    'a-verify': 150,
+    // a-check/b-check: 200 = L2 硬熔断(100次×2superstep=200) + 充足缓冲。
+    'a-check': 200,
+    'b-check': 200,
+    'a-consolidate': 200,
+    'b-fix': 300,
+    'a-verify': 300,
   };
   const recursionLimit = STEP_RECURSION_LIMITS[step] ?? 50;
 

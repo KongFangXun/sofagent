@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# sofagent install.sh · 主安装器 / FDE 入口 · v1.2.5
+# sofagent install.sh · 主安装器 / FDE 入口 · v1.2.6
 # ============================================================
 # 将 sofagent 约束层部署到目标平台，让 Agent 获得治理能力。
 #
@@ -45,7 +45,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.2.5"
+VERSION="1.2.6"
 
 # ── 颜色输出（合并两套）──
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'
@@ -317,7 +317,7 @@ if command -v npm &>/dev/null; then
 exec node "$LOCAL_AUDIT_DIST" "\$@"
 WRAPPER_EOF
     chmod +x "$NPM_GLOBAL_BIN/sofagent-audit" 2>/dev/null || true
-    ok "  @sofagent/audit 已从仓库本地安装（$(node -e "console.log(require('./engine/audit/package.json').version)" 2>/dev/null || echo "v1.2.0")）"
+    ok "  @sofagent/audit 已从仓库本地安装（$(node -e "console.log(require('./engine/audit/package.json').version)" 2>/dev/null || echo "v${VERSION}")）"
   else
     info "  执行: npm install -g @sofagent/audit@latest"
     if npm install -g "@sofagent/audit@latest" 2>&1 | tail -1; then

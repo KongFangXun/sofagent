@@ -141,7 +141,7 @@ graph TD
 | rules | 规则引擎纯函数包（零 fs/git 依赖），编排层 tool-call 事前拦截 | ✅ 已实现 |
 | eval | 质量评估引擎：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
-| orchestrator | 编排引擎：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 | ✅ 已实现（336 测试） |
+| orchestrator | 编排引擎：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 | ✅ 已实现（347 测试） |
 | daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 | ✅ 已实现（171 测试） |
 | mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
@@ -862,11 +862,11 @@ flowchart TD
 | 阶段 | 版本 | 核心交付 | 依赖已有能力 |
 |------|------|---------|-------------|
 | ① ACTIVATE | v1.2.5 | `activate.ts` + MCP `activate_workflow` tool + workflow.yml 扩展 | registry.ts 动态注册（v1.0.8）+ MCP Server（23 tools） |
-| ② ORCHESTRATE | v1.2.6-v1.2.7 | workflow-parser 扩展 + `composeEnterpriseWorkflow()` + StateGraph 构建 | orchestrator（336 测试）+ LangGraph StateGraph |
+| ② ORCHESTRATE | v1.2.6-v1.2.7 | workflow-parser 扩展 + `composeEnterpriseWorkflow()` + StateGraph 构建 | orchestrator（347 测试）+ LangGraph StateGraph |
 | ③ EXECUTE | v1.2.8-v1.2.9 | dag-runner node-executor + HITL interrupt + 审计集成 + 异常兜底 | audit（568 测试）+ daemon 文件监控 |
 | ④ SUSTAIN | v1.3.0 | 全链路验证 + `wrapToolCall` 联动 | think（反思引擎）+ eval + skillopt |
 
-> **关键认知**：底座（引擎）已经全绿（12 包 1441 测试，实测见 `tools/test-count.sh`），激活链不是造新引擎，是往已有引擎上放车厢——"轨道从早期就铺好了，一直没人往上面放车厢"。
+> **关键认知**：底座（引擎）已经全绿（12 包 1464 测试，实测见 `tools/test-count.sh`），激活链不是造新引擎，是往已有引擎上放车厢——"轨道从早期就铺好了，一直没人往上面放车厢"。
 
 ### 企业 SubAgent YML 格式（v1.2.5 新增）
 

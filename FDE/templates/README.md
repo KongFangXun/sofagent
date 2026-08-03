@@ -13,6 +13,7 @@
 | `deployment-plan.md` | §4-§7 产出 | FDE Agent | 交付手册第二章：部署方案 |
 | `nodes/node-template.md` | §7 产出，§8-§10 更新 | FDE Agent | 工作流节点文档（人读） |
 | `skills/skill-template/SKILL.md` | §7-§8 定制 | FDE Agent | 工作流节点 Skill 层（AI 读） |
+| `delivery-report.md` | §5.9 离场时回写 | FDE 工程师 | **FDE 内部经验沉淀**（非给客户）——飞轮闭环数据入口 |
 
 ## 为什么填 sofagent 自己
 
@@ -54,6 +55,10 @@ FDE Agent 离场前产出给企业的文档，含 4 章：
 | 📄 文档层 | `nodes/[节点名].md` | **人读** | `nodes/node-template.md` |
 | 🧠 Skill 层 | `skills/[节点名]/SKILL.md` | **AI 读** | `skills/skill-template/SKILL.md` |
 | 🔴 运行层 | 对话 session / 部署清单 | **活的** | 文档里 checklist 确认 |
+
+### 三、交付报告（FDE 内部，非给客户）
+
+`delivery-report.md` 是唯一一份 **FDE 给自己回写** 的模板——离场时把这次交付的经验（踩的坑、调试难点、可复用模式）结构化沉淀。它不进交付手册，而是回流到 sofagent 的知识库，作为飞轮闭环的数据入口（详见 PHILOSOPHY §五「飞轮闭环」）。
 
 > 为什么没有 .yaml 配置层？
 > Agent 接受自然语言输入，不读 .yaml 配置文件。节点文档（.md）同时服务企业方人读（看懂这个节点是什么）。
