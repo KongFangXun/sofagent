@@ -284,7 +284,7 @@ a:hover{text-decoration:underline}
 <div class="header">
   <div class="header-inner">
     <div class="header-left">
-      <img src="assets/sofagent.png" alt="sofagent" onerror="this.style.display='none'">
+      <img src="docs/assets/sofagent.png" alt="sofagent" onerror="this.style.display='none'">
       <span class="logo-text">sofagent</span>
       <span class="logo-version">v1.2.5</span>
     </div>
@@ -454,7 +454,7 @@ a:hover{text-decoration:underline}
         <div class="step-desc">
           <span class="node-type nt-auto">🔄 自动执行</span> 输入能自动取 + 规则能写清 + 输出能自动推<br>
           <span class="node-type nt-ai">⚡ 强化岗位</span> 两问满足——AI 辅助人完成<br>
-          <span class="node-type nt-human">👤 暂不动</span> 一问满足——暂不上 AI
+          <span class="node-type nt-human">👤 暂不介入</span> 一问满足——暂不上 AI
         </div>
       </div>
       <div class="step-card">
@@ -483,7 +483,7 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="info-note">
-    节点部署后 7×24 自动执行。节点类型分三种：<strong>🔄 自动执行</strong>（AI 自主完成）、<strong>⚡ 强化岗位</strong>（AI 辅助人）、<strong>👤 暂不动</strong>。详见 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md 第四章</a>
+    节点部署后 7×24 自动执行。节点类型分三种：<strong>🔄 自动执行</strong>（AI 自主完成）、<strong>⚡ 强化岗位</strong>（AI 辅助人）、<strong>👤 暂不介入</strong>。详见 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md 第四章</a>
   </div>
 </div>
 
@@ -499,8 +499,8 @@ a:hover{text-decoration:underline}
     <div class="section-body">
       <div id="kbStats" class="grid-3" style="margin-bottom:16px">
         <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">—</div><div style="font-size:11px;color:var(--text-s)">知识页面</div></div>
+        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--brand)">—</div><div style="font-size:11px;color:var(--text-s)">业务领域</div></div>
         <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">—</div><div style="font-size:11px;color:var(--text-s)">更新日志</div></div>
-        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--brand)">—</div><div style="font-size:11px;color:var(--text-s)">知识域</div></div>
       </div>
       <div id="kbEntries" style="font-size:12px;color:var(--text-s)">加载中...</div>
     </div>
@@ -551,9 +551,9 @@ a:hover{text-decoration:underline}
     </div>
     <div class="section-body">
       <div id="ontStats" class="grid-3" style="margin-bottom:16px">
-        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">—</div><div style="font-size:11px;color:var(--text-s)">实体 Entities</div></div>
+        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--green)">—</div><div style="font-size:11px;color:var(--text-s)">实体 Entities</div></div>
         <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">—</div><div style="font-size:11px;color:var(--text-s)">概念 Concepts</div></div>
-        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">—</div><div style="font-size:11px;color:var(--text-s)">关系 Relations</div></div>
+        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--brand)">—</div><div style="font-size:11px;color:var(--text-s)">关系 Relations</div></div>
       </div>
       <div id="ontEntries" style="font-size:12px;color:var(--text-s)">加载中...</div>
     </div>
@@ -567,7 +567,7 @@ a:hover{text-decoration:underline}
       <p style="font-size:13px;color:var(--text-s);margin-bottom:12px">类比城市规划中的<strong>「用地性质图」</strong>——每块地是住宅/商业/工业，决定了这块地能干什么、归谁管。本体结构 = 企业知识的「用地性质图」——每个知识节点是什么类型、归哪个业务域、能看什么不能看什么。</p>
       <div class="grid-3" style="margin-bottom:16px">
         <div class="ont-card">
-          <h4 style="color:var(--brand-d)">实体 Entity</h4>
+          <h4 style="color:var(--green)">实体 Entity</h4>
           <p>业务对象（如「客户」「订单」「员工」）</p>
           <ul class="ont-list">
             <li>业务可命名</li>
@@ -576,7 +576,7 @@ a:hover{text-decoration:underline}
           </ul>
         </div>
         <div class="ont-card">
-          <h4 style="color:var(--green)">概念 Concept</h4>
+          <h4 style="color:var(--purple)">概念 Concept</h4>
           <p>业务规则（如「审批流」「权限矩阵」）</p>
           <ul class="ont-list">
             <li>抽象规则定义</li>
@@ -585,7 +585,7 @@ a:hover{text-decoration:underline}
           </ul>
         </div>
         <div class="ont-card">
-          <h4 style="color:var(--amber)">关系 Relations</h4>
+          <h4 style="color:var(--brand)">关系 Relations</h4>
           <p>实体/概念间关联</p>
           <ul class="ont-list">
             <li>belongs_to（属于）</li>
@@ -914,19 +914,21 @@ a:hover{text-decoration:underline}
     <div class="section-body">
       <div class="doc-list">
         <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/README.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>README<span class="ext">介绍 + 安装</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/PHILOSOPHY.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>PHILOSOPHY<span class="ext">设计哲学</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/WIKI.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>WIKI<span class="ext">导航索引</span></a>
         <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>ARCHITECTURE<span class="ext">架构详解</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/PHILOSOPHY.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>PHILOSOPHY<span class="ext">设计哲学</span></a>
         <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/VALIDATION.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>VALIDATION<span class="ext">行业印证</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/ROADMAP.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>ROADMAP<span class="ext">路线图</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/DEVELOPMENT.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>DEVELOPMENT<span class="ext">开发指南</span></a>
         <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/HANDBOOK.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>HANDBOOK<span class="ext">操作手册</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>FDE GUIDE<span class="ext">诊断方法论</span></a>
         <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/SECURITY.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>SECURITY<span class="ext">安全策略</span></a>
         <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/LIMITATIONS.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>LIMITATIONS<span class="ext">已知局限</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>FDE GUIDE<span class="ext">诊断方法论</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/THANKS.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>THANKS<span class="ext">致谢</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/WIKI.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>WIKI<span class="ext">导航索引</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/ROADMAP.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>ROADMAP<span class="ext">路线图</span></a>
         <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/CONTRIBUTING.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>CONTRIBUTING<span class="ext">贡献指南</span></a>
-      </div>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/THANKS.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>THANKS<span class="ext">致谢</span></a>
+      
     </div>
+  </div>
   </div>
   <div class="section">
     <div class="section-header">
@@ -1140,7 +1142,9 @@ function renderSummaryData(s){
       var h=Math.max(3,(item.count||0)/max*100);
       var x=30+i*sw;
       svg+='<rect x="'+x+'" y="'+(130-h)+'" width="'+(sw-20)+'" height="'+h+'" rx="3" fill="#E24B4A"/>';
+      // 柱底标签：规则码 + 规则名（两行，用户不用记 A 几）
       svg+='<text x="'+(x+(sw-20)/2)+'" y="145" text-anchor="middle" font-size="9" fill="#8B949E">'+item.code+'</text>';
+      svg+='<text x="'+(x+(sw-20)/2)+'" y="156" text-anchor="middle" font-size="8.5" fill="#57606A" font-weight="500">'+(item.name||'')+'</text>';
       svg+='<text x="'+(x+(sw-20)/2)+'" y="'+(130-h-4)+'" text-anchor="middle" font-size="9" fill="#E24B4A">'+(item.count||0)+'</text>';
     });
     svg+='<text x="2" y="20" font-size="9" fill="#8B949E">'+max+'</text>';
@@ -1649,7 +1653,7 @@ function loadKnowledgeData(){
       var t=l.trim();
       return t&&!t.startsWith('|--')&&!t.startsWith('#');
     }).length;
-    // 知识域数（index.md 表格第二列的域，去重）
+    // 业务领域数（index.md 表格第二列的域，去重）
     var domains={};
     index.split('\n').forEach(function(line){
       var m=line.match(/\|.*?\[\[[^\]]+\]\]\s*\|\s*([^|]*)\|/);
@@ -1659,8 +1663,8 @@ function loadKnowledgeData(){
     if(stats){
       stats.innerHTML=
         '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">'+(pageCount>0?pageCount:'0')+'</div><div style="font-size:11px;color:var(--text-s)">知识页面</div></div>'+
-        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">'+(logCount>0?logCount:'0')+'</div><div style="font-size:11px;color:var(--text-s)">更新日志</div></div>'+
-        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--brand)">'+(domainCount>0?domainCount:'0')+'</div><div style="font-size:11px;color:var(--text-s)">知识域</div></div>';
+        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--brand)">'+(domainCount>0?domainCount:'0')+'</div><div style="font-size:11px;color:var(--text-s)">业务领域</div></div>'+
+        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">'+(logCount>0?logCount:'0')+'</div><div style="font-size:11px;color:var(--text-s)">更新日志</div></div>';
     }
     // 条目列表：index.md 表格行
     var rows=[];
@@ -1682,6 +1686,30 @@ function loadKnowledgeData(){
       }
     }
     if(updated)updated.textContent=fmtUpdatedAt();
+    // 最近经验教训（think.md 段落渲染）
+    var thinkBox=document.getElementById('thinkList');
+    if(thinkBox){
+      var thinks=[];
+      var blocks=String(think||'').split(/^##\s+/m).slice(1);
+      blocks.forEach(function(b){
+        var lines=b.split('\n').filter(function(l){return l.trim()});
+        if(!lines.length)return;
+        var first=lines[0].trim();
+        var rule='';
+        var rm=first.match(/^\[([^\]]+)\]/);
+        if(rm){rule=rm[1];first=first.replace(rm[0],'').trim();}
+        var text=lines.slice(1).join(' ').slice(0,120)||first;
+        thinks.push({title:first,rule:rule,text:text});
+      });
+      if(thinks.length){
+        thinkBox.innerHTML=thinks.slice(0,6).map(function(t){
+          return '<div class="think-entry"><div class="t-rule">'+(t.rule||'反思')+'</div><div class="t-text"><b>'+
+            escapeHtml(t.title)+'</b> '+(t.text!==t.title?escapeHtml(t.text):'')+'</div></div>';
+        }).join('');
+      }else{
+        thinkBox.innerHTML='<div style="grid-column:1/-1;font-size:12px;color:var(--text-s)">暂无经验教训——AI 每次被拦下的毛病、成功的经验会自动沉淀到这里（think.md）。</div>';
+      }
+    }
   }).catch(function(){
     if(stats)stats.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">未连接数据源</div>';
     if(entries)entries.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到知识库（通过 tools/serve-dashboard.mjs 启动可看真实数据）</div>';
@@ -1706,9 +1734,9 @@ function loadOntologyData(){
       var relations=d.relations||[];
       if(stats){
         stats.innerHTML=
-          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">'+entities.length+'</div><div style="font-size:11px;color:var(--text-s)">实体 Entities</div></div>'+
+          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--green)">'+entities.length+'</div><div style="font-size:11px;color:var(--text-s)">实体 Entities</div></div>'+
           '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">'+concepts.length+'</div><div style="font-size:11px;color:var(--text-s)">概念 Concepts</div></div>'+
-          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">'+relations.length+'</div><div style="font-size:11px;color:var(--text-s)">关系 Relations</div></div>';
+          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--brand)">'+relations.length+'</div><div style="font-size:11px;color:var(--text-s)">关系 Relations</div></div>';
       }
       if(entries){
         var html='';
@@ -1722,9 +1750,9 @@ function loadOntologyData(){
           }).join('')+'</div>';
           return h;
         }
-        html+=renderGroup('实体 Entities', '#7F77DD', entities);
-        html+=renderGroup('概念 Concepts', '#1D9E75', concepts);
-        html+=renderGroup('关系 Relations', '#EF9F27', relations);
+        html+=renderGroup('实体 Entities', '#1D9E75', entities);
+        html+=renderGroup('概念 Concepts', '#7F77DD', concepts);
+        html+=renderGroup('关系 Relations', '#16B8F3', relations);
         if(!any){
           html='<div style="font-size:12px;color:var(--text-s)">尚未建立本体结构——在 <a href="javascript:void(0)" onclick="goPage(\'fde\')" style="color:var(--brand)">FDE 引导</a> 页复制 Prompt 执行深挖阶段，或运行 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">create_entity / create_concept</code> 构建。实体/概念文件写入 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/data/knowledge/</code> 后自动显示。</div>';
         }

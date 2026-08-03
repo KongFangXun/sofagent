@@ -570,6 +570,22 @@ while IFS=: read -r file line_num rest; do
     inline_errors=$((inline_errors + 1))
   fi
 done < <(grep -rn "Current version: v[0-9]" --include="*.md" . 2>/dev/null | grep -v node_modules | grep -v ".workbuddy/" | grep -v "docs/changelog/" || true)
+
+# v1.2.5 阶段八① 补：dashboard.html 当前版本活引用（logo 徽章 + 页脚署名）。
+# 只校验两处"当前版本"锚点；激活链里程碑标记（v1.2.5+ / ✅）属历史叙述，不校验。
+dash_html="${PROJECT_ROOT}/dashboard.html"
+if [[ -f "$dash_html" ]]; then
+  for anchor in "logo-version\">v" "孔放勋 · v"; do
+    found_ver=$(grep -F "$anchor" "$dash_html" | grep -oE "v[0-9]+\.[0-9]+(\.[0-9]+)?" | head -1 | sed 's/^v//')
+    if [[ -z "$found_ver" ]]; then continue; fi
+    inline_checked=$((inline_checked + 1))
+    if [[ "$found_ver" != "$SSOT_VERSION" ]]; then
+      report_error "dashboard.html" "v${found_ver}" "v${SSOT_VERSION}"
+      inline_errors=$((inline_errors + 1))
+    fi
+  done
+fi
+
 if [[ $inline_errors -eq 0 ]]; then
   echo -e "  ${GREEN}✓${NC} ${inline_checked} 处中英文正文版本号引用全部一致"
 fi
