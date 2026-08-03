@@ -135,29 +135,36 @@ function aggregateSummary() {
       };
     });
 
-    // ── 近 7 天每日违规任务数 + 今日审计次数（通栏趋势图）──
-    // 违规按「任务」计：一次审计无论触发几条规则只算 1 次，避免数字爆炸
+    // ── 近 7 天每日任务级 PASS/WARN/FAIL（通栏趋势图）──
+    // 按任务计：exitCode 0=PASS / 1=WARN / >1=FAIL，一次审计只算 1 条
     const dailyRaw = runJq(
       '[.[] | select(.timestamp)]' +
       ' | group_by(.timestamp[0:10])' +
       ' | map({ day: .[0].timestamp[0:10],' +
-      '     violations: ([.[] | select([.ruleResults[]? | select(.status == "FAIL" or .status == "WARN")] | length > 0)] | length),' +
-      '     audits: length })' +
-      ' | .[] | "\\(.day)\t\\(.violations)\t\\(.audits)"',
+      '     pass: ([.[] | select((.exitCode // 0) == 0)] | length),' +
+      '     warn: ([.[] | select(.exitCode == 1)] | length),' +
+      '     fail: ([.[] | select((.exitCode // 0) > 1)] | length) })' +
+      ' | .[] | "\\(.day)\t\\(.pass)\t\\(.warn)\t\\(.fail)"',
       historyRaw
     );
     const byDay = {};
     dailyRaw.split('\n').filter(Boolean).forEach((line) => {
-      const [day, v, a] = line.split('\t');
-      byDay[day] = { violations: parseInt(v || 0, 10), audits: parseInt(a || 0, 10) };
+      const [day, p, w, f] = line.split('\t');
+      byDay[day] = { pass: parseInt(p || 0, 10), warn: parseInt(w || 0, 10), fail: parseInt(f || 0, 10) };
     });
     out.daily = [];
     for (let i = 6; i >= 0; i--) {
       const key = new Date(Date.now() - i * 24 * 3600 * 1000).toISOString().slice(0, 10);
-      const d = byDay[key] || { violations: 0, audits: 0 };
-      out.daily.push({ day: key, violations: d.violations, audits: d.audits });
+      const d = byDay[key] || { pass: 0, warn: 0, fail: 0 };
+      const total = d.pass + d.warn + d.fail;
+      const violations = d.warn + d.fail;
+      out.daily.push({
+        day: key, ...d,
+        audits: total, violations,
+        rate: total > 0 ? Math.round((violations * 100) / total) : 0,
+      });
     }
-    out.todayCount = (byDay[new Date().toISOString().slice(0, 10)] || { audits: 0 }).audits;
+    out.todayCount = (out.daily[out.daily.length - 1] || { audits: 0 }).audits;
   }
 
   // ── 数据主权（bash render_sovereignty 同一 jq：近 7 天全部 sovereignty jsonl）──

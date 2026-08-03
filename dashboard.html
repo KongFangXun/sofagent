@@ -337,6 +337,11 @@ a:hover{text-decoration:underline}
       <div class="metric-sub" id="m-audit-sub">24 条规则</div>
     </div>
     <div class="metric-card">
+      <div class="metric-value" style="color:var(--purple)" id="m-today">—</div>
+      <div class="metric-label">今日审计</div>
+      <div class="metric-sub" id="m-today-sub">当日任务数</div>
+    </div>
+    <div class="metric-card">
       <div class="metric-value" style="color:var(--brand)" id="m-nodes">—</div>
       <div class="metric-label">审计记录</div>
       <div class="metric-sub" id="m-nodes-sub">总执行次数</div>
@@ -345,11 +350,6 @@ a:hover{text-decoration:underline}
       <div class="metric-value" style="color:var(--amber)" id="m-violations">—</div>
       <div class="metric-label">违规次数</div>
       <div class="metric-sub" id="m-violations-sub">FAIL + WARN</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-value" style="color:var(--purple)" id="m-today">—</div>
-      <div class="metric-label">今日审计</div>
-      <div class="metric-sub" id="m-today-sub">当日任务数</div>
     </div>
   </div>
 
@@ -1110,33 +1110,54 @@ function renderSummaryData(s){
   }
 }
 
-/* 通栏趋势图：近 7 天每日审计量（灰=总量，红=有违规的任务数） */
+/* 通栏趋势图：近 7 天每日任务级 PASS/WARN/FAIL 堆叠柱 + 违规率折线 */
 function renderDailyTrend(days){
-  var max=Math.max.apply(null,days.map(function(d){return d.audits||0}).concat([1]));
-  var W=920,H=180,padL=40,padR=20,top=20,base=140;
+  var max=Math.max.apply(null,days.map(function(d){return (d.audits!==undefined?d.audits:(d.pass||0)+(d.warn||0)+(d.fail||0))}).concat([1]));
+  var W=920,padL=40,padR=20,top=26,base=140;
   var bw=(W-padL-padR)/days.length;
-  var svg='<line x1="'+padL+'" y1="'+top+'" x2="'+(W-padR)+'" y2="'+top+'" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
   var mid=Math.round((top+base)/2);
+  var svg='<line x1="'+padL+'" y1="'+top+'" x2="'+(W-padR)+'" y2="'+top+'" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
   svg+='<line x1="'+padL+'" y1="'+mid+'" x2="'+(W-padR)+'" y2="'+mid+'" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
   svg+='<line x1="'+padL+'" y1="'+base+'" x2="'+(W-padR)+'" y2="'+base+'" stroke="#E1E4E8" stroke-width="1"/>';
+  var ratePts=[];
   days.forEach(function(d,i){
-    var audits=d.audits||0;
-    var vio=d.violations||0;
-    var h=Math.max(3,audits/max*(base-top));
-    var hv=vio>0?Math.max(2,vio/max*(base-top)):0;
+    var p=d.pass||0,w=d.warn||0,f=d.fail||0;
+    var total=p+w+f;
     var x=padL+i*bw+bw*0.25;
-    var w=bw*0.5;
-    // 灰底柱=审计总量，红柱=违规任务数（叠在底部）
-    svg+='<rect x="'+x+'" y="'+(base-h)+'" width="'+w+'" height="'+h+'" rx="4" fill="#D8DCE1"/>';
-    if(hv>0)svg+='<rect x="'+x+'" y="'+(base-hv)+'" width="'+w+'" height="'+hv+'" rx="4" fill="#E24B4A"/>';
-    svg+='<text x="'+(x+w/2)+'" y="'+(base-h-6)+'" text-anchor="middle" font-size="11" fill="#57606A">'+audits+'</text>';
-    if(vio>0)svg+='<text x="'+(x+w/2)+'" y="'+(base+2)+'" text-anchor="middle" font-size="10" fill="#fff" font-weight="600">'+vio+'</text>';
-    svg+='<text x="'+(x+w/2)+'" y="'+(base+18)+'" text-anchor="middle" font-size="10" fill="#8B949E">'+String(d.day).slice(5)+'</text>';
+    var wBar=bw*0.5;
+    var cx=x+wBar/2;
+    // 堆叠：PASS 在底（绿）→ WARN（琥珀）→ FAIL（红）在顶
+    var acc=0;
+    var segs=[[p,'#1D9E75'],[w,'#EF9F27'],[f,'#E24B4A']];
+    segs.forEach(function(s){
+      var val=s[0];if(val<=0)return;
+      var h0=acc/max*(base-top);
+      var h1=(acc+val)/max*(base-top);
+      svg+='<rect x="'+x+'" y="'+(base-h1)+'" width="'+wBar+'" height="'+(h1-h0)+'" fill="'+s[1]+'"/>';
+      acc+=val;
+    });
+    var hTotal=Math.max(2,total/max*(base-top));
+    svg+='<rect x="'+x+'" y="'+(base-hTotal)+'" width="'+wBar+'" height="2" rx="1" fill="#24292E" opacity="0.15"/>';
+    svg+='<text x="'+cx+'" y="'+(base-hTotal-6)+'" text-anchor="middle" font-size="11" fill="#57606A" font-weight="600">'+total+'</text>';
+    svg+='<text x="'+cx+'" y="'+(base+16)+'" text-anchor="middle" font-size="10" fill="#8B949E">'+String(d.day).slice(5)+'</text>';
+    var rate=(d.rate!==undefined)?d.rate:(total>0?Math.round((w+f)*100/total):0);
+    ratePts.push([cx,rate]);
   });
+  // 违规率折线（映射到右侧 0-100%，用蓝线叠加在顶部区域）
+  var rateTop=top,rateBase=base;
+  var linePts=ratePts.map(function(pt){return pt[0]+','+(rateBase-(pt[1]/100)*(rateBase-rateTop))}).join(' ');
+  if(ratePts.length>1){
+    svg+='<polyline points="'+linePts+'" fill="none" stroke="#16B8F3" stroke-width="2" stroke-linejoin="round" opacity="0.85"/>';
+    ratePts.forEach(function(pt){
+      svg+='<circle cx="'+pt[0]+'" cy="'+(rateBase-(pt[1]/100)*(rateBase-rateTop))+'" r="3" fill="#16B8F3"/>';
+    });
+  }
   svg+='<text x="4" y="'+(top+4)+'" font-size="10" fill="#8B949E">'+max+'</text>';
   // 图例
-  svg+='<rect x="'+(W-210)+'" y="'+top+'" width="10" height="10" rx="2" fill="#D8DCE1"/><text x="'+(W-196)+'" y="'+(top+9)+'" font-size="10" fill="#8B949E">审计总量</text>';
-  svg+='<rect x="'+(W-120)+'" y="'+top+'" width="10" height="10" rx="2" fill="#E24B4A"/><text x="'+(W-106)+'" y="'+(top+9)+'" font-size="10" fill="#8B949E">含违规任务</text>';
+  svg+='<rect x="'+(W-330)+'" y="8" width="10" height="10" rx="2" fill="#1D9E75"/><text x="'+(W-316)+'" y="17" font-size="10" fill="#8B949E">PASS</text>';
+  svg+='<rect x="'+(W-270)+'" y="8" width="10" height="10" rx="2" fill="#EF9F27"/><text x="'+(W-256)+'" y="17" font-size="10" fill="#8B949E">WARN</text>';
+  svg+='<rect x="'+(W-210)+'" y="8" width="10" height="10" rx="2" fill="#E24B4A"/><text x="'+(W-196)+'" y="17" font-size="10" fill="#8B949E">FAIL</text>';
+  svg+='<line x1="'+(W-140)+'" y1="13" x2="'+(W-120)+'" y2="13" stroke="#16B8F3" stroke-width="2"/><text x="'+(W-114)+'" y="17" font-size="10" fill="#8B949E">违规率</text>';
   document.getElementById('trendChart').innerHTML=svg;
 }
 
@@ -1241,23 +1262,19 @@ function renderTrendChart(records){
   records.forEach(function(r){
     if(!r.timestamp)return;
     var day=r.timestamp.slice(0,10);
-    // 违规按任务计：一次审计触发多条规则只算 1 次
-    var hasViolation=false;
-    if(r.ruleResults){
-      r.ruleResults.forEach(function(rr){
-        if(rr.status==='FAIL'||rr.status==='WARN')hasViolation=true;
-      })
-    }
-    if(!byDay[day])byDay[day]={violations:0,audits:0};
-    byDay[day].audits++;
-    if(hasViolation)byDay[day].violations++;
+    if(!byDay[day])byDay[day]={pass:0,warn:0,fail:0};
+    var ec=r.exitCode||0;
+    if(ec===0)byDay[day].pass++;
+    else if(ec===1)byDay[day].warn++;
+    else byDay[day].fail++;
   });
   // 补齐最近 7 天（缺失日补 0），再画通栏柱状图
   var days=[];
   for(var i=6;i>=0;i--){
     var dt=new Date(Date.now()-i*24*3600*1000);
     var key=dt.toISOString().slice(0,10);
-    days.push({day:key,violations:(byDay[key]&&byDay[key].violations)||0});
+    var d=byDay[key]||{pass:0,warn:0,fail:0};
+    days.push({day:key,pass:d.pass,warn:d.warn,fail:d.fail});
   }
   renderDailyTrend(days);
 }
@@ -1299,13 +1316,14 @@ function loadSampleData(){
       : '<span class="audit-rule" style="color:var(--green)">✓</span>';
     return '<div class="audit-row"><span class="audit-time">'+r.time+'</span><span class="audit-badge badge-'+r.verdict.toLowerCase()+'">'+r.verdict+'</span>'+ruleCell+'<span class="audit-task">'+r.task+'</span></div>';
   }).join('');
-  // 示例趋势：近 7 天每日审计量（灰）+ 含违规任务（红）
-  var sampleVio=[9,7,11,5,8,4,6];
-  var sampleAudits=[28,24,31,18,26,15,22];
+  // 示例趋势：近 7 天每日 PASS/WARN/FAIL（堆叠柱 + 违规率折线）
+  var samplePass=[19,17,20,13,18,11,16];
+  var sampleWarn=[6,5,8,3,5,2,4];
+  var sampleFail=[3,2,3,2,3,2,2];
   var sampleDays=[];
   for(var i=6;i>=0;i--){
     var dt=new Date(Date.now()-i*24*3600*1000);
-    sampleDays.push({day:dt.toISOString().slice(0,10),violations:sampleVio[6-i],audits:sampleAudits[6-i]});
+    sampleDays.push({day:dt.toISOString().slice(0,10),pass:samplePass[6-i],warn:sampleWarn[6-i],fail:sampleFail[6-i]});
   }
   renderDailyTrend(sampleDays);
   renderSovereignty(null,null);
