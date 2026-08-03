@@ -555,21 +555,36 @@ fi
 # v1.2.5 阶段八① 补：dashboard.html 是当前版本活引用文件（v1.2.5 新增），
 # 此前 bump/check 均未覆盖（结构性盲区）。只替换两处"当前版本"锚点：
 # ① logo-version 徽章 ② 页脚署名行。激活链里程碑标记（v1.2.5+ / ✅ 历史）不 bump。
+# 🔴 用 node 而非 bash ${//} 参数替换：bash 3.2 对 109KB 大字符串做 ${//} 时
+#    内存暴涨被 macOS jetsam 杀死（exit 137）——阶段八实测锁定。node 处理稳定。
 dash_html="$PROJECT_ROOT/dashboard.html"
 if [[ -f "$dash_html" ]]; then
-  dash_content=$(cat "$dash_html")
-  dash_new=$(cat "$dash_html")
-  dash_new="${dash_new//class=\"logo-version\">v$OLD_3SEG</class=\"logo-version\">v$NEW_3SEG<}"
-  dash_new="${dash_new//孔放勋 · v$OLD_3SEG</孔放勋 · v$NEW_3SEG<}"
-  if [[ "$dash_new" != "$dash_content" ]]; then
-    echo -e "  ${GREEN}✓${NC} dashboard.html: v$OLD_3SEG → v$NEW_3SEG（logo + 页脚）"
+  export SOFAGENT_BUMP_DASH_WRITE="0"
+  if ! $DRY_RUN; then SOFAGENT_BUMP_DASH_WRITE="1"; fi
+  DASH_HITS=$(node -e "
+    const fs = require('fs');
+    const p = '$dash_html';
+    const old = '$OLD_3SEG', nv = '$NEW_3SEG';
+    const content = fs.readFileSync(p, 'utf8');
+    const anchors = [
+      ['class=\"logo-version\">v' + old + '<', 'class=\"logo-version\">v' + nv + '<'],
+      ['孔放勋 · v' + old + '<', '孔放勋 · v' + nv + '<'],
+    ];
+    let out = content, hits = 0;
+    for (const [from, to] of anchors) {
+      if (out.includes(from)) { out = out.split(from).join(to); hits++; }
+    }
+    if (hits > 0 && process.env.SOFAGENT_BUMP_DASH_WRITE === '1') {
+      fs.writeFileSync(p, out);
+    }
+    console.log(hits);
+  ")
+  if [[ "$DASH_HITS" -gt 0 ]] 2>/dev/null; then
+    echo -e "  ${GREEN}✓${NC} dashboard.html: v${OLD_3SEG} → v${NEW_3SEG}（${DASH_HITS} 处活引用）"
     echo -e "    ${CYAN}$dash_html${NC}"
-    if ! $DRY_RUN; then
-      printf '%s\n' "$dash_new" > "$dash_html"
-    fi
     TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
   else
-    echo -e "  ${YELLOW}dashboard.html 没有匹配到 v$OLD_3SEG${NC}"
+    echo -e "  ${YELLOW}dashboard.html 没有匹配到 v${OLD_3SEG}${NC}"
   fi
 else
   echo -e "  ${YELLOW}dashboard.html 跳过（文件不存在）${NC}"
