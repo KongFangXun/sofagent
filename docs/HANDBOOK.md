@@ -34,7 +34,7 @@
 | 想理解为什么这么做 | [设计哲学](./PHILOSOPHY.md)（**强烈推荐，读 5 分钟**） |
 | 想配置 MCP 推送 | [MCP 使用指南](./guides/mcp-usage.md) |
 
-> 📁 **项目文件导航**：根目录 8 个 .md 文件各司其职——[README.md](../README.md)（项目概览）、[README.en.md](../README.en.md)（英文概览）、[CHANGELOG.md](../CHANGELOG.md)（版本索引）、[ROADMAP.md](../ROADMAP.md)（路线图）、[LIMITATIONS.md](../LIMITATIONS.md)（已知局限）、[SECURITY.md](../SECURITY.md)（安全策略）、[CONTRIBUTING.md](../CONTRIBUTING.md)（贡献指南）、[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)（行为准则）。其余文档在 `docs/` 子目录下。
+> 📁 **项目文件导航**：根目录 6 个 .md 文件各司其职——[README.md](../README.md)（项目概览）、[README.en.md](../README.en.md)（英文概览）、[CHANGELOG.md](../CHANGELOG.md)（版本索引）、[SECURITY.md](../SECURITY.md)（安全策略）、[CONTRIBUTING.md](../CONTRIBUTING.md)（贡献指南）、[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)（行为准则）。[ROADMAP.md](./ROADMAP.md)（路线图）和 [LIMITATIONS.md](./LIMITATIONS.md)（已知局限）在 `docs/` 下。
 
 ---
 
@@ -49,7 +49,7 @@
 | AI 知识库 | `data/knowledge/` 目录，跨任务积累最佳实践，加载链被动注入 | [进化：知识自动沉淀](#进化知识自动沉淀) |
 | 交付后怎么自动跑 | 🔗 激活链（v1.2.5+）：读交付物 → 注册 SubAgent → 编排 → 带审批和审计地自动跑 | [常驻：长期自跑与持续优化](#常驻长期自跑与持续优化) |
 | AI 成熟度 | 三级台阶（替换→增强→重构），FDE 帮企业从第二级跨到第三级——不只装 AI，还装上责任机制 | [FDE/GUIDE.md](../FDE/GUIDE.md#18-企业-ai-成熟度三级台阶) |
-| 已知局限 | 核心效果见 [evidence.md](./evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](../LIMITATIONS.md) |
+| 已知局限 | 核心效果见 [evidence.md](./evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](./LIMITATIONS.md) |
 
 ---
 
@@ -66,7 +66,7 @@
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
 - **🔗 激活链（v1.2.5+ 规划中）**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
-**现在还干不了的事（规划中，暂无代码）**：完整多设备协同、并行编排、SubAgent 生产级沙箱、本地推理小模型——路线见 [ROADMAP](../ROADMAP.md)。
+**现在还干不了的事（规划中，暂无代码）**：完整多设备协同、并行编排、SubAgent 生产级沙箱、本地推理小模型——路线见 [ROADMAP](./ROADMAP.md)。
 
 ---
 
@@ -161,7 +161,7 @@ cd sofagent && bash install.sh
 | `sofagent-audit: Node.js 未找到` | Node.js 未安装或版本过低 | 安装 Node.js ≥18：`node --version` 确认 |
 | commit 时没有审计输出 | commit-msg hook 未安装 | `sofagent-audit --init` 或 `sofagent-audit --install-hook` |
 | 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
-| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计引擎可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](../LIMITATIONS.md#windows-支持是实验性的) |
+| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计引擎可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](./LIMITATIONS.md#windows-支持是实验性的) |
 | hook 装了但静默跳过 | Node.js 或 sofagent-audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
 | `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（默认 17 条（A1–A11 + A18–A23）全启用，扩展 7 条（A14–A17 + E1/E2/E4）需开启，全量 24 条） |
 
@@ -492,7 +492,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 | 评分越来越不准 | 翻 task/logs 对照 think.md，清理低置信度旧条目 |
 | 什么不该让 Agent 做 | 确定性操作（去重/格式校验/文件清理）用脚本 |
 
-> 更多见 [LIMITATIONS.md](../LIMITATIONS.md)。
+> 更多见 [LIMITATIONS.md](./LIMITATIONS.md)。
 
 ### Osmani 三盆冷水
 

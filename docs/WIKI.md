@@ -9,7 +9,7 @@
 > - **[ARCHITECTURE.md](./ARCHITECTURE.md)**（83KB）：双层架构设计（能力底座 × 生命周期）+ 引擎工程三层嵌套（Harness → Graph → Loop），关键技术决策记录。**3 秒版**：一底座·三引擎管"做对" · 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
 > - **[PHILOSOPHY.md](./PHILOSOPHY.md)**（41KB）：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
 > - **[VALIDATION.md](./VALIDATION.md)**（40KB）：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射。
-> - **[ROADMAP.md](../ROADMAP.md)**（73KB）：版本路线图 + 已发布版本记录。当前 v1.2.5 已开发完成，待发版。
+> - **[ROADMAP.md](./ROADMAP.md)**（73KB）：版本路线图 + 已发布版本记录。当前 v1.2.5 已开发完成，待发版。
 
 ---
 
@@ -103,13 +103,13 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | 文件 | 看什么的 |
 |------|---------|
 | `README.md` | 项目介绍、安装、部署（给人看） |
-| `ROADMAP.md` | 版本路线图、行业借鉴项、技术预研方向 |
+| `docs/ROADMAP.md` | 版本路线图、行业借鉴项、技术预研方向 |
 | `CHANGELOG.md` | 纯目录索引——每版本一行，细节见 `docs/changelog/` |
 | `SKILL/SKILL.md` | FDE Agent 主入口（Harness 加载链起点） |
 | `install.sh` | 一键安装脚本 |
 | `LICENSE` | MIT |
 | `SECURITY.md` | 安全策略、审计规则清单 |
-| `LIMITATIONS.md` | 已知限制和适用边界 |
+| `docs/LIMITATIONS.md` | 已知限制和适用边界 |
 | `CONTRIBUTING.md` | 贡献指南 |
 
 ### docs/ 目录
@@ -161,7 +161,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | 项 | 值 |
 |----|-----|
 | 当前版本 | **v1.2.4**（2026-08-02） |
-| 下一版本 | v1.2.5（激活链 Phase 1，参见 ROADMAP.md） |
+| 下一版本 | v1.2.5（激活链 Phase 1，参见 docs/ROADMAP.md） |
 | 测试覆盖 | 1441 测试 / 12 包（共 1441，16 因 safe-delete 环境限制预期失败） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1-E2/E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
@@ -195,7 +195,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | 3 分钟搞懂它是什么、能干什么 | [README.md](../README.md) |
 | 理解设计哲学（为什么这么做） | [PHILOSOPHY.md](./PHILOSOPHY.md) |
 | 看行业印证与生态定位 | [VALIDATION.md](./VALIDATION.md) |
-| 看版本路线图和下一步 | [ROADMAP.md](../ROADMAP.md) |
+| 看版本路线图和下一步 | [ROADMAP.md](./ROADMAP.md) |
 | 了解激活链（交付物怎么自己跑起来） | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md)（v1.2.5+） |
 | 作为 FDE 进场部署 | [HANDBOOK.md](./HANDBOOK.md) |
 | 找效果证据/案例 | [docs/evidence/](./evidence/) |

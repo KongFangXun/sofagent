@@ -99,7 +99,7 @@ v0.94 要补上这个缺口：**同一任务、同一模型，在三种条件下
 **验证方式**：实验结束后检查 WorkBuddy 对话历史（或 `.sofagent/task/logs/`）中是否出现对 think.md / fde.md 的 Read 操作。
 
 - 命中率 = 被读到的层数 / 3
-- 命中率 < 50%（< 1.5 层）→ 加载链机制本身有问题，回到 [LIMITATIONS.md](../../../LIMITATIONS.md) 讨论
+- 命中率 < 50%（< 1.5 层）→ 加载链机制本身有问题，回到 [LIMITATIONS.md](../../LIMITATIONS.md) 讨论
 
 #### 次要指标（记录但不作为主判据）
 

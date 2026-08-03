@@ -62,4 +62,4 @@ sofagent-audit --revert <SHA>     # 回滚到指定快照
 
 - 不解析二进制文件内容（Excel、PDF 等）
 - daemon 重启后 A17 窗口内历史不保留
-- 详见 [LIMITATIONS.md](../../LIMITATIONS.md)
+- 详见 [LIMITATIONS.md](../LIMITATIONS.md)
