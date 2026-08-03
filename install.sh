@@ -267,8 +267,17 @@ fi
 info "Step 2/8 · 检查运行环境..."
 if command -v node &>/dev/null; then
   NODE_VER=$(node --version); ok "Node.js 已安装: $NODE_VER"; _log "node=$NODE_VER"
+  # v1.2.6: Node 版本下限检查——Node < 18 时 err 并退出（不是 warn）
+  NODE_MAJOR=$(echo "$NODE_VER" | sed 's/v//' | cut -d. -f1)
+  if [ -n "$NODE_MAJOR" ] && [ "$NODE_MAJOR" -lt 18 ] 2>/dev/null; then
+    err "Node.js 版本过低（$NODE_VER），sofagent 需要 Node.js >= 18"
+    err "请升级 Node.js: https://nodejs.org/"
+    exit 1
+  fi
 else
-  warn "Node.js 未安装。审计引擎（@sofagent/audit）需要 Node.js >= 18"; warn "请先安装 Node.js: https://nodejs.org/"
+  err "Node.js 未安装。审计引擎（@sofagent/audit）需要 Node.js >= 18"
+  err "请先安装 Node.js: https://nodejs.org/"
+  exit 1
 fi
 if command -v npm &>/dev/null; then
   NPM_VER=$(npm --version); ok "npm 已安装: v$NPM_VER"
@@ -287,7 +296,16 @@ info "Step 3/8 · 审计引擎: @sofagent/audit（约束底座三引擎之一）
 # 优先使用仓库本地的 engine/audit/dist/（避免 npm @latest 版本漂移）
 # 仓库本地版本与用户 clone 的版本一致，npm registry 可能滞后
 LOCAL_AUDIT_DIST="$PROJECT_ROOT/engine/audit/dist/index.js"
-NPM_GLOBAL_BIN=$(npm bin -g 2>/dev/null || echo "/usr/local/bin")
+# v1.2.6: npm 10+ 废弃了 `npm bin -g`，改用 `npm prefix -g`。
+# 兼容策略：优先 npm prefix -g，失败时 fallback 到 ~/.local/bin，最后 /usr/local/bin。
+NPM_GLOBAL_PREFIX=$(npm prefix -g 2>/dev/null || true)
+if [ -n "$NPM_GLOBAL_PREFIX" ] && [ -d "$NPM_GLOBAL_PREFIX/bin" ]; then
+  NPM_GLOBAL_BIN="$NPM_GLOBAL_PREFIX/bin"
+elif [ -d "$HOME/.local/bin" ]; then
+  NPM_GLOBAL_BIN="$HOME/.local/bin"
+else
+  NPM_GLOBAL_BIN="/usr/local/bin"
+fi
 
 if command -v npm &>/dev/null; then
   if [ -f "$LOCAL_AUDIT_DIST" ]; then
@@ -320,6 +338,32 @@ fi
 deploy_constitution    # Step 4: 创建目录 + 复制宪法文件
 deploy_skill_files     # Step 5: 复制 Skill + 数据文件
 deploy_scripts         # Step 5b: 部署配套脚本 + 数据目录
+
+# ════════════════════════════════════════
+# Step 5c: HMAC 密钥自动生成（v1.2.6 新增）
+# ════════════════════════════════════════
+# 审计历史的 HMAC 防篡改链需要 ~/.sofagent-key。
+# 此前密钥不存在时降级为 SHA-256（无密钥校验），现在 config 签名改为 fail-closed 后
+# 必须有密钥才能启动。install.sh 自动生成密钥（权限 600），避免用户遗忘。
+SOFAGENT_KEY_PATH="${HOME}/.sofagent-key"
+if [ ! -f "$SOFAGENT_KEY_PATH" ]; then
+  info "Step 5c · 生成 HMAC 密钥（~/.sofagent-key）..."
+  # 用 openssl 生成 32 字节随机密钥（hex 编码 = 64 字符），权限 600
+  if command -v openssl &>/dev/null; then
+    (umask 077 && openssl rand -hex 32 > "$SOFAGENT_KEY_PATH")
+  else
+    # fallback：用 /dev/urandom + xxd 或 hexdump
+    (umask 077 && head -c 32 /dev/urandom | od -A n -t x1 | tr -d ' \n' > "$SOFAGENT_KEY_PATH")
+  fi
+  if [ -f "$SOFAGENT_KEY_PATH" ]; then
+    chmod 600 "$SOFAGENT_KEY_PATH"
+    ok "  HMAC 密钥已生成（权限 600）——用于审计历史防篡改链 + 配置签名"
+  else
+    warn "  HMAC 密钥生成失败（后续可用 openssl rand -hex 32 > ~/.sofagent-key 手动创建）"
+  fi
+else
+  ok "  HMAC 密钥已存在（~/.sofagent-key），跳过生成"
+fi
 
 # ════════════════════════════════════════
 # Step 6-7: Hook + 断路器

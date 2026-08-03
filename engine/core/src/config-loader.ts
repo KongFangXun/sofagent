@@ -314,8 +314,10 @@ function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath:
 
   const key = getHmacKey();
   if (key === null) {
-    console.warn('⚠️ config.yml 含 signature 字段但无 ~/.sofagent-key，跳过签名校验（向后兼容，未阻断启动）');
-    return;
+    // v1.2.6: fail-closed——配置文件有 signature 但无密钥时拒绝启动（而非静默跳过）。
+    // 原为 console.warn 后继续（等于没有防护），现与签名不匹配时的处理一致。
+    console.error(`❌ config.yml 含 signature 字段但无 ~/.sofagent-key，无法验签——拒绝启动: ${filePath}`);
+    throw new Error(`配置文件签名校验失败（缺少 HMAC 密钥），拒绝启动。请创建 ~/.sofagent-key 或删除 config.yml 中的 signature 字段: ${filePath}`);
   }
   const canonical = stableStringify(parsed);
   const expected = createHmac('sha256', key).update(canonical).digest('hex');

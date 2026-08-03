@@ -98,11 +98,15 @@ if [ -n "$SOFAGENT_SKIP_HOOK" ]; then
   exit 0
 fi
 
-# 0b. 读取 commit message（commit-msg hook 独有优势——A3 越界检查依赖此参数）
+# 0b. 读取 commit message（commit-msg hook 独有优势）
+#    - subject（第一行）：A3 越界检查依赖此参数
+#    - 完整 message：A9 注入检查依赖此参数（body 里的注入 payload 不能漏检）
 COMMIT_MSG_FILE="$1"
 COMMIT_SUBJECT=""
+COMMIT_FULL_MSG=""
 if [ -f "$COMMIT_MSG_FILE" ]; then
   COMMIT_SUBJECT=$(head -1 "$COMMIT_MSG_FILE")
+  COMMIT_FULL_MSG=$(cat "$COMMIT_MSG_FILE")
 fi
 
 DIFF=$(git diff --cached --name-only)
@@ -117,11 +121,11 @@ if ! command -v node &>/dev/null; then
   exit 1
 fi
 
-# 2. sofagent-audit 检测
-if command -v sofagent-audit &>/dev/null; then
-  AUDIT_CMD="sofagent-audit"
-elif [ -f "engine/audit/dist/index.js" ]; then
-  AUDIT_CMD="node engine/audit/dist/index.js"
+# 2. sofagent-audit 检测（优先用仓库本地 engine/audit/dist/，避免全局旧版版本漂移）
+if [ -f "engine/audit/dist/index.js" ]; then
+  AUDIT_CMD=(node "engine/audit/dist/index.js")
+elif command -v sofagent-audit &>/dev/null; then
+  AUDIT_CMD=(sofagent-audit)
 else
   echo "❌ sofagent 提示：未找到 sofagent-audit 命令，审计无法运行"
   echo "   请运行: npm install -g @sofagent/audit"
@@ -133,11 +137,13 @@ fi
 AUDIT_DIFF_ARG="--cached"
 
 # 4. 正常运行审计
-# commit-msg hook 可读取 commit message，传 --task 使 A3 越界检查生效
+# --task 传 subject（A3 越界检查用）
+# --commit-msg 传完整 message（A9 注入检查用）——两个参数都传
+# AUDIT_CMD 用 bash 数组——仓库路径含空格时（如 /Users/foo/my repo/）不炸
 if [ -n "$COMMIT_SUBJECT" ]; then
-  $AUDIT_CMD --diff "$AUDIT_DIFF_ARG" --silent --ci --task "$COMMIT_SUBJECT"
+  "\${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci --task "$COMMIT_SUBJECT" --commit-msg "$COMMIT_FULL_MSG"
 else
-  $AUDIT_CMD --diff "$AUDIT_DIFF_ARG" --silent --ci
+  "\${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci
 fi
 EXIT_CODE=$?
 

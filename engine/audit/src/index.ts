@@ -321,6 +321,18 @@ function installHook(): void {
 
   const destPath = join(hooksDir, 'commit-msg');
 
+  // v1.2.6: 覆盖前备份已有 hook（如果有）
+  if (existsSync(destPath)) {
+    const backupPath = join(hooksDir, 'commit-msg.bak');
+    try {
+      const existingContent = readFileSync(destPath, 'utf-8');
+      writeFileSync(backupPath, existingContent);
+      console.log(`  → 已备份旧 commit-msg hook 到 ${backupPath}`);
+    } catch (e) {
+      console.warn('[sofagent] 警告：备份旧 hook 失败，继续覆盖', e instanceof Error ? e.message : String(e));
+    }
+  }
+
   // 读取模板并写入
   const templateContent = readFileSync(hookTemplate, 'utf-8');
   writeFileSync(destPath, templateContent);

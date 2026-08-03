@@ -30,13 +30,13 @@ Agent 检测到后跳过 ClawHub 搜索，Skills 手动放入 `~/.openclaw/skill
 
 ### 权限
 
-install.sh 自动设置 `.sofagent/` 目录权限为 700（仅当前用户可访问）。
+install.sh 自动设置 `~/.sofagent/data/` 目录权限为 700（仅当前用户可访问）。
 多用户服务器场景下，其他用户无法读取你的任务记录。
 
 ### 明文存储提醒
 
 task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对话摘要。
-如需更高安全级别，考虑对 .sofagent/ 目录做 gpg 加密或放在加密卷上。
+如需更高安全级别，考虑对 ~/.sofagent/data/ 目录做 gpg 加密或放在加密卷上。
 
 ## 合规检查清单
 
@@ -78,7 +78,7 @@ done < repo-list.txt
 
 ### ② org-level 配置集中下发
 
-通过符号链接共享 `.sofagent/config.yml` 模板，企业统一管控审计策略：
+通过符号链接共享 `~/.sofagent/data/config.yml` 模板，企业统一管控审计策略：
 
 ```bash
 # 创建标准模板
@@ -94,8 +94,8 @@ EOF
 
 # 符号链接到各 repo
 for repo in /path/to/repos/*/; do
-  mkdir -p "$repo/.sofagent"
-  ln -sf /etc/sofagent/template-config.yml "$repo/.sofagent/config.yml"
+  mkdir -p "$repo/.sofagent/data"
+  ln -sf /etc/sofagent/template-config.yml "$repo/.sofagent/data/config.yml"
 done
 ```
 
@@ -127,8 +127,8 @@ jobs:
 
 ### 其他方案
 
-- **Git submodule**：`git submodule add git@github.com:your-org/sofagent-shared-config.git .sofagent/shared`
-- **dotfiles**：将 `.sofagent/config.yml` 加入 stow/chezmoi，通过 symlink 统一管理
+- **Git submodule**：`git submodule add git@github.com:your-org/sofagent-shared-config.git ~/.sofagent/data/shared`
+- **dotfiles**：将 `~/.sofagent/data/config.yml` 加入 stow/chezmoi，通过 symlink 统一管理
 
 ### 当前局限
 
@@ -140,9 +140,9 @@ jobs:
 
 > 当前 sofagent 不直接支持 AD/LDAP 认证集成。
 
-- **现状**：sofagent 的用户身份基于本地 OS 用户（`~/.sofagent/` 目录权限 700），没有集中用户目录概念
+- **现状**：sofagent 的用户身份基于本地 OS 用户（`~/.sofagent/data/` 目录权限 700），没有集中用户目录概念
 - **替代方案**：通过系统级 git hook 模板部署实现组织范围策略下发——将 `sofagent-audit --install-hook` 嵌入 git 模板目录（`git config --global init.templateDir`），新 clone 的仓库自动带 hook
-- **权限映射**：可通过组织级脚本控制哪些用户组有权修改 `.sofagent/config.yml`（文件 ACL：`chmod 640` + `chown :engineering`）
+- **权限映射**：可通过组织级脚本控制哪些用户组有权修改 `~/.sofagent/data/config.yml`（文件 ACL：`chmod 640` + `chown :engineering`）
 - **路线图**：企业级 SSO/LDAP 集成规划在 v2.x，当前建议结合 OS 级权限 + git hook 模板实现等效控制
 
 ## 审计日志对接
@@ -163,7 +163,7 @@ sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，�
 | **ELK (Elasticsearch + Logstash + Kibana)** | Filebeat 配置 `input.path: /path/to/.sofagent/data/audit/history.jsonl`，Logstash 解析 JSONL 后索引到 Elasticsearch |
 | **Splunk** | Universal Forwarder 配置 monitor 监听 `history.jsonl`，自动解析结构化日志 |
 | **Grafana Loki** | Promtail 配置 scrape_config 指向 `history.jsonl`，label 按 `rule`/`status` 维度 |
-| **自家 SIEM** | `tail -f .sofagent/data/audit/history.jsonl \| your-pipe` 实时消费 |
+| **自家 SIEM** | `tail -f ~/.sofagent/data/audit/history.jsonl \| your-pipe` 实时消费 |
 
 > `--json` 输出模式可配合 jq 做实时过滤：`sofagent-audit --diff HEAD~1..HEAD --json | jq 'select(.status == "FAIL")'`
 

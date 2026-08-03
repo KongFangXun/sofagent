@@ -212,6 +212,43 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
   // 因为这些异常无法在当前侧区分「真·篡改」与「密钥轮换 / 环境漂移」。
   let foundUnverifiable = false;
 
+  // v1.2.6 F22: 创世条目（entries[0]）HMAC 验签——
+  // 主循环从 i=1 开始（校验 prevHash 链），entries[0] 从未被独立校验。
+  // 攻击者可篡改创世条目内容（如修改初始审计结果）而不被检测。
+  // 在主循环之前对创世条目做 HMAC 验签（复用已有逻辑，不引入新字段）。
+  const genesisEntry = entries[0]!;
+  if (
+    genesisEntry &&
+    typeof genesisEntry.hmacSig === 'string' &&
+    genesisEntry.hmacSig &&
+    keyAvailable &&
+    hmacKey
+  ) {
+    const genesisUseFingerprint = genesisEntry.hashVersion === 2;
+    const genesisRecordForSig = {
+      ...genesisEntry,
+      prevHash: undefined,
+      hashVersion: undefined,
+      hmacSig: undefined,
+      hmacAlgo: undefined,
+    };
+    const genesisHashInput = genesisUseFingerprint
+      ? stableStringify(genesisRecordForSig) + '|' + fingerprint
+      : stableStringify(genesisRecordForSig);
+    const genesisExpectedHmac = createHmac('sha256', hmacKey)
+      .update(genesisHashInput)
+      .digest('hex')
+      .slice(0, 32);
+    if (genesisEntry.hmacSig !== genesisExpectedHmac) {
+      if (genesisEntry.hmacAlgo === 'stable' && !genesisUseFingerprint) {
+        // stable 条目（无环境指纹）：HMAC 不匹配 = 内容被改 → tampered（红）
+        return { status: 'tampered', index: 0, detail: `创世条目（索引 0）HMAC 签名不匹配（stable 条目，无环境指纹），疑似内容被篡改` };
+      }
+      // 其余情况（v2 指纹条目或旧条目）归为不可复验（黄）
+      foundUnverifiable = true;
+    }
+  }
+
   for (let i = 1; i < entries.length; i++) {
     const prev = entries[i - 1]!;
     const curr = entries[i]!;

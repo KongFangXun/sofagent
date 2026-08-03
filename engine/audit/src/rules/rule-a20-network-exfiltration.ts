@@ -31,11 +31,21 @@ const SENSITIVE_DATA_PATTERNS: { pattern: RegExp; name: string }[] = [
 ];
 
 /**
- * 检查 URL 是否在白名单域名中
+ * 检查 URL 是否在白名单域名中（精确 hostname 比对）
+ * v1.2.6: 从 includes 子串匹配改为 URL 解析后精确 hostname 比对——
+ * 防止 attacker.com 白名单绕过（如 evil-github.com 含子串 github.com）
  */
-function isWhitelisted(url: string): boolean {
-  const lowerUrl = url.toLowerCase();
-  return DOMAIN_WHITELIST.some(domain => lowerUrl.includes(domain));
+function isWhitelisted(rawUrl: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return false;
+  }
+  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  return DOMAIN_WHITELIST.some(domain =>
+    host === domain || host.endsWith('.' + domain)
+  );
 }
 
 /**

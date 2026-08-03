@@ -52,7 +52,7 @@ export const defaultRules: Rule[] = [
   { name: 'A9 不纳注入', number: 9, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA9 },
   { name: 'A10 不引毒源', number: 10, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA10 },
   { name: 'A11 不滥资源', number: 11, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA11 },
-  // A12-A17 为预留/扩展编号：A12（供应链安全）和 A13（文件权限）已永久跳号——v1.1.0 合并入 A11（不滥资源），语义有重叠但不完全等价，A12/A13 独立规则留待未来版本恢复；A14-A17 见 extendedRules
+  // A12-A17 为预留/扩展编号：A12（供应链安全）和 A13（文件权限）已永久跳号——v0.99.4 合并入 A11（不滥资源），语义有重叠但不完全等价，A12/A13 独立规则留待未来版本恢复；A14-A17 见 extendedRules
   { name: 'A18 垃圾文件', number: 18, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleA18 },
   // v1.2.5: A19 ruleClass 从 '业务底线' 改为 '工程规范'（msg 质量是工程规范，不是安全红线）
   { name: 'A19 msg 质量', number: 19, evidenceMode: 'git-diff', ruleClass: '工程规范', check: checkRuleA19 },
