@@ -51,7 +51,7 @@ a:hover{text-decoration:underline}
 .section-title .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .dot-emoji{font-size:14px;line-height:1;flex-shrink:0}
 .section-sub{font-size:12px;color:var(--text-s);font-weight:400;margin-left:4px}
-.section-body{padding:20px;flex:1}
+.section-body{padding:20px;flex:1;display:flex;flex-direction:column;min-height:0}
 
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
 .metric-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
@@ -1109,7 +1109,7 @@ function renderSummaryData(s){
   if(s.sovereignty){
     document.getElementById('m-localrate').textContent=(s.sovereignty.localRate||0)+'%';
     document.getElementById('m-localrate-sub').textContent=(s.sovereignty.local||0)+'/'+(s.sovereignty.total||0)+' 本地';
-    renderSovereigntyFromSummary(s.sovereignty);
+    renderSovereigntyBox(s.sovereignty,s.daemon?s.daemon.status:null);
   }
   // 环形图
   var circ=2*Math.PI*64;
@@ -1161,18 +1161,22 @@ function renderSummaryData(s){
   }
 }
 
-function renderSovereigntyFromSummary(sov){
+/* 统一渲染函数：API 路径和降级路径共用 */
+function renderSovereigntyBox(sov,daemonStatus){
   var el=document.getElementById('sovereigntyBox');
   if(!el)return;
-  el.innerHTML='<div class="chart-box" style="display:flex;flex-direction:column;justify-content:center">'+
+  var ds=(daemonStatus==='ok'||daemonStatus==='healthy')?'运行中':(daemonStatus||'运行中');
+  var dc=(daemonStatus==='degraded'||daemonStatus==='down')?'var(--amber)':'var(--green)';
+  el.innerHTML='<div class="chart-box" style="display:flex;flex-direction:column;justify-content:center;height:100%">'+
     '<div style="display:flex;justify-content:space-around;align-items:stretch;text-align:center;margin-bottom:12px">'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--brand)">'+sov.cloud+'</div><div style="font-size:11px;color:var(--text-s)">云端调用</div></div>'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--green)">'+sov.local+'</div><div style="font-size:11px;color:var(--text-s)">本地执行</div></div>'+
-    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--amber)">'+sov.outbound+'</div><div style="font-size:11px;color:var(--text-s)">数据流出</div></div>'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--amber)">'+(sov.outbound||0)+'</div><div style="font-size:11px;color:var(--text-s)">数据流出</div></div>'+
     '</div>'+
     '<div style="font-size:12px;color:var(--text-s)">本地化率：<b style="color:var(--green)">'+sov.localRate+'%</b>（'+sov.local+'/'+sov.total+'）</div>'+
-    '<div style="font-size:11px;color:var(--text-t);margin-top:4px">近 7 天 · 敏感记录 '+sov.sensitive+' 条</div>'+
+    '<div style="font-size:11px;color:var(--text-t);margin-top:4px">近 7 天 · 敏感记录 '+(sov.sensitive||0)+' 条</div>'+
     '<div style="font-size:11px;color:var(--text-t);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)">🔒 审计证据、知识库、反思记录全部保存在本地 <code style="background:var(--brand-l);padding:1px 5px;border-radius:4px;font-size:10px">~/.sofagent/data/</code>，不送云端。</div>'+
+    '<div style="font-size:11px;margin-top:4px;color:'+dc+'">● 守护进程：'+ds+'</div>'+
     '</div>';
 }
 
@@ -1271,25 +1275,16 @@ function renderTrendChart(records){
   document.getElementById('trendChart').innerHTML=svg;
 }
 
+/* 降级/示例数据路径的 wrapper */
 function renderSovereignty(sData,dh){
-  var el=document.getElementById('sovereigntyBox');
-  if(!el)return;
   var local=sData?sData.localExecutions:575;
   var cloud=sData?sData.cloudCalls:12;
-  var outflow=sData?sData.dataOutflow:0;
-  var lr=Math.round(local*100/(local+cloud||1));
-  var daemonStatus=dh&&dh.status?dh.status:'运行中';
-  var daemonColor=dh&&dh.status==='healthy'?'var(--green)':(dh&&dh.status==='degraded'?'var(--amber)':'var(--green)');
-  el.innerHTML='<div class="chart-box" style="display:flex;flex-direction:column;justify-content:center">'+
-    '<div style="display:flex;justify-content:space-around;align-items:stretch;text-align:center;margin-bottom:12px">'+
-    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--brand)">'+cloud+'</div><div style="font-size:11px;color:var(--text-s)">云端调用</div></div>'+
-    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--green)">'+local+'</div><div style="font-size:11px;color:var(--text-s)">本地执行</div></div>'+
-    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--amber)">'+outflow+'</div><div style="font-size:11px;color:var(--text-s)">数据流出</div></div>'+
-    '</div>'+
-    '<div style="font-size:12px;color:var(--text-s)">本地化率：<b style="color:var(--green)">'+lr+'%</b>（'+local+'/'+(local+cloud)+'）</div>'+
-    '<div style="font-size:11px;color:var(--text-t);margin-top:4px">MIT 开源可审计 · 审计证据不送云端</div>'+
-    '<div style="font-size:11px;margin-top:4px;color:'+daemonColor+'">● 守护进程：'+daemonStatus+'</div>'+
-    '</div>';
+  var total=local+cloud;
+  var lr=Math.round(local*100/(total||1));
+  renderSovereigntyBox({
+    cloud:cloud,local:local,total:total,localRate:lr,
+    outbound:sData?sData.dataOutflow:0,sensitive:0
+  },dh?dh.status:null);
 }
 
 function loadSampleData(){

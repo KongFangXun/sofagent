@@ -170,6 +170,12 @@ function aggregateSummary() {
     };
   }
 
+  // ── daemon 健康状态 ──
+  try {
+    const dh = JSON.parse(readFileSync(DAEMON_HEALTH, 'utf8'));
+    out.daemon = { status: dh.status || dh.state || 'unknown' };
+  } catch {}
+
   return out;
 }
 
