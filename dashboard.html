@@ -1171,13 +1171,8 @@ function renderSovereigntyBox(sov,daemonStatus){
   /* 守护进程放卡片头部右上角 */
   var badge=document.getElementById('sovDaemonBadge');
   if(badge){badge.style.display='inline-flex';badge.style.alignItems='center';badge.style.color=dc;badge.innerHTML='● 守护进程 '+ds;}
-  /* 本地化率 + 敏感记录融合：同一行用 · 分隔 */
-  var localInfo='本地化率 <b style="color:var(--green)">'+sov.localRate+'%</b>（'+sov.local+'/'+sov.total+'）';
-  var sensInfo='敏感记录 '+(sov.sensitive||0)+' 条';
-  /* local 和 sensitive 都是同一个 total，可以合并显示 */
-  var summaryLine=(sov.sensitive===sov.total)
-    ? '<b style="color:var(--green)">'+sov.local+'</b> / '+sov.total+' 全本地 · 敏感 '+sov.sensitive+' 条'
-    : localInfo+' · '+sensInfo;
+  /* summary 行：百分比 + 总条数，不重复三栏已有的数字 */
+  var summaryLine='<b style="color:var(--green)">'+sov.localRate+'%</b> 本地化率 · 近 7 天 '+(sov.total)+' 条记录';
   el.innerHTML='<div class="chart-box" style="display:flex;flex-direction:column;justify-content:center;height:100%">'+
     '<div style="display:flex;justify-content:space-around;align-items:stretch;text-align:center;padding-bottom:8px;border-bottom:1px dashed var(--border)">'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--green)">'+sov.local+'</div><div style="font-size:11px;color:var(--text-s)">本地执行</div></div>'+
