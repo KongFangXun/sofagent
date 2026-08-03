@@ -594,7 +594,7 @@ else
 fi
 rm -rf "$_DAEMON_TEST_DIR"
 
-# 全部 12 包 .js.map 泄露检查 + 类型检查 + README 非空检查
+# 全部 13 包 .js.map 泄露检查 + 类型检查 + README 非空检查（12 个 engine/<pkg> + load-chain）
 for pkg in harness ontology eval core audit think mcp orchestrator daemon ab-test skillopt rules; do
   echo "=== $pkg ==="
   (cd engine/$pkg && npm pack --dry-run 2>&1 | grep -c '\.js\.map')  # 期望: 0
@@ -615,7 +615,7 @@ echo "⚠️ 确认 audit/mcp 的 README.md 在 npm pack 输出中有内容—�
 
 **npm 先行策略**：先手动发布 npm 全部包（按依赖顺序），再 git tag + push。即使 CI 失败，npm 包已就位。
 
-> 🔴 v1.1.0 教训：12 包按依赖层分批发布——叶子包先发，消费方后发，npm workspace symlink 在 publish 时不生效，必须在 npm registry 上有真实包。
+> 🔴 v1.1.0 教训：全部非私有包（现 13 个）按依赖层分批发布——叶子包先发，消费方后发，npm workspace symlink 在 publish 时不生效，必须在 npm registry 上有真实包。
 
 ```
 ── Step 1: 全量 workspace build（拓扑序） ──
@@ -633,11 +633,13 @@ npm run build
 2. (cd engine/ontology    && npm publish --access public)
 3. (cd engine/eval        && npm publish --access public)
 4. (cd engine/core        && npm publish --access public)
+4.5 (cd engine/hooks/sofagent-load-chain && npm publish --access public)
 
-🔴 第二层·依赖第一层（audit/orchestrator/skillopt 可并行）：
+🔴 第二层·依赖第一层（audit/orchestrator/skillopt/rules 可并行）：
 5. (cd engine/audit        && npm publish --access public)
 6. (cd engine/orchestrator && npm publish --access public)
 7. (cd engine/skillopt     && npm publish --access public)
+7.5 (cd engine/rules       && npm publish --access public)
 
 🔴 第三层·依赖第二层（think/daemon 可并行）：
 8. (cd engine/think   && npm publish --access public)
@@ -649,13 +651,15 @@ npm run build
 🔴 第五层·收官（mcp 依赖 audit+orchestrator+think）：
 11. (cd engine/mcp  && npm publish --access public)
 
-── Step 3: 验证全部 12 包（🔴 v1.1.3 教训强化——只 echo 不判 FAIL 是虚假绿色） ──
+── Step 3: 验证全部 13 包（🔴 v1.1.3 教训强化——只 echo 不判 FAIL 是虚假绿色） ──
 NEW_VER="1.1.X"  # 替换为实际新版本号
 FAILED=""
 # 🔴 v1.2.3 教训：for 循环漏了 rules 包（只列 11 个），导致 rules 滞留旧版本不被检出
 #    （v1.2.3 发布时 rules 实际停在 1.2.1，其余 11 包 1.2.3，循环却报「全部一致」= 虚假绿色）。
 #    包清单必须与 engine/ 下全部非私有包一致，新增包后同步追加。
-for pkg in harness ontology eval rules core audit think mcp orchestrator daemon ab-test skillopt; do
+# 🔴 v1.2.5 教训：漏了 load-chain（engine/hooks/），它停在 1.2.1 两个版本不被检出。
+#    load-chain 在 engine/hooks/ 子目录，不在 engine/<pkg> 一级目录，最易被遗漏。
+for pkg in harness ontology eval rules core audit think mcp orchestrator daemon ab-test skillopt load-chain; do
   ver=$(npm view "/$pkg" version 2>/dev/null)
   if [ "$ver" != "$NEW_VER" ]; then
     echo "❌ /$pkg: $ver（期望 $NEW_VER）"
@@ -668,7 +672,7 @@ if [ -n "$FAILED" ]; then
   echo "🔴 以下包版本不一致，必须手动补发：$FAILED"
   exit 1
 fi
-echo "✅ 全部 12 包版本一致 = $NEW_VER"
+echo "✅ 全部 13 包版本一致 = $NEW_VER"
 # 🔴 v1.1.3 教训：Step 3 只 echo 不判 FAIL，导致 5/12 包（think/mcp/daemon/ab-test/skillopt）滞留在 v1.1.0 未发现
 
 ── Step 4: git tag + push ──
@@ -962,7 +966,7 @@ bash tools/check-version.sh   # 期望：全绿
 
 | # | 步骤 |
 |:--:|------|
-| 1 | **npm 12 包验证**：全部 12 包版本一致，无 MISSING |
+| 1 | **npm 13 包验证**：全部 13 包版本一致（engine/ 下 12 包 + engine/hooks/sofagent-load-chain），无 MISSING |
 | 2 | npm README 验证：`npm view /audit readme` + `npm view /mcp readme` 均有内容 |
 | 3 | **🔴 CI 全绿检查（v1.2.0 教训）**：`gh run list -b main -L 10 --json conclusion,name,headSha` → 任一 failure 则 `gh run view --log-failed` 定位 → 修复 → push → 重查。v1.2.0 教训：4 轮 CI 挂全是 LOOP→FORGE 重构时 CI 配置未同步——代码写对不等于 CI 能过 |
 | 4 | 如果本次迭代暴露了新的流程漏洞，**直接吸收进本 SOP 对应阶段**——不要存到单独章节。每条新规则标注版本号（如 `vX.Y 教训`）以便追溯 |
@@ -1054,6 +1058,7 @@ bash tools/check-version.sh   # 期望：全绿
 | v1.2.2 | CI verify.yml 检查 hook.js 但实际文件在 dist/handler.js（路径过时）+ daemon-macos-ci 环境无 daemon | 阶段十一 |
 | v1.2.2 | pr-check data-sovereignty.test.ts vi.doMock 在 CI 不生效（本地过 CI 挂，模块解析差异） | 阶段十一 |
 | v1.2.2 | push 前不模拟 CI 检查 + push 后不等 CI 绿灯 = 反复 push→红叉→修循环 | 阶段十 |
+| v1.2.5 | publish/验证清单漏 load-chain（engine/hooks/ 子目录非一级目录），远端滞留 1.2.1 两个版本不被检出——v1.2.3 漏 rules 虚假绿色教训的重演；包清单必须穷举 engine/ 下全部非私有包，含 hooks/ 子目录 | 阶段十 |
 | v1.0.7 | 忘了更新本机全局安装（QA 测试时跑旧版本） | 阶段十 |
 | v1.0.4 | dist 与 src 同步验证 | 阶段三 |
 | v1.0.4 | 审查文档自身也会过时（每版本审视数字/路径/维度有效性） | 阶段六 |
