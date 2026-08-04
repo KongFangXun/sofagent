@@ -13,6 +13,7 @@
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { resolveKnowledgeDir } from '@sofagent/core';
 
 /** 矛盾检测结果（与 daemon InspectorResult 结构一致，避免反向依赖） */
 export interface ConflictCheckResult {
@@ -84,7 +85,7 @@ export function runConflictCheckCli(
  * 矛盾/死链不自动修复（需人工判断）。
  */
 function tryAutoFix(projectDir: string): void {
-  const knowledgeDir = join(projectDir, '.sofagent', 'knowledge');
+  const knowledgeDir = resolveKnowledgeDir();
   if (!existsSync(knowledgeDir)) return;
 
   const subdirs = ['entities', 'concepts', 'comparisons', 'summaries'];
