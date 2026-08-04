@@ -1,9 +1,15 @@
 // sofagent load-chain hook · OpenClaw 2026.6.x
 // 注入三层加载链到 agent:bootstrap：
-//   L1 SKILL.md（4 底线 + 7 则铁律，openclaw 技能系统只注入 description ≈240 chars，本 hook 补注全文）
+//   L1 core-rules.md（核心铁律 ~30 行，始终注入）+ 按 task type 追加岗位规范（v1.2.7 渐进式加载）
 //   L2 think.md（反思区）
 //   L3 fde.md（用户规则）
 // 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
+//
+// v1.2.7 渐进式加载改造：
+//   L1 从"注入完整 SKILL.md（149 行）"改为"注入 core-rules.md（~30 行核心铁律）"
+//   + 根据 event.context 中的 task description 判断 task type
+//   + 按需追加注入对应岗位规范文件（role-audit.md / role-fde.md / role-orchestrate.md）
+//   L2/L3 的 think.md 和 fde.md 注入逻辑原样保留
 //
 // fde.md 路径优先级（v0.73 扁平化）：
 //   1. skills/sofagent/fde.md（install.sh 部署目标，权威路径）
@@ -22,7 +28,45 @@ export interface LoadChainEvent {
       path: string;
       content: string;
     }>;
+    /** task description / agent bootstrap 信息（用于渐进式加载 task type 判定） */
+    taskDescription?: string;
+    [key: string]: unknown;
   };
+}
+
+/**
+ * v1.2.7: task type 判定——轻量关键词匹配（非 LLM 调用）
+ * @returns 'audit' | 'deploy' | 'orchestrate' | 'general'
+ */
+function detectTaskType(event: LoadChainEvent): 'audit' | 'deploy' | 'orchestrate' | 'general' {
+  // 从 event.context 中提取任务描述文本（兼容多种字段名）
+  const sources = [
+    event.context.taskDescription,
+    (event.context as Record<string, unknown>).task as string,
+    (event.context as Record<string, unknown>).prompt as string,
+    (event.context as Record<string, unknown>).userInput as string,
+  ].filter((s): s is string => typeof s === 'string' && s.length > 0);
+
+  const text = sources.join(' ').toLowerCase();
+
+  // 关键词匹配（按优先级）
+  if (/审计|audit|检查|巡检|inspect|doctor|verify/.test(text)) return 'audit';
+  if (/部署|install|activate|fde|进场|交付|deploy/.test(text)) return 'deploy';
+  if (/编排|compose|workflow|orchestrat|loop/.test(text)) return 'orchestrate';
+
+  return 'general';
+}
+
+/**
+ * v1.2.7: 按 task type 解析需要追加注入的岗位规范文件
+ */
+function resolveRoleFile(taskType: 'audit' | 'deploy' | 'orchestrate' | 'general'): string | null {
+  switch (taskType) {
+    case 'audit': return 'role-audit.md';
+    case 'deploy': return 'role-fde.md';
+    case 'orchestrate': return 'role-orchestrate.md';
+    default: return null; // general 不额外注入
+  }
 }
 
 const handler = async (event: LoadChainEvent) => {
@@ -37,20 +81,48 @@ const handler = async (event: LoadChainEvent) => {
       (process.platform === "win32" ? "C:\\Users\\Default" : "/tmp");
     const openclawDir =
       process.env.OPENCLAW_STATE_DIR || path.join(home, ".openclaw");
+    const sofagentSkillDir = path.join(openclawDir, "skills", "sofagent");
     const pushed: string[] = [];
 
-    // ── 第 1 层：宪法（SKILL.md 全文）──
-    // OpenClaw 技能系统仅注入 description 字段（≈240 chars），不注入全文。
-    // 本 hook 补注完整 SKILL.md，确保 4 底线 + 7 则铁律进入 agent 上下文。
-    const skillMdFile = path.join(openclawDir, "skills", "sofagent", "SKILL.md");
-    if (fs.existsSync(skillMdFile)) {
-      const content = fs.readFileSync(skillMdFile, "utf-8");
+    // ── 第 1 层：核心铁律（core-rules.md ~30 行，始终注入）+ 按需岗位规范 ──
+    // v1.2.7: 从"注入完整 SKILL.md（149 行）"改为"注入 core-rules.md（~30 行核心铁律）"
+    const coreRulesFile = path.join(sofagentSkillDir, "core-rules.md");
+    if (fs.existsSync(coreRulesFile)) {
+      const content = fs.readFileSync(coreRulesFile, "utf-8");
       event.context.bootstrapFiles.push({
-        name: "sofagent-SKILL.md",
-        path: skillMdFile,
-        content: `<!-- ===== sofagent 第 1 层：宪法（SKILL.md）===== -->\n${content}`,
+        name: "sofagent-core-rules.md",
+        path: coreRulesFile,
+        content: `<!-- ===== sofagent 第 1 层：核心铁律（core-rules.md）===== -->\n${content}`,
       });
-      pushed.push("SKILL.md");
+      pushed.push("core-rules.md");
+    } else {
+      // 兼容旧安装：core-rules.md 不存在时 fallback 到 SKILL.md 全文
+      const skillMdFile = path.join(sofagentSkillDir, "SKILL.md");
+      if (fs.existsSync(skillMdFile)) {
+        const content = fs.readFileSync(skillMdFile, "utf-8");
+        event.context.bootstrapFiles.push({
+          name: "sofagent-SKILL.md",
+          path: skillMdFile,
+          content: `<!-- ===== sofagent 第 1 层：宪法（SKILL.md · 兼容旧安装）===== -->\n${content}`,
+        });
+        pushed.push("SKILL.md(legacy)");
+      }
+    }
+
+    // v1.2.7: 按 task type 追加注入岗位规范
+    const taskType = detectTaskType(event);
+    const roleFile = resolveRoleFile(taskType);
+    if (roleFile) {
+      const rolePath = path.join(sofagentSkillDir, roleFile);
+      if (fs.existsSync(rolePath)) {
+        const roleContent = fs.readFileSync(rolePath, "utf-8");
+        event.context.bootstrapFiles.push({
+          name: `sofagent-${roleFile}`,
+          path: rolePath,
+          content: `<!-- ===== sofagent 第 1 层（按需）：${roleFile}（task type=${taskType}）===== -->\n${roleContent}`,
+        });
+        pushed.push(roleFile);
+      }
     }
 
     // ── 第 2 层：反思区（think.md）──
