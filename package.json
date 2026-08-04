@@ -31,6 +31,10 @@
     "@langchain/anthropic": "^1.5.2"
   },
   "dependencies": {
-    "@sofagent/rules": "^1.2.2"
+    "@sofagent/rules": "^1.2.2",
+    "archiver": "^7.0.1"
+  },
+  "devDependencies": {
+    "@types/archiver": "^6.0.4"
   }
 }

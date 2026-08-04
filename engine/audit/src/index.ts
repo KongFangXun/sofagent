@@ -105,6 +105,8 @@ interface Args {
   conflictCheckCommand?: boolean;
   /** v1.2.5 P2: federation-distill 子命令 */
   federationDistillCommand?: boolean;
+  /** v1.2.7: support-bundle 子命令 */
+  supportBundle: boolean;
   /** v1.2.0: 审计 session 产物（默认开启，--no-session 关闭） */
   noSession: boolean;
   /** v1.2.0: --commit-msg 完整 commit message（hook 场景传完整 body 供 A9 扫描） */
@@ -113,7 +115,7 @@ interface Args {
 
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, supportBundle: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff') {
       // P1-12: --diff 无显式值（末尾或后跟其他 flag）→ 用默认 HEAD~1..HEAD，
@@ -188,6 +190,8 @@ function parseArgs(argv: string[]): Args {
       args.init = true;
     } else if (argv[i] === '--sign-config') {
       args.signConfig = true;
+    } else if (argv[i] === '--support-bundle') {
+      args.supportBundle = true;
     } else if (argv[i] === '--no-session') {
       args.noSession = true;
     } else if (argv[i] === 'ontology' && argv[i + 1]) {
@@ -211,6 +215,7 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit --init                           一键初始化（配置+hook+冒烟）');
       console.log('  sofagent-audit --doctor                         运行环境健康检查（检查 config / hook / 版本一致性）');
       console.log('  sofagent-audit --sign-config                    对 config.yml 签名（消除防篡改警告）');
+      console.log('  sofagent-audit --support-bundle                 一键生成 issue 摘要 + 证据 zip（脱敏）');
       console.log('  sofagent-audit --root-cause                     根因分析');
       console.log('  sofagent-audit --regression <dir>               回归验证');
       console.log('  sofagent-audit --install-hook                   安装 commit-msg hook');
@@ -625,6 +630,22 @@ async function main(): Promise<void> {
     } catch (err) {
       console.error(`❌ 签名失败: ${err instanceof Error ? err.message : String(err)}`);
       console.error('   提示：签名需要 HMAC 密钥（~/.sofagent-key），运行 sofagent-audit --init 可自动生成');
+      exit(1);
+    }
+  }
+
+  // v1.2.7: --support-bundle 模式——一键生成 issue 摘要 + 证据 zip
+  if (args.supportBundle) {
+    const { generateSupportBundle } = await import('./support-bundle');
+    try {
+      const zipPath = await generateSupportBundle();
+      const stats = statSync(zipPath);
+      const sizeKB = Math.round(stats.size / 1024);
+      console.log(`✅ support-bundle 已生成：${zipPath}（${sizeKB}KB）`);
+      console.log('   包含：version.txt / doctor-output.txt / audit-log-recent.jsonl / config-summary.yml / install-info.txt');
+      exit(0);
+    } catch (err) {
+      console.error(`❌ support-bundle 生成失败: ${err instanceof Error ? err.message : String(err)}`);
       exit(1);
     }
   }
