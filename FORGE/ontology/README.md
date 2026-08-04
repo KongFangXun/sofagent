@@ -280,7 +280,7 @@ flowchart TD
 | 12 | `docs/DEVELOPMENT.md` | 开发指南 |
 | 13 | `FDE/GUIDE.md` + `FDE/README.md` | FDE 方法论 |
 | 14 | `SKILL/SKILL.md` + `SKILL/AGENTS.md` | Skill 入口 |
-| 15 | `FORGE/archive/self-evolution-design.md` + `FORGE/README.md` | FORGE 说明 |
+| 15 | `FORGE/README.md` | FORGE 说明 |
 | 16 | `README.en.md` + `CONTRIBUTING.md` | 英文 / 贡献指南 |
 
 ### L3 写完基本不维护（归档 / 参考性质）

@@ -155,6 +155,7 @@ while IFS= read -r ts; do
   # 跳过归档目录（_archive 和 docs/archive）
   [[ "${ts}" == */_archive/* ]] && continue
   [[ "${ts}" == */docs/archive/* ]] && continue
+  [[ "${ts}" == */FORGE/archive/* ]] && continue
   # mcp-server.ts 已改为从 @sofagent/audit 导入 VERSION，不再跳过
   # v1.1.3: SCHEMA_VERSION 是数据结构 schema 版本（如 checkpoint 'v1'），非产品版本，豁免
   match=$(grep -n "const [A-Z_]*VERSION = '" "${ts}" | grep -v 'PROTOCOL_VERSION' | grep -v 'SCHEMA_VERSION' | head -1)
@@ -323,6 +324,7 @@ done < <(find "${PROJECT_ROOT}" \
   -not -path '*/docs/changelog/*' \
   -not -path '*/docs/archive/*' \
   -not -path '*/_archive/*' \
+  -not -path '*/FORGE/archive/*' \
   -not -path '*/.sofagent/*' \
   -not -path '*/.workbuddy/*' \
   -not -path '*/engine/daemon/data/*' \
@@ -513,6 +515,7 @@ while IFS= read -r ts; do
   [[ -f "${ts}" ]] || continue
   [[ "${ts}" == */_archive/* ]] && continue
   [[ "${ts}" == */docs/archive/* ]] && continue
+  [[ "${ts}" == */FORGE/archive/* ]] && continue
   [[ "${ts}" == *.test.ts ]] && continue
   [[ "${ts}" == */dist/* ]] && continue
   # 只检查文件头前 10 行的注释（与 tools/bump-version.sh [4/13] 对齐）
@@ -700,7 +703,7 @@ echo ""
 # 同步修改下方 EXPECTED_DOC_DATE 与 bump-version.sh。
 echo "=== 14. 文档头日期一致性扫描（> vX.Y · YYYY-MM-DD）==="
 DOC_DATE_OK=true
-EXPECTED_DOC_DATE="2026-08-03"
+EXPECTED_DOC_DATE="2026-08-04"
 while IFS= read -r md; do
   match=$(grep -m1 -nE "^> v[0-9]+\.[0-9]+(\.[0-9]+)? · [0-9]{4}-[0-9]{2}-[0-9]{2}" "$md" 2>/dev/null)
   if [ -n "$match" ]; then

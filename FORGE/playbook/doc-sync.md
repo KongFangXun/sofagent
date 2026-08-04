@@ -60,7 +60,6 @@ LIMITATIONS.md 必须覆盖本版本引入的核心新功能带来的已知局�
 | 理念/定位叙事 | PHILOSOPHY.md | README 开篇引用 |
 | 安全机制 | SECURITY.md | docs/ARCHITECTURE.md 引用 |
 | 用户日常使用 | HANDBOOK.md | README 快速上手段引用 |
-| 开发循环工具 | FORGE/archive/self-evolution-design.md | DEVELOPMENT 引用 |
 
 **Step B — 逐条 grep 验证覆盖**
 
