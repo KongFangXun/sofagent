@@ -9,7 +9,7 @@
 > - **[ARCHITECTURE.md](./ARCHITECTURE.md)**（83KB）：双层架构设计（能力底座 × 生命周期）+ 引擎工程三层嵌套（Harness → Graph → Loop），关键技术决策记录。**3 秒版**：一底座·三引擎管"做对" · 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
 > - **[PHILOSOPHY.md](./PHILOSOPHY.md)**（41KB）：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
 > - **[VALIDATION.md](./VALIDATION.md)**（40KB）：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射。
-> - **[ROADMAP.md](./ROADMAP.md)**（73KB）：版本路线图 + 已发布版本记录。当前 v1.2.6。
+> - **[ROADMAP.md](./ROADMAP.md)**（73KB）：版本路线图 + 已发布版本记录。当前 v1.2.7。
 
 ---
 

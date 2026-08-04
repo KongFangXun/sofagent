@@ -1,7 +1,7 @@
 ---
 name: 代码审查员
 slug: sofagent-reviewer
-version: 1.2.6
+version: 1.2.7
 displayName: 代码审查员
 description: 专业代码审查专家，提供建设性、可操作的反馈，聚焦正确性、可维护性、安全性和性能，而非代码风格偏好。
 tags:

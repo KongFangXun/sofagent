@@ -42,7 +42,7 @@ import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-hist
 // Re-export for external consumers (P0-②: doctor needs checkHistoryChainIntegrity via require('@sofagent/audit'))
 export { checkHistoryChainIntegrity } from './audit-history';
 
-// Re-export core 审计原语——daemon/mcp/orchestrator 通过 @sofagent/audit 消费（v1.2.6）
+// Re-export core 审计原语——daemon/mcp/orchestrator 通过 @sofagent/audit 消费（v1.2.7）
 export { runRules, productSignature } from './reporter';
 export type { AuditResult } from './reporter';
 export { loadHistory, appendHistory } from './audit-history';
@@ -343,7 +343,7 @@ function installHook(): void {
 
   const destPath = join(hooksDir, 'commit-msg');
 
-  // v1.2.6: 覆盖前备份已有 hook（如果有）
+  // v1.2.7: 覆盖前备份已有 hook（如果有）
   if (existsSync(destPath)) {
     const backupPath = join(hooksDir, 'commit-msg.bak');
     try {
