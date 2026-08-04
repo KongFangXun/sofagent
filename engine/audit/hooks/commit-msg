@@ -1,5 +1,5 @@
 #!/bin/bash
-# sofagent commit-msg hook v1.2.5（P2-2：版本标记从 v1.1.0 同步到当前版本）
+# sofagent commit-msg hook v1.2.6
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # commit-msg hook 接收 $1 = commit message 文件路径
 
