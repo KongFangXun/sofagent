@@ -258,3 +258,46 @@ function extractText(result: unknown): string {
 
   return String(result ?? '');
 }
+
+// ────────────────────────────────────────────────────────────
+// v1.2.7 新增：企业编排入口（与现有 compose() 并行，不调 LLM 拆任务）
+// ────────────────────────────────────────────────────────────
+
+export type {
+  EnterpriseComposeInput,
+  EnterpriseComposeResult,
+  DataFlowConfig,
+  DataFlowMapping,
+  StateGraphConfig,
+} from './enterprise-graph';
+
+export { buildEnterpriseStateGraph, buildStateGraphConfig } from './enterprise-graph';
+
+/**
+ * 企业编排入口（v1.2.7 新增 · 与现有 compose() 并行，不调 LLM 拆任务）。
+ *
+ * 从 FDE 交付的 workflow.yml 直接构建 LangGraph StateGraph 配置：
+ *   - 不调 createReactAgent 拆任务（compose() 的行为）
+ *   - 直接用 workflow.yml 中已有的节点定义
+ *   - 构建数据流三层映射（State / entity / 双写）
+ *   - 序列化 graph 配置（v1.2.8 dag-runner 接线执行）
+ *
+ * v1.2.7 无运行时调用方——验收仅靠单测（enterprise-graph.test.ts）
+ *
+ * @param input EnterpriseComposeInput（workflowYmlPath + dataDir 必填）
+ * @returns EnterpriseComposeResult，或 null（workflow.yml 不存在/解析失败）
+ */
+export async function composeEnterpriseWorkflow(
+  input: EnterpriseComposeInput,
+): Promise<EnterpriseComposeResult | null> {
+  try {
+    return await buildEnterpriseStateGraph(input);
+  } catch (err) {
+    console.warn(
+      `⚠️ sofagent 提示：composeEnterpriseWorkflow 未完成——${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    );
+    return null;
+  }
+}
