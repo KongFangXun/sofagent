@@ -178,7 +178,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 | 7 | 高危动作强制人工确认 | entry-gate 🔴 高风险审批 | ✅ 已有 |
 | 8 | 全链路日志 + 红队测试 | 审计 history.jsonl + daemon WARN 累积（v1.1.4）；联邦查询 `federation_query` 审计条目 | ✅ 已有 |
 
-> ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文"忽略类"指令、英文"ignore 类"指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），规划在 v1.3.x 评估 LLM 辅助检测。
+> ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文"忽略类"指令、英文"ignore 类"指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），规划在 v1.3.x 评估 LLM 辅助检测。**在 v1.3.x LLM 辅助检测落地前，建议对外部输入做归一化（Unicode NFC + 解码后再送检）。**
 
 ### Sub Agent 工具集零重叠（v1.1.0）
 
@@ -370,7 +370,7 @@ install.sh 拆分为以下模块，便于逐模块审查：
 
 **automerge@1.0.1-preview.7 风险声明（v1.1.9 F-04）**：
 
-`automerge@1.0.1-preview.7` 为 preview 版（非稳定版），API 可能在后续版本变更。截至 v1.1.9 发布时，npm 上尚无 ≥1.0.0 的 automerge 稳定版（仅 preview 和 2.0.0-alpha）。daemon 精确锁定版本号（`"automerge": "1.0.1-preview.7"`，非 `^` 前缀）避免意外升级。如 automerge 发布 stable 版本或 breaking change，`daemon/src/merge.ts` 的 `Automerge.change/clone/merge` 调用需重新验证。
+`automerge@1.0.1-preview.7` 为 preview 版（非稳定版），API 可能在后续版本变更。截至 v1.2.7 复核，npm 仍无 stable（latest=2.0.0-alpha.3），uuid 弃用警告为已知观感问题；federation 功能不使用时该依赖路径不触达。daemon 精确锁定版本号（`"automerge": "1.0.1-preview.7"`，非 `^` 前缀）避免意外升级。如 automerge 发布 stable 版本或 breaking change，`engine/core/src/federation.ts` 的 `Automerge.change/clone/merge` 调用需重新验证。
 
 ---
 
@@ -452,7 +452,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 ## 响应承诺
 
 - **确认**：72 小时内确认收到报告
-- **初步评估**：30 天内给出初步评估和影响范围
+- **初步评估**：7 天内给出初步评估和影响范围
 - **修复**：根据严重程度排期——高危（数据泄露/权限提升）优先修复并发布补丁版本
 
 ## 适用范围
