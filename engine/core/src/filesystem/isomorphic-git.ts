@@ -1,5 +1,5 @@
 // ============================================================
-// isomorphic-git.ts · 同构 Git 集成
+// isomorphic-git.ts · 同构 Git 引擎（自研）
 // v1.2.0 新增：纯 JS 实现的 git diff / shadow repo
 //
 // 用途：
@@ -7,7 +7,7 @@
 //   - 作为 diff-parser.ts 的 fallback——当系统 git 不可用时切换
 //   - 支持 daemon/snapshot.ts 的快照提交
 //
-// 依赖：isomorphic-git（npm 包，纯 JS，无原生依赖）
+// 自研同构 Git 引擎（命名借鉴 isomorphic-git 风格，非 npm 包依赖）
 // ============================================================
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync } from 'fs';

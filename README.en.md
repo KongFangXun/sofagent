@@ -237,7 +237,7 @@ Internally uses LangGraph StateGraph for node flow + 6 built-in tools (read/writ
 
 ### 🔍 Audit Engine
 
-Of the 24 rules, 19 are pure git-diff (don't need Agent cooperation), 4 are hybrid (A7/A8/A14/A15 need Agent logs), 1 is filesystem (A17 abnormal batch change). v1.0.8+ embeds isomorphic-git + daemon file monitoring, **audits without git commit**. Since v1.1.8, Prompt injection defense (A9 extended) + federated query encryption extend audit capability from local to cross-device.
+Of the 24 rules, 19 are pure git-diff (don't need Agent cooperation), 4 are hybrid (A7/A8/A14/A15 need Agent logs), 1 is filesystem (A17 abnormal batch change). v1.0.8+ uses a self-developed isomorphic-git style diff engine + daemon file monitoring, **audits without git commit**. Since v1.1.8, Prompt injection defense (A9 extended) + federated query encryption extend audit capability from local to cross-device.
 
 **Default rules (17, active on install)**:
 
