@@ -13,7 +13,7 @@
   <em>让 AI 替你干活，且每次都干得对。</em>
 </p>
 
-> **sofagent 是一个 FDE Agent**——进场帮你梳理工作流，把能自动化的环节变成 AI 节点，部署后 7×24 自己跑。AI 每次干活都自动受检查（越界就拦、出事能回滚、干了啥看得见），经验自动沉淀，越用越好。
+> **sofagent 是一个 FDE Agent**——进场帮你梳理工作流，把能自动化的环节变成 AI 节点，部署后 7×24 自己跑。AI 每次干活都自动受检查（越界就告警、出事能回滚、干了啥看得见），经验自动沉淀，越用越好。
 
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
