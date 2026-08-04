@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>FDE（Forward Deployed Engineer）Agent——梳理工作流 · 部署 AI 节点 · 审计每次变更</strong><br/>
+  <strong>FDE（Forward Deployed Engineer）Agent——梳理工作流 · 部署 AI 节点 · 审计每次变更 · 沉淀经验</strong><br/>
   <em>让 AI 替你干活，且每次都干得对。</em>
 </p>
 
@@ -22,14 +22,12 @@
   <a href="#快速开始"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>当前版本：v1.2.7</strong> · 2026-08-05 · 编排引擎增强（/goal 目标驱动收敛 + /compact 手动上下文压缩 + Skill 渐进式加载 + --doctor --repair + --support-bundle + bootstrap.sh 一行安装 + Agent Mailbox + enterprise-graph + FORGE driver 抽象）</p>
+<p align="center"><strong>当前版本：v1.2.7</strong> · 2026-08-05 · 编排引擎增强（/goal 目标驱动 + /compact 上下文压缩 + bootstrap.sh 一行安装 + --doctor --repair 等）→ <a href="#v127-新增能力">新功能速览 ↓</a></p>
 
-> ⚖️ **正式版边界声明**：本项目的「正式版」指 API 稳定、测试覆盖完整、核心流程经多轮验证。**不代表所有已知局限已解决**——详见 [LIMITATIONS.md](./docs/LIMITATIONS.md)。强合规场景请等待 v1.4.0 静态加密落地。
-
-> ⚠️ **信任边界**：sofagent 防的是诚实 Agent 的疏忽（漏提交密钥、越界改动），不是恶意 Agent 的蓄意绕过。强安全场景请配合 CI 侧 `sofagent-audit --diff` 兜底 + 外部加密卷。详见 [SECURITY.md](./SECURITY.md)。
+> ⚖️ **诚实边界**：sofagent 防的是**诚实 Agent 的疏忽**（漏提交密钥、越界改动），不是恶意 Agent 的蓄意绕过——强安全场景请配合 CI 侧 `sofagent-audit --diff` 兜底。「正式版」指 API 稳定、测试覆盖完整，**不代表所有已知局限已解决**。详见 [LIMITATIONS.md](./docs/LIMITATIONS.md) · [SECURITY.md](./SECURITY.md)。
 
 <p align="center">
-  <a href="#这是什么">这是什么</a> · <a href="#快速开始">快速开始</a> · <a href="#延伸阅读">文档</a>
+  <a href="#这是什么">这是什么</a> · <a href="#快速开始">快速开始</a> · <a href="#延伸阅读">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
 
 ---
@@ -54,7 +52,7 @@ sofagent 就是解决这个问题的：**它帮你把 AI 管起来，让 AI 干�
 
 > 🎯 **90/10 价值分层**：模型给 90% 的智力，sofagent 补 10% 的可靠执行——越往后这 10% 越值钱。不是造更聪明的模型，是给已有的聪明加一套闸门。
 
-> 🔬 **外部独立实验证据**（非 sofagent 官方自测）：HuggingFace 上 Joel Niklaus 的 harness-optimization 研究显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**（提升全部来自外层机制），成本降至 1/7。这是同类约束机制有效性的外部证据。详见 [THANKS.md](./docs/THANKS.md)。
+> 🔬 **外部独立实验证据**（非 sofagent 官方自测）：HuggingFace 上 Joel Niklaus 的 harness-optimization 研究显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**（提升全部来自外层机制）。这是同类约束机制有效性的外部证据。详见 [THANKS.md](./docs/THANKS.md)。
 
 <details>
 <summary>🔄 它怎么"越用越好"？（点开看闭环）</summary>
@@ -106,7 +104,7 @@ sofagent-dashboard --full    # 展开完整视图
 
 ### 从交付到自转（激活链）
 
-FDE 交付了 ontology + workflow.yml + skills/ 之后，v1.2.5 起分四步让交付物自己跑起来：
+FDE 交付了本体结构（ontology）+ workflow.yml + skills/ 之后，v1.2.5 起分四步让交付物自己跑起来：
 
 | 阶段 | 做什么 | 版本 |
 |------|--------|:----:|
@@ -159,12 +157,11 @@ sofagent-audit --doctor  # 验证环境是否就绪（可选但推荐）
 > 💡 **不需要装引擎？** 如果你只需要 FDE 方法论（给 Agent 装治理 Skill），直接看 [FDE/README.md](./FDE/README.md)——零依赖，不需要 Node.js。
 > 💡 **下一步**：安装完成后，运行 `sofagent-audit --doctor` 检查环境状态，或查看 [项目导航索引（WIKI）→](./docs/WIKI.md)
 
-### 三种安装方式，适配所有场景
+### 其他安装方式（可选）
 
 | 方式 | 谁用 | 怎么用 |
 |------|------|--------|
 | 🚀 **npx 零安装** | 快速体验 / CI 环境 | `npx @sofagent/audit --init`（即装即用，不需下载） |
-| 💻 **install.sh 全量安装** | 技术人员 / 开发者 | `bash install.sh`（底座 + FDE Agent） |
 | ⚡ **install.sh 最小安装** | 开发者 / 企业 IT | `bash install.sh --base-only`（仅底座引擎） |
 
 > [!NOTE]
@@ -196,8 +193,6 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 </details>
 
 > ⚠️ **关于 commit 拦截**：`git commit --no-verify` 可以绕过本地 hook。sofagent 的设计初衷是"诚实 Agent 的护栏"而非"恶意攻击者的防线"。企业高安全场景建议在 CI/CD pipeline 侧再加一道 `sofagent-audit --diff` 审计（hook 可绕，CI 不可绕）。详见 [LIMITATIONS](./docs/LIMITATIONS.md) §一·已知架构限制。
-
-> **推荐**：新用户使用 `bash install.sh`（一键安装全套）。高级用户/CI 环境使用 `npm install -g @sofagent/audit`（仅安装审计引擎）。
 
 **按需安装**：
 
@@ -266,7 +261,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 
 ---
 
-## Deployment Sizing（企业 IT 参考）
+## 部署规模（企业 IT 参考）
 
 | 部署规模 | 并发 Agent | CPU | 内存 | 磁盘 | 适用场景 |
 |---------|:---:|:---:|:---:|:---:|---------|
@@ -309,7 +304,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 ## <a id="engine-architecture"></a>引擎架构（开发者段）
 
 > [!NOTE]
-> **品牌与描述**：**sofagent** 是产品品牌名；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent（进场梳理工作流、把可自动化环节变成 AI 节点、构建本体、部署专属小模型的常驻硅基员工）。底层技术实现是一套约束 Agent 行为的 Harness 中间件（**能力底座 × 生命周期**双层架构：层 1 一底座·三引擎 + 层 2 激活链四阶段），开源在 `@sofagent/*`。下面这段是给开发者看的。
+> **品牌与描述**：**sofagent** 是产品品牌名；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent（进场梳理工作流、把可自动化环节变成 AI 节点、构建本体结构、常驻值守）。底层技术实现是一套约束 Agent 行为的 Harness 中间件（**能力底座 × 生命周期**双层架构：层 1 一底座·三引擎 + 层 2 激活链四阶段），开源在 `@sofagent/*`。下面这段是给开发者看的。
 
 sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，**能力底座 × 生命周期**双层架构。**层 1 能力底座 = 一底座·三引擎**：一底座 = 约束底座（开工前注入规则）；三引擎 = 审计引擎（24 条规则拦截）+ 回溯引擎（自动快照回滚）+ 进化引擎（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化）。**层 2 生命周期 = 激活链四阶段**（v1.2.5+）：激活（ACTIVATE）→ 编排（ORCHESTRATE）→ 执行（EXECUTE）→ 持续（SUSTAIN）。完整生命周期在诊断（FDE）与进化（EVOLVE）两端延伸为五阶段：诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，不作为对外引擎宣称。
 
@@ -329,7 +324,7 @@ flowchart LR
 | 组件 | 作用 | 状态 |
 |:------|:--------|:--:|
 | 🧭 约束底座 | 开工前规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
-| 🔍 审计引擎 | 24 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计引擎核心规则零额外 token**（19 条纯 git-diff 规则不调用 LLM + 1 条文件系统监控，4 条混合规则需 Agent 日志）——不调用 LLM（0 token），不消耗任何 LLM 额度 | ✅ 稳定 |
+| 🔍 审计引擎 | 24 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计核心零额外 token**（19 条纯 git-diff + 1 条文件系统监控不调用 LLM，4 条混合规则需 Agent 日志）| ✅ 稳定 |
 | 🔄 回溯引擎 | 每次审计后自动 git snapshot，违规一键回滚 | ✅ 稳定 |
 | 🧬 进化引擎 | think.md 反思（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成）+ Dream Cycle 知识回灌（🔧 轻量态）+ skillopt Skill 优化（⚠️ 需外部 SkillOpt CLI）| 🔧 部分可用 |
 
@@ -362,6 +357,8 @@ LOOP 内部使用 LangGraph StateGraph 组装节点流转 + 6 个内置工具（
 | 🔵 流程合规 | A5 空消息 · A7 盲改 · A8 跳测试 · A19 消息质量 | 空 commit msg，不读就改，跳测试，低质量 msg |
 | ⚪ 工程质量 | A6 破构建 · A11 资源滥用 · A18 垃圾文件 | 构建配置异常，超大文件，临时文件提交 |
 | 🔴 安全红线 | A20 数据外传 · A21 持久化后门 · A22 权限提升 · A23 路径穿越 | curl 外传数据，LaunchAgent/systemd 后门，全权限 chmod，目录穿越序列 |
+
+> 注：A3 越界编辑为**启发式告警（WARN）**——误报率较高，不硬拦截，避免误伤正常改动。其余规则按严重度分级拦截或记录。
 
 **扩展规则（7 条，按需开启）**：A14 知识库跨域 · A15 盲动 · A16 非授权变更 · A17 异常批量（文件系统监控）· E1-E2/E4（测试文件 / 未声明 TODO / 低注释率）。完整 24 条规则表（含严重度、分级、判定逻辑）见 [engine/audit/README.md · 审计规则](./engine/audit/README.md#审计规则)。
 
