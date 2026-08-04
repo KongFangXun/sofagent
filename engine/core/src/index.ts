@@ -299,3 +299,15 @@ export {
   restoreSnapshot,
 } from './snapshot-helpers';
 export type { SnapshotInfo } from './snapshot-helpers';
+
+// ── Slash 命令注册（v1.2.7 新增 · 功能 ①②）──
+export { SlashCommandRegistry, globalSlashRegistry } from './slash-registry';
+export type { SlashCommand, SlashCommandContext } from './slash-registry';
+export { CompactCommand } from './slash-commands/compact';
+export {
+  GoalCommand,
+  loadSessionGoal,
+  evaluateGoal,
+  incrementContinuations,
+} from './slash-commands/goal';
+export type { SessionGoal, LoopSpecGoalExtension } from './slash-commands/goal';
