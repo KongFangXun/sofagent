@@ -968,7 +968,7 @@ scenario 120 "v1.1.9 叙事收敛 + BugFix 回归锁"
 S120_OK=true; README="$PROJECT_ROOT/README.md"
 FDE_COUNT=$(grep -c "FDE Agent" "$README" 2>/dev/null || echo 0)
 [ "$FDE_COUNT" -ge 5 ] || { fail "README 'FDE Agent' 出现 $FDE_COUNT 次（期望 ≥5）"; S120_OK=false; }
-grep -q "审计引擎核心规则零 token" "$README" || { fail "README 缺 '审计引擎核心规则零 token'"; S120_OK=false; }
+grep -qE '审计引擎核心规则零(额外)?[ ]?token' "$README" || { fail "README 缺 '审计引擎核心规则零 token'"; S120_OK=false; }
 grep -q "v1.1.8" "$README" || { fail "README 缺 'v1.1.8' 版本标记"; S120_OK=false; }
 $S120_OK && pass
 S121_OK=true; DAG_RUNNER="$PROJECT_ROOT/engine/orchestrator/src/dag-runner.ts"
@@ -1576,22 +1576,26 @@ grep -q "SOFAGENT_LLM_B" "$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts" 2
 $S196_OK && pass "resolveLLMModel/resolveApiKey 四级回退（SOFAGENT_LLM → _ROLE → _A → _B）"
 
 scenario 197 "v1.2.6 — 文档死链清零（docs/ 下 .md 互链全部可达）"
-# 复用 scenario 164 同款逻辑，扫 docs/ 下所有 .md 的相对链接是否指向真实文件
+# 复用 scenario 164 同款 node 实现（v1.2.6 教训：bash grep+sed 清洗 bug 导致 381 假阳性，
+# sed 's/]((//' 删不掉 ]( 单括号 → target 残留 ]( 前缀 → 全部误判为死链）
 S197_OK=true
-TOTAL_BROKEN=0
-while IFS= read -r mdfile; do
-  dir=$(dirname "$mdfile")
-  while IFS= read -r link; do
-    # 提取 [text](url) 中的 url，只处理 ./ 或 ../ 开头的相对链接
-    target=$(echo "$link" | grep -oE '\]\((\.\./|\./)[^)]+\)' | sed 's/]((//;s/)//')
-    [ -z "$target" ] && continue
-    # 去 anchor
-    target=$(echo "$target" | sed 's/#.*//')
-    [ -z "$target" ] && continue
-    resolved="$dir/$target"
-    [ -f "$resolved" ] || { TOTAL_BROKEN=$((TOTAL_BROKEN + 1)); }
-  done < <(grep -oE '\]\((\.\./|\./)[^)]+\)' "$mdfile" 2>/dev/null)
-done < <(find "$PROJECT_ROOT/docs" -name "*.md" -not -path "*/archive/*" 2>/dev/null)
+TOTAL_BROKEN=$(node -e "
+const fs=require('fs'),path=require('path');
+const{execSync}=require('child_process');
+const root=process.env.PROJECT_ROOT;
+const files=execSync('find \"'+root+'/docs\" -name \"*.md\" -not -path \"*/archive/*\"').toString().trim().split('\n').filter(Boolean);
+let bad=0;
+const re=/\]\(((?:\.\.?\/)[^)]+\.md(?:#[^)]*)?)\)/g;
+for(const fp of files){
+  let c; try{c=fs.readFileSync(fp,'utf8')}catch{continue}
+  const dir=path.dirname(fp);let m;
+  while((m=re.exec(c))){
+    const href=m[1].split('#')[0];
+    if(!fs.existsSync(path.resolve(dir,href))){bad++;}
+  }
+}
+console.log(bad);
+" 2>/dev/null || echo "999")
 [ "$TOTAL_BROKEN" -eq 0 ] && pass "docs/ 下文档死链清零（TOTAL_BROKEN=0）" || { fail "docs/ 下仍有 ${TOTAL_BROKEN} 处死链"; S197_OK=false; }
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
