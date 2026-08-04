@@ -24,8 +24,6 @@
 
 <p align="center"><strong>当前版本：v1.2.7</strong> · 2026-08-05 · 编排引擎增强（/goal 目标驱动 + /compact 上下文压缩 + bootstrap.sh 一行安装 + --doctor --repair 等）→ <a href="#v127-新增能力">新功能速览 ↓</a></p>
 
-> ⚖️ **诚实边界**：sofagent 防的是**诚实 Agent 的疏忽**（漏提交密钥、越界改动），不是恶意 Agent 的蓄意绕过——强安全场景请配合 CI 侧 `sofagent-audit --diff` 兜底。「正式版」指 API 稳定、测试覆盖完整，**不代表所有已知局限已解决**。详见 [LIMITATIONS.md](./docs/LIMITATIONS.md) · [SECURITY.md](./SECURITY.md)。
-
 <p align="center">
   <a href="#这是什么">这是什么</a> · <a href="#快速开始">快速开始</a> · <a href="#延伸阅读">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
@@ -48,7 +46,13 @@ sofagent 就是解决这个问题的：**它帮你把 AI 管起来，让 AI 干�
 | **换了 AI 工具/模型怎么办？** | 不挑平台——Claude、GPT、自建模型都能管 | 换模型不影响防护 |
 | **越用越好吗？** | AI 每次干活的经验自动沉淀，定期巡检优化规则 | 它越用越懂你的业务 |
 
-**🏞️ 打个比方：一条河**——大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是**堤坝 + 自来水厂 + 管网 + 水龙头**——不让水泛滥（约束 AI 不乱来）、把水变成直饮水（安全沙箱）、把水送到该去的地方（管道约束）。简单说：**让 AI 从"能用"变成"敢用"。**
+**🏞️ 打个比方：一条河**——大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是**堤坝 + 自来水厂 + 管网 + 水龙头**：
+
+- **堤坝**——不让水泛滥（约束 AI 不乱来）
+- **自来水厂**——把原水变成直饮水（安全沙箱）
+- **管网 + 水龙头**——把水送到该去的地方（管道约束）
+
+简单说：**让 AI 从"能用"变成"敢用"。**
 
 > 🎯 **90/10 价值分层**：模型给 90% 的智力，sofagent 补 10% 的可靠执行——越往后这 10% 越值钱。不是造更聪明的模型，是给已有的聪明加一套闸门。
 
@@ -73,7 +77,14 @@ AI 每次被拦下的毛病、每次成功的经验，都沉淀成"教训库"—
 <details>
 <summary>🔧 技术细节（给开发者）</summary>
 
-底层是 **Harness 中间件**——每次 Agent 改完代码自动跑审计规则（24 条注册：17 条默认启用 + 7 条扩展需显式开启，含 9 条基线不可禁用；git diff 硬证据，审计核心零 token（19/24 条纯 git-diff）；4 条 hybrid 规则需 Agent 日志配合），违规当场拦截、合规存快照。加载链采用渐进式加载：核心铁律层（core-rules.md ~30 行）始终注入 + 岗位规范按 task type 按需追加；四层加载链骨架（SKILL.md → fde.md → think.md → knowledge/）保留，提供行为底线供 Agent 加载（Agent 应自觉读取，非强制注入）。审计拦截在所有路径生效；反思生成（think.md）仅 MCP/CLI 路径触发。完整架构见 [ARCHITECTURE.md](./docs/ARCHITECTURE.md)。
+底层是 **Harness 中间件**——每次 Agent 改完代码自动跑审计规则，违规当场拦截、合规存快照。四个要点：
+
+- **审计规则结构**：24 条注册 = 17 条默认启用 + 7 条扩展（需显式开启），其中 9 条基线不可禁用
+- **零 token 审计核心**：git diff 硬证据——19/24 条纯 git-diff（不依赖 Agent 配合）；4 条 hybrid 规则需 Agent 日志配合
+- **渐进式加载**：核心铁律层（core-rules.md ~30 行）始终注入 + 岗位规范按 task type 按需追加；四层加载链骨架（SKILL.md → fde.md → think.md → knowledge/）保留，提供行为底线供 Agent 自觉读取（非强制注入）
+- **审计拦截路径**：审计拦截在所有路径生效；反思生成（think.md）仅 MCP/CLI 路径触发
+
+完整架构见 [ARCHITECTURE.md](./docs/ARCHITECTURE.md)。
 
 </details>
 
@@ -81,7 +92,7 @@ AI 每次被拦下的毛病、每次成功的经验，都沉淀成"教训库"—
 
 两种面板一眼看清：数据去哪了（有没有偷偷外传）、AI 犯规了吗（有没有越权）、任务跑到哪了（是活的还是挂了）：
 
-**🖥️ HTML Dashboard（网页版，推荐）**——6 页可视化控制台：驾驶舱（实时指标）/ FDE 引导 / AI 节点 / 本体结构 / 知识库 / 工具箱（安装·架构·审计规则·MCP·npm·文档·FORGE），全部真实数据驱动：
+**🖥️ HTML Dashboard（网页版，推荐）**——6 页可视化控制台，全部真实数据驱动：驾驶舱（实时指标）· FDE 引导 · AI 节点 · 本体结构 · 知识库 · 工具箱（安装·架构·审计规则·MCP·npm·文档·FORGE）。
 
 **一键启动**：macOS 用户直接双击仓库根目录的 [`start-dashboard.command`](./start-dashboard.command)（自动开浏览器，关窗口即停）。
 
@@ -119,14 +130,14 @@ FDE 交付了本体结构（ontology）+ workflow.yml + skills/ 之后，v1.2.5 
 
 装了就能直接用的新功能——
 
-| 功能 | 命令 | 一句话 |
-|------|------|--------|
-| 一键安装 | `curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh \| bash` | 一行命令搞定，不用 clone |
-| 环境自检+修复 | `sofagent-audit --doctor --repair` | 红了一片？一键自动修复 |
-| 诊断包 | `sofagent-audit --support-bundle` | 提 issue 时一键生成脱敏诊断 zip |
-| 配置签名 | `sofagent-audit --sign-config` | 给 config.yml 加防篡改签名 |
-| 上下文压缩 | `/compact` | 上下文爆了？手动压缩，验证证据不丢（@sofagent/core） |
-| 目标驱动 | `/goal <完成条件>` | 循环收敛从启发式升级为目标驱动（@sofagent/core） |
+| 功能 | 有什么用 | 怎么用（命令） |
+|------|---------|--------|
+| 一键安装 | 不用 clone 仓库，一行命令搞定 | `curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh \| bash` |
+| 环境自检+修复 | 环境不对劲？一条命令自动查出并修好 | `sofagent-audit --doctor --repair` |
+| 诊断包 | 报障/提 issue 时，一键生成脱敏诊断 zip | `sofagent-audit --support-bundle` |
+| 配置签名 | 给 config.yml 加防篡改签名，防止被悄悄改动 | `sofagent-audit --sign-config` |
+| 上下文压缩 | 上下文太满？手动压缩，关键验证证据不丢 | `/compact`（@sofagent/core） |
+| 目标驱动 | 设定「完成条件」，任务收敛从启发式升级为目标驱动 | `/goal <完成条件>`（@sofagent/core） |
 
 ---
 
@@ -165,7 +176,9 @@ sofagent-audit --doctor  # 验证环境是否就绪（可选但推荐）
 | ⚡ **install.sh 最小安装** | 开发者 / 企业 IT | `bash install.sh --base-only`（仅底座引擎） |
 
 > [!NOTE]
-> 需要 Node.js ≥ 18 + bash + git。macOS / Linux 全功能，Windows 实验性。终端版 Dashboard 依赖 jq（macOS 请 `brew install jq`，Linux 请 `apt install jq` / `yum install jq`）；HTML 网页版 Dashboard 不需要 jq。
+> - **要求**：Node.js ≥ 18 + bash + git
+> - **平台**：macOS / Linux 全功能，Windows 实验性
+> - **终端版 Dashboard**：依赖 jq（macOS `brew install jq` · Linux `apt install jq` / `yum install jq`）；HTML 网页版不需要 jq
 
 <details>
 <summary>🚀 装完三步体验</summary>
@@ -192,7 +205,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
 </details>
 
-> ⚠️ **关于 commit 拦截**：`git commit --no-verify` 可以绕过本地 hook。sofagent 的设计初衷是"诚实 Agent 的护栏"而非"恶意攻击者的防线"。企业高安全场景建议在 CI/CD pipeline 侧再加一道 `sofagent-audit --diff` 审计（hook 可绕，CI 不可绕）。详见 [LIMITATIONS](./docs/LIMITATIONS.md) §一·已知架构限制。
+> ⚠️ **关于 commit 拦截与诚实边界**：`git commit --no-verify` 可以绕过本地 hook——sofagent 的设计初衷是"诚实 Agent 的护栏"，防的是**诚实 Agent 的疏忽**（漏提交密钥、越界改动），不是恶意 Agent 的蓄意绕过（hook 可绕，CI 不可绕）。企业高安全场景请在 CI/CD pipeline 侧再加一道 `sofagent-audit --diff` 审计兜底。详见 [LIMITATIONS](./docs/LIMITATIONS.md) §一·已知架构限制。
 
 **按需安装**：
 
@@ -269,7 +282,10 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 | 中型团队 | 5-10 | 2 核 | 1 GB | 2 GB | 多人协作，daemon 常驻 + webhook 推送 |
 | 企业级 | 10+ | 4 核 | 2 GB | 5 GB+ | 多仓库联邦，A/B 审查 + 知识库 + Dashboard |
 
-> 磁盘主要消耗：`~/.sofagent/data/`（审计历史 + 快照 + 知识库，日均 ~5 MB/仓库）。内存主要消耗：daemon 常驻进程（~50 MB）+ Node.js 运行时（~200 MB/并发 Agent）。网络：仅 LLM API 出站，无入站端口需求。
+> **资源消耗说明**：
+> - **磁盘**：`~/.sofagent/data/`（审计历史 + 快照 + 知识库，日均 ~5 MB/仓库）
+> - **内存**：daemon 常驻进程（~50 MB）+ Node.js 运行时（~200 MB/并发 Agent）
+> - **网络**：仅 LLM API 出站，无入站端口需求
 
 ---
 
@@ -296,6 +312,8 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 > - **想懂它怎么工作**（架构师 / 技术决策者）→ [ARCHITECTURE](./docs/ARCHITECTURE.md)（设计）→ [PHILOSOPHY](./docs/PHILOSOPHY.md)（理念）
 > - **想动手贡献或集成**（开发者）→ [↓ 引擎架构段](#engine-architecture) → [DEVELOPMENT](./docs/DEVELOPMENT.md)（开发指南）
 
+> ⚖️ **正式版边界**：「正式版」指 API 稳定、测试覆盖完整，**不代表所有已知局限已解决**。详见 [LIMITATIONS.md](./docs/LIMITATIONS.md) · [SECURITY.md](./SECURITY.md)。
+
 ---
 
 <details>
@@ -304,9 +322,19 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 ## <a id="engine-architecture"></a>引擎架构（开发者段）
 
 > [!NOTE]
-> **品牌与描述**：**sofagent** 是产品品牌名；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent（进场梳理工作流、把可自动化环节变成 AI 节点、构建本体结构、常驻值守）。底层技术实现是一套约束 Agent 行为的 Harness 中间件（**能力底座 × 生命周期**双层架构：层 1 一底座·三引擎 + 层 2 激活链四阶段），开源在 `@sofagent/*`。下面这段是给开发者看的。
+> **品牌与描述**：**sofagent** 是产品品牌名；**FDE Agent** 是对它核心形态的描述——sofagent 本质上是一款 FDE Agent（进场梳理工作流、把可自动化环节变成 AI 节点、构建本体结构、常驻值守）。底层技术实现是一套约束 Agent 行为的 Harness 中间件，开源在 `@sofagent/*`。以下为开发者视角。
 
-sofagent 底层引擎是一套约束 Agent 行为的 Harness 中间件，**能力底座 × 生命周期**双层架构。**层 1 能力底座 = 一底座·三引擎**：一底座 = 约束底座（开工前注入规则）；三引擎 = 审计引擎（24 条规则拦截）+ 回溯引擎（自动快照回滚）+ 进化引擎（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化）。**层 2 生命周期 = 激活链四阶段**（v1.2.5+）：激活（ACTIVATE）→ 编排（ORCHESTRATE）→ 执行（EXECUTE）→ 持续（SUSTAIN）。完整生命周期在诊断（FDE）与进化（EVOLVE）两端延伸为五阶段：诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，不作为对外引擎宣称。
+**双层架构：能力底座 × 生命周期**。层 1 能力底座 + 层 2 生命周期：
+
+**层 1 · 能力底座 = 一底座·三引擎**
+- **约束底座（一底座）**——开工前注入规则
+- **审计引擎**——24 条规则拦截
+- **回溯引擎**——自动快照回滚
+- **进化引擎**——think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化
+
+**层 2 · 生命周期 = 激活链四阶段**（v1.2.5+）：激活（ACTIVATE）→ 编排（ORCHESTRATE）→ 执行（EXECUTE）→ 持续（SUSTAIN）；在诊断（FDE）与进化（EVOLVE）两端延伸为**五阶段**：诊断 → 激活 → 编排 → 执行 → 进化。
+
+> ⚠️ FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，不作为对外引擎宣称。
 
 <details>
 <summary>📖 一底座·三引擎架构（开发者参考）</summary>

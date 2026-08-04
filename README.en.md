@@ -24,8 +24,6 @@
 
 <p align="center"><strong>Current version: v1.2.7</strong> · 2026-08-05 · Orchestration engine enhancements (/goal goal-driven + /compact context compression + bootstrap.sh one-line install + --doctor --repair etc.) → <a href="#v127-new-capabilities">What's new ↓</a></p>
 
-> ⚖️ **Honest boundaries**: sofagent guards against **honest Agents' mistakes** (accidentally committing secrets, out-of-scope edits) — not malicious Agents deliberately bypassing the rules. For high-security environments, pair it with `sofagent-audit --diff` on the CI side as a backstop. "Stable" means the API is stable and test coverage is complete — it does **not** mean every known limitation is resolved. See [LIMITATIONS.md](./docs/LIMITATIONS.md) · [SECURITY.md](./SECURITY.md).
-
 <p align="center">
   <a href="#what-is-this">What is this</a> · <a href="#quick-start">Quick Start</a> · <a href="#further-reading">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
@@ -48,7 +46,13 @@ Concretely, it does three things:
 | **What if I switch AI tools/models?** | Platform-agnostic — Claude, GPT, self-hosted models all work | Switching models doesn't weaken your protection |
 | **Does it get better over time?** | Experience from every AI task is captured automatically, rules refined through regular inspections | It understands your business better the more it works |
 
-**🏞️ Think of it as a river** — big vendors give you "water" (the LLM) and a "riverbed" (the Agent platform), but the water is raw; you wouldn't dare drink it straight. sofagent is the **dam + water treatment plant + pipe network + faucet** — keeping the water from flooding (constraining the AI), turning raw water into drinking water (safe sandbox), and delivering it where it should go (pipeline constraints). In short: **it takes AI from "usable" to "safe to trust".**
+**🏞️ Think of it as a river** — big vendors give you "water" (the LLM) and a "riverbed" (the Agent platform), but the water is raw; you wouldn't dare drink it straight. sofagent is the **dam + water treatment plant + pipe network + faucet**:
+
+- **Dam** — keeps the water from flooding (constraining the AI)
+- **Water treatment plant** — turns raw water into drinking water (safe sandbox)
+- **Pipe network + faucet** — delivers the water where it should go (pipeline constraints)
+
+In short: **it takes AI from "usable" to "safe to trust".**
 
 > 🎯 **90/10 value split**: the model provides 90% of the intelligence; sofagent adds the 10% of reliable execution — and over time that 10% becomes the most valuable part. It's not about building a smarter model; it's adding a set of gates to the intelligence you already have.
 
@@ -73,7 +77,14 @@ Every violation the AI gets stopped for, and every success, is captured into a "
 <details>
 <summary>🔧 Technical details (for developers)</summary>
 
-Under the hood it's a **Harness middleware** — every time the Agent finishes a change, audit rules run automatically (24 registered rules: 17 enabled by default + 7 extended that require explicit opt-in, including 9 baseline rules that cannot be disabled; hard evidence from git diff, zero-token audit core (19/24 pure git-diff); 4 hybrid rules need Agent logs), violations are blocked on the spot, compliant changes are snapshotted. Loading uses gradual loading: the core iron-rules layer (core-rules.md ~30 lines) is always injected + role norms appended on demand by task type; the four-layer loading chain skeleton (SKILL.md → fde.md → think.md → knowledge/) is preserved, providing a behavioral baseline for the Agent to load (the Agent should read it voluntarily — not force-injected). Audit interception works on all paths; reflection generation (think.md) triggers only on MCP/CLI paths. Full architecture: [ARCHITECTURE.md](./docs/ARCHITECTURE.md).
+Under the hood it's a **Harness middleware** — every time the Agent finishes a change, audit rules run automatically; violations are blocked on the spot, compliant changes are snapshotted. Four key points:
+
+- **Audit rule structure**: 24 registered rules = 17 enabled by default + 7 extended (require explicit opt-in), including 9 baseline rules that cannot be disabled
+- **Zero-token audit core**: hard evidence from git diff — 19/24 rules are pure git-diff (no Agent cooperation needed); 4 hybrid rules need Agent logs
+- **Gradual loading**: the core iron-rules layer (core-rules.md ~30 lines) is always injected + role norms appended on demand by task type; the four-layer loading chain skeleton (SKILL.md → fde.md → think.md → knowledge/) is preserved, providing a behavioral baseline for the Agent to read voluntarily (not force-injected)
+- **Audit interception paths**: interception works on all paths; reflection generation (think.md) triggers only on MCP/CLI paths
+
+Full architecture: [ARCHITECTURE.md](./docs/ARCHITECTURE.md).
 
 </details>
 
@@ -81,7 +92,7 @@ Under the hood it's a **Harness middleware** — every time the Agent finishes a
 
 Two panels give you the whole picture at a glance: where data goes (is anything being exfiltrated), whether the AI broke a rule (overstepping), where the task stands (alive or dead):
 
-**🖥️ HTML Dashboard (web version, recommended)** — a 6-page visual console: cockpit (live metrics) / FDE guide / AI nodes / ontology / knowledge base / toolbox (install · architecture · audit rules · MCP · npm · docs · FORGE), all driven by real data:
+**🖥️ HTML Dashboard (web version, recommended)** — a 6-page visual console, all driven by real data: cockpit (live metrics) · FDE guide · AI nodes · ontology · knowledge base · toolbox (install · architecture · audit rules · MCP · npm · docs · FORGE).
 
 **One-click launch**: macOS users can double-click [`start-dashboard.command`](./start-dashboard.command) in the repo root (auto-opens the browser, closes when you close the window).
 
@@ -119,14 +130,14 @@ Design details: [activation chain doc](./docs/guides/fde-activation-chain.md)
 
 New features you can use right after installing —
 
-| Feature | Command | In one line |
-|------|------|--------|
-| One-line install | `curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh \| bash` | One command, no clone needed |
-| Environment check + repair | `sofagent-audit --doctor --repair` | Everything red? Auto-repair with one command |
-| Diagnostic bundle | `sofagent-audit --support-bundle` | One-click sanitized diagnostic zip when filing an issue |
-| Config signing | `sofagent-audit --sign-config` | Adds tamper-evident signature to config.yml |
-| Context compression | `/compact` | Context overflowing? Compress manually, verification evidence preserved (@sofagent/core) |
-| Goal-driven | `/goal <completion condition>` | Loop convergence upgraded from heuristics to goal-driven (@sofagent/core) |
+| Feature | What it's for | How (command) |
+|------|---------|--------|
+| One-line install | No clone needed — one command and you're set | `curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh \| bash` |
+| Environment check + repair | Environment acting up? One command diagnoses and fixes it | `sofagent-audit --doctor --repair` |
+| Diagnostic bundle | Filing an issue? One-click sanitized diagnostic zip | `sofagent-audit --support-bundle` |
+| Config signing | Adds a tamper-evident signature to config.yml so it can't be silently changed | `sofagent-audit --sign-config` |
+| Context compression | Context too long? Compress manually — verification evidence preserved | `/compact` (@sofagent/core) |
+| Goal-driven | Set the "completion condition" — convergence upgrades from heuristics to goal-driven | `/goal <completion condition>` (@sofagent/core) |
 
 ---
 
@@ -165,7 +176,9 @@ sofagent-audit --doctor  # verify environment is ready (optional but recommended
 | ⚡ **install.sh minimal install** | Developers / enterprise IT | `bash install.sh --base-only` (base engine only) |
 
 > [!NOTE]
-> Requires Node.js ≥ 18 + bash + git. macOS / Linux fully supported, Windows experimental. Terminal Dashboard depends on jq (macOS: `brew install jq`, Linux: `apt install jq` / `yum install jq`); the HTML web Dashboard does not need jq.
+> - **Requirements**: Node.js ≥ 18 + bash + git
+> - **Platforms**: macOS / Linux fully supported, Windows experimental
+> - **Terminal Dashboard**: requires jq (macOS `brew install jq` · Linux `apt install jq` / `yum install jq`); the HTML web Dashboard does not need jq
 
 <details>
 <summary>🚀 Three-step first experience after install</summary>
@@ -192,7 +205,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
 </details>
 
-> ⚠️ **About commit blocking**: `git commit --no-verify` can bypass the local hook. sofagent is designed as a "guardrail for honest Agents", not a "defense against malicious attackers". For high-security enterprise scenarios, add a second `sofagent-audit --diff` audit on the CI/CD side (hooks can be bypassed, CI cannot). See [LIMITATIONS](./docs/LIMITATIONS.md) §1 Known architectural limitations.
+> ⚠️ **About commit blocking & honest boundaries**: `git commit --no-verify` can bypass the local hook — sofagent is designed as a "guardrail for honest Agents", guarding against **honest Agents' mistakes** (accidentally committing secrets, out-of-scope edits), not malicious Agents deliberately bypassing the rules (hooks can be bypassed, CI cannot). For high-security enterprise scenarios, add a second `sofagent-audit --diff` audit on the CI/CD side as a backstop. See [LIMITATIONS](./docs/LIMITATIONS.md) §1 Known architectural limitations.
 
 **Install on demand**:
 
@@ -269,7 +282,10 @@ The first four are assets; the fifth is the FDE Agent itself that keeps the firs
 | Mid-size team | 5-10 | 2 cores | 1 GB | 2 GB | Multi-dev collaboration, resident daemon + webhook push |
 | Enterprise | 10+ | 4 cores | 2 GB | 5 GB+ | Multi-repo federation, A/B review + knowledge base + Dashboard |
 
-> Disk is mostly consumed by: `~/.sofagent/data/` (audit history + snapshots + knowledge base, ~5 MB/repo/day). Memory is mostly consumed by: the resident daemon (~50 MB) + Node.js runtime (~200 MB/concurrent Agent). Network: outbound LLM API only, no inbound ports required.
+> **Resource usage notes**:
+> - **Disk**: `~/.sofagent/data/` (audit history + snapshots + knowledge base, ~5 MB/repo/day)
+> - **Memory**: resident daemon (~50 MB) + Node.js runtime (~200 MB/concurrent Agent)
+> - **Network**: outbound LLM API only, no inbound ports required
 
 ---
 
@@ -296,6 +312,8 @@ The first four are assets; the fifth is the FDE Agent itself that keeps the firs
 > - **Want to understand how it works** (architects / technical decision makers) → [ARCHITECTURE](./docs/ARCHITECTURE.md) (design) → [PHILOSOPHY](./docs/PHILOSOPHY.md) (philosophy)
 > - **Want to contribute or integrate** (developers) → [↓ Engine architecture section](#engine-architecture) → [DEVELOPMENT](./docs/DEVELOPMENT.md) (dev guide)
 
+> ⚖️ **Stable-version boundary**: "Stable" means the API is stable and test coverage is complete — it does **not** mean every known limitation is resolved. See [LIMITATIONS.md](./docs/LIMITATIONS.md) · [SECURITY.md](./SECURITY.md).
+
 ---
 
 <details>
@@ -304,9 +322,19 @@ The first four are assets; the fifth is the FDE Agent itself that keeps the firs
 ## <a id="engine-architecture"></a>Engine architecture (developers)
 
 > [!NOTE]
-> **Brand vs. description**: **sofagent** is the product brand; **FDE Agent** is a description of its core form — sofagent is essentially an FDE Agent (comes in to map workflows, turns automatable steps into AI nodes, builds the ontology, and stays resident on duty). The underlying technical implementation is a Harness middleware that constrains Agent behavior (**capability base × lifecycle** two-layer architecture: layer 1 one base · three engines + layer 2 activation chain four stages), open-sourced as `@sofagent/*`. The section below is for developers.
+> **Brand vs. description**: **sofagent** is the product brand; **FDE Agent** is a description of its core form — sofagent is essentially an FDE Agent (comes in to map workflows, turns automatable steps into AI nodes, builds the ontology, and stays resident on duty). The underlying technical implementation is a Harness middleware that constrains Agent behavior, open-sourced as `@sofagent/*`. Developer view below.
 
-The sofagent engine is a Harness middleware that constrains Agent behavior, with a **capability base × lifecycle** two-layer architecture. **Layer 1 capability base = one base · three engines**: one base = Constraint Base (injects rules before work starts); three engines = Audit Engine (24 rules interception) + Rollback Engine (auto snapshot + rollback) + Evolution Engine (think.md reflection + Dream Cycle knowledge feedback + skillopt Skill optimization). **Layer 2 lifecycle = activation chain four stages** (v1.2.5+): activate (ACTIVATE) → orchestrate (ORCHESTRATE) → execute (EXECUTE) → sustain (SUSTAIN). At both ends, diagnosis (FDE) and evolution (EVOLVE) extend the full lifecycle into five stages: diagnose → activate → orchestrate → execute → evolve. The FORGE self-iteration toolchain (LOOP pipeline) is an internal development tool, not marketed as an external engine.
+**Two-layer architecture: capability base × lifecycle.** Layer 1 capability base + layer 2 lifecycle:
+
+**Layer 1 · capability base = one base · three engines**
+- **Constraint Base (the one base)** — injects rules before work starts
+- **Audit Engine** — 24 rules interception
+- **Rollback Engine** — auto snapshot + rollback
+- **Evolution Engine** — think.md reflection + Dream Cycle knowledge feedback + skillopt Skill optimization
+
+**Layer 2 · lifecycle = activation chain four stages** (v1.2.5+): activate (ACTIVATE) → orchestrate (ORCHESTRATE) → execute (EXECUTE) → sustain (SUSTAIN); extended at both ends by diagnosis (FDE) and evolution (EVOLVE) into **five stages**: diagnose → activate → orchestrate → execute → evolve.
+
+> ⚠️ The FORGE self-iteration toolchain (LOOP pipeline) is an internal development tool, not marketed as an external engine.
 
 <details>
 <summary>📖 One base · three engines architecture (developer reference)</summary>
