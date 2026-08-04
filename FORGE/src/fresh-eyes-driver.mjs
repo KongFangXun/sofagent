@@ -30,6 +30,9 @@ import { join, resolve, dirname, relative, sep } from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
 
+// v1.2.7 功能⑤：继承 driver-base 公共编排层
+import { createForgeDriverBase } from './driver-base.mjs';
+
 // 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
 import { createVisibility, EVENTS } from './visibility.mjs';
 
@@ -104,6 +107,18 @@ const DEFAULT_GRACE_STEPS = 5;   // 其他步骤写报告窗口（superstep 数�
 //   套餐折扣都会影响最终费用。driver 算出的 cost_cny 仅供成本感知
 //   （「这轮大概花了多少」），真实账单请到各厂商 API 后台查看。
 const MODEL_PRICING = resolvePricing();
+
+// ─── driver-base 公共编排层实例 ──────────────────────────
+// v1.2.7 功能⑤：继承 driver-base，复用公共工具函数。
+// fresh-eyes-driver 保留自身的差异化逻辑（多轮循环、并行 worker、分片执行、
+// 停止判定、StallError 重试），公共工具函数（sliceMultiOutput 等）从 base 复用。
+const base = createForgeDriverBase({
+  driverName: 'fresh-eyes',
+  loopDir: LOOP_DIR,
+  repoRoot: REPO_ROOT,
+  modelConfigs: MODEL_CONFIGS,
+  modelPricing: MODEL_PRICING,
+});
 
 // ─── 步骤定义（role / prompt / output / extraInputs / maxTokens）────────
 // maxTokens：步骤级输出 token 上限覆盖。未定义时回退到 MODEL_CONFIGS[role].maxTokens。
@@ -897,60 +912,9 @@ async function runWorker(step, roundDir, target) {
 
 /**
  * 按 `===FILE: <filename>===` 分隔符切片多产物输出。
- *
- * 约定 agent 返回格式：
- *   ===FILE: findings.md===
- *   <findings 正文>
- *   ===FILE: result.md===
- *   <result 正文>
- *
- * 每个 slice 取分隔符行到下一个分隔符行（或文本末尾）之间的内容，
- * trim 前后空白后返回。找不到某文件名对应的 slice 时，该文件写空占位提示。
- *
- * @param {string} text  agent 返回的完整文本
- * @param {string[]} outputs  期望的产物文件名列表
- * @returns {Record<string, string>}  filename → content
+ * v1.2.7 功能⑤：复用 driver-base 的 sliceMultiOutput 实现。
  */
-function sliceMultiOutput(text, outputs) {
-  const SEPARATOR_RE = /^===FILE:\s*(.+?)\s*===\s*$/gm;
-  const slices = {};
-
-  // 收集所有分隔符位置
-  const marks = [];
-  let m;
-  while ((m = SEPARATOR_RE.exec(text)) !== null) {
-    const filename = m[1].trim();
-    const contentStart = SEPARATOR_RE.lastIndex;
-    marks.push({ filename, contentStart });
-  }
-
-  if (marks.length === 0) {
-    // 无分隔符：fallback 全写第一个产物，其余空占位
-    slices[outputs[0]] = text;
-    for (let i = 1; i < outputs.length; i++) {
-      slices[outputs[i]] = `<!-- 未检测到 ===FILE: 分隔符，此产物为空。请检查 agent 输出。 -->\n`;
-    }
-    return slices;
-  }
-
-  // 计算每个 slice 的文本范围
-  for (let i = 0; i < marks.length; i++) {
-    const contentEnd = (i + 1 < marks.length)
-      ? text.lastIndexOf('===FILE:', marks[i + 1].contentStart)
-      : text.length;
-    const raw = text.slice(marks[i].contentStart, contentEnd).trim();
-    slices[marks[i].filename] = raw;
-  }
-
-  // 补齐期望产物中未被 agent 显式产出的（空占位）
-  for (const filename of outputs) {
-    if (!(filename in slices)) {
-      slices[filename] = `<!-- agent 未产出此文件，检查 prompt 指令。 -->\n`;
-    }
-  }
-
-  return slices;
-}
+const sliceMultiOutput = base.sliceMultiOutput;
 
 /**
  * 从 DeepAgent invoke 结果中提取文本（兼容多种返回格式）。

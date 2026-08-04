@@ -34,6 +34,9 @@ import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
 
+// v1.2.7 功能⑤：继承 driver-base 公共编排层
+import { createForgeDriverBase } from './driver-base.mjs';
+
 // 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
 import { createVisibility, EVENTS } from './visibility.mjs';
 
@@ -72,6 +75,18 @@ const MODEL_CONFIGS = resolveConfigs(AGENTS_DIR);
 // 订阅制按周期固定付费，与 token 消耗无关，MODEL_PRICING 的成本估算对
 // 订阅账号意义有限，仅供参考（recordUsage 的 subscription 分支输出 cost_cny = null）。
 const MODEL_PRICING = resolvePricing();
+
+// ─── driver-base 公共编排层实例 ──────────────────────────
+// v1.2.7 功能⑤：继承 driver-base，复用公共工具函数。
+// release-gate-driver 保留自身的差异化逻辑（单角色 V、单轮线性串行、
+// 预执行器、PASS/FAIL 裁决），公共工具函数（sliceMultiOutput 等）从 base 复用。
+const base = createForgeDriverBase({
+  driverName: 'release-gate',
+  loopDir: LOOP_DIR,
+  repoRoot: REPO_ROOT,
+  modelConfigs: MODEL_CONFIGS,
+  modelPricing: MODEL_PRICING,
+});
 
 // ─── 步骤定义（prompt / output / inputs / maxTokens）─────────────────────
 // 单角色 V，无 role 字段。5 步全串行。
@@ -733,44 +748,9 @@ async function runWorker(step, runDir, target) {
 
 /**
  * 按 `===FILE: <filename>===` 分隔符切片多产物输出。
- * 与 fresh-eyes-driver 完全一致的逻辑。
+ * v1.2.7 功能⑤：复用 driver-base 的 sliceMultiOutput 实现。
  */
-function sliceMultiOutput(text, outputs) {
-  const SEPARATOR_RE = /^===FILE:\s*(.+?)\s*===\s*$/gm;
-  const slices = {};
-
-  const marks = [];
-  let m;
-  while ((m = SEPARATOR_RE.exec(text)) !== null) {
-    const filename = m[1].trim();
-    const contentStart = SEPARATOR_RE.lastIndex;
-    marks.push({ filename, contentStart });
-  }
-
-  if (marks.length === 0) {
-    slices[outputs[0]] = text;
-    for (let i = 1; i < outputs.length; i++) {
-      slices[outputs[i]] = `<!-- 未检测到 ===FILE: 分隔符，此产物为空。请检查 agent 输出。 -->\n`;
-    }
-    return slices;
-  }
-
-  for (let i = 0; i < marks.length; i++) {
-    const contentEnd = (i + 1 < marks.length)
-      ? text.lastIndexOf('===FILE:', marks[i + 1].contentStart)
-      : text.length;
-    const raw = text.slice(marks[i].contentStart, contentEnd).trim();
-    slices[marks[i].filename] = raw;
-  }
-
-  for (const filename of outputs) {
-    if (!(filename in slices)) {
-      slices[filename] = `<!-- agent 未产出此文件，检查 prompt 指令。 -->\n`;
-    }
-  }
-
-  return slices;
-}
+const sliceMultiOutput = base.sliceMultiOutput;
 
 /**
  * 从 DeepAgent invoke 结果中提取文本（兼容多种返回格式）。
