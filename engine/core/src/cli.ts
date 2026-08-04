@@ -11,6 +11,7 @@ async function main() {
     console.log('');
     console.log('Subcommands:');
     console.log('  doctor        运行健康检查（环境 / 配置 / 数据目录 / Hook / 依赖）');
+    console.log('  doctor --repair  自动修复可修复的问题（创建目录 / 安装依赖等）');
     console.log('  verify        装后验证（9 个检查类别）');
     console.log('');
     console.log('Verify options:');
@@ -23,9 +24,12 @@ async function main() {
 
   switch (subcommand) {
     case 'doctor': {
-      const { runDoctor } = await import('./doctor');
+      const { runDoctor, runDoctorWithRepair } = await import('./doctor');
       const projectDir = process.cwd();
-      const report = runDoctor(projectDir);
+      const isRepair = args.includes('--repair');
+      const report = isRepair
+        ? runDoctorWithRepair(projectDir, true)
+        : runDoctor(projectDir);
       process.exit(report.allOk ? 0 : 1);
     }
     case 'verify': {

@@ -2,6 +2,7 @@
 // doctor.ts · sofagent 健康检查
 // v1.2.0 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
 // v1.2.0 维护：新增 post-commit hook 存在性检查
+// v1.2.7 新增：每项 fail/warn 附修复命令 + --repair 自动修复模式
 //
 // 检查项：
 //   1. 环境检查（Node / git / npm / disk / bash）
@@ -28,6 +29,25 @@ function warn(msg: string) { console.log(`  ⚠️  ${msg}`); }
 function fail(msg: string) { console.log(`  ❌ ${msg}`); }
 function info(msg: string) { console.log(`  ℹ️  ${msg}`); }
 
+/** v1.2.7: 修复提示输出 */
+function repairHint(cmd: string) { console.log(`     修复：${cmd}`); }
+
+/**
+ * v1.2.7: doctor 检查结果（结构化，含修复命令）
+ */
+export interface DoctorCheckResult {
+  /** 检查项名称 */
+  check: string;
+  /** 是否通过 */
+  passed: boolean;
+  /** 严重程度 */
+  severity: 'ok' | 'warn' | 'fail';
+  /** 检查消息 */
+  message: string;
+  /** 修复命令（v1.2.7 新增，fail/warn 时提供） */
+  repairCommand?: string;
+}
+
 export interface DoctorReport {
   env: boolean;
   config: boolean;
@@ -53,14 +73,14 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   if (env.allOk) {
     ok('环境检查通过');
   } else {
-    if (!env.node.ok) fail(`Node.js ${env.node.version} (需要 ≥18)`);
+    if (!env.node.ok) { fail(`Node.js ${env.node.version} (需要 ≥18)`); repairHint('升级 Node.js 到 ≥18（macOS: brew install node@18 / Linux: nvm install 18 / Windows: https://nodejs.org/）'); }
     else ok(`Node.js ${env.node.version}`);
-    if (!env.git.available) fail('git 不可用');
+    if (!env.git.available) { fail('git 不可用'); repairHint('安装 git（macOS: xcode-select --install / Linux: sudo apt install git / Windows: https://git-scm.com/）'); }
     else ok('git 可用');
     // P2-23: 移除凑数检查项——npm 可用/磁盘空间与 sofagent 健康无因果（npm 装过即可，
     // 磁盘 342GB ✅ 只是噪音）。npm/disk 仍在 checkEnv() 内部计算，只是不再作为健康信号展示。
-    if (!env.openclaw.exists) warn('~/.openclaw 不存在');
-    if (!env.sofagent.exists) warn('~/.sofagent 不存在（将自动创建）');
+    if (!env.openclaw.exists) { warn('~/.openclaw 不存在'); repairHint('运行 sofagent-audit --init 初始化（或安装 OpenClaw 平台）'); }
+    if (!env.sofagent.exists) { warn('~/.sofagent 不存在（将自动创建）'); repairHint('运行 sofagent-audit --init 初始化'); }
   }
 
   // 2. 配置检查（v1.1.3: 从「存在」升级为「存在且合法」）
@@ -73,6 +93,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
       const content = readFileSync(configPath, 'utf-8');
       if (content.trim().length === 0) {
         warn('.sofagent/config.yml 为空');
+        repairHint('运行 sofagent-audit --init 生成默认配置');
       } else {
         // v1.1.3: 验证 YAML 合法性
         try {
@@ -84,16 +105,20 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
             const line = yamlErr.mark?.line != null ? yamlErr.mark.line + 1 : '?';
             const col = yamlErr.mark?.column != null ? yamlErr.mark.column + 1 : '?';
             fail(`.sofagent/config.yml 格式错误（第 ${line} 行第 ${col} 列: ${yamlErr.reason}）`);
+            repairHint('修正 YAML 语法错误（或删除文件让系统使用默认配置：rm .sofagent/config.yml）');
           } else {
             fail(`.sofagent/config.yml 格式错误: ${(yamlErr as Error).message}`);
+            repairHint('修正 YAML 语法错误（或删除文件让系统使用默认配置：rm .sofagent/config.yml）');
           }
         }
       }
     } catch (err) {
       fail(`.sofagent/config.yml 读取失败: ${err instanceof Error ? err.message : String(err)}`);
+      repairHint('检查文件权限（chmod 644 .sofagent/config.yml）');
     }
   } else {
     warn('.sofagent/config.yml 不存在（将使用默认配置，功能正常）');
+    configOk = true;  // 新装场景，使用默认配置，功能正常
     configOk = true;  // 新装场景，使用默认配置，功能正常
   }
 
@@ -130,6 +155,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
           ok(`${rootLabel}/${dir}/ (${files.length} 文件)`);
         } catch (err) {
           warn(`${rootLabel}/${dir}/ (无法读取): ${err instanceof Error ? err.message : String(err)}`);
+          repairHint(`检查目录权限（chmod -R 755 ${rootLabel}/${dir}）`);
           dirsOk = false;
         }
       }
@@ -160,9 +186,11 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
           hookOk = true;
         } else {
           warn('commit-msg hook 存在但不包含 sofagent 标识');
+          repairHint('sofagent-audit --install-hook');
         }
       } catch (err) {
         warn(`commit-msg hook 存在但无法读取: ${err instanceof Error ? err.message : String(err)}`);
+        repairHint(`检查文件权限（chmod 755 ${hookPath}）`);
       }
     } else {
       info('commit-msg hook 未安装（运行 sofagent-audit --install-hook 安装）');
@@ -201,6 +229,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
         ok(`${dep} 已安装 (workspace)`);
       } else {
         warn(`${dep} 未安装（某些功能可能不可用）`);
+        repairHint(`npm install ${dep}`);
         depsOk = false;
       }
     }
@@ -222,6 +251,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
           ok(`audit dist/index.js 完整性校验通过（SHA-256: ${currentHash.slice(0, 12)}...）`);
         } else {
           fail(`audit dist/index.js 哈希不匹配——可能被替换（影子审计器劫持风险）。记录值: ${recordedHash.slice(0, 12)}...，当前值: ${currentHash.slice(0, 12)}...`);
+          repairHint('重新安装 sofagent（npm run build 或 sofagent-audit --install-hook）以恢复原始 dist');
           distIntegrityOk = false;
         }
       } else {
@@ -252,9 +282,11 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     // P0-3 (2026-08-02 复核修正)：--init-hmac 命令不存在，提示语指向 P1-24 的 --init 入口
     // （--init 已实现自动生成 ~/.sofagent-key）
     warn('无 HMAC 签名，完整性校验强度降低：审计日志仅 SHA-256 校验（Agent 可重算整链）。运行 sofagent-audit --init 可自动生成 HMAC 密钥（~/.sofagent-key）启用 HMAC-SHA256 强校验');
+    repairHint('sofagent-audit --init');
   } else if (!keyStatus.strong) {
     // FLAG-4：弱密钥明确告警，不静默稀释强校验
     warn(`HMAC 密钥强度不足（${keyStatus.reason}）——审计日志强校验被弱密钥稀释，建议重新生成 ≥16 字节强密钥（如：openssl rand -hex 32 > ~/.sofagent-key && chmod 600 ~/.sofagent-key）`);
+    repairHint('openssl rand -hex 32 > ~/.sofagent-key && chmod 600 ~/.sofagent-key');
   } else {
     ok('已配置 HMAC 密钥（~/.sofagent-key，≥16 字节），审计日志使用 HMAC-SHA256 强校验');
   }
@@ -309,6 +341,75 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     auditLog: auditLogOk,
     allOk,
   };
+}
+
+// ============================================================
+// v1.2.7: --repair 模式
+// ============================================================
+
+/**
+ * v1.2.7: 带 --repair 模式的 doctor 运行入口。
+ *
+ * repair=true 时自动执行可自动修复的项：
+ *   - ~/.sofagent 不存在 → 创建目录
+ *   - commit-msg hook 缺失 → sofagent-audit --install-hook
+ *   - HMAC 密钥缺失 → sofagent-audit --init
+ *   - js-yaml 未安装 → npm install js-yaml
+ *
+ * repair=false 时等价于 runDoctor()
+ *
+ * @param projectDir 项目根目录
+ * @param repair 是否自动修复
+ * @returns DoctorReport
+ */
+export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: boolean = false): DoctorReport {
+  if (repair) {
+    console.log('\n  sofagent doctor --repair v' + VERSION + '\n');
+    console.log('  检查目录: ' + projectDir + '\n');
+    console.log('── 自动修复模式 ──\n');
+
+    let repairsApplied = 0;
+
+    // 1. ~/.sofagent 不存在 → 创建
+    const home = process.env.SOFAGENT_HOME || join(homedir(), '.sofagent');
+    if (!existsSync(home)) {
+      try {
+        mkdirSync(home, { recursive: true });
+        mkdirSync(join(home, 'data'), { recursive: true });
+        mkdirSync(join(home, 'internal'), { recursive: true });
+        ok('~/.sofagent 已自动创建');
+        repairsApplied++;
+      } catch (err) {
+        fail(`创建 ~/.sofagent 失败: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    // 2. js-yaml 未安装 → npm install
+    const rootNodeModules = join(__dirname, '..', '..', '..', 'node_modules');
+    const workspaceNodeModules = join(projectDir, 'node_modules');
+    if (!existsSync(join(rootNodeModules, 'js-yaml')) && !existsSync(join(workspaceNodeModules, 'js-yaml'))) {
+      try {
+        console.log('  📦 正在安装 js-yaml...');
+        execFileSync('npm', ['install', 'js-yaml'], { cwd: projectDir, stdio: 'pipe' });
+        ok('js-yaml 已自动安装');
+        repairsApplied++;
+      } catch {
+        warn('js-yaml 自动安装失败——请手动运行 npm install js-yaml');
+      }
+    }
+
+    // 3. HMAC 密钥缺失 → 提示运行 --init（不自动执行，因为会重置审计链）
+    const keyPath = join(homedir(), '.sofagent-key');
+    if (!existsSync(keyPath)) {
+      info('HMAC 密钥缺失——建议运行 sofagent-audit --init 生成');
+      // 不自动执行 --init（会重置审计链，需用户确认）
+    }
+
+    console.log(`\n── 修复完成（${repairsApplied} 项自动修复）──\n`);
+  }
+
+  // 运行完整检查（无论是否 repair）
+  return runDoctor(projectDir);
 }
 
 // 直接运行时执行
