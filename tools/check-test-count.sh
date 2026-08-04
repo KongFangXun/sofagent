@@ -376,6 +376,15 @@ else
       ((FAIL++)) || true
     fi
   fi
+  # ④ changelog v1.2.6.md — 当前版本开发日志，场景数必须与 SSOT 一致
+  # v1.2.7 (F04+F29): 纳入门禁范围——之前漏查导致 209/132 漂移穿过校验
+  CHG126_SCN_LINE=$(grep -nE '[0-9]+ 场景' docs/changelog/v1.2/v1.2.6.md 2>/dev/null | head -1)
+  if [ -n "$CHG126_SCN_LINE" ]; then
+    CHG126_CLAIMED=$(echo "$CHG126_SCN_LINE" | grep -oE '[0-9]+ 场景' | grep -oE '[0-9]+' | head -1)
+    check_scenario_doc "changelog v1.2.6.md" "docs/changelog/v1.2/v1.2.6.md" \
+      "$(echo "$CHG126_SCN_LINE" | cut -d: -f1)" \
+      "$CHG126_CLAIMED"
+  fi
 fi
 
 # LIMITATIONS.md — 多行检查（"审计核心 NNN 个、全 workspace NNN 个" 可能出现多次）
