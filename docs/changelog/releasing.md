@@ -82,7 +82,7 @@
 | 2 | P1 工程欠债 | 工程师 | 应该修 |
 | 3 | P2 改进 | 工程师 | 不阻塞发布 |
 | 4 | 审查体系更新 | 工程师 | 随修复同步更新：① 回归清单追加检查项（编号递增）② 发布后审查文档（`fresh-eyes-review.md`）补充新盲区维度/任务。**不要等到阶段四和阶段七才做——开发时记忆最新，随修随记** |
-| 5 | 版本号前置 bump | 工程师 | 开发完成后、自测前：`./tools/bump-version.sh <旧> <新>` → `./tools/check-version.sh` 全绿。npm 不动。**⚠️ 跨 session 场景（v1.2.6 教训）**：如果开发 session 和发版 session 分离，开发 session 可不做 bump，但**必须在 D5 标注「版本号未 bump，留发版 session 执行」**。发版 session 接手后，**阶段三步骤 1（changelog 转正）之后、步骤 2（build）之前，必须先执行 bump-version.sh + check-version.sh 全绿**——否则 build 产出的 dist 版本号是旧的，后续所有测试基于错误版本号跑。**禁止跳过 bump 直接进 build/test**。 |
+| 5 | 版本号前置 bump | 工程师 | 开发完成后、自测前：`./tools/bump-version.sh <旧> <新>` → `./tools/check-version.sh` 全绿。npm 不动。**无条件执行——跨 session 也不准跳过**。未完成 bump = 阶段二未完成，禁止进入阶段三。 |
 
 **🔴 开发铁律（v1.0.3 教训）**：
 - **🔴 版本号前置（v1.1.3 流程优化）**：开发完成后、进入自测（阶段三）之前，先跑 `bump-version.sh <旧版本> <新版本>` 把 13 类位置全部更新到目标版本号。然后跑 `check-version.sh` 确认全绿。这样测试阶段所有版本号已统一，不会出现「全局 v1.1.2 vs SSOT v1.1.3」的漂移。npm publish 仍在阶段十，版本号一致性 ≠ 发布。
@@ -102,10 +102,10 @@
 | D2 | **changelog 草稿持续更新** | `docs/changelog/v<major>.<minor>/vX.Y.md` 在开发期间随功能点 + 新增测试数持续追加（活文档）；**最终定稿在阶段七**，不在阶段一写 | 工程师 |
 | D3 | **acceptance-test 补场景** | 按 changelog 功能点逐条 grep `FORGE/playbook/acceptance-test.sh`，零覆盖 = 未交付。**Step D 覆盖率闭环判定三项全 PASS** | 工程师 |
 | D4 | **审查体系已更新** | `regression-checklist.md` 追加本版本新维度 + `fresh-eyes-review.md` 补充新盲区。**可留发版 session 阶段四补做**，但开发 session 须标注「待补」 | 工程师 |
-| D5 | **版本号一致性（v1.2.6 起含门禁）** | `./tools/check-version.sh` 全绿（仅 archive 历史存档可豁免）。跨 session 时开发 session 可不做 bump，但**必须标注「版本号未 bump」**；发版 session 阶段三步骤 1→2 之间必须先执行 `bump-version.sh` 补齐。**check-version.sh 不全绿 = 禁止进阶段三** | 工程师 |
+| D5 | **版本号一致性（v1.2.6 起含门禁）** | `./tools/check-version.sh` 全绿（仅 archive 历史存档可豁免）。阶段二步骤 5 无条件执行 bump，**不存在"未 bump"状态**。**check-version.sh 不全绿 = 禁止进阶段三** | 工程师 |
 | D6 | **项目文档同步清单**（v1.1.9 新增） | 从 `docs/changelog/v<major>.<minor>/vX.Y.md`「核心变更/交付」提取所有新功能关键词，列出「功能点 → 应在哪个文档出现」对照表。**归属原则**：详细机制写到权威文档（FDE.md / DEVELOPMENT.md / ARCHITECTURE.md），其他文档（HANDBOOK / README / PHILOSOPHY / WIKI）一句话 + 链接引用，不重复展开。可留发版 session 阶段七执行，但开发 session 须产出清单 | 工程师 |
 
-> **发版 session 接手检查**：D3/D4/D6 标「待补」→ 先补完才能进自测。D5 标「版本号未 bump」→ 阶段三步骤 1b 必须先执行 bump。绝不能跳过 D3（零覆盖新功能跑出全绿是假象）或 D6（文档零提及 = 用户不知道有这功能）或 D5（版本号不一致 = dist 和测试全是错的）。
+> **发版 session 接手检查**：D3/D4/D6 标「待补」→ 先补完才能进自测。D5 已在阶段二步骤 5 无条件完成，不存在「版本号未 bump」状态——check-version.sh 不全绿直接打回阶段二。绝不能跳过 D3（零覆盖新功能跑出全绿是假象）或 D6（文档零提及 = 用户不知道有这功能）。
 
 ---
 
@@ -122,7 +122,6 @@
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
 | 1 | **🔴 changelog 状态转正（v1.2.4 起）**：把 `docs/changelog/v<major>.<minor>/vX.Y.md` 头部「⚠️ 规划中，尚未实现」改为「✅ 已开发」——代码已落地，changelog 必须如实反映，否则步骤 9 拿"宣称不存在的文档"当核对表会失真。删除「engine/ 下尚无对应代码」等过时警告，保留「前置依赖」 | 头部状态标注为已开发，无「规划中」残留 |
-| 1b | **🔴 版本号 bump 补齐（v1.2.6 教训·跨 session 门禁）**：如果 D5 标注「版本号未 bump」或 `check-version.sh` 不全绿，**必须在此步骤执行 bump**——在 build（步骤 2）之前把 13 类位置全部更新到目标版本号。命令：`./tools/bump-version.sh <旧> <新>` → `./tools/check-version.sh`。**不全绿禁止继续步骤 2**——build 产出的 dist 版本号会是旧的，后续所有测试基于错误版本号跑 | `check-version.sh` 全绿（仅 archive 历史存档可豁免） |
 
 > 🔴 **v1.0.9 教训**：步骤 4（shellcheck）依赖当前版本的 CLI 命令名。如果本版本涉及 CLI 命令迁移（如旧命令改名、上帝包子命令拆到新包二进制），shellcheck **跳过本部分**，延后到阶段七文档收尾全部完成之后补跑——那时文档引用和脚本命令名都已更新完毕，跑出来才是真实结果。build + test 不受影响，正常执行。
 
