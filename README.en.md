@@ -9,8 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>FDE (Forward Deployed Engineer) Agent — map workflows · deploy AI nodes · audit every change · capture experience</strong><br/>
-  <em>Let AI do the work — right, every time.</em>
+  <strong>FDE (Forward Deployed Engineer) Agent — map workflows · deploy AI nodes · audit every change · capture experience</strong>
 </p>
 
 > **sofagent is an FDE Agent** — it comes in, maps your workflows, turns the automatable parts into AI nodes, and runs 7×24 on its own after deployment. Every action the AI takes is automatically checked (warns when it steps out of bounds, rolls back when something breaks, shows you everything it did), and experience is captured automatically — the more you use it, the better it gets.

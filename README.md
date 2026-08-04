@@ -9,8 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>FDE（Forward Deployed Engineer）Agent——梳理工作流 · 部署 AI 节点 · 审计每次变更 · 沉淀经验</strong><br/>
-  <em>让 AI 替你干活，且每次都干得对。</em>
+  <strong>FDE（Forward Deployed Engineer）Agent——梳理工作流 · 部署 AI 节点 · 审计每次变更 · 沉淀经验</strong>
 </p>
 
 > **sofagent 是一个 FDE Agent**——进场帮你梳理工作流，把能自动化的环节变成 AI 节点，部署后 7×24 自己跑。AI 每次干活都自动受检查（越界就告警、出事能回滚、干了啥看得见），经验自动沉淀，越用越好。
