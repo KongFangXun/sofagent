@@ -185,6 +185,20 @@ function parseArgs(argv: string[]): Args {
       args.mcp = true;
     } else if (argv[i] === '--init') {
       args.init = true;
+    } else if (argv[i] === '--sign-config') {
+      // F07: 签名 config.yml（消除"config 无签名"警告）
+      const { signConfig } = await import('@sofagent/core');
+      const { getConfigFile } = await import('@sofagent/core');
+      const configPath = getConfigFile();
+      try {
+        const result = signConfig(configPath);
+        console.log(`✅ config.yml 签名完成（${result}）：${configPath}`);
+        exit(0);
+      } catch (err) {
+        console.error(`❌ 签名失败: ${err instanceof Error ? err.message : String(err)}`);
+        console.error('   提示：签名需要 HMAC 密钥（~/.sofagent-key），运行 sofagent-audit --init 可自动生成');
+        exit(1);
+      }
     } else if (argv[i] === '--no-session') {
       args.noSession = true;
     } else if (argv[i] === 'ontology' && argv[i + 1]) {
@@ -207,6 +221,7 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit --diff <range> [--task <desc>]   审计 git diff');
       console.log('  sofagent-audit --init                           一键初始化（配置+hook+冒烟）');
       console.log('  sofagent-audit --doctor                         运行环境健康检查（检查 config / hook / 版本一致性）');
+      console.log('  sofagent-audit --sign-config                    对 config.yml 签名（消除防篡改警告）');
       console.log('  sofagent-audit --root-cause                     根因分析');
       console.log('  sofagent-audit --regression <dir>               回归验证');
       console.log('  sofagent-audit --install-hook                   安装 commit-msg hook');
@@ -241,6 +256,7 @@ function parseArgs(argv: string[]): Args {
         console.log('  --regression <dir> 回归验证');
         console.log('  --init             一键初始化');
         console.log('  --doctor           环境健康检查（内置完整诊断）');
+        console.log('  --sign-config      对 config.yml 签名（消除防篡改警告）');
         console.log('  --no-session      不写入 session 报告文件');
         console.log('  --webhook <p>      webhook 推送（dingtalk/feishu/wecom）');
         console.log('  --webhook-url <u>  webhook URL');
