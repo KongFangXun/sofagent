@@ -204,7 +204,46 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     }
   }
 
-  // 6. 审计日志完整性（HMAC 密钥强度 + 链完整性，v1.1.8 / v1.2.0）
+  // 6. dist 完整性检查（v1.2.7: 影子审计器劫持防护——检测 dist/index.js 是否被替换）
+  // 计算 dist/index.js 的 SHA-256，与安装时记录的哈希比对（存 ~/.sofagent/internal/audit-hash.txt）
+  console.log('\n── dist 完整性检查 ──');
+  let distIntegrityOk = true;
+  const auditDistPath = join(__dirname, '..', 'audit', 'dist', 'index.js');
+  if (existsSync(auditDistPath)) {
+    try {
+      const { createHash } = await import('crypto');
+      const distContent = readFileSync(auditDistPath);
+      const currentHash = createHash('sha256').update(distContent).digest('hex');
+      const hashRecordPath = join(process.env.SOFAGENT_HOME || join(require('os').homedir(), '.sofagent'), 'internal', 'audit-hash.txt');
+      if (existsSync(hashRecordPath)) {
+        const recordedHash = readFileSync(hashRecordPath, 'utf-8').trim();
+        if (currentHash === recordedHash) {
+          ok(`audit dist/index.js 完整性校验通过（SHA-256: ${currentHash.slice(0, 12)}...）`);
+        } else {
+          fail(`audit dist/index.js 哈希不匹配——可能被替换（影子审计器劫持风险）。记录值: ${recordedHash.slice(0, 12)}...，当前值: ${currentHash.slice(0, 12)}...`);
+          distIntegrityOk = false;
+        }
+      } else {
+        // 首次记录哈希（安装时未记录）
+        warn(`audit dist/index.js 哈希未记录（首次运行）——当前 SHA-256: ${currentHash.slice(0, 12)}...`);
+        try {
+          const { mkdirSync: mkdirAsync, writeFileSync: writeAsync } = await import('fs');
+          const hashDir = join(hashRecordPath, '..');
+          if (!existsSync(hashDir)) mkdirAsync(hashDir, { recursive: true });
+          writeAsync(hashRecordPath, currentHash + '\n', { mode: 0o600 });
+          ok('已自动记录当前哈希作为基准（后续运行将比对）');
+        } catch {
+          // 记录失败不影响核心功能
+        }
+      }
+    } catch (err) {
+      warn(`dist 完整性检查异常（已跳过）: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  } else {
+    // 非 monorepo 开发环境可能没有 audit/dist，跳过
+  }
+
+  // 7. 审计日志完整性（HMAC 密钥强度 + 链完整性，v1.1.8 / v1.2.0）
   // 检查两项：① HMAC 密钥是否配置且足够强 ② history.jsonl 链完整性
   //   FLAG-2 修复：区分「篡改（红）」与「历史不可复验（黄，key/环境漂移）」
   console.log('\n── 审计日志完整性 ──');
@@ -251,7 +290,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   }
 
   // 总结
-  const allOk = env.allOk && configOk && dirsOk && hookOk && depsOk && auditLogOk;
+  const allOk = env.allOk && configOk && dirsOk && hookOk && depsOk && distIntegrityOk && auditLogOk;
   console.log('\n── 健康检查结果 ──');
   if (allOk) {
     console.log('  ✅ 全部通过\n');
