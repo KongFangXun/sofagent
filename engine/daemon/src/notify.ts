@@ -2,7 +2,7 @@
 // 所有 daemon 对外通知统一走此模块，确保 sofagent 品牌归属
 // ============================================================
 
-const VERSION = '1.2.5';
+const VERSION = '1.2.6';
 
 /** 通知级别 */
 export type NotifyLevel = 'info' | 'warn' | 'error';
