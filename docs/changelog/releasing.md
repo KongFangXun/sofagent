@@ -5,7 +5,7 @@
 > 🔴 文档预算分层检查（A 用户文档 / B 开发者参考 / C 审查体系 / E 指南），见 `check-docs.sh`。
 > 🔴 回归检查已升格为**独立阶段**（阶段五）——开发 session 直连预跑 acceptance-test，然后**开新监控 session** 启动 driver（sandbox 杀后台进程的 10 轮血泪已根治），driver 只负责 regression + coverage + consolidate + verdict。
 > 🔴 **CI 绿灯闸门（v1.2.2 教训，v1.2.4 追加 daemon CI 模拟）**：release 过程中任何 push（代码修复、文档微调、CI 配置修正）后，都必须等 CI 全绿再继续下一步。push 前先本地模拟 CI 会跑的检查（`pre-push-check.sh` + `npm test` + `npm run build` + **daemon CI 模拟**），避免 push 上去 GitHub 打红叉再回头修。v1.2.2 教训：3 个 CI workflow 在发版后才暴露失败；v1.2.4 教训：daemon CI 漏模拟，config.sh `set -e` 崩溃在 push 后才暴露，又多走 4 轮 push→红叉→修循环。
-> 🔴 **Prompt 模板铁律**：本文档中所有「一键复制 prompt」模板（阶段三步骤 7、阶段五监控 session），AI 输出时**必须把所有占位符替换为当前版本的实际值**再呈现——版本号、项目路径、日期等全部填好，用户复制后可直接粘贴到新 session 执行，不需要再手动替换任何内容。
+> 🔴 **Prompt 模板铁律**：本文档中所有「一键复制 prompt」模板（阶段三步骤 8、阶段五监控 session），AI 输出时**必须把所有占位符替换为当前版本的实际值**再呈现——版本号、项目路径、日期等全部填好，用户复制后可直接粘贴到新 session 执行，不需要再手动替换任何内容。
 
 ---
 
@@ -17,7 +17,7 @@
 
 | # | 步骤 | 谁做 | 产物 |
 |:--:|------|:--:|------|
-| 1 | 全新 session 启动 fresh-eyes-loop 审查上一版本：`node FORGE/src/fresh-eyes-driver.mjs --target <上一版本号> --max-rounds 10`，按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md`「Session 监控协议」轮询 `status.json`（启动与监控手法同阶段三步骤 7 的一键复制 prompt，仅 target 换为上一版本号）。loop 产出 P0/P1/P2 清单，loop 内修复即本版本 BugFix 批次主体；修复只本地 commit、不 push | 作者启动 driver（新 session） | 审查报告 + loop 修复（→ 本版本 BugFix 批次来源） |
+| 1 | 全新 session 启动 fresh-eyes-loop 审查上一版本：`node FORGE/src/fresh-eyes-driver.mjs --target <上一版本号> --max-rounds 10`，按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md`「Session 监控协议」轮询 `status.json`（启动与监控手法同阶段三步骤 8 的一键复制 prompt，仅 target 换为上一版本号）。loop 产出 P0/P1/P2 清单，loop 内修复即本版本 BugFix 批次主体；修复只本地 commit、不 push | 作者启动 driver（新 session） | 审查报告 + loop 修复（→ 本版本 BugFix 批次来源） |
 | 2 | （可选）人工审查补充：以 `fresh-eyes-review.md` 方法论人肉复核 loop 报告，直觉盲区发现并入 P0/P1/P2 清单；loop 未自动修复的 P0/P1 项进阶段二首批修复，先于一切新功能 | 作者（可选） | 补充发现（并入 BugFix 批次） |
 
 > **🔴 changelog 章节顺序铁律（v1.1.7 教训）**：合并版本（新功能 + BugFix 同版）时，**新功能在前、BugFix 在后**。用户读 changelog 第一眼看到的应该是「这个版本带来了什么新价值」，而不是「修了上个版本的哪些坑」。BugFix 放前面会让用户觉得这只是个补丁版，掩盖了新功能的价值传达。背景段的两行概述同理——先写新功能一句话，再写 BugFix。
@@ -82,10 +82,9 @@
 | 2 | P1 工程欠债 | 工程师 | 应该修 |
 | 3 | P2 改进 | 工程师 | 不阻塞发布 |
 | 4 | 审查体系更新 | 工程师 | 随修复同步更新：① 回归清单追加检查项（编号递增）② 发布后审查文档（`fresh-eyes-review.md`）补充新盲区维度/任务。**不要等到阶段四和阶段七才做——开发时记忆最新，随修随记** |
-| 5 | 版本号前置 bump | 工程师 | 开发完成后、自测前：`./tools/bump-version.sh <旧> <新>` → `./tools/check-version.sh` 全绿。npm 不动。**无条件执行——跨 session 也不准跳过**。未完成 bump = 阶段二未完成，禁止进入阶段三。 |
 
 **🔴 开发铁律（v1.0.3 教训）**：
-- **🔴 版本号前置（v1.1.3 流程优化）**：开发完成后、进入自测（阶段三）之前，先跑 `bump-version.sh <旧版本> <新版本>` 把 13 类位置全部更新到目标版本号。然后跑 `check-version.sh` 确认全绿。这样测试阶段所有版本号已统一，不会出现「全局 v1.1.2 vs SSOT v1.1.3」的漂移。npm publish 仍在阶段十，版本号一致性 ≠ 发布。
+- **🔴 版本号前置（v1.1.3 流程优化）**：版本号 bump 是阶段三步骤 1（自测第一步），在 build 之前把 13 类位置全部更新到目标版本号。然后跑 `check-version.sh` 确认全绿。这样后续所有测试版本号已统一，不会出现「全局 v1.1.2 vs SSOT v1.1.3」的漂移。npm publish 仍在阶段十，版本号一致性 ≠ 发布。
 - **🔴 hook 文件头版本同步（v1.2.7 教训）**：`bump-version.sh` 不自动更新 `engine/audit/hooks/commit-msg` 和 `engine/audit/hooks/post-commit` 的文件头版本标记。版本 bump 后手动检查：`head -2 engine/audit/hooks/commit-msg engine/audit/hooks/post-commit`——两文件的 v 标记必须与 `package.json` version 一致。`check-version.sh` 已覆盖此项检查。
 - **🔴 changelog 写法规则（v1.2.7 F14 教训）**：changelog 只写产品变更（新功能 / 修复 / 改进 / 破坏性变更），**禁止**审查 round 编号、commit hash、行数调整细节、fresh-eyes-loop 过程流水账等开发过程元信息。审查过程归 `fresh-eyes-review.md`，开发日志归 `docs/changelog/`。v1.0.7 起严格区分产品变更与审查过程——违者 F33 清理。
 - 对 optional dependency（如 deepagents）的类型断言统一用 `as unknown as` 双重转换——本地编译通过不代表 CI 通过
@@ -102,10 +101,10 @@
 | D2 | **changelog 草稿持续更新** | `docs/changelog/v<major>.<minor>/vX.Y.md` 在开发期间随功能点 + 新增测试数持续追加（活文档）；**最终定稿在阶段七**，不在阶段一写 | 工程师 |
 | D3 | **acceptance-test 补场景** | 按 changelog 功能点逐条 grep `FORGE/playbook/acceptance-test.sh`，零覆盖 = 未交付。**Step D 覆盖率闭环判定三项全 PASS** | 工程师 |
 | D4 | **审查体系已更新** | `regression-checklist.md` 追加本版本新维度 + `fresh-eyes-review.md` 补充新盲区。**可留发版 session 阶段四补做**，但开发 session 须标注「待补」 | 工程师 |
-| D5 | **版本号一致性（v1.2.6 起含门禁）** | `./tools/check-version.sh` 全绿（仅 archive 历史存档可豁免）。阶段二步骤 5 无条件执行 bump，**不存在"未 bump"状态**。**check-version.sh 不全绿 = 禁止进阶段三** | 工程师 |
+| D5 | **版本号一致性（v1.2.6 起含门禁）** | `./tools/check-version.sh` 全绿（仅 archive 历史存档可豁免）。版本号 bump 在阶段三步骤 1 执行。**check-version.sh 不全绿 = 禁止继续阶段三后续步骤** | 工程师 |
 | D6 | **项目文档同步清单**（v1.1.9 新增） | 从 `docs/changelog/v<major>.<minor>/vX.Y.md`「核心变更/交付」提取所有新功能关键词，列出「功能点 → 应在哪个文档出现」对照表。**归属原则**：详细机制写到权威文档（FDE.md / DEVELOPMENT.md / ARCHITECTURE.md），其他文档（HANDBOOK / README / PHILOSOPHY / WIKI）一句话 + 链接引用，不重复展开。可留发版 session 阶段七执行，但开发 session 须产出清单 | 工程师 |
 
-> **发版 session 接手检查**：D3/D4/D6 标「待补」→ 先补完才能进自测。D5 已在阶段二步骤 5 无条件完成，不存在「版本号未 bump」状态——check-version.sh 不全绿直接打回阶段二。绝不能跳过 D3（零覆盖新功能跑出全绿是假象）或 D6（文档零提及 = 用户不知道有这功能）。
+> **发版 session 接手检查**：D3/D4/D6 标「待补」→ 先补完才能进自测。D5 在阶段三步骤 1 执行 bump——跨 session 接手时，第一步就是跑 bump-version.sh + check-version.sh。绝不能跳过 D3（零覆盖新功能跑出全绿是假象）或 D6（文档零提及 = 用户不知道有这功能）。
 
 ---
 
@@ -117,29 +116,25 @@
 >
 > **v1.2.2 流程优化**：fresh-eyes-loop 从原阶段九前移到阶段三。原因：代码写完、自测跑完之后立即跑独立审查循环，发现的 bug 在代码审核之前就修掉——而不是拖到发版前才发现。原阶段九仅保留工具脚本健康检查 + dist 重建。
 
-### 第一部分：changelog 转正 + 基础自测（fresh-eyes-loop 之前）
-
-| # | 步骤 | 谁做 | 验证方式 |
-|:--:|------|:--:|------|
-| 1 | **🔴 changelog 状态转正（v1.2.4 起）**：把 `docs/changelog/v<major>.<minor>/vX.Y.md` 头部「⚠️ 规划中，尚未实现」改为「✅ 已开发」——代码已落地，changelog 必须如实反映，否则步骤 9 拿"宣称不存在的文档"当核对表会失真。删除「engine/ 下尚无对应代码」等过时警告，保留「前置依赖」 | 头部状态标注为已开发，无「规划中」残留 |
-
-> 🔴 **v1.0.9 教训**：步骤 4（shellcheck）依赖当前版本的 CLI 命令名。如果本版本涉及 CLI 命令迁移（如旧命令改名、上帝包子命令拆到新包二进制），shellcheck **跳过本部分**，延后到阶段七文档收尾全部完成之后补跑——那时文档引用和脚本命令名都已更新完毕，跑出来才是真实结果。build + test 不受影响，正常执行。
+### 第一部分：版本号 bump + changelog 转正 + 基础自测（fresh-eyes-loop 之前）
 
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
-| 2 | `npm run build` | exit 0 |
-| 3 | `npm test` | 全部通过 |
-| 4 | `shellcheck engine/scripts/*.sh tools/*.sh install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段七之后 |
-| 5 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
-| 6 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
+| 1 | **🔴 版本号 bump**：`./tools/bump-version.sh <旧> <新>` → `./tools/check-version.sh` 全绿。npm 不动。bump 后检查 hook 文件头版本（`head -2 engine/audit/hooks/commit-msg engine/audit/hooks/post-commit`）——两文件的 v 标记必须与 package.json version 一致（check-version.sh 已覆盖） | check-version.sh 全绿 |
+| 2 | **🔴 changelog 状态转正（v1.2.4 起）**：把 `docs/changelog/v<major>.<minor>/vX.Y.md` 头部「⚠️ 规划中，尚未实现」改为「✅ 已开发」——代码已落地，changelog 必须如实反映，否则步骤 10 拿"宣称不存在的文档"当核对表会失真。删除「engine/ 下尚无对应代码」等过时警告，保留「前置依赖」 | 头部状态标注为已开发，无「规划中」残留 |
+| 3 | `npm run build` | exit 0 |
+| 4 | `npm test` | 全部通过 |
+| 5 | `shellcheck engine/scripts/*.sh tools/*.sh install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段七之后 |
+| 6 | 改动清单核对 | diff 确认只改了 changelog 规定的文件 |
+| 7 | dist 与 src 同步验证（v1.0.4 教训）<br>`diff <(grep "关键命令" src/index.ts) <(grep "关键命令" dist/index.js)` | 无实质差异（排除编译格式化） |
 
 ### 第二部分：fresh-eyes-loop 质量循环（开新 session）
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 7 | **🔴 运行 fresh-eyes-loop（开发后独立质量循环）**：在**全新 session** 中启动 Node driver——`node FORGE/src/fresh-eyes-driver.mjs --target <本版本号> --max-rounds 10`。driver 用 LangGraph createReactAgent 编排 A（审查模型）双盲并行审查 + B（工程模型）修复 + A 验证，连续 2 轮 findings 无 P0/P1 即停（机制详见 `FORGE/SKILL/fresh-eyes-loop/SKILL.md`）。**Session 监控协议**：启动 driver 后按 SKILL.md「Session 监控协议」**在 session 内持续轮询** `<runDir>/status.json`——每 120 秒读一次，phase 变化时一句话汇报，phase 不变就继续轮询（session 一直在转，不 sleep 空转）。🔴 修复提交本地、不 push（发版步骤才统一推） | driver 跑完，`status.json` 显示 phase=completed 且无未推送提交被误 push |
+| 8 | **🔴 运行 fresh-eyes-loop（开发后独立质量循环）**：在**全新 session** 中启动 Node driver——`node FORGE/src/fresh-eyes-driver.mjs --target <本版本号> --max-rounds 10`。driver 用 LangGraph createReactAgent 编排 A（审查模型）双盲并行审查 + B（工程模型）修复 + A 验证，连续 2 轮 findings 无 P0/P1 即停（机制详见 `FORGE/SKILL/fresh-eyes-loop/SKILL.md`）。**Session 监控协议**：启动 driver 后按 SKILL.md「Session 监控协议」**在 session 内持续轮询** `<runDir>/status.json`——每 120 秒读一次，phase 变化时一句话汇报，phase 不变就继续轮询（session 一直在转，不 sleep 空转）。🔴 修复提交本地、不 push（发版步骤才统一推） | driver 跑完，`status.json` 显示 phase=completed 且无未推送提交被误 push |
 
-> **📋 一键复制 prompt（步骤 7 专用）**：执行到这一步时，**当前 session 的 AI 必须把下面的模板中所有占位符替换为实际值**（版本号、项目路径等），**输出填好的完整 prompt** 到对话里（不要创建任何文件），用户复制后直接粘贴到新 session 的第一条消息即可执行：
+> **📋 一键复制 prompt（步骤 8 专用）**：执行到这一步时，**当前 session 的 AI 必须把下面的模板中所有占位符替换为实际值**（版本号、项目路径等），**输出填好的完整 prompt** 到对话里（不要创建任何文件），用户复制后直接粘贴到新 session 的第一条消息即可执行：
 
 > ```
 > 在 sofagent 项目（{项目实际路径}）中，执行 {实际版本号} 的 fresh-eyes-loop（开发后独立质量循环）。
@@ -158,17 +153,17 @@
 
 ### 第三部分：代码审核 + 验收测试更新（fresh-eyes-loop 之后）
 
-在当前 session 中，拿着 changelog（开发期活文档草稿）当核对表，逐项确认每个改动存在且正确。核心价值不是"换模型"，而是"拿 changelog 当 checklist 逐项验证代码"——代码就在磁盘上，读 diff 验证不需要换脑子。真正的独立性验证交给 fresh-eyes-loop（步骤 7）和阶段五。最终定稿见阶段七。
+在当前 session 中，拿着 changelog（开发期活文档草稿）当核对表，逐项确认每个改动存在且正确。核心价值不是"换模型"，而是"拿 changelog 当 checklist 逐项验证代码"——代码就在磁盘上，读 diff 验证不需要换脑子。真正的独立性验证交给 fresh-eyes-loop（步骤 8）和阶段五。最终定稿见阶段七。
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 8 | **🔴 汇总 fresh-eyes-loop 修复并整合 changelog（human-in-the-loop）**：loop（步骤 7）跑完后，用户以 `fresh-eyes-review.md` 方法论为参考**人肉**复核，① 汇总 loop 所有的 bug 修改，整合到本版本 changelog 开发日志（`docs/changelog/v<major>.<minor>/vX.Y.Z.md`）；② 将 loop 全部修复计入本版本 changelog 并打勾——此时所有修复仍本地未推，这是设计内正确状态 | 本版本 changelog 的「发布检查清单」含 loop 全部修复项且全部 `[x]`，开发日志已整合 loop 全部 bug 修改 |
-| 9 | **逐项核对 changelog 每一项**（含 fresh-eyes-loop 修复项） | 当前 session | 逐文件读源码/diff，逐项确认改动存在且正确，标记 PASS/FAIL |
-| 10 | FAIL 项修复 | 当前 session（切回开发者角色） | build + test 全绿 |
-| 11 | **🔴 代码冻结回归验证**：所有代码变更（fresh-eyes-loop 自动修复 + 步骤 10 人工 FAIL 修复）完成后，重新跑 `npm run build` + `npm test` 确认全绿——fresh-eyes-loop 的 B 模型修改了代码，必须验证不引入回归。build + test 在当前 session 直接跑（2-3 分钟出结果），不需要开新 session | 当前 session | build exit 0 + test 全绿 |
-| 12 | **🔴 更新 `FORGE/playbook/acceptance-test.sh`**<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/v<major>.<minor>/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `FORGE/playbook/acceptance-test.sh`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `FORGE/playbook/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n FORGE/playbook/acceptance-test.sh` 确认语法<br><br>**Step C — 同步 `FORGE/playbook/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增）<br><br>**🔴 Step D — 覆盖率闭环判定**：<br>① **场景数声称 vs 实际对齐**：`DECLARED=$(head -5 FORGE/playbook/acceptance-test.sh \| grep -oE "[0-9]+ 个端到端" \| grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " FORGE/playbook/acceptance-test.sh); [ "$DECLARED" = "$ACTUAL" ]` 不一致 = P0<br>② **功能点逐条对照**：从 changelog「核心变更/交付」提取功能关键词，逐条 grep `FORGE/playbook/acceptance-test.sh`——零覆盖 = P0（回归测试无法发现该功能退化）<br>③ **失效场景清理**：`grep -rn "sofagent-audit --daemon" FORGE/playbook/acceptance-test.sh` 期望零命中 | `bash -n FORGE/playbook/acceptance-test.sh` 通过；**Step D 三项判定全 PASS** |
+| 9 | **🔴 汇总 fresh-eyes-loop 修复并整合 changelog（human-in-the-loop）**：loop（步骤 8）跑完后，用户以 `fresh-eyes-review.md` 方法论为参考**人肉**复核，① 汇总 loop 所有的 bug 修改，整合到本版本 changelog 开发日志（`docs/changelog/v<major>.<minor>/vX.Y.Z.md`）；② 将 loop 全部修复计入本版本 changelog 并打勾——此时所有修复仍本地未推，这是设计内正确状态 | 本版本 changelog 的「发布检查清单」含 loop 全部修复项且全部 `[x]`，开发日志已整合 loop 全部 bug 修改 |
+| 10 | **逐项核对 changelog 每一项**（含 fresh-eyes-loop 修复项） | 当前 session | 逐文件读源码/diff，逐项确认改动存在且正确，标记 PASS/FAIL |
+| 11 | FAIL 项修复 | 当前 session（切回开发者角色） | build + test 全绿 |
+| 12 | **🔴 代码冻结回归验证**：所有代码变更（fresh-eyes-loop 自动修复 + 步骤 11 人工 FAIL 修复）完成后，重新跑 `npm run build` + `npm test` 确认全绿——fresh-eyes-loop 的 B 模型修改了代码，必须验证不引入回归。build + test 在当前 session 直接跑（2-3 分钟出结果），不需要开新 session | 当前 session | build exit 0 + test 全绿 |
+| 13 | **🔴 更新 `FORGE/playbook/acceptance-test.sh`**<br><br>**Step A — 对照 changelog 找出缺口**：<br>① 读本版本 `docs/changelog/v<major>.<minor>/vX.Y.md`，列出所有新增/变更的功能点<br>② 逐条 grep `FORGE/playbook/acceptance-test.sh`，确认每条功能有对应场景——**只新增场景，不改现有场景编号**<br><br>**Step B — 更新 `FORGE/playbook/acceptance-test.sh`**：<br>① 在最后一个场景与总结段之间追加新场景（用 `scenario N "描述"` 格式）<br>② 更新文件头第 4 行：场景总数 + 功能描述<br>③ 新场景使用已有辅助函数（`pass`/`fail`/`git_log_has`），遵守 pipefail 安全约定<br>④ 改后跑 `bash -n FORGE/playbook/acceptance-test.sh` 确认语法<br><br>**Step C — 同步 `FORGE/playbook/regression-checklist.md`**：<br>如果新场景暴露了之前遗漏的检查维度，追加到回归检查清单（编号递增）<br><br>**🔴 Step D — 覆盖率闭环判定**：<br>① **场景数声称 vs 实际对齐**：`DECLARED=$(head -5 FORGE/playbook/acceptance-test.sh \| grep -oE "[0-9]+ 个端到端" \| grep -oE "[0-9]+"); ACTUAL=$(grep -c "^scenario " FORGE/playbook/acceptance-test.sh); [ "$DECLARED" = "$ACTUAL" ]` 不一致 = P0<br>② **功能点逐条对照**：从 changelog「核心变更/交付」提取功能关键词，逐条 grep `FORGE/playbook/acceptance-test.sh`——零覆盖 = P0（回归测试无法发现该功能退化）<br>③ **失效场景清理**：`grep -rn "sofagent-audit --daemon" FORGE/playbook/acceptance-test.sh` 期望零命中 | `bash -n FORGE/playbook/acceptance-test.sh` 通过；**Step D 三项判定全 PASS** |
 
-> 🔴 **v1.1.3 教训**：每版本发版后，验收测试文件自身的功能也会过时——**场景数落后于代码实现、新增功能零覆盖**。步骤 12 在 fresh-eyes-loop 之后执行，确保补的场景基于已审核确认的功能清单。
+> 🔴 **v1.1.3 教训**：每版本发版后，验收测试文件自身的功能也会过时——**场景数落后于代码实现、新增功能零覆盖**。步骤 13 在 fresh-eyes-loop 之后执行，确保补的场景基于已审核确认的功能清单。
 
 ---
 
@@ -487,7 +482,7 @@ shellcheck engine/scripts/*.sh tools/*.sh install.sh   # 期望：零 error
 
 ## 阶段八：工具脚本健康检查（v1.1.3 教训）
 
-> **v1.2.2 流程优化**：fresh-eyes-loop 已前移到阶段三（步骤 7-8）。本阶段仅保留工具脚本健康检查 + dist 重建。fresh-eyes-loop 的 changelog 汇总也已在阶段三完成。
+> **v1.2.2 流程优化**：fresh-eyes-loop 已前移到阶段三（步骤 8-9）。本阶段仅保留工具脚本健康检查 + dist 重建。fresh-eyes-loop 的 changelog 汇总也已在阶段三完成。
 >
 > 工具脚本和产品代码同步演进，不要等脚本报错才发现缺口。每次发版前过一遍——这一步防止「check 能查但 bump 不改」「新增目录没进排除规则」「regression-checklist 路径过时」三类结构性盲区。
 
@@ -995,7 +990,7 @@ bash tools/check-version.sh   # 期望：全绿
 |:--:|------|:--:|:--:|------|
 | 一 | 审查（fresh-eyes-loop 找齐上版本 bug） | 作者启动 driver（新 session）+ 可选人工补充 | 是（全新 session 跑 fresh-eyes-driver.mjs 审查上一版本） | 审查报告 + loop 修复（→ 本版本 BugFix 批次） |
 | 二 | 开发 | 工程师 | 否 | 代码 + 随修随记的回归维度 |
-| 三 | 基础自测 + fresh-eyes-loop 质量循环 + 代码审核（原三+四合并） | 工程师自测 → 新 session（loop）→ 当前 session（审核+验收测试更新） | **🔴 是（步骤 7 开新 session 跑 fresh-eyes-loop）** | build/test 全绿 + loop 修复 + changelog 汇总打勾 + 逐项 PASS 或 FAIL→修复 + 更新验收测试文件。涉及 CLI 迁移时 shellcheck 延后到阶段七 |
+| 三 | 基础自测 + fresh-eyes-loop 质量循环 + 代码审核（原三+四合并） | 工程师自测 → 新 session（loop）→ 当前 session（审核+验收测试更新） | **🔴 是（步骤 8 开新 session 跑 fresh-eyes-loop）** | build/test 全绿 + loop 修复 + changelog 汇总打勾 + 逐项 PASS 或 FAIL→修复 + 更新验收测试文件。涉及 CLI 迁移时 shellcheck 延后到阶段七 |
 | 四 | 审查体系合并更新（含瘦身检查） | 当前 session | 否 | regression-checklist（加法）+ fresh-eyes-review（校准，Tier 3 守护留白风格）+ acceptance-test.sh（可自动化验证的发现追加入场景）+ 防膨胀瘦身 |
 | **五** | **release-gate-loop 发版闸门（开新 session，一步到位）** | **新 session：acceptance 预跑 → driver 启动 → 轮询监控 → 最终汇报** | **🔴 是（新 session 一段 prompt 跑完全部 5 步；FAIL 回阶段四循环）** | **verdict = PASS** |
 | 六 | 审查体系最终确认 | 作者 | 否 | 两份审查文档状态一致、无遗漏（初版已在阶段四写入） |
