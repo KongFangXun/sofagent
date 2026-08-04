@@ -16,6 +16,21 @@ import { Annotation } from '@langchain/langgraph';
 export type AuditVerdict = 'PASS' | 'FAIL' | 'WARN';
 
 /**
+ * v1.2.7: Session Goal 状态——循环收敛从"启发式"升级为"目标驱动"。
+ * 未配置 goal（condition=null）时 fallback 到现有"连续 2 轮无 P0/P1"逻辑。
+ */
+export interface SessionGoalState {
+  /** 自然语言完成条件（null = 未设置 goal，fallback 启发式） */
+  condition: string | null;
+  /** 安全上限：最多续接次数（默认 10） */
+  maxContinuations: number;
+  /** 当前已续接次数 */
+  currentContinuations: number;
+  /** 最近一次评估结果 */
+  lastEvalResult: 'PASS' | 'CONTINUE' | 'FAIL' | null;
+}
+
+/**
  * StateGraph 节点名
  * v1.2.2 P4：新增 'plan'（Planner 节点，START → plan → engineer）
  * v1.2.4 P2b：新增 'checker'（多类型 Checker 节点，audit → checker → reviewer）
@@ -100,6 +115,11 @@ export interface LoopGraphState {
    * audit FAIL 第 2/3 次时由 routeAfterAudit 分别推进到 1/2
    */
   degradationLevel: number;
+  /**
+   * v1.2.7: Session Goal 状态（目标驱动收敛）。
+   * null = 未设置 goal，fallback 到现有启发式停止条件。
+   */
+  goal: SessionGoalState | null;
 }
 
 /** artifacts 初始值 */
@@ -155,5 +175,10 @@ export const LoopStateAnnotation = Annotation.Root({
   degradationLevel: Annotation<number>({
     reducer: (_prev, next) => next,
     default: () => 0,
+  }),
+  // v1.2.7: Session Goal 通道（目标驱动收敛）
+  goal: Annotation<SessionGoalState | null>({
+    reducer: (_prev, next) => next,
+    default: () => null,
   }),
 });

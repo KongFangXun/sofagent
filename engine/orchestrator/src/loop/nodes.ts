@@ -32,6 +32,46 @@ import { writeGraphState } from './plan-node';
 import { engineerDecide, defaultDecideCallLLM } from './engineer-decide';
 import { engineerExecute } from './engineer-execute';
 
+/**
+ * v1.2.7: Session Goal 评估函数——延迟导入避免编译时依赖。
+ * 从 @sofagent/core 动态加载（运行时已编译为 dist）。
+ */
+async function loadGoalFunctions(): Promise<{
+  loadSessionGoal: (dataDir: string) => { condition: string | null } | null;
+  evaluateGoal: (condition: string, currentState: string, dataDir: string) => Promise<'PASS' | 'CONTINUE' | 'FAIL'>;
+  incrementContinuations: (dataDir: string) => number;
+} | null> {
+  try {
+    const core = await import('@sofagent/core');
+    return {
+      loadSessionGoal: core.loadSessionGoal,
+      evaluateGoal: core.evaluateGoal,
+      incrementContinuations: core.incrementContinuations,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * v1.2.7: 本地 fallback 实现——@sofagent/core 未编译时使用。
+ * 从 data/orchestrator/goals/current.json 直接读取 goal。
+ */
+function loadSessionGoalLocal(dataDir: string): { condition: string; maxContinuations: number; currentContinuations: number } | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { existsSync, readFileSync } = require('fs');
+    const { join } = require('path');
+    const goalPath = join(dataDir, 'orchestrator', 'goals', 'current.json');
+    if (!existsSync(goalPath)) return null;
+    const content = readFileSync(goalPath, 'utf-8').trim();
+    if (!content) return null;
+    return JSON.parse(content);
+  } catch {
+    return null;
+  }
+}
+
 /** 重试上限：第 3 轮重试后仍未过 → blocked 终态 */
 export const DEFAULT_MAX_RETRIES = 3;
 
@@ -1008,6 +1048,119 @@ export function makeHumanConfirmNode(deps: LoopGraphDeps) {
       currentNode: 'human_confirm',
       finalStatus: 'blocked',
       artifacts: { humanFeedback: 'rejected' },
+    };
+  };
+}
+
+/**
+ * v1.2.7: goal 评估节点——每轮结束后评估当前状态是否满足 SessionGoal。
+ *
+ * 评估流程：
+ *   1. 加载 SessionGoal（从 data/orchestrator/goals/current.json）
+ *   2. 调轻量模型评估 condition vs 当前状态（audit + review 报告）
+ *   3. PASS → finalStatus='completed'（stopReason='goal-met'）
+ *   4. CONTINUE + continuations < max → 继续下一轮
+ *   5. continuations >= max → finalStatus='blocked'（stopReason='goal-max-continuations'）
+ *   6. FAIL → finalStatus='blocked'（stopReason='goal-failed'）
+ *   7. 未设置 goal → no-op（fallback 到现有启发式）
+ */
+export function makeGoalEvalNode(deps: LoopGraphDeps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return async (state: LoopGraphState): Promise<any> => {
+    const dataDir = deps.dataDir;
+    if (!dataDir) {
+      // 无 dataDir → 跳过 goal 评估
+      return { currentNode: 'goal_eval' as LoopNodeName };
+    }
+
+    // 延迟加载 goal 函数（优先 @sofagent/core，fallback 本地实现）
+    const goalFuncs = await loadGoalFunctions();
+    const goal = (goalFuncs && typeof goalFuncs.loadSessionGoal === 'function')
+      ? goalFuncs.loadSessionGoal(dataDir)
+      : loadSessionGoalLocal(dataDir);
+
+    if (!goal || !goal.condition) {
+      // 未设置 goal → no-op（fallback 启发式）
+      return { currentNode: 'goal_eval' as LoopNodeName };
+    }
+
+    const maxCont = goal.maxContinuations ?? 10;
+    const curCont = goal.currentContinuations ?? 0;
+
+    deps.log(`🎯 goal 评估中...（续接 ${curCont}/${maxCont}）`);
+
+    // 构建当前状态摘要（audit 报告 + review 报告）
+    const currentState = [
+      '# 审计报告',
+      state.artifacts.auditReport.slice(0, 2000),
+      '# 审查报告',
+      state.artifacts.reviewReport.slice(0, 2000),
+    ].join('\n');
+
+    // 调轻量模型评估
+    let evalResult: 'PASS' | 'CONTINUE' | 'FAIL' = 'CONTINUE';
+    if (goalFuncs && typeof goalFuncs.evaluateGoal === 'function') {
+      evalResult = await goalFuncs.evaluateGoal(goal.condition, currentState, dataDir);
+    }
+    deps.log(`🎯 goal 评估结果: ${evalResult}`);
+
+    if (evalResult === 'PASS') {
+      deps.log('✅ goal 已满足 → goal-met');
+      return {
+        currentNode: 'goal_eval' as LoopNodeName,
+        finalStatus: 'completed',
+        goal: {
+          condition: goal.condition,
+          maxContinuations: maxCont,
+          currentContinuations: curCont,
+          lastEvalResult: 'PASS',
+        },
+      };
+    }
+
+    if (evalResult === 'FAIL') {
+      deps.log('⛔ goal 无法满足 → goal-failed');
+      return {
+        currentNode: 'goal_eval' as LoopNodeName,
+        finalStatus: 'blocked',
+        goal: {
+          condition: goal.condition,
+          maxContinuations: maxCont,
+          currentContinuations: curCont,
+          lastEvalResult: 'FAIL',
+        },
+      };
+    }
+
+    // CONTINUE: 递增续接计数
+    let newContinuations = curCont + 1;
+    if (goalFuncs && typeof goalFuncs.incrementContinuations === 'function') {
+      newContinuations = goalFuncs.incrementContinuations(dataDir);
+    }
+    if (newContinuations >= maxCont) {
+      deps.log(`⛔ goal 续接已达上限（${maxCont}）→ goal-max-continuations`);
+      return {
+        currentNode: 'goal_eval' as LoopNodeName,
+        finalStatus: 'blocked',
+        goal: {
+          condition: goal.condition,
+          maxContinuations: maxCont,
+          currentContinuations: newContinuations,
+          lastEvalResult: 'CONTINUE',
+        },
+      };
+    }
+
+    // 继续下一轮
+    deps.log(`🔄 goal 未满足 → 继续下一轮（${newContinuations}/${maxCont}）`);
+    return {
+      currentNode: 'goal_eval' as LoopNodeName,
+      goal: {
+        condition: goal.condition,
+        maxContinuations: maxCont,
+        currentContinuations: newContinuations,
+        lastEvalResult: 'CONTINUE',
+      },
     };
   };
 }

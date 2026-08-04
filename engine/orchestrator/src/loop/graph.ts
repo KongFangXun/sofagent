@@ -28,6 +28,7 @@ import {
   emptyArtifacts,
   type LoopGraphState,
   type LoopNodeName,
+  type SessionGoalState,
 } from './state';
 import { FileCheckpointer, type CheckpointRecord } from '../graph/checkpoint';
 import { readHITLResponse, type HITLDecision } from '../hitl';
@@ -37,6 +38,7 @@ import {
   makeAuditNode,
   makeReviewerNode,
   makeHumanConfirmNode,
+  makeGoalEvalNode,
   DEFAULT_MAX_RETRIES,
   type LoopGraphDeps,
 } from './nodes';
@@ -128,9 +130,22 @@ export function routeAfterAudit(
  * v1.2.2 P3b 注：awaiting_human 走 END 分支——图 invoke 自然返回，
  * 不路由到任何节点，等待外部信号触发 resumeLoopGraph() 续跑。
  */
-export function routeAfterHuman(state: LoopGraphState): 'engineer' | typeof END {
+/**
+ * human_confirm 之后的条件路由（异步/同步两条路径共享同一个函数）：
+ * completed/blocked/aborted/awaiting_human → END（挂起或收尾，都不推进）；
+ * 驳回（finalStatus 仍为 running）→ goal_eval（v1.2.7: 先评估 goal 再决定是否继续）
+ *
+ * v1.2.7: 新增 goal_eval 节点——驳回后先过 goal 评估：
+ *   - goal PASS → completed（goal-met）
+ *   - goal CONTINUE + 未超限 → engineer（继续下一轮）
+ *   - goal 未设置 → engineer（fallback 启发式）
+ *
+ * v1.2.2 P3b 注：awaiting_human 走 END 分支——图 invoke 自然返回，
+ * 不路由到任何节点，等待外部信号触发 resumeLoopGraph() 续跑。
+ */
+export function routeAfterHuman(state: LoopGraphState): 'engineer' | 'goal_eval' | typeof END {
   if (state.finalStatus !== 'running') return END;
-  return 'engineer';
+  return 'goal_eval';
 }
 
 /**
@@ -138,6 +153,17 @@ export function routeAfterHuman(state: LoopGraphState): 'engineer' | typeof END 
  */
 function routeFromStart(state: LoopGraphState): LoopNodeName {
   return state.resumeFrom ?? 'plan';
+}
+
+/**
+ * v1.2.7: goal_eval 之后的条件路由：
+ *   completed/blocked → END（goal 已满足/无法满足）
+ *   running + goal CONTINUE → engineer（继续下一轮）
+ *   running + goal 未设置 → engineer（fallback 启发式）
+ */
+function routeAfterGoalEval(state: LoopGraphState): 'engineer' | typeof END {
+  if (state.finalStatus !== 'running') return END;
+  return 'engineer';
 }
 
 /**
@@ -183,6 +209,8 @@ export function buildLoopGraph(deps: LoopGraphDeps) {
     .addNode('human_confirm', withCheckpoint('human_confirm', deps.checkpointer, makeHumanConfirmNode(deps)))
     // v1.2.4 P2b：checker 节点（format/fact/source 三合一）
     .addNode('checker', withCheckpoint('checker', deps.checkpointer, makeCheckerNode(deps)))
+    // v1.2.7: goal_eval 节点（每轮后评估 SessionGoal 是否满足）
+    .addNode('goal_eval', withCheckpoint('goal_eval' as LoopNodeName, deps.checkpointer, makeGoalEvalNode(deps)))
     .addConditionalEdges(START, routeFromStart, {
       plan: 'plan',
       engineer: 'engineer',
@@ -204,6 +232,11 @@ export function buildLoopGraph(deps: LoopGraphDeps) {
     .addEdge('checker', 'reviewer')
     .addEdge('reviewer', 'human_confirm')
     .addConditionalEdges('human_confirm', routeAfterHuman, {
+      goal_eval: 'goal_eval',
+      [END]: END,
+    })
+    // v1.2.7: goal_eval → engineer（继续）或 END（停止）
+    .addConditionalEdges('goal_eval', routeAfterGoalEval, {
       engineer: 'engineer',
       [END]: END,
     });
@@ -267,6 +300,7 @@ export async function runLoopGraph(
     finalStatus: 'running',
     resumeFrom: null,
     degradationLevel: 0,
+    goal: null,
   };
 
   const finalState = (await app.invoke(initial, {
@@ -303,6 +337,10 @@ export function resolveResumeNode(record: CheckpointRecord): LoopNodeName | null
       return 'human_confirm';
     case 'human_confirm': {
       const next = routeAfterHuman(record.state as unknown as LoopGraphState);
+      return next === END ? null : next;
+    }
+    case 'goal_eval': {
+      const next = routeAfterGoalEval(record.state as unknown as LoopGraphState);
       return next === END ? null : next;
     }
     default:

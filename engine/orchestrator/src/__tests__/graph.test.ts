@@ -266,8 +266,8 @@ describe('routeAfterHuman', () => {
     expect(routeAfterHuman(sampleState({ finalStatus: 'aborted' }))).toBe(END);
   });
 
-  it('running → engineer', () => {
-    expect(routeAfterHuman(sampleState({ finalStatus: 'running' }))).toBe('engineer');
+  it('running → goal_eval (v1.2.7: goal 评估节点)', () => {
+    expect(routeAfterHuman(sampleState({ finalStatus: 'running' }))).toBe('goal_eval');
   });
 });
 
@@ -323,8 +323,16 @@ describe('resolveResumeNode', () => {
     expect(resolveResumeNode(record('human_confirm', 'after', { finalStatus: 'completed' }))).toBeNull();
   });
 
-  it('human_confirm after running → engineer', () => {
-    expect(resolveResumeNode(record('human_confirm', 'after', { finalStatus: 'running' }))).toBe('engineer');
+  it('human_confirm after running → goal_eval (v1.2.7: goal 评估节点)', () => {
+    expect(resolveResumeNode(record('human_confirm', 'after', { finalStatus: 'running' }))).toBe('goal_eval');
+  });
+
+  it('goal_eval after running → engineer', () => {
+    expect(resolveResumeNode(record('goal_eval', 'after', { finalStatus: 'running' }))).toBe('engineer');
+  });
+
+  it('goal_eval after completed → null', () => {
+    expect(resolveResumeNode(record('goal_eval', 'after', { finalStatus: 'completed' }))).toBeNull();
   });
 });
 

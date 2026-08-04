@@ -64,6 +64,12 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 - **主停止**：连续 **2 轮** `findings.md` 中 **无 P0 且无 P1** → 停止，本轮循环结束。
 - **人工停止**：driver 在任意轮后判定 `human-stop`（如时间窗到了）。
 - **上限**：设 `max-rounds`（默认 10），触顶强制停止并标注 `max-rounds`，遗留 P0/P1 进 `LEDGER.md` 备注。
+- **v1.2.7 Session Goal**：设置 `completion_condition` 后，每轮结束后用轻量模型评估是否满足条件：
+  - `PASS` → `stopReason='goal-met'`（目标达成停止）
+  - `CONTINUE` + 续接次数 < `max_continuations`（默认 10）→ 继续下一轮
+  - 续接次数 ≥ `max_continuations` → `stopReason='goal-max-continuations'`（续接超限停止）
+  - `FAIL` → `stopReason='goal-failed'`（目标无法达成停止）
+  - 未设置 `completion_condition` → fallback 到"连续 2 轮无 P0/P1"启发式（向后兼容）
 
 ### 循环健康指标：Evidence Delta（证据增量）
 
