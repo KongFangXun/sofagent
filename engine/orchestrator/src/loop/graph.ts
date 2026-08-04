@@ -253,6 +253,17 @@ function buildDeps(options: LoopGraphOptions): LoopGraphDeps {
     ...options.deps,
     checkpointer,
   };
+
+  // v1.2.7: Agent Mailbox 注入器初始化（dataDir 存在时自动启用）
+  if (!merged.mailboxInjector && merged.dataDir) {
+    try {
+      const { createMailbox } = require('../mailbox');
+      const { injector } = createMailbox(merged.dataDir);
+      merged.mailboxInjector = injector;
+    } catch {
+      // mailbox 模块不可用时静默跳过（降级到无邮箱模式）
+    }
+  }
   // v1.2.2 P3b：CLI --data-dir 显式覆盖优先于 env 解析（defaultDeps 注入的值）
   if (options.dataDir) merged.dataDir = options.dataDir;
   // v1.2.2 P4：runLoopGraph 默认开启降级链（测试可显式传 false 关闭）
