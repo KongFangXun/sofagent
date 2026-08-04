@@ -9,139 +9,190 @@
 </p>
 
 <p align="center">
-  <strong>Onboard · Deploy AI nodes · Control layer stays resident</strong><br/>
-  <em>Give SMBs the ability to turn AI into daily work.</em>
+  <strong>FDE (Forward Deployed Engineer) Agent — map workflows · deploy AI nodes · audit every change · capture experience</strong><br/>
+  <em>Let AI do the work — right, every time.</em>
 </p>
+
+> **sofagent is an FDE Agent** — it comes in, maps your workflows, turns the automatable parts into AI nodes, and runs 7×24 on its own after deployment. Every action the AI takes is automatically checked (warns when it steps out of bounds, rolls back when something breaks, shows you everything it did), and experience is captured automatically — the more you use it, the better it gets.
 
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.7-16B8F3" alt="Version" /></a>
-  <a href="#install-and-get-going"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>Current version: v1.2.7</strong> · 2026-08-03 · Activation Chain Phase 2 (First Half) + MCP Tool Delivery Fixes + Dead-Link Zero</p>
+<p align="center"><strong>Current version: v1.2.7</strong> · 2026-08-05 · Orchestration engine enhancements (/goal goal-driven + /compact context compression + bootstrap.sh one-line install + --doctor --repair etc.) → <a href="#v127-new-capabilities">What's new ↓</a></p>
+
+> ⚖️ **Honest boundaries**: sofagent guards against **honest Agents' mistakes** (accidentally committing secrets, out-of-scope edits) — not malicious Agents deliberately bypassing the rules. For high-security environments, pair it with `sofagent-audit --diff` on the CI side as a backstop. "Stable" means the API is stable and test coverage is complete — it does **not** mean every known limitation is resolved. See [LIMITATIONS.md](./docs/LIMITATIONS.md) · [SECURITY.md](./SECURITY.md).
 
 <p align="center">
-  <a href="#what-is-this">What is this</a> · <a href="#what-sofagent-can-do-for-you">Features</a> · <a href="#three-deployment-options">Deployment</a> · <a href="#install-and-get-going">Install</a> · <a href="#further-reading">Docs</a>
+  <a href="#what-is-this">What is this</a> · <a href="#quick-start">Quick Start</a> · <a href="#further-reading">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
-
----
-
-## 🚀 30-Second Quick Start
-
-```bash
-bash install.sh
-source ~/.bashrc   # or source ~/.zshrc / restart terminal
-sofagent-audit --init
-```
-
-> After setup, every `git commit` triggers an audit automatically. See [中文快速开始](README.md) for details.
 
 ---
 
 ## What is this
 
-Companies don't lack LLMs and Agents — they lack the ability to turn AI into daily work.
+**The more capable your AI gets, the harder it is to let go** — it writes wrong code, leaks secrets, messes up your files, and you have no idea. When something actually goes wrong, who's responsible? Can it be stopped? Can it be rolled back?
 
-**That's what sofagent does.** It's an FDE Agent — it onboards with a four-phase process: map your workflows, turn automatable steps into AI nodes, deploy them onto devices, then leave. After departure, the control layer keeps running — audit chain, tamper-proof, compliance trail. What you keep is a set of self-sustaining AI assets.
+sofagent solves exactly this: **it helps you govern your AI — the AI does the work, you just keep watch.**
 
-Big vendors built the river — LLM is the water, Agent platforms are the riverbed. But enterprises don't dare drink straight from it. sofagent builds the dam + water treatment plant + pipe network + faucet — turning raw water into drinkable water for everyone. Full analogy: [ARCHITECTURE · River](./docs/ARCHITECTURE.md).
+Concretely, it does three things:
 
-### Why not existing tools
+| What you worry about | What sofagent does | In plain words |
+|---------|----------------|---------|
+| **Want AI to run on its own?** | First maps your workflows, turns the automatable parts into AI nodes, deployed and running by themselves | From "you do the work" to "you delegate the work" — AI nodes run 7×24 on their own |
+| **What if AI goes rogue?** | Every change the AI makes is checked automatically | Someone is watching — the moment it steps out of bounds, you get an alert |
+| **What if AI breaks something?** | Every change is archived automatically, one-click rollback | When things go wrong, one click takes you back to a safe state |
+| **What if I switch AI tools/models?** | Platform-agnostic — Claude, GPT, self-hosted models all work | Switching models doesn't weaken your protection |
+| **Does it get better over time?** | Experience from every AI task is captured automatically, rules refined through regular inspections | It understands your business better the more it works |
 
-| Tool | What they check | What sofagent checks |
-|------|:---------|:----------------|
-| pre-commit / husky | Code quality (lint / format) | **Agent behavior** (secret leaks / out-of-scope edits / injection attacks / blind edits) |
-| detect-secrets / gitleaks | Secret scanning (full history + pre-commit; gitleaks ships 100+ rules) | A2 covers common API keys (⚠️ incremental diff only); the difference is **Agent behavior auditing**, not secret coverage |
-| Cursor Rules / Claude Code hooks | Single-platform IDE constraints | Platform-agnostic — any Agent + git repo |
-| Agent platforms (OpenClaw etc.) | Agent scheduling — "can it do it" | Agent governance — "can it do it right every time" |
+**🏞️ Think of it as a river** — big vendors give you "water" (the LLM) and a "riverbed" (the Agent platform), but the water is raw; you wouldn't dare drink it straight. sofagent is the **dam + water treatment plant + pipe network + faucet** — keeping the water from flooding (constraining the AI), turning raw water into drinking water (safe sandbox), and delivering it where it should go (pipeline constraints). In short: **it takes AI from "usable" to "safe to trust".**
 
-Existing tools check "is the code written well"; sofagent checks "did the Agent behave well" — out-of-scope edits, knowledge base cross-domain, process compliance, edit-without-read. These are LLM-Agent-specific failure modes that generic lint tools don't cover.
+> 🎯 **90/10 value split**: the model provides 90% of the intelligence; sofagent adds the 10% of reliable execution — and over time that 10% becomes the most valuable part. It's not about building a smarter model; it's adding a set of gates to the intelligence you already have.
+
+> 🔬 **Independent external evidence** (not sofagent's own benchmark): Joel Niklaus' harness-optimization research on HuggingFace shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)** — the entire gain came from outer-layer mechanisms. Independent evidence that this class of constraint mechanism works. See [THANKS.md](./docs/THANKS.md).
 
 <details>
-<summary>📦 After FDE leaves, the enterprise keeps five things</summary>
+<summary>🔄 How does it "get better with use"? (click to see the loop)</summary>
 
-The first four are assets, the fifth is sofagent itself — the FDE Agent that stays and keeps them running:
+```mermaid
+graph LR
+    A[AI does the work] --> B[Auto-check<br/>out-of-bounds / leaks / blind edits]
+    B -->|Found a problem| C[Lesson captured<br/>won't repeat next time]
+    C --> D[Rules refined<br/>more precise over time]
+    D --> A
+    B -->|No problem| A
+```
 
-| Deliverable | Description |
-|-------------|-------------|
-| Deployment manual | Operation manual that enterprise IT can independently maintain |
-| AI nodes | Running Agents that auto-execute daily tasks (financial reconciliation, audit inspection, data analysis...) |
-| AI knowledge base | Continuously accumulated entities, concepts, comparison pages (Dream Cycle auto-sedimentation) |
-| Private evaluation system | eval feedback + Skill iteration history — non-copyable enterprise IP |
-| **sofagent itself** | The FDE Agent: control layer resident — manages lifecycle of audit/constraints/knowledge; the human leaves, it stays |
+Every violation the AI gets stopped for, and every success, is captured into a "lessons library" — the next run avoids them automatically. That's how it understands your business better over time.
 
 </details>
 
+<details>
+<summary>🔧 Technical details (for developers)</summary>
+
+Under the hood it's a **Harness middleware** — every time the Agent finishes a change, audit rules run automatically (24 registered rules: 17 enabled by default + 7 extended that require explicit opt-in, including 9 baseline rules that cannot be disabled; hard evidence from git diff, zero-token audit core (19/24 pure git-diff); 4 hybrid rules need Agent logs), violations are blocked on the spot, compliant changes are snapshotted. Loading uses gradual loading: the core iron-rules layer (core-rules.md ~30 lines) is always injected + role norms appended on demand by task type; the four-layer loading chain skeleton (SKILL.md → fde.md → think.md → knowledge/) is preserved, providing a behavioral baseline for the Agent to load (the Agent should read it voluntarily — not force-injected). Audit interception works on all paths; reflection generation (think.md) triggers only on MCP/CLI paths. Full architecture: [ARCHITECTURE.md](./docs/ARCHITECTURE.md).
+
+</details>
+
+### How to see what the AI is doing
+
+Two panels give you the whole picture at a glance: where data goes (is anything being exfiltrated), whether the AI broke a rule (overstepping), where the task stands (alive or dead):
+
+**🖥️ HTML Dashboard (web version, recommended)** — a 6-page visual console: cockpit (live metrics) / FDE guide / AI nodes / ontology / knowledge base / toolbox (install · architecture · audit rules · MCP · npm · docs · FORGE), all driven by real data:
+
+**One-click launch**: macOS users can double-click [`start-dashboard.command`](./start-dashboard.command) in the repo root (auto-opens the browser, closes when you close the window).
+
+```bash
+node tools/serve-dashboard.mjs    # command-line launch (cross-platform, auto-opens browser)
+# → http://localhost:3780
+```
+
+> How to open: open via the server to read live data from `~/.sofagent/data` (browser security restriction). Chrome/Edge users can also click "Connect data directory" in the page to pick a directory directly — no server needed. Opening the HTML statically only shows sample data.
+
+**💻 Terminal panel (bash)** — lightweight, zero dependency (requires jq):
+
+```bash
+sofagent-dashboard           # view current status
+sofagent-dashboard --watch   # live refresh (for watchful reviews)
+sofagent-dashboard --full    # expanded full view
+```
+
+> Prerequisite: requires `jq` (`brew install jq` / `apt install jq`).
+
+### From delivery to self-running (activation chain)
+
+After the FDE delivers the ontology + workflow.yml + skills/, since v1.2.5 the deliverables run themselves in four steps:
+
+| Stage | What it does | Version |
+|------|--------|:----:|
+| **ACTIVATE** | Reads the deliverables → registers enterprise SubAgents | v1.2.5 ✅ |
+| **ORCHESTRATE** | Builds the enterprise-specific workflow graph (Phase 2 first half: mapping table + registry extension / Phase 2 second half: enterprise-graph) | v1.2.6 ✅ · v1.2.7 ✅ |
+| **EXECUTE** | Run + human confirmation + per-step audit | v1.2.8-v1.2.9 (planned) |
+| **SUSTAIN** | Continuous optimization, gets better the longer it runs | v1.3.0 (planned) |
+
+Design details: [activation chain doc](./docs/guides/fde-activation-chain.md)
+
+### <a id="v127-new-capabilities"></a>What's new in v1.2.7
+
+New features you can use right after installing —
+
+| Feature | Command | In one line |
+|------|------|--------|
+| One-line install | `curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh \| bash` | One command, no clone needed |
+| Environment check + repair | `sofagent-audit --doctor --repair` | Everything red? Auto-repair with one command |
+| Diagnostic bundle | `sofagent-audit --support-bundle` | One-click sanitized diagnostic zip when filing an issue |
+| Config signing | `sofagent-audit --sign-config` | Adds tamper-evident signature to config.yml |
+| Context compression | `/compact` | Context overflowing? Compress manually, verification evidence preserved (@sofagent/core) |
+| Goal-driven | `/goal <completion condition>` | Loop convergence upgraded from heuristics to goal-driven (@sofagent/core) |
+
 ---
 
-## What sofagent can do for you
+## Quick Start
 
-| What you want to solve | How sofagent does it |
-|------|------|
-| **Want AI to auto-run daily tasks** | Onboard, map workflows, turn automatable steps into AI nodes — the control layer stays resident after deployment |
-| **What if the Agent goes out of bounds** | 24 rules auto-audit every change — out-of-scope edits, secret leaks, injection attacks, blocked on the spot |
-| **Can I roll back if something goes wrong** | Auto git snapshot after every change, one-click revert to any safe state |
-| **What if I switch Agent / model** | Platform-agnostic — Claude Code / Codex / Cursor / WorkBuddy, plug and play |
-| **Does it get better over time** | Experience auto-sedimented, FDE weekly inspection continuously optimizes rules and knowledge |
+After installing, say one sentence to your AI tool (WorkBuddy / Codex / Claude Code) and sofagent starts working. No new interface to learn — use the conversational style you already know.
 
-> [!TIP]
-> **90/10 value split**: the model provides 90% of the intelligence, sofagent adds 10% of reliable execution — and that 10% gets more valuable over time. Not a smarter model, but a set of gates for the intelligence you already have.
+| You are… | First step | What you need |
+|------|------|------|
+| **Enterprise user** | Install the [FDE guide tool](./FDE/README.md) → the conversation walks you through mapping workflows | Zero dependencies, no Node.js needed |
+| **Burning USB keys for employees** | `sofagent-daemon create-usb-key --role "node name" --target /Volumes/XXX --platform macos` | Installed daemon + a USB key |
+| **Developer** | `bash install.sh` → `sofagent-audit --init` → install git hook audit | Node.js ≥ 18 + git |
 
----
+> **Prerequisite**: run the developer path in the root of a git repo. If you don't have a repo yet, run `git init` first.
 
-## Three deployment options
+```bash
+# Option 1: one-line install (new in v1.2.7 · recommended)
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh | bash
+
+# Option 2: full install (clone + install.sh)
+git clone https://github.com/KongFangXun/sofagent.git && cd sofagent
+bash install.sh          # install (auto-detects shell config; open a new terminal or source after)
+sofagent-audit --init    # initialize (installs git hook)
+sofagent-audit --doctor  # verify environment is ready (optional but recommended)
+```
+
+> 💡 If `sofagent-audit` still says command not found, **open a new terminal window** and try again.
+> 💡 **Don't need the engine?** If you only need the FDE methodology (installing a governance Skill for your Agent), go straight to [FDE/README.md](./FDE/README.md) — zero dependencies, no Node.js.
+> 💡 **Next step**: after installing, run `sofagent-audit --doctor` to check environment status, or see the [project navigation index (WIKI) →](./docs/WIKI.md)
+
+### Other install options (optional)
 
 | Option | Who uses it | How |
 |------|------|--------|
-| 💻 **Install on computer** | Technical staff / developers | `bash install.sh` normal install |
-| 🔌 **USB key** | Regular employees (SMB core scenario) | Plug and play, zero residue on unplug, no installation or expertise needed |
-| 🖥️ **Headless device** | Server / industrial PC (OPC scenario) | Plug USB and leave it, control layer stays resident in the federation |
-
-> 💡 **USB one-click burn**: build a workflow → burn a batch of USB keys → distribute to the team. Enterprise narrative: "buy USB → download sofagent → write to disk → distribute to employees". See [FDE/GUIDE.md](./FDE/GUIDE.md).
-
----
-
-## Install and get going
-
-After installation, you talk to sofagent in your own Agent (WorkBuddy / Codex / Claude Code) and it starts working. No UI — language is the interface.
-
-```bash
-# Main installer (base + FDE Agent)
-bash install.sh
-```
+| 🚀 **npx zero-install** | Quick trial / CI environments | `npx @sofagent/audit --init` (use immediately, no download) |
+| ⚡ **install.sh minimal install** | Developers / enterprise IT | `bash install.sh --base-only` (base engine only) |
 
 > [!NOTE]
-> Requires Node.js ≥ 18 + bash + git. macOS / Linux fully supported, Windows experimental.
+> Requires Node.js ≥ 18 + bash + git. macOS / Linux fully supported, Windows experimental. Terminal Dashboard depends on jq (macOS: `brew install jq`, Linux: `apt install jq` / `yum install jq`); the HTML web Dashboard does not need jq.
 
 <details>
-<summary>🚀 Three-step first experience</summary>
+<summary>🚀 Three-step first experience after install</summary>
+
+> ⚠️ Must run inside a git repo (initialize one with `git init`).
 
 ```bash
-# 1. See the rules — agents carry these red lines
+# 0. Initialize — install the git hook so the audit engine can block commits
+sofagent-audit --init
+
+# 1. See the rules — the Agent carries these red lines while working
 sofagent-audit --help | head -5
 
-# 2. Run an audit — --init installed a pre-commit hook, so every commit is scanned by A1
-echo "API_KEY=sk-123456" > .env && git add -f .env && GIT_EDITOR=true git commit -m "test"
-# → ⛔ A1 sensitive files: .env contains key pattern, commit blocked (never lands)
+# 2. Run an audit — the --init in step 0 installed a pre-commit hook, so every commit is blocked
+# GIT_EDITOR=true keeps git commit from opening an editor (common in CI/automation)
+echo "API_KEY=sk-123456" > .env && git add -f .env && GIT_EDITOR=true git commit -m "add env config"
+# → ⛔ A1 sensitive files: .env contains a key pattern, commit blocked (never lands)
 
-# 3. Check snapshots — auto-saved after every audit
+# 3. See snapshots — auto-archived after every audit
 sofagent-audit --timeline
 
-# Cleanup (A1 blocked the commit, so nothing landed)
+# Cleanup after the demo
 git rm --cached -f .env 2>/dev/null; rm -f .env
 ```
 </details>
 
-> ⚠️ **About commit blocking**: `git commit --no-verify` can bypass the local hook. sofagent is designed as a "guardrail for honest Agents", not a "defense against malicious attackers". For high-security enterprise scenarios, add a `sofagent-audit --diff` check in your CI/CD pipeline (hooks can be bypassed, CI cannot). See [LIMITATIONS](./docs/LIMITATIONS.md).
-
-**Two install modes**:
-
-| Mode | Command | What it installs |
-|------|------|--------|
-| Full install | `bash install.sh` | Base + FDE Agent (everyone) |
-| Base only | `bash install.sh --base-only` | Base engine only (developers / enterprise IT) |
+> ⚠️ **About commit blocking**: `git commit --no-verify` can bypass the local hook. sofagent is designed as a "guardrail for honest Agents", not a "defense against malicious attackers". For high-security enterprise scenarios, add a second `sofagent-audit --diff` audit on the CI/CD side (hooks can be bypassed, CI cannot). See [LIMITATIONS](./docs/LIMITATIONS.md) §1 Known architectural limitations.
 
 **Install on demand**:
 
@@ -149,58 +200,113 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 |------|------|
 | `@sofagent/audit` | Audit engine (24 rules, git diff hard evidence) |
 | `@sofagent/core` | Runtime diagnostics (doctor / verify) |
-| `@sofagent/orchestrator` | FORGE self-iteration toolchain (LOOP pipeline + task composition) |
+| `@sofagent/orchestrator` | FORGE self-iteration toolchain (LOOP pipeline + task orchestration; orchestration capability is kept but **not marketed to users** — task orchestration is done by your Agent platform, sofagent only provides constraints/audit/experience capture during the process) |
 | `@sofagent/daemon` | Daemon process (file monitoring / scheduled inspection) |
 | `@sofagent/mcp` | MCP Server (JSON-RPC 2.0) |
 
-<details>
-<summary>Uninstall</summary>
+> 💡 Uninstall: `npm uninstall -g @sofagent/audit` + clean up the remaining global packages + `rm -f .git/hooks/commit-msg .git/hooks/post-commit`
 
-```bash
-# install.sh globally installs @sofagent/audit (other engines via monorepo local references)
-npm uninstall -g @sofagent/audit 2>/dev/null || true
-# If you manually installed other packages, clean them up too
-npm uninstall -g @sofagent/core @sofagent/orchestrator @sofagent/daemon @sofagent/mcp 2>/dev/null || true
-rm -f .git/hooks/commit-msg .git/hooks/post-commit
-```
+⚠️ **Data storage note**: sofagent currently stores audit data as plaintext Markdown in `~/.sofagent/data/`. Built-in encryption (age) is planned for v1.4.0. Before production use, we recommend:
+- macOS: put `~/.sofagent/` on an APFS encrypted volume
+- Linux: mount `~/.sofagent/` on a LUKS encrypted partition
+- See [SECURITY.md](./SECURITY.md#已知风险明文存储)
+
+---
+
+## Why not existing tools
+
+| Tool | What they manage | What sofagent manages |
+|------|:--------|:----------------|
+| AI Agent platforms (OpenClaw etc.) | Making AI "able to do things" | Making AI "do it right every time, and be accountable when it goes wrong" |
+| Enterprise AI consulting | One-time delivery, gone once the consultant leaves | Tool + resident, reusable and maintainable |
+| Code checkers (pre-commit etc.) | Checking "is the code written well" | Checking "did the AI behave right" (out-of-bounds / leaks / blind edits) |
+
+In one sentence: **existing tools check code; sofagent checks AI behavior** — secret leaks, out-of-scope file edits, blind modifications. These are AI-specific ways of causing trouble that generic tools don't cover.
+
+<details>
+<summary>🔧 Specific differences from technical tools (for developers)</summary>
+
+| Tool | What they manage | What sofagent manages |
+|------|:--------|:----------------|
+| detect-secrets / gitleaks | Secret scanning (full history + 100+ patterns) | A2 covers common API keys; the differentiator is **Agent behavior auditing**, not secret coverage |
+| Cursor Rules / Claude hooks | Single-platform IDE constraints | Audit layer works on all platforms (git diff); constraint layer is tiered per platform (deepest on OpenClaw → WorkBuddy SKILL → other seed instructions) |
+
+> ⚠️ **Comparison snapshot timestamp**: the comparisons above are based on public capability snapshots as of 2026-08-02; tools iterate fast, so details may be outdated. The core differentiator (sofagent audits "AI behavior" rather than "code quality") does not change with tool versions.
+
 </details>
 
-### Running tests
+<details>
+<summary>📦 After the FDE leaves, the enterprise keeps five things</summary>
 
-```bash
-# Full test suite (all workspaces + Dashboard)
-npm test
+The first four are assets; the fifth is the FDE Agent itself that keeps the first four alive — sofagent stays at the customer and keeps running:
 
-# Core engine tests only
-npm test --workspace=engine/audit
+| Deliverable | Description |
+|--------|--------|
+| Deployment manual | An operations manual enterprise IT can maintain independently |
+| AI nodes | Running Agents that auto-execute daily tasks (financial reconciliation, audit inspection, data analysis…) |
+| AI knowledge base | Continuously accumulated entities, concepts, comparison pages (auto-captured by Dream Cycle) |
+| Private evaluation system | eval feedback + Skill iteration history — enterprise IP that can't be copied |
+| **The FDE Agent itself** | The control layer stays resident — manages the lifecycle of audit / constraints / knowledge; the human leaves, it stays |
 
-# Expected: 1441 tests passed (16 may fail in certain environments, see LIMITATIONS §四)
-```
+</details>
+
+### How it differs from similar solutions
+
+| Dimension | sofagent | LangSmith | Guardrails AI |
+|------|----------|-----------|---------------|
+| Positioning | Agent behavior constraint layer (constraint + audit + experience capture) | LLM observability platform | LLM output validation |
+| Deployment | Local-first, zero cloud dependency | SaaS | Library integration |
+| Core capability | git hook audit + rule interception + constraint injection (provides audit/constraint/capture during Agent platform orchestration) | trace/eval | Output format constraints |
+| Use case | Enterprise AI governance & compliance | Development debugging | Single-point output validation |
+
+---
+
+## Deployment sizing (enterprise IT reference)
+
+| Deployment scale | Concurrent Agents | CPU | Memory | Disk | Use case |
+|---------|:---:|:---:|:---:|:---:|---------|
+| Individual / small team | 1-3 | 1 core | 512 MB | 500 MB | Solo development, git commit hook audit |
+| Mid-size team | 5-10 | 2 cores | 1 GB | 2 GB | Multi-dev collaboration, resident daemon + webhook push |
+| Enterprise | 10+ | 4 cores | 2 GB | 5 GB+ | Multi-repo federation, A/B review + knowledge base + Dashboard |
+
+> Disk is mostly consumed by: `~/.sofagent/data/` (audit history + snapshots + knowledge base, ~5 MB/repo/day). Memory is mostly consumed by: the resident daemon (~50 MB) + Node.js runtime (~200 MB/concurrent Agent). Network: outbound LLM API only, no inbound ports required.
 
 ---
 
 ## Further reading
 
-| Want to learn | Where |
+| You want to know | Where |
 |:---------|:--------|
-| FDE Agent four-phase onboarding, enterprise deployment | [GUIDE.md](./FDE/GUIDE.md) |
-| Install, usage, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
-| Engine architecture, 24 rules, internal mechanisms | [↓ Engine architecture (developers)](#engine-architecture-developers) |
-| Why designed this way | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
+| 🖥️ Dashboard (HTML web + terminal) | [↑ How to see what the AI is doing](#how-to-see-what-the-ai-is-doing) · or open [`dashboard.html`](./dashboard.html) directly in the repo root |
+| FDE diagnostic methodology (four phases, twelve steps) | [GUIDE.md](./FDE/GUIDE.md) |
+| 🔗 Activation chain design (deliverables → self-running) | [activation chain design doc](./docs/guides/fde-activation-chain.md) |
+| How to install, use, and FAQ (enterprise users) | [HANDBOOK](./docs/HANDBOOK.md) |
+| Engine architecture, 24 rules, internal mechanisms | [↓ Engine architecture (developers)](#engine-architecture) |
+| Why it's designed this way | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | Design philosophy | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
-| Security statement | [SECURITY](./SECURITY.md) |
+| Industry validation and ecosystem positioning | [VALIDATION](./docs/VALIDATION.md) |
+| Security statement (incl. data storage) | [SECURITY](./SECURITY.md) |
 | Known limitations | [LIMITATIONS](./docs/LIMITATIONS.md) |
 | Version roadmap | [ROADMAP](./docs/ROADMAP.md) |
-| Contributing | [CONTRIBUTING](./CONTRIBUTING.md) |
+| Project navigation index (for AI) | [WIKI](./docs/WIKI.md) |
+| Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
+
+> 🧭 **First time here? Pick a path by your role**
+> - **Want to use it** (enterprise users / business owners) → [HANDBOOK](./docs/HANDBOOK.md): how to install, how to delegate work, FAQ
+> - **Want to understand how it works** (architects / technical decision makers) → [ARCHITECTURE](./docs/ARCHITECTURE.md) (design) → [PHILOSOPHY](./docs/PHILOSOPHY.md) (philosophy)
+> - **Want to contribute or integrate** (developers) → [↓ Engine architecture section](#engine-architecture) → [DEVELOPMENT](./docs/DEVELOPMENT.md) (dev guide)
 
 ---
 
-## Engine architecture (developers)
+<details>
+<summary>🔧 Engine architecture (developer section — non-developers don't need to expand)</summary>
+
+## <a id="engine-architecture"></a>Engine architecture (developers)
 
 > [!NOTE]
-> **Two names, one thing**: the product you interact with is called **FDE Agent** (helps you map workflows and deploy AI nodes); the underlying engine is called **sofagent** (open-source repo + npm packages `@sofagent/*`). Regular users only need to remember **FDE Agent** — the following section is for developers.
+> **Brand vs. description**: **sofagent** is the product brand; **FDE Agent** is a description of its core form — sofagent is essentially an FDE Agent (comes in to map workflows, turns automatable steps into AI nodes, builds the ontology, and stays resident on duty). The underlying technical implementation is a Harness middleware that constrains Agent behavior (**capability base × lifecycle** two-layer architecture: layer 1 one base · three engines + layer 2 activation chain four stages), open-sourced as `@sofagent/*`. The section below is for developers.
 
-The sofagent engine is a Harness middleware that constrains Agent behavior, with one base and three engines covering the full lifecycle. FORGE LOOP pipeline is an internal development tool, not marketed as a user-facing engine.
+The sofagent engine is a Harness middleware that constrains Agent behavior, with a **capability base × lifecycle** two-layer architecture. **Layer 1 capability base = one base · three engines**: one base = Constraint Base (injects rules before work starts); three engines = Audit Engine (24 rules interception) + Rollback Engine (auto snapshot + rollback) + Evolution Engine (think.md reflection + Dream Cycle knowledge feedback + skillopt Skill optimization). **Layer 2 lifecycle = activation chain four stages** (v1.2.5+): activate (ACTIVATE) → orchestrate (ORCHESTRATE) → execute (EXECUTE) → sustain (SUSTAIN). At both ends, diagnosis (FDE) and evolution (EVOLVE) extend the full lifecycle into five stages: diagnose → activate → orchestrate → execute → evolve. The FORGE self-iteration toolchain (LOOP pipeline) is an internal development tool, not marketed as an external engine.
 
 <details>
 <summary>📖 One base · three engines architecture (developer reference)</summary>
@@ -208,17 +314,19 @@ The sofagent engine is a Harness middleware that constrains Agent behavior, with
 ```mermaid
 flowchart LR
     CB[🧭 Constraint Base<br/>inject red lines before work] --> AU[🔍 Audit Engine<br/>hard evidence per change]
-    AU --> RE[🔄 Restore Engine<br/>auto-snapshot · one-click revert]
-    RE --> EV[🧬 Evolution<br/>weekly inspection · improves with use]
+    AU --> RE[🔄 Rollback Engine<br/>git snapshot · one-click revert]
+    RE --> EV[🧬 Evolution Engine<br/>think.md reflection + Dream Cycle + skillopt]
     EV -.-> CB
 ```
 
-| Engine | What it does | Status |
+> The 4 rows below = 1 base + 3 engines.
+
+| Component | What it does | Status |
 |:------|:--------|:--:|
 | 🧭 Constraint Base | Injects rules into Agent context before work starts (SKILL.md + fde.md + think.md + knowledge/) | ✅ stable |
-| 🔍 Audit Engine | 24 rules on every git commit / file change, blocks + logs violations. **Core audit rules zero extra-token** (19 pure git-diff rules don't call LLM + 1 filesystem monitoring rule, 4 hybrid rules need Agent logs) — pure static analysis, no LLM cost | ✅ stable |
-| 🔄 Restore Engine | Auto git snapshot after every audit, one-click revert | ✅ stable |
-| 🧬 Evolution | think.md reflection (✅ shipped) + Dream Cycle knowledge feedback (🔧 lightweight) + skillopt Skill optimization (⚠️ needs external SkillOpt CLI) | 🔧 partial |
+| 🔍 Audit Engine | 24 rules, triggered on every git commit / file change, blocks + records violations. **Zero extra tokens in the audit core** (19 pure git-diff + 1 filesystem monitoring that don't call the LLM, 4 hybrid rules need Agent logs) | ✅ stable |
+| 🔄 Rollback Engine | Auto git snapshot after every audit, one-click rollback on violation | ✅ stable |
+| 🧬 Evolution Engine | think.md reflection (⚠️ MCP/CLI paths only, not auto-generated on the git hook path) + Dream Cycle knowledge feedback (🔧 lightweight) + skillopt Skill optimization (⚠️ needs external SkillOpt CLI) | 🔧 partially available |
 
 </details>
 
@@ -227,44 +335,48 @@ flowchart LR
 
 ### 🧭 Constraint Base
 
-Four-layer loading chain: SKILL.md (constitution · immutable) → fde.md (norms · editable) → think.md (reflection · auto-generated) → knowledge/ (knowledge · auto-accumulated). v1.0.7+ Sub Agents self-load on startup (`buildConstrainedSystemPrompt`), independent of any Agent platform's Skill system.
+Gradual loading: the core iron-rules layer (core-rules.md ~30 lines) is always injected + role norms appended on demand by task type. The four-layer loading chain skeleton (SKILL.md (constitution · immutable) → fde.md (norms · editable) → think.md (reflection · auto-generated) → knowledge/ (knowledge · auto-accumulated)) is preserved. Since v1.0.7, SubAgents self-load on startup (`buildConstrainedSystemPrompt`), independent of any Agent platform's Skill system.
 
-### ⚙️ FORGE Self-Iteration Toolchain (Internal)
+### ⚙️ FORGE self-iteration toolchain (internal tool)
 
-> ⚠️ The FORGE LOOP pipeline (plan→engineer→audit→review→confirm) is an **internal development tool** for sofagent project self-iteration (fresh-eyes-loop / release-gate-loop). It is not marketed as a user-facing orchestration engine. Real task orchestration is done by your AI Agent platform (WorkBuddy / Claude / Cursor etc.); sofagent provides constraints + audit + experience sedimentation during the orchestration process.
+> ⚠️ The FORGE LOOP pipeline (plan→engineer→audit→review→confirm) is a **development tool for sofagent's own self-iteration** (fresh-eyes-loop / release-gate-loop), not marketed as a user-facing orchestration engine. Real task orchestration is done by your AI Agent platform (WorkBuddy / Claude / Cursor etc.); sofagent provides constraints + audit + experience capture during the orchestration process.
 
-Internally uses LangGraph StateGraph for node flow + 6 built-in tools (read/write/edit/bash/search/test) + ToolGate pre-call interception. Code is in the `@sofagent/orchestrator` package, open-source for reference and secondary development.
+Internally it uses LangGraph StateGraph to assemble node flow + 6 built-in tools (read/write/edit/bash/search/test) + ToolGate pre-call interception. Code is open-sourced in the `@sofagent/orchestrator` package for reference and secondary development.
 
 ### 🔍 Audit Engine
 
-Of the 24 rules, 19 are pure git-diff (don't need Agent cooperation), 4 are hybrid (A7/A8/A14/A15 need Agent logs), 1 is filesystem (A17 abnormal batch change). v1.0.8+ uses a self-developed isomorphic-git style diff engine + daemon file monitoring, **audits without git commit**. Since v1.1.8, Prompt injection defense (A9 extended) + federated query encryption extend audit capability from local to cross-device.
+Of the 24 rules, 19 are pure git-diff (don't rely on Agent cooperation), 4 are hybrid (A7/A8/A14/A15 need Agent logs), 1 is filesystem (A17 abnormal batch changes). Since v1.0.8, a self-developed git-shadow diff parser (isomorphic-git style, not an embedded third-party package) + daemon file monitoring means **audits work without a git commit**. Since v1.1.8, Prompt injection defense (A9 extended) + federated query encryption extend audit capability from local to cross-device. Full workspace test coverage: **1527 tests / 12 packages**.
 
 **Default rules (17, active on install)**:
 
 | Category | Rules | What they block |
 |------|------|--------|
 | 🔴 Secret security | A1 sensitive files · A2 secret leaks | `.env` / `*.pem` commits, hardcoded API keys |
-| 🟡 Behavior boundaries | A3 out-of-scope · A4 config deletion | Editing files outside task scope, deleting configs |
-| 🟠 Injection defense | A9 injection · A10 malicious sources | Prompt injection patterns, unofficial source deps |
+| 🟡 Behavior boundaries | A3 out-of-scope edit · A4 config deletion | Editing files outside the task scope, deleting configs |
+| 🟠 Injection defense | A9 injection · A10 malicious sources | Command injection patterns, non-official source dependencies, typosquatting |
 | 🔵 Process compliance | A5 empty message · A7 blind edit · A8 skip tests · A19 message quality | Empty commit msg, edit-without-read, skip tests, low-quality msg |
 | ⚪ Engineering quality | A6 build break · A11 resource abuse · A18 junk files | Build config anomalies, oversized files, temp file commits |
-| 🆕 Security hardening (v1.2.5) | A20 network exfiltration · A21 persistence · A22 privilege escalation · A23 path traversal | curl/wget to external URLs, LaunchAgent/cron backdoors, chmod 777/sudoers, path traversal escapes |
+| 🔴 Security red lines | A20 data exfiltration · A21 persistence backdoor · A22 privilege escalation · A23 path traversal | curl exfiltration, LaunchAgent/systemd backdoors, full-permission chmod, traversal sequences |
 
-**Extended rules (7, opt-in)**: A14 KB cross-domain · A15 blind action · A16 unauthorized change · A17 batch change · E1-E2/E4 (test files / undeclared TODO / low comment ratio). Full 24-rule table (with severity, grading, logic) at [engine/audit/README.md](./engine/audit/README.md).
+> Note: A3 out-of-scope edit is a **heuristic warning (WARN)** — higher false-positive rate, not hard-blocked, to avoid hurting legitimate changes. Other rules are blocked or recorded by severity.
 
-### 🔄 Restore Engine
+**Extended rules (7, opt-in)**: A14 knowledge-base cross-domain · A15 blind action · A16 unauthorized change · A17 abnormal batch (filesystem monitoring) · E1-E2/E4 (test files / undeclared TODO / low comment ratio). Full 24-rule table (with severity, grading, and logic) at [engine/audit/README.md · Audit rules](./engine/audit/README.md#审计规则).
 
-Auto git snapshot after every audit (a lightweight snapshot of the working tree, not a git commit — no history pollution). Pushes notification + suggests rollback on violation. `sofagent-audit --revert <sha>` reverts to any snapshot.
+### 🔄 Rollback Engine
+
+Auto git snapshot after every audit (a lightweight snapshot of the working tree, not a git commit — no history pollution). Pushes a notification + suggests rollback on violation. `sofagent-audit --revert <sha>` takes you back to any snapshot with one command.
 
 ### 🧬 Evolution Engine
 
-The evolution engine is not a single component, but a three-layer closed loop:
+The evolution engine is not a single component but a three-layer closed loop:
 
 | Layer | Mechanism | Status | How it runs |
 |------|------|:---:|------|
-| **think.md reflection** | Auto-writes lessons after each audit (which rule triggered, what files changed, what to watch for next time). Agent reads it via harness loading chain on next run — avoids repeating mistakes | ✅ shipped | Triggered automatically when audit engine runs, no config needed |
-| **Dream Cycle knowledge feedback** | Daemon synthesizes concepts in background → feeds skillopt optimization queue, accumulating knowledge for later optimization cycles | 🔧 lightweight | Daemon background process, currently in-memory queue (lost on restart), full persistence planned for v1.3.0 |
-| **skillopt Skill optimization** | Failure pattern clustering (≥3 same-type failures) → auto-triggers external SkillOpt CLI to optimize Skill quality → validates candidates (line count ±30% + change rate ≥5%) | ⚠️ needs external dep | Requires [Microsoft SkillOpt](https://github.com/microsoft/SkillOpt) (`skillopt-sleep` CLI). Falls back to recording failure list only when not installed |
+| **think.md reflection** | Auto-writes lessons after each audit (which rule triggered, what files changed, what to watch next time). The Agent reads it via the harness loading chain on next startup — doesn't repeat the same mistakes | ⚠️ MCP/CLI only | Triggered by the MCP Server and sofagent-think CLI; not auto-generated on the git hook path (architectural limitation — audit does not reverse-depend on think) |
+| **Dream Cycle knowledge feedback** | Daemon synthesizes concepts in background → feeds the skillopt optimization queue, accumulating knowledge for later optimization cycles | 🔧 lightweight | Runs in the daemon background, currently an in-memory queue (lost on restart); full persistent consumption chain planned for v1.3.0. ⚠️ Dream Cycle uses **MockLLM (deterministic pseudo-output) by default** — configure an API Key to connect a real LLM |
+| **skillopt Skill optimization** | Failure pattern clustering (≥3 same-type failures) → auto-triggers the external SkillOpt CLI to optimize Skill quality → validates candidates (line count ±30% + change rate ≥5%) | ⚠️ needs external dep | Requires [Microsoft SkillOpt](https://github.com/microsoft/SkillOpt) (`skillopt-sleep` CLI). When not installed, degrades to recording the failure list only, no optimization |
+
+</details>
 
 </details>
 
@@ -273,6 +385,8 @@ The evolution engine is not a single component, but a three-layer closed loop:
 ## Contributing & thanks
 
 Issues and PRs welcome, especially the nitpicky kind. [CONTRIBUTING.md](./CONTRIBUTING.md) · [Thanks](./docs/THANKS.md)
+
+**Author**: [KongFangXun](https://github.com/KongFangXun) · MIT License
 
 ---
 
