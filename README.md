@@ -22,20 +22,15 @@
   <a href="#快速开始"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>当前版本：v1.2.7</strong> · 2026-08-04 · 激活链 Phase 2 前半（映射表+注册扩展）+ MCP 交付链路修补 + 文档死链清零</p>
+<p align="center"><strong>当前版本：v1.2.7</strong> · 2026-08-05 · 编排引擎增强（/goal 目标驱动收敛 + /compact 手动上下文压缩 + Skill 渐进式加载 + --doctor --repair + --support-bundle + bootstrap.sh 一行安装 + Agent Mailbox + enterprise-graph + FORGE driver 抽象）</p>
 
 > ⚖️ **正式版边界声明**：本项目的「正式版」指 API 稳定、测试覆盖完整、核心流程经多轮验证。**不代表所有已知局限已解决**——详见 [LIMITATIONS.md](./docs/LIMITATIONS.md)。强合规场景请等待 v1.4.0 静态加密落地。
 
 > ⚠️ **信任边界**：sofagent 防的是诚实 Agent 的疏忽（漏提交密钥、越界改动），不是恶意 Agent 的蓄意绕过。强安全场景请配合 CI 侧 `sofagent-audit --diff` 兜底 + 外部加密卷。详见 [SECURITY.md](./SECURITY.md)。
 
 <p align="center">
-  <a href="#这是什么">这是什么</a> · <a href="#sofagent-能帮你做什么">能帮你做什么</a> · <a href="#为什么不是现有工具">为什么不是现有工具</a> · <a href="#快速开始">快速开始</a> · <a href="#延伸阅读">文档</a>
+  <a href="#这是什么">这是什么</a> · <a href="#快速开始">快速开始</a> · <a href="#延伸阅读">文档</a>
 </p>
-
-> 🧭 **第一次来？按身份选路**
-> - **想用起来**（企业用户 / 业务负责人）→ [HANDBOOK](./docs/HANDBOOK.md)：怎么装、怎么派活、常见问题
-> - **想懂它怎么工作**（架构师 / 技术决策者）→ [ARCHITECTURE](./docs/ARCHITECTURE.md)（设计）→ [PHILOSOPHY](./docs/PHILOSOPHY.md)（理念）
-> - **想动手贡献或集成**（开发者）→ [↓ 引擎架构段](#engine-architecture) → [DEVELOPMENT](./docs/DEVELOPMENT.md)（开发指南）
 
 ---
 
@@ -52,38 +47,14 @@ sofagent 就是解决这个问题的：**它帮你把 AI 管起来，让 AI 干�
 | **想让 AI 自动跑？** | 先梳理你的工作流，把能自动化的环节变成 AI 节点，部署完自己跑 | 从"你干活"变成"你派活"——AI 节点 7×24 自己跑 |
 | **AI 乱来怎么办？** | 每次 AI 改东西都自动检查一遍 | AI 干的活有人盯着，越界立即告警 |
 | **AI 闯祸了怎么办？** | 每次改动自动存档，一键回滚 | 出事能一键回到安全状态 |
+| **换了 AI 工具/模型怎么办？** | 不挑平台——Claude、GPT、自建模型都能管 | 换模型不影响防护 |
+| **越用越好吗？** | AI 每次干活的经验自动沉淀，定期巡检优化规则 | 它越用越懂你的业务 |
 
 **🏞️ 打个比方：一条河**——大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是**堤坝 + 自来水厂 + 管网 + 水龙头**——不让水泛滥（约束 AI 不乱来）、把水变成直饮水（安全沙箱）、把水送到该去的地方（管道约束）。简单说：**让 AI 从"能用"变成"敢用"。**
 
 > 🎯 **90/10 价值分层**：模型给 90% 的智力，sofagent 补 10% 的可靠执行——越往后这 10% 越值钱。不是造更聪明的模型，是给已有的聪明加一套闸门。
 
 > 🔬 **外部独立实验证据**（非 sofagent 官方自测）：HuggingFace 上 Joel Niklaus 的 harness-optimization 研究显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**（提升全部来自外层机制），成本降至 1/7。这是同类约束机制有效性的外部证据。详见 [THANKS.md](./docs/THANKS.md)。
-
-<details>
-<summary>🔧 技术细节（给开发者）</summary>
-
-底层是 **Harness 中间件**——每次 Agent 改完代码自动跑审计规则（24 条注册：17 条默认启用 + 7 条扩展需显式开启，含 9 条基线不可禁用；git diff 硬证据，审计核心零 token（19/24 条纯 git-diff）；4 条 hybrid 规则需 Agent 日志配合），违规当场拦截、合规存快照。四层加载链（SKILL.md → fde.md → think.md → knowledge/）提供行为底线供 Agent 加载（Agent 应自觉读取，非强制注入）。审计拦截在所有路径生效；反思生成（think.md）仅 MCP/CLI 路径触发。完整架构见 [ARCHITECTURE.md](./docs/ARCHITECTURE.md)。
-
-</details>
-
----
-
-## sofagent 能帮你做什么
-
-**想让 AI 自动跑日常任务？**
-先梳理你的工作流，把能自动化的环节变成 AI 节点，部署完它自己跑。你从"干活的人"变成"派活的人"。
-
-**AI 越界了怎么办？**
-每次变更自动检查——泄漏密钥、盲目修改当场拦下，越界改动即时告警。不用你盯着，规则替你把关。
-
-**出了事能回滚吗？**
-每次改动自动存档，一键回到任意安全状态。AI 闯了祸，你按一下就能恢复。
-
-**换了 AI 工具/模型怎么办？**
-sofagent 不挑平台——Claude、GPT、自建模型都能管。换模型不影响防护。
-
-**越用越好吗？**
-AI 每次干活的经验自动沉淀，sofagent 定期巡检优化规则——它越用越懂你的业务。
 
 <details>
 <summary>🔄 它怎么"越用越好"？（点开看闭环）</summary>
@@ -101,7 +72,15 @@ AI 每次被拦下的毛病、每次成功的经验，都沉淀成"教训库"—
 
 </details>
 
-**怎么知道 AI 在干什么？**
+<details>
+<summary>🔧 技术细节（给开发者）</summary>
+
+底层是 **Harness 中间件**——每次 Agent 改完代码自动跑审计规则（24 条注册：17 条默认启用 + 7 条扩展需显式开启，含 9 条基线不可禁用；git diff 硬证据，审计核心零 token（19/24 条纯 git-diff）；4 条 hybrid 规则需 Agent 日志配合），违规当场拦截、合规存快照。加载链采用渐进式加载：核心铁律层（core-rules.md ~30 行）始终注入 + 岗位规范按 task type 按需追加；四层加载链骨架（SKILL.md → fde.md → think.md → knowledge/）保留，提供行为底线供 Agent 加载（Agent 应自觉读取，非强制注入）。审计拦截在所有路径生效；反思生成（think.md）仅 MCP/CLI 路径触发。完整架构见 [ARCHITECTURE.md](./docs/ARCHITECTURE.md)。
+
+</details>
+
+### 怎么知道 AI 在干什么？
+
 两种面板一眼看清：数据去哪了（有没有偷偷外传）、AI 犯规了吗（有没有越权）、任务跑到哪了（是活的还是挂了）：
 
 **🖥️ HTML Dashboard（网页版，推荐）**——6 页可视化控制台：驾驶舱（实时指标）/ FDE 引导 / AI 节点 / 本体结构 / 知识库 / 工具箱（安装·架构·审计规则·MCP·npm·文档·FORGE），全部真实数据驱动：
@@ -132,59 +111,24 @@ FDE 交付了 ontology + workflow.yml + skills/ 之后，v1.2.5 起分四步让�
 | 阶段 | 做什么 | 版本 |
 |------|--------|:----:|
 | **ACTIVATE** | 读交付物 → 注册企业 SubAgent | v1.2.5 ✅ |
-| **ORCHESTRATE** | 构建企业专属工作流图（Phase 2 前半：映射表+注册扩展） | v1.2.6 ✅ · v1.2.7（规划中） |
+| **ORCHESTRATE** | 构建企业专属工作流图（Phase 2 前半：映射表+注册扩展 / Phase 2 后半：enterprise-graph） | v1.2.6 ✅ · v1.2.7 ✅ |
 | **EXECUTE** | 运行 + 人工确认 + 每步审计 | v1.2.8-v1.2.9（规划中） |
 | **SUSTAIN** | 持续优化，越跑越好 | v1.3.0（规划中） |
 
 设计详情：[激活链文档](./docs/guides/fde-activation-chain.md)
 
----
+### v1.2.7 新增能力
 
-## 为什么不是现有工具
+装了就能直接用的新功能——
 
-| 工具 | 它们管什么 | sofagent 管什么 |
-|------|:--------|:----------------|
-| AI Agent 平台（OpenClaw 等）| 让 AI「会做事」 | 让 AI「每次都做对、出事能负责」 |
-| 企业 AI 咨询服务 | 一次性交付，人走茶凉 | 工具 + 常驻，可复用、可维护 |
-| 代码检查工具（pre-commit 等）| 查「代码写得好不好」 | 查「AI 行为对不对」（越界/泄密/盲改）|
-
-一句话：**现有工具查代码，sofagent 查 AI 的行为**——密钥泄漏、越界改文件、盲目修改，这些是 AI 特有的闯祸方式，通用工具不管。
-
-<details>
-<summary>🔧 与技术工具的具体差异（给开发者）</summary>
-
-| 工具 | 它们管什么 | sofagent 管什么 |
-|------|:--------|:----------------|
-| detect-secrets / gitleaks | 密钥扫描（全量历史 + 100+ 模式）| A2 覆盖常见 API key；差异化 = **Agent 行为审计**而非密钥覆盖率 |
-| Cursor Rules / Claude hooks | 单平台 IDE 约束 | 审计层全平台可用（git diff）；约束层按平台分层（OpenClaw 最深 → WorkBuddy SKILL → 其他种子指令）|
-
-> ⚠️ **对比快照时间戳**：以上对比基于 2026-08-02 各工具的公开能力快照；工具迭代快，条款可能过时。差异化的核心论点（sofagent 审计「AI 行为」而非「代码质量」）不随工具版本变化。
-
-</details>
-
-<details>
-<summary>📦 FDE 离场后，企业留下五样东西</summary>
-
-前四样是资产，第五样是让前四样一直活着的 FDE Agent 本身——sofagent 留在客户那里继续跑：
-
-| 交付物 | 说明 |
-|--------|------|
-| 交付手册 | 企业 IT 可独立维护的操作手册 |
-| AI 节点 | 在跑的 Agent，自动执行日常任务（财务对账、审计巡检、数据分析…）|
-| AI 知识库 | 持续积累的实体、概念、对比页（Dream Cycle 自动沉淀）|
-| 私有化评估体系 | eval 反馈 + Skill 迭代历史——无法复制的企业 IP |
-| **FDE Agent 本身** | 控制层常驻——管审计 / 约束 / 知识的生命周期，人离场了它留下 |
-
-</details>
-
-### 与同类方案的区别
-
-| 维度 | sofagent | LangSmith | Guardrails AI |
-|------|----------|-----------|---------------|
-| 定位 | Agent 行为约束层（约束+审计+经验沉淀） | LLM 可观测性平台 | LLM 输出校验 |
-| 部署 | 本地优先、零云依赖 | SaaS | 库集成 |
-| 核心能力 | git hook 审计 + 规则拦截 + 约束注入（在 Agent 平台编排过程中提供审计/约束/沉淀） | trace/eval | 输出格式约束 |
-| 适用场景 | 企业 AI 治理合规 | 开发调试 | 单点输出校验 |
+| 功能 | 命令 | 一句话 |
+|------|------|--------|
+| 一键安装 | `curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh \| bash` | 一行命令搞定，不用 clone |
+| 环境自检+修复 | `sofagent-audit --doctor --repair` | 红了一片？一键自动修复 |
+| 诊断包 | `sofagent-audit --support-bundle` | 提 issue 时一键生成脱敏诊断 zip |
+| 配置签名 | `sofagent-audit --sign-config` | 给 config.yml 加防篡改签名 |
+| 上下文压缩 | `/compact` | 上下文爆了？手动压缩，验证证据不丢 |
+| 目标驱动 | `/goal <完成条件>` | 循环收敛从启发式升级为目标驱动 |
 
 ---
 
@@ -274,6 +218,54 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 
 ---
 
+## 为什么不是现有工具
+
+| 工具 | 它们管什么 | sofagent 管什么 |
+|------|:--------|:----------------|
+| AI Agent 平台（OpenClaw 等）| 让 AI「会做事」 | 让 AI「每次都做对、出事能负责」 |
+| 企业 AI 咨询服务 | 一次性交付，人走茶凉 | 工具 + 常驻，可复用、可维护 |
+| 代码检查工具（pre-commit 等）| 查「代码写得好不好」 | 查「AI 行为对不对」（越界/泄密/盲改）|
+
+一句话：**现有工具查代码，sofagent 查 AI 的行为**——密钥泄漏、越界改文件、盲目修改，这些是 AI 特有的闯祸方式，通用工具不管。
+
+<details>
+<summary>🔧 与技术工具的具体差异（给开发者）</summary>
+
+| 工具 | 它们管什么 | sofagent 管什么 |
+|------|:--------|:----------------|
+| detect-secrets / gitleaks | 密钥扫描（全量历史 + 100+ 模式）| A2 覆盖常见 API key；差异化 = **Agent 行为审计**而非密钥覆盖率 |
+| Cursor Rules / Claude hooks | 单平台 IDE 约束 | 审计层全平台可用（git diff）；约束层按平台分层（OpenClaw 最深 → WorkBuddy SKILL → 其他种子指令）|
+
+> ⚠️ **对比快照时间戳**：以上对比基于 2026-08-02 各工具的公开能力快照；工具迭代快，条款可能过时。差异化的核心论点（sofagent 审计「AI 行为」而非「代码质量」）不随工具版本变化。
+
+</details>
+
+<details>
+<summary>📦 FDE 离场后，企业留下五样东西</summary>
+
+前四样是资产，第五样是让前四样一直活着的 FDE Agent 本身——sofagent 留在客户那里继续跑：
+
+| 交付物 | 说明 |
+|--------|------|
+| 交付手册 | 企业 IT 可独立维护的操作手册 |
+| AI 节点 | 在跑的 Agent，自动执行日常任务（财务对账、审计巡检、数据分析…）|
+| AI 知识库 | 持续积累的实体、概念、对比页（Dream Cycle 自动沉淀）|
+| 私有化评估体系 | eval 反馈 + Skill 迭代历史——无法复制的企业 IP |
+| **FDE Agent 本身** | 控制层常驻——管审计 / 约束 / 知识的生命周期，人离场了它留下 |
+
+</details>
+
+### 与同类方案的区别
+
+| 维度 | sofagent | LangSmith | Guardrails AI |
+|------|----------|-----------|---------------|
+| 定位 | Agent 行为约束层（约束+审计+经验沉淀） | LLM 可观测性平台 | LLM 输出校验 |
+| 部署 | 本地优先、零云依赖 | SaaS | 库集成 |
+| 核心能力 | git hook 审计 + 规则拦截 + 约束注入（在 Agent 平台编排过程中提供审计/约束/沉淀） | trace/eval | 输出格式约束 |
+| 适用场景 | 企业 AI 治理合规 | 开发调试 | 单点输出校验 |
+
+---
+
 ## Deployment Sizing（企业 IT 参考）
 
 | 部署规模 | 并发 Agent | CPU | 内存 | 磁盘 | 适用场景 |
@@ -293,7 +285,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 | 🖥️ Dashboard（HTML 网页版 + 终端版） | [↑ 怎么知道 AI 在干什么](#怎么知道-ai-在干什么) · 或直接打开仓库根目录 [`dashboard.html`](./dashboard.html) |
 | FDE 诊断方法论（四阶段十二步） | [GUIDE.md](./FDE/GUIDE.md) |
 | 🔗 激活链设计（交付物→自动运转） | [激活链设计文档](./docs/guides/fde-activation-chain.md) |
-| 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
+| 怎么装、怎么用、常见问题（企业用户） | [HANDBOOK](./docs/HANDBOOK.md) |
 | 引擎架构、24 条规则、内部机制 | [↓ 引擎架构（开发者段）](#engine-architecture) |
 | 为什么这么设计 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
@@ -303,6 +295,11 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 | 版本路线图 | [ROADMAP](./docs/ROADMAP.md) |
 | 项目导航索引（AI 用） | [WIKI](./docs/WIKI.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
+
+> 🧭 **第一次来？按身份选路**
+> - **想用起来**（企业用户 / 业务负责人）→ [HANDBOOK](./docs/HANDBOOK.md)：怎么装、怎么派活、常见问题
+> - **想懂它怎么工作**（架构师 / 技术决策者）→ [ARCHITECTURE](./docs/ARCHITECTURE.md)（设计）→ [PHILOSOPHY](./docs/PHILOSOPHY.md)（理念）
+> - **想动手贡献或集成**（开发者）→ [↓ 引擎架构段](#engine-architecture) → [DEVELOPMENT](./docs/DEVELOPMENT.md)（开发指南）
 
 ---
 
@@ -343,7 +340,7 @@ flowchart LR
 
 ### 🧭 约束底座
 
-四层加载链：SKILL.md（宪法·不可改）→ fde.md（规范·可改）→ think.md（反思·自动生成）→ knowledge/（知识·自动积累）。v1.0.7+ SubAgent 启动时自加载（`buildConstrainedSystemPrompt`），不依赖任何 Agent 平台的 Skill 系统。
+渐进式加载：核心铁律层（core-rules.md ~30 行）始终注入 + 岗位规范按 task type 按需追加。四层加载链骨架（SKILL.md（宪法·不可改）→ fde.md（规范·可改）→ think.md（反思·自动生成）→ knowledge/（知识·自动积累））保留。v1.0.7+ SubAgent 启动时自加载（`buildConstrainedSystemPrompt`），不依赖任何 Agent 平台的 Skill 系统。
 
 ### ⚙️ FORGE 自迭代工具链（内部工具）
 
