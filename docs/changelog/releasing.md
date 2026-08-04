@@ -87,6 +87,7 @@
 **🔴 开发铁律（v1.0.3 教训）**：
 - **🔴 版本号前置（v1.1.3 流程优化）**：开发完成后、进入自测（阶段三）之前，先跑 `bump-version.sh <旧版本> <新版本>` 把 13 类位置全部更新到目标版本号。然后跑 `check-version.sh` 确认全绿。这样测试阶段所有版本号已统一，不会出现「全局 v1.1.2 vs SSOT v1.1.3」的漂移。npm publish 仍在阶段十，版本号一致性 ≠ 发布。
 - **🔴 hook 文件头版本同步（v1.2.7 教训）**：`bump-version.sh` 不自动更新 `engine/audit/hooks/commit-msg` 和 `engine/audit/hooks/post-commit` 的文件头版本标记。版本 bump 后手动检查：`head -2 engine/audit/hooks/commit-msg engine/audit/hooks/post-commit`——两文件的 v 标记必须与 `package.json` version 一致。`check-version.sh` 已覆盖此项检查。
+- **🔴 changelog 写法规则（v1.2.7 F14 教训）**：changelog 只写产品变更（新功能 / 修复 / 改进 / 破坏性变更），**禁止**审查 round 编号、commit hash、行数调整细节、fresh-eyes-loop 过程流水账等开发过程元信息。审查过程归 `fresh-eyes-review.md`，开发日志归 `docs/changelog/`。v1.0.7 起严格区分产品变更与审查过程——违者 F33 清理。
 - 对 optional dependency（如 deepagents）的类型断言统一用 `as unknown as` 双重转换——本地编译通过不代表 CI 通过
 
 ### 🔴 开发 session 交付物清单闸门（v1.1.8 流程优化 · [详见索引](#附历史教训索引按版本倒序)）
