@@ -2,7 +2,7 @@
 
 > **本文档是 sofagent 最核心的一份「为什么」。** 读完你能回答：sofagent 是什么、怎么用、怎么跑、怎么管、怎么记、怎么装、怎么进化、以及不做什么。
 >
-> v1.2.6 · 2026-08-03（UTC）· 孔放勋
+> v1.2.6 · 2026-08-04（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -411,7 +411,7 @@ FDE 入场时，不搭交互页面。做的事是：梳理 workflow 节点 → �
 
 ## 七、怎么进化——FORGE 自迭代
 
-> ⚠️ **以下为 v1.2.0 前期设计正文，保留作历史参考。** FORGE 的自迭代目标从未改变——v1.2.0 后期重构了落地方式：从硬编码串行工具包改为通过 workflow 逐步实现自迭代。当前已落地第一个 workflow **fresh-eyes-loop**（A/B 双盲 12 视角质量审查循环），未来更多 workflow 加入后逐步实现完整自迭代。如需最新信息，请以 [`FORGE/SKILL/fresh-eyes-loop/loop.md`](../FORGE/SKILL/fresh-eyes-loop/loop.md) 和 [`FORGE/archive/self-evolution-design.md`](../FORGE/archive/self-evolution-design.md) 为准。
+> ⚠️ **以下为 v1.2.0 前期设计正文，保留作历史参考。** FORGE 的自迭代目标从未改变——v1.2.0 后期重构了落地方式：从硬编码串行工具包改为通过 workflow 逐步实现自迭代。当前已落地第一个 workflow **fresh-eyes-loop**（A/B 双盲 12 视角质量审查循环），未来更多 workflow 加入后逐步实现完整自迭代。如需最新信息，请以 [`FORGE/SKILL/fresh-eyes-loop/loop.md`](../FORGE/SKILL/fresh-eyes-loop/loop.md) 为准。
 >
 > *以下旧设计正文原样保留作为历史参考。*
 

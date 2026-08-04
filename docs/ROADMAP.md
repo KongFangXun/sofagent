@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.2.6 · 2026-08-03（UTC）· 🔗 激活链 Phase 1 + 🛡️ 审计引擎加固（A20-A23）+ 🔧 daemon 可靠性 + 多设备前置
+> v1.2.6 · 2026-08-04（UTC）· 🔗 激活链 Phase 1 + 🛡️ 审计引擎加固（A20-A23）+ 🔧 daemon 可靠性 + 多设备前置
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
@@ -98,9 +98,9 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.2.8** | **记忆分层 + 定时任务（DeerFlow 启发）+ 🔗 激活链 Phase 3 前半** | ① **记忆事实级分层** ② **Scheduled Tasks MVP**（cron+once / 暂停/恢复/触发/历史/删除）③ **ToolOutputBudget 中间件化** ④ **🔗 激活链 Phase 3 前半**——dag-runner 扩展支持企业 Agent + 新增 `node-executor.ts` + `run-enterprise` CLI 子命令（详见 [开发日志](./changelog/v1.2/v1.2.8.md)）|
 | **v1.2.9** | **🔒 弹性预留 + 🔗 激活链 Phase 3 后半** | **🔗 激活链 Phase 3 后半**：① HITL 中断处理（`hitl-handler.ts`——⚡ 节点执行前暂停等人确认）② 每节点执行后自动审计 + think.md 回溯 ③ 异常处理（exceptions 队列 + 重试/跳过策略）。紧急修复 / 探索项按需取用（详见 [开发日志](./changelog/v1.2/v1.2.9.md)）|
 | **v1.3.0** | 📋 规划中 | **运行时审计最小闭环 + 🔗 激活链 Phase 4 收尾（SUSTAIN）**：① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离 ⑥ 决策审计 Judgment Unit（emitDecision + kind-wise back）⑦ **🔗 激活链收尾**：全链路验证（activate→compose→run→HITL→audit→sustain）+ wrapToolCall 自动覆盖企业 Agent + FDE SKILL.md 新增 activate 引导 ⑧ **list_rules** MCP tool（tool-gate 规则透明化，覆盖度审计缺口补全）（详见 [开发日志](./changelog/v1.3/v1.3.0.md) + [激活链设计](./guides/fde-activation-chain.md)）|
-| **v1.3.1** | 📋 规划中 | **Ontology 本体结构 + 国标对齐 + 并行编排 + Agent 身份码 + 跨设备审计聚合 + 🔄 Loop Agent L1**：① 本体结构——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + E1-E4（共 21 条，v1.2.5 起含 A20-A23 共 24 条，E3 并入 A11）+ 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **并行编排**——使用 LangGraph 原生 DAG 并行能力（StateGraph + Send API），每波次经审计节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供；恢复时**幂等性保证**（任务 ID 查重，避免 SubAgent 恢复后重复执行外部动作如重复创建 PR）；⑤ **Ontology CRUD 补全**——`update_entity` / `delete_entity` / `delete_concept` 三个 MCP tool（覆盖度审计缺口补全，删除类强制人审）；⑥ **Agent 独立身份码 + KYA 完整版**（Ed25519 签发/验证，绑定委托人/约束/责任，身份与审计双签名）+ 跨设备审计轨迹聚合（按 agentId 合并完整轨迹，复用安全联邦加密通道）+ MCP `agent_identity` + `audit_trail` tool；⑦ **🔄 Loop Agent L1（FORGE 产品化第一刀 · 工程判定层）**：企业 AI 节点 activate 后自动跑一轮 → crash/error 判定 → 报错人工修 → 再跑（半自动调试循环，L2-L5 在 v1.3.2）。**这是 L2/L3 的地基**——没有身份就没有"谁在协作"（原 v1.3.2 身份码+审计聚合拆入本版）（详见 [开发日志](./changelog/v1.3/v1.3.1.md)）|
-| **v1.3.2** | 📋 规划中 | **🔄 Loop Agent 完整版（L2-L5 · FORGE 产品化第二刀）**：① **L2 语义判定**——基于 v1.3.1 Ontology 定义预期输出 → 对比器判"跑出来的对不对"（Ontology 作判据，本版前置）② **L3 自动定位**——不对时用 LLM 实时推理定位错误源（skill/ontology/prompt 哪层出问题）③ **L4 自动修复**——定位后自动改 + 审计引擎 git diff 硬证据兜底 ④ **L5 循环收敛**——回归测试 + 连续 N 轮 PASS 才停，防发散。与 v1.3.1 L1（工程判定）组成完整五层 Loop Agent（详见 [开发日志](./changelog/v1.3/v1.3.2.md)）|
-| **v1.3.3** | 📋 规划中 | **L2 团队协作协议（五大机制）**：共享态（CRDT 合并）/ 意图广播 / 触发反应 / 冲突消解（trust 优先）/ 反馈放大（团队级 think.md 沉淀）+ 团队状态管理（team.yml + 团队会话持久化 + 团队审计）。让多个有身份的 Agent 从"各自为战"变成"一个团队"（原 v1.2.5 拆入，依赖 v1.3.1 身份码）（详见 [开发日志](./changelog/v1.3/v1.3.3.md)）|
+| **v1.3.1** | 📋 规划中 | **Ontology 本体结构 + 国标对齐 + 并行编排 + Agent 身份码 + 跨设备审计聚合 + 🚀 Onboard Agent L1**：① 本体结构——将 Ontology 统一层从「描述事实如何被理解」升级为「可运行推理底座」（对齐 LLM + Harness 规则 A1-A11、A14-A19 + E1-E4（共 21 条，v1.2.5 起含 A20-A23 共 24 条，E3 并入 A11）+ 记忆 Ledger-Views-Policy）；② 三层落地法（统一元模型 → 企业通用 Ontology 规范：命名/版本/验证 → 与 Agent 平台打通）；③ 国标对齐 GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》作为审计/Ontology 层合规参考基线；④ **并行编排**——使用 LangGraph 原生 DAG 并行能力（StateGraph + Send API），每波次经审计节点（★Reality Anchor，真实 git diff 作 guard edge）卡关，并行 SubAgent 文件隔离由 v1.2.x 的 git worktree 隔离底座提供；恢复时**幂等性保证**（任务 ID 查重，避免 SubAgent 恢复后重复执行外部动作如重复创建 PR）；⑤ **Ontology CRUD 补全**——`update_entity` / `delete_entity` / `delete_concept` 三个 MCP tool（覆盖度审计缺口补全，删除类强制人审）；⑥ **Agent 独立身份码 + KYA 完整版**（Ed25519 签发/验证，绑定委托人/约束/责任，身份与审计双签名）+ 跨设备审计轨迹聚合（按 agentId 合并完整轨迹，复用安全联邦加密通道）+ MCP `agent_identity` + `audit_trail` tool；⑦ **🚀 Onboard Agent L1（FORGE 产品化第一刀 · 工程判定层）**：企业 AI 节点 activate 后自动跑一轮 → crash/error 判定 → 报错人工修 → 再跑（半自动调试循环，L2-L5 在 v1.3.2）。**这是 L2/L3 的地基**——没有身份就没有"谁在协作"（原 v1.3.2 身份码+审计聚合拆入本版）（详见 [开发日志](./changelog/v1.3/v1.3.1.md)）|
+| **v1.3.2** | 📋 规划中 | **🚀 Onboard Agent 完整版（L2-L5 · FORGE 产品化第二刀）**：① **L2 语义判定**——基于 v1.3.1 Ontology 定义预期输出 → 对比器判"跑出来的对不对"（Ontology 作判据，本版前置）② **L3 自动定位**——不对时用 LLM 实时推理定位错误源（skill/ontology/prompt 哪层出问题）③ **L4 自动修复**——定位后自动改 + 审计引擎 git diff 硬证据兜底 ④ **L5 循环收敛**——回归测试 + 连续 N 轮 PASS 才停，防发散。与 v1.3.1 L1（工程判定）组成完整五层 Onboard Agent（详见 [开发日志](./changelog/v1.3/v1.3.2.md)）|
+| **v1.3.3** | 📋 规划中 | **L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版**：① **L2 协作协议**——共享态（CRDT 合并）/ 意图广播 / 触发反应 / 冲突消解（trust 优先）/ 反馈放大（团队级 think.md 沉淀）+ 团队状态管理（team.yml + 团队会话持久化 + 团队审计）；② **✨ Refine Agent**——让 AI 节点从「能用」到「好用」：复用 Onboard Agent 的循环引擎（driver/judge/converge），判据从 Ontology（对不对）换成质量规则集（好不好），五层一次交付（L1 质量探测 → L2 质量判定 → L3 定位 → L4 修复 → L5 收敛）。原型 = FORGE fresh-eyes-loop。与团队协作同版交付：Refine 的质量规则集天然适合团队级反馈放大（一个 Agent 学到的质量经验广播给全队）（原 v1.2.5 拆入协作协议，依赖 v1.3.1 身份码 + v1.3.2 Onboard 循环引擎）（详见 [开发日志](./changelog/v1.3/v1.3.3.md)）|
 | **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价）**：Skill / Agent / 流程打包发布（market/ 目录）+ 目录检索（复用 search_knowledge）+ 调用挂载（复用 registry）+ 评分聚合（评分 × 调用量加权自然选择）+ 全程审计。高频高价值能力自然胜出（原 v1.2.5 拆入，依赖 v1.3.3 L2 协议）（详见 [开发日志](./changelog/v1.3/v1.3.4.md)）|
 | **v1.3.5** | 📋 规划中 | **自进化与运维闭环（MCP 覆盖度审计缺口补全）**：4 个 MCP tool——`run_ab_test` / `promote_ab`（ab-test 自进化闭环，晋升强制人审）+ `snapshot_list` / `snapshot_restore`（daemon 运维快照，恢复强制人审）（详见 [开发日志](./changelog/v1.3/v1.3.5.md)）|
 | **v1.4.0** | 📋 规划中 | **SubAgent 完整沙箱执行环境 + 场景驱动权限体系 + 代理网关硬边界 + 数据静态加密**：① **沙箱**——虚拟文件系统隔离（FilesystemBackend + virtualMode）、网络出站白名单、**工具调用中介（前置 allow/deny，非仅审计追踪）**、**虚拟 key 凭证边界注入**、AsyncSubAgent（远程 Agent Protocol 服务端）+ 真·实时 A/B 双跑；② **场景驱动权限体系**（原 v1.2.5 拆入）——权限按"场景"（任务类型 × 数据域 × 动作风险等级）动态判定，判定链 = 身份（v1.3.1）→ 场景匹配 → 风险等级 → 放行，含团队场景权限 + 市场调用权限 + 动态提权到期回收；③ **代理网关硬边界**（原 v1.2.5 拆入）——SubAgent 所有外部请求经网关（唯一出入口），allow/deny + 风险分级 + 超阈值人工批准；④ **数据静态加密（age）**——`~/.sofagent/data/` 审计数据 age 加密落盘（原计划 v1.3.0，随安全加固批次后移），解决明文存储合规短板。审计从「事后」扩展到「运行时」（**范围限定 SubAgent，主 Agent 仍事后审计**）。**v1.4.x backlog**：`eval_history` MCP tool（eval 包——查询历史评估报告，P2 锦上添花，视本版容量顺带或砍，不单独建版本）（详见 [开发日志](./changelog/v1.4/v1.4.0.md)）|
@@ -112,9 +112,9 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | 版本 | 主题 | 核心交付 |
 |------|------|------|
 | **v1.3.0** | **运行时审计最小闭环（LangGraph middleware）** | ① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离 ⑥ **list_rules** MCP tool（tool-gate 规则透明化，覆盖度审计缺口补全）（详见 [开发日志](./changelog/v1.3/v1.3.0.md)）|
-| **v1.3.1** | **Ontology + 并行编排 + 身份码 + Loop L1** | 见上方主表：Ontology 本体结构 + GB/T 48000.3-2026 国标对齐 + DAG 波次并行 + Agent 身份码（Ed25519）+ 跨设备审计聚合 + Loop Agent L1（工程判定）|
-| **v1.3.2** | **🔄 Loop Agent 完整版（L2-L5）** | L2 语义判定（Ontology 判据）+ L3 自动定位（LLM 推理）+ L4 自动修复（审计兜底）+ L5 循环收敛（回归+连续 PASS）（详见 [开发日志](./changelog/v1.3/v1.3.2.md)）|
-| **v1.3.3** | **L2 团队协作协议** | 共享态/意图广播/触发反应/冲突消解/反馈放大五大机制 + 团队状态管理（详见 [开发日志](./changelog/v1.3/v1.3.3.md)）|
+| **v1.3.1** | **Ontology + 并行编排 + 身份码 + Onboard L1** | 见上方主表：Ontology 本体结构 + GB/T 48000.3-2026 国标对齐 + DAG 波次并行 + Agent 身份码（Ed25519）+ 跨设备审计聚合 + Onboard Agent L1（工程判定）|
+| **v1.3.2** | **🚀 Onboard Agent 完整版（L2-L5）** | L2 语义判定（Ontology 判据）+ L3 自动定位（LLM 推理）+ L4 自动修复（审计兜底）+ L5 循环收敛（回归+连续 PASS）（详见 [开发日志](./changelog/v1.3/v1.3.2.md)）|
+| **v1.3.3** | **L2 团队协作协议 + ✨ Refine Agent** | 协作五大机制 + Refine Agent 完整版（质量规则集判据，复用 Onboard 循环引擎）（详见 [开发日志](./changelog/v1.3/v1.3.3.md)）|
 | **v1.3.4** | **L3 组织能力市场** | 发布→发现→调用→评价 + 评分聚合自然选择 + 全程审计（详见 [开发日志](./changelog/v1.3/v1.3.4.md)）|
 | **v1.3.5** | **自进化与运维闭环（MCP 覆盖度审计缺口补全）** | `run_ab_test` / `promote_ab`（晋升强制人审）+ `snapshot_list` / `snapshot_restore`（恢复强制人审）四个 MCP tool（详见 [开发日志](./changelog/v1.3/v1.3.5.md)）|
 | **v1.3.6-v1.3.9** | 🔒 弹性预留 | 紧急修复 / 探索项按需取用（智能 E2E 测试 Agent、规则文件独立只读焊死门、Agent 执行层实时治理等 v1.3+ 探索项可在此落位）|
@@ -273,7 +273,8 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 | FDE 陪跑期机制 | 部署后前 2 周 AI 节点 daily review，人类反馈和 AI 反思双向写入 think.md |
 | SMB 场景审计扩展 | 审计从代码开发扩展到数据处理/报表生成 |
 | **自带净水设备的水龙头（v3.x+ 远景）** | Subagent 内置 workflow 专属精调小模型（QLoRA），零投喂、本地推理、离线可用 |
-| **Loop Agent（FORGE 产品化 · v1.3.1 L1 + v1.3.2 L2-L5）** | 把 FORGE 验证的「元循环」能力泛化——企业 AI 节点生成后，自动调试到跑通（activate→run→audit→fix→re-run）。从「给自己用」（FORGE）变「给客户用」。v1.3.1 交付 L1（工程判定：crash/error/超时）+ v1.3.2 交付 L2-L5（语义判定→自动定位→自动修复→循环收敛）|
+| **Onboard Agent（FORGE 产品化 · v1.3.1 L1 + v1.3.2 L2-L5）** | 把 FORGE 验证的「元循环」能力泛化——企业 AI 节点生成后，自动调试到跑通（activate→run→audit→fix→re-run）。从「给自己用」（FORGE）变「给客户用」。v1.3.1 交付 L1（工程判定：crash/error/超时）+ v1.3.2 交付 L2-L5（语义判定→自动定位→自动修复→循环收敛）|
+| **Refine Agent（FORGE 产品化第三刀 · v1.3.3）** | Onboard Agent 让节点「能用」，Refine Agent 让节点「好用」——复用 Onboard 循环引擎，判据从 Ontology（对不对）换成质量规则集（好不好）。原型 = FORGE fresh-eyes-loop。v1.3.3 五层一次交付，与团队协作协议同版（质量经验可团队级反馈放大）|
 | 国标 Agent 审计对位 | 关注国家 AI 智能体互联标准草案进展，标准正式发布后评估对齐 |
 | 异步长任务自治 | daemon 从文件监控升级为长任务自主运行 |
 | 双闸验证 | 工具执行前 gate + 执行后副作用复查 |

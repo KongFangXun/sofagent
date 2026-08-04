@@ -123,8 +123,6 @@ FORGE/
     release-gate-driver.mjs      ← release-gate-loop 编排 driver
     progress-middleware.mjs      ← 进度上报中间件
     visibility.mjs / disk-backend.mjs / reporters/
-  archive/
-    self-evolution-design.md     ← 早期自迭代设计（历史参考）
 ```
 
 > **演进历程**：FORGE 从硬编码串行工具包（engineer→audit→reviewer 单循环 + loop-install.sh 独立安装）→ workflow 驱动（`FORGE/SKILL/<loop>/` + driver 自动编排）→ 双层循环架构（外环 releasing.md loop body + 内环 fresh-eyes/release-gate）。旧 `loop-workflow.sh`、`FORGE/SKILL.md`、`FORGE/loop-install.sh`、`FORGE/releaser/` 已删除。当前两个内环已可 driver 自转；外环的关键节点正逐步从"手动审批"升级为"证据闸门"——最近一轮补上的是 A0 的 `check-dev-prompt.sh`。

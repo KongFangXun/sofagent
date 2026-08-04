@@ -2,7 +2,7 @@
 
 > **本文档原属 [PHILOSOPHY.md](./PHILOSOPHY.md) §十 + §十一，v1.2.4 起拆为独立文档。** PHILOSOPHY 只保留 §一~§九 核心哲学，行业方法论印证与 Agent 生态定位分析移至本文件。
 >
-> v1.2.6 · 2026-08-03（UTC）· 孔放勋
+> v1.2.6 · 2026-08-04（UTC）· 孔放勋
 
 ---
 
@@ -296,7 +296,7 @@ Ontology 的本质是「**翻译而非统一**」——在多个异构 Agent / �
 
 ### 外层 FORGE 的节奏与护栏
 
-Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人类审批双模式（L2：高风险人工确认 / 常规受信自动执行）是 31 篇研读里外层 Loop 的两个关键印证——前者给出闭环叙事节奏，后者给出「按风险分级放行」的 human 节点策略。详细展开与 sofagent 对应见 [FORGE §行业框架印证](../FORGE/archive/self-evolution-design.md)。
+Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人类审批双模式（L2：高风险人工确认 / 常规受信自动执行）是 31 篇研读里外层 Loop 的两个关键印证——前者给出闭环叙事节奏，后者给出「按风险分级放行」的 human 节点策略。sofagent 对应落地：外层循环节奏 = SUSTAIN 巡检（`docs/guides/fde-activation-chain.md`）+ `releasing.md` 阶段十二（发版后 SOP 自进化）；human 节点分级 = 审计引擎 critical/warning/crutch 分层 + 危险操作前人工批准钩子（v1.3.0）。
 
 > 💡 **协议 Adapter 封装**：中间件应在底层封装 MCP / A2A / ACP 协议差异，上层语义层（Ontology / Action Type）不感知底层协议——对齐 sofagent「合的框架」定位：企业换 Agent 平台，约束与审计不动。
 >
