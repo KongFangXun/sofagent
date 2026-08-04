@@ -384,8 +384,14 @@ export function runInit(): void {
 
   if (!gitDir) {
     console.log('  → 当前目录不在 git 仓库内，hook 已跳过');
+    console.log('  ⚠️ 审计引擎在 git 项目中才能运行——配置已生成，但审计不可用');
     console.log('  → 初始化 git 仓库后重新跑: git init && sofagent-audit --init');
-    stepSkipped++;
+    console.log('');
+    console.log('╔══════════════════════════════════════════╗');
+    console.log('║  ⚠️ 初始化未完成——当前不在 git 仓库      ║');
+    console.log('║  请先 git init 后重跑 sofagent-audit --init ║');
+    console.log('╚══════════════════════════════════════════╝');
+    process.exit(1);
   } else {
     const hooksDir = join(gitDir, 'hooks');
     if (!existsSync(hooksDir)) {
