@@ -538,6 +538,23 @@ if [[ ${ts_header_errors} -eq 0 ]]; then
 fi
 echo ""
 
+# ── 10d. 检查 git hook 文件头版本号（v1.2.7 F22: hook 版本签名同步）──
+echo -e "${BOLD}── Hook 文件头版本号 ──${NC}"
+hook_version_errors=0
+for hook_file in engine/audit/hooks/commit-msg engine/audit/hooks/post-commit; do
+  if [[ -f "${hook_file}" ]]; then
+    hook_ver=$(head -2 "${hook_file}" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1 | sed 's/v//')
+    if [[ -n "${hook_ver}" && "${hook_ver}" != "${SSOT_VERSION}" ]]; then
+      report_error "${hook_file}" "v${hook_ver}" "v${SSOT_VERSION}"
+      hook_version_errors=$((hook_version_errors + 1))
+    fi
+  fi
+done
+if [[ ${hook_version_errors} -eq 0 ]]; then
+  echo -e "  ${GREEN}✓${NC} Hook 文件头版本号一致"
+fi
+echo ""
+
 # ── 11. 检查正文中"当前 vX.Y"是否与项目版本一致 ─
 echo -e "${BOLD}── [13/14] 正文版本号引用 ──${NC}"
 inline_checked=0
