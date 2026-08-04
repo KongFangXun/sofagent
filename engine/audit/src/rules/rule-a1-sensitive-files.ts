@@ -9,7 +9,7 @@ import type { AuditContext, RuleCheck } from './types';
 
 /** 敏感文件匹配模式（匹配 basename） */
 const SENSITIVE_PATTERNS = [
-  /^\.env(\.\w+)?$/i,           // .env, .env.local, .env.production
+  /^\.env[\w.-]*$/i,            // .env, .env.local, .env.production, .env_backup, .env-backup, .env2, .envrc 等
   /\.pem$/i,                     // *.pem
   /\.key$/i,                     // *.key
   /(^|\/)id_rsa$/,               // id_rsa
@@ -22,9 +22,16 @@ const SENSITIVE_PATTERNS = [
 /**
  * 检查文件路径是否为敏感文件
  * 同时检查 path 和 oldPath（重命名场景）
+ *
+ * 同形字防御：basename 含非 ASCII 字符且以 .env 开头（不区分大小写）时，
+ * 视为可疑同形字文件名（如西里尔字母 е 替换拉丁 e 的 .еnv），按 FAIL 处理。
  */
 function isSensitiveFile(filePath: string): boolean {
   const name = basename(filePath);
+  // 先做 ASCII-only 同形字检查：.env 开头但含非 ASCII 字符 → 可疑
+  if (/^\.env/i.test(name) && /[^\x00-\x7f]/.test(name)) {
+    return true;
+  }
   return SENSITIVE_PATTERNS.some((pattern) => pattern.test(name) || pattern.test(filePath));
 }
 
