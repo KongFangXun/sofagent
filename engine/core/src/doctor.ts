@@ -12,9 +12,11 @@
 //
 // 注意：post-commit 仅检查存在性——不检查内容是否引用 sofagent
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, statSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { execFileSync } from 'child_process';
+import { createHash } from 'crypto';
+import { homedir } from 'os';
 import { checkEnv } from './env-check';
 import { VERSION } from './shared/constants';
 import { load as yamlLoad, YAMLException } from 'js-yaml';
@@ -211,10 +213,9 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   const auditDistPath = join(__dirname, '..', 'audit', 'dist', 'index.js');
   if (existsSync(auditDistPath)) {
     try {
-      const { createHash } = await import('crypto');
       const distContent = readFileSync(auditDistPath);
       const currentHash = createHash('sha256').update(distContent).digest('hex');
-      const hashRecordPath = join(process.env.SOFAGENT_HOME || join(require('os').homedir(), '.sofagent'), 'internal', 'audit-hash.txt');
+      const hashRecordPath = join(process.env.SOFAGENT_HOME || join(homedir(), '.sofagent'), 'internal', 'audit-hash.txt');
       if (existsSync(hashRecordPath)) {
         const recordedHash = readFileSync(hashRecordPath, 'utf-8').trim();
         if (currentHash === recordedHash) {
@@ -227,10 +228,9 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
         // 首次记录哈希（安装时未记录）
         warn(`audit dist/index.js 哈希未记录（首次运行）——当前 SHA-256: ${currentHash.slice(0, 12)}...`);
         try {
-          const { mkdirSync: mkdirAsync, writeFileSync: writeAsync } = await import('fs');
           const hashDir = join(hashRecordPath, '..');
-          if (!existsSync(hashDir)) mkdirAsync(hashDir, { recursive: true });
-          writeAsync(hashRecordPath, currentHash + '\n', { mode: 0o600 });
+          if (!existsSync(hashDir)) mkdirSync(hashDir, { recursive: true });
+          writeFileSync(hashRecordPath, currentHash + '\n', { mode: 0o600 });
           ok('已自动记录当前哈希作为基准（后续运行将比对）');
         } catch {
           // 记录失败不影响核心功能
