@@ -2176,6 +2176,13 @@ async function main() {
   });
   console.log(`   可见性     = ${reporters.length} 个适配器${reporters.map(r => ` [${r.name}]`).join('')}`);
 
+  // 🔴 v1.2.7 心跳定时器（run-01 SIGKILL 教训）。
+  // SIGKILL 杀进程时所有 Node handler 都来不及执行，status.json 停在上一次状态。
+  // 解法：每 15s 更新 heartbeat 字段，监控端可判断"超 60s 没更新 = driver 已死"。
+  const heartbeatTimer = setInterval(() => {
+    try { visibility.heartbeat(); } catch { /* 心跳失败不中断 */ }
+  }, 15_000);
+
   console.log(`\n🔍 fresh-eyes-loop 启动`);
   console.log(`   target    = sofagent ${args.target}`);
   console.log(`   max-rounds = ${args.maxRounds}`);
@@ -2325,6 +2332,9 @@ async function main() {
     counts: finalCounts,
   });
 
+  // 🔴 v1.2.7 清理心跳定时器
+  clearInterval(heartbeatTimer);
+
   // latest.json 指针：driver 结束时更新（标记停止原因，Dashboard 不再显示"运行中"）
   updateLatestPointer(runDir, {
     round: actualRounds,
@@ -2339,6 +2349,9 @@ async function main() {
 main().catch(err => {
   console.error(`\n💥 致命错误: ${err.message}`);
   console.error(err.stack);
+  // 🔴 v1.2.7 清理心跳定时器（catch 路径）
+  // 注意：heartbeatTimer 是 main() 内的局部变量，这里无法直接 clearInterval。
+  // 但 process.exit(1) 会清理所有定时器，所以不是问题。
   // 可见性：失败路径也要写事件——否则 Dashboard 看到"永远在跑"。
   // 🔴 v1.2.2 教训（run-07）：catch 块曾把 actualRounds/counts 归零，
   // 导致明明跑完 Round 1（5 P0 + 11 P1）的成果全部消失。

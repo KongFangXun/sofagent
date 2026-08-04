@@ -91,16 +91,43 @@ export function createVisibility(runDir, reporters = []) {
     }
   }
 
-  return { emit, getStatus };
+  /**
+   * 🔴 v1.2.7 心跳更新（SIGKILL 场景必备）。
+   * 只更新 status.json 的 heartbeat + lastUpdate 字段，
+   * 不写 progress.jsonl（避免事件流被心跳污染）。
+   *
+   * 用途：driver 主循环每 15s 调一次，监控端发现 heartbeat
+   * 超过 60s 没更新 → driver 已被 SIGKILL。
+   */
+  function heartbeat() {
+    try {
+      const current = getStatus();
+      if (!current) return;  // status.json 还不存在，跳过
+      const now = new Date().toISOString();
+      current.heartbeat = now;
+      current.lastUpdate = now;
+      writeFileSync(statusPath, JSON.stringify(current, null, 2) + '\n', 'utf-8');
+    } catch {
+      // 心跳失败不中断主流程
+    }
+  }
+
+  return { emit, getStatus, heartbeat };
 }
 
 /**
  * 构建 status.json 快照。
- * 保留最近状态 + 累计统计。
+ * 保留最近状态 + 累计统计 + 心跳时间戳。
+ *
+ * 🔴 v1.2.7 教训（run-01 SIGKILL 事件）：
+ * driver 被 SIGKILL 时所有 Node handler 都来不及执行，
+ * status.json 停在最后一次 emit 的状态，监控端无法区分
+ * "在跑"和"已死"。解法：heartbeat 字段让监控端做超时判断。
  */
 function buildStatusSnapshot(event, detail, timestamp) {
   const snapshot = {
     lastUpdate: timestamp,
+    heartbeat: timestamp,  // 🔴 心跳：监控端用此字段判断 driver 是否存活
     event,
     ...detail,
   };
