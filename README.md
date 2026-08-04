@@ -363,7 +363,11 @@ flowchart LR
 
 ### 🧭 约束底座
 
-渐进式加载：核心铁律层（core-rules.md ~30 行）始终注入 + 岗位规范按 task type 按需追加。四层加载链骨架（SKILL.md（宪法·不可改）→ fde.md（规范·可改）→ think.md（反思·自动生成）→ knowledge/（知识·自动积累））保留。v1.0.7+ SubAgent 启动时自加载（`buildConstrainedSystemPrompt`），不依赖任何 Agent 平台的 Skill 系统。
+渐进式加载相关，三点：
+
+- **渐进式加载**：核心铁律层（core-rules.md ~30 行）始终注入 + 岗位规范按 task type 按需追加
+- **四层加载链骨架**（SKILL.md（宪法·不可改）→ fde.md（规范·可改）→ think.md（反思·自动生成）→ knowledge/（知识·自动积累））保留
+- **自加载**：v1.0.7+ SubAgent 启动时自加载（`buildConstrainedSystemPrompt`），不依赖任何 Agent 平台的 Skill 系统
 
 ### ⚙️ FORGE 自迭代工具链（内部工具）
 
@@ -373,7 +377,12 @@ LOOP 内部使用 LangGraph StateGraph 组装节点流转 + 6 个内置工具（
 
 ### 🔍 审计引擎
 
-24 条规则中 19 条纯 git-diff（不依赖 Agent 配合），4 条混合（A7/A8/A14/A15 需 Agent 日志），1 条文件系统（A17 异常批量变更）。v1.0.8+ 自研 git-shadow diff 解析（isomorphic-git 风格，非内嵌第三方包）+ daemon 文件监控，**不需要 git commit 也能审计**。自 v1.1.8 起加入 Prompt 注入防护（A9 扩展）+ 联邦查询加密，审计能力从本地扩展到跨设备。全 workspace 测试覆盖 **1527 测试 / 12 包**。
+审计引擎，四点：
+
+- **规则构成**：24 条中 19 条纯 git-diff（不依赖 Agent 配合）、4 条混合（A7/A8/A14/A15 需 Agent 日志）、1 条文件系统（A17 异常批量变更）
+- **不需要 commit 也能审计**：v1.0.8+ 自研 git-shadow diff 解析（isomorphic-git 风格，非内嵌第三方包）+ daemon 文件监控
+- **跨设备扩展**：v1.1.8+ Prompt 注入防护（A9 扩展）+ 联邦查询加密，审计能力从本地扩展到跨设备
+- **测试覆盖**：全 workspace **1527 测试 / 12 包**
 
 **默认规则（17 条，装上就生效）**：
 
