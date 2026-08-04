@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/core",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "sofagent 核心运行时 — doctor / 配置解析 / 通用类型（不含审计逻辑）",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
