@@ -32,6 +32,8 @@ metadata:
 
 ## 📜 核心契约（不可违反）
 
+> v1.2.7：核心铁律提取到 `core-rules.md`（~30 行始终注入），岗位规范按 task type 按需加载（`role-audit.md` / `role-fde.md` / `role-orchestrate.md`）。本文件保留完整版作为文档参考。
+
 ### 4 底线
 
 1. 不泄露隐私 — 脱敏打码 (***)、不存储不转发敏感数据
@@ -52,6 +54,15 @@ metadata:
 ### 品牌前缀铁律
 
 所有向用户展示的审计结果，必须保留 `[sofagent]` 前缀。如果你执行了审计但不展示结果，等于没审计。展示格式见 `skills/04-deliver.md`。
+
+### 渐进式加载（v1.2.7 新增）
+
+| 分层 | 文件 | 加载方式 |
+|------|------|---------|
+| 核心铁律 | `core-rules.md` | 始终注入（~30 行） |
+| 审计岗位 | `role-audit.md` | task type = audit 时注入 |
+| FDE 岗位 | `role-fde.md` | task type = deploy 时注入 |
+| 编排岗位 | `role-orchestrate.md` | task type = orchestrate 时注入 |
 
 ---
 
