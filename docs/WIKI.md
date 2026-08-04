@@ -162,7 +162,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 |----|-----|
 | 当前版本 | **v1.2.6**（2026-08-04） |
 | 下一版本 | v1.2.7（参见 docs/ROADMAP.md） |
-| 测试覆盖 | 1470 测试 / 12 包（测试 SSOT 口径：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，见 check-test-count.sh） |
+| 测试覆盖 | 1527 测试 / 12 包（测试 SSOT 口径：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，见 check-test-count.sh） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1-E2/E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
