@@ -16,6 +16,23 @@ const BLACKLIST = ['add', 'fix', 'test', 'update', 'change', 'wip', 'tmp', 'asdf
 /** 最小长度要求（字符） */
 const MIN_LENGTH = 8;
 
+/**
+ * 计算有效长度——中文字符计 2（中文 commit 天然字符数少，加权后避免误拦）。
+ * "修复 bug" = 2 汉字 ×2 + " bug" 4 字符 = 8 ≥ MIN_LENGTH ✓
+ */
+function effectiveLength(msg: string): number {
+  let len = 0;
+  for (const ch of msg) {
+    // CJK 统一汉字 + 常见 CJK 范围按 2 计
+    if (/[\u4e00-\u9fff\u3400-\u4dbf\u3040-\u309f\u30a0-\u30ff]/.test(ch)) {
+      len += 2;
+    } else {
+      len += 1;
+    }
+  }
+  return len;
+}
+
 export function checkRuleA19(ctx: AuditContext): RuleCheck {
   const rule: RuleCheck = {
     name: 'A19 msg 质量',
@@ -43,10 +60,11 @@ export function checkRuleA19(ctx: AuditContext): RuleCheck {
     return rule;
   }
 
-  // 检查 2：长度不足
-  if (normalized.length < MIN_LENGTH) {
+  // 检查 2：长度不足（中文字符加权计算——有效长度 = 中文数×2 + 其他字符数）
+  const effLen = effectiveLength(normalized);
+  if (effLen < MIN_LENGTH) {
     rule.status = 'FAIL';
-    rule.details.push(`commit message 长度不足（${normalized.length} 字符，需 ≥${MIN_LENGTH}）`);
+    rule.details.push(`commit message 有效长度不足（${effLen} 有效字符，需 ≥${MIN_LENGTH}）`);
     return rule;
   }
 

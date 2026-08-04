@@ -60,6 +60,19 @@ describe('A19 msg 质量', () => {
     expect(result.status).toBe('PASS');
   });
 
+  it('commitMsg = "修复 bug"（中文加权 2×2+4=8）→ PASS', () => {
+    const ctx = makeCtx([makeDiffFile('src/index.ts')], { commitMsg: '修复 bug' });
+    const result = checkRuleA19(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('commitMsg = "加注释"（中文加权 3×2=6 < 8）→ FAIL', () => {
+    const ctx = makeCtx([makeDiffFile('src/index.ts')], { commitMsg: '加注释' });
+    const result = checkRuleA19(ctx);
+    expect(result.status).toBe('FAIL');
+    expect(result.details[0]).toContain('长度不足');
+  });
+
   it('evidenceMode 标注为 git-diff', () => {
     const ctx = makeCtx([makeDiffFile('src/index.ts')], { commitMsg: 'valid message' });
     const result = checkRuleA19(ctx);
