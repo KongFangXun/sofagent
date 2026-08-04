@@ -257,7 +257,7 @@ done < <(find "$PROJECT_ROOT/engine" \
   -maxdepth 3 \
   -type f 2>/dev/null || true)
 if [[ $ws_pkg_count -eq 0 ]]; then
-  echo -e "  ${YELLOW}（无匹配——可能已是 $NEW_3SEG）${NC}"
+  echo -e "  ${YELLOW}（无匹配——可能已是 ${NEW_3SEG}）${NC}"
 fi
 echo ""
 
@@ -329,7 +329,7 @@ done < <(find "$PROJECT_ROOT/engine" \
   -not -path '*/_archive/*' \
   -type f 2>/dev/null || true)
 if [[ $ts_header_count -eq 0 ]]; then
-  echo -e "  ${YELLOW}（无匹配——可能已是 $NEW_3SEG）${NC}"
+  echo -e "  ${YELLOW}（无匹配——可能已是 ${NEW_3SEG}）${NC}"
 fi
 echo ""
 
