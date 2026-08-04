@@ -8,6 +8,9 @@ import type { RuleCheck } from './rules/types';
 import { VERSION, REDACTION_PATTERNS } from '@sofagent/core';
 import { URL } from 'url';
 import { isIP } from 'net';
+import { execSync } from 'child_process';
+import { hostname } from 'os';
+import { cwd } from 'process';
 
 export type WebhookPlatform = 'dingtalk' | 'feishu' | 'wecom';
 
@@ -81,12 +84,36 @@ function redactDetail(detail: string): string {
 }
 
 /**
+ * 获取溯源信息（仓库路径 / commit SHA / 机器标识）
+ * 用于企业集中告警场景定位告警来源
+ */
+function getTracingContext(): { repo: string; sha: string; machine: string } {
+  let repo = '';
+  let sha = '';
+  try {
+    repo = execSync('git rev-parse --show-toplevel 2>/dev/null', { encoding: 'utf-8' }).trim() || cwd();
+  } catch {
+    repo = cwd();
+  }
+  try {
+    sha = execSync('git rev-parse --short HEAD 2>/dev/null', { encoding: 'utf-8' }).trim() || '';
+  } catch {
+    sha = '';
+  }
+  const machine = process.env.SOFAGENT_MACHINE_ID || hostname();
+  return { repo, sha, machine };
+}
+
+/**
  * 构建消息文本内容
  * v1.1.3: PASS 也推送；所有消息以 sofagent 开头
  * v1.2.6: 推送前对审计详情脱敏（防止密钥/凭证泄露到钉钉/飞书/企微）
+ * v1.2.7: 追加溯源字段（仓库路径 / commit SHA / 机器标识）
  */
 function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass: boolean): string {
   const version = VERSION;
+  const tracing = getTracingContext();
+  const tracingLine = `仓库: ${tracing.repo} | 提交: ${tracing.sha || 'N/A'} | 机器: ${tracing.machine}`;
 
   if (isPass) {
     const lines: string[] = ['✅ sofagent 审计通过'];
@@ -94,6 +121,7 @@ function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass:
       lines.push(`任务：${payload.task}`);
     }
     lines.push(`扫描 ${payload.rules.length} 条规则全部通过`);
+    lines.push(tracingLine);
     lines.push(`审计引擎: sofagent-audit v${version}`);
     return lines.join('\n');
   }
@@ -106,6 +134,7 @@ function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass:
     lines.push(`A${rule.number} ${rule.name}：${rule.details.map(redactDetail).join('；')}`);
   }
   lines.push(`详情：exit code ${payload.exitCode}`);
+  lines.push(tracingLine);
   lines.push(`审计引擎: sofagent-audit v${version}`);
   return lines.join('\n');
 }
