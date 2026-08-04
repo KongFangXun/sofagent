@@ -78,14 +78,15 @@ describe('Agent Mailbox', () => {
 
     describe('readUnread', () => {
       it('只返回未读消息', () => {
+        // 使用不同 priority 确保排序确定性（避免同毫秒时间戳导致 localeCompare 不稳定）
         store.send({
-          from: 'a', to: 'b', subject: 'msg1', body: 'x', priority: 'normal',
+          from: 'a', to: 'b', subject: 'msg1', body: 'x', priority: 'high',
         });
         store.send({
           from: 'a', to: 'b', subject: 'msg2', body: 'x', priority: 'normal',
         });
 
-        // 标记第一条已读
+        // 标记第一条（high 排序后必定是 all[0]）已读
         const all = store.read('b');
         store.markRead('b', all[0]!.id);
 
