@@ -125,8 +125,8 @@ FDE 交付了本体结构（ontology）+ workflow.yml + skills/ 之后，v1.2.5 
 | 环境自检+修复 | `sofagent-audit --doctor --repair` | 红了一片？一键自动修复 |
 | 诊断包 | `sofagent-audit --support-bundle` | 提 issue 时一键生成脱敏诊断 zip |
 | 配置签名 | `sofagent-audit --sign-config` | 给 config.yml 加防篡改签名 |
-| 上下文压缩 | `/compact` | 上下文爆了？手动压缩，验证证据不丢 |
-| 目标驱动 | `/goal <完成条件>` | 循环收敛从启发式升级为目标驱动 |
+| 上下文压缩 | `/compact` | 上下文爆了？手动压缩，验证证据不丢（@sofagent/core） |
+| 目标驱动 | `/goal <完成条件>` | 循环收敛从启发式升级为目标驱动（@sofagent/core） |
 
 ---
 
