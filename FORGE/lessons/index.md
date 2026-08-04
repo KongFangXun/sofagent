@@ -46,7 +46,7 @@
 ### 🤖 模型配置
 
 - [ ] **MODEL_CONFIGS 定义完整字段**（[二·模型配置](./models.md#模型配置)）
-- [ ] **Thinking-only 模型不传 thinking/reasoningEffort**（[二·Thinking-only](./models.md#thinking-only-模型特殊处理)）
+- [ ] **Thinking-only 模型不传 thinking/reasoningEffort**（[二·Thinking-only](./models.md#thinking-模型特殊处理)）
 - [ ] **合并/汇总步骤 maxTokens = 32000**（[二·步骤级 maxTokens](./models.md#步骤级-maxtokens-覆盖)）
 - [ ] **计费模式标注**（subscription 的 cost_cny = null）
 
