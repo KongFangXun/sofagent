@@ -1,5 +1,5 @@
 #!/bin/bash
-# sofagent post-commit hook v1.2.1
+# sofagent post-commit hook v1.2.6
 # --no-verify 跳过 commit-msg，但不跳过 post-commit
 # 安装：sofagent-audit --init（v1.0.6 起 --init 同时安装 commit-msg + post-commit）
 #
@@ -28,7 +28,8 @@ fi
 
 # 检查 history.jsonl 最后一条记录的 timestamp 是否在 300 秒内
 # （SHA 精确匹配 + 300s 时间窗口双检测，扩大覆盖）
-HISTORY_FILE=".sofagent/audit/history.jsonl"
+# 路径动态获取用户级 data 目录（与 data-paths.ts 的 SOFAGENT_HOME 解析链对齐）
+HISTORY_FILE="${SOFAGENT_HOME:-$HOME/.sofagent}/data/audit/history.jsonl"
 if [ -f "$HISTORY_FILE" ]; then
   # 先检查 SHA 精确匹配
   if grep -q "$CURRENT_SHA" "$HISTORY_FILE" 2>/dev/null; then
