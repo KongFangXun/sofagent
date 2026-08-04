@@ -6,7 +6,7 @@
 
 | 步骤类型 | recursionLimit | 理由 |
 |---------|---------------|------|
-| 审查类（a-check/b-check） | 130 | L2 硬熔断在 60 次工具调用时触发（≈superstep 120），留 10 步稳定窗口 |
+| 审查类（a-check/b-check） | 130 | L2 硬熔断在 100 次工具调用时触发（≈superstep 200），写报告窗口 REVIEW_GRACE_STEPS=80 |
 | 文本处理类（a-consolidate） | 50-100 | 主要做合并/格式化 |
 | 修复类（b-fix） | 100-150 | 每个修复点 Read→Edit→Test 三步 |
 | 验证类（a-verify） | 50-150 | 简单验证给低，复杂验证给高 |
@@ -44,17 +44,18 @@ superstep N: AIMessage(content="审查报告...", tool_calls=[])        ← 唯�
 ```
 L0 prompt 铁律（commit 95cd74a，对 Qwen 无效但保留）
   ↓ 被无视
-L1 软熔断 TOOL_SOFT_LIMIT=50（stateModifier 注入 HumanMessage）
+L1 软熔断 TOOL_SOFT_LIMIT=100（stateModifier 注入 HumanMessage）
   ↓ 被无视
-L2 硬熔断 TOOL_HARD_LIMIT=60 + 写报告窗口 TOOL_GRACE_STEPS=5（stream loop 两阶段）
+L2 硬熔断 TOOL_HARD_LIMIT=100 + 写报告窗口 REVIEW_GRACE_STEPS=80（stream loop 两阶段）
   ↓ 仍未产出
 L3 框架兜底 recursionLimit=130（GraphRecursionError 兜底）
 ```
 
 ```js
-const TOOL_SOFT_LIMIT  = 50;  // L1: 超此值注入"立即写报告"HumanMessage
-const TOOL_HARD_LIMIT  = 60;  // L2: 超此值进入"写报告窗口"
-const TOOL_GRACE_STEPS = 5;   // L2 触发后给模型的写报告窗口（superstep 数）
+const TOOL_SOFT_LIMIT  = 100;  // L1: 超此值注入"立即写报告"HumanMessage
+const TOOL_HARD_LIMIT  = 100;  // L2: 超此值进入"写报告窗口"
+const REVIEW_GRACE_STEPS = 80; // L2 触发后审查步骤的写报告窗口（superstep 数）
+const DEFAULT_GRACE_STEPS = 5; // L2 触发后其他步骤的写报告窗口（superstep 数）
 ```
 
 #### L2 两阶段写报告窗口（关键设计）
