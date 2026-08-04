@@ -363,7 +363,11 @@ flowchart LR
 
 ### 🧭 Constraint Base
 
-Gradual loading: the core iron-rules layer (core-rules.md ~30 lines) is always injected + role norms appended on demand by task type. The four-layer loading chain skeleton (SKILL.md (constitution · immutable) → fde.md (norms · editable) → think.md (reflection · auto-generated) → knowledge/ (knowledge · auto-accumulated)) is preserved. Since v1.0.7, SubAgents self-load on startup (`buildConstrainedSystemPrompt`), independent of any Agent platform's Skill system.
+Three points on gradual loading:
+
+- **Gradual loading**: the core iron-rules layer (core-rules.md ~30 lines) is always injected + role norms appended on demand by task type
+- **Four-layer loading chain** (SKILL.md (constitution · immutable) → fde.md (norms · editable) → think.md (reflection · auto-generated) → knowledge/ (knowledge · auto-accumulated)) preserved
+- **Self-loading**: since v1.0.7, SubAgents self-load on startup (`buildConstrainedSystemPrompt`), independent of any Agent platform's Skill system
 
 ### ⚙️ FORGE self-iteration toolchain (internal tool)
 
@@ -373,7 +377,12 @@ Internally it uses LangGraph StateGraph to assemble node flow + 6 built-in tools
 
 ### 🔍 Audit Engine
 
-Of the 24 rules, 19 are pure git-diff (don't rely on Agent cooperation), 4 are hybrid (A7/A8/A14/A15 need Agent logs), 1 is filesystem (A17 abnormal batch changes). Since v1.0.8, a self-developed git-shadow diff parser (isomorphic-git style, not an embedded third-party package) + daemon file monitoring means **audits work without a git commit**. Since v1.1.8, Prompt injection defense (A9 extended) + federated query encryption extend audit capability from local to cross-device. Full workspace test coverage: **1527 tests / 12 packages**.
+The audit engine, four points:
+
+- **Rule composition**: of the 24 rules, 19 are pure git-diff (don't rely on Agent cooperation), 4 are hybrid (A7/A8/A14/A15 need Agent logs), 1 is filesystem (A17 abnormal batch changes)
+- **Audits work without a git commit**: since v1.0.8, a self-developed git-shadow diff parser (isomorphic-git style, not an embedded third-party package) + daemon file monitoring
+- **Cross-device extension**: since v1.1.8, Prompt injection defense (A9 extended) + federated query encryption extend audit capability from local to cross-device
+- **Test coverage**: full workspace **1527 tests / 12 packages**
 
 **Default rules (17, active on install)**:
 
