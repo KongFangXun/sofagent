@@ -617,11 +617,11 @@ if $MODE_OK && [ -f "$ORCH_CLI_62" ]; then
 fi
 $MODE_OK && pass
 SKILLOPT_DIST="$PROJECT_ROOT/engine/skillopt/dist/skillopt-integration.js"
-SKILLOPT_VENV_BIN="/Users/kongfangxun/.workbuddy/binaries/python/envs/skillopt/bin"
+SKILLOPT_VENV_BIN="${SOFAGENT_SKILLOPT_VENV:-$(dirname "$(which skillopt-cli 2>/dev/null || echo /usr/local/bin/skillopt-cli)")}"
 DAEMON_DIST="$PROJECT_ROOT/engine/daemon/dist"
 AUDIT_RULES_INDEX="$PROJECT_ROOT/engine/audit/src/rules/index.ts"
 AUDIT_RULES_TYPES="$PROJECT_ROOT/engine/audit/src/rules/types.ts"
-DEEPAGENTS_MODULES="/Users/kongfangxun/.workbuddy/binaries/node/workspace/node_modules"
+DEEPAGENTS_MODULES="${SOFAGENT_DEEPAGENTS_MODULES:-$(npm root 2>/dev/null || echo /usr/local/lib/node_modules)}"
 scenario 63 "SkillOpt 三合一（可用性 + validateCandidate + CLI smoke）"
 S63_OK=true; require_dist "engine/skillopt/dist/skillopt-integration.js" || S63_OK=false
 if $S63_OK; then

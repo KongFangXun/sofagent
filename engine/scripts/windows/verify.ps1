@@ -98,7 +98,7 @@ if ($Quick) {
     $skillQuickContent = if ($skillQuick) { [System.IO.File]::ReadAllText($skillQuick) } else { "" }
     if ($skillQuick -and ($skillQuickContent -match "4.*底线|6.*铁律")) { Check-Pass "SKILL.md 存在且含宪法（4底线+6则铁律）" } else { Check-Fail "SKILL.md 缺失或宪法关键词不全" }
     if (Test-Path $sofagentData) { Check-Pass ".sofagent/ 数据目录存在" } else { Check-Warn ".sofagent/ 数据目录不存在（首次使用会自动创建）" }
-    if (Get-Command ao -ErrorAction SilentlyContinue) { Check-Pass "ao compose 可用 — v$(ao --version 2>$null)" } else { Check-Warn "ao compose 不可用——编排引擎降级为默认编排" }
+    if (Get-Command sofagent-audit -ErrorAction SilentlyContinue) { Check-Pass "sofagent-audit 可用 — v$(sofagent-audit --version 2>$null)" } else { Check-Warn "sofagent-audit 不可用——审计引擎降级" }
     $rulesQuick = @("$OPENCLAW_DIR\skills\sofagent\fde.md", "$up\.workbuddy\skills\sofagent\fde.md", "$up\.openclaw\fde.md") | Where-Object { Test-Path $_ } | Select-Object -First 1
     if ($rulesQuick) { Check-Pass "fde.md 可读 — $rulesQuick" } else { Check-Warn "fde.md 未找到或不可读" }
     Write-Summary; exit $(if ($script:fail -gt 0) { 1 } else { 0 })
@@ -141,15 +141,15 @@ Section "配套脚本（Windows 检查 .ps1）"
 $scriptsDir = Join-Path $OPENCLAW_DIR "scripts"
 if (Test-Path $scriptsDir) {
     Check-Pass "scripts/ 目录存在: $((Get-ChildItem $scriptsDir -Filter *.ps1 -EA SilentlyContinue | Measure-Object).Count) 个 .ps1 文件"
-    foreach ($s in @("task-record.ps1", "task-orchestrate.ps1", "skill-safety-check.ps1")) {
+    foreach ($s in @("task-record.ps1", "audit.ps1")) {
         if (Test-Path (Join-Path $scriptsDir $s)) { Check-Pass "  $s 已部署" } else { Check-Warn "  $s 缺失" }
     }
 } else { Check-Warn "scripts/ 目录不存在（请先运行 install.ps1 部署脚本）" }
 
 Section "外部依赖"
-if (Get-Command ao -ErrorAction SilentlyContinue) {
-    Check-Pass "agency-orchestrator (ao) 可用 — v$(ao --version 2>$null)"
-} else { Check-Warn "ao 命令不可用 — 编排功能将不可用" }
+if (Get-Command sofagent-audit -ErrorAction SilentlyContinue) {
+    Check-Pass "sofagent-audit 可用 — v$(sofagent-audit --version 2>$null)"
+} else { Check-Warn "sofagent-audit 命令不可用 — 审计功能将不可用" }
 if (Get-Command node -ErrorAction SilentlyContinue) { Check-Pass "Node.js $(node --version)" } else { Check-Fail "Node.js 不可用" }
 
 Section "平台兼容性"
