@@ -16,11 +16,11 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.5-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.6-16B8F3" alt="Version" /></a>
   <a href="#install-and-get-going"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>Current version: v1.2.5</strong> · 2026-08-02 · Activation Chain Phase 1 + Audit Engine Hardening (A20-A23) + Daemon Reliability + Multi-Device Foundation</p>
+<p align="center"><strong>Current version: v1.2.6</strong> · 2026-08-03 · Activation Chain Phase 2 (First Half) + MCP Tool Delivery Fixes + Dead-Link Zero</p>
 
 <p align="center">
   <a href="#what-is-this">What is this</a> · <a href="#what-sofagent-can-do-for-you">Features</a> · <a href="#three-deployment-options">Deployment</a> · <a href="#install-and-get-going">Install</a> · <a href="#further-reading">Docs</a>

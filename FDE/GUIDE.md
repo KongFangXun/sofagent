@@ -1,6 +1,6 @@
 # FDE 完全指南 · 从理念到落地
 
-> v1.2.5 · 孔放勋 · 面向想系统掌握 FDE 方法论的人。读完你能独立做一次 FDE 诊断，并能判断客户的 AI 成熟度。
+> v1.2.6 · 孔放勋 · 面向想系统掌握 FDE 方法论的人。读完你能独立做一次 FDE 诊断，并能判断客户的 AI 成熟度。
 > 本文档是学习手册（人读）。给 AI Agent 的操作指令见 `SKILL/SKILL.md` 与 `SKILL/skills/01-05`。
 >
 > **本文档的定位：FDE 诊断方法论。** 它讲清楚一件事——怎么把企业的 workflow 梳理好、判定 AI 节点、交付可运行的交付物。**诊断是起点，不是终点**：诊断交付的 ontology + workflow.yml + skills/ 会通过激活链（v1.2.5+，ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）自动注册为企业 SubAgent、编排成可运行工作流。本文档专注"把诊断做对"，激活链部分见 [5.11 交付之后](#511-交付之后激活链从交付物到自动运转v125-规划中)（完整设计见仓库内 docs/guides/fde-activation-chain.md，FDE 独立部署时不随包分发）。

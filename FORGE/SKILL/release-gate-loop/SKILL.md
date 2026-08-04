@@ -3,7 +3,7 @@ name: release-gate-loop
 description: 发版前自动验证闸门——单角色单轮 5 步线性验证（acceptance-test + regression-checklist + 覆盖率交叉检查），跑完即出 PASS/FAIL，纯只读不修改任何代码或文档。
 emoji: 🚪
 color: "#F59E0B"
-version: 1.2.5
+version: 1.2.6
 ---
 
 # release-gate-loop · 发版闸门循环定义

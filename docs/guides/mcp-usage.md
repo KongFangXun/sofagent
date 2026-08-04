@@ -2,7 +2,7 @@
 
 > **本文档是 sofagent 的 MCP 能力全目录。** 告诉你：Agent 能调什么、能生成什么、结果推到哪、什么时候推。
 >
-> v1.2.5 · 2026-08-02（UTC）· 孔放勋
+> v1.2.6 · 2026-08-03（UTC）· 孔放勋
 
 <img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
 
