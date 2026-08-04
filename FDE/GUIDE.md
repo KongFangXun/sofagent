@@ -29,6 +29,20 @@ sofagent 把它从岗位 title 升级为能力模型，再升级为**常驻 FDE 
 
 **最终目标不是培养更多 FDE，而是让 SMB 与 OPC 的每个人，都具备 FDE 的能力：掌握完整上下文、打破岗位边界、对结果负责。**
 
+**补充：Palantir 官方口径下的三种 Echo 形态**
+
+Palantir 官方博客澄清了两件常被误传的事：① **Echo 与 Delta 的边界是模糊的**——「理论上 Echo 更偏产品经理、Delta 更偏技术，但现实中两个角色都是产品经理 + 软件工程师 + 战略师的混合体，界线经常严重模糊」；② 同一职位名下并存三种形态：
+
+| 形态 | 干什么 |
+|------|--------|
+| Pilot Lead | 4–12 周试点，白天写数据管道，下午对客迭代 |
+| Enterprise Lead | 偏组织赋能与售前，写 1 页 thesis 把特性推进核心产品 |
+| **Internal Echo** | 审 PR、给核心产品补「项目团队急需但产品里还没有」的功能 |
+
+其中 **Internal Echo 就是 sofagent 进化引擎的人肉版本**——介于嵌入团队与核心产品团队之间，把现场缺口补成平台能力。原文那句「你通常同时负责跑一个项目和造一个产品，同时确保学到的一切都回流进 Palantir 的软件」说的就是经验回流；sofagent 要做的是把这条职责**机制化**，不依赖个人自觉。
+
+> 📖 来源：[A Day in the Life of a Palantir Deployment Strategist](https://blog.palantir.com/a-day-in-the-life-of-a-palantir-deployment-strategist-951cb59a5a96)（blog.palantir.com，2022）
+
 ### 1.3 FDE 解决的核心矛盾
 
 AI 能力强但不可控 vs 企业需要可控可审计。FDE 用四件事化解：

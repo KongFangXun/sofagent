@@ -164,6 +164,18 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 ---
 
+### OpenAI Deployment Company：build-prove-generalize 三段循环（2026-08 行业印证）
+
+[OpenAI 官方业务页](https://openai.com/business/the-openai-deployment-company/) 把 FDE 的工作方式写成一条公开方法论：「与其从一个通用产品出发，FDE 团队直接与客户合作解决一个**具体**问题，验证影响，然后识别出可规模化的**模式**」——这个循环被官方命名为 **build, prove, generalize**，作用是「把部署与产品开发连接起来」。
+
+它与 sofagent 进化引擎的经验回流路径逐字对位，也与 YC FDE Playbook（Bob McGrew）的「碎石路 → 高速公路」是同一循环的两种命名。真正有增量的是 `prove` 的落法：在 John Deere 案例中，OpenAI 与领域专家复盘数百个真实样例后**构建了定制评估系统度量准确率**，再谈规模化（结果：农户化学品用量降 70%，客户互动提升 6 倍）。
+
+**对我们的意义**：`prove = 建定制 eval`，这句把审计引擎从「成本项」重新定义为**产品化的前置条件**——先能度量，才谈得上泛化。三段式命名也比比喻更适合对外沟通，可直接用作交付 SOP 的阶段划分。
+
+> 📖 来源：[The OpenAI Deployment Company](https://openai.com/business/the-openai-deployment-company/)（openai.com，2026）
+
+---
+
 > 对应的落地借鉴项清单见 ROADMAP.md §十（行业借鉴项）。
 
 ## 十一、Agent 生态三层模型与 sofagent 的位置
