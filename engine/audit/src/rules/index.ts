@@ -43,7 +43,7 @@ import { checkRuleE4 } from './rule-e4-low-comment-ratio';
 export const defaultRules: Rule[] = [
   { name: 'A1 不碰敏感', number: 1, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA1 },
   { name: 'A2 不泄密钥', number: 2, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA2 },
-  { name: 'A3 不改越界', number: 3, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA3 },
+  { name: 'A3 不改越界', number: 3, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA3 }, // A3: ruleClass='业务底线' 但实现为 WARN-only（启发式检测误报率高，不适合硬拦截）
   { name: 'A4 不删配置', number: 4, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA4 },
   { name: 'A5 不瞒真相', number: 5, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA5 },
   { name: 'A6 不坏构建', number: 6, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleA6 },

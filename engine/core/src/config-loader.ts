@@ -303,9 +303,15 @@ function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath:
 
   const sig = parsed['signature'];
   if (typeof sig !== 'string' || sig.trim().length === 0) {
-    // P1-5: 签名缺失不再静默接受——明确 WARN（防篡改签名是可选字段，删 signature 即静默接受的洞）
-    // 仅当配置存在且非空时提示，避免全新安装（无配置）时刷屏
-    console.warn(`⚠️ config.yml 无防篡改签名（signature 字段缺失）——配置可被任意修改且不被发现。如需强校验，运行 sofagent-audit --init 后可用 signConfig 签名（见 docs/guides/enterprise-deploy.md）`);
+    // F06 (v1.2.7): 签名缺失——fail-open（全新安装无签名是常态），但 WARN 更显眼
+    // 全新安装时无签名是正常的；已有配置但无签名 = 配置可被任意修改且不被发现
+    console.warn('');
+    console.warn('  ╔══════════════════════════════════════════════════════╗');
+    console.warn('  ║  ⚠️  config.yml 无防篡改签名（signature 字段缺失）  ║');
+    console.warn('  ║  配置可被任意修改且不被发现。                          ║');
+    console.warn('  ║  如需强校验，运行：sofagent-audit --sign-config       ║');
+    console.warn('  ╚══════════════════════════════════════════════════════╝');
+    console.warn('');
     return;
   }
 
