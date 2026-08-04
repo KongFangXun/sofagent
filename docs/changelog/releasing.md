@@ -190,13 +190,13 @@
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 3 | **🔴 防膨胀轻量自检（每版本）**：更新完两份审查文档 + acceptance-test.sh 后，立即跑以下自检：<br>**① 行数警戒线**：`WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md)` 超 1050 → 触发深度瘦身；`WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)` 超 1600 → 触发深度瘦身<br>**② 声称一致性（v1.2.6 教训：加维度时漏改标题声称数）**：直接跑 `regression-checklist.md` 顶部「清单自身健康度自校验」代码块——它比对标题声称维度数 vs 实际 `#### ` 数。再跑 `bash tools/check-test-count.sh --quiet` 确认 acceptance 场景数声称 vs 实际一致。**🔴 禁止手动报数（"当前 49"）——硬编码基准必然漂移，本轮 v1.2.6 就是加维度 70 时漏改 L25 标题声称 49→50，靠自校验脚本才发现的。必须跑脚本拿实际值** | 当前 session | 两份文件行数均在警戒线内 + 自校验脚本 + check-test-count.sh 均全绿 |
+| 3 | **🔴 防膨胀轻量自检（每版本）**：更新完两份审查文档 + acceptance-test.sh 后，立即跑以下自检：<br>**① 行数警戒线**：`WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md)` 超 1050 → 触发深度瘦身；`WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)` 超 1650 → 触发深度瘦身<br>**② 声称一致性（v1.2.6 教训：加维度时漏改标题声称数）**：直接跑 `regression-checklist.md` 顶部「清单自身健康度自校验」代码块——它比对标题声称维度数 vs 实际 `#### ` 数。再跑 `bash tools/check-test-count.sh --quiet` 确认 acceptance 场景数声称 vs 实际一致。**🔴 禁止手动报数（"当前 49"）——硬编码基准必然漂移，本轮 v1.2.6 就是加维度 70 时漏改 L25 标题声称 49→50，靠自校验脚本才发现的。必须跑脚本拿实际值** | 当前 session | 两份文件行数均在警戒线内 + 自校验脚本 + check-test-count.sh 均全绿 |
 
 **Tier 2 — 深度瘦身（每版本，步骤 3 之后）**
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 4 | **深度瘦身—逐维度/逐场景过检查项**：<br>**回归清单（regression-checklist.md）**：① **工具覆盖？**该维度是否已被 pre-push-check.sh / check-docs.sh / acceptance-test.sh 全量覆盖 → 移除（标 `[vX.Y.Z 移除: 被XX工具覆盖]`）② **命令还跑得通？**引用的路径/CLI 名/grep 模式是否仍有效，失效 >2 版 → 移除，小修可用 → 更新 ③ **与其它维度重叠？**关键词 grep 同 section ≥50% 目标文件重叠 → 归并，主编号保留、其余降为 `# 子项:`，空闲编号回收<br>**验收脚本（FORGE/playbook/acceptance-test.sh）**：④ **重复可抽？**同一段 git 脚手架 / dist 检查 / node -e 内联 / 多行 if-else 重复 ≥3 次 → 抽为公共函数（如 `mktmp_repo`/`require_dist`/`assert_js`/`assert_rc`/`assert_grep`），场景改单行调用 ⑤ **场景可并？**相邻场景是否在做同一能力正常/异常触发 → 合并为一个场景内多断言，减场景总数膨胀 | 当前 session | 清单 ≤1050 行；脚本 ≤1600 行；归并维度有 `> 归并自：` 注释；移除维度有 `[vX.Y.Z 移除]` 标注 |
+| 4 | **深度瘦身—逐维度/逐场景过检查项**：<br>**回归清单（regression-checklist.md）**：① **工具覆盖？**该维度是否已被 pre-push-check.sh / check-docs.sh / acceptance-test.sh 全量覆盖 → 移除（标 `[vX.Y.Z 移除: 被XX工具覆盖]`）② **命令还跑得通？**引用的路径/CLI 名/grep 模式是否仍有效，失效 >2 版 → 移除，小修可用 → 更新 ③ **与其它维度重叠？**关键词 grep 同 section ≥50% 目标文件重叠 → 归并，主编号保留、其余降为 `# 子项:`，空闲编号回收<br>**验收脚本（FORGE/playbook/acceptance-test.sh）**：④ **重复可抽？**同一段 git 脚手架 / dist 检查 / node -e 内联 / 多行 if-else 重复 ≥3 次 → 抽为公共函数（如 `mktmp_repo`/`require_dist`/`assert_js`/`assert_rc`/`assert_grep`），场景改单行调用 ⑤ **场景可并？**相邻场景是否在做同一能力正常/异常触发 → 合并为一个场景内多断言，减场景总数膨胀 | 当前 session | 清单 ≤1050 行；脚本 ≤1650 行；归并维度有 `> 归并自：` 注释；移除维度有 `[vX.Y.Z 移除]` 标注 |
 | 5 | **瘦身自验证**：① 跑 `regression-checklist.md` 顶部「清单自身健康度自校验」代码块确认维度声称数 = 实际 `#### ` 数 + 行数警戒线绿 ② `bash -n FORGE/playbook/acceptance-test.sh` 语法通过 ③ 跑 `bash FORGE/playbook/acceptance-test.sh` 确认场景数不变、全 PASS ④ 跑 `bash tools/check-test-count.sh --quiet` 确认场景数声称一致 | 当前 session | 四项全 PASS |
 
 > 💡 **节奏**：每版本必跑 Tier 1（步骤 3）+ Tier 2（步骤 4-5）。因为每版都做，单次瘦身量小、负担可控——这也是 v1.1.7 的教训：验证文件一旦放任堆积，几版就会回到 3000+ 行不可维护状态。
@@ -313,7 +313,7 @@ VIEWS=$(grep -c '^### ' FORGE/playbook/fresh-eyes-review.md)
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
 | 1 | **最终确认两份审查文档**：regression 维度与 fresh-eyes 维度互相印证，循环修复中暴露的新盲区已补入 | 两份文档最终状态见于文件 diff |
-| 2 | **🔴 确认 acceptance test 的审查维度已同步**（v1.1.4 教训）：`regression-checklist.md` 维度 8「acceptance-test 健壮性」+ 维度 61「新功能零覆盖禁止」+ `fresh-eyes-review.md` v1.2.2 三条教训（F-39/F2/F1）——三处配合本版本 acceptance-test.sh 场景 153–166 构成完整验证链。**⚠️ 场景号随版本变化**，以当前实际场景数为准 | 对照三份文件确认：regression 维度 → acceptance 场景 → fresh-eyes 教训形成闭环 |
+| 2 | **🔴 确认 acceptance test 的审查维度已同步**（v1.1.4 教训）：`regression-checklist.md` 维度 8「acceptance-test 健壮性」+ 维度 61「新功能零覆盖禁止」+ `fresh-eyes-review.md`「附：历史教训」5 方向（数字漂移 / 搬迁残留 / 叙事不一致 / 静默失效 / 假绿假阳性）——三处配合本版本 acceptance-test.sh 新增场景构成完整验证链。**⚠️ 场景号随版本变化**，以当前实际场景数为准 | 对照三份文件确认：regression 维度 → acceptance 场景 → fresh-eyes 5 方向形成闭环 |
 
 **审查体系闭环**（v1.0.4 教训）：审查文档自身也会过时——每次发版后审视 `fresh-eyes-review.md` 和 `regression-checklist.md` 的数字、路径、维度是否还有效。**验收测试同理**（v1.1.4 教训）——`acceptance-test.sh` 的场景数和覆盖范围必须与 changelog 功能点对齐，否则回归测试形同虚设。
 
