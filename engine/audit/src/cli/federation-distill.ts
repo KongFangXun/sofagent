@@ -18,7 +18,7 @@
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
-import { loadEnvConfig } from '@sofagent/core';
+import { loadEnvConfig, resolveKnowledgeDir } from '@sofagent/core';
 import type { KnowledgeQueryResult, FederationResult, MergedKnowledge } from '@sofagent/core';
 
 /** 注入的合并函数签名（P1-3: 与 core mergeFederationResults 类型对齐——静态 import 后不再 any） */
@@ -181,7 +181,7 @@ export function runFederationDistillCli(
 function loadLocalKnowledge(
   projectDir: string,
 ): KnowledgeQueryResult[] {
-  const knowledgeDir = join(projectDir, '.sofagent', 'knowledge');
+  const knowledgeDir = resolveKnowledgeDir();
   const items: KnowledgeQueryResult[] = [];
 
   if (!existsSync(knowledgeDir)) return items;
