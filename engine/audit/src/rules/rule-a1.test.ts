@@ -58,4 +58,24 @@ describe('A1 不碰敏感', () => {
     const result = checkRuleA1(makeCtx([makeDiffFile('.env')]));
     expect(result.evidenceMode).toBe('git-diff');
   });
+
+  it('.env_backup → FAIL（下划线后缀）', () => {
+    const result = checkRuleA1(makeCtx([makeDiffFile('.env_backup')]));
+    expect(result.status).toBe('FAIL');
+  });
+
+  it('.env-backup → FAIL（连字符后缀）', () => {
+    const result = checkRuleA1(makeCtx([makeDiffFile('.env-backup')]));
+    expect(result.status).toBe('FAIL');
+  });
+
+  it('.env2 → FAIL（数字后缀）', () => {
+    const result = checkRuleA1(makeCtx([makeDiffFile('.env2')]));
+    expect(result.status).toBe('FAIL');
+  });
+
+  it('.еnv（西里尔同形字）→ FAIL（ASCII-only 检查）', () => {
+    const result = checkRuleA1(makeCtx([makeDiffFile('.\u0435nv')]));
+    expect(result.status).toBe('FAIL');
+  });
 });
