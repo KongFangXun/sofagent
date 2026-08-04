@@ -109,6 +109,7 @@ export {
   resolveKnowledgeDir,
   resolveDaemonLog,
   resolveDaemonJson,
+  getConfigFile,
 } from './data-paths';
 
 // ── 配置模板 ──
