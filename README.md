@@ -22,7 +22,7 @@
   <a href="#快速开始"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>当前版本：v1.2.6</strong> · 2026-08-03 · 激活链 Phase 2 前半（映射表+注册扩展）+ MCP 交付链路修补 + 文档死链清零</p>
+<p align="center"><strong>当前版本：v1.2.6</strong> · 2026-08-04 · 激活链 Phase 2 前半（映射表+注册扩展）+ MCP 交付链路修补 + 文档死链清零</p>
 
 > ⚖️ **正式版边界声明**：本项目的「正式版」指 API 稳定、测试覆盖完整、核心流程经多轮验证。**不代表所有已知局限已解决**——详见 [LIMITATIONS.md](./docs/LIMITATIONS.md)。强合规场景请等待 v1.4.0 静态加密落地。
 
