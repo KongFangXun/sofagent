@@ -201,10 +201,11 @@ FDE 交付了 ontology + workflow.yml + skills/ 之后，v1.2.5 起分四步让�
 > **前提**：开发者路径请在 git 仓库根目录下执行。如果还没有仓库，先运行 `git init`。
 
 ```bash
-# 第 0 步：获取仓库
-git clone https://github.com/KongFangXun/sofagent.git && cd sofagent
-# 或：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/install.sh | bash
+# 方式 1：一行安装（v1.2.7 新增 · 推荐）
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh | bash
 
+# 方式 2：完整安装（clone + install.sh）
+git clone https://github.com/KongFangXun/sofagent.git && cd sofagent
 bash install.sh          # 安装（自动检测 shell 配置文件，装完新开终端或 source）
 sofagent-audit --init    # 初始化（装 git hook）
 sofagent-audit --doctor  # 验证环境是否就绪（可选但推荐）
