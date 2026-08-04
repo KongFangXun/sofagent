@@ -360,21 +360,10 @@ export function makeCheckerNode(
   const log = deps.log ?? (() => {});
   const maxRetries = deps.maxRetries ?? 3;
 
-  const formatChecker = makeFormatCheckerNode();
-  const factChecker = makeFactCheckerNode();
-  const sourceValidator = makeSourceValidatorNode();
-
   return async (state: LoopGraphState): Promise<Partial<LoopGraphState>> => {
     log('🔍 checker 执行中（format + fact + source）...');
 
-    // 执行三个 checker
-    const formatResult = await formatChecker(state) as unknown as { checkerResults?: CheckerResult[] };
-    const factResult = await factChecker(state) as unknown as { checkerResults?: CheckerResult[] };
-    const sourceResult = await sourceValidator(state) as unknown as { checkerResults?: CheckerResult[] };
-
-    // 重建结构化 CheckerResult（从节点返回值中恢复）
-    // 由于 makeFormatCheckerNode 等返回的 Partial<LoopGraphState> 不含 CheckerResult，
-    // 实际 checker 结果需从 report 字段提取。此处简化：重新执行逻辑获取结构化结果。
+    // 直接执行结构化 CheckerResult 获取（不再先跑 LangGraph 节点再丢弃结果）
     const checkerResults = executeCheckersStandalone(state);
 
     // 判定受控循环模式
