@@ -17,11 +17,11 @@
 //   'reviewer'  → reviewer/SKILL.md + REVIEWER_TOOLS
 //   'engineer'  → engineer/SKILL.md + ENGINEER_TOOLS
 
-import qwen from './qwen3.8-max.mjs';
+import deepseekV4Flash from './deepseek-v4-flash.mjs';
 import glm from './glm-5.2.mjs';
 
 export default {
-  A: { model: qwen, role: 'reviewer' },   // 审查者：Qwen3.8-max → QWEN_API_KEY
-  B: { model: glm,  role: 'engineer' },   // 工程师：GLM-5.2 → GLM_API_KEY
-  V: { model: glm,  role: 'reviewer' },   // 验证者：GLM-5.2 → GLM_API_KEY（与 B 共用，key 跟模型走自动一致）
+  A: { model: deepseekV4Flash, role: 'reviewer' },   // 审查者：DeepSeek V4 Flash → DEEPSEEK_API_KEY（2026-08-04 从 Qwen3.8-max 切入）
+  B: { model: glm,             role: 'engineer' },   // 工程师：GLM-5.2 → GLM_API_KEY
+  V: { model: glm,             role: 'reviewer' },   // 验证者：GLM-5.2 → GLM_API_KEY（与 B 共用，key 跟模型走自动一致）
 };
