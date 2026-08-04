@@ -23,13 +23,14 @@ const SENSITIVE_PATTERNS = [
  * 检查文件路径是否为敏感文件
  * 同时检查 path 和 oldPath（重命名场景）
  *
- * 同形字防御：basename 含非 ASCII 字符且以 .env 开头（不区分大小写）时，
+ * 同形字防御：basename 以点开头、含 "nv" 子串、且含非 ASCII 字符时，
  * 视为可疑同形字文件名（如西里尔字母 е 替换拉丁 e 的 .еnv），按 FAIL 处理。
  */
 function isSensitiveFile(filePath: string): boolean {
   const name = basename(filePath);
-  // 先做 ASCII-only 同形字检查：.env 开头但含非 ASCII 字符 → 可疑
-  if (/^\.env/i.test(name) && /[^\x00-\x7f]/.test(name)) {
+  // 先做 ASCII-only 同形字检查：以点开头 + 含 nv 子串 + 含非 ASCII 字符 → 可疑同形字
+  // 覆盖 .еnv（西里尔е）、.enν（希腊ν）等同形字变体
+  if (/^\..*nv/i.test(name) && /[^\x00-\x7f]/.test(name)) {
     return true;
   }
   return SENSITIVE_PATTERNS.some((pattern) => pattern.test(name) || pattern.test(filePath));
