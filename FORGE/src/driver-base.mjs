@@ -403,6 +403,65 @@ export function createForgeDriverBase(config = {}) {
     return Array.from(visible);
   }
 
+  // ── 14. sliceMultiOutput ──────────────────────────────
+
+  /**
+   * 按 `===FILE: <filename>===` 分隔符切片多产物输出。
+   *
+   * 约定 agent 返回格式：
+   *   ===FILE: findings.md===
+   *   <findings 正文>
+   *   ===FILE: result.md===
+   *   <result 正文>
+   *
+   * 每个 slice 取分隔符行到下一个分隔符行（或文本末尾）之间的内容，
+   * trim 前后空白后返回。找不到某文件名对应的 slice 时，该文件写空占位提示。
+   *
+   * @param {string} text  agent 返回的完整文本
+   * @param {string[]} outputs  期望的产物文件名列表
+   * @returns {Record<string, string>}  filename → content
+   */
+  function sliceMultiOutput(text, outputs) {
+    const SEPARATOR_RE = /^===FILE:\s*(.+?)\s*===\s*$/gm;
+    const slices = {};
+
+    // 收集所有分隔符位置
+    const marks = [];
+    let m;
+    while ((m = SEPARATOR_RE.exec(text)) !== null) {
+      const filename = m[1].trim();
+      const contentStart = SEPARATOR_RE.lastIndex;
+      marks.push({ filename, contentStart });
+    }
+
+    if (marks.length === 0) {
+      // 无分隔符：fallback 全写第一个产物，其余空占位
+      slices[outputs[0]] = text;
+      for (let i = 1; i < outputs.length; i++) {
+        slices[outputs[i]] = `<!-- 未检测到 ===FILE: 分隔符，此产物为空。请检查 agent 输出。 -->\n`;
+      }
+      return slices;
+    }
+
+    // 计算每个 slice 的文本范围
+    for (let i = 0; i < marks.length; i++) {
+      const contentEnd = (i + 1 < marks.length)
+        ? text.lastIndexOf('===FILE:', marks[i + 1].contentStart)
+        : text.length;
+      const raw = text.slice(marks[i].contentStart, contentEnd).trim();
+      slices[marks[i].filename] = raw;
+    }
+
+    // 补齐期望产物中未被 agent 显式产出的（空占位）
+    for (const filename of outputs) {
+      if (!(filename in slices)) {
+        slices[filename] = `<!-- agent 未产出此文件，检查 prompt 指令。 -->\n`;
+      }
+    }
+
+    return slices;
+  }
+
   // ── 辅助 ──────────────────────────────
 
   /** 相对化运行目录路径（用于 LEDGER 展示） */
@@ -432,7 +491,7 @@ export function createForgeDriverBase(config = {}) {
   }
 
   return {
-    // 13 项公共工具函数
+    // 公共工具函数
     parseDriverArgs,
     resolvePaths,
     createModelFromConfig,
@@ -446,6 +505,7 @@ export function createForgeDriverBase(config = {}) {
     truncateToolOutput,
     updateLatestPointer,
     resolveVisibleFiles,
+    sliceMultiOutput,
     // 辅助函数
     extractUsage,
     extractAgentText,
