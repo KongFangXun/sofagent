@@ -275,6 +275,15 @@ export interface LoopGraphDeps {
    * 缺省 undefined 时行为与 v1.2.2 完全一致。
    */
   worktreeFactory?: () => WorktreeHandle;
+  /**
+   * v1.2.7: Agent Mailbox 注入器（可选）。
+   * 设置后，每个节点 wrapper 在执行前调 injectMessages() 扫描邮箱，
+   * 将高优先级未读消息注入 system prompt。
+   * 不设置时行为与 v1.2.6 完全一致（无邮箱注入）。
+   */
+  mailboxInjector?: {
+    injectMessages: (agentName: string, systemPrompt: string) => string;
+  };
 }
 
 // ────────────────────────────────
