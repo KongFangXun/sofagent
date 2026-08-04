@@ -90,6 +90,7 @@ interface Args {
   webhookUrl?: string;
   mcp: boolean;
   init: boolean;
+  signConfig: boolean;
   /** staged 模式（首次提交场景）——diffRange 值为 --cached */
   cached: boolean;
   /** v1.0.9: 恢复到指定快照 SHA */
@@ -112,7 +113,7 @@ interface Args {
 
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff') {
       // P1-12: --diff 无显式值（末尾或后跟其他 flag）→ 用默认 HEAD~1..HEAD，
@@ -186,19 +187,7 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === '--init') {
       args.init = true;
     } else if (argv[i] === '--sign-config') {
-      // F07: 签名 config.yml（消除"config 无签名"警告）
-      const { signConfig } = await import('@sofagent/core');
-      const { getConfigFile } = await import('@sofagent/core');
-      const configPath = getConfigFile();
-      try {
-        const result = signConfig(configPath);
-        console.log(`✅ config.yml 签名完成（${result}）：${configPath}`);
-        exit(0);
-      } catch (err) {
-        console.error(`❌ 签名失败: ${err instanceof Error ? err.message : String(err)}`);
-        console.error('   提示：签名需要 HMAC 密钥（~/.sofagent-key），运行 sofagent-audit --init 可自动生成');
-        exit(1);
-      }
+      args.signConfig = true;
     } else if (argv[i] === '--no-session') {
       args.noSession = true;
     } else if (argv[i] === 'ontology' && argv[i + 1]) {
@@ -623,6 +612,21 @@ async function main(): Promise<void> {
     const { runInit } = await import('./commands/init');
     runInit();
     return;
+  }
+
+  // --sign-config 模式：对 config.yml 签名（消除防篡改警告）
+  if (args.signConfig) {
+    const { signConfig, getConfigFile } = await import('@sofagent/core');
+    const configPath = getConfigFile();
+    try {
+      const result = signConfig(configPath);
+      console.log(`✅ config.yml 签名完成（${result}）：${configPath}`);
+      exit(0);
+    } catch (err) {
+      console.error(`❌ 签名失败: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('   提示：签名需要 HMAC 密钥（~/.sofagent-key），运行 sofagent-audit --init 可自动生成');
+      exit(1);
+    }
   }
 
   // ontology 子命令（v1.0.9 新增，v1.0.8 改用 @sofagent/ontology）
