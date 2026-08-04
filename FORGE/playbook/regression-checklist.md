@@ -13,10 +13,10 @@ HEAD_VAL=$(grep -oE '审查维度（[0-9]+ 项' FORGE/playbook/regression-checkl
 ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 [ "$HEAD_VAL" = "$ACTUAL" ] && echo "✅ 维度数一致 ($HEAD_VAL)" || echo "❌ 标题声称 $HEAD_VAL ≠ 实际 $ACTUAL"
 
-# 行数警戒线自检（越线提醒瘦身，非失败）
+# 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段四 Tier 1 警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
 [ "$WC_CHK" -le 1050 ] && echo "✅ checklist $WC_CHK (≤1050)" || echo "⚠️ checklist $WC_CHK 超 1050"
-[ "$WC_ACC" -le 1500 ] && echo "✅ acceptance $WC_ACC (≤1500)" || echo "⚠️ acceptance $WC_ACC 超 1500"
+[ "$WC_ACC" -le 1600 ] && echo "✅ acceptance $WC_ACC (≤1600)" || echo "⚠️ acceptance $WC_ACC 超 1600"
 ```
 ## 你的身份
 
