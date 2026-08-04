@@ -3,8 +3,7 @@
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离 + v1.2.5 激活链Phase1 + v1.2.5 审计加固A20-A23 + v1.2.5 daemon可靠性 + v1.2.5 多设备前置
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
 # 场景数：132 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
-#   口径 = 纯数字编号去重数（scenario 34b/34c/167a/167b 子场景不计入此总数；最大编号 197 为编号上限，非场景数）
-#   计数命令（精确口径，排除 echo 探针假阳性）：grep -oE 'scenario [0-9]+ "' FORGE/playbook/acceptance-test.sh | grep -oE '[0-9]+' | sort -un | wc -l
+#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 197 为编号上限，非场景数
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
 RUN_MODE="all"
@@ -1394,11 +1393,6 @@ S166_OK=true
 node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}process.exit(bad.length?(console.log('U+FFFD:',bad.join(',')),1):0);" >/dev/null 2>&1 || { fail "活跃文档存在 U+FFFD 编码污染"; S166_OK=false; }
 for f in docs/changelog/releasing.md README.md docs/ARCHITECTURE.md; do N=$(grep -c '^\`\`\`' "$PROJECT_ROOT/$f" 2>/dev/null || echo 0); [ $((N % 2)) -eq 0 ] || { fail "$f 代码围栏未闭合（$N 个 fence 为奇数）"; S166_OK=false; }; done
 $S166_OK && pass "Markdown 格式完整（无 U+FFFD + 代码块闭合）"
-
-# ────────────────────────────────────────────────────────────
-# v1.2.4 新增验收场景（知识进化：分层巡检 + skillopt + 失败清单 + 联邦蒸馏 + Checker）
-# ────────────────────────────────────────────────────────────
-
 scenario 167a "v1.2.4 P0 分层巡检——inspector-layers 三层调度器存在 + L1/L2/L3 名称列表"
 S167A_OK=true
 [ -f "$PROJECT_ROOT/engine/daemon/dist/inspector-layers.js" ] || { fail "inspector-layers.js 不存在"; S167A_OK=false; }
@@ -1440,9 +1434,7 @@ node -e "const m=require('$PROJECT_ROOT/engine/orchestrator/dist/loop/checker-no
 node -e "const{routeAfterAudit}=require('$PROJECT_ROOT/engine/orchestrator/dist/loop/graph.js');if(routeAfterAudit({auditResult:'PASS',retryCount:0,degradationLevel:0,finalStatus:'running'})!=='checker'){console.log('PASS 未路由到 checker');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "routeAfterAudit PASS 未路由到 checker"; S171_OK=false; }
 $S171_OK && pass "Checker 三节点完整（format/fact/source + makeCheckerNode + routeAfterAudit PASS→checker）"
 
-# ============================================================
 # v1.2.4 P3 Skill × MCP 集成验收（S2/S4/S5）
-# ============================================================
 
 scenario 172 "v1.2.4 P3 S2 — MCP tools/list 返回 22 个 tools"
 # 直接检查 mcp-server.ts 源码中的 tool 注册数（name: 'xxx' 去重计数）
@@ -1493,8 +1485,6 @@ scenario 180 "v1.2.4 P3 S5 — SKILL/SKILL.md 行数 ≤180"
 SKILL_LINES=$(wc -l < "$PROJECT_ROOT/SKILL/SKILL.md" | tr -d ' ')
 [ "$SKILL_LINES" -le 180 ] && pass "SKILL/SKILL.md 行数达标（$SKILL_LINES ≤ 180）" || fail "SKILL/SKILL.md 行数超标（$SKILL_LINES > 180）"
 
-# v1.2.4 P4 验收场景（FDE 人机分离 + Skill 分包）
-
 scenario 181 "v1.2.4 P4 R1-R2 — FDE/README.md ≤80 行 + FDE/GUIDE.md 存在"
 S181_OK=true
 [ -f "$PROJECT_ROOT/FDE/README.md" ] || { fail "FDE/README.md 不存在"; S181_OK=false; }
@@ -1517,8 +1507,6 @@ scenario 183 "v1.2.4 P4 R5 — FDE/SKILL.md 已删除（内容合并到 SKILL/SK
 
 scenario 184 "v1.2.4 P0 预存 bug — data-sovereignty×3 补入分层执行列表"
 node -e "const m=require('$PROJECT_ROOT/engine/daemon/dist/inspector-layers.js');const l1=m.getLayerInspectorNames('L1');const l2=m.getLayerInspectorNames('L2');const l3=m.getLayerInspectorNames('L3');if(!l1.includes('data-sovereignty-daily')){console.log('L1 缺 data-sovereignty-daily');process.exit(1);}if(!l2.includes('data-sovereignty-weekly')){console.log('L2 缺 data-sovereignty-weekly');process.exit(1);}if(!l3.includes('data-sovereignty-monthly')){console.log('L3 缺 data-sovereignty-monthly');process.exit(1);}console.log('OK');" >/dev/null 2>&1 && pass "data-sovereignty×3 已补入 L1/L2/L3 执行列表" || fail "data-sovereignty×3 未补入分层执行列表（预存 bug 未修复）"
-
-# ═══ v1.2.5 验收场景（185-191）═══
 
 scenario 185 "v1.2.5 主线A — activate.ts 存在且导出 activateWorkflow"
 check_dist_export "engine/orchestrator/dist/activate.js" "activateWorkflow" "ACTIVATE" || true
