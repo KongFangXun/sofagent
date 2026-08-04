@@ -282,6 +282,8 @@ sanitize() 管道在写入 history.jsonl、think.md、task/logs 等文件前自�
 
 > ⚠️ **企业高安全场景**：`config.yml` 篡改可绕过审计规则（如关闭规则、放宽阈值）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。
 
+> ⚠️ **影子审计器劫持（v1.2.7 已知风险）**：本地安装的 `engine/audit/dist/index.js` 无完整性校验（dist 目录不随 git 版本控制），恶意 Agent 可替换 dist 绕过所有审计规则——比 `--no-verify` 更隐蔽（hook 仍在运行，看不出绕过）。`--doctor` 已增加 dist 哈希校验（SHA-256 比对 `~/.sofagent/internal/audit-hash.txt`），但根治需 v1.3.x 代码签名 + 运行时验证。**CI 侧 `sofagent-audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。
+
 ### 详细缓解步骤
 
 1. **CI 侧兜底（推荐）**：在 CI/CD pipeline 中独立运行 `sofagent-audit --diff HEAD~1..HEAD`（审最近一次 commit；审整个分支区间用 `--diff main..HEAD`），
