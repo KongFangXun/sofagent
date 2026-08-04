@@ -38,8 +38,14 @@ A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个
 ### 执行方式
 
 ```
-1. Bash run_in_background:
-   node FORGE/src/fresh-eyes-driver.mjs --target <版本号> --max-rounds 10
+1. Bash（⚠️ 必须加 dangerouslyDisableSandbox: true，否则三层进程嵌套会被 sandbox SIGKILL）:
+   nohup node FORGE/src/fresh-eyes-driver.mjs --target <版本号> --max-rounds 10 > /tmp/fresh-eyes.log 2>&1 &
+   disown
+
+   🔴 铁律：必须 dangerouslyDisableSandbox。
+   原因：driver(spawn) → worker(spawn) → run_bash(execSync) = 三层子进程嵌套。
+   sandbox 对进程嵌套层数有限制，第 4 层进程返回时整棵进程树被 SIGKILL。
+   脱离 sandbox 后不受此限制。（2026-08-05 run-01~03 验证）
 
 2. 记住 runDir（driver 启动日志第一行会打印）
 
@@ -48,9 +54,24 @@ A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个
    cat <runDir>/status.json                           # 读进度
    判断:
      - phase === "completed" 或 "error"  → 汇报最终结果，退出循环
+     - heartbeat 超 90s 未更新            → ⚠️ 疑似 driver 死亡，检查进程存活（见下）
      - phase 跟上次相同（无变化）        → 静默，继续下一轮 sleep
      - phase 有变化                      → 一句话汇报，继续 sleep
 ```
+
+### 🔴 Heartbeat 死亡检测（v1.2.7 run-01 教训）
+
+**背景**：driver 被 SIGKILL（sandbox 回收 / OOM）时，所有 Node handler 都来不及
+执行，status.json 停在上一次状态，监控端无法区分"在跑"和"已死"。
+
+**解法**：driver 每 15s 更新 status.json 的 `heartbeat` 字段。监控端发现 heartbeat
+超过 90s 未更新 → 大概率 driver 已死，需用 `pgrep` 确认：
+
+```
+pgrep -f "fresh-eyes-driver"  # 有输出=活着，无输出=已死
+```
+
+如果确认已死，读 latest.json 的 stopReason 判断死亡类型，汇报后退出监控。
 
 ### 汇报规则
 
