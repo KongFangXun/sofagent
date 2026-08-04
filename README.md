@@ -22,7 +22,7 @@
   <a href="#快速开始"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>当前版本：v1.2.7</strong> · 2026-08-05 · 编排引擎增强（/goal 目标驱动 + /compact 上下文压缩 + bootstrap.sh 一行安装 + --doctor --repair 等）→ <a href="#v127-新增能力">新功能速览 ↓</a></p>
+<p align="center"><strong>当前版本：v1.2.7</strong> · 2026-08-05 · 新增功能详见 [CHANGELOG.md](./CHANGELOG.md)</p>
 
 <p align="center">
   <a href="#这是什么">这是什么</a> · <a href="#快速开始">快速开始</a> · <a href="#延伸阅读">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
@@ -126,18 +126,9 @@ FDE 交付了本体结构（ontology）+ workflow.yml + skills/ 之后，v1.2.5 
 
 设计详情：[激活链文档](./docs/guides/fde-activation-chain.md)
 
-### v1.2.7 新增能力
+### v1.2.7 新增了什么？
 
-装了就能直接用的新功能——
-
-| 功能 | 有什么用 | 怎么用（命令） |
-|------|---------|--------|
-| 一键安装 | 不用 clone 仓库，一行命令搞定 | `curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh \| bash` |
-| 环境自检+修复 | 环境不对劲？一条命令自动查出并修好 | `sofagent-audit --doctor --repair` |
-| 诊断包 | 报障/提 issue 时，一键生成脱敏诊断 zip | `sofagent-audit --support-bundle` |
-| 配置签名 | 给 config.yml 加防篡改签名，防止被悄悄改动 | `sofagent-audit --sign-config` |
-| 上下文压缩 | 上下文太满？手动压缩，关键验证证据不丢 | `/compact`（@sofagent/core） |
-| 目标驱动 | 设定「完成条件」，任务收敛从启发式升级为目标驱动 | `/goal <完成条件>`（@sofagent/core） |
+> 🆕 一键安装、环境自检修复、上下文压缩、目标驱动……完整清单见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

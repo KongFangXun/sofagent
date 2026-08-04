@@ -22,7 +22,7 @@
   <a href="#quick-start"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>Current version: v1.2.7</strong> · 2026-08-05 · Orchestration engine enhancements (/goal goal-driven + /compact context compression + bootstrap.sh one-line install + --doctor --repair etc.) → <a href="#v127-new-capabilities">What's new ↓</a></p>
+<p align="center"><strong>Current version: v1.2.7</strong> · 2026-08-05 · See [CHANGELOG.md](./CHANGELOG.md) for what's new</p>
 
 <p align="center">
   <a href="#what-is-this">What is this</a> · <a href="#quick-start">Quick Start</a> · <a href="#further-reading">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
@@ -126,18 +126,9 @@ After the FDE delivers the ontology + workflow.yml + skills/, since v1.2.5 the d
 
 Design details: [activation chain doc](./docs/guides/fde-activation-chain.md)
 
-### <a id="v127-new-capabilities"></a>What's new in v1.2.7
+### What's new in v1.2.7?
 
-New features you can use right after installing —
-
-| Feature | What it's for | How (command) |
-|------|---------|--------|
-| One-line install | No clone needed — one command and you're set | `curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh \| bash` |
-| Environment check + repair | Environment acting up? One command diagnoses and fixes it | `sofagent-audit --doctor --repair` |
-| Diagnostic bundle | Filing an issue? One-click sanitized diagnostic zip | `sofagent-audit --support-bundle` |
-| Config signing | Adds a tamper-evident signature to config.yml so it can't be silently changed | `sofagent-audit --sign-config` |
-| Context compression | Context too long? Compress manually — verification evidence preserved | `/compact` (@sofagent/core) |
-| Goal-driven | Set the "completion condition" — convergence upgrades from heuristics to goal-driven | `/goal <completion condition>` (@sofagent/core) |
+> 🆕 One-line install, environment check & repair, context compression, goal-driven… full list in [CHANGELOG.md](./CHANGELOG.md).
 
 ---
 
