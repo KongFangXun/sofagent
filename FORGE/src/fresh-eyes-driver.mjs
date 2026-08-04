@@ -86,7 +86,7 @@ const TOOL_HARD_LIMIT  = 100;  // stream loop：超此值进入"写报告窗口"
 // 审查类步骤（a-check/b-check）探索深度高（12 视角 × 30-60 文件），需要更长切换时间
 // 修复/验证类步骤（b-fix/a-verify）是有限任务，5 步够用
 // run-07 教训：统一 5 步在审查步骤上 0% 成功率，改 10 步后审查步骤能完成写报告
-const REVIEW_GRACE_STEPS  = 50;  // 审查步骤写报告窗口（superstep 数）
+const REVIEW_GRACE_STEPS  = 80;  // 审查步骤写报告窗口（superstep 数）—Qwen thinking 模型需要更多时间从 thinking 切到 writing
 const DEFAULT_GRACE_STEPS = 5;   // 其他步骤写报告窗口（superstep 数）
 
 // ─── 模型定价（从 FORGE/models/ 加载）──────────────────────
@@ -994,17 +994,25 @@ function extractAgentText(result) {
       }
       if (text.trim()) return text;  // 非空才返回，空则继续往前找
     }
-    // 所有消息都不是 AI 类型——尝试最后一条的 content
-    const last = result.messages[result.messages.length - 1];
-    const content = last?.content;
-    if (typeof content === 'string') return content;
-    if (Array.isArray(content)) {
-      return content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
+    // 所有消息都不是 AI 类型——从最后一条往前找非 ToolMessage 的消息。
+    // 硬中断场景：最后一条可能是 ToolMessage（工具返回值，如 sf_read 读到的
+    // prompt 文件内容），不能把工具返回值当 agent 输出写入报告。
+    for (let i = result.messages.length - 1; i >= 0; i--) {
+      const msg = result.messages[i];
+      // 跳过 ToolMessage——它的 content 是工具返回值不是 agent 输出
+      if (msg?._getType?.() === 'tool') continue;
+      const content = msg?.content;
+      if (typeof content === 'string') return content;
+      if (Array.isArray(content)) {
+        return content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
+      }
+      if (content && typeof content === 'object') {
+        if (typeof content.text === 'string') return content.text;
+        return JSON.stringify(content);
+      }
     }
-    if (content && typeof content === 'object') {
-      if (typeof content.text === 'string') return content.text;
-      return JSON.stringify(content);
-    }
+    // 全是 ToolMessage 则返回空字符串（让调用方走 synthesizeReportFromMessages 兜底）
+    return '';
   }
   // 最终 fallback——避免 String(object) 产出 "[object Object]"
   if (result && typeof result === 'object') {
@@ -1407,9 +1415,16 @@ function spawnWorker(step, roundDir, target, round, options = {}) {
         process.stderr.write(chunk); // 保持实时可见
       });
 
-      child.on('close', (code) => {
+      child.on('close', (code, signal) => {
         if (code === 0) {
           resolveP();
+        } else if (code === null) {
+          // 进程被信号杀死（最常见：OOM SIGKILL）
+          console.error(`  💀 [worker:${step}] 子进程被信号杀死: ${signal}（可能是 OOM）`);
+          const err = new Error(`worker ${step} 被信号杀死 (${signal})，可能是内存不足`);
+          err.isStallError = false;
+          err.isSignalKill = true;
+          rejectP(err);
         } else {
           // 检测 StallError（watchdog 中止标记）
           // Detect StallError (watchdog abort marker)
@@ -2147,6 +2162,28 @@ async function main() {
       console.warn(`   防休眠     = ⚠️ caffeinate 不可用（${err.message}），降级运行`);
     }
   }
+
+  // ─── 全局异常兜底（v1.2.7 · P0）───
+  // 背景：进程被 OS 直接杀死（OOM SIGKILL）时 main().catch() 不执行，
+  // status.json 停在 "round-N-running" 永远不会更新。
+  // 方案：在 main() 调用之前注册 uncaughtException / unhandledRejection handler，
+  // 确保任何致命路径都更新 latest.json 的 stopReason 为 'fatal-crash'。
+  process.on('uncaughtException', (err) => {
+    console.error(`\n💥 uncaughtException: ${err.message}`);
+    console.error(err.stack);
+    if (preservedRunDir) {
+      try { updateLatestPointer(preservedRunDir, { round: preservedActualRounds, totalRounds: preservedTotalRounds, stopReason: 'fatal-crash', counts: preservedFinalCounts }); } catch {}
+    }
+    process.exit(1);
+  });
+  process.on('unhandledRejection', (reason) => {
+    console.error(`\n💥 unhandledRejection: ${reason instanceof Error ? reason.message : String(reason)}`);
+    if (reason instanceof Error) console.error(reason.stack);
+    if (preservedRunDir) {
+      try { updateLatestPointer(preservedRunDir, { round: preservedActualRounds, totalRounds: preservedTotalRounds, stopReason: 'fatal-crash', counts: preservedFinalCounts }); } catch {}
+    }
+    process.exit(1);
+  });
 
   // 验证环境变量
   const missingEnvs = [];

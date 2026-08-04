@@ -8,21 +8,8 @@
 #
 # 版本号格式: 2 段（如 0.94），package.json 自动补 3 段（0.94.0）
 #
-# ⚠️ 不支持 patch 级版本号变更（如 0.99.3 → 0.99.4）。
-#    只支持 major.minor → major.minor 替换（如 0.99 → 1.0）。
-#    patch bump 需手工执行以下步骤：
-#      1. vi engine/audit/package.json          # 改 version 字段
-#      2. vi engine/audit/src/index.ts           # 改 v0.99.3 → v0.99.4
-#      3. vi engine/scripts/*.sh                 # 改 VERSION="0.99.3"
-#      4. vi engine/scripts/windows/*.ps1        # 改 $VERSION = "0.99.3"
-#      5. vi docs/ROADMAP.md                          # 改文件头 > v0.99.3 ·
-#      6. vi ARCHITECTURE.md                        # 改文件头 > v0.99.3 ·
-#      7. vi HANDBOOK.md                            # 改文件头 > v0.99.3 ·
-#      8. vi README.md README.en.md                 # 改 badge Version-v0.99.3
-#      9. vi SKILL/SKILL.md                          # 改 frontmatter + 正文标题
-#     10. vi SKILL/harness/fde-template.md           # 改正文标题 · v0.99.3
-#     11. vi FORGE/SKILL/fresh-eyes-loop/SKILL.md    # 改 frontmatter（如有版本字段）
-#     12. 跑 ./tools/check-version.sh 确认一致性
+# ✅ 支持 2 段（如 0.99 → 1.0）和 3 段版本号（如 1.2.5 → 1.2.6）。
+#    用法示例：./tools/bump-version.sh 1.2.5 1.2.6
 #
 # 替换范围（结构性位置，不碰历史引用）:
 #   1. .ts 文件:  const VERSION = 'OLD'
