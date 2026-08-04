@@ -793,19 +793,46 @@ async function main(): Promise<void> {
     throw err;
   }
 
-  // 4.3 配置完整性检查：检测 config.yml 中是否关闭了过多规则（防篡改）
+  // 4.3 配置完整性检查：检测 config.yml 中是否关闭了规则（防篡改）
+  // v1.2.7 (F21): 阈值从 >3 改为 >0——关闭任意条规则即输出显眼告警（不阻断，保持灵活性但确保可追溯）
   let configDisabledTooMany = false;
   if (config?.rules) {
     // v1.2.5: 追加 a20-a23（A20-A23 新增安全红线规则）
     const ALL_RULE_KEYS = ['a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a14','a15','a16','a17','a18','a19','a20','a21','a22','a23','e1','e2','e4'];
     // P1-6: 基线规则集合与 core 共享常量统一（单一事实源）
     const BASELINE_KEYS = new Set<string>(BASELINE_RULE_KEYS);
-    const disabledCount = Object.entries(config.rules)
-      .filter(([key, val]) => val === false && !BASELINE_KEYS.has(key) && ALL_RULE_KEYS.includes(key))
-      .length;
+    const disabledEntries = Object.entries(config.rules)
+      .filter(([key, val]) => val === false && !BASELINE_KEYS.has(key) && ALL_RULE_KEYS.includes(key));
+    const disabledCount = disabledEntries.length;
     const totalActive = ALL_RULE_KEYS.length;
+
+    // v1.2.7 (F21): 关闭任意条规则即告警（不再等 >3），并记录到 history.jsonl 留下痕迹
+    if (disabledCount > 0) {
+      const disabledList = disabledEntries.map(([key]) => key).join(', ');
+      console.warn(`\u26a0\ufe0f  当前有 ${disabledCount} 条规则被关闭（${disabledList}）。如果这不是你主动配置的，config.yml 可能已被篡改。`);
+      // 关闭规则时在 history.jsonl 记录一条 audit log（rule_disabled 事件）
+      try {
+        const { resolveAuditDir } = await import('@sofagent/core');
+        const { appendFileSync, existsSync: dirExists } = await import('fs');
+        const auditDir = resolveAuditDir();
+        const historyFile = join(auditDir, 'history.jsonl');
+        if (!dirExists(auditDir)) {
+          const { mkdirSync } = await import('fs');
+          mkdirSync(auditDir, { recursive: true });
+        }
+        const record = JSON.stringify({
+          timestamp: new Date().toISOString(),
+          event: 'rule_disabled',
+          disabledRules: disabledList,
+          count: disabledCount,
+        });
+        appendFileSync(historyFile, record + '\n');
+      } catch {
+        // 记录失败不影响核心审计流程
+      }
+    }
+
     if (disabledCount > 3) {
-      console.warn(`\u26a0\ufe0f  当前有 ${disabledCount} 条规则被关闭（默认 ${totalActive} 条中仅 ${totalActive - disabledCount} 条生效）。如果这不是你主动配置的，config.yml 可能已被篡改。`);
       // P1-5: 非基线规则全关 → 阻断（exit 1 WARN），不再「全绿 PASS」
       configDisabledTooMany = true;
     }
