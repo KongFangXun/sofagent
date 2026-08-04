@@ -24,7 +24,7 @@
 // ============================================================
 
 import { execFileSync } from 'child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { createInterface } from 'readline';
 import { parseDiff, parseStagedDiff, isInGitRepo, type DiffFile } from '@sofagent/core';

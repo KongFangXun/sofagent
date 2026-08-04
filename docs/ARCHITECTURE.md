@@ -593,6 +593,17 @@ graph LR
 ├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
 │ FORGE driver                             │  │ forge-runs/          │  │ verdict.md（人类读）                  │
 │   fresh-eyes / release-gate              │→ │   <loop>/<date>/run/ │→ │                                     │
+├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
+│ @sofagent/orchestrator ⭐ v1.2.7         │  │ agent-mailbox/ ⭐     │  │ @sofagent/orchestrator ⭐ v1.2.7     │
+│   SubAgent send() → inbox JSON           │→ │   <agent>/inbox/*.json│→ │ MessageInjector.injectMessages()    │
+│   （SubAgent 间异步消息）                 │→ │                      │→ │   （节点开始前注入 system prompt）   │
+├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
+│ @sofagent/core ⭐ v1.2.7                 │  │ orchestrator/goals/ ⭐│  │ @sofagent/orchestrator ⭐ v1.2.7     │
+│   /goal → evaluateGoal() 写 current.json │→ │   current.json       │→ │   goal_eval 节点（每轮评估收敛）     │
+│   （Session Goals 持久化）                │→ │                      │→ │                                     │
+├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
+│ @sofagent/audit ⭐ v1.2.7                │  │ support-bundles/ ⭐   │  │ 人类（报障附件）                      │
+│   --support-bundle → generateSupportBundle│→ │   <timestamp>.zip    │→ │   （脱敏后的诊断快照）               │
 └─────────────────────────────────────────┘  └──────────────────────┘  └─────────────────────────────────────┘
 ```
 
