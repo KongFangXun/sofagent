@@ -276,30 +276,20 @@ VIEWS=$(grep -c '^### ' FORGE/playbook/fresh-eyes-review.md)
 > 开新 session 时，**当前 session 的 AI 必须把以下模板中所有占位符替换为实际值**（项目路径、版本号），输出填好的完整 prompt 供用户复制。用户粘贴后可直接执行，不需要手动替换任何内容：
 
 ```
-你是 release-gate-loop 全流程执行员。项目路径：{项目实际路径}，目标版本：{实际版本号}。
+在 sofagent 项目（{项目实际路径}）中，执行 {实际版本号} 的 release-gate-loop（发版闸门）。
 
-依次执行以下 5 步，全部在一个 session 内完成，中途不要换 session：
+先读 `FORGE/SKILL/release-gate-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按协议执行：
 
-1. cd 到项目目录，直连跑验收脚本（约 90 秒）：
-   bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-raw.log 2>&1
-   确认 exit code = 0 且末尾显示"全部通过"
+1. 直连预跑 acceptance（约 90 秒）：bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-raw.log 2>&1，确认 exit 0
+2. 后台启动 driver：node FORGE/src/release-gate-driver.mjs --target {实际版本号} --skip-acceptance > /tmp/release-gate.log 2>&1 &
+3. 记住 runDir（启动日志第一行打印的路径），按 SKILL.md 协议轮询 status.json——每 120 秒读一次，phase 变化时一句话汇报，phase 不变就继续轮询。session 要一直在转，不要 sleep 空转
+4. phase 变成 completed 或 error 时，读 verdict.md，用 3-5 行汇报：acceptance + regression + coverage + 最终裁决
 
-2. 预建 run 目录并把日志放进去：
-   RUN_DIR=~/.sofagent/data/forge-runs/release-gate-loop/$(date +%Y-%m-%d)/run-$(printf "%02d" $(ls ~/.sofagent/data/forge-runs/release-gate-loop/$(date +%Y-%m-%d)/ 2>/dev/null | grep -c run-))
-   mkdir -p "$RUN_DIR"
-   cp /tmp/acceptance-raw.log "$RUN_DIR/acceptance-raw.log"
-
-3. 后台启动 driver（检测到已有 acceptance-raw.log 会自动跳过预跑，直接进 regression）：
-   node FORGE/src/release-gate-driver.mjs --target {实际版本号} > /tmp/release-gate.log 2>&1 &
-
-4. 每 120 秒 tail /tmp/release-gate.log，有新进展就一句话汇报，没变化就静默；最长沉默不超过 3 分钟
-
-5. driver 退出后读 verdict.md，用 3-5 行汇报：acceptance + regression + coverage + 最终裁决
-
-铁律：不干涉 driver、不改代码、不探索源码——只做执行 + 定期汇报 + 最终汇报。
+铁律：不干涉 driver、不改代码、不探索源码——只做预跑 + 启动 + 持续轮询监控 + 最终汇报。
 ```
 > ⚠️ **AI 输出 prompt 时必须替换的占位符**：`{项目实际路径}`、`{实际版本号}`。输出前检查：prompt 中不得残留任何花括号占位符。
-> **执行过程**：步骤 1-2 直连跑 acceptance-test.sh（不走 driver spawn，sandbox 不杀），步骤 3 启动 driver 后检测到已有日志自动跳过预跑，只跑 regression + coverage + consolidate + verdict。acceptance 通过子 shell signal 隔离（HUP 不传导）+ S148 `const today` 去重后稳定跑通。v1.2.2 实测：acceptance 165/165 全绿、regression 40/44 PASS（2 ⚠️ 非阻塞）、coverage 8/10 覆盖。
+>
+> **v1.2.6 简化**（对齐 fresh-eyes-loop prompt 风格）：① 监控细节（120 秒轮询间隔、phase 含义、汇报规则）全部交给 SKILL.md 承载，prompt 不重复写——新 session 的 AI 自己读 SKILL.md 拿协议细节 ② 删手动预建 runDir + cp 日志步骤——driver 启动时自建 runDir ③ acceptance 预跑合并为单步，driver 的 `--skip-acceptance` 参数自动复用 `/tmp/acceptance-raw.log`，不需要手动 cp 到 runDir。原 20 行 → 9 行。
 
 ### 判定与循环
 
