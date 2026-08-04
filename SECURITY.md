@@ -372,6 +372,10 @@ install.sh 拆分为以下模块，便于逐模块审查：
 
 `automerge@1.0.1-preview.7` 为 preview 版（非稳定版），API 可能在后续版本变更。截至 v1.2.7 复核，npm 仍无 stable（latest=2.0.0-alpha.3），uuid 弃用警告为已知观感问题；federation 功能不使用时该依赖路径不触达。daemon 精确锁定版本号（`"automerge": "1.0.1-preview.7"`，非 `^` 前缀）避免意外升级。如 automerge 发布 stable 版本或 breaking change，`engine/core/src/federation.ts` 的 `Automerge.change/clone/merge` 调用需重新验证。
 
+**uuid@3.4.0 漏洞可利用性评估（GHSA-w5hq-g745-h8pq · v1.2.7 F13）**：
+
+automerge preview 版传递依赖 `uuid@3.4.0`（2018 弃用），存在 `uuid()` 默认 RNG 可预测漏洞。评估结论：uuid v3 的漏洞面在 `uuid()` 默认 RNG 可预测——automerge 用它生成文档 ID，非安全凭据，实际可利用性极低。v1.3.x 将重新评估 automerge stable 升级路径或 federation 换用其他 CRDT（如 yjs）。
+
 ---
 
 ## 六、LLM API Key 透明度（v1.2.0）
