@@ -60,7 +60,7 @@ sofagent 就是解决这个问题的：**它帮你把 AI 管起来，让 AI 干�
 <details>
 <summary>🔧 技术细节（给开发者）</summary>
 
-底层是 **Harness 中间件**——每次 Agent 改完代码自动跑审计规则（24 条注册：17 条默认启用 + 7 条扩展需显式开启，含 9 条基线不可禁用；git diff 硬证据，零 token），违规当场拦截、合规存快照。四层加载链（SKILL.md → fde.md → think.md → knowledge/）在 Agent 启动时注入行为底线。完整架构见 [ARCHITECTURE.md](./docs/ARCHITECTURE.md)。
+底层是 **Harness 中间件**——每次 Agent 改完代码自动跑审计规则（24 条注册：17 条默认启用 + 7 条扩展需显式开启，含 9 条基线不可禁用；git diff 硬证据，零 token），违规当场拦截、合规存快照。四层加载链（SKILL.md → fde.md → think.md → knowledge/）提供行为底线供 Agent 加载。审计拦截在所有路径生效；反思生成（think.md）仅 MCP/CLI 路径触发。完整架构见 [ARCHITECTURE.md](./docs/ARCHITECTURE.md)。
 
 </details>
 
@@ -331,7 +331,7 @@ flowchart LR
 | 🧭 约束底座 | 开工前规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
 | 🔍 审计引擎 | 24 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计引擎核心规则零额外 token**（19 条纯 git-diff 规则不调用 LLM + 1 条文件系统监控，4 条混合规则需 Agent 日志）——不调用 LLM（0 token），不消耗任何 LLM 额度 | ✅ 稳定 |
 | 🔄 回溯引擎 | 每次审计后自动 git snapshot，违规一键回滚 | ✅ 稳定 |
-| 🧬 进化引擎 | think.md 反思（✅ 已交付）+ Dream Cycle 知识回灌（🔧 轻量态）+ skillopt Skill 优化（⚠️ 需外部 SkillOpt CLI）| 🔧 部分可用 |
+| 🧬 进化引擎 | think.md 反思（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成）+ Dream Cycle 知识回灌（🔧 轻量态）+ skillopt Skill 优化（⚠️ 需外部 SkillOpt CLI）| 🔧 部分可用 |
 
 </details>
 
@@ -375,7 +375,7 @@ LOOP 内部使用 LangGraph StateGraph 组装节点流转 + 6 个内置工具（
 
 | 层 | 机制 | 状态 | 怎么跑 |
 |------|------|:---:|------|
-| **think.md 反思** | 每次审计自动写教训（哪个规则触发了、改了哪些文件、下次注意什么），Agent 下次启动时通过 harness 加载链读到——不犯同样的错 | ✅ 已交付 | 审计引擎每次跑自动触发，无需配置 |
+| **think.md 反思** | 每次审计自动写教训（哪个规则触发了、改了哪些文件、下次注意什么），Agent 下次启动时通过 harness 加载链读到——不犯同样的错 | ⚠️ 仅 MCP/CLI | MCP Server 与 sofagent-think CLI 触发；git hook 路径不自动生成（架构限制，audit 不反向依赖 think） |
 | **Dream Cycle 知识回灌** | daemon 后台合成概念 → 回灌 skillopt 待优化队列，积累知识供后续优化周期消费 | 🔧 轻量态 | daemon 后台运行，当前为内存态队列（重启即丢），完整持久消费链路计划 v1.3.0 交付。⚠️ Dream Cycle **默认使用 MockLLM（确定性伪输出）**——接入真实 LLM 需配置 API Key |
 | **skillopt Skill 优化** | 失败模式聚类（≥3 次同类失败）→ 自动触发外部 SkillOpt CLI 优化 Skill 质量 → 校验候选（行数 ±30% + 变化率 ≥5%）| ⚠️ 需外部依赖 | 需安装 [Microsoft SkillOpt](https://github.com/microsoft/SkillOpt)（`skillopt-sleep` CLI）。未安装时自动降级为仅记录失败清单，不执行优化 |
 
