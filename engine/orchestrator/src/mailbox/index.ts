@@ -3,6 +3,9 @@
 // v1.2.7 新建 · 功能 ⑨
 // ============================================================
 
+import { MailboxStore } from './mailbox';
+import { MessageInjector } from './message-injector';
+
 export type { MailboxAPI, MailboxMessage, MessagePriority } from './mailbox';
 export { MailboxStore } from './mailbox';
 export { MessageInjector } from './message-injector';

@@ -156,10 +156,8 @@ function buildNodeConfig(
   dataFlowMapping: DataFlowMapping,
 ): StateGraphConfig['nodes'][0] {
   // 检查是否需要 HITL
-  const agentDef = node.agent === 'enterprise'
-    ? null
-    : null; // HITL 标记来自 resolveAgent → SubAgentDefinition.hitl
-  const interruptBefore = agentDef?.hitl ?? false;
+  // TODO v1.2.8: HITL 标记来自 resolveAgent → SubAgentDefinition.hitl
+  const interruptBefore = false;
 
   return {
     id: node.id,

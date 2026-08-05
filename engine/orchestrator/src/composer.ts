@@ -263,6 +263,12 @@ function extractText(result: unknown): string {
 // v1.2.7 新增：企业编排入口（与现有 compose() 并行，不调 LLM 拆任务）
 // ────────────────────────────────────────────────────────────
 
+import {
+  buildEnterpriseStateGraph,
+  type EnterpriseComposeInput,
+  type EnterpriseComposeResult,
+} from './enterprise-graph';
+
 export type {
   EnterpriseComposeInput,
   EnterpriseComposeResult,
