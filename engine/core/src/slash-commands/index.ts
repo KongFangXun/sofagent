@@ -6,6 +6,11 @@
 // handler.ts / CLI 入口通过本文件注册命令到 globalSlashRegistry。
 // ============================================================
 
+import {
+  SlashCommandRegistry,
+  globalSlashRegistry,
+} from '../slash-registry';
+
 export {
   SlashCommandRegistry,
   globalSlashRegistry,
@@ -22,6 +27,9 @@ export { CompactCommand } from './compact';
 // v1.2.7 功能 ①: /goal 命令
 export { GoalCommand } from './goal';
 export type { SessionGoal, LoopSpecGoalExtension } from './goal';
+
+import { CompactCommand } from './compact';
+import { GoalCommand } from './goal';
 
 /**
  * 注册所有内置 slash 命令到指定注册表（或全局注册表）。

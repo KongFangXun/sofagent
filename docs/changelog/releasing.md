@@ -143,9 +143,14 @@
 >
 > 先读 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按协议执行：
 >
-> 1. 后台启动 driver：`node FORGE/src/fresh-eyes-driver.mjs --target {实际版本号} --max-rounds 10`
-> 2. 记住 runDir（启动日志第一行打印的路径）
-> 3. **在 session 内持续轮询** `status.json`——每 120 秒读一次，phase 变化时一句话汇报（如"审查第 2 轮进行中""B 模型修复中"），phase 不变就继续轮询。**session 要一直在转，不要 sleep 空转——每 120 秒就是一个工作周期**
+> 1. 后台启动 driver——🔴 必须用 Bash 工具的 dangerouslyDisableSandbox: true（否则三层进程嵌套会被 sandbox SIGKILL，run-01~03 血泪教训）：
+>    nohup node FORGE/src/fresh-eyes-driver.mjs --target {实际版本号} --max-rounds 10 > /tmp/fresh-eyes.log 2>&1 &
+>    disown
+> 2. 记住 runDir（启动日志第一行打印的路径，格式如 `~/.sofagent/data/forge-runs/fresh-eyes-loop/<date>/run-XX/`）
+> 3. **在 session 内持续轮询**——每 120 秒一个工作周期，每个周期做两件事：
+>    ① 读 `<runDir>/status.json` 看 phase 变化，phase 变化时一句话汇报（如"审查第 2 轮进行中""B 模型修复中"）
+>    ② 读 `status.json` 的 `heartbeat` 字段时间戳——如果距今 > 90 秒，说明 driver 可能已死（SIGKILL 绕过所有 handler），用 `pgrep -f "fresh-eyes-driver"` 确认进程是否存活：无输出 = 已死，汇报死亡并退出；有输出 = 活着，继续轮询
+>    phase 不变且 heartbeat 正常 → 继续轮询。session 要一直在转，不要 sleep 空转——每 120 秒就是一个工作周期
 > 4. phase 变成 completed 或 error 时，读最终报告，用 2-3 行汇报：轮数 + 停止原因 + 最终 P0/P1/P2 计数
 >
 > 铁律：修复只本地 commit、绝不 push；不要干涉 driver 内部、不要探索项目源码——你只做启动 + 持续轮询监控 + 汇报。

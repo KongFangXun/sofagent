@@ -12,10 +12,9 @@
 //   node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>
 //
 // 模型配置抽取到 FORGE/models/（换模型只改 profile.mjs 一行）：
-//   A（审查者）= Qwen3.8-max        阿里百炼 Token Plan 订阅制
+//   A（审查者）= GLM-5.2            智谱 Coding Plan 订阅制（2026-08-05 A/B 统一 GLM）
 //   B（工程师）= GLM-5.2            智谱 Coding Plan 订阅制（代码编写强项）
-//   Qwen3.8-max 是 thinking-only 模型——始终思考、无法关闭，
-//   不需要（也不应传）enable_thinking/thinking 参数，也没有 reasoningEffort（DeepSeek/GLM 专属）。
+//   V（验证者）= GLM-5.2            智谱 Coding Plan 订阅制（与 B 共用）
 //   GLM-5.2 支持 thinking + reasoning_effort 参数（Coding Plan 订阅制，不按量计价）。
 //   切换模型：编辑 FORGE/models/profile.mjs，改 import 和映射即可，不需要改本文件。
 // ============================================================
@@ -70,8 +69,8 @@ const RUNS_DIR    = join(SOFAGENT_HOME, 'data', 'forge-runs');
 const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
 const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 
-// Qwen Token Plan + GLM Coding Plan 双 key，A/B 各用各的。
-// A 用 SOFAGENT_LLM_A_API_KEY（Qwen），B 用 SOFAGENT_LLM_B_API_KEY（GLM）。
+// A/B/V 统一 GLM-5.2 Coding Plan，共用 GLM_API_KEY。
+// key 跟模型走——模型文件标注 apiKeyEnv，profile.mjs 引用时自动继承。
 // ─── 模型配置（从 FORGE/models/ 加载，换模型改 profile.mjs 即可）─────────────
 import { resolveConfigs, resolvePricing } from '../models/index.mjs';
 const MODEL_CONFIGS = resolveConfigs(AGENTS_DIR);
@@ -84,12 +83,12 @@ const MODEL_CONFIGS = resolveConfigs(AGENTS_DIR);
 // 数值关系：200(劝) → 200(拽) → 500(杀)，给足冗余让审查者完成取证+写报告。
 // run-07 教训：v1.2.6 版本范围大，50/60 步不够审查者完成取证，
 // 产物全是 grep/cat 原始转储，无审查结论。
-const TOOL_SOFT_LIMIT  = 100;  // stateModifier：超此值注入"立即写报告"HumanMessage
-const TOOL_HARD_LIMIT  = 100;  // stream loop：超此值进入"写报告窗口"（不再 break）
+const TOOL_SOFT_LIMIT  = 60;   // stateModifier：超此值注入"立即写报告"HumanMessage（v1.2.7：100→60，run-03 教训：100 次仍不够模型收敛写报告）
+const TOOL_HARD_LIMIT  = 80;   // stream loop：超此值进入"写报告窗口"（v1.2.7：100→80，配合软上限降低更早介入）
 // 审查类步骤（a-check/b-check）探索深度高（12 视角 × 30-60 文件），需要更长切换时间
 // 修复/验证类步骤（b-fix/a-verify）是有限任务，5 步够用
 // run-07 教训：统一 5 步在审查步骤上 0% 成功率，改 10 步后审查步骤能完成写报告
-const REVIEW_GRACE_STEPS  = 80;  // 审查步骤写报告窗口（superstep 数）—Qwen thinking 模型需要更多时间从 thinking 切到 writing
+const REVIEW_GRACE_STEPS  = 40;  // 审查步骤写报告窗口（v1.2.7：80→40，配合工具调用惩罚加速收敛）
 const DEFAULT_GRACE_STEPS = 5;   // 其他步骤写报告窗口（superstep 数）
 
 // ─── 模型定价（从 FORGE/models/ 加载）──────────────────────
@@ -637,18 +636,78 @@ async function runWorker(step, roundDir, target) {
 
   const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
   const systemMsg = new SystemMessage(systemPrompt);
+
+  // 🔴 v1.2.7 run-03/run-04 教训：消息裁剪会切断 tool_calls ↔ ToolMessage 配对。
+  // DeepSeek API 严格校验两种方向：
+  //   ① "Messages with role 'tool' must be a response to a preceding message with 'tool_calls'"
+  //      → 裁剪后开头的 ToolMessage 找不到它的 AI tool_calls 父消息
+  //   ② "An assistant message with 'tool_calls' must be followed by tool messages responding to each 'tool_call_id'"
+  //      → 裁剪后尾部的 AI tool_calls 消息对应的 ToolMessage 被切掉了
+  //
+  // trimMessagesSafe 做 3 步：
+  //   1. slice 取最后 keepCount 条
+  //   2. 清除配对：扫一遍，标记所有孤立的 tool_calls / ToolMessage，从结果中移除
+  //   3. 返回清洗后的安全消息数组
+  function trimMessagesSafe(messages, keepCount) {
+    if (messages.length <= keepCount) return [...messages];
+    let recent = messages.slice(-keepCount);
+
+    // 配对清洗：收集所有 AI tool_calls 的 id 和所有 ToolMessage 的 tool_call_id
+    // 如果 ToolMessage 的 tool_call_id 在 recent 中找不到对应的 AI tool_calls → 移除
+    // 如果 AI tool_calls 的某个 tool_call_id 在 recent 中找不到对应的 ToolMessage → 从 tool_calls 中移除该条
+    // 如果 AI 消息的所有 tool_calls 都找不到对应 ToolMessage → 移除整条 AI 消息
+
+    const aiToolCallIds = new Set();
+    for (const msg of recent) {
+      if (msg?._getType?.() === 'ai' && msg.tool_calls?.length > 0) {
+        for (const tc of msg.tool_calls) {
+          if (tc.id) aiToolCallIds.add(String(tc.id));
+        }
+      }
+    }
+
+    const toolMsgIds = new Set();
+    for (const msg of recent) {
+      if (msg?._getType?.() === 'tool' && msg.tool_call_id) {
+        toolMsgIds.add(String(msg.tool_call_id));
+      }
+    }
+
+    // 过滤：移除孤立的 ToolMessage 和孤立的 AI tool_calls
+    const cleaned = [];
+    for (const msg of recent) {
+      const type = msg?._getType?.();
+      if (type === 'tool' && msg.tool_call_id) {
+        // ToolMessage 有对应的 AI tool_calls？→ 保留
+        if (aiToolCallIds.has(String(msg.tool_call_id))) {
+          cleaned.push(msg);
+        }
+        // 否则跳过（孤立的 ToolMessage）
+      } else if (type === 'ai' && msg.tool_calls?.length > 0) {
+        // AI 消息有 tool_calls → 检查每个 tool_call 是否都有对应的 ToolMessage
+        const validCalls = msg.tool_calls.filter(tc =>
+          !tc.id || toolMsgIds.has(String(tc.id))
+        );
+        if (validCalls.length === msg.tool_calls.length) {
+          // 所有配对完整 → 保留原消息
+          cleaned.push(msg);
+        } else if (validCalls.length > 0) {
+          // 部分配对 → 保留消息但更新 tool_calls（创建修改副本）
+          cleaned.push({ ...msg, tool_calls: validCalls });
+        }
+        // 所有 tool_calls 都无配对 → 跳过（孤立的 AI tool_calls）
+      } else {
+        // 普通消息（Human/AI text/System）→ 直接保留
+        cleaned.push(msg);
+      }
+    }
+
+    return cleaned;
+  }
+
   const agent = createReactAgent({
     llm: model,
     tools,
-    // v1.2.5：stateModifier = system prompt + 上下文窗口裁剪（替代 prompt 参数）
-    // v1.2.6：preModelHook 物理裁剪 state.messages，防止内存累积 OOM
-    // v1.2.6：stateModifier 加工具调用计数 + 软熔断注入。
-    // run-01/run-02 教训：模型无视 prompt 铁律，
-    // 陷入"找不到文件→换路径重试"死循环（1119 次工具调用）。
-    // 这里在代码层做硬兜底：累计 tool_calls 超过 TOOL_SOFT_LIMIT(200)
-    // 时注入 HumanMessage 强制要求写报告——HumanMessage 比 SystemMessage
-    // 优先级更高，模型更容易遵从。
-    // 200 = 给 v1.2.6 大版本审查充足的取证空间。
     stateModifier: (state) => {
       const messages = state.messages ?? [];
 
@@ -660,8 +719,6 @@ async function runWorker(step, roundDir, target) {
         }
       }
       if (toolCallCount >= TOOL_HARD_LIMIT) {
-        // L2 写报告窗口期：更强制的指令。run-06 教训：模型在 50 次注入后
-        // 仍无视普通指令继续调工具，这里用更严厉的措辞 + 每步重复注入。
         const forceReport = new HumanMessage({
           content: '【🔴 系统最终警告 🔴】你已调用 ' + toolCallCount + ' 次工具，远超预算。' +
             '现在必须立即输出审查报告文本。禁止再调用任何工具。' +
@@ -671,7 +728,7 @@ async function runWorker(step, roundDir, target) {
           return [systemMsg, forceReport, ...messages];
         }
         const first = messages[0];
-        const recent = messages.slice(-MAX_CONTEXT_MESSAGES);
+        const recent = trimMessagesSafe(messages, MAX_CONTEXT_MESSAGES);
         return [systemMsg, forceReport, first, ...recent];
       }
 
@@ -684,18 +741,16 @@ async function runWorker(step, roundDir, target) {
         if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
           return [systemMsg, forceReport, ...messages];
         }
-        // 保留第一条 + 最后 N 条，同时插入强制指令
         const first = messages[0];
-        const recent = messages.slice(-MAX_CONTEXT_MESSAGES);
+        const recent = trimMessagesSafe(messages, MAX_CONTEXT_MESSAGES);
         return [systemMsg, forceReport, first, ...recent];
       }
 
       if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
         return [systemMsg, ...messages];
       }
-      // 保留第一条（原始任务 prompt）+ 最后 N 条（近期工具交互）
       const first = messages[0];
-      const recent = messages.slice(-MAX_CONTEXT_MESSAGES);
+      const recent = trimMessagesSafe(messages, MAX_CONTEXT_MESSAGES);
       return [systemMsg, first, ...recent];
     },
     preModelHook: (state) => {
@@ -704,7 +759,7 @@ async function runWorker(step, roundDir, target) {
         return state;
       }
       const first = messages[0];
-      const recent = messages.slice(-STATE_MESSAGES_HARD_LIMIT);
+      const recent = trimMessagesSafe(messages, STATE_MESSAGES_HARD_LIMIT);
       return { ...state, messages: [first, ...recent] };
     },
   });
@@ -808,6 +863,13 @@ async function runWorker(step, roundDir, target) {
               toolCallCount++;
               console.log(`  → [${step}#${role}] tool #${toolCallCount}: ${tc.name}`);
             }
+            // 🔴 v1.2.7 run-03 教训：写报告窗口期内模型仍调工具 = 它无视了
+            // stateModifier 注入的强制写报告指令。每调一次工具 graceStepCount
+            // 多加 1（加速熔断），避免 80 步窗口全浪费在无效工具调用上。
+            if (inGraceWindow && !gotReport) {
+              graceStepCount += 2;  // 惩罚系数：工具调用 = 2 倍步数消耗
+              console.warn(`  ⚠️ [${step}#${role}] 写报告窗口内仍调工具（惩罚 +2，进度 ${graceStepCount}/${graceSteps}）`);
+            }
           }
         }
       }
@@ -874,12 +936,26 @@ async function runWorker(step, roundDir, target) {
   // 6. 提取文本输出
   let text = extractAgentText(result);
   if (!text) {
-    // 硬熔断后模型未输出文本——从工具结果合成最小报告
-    // run-06 教训：直接 throw 会让抢救的消息全部白费
-    console.warn(`  ⚠️ [${step}] 模型未输出文本，从工具结果合成最小报告`);
-    text = synthesizeReportFromMessages(result?.messages ?? [], step, role);
+    // 硬熔断后模型未输出文本——先尝试无工具裸 LLM 报告生成。
+    // run-06 教训：GLM-5.2 在审查步骤调 80+ 次工具不收敛，stateModifier
+    // 注入的"强制写报告"HumanMessage 被忽略（tools 数组仍在，模型继续走 tool 路线）。
+    // 解法：绕过 agent 的 tool 循环，直接用裸 LLM 调用——不传 tools，
+    // 模型无法调工具，只能输出文本。把工具结果摘要作为上下文发给模型。
+    console.warn(`  ┄ [${step}] 模型未输出文本，启动无工具裸 LLM 报告生成`);
+    try {
+      text = await generateReportWithoutTools(model, result?.messages ?? [], step, role, stepDef);
+      if (text) {
+        console.log(`  ✅ [${step}] 裸 LLM 报告生成成功（${text.length} 字符）`);
+      }
+    } catch (bareErr) {
+      console.warn(`  ⚠️ [${step}] 裸 LLM 报告生成失败: ${bareErr.message}，降级为碎片合成`);
+    }
     if (!text) {
-      throw new Error(`[worker:${step}] DeepAgent 未返回内容且无法合成报告`);
+      // 最终兜底：从工具结果合成最小报告
+      text = synthesizeReportFromMessages(result?.messages ?? [], step, role);
+      if (!text) {
+        throw new Error(`[worker:${step}] DeepAgent 未返回内容且无法合成报告`);
+      }
     }
   }
 
@@ -983,6 +1059,81 @@ function extractAgentText(result) {
     return JSON.stringify(result);
   }
   return String(result ?? '');
+}
+
+/**
+ * 无工具裸 LLM 报告生成。
+ *
+ * 当 agent 的 tool 循环无法收敛时（模型在硬上限后仍不停调工具），
+ * 绕过 createReactAgent，直接用 LLM.invoke() 发一次无 tools 请求。
+ * 把工具调用结果的关键信息作为摘要上下文发给模型，让它基于已掌握的
+ * 信息写出完整报告。
+ *
+ * 为什么这么做：createReactAgent 的 tools 在创建时就固定了，stateModifier
+ * 只能改消息不能改 tools。LangGraph React 循环里只要 tools 不为空，
+ * model 如果选择 tool_call 就继续走 tool 路线。唯一出路是绕过 agent
+ * 循环，直接用 model.invoke()——不带 tools 参数，模型没有工具可调，
+ * 只能输出文本。
+ *
+ * @param {object} model   ChatOpenAI 实例
+ * @param {Array}  messages agent 消息历史
+ * @param {string} step     步骤名
+ * @param {string} role     角色 A/B
+ * @param {object} stepDef  步骤定义（含 prompt 文件名等）
+ * @returns {Promise<string>} 报告文本，失败返回 null
+ */
+async function generateReportWithoutTools(model, messages, step, role, stepDef) {
+  // 1. 从工具结果中提取关键摘要（文件路径 + grep 结果等）
+  const toolSummaries = [];
+  for (const msg of messages) {
+    if (msg?._getType?.() === 'tool') {
+      const content = typeof msg.content === 'string' ? msg.content : '';
+      // 截取每个工具结果的前 200 字符（保留路径行和关键 grep 输出）
+      if (content.trim()) {
+        const truncated = content.slice(0, 200).trim();
+        toolSummaries.push(truncated);
+      }
+    }
+  }
+  // 去重 + 最多 40 条（控制 prompt 长度）
+  const unique = [...new Set(toolSummaries)].slice(0, 40);
+
+  // 2. 构造裸 LLM 请求——无 tools，只有 system + user 消息
+  const { SystemMessage, HumanMessage } = await import('@langchain/core/messages');
+
+  const reportPrompt = [
+    '你是审查报告生成器。以下是之前审查过程中工具调用的结果摘要。',
+    '请基于这些信息，写出完整的审查报告。',
+    '',
+    '报告要求：',
+    `- 步骤：${step}（角色 ${role}）`,
+    `- 产物文件：${(stepDef?.outputs ?? ['report.md']).join(', ')}`,
+    '- 每条发现标注优先级：P0（严重/阻塞）/ P1（应该修）/ P2（观察项）',
+    '- 给出文件路径和具体描述',
+    '- 如果信息不足以确认某条发现，标注"待证实"并降级为 P2',
+    '- 用中文写，Markdown 格式',
+    '',
+    `以下是 ${unique.length} 条工具结果摘要：`,
+    '---',
+    ...unique.map((s, i) => `[${i + 1}] ${s}`),
+    '---',
+  ].join('\n');
+
+  const reportMessages = [
+    new SystemMessage('你是 sofagent 项目的独立审查者。现在需要你根据已有工具调用结果写出审查报告。不调用任何工具，直接输出报告文本。'),
+    new HumanMessage(reportPrompt),
+  ];
+
+  // 3. 裸调用——不带 tools，模型只能输出文本
+  const response = await model.invoke(reportMessages);
+  const respText = typeof response === 'string'
+    ? response
+    : (response?.content ?? '');
+  // 处理数组格式 content
+  if (Array.isArray(respText)) {
+    return respText.map(x => typeof x === 'string' ? x : x?.text ?? '').join('');
+  }
+  return typeof respText === 'string' && respText.trim() ? respText : null;
 }
 
 /**
@@ -1345,11 +1496,43 @@ async function runAVerifySharded(roundDir, target, round) {
 /** v1.2.4 StallError 重试次数上限 / StallError retry limit */
 const STALL_RETRY_MAX = parseInt(process.env.FORGE_STALL_RETRY_MAX || '2', 10);
 
+/**
+ * 步骤级 stall 超时覆盖表（run-05 教训）。
+ * key = step 名，value = 注入 worker 子进程的环境变量覆盖。
+ * 未列出的步骤使用全局默认（STALL_MAX=3 ≈ 9min）。
+ *
+ * 为什么 a-consolidate 需要特殊对待：
+ *   - 输入双份完整 12 视角审查报告（check-a.md ~10KB + check-b.md ~5KB）
+ *   - 需要在单次 LLM 调用中理解+合并+输出 findings.md
+ *   - 模型在长上下文处理时事件循环长时间不 yield，心跳检测判定 stall
+ *   - run-05 连续 18 次 StallError，3 轮全部降级
+ *
+ * STALL_MAX=8 ≈ 24min 容忍；STALL_ABORT_MS=30min 单次极端停顿中止。
+ */
+const STALL_OVERRIDE = {
+  'a-consolidate': {
+    FORGE_STALL_MAX: '8',           // 累计停顿次数：3→8（≈9min→≈24min）
+    FORGE_STALL_ABORT_MS: '1800000', // 单次极端停顿：10min→30min
+  },
+};
+
 function spawnWorker(step, roundDir, target, round, options = {}) {
   /** 单次执行 worker 子进程 */
   function runOnce() {
     return new Promise((resolveP, rejectP) => {
       const env = { ...process.env, FORGE_ROUND: String(round) };
+
+      // 步骤级 stall 超时覆盖（run-05 教训：a-consolidate 合并双份完整报告，
+      // 输入 check-a.md(~10KB)+check-b.md(~5KB)，deepseek-v4-flash/glm-5.2
+      // 在长文本合并时事件循环长时间不推进，默认 STALL_MAX=3（~9min）不够，
+      // 连续 18 次 StallError → 全部降级。给文本密集步骤更宽容的心跳预算。
+      //
+      // STALL_MAX=8 ≈ 24min 无响应才判定 stall（每次 stall ~3min）。
+      // STALL_ABORT_MS=1800000 = 30min 单次极端停顿立即中止。
+      if (STALL_OVERRIDE[step]) {
+        Object.assign(env, STALL_OVERRIDE[step]);
+      }
+
       // 分片模式：通过环境变量把覆盖项传给 worker
       if (options.customInputs && options.customInputs['result.md']) {
         env.FORGE_BATCH_RESULT = options.customInputs['result.md'];
@@ -1534,8 +1717,15 @@ function writeFallbackFindings(roundDir) {
 /**
  * 解析停止条件——driver 唯一做判断的地方。
  *
- * 读 findings.md 数 P0/P1/P2 标记；读 result.md verify 列数 FAIL。
+ * 从 result.md 的结构化 finding 表格数 P0/P1/P2；读 verify 列数 FAIL。
  * 只解析机器可读信号，不读审查内容做语义判断。
+ *
+ * run-06 教训：原来从 findings.md 裸文本数 \bP0\b 正则匹配——但 findings.md
+ * 里的叙述性文字（"无 P0" "P2/待证实" "不含 P0/P1"）本身就含 P0/P1 字符串，
+ * 导致每轮计数 >0，连续"干净轮"判定永远不成立，driver 永不停止。
+ * 修复：改从 result.md 的结构化表格解析。result.md 的 finding 行格式：
+ *   ### finding-P0-01  或  ### finding-01  + 正文含 priority 列
+ * 用 splitFindings 切片后逐条判断优先级。
  *
  * @returns {{ p0:number, p1:number, p2:number, hasFail:boolean, isClean:boolean, isDegraded:boolean }}
  */
@@ -1545,16 +1735,24 @@ function parseStopCondition(roundDir) {
 
   let p0 = 0, p1 = 0, p2 = 0;
 
-  // 数 findings.md 里的 P0/P1/P2 标记
-  if (existsSync(findingsPath)) {
-    const text = readFileSync(findingsPath, 'utf-8');
-    // 匹配 "优先级(P0)" / "P0" / "优先级：P0" 等格式
-    const p0Matches = text.match(/\bP0\b/g);
-    const p1Matches = text.match(/\bP1\b/g);
-    const p2Matches = text.match(/\bP2\b/g);
-    p0 = p0Matches ? p0Matches.length : 0;
-    p1 = p1Matches ? p1Matches.length : 0;
-    p2 = p2Matches ? p2Matches.length : 0;
+  // 从 result.md 结构化解析（不再从 findings.md 裸文本数正则）
+  if (existsSync(resultPath)) {
+    const resultText = readFileSync(resultPath, 'utf-8');
+    const findingsList = splitFindings(resultText);
+    for (const f of findingsList) {
+      // finding ID 含 P0/P1/P2 前缀（如 finding-P0-01）
+      const idLower = f.id.toLowerCase();
+      if (idLower.includes('p0')) { p0++; continue; }
+      if (idLower.includes('p1')) { p1++; continue; }
+      if (idLower.includes('p2')) { p2++; continue; }
+      // ID 无前缀时从正文找 priority 标记（表格行的 priority 列）
+      const content = f.content;
+      if (/\bP0\b/.test(content)) { p0++; continue; }
+      if (/\bP1\b/.test(content)) { p1++; continue; }
+      if (/\bP2\b/.test(content)) { p2++; continue; }
+      // 无法确定优先级的 finding 计为 P2（保守不丢）
+      p2++;
+    }
   }
 
   // 读 result.md verify 列，数 FAIL
