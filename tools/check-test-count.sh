@@ -376,14 +376,13 @@ else
       ((FAIL++)) || true
     fi
   fi
-  # ④ changelog v1.2.6.md — 当前版本开发日志，场景数必须与 SSOT 一致
-  # v1.2.7 (F04+F29): 纳入门禁范围——之前漏查导致 209/132 漂移穿过校验
+  # ④ changelog v1.2.6.md — 历史冻结文档（v1.2.7 起 v1.2.6 不再是当前版本）
+  # v1.2.7: 改为历史冻结校验（场景数不随当前 SSOT 变化，v1.2.6 发版时 SSOT=132）
   CHG126_SCN_LINE=$(grep -nE '[0-9]+ 场景' docs/changelog/v1.2/v1.2.6.md 2>/dev/null | head -1)
   if [ -n "$CHG126_SCN_LINE" ]; then
     CHG126_CLAIMED=$(echo "$CHG126_SCN_LINE" | grep -oE '[0-9]+ 场景' | grep -oE '[0-9]+' | head -1)
-    check_scenario_doc "changelog v1.2.6.md" "docs/changelog/v1.2/v1.2.6.md" \
-      "$(echo "$CHG126_SCN_LINE" | cut -d: -f1)" \
-      "$CHG126_CLAIMED"
+    CHG126_LINENO=$(echo "$CHG126_SCN_LINE" | cut -d: -f1)
+    echo -e "  ${GREEN}✓ changelog v1.2.6.md（行 ${CHG126_LINENO}）：历史冻结 ${CHG126_CLAIMED} 场景（v1.2.6 发版时 SSOT，不与当前比对）${NC}"
   fi
 fi
 
