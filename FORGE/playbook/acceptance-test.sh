@@ -2,8 +2,8 @@
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离 + v1.2.5 激活链Phase1 + v1.2.5 审计加固A20-A23 + v1.2.5 daemon可靠性 + v1.2.5 多设备前置
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
-# 场景数：132 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
-#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 197 为编号上限，非场景数
+# 场景数：142 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
+#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 207 为编号上限，非场景数
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
 RUN_MODE="all"
@@ -1376,7 +1376,7 @@ S164_OK=true
 for p in install.sh engine/think/src/think-generator.ts; do test -e "$PROJECT_ROOT/$p" || { fail "文档引用的代码路径不存在: $p"; S164_OK=false; }; done
 node -e "const fs=require('fs'),path=require('path');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=0;for(const fp of files){const c=fs.readFileSync(fp,'utf8'),dir=path.dirname(fp);const re=/\]\(((?:\.\.?\/)?[^)]+\.md(?:#[^)]*)?)\)/g;let m;while((m=re.exec(c))){const href=m[1].split('#')[0];if(href.startsWith('http'))continue;if(!fs.existsSync(path.resolve(dir,href))){console.log('断链:',fp,'->',m[1]);bad++;}}}process.exit(bad?1:0);" >/dev/null 2>&1 || { fail "存在指向不存在文件的跨文档 Markdown 链接"; S164_OK=false; }
 $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接无死链）"
-scenario 165 "关键数字跨文档一致性——测试数 / 规则数 24 / acceptance 132"
+scenario 165 "关键数字跨文档一致性——测试数 / 规则数 24 / acceptance 142"
 S165_OK=true
 TEST_COUNT=""
 if [ -f "$PROJECT_ROOT/tools/test-count.sh" ]; then
@@ -1386,8 +1386,8 @@ if [ -n "$TEST_COUNT" ] && [ "$TEST_COUNT" -gt 0 ] 2>/dev/null; then
   for f in README.md docs/WIKI.md; do grep -q "$TEST_COUNT" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 $TEST_COUNT（数字漂移）"; S165_OK=false; }; done
 fi
 for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do grep -q "24 条\|24 个\|24 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 24（数字漂移）"; S165_OK=false; }; done
-for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "132" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 132"; S165_OK=false; }; done
-$S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / 132）"
+for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "142" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 142"; S165_OK=false; }; done
+$S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / 142）"
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
 S166_OK=true
 node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}process.exit(bad.length?(console.log('U+FFFD:',bad.join(',')),1):0);" >/dev/null 2>&1 || { fail "活跃文档存在 U+FFFD 编码污染"; S166_OK=false; }
@@ -1597,6 +1597,83 @@ for(const fp of files){
 console.log(bad);
 " 2>/dev/null || echo "999")
 [ "$TOTAL_BROKEN" -eq 0 ] && pass "docs/ 下文档死链清零（TOTAL_BROKEN=0）" || { fail "docs/ 下仍有 ${TOTAL_BROKEN} 处死链"; S197_OK=false; }
+
+# ─── v1.2.7 新增场景（S198-S207）───
+
+scenario 198 "v1.2.7 ① Session Goals — /goal 命令注册 + goal_eval 路由节点"
+S198_OK=true
+[ -f "$PROJECT_ROOT/engine/core/src/slash-commands/goal.ts" ] || { fail "goal.ts 不存在"; S198_OK=false; }
+assert_grep "GoalCommand\|register.*goal\|name:.*['\"]goal" "$PROJECT_ROOT/engine/core/src/slash-commands/goal.ts" || S198_OK=false
+assert_grep "goal_eval" "$PROJECT_ROOT/engine/orchestrator/src/loop/graph.ts" || S198_OK=false
+assert_grep "SessionGoalState\|goal:" "$PROJECT_ROOT/engine/orchestrator/src/loop/state.ts" || S198_OK=false
+$S198_OK && pass "Session Goals（/goal 命令 + goal_eval 路由节点存在）"
+
+scenario 199 "v1.2.7 ② 手动上下文压缩 — /compact 命令注册 + 摘要生成"
+S199_OK=true
+[ -f "$PROJECT_ROOT/engine/core/src/slash-commands/compact.ts" ] || { fail "compact.ts 不存在"; S199_OK=false; }
+assert_grep "CompactCommand\|name:.*['\"]compact" "$PROJECT_ROOT/engine/core/src/slash-commands/compact.ts" || S199_OK=false
+assert_grep "compact\|CompactCommand" "$PROJECT_ROOT/engine/core/src/slash-registry.ts" || S199_OK=false
+$S199_OK && pass "手动上下文压缩（/compact 命令注册）"
+
+scenario 200 "v1.2.7 ③ Skill 渐进式加载 — core-rules.md + role-*.md 分层"
+S200_OK=true
+[ -f "$PROJECT_ROOT/SKILL/core-rules.md" ] || { fail "core-rules.md 不存在"; S200_OK=false; }
+[ -f "$PROJECT_ROOT/SKILL/role-audit.md" ] || { fail "role-audit.md 不存在"; S200_OK=false; }
+[ -f "$PROJECT_ROOT/SKILL/role-fde.md" ] || { fail "role-fde.md 不存在"; S200_OK=false; }
+[ -f "$PROJECT_ROOT/SKILL/role-orchestrate.md" ] || { fail "role-orchestrate.md 不存在"; S200_OK=false; }
+assert_grep "core-rules\|role-audit\|role-fde\|role-orchestrate" "$PROJECT_ROOT/engine/hooks/sofagent-load-chain/src/handler.ts" || S200_OK=false
+$S200_OK && pass "Skill 渐进式加载（core-rules + role-*.md 四文件 + handler 映射）"
+
+scenario 201 "v1.2.7 ④a --doctor 修复提示 — 检测问题时输出可执行修复建议"
+S201_OK=true
+assert_grep "repairHint\|repairCommand\|修复.*命令\|如何修复\|安装命令" "$PROJECT_ROOT/engine/core/src/doctor.ts" || S201_OK=false
+$S201_OK && pass "--doctor 修复提示（repairHint/repairCommand 字段存在）"
+
+scenario 202 "v1.2.7 ④b --repair 模式 — cli.ts 支持 --repair 参数"
+S202_OK=true
+assert_grep "repair\|--repair\|isRepair" "$PROJECT_ROOT/engine/core/src/cli.ts" || S202_OK=false
+assert_grep "runDoctorWithRepair\|repair.*doctor\|doctor.*repair" "$PROJECT_ROOT/engine/core/src/cli.ts" || S202_OK=false
+$S202_OK && pass "--repair 模式（cli.ts 有 --repair 参数 + runDoctorWithRepair 调用）"
+
+scenario 203 "v1.2.7 ⑤ FORGE driver 三方抽象 — driver-base.mjs 存在 + 公共函数"
+S203_OK=true
+[ -f "$PROJECT_ROOT/FORGE/src/driver-base.mjs" ] || { fail "driver-base.mjs 不存在"; S203_OK=false; }
+assert_grep "createForgeDriverBase\|parseDriverArgs\|spawnWorkerStep\|createCircuitBreaker" "$PROJECT_ROOT/FORGE/src/driver-base.mjs" || S203_OK=false
+$S203_OK && pass "FORGE driver 三方抽象（driver-base.mjs + 公共工具函数导出）"
+
+scenario 204 "v1.2.7 ⑥ enterprise-graph — composeEnterpriseWorkflow + StateGraph 构建"
+S204_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/enterprise-graph.ts" ] || { fail "enterprise-graph.ts 不存在"; S204_OK=false; }
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/entity-store.ts" ] || { fail "entity-store.ts 不存在"; S204_OK=false; }
+assert_grep "composeEnterpriseWorkflow" "$PROJECT_ROOT/engine/orchestrator/src/composer.ts" || S204_OK=false
+assert_grep "buildEnterpriseStateGraph\|buildStateGraphConfig" "$PROJECT_ROOT/engine/orchestrator/src/enterprise-graph.ts" || S204_OK=false
+$S204_OK && pass "enterprise-graph（composeEnterpriseWorkflow + StateGraph 构建函数）"
+
+scenario 205 "v1.2.7 ⑦ --support-bundle — 诊断信息一键打包 + 脱敏"
+S205_OK=true
+[ -f "$PROJECT_ROOT/engine/audit/src/support-bundle.ts" ] || { fail "support-bundle.ts 不存在"; S205_OK=false; }
+assert_grep "generateSupportBundle\|support-bundle\|supportBundle" "$PROJECT_ROOT/engine/audit/src/index.ts" || S205_OK=false
+assert_grep "sanitize\|脱敏\|mask.*key\|redact" "$PROJECT_ROOT/engine/audit/src/support-bundle.ts" || S205_OK=false
+assert_grep "archiver" "$PROJECT_ROOT/engine/audit/package.json" || S205_OK=false
+$S205_OK && pass "--support-bundle（generateSupportBundle + 脱敏 + archiver 依赖）"
+
+scenario 206 "v1.2.7 ⑧ One-Line Agent Setup — bootstrap.sh 存在 + 轻量入口"
+S206_OK=true
+[ -f "$PROJECT_ROOT/bootstrap.sh" ] || { fail "bootstrap.sh 不存在"; S206_OK=false; }
+BOOTSTRAP_LINES=$(wc -l < "$PROJECT_ROOT/bootstrap.sh" 2>/dev/null || echo 999)
+[ "$BOOTSTRAP_LINES" -lt 50 ] || { fail "bootstrap.sh 超过 50 行（$BOOTSTRAP_LINES 行）"; S206_OK=false; }
+assert_grep "curl\|bash\|install" "$PROJECT_ROOT/bootstrap.sh" || S206_OK=false
+$S206_OK && pass "One-Line Agent Setup（bootstrap.sh 存在 + ${BOOTSTRAP_LINES} 行 + curl|bash 入口）"
+
+scenario 207 "v1.2.7 ⑨ Agent Mailbox — 邮箱模块 + 节点注入"
+S207_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/mailbox/mailbox.ts" ] || { fail "mailbox.ts 不存在"; S207_OK=false; }
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/mailbox/message-injector.ts" ] || { fail "message-injector.ts 不存在"; S207_OK=false; }
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/mailbox/index.ts" ] || { fail "mailbox/index.ts 不存在"; S207_OK=false; }
+assert_grep "MailboxStore\|send\|readUnread\|markRead" "$PROJECT_ROOT/engine/orchestrator/src/mailbox/mailbox.ts" || S207_OK=false
+assert_grep "MessageInjector\|injectMessages" "$PROJECT_ROOT/engine/orchestrator/src/mailbox/message-injector.ts" || S207_OK=false
+assert_grep "mailbox\|MailboxInjector\|injectMessages" "$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts" || S207_OK=false
+$S207_OK && pass "Agent Mailbox（mailbox.ts + message-injector.ts + nodes.ts 注入逻辑）"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
