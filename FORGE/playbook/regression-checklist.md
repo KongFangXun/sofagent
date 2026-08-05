@@ -1,8 +1,8 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
-> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。
-> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：50 维（v1.2.6）
+> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。
+> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：51 维（v1.2.7）
 ## 🔒 维护公约（防膨胀铁律）
 
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1050 行（v1.2.5 起从 1000 上调，49 维度自然增长）、`acceptance-test.sh` ≤ 1650 行（v1.2.6 起从 1600 上调，v1.2.6 场景 192-197 新增 + 场景 197 修 bash 清洗 bug 改 node 实现所致），越线触发瘦身（releasing.md 阶段四 Tier 2）。
@@ -22,7 +22,7 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（50 项 · 编号 1–70，19 个归并/移除项已转为 HTML 注释；v1.2.6 新增 #70）
+## 审查维度（51 项 · 编号 1–72，21 个归并/移除项已转为 HTML 注释；v1.2.7 新增 #71-72、移除 #34）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -259,12 +259,7 @@ NPM_VER=$(npm view /audit version 2>/dev/null)
 TAG_VER=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
 echo "npm=$NPM_VER ssot=$SSOT_VER tag=$TAG_VER"   # 期望：三者一致
 
-# 子项 c: tag 指向的 commit message 含版本号（被 pre-push-check.sh 步骤 7 全量覆盖）
-
-# 子项 d: 发版前工作树 clean
-git diff --quiet || echo "⚠️ 工作树有未提交修改"
-
-# 子项 e: 全量历史 tag commit message 含版本号（被 pre-push-check.sh 步骤 7 全量覆盖）
+# 子项 c/d/e: tag commit message 含版本号 + 工作树 clean — 被 pre-push-check.sh 步骤 7 全量覆盖，不再重复
 ```
 
 #### 18. 扩展审计规则源码回归锁——A19 commit 质量 + A18 垃圾文件（v1.2.1 归并 18+19）
@@ -498,19 +493,7 @@ grep -c "向后兼容\|undefined\|actionGovernance" engine/audit/src/audit-histo
 # 子项 f: audit-history 测试用例数（测试数声称已被维度 13 SSOT 反查覆盖，此处只验证结构）
 grep -c "  it(" engine/audit/src/audit-history.test.ts   # ≥11
 ```
-#### 34. 文档头日期 + 文档数字 SSOT 一致性（v1.2.0 归并自 34+35）
-
-```bash
-# 子项 a: check-version.sh 有日期扫描 + 跑 check-version 全绿
-grep -c "日期一致性扫描\|文档头日期" tools/check-version.sh   # ≥1
-bash tools/check-version.sh 2>&1 | tail -5   # 期望：全部通过
-# 子项 b: README 无模糊数字（700+ 等区间声称）+ 使用精确数字
-grep -n "[0-9]\++\|700+" README.md 2>/dev/null   # 期望：零命中
-# 子项 c: test-count.sh 实测与文档声称比对
-ACTUAL=$(bash tools/test-count.sh --quiet 2>&1 | grep -oE 'TOTAL_TESTS=[0-9]+' | cut -d= -f2); echo "实测 workspace 测试数: $ACTUAL"
-# 子项 d: 三产品关系表述一致
-grep -c "独立产品\|按需选用\|独立安装" README.md FDE/README.md FORGE/README.md 2>/dev/null   # 每个文档 ≥1
-```
+<!-- #34 [v1.2.7 移除: 子项 a/c 被 check-version.sh + check-test-count.sh 全量覆盖；子项 b/d 被 acceptance-test S165 覆盖] -->
 <!-- #35 [v1.2.0 归并至维度 34] -->
 <!-- #36 [v1.2.3 归并至维度 23 子项 e：跨产品 install CI 验证检查] -->
 <!-- #37 [v1.2.1 归并至维度 8：red-team 场景检查是 acceptance-test 健壮性的子集] -->
@@ -729,7 +712,8 @@ grep -c "FDE Agent\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODE
 node -e "const fs=require('fs');const dirs=['engine','LOOP','FDE','SKILL','docs','tools','.github'];let hits=[];dirs.forEach(d=>{if(!fs.existsSync(d))return;function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist','target','archive','changelog'].includes(e.name))continue;const f=dir+'/'+e.name;if(e.isDirectory())walk(f);else if(e.name.endsWith('.md')||e.name.endsWith('.ts')||e.name.endsWith('.sh')){const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('sofagent/skill/')&&!l.includes('.sofagent/skill/')&&!l.includes('已')&&!l.includes('旧')&&!l.includes('→')&&!l.includes('历史'))hits.push(f+':'+(i+1))})}}}walk(d)});['install.sh','SECURITY.md','README.md'].forEach(f=>{if(!fs.existsSync(f))return;const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('sofagent/skill/')&&!l.includes('.sofagent/skill/')&&!l.includes('已')&&!l.includes('旧')&&!l.includes('→')&&!l.includes('历史'))hits.push(f+':'+(i+1))})});console.log(hits.length===0?'✅ sofagent/skill/ 零残留':'❌ FOUND '+hits.length);hits.forEach(h=>console.log('  '+h))"
 
 # 子项 b: agents/SKILL/ 旧路径残留（应零命中，排除 changelog 历史 + acceptance-test 反向断言）
-node -e "const fs=require('fs');const dirs=['engine/src','engine/orchestrator/src','engine/rules/src','LOOP','FDE','SKILL','docs','tools'];let hits=[];dirs.forEach(d=>{if(!fs.existsSync(d))return;function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist'].includes(e.name))continue;const f=dir+'/'+e.name;if(e.isDirectory())walk(f);else if(e.name.endsWith('.md')||e.name.endsWith('.ts')||e.name.endsWith('.sh')){const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('agents/SKILL')&&!f.includes('changelog/')&&!(f.includes('acceptance-test')&&l.includes('! -d')))hits.push(f+':'+(i+1))})}}}walk(d)});console.log(hits.length===0?'✅ agents/SKILL/ 零残留':'❌ FOUND '+hits.length);hits.forEach(h=>console.log('  '+h))"
+# v1.2.7 清理：engine/src + LOOP 目录 v1.2.0 重构后已删除，从扫描数组移除
+node -e "const fs=require('fs');const dirs=['engine/orchestrator/src','engine/rules/src','FDE','SKILL','docs','tools'];let hits=[];dirs.forEach(d=>{if(!fs.existsSync(d))return;function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist'].includes(e.name))continue;const f=dir+'/'+e.name;if(e.isDirectory())walk(f);else if(e.name.endsWith('.md')||e.name.endsWith('.ts')||e.name.endsWith('.sh')){const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('agents/SKILL')&&!f.includes('changelog/')&&!(f.includes('acceptance-test')&&l.includes('! -d')))hits.push(f+':'+(i+1))})}}}walk(d)});console.log(hits.length===0?'✅ agents/SKILL/ 零残留':'❌ FOUND '+hits.length);hits.forEach(h=>console.log('  '+h))"
 
 # 子项 c: SECURITY.md Dengine/ 残留（应零命中）
 node -e "const fs=require('fs');const c=fs.readFileSync('SECURITY.md','utf8');let n=0;c.split('\n').forEach((l,i)=>{if(l.includes('Dengine')){console.log('  L'+(i+1)+': '+l.trim());n++}});console.log(n===0?'✅ SECURITY.md Dengine 零残留':'❌ FOUND '+n)"
@@ -1036,6 +1020,27 @@ TOOLS_ARRAY=$(grep -cE "name:\s*'" engine/mcp/src/mcp-server.ts)
 CASES=$(grep -cE "case '" engine/mcp/src/mcp-server.ts)
 echo "imports=$IMPORTS tools_array=$TOOLS_ARRAY cases=$CASES"
 # 期望：三者数量接近一致（tools_array 含历史 tool，但不应有 import 的 tool 缺 case）
+```
+
+#### 71. package.json build 脚本禁用 `|| true` 吞编译错误（v1.2.7 新盲区）
+
+> v1.2.7 教训：`tsc && [...] || true` 末尾 `|| true` 会吞掉 tsc 编译失败的 exit code，导致 build 永远报成功。正确格式是子 shell 分组 `(...; true)`——在子 shell 内执行后返回 true，不影响外层 exit code 传递。
+
+```bash
+# 检测所有 package.json 的 build 脚本不含裸 || true 吞错误
+BAD=$(grep -rE '"build".*\|\| true' engine/*/package.json 2>/dev/null | head -1)
+[ -z "$BAD" ] && echo "✓ 无 || true 吞错误" || echo "✗ 发现: $BAD"
+# 期望：零命中（正确格式是 (...; true) 子 shell 分组）
+```
+
+#### 72. 函数定义作用域 vs 引用位置——局部函数禁被模块级引用（v1.2.7 新盲区）
+
+> v1.2.7 教训：`isReportText` 定义在 `runWorker` 局部作用域内，但模块级函数 `extractAgentText` 也调用了它 → `ReferenceError` 运行时崩溃。TS/JS 不会编译期报此错。
+
+```bash
+# 检查 FORGE driver：局部定义（缩进 function）是否被模块级区域引用
+node -e "const fs=require('fs'),src=fs.readFileSync('FORGE/src/fresh-eyes-driver.mjs','utf8');const mod=[...src.matchAll(/^function (\w+)/gm)].map(m=>m[1]);const loc=[...src.matchAll(/^\s+function (\w+)/gm)].map(m=>m[1]).filter(n=>!mod.includes(n));const bad=loc.filter(fn=>src.slice(0,src.indexOf('function '+fn)).includes(fn));console.log(bad.length?'ISSUE: '+bad.join(','):'OK')" 2>/dev/null
+# 期望：OK
 ```
 
 
