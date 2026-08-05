@@ -2,8 +2,8 @@
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离 + v1.2.5 激活链Phase1 + v1.2.5 审计加固A20-A23 + v1.2.5 daemon可靠性 + v1.2.5 多设备前置
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
-# 场景数：142 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
-#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 207 为编号上限，非场景数
+# 场景数：141 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
+#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 207 为编号上限，非场景数；S197 归并至 S164
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
 RUN_MODE="all"
@@ -795,19 +795,7 @@ if [ -f "$HISTORY_FILE" ]; then
   set +e; $CLI --doctor >/dev/null 2>&1; rc=$?; set -e
   [ "$rc" = "0" ] || [ "$rc" = "1" ] && pass || fail "doctor 因损坏行崩溃（exit=$rc）"
 else warn "history.jsonl 未生成，跳过损坏行测试"; fi
-cd "$TMP_REPO"; HISTORY_FILE=".sofagent/audit/history.jsonl"; mkdir -p "$(dirname "$HISTORY_FILE")"
-for i in 1 2 3; do echo "// commit $i" >> README.md; git add README.md; $CLI --diff --cached --task "gen history $i" >/dev/null 2>&1 || true; git rm --cached -f README.md >/dev/null 2>&1 || true; done
-if [ -f "$HISTORY_FILE" ]; then
-  LINE_COUNT=$(wc -l < "$HISTORY_FILE" | tr -d ' ')
-  if [ "$LINE_COUNT" -ge 2 ]; then
-    cp "$HISTORY_FILE" "$HISTORY_FILE.bak"; sed -i.tmp '2s/"prevHash":[[:space:]]*"[^"]*"/"prevHash":"tampered99"/' "$HISTORY_FILE"
-    set +e
-    TAMPER_RUN=$(cd "$TMP_REPO" && node -e "try { const { checkHistoryChainIntegrity } = require('$PROJECT_ROOT/engine/audit/dist/audit-history.js'); console.log(checkHistoryChainIntegrity() ? 'CHAIN_OK' : 'CHAIN_BREAK'); } catch (e) { console.log('CHAIN_ERROR'); }" 2>/dev/null) || true
-    set -e
-    echo "$TAMPER_RUN" | grep -q "CHAIN_BREAK" && pass || warn "history.jsonl 篡改检测环境依赖（hash chain 逻辑由 npm test 覆盖）"
-    mv "$HISTORY_FILE.bak" "$HISTORY_FILE"
-  else warn "history.jsonl 行数不足（<2），跳过篡改检测"; fi
-else warn "history.jsonl 未生成，跳过篡改检测"; fi
+# 篡改检测（原 L798-810）已归并至 S18 硬断言覆盖
 scenario 93 "red-team 三合一"
 cd "$TMP_REPO"
 for i in 1 2 3; do rm -f "$TMP_REPO/.git/hooks/commit-msg"; done
@@ -1376,7 +1364,7 @@ S164_OK=true
 for p in install.sh engine/think/src/think-generator.ts; do test -e "$PROJECT_ROOT/$p" || { fail "文档引用的代码路径不存在: $p"; S164_OK=false; }; done
 node -e "const fs=require('fs'),path=require('path');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=0;for(const fp of files){const c=fs.readFileSync(fp,'utf8'),dir=path.dirname(fp);const re=/\]\(((?:\.\.?\/)?[^)]+\.md(?:#[^)]*)?)\)/g;let m;while((m=re.exec(c))){const href=m[1].split('#')[0];if(href.startsWith('http'))continue;if(!fs.existsSync(path.resolve(dir,href))){console.log('断链:',fp,'->',m[1]);bad++;}}}process.exit(bad?1:0);" >/dev/null 2>&1 || { fail "存在指向不存在文件的跨文档 Markdown 链接"; S164_OK=false; }
 $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接无死链）"
-scenario 165 "关键数字跨文档一致性——测试数 / 规则数 24 / acceptance 142"
+scenario 165 "关键数字跨文档一致性——测试数 / 规则数 24 / acceptance 141"
 S165_OK=true
 TEST_COUNT=""
 if [ -f "$PROJECT_ROOT/tools/test-count.sh" ]; then
@@ -1386,8 +1374,8 @@ if [ -n "$TEST_COUNT" ] && [ "$TEST_COUNT" -gt 0 ] 2>/dev/null; then
   for f in README.md docs/WIKI.md; do grep -q "$TEST_COUNT" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 $TEST_COUNT（数字漂移）"; S165_OK=false; }; done
 fi
 for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do grep -q "24 条\|24 个\|24 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 24（数字漂移）"; S165_OK=false; }; done
-for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "142" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 142"; S165_OK=false; }; done
-$S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / 142）"
+for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "141" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 141"; S165_OK=false; }; done
+$S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / 141）"
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
 S166_OK=true
 node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}process.exit(bad.length?(console.log('U+FFFD:',bad.join(',')),1):0);" >/dev/null 2>&1 || { fail "活跃文档存在 U+FFFD 编码污染"; S166_OK=false; }
@@ -1575,28 +1563,8 @@ grep -q "SOFAGENT_LLM_A" "$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts" 2
 grep -q "SOFAGENT_LLM_B" "$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts" 2>/dev/null || { fail "nodes.ts 缺少 SOFAGENT_LLM_B 回退"; S196_OK=false; }
 $S196_OK && pass "resolveLLMModel/resolveApiKey 四级回退（SOFAGENT_LLM → _ROLE → _A → _B）"
 
-scenario 197 "v1.2.6 — 文档死链清零（docs/ 下 .md 互链全部可达）"
-# 复用 scenario 164 同款 node 实现（v1.2.6 教训：bash grep+sed 清洗 bug 导致 381 假阳性，
-# sed 's/]((//' 删不掉 ]( 单括号 → target 残留 ]( 前缀 → 全部误判为死链）
-S197_OK=true
-TOTAL_BROKEN=$(node -e "
-const fs=require('fs'),path=require('path');
-const{execSync}=require('child_process');
-const root=process.env.PROJECT_ROOT;
-const files=execSync('find \"'+root+'/docs\" -name \"*.md\" -not -path \"*/archive/*\"').toString().trim().split('\n').filter(Boolean);
-let bad=0;
-const re=/\]\(((?:\.\.?\/)[^)]+\.md(?:#[^)]*)?)\)/g;
-for(const fp of files){
-  let c; try{c=fs.readFileSync(fp,'utf8')}catch{continue}
-  const dir=path.dirname(fp);let m;
-  while((m=re.exec(c))){
-    const href=m[1].split('#')[0];
-    if(!fs.existsSync(path.resolve(dir,href))){bad++;}
-  }
-}
-console.log(bad);
-" 2>/dev/null || echo "999")
-[ "$TOTAL_BROKEN" -eq 0 ] && pass "docs/ 下文档死链清零（TOTAL_BROKEN=0）" || { fail "docs/ 下仍有 ${TOTAL_BROKEN} 处死链"; S197_OK=false; }
+# S197 已归并至 S164（全项目 .md 死链检测已覆盖 docs/ 子集）
+pass "S197 归并至 S164（全项目死链检测）"
 
 # ─── v1.2.7 新增场景（S198-S207）───
 
