@@ -17,10 +17,13 @@
 //   'reviewer'  → reviewer/SKILL.md + REVIEWER_TOOLS
 //   'engineer'  → engineer/SKILL.md + ENGINEER_TOOLS
 
+import qwen from './qwen3.8-max.mjs';
 import glm from './glm-5.2.mjs';
 
 export default {
-  A: { model: glm, role: 'reviewer' },   // 审查者：GLM-5.2 → GLM_API_KEY（2026-08-05 从 DeepSeek V4 Flash 切入，A/B 统一 GLM Coding Plan）
+  // A 审查者用 Qwen3.8-max（阿里百炼 thinking-only 模型）——与 B 工程师(GLM-5.2)不同厂商，
+  // 保持双盲审查的模型独立性。run-06 曾临时改成全 GLM（B 模型自我审查=退步），恢复双模型。
+  A: { model: qwen, role: 'reviewer' },  // 审查者：Qwen3.8-max → QWEN_API_KEY
   B: { model: glm, role: 'engineer' },   // 工程师：GLM-5.2 → GLM_API_KEY
   V: { model: glm, role: 'reviewer' },   // 验证者：GLM-5.2 → GLM_API_KEY（与 B 共用，key 跟模型走自动一致）
 };

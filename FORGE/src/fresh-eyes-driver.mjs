@@ -12,10 +12,10 @@
 //   node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>
 //
 // 模型配置抽取到 FORGE/models/（换模型只改 profile.mjs 一行）：
-//   A（审查者）= GLM-5.2            智谱 Coding Plan 订阅制（2026-08-05 A/B 统一 GLM）
+//   A（审查者）= Qwen3.8-max         阿里百炼 Token Plan 订阅制（thinking-only，最强推理）
 //   B（工程师）= GLM-5.2            智谱 Coding Plan 订阅制（代码编写强项）
 //   V（验证者）= GLM-5.2            智谱 Coding Plan 订阅制（与 B 共用）
-//   GLM-5.2 支持 thinking + reasoning_effort 参数（Coding Plan 订阅制，不按量计价）。
+//   双模型设计：A/B 用不同厂商保持审查独立性（双盲审查原则）。
 //   切换模型：编辑 FORGE/models/profile.mjs，改 import 和映射即可，不需要改本文件。
 // ============================================================
 
@@ -69,7 +69,7 @@ const RUNS_DIR    = join(SOFAGENT_HOME, 'data', 'forge-runs');
 const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
 const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 
-// A/B/V 统一 GLM-5.2 Coding Plan，共用 GLM_API_KEY。
+// A=Qwen3.8-max (QWEN_API_KEY), B/V=GLM-5.2 (GLM_API_KEY)。
 // key 跟模型走——模型文件标注 apiKeyEnv，profile.mjs 引用时自动继承。
 // ─── 模型配置（从 FORGE/models/ 加载，换模型改 profile.mjs 即可）─────────────
 import { resolveConfigs, resolvePricing } from '../models/index.mjs';
@@ -80,15 +80,22 @@ const MODEL_CONFIGS = resolveConfigs(AGENTS_DIR);
 //   L1 软熔断(TOOL_SOFT_LIMIT)：stateModifier 注入 HumanMessage 强制收尾
 //   L2 硬熔断(TOOL_HARD_LIMIT)：stream 循环物理 break，抢救部分产物
 //   L3 框架兜底(STEP_RECURSION_LIMITS)：LangGraph recursionLimit 最终防线
-// 数值关系：200(劝) → 200(拽) → 500(杀)，给足冗余让审查者完成取证+写报告。
-// run-07 教训：v1.2.6 版本范围大，50/60 步不够审查者完成取证，
-// 产物全是 grep/cat 原始转储，无审查结论。
-const TOOL_SOFT_LIMIT  = 60;   // stateModifier：超此值注入"立即写报告"HumanMessage（v1.2.7：100→60，run-03 教训：100 次仍不够模型收敛写报告）
-const TOOL_HARD_LIMIT  = 80;   // stream loop：超此值进入"写报告窗口"（v1.2.7：100→80，配合软上限降低更早介入）
-// 审查类步骤（a-check/b-check）探索深度高（12 视角 × 30-60 文件），需要更长切换时间
+//
+// v1.2.7 run-06 教训（2026-08-05）：TOOL_SOFT_LIMIT=60 / TOOL_HARD_LIMIT=80 时，
+// GLM-5.2 在审查步骤调 60+ 次工具不收敛——软熔断注入的"别调工具了"HumanMessage
+// 被无视，因为 tools 数组仍在，模型有工具可调就继续调。
+// v1.2.7 修复（2026-08-05）：大幅收紧工具预算 + 缩短写报告窗口。
+//   审查步骤（a-check/b-check）的核心任务是在 12 个视角里 grep+cat 文件，
+//   每个视角约 2-3 次工具调用 = 24-36 次。35 次软上限给足取证空间，
+//   45 次硬上限 + 15 步窗口确保模型收敛写报告。
+//   recursionLimit 500→300：原值给的空间太大反而让模型不收敛。
+const TOOL_SOFT_LIMIT  = 35;   // stateModifier：超此值注入"立即写报告"HumanMessage
+const TOOL_HARD_LIMIT  = 45;   // stream loop：超此值进入"写报告窗口"
+// 审查类步骤（a-check/b-check）探索深度高（12 视角 × 2-3 文件），需要时间切换到报告模式
 // 修复/验证类步骤（b-fix/a-verify）是有限任务，5 步够用
-// run-07 教训：统一 5 步在审查步骤上 0% 成功率，改 10 步后审查步骤能完成写报告
-const REVIEW_GRACE_STEPS  = 40;  // 审查步骤写报告窗口（v1.2.7：80→40，配合工具调用惩罚加速收敛）
+// run-06 教训：REVIEW_GRACE_STEPS=40 太长，模型在窗口内又调了 20+ 次工具。
+// 收紧到 15 步 + 惩罚系数加速收敛。
+const REVIEW_GRACE_STEPS  = 15;  // 审查步骤写报告窗口
 const DEFAULT_GRACE_STEPS = 5;   // 其他步骤写报告窗口（superstep 数）
 
 // ─── 模型定价（从 FORGE/models/ 加载）──────────────────────
@@ -720,9 +727,14 @@ async function runWorker(step, roundDir, target) {
       }
       if (toolCallCount >= TOOL_HARD_LIMIT) {
         const forceReport = new HumanMessage({
-          content: '【🔴 系统最终警告 🔴】你已调用 ' + toolCallCount + ' 次工具，远超预算。' +
-            '现在必须立即输出审查报告文本。禁止再调用任何工具。' +
-            '直接在回复中写出完整的 12 视角审查发现，格式：[视角] 路径 · 描述 · 优先级(P0|P1|P2)。'
+          content: '【🔴🔴 绝对最终指令——违反将导致你的审查成果全部丢弃 🔴🔴】\n' +
+            `你已调用 ${toolCallCount} 次工具，已到达硬上限 ${TOOL_HARD_LIMIT}。\n` +
+            '任何进一步的工具调用都将被系统拦截，你的审查工作将归零。\n\n' +
+            '现在立即、马上、在这一条回复中输出完整的审查报告。\n' +
+            '不要思考下一步该看什么文件。不要写"让我再检查一下"。\n' +
+            '直接写报告。格式：\n' +
+            '## 审查发现\n\n### finding-01\n- 视角：XXX\n- 文件：路径\n- 描述：问题\n- 优先级：P0|P1|P2\n\n' +
+            '用你现在已经掌握的全部信息写。信息不足的发现标注 P2。'
         });
         if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
           return [systemMsg, forceReport, ...messages];
@@ -734,10 +746,13 @@ async function runWorker(step, roundDir, target) {
 
       if (toolCallCount >= TOOL_SOFT_LIMIT) {
         const forceReport = new HumanMessage({
-          content: '【系统强制指令】你已经调用了 ' + toolCallCount + ' 次工具，超过软上限。' +
-            '立即停止所有探索，用已掌握的信息写报告并写入产物文件。不要再调任何工具。'
+          content: '【🔴 系统强制指令——你已超过工具预算 🔴】\n' +
+            `你已调用 ${toolCallCount} 次工具，超过软上限 ${TOOL_SOFT_LIMIT}。\n` +
+            `硬上限 ${TOOL_HARD_LIMIT} 即将到来。到硬上限时系统将物理中断你的工作。\n\n` +
+            '立即停止探索，用已掌握的信息写报告并写入产物文件。\n' +
+            '你的工具调用已经足够——现在需要的是把发现组织成报告，而不是继续搜集信息。'
         });
-        console.warn(`  ⚡ [${step}#${role}] 工具调用 ${toolCallCount} 次超软上限，注入强制收尾指令`);
+        console.warn(`  ⚡ [${step}#${role}] 工具调用 ${toolCallCount} 次超软上限，注入强制收尾指令（硬上限 ${TOOL_HARD_LIMIT}）`);
         if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
           return [systemMsg, forceReport, ...messages];
         }
@@ -778,10 +793,12 @@ async function runWorker(step, roundDir, target) {
   //   太高会导致消息累积 OOM（exit 137）
   // - a-verify：分片后每批 5 条 × 2 操作 = 10 步，给 150 是 15 倍余量
   const STEP_RECURSION_LIMITS = {
-    // a-check/b-check: 200 = L2 硬熔断(100次×2superstep=200) + 充足缓冲。
-    'a-check': 200,
-    'b-check': 200,
-    'a-consolidate': 200,
+    // a-check/b-check: 120 = L2 硬熔断(45次×2superstep≈90) + 30 步缓冲。
+    // v1.2.7 run-06 教训：原 200 给的空间太大，模型不收敛调 60-80 次工具。
+    // 收紧工具预算(35/45)后 recursionLimit 跟着降，避免 OOM。
+    'a-check': 120,
+    'b-check': 120,
+    'a-consolidate': 100,
     'b-fix': 300,
     'a-verify': 300,
   };
@@ -936,19 +953,25 @@ async function runWorker(step, roundDir, target) {
   // 6. 提取文本输出
   let text = extractAgentText(result);
   if (!text) {
-    // 硬熔断后模型未输出文本——先尝试无工具裸 LLM 报告生成。
-    // run-06 教训：GLM-5.2 在审查步骤调 80+ 次工具不收敛，stateModifier
-    // 注入的"强制写报告"HumanMessage 被忽略（tools 数组仍在，模型继续走 tool 路线）。
-    // 解法：绕过 agent 的 tool 循环，直接用裸 LLM 调用——不传 tools，
-    // 模型无法调工具，只能输出文本。把工具结果摘要作为上下文发给模型。
-    console.warn(`  ┄ [${step}] 模型未输出文本，启动无工具裸 LLM 报告生成`);
-    try {
-      text = await generateReportWithoutTools(model, result?.messages ?? [], step, role, stepDef);
-      if (text) {
-        console.log(`  ✅ [${step}] 裸 LLM 报告生成成功（${text.length} 字符）`);
+    // v1.2.7 run-06 修复：generateReportWithoutTools 只在硬熔断(hardBreak)时触发。
+    //
+    // 原设计问题：无论是否硬熔断，只要 extractAgentText 返回空就走裸 LLM 报告生成。
+    // 这导致正常流程中模型偶尔没输出文本（如 API 超时重试后 content 丢失）时，
+    // 也会启动一个完全脱离 agent 上下文的裸 LLM 调用——报告质量极差且不可预测。
+    //
+    // 正确行为：
+    //   - hardBreak=true（工具预算耗尽，agent 被物理中断）→ 启动裸 LLM 抢救（合理）
+    //   - hardBreak=false（正常完成但 content 为空）→ 直接走 synthesizeReportFromMessages 碎片合成
+    if (hardBreakFlag) {
+      console.warn(`  ┄ [${step}] 硬熔断后模型未输出文本，启动无工具裸 LLM 报告生成`);
+      try {
+        text = await generateReportWithoutTools(model, result?.messages ?? [], step, role, stepDef);
+        if (text) {
+          console.log(`  ✅ [${step}] 裸 LLM 报告生成成功（${text.length} 字符）`);
+        }
+      } catch (bareErr) {
+        console.warn(`  ⚠️ [${step}] 裸 LLM 报告生成失败: ${bareErr.message}，降级为碎片合成`);
       }
-    } catch (bareErr) {
-      console.warn(`  ⚠️ [${step}] 裸 LLM 报告生成失败: ${bareErr.message}，降级为碎片合成`);
     }
     if (!text) {
       // 最终兜底：从工具结果合成最小报告
@@ -1062,12 +1085,14 @@ function extractAgentText(result) {
 }
 
 /**
- * 无工具裸 LLM 报告生成。
+ * 无工具裸 LLM 报告生成（仅硬熔断 hardBreak=true 时触发）。
  *
- * 当 agent 的 tool 循环无法收敛时（模型在硬上限后仍不停调工具），
- * 绕过 createReactAgent，直接用 LLM.invoke() 发一次无 tools 请求。
- * 把工具调用结果的关键信息作为摘要上下文发给模型，让它基于已掌握的
- * 信息写出完整报告。
+ * 当 agent 撞了 TOOL_HARD_LIMIT 后进入写报告窗口，窗口耗尽模型仍没输出文本，
+ * 此时用裸 LLM 调用（不传 tools）作为最后抢救——模型无法调工具只能输出文本。
+ *
+ * v1.2.7 run-06 修复：此函数从"extractAgentText 返回空就调用"改为
+ * "仅 hardBreak=true 时调用"。正常流程模型没输出文本不该走这条路径，
+ * 那属于 API 异常，应该走 synthesizeReportFromMessages 碎片合成。
  *
  * 为什么这么做：createReactAgent 的 tools 在创建时就固定了，stateModifier
  * 只能改消息不能改 tools。LangGraph React 循环里只要 tools 不为空，
