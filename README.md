@@ -21,8 +21,6 @@
   <a href="#快速开始"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>当前版本：v1.2.7</strong> · 2026-08-05 · 新增功能详见 [CHANGELOG.md](./CHANGELOG.md)</p>
-
 <p align="center">
   <a href="#这是什么">这是什么</a> · <a href="#快速开始">快速开始</a> · <a href="#延伸阅读">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>

@@ -21,8 +21,6 @@
   <a href="#quick-start"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
-<p align="center"><strong>Current version: v1.2.7</strong> · 2026-08-05 · See [CHANGELOG.md](./CHANGELOG.md) for what's new</p>
-
 <p align="center">
   <a href="#what-is-this">What is this</a> · <a href="#quick-start">Quick Start</a> · <a href="#further-reading">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
