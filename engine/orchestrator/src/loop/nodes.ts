@@ -22,7 +22,7 @@ import { buildConstrainedSystemPrompt } from '@sofagent/harness';
 import { loadConfig, loadEnvConfig, resolveDataDir } from '@sofagent/core';
 import type { AuditHistoryEntry } from '@sofagent/audit';
 import type { WorktreeHandle } from '../worktree-isolation';
-import type { AuditVerdict, LoopArtifacts, LoopGraphState } from './state';
+import type { AuditVerdict, LoopArtifacts, LoopGraphState, LoopNodeName, SessionGoalState } from './state';
 import type { FileCheckpointer } from '../graph/checkpoint';
 import { HITL_OPTIONS, shouldUseAsyncHITL, writeHITLRequest } from '../hitl';
 import { ModelRouter } from '../model-router';
@@ -37,14 +37,23 @@ import { engineerExecute } from './engineer-execute';
  * 从 @sofagent/core 动态加载（运行时已编译为 dist）。
  */
 async function loadGoalFunctions(): Promise<{
-  loadSessionGoal: (dataDir: string) => { condition: string | null } | null;
+  loadSessionGoal: (dataDir: string) => SessionGoalState | null;
   evaluateGoal: (condition: string, currentState: string, dataDir: string) => Promise<'PASS' | 'CONTINUE' | 'FAIL'>;
   incrementContinuations: (dataDir: string) => number;
 } | null> {
   try {
     const core = await import('@sofagent/core');
     return {
-      loadSessionGoal: core.loadSessionGoal,
+      loadSessionGoal: (dataDir: string): SessionGoalState | null => {
+        const goal = core.loadSessionGoal(dataDir);
+        if (!goal) return null;
+        return {
+          condition: goal.condition,
+          maxContinuations: goal.maxContinuations,
+          currentContinuations: goal.currentContinuations,
+          lastEvalResult: null,
+        };
+      },
       evaluateGoal: core.evaluateGoal,
       incrementContinuations: core.incrementContinuations,
     };
@@ -57,7 +66,7 @@ async function loadGoalFunctions(): Promise<{
  * v1.2.7: 本地 fallback 实现——@sofagent/core 未编译时使用。
  * 从 data/orchestrator/goals/current.json 直接读取 goal。
  */
-function loadSessionGoalLocal(dataDir: string): { condition: string; maxContinuations: number; currentContinuations: number } | null {
+function loadSessionGoalLocal(dataDir: string): SessionGoalState | null {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { existsSync, readFileSync } = require('fs');
