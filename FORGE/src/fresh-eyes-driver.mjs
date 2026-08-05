@@ -819,13 +819,7 @@ async function runWorker(step, roundDir, target) {
   // run-07 Round 5：155 字节一句话（"Rule count checks out. Now let me verify..."）
   // 在窗口期被当"报告捕获" → gotReport=true → 流提前结束。
   // 真报告至少含 1 个 ## 标题行 或 ≥ 500 字符。
-  const REPORT_MIN_CHARS = 500;
-  function isReportText(text) {
-    if (!text || !text.trim()) return false;
-    if (text.length >= REPORT_MIN_CHARS) return true;       // 长度够
-    if (/^#{1,3}\s/m.test(text)) return true;               // 含 ## 标题行
-    return false;
-  }
+  // v1.2.7 run-09：isReportText 提到模块级（extractAgentText 也要用）
 
   const invokeAgent = async () => {
     const stream = await agent.stream(
@@ -1022,6 +1016,17 @@ async function runWorker(step, roundDir, target) {
  * v1.2.7 功能⑤：复用 driver-base 的 sliceMultiOutput 实现。
  */
 const sliceMultiOutput = base.sliceMultiOutput;
+
+// ─── 报告质量门控（模块级，extractAgentText 和 stream loop 共用）──────────
+// v1.2.7 run-07：GLM 的中间思考碎片（172 字符"现在让我查看..."）被当报告写入。
+// 真报告至少含 1 个 ## 标题行 或 ≥ 500 字符。
+const REPORT_MIN_CHARS = 500;
+function isReportText(text) {
+  if (!text || !text.trim()) return false;
+  if (text.length >= REPORT_MIN_CHARS) return true;       // 长度够
+  if (/^#{1,3}\s/m.test(text)) return true;               // 含 ## 标题行
+  return false;
+}
 
 /**
  * 从 DeepAgent invoke 结果中提取文本（兼容多种返回格式）。
@@ -1584,7 +1589,7 @@ function spawnWorker(step, roundDir, target, round, options = {}) {
       // Capture stderr to detect StallError marker from worker process
       let stderrBuf = '';
       const child = spawn(process.execPath, [
-        '--max-old-space-size=1536',   // run-07 教训：768MB 默认在 6 轮长循环中不够，主进程静默 OOM
+        '--max-old-space-size=2048',   // run-09 教训：1536MB 在零窗口模式下 a-check+b-check 并行 + generateReportWithoutTools 裸 LLM 调用仍会 OOM
         __filename,
         '--worker',
         '--step', step,
