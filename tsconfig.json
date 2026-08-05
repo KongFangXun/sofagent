@@ -19,7 +19,7 @@
       "@sofagent/ontology": ["engine/ontology/src"],
       "@sofagent/eval": ["engine/eval/src"],
       "@sofagent/core": ["engine/core/src"],
-      "@sofagent/audit": ["engine/audit/src"],
+      "@sofagent/audit": ["engine/audit/src/public-api"],
       "@sofagent/mcp": ["engine/mcp/src"],
       "@sofagent/orchestrator": ["engine/orchestrator/src"],
       "@sofagent/daemon": ["engine/daemon/src"],
@@ -30,5 +30,11 @@
     }
   },
   "include": ["engine/*/src/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "engine/*/src/**/*.test.ts",
+    "engine/*/src/**/__tests__/**",
+    "engine/*/src/cli.ts"
+  ]
 }
