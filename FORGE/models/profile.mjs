@@ -17,13 +17,14 @@
 //   'reviewer'  → reviewer/SKILL.md + REVIEWER_TOOLS
 //   'engineer'  → engineer/SKILL.md + ENGINEER_TOOLS
 
-import qwen from './qwen3.8-max.mjs';
 import glm from './glm-5.2.mjs';
 
 export default {
-  // A 审查者用 Qwen3.8-max（阿里百炼 thinking-only 模型）——与 B 工程师(GLM-5.2)不同厂商，
-  // 保持双盲审查的模型独立性。run-06 曾临时改成全 GLM（B 模型自我审查=退步），恢复双模型。
-  A: { model: qwen, role: 'reviewer' },  // 审查者：Qwen3.8-max → QWEN_API_KEY
-  B: { model: glm, role: 'engineer' },   // 工程师：GLM-5.2 → GLM_API_KEY
-  V: { model: glm, role: 'reviewer' },   // 验证者：GLM-5.2 → GLM_API_KEY（与 B 共用，key 跟模型走自动一致）
+  // A/B/V 统一 GLM-5.2（智谱 Coding Plan 订阅制）。
+  // 双盲审查独立性通过 A/B 不同 prompt 视角保证（a-check.md ≠ b-check.md），
+  // 不依赖不同模型。Qwen3.8-max 在 run-07 验证中无法被 stateModifier 约束
+  // （thinking-only 模型在工具循环中停不下来），改回 GLM-5.2。
+  A: { model: glm, role: 'reviewer' },  // 审查者：GLM-5.2 → GLM_API_KEY
+  B: { model: glm, role: 'engineer' },  // 工程师：GLM-5.2 → GLM_API_KEY
+  V: { model: glm, role: 'reviewer' },  // 验证者：GLM-5.2 → GLM_API_KEY（与 B 共用，key 跟模型走自动一致）
 };

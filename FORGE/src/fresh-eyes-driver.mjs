@@ -12,10 +12,9 @@
 //   node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>
 //
 // 模型配置抽取到 FORGE/models/（换模型只改 profile.mjs 一行）：
-//   A（审查者）= Qwen3.8-max         阿里百炼 Token Plan 订阅制（thinking-only，最强推理）
-//   B（工程师）= GLM-5.2            智谱 Coding Plan 订阅制（代码编写强项）
-//   V（验证者）= GLM-5.2            智谱 Coding Plan 订阅制（与 B 共用）
-//   双模型设计：A/B 用不同厂商保持审查独立性（双盲审查原则）。
+//   A/B/V 统一 GLM-5.2            智谱 Coding Plan 订阅制
+//   双盲审查通过 A/B 不同 prompt 视角保证（a-check.md ≠ b-check.md），不依赖不同模型。
+//   Qwen3.8-max（thinking-only）在工具循环中无法被约束，已弃用（run-07 验证）。
 //   切换模型：编辑 FORGE/models/profile.mjs，改 import 和映射即可，不需要改本文件。
 // ============================================================
 
@@ -69,7 +68,8 @@ const RUNS_DIR    = join(SOFAGENT_HOME, 'data', 'forge-runs');
 const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
 const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 
-// A=Qwen3.8-max (QWEN_API_KEY), B/V=GLM-5.2 (GLM_API_KEY)。
+// A/B/V 统一 GLM-5.2 Coding Plan，共用 GLM_API_KEY。
+// 双盲审查通过 A/B 不同 prompt 视角保证，不依赖不同模型。
 // key 跟模型走——模型文件标注 apiKeyEnv，profile.mjs 引用时自动继承。
 // ─── 模型配置（从 FORGE/models/ 加载，换模型改 profile.mjs 即可）─────────────
 import { resolveConfigs, resolvePricing } from '../models/index.mjs';
@@ -93,10 +93,12 @@ const TOOL_SOFT_LIMIT  = 35;   // stateModifier：超此值注入"立即写报�
 const TOOL_HARD_LIMIT  = 45;   // stream loop：超此值进入"写报告窗口"
 // 审查类步骤（a-check/b-check）探索深度高（12 视角 × 2-3 文件），需要时间切换到报告模式
 // 修复/验证类步骤（b-fix/a-verify）是有限任务，5 步够用
-// run-06 教训：REVIEW_GRACE_STEPS=40 太长，模型在窗口内又调了 20+ 次工具。
-// 收紧到 15 步 + 惩罚系数加速收敛。
-const REVIEW_GRACE_STEPS  = 15;  // 审查步骤写报告窗口
-const DEFAULT_GRACE_STEPS = 5;   // 其他步骤写报告窗口（superstep 数）
+// v1.2.7 run-07 教训（2026-08-05）：GLM-5.2 和 Qwen3.8-max 在写报告窗口内
+// 都继续调工具（HumanMessage 对有 tools 可用的模型无物理约束力）。
+// 窗口给了 15 步反而浪费 15 次工具调用的消息累积 → OOM 风险。
+// 改为零窗口——撞硬上限立即 break，直接走 generateReportWithoutTools。
+const REVIEW_GRACE_STEPS  = 0;   // 审查步骤写报告窗口（0=撞硬上限立即中断）
+const DEFAULT_GRACE_STEPS = 0;   // 其他步骤同上
 
 // ─── 模型定价（从 FORGE/models/ 加载）──────────────────────
 // 单位：CNY per 1M tokens（百万 token 计价）
@@ -895,14 +897,20 @@ async function runWorker(step, roundDir, target) {
       // gotReport 日志交错，导致"报告已捕获"出现在"撞硬上限"之前。
       if (toolCallCount >= TOOL_HARD_LIMIT && !inGraceWindow && !hardBreak) {
         inGraceWindow = true;
-        console.warn(`  ⏳ [${step}#${role}] 工具调用 ${toolCallCount} 次撞硬上限，进入 ${graceSteps} 步写报告窗口`);
+        if (graceSteps > 0) {
+          console.warn(`  ⏳ [${step}#${role}] 工具调用 ${toolCallCount} 次撞硬上限，进入 ${graceSteps} 步写报告窗口`);
+        } else {
+          console.warn(`  🛑 [${step}#${role}] 工具调用 ${toolCallCount} 次撞硬上限，立即中断（零窗口模式）`);
+        }
       }
       // 写报告窗口期检查
       if (inGraceWindow && !gotReport && !hardBreak) {
         graceStepCount++;
         if (graceStepCount >= graceSteps) {
           hardBreak = true;
-          console.warn(`  🛑 [${step}#${role}] 写报告窗口耗尽（${graceSteps} 步），模型仍未输出文本，强制中断`);
+          if (graceSteps > 0) {
+            console.warn(`  🛑 [${step}#${role}] 写报告窗口耗尽（${graceSteps} 步），模型仍未输出文本，强制中断`);
+          }
           break;
         }
       }
@@ -1035,18 +1043,21 @@ function extractAgentText(result) {
   }
   // messages 数组结构（LangGraph stream 返回格式）
   if (result?.messages) {
-    // 从后往前找最后一条「有非空 content 的」AI 消息。
-    // 审查 P1 修复：硬熔断(_hardBreak)时最后一条 AI message 可能只有 tool_calls
-    // 没有 content（qwen3.8 纯函数调用模式），直接 return 空字符串会导致
-    // throw → allSettled rejected → 走降级占位，抢救的部分报告白丢。
-    // 改为：跳过空 content 的 AI 消息，继续往前找有内容的。
+    // 从后往前找最后一条「有报告级 content 的」AI 消息。
+    //
+    // v1.2.7 run-07 修复：原来只要 text.trim() 非空就返回，但 GLM/Qwen 在
+    // 硬熔断前的最后一条 AI message 可能是一句中间思考碎片（如"现在让我
+    // 查看一些特定的代码文件"），172 字符的碎片被当成报告写入了产物文件。
+    //
+    // 报告质量门控：≥500 字符 或 含 ## 标题行（与 stream loop 的 isReportText 一致）。
+    // 如果所有 AI message 都不达标 → 返回 null → 走 generateReportWithoutTools / synthesize 降级。
     for (let i = result.messages.length - 1; i >= 0; i--) {
       const msg = result.messages[i];
       const isAI = msg?._getType?.() === 'ai' || (msg?.tool_calls !== undefined && msg?.content !== undefined);
       if (!isAI) continue;
 
       const content = msg?.content;
-      // 提取文本——如果为空字符串则跳过继续往前找（硬熔断抢救场景）
+      // 提取文本
       let text = '';
       if (typeof content === 'string') text = content;
       else if (Array.isArray(content)) text = content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
@@ -1055,7 +1066,8 @@ function extractAgentText(result) {
         else if (typeof content.content === 'string') text = content.content;
         else text = JSON.stringify(content);
       }
-      if (text.trim()) return text;  // 非空才返回，空则继续往前找
+      // 报告质量门控：非空 + (≥500 字符 或 含 ## 标题行)
+      if (text.trim() && isReportText(text)) return text;
     }
     // 所有消息都不是 AI 类型——从最后一条往前找非 ToolMessage 的消息。
     // 硬中断场景：最后一条可能是 ToolMessage（工具返回值，如 sf_read 读到的
@@ -1109,19 +1121,20 @@ function extractAgentText(result) {
  */
 async function generateReportWithoutTools(model, messages, step, role, stepDef) {
   // 1. 从工具结果中提取关键摘要（文件路径 + grep 结果等）
+  // v1.2.7 run-07：200 字符→500 字符，让裸 LLM 有足够上下文判断 P0/P1 而非全标 P2
   const toolSummaries = [];
   for (const msg of messages) {
     if (msg?._getType?.() === 'tool') {
       const content = typeof msg.content === 'string' ? msg.content : '';
-      // 截取每个工具结果的前 200 字符（保留路径行和关键 grep 输出）
+      // 截取每个工具结果的前 500 字符（保留文件内容片段和关键 grep 输出）
       if (content.trim()) {
-        const truncated = content.slice(0, 200).trim();
+        const truncated = content.slice(0, 500).trim();
         toolSummaries.push(truncated);
       }
     }
   }
-  // 去重 + 最多 40 条（控制 prompt 长度）
-  const unique = [...new Set(toolSummaries)].slice(0, 40);
+  // 去重 + 最多 20 条（500 字符 × 20 = ~10K tokens prompt，控制总量）
+  const unique = [...new Set(toolSummaries)].slice(0, 20);
 
   // 2. 构造裸 LLM 请求——无 tools，只有 system + user 消息
   const { SystemMessage, HumanMessage } = await import('@langchain/core/messages');
@@ -1135,7 +1148,8 @@ async function generateReportWithoutTools(model, messages, step, role, stepDef) 
     `- 产物文件：${(stepDef?.outputs ?? ['report.md']).join(', ')}`,
     '- 每条发现标注优先级：P0（严重/阻塞）/ P1（应该修）/ P2（观察项）',
     '- 给出文件路径和具体描述',
-    '- 如果信息不足以确认某条发现，标注"待证实"并降级为 P2',
+    '- 基于摘要中能看到的实际证据做判断——如果摘要中有明确的代码/配置/路径问题，标 P0 或 P1',
+    '- 只有当摘要信息确实不足以确认时才标 P2"待证实"',
     '- 用中文写，Markdown 格式',
     '',
     `以下是 ${unique.length} 条工具结果摘要：`,
