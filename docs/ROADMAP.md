@@ -1,11 +1,11 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.2.7 · 2026-08-06（UTC）· 🔗 激活链 Phase 2 后半（StateGraph 构建）+ 编排引擎增强 + FORGE 三方抽象
+> v1.2.8 · 2026-08-06（UTC）· 🔗 激活链 Phase 2 后半（StateGraph 构建）+ 编排引擎增强 + FORGE 三方抽象
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
-## 现在在哪：v1.2.7（开发完成 · 🔗 激活链 Phase 2 后半（StateGraph 构建）+ 编排引擎增强 + FORGE 三方抽象）
+## 现在在哪：v1.2.8（开发完成 · 🔗 激活链 Phase 2 后半（StateGraph 构建）+ 编排引擎增强 + FORGE 三方抽象）
 
 > **v1.2.6 交付内容**：
 > **🔗 激活链 Phase 2 前半**：workflow-parser 扩展支持 `agent: enterprise` 类型 + registry.ts 的 SubAgentDefinition 增加 hitl/hitlConfig/knowledgeDomain 字段 + 2A workflow.yml 格式对齐 + 2B SOFAGENT_LLM env 打通。

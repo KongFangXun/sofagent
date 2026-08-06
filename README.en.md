@@ -17,7 +17,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.7-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.8-16B8F3" alt="Version" /></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
@@ -117,7 +117,7 @@ After the FDE delivers the ontology + workflow.yml + skills/, since v1.2.5 the d
 | Stage | What it does | Version |
 |------|--------|:----:|
 | **ACTIVATE** | Reads the deliverables → registers enterprise SubAgents | v1.2.5 ✅ |
-| **ORCHESTRATE** | Builds the enterprise-specific workflow graph (Phase 2 first half: mapping table + registry extension / Phase 2 second half: enterprise-graph) | v1.2.6 ✅ · v1.2.7 ✅ |
+| **ORCHESTRATE** | Builds the enterprise-specific workflow graph (Phase 2 first half: mapping table + registry extension / Phase 2 second half: enterprise-graph) | v1.2.6 ✅ · v1.2.8 ✅ |
 | **EXECUTE** | Run + human confirmation + per-step audit | v1.2.8-v1.2.9 (planned) |
 | **SUSTAIN** | Continuous optimization, gets better the longer it runs | v1.3.0 (planned) |
 
