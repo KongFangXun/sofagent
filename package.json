@@ -24,7 +24,8 @@
     "test": "npm test --workspaces --if-present && bash tools/sofagent-dashboard.test.sh",
     "test:count": "bash tools/check-test-count.sh",
     "build": "npm run build --workspace=engine/harness && npm run build --workspace=engine/ontology && npm run build --workspace=engine/core && npm run build --workspace=engine/rules && npm run build --workspace=engine/think && npm run build --workspace=engine/audit && npm run build --workspace=engine/eval && npm run build --workspace=engine/skillopt && npm run build --workspace=engine/orchestrator && npm run build --workspace=engine/daemon && npm run build --workspace=engine/ab-test && npm run build --workspace=engine/mcp && npm run build --workspace=engine/hooks/sofagent-load-chain",
-    "postinstall": "npm run build"
+    "postinstall": "npm run build",
+    "postbuild": "node -e \"const fs=require('fs');const dirs=['engine/audit','engine/core','engine/daemon','engine/mcp','engine/orchestrator'];for(const d of dirs){const p=require('path').join(d,'dist');if(fs.existsSync(p)){fs.readdirSync(p).forEach(f=>{if(f.endsWith('.js')){try{fs.chmodSync(require('path').join(p,f),0o755)}catch(e){}}})}}\""
   },
   "//optionalDependencies": "F-18 归属说明：@langchain/anthropic 是 root 级可选依赖，对应编排层 LLM 厂商运行时可选适配器——orchestrator/ab-test 经 @langchain/langgraph 的 createReactAgent（launcher.ts/ab-runner.ts 动态 import）按模型厂商动态加载 ChatAnthropic。源码无静态 import（grep engine/*/src 零命中），仅运行时按需解析；作为 optionalDependency，其安装失败不阻断 build/test，audit 核心引擎零依赖。v1.2.1 (commit 295bf26) 加入。结论：保留并在此注明用途，勿删（删之会破坏运行时 Anthropic 模型动态加载）。",
   "optionalDependencies": {

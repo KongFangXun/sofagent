@@ -10,7 +10,7 @@
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "npm run clean && tsc && ([ -f dist/cli.js ] && chmod +x dist/cli.js; [ -f dist/orchestrator-compare.js ] && chmod +x dist/orchestrator-compare.js; true)",
+    "build": "npm run clean && tsc",
     "test": "vitest run",
     "check": "tsc --noEmit"
   },
