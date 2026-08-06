@@ -11,6 +11,8 @@ import { createHash } from 'crypto';
 
 import type { Fact, Ledger, LLMProvider } from './types';
 import { validateExtractOutput, scanInjection } from './injection-guard';
+// v1.2.8 功能①：事实抽取后自动写入事实级记忆存储
+import { createMemoryStore } from '@sofagent/core';
 
 /** 文本 → 稳定 fact id（内容 hash 前 12 位） */
 function factId(text: string): string {
@@ -27,6 +29,9 @@ function factId(text: string): string {
 export async function extractFacts(ledger: Ledger, llm: LLMProvider): Promise<Fact[]> {
   const facts: Fact[] = [];
 
+  // v1.2.8 功能①：事实级记忆存储——提取后自动写入
+  const memoryStore = createMemoryStore();
+
   // think.md 事实
   if (ledger.thinkContent.trim().length > 0) {
     // [P2-5] 第三层隔离：A9 注入扫描标记 think.md 潜在注入，隔离于提取结果
@@ -35,7 +40,20 @@ export async function extractFacts(ledger: Ledger, llm: LLMProvider): Promise<Fa
     const raw = await llm.extract(marked);
     const texts = validateExtractOutput(raw, marked);
     for (const text of texts) {
-      facts.push({ id: factId(`think:${text}`), text, source: 'think.md' });
+      const fact: Fact = { id: factId(`think:${text}`), text, source: 'think.md' };
+      facts.push(fact);
+      // v1.2.8：写入事实级记忆存储
+      try {
+        memoryStore.set({
+          key: `think.${fact.id}`,
+          value: text,
+          source: 'think.md',
+          confidence: 0.8,
+          tags: ['dream-cycle', 'think'],
+        });
+      } catch {
+        // 记忆存储写入失败不阻塞 pipeline
+      }
     }
   }
 
@@ -49,7 +67,20 @@ export async function extractFacts(ledger: Ledger, llm: LLMProvider): Promise<Fa
           ? `${rule}:${entry.status}`
           : rule;
     const text = `${rule} — ${message}`;
-    facts.push({ id: factId(`audit:${JSON.stringify(entry)}`), text, source: `audit:${rule}` });
+    const fact: Fact = { id: factId(`audit:${JSON.stringify(entry)}`), text, source: `audit:${rule}` };
+    facts.push(fact);
+    // v1.2.8：写入事实级记忆存储
+    try {
+      memoryStore.set({
+        key: `audit.${rule}.${fact.id}`,
+        value: text,
+        source: `audit:${rule}`,
+        confidence: 0.9,
+        tags: ['dream-cycle', 'audit', rule],
+      });
+    } catch {
+      // 记忆存储写入失败不阻塞 pipeline
+    }
   }
 
   return facts;

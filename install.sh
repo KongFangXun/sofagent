@@ -27,7 +27,8 @@
 # v1.0.7: ao 退役，移除 agency-orchestrator 安装逻辑
 # v1.2.0: install.sh 吸收 FDE/fde-install.sh，成为主安装器+FDE 入口
 #
-# 平台：openclaw（完整）/ workbuddy / claude / codex / hermes / 自动探测
+# 平台无关重构：默认安装不探测/不枚举任何平台，只写 sofagent 自己的目录 ~/.sofagent/；
+# 平台集成改为显式 opt-in：--platform openclaw（完整）/ workbuddy / claude / codex / hermes
 # 三引擎：审计 / 回溯 / 进化（FORGE 是内部开发工具，非交付引擎）。
 # 编排引擎为独立可选包 @sofagent/orchestrator，需单独安装（npm install -g @sofagent/orchestrator）。
 #
@@ -37,9 +38,9 @@
 # 版本锁定：本脚本的接口（入参/退出码/副作用）从 v1.1.5 起冻结，
 # 任何 breaking change 必须 bump major 版本并通知调用方。
 # 契约约定：
-#   1. 入参：--platform <name>（可选，缺省时自动探测）/ --base-only（仅装底座）
+#   1. 入参：--platform <name>（可选；缺省时平台无关安装，不再自动探测）/ --base-only（仅装底座）
 #   2. 退出码：0=成功，非 0=失败（调用方依赖 set -e 自动中断）
-#   3. 副作用：写入 ~/.sofagent/ + 目标平台配置目录；不修改调用方脚本
+#   3. 副作用：默认只写 ~/.sofagent/；显式 --platform 时额外写该平台目录；不修改调用方脚本
 #   4. 幂等性：重复执行安全，已存在的 hook/config 不覆盖（除非 --force）
 #   5. 输出：使用 [sofagent] 前缀，调用方可据日志判断阶段
 # ============================================================
@@ -89,12 +90,12 @@ source "${LIB_DIR}/post-install.sh"
 # ── 帮助 ──
 show_help() {
   cat <<EOF
-sofagent install.sh v${VERSION} — 主安装器
+sofagent install.sh v${VERSION} — 主安装器（平台无关）
 
 用法:
-  bash install.sh                       默认模式：底座 + FDE Agent Skill
+  bash install.sh                       默认模式：平台无关安装（只写 ~/.sofagent/）+ FDE Agent Skill
   bash install.sh --base-only           仅装底座（约束层 + 三引擎：审计/回溯/进化）
-  bash install.sh --platform <name>     指定平台：openclaw / workbuddy / claude / codex / hermes
+  bash install.sh --platform <name>     显式平台集成（opt-in）：openclaw / workbuddy / claude / codex / hermes
   bash install.sh --quick               完整安装（静默模式，跳过交互确认）⚠️ 非预览，会写入文件
   bash install.sh --remote              远程安装模式（git clone）
   bash install.sh --force               升级时强制覆盖 custom/ 用户层（确认+备份）
@@ -102,7 +103,8 @@ sofagent install.sh v${VERSION} — 主安装器
   bash install.sh --yes, -y             配合 --force 跳过交互确认（CI 场景）
   bash install.sh --help, -h            显示此帮助
 
-平台: openclaw（完整）/ workbuddy / claude / codex / hermes / 自动探测
+平台: 默认平台无关安装（不探测、不修改任何第三方平台配置，只写 ~/.sofagent/）；
+     显式 --platform 时才做平台集成：openclaw（完整）/ workbuddy / claude / codex / hermes
 EOF
 }
 
@@ -170,6 +172,26 @@ parse_args "$@"
 auto_detect_platform
 resolve_data_dir
 
+# ── 历史注入残留检测（平台无关重构加分项）──
+# 仅检测 + 提示，不自动清理（避免误删用户自己的配置）
+detect_legacy_injections() {
+  local legacy_found=0
+  local oc_cfg="${HOME}/.openclaw/config.json"
+  if [ -f "$oc_cfg" ]; then
+    if grep -q 'loopDetection' "$oc_cfg" 2>/dev/null; then legacy_found=1; fi
+    if grep -q 'before_prompt_build' "$oc_cfg" 2>/dev/null; then legacy_found=1; fi
+  fi
+  if [ -d "${HOME}/.openclaw/hooks/sofagent-load-chain" ] || [ -d "${HOME}/.openclaw/skills/sofagent" ]; then
+    legacy_found=1
+  fi
+  if [ "$legacy_found" = "1" ]; then
+    warn "检测到历史版本注入的 OpenClaw 配置残留（如 config.json 的 loopDetection/before_prompt_build）"
+    warn "  sofagent 现在是平台无关安装——不会再静默修改第三方平台配置"
+    warn "  运行 engine/scripts/uninstall.sh 可清理历史注入残留（会先备份，只删 sofagent 产物）"
+  fi
+}
+detect_legacy_injections
+
 # ════════════════════════════════════════
 # Step 1.5: v1.2.1 安装路径分离——SOFAGENT_HOME 创建 + 数据迁移
 # ════════════════════════════════════════
@@ -204,7 +226,8 @@ mkdir -p "$INTERNAL_ROOT/checkpoint" "$INTERNAL_ROOT/.git-shadow" "$INTERNAL_ROO
 # 写入版本标记
 echo "${VERSION}" > "$SOFAGENT_HOME/VERSION"
 
-# 写入源码仓库路径标记（供升级时定位）
+# 写入源码仓库路径标记（供升级时定位 sofagent 引擎源码位置，
+# sofagent-update 等升级脚本读取此文件找到仓库根以执行 git pull + rebuild）
 echo "$SCRIPT_DIR" > "$SOFAGENT_HOME/REPO_PATH"
 
 # ── 迁移旧数据（Q2 决策：自动迁移）──
@@ -558,19 +581,22 @@ install_skill_unified() {
     mkdir -p "$SOFAGENT_HOME/skill"
     cp -R "$skill_src"/. "$SOFAGENT_HOME/skill/" 2>/dev/null || true
 
-    # 向平台目录 symlink（保留平台发现机制）
-    local platform_skill_dirs=(
-      "${HOME}/.openclaw/skills/sofagent"
-      "${HOME}/.workbuddy/skills/sofagent"
-    )
-    for psd in "${platform_skill_dirs[@]}"; do
-      mkdir -p "$(dirname "$psd")" 2>/dev/null || true
-      ln -sfn "$SOFAGENT_HOME/skill" "$psd" 2>/dev/null || true
-      if [ ! -L "$psd" ]; then
-        warn "  Symlink 创建失败：$psd（可能已被普通目录占用）"
-      fi
-    done
-    ok "  Skill 统一路径已建立：$SOFAGENT_HOME/skill/ → 平台 symlink"
+    # 平台无关重构：仅当用户显式指定平台时才向该平台目录建 symlink——
+    # 默认安装不再创建/修改任何第三方平台目录（如 ~/.openclaw/skills、~/.workbuddy/skills）
+    case "$PLATFORM" in
+      openclaw|workbuddy)
+        local psd="${HOME}/.${PLATFORM}/skills/sofagent"
+        mkdir -p "$(dirname "$psd")" 2>/dev/null || true
+        ln -sfn "$SOFAGENT_HOME/skill" "$psd" 2>/dev/null || true
+        if [ ! -L "$psd" ]; then
+          warn "  Symlink 创建失败：${psd}（可能已被普通目录占用）"
+        fi
+        ok "  Skill 统一路径已建立：${SOFAGENT_HOME}/skill/ → ${psd}（显式平台集成）"
+        ;;
+      *)
+        ok "  Skill 已安装到统一路径：$SOFAGENT_HOME/skill/（平台无关安装，未修改任何平台目录）"
+        ;;
+    esac
   fi
 }
 
@@ -843,16 +869,17 @@ if [ "${BASE_ONLY:-0}" = "0" ]; then
   echo ""
   echo -e "${BOLD}[FDE] 写入 FDE 运行规范 + 安装 Agent Skill...${NC}"
 
-  # ── 写入 fde.md（按平台选目标路径）──
+  # ── 写入 fde.md（默认写 sofagent 自己的目录；显式平台时写平台目录）──
   # ⚠️ 路径必须与 handler.ts / checks.ts 的读取路径对齐：skills/sofagent/
   # （v1.2.0 仓库改名 /sofagent/→/engine/ 不影响部署目标路径——消费方仍读 skills/sofagent/）
+  # 平台无关重构：未显式指定平台时写入 ${SOFAGENT_HOME}（~/.sofagent/），不碰任何第三方平台目录
   case "$PLATFORM" in
     openclaw) FDE_MD_TARGET="$HOME/.openclaw/skills/sofagent/fde.md" ;;
     workbuddy) FDE_MD_TARGET="$HOME/.workbuddy/skills/sofagent/fde.md" ;;
     claude) FDE_MD_TARGET="$HOME/.claude/fde.md" ;;
     codex) FDE_MD_TARGET="$HOME/.codex/fde.md" ;;
     hermes) FDE_MD_TARGET="$HOME/.hermes/fde.md" ;;
-    *) FDE_MD_TARGET="" ;;
+    *) FDE_MD_TARGET="$SOFAGENT_HOME/skills/sofagent/fde.md" ;;  # 平台无关：默认写入自己的目录
   esac
 
   if [ -n "$FDE_MD_TARGET" ] && [ -f "$RULES_SRC" ]; then
@@ -896,7 +923,13 @@ if [ "${BASE_ONLY:-0}" = "0" ]; then
   # ── 验证安装 ──
   echo ""
   echo -e "${BOLD}[FDE] 验证安装...${NC}"
-  bash "${SCRIPT_DIR}/engine/scripts/verify.sh" --quick --platform "$PLATFORM" 2>&1 | tail -3
+  # 平台无关重构：未显式指定平台时不传 --platform（避免触发 verify.sh 自身的平台探测日志）；
+  # || true 防止 verify 失败项在 set -e + pipefail 下中断安装
+  if [ -n "$PLATFORM" ]; then
+    bash "${SCRIPT_DIR}/engine/scripts/verify.sh" --quick --platform "$PLATFORM" 2>&1 | tail -3 || true
+  else
+    bash "${SCRIPT_DIR}/engine/scripts/verify.sh" --quick --quiet 2>&1 | tail -3 || true
+  fi
   echo ""
 
   # ── 设置 data 目录权限 ──

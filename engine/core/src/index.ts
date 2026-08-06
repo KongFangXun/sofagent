@@ -173,6 +173,10 @@ export {
   extractSummary,
 } from './compress-memory';
 
+// ── 事实级记忆存储（v1.2.8 功能①）──
+export { createMemoryStore } from './memory-store';
+export type { MemoryFact } from './memory-store';
+
 // ── 记忆契约（think.md · Ledger-Views-Policy）──
 // think.md 路径 / 层级归属 / 只追加写入点的单一事实来源
 export {

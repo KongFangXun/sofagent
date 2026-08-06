@@ -92,8 +92,9 @@ export function appendAuditTrail(
       mkdirSync(dataDir, { recursive: true });
     }
     appendFileSync(trailPath, JSON.stringify(fullEntry) + '\n', 'utf-8');
-  } catch {
-    // 写入失败不影响主流程
+  } catch (err) {
+    // 写入失败不阻断主流程，但输出告警（P2-15: 原完全静默改为 stderr 告警）
+    console.error('[sofagent] audit-trail 写入失败:', err instanceof Error ? err.message : String(err));
   }
 }
 

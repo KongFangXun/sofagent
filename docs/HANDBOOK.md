@@ -62,7 +62,7 @@
 - **进场梳理 → 部署 AI 节点 → 离场常驻**：FDE 帮你盘清工作流、识别可自动化环节、把重复业务变成自动跑的 Agent，离场后 7×24 自己巡检、自己优化。
 - **每次变更都被管住**：24 条规则硬证据审计，密钥泄漏 / 越界编辑 / 注入攻击 / 盲改当场拦截；出事一键回滚到任意安全状态。
 - **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
-- **平台无关、即挂即用**：骑在你自选的大厂 Agent（Claude Code / Codex / Cursor / WorkBuddy / 扣子 / OpenClaw）之上，不替代模型，只补「可靠执行」。
+- **平台无关、即挂即用**：骑在你自选的大厂 Agent（Claude Code / Codex / WorkBuddy / 扣子 / OpenClaw）之上，不替代模型，只补「可靠执行」。（Cursor 社区验证中）
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
 - **🔗 激活链（v1.2.5+ 规划中）**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
@@ -77,7 +77,7 @@
 借一条河来记：
 
 - **大厂 LLM = 原水**：90% 的智力来自它，sofagent 不自己造水。
-- **大厂 Agent 平台 = 河床**：统一入口（Claude Code / Codex / Cursor / WorkBuddy / OpenClaw），sofagent 不做河床。
+- **大厂 Agent 平台 = 河床**：统一入口（Claude Code / Codex / WorkBuddy / OpenClaw），sofagent 不做河床。
 - **sofagent 引擎 = 堤坝 + 自来水厂 + 管网 + 水龙头（4 项核心已实现）+ 水表（审计已实现，终端 Dashboard v1.2.3 已落地）**：
   - 🧱 **堤坝（约束底座）**——四层加载链，把行为底线焊死在每次对话里
   - 🏭 **自来水厂（沙箱安全）**——让原水变「直饮水」，危险操作隔离在沙箱
@@ -546,7 +546,7 @@ sofagent 站在 6 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 ## 彩蛋
 
-不想装整套 sofagent，只想先给自己的 Agent 加一层「行为底线」？把下面这段直接丢给你的 Agent（Claude Code / Codex / Cursor / WorkBuddy / OpenClaw 都行）：
+不想装整套 sofagent，只想先给自己的 Agent 加一层「行为底线」？把下面这段直接丢给你的 Agent（Claude Code / Codex / WorkBuddy / OpenClaw 都行）：
 
 ```
 请按 sofagent 的约束底座约束自己：

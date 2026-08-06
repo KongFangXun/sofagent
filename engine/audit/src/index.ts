@@ -61,6 +61,7 @@ export type { SafetyResult, SafetyRule } from './rules/skill-safety-rules';
 export { pushAuditResult } from './webhook';
 export type { WebhookPlatform } from './webhook';
 import { analyzeRootCause } from './audit-root-cause';
+import { runVerifyChain, runVerifyCommit } from './commands/verify';
 import { formatSuggestions } from './config-suggestion';
 import { runRegression, type DiffSnapshot } from './audit-regression';
 import { defaultRules, extendedRules } from './rules';
@@ -85,6 +86,10 @@ interface Args {
   installHook: boolean;
   json: boolean;
   rootCause: boolean;
+  /** v1.2.8: --verify-chain 校验 HMAC hash chain 完整性 */
+  verifyChain: boolean;
+  /** v1.2.8: --verify-commit <hash> 检查 commit 是否有审计记录 */
+  verifyCommit?: string;
   regressionDir?: string;
   webhook?: WebhookPlatform;
   webhookUrl?: string;
@@ -115,7 +120,7 @@ interface Args {
 
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, supportBundle: false };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, supportBundle: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff') {
       // P1-12: --diff 无显式值（末尾或后跟其他 flag）→ 用默认 HEAD~1..HEAD，
@@ -150,6 +155,11 @@ function parseArgs(argv: string[]): Args {
       args.json = true;
     } else if (argv[i] === '--root-cause') {
       args.rootCause = true;
+    } else if (argv[i] === '--verify-chain') {
+      args.verifyChain = true;
+    } else if (argv[i] === '--verify-commit' && argv[i + 1]) {
+      i++;
+      args.verifyCommit = argv[i] as string;
     } else if (argv[i] === '--regression' && argv[i + 1]) {
       i++;
       args.regressionDir = argv[i] as string;
@@ -217,6 +227,8 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit --sign-config                    对 config.yml 签名（消除防篡改警告）');
       console.log('  sofagent-audit --support-bundle                 一键生成 issue 摘要 + 证据 zip（脱敏）');
       console.log('  sofagent-audit --root-cause                     根因分析');
+      console.log('  sofagent-audit --verify-chain                   审计链完整性校验');
+      console.log('  sofagent-audit --verify-commit <hash>           检查 commit 审计记录');
       console.log('  sofagent-audit --regression <dir>               回归验证');
       console.log('  sofagent-audit --install-hook                   安装 commit-msg hook');
       console.log('  sofagent-audit --revert <snapshot-sha>              恢复到指定快照');
@@ -247,6 +259,8 @@ function parseArgs(argv: string[]): Args {
         console.log('  --json             JSON 输出');
         console.log('  --install-hook     安装 commit-msg hook');
         console.log('  --root-cause       根因分析');
+        console.log('  --verify-chain     审计链完整性校验');
+        console.log('  --verify-commit    检查 commit 审计记录');
         console.log('  --regression <dir> 回归验证');
         console.log('  --init             一键初始化');
         console.log('  --doctor           环境健康检查（内置完整诊断）');
@@ -369,18 +383,24 @@ function installHook(): void {
  * --root-cause 模式：分析审计历史，输出根因报告 + 配置建议
  */
 function runRootCauseAnalysis(): void {
-  const history = loadHistory();
+  try {
+    const history = loadHistory();
 
-  if (history.length === 0) {
-    console.log('无历史数据。运行 sofagent-audit --diff <range> 后会自动记录审计历史。');
+    if (history.length === 0) {
+      console.log('无历史数据。运行 sofagent-audit --diff <range> 后会自动记录审计历史。');
+      exit(0);
+    }
+
+    const report = analyzeRootCause(history);
+    const output = formatSuggestions(report);
+    console.log(output);
+
     exit(0);
+  } catch (err) {
+    console.error(`❌ sofagent 根因分析失败: ${err instanceof Error ? err.message : String(err)}`);
+    console.error('  可能是审计记录格式不一致。如刚升级版本，历史记录可能缺少部分字段。');
+    exit(1);
   }
-
-  const report = analyzeRootCause(history);
-  const output = formatSuggestions(report);
-  console.log(output);
-
-  exit(0);
 }
 
 /**
@@ -706,6 +726,18 @@ async function main(): Promise<void> {
     return;
   }
 
+  // --verify-chain 模式（v1.2.8 新增）
+  if (args.verifyChain) {
+    runVerifyChain();
+    return;
+  }
+
+  // --verify-commit <hash> 模式（v1.2.8 新增）
+  if (args.verifyCommit) {
+    runVerifyCommit(args.verifyCommit);
+    return;
+  }
+
   // --root-cause 模式：分析审计历史，输出根因报告 + 配置建议
   if (args.rootCause) {
     runRootCauseAnalysis();
@@ -769,7 +801,38 @@ async function main(): Promise<void> {
   }
 
   // 2. 解析 git diff（--cached 模式用于首次提交场景）
-  const diffFiles = args.cached ? parseStagedDiff() : parseDiff(args.diffRange);
+  let diffFiles: DiffFile[];
+  try {
+    diffFiles = args.cached ? parseStagedDiff() : parseDiff(args.diffRange);
+  } catch {
+    // v1.2.8: diff 解析本身报错（如无效 range）——git fatal 不能当"无变更"处理
+    if (args.json) {
+      console.log(JSON.stringify({ exitCode: 2, rules: [], error: 'DIFF_PARSE_FAILED' }, null, 2));
+    } else {
+      console.error(`❌ diff 获取失败——range 可能无效: ${args.diffRange ?? args.cached ? '--cached' : '(空)'}`);
+      console.error('  示例: sofagent-audit --diff origin/main..HEAD');
+    }
+    exit(2);
+  }
+
+  // v1.2.8: diff 为空时二次验证——如果 --diff range 无效（git 报 fatal），parseDiff 可能返回空数组
+  if (!args.cached && diffFiles.length === 0 && args.diffRange) {
+    try {
+      execFileSync('git', ['diff', '--exit-code', args.diffRange], { stdio: 'pipe' });
+    } catch (err) {
+      const stderr = (err as { stderr?: string }).stderr ?? '';
+      // git diff --exit-code 对"无变更"返回 1，对"range 无效"返回 128+不同 stderr
+      if (stderr.includes('fatal') || stderr.includes('not a valid') || stderr.includes('unknown revision')) {
+        if (args.json) {
+          console.log(JSON.stringify({ exitCode: 2, rules: [], error: 'INVALID_DIFF_RANGE' }, null, 2));
+        } else {
+          console.error(`❌ diff range 无效: ${args.diffRange}`);
+          console.error(`  git 报错: ${stderr.trim()}`);
+        }
+        exit(2);
+      }
+    }
+  }
 
   if (diffFiles.length === 0) {
     if (args.json) {
@@ -927,13 +990,22 @@ async function main(): Promise<void> {
   const webhookUrlFinal = args.webhookUrl || config.webhook?.url;
   if (webhookPlatform && webhookUrlFinal) {
     try {
+      // v1.2.8 P1-5: 编译自定义脱敏正则
+      const customSanitizePatterns = config.sanitizePatterns
+        ? config.sanitizePatterns
+            .map((p) => {
+              try { return { pattern: new RegExp(p.pattern, 'g'), replacement: p.replacement }; }
+              catch { return null; }
+            })
+            .filter((p): p is { pattern: RegExp; replacement: string } => p !== null)
+        : undefined;
       const pushed = await pushAuditResult({
         platform: webhookPlatform,
         url: webhookUrlFinal,
         task: args.task,
         rules: results.rules,
         exitCode: results.exitCode,
-      });
+      }, customSanitizePatterns);
       if (!pushed) {
         console.warn('⚠️  webhook 推送失败或无需推送（不影响审计结果）。');
       }
@@ -1145,12 +1217,9 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
 
     const problems = results.rules.filter((r) => r.status !== 'PASS' && r.status !== 'SKIPPED');
     if (problems.length === 0) {
-      // v1.0.8: PASS 时向 stderr 输出轻量签名行（防遗忘装了 sofagent）
-      if (!ci) {
-        // --quiet/--ci 模式抑制签名行
-        const totalRules = results.rules.length;
-        process.stderr.write(`✅ sofagent-audit v${VERSION} · ${totalRules} 条规则全部通过\n`);
-      }
+      // v1.2.8: P1-23 — PASS 时即使 --ci 也输出极简签名到 stderr（防遗忘装了 sofagent）
+      const totalRules = results.rules.length;
+      process.stderr.write(`✅ [sofagent] 审计通过 · ${totalRules} 条规则\n`);
       return;
     }
 

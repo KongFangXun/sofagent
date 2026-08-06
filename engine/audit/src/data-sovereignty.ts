@@ -96,8 +96,9 @@ const SECRET_PATTERNS: RegExp[] = [
 /**
  * 脱敏单个文本——替换敏感串为占位符。
  * 数据主权日志自身绝不能成为第二泄漏点。
+ * v1.2.8 P1-5: 支持自定义正则（sanitizePatterns from config.yml）——企业业务机密（合同名称/客户名单/工资表）
  */
-function sanitizeText(text: string): string {
+function sanitizeText(text: string, customPatterns?: { pattern: RegExp; replacement: string }[]): string {
   let out = text;
   for (const pattern of SECRET_PATTERNS) {
     if (pattern.source === '\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b') {
@@ -108,6 +109,16 @@ function sanitizeText(text: string): string {
       out = out.replace(pattern, (m) => `[REDACTED:${m.length}字符]`);
     }
   }
+  // v1.2.8 P1-5: 自定义业务机密脱敏
+  if (customPatterns) {
+    for (const { pattern, replacement } of customPatterns) {
+      try {
+        out = out.replace(pattern, replacement);
+      } catch {
+        // 无效正则跳过，不阻断审计
+      }
+    }
+  }
   return out;
 }
 
@@ -115,9 +126,9 @@ function sanitizeText(text: string): string {
  * 脱敏整条记录——fields[] 元素与 userIntent 摘要中的敏感串替换为占位符。
  * 返回新对象，不改入参。redacted 标记置 true（只要发生了替换）。
  */
-export function sanitizeRecord(record: DataSovereigntyRecord): DataSovereigntyRecord {
-  const sanitizedFields = record.dataFlow.fields.map((f) => sanitizeText(f));
-  const sanitizedIntent = sanitizeText(record.taskContext.userIntent);
+export function sanitizeRecord(record: DataSovereigntyRecord, customPatterns?: { pattern: RegExp; replacement: string }[]): DataSovereigntyRecord {
+  const sanitizedFields = record.dataFlow.fields.map((f) => sanitizeText(f, customPatterns));
+  const sanitizedIntent = sanitizeText(record.taskContext.userIntent, customPatterns);
   const fieldsChanged = sanitizedFields.some((f, i) => f !== record.dataFlow.fields[i]);
   const intentChanged = sanitizedIntent !== record.taskContext.userIntent;
   return {

@@ -251,7 +251,7 @@ export async function main(cliArgs?: string[]): Promise<void> {
 
   const config = parseArgs(args);
 
-  console.log('sofagent-eval v1.2.4 — 运行质量评估');
+  console.log(`sofagent-eval v${require('../../package.json').version} — 运行质量评估`);
   console.log(`  Golden Set: ${config.goldenSetPath}`);
   console.log('');
 

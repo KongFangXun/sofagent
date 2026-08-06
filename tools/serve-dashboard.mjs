@@ -28,7 +28,7 @@ import net from 'node:net';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const PORT = process.env.DASHBOARD_PORT || 3780;
-// dashboard.html 在仓库根目录（docs/ 已迁移到根，assets 软链指向 docs/assets）
+// dashboard.html 在仓库根目录（docs/assets/ 存放静态资源，此处直接服务仓库根）
 const DOCS_DIR = join(__dirname, '..');
 const SOFAGENT_DATA = process.env.SOFAGENT_HOME
   ? join(process.env.SOFAGENT_HOME, 'data')

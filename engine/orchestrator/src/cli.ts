@@ -5,6 +5,8 @@
 // （engineer→audit→reviewer→human_confirm），支持 --resume 从 checkpoint
 // 恢复。旧版串行路径通过 --legacy 保留兼容。
 
+import { join } from 'path';
+
 const args = process.argv.slice(2);
 const subcommand = args[0];
 async function main() {
@@ -30,6 +32,8 @@ async function main() {
     console.log('                                   激活 FDE 交付物 → 注册企业 SubAgent');
     console.log('                                   --dry-run 只预览不写文件');
     console.log('                                   --node-filter 只激活指定节点');
+    console.log('  run-enterprise [--workflow <path>]');
+    console.log('                                   v1.2.8: 从 workflow.yml 构建图 + 逐节点执行企业 Agent');
     process.exit(0);
   }
 
@@ -251,9 +255,104 @@ async function main() {
         process.exit(1);
       }
     }
+    case 'run-enterprise': {
+      // v1.2.8 功能④：从 workflow.yml 构建图 + 逐节点执行企业 Agent
+      const wfIdx = args.indexOf('--workflow');
+      const workflowPath = wfIdx !== -1
+        ? args[wfIdx + 1]!
+        : join(process.cwd(), '.sofagent', 'data', 'workflow.yml');
+
+      const { buildEnterpriseStateGraph } = await import('./enterprise-graph');
+      const { executeNode } = await import('./node-executor');
+      const { toSubAgentConfigs } = await import('./workflow-parser');
+      const { loadEnvConfig } = await import('@sofagent/core');
+      const dataDir = loadEnvConfig().dataDir;
+
+      try {
+        const composeResult = await buildEnterpriseStateGraph({
+          workflowYmlPath: workflowPath,
+          dataDir,
+        });
+
+        console.log(`📋 workflow「${composeResult.workflow.name}」: ${composeResult.graph.nodes.length} 个节点`);
+        console.log('');
+
+        // 检查是否有 HITL 节点 → fail-fast
+        const hitlNodes = composeResult.graph.nodes.filter((n) => n.interruptBefore);
+        if (hitlNodes.length > 0) {
+          console.error(`❌ 发现 ${hitlNodes.length} 个 HITL 节点: ${hitlNodes.map((n) => n.id).join(', ')}`);
+          console.error('   HITL 节点执行需 v1.2.9 hitl-handler.ts，当前版本不支持。');
+          process.exit(1);
+        }
+
+        // 按拓扑顺序逐节点执行
+        const subagentMap = new Map(composeResult.subagents.map((s) => [s.name, s]));
+        let allSuccess = true;
+        const results: Array<{ node: string; success: boolean; durationMs: number; output: string }> = [];
+
+        for (const graphNode of composeResult.graph.nodes) {
+          const agentConfig = subagentMap.get(graphNode.agent)
+            ?? subagentMap.get(graphNode.id)
+            ?? composeResult.subagents[0];
+
+          if (!agentConfig) {
+            console.error(`❌ 节点 ${graphNode.id} 的 Agent 配置未找到`);
+            allSuccess = false;
+            break;
+          }
+
+          // 检查依赖是否全部成功
+          const depResults = results.filter((r) => graphNode.dependsOn.includes(r.node));
+          if (depResults.some((r) => !r.success)) {
+            console.error(`❌ 节点 ${graphNode.id} 的上游节点失败，跳过执行`);
+            allSuccess = false;
+            continue;
+          }
+
+          console.log(`▶️  执行节点 ${graphNode.id}（agent: ${graphNode.agent}）...`);
+          const result = await executeNode({
+            agentName: graphNode.agent,
+            agentConfig,
+            node: {
+              id: graphNode.id,
+              agent: graphNode.agent,
+              task: graphNode.task,
+              depends_on: graphNode.dependsOn,
+            },
+            dataDir,
+            projectRoot: process.cwd(),
+          });
+
+          results.push({
+            node: graphNode.id,
+            success: result.success,
+            durationMs: result.durationMs,
+            output: result.output,
+          });
+
+          if (result.success) {
+            console.log(`  ✅ ${graphNode.id} 完成 (${result.durationMs}ms)`);
+          } else {
+            console.error(`  ❌ ${graphNode.id} 失败: ${result.error}`);
+            allSuccess = false;
+          }
+        }
+
+        console.log('');
+        console.log(allSuccess ? '✅ 所有节点执行完成' : '❌ 部分节点执行失败');
+        for (const r of results) {
+          const status = r.success ? '✅' : '❌';
+          console.log(`  ${status} ${r.node} (${r.durationMs}ms)`);
+        }
+        process.exit(allSuccess ? 0 : 1);
+      } catch (err) {
+        console.error(`❌ run-enterprise 失败: ${(err as Error).message}`);
+        process.exit(1);
+      }
+    }
     default:
       console.error(`❌ sofagent 提示：不支持的子命令 "${subcommand}"`);
-      console.error('   可用子命令: compose | subagent | loop | compare | activate');
+      console.error('   可用子命令: compose | subagent | loop | compare | activate | run-enterprise');
       process.exit(1);
   }
 }

@@ -153,7 +153,7 @@ export function analyzeRootCause(history: AuditHistoryEntry[]): RootCauseReport 
 
   // 遍历每条历史
   for (const entry of sorted) {
-    for (const ruleResult of entry.ruleResults) {
+    for (const ruleResult of (entry.ruleResults ?? [])) {
       const name = ruleResult.name;
 
       // 初始化规则统计

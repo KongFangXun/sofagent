@@ -289,13 +289,15 @@ ${entry.args.map((a) => `        <string>${a}</string>`).join('\n')}
  * 幂等：已存在的配置不覆盖，已安装的 hook 不重复写入
  *
  * v1.2.5: 设置 SOFAGENT_SKIP_HOOK=1 防止 init 内部的 git 操作触发刚安装的 hook
+ * v1.2.8: SOFAGENT_SKIP_HOOK 是公开旁路（任何进程可绕过审计），改为 SOFAGENT_INTERNAL_INIT
  * （hook 模板检测到此环境变量时直接 exit 0）
  */
 export function runInit(): void {
   const cwd = process.cwd();
 
-  // v1.2.5: 防止 init 流程中的 git 操作触发 commit-msg hook（递归保护）
-  process.env.SOFAGENT_SKIP_HOOK = '1';
+  // v1.2.8: 防止 init 流程中的 git 操作触发 commit-msg hook（递归保护）
+  // 不再使用公开的 SOFAGENT_SKIP_HOOK——任何进程都能设它来绕过审计
+  process.env.SOFAGENT_INTERNAL_INIT = '1';
 
   console.log('');
   console.log(`sofagent v${VERSION} · 孔放勋`);
@@ -447,53 +449,67 @@ export function runInit(): void {
       stepOk++;
     }
 
-    // v1.0.7: 安装 post-commit hook（timestamp 近邻匹配替代 SHA 精确匹配）
-    const postCommitPath = join(hooksDir, 'post-commit');
+    // v1.2.8: post-commit hook 重写——commit hash 对账替代 timestamp 近邻匹配 + 读全局 history 路径
     const POST_COMMIT_TEMPLATE = `#!/bin/bash
-# sofagent post-commit hook v1.2.3
-# 检测策略：检查 history.jsonl 最后一条记录的 timestamp 是否在 300 秒内
-# 如果 300 秒内有审计记录，认为 commit 通过了审计；否则可能是 --no-verify 绕过
-# 注意：git commit --no-verify 会绕过本 hook。
-# 如果怀疑审计被绕过，检查 CI 侧的 sofagent-audit 校验步骤。
-# post-commit 是 best-effort 检测——不保证 100% 覆盖，建议配合 CI 侧 sofagent-audit --diff 兜底
+# sofagent post-commit hook v1.2.8
+# 检测策略：commit hash 对账——检查当前 commit 的 SHA 是否在审计记录中有对应条目
+# 如果没有，判定为绕过（--no-verify 或 hook 被删/失效）
+# 注意：git commit --no-verify 会绕过本 hook——CI 侧 sofagent-audit --diff 兜底是最终防线
+
+# commit-msg hook 存在性检查（v1.2.8: P1-3 联动）
+COMMIT_MSG_HOOK=".git/hooks/commit-msg"
+if [ ! -f "$COMMIT_MSG_HOOK" ]; then
+  echo ""
+  echo "  ⚠️ [sofagent] commit-msg hook 不存在——审计可能未运行！"
+  echo "  运行 sofagent-audit --init 重新安装。"
+fi
 
 if ! command -v node &>/dev/null; then exit 0; fi
 
 if command -v sofagent-audit &>/dev/null; then
   AUDIT_CMD="sofagent-audit"
-elif [ -f "engine/audit/dist/index.js" ]; then
-  AUDIT_CMD="node engine/audit/dist/index.js"
 else
   exit 0
 fi
 
-HISTORY_FILE="data/audit/history.jsonl"
+# v1.2.8: 读全局 history 路径（不再读仓库相对路径 data/audit/history.jsonl）
+SOFAGENT_HOME="\${SOFAGENT_HOME:-\$HOME/.sofagent}"
+HISTORY_FILE="$SOFAGENT_HOME/data/audit/history.jsonl"
 if [ ! -f "$HISTORY_FILE" ]; then exit 0; fi
 
-# 读取 history.jsonl 最后一条的 timestamp，检查是否在 300 秒内
+# 当前 commit SHA
+COMMIT_SHA=$(git rev-parse HEAD 2>/dev/null)
+if [ -z "$COMMIT_SHA" ]; then exit 0; fi
+
+# commit hash 对账：检查当前 commit SHA 是否在审计记录中
 node -e "
 const fs = require('fs');
 const lines = fs.readFileSync('$HISTORY_FILE', 'utf-8').trim().split('\\\\n').filter(Boolean);
 if (lines.length === 0) process.exit(0);
 try {
-  const last = JSON.parse(lines[lines.length - 1]);
-  if (!last.timestamp) process.exit(0);
-  const age = Date.now() - new Date(last.timestamp).getTime();
-  if (age > 300000) {
-    console.log('');
-    console.log('  sofagent: 最近一次审计记录在 ' + Math.round(age/1000) + ' 秒前，当前 commit 可能未经过审计。');
-    console.log('  可能使用了 --no-verify 绕过审计 hook。');
-    console.log('  运行 sofagent-audit --doctor 查看详情。');
+  // 反向查找（最新记录在末尾）
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const entry = JSON.parse(lines[i]);
+    const entryCommit = entry.commitSha || '';
+    if (entryCommit === '$COMMIT_SHA') {
+      process.exit(0);  // 找到匹配——审计已运行
+    }
   }
+  // 未找到匹配——可能 --no-verify 绕过或 hook 失效
+  console.log('');
+  console.log('  ⚠️ [sofagent] 当前 commit 未找到审计记录。');
+  console.log('  可能使用了 --no-verify 绕过审计 hook。');
+  console.log('  运行 sofagent-audit --verify-commit $COMMIT_SHA 确认。');
 } catch (e) {
-  console.error('[sofagent] init 失败: ' + (e instanceof Error ? e.message : String(e)));
-  process.exit(1);
+  // 解析失败不影响提交
 }
 " 2>/dev/null
 
 exit 0
 `;
 
+    // v1.0.7: 安装 post-commit hook
+    const postCommitPath = join(hooksDir, 'post-commit');
     let hasPostCommitHook = false;
     if (existsSync(postCommitPath)) {
       try {
@@ -505,8 +521,8 @@ exit 0
           const major = parseInt(versionMatch[1]!, 10);
           const minor = parseInt(versionMatch[2]!, 10);
           const patch = parseInt(versionMatch[3]!, 10);
-          // v1.0.8 以下版本强制覆盖
-          if (major < 1 || (major === 1 && minor === 0 && patch < 8)) {
+        // v1.2.8: post-commit 大改（路径+对账机制），强制覆盖 1.2.7 及以下
+        if (major < 1 || (major === 1 && (minor < 2 || (minor === 2 && patch < 8)))) {
             hasPostCommitHook = false;  // 旧版本 → 覆盖
           } else {
             hasPostCommitHook = true;   // 当前版本或更新 → 保留
@@ -641,7 +657,8 @@ exit 0
   console.log('  💡 首次使用？先 cd 到你的项目目录跑 `sofagent-audit --init` 初始化审计。');
   console.log('  下一步：');
   console.log('    1. 改个文件，试试 git commit——你会看到审计引擎在提交前自动扫描');
-  console.log('    2. 想测试拦截？echo "API_KEY=test" > .env && git add .env && git commit -m "test"');
+  console.log('    2. 想测试拦截？echo "API_KEY=test" > .env && git add -f .env && git commit -m "test"');
+  console.log('       （用 -f 强制添加以便演示拦截——.env 通常被 .gitignore 忽略）');
   console.log('    3. 想看全部命令？sofagent-audit --help');
   console.log('    4. 想管住 Agent 全流程？看 HANDBOOK → 场景一');
   console.log('');

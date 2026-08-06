@@ -137,6 +137,8 @@ const STEPS = {
   'b-check':       { role: 'B', prompt: 'b-check.md',       outputs: ['check-b.md'],             inputs: [] },
   'a-consolidate': { role: 'A', prompt: 'a-consolidate.md', outputs: ['findings.md','result.md'],inputs: ['check-a.md','check-b.md'], maxTokens: 32000 },
   'b-fix':         { role: 'B', prompt: 'b-fix.md',         outputs: ['summary.md'],             inputs: ['result.md','findings.md'] },
+  // v1.2.8 功能⑥：b-audit 步骤——b-fix 改完代码后 driver 自动跑 sofagent-audit
+  'b-audit':       { role: null, prompt: null,              outputs: ['audit-result.md'],        inputs: [], driverFn: 'runAuditGate' },
   'a-verify':      { role: 'A', prompt: 'a-verify.md',      outputs: ['result.md'],              inputs: ['findings.md','result.md','summary.md'] },
 };
 
@@ -314,39 +316,10 @@ async function createModel(role, maxTokensOverride) {
  * start/end 事件到 sub-progress-<role>.jsonl。middleware 内部容错，
  * 观测失败绝不影响工具执行（与 L1 visibility 容错策略一致）。
  */
-// ─── 工具输出截断（v1.2.5 性能优化）────────────────────────────
-// Agent 跑一次 run_bash（如 npm test）输出可能 2000+ 行，完整输出被追加到
-// messages 列表后每一次 LLM 调用都要重新处理它。截断到头尾各 100 行，
-// 砍掉中间重复内容，可将单步 prompt_tokens 从 100k+ 降到 30-40k。
-const TOOL_OUTPUT_MAX_LINES = 200;
-
-function truncateToolOutput(text, maxLines = TOOL_OUTPUT_MAX_LINES) {
-  const str = String(text);
-
-  // No such file 检测——辅助手段，在工具输出末尾追加系统提示。
-  // 本质是 prompt 层措施（模型可能无视），不构成死循环的核心修复——
-  // 真正的防线是 stateModifier 软熔断(50) + stream 硬熔断(60)。
-  // 价值在于减少模型对错误信息的误判，明确告诉它"文件不存在"。
-  const hasNoSuchFile = /No such file or directory/i.test(str);
-
-  const lines = str.split('\n');
-  if (lines.length <= maxLines) {
-    return hasNoSuchFile
-      ? str + '\n\n[系统提示] 该文件不存在，请记录为缺失并继续下一步，禁止换路径重试。'
-      : str;
-  }
-  const half = maxLines / 2;
-  const head = lines.slice(0, half);
-  const tail = lines.slice(-half);
-  const truncated = [
-    ...head,
-    `\n... [${lines.length - maxLines} lines truncated by FORGE driver — head ${half} + tail ${half}] ...\n`,
-    ...tail,
-  ].join('\n');
-  return hasNoSuchFile
-    ? truncated + '\n\n[系统提示] 该文件不存在，请记录为缺失并继续下一步，禁止换路径重试。'
-    : truncated;
-}
+// ─── 工具输出截断（v1.2.5 性能优化 → v1.2.8 功能③：迁移到统一中间件）──
+// v1.2.8：truncateToolOutput 从 tool-output-budget.mjs 统一导入，
+// 不再在此文件内联定义。删除旧实现 L317-349。
+import { truncateToolOutput, createToolOutputBudget, DEFAULT_BUDGET as TOOL_OUTPUT_MAX_LINES } from './tool-output-budget.mjs';
 
 function loadTools(role, progressMw = null) {
   const cfg = MODEL_CONFIGS[role];
@@ -2202,6 +2175,7 @@ async function runRound(roundNum, runDir, target, dryRun) {
     console.log('    ② b-check   (B 独立审查)    → check-b.md   [与①并行]');
     console.log('    ③ a-consolidate (A 合并)    → findings.md + result.md');
     console.log('    ④ b-fix     (B 修复)        → summary.md');
+    console.log('    ④½ b-audit  (dogfooding)    → audit-result.md [v1.2.8]');
     console.log('    ⑤ a-verify  (A 验证·分片) → result.md 回填 verify');
     const counts = parseStopCondition(roundDir);
     return { roundDir, counts, isClean: true };
@@ -2258,6 +2232,27 @@ async function runRound(roundNum, runDir, target, dryRun) {
       `# summary.md · b-fix 降级（未完成）\n\n> ⚠️ b-fix 整体失败: ${fixErr.message}\n> findings.md 和 result.md 已保留，可人工介入修复。\n`,
       'utf-8'
     );
+  }
+
+  // 步骤 ④½ b-audit（v1.2.8 功能⑥）
+  // b-fix 改完代码后，driver 自动 git commit + 跑 sofagent-audit --diff HEAD~1..HEAD。
+  // 这就是 dogfooding——FORGE 自己的审计规则审查 FORGE 自己的修改。
+  // audit exit 0=全过 1=警告(不阻塞) 2=违规(打回重修)。
+  // 设计决策：这里只记录结果不中断循环——fresh-eyes 的循环停止条件由
+  // parseStopCondition 独立判定，audit 违规记入 audit-result.md 供后续 review。
+  console.log('\n  [步骤 ④½] b-audit — dogfooding 审计 b-fix 改动...');
+  try {
+    const auditResult = await base.runAuditGate(roundDir, 'b-fix', roundNum);
+    if (auditResult.passed) {
+      console.log(`     ✅ audit gate 通过（exitCode=${auditResult.exitCode}）`);
+    } else {
+      console.warn(`     ⚠️  audit gate 发现违规（exitCode=${auditResult.exitCode}）`);
+      console.warn(`     结果已写入 ${join(roundDir, 'audit-result.md')}`);
+      console.warn(`     循环继续——findings 停止条件独立判定`);
+    }
+  } catch (auditErr) {
+    console.warn(`\n  ⚠️  b-audit 失败: ${auditErr.message}`);
+    console.warn(`     降级：跳过审计，循环继续`);
   }
 
   // 步骤 ⑤ A 验证（分片执行）

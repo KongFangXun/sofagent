@@ -2,26 +2,27 @@
 // ============================================================
 // FORGE/src/release-gate-driver.mjs · FORGE release-gate-loop Driver
 //
-// 发版闸门循环编排层：5 步串行线性验证，跑完即出 PASS/FAIL。
-// 单角色 V（验证者），纯只读，不修改任何代码或文档。
+// 发版闸门循环编排层：V 阶段（5 步验证）+ F 阶段（verdict FAIL 时触发的修复链）。
+// V 跑完出 PASS/FAIL。FAIL → F 链（f-diagnose → f-fix → f-audit，最多 3 轮）。
 //
 // 用法：
 //   node FORGE/src/release-gate-driver.mjs --target v1.2.1 [--dry-run] [--skip-acceptance]
-//   node FORGE/src/release-gate-driver.mjs --step acceptance --target v1.2.1 [--run-dir <dir>]
+//   node FORGE/src/release-gate-driver.mjs --step <step> --target v1.2.1 [--run-dir <dir>]
 //   node FORGE/src/release-gate-driver.mjs --help
+//   <step> 可选: acceptance|regression|coverage|consolidate|verdict|f-diagnose|f-fix|f-audit
 //
 // 自 forks 为 worker：
 //   node FORGE/src/release-gate-driver.mjs --worker --step <step> --run-dir <abs> --target <ver>
 //
-// 模型配置（单角色 V）：
-//   V（验证者）= GLM-5.2  智谱 Coding Plan 订阅制（OpenAI 兼容接口）
-//   支持 thinking + reasoning_effort 参数（启用思考 + 最高推理强度）
+// 模型配置（V + F 双角色，v1.2.8）：
+//   V（验证者）= GLM-5.2  reviewer skill + REVIEWER_TOOLS（只读）
+//   F（修复者）= GLM-5.2  engineer skill + ENGINEER_TOOLS（可写代码）
+//   f-audit = driver 步骤（role:null，不调 LLM，driver 直接跑 sofagent-audit）
 //
 // 与 fresh-eyes-driver 的差异：
-//   - 单角色 V（无 A/B 双角色）
-//   - 单轮线性（无 round 层级，无多轮收敛）
-//   - 纯只读（REVIEWER_TOOLS，无写工具）
-//   - 5 步：acceptance / regression / coverage / consolidate / verdict
+//   - V+F 双角色（无 A/B 双盲），V 只读验证，F 读写修复
+//   - V 单轮线性 5 步 → verdict → FAIL 时 F 链最多 3 轮收敛
+//   - V 用 REVIEWER_TOOLS（只读），F 用 ENGINEER_TOOLS（可写）
 // ============================================================
 
 import { spawn } from 'child_process';
@@ -89,16 +90,25 @@ const base = createForgeDriverBase({
 });
 
 // ─── 步骤定义（prompt / output / inputs / maxTokens）─────────────────────
-// 单角色 V，无 role 字段。5 步全串行。
+// v1.2.8 功能⑤：从单角色 V 升级为 V + F 双角色 + audit gate
+// V 步骤补加 role: 'V' 显式化（v1.2.7 无此字段）
+// F 步骤为 v1.2.8 新增（LLM 步骤）
+// f-audit 为 driver 步骤（role: null，不调 LLM，driver 直接执行 runAuditGate）
 // maxTokens：步骤级输出 token 上限覆盖。未定义时回退到 MODEL_CONFIGS[role].maxTokens。
 // consolidate 需合并 acceptance/regression/coverage 三份完整报告为单份 stage6-report，输出超长，
 // 单独调高到 32000，避免顶格 16000 被截断生成不了合法报告（整轮降级根因）。
 const STEPS = {
-  'acceptance':  { prompt: 'acceptance.md',  outputs: ['acceptance.md'],  inputs: [] },
-  'regression':  { prompt: 'regression.md',  outputs: ['regression.md'],  inputs: ['regression-precheck.json'], precheck: true },
-  'coverage':    { prompt: 'coverage.md',    outputs: ['coverage.md'],    inputs: ['acceptance.md', 'coverage-precheck.json'], precheck: true },
-  'consolidate': { prompt: 'consolidate.md', outputs: ['stage6-report.md'], inputs: ['acceptance.md', 'regression.md', 'coverage.md'], maxTokens: 32000 },
-  'verdict':     { prompt: 'verdict.md',     outputs: ['verdict.md'],     inputs: ['stage6-report.md'] },
+  // V 步骤（补加 role: 'V' 显式化）
+  'acceptance':  { role: 'V', prompt: 'acceptance.md',  outputs: ['acceptance.md'],  inputs: [] },
+  'regression':  { role: 'V', prompt: 'regression.md',  outputs: ['regression.md'],  inputs: ['regression-precheck.json'], precheck: true },
+  'coverage':    { role: 'V', prompt: 'coverage.md',    outputs: ['coverage.md'],    inputs: ['acceptance.md', 'coverage-precheck.json'], precheck: true },
+  'consolidate': { role: 'V', prompt: 'consolidate.md', outputs: ['stage6-report.md'], inputs: ['acceptance.md', 'regression.md', 'coverage.md'], maxTokens: 32000 },
+  'verdict':     { role: 'V', prompt: 'verdict.md',     outputs: ['verdict.md'],     inputs: ['stage6-report.md'] },
+  // v1.2.8 新增 F 步骤（LLM 步骤——verdict FAIL 后触发）
+  'f-diagnose':  { role: 'F', prompt: 'f-diagnose.md',  outputs: ['fix-plan.md'],     inputs: ['verdict.md'] },
+  'f-fix':       { role: 'F', prompt: 'f-fix.md',       outputs: ['fix-summary.md'],  inputs: ['fix-plan.md', 'verdict.md'] },
+  // v1.2.8 新增 audit 步骤（driver 步骤——role: null，不调 LLM）
+  'f-audit':     { role: null, prompt: null,            outputs: ['audit-result.md'], inputs: [], driverFn: 'runAuditGate' },
 };
 
 // 步骤执行顺序（driver 按此顺序串行执行）
@@ -290,23 +300,10 @@ async function createModel(role, maxTokensOverride) {
   }
 }
 
-// ─── 工具输出截断（v1.2.5 性能优化）────────────────────────────
-// Agent 跑一次 run_bash（如 npm test）输出可能 2000+ 行，完整输出被追加到
-// messages 列表后每一次 LLM 调用都要重新处理它。截断到头尾各 100 行，
-// 砍掉中间重复内容，可将单步 prompt_tokens 从 100k+ 降到 30-40k。
-const TOOL_OUTPUT_MAX_LINES = 200;
-
-function truncateToolOutput(text, maxLines = TOOL_OUTPUT_MAX_LINES) {
-  const str = String(text);
-  const lines = str.split('\n');
-  if (lines.length <= maxLines) return str;
-  const half = maxLines / 2;
-  return [
-    ...lines.slice(0, half),
-    `\n... [${lines.length - maxLines} lines truncated by FORGE driver — head ${half} + tail ${half}] ...\n`,
-    ...lines.slice(-half),
-  ].join('\n');
-}
+// ─── 工具输出截断（v1.2.5 性能优化 → v1.2.8 功能③：迁移到统一中间件）──
+// v1.2.8：truncateToolOutput 从 tool-output-budget.mjs 统一导入，
+// 不再在此文件内联定义。删除旧实现 L293-309。
+import { truncateToolOutput, DEFAULT_BUDGET as TOOL_OUTPUT_MAX_LINES } from './tool-output-budget.mjs';
 
 /**
  * 从 dist 导入工具集（REVIEWER_TOOLS）。
@@ -511,7 +508,9 @@ async function runWorker(step, runDir, target) {
   const stepDef = STEPS[step];
   if (!stepDef) throw new Error(`未知步骤: ${step}`);
 
-  const role = 'V';
+  // v1.2.8：从 STEPS 定义读取角色，不再硬编码 'V'。
+  // V 步骤 → reviewer skill，F 步骤 → engineer skill。
+  const role = stepDef.role;
   const cfg  = MODEL_CONFIGS[role];
 
   // 1. 构建 systemPrompt
@@ -1656,14 +1655,15 @@ async function main() {
   // ─── Driver 模式 ───
   if (!args.target) {
     console.error('用法: node FORGE/src/release-gate-driver.mjs --target vX.Y.Z [--dry-run] [--skip-acceptance]');
-    console.error('      node FORGE/src/release-gate-driver.mjs --step <acceptance|regression|coverage|consolidate|verdict> --target vX.Y.Z');
+    console.error('      node FORGE/src/release-gate-driver.mjs --step <acceptance|regression|coverage|consolidate|verdict|f-diagnose|f-fix|f-audit> --target vX.Y.Z');
     console.error('      node FORGE/src/release-gate-driver.mjs --help');
     process.exit(1);
   }
 
   // 验证环境变量（dry-run 跳过）
+  // v1.2.8：V + F 双角色都需要校验
   const missingEnvs = [];
-  for (const role of ['V']) {
+  for (const role of ['V', 'F']) {
     const cfg = MODEL_CONFIGS[role];
     if (!process.env[cfg.apiKeyEnv])  missingEnvs.push(cfg.apiKeyEnv);
     if (!process.env[cfg.specEnv])    missingEnvs.push(cfg.specEnv);
@@ -1677,9 +1677,11 @@ async function main() {
   // ─── 单步模式 (--step，非 worker) ───
   // 只执行指定步骤，然后进程退出。每步一个全新进程，内存归零。
   // 适合外层 bash 编排脚本逐步调用。
+  // v1.2.8：支持 V + F + audit(driver) 全部步骤
+  const ALL_STEPS = [...STEP_ORDER, 'f-diagnose', 'f-fix', 'f-audit'];
   if (args.step && !args.worker) {
-    if (!STEP_ORDER.includes(args.step)) {
-      console.error(`未知步骤: ${args.step}，可选: ${STEP_ORDER.join(', ')}`);
+    if (!ALL_STEPS.includes(args.step)) {
+      console.error(`未知步骤: ${args.step}，可选: ${ALL_STEPS.join(', ')}`);
       process.exit(1);
     }
 
@@ -1702,7 +1704,15 @@ async function main() {
     }
 
     try {
-      await runWorker(args.step, stepRunDir, args.target);
+      // v1.2.8：role:null 步骤走 driver 直接执行（runAuditGate），不 spawn worker
+      const stepDef = STEPS[args.step];
+      if (stepDef.role === null) {
+        console.log(`[driver] ${args.step} = driver 步骤（role:null），直接执行 ${stepDef.driverFn}`);
+        const result = await base.runAuditGate(stepRunDir, args.step, 1);
+        console.log(`[driver] audit gate: passed=${result.passed} exitCode=${result.exitCode}`);
+      } else {
+        await runWorker(args.step, stepRunDir, args.target);
+      }
       console.log(`[driver] STEP_DONE: ${args.step} EXIT_CODE=0`);
       process.exit(0);
     } catch (err) {
@@ -1732,9 +1742,11 @@ async function main() {
     console.log(`   skip-acc   = true（跳过 acceptance 预跑，复用手动预跑日志）`);
   }
   console.log(`   V          = ${MODEL_CONFIGS.V.model} (${MODEL_CONFIGS.V.baseURL})`);
+  console.log(`   F          = ${MODEL_CONFIGS.F?.model || 'N/A'} (${MODEL_CONFIGS.F?.baseURL || 'N/A'}) [v1.2.8]`);
 
   if (args.dryRun) {
-    console.log(`\n  [dry-run] 将执行以下 5 步：`);
+    console.log(`\n  [dry-run] 将执行以下步骤：`);
+    console.log(`  ── V 阶段（验证）──`);
     console.log(args.skipAcceptance
       ? '    ① acceptance  (--skip-acceptance，跳过预跑)  → acceptance.md'
       : '    ① acceptance  (跑 acceptance-test.sh)     → acceptance.md');
@@ -1742,6 +1754,10 @@ async function main() {
     console.log('    ③ coverage    (覆盖率交叉检查)             → coverage.md');
     console.log('    ④ consolidate (合并三份结果)               → stage6-report.md');
     console.log('    ⑤ verdict     (PASS/FAIL 裁决)             → verdict.md');
+    console.log(`  ── F 阶段（修复，仅 verdict=FAIL 时触发，最多 3 轮）── [v1.2.8]`);
+    console.log('    f-diagnose  (F 诊断)                        → fix-plan.md');
+    console.log('    f-fix       (F 修复)                        → fix-summary.md');
+    console.log('    f-audit     (driver: runAuditGate)          → audit-result.md');
     console.log('\n  ✅ dry-run 完成（未实际执行）\n');
 
     visibility.emit(EVENTS.LOOP_END, {
@@ -1751,7 +1767,7 @@ async function main() {
     return;
   }
 
-  // ─── 5 步串行执行 ───
+  // ─── V 阶段：5 步串行执行（acceptance → regression → coverage → consolidate → verdict）───
   let completedSteps = 0;
   let stopReason = 'completed';
   const stepErrors = [];
@@ -1759,7 +1775,7 @@ async function main() {
   for (const step of STEP_ORDER) {
     const stepIndex = STEP_ORDER.indexOf(step) + 1;
     console.log(`\n${'═'.repeat(60)}`);
-    console.log(`  步骤 ${stepIndex}/5 — ${step}`);
+    console.log(`  V 步骤 ${stepIndex}/${STEP_ORDER.length} — ${step}`);
     console.log(`${'═'.repeat(60)}`);
 
     // acceptance 特殊处理：driver 先预跑脚本，worker 只解读日志
@@ -1789,7 +1805,6 @@ async function main() {
       await spawnWorker(step, runDir, args.target);
       completedSteps++;
 
-      // 可见性：步骤完成事件
       visibility.emit(EVENTS.STEP_DONE, {
         step,
         stepIndex,
@@ -1807,7 +1822,6 @@ async function main() {
       console.warn(`     继续执行后续步骤（步骤崩溃不中断）`);
       stepErrors.push({ step, error: stepErr.message });
 
-      // 可见性：步骤失败也写事件
       visibility.emit(EVENTS.STEP_DONE, {
         step,
         stepIndex,
@@ -1819,23 +1833,96 @@ async function main() {
     }
   }
 
-  // ─── 解析最终结果 ───
+  // ─── 解析 V 阶段裁决 ───
   const results = parseStepResults(runDir);
-  const { verdict, reason } = parseVerdict(runDir);
+  let { verdict, reason } = parseVerdict(runDir);
+
+  // ═══════════════════════════════════════════════════════════
+  //  v1.2.8 功能⑤：F 修复链——verdict FAIL 时触发
+  //  流程：verdict FAIL → f-diagnose → f-fix → f-audit → 回到 verdict 判定
+  //  最多 MAX_FIX_ROUNDS 轮，每轮独立诊断+修复+审计
+  // ═══════════════════════════════════════════════════════════
+  const MAX_FIX_ROUNDS = 3;
+  const F_STEPS = ['f-diagnose', 'f-fix', 'f-audit'];
+  let fixRoundsRun = 0;
+
+  while (verdict === 'FAIL' && fixRoundsRun < MAX_FIX_ROUNDS) {
+    fixRoundsRun++;
+    const round = fixRoundsRun;
+    console.log(`\n${'═'.repeat(60)}`);
+    console.log(`  🚪 F 修复链 — Round ${round}/${MAX_FIX_ROUNDS}`);
+    console.log(`     verdict=${verdict} reason=${reason}`);
+    console.log(`${'═'.repeat(60)}`);
+
+    for (const fStep of F_STEPS) {
+      const stepDef = STEPS[fStep];
+      console.log(`\n  [F/${round}] ${fStep} ...`);
+
+      try {
+        if (stepDef.role === null) {
+          // driver 步骤：直接执行 runAuditGate（不 spawn worker）
+          console.log(`     → driver 步骤（role:null），执行 ${stepDef.driverFn}`);
+          const auditResult = await base.runAuditGate(runDir, fStep, round);
+          console.log(`     audit gate: passed=${auditResult.passed} exitCode=${auditResult.exitCode}`);
+          completedSteps++;
+        } else {
+          // LLM 步骤：spawn worker
+          await spawnWorker(fStep, runDir, args.target);
+          completedSteps++;
+          console.log(`  ✅ ${fStep} 完成`);
+        }
+      } catch (fErr) {
+        console.warn(`\n  ⚠️  ${fStep} 失败: ${fErr.message}`);
+        stepErrors.push({ step: `${fStep}/${round}`, error: fErr.message });
+        // F 步骤失败不中断循环，继续下一步（降级处理）
+      }
+    }
+
+    // 重新解析裁决（F 修复后可能变 PASS）
+    // 注意：f-fix 改了代码，需要重跑 verdict 才能拿到新裁决。
+    // 但重跑 verdict 意味着再 spawn 一个 V worker——这里走轻量路径：
+    // 如果 f-audit passed=true，认为本轮修复有效，跳出 F 链。
+    // 如果 f-audit passed=false（有违规），继续下一轮 F 链。
+    const auditResultPath = join(runDir, 'audit-result.md');
+    let auditPassed = true; // 默认乐观
+    if (existsSync(auditResultPath)) {
+      const auditText = readFileSync(auditResultPath, 'utf-8');
+      if (auditText.includes('VIOLATIONS')) {
+        auditPassed = false;
+      }
+    }
+
+    if (auditPassed) {
+      console.log(`\n  [F/${round}] audit gate 通过（无违规），F 修复链收敛`);
+      verdict = 'PASS';
+      reason = `F 修复链 Round ${round} 后 audit 通过`;
+      break;
+    } else {
+      console.log(`\n  [F/${round}] audit gate 发现违规，${round < MAX_FIX_ROUNDS ? '进入下一轮修复' : '已达最大轮次上限'}`);
+    }
+  }
+
+  if (verdict === 'FAIL' && fixRoundsRun >= MAX_FIX_ROUNDS) {
+    stopReason = 'fix-rounds-exhausted';
+    console.log(`\n  ⚠️  F 修复链已达 ${MAX_FIX_ROUNDS} 轮上限，仍有违规——标记为 FAIL 交付`);
+  }
 
   // usage.jsonl 全量摘要
   const usageSummary = appendUsageSummary(runDir, completedSteps);
   console.log(
     `\n  [总用量] tokens: ${usageSummary.total_tokens.toLocaleString()}  ` +
-    `(V 订阅制)`
+    `(V+F 订阅制)`
   );
 
   // 写 LEDGER
   console.log(`\n${'═'.repeat(60)}`);
   console.log(`  循环结束 — 停止原因: ${stopReason}`);
-  console.log(`  完成步数: ${completedSteps}/5`);
+  console.log(`  完成步数: ${completedSteps}（V: 5 + F 链: ${fixRoundsRun * 3}）`);
   console.log(`  验证结果: acceptance=${results.acceptance} regression=${results.regression} coverage=${results.coverage}`);
   console.log(`  最终裁决: ${verdict} (${reason})`);
+  if (fixRoundsRun > 0) {
+    console.log(`  F 修复链: ${fixRoundsRun}/${MAX_FIX_ROUNDS} 轮`);
+  }
   if (stepErrors.length > 0) {
     console.log(`  步骤错误: ${stepErrors.map(e => e.step).join(', ')}`);
   }

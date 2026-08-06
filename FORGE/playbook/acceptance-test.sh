@@ -4,6 +4,9 @@
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
 # 场景数：141 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
 #   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 207 为编号上限，非场景数；S197 归并至 S164
+#   ⚠️ 口径注意（P2-31）：底部输出的「$PASSED 通过」是**断言通过数**（含跳过的场景也计 PASS），
+#   与「141 场景」不同——141 是 scenario 定义数，PASSED 可能 >141（条件跳过的场景也 +1）。
+#   文档引用 141 时指 scenario 定义数；引用「XXX 通过」时指断言通过数，勿混用。
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
 RUN_MODE="all"

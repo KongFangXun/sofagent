@@ -54,6 +54,39 @@ import {
   type ControlledLoopMode,
 } from './checker-nodes';
 
+/**
+ * v1.2.8 P1-21: 运行时守卫——从 CheckpointRecord.state（Record<string, unknown>）安全恢复为 LoopGraphState。
+ *
+ * 此前 14 处 `as unknown as` 双重断言使 checkpoint 恢复全链路零类型保护。
+ * 现统一通过此函数恢复：做基础结构校验后断言，而非裸断言。
+ * 未来演进为 zod schema 校验时只需改这一处。
+ */
+function restoreState(record: CheckpointRecord): LoopGraphState {
+  const s = record.state as Record<string, unknown>;
+  // 基础结构守卫：关键字段存在性检查
+  if (!s || typeof s !== 'object') {
+    throw new Error('checkpoint state 不是有效对象');
+  }
+  // artifacts 是必需字段（emptyArtifacts 初始化）
+  if (!('artifacts' in s) || !s.artifacts || typeof s.artifacts !== 'object') {
+    (s as Record<string, unknown>)['artifacts'] = emptyArtifacts('restored');
+  }
+  return s as unknown as LoopGraphState;
+}
+
+/**
+ * v1.2.8 P1-21: 中心化 checkpoint 写入——替代 6 处裸 `as unknown as CheckpointState` 断言。
+ * LoopGraphState → CheckpointState 的结构映射在此一处完成。
+ */
+function saveCheckpoint(
+  checkpointer: FileCheckpointer,
+  state: LoopGraphState,
+  node: string,
+  phase: 'before' | 'after',
+): void {
+  checkpointer.save(state as unknown as import('../graph/checkpoint').CheckpointState, node, phase);
+}
+
 /** 图执行步数上限：4 节点 × (1 + 3 重试) 轮 = 16 步，留足余量 */
 const RECURSION_LIMIT = 64;
 
@@ -177,14 +210,14 @@ function withCheckpoint<S extends LoopGraphState>(
   fn: (state: S) => Promise<Partial<LoopGraphState>>
 ) {
   return async (state: S) => {
-    checkpointer.save(state as unknown as import('../graph/checkpoint').CheckpointState, node, 'before');
+    saveCheckpoint(checkpointer, state, node, 'before');
     const update = await fn(state);
     const merged: LoopGraphState = {
       ...state,
       ...update,
       artifacts: { ...state.artifacts, ...(update.artifacts ?? {}) },
     } as LoopGraphState;
-    checkpointer.save(merged as unknown as import('../graph/checkpoint').CheckpointState, node, 'after');
+    saveCheckpoint(checkpointer, merged, node, 'after');
     return update;
   };
 }
@@ -339,7 +372,7 @@ export function resolveResumeNode(record: CheckpointRecord): LoopNodeName | null
     case 'engineer':
       return 'audit';
     case 'audit': {
-      const next = routeAfterAudit(record.state as unknown as LoopGraphState);
+      const next = routeAfterAudit(restoreState(record));
       return next === END ? null : next;
     }
     case 'checker':
@@ -347,11 +380,11 @@ export function resolveResumeNode(record: CheckpointRecord): LoopNodeName | null
     case 'reviewer':
       return 'human_confirm';
     case 'human_confirm': {
-      const next = routeAfterHuman(record.state as unknown as LoopGraphState);
+      const next = routeAfterHuman(restoreState(record));
       return next === END ? null : next;
     }
     case 'goal_eval': {
-      const next = routeAfterGoalEval(record.state as unknown as LoopGraphState);
+      const next = routeAfterGoalEval(restoreState(record));
       return next === END ? null : next;
     }
     default:
@@ -377,7 +410,7 @@ async function resumeAfterHumanDecision(
   comment: string | undefined,
   deps: LoopGraphDeps,
 ): Promise<LoopGraphResult> {
-  const state = record.state as unknown as LoopGraphState;
+  const state = restoreState(record);
   const feedback = comment ? `${decision}: ${comment}` : decision;
 
   // approve → 直接 completed 终态，不重进图
@@ -390,7 +423,7 @@ async function resumeAfterHumanDecision(
       artifacts: { ...state.artifacts, humanFeedback: feedback === 'approve' ? 'approved' : feedback },
       resumeFrom: null,
     };
-    deps.checkpointer.save(approved as unknown as import('../graph/checkpoint').CheckpointState, 'human_confirm', 'after');
+    saveCheckpoint(deps.checkpointer, approved, 'human_confirm', 'after');
     return toResult(approved);
   }
 
@@ -404,7 +437,7 @@ async function resumeAfterHumanDecision(
       artifacts: { ...state.artifacts, humanFeedback: feedback === 'aborted' ? 'aborted' : feedback },
       resumeFrom: null,
     };
-    deps.checkpointer.save(aborted as unknown as import('../graph/checkpoint').CheckpointState, 'human_confirm', 'after');
+    saveCheckpoint(deps.checkpointer, aborted, 'human_confirm', 'after');
     return toResult(aborted);
   }
 
@@ -419,7 +452,7 @@ async function resumeAfterHumanDecision(
       resumeFrom: null,
     };
     await deps.recordBlocked(blocked);
-    deps.checkpointer.save(blocked as unknown as import('../graph/checkpoint').CheckpointState, 'human_confirm', 'after');
+    saveCheckpoint(deps.checkpointer, blocked, 'human_confirm', 'after');
     return toResult(blocked);
   }
 
@@ -436,7 +469,7 @@ async function resumeAfterHumanDecision(
     finalStatus: 'running',
     resumeFrom: 'engineer',
   };
-  deps.checkpointer.save(resumedInitial as unknown as import('../graph/checkpoint').CheckpointState, 'human_confirm', 'after');
+  saveCheckpoint(deps.checkpointer, resumedInitial, 'human_confirm', 'after');
 
   const app = buildLoopGraph(deps);
   const finalState = (await app.invoke(resumedInitial, {
@@ -466,7 +499,7 @@ export async function resumeLoopGraph(
 
   if (record.state.finalStatus !== 'running' && record.state.finalStatus !== 'awaiting_human') {
     deps.log(`ℹ️ 最近 checkpoint 已是终态（${record.state.finalStatus}），无需恢复`);
-    return toResult(record.state as unknown as LoopGraphState);
+    return toResult(restoreState(record));
   }
 
   // v1.2.2 P3b：awaiting_human 挂起态——先检查 resolved/ 是否已有外部信号
@@ -478,7 +511,7 @@ export async function resumeLoopGraph(
         `⏸️ HITL 仍在等待人工信号（checkpointId=${record.checkpointId}）——\n` +
           `   Dashboard POST / daemon 轮询 / CLI: sofagent-orchestrator loop --resolve ${record.checkpointId} --decision approve|reject`
       );
-      return toResult(record.state as unknown as LoopGraphState);
+      return toResult(restoreState(record));
     }
     // 有响应：按 decision 映射终态/重试，复用 routeAfterHuman 单一路由判定
     return resumeAfterHumanDecision(record, response.decision, response.comment, deps);
@@ -487,7 +520,7 @@ export async function resumeLoopGraph(
   const entry = resolveResumeNode(record);
   if (!entry) {
     deps.log('ℹ️ 最近 checkpoint 已到达流程末尾，无需恢复');
-    return toResult(record.state as unknown as LoopGraphState);
+    return toResult(restoreState(record));
   }
 
   deps.log(
@@ -495,7 +528,7 @@ export async function resumeLoopGraph(
   );
 
   const app = buildLoopGraph(deps);
-  const resumedInitial: LoopGraphState = { ...(record.state as unknown as LoopGraphState), resumeFrom: entry };
+  const resumedInitial: LoopGraphState = { ...restoreState(record), resumeFrom: entry };
   const finalState = (await app.invoke(resumedInitial, {
     recursionLimit: RECURSION_LIMIT,
   })) as LoopGraphState;

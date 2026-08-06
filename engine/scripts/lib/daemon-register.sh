@@ -3,11 +3,18 @@
 # 导出：deploy_hook / inject_loopdetect / install_daemon
 # OpenClaw 2026.6.x 声明式 hook：HOOK.md+handler.ts → ~/.openclaw/hooks/sofagent-load-chain/
 # 在 openclaw.json hooks.internal.entries.sofagent-load-chain 注册 enabled:true 即生效
+# 平台无关原则（平台无关重构）：deploy_hook / inject_loopdetect 默认跳过，
+# 仅当用户显式 --platform openclaw 时才执行，且写入第三方配置前必须明确提示。
 
-deploy_hook() {  # Step 6: 部署加载链 Hook（仅 OpenClaw）
+deploy_hook() {  # Step 6: 部署加载链 Hook（仅显式 --platform openclaw）
   [ "${LITE_MODE:-0}" = "1" ] && { info "Lite 模式：跳过 Hook 部署"; return 0; }
-  [ "$PLATFORM" != "openclaw" ] && return 0
+  # 平台无关重构：默认不注入——仅显式 --platform openclaw 时才部署 Hook
+  if [ "$PLATFORM" != "openclaw" ]; then
+    info "Step 6/7 · 平台无关模式：跳过 OpenClaw Hook 部署（如需启用请加 --platform openclaw）"
+    return 0
+  fi
   info "Step 6/7 · 部署加载链 Hook（OpenClaw 2026.6.x 内部 hook 架构）..."
+  warn "显式 --platform openclaw 已启用：以下操作将修改 OpenClaw 配置（openclaw.json）"
   local HOOK_SRC_DIR="${SCRIPT_DIR}/engine/hooks/sofagent-load-chain"
   local HOOK_DST_DIR="${TARGET}/hooks/sofagent-load-chain"
   # v1.2.1 (DP-4): hook 已提升为正式 workspace 包，源码在 src/handler.ts，
@@ -67,8 +74,17 @@ H
     warn '  {"hooks":{"internal":{"enabled":true,"entries":{"sofagent-load-chain":{"enabled":true}}}}}'
   fi
 }
-inject_loopdetect() {  # Step 7: 注入 loopDetection（仅 OpenClaw，写入 config.json）
-  [ "$PLATFORM" != "openclaw" ] || [ "${NO_CONFIG_INJECT:-0}" = "1" ] && return 0
+inject_loopdetect() {  # Step 7: 注入 loopDetection（仅显式 --platform openclaw，写入 config.json）
+  # 平台无关重构：默认不注入——仅显式 --platform openclaw 时才写入断路器配置
+  if [ "$PLATFORM" != "openclaw" ]; then
+    info "Step 7/7 · 平台无关模式：跳过 loopDetection 注入（如需启用请加 --platform openclaw）"
+    return 0
+  fi
+  if [ "${NO_CONFIG_INJECT:-0}" = "1" ]; then
+    info "Step 7/7 · --no-config-inject 已启用：跳过 loopDetection 注入"
+    return 0
+  fi
+  warn "显式 --platform openclaw 已启用：以下操作将修改 OpenClaw 配置（config.json）"
   info "Step 7/7 · 注入断路器配置..."
   CONFIG_FILE="${TARGET}/config.json"
   local B='{"tools":{"loopDetection":{"enabled":true,"historySize":30,"warningThreshold":10,"criticalThreshold":20,"globalCircuitBreakerThreshold":30,"detectors":{"genericRepeat":true,"knownPollNoProgress":true,"pingPong":true}}}}'

@@ -39,7 +39,7 @@ async function main() {
         process.exit(1);
       }
 
-      console.log(`sofagent-think v1.1.0 — 生成 think.md 条目`);
+      console.log(`sofagent-think v${require('../../package.json').version} — 生成 think.md 条目`);
       try {
         const diffFiles = parseDiff(diffRange);
         if (diffFiles.length === 0) {

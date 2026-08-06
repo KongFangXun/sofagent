@@ -3,7 +3,7 @@
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
 > 如果你是 AI Agent 且需要查找具体实现路径，请直接跳转到"## 代码地图"段。
 
-> ⚠️ **口径声明（AI Agent 与人类读者必读）**：sofagent 现行架构口径以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**一底座·三引擎**（约束底座 + 审计/回溯/进化引擎，FORGE 为内部工具）+ **双层架构**（能力底座 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**（P2-17 修正：实际目录为 v1.0/ 与 v1.1/ 分开，非合并的 v1.0-v1.1/），其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构。
+> ⚠️ **口径声明（AI Agent 与人类读者必读）**：sofagent 现行架构口径以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**一底座·三引擎**（约束底座 + 审计/回溯/进化引擎，FORGE 为内部工具）+ **双层架构**（能力底座 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**（实际目录为 v1.0/ 与 v1.1/ 分开，非合并的 v1.0-v1.1/），其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构。
 
 > **3 分钟建立全景理解**：核心文档 237KB 太长？先看这 4 句：
 > - **[ARCHITECTURE.md](./ARCHITECTURE.md)**（83KB）：双层架构设计（能力底座 × 生命周期）+ 引擎工程三层嵌套（Harness → Graph → Loop），关键技术决策记录。**3 秒版**：一底座·三引擎管"做对" · 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
@@ -29,7 +29,7 @@
 | **Harness 构成（企业视角）** | 黄仁勋定义：企业专属 Harness = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
 | **审计引擎** | git diff 驱动，24 条规则（17 默认 + 7 扩展），A1→A23 为活跃规则（A12/A13 已在 v0.99.4 合并入 A11，编号不再使用；v1.2.5 新增 A20-A23），每次 commit 自动跑 | [ARCHITECTURE §三](./ARCHITECTURE.md) |
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
-| **FORGE** | 自迭代引擎——通过 workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
+| **FORGE** | 自迭代引擎——通过 Workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ sofagent/（约束底座）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |
 | **激活链** | FDE 交付物→企业工作流自运转的四阶段生命周期：ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN（v1.2.5-v1.3.0） | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md) |
 | **data/** | ~/.sofagent/data/ v1.2.1 确立的 SSOT 数据目录（原 .sofagent/ 已迁移）：history.jsonl、knowledge/、audit/、config/ | [DEVELOPMENT §数据目录](./DEVELOPMENT.md) |
@@ -124,7 +124,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | `docs/HANDBOOK.md` | FDE 操作手册：进场流程、节点部署、持续维护 |
 | `docs/guides/fde-activation-chain.md` | 🔗 激活链设计（v1.2.5+）：FDE 交付物 → 企业工作流自动运转（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN） |
 | `docs/THANKS.md` | 致谢——谁启发了哪个设计决策 |
-| `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/`）。⚠️ P2-22 免责：早期版本日志含"审查元信息/开发过程备注"等非产品文档内容，属当时开发留痕，不代表产品能力声明；以各版本 changelog 顶部的"已开发/规划中"标记为准 |
+| `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/`）。⚠️ 早期版本日志含"审查元信息/开发过程备注"等非产品文档内容，属当时开发留痕，不代表产品能力声明；以各版本 changelog 顶部的"已开发/规划中"标记为准 |
 | `docs/changelog/releasing.md` | **发版 SOP**——十二阶段全流程 |
 | `docs/evidence/` | 效果证据：案例、基准测试、反例 |
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |
@@ -141,8 +141,9 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | `engine/harness/` | @sofagent/harness — SKILL 加载链（上下文注入） |
 | `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool） |
 | `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（v1.2.x 新增，第 13 个包） |
+| `engine/scripts/` | 运维脚本集（9 个 .sh + lib/ 模块 + windows/ 14 个 .ps1）——安装（install.sh 调用）、卸载、验证（verify.sh）、daemon 管理、审计日志记录等 |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
-| 其余 6 包（ontology/eval/think/ab-test/skillopt/rules） | 详见 `docs/DEVELOPMENT.md §包结构` |
+| 其余 6 包（ontology/eval/think/ab-test/skillopt/rules） | 详见 `docs/DEVELOPMENT.md §包结构`（注：think 已在上方 core 集团列出，此处为包总数口径 13-7=6） |
 
 ### 关键数据路径（`data/`）
 
@@ -160,7 +161,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 
 | 项 | 值 |
 |----|-----|
-| 当前版本 | **v1.2.6**（2026-08-04） |
+| 当前版本 | **v1.2.7**（2026-08-06） |
 | 下一版本 | v1.2.7（参见 docs/ROADMAP.md） |
 | 测试覆盖 | 1527 测试 / 12 包（测试 SSOT 口径：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，见 check-test-count.sh） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1-E2/E4，每次 commit 自动跑 |
@@ -234,4 +235,4 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 
 ---
 
-> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.2.6 · 孔放勋 · 2026-08-04。
+> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.2.7 · 孔放勋 · 2026-08-06。

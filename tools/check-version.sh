@@ -795,6 +795,53 @@ else
 fi
 echo ""
 
+# ── v1.2.8 P1-11: WIKI 状态表版本号扫描 ──────────────────────
+echo "=== 16. WIKI 状态表版本号扫描 ==="
+WIKI_FILE="${PROJECT_ROOT}/docs/WIKI.md"
+if [[ -f "${WIKI_FILE}" ]]; then
+  WIKI_DRIFT_OK=true
+  # 扫描 WIKI.md 中所有 vX.Y.Z 格式版本号（排除历史叙述和 CHANGELOG 引用）
+  while IFS=: read -r line_num line_content; do
+    found_vers=$(echo "$line_content" | grep -oE 'v[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
+    [[ -z "$found_vers" ]] && continue
+    found_ver=$(echo "$found_vers" | sed 's/^v//')
+    found_2seg=$(echo "$found_ver" | cut -d. -f1-2)
+    # 跳过旧版本历史叙述（如"v1.2.5 引入了..."）
+    # 只检查状态表行（含"当前"或含"状态"或含"版本"关键字的行）
+    if echo "$line_content" | grep -qE '当前|状态|版本'; then
+      if [[ "$found_2seg" != "$SSOT_2SEG" ]]; then
+        echo "  ❌ WIKI.md:${line_num} 版本 ${found_ver} ≠ SSOT ${SSOT_VERSION}"
+        WIKI_DRIFT_OK=false
+        ERRORS=$((ERRORS + 1))
+      fi
+    fi
+  done < <(grep -nE 'v[0-9]+\.[0-9]+' "${WIKI_FILE}" 2>/dev/null | grep -v 'changelog' || true)
+  if $WIKI_DRIFT_OK; then
+    echo -e "  ${GREEN}✓${NC} WIKI.md 状态表版本号一致"
+    CHECKS=$((CHECKS + 1))
+  fi
+fi
+echo ""
+
+# ── v1.2.8 P1-26: MCP 工具数一致性 ──────────────────────────
+echo "=== 17. MCP 工具数一致性 ==="
+MCP_SERVER="${PROJECT_ROOT}/engine/mcp/src/mcp-server.ts"
+SKILL_FILE="${PROJECT_ROOT}/SKILL/SKILL.md"
+if [[ -f "${MCP_SERVER}" ]] && [[ -f "${SKILL_FILE}" ]]; then
+  # 从 mcp-server.ts 统计注册的工具数（name: 'xxx' 模式匹配）
+  REGISTERED_COUNT=$(grep -cE "name: '[a-z_]+'" "${MCP_SERVER}" 2>/dev/null || echo 0)
+  # 从 SKILL.md 提取标题中声称的工具数
+  SKILL_CLAIMED=$(grep -oE '[0-9]+ tools' "${SKILL_FILE}" | grep -oE '^[0-9]+' | head -1)
+  if [[ -n "$SKILL_CLAIMED" ]] && [[ "$SKILL_CLAIMED" != "$REGISTERED_COUNT" ]]; then
+    echo "  ❌ SKILL.md 声称 ${SKILL_CLAIMED} tools，mcp-server.ts 注册 ${REGISTERED_COUNT} 个"
+    ERRORS=$((ERRORS + 1))
+  elif [[ -n "$SKILL_CLAIMED" ]]; then
+    echo -e "  ${GREEN}✓${NC} MCP 工具数一致：${REGISTERED_COUNT} tools"
+    CHECKS=$((CHECKS + 1))
+  fi
+fi
+echo ""
+
 # ── 汇总 ──────────────────────────────────────────────────────
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then

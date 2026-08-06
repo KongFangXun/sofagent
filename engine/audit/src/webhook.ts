@@ -75,10 +75,22 @@ export function isPrivateWebhookUrl(rawUrl: string): boolean {
  * v1.2.6: 脱敏辅助——webhook 推送到第三方平台前，对审计详情做敏感信息脱敏。
  * 复用 @sofagent/core 的 REDACTION_PATTERNS（与审计引擎内部脱敏口径一致）。
  */
-function redactDetail(detail: string): string {
+/**
+ * v1.2.8 P1-5: 支持自定义脱敏正则（config.yml sanitizePatterns）
+ */
+function redactDetail(detail: string, customPatterns?: { pattern: RegExp; replacement: string }[]): string {
   let redacted = detail;
   for (const { pattern, replacement } of REDACTION_PATTERNS) {
     redacted = redacted.replace(pattern, replacement);
+  }
+  if (customPatterns) {
+    for (const { pattern, replacement } of customPatterns) {
+      try {
+        redacted = redacted.replace(pattern, replacement);
+      } catch {
+        // 无效正则跳过
+      }
+    }
   }
   return redacted;
 }
@@ -110,10 +122,17 @@ function getTracingContext(): { repo: string; sha: string; machine: string } {
  * v1.2.6: 推送前对审计详情脱敏（防止密钥/凭证泄露到钉钉/飞书/企微）
  * v1.2.7: 追加溯源字段（仓库路径 / commit SHA / 机器标识）
  */
-function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass: boolean): string {
+function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass: boolean, customPatterns?: { pattern: RegExp; replacement: string }[]): string {
   const version = VERSION;
   const tracing = getTracingContext();
-  const tracingLine = `仓库: ${tracing.repo} | 提交: ${tracing.sha || 'N/A'} | 机器: ${tracing.machine}`;
+  // v1.2.8: P1-7 — 增加 actor（OS 用户 + git 提交者）
+  const osUser = require('os').userInfo().username;
+  let gitAuthor = 'N/A';
+  try {
+    gitAuthor = require('child_process').execSync('git config user.name', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim() || 'N/A';
+  } catch { /* 非 git 仓库或无配置 */ }
+  const actor = `操作者: ${osUser} (git: ${gitAuthor})`;
+  const tracingLine = `仓库: ${tracing.repo} | 提交: ${tracing.sha || 'N/A'} | 机器: ${tracing.machine} | ${actor}`;
 
   if (isPass) {
     const lines: string[] = ['✅ sofagent 审计通过'];
@@ -131,7 +150,7 @@ function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass:
     lines.push(`任务：${payload.task}`);
   }
   for (const rule of failedRules) {
-    lines.push(`A${rule.number} ${rule.name}：${rule.details.map(redactDetail).join('；')}`);
+    lines.push(`A${rule.number} ${rule.name}：${rule.details.map((d: string) => redactDetail(d, customPatterns)).join('；')}`);
   }
   lines.push(`详情：exit code ${payload.exitCode}`);
   lines.push(tracingLine);
@@ -159,7 +178,7 @@ function buildRequestBody(platform: WebhookPlatform, content: string): Record<st
  * 超时 5 秒，超时/失败 silently return false
  * @returns true 推送成功, false 推送失败
  */
-export async function pushAuditResult(payload: WebhookPayload): Promise<boolean> {
+export async function pushAuditResult(payload: WebhookPayload, customPatterns?: { pattern: RegExp; replacement: string }[]): Promise<boolean> {
   // 测试豁免开关：仅供测试环境使用。
   // 验收测试（acceptance-test.sh 场景 34/34b/34c）用 localhost mock server 接收
   // webhook 推送做断言，而该地址会被下方 SSRF 防护拦截。显式设置
@@ -182,7 +201,7 @@ export async function pushAuditResult(payload: WebhookPayload): Promise<boolean>
   );
   const isPass = failedRules.length === 0;
 
-  const content = buildContent(payload, failedRules, isPass);
+  const content = buildContent(payload, failedRules, isPass, customPatterns);
   const body = buildRequestBody(payload.platform, content);
 
   try {

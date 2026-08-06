@@ -3,7 +3,7 @@ name: fresh-eyes-loop
 description: 发布后独立质量循环——A/B 双盲 12 视角 fresh-eyes 审查 + 修复 + 验证，每轮新 session 保证零上下文，连续 2 轮无 P0/P1 即停。
 emoji: 🔍
 color: "#16B8F3"
-version: 1.2.7
+version: 1.2.8
 ---
 
 # fresh-eyes-loop · 质量循环定义
@@ -24,7 +24,8 @@ version: 1.2.7
 
 1. 读 `loop.md` 拿到完整 SOP（角色 / 轮次协议 / 产物 schema / 停止条件）。
 2. 12 视角的定义见 `FORGE/playbook/fresh-eyes-review.md`（两个 subagent 都按它跑）。
-3. A/B 的行为指令在 `prompts/`（a-check / b-check / a-consolidate / b-fix / a-verify）。
+3. A/B 的行为指令在 `prompts/`（a-check / b-check / a-consolidate / b-fix / b-audit / a-verify）。
+4. v1.2.8 新增 **b-audit** 步骤：b-fix 改完代码后 driver 自动跑 `sofagent-audit --diff`——审计每次变更，dogfooding 铁律。audit FAIL（exit 2）打回 b-fix 重修，不进 a-verify。
 4. 跨 run 的永久索引在 `FORGE/LEDGER.md`（被 git 跟踪）；每轮正文在 `runs/`（不进 git）。
 
 ## 实现载体

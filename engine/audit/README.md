@@ -4,7 +4,7 @@
 >
 > **安装后运行：`sofagent-audit --init`**（一键初始化 config + hook + 冒烟测试）
 >
-> 最小运行时依赖（仅 js-yaml）。TypeScript 实现。Node.js 18+。
+> 最小运行时直接依赖（js-yaml + archiver，传递依赖随 @sofagent/core 引入）。TypeScript 实现。Node.js 18+。
 
 ---
 
@@ -29,7 +29,7 @@ npx @sofagent/audit --diff HEAD~1..HEAD
 | `sofagent-core` | `@sofagent/core` | 核心运行时（含 `verify` / `doctor` 子命令） |
 | `sofagent-orchestrator` | `@sofagent/orchestrator` | 编排引擎 CLI（含 `compose` / `compare` 子命令） |
 
-> 💡 其他常用命令：`sofagent-mcp`（`@sofagent/mcp`）、`sofagent-daemon`（`@sofagent/daemon`）、`sofagent-think`（`@sofagent/think`）等均为各自独立 npm 包的 bin 命令。`@sofagent/audit` 内置 MCP Server（通过 `sofagent-audit --mcp` 启动），无需单独安装 mcp 包。
+> 💡 其他常用命令：`sofagent-mcp`（`@sofagent/mcp`，v1.2.0 起拆分为独立包）、`sofagent-daemon`（`@sofagent/daemon`）、`sofagent-think`（`@sofagent/think`）等均为各自独立 npm 包的 bin 命令。MCP 支持请安装 `@sofagent/mcp` 独立包。
 
 ---
 
