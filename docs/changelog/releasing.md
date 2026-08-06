@@ -395,6 +395,15 @@ bash tools/check-test-count.sh
 
 > 🔴 **v1.2.3 教训·CI 解析要 strip ANSI**：vitest 在 CI 非 TTY 环境（GitHub Actions）仍输出颜色码，`Tests` 汇总行行首是 `\033[2m` 而非空格，导致 `grep '^\s*Tests\s+'` 恒不匹配 → `TOTAL_TESTS=0` → check-test-count.sh 报「无法获取实际测试数」exit 1。**本地非 TTY 不出颜色码故无法复现**——必须用 `script -q /dev/null bash -c '...'` 强制 TTY 才能模拟。修复铁律：test-count.sh / check-test-count.sh 所有对 vitest 输出的 grep **必须先 `sed $'s/\033\[[0-9;]*m//g'` strip ANSI**；优先信任 test-count.sh 末尾机器可读行 `TOTAL_TESTS=NNN`（不受 quiet/ANSI 守卫影响，恒输出），再回退人读「总计」行。
 
+> **🔴 v1.2.7 教训·ROADMAP 未来版本链接 + check-docs 预算**
+>
+> v1.2.7 发版 CI 第 4-5 轮失败，根因归阶段八：
+>
+> | 轮次 | 根因 | 修法 | 检查 |
+> |:--:|------|------|------|
+> | 4 | `check-docs.sh` 死链扫描把 ROADMAP 中 `[开发日志](./changelog/v1.3/v1.3.X.md)` markdown 链接当死链——指向不存在的未来版本文件 | **ROADMAP 未来版本 changelog 引用一律用纯文本，不用 markdown 链接**。已发版的才用链接 | 推前 `grep '\[开发日志\](./changelog/v1\.' docs/ROADMAP.md` 应为零 |
+> | 5 | A 类用户文档 6258 行 > 6100 上限（开发日志收尾自然增长） | **超标上调不删内容**——check-docs.sh 的 `LIMIT_A/LIMIT_B/LIMIT_TOTAL` 按实际行数上调并留余量 | 同步更新 MEMORY.md 预算值 |
+
 ### 全项目版本号扫描
 
 详见 [FORGE/playbook/version-bump.md](../../FORGE/playbook/version-bump.md)——bump-version.sh 13 类位置、package-lock 同步、npm 铁律、手动排查。
@@ -600,6 +609,16 @@ for pkg in audit mcp; do
 done
 echo "⚠️ 确认 audit/mcp 的 README.md 在 npm pack 输出中有内容——v1.1.3 mcp README 0 bytes"
 ```
+
+> **🔴 v1.2.7 教训：跨平台 CI + 版本一致性三连**
+>
+> v1.2.7 发版连续修了 5 轮 CI，每轮一个不同根因。前 3 轮归阶段十一（lock 同步 / 内部依赖 / 跨平台脚本）：
+>
+> | 轮次 | 根因 | 修法 | 本阶段检查 |
+> |:--:|------|------|-----------|
+> | 1 | `package-lock.json` 版本未同步——package.json 已 bump 但 lock 里子包嵌套依赖仍为旧版 | `npm install --package-lock-only --ignore-scripts` 重新生成 lock | 推前 `npm ci --dry-run` 确认 lock 与 package.json 一致 |
+> | 2 | 9 处子包内部 `@sofagent/*` 依赖硬编码旧版（如 audit/mcp/rules 的 dependencies 仍是 1.2.6） | bump 后全局搜 `grep -rn '"@sofagent' engine/*/package.json` 确认所有内部依赖版本已同步 bump | bump-version.sh 需覆盖内部依赖版本 |
+> | 3 | Windows cmd.exe 不认 Unix shell 语法——5 个子包 build 脚本含 `[ -f ] && chmod; true` | build 脚本只用 `npm run clean && tsc`（跨平台），chmod 移到 root `postbuild` 用 node 实现 | build 脚本不含 shell-only 语法（`[ -f ]`/`chmod`/`; true`） |
 
 ### 执行发布
 
@@ -1012,6 +1031,7 @@ bash tools/check-version.sh   # 期望：全绿
 
 | 版本 | 教训摘要 | 所在阶段 |
 |------|---------|---------|
+| v1.2.7 | **CI 跨平台 + 版本一致性五连修**：① package-lock.json 子包嵌套依赖版本不同步（npm ci 严格模式拒绝）② 9 处子包内部 @sofagent/* 依赖硬编码旧版（bump 未覆盖内部依赖）③ Windows cmd.exe 不认 Unix build 脚本（`[ -f ]`/`chmod`/`; true`→跨平台 node postbuild）④ ROADMAP 未来版本 changelog markdown 链接被判死链（未来版本文件不存在→纯文本）⑤ check-docs A 类预算超标（超标上调不删内容铁律） | 阶段八(④⑤)/阶段十一(①②③) |
 | v1.2.5 | **阶段六拆分冗余**：旧设计把 acceptance 预跑放开发 session、driver 放新 session，需用户在两 session 间手动传日志路径。实际新 session 的 bash 完全能直连跑 acceptance + 启动 driver，合并为单 session 单 prompt 一步到位 | 阶段六 |
 | v1.2.4 | **daemon CI 在无 fde.md 环境静默崩溃**：config.sh `SOFA_RULES_FILE="$(_find_rules)"` 在 CI runner（无任何 fde.md 路径）触发 `set -e` → daemon 在 `_init_json()` 前静默退出 → `daemon.json` 不生成 → CI 验证失败。bash `-x` trace 是唯一排查手段（`set -e` 不打印错误行）。修法：`"$(_find_rules || true)"`；阶段十一推前预检新增 daemon CI 本地模拟（fake HOME 跑 foreground daemon 验证 daemon.json 生成） | 阶段十一 |
 | v1.2.4 | **macOS daemon CI launchd 冲突**：daemon-install.sh 注册的 plist 有 `RunAtLoad=true + KeepAlive=true`，launchd load 时立即启动后台 daemon，该进程不继承 `SOFAGENT_DATA` → 与手动 foreground daemon 竞争写 daemon.json。Linux CI 无此问题（systemd user service 在无 logind session 的 CI 中无法启动）。修法：验证 plist 注册后立即 `launchctl unload`，后续只跑 foreground（与 Linux CI 路径对齐） | 阶段十一 |
