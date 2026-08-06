@@ -186,6 +186,24 @@ if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
 fi
 
 # ════════════════════════════════════════
+# 4b. FORGE driver 冒烟测试（import/export 接线 + 测试文件）
+# ════════════════════════════════════════
+# FORGE/ 不在 npm workspaces 内，npm test 不覆盖 FORGE/src/*.test.mjs。
+# driver 的接线断裂（如 DEFAULT_BUDGET 缺 export）只有手动跑 driver 时才暴露。
+# 此步在推前自动验证：模块可加载 + dry-run 不崩 + 测试文件可运行。
+if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
+  echo -e "\n${BOLD}── 4b. FORGE driver 冒烟测试 ──${NC}"
+  FORGE_OUT=$(bash tools/forge-smoke-test.sh 2>&1)
+  FORGE_RC=$?
+  echo "$FORGE_OUT" | grep -E "通过|失败|✗|⚠" | sed 's/^/  /'
+  if [ "$FORGE_RC" -eq 0 ]; then
+    check_pass "forge-smoke-test.sh（模块加载 + 测试文件）"
+  else
+    check_fail "forge-smoke-test.sh 有失败项"
+  fi
+fi
+
+# ════════════════════════════════════════
 # 5. sofagent-audit（对应 sofagent-audit.yml）
 # ════════════════════════════════════════
 echo -e "\n${BOLD}── 5. CLI 二进制验证 ──${NC}"
