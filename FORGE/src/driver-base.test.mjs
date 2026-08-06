@@ -114,7 +114,8 @@ describe('createForgeDriverBase', () => {
       const text = lines.join('\n');
       const result = base.truncateToolOutput(text, 100);
       expect(result).toContain('truncated');
-      expect(result.split('\n').length).toBeLessThanOrEqual(101);
+      // 100 行预算 = head 50 + tail 50 + 截断消息行（消息含前后 \n 展开为 3 行）= ≤103
+      expect(result.split('\n').length).toBeLessThanOrEqual(103);
     });
 
     it('空文本返回空字符串', () => {
