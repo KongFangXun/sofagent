@@ -179,7 +179,7 @@
 | 1 | **合并更新三份审查文档（三份逻辑不同，区分对待）**：<br>**① regression-checklist.md（加法）**：汇总本版本所有修复项，抽象为回归检查维度（编号递增）写入。每发现一个问题加一条——这是精确清单，膨胀靠瘦身控制<br>**② fresh-eyes-review.md（校准，不是加法）**：按下方「fresh-eyes-review 升级优化」决策树处理本版本审查中的预料外发现。**⚠️ 不要往 fresh-eyes-review 里加精确检查项**——它是留白式的直觉审查，加检查项会让它退化成第二个 regression-checklist（v1.2.0 刚从 826 行砍到 274 行修复了这个问题）<br>**③ acceptance-test.sh（可自动化验证的发现）**：如果 fresh-eyes 审查报告中的 P0/P1 问题可以通过 CLI 命令/grep/bash 自动化验证，**同步追加到 `FORGE/playbook/acceptance-test.sh`**（追加场景，编号递增）。手法与阶段四·步骤 6 Step B 相同——`scenario` 编号 + 中文注释 + 断言。**为什么需要这一步**：regression-checklist 是人工巡检用的，acceptance-test 是机器跑的——如果一个 bug 可以被自动化检出，把它只放在 regression-checklist 里等于每次发版都要人工跑一遍。让它进 acceptance-test 才能让机器替你记住。 | 当前 session | `git diff` 显示三份文档均有更新（fresh-eyes 可能无变更，见下说明）；regression 新增维度 + acceptance-test 新增场景 ≥ 本版本修复数 |
 | 2 | **当前 session 逐项验证**：每条新增回归维度跑一遍命令确认可执行；确认 `fresh-eyes-review.md` 新维度与回归维度互相印证、无矛盾 | 当前 session | 所有新增维度可执行 + 两份文档互相印证 |
 
-> ✅ 完成阶段四（fresh-eyes-loop + 代码审核 + 验收测试）后，**开发 session 的文档工作已一气呵成**——回归清单 + 发布后审查全部在当前 session 更新完。接下来**阶段六在新 session 直连跑 acceptance-test.sh**（acceptance 直连绕过 sandbox kill），然后**开新监控 session 启动 driver**（只跑 regression/coverage/consolidate/verdict）。开发 session 转阶段七~八，与监控 session 并行。
+> ✅ 完成阶段四（fresh-eyes-loop + 代码审核 + 验收测试）后，**开发 session 的文档工作已一气呵成**——回归清单 + 发布后审查全部在当前 session 更新完。接下来**阶段六在新 session 直连跑 acceptance-test.sh**（acceptance 直连绕过 sandbox kill），然后**开新监控 session 启动 driver**（只跑 regression/coverage/consolidate/verdict）。🔴 阶段六 verdict=PASS 前，开发 session 不进阶段七~八——等 PASS 回来再继续。
 
 > 🔴 **防膨胀自检 + 瘦身检查（v1.1.7 起，覆盖回归清单 + 验收脚本两份验证文件，每版本执行）**：两份验证文件历史上都曾严重膨胀——回归清单曾达 288 维度（3686 行，2026-07-18 治理归并），验收脚本 `FORGE/playbook/acceptance-test.sh` 在 v1.1.7 优化前达 3207 行。为防止"每次单纯堆砌、几版就不可维护"，**每版本发版都做一轮瘦身**（既然每版都做，单次瘦身量小、负担可控）。流程：先跑轻量自检看两个数，再对越线或冗余处做深度瘦身。
 
@@ -260,7 +260,9 @@ VIEWS=$(grep -c '^### ' FORGE/playbook/fresh-eyes-review.md)
 
 ## 🔴 阶段六：release-gate-loop 发版闸门（开新 session，一步到位）
 
-**操作模式**：阶段五完成后，**开一个新 session**，给它一段 prompt（见下方模板），它一次性完成 acceptance 预跑 → driver 启动 → 轮询监控 → 最终汇报。开发 session 此时可并行做阶段七~八的文档工作，不用干等。
+**操作模式**：阶段五完成后，**开一个新 session**，给它一段 prompt（见下方模板），它一次性完成 acceptance 预跑 → driver 启动 → 轮询监控 → 最终汇报。
+
+> 🔴 **阶段六必须 PASS 后才能进阶段七~八**：阶段六 FAIL 会回阶段五修复（regression-checklist / fresh-eyes-review / 源码都可能动），此时阶段七八的审查体系确认和开发日志定稿会被推翻。**禁止提前做阶段七八**——等 verdict=PASS 再进。
 
 > **为什么开新 session**：阶段三~五在开发 session 做完后，上下文已经很长。release-gate-loop 全程需要 15-20 分钟，期间只需执行命令 + 轮询日志 + 汇报——不需要开发 session 的上下文。开一个干净的 session，上下文短、不互相干扰。
 >
