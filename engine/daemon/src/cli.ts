@@ -18,6 +18,7 @@ async function main() {
     console.log('  snapshot list                列出所有快照');
     console.log('  snapshot restore <sha>       恢复到指定快照');
     console.log('  knowledge status             聚合知识库状态（Dream Cycle / 健康 / sensitivity）');
+    console.log('  scheduler <list|pause|resume|trigger|history|delete>  定时任务管理（v1.2.8）');
     console.log('  doctor                       检查 daemon 健康状态（v1.2.5 §8.4）');
     process.exit(0);
   }
@@ -225,9 +226,82 @@ async function main() {
       }
       break;
     }
+    case 'scheduler': {
+      // v1.2.8 功能②：定时任务管理
+      const action = args[1];
+      const taskId = args[2];
+      const { createScheduler } = await import('./scheduler');
+      const sched = createScheduler();
+
+      switch (action) {
+        case 'list': {
+          const tasks = sched.list();
+          if (tasks.length === 0) {
+            console.log('暂无定时任务。');
+          } else {
+            console.log(`定时任务 (${tasks.length}):`);
+            for (const t of tasks) {
+              const status = t.status === 'active' ? '✅' : '⏸️';
+              const lastRun = t.lastRun ? new Date(t.lastRun).toLocaleString('zh-CN') : '—';
+              const nextRun = t.nextRun ? new Date(t.nextRun).toLocaleString('zh-CN') : '—';
+              console.log(`  ${status} ${t.id.slice(0, 8)}  ${t.name}  [${t.type}]  last=${lastRun}  next=${nextRun}`);
+            }
+          }
+          break;
+        }
+        case 'pause': {
+          if (!taskId) { console.error('❌ scheduler pause 需要 <task-id>'); process.exit(1); }
+          const result = sched.pause(taskId);
+          if (result) console.log(`⏸️  已暂停: ${result.name}`); else console.error('❌ 任务不存在');
+          break;
+        }
+        case 'resume': {
+          if (!taskId) { console.error('❌ scheduler resume 需要 <task-id>'); process.exit(1); }
+          const result = sched.resume(taskId);
+          if (result) console.log(`▶️  已恢复: ${result.name}`); else console.error('❌ 任务不存在');
+          break;
+        }
+        case 'trigger': {
+          if (!taskId) { console.error('❌ scheduler trigger 需要 <task-id>'); process.exit(1); }
+          try {
+            const run = sched.trigger(taskId, () => ({ exitCode: 0, output: '手动触发完成' }));
+            console.log(`✅ 已触发 (${run.exitCode === 0 ? '成功' : '失败'}): ${run.output}`);
+          } catch (err) {
+            console.error(`❌ ${(err as Error).message}`);
+            process.exit(1);
+          }
+          break;
+        }
+        case 'history': {
+          if (!taskId) { console.error('❌ scheduler history 需要 <task-id>'); process.exit(1); }
+          const runs = sched.history(taskId);
+          if (runs.length === 0) {
+            console.log('暂无运行历史。');
+          } else {
+            console.log(`运行历史 (${runs.length}):`);
+            for (const r of runs.slice(0, 20)) {
+              const time = new Date(r.startedAt).toLocaleString('zh-CN');
+              const status = r.exitCode === 0 ? '✅' : '❌';
+              console.log(`  ${status} ${time}  exit=${r.exitCode}  ${r.output.slice(0, 60)}`);
+            }
+          }
+          break;
+        }
+        case 'delete': {
+          if (!taskId) { console.error('❌ scheduler delete 需要 <task-id>'); process.exit(1); }
+          if (sched.delete(taskId)) console.log('🗑️  已删除'); else console.error('❌ 任务不存在');
+          break;
+        }
+        default:
+          console.error('❌ 未知 scheduler 子命令: ' + (action || ''));
+          console.error('   用法: sofagent-daemon scheduler <list|pause|resume|trigger|history|delete> [task-id]');
+          process.exit(1);
+      }
+      break;
+    }
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Usage: sofagent-daemon <start|create-usb-key|snapshot|knowledge|doctor> [options]');
+      console.error('Usage: sofagent-daemon <start|create-usb-key|snapshot|knowledge|scheduler|doctor> [options]');
       process.exit(1);
   }
 }

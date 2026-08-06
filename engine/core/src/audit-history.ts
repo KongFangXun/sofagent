@@ -377,5 +377,20 @@ export function validateHmacKey(): HmacKeyStatus {
   if (byteLen < 16) {
     return { configured: true, strong: false, reason: `密钥长度不足（${byteLen} 字节，建议 ≥16 字节 / 128-bit）` };
   }
+  // v1.2.8: P1-2 — 熵检测（弱密钥模式识别）
+  // 检查重复字符占比（如 "1234567890123456" 重复度高）
+  const uniqueChars = new Set(trimmed).size;
+  const repetitionRatio = 1 - (uniqueChars / trimmed.length);
+  if (repetitionRatio > 0.6) {
+    return { configured: true, strong: false, reason: `密钥重复度过高（${(repetitionRatio * 100).toFixed(0)}%，可能为弱密钥）——建议用 openssl rand -hex 32 重新生成` };
+  }
+  // 检查常见弱密钥
+  const weakPatterns = ['test-hmac-key', '1234567890', 'password', 'secret', 'changeme', 'aaaaaaaa'];
+  const lowerKey = trimmed.toLowerCase();
+  for (const weak of weakPatterns) {
+    if (lowerKey.includes(weak)) {
+      return { configured: true, strong: false, reason: `检测到弱密钥模式（含 "${weak}"）——建议用 openssl rand -hex 32 重新生成` };
+    }
+  }
   return { configured: true, strong: true };
 }

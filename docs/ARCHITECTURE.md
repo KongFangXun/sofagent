@@ -7,7 +7,7 @@
 
 ## 心智模型（先读这个）
 
-> **sofagent 是一个 FDE Agent**（开源 MIT）——对外帮你进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎是一套约束 Agent 行为的 Harness 中间件，**能力底座 × 生命周期**双层架构：层 1 能力底座 = 一底座·三引擎（约束底座 + 审计/回溯/进化引擎）；层 2 生命周期 = 诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具保证每次变更可审计、可回滚、可进化。
+> **sofagent 是一个 FDE Agent**（开源 MIT）——对外帮你进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎是一套约束 Agent 行为的 Harness 中间件，**能力底座 × 生命周期**双层架构：层 1 能力底座 = 一底座·三引擎（约束底座 + 审计/回溯/进化引擎）；层 2 生命周期 = 诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，保证每次变更可审计、可回滚、可进化。
 
 ```mermaid
 graph TD
@@ -94,6 +94,7 @@ graph TD
 - [五、激活链架构（v1.2.5+ 规划中）](#五激活链架构v125-规划中)
 - [六、已知局限与未来方向](#六已知局限与未来方向)
 - [七、架构设计决策的行业锚点](#七架构设计决策的行业锚点)
+- [八、数据层路线建议（待审阅）](#八数据层路线建议待审阅)
 
 ---
 
@@ -151,7 +152,7 @@ graph TD
 
 ### 对外核心能力（FDE Agent 给用户什么）
 
-✅ 已发布可用（v1.2.0 - v1.2.4）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 24 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关（Claude Code / Codex / Cursor / WorkBuddy / OpenClaw 即挂即用）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 本体结构 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
+✅ 已发布可用（v1.2.0 - v1.2.7）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 24 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关（Claude Code / Codex / WorkBuddy / OpenClaw 即挂即用；Cursor 社区验证中）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 本体结构 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
 
 > **v1.2.0 审计链安全加固**（BugFix 批次）：`--doctor` hash chain 三态判定（ok / tampered / unverifiable，`checkHistoryChainDetailed`）· HMAC key ≥16 字节强校验（`validateHmacKey`）· HMAC 签名改为基于脱敏记录（先 sanitize 再签名，写读一致）· config 可选签名校验（`verifyConfigSignature` + `signConfig` CLI）· CLI 版本一致性自检（`checkVersionConsistency`）。详见 `engine/core/src/audit-history.ts`、`engine/core/src/config-loader.ts`。
 
@@ -616,6 +617,14 @@ graph LR
 ├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
 │ @sofagent/audit ⭐ v1.2.7                │  │ support-bundles/ ⭐   │  │ 人类（报障附件）                      │
 │   --support-bundle → generateSupportBundle│→ │   <timestamp>.zip    │→ │   （脱敏后的诊断快照）               │
+├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
+│ @sofagent/core ⭐ v1.2.8                 │  │ memory/ ⭐ v1.2.8     │  │ @sofagent/daemon（dream-cycle）      │
+│   createMemoryStore → per-fact Markdown  │→ │   memory.json 索引   │→ │   extract-facts 写入事实级记忆       │
+│   （事实级记忆存储）                      │→ │   __default__/*.md   │→ │ @sofagent/core（search/list/delete）│
+├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
+│ @sofagent/daemon ⭐ v1.2.8               │  │ scheduler/ ⭐ v1.2.8  │  │ CLI（scheduler list/history）        │
+│   createScheduler → cron/once 定时任务   │→ │   tasks.json 索引    │→ │   daemon start → getDueTasks()       │
+│   （定时任务调度器）                      │→ │   history/<id>/*.json│→ │                                     │
 └─────────────────────────────────────────┘  └──────────────────────┘  └─────────────────────────────────────┘
 ```
 
@@ -1017,3 +1026,48 @@ Action Type = 一个**有身份的变更请求**：携带参数 + 校验 + 权�
 这三条注入 sofagent 的 Policy 层，避免「语义层想管一切」导致的权限失控。
 
 > 📖 [行业笔记]
+
+---
+
+## 八、数据层路线建议（待审阅 · 2026-08-06）
+
+> ⚠️ **本节约等同于决策草案，尚未纳入正式架构约束，待孔老师审阅拍板。**
+> 来源：知识库蒸馏《语义层构建：人工 vs 自动——Palantir 路线与 Databricks 路线对照》（2026-08-06）及两篇对立笔记研讨。本文件仅记录建议与设计理由，不修改任何既有引擎行为。
+
+### 8.1 问题：语义层 / 本体该由谁建
+
+业界同一议题存在两种对立路线（非产品之争，是"业务上下文层该由谁建、谁说了算、怎么可信"之争）：
+
+- **路线 A · 人工精心构建（Palantir）**：语义层 = 共享行动现实，由人 / FDE 在部署时精心建模统一业务对象、状态、动作、权限；慢但出处清楚，是 Agent 规模化的前提。
+- **路线 B · 自动生成（Databricks Genie Ontology）**：语义层 = LLM Wiki 企业版 ＋ 权限过滤 ＋ 类 PageRank 权威排序，从公司已有使用痕迹里"长"出来；快但赌"流行 ≈ 正确"，且"认证能否强制压过流行"未定义。
+
+**关键咬合点**：自动语义层来了，手工语义层没死，反而变成整张图的**压舱石**——手工层负责"认证"（金标准不可被覆盖），自动层负责"补全"（长尾语义，默认权重低于认证层）。对立不是二选一，而是**两层怎么分工、谁压顶**。
+
+### 8.2 建议：采用「混合路线」，且人工认证层永远压顶
+
+sofagent 的现有架构**天然已是这种混合结构**，只是还没把"谁压顶"写成硬约束：
+
+| sofagent 层 | 对应路线 | 当前状态 |
+|------|------|------|
+| **Policy 层**（ontology / fde.md / SKILL.md） | 路线 A 人工构建 | FDE 部署时精心建模，是"业务世界模型"的压舱石 ✅ |
+| **Views 层**（knowledge/） | 路线 B 自动生成 | Dream Cycle 从 think.md（Ledger）自动抽取沉淀 ⚠️ 加权待硬化 |
+| **Ledger → Views 单向** | 派生方向约束 | 已有不变量（Views 不得反向写回 Ledger）✅ |
+
+### 8.3 待硬化的三条设计决策（建议上升为硬约束）
+
+1. **铁律：人工认证压顶**——ontology / fde.md 中显式声明的规则（`certified`）在冲突时**强制压过** knowledge/ 中由"被引用次数"隐式加权的自动沉淀条目。对应 Databricks 笔记点名的"认证能否强制压过流行"盲区，须显式闭合。
+2. **自动层只补全、不推翻**——knowledge/ 自动派生物不得反向覆盖 Policy 层认证条目。扩展现有 Ledger→Views 单向不变量为"**Views 自动条目不得覆盖 Policy 认证条目**"。
+3. **权威排序显式化**——进化引擎经验加权当前按"命中次数"隐性加权，与 Databricks PageRank **同构**，存在"高频错误经验挤掉低频正确铁律"风险；须改为 **命中次数 × 来源可信度（certified 权重最高）**。
+
+### 8.4 落到版本的下一步
+
+- **v1.3.0 数据层硬化**：ontology I/O schema 硬化（§七 生长树"根系"工程化）；knowledge/ 条目标注 `certified: true | false` 来源标记；冲突裁决规则（certified 压顶）代码化。
+- **进化引擎加权改造**：经验条目从"纯命中次数"改为"命中次数 × 来源可信度"，`certified` 条目权重视为 ∞（不可被高频非认证条目挤掉）。
+- **巡检联动**：`conflict-check` 增加"认证条目被高频非认证条目反向影响"的告警维度。
+
+### 8.5 待孔老师拍板的问题
+
+1. 是否将"人工认证压顶"上升为 **A 系列审计规则**（类似 A15 的约束验证），在 commit 时硬拦截反向覆盖？
+2. knowledge/ 自动条目是否**强制带 `certified` 字段**（缺省 = false，不得压顶）？
+3. 此混合路线是否写入 **PHILOSOPHY.md §五 世界模型**，作为"世界模型优先于语言模型"的工程补充？
+4. 若采纳，ARCHITECTURE.md 本节的"待审阅"标记何时转为正式约束（建议随 v1.3.0  hardening 一并转正）？

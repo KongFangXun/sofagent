@@ -33,7 +33,7 @@
 
 sofagent 就是解决这个问题的：**它帮你把 AI 管起来，让 AI 干活，你只负责把关。**
 
-具体来说，它做三件事：
+具体来说，它做这些事：
 
 | 你担心的 | sofagent 怎么做 | 用人话说 |
 |---------|----------------|---------|
@@ -77,7 +77,7 @@ AI 每次被拦下的毛病、每次成功的经验，都沉淀成"教训库"—
 底层是 **Harness 中间件**——每次 Agent 改完代码自动跑审计规则，违规当场拦截、合规存快照。四个要点：
 
 - **审计规则结构**：24 条注册 = 17 条默认启用 + 7 条扩展（需显式开启），其中 9 条基线不可禁用
-- **零 token 审计核心**：git diff 硬证据——19/24 条纯 git-diff（不依赖 Agent 配合）；4 条 hybrid 规则需 Agent 日志配合
+- **零 token 审计核心**：git diff 硬证据——19/24 条纯 git-diff + 1 条 filesystem（不依赖 Agent 配合）；4 条 hybrid 规则需 Agent 日志配合
 - **渐进式加载**：核心铁律层（core-rules.md ~30 行）始终注入 + 岗位规范按 task type 按需追加；四层加载链骨架（SKILL.md → fde.md → think.md → knowledge/）保留，提供行为底线供 Agent 自觉读取（非强制注入）
 - **审计拦截路径**：审计拦截在所有路径生效；反思生成（think.md）仅 MCP/CLI 路径触发
 
@@ -136,10 +136,12 @@ FDE 交付了本体结构（ontology）+ workflow.yml + skills/ 之后，v1.2.5 
 | 你是… | 第一步 | 需要什么 |
 |------|------|------|
 | **企业用户** | 装 [FDE 引导工具](./FDE/README.md) → 对话引导你梳理工作流 | 零依赖、不需要 Node.js |
-| **要给员工发 U 盘** | `sofagent-daemon create-usb-key --role "节点名" --target /Volumes/XXX --platform macos` | 已装 daemon + 一个 U 盘 |
+| **企业批量部署（USB 烧录）** | `sofagent-daemon create-usb-key --role "节点名" --target /Volumes/XXX --platform macos` | 已装 daemon + 一个 U 盘 |
 | **开发者** | `bash install.sh` → `sofagent-audit --init` → 装 git hook 审计 | Node.js ≥ 18 + git |
 
 > **前提**：开发者路径请在 git 仓库根目录下执行。如果还没有仓库，先运行 `git init`。
+>
+> 🔒 **安全提示**：`curl | bash` 会执行远程脚本。建议先审查脚本内容再执行：`curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh | less`，确认无误后再运行安装命令。脚本只写入 `~/.sofagent/` 目录，不修改系统文件。
 
 ```bash
 # 方式 1：一行安装（v1.2.7 新增 · 推荐）
@@ -160,7 +162,7 @@ sofagent-audit --doctor  # 验证环境是否就绪（可选但推荐）
 
 | 方式 | 谁用 | 怎么用 |
 |------|------|--------|
-| 🚀 **npx 零安装** | 快速体验 / CI 环境 | `npx @sofagent/audit --init`（即装即用，不需下载） |
+| 🚀 **npx 零安装** | 快速体验 / CI 环境 | `npx @sofagent/audit@latest --init`（即装即用，不需下载）。⚠️ npx 会缓存旧版本，加 `@latest` 确保拉取最新版 |
 | ⚡ **install.sh 最小安装** | 开发者 / 企业 IT | `bash install.sh --base-only`（仅底座引擎） |
 
 > [!NOTE]
@@ -177,8 +179,8 @@ sofagent-audit --doctor  # 验证环境是否就绪（可选但推荐）
 # 0. 初始化——装 git hook，让审计引擎能拦截 commit
 sofagent-audit --init
 
-# 1. 看规则——Agent 会带着这些红线干活
-sofagent-audit --help | head -5
+# 1. 看可用命令
+sofagent-audit --help
 
 # 2. 跑审计——第 0 步的 --init 已装好 pre-commit hook，每次 commit 都被拦
 # GIT_EDITOR=true 让 git commit 不弹编辑器（CI/自动化场景常用）
@@ -201,7 +203,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 |------|------|
 | `@sofagent/audit` | 审计引擎（24 条规则，git diff 硬证据）|
 | `@sofagent/core` | 运行时诊断（doctor / verify）|
-| `@sofagent/orchestrator` | FORGE 自迭代工具链（LOOP 流水线 + 任务编排；编排能力保留但**不对用户宣传**——任务编排由你使用的 Agent 平台完成，sofagent 只在其过程中提供约束/审计/经验沉淀）|
+| `@sofagent/orchestrator` | 任务编排引擎（LOOP 流水线 + 任务编排；编排能力保留但**不对用户宣传**——任务编排由你使用的 Agent 平台完成，sofagent 只在其过程中提供约束/审计/经验沉淀）|
 | `@sofagent/daemon` | 守护进程（文件监控 / 定时巡检）|
 | `@sofagent/mcp` | MCP Server（JSON-RPC 2.0）|
 

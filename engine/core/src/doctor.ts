@@ -25,9 +25,13 @@ import { checkHistoryChainDetailed, validateHmacKey } from './audit-history';
 import { DATA_DIR, getConfigFile } from './data-paths';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
-function warn(msg: string) { console.log(`  ⚠️  ${msg}`); }
-function fail(msg: string) { console.log(`  ❌ ${msg}`); }
+function warn(msg: string) { console.log(`  ⚠️  ${msg}`); _warnCount++; }
+function fail(msg: string) { console.log(`  ❌ ${msg}`); _failCount++; }
 function info(msg: string) { console.log(`  ℹ️  ${msg}`); }
+
+// v1.2.8: P1-18 — 计数器，用于结尾诚实汇总
+let _warnCount = 0;
+let _failCount = 0;
 
 /** v1.2.7: 修复提示输出 */
 function repairHint(cmd: string) { console.log(`     修复：${cmd}`); }
@@ -64,6 +68,10 @@ export interface DoctorReport {
  * @returns DoctorReport
  */
 export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
+  // v1.2.8: P1-18 — 每次调用重置计数器
+  _warnCount = 0;
+  _failCount = 0;
+
   console.log(`\n  sofagent doctor v${VERSION}\n`);
   console.log(`  检查目录: ${projectDir}\n`);
 
@@ -83,10 +91,42 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     if (!env.sofagent.exists) { warn('~/.sofagent 不存在（将自动创建）'); repairHint('运行 sofagent-audit --init 初始化'); }
   }
 
+  // v1.2.8 P1-9: 版本一致性检查（~/.sofagent/VERSION vs 当前引擎版本）
+  console.log('\n── 版本一致性 ──');
+  try {
+    const homeVersionFile = join(process.env.SOFAGENT_HOME || join(process.env.HOME || '~', '.sofagent'), 'VERSION');
+    if (existsSync(homeVersionFile)) {
+      const installedVersion = readFileSync(homeVersionFile, 'utf-8').trim();
+      if (installedVersion !== VERSION) {
+        warn(`~/.sofagent/VERSION 写的是 ${installedVersion}，当前引擎 ${VERSION}——可能发版后未同步`);
+        repairHint(`重新安装以同步版本：bash install.sh（或手动更新 ${homeVersionFile}）`);
+      } else {
+        ok(`~/.sofagent/VERSION (${installedVersion}) 与引擎版本一致`);
+      }
+    } else {
+      warn('~/.sofagent/VERSION 不存在——可能是首次安装或旧版本残留');
+      repairHint('重新运行 install.sh 创建 VERSION 文件');
+    }
+  } catch {
+    warn('版本检查失败（不影响审计功能）');
+  }
+
   // 2. 配置检查（v1.1.3: 从「存在」升级为「存在且合法」）
   console.log('\n── 配置检查 ──');
   const sofagentDir = join(projectDir, '.sofagent');
-  const configPath = getConfigFile(projectDir);
+
+  // v1.2.8 P0-4: SOFAGENT_CONFIG 环境变量检查（企业集中管控用）
+  const envConfigPath = process.env.SOFAGENT_CONFIG;
+  if (envConfigPath) {
+    if (existsSync(envConfigPath)) {
+      ok(`SOFAGENT_CONFIG=${envConfigPath}（企业集中管控配置，已存在）`);
+    } else {
+      fail(`SOFAGENT_CONFIG=${envConfigPath} 但文件不存在`);
+      repairHint(`创建配置文件或修正 SOFAGENT_CONFIG 环境变量路径`);
+    }
+  }
+
+  const configPath = envConfigPath && existsSync(envConfigPath) ? envConfigPath : getConfigFile(projectDir);
   let configOk = false;
   if (existsSync(configPath)) {
     try {
@@ -193,7 +233,8 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
         repairHint(`检查文件权限（chmod 755 ${hookPath}）`);
       }
     } else {
-      info('commit-msg hook 未安装（运行 sofagent-audit --install-hook 安装）');
+      warn('commit-msg hook 未安装——审计不会运行！运行 sofagent-audit --install-hook 安装');
+      repairHint('sofagent-audit --install-hook');
     }
 
     // post-commit：仅检查存在性，不检查内容
@@ -201,33 +242,36 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     if (existsSync(postCommitPath)) {
       ok('post-commit hook 已安装');
     } else {
-      info('post-commit hook 未安装（运行 sofagent-audit --init 自动安装）');
+      warn('post-commit hook 未安装——绕过检测不可用。运行 sofagent-audit --init 自动安装');
+      repairHint('sofagent-audit --init');
     }
   } catch (err) {
     info(`非 git 仓库，跳过 hook 检查（${err instanceof Error ? err.message : String(err)}）`);
   }
 
   // 5. 依赖检查
-  // P1-8: 依赖解析从引擎自身路径（__dirname → 仓库根 node_modules）找，
-  //   不再从 cwd 找（此前在非仓库目录跑 --doctor 会误报 js-yaml 未安装）；
-  //   移除对 @langchain/langgraph 的无意义检查（不在 audit/core 运行时依赖内）。
+  // P2-22: 依赖解析改为 require.resolve（从包自身位置解析 Node 模块解析算法），
+  //   替代此前手拼路径的 existsSync——手拼路径在 monorepo hoist / pnpm / 不同安装
+  //   布局下会误报 "js-yaml 未安装"。require.resolve 从 __dirname 出发，走 Node
+  //   标准模块解析（向上逐层 node_modules），覆盖所有包管理器布局。
   console.log('\n── 依赖检查 ──');
   let depsOk = true;
-  // dist/doctor.js → engine/core/dist → engine → 仓库根
-  const rootNodeModules = join(__dirname, '..', '..', '..', 'node_modules');
-  const workspaceNodeModules = join(projectDir, 'node_modules');
 
   const criticalDeps = ['js-yaml'];
   for (const dep of criticalDeps) {
-    const depPath = join(rootNodeModules, dep);
-    if (existsSync(depPath)) {
+    try {
+      // require.resolve 从 doctor.ts 编译后的位置（引擎包 dist/ 内）向上查找
+      // node_modules，不受 cwd 影响——修复非仓库目录运行 --doctor 时误报依赖缺失。
+      // CJS 环境下 require 全局可用，直接调用 require.resolve。
+      require.resolve(dep);
       ok(`${dep} 已安装`);
-    } else {
-      // 检查 workspace node_modules
-      const wsPath = join(workspaceNodeModules, dep);
-      if (existsSync(wsPath)) {
+    } catch {
+      // 引擎包内解析失败 → 尝试从 cwd 解析（workspace 场景）
+      try {
+        const cwdRequire = require('module').createRequire(join(projectDir, 'package.json'));
+        cwdRequire.resolve(dep);
         ok(`${dep} 已安装 (workspace)`);
-      } else {
+      } catch {
         warn(`${dep} 未安装（某些功能可能不可用）`);
         repairHint(`npm install ${dep}`);
         depsOk = false;
@@ -321,15 +365,15 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     auditLogOk = true;
   }
 
-  // 总结
+  // 总结（v1.2.8: P1-18 — 有 WARN/FAIL 时不再说"全部通过"）
   const allOk = env.allOk && configOk && dirsOk && hookOk && depsOk && distIntegrityOk && auditLogOk;
   console.log('\n── 健康检查结果 ──');
-  if (allOk) {
-    console.log('  ✅ 全部通过\n');
+  if (_failCount > 0) {
+    console.log(`  ❌ ${_failCount} 项失败，${_warnCount} 项警告（详见上方）\n`);
+  } else if (_warnCount > 0) {
+    console.log(`  ⚠️  ${_warnCount} 项警告，其余通过（详见上方，不影响核心审计功能则无需处理）\n`);
   } else {
-    // P2-24: 未通过不一定"存在问题"——可能只是黄色提示（如历史链不可复验/依赖缺失）
-    // 用 ℹ️ 中性措辞，避免把轻微警告误报成红色"存在问题"
-    console.log('  ℹ️  存在告警项，详见上方检查项（不影响核心审计功能则无需处理）\n');
+    console.log('  ✅ 全部通过\n');
   }
 
   return {
@@ -384,10 +428,21 @@ export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: 
       }
     }
 
-    // 2. js-yaml 未安装 → npm install
-    const rootNodeModules = join(__dirname, '..', '..', '..', 'node_modules');
-    const workspaceNodeModules = join(projectDir, 'node_modules');
-    if (!existsSync(join(rootNodeModules, 'js-yaml')) && !existsSync(join(workspaceNodeModules, 'js-yaml'))) {
+    // 2. js-yaml 未安装 → npm install（P2-22: 改用 require.resolve 检测）
+    let jsYamlInstalled = false;
+    try {
+      require.resolve('js-yaml');
+      jsYamlInstalled = true;
+    } catch {
+      try {
+        const cwdRequire = require('module').createRequire(join(projectDir, 'package.json'));
+        cwdRequire.resolve('js-yaml');
+        jsYamlInstalled = true;
+      } catch {
+        // both resolve paths failed
+      }
+    }
+    if (!jsYamlInstalled) {
       try {
         console.log('  📦 正在安装 js-yaml...');
         execFileSync('npm', ['install', 'js-yaml'], { cwd: projectDir, stdio: 'pipe' });

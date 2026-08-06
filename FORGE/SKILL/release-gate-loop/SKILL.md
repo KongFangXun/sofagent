@@ -1,29 +1,31 @@
 ---
 name: release-gate-loop
-description: 发版前自动验证闸门——单角色单轮 5 步线性验证（acceptance-test + regression-checklist + 覆盖率交叉检查），跑完即出 PASS/FAIL，纯只读不修改任何代码或文档。
+description: 发版前自动验证闸门——V 验证 + F 修复循环（verdict FAIL → F 改代码 → 跑 audit → V 重验），最大 3 轮直到 PASS。纯只读验证 + 最小修复。
 emoji: 🚪
 color: "#F59E0B"
-version: 1.2.7
+version: 1.2.8
 ---
 
 # release-gate-loop · 发版闸门循环定义
 
-> **一个循环 = 一轮 5 步线性验证，跑完即出 PASS/FAIL 裁决。**
+> **v1.2.8 升级：V 验证 FAIL 后触发 F 修复循环——F 读 verdict → 改代码 → 跑 audit → V 重验，最大 3 轮。**
 >
-> 这不是审查循环，是一道**确定性发版闸门**：跑 acceptance-test、跑 regression-checklist、做覆盖率交叉检查，合并报告，判定通过/失败。纯只读——绝不做修复。
+> v1.2.7 是线性 5 步跑完即出 PASS/FAIL。v1.2.8 在 FAIL 后自动修复，形成验-改闭环。
 
 ## 这是什么
 
-一套可复用的发版前自动验证闸门。它描述：谁来做（V = 验证者，单角色）、怎么走（5 步串行线性执行）、产物放哪（`runs/release-gate-loop/YYYY-MM-DD/run-NN/`）。
+一套可复用的发版前自动验证闸门 + 自动修复。它描述：谁来做（V = 验证者 + F = 修复者）、怎么走（V 5 步验证 + F 3 步修复循环）、产物放哪（`runs/release-gate-loop/YYYY-MM-DD/run-NN/round-N/`）。
 
 - **V** = 验证者：跑 acceptance-test.sh、跑 regression-checklist、做覆盖率交叉检查、合并报告、出裁决。
-- **driver（"我"，当前会话）**：在 5 步之间中转、维护 `runs/` 文件、复制报告到桌面。**driver 不是 agent**，只是编排层。
+- **F** = 修复者（v1.2.8 新增）：V 裁决 FAIL 后，F 读 verdict 报告 → 定位根因 → 改代码 → driver 自动跑 audit → 回到 V 重验。
+- **driver（"我"，当前会话）**：在步骤间中转、维护 `runs/` 文件、复制报告到桌面。driver 不是 agent，只是编排层。
 
 ## 怎么用
 
 1. 读 `loop.md` 拿到完整 SOP（角色 / 步骤协议 / 产物 schema）。
 2. 5 步的行为指令在 `prompts/`（acceptance / regression / coverage / consolidate / verdict）。
-3. 跨 run 的永久索引在 `FORGE/LEDGER.md`（被 git 跟踪）；每次产物在 `runs/`（不进 git）。
+3. v1.2.8 新增 F 步骤指令在 `prompts/`（f-diagnose / f-fix）+ driver 自动执行 f-audit。
+4. 跨 run 的永久索引在 `FORGE/LEDGER.md`（被 git 跟踪）；每次产物在 `runs/`（不进 git）。
 
 ## 实现载体
 

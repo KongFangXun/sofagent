@@ -88,6 +88,13 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 在进程列表（`ps e`、`/proc/*/environ`）中明文可见。
 
 **修复**：v1.2.3 已将 token 从环境变量迁移至 `~/.sofagent/federation.token` 文件读取（权限 600），
+
+> **v1.2.8 轮换提醒**：联邦 token 建议 90 天轮换一次。`--doctor` 不自动检查 token 年龄。手动检查：
+> ```bash
+> # 查看 token 文件创建/修改时间
+> stat -f '%Sm' ~/.sofagent/federation.token 2>/dev/null || stat -c '%y' ~/.sofagent/federation.token 2>/dev/null
+> # 如超过 90 天，重新执行联邦配对流程生成新 token
+> ```
 不再在进程列表中暴露。详见 `engine/core/src/crypto/pairing.ts` 的 `readTokenFromFile()`。
 
 **影响范围**：v1.1.0 - v1.2.2（已修复于 v1.2.3）
@@ -243,6 +250,14 @@ sanitize() 管道在写入 history.jsonl、think.md、task/logs 等文件前自�
 - **密钥打码**：匹配 `sk-`/`Bearer`/`api_key`/`password=` 等模式 → 替换为 `***REDACTED***`
 - **手机号打码**：匹配 11 位手机号格式 → `138****1234`
 - **密码字段打码**：匹配 `password[:=]\s*\S+` → `password=***`
+- **v1.2.8 自定义业务机密脱敏**：config.yml 配置 `sanitizePatterns` 字段可添加企业业务机密正则（如合同名称/客户名单/工资表），审计记录和 webhook 推送前均过自定义脱敏管道。示例：
+  ```yaml
+  sanitizePatterns:
+    - pattern: "合同编号[:：]\\s*\\d{6,}"
+      replacement: "[合同编号:REDACTED]"
+    - pattern: "[\\u4e00-\\u9fa5]{2,4}的工资单"
+      replacement: "[工资单:REDACTED]"
+  ```
 
 > 以上为**掩码（masking）非加密**——原始数据仍在 git diff 中可读。sanitize() 只保护写入 `data/` 的副本，不保护源头。
 
@@ -251,6 +266,28 @@ sanitize() 管道在写入 history.jsonl、think.md、task/logs 等文件前自�
 #### history.jsonl 存储（v1.1.3+）
 
 审计拦截记录以 JSONL 明文存储在 `data/audit/history.jsonl`，目录权限 0o700、文件权限 0o600（v1.1.3 起收紧）。仅追加写入（`appendFileSync`），不覆盖、不删除。历史记录供编排引擎和进化引擎本地读取。
+
+**HMAC 密钥轮换**（v1.2.8）：HMAC 签名密钥存储在 `~/.sofagent-key`（权限 0600）。如需轮换（如安全审计要求或疑似泄露）：
+
+```bash
+# 1. 备份旧密钥（旧 hash chain 仍需此密钥验证）
+cp ~/.sofagent-key ~/.sofagent-key.old.$(date +%Y%m%d)
+
+# 2. 生成新密钥（openssl 32 字节随机）
+openssl rand -base64 32 > ~/.sofagent-key
+chmod 600 ~/.sofagent-key
+
+# 3. 注意：轮换后旧 history.jsonl 的 HMAC 签名将无法用新密钥验证
+#    --verify-chain 会报告旧条目签名不匹配（这是预期行为）
+#    新条目将使用新密钥建立新的 hash chain
+```
+
+**审计备份清理**：`history.jsonl.bak-*` 旋转备份文件会留在 `~/.sofagent/data/audit/` 目录中（每次达到大小阈值时生成一份）。这些是明文 JSONL 副本，建议定期清理：
+
+```bash
+# 保留最近 2 份备份，其余删除
+ls -t ~/.sofagent/data/audit/history.jsonl.bak-* | tail -n +3 | xargs rm -f
+```
 
 ### 威胁模型：`SOFAGENT_DATA` 环境变量的信任边界（F-23 · 本版声明为已知风险）
 

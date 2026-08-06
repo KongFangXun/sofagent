@@ -7,7 +7,8 @@
 // v1.2.0：新增 ConfigParseError（含 cause 链），audit.strict fail-closed 选项
 // ============================================================
 //
-// 三级 fallback：
+// 三级 fallback（v1.2.8: 增加 SOFAGENT_CONFIG 环境变量为最高优先级）：
+//   0. $SOFAGENT_CONFIG（环境变量指定路径，企业集中管控）
 //   1. ${cwd}/.sofagent/config.yml
 //   2. ~/.sofagent/config.yml
 //   3. DEFAULT_CONFIG
@@ -81,6 +82,8 @@ export interface AuditConfig {
     /** WARN 是否升级为 FAIL 阻断（默认 false，WARN 不阻断） */
     warnAsFail: boolean;
   };
+  /** v1.2.8: P1-5 自定义脱敏正则——企业业务机密（合同名称/客户名单/工资表等） */
+  sanitizePatterns?: { pattern: string; replacement: string }[];
 }
 
 /**
@@ -139,6 +142,19 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
   const baseDir = cwd || process.cwd();
 
   try {
+    // 0. v1.2.8: SOFAGENT_CONFIG 环境变量（优先级最高，企业集中管控用）
+    const envConfigPath = process.env.SOFAGENT_CONFIG;
+    if (envConfigPath) {
+      const envConfig = tryLoadYaml(envConfigPath);
+      if (envConfig) {
+        const merged = mergeWithDefaults(envConfig);
+        if (strict || merged.strict) {
+          merged.strict = true;
+        }
+        return merged;
+      }
+    }
+
     // 1. 尝试 ${cwd}/.sofagent/config.yml
     const projectConfigPath = getConfigFile(baseDir);
     const projectConfig = tryLoadYaml(projectConfigPath);
@@ -238,7 +254,7 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
       const topLevelAuditKeys: (keyof AuditConfig)[] = [
         'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
         'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17',
-        'loop', 'webhook',
+        'loop', 'webhook', 'sanitizePatterns',
       ];
       const hasAny = topLevelAuditKeys.some(k => k in parsed);
       if (hasAny) {
@@ -420,11 +436,12 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     toolGate: partial.toolGate ?? DEFAULT_CONFIG.toolGate,
     // v1.1.6: webhook 配置透传（CLI 未传 --webhook 时回退到此）
     webhook: partial.webhook,
+    sanitizePatterns: partial.sanitizePatterns,
   };
 
   // 校验 rules key——未知规则名输出警告
   // v1.1.5: P0-1 补全 a18/a19（v1.1.4 新增 A18/A19 规则后此处遗漏）
-  // P1-6: 基线规则集合与 runner 统一（共享常量 BASELINE_RULE_KEYS = a1/a2/a9/a10/a11）
+  // P1-6: 基线规则集合与 runner 统一（共享常量 BASELINE_RULE_KEYS，9 条：a1/a2/a9/a10/a11/a20/a21/a22/a23）
   if (merged.rules) {
     for (const key of BASELINE_RULE_KEYS) {
       if (merged.rules[key] === false) {

@@ -93,8 +93,9 @@ export const HOOK_TEMPLATE = `#!/bin/bash
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # commit-msg hook 接收 $1 = commit message 文件路径
 
-# 0a. 环境变量旁路——init/acceptance-test 等内部流程设置此变量时跳过 hook
-if [ -n "$SOFAGENT_SKIP_HOOK" ]; then
+# 0a. 内部旁路——仅 sofagent-audit init 自身的 git 操作使用（v1.2.8: 删除公开的 SOFAGENT_SKIP_HOOK 旁路，改用内部标志）
+# SOFAGENT_INTERNAL_INIT 仅在 init 调用栈内设置，外部进程无法通过它绕过审计
+if [ -n "$SOFAGENT_INTERNAL_INIT" ]; then
   exit 0
 fi
 
@@ -121,10 +122,8 @@ if ! command -v node &>/dev/null; then
   exit 1
 fi
 
-# 2. sofagent-audit 检测（优先用仓库本地 engine/audit/dist/，避免全局旧版版本漂移）
-if [ -f "engine/audit/dist/index.js" ]; then
-  AUDIT_CMD=(node "engine/audit/dist/index.js")
-elif command -v sofagent-audit &>/dev/null; then
+# 2. sofagent-audit 检测（v1.2.8: 只加载全局安装，不读仓库本地 dist——审计工具不能被审计对象篡改）
+if command -v sofagent-audit &>/dev/null; then
   AUDIT_CMD=(sofagent-audit)
 else
   echo "❌ sofagent 提示：未找到 sofagent-audit 命令，审计无法运行"

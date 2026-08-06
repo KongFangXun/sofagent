@@ -278,10 +278,31 @@ if [ -f "$CONFIG_FILE" ] && command -v jq &>/dev/null; then
     if [ "$LIST_ONLY" = true ]; then
       info "  $CONFIG_FILE (tools.loopDetection)"
     else
+      cp "$CONFIG_FILE" "${CONFIG_FILE}.bak" 2>/dev/null || true
       jq 'del(.tools.loopDetection)' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" 2>/dev/null
       mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE" 2>/dev/null && ok "已移除 loopDetection 配置"
     fi
     ((removed++)) || true
+  fi
+fi
+
+# ── 清理 before_prompt_build 中指向 sofagent 产物的悬空 hook 引用 ──
+# 历史版本（v1.0.7 前）在 config.json 注入了 hooks.before_prompt_build 指向
+# ~/.openclaw/hooks/load-chain.sh（该脚本已在架构迁移后删除，留下悬空引用）。
+# 仅删除指向 sofagent 产物（load-chain / sofagent-load-chain）的条目，保留用户自己的 hook。
+if [ -f "$CONFIG_FILE" ] && command -v jq &>/dev/null; then
+  if jq -e '.hooks.before_prompt_build' "$CONFIG_FILE" >/dev/null 2>&1; then
+    sofagent_hooks=$(jq -r '.hooks.before_prompt_build | map(select(.command // "" | test("load-chain|sofagent"))) | length' "$CONFIG_FILE" 2>/dev/null || echo "0")
+    if [ "${sofagent_hooks:-0}" -gt 0 ]; then
+      if [ "$LIST_ONLY" = true ]; then
+        info "  $CONFIG_FILE (hooks.before_prompt_build 中 ${sofagent_hooks} 个 sofagent 悬空引用)"
+      else
+        cp "$CONFIG_FILE" "${CONFIG_FILE}.bak" 2>/dev/null || true
+        jq 'del(.hooks.before_prompt_build[] | select(.command // "" | test("load-chain|sofagent")))' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" 2>/dev/null
+        mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE" 2>/dev/null && ok "已清理 before_prompt_build 中 ${sofagent_hooks} 个 sofagent 悬空 hook 引用"
+      fi
+      ((removed++)) || true
+    fi
   fi
 fi
 

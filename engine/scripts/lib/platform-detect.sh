@@ -1,6 +1,8 @@
 #!/bin/bash
-# platform-detect.sh · 平台探测 + 环境检测 + 参数解析 + 数据目录
+# platform-detect.sh · 环境检测 + 参数解析 + 数据目录（平台无关重构后不再探测平台）
 # 导出：detect_env / parse_args / auto_detect_platform / resolve_data_dir
+# 平台无关原则：默认安装只写 ~/.sofagent/，不探测/不枚举/不修改任何第三方平台目录；
+#              平台集成改为显式 opt-in（用户明确传 --platform <name> 才启用）。
 # shellcheck disable=SC2034  # 本文件被 source 到 install.sh，变量跨文件使用
 
 detect_env() {
@@ -40,11 +42,12 @@ parse_args() {
                  [--base-only]
 
 模式说明：
-  默认模式         安装底座 + FDE Agent Skill（企业部署能力）
+  默认模式         平台无关安装（只写 ~/.sofagent/）+ FDE Agent Skill（企业部署能力）
   --base-only      仅安装约束底座 + 四引擎（不装 FDE Agent Skill）
 
-平台说明：
-  openclaw  完整部署（宪法 + Hook + 脚本 + 断路器）→ ~/.openclaw/
+平台说明（默认不探测、不枚举任何平台——平台集成为显式 opt-in）：
+  （不传）    通用安装：只写 sofagent 自己的目录 ~/.sofagent/，不碰任何第三方平台目录
+  openclaw  显式平台集成：部署宪法 + Hook + 脚本 + 断路器 → ~/.openclaw/（将修改 OpenClaw 配置）
   workbuddy 检查 .sofagent/ 数据目录 + 运行 verify.sh
   claude    部署宪法 → ~/.claude/ + 输出种子指令（需手动粘贴到 CLAUDE.md）
   codex     部署宪法 → ~/.codex/ + 输出种子指令（需手动粘贴到 AGENTS.md）
@@ -66,17 +69,15 @@ HELP
   PLATFORM="$(echo "$PLATFORM" | tr '[:upper:]' '[:lower:]')"  # 转小写
 }
 auto_detect_platform() {
-  [ -n "$PLATFORM" ] && return 0
-  if   [ -d "$HOME/.openclaw" ];  then PLATFORM="openclaw"
-  elif [ -d "$HOME/.workbuddy" ]; then PLATFORM="workbuddy"
-  elif [ -d "$HOME/.claude" ];    then PLATFORM="claude"
-  elif [ -d "$HOME/.codex" ];     then PLATFORM="codex"
-  elif [ -d "$HOME/.hermes" ];    then PLATFORM="hermes"
-  else  PLATFORM="openclaw"; fi   # 默认
+  # 平台无关重构：不再做任何自动探测（不枚举 ~/.openclaw / ~/.workbuddy / ... 目录）。
+  # 函数名保留只为兼容 install.sh 既有调用点；未显式传 --platform 时 PLATFORM 保持为空，
+  # 走通用安装路径（只写 sofagent 自己的目录 ~/.sofagent/）。
+  PLATFORM="${PLATFORM:-}"
 }
 resolve_data_dir() {
   # v1.2.1 安装路径分离：数据根目录 = SOFAGENT_HOME/data
   # SOFAGENT_HOME 默认 ~/.sofagent，可被环境变量或 --project-dir 覆盖
+  TARGET=""  # 初始化——set -u 下避免后续引用未定义变量（平台无关重构）
   if [ -n "${PROJECT_DIR:-}" ]; then
     PROJECT_DIR="$(cd "$PROJECT_DIR" 2>/dev/null && pwd)" || { err "--project-dir 目录不存在或无法访问: $PROJECT_DIR"; exit 1; }
     # --project-dir 时，SOFAGENT_HOME 设为该目录（开发/定制场景）
@@ -87,14 +88,15 @@ resolve_data_dir() {
     ok "安装目录: ${SOFAGENT_HOME}"
   fi
   SOFAGENT_DATA="${SOFAGENT_DATA:-${SOFAGENT_HOME}/data}"
-  # 向后兼容：写入数据目录标记文件（config.sh 和 verify 的 fallback）
+  # 向后兼容：写入数据目录标记文件（config.sh 和 verify 的 fallback）——仅显式指定平台时
   case "$PLATFORM" in
     openclaw|workbuddy)
       _SKILL_DIR="${TARGET:-${HOME}/.${PLATFORM}/skills/sofagent}"
       mkdir -p "$_SKILL_DIR" 2>/dev/null || true
       echo "$SOFAGENT_DATA" > "$_SKILL_DIR/.sofagent-data-path" 2>/dev/null || true ;;
   esac
-  # 按平台确定目标路径
+  # 目标路径：默认 TARGET = SOFAGENT_HOME（~/.sofagent/，平台无关安装，不碰第三方目录）；
+  # 仅当用户显式 --platform <name> 时才指向对应平台目录
   case "$PLATFORM" in
     openclaw) TARGET="${OPENCLAW_STATE_DIR:-$HOME/.openclaw}" ;;
     workbuddy)
@@ -112,7 +114,11 @@ resolve_data_dir() {
     claude) TARGET="$HOME/.claude" ;;
     codex)  TARGET="$HOME/.codex" ;;
     hermes) TARGET="$HOME/.hermes" ;;
-    *)      TARGET="${OPENCLAW_STATE_DIR:-$HOME/.openclaw}" ;;
+    *)      TARGET="$SOFAGENT_HOME" ;;  # 通用安装路径——只写自己的目录
   esac
-  ok "平台: $PLATFORM → 目标: $TARGET"
+  if [ -n "$PLATFORM" ]; then
+    ok "平台: ${PLATFORM}（显式指定）→ 目标: ${TARGET}"
+  else
+    ok "平台无关安装（未指定平台）→ 目标: ${TARGET}（只写 sofagent 自己的目录）"
+  fi
 }

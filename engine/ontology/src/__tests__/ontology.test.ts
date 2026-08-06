@@ -55,7 +55,7 @@ describe('generateOntologyView', () => {
 
   it('无 ontology 目录时返回未初始化提示', () => {
     const result = generateOntologyView(tmpDir);
-    expect(result).toContain('not yet initialized');
+    expect(result).toContain('尚未初始化');
   });
 
   it('有 ontology 文件时返回 Markdown 报告', () => {

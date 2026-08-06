@@ -30,7 +30,7 @@ async function main() {
         process.exit(1);
       }
 
-      console.log(`sofagent-skillopt v1.1.0 — 运行 Skill 优化`);
+      console.log(`sofagent-skillopt v${require('../../package.json').version} — 运行 Skill 优化`);
       console.log(`  目标: ${targetPath}`);
 
       const result = runSkillOpt(targetPath);
@@ -61,7 +61,7 @@ async function main() {
       const { scanSkillSafety } = await import('./skill-safety-check');
 
       const mode = args.includes('--json') ? 'json' : args.includes('--quiet') ? 'quiet' : 'terminal';
-      console.log(`sofagent-skillopt v1.1.0 — Skill 安全扫描`);
+      console.log(`sofagent-skillopt v${require('../../package.json').version} — Skill 安全扫描`);
       console.log(`  目标: ${targetPath}`);
       console.log('');
 

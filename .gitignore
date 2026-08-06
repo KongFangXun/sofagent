@@ -21,6 +21,7 @@ engine/hooks/sofagent-load-chain/handler.ts
 /workflows/
 
 # IDE / editor —— WorkBuddy 运行时产物，不进仓库
+# ⚠️ .workbuddy/ 含开发日记/记忆/审查记录，绝不 track 或打包分发（P2-10）
 .workbuddy/
 .codebuddy/
 .DS_Store

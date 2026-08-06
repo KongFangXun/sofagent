@@ -373,7 +373,7 @@ fi
 # ════════════════════════════════════════
 # F-17: CHANGELOG 纯度扫描
 # ════════════════════════════════════════
-echo -e "\n${BOLD}── 8. CHANGELOG 纯度扫描 ──${NC}"
+echo -e "\n${BOLD}── 9. CHANGELOG 纯度扫描 ──${NC}"
 CHANGELOG_FILE="CHANGELOG.md"
 if [ -f "$CHANGELOG_FILE" ]; then
   # 提取当前版本号：优先从 package.json（SSOT），fallback 到 CHANGELOG
@@ -384,7 +384,7 @@ if [ -f "$CHANGELOG_FILE" ]; then
   fi
   if [ -n "$LATEST_VER" ]; then
     # 提取当前版本条目段落（兼容两种 CHANGELOG 格式）
-    CHANGELOG_SECTION=$(sed -n "/\*\*v${LATEST_VER}\*\*\|^### \[v${LATEST_VER}\]/,/\*\*v\|^### \[v/p" "$CHANGELOG_FILE" | head -n -1)
+    CHANGELOG_SECTION=$(sed -n "/\*\*v${LATEST_VER}\*\*\|^### \[v${LATEST_VER}\]/,/\*\*v\|^### \[v/p" "$CHANGELOG_FILE" | sed '$d')
     # 扫描审查元信息关键词（P0×N / P1×N 等带乘号计数模式 + fresh-eyes 审查描述）
     META_HITS=$(echo "$CHANGELOG_SECTION" | grep -cE "P[0-2]×|fresh-eyes 独立审查|审查轮次|审查发现 [0-9]+" || echo "0")
     if [ "$META_HITS" -gt 0 ] 2>/dev/null; then

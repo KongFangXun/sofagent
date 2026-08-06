@@ -6,6 +6,7 @@
 //   A = 审查者（fresh-eyes-loop，需要最强推理）
 //   B = 工程师（fresh-eyes-loop，侧重代码修复）
 //   V = 验证者（release-gate-loop，跑测试+裁决）
+//   F = 修复者（release-gate-loop v1.2.8，V FAIL 后读 verdict → 改代码 → 跑 audit）
 //
 // key 映射（自动）：
 //   qwen3.8-max       → QWEN_API_KEY（env.local.template 里配）
@@ -27,4 +28,5 @@ export default {
   A: { model: glm, role: 'reviewer' },  // 审查者：GLM-5.2 → GLM_API_KEY
   B: { model: glm, role: 'engineer' },  // 工程师：GLM-5.2 → GLM_API_KEY
   V: { model: glm, role: 'reviewer' },  // 验证者：GLM-5.2 → GLM_API_KEY（与 B 共用，key 跟模型走自动一致）
+  F: { model: glm, role: 'engineer' },  // v1.2.8 修复者：GLM-5.2 → GLM_API_KEY（与 B 共用 ENGINEER_TOOLS）
 };

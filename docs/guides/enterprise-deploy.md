@@ -78,7 +78,9 @@ done < repo-list.txt
 
 ### ② org-level 配置集中下发
 
-通过符号链接共享 `~/.sofagent/data/config.yml` 模板，企业统一管控审计策略：
+通过符号链接共享配置模板，或使用 `SOFAGENT_CONFIG` 环境变量指定统一配置路径：
+
+**方案 A · 符号链接（逐仓库）**
 
 ```bash
 # 创建标准模板
@@ -92,14 +94,23 @@ rules:
   # ... 按企业策略配置
 EOF
 
-# 符号链接到各 repo
+# 符号链接到各 repo（注意：配置路径是 .sofagent/config.yml，不是 .sofagent/data/config.yml）
 for repo in /path/to/repos/*/; do
-  mkdir -p "$repo/.sofagent/data"
-  ln -sf /etc/sofagent/template-config.yml "$repo/.sofagent/data/config.yml"
+  mkdir -p "$repo/.sofagent"
+  ln -sf /etc/sofagent/template-config.yml "$repo/.sofagent/config.yml"
 done
 ```
 
-> 修改一次模板，所有 repo 立即生效。`--doctor` 可验证当前配置完整性。
+> ⚠️ **v1.2.8 修正**：此前文档写的 `.sofagent/data/config.yml` 是错误路径——配置加载器只读 `.sofagent/config.yml`。
+
+**方案 B · SOFAGENT_CONFIG 环境变量（集中管控，v1.2.8 新增）**
+
+```bash
+# 全局环境变量指向企业统一配置（优先级最高）
+echo 'export SOFAGENT_CONFIG=/etc/sofagent/template-config.yml' >> /etc/profile.d/sofagent.sh
+```
+
+> `--doctor` 会检查 `SOFAGENT_CONFIG` 配置路径是否存在。修改一次模板，所有 repo 立即生效。
 
 ### ③ CI 集成示例
 
@@ -127,12 +138,74 @@ jobs:
 
 ### 其他方案
 
-- **Git submodule**：`git submodule add git@github.com:your-org/sofagent-shared-config.git ~/.sofagent/data/shared`
-- **dotfiles**：将 `~/.sofagent/data/config.yml` 加入 stow/chezmoi，通过 symlink 统一管理
+- **Git submodule**：`git submodule add git@github.com:your-org/sofagent-shared-config.git ~/.sofagent/shared`
+- **dotfiles**：将 `~/.sofagent/config.yml` 加入 stow/chezmoi，通过 symlink 统一管理
 
 ### 当前局限
 
 - 没有 org-level 自动推送机制，每个 repo 需独立 `--init`。企业版集中管控规划在 v2.x
+
+### 多项目数据隔离（v1.2.8）
+
+默认情况下所有项目的审计数据汇聚在 `~/.sofagent/data/` 单目录下。如果需要为不同项目（如财务/人事项目 vs 普通项目）做数据隔离，使用 `SOFAGENT_HOME` 环境变量：
+
+```bash
+# 为财务项目单独隔离数据目录
+export SOFAGENT_HOME=/data/sofagent-finance
+sofagent-audit --init    # 数据写入 /data/sofagent-finance/data/
+
+# 为人事项目单独隔离
+export SOFAGENT_HOME=/data/sofagent-hr
+sofagent-audit --init    # 数据写入 /data/sofagent-hr/data/
+```
+
+> `SOFAGENT_HOME` 影响全部数据路径：审计历史、知识库、HMAC 密钥、引擎内部状态。每个 `SOFAGENT_HOME` 实例的 HMAC 密钥互相独立，审计链条互不交叉。
+
+### 多机状态汇聚（v1.2.8）
+
+企业多机部署后，集中收集各机器状态：
+
+```bash
+# 方案 A：定期 doctor --json 汇总到中心
+# 每台机器的 crontab：
+0 9 * * 1 SOFAGENT_HOME=/data/sofagent sofagent-audit --doctor --json >> /shared/sofagent-reports/$(hostname)-$(date +%F).json
+
+# 方案 B：dashboard 定期采集
+# 将各机器的 ~/.sofagent/data/ 通过 NFS/共享存储挂载到 dashboard 所在机器
+```
+
+### 版本一致性校验（v1.2.8）
+
+发版后校验所有机器的引擎版本一致：
+
+```bash
+# 各机器检查 ~/.sofagent/VERSION 与最新发布版本
+LATEST=$(npm view @sofagent/audit version 2>/dev/null)
+INSTALLED=$(cat ~/.sofagent/VERSION 2>/dev/null || echo 'unknown')
+if [ "$LATEST" != "$INSTALLED" ]; then
+  echo "⚠️ 版本不一致：已装 $INSTALLED，最新 $LATEST"
+  # 触发升级
+  bash install.sh --upgrade
+fi
+```
+
+> `--doctor` 也会报告"运行引擎版本 vs 已发布版本"不一致（v1.2.8 新增检查项）。
+
+### Windows 支持边界（v1.2.8）
+
+sofagent 对 Windows 的支持是**实验性**的：
+
+| 能力 | macOS/Linux | Windows |
+|------|:-----------:|:-------:|
+| git hook（commit-msg / post-commit） | ✅ 完全支持 | ⚠️ 需 Git Bash（原生 cmd.exe 不支持 bash hook 脚本） |
+| 审计引擎（sofagent-audit） | ✅ 完全支持 | ✅ 支持（Node.js 跨平台） |
+| MCP Server | ✅ | ✅ |
+| daemon 常驻进程 | ✅ | ❌ 不支持（v1.3.0 规划） |
+| orchestrator 编排 | ✅ | ⚠️ 部分功能依赖 Unix signal |
+| install.sh 安装脚本 | ✅ | ❌ 需 WSL 或 Git Bash 运行 |
+| `tools/windows/*.ps1` PowerShell 脚本 | N/A | ⚠️ 覆盖核心功能（约 25%），非完整替代 |
+
+> Windows 用户建议使用 WSL2 或 Git Bash 环境。原生 PowerShell 支持规划在 v1.4.0。
 
 ---
 
@@ -142,7 +215,7 @@ jobs:
 
 - **现状**：sofagent 的用户身份基于本地 OS 用户（`~/.sofagent/data/` 目录权限 700），没有集中用户目录概念
 - **替代方案**：通过系统级 git hook 模板部署实现组织范围策略下发——将 `sofagent-audit --install-hook` 嵌入 git 模板目录（`git config --global init.templateDir`），新 clone 的仓库自动带 hook
-- **权限映射**：可通过组织级脚本控制哪些用户组有权修改 `~/.sofagent/data/config.yml`（文件 ACL：`chmod 640` + `chown :engineering`）
+- **权限映射**：可通过组织级脚本控制哪些用户组有权修改 `~/.sofagent/config.yml`（文件 ACL：`chmod 640` + `chown :engineering`）
 - **路线图**：企业级 SSO/LDAP 集成规划在 v2.x，当前建议结合 OS 级权限 + git hook 模板实现等效控制
 
 ## 审计日志对接

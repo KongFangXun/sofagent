@@ -41,6 +41,16 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
   echo "  ║  sofagent · 安装完成！                  ║"
   echo "  ╚══════════════════════════════════════════╝"; echo ""
   case "$PLATFORM" in
+    "")
+      # 平台无关安装：未指定平台，只写了自己的目录
+      echo "  已部署文件："
+      echo "    Skill 文件:     $SOFAGENT_HOME/skill/（统一路径，平台无关安装）"
+      echo "    配套脚本:       $TARGET/scripts/{task-record,cleanup,audit}.sh"
+      echo "    数据目录:       $SOFAGENT_DATA"; echo ""
+      echo "  ┌──────────────────────────────────────────┐"
+      echo "  │  平台无关安装：只写了 ~/.sofagent/        │"
+      echo "  │  未探测/未修改任何第三方平台配置          │"
+      echo "  └──────────────────────────────────────────┘" ;;
     openclaw)
       echo "  已部署文件："
       echo "    宪法文件:      $TARGET/skills/sofagent/fde.md（宪法内联在 SKILL.md）"
@@ -137,7 +147,7 @@ log_install_audit() {  # 审计：安装完成 + HMAC key 生成
       _log "hmac-key generated: $HMAC_KEY"
     fi
   else
-    ok "HMAC 签名密钥已存在（$HMAC_KEY）— history.jsonl 强防篡改已启用"
+    ok "HMAC 签名密钥已存在（${HMAC_KEY}）— history.jsonl 强防篡改已启用"
   fi
   bash "${SCRIPT_DIR}/audit.sh" --operation "install" --target "完成" --result "成功" 2>/dev/null || true
   _log "install complete: constitution=1(rules) skills=6 hook=1 loopdetect=1"

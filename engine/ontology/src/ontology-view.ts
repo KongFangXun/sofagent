@@ -55,7 +55,20 @@ export function generateOntologyView(projectDir: string): string {
 
   // 检查目录是否存在
   if (!existsSync(ontologyDir)) {
-    return 'Ontology not yet initialized. Run FDE deploy first.\n';
+    return [
+      'Ontology 尚未初始化。',
+      '',
+      '> 💡 **如何生成 Ontology？**',
+      '>',
+      '> Ontology 由 FDE 部署流程自动生成——运行 `sofagent-audit --init` 初始化环境后，',
+      '> 在你的 Agent 中输入 `@sofagent-fde` 开始 FDE 部署流程，完成后本目录会自动填充：',
+      '>   - `objects.yml` — 实体定义',
+      '>   - `actions.yml` — 动作定义',
+      '>   - `constraints.yml` — 约束规则',
+      '>',
+      '> 详细指引见 [docs/HANDBOOK.md](HANDBOOK.md)。',
+      '',
+    ].join('\n');
   }
 
   const objectsPath = join(ontologyDir, 'objects.yml');
@@ -68,7 +81,12 @@ export function generateOntologyView(projectDir: string): string {
   const hasConstraints = existsSync(constraintsPath);
 
   if (!hasObjects && !hasActions && !hasConstraints) {
-    return 'Ontology not yet initialized. Run FDE deploy first.\n';
+    return [
+      'Ontology 目录已存在，但尚未填充数据文件。',
+      '',
+      '> 💡 运行 FDE 部署流程（`@sofagent-fde`）生成 objects.yml / actions.yml / constraints.yml 后重试。',
+      '',
+    ].join('\n');
   }
 
   // 加载各文件

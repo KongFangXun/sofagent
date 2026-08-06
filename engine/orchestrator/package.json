@@ -34,6 +34,9 @@
     "js-yaml": "^5.2.0",
     "zod": "^4.4.3"
   },
+  "devDependencies": {
+    "@sofagent/daemon": "1.2.7"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

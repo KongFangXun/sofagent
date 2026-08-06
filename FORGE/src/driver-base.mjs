@@ -37,6 +37,8 @@ import os from 'os';
 
 import { createVisibility, EVENTS } from './visibility.mjs';
 import { createProgressMiddleware } from './progress-middleware.mjs';
+// v1.2.8 功能③：统一工具输出截断中间件（替代下方内联实现）
+import { truncateToolOutput as truncateToolOutputUnified, createToolOutputBudget, DEFAULT_BUDGET as TOOL_OUTPUT_DEFAULT } from './tool-output-budget.mjs';
 
 // ─── 工厂函数 ────────────────────────────────────────────────
 
@@ -342,23 +344,23 @@ export function createForgeDriverBase(config = {}) {
     };
   }
 
-  // ── 11. truncateToolOutput ──────────────────────────────
+  // ── 11. truncateToolOutput（v1.2.8 功能③：迁移到统一中间件）──
 
-  /** 工具输出最大行数 */
-  const TOOL_OUTPUT_MAX_LINES = 200;
+  /** 工具输出最大行数（v1.2.8：从 tool-output-budget.mjs 导入） */
+  const TOOL_OUTPUT_MAX_LINES = TOOL_OUTPUT_DEFAULT;
 
   /**
    * 截断工具输出（防止超长输出撑爆上下文）。
+   *
+   * v1.2.8 功能③：改为委托统一中间件实现。
+   * 保留原签名以兼容已有调用方。
    *
    * @param {string} text - 原始输出
    * @param {number} maxLines - 最大行数
    * @returns {string} 截断后的输出
    */
   function truncateToolOutput(text, maxLines = TOOL_OUTPUT_MAX_LINES) {
-    if (!text || typeof text !== 'string') return '';
-    const lines = text.split('\n');
-    if (lines.length <= maxLines) return text;
-    return lines.slice(0, maxLines).join('\n') + `\n... (truncated ${lines.length - maxLines} lines)`;
+    return truncateToolOutputUnified(text, maxLines);
   }
 
   // ── 12. updateLatestPointer ──────────────────────────────
@@ -490,6 +492,92 @@ export function createForgeDriverBase(config = {}) {
     return String(result ?? '');
   }
 
+  // ── 15. runAuditGate（v1.2.8 功能⑥：FORGE 全 loop 接入 audit）──
+
+  /**
+   * 在 FORGE loop 的代码变更步骤后自动跑 sofagent-audit。
+   *
+   * 流程：
+   *   1. B/F 步骤执行完毕后，driver 自动 git add -A && git commit
+   *   2. 跑 node engine/audit/dist/index.js --diff HEAD~1..HEAD --silent
+   *   3. exit 0 → passed=true（全过）
+   *   4. exit 1 → passed=true（有警告，不阻塞）
+   *   5. exit 2 → passed=false（有违规，打回重修）
+   *   6. 输出写到 runDir/audit-result.md
+   *
+   * @param {string} runDir - 当前 run 目录
+   * @param {string} stepName - 当前步骤名（如 'b-fix', 'f-fix'）
+   * @param {number} round - 当前轮次
+   * @returns {Promise<{passed: boolean, exitCode: number, output: string}>}
+   */
+  async function runAuditGate(runDir, stepName = 'unknown', round = 1) {
+    const auditResultPath = join(runDir, 'audit-result.md');
+
+    // 1. auto-commit B/F 的改动
+    const commitMsg = `FORGE auto-commit: ${stepName} round-${round}`;
+    try {
+      const { execSync } = await import('child_process');
+      execSync('git add -A', { cwd: REPO_ROOT, encoding: 'utf-8', timeout: 30_000 });
+      execSync(`git commit -m "${commitMsg}"`, { cwd: REPO_ROOT, encoding: 'utf-8', timeout: 30_000 });
+    } catch (err) {
+      // commit 可能因为 "nothing to commit" 而失败——这是正常的（B/F 可能没改任何东西）
+      const msg = String(err.message || '');
+      if (!msg.includes('nothing to commit') && !msg.includes('no changes')) {
+        // 真正的 commit 失败
+        const output = `## Audit Gate — COMMIT FAILED\n\n步骤: ${stepName} round-${round}\n\n错误: ${msg}\n`;
+        writeFileSync(auditResultPath, output, 'utf-8');
+        return { passed: false, exitCode: -1, output: msg };
+      }
+    }
+
+    // 2. 跑 sofagent-audit
+    try {
+      const { execSync } = await import('child_process');
+      const auditCmd = `node ${join(REPO_ROOT, 'engine', 'audit', 'dist', 'index.js')} --diff HEAD~1..HEAD --silent --task "FORGE audit gate: ${stepName} round-${round}"`;
+      let auditOutput = '';
+      let exitCode = 0;
+      try {
+        auditOutput = execSync(auditCmd, {
+          cwd: REPO_ROOT,
+          encoding: 'utf-8',
+          timeout: 120_000,
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+      } catch (auditErr) {
+        exitCode = auditErr.status ?? 1;
+        auditOutput = auditErr.stdout || auditErr.stderr || auditErr.message;
+      }
+
+      // 3. 判定
+      const passed = exitCode <= 1; // 0=全过, 1=有警告（不阻塞）, 2=有违规（阻塞）
+
+      // 4. 写结果
+      const statusLabel = exitCode === 0 ? '✅ ALL PASS'
+        : exitCode === 1 ? '⚠️ WARNINGS (不阻塞)'
+        : '❌ VIOLATIONS (打回重修)';
+      const md = [
+        `## Audit Gate Result — ${stepName} round-${round}`,
+        '',
+        `**状态**: ${statusLabel}`,
+        `**Exit Code**: ${exitCode}`,
+        `**Diff**: HEAD~1..HEAD`,
+        '',
+        '### 审计输出',
+        '',
+        '```',
+        String(auditOutput).slice(0, 5000),
+        '```',
+      ].join('\n');
+      writeFileSync(auditResultPath, md, 'utf-8');
+
+      return { passed, exitCode, output: String(auditOutput) };
+    } catch (err) {
+      const output = `## Audit Gate — EXECUTION FAILED\n\n步骤: ${stepName} round-${round}\n\n错误: ${err.message}\n`;
+      writeFileSync(auditResultPath, output, 'utf-8');
+      return { passed: false, exitCode: -1, output: err.message };
+    }
+  }
+
   return {
     // 公共工具函数
     parseDriverArgs,
@@ -506,6 +594,7 @@ export function createForgeDriverBase(config = {}) {
     updateLatestPointer,
     resolveVisibleFiles,
     sliceMultiOutput,
+    runAuditGate,  // v1.2.8 功能⑥
     // 辅助函数
     extractUsage,
     extractAgentText,

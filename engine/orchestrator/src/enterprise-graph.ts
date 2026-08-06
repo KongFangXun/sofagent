@@ -154,10 +154,22 @@ function readWorkflowYml(ymlPath: string): string {
 function buildNodeConfig(
   node: WorkflowNode,
   dataFlowMapping: DataFlowMapping,
+  dataDir?: string,
 ): StateGraphConfig['nodes'][0] {
-  // 检查是否需要 HITL
-  // TODO v1.2.8: HITL 标记来自 resolveAgent → SubAgentDefinition.hitl
-  const interruptBefore = false;
+  // v1.2.8 功能④：HITL 标记从 resolveAgent → SubAgentDefinition.hitl 读取
+  // （v1.2.7 硬编码 false，TODO v1.2.8 已消除）
+  let interruptBefore = false;
+  if (dataDir && node.agent === 'enterprise') {
+    try {
+      const agents = listAgents(dataDir);
+      const def = agents.find((a) => a.name === node.id);
+      if (def?.hitl) {
+        interruptBefore = true;
+      }
+    } catch {
+      // listAgents 失败时不阻塞图构建，默认无 HITL
+    }
+  }
 
   return {
     id: node.id,
@@ -185,7 +197,7 @@ export function buildStateGraphConfig(
   const dataFlowMapping = buildDataFlowMapping(dataFlow);
 
   // 构建节点配置
-  const nodes = workflow.nodes.map((node) => buildNodeConfig(node, dataFlowMapping));
+  const nodes = workflow.nodes.map((node) => buildNodeConfig(node, dataFlowMapping, dataDir));
 
   // 构建边：depends_on → 直接边
   const edges: StateGraphConfig['edges'] = [];
