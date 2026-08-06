@@ -42,7 +42,7 @@ const STEP_BUDGETS = {
 };
 
 /** 默认截断行数 */
-const DEFAULT_BUDGET = 200;
+export const DEFAULT_BUDGET = 200;
 
 /**
  * 根据步骤名获取截断预算。
