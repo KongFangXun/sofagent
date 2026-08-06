@@ -153,17 +153,15 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | `data/knowledge/` | 知识库（entities / concepts / comparisons / summaries） |
 | `data/config/` | 配置文件（audit-report.json 等） |
 
-> 💡 **FDE/ 是给人看的部署流程文档；SKILL/ 是给 Agent 读的行为约束文件。新 Skill 放 SKILL/。**
-
 ---
 
 ## 五、当前状态
 
 | 项 | 值 |
 |----|-----|
-| 当前版本 | **v1.2.7**（2026-08-06） |
-| 下一版本 | v1.2.7（参见 docs/ROADMAP.md） |
-| 测试覆盖 | 1527 测试 / 12 包（测试 SSOT 口径：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，见 check-test-count.sh） |
+| 当前版本 | **v1.2.8**（2026-08-07） |
+| 下一版本 | v1.2.9（参见 docs/ROADMAP.md） |
+| 测试覆盖 | 1562 测试 / 12 包（测试 SSOT 口径：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，见 check-test-count.sh） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1-E2/E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
@@ -235,4 +233,4 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 
 ---
 
-> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.2.7 · 孔放勋 · 2026-08-06。
+> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.2.8 · 孔放勋 · 2026-08-07。
