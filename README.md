@@ -340,7 +340,7 @@ flowchart LR
 | 组件 | 作用 | 状态 |
 |:------|:--------|:--:|
 | 🧭 约束底座 | 开工前规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
-| 🔍 审计引擎 | 24 条规则，每次 git commit / 文件变更触发，违规拦截+记录。**审计核心零额外 token**（19 条纯 git-diff + 1 条文件系统监控不调用 LLM，4 条混合规则需 Agent 日志）| ✅ 稳定 |
+| 🔍 审计引擎 | **FDE Agent 的审计引擎核心规则零额外 token**——24 条规则，每次 git commit / 文件变更触发，违规拦截+记录（19 条纯 git-diff + 1 条文件系统监控不调用 LLM，4 条混合规则需 Agent 日志）| ✅ 稳定 |
 | 🔄 回溯引擎 | 每次审计后自动 git snapshot，违规一键回滚 | ✅ 稳定 |
 | 🧬 进化引擎 | think.md 反思（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成）+ Dream Cycle 知识回灌（🔧 轻量态）+ skillopt Skill 优化（⚠️ 需外部 SkillOpt CLI）| 🔧 部分可用 |
 

@@ -40,7 +40,8 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
    node FORGE/src/release-gate-driver.mjs --target <版本号>
 
    # sandbox 环境（acceptance-test.sh 预跑会被 kill 时）：
-   # 先手动预跑：bash FORGE/playbook/acceptance-test.sh > <runDir>/acceptance-raw.log 2>&1
+   # 先手动预跑到 /tmp（driver 启动时自动复制到 runDir）：
+   bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-raw.log 2>&1
    # 再加 --skip-acceptance 启动：
    node FORGE/src/release-gate-driver.mjs --target <版本号> --skip-acceptance
 

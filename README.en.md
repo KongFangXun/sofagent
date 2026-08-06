@@ -340,7 +340,7 @@ flowchart LR
 | Component | What it does | Status |
 |:------|:--------|:--:|
 | 🧭 Constraint Base | Injects rules into Agent context before work starts (SKILL.md + fde.md + think.md + knowledge/) | ✅ stable |
-| 🔍 Audit Engine | 24 rules, triggered on every git commit / file change, blocks + records violations. **Zero extra tokens in the audit core** (19 pure git-diff + 1 filesystem monitoring that don't call the LLM, 4 hybrid rules need Agent logs) | ✅ stable |
+| 🔍 Audit Engine | **The FDE Agent's audit engine core rules use zero extra tokens** — 24 rules, triggered on every git commit / file change, blocks + records violations (19 pure git-diff + 1 filesystem monitoring that don't call the LLM, 4 hybrid rules need Agent logs) | ✅ stable |
 | 🔄 Rollback Engine | Auto git snapshot after every audit, one-click rollback on violation | ✅ stable |
 | 🧬 Evolution Engine | think.md reflection (⚠️ MCP/CLI paths only, not auto-generated on the git hook path) + Dream Cycle knowledge feedback (🔧 lightweight) + skillopt Skill optimization (⚠️ needs external SkillOpt CLI) | 🔧 partially available |
 
