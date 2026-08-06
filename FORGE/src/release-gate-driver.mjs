@@ -128,10 +128,19 @@ const STEP_RECURSION_LIMITS = {
 // 数值关系：30(劝) → 40(拽) → L3(杀)
 // release-gate 任务比 fresh-eyes 简单（读预执行结果 + 分析文档），
 // 所以阈值比 fresh-eyes(50/60) 更低，更早收敛。
-const TOOL_SOFT_LIMIT = 30;   // L1：超过此数注入"立即写报告"HumanMessage
-const TOOL_HARD_LIMIT = 40;   // L2：超过此数进入 grace window
-const GRACE_STEPS_DEFAULT = 5;    // 默认 grace window 步数
-const GRACE_STEPS_ANALYSIS = 10;  // 分析型步骤（coverage/consolidate）需要更多步切换到报告模式
+const TOOL_SOFT_LIMIT = 35;   // L1：超过此数注入"立即写报告"HumanMessage
+const TOOL_HARD_LIMIT = 45;   // L2：超过此数进入 grace window
+const GRACE_STEPS_DEFAULT = 0;    // 零窗口模式（v1.2.7：撞硬上限立即中断，和 fresh-eyes-driver 对齐）
+const GRACE_STEPS_ANALYSIS = 0;  // 分析型步骤同样零窗口
+
+// v1.2.7：isReportText + REPORT_MIN_CHARS 提到模块级（和 fresh-eyes-driver 对齐，避免局部作用域引用 bug）
+const REPORT_MIN_CHARS = 300;
+function isReportText(text) {
+  if (!text || !text.trim()) return false;
+  if (text.length >= REPORT_MIN_CHARS) return true;
+  if (/^#{1,3}\s/m.test(text)) return true;
+  return false;
+}
 
 // 维度级超时覆盖（默认 60s；重遍历/全仓扫描类维度给更长时间）
 // v1.2.5：维度 49（旧路径零残留 node 递归遍历 7 目录）实测 60s 超时 → 上调 120s
@@ -647,12 +656,8 @@ async function runWorker(step, runDir, target) {
     let hardBreak = false;       // 窗口耗尽，强制中断
     let gotReport = false;       // 窗口期内捕获到报告文本
 
-    // 报告质量门控：非空 content 不一定是报告（可能是中间思考碎片）
+    // 报告质量门控：使用模块级 isReportText（v1.2.7：从局部提到模块级）
     // 真报告至少含 ## 标题行 或 ≥ 300 字符
-    const isReportText = (text) => {
-      if (!text || text.length < 10) return false;
-      return /^##\s+/m.test(text) || text.length >= 300;
-    };
 
     for await (const chunk of stream) {
       for (const [, delta] of Object.entries(chunk)) {
@@ -710,7 +715,7 @@ async function runWorker(step, runDir, target) {
       }
     }
 
-    return { messages: allMessages };
+    return { messages: allMessages, hardBreak };
   };
 
   const result = progressMw
@@ -726,9 +731,20 @@ async function runWorker(step, runDir, target) {
   }
 
   // 6. 提取文本输出
-  const text = extractAgentText(result);
+  let text = extractAgentText(result);
   if (!text) {
-    throw new Error(`[worker:${step}] Agent 未返回内容`);
+    // v1.2.7：hardBreak 后 agent 无文本，走无工具裸 LLM 报告生成（和 fresh-eyes-driver 对齐）
+    if (result?.hardBreak) {
+      console.warn(`  ┄ [${step}] 硬熔断后模型未输出文本，启动无工具裸 LLM 报告生成`);
+      try {
+        text = await generateReportWithoutTools(model, result?.messages ?? [], step, 'V', stepDef);
+      } catch (bareErr) {
+        console.warn(`  ┄ [${step}] 裸 LLM 报告生成也失败: ${bareErr.message}`);
+      }
+    }
+    if (!text) {
+      throw new Error(`[worker:${step}] Agent 未返回内容`);
+    }
   }
 
   // 7. 写产物（release-gate 每步只产出 1 个文件）
@@ -772,40 +788,111 @@ function extractAgentText(result) {
   }
   // messages 数组结构（LangGraph stream 返回格式）
   if (result?.messages) {
-    // 从后往前找最后一条 AI 消息（跳过 tool/human 消息）
+    // 从后往前找最后一条「有报告级 content 的」AI 消息。
+    //
+    // v1.2.7 修复（同步自 fresh-eyes-driver run-07）：原来只要 text.trim()
+    // 非空就返回，但 GLM 在硬熔断前的最后一条 AI message 可能是一句中间思考
+    // 碎片（如"现在我已经有了所需的所有数据。让我阅读日志的中间部分..."），
+    // 碎片被当成报告写入了产物文件。
+    //
+    // 报告质量门控：≥REPORT_MIN_CHARS 字符 或 含 ## 标题行（与 stream loop 的 isReportText 一致）。
+    // 如果所有 AI message 都不达标 → 返回 null → 走 generateReportWithoutTools 降级。
     for (let i = result.messages.length - 1; i >= 0; i--) {
       const msg = result.messages[i];
       const isAI = msg?._getType?.() === 'ai' || (msg?.tool_calls !== undefined && msg?.content !== undefined);
       if (!isAI) continue;
 
       const content = msg?.content;
-      if (typeof content === 'string') return content;
-      if (Array.isArray(content)) {
-        return content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
+      // 提取文本
+      let text = '';
+      if (typeof content === 'string') text = content;
+      else if (Array.isArray(content)) text = content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
+      else if (content && typeof content === 'object') {
+        if (typeof content.text === 'string') text = content.text;
+        else if (typeof content.content === 'string') text = content.content;
+        else text = JSON.stringify(content);
       }
-      if (content && typeof content === 'object') {
-        if (typeof content.text === 'string') return content.text;
-        if (typeof content.content === 'string') return content.content;
-        return JSON.stringify(content);
-      }
+      // 报告质量门控：非空 + (≥REPORT_MIN_CHARS 字符 或 含 ## 标题行)
+      if (text.trim() && isReportText(text)) return text;
     }
-    // 所有消息都不是 AI 类型——尝试最后一条的 content
-    const last = result.messages[result.messages.length - 1];
-    const content = last?.content;
-    if (typeof content === 'string') return content;
-    if (Array.isArray(content)) {
-      return content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
-    }
-    if (content && typeof content === 'object') {
-      if (typeof content.text === 'string') return content.text;
-      return JSON.stringify(content);
-    }
+    // 所有 AI message 都不达标（碎片/中间思考）→ 返回空，让调用方走 generateReportWithoutTools。
+    // 注意：硬中断场景下最后一条可能是 ToolMessage（工具返回值），不能把工具返回值当报告。
+    return '';
   }
   // 最终 fallback——避免 String(object) 产出 "[object Object]"
   if (result && typeof result === 'object') {
     return JSON.stringify(result);
   }
   return String(result ?? '');
+}
+
+/**
+ * 硬熔断后的无工具裸 LLM 报告生成。
+ *
+ * 当 agent 撞硬上限（TOOL_HARD_LIMIT + 零窗口）仍未输出文本时，
+ * 从 ToolMessage 中提取摘要，构造无 tools 的 prompt 让模型直接输出报告。
+ *
+ * v1.2.7：从 fresh-eyes-driver.mjs 同步——release-gate 和 fresh-eyes 共享
+ * 相同的熔断架构，需要相同的降级策略，否则 release-gate 撞硬上限后直接 throw。
+ *
+ * @param {object} model    已初始化的 LLM 实例（ChatOpenAI）
+ * @param {Array}  messages agent 执行期间累积的消息列表
+ * @param {string} step     当前步骤名（acceptance/regression/coverage/consolidate/verdict）
+ * @param {string} role     角色名（release-gate 固定为 'V'）
+ * @param {object} stepDef  步骤定义（含 outputs 数组）
+ * @returns {Promise<string|null>} 报告文本，或 null（生成失败）
+ */
+async function generateReportWithoutTools(model, messages, step, role, stepDef) {
+  // 1. 从工具结果中提取关键摘要（文件路径 + grep 结果等）
+  // 每个 ToolMessage 截取前 500 字符，去重后最多 20 条（~10K tokens prompt）
+  const toolSummaries = [];
+  for (const msg of messages) {
+    if (msg?._getType?.() === 'tool') {
+      const content = typeof msg.content === 'string' ? msg.content : '';
+      if (content.trim()) {
+        toolSummaries.push(content.slice(0, 500).trim());
+      }
+    }
+  }
+  const unique = [...new Set(toolSummaries)].slice(0, 20);
+
+  // 2. 构造裸 LLM 请求——无 tools，只有 system + user 消息
+  const { SystemMessage, HumanMessage } = await import('@langchain/core/messages');
+
+  const reportPrompt = [
+    '你是发版闸门审查报告生成器。以下是之前审查过程中工具调用的结果摘要。',
+    '请基于这些信息，写出完整的审查报告。',
+    '',
+    '报告要求：',
+    `- 步骤：${step}（角色 ${role}）`,
+    `- 产物文件：${(stepDef?.outputs ?? ['report.md']).join(', ')}`,
+    '- 每条发现标注优先级：P0（严重/阻塞）/ P1（应该修）/ P2（观察项）',
+    '- 给出文件路径和具体描述',
+    '- 基于摘要中能看到的实际证据做判断——如果摘要中有明确的代码/配置/路径问题，标 P0 或 P1',
+    '- 只有当摘要信息确实不足以确认时才标 P2"待证实"',
+    '- 用中文写，Markdown 格式',
+    '',
+    `以下是 ${unique.length} 条工具结果摘要：`,
+    '---',
+    ...unique.map((s, i) => `[${i + 1}] ${s}`),
+    '---',
+  ].join('\n');
+
+  const reportMessages = [
+    new SystemMessage('你是 sofagent 项目的发版闸门独立审查者。现在需要你根据已有工具调用结果写出审查报告。不调用任何工具，直接输出报告文本。'),
+    new HumanMessage(reportPrompt),
+  ];
+
+  // 3. 裸调用——不带 tools，模型只能输出文本
+  const response = await model.invoke(reportMessages);
+  const respText = typeof response === 'string'
+    ? response
+    : (response?.content ?? '');
+  // 处理数组格式 content
+  if (Array.isArray(respText)) {
+    return respText.map(x => typeof x === 'string' ? x : x?.text ?? '').join('');
+  }
+  return typeof respText === 'string' && respText.trim() ? respText : null;
 }
 
 // ═══════════════════════════════════════════════════════════
