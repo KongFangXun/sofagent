@@ -261,4 +261,9 @@ sofagent（https://github.com/KongFangXun/sofagent）——当前已完成发版
 - **静默失效**——空 catch 吞错、写入/读取不对称、功能做了但用户感知不到——问题发生了但无人知晓
 - **假绿与假阳性**——exit code 测量取到的是管道末端的退出码而非脚本的；自动化裁决把 PASS 读成 FAIL——"全绿"本身就是最值得怀疑的信号
 
+**v1.2.7 新增经验（release-gate-driver 修复过程中暴露）**：
+
+- **镜像 driver 漂移**——`fresh-eyes-driver.mjs` 和 `release-gate-driver.mjs` 共享相同的熔断架构（createReactAgent + 零窗口 + 降级报告），但各自独立维护。一个 driver 修了 4 轮熔断逻辑（零窗口、generateReportWithoutTools、isReportText 作用域、model 实例传递），另一个 driver 忘了同步 → 撞硬上限直接 throw。**教训：两个 driver 有公共逻辑应该提取到 driver-base，否则修 A 忘 B 是必然的**
+- **碎片文本伪装成报告**——GLM 在工具调用循环中，最后一条 AI message 可能是一句中间思考碎片（如"现在我已经有了所需的所有数据。让我阅读日志的中间部分..."）。这段文字非空，会被 `extractAgentText` 直接当成报告写入产物文件。**教训：提取报告文本必须过质量门控（≥300 字符或含 `##` 标题行），不达标的碎片返回空 → 触发 generateReportWithoutTools 降级**
+
 这些方向值得你保持**额外敏感**——但不要把它们当成清单。你今天发现的问题可能完全不在这个列表上。**那才是最值钱的发现。**
