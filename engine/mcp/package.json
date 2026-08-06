@@ -38,12 +38,12 @@
   },
   "homepage": "https://github.com/KongFangXun/sofagent#readme",
   "dependencies": {
-    "@sofagent/audit": "1.2.6",
-    "@sofagent/core": "1.2.6",
-    "@sofagent/think": "1.2.6",
-    "@sofagent/ontology": "1.2.6",
-    "@sofagent/eval": "1.2.6",
-    "@sofagent/skillopt": "1.2.6"
+    "@sofagent/audit": "1.2.7",
+    "@sofagent/core": "1.2.7",
+    "@sofagent/think": "1.2.7",
+    "@sofagent/ontology": "1.2.7",
+    "@sofagent/eval": "1.2.7",
+    "@sofagent/skillopt": "1.2.7"
   },
   "optionalDependencies": {
     "@sofagent/daemon": "1.2.6"

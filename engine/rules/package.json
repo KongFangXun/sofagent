@@ -28,6 +28,6 @@
     "README.md"
   ],
   "dependencies": {
-    "@sofagent/core": "^1.2.4"
+    "@sofagent/core": "1.2.7"
   }
 }
