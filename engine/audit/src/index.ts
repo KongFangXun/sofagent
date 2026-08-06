@@ -42,7 +42,7 @@ import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-hist
 // Re-export for external consumers (P0-②: doctor needs checkHistoryChainIntegrity via require('@sofagent/audit'))
 export { checkHistoryChainIntegrity } from './audit-history';
 
-// Re-export core 审计原语——daemon/mcp/orchestrator 通过 @sofagent/audit 消费（v1.2.7）
+// Re-export core 审计原语——daemon/mcp/orchestrator 通过 @sofagent/audit 消费（v1.2.8）
 export { runRules, productSignature } from './reporter';
 export type { AuditResult } from './reporter';
 export { loadHistory, appendHistory } from './audit-history';
@@ -110,7 +110,7 @@ interface Args {
   conflictCheckCommand?: boolean;
   /** v1.2.5 P2: federation-distill 子命令 */
   federationDistillCommand?: boolean;
-  /** v1.2.7: support-bundle 子命令 */
+  /** v1.2.8: support-bundle 子命令 */
   supportBundle: boolean;
   /** v1.2.0: 审计 session 产物（默认开启，--no-session 关闭） */
   noSession: boolean;
@@ -357,7 +357,7 @@ function installHook(): void {
 
   const destPath = join(hooksDir, 'commit-msg');
 
-  // v1.2.7: 覆盖前备份已有 hook（如果有）
+  // v1.2.8: 覆盖前备份已有 hook（如果有）
   if (existsSync(destPath)) {
     const backupPath = join(hooksDir, 'commit-msg.bak');
     try {
@@ -654,7 +654,7 @@ async function main(): Promise<void> {
     }
   }
 
-  // v1.2.7: --support-bundle 模式——一键生成 issue 摘要 + 证据 zip
+  // v1.2.8: --support-bundle 模式——一键生成 issue 摘要 + 证据 zip
   if (args.supportBundle) {
     const { generateSupportBundle } = await import('./support-bundle');
     try {
@@ -898,7 +898,7 @@ async function main(): Promise<void> {
   }
 
   // 4.3 配置完整性检查：检测 config.yml 中是否关闭了规则（防篡改）
-  // v1.2.7 (F21): 阈值从 >3 改为 >0——关闭任意条规则即输出显眼告警（不阻断，保持灵活性但确保可追溯）
+  // v1.2.8 (F21): 阈值从 >3 改为 >0——关闭任意条规则即输出显眼告警（不阻断，保持灵活性但确保可追溯）
   let configDisabledTooMany = false;
   if (config?.rules) {
     // v1.2.5: 追加 a20-a23（A20-A23 新增安全红线规则）
@@ -910,7 +910,7 @@ async function main(): Promise<void> {
     const disabledCount = disabledEntries.length;
     const totalActive = ALL_RULE_KEYS.length;
 
-    // v1.2.7 (F21): 关闭任意条规则即告警（不再等 >3），并记录到 history.jsonl 留下痕迹
+    // v1.2.8 (F21): 关闭任意条规则即告警（不再等 >3），并记录到 history.jsonl 留下痕迹
     if (disabledCount > 0) {
       const disabledList = disabledEntries.map(([key]) => key).join(', ');
       console.warn(`\u26a0\ufe0f  当前有 ${disabledCount} 条规则被关闭（${disabledList}）。如果这不是你主动配置的，config.yml 可能已被篡改。`);

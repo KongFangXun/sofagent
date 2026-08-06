@@ -17,7 +17,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.7-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.8-16B8F3" alt="Version" /></a>
   <a href="#快速开始"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
 </p>
 
@@ -117,7 +117,7 @@ FDE 交付了本体结构（ontology）+ workflow.yml + skills/ 之后，v1.2.5 
 | 阶段 | 做什么 | 版本 |
 |------|--------|:----:|
 | **ACTIVATE** | 读交付物 → 注册企业 SubAgent | v1.2.5 ✅ |
-| **ORCHESTRATE** | 构建企业专属工作流图（Phase 2 前半：映射表+注册扩展 / Phase 2 后半：enterprise-graph） | v1.2.6 ✅ · v1.2.7 ✅ |
+| **ORCHESTRATE** | 构建企业专属工作流图（Phase 2 前半：映射表+注册扩展 / Phase 2 后半：enterprise-graph） | v1.2.6 ✅ · v1.2.8 ✅ |
 | **EXECUTE** | 运行 + 人工确认 + 每步审计 | v1.2.8-v1.2.9（规划中） |
 | **SUSTAIN** | 持续优化，越跑越好 | v1.3.0（规划中） |
 

@@ -2,7 +2,7 @@
 // doctor.ts · sofagent 健康检查
 // v1.2.0 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
 // v1.2.0 维护：新增 post-commit hook 存在性检查
-// v1.2.7 新增：每项 fail/warn 附修复命令 + --repair 自动修复模式
+// v1.2.8 新增：每项 fail/warn 附修复命令 + --repair 自动修复模式
 //
 // 检查项：
 //   1. 环境检查（Node / git / npm / disk / bash）

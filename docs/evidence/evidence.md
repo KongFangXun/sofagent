@@ -1,7 +1,7 @@
 # Evidence.md — sofagent 真的有用吗？
 
 > ⚠️ **版本说明**：以下实验数据基于 v0.92-v0.93（prompt 前缀注入，4 条核心规则）。
-> 当前 v1.2.7 已升级为 SKILL 文件加载链 + 24 条规则体系。
+> 当前 v1.2.8 已升级为 SKILL 文件加载链 + 24 条规则体系。
 > v1.2.3 的对照实验数据待补充（计划在 v1.3.0 前完成）。
 
 > 当前单元测试数：见 `tools/test-count.sh` 实跑（audit 包 / 全 workspace 汇总）。v1.2.4：audit 包 507、全 workspace 1320 测试（共 1320，全绿）。v1.2.3：audit 包 498、全 workspace 1207 测试。v1.2.1：audit 包 428、全 workspace 984（v1.2.1 acceptance-test 场景扩展 + 审查维度新增）。v1.2.0：audit 包 423、全 workspace 957（物理结构重构不增测试 + rules-engine 新增 28 + DP-2 signConfig 回归测试）。
