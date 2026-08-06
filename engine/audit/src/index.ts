@@ -1041,7 +1041,8 @@ async function main(): Promise<void> {
       const author = execFileSync('git', ['log', '-1', '--format=%an'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
       if (author) actor = author;
     } catch {
-      console.warn('[sofagent] 警告：git 操作失败，相关审计已降级');
+      // git log 失败（unborn HEAD / 非 git 环境）：审计正常运行，仅 actor 退化为 unknown
+      console.warn('[sofagent] 警告：git 作者获取失败，actor 标记为 unknown');
     }
     const govTimestamp = new Date().toISOString();
     // 目标实体 = 本次变更涉及的文件路径（最多取前 20 个，避免记录超长）
