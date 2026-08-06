@@ -259,7 +259,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
         warn(`audit dist/index.js 哈希未记录（首次运行）——当前 SHA-256: ${currentHash.slice(0, 12)}...`);
         try {
           const hashDir = join(hashRecordPath, '..');
-          if (!existsSync(hashDir)) mkdirSync(hashDir, { recursive: true });
+          if (!existsSync(hashDir)) mkdirSync(hashDir, { recursive: true, mode: 0o700 });
           writeFileSync(hashRecordPath, currentHash + '\n', { mode: 0o600 });
           ok('已自动记录当前哈希作为基准（后续运行将比对）');
         } catch {
@@ -374,9 +374,9 @@ export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: 
     const home = process.env.SOFAGENT_HOME || join(homedir(), '.sofagent');
     if (!existsSync(home)) {
       try {
-        mkdirSync(home, { recursive: true });
-        mkdirSync(join(home, 'data'), { recursive: true });
-        mkdirSync(join(home, 'internal'), { recursive: true });
+        mkdirSync(home, { recursive: true, mode: 0o700 });
+        mkdirSync(join(home, 'data'), { recursive: true, mode: 0o700 });
+        mkdirSync(join(home, 'internal'), { recursive: true, mode: 0o700 });
         ok('~/.sofagent 已自动创建');
         repairsApplied++;
       } catch (err) {

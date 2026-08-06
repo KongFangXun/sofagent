@@ -118,7 +118,7 @@ export class CompactCommand implements SlashCommand {
 
     // 确保 dataDir 存在
     const thinkDir = join(thinkPath, '..');
-    if (!existsSync(thinkDir)) mkdirSync(thinkDir, { recursive: true });
+    if (!existsSync(thinkDir)) mkdirSync(thinkDir, { recursive: true, mode: 0o700 });
 
     if (existsSync(thinkPath)) {
       appendFileSync(thinkPath, '\n' + compactSection.join('\n'));
@@ -230,7 +230,7 @@ export class CompactCommand implements SlashCommand {
         compressionRatio: originalLen > 0 ? (summaryLen / originalLen).toFixed(2) : '0',
       }) + '\n';
       const logDir = join(dataDir, 'audit');
-      if (!existsSync(logDir)) mkdirSync(logDir, { recursive: true });
+      if (!existsSync(logDir)) mkdirSync(logDir, { recursive: true, mode: 0o700 });
       appendFileSync(AUDIT_HISTORY, entry);
     } catch {
       // 审计日志写入失败不阻塞压缩

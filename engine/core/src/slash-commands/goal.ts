@@ -103,7 +103,7 @@ export class GoalCommand implements SlashCommand {
 
     const goalPath = resolveGoalPath(dataDir);
     const goalDir = join(goalPath, '..');
-    if (!existsSync(goalDir)) mkdirSync(goalDir, { recursive: true });
+    if (!existsSync(goalDir)) mkdirSync(goalDir, { recursive: true, mode: 0o700 });
     writeFileSync(goalPath, JSON.stringify(goal, null, 2) + '\n');
 
     return [

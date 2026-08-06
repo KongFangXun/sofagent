@@ -1461,13 +1461,22 @@ async function detectReporters() {
  */
 async function ensureAcceptancePreRun(args, runDir) {
   const preRunLog = join(runDir, 'acceptance-raw.log');
+  const externalLog = '/tmp/acceptance-raw.log';
   if (args.skipAcceptance && !existsSync(preRunLog)) {
-    console.log('  [driver] --skip-acceptance 已指定，跳过预跑');
-    console.log('  [driver] 请确保 acceptance-raw.log 存在（手动预跑：bash FORGE/playbook/acceptance-test.sh > runDir/acceptance-raw.log 2>&1）');
-    writeFileSync(preRunLog,
-      '--skip-acceptance 模式：未预跑 acceptance-test.sh。\n' +
-      '请手动预跑后把日志放到此文件，或去掉 --skip-acceptance 参数让 driver 自动预跑。\n',
-      'utf-8');
+    // v1.2.7 修复：先检查 /tmp/acceptance-raw.log（外部预跑日志），存在就复制到 runDir
+    // 根因：runDir 由 driver 启动时创建，用户无法在启动前预跑日志到 runDir
+    if (existsSync(externalLog)) {
+      copyFileSync(externalLog, preRunLog);
+      console.log(`  [driver] --skip-acceptance 已从 ${externalLog} 复制预跑日志到 runDir`);
+    } else {
+      console.log('  [driver] --skip-acceptance 已指定，但未找到预跑日志');
+      console.log(`  [driver] 请先手动预跑：bash FORGE/playbook/acceptance-test.sh > ${externalLog} 2>&1`);
+      writeFileSync(preRunLog,
+        '--skip-acceptance 模式：未预跑 acceptance-test.sh。\n' +
+        `请手动预跑后把日志放到 ${externalLog}（driver 会自动复制），\n` +
+        '或去掉 --skip-acceptance 参数让 driver 自动预跑。\n',
+        'utf-8');
+    }
   } else if (existsSync(preRunLog)) {
     console.log('  [driver] acceptance-raw.log 已存在，跳过预跑（复用模式）');
   } else {
