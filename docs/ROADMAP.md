@@ -128,7 +128,7 @@ sofagent v1.3.1 的 Ontology 本体结构方向与之高度同构，但走**分�
 
 > 🔗 **Graph Engineering 定位**：sofagent 已经在做 Graph Engineering——`engine/orchestrator/src/loop/graph.ts` 用 LangGraph StateGraph 实现 `START→engineer→audit→reviewer→human_confirm→END`，`audit` 节点即 ★Reality Anchor（真实 git diff 24 条规则作 guard edge）。v1.3.1 的「控制图多循环 DAG 波次并行」是这一定位的自然延伸。理论框架详见 [VALIDATION](./VALIDATION.md) 和 [ARCHITECTURE §Graph Engineering 视角](./ARCHITECTURE.md#graph-engineering-视角控制图--stategraph)。
 >
-> 📌 **本文档聚焦技术路线。** 终局愿景与转折点信号概述见上方「未来去哪」；商业化方向与市场定位（产品化四条 / 市场信号 / 价值度量 / SMB 断层）见 [VALIDATION §十三](./VALIDATION.md)；Agent 时代组织哲学（Conway/Coase 双重反转）见 [PHILOSOPHY 附章](./PHILOSOPHY.md)。
+> 📌 **本文档聚焦技术路线。** 终局愿景与转折点信号概述见上方「未来去哪」；商业化方向与市场定位（产品化四条 / 市场信号 / 价值度量 / SMB 断层）见 [VALIDATION §四](./VALIDATION.md)；Agent 时代组织哲学（Conway/Coase 双重反转）见 [PHILOSOPHY 附章](./PHILOSOPHY.md)。
 
 ---
 

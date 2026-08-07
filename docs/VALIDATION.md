@@ -1,12 +1,19 @@
 # sofagent 行业印证与生态定位 · Validation
 
-> **本文档汇集 sofagent 的行业印证与生态定位分析。** §十~§十一 原属 [PHILOSOPHY.md](./PHILOSOPHY.md)，v1.2.4 起拆为独立文档；§十二 原 ARCHITECTURE §七；§十三 原 ROADMAP「产品化与商业化方向」，v1.2.9 文档治理中迁入。
+> **本文档从四个维度回答一个问题：行业有没有独立验证 sofagent 的直觉？**
+>
+> - **§一 方法论**——行业研究怎么印证"约束层是刚需"（Harness 范式 / 确定性迁移 / Verifier 瓶颈 / 治理缺口代价）
+> - **§二 生态位**——sofagent 在 Agent 生态三层模型中的位置（约束基础设施，不碰平台、不碰框架）
+> - **§三 架构**——行业框架怎么独立复现 sofagent 的架构选择（Ontology / Apache Ossie / 五层骨架 / AOS / Palantir OAG）
+> - **§四 市场**——这些技术判断有没有被市场买单（FDE 经济账 / SMB 断层 / 产品化四条 / 价值度量翻转）
+>
+> 四个维度共同指向同一结论：**不管你的 Agent 怎么搭、在哪跑，它需要一个独立的约束层。**
 >
 > v1.2.8 · 2026-08-06（UTC）· 孔放勋
 
 ---
 
-## 十、行业方法论印证：研究如何验证 sofagent 直觉
+## 一、方法论印证：行业研究怎么验证 sofagent 直觉
 
 > 这一节不是新理论，而是把跨批行业研读（Palantir Ontology / 五层骨架 / Stage 渐进 / Loop / FDE 边界 / 王阳明）里反复出现、能**直接印证** sofagent 已有直觉的结论落到纸面。它们不替代正文，只是给「我们一直这么干」补上行业证据。有公开来源者已标注出处。
 
@@ -174,7 +181,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 > 对应的落地借鉴项清单见 [ROADMAP · 探索方向](./ROADMAP.md#探索方向)。
 
-## 十一、Agent 生态三层模型与 sofagent 的位置
+## 二、生态位：Agent 三层模型与 sofagent 的位置
 
 > 要理解 sofagent 在整个 Agent 生态中的位置，先看清这个生态的三层结构。sofagent 不是开发者框架的竞争者，也不是大厂 Agent 平台的替代品——它占据的是一个被三层夹击后依然空出来的生态位：**约束基础设施**。
 
@@ -273,7 +280,7 @@ sofagent 的审计引擎已经覆盖了「做了什么」——每次变更都�
 
 ---
 
-## 十二、架构框架行业印证（原 ARCHITECTURE §七，2026-07 研读）
+## 三、架构印证：行业框架独立复现 sofagent 的选择
 
 > 本节把跨批行业研读中与 sofagent 架构**结构上对齐**的行业框架逐条印证——不是发明新架构，是验证已有架构选型的行业合理性。
 
@@ -397,33 +404,19 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 
 ---
 
-## 十三、商业化方向与市场定位
+## 四、市场印证：行业判断被市场买单
 
-### 产品化四条
+> 前三章从方法论、生态位、架构三个维度回答了"技术对不对"。最后一章回答"市场认不认"——如果约束层真的是刚需，它应该体现在买单意愿、资本动向和单位经济上。
 
-> 控制平面打法——卖「能力」不卖「工时」，必须有自己的 MCP + dashboard。
+### 为什么需要中间件，而不是更多 FDE：SMB 断层
 
-sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商品化的东西），而在「管住 Agent 的那一层」。产品化方向锁定四条：
+SaaStr 创始人 Jason Lemkin 算清了 FDE 模式的单位经济账：FDE 年薪 $135K–$200K+，一名 $200K 的 FDE 管 3–5 个企业账户，仅工程费即**每客户 $40K–$67K/年**，加差旅与利润后**每部署年成本 $75K+**。对 20–50 人、$2M–$10M 营收的中小企业，这笔实施费占营收 1-4%（还没算 AI 工具本身），无法 justify——55% 的 SMB 称成本是最大采用障碍。
 
-1. **卖能力不卖工时**：FDE 从「一种岗位 / 服务」重构成「企业该有的能力」，用 Agent / SubAgent / 产品化封装交给企业，企业自己用、自己落地 AI 化。
-2. **MCP + dashboard 必须有**：dashboard 是自有视图（持久可见 + 真相源），MCP 是向外接的桥。Agent 的 LUI + LLM 吞噬一切 → 所以要有 dashboard；dashboard 轻量 → 所以靠 MCP 配合。两者配合才能把「项目」变成「产品」。
-3. **open-core 双轨**：内核 MIT 开源（信任 + 分发 + 生态），只卖 dashboard 那层（控制台 / 合规月报 / 告警）。
-4. **能力长在代码里，不长在 prompt 里——对抗「模型吞噬一切」**：skill / prompt engineering / context engineering / 以 skill 形式做的 harness engineering，本质都是**文字形式的约束**。每次注入到模型 = 每次投喂 = 每次训练——模型会训练得越来越强，**必然吞噬文字形式的约束**（今天的 Skill 是差异化优势，明天就是模型的内置能力）。sofagent 对策：把 Skill + Harness 能力**封装进 Subagent**（代码级实现，非文字注入）+ **防投喂机制**（防止输入素材变成大模型训练材料）。生存位：细分业务 workflow 上对业务最终结果的可约束性——这个不会被模型吞噬。
+结果是市场两极：Tier 1 企业拿到定制 AI + 嵌入式工程 + 高成功率；Tier 2 中小企业只拿到「预打包方案 + 远程支持 + 培训会」这种无结果承诺的版本。原文结论：**「最需要 AI 转型的企业，可能正被那个能出结果的实施模型的定价排除在外。」**
 
-### 市场信号
+**这正是 sofagent 的位置**：Lemkin 只给出「SMB 需要另一套剧本——第一天就设计自实施、做行业模板、重 onboarding UX」，却没回答「自实施如何保证结果」。若 FDE 的判断力能固化进一层可复制的 harness（约束 + 审计 + 经验回流），$75K/部署的人力成本才可能摊薄成软件成本。$75K/部署/年是可长期引用的量化锚点。
 
-- **FDE-as-a-Service / Services-as-Software 被资本验证**：Anthropic 收购 Fractional AI、Accenture×Anthropic 3 万人 FDE 受训、Blackstone+H&F+Goldman 共建企业 AI 服务公司、Anthropic 接入 Palantir FedStart。
-- **受监管行业规模化交付**：全球 Top-3 SI 将 FDE 能力标准化、规模化交付至强监管场景——TCS×Anthropic 在 56 国为 5 万员工与受监管行业部署 Claude；DXC×Anthropic 联盟（FDE 培训认证规模化）；Anthropic×Infosys 在电信等受监管行业共建 AI Agent。三者同源互证 sofagent「FDE 通用能力化 + Services-as-Software + 受监管行业护城河」定位，且印证「卖能力不卖工时」路线在强监管客户侧已被头部 SI 验证可行。
-- **PE/VC 多企业审计仪表盘**（探索方向）：投后管理场景，所有被投企业 AI 审计数据汇总到一个面板。
-- **WB 企业版竞品对标**（商业化储备）：席位全生命周期管理 + 成本三维核算 + 统一采购合规 + 审计追踪 + 安全沙箱。
-- **🔴 Skill 廉价化危机**：豆包已能自动生成 Skill、Hermes 能给自己生成 Skill → 以 Prompt 形式出现的所有产品形态都将被模型吞噬。引擎层对策见上方第 4 点（能力封装进 Subagent + 防投喂机制）。
-- **私有化部署需求加速**：客户担心数据被用于训练（已有硬件客户代码出现在 AI 输出中）。U 盘交付模式的"龙虾 U 盘"心理价值——插入即用、拔出即停，制造"盾牌般的物理安全感"。核心卖的不是技术实现，是老板的掌控感。
-
-> **待落地**：首个 MVP = FDE Agent + 一个引擎 dashboard（进度 / 合规视图）；商业计划（GTM / 定价 / 买家画像 / 竞争象限）独立私有仓维护，不进本 MIT 库。
-
-### 分层落地中型蓝海
-
-商业化切入上，我们倾向「分层落地」而非一刀切：先在中型客户（有真实 workflow、愿为成果付费、但养不起自建 AI 团队）的蓝海市场建立标杆，用 FDE 的「交付企业专有 skill」模式把单点打透，再向大型客户的标准化模块、小型客户的自助模板双向延伸。核心判断是——卖能力不卖工时，控制平面（sofagent 引擎）是底层，业务 workflow 的可约束性才是护城河。
+> 📖 来源：[Forward Deployed Engineer: What It Takes to Make AI Work in B2B](https://www.saastr.com/forward-deployed-engineer-what-it-takes-to-make-ai-work-in-b2b-but-do-they-work-for-smbs/)（saastr.com，2026）
 
 ### 价值度量翻转：FDE vs 传统外包
 
@@ -439,12 +432,30 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 
 > 印证 sofagent 商业化判断「卖能力不卖工时」：护城河是可约束的业务 workflow，不是人头。
 
-### 为什么需要中间件，而不是更多 FDE：SMB 断层
+### 产品化四条
 
-SaaStr 创始人 Jason Lemkin 算清了 FDE 模式的单位经济账：FDE 年薪 $135K–$200K+，一名 $200K 的 FDE 管 3–5 个企业账户，仅工程费即**每客户 $40K–$67K/年**，加差旅与利润后**每部署年成本 $75K+**。对 20–50 人、$2M–$10M 营收的中小企业，这笔实施费占营收 1-4%（还没算 AI 工具本身），无法 justify——55% 的 SMB 称成本是最大采用障碍。
+> 控制平面打法——卖「能力」不卖「工时」，必须有自己的 MCP + dashboard。
 
-结果是市场两极：Tier 1 企业拿到定制 AI + 嵌入式工程 + 高成功率；Tier 2 中小企业只拿到「预打包方案 + 远程支持 + 培训会」这种无结果承诺的版本。原文结论：**「最需要 AI 转型的企业，可能正被那个能出结果的实施模型的定价排除在外。」**
+SMB 断层解释了"为什么需要中间件"，产品化四条回答"中间件怎么变成生意"。sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商品化的东西），而在「管住 Agent 的那一层」。产品化方向锁定四条：
 
-**这正是 sofagent 的位置**：Lemkin 只给出「SMB 需要另一套剧本——第一天就设计自实施、做行业模板、重 onboarding UX」，却没回答「自实施如何保证结果」。若 FDE 的判断力能固化进一层可复制的 harness（约束 + 审计 + 经验回流），$75K/部署的人力成本才可能摊薄成软件成本。$75K/部署/年是可长期引用的量化锚点。
+1. **卖能力不卖工时**：FDE 从「一种岗位 / 服务」重构成「企业该有的能力」，用 Agent / SubAgent / 产品化封装交给企业，企业自己用、自己落地 AI 化。
+2. **MCP + dashboard 必须有**：dashboard 是自有视图（持久可见 + 真相源），MCP 是向外接的桥。Agent 的 LUI + LLM 吞噬一切 → 所以要有 dashboard；dashboard 轻量 → 所以靠 MCP 配合。两者配合才能把「项目」变成「产品」。
+3. **open-core 双轨**：内核 MIT 开源（信任 + 分发 + 生态），只卖 dashboard 那层（控制台 / 合规月报 / 告警）。
+4. **能力长在代码里，不长在 prompt 里——对抗「模型吞噬一切」**：skill / prompt engineering / context engineering / 以 skill 形式做的 harness engineering，本质都是**文字形式的约束**。每次注入到模型 = 每次投喂 = 每次训练——模型会训练得越来越强，**必然吞噬文字形式的约束**（今天的 Skill 是差异化优势，明天就是模型的内置能力）。sofagent 对策：把 Skill + Harness 能力**封装进 Subagent**（代码级实现，非文字注入）+ **防投喂机制**（防止输入素材变成大模型训练材料）。生存位：细分业务 workflow 上对业务最终结果的可约束性——这个不会被模型吞噬。
 
-> 📖 来源：[Forward Deployed Engineer: What It Takes to Make AI Work in B2B](https://www.saastr.com/forward-deployed-engineer-what-it-takes-to-make-ai-work-in-b2b-but-do-they-work-for-smbs/)（saastr.com，2026）
+### 市场信号
+
+产品化方向需要市场信号验证可行性：
+
+- **FDE-as-a-Service / Services-as-Software 被资本验证**：Anthropic 收购 Fractional AI、Accenture×Anthropic 3 万人 FDE 受训、Blackstone+H&F+Goldman 共建企业 AI 服务公司、Anthropic 接入 Palantir FedStart。
+- **受监管行业规模化交付**：全球 Top-3 SI 将 FDE 能力标准化、规模化交付至强监管场景——TCS×Anthropic 在 56 国为 5 万员工与受监管行业部署 Claude；DXC×Anthropic 联盟（FDE 培训认证规模化）；Anthropic×Infosys 在电信等受监管行业共建 AI Agent。三者同源互证 sofagent「FDE 通用能力化 + Services-as-Software + 受监管行业护城河」定位，且印证「卖能力不卖工时」路线在强监管客户侧已被头部 SI 验证可行。
+- **PE/VC 多企业审计仪表盘**（探索方向）：投后管理场景，所有被投企业 AI 审计数据汇总到一个面板。
+- **WB 企业版竞品对标**（商业化储备）：席位全生命周期管理 + 成本三维核算 + 统一采购合规 + 审计追踪 + 安全沙箱。
+- **🔴 Skill 廉价化危机**：豆包已能自动生成 Skill、Hermes 能给自己生成 Skill → 以 Prompt 形式出现的所有产品形态都将被模型吞噬。引擎层对策见上方第 4 点（能力封装进 Subagent + 防投喂机制）。
+- **私有化部署需求加速**：客户担心数据被用于训练（已有硬件客户代码出现在 AI 输出中）。U 盘交付模式的"龙虾 U 盘"心理价值——插入即用、拔出即停，制造"盾牌般的物理安全感"。核心卖的不是技术实现，是老板的掌控感。
+
+> **待落地**：首个 MVP = FDE Agent + 一个引擎 dashboard（进度 / 合规视图）；商业计划（GTM / 定价 / 买家画像 / 竞争象限）独立私有仓维护，不进本 MIT 库。
+
+### 分层落地中型蓝海
+
+商业化切入上，我们倾向「分层落地」而非一刀切：先在中型客户（有真实 workflow、愿为成果付费、但养不起自建 AI 团队）的蓝海市场建立标杆，用 FDE 的「交付企业专有 skill」模式把单点打透，再向大型客户的标准化模块、小型客户的自助模板双向延伸。核心判断是——卖能力不卖工时，控制平面（sofagent 引擎）是底层，业务 workflow 的可约束性才是护城河。
