@@ -91,7 +91,7 @@
 
 > 三层闸门 + 一条回环：入境 → 每任务 → Loop → 离境。四个全走才能保证 `.sofagent/` 数据层被激活。
 
-sofagent **能力底座（一底座·三引擎）** 各有分工。**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义，之后 Sub Agent 自加载约束执行。两种调用路径：OpenClaw 节点走内部 API，非 OpenClaw 节点走 CLI。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
+sofagent **能力底座（一底座·三引擎）** 各有分工。**审计引擎**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义，之后 Sub Agent 自加载约束执行。两种调用路径：支持 Hook 的平台节点走内部 API，其他节点走 CLI。两者通过 think.md 交汇——审计引擎基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
 
 主 Agent 的日常：接活 → 看 `data/eval/` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE 编排收敛](./ARCHITECTURE.md#编排收敛与-ab-测试)。
 
@@ -176,7 +176,7 @@ FDE 部署 SOP 应遵循此顺序：
   - `data/`（4 个模板：think.md / orchestrator.md / task.md / fde.md）
 - `engine/scripts/`（核心 3 个）：`verify.sh` / `uninstall.sh` / `task-record.sh`
 - `install.sh`（仓库根目录）：多平台一键安装（v1.2.0 从 engine/scripts/ 提升到根目录）
-- `engine/hooks/sofagent-load-chain/`：`HOOK.md` + `handler.ts`（OpenClaw 内部 hook）
+- `engine/hooks/sofagent-load-chain/`：`HOOK.md` + `handler.ts`（Agent 平台 hook，如 OpenClaw / WorkBuddy）
 - `engine/orchestrator/src/loop/`：**Graph Engine 核心**（StateGraph 四节点 + 条件路由 + checkpoint）。`graph.ts`（图组装+并行调度）、`state.ts`（LoopGraphState 状态契约）、`nodes.ts`（engineer/audit/reviewer/human_confirm 节点实现）
 
 ### docs/ 组织约定
@@ -226,7 +226,7 @@ CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写�
 
 ### 编排流程
 
-任务到达 → 两轮澄清 → 目标定稿 → LangGraph createReactAgent 拆任务（v1.0.6 从 ao 迁移至 DeepAgents，v1.2.0 迁移至 LangGraph createReactAgent，deepagents 已弃用） → 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 Sub Agent 启动时自加载（v1.0.7+ `buildConstrainedSystemPrompt`）或 OpenClaw Hook 注入。
+任务到达 → 两轮澄清 → 目标定稿 → LangGraph createReactAgent 拆任务（v1.0.6 从 ao 迁移至 DeepAgents，v1.2.0 迁移至 LangGraph createReactAgent，deepagents 已弃用） → 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 Sub Agent 启动时自加载（v1.0.7+ `buildConstrainedSystemPrompt`）或平台 Hook 注入。
 
 #### 两条执行路径与降级链
 

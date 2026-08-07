@@ -2,11 +2,11 @@
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离 + v1.2.5 激活链Phase1 + v1.2.5 审计加固A20-A23 + v1.2.5 daemon可靠性 + v1.2.5 多设备前置
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
-# 场景数：141 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
-#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 207 为编号上限，非场景数；S197 归并至 S164
+# 场景数：148 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
+#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 214 为编号上限，非场景数；S197 归并至 S164
 #   ⚠️ 口径注意（P2-31）：底部输出的「$PASSED 通过」是**断言通过数**（含跳过的场景也计 PASS），
-#   与「141 场景」不同——141 是 scenario 定义数，PASSED 可能 >141（条件跳过的场景也 +1）。
-#   文档引用 141 时指 scenario 定义数；引用「XXX 通过」时指断言通过数，勿混用。
+#   与「148 场景」不同——148 是 scenario 定义数，PASSED 可能 >148（条件跳过的场景也 +1）。
+#   文档引用 148 时指 scenario 定义数；引用「XXX 通过」时指断言通过数，勿混用。
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
 RUN_MODE="all"
@@ -1367,7 +1367,7 @@ S164_OK=true
 for p in install.sh engine/think/src/think-generator.ts; do test -e "$PROJECT_ROOT/$p" || { fail "文档引用的代码路径不存在: $p"; S164_OK=false; }; done
 node -e "const fs=require('fs'),path=require('path');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=0;for(const fp of files){const c=fs.readFileSync(fp,'utf8'),dir=path.dirname(fp);const re=/\]\(((?:\.\.?\/)?[^)]+\.md(?:#[^)]*)?)\)/g;let m;while((m=re.exec(c))){const href=m[1].split('#')[0];if(href.startsWith('http'))continue;if(!fs.existsSync(path.resolve(dir,href))){console.log('断链:',fp,'->',m[1]);bad++;}}}process.exit(bad?1:0);" >/dev/null 2>&1 || { fail "存在指向不存在文件的跨文档 Markdown 链接"; S164_OK=false; }
 $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接无死链）"
-scenario 165 "关键数字跨文档一致性——测试数 / 规则数 24 / acceptance 141"
+scenario 165 "关键数字跨文档一致性——测试数 / 规则数 24 / acceptance 148"
 S165_OK=true
 TEST_COUNT=""
 if [ -f "$PROJECT_ROOT/tools/test-count.sh" ]; then
@@ -1377,8 +1377,8 @@ if [ -n "$TEST_COUNT" ] && [ "$TEST_COUNT" -gt 0 ] 2>/dev/null; then
   for f in README.md docs/WIKI.md; do grep -q "$TEST_COUNT" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 $TEST_COUNT（数字漂移）"; S165_OK=false; }; done
 fi
 for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do grep -q "24 条\|24 个\|24 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 24（数字漂移）"; S165_OK=false; }; done
-for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "141" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 141"; S165_OK=false; }; done
-$S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / 141）"
+for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "148" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 148"; S165_OK=false; }; done
+$S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / 148）"
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
 S166_OK=true
 node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}process.exit(bad.length?(console.log('U+FFFD:',bad.join(',')),1):0);" >/dev/null 2>&1 || { fail "活跃文档存在 U+FFFD 编码污染"; S166_OK=false; }
@@ -1645,6 +1645,136 @@ assert_grep "MailboxStore\|send\|readUnread\|markRead" "$PROJECT_ROOT/engine/orc
 assert_grep "MessageInjector\|injectMessages" "$PROJECT_ROOT/engine/orchestrator/src/mailbox/message-injector.ts" || S207_OK=false
 assert_grep "mailbox\|MailboxInjector\|injectMessages" "$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts" || S207_OK=false
 $S207_OK && pass "Agent Mailbox（mailbox.ts + message-injector.ts + nodes.ts 注入逻辑）"
+
+# ╔═══════════════════════════════════════════════════════════════╗
+# ║  v1.2.8 验收场景（scenario 208-214）                           ║
+# ║  ① memory-store ② scheduler ③ tool-output-budget              ║
+# ║  ④ node-executor/HITL ⑤ release-gate F 角色                    ║
+# ║  ⑥ FORGE audit dogfooding ⑦ checkpoint/resume                  ║
+# ╚═══════════════════════════════════════════════════════════════╝
+
+scenario 208 "v1.2.8 ① memory-store — createMemoryStore 导出 + CRUD + 分层目录"
+S208_OK=true; require_dist "engine/core/dist/memory-store.js" || S208_OK=false
+if $S208_OK; then
+  S208_DIR=$(mktemp -d /tmp/s208-mem-XXXX)
+  assert_js engine/core/dist/memory-store.js "
+    const m = require(ABSPATH);
+    const store = m.createMemoryStore('$S208_DIR');
+    // set + get
+    const id = store.set({ key: 'pref.framework', value: 'React', source: 'test', confidence: 0.9, tags: ['frontend'] });
+    ok(id && id.length > 0, 'set 应返回 id');
+    const fact = store.get('pref.framework');
+    ok(fact !== null, 'get 应返回 fact');
+    eq(fact.value, 'React');
+    eq(fact.confidence, 0.9);
+    // list
+    store.set({ key: 'pref.lang', value: 'TS', source: 'test', confidence: 0.8, tags: [] });
+    const all = store.list();
+    ok(all.length >= 2, 'list 应返回 >=2 条');
+    const prefixed = store.list('pref.framework');
+    ok(prefixed.length === 1, 'list(prefix) 应返回 1 条');
+    // delete
+    ok(store.delete('pref.framework') === true, 'delete 应返回 true');
+    ok(store.get('pref.framework') === null, '删除后 get 应为 null');
+    // search
+    const results = store.search('lang');
+    ok(results.length >= 1, 'search 应返回 >=1 条');" && pass
+  rm -rf "$S208_DIR"
+fi
+
+scenario 209 "v1.2.8 ② Scheduled Tasks MVP — createScheduler + ScheduledTask 结构 + cron 解析"
+S209_OK=true; require_dist "engine/daemon/dist/scheduler.js" || S209_OK=false
+if $S209_OK; then
+  S209_DIR=$(mktemp -d /tmp/s209-sched-XXXX)
+  assert_js engine/daemon/dist/scheduler.js "
+    const m = require(ABSPATH);
+    ok(typeof m.createScheduler === 'function', 'createScheduler 应为函数');
+    ok(typeof m.loadTasks === 'function', 'loadTasks 应为函数');
+    ok(typeof m.nextCronTime === 'function', 'nextCronTime 应为函数');
+    // nextCronTime 能解析标准 cron 表达式
+    const next = m.nextCronTime('0 9 * * 1');
+    ok(next !== null && next !== undefined, 'nextCronTime(\"0 9 * * 1\") 应返回非 null');
+    // createScheduler 创建实例
+    const sched = m.createScheduler('$S209_DIR');
+    ok(sched && typeof sched === 'object', 'createScheduler 应返回对象');" && pass
+  rm -rf "$S209_DIR"
+fi
+
+scenario 210 "v1.2.8 ③ ToolOutputBudget — DEFAULT_BUDGET + getStepBudget + truncateToolOutput"
+S210_OK=true
+[ -f "$PROJECT_ROOT/FORGE/src/tool-output-budget.mjs" ] || { fail "tool-output-budget.mjs 不存在"; S210_OK=false; }
+if $S210_OK; then
+  S210_OUT=$(node --input-type=module -e "
+    import { DEFAULT_BUDGET, getStepBudget, truncateToolOutput, createToolOutputBudget } from '$PROJECT_ROOT/FORGE/src/tool-output-budget.mjs';
+    if (DEFAULT_BUDGET !== 200) { console.log('DEFAULT_BUDGET 应为 200，实际:', DEFAULT_BUDGET); process.exit(1); }
+    const budget = getStepBudget('a-check');
+    if (typeof budget !== 'number' || budget <= 0) { console.log('getStepBudget(a-check) 应为正数，实际:', budget); process.exit(1); }
+    const longText = Array(300).fill('line').join('\n');
+    const truncated = truncateToolOutput(longText, 50);
+    if (!truncated.includes('截断') && !truncated.includes('truncat') && truncated.split('\n').length > 55) {
+      console.log('truncateToolOutput 未生效，行数:', truncated.split('\n').length); process.exit(1);
+    }
+    const mw = createToolOutputBudget('a-check');
+    if (typeof mw !== 'function' && typeof mw !== 'object') { console.log('createToolOutputBudget 返回类型异常:', typeof mw); process.exit(1); }
+    console.log('OK budget=' + budget);
+  " 2>&1) || true
+  echo "$S210_OUT" | grep -q "^OK " || { fail "ToolOutputBudget 验证失败: $S210_OUT"; S210_OK=false; }
+fi
+$S210_OK && pass "ToolOutputBudget（DEFAULT_BUDGET=200 + getStepBudget + truncateToolOutput + middleware 工厂）"
+
+scenario 211 "v1.2.8 ④ node-executor + HITL — checkHITL + executeNode + resolveEnterpriseAgent"
+S211_OK=true; require_dist "engine/orchestrator/dist/node-executor.js" || S211_OK=false
+if $S211_OK; then
+  assert_js engine/orchestrator/dist/node-executor.js "
+    const m = require(ABSPATH);
+    ok(typeof m.checkHITL === 'function', 'checkHITL 应为函数');
+    ok(typeof m.executeNode === 'function', 'executeNode 应为函数');
+    ok(typeof m.resolveEnterpriseAgent === 'function', 'resolveEnterpriseAgent 应为函数');" && pass
+fi
+
+scenario 212 "v1.2.8 ⑤ release-gate F 角色 — f-diagnose/f-fix/f-audit 步骤定义 + V+F 循环"
+S212_OK=true
+RG_DRIVER="$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs"
+[ -f "$RG_DRIVER" ] || { fail "release-gate-driver.mjs 不存在"; S212_OK=false; }
+if $S212_OK; then
+  assert_grep "f-diagnose.*role.*F" "$RG_DRIVER" || S212_OK=false
+  assert_grep "f-fix.*role.*F" "$RG_DRIVER" || S212_OK=false
+  assert_grep "f-audit.*role.*null\|f-audit.*driverFn.*runAuditGate" "$RG_DRIVER" || S212_OK=false
+  # 主循环含 V+F 循环逻辑
+  assert_grep "skipVPhase\|V.*F.*循环\|验.*改.*循环\|round.*PASS" "$RG_DRIVER" || S212_OK=false
+  # --step 支持新 F 步骤
+  assert_grep "f-diagnose|f-fix|f-audit" "$RG_DRIVER" || S212_OK=false
+  $S212_OK && pass "release-gate F 角色（f-diagnose/f-fix/f-audit + V+F 循环 + --step 支持）"
+fi
+
+scenario 213 "v1.2.8 ⑥ FORGE audit dogfooding — runAuditGate driver 步骤 + engine/audit dist 引用"
+S213_OK=true
+[ -f "$PROJECT_ROOT/FORGE/src/driver-base.mjs" ] || { fail "driver-base.mjs 不存在"; S213_OK=false; }
+if $S213_OK; then
+  assert_grep "runAuditGate" "$PROJECT_ROOT/FORGE/src/driver-base.mjs" || S213_OK=false
+  assert_grep "engine/audit/dist/index.js\|sofagent-audit" "$RG_DRIVER" || S213_OK=false
+  # f-audit 的 role 为 null（driver 直接执行，不 spawn worker）
+  assert_grep "role: null" "$RG_DRIVER" || S213_OK=false
+  # require audit dist
+  require_dist "engine/audit/dist/index.js" || S213_OK=false
+  $S213_OK && pass "FORGE audit dogfooding（runAuditGate + audit dist 引用 + role:null driver 步骤）"
+fi
+
+scenario 214 "v1.2.8 ⑦ Checkpoint/Resume — saveResumePoint + loadResumePoint + --resume CLI"
+S214_OK=true
+DB="$PROJECT_ROOT/FORGE/src/driver-base.mjs"
+[ -f "$DB" ] || { fail "driver-base.mjs 不存在"; S214_OK=false; }
+if $S214_OK; then
+  assert_grep "saveResumePoint" "$DB" || S214_OK=false
+  assert_grep "loadResumePoint" "$DB" || S214_OK=false
+  assert_grep "\-\-resume" "$DB" || S214_OK=false
+  # 两个 driver 都有 --resume 支持
+  assert_grep "\-\-resume" "$RG_DRIVER" || S214_OK=false
+  assert_grep "\-\-resume\|discoverLatestRunDir" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S214_OK=false
+  # 原子写（tmp→rename）
+  assert_grep "renameSync\|renameSync(tmpPath\|writeFileSync.*tmp" "$DB" || S214_OK=false
+  $S214_OK && pass "Checkpoint/Resume（saveResumePoint + loadResumePoint + --resume + 原子写）"
+fi
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
