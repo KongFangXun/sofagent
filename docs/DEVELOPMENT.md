@@ -111,7 +111,7 @@ Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 
 
 ### Skill 生命力与自进化判据
 
-> 来源：学习笔记《sofagent 参考》Skills 价值重构 / AI 时代 Skill 核心逻辑（2026-07-15、07-18 定向蒸馏）。本节为 Skill 治理的判据沉淀，供 `skillopt` 自进化引擎与 FDE 部署 SOP 调用。
+> 本节为 Skill 治理的判据沉淀，供 `skillopt` 自进化引擎与 FDE 部署 SOP 调用。
 
 **A1｜Skills 生命力五分类法**（模型越强越要保留的 5 类 Skill）
 

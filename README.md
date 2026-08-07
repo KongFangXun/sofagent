@@ -203,7 +203,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 |------|------|
 | `@sofagent/audit` | 审计引擎（24 条规则，git diff 硬证据）|
 | `@sofagent/core` | 运行时诊断（doctor / verify）|
-| `@sofagent/orchestrator` | 任务编排引擎（LOOP 流水线 + 任务编排；编排能力保留但**不对用户宣传**——任务编排由你使用的 Agent 平台完成，sofagent 只在其过程中提供约束/审计/经验沉淀）|
+| `@sofagent/orchestrator` | 任务编排引擎（LOOP 流水线 + 任务编排；注：面向用户的任务编排由 Agent 平台完成，sofagent 在其过程中提供约束/审计/经验沉淀）|
 | `@sofagent/daemon` | 守护进程（文件监控 / 定时巡检）|
 | `@sofagent/mcp` | MCP Server（JSON-RPC 2.0）|
 
