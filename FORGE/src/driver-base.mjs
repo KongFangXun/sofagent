@@ -16,6 +16,8 @@
 //  11. truncateToolOutput()   — 工具输出截断
 //  12. updateLatestPointer()  — latest.json 指针
 //  13. resolveVisibleFiles()  — 文件可见性控制
+//  16. saveResumePoint()     — 断点续跑：写 resume-point.json（v1.2.8 功能⑦）
+//  17. loadResumePoint()     — 断点续跑：读 resume-point.json（v1.2.8 功能⑦）
 //
 // ⚠️ 抽象边界（已定稿）：
 //   base 只提取公共工具函数，不提取 main() 框架。
@@ -29,7 +31,7 @@ import { spawn } from 'child_process';
 import { createRequire } from 'module';
 import {
   readFileSync, writeFileSync, mkdirSync, existsSync,
-  appendFileSync, readdirSync,
+  appendFileSync, readdirSync, renameSync,
 } from 'fs';
 import { join, resolve, dirname, relative, sep } from 'path';
 import { fileURLToPath } from 'url';
@@ -78,12 +80,14 @@ export function createForgeDriverBase(config = {}) {
    * @returns {Object} 解析后的参数
    */
   function parseDriverArgs(argv) {
-    const args = { target: null, dryRun: false, worker: false, step: null, runDir: null, maxRounds: 10, help: false, extra: {} };
+    const args = { target: null, dryRun: false, worker: false, step: null, runDir: null, maxRounds: 10, help: false, resume: false, extra: {} };
 
     for (let i = 0; i < argv.length; i++) {
       const a = argv[i];
       if (a === '--target' || a === '-t') { args.target = argv[++i]; continue; }
       if (a === '--dry-run') { args.dryRun = true; continue; }
+      // v1.2.8 功能⑦：断点续跑开关（参数名与两个 driver 的 parseArgs 保持一致）
+      if (a === '--resume') { args.resume = true; continue; }
       if (a === '--worker') { args.worker = true; continue; }
       if (a === '--step') { args.step = argv[++i]; continue; }
       if (a === '--run-dir') { args.runDir = argv[++i]; continue; }
@@ -578,6 +582,55 @@ export function createForgeDriverBase(config = {}) {
     }
   }
 
+  // ── 16/17. saveResumePoint / loadResumePoint（v1.2.8 功能⑦：断点续跑）──
+
+  /**
+   * 写断点文件 resume-point.json 到 runDir（原子写入）。
+   *
+   * 原子性：先写 resume-point.json.tmp 再 renameSync——rename 在同一文件系统内
+   * 是原子操作，进程中途被杀也不会留下半截 JSON（读方要么看到旧版本要么看到新版本）。
+   *
+   * @param {string} runDir - run 根目录（断点写在 run 根目录，不是轮子目录）
+   * @param {Object} state - 状态摘要（只存摘要不存大体积数据——铁律）
+   * @returns {string} 断点文件绝对路径
+   */
+  function saveResumePoint(runDir, state) {
+    const resumePath = join(runDir, 'resume-point.json');
+    const tmpPath = join(runDir, 'resume-point.json.tmp');
+    const payload = { ...state, timestamp: new Date().toISOString() };
+    writeFileSync(tmpPath, JSON.stringify(payload, null, 2) + '\n', 'utf-8');
+    renameSync(tmpPath, resumePath);
+    return resumePath;
+  }
+
+  /**
+   * 读断点文件 resume-point.json。
+   *
+   * 容错策略：文件不存在 / JSON 损坏 / 必需字段缺失，一律返回 null（不 throw）——
+   * 断点是优化层不是正确性层，坏了就从头跑，绝不能因为断点问题阻断主流程。
+   *
+   * @param {string} runDir - run 根目录
+   * @returns {Object|null} 断点状态（含 round / completed / timestamp），无效时返回 null
+   */
+  function loadResumePoint(runDir) {
+    const resumePath = join(runDir, 'resume-point.json');
+    if (!existsSync(resumePath)) return null;
+
+    let parsed = null;
+    try {
+      parsed = JSON.parse(readFileSync(resumePath, 'utf-8'));
+    } catch {
+      // 文件损坏（写入中途被杀等）——当作无断点处理
+      return null;
+    }
+
+    // 字段校验：round 必须是 number，completed 必须是 boolean
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (typeof parsed.round !== 'number') return null;
+    if (typeof parsed.completed !== 'boolean') return null;
+    return parsed;
+  }
+
   return {
     // 公共工具函数
     parseDriverArgs,
@@ -595,6 +648,8 @@ export function createForgeDriverBase(config = {}) {
     resolveVisibleFiles,
     sliceMultiOutput,
     runAuditGate,  // v1.2.8 功能⑥
+    saveResumePoint,   // v1.2.8 功能⑦
+    loadResumePoint,   // v1.2.8 功能⑦
     // 辅助函数
     extractUsage,
     extractAgentText,

@@ -1,10 +1,10 @@
 // driver-base.test.mjs · FORGE driver 公共编排层测试
 // v1.2.7 新建 · 功能 ⑤
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { createForgeDriverBase } from './driver-base.mjs';
 import { join } from 'path';
-import { mkdtempSync, rmSync, existsSync, readFileSync } from 'fs';
+import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 
 describe('createForgeDriverBase', () => {
@@ -209,6 +209,104 @@ describe('createForgeDriverBase', () => {
       const pointer = JSON.parse(readFileSync(pointerPath, 'utf-8'));
       expect(pointer.driver).toBe('test');
       expect(pointer.stopReason).toBe('clean');
+    });
+  });
+
+  // ─── v1.2.8 功能⑦：断点续跑（saveResumePoint / loadResumePoint）───
+  describe('resume point（断点续跑）', () => {
+    let tmpDir;
+    beforeEach(() => {
+      tmpDir = mkdtempSync(join(tmpdir(), 'driver-base-resume-'));
+    });
+    afterEach(() => {
+      rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    // 最小参数集——resume 函数不依赖模型配置
+    const resumeBase = createForgeDriverBase({
+      driverName: 'resume-test',
+      loopDir: '/tmp/loop',
+      repoRoot: process.cwd(),
+    });
+
+    it('saveResumePoint 写入 resume-point.json（round/completed/counts/timestamp）', () => {
+      const state = {
+        round: 3,
+        completed: true,
+        counts: { p0: 0, p1: 2, p2: 5 },
+        cleanStreak: 1,
+        consecutiveDegraded: 0,
+        severityHistory: [4, 2],
+        target: 'v1.2.8',
+        maxRounds: 10,
+      };
+      resumeBase.saveResumePoint(tmpDir, state);
+
+      const resumePath = join(tmpDir, 'resume-point.json');
+      expect(existsSync(resumePath)).toBe(true);
+
+      const saved = JSON.parse(readFileSync(resumePath, 'utf-8'));
+      expect(saved.round).toBe(3);
+      expect(saved.completed).toBe(true);
+      expect(saved.counts).toEqual({ p0: 0, p1: 2, p2: 5 });
+      expect(saved.cleanStreak).toBe(1);
+      expect(saved.severityHistory).toEqual([4, 2]);
+      expect(saved.target).toBe('v1.2.8');
+      expect(saved.maxRounds).toBe(10);
+      // timestamp 由 saveResumePoint 自动注入（ISO 格式）
+      expect(typeof saved.timestamp).toBe('string');
+      expect(Number.isNaN(Date.parse(saved.timestamp))).toBe(false);
+    });
+
+    it('saveResumePoint 原子写：不留 .tmp 残留', () => {
+      resumeBase.saveResumePoint(tmpDir, { round: 1, completed: true });
+      expect(existsSync(join(tmpDir, 'resume-point.json.tmp'))).toBe(false);
+      expect(existsSync(join(tmpDir, 'resume-point.json'))).toBe(true);
+    });
+
+    it('loadResumePoint 读取有效断点', () => {
+      const state = { round: 2, completed: false, counts: { p0: 1, p1: 1, p2: 0 } };
+      resumeBase.saveResumePoint(tmpDir, state);
+
+      const loaded = resumeBase.loadResumePoint(tmpDir);
+      expect(loaded).not.toBeNull();
+      expect(loaded.round).toBe(2);
+      expect(loaded.completed).toBe(false);
+      expect(loaded.counts).toEqual({ p0: 1, p1: 1, p2: 0 });
+    });
+
+    it('loadResumePoint 文件不存在返回 null', () => {
+      expect(resumeBase.loadResumePoint(tmpDir)).toBeNull();
+    });
+
+    it('loadResumePoint 文件损坏返回 null 不 throw', () => {
+      writeFileSync(join(tmpDir, 'resume-point.json'), '{ "round": 3, "completed": tru', 'utf-8');
+      // 不 throw，返回 null
+      expect(resumeBase.loadResumePoint(tmpDir)).toBeNull();
+    });
+
+    it('loadResumePoint 字段缺失（只有 round 没有 completed）返回 null', () => {
+      writeFileSync(join(tmpDir, 'resume-point.json'), JSON.stringify({ round: 3 }) + '\n', 'utf-8');
+      expect(resumeBase.loadResumePoint(tmpDir)).toBeNull();
+    });
+
+    it('loadResumePoint 字段类型错误（round 非 number）返回 null', () => {
+      writeFileSync(
+        join(tmpDir, 'resume-point.json'),
+        JSON.stringify({ round: 'three', completed: true }) + '\n',
+        'utf-8'
+      );
+      expect(resumeBase.loadResumePoint(tmpDir)).toBeNull();
+    });
+
+    it('parseDriverArgs 解析 --resume flag', () => {
+      const args = resumeBase.parseDriverArgs(['--target', 'v1.2.8', '--resume']);
+      expect(args.resume).toBe(true);
+    });
+
+    it('parseDriverArgs 默认 resume=false', () => {
+      const args = resumeBase.parseDriverArgs(['--target', 'v1.2.8']);
+      expect(args.resume).toBe(false);
     });
   });
 });

@@ -96,6 +96,21 @@ for drv in "${DRIVER_MODULES[@]}"; do
     echo "$DRY_OUT" | grep -E "Error|SyntaxError|does not provide" | head -3 | sed 's/^/    /'
     FAIL=$((FAIL + 1))
   fi
+
+  # v1.2.8 功能⑦：--resume --dry-run 冒烟（断点续跑参数接线验证）
+  # resume 逻辑在 dry-run 下必须被跳过（铁律：dry-run 不受 resume 影响），
+  # 只验证 driver 吃了 --resume 参数后不崩：exit 0/1/2 都算正常（正常退出或
+  # 业务性失败），exit >= 3 才算 import/语法级崩溃。
+  # macOS bash 3.2 兼容：不用 mapfile；exit code 直接取 $?（不走管道，避免 SIGPIPE 炸弹）
+  RESUME_OUT=$(node "$drv" --resume --dry-run --target v0.0.0-test 2>&1)
+  RESUME_RC=$?
+  if [ "$RESUME_RC" -le 2 ]; then
+    PASS=$((PASS + 1))
+  else
+    echo -e "  ${RED}✗ --resume --dry-run 崩溃 (exit=$RESUME_RC): ${drv}${NC}"
+    echo "$RESUME_OUT" | grep -E "Error|SyntaxError|does not provide" | head -3 | sed 's/^/    /'
+    FAIL=$((FAIL + 1))
+  fi
 done
 
 echo "  模块检查: ${PASS} 通过, ${FAIL} 失败"

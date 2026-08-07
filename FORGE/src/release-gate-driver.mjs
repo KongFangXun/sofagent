@@ -31,7 +31,7 @@ import {
   readFileSync, writeFileSync, mkdirSync, existsSync,
   appendFileSync, readdirSync, copyFileSync, createWriteStream,
 } from 'fs';
-import { join, resolve, dirname } from 'path';
+import { join, resolve, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
 
@@ -164,7 +164,8 @@ const DIM_TIMEOUT_OVERRIDE = {
 function parseArgs(argv) {
   const args = { target: null, dryRun: false,
                  worker: false, step: null, runDir: null,
-                 skipAcceptance: false, help: false };
+                 skipAcceptance: false, help: false,
+                 resume: false };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--help' || a === '-h') args.help             = true;
@@ -174,6 +175,8 @@ function parseArgs(argv) {
     else if (a === '--step')        args.step           = argv[++i];
     else if (a === '--run-dir')     args.runDir         = argv[++i];
     else if (a === '--skip-acceptance') args.skipAcceptance = true;
+    // v1.2.8 功能⑦：断点续跑（参数名与 driver-base.parseDriverArgs / fresh-eyes 保持一致）
+    else if (a === '--resume')      args.resume         = true;
   }
   return args;
 }
@@ -926,6 +929,52 @@ function resolveRunDir() {
 }
 
 /**
+ * v1.2.8 功能⑦：从已有 run 目录反推 runId / dateStr（resume 模式复用已有目录）。
+ * run 目录结构：RUNS_DIR/release-gate-loop/YYYY-MM-DD/run-NN/
+ *
+ * @param {string} runDir - 已有 run 目录绝对路径
+ * @returns {{runDir: string, runId: string, dateStr: string}}
+ */
+function resolveRunDirInfo(runDir) {
+  const runName = basename(runDir);              // run-03
+  const dateDir = basename(dirname(runDir));     // 2026-08-07
+  const runNumStr = runName.replace('run-', '').padStart(2, '0');
+  const digits = dateDir.replace(/-/g, '');
+  return { runDir, runId: `${digits}-${runNumStr}`, dateStr: dateDir };
+}
+
+/**
+ * v1.2.8 功能⑦：--resume 时自动发现最近的 run 目录。
+ *
+ * release-gate-loop 不写 latest.json 指针，直接扫目录：
+ * 日期目录倒序 → 每天取最大的 run-NN。
+ *
+ * 铁律：只读发现，不修改任何已有产物。
+ *
+ * @returns {string|null} 最近的 run 目录绝对路径；无任何历史 run 时返回 null
+ */
+function discoverLatestRunDir() {
+  const workflowDir = join(RUNS_DIR, 'release-gate-loop');
+  if (!existsSync(workflowDir)) return null;
+  const dates = readdirSync(workflowDir)
+    .filter(n => /^\d{4}-\d{2}-\d{2}$/.test(n))
+    .sort()
+    .reverse();
+  for (const dateStr of dates) {
+    const dateDir = join(workflowDir, dateStr);
+    const nums = readdirSync(dateDir)
+      .filter(n => n.startsWith('run-'))
+      .map(n => parseInt(n.replace('run-', ''), 10))
+      .filter(n => !isNaN(n));
+    if (nums.length > 0) {
+      const runDir = join(dateDir, `run-${String(Math.max(...nums)).padStart(2, '0')}`);
+      if (existsSync(runDir)) return runDir;
+    }
+  }
+  return null;
+}
+
+/**
  * 起一个 worker 子进程（真·零上下文：独立 node 进程）。
  * 返回 Promise，resolve 时子进程已退出。
  *
@@ -1653,11 +1702,70 @@ async function main() {
   }
 
   // ─── Driver 模式 ───
+
+  // ─── v1.2.8 功能⑦：断点续跑（--resume）───
+  // release-gate 的"轮" = V 阶段一轮 + 可能的 F 修复轮。断点策略：
+  //   - V 阶段 verdict 解析后写 { phase: 'verdict-done', verdict, fixRoundsRun: 0 }
+  //   - 每个 F 轮完成后写 { phase: 'f-round-done', fixRoundsRun: round }
+  //   - V 阶段步骤幂等可重跑（产物会被覆盖），V 阶段内不写步骤级断点
+  // 铁律：resume 只跳过重跑，不修改已有产物；dry-run 永远不写断点；
+  // worker 模式已在上面 return，不处理 resume。
+  let resumeState = null;        // loadResumePoint 的结果（null = 无断点）
+  let resumeRunDir = null;       // resume 复用的已有 run 目录
+  let skipVPhase = false;        // 断点已过 verdict → 跳过 V 阶段 5 步
+  let resumeVerdict = null;      // 断点记录的 verdict（resume 进入 F 链的入口）
+  let resumeReason = 'resume：复用断点记录的 verdict';
+  let resumeFixRoundsRun = 0;    // F 链已完成轮数
+  let resumeCompletedSteps = 0;  // 已完成步数（V:5 + F:每轮 3 步）
+
+  if (args.resume && !args.dryRun) {
+    const discovered = discoverLatestRunDir();
+    if (!discovered) {
+      console.warn('⚠️  --resume：未找到任何历史 run 目录，从头开始');
+    } else {
+      resumeState = base.loadResumePoint(discovered);
+      if (!resumeState) {
+        console.warn(`⚠️  --resume：${discovered} 无有效断点（resume-point.json 不存在或损坏），从头开始`);
+      } else if (resumeState.phase === 'verdict-done' && resumeState.verdict === 'PASS') {
+        console.log('✅ resume：上次 V 阶段 verdict=PASS，无需续跑');
+        process.exit(0);
+      } else if (resumeState.phase === 'f-round-done' && resumeState.verdict === 'PASS') {
+        console.log('✅ resume：F 修复链已收敛为 PASS，无需续跑');
+        process.exit(0);
+      } else if (resumeState.phase === 'verdict-done' && resumeState.verdict === 'FAIL') {
+        resumeRunDir = discovered;
+        skipVPhase = true;
+        resumeVerdict = 'FAIL';
+        resumeFixRoundsRun = 0;
+        resumeCompletedSteps = STEP_ORDER.length;
+        console.log(`🔄 resume：上次 V 阶段 verdict=FAIL，从 F 修复链 Round 1 开始，复用 ${discovered}`);
+      } else if (resumeState.phase === 'f-round-done') {
+        resumeRunDir = discovered;
+        skipVPhase = true;
+        resumeVerdict = 'FAIL';
+        resumeFixRoundsRun = typeof resumeState.fixRoundsRun === 'number' ? resumeState.fixRoundsRun : 0;
+        resumeCompletedSteps = STEP_ORDER.length + resumeFixRoundsRun * 3;
+        console.log(`🔄 resume：F 修复链已完成 ${resumeFixRoundsRun} 轮，从 Round ${resumeFixRoundsRun + 1} 开始，复用 ${discovered}`);
+      } else {
+        console.warn(`⚠️  --resume：断点 phase=${resumeState.phase || '?'} 不可续跑（V 阶段内中断），从头开始`);
+        // 从头开始 = 新建 run 目录——不能复用旧 runDir 覆盖已有产物
+        resumeState = null;
+      }
+    }
+  }
+
   if (!args.target) {
-    console.error('用法: node FORGE/src/release-gate-driver.mjs --target vX.Y.Z [--dry-run] [--skip-acceptance]');
-    console.error('      node FORGE/src/release-gate-driver.mjs --step <acceptance|regression|coverage|consolidate|verdict|f-diagnose|f-fix|f-audit> --target vX.Y.Z');
-    console.error('      node FORGE/src/release-gate-driver.mjs --help');
-    process.exit(1);
+    // --target 未传时从断点读取 target（v1.2.8 功能⑦）；断点也没有则报错退出
+    if (resumeState && typeof resumeState.target === 'string' && resumeState.target) {
+      args.target = resumeState.target;
+      console.log(`   target    = ${args.target}（从断点恢复）`);
+    } else {
+      console.error('用法: node FORGE/src/release-gate-driver.mjs --target vX.Y.Z [--dry-run] [--skip-acceptance] [--resume]');
+      console.error('      node FORGE/src/release-gate-driver.mjs --step <acceptance|regression|coverage|consolidate|verdict|f-diagnose|f-fix|f-audit> --target vX.Y.Z');
+      console.error('      node FORGE/src/release-gate-driver.mjs --help');
+      console.error('      --resume 模式也需 --target，除非断点中已保存 target');
+      process.exit(1);
+    }
   }
 
   // 验证环境变量（dry-run 跳过）
@@ -1721,8 +1829,30 @@ async function main() {
     }
   }
 
-  // 建 run 目录
-  const { runDir, runId, dateStr } = resolveRunDir();
+  // 建 run 目录（v1.2.8 功能⑦：resume 模式复用已有目录，不新建）
+  const { runDir, runId, dateStr } = resumeRunDir
+    ? resolveRunDirInfo(resumeRunDir)
+    : resolveRunDir();
+
+  // ─── v1.2.8 功能⑦：断点写入闭包 ───
+  // 铁律：dry-run 永远不写断点；断点只存状态摘要不存大体积数据；
+  // 写失败不阻断主流程（断点是优化层不是正确性层）。
+  // round 字段：V 阶段 verdict-done 时为 0，F 轮完成时为已完成 F 轮数。
+  const saveGateCheckpoint = (phase, currentVerdict, fixRounds) => {
+    if (args.dryRun) return;
+    try {
+      base.saveResumePoint(runDir, {
+        round: fixRounds,
+        completed: true,
+        phase,
+        verdict: currentVerdict,
+        fixRoundsRun: fixRounds,
+        target: args.target,
+      });
+    } catch (ckptErr) {
+      console.warn(`  ⚠️  断点写入失败（不影响主流程）: ${ckptErr.message}`);
+    }
+  };
 
   // ─── 可见性：初始化 ───
   const reporters = await detectReporters();
@@ -1740,6 +1870,14 @@ async function main() {
   console.log(`   dry-run    = ${args.dryRun}`);
   if (args.skipAcceptance) {
     console.log(`   skip-acc   = true（跳过 acceptance 预跑，复用手动预跑日志）`);
+  }
+  // v1.2.8 功能⑦：启动日志打印 resume 状态
+  if (args.resume && !args.dryRun) {
+    if (resumeRunDir) {
+      console.log(`   resume     = 断点恢复（phase=${resumeState.phase} verdict=${resumeState.verdict} F 轮=${resumeFixRoundsRun}）`);
+    } else {
+      console.log(`   resume     = 无有效断点，从头开始`);
+    }
   }
   console.log(`   V          = ${MODEL_CONFIGS.V.model} (${MODEL_CONFIGS.V.baseURL})`);
   console.log(`   F          = ${MODEL_CONFIGS.F?.model || 'N/A'} (${MODEL_CONFIGS.F?.baseURL || 'N/A'}) [v1.2.8]`);
@@ -1768,11 +1906,16 @@ async function main() {
   }
 
   // ─── V 阶段：5 步串行执行（acceptance → regression → coverage → consolidate → verdict）───
-  let completedSteps = 0;
+  // v1.2.8 功能⑦：resume 断点已过 verdict 时跳过整个 V 阶段（产物复用，不重跑不覆盖）
+  let completedSteps = resumeCompletedSteps;
   let stopReason = 'completed';
   const stepErrors = [];
 
-  for (const step of STEP_ORDER) {
+  if (skipVPhase) {
+    console.log(`\n  🔄 resume：跳过 V 阶段 5 步（断点已完成），从 F 修复链继续`);
+  }
+
+  for (const step of skipVPhase ? [] : STEP_ORDER) {
     const stepIndex = STEP_ORDER.indexOf(step) + 1;
     console.log(`\n${'═'.repeat(60)}`);
     console.log(`  V 步骤 ${stepIndex}/${STEP_ORDER.length} — ${step}`);
@@ -1835,7 +1978,19 @@ async function main() {
 
   // ─── 解析 V 阶段裁决 ───
   const results = parseStepResults(runDir);
-  let { verdict, reason } = parseVerdict(runDir);
+  let verdict, reason;
+  if (skipVPhase) {
+    // v1.2.8 功能⑦：resume 模式下 verdict 取自断点（V 阶段未重跑，
+    // 断点是唯一权威——不重新 parseVerdict，避免读旧 verdict.md 产生歧义）
+    verdict = resumeVerdict;
+    reason = resumeReason;
+    console.log(`\n  🔄 resume：verdict=${verdict}（来自断点）`);
+  } else {
+    ({ verdict, reason } = parseVerdict(runDir));
+    // v1.2.8 功能⑦：V 阶段完成后（verdict 解析后）写断点
+    // fixRoundsRun=0 表示 F 轮尚未开始；V 阶段内不写步骤级断点（幂等可重跑）
+    saveGateCheckpoint('verdict-done', verdict, 0);
+  }
 
   // ═══════════════════════════════════════════════════════════
   //  v1.2.8 功能⑤：F 修复链——verdict FAIL 时触发
@@ -1844,7 +1999,8 @@ async function main() {
   // ═══════════════════════════════════════════════════════════
   const MAX_FIX_ROUNDS = 3;
   const F_STEPS = ['f-diagnose', 'f-fix', 'f-audit'];
-  let fixRoundsRun = 0;
+  // v1.2.8 功能⑦：resume 模式从断点恢复已完成 F 轮数，从 fixRoundsRun+1 继续
+  let fixRoundsRun = resumeFixRoundsRun;
 
   while (verdict === 'FAIL' && fixRoundsRun < MAX_FIX_ROUNDS) {
     fixRoundsRun++;
@@ -1896,9 +2052,13 @@ async function main() {
       console.log(`\n  [F/${round}] audit gate 通过（无违规），F 修复链收敛`);
       verdict = 'PASS';
       reason = `F 修复链 Round ${round} 后 audit 通过`;
+      // v1.2.8 功能⑦：本轮 F 完成且收敛为 PASS → 写断点（resume 时识别为已完成）
+      saveGateCheckpoint('f-round-done', verdict, round);
       break;
     } else {
       console.log(`\n  [F/${round}] audit gate 发现违规，${round < MAX_FIX_ROUNDS ? '进入下一轮修复' : '已达最大轮次上限'}`);
+      // v1.2.8 功能⑦：本轮 F 完成（仍有违规）→ 写断点，resume 从 round+1 继续
+      saveGateCheckpoint('f-round-done', 'FAIL', round);
     }
   }
 
@@ -1906,6 +2066,11 @@ async function main() {
     stopReason = 'fix-rounds-exhausted';
     console.log(`\n  ⚠️  F 修复链已达 ${MAX_FIX_ROUNDS} 轮上限，仍有违规——标记为 FAIL 交付`);
   }
+
+  // v1.2.8 功能⑦：循环正常走完（含 fix-rounds-exhausted）写最终断点——
+  // 记录终态 verdict，resume 时直接识别为已完成（PASS）或轮次耗尽（FAIL），
+  // 不会无意义地重新续跑。
+  saveGateCheckpoint('f-round-done', verdict, fixRoundsRun);
 
   // usage.jsonl 全量摘要
   const usageSummary = appendUsageSummary(runDir, completedSteps);
