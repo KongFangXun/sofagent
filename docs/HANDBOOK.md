@@ -124,7 +124,7 @@
 
 ### 两种装法（v1.2.0）
 
-（详见 [ARCHITECTURE §安装包边界](./ARCHITECTURE.md#安装包边界v120-设计)）
+**全量安装**（`bash install.sh`）：底座 + 编排 + FDE + daemon，企业驻场部署用。**底座 only**（`install.sh --base-only`）：仅审计 + 回溯核心引擎，开发者 CI 集成用。详见 [ARCHITECTURE §安装包边界](./ARCHITECTURE.md#安装包边界v120-设计)。
 
 ### 安装
 
