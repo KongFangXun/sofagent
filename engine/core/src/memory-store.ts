@@ -114,7 +114,7 @@ function readIndex(memoryRoot: string): MemoryIndex {
 
 /** 写入索引文件 */
 function writeIndex(memoryRoot: string, index: MemoryIndex): void {
-  mkdirSync(memoryRoot, { recursive: true });
+  mkdirSync(memoryRoot, { recursive: true, mode: 0o700 });
   writeFileSync(getIndexPath(memoryRoot), JSON.stringify(index, null, 2) + '\n', 'utf-8');
 }
 
@@ -203,7 +203,7 @@ export function createMemoryStore(dataBase?: string): {
      * @returns 事实 ID
      */
     set(fact: Omit<MemoryFact, 'id' | 'createdAt' | 'updatedAt'>): string {
-      mkdirSync(memoryRoot, { recursive: true });
+      mkdirSync(memoryRoot, { recursive: true, mode: 0o700 });
       const index = readIndex(memoryRoot);
       const now = new Date().toISOString();
 
@@ -231,7 +231,7 @@ export function createMemoryStore(dataBase?: string): {
 
       const { bucket } = extractBucket(fact.key);
       const bucketDir = getBucketDir(memoryRoot, bucket);
-      mkdirSync(bucketDir, { recursive: true });
+      mkdirSync(bucketDir, { recursive: true, mode: 0o700 });
 
       // 写 Markdown 单文件
       writeFileSync(getFactPath(memoryRoot, bucket, factId), factToMarkdown(full), 'utf-8');

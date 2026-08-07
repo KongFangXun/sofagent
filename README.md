@@ -324,7 +324,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 
 **层 2 · 生命周期 = 激活链四阶段**（v1.2.5+）：激活（ACTIVATE）→ 编排（ORCHESTRATE）→ 执行（EXECUTE）→ 持续（SUSTAIN）；在诊断（FDE）与进化（EVOLVE）两端延伸为**五阶段**：诊断 → 激活 → 编排 → 执行 → 进化。
 
-> ⚠️ FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，不作为对外引擎宣称。
+> ⚠️ FORGE 自迭代工具链（LOOP 流水线）用于 sofagent 项目自身的开发迭代，面向用户的任务编排由 Agent 平台完成。
 
 <details>
 <summary>📖 一底座·三引擎架构（开发者参考）</summary>
@@ -372,7 +372,7 @@ LOOP 内部使用 LangGraph StateGraph 组装节点流转 + 6 个内置工具（
 - **规则构成**：24 条中 19 条纯 git-diff（不依赖 Agent 配合）、4 条混合（A7/A8/A14/A15 需 Agent 日志）、1 条文件系统（A17 异常批量变更）
 - **不需要 commit 也能审计**：v1.0.8+ 自研 git-shadow diff 解析（isomorphic-git 风格，非内嵌第三方包）+ daemon 文件监控
 - **跨设备扩展**：v1.1.8+ Prompt 注入防护（A9 扩展）+ 联邦查询加密，审计能力从本地扩展到跨设备
-- **测试覆盖**：全 workspace **1562 测试 / 13 包**
+- **测试覆盖**：全 workspace **1562 测试 / 12 包**
 
 **默认规则（17 条，装上就生效）**：
 
