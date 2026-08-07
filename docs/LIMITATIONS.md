@@ -393,7 +393,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 v1.0 新增 `FORGE/playbook/acceptance-test.sh`（102 个场景，含子断言），覆盖范围持续扩展：
 
 - **CI 已覆盖**：单元测试审计核心 587 个、全 workspace 1562 个测试（全绿，详见上方「测试覆盖范围」节，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
-- **发版前手动覆盖**：acceptance-test.sh 141 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
+- **发版前手动覆盖**：acceptance-test.sh 148 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
 
@@ -444,7 +444,7 @@ Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown fr
 
 ### Work模板市场 模板（✅ 已随 v1.1.9 迁出 MIT scope）
 
-> ✅ 已于 v1.1.9 修复：模板市场 整体迁出 MIT scope，相关 CLI（`sofagent hub deploy`）与模板源已移至 `商业仓库/模板市场/`，不在开源仓库维护。
+> ✅ 已于 v1.1.9 修复：Work模板市场 模板整体迁出 MIT scope，相关 CLI（`sofagent hub deploy`）与模板源已移至外部商业仓，不在开源仓库维护。
 
 ### Agent Dashboard 是原型而非生产功能
 

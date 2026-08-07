@@ -16,7 +16,7 @@ graph TD
     C --> D[SMB · OPC 的每个人<br/>成为自己业务的 FDE]
 ```
 
-### 双层架构：能力底座与生命周期
+### 双层架构：能力底座与生命周期（主框架）
 
 **这是理解 sofagent 最关键的一张图**——之前只有"一底座·三引擎"，那是**能力视角**（怎么保证做对）。激活链引入后，产品在"治理"之外多了一条**流程视角**（企业 AI 从诊断到自动运行怎么走）：
 
@@ -46,11 +46,12 @@ graph LR
 ```
 
 > **引擎为生命周期提供能力，生命周期让引擎有活干**——审计引擎在 EXECUTE 阶段每步把关，进化引擎在 SUSTAIN 阶段吃 think.md 回写。两个模型不是并列关系，是**能力 × 流程的矩阵**：能力底座是"怎么保证做对"，生命周期是"让什么跑起来"。
->
-> 💡 **双层架构 vs 三层嵌套（避免混淆）**：本文档出现两种"架构分层"，维度不同——**双层架构**（能力底座 × 生命周期）是**产品视角**：对外讲"企业 AI 从诊断到自运转怎么走"；**三层嵌套**（Harness → Graph → Loop，见下节）是**引擎工程视角**：对内讲"引擎内部环境/流程/反馈怎么组织"。双层里的"生命周期"对应三层里的"Loop 反馈改进"方向，双层里的"能力底座"对应三层里的"Harness 环境"——同一产品的两个观察维度，不冲突。
-### Agent 工程三层嵌套
 
-一底座·三引擎不是并列关系——它们按「环境 → 流程 → 反馈」三层嵌套：
+### 补充视角：引擎内部分层与业务概念嵌套
+
+> 以下两个视角是对双层架构内部结构的补充展开，不是独立的架构框架——**双层架构是唯一主框架**。
+
+**引擎工程视角**——一底座·三引擎内部按「环境 → 流程 → 反馈」组织：
 
 ```mermaid
 graph TD
@@ -62,9 +63,7 @@ graph TD
 
 > **记忆法：环境、反馈、流程。** Harness 给 Agent 一个稳定的工作间（上下文/工具/权限/可观测性），Graph 告诉它任务流向哪（节点边界/路由条件/并行/汇合），Loop 让它出错后能基于证据自己改进（验证→反馈→修复→再验证）。三层缺一不可——再漂亮的 Graph 没有 Harness 就不可执行，再好的 Loop 没有 Graph 就不知道在哪个环节改进。
 
-### 核心概念层次：Graph > Workflow > Loop > Goal
-
-上面三层嵌套讲的是引擎视角（Harness / Graph / Loop）。换到**业务视角**，同样的概念体现为四个自外向内的嵌套层级：
+**业务概念视角**——从企业用户角度看，同一套系统体现为四个自外向内的嵌套层级：
 
 | 层级 | 定义 | sofagent 对应 | 例子 |
 |------|------|--------------|------|
@@ -108,9 +107,9 @@ graph TD
 | ⚙️ FORGE 工具链 | FORGE Toolchain | LOOP 流水线（内部自迭代用，非对外引擎） |
 | 🧬 进化引擎 | Evolution Engine | FDE 周度巡检 + 自动优化，v1.0.8+ |
 | 加载链 | Load Chain | Agent 启动时注入的约束文件 |
-| FDE | Forward Deployed Engineer | 一种能力（非岗位 title）——前线部署工程能力模型：掌握完整上下文、打破岗位边界、对结果负责 |
+| FDE | Forward Deployed Engineer（前线部署工程师） | 源自 Palantir 交付纪律：工程师驻场客户，掌握完整上下文、打破岗位边界、对结果负责。sofagent 把 FDE 能力产品化——FDE 进场部署 AI 节点，离场后节点自己跑 |
 | Harness | Harness 中间层 | 挂在 Agent 之上的行为约束层（约束底座）：约束 + 审计 + 回溯 + 迭代 |
-| Gateway | Gateway | 企业级 AI 统一入口（OpenClaw/WorkBuddy 等大厂平台），sofagent 不替代它 |
+| Gateway | Gateway | 企业级 AI 统一入口（WorkBuddy / OpenClaw 等大厂平台），sofagent 不替代它 |
 | Sub Agent | Sub Agent | 用 LangGraph createReactAgent 搭的专有执行节点 |
 | Ontology | 本体结构 | 企业的业务世界模型，FDE 帮你搭建并持续维护 |
 | River | 统一 Agent 入口 | 多个 Workflow 的集合——每段 Workflow 把模型能力引到业务侧，汇入同一条大河。详见 §三 River—Workflow—Subagent 三层架构 |
@@ -148,11 +147,11 @@ graph TD
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | skillopt | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填 | ✅ 已实现 |
 | think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现 |
-| load-chain | 加载链 Hook 包 `@sofagent/load-chain`：OpenClaw/Agent 平台 hook 注入四层约束（v1.2.0 DP-4（设计原则 4）提升为正式 workspace 包） | ✅ 已实现 |
+| load-chain | 加载链 Hook 包 `@sofagent/load-chain`：Agent 平台（OpenClaw / WorkBuddy 等）hook 注入四层约束（v1.2.0 DP-4（设计原则 4）提升为正式 workspace 包） | ✅ 已实现 |
 
 ### 对外核心能力（FDE Agent 给用户什么）
 
-✅ 已发布可用（v1.2.0 - v1.2.8）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 24 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关核心约束（Claude Code / Codex / WorkBuddy / OpenClaw 均可用审计能力；OpenClaw 深度集成 Hook 自动注入，其他平台手动注入约束 + 审计照常生效）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 本体结构 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
+✅ 已发布可用（v1.2.0 - v1.2.8）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 24 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关核心约束（Claude Code / Codex / WorkBuddy / OpenClaw 均可用审计能力；支持平台 Hook 自动注入，其他平台手动注入约束 + 审计照常生效）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 本体结构 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
 
 > **v1.2.0 审计链安全加固**（BugFix 批次）：`--doctor` hash chain 三态判定（ok / tampered / unverifiable，`checkHistoryChainDetailed`）· HMAC key ≥16 字节强校验（`validateHmacKey`）· HMAC 签名改为基于脱敏记录（先 sanitize 再签名，写读一致）· config 可选签名校验（`verifyConfigSignature` + `signConfig` CLI）· CLI 版本一致性自检（`checkVersionConsistency`）。详见 `engine/core/src/audit-history.ts`、`engine/core/src/config-loader.ts`。
 
@@ -178,7 +177,7 @@ Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2
 
 sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent 失忆，文件不失忆」。**不信任 Agent 自我报告，只看 git diff 硬证据。**
 
-| 维度 | 通用 Agent 平台（OpenClaw/WorkBuddy） | sofagent |
+| 维度 | 通用 Agent 平台（WorkBuddy / OpenClaw 等） | sofagent |
 |------|------|------|
 | 管什么 | 「会不会做」——能力问题 | 「能不能每次都做对」——执行控制问题 |
 | 关系 | Gateway 高速公路 | 交规 + 测速摄像头 + 驾校教练 |
@@ -264,7 +263,7 @@ Harness 中间件最大的挑战是存在感——引擎在正常工作，但用
 | 3 反思 | think.md | ⚠️ 自动生成 | 上轮踩过的坑 |
 | 4 知识 | knowledge/ | ✅ 积累 | 自动关联的 best practice |
 
-OpenClaw 通过 Hook 精确注入，其他平台 Agent 主动 Read，v1.0.7+ Sub Agent 启动时自加载（`buildConstrainedSystemPrompt`）。
+Agent 平台（OpenClaw / WorkBuddy 等）通过 Hook 精确注入，其他平台 Agent 主动 Read，v1.0.7+ Sub Agent 启动时自加载（`buildConstrainedSystemPrompt`）。
 
 > **v1.1.8 加载链扩展**：联邦知识注入于 knowledge/ 层（加载链第 4 层，位于 think.md 第 3 层之后；目录 `knowledge/federation/`，daemon 联邦查询落盘的 peer 知识快照）——低于 SKILL.md 宪法层。联邦内容是外部来源，强制 `<untrusted source="federation">` 包裹（Prompt 注入防线层 1，详见 SECURITY.md 8 层映射表）。
 
@@ -290,12 +289,12 @@ OpenClaw 通过 Hook 精确注入，其他平台 Agent 主动 Read，v1.0.7+ Sub
 
 ### 联邦查询（v1.1.8）
 
-两台配对设备经 OpenClaw channel 互相查 knowledge/。纵深防御四层：MCP localhost 绑定 → OpenClaw channel 路由 → **AES-256-GCM 应用加密**（审计结论：OpenClaw 本地回环 ws:// 明文无 TLS，第 3 层是唯一保密防线）→ sensitivity frontmatter 过滤。
+两台配对设备经 Agent 平台 channel（如 OpenClaw）互相查 knowledge/。纵深防御四层：MCP localhost 绑定 → 平台 channel 路由 → **AES-256-GCM 应用加密**（审计结论：本地回环 ws:// 明文无 TLS，第 3 层是唯一保密防线）→ sensitivity frontmatter 过滤。
 
 | 模块 | 落点 | 职责 |
 |------|------|------|
 | 安全层 | `core/src/crypto/` | AES-256-GCM（IV 12 字节随机不复用 + tag 校验）· ECDH(prime256v1)+HKDF 派生 32 字节 key（只存内存）· 24h 密钥轮换（旧 key 只解不加）· 三条配对路径（6 位码 + y/N / `~/.sofagent/federation.token` 文件（权限 600，带外交换）/ federation.json HMAC .sig 验签） |
-| 传输层 | `daemon/src/federation/channel.ts` | OpenClaw channel 抽象（依赖倒置，测试内存 channel）；只搬运密文帧（iv‖tag‖ciphertext） |
+| 传输层 | `daemon/src/federation/channel.ts` | Agent 平台 channel 抽象（依赖倒置，测试内存 channel）；只搬运密文帧（iv‖tag‖ciphertext） |
 | 查询路由 | `daemon/src/federation/query-router.ts` | 并发 fetch + 单 peer 5s 超时按离线 + sensitivity 本地端二次校验（restricted 不接收；篡改标签降权 trust=web + 审计 WARN） |
 | 合并 | `daemon/src/federation/merge.ts` | `automerge@1.0.1-preview.7`（MIT）CRDT 合并（clone-fork 共享版本史收敛）；裁决：trust 优先于 mtime；排序 trust 降 → mtime 降 |
 | 离线降级 | `daemon/src/federation/offline-fallback.ts` | 任一 peer 离线跳过不阻塞；全部离线/整块失败退化纯本地查；审计 `federation_query{peers, merged, onlinePeers}` |
@@ -355,7 +354,7 @@ graph LR
 `engine/rules/`（tool-level 规则，3 条）和 `engine/audit/src/rules/`（git-diff 规则，24 条）
 均包含 secret-leak 检测功能。当前两者并行维护，存在行为不一致风险。
 
-> 原计划 v1.2.4 统一为单一规则引擎（`ruleType: 'tool' | 'diff'`），未落地。已推迟——两套规则触发时机不同（tool-level 在调用前拦截、audit 在 commit 后审计），当前各自独立演进成本可接受。后续若不一致问题暴露再合并。
+> 原计划 v1.2.4 统一为单一规则引擎（`ruleType: 'tool' | 'diff'`），未落地。**已承接至 v1.3.0**（详见 [ROADMAP v1.3.0](./ROADMAP.md)）——v1.3.0 的运行时审计 middleware 升级正好是统一规则引擎的天然时机（tool-gate 规则从硬编码升级为 middleware 拦截时，顺便统一 `ruleType` 字段）。两套规则触发时机不同（tool-level 在调用前拦截、audit 在 commit 后审计），统一后保留两种触发模式但共用一套规则定义。
 
 ### 回溯能力（本质：git snapshot + revert 包装）
 
@@ -389,7 +388,7 @@ daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml
 |------|------|------|
 | 判断（评分、反思、选模板） | Skill（MD prompt） | LLM 长项——模式识别 |
 | 机械操作（文件读写、API） | 脚本（bash） | 确定性操作 |
-| 硬安全（加载链、断路器） | Runtime（OpenClaw） | Agent 失控时没法自己管自己 |
+| 硬安全（加载链、断路器） | Runtime（Agent 平台，如 OpenClaw） | Agent 失控时没法自己管自己 |
 
 **编排收敛条件**：目标必须可验证（有量化标准）+ 模型可自主判断。Maker-Checker 分离是收敛前提——详见下文「解题/验证分离」及 [§四 编排收敛与 A/B 测试](#编排收敛与-ab-测试)。
 
@@ -649,9 +648,9 @@ sofagent 支持两种节点类型：
 | 维度 | 自动运行节点 | 个人增强节点 |
 |------|------|------|
 | **场景** | 企业无人值守设备 | 个人开发者（WorkBuddy/Codex 等） |
-| **OpenClaw** | ✅ 必须 | ❌ 不需要 |
-| **编排调用** | OpenClaw 内部 API | `sofagent-orchestrator compose --task` CLI |
-| **约束注入** | OpenClaw Hook 精确注入 | Sub Agent 自加载（`buildConstrainedSystemPrompt`） |
+| **Agent 平台** | ✅ 必须（OpenClaw 或其他企业级平台） | ❌ 不需要 |
+| **编排调用** | 平台内部 API | `sofagent-orchestrator compose --task` CLI |
+| **约束注入** | 平台 Hook 精确注入 | Sub Agent 自加载（`buildConstrainedSystemPrompt`） |
 
 > Sub Agent 约束自加载：启动时读 `.sofagent/` 下的约束文件，拼装为 system prompt。纯文件系统操作，不依赖任何 Agent 平台的 Skill 系统。换平台约束不丢。
 
@@ -659,7 +658,7 @@ sofagent 支持两种节点类型：
 
 **River = 多个 Workflow 的集合**——每段 Workflow 把模型能力（水）引到业务侧，汇入同一条大河（River），从头到尾同一个身份、同一段上下文。
 
-Work模板市场 的实现规范已随 v1.1.9 迁至商业产品 `商业仓库/模板市场/`（混合架构：外层 `workflow.yml` Graph 骨架锁步骤 + 内层 ReAct 节点）。
+Workflow 的混合架构（外层 `workflow.yml` Graph 骨架锁步骤 + 内层 ReAct 节点）实现细节见 HANDBOOK 的 Workflow 配置章节。
 
 ```
 用户 → River（统一入口）→ Workflow A/B/C（分发）→ Subagent（执行）
@@ -672,11 +671,11 @@ Work模板市场 的实现规范已随 v1.1.9 迁至商业产品 `商业仓库/�
 | **Workflow** | 任务编排方案 | 把水引到业务侧 |
 | **Subagent** | 执行具体能力的 Agent | 水龙头 / 用水设备——让水真正作用 |
 
-River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 本身（河是大厂造的——LLM 是水，Agent 平台是河床），而是做河的约束层（约束 + 安全 + 编排 + 执行），确保 River 里的每一个 Sub Agent 都有纪律、可追溯、会反思。
+River 的载体是 Agent 平台（OpenClaw / WorkBuddy 等）+ sofagent + Channel 集成。sofagent 不做 River 本身（河是大厂造的——LLM 是水，Agent 平台是河床），而是做河的约束层（约束 + 安全 + 编排 + 执行），确保 River 里的每一个 Sub Agent 都有纪律、可追溯、会反思。
 
 > 🏞️ **River 比喻完整映射**见 [README（项目概览）](../README.md)——sofagent 做堤坝 + 自来水厂 + 管网 + 水龙头，不做河本身。
 
-> **Workflow 的混合架构**：每条 Workflow 采用「外层 Graph 骨架 + 内层 ReAct 节点」——`workflow.yml` 的 `nextNodes` 锁定全链路步骤、保证可追溯（对应行业笔记中的「Graph 实现全局流程骨架」），单个节点的 `prompt` 保留模型自主规划能力（对应「内层 ReAct Agent」）。这一设计兼顾全局稳定性与局部灵活性：低容错业务靠 Graph 锁死流程，复杂节点靠 ReAct 保灵活。实现规范已随 v1.1.9 迁至商业产品 `商业仓库/模板市场/`。
+> **Workflow 的混合架构**：每条 Workflow 采用「外层 Graph 骨架 + 内层 ReAct 节点」——`workflow.yml` 的 `nextNodes` 锁定全链路步骤、保证可追溯（对应行业笔记中的「Graph 实现全局流程骨架」），单个节点的 `prompt` 保留模型自主规划能力（对应「内层 ReAct Agent」）。这一设计兼顾全局稳定性与局部灵活性：低容错业务靠 Graph 锁死流程，复杂节点靠 ReAct 保灵活。
 
 #### MCP 触发完整链路（v1.1.8+）
 
@@ -720,9 +719,9 @@ River 的载体是 OpenClaw + sofagent + Channel 集成。sofagent 不做 River 
 
 Agent 定义在 `SKILL/agents/{name}/SKILL.md`，`parseSkillMd()` 读 front matter 作为身份标签，body 注入 createReactAgent 作为 role prompt。
 
-### OpenClaw 在架构中的角色
+### Agent 平台在架构中的角色
 
-**审计层不需要 OpenClaw**——sofagent-audit 是独立 TypeScript CLI，输入 git diff，输出 exit code。即使不装 OpenClaw，开发者也可通过 `bash install.sh`（推荐）或 `npm install -g @sofagent/audit`（高级/开发者路径）配 commit-msg hook，让任何 Agent 平台的提交经过审计。
+**审计层不依赖任何特定平台**——sofagent-audit 是独立 TypeScript CLI，输入 git diff，输出 exit code。即使不装 Agent 平台（OpenClaw / WorkBuddy 等），开发者也可通过 `bash install.sh`（推荐）或 `npm install -g @sofagent/audit`（高级/开发者路径）配 commit-msg hook，让任何 Agent 平台的提交经过审计。
 
 **编排层当前走 LangGraph createReactAgent**——`compose --task` CLI 入口，任何 Agent 平台都能用。迁移路径：ao（AutoGen）→ DeepAgents（v1.0.7）→ LangGraph createReactAgent（v1.2.0，deepagents 已弃用）。
 
@@ -737,18 +736,6 @@ v1.0.8+ daemon 监控文件变更，非开发者也能用审计：
 | 需要 git | ✅ | ❌ 自研 git-shadow diff 解析（isomorphic-git 风格，非内嵌第三方包） |
 
 事后审计是平台无关性的前提——实时拦截需深度集成平台，一旦集成丧失第三方独立性。v1.0.8 daemon 让事后审计达到准实时（fs.watch → 2 秒防抖 → 立即审计）。因此**实时拦截 / 运行时治理仅限 sofagent 自派 SubAgent**（sofagent 起环境又发凭证、天然拥有执行边界）；主 Agent 由第三方平台运行，sofagent 不进其执行环，保持事后审计（详见 ROADMAP「范围铁律」）。
-
-### FDE Dashboard vs 模板市场（v1.2.0）
-
-两个独立产品，分属不同用户和场景：
-
-| | FDE Dashboard | 模板市场 |
-|---|---|---|
-| 给谁看 | 企业用户（「FDE 给我装了啥、AI 化进度到哪了」） | 商业买家（「有什么行业模板可以买/下载」） |
-| 数据源 | `.sofagent/` 运行时 + `{企业名}/` 交付物 | 商业模板仓库 |
-| 关系 | 独立产品，FDE 交付 → Dashboard 展示 | 独立商业产品，两者不合并 |
-
-FDE 用户关心的是「我公司 AI 化进度」——跑着哪些节点、审计有没有报警、知识库健不健康。模板市场 用户关心的是「有什么模板可以买」。两个场景、两套数据、两个产品，不绑在一起。
 
 ---
 
@@ -957,7 +944,7 @@ audit:
 | skill-staleness | @weekly（默认禁用） | Skill 陈旧度（需 eval 数据支持） |
 | warn-accumulator | @daily | 连续未处理 WARN 累积（阈值 3，含文件级追踪） |
 
-> **范围声明**：sofagent 是 Harness 中间件——覆盖行为约束 + 变更审计 + 经验沉淀 + 持续优化。不覆盖**主 Agent 平台**本身（IM 渠道 / 第三方平台托管的沙箱（如 OpenClaw 沙箱）/ 工具调用——OpenClaw/WorkBuddy 等大厂平台的事），也不覆盖运维层（监控/告警/重启/日志轮转）。**例外**：sofagent 托管**自派 SubAgent** 的运行时治理——v1.3.0 起为 middleware 层轻量拦截（工具调用中介 + 人工批准钩子），v1.4.0 扩展为完整沙箱（文件系统隔离 + 网络出站白名单 + 工具调用前置 allow/deny + 虚拟 key 边界注入），因 sofagent 既起环境又发凭证、天然拥有执行边界。**运行时治理仅限自派 SubAgent，主 Agent 永远事后审计**（详见 ROADMAP「范围铁律」）。扣子（Coze，字节跳动） 类全栈产品管从 Agent 到权限的全部层，sofagent 管其中可独立标准化的约束+审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立底线守卫。
+> **范围声明**：sofagent 是 Harness 中间件——覆盖行为约束 + 变更审计 + 经验沉淀 + 持续优化。不覆盖**主 Agent 平台**本身（IM 渠道 / 第三方平台托管的沙箱 / 工具调用——WorkBuddy / OpenClaw 等大厂平台的事），也不覆盖运维层（监控/告警/重启/日志轮转）。**例外**：sofagent 托管**自派 SubAgent** 的运行时治理——v1.3.0 起为 middleware 层轻量拦截（工具调用中介 + 人工批准钩子），v1.4.0 扩展为完整沙箱（文件系统隔离 + 网络出站白名单 + 工具调用前置 allow/deny + 虚拟 key 边界注入），因 sofagent 既起环境又发凭证、天然拥有执行边界。**运行时治理仅限自派 SubAgent，主 Agent 永远事后审计**（详见 ROADMAP「范围铁律」）。扣子（Coze，字节跳动） 类全栈产品管从 Agent 到权限的全部层，sofagent 管其中可独立标准化的约束+审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立底线守卫。
 
 ---
 

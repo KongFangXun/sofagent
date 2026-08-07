@@ -65,7 +65,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 两条路径：**FDE 驻场部署**（传统中小企业，FDE 进场→四阶段十二步流程→交付→撤离）和 **开发者自部署**（开源社区，git clone→install.sh→审计→CI 集成）。
 
-设备端形态：安装时自动带 OpenClaw，审计结果通过 MCP server 推到企业协同平台。**数据主权在设备**——所有记忆、日志、决策记录永不离开本地。
+设备端形态：安装时可配置 Agent 平台（OpenClaw / WorkBuddy 等），审计结果通过 MCP server 推到企业协同平台。**数据主权在设备**——所有记忆、日志、决策记录永不离开本地。
 
 > 以下是方向落地为版本的具体拆解。v3.x 长期架构骨架见下方「探索方向」。
 
@@ -86,7 +86,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
 | **v1.2.9** | 🔨 开发中 | **🔧 FORGE Driver 短任务化 + ⏸️ Checkpoint/Resume 升级 + 🏠 PM2 守护 + 🔗 激活链 Phase 3 后半**：① 短任务化——a-check/b-check 从"1 worker 跑 12 视角"拆成"12 独立 worker 各跑 1 视角"（5-8 次工具调用）② Checkpoint/Resume 从轮级升级为 worker 级断点（`completedWorkers: string[]`）③ PM2 守护进程（脱离 session 生命周期，崩溃自动重启+日志持久化+开机自启）④ 激活链 Phase 3 后半（HITL 中断处理 + 每节点执行后自动审计 + 异常处理）⑤ 工程债务——mcp-server.ts 1899 行拆分 | [日志](./changelog/v1.2/v1.2.9.md) |
-| **v1.3.0** | 📋 规划中 | **运行时审计最小闭环 + 🔗 激活链 Phase 4 收尾（SUSTAIN）**：① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离 ⑥ 决策审计 Judgment Unit（emitDecision + kind-wise back）⑦ **🔗 激活链收尾**：全链路验证（activate→compose→run→HITL→audit→sustain）+ wrapToolCall 自动覆盖企业 Agent + FDE SKILL.md 新增 activate 引导 ⑧ **list_rules** MCP tool（tool-gate 规则透明化，覆盖度审计缺口补全） | [日志](./changelog/v1.3/v1.3.0.md) |
+| **v1.3.0** | 📋 规划中 | **运行时审计最小闭环 + 🔗 激活链 Phase 4 收尾（SUSTAIN）**：① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离 ⑥ 决策审计 Judgment Unit（emitDecision + kind-wise back）⑦ **🔗 激活链收尾**：全链路验证（activate→compose→run→HITL→audit→sustain）+ wrapToolCall 自动覆盖企业 Agent + FDE SKILL.md 新增 activate 引导 ⑧ **list_rules** MCP tool（tool-gate 规则透明化，覆盖度审计缺口补全）⑨ **🔧 技术债回收：双规则系统统一**——`engine/rules/`（tool-level）与 `engine/audit/src/rules/`（git-diff）统一为单一规则引擎（`ruleType: 'tool' | 'diff'`），消除 secret-leak 检测的行为不一致风险（详见 [ARCHITECTURE 已知技术债](./ARCHITECTURE.md#已知技术债双规则系统重叠)） | [日志](./changelog/v1.3/v1.3.0.md) |
 | **v1.3.1** | 📋 规划中 | **Ontology 本体结构 + 国标对齐 + 并行编排 + Agent 身份码 + 跨设备审计聚合 + 🚀 Onboard Agent L1**（详见 [下方详解](#v131--ontology-本体结构操作型本体论落地)） | [日志](./changelog/v1.3/v1.3.1.md) |
 | **v1.3.2** | 📋 规划中 | **🚀 Onboard Agent 完整版（L2-L5 · FORGE 产品化第二刀）**：① L2 语义判定（Ontology 判据）② L3 自动定位（LLM 推理）③ L4 自动修复（审计兜底）④ L5 循环收敛（回归+连续 PASS） | [日志](./changelog/v1.3/v1.3.2.md) |
 | **v1.3.3** | 📋 规划中 | **L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版**：① 协作协议——共享态/意图广播/触发反应/冲突消解/反馈放大 + 团队状态管理 ② Refine Agent——复用 Onboard 循环引擎，判据从 Ontology 换成质量规则集（好不好），五层一次交付 | [日志](./changelog/v1.3/v1.3.3.md) |
@@ -101,7 +101,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 主题 | 核心交付 |
 |------|------|------|
-| **v1.3.0** | **运行时审计最小闭环（LangGraph middleware）** | ① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离 ⑥ **list_rules** MCP tool（详见 开发日志 ./changelog/v1.3/v1.3.0.md）|
+| **v1.3.0** | **运行时审计最小闭环（LangGraph middleware）** | ① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离 ⑥ **list_rules** MCP tool ⑦ **🔧 双规则系统统一**（`ruleType: 'tool' | 'diff'`，消除技术债）（详见 开发日志 ./changelog/v1.3/v1.3.0.md）|
 | **v1.3.1** | **Ontology + 并行编排 + 身份码 + Onboard L1** | 见上方主表 + [Ontology 详解](#v131--ontology-本体结构操作型本体论落地) |
 | **v1.3.2** | **🚀 Onboard Agent 完整版（L2-L5）** | L2 语义判定（Ontology 判据）+ L3 自动定位（LLM 推理）+ L4 自动修复（审计兜底）+ L5 循环收敛（回归+连续 PASS）（详见 开发日志 ./changelog/v1.3/v1.3.2.md）|
 | **v1.3.3** | **L2 团队协作协议 + ✨ Refine Agent** | 协作五大机制 + Refine Agent 完整版（质量规则集判据，复用 Onboard 循环引擎）（详见 开发日志 ./changelog/v1.3/v1.3.3.md）|
@@ -127,59 +127,8 @@ sofagent v1.3.1 的 Ontology 本体结构方向与之高度同构，但走**分�
 **v1.3.1 完整交付清单**：① 本体结构升级为可运行推理底座（对齐 24 条审计规则 + Ledger-Views-Policy）② 三层落地法（统一元模型 → 企业通用 Ontology 规范 → 与 Agent 平台打通）③ 国标对齐 GB/T 48000.3-2026 ④ **并行编排**——LangGraph 原生 DAG 并行（StateGraph + Send API），每波次经审计节点（★Reality Anchor）卡关，git worktree 隔离（v1.2.3 底座），幂等性保证 ⑤ **Ontology CRUD 补全**——`update_entity`/`delete_entity`/`delete_concept` 三个 MCP tool ⑥ **Agent 独立身份码 + KYA 完整版**（Ed25519 签发/验证）+ 跨设备审计轨迹聚合 + MCP `agent_identity`/`audit_trail` tool ⑦ **🚀 Onboard Agent L1（FORGE 产品化第一刀 · 工程判定层）**：企业 AI 节点 activate 后自动跑一轮 → crash/error 判定 → 报错人工修 → 再跑
 
 > 🔗 **Graph Engineering 定位**：sofagent 已经在做 Graph Engineering——`engine/orchestrator/src/loop/graph.ts` 用 LangGraph StateGraph 实现 `START→engineer→audit→reviewer→human_confirm→END`，`audit` 节点即 ★Reality Anchor（真实 git diff 24 条规则作 guard edge）。v1.3.1 的「控制图多循环 DAG 波次并行」是这一定位的自然延伸。理论框架详见 [VALIDATION](./VALIDATION.md) 和 [ARCHITECTURE §Graph Engineering 视角](./ARCHITECTURE.md#graph-engineering-视角控制图--stategraph)。
-
----
-
-## 产品化与商业化方向
-
-> 控制平面打法——卖「能力」不卖「工时」，必须有自己的 MCP + dashboard。
-
-sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商品化的东西），而在「管住 Agent 的那一层」。产品化方向锁定四条：
-
-1. **卖能力不卖工时**：FDE 从「一种岗位 / 服务」重构成「企业该有的能力」，用 Agent / SubAgent / 产品化封装交给企业，企业自己用、自己落地 AI 化。
-2. **MCP + dashboard 必须有**：dashboard 是自有视图（持久可见 + 真相源），MCP 是向外接的桥。Agent 的 LUI + LLM 吞噬一切 → 所以要有 dashboard；dashboard 轻量 → 所以靠 MCP 配合。两者配合才能把「项目」变成「产品」。
-3. **open-core 双轨**：内核 MIT 开源（信任 + 分发 + 生态），只卖 dashboard 那层（控制台 / 合规月报 / 告警）。
-4. **能力长在代码里，不长在 prompt 里——对抗「模型吞噬一切」**：skill / prompt engineering / context engineering / 以 skill 形式做的 harness engineering，本质都是**文字形式的约束**。每次注入到模型 = 每次投喂 = 每次训练——模型会训练得越来越强，**必然吞噬文字形式的约束**（今天的 Skill 是差异化优势，明天就是模型的内置能力）。sofagent 对策：把 Skill + Harness 能力**封装进 Subagent**（代码级实现，非文字注入）+ **防投喂机制**（防止输入素材变成大模型训练材料）。生存位：细分业务 workflow 上对业务最终结果的可约束性——这个不会被模型吞噬。
-
-**市场信号**（非技术变更，纯定位 / 竞品补充）：
-- **FDE-as-a-Service / Services-as-Software 被资本验证**（详见「探索方向 · 市场信号验证」）：Anthropic 收购 Fractional AI、Accenture×Anthropic 3 万人 FDE 受训、Blackstone+H&F+Goldman 共建企业 AI 服务公司、Anthropic 接入 Palantir FedStart。
-- **受监管行业规模化交付（2026 concrete 证据，强化上条）**：全球 Top-3 SI 将 FDE 能力标准化、规模化交付至强监管场景——TCS×Anthropic 在 56 国为 5 万员工与受监管行业部署 Claude；DXC×Anthropic 联盟（FDE 培训认证规模化）；Anthropic×Infosys 在电信等受监管行业共建 AI Agent。三者同源互证 sofagent「FDE 通用能力化 + Services-as-Software + 受监管行业护城河」定位，且印证「卖能力不卖工时」路线在强监管客户侧已被头部 SI 验证可行。
-  > 📖 来源：温故知新 2026-07-23 / 2026-07-25（OpenFDE 信号库 P2 🎯：DXC / TCS / Infosys）
-- **PE/VC 多企业审计仪表盘**（探索方向）：投后管理场景，所有被投企业 AI 审计数据汇总到一个面板。
-- **WB 企业版竞品对标**（商业化储备）：席位全生命周期管理 + 成本三维核算 + 统一采购合规 + 审计追踪 + 安全沙箱。
-- **🔴 Skill 廉价化危机（2026-07-25 阿里/钉钉会议验证）**：豆包已能自动生成 Skill、Hermes 能给自己生成 Skill → 以 Prompt 形式出现的所有产品形态都将被模型吞噬。引擎层对策见上方第 4 点（能力封装进 Subagent + 防投喂机制）。
-- **私有化部署需求加速（2026-07-25 会议验证）**：客户担心数据被用于训练（已有硬件客户代码出现在 AI 输出中）。U 盘交付模式的"龙虾 U 盘"心理价值——插入即用、拔出即停，制造"盾牌般的物理安全感"。核心卖的不是技术实现，是老板的掌控感。
-
-**待落地**：首个 MVP = FDE Agent + 一个引擎 dashboard（进度 / 合规视图）；商业计划（GTM / 定价 / 买家画像 / 竞争象限）独立私有仓维护，不进本 MIT 库。
-
-**分层落地中型蓝海**
-商业化切入上，孔老师倾向「分层落地」而非一刀切：先在中型客户（有真实 workflow、愿为成果付费、但养不起自建 AI 团队）的蓝海市场建立标杆，用 FDE 的「交付企业专有 skill」模式把单点打透，再向大型客户的标准化模块、小型客户的自助模板双向延伸。核心判断是——卖能力不卖工时，控制平面（sofagent 引擎）是底层，业务 workflow 的可约束性才是护城河。
-
-### 价值度量翻转：FDE vs 传统外包（2026-07 行业参考 blog 研读）
-
-行业参考以「数字员工」重新定义 AI to B 的价值度量：传统外包按人·月计费，FDE 按成果·Token 计费，成本差可达三个数量级。
-
-> ⚠️ 下表为量级对比（来源 blog 数字未经独立核验），仅供方向参考：
-
-| 维度 | 传统外包团队 | 1 个 FDE Agent |
-|------|------|------|
-| 人力 | ~5 人 | 1 FDE（一底座·三引擎 + FORGE 工具链）|
-| 周期 | ~3 个月 | ~3 天 |
-| 成本 | ~50 万 | ~500 元 Token |
-
-> 印证 sofagent 商业化判断「卖能力不卖工时」：护城河是可约束的业务 workflow，不是人头。
-
-> 📖 来源：行业参考 blog《价值度量翻转》（2026，具体 URL 待核验）
-
-### 为什么需要中间件，而不是更多 FDE：SMB 断层（2026-08 行业印证）
-
-SaaStr 创始人 Jason Lemkin 算清了 FDE 模式的单位经济账：FDE 年薪 $135K–$200K+，一名 $200K 的 FDE 管 3–5 个企业账户，仅工程费即**每客户 $40K–$67K/年**，加差旅与利润后**每部署年成本 $75K+**。对 20–50 人、$2M–$10M 营收的中小企业，这笔实施费占营收 1-4%（还没算 AI 工具本身），无法 justify——55% 的 SMB 称成本是最大采用障碍。
-
-结果是市场两极：Tier 1 企业拿到定制 AI + 嵌入式工程 + 高成功率；Tier 2 中小企业只拿到「预打包方案 + 远程支持 + 培训会」这种无结果承诺的版本。原文结论：**「最需要 AI 转型的企业，可能正被那个能出结果的实施模型的定价排除在外。」**
-
-**这正是 sofagent 的位置**：Lemkin 只给出「SMB 需要另一套剧本——第一天就设计自实施、做行业模板、重 onboarding UX」，却没回答「自实施如何保证结果」。若 FDE 的判断力能固化进一层可复制的 harness（约束 + 审计 + 经验回流），$75K/部署的人力成本才可能摊薄成软件成本。$75K/部署/年是可长期引用的量化锚点。
-
-> 📖 来源：[Forward Deployed Engineer: What It Takes to Make AI Work in B2B](https://www.saastr.com/forward-deployed-engineer-what-it-takes-to-make-ai-work-in-b2b-but-do-they-work-for-smbs/)（saastr.com，2026）
+>
+> 📌 **本文档只谈技术路线。** 商业化方向与市场定位（产品化四条 / 市场信号 / 价值度量 / SMB 断层）见 [VALIDATION §十三](./VALIDATION.md)；Agent 时代组织哲学（Conway/Coase 双重反转）见 [PHILOSOPHY 附章](./PHILOSOPHY.md)。
 
 ---
 
@@ -261,14 +210,6 @@ SaaStr 创始人 Jason Lemkin 算清了 FDE 模式的单位经济账：FDE 年�
 > [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ---
-
-## 长期叙事：Conway/Coase 双重反转
-
-> **Conway 定律反转**：传统软件架构反映组织沟通结构。Agent 时代出现反转——Agent 架构（谁做什么、怎么协作）开始**反向塑造企业组织形态**。阿里巴巴 OPT 已观察到这一趋势：单人 + Agent Skill + 企业系统 → 闭环完成多岗工作，传统部门边界被 Agent 能力边界替代。
->
-> **Coase 定理反转**：企业存在的经济学理由是内部交易成本低于市场。当 Agent 将内部协调成本降为零，企业的边界开始模糊——一个人借 Agent 能做成的事，不再需要一个部门。"企业"从组织结构变成一个 Agent 能力矩阵。
->
-> sofagent 的终局：**Ontology（业务世界模型）+ SkillHub（跨岗能力）+ 审计引擎（责任确权）= 让单人 + 硅基构成的最小闭环单元，替代传统多部门协作。**
 
 ## 历史架构演进
 

@@ -96,7 +96,7 @@
 
 | 角色 | 引擎 | 管什么 | 触发方式 |
 |------|------|------|------|
-| 🧱 底座 | **约束底座**（harness） | 四层加载链注入规则，Agent 启动即生效 | OpenClaw Hook / Sub Agent 自加载 |
+| 🧱 底座 | **约束底座**（harness） | 四层加载链注入规则，Agent 启动即生效 | 平台 Hook（OpenClaw / WorkBuddy）/ Sub Agent 自加载 |
 | 🔍 引擎① | **审计引擎**（audit） | git diff → 24 条规则硬扫描，违规当场拦 | git commit / daemon 文件变更 |
 | 🔄 引擎② | **回溯引擎**（core） | 审计后自动快照，出事一键回滚 | 审计完成后自动 |
 | ⚙️ 内部工具 | **FORGE 工具链**（orchestrator） | LOOP 流水线（项目自迭代用，非对外引擎） | CLI compose tool |
@@ -178,8 +178,8 @@ sofagent-verify                     # 同样跑 verify 检查
 ### 安装后的目录
 
 ```
-你的项目根目录（$PWD）               OpenClaw 用户目录
-├── .sofagent/          ← 数据目录    ~/.openclaw/
+你的项目根目录（$PWD）               Agent 平台用户目录
+├── .sofagent/          ← 数据目录    ~/.openclaw/ 或 ~/.workbuddy/
 │   ├── think.md                     ├── skills/sofagent/   ← Skill 文件
 │   └── task/logs/                   └── scripts/           ← 部署脚本
 ```
@@ -188,7 +188,7 @@ sofagent-verify                     # 同样跑 verify 检查
 
 ### 跨平台能力差异
 
-OpenClaw 完整能力（Hook 自动注入 + 断路器 + 编排引擎）。其他平台核心约束生效，编排引擎降级。详见 [开发文档 §一](./DEVELOPMENT.md#脚本与文件结构速查)。
+支持 Hook 注入的平台（OpenClaw / WorkBuddy 等）获得完整能力（Hook 自动注入 + 断路器 + 编排引擎）。其他平台核心约束生效，编排引擎降级。详见 [开发文档 §一](./DEVELOPMENT.md#脚本与文件结构速查)。
 
 ---
 
@@ -207,7 +207,7 @@ OpenClaw 完整能力（Hook 自动注入 + 断路器 + 编排引擎）。其他
 | 3 | `think.md` | 反思摘要（≤2K token） | ⚠️ 改了没用。→ [反思工程](./DEVELOPMENT.md#六反思工程) |
 | 4 | `knowledge/index.md` | AI 知识库目录，被动注入 top-3 页摘要 | ⚠️ daemon 自动维护 |
 
-> 地基约 3,500 token，不到 128K 窗口的 3%。OpenClaw 平台 Hook 自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE 地基与引擎](./ARCHITECTURE.md#地基与引擎)。
+> 地基约 3,500 token，不到 128K 窗口的 3%。支持 Hook 的平台（OpenClaw / WorkBuddy）自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE 地基与引擎](./ARCHITECTURE.md#地基与引擎)。
 
 ### 4 条底线 + 7 则行为铁律
 
@@ -414,7 +414,7 @@ jobs:
 
 没有 sofagent，梳理的 workflow 就是一份 PPT。引擎装到设备上，AI 节点才有纪律和审计。完整引擎对照表与部署步骤见 [FDE/GUIDE.md §5.3 部署流程](../FDE/GUIDE.md#53-部署流程人怎么看懂)。
 
-**节点类型选择**：自动运行节点（需 OpenClaw 全栈）vs 个人增强节点（WorkBuddy / Codex，无需 OpenClaw）。完整对照表见 [ARCHITECTURE 双节点架构](./ARCHITECTURE.md#双节点架构)。
+**节点类型选择**：自动运行节点（需 OpenClaw 或其他企业级平台全栈）vs 个人增强节点（WorkBuddy / Codex，无需平台全栈）。完整对照表见 [ARCHITECTURE 双节点架构](./ARCHITECTURE.md#双节点架构)。
 
 ### USB 烧录：三种部署场景全覆盖（v1.1.8+ / v1.2.0 叙事收口）
 
@@ -485,7 +485,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 | 问题 | 怎么办 |
 |------|------|
-| Agent 不遵守铁律 | 检查文件位置；关键规则写 fde.md；非 OpenClaw 手动 `@skill:sofagent` |
+| Agent 不遵守铁律 | 检查文件位置；关键规则写 fde.md；非 Hook 平台手动 `@skill:sofagent` |
 | think.md 出现错误记忆 | 直接编辑删掉；对照 task/logs 核实。→ [反思工程 三道防线](./DEVELOPMENT.md#六反思工程) |
 | 编排结果不稳定 | 同类任务跑够 3 次用模板；没模板时少拆子任务 |
 | Agent 卡住不动 | 断路器保护——任务拆得不够细，拆小点再跑。→ [自进化 检查点](./DEVELOPMENT.md#五自进化机制) |
@@ -523,7 +523,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 ### 概念速查
 
-上述术语（Harness 中间件、能力底座 × 生命周期双层架构、一底座·三引擎（约束底座 + 审计/回溯/进化引擎）、激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）、FORGE 内部工具链、铁律、审计规则、Skill、think.md、daemon、OpenClaw、FDE 等）已在上方各幕详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。核心 = **能力底座（一底座·三引擎）× 生命周期（诊断→激活→编排→执行→持续）**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
+上述术语（Harness 中间件、能力底座 × 生命周期双层架构、一底座·三引擎（约束底座 + 审计/回溯/进化引擎）、激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）、FORGE 内部工具链、铁律、审计规则、Skill、think.md、daemon、Agent 平台（OpenClaw / WorkBuddy 等）、FDE 等）已在上方各幕详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。核心 = **能力底座（一底座·三引擎）× 生命周期（诊断→激活→编排→执行→持续）**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 ---
 
@@ -588,6 +588,6 @@ loop-engineering 社区总结了 10 个生产反模式，以下 4 个直接适�
 
 > 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [anti-patterns.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/anti-patterns.md)
 
-> 大半年 OpenClaw 实战笔记。如有更好的用法，欢迎开 Issue。
+> 大半年 Agent 平台实战笔记（OpenClaw / WorkBuddy / Claude Code / Codex）。如有更好的用法，欢迎开 Issue。
 >
 > *v1.2.8，2026 年 8 月 6 日*
