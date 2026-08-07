@@ -1,11 +1,11 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
-> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。
-> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：51 维（v1.2.7）
+> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。
+> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：53 维（v1.2.8）
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1050 行（v1.2.5 起从 1000 上调，49 维度自然增长）、`acceptance-test.sh` ≤ 1650 行（v1.2.6 起从 1600 上调，v1.2.6 场景 192-197 新增 + 场景 197 修 bash 清洗 bug 改 node 实现所致），越线触发瘦身（releasing.md 阶段四 Tier 2）。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1100 行（v1.2.8 起从 1050 上调，53 维度自然增长）、`acceptance-test.sh` ≤ 1850 行（v1.2.8 起从 1650 上调，148 场景自然增长），越线触发瘦身（releasing.md 阶段四 Tier 2）。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
@@ -15,14 +15,14 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段四 Tier 1 警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1050 ] && echo "✅ checklist $WC_CHK (≤1050)" || echo "⚠️ checklist $WC_CHK 超 1050"
-[ "$WC_ACC" -le 1650 ] && echo "✅ acceptance $WC_ACC (≤1650)" || echo "⚠️ acceptance $WC_ACC 超 1650"
+[ "$WC_CHK" -le 1100 ] && echo "✅ checklist $WC_CHK (≤1100)" || echo "⚠️ checklist $WC_CHK 超 1100"
+[ "$WC_ACC" -le 1850 ] && echo "✅ acceptance $WC_ACC (≤1850)" || echo "⚠️ acceptance $WC_ACC 超 1850"
 ```
 ## 你的身份
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（51 项 · 编号 1–72，21 个归并/移除项已转为 HTML 注释；v1.2.7 新增 #71-72、移除 #34）
+## 审查维度（53 项 · 编号 1–74，21 个归并/移除项已转为 HTML 注释；v1.2.8 新增 #73-74）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -1020,6 +1020,9 @@ TOOLS_ARRAY=$(grep -cE "name:\s*'" engine/mcp/src/mcp-server.ts)
 CASES=$(grep -cE "case '" engine/mcp/src/mcp-server.ts)
 echo "imports=$IMPORTS tools_array=$TOOLS_ARRAY cases=$CASES"
 # 期望：三者数量接近一致（tools_array 含历史 tool，但不应有 import 的 tool 缺 case）
+# v1.2.8 补充：check-version.sh 的 MCP tool count 正则须精确匹配独立行
+# 错误正则 name: '[a-z_]+' 会匹配 capabilities 数组内联条目（54 误报 vs 实际 27）
+# 正确正则 ^\s+name: '[a-z_]+',$（行首缩进+逗号结尾=独立声明行）
 ```
 
 #### 71. package.json build 脚本禁用 `|| true` 吞编译错误（v1.2.7 新盲区）
@@ -1041,6 +1044,53 @@ BAD=$(grep -rE '"build".*\|\| true' engine/*/package.json 2>/dev/null | head -1)
 # 检查 FORGE driver：局部定义（缩进 function）是否被模块级区域引用
 node -e "const fs=require('fs'),src=fs.readFileSync('FORGE/src/fresh-eyes-driver.mjs','utf8');const mod=[...src.matchAll(/^function (\w+)/gm)].map(m=>m[1]);const loc=[...src.matchAll(/^\s+function (\w+)/gm)].map(m=>m[1]).filter(n=>!mod.includes(n));const bad=loc.filter(fn=>src.slice(0,src.indexOf('function '+fn)).includes(fn));console.log(bad.length?'ISSUE: '+bad.join(','):'OK')" 2>/dev/null
 # 期望：OK
+```
+
+#### 73. ESM named export 完整性——`const` 被 named import 引用时必须 `export const`（v1.2.8 新盲区）
+
+> v1.2.8 教训：`tool-output-budget.mjs` 中 `const DEFAULT_BUDGET = 200` 被 `driver-base.mjs` 以 `{ DEFAULT_BUDGET as TOOL_OUTPUT_DEFAULT }` named import 引用，但 `DEFAULT_BUDGET` 缺 `export` 关键字 → 所有 3 个 driver 启动即崩溃（`SyntaxError: The requested module does not provide an export named 'DEFAULT_BUDGET'`）。ESM 不像 CJS 那样隐式导出模块级变量——`const` 只要不加 `export` 就是模块私有的。
+
+```bash
+# 检查 FORGE ESM 模块：被 import 引用的符号是否都有 export 声明
+node -e "
+const fs=require('fs'),path=require('path');
+const files=fs.readdirSync('FORGE/src').filter(f=>f.endsWith('.mjs'));
+let issues=[];
+for(const f of files){
+  const src=fs.readFileSync('FORGE/src/'+f,'utf8');
+  // 找所有 export 的符号
+  const exported=new Set([...src.matchAll(/export\s+(?:const|function|class|default)\s+(\w+)/g)].map(m=>m[1]));
+  // 找被其他文件 import 的符号（仅检查 FORGE/src 内部交叉引用）
+  for(const f2 of files){
+    if(f2===f) continue;
+    const src2=fs.readFileSync('FORGE/src/'+f2,'utf8');
+    const imports=[...src2.matchAll(/import\s*\{([^}]+)\}\s*from\s*['\"]\.\/([\w.-]+)['\"]/g)];
+    for(const imp of imports){
+      if(imp[2].replace('.mjs','')===f.replace('.m','')){
+        for(const name of imp[1].split(',').map(s=>s.trim().split(/\s+as\s+/)[0])){
+          if(name && !exported.has(name) && !['default'].includes(name)){
+            issues.push(f2+' imports {'+name+'} from '+f+' but '+f+' has no export const/function '+name);
+          }
+        }
+      }
+    }
+  }
+}
+console.log(issues.length?'ISSUE: '+issues.join('; '):'OK')" 2>/dev/null
+# 期望：OK
+```
+
+#### 74. FORGE 模块加载烟测——FORGE/ 不在 npm workspaces，npm test 永远不覆盖 driver 测试（v1.2.8 新盲区）
+
+> v1.2.8 教训：FORGE/ 目录不在 npm workspaces 配置中，导致 `npm test` 从不执行 FORGE/ 下的 `.test.mjs` 文件。driver 曾出过启动即崩的 P0 bug（维度 73 的 DEFAULT_BUDGET 缺 export），但单元测试完全没覆盖。补建 `tools/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件的烟测，并集成到 pre-push-check.sh。
+
+```bash
+# 确认 FORGE smoke test 存在且可执行
+test -f tools/forge-smoke-test.sh && echo "✅ smoke test 存在" || echo "❌ 缺失"
+# 确认 pre-push-check.sh 集成了 smoke test（非 quick/minimal 模式）
+grep -q "forge-smoke-test" tools/pre-push-check.sh && echo "✅ 已集成 pre-push" || echo "❌ 未集成"
+# 跑一次确认全绿
+bash tools/forge-smoke-test.sh 2>&1 | tail -3
 ```
 
 

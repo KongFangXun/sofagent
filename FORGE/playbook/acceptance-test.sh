@@ -1342,7 +1342,8 @@ if $S161_OK; then
   S161_HOME=$(mktemp -d /tmp/sofagent-acc-dash161-XXXX)
   mkdir -p "$S161_HOME/data/dashboard" "$S161_HOME/data/audit"
   echo '{}' > "$S161_HOME/data/dashboard/graph-state.json"
-  printf '{"timestamp":"2026-07-30T12:00:00Z","ruleResults":[{"name":"A3 不改越界","number":3,"status":"FAIL"},{"name":"A3 不改越界","number":3,"status":"FAIL"},{"name":"A1 不碰敏感","number":1,"status":"WARN"}]}\n' > "$S161_HOME/data/audit/history.jsonl"
+  S161_NOW=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+  printf '{"timestamp":"%s","ruleResults":[{"name":"A3 不改越界","number":3,"status":"FAIL"},{"name":"A3 不改越界","number":3,"status":"FAIL"},{"name":"A1 不碰敏感","number":1,"status":"WARN"}]}\n' "$S161_NOW" > "$S161_HOME/data/audit/history.jsonl"
   S161_OUT=$(SOFAGENT_HOME="$S161_HOME" bash "$DASH161" 2>&1) || true
   rm -rf "$S161_HOME"
   echo "$S161_OUT" | grep -q "不改越界" || { fail "规则审计栏未渲染中文名'不改越界'"; S161_OK=false; }

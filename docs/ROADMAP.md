@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.2.8 · 2026-08-06（UTC）· 🔗 激活链 Phase 3 前半（dag-runner 企业 Agent）+ FORGE 全 loop 接入 audit + release-gate F 修复者
+> v1.2.8 · 2026-08-07（UTC）· 🔗 激活链 Phase 3 前半（dag-runner 企业 Agent）+ FORGE 全 loop 接入 audit + release-gate F 修复者
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
