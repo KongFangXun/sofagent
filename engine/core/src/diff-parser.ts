@@ -71,10 +71,11 @@ function isGitHelpText(output: string): boolean {
 export function parseDiff(range: string, cwd?: string): DiffFile[] {
   const files: DiffFile[] = [];
 
-  // 参数格式校验：range 只允许 [a-zA-Z0-9~^.\-] 字符，防止命令注入和 git flag 注入
-  if (!/^[a-zA-Z0-9~^.\-]+$/.test(range)) {
+  // 参数格式校验：range 只允许 [a-zA-Z0-9~^.\-/] 字符，防止命令注入和 git flag 注入
+  // `/` 是合法 refspec 字符（分支名 origin/main）；execFileSync 数组传参不经 shell，无注入风险
+  if (!/^[a-zA-Z0-9~^.\-\/]+$/.test(range)) {
     console.error(
-      `参数校验失败: range "${range}" 包含非法字符。只允许 [a-zA-Z0-9~^.-] 字符。`
+      `参数校验失败: range "${range}" 包含非法字符。只允许 [a-zA-Z0-9~^.-/] 字符。`
     );
     console.error(
       '提示：使用 git refspec 而非文件路径，例如 HEAD~1..HEAD 或 origin/main..HEAD'
