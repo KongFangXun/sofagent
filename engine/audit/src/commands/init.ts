@@ -450,9 +450,11 @@ export function runInit(): void {
     }
 
     // v1.2.8: post-commit hook 重写——commit hash 对账替代 timestamp 近邻匹配 + 读全局 history 路径
+    // v1.2.9 P0-2: 对账逻辑适配 parentSha（commit-msg hook 记录的是父提交 SHA）
     const POST_COMMIT_TEMPLATE = `#!/bin/bash
-# sofagent post-commit hook v1.2.8
+# sofagent post-commit hook v1.2.9
 # 检测策略：commit hash 对账——检查当前 commit 的 SHA 是否在审计记录中有对应条目
+# （commitSha 精确匹配 + commitPhase='pre-commit' 记录的 parentSha 匹配）
 # 如果没有，判定为绕过（--no-verify 或 hook 被删/失效）
 # 注意：git commit --no-verify 会绕过本 hook——CI 侧 sofagent-audit --diff 兜底是最终防线
 
@@ -488,11 +490,19 @@ const lines = fs.readFileSync('$HISTORY_FILE', 'utf-8').trim().split('\\\\n').fi
 if (lines.length === 0) process.exit(0);
 try {
   // 反向查找（最新记录在末尾）
+  // 匹配规则（v1.2.9 P0-2）：
+  //   1. commitSha 精确匹配（手动 --diff 场景记录）
+  //   2. parentSha 匹配（commit-msg hook 场景记录——commitPhase='pre-commit'，
+  //      parentSha = 审计时 HEAD = 新提交的父提交，见 engine/audit/src/index.ts）
+  //   旧记录无 parentSha/commitPhase 字段时规则 2 不生效，行为与旧版一致。
   for (let i = lines.length - 1; i >= 0; i--) {
     const entry = JSON.parse(lines[i]);
     const entryCommit = entry.commitSha || '';
     if (entryCommit === '$COMMIT_SHA') {
       process.exit(0);  // 找到匹配——审计已运行
+    }
+    if (entry.commitPhase === 'pre-commit' && entry.parentSha === '$COMMIT_SHA') {
+      process.exit(0);  // pre-commit 记录按父提交 SHA 匹配——审计已运行
     }
   }
   // 未找到匹配——可能 --no-verify 绕过或 hook 失效
@@ -522,7 +532,8 @@ exit 0
           const minor = parseInt(versionMatch[2]!, 10);
           const patch = parseInt(versionMatch[3]!, 10);
         // v1.2.8: post-commit 大改（路径+对账机制），强制覆盖 1.2.7 及以下
-        if (major < 1 || (major === 1 && (minor < 2 || (minor === 2 && patch < 8)))) {
+        // v1.2.9 P0-2: 对账逻辑适配 parentSha，强制覆盖 1.2.8 及以下（否则 A8 误报自愈不生效）
+        if (major < 1 || (major === 1 && (minor < 2 || (minor === 2 && patch < 9)))) {
             hasPostCommitHook = false;  // 旧版本 → 覆盖
           } else {
             hasPostCommitHook = true;   // 当前版本或更新 → 保留

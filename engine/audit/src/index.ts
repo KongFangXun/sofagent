@@ -1016,6 +1016,8 @@ async function main(): Promise<void> {
 
   // 8. 写入审计历史（JSONL 持久化，用于根因分析和回归验证）
   let commitSha: string | undefined;
+  let parentSha: string | undefined;
+  let isPreCommitPhase = false;
   try {
     // P1-15: 获取当前 HEAD SHA
     // 注：isInGitRepo() 已在入口处确认处于 git 仓库，因此 rev-parse HEAD 失败
@@ -1032,6 +1034,19 @@ async function main(): Promise<void> {
         commitSha = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'; // 空树 SHA-1 常量
       }
       console.warn('[sofagent] 提示：首次提交（unborn HEAD），对比空树进行审计');
+    }
+
+    // v1.2.9 P0-2: commit-msg hook 场景下（--commit-msg 由 hook 传入），审计运行在
+    // commit 对象生成之前——此刻 git rev-parse HEAD 得到的是新提交的**父提交** SHA，
+    // 而非正在创建的提交。若直接记入 commitSha，追溯链整体错位一个 commit，
+    // --verify-commit 按 SHA 匹配必然张冠李戴（100% 误报）。
+    // 修复：hook 场景把「审计时 HEAD」如实记入 parentSha，标记 commitPhase='pre-commit'；
+    // commitSha 不伪造（留空）。--verify-commit / post-commit 对账按 parentSha fallback 匹配。
+    // 手动 --diff <range>（无 --commit-msg）保持原语义：HEAD 已存在，commitSha = 当前 HEAD。
+    if (args.commitMsgArg !== undefined) {
+      isPreCommitPhase = true;
+      parentSha = commitSha;
+      commitSha = undefined;
     }
 
     // A4 研读落地：Action Governance 审计 5 字段 schema + 决策溯源组
@@ -1059,6 +1074,10 @@ async function main(): Promise<void> {
       diffFileCount: diffFiles.length,
       commitMsg: commitMsg || undefined,
       commitSha,
+      // v1.2.9 P0-2: pre-commit 阶段记录父提交 SHA（= 审计时 HEAD），
+      // --verify-commit / post-commit 对账按此 fallback 匹配。旧记录无此字段。
+      parentSha,
+      commitPhase: isPreCommitPhase ? 'pre-commit' : undefined,
       engine: `sofagent-audit v${VERSION}`,
       actionGovernance: {
         actor,

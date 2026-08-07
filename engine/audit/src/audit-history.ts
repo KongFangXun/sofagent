@@ -93,6 +93,19 @@ export interface AuditHistoryEntry {
   prevHash?: string;
   /** P1-15: 本次审计对应的 commit SHA（doctor #8 追溯用） */
   commitSha?: string;
+  /**
+   * v1.2.9 P0-2: commit-msg hook 场景（commit 对象尚未生成）记录的父提交 SHA
+   * （= 审计运行时的 HEAD）。--verify-commit 精确 commitSha 未命中时，
+   * 对 commitPhase='pre-commit' 的记录按 parentSha fallback 匹配。
+   * 旧记录无此字段时 fallback 不生效（向后兼容）。
+   */
+  parentSha?: string;
+  /**
+   * v1.2.9 P0-2: 审计所处阶段标记。'pre-commit' = commit-msg hook 场景
+   * （审计在 commit 对象生成前运行，commitSha 未知，仅记 parentSha）。
+   * 手动 --diff <range> 场景无此字段（保持旧语义）。
+   */
+  commitPhase?: 'pre-commit';
   /** hash 算法版本：1 = 无指纹（v1.0.5 及以前），2 = 环境指纹（v1.0.6+） */
   hashVersion?: number;
   /** v1.1.8+: HMAC-SHA256 签名（密钥来自 ~/.sofagent-key，chmod 600）。无密钥时缺省（降级 SHA-256，向后兼容）。用于强防篡改。 */

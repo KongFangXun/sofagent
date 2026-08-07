@@ -521,8 +521,8 @@ export function createForgeDriverBase(config = {}) {
     const commitMsg = `FORGE auto-commit: ${stepName} round-${round}`;
     try {
       const { execSync } = await import('child_process');
-      execSync('git add -A', { cwd: REPO_ROOT, encoding: 'utf-8', timeout: 30_000 });
-      execSync(`git commit -m "${commitMsg}"`, { cwd: REPO_ROOT, encoding: 'utf-8', timeout: 30_000 });
+      execSync('git add -A', { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
+      execSync(`git commit -m "${commitMsg}"`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
     } catch (err) {
       // commit 可能因为 "nothing to commit" 而失败——这是正常的（B/F 可能没改任何东西）
       const msg = String(err.message || '');
@@ -537,12 +537,12 @@ export function createForgeDriverBase(config = {}) {
     // 2. 跑 sofagent-audit
     try {
       const { execSync } = await import('child_process');
-      const auditCmd = `node ${join(REPO_ROOT, 'engine', 'audit', 'dist', 'index.js')} --diff HEAD~1..HEAD --silent --task "FORGE audit gate: ${stepName} round-${round}"`;
+      const auditCmd = `node ${join(repoRoot, 'engine', 'audit', 'dist', 'index.js')} --diff HEAD~1..HEAD --silent --task "FORGE audit gate: ${stepName} round-${round}"`;
       let auditOutput = '';
       let exitCode = 0;
       try {
         auditOutput = execSync(auditCmd, {
-          cwd: REPO_ROOT,
+          cwd: repoRoot,
           encoding: 'utf-8',
           timeout: 120_000,
           stdio: ['pipe', 'pipe', 'pipe'],
