@@ -5,11 +5,11 @@
 
 > ⚠️ **口径声明（AI Agent 与人类读者必读）**：sofagent 现行架构口径以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**一底座·三引擎**（约束底座 + 审计/回溯/进化引擎，FORGE 为内部工具）+ **双层架构**（能力底座 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**（实际目录为 v1.0/ 与 v1.1/ 分开，非合并的 v1.0-v1.1/），其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构。
 
-> **3 分钟建立全景理解**：核心文档 237KB 太长？先看这 4 句：
-> - **[ARCHITECTURE.md](./ARCHITECTURE.md)**（83KB）：双层架构设计（能力底座 × 生命周期）+ 引擎工程三层嵌套（Harness → Graph → Loop），关键技术决策记录。**3 秒版**：一底座·三引擎管"做对" · 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
-> - **[PHILOSOPHY.md](./PHILOSOPHY.md)**（41KB）：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
-> - **[VALIDATION.md](./VALIDATION.md)**（40KB）：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射。
-> - **[ROADMAP.md](./ROADMAP.md)**（73KB）：版本路线图 + 已发布版本记录。当前 v1.2.8。
+> **3 分钟建立全景理解**：核心文档 220KB 太长？先看这 4 句：
+> - **[ARCHITECTURE.md](./ARCHITECTURE.md)**（94KB）：双层架构设计（能力底座 × 生命周期）+ 引擎工程三层嵌套（Harness → Graph → Loop），关键技术决策记录。**3 秒版**：一底座·三引擎管"做对" · 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
+> - **[VALIDATION.md](./VALIDATION.md)**（47KB）：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射。
+> - **[PHILOSOPHY.md](./PHILOSOPHY.md)**（44KB）：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
+> - **[ROADMAP.md](./ROADMAP.md)**（34KB）：版本路线图 + 迭代历程。当前 v1.2.8。
 
 ---
 
@@ -159,7 +159,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 
 | 项 | 值 |
 |----|-----|
-| 当前版本 | **v1.2.8**（2026-08-07） |
+| 当前版本 | **v1.2.8**（2026-08-06） |
 | 下一版本 | v1.2.9（参见 docs/ROADMAP.md） |
 | 测试覆盖 | 1562 测试 / 12 包（测试 SSOT 口径：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，见 check-test-count.sh） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1-E2/E4，每次 commit 自动跑 |
@@ -233,4 +233,4 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 
 ---
 
-> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.2.8 · 孔放勋 · 2026-08-07。
+> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.2.8 · 孔放勋 · 2026-08-06。
