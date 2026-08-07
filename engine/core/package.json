@@ -37,8 +37,8 @@
     "url": "https://github.com/KongFangXun/sofagent/issues"
   },
   "homepage": "https://github.com/KongFangXun/sofagent#readme",
+  "//": "automerge 精确锁版 1.0.1-preview.7：稳定版（2.x）API 不兼容本项目 CRDT 同步用法；preview 版是唯一可用版本，升级需验证 multi-device-sync 测试全绿后再放开",
   "dependencies": {
-    "//automerge": "精确锁版 1.0.1-preview.7：automerge 稳定版（2.x）API 不兼容本项目 CRDT 同步用法；preview 版是唯一可用版本，升级需验证 multi-device-sync 测试全绿后再放开",
     "automerge": "1.0.1-preview.7",
     "js-yaml": "^5.2.0"
   },
