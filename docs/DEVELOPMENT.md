@@ -372,7 +372,7 @@ LangGraph createReactAgent 拆完任务
 
 复盘加权算出总分，分比上次高 → 覆盖 orchestrator/ 为最优配置。分比上次低 → 不动，标「待验证」。每次闭环只需回答三问：**用对了吗？更好了吗？Loop 起作用了吗？**
 
-### 轨迹优化闭环：Trajectory Store + LLM-Judge 蒸馏（2026-07 行业参考 blog 研读）
+### 轨迹优化闭环：Trajectory Store + LLM-Judge 蒸馏
 
 进化引擎核心机制（行业参考「轨迹优化闭环」）：好轨迹经 LLM-Judge 评分 + Best-of-N 筛选，蒸馏成 Skill 沉淀。
 
@@ -383,8 +383,6 @@ LangGraph createReactAgent 拆完任务
 案例（成本数字来源待补充）：选品报告 $0.80 / 120s / 92 分 → 蒸馏后 $0.20 / 35s / 91 分。
 
 > 与 sofagent FORGE 进化引擎同源——好轨迹沉淀为 Skill，闭环驱动自迭代。
-
-> 📖 来源：行业参考 blog（2026-07）
 
 ### 中间检查点
 
@@ -462,7 +460,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 ---
 
-### 记忆 ≠ RAG：分层状态管理（2026-07 行业参考 blog 研读）
+### 记忆 ≠ RAG：分层状态管理
 
 行业参考区分：多数 Agent 的「记忆」只是当前对话上下文窗口，关掉归零——这是金鱼不是记忆。真记忆应分层：
 
@@ -474,8 +472,6 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 | 操作日志 | 做了什么、为什么、结果 | 审计保留期 | task/logs + 审计引擎 |
 
 > 关键：「这不是 RAG。RAG 是『从文档里找答案』，记忆是『我自己经历过，我知道该怎么做』。」数字员工每次完成任务自动把关键决策与踩过的坑写入长期记忆——sofagent 的记忆观不依赖 RAG 式检索作为主记忆机制（knowledge/ 的检索式注入是另一回事），此区分加固反 RAG 立场。
-
-> 📖 来源：行业参考 blog/公众号 2026-07-27《Agent 进入企业，还差一个工位》
 
 ## 七、数据文件架构
 
@@ -571,8 +567,6 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 
 - **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（49 维）+ `acceptance-test.sh`（148 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
 - **上下文精简 = 低成本高通过**：研报发现 Pipe Agent 同模型下比原生工具便宜 1.2–2×、性能差距 <3pt，根因是初始提示 <1500 token（vs Claude Code 20k）。这从量化角度印证 sofagent「Harness 要轻」——约束底座零 token 运行（24 条规则 19 条纯 git-diff），把成本压在确定性引擎而非上下文堆料。
-
-> 📖 来源：温故知新 2026-07-21（行业研报《Databricks 真实代码库 AI 编程工具测评》）
 
 ## 十、STATE.md 持久化外部记忆模式（2026-07 loop-engineering 研读）
 
