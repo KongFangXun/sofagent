@@ -6,9 +6,9 @@
 
 ---
 
-## 十、行业方法论印证：研究如何验证 sofagent 直觉（2026-07 研读）
+## 十、行业方法论印证：研究如何验证 sofagent 直觉
 
-> 这一节不是新理论，而是把 31 篇跨批研读（Palantir Ontology / 五层骨架 / Stage 渐进 / Loop / FDE 边界 / 王阳明）里反复出现、能**直接印证** sofagent 已有直觉的结论落到纸面。它们不替代正文，只是给「我们一直这么干」补上行业证据。各条统一来源：📖 31 篇行业笔记跨批研读（2026-07-20）；含联网核验 / 外部研报者已单标出处。
+> 这一节不是新理论，而是把跨批行业研读（Palantir Ontology / 五层骨架 / Stage 渐进 / Loop / FDE 边界 / 王阳明）里反复出现、能**直接印证** sofagent 已有直觉的结论落到纸面。它们不替代正文，只是给「我们一直这么干」补上行业证据。有公开来源者已标注出处。
 
 ### 骨架开场钩子（N5）
 
@@ -92,7 +92,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 - **Org Graph = 进组织架构的硅基员工**：研报把「长期存活、固定领域、保留上下文与工具权限」的 Agent 称为 Org Graph 节点，与 sofagent 核心定位字面对应——AI 不是效率工具，是进组织编制、有独立账号、接受绩效考核的硅基员工；FDE 交付的「常驻 Agent」正是 Org Graph 的企业落地形态。
 - **Ontology Runtime 是 AI Native 企业底座，非 API 网关**：研报强调 Runtime 接管的是「语义边界」而非重建核心系统（CRM/OMS/ERP 之上的一层），企业系统边界从「系统接口」转移到「业务对象运行时」。与 sofagent「Harness 中间件 = 给模型搭脚手架、约束底座永远在线」同源——我们不做业务系统，做业务系统之上的约束层。
 
-### 数字员工操作性定义：四跨越 + 结果负责三要素（2026-07 行业参考 blog 研读）
+### 数字员工操作性定义：四跨越 + 结果负责三要素
 
 行业参考区分「数字分身」（服务个人、替代时间）与「数字员工」（服务组织、承接职责、对结果负责）。数字员工进组织需完成**四跨越**：
 
@@ -102,10 +102,6 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 4. 结果负责（对产出后果负责）
 
 **结果负责三要素**（与审计 / 回溯引擎对齐）：可观测（行为留痕）/ 可归因（责任到人 · Agent 身份）/ 可回滚（出错能退）。
-
-> 📖 来源：行业参考 blog《分身 vs 员工》《拟人化》（2026-07）
-
-> 📖 来源：温故知新 2026-07-21（行业研报《从提示工程到图系统》《Ontology Runtime 企业级架构落地》）
 
 ### DeerFlow 2.0：大厂用「Harness」命名的活样本（2026-07 行业印证）
 
@@ -230,7 +226,7 @@ sofagent 是**跨层约束**——不管企业用 WorkBuddy（L1）还是 LangGr
 >
 > 精确定位：不是"我们也有治理"，是**"我们补巨头补不上的缺口"**——巨头做平台内治理（绑定自家云），sofagent 做平台外治理（不管你用哪个云）。
 >
-> 📖 来源：InfoWorld（2025-11，Vertex AI Agent Builder 分析）+ Forrester Charlie Dai + IDC Dhiraj Badgujar·温故知新 2026-08-01 扫描
+> 📖 来源：InfoWorld（2025-11，Vertex AI Agent Builder 分析）+ Forrester Charlie Dai + IDC Dhiraj Badgujar
 
 ### 技术选型原则——用什么、不用什么
 
@@ -279,7 +275,7 @@ sofagent 的审计引擎已经覆盖了「做了什么」——每次变更都�
 
 ## 十二、架构框架行业印证（原 ARCHITECTURE §七，2026-07 研读）
 
-> 本节把 31 篇研读里与 sofagent 架构**结构上对齐**的行业框架逐条印证——不是发明新架构，是验证已有架构选型的行业合理性。各条统一来源：📖 31 篇行业笔记跨批研读（2026-07-20）。
+> 本节把跨批行业研读中与 sofagent 架构**结构上对齐**的行业框架逐条印证——不是发明新架构，是验证已有架构选型的行业合理性。
 
 ### Ontology = 共同理解层 / 翻译层
 
@@ -298,7 +294,7 @@ Ontology 的本质是「**翻译而非统一**」——在多个异构 Agent / �
 
 > ⚠️ 克制说明：Ossie 仍是 2026 年初生标准（v0.1/v0.2.dev），sofagent 当前以自有 Ontology 层 + Ledger-Views-Policy 承载语义，**不引入 Ossie 依赖**；此处仅作"语义层交换协议"的演进参照记录，待其生态成熟再评估 Adapter 级对接。
 
-> 📖 来源：温故知新 2026-07-27 IMA Ontology 笔记 + Apache Ossie 官网 [ossie.apache.org](https://ossie.apache.org/)（2026-07 进 Apache 孵化器）+ 掘金《Apache Ossie 进入 Apache 孵化器：50+ 企业支持的语义数据标准》[juejin.cn/post/7663683553181777947](https://juejin.cn/post/7663683553181777947) + dev.to《Meet Apache Ossie》[dev.to/alexmercedcoder/meet-apache-ossie-the-open-semantic-interchange-finds-its-home-at-the-asf-2mio](https://dev.to/alexmercedcoder/meet-apache-ossie-the-open-semantic-interchange-finds-its-home-at-the-asf-2mio)
+> 📖 来源：Apache Ossie 官网 [ossie.apache.org](https://ossie.apache.org/)（2026-07 进 Apache 孵化器）+ 掘金《Apache Ossie 进入 Apache 孵化器：50+ 企业支持的语义数据标准》[juejin.cn/post/7663683553181777947](https://juejin.cn/post/7663683553181777947) + dev.to《Meet Apache Ossie》[dev.to/alexmercedcoder/meet-apache-ossie-the-open-semantic-interchange-finds-its-home-at-the-asf-2mio](https://dev.to/alexmercedcoder/meet-apache-ossie-the-open-semantic-interchange-finds-its-home-at-the-asf-2mio)
 
 ### Notification 事件驱动协作
 
@@ -357,8 +353,6 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 | 权限管理系统 | 身份认证 · 权限控制 · 行为审计 · 安全边界 | 审计引擎（git diff 硬证据）+ Harness 约束底座 + entry-gate 风险分级 |
 | Skill 生态 | 开发者输出专项 Skill（类比 App Store） | `/SKILL/` 统一入口 + 引擎层 / 用户层分离 |
 
-> 📖 来源：温故知新 2026-07-22（AOS 范式解析）
-
 ### 脑力自动化四阶段 ↔ sofagent 工程谱系映射
 
 行业将「AI 对应脑力自动化」的演进概括为四阶段——提示词工程 → 上下文工程 → 驾驭工程 → 循环自动化。sofagent 在五层工程谱系中的对应恰好是这条主线的工程化落地：
@@ -369,8 +363,6 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 | 上下文工程 | 给模型「什么背景」 | Context 层（knowledge/ + Ontology 运行时语义）|
 | 驾驭工程 | 约束模型「不能乱来」 | Harness 层（约束底座 + 审计 + 回溯，七步 Action 管线）|
 | 循环自动化 | 让模型「自己跑闭环」 | Loop / Graph 层（编排引擎 + 进化引擎 + FORGE 外层循环）|
-
-> 📖 来源：温故知新 2026-07-22（FDE 行业实战研报）
 
 ### 综合行业对标
 
@@ -411,13 +403,9 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 
 顶尖团队用 Harness 的工业级验证数据：OpenAI Codex 团队 3-7 人 5 个月产出 100 万行生产级代码；LangChain + Deep Agents 在 Terminal 基准测试排名从 30 名升到前五。不改底层模型，只加 Harness 就能大幅提效——与 sofagent「能力长在代码里不长在 prompt 里」的产品哲学一致。
 
-> 📖 来源：得到大脑《Harness Engineering 深度解析》2026-08-01（GStark / OpenAI Codex / LangChain Deep Agents 公开数据）
-
 ---
 
-## 十三、商业化方向与市场定位（2026-07 ~ 08 研读整理）
-
-> 本节原属 ROADMAP.md「产品化与商业化方向」，v1.2.9 文档治理中迁入本文件。ROADMAP 只保留技术路线，商业/定位分析归此。
+## 十三、商业化方向与市场定位
 
 ### 产品化四条
 
@@ -433,24 +421,23 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 ### 市场信号
 
 - **FDE-as-a-Service / Services-as-Software 被资本验证**：Anthropic 收购 Fractional AI、Accenture×Anthropic 3 万人 FDE 受训、Blackstone+H&F+Goldman 共建企业 AI 服务公司、Anthropic 接入 Palantir FedStart。
-- **受监管行业规模化交付（2026 concrete 证据，强化上条）**：全球 Top-3 SI 将 FDE 能力标准化、规模化交付至强监管场景——TCS×Anthropic 在 56 国为 5 万员工与受监管行业部署 Claude；DXC×Anthropic 联盟（FDE 培训认证规模化）；Anthropic×Infosys 在电信等受监管行业共建 AI Agent。三者同源互证 sofagent「FDE 通用能力化 + Services-as-Software + 受监管行业护城河」定位，且印证「卖能力不卖工时」路线在强监管客户侧已被头部 SI 验证可行。
-  > 📖 来源：温故知新 2026-07-23 / 2026-07-25（OpenFDE 信号库 P2 🎯：DXC / TCS / Infosys）
+- **受监管行业规模化交付**：全球 Top-3 SI 将 FDE 能力标准化、规模化交付至强监管场景——TCS×Anthropic 在 56 国为 5 万员工与受监管行业部署 Claude；DXC×Anthropic 联盟（FDE 培训认证规模化）；Anthropic×Infosys 在电信等受监管行业共建 AI Agent。三者同源互证 sofagent「FDE 通用能力化 + Services-as-Software + 受监管行业护城河」定位，且印证「卖能力不卖工时」路线在强监管客户侧已被头部 SI 验证可行。
 - **PE/VC 多企业审计仪表盘**（探索方向）：投后管理场景，所有被投企业 AI 审计数据汇总到一个面板。
 - **WB 企业版竞品对标**（商业化储备）：席位全生命周期管理 + 成本三维核算 + 统一采购合规 + 审计追踪 + 安全沙箱。
-- **🔴 Skill 廉价化危机（2026-07-25 阿里/钉钉会议验证）**：豆包已能自动生成 Skill、Hermes 能给自己生成 Skill → 以 Prompt 形式出现的所有产品形态都将被模型吞噬。引擎层对策见上方第 4 点（能力封装进 Subagent + 防投喂机制）。
-- **私有化部署需求加速（2026-07-25 会议验证）**：客户担心数据被用于训练（已有硬件客户代码出现在 AI 输出中）。U 盘交付模式的"龙虾 U 盘"心理价值——插入即用、拔出即停，制造"盾牌般的物理安全感"。核心卖的不是技术实现，是老板的掌控感。
+- **🔴 Skill 廉价化危机**：豆包已能自动生成 Skill、Hermes 能给自己生成 Skill → 以 Prompt 形式出现的所有产品形态都将被模型吞噬。引擎层对策见上方第 4 点（能力封装进 Subagent + 防投喂机制）。
+- **私有化部署需求加速**：客户担心数据被用于训练（已有硬件客户代码出现在 AI 输出中）。U 盘交付模式的"龙虾 U 盘"心理价值——插入即用、拔出即停，制造"盾牌般的物理安全感"。核心卖的不是技术实现，是老板的掌控感。
 
 > **待落地**：首个 MVP = FDE Agent + 一个引擎 dashboard（进度 / 合规视图）；商业计划（GTM / 定价 / 买家画像 / 竞争象限）独立私有仓维护，不进本 MIT 库。
 
 ### 分层落地中型蓝海
 
-商业化切入上，孔老师倾向「分层落地」而非一刀切：先在中型客户（有真实 workflow、愿为成果付费、但养不起自建 AI 团队）的蓝海市场建立标杆，用 FDE 的「交付企业专有 skill」模式把单点打透，再向大型客户的标准化模块、小型客户的自助模板双向延伸。核心判断是——卖能力不卖工时，控制平面（sofagent 引擎）是底层，业务 workflow 的可约束性才是护城河。
+商业化切入上，我们倾向「分层落地」而非一刀切：先在中型客户（有真实 workflow、愿为成果付费、但养不起自建 AI 团队）的蓝海市场建立标杆，用 FDE 的「交付企业专有 skill」模式把单点打透，再向大型客户的标准化模块、小型客户的自助模板双向延伸。核心判断是——卖能力不卖工时，控制平面（sofagent 引擎）是底层，业务 workflow 的可约束性才是护城河。
 
-### 价值度量翻转：FDE vs 传统外包（2026-07 行业参考 blog 研读）
+### 价值度量翻转：FDE vs 传统外包
 
-行业参考以「数字员工」重新定义 AI to B 的价值度量：传统外包按人·月计费，FDE 按成果·Token 计费，成本差可达三个数量级。
+以「数字员工」重新定义 AI to B 的价值度量：传统外包按人·月计费，FDE 按成果·Token 计费，成本差可达三个数量级。
 
-> ⚠️ 下表为量级对比（来源 blog 数字未经独立核验），仅供方向参考：
+> ⚠️ 下表为量级对比（数字未经独立核验），仅供方向参考：
 
 | 维度 | 传统外包团队 | 1 个 FDE Agent |
 |------|------|------|
@@ -460,9 +447,7 @@ sofagent 的结构性壁垒不在「更聪明的 Agent」（那是大厂在商�
 
 > 印证 sofagent 商业化判断「卖能力不卖工时」：护城河是可约束的业务 workflow，不是人头。
 
-> 📖 来源：行业参考 blog《价值度量翻转》（2026，具体 URL 待核验）
-
-### 为什么需要中间件，而不是更多 FDE：SMB 断层（2026-08 行业印证）
+### 为什么需要中间件，而不是更多 FDE：SMB 断层
 
 SaaStr 创始人 Jason Lemkin 算清了 FDE 模式的单位经济账：FDE 年薪 $135K–$200K+，一名 $200K 的 FDE 管 3–5 个企业账户，仅工程费即**每客户 $40K–$67K/年**，加差旅与利润后**每部署年成本 $75K+**。对 20–50 人、$2M–$10M 营收的中小企业，这笔实施费占营收 1-4%（还没算 AI 工具本身），无法 justify——55% 的 SMB 称成本是最大采用障碍。
 

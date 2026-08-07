@@ -502,8 +502,6 @@ ab-scheduler 连续 2 轮更好即 promote。如果 eval 场景偏窄（只测�
 
 研报测评发现：当用户提示模糊时，精简上下文方案弱于「有完整 system prompt 兜底」的工具。对应 sofagent 的**依赖良好 Skill 定义**——fde.md / SKILL.md 提供的确定性骨架（岗位模板 + 四问 + 铁律）正是弥补模糊提示的兜底层；Skill 定义质量直接决定 Agent 在模糊输入下的下限。Skill 级经验漂移（见 §三）会侵蚀这层兜底，需持续维护。
 
-> 📖 来源：温故知新 2026-07-21（行业研报《Ontology Runtime 企业级架构落地》《Databricks 真实代码库测评》）
-
 ---
 
 ## 十一、架构反模式：五种常见 Agent 工程错误

@@ -83,8 +83,6 @@ WorkBuddy / OpenClaw 等大厂 Agent 平台管路由调度——「会不会做�
 
 这与 sofagent「不做通用平台、做细分业务 workflow 的可约束性」定位同频：护城河在垂直、在审计、在客户工作流，不在通用能力堆叠。
 
-> 📖 来源：温故知新 2026-07-21（行业研读 · Harvey/Sierra 公开披露 + a16z Services-as-Software 论述 + 36氪 Palantir 化警示）
-
 ### 智能与控制分离——sofagent 的理论锚点
 
 > Intelligence belongs to the model. Control belongs to the system.
@@ -113,7 +111,7 @@ sofagent 的 Harness 中间件就是这条原则的工程实现：审计引擎�
 | L3 | Bonded Agent（受限代理） | 在预算/规则范围内自主循环执行 | fresh-eyes-loop 自主循环 + tool-gate 三色 |
 | L4 | Accountable System（可问责系统） | 全流程留证据、可解释决策、责任可追溯 | **sofagent 目标态**：append-only A1-A19 审计 + 控制平面治理 + 责任可追溯 |
 
-> 注：命名「受治理的自主性」对齐既有「受控自主性」，不另起术语；4 级框架为净新增定位资产（二手转述：孔放勋《得到大脑》2026-07-27，原始观点 AI酋长 Andy）。
+> 注：命名「受治理的自主性」对齐既有「受控自主性」，不另起术语；4 级框架为净新增定位资产。
 
 ### 为什么不封装成 Skill——大模型会吞噬文字形式的约束
 
@@ -123,7 +121,7 @@ Skill、Prompt Engineering、Context Engineering，甚至以 Skill 形式做的 
 
 sofagent 的生存位不在"写更聪明的约束文字"，而在**细分业务 workflow 上对业务最终结果的可约束性**——这个不会被模型吞噬。对策是把 Skill + Harness 能力**封装进 Subagent**（代码级实现，非文字注入）+ **防投喂机制**（防止输入素材变成大模型的训练材料）。让能力长在代码里，而不是长在 prompt 里——这是对抗"模型吞噬一切"的唯一姿势。
 
-> **外部印证——Claude Code 强模型时代的提示词革命（2026-07-30 温故知新）**：Anthropic 在 Claude 3.5 Sonnet/Opus 上把系统提示词**砍掉 80%**，核心逻辑正是「模型越强，要写的约束越少」——从"教模型做事"转向"让模型自己推导"。
+> **外部印证——Claude Code 强模型时代的提示词革命**：Anthropic 在 Claude 3.5 Sonnet/Opus 上把系统提示词**砍掉 80%**，核心逻辑正是「模型越强，要写的约束越少」——从"教模型做事"转向"让模型自己推导"。
 >
 > 其六个转变中与 sofagent 约束哲学同向的有三条：**规则→判断**（写死硬约束多了会互斥矛盾，通用规范模型自己能推）、**前置上下文→渐进式披露**（Claude.md 只放每轮都用到的，业务规则按需引用）、**简单规范→丰富验证**（写"什么算完成"比写"怎么做"更重要）。
 >
@@ -269,7 +267,7 @@ sofagent 用三条制度把「判断权不可外包」落成防线，与「反�
 
 sofagent 的审计引擎 Gate + 硬规则正是这类锚点：审计只信 git diff 一手证据（不容争辩），fde.md 业务底线不可被 Agent 覆盖（冻结节点），问题定义与验收终裁权留在人类（图谱外的判断）。人类终裁因此不只是一句宣言，而是一组**写死在优化器碰不到之处的锚点**。
 
-> 📖 来源：温故知新 2026-07-26（Seebin《从 Loop Engineering 到 Graph Engineering》backfill 归档触发）；外部佐证 Goodhart, C.A.E. (1975). *Problems of Monetary Management: The U.K. Experience*. Reserve Bank of Australia；Perez, C.E. (2026). *From Loop Engineering to Graph Engineering?* IntuitionMachine. https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c
+> 📖 来源：Goodhart, C.A.E. (1975). *Problems of Monetary Management: The U.K. Experience*. Reserve Bank of Australia；Perez, C.E. (2026). *From Loop Engineering to Graph Engineering?* IntuitionMachine. https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c
 
 ### 中立性——运动员不能兼任裁判
 
@@ -322,8 +320,6 @@ sofagent 的三条中立性原则：
 | 工具网关（统一受控入口：身份·路由·重试·审计） | Policy（约束注入） | MCP 桥 + 审计引擎 |
 
 可信工具 4 要求（可溯源 / 权限合规 / 过程可查 / 证据可验）即三层治理中 Policy 层「人类意志最后防线」的工程化表达——Policy 层 = 受控调用，审计引擎 = 证据可验，二者同构。
-
-> 📖 来源：温故知新 2026-07-21（行业研报《企业知识库进阶：从问答工具到 Agent 可信调用载体》）
 
 ### 为什么世界模型优先于语言模型
 
