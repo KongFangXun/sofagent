@@ -16,7 +16,7 @@ export type { AuditResult, RuleCheck } from './reporter';
 export { loadConfig } from '@sofagent/core';
 export type { AuditConfig } from '@sofagent/core';
 
-// P0-3: clearHistory 已移出公共 exports——「用于测试」的破坏性 API 不应挂在包默认导出，
+// clearHistory 已移出公共 exports——「用于测试」的破坏性 API 不应挂在包默认导出，
 // 任何人调一行 clearHistory() 就能清空全部审计历史。内部测试仍可从模块路径导入。
 export { loadHistory, appendHistory, checkHistoryChainIntegrity, isHmacKeyConfigured, validateHmacKey } from './audit-history';
 export type { AuditHistoryEntry } from './audit-history';

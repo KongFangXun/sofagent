@@ -96,7 +96,7 @@ FDE 诊断完成（交付物就绪）
 | **v1.2.9** | HITL + 审计集成 | HITL interrupt + 审计集成 + 异常处理 | Phase 3 后半 |
 | **v1.3.0** | 运行时审计最小闭环 | 激活链收尾——全闭环验证 + wrapToolCall 联动 + 企业工作流审计 | Phase 4 收尾 |
 
-> 开发每个版本时读本文档作为设计指引。桌面拆分的 3 个 Prompt（Phase 1 / Phase 2 / Phase 3+4）已迁至 `~/Desktop/sofagent-dev-prompts/` 为开发细节参考。
+> 开发每个版本时读本文档作为设计指引。各 Phase 的开发 Prompt 仅作开发过程内部参考，不随仓库分发。
 
 ---
 

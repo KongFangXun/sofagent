@@ -39,7 +39,8 @@ import { createShadowRepo, commitSnapshot, hasShadowRepo } from '@sofagent/core'
 import { runRules, productSignature, type AuditResult } from './reporter';
 import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-history';
 
-// Re-export for external consumers (P0-②: doctor needs checkHistoryChainIntegrity via require('@sofagent/audit'))
+// Re-export for external consumers —— doctor 等外部调用方需要通过
+// require('@sofagent/audit') 使用 checkHistoryChainIntegrity
 export { checkHistoryChainIntegrity } from './audit-history';
 
 // Re-export core 审计原语——daemon/mcp/orchestrator 通过 @sofagent/audit 消费（v1.2.8）
@@ -123,7 +124,7 @@ function parseArgs(argv: string[]): Args {
   const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, supportBundle: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff') {
-      // P1-12: --diff 无显式值（末尾或后跟其他 flag）→ 用默认 HEAD~1..HEAD，
+      // --diff 无显式值（末尾或后跟其他 flag）→ 用默认 HEAD~1..HEAD，
       // 不再落进「不支持的参数 --diff」矛盾报错
       const next = argv[i + 1];
       if (next === '--cached') {
@@ -573,7 +574,7 @@ async function main(): Promise<void> {
   // 在 args 解析之后、主 switch 分支之前，拦截已迁移的子命令
   const rawArgs = process.argv.slice(2);
 
-  // compose → sofagent-orchestrator (v1.0.8 P0-2: 友好报错降级，不再 execFileSync)
+  // compose → sofagent-orchestrator (v1.0.8 友好报错降级，不再 execFileSync)
   if (rawArgs.includes('compose')) {
     console.error('⚠️  "sofagent-audit compose" 已弃用，将在 v1.3.0 移除，请尽快迁移到 "sofagent-orchestrator compose"。');
     console.error('   请直接运行：sofagent-orchestrator compose');
@@ -581,7 +582,7 @@ async function main(): Promise<void> {
     exit(1);
   }
 
-  // doctor → @sofagent/core 内置健康检查（P1-34: 移除对 core CLI 的 doctor 错误推荐——
+  // doctor → @sofagent/core 内置健康检查(移除对 core CLI 的 doctor 错误推荐——
   // core CLI 只支持子命令形式，flag 形式不合法；且 audit --doctor 已直接调用 core 的
   // runDoctor，本就是完整诊断，无需再引导到别的命令）
   if (rawArgs.includes('--doctor')) {
@@ -602,7 +603,7 @@ async function main(): Promise<void> {
     }
   }
 
-  // verify → sofagent-core (v1.0.8 P0-2: 友好报错降级，不再 execFileSync)
+  // verify → sofagent-core (v1.0.8 友好报错降级，不再 execFileSync)
   if (rawArgs.includes('verify')) {
     console.error('⚠️  "sofagent-audit verify" 已弃用，将在 v1.3.0 移除，请尽快迁移到 "sofagent-core verify"。');
     console.error('   请直接运行：sofagent-core verify');
@@ -671,7 +672,7 @@ async function main(): Promise<void> {
   }
 
   // ontology 子命令（v1.0.9 新增，v1.0.8 改用 @sofagent/ontology）
-  // P2-9: audit 已声明 @sofagent/ontology 依赖——改静态 import 获类型安全（此前动态 import 运行时才报错）
+  // audit 已声明 @sofagent/ontology 依赖——改静态 import 获类型安全（此前动态 import 运行时才报错）
   if (args.ontologyCommand === 'view') {
     try {
       const output = generateOntologyView(process.cwd());
@@ -689,7 +690,7 @@ async function main(): Promise<void> {
     const { runConflictCheckCli, parseConflictCheckArgs } = await import('./cli/conflict-check');
     const cliArgs = parseConflictCheckArgs(rawArgs);
     try {
-      // P1-3: checkConflict 已下沉到 core——静态 import，类型安全（此前 any + 变量名动态 import）
+      // checkConflict 已下沉到 core——静态 import，类型安全（此前 any + 变量名动态 import）
       const exitCode = runConflictCheckCli(cliArgs, checkConflict);
       exit(exitCode as 0 | 1 | 2);
     } catch (err) {
@@ -704,7 +705,7 @@ async function main(): Promise<void> {
     const { runFederationDistillCli, parseFederationDistillArgs } = await import('./cli/federation-distill');
     const cliArgs = parseFederationDistillArgs(rawArgs);
     try {
-      // P1-3: mergeFederationResults 已下沉到 core——静态 import，类型安全
+      // mergeFederationResults 已下沉到 core——静态 import，类型安全
       const exitCode = runFederationDistillCli(cliArgs, mergeFederationResults);
       exit(exitCode as 0 | 1 | 2);
     } catch (err) {
@@ -843,7 +844,7 @@ async function main(): Promise<void> {
     exit(0);
   }
 
-  // F-22：超大 diff（>5MB）被跳过内容审计的文件 → 注入 WARN 级发现，消除审计盲区。
+  // 超大 diff（>5MB）被跳过内容审计的文件 → 注入 WARN 级发现，消除审计盲区。
   // 作为一条合成 WARN 规则追加到审计结果，使其在 text/table 报告与 --json 输出中
   // 均可见。WARN 不拦截提交（不改 exit code 判定），但明确告知「这些文件未被审计」。
   const oversizedPaths = diffFiles.filter((f) => f.oversized).map((f) => f.path);
@@ -898,19 +899,19 @@ async function main(): Promise<void> {
   }
 
   // 4.3 配置完整性检查：检测 config.yml 中是否关闭了规则（防篡改）
-  // v1.2.8 (F21): 阈值从 >3 改为 >0——关闭任意条规则即输出显眼告警（不阻断，保持灵活性但确保可追溯）
+  // v1.2.8: 阈值从 >3 改为 >0——关闭任意条规则即输出显眼告警（不阻断，保持灵活性但确保可追溯）
   let configDisabledTooMany = false;
   if (config?.rules) {
     // v1.2.5: 追加 a20-a23（A20-A23 新增安全红线规则）
     const ALL_RULE_KEYS = ['a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a14','a15','a16','a17','a18','a19','a20','a21','a22','a23','e1','e2','e4'];
-    // P1-6: 基线规则集合与 core 共享常量统一（单一事实源）
+    // 基线规则集合与 core 共享常量统一（单一事实源）
     const BASELINE_KEYS = new Set<string>(BASELINE_RULE_KEYS);
     const disabledEntries = Object.entries(config.rules)
       .filter(([key, val]) => val === false && !BASELINE_KEYS.has(key) && ALL_RULE_KEYS.includes(key));
     const disabledCount = disabledEntries.length;
     const totalActive = ALL_RULE_KEYS.length;
 
-    // v1.2.8 (F21): 关闭任意条规则即告警（不再等 >3），并记录到 history.jsonl 留下痕迹
+    // v1.2.8: 关闭任意条规则即告警（不再等 >3），并记录到 history.jsonl 留下痕迹
     if (disabledCount > 0) {
       const disabledList = disabledEntries.map(([key]) => key).join(', ');
       console.warn(`\u26a0\ufe0f  当前有 ${disabledCount} 条规则被关闭（${disabledList}）。如果这不是你主动配置的，config.yml 可能已被篡改。`);
@@ -937,7 +938,7 @@ async function main(): Promise<void> {
     }
 
     if (disabledCount > 3) {
-      // P1-5: 非基线规则全关 → 阻断（exit 1 WARN），不再「全绿 PASS」
+      // 非基线规则全关 → 阻断（exit 1 WARN），不再「全绿 PASS」
       configDisabledTooMany = true;
     }
   }
@@ -955,7 +956,7 @@ async function main(): Promise<void> {
   // 5. 运行规则
   const results = runRules(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config);
 
-  // P1-5: 非基线规则全关（disabledCount>3）→ 阻断（exit 1 WARN）
+  // 非基线规则全关（disabledCount>3）→ 阻断（exit 1 WARN）
   if (configDisabledTooMany && results.exitCode === 0) {
     results.exitCode = 1;
   }
@@ -965,7 +966,7 @@ async function main(): Promise<void> {
     results.permissionDenials = permissionDenials;
   }
 
-  // F-22：超大 diff 审计盲区 → 注入 WARN 级发现（报告中可见，不拦截提交）。
+  // 超大 diff 审计盲区 → 注入 WARN 级发现（报告中可见，不拦截提交）。
   // text/table 人类可读格式：打印醒目 WARN 行；--json 输出绝不掺入（保持机器可读纯净）。
   if (oversizedPaths.length > 0 && !args.json) {
     console.log('');
@@ -975,7 +976,7 @@ async function main(): Promise<void> {
     }
     console.log('       可能为二进制/lock/minified 文件，请人工确认这些文件无密钥泄漏/越界改动。');
   }
-  // P1-1: 超大 diff 审计盲区 → exit=1（WARN 而非 0），「13 项检查 PASS」不再误导
+  // 超大 diff 审计盲区 → exit=1（WARN 而非 0），「13 项检查 PASS」不再误导
   if (oversizedPaths.length > 0 && results.exitCode === 0) {
     results.exitCode = 1;
   }
@@ -990,7 +991,7 @@ async function main(): Promise<void> {
   const webhookUrlFinal = args.webhookUrl || config.webhook?.url;
   if (webhookPlatform && webhookUrlFinal) {
     try {
-      // v1.2.8 P1-5: 编译自定义脱敏正则
+      // v1.2.8 编译自定义脱敏正则
       const customSanitizePatterns = config.sanitizePatterns
         ? config.sanitizePatterns
             .map((p) => {
@@ -1019,7 +1020,7 @@ async function main(): Promise<void> {
   let parentSha: string | undefined;
   let isPreCommitPhase = false;
   try {
-    // P1-15: 获取当前 HEAD SHA
+    // 获取当前 HEAD SHA
     // 注：isInGitRepo() 已在入口处确认处于 git 仓库，因此 rev-parse HEAD 失败
     // 只可能是「unborn HEAD」（首次提交，尚无任何 commit）——而非"非 git 环境"。
     // 此时用空树 SHA 作为 diff 基准（git hash-object -t tree /dev/null），
@@ -1036,7 +1037,7 @@ async function main(): Promise<void> {
       console.warn('[sofagent] 提示：首次提交（unborn HEAD），对比空树进行审计');
     }
 
-    // v1.2.9 P0-2: commit-msg hook 场景下（--commit-msg 由 hook 传入），审计运行在
+    // v1.2.9 commit-msg hook 场景下（--commit-msg 由 hook 传入），审计运行在
     // commit 对象生成之前——此刻 git rev-parse HEAD 得到的是新提交的**父提交** SHA，
     // 而非正在创建的提交。若直接记入 commitSha，追溯链整体错位一个 commit，
     // --verify-commit 按 SHA 匹配必然张冠李戴（100% 误报）。
@@ -1074,7 +1075,7 @@ async function main(): Promise<void> {
       diffFileCount: diffFiles.length,
       commitMsg: commitMsg || undefined,
       commitSha,
-      // v1.2.9 P0-2: pre-commit 阶段记录父提交 SHA（= 审计时 HEAD），
+      // v1.2.9 pre-commit 阶段记录父提交 SHA（= 审计时 HEAD），
       // --verify-commit / post-commit 对账按此 fallback 匹配。旧记录无此字段。
       parentSha,
       commitPhase: isPreCommitPhase ? 'pre-commit' : undefined,
@@ -1116,7 +1117,7 @@ async function main(): Promise<void> {
   // 审计通过（PASS）后自动创建 shadow repo 快照，供 --timeline/--revert 使用
   // 设计原则：只有 PASS 才快照（WARN/FAIL 不快照，符合「审计通过后自动快照」契约）
   // v1.2.0：snapshot helpers 已从 @sofagent/daemon 迁移到 @sofagent/core，循环依赖已消除
-  // P1-14: 拦截后也存 snapshot——拦截记录比通过记录更有审计价值（--timeline 应可见被拦截的变更）
+  // 拦截后也存 snapshot——拦截记录比通过记录更有审计价值（--timeline 应可见被拦截的变更）
   if (isInGitRepo()) {
     try {
       if (!hasShadowRepo(process.cwd())) {
@@ -1202,7 +1203,7 @@ function getHistoryStats(): { total: number; thisMonth: number } | null {
 export function printResults(results: AuditResult, diffFiles: DiffFile[], json: boolean, ci: boolean, silent?: boolean): void {
   // JSON 输出模式——输出结构化 JSON，适合 CI 系统解析
   if (json) {
-    // P1-13: JSON 顶层补产品签名——此前只有 exitCode+rules，CI/CD 无法区分 sofagent 产出
+    // JSON 顶层补产品签名——此前只有 exitCode+rules，CI/CD 无法区分 sofagent 产出
     console.log(JSON.stringify({
       engine: 'sofagent-audit',
       version: VERSION,
@@ -1217,7 +1218,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
 
   // 静默 / CI 模式——只抑制输出，不改 exit code 判定
   if (ci || silent) {
-    // F-05：产品签名（text 人类可读输出头部；--json 已在上方提前 return，绝不加签名）
+    // 产品签名（text 人类可读输出头部；--json 已在上方提前 return，绝不加签名）
     console.log(productSignature(results.exitCode, results.rules.length));
     // ★ v1.2.0: 无条件向 stdout 输出一行结论（session 可见性核心）
     const c = results.exitCode;
@@ -1237,7 +1238,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
 
     const problems = results.rules.filter((r) => r.status !== 'PASS' && r.status !== 'SKIPPED');
     if (problems.length === 0) {
-      // v1.2.8: P1-23 — PASS 时即使 --ci 也输出极简签名到 stderr（防遗忘装了 sofagent）
+      // v1.2.8: — PASS 时即使 --ci 也输出极简签名到 stderr（防遗忘装了 sofagent）
       const totalRules = results.rules.length;
       process.stderr.write(`✅ [sofagent] 审计通过 · ${totalRules} 条规则\n`);
       return;
@@ -1274,7 +1275,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   const issueWord = failCount > 0 ? `${failCount} 违规` : warnCount > 0 ? `${warnCount} 警告` : '0 违规';
 
   console.log('');
-  // F-05：产品签名行（人类可读输出头部，FAIL 拦截时醒目，让用户知道是 sofagent 拦的）
+  // 产品签名行（人类可读输出头部，FAIL 拦截时醒目，让用户知道是 sofagent 拦的）
   console.log('  ' + productSignature(exitCode, totalRules));
   console.log(bannerTop());
   console.log(bannerLine(`sofagent-audit · FDE Agent · v${VERSION}`));
@@ -1322,7 +1323,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
     console.log('  扩展规则   未启用（E1 E2 E3 E4，config 中开启）');
   }
 
-  // 历史拦截统计（P2-7: loadHistory(500) 是"最近 500 条"截断语义，不是全量统计——
+  // 历史拦截统计(loadHistory(500) 是"最近 500 条"截断语义，不是全量统计——
   // 措辞明确"最近"，避免被误读为历史全量拦截数）
   const stats = getHistoryStats();
   if (stats) {
@@ -1345,7 +1346,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   }
 
   // 失败时输出"下一步"指引
-  // P1-7: 移除「git commit --no-verify」教程式绕过提示——审计引擎不应教用户关掉自己。
+  // 移除「git commit --no-verify」教程式绕过提示——审计引擎不应教用户关掉自己。
   // 如需临时跳过请咨询安全管理员并在 CI 侧补审。
   if (exitCode > 0) {
     console.log('');

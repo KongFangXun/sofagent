@@ -50,7 +50,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 在 age 加密（目标 v1.4.0）交付之前，建议：
 1. **设置 `~/.sofagent/data/` 目录权限为 700**：`chmod 700 ~/.sofagent/data/`（用户可见运行时数据；`~/.sofagent/internal/` 引擎内部状态同样 700）
 2. **将 `~/.sofagent/` 父目录放在加密文件系统上**（如 macOS APFS 加密卷）
-3. **定期轮换 `~/.sofagent/data/` 中的历史审计数据**（P2-31：合并原重复的权限提示段）
+3. **定期轮换 `~/.sofagent/data/` 中的历史审计数据**
 
 > 📌 config.yml 的权限加固（chmod 400）见 [LIMITATIONS.md](./docs/LIMITATIONS.md) "config.yml 可被篡改"段。
 
@@ -154,7 +154,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 
 ### Dream Cycle LLM 安全边界（v1.1.7）
 
-6 阶段流水线经 `LLMProvider` 接口抽象；v1.1.7 默认使用 MockLLM（确定性、无外部调用），RealLLM 在 v1.1.8 才接入。LLM 仅读取 `think.md`/知识库内容并产出结构化事实/概念，**不回写代码、不执行命令、不访问网络**。注入隔离见 `daemon/src/dream-cycle/` 的 system-role 声明与返回 schema 校验（P2-5）。
+6 阶段流水线经 `LLMProvider` 接口抽象；v1.1.7 默认使用 MockLLM（确定性、无外部调用），RealLLM 在 v1.1.8 才接入。LLM 仅读取 `think.md`/知识库内容并产出结构化事实/概念，**不回写代码、不执行命令、不访问网络**。注入隔离见 `daemon/src/dream-cycle/` 的 system-role 声明与返回 schema 校验。
 
 ### 知识摘要主动通知（v1.1.8）
 
@@ -162,7 +162,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 
 ### 知识库与工具网关安全边界
 
-知识库作为 Agent 可信调用载体，sofagent 的对应机制（F-10：去掉研报背书修辞，只留可验证的技术对应）：
+知识库作为 Agent 可信调用载体，sofagent 的对应机制：
 
 - **权限核验**：审计 A14 检测知识库越权访问——当前为**事后审计**而非运行时阻断（见 LIMITATIONS §五）；运行时阻断列入 v2.x（ROADMAP.md）。
 - **受控 Action + 全链路审计**：「模型提建议、审计引擎控执行」——Action 经权限·副作用·审计后才落地（见 DEVELOPMENT §八）。
@@ -289,7 +289,7 @@ chmod 600 ~/.sofagent-key
 ls -t ~/.sofagent/data/audit/history.jsonl.bak-* | tail -n +3 | xargs rm -f
 ```
 
-### 威胁模型：`SOFAGENT_DATA` 环境变量的信任边界（F-23 · 本版声明为已知风险）
+### 威胁模型：`SOFAGENT_DATA` 环境变量的信任边界（本版声明为已知风险）
 
 `getHistoryFilePath()`（`engine/core/src/audit-history.ts`）解析审计历史路径时优先级为：**显式 dataDir 参数 > `SOFAGENT_DATA` 环境变量 > 默认 `data/audit/history.jsonl`**。写入侧（`appendHistory`）与校验侧（`checkHistoryChainDetailed`）均走此函数。
 
@@ -405,7 +405,7 @@ install.sh 拆分为以下模块，便于逐模块审查：
 - 每次 `npm install` 后运行 `npm audit`
 - 内网环境建议预装 @langchain/langgraph 并验证安装通过后再部署
 
-**automerge@1.0.1-preview.7 风险声明（v1.1.9 F-04）**：
+**automerge@1.0.1-preview.7 风险声明（v1.1.9）**：
 
 `automerge@1.0.1-preview.7` 为 preview 版（非稳定版），API 可能在后续版本变更。截至 v1.2.7 复核，npm 仍无 stable（latest=2.0.0-alpha.3），uuid 弃用警告为已知观感问题；federation 功能不使用时该依赖路径不触达。daemon 精确锁定版本号（`"automerge": "1.0.1-preview.7"`，非 `^` 前缀）避免意外升级。如 automerge 发布 stable 版本或 breaking change，`engine/core/src/federation.ts` 的 `Automerge.change/clone/merge` 调用需重新验证。
 

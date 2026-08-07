@@ -54,7 +54,7 @@
 - **[Deep Agents](https://github.com/langchain-ai/deepagentsjs)** · LangChain — LangGraph 状态底座 + Harness 范式 + HITL，验证 v1.x 技术选型（v1.2.0 已迁移至 LangGraph createReactAgent）
 - **[Claude Code Agent Loop](https://docs.anthropic.com/en/docs/claude-code/how-claude-code-works)** · Anthropic — 三阶段循环 + 三档工具权限，与 sofagent HITL 🟢🟡🔴 同构
 - **[Palantir AIP Ontology](https://www.palantir.com/platforms/aip/)** · Palantir — 数据+逻辑+动作+安全四合一的数字孪生层，Harness 定义与 sofagent 一致
-- **The Path to Recursively Self-Improving Harnesses** · 翁荔（Lilian Weng）— 六层 Harness 优化框架（P2-18：原 lilianweng.github.io/posts/2026-07-04-harness-rsl/ 链接已 404，保留文字引用不链死链）
+- **The Path to Recursively Self-Improving Harnesses** · 翁荔（Lilian Weng）— 六层 Harness 优化框架（原 lilianweng.github.io/posts/2026-07-04-harness-rsl/ 链接已 404，保留文字引用不链死链）
 - **[The Anatomy of an Agent Harness](https://x.com/i/article/2040732084843782144)** · Akshay Pachaar — Harness 即 LLM 的操作系统，12 个核心组件
 - **[Three Key Loops](https://www.deeplearning.ai/the-batch/three-key-loops-for-building-great-software)** · Andrew Ng — 分钟→小时→天-周三层嵌套循环；开发者留在循环的理由是上下文优势而非品味
 - **[OpenWorker](https://github.com/andrewyng/openworker)** · Andrew Ng 团队 — 开源桌面 AI 代理（7.3k stars, MIT）。四级权限模型（plan/interactive/auto/custom）和无人值守收件箱设计，为 FDE sustain 模式的 daemon 审批机制提供参考。"Ask for an outcome, not just an answer"的产品叙事与 sofagent「交付文档而非建议」同源

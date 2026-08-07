@@ -46,7 +46,7 @@ bash install.sh && bash engine/scripts/verify.sh
 
 > ⚠️ **本地测试用 `node dist/index.js` 而非全局二进制**——全局 `sofagent-audit` 可能是旧版本（npm publish 后才更新）。改代码后先 `npm run build`，再用 `node engine/audit/dist/index.js --diff HEAD~1..HEAD` 测试。
 
-### 仓库目录结构（P1-38 新增——新贡献者先看文件放哪）
+### 仓库目录结构（新贡献者先看文件放哪）
 
 | 目录 | 内容 |
 |------|------|
@@ -117,6 +117,14 @@ cd sofagent && bash install.sh && bash engine/scripts/verify.sh
 ```
 
 发版：`docs/changelog/vX.Y.md` 写日志 → `CHANGELOG.md` 加索引 → `tools/bump-version.sh` 升级版本号 → `cp -r sofagent/ ~/.workbuddy/skills/sofagent/` → `git tag vX.Y && git push` → `gh release create vX.Y`
+
+> 📋 **changelog 写作规范（v1.2.9 起）**：changelog 是对外公开文档，**不写人名、内部私有路径、内部工单/审查代号**。
+> - ❌ 不写开发成员名字或角色代号（如"某某拍板""供某某实现"）
+> - ❌ 不写本机私有路径（如 `~/Desktop/xxx-prompts/`），开发 Prompt 仅作内部参考不分发
+> - ❌ 不写内部工单 / 审查代号（如 `F-XX` / `P0-XX` / `FLAG-X`），改用描述性文字（"密钥泄漏修复""链校验重构"）
+> - ✅ 版本号、功能描述、行为变更、兼容性说明照常写
+>
+> 已发布版本（≤ v1.2.8）的 changelog 按"已发布不改"原则保留原样。
 
 ---
 

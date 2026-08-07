@@ -1069,7 +1069,7 @@ class McpServer {
         ? await (fed.loadOpenClawChannel as () => Promise<unknown>)()
         : null;
       if (!channel) return;
-      // P0-9: peer 覆盖本地时告警（trust 排序已保证默认不覆盖；走到这里是显式配置或本地低信任）
+      // peer 覆盖本地时告警（trust 排序已保证默认不覆盖；走到这里是显式配置或本地低信任）
       const overrides: string[] = [];
       const merged = await (fed.withOfflineFallback as (
         q: { text: string }, ps: unknown[], local: () => unknown[], ch: unknown,
@@ -1082,7 +1082,7 @@ class McpServer {
       );
       const remote = merged.filter((m) => m.source !== 'local');
       if (remote.length > 0) {
-        // P0-9 生产接线：联邦知识进入 Agent 上下文前必须过 8 层防护——
+        // 生产接线：联邦知识进入 Agent 上下文前必须过 8 层防护——
         // 层 5 排序（sortByTrust）+ 层 4 脱敏（redactForPrompt）+ 层 1 包裹（wrapUntrusted）。
         // 远端条目 trust 已由 query-router 强制为本地白名单等级（默认 user），
         // prepareForPrompt 会为 user/web 内容加 <untrusted source="federation"> 包裹。

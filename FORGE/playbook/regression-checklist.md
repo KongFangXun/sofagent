@@ -878,7 +878,7 @@ grep -A10 'convertAuditResult' engine/eval/src/cli.ts | grep -E 'PASS|WARN|FAIL|
 > **路径迁移感知**：v1.2.1 起 `.sofagent/` 迁移到 `~/.sofagent/`，数据子目录从 `.sofagent/audit` 变为 `~/.sofagent/data/audit`。检查路径权限时认准 `~/.sofagent/`。
 
 
-#### 59. resolve*Dir 调用方传参——禁止传 process.cwd() 给 overrideHome 参数（v1.2.2 F-39 新增）
+#### 59. resolve*Dir 调用方传参——禁止传 process.cwd() 给 overrideHome 参数（v1.2.2 新增）
 
 ```bash
 # 搜索所有传 process.cwd() 给 resolve*Dir 或 writeSessionReport 的地方（排除测试）
@@ -989,7 +989,7 @@ grep -q "效率铁律" SKILL/agents/engineer/SKILL.md && echo "✓ engineer" || 
 
 #### 68. 中英文 README 副标题描述同步——改中文版必须同步英文版（v1.2.5 新盲区）
 
-> v1.2.5 教训：fresh-eyes-loop R01 修了英文版版本号（P0-2），R02 修了中文版副标题描述（P0-3），但没人回头看英文版的描述层是否也需同步。结果英文版版本号对了但描述还是上版本的"Knowledge Evolution"。**根因：同一行的两层问题（版本号 + 描述）分两轮独立发现，每轮只修自己发现的那层。**
+> v1.2.5 教训：fresh-eyes-loop R01 修了英文版版本号，R02 修了中文版副标题描述，但没人回头看英文版的描述层是否也需同步。结果英文版版本号对了但描述还是上版本的"Knowledge Evolution"。**根因：同一行的两层问题（版本号 + 描述）分两轮独立发现，每轮只修自己发现的那层。**
 
 ```bash
 # 验证中英文副标题关键词重合（至少包含相同的版本核心交付关键词）

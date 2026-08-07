@@ -11,7 +11,7 @@ export interface DiffFile {
   oldPath?: string;
   lines: string[];
   /**
-   * F-22：该文件的 diff 超过 maxBuffer（5MB）被跳过审计的标记。
+   * 该文件的 diff 超过 maxBuffer（5MB）被跳过审计的标记。
    * 置位时 lines 为空数组，调用方（audit/index.ts）据此注入 WARN 级发现，
    * 避免「超大 diff 静默跳过」造成的审计盲区。
    */
@@ -40,7 +40,7 @@ export function isInGitRepo(cwd?: string): boolean {
     });
     return true;
   } catch {
-    // P1-12: 吞掉 stack trace（非 git 目录是正常场景，不该打原生 Node 堆栈）；
+    // 吞掉 stack trace（非 git 目录是正常场景，不该打原生 Node 堆栈）；
     // 调用方（parseDiff/parseStagedDiff）会给出友好的"不在 git 仓库"提示
     return false;
   }
@@ -173,7 +173,7 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
           });
           diffLines = diffContent.split('\n');
         } catch (err) {
-          // F-22：maxBuffer（5MB）溢出 = 超大 diff（二进制误入 / lock / minified bundle）。
+          // maxBuffer（5MB）溢出 = 超大 diff（二进制误入 / lock / minified bundle）。
           // 不再静默跳过——置 oversized 标记，调用方注入 WARN 级发现，让审计盲区可见。
           const isBufOverflow = (err as NodeJS.ErrnoException)?.code === 'ENOBUFS'
             || /maxBuffer/i.test((err as Error)?.message ?? '');
@@ -268,7 +268,7 @@ export function parseStagedDiff(): DiffFile[] {
           });
           diffLines = diffContent.split('\n');
         } catch (err) {
-          // F-22：同 parseDiff——maxBuffer 溢出置 oversized 标记，注入 WARN，消除审计盲区
+          // 同 parseDiff——maxBuffer 溢出置 oversized 标记，注入 WARN，消除审计盲区
           const isBufOverflow = (err as NodeJS.ErrnoException)?.code === 'ENOBUFS'
             || /maxBuffer/i.test((err as Error)?.message ?? '');
           if (isBufOverflow) {

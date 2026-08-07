@@ -23,7 +23,7 @@ export interface WebhookPayload {
 }
 
 /**
- * P2-4: SSRF 防护——webhook URL 指向本机/内网时拒绝推送。
+ * SSRF 防护——webhook URL 指向本机/内网时拒绝推送。
  * 审计数据（可能含文件路径/代码片段）不应被投递到内网服务：
  * 恶意 Agent 若可写 config.yml 的 webhook.url，就能把审计数据 POST 到
  * 内网管理端口（如 http://127.0.0.1:8080/admin）。
@@ -76,7 +76,7 @@ export function isPrivateWebhookUrl(rawUrl: string): boolean {
  * 复用 @sofagent/core 的 REDACTION_PATTERNS（与审计引擎内部脱敏口径一致）。
  */
 /**
- * v1.2.8 P1-5: 支持自定义脱敏正则（config.yml sanitizePatterns）
+ * v1.2.8 支持自定义脱敏正则（config.yml sanitizePatterns）
  */
 function redactDetail(detail: string, customPatterns?: { pattern: RegExp; replacement: string }[]): string {
   let redacted = detail;
@@ -125,7 +125,7 @@ function getTracingContext(): { repo: string; sha: string; machine: string } {
 function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass: boolean, customPatterns?: { pattern: RegExp; replacement: string }[]): string {
   const version = VERSION;
   const tracing = getTracingContext();
-  // v1.2.8: P1-7 — 增加 actor（OS 用户 + git 提交者）
+  // v1.2.8: — 增加 actor（OS 用户 + git 提交者）
   const osUser = require('os').userInfo().username;
   let gitAuthor = 'N/A';
   try {
@@ -186,7 +186,7 @@ export async function pushAuditResult(payload: WebhookPayload, customPatterns?: 
   // 默认（未设置该变量）行为不变，生产环境 SSRF 防护不受影响。
   const allowLocalhost = process.env.SOFAGENT_WEBHOOK_ALLOW_LOCALHOST === '1';
 
-  // P2-4: SSRF 防护——内网/本机 URL 直接拒绝，不发起请求（测试豁免模式下跳过）
+  // SSRF 防护——内网/本机 URL 直接拒绝，不发起请求（测试豁免模式下跳过）
   if (!allowLocalhost && isPrivateWebhookUrl(payload.url)) {
     console.warn(`[sofagent] webhook URL 指向本机/内网地址，已拒绝推送（SSRF 防护）: ${payload.url}`);
     return false;

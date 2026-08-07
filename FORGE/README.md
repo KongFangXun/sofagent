@@ -4,7 +4,7 @@
 >
 > 这是给 sofagent 开发者的工具包——如果你是 sofagent 用户，不需要看这里。企业用户的入口是 [FDE Agent](../SKILL/SKILL.md)。
 >
-> ⚠️ **非独立产品（P2-27 声明）**：FORGE 不独立发布、不对外提供安装包。它深度依赖 sofagent 主包（audit 引擎 + 发布闸门 + fresh-eyes 审查）与特定模型配置（fresh-eyes A/B 双盲审查需 LLM），单独复制 FORGE/ 目录无法运行。想复用其思想请参考 [docs/THANKS.md](../docs/THANKS.md) 的设计来源，想跑起来请先完整安装 sofagent。
+> ⚠️ **非独立产品**：FORGE 不独立发布、不对外提供安装包。它深度依赖 sofagent 主包（audit 引擎 + 发布闸门 + fresh-eyes 审查）与特定模型配置（fresh-eyes A/B 双盲审查需 LLM），单独复制 FORGE/ 目录无法运行。想复用其思想请参考 [docs/THANKS.md](../docs/THANKS.md) 的设计来源，想跑起来请先完整安装 sofagent。
 
 ## 双层循环架构
 

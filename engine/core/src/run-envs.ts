@@ -74,7 +74,7 @@ export function detectRuntimeEnv(): string {
 export function collectEnvVars(): Record<string, string> {
   const vars: Record<string, string> = {};
   const keys = ['PATH', 'HOME', 'SHELL', 'USER', 'LOGNAME', 'PWD', 'LANG', 'LC_ALL',
-    // P2-36: 主名 SOFAGENT_*；SOFA_* 别名保留收集（旧环境仍有设置时可见）
+    // 主名 SOFAGENT_*；SOFA_* 别名保留收集（旧环境仍有设置时可见）
     'SOFAGENT_DATA', 'SOFAGENT_AUDIT_ENABLED', 'SOFAGENT_SANITIZE', 'SOFAGENT_RETENTION_DAYS', 'SOFAGENT_RETENTION_MAX',
     'SOFA_AUDIT_ENABLED', 'SOFA_SANITIZE', 'SOFA_RETENTION_DAYS', 'SOFA_RETENTION_MAX',
     'OPENCLAW_STATE_DIR', 'WORKBUDDY_DIR',

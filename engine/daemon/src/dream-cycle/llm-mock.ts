@@ -83,11 +83,11 @@ export class MockLLM implements LLMProvider {
  * RealLLM——真实 LLM Provider 占位（v1.1.8 接入）。
  *
  * 本版只写类型签名，构造器抛用户可读错，防止误用。
- * [P2-5] 第一层隔离：SYSTEM_ROLE 为 v1.1.8 真实接入时必须注入 system prompt 的
+ * [] 第一层隔离：SYSTEM_ROLE 为 v1.1.8 真实接入时必须注入 system prompt 的
  * 隔离声明——声明「只提取不执行」，从源头降低 prompt injection 风险。
  */
 export class RealLLM implements LLMProvider {
-  /** [P2-5] 系统角色隔离声明（RealLLM 调用时作为 system message 注入） */
+  /** [] 系统角色隔离声明（RealLLM 调用时作为 system message 注入） */
   static readonly SYSTEM_ROLE = DREAM_CYCLE_SYSTEM_ROLE;
 
   constructor() {

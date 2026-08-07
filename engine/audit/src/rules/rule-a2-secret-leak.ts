@@ -2,7 +2,7 @@
 // A2 不泄密钥（安全层 · 业务底线）
 // 检测 diff 新增行内容是否含密钥字符串 → 命中任意一条 → FAIL
 // v1.2.0：输出聚合——同文件同模式多次命中时限量显示，避免超大 diff 输出爆炸
-// v1.2.5 P0-4：补编码绕过检测——新增行尝试 base64/hex 解码后再跑正则，
+// v1.2.5 补编码绕过检测——新增行尝试 base64/hex 解码后再跑正则，
 //   命中则报警（此前 `printf 'AKIA...' | base64 > encoded.txt` 即可绕过）。
 //   另补 .gitattributes -diff 绕过检测——把文件标记为 -diff 会让 git diff
 //   不输出内容行，A2 扫不到任何新增行（静默全绿），检测到该模式时 WARN。
@@ -15,9 +15,9 @@ import { SECRET_PATTERNS } from '@sofagent/core';
 /**
  * 密钥泄漏检测正则模式
  *
- * P1-27: 单一事实源 = @sofagent/core shared/secret-patterns.ts（与 ToolGate
+ * 单一事实源 = @sofagent/core shared/secret-patterns.ts（与 ToolGate
  *   tool-secret-leak 共用同一套正则，杜绝 32-47 位密钥被运行时防线放行的漂移）。
- * P2-25: 确认——A2 本身无独立长度门槛，所有正则均来自 SECRET_PATTERNS。
+ * 确认——A2 本身无独立长度门槛，所有正则均来自 SECRET_PATTERNS。
  *   通用 sk- key 模式为 {32,}（覆盖 DeepSeek 等短 key），厂商专属模式
  *   （sk-ant/sk-proj/sk-svcacct/sk-admin）为 {40,}（厂商文档最小长度）。
  *
@@ -31,7 +31,7 @@ import { SECRET_PATTERNS } from '@sofagent/core';
 const MAX_DISPLAY_PER_GROUP = 5;
 
 /**
- * P0-4: 对一条新增行生成「明文候选」——原行 + 可能的 base64/hex 解码结果。
+ * 对一条新增行生成「明文候选」——原行 + 可能的 base64/hex 解码结果。
  * 仅当行内容形态符合编码特征（且能解码出可打印文本）才尝试，避免误伤普通文本。
  */
 function candidatePlaintexts(content: string): string[] {
@@ -67,8 +67,8 @@ function candidatePlaintexts(content: string): string[] {
 }
 
 /**
- * P0-4: 检测 .gitattributes -diff 隐藏（函数名刻意避免英文绕过类字样——
- * A9 启发式会把英文绕过类字样误判为 prompt 注入模式，P1-29 顺带清理）。
+ * 检测 .gitattributes -diff 隐藏（函数名刻意避免英文绕过类字样——
+ * A9 启发式会把英文绕过类字样误判为 prompt 注入模式，顺带清理）。
  * 当 diff 中出现 `.gitattributes` 的新增行含 `-diff` 属性时，被标记文件的内容
  * 不会出现在 git diff 输出中 → A2 扫不到其新增行（静默全绿）。返回命中的文件名列表。
  */
@@ -109,9 +109,9 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
       // 只检查新增行（以 + 开头且不是 +++）
       if (line.startsWith('+') && !line.startsWith('+++')) {
         const content = line.substring(1);
-        // v1.2.8: P1-1 — zero-width 字符归一化（防止 U+200B/U+200C/U+200D/U+FEFF 拆分密钥绕过）
+        // v1.2.8: — zero-width 字符归一化（防止 U+200B/U+200C/U+200D/U+FEFF 拆分密钥绕过）
         const normalized = content.replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
-        // P0-4: 原行 + base64/hex 解码候选（v1.2.8: 用归一化后的内容防 zero-width 绕过）
+        // 原行 + base64/hex 解码候选（v1.2.8: 用归一化后的内容防 zero-width 绕过）
         for (const candidate of candidatePlaintexts(normalized)) {
           for (const { pattern, label } of SECRET_PATTERNS) {
             if (pattern.test(candidate)) {
@@ -144,7 +144,7 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
     );
   }
 
-  // P0-4: .gitattributes -diff 绕过检测（WARN 级——该模式可能让密钥对 git diff 隐身）
+  // .gitattributes -diff 绕过检测（WARN 级——该模式可能让密钥对 git diff 隐身）
   const attrHiddenTargets = detectGitattributesDiffHidden(ctx);
   if (attrHiddenTargets.length > 0) {
     if (rule.status === 'PASS') rule.status = 'WARN';

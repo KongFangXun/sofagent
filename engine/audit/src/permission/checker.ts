@@ -1,7 +1,7 @@
 // ============================================================
 // permission/checker.ts · 权限检查逻辑
 // v1.2.0 新增
-// v1.2.5 P0-10: RegExp 构造加 try/catch——非法正则（如 `finance/(unclosed`）
+// v1.2.5 RegExp 构造加 try/catch——非法正则（如 `finance/(unclosed`）
 //   不再让审计进程崩溃（此前 new RegExp(用户串) 无保护 = 权限配置 DoS：
 //   攻击者写一个语法错误的正则就能让整个审计停摆且 commit 照过）。
 //   构造失败时 WARN 并跳过该条规则，不崩溃进程。
@@ -30,7 +30,7 @@ export function checkPermission(
   operation: string,
 ): { allowed: boolean; matchedRule?: string; reason?: string } {
   for (const rule of perm.merged) {
-    // 简单 glob 匹配（支持 * 通配符）——P0-10: 构造失败跳过该条，不崩溃进程
+    // 简单 glob 匹配（支持 * 通配符）——构造失败跳过该条，不崩溃进程
     const patternRegex = compilePermissionPattern(rule.pattern);
     if (patternRegex === null) continue;
     if (patternRegex.test(file) || patternRegex.test(operation)) {

@@ -156,7 +156,7 @@ export function checkRuleA3(ctx: AuditContext): RuleCheck {
   // 提取任务描述中的文件名、路径模式、关键词
   const taskFileNames = extractFileNamesFromTask(searchText);
   const taskPathPatterns = extractPathPatternsFromTask(searchText);
-  // P1-13: 停用词表——常见英文词不作为关键词
+  // 停用词表——常见英文词不作为关键词
   const STOP_WORDS = new Set([
     'the', 'for', 'and', 'are', 'but', 'not', 'you', 'all', 'any', 'can',
     'had', 'her', 'was', 'one', 'our', 'out', 'has', 'have', 'from',
@@ -170,7 +170,7 @@ export function checkRuleA3(ctx: AuditContext): RuleCheck {
     .split(/[\s,，。、；;:：()（）+]+/)
     .filter((w) => w.length >= 3 && !STOP_WORDS.has(w));
 
-  // P1-29: 短中文 commit（<10 字符且含中文）不触发盲改告警——
+  // 短中文 commit（<10 字符且含中文）不触发盲改告警——
   // 中文短句通常不含文件名/路径（如「修复bug」「改配置」），A3 关键词匹配
   // 必然失败 → 对任意文件变更 100% 误报（本项目历史 13.9% commit 被标 [底线]）。
   const cjkCount = (searchText.match(/[\u4e00-\u9fff]/g) ?? []).length;

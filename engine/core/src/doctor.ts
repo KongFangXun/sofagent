@@ -29,7 +29,7 @@ function warn(msg: string) { console.log(`  ⚠️  ${msg}`); _warnCount++; }
 function fail(msg: string) { console.log(`  ❌ ${msg}`); _failCount++; }
 function info(msg: string) { console.log(`  ℹ️  ${msg}`); }
 
-// v1.2.8: P1-18 — 计数器，用于结尾诚实汇总
+// v1.2.8: — 计数器，用于结尾诚实汇总
 let _warnCount = 0;
 let _failCount = 0;
 
@@ -68,7 +68,7 @@ export interface DoctorReport {
  * @returns DoctorReport
  */
 export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
-  // v1.2.8: P1-18 — 每次调用重置计数器
+  // v1.2.8: — 每次调用重置计数器
   _warnCount = 0;
   _failCount = 0;
 
@@ -85,13 +85,13 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     else ok(`Node.js ${env.node.version}`);
     if (!env.git.available) { fail('git 不可用'); repairHint('安装 git（macOS: xcode-select --install / Linux: sudo apt install git / Windows: https://git-scm.com/）'); }
     else ok('git 可用');
-    // P2-23: 移除凑数检查项——npm 可用/磁盘空间与 sofagent 健康无因果（npm 装过即可，
+    // 移除凑数检查项——npm 可用/磁盘空间与 sofagent 健康无因果（npm 装过即可，
     // 磁盘 342GB ✅ 只是噪音）。npm/disk 仍在 checkEnv() 内部计算，只是不再作为健康信号展示。
     if (!env.openclaw.exists) { warn('~/.openclaw 不存在'); repairHint('运行 sofagent-audit --init 初始化（或安装 OpenClaw 平台）'); }
     if (!env.sofagent.exists) { warn('~/.sofagent 不存在（将自动创建）'); repairHint('运行 sofagent-audit --init 初始化'); }
   }
 
-  // v1.2.8 P1-9: 版本一致性检查（~/.sofagent/VERSION vs 当前引擎版本）
+  // v1.2.8 版本一致性检查（~/.sofagent/VERSION vs 当前引擎版本）
   console.log('\n── 版本一致性 ──');
   try {
     const homeVersionFile = join(process.env.SOFAGENT_HOME || join(process.env.HOME || '~', '.sofagent'), 'VERSION');
@@ -115,7 +115,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   console.log('\n── 配置检查 ──');
   const sofagentDir = join(projectDir, '.sofagent');
 
-  // v1.2.8 P0-4: SOFAGENT_CONFIG 环境变量检查（企业集中管控用）
+  // v1.2.8 SOFAGENT_CONFIG 环境变量检查（企业集中管控用）
   const envConfigPath = process.env.SOFAGENT_CONFIG;
   if (envConfigPath) {
     if (existsSync(envConfigPath)) {
@@ -250,7 +250,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   }
 
   // 5. 依赖检查
-  // P2-22: 依赖解析改为 require.resolve（从包自身位置解析 Node 模块解析算法），
+  // 依赖解析改为 require.resolve（从包自身位置解析 Node 模块解析算法），
   //   替代此前手拼路径的 existsSync——手拼路径在 monorepo hoist / pnpm / 不同安装
   //   布局下会误报 "js-yaml 未安装"。require.resolve 从 __dirname 出发，走 Node
   //   标准模块解析（向上逐层 node_modules），覆盖所有包管理器布局。
@@ -319,16 +319,16 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
 
   // 7. 审计日志完整性（HMAC 密钥强度 + 链完整性，v1.1.8 / v1.2.0）
   // 检查两项：① HMAC 密钥是否配置且足够强 ② history.jsonl 链完整性
-  //   FLAG-2 修复：区分「篡改（红）」与「历史不可复验（黄，key/环境漂移）」
+  //   修复：区分「篡改（红）」与「历史不可复验（黄，key/环境漂移）」
   console.log('\n── 审计日志完整性 ──');
   const keyStatus = validateHmacKey();
   if (!keyStatus.configured) {
-    // P0-3 (2026-08-02 复核修正)：--init-hmac 命令不存在，提示语指向 P1-24 的 --init 入口
+    // (2026-08-02 复核修正)：--init-hmac 命令不存在，提示语指向 的 --init 入口
     // （--init 已实现自动生成 ~/.sofagent-key）
     warn('无 HMAC 签名，完整性校验强度降低：审计日志仅 SHA-256 校验（Agent 可重算整链）。运行 sofagent-audit --init 可自动生成 HMAC 密钥（~/.sofagent-key）启用 HMAC-SHA256 强校验');
     repairHint('sofagent-audit --init');
   } else if (!keyStatus.strong) {
-    // FLAG-4：弱密钥明确告警，不静默稀释强校验
+    // 弱密钥明确告警，不静默稀释强校验
     warn(`HMAC 密钥强度不足（${keyStatus.reason}）——审计日志强校验被弱密钥稀释，建议重新生成 ≥16 字节强密钥（如：openssl rand -hex 32 > ~/.sofagent-key && chmod 600 ~/.sofagent-key）`);
     repairHint('openssl rand -hex 32 > ~/.sofagent-key && chmod 600 ~/.sofagent-key');
   } else {
@@ -351,7 +351,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
      2. 审计日志文件损坏（并发写入冲突）→ 检查 ~/.sofagent/data/audit/history.jsonl 是否有损坏行
      3. 审计日志确实被篡改 → 检查 ~/.sofagent/data/audit/history.jsonl 的修改时间`);
     } else if (result.status === 'insufficient') {
-      // ③ 历史不可信（黄，P0-3）：删除/单条不再报 ok——显式声明防篡改链不可验证
+      // ③ 历史不可信（黄，）：删除/单条不再报 ok——显式声明防篡改链不可验证
       auditLogOk = false;
       warn(`审计日志 hash chain 不可验证（${result.detail ?? '审计历史不足'}）——审计历史不存在或不足 2 条，无法构成可验证的防篡改链。如非全新安装，请核查审计历史是否被删除`);
     } else {
@@ -365,7 +365,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     auditLogOk = true;
   }
 
-  // 总结（v1.2.8: P1-18 — 有 WARN/FAIL 时不再说"全部通过"）
+  // 总结（v1.2.8: — 有 WARN/FAIL 时不再说"全部通过"）
   const allOk = env.allOk && configOk && dirsOk && hookOk && depsOk && distIntegrityOk && auditLogOk;
   console.log('\n── 健康检查结果 ──');
   if (_failCount > 0) {
@@ -428,7 +428,7 @@ export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: 
       }
     }
 
-    // 2. js-yaml 未安装 → npm install（P2-22: 改用 require.resolve 检测）
+    // 2. js-yaml 未安装 → npm install(改用 require.resolve 检测）
     let jsYamlInstalled = false;
     try {
       require.resolve('js-yaml');

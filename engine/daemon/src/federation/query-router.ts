@@ -84,7 +84,7 @@ export function decodeFrame<T>(key: Buffer, frame: Buffer): T {
 }
 
 // ────────────────────────────────────────────────────────────
-// P0-9: peer trust 本地白名单——trust 字段不能来自 peer 自报
+// peer trust 本地白名单——trust 字段不能来自 peer 自报
 // ────────────────────────────────────────────────────────────
 
 /** 本地维护的 peer trust 白名单（peerId → trust）。空 = 无白名单记录。 */
@@ -123,7 +123,7 @@ const SENSITIVE_CONTENT_PATTERNS: RegExp[] = [
  * 本地端二次校验单条结果：
  *   - restricted 条目 → 丢弃（peer 违约返回）
  *   - 标签可疑（标 public 但内容命中敏感模式）→ trust 降为 web + WARN（不丢弃）
- *   - P0-9: trust 一律采用本地白名单等级（localTrust ?? getLocalPeerTrust(peerId)），
+ *   - trust 一律采用本地白名单等级（localTrust ?? getLocalPeerTrust(peerId)），
  *     绝不采信 peer 自报的 trust 字段——peer 自称 'official' 不再能覆盖本地知识。
  *
  * @returns { result, warning } —— result 为 null 表示丢弃
@@ -137,7 +137,7 @@ export function validateRemoteResult(
   if (!isSensitivityVisible(item.sensitivity, 'internal')) {
     return { result: null, warning: null };
   }
-  // P0-9 防线三：trust 来自本地白名单（默认 user），peer 自报的 trust 被忽略
+  // 防线三：trust 来自本地白名单（默认 user），peer 自报的 trust 被忽略
   const effectiveTrust: Trust = localTrust ?? getLocalPeerTrust(peerId);
   // 防线二：篡改标签降权——标 public 但内容疑似敏感
   if (item.sensitivity === 'public') {
@@ -205,7 +205,7 @@ export async function broadcastQuery(
       const warnings: string[] = [];
       const validated: KnowledgeQueryResult[] = [];
       for (const item of raw) {
-        // P0-9: 本地白名单 trust 注入——peer 自报的 trust 一律被本地等级覆盖
+        // 本地白名单 trust 注入——peer 自报的 trust 一律被本地等级覆盖
         const { result, warning } = validateRemoteResult(peer.peerId, item, getLocalPeerTrust(peer.peerId));
         if (warning) {
           warnings.push(warning);

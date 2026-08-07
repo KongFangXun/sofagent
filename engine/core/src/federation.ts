@@ -1,6 +1,6 @@
 // ============================================================
-// federation.ts · 联邦/巡检共用实现（P1-3 下沉）
-// v1.2.5 P1-3: 从 @sofagent/daemon 下沉——audit 此前用变量名 + any 动态 import
+// federation.ts · 联邦/巡检共用实现(下沉）
+// v1.2.5 从 @sofagent/daemon 下沉——audit 此前用变量名 + any 动态 import
 //   daemon 的 checkConflict/mergeFederationResults，失去类型安全、运行时才报错。
 //   现在实现位于 core（零上层依赖底座），audit 静态 import 获得编译期类型。
 //   daemon 侧保留 re-export shim（federation/merge.ts、inspectors/*）保证兼容。
@@ -85,7 +85,7 @@ export function pickWinner(a: KnowledgeQueryResult, b: KnowledgeQueryResult): Kn
 /**
  * 合并本地 + 联邦结果：CRDT 收敛 + 去重 + trust/mtime 排序
  *
- * P0-9: peer 结果覆盖本地条目时触发 onPeerOverride 告警。
+ * peer 结果覆盖本地条目时触发 onPeerOverride 告警。
  * 「默认不覆盖」由 trust 排序天然保证：本地知识缺省 internal（trust=2），
  * 远端 peer 缺省 user（trust=1）——同 id 冲突时 pickWinner 按 trust 优先，
  * 本地 internal 恒胜远端 user。
@@ -113,7 +113,7 @@ export function mergeFederationResults(
       const winner = existing ? pickWinner(existing, item) : item;
       winners.set(item.id, winner);
       if (winner === item) {
-        // P0-9: 远端结果覆盖了本地条目 → 告警（trust 排序已保证默认不覆盖）
+        // 远端结果覆盖了本地条目 → 告警（trust 排序已保证默认不覆盖）
         if (sourceOf.get(item.id) === 'local') {
           onPeerOverride?.(
             fedResult.peerId,

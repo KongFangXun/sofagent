@@ -2,7 +2,7 @@
 
 > 发版时 changelog 功能点 → 项目文档覆盖检查的操作手册。releasing.md 阶段八引用本文件。
 
-### LIMITATIONS 新功能覆盖检查（🔴 F-11 / fresh-eyes F-05 教训）
+### LIMITATIONS 新功能覆盖检查（🔴 fresh-eyes 教训）
 
 LIMITATIONS.md 必须覆盖本版本引入的核心新功能带来的已知局限。fresh-eyes 审查发现 v1.1.7+ 的 5 个新功能（Dream Cycle / sensitivity / USB / knowledge-health / A/B 调度器）在 LIMITATIONS 中零覆盖。
 

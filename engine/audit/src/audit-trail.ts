@@ -93,7 +93,7 @@ export function appendAuditTrail(
     }
     appendFileSync(trailPath, JSON.stringify(fullEntry) + '\n', 'utf-8');
   } catch (err) {
-    // 写入失败不阻断主流程，但输出告警（P2-15: 原完全静默改为 stderr 告警）
+    // 写入失败不阻断主流程，但输出告警(原完全静默改为 stderr 告警）
     console.error('[sofagent] audit-trail 写入失败:', err instanceof Error ? err.message : String(err));
   }
 }

@@ -31,7 +31,7 @@ export interface AuditResult {
 }
 
 /**
- * 产品签名行（F-05：感知层——让用户明确知道「这是 sofagent 的审计结果」）。
+ * 产品签名行(感知层——让用户明确知道「这是 sofagent 的审计结果」）。
  *
  * 仅用于 text/table 等**人类可读**输出格式的头部；`--json` 输出绝不使用
  * （保持机器可读纯净，不破坏 acceptance scenario 6 的 JSON 结构断言）。

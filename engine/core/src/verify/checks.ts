@@ -85,7 +85,7 @@ export function runQuickChecks(
     v.checkWarn('fde.md 未找到或不可读（未配置自定义规则）');
   }
 
-  // 5. config.yml 完整性检查（v1.2.2 F-27 新增）
+  // 5. config.yml 完整性检查（v1.2.2 新增）
   // 检查 .sofagent/config.yml 是否存在且包含关键字段（rules 数组）
   const configYmlPath = join(sofagentData, 'config.yml');
   if (existsSync(configYmlPath)) {
@@ -675,7 +675,7 @@ export function runAllChecks(
 
   // 10.5 默认关闭确认
   {
-    // P2-36: SOFAGENT_* 主名优先，SOFA_* 别名兜底
+    // SOFAGENT_* 主名优先，SOFA_* 别名兜底
     const sofaSanitize = resolveEnvVar('SOFAGENT_SANITIZE', 'SOFA_SANITIZE');
     const sofaAuditEnabled = resolveEnvVar('SOFAGENT_AUDIT_ENABLED', 'SOFA_AUDIT_ENABLED');
     const sofaCleanupOnRecord = resolveEnvVar('SOFAGENT_CLEANUP_ON_RECORD', 'SOFA_CLEANUP_ON_RECORD');

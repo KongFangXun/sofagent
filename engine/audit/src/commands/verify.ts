@@ -22,7 +22,7 @@ export function runVerifyChain(): void {
   console.log(`\n  审计历史共 ${history.length} 条记录\n`);
 
   try {
-    // v1.2.9 P0-1: 传 data 根目录（~/.sofagent/data），而非 audit 目录。
+    // v1.2.9 传 data 根目录（~/.sofagent/data），而非 audit 目录。
     // getHistoryFilePath 内部再拼 'audit/history.jsonl'。
     // 此前误传 resolveAuditDir()（已含 audit/），导致双重拼接成
     // data/audit/audit/history.jsonl（不存在），防篡改信任锚整体失效。
@@ -95,7 +95,7 @@ export function runVerifyCommit(commitHash: string): void {
     process.exit(0);
   }
 
-  // v1.2.9 P0-2: parentSha fallback——commit-msg hook 在 commit 对象生成前运行，
+  // v1.2.9 parentSha fallback——commit-msg hook 在 commit 对象生成前运行，
   // 记录的 parentSha 是「审计时 HEAD」，即正在创建的 commit 的**父提交**。
   // 因此用户传入「某 commit 的 SHA X」时，对应的 pre-commit 审计记录
   // parentSha = parentOf(X)，而非 X 本身。精确 commitSha 未命中时：

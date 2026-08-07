@@ -39,7 +39,7 @@ async function main() {
 
   switch (subcommand) {
     case 'compose': {
-      // v1.1.9 (F-02): 检测 --run / --variants 等新 flag，委托给 composeTask（单一实现源）
+      // v1.1.9: 检测 --run / --variants 等新 flag，委托给 composeTask（单一实现源）
       const hasNewFlags = args.includes('--run') ||
         args.includes('--variants') ||
         args.includes('--enterprise-workflow') ||

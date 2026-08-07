@@ -11,7 +11,7 @@ import { getAddedLines } from '@sofagent/core';
 import type { AuditContext, RuleCheck } from './types';
 
 /**
- * P0-3: 脱敏 A9 details 中的命中行——防止密钥外泄。
+ * 脱敏 A9 details 中的命中行——防止密钥外泄。
  *
  * A9 命中时把命中行原文写入 details，如果注入指令写在含密钥的行中，
  * 密钥会被写入 history.jsonl 和 webhook 推送——与 A2 的脱敏设计自相矛盾。
@@ -86,9 +86,9 @@ const MEDIUM_CONFIDENCE_PATTERNS: { pattern: RegExp; name: string }[] = [
 
 /**
  * NFKC 归一化 + 零宽字符剥离 + leet speak 反转（供两处评分复用）
- * P1-6: 全角字符转半角；P1-7: leet 字符反转（1→i, 0→o, 3→e 等）
+ * 全角字符转半角；leet 字符反转（1→i, 0→o, 3→e 等）
  *
- * F-25: NFKC 归一化按 Unicode 标准**不映射**零宽/格式控制符（它们不是兼容字符），
+ * NFKC 归一化按 Unicode 标准**不映射**零宽/格式控制符（它们不是兼容字符），
  * 故攻击者可在 payload 中插入 U+200B（零宽空格）等不可见字符绕过字符串匹配
  * （如 `sk\u200B-abc123` 匹配不到密钥模式）。需在 NFKC 之后、leet 反转之前
  * **显式剥离**这些格式控制符。只剥离不可见控制符，不动有意义的 Unicode
@@ -99,7 +99,7 @@ const MEDIUM_CONFIDENCE_PATTERNS: { pattern: RegExp; name: string }[] = [
  */
 export function normalizeLine(line: string): string {
   let normalized = line.normalize('NFKC');
-  // F-25: 剥离不可见格式控制符（NFKC 不处理这些，需显式移除）
+  // 剥离不可见格式控制符（NFKC 不处理这些，需显式移除）
   // U+200B 零宽空格 / U+200C 零宽非连接符 / U+200D 零宽连接符 /
   // U+200E·200F 方向标记 / U+FEFF BOM·零宽不换行空格 / U+00AD 软连字符
   normalized = normalized.replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF\u00AD]/g, '');
@@ -279,7 +279,7 @@ export function checkRuleA9(ctx: AuditContext): RuleCheck {
     }
   }
 
-  // P1-8: 扫描 commit message 中的 prompt injection（正文语境，仍走全模式）
+  // 扫描 commit message 中的 prompt injection（正文语境，仍走全模式）
   if (ctx.commitMsg) {
     const rawMsgScore = scoreLine(ctx.commitMsg, false);
     const normalizedMsg = normalizeLine(ctx.commitMsg);

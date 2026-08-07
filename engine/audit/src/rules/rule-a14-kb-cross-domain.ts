@@ -164,7 +164,7 @@ export function checkRuleA14(ctx: AuditContext): RuleCheck {
     rule.details.push(
       `知识库越权访问: ${violations.slice(0, 3).join('; ')}${violations.length > 3 ? ` 等 ${violations.length} 处` : ''}。跨域查询有时合理，仅告警。`
     );
-    // P0-4: 设计限制说明
+    // 设计限制说明
     rule.details.push(
       '注意：A14 是事后审计提醒，不是强制访问控制。Agent 不写日志时此规则不生效。企业场景需配合文件系统权限实现真正的隔离。'
     );

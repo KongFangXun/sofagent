@@ -3,7 +3,7 @@
 // v1.2.0 env fingerprint: hash chain 加环境指纹防 Agent 重算整链
 // ============================================================
 //
-// ⚠️ F-24 双副本说明（勿混淆）：本仓库有两份同名 audit-history.ts，职责不同、**不可合并**：
+// ⚠️ 双副本说明（勿混淆）：本仓库有两份同名 audit-history.ts，职责不同、**不可合并**：
 //   - 【本文件】engine/audit/src/audit-history.ts —— 业务「审计历史持久化」层。
 //     提供 AuditHistoryEntry 类型 + appendHistory/loadHistory/clearHistory/
 //     isHmacKeyConfigured，依赖 audit 域的规则结果类型与 sanitize 管道；
@@ -51,7 +51,7 @@ export { checkHistoryChainIntegrity, checkHistoryChainDetailed, getHistoryFilePa
  * 对 ruleResult 做脱敏处理——避免审计工具自身成为第二泄漏点。
  * A2（密钥泄漏，number=2）和 A9（prompt injection，number=9）的 details
  * 移除命中行原文，替换为脱敏占位文本。
- * P1-26: 只在规则真正命中（details 非空）时覆写——此前无条件覆写导致
+ * 只在规则真正命中（details 非空）时覆写——此前无条件覆写导致
  *   干净提交也被标"检测到密钥泄漏"（1589 条假告警，SIEM 噪声 100%）。
  */
 function sanitizeRuleResult(rule: RuleCheck): RuleCheck {
@@ -89,19 +89,19 @@ export interface AuditHistoryEntry {
   diffFileCount: number;
   /** commit message */
   commitMsg?: string;
-  /** P0-5: 前一条记录的 hash，用于链完整性验证 */
+  /** 前一条记录的 hash，用于链完整性验证 */
   prevHash?: string;
-  /** P1-15: 本次审计对应的 commit SHA（doctor #8 追溯用） */
+  /** 本次审计对应的 commit SHA（doctor #8 追溯用） */
   commitSha?: string;
   /**
-   * v1.2.9 P0-2: commit-msg hook 场景（commit 对象尚未生成）记录的父提交 SHA
+   * v1.2.9 commit-msg hook 场景（commit 对象尚未生成）记录的父提交 SHA
    * （= 审计运行时的 HEAD）。--verify-commit 精确 commitSha 未命中时，
    * 对 commitPhase='pre-commit' 的记录按 parentSha fallback 匹配。
    * 旧记录无此字段时 fallback 不生效（向后兼容）。
    */
   parentSha?: string;
   /**
-   * v1.2.9 P0-2: 审计所处阶段标记。'pre-commit' = commit-msg hook 场景
+   * v1.2.9 审计所处阶段标记。'pre-commit' = commit-msg hook 场景
    * （审计在 commit 对象生成前运行，commitSha 未知，仅记 parentSha）。
    * 手动 --diff <range> 场景无此字段（保持旧语义）。
    */
@@ -110,7 +110,7 @@ export interface AuditHistoryEntry {
   hashVersion?: number;
   /** v1.1.8+: HMAC-SHA256 签名（密钥来自 ~/.sofagent-key，chmod 600）。无密钥时缺省（降级 SHA-256，向后兼容）。用于强防篡改。 */
   hmacSig?: string;
-  /** v1.2.5 P0-3: 写入时记录的环境指纹——读侧 HMAC 不匹配时用它区分「真篡改（指纹一致）」与「环境漂移（指纹不一致）」 */
+  /** v1.2.5 写入时记录的环境指纹——读侧 HMAC 不匹配时用它区分「真篡改（指纹一致）」与「环境漂移（指纹不一致）」 */
   envFingerprint?: string;
   /** v1.1.3+: 审计引擎标识，用于追溯记录来源 */
   engine?: string;
@@ -142,7 +142,7 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   // v1.0.6: 加入环境指纹——Agent 重算整链时不包含指纹则校验不一致
   const fingerprint = getEnvFingerprint(dataDir);
 
-  // P0-5: 计算 prevHash（上一行的 hash）
+  // 计算 prevHash（上一行的 hash）
   let prevHash = 'genesis';
   if (existsSync(filePath)) {
     const lines = readFileSync(filePath, 'utf-8').trim().split('\n').filter(Boolean);
@@ -163,14 +163,14 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
 
   // v1.1.8: HMAC-SHA256 签名（密钥来自 ~/.sofagent-key，chmod 600）。
   // 有密钥时签名整条记录（防 Agent 重算整链）；无密钥时降级 SHA-256（不写 hmacSig，向后兼容）。
-  // P0-3 修复（含回归修复）：必须先脱敏再签名——HMAC 基于【已脱敏的 baseSanitized】计算，
+  // 修复（含回归修复）：必须先脱敏再签名——HMAC 基于【已脱敏的 baseSanitized】计算，
   // 而非原始 entry.ruleResults。原因：落盘记录经过 sanitizeRuleResult()，它对 A2(number=2)/A9(number=9)
   // 的 details 强制脱敏覆盖；读侧 checkHistoryChainIntegrity 校验的正是「脱敏后」记录。若写侧用 raw
   // ruleResults 签名，含 A2/A9 的条目 HMAC 永远与读侧不匹配，被 hmacAlgo:'stable' 判为篡改 →
   // 干净链误报链断裂（run-09 回归 false-positive）。先脱敏再签名后，写/读两侧 HMAC 输入完全一致。
   const hmacKey = getHmacKey();
 
-  // FLAG-4: HMAC 密钥强度校验——弱密钥（空 / <16 字节）时明确告警，
+  // HMAC 密钥强度校验——弱密钥（空 / <16 字节）时明确告警，
   // 不静默用弱密钥签名稀释强校验能力。仍照常签名（优于无密钥），但醒目提示。
   const keyStatus = validateHmacKey();
   if (keyStatus.configured && !keyStatus.strong) {
@@ -181,10 +181,10 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     ...entry,
     prevHash,
     hashVersion: 2,
-    // P0-3 (2026-08-02 复核修正): 记录写入时的环境指纹——读侧 HMAC 不匹配时
+    // (2026-08-02 复核修正): 记录写入时的环境指纹——读侧 HMAC 不匹配时
     // 用它区分「真篡改（指纹一致）」与「环境漂移（指纹不一致）」。
     envFingerprint: fingerprint,
-    // P0-3: 标记写入侧用 stableStringify 签名（新条目）。读侧据此区分
+    // 标记写入侧用 stableStringify 签名（新条目）。读侧据此区分
     // 「旧条目 key 顺序不可复现（HMAC 不匹配不判篡改）」与「新条目被篡改（判链断裂）」。
     hmacAlgo: hmacKey ? 'stable' : undefined,
     ruleResults: entry.ruleResults.map(sanitizeRuleResult),
@@ -193,7 +193,7 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   // 签名输入排除 prevHash/hashVersion/hmacSig/hmacAlgo（与读侧 recordForSig 一致）；
   // 用 stableStringify（递归按 key 字典序排序）消除 key 顺序敏感。
   const recordForSig = { ...baseSanitized, prevHash: undefined, hashVersion: undefined, hmacSig: undefined, hmacAlgo: undefined };
-  // F-08：HMAC-SHA256 完整输出 64 hex（256bit），此处 .slice(0, 32) 截断到 128bit。
+  // HMAC-SHA256 完整输出 64 hex（256bit），此处 .slice(0, 32) 截断到 128bit。
   // 截断理由：① 每条 history.jsonl 记录都存 hmacSig，截断省约一半存储空间；
   // ② 128bit 防篡改强度充分（伪造需 2^128 次尝试，远超可行算力）；
   // ③ 写侧（此处）与读侧（core/audit-history.ts recordForSig 验签）必须用**同一**
@@ -204,7 +204,7 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
 
   const sanitizedEntry = { ...baseSanitized, hmacSig: hmacSig ?? undefined };
   // v1.0.5: 使用原子追加（先读+追加+原子写），避免并发写入导致的行交错
-  // v1.2.5 P1-2: atomicAppendSync 已内置文件锁互斥（O_EXCL + 过期回收），
+  // v1.2.5 atomicAppendSync 已内置文件锁互斥（O_EXCL + 过期回收），
   //   读-改-写跨进程串行化——不再需要 busy-wait 重试循环（原 189-206 行已移除）。
   const jsonLine = JSON.stringify(sanitizedEntry);
   atomicAppendSync(filePath, jsonLine);
@@ -266,7 +266,7 @@ export function loadHistory(limit?: number, dataDir?: string): AuditHistoryEntry
     }
   }
 
-  // P0-3 修复：过滤无 timestamp 的条目后再排序
+  // 修复：过滤无 timestamp 的条目后再排序
   const validEntries = entries.filter(
     (e) => e && typeof e.timestamp === 'string' && e.timestamp.length > 0
   );

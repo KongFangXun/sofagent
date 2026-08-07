@@ -791,7 +791,7 @@ async function runWorker(step, roundDir, target) {
   //
   //   正确做法：累积所有 chunk 的 delta.messages 到一个扁平数组，模拟 invoke 返回格式。
 
-  // P2-1：报告质量门控——非空 content 不一定是报告（可能是中间思考碎片）
+  // 报告质量门控——非空 content 不一定是报告（可能是中间思考碎片）
   // run-07 Round 5：155 字节一句话（"Rule count checks out. Now let me verify..."）
   // 在窗口期被当"报告捕获" → gotReport=true → 流提前结束。
   // 真报告至少含 1 个 ## 标题行 或 ≥ 500 字符。
@@ -818,7 +818,7 @@ async function runWorker(step, roundDir, target) {
     let hardBreak = false;
     let gotReport = false;         // 模型在窗口期输出了文本
 
-    // P1-1：窗口步数按步骤类型区分——审查类(a-check/b-check)探索深度高，
+    // 窗口步数按步骤类型区分——审查类(a-check/b-check)探索深度高，
     // 需要更多步切换到"报告模式"；修复/验证类是有限任务，5 步够用。
     // run-07 教训：统一 5 步在审查步骤上 0% 成功率。
     const graceSteps = (step === 'a-check' || step === 'b-check')
@@ -838,7 +838,7 @@ async function runWorker(step, roundDir, target) {
             let textContent = '';
             if (typeof c === 'string') textContent = c;
             else if (Array.isArray(c)) textContent = c.map(x => typeof x === 'string' ? x : x?.text ?? '').join('');
-            // P2-1：报告质量门控——非空 content 不一定是报告（可能是中间思考碎片）
+            // 报告质量门控——非空 content 不一定是报告（可能是中间思考碎片）
             // run-07 Round 5：155 字节一句话（"Rule count checks out. Now let me verify..."）
             // 被当"报告捕获"。真报告至少含 ## 标题行 或 ≥ 500 字符。
             if (inGraceWindow && isReportText(textContent)) {
@@ -862,7 +862,7 @@ async function runWorker(step, roundDir, target) {
           }
         }
       }
-      // P2-2：撞硬上限日志提前到 grace window 检查处——确保日志时序正确
+      // 撞硬上限日志提前到 grace window 检查处——确保日志时序正确
       // run-07 教训：原代码在工具计数循环内设置 inGraceWindow，日志可能与
       // gotReport 日志交错，导致"报告已捕获"出现在"撞硬上限"之前。
       if (toolCallCount >= TOOL_HARD_LIMIT && !inGraceWindow && !hardBreak) {
@@ -1308,8 +1308,8 @@ function discoverLatestRunDir() {
  */
 function splitFindings(resultText) {
   const findings = [];
-  // 匹配 ### finding-01 / ### finding-P0-01 / ### finding-P1-02 等格式
-  // Accept: pure digits (01) or level-prefixed (P0-01, P1-02)
+  // 匹配 ### finding-01 / ### finding-/ ### finding-等格式
+  // Accept: pure digits (01) or level-prefixed (, )
   const re = /^### finding-([A-Z0-9-]+)[：:]?/gm;
   const marks = [];
   let m;
@@ -1808,7 +1808,7 @@ function writeFallbackFindings(roundDir) {
  * 里的叙述性文字（"无 P0" "P2/待证实" "不含 P0/P1"）本身就含 P0/P1 字符串，
  * 导致每轮计数 >0，连续"干净轮"判定永远不成立，driver 永不停止。
  * 修复：改从 result.md 的结构化表格解析。result.md 的 finding 行格式：
- *   ### finding-P0-01  或  ### finding-01  + 正文含 priority 列
+ *   ### finding- 或  ### finding-01  + 正文含 priority 列
  * 用 splitFindings 切片后逐条判断优先级。
  *
  * @returns {{ p0:number, p1:number, p2:number, hasFail:boolean, isClean:boolean, isDegraded:boolean }}
@@ -1824,7 +1824,7 @@ function parseStopCondition(roundDir) {
     const resultText = readFileSync(resultPath, 'utf-8');
     const findingsList = splitFindings(resultText);
     for (const f of findingsList) {
-      // finding ID 含 P0/P1/P2 前缀（如 finding-P0-01）
+      // finding ID 含 P0/P1/P2 前缀（如 finding-）
       const idLower = f.id.toLowerCase();
       if (idLower.includes('p0')) { p0++; continue; }
       if (idLower.includes('p1')) { p1++; continue; }
@@ -1871,7 +1871,7 @@ function parseStopCondition(roundDir) {
     if (isDegraded) break;
   }
 
-  // P1-2：碎片内容假阳性干净——check 产物最小内容阈值检查
+  // 碎片内容假阳性干净——check 产物最小内容阈值检查
   // run-07 教训：兜底合成产出的碎片内容（155 字节一句话中间思考）
   // 不含 P0/P1 标记也不含降级标记词 → 数标记得到 0/0/0 → isClean=true → 假阳性。
   // 补充检查：check 产物太短说明审查不完整，强制不干净。

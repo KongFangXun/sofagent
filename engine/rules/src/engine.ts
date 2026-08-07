@@ -31,7 +31,7 @@ export class RulesEngine {
         return rule.check(ctx);
       } catch (err) {
         // 单条规则异常不应中断整批检查——降级为该规则 FAIL，
-        // 让编排层 tool-gate 看到明确违规而非进程崩溃（P1-9 修复）
+        // 让编排层 tool-gate 看到明确违规而非进程崩溃(修复）
         return {
           status: 'FAIL',
           ruleName: rule.name ?? 'unknown-rule',
