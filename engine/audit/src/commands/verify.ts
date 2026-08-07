@@ -5,7 +5,7 @@
 // ============================================================
 
 import { loadHistory, checkHistoryChainDetailed } from '../audit-history';
-import { resolveAuditDir } from '@sofagent/core';
+import { resolveDataDir } from '@sofagent/core';
 
 /**
  * --verify-chain：校验 HMAC hash chain 完整性
@@ -22,8 +22,14 @@ export function runVerifyChain(): void {
   console.log(`\n  审计历史共 ${history.length} 条记录\n`);
 
   try {
-    const dataDir = resolveAuditDir();
-    const result = checkHistoryChainDetailed(dataDir);
+    // v1.2.9 P0-1: 传 data 根目录（~/.sofagent/data），而非 audit 目录。
+    // getHistoryFilePath 内部再拼 'audit/history.jsonl'。
+    // 此前误传 resolveAuditDir()（已含 audit/），导致双重拼接成
+    // data/audit/audit/history.jsonl（不存在），防篡改信任锚整体失效。
+    // ⚠️ 必须与写侧 appendHistory 的指纹口径一致——appendHistory 默认 dataDir=undefined，
+    //    故此处同样不传覆盖值（走 AUDIT_HISTORY 默认路径 + 空 dataDir 指纹），
+    //    否则 getEnvFingerprint 会把路径差异算进 HMAC，干净链被误判 unverifiable。
+    const result = checkHistoryChainDetailed();
 
     switch (result.status) {
       case 'ok':
@@ -87,13 +93,54 @@ export function runVerifyCommit(commitHash: string): void {
       console.log(`    ${entry.timestamp} · ${status} · ${entry.ruleResults?.length ?? 0} 条规则检查`);
     }
     process.exit(0);
-  } else {
-    console.log(`  ❌ commit ${commitHash} 未找到审计记录`);
-    console.log('\n  可能原因:');
-    console.log('    1. 此 commit 使用了 --no-verify 绕过审计');
-    console.log('    2. 此 commit 在审计安装之前产生');
-    console.log('    3. commit-msg hook 被删除或失效');
-    console.log('    4. commit hash 输入有误');
-    process.exit(1);
   }
+
+  // v1.2.9 P0-2: parentSha fallback——commit-msg hook 在 commit 对象生成前运行，
+  // 记录的 parentSha 是「审计时 HEAD」，即正在创建的 commit 的**父提交**。
+  // 因此用户传入「某 commit 的 SHA X」时，对应的 pre-commit 审计记录
+  // parentSha = parentOf(X)，而非 X 本身。精确 commitSha 未命中时：
+  //   ① 解析 X 的父提交（git rev-parse X^），对 pre-commit 记录按 parentSha 匹配；
+  //   ② 兼容直接传父提交 SHA 的场景——parentSha 也尝试与 X 本身比对。
+  // 向后兼容：旧记录无 parentSha/commitPhase 字段时 fallback 不生效，行为不变。
+  let queriedParentSha = '';
+  try {
+    const { execFileSync } = require('child_process');
+    queriedParentSha = execFileSync('git', ['rev-parse', `${commitHash}^`], {
+      encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim().toLowerCase();
+  } catch {
+    // 非 git 仓库 / SHA 不存在 / 首次提交无父提交——fallback 仅用 X 本身比对
+    queriedParentSha = '';
+  }
+
+  const parentMatched = history.filter((entry) => {
+    if (entry.commitPhase !== 'pre-commit') return false;
+    const entryParent = (entry.parentSha || '').toLowerCase();
+    if (!entryParent) return false;
+    // ① parentSha === parentOf(X)（commit-msg 场景的正常匹配路径）
+    if (queriedParentSha && (entryParent === queriedParentSha || queriedParentSha.startsWith(entryParent) || entryParent.startsWith(queriedParentSha))) {
+      return true;
+    }
+    // ② parentSha === X（用户直接传父提交 SHA 的兼容路径）
+    return entryParent === normalizedHash || entryParent.startsWith(normalizedHash);
+  });
+
+  if (parentMatched.length > 0) {
+    console.log(`  ✅ commit ${commitHash} 有 ${parentMatched.length} 条审计记录（pre-commit 阶段记录，按父提交 SHA 匹配）:`);
+    for (const entry of parentMatched) {
+      const status = entry.exitCode === 0 ? 'PASS' : entry.exitCode === 1 ? 'WARN' : 'FAIL';
+      console.log(`    ${entry.timestamp} · ${status} · ${entry.ruleResults?.length ?? 0} 条规则检查`);
+    }
+    console.log('  说明: 该记录由 commit-msg hook 在提交对象生成前写入，');
+    console.log('        parentSha = 审计运行时的 HEAD（即本 commit 的父提交）。');
+    process.exit(0);
+  }
+
+  console.log(`  ❌ commit ${commitHash} 未找到审计记录`);
+  console.log('\n  可能原因:');
+  console.log('    1. 此 commit 使用了 --no-verify 绕过审计');
+  console.log('    2. 此 commit 在审计安装之前产生');
+  console.log('    3. commit-msg hook 被删除或失效');
+  console.log('    4. commit hash 输入有误');
+  process.exit(1);
 }

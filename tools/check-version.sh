@@ -539,14 +539,23 @@ fi
 echo ""
 
 # ── 10d. 检查 git hook 文件头版本号（v1.2.7 F22: hook 版本签名同步）──
+# v1.2.9 P0-2: 比对语义从「严格等于 SSOT」放宽为「不得早于 SSOT」。
+# 原因：hook 模板的版本号承载的是「该 hook 行为的版本」——发版准备期
+# 下一版（如 1.2.9）的 hook 行为改动会先于 SSOT 版本号提升（1.2.8 → 1.2.9
+# 由 bump-version.sh 在发版时统一执行）落盘。hook 版本 < SSOT = 模板落后
+# 于仓库代码（真问题）；hook 版本 >= SSOT = 模板与当前/下版代码同步（正常）。
 echo -e "${BOLD}── Hook 文件头版本号 ──${NC}"
 hook_version_errors=0
 for hook_file in engine/audit/hooks/commit-msg engine/audit/hooks/post-commit; do
   if [[ -f "${hook_file}" ]]; then
     hook_ver=$(head -2 "${hook_file}" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1 | sed 's/v//')
-    if [[ -n "${hook_ver}" && "${hook_ver}" != "${SSOT_VERSION}" ]]; then
-      report_error "${hook_file}" "v${hook_ver}" "v${SSOT_VERSION}"
-      hook_version_errors=$((hook_version_errors + 1))
+    if [[ -n "${hook_ver}" ]]; then
+      # hook_ver < SSOT_VERSION 判定（sort -V 取最小值）
+      oldest=$(printf '%s\n%s\n' "${hook_ver}" "${SSOT_VERSION}" | sort -V | head -1)
+      if [[ "${oldest}" != "${SSOT_VERSION}" ]]; then
+        report_error "${hook_file}" "v${hook_ver}" "v${SSOT_VERSION}（hook 版本不得早于 SSOT）"
+        hook_version_errors=$((hook_version_errors + 1))
+      fi
     fi
   fi
 done
@@ -628,12 +637,19 @@ fi
 echo ""
 
 # ── 12b. v1.1.3: 检查全部 @sofagent/* 包内部依赖版本一致性 ─
+# v1.2.9 P0-4 修复三重 bug：
+#   ① find 路径 $PROJECT_ROOT/sofagent 不存在（仓库根本身即 PROJECT_ROOT）→ 改扫 engine/
+#   ② 原结构 `done < <(find ...) | while read` 管道使 while 在子 shell 执行，
+#      INTERNAL_DEPS_OK=false 传不回父 shell → 改用命令替换收集输出后统一判定
+#   ③ node stderr 被 2>/dev/null 吞掉 → 改 2>&1 保留报错信息
 echo -e "${BOLD}── 检查子包内部依赖版本 ──${NC}"
 INTERNAL_DEPS_OK=true
-while IFS= read -r -d '' pkg_json; do
+
+# 收集所有 workspace package.json 中的版本不一致（含 node stderr，不再吞）
+MISMATCHES=$(while IFS= read -r -d '' pkg_json; do
   node -e "
     const fs = require('fs');
-    const pkg = JSON.parse(fs.readFileSync('$pkg_json', 'utf-8'));
+    const pkg = JSON.parse(fs.readFileSync(process.argv[1], 'utf-8'));
     const pkgName = pkg.name;
     for (const field of ['dependencies', 'optionalDependencies']) {
       if (pkg[field]) {
@@ -647,17 +663,51 @@ while IFS= read -r -d '' pkg_json; do
         }
       }
     }
-  " 2>/dev/null
-done < <(find "$PROJECT_ROOT/sofagent" -maxdepth 3 -name "package.json" -not -path "*/node_modules/*" -print0 2>/dev/null) | while read -r line; do
-  echo "  ❌ $line"
-  INTERNAL_DEPS_OK=false
-  ERRORS=$((ERRORS + 1))
-  CHECKS=$((CHECKS + 1))
-done
+  " "$pkg_json" 2>&1
+done < <(find "$PROJECT_ROOT/engine" -maxdepth 3 -name "package.json" -not -path "*/node_modules/*" -print0 2>/dev/null))
+
+# 补查根 package.json（内部依赖也应与 SSOT 对齐）
+ROOT_MISMATCH=$(node -e "
+    const pkg = JSON.parse(require('fs').readFileSync(process.argv[1], 'utf-8'));
+    for (const field of ['dependencies', 'devDependencies']) {
+      if (pkg[field]) {
+        for (const [name, ver] of Object.entries(pkg[field])) {
+          if (name.startsWith('@sofagent/')) {
+            const verClean = ver.replace(/^[~^>=<]+/, '');
+            if (verClean !== '$SSOT_VERSION') {
+              console.log('MISMATCH root → ' + name + ': ' + ver + ' (期望: ' + '$SSOT_VERSION' + ')');
+            }
+          }
+        }
+      }
+    }
+  " "$PROJECT_ROOT/package.json" 2>&1)
+
+ALL_MISMATCH="${MISMATCHES}
+${ROOT_MISMATCH}"
+# 逐行判定：MISMATCH* / 含 Error: → 红色错误；其余非空输出（node 警告噪音）→ 黄色提示
+while IFS= read -r line; do
+  [ -z "$line" ] && continue
+  case "$line" in
+    MISMATCH*)
+      echo -e "  ${RED}✗${NC} $line"
+      INTERNAL_DEPS_OK=false
+      ERRORS=$((ERRORS + 1))
+      ;;
+    *Error:*)
+      echo -e "  ${RED}✗${NC} $line"
+      INTERNAL_DEPS_OK=false
+      ERRORS=$((ERRORS + 1))
+      ;;
+    *)
+      echo -e "  ${YELLOW}⚠${NC} $line"
+      ;;
+  esac
+done <<< "$ALL_MISMATCH"
 if $INTERNAL_DEPS_OK; then
   echo -e "  ${GREEN}✓${NC} 所有内部 @sofagent/* 依赖版本一致"
-  CHECKS=$((CHECKS + 1))
 fi
+CHECKS=$((CHECKS + 1))
 echo ""
 
 # ── 文案数字漂移扫描（v1.1.6 新增 · 维度八·任务5 强化）──────────
