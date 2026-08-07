@@ -91,7 +91,7 @@ graph TD
 - [二、一底座·三引擎设计](#二一底座三引擎设计)
 - [三、部署与运行架构](#三部署与运行架构)
 - [四、核心设计决策](#四核心设计决策)
-- [五、激活链架构（v1.2.5+ 规划中）](#五激活链架构v125-规划中)
+- [五、激活链架构（v1.2.5+ Phase 1-3 已交付）](#五激活链架构v125-phase-1-3-已交付)
 - [六、已知局限与未来方向](#六已知局限与未来方向)
 - [七、架构设计决策的行业锚点](#七架构设计决策的行业锚点)
 - [八、数据层路线建议（待审阅）](#八数据层路线建议待审阅)
@@ -168,7 +168,7 @@ graph TD
 
 ### 规划中（仓库内暂无实现）
 
-Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2 / 组织能力市场 · Webhook 推飞书 / 钉钉 / 企微完整能力（本地三态已通）· 并行编排 DAG 波次并行（v1.3.0）· Ontology 升级为可运行推理底座 + 国标对齐（v1.3.0）· SubAgent 完整沙箱（v1.4.0）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
+Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2 / 组织能力市场 · 并行编排 DAG 波次并行（v1.3.1）· Ontology 升级为可运行推理底座 + 国标对齐（v1.3.1）· SubAgent 完整沙箱（v1.4.0）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
 
 ---
 
@@ -500,7 +500,7 @@ sofagent 的编排引擎天然就是一张**控制图（Control Graph）**——
 | **可审计状态文件**（状态落盘可复核） | `FileCheckpointer` 每节点前后 snapshot 到 `.sofagent/checkpoint/`，`resumeLoopGraph()` 断点续跑 | `engine/orchestrator/src/graph/checkpoint.ts` |
 | **数据图 Data Graph**（知识图谱/血缘） | 蓄水池（知识库 `knowledge/`） + 市政规划（Ontology，Ledger-Views-Policy）——与编排控制图正交 | `knowledge/` + Ontology 层 |
 | **Org Graph（稳定角色）** | 四节点（engineer/audit/reviewer/human_confirm）是稳定角色——不随任务变化；变动的是节点内的 Work Graph 子拓扑 | `engine/orchestrator/src/loop/graph.ts:128-132` |
-| **Work Graph（临时拓扑）** | 每个任务的子任务拆分 + 并行 engineer 实例 = 任务结束即解散的工作图；v1.2.3 Planner 节点落地后显式生成 | 规划中（v1.2.2+） |
+| **Work Graph（临时拓扑）** | 每个任务的子任务拆分 + 并行 engineer 实例 = 任务结束即解散的工作图；v1.2.2 Planner 节点 + v1.2.3 并行子图已落地 | ✅ v1.2.2-v1.2.3 已交付 |
 
 **控制图 vs 数据图二分天然具备**：管道（Workflow / StateGraph）= 控制图，决定"先干什么后干什么"；蓄水池 + 市政规划 = 数据图，承载"知道什么、怎么理解"。两者解耦——控制图无知识库也能跑（纯编排），数据图无控制图也能沉淀（Dream Cycle 独立跑）。
 
@@ -864,7 +864,7 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 | 同一 Agent 自验 | 覆盖率 7-33%，裁判运动员同一人 |
 | Maker-Checker 分离后 | 覆盖率提升至 73% |
 
-## 五、激活链架构（v1.2.5+ 规划中）
+## 五、激活链架构（v1.2.5+ Phase 1-3 已交付）
 
 > **本章是心智模型「层 2 · 生命周期」的架构展开**——层 1 能力底座（一底座·三引擎）已在第二章详述，这里讲生命周期怎么跑。
 >
@@ -935,8 +935,9 @@ audit:
 **已知局限**：详见 [LIMITATIONS.md](./LIMITATIONS.md)（按主题分章，含 Key Limitations 速览）。核心：Harness 层自身在上下文里、加载链步进脆弱性、Skill 自进化处于经验记录阶段。
 
 **未来方向**：
-- **v1.2.5-v1.3.0**：**🔗 FDE 激活链**——从静态交付到自运转企业 Agent。FDE 诊断交付了 ontology + workflow.yml + skills/，但交付物躺在磁盘上没人"点燃"。激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）解决这个大断裂带：读交付物 → 注册企业 SubAgent → 构建 LangGraph StateGraph → DAG 运行 + HITL + 审计 → 持续优化自运转。详见 [激活链设计文档](./guides/fde-activation-chain.md)
-- **v1.2.x**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界
+- **v1.3.0**：**🔗 激活链 Phase 4 收尾（SUSTAIN）**——全链路验证（activate→compose→run→HITL→audit→sustain）+ `wrapToolCall` middleware 联动 + FDE SKILL.md 新增 activate 引导。Phase 1-3（v1.2.5-v1.2.8）已交付。详见 [激活链设计文档](./guides/fde-activation-chain.md)
+- **v1.3.1-v1.3.5**：Ontology 本体结构 + 并行编排 + Agent 身份码 + Onboard/Refine Agent + 团队协作协议 + 组织能力市场
+- **v1.4.x**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界 + SubAgent 沙箱
 - **v2.x**：组织级共享记忆 + 协同层 + **分层模型路由**（Harness 按任务复杂度路由到云端大模型/本地 7B/本地 0.5B，数据主权驱动——敏感数据不出内网）
 - **v3.x-v4.x+**：企业专属小模型精调（`sofagent-model distill` QLoRA）+ 本地推理 + 离线 USB 节点。详见 [ROADMAP · 分层模型架构](./ROADMAP.md#分层模型架构v3x-远景概述)
 - **远期护城河演进方向（非当前能力 · 2026-07-30 战略讨论）**：当前护城河 = 约束底座 + 审计能力（模型越强越值钱）。更远的演进方向：把「帮 sofagent 自身进化」的 Harness + 进化引擎能力，泛化为「**自动帮企业部署后训练模型**」的引擎。届时护城河从「约束能力」升维为「**后训练模型的自动化部署能力**」——交付物是部署在企业侧的定制模型（基于企业自有/通用基座后训练，非 sofagent 自制大模型），使用者是企业客户而非 sofagent 自身；ontology 在此既是企业数字孪生（语义层），也是后训练规格来源（每个 workflow 节点 → 一个专精模型）。**此为长期目标蓝图，当前完全不具备该能力**，仅作演进方向记录，不视为现状或近期计划。> 来源：产品战略讨论 2026-07-30（尚未实现）

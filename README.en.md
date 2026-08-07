@@ -117,9 +117,9 @@ After the FDE delivers the ontology + workflow.yml + skills/, since v1.2.5 the d
 | Stage | What it does | Version |
 |------|--------|:----:|
 | **ACTIVATE** | Reads the deliverables → registers enterprise SubAgents | v1.2.5 ✅ |
-| **ORCHESTRATE** | Builds the enterprise-specific workflow graph (Phase 2 first half: mapping table + registry extension / Phase 2 second half: enterprise-graph) | v1.2.6 ✅ · v1.2.8 ✅ |
-| **EXECUTE** | Run + human confirmation + per-step audit | v1.2.8-v1.2.9 (planned) |
-| **SUSTAIN** | Continuous optimization, gets better the longer it runs | v1.3.0 (planned) |
+| **ORCHESTRATE** | Builds the enterprise-specific workflow graph (Phase 2 first half: mapping table + registry extension / Phase 2 second half: enterprise-graph) | v1.2.6-v1.2.7 ✅ |
+| **EXECUTE** | Run + human confirmation + per-step audit | v1.2.8 ✅ · v1.2.9 🔨 |
+| **SUSTAIN** | Continuous optimization, gets better the longer it runs | v1.3.0 📋 |
 
 Design details: [activation chain doc](./docs/guides/fde-activation-chain.md)
 

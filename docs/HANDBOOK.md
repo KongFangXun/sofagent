@@ -64,7 +64,7 @@
 - **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
 - **平台无关、即挂即用**：骑在你自选的大厂 Agent（Claude Code / Codex / WorkBuddy / 扣子 / OpenClaw）之上，不替代模型，只补「可靠执行」。（Cursor 社区验证中）
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
-- **🔗 激活链（v1.2.5+ 规划中）**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
+- **🔗 激活链（v1.2.5+ 已实现 Phase 1-3）**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。Phase 4（SUSTAIN）在 v1.3.0 规划中。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 **现在还干不了的事（规划中，暂无代码）**：完整多设备协同、并行编排、SubAgent 生产级沙箱、本地推理小模型——路线见 [ROADMAP](./ROADMAP.md)。
 
@@ -90,7 +90,7 @@
 | 层 | 是什么 | 一句话 | 状态 |
 |:--:|------|------|:--:|
 | **层 1 · 能力底座** | 一底座·三引擎（约束底座 + 审计/回溯/进化引擎） | 怎么保证每次执行都做对 | ✅ 已交付 |
-| **层 2 · 生命周期（五阶段）** | 诊断 → 激活 → 编排 → 执行 → 进化（P1-18 口径统一：激活链四阶段 = 激活→编排→执行→持续 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，为五阶段中后四环） | 企业 AI 从诊断到自运转怎么走 | 🔗 v1.2.5+ 规划中 |
+| **层 2 · 生命周期（五阶段）** | 诊断 → 激活 → 编排 → 执行 → 进化（P1-18 口径统一：激活链四阶段 = 激活→编排→执行→持续 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，为五阶段中后四环） | 企业 AI 从诊断到自运转怎么走 | 🔗 Phase 1-3 已交付 |
 
 **层 1 · 能力底座（一底座·三引擎）**：
 
@@ -102,7 +102,7 @@
 | ⚙️ 内部工具 | **FORGE 工具链**（orchestrator） | LOOP 流水线（项目自迭代用，非对外引擎） | CLI compose tool |
 | 🧬 引擎③ | **进化引擎**（eval + ab-test + skillopt + think + ontology；由 daemon 定时驱动） | 知识沉淀 + 反思 + A/B 自优化，越用越好 | daemon cron / 手动触发 |
 
-**层 2 · 生命周期（激活链，v1.2.5+ 规划中）**：
+**层 2 · 生命周期（激活链，v1.2.5+ Phase 1-3 已交付）**：
 
 | 环 | 阶段 | 做什么 |
 |:--:|------|--------|
@@ -462,7 +462,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 > sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。sofagent 本质上是一款 FDE Agent：对外你用的是品牌名 sofagent（它正是一款 FDE Agent 在帮你干活），对内是 sofagent 引擎（Harness 中间件）在跑。
 
-### 🔗 激活链：从"交付文档"到"自动运转"（v1.2.5+ 规划中）
+### 🔗 激活链：从"交付文档"到"自动运转"（v1.2.5+ Phase 1-3 已交付）
 
 > **当前的断裂带**：FDE 离场后留下交付手册、节点 .md、workflow.yml、Skill 文件——这些都是静态文件，企业 IT 拿到后还得手动搭运行环境、手动配编排、手动接审批。
 
