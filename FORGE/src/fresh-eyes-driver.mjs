@@ -24,7 +24,7 @@ import {
   readFileSync, writeFileSync, mkdirSync, existsSync,
   appendFileSync, readdirSync, renameSync, statSync,
 } from 'fs';
-import { join, resolve, dirname, relative, sep } from 'path';
+import { join, resolve, dirname, relative, sep, basename } from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
 
@@ -147,7 +147,8 @@ const STEPS = {
 // ═══════════════════════════════════════════════════════════
 function parseArgs(argv) {
   const args = { target: null, maxRounds: 10, dryRun: false,
-                 worker: false, step: null, roundDir: null };
+                 worker: false, step: null, roundDir: null,
+                 resume: false };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--target')           args.target    = argv[++i];
@@ -156,6 +157,8 @@ function parseArgs(argv) {
     else if (a === '--worker')      args.worker    = true;
     else if (a === '--step')        args.step      = argv[++i];
     else if (a === '--round-dir')   args.roundDir  = argv[++i];
+    // v1.2.8 功能⑦：断点续跑（参数名与 driver-base.parseDriverArgs / release-gate 保持一致）
+    else if (a === '--resume')      args.resume    = true;
   }
   return args;
 }
@@ -1226,6 +1229,70 @@ function resolveRunDir() {
   const runDir = join(dateDir, `run-${String(runNum).padStart(2, '0')}`);
   mkdirSync(runDir, { recursive: true });
   return { runDir, runId: `${y}${m}${d}-${String(runNum).padStart(2, '0')}`, dateStr: `${y}-${m}-${d}` };
+}
+
+/**
+ * v1.2.8 功能⑦：从已有 run 目录反推 runId / dateStr（resume 模式复用已有目录）。
+ * run 目录结构：RUNS_DIR/fresh-eyes-loop/YYYY-MM-DD/run-NN/
+ *
+ * @param {string} runDir - 已有 run 目录绝对路径
+ * @returns {{runDir: string, runId: string, dateStr: string}}
+ */
+function resolveRunDirInfo(runDir) {
+  const runName = basename(runDir);              // run-03
+  const dateDir = basename(dirname(runDir));     // 2026-08-07
+  const runNumStr = runName.replace('run-', '').padStart(2, '0');
+  const digits = dateDir.replace(/-/g, '');
+  return { runDir, runId: `${digits}-${runNumStr}`, dateStr: dateDir };
+}
+
+/**
+ * v1.2.8 功能⑦：--resume 时自动发现最近的 run 目录。
+ *
+ * 优先级：
+ *   1. 读 latest.json 指针（runDir 字段）——driver 每轮结束都会刷新该指针
+ *   2. 目录时间倒序兜底——latest.json 缺失/损坏时扫最新日期目录里最大的 run-NN
+ *
+ * 铁律：只读发现，不修改任何已有产物。
+ *
+ * @returns {string|null} 最近的 run 目录绝对路径；无任何历史 run 时返回 null
+ */
+function discoverLatestRunDir() {
+  const workflowDir = join(RUNS_DIR, 'fresh-eyes-loop');
+
+  // 1. latest.json 指针优先
+  const latestPath = join(workflowDir, 'latest.json');
+  if (existsSync(latestPath)) {
+    try {
+      const pointer = JSON.parse(readFileSync(latestPath, 'utf-8'));
+      if (pointer && typeof pointer.runDir === 'string' && pointer.runDir) {
+        // relativeRunDir 写入的是相对 SOFAGENT_HOME/data 的路径（fallback 相对 REPO_ROOT）
+        const dataRoot = join(SOFAGENT_HOME, 'data');
+        let candidate = join(dataRoot, pointer.runDir);
+        if (!existsSync(candidate)) candidate = resolve(REPO_ROOT, pointer.runDir);
+        if (existsSync(candidate)) return candidate;
+      }
+    } catch { /* latest.json 损坏——走兜底扫描 */ }
+  }
+
+  // 2. 兜底：扫日期目录（倒序）+ 每天最大的 run-NN
+  if (!existsSync(workflowDir)) return null;
+  const dates = readdirSync(workflowDir)
+    .filter(n => /^\d{4}-\d{2}-\d{2}$/.test(n))
+    .sort()
+    .reverse();
+  for (const dateStr of dates) {
+    const dateDir = join(workflowDir, dateStr);
+    const nums = readdirSync(dateDir)
+      .filter(n => n.startsWith('run-'))
+      .map(n => parseInt(n.replace('run-', ''), 10))
+      .filter(n => !isNaN(n));
+    if (nums.length > 0) {
+      const runDir = join(dateDir, `run-${String(Math.max(...nums)).padStart(2, '0')}`);
+      if (existsSync(runDir)) return runDir;
+    }
+  }
+  return null;
 }
 
 // ─── b-fix 分片工具函数 ──────────────────────────────────────
@@ -2335,9 +2402,55 @@ async function main() {
   }
 
   // ─── Driver 模式 ───
+
+  // ─── v1.2.8 功能⑦：断点续跑（--resume）───
+  // driver 被杀后已完成轮的产物全部有效；--resume 从断点继续，不重跑已完成轮。
+  // 铁律：resume 只跳过重跑，不修改任何已有轮产物（findings.md/result.md/summary.md）。
+  // dry-run 永远不写断点，也不受 resume 影响（dry-run 分支在下方单独处理）。
+  // worker 模式已在上面 return，这里不会进入。
+  let resumeState = null;       // loadResumePoint 的结果（null = 无断点）
+  let resumeRunDir = null;      // resume 复用的已有 run 目录
+  let resumeFromRound = 0;      // 下一轮从这里开始（= 最后完成轮号，循环从 +1 起）
+
+  if (args.resume && !args.dryRun) {
+    resumeRunDir = discoverLatestRunDir();
+    if (!resumeRunDir) {
+      console.warn('⚠️  --resume：未找到任何历史 run 目录，从头开始');
+    } else {
+      resumeState = base.loadResumePoint(resumeRunDir);
+      if (!resumeState) {
+        console.warn(`⚠️  --resume：${resumeRunDir} 无有效断点（resume-point.json 不存在或损坏），从头开始`);
+        // 无断点 → 从头开始 = 新建 run 目录。
+        // 铁律：不能复用旧 runDir 从 Round 1 重跑，否则会覆盖已完成轮的产物。
+        resumeRunDir = null;
+      } else if (resumeState.completed === true) {
+        // completed=true：round 轮已完成 → 从 round+1 继续
+        resumeFromRound = resumeState.round;
+        console.log(`🔄 resume：断点显示 Round ${resumeState.round} 已完成，从 Round ${resumeFromRound + 1} 继续`);
+      } else {
+        // completed=false：round 轮中途被杀 → 重跑该轮
+        resumeFromRound = Math.max(0, resumeState.round - 1);
+        console.log(`🔄 resume：断点显示 Round ${resumeState.round} 未完成，重跑 Round ${resumeState.round}`);
+      }
+    }
+  }
+
   if (!args.target) {
-    console.error('用法: node FORGE/src/fresh-eyes-driver.mjs --target vX.Y.Z [--max-rounds N] [--dry-run]');
-    process.exit(1);
+    // --target 未传时从断点读取 target（v1.2.8 功能⑦）；断点也没有则报错退出
+    if (resumeState && typeof resumeState.target === 'string' && resumeState.target) {
+      args.target = resumeState.target;
+      console.log(`   target    = ${args.target}（从断点恢复）`);
+    } else {
+      console.error('用法: node FORGE/src/fresh-eyes-driver.mjs --target vX.Y.Z [--max-rounds N] [--dry-run] [--resume]');
+      console.error('      --resume 模式也需 --target，除非断点中已保存 target');
+      process.exit(1);
+    }
+  }
+
+  // resumeFromRound >= maxRounds → 循环已完成，无需续跑（正常退出）
+  if (resumeFromRound >= args.maxRounds) {
+    console.log(`✅ 循环已完成（断点轮 ${resumeFromRound} ≥ max-rounds ${args.maxRounds}），无需续跑`);
+    process.exit(0);
   }
 
   // ─── 防 macOS 后台节流（v1.2.4 · P0）───
@@ -2399,8 +2512,10 @@ async function main() {
     process.exit(1);
   }
 
-  // 建 run 目录
-  const { runDir, runId, dateStr } = resolveRunDir();
+  // 建 run 目录（v1.2.8 功能⑦：resume 模式复用已有目录，不新建）
+  const { runDir, runId, dateStr } = resumeRunDir
+    ? resolveRunDirInfo(resumeRunDir)
+    : resolveRunDir();
 
   // ─── 可见性：启动时探测可用适配器并初始化 ───
   const reporters = await detectReporters();
@@ -2425,6 +2540,14 @@ async function main() {
   console.log(`   max-rounds = ${args.maxRounds}`);
   console.log(`   run-dir    = ${runDir}`);
   console.log(`   dry-run    = ${args.dryRun}`);
+  // v1.2.8 功能⑦：启动日志打印 resume 状态
+  if (args.resume && !args.dryRun) {
+    if (resumeState) {
+      console.log(`   resume     = 断点恢复（最后完成轮 ${resumeFromRound}，从 Round ${resumeFromRound + 1} 继续）`);
+    } else {
+      console.log(`   resume     = 无有效断点，从头开始`);
+    }
+  }
   console.log(`   A          = ${MODEL_CONFIGS.A.model} (${MODEL_CONFIGS.A.baseURL})`);
   console.log(`   B          = ${MODEL_CONFIGS.B.model} (${MODEL_CONFIGS.B.baseURL})`);
 
@@ -2440,16 +2563,39 @@ async function main() {
   preservedTotalRounds  = args.maxRounds;
   preservedStopReason   = null;
 
+  // ─── 状态变量：resume 模式从断点恢复，否则全部归零 ───
+  // v1.2.8 功能⑦：断点里存了最后完成轮的状态摘要（cleanStreak / counts /
+  // severityHistory / consecutiveDegraded），恢复后收敛判定逻辑与不中断时等价。
   let cleanStreak   = 0;
   let stopReason    = 'max-rounds';
-  let actualRounds  = 0;
+  let actualRounds  = resumeFromRound;   // 已完成轮数（resume 起点；fresh run 为 0）
   let finalCounts   = { p0: 0, p1: 0, p2: 0 };
   let severityHistory = [];  // #13 每轮 (P0+P1) 趋势，用于加权收敛检测
   // v1.2.7：连续降级检测——run-06 教训：3 轮全降级消耗 132k tokens 零产出。
   // 连续 2 轮 isDegraded=true → 直接 error 退出，不浪费 token 跑无意义的循环。
   let consecutiveDegraded = 0;
 
-  for (let round = 1; round <= args.maxRounds; round++) {
+  if (resumeState) {
+    if (resumeState.counts && typeof resumeState.counts === 'object') {
+      finalCounts = {
+        p0: resumeState.counts.p0 ?? 0,
+        p1: resumeState.counts.p1 ?? 0,
+        p2: resumeState.counts.p2 ?? 0,
+      };
+    }
+    if (typeof resumeState.cleanStreak === 'number') cleanStreak = resumeState.cleanStreak;
+    if (typeof resumeState.consecutiveDegraded === 'number') consecutiveDegraded = resumeState.consecutiveDegraded;
+    if (Array.isArray(resumeState.severityHistory)) severityHistory = [...resumeState.severityHistory];
+    // fatal-error 兜底：新轮还没跑完就崩时，catch 块至少保留已完成轮的数据
+    preservedActualRounds = resumeFromRound;
+    preservedFinalCounts  = { ...finalCounts };
+    console.log(
+      `   断点状态   = counts P0=${finalCounts.p0} P1=${finalCounts.p1} P2=${finalCounts.p2} ` +
+      `cleanStreak=${cleanStreak} severity=[${severityHistory.join(',')}]\n`
+    );
+  }
+
+  for (let round = resumeFromRound + 1; round <= args.maxRounds; round++) {
     actualRounds = round;
     visibility.emit(EVENTS.ROUND_START, { round, target: args.target });
 
@@ -2481,6 +2627,30 @@ async function main() {
     preservedActualRounds = actualRounds;
     preservedFinalCounts   = { ...finalCounts };
 
+    // ─── v1.2.8 功能⑦：断点写入闭包 ───
+    // 每轮完成后写 resume-point.json（runDir 根目录，不是 round 子目录）。
+    // 铁律：dry-run 永远不写断点；断点只存状态摘要不存大体积数据；
+    // 写失败不阻断主流程（断点是优化层不是正确性层）。
+    // 调用时机：本轮 cleanStreak / consecutiveDegraded 更新完毕之后，
+    // 保证 resume 恢复时拿到的正是本轮完成那一刻的状态。
+    const saveRoundCheckpoint = () => {
+      if (args.dryRun) return;
+      try {
+        base.saveResumePoint(runDir, {
+          round,
+          completed: true,
+          counts,
+          cleanStreak,
+          consecutiveDegraded,
+          severityHistory,
+          target: args.target,
+          maxRounds: args.maxRounds,
+        });
+      } catch (ckptErr) {
+        console.warn(`  ⚠️  断点写入失败（不影响主流程）: ${ckptErr.message}`);
+      }
+    };
+
     // 可见性：每轮结束 emit（含停止判定结果）
     visibility.emit(EVENTS.ROUND_END, {
       round,
@@ -2509,6 +2679,7 @@ async function main() {
         console.error(`\n💥 连续 ${consecutiveDegraded} 轮降级，循环无产出意义，直接退出`);
         stopReason = 'consecutive-degraded-error';
         preservedStopReason = stopReason;
+        saveRoundCheckpoint();  // v1.2.8 功能⑦：退出前写断点（本轮已完成）
         break;
       }
     } else {
@@ -2520,6 +2691,7 @@ async function main() {
       console.log(`\n  ✅ 干净轮 (${cleanStreak}/2)`);
       if (cleanStreak >= 2) {
         stopReason = '2-rounds-clean';
+        saveRoundCheckpoint();  // v1.2.8 功能⑦：退出前写断点（本轮已完成）
         break;
       }
     } else {
@@ -2528,10 +2700,15 @@ async function main() {
       if (detectWeightedConvergence(severityHistory)) {
         console.log(`\n  📉 加权收敛：近 3 轮 severity=${severityHistory.slice(-3).join('→')}，已收敛到极低位，提前停止`);
         stopReason = 'weighted-convergence';
+        saveRoundCheckpoint();  // v1.2.8 功能⑦：退出前写断点（本轮已完成）
         break;
       }
       console.log(`\n  ❌ 本轮有 P0/P1/FAIL，进入下一轮`);
     }
+
+    // v1.2.8 功能⑦：本轮完成（进入下一轮前）写断点——
+    // 进程若在轮间被杀，resume 从本轮的下一轮继续，本轮成果不丢。
+    saveRoundCheckpoint();
   }
 
   // usage.jsonl 全量摘要（非 dry-run）
