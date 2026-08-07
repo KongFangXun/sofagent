@@ -123,7 +123,7 @@ FDE 交付了本体结构（ontology）+ workflow.yml + skills/ 之后，v1.2.5 
 
 设计详情：[激活链文档](./docs/guides/fde-activation-chain.md)
 
-### v1.2.7 新增了什么？
+### v1.2.8 新增了什么？
 
 > 🆕 一键安装、环境自检修复、上下文压缩、目标驱动……完整清单见 [CHANGELOG.md](./CHANGELOG.md)。
 
@@ -372,7 +372,7 @@ LOOP 内部使用 LangGraph StateGraph 组装节点流转 + 6 个内置工具（
 - **规则构成**：24 条中 19 条纯 git-diff（不依赖 Agent 配合）、4 条混合（A7/A8/A14/A15 需 Agent 日志）、1 条文件系统（A17 异常批量变更）
 - **不需要 commit 也能审计**：v1.0.8+ 自研 git-shadow diff 解析（isomorphic-git 风格，非内嵌第三方包）+ daemon 文件监控
 - **跨设备扩展**：v1.1.8+ Prompt 注入防护（A9 扩展）+ 联邦查询加密，审计能力从本地扩展到跨设备
-- **测试覆盖**：全 workspace **1527 测试 / 12 包**
+- **测试覆盖**：全 workspace **1562 测试 / 13 包**
 
 **默认规则（17 条，装上就生效）**：
 

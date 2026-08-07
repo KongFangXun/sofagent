@@ -370,7 +370,7 @@ The audit engine, four points:
 - **Rule composition**: of the 24 rules, 19 are pure git-diff (don't rely on Agent cooperation), 4 are hybrid (A7/A8/A14/A15 need Agent logs), 1 is filesystem (A17 abnormal batch changes)
 - **Audits work without a git commit**: since v1.0.8, a self-developed git-shadow diff parser (isomorphic-git style, not an embedded third-party package) + daemon file monitoring
 - **Cross-device extension**: since v1.1.8, Prompt injection defense (A9 extended) + federated query encryption extend audit capability from local to cross-device
-- **Test coverage**: full workspace **1527 tests / 12 packages**
+- **Test coverage**: full workspace **1562 tests / 13 packages**
 
 **Default rules (17, active on install)**:
 

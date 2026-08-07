@@ -61,7 +61,7 @@ graph TD
     L -.->|审计趋势回流| H
 ```
 
-> **记忆法：环境、反馈、流程。** Harness 给 Agent 一个稳定的工作间（上下文/工具/权限/可观测性），Graph 告诉它任务流向哪（节点边界/路由条件/并行/汇合），Loop 让它出错后能基于证据自己改进（验证→反馈→修复→再验证）。三层缺一不可——再漂亮的 Graph 没有 Harness 就不可执行，再好的 Loop 没有 Graph 就不知道在哪个环节改进。
+> **记忆法：环境、流程、反馈。** Harness 给 Agent 一个稳定的工作间（上下文/工具/权限/可观测性），Graph 告诉它任务流向哪（节点边界/路由条件/并行/汇合），Loop 让它出错后能基于证据自己改进（验证→反馈→修复→再验证）。三层缺一不可——再漂亮的 Graph 没有 Harness 就不可执行，再好的 Loop 没有 Graph 就不知道在哪个环节改进。
 
 **业务概念视角**——从企业用户角度看，同一套系统体现为四个自外向内的嵌套层级：
 
@@ -735,7 +735,7 @@ v1.0.8+ daemon 监控文件变更，非开发者也能用审计：
 | 拦截 | ✅ 阻断 commit | ❌ 事后告警（已改完） |
 | 需要 git | ✅ | ❌ 自研 git-shadow diff 解析（isomorphic-git 风格，非内嵌第三方包） |
 
-事后审计是平台无关性的前提——实时拦截需深度集成平台，一旦集成丧失第三方独立性。v1.0.8 daemon 让事后审计达到准实时（fs.watch → 2 秒防抖 → 立即审计）。因此**实时拦截 / 运行时治理仅限 sofagent 自派 SubAgent**（sofagent 起环境又发凭证、天然拥有执行边界）；主 Agent 由第三方平台运行，sofagent 不进其执行环，保持事后审计（详见 ROADMAP「范围铁律」）。
+事后审计是平台无关性的前提——实时拦截需深度集成平台，一旦集成丧失第三方独立性。v1.0.8 daemon 让事后审计达到准实时（fs.watch → 2 秒防抖 → 立即审计）。因此**实时拦截 / 运行时治理仅限 sofagent 自派 SubAgent**（sofagent 起环境又发凭证、天然拥有执行边界）；主 Agent 由第三方平台运行，sofagent 不进其执行环，保持事后审计。
 
 ---
 
@@ -880,7 +880,7 @@ flowchart TD
 
 | 阶段 | 版本 | 核心交付 | 依赖已有能力 |
 |------|------|---------|-------------|
-| ① ACTIVATE | v1.2.5 | `activate.ts` + MCP `activate_workflow` tool + workflow.yml 扩展 | registry.ts 动态注册（v1.0.8）+ MCP Server（31 tools） |
+| ① ACTIVATE | v1.2.5 | `activate.ts` + MCP `activate_workflow` tool + workflow.yml 扩展 | registry.ts 动态注册（v1.0.8）+ MCP Server（27 tools） |
 | ② ORCHESTRATE | v1.2.6-v1.2.7 | workflow-parser 扩展 + `composeEnterpriseWorkflow()` + StateGraph 构建 | orchestrator（374 测试）+ LangGraph StateGraph |
 | ③ EXECUTE | v1.2.8-v1.2.9 | dag-runner node-executor + HITL interrupt + 审计集成 + 异常兜底 | audit（587 测试）+ daemon 文件监控 |
 | ④ SUSTAIN | v1.3.0 | 全链路验证 + `wrapToolCall` 联动 | think（反思引擎）+ eval + skillopt |
@@ -944,7 +944,7 @@ audit:
 | skill-staleness | @weekly（默认禁用） | Skill 陈旧度（需 eval 数据支持） |
 | warn-accumulator | @daily | 连续未处理 WARN 累积（阈值 3，含文件级追踪） |
 
-> **范围声明**：sofagent 是 Harness 中间件——覆盖行为约束 + 变更审计 + 经验沉淀 + 持续优化。不覆盖**主 Agent 平台**本身（IM 渠道 / 第三方平台托管的沙箱 / 工具调用——WorkBuddy / OpenClaw 等大厂平台的事），也不覆盖运维层（监控/告警/重启/日志轮转）。**例外**：sofagent 托管**自派 SubAgent** 的运行时治理——v1.3.0 起为 middleware 层轻量拦截（工具调用中介 + 人工批准钩子），v1.4.0 扩展为完整沙箱（文件系统隔离 + 网络出站白名单 + 工具调用前置 allow/deny + 虚拟 key 边界注入），因 sofagent 既起环境又发凭证、天然拥有执行边界。**运行时治理仅限自派 SubAgent，主 Agent 永远事后审计**（详见 ROADMAP「范围铁律」）。扣子（Coze，字节跳动） 类全栈产品管从 Agent 到权限的全部层，sofagent 管其中可独立标准化的约束+审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立底线守卫。
+> **范围声明**：sofagent 是 Harness 中间件——覆盖行为约束 + 变更审计 + 经验沉淀 + 持续优化。不覆盖**主 Agent 平台**本身（IM 渠道 / 第三方平台托管的沙箱 / 工具调用——WorkBuddy / OpenClaw 等大厂平台的事），也不覆盖运维层（监控/告警/重启/日志轮转）。**例外**：sofagent 托管**自派 SubAgent** 的运行时治理——v1.3.0 起为 middleware 层轻量拦截（工具调用中介 + 人工批准钩子），v1.4.0 扩展为完整沙箱（文件系统隔离 + 网络出站白名单 + 工具调用前置 allow/deny + 虚拟 key 边界注入），因 sofagent 既起环境又发凭证、天然拥有执行边界。**运行时治理仅限自派 SubAgent，主 Agent 永远事后审计**。扣子（Coze，字节跳动） 类全栈产品管从 Agent 到权限的全部层，sofagent 管其中可独立标准化的约束+审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立底线守卫。
 
 ---
 
