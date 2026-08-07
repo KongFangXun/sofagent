@@ -532,11 +532,11 @@ sofagent-audit（v1.0.8）是 TypeScript CLI，支持两种审计触发模式：
 | 模式 | 版本 | 触发 | 适用 | 需要 git |
 |------|:--:|------|------|:--:|
 | git commit 审计 | v0.92+ | `git commit` → commit-msg hook | 开发者 | ✅ |
-| 文件系统审计 | v1.0.8+ | daemon 监控文件变更 | 开发者 + 非开发者 | ❌（内嵌 isomorphic-git） |
+| 文件系统审计 | v1.0.8+ | daemon 监控文件变更 | 开发者 + 非开发者 | ❌（自研 git-shadow diff） |
 
 两种模式共用同一套审计规则（A1-A11、A14-A23 + E1-E2/E4，共 24 条）和 exit code（0=PASS / 1=WARN / 2=FAIL）。差异在于触发时机和拦截能力：git commit 审计能阻断 commit，文件系统审计只能事后告警 + 快照回溯。
 
-v1.0.8 内嵌 `isomorphic-git`（纯 JS Git，~2MB）作为 diff 引擎——非 git 目录也能做行级 diff。daemon 用 `chokidar` 监控文件变更，5 秒防抖后触发审计。每次审计后自动做 git 快照，用户可 `sofagent-audit --revert <sha>` 回滚。
+v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包依赖）作为 diff 引擎——非 git 目录也能做行级 diff。daemon 用 `chokidar` 监控文件变更，5 秒防抖后触发审计。每次审计后自动做 git 快照，用户可 `sofagent-audit --revert <sha>` 回滚。
 
 > 📖 **多设备同步**：daemon 的经验产出（knowledge/ + think.md）可跨设备共享——4 种方案见 [多设备同步指南](./guides/multi-device-sync.md)。
 
@@ -569,7 +569,7 @@ v1.0.8 内嵌 `isomorphic-git`（纯 JS Git，~2MB）作为 diff 引擎——非
 
 行业测评揭示的「防刷分验证法」与 sofagent 验证体系同构：
 
-- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（49 维）+ `acceptance-test.sh`（141 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
+- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（49 维）+ `acceptance-test.sh`（148 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
 - **上下文精简 = 低成本高通过**：研报发现 Pipe Agent 同模型下比原生工具便宜 1.2–2×、性能差距 <3pt，根因是初始提示 <1500 token（vs Claude Code 20k）。这从量化角度印证 sofagent「Harness 要轻」——约束底座零 token 运行（24 条规则 19 条纯 git-diff），把成本压在确定性引擎而非上下文堆料。
 
 > 📖 来源：温故知新 2026-07-21（行业研报《Databricks 真实代码库 AI 编程工具测评》）

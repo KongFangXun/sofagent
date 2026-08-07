@@ -90,7 +90,7 @@
 | 层 | 是什么 | 一句话 | 状态 |
 |:--:|------|------|:--:|
 | **层 1 · 能力底座** | 一底座·三引擎（约束底座 + 审计/回溯/进化引擎） | 怎么保证每次执行都做对 | ✅ 已交付 |
-| **层 2 · 生命周期（五阶段）** | 诊断 → 激活 → 编排 → 执行 → 进化（P1-18 口径统一：激活链四阶段 = 激活→编排→执行→持续 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，为五阶段中后四环） | 企业 AI 从诊断到自运转怎么走 | 🔗 Phase 1-3 已交付 |
+| **层 2 · 生命周期（五阶段）** | 诊断 → 激活 → 编排 → 执行 → 持续（P1-18 口径统一：激活链四阶段 = 激活→编排→执行→持续 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，为五阶段中后四环） | 企业 AI 从诊断到自运转怎么走 | 🔗 Phase 1-3 已交付 |
 
 **层 1 · 能力底座（一底座·三引擎）**：
 
@@ -110,7 +110,7 @@
 | ② | **激活** ACTIVATE（v1.2.5） | 读交付物 → 注册企业 SubAgent |
 | ③ | **编排** ORCHESTRATE（v1.2.6-7） | 多 Agent → StateGraph 工作流 |
 | ④ | **执行** EXECUTE（v1.2.8-9） | DAG 运行 + 人工审批（HITL）+ 审计集成 |
-| ⑤ | **进化** SUSTAIN（v1.3.0） | 反思 + 回灌，喂下一轮诊断 |
+| ⑤ | **持续** SUSTAIN（v1.3.0） | 反思 + 回灌，喂下一轮诊断 |
 
 > 一底座（约束）＋ 三引擎（审计 / 回溯 / 进化）＝ 全生命周期**可审计、可回滚、可进化**。激活链在此基础上让企业 AI 从"诊断完交付一堆文档"走向"自运转"。FORGE 自迭代工具链是项目内部开发工具。完整设计见 [ARCHITECTURE · 双层架构](./ARCHITECTURE.md#双层架构能力底座与生命周期) 和 [激活链设计文档](./guides/fde-activation-chain.md)。
 
@@ -291,7 +291,7 @@ Agent 先判断任务复杂度：
 
 ### 提交后自动审计
 
-Agent 改完代码 commit 了——`sofagent-audit` 扫描 git diff 对照 A1-A11、A14-A19 审计规则逐条判定：
+Agent 改完代码 commit 了——`sofagent-audit` 扫描 git diff 对照 24 条审计规则（17 默认启用：A1-A11 + A18-A23；7 扩展 opt-in：A14-A17 + E1/E2/E4）逐条判定：
 
 ```bash
 cd engine/audit && npm ci && npm run build
@@ -523,7 +523,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 ### 概念速查
 
-上述术语（Harness 中间件、能力底座 × 生命周期双层架构、一底座·三引擎（约束底座 + 审计/回溯/进化引擎）、激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）、FORGE 内部工具链、铁律、审计规则、Skill、think.md、daemon、OpenClaw、FDE 等）已在上方各幕详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。核心 = **能力底座（一底座·三引擎）× 生命周期（诊断→激活→编排→执行→进化）**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
+上述术语（Harness 中间件、能力底座 × 生命周期双层架构、一底座·三引擎（约束底座 + 审计/回溯/进化引擎）、激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）、FORGE 内部工具链、铁律、审计规则、Skill、think.md、daemon、OpenClaw、FDE 等）已在上方各幕详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。核心 = **能力底座（一底座·三引擎）× 生命周期（诊断→激活→编排→执行→持续）**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 ---
 
@@ -590,4 +590,4 @@ loop-engineering 社区总结了 10 个生产反模式，以下 4 个直接适�
 
 > 大半年 OpenClaw 实战笔记。如有更好的用法，欢迎开 Issue。
 >
-> *v1.2.3，2026 年 7 月 30 日*
+> *v1.2.8，2026 年 8 月 6 日*
