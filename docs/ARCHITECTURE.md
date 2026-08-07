@@ -120,7 +120,7 @@ graph TD
 | ACTIVATE | 激活 | 读 FDE 交付物 → 写 `.sofagent/subagents/*.yml` → 注册企业 SubAgent（v1.2.5） |
 | ORCHESTRATE | 编排 | 多个企业 SubAgent → LangGraph StateGraph 工作流（v1.2.6-v1.2.7） |
 | EXECUTE | 执行 | DAG 运行 + HITL 人工审批 + 审计集成 + 异常兜底（v1.2.8-v1.2.9） |
-| SUSTAIN | 闭环 | wrapToolCall 联动：执行 → 审计 → 反思 → 进化（v1.3.0） |
+| SUSTAIN | 持续 | wrapToolCall 联动：执行 → 审计 → 反思 → 进化（v1.3.0） |
 
 > 💬 **交互范式**：sofagent 没有图形界面。所有能力通过 MCP 协议暴露，用户通过 Agent 对话（LUI）操作——说一句话，它做完告诉你结果在哪。这是架构的根本设计约束：不存在「仅 CLI 可用」或「需要打开页面」的能力。详见 [设计哲学](./PHILOSOPHY.md)。
 
@@ -152,7 +152,7 @@ graph TD
 
 ### 对外核心能力（FDE Agent 给用户什么）
 
-✅ 已发布可用（v1.2.0 - v1.2.7）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 24 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关（Claude Code / Codex / WorkBuddy / OpenClaw 即挂即用；Cursor 社区验证中）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 本体结构 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
+✅ 已发布可用（v1.2.0 - v1.2.8）：FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 24 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关核心约束（Claude Code / Codex / WorkBuddy / OpenClaw 均可用审计能力；OpenClaw 深度集成 Hook 自动注入，其他平台手动注入约束 + 审计照常生效）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 本体结构 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层）。
 
 > **v1.2.0 审计链安全加固**（BugFix 批次）：`--doctor` hash chain 三态判定（ok / tampered / unverifiable，`checkHistoryChainDetailed`）· HMAC key ≥16 字节强校验（`validateHmacKey`）· HMAC 签名改为基于脱敏记录（先 sanitize 再签名，写读一致）· config 可选签名校验（`verifyConfigSignature` + `signConfig` CLI）· CLI 版本一致性自检（`checkVersionConsistency`）。详见 `engine/core/src/audit-history.ts`、`engine/core/src/config-loader.ts`。
 
@@ -163,7 +163,7 @@ graph TD
 | `install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（@sofagent-fde / @sofagent-audit）+ hook | FORGE | 企业 / FDE：要常驻硅基员工 |
 | `install.sh --base-only` | 仅底座（三引擎） | FDE / FORGE | 开发者 / 企业 IT：只要核心治理引擎 |
 
-> 最小可用：只装 `@sofagent/audit` 就有纯审计（21 规则 + 快照 + 回滚）；五包全装才是完整 Harness 中间件。
+> 最小可用：只装 `@sofagent/audit` 就有纯审计（24 条规则，17 默认启用 + 7 扩展 opt-in + 快照 + 回滚）；五包全装才是完整 Harness 中间件。
 > 注：v1.2.0 起 `install.sh`（根目录）成为主安装器并新增 `--base-only`，详见发版说明。
 
 ### 规划中（仓库内暂无实现）
@@ -419,7 +419,7 @@ daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml
 
 > 💡 **Graph Engineering 实操四纪律（2026-07-30 温故知新）**
 >
-> **① 节点不全是 Agent。** 节点分三类：Agent 节点（需求分析/代码理解等要语义判断的）、工具节点（跑编译器/JSON 结构校验——普通代码更便宜更稳定）、人工节点（合并主分支这类关键操作交给人）。别看到 graph 就往每个方框里塞一个 Agent——「连三个数组都召唤一个大模型」不是智能，是铺张浪费。sofagent 的四节点状态机正是活例：engineer/reviewer = Agent 节点，audit = 工具节点（16 条纯 git-diff 零 token），human_confirm = 人工节点。
+> **① 节点不全是 Agent。** 节点分三类：Agent 节点（需求分析/代码理解等要语义判断的）、工具节点（跑编译器/JSON 结构校验——普通代码更便宜更稳定）、人工节点（合并主分支这类关键操作交给人）。别看到 graph 就往每个方框里塞一个 Agent——「连三个数组都召唤一个大模型」不是智能，是铺张浪费。sofagent 的四节点状态机正是活例：engineer/reviewer = Agent 节点，audit = 工具节点（19 条纯 git-diff 零 token），human_confirm = 人工节点。
 >
 > **② 汇合比并行更难。** 并行的难点不是怎么出去，是怎么回来：哪些结果必须全部到齐、哪些只看关键结果、超时后是停止任务还是带着「尚未确认」的标记继续——这才是汇合规则。不能简单等全部完成（最慢的拖垮整张图），也不能投票放行（两票通过就假装漏洞不存在）。v1.3.1 并行波次落地时须为每一波显式定义汇合条件。
 >
@@ -884,7 +884,7 @@ flowchart TD
     SG --> A3[③ EXECUTE 执行<br/>dag-runner + node-executor<br/>v1.2.8-v1.2.9]
     A3 -->|HITL interrupt_before| HITL[人工审批节点<br/>高风险操作暂停等人确认]
     A3 -->|审计 hook| AUDIT[审计引擎<br/>每步变更自动审计]
-    A3 --> A4[④ SUSTAIN 闭环<br/>wrapToolCall 联动<br/>v1.3.0]
+    A3 --> A4[④ SUSTAIN 持续<br/>wrapToolCall 联动<br/>v1.3.0]
     A4 -->|think.md 回写| EVOLVE[进化引擎<br/>执行→审计→反思→进化]
     EVOLVE -.->|喂下一轮诊断| FDE
 ```
@@ -893,12 +893,12 @@ flowchart TD
 
 | 阶段 | 版本 | 核心交付 | 依赖已有能力 |
 |------|------|---------|-------------|
-| ① ACTIVATE | v1.2.5 | `activate.ts` + MCP `activate_workflow` tool + workflow.yml 扩展 | registry.ts 动态注册（v1.0.8）+ MCP Server（23 tools） |
+| ① ACTIVATE | v1.2.5 | `activate.ts` + MCP `activate_workflow` tool + workflow.yml 扩展 | registry.ts 动态注册（v1.0.8）+ MCP Server（31 tools） |
 | ② ORCHESTRATE | v1.2.6-v1.2.7 | workflow-parser 扩展 + `composeEnterpriseWorkflow()` + StateGraph 构建 | orchestrator（374 测试）+ LangGraph StateGraph |
 | ③ EXECUTE | v1.2.8-v1.2.9 | dag-runner node-executor + HITL interrupt + 审计集成 + 异常兜底 | audit（587 测试）+ daemon 文件监控 |
 | ④ SUSTAIN | v1.3.0 | 全链路验证 + `wrapToolCall` 联动 | think（反思引擎）+ eval + skillopt |
 
-> **关键认知**：底座（引擎）已经全绿（12 包 1527 测试，实测见 `tools/test-count.sh`），激活链不是造新引擎，是往已有引擎上放车厢——"轨道从早期就铺好了，一直没人往上面放车厢"。
+> **关键认知**：底座（引擎）已经全绿（13 包 1562 测试，实测见 `tools/test-count.sh`），激活链不是造新引擎，是往已有引擎上放车厢——"轨道从早期就铺好了，一直没人往上面放车厢"。
 
 ### 企业 SubAgent YML 格式（v1.2.5 新增）
 
