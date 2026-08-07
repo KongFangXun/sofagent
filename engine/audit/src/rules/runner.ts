@@ -21,14 +21,14 @@ import { defaultRules, rules } from './index';
  * 扩展规则（7 条，需主动开启 extensions.enabled: true）：
  *   A14-A17, E1-E2, E4
  *
- * 规则数口径（P2-24 统一）：
+ * 规则数口径(统一）：
  *   - 17 条默认规则（normal run，config.yml extendedRulesEnabled=false）
  *   - 24 条全量规则（config fallback 到 safeDefaults 时 extendedRulesEnabled=true，
  *     fail-closed 保护——宁可多查不漏查）
  *   - 23 个 .ts 文件（rules/ 目录，含 index.ts 注册表 = 23 规则文件 + 1 index）
  *   - 9 条基线规则（不可禁用）
  *
- * 注：A12/A13 已在 v0.99.4 合并入 A11，不再独立存在（P1-21 统一：以 v1.1.4 changelog 为准，
+ * 注：A12/A13 已在 v0.99.4 合并入 A11，不再独立存在(统一：以 v1.1.4 changelog 为准，
  * README 与代码此前 v0.99.4/v1.2.0 不一致，真实版本为 v0.99.4）。
  * @see engine/audit/src/rules/index.ts defaultRules/extendedRules ——以实际注册表为准。
  */
@@ -36,7 +36,7 @@ import { defaultRules, rules } from './index';
 /**
  * 基线规则——安全底线，不可通过 config.yml 关闭。
  * 即使 config.rules.a1 = false，A1 仍然生效。
- * P1-6: 单一事实源 = @sofagent/core BASELINE_RULE_KEYS（9 条：a1/a2/a9/a10/a11/a20/a21/a22/a23）
+ * 单一事实源 = @sofagent/core BASELINE_RULE_KEYS（9 条：a1/a2/a9/a10/a11/a20/a21/a22/a23）
  */
 // 注：数字编号由 BASELINE_RULE_KEYS 派生，避免与 config-loader 的 key 集合漂移
 

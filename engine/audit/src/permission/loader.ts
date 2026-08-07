@@ -1,7 +1,7 @@
 // ============================================================
 // permission/loader.ts · 权限配置加载与合并
 // v1.2.0 新增
-// v1.2.5 P0-10: 配置解析容错——JSON 解析失败 / 缺少 rules 数组时
+// v1.2.5 配置解析容错——JSON 解析失败 / 缺少 rules 数组时
 //   WARN 并按空配置处理，不让权限配置 DoS 崩溃审计进程。
 // ============================================================
 
@@ -14,7 +14,7 @@ function loadConfig(filePath: string): PermissionConfig | null {
   try {
     const raw = fs.readFileSync(filePath, 'utf-8');
     const parsed = JSON.parse(raw) as Partial<PermissionConfig>;
-    // P0-10: 缺少 rules 数组（如 {"deny":[...]} 错误 schema）→ WARN + 空配置，不崩溃
+    // 缺少 rules 数组（如 {"deny":[...]} 错误 schema）→ WARN + 空配置，不崩溃
     if (!Array.isArray(parsed.rules)) {
       console.warn(`[sofagent] 权限配置缺少 rules 数组（已忽略）: ${filePath}`);
       return { rules: [] };

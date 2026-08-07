@@ -46,7 +46,7 @@ const defaultAudit: AuditWriter = (entry) => {
  * @param localFallback 本地查询函数（search_knowledge 的本地路径）
  * @param channel 传输 channel（可选；缺省/为空时按"无联邦能力"本地查）
  * @param audit 审计写入回调
- * @param onPeerOverride P0-9: 远端结果覆盖本地条目时的告警回调（默认静默）
+ * @param onPeerOverride 远端结果覆盖本地条目时的告警回调（默认静默）
  * @returns 合并结果（纯本地时 source 全为 'local'）
  */
 export async function withOfflineFallback(

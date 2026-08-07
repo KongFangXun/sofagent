@@ -13,6 +13,8 @@
 </p>
 
 > **sofagent 是一个 FDE Agent**——进场帮你梳理工作流，把能自动化的环节变成 AI 节点，部署后 7×24 自己跑。AI 每次干活都自动受检查（越界就告警、出事能回滚、干了啥看得见），经验自动沉淀，越用越好。
+>
+> ⚠️ **「越用越好」当前状态（v1.2.8）**：进化引擎骨架已搭通，但尚未全自动闭环——think.md 反思需 MCP/CLI 手动触发、Dream Cycle 为轻量内存态（持久化计划 v1.3.0）、skillopt 需外部 CLI。完整「自动越用越好」闭环为 v1.3.x 目标，详见下方「引擎状态」表。
 
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
@@ -41,7 +43,7 @@ sofagent 就是解决这个问题的：**它帮你把 AI 管起来，让 AI 干�
 | **AI 乱来怎么办？** | 每次 AI 改东西都自动检查一遍 | AI 干的活有人盯着，越界立即告警 |
 | **AI 闯祸了怎么办？** | 每次改动自动存档，一键回滚 | 出事能一键回到安全状态 |
 | **换了 AI 工具/模型怎么办？** | 不挑平台——Claude、GPT、自建模型都能管 | 换模型不影响防护 |
-| **越用越好吗？** | AI 每次干活的经验自动沉淀，定期巡检优化规则 | 它越用越懂你的业务 |
+| **越用越好吗？** | AI 每次干活的经验自动沉淀，定期巡检优化规则（⚠️ v1.2.8 部分自动——详见首屏状态说明） | 它越用越懂你的业务 |
 
 **🏞️ 打个比方：一条河**——大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是**堤坝 + 自来水厂 + 管网 + 水龙头**：
 
@@ -135,7 +137,7 @@ FDE 交付了本体结构（ontology）+ workflow.yml + skills/ 之后，v1.2.5 
 
 | 你是… | 第一步 | 需要什么 |
 |------|------|------|
-| **企业用户** | 装 [FDE 引导工具](./FDE/README.md) → 对话引导你梳理工作流 | 零依赖、不需要 Node.js |
+| **企业用户** | 打开仓库内的 [FDE 引导目录](./FDE/README.md) → 对话引导你梳理工作流 | 零依赖、不需要 Node.js |
 | **企业批量部署（USB 烧录）** | `sofagent-daemon create-usb-key --role "节点名" --target /Volumes/XXX --platform macos` | 已装 daemon + 一个 U 盘 |
 | **开发者** | `bash install.sh` → `sofagent-audit --init` → 装 git hook 审计 | Node.js ≥ 18 + git |
 

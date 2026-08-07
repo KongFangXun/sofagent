@@ -10,11 +10,11 @@
 // ── 常量 ──
 export { VERSION } from './shared/constants';
 
-// ── P1-6: 基线规则常量（单一事实源）──
+// ── 基线规则常量（单一事实源）──
 export { BASELINE_RULE_KEYS, BASELINE_RULE_NUMBERS } from './shared/rule-constants';
 export type { BaselineRuleKey } from './shared/rule-constants';
 
-// ── P1-27: 密钥检测正则单一事实源（A2 + ToolGate 共用）──
+// ── 密钥检测正则单一事实源（A2 + ToolGate 共用）──
 // v1.2.5: 扩展为全规则共享库——新增 REDACTION_PATTERNS / DOMAIN_WHITELIST / DANGEROUS_SCRIPT_CMDS
 export { SECRET_PATTERNS, REDACTION_PATTERNS, DOMAIN_WHITELIST, DANGEROUS_SCRIPT_CMDS } from './shared/secret-patterns';
 
@@ -27,10 +27,10 @@ export {
 } from './agent-identity';
 export type { AgentIdentity } from './agent-identity';
 
-// ── P2-36: 环境变量统一读取（SOFAGENT_* 主名 + 旧名别名兜底）──
+// ── 环境变量统一读取（SOFAGENT_* 主名 + 旧名别名兜底）──
 export { resolveEnvVar, resolveEnvBool, resolveEnvNumber } from './shared/env';
 
-// ── P1-3: 联邦/巡检共用实现（从 daemon 下沉，audit 静态 import）──
+// ── 联邦/巡检共用实现（从 daemon 下沉，audit 静态 import）──
 export {
   checkConflict,
   mergeFederationResults,

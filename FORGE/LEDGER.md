@@ -70,46 +70,46 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 
 2026-07-26     | 20260726-03    | fresh-eyes  | 1    | 14  | 21  | 16  | max-rounds      | FORGE/SKILL/fresh-eyes-loop/runs/2026/07/26/run-03
 
-2026-07-28     | 20260728-05    | release-gate | 4    | FAIL       | SKIP       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-07-28/run-05
+2026-07-28     | 20260728-05    | release-gate | 4    | FAIL       | SKIP       | FAIL     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-07-28/run-05
 
-2026-07-29     | 20260729-01    | release-gate | 4    | FAIL       | SKIP       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-07-29/run-01
+2026-07-29     | 20260729-01    | release-gate | 4    | FAIL       | SKIP       | FAIL     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-07-29/run-01
 
-2026-07-29     | 20260729-02    | release-gate | 4    | SKIP       | FAIL       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-07-29/run-02
+2026-07-29     | 20260729-02    | release-gate | 4    | SKIP       | FAIL       | FAIL     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-07-29/run-02
 
-2026-07-29     | 20260729-03    | release-gate | 4    | SKIP       | FAIL       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-07-29/run-03
+2026-07-29     | 20260729-03    | release-gate | 4    | SKIP       | FAIL       | FAIL     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-07-29/run-03
 
-2026-07-29     | 20260729-04    | release-gate | 4    | SKIP       | FAIL       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-07-29/run-04
+2026-07-29     | 20260729-04    | release-gate | 4    | SKIP       | FAIL       | FAIL     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-07-29/run-04
 
-2026-07-29     | 20260729-08    | release-gate | 5    | FAIL       | FAIL       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-07-29/run-08
+2026-07-29     | 20260729-08    | release-gate | 5    | FAIL       | FAIL       | FAIL     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-07-29/run-08
 
-2026-07-29     | 20260729-14    | release-gate | 4    | FAIL       | SKIP       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-07-29/run-14
+2026-07-29     | 20260729-14    | release-gate | 4    | FAIL       | SKIP       | FAIL     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-07-29/run-14
 
-2026-07-29     | 20260729-16    | release-gate | 3    | FAIL       | FAIL       | FAIL     | ERROR   | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-07-29/run-16
+2026-07-29     | 20260729-16    | release-gate | 3    | FAIL       | FAIL       | FAIL     | ERROR   | ~/.sofagent/data/forge-runs/release-gate-loop/2026-07-29/run-16
 
-2026-07-31     | 20260731-01    | release-gate | 5    | FAIL       | FAIL       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-07-31/run-01
+2026-07-31     | 20260731-01    | release-gate | 5    | FAIL       | FAIL       | FAIL     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-07-31/run-01
 
-2026-07-31     | 20260731-04    | release-gate | 5    | FAIL       | FAIL       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-07-31/run-04
+2026-07-31     | 20260731-04    | release-gate | 5    | FAIL       | FAIL       | FAIL     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-07-31/run-04
 
-2026-07-31     | 20260731-05    | release-gate | 5    | FAIL       | FAIL       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-07-31/run-05
+2026-07-31     | 20260731-05    | release-gate | 5    | FAIL       | FAIL       | FAIL     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-07-31/run-05
 
 2026-07-31     | 20260731-05*   | release-gate | 5    | PASS       | PASS       | PASS     | PASS    | 勘误：run-05 真实裁决 PASS（verdict.md 权威）。上行为 driver parseVerdict/parseStepResults 解析 bug（commit a845ed8 已修）导致的误标，特此补正。run-01/run-04 的 FAIL 为真实裁决（coverage 零覆盖 + regression U+FFFD），未受此 bug 影响。
 
-2026-08-02     | 20260802-05    | fresh-eyes  | 2    | 0   | 0   | 0   | 2-rounds-clean  | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-02/run-05
+2026-08-02     | 20260802-05    | fresh-eyes  | 2    | 0   | 0   | 0   | 2-rounds-clean  | ~/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-02/run-05
 
-2026-08-02     | 20260802-06    | fresh-eyes  | 3    | 0   | 0   | 0   | weighted-convergence | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-02/run-06
+2026-08-02     | 20260802-06    | fresh-eyes  | 3    | 0   | 0   | 0   | weighted-convergence | ~/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-02/run-06
 
-2026-08-03     | 20260803-02    | release-gate | 3    | PASS       | SKIP       | SKIP     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-03/run-02
+2026-08-03     | 20260803-02    | release-gate | 3    | PASS       | SKIP       | SKIP     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-08-03/run-02
 
-2026-08-03     | 20260803-06    | release-gate | 4    | PASS       | FAIL       | SKIP     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-03/run-06
+2026-08-03     | 20260803-06    | release-gate | 4    | PASS       | FAIL       | SKIP     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-08-03/run-06
 
-2026-08-03     | 20260803-08    | release-gate | 5    | PASS       | FAIL       | PASS     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-03/run-08
+2026-08-03     | 20260803-08    | release-gate | 5    | PASS       | FAIL       | PASS     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-08-03/run-08
 
-2026-08-05     | 20260805-03    | fresh-eyes  | 2    | 0   | 0   | 0   | consecutive-degraded-error | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-05/run-03
+2026-08-05     | 20260805-03    | fresh-eyes  | 2    | 0   | 0   | 0   | consecutive-degraded-error | ~/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-05/run-03
 
-2026-08-05     | 20260805-05    | fresh-eyes  | 2    | 1   | 1   | 0   | consecutive-degraded-error | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-05/run-05
+2026-08-05     | 20260805-05    | fresh-eyes  | 2    | 1   | 1   | 0   | consecutive-degraded-error | ~/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-05/run-05
 
-2026-08-05     | 20260805-06    | fresh-eyes  | 5    | 1   | 1   | 2   | weighted-convergence | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-05/run-06
+2026-08-05     | 20260805-06    | fresh-eyes  | 5    | 1   | 1   | 2   | weighted-convergence | ~/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-05/run-06
 
-2026-08-06     | 20260806-06    | release-gate | 5    | SKIP       | SKIP       | PASS     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-06/run-06
+2026-08-06     | 20260806-06    | release-gate | 5    | SKIP       | SKIP       | PASS     | PASS    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-08-06/run-06
 
-2026-08-07     | 20260807-24    | release-gate | 8    | FAIL       | FAIL       | PASS     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-07/run-24
+2026-08-07     | 20260807-24    | release-gate | 8    | FAIL       | FAIL       | PASS     | PASS    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-08-07/run-24

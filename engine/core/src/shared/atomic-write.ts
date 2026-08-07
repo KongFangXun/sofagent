@@ -1,7 +1,7 @@
 // ============================================================
 // shared/atomic-write.ts · 原子文件写入工具
 // v1.2.0 新增：gstack 工程学习——原子写入防并发冲突
-// v1.2.5 P1-2: atomicAppendSync 加文件锁互斥（O_EXCL 锁文件 + 过期回收），
+// v1.2.5 atomicAppendSync 加文件锁互斥（O_EXCL 锁文件 + 过期回收），
 //   消除 read-modify-write 非原子的并发丢数据；>1MB 不再退化为无保护 append。
 // ============================================================
 //
@@ -24,7 +24,7 @@ function tmpPath(filePath: string): string {
 }
 
 // ────────────────────────────────────────────────────────────
-// P1-2: 文件锁（O_EXCL 互斥 + 过期回收）
+// 文件锁（O_EXCL 互斥 + 过期回收）
 // ────────────────────────────────────────────────────────────
 
 /** 锁文件过期阈值（10s——正常读改写远快于此，超时视为死锁残留回收） */
@@ -50,7 +50,7 @@ function lockPathOf(filePath: string): string {
 }
 
 /**
- * 带文件锁的互斥执行（P1-2）：
+ * 带文件锁的互斥执行：
  * 通过 O_EXCL 创建锁文件实现同机跨进程互斥；锁文件带 PID/时间戳，
  * 超过 LOCK_STALE_MS 视为死锁残留自动回收（防崩溃遗留永久卡死）。
  * 用于 atomicAppendSync 的读-改-写，杜绝并发丢数据。
@@ -118,7 +118,7 @@ export function atomicWriteSync(filePath: string, content: string): void {
 
 /**
  * 原子追加——读入现有内容 + 追加行 + 原子写。
- * P1-2: 整个读-改-写在 withFileLockSync 互斥下执行（O_EXCL 锁文件），
+ * 整个读-改-写在 withFileLockSync 互斥下执行（O_EXCL 锁文件），
  *   多进程并发不再丢数据；>1MB 大文件同样加锁读改写（不再退化为无保护 append）。
  *
  * @param filePath 目标文件路径

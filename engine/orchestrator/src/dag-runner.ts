@@ -63,7 +63,7 @@ export type CreateReactAgentFn = (params: {
 }) => Promise<{ invoke: (input: { messages: Array<{ role: string; content: string }> }, config?: { recursionLimit?: number }) => Promise<unknown> }>;
 
 /**
- * 断言 SubAgent tools 数组不为空（F-01 回归防护）。
+ * 断言 SubAgent tools 数组不为空(回归防护）。
  * 迁移后语义变化：不再有 subagents 配置数组，改为检查注入的 subagent tools 数组。
  * 每个封装的 task tool 必须包含实际工具（不能为空数组）。
  */
@@ -273,7 +273,7 @@ export async function runDAG(
     );
   });
 
-  // 6. F-01 回归防护：确认 subagent tools 不为空
+  // 6. 回归防护：确认 subagent tools 不为空
   assertSubAgentsNoEmptyTools(subagentTools);
 
   // 7. 创建编排 Agent（主 Agent 用 subagent tools 委派）

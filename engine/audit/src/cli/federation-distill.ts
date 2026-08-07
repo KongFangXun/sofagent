@@ -21,7 +21,7 @@ import { join, dirname } from 'path';
 import { loadEnvConfig, resolveKnowledgeDir } from '@sofagent/core';
 import type { KnowledgeQueryResult, FederationResult, MergedKnowledge } from '@sofagent/core';
 
-/** 注入的合并函数签名（P1-3: 与 core mergeFederationResults 类型对齐——静态 import 后不再 any） */
+/** 注入的合并函数签名(与 core mergeFederationResults 类型对齐——静态 import 后不再 any） */
 export type MergeFn = (
   local: KnowledgeQueryResult[],
   remote: FederationResult[],

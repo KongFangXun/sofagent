@@ -406,23 +406,22 @@ FDE 入场时，不搭交互页面。做的事是：梳理 workflow 节点 → �
 
 ## 七、怎么进化——FORGE 自迭代
 
-> ⚠️ **以下为 v1.2.0 前期设计正文，保留作历史参考。** FORGE 的自迭代目标从未改变——v1.2.0 后期重构了落地方式：从硬编码串行工具包改为通过 workflow 逐步实现自迭代。当前已落地第一个 workflow **fresh-eyes-loop**（A/B 双盲 12 视角质量审查循环），未来更多 workflow 加入后逐步实现完整自迭代。如需最新信息，请以 [`FORGE/SKILL/fresh-eyes-loop/loop.md`](../FORGE/SKILL/fresh-eyes-loop/loop.md) 为准。
->
-> *以下旧设计正文原样保留作为历史参考。*
+FORGE 是 sofagent 的自迭代工具链：Agent 写代码、Agent 审计、Agent 审查——不是隐喻，是真实运行的工程闭环。核心纪律是**评判者与执行者分离**——银行转账，录入和复核是两个人。工程师 Agent 看自己写的代码不是审查，是自我说服。
 
-不是隐喻——是真的让 Agent 写代码、Agent 审计、Agent 审查：
+### 当前形态：两个已落地的闭环
 
-```
-人类下达任务
-  → engineering-minimal-change-engineer（写代码 + build + test + commit）
-  → sofagent-audit（commit-msg hook 自动触发）
-  → engineering-code-reviewer（读 git diff + 输出审查报告）
-  → 人类确认 → git push → 下一轮
-```
+| Loop | 角色 | 职责 |
+|------|------|------|
+| **fresh-eyes-loop** | A（审查者，只读工具）+ B（工程师，写工具） | A/B 双盲 12 视角质量审查循环 |
+| **release-gate-loop** | V（验证者，只读工具） | 发版闸门：从审查到发版的全流程验证 |
 
-评判者与执行者分离——银行转账，录入和复核是两个人。工程师 Agent 看自己写的代码不是审查，是自我说服。
+「新鲜眼睛」的纪律不靠模型自觉，而靠**流程结构**保证：每步独立子进程（零上下文）+ 独立 prompt + 异构双模型（审查者用深度推理模型、工程师用编码强项模型）。
 
-进化引擎的产出不只是优化后的规则——还包括**价值证明报告**。审计引擎生成证据，进化引擎生成报表，MCP 层推送——三者共同构成 sofagent 的"持续存在感"。客户不需要记得 FDE 做了什么，每次看到带签名的报告就够了。
+### 上手路径
+
+- 环境配置与模型接入：[`FORGE/quick-start.md`](../FORGE/quick-start.md)
+- 循环协议：[`FORGE/SKILL/fresh-eyes-loop/loop.md`](../FORGE/SKILL/fresh-eyes-loop/loop.md) / [`FORGE/SKILL/release-gate-loop/loop.md`](../FORGE/SKILL/release-gate-loop/loop.md)
+- 沉淀的经验教训：[`FORGE/lessons/index.md`](../FORGE/lessons/index.md)
 
 ### 建设顺序：先 Harness，再 Loop，后 Graph
 

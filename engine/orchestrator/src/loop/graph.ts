@@ -55,7 +55,7 @@ import {
 } from './checker-nodes';
 
 /**
- * v1.2.8 P1-21: 运行时守卫——从 CheckpointRecord.state（Record<string, unknown>）安全恢复为 LoopGraphState。
+ * v1.2.8 运行时守卫——从 CheckpointRecord.state（Record<string, unknown>）安全恢复为 LoopGraphState。
  *
  * 此前 14 处 `as unknown as` 双重断言使 checkpoint 恢复全链路零类型保护。
  * 现统一通过此函数恢复：做基础结构校验后断言，而非裸断言。
@@ -75,7 +75,7 @@ function restoreState(record: CheckpointRecord): LoopGraphState {
 }
 
 /**
- * v1.2.8 P1-21: 中心化 checkpoint 写入——替代 6 处裸 `as unknown as CheckpointState` 断言。
+ * v1.2.8 中心化 checkpoint 写入——替代 6 处裸 `as unknown as CheckpointState` 断言。
  * LoopGraphState → CheckpointState 的结构映射在此一处完成。
  */
 function saveCheckpoint(

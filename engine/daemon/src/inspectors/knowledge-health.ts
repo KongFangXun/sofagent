@@ -378,7 +378,7 @@ export function checkKnowledgeHealth(
     parts.push(`缺源 ${visibleMissingSource.length} 项：${visibleMissingSource.slice(0, 3).join(', ')}${visibleMissingSource.length > 3 ? '…' : ''}`);
     reportLines.push(`缺源 concept ${visibleMissingSource.length} 项（无 source: frontmatter）：${visibleMissingSource.join(', ')}`);
   }
-  // ── [P2-10] 可选自动修复（仅 --auto-fix 开启时，默认关闭）──
+  // ── [] 可选自动修复（仅 --auto-fix 开启时，默认关闭）──
   // 低风险管理：① 移除 index.md 中指向断链目标的行 ② index 过旧重新生成。
   // 孤立页 / 重复 normalized-key 仍仅报告、不自动改（避免误删源数据）。
   if (options.autoFix) {

@@ -1,5 +1,5 @@
 // ============================================================
-// dream-cycle/injection-guard.ts · Prompt injection 隔离（P2-5）
+// dream-cycle/injection-guard.ts · Prompt injection 隔离
 //
 // Dream Cycle 经 LLMProvider 读取 think.md / audit history，产出结构化
 // 事实/概念。为防止 think.md 中的诱导指令被 LLM 当作指令执行（而非文本提取），

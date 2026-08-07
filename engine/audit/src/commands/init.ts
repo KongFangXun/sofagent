@@ -5,10 +5,10 @@
 //   2. 安装 git commit-msg hook
 //   3. 冒烟测试——验证审计引擎可用
 // v1.2.0: 新增仓库状态分类器（gstack 首次运行引导）
-// v1.2.5 P0-1: daemon 注册改为「确认后注册」——默认不装、非 TTY 不挂起、
+// v1.2.5 daemon 注册改为「确认后注册」——默认不装、非 TTY 不挂起、
 //   已有 plist 询问不静默覆盖、npx 场景如实报错（不生成坏 plist、不打印假成功）、
 //   修正 plist 路径前缀 sofagent/daemon/ → engine/daemon/。
-// v1.2.5 P1-24: --init 自动生成 HMAC 密钥（~/.sofagent-key，权限 600），
+// v1.2.5 --init 自动生成 HMAC 密钥（~/.sofagent-key，权限 600），
 //   审计历史默认启用 HMAC-SHA256 强校验。
 // ============================================================
 
@@ -29,7 +29,7 @@ import { defaultRules } from '../rules';
 type RepoState = 'greenfield' | 'has_code' | 'has_uncommitted' | 'dirty' | 'clean';
 
 /**
- * P1-1: 确保 .sofagent/ 被 .gitignore 排除
+ * 确保 .sofagent/ 被 .gitignore 排除
  * v1.0.7 新增——防止首次 commit 时 A3 越界告警
  */
 export function ensureGitignore(cwd: string): void {
@@ -93,7 +93,7 @@ function classifyRepo(): { state: RepoState; hint: string } {
 }
 
 // ────────────────────────────────────────────────────────────
-// P0-1: 交互式确认（非 TTY 默认 N，不挂起）
+// 交互式确认（非 TTY 默认 N，不挂起）
 // ────────────────────────────────────────────────────────────
 
 /** 是否处于可交互终端（stdin 与 stdout 均为 TTY 才提示，避免脚本/CI 挂起） */
@@ -132,7 +132,7 @@ function extractFirstPlistString(plistContent: string): string | null {
 }
 
 // ────────────────────────────────────────────────────────────
-// P0-1: daemon 注册（确认后注册 + 路径修正 + 已有 plist 询问 + npx 如实报错）
+// daemon 注册（确认后注册 + 路径修正 + 已有 plist 询问 + npx 如实报错）
 // ────────────────────────────────────────────────────────────
 
 /**
@@ -180,7 +180,7 @@ function resolveDaemonEntry(cwd: string): { cliPath: string; args: string[] } | 
 }
 
 /**
- * 注册 macOS LaunchAgent（P0-1 修复版）：
+ * 注册 macOS LaunchAgent(修复版）：
  *  - 已有 plist 时先询问是否覆盖（默认不覆盖，不静默卸载）
  *  - daemon 未安装（npx 场景）时如实报错，不生成坏 plist、不打印假成功
  */
@@ -193,7 +193,7 @@ function registerDaemon(cwd: string): void {
   const plistPath = join(launchAgentsDir, 'com.sofagent.daemon.plist');
   const projectWorkingDir = cwd;
 
-  // 已有 plist → 询问是否覆盖（P0-1：单例互踩根因——不再静默卸载覆盖）
+  // 已有 plist → 询问是否覆盖(单例互踩根因——不再静默卸载覆盖）
   if (existsSync(plistPath)) {
     let oldTarget = '(无法读取)';
     try {
@@ -345,11 +345,11 @@ export function runInit(): void {
     console.log('  → 监控路径不匹配？编辑 .sofagent/watch.yml 的 watch.paths');
   }
 
-  // P1-1: 确保 .sofagent/ 被 gitignore
+  // 确保 .sofagent/ 被 gitignore
   ensureGitignore(cwd);
 
-  // P1-24: 自动生成 HMAC 密钥（~/.sofagent-key，权限 600）
-  // 配合 P0-3 修复形成完整防篡改链路：默认启用 HMAC-SHA256 强校验
+  // 自动生成 HMAC 密钥（~/.sofagent-key，权限 600）
+  // 配合 修复形成完整防篡改链路：默认启用 HMAC-SHA256 强校验
   const hmacKeyPath = join(homedir(), '.sofagent-key');
   if (existsSync(hmacKeyPath)) {
     console.log('  → ~/.sofagent-key 已存在，不覆盖（审计历史继续使用现有密钥）');
@@ -450,7 +450,7 @@ export function runInit(): void {
     }
 
     // v1.2.8: post-commit hook 重写——commit hash 对账替代 timestamp 近邻匹配 + 读全局 history 路径
-    // v1.2.9 P0-2: 对账逻辑适配 parentSha（commit-msg hook 记录的是父提交 SHA）
+    // v1.2.9 对账逻辑适配 parentSha（commit-msg hook 记录的是父提交 SHA）
     const POST_COMMIT_TEMPLATE = `#!/bin/bash
 # sofagent post-commit hook v1.2.9
 # 检测策略：commit hash 对账——检查当前 commit 的 SHA 是否在审计记录中有对应条目
@@ -458,7 +458,7 @@ export function runInit(): void {
 # 如果没有，判定为绕过（--no-verify 或 hook 被删/失效）
 # 注意：git commit --no-verify 会绕过本 hook——CI 侧 sofagent-audit --diff 兜底是最终防线
 
-# commit-msg hook 存在性检查（v1.2.8: P1-3 联动）
+# commit-msg hook 存在性检查（v1.2.8: 联动）
 COMMIT_MSG_HOOK=".git/hooks/commit-msg"
 if [ ! -f "$COMMIT_MSG_HOOK" ]; then
   echo ""
@@ -490,7 +490,7 @@ const lines = fs.readFileSync('$HISTORY_FILE', 'utf-8').trim().split('\\\\n').fi
 if (lines.length === 0) process.exit(0);
 try {
   // 反向查找（最新记录在末尾）
-  // 匹配规则（v1.2.9 P0-2）：
+  // 匹配规则（v1.2.9 ）：
   //   1. commitSha 精确匹配（手动 --diff 场景记录）
   //   2. parentSha 匹配（commit-msg hook 场景记录——commitPhase='pre-commit'，
   //      parentSha = 审计时 HEAD = 新提交的父提交，见 engine/audit/src/index.ts）
@@ -532,7 +532,7 @@ exit 0
           const minor = parseInt(versionMatch[2]!, 10);
           const patch = parseInt(versionMatch[3]!, 10);
         // v1.2.8: post-commit 大改（路径+对账机制），强制覆盖 1.2.7 及以下
-        // v1.2.9 P0-2: 对账逻辑适配 parentSha，强制覆盖 1.2.8 及以下（否则 A8 误报自愈不生效）
+        // v1.2.9 对账逻辑适配 parentSha，强制覆盖 1.2.8 及以下（否则 A8 误报自愈不生效）
         if (major < 1 || (major === 1 && (minor < 2 || (minor === 2 && patch < 9)))) {
             hasPostCommitHook = false;  // 旧版本 → 覆盖
           } else {
@@ -632,13 +632,13 @@ exit 0
 
   if (smokeOk) stepOk++;
 
-  // [5/5] 注册 daemon 文件系统监控（v1.0.8 新增；v1.2.5 P0-1 改为确认后注册）
+  // [5/5] 注册 daemon 文件系统监控（v1.0.8 新增；v1.2.5 改为确认后注册）
   console.log('');
   console.log('[5/5] 注册 daemon 文件系统监控...');
 
   const isMacOS = platform() === 'darwin';
   if (isMacOS) {
-    // P0-1: 默认不装——询问用户是否注册 daemon 常驻服务。
+    // 默认不装——询问用户是否注册 daemon 常驻服务。
     // 非 TTY（脚本/CI/npx）默认 N，绝不挂起等待输入；也可用 --no-daemon 显式跳过。
     if (process.argv.includes('--no-daemon')) {
       console.log('  → 已指定 --no-daemon，跳过 daemon 常驻服务注册');

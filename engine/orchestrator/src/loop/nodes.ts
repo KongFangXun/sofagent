@@ -383,7 +383,7 @@ function routeAndLog(role: 'engineer' | 'reviewer', task: string): {
       routeSummary: `[router] target=${route.target} reason=${route.reason} sensitivity=${route.sensitivity}`,
     };
   } catch (err) {
-    // P1-21: 数据流向/安全降级必须有 warn——router 失败时降级为 internal（可上云），
+    // 数据流向/安全降级必须有 warn——router 失败时降级为 internal（可上云），
     // 如果本该走 restricted（本地）的数据被降级，用户需要知道
     console.warn('[sofagent] router 路由评估失败，降级 sensitivity=internal:', err instanceof Error ? err.message : String(err));
     return { sensitivity: 'internal', routeSummary: '[router] 路由评估失败，降级 internal' };
@@ -452,7 +452,7 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
       decideSummary += `\n[execute] ${execResult.summary.split('\n')[0] ?? ''}`;
     }
   } catch (err) {
-    // P1-21: decide/execute 异常时降级走 createReactAgent 路径——工具可用性降级需 warn
+    // decide/execute 异常时降级走 createReactAgent 路径——工具可用性降级需 warn
     console.warn('[sofagent] engineer decide/execute 失败，降级走 createReactAgent:', err instanceof Error ? err.message : String(err));
   }
 
@@ -499,7 +499,7 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
     progressMw.nodeEnd('engineer', { durationMs: Date.now() - nodeStartedAt, success: true });
     return output || '[降级运行] createReactAgent 未返回内容，已回退';
   } catch (err) {
-    // P1-21: 模型解析失败/createReactAgent import 失败 → spawnSubAgent 零工具路径（工具可用性降级）
+    // 模型解析失败/createReactAgent import 失败 → spawnSubAgent 零工具路径（工具可用性降级）
     console.warn('[sofagent] engineer createReactAgent 失败，降级到 spawnSubAgent:', err instanceof Error ? err.message : String(err));
     progressMw.nodeEnd('engineer', { durationMs: Date.now() - nodeStartedAt, success: false });
     const fallback = await spawnSubAgent(ENGINEER_AGENT, fullTask);
@@ -669,7 +669,7 @@ async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
     progressMw.nodeEnd('reviewer', { durationMs: Date.now() - nodeStartedAt, success: true });
     return output || '[降级运行] createReactAgent 未返回内容，已回退';
   } catch (err) {
-    // P1-21: reviewer 模型解析失败/createReactAgent import 失败 → spawnSubAgent 零工具路径
+    // reviewer 模型解析失败/createReactAgent import 失败 → spawnSubAgent 零工具路径
     console.warn('[sofagent] reviewer createReactAgent 失败，降级到 spawnSubAgent:', err instanceof Error ? err.message : String(err));
     progressMw.nodeEnd('reviewer', { durationMs: Date.now() - nodeStartedAt, success: false });
     const fallback = await spawnSubAgent(REVIEWER_AGENT, reviewTask);

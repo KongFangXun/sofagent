@@ -29,7 +29,7 @@ function getDataBase(): string {
 }
 
 function getAuditEnabled(): boolean {
-  // P2-36: SOFAGENT_* 主名优先，SOFA_* 别名兜底
+  // SOFAGENT_* 主名优先，SOFA_* 别名兜底
   return (process.env.SOFAGENT_AUDIT_ENABLED ?? process.env.SOFA_AUDIT_ENABLED) === 'true';
 }
 

@@ -36,7 +36,7 @@ export interface AgentIdentity {
 /**
  * 读取 sofagent-key（HMAC 密钥文件）。
  *
- * 密钥文件位置：~/.sofagent-key（由 init.ts P1-24 生成）。
+ * 密钥文件位置：~/.sofagent-key（由 init.ts 生成）。
  * 如果文件不存在，使用 hostname 作为 fallback（不强制依赖密钥文件存在）。
  *
  * @returns 密钥字符串

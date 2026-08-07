@@ -82,7 +82,7 @@ export interface AuditConfig {
     /** WARN 是否升级为 FAIL 阻断（默认 false，WARN 不阻断） */
     warnAsFail: boolean;
   };
-  /** v1.2.8: P1-5 自定义脱敏正则——企业业务机密（合同名称/客户名单/工资表等） */
+  /** v1.2.8: 自定义脱敏正则——企业业务机密（合同名称/客户名单/工资表等） */
   sanitizePatterns?: { pattern: string; replacement: string }[];
 }
 
@@ -231,11 +231,11 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
   }
 
   // v1.1.3: 先尝试浅层解析以提取 audit.strict（用于 fail-closed 判定）
-  // v1.1.5: P1-1 schema 一致性——允许顶层配置（无 audit: 包装），与 mergeWithDefaults 支持范围对齐
+  // v1.1.5:  schema 一致性——允许顶层配置（无 audit: 包装），与 mergeWithDefaults 支持范围对齐
   let configStrict = false;
   try {
     const parsed = yamlLoad(content) as Record<string, unknown> | null;
-    // v1.2.0 (FLAG-3): 可选 signature 字段校验（防 Agent 篡改配置文件）
+    // v1.2.0: 可选 signature 字段校验（防 Agent 篡改配置文件）
     verifyConfigSignature(parsed, filePath);
     if (parsed && typeof parsed === 'object') {
       const audit = parsed['audit'];
@@ -283,7 +283,7 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
 }
 
 /**
- * v1.2.0 (FLAG-3) 最小安全实现：config.yml 可选 signature 字段校验
+ * v1.2.0 最小安全实现：config.yml 可选 signature 字段校验
  *
  * 设计：
  *   - config.yml 顶层可带 `signature: <hex HMAC-SHA256>` 字段。
@@ -319,7 +319,7 @@ function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath:
 
   const sig = parsed['signature'];
   if (typeof sig !== 'string' || sig.trim().length === 0) {
-    // F06 (v1.2.7): 签名缺失——fail-open（全新安装无签名是常态），但 WARN 更显眼
+    // (v1.2.7): 签名缺失——fail-open（全新安装无签名是常态），但 WARN 更显眼
     // 全新安装时无签名是正常的；已有配置但无签名 = 配置可被任意修改且不被发现
     console.warn('');
     console.warn('  ╔══════════════════════════════════════════════════════╗');
@@ -440,8 +440,8 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
   };
 
   // 校验 rules key——未知规则名输出警告
-  // v1.1.5: P0-1 补全 a18/a19（v1.1.4 新增 A18/A19 规则后此处遗漏）
-  // P1-6: 基线规则集合与 runner 统一（共享常量 BASELINE_RULE_KEYS，9 条：a1/a2/a9/a10/a11/a20/a21/a22/a23）
+  // v1.1.5: 补全 a18/a19（v1.1.4 新增 A18/A19 规则后此处遗漏）
+  // 基线规则集合与 runner 统一（共享常量 BASELINE_RULE_KEYS，9 条：a1/a2/a9/a10/a11/a20/a21/a22/a23）
   if (merged.rules) {
     for (const key of BASELINE_RULE_KEYS) {
       if (merged.rules[key] === false) {
@@ -521,7 +521,7 @@ export function writeConfig(filePath: string, config: string): void {
 /**
  * 运行时配置——由环境变量加载（对应 lib/config.sh 导出项）
  *
- * 命名约定说明（F-06）：`Sofa*` 是 TS 接口/类型的驼峰命名，仅存在于 TypeScript
+ * 命名约定说明：`Sofa*` 是 TS 接口/类型的驼峰命名，仅存在于 TypeScript
  * 层；它对应的**所有**环境变量均为 `SOFAGENT_` 全大写 + 下划线（SOFAGENT_HOME /
  * SOFAGENT_DATA / SOFAGENT_KEY_PATH …），符合 Unix 环境变量约定。shell↔TS 边界
  * 只通过 `process.env.SOFAGENT_*`（见 resolveDataDir）传递，不存在驼峰环境变量，
@@ -548,7 +548,7 @@ export interface SofaEnvConfig {
 
 /** 环境变量默认值 */
 export const ENV_DEFAULTS: Omit<SofaEnvConfig, 'dataDir'> = {
-  // P1-16: 数据主权产品的脱敏不应是 opt-in——默认开启
+  // 数据主权产品的脱敏不应是 opt-in——默认开启
   sanitizeEnabled: true,
   sanitizeIpsEnabled: true,
   retentionDays: 90,
@@ -568,7 +568,7 @@ export function loadEnvConfig(): SofaEnvConfig {
 
   return {
     dataDir,
-    // P2-3: 前缀统一为 SOFAGENT_*；旧 SOFA_* 保留为向后兼容别名
+    // 前缀统一为 SOFAGENT_*；旧 SOFA_* 保留为向后兼容别名
     // （resolveEnv 内部先读 SOFAGENT_*，未设置再读 SOFA_*）
     sanitizeEnabled: resolveBoolEnv('SOFAGENT_SANITIZE', 'SOFA_SANITIZE', ENV_DEFAULTS.sanitizeEnabled),
     sanitizeIpsEnabled: resolveBoolEnv('SOFAGENT_SANITIZE_IPS', 'SOFA_SANITIZE_IPS', ENV_DEFAULTS.sanitizeIpsEnabled),
@@ -616,7 +616,7 @@ function resolveDataDir(home: string): string {
   return join(process.cwd(), '.sofagent');
 }
 
-// P2-36: 布尔/数字环境变量读取统一走 shared/env（SOFAGENT_* 主名 + SOFA_* 别名兜底）
+// 布尔/数字环境变量读取统一走 shared/env（SOFAGENT_* 主名 + SOFA_* 别名兜底）
 function resolveBoolEnv(key: string, legacyKey: string | null, defaultValue: boolean): boolean {
   return resolveEnvBool(key, legacyKey ?? undefined, defaultValue);
 }

@@ -137,10 +137,10 @@ async function pushWebhook(
   }
 }
 
-/** im-outbox 保留天数——超过自动清理（P0-2 + §8.5） */
+/** im-outbox 保留天数——超过自动清理(+ §8.5） */
 const OUTBOX_RETENTION_DAYS = 7;
 
-/** im-outbox 单目录文件数上限——超过告警并停止写入（P0-2） */
+/** im-outbox 单目录文件数上限——超过告警并停止写入 */
 const OUTBOX_MAX_FILES = 100;
 
 /**
@@ -250,7 +250,7 @@ async function pushOpenClawIM(title: string, message: string): Promise<boolean> 
   // OpenClaw IM channel——通过本地 socket / 配置文件桥接
   // v1.1.5 最小实现：写入 im-outbox/ 由 OpenClaw 端拉取
   // v1.2.1：默认输出目录从 .sofagent/im-outbox/ 迁移到 data/im-outbox/
-  // v1.2.5 P0-2：im-outbox 数据爆炸修复——加保留策略 + 上限 + 去重：
+  // v1.2.5 im-outbox 数据爆炸修复——加保留策略 + 上限 + 去重：
   //   ① 写入前清理超过 7 天的旧文件（保留策略）
   //   ② 单目录文件数达上限（100）时告警并停止写入（上限）
   //   ③ 同内容文件已存在则跳过写入（去重——知识沉淀周报不再重复落盘）

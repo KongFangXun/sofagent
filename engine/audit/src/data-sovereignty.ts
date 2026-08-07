@@ -10,7 +10,7 @@
 //   2. 再签名（HMAC-SHA256，密钥来自 ~/.sofagent-key；无密钥降级不写 hmacSig）
 //   3. prevHash 链 + 环境指纹（hostname+username+git 路径）防 Agent 重算整链
 //
-// 写侧/读侧输入一致性铁律（对齐 P0-3 修复）：HMAC 基于【已脱敏】记录计算，
+// 写侧/读侧输入一致性铁律（对齐 修复）：HMAC 基于【已脱敏】记录计算，
 // 读侧校验的正是脱敏后记录——两侧输入完全一致，避免 A2/A9 防误报回归。
 // ============================================================
 
@@ -96,7 +96,7 @@ const SECRET_PATTERNS: RegExp[] = [
 /**
  * 脱敏单个文本——替换敏感串为占位符。
  * 数据主权日志自身绝不能成为第二泄漏点。
- * v1.2.8 P1-5: 支持自定义正则（sanitizePatterns from config.yml）——企业业务机密（合同名称/客户名单/工资表）
+ * v1.2.8 支持自定义正则（sanitizePatterns from config.yml）——企业业务机密（合同名称/客户名单/工资表）
  */
 function sanitizeText(text: string, customPatterns?: { pattern: RegExp; replacement: string }[]): string {
   let out = text;
@@ -109,7 +109,7 @@ function sanitizeText(text: string, customPatterns?: { pattern: RegExp; replacem
       out = out.replace(pattern, (m) => `[REDACTED:${m.length}字符]`);
     }
   }
-  // v1.2.8 P1-5: 自定义业务机密脱敏
+  // v1.2.8 自定义业务机密脱敏
   if (customPatterns) {
     for (const { pattern, replacement } of customPatterns) {
       try {
