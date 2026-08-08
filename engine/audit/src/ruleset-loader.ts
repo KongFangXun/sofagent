@@ -417,6 +417,32 @@ function formatMessage(
 }
 
 /**
+ * 编译 ruleset 的 pattern 字符串为 RegExp
+ *
+ * 支持 grep/ripgrep 风格的前导内联修饰符（如 (?i) / (?im) / (?ims)），
+ * 自动剥离并转换为 JS RegExp flags——JS 原生不支持内联修饰符语法，
+ * 在编译层统一转换，社区 ruleset 无需感知差异。
+ *
+ * @param pattern 原始 pattern 字符串
+ * @param baseFlags 基础 flags（如 'g'）
+ * @returns 编译后的 RegExp
+ */
+function compilePattern(pattern: string, baseFlags: string): RegExp {
+  let flags = baseFlags;
+  let body = pattern;
+  // 匹配前导内联修饰符：(?i) (?im) (?ims) 等
+  const modifierMatch = body.match(/^\(\?([ims]+)\)/);
+  if (modifierMatch) {
+    const mods = modifierMatch[1] ?? '';
+    if (mods.includes('i')) flags += 'i';
+    if (mods.includes('m')) flags += 'm';
+    if (mods.includes('s')) flags += 's';
+    body = body.slice(modifierMatch[0].length);
+  }
+  return new RegExp(body, flags);
+}
+
+/**
  * 执行单条 pattern 类型规则
  *
  * 对 diff 中每个文件的新增行（以 + 开头，非 +++）做正则匹配，命中则收集为 detail。
@@ -435,7 +461,7 @@ export function runPatternRule(
 
   let regex: RegExp;
   try {
-    regex = new RegExp(rule.pattern!, 'g');
+    regex = compilePattern(rule.pattern!, 'g');
   } catch (err) {
     return {
       name: rule.name,
@@ -448,7 +474,7 @@ export function runPatternRule(
   let fileRegex: RegExp | null = null;
   if (rule.filePattern) {
     try {
-      fileRegex = new RegExp(rule.filePattern);
+      fileRegex = compilePattern(rule.filePattern, '');
     } catch {
       // 文件过滤正则无效 → 不过滤（匹配所有文件）
       fileRegex = null;
