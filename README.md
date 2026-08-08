@@ -86,7 +86,7 @@ npx -y -p @sofagent/audit sofagent-audit
 
 > ℹ️ A2 检测 AWS AKIA、OpenAI sk-*、GitHub ghp_、PEM 私钥块等已知格式。
 > 通用密钥形态（password=、secret 裸值）暂不在检测范围——保守设计防误报。
-> 完整检测能力见 [LIMITATIONS.md A2 节](./docs/LIMITATIONS.md#a2-密钥检测局限)。
+> 完整检测能力见 [LIMITATIONS.md A2 节](./docs/LIMITATIONS.md#a2-密钥检测局限编码与格式绕过v125-披露)。
 
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit 拦截 .env 提交" width="860" />
