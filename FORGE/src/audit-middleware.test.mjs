@@ -227,3 +227,47 @@ test('交付 3: recordHitlAudit 拒绝/超时 → 审计 FAIL 记录到运行时
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// ── 交付 5：边契约——权限流 + 失败流三条路径均可审计 ──
+test('交付 5: FAIL 拦截 / HITL 挂起 / PASS 放行 三条路径都写运行时审计日志', () => {
+  const dir = tmpDir();
+  const savedHome = process.env.SOFAGENT_HOME;
+  process.env.SOFAGENT_HOME = dir;
+  try {
+    const { RulesEngine, defaultToolRules } = require('../../engine/rules/dist/index.js');
+    const mw = createAuditMiddleware(new RulesEngine(defaultToolRules), {
+      agentName: 'edge-test',
+      cwd: dir,
+      sessionId: 'sess-edge',
+      emitDecision: false,
+    });
+
+    // 1. 失败流 - deny：FAIL 拦截（写 .env）
+    mw.check('sf_write', { path: '.env', content: 'x=1' });
+    // 2. 权限流 - 挂起：requireApproval（自定义规则）
+    const approvalRule = {
+      name: 'tool-approval-edge',
+      number: 99,
+      ruleClass: '业务底线',
+      ruleType: 'tool',
+      check: () => ({ status: 'PASS', ruleName: 'tool-approval-edge', ruleNumber: 99, details: ['需要确认'], suggestion: '', requireApproval: true }),
+    };
+    const mwH = createAuditMiddleware(new RulesEngine([approvalRule]), { agentName: 'edge-test', cwd: dir, sessionId: 'sess-edge2', emitDecision: false });
+    mwH.check('sf_delete', { path: 'data.db' });
+    // 3. 失败流 - 降级/放行：PASS 放行（读 README）
+    mw.check('sf_read', { path: 'README.md' });
+
+    // 三种判定都应有审计日志
+    const logPath = resolveRuntimeAuditPath(dir);
+    assert.ok(existsSync(logPath), '运行时审计日志应存在');
+    const lines = readFileSync(logPath, 'utf-8').trim().split('\n').filter(Boolean);
+    const statuses = lines.map((l) => JSON.parse(l).verdict.status);
+    assert.ok(statuses.includes('FAIL'), `应含 FAIL 拦截记录: ${statuses}`);
+    assert.ok(statuses.includes('HITL_PENDING'), `应含 HITL 挂起记录: ${statuses}`);
+    assert.ok(statuses.includes('PASS'), `应含 PASS 放行记录: ${statuses}`);
+  } finally {
+    if (savedHome === undefined) delete process.env.SOFAGENT_HOME;
+    else process.env.SOFAGENT_HOME = savedHome;
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
