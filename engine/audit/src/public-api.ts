@@ -13,6 +13,10 @@ export type { LogEntry } from '@sofagent/core';
 export { runRules } from './reporter';
 export type { AuditResult, RuleCheck } from './reporter';
 
+// v1.3.0 (交付 4)：规则清单只读暴露（list_rules 用）——默认规则 + 扩展规则全量
+export { defaultRules, extendedRules, rules as allDiffRules } from './rules';
+export type { Rule, RuleClass, EvidenceMode } from './rules/types';
+
 export { loadConfig } from '@sofagent/core';
 export type { AuditConfig } from '@sofagent/core';
 
