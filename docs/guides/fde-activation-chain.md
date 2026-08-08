@@ -613,7 +613,7 @@ dag-runner.ts（修改）
 
 ## 企业 SubAgent = 引擎公民，不是独立脚本
 
-> **激活链注册的企业 SubAgent 自动继承一底座·三引擎**——因为注册后与内置 4 个 SubAgent（@sofagent-fde / @sofagent-audit / engineer / reviewer）**跑在同一个运行时**：同一条四层加载链、同一个审计 hook、同一个 data/ 状态层。不是"给企业 Agent 装引擎"，是企业 Agent 本来就在引擎里。这就是"轨道从早期就铺好了"的真正含义。
+> **激活链注册的企业 SubAgent 自动继承约束层四种能力**——因为注册后与内置 4 个 SubAgent（@sofagent-fde / @sofagent-audit / engineer / reviewer）**跑在同一个运行时**：同一条四层加载链、同一个审计 hook、同一个 data/ 状态层。不是"给企业 Agent 装引擎"，是企业 Agent 本来就在引擎里。这就是"轨道从早期就铺好了"的真正含义。
 
 ```mermaid
 flowchart TD

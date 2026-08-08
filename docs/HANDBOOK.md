@@ -89,10 +89,10 @@
 
 | 层 | 是什么 | 一句话 | 状态 |
 |:--:|------|------|:--:|
-| **层 1 · 能力底座** | 一底座·三引擎（约束底座 + 审计/回溯/进化引擎） | 怎么保证每次执行都做对 | ✅ 已交付 |
+| **层 1 · 能力底座** | 约束层四种能力（注入 · 审计 / 回溯 / 进化） | 怎么保证每次执行都做对 | ✅ 已交付 |
 | **层 2 · 生命周期（五阶段）** | 诊断 → 激活 → 编排 → 执行 → 持续（激活链四阶段 = 激活→编排→执行→持续 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，为五阶段中后四环） | 企业 AI 从诊断到自运转怎么走 | 🔗 Phase 1-3 已交付 |
 
-**层 1 · 能力底座（一底座·三引擎）**：
+**层 1 · 能力底座（约束层四种能力）**：
 
 | 角色 | 引擎 | 管什么 | 触发方式 |
 |------|------|------|------|
@@ -112,7 +112,7 @@
 | ④ | **执行** EXECUTE（v1.2.8-9） | DAG 运行 + 人工审批（HITL）+ 审计集成 |
 | ⑤ | **持续** SUSTAIN（v1.3.0） | 反思 + 回灌，喂下一轮诊断 |
 
-> 一底座（约束）＋ 三引擎（审计 / 回溯 / 进化）＝ 全生命周期**可审计、可回滚、可进化**。激活链在此基础上让企业 AI 从"诊断完交付一堆文档"走向"自运转"。FORGE 自迭代工具链是项目内部开发工具。完整设计见 [ARCHITECTURE · 双层架构](./ARCHITECTURE.md#双层架构能力底座与生命周期主框架) 和 [激活链设计文档](./guides/fde-activation-chain.md)。
+> 约束层（注入）＋ 审计 / 回溯 / 进化 ＝ 全生命周期**可审计、可回滚、可进化**。激活链在此基础上让企业 AI 从"诊断完交付一堆文档"走向"自运转"。FORGE 自迭代工具链是项目内部开发工具。完整设计见 [ARCHITECTURE · 双层架构](./ARCHITECTURE.md#双层架构能力底座与生命周期主框架) 和 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 ---
 
@@ -537,7 +537,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 ### 概念速查
 
-上述术语（Harness 中间件、能力底座 × 生命周期双层架构、一底座·三引擎（约束底座 + 审计/回溯/进化引擎）、激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）、FORGE 内部工具链、铁律、审计规则、Skill、think.md、daemon、Agent 平台（OpenClaw / WorkBuddy 等）、FDE 等）已在上方各幕详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。核心 = **能力底座（一底座·三引擎）× 生命周期（诊断→激活→编排→执行→持续）**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
+上述术语（Harness 中间件、能力底座 × 生命周期双层架构、约束层四种能力（注入·审计·回溯·进化）、激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）、FORGE 内部工具链、铁律、审计规则、Skill、think.md、daemon、Agent 平台（OpenClaw / WorkBuddy 等）、FDE 等）已在上方各幕详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。核心 = **能力底座（约束层四能力）× 生命周期（诊断→激活→编排→执行→持续）**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 ---
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // mcp-server.ts · MCP Server (Model Context Protocol)
-// v1.2.9: 拆分为 ≤300 行主文件 + tools/ 子目录按功能分组
+// v1.2.8: 拆分为 ≤300 行主文件 + tools/ 子目录按功能分组
 // v1.2.8: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
 //
 // 协议：https://spec.modelcontextprotocol.io/
@@ -19,7 +19,8 @@ import { TOOLS } from './tool-registry';
 import { listResources, readResource } from './resources';
 
 // audit tools
-import { runAudit, auditFile, type ToolResult } from './tools/audit-tools';
+import { runAudit, type ToolResult } from './tools/audit-tools';
+import { auditFile } from './tools/audit-file';
 // think tools
 import { getThink, writeThink, readThinkMd, readLessons } from './tools/think-tools';
 // knowledge tools

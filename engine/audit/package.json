@@ -11,12 +11,14 @@
     }
   },
   "bin": {
-    "sofagent-audit": "dist/index.js",
+    "sofagent-audit": "dist/cli-quick.js",
+    "sofagent-audit-full": "dist/index.js",
     "audit": "dist/index.js"
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "npm run clean && tsc",
+    "build": "npm run clean && tsc && npm run copy-assets",
+    "copy-assets": "cp -r src/rulesets dist/rulesets 2>/dev/null || true",
     "prepublishOnly": "npm run build && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete",
     "start": "node dist/index.js",
     "test": "vitest run",
