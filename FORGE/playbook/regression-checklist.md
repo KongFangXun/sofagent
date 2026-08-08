@@ -1,11 +1,11 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
-> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。
-> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：53 维（v1.2.8）
+> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。v1.2.9 新增维度 75-78（check-version MCP 扫描路径 / JS RegExp (?i) 不支持 / drift 排除 .test. / 新文件版本头匹配 SSOT），归并 65+66（FORGE stream 数据处理）、73+74（ESM named export + FORGE 烟测）。
+> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：55 维（v1.2.9）
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1100 行（v1.2.8 起从 1050 上调，53 维度自然增长）、`acceptance-test.sh` ≤ 1850 行（v1.2.8 起从 1650 上调，148 场景自然增长），越线触发瘦身（releasing.md 阶段四 Tier 2）。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1100 行（v1.2.9 起保持 1100，55 维度）、`acceptance-test.sh` ≤ 1950 行（v1.2.9 起从 1850 上调，158 场景自然增长），越线触发瘦身（releasing.md 阶段四 Tier 2）。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
@@ -22,7 +22,7 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（53 项 · 编号 1–74，21 个归并/移除项已转为 HTML 注释；v1.2.8 新增 #73-74）
+## 审查维度（55 项 · 编号 1–78，19 个归并/移除项已转为 HTML 注释；v1.2.9 新增 #75-78，归并 #66→#65、#74→#73）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
