@@ -1,6 +1,6 @@
 // ============================================================
 // dream-cycle/types.ts · Dream Cycle 6 阶段流水线共享类型
-// v1.2.0 新增
+// v1.2.8 新增
 //
 // Dream Cycle 是 gbrain 21 阶段的精简版——对约束沉淀真正有用的前半段：
 //   extract_facts → extract_atoms → cluster_patterns

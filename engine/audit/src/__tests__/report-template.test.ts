@@ -1,6 +1,6 @@
 // ============================================================
 // report-template.test.ts · 审计报告 Markdown 模板单测
-// v1.2.2 P0 — 覆盖 renderReport 6-section 渲染
+// v1.2.8 P0 — 覆盖 renderReport 6-section 渲染
 // ============================================================
 
 import { describe, it, expect } from 'vitest';

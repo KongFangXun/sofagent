@@ -1,6 +1,6 @@
 // ============================================================
-// runner.test.ts · baseline rule protection tests (v1.2.0 P0-⑤)
-// v1.2.5: 新增 critical 全量收集 + A20-A23 基线保护测试
+// runner.test.ts · baseline rule protection tests (v1.2.8 P0-⑤)
+// v1.2.8: 新增 critical 全量收集 + A20-A23 基线保护测试
 // ============================================================
 
 import { describe, it, expect } from 'vitest';

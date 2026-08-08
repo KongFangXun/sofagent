@@ -254,7 +254,7 @@ _（基于 §5 决策表，选一行）_
 WorkBuddy 里跑 Agent 时，Agent 就是我（被调度的这个 Agent）。我没有独立"会话"的概念——我被主理人调度来写这个文档，不是被调度去跑 camelCase 重构。
 
 要跑条件 C（真实加载链），需要一个**独立的 WorkBuddy 对话**：
-1. 作者（孔老师）打开一个新的 WorkBuddy 对话
+1. 作者打开一个新的 WorkBuddy 对话
 2. 把测试套件代码放到工作区
 3. 给出 Task 1 prompt
 4. 观察那个对话里的 Agent 是否 Read 了 think.md / fde.md

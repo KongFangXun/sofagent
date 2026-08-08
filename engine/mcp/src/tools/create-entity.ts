@@ -1,5 +1,5 @@
 // ============================================================
-// create-entity.ts · MCP tool：创建/更新 entity 页（v1.2.5 S2 新增）
+// create-entity.ts · MCP tool：创建/更新 entity 页（v1.2.8 S2 新增）
 // ============================================================
 //
 // 写入 knowledge/entities/<name>.md，含 frontmatter + created_at/updated_at

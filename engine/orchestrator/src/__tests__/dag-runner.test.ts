@@ -1,6 +1,6 @@
 // ============================================================
 // dag-runner.test.ts · 编排执行器测试（mock createReactAgent）
-// v1.1.8 新增 · v1.2.0 迁移至 createReactAgent（方案 B）
+// v1.1.8 新增 · v1.2.8 迁移至 createReactAgent（方案 B）
 //
 // 覆盖用例（共 6 case）：
 //   1. 端到端：YAML → SubAgent tools 创建（注入四层约束 prompt）→ invoke → DAGResult

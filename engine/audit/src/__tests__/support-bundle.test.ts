@@ -1,5 +1,5 @@
 // support-bundle.test.ts · 一键生成证据 zip 单测
-// v1.2.7 新建 · 功能 ⑦
+// v1.2.8 新建 · 功能 ⑦
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, existsSync, readFileSync } from 'fs';

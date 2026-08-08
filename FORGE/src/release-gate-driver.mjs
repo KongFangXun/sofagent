@@ -97,9 +97,65 @@ const base = createForgeDriverBase({
 // maxTokens：步骤级输出 token 上限覆盖。未定义时回退到 MODEL_CONFIGS[role].maxTokens。
 // consolidate 需合并 acceptance/regression/coverage 三份完整报告为单份 stage6-report，输出超长，
 // 单独调高到 32000，避免顶格 16000 被截断生成不了合法报告（整轮降级根因）。
+// ─── v1.2.9 功能①：acceptance 维度分片 ──────────────────────
+// 把 acceptance-test.sh 的 148 个场景按 12 个维度分片，每片一个独立 worker 分析。
+// 每个 worker 只分析分配到的场景编号范围（从 acceptance-raw.log 中提取），
+// 产出 acceptance-sN.md，最后 acceptance-consolidate 合并为单份 acceptance.md。
+//
+// 分片策略：按场景编号均分（148 / 12 ≈ 12-13 个场景/片）。
+const ACCEPTANCE_TOTAL_SCENARIOS = 148;
+const ACCEPTANCE_SHARD_COUNT = parseInt(process.env.FORGE_ACCEPTANCE_SHARDS || '12', 10);
+
+/**
+ * 计算每个分片负责的场景编号范围。
+ * @returns {Array<{id:number, start:number, end:number}>}
+ */
+function computeAcceptanceShards() {
+  const shards = [];
+  const perShard = Math.ceil(ACCEPTANCE_TOTAL_SCENARIOS / ACCEPTANCE_SHARD_COUNT);
+  for (let i = 0; i < ACCEPTANCE_SHARD_COUNT; i++) {
+    const start = i * perShard + 1;
+    const end = Math.min((i + 1) * perShard, ACCEPTANCE_TOTAL_SCENARIOS);
+    if (start > ACCEPTANCE_TOTAL_SCENARIOS) break;
+    shards.push({ id: i + 1, start, end });
+  }
+  return shards;
+}
+
+const ACCEPTANCE_SHARDS = computeAcceptanceShards();
+
+/**
+ * 动态生成 acceptance 分片步骤 + consolidate 步骤。
+ * 替换原来的单个 acceptance 步骤。
+ */
+function buildAcceptanceSteps() {
+  const steps = {};
+  const shardInputs = [];
+  for (const s of ACCEPTANCE_SHARDS) {
+    steps[`acceptance-s${s.id}`] = {
+      role: 'V',
+      prompt: `acceptance-shard-${s.id}.md`,
+      outputs: [`acceptance-s${s.id}.md`],
+      inputs: [],
+      shard: s,
+      recursionLimit: 40,
+    };
+    shardInputs.push(`acceptance-s${s.id}.md`);
+  }
+  // consolidate：合并 12 份分片报告为单份 acceptance.md
+  steps['acceptance-consolidate'] = {
+    role: 'V',
+    prompt: 'acceptance-consolidate.md',
+    outputs: ['acceptance.md'],
+    inputs: shardInputs,
+    maxTokens: 16000,
+  };
+  return steps;
+}
+
 const STEPS = {
-  // V 步骤（补加 role: 'V' 显式化）
-  'acceptance':  { role: 'V', prompt: 'acceptance.md',  outputs: ['acceptance.md'],  inputs: [] },
+  // v1.2.9 功能①：acceptance 分片（12 个 shard worker + 1 个 consolidate）
+  ...buildAcceptanceSteps(),
   'regression':  { role: 'V', prompt: 'regression.md',  outputs: ['regression.md'],  inputs: ['regression-precheck.json'], precheck: true },
   'coverage':    { role: 'V', prompt: 'coverage.md',    outputs: ['coverage.md'],    inputs: ['acceptance.md', 'coverage-precheck.json'], precheck: true },
   'consolidate': { role: 'V', prompt: 'consolidate.md', outputs: ['stage6-report.md'], inputs: ['acceptance.md', 'regression.md', 'coverage.md'], maxTokens: 32000 },
@@ -112,7 +168,10 @@ const STEPS = {
 };
 
 // 步骤执行顺序（driver 按此顺序串行执行）
-const STEP_ORDER = ['acceptance', 'regression', 'coverage', 'consolidate', 'verdict'];
+// v1.2.9 功能①：acceptance 拆为 12 shard + consolidate，替换原单步 acceptance。
+// shard 步骤并行执行（spawnParallel），consolidate 在所有 shard 完成后串行。
+const ACCEPTANCE_SHARD_STEPS = ACCEPTANCE_SHARDS.map(s => `acceptance-s${s.id}`);
+const STEP_ORDER = [...ACCEPTANCE_SHARD_STEPS, 'acceptance-consolidate', 'regression', 'coverage', 'consolidate', 'verdict'];
 
 // 每步的 recursionLimit（L3 框架兜底——L1/L2 熔断应在此之前触发）
 // v1.2.5+ 优化：regression 改用 driver 预执行器（parseRegressionDimensions + runRegressionPrecheck），
@@ -121,7 +180,8 @@ const STEP_ORDER = ['acceptance', 'regression', 'coverage', 'consolidate', 'verd
 // v1.2.5+ coverage：同样加预执行器（runCoveragePrecheck），recursionLimit 100→40，
 // worker 只读 coverage-precheck.json 交叉判定。
 const STEP_RECURSION_LIMITS = {
-  'acceptance':  100,
+  // v1.2.9 功能①：acceptance shard 用 40（短任务——分析日志片段）
+  'acceptance-consolidate': 60,
   'regression':  50,
   'coverage':    40,
   'consolidate': 80,
@@ -635,7 +695,8 @@ async function runWorker(step, runDir, target) {
   console.log(`[worker:${step}] 开始执行（role=V, model=${cfg.model}）`);
   const t0 = Date.now();
 
-  const recursionLimit = STEP_RECURSION_LIMITS[step] ?? 50;
+  // v1.2.9 功能①：acceptance shard 用 stepDef.recursionLimit（40），其他用 STEP_RECURSION_LIMITS
+  const recursionLimit = STEP_RECURSION_LIMITS[step] ?? stepDef.recursionLimit ?? 50;
 
   // v1.2.5：流式执行——实时打印工具调用
   //
@@ -1002,6 +1063,44 @@ function spawnWorker(step, runDir, target) {
     });
     child.on('error', rejectP);
   });
+}
+
+/**
+ * v1.2.9 功能①：并行执行 acceptance 分片 worker（带并发限制）。
+ *
+ * 把 12 个 shard worker 按 maxConcurrency 分批执行，避免 API rate limit。
+ *
+ * @param {Array<[string,string,string]>} workers  [step, runDir, target] 元组数组
+ * @param {string} _target  验证目标版本号（当前未使用，预留）
+ * @param {number} maxConcurrency  最大并发数
+ * @returns {Promise<{results: Array, failures: Array}>}
+ */
+async function spawnAcceptanceShards(workers, _target, maxConcurrency = 6) {
+  const concurrency = Math.max(1, Math.min(maxConcurrency, workers.length));
+  const results = [];
+  const failures = [];
+
+  for (let batchStart = 0; batchStart < workers.length; batchStart += concurrency) {
+    const batch = workers.slice(batchStart, batchStart + concurrency);
+    const batchNum = Math.floor(batchStart / concurrency) + 1;
+    const totalBatches = Math.ceil(workers.length / concurrency);
+    console.log(`  [acceptance 并发批次 ${batchNum}/${totalBatches}] 启动 ${batch.length} 个 shard worker（并发=${concurrency}）`);
+
+    const settled = await Promise.allSettled(
+      batch.map(([step, runDir, target]) => spawnWorker(step, runDir, target))
+    );
+    settled.forEach((s, i) => {
+      const globalIndex = batchStart + i;
+      const [step] = workers[globalIndex];
+      if (s.status === 'fulfilled') {
+        results.push({ step, value: s.value });
+      } else {
+        results.push({ step, value: null });
+        failures.push({ step, reason: s.reason });
+      }
+    });
+  }
+  return { results, failures };
 }
 
 /**
@@ -1807,7 +1906,8 @@ async function main() {
     console.log(`[driver] run-dir = ${stepRunDir}`);
 
     // acceptance 特殊处理：单步模式下也执行预跑逻辑
-    if (args.step === 'acceptance') {
+    // v1.2.9 功能①：acceptance shard 步骤也需要预跑日志
+    if (args.step === 'acceptance' || args.step.startsWith('acceptance-s') || args.step === 'acceptance-consolidate') {
       await ensureAcceptancePreRun(args, stepRunDir);
     }
 
@@ -1886,8 +1986,9 @@ async function main() {
     console.log(`\n  [dry-run] 将执行以下步骤：`);
     console.log(`  ── V 阶段（验证）──`);
     console.log(args.skipAcceptance
-      ? '    ① acceptance  (--skip-acceptance，跳过预跑)  → acceptance.md'
-      : '    ① acceptance  (跑 acceptance-test.sh)     → acceptance.md');
+      ? `    ① acceptance × ${ACCEPTANCE_SHARD_COUNT} 维度分片 (--skip-acceptance)  → acceptance-s1~12.md → acceptance.md`
+      : `    ① acceptance × ${ACCEPTANCE_SHARD_COUNT} 维度分片 (跑 acceptance-test.sh)  → acceptance-s1~12.md → acceptance.md`);
+    console.log(`       分片 worker 并行（MAX_CONCURRENCY=6），各分析场景范围`);
     console.log('    ② regression  (跑 regression-checklist)   → regression.md');
     console.log('    ③ coverage    (覆盖率交叉检查)             → coverage.md');
     console.log('    ④ consolidate (合并三份结果)               → stage6-report.md');
@@ -1915,16 +2016,75 @@ async function main() {
     console.log(`\n  🔄 resume：跳过 V 阶段 5 步（断点已完成），从 F 修复链继续`);
   }
 
-  for (const step of skipVPhase ? [] : STEP_ORDER) {
+  // v1.2.9 功能①：acceptance shard 步骤并行执行——在循环外先处理。
+  // 预跑 acceptance-test.sh（所有 shard 共享同一份日志）
+  if (!skipVPhase) {
+    await ensureAcceptancePreRun(args, runDir);
+
+    console.log(`\n${'═'.repeat(60)}`);
+    console.log(`  V 步骤 — acceptance × ${ACCEPTANCE_SHARD_COUNT} 维度分片（并行）`);
+    console.log(`${'═'.repeat(60)}`);
+
+    // 并行执行所有 acceptance shard worker
+    const shardWorkers = ACCEPTANCE_SHARDS.map(s => [`acceptance-s${s.id}`, runDir, args.target]);
+    const MAX_ACC_CONCURRENCY = parseInt(process.env.FORGE_ACCEPTANCE_CONCURRENCY || '6', 10);
+    const { results: shardResults, failures: shardFailures } = await spawnAcceptanceShards(shardWorkers, args.target, MAX_ACC_CONCURRENCY);
+
+    for (const f of shardFailures) {
+      console.warn(`\n  ⚠️  ${f.step} 失败: ${f.reason?.message || f.reason}`);
+      // 降级：写最小占位文件
+      const outFile = `${f.step}.md`;
+      const outPath = join(runDir, outFile);
+      if (!existsSync(outPath)) {
+        writeFileSync(outPath,
+          `# ${outFile} · ${f.step} 崩溃（降级占位）\n\n` +
+          `> ⚠️ worker 异常终止: ${f.reason?.message || f.reason}\n` +
+          `> 其他分片的结果仍可用。\n`,
+          'utf-8');
+      }
+      stepErrors.push({ step: f.step, error: f.reason?.message || String(f.reason) });
+    }
+
+    for (const r of shardResults) {
+      if (r.value !== null) completedSteps++;
+    }
+
+    console.log(`  ✅ acceptance 分片完成（${shardResults.filter(r => r.value !== null).length}/${ACCEPTANCE_SHARDS.length} 成功）`);
+
+    // acceptance-consolidate：合并分片报告（串行执行，用标准 spawnWorker）
+    console.log(`\n${'═'.repeat(60)}`);
+    console.log(`  V 步骤 — acceptance-consolidate（合并 ${ACCEPTANCE_SHARDS.length} 份分片报告）`);
+    console.log(`${'═'.repeat(60)}`);
+    try {
+      await spawnWorker('acceptance-consolidate', runDir, args.target);
+      completedSteps++;
+      console.log(`  ✅ acceptance-consolidate 完成`);
+    } catch (consErr) {
+      console.warn(`\n  ⚠️  acceptance-consolidate 失败: ${consErr.message}`);
+      console.warn(`     降级：直接拼接分片报告作为 acceptance.md`);
+      // 降级：直接拼接所有分片
+      const parts = ['# Acceptance Test 结果（降级——分片拼接）', ''];
+      for (const s of ACCEPTANCE_SHARDS) {
+        const sPath = join(runDir, `acceptance-s${s.id}.md`);
+        if (existsSync(sPath)) {
+          parts.push(readFileSync(sPath, 'utf-8'), '');
+        }
+      }
+      writeFileSync(join(runDir, 'acceptance.md'), parts.join('\n'), 'utf-8');
+      stepErrors.push({ step: 'acceptance-consolidate', error: consErr.message });
+    }
+  }
+
+  // 非 acceptance shard 步骤串行执行（跳过已处理的 acceptance shard 步骤）
+  const nonShardSteps = (skipVPhase ? [] : STEP_ORDER).filter(
+    step => !ACCEPTANCE_SHARD_STEPS.includes(step) && step !== 'acceptance-consolidate'
+  );
+
+  for (const step of nonShardSteps) {
     const stepIndex = STEP_ORDER.indexOf(step) + 1;
     console.log(`\n${'═'.repeat(60)}`);
     console.log(`  V 步骤 ${stepIndex}/${STEP_ORDER.length} — ${step}`);
     console.log(`${'═'.repeat(60)}`);
-
-    // acceptance 特殊处理：driver 先预跑脚本，worker 只解读日志
-    if (step === 'acceptance') {
-      await ensureAcceptancePreRun(args, runDir);
-    }
 
     // regression 特殊处理（v1.2.5+）：driver 预执行 checklist，worker 只读结果判定
     if (step === 'regression' && STEPS.regression.precheck) {
@@ -2052,6 +2212,14 @@ async function main() {
       console.log(`\n  [F/${round}] audit gate 通过（无违规），F 修复链收敛`);
       verdict = 'PASS';
       reason = `F 修复链 Round ${round} 后 audit 通过`;
+      // Bug-F2 修复：F 修复链收敛为 PASS 后，重新解析 results 确保状态一致。
+      // 原 bug：results 只在 V 阶段结束后解析一次（L1980），F 修复后 verdict 改为 PASS
+      // 但 results.acceptance/regression 仍为初始 FAIL 值——状态不一致。
+      const updatedResults = parseStepResults(runDir);
+      results.acceptance = updatedResults.acceptance;
+      results.regression = updatedResults.regression;
+      results.coverage = updatedResults.coverage;
+      console.log(`     更新后 results: acceptance=${results.acceptance} regression=${results.regression} coverage=${results.coverage}`);
       // v1.2.8 功能⑦：本轮 F 完成且收敛为 PASS → 写断点（resume 时识别为已完成）
       saveGateCheckpoint('f-round-done', verdict, round);
       break;

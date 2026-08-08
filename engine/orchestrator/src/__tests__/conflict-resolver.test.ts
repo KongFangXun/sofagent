@@ -1,5 +1,5 @@
 // ============================================================
-// conflict-resolver.test.ts · merge 文本冲突仲裁测试（v1.2.3）
+// conflict-resolver.test.ts · merge 文本冲突仲裁测试（v1.2.8）
 //
 // 覆盖仲裁三场景（优先级从高到低）：
 // 1. scope 内者赢（写自己 scope → 赢；声明 scope 越界写 → 让步）

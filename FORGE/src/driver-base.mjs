@@ -590,6 +590,16 @@ export function createForgeDriverBase(config = {}) {
    * 原子性：先写 resume-point.json.tmp 再 renameSync——rename 在同一文件系统内
    * 是原子操作，进程中途被杀也不会留下半截 JSON（读方要么看到旧版本要么看到新版本）。
    *
+   * v1.2.9 功能②：worker 级断点升级。
+   * state 格式从 `{ round, completed: boolean }` 升级为：
+   *   `{ round, completedWorkers: string[], workers: {...}, counts, ... }`
+   *
+   *   - completedWorkers: 已完成的 worker id 数组（如 ['a-check-p1', 'b-check-p3']）
+   *   - workers: 每个 worker 的状态摘要 { [workerId]: { status, output } }
+   *
+   * 向后兼容：state 仍然可以包含 `completed: boolean` 字段（release-gate 用它做
+   * phase 级 resume），loadResumePoint 会同时兼容两种格式。
+   *
    * @param {string} runDir - run 根目录（断点写在 run 根目录，不是轮子目录）
    * @param {Object} state - 状态摘要（只存摘要不存大体积数据——铁律）
    * @returns {string} 断点文件绝对路径
@@ -609,8 +619,20 @@ export function createForgeDriverBase(config = {}) {
    * 容错策略：文件不存在 / JSON 损坏 / 必需字段缺失，一律返回 null（不 throw）——
    * 断点是优化层不是正确性层，坏了就从头跑，绝不能因为断点问题阻断主流程。
    *
+   * v1.2.9 功能②：worker 级断点升级。
+   *   - 旧格式（v1.2.8）：`{ round, completed: boolean, ... }`
+   *   - 新格式（v1.2.9）：`{ round, completedWorkers: string[], workers: {...}, ... }`
+   *
+   * 向后兼容：旧断点（含 `completed: boolean` 但无 `completedWorkers`）仍然有效——
+   * 把 `completed` 字段透传给调用方，调用方用它做轮级 resume 判断。
+   *
+   * 字段校验优先级：
+   *   1. round 必须是 number（必需）
+   *   2. completedWorkers 必须是 array（v1.2.9 新格式必需）
+   *   3. 如果 completedWorkers 不存在但 completed 存在 → 旧格式，向后兼容
+   *
    * @param {string} runDir - run 根目录
-   * @returns {Object|null} 断点状态（含 round / completed / timestamp），无效时返回 null
+   * @returns {Object|null} 断点状态（含 round / completedWorkers / timestamp），无效时返回 null
    */
   function loadResumePoint(runDir) {
     const resumePath = join(runDir, 'resume-point.json');
@@ -624,10 +646,27 @@ export function createForgeDriverBase(config = {}) {
       return null;
     }
 
-    // 字段校验：round 必须是 number，completed 必须是 boolean
+    // 字段校验：round 必须是 number（必需字段）
     if (!parsed || typeof parsed !== 'object') return null;
     if (typeof parsed.round !== 'number') return null;
-    if (typeof parsed.completed !== 'boolean') return null;
+
+    // v1.2.9 功能②：worker 级断点——completedWorkers 必须是数组（新格式）。
+    // 向后兼容：旧格式用 `completed: boolean`，没有 completedWorkers。
+    // 旧格式的断点仍然可读（resume 从轮级恢复），只是没有 worker 级跳过能力。
+    if (!Array.isArray(parsed.completedWorkers)) {
+      // 检查是否是旧格式（有 completed: boolean）——旧格式仍然有效
+      if (typeof parsed.completed === 'boolean') {
+        // 旧格式兼容：把旧格式的 completed 转换为 completedWorkers 语义
+        // completed=true → 所有 worker 都已完成（空数组代表"无需跳过"）
+        // completed=false → 没有 worker 完成（返回 null 让调用方重跑该轮）
+        // 但旧格式没有 worker 级粒度，无法精确恢复——降级为轮级恢复。
+        // 这里直接返回 parsed，调用方通过 completed 字段做轮级判断。
+        return parsed;
+      }
+      // 既没有 completedWorkers 也没有 completed → 无效断点
+      return null;
+    }
+
     return parsed;
   }
 

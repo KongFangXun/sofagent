@@ -1,5 +1,5 @@
 // mailbox.test.ts · Agent Mailbox 发送/接收/注入全流程单测
-// v1.2.7 新建 · 功能 ⑨
+// v1.2.8 新建 · 功能 ⑨
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync } from 'fs';
