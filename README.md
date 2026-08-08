@@ -7,16 +7,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="https://github.com/KongFangXun/sofagent"><img src="https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&label=Stars" alt="Stars" /></a>
-  <a href="https://www.npmjs.com/package/@sofagent/audit"><img src="https://img.shields.io/npm/v/%40sofagent%2Faudit?label=npm&color=16B8F3" alt="npm" /></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.9-16B8F3" alt="Version" /></a>
-  <a href="#快速开始"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-16B8F3" alt="Node" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
 </p>
 
 <p align="center">
-  <a href="#这是什么">这是什么</a> · <a href="#快速开始">快速开始</a> · <a href="#三个入口从-30-秒到全套部署">三个入口</a> · <a href="#文档">文档</a> · <a href="#社区">社区</a> · <a href="README.en.md">English</a> ⚠️更新中 · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
+  <a href="#这是什么">这是什么</a> · <a href="#快速开始">快速开始</a> · <a href="#三个入口从-30-秒到全套部署">三个入口</a> · <a href="#文档">文档</a> · <a href="README.en.md">English</a> ⚠️更新中 · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
 
 ---
@@ -36,6 +33,8 @@ graph LR
 
 ## 核心特性
 
+- 🧭 **进场梳理工作流**——FDE 对话引导你把业务工作流拆清楚：哪些环节自动化、哪些留给人、哪些不动，产出本体结构（ontology）+ workflow.yml + skills/
+- 🤖 **部署 AI 节点**——把自动化环节变成 SubAgent，装进你已有的 AI 工具（WorkBuddy / Codex / Claude Code）里跑，不用学新界面，从"你干活"变成"你派活"
 - 🔍 **零配置审计**——`npx sofagent-audit`，在任何 git 仓库 3 秒审计最近一次 commit，不安装任何东西
 - 🧱 **24 条审计规则**——密钥泄漏、越界编辑、盲目修改、注入防御、权限红线，git diff 硬证据判定，违规当场拦截
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
@@ -136,18 +135,9 @@ jobs:
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-## 社区
-
-欢迎提 Issue 和 PR，尤其较真的那种。[CONTRIBUTING.md](./CONTRIBUTING.md) · [致谢](./docs/THANKS.md)
-
-<p align="center">
-  <a href="https://www.star-history.com/#KongFangXun/sofagent&Date">
-    <img src="https://api.star-history.com/svg?repos=KongFangXun/sofagent&type=Date" alt="Star History" width="520" />
-  </a>
-</p>
-
 ---
 
 <p align="center">
-  <sub>MIT License · <a href="https://github.com/KongFangXun/sofagent">⭐ 如果 sofagent 帮到你，Star 一下让更多人看到</a></sub>
+  欢迎提 Issue 和 PR，尤其较真的那种 · <a href="./CONTRIBUTING.md">贡献指南</a> · <a href="./docs/THANKS.md">致谢</a><br/>
+  <sub>MIT License © <a href="https://github.com/KongFangXun/sofagent">孔放勋</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ 如果 sofagent 帮到你，Star 一下让更多人看到</a></sub>
 </p>
