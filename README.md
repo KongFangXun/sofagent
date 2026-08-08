@@ -7,13 +7,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/KongFangXun/sofagent"><img src="https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat&label=Stars" alt="Stars" /></a>
+  <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.9-16B8F3" alt="Version" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
 </p>
 
 <p align="center">
-  <a href="#这是什么">这是什么</a> · <a href="#快速开始">快速开始</a> · <a href="#三个入口从-30-秒到全套部署">三个入口</a> · <a href="#文档">文档</a> · <a href="README.en.md">English</a> ⚠️更新中 · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
+  <a href="#这是什么">这是什么</a> · <a href="#快速开始">快速开始</a> · <a href="#三个入口从-30-秒到全套部署">三个入口</a> · <a href="#文档">文档</a> · <a href="README.en.md">English</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
 
 ---
