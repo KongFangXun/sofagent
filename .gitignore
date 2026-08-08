@@ -49,3 +49,4 @@ engine/daemon/data/
 # daemon 运行时发件箱（不进入版本控制）
 engine/daemon/.sofagent/im-outbox/
 *.tmp.sh
+sofagent-audit-*.tgz
