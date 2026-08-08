@@ -136,7 +136,7 @@ graph TD
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，详见 WIKI.md）硬证据扫描 + 快照/回滚/webhook | ✅ 已实现（689 测试） |
+| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，详见 WIKI.md）硬证据扫描 + 快照/回滚/webhook | ✅ 已实现（696 测试） |
 | core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor | ✅ 已实现（223 测试） |
 | harness | 四层约束加载链 `buildConstrainedSystemPrompt()` | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 fs/git 依赖），编排层 tool-call 事前拦截 | ✅ 已实现 |
@@ -905,7 +905,7 @@ flowchart TD
 |------|------|---------|-------------|
 | ① ACTIVATE | v1.2.5 | `activate.ts` + MCP `activate_workflow` tool + workflow.yml 扩展 | registry.ts 动态注册（v1.0.8）+ MCP Server（27 tools） |
 | ② ORCHESTRATE | v1.2.6-v1.2.7 | workflow-parser 扩展 + `composeEnterpriseWorkflow()` + StateGraph 构建 | orchestrator（390 测试）+ LangGraph StateGraph |
-| ③ EXECUTE | v1.2.8-v1.2.9 | dag-runner node-executor + HITL interrupt + 审计集成 + 异常兜底 | audit（689 测试）+ daemon 文件监控 |
+| ③ EXECUTE | v1.2.8-v1.2.9 | dag-runner node-executor + HITL interrupt + 审计集成 + 异常兜底 | audit（696 测试）+ daemon 文件监控 |
 | ④ SUSTAIN | v1.3.0 | 全链路验证 + `wrapToolCall` 联动 | think（反思引擎）+ eval + skillopt |
 
 > **关键认知**：底座（引擎）已经全绿（13 包 1562 测试，实测见 `tools/test-count.sh`），激活链不是造新引擎，是往已有引擎上放车厢——"轨道从早期就铺好了，一直没人往上面放车厢"。
