@@ -100,7 +100,7 @@ function getAllRuleIds(activeRules: Rule[]): string[] {
  * 按 AUDIT_PRIORITY 定义的顺序分组执行：
  * 1. critical 层：v1.2.5 变更——全部跑完收集所有 FAIL，统一 fast-fail 后续层
  * 2. warning 层：全部跑完
- * 3. crutch 层：拐杖规则（A6/A7/A8/A18 hybrid 模式）
+ * 3. crutch 层：拐杖规则（A6/A7/A8/A18，其中 A7/A8 为 hybrid 模式需 Agent 日志）
  * 4. extended 层：扩展规则
  *
  * @param diffFiles git diff 解析出的文件变更列表

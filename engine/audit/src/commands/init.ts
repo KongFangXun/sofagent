@@ -54,13 +54,23 @@ export function ensureGitignore(cwd: string): void {
 }
 
 function classifyRepo(): { state: RepoState; hint: string } {
+  // 0. 检测是否在 git 仓库中
+  try {
+    execFileSync('git', ['rev-parse', '--is-inside-work-tree'], { stdio: 'pipe' });
+  } catch {
+    return {
+      state: 'greenfield',
+      hint: '⚠️ 当前目录不是 git 仓库——sofagent 的审计基于 git diff，请先 git init 后再跑 --init。',
+    };
+  }
+
   // 1. 检测是否有 commit 历史
   let hasCommits = true;
   try { execFileSync('git', ['rev-parse', 'HEAD'], { stdio: 'pipe' }); } catch { hasCommits = false; }
   if (!hasCommits) {
     return {
       state: 'greenfield',
-      hint: '📋 新仓库——sofagent 会从第一次 commit 开始审计。建议先跑 acceptance-test.sh 验证安装。',
+      hint: '📋 新仓库——sofagent 会从第一次 commit 开始审计。建议先跑 FORGE/playbook/acceptance-test.sh 验证安装。',
     };
   }
 
@@ -81,7 +91,7 @@ function classifyRepo(): { state: RepoState; hint: string } {
     if (files.trim().length === 0) {
       return {
         state: 'greenfield',
-        hint: '📋 新仓库——sofagent 会从第一次 commit 开始审计。建议先跑 acceptance-test.sh 验证安装。',
+        hint: '📋 新仓库——sofagent 会从第一次 commit 开始审计。建议先跑 FORGE/playbook/acceptance-test.sh 验证安装。',
       };
     }
   } catch { /* */ }
@@ -300,7 +310,7 @@ export function runInit(): void {
   process.env.SOFAGENT_INTERNAL_INIT = '1';
 
   console.log('');
-  console.log(`sofagent v${VERSION} · 孔放勋`);
+  console.log(`sofagent v${VERSION}`);
   console.log('sofagent-audit · 初始化');
   console.log('');
 
@@ -405,6 +415,30 @@ export function runInit(): void {
     console.log('  → 当前目录不在 git 仓库内，hook 已跳过');
     console.log('  ⚠️ 审计引擎在 git 项目中才能运行——配置已生成，但审计不可用');
     console.log('  → 初始化 git 仓库后重新跑: git init && sofagent-audit --init');
+    // P1-C4: 非 git 目录残留清理——删除刚创建的 .sofagent/ 目录
+    try {
+      const createdDir = join(cwd, '.sofagent');
+      if (existsSync(createdDir)) {
+        const { rmSync } = require('fs');
+        rmSync(createdDir, { recursive: true, force: true });
+        console.log('  → 已清理 .sofagent/ 目录（非 git 仓库不应残留配置）');
+      }
+      // 清理可能追加到 .gitignore 的条目
+      const gitignorePath = join(cwd, '.gitignore');
+      if (existsSync(gitignorePath)) {
+        let content = readFileSync(gitignorePath, 'utf-8');
+        // 移除 sofagent 追加的行（如果 .gitignore 原本只有 sofagent 的条目则删除整个文件）
+        if (content.includes('# sofagent 审计数据')) {
+          content = content.replace(/\n?# sofagent 审计数据（本地配置 \+ 知识库 \+ 审计历史）\n\.sofagent\/\n?/g, '');
+          if (content.trim() === '') {
+            require('fs').unlinkSync(gitignorePath);
+          } else {
+            writeFileSync(gitignorePath, content, 'utf-8');
+          }
+          console.log('  → 已清理 .gitignore 中的 sofagent 条目');
+        }
+      }
+    } catch { /* 清理失败不阻塞退出 */ }
     console.log('');
     console.log('╔══════════════════════════════════════════╗');
     console.log('║  ⚠️ 初始化未完成——当前不在 git 仓库      ║');

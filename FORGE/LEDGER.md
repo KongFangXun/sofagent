@@ -1,5 +1,7 @@
 # LEDGER · 质量循环跨 Run 永久索引
 
+> ⚠️ **内部工具文件**：本文件是 sofagent 项目 FORGE 自迭代工具链的内部状态记录，非面向用户的文档。其中的 FAIL 记录、勘误行等均为开发过程正常产物，不代表产品质量问题。
+
 > **这是唯一被 git 跟踪的循环状态文件。** 它不随 `runs/` 清理而消失。
 >
 > 原则：**目录（指针 + 统计）vs runs/（正文，可丢弃）**。
@@ -67,6 +69,8 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 ---
 
 ## 运行记录
+
+> 📌 **关于 FAIL 记录**：以下记录反映了 FORGE 质量循环从 v1.0.5 到 v1.2.8 的真实迭代过程。早期的 FAIL 主要来自工具链 bug（driver 解析 bug、U+FFFD 编码问题、coverage 零覆盖），而非产品功能缺陷。这些问题在迭代中逐步修复，最终 run-24 达到 PASS。保留原始记录是 append-only 纪律的要求，也是 sofagent"审计每次变更"理念在自身开发中的实践。
 
 2026-07-26     | 20260726-03    | fresh-eyes  | 1    | 14  | 21  | 16  | max-rounds      | FORGE/SKILL/fresh-eyes-loop/runs/2026/07/26/run-03
 

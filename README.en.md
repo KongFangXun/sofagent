@@ -123,7 +123,7 @@ After the FDE delivers the ontology + workflow.yml + skills/, since v1.2.5 the d
 
 Design details: [activation chain doc](./docs/guides/fde-activation-chain.md)
 
-### What's new in v1.2.7?
+### What's new in v1.2.8?
 
 > 🆕 One-line install, environment check & repair, context compression, goal-driven… full list in [CHANGELOG.md](./CHANGELOG.md).
 
@@ -142,8 +142,10 @@ After installing, say one sentence to your AI tool (WorkBuddy / Codex / Claude C
 > **Prerequisite**: run the developer path in the root of a git repo. If you don't have a repo yet, run `git init` first.
 
 ```bash
-# Option 1: one-line install (new in v1.2.7 · recommended)
-curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh | bash
+# Option 1: safe one-line install (download first, then run — recommended)
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh -o bootstrap.sh
+less bootstrap.sh   # ← review the script before running
+bash bootstrap.sh && rm bootstrap.sh
 
 # Option 2: full install (clone + install.sh)
 git clone https://github.com/KongFangXun/sofagent.git && cd sofagent
@@ -370,7 +372,7 @@ The audit engine, four points:
 - **Rule composition**: of the 24 rules, 19 are pure git-diff (don't rely on Agent cooperation), 4 are hybrid (A7/A8/A14/A15 need Agent logs), 1 is filesystem (A17 abnormal batch changes)
 - **Audits work without a git commit**: since v1.0.8, a self-developed git-shadow diff parser (isomorphic-git style, not an embedded third-party package) + daemon file monitoring
 - **Cross-device extension**: since v1.1.8, Prompt injection defense (A9 extended) + federated query encryption extend audit capability from local to cross-device
-- **Test coverage**: full workspace **1562 tests / 13 packages**
+- **Test coverage**: full workspace **1562 tests / 12 packages**
 
 **Default rules (17, active on install)**:
 

@@ -3,7 +3,7 @@
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
 > 如果你是 AI Agent 且需要查找具体实现路径，请直接跳转到"## 代码地图"段。
 
-> ⚠️ **口径声明（AI Agent 与人类读者必读）**：sofagent 现行架构口径以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**一底座·三引擎**（约束底座 + 审计/回溯/进化引擎，FORGE 为内部工具）+ **双层架构**（能力底座 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**（实际目录为 v1.0/ 与 v1.1/ 分开，非合并的 v1.0-v1.1/），其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构。
+> ⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**一底座·三引擎**（约束底座 + 审计/回溯/进化引擎，FORGE 为内部工具）+ **双层架构**（能力底座 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**（实际目录为 v1.0/ 与 v1.1/ 分开，非合并的 v1.0-v1.1/），其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构。
 
 > **3 分钟建立全景理解**：核心文档 220KB 太长？先看这 4 句：
 > - **[ARCHITECTURE.md](./ARCHITECTURE.md)**（94KB）：双层架构设计（能力底座 × 生命周期）+ 引擎工程三层嵌套（Harness → Graph → Loop），关键技术决策记录。**3 秒版**：一底座·三引擎管"做对" · 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
@@ -140,10 +140,10 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | `engine/daemon/` | @sofagent/daemon — 后台守护进程（cron 巡检 + 文件监听） |
 | `engine/harness/` | @sofagent/harness — SKILL 加载链（上下文注入） |
 | `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool） |
-| `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（v1.2.x 新增，第 13 个包） |
+| `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（v1.2.x 新增，第 13 个 workspace） |
 | `engine/scripts/` | 运维脚本集（9 个 .sh + lib/ 模块 + windows/ 14 个 .ps1）——安装（install.sh 调用）、卸载、验证（verify.sh）、daemon 管理、审计日志记录等 |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
-| 其余 6 包（ontology/eval/think/ab-test/skillopt/rules） | 详见 `docs/DEVELOPMENT.md §包结构`（注：think 已在上方 core 集团列出，此处为包总数口径 13-7=6） |
+| 其余 5 包（eval/ab-test/skillopt/rules/ontology） | 详见 `docs/DEVELOPMENT.md §包结构`（README 统一口径为 12 个 npm 发布包，workspace 含 hooks 内部包共 13） |
 
 ### 关键数据路径（`data/`）
 
@@ -161,7 +161,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 |----|-----|
 | 当前版本 | **v1.2.8**（2026-08-06） |
 | 下一版本 | v1.2.9（参见 docs/ROADMAP.md） |
-| 测试覆盖 | 1562 测试 / 12 包（测试 SSOT 口径：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，见 check-test-count.sh） |
+| 测试覆盖 | 1562 测试 / 12 包（测试统计标准：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，见 check-test-count.sh） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1-E2/E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |

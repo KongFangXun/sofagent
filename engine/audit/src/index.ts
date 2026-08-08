@@ -839,7 +839,10 @@ async function main(): Promise<void> {
     try {
       execFileSync('git', ['diff', '--exit-code', args.diffRange], { stdio: 'pipe' });
     } catch (err) {
-      const stderr = (err as { stderr?: string }).stderr ?? '';
+      const rawStderr = (err as { stderr?: string | Buffer }).stderr;
+      const stderr = typeof rawStderr === 'string' ? rawStderr
+        : Buffer.isBuffer(rawStderr) ? rawStderr.toString('utf-8')
+        : '';
       // git diff --exit-code 对"无变更"返回 1，对"range 无效"返回 128+不同 stderr
       if (stderr.includes('fatal') || stderr.includes('not a valid') || stderr.includes('unknown revision')) {
         if (args.json) {
