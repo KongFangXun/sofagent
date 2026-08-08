@@ -117,6 +117,27 @@ export function startCron(projectDir: string): void {
       continue;
     }
 
+    // v1.3.0 (交付 10 MA5)：task === 'decision-memory' 走决策记忆回灌分支——
+    // @daily 扫描 decision-log.jsonl 提取高频模式 + 规则上下文写入 Memory。
+    // Memory 后端未配置 / 不可达 → 优雅降级（warn + skip），不 crash。
+    if (job.task === 'decision-memory') {
+      console.log(`[cron] ${job.schedule} → decision-memory（决策记忆回灌 MA5/MA7）`);
+      setInterval(() => {
+        void (async () => {
+          try {
+            const { runDailyMemoryExtraction } = (await import('./extractors/decision-memory-extractor')) as {
+              runDailyMemoryExtraction: () => Promise<unknown>;
+            };
+            const entries = await runDailyMemoryExtraction();
+            console.log(`[cron] decision-memory 完成: ${Array.isArray(entries) ? entries.length : 0} 条提取`);
+          } catch (err) {
+            console.error(`[cron] decision-memory 回灌失败:`, (err as Error).message);
+          }
+        })();
+      }, intervalMs);
+      continue;
+    }
+
     const agentName = job.agent || 'fde';
     const mode = job.mode || 'sustain';
 

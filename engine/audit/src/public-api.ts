@@ -76,5 +76,5 @@ export { sanitizeWhy } from './decision-schema';
 export type { DecisionKind, LoopPhase, DecisionWhy } from './decision-schema';
 
 // ── 决策审计查询（v1.3.0 交付 6 T04）──
-export { queryByKind, getKindSummary, traceBack, traceFromBehavior } from './decision-query';
-export type { QueryOptions, KindSummary, TraceResult } from './decision-query';
+export { queryByKind, getKindSummary, traceBack, traceFromBehavior, getHighFrequencyPatterns } from './decision-query';
+export type { QueryOptions, KindSummary, TraceResult, HighFrequencyPattern } from './decision-query';
