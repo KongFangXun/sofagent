@@ -143,9 +143,8 @@
 >
 > 先读 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按协议执行：
 >
-> 1. 后台启动 driver——🔴 必须用 Bash 工具的 dangerouslyDisableSandbox: true（否则三层进程嵌套会被 sandbox SIGKILL，run-01~03 血泪教训）：
->    nohup node FORGE/src/fresh-eyes-driver.mjs --target {实际版本号} --max-rounds 10 > /tmp/fresh-eyes.log 2>&1 &
->    disown
+> 1. 后台启动 driver——🔴 必须用 Bash 工具的 run_in_background: true + dangerouslyDisableSandbox: true（否则三层进程嵌套会被 sandbox SIGKILL，run-01~03 血泪教训；🔴 禁止用 nohup+disown，WorkBuddy 会清理脱离 session 的后台进程，run-07~11 教训）：
+>    node FORGE/src/fresh-eyes-driver.mjs --target {实际版本号} --max-rounds 10
 > 2. 记住 runDir（启动日志第一行打印的路径，格式如 `~/.sofagent/data/forge-runs/fresh-eyes-loop/<date>/run-XX/`）
 > 3. **在 session 内持续轮询**——每 120 秒一个工作周期，每个周期做两件事：
 >    ① 读 `<runDir>/status.json` 看 phase 变化，phase 变化时一句话汇报（如"审查第 2 轮进行中""B 模型修复中"）
@@ -156,7 +155,7 @@
 > 铁律：修复只本地 commit、绝不 push；不要干涉 driver 内部、不要探索项目源码——你只做启动 + 持续轮询监控 + 汇报。
 > ```
 >
-> ⚠️ **AI 输出 prompt 时必须替换的占位符**：`{项目实际路径}`（如 `/Users/kongfangxun/Workbuddy/sofagent`）、`{实际版本号}`（如 `v1.2.5`）。输出前检查：prompt 中不得残留任何花括号占位符。新 session 的 AI 会自己读 SKILL.md 拿监控协议细节（轮询间隔、phase 含义、汇报规则），不需要手写进 prompt。
+> ⚠️ **AI 输出 prompt 时必须替换的占位符**：`{项目实际路径}`（如 `/Users/kongfangxun/Workbuddy/sofagent`）、`{实际版本号}`（如 `v1.2.5`）。输出前检查：prompt 中不得残留任何花括号占位符。prompt 中的监控协议细节（heartbeat 检测、轮询节奏）是"不读 SKILL.md 就一定踩坑"的关键约束，必须内联——不能只依赖新 session 的 AI 自己去读 SKILL.md。
 
 | 2 | **🔴 汇总 fresh-eyes-loop 修复并整合 changelog（human-in-the-loop）**：loop（步骤 1）跑完后，用户以 `fresh-eyes-review.md` 方法论为参考**人肉**复核，① 汇总 loop 所有的 bug 修改，整合到本版本 changelog 开发日志（`docs/changelog/v<major>.<minor>/vX.Y.Z.md`）；② 将 loop 全部修复计入本版本 changelog 并打勾——此时所有修复仍本地未推，这是设计内正确状态 | 本版本 changelog 的「发布检查清单」含 loop 全部修复项且全部 `[x]`，开发日志已整合 loop 全部 bug 修改 |
 | 3 | **逐项核对 changelog 每一项**（含 fresh-eyes-loop 修复项） | 当前 session | 逐文件读源码/diff，逐项确认改动存在且正确，标记 PASS/FAIL |
@@ -280,15 +279,22 @@ VIEWS=$(grep -c '^### ' FORGE/playbook/fresh-eyes-review.md)
 先读 `FORGE/SKILL/release-gate-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按协议执行：
 
 1. 直连预跑 acceptance（约 90 秒）：bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-raw.log 2>&1，确认 exit 0
-2. 后台启动 driver：node FORGE/src/release-gate-driver.mjs --target {实际版本号} --skip-acceptance > /tmp/release-gate.log 2>&1 &
-3. 记住 runDir（启动日志第一行打印的路径），按 SKILL.md 协议轮询 status.json——每 120 秒读一次，phase 变化时一句话汇报，phase 不变就继续轮询。session 要一直在转，不要 sleep 空转
-4. phase 变成 completed 或 error 时，读 verdict.md，用 3-5 行汇报：acceptance + regression + coverage + 最终裁决
+2. 后台启动 driver——🔴 必须用 Bash 工具的 run_in_background: true + dangerouslyDisableSandbox: true（否则三层进程嵌套会被 sandbox SIGKILL）：
+   export SOFAGENT_LLM_V="${SOFAGENT_LLM_A}" && export SOFAGENT_LLM_F="${SOFAGENT_LLM_B}" && FORGE_MAX_CONCURRENCY=1 node FORGE/src/release-gate-driver.mjs --target {实际版本号} --skip-acceptance
+   ⚠️ V/F 角色环境变量须手动导出（driver 的 resolveConfigs 自动生成 SOFAGENT_LLM_V/F 但 models/ 未覆盖 specEnv）
+   ⚠️ 8GB 机器必须 FORGE_MAX_CONCURRENCY=1（并发 worker 各占 2GB heap，3+ 并发即 OOM）
+3. 记住 runDir（启动日志第一行打印的路径）
+4. **在 session 内持续轮询**——每 120 秒一个工作周期，每个周期做两件事：
+   ① 读 `<runDir>/status.json` 看 phase 变化，phase 变化时一句话汇报（如"acceptance 完成——进入 regression""coverage 完成——进入 verdict"）
+   ② 读 `status.json` 的 `heartbeat` 字段时间戳——如果距今 > 90 秒，说明 driver 可能已死（SIGKILL 绕过所有 handler），用 `pgrep -f "release-gate-driver"` 确认进程是否存活：无输出 = 已死，汇报死亡并退出；有输出 = 活着，继续轮询
+   phase 不变且 heartbeat 正常 → 继续轮询。session 要一直在转，不要 sleep 空转——每 120 秒就是一个工作周期
+5. phase 变成 completed 或 error 时，读 verdict.md，用 3-5 行汇报：裁决结果（PASS / FAIL）、各步骤通过数、如有 FAIL 列出具体失败项、最终建议（可以发版 / 需修复后重跑）
 
-铁律：不干涉 driver、不改代码、不探索源码——只做预跑 + 启动 + 持续轮询监控 + 最终汇报。
+铁律：不干涉 driver、不改代码、不探索源码——你只做预跑 + 启动 + 持续轮询监控 + 最终汇报。
 ```
 > ⚠️ **AI 输出 prompt 时必须替换的占位符**：`{项目实际路径}`、`{实际版本号}`。输出前检查：prompt 中不得残留任何花括号占位符。
 >
-> **v1.2.6 简化**（对齐 fresh-eyes-loop prompt 风格）：① 监控细节（120 秒轮询间隔、phase 含义、汇报规则）全部交给 SKILL.md 承载，prompt 不重复写——新 session 的 AI 自己读 SKILL.md 拿协议细节 ② 删手动预建 runDir + cp 日志步骤——driver 启动时自建 runDir ③ acceptance 预跑合并为单步，driver 的 `--skip-acceptance` 参数自动复用 `/tmp/acceptance-raw.log`，不需要手动 cp 到 runDir。原 20 行 → 9 行。
+> **v1.2.6 简化 → v1.2.9 补强**：① v1.2.6 对齐 fresh-eyes-loop prompt 风格，监控细节交给 SKILL.md ② v1.2.9 发现原 prompt 太薄——新 session AI 不会持续轮询（它不理解"每 120 秒一个工作周期"），实际行为是启动 driver 后就去干别的了。v1.2.9 把 heartbeat 死亡检测、run_in_background + dangerouslyDisableSandbox 启动方式、V/F 环境变量、FORGE_MAX_CONCURRENCY=1 全部写进 prompt（与 fresh-eyes prompt 对齐）。教训：prompt 和 SKILL.md 的分工——SKILL.md 是完整协议，prompt 必须把"不读 SKILL.md 就一定踩坑"的关键约束内联，不能只依赖 AI 自己去读。
 
 ### 判定与循环
 

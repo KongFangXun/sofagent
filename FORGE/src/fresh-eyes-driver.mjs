@@ -771,6 +771,26 @@ async function runWorker(step, roundDir, target) {
     return cleaned;
   }
 
+  // v1.2.9 功能⑨：动态 token 估算——粗估消息总 token 数（content 长度 / 4）
+  function estimateTokens(messages) {
+    let totalChars = 0;
+    for (const msg of messages) {
+      const content = msg?.content;
+      if (typeof content === 'string') {
+        totalChars += content.length;
+      } else if (Array.isArray(content)) {
+        for (const part of content) {
+          if (typeof part === 'string') {
+            totalChars += part.length;
+          } else if (part && typeof part.text === 'string') {
+            totalChars += part.text.length;
+          }
+        }
+      }
+    }
+    return Math.ceil(totalChars / 4);
+  }
+
   // v1.2.9 功能①：perspective worker 用自己的 toolSoftLimit/toolHardLimit（12/15）。
   // 非 perspective 步骤用模块级 TOOL_SOFT_LIMIT/TOOL_HARD_LIMIT（35/45）。
   // 🔴 run-07 修复：原声明在 stateModifier 闭包内，invokeAgent 引用时
@@ -836,12 +856,31 @@ async function runWorker(step, roundDir, target) {
       return [systemMsg, first, ...recent];
     },
     preModelHook: (state) => {
+      // v1.2.9 功能⑨：动态阈值压缩——基于 token 估算而非纯消息条数
+      const TOKEN_SOFT = 60000;
+      const TOKEN_HARD = 100000;
       const messages = state.messages ?? [];
-      if (messages.length <= STATE_MESSAGES_HARD_LIMIT) {
+      const msgCount = messages.length;
+      const tokenEst = estimateTokens(messages);
+
+      // 消息数少且 token 未超软阈值 → 不裁剪
+      if (msgCount <= 20 && tokenEst <= TOKEN_SOFT) {
+        return state;
+      }
+
+      // token 超硬阈值 → 激进裁剪到 12 条
+      if (tokenEst > TOKEN_HARD) {
+        const first = messages[0];
+        const recent = trimMessagesSafe(messages, 12);
+        return { ...state, messages: [first, ...recent] };
+      }
+
+      // 中间地带 → 裁剪到 MAX_CONTEXT_MESSAGES
+      if (msgCount <= MAX_CONTEXT_MESSAGES + 1) {
         return state;
       }
       const first = messages[0];
-      const recent = trimMessagesSafe(messages, STATE_MESSAGES_HARD_LIMIT);
+      const recent = trimMessagesSafe(messages, MAX_CONTEXT_MESSAGES);
       return { ...state, messages: [first, ...recent] };
     },
   });
