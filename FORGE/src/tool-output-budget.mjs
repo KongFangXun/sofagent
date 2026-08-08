@@ -24,7 +24,7 @@ import { writeFileSync } from 'fs';
 /**
  * 步骤类型 → 截断预算映射。
  */
-const STEP_BUDGETS = {
+export const STEP_BUDGETS = {
   // 审查类：只读摘要，200 行够用
   'a-check':       200,
   'b-check':       200,
@@ -142,7 +142,7 @@ export function createToolOutputBudget(stepName, diskDir) {
 }
 
 /** 触发小模型总结的行数阈值 */
-const SUMMARIZE_THRESHOLD = 400;
+export const SUMMARIZE_THRESHOLD = 400;
 
 /**
  * 审查类步骤判定——这些步骤的工具输出超阈值时走小模型总结。
@@ -160,9 +160,10 @@ function isReviewStep(stepName) {
 }
 
 /**
- * 用小模型（deepseek-v4-flash）按任务目标总结超长工具输出。
+ * 用 LLM 按任务目标总结超长工具输出。
  *
  * v1.2.9 功能⑧：L2 防御层——信息密度 > 原文截断。
+ * 模型配置从 FORGE/models/ 动态读取，与 driver 的角色模型保持一致。
  * 总结失败时 fallback 到 truncateToolOutput（L1 截断），保证不丢数据。
  *
  * @param {string} text - 原始工具输出
@@ -181,9 +182,13 @@ export async function summarizeToolOutput(text, taskContext, options = {}) {
   if (lines.length <= SUMMARIZE_THRESHOLD) return text;
 
   try {
+    // 从 FORGE/models/ 动态读取模型配置（与 driver 角色模型一致）
+    const glmConfig = (await import('../models/glm-5.2.mjs')).default;
     const { ChatOpenAI } = await import('@langchain/openai');
     const summarizer = new ChatOpenAI({
-      modelName: 'deepseek-v4-flash',
+      modelName: glmConfig.model,
+      baseURL: glmConfig.baseURL,
+      apiKey: process.env[glmConfig.apiKeyEnv],
       temperature: 0,
       maxTokens: 800,
     });
