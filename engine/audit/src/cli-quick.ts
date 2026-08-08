@@ -150,27 +150,10 @@ export function runCliQuick(argv: string[]): number {
   // 3. 取 commit SHA
   const commitSha = getLatestCommitSha();
 
-  // 4. 取 diff
-  let diffOutput: string;
-  try {
-    diffOutput = execFileSync('git', ['diff', diffRange], {
-      encoding: 'utf-8',
-      maxBuffer: 50 * 1024 * 1024, // 50MB
-    });
-  } catch {
-    console.log(`⚠️  无法获取 git diff（范围：${diffRange}）。`);
-    console.log('   可能原因：');
-    console.log('   - 这是首次 commit（没有 HEAD~1）');
-    console.log('   - diff 范围无效');
-    console.log('');
-    console.log('   尝试：npx sofagent-audit HEAD~2..HEAD');
-    return 3;
-  }
-
-  // 5. 解析 diff
+  // 4. 解析 diff——parseDiff 接收 git refspec（如 HEAD~1..HEAD），内部执行 git diff
   let diffFiles: DiffFile[];
   try {
-    diffFiles = parseDiff(diffOutput);
+    diffFiles = parseDiff(diffRange);
   } catch {
     console.log('⚠️  diff 解析失败。');
     return 3;

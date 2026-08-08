@@ -52,8 +52,8 @@ export function extractFileLine(
     }
   }
 
-  // 匹配纯文件路径（无行号）
-  const fileOnly = detail.match(/([^\s:]+?\.\w+)/);
+  // 匹配纯文件路径（无行号）——排除括号/引号等包裹字符
+  const fileOnly = detail.match(/([^\s:()（）"']+?\.\w+)/);
   if (fileOnly && fileOnly[1]) {
     return { file: fileOnly[1], line: 1 };
   }
