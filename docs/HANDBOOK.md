@@ -55,7 +55,7 @@
 
 ## FDE Agent 能替你干什么
 
-> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是一个**能进场、能部署、能离场常驻的 硅基员工**——它替企业把大模型变成日常能干活的资产。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览v120)。
+> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是一个**能进场、能部署、能离场常驻的 硅基员工**——它替企业把大模型变成日常能干活的资产。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览v128)。
 
 **已经能替你干的事（v1.2.0 开发完成）**：
 
@@ -112,7 +112,7 @@
 | ④ | **执行** EXECUTE（v1.2.8-9） | DAG 运行 + 人工审批（HITL）+ 审计集成 |
 | ⑤ | **持续** SUSTAIN（v1.3.0） | 反思 + 回灌，喂下一轮诊断 |
 
-> 约束层（注入）＋ 审计 / 回溯 / 进化 ＝ 全生命周期**可审计、可回滚、可进化**。激活链在此基础上让企业 AI 从"诊断完交付一堆文档"走向"自运转"。FORGE 自迭代工具链是项目内部开发工具。完整设计见 [ARCHITECTURE · 双层架构](./ARCHITECTURE.md#双层架构能力底座与生命周期主框架) 和 [激活链设计文档](./guides/fde-activation-chain.md)。
+> 约束层（注入）＋ 审计 / 回溯 / 进化 ＝ 全生命周期**可审计、可回滚、可进化**。激活链在此基础上让企业 AI 从"诊断完交付一堆文档"走向"自运转"。FORGE 自迭代工具链是项目内部开发工具。完整设计见 [ARCHITECTURE · 双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) 和 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 ---
 
@@ -333,7 +333,7 @@ sofagent-audit --history              # 查看审计快照
 sofagent-audit --revert <sha>         # 回滚到某次审计前
 ```
 
-Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯引擎](./ARCHITECTURE.md#回溯引擎本质git-snapshot--revert-包装)。
+Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯引擎](./ARCHITECTURE.md#回溯能力本质git-snapshot--revert-包装)。
 
 ### 终端 Dashboard：一眼看清 AI 在干什么
 
@@ -390,7 +390,7 @@ jobs:
 
 ## 进化：知识自动沉淀
 
-> 这一幕讲「长本事」——硅基员工怎么把每次任务变成企业资产，越用越懂你的业务。以下功能 daemon 自动运行，装完即生效，你不需要做任何配置。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览v120)；下表只列「装完即自动生效」的新能力。
+> 这一幕讲「长本事」——硅基员工怎么把每次任务变成企业资产，越用越懂你的业务。以下功能 daemon 自动运行，装完即生效，你不需要做任何配置。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览v128)；下表只列「装完即自动生效」的新能力。
 
 ### 近期版本新功能速览
 
