@@ -46,16 +46,9 @@ graph LR
 >
 > 🎯 **90/10 价值分层**：模型给 90% 的智力，sofagent 补 10% 的可靠执行——越往后这 10% 越值钱。不是造更聪明的模型，是给已有的聪明加一套闸门。
 
-### 激活链：从交付到自转（v1.2.5+）
+### 从交付到自转
 
-FDE 交付了本体结构 + workflow.yml + skills/ 之后，分四步让交付物自己跑起来：
-
-| 阶段 | 做什么 | 版本 |
-|------|--------|:----:|
-| **ACTIVATE** | 读交付物 → 注册企业 SubAgent | v1.2.5 ✅ |
-| **ORCHESTRATE** | 构建企业专属工作流图（映射表+注册扩展+enterprise-graph） | v1.2.6-v1.2.7 ✅ |
-| **EXECUTE** | 运行 + 人工确认 + 每步审计 | v1.2.8 ✅ · v1.2.9 ✅ |
-| **SUSTAIN** | 持续优化，越跑越好 | v1.3.0 📋 |
+FDE 交付了本体结构 + workflow.yml + skills/ 之后，激活链分四步让交付物自己跑起来：激活（注册 SubAgent）→ 编排（构建工作流图）→ 执行（运行 + 人工确认 + 每步审计）→ 持续（越跑越好）。目前前三步已交付（v1.2.5-v1.2.9），第四步在 v1.3.0 规划中。
 
 设计详情：[激活链文档](./docs/guides/fde-activation-chain.md)
 
@@ -78,21 +71,55 @@ FDE 交付了本体结构 + workflow.yml + skills/ 之后，分四步让交付�
 
 ## 三个入口，从 30 秒到全套部署
 
-不需要一开始就部署整个 FDE Agent。三个入口产品形成获客漏斗，你可以从 30 秒体验开始：
+不用一开始就做全套决定——从 30 秒体验开始，觉得有用再深入：
 
 ```mermaid
 graph LR
-    A["路人<br/>npx sofagent-audit<br/>30 秒零配置审计"] --> B["团队<br/>GitHub Action<br/>PR 自动审计"]
+    A["路人<br/>npx sofagent-audit<br/>30 秒零配置审计"] --> B["团队<br/>规则市场 + GitHub Action<br/>PR 自动审计"]
     B --> C["企业<br/>FDE Agent<br/>全套部署·7×24 自运转"]
 ```
 
-| 入口 | 适合谁 | 做什么 | 时间 |
+| 入口 | 适合谁 | 做什么 | 花多久 |
 |------|--------|--------|:----:|
 | **`npx sofagent-audit`** | 任何开发者 | 零配置审计最近一次 commit，3 秒出结果 | 30 秒 |
+| **`--ruleset` 规则市场** | 需要更多规则的团队 | 加载安全等规则集，或自定义 JSON 规则 | 1 分钟 |
 | **GitHub Action** | 有 PR 流程的团队 | 每次 PR 自动审计，违规直接标注在 diff 行上 | 配置一次 |
 | **FDE Agent** | 企业 | 进场梳理工作流 → 部署 AI 节点 → 7×24 自运转 | FDE 驻场 |
 
-> 💡 审计能力是入口产品（让陌生人 30 秒体验到价值），FDE Agent 是完整产品（让企业获得全流程部署）。不是替代关系，是获客漏斗。
+### 30 秒：零配置审计
+
+```bash
+npx sofagent-audit   # 在任何 git 仓库里跑，不安装任何东西
+```
+
+### 1 分钟：规则市场
+
+```bash
+npx sofagent-audit --list-rulesets      # 看有哪些规则集
+npx sofagent-audit --ruleset security   # 加载安全规则集
+```
+
+社区规则集以 `sofagent-ruleset-*` npm 包发布，装上自动发现；也支持 `--ruleset-path` 指向你自己的 JSON 规则文件。
+
+### 配置一次，常开：GitHub Action
+
+在仓库加 `.github/workflows/sofagent-audit.yml`：
+
+```yaml
+on: [pull_request]
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # 审计需要完整 diff 历史
+      - uses: KongFangXun/sofagent@v1.2.9
+        with:
+          ruleset: sofagent     # sofagent / security / 社区规则集
+```
+
+审计结果以 GitHub Annotations 形式标注在 PR diff 对应行上。
 
 > 🔬 **外部独立实验证据**（非 sofagent 官方自测）：HuggingFace 上 Joel Niklaus 的 harness-optimization 研究显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**（提升全部来自外层机制）。详见 [THANKS.md](./docs/THANKS.md)。
 
@@ -105,8 +132,9 @@ graph LR
 | 你是… | 第一步 | 需要什么 |
 |------|------|------|
 | **企业用户** | 打开仓库内的 [FDE 引导目录](./FDE/README.md) → 对话引导你梳理工作流 | 零依赖、不需要 Node.js |
-| **企业批量部署（USB 烧录）** | `sofagent-daemon create-usb-key --role "节点名" --target /Volumes/XXX --platform macos` | 已装 daemon + 一个 U 盘 |
 | **开发者** | `bash install.sh` → `sofagent-audit --init` → 装 git hook 审计 | Node.js ≥ 18 + git |
+
+> 💡 企业批量部署（USB 烧录）见 [HANDBOOK](./docs/HANDBOOK.md)。
 
 > **前提**：开发者路径请在 git 仓库根目录下执行。如果还没有仓库，先运行 `git init`。
 
@@ -132,7 +160,8 @@ sofagent-audit --doctor  # 验证环境是否就绪（可选但推荐）
 
 | 方式 | 谁用 | 怎么用 |
 |------|------|--------|
-| 🚀 **npx 零安装** | 快速体验 / CI 环境 | `npx @sofagent/audit@latest --init`（即装即用）。⚠️ npx 会缓存旧版本，加 `@latest` 确保拉取最新版 |
+| 🚀 **npx 一次性体验** | 快速体验 / CI 环境 | `npx sofagent-audit`（零配置跑一次审计，不安装任何东西）|
+| 🚀 **npx 完整安装** | 不想 clone 仓库的开发者 | `npx @sofagent/audit@latest --init`（装完整 CLI + git hook）。⚠️ npx 会缓存旧版本，加 `@latest` 确保拉取最新版 |
 | ⚡ **install.sh 最小安装** | 开发者 / 企业 IT | `bash install.sh --base-only`（仅底座引擎） |
 
 <details>
@@ -165,7 +194,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 |------|------|
 | `@sofagent/audit` | 审计引擎（24 条规则，git diff 硬证据）|
 | `@sofagent/core` | 运行时诊断（doctor / verify）|
-| `@sofagent/orchestrator` | 任务编排引擎（LOOP 流水线；注：面向用户的任务编排由 Agent 平台完成，sofagent 在其过程中提供约束/审计/经验沉淀）|
+| `@sofagent/orchestrator` | FORGE 自迭代工具链（LOOP 流水线，sofagent 项目自身开发用；面向用户的任务编排由 Agent 平台完成）|
 | `@sofagent/daemon` | 守护进程（文件监控 / 定时巡检）|
 | `@sofagent/mcp` | MCP Server（JSON-RPC 2.0）|
 
