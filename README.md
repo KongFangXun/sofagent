@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <a href="README.en.md">English</a> · <a href="#这是什么">这是什么</a> · <a href="#快速开始">快速开始</a> · <a href="#三个入口从-30-秒到全套部署">三个入口</a> · <a href="#文档">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
+  <a href="README.en.md">English</a> · <a href="#这是什么">这是什么</a> · <a href="#fde-方法论">FDE 方法论</a> · <a href="#快速开始">快速开始</a> · <a href="#三个入口从-30-秒到全套部署">三个入口</a> · <a href="#文档">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
 
 ---
@@ -33,14 +33,41 @@ graph LR
 
 ## 核心特性
 
-- 🧭 **进场梳理工作流**——FDE 对话引导你把业务工作流拆清楚：哪些环节自动化、哪些留给人、哪些不动，产出本体结构（ontology）+ workflow.yml + skills/
-- 🤖 **部署 AI 节点**——把自动化环节变成 SubAgent，装进你已有的 AI 工具（WorkBuddy / Codex / Claude Code）里跑，不用学新界面，从"你干活"变成"你派活"
-- 🔍 **零配置审计**——`npx sofagent-audit`，在任何 git 仓库 3 秒审计最近一次 commit，不安装任何东西
-- 🧱 **24 条审计规则**——密钥泄漏、越界编辑、盲目修改、注入防御、权限红线，git diff 硬证据判定，违规当场拦截
+**FDE Agent 交付**
+
+- 🧭 **进场梳理工作流**——五要素深挖 + 三问判定法，把每个岗位环节摸清，算清每个 AI 节点值多少钱
+- 🤖 **部署 AI 节点**——三层交付物（文档层 + Skill 层 + 运行层），装进你已有的 AI 工具，从"你干活"变"你派活"
+- 🏠 **离场后常驻**——FDE Agent 留下巡检、审计、优化，7×24 在线，人离场治理不离开
+
+**治理保障**
+
+- 🔍 **零配置审计**——`npx sofagent-audit`，任何 git 仓库 3 秒审计最近一次 commit
+- 🧱 **24 条审计规则**——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
-- 🧬 **越跑越好**——每次任务的经验教训自动沉淀进知识库，下次干活自动避开同样的坑
-- 🖥️ **可视化 Dashboard**——6 页网页控制台（驾驶舱 / AI 节点 / 本体结构 / 知识库…），真实数据驱动
-- 🔌 **规则市场 + GitHub Action**——内置 security / sofagent 规则集，支持自定义 JSON 规则；每次 PR 自动审计，违规标注在 diff 行上
+- 🧬 **越跑越好**——经验教训自动沉淀进知识库，下次自动避开同样的坑
+
+## FDE 方法论
+
+很多企业上 AI 的路径是反的——先选模型、搭平台、买 Agent，结果没人用。问题不在技术，在于**还没搞清楚自己的业务流程，就想让 AI 接管**。FDE 把这件事倒过来：
+
+| 阶段 | 做什么 | 产出 |
+|------|--------|------|
+| ① 梳理 | **五要素深挖**——按岗位把每个环节的输入 / 输出 / 负责人 / 耗时 / 痛点摸清 | 企业画像 |
+| ② 判定 | **三问判定法**——哪些环节适合上 AI：🔄 自动执行 · ⚡ 强化岗位 · 👤 暂不动，按 ROI 排优先级 | 节点方案 + 年节省金额 |
+| ③ 交付 | **三层交付物**——文档层 + Skill 层 + 运行层，让 AI 节点真的跑起来 | 本体结构（ontology）+ workflow.yml + skills/ |
+
+完整方法论（四阶段十二步）见 [FDE/GUIDE.md](./FDE/GUIDE.md)——半天精读，读完能独立做 FDE。
+
+## FDE Skill 体系
+
+把 AI 节点部署出去只是第一步——让它**每次都守规矩**，靠的是随节点一起加载的 FDE Skill 体系：
+
+- 📜 **SKILL.md**——唯一主入口，由你的 AI 工具加载（含阶段路由 + 浓缩兜底）
+- 🧩 **四个角色 Skill**——`fde`（进场梳理）· `audit`（审计）· `engineer`（实现）· `reviewer`（审查），各司其职
+- 🔒 **harness 约束骨架**——entry-gate / fde-template / engage / loop-check / task-closure…，从进场到离场每一步都有对应的约束模板
+- 🧬 **经验自动沉淀**——think.md 反思 + knowledge 维护，节点越跑越聪明
+
+> 部署的不是裸 Agent，是**带约束骨架的 Agent**——约束是建议性的，审计是强制性的：Agent 可以不遵守约束，但每次变更都逃不过审计。
 
 ## 产品一瞥
 
@@ -120,7 +147,14 @@ jobs:
           ruleset: sofagent     # sofagent / security / 社区规则集
 ```
 
+**FDE Agent**——进场梳理 + 部署 + 常驻，两条路径任选：
+
+- **方法论路径**（零依赖）：读 [FDE/GUIDE.md](./FDE/GUIDE.md)，按手册手动梳理工作流，Excel + 人脑也能跑
+- **工具路径**（Node.js ≥ 18）：装好后在你的 AI 工具里说"帮我做 FDE 诊断"，Agent 从进场开始引导你
+
 > 🔬 **外部独立实验证据**（非官方自测）：HuggingFace 上 Joel Niklaus 的 harness-optimization 研究显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**。详见 [THANKS.md](./docs/THANKS.md)。
+
+> 🧪 **工程可信度**：1650 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes-loop 双盲审查连续 2 轮零 P0/P1。
 
 ## 文档
 
