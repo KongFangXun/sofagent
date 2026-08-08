@@ -428,6 +428,21 @@ jobs:
 
 没有 sofagent，梳理的 workflow 就是一份 PPT。引擎装到设备上，AI 节点才有纪律和审计。完整引擎对照表与部署步骤见 [FDE/GUIDE.md §5.3 部署流程](../FDE/GUIDE.md#53-部署流程人怎么看懂)。
 
+### 部署规模参考（企业 IT）
+
+| 部署规模 | 并发 Agent | CPU | 内存 | 磁盘 | 适用场景 |
+|---------|:---:|:---:|:---:|:---:|---------|
+| 个人 / 小团队 | 1-3 | 1 核 | 512 MB | 500 MB | 单人开发，git commit hook 审计 |
+| 中型团队 | 5-10 | 2 核 | 1 GB | 2 GB | 多人协作，daemon 常驻 + webhook 推送 |
+| 企业级 | 10+ | 4 核 | 2 GB | 5 GB+ | 多仓库联邦，A/B 审查 + 知识库 + Dashboard |
+
+> **资源消耗说明**：
+> - **磁盘**：`~/.sofagent/data/`（审计历史 + 快照 + 知识库，日均 ~5 MB/仓库）
+> - **内存**：daemon 常驻进程（~50 MB）+ Node.js 运行时（~200 MB/并发 Agent）
+> - **网络**：仅 LLM API 出站，无入站端口需求
+
+⚠️ **数据存储说明**：当前版本将审计数据以 Markdown 明文存储在 `~/.sofagent/data/`。内置加密（age）计划在 v1.4.0 引入。生产环境使用前建议将 `~/.sofagent/` 放在加密卷中。详见 [SECURITY.md](../SECURITY.md)。
+
 **节点类型选择**：自动运行节点（需 OpenClaw 或其他企业级平台全栈）vs 个人增强节点（WorkBuddy / Codex，无需平台全栈）。完整对照表见 [ARCHITECTURE 双节点架构](./ARCHITECTURE.md#双节点架构)。
 
 ### USB 烧录：三种部署场景全覆盖（v1.1.8+ / v1.2.0 叙事收口）
