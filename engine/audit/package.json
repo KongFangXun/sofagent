@@ -12,8 +12,7 @@
   },
   "bin": {
     "sofagent-audit": "dist/cli-quick.js",
-    "sofagent-audit-full": "dist/index.js",
-    "audit": "dist/index.js"
+    "sofagent-audit-full": "dist/index.js"
   },
   "scripts": {
     "clean": "rm -rf dist",

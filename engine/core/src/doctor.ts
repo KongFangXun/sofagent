@@ -60,6 +60,10 @@ export interface DoctorReport {
   deps: boolean;
   auditLog: boolean;
   allOk: boolean;
+  /** v1.3.0 (F-23): warning 条数——调用方据此区分「仅警告（EXIT=0）」与「有错误（EXIT≠0）」 */
+  warnCount: number;
+  /** v1.3.0 (F-23): error 条数 */
+  failCount: number;
 }
 
 /**
@@ -384,6 +388,8 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     deps: depsOk,
     auditLog: auditLogOk,
     allOk,
+    warnCount: _warnCount,
+    failCount: _failCount,
   };
 }
 

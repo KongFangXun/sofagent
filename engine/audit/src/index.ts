@@ -612,7 +612,12 @@ async function main(): Promise<void> {
     try {
       const { runDoctor } = await import('@sofagent/core');
       const report = runDoctor(process.cwd());
-      exit(report.allOk ? 0 : 1);
+      // v1.3.0 (F-23): doctor 仅在 error 时返回非零，warning 时返回 0——
+      // 对 cron/CI 脚本友好（仅警告不应被解释为失败）。人类如需 warning 也失败，用 --doctor --strict。
+      if (rawArgs.includes('--strict')) {
+        exit(report.allOk ? 0 : report.failCount > 0 ? 2 : 1);
+      }
+      exit(report.failCount > 0 ? 1 : 0);
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND' || (err as NodeJS.ErrnoException).code === 'MODULE_NOT_FOUND') {
         // audit 自身的简易诊断（检查 git 仓库 + audit 安装状态）

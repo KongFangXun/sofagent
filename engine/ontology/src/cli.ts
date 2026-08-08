@@ -1,8 +1,52 @@
 #!/usr/bin/env node
 // ontology CLI · v1.2.9
 
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
+import { homedir } from 'os';
+
 const args = process.argv.slice(2);
 const subcommand = args[0];
+
+/**
+ * F-18 (v1.3.0 bugfix)：解析数据目录——与 @sofagent/core loadEnvConfig().dataDir
+ * 的 resolveDataDir 语义一致（SOFAGENT_DATA → cwd/.sofagent → 标记文件 → fallback）。
+ * ontology 是叶子包（构建顺序在 core 之前、零 workspace 依赖），不能 import @sofagent/core，
+ * 故内联等价实现，避免破坏干净构建顺序。
+ */
+function resolveDataDir(): string {
+  // 1. 环境变量显式指定（官方变量 SOFAGENT_DATA，旧变量名已废弃）
+  const envData = process.env.SOFAGENT_DATA;
+  if (envData && existsSync(envData)) {
+    return envData;
+  }
+
+  // 2. 当前目录有 .sofagent/
+  const cwdData = join(process.cwd(), '.sofagent');
+  if (existsSync(cwdData)) {
+    return cwdData;
+  }
+
+  // 3. 标记文件
+  const home = homedir();
+  const markers = [
+    join(home, '.openclaw', 'skills', 'sofagent', '.sofagent-data-path'),
+    join(home, '.workbuddy', 'skills', 'sofagent', '.sofagent-data-path'),
+  ];
+  for (const marker of markers) {
+    if (existsSync(marker)) {
+      try {
+        const path = readFileSync(marker, 'utf-8').trim();
+        if (path && existsSync(path)) return path;
+      } catch {
+        // 读取失败忽略，继续下一个标记
+      }
+    }
+  }
+
+  // 4. fallback
+  return join(process.cwd(), '.sofagent');
+}
 
 async function main() {
   if (!subcommand || subcommand === '--help') {
@@ -33,7 +77,7 @@ async function main() {
     }
     case 'merge': {
       const { mergeOntology } = await import('./merge-engine');
-      const sofagentDir = process.env.SOFAGENT_DATA_DIR || '.sofagent';
+      const sofagentDir = resolveDataDir();
       try {
         const result = mergeOntology(sofagentDir);
         console.log(`✅ ontology 合并完成`);
@@ -48,7 +92,7 @@ async function main() {
     }
     case 'status': {
       const { checkOntologyStatus } = await import('./merge-engine');
-      const sofagentDir = process.env.SOFAGENT_DATA_DIR || '.sofagent';
+      const sofagentDir = resolveDataDir();
       try {
         const status = checkOntologyStatus(sofagentDir);
         console.log('ontology 目录状态:');

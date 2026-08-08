@@ -37,7 +37,7 @@ graph LR
 
 **Governance guarantees**
 
-- 🔍 **Zero-setup audit** — `npx sofagent-audit`, audits your last commit in any git repo in 3 seconds
+- 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, audits your last commit in any git repo in 3 seconds
 - 🧱 **24 audit rules** — secret leaks, out-of-scope edits, injection defense, privilege red lines — judged on hard git diff evidence, violations blocked on the spot
 - 🛡️ **Automatic snapshot & rollback** — auto-archived after every audit, one-click restore to any snapshot
 
@@ -79,10 +79,14 @@ Deploying AI nodes is only step one — what keeps them **on track every time** 
 **30 seconds, zero setup** — run an audit in any git repo:
 
 ```bash
-npx sofagent-audit
+npx -y -p @sofagent/audit sofagent-audit
 ```
 
-Here's what it looks like when a violation is blocked (real output):
+Here's what it looks like when a known-format secret leak is blocked (real output):
+
+> ℹ️ Rule A2 detects known formats: AWS AKIA, OpenAI sk-*, GitHub ghp_, PEM private key blocks, etc.
+> Generic secret shapes (bare `password=`, `secret` values) are intentionally out of scope — conservative design to avoid false positives.
+> Full detection capability in [LIMITATIONS.md A2](./docs/LIMITATIONS.md#a2-密钥检测局限).
 
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" />
@@ -108,13 +112,13 @@ No need to commit to the full package up front — start with a 30-second trial,
 
 ```mermaid
 graph LR
-    A["Individual<br/>npx sofagent-audit<br/>30-second zero-setup audit"] --> B["Team<br/>Rule marketplace + GitHub Action<br/>PR auto-audit"]
+    A["Individual<br/>npx -y -p @sofagent/audit sofagent-audit<br/>30-second zero-setup audit"] --> B["Team<br/>Rule marketplace + GitHub Action<br/>PR auto-audit"]
     B --> C["Enterprise<br/>FDE Agent<br/>full deployment · 7×24 self-running"]
 ```
 
 | Entry | What it does | Time needed |
 |------|--------|:----:|
-| **`npx sofagent-audit`** | Zero-setup audit of the last commit, results in 3 seconds | 30 sec |
+| **`npx -y -p @sofagent/audit sofagent-audit`** | Zero-setup audit of the last commit, results in 3 seconds | 30 sec |
 | **`--ruleset` rule marketplace** | Load rulesets like security, or use custom JSON rules | 1 min |
 | **GitHub Action** | Auto-audit every PR, violations annotated on the diff lines | Set up once |
 | **FDE Agent** | Map workflows on-site → deploy AI nodes → 7×24 self-running | FDE residency |
@@ -122,8 +126,8 @@ graph LR
 **Rule marketplace**:
 
 ```bash
-npx sofagent-audit --list-rulesets      # see available rulesets
-npx sofagent-audit --ruleset security   # load the security ruleset
+npx -y -p @sofagent/audit sofagent-audit --list-rulesets      # see available rulesets
+npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the security ruleset
 ```
 
 Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-discovered once installed; `--ruleset-path` can also point to your own JSON rules.
@@ -139,7 +143,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0        # auditing needs full diff history
-      - uses: KongFangXun/sofagent@v1.2.9
+      - uses: KongFangXun/sofagent@main
         with:
           ruleset: sofagent     # sofagent / security / community rulesets
 ```
@@ -149,9 +153,9 @@ jobs:
 - **Methodology path** (zero dependencies): read [FDE/GUIDE.md](./FDE/GUIDE.md) and map workflows manually following the handbook — Excel + your own brain is enough
 - **Tooling path** (Node.js ≥ 18): after installing, tell your AI tool "run an FDE diagnosis for me" and the Agent guides you from the entry phase
 
-> 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research on HuggingFace shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
+> 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research ([research code repository](https://github.com/JoelNiklaus/harness-optimization), data in the repo experiments) shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
 
-> 🧪 **Engineering credibility**: 1650 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes-loop double-blind review with zero P0/P1 for 2 consecutive rounds.
+> 🧪 **Engineering credibility**: 1658 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
 
 ## Docs
 

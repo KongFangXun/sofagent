@@ -6,14 +6,14 @@
 #
 # 🧭 路径声明（v1.2.0）：本脚本在仓库根目录，是主安装器。
 #    默认模式 = FDE 模式（底座 + FDE Agent Skill）。
-#    --base-only 模式 = 仅装底座（约束层 + 三引擎：审计/回溯/进化）。
+#    --base-only 模式 = 仅装约束层（注入·审计·回溯·进化四种能力）。
 #
 # 📦 安装包边界（v1.2.0）：
 #    ┌─────────────────────────┬──────────┬──────────────────────┐
 #    │ 脚本                    │ 给谁     │ 装什么               │
 #    ├─────────────────────────┼──────────┼──────────────────────┤
 #    │ install.sh              │ 所有用户 │ 底座+FDE Agent Skill │
-#    │ install.sh --base-only  │ 所有用户 │ 约束底座+三引擎      │
+#    │ install.sh --base-only  │ 所有用户 │ 约束层              │
 #    └─────────────────────────┴──────────┴──────────────────────┘
 #    原则：FORGE 由 `FORGE/SKILL/<loop>/` 定义驱动，无需单独安装脚本——
 #    FORGE 是 sofagent 项目的自迭代开发工具包（管理代码变更，给开发者用），
@@ -29,7 +29,7 @@
 #
 # 平台无关重构：默认安装不探测/不枚举任何平台，只写 sofagent 自己的目录 ~/.sofagent/；
 # 平台集成改为显式 opt-in：--platform openclaw（完整）/ workbuddy / claude / codex / hermes
-# 三引擎：审计 / 回溯 / 进化（FORGE 是内部开发工具，非交付引擎）。
+# 约束层四种能力：注入 / 审计 / 回溯 / 进化（FORGE 是内部开发工具，非交付引擎）。
 # 编排引擎为独立可选包 @sofagent/orchestrator，需单独安装（npm install -g @sofagent/orchestrator）。
 #
 # ── 调用契约（v1.2.0）──
@@ -94,7 +94,7 @@ sofagent install.sh v${VERSION} — 主安装器（平台无关）
 
 用法:
   bash install.sh                       默认模式：平台无关安装（只写 ~/.sofagent/）+ FDE Agent Skill
-  bash install.sh --base-only           仅装底座（约束层 + 三引擎：审计/回溯/进化）
+  bash install.sh --base-only           仅装约束层（审计/回溯/进化）
   bash install.sh --platform <name>     显式平台集成（opt-in）：openclaw / workbuddy / claude / codex / hermes
   bash install.sh --quick               完整安装（静默模式，跳过交互确认）⚠️ 非预览，会写入文件
   bash install.sh --remote              远程安装模式（git clone）
@@ -315,7 +315,7 @@ else warn "npm 未安装"; fi
 # ════════════════════════════════════════
 # Step 3: 审计引擎（@sofagent/audit）
 # ════════════════════════════════════════
-info "Step 3/8 · 审计引擎: @sofagent/audit（约束底座三引擎之一）"
+info "Step 3/8 · 审计引擎: @sofagent/audit（约束层审计能力）"
 # 优先使用仓库本地的 engine/audit/dist/（避免 npm @latest 版本漂移）
 # 仓库本地版本与用户 clone 的版本一致，npm registry 可能滞后
 LOCAL_AUDIT_DIST="$PROJECT_ROOT/engine/audit/dist/index.js"

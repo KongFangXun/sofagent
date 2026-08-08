@@ -378,7 +378,7 @@ FDE 一线观察指出：AI 项目失败的最根因往往不是技术，而是"
 | ① 交付物 | workflow.yml + ontology + skills/ | `.sofagent/` 目录（activate 读它） | ✅ 已实现 |
 | ② 离场报告 | FDE 经验（踩坑/调试难点/可复用模式） | `delivery-report.md`（FDE/templates/） | ✅ 模板已建 |
 | ③ 知识聚合 | 多客户报告 → 统一知识库 | `knowledge/`（Dream Cycle 自动派生） | ✅ 已实现 |
-| ④ 模型精调 | 知识库 → QLoRA 训练语料 | `sofagent-model` CLI（v3.x） | 🔴 规划中 |
+| ④ 模型精调 | 知识库 → QLoRA 训练语料 | `sofagent-model` CLI（v3.x） | 🔴 远期（见 ROADMAP） |
 
 **为什么离场报告是关键**：交付物（①）是结构化的，但 FDE 脑子里的经验（②）是非结构化的——散落在对话、录音、个人笔记里，会随时间流失。`delivery-report.md` 就是把这个"漏斗"接住：离场时强制回写一份，飞轮才有数据可转。没有它，飞轮缺一齿，转不起来。
 

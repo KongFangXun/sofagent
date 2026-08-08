@@ -88,7 +88,8 @@ async function main() {
       const { agentName, task: taskDesc, mode } = parsed!;
       const { listAgents } = await import('./registry');
       const { spawnSubAgent } = await import('./launcher');
-      const dataDir = process.env.SOFAGENT_DATA_DIR || '.sofagent';
+      const { loadEnvConfig } = await import('@sofagent/core');
+      const dataDir = loadEnvConfig().dataDir;
       const agents = listAgents(dataDir);
       const definition = agents.find((a) => a.name === agentName);
       if (!definition) {

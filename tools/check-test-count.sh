@@ -111,24 +111,43 @@ check_doc() {
   fi
 }
 
-# CHANGELOG.md — 最新版本段的质量验证行
-# 格式："**质量验证**：781 tests across 12 packages"（取第一条，即最新版本）
-CHANGELOG_LINE=$(grep -nE '\*\*质量验证\*\*：[0-9]+ tests' CHANGELOG.md | head -1)
-if [ -n "$CHANGELOG_LINE" ]; then
-  CHANGELOG_CLAIMED=$(echo "$CHANGELOG_LINE" | grep -oE '[0-9]+ tests' | head -1 | grep -oE '[0-9]+')
-  CHANGELOG_LINENO=$(echo "$CHANGELOG_LINE" | cut -d: -f1)
-  if [ "$QUIET" = false ]; then
-    echo -e "  校验 CHANGELOG.md（行 ${CHANGELOG_LINENO}）..."
-  fi
-  if [ "$CHANGELOG_CLAIMED" = "$TOTAL_TESTS" ]; then
-    if [ "$QUIET" = false ]; then
-      echo -e "  ${GREEN}✓ CHANGELOG.md：${CHANGELOG_CLAIMED}${NC}"
+# 当前版本开发日志 — CHANGELOG.md 已改为纯目录索引（不再含测试数声明），
+# 测试数声明在开发日志的「开发完成快照」行。F-09 (v1.3.0 bugfix)：
+# 校验目标改为 docs/changelog/vX.Y/vX.Y.Z.md（从 engine/audit/package.json 提取版本号自动拼路径）。
+# 格式："开发完成快照：... NNN 单元（单元测试数，与 SSOT 一致）" 或 "NNN tests across NN packages"。
+# grep 未命中 → FAIL（与 WIKI/README 校验段一致，禁止静默跳过）。
+CUR_VERSION=$(node -p "require('./engine/audit/package.json').version" 2>/dev/null || echo "1.2.9")
+CUR_MAJOR_MINOR=$(echo "$CUR_VERSION" | cut -d. -f1-2)
+DEVLOG_FILE="docs/changelog/v${CUR_MAJOR_MINOR}/v${CUR_VERSION}.md"
+if [ -f "$DEVLOG_FILE" ]; then
+  # 优先「开发完成快照」行的单元数（1650 单元），回退 "NNN tests across"
+  DEVLOG_LINE=$(grep -nE '开发完成快照.*[0-9]+ 单元|[0-9]+ tests across' "$DEVLOG_FILE" | head -1)
+  if [ -n "$DEVLOG_LINE" ]; then
+    DEVLOG_CLAIMED=$(echo "$DEVLOG_LINE" | grep -oE '[0-9]+ 单元' | head -1 | grep -oE '[0-9]+')
+    if [ -z "$DEVLOG_CLAIMED" ]; then
+      DEVLOG_CLAIMED=$(echo "$DEVLOG_LINE" | grep -oE '[0-9]+ tests across' | head -1 | grep -oE '[0-9]+')
     fi
-    ((PASS++)) || true
+    DEVLOG_LINENO=$(echo "$DEVLOG_LINE" | cut -d: -f1)
+    if [ "$QUIET" = false ]; then
+      echo -e "  校验 ${DEVLOG_FILE}（行 ${DEVLOG_LINENO}）..."
+    fi
+    if [ "$DEVLOG_CLAIMED" = "$TOTAL_TESTS" ]; then
+      if [ "$QUIET" = false ]; then
+        echo -e "  ${GREEN}✓ ${DEVLOG_FILE}：${DEVLOG_CLAIMED}${NC}"
+      fi
+      ((PASS++)) || true
+    else
+      echo -e "  ${RED}✗ ${DEVLOG_FILE}（行 ${DEVLOG_LINENO}）：声称 ${DEVLOG_CLAIMED}，实际 ${TOTAL_TESTS}${NC}"
+      ((FAIL++)) || true
+    fi
   else
-    echo -e "  ${RED}✗ CHANGELOG.md（行 ${CHANGELOG_LINENO}）：声称 ${CHANGELOG_CLAIMED}，实际 ${TOTAL_TESTS}${NC}"
+    echo -e "  ${RED}✗ ${DEVLOG_FILE} 未找到「开发完成快照」测试数声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+    echo -e "    提示：CHANGELOG 已改为纯索引，测试数声明在开发日志中。请在本脚本校验目标处补正则。"
     ((FAIL++)) || true
   fi
+else
+  echo -e "  ${RED}✗ 当前版本开发日志 ${DEVLOG_FILE} 不存在（无法校验 → FAIL，禁止静默跳过）${NC}"
+  ((FAIL++)) || true
 fi
 
 # ROADMAP.md — "质量验证：NNN tests" 格式（最新版本段）
