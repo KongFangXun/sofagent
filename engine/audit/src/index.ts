@@ -613,6 +613,24 @@ async function main(): Promise<void> {
 
   const args = parseArgs(process.argv);
 
+  // P1-A9: 无参数运行静默写库——用户无意识触发真实审计并写入全局数据。
+  // 无参数时（argv 仅含 node + 脚本路径，无任何 flag），改为输出 help 而非默认执行审计。
+  if (process.argv.slice(2).length === 0) {
+    console.log(`sofagent-audit v${VERSION} · FDE Agent 的审计引擎\n`);
+    console.log('⚠️  无参数运行不会执行审计。请指定要执行的操作：\n');
+    console.log('常用命令:');
+    console.log('  sofagent-audit --init                           一键初始化（配置+hook+冒烟）');
+    console.log('  sofagent-audit --diff HEAD~1..HEAD              审计最近一次 commit');
+    console.log('  sofagent-audit --diff --cached                  审计暂存区（commit-msg hook 用）');
+    console.log('  sofagent-audit --diff origin/main..HEAD         审计分支差异');
+    console.log('  sofagent-audit --doctor                         运行环境健康检查');
+    console.log('  sofagent-audit --verify-chain                   审计链完整性校验');
+    console.log('  sofagent-audit --help                           查看全部命令');
+    console.log('');
+    console.log('提示：commit-msg hook 会自动运行审计，通常无需手动执行。');
+    exit(0);
+  }
+
   // --mcp 模式：MCP Server 已拆分为独立包 @sofagent/mcp
   if (args.mcp) {
     console.log('MCP Server 已拆分为独立包 @sofagent/mcp。');
@@ -968,17 +986,37 @@ async function main(): Promise<void> {
 
   // 超大 diff 审计盲区 → 注入 WARN 级发现（报告中可见，不拦截提交）。
   // text/table 人类可读格式：打印醒目 WARN 行；--json 输出绝不掺入（保持机器可读纯净）。
+  // P1-A6: 安全敏感文件名模式（.env/secret/key/credential）在 oversized 场景升级为 FAIL（exit 2）
+  const SENSITIVE_FILE_RE = /\.(env|envrc|pfx|p12|key|pem|secret|credential)s?(\.|$)/i;
+  const oversizedSensitivePaths = oversizedPaths.filter((p) => SENSITIVE_FILE_RE.test(p));
+  const oversizedNormalPaths = oversizedPaths.filter((p) => !SENSITIVE_FILE_RE.test(p));
+
   if (oversizedPaths.length > 0 && !args.json) {
     console.log('');
-    console.log(`  ⚠️  [sofagent] 审计盲区（WARN）：以下 ${oversizedPaths.length} 个文件的 diff 超过 5MB，已跳过内容审计`);
-    for (const p of oversizedPaths) {
-      console.log(`       - ${p}`);
+    // 安全敏感文件 → FAIL 级别告警（堵住「故意构造超大 diff 藏密钥」攻击路径）
+    if (oversizedSensitivePaths.length > 0) {
+      console.log(`  🔴 [sofagent] 审计盲区（FAIL）：以下 ${oversizedSensitivePaths.length} 个安全敏感文件的 diff 超过 5MB，已跳过内容审计且阻止提交`);
+      for (const p of oversizedSensitivePaths) {
+        console.log(`       - ${p}（文件名匹配密钥模式）`);
+      }
+      console.log('       安全敏感文件（.env/secret/key/credential）在 oversized 场景升级为 FAIL——请确认无密钥泄漏后缩减文件大小再提交。');
     }
-    console.log('       可能为二进制/lock/minified 文件，请人工确认这些文件无密钥泄漏/越界改动。');
+    // 普通文件 → WARN（保持 F-22 有意设计）
+    if (oversizedNormalPaths.length > 0) {
+      console.log(`  ⚠️  [sofagent] 审计盲区（WARN）：以下 ${oversizedNormalPaths.length} 个文件的 diff 超过 5MB，已跳过内容审计`);
+      for (const p of oversizedNormalPaths) {
+        console.log(`       - ${p}`);
+      }
+      console.log('       可能为二进制/lock/minified 文件，请人工确认这些文件无密钥泄漏/越界改动。');
+    }
   }
-  // 超大 diff 审计盲区 → exit=1（WARN 而非 0），「13 项检查 PASS」不再误导
-  if (oversizedPaths.length > 0 && results.exitCode === 0) {
+  // 超大 diff 普通文件 → exit=1（WARN 而非 0），「13 项检查 PASS」不再误导
+  if (oversizedNormalPaths.length > 0 && results.exitCode === 0) {
     results.exitCode = 1;
+  }
+  // P1-A6: 超大 diff 安全敏感文件 → exit=2（FAIL，阻止提交）
+  if (oversizedSensitivePaths.length > 0) {
+    results.exitCode = 2;
   }
 
   printResults(results, diffFiles, args.json, args.ci, args.silent);

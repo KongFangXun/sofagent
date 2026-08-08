@@ -38,14 +38,14 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 | `knowledge/` | `data/knowledge/` | 知识库 / 评估反馈（eval 体系；旧 `scoring/` 已废弃） |
 | `orchestrator/` | `data/orchestrator/` | 编排决策历史 |
 
-**当前状态（v1.2.7）**：
+**当前状态（v1.2.8）**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
 - ⚠️ 明文存储：`data/` 下文件仍为 Markdown 明文，未做加密
 - ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**预计 v1.4.0（与沙箱/权限/网关同批安全加固）落地**。合规审查员请注意：v1.2.x 版本不适合直接用于强合规场景，需配合外部加密卷（gpg / disk encryption）。
 
-### 当前版本（v1.2.7）临时缓解措施
+### 当前版本（v1.2.8）临时缓解措施
 
 在 age 加密（目标 v1.4.0）交付之前，建议：
 1. **设置 `~/.sofagent/data/` 目录权限为 700**：`chmod 700 ~/.sofagent/data/`（用户可见运行时数据；`~/.sofagent/internal/` 引擎内部状态同样 700）
@@ -282,11 +282,12 @@ chmod 600 ~/.sofagent-key
 #    新条目将使用新密钥建立新的 hash chain
 ```
 
-**审计备份清理**：`history.jsonl.bak-*` 旋转备份文件会留在 `~/.sofagent/data/audit/` 目录中（每次达到大小阈值时生成一份）。这些是明文 JSONL 副本，建议定期清理：
+**审计备份说明**：sofagent 审计引擎**当前不自动生成** `history.jsonl.bak-*` 备份文件（SECURITY.md 早期版本描述的"达到大小阈值时生成备份"机制在代码中不存在）。`history.jsonl` 为 append-only 单文件，不覆盖、不轮换。如需备份，建议用外部 cron + `cp` 定期归档：
 
 ```bash
-# 保留最近 2 份备份，其余删除
-ls -t ~/.sofagent/data/audit/history.jsonl.bak-* | tail -n +3 | xargs rm -f
+# 手动备份（建议加入 crontab）
+cp ~/.sofagent/data/audit/history.jsonl ~/.sofagent/data/audit/history.jsonl.bak-$(date +%Y%m%d)
+chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 ```
 
 ### 威胁模型：`SOFAGENT_DATA` 环境变量的信任边界（本版声明为已知风险）

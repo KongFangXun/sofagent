@@ -34,34 +34,59 @@ const MAX_DISPLAY_PER_GROUP = 5;
  * 对一条新增行生成「明文候选」——原行 + 可能的 base64/hex 解码结果。
  * 仅当行内容形态符合编码特征（且能解码出可打印文本）才尝试，避免误伤普通文本。
  */
+function tryDecodeBase64(s: string): string | null {
+  if (!/^[A-Za-z0-9+/=\s]+$/.test(s) || s.replace(/\s+/g, '').length < 8 || s.replace(/\s+/g, '').length % 4 !== 0) {
+    return null;
+  }
+  try {
+    const decoded = Buffer.from(s.replace(/\s+/g, ''), 'base64').toString('utf-8');
+    if (decoded && /[\x20-\x7E\u4e00-\u9fff]/.test(decoded) && !decoded.includes('\uFFFD')) {
+      return decoded;
+    }
+  } catch { /* 解码失败忽略 */ }
+  return null;
+}
+
+function tryDecodeHex(s: string): string | null {
+  const hexStr = s.replace(/\s+/g, '');
+  if (!/^[0-9a-fA-F]+$/.test(hexStr) || hexStr.length < 16 || hexStr.length % 2 !== 0) {
+    return null;
+  }
+  try {
+    const decoded = Buffer.from(hexStr, 'hex').toString('utf-8');
+    if (decoded && /[\x20-\x7E\u4e00-\u9fff]/.test(decoded) && !decoded.includes('\uFFFD')) {
+      return decoded;
+    }
+  } catch { /* 解码失败忽略 */ }
+  return null;
+}
+
 function candidatePlaintexts(content: string): string[] {
   const candidates: string[] = [content];
   const trimmed = content.trim();
 
-  // base64 候选：仅含 base64 字符集、长度 ≥8 且为 4 的倍数、解码为可打印文本
-  if (
-    /^[A-Za-z0-9+/=\s]+$/.test(trimmed) &&
-    trimmed.length >= 8 &&
-    trimmed.length % 4 === 0
-  ) {
-    try {
-      const decoded = Buffer.from(trimmed.replace(/\s+/g, ''), 'base64').toString('utf-8');
-      if (decoded && /[\x20-\x7E\u4e00-\u9fff]/.test(decoded) && !decoded.includes('\uFFFD')) {
-        candidates.push(decoded);
-      }
-    } catch { /* 解码失败忽略 */ }
+  // P1-A4: 带变量前缀的赋值行（如 `token = <b64>` / `key: <hex>`）
+  // 提取等号/冒号后的值部分，尝试解码——堵住 `token = <base64>` 绕过路径
+  const assignMatch = trimmed.match(/(?:^|\s)([\w.-]+)\s*[:=]\s*(.+)$/);
+  if (assignMatch) {
+    const valuePart = assignMatch[2]!.trim().replace(/['"`;,\s]+$/g, '');
+
+    // base64 候选（值部分）
+    const b64Decoded = tryDecodeBase64(valuePart);
+    if (b64Decoded) candidates.push(b64Decoded);
+
+    // hex 候选（值部分）
+    const hexDecoded = tryDecodeHex(valuePart);
+    if (hexDecoded) candidates.push(hexDecoded);
   }
 
-  // hex 候选：偶数长度、仅含 0-9a-f、解码为可打印文本
-  const hexStr = trimmed.replace(/\s+/g, '');
-  if (/^[0-9a-fA-F]+$/.test(hexStr) && hexStr.length >= 16 && hexStr.length % 2 === 0) {
-    try {
-      const decoded = Buffer.from(hexStr, 'hex').toString('utf-8');
-      if (decoded && /[\x20-\x7E\u4e00-\u9fff]/.test(decoded) && !decoded.includes('\uFFFD')) {
-        candidates.push(decoded);
-      }
-    } catch { /* 解码失败忽略 */ }
-  }
+  // 整行 base64 候选
+  const wholeB64 = tryDecodeBase64(trimmed);
+  if (wholeB64) candidates.push(wholeB64);
+
+  // 整行 hex 候选
+  const wholeHex = tryDecodeHex(trimmed);
+  if (wholeHex) candidates.push(wholeHex);
 
   return candidates;
 }

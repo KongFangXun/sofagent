@@ -219,13 +219,14 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     console.warn('[sofagent] 审计历史最后一行读回校验失败（请检查 history.jsonl 完整性）');
   }
 
-  // 文件首次创建时收紧权限为 0o600（仅当前用户可读写）
-  if (!fileExists) {
-    try {
-      chmodSync(filePath, 0o600);
-    } catch (e) {
-      console.error(`[sofagent] 审计历史文件权限设置失败: ${e instanceof Error ? e.message : String(e)}`);
-    }
+  // P1-B1: 每次写入后确保文件权限为 0o600（不仅首次创建时收紧）
+  // 此前只在 !fileExists 时 chmodSync，后续追加写入不校验权限——
+  // 如果文件被外部改为 644（如手动 chmod / 恢复备份），权限会保持 644 不收紧。
+  // 每次 appendHistory 后都 chmodSync(filePath, 0o600) 确保权限恒为 0600。
+  try {
+    chmodSync(filePath, 0o600);
+  } catch (e) {
+    console.error(`[sofagent] 审计历史文件权限设置失败: ${e instanceof Error ? e.message : String(e)}`);
   }
 }
 
