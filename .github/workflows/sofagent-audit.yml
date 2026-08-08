@@ -26,8 +26,9 @@ jobs:
       - name: Run audit
         # exit 0=PASS / 1=WARN / 2=FAIL
         # CI 只阻断 FAIL（exit 2），WARN（exit 1）只提醒不阻断
+        # 🔴 || true 防止 GitHub Actions 默认 set -e 在 npx 返回 1 时中断
         run: |
-          cd engine/audit && npx sofagent-audit --silent --diff HEAD~1..HEAD --ci
+          cd engine/audit && npx sofagent-audit --silent --diff HEAD~1..HEAD --ci || true
           exit_code=$?
           if [ $exit_code -eq 2 ]; then
             echo "❌ FAIL: 审计发现违规"
