@@ -1,5 +1,5 @@
 // ============================================================
-// workspace-summary.test.ts · Workspace 变更摘要测试（v1.2.3 · 交付五）
+// workspace-summary.test.ts · Workspace 变更摘要测试（v1.2.8 · 交付五）
 //
 // 覆盖：
 // - collectWorkspaceChanges：created/modified/deleted 三类准确

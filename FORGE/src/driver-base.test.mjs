@@ -229,15 +229,21 @@ describe('createForgeDriverBase', () => {
       repoRoot: process.cwd(),
     });
 
-    it('saveResumePoint 写入 resume-point.json（round/completed/counts/timestamp）', () => {
+    it('saveResumePoint 写入 resume-point.json（round/completedWorkers/counts/timestamp）', () => {
+      // v1.2.9 功能②：worker 级断点——state 从 completed: boolean 升级为 completedWorkers: string[]
       const state = {
         round: 3,
-        completed: true,
+        completedWorkers: ['a-check-p1', 'a-check-p2', 'b-check-p1'],
+        workers: {
+          'a-check-p1': { status: 'done', output: 'check-a-p1.md' },
+          'a-check-p2': { status: 'done', output: 'check-a-p2.md' },
+          'b-check-p1': { status: 'done', output: 'check-b-p1.md' },
+        },
         counts: { p0: 0, p1: 2, p2: 5 },
         cleanStreak: 1,
         consecutiveDegraded: 0,
         severityHistory: [4, 2],
-        target: 'v1.2.8',
+        target: 'v1.2.9',
         maxRounds: 10,
       };
       resumeBase.saveResumePoint(tmpDir, state);
@@ -247,11 +253,14 @@ describe('createForgeDriverBase', () => {
 
       const saved = JSON.parse(readFileSync(resumePath, 'utf-8'));
       expect(saved.round).toBe(3);
-      expect(saved.completed).toBe(true);
+      // v1.2.9 功能②：completedWorkers 是数组
+      expect(saved.completedWorkers).toEqual(['a-check-p1', 'a-check-p2', 'b-check-p1']);
+      expect(saved.workers).toBeDefined();
+      expect(saved.workers['a-check-p1']).toEqual({ status: 'done', output: 'check-a-p1.md' });
       expect(saved.counts).toEqual({ p0: 0, p1: 2, p2: 5 });
       expect(saved.cleanStreak).toBe(1);
       expect(saved.severityHistory).toEqual([4, 2]);
-      expect(saved.target).toBe('v1.2.8');
+      expect(saved.target).toBe('v1.2.9');
       expect(saved.maxRounds).toBe(10);
       // timestamp 由 saveResumePoint 自动注入（ISO 格式）
       expect(typeof saved.timestamp).toBe('string');
@@ -259,19 +268,23 @@ describe('createForgeDriverBase', () => {
     });
 
     it('saveResumePoint 原子写：不留 .tmp 残留', () => {
-      resumeBase.saveResumePoint(tmpDir, { round: 1, completed: true });
+      resumeBase.saveResumePoint(tmpDir, { round: 1, completedWorkers: [] });
       expect(existsSync(join(tmpDir, 'resume-point.json.tmp'))).toBe(false);
       expect(existsSync(join(tmpDir, 'resume-point.json'))).toBe(true);
     });
 
-    it('loadResumePoint 读取有效断点', () => {
-      const state = { round: 2, completed: false, counts: { p0: 1, p1: 1, p2: 0 } };
+    it('loadResumePoint 读取有效断点（v1.2.9 worker 级格式）', () => {
+      const state = {
+        round: 2,
+        completedWorkers: ['a-check-p1', 'b-check-p3'],
+        counts: { p0: 1, p1: 1, p2: 0 },
+      };
       resumeBase.saveResumePoint(tmpDir, state);
 
       const loaded = resumeBase.loadResumePoint(tmpDir);
       expect(loaded).not.toBeNull();
       expect(loaded.round).toBe(2);
-      expect(loaded.completed).toBe(false);
+      expect(loaded.completedWorkers).toEqual(['a-check-p1', 'b-check-p3']);
       expect(loaded.counts).toEqual({ p0: 1, p1: 1, p2: 0 });
     });
 
@@ -280,12 +293,12 @@ describe('createForgeDriverBase', () => {
     });
 
     it('loadResumePoint 文件损坏返回 null 不 throw', () => {
-      writeFileSync(join(tmpDir, 'resume-point.json'), '{ "round": 3, "completed": tru', 'utf-8');
+      writeFileSync(join(tmpDir, 'resume-point.json'), '{ "round": 3, "completedWorkers": ["a-check-p1"', 'utf-8');
       // 不 throw，返回 null
       expect(resumeBase.loadResumePoint(tmpDir)).toBeNull();
     });
 
-    it('loadResumePoint 字段缺失（只有 round 没有 completed）返回 null', () => {
+    it('loadResumePoint 字段缺失（只有 round 没有 completedWorkers/completed）返回 null', () => {
       writeFileSync(join(tmpDir, 'resume-point.json'), JSON.stringify({ round: 3 }) + '\n', 'utf-8');
       expect(resumeBase.loadResumePoint(tmpDir)).toBeNull();
     });
@@ -293,10 +306,23 @@ describe('createForgeDriverBase', () => {
     it('loadResumePoint 字段类型错误（round 非 number）返回 null', () => {
       writeFileSync(
         join(tmpDir, 'resume-point.json'),
-        JSON.stringify({ round: 'three', completed: true }) + '\n',
+        JSON.stringify({ round: 'three', completedWorkers: ['a-check-p1'] }) + '\n',
         'utf-8'
       );
       expect(resumeBase.loadResumePoint(tmpDir)).toBeNull();
+    });
+
+    // v1.2.9 功能②：向后兼容——旧格式（completed: boolean）仍然可读
+    it('loadResumePoint 向后兼容旧格式（completed: boolean 无 completedWorkers）', () => {
+      writeFileSync(
+        join(tmpDir, 'resume-point.json'),
+        JSON.stringify({ round: 3, completed: true, counts: { p0: 0 } }) + '\n',
+        'utf-8'
+      );
+      const loaded = resumeBase.loadResumePoint(tmpDir);
+      expect(loaded).not.toBeNull();
+      expect(loaded.round).toBe(3);
+      expect(loaded.completed).toBe(true);
     });
 
     it('parseDriverArgs 解析 --resume flag', () => {

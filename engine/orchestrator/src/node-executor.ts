@@ -59,22 +59,24 @@ export interface NodeExecutionResult {
 /**
  * 检查节点是否标记为 HITL。
  *
- * v1.2.8 铁律：HITL 节点执行需 v1.2.9 hitl-handler.ts，
- * 本版遇到 HITL 节点必须 fail-fast——
- * 不得静默跳过、不得未经确认直接执行。
+ * v1.2.9：HITL 节点由 hitl-handler.ts 处理（中断 → 审批 → 执行）。
+ * 本函数仅做检测——如果调用方未接入 hitl-handler，仍 fail-fast。
+ * 如果调用方已接入 hitl-handler，应在 executeNode 前调用 hitl.before()，
+ * 并在通过后传入 hitlCleared=true 跳过此检查。
  *
- * @throws Error 如果节点标记了 HITL
+ * @throws Error 如果节点标记了 HITL 且未传入 hitlCleared
  */
-export function checkHITL(node: WorkflowNode, dataDir: string): void {
+export function checkHITL(node: WorkflowNode, dataDir: string, hitlCleared = false): void {
   if (node.agent !== 'enterprise') return;
+  if (hitlCleared) return; // v1.2.9：hitl-handler 已审批，跳过 fail-fast
 
   const agents = listAgents(dataDir);
   const def = agents.find((a) => a.name === node.id);
   if (def?.hitl) {
     throw new Error(
       `[node-executor] 节点 "${node.id}" 标记了 HITL（Human-in-the-Loop）。` +
-      `HITL 节点执行需 v1.2.9 hitl-handler.ts，当前版本不支持。` +
-      `请移除 HITL 标记或等待 v1.2.9。`,
+      `请使用 hitl-handler.ts 处理 HITL 节点（v1.2.9 已支持）。` +
+      `或在调用 executeNode 前先调用 hitl.before(node) 获取审批。`,
     );
   }
 }
@@ -123,14 +125,16 @@ export async function executeNode(
     }>;
     resolveModel?: () => Promise<unknown | null>;
     buildSystemPrompt?: (projectRoot: string, agentConfig: SubAgentConfig) => string;
+    /** v1.2.9：hitl-handler 已审批后传入 true，跳过 fail-fast */
+    hitlCleared?: boolean;
   },
 ): Promise<NodeExecutionResult> {
   const startTime = Date.now();
   const entitiesWritten: string[] = [];
 
-  // 1. 检查 HITL（fail-fast）
+  // 1. 检查 HITL（fail-fast，除非 hitl-handler 已审批）
   try {
-    checkHITL(ctx.node, ctx.dataDir);
+    checkHITL(ctx.node, ctx.dataDir, deps?.hitlCleared);
   } catch (err) {
     return {
       agentName: ctx.agentName,

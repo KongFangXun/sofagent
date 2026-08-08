@@ -1,5 +1,5 @@
 // ============================================================
-// agent-identity.test.ts · Agent 身份码测试（v1.2.5 §3.1）
+// agent-identity.test.ts · Agent 身份码测试（v1.2.8 §3.1）
 // ============================================================
 
 import { describe, it, expect } from 'vitest';

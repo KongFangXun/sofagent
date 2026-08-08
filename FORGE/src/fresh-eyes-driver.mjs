@@ -129,18 +129,99 @@ const base = createForgeDriverBase({
 });
 
 // ─── 步骤定义（role / prompt / output / extraInputs / maxTokens）────────
-// maxTokens：步骤级输出 token 上限覆盖。未定义时回退到 MODEL_CONFIGS[role].maxTokens。
-// a-consolidate 需合并 A/B 两份完整 12 视角报告为单份 findings，输出超长，
-// 单独调高到 32000，避免顶格 16000 被截断生成不了合法 result.md（整轮降级根因）。
+// v1.2.9 功能①：FORGE Driver 短任务化——12 视角拆分为 24 个独立 worker（A/B 各 12）。
+//
+// 改造动机：
+//   原 a-check/b-check 各是一个 worker，单 worker 要在 35 次工具预算内跑完 12 个
+//   视角（平均每视角 3 次），容易撞硬熔断导致碎片报告。短任务化后每个视角独立
+//   worker（recursionLimit=30, toolSoftLimit=12, toolHardLimit=15），单视角
+//   工具预算充裕，报告质量大幅提升。
+//
+// STEPS 动态生成：A 侧 12 个 perspective worker + B 侧 12 个 perspective worker
+// + a-consolidate 合并 24 份报告 + b-fix/b-audit/a-verify 不变。
+
+/**
+ * v1.2.9 功能①：fresh-eyes 审查的 12 个视角定义。
+ * 每个视角对应 playbook/fresh-eyes-review.md 中的一个审查身份。
+ * A/B 各跑一遍（双盲），合计 24 个独立 perspective worker。
+ */
+const PERSPECTIVES = [
+  { id: 1,  name: 'stranger',        label: '陌生人' },
+  { id: 2,  name: 'enterprise-it',   label: '企业 IT' },
+  { id: 3,  name: 'competitor',      label: '竞品' },
+  { id: 4,  name: 'npm-user',        label: 'npm 用户' },
+  { id: 5,  name: 'reviewer',        label: '开源审查员' },
+  { id: 6,  name: 'journey',         label: '用户旅程' },
+  { id: 7,  name: 'red-team',        label: '红队' },
+  { id: 8,  name: 'detective',       label: '数字侦探' },
+  { id: 9,  name: 'perception',      label: '感知层' },
+  { id: 10, name: 'doc-consistency', label: '文档一致性' },
+  { id: 11, name: 'code-reader',     label: '代码审读者' },
+  { id: 12, name: 'file-stranger',   label: '文件结构陌生人' },
+];
+
+/**
+ * 动态生成 A 侧 perspective 步骤（a-check-p1 ~ a-check-p12）。
+ * 每个 perspective worker 的配置：
+ *   - prompt: a-check-perspective-N.md（N = perspective.id）
+ *   - outputs: ['check-a-pN.md']
+ *   - recursionLimit: 30（短任务——单视角只需读 2-3 个文件）
+ *   - toolSoftLimit: 12, toolHardLimit: 15
+ */
+function buildPerspectiveSteps() {
+  const steps = {};
+  for (const p of PERSPECTIVES) {
+    steps[`a-check-p${p.id}`] = {
+      role: 'A',
+      prompt: `a-check-perspective-${p.id}.md`,
+      outputs: [`check-a-p${p.id}.md`],
+      inputs: [],
+      perspective: p.label,
+      recursionLimit: 30,
+      toolSoftLimit: 12,
+      toolHardLimit: 15,
+    };
+    steps[`b-check-p${p.id}`] = {
+      role: 'B',
+      prompt: `b-check-perspective-${p.id}.md`,
+      outputs: [`check-b-p${p.id}.md`],
+      inputs: [],
+      perspective: p.label,
+      recursionLimit: 30,
+      toolSoftLimit: 12,
+      toolHardLimit: 15,
+    };
+  }
+  return steps;
+}
+
 const STEPS = {
-  'a-check':       { role: 'A', prompt: 'a-check.md',       outputs: ['check-a.md'],             inputs: [] },
-  'b-check':       { role: 'B', prompt: 'b-check.md',       outputs: ['check-b.md'],             inputs: [] },
-  'a-consolidate': { role: 'A', prompt: 'a-consolidate.md', outputs: ['findings.md','result.md'],inputs: ['check-a.md','check-b.md'], maxTokens: 32000 },
+  // v1.2.9 功能①：A/B 各 12 个 perspective worker（短任务化）
+  ...buildPerspectiveSteps(),
+  // a-consolidate 合并 24 份 perspective 报告（A 侧 12 + B 侧 12）
+  // maxTokens：步骤级输出 token 上限覆盖。未定义时回退到 MODEL_CONFIGS[role].maxTokens。
+  // a-consolidate 需合并 A/B 两份完整 12 视角报告为单份 findings，输出超长，
+  // 单独调高到 32000，避免顶格 16000 被截断生成不了合法 result.md（整轮降级根因）。
+  'a-consolidate': {
+    role: 'A',
+    prompt: 'a-consolidate.md',
+    outputs: ['findings.md', 'result.md'],
+    inputs: PERSPECTIVES.flatMap(p => [`check-a-p${p.id}.md`, `check-b-p${p.id}.md`]),
+    maxTokens: 32000,
+  },
   'b-fix':         { role: 'B', prompt: 'b-fix.md',         outputs: ['summary.md'],             inputs: ['result.md','findings.md'] },
   // v1.2.8 功能⑥：b-audit 步骤——b-fix 改完代码后 driver 自动跑 sofagent-audit
   'b-audit':       { role: null, prompt: null,              outputs: ['audit-result.md'],        inputs: [], driverFn: 'runAuditGate' },
   'a-verify':      { role: 'A', prompt: 'a-verify.md',      outputs: ['result.md'],              inputs: ['findings.md','result.md','summary.md'] },
 };
+
+/**
+ * v1.2.9 功能①：spawnParallel 并发限制。
+ * 24 个 perspective worker 同时启动会触发 API rate limit（GLM Coding Plan
+ * 并发上限）。MAX_CONCURRENCY=6 分批执行：6 个一批，全部完成后启动下一批。
+ * 24 worker / 6 并发 = 4 批，每批约 2-3 分钟，总计 ~10 分钟。
+ */
+const MAX_CONCURRENCY = parseInt(process.env.FORGE_MAX_CONCURRENCY || '6', 10);
 
 // ═══════════════════════════════════════════════════════════
 //  CLI 参数解析
@@ -696,6 +777,11 @@ async function runWorker(step, roundDir, target) {
     stateModifier: (state) => {
       const messages = state.messages ?? [];
 
+      // v1.2.9 功能①：perspective worker 用自己的 toolSoftLimit/toolHardLimit（12/15）。
+      // 非 perspective 步骤用模块级 TOOL_SOFT_LIMIT/TOOL_HARD_LIMIT（35/45）。
+      const effectiveSoftLimit = stepDef.toolSoftLimit ?? TOOL_SOFT_LIMIT;
+      const effectiveHardLimit = stepDef.toolHardLimit ?? TOOL_HARD_LIMIT;
+
       // 统计历史消息中所有 AI tool_calls 总数
       let toolCallCount = 0;
       for (const msg of messages) {
@@ -703,10 +789,10 @@ async function runWorker(step, roundDir, target) {
           toolCallCount += msg.tool_calls.length;
         }
       }
-      if (toolCallCount >= TOOL_HARD_LIMIT) {
+      if (toolCallCount >= effectiveHardLimit) {
         const forceReport = new HumanMessage({
           content: '【🔴🔴 绝对最终指令——违反将导致你的审查成果全部丢弃 🔴🔴】\n' +
-            `你已调用 ${toolCallCount} 次工具，已到达硬上限 ${TOOL_HARD_LIMIT}。\n` +
+            `你已调用 ${toolCallCount} 次工具，已到达硬上限 ${effectiveHardLimit}。\n` +
             '任何进一步的工具调用都将被系统拦截，你的审查工作将归零。\n\n' +
             '现在立即、马上、在这一条回复中输出完整的审查报告。\n' +
             '不要思考下一步该看什么文件。不要写"让我再检查一下"。\n' +
@@ -722,15 +808,15 @@ async function runWorker(step, roundDir, target) {
         return [systemMsg, forceReport, first, ...recent];
       }
 
-      if (toolCallCount >= TOOL_SOFT_LIMIT) {
+      if (toolCallCount >= effectiveSoftLimit) {
         const forceReport = new HumanMessage({
           content: '【🔴 系统强制指令——你已超过工具预算 🔴】\n' +
-            `你已调用 ${toolCallCount} 次工具，超过软上限 ${TOOL_SOFT_LIMIT}。\n` +
-            `硬上限 ${TOOL_HARD_LIMIT} 即将到来。到硬上限时系统将物理中断你的工作。\n\n` +
+            `你已调用 ${toolCallCount} 次工具，超过软上限 ${effectiveSoftLimit}。\n` +
+            `硬上限 ${effectiveHardLimit} 即将到来。到硬上限时系统将物理中断你的工作。\n\n` +
             '立即停止探索，用已掌握的信息写报告并写入产物文件。\n' +
             '你的工具调用已经足够——现在需要的是把发现组织成报告，而不是继续搜集信息。'
         });
-        console.warn(`  ⚡ [${step}#${role}] 工具调用 ${toolCallCount} 次超软上限，注入强制收尾指令（硬上限 ${TOOL_HARD_LIMIT}）`);
+        console.warn(`  ⚡ [${step}#${role}] 工具调用 ${toolCallCount} 次超软上限，注入强制收尾指令（硬上限 ${effectiveHardLimit}）`);
         if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
           return [systemMsg, forceReport, ...messages];
         }
@@ -770,17 +856,17 @@ async function runWorker(step, roundDir, target) {
   // - b-fix：分片后每批 5 条 finding × 5 工具调用 = 25 步，给 150 是 6 倍余量
   //   太高会导致消息累积 OOM（exit 137）
   // - a-verify：分片后每批 5 条 × 2 操作 = 10 步，给 150 是 15 倍余量
+  // v1.2.9 功能①：短任务化后 STEP_RECURSION_LIMITS 按新 step key 生成。
+  // 每个 perspective worker 用 recursionLimit=30（单视角短任务）。
+  // STEPS 中已定义 recursionLimit 字段的 perspective worker 直接从 stepDef 读取。
+  // 这里只为非 perspective 步骤（a-consolidate/b-fix/a-verify）保留显式覆盖。
   const STEP_RECURSION_LIMITS = {
-    // a-check/b-check: 120 = L2 硬熔断(45次×2superstep≈90) + 30 步缓冲。
-    // v1.2.7 run-06 教训：原 200 给的空间太大，模型不收敛调 60-80 次工具。
-    // 收紧工具预算(35/45)后 recursionLimit 跟着降，避免 OOM。
-    'a-check': 120,
-    'b-check': 120,
     'a-consolidate': 100,
     'b-fix': 300,
     'a-verify': 300,
   };
-  const recursionLimit = STEP_RECURSION_LIMITS[step] ?? 50;
+  // perspective worker（a-check-p1 ~ b-check-p12）的 recursionLimit 从 stepDef.recursionLimit 读取
+  const recursionLimit = STEP_RECURSION_LIMITS[step] ?? stepDef.recursionLimit ?? 50;
 
   // v1.2.5：流式执行——实时打印工具调用，用户不再盯着空白等 5 分钟
   //
@@ -865,7 +951,8 @@ async function runWorker(step, roundDir, target) {
       // 撞硬上限日志提前到 grace window 检查处——确保日志时序正确
       // run-07 教训：原代码在工具计数循环内设置 inGraceWindow，日志可能与
       // gotReport 日志交错，导致"报告已捕获"出现在"撞硬上限"之前。
-      if (toolCallCount >= TOOL_HARD_LIMIT && !inGraceWindow && !hardBreak) {
+      // v1.2.9 功能①：perspective worker 用自己的 toolHardLimit
+      if (toolCallCount >= effectiveHardLimit && !inGraceWindow && !hardBreak) {
         inGraceWindow = true;
         if (graceSteps > 0) {
           console.warn(`  ⏳ [${step}#${role}] 工具调用 ${toolCallCount} 次撞硬上限，进入 ${graceSteps} 步写报告窗口`);
@@ -1691,7 +1778,16 @@ function spawnWorker(step, roundDir, target, round, options = {}) {
 }
 
 /**
- * 并行起两个 worker（用于步骤 ①② 双盲独立审查）。
+ * 并行起多个 worker（用于步骤 ①② 双盲独立审查）。
+ *
+ * v1.2.9 功能①：MAX_CONCURRENCY 分批执行。
+ * 24 个 perspective worker 同时启动会触发 API rate limit。MAX_CONCURRENCY=6
+ * 把 worker 数组按并发数分批，每批全部完成后启动下一批。
+ *
+ * v1.2.6：allSettled 替代 all——一方崩溃不拖累另一方。
+ * run-01/run-02 教训：a-check 崩溃导致 Promise.all reject，
+ * b-check 的成果也随之丢弃（虽然 b-check 可能已成功写出 check-b.md）。
+ * 返回 { results, failures } 让调用方做降级判定。
  *
  * @param {Array<[string,string,string]>} workers  [step, roundDir, target] 元组数组
  * @param {number} round  轮次号（透传给 spawnWorker）
@@ -1702,36 +1798,49 @@ function spawnParallel(workers, round) {
   // b-check 的成果也随之丢弃（虽然 b-check 可能已成功写出 check-b.md）。
   // 返回 { results, failures } 让调用方做降级判定。
   return (async () => {
-    const settled = await Promise.allSettled(
-      workers.map(([step, roundDir, target]) => spawnWorker(step, roundDir, target, round))
-    );
+    // v1.2.9 功能①：MAX_CONCURRENCY 分批执行。
+    // 24 个 perspective worker 分批：MAX_CONCURRENCY 个一批，批内并行，
+    // 批间串行。避免 API rate limit。
+    const concurrency = Math.max(1, Math.min(MAX_CONCURRENCY, workers.length));
     const results = [];
     const failures = [];
-    settled.forEach((s, i) => {
-      const [step] = workers[i];
-      if (s.status === 'fulfilled') {
-        results.push({ step, value: s.value });
-      } else {
-        results.push({ step, value: null });
-        failures.push({ step, reason: s.reason });
-      }
-    });
+
+    for (let batchStart = 0; batchStart < workers.length; batchStart += concurrency) {
+      const batch = workers.slice(batchStart, batchStart + concurrency);
+      const batchNum = Math.floor(batchStart / concurrency) + 1;
+      const totalBatches = Math.ceil(workers.length / concurrency);
+      console.log(`  [并发批次 ${batchNum}/${totalBatches}] 启动 ${batch.length} 个 worker（并发=${concurrency}）`);
+
+      const settled = await Promise.allSettled(
+        batch.map(([step, roundDir, target]) => spawnWorker(step, roundDir, target, round))
+      );
+      settled.forEach((s, i) => {
+        const globalIndex = batchStart + i;
+        const [step] = workers[globalIndex];
+        if (s.status === 'fulfilled') {
+          results.push({ step, value: s.value });
+        } else {
+          results.push({ step, value: null });
+          failures.push({ step, reason: s.reason });
+        }
+      });
+    }
     return { results, failures };
   })();
 }
 
 /**
- * 降级兜底：a-consolidate 失败时，直接拼接 check-a + check-b 作为 findings.md。
+ * 降级兜底：a-consolidate 失败时，直接拼接所有 perspective 报告作为 findings.md。
+ *
+ * v1.2.9 功能①：短任务化后 check 产物从 check-a.md/check-b.md 变为
+ * check-a-p1~12.md / check-b-p1~12.md（24 份）。降级时读全部 24 份。
  *
  * 不做去重/合并/优先级排序——只是让循环能继续走到 b-fix。
- * findings.md 里保留两份报告的**摘要**（P0/P1 条目 + 总评），不传完整正文——
+ * findings.md 里保留每份报告的**摘要**（P0/P1 条目 + 总评），不传完整正文——
  * 避免 b-fix 收到完整报告后上下文溢出（run-06 教训：119 万 tokens > 104 万上限）。
  * result.md 写一个最小结构让 parseStopCondition 能数 P0/P1。
  */
 function writeFallbackFindings(roundDir) {
-  const checkA = join(roundDir, 'check-a.md');
-  const checkB = join(roundDir, 'check-b.md');
-
   /**
    * 从 check 报告中提取摘要：P0/P1 条目 + 总评行。
    * 跳过 P2 细节和冗长描述，把单份报告压缩到 ~2KB 以内。
@@ -1772,13 +1881,20 @@ function writeFallbackFindings(roundDir) {
   }
 
   const parts = ['# Fallback Findings（a-consolidate 失败降级·摘要模式）', '',
-    '> ⚠️ a-consolidate 失败，以下为 check-a/check-b 的 P0/P1 摘要（非完整报告）。', ''];
-  if (existsSync(checkA)) {
-    parts.push('## A 审查摘要', '', summarize(checkA, 'A'), '');
+    '> ⚠️ a-consolidate 失败，以下为各 perspective 报告的 P0/P1 摘要（非完整报告）。', ''];
+
+  // v1.2.9 功能①：读全部 24 份 perspective 报告
+  for (const p of PERSPECTIVES) {
+    const checkA = join(roundDir, `check-a-p${p.id}.md`);
+    const checkB = join(roundDir, `check-b-p${p.id}.md`);
+    if (existsSync(checkA)) {
+      parts.push(`## A-${p.label}`, '', summarize(checkA, `A-${p.label}`), '');
+    }
+    if (existsSync(checkB)) {
+      parts.push(`## B-${p.label}`, '', summarize(checkB, `B-${p.label}`), '');
+    }
   }
-  if (existsSync(checkB)) {
-    parts.push('## B 审查摘要', '', summarize(checkB, 'B'), '');
-  }
+
   const findingsText = parts.join('\n');
   writeFileSync(join(roundDir, 'findings.md'), findingsText, 'utf-8');
 
@@ -1790,7 +1906,7 @@ function writeFallbackFindings(roundDir) {
     '',
     `| # | 发现 | 优先级 | 状态 |`,
     `|---|------|--------|------|`,
-    `| fallback | a-consolidate 失败，findings 由 check-a + check-b 摘要拼接 | P0×${p0} P1×${p1} | SKIP |`,
+    `| fallback | a-consolidate 失败，findings 由各 perspective 报告摘要拼接 | P0×${p0} P1×${p1} | SKIP |`,
     '',
   ].join('\n');
   writeFileSync(join(roundDir, 'result.md'), resultContent, 'utf-8');
@@ -1875,16 +1991,27 @@ function parseStopCondition(roundDir) {
   // run-07 教训：兜底合成产出的碎片内容（155 字节一句话中间思考）
   // 不含 P0/P1 标记也不含降级标记词 → 数标记得到 0/0/0 → isClean=true → 假阳性。
   // 补充检查：check 产物太短说明审查不完整，强制不干净。
-  const CHECK_MIN_BYTES = 500;  // 审查报告至少 500 字节才算真实产物
-  for (const checkFile of ['check-a.md', 'check-b.md']) {
-    const checkPath = join(roundDir, checkFile);
-    if (existsSync(checkPath)) {
-      const stat = statSync(checkPath);
-      if (stat.size < CHECK_MIN_BYTES) {
-        isDegraded = true;
-        break;
+  // v1.2.9 功能①：短任务化后 check 产物从 check-a.md/check-b.md 变为
+  // check-a-p1~12.md / check-b-p1~12.md（24 份）。检查每份的最小字节数。
+  const CHECK_MIN_BYTES = 200;  // 单视角审查报告至少 200 字节才算真实产物（短任务阈值降低）
+  let hasAnyCheckProduct = false;
+  for (const p of PERSPECTIVES) {
+    for (const checkFile of [`check-a-p${p.id}.md`, `check-b-p${p.id}.md`]) {
+      const checkPath = join(roundDir, checkFile);
+      if (existsSync(checkPath)) {
+        hasAnyCheckProduct = true;
+        const stat = statSync(checkPath);
+        if (stat.size < CHECK_MIN_BYTES) {
+          isDegraded = true;
+          break;
+        }
       }
     }
+    if (isDegraded) break;
+  }
+  // 如果一份 check 产物都没有（全部 perspective worker 崩溃），也是降级
+  if (!hasAnyCheckProduct && !isDegraded) {
+    isDegraded = true;
   }
 
   // 干净轮 = 无 P0 无 P1 无 P2 闭环失败 且 非降级产物
@@ -2226,10 +2353,25 @@ function updateLatestPointer(runDir, opts = {}) {
 }
 
 /**
- * 执行一轮（5 步）。
+ * 执行一轮（短任务化 24 perspective worker + 合并 + 修复 + 审计 + 验证）。
+ *
+ * v1.2.9 功能①：短任务化改造——原 a-check/b-check 各 1 个 worker
+ * 拆分为 A/B 各 12 个 perspective worker（24 个并行，MAX_CONCURRENCY=6 分批）。
+ *
+ * v1.2.9 功能②：worker 级断点——每个 perspective worker 完成后更新断点，
+ * --resume 时跳过已完成的 worker。
+ *
+ * @param {number} roundNum  轮次号
+ * @param {string} runDir    run 根目录
+ * @param {string} target    验证目标版本号
+ * @param {boolean} dryRun   dry-run 模式
+ * @param {Object} [opts]    可选参数
+ * @param {Object} [opts.resumeState]  本轮的 resume 断点（含 completedWorkers）
+ * @param {number} [opts.maxRounds]    最大轮数（写入断点）
  * @returns {Promise<{roundDir:string, counts:object, isClean:boolean}>}
  */
-async function runRound(roundNum, runDir, target, dryRun) {
+async function runRound(roundNum, runDir, target, dryRun, opts = {}) {
+  const { resumeState: resumeStateForRound = null, maxRounds: args_maxRoundsForCheckpoint = 10 } = opts;
   const roundDir = join(runDir, `round-${String(roundNum).padStart(2, '0')}`);
   mkdirSync(roundDir, { recursive: true });
   console.log(`\n${'═'.repeat(60)}`);
@@ -2238,38 +2380,82 @@ async function runRound(roundNum, runDir, target, dryRun) {
 
   if (dryRun) {
     console.log('  [dry-run] 将执行以下步骤：');
-    console.log('    ① a-check   (A 独立审查)    → check-a.md');
-    console.log('    ② b-check   (B 独立审查)    → check-b.md   [与①并行]');
-    console.log('    ③ a-consolidate (A 合并)    → findings.md + result.md');
-    console.log('    ④ b-fix     (B 修复)        → summary.md');
-    console.log('    ④½ b-audit  (dogfooding)    → audit-result.md [v1.2.8]');
-    console.log('    ⑤ a-verify  (A 验证·分片) → result.md 回填 verify');
+    console.log(`    ① a-check × 12 视角 (A 独立审查·短任务化)  → check-a-p1~12.md`);
+    console.log(`    ② b-check × 12 视角 (B 独立审查·短任务化)  → check-b-p1~12.md   [与①并行]`);
+    console.log('    ③ a-consolidate (A 合并 24 份报告)         → findings.md + result.md');
+    console.log('    ④ b-fix     (B 修复)                      → summary.md');
+    console.log('    ④½ b-audit  (dogfooding)                  → audit-result.md [v1.2.8]');
+    console.log('    ⑤ a-verify  (A 验证·分片)                → result.md 回填 verify');
     const counts = parseStopCondition(roundDir);
     return { roundDir, counts, isClean: true };
   }
 
-  // 步骤 ①② 双盲独立审查——并行（allSettled：一方崩不拖累另一方）
-  console.log('\n  [步骤 ①②] A/B 双盲独立审查（并行）...');
-  const { failures: checkFailures } = await spawnParallel([
-    ['a-check', roundDir, target],
-    ['b-check', roundDir, target],
-  ], roundNum);
-  // 降级：a-check/b-check 崩溃时写部分报告占位，让后续步骤能继续。
-  // run-01/run-02 教训：一方 worker 死循环崩溃后，另一方的审查报告也被丢弃，
-  // 导致整轮零产出。占位文件让 a-consolidate 至少有输入可处理。
-  for (const f of checkFailures) {
-    console.warn(`\n  ⚠️  ${f.step} 失败: ${f.reason?.message || f.reason}`);
-    const outFile = f.step === 'a-check' ? 'check-a.md' : 'check-b.md';
-    const outPath = join(roundDir, outFile);
-    if (!existsSync(outPath)) {
-      writeFileSync(outPath,
-        `# ${outFile} · ${f.step} 崩溃（降级占位）\n\n` +
-        `> ⚠️ worker 异常终止: ${f.reason?.message || f.reason}\n` +
-        `> 对方的审查报告仍可用。后续合并步骤会标注此部分缺失。\n`,
-        'utf-8');
-      console.warn(`     降级：写最小占位 ${outFile}，循环继续`);
-    } else {
-      console.warn(`     产物 ${outFile} 已存在（stream 抢救成功），保留不覆盖`);
+  // v1.2.9 功能①：步骤 ①② 双盲独立审查——24 个 perspective worker 并行（分批 MAX_CONCURRENCY=6）
+  // 每个 perspective worker 是独立的子进程（零上下文），单视角工具预算 12/15 次，recursionLimit=30。
+  // A/B 各 12 个 worker 合计 24 个，按 6 并发分 4 批执行。
+  console.log('\n  [步骤 ①②] A/B 双盲独立审查（24 perspective worker，分批并发=' + MAX_CONCURRENCY + '）...');
+
+  // v1.2.9 功能②：worker 级断点——跳过已完成的 perspective worker（resume 模式）
+  const resumeCompletedWorkers = resumeStateForRound?.completedWorkers || [];
+  const allPerspectiveWorkers = PERSPECTIVES.flatMap(p => [
+    [`a-check-p${p.id}`, roundDir, target],
+    [`b-check-p${p.id}`, roundDir, target],
+  ]);
+  // 过滤掉已完成的 worker（resume 模式跳过）
+  const pendingWorkers = allPerspectiveWorkers.filter(
+    ([step]) => !resumeCompletedWorkers.includes(step)
+  );
+  const skippedCount = allPerspectiveWorkers.length - pendingWorkers.length;
+  if (skippedCount > 0) {
+    console.log(`  [resume] 跳过 ${skippedCount} 个已完成的 perspective worker`);
+  }
+
+  // 跟踪本轮已完成的 worker（用于 worker 级断点）
+  const roundCompletedWorkers = [...resumeCompletedWorkers];
+
+  if (pendingWorkers.length > 0) {
+    const { results: checkResults, failures: checkFailures } = await spawnParallel(pendingWorkers, roundNum);
+
+    // 记录成功完成的 worker（用于 worker 级断点）
+    for (const r of checkResults) {
+      if (r.value !== null) {
+        roundCompletedWorkers.push(r.step);
+      }
+    }
+
+    // v1.2.9 功能②：worker 级断点——每批 perspective worker 完成后更新断点
+    if (!dryRun) {
+      try {
+        base.saveResumePoint(runDir, {
+          round: roundNum,
+          completedWorkers: roundCompletedWorkers,
+          workers: {},
+          counts: { p0: 0, p1: 0, p2: 0 },
+          target,
+          maxRounds: args_maxRoundsForCheckpoint,
+        });
+      } catch (ckptErr) {
+        console.warn(`  ⚠️  worker 级断点写入失败（不影响主流程）: ${ckptErr.message}`);
+      }
+    }
+
+    // 降级：perspective worker 崩溃时写部分报告占位，让后续步骤能继续。
+    for (const f of checkFailures) {
+      console.warn(`\n  ⚠️  ${f.step} 失败: ${f.reason?.message || f.reason}`);
+      const outFile = f.step.startsWith('a-check')
+        ? `check-a-p${f.step.match(/p(\d+)/)?.[1] || '?'}.md`
+        : `check-b-p${f.step.match(/p(\d+)/)?.[1] || '?'}.md`;
+      const outPath = join(roundDir, outFile);
+      if (!existsSync(outPath)) {
+        writeFileSync(outPath,
+          `# ${outFile} · ${f.step} 崩溃（降级占位）\n\n` +
+          `> ⚠️ worker 异常终止: ${f.reason?.message || f.reason}\n` +
+          `> 其他视角的报告仍可用。后续合并步骤会标注此部分缺失。\n`,
+          'utf-8');
+        console.warn(`     降级：写最小占位 ${outFile}，循环继续`);
+      } else {
+        console.warn(`     产物 ${outFile} 已存在（stream 抢救成功），保留不覆盖`);
+      }
     }
   }
 
@@ -2424,11 +2610,16 @@ async function main() {
         // 铁律：不能复用旧 runDir 从 Round 1 重跑，否则会覆盖已完成轮的产物。
         resumeRunDir = null;
       } else if (resumeState.completed === true) {
-        // completed=true：round 轮已完成 → 从 round+1 继续
+        // completed=true（轮级完成标记，新旧格式都保留）：round 轮已完成 → 从 round+1 继续
         resumeFromRound = resumeState.round;
         console.log(`🔄 resume：断点显示 Round ${resumeState.round} 已完成，从 Round ${resumeFromRound + 1} 继续`);
+      } else if (Array.isArray(resumeState.completedWorkers) && resumeState.completedWorkers.length > 0) {
+        // v1.2.9 功能②：worker 级断点——本轮有部分 perspective worker 已完成。
+        // 重跑本轮但跳过已完成的 worker（runRound 内部用 resumeState.completedWorkers 过滤）。
+        resumeFromRound = resumeState.round - 1;
+        console.log(`🔄 resume：断点显示 Round ${resumeState.round} 有 ${resumeState.completedWorkers.length} 个 perspective worker 已完成，重跑 Round ${resumeState.round}（跳过已完成 worker）`);
       } else {
-        // completed=false：round 轮中途被杀 → 重跑该轮
+        // 无完成标记 → 重跑该轮
         resumeFromRound = Math.max(0, resumeState.round - 1);
         console.log(`🔄 resume：断点显示 Round ${resumeState.round} 未完成，重跑 Round ${resumeState.round}`);
       }
@@ -2614,7 +2805,11 @@ async function main() {
 
     let runRoundResult;
     try {
-      runRoundResult = await runRound(round, runDir, args.target, args.dryRun);
+      // v1.2.9 功能②：传入 resume 断点（含 completedWorkers），让 runRound 跳过已完成的 perspective worker
+      runRoundResult = await runRound(round, runDir, args.target, args.dryRun, {
+        resumeState: resumeState,
+        maxRounds: args.maxRounds,
+      });
     } finally {
       clearInterval(intraRoundTimer);
     }
@@ -2638,6 +2833,8 @@ async function main() {
       try {
         base.saveResumePoint(runDir, {
           round,
+          // v1.2.9 功能②：worker 级断点——轮完成后 completedWorkers 标记为全部完成
+          completedWorkers: [],
           completed: true,
           counts,
           cleanStreak,

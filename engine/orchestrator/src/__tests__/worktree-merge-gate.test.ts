@@ -1,5 +1,5 @@
 // ============================================================
-// worktree-merge-gate.test.ts · 审计合并卡关测试（v1.2.3）
+// worktree-merge-gate.test.ts · 审计合并卡关测试（v1.2.8）
 //
 // 覆盖：
 // - audit PASS → merge --no-ff 合并成功，主分支有 merge commit

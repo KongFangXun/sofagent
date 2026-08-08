@@ -1,9 +1,9 @@
 // ============================================================
 // ab-testing/ab-runner.ts · A/B 测试运行器
-// v1.2.0 新增 · v1.0.9 替换 simulateAgentRun → runMinimalAgent
-// v1.2.0 新增 runReactAgent（方案 C），保留 runMinimalAgent fallback
+// v1.2.8 新增 · v1.0.9 替换 simulateAgentRun → runMinimalAgent
+// v1.2.8 新增 runReactAgent（方案 C），保留 runMinimalAgent fallback
 // current vs candidate 并行对比评测
-// v1.2.0：迁移至 @sofagent/ab-test，import 路径对齐新包结构
+// v1.2.8：迁移至 @sofagent/ab-test，import 路径对齐新包结构
 // ============================================================
 
 import { readFileSync } from 'fs';

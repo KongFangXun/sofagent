@@ -1,5 +1,5 @@
 // ============================================================
-// worktree-isolation.ts · git worktree 隔离原语（v1.2.3 · 交付一）
+// worktree-isolation.ts · git worktree 隔离原语（v1.2.8 · 交付一）
 //
 // 为未来并行 SubAgent 提供文件级隔离底座——不是替换编排引擎，
 // 是加一层 worktree 隔离原语（AD-4：只交付三原语 + 单测 +

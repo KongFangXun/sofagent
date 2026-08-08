@@ -526,7 +526,7 @@ while IFS= read -r ts; do
     report_error "${ts}" "v${found_ver}" "v${SSOT_VERSION}"
     ts_header_errors=$((ts_header_errors + 1))
   fi
-done < <(find "${PROJECT_ROOT}/sofagent" \
+done < <(find "${PROJECT_ROOT}/engine" \
   -name '*.ts' \
   -not -path '*/node_modules/*' \
   -not -path '*/.git/*' \
@@ -878,8 +878,9 @@ echo "=== 17. MCP 工具数一致性 ==="
 MCP_SERVER="${PROJECT_ROOT}/engine/mcp/src/mcp-server.ts"
 SKILL_FILE="${PROJECT_ROOT}/SKILL/SKILL.md"
 if [[ -f "${MCP_SERVER}" ]] && [[ -f "${SKILL_FILE}" ]]; then
-  # 从 mcp-server.ts 统计注册的工具数（行首缩进 + name: 'xxx' + 行尾逗号，排除内联数组条目）
-  REGISTERED_COUNT=$(grep -cE "^\s+name: '[a-z_]+',$" "${MCP_SERVER}" 2>/dev/null || echo 0)
+  # 从 mcp-server.ts 统计注册的工具数——用 sort -u 去重唯一工具名
+  # 不用 grep -c（会数出响应 schema 的 name 字段）
+  REGISTERED_COUNT=$(grep -oE "name: '[^']+'" "${MCP_SERVER}" 2>/dev/null | sort -u | wc -l | tr -d ' ')
   # 从 SKILL.md 提取标题中声称的工具数
   SKILL_CLAIMED=$(grep -oE '[0-9]+ tools' "${SKILL_FILE}" | grep -oE '^[0-9]+' | head -1)
   if [[ -n "$SKILL_CLAIMED" ]] && [[ "$SKILL_CLAIMED" != "$REGISTERED_COUNT" ]]; then

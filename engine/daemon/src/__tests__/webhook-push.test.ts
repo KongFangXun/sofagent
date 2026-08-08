@@ -4,7 +4,7 @@
 //       import 即失败——这是 TDD Red 的正常起点）。
 // 工程师铁律：严禁修改此测试文件中的任何断言和测试用例。
 //
-// webhook-push.test.ts · Webhook 企业平台推送（v1.2.1 · P0 · 采购阻塞项）
+// webhook-push.test.ts · Webhook 企业平台推送（v1.2.8 · P0 · 采购阻塞项）
 //
 // 🔴 TDD Red — 功能未实现，预期全部 FAIL。
 //

@@ -1,6 +1,6 @@
 // ============================================================
 // dream-cycle/extract-facts.ts · Stage 1 — 从 Ledger 提取原始事实
-// v1.2.0 新增
+// v1.2.8 新增
 //
 // 输入：Ledger（think.md 全文 + audit history 条目）
 // 输出：Fact[]（每条事实带稳定 id + 来源回指）

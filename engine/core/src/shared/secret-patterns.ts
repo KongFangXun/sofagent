@@ -1,10 +1,10 @@
 // ============================================================
 // shared/secret-patterns.ts · 密钥检测正则单一事实源
-// v1.2.5 A2（engine/audit rule-a2）与 ToolGate（engine/rules
+// v1.2.8 A2（engine/audit rule-a2）与 ToolGate（engine/rules
 //   tool-secret-leak）此前各持一份正则且漂移——ToolGate 用严格 48 位
 //   sk- 模式导致 32-47 位密钥被放行，运行时洞与提交时洞错开互补。
 //   现抽共享常量，两处 import 同一来源。
-// v1.2.5 §4.10.2: 扩展为全规则共享库——新增 REDACTION_PATTERNS /
+// v1.2.8 §4.10.2: 扩展为全规则共享库——新增 REDACTION_PATTERNS /
 //   DOMAIN_WHITELIST / DANGEROUS_SCRIPT_CMDS 三组共享正则
 // ============================================================
 

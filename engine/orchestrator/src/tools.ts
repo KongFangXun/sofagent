@@ -1,7 +1,7 @@
 // ============================================================
 // tools.ts · LOOP 工具注入 + ToolGate 事前拦截
-// v1.2.0 新增（骨架）· v1.2.0 正式启用（工具注入路径落地）
-// v1.2.0 新增：ToolGate——接入 @sofagent/rules 做 tool call 事前拦截
+// v1.2.8 新增（骨架）· v1.2.0 正式启用（工具注入路径落地）
+// v1.2.8 新增：ToolGate——接入 @sofagent/rules 做 tool call 事前拦截
 //
 // 设计核心——双重防御（defense-in-depth）：
 //   第一层：约束通过 description 注入，让 Agent 自觉不犯（软约束）
