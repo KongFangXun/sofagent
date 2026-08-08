@@ -142,17 +142,9 @@ jobs:
 
 欢迎提 Issue 和 PR，尤其较真的那种。[CONTRIBUTING.md](./CONTRIBUTING.md) · [致谢](./docs/THANKS.md)
 
-<p align="center">
-  <a href="https://github.com/KongFangXun/sofagent/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=KongFangXun/sofagent" alt="Contributors" />
-  </a>
-</p>
-
-<p align="center">
-  <a href="https://www.star-history.com/#KongFangXun/sofagent&Date">
-    <img src="https://api.star-history.com/svg?repos=KongFangXun/sofagent&type=Date" alt="Star History" width="600" />
-  </a>
-</p>
+| Contributors | Star History |
+|:---:|:---:|
+| <a href="https://github.com/KongFangXun/sofagent/graphs/contributors"><img src="https://contrib.rocks/image?repo=KongFangXun/sofagent" alt="Contributors" /></a> | <a href="https://www.star-history.com/#KongFangXun/sofagent&Date"><img src="https://api.star-history.com/svg?repos=KongFangXun/sofagent&type=Date" alt="Star History" width="460" /></a> |
 
 ## License
 
