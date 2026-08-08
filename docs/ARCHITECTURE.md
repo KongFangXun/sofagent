@@ -556,6 +556,19 @@ WARN 不阻断流转——`[审计告警]` 前缀透传给 reviewer 输入，由
 
 audit 节点程序化调用 `@sofagent/audit`（比 CLI 子进程侵入更小，类型安全）。审计不可用时（如 git 环境缺失）**降级 WARN 而非 FAIL**——不直接烧穿重试次数，由 reviewer + human_confirm 兜底。降级时 audit history 的 engine 字段标 `loop-graph-degraded` 便于追溯。`git diff HEAD` 为空时也返回 WARN（engineer 可能未产生文件修改）。
 
+#### 上下文预算管理：四层防御
+
+FORGE 的 worker（LangGraph createReactAgent）跑长任务时面临上下文膨胀——工具调用越多、工具输出越长，prompt_tokens 从 30K 膨胀到 100K+ 直至 OOM。v1.2.5–v1.2.9 的性能优化经验总结为四层防御，每层解决不同层面的膨胀问题：
+
+| 层 | 做什么 | FORGE 实现 | 设计依据 |
+|---|---|---|---|
+| L1 工具输出截断 | 超长工具输出按步骤预算截断 | tool-output-budget.mjs：头尾各半 + 渐进式磁盘加载 | 短结果直接入上下文，长结果截断但不丢失 |
+| L2 小模型总结 | 超阈值输出用 lite 模型按任务目标总结 | summarizeToolOutput：审查类步骤触发，失败 fallback 截断 | 信息密度 > 原文截断 |
+| L3 上下文裁剪 | 每次模型调用前裁剪历史消息 | trimMessagesSafe + preModelHook + 动态 token 估算 | 保留 system + 首条 user + 最近 N 条 |
+| L4 工具调用预算 + 内存限制 | 硬上限撞了立即 break | TOOL_SOFT_LIMIT=35 / HARD=45 + --max-old-space-size=2048 | prompt 层纪律对模型无效，须代码层硬熔断 |
+
+与 ClaudeCode 上下文管理的对标：ClaudeCode 三级压缩（SN 快照→微压缩→全局压缩）解决单进程长会话；FORGE 四层防御解决多 worker 短任务进程。交集在 L1（渐进式加载）和 L3（消息裁剪），差异在 FORGE 独有的 L4（工具调用预算——ClaudeCode 不限制工具调用次数，FORGE 用零窗口熔断强制收敛）。FORGE 不需要 ClaudeCode 的磁盘持久化恢复——worker 是短命子进程，跑完就退出，不存在跨 session 恢复场景。
+
 ### 🧬 进化能力
 
 FDE 部署完成后转为**持续优化角色**。daemon cron @weekly 自动巡检审计趋势 + 反思记录，发现退化就优化。

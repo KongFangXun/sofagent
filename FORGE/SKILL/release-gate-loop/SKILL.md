@@ -33,19 +33,27 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
 
 ## Session 监控协议（CRITICAL）
 
-**启动 driver 后，session 进入 sleep 轮询模式**——保持 working 状态，让用户感知"后台在干活"。
+**启动 driver 后，session 不是傻等，而是进入 sleep 轮询模式**——保持 working 状态，让用户感知"后台在干活"。
 
 ### 执行方式
 
 ```
-1. Bash run_in_background:
-   node FORGE/src/release-gate-driver.mjs --target <版本号>
+1. Bash（⚠️ 必须加 run_in_background: true + dangerouslyDisableSandbox: true，
+   否则三层进程嵌套会被 sandbox SIGKILL）:
+
+   # V/F 环境变量（⚠️ 必须手动导出——resolveConfigs 自动生成 SOFAGENT_LLM_V/F
+   # 但 models/ 未覆盖 specEnv，不导出会报"缺少环境变量"）：
+   export SOFAGENT_LLM_V="${SOFAGENT_LLM_A}"
+   export SOFAGENT_LLM_F="${SOFAGENT_LLM_B}"
+
+   # 8GB 机器必须限并发（每个 worker --max-old-space-size=2048，3+ 并发即 OOM）：
+   FORGE_MAX_CONCURRENCY=1 node FORGE/src/release-gate-driver.mjs --target <版本号>
 
    # sandbox 环境（acceptance-test.sh 预跑会被 kill 时）：
    # 先手动预跑到 /tmp（driver 启动时自动复制到 runDir）：
    bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-raw.log 2>&1
    # 再加 --skip-acceptance 启动：
-   node FORGE/src/release-gate-driver.mjs --target <版本号> --skip-acceptance
+   FORGE_MAX_CONCURRENCY=1 node FORGE/src/release-gate-driver.mjs --target <版本号> --skip-acceptance
 
    # 沙箱 OOM 环境（driver 主进程 + worker 内存叠加触发 OOM 时）：
    # 用 --step 单步模式，外层脚本逐步调用，每步全新进程退出：
@@ -55,6 +63,10 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
    node FORGE/src/release-gate-driver.mjs --step consolidate  --target <版本号> --run-dir <runDir>
    node FORGE/src/release-gate-driver.mjs --step verdict       --target <版本号> --run-dir <runDir>
 
+   🔴 铁律：必须 dangerouslyDisableSandbox。
+   原因：driver(spawn) → worker(spawn) → run_bash(execSync) = 三层子进程嵌套。
+   sandbox 对进程嵌套层数有限制，第 4 层进程返回时整棵进程树被 SIGKILL。
+
 2. 记住 runDir（driver 启动日志第一行会打印）
 
 3. 循环（最多 20 次，防 turn 超限）:
@@ -62,9 +74,24 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
    cat <runDir>/status.json                           # 读进度
    判断:
      - phase === "completed" 或 "error"  → 汇报最终结果，退出循环
+     - heartbeat 超 90s 未更新            → ⚠️ 疑似 driver 死亡，检查进程存活（见下）
      - phase 跟上次相同（无变化）        → 静默，继续下一轮 sleep
      - phase 有变化                      → 一句话汇报，继续 sleep
 ```
+
+### 🔴 Heartbeat 死亡检测
+
+**背景**：driver 被 SIGKILL（sandbox 回收 / OOM）时，所有 Node handler 都来不及
+执行，status.json 停在上一次状态，监控端无法区分"在跑"和"已死"。
+
+**解法**：driver 每 15s 更新 status.json 的 `heartbeat` 字段。监控端发现 heartbeat
+超过 90s 未更新 → 大概率 driver 已死，需用 `pgrep` 确认：
+
+```
+pgrep -f "release-gate-driver"  # 有输出=活着，无输出=已死
+```
+
+如果确认已死，读 latest.json 的 stopReason 判断死亡类型，汇报后退出监控。
 
 ### 汇报规则
 

@@ -39,14 +39,16 @@ A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个
 ### 执行方式
 
 ```
-1. Bash（⚠️ 必须加 dangerouslyDisableSandbox: true，否则三层进程嵌套会被 sandbox SIGKILL）:
-   nohup node FORGE/src/fresh-eyes-driver.mjs --target <版本号> --max-rounds 10 > /tmp/fresh-eyes.log 2>&1 &
-   disown
+1. Bash（⚠️ 必须加 run_in_background: true + dangerouslyDisableSandbox: true，否则三层进程嵌套会被 sandbox SIGKILL）:
+   node FORGE/src/fresh-eyes-driver.mjs --target <版本号> --max-rounds 10
 
    🔴 铁律：必须 dangerouslyDisableSandbox。
    原因：driver(spawn) → worker(spawn) → run_bash(execSync) = 三层子进程嵌套。
    sandbox 对进程嵌套层数有限制，第 4 层进程返回时整棵进程树被 SIGKILL。
    脱离 sandbox 后不受此限制。（2026-08-05 run-01~03 验证）
+
+   🔴 v1.2.9 教训：禁止用 nohup+disown 启动——WorkBuddy 会清理脱离 session 的后台进程。
+   必须用 Bash 工具的 run_in_background: true（安全替代方案）。
 
 2. 记住 runDir（driver 启动日志第一行会打印）
 

@@ -957,10 +957,13 @@ if $S119_OK; then S119_RESULT=$(LSE="$PROJECT_ROOT/engine/orchestrator/dist/loop
 $S119_OK && pass
 scenario 120 "v1.1.9 叙事收敛 + BugFix 回归锁"
 S120_OK=true; README="$PROJECT_ROOT/README.md"
+# v1.2.9 README 精简为产品落地页，FDE Agent 提及次数从 ≥5 降到 ≥3（精简后技术细节移入 ARCHITECTURE）
 FDE_COUNT=$(grep -c "FDE Agent" "$README" 2>/dev/null || echo 0)
-[ "$FDE_COUNT" -ge 5 ] || { fail "README 'FDE Agent' 出现 $FDE_COUNT 次（期望 ≥5）"; S120_OK=false; }
-grep -qE '审计引擎核心规则零(额外)?[ ]?token' "$README" || { fail "README 缺 '审计引擎核心规则零 token'"; S120_OK=false; }
-grep -q "v1.1.8" "$README" || { fail "README 缺 'v1.1.8' 版本标记"; S120_OK=false; }
+[ "$FDE_COUNT" -ge 3 ] || { fail "README 'FDE Agent' 出现 $FDE_COUNT 次（期望 ≥3）"; S120_OK=false; }
+# v1.2.9 技术描述移入 ARCHITECTURE.md，改为检查 ARCHITECTURE（措辞已从 README 的"审计引擎核心规则零 token"改为 ARCHITECTURE 的"19 条纯 git-diff 零 token"）
+grep -qE '(纯\s*git-diff|零\s*token|不调\s*LLM)' "$PROJECT_ROOT/docs/ARCHITECTURE.md" || { fail "ARCHITECTURE 缺 '零 token' 审计描述"; S120_OK=false; }
+# v1.2.9 README 不再列历史版本号，检查当前版本标记即可
+grep -qE 'v1\.2\.[89]' "$README" || { fail "README 缺 v1.2.x 版本标记"; S120_OK=false; }
 $S120_OK && pass
 S121_OK=true; DAG_RUNNER="$PROJECT_ROOT/engine/orchestrator/src/dag-runner.ts"
 SANITIZER="$PROJECT_ROOT/engine/core/src/security/prompt-sanitizer.ts"
@@ -1181,7 +1184,8 @@ WIKI="$PROJECT_ROOT/docs/WIKI.md"; S145_OK=true
 if $S145_OK; then
   WIKI_SEC=$(grep -c "^## [一二三四五六七]、" "$WIKI" 2>/dev/null || echo 0)
   [ "$WIKI_SEC" -ge 7 ] || { fail "WIKI.md 节数不足（期望 7，实际 $WIKI_SEC）"; S145_OK=false; }
-  grep -q "WIKI" "$PROJECT_ROOT/README.md" || { fail "README 未引用 WIKI.md"; S145_OK=false; }
+  # v1.2.9 README 文档索引用 docs/ 路径而非直接写 "WIKI"
+  grep -q "docs/" "$PROJECT_ROOT/README.md" || { fail "README 未引用 docs/ 路径"; S145_OK=false; }
   $S145_OK && pass "WIKI.md 存在 + 7 节结构完整 + README 可发现"
 fi
 S146_OK=true; # 清理可能存在的残留
