@@ -15,10 +15,10 @@
 //   think.md 只读，绝不回写。
 // ============================================================
 
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
-import { getThinkPath, resolveKnowledgeDir, resolveDataDir } from '@sofagent/core';
+import { getThinkPath, resolveKnowledgeDir, resolveDataDir, atomicWriteWithMergeSync } from '@sofagent/core';
 
 import type {
   AuditEntry,
@@ -145,7 +145,8 @@ function saveState(projectDir: string, state: DreamCycleState): void {
     `failed: ${state.failed ?? ''}\n` +
     `cycle_complete: ${state.cycleComplete}\n` +
     `last_run_at: ${state.lastRunAt ?? ''}\n`;
-  writeFileSync(join(dir, STATE_FILENAME), content, 'utf-8');
+  // v1.3.0 (交付 11)：状态文件接入原子写 + 写前 mtime 检测（多进程状态竞争防护）
+  atomicWriteWithMergeSync(join(dir, STATE_FILENAME), content);
 }
 
 /**

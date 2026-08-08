@@ -45,7 +45,7 @@ export type {
 } from './federation';
 
 // ── 原子写入 ──
-export { atomicWriteSync, atomicAppendSync } from './shared/atomic-write';
+export { atomicWriteSync, atomicAppendSync, atomicWriteWithMergeSync, mergeAppendMissing } from './shared/atomic-write';
 
 // ── Git Diff 解析 ──
 export {
