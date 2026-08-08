@@ -44,6 +44,7 @@ import { listAgentsTool } from './tools/list-agents';
 import { listConcepts } from './tools/list-concepts';
 import { hitlResolve } from './tools/hitl-resolve';
 import { listRules } from './tools/list-rules';
+import { getDynamicTools, getDynamicTool, registerMemoryBackends } from './tools/memory-backend';
 
 // ============================================================
 // 常量
@@ -86,6 +87,11 @@ class McpServer {
   private initialized = false;
 
   start(): void {
+    // v1.3.0 (交付 10 MA1)：启动时读 memory_backends 注册动态工具——优雅降级不 crash
+    void registerMemoryBackends().catch((err) => {
+      process.stderr.write(`[${SERVER_NAME}] memory_backends 注册失败（不影响主流程）: ${err instanceof Error ? err.message : String(err)}\n`);
+    });
+
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: false, crlfDelay: Infinity });
     process.stderr.write(`[${SERVER_NAME}] v${SERVER_VERSION} started\n`);
     rl.on('line', (line: string) => {
@@ -116,7 +122,10 @@ class McpServer {
       case 'initialize': this.handleInitialize(id); break;
       case 'shutdown': this.sendResult(id, null); break;
       case 'exit': process.exit(0); break;
-      case 'tools/list': if (this.checkInit(id)) this.sendResult(id, { tools: TOOLS }); break;
+      case 'tools/list': if (this.checkInit(id)) {
+        // v1.3.0 (交付 10 MA1)：动态工具合并——不污染静态 TOOLS 清单
+        this.sendResult(id, { tools: [...TOOLS, ...getDynamicTools()] });
+      } break;
       case 'tools/call': if (this.checkInit(id)) await this.handleToolsCall(id, params); break;
       case 'resources/list': if (this.checkInit(id)) this.sendResult(id, listResources()); break;
       case 'resources/read': if (this.checkInit(id)) this.handleResourcesRead(id, params); break;
@@ -149,6 +158,14 @@ class McpServer {
     const args = (params.arguments ?? {}) as Record<string, unknown>;
 
     try {
+      // v1.3.0 (交付 10 MA1)：动态工具优先路由（memory_backends 注册的工具）
+      const dynamicTool = getDynamicTool(toolName);
+      if (dynamicTool) {
+        const r = await dynamicTool.handler(args);
+        this.sendTool(id, { text: `[sofagent] ${toolName} 调用完成`, data: r });
+        return;
+      }
+
       switch (toolName) {
         case 'run_audit': { const r = runAudit(args, this.pushAuditWebhook.bind(this)); this.sendTool(id, r); break; }
         case 'get_think': { const r = getThink(args); this.sendTool(id, r); break; }

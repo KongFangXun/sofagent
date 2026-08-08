@@ -71,7 +71,7 @@ export {
   ConfigParseError,
   signConfig,
 } from './config-loader';
-export type { AuditConfig, SofaEnvConfig } from './config-loader';
+export type { AuditConfig, SofaEnvConfig, MemoryBackend } from './config-loader';
 
 // ── 数据目录路径（v1.2.1 安装路径分离：SOFAGENT_HOME 优先） ──
 export {
