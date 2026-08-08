@@ -856,32 +856,20 @@ async function runWorker(step, roundDir, target) {
       return [systemMsg, first, ...recent];
     },
     preModelHook: (state) => {
-      // v1.2.9 功能⑨：动态阈值压缩——基于 token 估算而非纯消息条数
-      const TOKEN_SOFT = 60000;
+      // v1.2.9 功能⑨：动态 token 估算——只在 token 超硬阈值时激进裁剪。
+      // 消息条数裁剪已由 stateModifier 处理，这里只补 stateModifier 看不到的维度：
+      // 单条消息超长（如 500 行审查报告全文）导致总 token 爆炸但消息条数还不多。
       const TOKEN_HARD = 100000;
       const messages = state.messages ?? [];
-      const msgCount = messages.length;
       const tokenEst = estimateTokens(messages);
 
-      // 消息数少且 token 未超软阈值 → 不裁剪
-      if (msgCount <= 20 && tokenEst <= TOKEN_SOFT) {
-        return state;
-      }
-
-      // token 超硬阈值 → 激进裁剪到 12 条
       if (tokenEst > TOKEN_HARD) {
         const first = messages[0];
         const recent = trimMessagesSafe(messages, 12);
         return { ...state, messages: [first, ...recent] };
       }
 
-      // 中间地带 → 裁剪到 MAX_CONTEXT_MESSAGES
-      if (msgCount <= MAX_CONTEXT_MESSAGES + 1) {
-        return state;
-      }
-      const first = messages[0];
-      const recent = trimMessagesSafe(messages, MAX_CONTEXT_MESSAGES);
-      return { ...state, messages: [first, ...recent] };
+      return state;
     },
   });
 
