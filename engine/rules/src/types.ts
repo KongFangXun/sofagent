@@ -56,6 +56,8 @@ export interface ToolRule {
   ruleClass: RuleClass;
   /** v1.3.0 (交付 7)：双规则统一——'tool' = 运行时拦截工具调用 */
   ruleType: 'tool';
+  /** v1.3.0 (交付 10 MA7)：规则「为什么」记忆 namespace——提取规则触发上下文时按此分组 */
+  whyMemoryNamespace?: string;
   /**
    * 检查 tool call 是否违规
    * @param ctx tool call 上下文

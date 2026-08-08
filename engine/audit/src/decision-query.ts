@@ -97,6 +97,45 @@ export function getKindSummary(kind: DecisionKind, dataDir?: string): KindSummar
   };
 }
 
+/** 高频决策模式条目（MA5 回灌用） */
+export interface HighFrequencyPattern {
+  kind: DecisionKind;
+  /** 聚合 key（kind + tags 组合） */
+  key: string;
+  /** 出现次数（≥3 才算高频） */
+  count: number;
+  /** 代表条目（最近一条） */
+  sample: DecisionLogEntry;
+}
+
+/**
+ * 提取高频决策模式（MA5 审查历史回灌）——kind+tags 组合出现 ≥3 次。
+ *
+ * @param minCount 最低出现次数（默认 3）
+ * @param dataDir 可选的数据目录覆盖（用于测试）
+ */
+export function getHighFrequencyPatterns(minCount = 3, dataDir?: string): HighFrequencyPattern[] {
+  const entries = loadDecisionLog(dataDir);
+  const groups = new Map<string, { kind: DecisionKind; count: number; sample: DecisionLogEntry }>();
+
+  for (const e of entries) {
+    const tags = (e.why?.tags ?? []).length > 0 ? e.why!.tags!.join(',') : 'untagged';
+    const key = `${e.kind}:${tags}`;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.count += 1;
+      existing.sample = e; // 保留最近一条
+    } else {
+      groups.set(key, { kind: e.kind, count: 1, sample: e });
+    }
+  }
+
+  return [...groups.values()]
+    .filter((g) => g.count >= minCount)
+    .sort((a, b) => b.count - a.count)
+    .map((g) => ({ kind: g.kind, key: g.sample.why?.tags?.length ? `${g.kind}:${g.sample.why!.tags!.join(',')}` : `${g.kind}:untagged`, count: g.count, sample: g.sample }));
+}
+
 /** traceBack 结果 */
 export interface TraceResult {
   /** 被追溯的决策条目 */
