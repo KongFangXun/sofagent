@@ -83,9 +83,9 @@
 - [ ] **driver 支持 --skip-acceptance**（[四·--skip-acceptance](./driver.md#sofagent_skip_hook----skip-acceptance----step)）
 - [ ] **driver 支持 --step 单步模式**（[四·--step](./driver.md#sofagent_skip_hook----skip-acceptance----step)）
 - [ ] **沙箱环境加 --max-old-space-size=1536**（v1.2.5 run-07 教训：768 在长循环 OOM）（[四·V8 heap](./driver.md#v8-heap-限制--max-old-space-size反直觉优化)）
-- [ ] **跨闭包变量提到 agent 定义前**（stateModifier 和 invokeAgent 是平行闭包，不可见对方局部变量）（[四·跨闭包变量](./driver.md#-跨闭包变量引用js-作用域陷阱v129-run-07)）
-- [ ] **后台启动用 Bash 工具 run_in_background，禁用 nohup+disown**（WorkBuddy 清理脱离进程）（[四·nohup 不安全](./driver.md#-nohupdisown-在-workbuddy-中不安全v129-run-0711)）
-- [ ] **启动前算并发上限**（并发 ≤ floor((RAM - 3GB) / worker_heap_limit)）（[三·并发内存](./performance.md#-并发-worker-总内存计算v129-run-0809)）
+- [ ] **跨闭包变量提到 agent 定义前**（stateModifier 和 invokeAgent 是平行闭包，不可见对方局部变量）（[四·跨闭包变量](./driver.md#跨闭包变量引用js-作用域陷阱v129-run-07)）
+- [ ] **后台启动用 Bash 工具 run_in_background，禁用 nohup+disown**（WorkBuddy 清理脱离进程）（[四·nohup 不安全](./driver.md#nohupdisown-在-workbuddy-中不安全v129-run-0711)）
+- [ ] **启动前算并发上限**（并发 ≤ floor((RAM - 3GB) / worker_heap_limit)）（[三·并发内存](./performance.md#并发-worker-总内存计算v129-run-0809)）
 
 ### 🔴 stream 迁移（如做 invoke→stream 改造时必查）
 
