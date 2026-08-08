@@ -138,7 +138,7 @@ SOFAGENT_HOME="\${SOFAGENT_HOME:-\$HOME/.sofagent}"
 HASH_RECORD="$SOFAGENT_HOME/internal/audit-hash.txt"
 GLOBAL_DIST=$(node -e "try{const p=require('path');const idx=require.resolve('sofagent-audit');const d=p.dirname(p.dirname(idx));process.stdout.write(p.join(d,'dist','index.js'))}catch{process.stdout.write('')}" 2>/dev/null)
 if [ -n "$GLOBAL_DIST" ] && [ -f "$GLOBAL_DIST" ] && [ -f "$HASH_RECORD" ]; then
-  CURRENT_HASH=$(node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('$GLOBAL_DIST')).digest('hex'))" 2>/dev/null)
+  CURRENT_HASH=$(node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync(process.argv[1])).digest('hex'))" "$GLOBAL_DIST" 2>/dev/null)
   RECORDED_HASH=$(cat "$HASH_RECORD" 2>/dev/null | tr -d '[:space:]')
   if [ -n "$CURRENT_HASH" ] && [ -n "$RECORDED_HASH" ] && [ "$CURRENT_HASH" != "$RECORDED_HASH" ]; then
     echo "🔴 [sofagent] 审计引擎完整性校验失败（dist 哈希不匹配）"
