@@ -38,6 +38,11 @@ import { createVisibility, EVENTS } from './visibility.mjs';
 // v1.2.4 新增 StallError 导出（watchdog 停顿检测错误类）
 import { createProgressMiddleware, StallError } from './progress-middleware.mjs';
 
+// v1.3.0 (交付 10 MA4)：FORGE worker 经验共享飞轮——FORGE_MEMORY_BACKEND
+// 启用时 worker 启动前检索历史经验、完成后写入本次发现。
+// 缺省 unset = 完全不变（与 v1.2.9 行为一致）。
+import { memorySearch, memoryWrite, getMemoryBackendEndpoint } from './memory-client.mjs';
+
 // 模块级引用——让 catch 块也能写可见性事件（失败场景覆盖）
 let globalVisibility = null;
 
@@ -1748,6 +1753,21 @@ function spawnWorker(step, roundDir, target, round, options = {}) {
     return new Promise((resolveP, rejectP) => {
       const env = { ...process.env, FORGE_ROUND: String(round) };
 
+      // v1.3.0 (交付 10 MA4)：worker 启动前检索历史经验（仅 FORGE_MEMORY_BACKEND 启用时）。
+      // 检索结果注入 FORGE_MEMORY_CONTEXT 环境变量，worker 读取后拼入 system prompt。
+      // 缺省 unset / 不可达 → 不注入（与 v1.2.9 完全一致）。
+      const memoryEndpoint = getMemoryBackendEndpoint();
+      if (memoryEndpoint) {
+        memorySearch(`forge/fresh-eyes/${step}`, target)
+          .then((hits) => {
+            if (hits && hits.length > 0) {
+              const ctx = hits.map((h) => h.content ?? '').filter(Boolean).join('\n').slice(0, 4000);
+              if (ctx) env.FORGE_MEMORY_CONTEXT = ctx;
+            }
+          })
+          .catch(() => { /* 检索失败不阻断 spawn */ });
+      }
+
       // 步骤级 stall 超时覆盖（run-05 教训：a-consolidate 合并双份完整报告，
       // 输入 check-a.md(~10KB)+check-b.md(~5KB)，deepseek-v4-flash/glm-5.2
       // 在长文本合并时事件循环长时间不推进，默认 STALL_MAX=3（~9min）不够，
@@ -1789,6 +1809,14 @@ function spawnWorker(step, roundDir, target, round, options = {}) {
       });
 
       child.on('close', (code, signal) => {
+        // v1.3.0 (交付 10 MA4)：worker 完成后写入本次发现（仅 FORGE_MEMORY_BACKEND 启用时）。
+        // 写入失败 warn + 不阻断（优雅降级铁律）。
+        if (code === 0 && getMemoryBackendEndpoint()) {
+          const summary = (options.customOutput || options.customInputs?.['result.md'] || `step=${step} round=${round}`).slice(0, 2000);
+          memoryWrite(`forge/fresh-eyes/${step}`, summary, { perspective: step, round: String(round), ts: new Date().toISOString() })
+            .catch(() => { /* 写入失败不阻断 */ });
+        }
+
         if (code === 0) {
           resolveP();
         } else if (code === null) {
