@@ -41,26 +41,26 @@ import { checkRuleE4 } from './rule-e4-low-comment-ratio';
  *      ② 在 runner.ts 的 AUDIT_PRIORITY 分组中添加对应的规则 ID。
  *      两边顺序一致才能保证优先级分组正确。 */
 export const defaultRules: Rule[] = [
-  { name: 'A1 不碰敏感', number: 1, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA1 },
-  { name: 'A2 不泄密钥', number: 2, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA2 },
-  { name: 'A3 不改越界', number: 3, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA3 }, // A3: ruleClass='业务底线' 但实现为 WARN-only（启发式检测误报率高，不适合硬拦截）
-  { name: 'A4 不删配置', number: 4, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA4 },
-  { name: 'A5 不瞒真相', number: 5, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA5 },
-  { name: 'A6 不坏构建', number: 6, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleA6 },
-  { name: 'A7 不存盲改', number: 7, evidenceMode: 'hybrid', ruleClass: '能力拐杖', check: checkRuleA7 },
-  { name: 'A8 不逃验证', number: 8, evidenceMode: 'hybrid', ruleClass: '能力拐杖', check: checkRuleA8 },
-  { name: 'A9 不纳注入', number: 9, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA9 },
-  { name: 'A10 不引毒源', number: 10, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA10 },
-  { name: 'A11 不滥资源', number: 11, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA11 },
+  { name: 'A1 不碰敏感', number: 1, evidenceMode: 'git-diff', ruleClass: '业务底线', ruleType: 'diff', check: checkRuleA1 },
+  { name: 'A2 不泄密钥', number: 2, evidenceMode: 'git-diff', ruleClass: '业务底线', ruleType: 'diff', check: checkRuleA2 },
+  { name: 'A3 不改越界', number: 3, evidenceMode: 'git-diff', ruleClass: '业务底线', ruleType: 'diff', check: checkRuleA3 }, // A3: ruleClass='业务底线' 但实现为 WARN-only（启发式检测误报率高，不适合硬拦截）
+  { name: 'A4 不删配置', number: 4, evidenceMode: 'git-diff', ruleClass: '业务底线', ruleType: 'diff', check: checkRuleA4 },
+  { name: 'A5 不瞒真相', number: 5, evidenceMode: 'git-diff', ruleClass: '业务底线', ruleType: 'diff', check: checkRuleA5 },
+  { name: 'A6 不坏构建', number: 6, evidenceMode: 'git-diff', ruleClass: '能力拐杖', ruleType: 'diff', check: checkRuleA6 },
+  { name: 'A7 不存盲改', number: 7, evidenceMode: 'hybrid', ruleClass: '能力拐杖', ruleType: 'diff', check: checkRuleA7 },
+  { name: 'A8 不逃验证', number: 8, evidenceMode: 'hybrid', ruleClass: '能力拐杖', ruleType: 'diff', check: checkRuleA8 },
+  { name: 'A9 不纳注入', number: 9, evidenceMode: 'git-diff', ruleClass: '业务底线', ruleType: 'diff', check: checkRuleA9 },
+  { name: 'A10 不引毒源', number: 10, evidenceMode: 'git-diff', ruleClass: '业务底线', ruleType: 'diff', check: checkRuleA10 },
+  { name: 'A11 不滥资源', number: 11, evidenceMode: 'git-diff', ruleClass: '业务底线', ruleType: 'diff', check: checkRuleA11 },
   // A12-A17 为预留/扩展编号：A12（供应链安全）和 A13（文件权限）已永久跳号——v0.99.4 合并入 A11（不滥资源），语义有重叠但不完全等价，A12/A13 独立规则留待未来版本恢复；A14-A17 见 extendedRules
-  { name: 'A18 垃圾文件', number: 18, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleA18 },
+  { name: 'A18 垃圾文件', number: 18, evidenceMode: 'git-diff', ruleClass: '能力拐杖', ruleType: 'diff', check: checkRuleA18 },
   // v1.2.5: A19 ruleClass 从 '业务底线' 改为 '工程规范'（msg 质量是工程规范，不是安全红线）
-  { name: 'A19 msg 质量', number: 19, evidenceMode: 'git-diff', ruleClass: '工程规范', check: checkRuleA19 },
+  { name: 'A19 msg 质量', number: 19, evidenceMode: 'git-diff', ruleClass: '工程规范', ruleType: 'diff', check: checkRuleA19 },
   // v1.2.5 新增：A20-A23 四条安全红线规则（必须在 defaultRules，不能放 extendedRules）
-  { name: 'A20 不泄外联', number: 20, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA20 },
-  { name: 'A21 不植后门', number: 21, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA21 },
-  { name: 'A22 不越权限', number: 22, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA22 },
-  { name: 'A23 不逃路径', number: 23, evidenceMode: 'git-diff', ruleClass: '业务底线', check: checkRuleA23 },
+  { name: 'A20 不泄外联', number: 20, evidenceMode: 'git-diff', ruleClass: '业务底线', ruleType: 'diff', check: checkRuleA20 },
+  { name: 'A21 不植后门', number: 21, evidenceMode: 'git-diff', ruleClass: '业务底线', ruleType: 'diff', check: checkRuleA21 },
+  { name: 'A22 不越权限', number: 22, evidenceMode: 'git-diff', ruleClass: '业务底线', ruleType: 'diff', check: checkRuleA22 },
+  { name: 'A23 不逃路径', number: 23, evidenceMode: 'git-diff', ruleClass: '业务底线', ruleType: 'diff', check: checkRuleA23 },
 ];
 
 /** 扩展规则（E1-E4 + A14-A17）——默认不生效，需 config.extendedRulesEnabled = true
@@ -69,14 +69,14 @@ export const defaultRules: Rule[] = [
  * - A14-A17：行为类扩展规则（沿用 A 系列编号，number = 规则号，与 defaultRules 同 namespace 但 A12-A13 已永久跳号，合并入 A11（语义部分重叠但不完全等价））
  * - E1-E4：引擎增强类扩展规则（E 系列，number = 200 + 序号，避免与 A 系列冲突） */
 export const extendedRules: Rule[] = [
-  { name: 'E1 不落测试', number: 201, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE1 },
-  { name: 'E2 不空标记', number: 202, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE2 },
+  { name: 'E1 不落测试', number: 201, evidenceMode: 'git-diff', ruleClass: '能力拐杖', ruleType: 'diff', check: checkRuleE1 },
+  { name: 'E2 不空标记', number: 202, evidenceMode: 'git-diff', ruleClass: '能力拐杖', ruleType: 'diff', check: checkRuleE2 },
   // E3 已在 v1.2.5 并入 A11（行数维度），编号跳号
-  { name: 'E4 不低注释', number: 204, evidenceMode: 'git-diff', ruleClass: '能力拐杖', check: checkRuleE4 },
-  { name: 'A14 知识库越权', number: 14, evidenceMode: 'hybrid', ruleClass: '能力拐杖', check: checkRuleA14 },
-  { name: 'A15 不盲动', number: 15, evidenceMode: 'hybrid', ruleClass: '能力拐杖', check: checkRuleA15 },
-  { name: 'A16 非授权文件变更', number: 16, evidenceMode: 'git-diff', ruleClass: '工程规范', check: checkRuleA16, description: '检测敏感目录/文件类型的非授权变更' },
-  { name: 'A17 异常批量变更', number: 17, evidenceMode: 'filesystem', ruleClass: '工程规范', check: checkRuleA17, description: '检测短时间内大量文件变更' },
+  { name: 'E4 不低注释', number: 204, evidenceMode: 'git-diff', ruleClass: '能力拐杖', ruleType: 'diff', check: checkRuleE4 },
+  { name: 'A14 知识库越权', number: 14, evidenceMode: 'hybrid', ruleClass: '能力拐杖', ruleType: 'diff', check: checkRuleA14 },
+  { name: 'A15 不盲动', number: 15, evidenceMode: 'hybrid', ruleClass: '能力拐杖', ruleType: 'diff', check: checkRuleA15 },
+  { name: 'A16 非授权文件变更', number: 16, evidenceMode: 'git-diff', ruleClass: '工程规范', ruleType: 'diff', check: checkRuleA16, description: '检测敏感目录/文件类型的非授权变更' },
+  { name: 'A17 异常批量变更', number: 17, evidenceMode: 'filesystem', ruleClass: '工程规范', ruleType: 'diff', check: checkRuleA17, description: '检测短时间内大量文件变更' },
 ];
 
 /** 全部规则——reporter 默认使用此数组（含 default + extended） */
