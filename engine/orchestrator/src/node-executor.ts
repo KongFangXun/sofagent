@@ -193,8 +193,16 @@ export async function executeNode(
   // 4. 加载工具
   let tools: unknown[] = [];
   try {
-    const { convertToLangGraphTools, ENGINEER_TOOLS } = await import('./tools');
-    tools = convertToLangGraphTools(ENGINEER_TOOLS);
+    const { convertToLangGraphTools, ENGINEER_TOOLS, createToolGate, wrapToolsWithGate } = await import('./tools');
+    // v1.3.0 (交付 1)：企业 Agent 路径补 gate 包裹——与 LOOP 路径 nodes.ts 的
+    // gateToolsForRole 接线方式对齐，工具调用经 tool-gate 规则拦截 + 审计留证。
+    const gate = createToolGate({
+      agentName: ctx.agentName,
+      taskDesc: ctx.node.task?.slice(0, 500) ?? '',
+      cwd: ctx.projectRoot,
+    });
+    const gatedTools = wrapToolsWithGate(ENGINEER_TOOLS, gate);
+    tools = convertToLangGraphTools(gatedTools);
   } catch {
     // 工具不可用——空数组
   }
