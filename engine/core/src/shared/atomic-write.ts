@@ -148,3 +148,56 @@ export function atomicAppendSync(filePath: string, line: string): void {
     }
   });
 }
+
+/**
+ * 合并策略：保留 existing 中未在 incoming 出现的行（追加到末尾）。
+ * 用于进化链路写保护——其他进程在读取后追加了新行（如新的反思条目），
+ * 写入时保留这些并发新增，不盲目覆盖。
+ *
+ * ⚠️ 方向说明：参数顺序为 merge(existing, incoming)——existing 是磁盘当前内容
+ * （可能含并发新增），incoming 是本进程要写入的内容。返回 = incoming +
+ * existing 中不在 incoming 的行（并发新增保留）。
+ */
+export function mergeAppendMissing(existing: string, incoming: string): string {
+  if (!existing) return incoming;
+  if (!incoming) return existing;
+  if (existing === incoming) return incoming;
+  const incomingLines = new Set(incoming.split('\n'));
+  const extra = existing.split('\n').filter((l) => !incomingLines.has(l));
+  return extra.length > 0 ? incoming + '\n' + extra.join('\n') : incoming;
+}
+
+/**
+ * 写前 mtime 检测 + 合并原子写（v1.3.0 交付 11 · prime-agent _sync_from_disk 启发）。
+ *
+ * 解决进化链路（think.md / knowledge/ / 状态文件）的 read-modify-write 并发覆盖：
+ *   1. 读现有内容 + 记录写前 mtime
+ *   2. 若读取后 mtime 已变化（其他进程在读取与写入之间改写了文件）→ 重读最新内容再合并
+ *   3. 合并后经 withFileLockSync + atomicWriteSync 落盘（不盲目覆盖并发写入）
+ *
+ * @param filePath 目标文件路径
+ * @param content  本次要写入的内容（与 existing 合并）
+ * @param merge    合并策略（缺省 = 用 content 覆盖，仅做 mtime 检测告警）
+ */
+export function atomicWriteWithMergeSync(
+  filePath: string,
+  content: string,
+  merge: (existing: string, incoming: string) => string = (_existing, incoming) => incoming,
+): void {
+  withFileLockSync(filePath, () => {
+    const existedBefore = existsSync(filePath);
+    const mtimeBefore = existedBefore ? statSync(filePath).mtimeMs : null;
+    let existing = existedBefore ? readFileSync(filePath, 'utf-8') : '';
+
+    // 写前 mtime 检测：读取后若 mtime 变化 → 其他进程并发改写，重读最新内容合并
+    if (existedBefore && mtimeBefore !== null) {
+      const mtimeAfterRead = statSync(filePath).mtimeMs;
+      if (mtimeAfterRead !== mtimeBefore) {
+        console.warn(`[atomic-write] ${filePath} 写前 mtime 变化——重读最新内容合并，避免覆盖并发写入`);
+        existing = readFileSync(filePath, 'utf-8');
+      }
+    }
+
+    atomicWriteSync(filePath, merge(existing, content));
+  });
+}
