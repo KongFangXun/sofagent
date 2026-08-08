@@ -89,7 +89,7 @@ perception:
  * 与 hooks/commit-msg 保持一致（含 v1.0 无声失败保护）
  */
 export const HOOK_TEMPLATE = `#!/bin/bash
-# sofagent commit-msg hook v1.2.5
+# sofagent commit-msg hook v1.2.9
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # commit-msg hook 接收 $1 = commit message 文件路径
 
@@ -129,6 +129,24 @@ else
   echo "❌ sofagent 提示：未找到 sofagent-audit 命令，审计无法运行"
   echo "   请运行: npm install -g @sofagent/audit"
   exit 1
+fi
+
+# 2.1 P1-A2: dist 完整性校验——防止本地覆写 dist 致审计失效
+#     全局安装场景下比对其 dist 的 SHA-256 与安装时记录的基准哈希。
+#     基准哈希存储在 ~/.sofagent/internal/audit-hash.txt（--doctor 首次运行时记录）。
+SOFAGENT_HOME="\${SOFAGENT_HOME:-\$HOME/.sofagent}"
+HASH_RECORD="$SOFAGENT_HOME/internal/audit-hash.txt"
+GLOBAL_DIST=$(node -e "try{const p=require('path');const idx=require.resolve('sofagent-audit');const d=p.dirname(p.dirname(idx));process.stdout.write(p.join(d,'dist','index.js'))}catch{process.stdout.write('')}" 2>/dev/null)
+if [ -n "$GLOBAL_DIST" ] && [ -f "$GLOBAL_DIST" ] && [ -f "$HASH_RECORD" ]; then
+  CURRENT_HASH=$(node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('$GLOBAL_DIST')).digest('hex'))" 2>/dev/null)
+  RECORDED_HASH=$(cat "$HASH_RECORD" 2>/dev/null | tr -d '[:space:]')
+  if [ -n "$CURRENT_HASH" ] && [ -n "$RECORDED_HASH" ] && [ "$CURRENT_HASH" != "$RECORDED_HASH" ]; then
+    echo "🔴 [sofagent] 审计引擎完整性校验失败（dist 哈希不匹配）"
+    echo "   审计引擎可能被替换（影子审计器劫持风险）。"
+    echo "   如需恢复：npm install -g @sofagent/audit@latest"
+    echo "   如为故意重建：sofagent-audit --doctor（会更新基准哈希）"
+    exit 1
+  fi
 fi
 
 # 3. 用 --cached 只审计暂存区（避免扫到工作树未 staged 的改动导致 A3 误报）

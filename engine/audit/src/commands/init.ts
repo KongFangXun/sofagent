@@ -351,6 +351,7 @@ export function runInit(): void {
   // 自动生成 HMAC 密钥（~/.sofagent-key，权限 600）
   // 配合 修复形成完整防篡改链路：默认启用 HMAC-SHA256 强校验
   const hmacKeyPath = join(homedir(), '.sofagent-key');
+  let hmacKeyGenerated = false;
   if (existsSync(hmacKeyPath)) {
     console.log('  → ~/.sofagent-key 已存在，不覆盖（审计历史继续使用现有密钥）');
   } else {
@@ -361,8 +362,24 @@ export function runInit(): void {
       console.log('  ✅ HMAC 密钥已自动生成（~/.sofagent-key，权限 600）');
       console.log('  ℹ️  审计历史已启用 HMAC-SHA256 签名，篡改可检测');
       console.log('  ⚠️  请备份密钥文件，密钥丢失后历史记录将变为不可复验');
+      hmacKeyGenerated = true;
     } catch (err) {
       console.log(`  ⚠️ HMAC 密钥生成失败: ${(err as Error).message}（审计历史降级为 SHA-256）`);
+    }
+  }
+
+  // P1-A10: --init 时顺手对 config.yml 签名（消除 config 无签名警告）
+  // HMAC 密钥已存在（刚生成或已有），自动签名避免每次 audit 都看到"config.yml 无防篡改签名"警告。
+  if (existsSync(configPath)) {
+    try {
+      const { signConfig } = require('@sofagent/core');
+      signConfig(configPath);
+      console.log('  ✅ config.yml 已自动签名（消除防篡改警告）');
+    } catch {
+      // 签名失败不阻塞 init（可能密钥刚生成但权限问题）
+      if (hmacKeyGenerated) {
+        console.log('  ⚠️ config.yml 签名失败——运行 sofagent-audit --sign-config 手动签名');
+      }
     }
   }
 
@@ -458,12 +475,21 @@ export function runInit(): void {
 # 如果没有，判定为绕过（--no-verify 或 hook 被删/失效）
 # 注意：git commit --no-verify 会绕过本 hook——CI 侧 sofagent-audit --diff 兜底是最终防线
 
-# commit-msg hook 存在性检查（v1.2.8: 联动）
+# P1-A7: commit-msg hook 缺失自检——醒目告警（下次 commit 时）
 COMMIT_MSG_HOOK=".git/hooks/commit-msg"
 if [ ! -f "$COMMIT_MSG_HOOK" ]; then
   echo ""
-  echo "  ⚠️ [sofagent] commit-msg hook 不存在——审计可能未运行！"
-  echo "  运行 sofagent-audit --init 重新安装。"
+  echo "  ╔══════════════════════════════════════════════╗"
+  echo "  ║  🔴 [sofagent] commit-msg hook 不存在！       ║"
+  echo "  ║  审计引擎未运行——所有提交都不受审计约束      ║"
+  echo "  ║  运行 sofagent-audit --init 重新安装          ║"
+  echo "  ╚══════════════════════════════════════════════╝"
+  echo ""
+elif ! grep -q 'sofagent' "$COMMIT_MSG_HOOK" 2>/dev/null; then
+  echo ""
+  echo "  ⚠️ [sofagent] commit-msg hook 存在但不包含 sofagent 标识——"
+  echo "  可能已被替换或覆盖。运行 sofagent-audit --init 恢复。"
+  echo ""
 fi
 
 if ! command -v node &>/dev/null; then exit 0; fi

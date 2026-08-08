@@ -172,6 +172,14 @@ sofagent-audit --init    # 数据写入 /data/sofagent-hr/data/
 
 # 方案 B：dashboard 定期采集
 # 将各机器的 ~/.sofagent/data/ 通过 NFS/共享存储挂载到 dashboard 所在机器
+#
+# ⚠️ 安全警告：NFS/共享存储挂载明文审计目录与"数据不出本机"的数据主权立场存在矛盾。
+#    history.jsonl 为明文 JSONL（含文件路径、代码片段摘要），NFS 挂载使同 NFS 卷的其他
+#    主机可能读取。如需此方案，务必：
+#    ① NFS export 限制为 dashboard 机器 IP（ro 只读挂载）
+#    ② NFS export 使用 sec=sys + root_squash，防止非授权 UID 读取
+#    ③ 或将 data/ 放在加密卷（gpg / LUKS）上再挂载
+#    ④ 更安全的替代方案：方案 A（doctor --json SSH 拉取），不暴露 NFS 挂载面
 ```
 
 ### 版本一致性校验（v1.2.8）

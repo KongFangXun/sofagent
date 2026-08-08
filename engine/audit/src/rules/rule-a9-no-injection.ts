@@ -195,15 +195,17 @@ export function scoreHighOnlyContext(s: string): number {
 }
 
 /**
- * 启发式地把一行代码拆成「代码/正文」与「字符串字面量 + 注释文本」。
+ * 启发式地把一行代码拆成「代码/正文」「字符串字面量」「注释文本」。
  * 注意：这是启发式实现，不是完整 parser，仅用于注入扫描的上下文降级判定。
  *
  * @returns
  *  - code: 去掉字符串字面量与注释后的代码骨架（用空格替换被移除片段，长度无关）
  *  - literals: 提取出的字符串字面量内容（不含引号）+ 注释文本（不含注释标记）数组
+ *  - comments: 仅注释文本数组（不含字符串字面量，P1-A3 注释扫描用）
  */
-export function splitCodeContext(line: string): { code: string; literals: string[] } {
+export function splitCodeContext(line: string): { code: string; literals: string[]; comments: string[] } {
   const literals: string[] = [];
+  const comments: string[] = [];
 
   // 第一遍：提取字符串字面量（单/双/模板串，支持转义），并从 code 中移除
   const STRING_RE = /('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`)/g;
@@ -228,10 +230,11 @@ export function splitCodeContext(line: string): { code: string; literals: string
       inner = inner.slice(2, -2);
     }
     literals.push(inner);
+    comments.push(inner);
     return ' '.repeat(full.length);
   });
 
-  return { code, literals };
+  return { code, literals, comments };
 }
 
 export function checkRuleA9(ctx: AuditContext): RuleCheck {
@@ -249,6 +252,11 @@ export function checkRuleA9(ctx: AuditContext): RuleCheck {
   interface Hit { file: string; line: string; pattern: string; score: number }
   const hits: Hit[] = [];
 
+  // P1-A3: diff 代码注释中的中等置信度注入模式（如注释中写 adversarial-prompt 类词组）
+  // A9 原设计对字符串字面量/注释仅走 HIGH 置信度（避免误报），但相似内容在注释中完全放行。
+  // 现在对注释内容追加 MEDIUM 模糊档扫描——命中时记为 WARN（不直接 FAIL，因注释可能是引用）。
+  const diffCommentWarns: { file: string; line: string; pattern: string }[] = [];
+
   for (const file of diffFiles) {
     // 跳过文档目录——changelog/设计文档等会合法引用注入模式作为案例
     if (file.path.startsWith('docs/')) continue;
@@ -262,7 +270,7 @@ export function checkRuleA9(ctx: AuditContext): RuleCheck {
       // 上下文感知扫描：
       //  - code（代码/正文）走完整模式（HIGH + MEDIUM）
       //  - literals（字符串字面量 + 注释）仅走 HIGH 置信度模式（MEDIUM 模糊档关闭）
-      const { code, literals } = splitCodeContext(line);
+      const { code, literals, comments } = splitCodeContext(line);
       const codeScore = scoreFullContext(code);
       const literalScore = scoreHighOnlyContext(literals.join(' '));
       const finalScore = Math.max(codeScore, literalScore);
@@ -275,6 +283,22 @@ export function checkRuleA9(ctx: AuditContext): RuleCheck {
         // 中等置信度 → 记录为可疑（后续统一判定 WARN）
         const matchedPattern = findBestPattern(line, normalizeLine(line));
         hits.push({ file: file.path, line: line.trim(), pattern: matchedPattern, score: finalScore });
+      }
+
+      // P1-A3: 注释（不含字符串字面量）内的 MEDIUM 置信度注入模式 → 追加 WARN 建议
+      // 只对 splitCodeContext 单独提取的 comments 数组扫描，避免对字符串字面量误报
+      for (const commentText of comments) {
+        const commentScore = scoreLine(commentText, false);
+        if (commentScore >= 0.3 && commentScore < 0.8) {
+          // code 段未命中（codeScore < 0.3），但注释段命中了 MEDIUM → 记 WARN
+          if (codeScore < 0.3) {
+            const normComment = normalizeLine(commentText);
+            const commentPattern = normComment !== commentText
+              ? findBestPattern(commentText, normComment)
+              : findBestPattern(commentText, commentText);
+            diffCommentWarns.push({ file: file.path, line: commentText.trim().slice(0, 60), pattern: commentPattern });
+          }
+        }
       }
     }
   }
@@ -313,6 +337,19 @@ export function checkRuleA9(ctx: AuditContext): RuleCheck {
     rule.details.push(
       `另有 ${warnHits.length} 处可疑注入模式（建议人工审查）: ` +
       warnHits.map((h) => `${h.file}: "${sanitizeDetailLine(h.line)}" (${h.pattern}, score=${h.score.toFixed(1)})`).join('; ')
+    );
+  }
+
+  // P1-A3: diff 代码注释中的中等置信度注入模式 → 追加 WARN（不阻断提交，仅提示）
+  if (diffCommentWarns.length > 0) {
+    if (rule.status === 'PASS') rule.status = 'WARN';
+    const uniqueWarns = Array.from(new Set(diffCommentWarns.map((w) => `${w.file}:${w.pattern}`)));
+    rule.details.push(
+      `检测到 ${uniqueWarns.length} 处代码注释中的可疑注入模式（P1-A3 扩展扫描）: ` +
+      uniqueWarns.slice(0, 5).map((key) => {
+        const w = diffCommentWarns.find((d) => `${d.file}:${d.pattern}` === key)!;
+        return `${w.file}: 注释含 "${w.line}..." (${w.pattern})`;
+      }).join('; ') + (uniqueWarns.length > 5 ? ` 等 ${uniqueWarns.length} 处` : '')
     );
   }
 

@@ -65,9 +65,18 @@ export function isPrivateWebhookUrl(rawUrl: string): boolean {
     if (a === 192 && b === 168) return true;        // 192.168.0.0/16
     if (a === 169 && b === 254) return true;        // 169.254.0.0/16 链路本地
     if (a === 127) return true;                     // 127.0.0.0/8
+    // P1-A5: CGN（Carrier-Grade NAT）100.64.0.0/10
+    if (a === 100 && b >= 64 && b <= 127) return true;
   }
   // IPv6 私网/链路本地简判
   if (host.startsWith('fc') || host.startsWith('fd') || host.startsWith('fe80')) return true;
+  // P1-A5: IPv6-mapped IPv4（如 ::ffff:169.254.169.254 / ::ffff:10.0.0.1）
+  // 这类地址在 Node.js isIP 中被判为 IPv6（hostname 包含冒号+点），但实际可达 IPv4 内网地址
+  const v4MappedMatch = host.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
+  if (v4MappedMatch) {
+    const mappedV4 = v4MappedMatch[1]!;
+    return isPrivateWebhookUrl(`http://${mappedV4}`);
+  }
   return false;
 }
 
