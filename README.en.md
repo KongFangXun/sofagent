@@ -44,11 +44,12 @@ graph LR
 - 🔍 **Zero-setup audit** — `npx sofagent-audit`, audits your last commit in any git repo in 3 seconds
 - 🧱 **24 audit rules** — secret leaks, out-of-scope edits, injection defense, privilege red lines — judged on hard git diff evidence, violations blocked on the spot
 - 🛡️ **Automatic snapshot & rollback** — auto-archived after every audit, one-click restore to any snapshot
-- 🧬 **Keeps getting better** — lessons from every task are captured into the knowledge base automatically, so the next run avoids the same pitfalls
 
 ## FDE Methodology
 
-Many companies adopt AI the wrong way around — they pick models, build platforms, and buy Agents first, only to find nobody uses them. The problem isn't the technology; it's that **they haven't figured out their own business processes before handing them to AI**. FDE flips this around:
+Many companies adopt AI the wrong way around — they pick models, build platforms, and buy Agents first, only to find nobody uses them. The problem isn't the technology; it's that **they haven't figured out their own business processes before handing them to AI**.
+
+Most tools teach you how to build Agents; sofagent first answers **where AI should go** — turning the five-element deep-dive and three-question triage from guesswork into a repeatable methodology:
 
 | Phase | What happens | Deliverable |
 |------|--------|------|
@@ -62,10 +63,10 @@ Full methodology (four phases, twelve steps) in [FDE/GUIDE.md](./FDE/GUIDE.md) �
 
 Deploying AI nodes is only step one — what keeps them **on track every time** is the FDE Skill system loaded with each node:
 
-- 📜 **SKILL.md** — the single entry point, loaded by your AI tool (stage routing + condensed fallback)
-- 🧩 **Four role Skills** — `fde` (on-site mapping) · `audit` (auditing) · `engineer` (implementation) · `reviewer` (review), each with its own job
+- 📜 **SKILL.md** — the single entry point, loaded by your AI tool: routes to the matching stage sub-Skill, and auto-injects job specs by task type (mapping / audit / orchestration)
+- 🧩 **Stage sub-Skills** — a five-step closed loop: entry → discovery → quantify → deliver → exit (`01-entry` → `05-exit`), with every step's tasks and deliverables defined upfront
 - 🔒 **Harness constraint skeleton** — entry-gate / fde-template / engage / loop-check / task-closure…, a constraint template for every step from entry to departure
-- 🧬 **Automatic experience capture** — think.md reflection + knowledge maintenance; nodes get smarter as they run
+- 🧬 **Automatic experience capture** — think.md reflection + knowledge maintenance; lessons from every task flow into the knowledge base automatically, so nodes get smarter as they run
 
 > What gets deployed is not a bare Agent, but an **Agent with a constraint skeleton** — constraints are advisory, audits are mandatory: the Agent may ignore the constraints, but every change gets audited without exception.
 
