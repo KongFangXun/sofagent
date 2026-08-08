@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { checkRuleA3 } from './rules/rule-a3-careful-modify';
 import { checkRuleE1 } from './rules/rule-e1-no-test-files';
 import { checkRuleE2 } from './rules/rule-e2-todo-undeclared';
-// v1.2.8: E3 已并入 A11，不再独立存在
+// v1.2.9: E3 已并入 A11，不再独立存在
 import { checkRuleA11 } from './rules/rule-a11-no-abuse';
 import { checkRuleA5 } from './rules/rule-a5-honest-report';
 import { checkRuleA1 } from './rules/rule-a1-sensitive-files';

@@ -1,6 +1,6 @@
 // ============================================================
 // health-reporter.ts · daemon 健康状态报告
-// v1.2.8 新增
+// v1.2.9 新增
 //
 // 每次 daemon 运行时覆盖写入 data/dashboard/daemon-health.json
 // 替代旧的非结构化 daemon-notice.md

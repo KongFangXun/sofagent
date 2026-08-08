@@ -1,5 +1,5 @@
 // ============================================================
-// progress-mw.test.ts · ProgressMiddleware 单元测试（v1.2.8 · P2b）
+// progress-mw.test.ts · ProgressMiddleware 单元测试（v1.2.9 · P2b）
 //
 // 覆盖：
 //   1. 写出路径与 jsonl schema（timestamp/role/kind/toolName/target/

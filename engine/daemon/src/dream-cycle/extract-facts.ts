@@ -1,6 +1,6 @@
 // ============================================================
 // dream-cycle/extract-facts.ts · Stage 1 — 从 Ledger 提取原始事实
-// v1.2.8 新增
+// v1.2.9 新增
 //
 // 输入：Ledger（think.md 全文 + audit history 条目）
 // 输出：Fact[]（每条事实带稳定 id + 来源回指）
@@ -11,7 +11,7 @@ import { createHash } from 'crypto';
 
 import type { Fact, Ledger, LLMProvider } from './types';
 import { validateExtractOutput, scanInjection } from './injection-guard';
-// v1.2.8 功能①：事实抽取后自动写入事实级记忆存储
+// v1.2.9 功能①：事实抽取后自动写入事实级记忆存储
 import { createMemoryStore } from '@sofagent/core';
 
 /** 文本 → 稳定 fact id（内容 hash 前 12 位） */
@@ -29,7 +29,7 @@ function factId(text: string): string {
 export async function extractFacts(ledger: Ledger, llm: LLMProvider): Promise<Fact[]> {
   const facts: Fact[] = [];
 
-  // v1.2.8 功能①：事实级记忆存储——提取后自动写入
+  // v1.2.9 功能①：事实级记忆存储——提取后自动写入
   const memoryStore = createMemoryStore();
 
   // think.md 事实
@@ -42,7 +42,7 @@ export async function extractFacts(ledger: Ledger, llm: LLMProvider): Promise<Fa
     for (const text of texts) {
       const fact: Fact = { id: factId(`think:${text}`), text, source: 'think.md' };
       facts.push(fact);
-      // v1.2.8：写入事实级记忆存储
+      // v1.2.9：写入事实级记忆存储
       try {
         memoryStore.set({
           key: `think.${fact.id}`,
@@ -69,7 +69,7 @@ export async function extractFacts(ledger: Ledger, llm: LLMProvider): Promise<Fa
     const text = `${rule} — ${message}`;
     const fact: Fact = { id: factId(`audit:${JSON.stringify(entry)}`), text, source: `audit:${rule}` };
     facts.push(fact);
-    // v1.2.8：写入事实级记忆存储
+    // v1.2.9：写入事实级记忆存储
     try {
       memoryStore.set({
         key: `audit.${rule}.${fact.id}`,

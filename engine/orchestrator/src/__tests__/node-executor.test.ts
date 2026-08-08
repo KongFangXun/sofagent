@@ -1,5 +1,5 @@
 // ============================================================
-// node-executor.test.ts · 企业节点执行器测试（v1.2.8 功能④）
+// node-executor.test.ts · 企业节点执行器测试（v1.2.9 功能④）
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // skill-safety-check.ts · Skill 安全审查（入口）
-// v1.2.8：迁移至 @sofagent/skillopt
+// v1.2.9：迁移至 @sofagent/skillopt
 // ============================================================
 // 扫描 Skill 文件中的安全威胁——恶意命令/密钥泄露/危险API/Prompt注入/数据外泄。
 // 纯 TypeScript + Node.js 内置模块，最小运行时依赖：仅 js-yaml。

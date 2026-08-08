@@ -1,5 +1,5 @@
 // ============================================================
-// validate-ontology.test.ts · MCP validate_ontology tool 测试（v1.2.8 S2 新增）
+// validate-ontology.test.ts · MCP validate_ontology tool 测试（v1.2.9 S2 新增）
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';

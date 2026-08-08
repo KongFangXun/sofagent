@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// skillopt CLI · v1.2.8
+// skillopt CLI · v1.2.9
 
 const args = process.argv.slice(2);
 const subcommand = args[0];

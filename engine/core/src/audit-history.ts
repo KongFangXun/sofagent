@@ -1,7 +1,7 @@
 // ============================================================
 // audit-history.ts · audit history chain integrity (sunk to core)
 //
-// v1.2.8: Sunk from @sofagent/audit/audit-history.ts to eliminate
+// v1.2.9: Sunk from @sofagent/audit/audit-history.ts to eliminate
 // core's reverse dependency on audit (core → audit is forbidden;
 // core is the zero-upper-layer-dependency base package).
 //
@@ -377,7 +377,7 @@ export function validateHmacKey(): HmacKeyStatus {
   if (byteLen < 16) {
     return { configured: true, strong: false, reason: `密钥长度不足（${byteLen} 字节，建议 ≥16 字节 / 128-bit）` };
   }
-  // v1.2.8: — 熵检测（弱密钥模式识别）
+  // v1.2.9: — 熵检测（弱密钥模式识别）
   // 检查重复字符占比（如 "1234567890123456" 重复度高）
   const uniqueChars = new Set(trimmed).size;
   const repetitionRatio = 1 - (uniqueChars / trimmed.length);

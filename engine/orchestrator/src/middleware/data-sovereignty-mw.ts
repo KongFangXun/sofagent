@@ -1,5 +1,5 @@
 // ============================================================
-// data-sovereignty-mw.ts · 数据主权审计 middleware（v1.2.8 · P0）
+// data-sovereignty-mw.ts · 数据主权审计 middleware（v1.2.9 · P0）
 // ============================================================
 //
 // LangChain middleware：拦截每次模型调用 / 工具调用 → 写 DataSovereigntyRecord。

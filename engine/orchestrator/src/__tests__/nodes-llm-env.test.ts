@@ -1,6 +1,6 @@
 // ============================================================
 // nodes-llm-env.test.ts · resolveLLMModel / resolveApiKey 环境变量测试
-// v1.2.8 新增：验证 FORGE A/B 环境变量回退链
+// v1.2.9 新增：验证 FORGE A/B 环境变量回退链
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';

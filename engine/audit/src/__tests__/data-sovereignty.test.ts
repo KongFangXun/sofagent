@@ -1,6 +1,6 @@
 // ============================================================
 // data-sovereignty.test.ts · 数据主权审计日志单测
-// v1.2.8 P0 — 覆盖 DataSovereigntyLogger / sanitizeRecord /
+// v1.2.9 P0 — 覆盖 DataSovereigntyLogger / sanitizeRecord /
 //             resolveDateArg / resolveSovereigntyLogPath / HMAC 链
 // ============================================================
 

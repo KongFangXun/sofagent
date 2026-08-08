@@ -1,6 +1,6 @@
 // ============================================================
 // audit-tools.ts · MCP tool: run_audit + 共享类型
-// v1.2.8: 从 mcp-server.ts 提取；auditFile 拆至 audit-file.ts
+// v1.2.9: 从 mcp-server.ts 提取；auditFile 拆至 audit-file.ts
 // ============================================================
 
 import { execFileSync } from 'child_process';

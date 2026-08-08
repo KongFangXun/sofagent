@@ -1,8 +1,8 @@
 // ============================================================
 // composer.ts · 任务编排
-// v1.2.8 新增：用 createReactAgent() 做任务拆解，输出 YAML 工作流
-// v1.2.8：迁移至 @sofagent/orchestrator
-// v1.2.8 新增：ComposeResult 结构化返回（yaml + subagents）+
+// v1.2.9 新增：用 createReactAgent() 做任务拆解，输出 YAML 工作流
+// v1.2.9：迁移至 @sofagent/orchestrator
+// v1.2.9 新增：ComposeResult 结构化返回（yaml + subagents）+
 //   enterpriseWorkflowYaml 企业 workflow 参考 + variant 拆解策略（A/B/C/D）
 // ============================================================
 
@@ -286,7 +286,7 @@ export { buildEnterpriseStateGraph, buildStateGraphConfig } from './enterprise-g
  *   - 不调 createReactAgent 拆任务（compose() 的行为）
  *   - 直接用 workflow.yml 中已有的节点定义
  *   - 构建数据流三层映射（State / entity / 双写）
- *   - 序列化 graph 配置（v1.2.8 dag-runner 接线执行）
+ *   - 序列化 graph 配置（v1.2.9 dag-runner 接线执行）
  *
  * v1.2.7 无运行时调用方——验收仅靠单测（enterprise-graph.test.ts）
  *

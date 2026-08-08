@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/audit",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "description": "sofagent 提交时审计——扫描 git diff，检查 Agent 是否遵守工作纪律",
   "main": "dist/index.js",
   "types": "dist/public-api.d.ts",
@@ -63,8 +63,8 @@
   ],
   "dependencies": {
     "js-yaml": "^5.2.0",
-    "@sofagent/ontology": "1.2.8",
-    "@sofagent/core": "1.2.8",
+    "@sofagent/ontology": "1.2.9",
+    "@sofagent/core": "1.2.9",
     "archiver": "^7.0.0"
   }
 }

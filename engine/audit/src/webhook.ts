@@ -85,7 +85,7 @@ export function isPrivateWebhookUrl(rawUrl: string): boolean {
  * 复用 @sofagent/core 的 REDACTION_PATTERNS（与审计引擎内部脱敏口径一致）。
  */
 /**
- * v1.2.8 支持自定义脱敏正则（config.yml sanitizePatterns）
+ * v1.2.9 支持自定义脱敏正则（config.yml sanitizePatterns）
  */
 function redactDetail(detail: string, customPatterns?: { pattern: RegExp; replacement: string }[]): string {
   let redacted = detail;
@@ -134,7 +134,7 @@ function getTracingContext(): { repo: string; sha: string; machine: string } {
 function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass: boolean, customPatterns?: { pattern: RegExp; replacement: string }[]): string {
   const version = VERSION;
   const tracing = getTracingContext();
-  // v1.2.8: — 增加 actor（OS 用户 + git 提交者）
+  // v1.2.9: — 增加 actor（OS 用户 + git 提交者）
   const osUser = require('os').userInfo().username;
   let gitAuthor = 'N/A';
   try {

@@ -173,7 +173,7 @@ export {
   extractSummary,
 } from './compress-memory';
 
-// ── 事实级记忆存储（v1.2.8 功能①）──
+// ── 事实级记忆存储（v1.2.9 功能①）──
 export { createMemoryStore } from './memory-store';
 export type { MemoryFact } from './memory-store';
 

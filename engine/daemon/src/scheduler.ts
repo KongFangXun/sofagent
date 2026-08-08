@@ -1,5 +1,5 @@
 // ============================================================
-// scheduler.ts · 定时任务调度器（v1.2.8 功能②）
+// scheduler.ts · 定时任务调度器（v1.2.9 功能②）
 //
 // ScheduledTask CRUD + pause/resume/trigger/history
 // 支持 cron（周期）和 once（一次性）两种类型

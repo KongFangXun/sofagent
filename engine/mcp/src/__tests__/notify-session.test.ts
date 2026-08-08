@@ -1,5 +1,5 @@
 // ============================================================
-// notify-session.test.ts · MCP notify_session tool 测试（v1.2.8 S5 新增）
+// notify-session.test.ts · MCP notify_session tool 测试（v1.2.9 S5 新增）
 // ============================================================
 //
 // 覆盖：

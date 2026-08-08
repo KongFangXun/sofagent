@@ -1,5 +1,5 @@
 // ============================================================
-// memory-store.test.ts · 事实级记忆存储测试（v1.2.8 功能①）
+// memory-store.test.ts · 事实级记忆存储测试（v1.2.9 功能①）
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';

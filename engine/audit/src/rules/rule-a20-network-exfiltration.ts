@@ -1,5 +1,5 @@
 // ============================================================
-// A20 不泄外联（安全层 · 业务底线）v1.2.8 新增
+// A20 不泄外联（安全层 · 业务底线）v1.2.9 新增
 // 检测 git diff 新增行中是否含数据外传/凭证外发模式
 // evidenceMode: git-diff
 // ============================================================
@@ -7,7 +7,6 @@
 import { getAddedLines } from '@sofagent/core';
 import { DOMAIN_WHITELIST } from '@sofagent/core';
 import type { AuditContext, RuleCheck } from './types';
-
 /** 外传动作模式——curl/wget POST、fetch POST、DNS 隧道 */
 const EXFIL_ACTION_PATTERNS: { pattern: RegExp; name: string }[] = [
   // curl/wget 发送数据到外部（不用 g 标志——避免 lastIndex 状态问题）

@@ -2,7 +2,7 @@
 
 > **本文档是 sofagent 最核心的一份「为什么」。** 读完你能回答：sofagent 是什么、怎么用、怎么跑、怎么管、怎么记、怎么装、怎么进化、以及不做什么。
 >
-> v1.2.8 · 2026-08-07（UTC）· 孔放勋
+> v1.2.9 · 2026-08-08（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 

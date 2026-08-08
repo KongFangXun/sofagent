@@ -1,6 +1,6 @@
 // ============================================================
 // model-router.test.ts · ModelRouter 路由矩阵 + Mock Ollama + block-and-alert
-// v1.2.8 · P1
+// v1.2.9 · P1
 //
 // 覆盖矩阵（dev-prompt §3 L185-193）：
 //   public      × 任意        → cloud-fast          (3 用例)

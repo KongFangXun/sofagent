@@ -1,8 +1,8 @@
 // ============================================================
 // A2 不泄密钥（安全层 · 业务底线）
 // 检测 diff 新增行内容是否含密钥字符串 → 命中任意一条 → FAIL
-// v1.2.8：输出聚合——同文件同模式多次命中时限量显示，避免超大 diff 输出爆炸
-// v1.2.8 补编码绕过检测——新增行尝试 base64/hex 解码后再跑正则，
+// v1.2.9：输出聚合——同文件同模式多次命中时限量显示，避免超大 diff 输出爆炸
+// v1.2.9 补编码绕过检测——新增行尝试 base64/hex 解码后再跑正则，
 //   命中则报警（此前 `printf 'AKIA...' | base64 > encoded.txt` 即可绕过）。
 //   另补 .gitattributes -diff 绕过检测——把文件标记为 -diff 会让 git diff
 //   不输出内容行，A2 扫不到任何新增行（静默全绿），检测到该模式时 WARN。
@@ -134,9 +134,9 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
       // 只检查新增行（以 + 开头且不是 +++）
       if (line.startsWith('+') && !line.startsWith('+++')) {
         const content = line.substring(1);
-        // v1.2.8: — zero-width 字符归一化（防止 U+200B/U+200C/U+200D/U+FEFF 拆分密钥绕过）
+        // v1.2.9: — zero-width 字符归一化（防止 U+200B/U+200C/U+200D/U+FEFF 拆分密钥绕过）
         const normalized = content.replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
-        // 原行 + base64/hex 解码候选（v1.2.8: 用归一化后的内容防 zero-width 绕过）
+        // 原行 + base64/hex 解码候选（v1.2.9: 用归一化后的内容防 zero-width 绕过）
         for (const candidate of candidatePlaintexts(normalized)) {
           for (const { pattern, label } of SECRET_PATTERNS) {
             if (pattern.test(candidate)) {

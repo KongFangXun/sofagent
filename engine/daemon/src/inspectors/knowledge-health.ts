@@ -1,6 +1,6 @@
 // ============================================================
 // knowledge-health.ts · knowledge 健康巡检（Ledger-Views-Policy 三层治理）
-// v1.2.8 新增
+// v1.2.9 新增
 //
 // 与 conflict-check 的分工：
 //   - conflict-check 管「项目文件矛盾/孤儿/死链」（index.md 表驱动）

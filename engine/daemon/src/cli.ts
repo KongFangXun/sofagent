@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// daemon CLI · v1.2.8
+// daemon CLI · v1.2.9
 const args = process.argv.slice(2);
 const subcommand = args[0];
-const VERSION = '1.2.8';
+const VERSION = '1.2.9';
 
 async function main() {
   if (!subcommand || subcommand === '--help') {
@@ -18,7 +18,7 @@ async function main() {
     console.log('  snapshot list                列出所有快照');
     console.log('  snapshot restore <sha>       恢复到指定快照');
     console.log('  knowledge status             聚合知识库状态（Dream Cycle / 健康 / sensitivity）');
-    console.log('  scheduler <list|pause|resume|trigger|history|delete>  定时任务管理（v1.2.8）');
+    console.log('  scheduler <list|pause|resume|trigger|history|delete>  定时任务管理（v1.2.9）');
     console.log('  doctor                       检查 daemon 健康状态（v1.2.5 §8.4）');
     process.exit(0);
   }
@@ -227,7 +227,7 @@ async function main() {
       break;
     }
     case 'scheduler': {
-      // v1.2.8 功能②：定时任务管理
+      // v1.2.9 功能②：定时任务管理
       const action = args[1];
       const taskId = args[2];
       const { createScheduler } = await import('./scheduler');

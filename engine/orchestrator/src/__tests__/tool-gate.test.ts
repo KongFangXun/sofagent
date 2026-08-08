@@ -1,13 +1,13 @@
 // ============================================================
 // TDD_PRE_CODE: 此测试文件在功能代码编写之前创建
-// 预期：v1.2.8 目标行为相关断言当前 FAIL。工程师编写/补全功能代码后应全部 PASS。
+// 预期：v1.2.9 目标行为相关断言当前 FAIL。工程师编写/补全功能代码后应全部 PASS。
 // 工程师铁律：严禁修改此测试文件中的任何断言和测试用例。
 //
-// tool-gate.test.ts · ToolGate 运行时接入验证（v1.2.8 · P0）
+// tool-gate.test.ts · ToolGate 运行时接入验证（v1.2.9 · P0）
 //
 // 🔴 TDD Red 状态说明：
-//   v1.2.8 已交付 wrapToolsWithGate() 单元行为（FAIL/WARN/PASS 三分支），
-//   但 nodes.ts 运行时接入尚未达到 v1.2.8 验收标准
+//   v1.2.9 已交付 wrapToolsWithGate() 单元行为（FAIL/WARN/PASS 三分支），
+//   但 nodes.ts 运行时接入尚未达到 v1.2.9 验收标准
 //   （changelog v1.2.1 要求 nodes.ts 内 grep wrapToolsWithGate ≥4 处命中，
 //    当前仅 3 处：import × 1 + engineer × 1 + reviewer × 1）。
 //   因此本文件预期：单测用例大部分 PASS，运行时接线用例 FAIL——

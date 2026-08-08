@@ -1,7 +1,7 @@
 // ============================================================
 // config-loader.test.ts · 配置加载器测试（含环境变量）
 // v0.97 新增：loadEnvConfig 测试
-// v1.2.8 (DP-3): audit 段 signature 校验测试
+// v1.2.9 (DP-3): audit 段 signature 校验测试
 // ============================================================
 
 import { describe, it, expect, afterAll, beforeEach, vi } from 'vitest';

@@ -1,5 +1,5 @@
 // enterprise-graph.test.ts · 企业编排图构建单测
-// v1.2.8 新建 · 功能 ⑥
+// v1.2.9 新建 · 功能 ⑥
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
