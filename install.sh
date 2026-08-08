@@ -412,7 +412,6 @@ inject_loopdetect      # Step 7: 注入断路器配置（仅 OpenClaw）
 # ════════════════════════════════════════
 write_seed_instructions
 print_completion_summary
-verify_component_integrity
 install_daemon
 log_install_audit
 
@@ -602,6 +601,9 @@ install_skill_unified() {
 
 install_cli
 install_skill_unified
+
+# 安装完整性自检——必须在 install_cli 之后（bin/sofagent 由 install_cli 创建）
+verify_component_integrity
 
 # ════════════════════════════════════════
 # Step 8.6: v1.2.2 P3 Skill 分层升级三策略
