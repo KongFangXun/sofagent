@@ -146,6 +146,40 @@ function summarizeArgs(args) {
 }
 
 /**
+ * 记录 HITL 决策结果到运行时审计日志（交付 3）。
+ *
+ * 人工通过 hitl_resolve 决策后（或超时/拒绝时），把该工具的挂起决策归档：
+ *   - decision='approve' → status='HITL_APPROVED'（放行）
+ *   - decision='reject'  → status='HITL_REJECTED'（拒绝 = 审计 FAIL）
+ *   - 超时 → status='HITL_TIMEOUT'（默认按拒绝处理 = 审计 FAIL）
+ *
+ * @param {object} opts 记录选项
+ * @param {string} opts.toolName 工具名
+ * @param {string} opts.decision 'approve' | 'reject' | 'timeout'
+ * @param {string} [opts.reason] 决策理由
+ * @param {string} [opts.cwd] 工作目录
+ */
+export function recordHitlAudit({ toolName, decision, reason = '', cwd = process.cwd() }) {
+  const statusMap = {
+    approve: 'HITL_APPROVED',
+    reject: 'HITL_REJECTED',
+    timeout: 'HITL_TIMEOUT',
+  };
+  const status = statusMap[decision] ?? 'HITL_UNKNOWN';
+  appendRuntimeAuditLog({
+    toolName,
+    agentName: 'hitl-resolve',
+    args_summary: { reason: reason.slice(0, 200) },
+    verdict: {
+      status,
+      ruleName: 'HITL',
+      details: [reason || `人工决策: ${decision}`],
+    },
+    session_id: `hitl-${Date.now()}`,
+  }, cwd);
+}
+
+/**
  * 创建运行时审计 middleware——返回 { wrapTool, check }。
  *
  * wrapTool(originalFunc, toolName)：包裹工具 func，执行前跑规则引擎检查，
@@ -188,16 +222,19 @@ export function createAuditMiddleware(rulesEngine, opts = {}) {
     };
     const verdicts = engine.check(ctx);
     const agg = engine.aggregate(verdicts);
+    // v1.3.0 (交付 3)：任一规则 requireApproval=true → 挂起人工批准（HITL）
+    const requireApproval = verdicts.some((v) => v.requireApproval === true);
+    const hitlRule = verdicts.find((v) => v.requireApproval === true);
 
-    // 记运行时审计日志
+    // 记运行时审计日志（含 HITL 挂起状态）
     appendRuntimeAuditLog({
       toolName,
       agentName,
       args_summary: summarizeArgs(args),
       verdict: {
-        status: agg.status,
-        ruleName: agg.ruleName,
-        details: agg.details,
+        status: requireApproval ? 'HITL_PENDING' : agg.status,
+        ruleName: hitlRule?.ruleName ?? agg.ruleName,
+        details: hitlRule?.details ?? agg.details,
       },
       session_id: sessionId,
     }, cwd);
@@ -211,16 +248,28 @@ export function createAuditMiddleware(rulesEngine, opts = {}) {
           kind: 'TOOL_GATE',
           moment: 'ACT',
           why: {
-            text: `tool-gate ${agg.status === 'FAIL' ? '拦截' : agg.status === 'WARN' ? '告警' : '放行'} ${toolName}`,
+            text: `tool-gate ${requireApproval ? '待人工批准' : agg.status === 'FAIL' ? '拦截' : agg.status === 'WARN' ? '告警' : '放行'} ${toolName}`,
             tags: [toolName],
             confidence: agg.status === 'PASS' ? 'high' : 'med',
-            ...(agg.ruleName ? { triggeredRule: agg.ruleName } : {}),
+            ...((hitlRule?.ruleName ?? agg.ruleName) ? { triggeredRule: hitlRule?.ruleName ?? agg.ruleName } : {}),
           },
         });
       } catch (err) {
         // 决策日志失败不阻断工具执行（与审计日志同容错铁律）
         console.warn(`[audit-middleware] emitDecision 失败（不影响工具执行）: ${err instanceof Error ? err.message : String(err)}`);
       }
+    }
+
+    // HITL 挂起（交付 3）——不真正阻塞，返回待批准消息由 Agent 暂停该动作
+    if (requireApproval) {
+      return {
+        blocked: true,
+        status: 'HITL',
+        hitlPending: true,
+        reason: hitlRule
+          ? `[${hitlRule.ruleName}] ${hitlRule.details.join('; ')}`
+          : '需要人工批准',
+      };
     }
 
     if (agg.status === 'FAIL') {
@@ -241,7 +290,7 @@ export function createAuditMiddleware(rulesEngine, opts = {}) {
   }
 
   /**
-   * 包裹工具 func——执行前检查，FAIL 拦截优先。
+   * 包裹工具 func——执行前检查，FAIL 拦截优先，requireApproval 挂起 HITL。
    *
    * @param {Function} originalFunc 原始工具函数
    * @param {string} toolName 工具名
@@ -251,6 +300,11 @@ export function createAuditMiddleware(rulesEngine, opts = {}) {
     return async function (...args) {
       const input = args[0] ?? {};
       const verdict = check(toolName, input);
+      if (verdict.hitlPending) {
+        // 交付 3：HITL 待批准消息——不真正阻塞（LangGraph tool func 同步返回限制），
+        // 返回明确消息让 Agent 暂停该动作，等人工通过 hitl_resolve 决策后重试。
+        return `⛔ [HITL 待批准] ${toolName} 需要人工批准：${verdict.reason}。请等待人工通过 hitl_resolve 决策后再重试。`;
+      }
       if (verdict.blocked) {
         return `⛔ [Audit 拦截] ${toolName} 被拒绝执行：${verdict.reason}`;
       }
