@@ -698,7 +698,6 @@ async function runWorker(step, roundDir, target) {
   // run-01 教训：A worker 调了 1119 次工具仍未收敛，撞 GraphRecursionError 零产出。
   const { SystemMessage, HumanMessage } = await import('@langchain/core/messages');
   const MAX_CONTEXT_MESSAGES = 16; // 最后 8 轮工具交互（调用+结果各 1 条）
-  const STATE_MESSAGES_HARD_LIMIT = 20;
 
   const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
   const systemMsg = new SystemMessage(systemPrompt);

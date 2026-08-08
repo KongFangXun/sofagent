@@ -185,9 +185,12 @@ export async function summarizeToolOutput(text, taskContext, options = {}) {
     // 从 FORGE/models/ 动态读取模型配置（与 driver 角色模型一致）
     const glmConfig = (await import('../models/glm-5.2.mjs')).default;
     const { ChatOpenAI } = await import('@langchain/openai');
+    // 🔴 F-2 修复：baseURL 必须走 configuration 包裹——本仓 @langchain/openai 版本
+    // 顶层 baseURL 不落 clientConfig，只有 configuration: { baseURL } 写法才生效
+    // （与 fresh-eyes-driver.mjs createModel 惯用写法对齐）。
     const summarizer = new ChatOpenAI({
       modelName: glmConfig.model,
-      baseURL: glmConfig.baseURL,
+      configuration: { baseURL: glmConfig.baseURL },
       apiKey: process.env[glmConfig.apiKeyEnv],
       temperature: 0,
       maxTokens: 800,
@@ -235,22 +238,26 @@ export async function summarizeToolOutput(text, taskContext, options = {}) {
 export async function createSmartTruncator(stepName, taskContext, options = {}) {
   const budget = getStepBudget(stepName);
 
+  // 🔴 F-1 修复：统一 diskPath 生成——审查分支与非审查分支一致。
+  // 原审查分支直接把 options.diskDir（目录路径）当 diskPath（文件路径）传给
+  // summarizeToolOutput，导致 fallback 截断时 writeFileSync(目录路径) 抛 EISDIR
+  // 被 catch 吞掉，磁盘备份丢失。现在两个分支都用完整文件路径。
+  let diskPath;
+  if (options.diskDir) {
+    const stamp = Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    diskPath = `${options.diskDir.replace(/\/$/, '')}/tool-output-${stepName}-${stamp}.txt`;
+  }
+
   if (isReviewStep(stepName)) {
-    // 审查类步骤：L2 小模型总结
+    // 审查类步骤：L2 小模型总结（fallback 截断时用完整文件路径写磁盘）
     return async (text) => summarizeToolOutput(text, taskContext, {
       fallbackLines: budget,
-      diskPath: options.diskDir || undefined,
+      diskPath,
     });
   }
 
-  // 非审查类步骤：L1 截断
-  if (options.diskDir) {
-    const stamp = Date.now() + '-' + Math.random().toString(36).slice(2, 8);
-    const diskPath = `${options.diskDir.replace(/\/$/, '')}/tool-output-${stepName}-${stamp}.txt`;
-    return async (text) => truncateToolOutput(text, budget, diskPath);
-  }
-
-  return async (text) => truncateToolOutput(text, budget);
+  // 非审查类步骤：L1 截断（diskPath 未定义时纯截断不写磁盘）
+  return async (text) => truncateToolOutput(text, budget, diskPath);
 }
 
 /**
