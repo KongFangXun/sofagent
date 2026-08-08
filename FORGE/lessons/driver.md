@@ -243,7 +243,69 @@ node --max-old-space-size=1536 driver.mjs --step regression
 
 **演进史**：最初用 768MB 迫使 V8 频繁 GC（old space 膨胀到 macOS jetsam 阈值被 kill），RSS 反而更低。但 v1.2.5 run-07 实测：6 轮 30+ worker 并发时 768MB 不够主进程自身用，静默 OOM（exit 137）。改为 1536MB 后稳定。单步短循环（release-gate）可容忍 768，但为统一不再区分。
 
-> **三层防御**：preModelHook（旧消息可 GC）+ `--max-old-space-size=1536`（v1.2.5 起从 768 上调）+ `--step`（每步归零）—— OOM 阈值从 17→198 次工具调用。
+> **三层防御**：preModelHook（旧消息可 GC）+ `--max-old-space-size=1536`（v1.2.5 起从 768 上调；v1.2.9 run-09 起再调至 2048）+ `--step`（每步归零）—— OOM 阈值从 17→198 次工具调用。
+
+---
+
+### 🔴 跨闭包变量引用：JS 作用域陷阱（v1.2.9 run-07）
+
+> **来源**（run-07，2026-08-08）：`effectiveHardLimit is not defined` 导致全部 24 个 worker 瞬间崩溃。
+
+**根因**：`effectiveHardLimit` 在 `stateModifier` 闭包内定义（L783），但 `invokeAgent` 函数在另一个闭包里引用它（L955）。两个闭包互相不可见对方的局部变量。
+
+```js
+// ❌ 错误——变量在闭包 A 定义，闭包 B 引用
+const agent = createReactAgent({
+  stateModifier: (state) => {
+    const effectiveHardLimit = stepDef.toolHardLimit ?? TOOL_HARD_LIMIT;  // ← 闭包 A
+  },
+});
+
+const invokeAgent = async () => {
+  if (toolCallCount >= effectiveHardLimit) { ... }  // ← 闭包 B：ReferenceError!
+};
+```
+
+**修复**：把变量声明提到 agent 定义前（两个闭包的共同外层作用域）：
+
+```js
+// ✅ 正确——提到共同外层
+const effectiveHardLimit = stepDef.toolHardLimit ?? TOOL_HARD_LIMIT;
+const agent = createReactAgent({ ... });  // stateModifier 能访问
+const invokeAgent = async () => { ... };  // invokeAgent 也能访问
+```
+
+**铁律**：重构 LangGraph agent 时，如果同一个变量在 `stateModifier` 和 `invokeAgent`/stream loop 中都要用，必须在 `createReactAgent()` 调用前声明——它俩是平行的闭包，不是嵌套的。
+
+---
+
+### 🔴 nohup+disown 在 WorkBuddy 中不安全（v1.2.9 run-07~11）
+
+> **来源**（run-07/08/09/11，2026-08-08）：4 次 nohup 启动的 driver 全部静默死亡（无 stderr、无 crash handler、heartbeat 停在启动后几秒）。
+
+**根因**：WorkBuddy sandbox 对 `nohup + &disown` 脱离的进程有清理机制——后台进程脱离 session 后被回收。前台直接跑（阻塞终端）时正常，`nohup+disown` 时被杀。
+
+**验证方法**：前台 `FORGE_MAX_CONCURRENCY=1 node driver.mjs` 正常完成 2+ worker → 证明代码没问题，是后台启动方式的问题。
+
+**正确做法**：
+
+| 方式 | 是否安全 | 说明 |
+|------|---------|------|
+| 前台阻塞执行 | ✅ | 但占住 session 无法监控 |
+| `nohup ... &disown` | ❌ | WorkBuddy 清理脱离进程 |
+| Bash 工具 `run_in_background: true` + `dangerouslyDisableSandbox: true` | ✅ | Bash 工具管理生命周期，不被清理 |
+
+```bash
+# ❌ 危险——被 WorkBuddy 清理
+nohup node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9 > /tmp/fresh-eyes.log 2>&1 &
+disown
+
+# ✅ 安全——Bash 工具管理后台进程
+# 在 Bash 工具调用中设：run_in_background: true, dangerouslyDisableSandbox: true
+node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9 2>&1
+```
+
+**注意**：`dangerouslyDisableSandbox: true` 仍然是必须的——driver(spawn) → worker(spawn) → execSync(child_process) 三层进程嵌套，sandbox 对嵌套层数有限制，第 4 层返回时整棵进程树被 SIGKILL（run-01~03 教训）。
 
 ---
 
