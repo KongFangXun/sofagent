@@ -86,7 +86,7 @@ Here's what it looks like when a known-format secret leak is blocked (real outpu
 
 > ℹ️ Rule A2 detects known formats: AWS AKIA, OpenAI sk-*, GitHub ghp_, PEM private key blocks, etc.
 > Generic secret shapes (bare `password=`, `secret` values) are intentionally out of scope — conservative design to avoid false positives.
-> Full detection capability in [LIMITATIONS.md A2](./docs/LIMITATIONS.md#a2-密钥检测局限).
+> Full detection capability in [LIMITATIONS.md A2](./docs/LIMITATIONS.md#a2-密钥检测局限编码与格式绕过v125-披露).
 
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" />
