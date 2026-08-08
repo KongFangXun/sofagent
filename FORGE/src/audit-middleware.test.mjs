@@ -1,5 +1,5 @@
 // ============================================================
-// audit-middleware.test.mjs · 运行时审计 tool wrapper 测试（v1.3.0 交付 1 + 交付 8）
+// audit-middleware.test.mjs · 运行时审计 tool wrapper 测试（v1.3.0 交付 1 + 8 + 3）
 //
 // 覆盖：
 //   - createAuditMiddleware 三态判定（PASS/WARN/FAIL）
@@ -8,6 +8,7 @@
 //   - 交付 8：仓库隔离（git 目录 → repo-hash；非 git → nogit-<cwd-hash>）
 //   - args 摘要脱敏（content/command 等字段不落原文）
 //   - emitDecision 决策日志联动（TOOL_GATE）
+//   - 交付 3：requireApproval → HITL 待批准消息 + recordHitlAudit 决策归档
 // ============================================================
 
 import { test } from 'node:test';
@@ -17,7 +18,7 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 import { execSync } from 'child_process';
 
-import { createAuditMiddleware, computeRepoHash, resolveRuntimeAuditPath, appendRuntimeAuditLog } from './audit-middleware.mjs';
+import { createAuditMiddleware, computeRepoHash, resolveRuntimeAuditPath, appendRuntimeAuditLog, recordHitlAudit } from './audit-middleware.mjs';
 
 // CJS 包在 .mjs 测试里用 createRequire 导入
 import { createRequire } from 'module';
@@ -160,6 +161,66 @@ test('appendRuntimeAuditLog: 非 git 目录不与其他仓库混用', () => {
     assert.ok(pathB.includes('nogit-'));
     assert.ok(existsSync(pathA));
     assert.ok(existsSync(pathB));
+  } finally {
+    if (savedHome === undefined) delete process.env.SOFAGENT_HOME;
+    else process.env.SOFAGENT_HOME = savedHome;
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ── 交付 3：HITL 钩子（requireApproval → 待批准消息 + 决策归档）──
+test('交付 3: requireApproval → check 返回 hitlPending + wrapTool 返回待批准消息', async () => {
+  // 构造一条 requireApproval=true 的规则
+  const approvalRule = {
+    name: 'tool-approval-demo',
+    number: 99,
+    ruleClass: '业务底线',
+    ruleType: 'tool',
+    check: () => ({
+      status: 'PASS',
+      ruleName: 'tool-approval-demo',
+      ruleNumber: 99,
+      details: ['高危操作需要人工确认'],
+      suggestion: '等待批准',
+      requireApproval: true,
+    }),
+  };
+  const { RulesEngine } = require('../../engine/rules/dist/index.js');
+  const engine = new RulesEngine([approvalRule]);
+  const mw = createAuditMiddleware(engine, { agentName: 'test', cwd: process.cwd(), emitDecision: false });
+
+  // check 层面：hitlPending=true
+  const verdict = mw.check('sf_write', { path: 'config.yml' });
+  assert.equal(verdict.hitlPending, true);
+  assert.equal(verdict.status, 'HITL');
+  assert.equal(verdict.blocked, true);
+  assert.ok(verdict.reason.includes('tool-approval-demo'), `reason 应含规则名: ${verdict.reason}`);
+
+  // wrapTool 层面：返回待批准消息，不执行原 func
+  let executed = false;
+  const wrapped = mw.wrapTool(async () => { executed = true; return 'ok'; }, 'sf_write');
+  const result = await wrapped({ path: 'config.yml' });
+  assert.ok(result.includes('HITL 待批准'));
+  assert.ok(result.includes('hitl_resolve'));
+  assert.equal(executed, false);
+});
+
+test('交付 3: recordHitlAudit 拒绝/超时 → 审计 FAIL 记录到运行时日志', () => {
+  const dir = tmpDir();
+  const savedHome = process.env.SOFAGENT_HOME;
+  process.env.SOFAGENT_HOME = dir;
+  try {
+    recordHitlAudit({ toolName: 'sf_write', decision: 'reject', reason: '人工拒绝高危写入', cwd: dir });
+    recordHitlAudit({ toolName: 'sf_delete', decision: 'timeout', reason: '等待超时', cwd: dir });
+
+    const logPath = resolveRuntimeAuditPath(dir);
+    assert.ok(existsSync(logPath));
+    const lines = readFileSync(logPath, 'utf-8').trim().split('\n').filter(Boolean);
+    assert.equal(lines.length, 2);
+    const reject = JSON.parse(lines[0]);
+    assert.equal(reject.verdict.status, 'HITL_REJECTED');
+    const timeout = JSON.parse(lines[1]);
+    assert.equal(timeout.verdict.status, 'HITL_TIMEOUT');
   } finally {
     if (savedHome === undefined) delete process.env.SOFAGENT_HOME;
     else process.env.SOFAGENT_HOME = savedHome;
