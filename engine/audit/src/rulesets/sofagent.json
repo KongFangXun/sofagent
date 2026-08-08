@@ -1,0 +1,232 @@
+{
+  "name": "sofagent",
+  "version": "1.0.0",
+  "description": "sofagent 默认规则集——覆盖安全/质量/工程规范三大维度的 git diff 模式规则",
+  "author": "sofagent",
+  "homepage": "https://github.com/KongFangXun/sofagent",
+  "rules": [
+    {
+      "id": "no-hardcoded-secrets",
+      "name": "密钥泄漏检测",
+      "description": "检测新增行中的硬编码密钥/令牌模式",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(sk-[a-zA-Z0-9]{20,}|AKIA[A-Z0-9]{16}|ghp_[a-zA-Z0-9]{36}|gho_[a-zA-Z0-9]{36}|xox[baprs]-[a-zA-Z0-9-]+)",
+      "message": "检测到疑似硬编码密钥: {match}"
+    },
+    {
+      "id": "no-password-assignment",
+      "name": "密码赋值检测",
+      "description": "检测代码中的明文密码赋值",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)(password|passwd|pwd)\\s*[:=]\\s*['\"][^'\"]{4,}['\"]",
+      "message": "检测到明文密码赋值"
+    },
+    {
+      "id": "no-api-key-assignment",
+      "name": "API Key 赋值检测",
+      "description": "检测代码中的明文 API Key 赋值",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)(api[_-]?key|secret[_-]?key|access[_-]?token)\\s*[:=]\\s*['\"][^'\"]{8,}['\"]",
+      "message": "检测到明文 API Key/Secret 赋值"
+    },
+    {
+      "id": "no-private-key",
+      "name": "私钥检测",
+      "description": "检测 PEM/DER 格式私钥",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "-----BEGIN (RSA |EC |DSA |OPENSSH |)PRIVATE KEY-----",
+      "message": "检测到硬编码私钥"
+    },
+    {
+      "id": "no-jwt-secret",
+      "name": "JWT Secret 检测",
+      "description": "检测 JWT 签名密钥",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)jwt[_-]?(secret|key)\\s*[:=]\\s*['\"][^'\"]{8,}['\"]",
+      "message": "检测到硬编码 JWT 密钥"
+    },
+    {
+      "id": "no-eval",
+      "name": "eval 禁用",
+      "description": "检测 eval() 和 Function() 构造器使用（注入风险）",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "\\beval\\s*\\(|new\\s+Function\\s*\\(",
+      "filePattern": "\\.(js|ts|jsx|tsx|mjs)$",
+      "message": "检测到 eval/Function 使用（注入风险）"
+    },
+    {
+      "id": "no-inner-html",
+      "name": "innerHTML 检测",
+      "description": "检测 innerHTML 赋值（XSS 风险）",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "\\.innerHTML\\s*=",
+      "filePattern": "\\.(js|ts|jsx|tsx|vue)$",
+      "message": "检测到 innerHTML 赋值（XSS 风险）"
+    },
+    {
+      "id": "no-todo-left",
+      "name": "TODO 残留检测",
+      "description": "检测未完成的 TODO/FIXME/XXX 标记",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "\\b(TODO|FIXME|XXX|HACK)\\b",
+      "message": "检测到 TODO/FIXME 标记: {match}"
+    },
+    {
+      "id": "no-debugger",
+      "name": "debugger 语句检测",
+      "description": "检测遗留的 debugger 语句",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "^\\s*debugger\\s*;?\\s*$",
+      "filePattern": "\\.(js|ts|jsx|tsx)$",
+      "message": "检测到遗留的 debugger 语句"
+    },
+    {
+      "id": "no-console-log",
+      "name": "console.log 残留检测",
+      "description": "检测遗留的 console.log 调试输出",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "console\\.(log|debug)\\s*\\(",
+      "filePattern": "\\.(js|ts|jsx|tsx)$",
+      "message": "检测到遗留的 console.log 调试输出"
+    },
+    {
+      "id": "no-sql-injection",
+      "name": "SQL 注入风险检测",
+      "description": "检测字符串拼接 SQL 查询（注入风险）",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "(?i)(SELECT|INSERT|UPDATE|DELETE|DROP)\\s.+\\$\\{.+\\}",
+      "message": "检测到 SQL 字符串拼接（注入风险）"
+    },
+    {
+      "id": "no-dangerous-exec",
+      "name": "命令执行检测",
+      "description": "检测 child_process/exec/execSync 的直接使用",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "(?i)\\bexec(\\w*)\\s*\\(",
+      "filePattern": "\\.(js|ts|jsx|tsx)$",
+      "message": "检测到命令执行函数调用"
+    },
+    {
+      "id": "no-http-only-localhost",
+      "name": "HTTP 明文检测",
+      "description": "检测非 localhost 的 HTTP 明文请求（应为 HTTPS）",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "http://(?!localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)",
+      "message": "检测到 HTTP 明文请求（非 localhost）"
+    },
+    {
+      "id": "no-aws-credentials",
+      "name": "AWS 凭证检测",
+      "description": "检测 AWS access key 和 secret key",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(aws_access_key_id|aws_secret_access_key)\\s*[:=]",
+      "message": "检测到 AWS 凭证配置"
+    },
+    {
+      "id": "no-database-url-credentials",
+      "name": "数据库连接串凭证检测",
+      "description": "检测数据库 URL 中内嵌的用户名密码",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(postgres|mongodb|mysql|redis)://[^:]+:[^@]+@",
+      "message": "检测到数据库连接串内嵌凭证"
+    },
+    {
+      "id": "no-private-ip-hardcode",
+      "name": "内网 IP 硬编码检测",
+      "description": "检测代码中硬编码的内网 IP 地址",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "(10|172|192)\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})",
+      "message": "检测到内网 IP 硬编码"
+    },
+    {
+      "id": "no-stripped-error-handling",
+      "name": "空 catch 块检测",
+      "description": "检测空的 catch 块（吞掉异常）",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "catch\\s*\\([^)]*\\)\\s*\\{\\s*\\}",
+      "filePattern": "\\.(js|ts|jsx|tsx)$",
+      "message": "检测到空 catch 块（异常被吞掉）"
+    },
+    {
+      "id": "no-plain-text-email",
+      "name": "明文邮箱检测",
+      "description": "检测代码中的明文邮箱地址（PII 泄漏风险）",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
+      "message": "检测到明文邮箱地址"
+    },
+    {
+      "id": "no-dangerous-permissions",
+      "name": "危险文件权限检测",
+      "description": "检测危险的全权限设置（如 7-7-7）",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "chmod\\s+7[0-9]7",
+      "message": "检测到危险的全权限设置"
+    },
+    {
+      "id": "no-hardcoded-ip-whitelist",
+      "name": "IP 白名单硬编码检测",
+      "description": "检测硬编码的 IP 白名单/黑名单",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "(?i)(whitelist|blacklist|allowlist)\\s*[:=]\\s*\\[",
+      "message": "检测到硬编码 IP 白名单/黑名单"
+    },
+    {
+      "id": "no-credentials-in-url",
+      "name": "URL 凭证检测",
+      "description": "检测 URL 中内嵌的用户名密码（如 https://user:pass@host）",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "https?://[^:]+:[^@]+@(?!localhost|127\\.0\\.0\\.1)",
+      "message": "检测到 URL 内嵌凭证"
+    },
+    {
+      "id": "no-sensitive-env-reference",
+      "name": "敏感环境变量引用检测",
+      "description": "检测直接输出敏感环境变量的值",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "console\\.(log|error|warn)\\s*\\(.*process\\.env\\.(SECRET|KEY|TOKEN|PASSWORD)",
+      "message": "检测到敏感环境变量输出"
+    },
+    {
+      "id": "no-disabled-eslint",
+      "name": "ESLint 禁用检测",
+      "description": "检测 eslint-disable 注释（可能掩盖安全问题）",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "eslint-disable",
+      "filePattern": "\\.(js|ts|jsx|tsx)$",
+      "message": "检测到 eslint-disable 注释"
+    },
+    {
+      "id": "no-ssl-verify-disabled",
+      "name": "SSL 验证禁用检测",
+      "description": "检测 SSL 证书验证被禁用（中间人攻击风险）",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)(rejectUnauthorized|verify\\s*[:=]\\s*false|CERT_NONE|ssl_verify\\s*[:=]\\s*false)",
+      "message": "检测到 SSL 证书验证被禁用（中间人攻击风险）"
+    }
+  ]
+}

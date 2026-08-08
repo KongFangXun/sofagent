@@ -1,0 +1,22 @@
+name: 'sofagent-audit'
+description: 'AI Agent 行为审计——每次 PR 自动检查。sofagent 审计引擎 24 条规则，零 token 纯 git diff 扫描，结果直接显示在 PR diff 行上。'
+author: 'KongFangXun'
+branding:
+  icon: 'shield'
+  color: 'blue'
+inputs:
+  ruleset:
+    description: '规则集名称（sofagent / security / 社区包名）'
+    required: false
+    default: 'sofagent'
+  diff-range:
+    description: '审计的 diff 范围（默认 origin/main..HEAD）'
+    required: false
+    default: 'origin/main..HEAD'
+  strict:
+    description: '严格模式（无日志时 WARN 升级为 FAIL）'
+    required: false
+    default: 'false'
+runs:
+  using: 'node20'
+  main: 'engine/audit/dist/index.js'

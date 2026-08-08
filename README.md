@@ -53,7 +53,42 @@ sofagent 就是解决这个问题的：**它帮你把 AI 管起来，让 AI 干�
 
 简单说：**让 AI 从"能用"变成"敢用"。**
 
+> 💡 **上图中的堤坝就是约束层**——不让 AI 泛滥的那道闸门。下面的表格把堤坝拆成了四种能力。
+
+### 约束层（Harness）是什么
+
+AI 干活时，你怎么确保它不乱来？sofagent 的答案是一套**约束层**——一个层，四种能力：
+
+| 能力 | 做什么 | 人话 |
+|------|--------|------|
+| 📥 注入 | 启动前把红线灌进 Agent 上下文 | "先说好规矩" |
+| 🔍 审计 | 每次改动自动检查有没有越界 | "干完查一遍" |
+| 🔄 回溯 | 出事了能一键回到安全状态 | "出事能退" |
+| 🧬 进化 | 经验自动沉淀，越用越懂你 | "长了记性" |
+
+**不是四个产品，是同一件事的四个阶段**：定规矩 → 守规矩 → 闯祸了收拾 → 下次更聪明。
+
 > 🎯 **90/10 价值分层**：模型给 90% 的智力，sofagent 补 10% 的可靠执行——越往后这 10% 越值钱。不是造更聪明的模型，是给已有的聪明加一套闸门。
+
+### 从 30 秒体验到全套部署
+
+你可以先花 30 秒试试 sofagent 的审计能力，觉得有用再来了解 FDE Agent 全流程：
+
+```
+路人 ──npx sofagent-audit──▶ "有点意思"
+  │                                    │
+  └── GitHub Action ──────────────▶  "PR 上用用看"
+                                           │
+                                      ┌────▼─────┐
+                                      │ FDE Agent │  "来搞全套部署吧"
+                                      └──────────┘
+```
+
+- **`npx sofagent-audit`**（30 秒）——零配置审计最近一次 commit，3 秒出结果
+- **GitHub Action**（PR 级）——每次 PR 自动审计，结果直接显示在 diff 行上
+- **FDE Agent**（企业级）——进场梳理工作流 → 部署 AI 节点 → 7×24 自运转
+
+> 💡 审计能力是入口产品（让陌生人 30 秒体验到价值），FDE Agent 是完整产品（让企业获得全流程部署）。不是替代关系，是获客漏斗。
 
 > 🔬 **外部独立实验证据**（非 sofagent 官方自测）：HuggingFace 上 Joel Niklaus 的 harness-optimization 研究显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**（提升全部来自外层机制）。这是同类约束机制有效性的外部证据。详见 [THANKS.md](./docs/THANKS.md)。
 
@@ -320,35 +355,35 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 
 **双层架构：能力底座 × 生命周期**。层 1 能力底座 + 层 2 生命周期：
 
-**层 1 · 能力底座 = 一底座·三引擎**
-- **约束底座（一底座）**——开工前注入规则
-- **审计引擎**——24 条规则拦截
-- **回溯引擎**——自动快照回滚
-- **进化引擎**——think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化
+**层 1 · 能力底座 = 约束层（Harness）四种能力**
+- **注入**——开工前注入规则
+- **审计**——24 条规则拦截
+- **回溯**——自动快照回滚
+- **进化**——think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化
 
 **层 2 · 生命周期 = 激活链四阶段**（v1.2.5+）：激活（ACTIVATE）→ 编排（ORCHESTRATE）→ 执行（EXECUTE）→ 持续（SUSTAIN）；在诊断（FDE）与进化（EVOLVE）两端延伸为**五阶段**：诊断 → 激活 → 编排 → 执行 → 进化。
 
 > ⚠️ FORGE 自迭代工具链（LOOP 流水线）用于 sofagent 项目自身的开发迭代，面向用户的任务编排由 Agent 平台完成。
 
 <details>
-<summary>📖 一底座·三引擎架构（开发者参考）</summary>
+<summary>📖 约束层架构（开发者参考）</summary>
 
 ```mermaid
 flowchart LR
-    CB[🧭 约束底座<br/>开工前注入红线] --> AU[🔍 审计引擎<br/>每次变更硬证据审查]
-    AU --> RE[🔄 回溯引擎<br/>git snapshot·一键回滚]
-    RE --> EV[🧬 进化引擎<br/>think.md 反思 + Dream Cycle + skillopt]
+    CB[🧭 注入<br/>开工前注入红线] --> AU[🔍 审计<br/>每次变更硬证据审查]
+    AU --> RE[🔄 回溯<br/>git snapshot·一键回滚]
+    RE --> EV[🧬 进化<br/>think.md 反思 + Dream Cycle + skillopt]
     EV -.-> CB
 ```
 
-> 下表 4 项 = 1 底座 + 3 引擎。
+> 下表 4 项 = 约束层四种能力（注入·审计·回溯·进化）。
 
 | 组件 | 作用 | 状态 |
 |:------|:--------|:--:|
-| 🧭 约束底座 | 开工前规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
-| 🔍 审计引擎 | **FDE Agent 的审计引擎核心规则零额外 token**——24 条规则，每次 git commit / 文件变更触发，违规拦截+记录（19 条纯 git-diff + 1 条文件系统监控不调用 LLM，4 条混合规则需 Agent 日志）| ✅ 稳定 |
-| 🔄 回溯引擎 | 每次审计后自动 git snapshot，违规一键回滚 | ✅ 稳定 |
-| 🧬 进化引擎 | think.md 反思（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成）+ Dream Cycle 知识回灌（🔧 轻量态）+ skillopt Skill 优化（⚠️ 需外部 SkillOpt CLI）| 🔧 部分可用 |
+| 🧭 注入 | 开工前规则注入 Agent 上下文（SKILL.md + fde.md + think.md + knowledge/）| ✅ 稳定 |
+| 🔍 审计 | **FDE Agent 的审计能力核心规则零额外 token**——24 条规则，每次 git commit / 文件变更触发，违规拦截+记录（19 条纯 git-diff + 1 条文件系统监控不调用 LLM，4 条混合规则需 Agent 日志）| ✅ 稳定 |
+| 🔄 回溯 | 每次审计后自动 git snapshot，违规一键回滚 | ✅ 稳定 |
+| 🧬 进化 | think.md 反思（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成）+ Dream Cycle 知识回灌（🔧 轻量态）+ skillopt Skill 优化（⚠️ 需外部 SkillOpt CLI）| 🔧 部分可用 |
 
 </details>
 

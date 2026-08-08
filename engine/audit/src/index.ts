@@ -117,11 +117,19 @@ interface Args {
   noSession: boolean;
   /** v1.2.0: --commit-msg 完整 commit message（hook 场景传完整 body 供 A9 扫描） */
   commitMsgArg?: string;
+  /** v1.2.9 (⑧-3): --format github 输出为 GitHub Annotations 格式 */
+  format?: string;
+  /** v1.2.9 (⑧-2): --ruleset 指定规则集名称（如 sofagent / security） */
+  ruleset?: string;
+  /** v1.2.9 (⑧-2): --ruleset-path 指定本地规则集目录 */
+  rulesetPath?: string;
+  /** v1.2.9 (⑧-2): --list-rulesets 列出可用规则集 */
+  listRulesets?: boolean;
 }
 
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, supportBundle: false };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, supportBundle: false, format: undefined, ruleset: undefined, rulesetPath: undefined, listRulesets: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff') {
       // --diff 无显式值（末尾或后跟其他 flag）→ 用默认 HEAD~1..HEAD，
@@ -205,6 +213,17 @@ function parseArgs(argv: string[]): Args {
       args.supportBundle = true;
     } else if (argv[i] === '--no-session') {
       args.noSession = true;
+    } else if (argv[i] === '--format' && argv[i + 1]) {
+      i++;
+      args.format = argv[i] as string;
+    } else if (argv[i] === '--ruleset' && argv[i + 1]) {
+      i++;
+      args.ruleset = argv[i] as string;
+    } else if (argv[i] === '--ruleset-path' && argv[i + 1]) {
+      i++;
+      args.rulesetPath = argv[i] as string;
+    } else if (argv[i] === '--list-rulesets') {
+      args.listRulesets = true;
     } else if (argv[i] === 'ontology' && argv[i + 1]) {
       i++;
       args.ontologyCommand = argv[i] as string;
@@ -269,6 +288,10 @@ function parseArgs(argv: string[]): Args {
         console.log('  --no-session      不写入 session 报告文件');
         console.log('  --webhook <p>      webhook 推送（dingtalk/feishu/wecom）');
         console.log('  --webhook-url <u>  webhook URL');
+        console.log('  --format github    输出为 GitHub Actions Annotations 格式');
+        console.log('  --ruleset <name>   指定规则集（sofagent / security / 社区包）');
+        console.log('  --ruleset-path <d> 加载本地自定义规则集目录');
+        console.log('  --list-rulesets    列出可用规则集');
         console.log('  --mcp              MCP Server（已拆分为 @sofagent/mcp）');
         console.log('\n退出码: 0=全通过 / 1=有警告 / 2=有违规');
       } else {
@@ -769,6 +792,14 @@ async function main(): Promise<void> {
     return;
   }
 
+  // v1.2.9 (⑧-2): --list-rulesets → 列出可用规则集后退出
+  if (args.listRulesets) {
+    const { listAvailableRulesets, formatRulesetList } = require('./ruleset-loader');
+    const infos = listAvailableRulesets(args.rulesetPath);
+    console.log(formatRulesetList(infos));
+    exit(0);
+  }
+
   // --revert 模式：恢复到指定快照（v1.0.9 新增，v1.0.9 确认交互改进）
   if (args.revertSha) {
     try {
@@ -983,6 +1014,32 @@ async function main(): Promise<void> {
   // 5. 运行规则
   const results = runRules(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config);
 
+  // v1.2.9 (⑧-2): --ruleset / --ruleset-path → 运行 JSON 规则集（叠加在内置规则之上）
+  if (args.ruleset || args.rulesetPath) {
+    try {
+      const { loadRuleset, loadRulesetFromPath, runRulesetRules, computeExitCode } = require('./ruleset-loader');
+      let ruleset;
+      if (args.rulesetPath) {
+        ruleset = args.ruleset
+          ? loadRulesetFromPath(args.rulesetPath, args.ruleset)
+          : loadRulesetFromPath(args.rulesetPath);
+      } else {
+        ruleset = loadRuleset(args.ruleset);
+      }
+      const rulesetResults = runRulesetRules(diffFiles, ruleset);
+      results.rules.push(...rulesetResults);
+      // 重新计算 exitCode（取内置审计和规则集审计中的最高严重级别）
+      const rulesetExit = computeExitCode(rulesetResults);
+      if (rulesetExit > results.exitCode) {
+        results.exitCode = rulesetExit;
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`❌ 规则集加载失败: ${msg}`);
+      exit(1);
+    }
+  }
+
   // 非基线规则全关（disabledCount>3）→ 阻断（exit 1 WARN）
   if (configDisabledTooMany && results.exitCode === 0) {
     results.exitCode = 1;
@@ -1026,6 +1083,15 @@ async function main(): Promise<void> {
   // P1-A6: 超大 diff 安全敏感文件 → exit=2（FAIL，阻止提交）
   if (oversizedSensitivePaths.length > 0) {
     results.exitCode = 2;
+  }
+
+  // v1.2.9 (⑧-3): --format github → 输出 GitHub Annotations 格式
+  if (args.format === 'github') {
+    const { generateGithubOutput } = require('./formatters/github-formatter');
+    const ruleCount = results.rules.length;
+    const output = generateGithubOutput(results, ruleCount);
+    console.log(output);
+    exit(results.exitCode as 0 | 1 | 2);
   }
 
   printResults(results, diffFiles, args.json, args.ci, args.silent);

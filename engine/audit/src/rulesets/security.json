@@ -1,0 +1,119 @@
+{
+  "name": "security",
+  "version": "1.0.0",
+  "description": "sofagent 安全子集——仅安全相关规则，适合 CI 严格模式",
+  "author": "sofagent",
+  "homepage": "https://github.com/KongFangXun/sofagent",
+  "rules": [
+    {
+      "id": "sec-hardcoded-secrets",
+      "name": "密钥泄漏检测",
+      "description": "检测新增行中的硬编码密钥/令牌模式",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(sk-[a-zA-Z0-9]{20,}|AKIA[A-Z0-9]{16}|ghp_[a-zA-Z0-9]{36}|gho_[a-zA-Z0-9]{36}|xox[baprs]-[a-zA-Z0-9-]+)",
+      "message": "检测到疑似硬编码密钥: {match}"
+    },
+    {
+      "id": "sec-password-assignment",
+      "name": "密码赋值检测",
+      "description": "检测代码中的明文密码赋值",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)(password|passwd|pwd)\\s*[:=]\\s*['\"][^'\"]{4,}['\"]",
+      "message": "检测到明文密码赋值"
+    },
+    {
+      "id": "sec-api-key-assignment",
+      "name": "API Key 赋值检测",
+      "description": "检测代码中的明文 API Key 赋值",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)(api[_-]?key|secret[_-]?key|access[_-]?token)\\s*[:=]\\s*['\"][^'\"]{8,}['\"]",
+      "message": "检测到明文 API Key/Secret 赋值"
+    },
+    {
+      "id": "sec-private-key",
+      "name": "私钥检测",
+      "description": "检测 PEM/DER 格式私钥",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "-----BEGIN (RSA |EC |DSA |OPENSSH |)PRIVATE KEY-----",
+      "message": "检测到硬编码私钥"
+    },
+    {
+      "id": "sec-jwt-secret",
+      "name": "JWT Secret 检测",
+      "description": "检测 JWT 签名密钥",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)jwt[_-]?(secret|key)\\s*[:=]\\s*['\"][^'\"]{8,}['\"]",
+      "message": "检测到硬编码 JWT 密钥"
+    },
+    {
+      "id": "sec-eval-injection",
+      "name": "eval 注入检测",
+      "description": "检测 eval() 和 Function() 构造器使用（注入风险）",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "\\beval\\s*\\(|new\\s+Function\\s*\\(",
+      "filePattern": "\\.(js|ts|jsx|tsx|mjs)$",
+      "message": "检测到 eval/Function 使用（注入风险）"
+    },
+    {
+      "id": "sec-sql-injection",
+      "name": "SQL 注入检测",
+      "description": "检测字符串拼接 SQL 查询（注入风险）",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)(SELECT|INSERT|UPDATE|DELETE|DROP)\\s.+\\$\\{.+\\}",
+      "message": "检测到 SQL 字符串拼接（注入风险）"
+    },
+    {
+      "id": "sec-command-injection",
+      "name": "命令注入检测",
+      "description": "检测 child_process/exec 的直接使用",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)\\bexec(\\w*)\\s*\\(",
+      "filePattern": "\\.(js|ts|jsx|tsx)$",
+      "message": "检测到命令执行函数调用"
+    },
+    {
+      "id": "sec-aws-credentials",
+      "name": "AWS 凭证检测",
+      "description": "检测 AWS access key 和 secret key",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(aws_access_key_id|aws_secret_access_key)\\s*[:=]",
+      "message": "检测到 AWS 凭证配置"
+    },
+    {
+      "id": "sec-db-url-credentials",
+      "name": "数据库连接串凭证检测",
+      "description": "检测数据库 URL 中内嵌的用户名密码",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(postgres|mongodb|mysql|redis)://[^:]+:[^@]+@",
+      "message": "检测到数据库连接串内嵌凭证"
+    },
+    {
+      "id": "sec-url-credentials",
+      "name": "URL 凭证检测",
+      "description": "检测 URL 中内嵌的用户名密码",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "https?://[^:]+:[^@]+@(?!localhost|127\\.0\\.0\\.1)",
+      "message": "检测到 URL 内嵌凭证"
+    },
+    {
+      "id": "sec-ssl-verify-disabled",
+      "name": "SSL 验证禁用检测",
+      "description": "检测 SSL 证书验证被禁用（中间人攻击风险）",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)(rejectUnauthorized|verify\\s*[:=]\\s*false|CERT_NONE|ssl_verify\\s*[:=]\\s*false)",
+      "message": "检测到 SSL 证书验证被禁用（中间人攻击风险）"
+    }
+  ]
+}

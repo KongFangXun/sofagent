@@ -875,16 +875,16 @@ echo ""
 
 # ── v1.2.8 P1-26: MCP 工具数一致性 ──────────────────────────
 echo "=== 17. MCP 工具数一致性 ==="
-MCP_SERVER="${PROJECT_ROOT}/engine/mcp/src/mcp-server.ts"
+MCP_SRC_DIR="${PROJECT_ROOT}/engine/mcp/src"
 SKILL_FILE="${PROJECT_ROOT}/SKILL/SKILL.md"
-if [[ -f "${MCP_SERVER}" ]] && [[ -f "${SKILL_FILE}" ]]; then
-  # 从 mcp-server.ts 统计注册的工具数——用 sort -u 去重唯一工具名
-  # 不用 grep -c（会数出响应 schema 的 name 字段）
-  REGISTERED_COUNT=$(grep -oE "name: '[^']+'" "${MCP_SERVER}" 2>/dev/null | sort -u | wc -l | tr -d ' ')
+if [[ -d "${MCP_SRC_DIR}" ]] && [[ -f "${SKILL_FILE}" ]]; then
+  # v1.2.9 功能⑤：mcp-server.ts 拆分后工具定义在 tool-registry.ts + resources.ts
+  # 只扫这两个文件（不递归整个 src/，否则会数到测试 mock 和 response schema 的 name 字段）
+  REGISTERED_COUNT=$(cat "${MCP_SRC_DIR}/tool-registry.ts" "${MCP_SRC_DIR}/resources.ts" 2>/dev/null | grep -oE "name: '[^']+'" | sed "s/.*name: '//;s/'//" | sort -u | wc -l | tr -d ' ')
   # 从 SKILL.md 提取标题中声称的工具数
   SKILL_CLAIMED=$(grep -oE '[0-9]+ tools' "${SKILL_FILE}" | grep -oE '^[0-9]+' | head -1)
   if [[ -n "$SKILL_CLAIMED" ]] && [[ "$SKILL_CLAIMED" != "$REGISTERED_COUNT" ]]; then
-    echo "  ❌ SKILL.md 声称 ${SKILL_CLAIMED} tools，mcp-server.ts 注册 ${REGISTERED_COUNT} 个"
+    echo "  ❌ SKILL.md 声称 ${SKILL_CLAIMED} tools，mcp/src/ 注册 ${REGISTERED_COUNT} 个"
     ERRORS=$((ERRORS + 1))
   elif [[ -n "$SKILL_CLAIMED" ]]; then
     echo -e "  ${GREEN}✓${NC} MCP 工具数一致：${REGISTERED_COUNT} tools"

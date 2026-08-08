@@ -3,10 +3,10 @@
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
 > 如果你是 AI Agent 且需要查找具体实现路径，请直接跳转到"## 代码地图"段。
 
-> ⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**一底座·三引擎**（约束底座 + 审计/回溯/进化引擎，FORGE 为内部工具）+ **双层架构**（能力底座 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**（实际目录为 v1.0/ 与 v1.1/ 分开，非合并的 v1.0-v1.1/），其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构。
+> ⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**约束层（Harness）**（一个层四种能力：注入·审计·回溯·进化，FORGE 为内部工具）+ **双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**（实际目录为 v1.0/ 与 v1.1/ 分开，非合并的 v1.0-v1.1/），其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构。
 
 > **3 分钟建立全景理解**：核心文档 220KB 太长？先看这 4 句：
-> - **[ARCHITECTURE.md](./ARCHITECTURE.md)**（94KB）：双层架构设计（能力底座 × 生命周期）+ 引擎工程三层嵌套（Harness → Graph → Loop），关键技术决策记录。**3 秒版**：一底座·三引擎管"做对" · 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
+> - **[ARCHITECTURE.md](./ARCHITECTURE.md)**（94KB）：双层架构设计（约束层 × 生命周期）+ 约束层工程三层嵌套（约束层 → Graph → Loop），关键技术决策记录。**3 秒版**：约束层管"做对"（注入·审计·回溯·进化）· 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
 > - **[VALIDATION.md](./VALIDATION.md)**（47KB）：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射。
 > - **[PHILOSOPHY.md](./PHILOSOPHY.md)**（44KB）：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
 > - **[ROADMAP.md](./ROADMAP.md)**（34KB）：版本路线图 + 迭代历程。当前 v1.2.8。
@@ -15,7 +15,7 @@
 
 ## 一、一句话
 
-**sofagent 是一个 AI Agent 行为审计引擎（同时也是 FDE 方法论的参考实现）**，进场梳理工作流、把能自动化的环节变成 AI 节点、部署到设备上 7×24 自己跑。底层是 **sofagent 引擎（Harness 中间件）**——约束 Agent 行为、审计每次变更、沉淀经验。
+**sofagent 是一个 AI Agent 行为审计引擎（同时也是 FDE 方法论的参考实现）**，进场梳理工作流、把能自动化的环节变成 AI 节点、部署到设备上 7×24 自己跑。底层是 **约束层（Harness）**——约束 Agent 行为、审计每次变更、沉淀经验。
 
 ---
 
@@ -24,9 +24,9 @@
 | 概念 | 一句话 | 详情 |
 |------|--------|------|
 | **FDE Agent** | 对外的产品身份：「Forward Deployed Engineer」——进场→部署→离场，留一套能持续维护的 AI 化资产 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
-| **Harness 中间件** | 对内的技术身份：约束 Agent 行为的「缰绳」，一底座·三引擎（审计/回溯/进化），编排（FORGE）为内部工具不对外宣称 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
-| **Harness 七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——三引擎各自覆盖其中哪些维度 | [ARCHITECTURE §一·心智模型](./ARCHITECTURE.md) |
-| **Harness 构成（企业视角）** | 黄仁勋定义：企业专属 Harness = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
+| **约束层（Harness）** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层四种能力（注入·审计·回溯·进化），编排（FORGE）为内部工具不对外宣称 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
+| **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——四种能力各自覆盖其中哪些维度 | [ARCHITECTURE §一·心智模型](./ARCHITECTURE.md) |
+| **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
 | **审计引擎** | git diff 驱动，24 条规则（17 默认 + 7 扩展），A1→A23 为活跃规则（A12/A13 已在 v0.99.4 合并入 A11，编号不再使用；v1.2.5 新增 A20-A23），每次 commit 自动跑 | [ARCHITECTURE §三](./ARCHITECTURE.md) |
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | **FORGE** | 自迭代引擎——通过 Workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
@@ -46,12 +46,13 @@
 │  SKILL.md + harness/  │  fresh-eyes-loop +       │
 │  + agents/ + custom/  │  release-gate-loop       │
 ├─────────────────────────────────────────────────┤
-│              sofagent 引擎（Harness 中间件）       │
+│              约束层（Harness）              │
 │  ┌──────────┬──────────┬──────────┐            │
-│  │ 审计引擎  │ 回溯引擎  │ 进化引擎  │  ← 三引擎    │
-│  │ git diff  │ HMAC 链  │知识蒸馏  │  （对外叙事） │
+│  │  审计能力  │ 回溯能力  │ 进化能力  │  ← 四种能力   │
+│  │ git diff  │ HMAC 链  │知识蒸馏  │ （对外叙事） │
 │  │ 24条规则  │ 防篡改   │sustain   │            │
 │  └──────────┴──────────┴──────────┘            │
+│  + 注入能力（约束注入链）                         │
 │  内部：编排引擎 @sofagent/orchestrator            │
 │        （LangGraph ReactAgent，非对外产品引擎）   │
 ├─────────────────────────────────────────────────┤
@@ -76,21 +77,21 @@
 
 ### 三层嵌套：Harness → Graph → Loop
 
-上述架构全景中，一底座·三引擎（审计/回溯/进化）与 FORGE 内部编排不是并列关系——它们按 Agent 工程三层架构嵌套：
+上述架构全景中，约束层四种能力（注入·审计·回溯·进化）与 FORGE 内部编排不是并列关系——它们按 Agent 工程三层架构嵌套：
 
 ```
-Harness（工作环境）        Graph（流程拓扑）         Loop（反馈改进）
+约束层（工作环境）       Graph（流程拓扑）         Loop（反馈改进）
 ┌─────────────────┐     ┌──────────────────┐      ┌─────────────────────┐
-│ 约束底座 + 加载链 │ ──→ │ 编排引擎（内部）     │ ──→  │ FORGE（fresh-eyes +   │
-│ 审计引擎（24规则）│     │ LangGraph ReactAgent│      │ release-gate-loop）+  │
-│ daemon（文件监控） │     │ 多Agent 任务拆解     │      │ sustain（进化引擎）    │
+│ 约束注入链 + 加载链│ ──→ │ 编排引擎（内部）     │ ──→  │ FORGE（fresh-eyes +   │
+│ 审计能力（24规则）│     │ LangGraph ReactAgent│      │ release-gate-loop）+  │
+│ daemon（文件监控） │     │ 多Agent 任务拆解     │      │ sustain（进化能力）    │
 │ data/（状态持久） │     │                     │      │ eval 反馈闭环         │
 │ ToolGate（权限）  │     │                     │      │                      │
 └─────────────────┘     └──────────────────┘      └─────────────────────┘
   决定"能做什么"          决定"下一步去哪"          决定"怎么越做越好"
 ```
 
-> **一句话记忆**：环境、反馈、流程。Harness 给 Agent 一个工作间，Graph 告诉它任务流向哪，Loop 让它出错后能自己改。
+> **一句话记忆**：环境、反馈、流程。约束层给 Agent 一个工作间，Graph 告诉它任务流向哪，Loop 让它出错后能自己改。
 
 ---
 
@@ -119,7 +120,7 @@ Harness（工作环境）        Graph（流程拓扑）         Loop（反馈�
 | `docs/WIKI.md` | **你正在读的这个**——项目导航索引 |
 | `docs/PHILOSOPHY.md` | 产品哲学九节：为什么做、三层治理、FDE 定义 |
 | `docs/VALIDATION.md` | 行业印证与生态定位：31 篇行业方法论印证、a16z 七法则、Agent 三层模型、架构框架映射 |
-| `docs/ARCHITECTURE.md` | 架构详解：一底座·三引擎、数据流、部署模式、文件结构（含 Ledger-Views-Policy ↔ LLM Wiki 三层同构对照） |
+| `docs/ARCHITECTURE.md` | 架构详解：约束层四种能力（注入·审计·回溯·进化）、数据流、部署模式、文件结构（含 Ledger-Views-Policy ↔ LLM Wiki 三层同构对照） |
 | `docs/DEVELOPMENT.md` | 开发指南：本地环境、包结构、测试、发版流程 |
 | `docs/HANDBOOK.md` | FDE 操作手册：进场流程、节点部署、持续维护 |
 | `docs/guides/fde-activation-chain.md` | 🔗 激活链设计（v1.2.5+）：FDE 交付物 → 企业工作流自动运转（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN） |
