@@ -96,3 +96,19 @@ U 盘包含：Node.js 便携版 + sofagent 引擎 + knowledge 加密落盘（AES
 - **翻译而非替代**——"给财务配 AI 助手"不是"替换财务系统"
 - **具体而非抽象**——"对账从 3 天到 4 小时"不是"提升效率"
 - **你不是来写代码的**——改的是约束文件，coding 是 engineer 的活
+
+## 激活链引导（v1.3.0 · 交付后不是结束，activate 才是）
+
+> 🔗 FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——**激活链**自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。
+
+**交付收尾时，FDE Agent 必须引导执行 activate：**
+
+1. **运行激活**：在交付目录执行 `npx sofagent-audit --activate`（或 `sofagent activate`），确认：
+   - ontology 被读取并注册为 SubAgent（`list_agents` 可查）
+   - workflow.yml 被 compose 成企业工作流（`sofagent_compose` 可查）
+   - skills/ 被挂载到对应 Agent
+2. **验证自动运转**：`run-enterprise` 跑通——每步都有审计日志产出；工具调用经运行时审计（tool wrapper）拦截 + 留证（`data/audit/runtime/<repo-hash>/runtime-audit.jsonl`）
+3. **HITL 交接**：确认危险操作前有人工批准钩子（`hitl_resolve`），并**具名**中止负责人
+4. **SUSTAIN 说明**：告诉企业"系统会自己跑，但需要人看"——周度巡检由 daemon @daily/@weekly 自动触发，异常时推送
+
+**为什么 activate 是交付的一部分**：FDE 的价值不在交付物本身，而在企业工作流**开始自动运转**。不 activate 的交付 = 只给了图纸没点火。
