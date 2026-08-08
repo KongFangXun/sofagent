@@ -112,7 +112,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 
 ```mermaid
 graph LR
-    A["路人<br/>npx sofagent-audit<br/>30 秒零配置审计"] --> B["团队<br/>规则市场 + GitHub Action<br/>PR 自动审计"]
+    A["个人<br/>npx sofagent-audit<br/>30 秒零配置审计"] --> B["团队<br/>规则市场 + GitHub Action<br/>PR 自动审计"]
     B --> C["企业<br/>FDE Agent<br/>全套部署·7×24 自运转"]
 ```
 

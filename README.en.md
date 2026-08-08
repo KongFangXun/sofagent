@@ -112,7 +112,7 @@ No need to commit to the full package up front — start with a 30-second trial,
 
 ```mermaid
 graph LR
-    A["Passer-by<br/>npx sofagent-audit<br/>30-second zero-setup audit"] --> B["Team<br/>Rule marketplace + GitHub Action<br/>PR auto-audit"]
+    A["Individual<br/>npx sofagent-audit<br/>30-second zero-setup audit"] --> B["Team<br/>Rule marketplace + GitHub Action<br/>PR auto-audit"]
     B --> C["Enterprise<br/>FDE Agent<br/>full deployment · 7×24 self-running"]
 ```
 
