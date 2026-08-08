@@ -293,4 +293,15 @@ export const TOOLS: ToolDef[] = [
       required: ['checkpoint_id', 'decision'],
     },
   },
+  {
+    // v1.3.0 (交付 4)：规则透明化——只读列出规则清单（不暴露实现逻辑）
+    name: 'list_rules',
+    description: '列出所有审计规则清单（只读）——tool 运行时拦截规则 + diff 提交时审计规则。参数 type: tool|diff|all（默认 all）。不暴露规则实现逻辑。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        type: { type: 'string', enum: ['tool', 'diff', 'all'], description: '规则类型：tool（运行时）/ diff（提交时）/ all（默认）', default: 'all' },
+      },
+    },
+  },
 ];

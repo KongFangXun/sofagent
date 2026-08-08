@@ -43,6 +43,7 @@ import { daemonStatus } from './tools/daemon-status';
 import { listAgentsTool } from './tools/list-agents';
 import { listConcepts } from './tools/list-concepts';
 import { hitlResolve } from './tools/hitl-resolve';
+import { listRules } from './tools/list-rules';
 
 // ============================================================
 // 常量
@@ -176,6 +177,7 @@ class McpServer {
         case 'list_agents': { this.sendTool(id, await listAgentsTool()); break; }
         case 'list_concepts': { this.sendTool(id, listConcepts()); break; }
         case 'hitl_resolve': { this.sendTool(id, await hitlResolve({ checkpoint_id: args.checkpoint_id as string, decision: args.decision as 'approve' | 'reject' | 'aborted', ...(args.comment ? { comment: args.comment as string } : {}) })); break; }
+        case 'list_rules': { const r = listRules({ type: args.type as 'tool' | 'diff' | 'all' | undefined }); this.sendTool(id, r); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {
