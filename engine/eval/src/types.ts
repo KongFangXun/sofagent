@@ -1,6 +1,6 @@
 // ============================================================
 // eval/types.ts · eval harness 类型定义
-// v1.2.8 从 sofagent/audit/src/eval/types.ts 迁出
+// v1.2.9 从 sofagent/audit/src/eval/types.ts 迁出
 // ============================================================
 
 /**

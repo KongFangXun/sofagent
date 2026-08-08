@@ -1,6 +1,6 @@
 // ============================================================
 // report-generator.test.ts · 数据主权审计报告生成器单测
-// v1.2.8 P0 — 覆盖 aggregateStats / generateReport / 三档报告
+// v1.2.9 P0 — 覆盖 aggregateStats / generateReport / 三档报告
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';

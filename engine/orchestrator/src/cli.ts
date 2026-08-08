@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// orchestrator CLI · v1.2.8
+// orchestrator CLI · v1.2.9
 //
-// loop 子命令 v1.2.8 升级：默认走 LangGraph StateGraph 节点级流转
+// loop 子命令 v1.2.9 升级：默认走 LangGraph StateGraph 节点级流转
 // （engineer→audit→reviewer→human_confirm），支持 --resume 从 checkpoint
 // 恢复。旧版串行路径通过 --legacy 保留兼容。
 
@@ -256,7 +256,7 @@ async function main() {
       }
     }
     case 'run-enterprise': {
-      // v1.2.8 功能④：从 workflow.yml 构建图 + 逐节点执行企业 Agent
+      // v1.2.9 功能④：从 workflow.yml 构建图 + 逐节点执行企业 Agent
       const wfIdx = args.indexOf('--workflow');
       const workflowPath = wfIdx !== -1
         ? args[wfIdx + 1]!

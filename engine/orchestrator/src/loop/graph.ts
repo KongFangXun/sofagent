@@ -1,9 +1,9 @@
 // ============================================================
 // graph/loop-graph.ts · LOOP StateGraph 组装与运行入口
-// v1.2.8 新增：编排控制从 compose（一次性生成 YAML）
+// v1.2.9 新增：编排控制从 compose（一次性生成 YAML）
 // 上提为 sofagent 直接掌握的 LangGraph StateGraph 节点级流转
 //
-// 流转图（v1.2.8 P4：新增 plan 节点 + 降级路由链）：
+// 流转图（v1.2.9 P4：新增 plan 节点 + 降级路由链）：
 //   START → plan(AI) → engineer(AI) → audit(CLI) → reviewer(AI) → human_confirm(HITL) → END
 //                                      ↓ FAIL
 //                        降级链：第1次 retry engineer → 第2次 降级范围(L1) →
@@ -55,7 +55,7 @@ import {
 } from './checker-nodes';
 
 /**
- * v1.2.8 运行时守卫——从 CheckpointRecord.state（Record<string, unknown>）安全恢复为 LoopGraphState。
+ * v1.2.9 运行时守卫——从 CheckpointRecord.state（Record<string, unknown>）安全恢复为 LoopGraphState。
  *
  * 此前 14 处 `as unknown as` 双重断言使 checkpoint 恢复全链路零类型保护。
  * 现统一通过此函数恢复：做基础结构校验后断言，而非裸断言。
@@ -75,7 +75,7 @@ function restoreState(record: CheckpointRecord): LoopGraphState {
 }
 
 /**
- * v1.2.8 中心化 checkpoint 写入——替代 6 处裸 `as unknown as CheckpointState` 断言。
+ * v1.2.9 中心化 checkpoint 写入——替代 6 处裸 `as unknown as CheckpointState` 断言。
  * LoopGraphState → CheckpointState 的结构映射在此一处完成。
  */
 function saveCheckpoint(

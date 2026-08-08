@@ -1,5 +1,5 @@
 // slash-registry.test.ts · Slash 命令注册机制单测
-// v1.2.8 新建 · 功能 ①②
+// v1.2.9 新建 · 功能 ①②
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {

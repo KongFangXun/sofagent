@@ -1,13 +1,13 @@
 // ============================================================
 // config-loader.ts · .sofagent/config.yml 配置加载器
-// v0.95 新增：三级 fallback（v1.2.8，js-yaml 替代手写 YAML 解析器）
+// v0.95 新增：三级 fallback（v1.2.9，js-yaml 替代手写 YAML 解析器）
 // v0.97 扩展：环境变量配置（从 lib/config.sh 合并）
-// v1.2.8 重构：用 js-yaml 替代手写 YAML 解析器
-// v1.2.8 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
-// v1.2.8：新增 ConfigParseError（含 cause 链），audit.strict fail-closed 选项
+// v1.2.9 重构：用 js-yaml 替代手写 YAML 解析器
+// v1.2.9 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
+// v1.2.9：新增 ConfigParseError（含 cause 链），audit.strict fail-closed 选项
 // ============================================================
 //
-// 三级 fallback（v1.2.8: 增加 SOFAGENT_CONFIG 环境变量为最高优先级）：
+// 三级 fallback（v1.2.9: 增加 SOFAGENT_CONFIG 环境变量为最高优先级）：
 //   0. $SOFAGENT_CONFIG（环境变量指定路径，企业集中管控）
 //   1. ${cwd}/.sofagent/config.yml
 //   2. ~/.sofagent/config.yml
@@ -142,7 +142,7 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
   const baseDir = cwd || process.cwd();
 
   try {
-    // 0. v1.2.8: SOFAGENT_CONFIG 环境变量（优先级最高，企业集中管控用）
+    // 0. v1.2.9: SOFAGENT_CONFIG 环境变量（优先级最高，企业集中管控用）
     const envConfigPath = process.env.SOFAGENT_CONFIG;
     if (envConfigPath) {
       const envConfig = tryLoadYaml(envConfigPath);

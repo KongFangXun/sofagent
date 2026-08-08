@@ -1,13 +1,12 @@
 // ============================================================
 // resources.ts · MCP resources handlers (list + read)
-// v1.2.8: 从 mcp-server.ts 提取
+// v1.2.9: 从 mcp-server.ts 提取
 // ============================================================
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 import { getThinkPath } from '@sofagent/core';
 import { loadHistory } from '@sofagent/audit';
-
 // ============================================================
 // 辅助
 // ============================================================

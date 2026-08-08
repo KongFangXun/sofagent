@@ -4,7 +4,7 @@
 >
 > **本文档面向开发者。** 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。sofagent 是一个 FDE Agent，底层引擎的内部实现在这里展开。
 >
-> v1.2.8 · 2026-08-07（UTC）· 孔放勋
+> v1.2.9 · 2026-08-08（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -53,6 +53,11 @@
 |-----------|---------|
 | 审计规则代码 | `engine/audit/src/rules/` |
 | 审计 CLI 入口 | `engine/audit/src/index.ts` |
+| 审计快速 CLI（npx 零配置入口） | `engine/audit/src/cli-quick.ts` |
+| 规则集加载器（JSON ruleset + plugin 接口） | `engine/audit/src/ruleset-loader.ts` |
+| 插件规则执行器（type: "plugin" 委托外部 npm 包） | `engine/audit/src/plugin-runner.ts` |
+| GitHub Annotations 格式化器 | `engine/audit/src/formatters/github-formatter.ts` |
+| GitHub Action 配置 | `action.yml`（repo 根目录） |
 | 审计报告生成 | `engine/audit/src/reporter.ts` |
 | think.md 自动生成 | `engine/think/src/think-generator.ts` |
 | Skill 主入口（宪法内联） | `SKILL/SKILL.md` |
@@ -565,7 +570,7 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 
 行业测评揭示的「防刷分验证法」与 sofagent 验证体系同构：
 
-- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（49 维）+ `acceptance-test.sh`（148 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
+- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（49 维）+ `acceptance-test.sh`（158 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
 - **上下文精简 = 低成本高通过**：研报发现 Pipe Agent 同模型下比原生工具便宜 1.2–2×、性能差距 <3pt，根因是初始提示 <1500 token（vs Claude Code 20k）。这从量化角度印证 sofagent「Harness 要轻」——约束底座零 token 运行（24 条规则 19 条纯 git-diff），把成本压在确定性引擎而非上下文堆料。
 
 ## 十、STATE.md 持久化外部记忆模式（2026-07 loop-engineering 研读）

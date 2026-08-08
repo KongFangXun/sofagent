@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 // ============================================================
 // mcp-server.ts · MCP Server (Model Context Protocol)
-// v1.2.8: 拆分为 ≤300 行主文件 + tools/ 子目录按功能分组
-// v1.2.8: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
+// v1.2.9: 拆分为 ≤300 行主文件 + tools/ 子目录按功能分组
+// v1.2.9: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
 //
 // 协议：https://spec.modelcontextprotocol.io/
 // 传输：stdio（stdin/stdout，每行一个 JSON-RPC 消息）
 // ============================================================
-
 import * as readline from 'readline';
 import { VERSION, loadConfig } from '@sofagent/audit';
 import type { AuditResult } from '@sofagent/audit';
@@ -29,7 +28,7 @@ import { searchKnowledge, mergeFederationAsync, readEntity, readConcept, listEnt
 import { compose } from './tools/orchestrator-tools';
 // report tools
 import { listCapabilities } from './tools/report-tools';
-// already-extracted tools (v1.2.4~v1.2.8)
+// already-extracted tools (v1.2.4~v1.2.9)
 import { queryDataSovereigntyReport } from './tools/data-sovereignty-report';
 import { createEntity } from './tools/create-entity';
 import { createConcept } from './tools/create-concept';

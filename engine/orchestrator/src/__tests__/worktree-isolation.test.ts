@@ -1,5 +1,5 @@
 // ============================================================
-// worktree-isolation.test.ts · git worktree 隔离原语测试（v1.2.8）
+// worktree-isolation.test.ts · git worktree 隔离原语测试（v1.2.9）
 //
 // 覆盖：
 // - create() 创建 worktree 目录与分支

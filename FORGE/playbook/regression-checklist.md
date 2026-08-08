@@ -957,25 +957,20 @@ grep -rnE "^#{1,4} .*(🔮|🔄|🪟|✨|[+/（）():：])" docs/ README.md SECU
 
 > **PASS 标准**：所有跨文档 `#锚点` 链接指向的标题，按 GitHub 渲染规则（剥 emoji/标点、空格→`-`）推算的锚点与链接一致。标题含特殊字符者重点核对。
 
-#### 65. FORGE stream 迁移——finalState 须累积 delta 而非存原始 chunk（v1.2.4 新盲区）
+#### 65. FORGE stream 迁移数据处理——finalState 须累积 delta + extractAgentText 须防御对象 content（v1.2.4 新盲区 · v1.2.9 归并 65+66）
 
-> v1.2.4 教训：FORGE ReAct Agent 从 `invoke()` 迁移到 `stream(streamMode: 'updates')` 时，`invoke` 返回扁平 `{ messages: [...] }`，但 `stream` 的 chunk 是 `{ nodeName: stateDelta }`。直接 `finalState = chunk` 会把整个 `{ nodeName: delta }` 赋给 finalState，下游 `extractAgentText(result)` 找不到 `result.messages` → fallback `String(result)` → 产物写入 `[object Object]`。**迁移到 stream 必须遍历 `Object.entries(chunk)` 累积 delta。**
+> v1.2.4 教训（归并原 65+66）：FORGE stream 迁移有两个数据处理陷阱：① `stream(streamMode: 'updates')` 的 chunk 是 `{ nodeName: stateDelta }`，直接 `finalState = chunk` 会丢 `result.messages` → 输出 `[object Object]`——必须 `Object.entries(chunk)` 累积。② LangGraph message content 可能是 `Array<{type, text}>` 或嵌套对象，`extractAgentText` 只做 string 判断时会 fallback 到 `String(message)` → 同样输出 `[object Object]`。
 
 ```bash
 # 验证两个 driver 的 stream chunk 处理含 Object.entries 解包（而非裸赋值）
 grep -c 'Object.entries(chunk)' FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gate-driver.mjs   # 期望：各 ≥1
-grep 'finalState = chunk$' FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gate-driver.mjs        # 期望：零命中（裸赋值是 bug）
-```
-
-#### 66. extractAgentText 防御对象 content——嵌套对象须递归提取（v1.2.4 新盲区）
-
-> v1.2.4 教训：LangGraph message 的 content 可能是 `string`（普通文本）也可能是 `Array<{type, text}>`（工具调用块）或嵌套对象。`extractAgentText` 只做 `typeof content === 'string'` 判断时，遇到 Array/Object content 会 fallback 到 `String(message)` → 输出 `[object Object]`。**提取 Agent 输出文本时须处理 content 为数组和嵌套对象的情况。**
-
-```bash
+grep 'finalState = chunk$' FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gate-driver.mjs        # 期望：零命中
 # 验证 extractAgentText 含数组检测 + 对象防御
 grep -c 'Array.isArray(content)' FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gate-driver.mjs   # 期望：各 ≥1
 grep -c 'typeof content.*object' FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gate-driver.mjs   # 期望：各 ≥1
 ```
+
+<!-- #66 [v1.2.9 归并至 #65：均为 FORGE stream 迁移数据处理盲区] -->
 
 #### 67. FORGE ReAct 步骤预算——reviewer ≤50 步 / engineer ≤30 步（v1.2.4 效率铁律）
 
@@ -1046,51 +1041,58 @@ node -e "const fs=require('fs'),src=fs.readFileSync('FORGE/src/fresh-eyes-driver
 # 期望：OK
 ```
 
-#### 73. ESM named export 完整性——`const` 被 named import 引用时必须 `export const`（v1.2.8 新盲区）
+#### 73. ESM named export 完整性 + FORGE 模块加载烟测（v1.2.8 新盲区 · v1.2.9 归并 73+74）
 
-> v1.2.8 教训：`tool-output-budget.mjs` 中 `const DEFAULT_BUDGET = 200` 被 `driver-base.mjs` 以 `{ DEFAULT_BUDGET as TOOL_OUTPUT_DEFAULT }` named import 引用，但 `DEFAULT_BUDGET` 缺 `export` 关键字 → 所有 3 个 driver 启动即崩溃（`SyntaxError: The requested module does not provide an export named 'DEFAULT_BUDGET'`）。ESM 不像 CJS 那样隐式导出模块级变量——`const` 只要不加 `export` 就是模块私有的。
+> v1.2.9 教训（归并原 73+74）：FORGE/ 不在 npm workspaces → `npm test` 从不执行 FORGE/ 下的 `.test.mjs`。曾出过 `DEFAULT_BUDGET` 缺 `export` 关键字导致 3 个 driver 启动即崩溃的 P0 bug。补建 `tools/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件烟测，集成到 pre-push-check.sh。
 
 ```bash
-# 检查 FORGE ESM 模块：被 import 引用的符号是否都有 export 声明
-node -e "
-const fs=require('fs'),path=require('path');
-const files=fs.readdirSync('FORGE/src').filter(f=>f.endsWith('.mjs'));
-let issues=[];
-for(const f of files){
-  const src=fs.readFileSync('FORGE/src/'+f,'utf8');
-  // 找所有 export 的符号
-  const exported=new Set([...src.matchAll(/export\s+(?:const|function|class|default)\s+(\w+)/g)].map(m=>m[1]));
-  // 找被其他文件 import 的符号（仅检查 FORGE/src 内部交叉引用）
-  for(const f2 of files){
-    if(f2===f) continue;
-    const src2=fs.readFileSync('FORGE/src/'+f2,'utf8');
-    const imports=[...src2.matchAll(/import\s*\{([^}]+)\}\s*from\s*['\"]\.\/([\w.-]+)['\"]/g)];
-    for(const imp of imports){
-      if(imp[2].replace('.mjs','')===f.replace('.m','')){
-        for(const name of imp[1].split(',').map(s=>s.trim().split(/\s+as\s+/)[0])){
-          if(name && !exported.has(name) && !['default'].includes(name)){
-            issues.push(f2+' imports {'+name+'} from '+f+' but '+f+' has no export const/function '+name);
-          }
-        }
-      }
-    }
-  }
-}
-console.log(issues.length?'ISSUE: '+issues.join('; '):'OK')" 2>/dev/null
-# 期望：OK
+# 确认 forge-smoke-test.sh 存在且集成到 pre-push
+test -f tools/forge-smoke-test.sh && echo "✅ smoke test 存在" || echo "❌ 缺失"
+grep -q "forge-smoke-test" tools/pre-push-check.sh && echo "✅ 已集成" || echo "❌ 未集成"
+bash tools/forge-smoke-test.sh 2>&1 | tail -3
+# ESM named export 检查（被 import 引用的符号须有 export 声明）
+node -e "const fs=require('fs');const files=fs.readdirSync('FORGE/src').filter(f=>f.endsWith('.mjs'));let issues=[];for(const f of files){const s=fs.readFileSync('FORGE/src/'+f,'utf8');const exp=new Set([...s.matchAll(/export\s+(?:const|function|class)\s+(\w+)/g)].map(m=>m[1]));for(const f2 of files){if(f2===f)continue;const s2=fs.readFileSync('FORGE/src/'+f2,'utf8');const imp=[...s2.matchAll(/import\s*\{([^}]+)\}\s*from\s*['\"]\.\/([\w.-]+)['\"]/g)];for(const i of imp){if(i[2].replace('.mjs','')===f.replace('.m','')){for(const n of i[1].split(',').map(x=>x.trim().split(/\s+as\s+/)[0])){if(n&&!exp.has(n)&&n!=='default')issues.push(f2+' imports {'+n+'} from '+f);}}}}}console.log(issues.length?'ISSUE: '+issues.join('; '):'OK')" 2>/dev/null
 ```
 
-#### 74. FORGE 模块加载烟测——FORGE/ 不在 npm workspaces，npm test 永远不覆盖 driver 测试（v1.2.8 新盲区）
+<!-- #74 [v1.2.9 归并至 #73：均为 FORGE 模块加载/导出验证] -->
 
-> v1.2.8 教训：FORGE/ 目录不在 npm workspaces 配置中，导致 `npm test` 从不执行 FORGE/ 下的 `.test.mjs` 文件。driver 曾出过启动即崩的 P0 bug（维度 73 的 DEFAULT_BUDGET 缺 export），但单元测试完全没覆盖。补建 `tools/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件的烟测，并集成到 pre-push-check.sh。
+#### 75. check-version MCP 工具扫描路径必须跟随拆分文件（v1.2.9 新盲区）
+
+> v1.2.9 教训：mcp-server.ts 从 1899 行拆分为 ≤300 行主文件 + tool-registry.ts + resources.ts 后，check-version.sh 仍扫描 mcp-server.ts 的 `name: '...'` → 计数为 0 → 假绿。**文件拆分时，所有依赖该文件的检查脚本必须同步更新扫描路径。**
 
 ```bash
-# 确认 FORGE smoke test 存在且可执行
-test -f tools/forge-smoke-test.sh && echo "✅ smoke test 存在" || echo "❌ 缺失"
-# 确认 pre-push-check.sh 集成了 smoke test（非 quick/minimal 模式）
-grep -q "forge-smoke-test" tools/pre-push-check.sh && echo "✅ 已集成 pre-push" || echo "❌ 未集成"
-# 跑一次确认全绿
-bash tools/forge-smoke-test.sh 2>&1 | tail -3
+# check-version.sh 的 MCP 计数必须扫描 tool-registry.ts + resources.ts（拆分后的定义文件）
+grep -q 'tool-registry.ts' tools/check-version.sh && echo "✅ 扫描 tool-registry" || echo "❌ 未扫描"
+grep -q 'resources.ts' tools/check-version.sh && echo "✅ 扫描 resources" || echo "❌ 未扫描"
+```
+
+#### 76. JS RegExp 不支持 grep 风格 (?i) 内联修饰符（v1.2.9 新盲区）
+
+> v1.2.9 教训：JSON ruleset 的 pattern 字段用 grep 风格 `(?i)` 前缀做大小写不敏感匹配，但 JS RegExp 原生不支持内联修饰符语法——`new RegExp('(?i)foo')` 不报错也不匹配，**13 条规则静默失效，形同虚设**。compilePattern() 在编译层统一剥离前导修饰符并转为 JS flags。
+
+```bash
+# 确认 ruleset-loader.ts 含 compilePattern（(?i) → JS flags 转换器）
+grep -q 'compilePattern' engine/audit/src/ruleset-loader.ts && echo "✅ compilePattern 存在" || echo "❌ 缺失"
+# 确认 compilePattern 处理 (?i) 修饰符
+grep -q '?i' engine/audit/src/ruleset-loader.ts && echo "✅ 处理 (?i)" || echo "❌ 未处理"
+```
+
+#### 77. check-version 漂移扫描排除测试文件（v1.2.9 新盲区）
+
+> v1.2.9 教训：check-version.sh 第 13 节扫描 `engine/audit/src` 中所有 `N 条规则` 文案。测试文件中的 mock 数据（如 `expect(output).toContain('全部 2 条规则通过')`）被误报为硬编码 SSOT 数字。**漂移扫描必须排除 `.test.` 文件。**
+
+```bash
+# 确认 check-version.sh 漂移扫描排除了 .test. 文件
+grep 'grep.*条规则' tools/check-version.sh | grep -q '\.test\.' && echo "❌ 未排除 .test." || echo "✅ 已排除 .test."
+```
+
+#### 78. 新文件版本头必须匹配 SSOT（v1.2.9 反复出现）
+
+> v1.2.9 教训：开发期间 SSOT 还没 bump（仍 1.2.8），但工程师写的新文件头部注释写 `v1.2.9` → check-version 报版本不一致。**开发期间新文件的版本头必须匹配当前 SSOT，不能超前写下一版本号。** bump-version.sh 会在发版时统一提升。
+
+```bash
+# 跑 check-version.sh 确认 TS 文件头版本号与 SSOT 一致（零不一致）
+bash tools/check-version.sh 2>&1 | grep "TS 文件头" | grep -q "✓" && echo "✅ 版本头一致" || echo "❌ 有不一致"
 ```
 
 

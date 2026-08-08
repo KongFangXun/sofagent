@@ -1,5 +1,5 @@
 // ============================================================
-// agent-identity.ts · Agent 身份码轻量版（v1.2.8 §3.1）
+// agent-identity.ts · Agent 身份码轻量版（v1.2.9 §3.1）
 //
 // 企业 SubAgent 注册后（activate 写入 subagents/*.yml）即带独立身份码。
 // 轻量版方案（完整 Ed25519 签发在 v1.3.2）：

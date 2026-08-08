@@ -1,6 +1,6 @@
 // ============================================================
 // migration.test.ts · ab-history 路径迁移测试
-// v1.2.8 新增
+// v1.2.9 新增
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';

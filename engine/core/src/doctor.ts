@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 // doctor.ts · sofagent 健康检查
-// v1.2.8 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
-// v1.2.8 维护：新增 post-commit hook 存在性检查
-// v1.2.8 新增：每项 fail/warn 附修复命令 + --repair 自动修复模式
+// v1.2.9 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
+// v1.2.9 维护：新增 post-commit hook 存在性检查
+// v1.2.9 新增：每项 fail/warn 附修复命令 + --repair 自动修复模式
 //
 // 检查项：
 //   1. 环境检查（Node / git / npm / disk / bash）
 //   2. 配置检查（.sofagent/config.yml 是否存在且有效）
-//   3. 数据目录结构（v1.2.8：data/ 用户可见数据 + .sofagent/ 引擎内部状态）
+//   3. 数据目录结构（v1.2.9：data/ 用户可见数据 + .sofagent/ 引擎内部状态）
 //   4. Hook 状态（commit-msg 是否安装含 sofagent 标识 + post-commit 是否存在）
 //   5. 包完整性（node_modules 依赖）
 //
@@ -29,7 +29,7 @@ function warn(msg: string) { console.log(`  ⚠️  ${msg}`); _warnCount++; }
 function fail(msg: string) { console.log(`  ❌ ${msg}`); _failCount++; }
 function info(msg: string) { console.log(`  ℹ️  ${msg}`); }
 
-// v1.2.8: — 计数器，用于结尾诚实汇总
+// v1.2.9: — 计数器，用于结尾诚实汇总
 let _warnCount = 0;
 let _failCount = 0;
 
@@ -68,7 +68,7 @@ export interface DoctorReport {
  * @returns DoctorReport
  */
 export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
-  // v1.2.8: — 每次调用重置计数器
+  // v1.2.9: — 每次调用重置计数器
   _warnCount = 0;
   _failCount = 0;
 
@@ -91,7 +91,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     if (!env.sofagent.exists) { warn('~/.sofagent 不存在（将自动创建）'); repairHint('运行 sofagent-audit --init 初始化'); }
   }
 
-  // v1.2.8 版本一致性检查（~/.sofagent/VERSION vs 当前引擎版本）
+  // v1.2.9 版本一致性检查（~/.sofagent/VERSION vs 当前引擎版本）
   console.log('\n── 版本一致性 ──');
   try {
     const homeVersionFile = join(process.env.SOFAGENT_HOME || join(process.env.HOME || '~', '.sofagent'), 'VERSION');
@@ -115,7 +115,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   console.log('\n── 配置检查 ──');
   const sofagentDir = join(projectDir, '.sofagent');
 
-  // v1.2.8 SOFAGENT_CONFIG 环境变量检查（企业集中管控用）
+  // v1.2.9 SOFAGENT_CONFIG 环境变量检查（企业集中管控用）
   const envConfigPath = process.env.SOFAGENT_CONFIG;
   if (envConfigPath) {
     if (existsSync(envConfigPath)) {
@@ -365,7 +365,7 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     auditLogOk = true;
   }
 
-  // 总结（v1.2.8: — 有 WARN/FAIL 时不再说"全部通过"）
+  // 总结（v1.2.9: — 有 WARN/FAIL 时不再说"全部通过"）
   const allOk = env.allOk && configOk && dirsOk && hookOk && depsOk && distIntegrityOk && auditLogOk;
   console.log('\n── 健康检查结果 ──');
   if (_failCount > 0) {

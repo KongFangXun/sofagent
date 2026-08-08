@@ -1,5 +1,5 @@
 // ============================================================
-// data-sovereignty.ts · 数据主权审计日志（v1.2.8 · P0）
+// data-sovereignty.ts · 数据主权审计日志（v1.2.9 · P0）
 // ============================================================
 //
 // 每次 LLM 调用 / 工具调用生成一条 DataSovereigntyRecord（4 维），
@@ -96,7 +96,7 @@ const SECRET_PATTERNS: RegExp[] = [
 /**
  * 脱敏单个文本——替换敏感串为占位符。
  * 数据主权日志自身绝不能成为第二泄漏点。
- * v1.2.8 支持自定义正则（sanitizePatterns from config.yml）——企业业务机密（合同名称/客户名单/工资表）
+ * v1.2.9 支持自定义正则（sanitizePatterns from config.yml）——企业业务机密（合同名称/客户名单/工资表）
  */
 function sanitizeText(text: string, customPatterns?: { pattern: RegExp; replacement: string }[]): string {
   let out = text;
@@ -109,7 +109,7 @@ function sanitizeText(text: string, customPatterns?: { pattern: RegExp; replacem
       out = out.replace(pattern, (m) => `[REDACTED:${m.length}字符]`);
     }
   }
-  // v1.2.8 自定义业务机密脱敏
+  // v1.2.9 自定义业务机密脱敏
   if (customPatterns) {
     for (const { pattern, replacement } of customPatterns) {
       try {

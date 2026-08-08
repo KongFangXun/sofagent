@@ -1,6 +1,6 @@
 // doctor.test.ts · 审计日志 hash chain 完整性校验（P0-② 安全修复的回归保护）
 //
-// v1.2.8: checkHistoryChainIntegrity 下沉到 core（同包 ./audit-history），
+// v1.2.9: checkHistoryChainIntegrity 下沉到 core（同包 ./audit-history），
 // 消除 core → audit 反向依赖。vitest spyOn 作用在同一模块缓存实例，
 // doctor.ts 内的动态 import('./audit-history') 与测试的静态 import 命中同一实例。
 //

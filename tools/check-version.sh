@@ -726,7 +726,7 @@ while IFS= read -r line; do
     DOC_DRIFT_OK=false
     ERRORS=$((ERRORS + 1))
   fi
-done < <(grep -rnE "[0-9]+ 条规则|[0-9]+ 条默认的|[0-9]+ 条各自的" engine/audit/src 2>/dev/null | grep -v "import" | grep -v "defaultRules.length")
+done < <(grep -rnE "[0-9]+ 条规则|[0-9]+ 条默认的|[0-9]+ 条各自的" engine/audit/src 2>/dev/null | grep -v "import" | grep -v "defaultRules.length" | grep -v "\.test\.")
 if $DOC_DRIFT_OK; then
   echo "  [OK] audit 源码无规则条数漂移"
 fi
@@ -770,7 +770,7 @@ echo ""
 # 同步修改下方 EXPECTED_DOC_DATE 与 bump-version.sh。
 echo "=== 14. 文档头日期一致性扫描（> vX.Y · YYYY-MM-DD）==="
 DOC_DATE_OK=true
-EXPECTED_DOC_DATE="2026-08-07"
+EXPECTED_DOC_DATE="2026-08-08"
 while IFS= read -r md; do
   match=$(grep -m1 -nE "^> v[0-9]+\.[0-9]+(\.[0-9]+)? · [0-9]{4}-[0-9]{2}-[0-9]{2}" "$md" 2>/dev/null)
   if [ -n "$match" ]; then

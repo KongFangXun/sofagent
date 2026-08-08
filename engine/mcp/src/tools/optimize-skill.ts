@@ -1,5 +1,5 @@
 // ============================================================
-// tools/optimize-skill.ts · optimize_skill MCP tool（v1.2.8 · P3 S2）
+// tools/optimize-skill.ts · optimize_skill MCP tool（v1.2.9 · P3 S2）
 // ============================================================
 
 import { scanSkillSafety, runSkillOpt, validateCandidate, isSkillOptAvailable } from '@sofagent/skillopt';

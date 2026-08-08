@@ -4,8 +4,8 @@
 //   1. 生成 .sofagent/config.yml 配置模板
 //   2. 安装 git commit-msg hook
 //   3. 冒烟测试——验证审计引擎可用
-// v1.2.8: 新增仓库状态分类器（gstack 首次运行引导）
-// v1.2.8 daemon 注册改为「确认后注册」——默认不装、非 TTY 不挂起、
+// v1.2.9: 新增仓库状态分类器（gstack 首次运行引导）
+// v1.2.9 daemon 注册改为「确认后注册」——默认不装、非 TTY 不挂起、
 //   已有 plist 询问不静默覆盖、npx 场景如实报错（不生成坏 plist、不打印假成功）、
 //   修正 plist 路径前缀 sofagent/daemon/ → engine/daemon/。
 // v1.2.5 --init 自动生成 HMAC 密钥（~/.sofagent-key，权限 600），
@@ -299,13 +299,13 @@ ${entry.args.map((a) => `        <string>${a}</string>`).join('\n')}
  * 幂等：已存在的配置不覆盖，已安装的 hook 不重复写入
  *
  * v1.2.5: 设置 SOFAGENT_SKIP_HOOK=1 防止 init 内部的 git 操作触发刚安装的 hook
- * v1.2.8: SOFAGENT_SKIP_HOOK 是公开旁路（任何进程可绕过审计），改为 SOFAGENT_INTERNAL_INIT
+ * v1.2.9: SOFAGENT_SKIP_HOOK 是公开旁路（任何进程可绕过审计），改为 SOFAGENT_INTERNAL_INIT
  * （hook 模板检测到此环境变量时直接 exit 0）
  */
 export function runInit(): void {
   const cwd = process.cwd();
 
-  // v1.2.8: 防止 init 流程中的 git 操作触发 commit-msg hook（递归保护）
+  // v1.2.9: 防止 init 流程中的 git 操作触发 commit-msg hook（递归保护）
   // 不再使用公开的 SOFAGENT_SKIP_HOOK——任何进程都能设它来绕过审计
   process.env.SOFAGENT_INTERNAL_INIT = '1';
 
@@ -500,7 +500,7 @@ export function runInit(): void {
       stepOk++;
     }
 
-    // v1.2.8: post-commit hook 重写——commit hash 对账替代 timestamp 近邻匹配 + 读全局 history 路径
+    // v1.2.9: post-commit hook 重写——commit hash 对账替代 timestamp 近邻匹配 + 读全局 history 路径
     // v1.2.9 对账逻辑适配 parentSha（commit-msg hook 记录的是父提交 SHA）
     const POST_COMMIT_TEMPLATE = `#!/bin/bash
 # sofagent post-commit hook v1.2.9
@@ -591,7 +591,7 @@ exit 0
           const major = parseInt(versionMatch[1]!, 10);
           const minor = parseInt(versionMatch[2]!, 10);
           const patch = parseInt(versionMatch[3]!, 10);
-        // v1.2.8: post-commit 大改（路径+对账机制），强制覆盖 1.2.7 及以下
+        // v1.2.9: post-commit 大改（路径+对账机制），强制覆盖 1.2.7 及以下
         // v1.2.9 对账逻辑适配 parentSha，强制覆盖 1.2.8 及以下（否则 A8 误报自愈不生效）
         if (major < 1 || (major === 1 && (minor < 2 || (minor === 2 && patch < 9)))) {
             hasPostCommitHook = false;  // 旧版本 → 覆盖

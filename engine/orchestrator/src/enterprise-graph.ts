@@ -1,6 +1,6 @@
 // ============================================================
 // enterprise-graph.ts · 企业编排图构建核心
-// v1.2.8 新建 · 功能 ⑥ 激活链 Phase 2 后半
+// v1.2.9 新建 · 功能 ⑥ 激活链 Phase 2 后半
 //
 // 从 workflow.yml 直接构建 LangGraph StateGraph：
 //   1. 读 workflow.yml → parseWorkflowYaml() → ParsedWorkflow
@@ -156,8 +156,8 @@ function buildNodeConfig(
   dataFlowMapping: DataFlowMapping,
   dataDir?: string,
 ): StateGraphConfig['nodes'][0] {
-  // v1.2.8 功能④：HITL 标记从 resolveAgent → SubAgentDefinition.hitl 读取
-  // （v1.2.7 硬编码 false，TODO v1.2.8 已消除）
+  // v1.2.9 功能④：HITL 标记从 resolveAgent → SubAgentDefinition.hitl 读取
+  // （v1.2.7 硬编码 false，TODO v1.2.9 已消除）
   let interruptBefore = false;
   if (dataDir && node.agent === 'enterprise') {
     try {
@@ -187,7 +187,7 @@ function buildNodeConfig(
  * @param workflow 解析后的 ParsedWorkflow
  * @param dataDir 数据目录
  * @param dataFlow 数据流配置
- * @returns StateGraphConfig（序列化配置，v1.2.8 dag-runner 接线执行）
+ * @returns StateGraphConfig（序列化配置，v1.2.9 dag-runner 接线执行）
  */
 export function buildStateGraphConfig(
   workflow: ParsedWorkflow,

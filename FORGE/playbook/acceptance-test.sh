@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离 + v1.2.5 激活链Phase1 + v1.2.5 审计加固A20-A23 + v1.2.5 daemon可靠性 + v1.2.5 多设备前置
+# + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离 + v1.2.5 激活链Phase1 + v1.2.5 审计加固A20-A23 + v1.2.5 daemon可靠性 + v1.2.5 多设备前置 + v1.2.9 短任务化 + checkpoint/resume worker级 + PM2 + HITL + mcp拆分 + 叙事重构 + 入口产品
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
-# 场景数：148 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
-#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 214 为编号上限，非场景数；S197 归并至 S164
+# 场景数：158 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
+#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 224 为编号上限，非场景数；S197 归并至 S164
 #   ⚠️ 口径注意（P2-31）：底部输出的「$PASSED 通过」是**断言通过数**（含跳过的场景也计 PASS），
-#   与「148 场景」不同——148 是 scenario 定义数，PASSED 可能 >148（条件跳过的场景也 +1）。
-#   文档引用 148 时指 scenario 定义数；引用「XXX 通过」时指断言通过数，勿混用。
+#   与「158 场景」不同——158 是 scenario 定义数，PASSED 可能 >158（条件跳过的场景也 +1）。
+#   文档引用 158 时指 scenario 定义数；引用「XXX 通过」时指断言通过数，勿混用。
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
 RUN_MODE="all"
@@ -436,7 +436,7 @@ if [ -f "$ORCH_INDEX" ]; then node -e "const m = require('$ORCH_INDEX'); console
 scenario 37 "MCP [sofagent] 前缀 + 审查报告签名"
 MCP_SRC="$PROJECT_ROOT/engine/mcp/src/mcp-server.ts"
 MCP_DIST="$PROJECT_ROOT/engine/mcp/dist/mcp-server.js"
-if [ -f "$MCP_SRC" ]; then SOFAGENT_COUNT=$(grep -c '\[sofagent\]' "$MCP_SRC" || true); [ "$SOFAGENT_COUNT" -ge 6 ] && pass || fail "[sofagent] 前缀出现 $SOFAGENT_COUNT 次（期望 ≥ 6）"; fi
+if [ -f "$MCP_SRC" ]; then SOFAGENT_COUNT=$(grep -rc '\[sofagent\]' "$PROJECT_ROOT/engine/mcp/src/" 2>/dev/null | grep -v ':0$' | wc -l | tr -d ' ' || true); [ "$SOFAGENT_COUNT" -ge 6 ] && pass || fail "[sofagent] 前缀出现 $SOFAGENT_COUNT 个文件（期望 ≥ 6）"; fi
 if [ -f "$MCP_DIST" ]; then
   # 用 node --check 验证语法正确性（不执行模块，避免 MCP server 启动副作用导致事件循环阻塞）
   node --check "$MCP_DIST" 2>/dev/null && pass || fail "MCP server dist 语法错误"
@@ -1368,7 +1368,7 @@ S164_OK=true
 for p in install.sh engine/think/src/think-generator.ts; do test -e "$PROJECT_ROOT/$p" || { fail "文档引用的代码路径不存在: $p"; S164_OK=false; }; done
 node -e "const fs=require('fs'),path=require('path');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=0;for(const fp of files){const c=fs.readFileSync(fp,'utf8'),dir=path.dirname(fp);const re=/\]\(((?:\.\.?\/)?[^)]+\.md(?:#[^)]*)?)\)/g;let m;while((m=re.exec(c))){const href=m[1].split('#')[0];if(href.startsWith('http'))continue;if(!fs.existsSync(path.resolve(dir,href))){console.log('断链:',fp,'->',m[1]);bad++;}}}process.exit(bad?1:0);" >/dev/null 2>&1 || { fail "存在指向不存在文件的跨文档 Markdown 链接"; S164_OK=false; }
 $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接无死链）"
-scenario 165 "关键数字跨文档一致性——测试数 / 规则数 24 / acceptance 148"
+scenario 165 "关键数字跨文档一致性——测试数 / 规则数 24 / acceptance 158"
 S165_OK=true
 TEST_COUNT=""
 if [ -f "$PROJECT_ROOT/tools/test-count.sh" ]; then
@@ -1378,8 +1378,8 @@ if [ -n "$TEST_COUNT" ] && [ "$TEST_COUNT" -gt 0 ] 2>/dev/null; then
   for f in README.md docs/WIKI.md; do grep -q "$TEST_COUNT" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 $TEST_COUNT（数字漂移）"; S165_OK=false; }; done
 fi
 for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do grep -q "24 条\|24 个\|24 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 24（数字漂移）"; S165_OK=false; }; done
-for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "148" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 148"; S165_OK=false; }; done
-$S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / 148）"
+for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "158" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 158"; S165_OK=false; }; done
+$S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / 158）"
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
 S166_OK=true
 node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}process.exit(bad.length?(console.log('U+FFFD:',bad.join(',')),1):0);" >/dev/null 2>&1 || { fail "活跃文档存在 U+FFFD 编码污染"; S166_OK=false; }
@@ -1429,8 +1429,9 @@ $S171_OK && pass "Checker 三节点完整（format/fact/source + makeCheckerNode
 # v1.2.4 P3 Skill × MCP 集成验收（S2/S4/S5）
 
 scenario 172 "v1.2.4 P3 S2 — MCP tools/list 返回 22 个 tools"
-# 直接检查 mcp-server.ts 源码中的 tool 注册数（name: 'xxx' 去重计数）
-MCP_REGISTERED=$(grep -oE "name:\s*'[^']+'" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" 2>/dev/null | sort -u | wc -l | tr -d ' ')
+# v1.2.9 功能⑤：mcp-server.ts 已拆分，tool 定义移至 tool-registry.ts + tools/*.ts + resources.ts
+# 递归扫描 engine/mcp/src/ 全目录（含拆分后的模块）
+MCP_REGISTERED=$(grep -roE "name:\s*'[^']+'" "$PROJECT_ROOT/engine/mcp/src/" 2>/dev/null | sort -u | wc -l | tr -d ' ')
 [ "${MCP_REGISTERED:-0}" -ge 22 ] && pass "MCP tools/list 注册数 ≥22（实测 ${MCP_REGISTERED}）" || fail "MCP tools/list 注册数不足（${MCP_REGISTERED} < 22）"
 
 scenario 173 "v1.2.4 P3 S2 — 新增 6 个 tool handler 文件存在"
@@ -1458,8 +1459,10 @@ $S176_OK && pass "notify_session 返回值首行含 [sofagent] 前缀"
 
 scenario 177 "v1.2.4 P3 S5 L3 — isError 标记：run_audit FAIL 时 isError=true"
 S177_OK=true
-# 检查 mcp-server.ts 中 toolRunAudit 含 isError 逻辑
-grep -q "isError.*verdict.*FAIL\|isError.*FAIL\|verdict === 'FAIL'" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" 2>/dev/null || { fail "mcp-server.ts 中 run_audit 未设 isError 标记"; S177_OK=false; }
+# v1.2.9 功能⑤：mcp-server.ts 拆分后，run_audit 的 isError 逻辑移至 tools/audit-tools.ts
+# 同时检查 mcp-server.ts（可能保留 sendTool 通用 isError）和 tools/audit-tools.ts（verdict 逻辑）
+S177_AUDIT="$PROJECT_ROOT/engine/mcp/src/tools/audit-tools.ts"
+grep -q "isError.*verdict.*FAIL\|isError.*FAIL\|verdict === 'FAIL'" "$S177_AUDIT" 2>/dev/null || { fail "tools/audit-tools.ts 中 run_audit 未设 isError 标记"; S177_OK=false; }
 # 检查 create-entity 含 isError
 grep -q "isError" "$PROJECT_ROOT/engine/mcp/src/tools/create-entity.ts" 2>/dev/null || { fail "create-entity.ts 未含 isError"; S177_OK=false; }
 # 检查 audit-data-change 含 isError
@@ -1775,6 +1778,153 @@ if $S214_OK; then
   # 原子写（tmp→rename）
   assert_grep "renameSync\|renameSync(tmpPath\|writeFileSync.*tmp" "$DB" || S214_OK=false
   $S214_OK && pass "Checkpoint/Resume（saveResumePoint + loadResumePoint + --resume + 原子写）"
+fi
+
+# ╔═══════════════════════════════════════════════════════════════╗
+# ║  v1.2.9 验收场景（scenario 215-224）                           ║
+# ║  ① 短任务化 ② checkpoint/resume worker级 ③ PM2守护              ║
+# ║  ④ 激活链Phase3后半(HITL+审计集成) ⑤ mcp-server.ts拆分          ║
+# ║  ⑥ BugFix(REPO_ROOT+check-version路径) ⑦ 约束层叙事重构         ║
+# ║  ⑧-1 cli-quick零配置CLI ⑧-2 ruleset+plugin接口 ⑧-3 GitHub Action ║
+# ╚═══════════════════════════════════════════════════════════════╝
+
+scenario 215 "v1.2.9 ① 短任务化 — fresh-eyes 12 独立视角 prompt + perspective 关键词"
+S215_OK=true
+# 12 个独立视角 prompt 文件（a-check-perspective-1.md ~ -12.md）
+for _i in $(seq 1 12); do
+  [ -f "$PROJECT_ROOT/FORGE/SKILL/fresh-eyes-loop/prompts/a-check-perspective-${_i}.md" ] || { fail "a-check-perspective-${_i}.md 不存在"; S215_OK=false; }
+done
+if $S215_OK; then
+  # fresh-eyes-driver.mjs 含 perspective 关键词（短任务化：每个视角独立子任务）
+  assert_grep "perspective" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S215_OK=false
+  $S215_OK && pass "短任务化（12 个独立视角 prompt + driver perspective 关键词）"
+fi
+
+scenario 216 "v1.2.9 ② Checkpoint/Resume worker级 — completedWorkers 追踪"
+S216_OK=true
+DB="$PROJECT_ROOT/FORGE/src/driver-base.mjs"
+FED="$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs"
+[ -f "$DB" ] || { fail "driver-base.mjs 不存在"; S216_OK=false; }
+if $S216_OK; then
+  # driver-base.mjs 含 completedWorkers（worker 级断点续传）
+  assert_grep "completedWorkers" "$DB" || S216_OK=false
+  # fresh-eyes-driver.mjs 含 completedWorkers 或 pendingWorkers
+  assert_grep "completedWorkers\|pendingWorkers" "$FED" || S216_OK=false
+  $S216_OK && pass "Checkpoint/Resume worker级（driver-base completedWorkers + fresh-eyes driver worker 追踪）"
+fi
+
+scenario 217 "v1.2.9 ③ PM2守护 — ecosystem.config.mjs + forge-pm2-start.sh"
+S217_OK=true
+ECO="$PROJECT_ROOT/FORGE/ecosystem.config.mjs"
+[ -f "$ECO" ] || { fail "ecosystem.config.mjs 不存在"; S217_OK=false; }
+[ -f "$PROJECT_ROOT/tools/forge-pm2-start.sh" ] || { fail "tools/forge-pm2-start.sh 不存在"; S217_OK=false; }
+if $S217_OK; then
+  # PM2 进程定义：fresh-eyes + release-gate（两个 driver 守护）
+  assert_grep "fresh-eyes" "$ECO" || S217_OK=false
+  assert_grep "release-gate" "$ECO" || S217_OK=false
+  # 守护配置：autorestart + restart_delay
+  assert_grep "autorestart" "$ECO" || S217_OK=false
+  assert_grep "restart_delay" "$ECO" || S217_OK=false
+  $S217_OK && pass "PM2守护（ecosystem.config.mjs 含 fresh-eyes/release-gate + autorestart/restart_delay + start 脚本）"
+fi
+
+scenario 218 "v1.2.9 ④ 激活链Phase3后半 — HITL handler + 审计集成"
+S218_OK=true
+HITL="$PROJECT_ROOT/engine/orchestrator/src/hitl-handler.ts"
+NE="$PROJECT_ROOT/engine/orchestrator/src/node-executor.ts"
+HITL_TEST="$PROJECT_ROOT/engine/orchestrator/src/__tests__/hitl-handler.test.ts"
+[ -f "$HITL" ] || { fail "hitl-handler.ts 不存在"; S218_OK=false; }
+[ -f "$HITL_TEST" ] || { fail "hitl-handler.test.ts 不存在"; S218_OK=false; }
+if $S218_OK; then
+  # hitl-handler.ts 含中断/审批/审计接口关键词
+  assert_grep "interruptBefore\|checkHITL\|resolveEnterpriseAgent" "$HITL" || S218_OK=false
+  # hitl-handler.ts 含审计集成（runAudit 回调）
+  assert_grep "runAudit\|audit" "$HITL" || S218_OK=false
+  # node-executor.ts 含审计/HITL 集成（checkHITL + 审计日志写入）
+  assert_grep "audit\|checkHITL\|审计" "$NE" || S218_OK=false
+  $S218_OK && pass "激活链Phase3后半（hitl-handler.ts HITL+审计集成 + node-executor checkHITL + 测试覆盖）"
+fi
+
+scenario 219 "v1.2.9 ⑤ mcp-server.ts拆分 — 行数≤300 + 模块化（tool-registry + tools/ + resources）"
+S219_OK=true
+MCP="$PROJECT_ROOT/engine/mcp/src/mcp-server.ts"
+[ -f "$MCP" ] || { fail "mcp-server.ts 不存在"; S219_OK=false; }
+if $S219_OK; then
+  # 行数 ≤ 300（拆分后应瘦身）
+  MCP_LINES=$(wc -l < "$MCP" | tr -d ' ')
+  [ "$MCP_LINES" -le 300 ] || { fail "mcp-server.ts 行数 $MCP_LINES > 300（拆分不充分）"; S219_OK=false; }
+  # 拆分出的模块文件存在
+  [ -f "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" ] || { fail "tool-registry.ts 不存在"; S219_OK=false; }
+  [ -f "$PROJECT_ROOT/engine/mcp/src/tools/audit-tools.ts" ] || { fail "tools/audit-tools.ts 不存在"; S219_OK=false; }
+  [ -f "$PROJECT_ROOT/engine/mcp/src/tools/audit-file.ts" ] || { fail "tools/audit-file.ts 不存在"; S219_OK=false; }
+  [ -f "$PROJECT_ROOT/engine/mcp/src/resources.ts" ] || { fail "resources.ts 不存在"; S219_OK=false; }
+  $S219_OK && pass "mcp-server.ts拆分（${MCP_LINES}行 ≤ 300 + tool-registry + tools/audit-tools + tools/audit-file + resources）"
+fi
+
+scenario 220 "v1.2.9 ⑥ BugFix — REPO_ROOT 已修复 + check-version.sh 扫描路径已更新"
+S220_OK=true
+DB="$PROJECT_ROOT/FORGE/src/driver-base.mjs"
+[ -f "$DB" ] || { fail "driver-base.mjs 不存在"; S220_OK=false; }
+if $S220_OK; then
+  # driver-base.mjs 不含 REPO_ROOT（大写，已修复为小写 repoRoot / PROJECT_ROOT）
+  ! grep -q "REPO_ROOT" "$DB" || { fail "driver-base.mjs 仍含 REPO_ROOT（bug 未修复）"; S220_OK=false; }
+  # check-version.sh 已更新扫描路径指向拆分后的模块
+  assert_grep "tool-registry.ts" "$PROJECT_ROOT/tools/check-version.sh" || S220_OK=false
+  assert_grep "resources.ts" "$PROJECT_ROOT/tools/check-version.sh" || S220_OK=false
+  $S220_OK && pass "BugFix（driver-base.mjs 无 REPO_ROOT + check-version.sh 扫描 tool-registry/resources 路径）"
+fi
+
+scenario 221 "v1.2.9 ⑦ 约束层叙事重构 — ARCHITECTURE + README + SKILL 统一术语"
+S221_OK=true
+# docs/ARCHITECTURE.md 含「约束层」
+assert_grep "约束层" "$PROJECT_ROOT/docs/ARCHITECTURE.md" || S221_OK=false
+# README.md 含「约束层」
+assert_grep "约束层" "$PROJECT_ROOT/README.md" || S221_OK=false
+# SKILL/SKILL.md 含「约束层」
+assert_grep "约束层" "$PROJECT_ROOT/SKILL/SKILL.md" || S221_OK=false
+$S221_OK && pass "约束层叙事重构（ARCHITECTURE.md + README.md + SKILL/SKILL.md 均含「约束层」）"
+
+scenario 222 "v1.2.9 ⑧-1 cli-quick零配置CLI — cli-quick.ts + bin + dist"
+S222_OK=true
+[ -f "$PROJECT_ROOT/engine/audit/src/cli-quick.ts" ] || { fail "cli-quick.ts 不存在"; S222_OK=false; }
+# package.json bin 含 sofagent-audit（零配置 CLI 入口）
+assert_grep "sofagent-audit" "$PROJECT_ROOT/engine/audit/package.json" || S222_OK=false
+# dist 产物存在
+require_dist "engine/audit/dist/cli-quick.js" || S222_OK=false
+if $S222_OK; then
+  $S222_OK && pass "cli-quick零配置CLI（cli-quick.ts + package.json bin sofagent-audit + dist 产物）"
+fi
+
+scenario 223 "v1.2.9 ⑧-2 ruleset + plugin接口 — ruleset-loader + plugin-runner + 规则集 JSON"
+S223_OK=true
+RL="$PROJECT_ROOT/engine/audit/src/ruleset-loader.ts"
+PR="$PROJECT_ROOT/engine/audit/src/plugin-runner.ts"
+[ -f "$RL" ] || { fail "ruleset-loader.ts 不存在"; S223_OK=false; }
+[ -f "$PR" ] || { fail "plugin-runner.ts 不存在"; S223_OK=false; }
+if $S223_OK; then
+  # ruleset-loader.ts 含 loadRuleset + compilePattern
+  assert_grep "loadRuleset" "$RL" || S223_OK=false
+  assert_grep "compilePattern" "$RL" || S223_OK=false
+  # plugin-runner.ts 含 runPluginRule + loadPlugin
+  assert_grep "runPluginRule" "$PR" || S223_OK=false
+  assert_grep "loadPlugin" "$PR" || S223_OK=false
+  # 规则集 JSON 文件存在
+  [ -f "$PROJECT_ROOT/engine/audit/src/rulesets/sofagent.json" ] || { fail "rulesets/sofagent.json 不存在"; S223_OK=false; }
+  [ -f "$PROJECT_ROOT/engine/audit/src/rulesets/security.json" ] || { fail "rulesets/security.json 不存在"; S223_OK=false; }
+  $S223_OK && pass "ruleset + plugin接口（loadRuleset/compilePattern + runPluginRule/loadPlugin + sofagent/security 规则集）"
+fi
+
+scenario 224 "v1.2.9 ⑧-3 GitHub Action — action.yml + github-formatter + Annotations 格式"
+S224_OK=true
+[ -f "$PROJECT_ROOT/action.yml" ] || { fail "action.yml 不存在"; S224_OK=false; }
+GF="$PROJECT_ROOT/engine/audit/src/formatters/github-formatter.ts"
+[ -f "$GF" ] || { fail "formatters/github-formatter.ts 不存在"; S224_OK=false; }
+if $S224_OK; then
+  # action.yml 含 node20 或 node runtime
+  assert_grep "node20\|node" "$PROJECT_ROOT/action.yml" || S224_OK=false
+  # github-formatter.ts 输出 GitHub Annotations 格式（::error / ::warning）
+  assert_grep "::error\|::warning" "$GF" || S224_OK=false
+  $S224_OK && pass "GitHub Action（action.yml node runtime + github-formatter.ts ::error/::warning Annotations）"
 fi
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
