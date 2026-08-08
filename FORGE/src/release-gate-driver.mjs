@@ -631,8 +631,93 @@ async function runWorker(step, runDir, target) {
   // preModelHook 在每次模型调用前物理替换 state.messages，旧消息可被 GC 回收。
   // 实测：regression 步骤 17 次工具调用从 OOM(exit 137) 降到正常完成。
   const MAX_CONTEXT_MESSAGES = 16;
-  const STATE_MESSAGES_HARD_LIMIT = 20;
   const systemMsg = new SystemMessage(systemPrompt);
+
+  // 🔴 F-4 修复：从 fresh-eyes-driver.mjs 复制 trimMessagesSafe + estimateTokens。
+  // 原 release-gate 用 raw slice 裁剪，会切断 tool_calls ↔ ToolMessage 配对，
+  // 产生孤立消息触发 LangGraph / DeepSeek API 校验报错。
+
+  // trimMessagesSafe 做 3 步：
+  //   1. slice 取最后 keepCount 条
+  //   2. 清除配对：扫一遍，标记所有孤立的 tool_calls / ToolMessage，从结果中移除
+  //   3. 返回清洗后的安全消息数组
+  function trimMessagesSafe(messages, keepCount) {
+    if (messages.length <= keepCount) return [...messages];
+    let recent = messages.slice(-keepCount);
+
+    // 配对清洗：收集所有 AI tool_calls 的 id 和所有 ToolMessage 的 tool_call_id
+    // 如果 ToolMessage 的 tool_call_id 在 recent 中找不到对应的 AI tool_calls → 移除
+    // 如果 AI tool_calls 的某个 tool_call_id 在 recent 中找不到对应的 ToolMessage → 从 tool_calls 中移除该条
+    // 如果 AI 消息的所有 tool_calls 都找不到对应 ToolMessage → 移除整条 AI 消息
+
+    const aiToolCallIds = new Set();
+    for (const msg of recent) {
+      if (msg?._getType?.() === 'ai' && msg.tool_calls?.length > 0) {
+        for (const tc of msg.tool_calls) {
+          if (tc.id) aiToolCallIds.add(String(tc.id));
+        }
+      }
+    }
+
+    const toolMsgIds = new Set();
+    for (const msg of recent) {
+      if (msg?._getType?.() === 'tool' && msg.tool_call_id) {
+        toolMsgIds.add(String(msg.tool_call_id));
+      }
+    }
+
+    // 过滤：移除孤立的 ToolMessage 和孤立的 AI tool_calls
+    const cleaned = [];
+    for (const msg of recent) {
+      const type = msg?._getType?.();
+      if (type === 'tool' && msg.tool_call_id) {
+        // ToolMessage 有对应的 AI tool_calls？→ 保留
+        if (aiToolCallIds.has(String(msg.tool_call_id))) {
+          cleaned.push(msg);
+        }
+        // 否则跳过（孤立的 ToolMessage）
+      } else if (type === 'ai' && msg.tool_calls?.length > 0) {
+        // AI 消息有 tool_calls → 检查每个 tool_call 是否都有对应的 ToolMessage
+        const validCalls = msg.tool_calls.filter(tc =>
+          !tc.id || toolMsgIds.has(String(tc.id))
+        );
+        if (validCalls.length === msg.tool_calls.length) {
+          // 所有配对完整 → 保留原消息
+          cleaned.push(msg);
+        } else if (validCalls.length > 0) {
+          // 部分配对 → 保留消息但更新 tool_calls（创建修改副本）
+          cleaned.push({ ...msg, tool_calls: validCalls });
+        }
+        // 所有 tool_calls 都无配对 → 跳过（孤立的 AI tool_calls）
+      } else {
+        // 普通消息（Human/AI text/System）→ 直接保留
+        cleaned.push(msg);
+      }
+    }
+
+    return cleaned;
+  }
+
+  // 粗估消息总 token 数（content 长度 / 4）
+  function estimateTokens(messages) {
+    let totalChars = 0;
+    for (const msg of messages) {
+      const content = msg?.content;
+      if (typeof content === 'string') {
+        totalChars += content.length;
+      } else if (Array.isArray(content)) {
+        for (const part of content) {
+          if (typeof part === 'string') {
+            totalChars += part.length;
+          } else if (part && typeof part.text === 'string') {
+            totalChars += part.text.length;
+          }
+        }
+      }
+    }
+    return Math.ceil(totalChars / 4);
+  }
+
   const agent = createReactAgent({
     llm: model,
     tools,
@@ -648,12 +733,13 @@ async function runWorker(step, runDir, target) {
       }
 
       // 上下文裁剪辅助函数：保留 system + 第一条 user + 最后 N 条
+      // F-4：用 trimMessagesSafe 替换 raw slice，避免孤立 tool_calls/ToolMessage
       const trimmed = (extra) => {
         if (messages.length <= MAX_CONTEXT_MESSAGES + 1) {
           return extra ? [systemMsg, extra, ...messages] : [systemMsg, ...messages];
         }
         const first = messages[0];
-        const recent = messages.slice(-MAX_CONTEXT_MESSAGES);
+        const recent = trimMessagesSafe(messages, MAX_CONTEXT_MESSAGES);
         return extra ? [systemMsg, extra, first, ...recent] : [systemMsg, first, ...recent];
       };
 
@@ -681,13 +767,20 @@ async function runWorker(step, runDir, target) {
       return trimmed(null);
     },
     preModelHook: (state) => {
+      // F-4：token 维度激进裁剪——只在 token 超硬阈值时裁剪。
+      // 消息条数裁剪已由 stateModifier 处理，这里补 stateModifier 看不到的维度：
+      // 单条消息超长（如 500 行审查报告全文）导致总 token 爆炸但消息条数还不多。
       const messages = state.messages ?? [];
-      if (messages.length <= STATE_MESSAGES_HARD_LIMIT) {
-        return state;
+      const tokenEst = estimateTokens(messages);
+
+      // token 超硬阈值 → 激进裁剪
+      if (tokenEst > 100000) {
+        const first = messages[0];
+        const recent = trimMessagesSafe(messages, 12);
+        return { ...state, messages: [first, ...recent] };
       }
-      const first = messages[0];
-      const recent = messages.slice(-STATE_MESSAGES_HARD_LIMIT);
-      return { ...state, messages: [first, ...recent] };
+
+      return state;
     },
   });
 
