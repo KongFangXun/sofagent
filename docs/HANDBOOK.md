@@ -32,7 +32,6 @@
 | 想理解内部机制 | [开发文档](./DEVELOPMENT.md) |
 | 想理解设计哲学 | [设计文档](./ARCHITECTURE.md) |
 | 想理解为什么这么做 | [设计哲学](./PHILOSOPHY.md)（**强烈推荐，读 5 分钟**） |
-| 想配置 MCP 推送 | [MCP 使用指南](./guides/mcp-usage.md) |
 
 > 📁 **项目文件导航**：根目录 6 个 .md 文件各司其职——[README.md](../README.md)（项目概览）、[README.en.md](../README.en.md)（英文概览）、[CHANGELOG.md](../CHANGELOG.md)（版本索引）、[SECURITY.md](../SECURITY.md)（安全策略）、[CONTRIBUTING.md](../CONTRIBUTING.md)（贡献指南）、[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)（行为准则）。[ROADMAP.md](./ROADMAP.md)（路线图）和 [LIMITATIONS.md](./LIMITATIONS.md)（已知局限）在 `docs/` 下。
 

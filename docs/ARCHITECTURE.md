@@ -246,8 +246,6 @@ graph LR
 | **MCP 推送层** | 设备 MCP server | @sofagent/mcp 独立包 | ✅ |
 | **协同层** | 多设备 + 云端 | Agent 独立身份、共享上下文、组织记忆 | v2.x |
 
-> 📖 MCP resource 完整列表与 push target 配置见 [MCP 使用指南](./guides/mcp-usage.md)。
-
 ---
 
 ## 二、约束层（Harness）设计——一个层，四种能力
