@@ -68,6 +68,35 @@ preModelHook: (state) => {
 
 > **遗留问题**（release-gate regression）：prompt 预期 ~53 次调用，Qwen 实际跑 130-198 次——不遵循「每维度 1 次 run_bash」策略。三层裁剪把 OOM 阈值提到 198 次，但仍不够。后续方向：① prompt 更强调批量执行 + 示例 ② recursionLimit 从 400 降到 100 强制高效 ③ 拆分 regression 步骤。
 
+### 🔴 并发 worker 总内存计算（v1.2.9 run-08~09）
+
+> **来源**（run-08/09，2026-08-08）：8GB 机器上 6 并发 worker（各 `--max-old-space-size=2048`）= 12GB → 系统级 OOM SIGKILL，driver 静默死亡（无 stderr）。
+
+**根因**：`spawnWorker` 给每个 worker 子进程设 `--max-old-space-size=2048`（2GB）。并发 N 个 worker 时总内存 = N × 2GB + driver 自身。在 8GB 物理内存的机器上：
+
+| 并发数 | worker 总内存 | + driver | 合计 | 8GB 机器 |
+|--------|-------------|----------|------|---------|
+| 6 | 12 GB | ~1 GB | ~13 GB | ❌ OOM |
+| 3 | 6 GB | ~1 GB | ~7 GB | ⚠️ 临界 |
+| 1 | 2 GB | ~1 GB | ~3 GB | ✅ 安全 |
+
+**计算公式**：`安全并发数 = floor((物理内存 - driver预留 - 系统预留) / worker_heap_limit)`
+
+**8GB 机器**（macOS 系统占 ~2GB，driver 预留 1GB）：
+```
+安全并发 = floor((8 - 2 - 1) / 2) = floor(2.5) = 2 → 保险取 1
+```
+
+**16GB+ 机器**：默认 MAX_CONCURRENCY=6 安全。
+
+**调整方式**：
+```bash
+# 8GB 机器强制降并发
+FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9
+```
+
+**铁律**：在内存受限环境启动 driver 前，先算并发上限。公式：`并发 ≤ floor((RAM - 3GB) / worker_heap_limit)`。
+
 ### 流式输出：stream 替代 invoke
 
 `agent.stream(streamMode: 'updates')` 实时打印工具调用进度。`invoke()` 阻塞 5-8 分钟用户盯空白，stream 体感提升 ×2-3。

@@ -5,6 +5,8 @@
 > 这不是"踩坑参考"，是**开发参照**——下次开发新的 loop 或 sub-agent 时，必须逐条对照本文档执行。每条标准都来自真实 debug 会话（附 commit hash + 根因），不是理论推演。
 >
 > v1.2.9 · 2026-08-08（UTC）· 孔放勋
+>
+> v1.2.9 run-12 更新（2026-08-08）：跨闭包变量引用、nohup 后台死亡、8GB 并发 OOM 三项新坑位
 
 ## 本文档定位
 
@@ -81,6 +83,9 @@
 - [ ] **driver 支持 --skip-acceptance**（[四·--skip-acceptance](./driver.md#sofagent_skip_hook----skip-acceptance----step)）
 - [ ] **driver 支持 --step 单步模式**（[四·--step](./driver.md#sofagent_skip_hook----skip-acceptance----step)）
 - [ ] **沙箱环境加 --max-old-space-size=1536**（v1.2.5 run-07 教训：768 在长循环 OOM）（[四·V8 heap](./driver.md#v8-heap-限制--max-old-space-size反直觉优化)）
+- [ ] **跨闭包变量提到 agent 定义前**（stateModifier 和 invokeAgent 是平行闭包，不可见对方局部变量）（[四·跨闭包变量](./driver.md#-跨闭包变量引用js-作用域陷阱v129-run-07)）
+- [ ] **后台启动用 Bash 工具 run_in_background，禁用 nohup+disown**（WorkBuddy 清理脱离进程）（[四·nohup 不安全](./driver.md#-nohupdisown-在-workbuddy-中不安全v129-run-0711)）
+- [ ] **启动前算并发上限**（并发 ≤ floor((RAM - 3GB) / worker_heap_limit)）（[三·并发内存](./performance.md#-并发-worker-总内存计算v129-run-0809)）
 
 ### 🔴 stream 迁移（如做 invoke→stream 改造时必查）
 
@@ -136,6 +141,9 @@
 | 08-02 | dd5dde2 | P2 审查修复 × 3（注释措辞 + magic number 顶层化 + stream.return） | P2 | 四·死循环防护 |
 | 08-02 | f240594 | parseStopCondition 降级检测——占位文件不算干净轮 | P0 | 四·降级检测防假阳性干净 |
 | 08-02 | 701582a | L2 改两阶段写报告窗口 + 连续降级 error 退出 + 兜底合成报告 | P0 | 四·L2 两阶段 / 四·兜底报告 |
+| 08-08 | run-07 | effectiveHardLimit 跨闭包引用——stateModifier 定义→invokeAgent 引用 | P0 | 四·跨闭包变量引用 |
+| 08-08 | run-07~11 | nohup+disown 后台进程被 WorkBuddy 清理（4 次静默死亡） | P0 | 四·nohup 不安全 |
+| 08-08 | run-08~09 | 8GB 机器并发 3/6 worker OOM（各 worker 2GB heap） | P0 | 三·并发 worker 总内存 |
 
 ### 历史坑位索引
 
@@ -162,6 +170,9 @@
 | 19 | Worker 死循环——Qwen3.8 无视 prompt 1119 次调用 | 四·死循环防护（三层熔断） |
 | 20 | 硬熔断打断写报告——所有消息全空 content | 四·L2 两阶段 + 四·兜底报告 |
 | 21 | 假阳性干净——降级占位被当"审查通过" | 四·降级检测防假阳性干净 |
+| 22 | effectiveHardLimit 跨闭包引用——JS 作用域陷阱 | 四·跨闭包变量引用 |
+| 23 | nohup+disown 后台进程被 WorkBuddy 清理 | 四·nohup 不安全 |
+| 24 | 并发 worker 总内存超物理内存 → 系统级 OOM | 三·并发 worker 总内存 |
 
 ### 关键设计决策速查
 
@@ -170,7 +181,9 @@
 | Agent 框架 | createReactAgent | createDeepAgent 硬编码 FilesystemMiddleware |
 | 进程模型 | spawn 子进程 | 零上下文继承，步骤间文件传递 |
 | 沙箱执行 | --step 单步模式 + 外层编排 | 每步全新进程退出，内存归零 |
-| 沙箱内存 | --max-old-space-size=1536 | v1.2.5 起 768→1536（长循环 OOM 教训） |
+| 沙箱内存 | --max-old-space-size=1536 | v1.2.5 起 768→1536（长循环 OOM 教训）；v1.2.9 run-09 再调至 2048 |
+| 后台启动 | Bash 工具 run_in_background | nohup+disown 被 WorkBuddy 清理（run-07~11 教训） |
+| 并发上限 | floor((RAM - 3GB) / 2GB) | 8GB 机器并发=1，16GB+ 机器并发=6（run-08~09 OOM 教训） |
 | 上下文注入 | stateModifier（非 prompt） | 互斥约束 + 可同时做裁剪 |
 | 上下文物理裁剪 | preModelHook | stateModifier 只裁 prompt，preModelHook 物理替换 messages |
 | 执行模式 | stream（非 invoke） | 实时进度打印 |
