@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md">中文</a> · <a href="#what-is-this">What is this</a> · <a href="#quick-start">Quick Start</a> · <a href="#three-entries-from-30-seconds-to-full-deployment">Three Entries</a> · <a href="#docs">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
+  <a href="README.md">中文</a> · <a href="#what-is-this">What is this</a> · <a href="#fde-methodology">FDE Methodology</a> · <a href="#quick-start">Quick Start</a> · <a href="#three-entries-from-30-seconds-to-full-deployment">Three Entries</a> · <a href="#docs">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
 
 ---
@@ -33,14 +33,41 @@ graph LR
 
 ## Key Features
 
-- 🧭 **Map workflows on-site** — the FDE walks you through your business workflow in conversation: which steps to automate, which stay human, which to leave alone — producing an ontology + workflow.yml + skills/
-- 🤖 **Deploy AI nodes** — turn automatable steps into SubAgents that run inside your existing AI tools (WorkBuddy / Codex / Claude Code) — no new UI to learn; from "you do the work" to "you delegate the work"
-- 🔍 **Zero-setup audit** — `npx sofagent-audit`, audits your last commit in any git repo in 3 seconds, installs nothing
-- 🧱 **24 audit rules** — secret leaks, out-of-scope edits, blind modifications, injection defense, privilege red lines — judged on hard git diff evidence, violations blocked on the spot
+**FDE Agent delivery**
+
+- 🧭 **Map workflows on-site** — five-element deep-dive + three-question triage, mapping out every process step and calculating what each AI node is worth
+- 🤖 **Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), running inside your existing AI tools; from "you do the work" to "you delegate the work"
+- 🏠 **Stays resident after departure** — the FDE Agent stays for inspection, audit, and optimization, 7×24 online; the human leaves, governance doesn't
+
+**Governance guarantees**
+
+- 🔍 **Zero-setup audit** — `npx sofagent-audit`, audits your last commit in any git repo in 3 seconds
+- 🧱 **24 audit rules** — secret leaks, out-of-scope edits, injection defense, privilege red lines — judged on hard git diff evidence, violations blocked on the spot
 - 🛡️ **Automatic snapshot & rollback** — auto-archived after every audit, one-click restore to any snapshot
 - 🧬 **Keeps getting better** — lessons from every task are captured into the knowledge base automatically, so the next run avoids the same pitfalls
-- 🖥️ **Visual dashboard** — a 6-page web console (cockpit / AI nodes / ontology / knowledge base…), all driven by real data
-- 🔌 **Rule marketplace + GitHub Action** — built-in security / sofagent rulesets, custom JSON rules supported; every PR auto-audited, violations annotated on the diff lines
+
+## FDE Methodology
+
+Many companies adopt AI the wrong way around — they pick models, build platforms, and buy Agents first, only to find nobody uses them. The problem isn't the technology; it's that **they haven't figured out their own business processes before handing them to AI**. FDE flips this around:
+
+| Phase | What happens | Deliverable |
+|------|--------|------|
+| ① Map | **Five-element deep-dive** — for each process step, capture input / output / owner / time cost / pain points | Enterprise profile |
+| ② Triage | **Three-question triage** — which steps fit AI: 🔄 automate · ⚡ augment · 👤 leave alone, prioritized by ROI | Node plan + annual savings |
+| ③ Deliver | **Three-layer deliverables** — documents + Skills + runtime, so AI nodes actually run | Ontology + workflow.yml + skills/ |
+
+Full methodology (four phases, twelve steps) in [FDE/GUIDE.md](./FDE/GUIDE.md) — a half-day read, enough to run FDE independently afterwards.
+
+## FDE Skill System
+
+Deploying AI nodes is only step one — what keeps them **on track every time** is the FDE Skill system loaded with each node:
+
+- 📜 **SKILL.md** — the single entry point, loaded by your AI tool (stage routing + condensed fallback)
+- 🧩 **Four role Skills** — `fde` (on-site mapping) · `audit` (auditing) · `engineer` (implementation) · `reviewer` (review), each with its own job
+- 🔒 **Harness constraint skeleton** — entry-gate / fde-template / engage / loop-check / task-closure…, a constraint template for every step from entry to departure
+- 🧬 **Automatic experience capture** — think.md reflection + knowledge maintenance; nodes get smarter as they run
+
+> What gets deployed is not a bare Agent, but an **Agent with a constraint skeleton** — constraints are advisory, audits are mandatory: the Agent may ignore the constraints, but every change gets audited without exception.
 
 ## Product Preview
 
@@ -120,7 +147,14 @@ jobs:
           ruleset: sofagent     # sofagent / security / community rulesets
 ```
 
+**FDE Agent** — on-site mapping + deployment + residency, pick either of two paths:
+
+- **Methodology path** (zero dependencies): read [FDE/GUIDE.md](./FDE/GUIDE.md) and map workflows manually following the handbook — Excel + your own brain is enough
+- **Tooling path** (Node.js ≥ 18): after installing, tell your AI tool "run an FDE diagnosis for me" and the Agent guides you from the entry phase
+
 > 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research on HuggingFace shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
+
+> 🧪 **Engineering credibility**: 1650 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes-loop double-blind review with zero P0/P1 for 2 consecutive rounds.
 
 ## Docs
 
