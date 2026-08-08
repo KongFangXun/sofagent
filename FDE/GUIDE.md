@@ -416,6 +416,42 @@ FDE 交付不只是建 Ontology 和部署——还要识别哪些失效模式会
 
 ---
 
+### 3.11 可选：外部记忆后端（v1.3.0+ · Path A）
+
+> 可选能力，**缺省关闭**——不配置 `memory_backends` 段时，sofagent 行为与 v1.2.9 完全一致，不加载任何外部依赖、不发起任何外部请求。
+
+如果企业希望 Agent 拥有**跨会话记忆**（对话结束后经验自动沉淀，下次会话可检索），可以启用外部记忆后端（如 [TencentDB-Agent-Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory)，独立部署的 MCP 服务）。
+
+**启用方式**（在 `.sofagent/config.yml` 新增段）：
+
+```yaml
+memory_backends:
+  - name: "tencentdb-agent-memory"
+    enabled: true               # ⚠️ 缺省 false；启用才加载
+    type: "mcp"                 # mcp（外部服务）| workbuddy（本机降级）
+    endpoint: "http://localhost:8125"
+    tools:
+      - "memory_search"
+      - "memory_write"
+      - "skill_extract"
+      - "wiki_search"
+    sensitivity_map:
+      private: "restricted"
+      team: "internal"
+      restricted: "restricted"
+      agent: "internal"
+```
+
+**设计边界**：
+- 零架构改造——不替换 sofagent Ledger-Views-Policy，记忆后端只做增量检索/沉淀
+- 权限映射——restricted Agent 只能检索 restricted 记忆；internal Agent 可用 team 级；public 不走记忆后端
+- endpoint 不可达时优雅降级（warn + skip），不 crash、不影响主流程
+- `type: "workbuddy"` 为降级通道：`memory_write` 写本机 `.workbuddy/memory/`；`conversation_search` 标注待 v1.3.1
+
+> 完整开发日志见 `docs/changelog/v1.3/v1.3.0.md §外部记忆后端 Path A 专项`
+
+---
+
 ## 第四章：节点判定与量化
 
 ### 4.1 三问判定
