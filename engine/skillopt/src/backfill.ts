@@ -1,6 +1,6 @@
 // ============================================================
 // skillopt/backfill.ts · Dream Cycle skillopt_backfill 钩子
-// v1.2.9 新增
+// v1.3.0 新增
 //
 // 供 @sofagent/daemon Dream Cycle Stage 5 调用：把合成出的 Concept
 // 回灌给 skillopt 自进化引擎，触发 fde.md 优化钩子。

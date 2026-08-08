@@ -2,7 +2,7 @@
 
 > **sofagent 是一个 FDE Agent——进场梳理你的工作流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent（WorkBuddy / Codex / Claude Code）里说一句话，它就帮你干活——审计每次变更、沉淀每次经验、越用越好。下面从装到用到查问题，全流程走一遍。
 >
-> v1.2.9 · 2026-08-08（UTC）· 孔放勋
+> v1.3.0 · 2026-08-08（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -618,4 +618,4 @@ loop-engineering 社区总结了 10 个生产反模式，以下 4 个直接适�
 
 > 大半年 Agent 平台实战笔记（OpenClaw / WorkBuddy / Claude Code / Codex）。如有更好的用法，欢迎开 Issue。
 >
-> *v1.2.8，2026 年 8 月 6 日*
+> *v1.3.8，2026 年 8 月 6 日*

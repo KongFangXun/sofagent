@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/skillopt",
-  "version": "1.2.9",
+  "version": "1.3.0",
   "description": "sofagent Skill 优化 — Skill 质量分析 / 优化建议 / 自动重构",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,9 +22,9 @@
   "license": "MIT",
   "author": "KongFangXun",
   "dependencies": {
-    "@sofagent/ontology": "1.2.9",
-    "@sofagent/core": "1.2.9",
-    "@sofagent/audit": "1.2.9"
+    "@sofagent/ontology": "1.3.0",
+    "@sofagent/core": "1.3.0",
+    "@sofagent/audit": "1.3.0"
   },
   "exports": {
     ".": {
