@@ -771,16 +771,19 @@ async function runWorker(step, roundDir, target) {
     return cleaned;
   }
 
+  // v1.2.9 功能①：perspective worker 用自己的 toolSoftLimit/toolHardLimit（12/15）。
+  // 非 perspective 步骤用模块级 TOOL_SOFT_LIMIT/TOOL_HARD_LIMIT（35/45）。
+  // 🔴 run-07 修复：原声明在 stateModifier 闭包内，invokeAgent 引用时
+  // effectiveHardLimit is not defined（跨闭包不可见）。提到 agent 定义前，
+  // stateModifier 和 invokeAgent 都能访问。
+  const effectiveSoftLimit = stepDef.toolSoftLimit ?? TOOL_SOFT_LIMIT;
+  const effectiveHardLimit = stepDef.toolHardLimit ?? TOOL_HARD_LIMIT;
+
   const agent = createReactAgent({
     llm: model,
     tools,
     stateModifier: (state) => {
       const messages = state.messages ?? [];
-
-      // v1.2.9 功能①：perspective worker 用自己的 toolSoftLimit/toolHardLimit（12/15）。
-      // 非 perspective 步骤用模块级 TOOL_SOFT_LIMIT/TOOL_HARD_LIMIT（35/45）。
-      const effectiveSoftLimit = stepDef.toolSoftLimit ?? TOOL_SOFT_LIMIT;
-      const effectiveHardLimit = stepDef.toolHardLimit ?? TOOL_HARD_LIMIT;
 
       // 统计历史消息中所有 AI tool_calls 总数
       let toolCallCount = 0;
