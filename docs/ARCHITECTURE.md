@@ -1,7 +1,7 @@
 # sofagent Architecture
 
 > 设计决策记录——从为什么存在、约束层四种能力如何协作，到每个关键决策的工程理由。
-> v1.2.9 · 2026-08-08（UTC）
+> v1.3.0 · 2026-08-08（UTC）
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -27,7 +27,7 @@ graph TD
 
 ```mermaid
 graph LR
-    subgraph 层2 · 生命周期（流程视角 · v1.2.5+）
+    subgraph 层2 · 生命周期（流程视角 · v1.3.5+）
         D1[诊断<br/>FDE 四阶段] --> D2[激活 ACTIVATE<br/>交付物→SubAgent]
         D2 --> D3[编排 ORCHESTRATE<br/>多 Agent→StateGraph]
         D3 --> D4[执行 EXECUTE<br/>DAG + HITL + 审计]
@@ -143,7 +143,7 @@ graph TD
 | eval | 质量评估引擎：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
 | orchestrator | 编排引擎：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 | ✅ 已实现（390 测试） |
-| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 | ✅ 已实现（187 测试） |
+| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 | ✅ 已实现（193 测试） |
 | mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | skillopt | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填 | ✅ 已实现 |
@@ -328,6 +328,41 @@ graph LR
 在 agent-wrapping-agent 多层嵌套的架构趋势下（a16z 2026 研判），审计不仅是「事后护栏」——它是 Agent 嵌套体系中的**一等架构评估层**：外层 Agent 在运行期评估子 Agent 的方法论质量（评估层定位，非运行时实时拦截；实时拦截治理：v1.3.0 起 middleware 层轻量拦截，v1.4.0 完整沙箱），层层筛选合成高价值结论。审计是这个评估层的基础设施。
 
 > a16z 研判：智能体经济瓶颈从「智力」转向「身份」——非人类身份:人类 = 96:1，急需 KYA。审计 + 约束底座 = 企业内部轻量版 KYA。v1.2.x 评估引入签名凭证做 Agent 行动的可审计绑定（身份层，**对所有 Agent 适用**）；凭证虚拟 key 中介（host 边界注入真凭证）在 v1.4.0 **仅限自派 SubAgent 沙箱**（v1.3.0 为 middleware 层轻量拦截，无沙箱隔离）。
+
+#### 运行时审计 tool wrapper（v1.3.0）
+
+v1.3.0 把「提交时审计（git diff）」扩展为「运行时拦截 + 留证」——在 `createReactAgent` 的工具定义层包一层 tool wrapper（`FORGE/src/audit-middleware.mjs` 的 `createAuditMiddleware`，对标 `progressMw.wrapToolCall` 模式）：
+
+```mermaid
+graph LR
+    A[Agent 工具调用] --> B[audit-middleware<br/>wrapTool/check]
+    B --> C{RulesEngine<br/>tool-gate 规则}
+    C -->|FAIL| D[⛔ 拦截 + 运行时审计日志]
+    C -->|requireApproval| E[⛔ HITL 待批准<br/>hitl_resolve 决策]
+    C -->|WARN/PASS| F[✅ 放行 + 记日志]
+    D --> G[data/audit/runtime/&lt;repo-hash&gt;/]
+    E --> G
+    F --> G
+```
+
+- 规则引擎：`@sofagent/rules`（`RulesEngine.check + aggregate`），3 条 tool-gate 规则（A1/A2/A9 移植版，`ruleType: 'tool'`）
+- 判定便捷 API：`shouldAllow(engine, ctx)` → `{ allow, reason, requireApproval }`
+- 审计日志按 git 仓库隔离（`git rev-parse --show-toplevel` hash；非 git 回退 `nogit-<cwd-hash>`）
+- 每次判定同步写 `emitDecision`（决策审计 TOOL_GATE）
+- 企业 Agent 路径（node-executor）经 `wrapToolsWithGate` 补 gate——与 LOOP 路径一致
+
+#### 决策审计（v1.3.0 · 意图层审计 MVP）
+
+把 A1-A19 的「行为问责（扫 git diff）」升级为「意图问责（运行时记决策理由链）」：
+
+| 组件 | 文件 | 作用 |
+|------|------|------|
+| Schema | `engine/audit/src/decision-schema.ts` | DecisionKind(9)/LoopPhase(7)/DecisionWhy + `sanitizeWhy`（先脱敏再签名铁律） |
+| 受控写 | `engine/audit/src/decision-log.ts` | `emitDecision()`——唯一落盘入口，HMAC 链与 history.jsonl 同套（同密钥/同签名/同环境指纹） |
+| 链校验 | `engine/audit/src/decision-chain.ts` | `checkDecisionChainDetailed()`——mirror history 链范式 |
+| 查询层 | `engine/audit/src/decision-query.ts` | `queryByKind` / `getKindSummary` / `traceBack`（decision→spec→artifact→行为记录 join）/ `traceFromBehavior` |
+
+决策日志路径：`data/audit/decision-log.jsonl`（history.jsonl 同级兄弟文件）。Agent 只能经 `emitDecision` 落盘——**受控写铁律**。
 
 **评估即需求（Eval as Spec）**：在 Agent 系统中，传统软件的需求文档（PRD）正在被评估用例取代——不是先写 PRD 再让 Agent 照着做，而是先定义"什么算做对了"（可量化、可执行的验收标准），让 Agent 在这个靶子里自主循环收敛。sofagent 的审计就是这个理念的工程骨架：24 条规则 = 24 条可执行的验收标准（19 条纯 git-diff 零 token 确定性判定 + 5 条需语义理解），每次 commit 自动跑一轮回归——不是"写完看看对不对"，是"不满足标准就进不了主干"。这与 fresh-eyes 独立审查、release-gate 验收闭环同构：把"做完了的判定"（What + Done）从人的主观审查变成代码的确定性裁决。评估驱动的约束比提示词约束更坚固——提示词会被模型吞噬，可执行约束不会。
 

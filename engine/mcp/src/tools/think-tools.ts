@@ -1,6 +1,6 @@
 // ============================================================
 // think-tools.ts · MCP tools: get_think / write_think / read_think_md / read_lessons
-// v1.2.9: 从 mcp-server.ts 提取
+// v1.3.0: 从 mcp-server.ts 提取
 // ============================================================
 
 import { existsSync, readFileSync, mkdirSync } from 'fs';

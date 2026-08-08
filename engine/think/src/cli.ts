@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// think CLI · v1.2.9
+// think CLI · v1.3.0
 
 const args = process.argv.slice(2);
 const subcommand = args[0];

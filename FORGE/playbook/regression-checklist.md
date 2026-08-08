@@ -86,7 +86,7 @@ grep -A5 "'A4\|name.*不删配置" engine/audit/src/rules/index.ts | grep "ruleC
 grep "name:" engine/audit/src/rules/index.ts | wc -l   # 期望 24
 grep "A6.*能力拐杖\|A11.*业务底线" engine/audit/README.md | wc -l   # 期望 2
 
-# 子项 d: ruleClass SSOT ↔ README 逐条比对（v1.1.3 盲区 · v1.2.5 重写）
+# 子项 d: ruleClass SSOT ↔ README 逐条比对（v1.1.3 盲区 · v1.3.5 重写）
 # v1.2.5：旧版用 `diff <(index.ts 代码) <(README 表格行)`——两种文本格式天生不同，永远报差异（误报 12 行）。
 # 改为两侧归一化成「A编号 ruleClass」再比对，才是真正检查"每条规则分级两边一致"。
 diff <(grep -E "name: 'A[0-9]+" engine/audit/src/rules/index.ts | sed -E "s/.*name: '(A[0-9]+)[^']*'.*ruleClass: '([^']+)'.*/\1 \2/" | sort) \
@@ -185,7 +185,7 @@ echo "index.ts: $INDEX_RULES / knownKeys: $KNOWN_KEYS"   # 期望：两集合相
 # 文档侧：声称型数字（v1.1.5 教训——6 文档漏改）
 grep -rnE "A1-A11、A14-A1[0-9]|[0-9]+ 条审计规则" --include="*.md" README.md README.en.md docs/ FDE/ FORGE/ ROADMAP.md 2>/dev/null | grep -v "regression-checklist\|fresh-eyes-review\|changelog/"   # 人工核对：与 SSOT 一致
 
-# 字段完整性（v1.1.6：name+ruleClass 各 24 条=48 · v1.2.5 修正 21→24）+ evidenceMode 计数（v1.1.4：期望 24）
+# 字段完整性（v1.1.6：name+ruleClass 各 24 条=48 · v1.3.5 修正 21→24）+ evidenceMode 计数（v1.1.4：期望 24）
 grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l   # 期望 48
 grep -cE "evidenceMode:" engine/audit/src/rules/index.ts   # 期望 24
 ```
@@ -957,7 +957,7 @@ grep -rnE "^#{1,4} .*(🔮|🔄|🪟|✨|[+/（）():：])" docs/ README.md SECU
 
 > **PASS 标准**：所有跨文档 `#锚点` 链接指向的标题，按 GitHub 渲染规则（剥 emoji/标点、空格→`-`）推算的锚点与链接一致。标题含特殊字符者重点核对。
 
-#### 65. FORGE stream 迁移数据处理——finalState 须累积 delta + extractAgentText 须防御对象 content（v1.2.4 新盲区 · v1.2.9 归并 65+66）
+#### 65. FORGE stream 迁移数据处理——finalState 须累积 delta + extractAgentText 须防御对象 content（v1.2.4 新盲区 · v1.3.0 归并 65+66）
 
 > v1.2.4 教训（归并原 65+66）：FORGE stream 迁移有两个数据处理陷阱：① `stream(streamMode: 'updates')` 的 chunk 是 `{ nodeName: stateDelta }`，直接 `finalState = chunk` 会丢 `result.messages` → 输出 `[object Object]`——必须 `Object.entries(chunk)` 累积。② LangGraph message content 可能是 `Array<{type, text}>` 或嵌套对象，`extractAgentText` 只做 string 判断时会 fallback 到 `String(message)` → 同样输出 `[object Object]`。
 
@@ -1041,7 +1041,7 @@ node -e "const fs=require('fs'),src=fs.readFileSync('FORGE/src/fresh-eyes-driver
 # 期望：OK
 ```
 
-#### 73. ESM named export 完整性 + FORGE 模块加载烟测（v1.2.8 新盲区 · v1.2.9 归并 73+74）
+#### 73. ESM named export 完整性 + FORGE 模块加载烟测（v1.2.8 新盲区 · v1.3.0 归并 73+74）
 
 > v1.2.9 教训（归并原 73+74）：FORGE/ 不在 npm workspaces → `npm test` 从不执行 FORGE/ 下的 `.test.mjs`。曾出过 `DEFAULT_BUDGET` 缺 `export` 关键字导致 3 个 driver 启动即崩溃的 P0 bug。补建 `tools/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件烟测，集成到 pre-push-check.sh。
 
@@ -1094,5 +1094,3 @@ grep 'grep.*条规则' tools/check-version.sh | grep -q '\.test\.' && echo "❌ 
 # 跑 check-version.sh 确认 TS 文件头版本号与 SSOT 一致（零不一致）
 bash tools/check-version.sh 2>&1 | grep "TS 文件头" | grep -q "✓" && echo "✅ 版本头一致" || echo "❌ 有不一致"
 ```
-
-

@@ -1,11 +1,11 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.2.9 · 2026-08-08（UTC）· 🔗 激活链 Phase 3 后半 + 约束层叙事重构 + 三个入口产品
+> v1.3.0 · 2026-08-08（UTC）· 🔗 激活链 Phase 3 后半 + 约束层叙事重构 + 三个入口产品
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
-## 现在在哪：v1.2.9（已交付）
+## 现在在哪：v1.3.0（已交付）
 
 > **v1.2.9 交付内容**：
 > **🐛 FORGE Driver 短任务化**——a-check/b-check 从"1 worker 跑 12 视角"拆成"12 独立 worker 各跑 1 视角"（5-8 次工具调用）
@@ -87,7 +87,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
 | **v1.2.9** | ✅ 已交付 | **🐛 v1.2.8 发版遗留 BugFix + 🔧 FORGE Driver 短任务化 + ⏸️ Checkpoint/Resume 升级 + 🏠 PM2 守护 + 🔗 激活链 Phase 3 后半 + 📐 约束层叙事重构 + 🚪 三个入口产品**：① 短任务化——a-check/b-check 从"1 worker 跑 12 视角"拆成"12 独立 worker 各跑 1 视角"（5-8 次工具调用）② Checkpoint/Resume 从轮级升级为 worker 级断点（`completedWorkers: string[]`）③ PM2 守护进程（脱离 session 生命周期，崩溃自动重启+日志持久化+开机自启）④ 激活链 Phase 3 后半（HITL 中断处理 + 每节点执行后自动审计 + 异常处理）⑤ 工程债务——mcp-server.ts 1899 行拆分 ⑥ v1.2.8 发版遗留 BugFix——driver 修复链 bug（verdict PASS 时 results 状态一致 + f-fix 硬上限由短任务化覆盖；driver-base 继承重构已消化相关缺陷）⑦ 约束层叙事重构——"一底座·三引擎"统一为"约束层（Harness）：一个层四种能力（注入·审计·回溯·进化）"，纯文档改写 ⑧ 三个入口产品——`npx sofagent-audit` 零配置 CLI + 规则市场（`--ruleset` + 插件接口 `type: "plugin"` 支持外部 npm 包注册 AST/语义规则）+ GitHub Action（PR 自动审计） | [日志](./changelog/v1.2/v1.2.9.md) |
-| **v1.3.0** | 📋 规划中 | **运行时审计最小闭环 + 🔗 激活链 Phase 4 收尾（SUSTAIN）**：① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离 ⑥ 决策审计 Judgment Unit（emitDecision + kind-wise back）⑦ **🔗 激活链收尾**：全链路验证（activate→compose→run→HITL→audit→sustain）+ wrapToolCall 自动覆盖企业 Agent + FDE SKILL.md 新增 activate 引导 ⑧ **list_rules** MCP tool（tool-gate 规则透明化，覆盖度审计缺口补全）⑨ **🔧 技术债回收：双规则系统统一**——`engine/rules/`（tool-level）与 `engine/audit/src/rules/`（git-diff）统一为单一规则引擎（`ruleType: 'tool' | 'diff'`），消除 secret-leak 检测的行为不一致风险（详见 [ARCHITECTURE 已知技术债](./ARCHITECTURE.md#已知技术债双规则系统重叠)）⑩ **📦 外部记忆后端 Path A**——TencentDB-Agent-Memory MCP connector（弱依赖、缺省关闭、零架构改造，MA1-MA7；详见开发日志 §外部记忆后端 Path A 专项） | [日志](./changelog/v1.3/v1.3.0.md) |
+| **v1.3.0** | 🟡 开发中 | **运行时审计最小闭环 + 🔗 激活链 Phase 4 收尾（SUSTAIN）**：① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 审计日志按 git 仓库隔离 ⑥ 决策审计 Judgment Unit（emitDecision + kind-wise back）⑦ **🔗 激活链收尾**：全链路验证（activate→compose→run→HITL→audit→sustain）+ wrapToolCall 自动覆盖企业 Agent + FDE SKILL.md 新增 activate 引导 ⑧ **list_rules** MCP tool（tool-gate 规则透明化，覆盖度审计缺口补全）⑨ **🔧 技术债回收：双规则系统统一**——`engine/rules/`（tool-level）与 `engine/audit/src/rules/`（git-diff）统一为单一规则引擎（`ruleType: 'tool' | 'diff'`），消除 secret-leak 检测的行为不一致风险（详见 [ARCHITECTURE 已知技术债](./ARCHITECTURE.md#已知技术债双规则系统重叠)）⑩ **📦 外部记忆后端 Path A**——TencentDB-Agent-Memory MCP connector（弱依赖、缺省关闭、零架构改造，MA1-MA7；详见开发日志 §外部记忆后端 Path A 专项） | [日志](./changelog/v1.3/v1.3.0.md) |
 | **v1.3.1** | 📋 规划中 | **Ontology 本体结构 + 国标对齐 + 并行编排 + Agent 身份码 + 跨设备审计聚合 + 🚀 Onboard Agent L1 + 📊 Benchmark 评测体系 + 🔒 工具审批模式**（详见 [下方详解](#v131--ontology-本体结构操作型本体论落地)） | [日志](./changelog/v1.3/v1.3.1.md) |
 | **v1.3.2** | 📋 规划中 | **🚀 Onboard Agent 完整版（L2-L5 · FORGE 产品化第二刀）**：① L2 语义判定（Ontology 判据）② L3 自动定位（LLM 推理）③ L4 自动修复（审计兜底）④ L5 循环收敛（回归+连续 PASS） | [日志](./changelog/v1.3/v1.3.2.md) |
 | **v1.3.3** | 📋 规划中 | **L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版**：① 协作协议——共享态/意图广播/触发反应/冲突消解/反馈放大 + 团队状态管理 ② Refine Agent——复用 Onboard 循环引擎，判据从 Ontology 换成质量规则集（好不好），五层一次交付 | [日志](./changelog/v1.3/v1.3.3.md) |

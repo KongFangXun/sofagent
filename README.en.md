@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.9-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.0-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center">
@@ -155,7 +155,9 @@ jobs:
 
 > 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research ([research code repository](https://github.com/JoelNiklaus/harness-optimization), data in the repo experiments) shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
 
-> 🧪 **Engineering credibility**: 1696 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
+> 🧪 **Engineering credibility**: 1712 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
+
+> 🔐 **v1.3.0 new capabilities**: runtime audit (tool wrapper dynamic interception + audit trail) · decision audit (intent accountability: `emitDecision` + HMAC chain + kind-wise queries) · rule transparency (`list_rules` MCP tool) · HITL approval hooks · audit logs isolated per git repo · activation chain Phase 4 · external memory backend Path A (optional, off by default) · evolution-chain write protection. See [v1.3.0 devlog](./docs/changelog/v1.3/v1.3.0.md).
 
 ## Docs
 

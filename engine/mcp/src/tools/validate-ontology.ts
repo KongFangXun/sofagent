@@ -1,5 +1,5 @@
 // ============================================================
-// validate-ontology.ts · MCP tool：本体结构完整性校验（v1.2.9 S2 新增）
+// validate-ontology.ts · MCP tool：本体结构完整性校验（v1.3.0 S2 新增）
 // ============================================================
 //
 // 复用 @sofagent/ontology 的 checkOntologyStatus() + mergeOntology()

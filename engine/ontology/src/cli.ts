@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// ontology CLI · v1.2.9
+// ontology CLI · v1.3.0
 
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -7,7 +7,6 @@ import { homedir } from 'os';
 
 const args = process.argv.slice(2);
 const subcommand = args[0];
-
 /**
  * F-18 (v1.3.0 bugfix)：解析数据目录——与 @sofagent/core loadEnvConfig().dataDir
  * 的 resolveDataDir 语义一致（SOFAGENT_DATA → cwd/.sofagent → 标记文件 → fallback）。
