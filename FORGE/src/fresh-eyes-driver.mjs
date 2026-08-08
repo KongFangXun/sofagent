@@ -405,7 +405,7 @@ async function createModel(role, maxTokensOverride) {
 // 不再在此文件内联定义。删除旧实现 L317-349。
 import { truncateToolOutput, createToolOutputBudget, DEFAULT_BUDGET as TOOL_OUTPUT_MAX_LINES } from './tool-output-budget.mjs';
 
-function loadTools(role, progressMw = null) {
+function loadTools(role, progressMw = null, auditMw = null) {
   const cfg = MODEL_CONFIGS[role];
   const toolsModule = require('../../engine/orchestrator/dist/tools.js');
   const rawTools = toolsModule[cfg.toolsKey];
@@ -448,6 +448,15 @@ function loadTools(role, progressMw = null) {
 
     const wrappedTool = tool(
       async (input) => {
+        // v1.3.0 (交付 1)：运行时审计 tool wrapper——audit 检查在最外层，
+        // FAIL 拦截优先于 progress 埋点（被拦截的工具不执行、不埋 start/end）。
+        if (auditMw) {
+          const verdict = auditMw.check(rawTool.name, input ?? {});
+          if (verdict?.blocked) {
+            return `⛔ [Audit 拦截] ${rawTool.name} 被拒绝执行：${verdict.reason}`;
+          }
+        }
+
         // v1.2.1 L2：工具调用埋点（start → handler → end，含 duration）
         // v1.2.5：工具输出截断——超过 200 行的输出只保留头尾，防止上下文膨胀
         const execFn = async () => {
@@ -673,7 +682,24 @@ async function runWorker(step, roundDir, target) {
   } catch (mwErr) {
     console.warn(`[worker:${step}] ProgressMiddleware 创建失败（不影响主流程）: ${mwErr.message}`);
   }
-  const tools = loadTools(role, progressMw);
+
+  // v1.3.0 (交付 1)：运行时审计 tool wrapper——tool-gate 规则动态拦截 + 审计日志留证。
+  // 创建失败不阻断 worker（与 L1 visibility 容错策略一致）。
+  let auditMw = null;
+  try {
+    const { createAuditMiddleware } = await import('./audit-middleware.mjs');
+    const { RulesEngine, defaultToolRules } = require('../../engine/rules/dist/index.js');
+    auditMw = createAuditMiddleware(new RulesEngine(defaultToolRules), {
+      agentName: role,
+      taskDesc: stepDef?.task ?? '',
+      cwd: process.cwd(),
+      sessionId: `forge-${role}-${step}`,
+      emitDecision: true,
+    });
+  } catch (auditErr) {
+    console.warn(`[worker:${step}] AuditMiddleware 创建失败（不影响主流程）: ${auditErr.message}`);
+  }
+  const tools = loadTools(role, progressMw, auditMw);
 
   // 用 @langchain/langgraph 的 createReactAgent 替代 deepagents createDeepAgent。
   //
