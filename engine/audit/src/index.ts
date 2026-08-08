@@ -901,6 +901,12 @@ async function main(): Promise<void> {
     }
   }
 
+  // P2 安全：过滤 commit message 中的 ANSI 转义码（防止注入审计报告输出）
+  if (commitMsg) {
+    // eslint-disable-next-line no-control-regex
+    commitMsg = commitMsg.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
+  }
+
   // 4. 加载审计配置（三级 fallback）——YAML 语法错误时按模式处理
   let config;
   try {
