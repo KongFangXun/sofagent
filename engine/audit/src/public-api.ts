@@ -63,3 +63,10 @@ export type { FederationDistillArgs, DistillResult, MergeFn } from './cli/federa
 // ── webhook 推送（v1.2.4 P3 S5：供 @sofagent/mcp L4 双通道使用） ──
 export { pushAuditResult } from './webhook';
 export type { WebhookPayload, WebhookPlatform } from './webhook';
+
+// ── 决策审计（v1.3.0 交付 6 T03）──
+export { emitDecision } from './decision-log';
+export type { DecisionLogEntry, EmitDecisionInput } from './decision-log';
+export { checkDecisionChainDetailed } from './decision-chain';
+export { sanitizeWhy } from './decision-schema';
+export type { DecisionKind, LoopPhase, DecisionWhy } from './decision-schema';

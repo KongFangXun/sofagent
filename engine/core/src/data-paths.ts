@@ -38,6 +38,8 @@ export const DATA_DIR = path.join(SOFAGENT_HOME, 'data');
 export const AUDIT_DIR = path.join(DATA_DIR, 'audit');
 export const AUDIT_HISTORY = path.join(AUDIT_DIR, 'history.jsonl');
 export const AUDIT_SESSION_REPORT = path.join(AUDIT_DIR, 'session-report.json');
+// v1.3.0 (交付 6 T01)：决策审计日志——history.jsonl 同级兄弟文件（意图层审计 MVP）
+export const AUDIT_DECISION_LOG = path.join(AUDIT_DIR, 'decision-log.jsonl');
 
 // ── 数据主权审计（v1.2.3 P0） ──
 // 与 history.jsonl 同在 audit/ 父目录下，Dashboard jq 单目录扫描（架构决策：对齐 dev-prompt L40）
