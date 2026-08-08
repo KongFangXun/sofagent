@@ -9,7 +9,7 @@
 
 > 未来版本规划见 [ROADMAP.md](./docs/ROADMAP.md)
 
-- **v1.2.9** — 🐛 v1.2.8 发版遗留 BugFix + 🔧 FORGE Driver 短任务化 + ⏸️ Checkpoint/Resume + 🏠 PM2 守护 + 🔗 激活链 Phase 3 后半 + mcp-server.ts 拆分 · 2026-08-XX · [开发日志](./docs/changelog/v1.2/v1.2.9.md)
+- **v1.2.9** — 🐛 v1.2.8 发版遗留 BugFix + 🔧 FORGE Driver 短任务化 + ⏸️ Checkpoint/Resume + 🏠 PM2 守护 + 🔗 激活链 Phase 3 后半 + mcp-server.ts 拆分 · [开发中] · [开发日志](./docs/changelog/v1.2/v1.2.9.md)
 - **v1.2.8** — 记忆分层 + 定时任务 + 🔗 激活链 Phase 3 前半 + 🚪 release-gate-loop F 修复者 + 🔍 FORGE 全 loop 接入 audit + ⏸️ Checkpoint/Resume · 2026-08-07 · [开发日志](./docs/changelog/v1.2/v1.2.8.md)
 - **v1.2.7** — 编排引擎增强 + 🔗 激活链 Phase 2 后半（Session Goals `/goal` + `/compact` + Skill 渐进加载 + doctor --repair + FORGE driver-base + enterprise-graph StateGraph 构建 + --support-bundle + One-Line bootstrap.sh + Agent Mailbox）· 2026-08-06 · [开发日志](./docs/changelog/v1.2/v1.2.7.md)
 - **v1.2.6** — 激活链 Phase 2 前半（映射表+注册扩展）+ MCP 交付链路修补（4 tool 三处注册）+ 文档死链清零 · 2026-08-04 · [开发日志](./docs/changelog/v1.2/v1.2.6.md)

@@ -42,7 +42,7 @@ sofagent 就是解决这个问题的：**它帮你把 AI 管起来，让 AI 干�
 | **想让 AI 自动跑？** | 先梳理你的工作流，把能自动化的环节变成 AI 节点，部署完自己跑 | 从"你干活"变成"你派活"——AI 节点 7×24 自己跑 |
 | **AI 乱来怎么办？** | 每次 AI 改东西都自动检查一遍 | AI 干的活有人盯着，越界立即告警 |
 | **AI 闯祸了怎么办？** | 每次改动自动存档，一键回滚 | 出事能一键回到安全状态 |
-| **换了 AI 工具/模型怎么办？** | 不挑平台——Claude、GPT、自建模型都能管 | 换模型不影响防护 |
+| **换了 AI 工具/模型怎么办？** | 审计层基于 git diff，不挑平台——Claude、GPT、自建模型都能审计 | 换模型不影响防护 |
 | **越用越好吗？** | AI 每次干活的经验自动沉淀，定期巡检优化规则（⚠️ v1.2.8 部分自动——详见首屏状态说明） | 它越用越懂你的业务 |
 
 **🏞️ 打个比方：一条河**——大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是**堤坝 + 自来水厂 + 管网 + 水龙头**：
@@ -102,7 +102,7 @@ node tools/serve-dashboard.mjs    # 命令行启动（跨平台，自动打开�
 
 > 打开方式：通过服务器打开才能读到 `~/.sofagent/data` 的实时数据（浏览器安全限制）。Chrome/Edge 用户也可在页面里点「连接数据目录」直接选目录，免服务器。静态打开 HTML 仅显示示例数据。
 
-**💻 终端面板（bash）**——轻量、零依赖（需 jq）：
+**💻 终端面板（bash）**——轻量、仅需 jq：
 
 ```bash
 sofagent-dashboard           # 看当前状态
@@ -143,11 +143,13 @@ FDE 交付了本体结构（ontology）+ workflow.yml + skills/ 之后，v1.2.5 
 
 > **前提**：开发者路径请在 git 仓库根目录下执行。如果还没有仓库，先运行 `git init`。
 >
-> 🔒 **安全提示**：`curl | bash` 会执行远程脚本。建议先审查脚本内容再执行：`curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh | less`，确认无误后再运行安装命令。脚本只写入 `~/.sofagent/` 目录，不修改系统文件。
+> 🔒 **安全第一**：所有安装脚本只写入 `~/.sofagent/` 目录，不修改系统文件。建议先审查脚本内容再执行（上方方式 1 已改为先下载再执行）。
 
 ```bash
-# 方式 1：一行安装（v1.2.7 新增 · 推荐）
-curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh | bash
+# 方式 1：安全一键安装（先下载再执行，推荐）
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh -o bootstrap.sh
+less bootstrap.sh   # ← 先看一眼脚本内容，确认安全
+bash bootstrap.sh && rm bootstrap.sh
 
 # 方式 2：完整安装（clone + install.sh）
 git clone https://github.com/KongFangXun/sofagent.git && cd sofagent
@@ -184,7 +186,7 @@ sofagent-audit --init
 # 1. 看可用命令
 sofagent-audit --help
 
-# 2. 跑审计——第 0 步的 --init 已装好 pre-commit hook，每次 commit 都被拦
+# 2. 跑审计——第 0 步的 --init 已装好 commit-msg hook，每次 commit 都被拦
 # GIT_EDITOR=true 让 git commit 不弹编辑器（CI/自动化场景常用）
 echo "API_KEY=sk-123456" > .env && git add -f .env && GIT_EDITOR=true git commit -m "add env config"
 # → ⛔ A1 不碰敏感：.env 含密钥格式，提交被拦截（不会真的落库）
@@ -234,7 +236,7 @@ git rm --cached -f .env 2>/dev/null; rm -f .env
 | 工具 | 它们管什么 | sofagent 管什么 |
 |------|:--------|:----------------|
 | detect-secrets / gitleaks | 密钥扫描（全量历史 + 100+ 模式）| A2 覆盖常见 API key；差异化 = **Agent 行为审计**而非密钥覆盖率 |
-| Cursor Rules / Claude hooks | 单平台 IDE 约束 | 审计层全平台可用（git diff）；约束层按平台分层（OpenClaw 最深 → WorkBuddy SKILL → 其他种子指令）|
+| Cursor Rules / Claude hooks | IDE/CLI 级约束（Claude hooks 已支持 25+ 生命周期事件）| 审计层全平台可用（git diff）；约束层按平台分层（OpenClaw 最深 → WorkBuddy SKILL → 其他种子指令）|
 
 > ⚠️ **对比快照时间戳**：以上对比基于 2026-08-02 各工具的公开能力快照；工具迭代快，条款可能过时。差异化的核心论点（sofagent 审计「AI 行为」而非「代码质量」）不随工具版本变化。
 

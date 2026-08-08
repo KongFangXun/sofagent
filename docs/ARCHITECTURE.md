@@ -37,7 +37,7 @@ graph LR
     subgraph 层1 · 能力底座（能力视角 · 已交付）
         B1[🧭 约束底座<br/>开工前注入红线]
         B2[🔍 审计引擎<br/>每次变更硬证据]
-        B3[🔄 回溯能力<br/>快照·回滚]
+        B3[🔄 回溯引擎<br/>快照·回滚]
         B4[🧬 进化引擎<br/>反思·知识·优化]
         B1 --- B2 --- B3 --- B4
     end
@@ -102,7 +102,7 @@ graph TD
 |------|------|------|
 | 🧭 约束底座 | Constraint Base | 四层加载链，Agent 启动前注入红线 |
 | 🔍 审计引擎 | Audit Engine | git diff + 文件变更硬证据审计（v1.1.0 拆独立包） |
-| 🔄 回溯能力 | Restore Capability | 每次审计自动快照，`--revert` 一键回滚 |
+| 🔄 回溯引擎 | Restore Engine | 每次审计自动快照，`--revert` 一键回滚 |
 | ⚙️ FORGE 工具链 | FORGE Toolchain | LOOP 流水线（内部自迭代用，非对外引擎） |
 | 🧬 进化引擎 | Evolution Engine | FDE 周度巡检 + 自动优化，v1.0.8+ |
 | 加载链 | Load Chain | Agent 启动时注入的约束文件 |
@@ -126,7 +126,7 @@ graph TD
 
 ---
 
-## 能力与状态总览（v1.2.0）
+## 能力与状态总览（v1.2.8）
 
 > 这份清单是「现在能干什么」的单一索引。引擎内部设计见 [二、一底座·三引擎设计](#二一底座三引擎设计)；未来方向见 [六、已知局限与未来方向](#六已知局限与未来方向)。
 
@@ -145,7 +145,7 @@ graph TD
 | mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | skillopt | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填 | ✅ 已实现 |
-| think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现 |
+| think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成） |
 | load-chain | 加载链 Hook 包 `@sofagent/load-chain`：Agent 平台（OpenClaw / WorkBuddy 等）hook 注入四层约束（v1.2.0 DP-4（设计原则 4）提升为正式 workspace 包） | ✅ 已实现 |
 
 ### 对外核心能力（FDE Agent 给用户什么）
@@ -190,7 +190,7 @@ sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent �
 ```mermaid
 graph LR
     A["🧭 约束底座<br/>启动前注入红线"] --> B["🔍 审计引擎<br/>24 条规则·拦截违规"]
-    B --> C["🔄 回溯能力<br/>快照存档·一键回滚"]
+    B --> C["🔄 回溯引擎<br/>快照存档·一键回滚"]
     C --> D["🧬 进化引擎<br/>周度巡检·自动优化"]
     D --> A
 ```
@@ -199,7 +199,7 @@ graph LR
 |------|------|:--:|
 | 🧭 约束底座 | 四层加载链永远在线 | @sofagent/harness |
 | 🔍 审计引擎 | 只看 git diff 硬证据 | @sofagent/audit |
-| 🔄 回溯能力 | 事后快照 + `--revert` | @sofagent/core |
+| 🔄 回溯引擎 | 事后快照 + `--revert` | @sofagent/core |
 | ⚙️ FORGE 工具链 | StateGraph LOOP 流水线（内部自迭代用） | @sofagent/orchestrator |
 | 🧬 进化引擎 | daemon cron @weekly | @sofagent/daemon + @sofagent/skillopt |
 
@@ -230,9 +230,9 @@ Harness 中间件最大的挑战是存在感——引擎在正常工作，但用
 | 层 | 是什么 | 成本 |
 |:--:|------|:--:|
 | 地基 | 四层加载链（纯 MD 文件，Agent 读即生效） | ~3,500 token |
-| 引擎 | 编排 + 审计 + 回溯能力 + 进化（含质量评估）+ 约束底座（daemon + CLI） | 按需启动 |
+| 引擎 | 编排 + 审计 + 回溯引擎 + 进化（含质量评估）+ 约束底座（daemon + CLI） | 按需启动 |
 
-> v1.1.0 将审计引擎拆为独立 npm 包 `@sofagent/audit`，地基（约束底座）和其余引擎（编排/审计/进化）与回溯能力不受影响。
+> v1.1.0 将审计引擎拆为独立 npm 包 `@sofagent/audit`，地基（约束底座）和其余引擎（编排/审计/进化）与回溯引擎不受影响。
 
 ### 产品架构展望（五层）
 
@@ -278,7 +278,7 @@ Agent 平台（OpenClaw / WorkBuddy 等）通过 Hook 精确注入，其他平�
 
 **最坏情况反问**（权限模型必答题）：「如果这个 Agent 被 Prompt 注入了，最坏情况是什么？」答案应是它 profile 内那些权限能做的事，而非整个系统沦陷——权限不是限制 Agent，是保护组织。
 
-**动态治理三机制**（行业参考内部实践口径）：
+**动态治理三机制**（行业参考内部实践）：
 - 动态提权：任务触发、限时授权、到期自动回收（临时审批申请 → 批准 → 约 2 小时后过期）。
 - 熔断拦截：高危操作实时拦截、等待人类确认。
 - 红线制度：超阈值动作（如合同金额 > 10 万）须 VP 签字等边际审批。
@@ -329,6 +329,8 @@ graph LR
 
 > a16z 研判：智能体经济瓶颈从「智力」转向「身份」——非人类身份:人类 = 96:1，急需 KYA。审计引擎 + 约束底座 = 企业内部轻量版 KYA。v1.2.x 评估引入签名凭证做 Agent 行动的可审计绑定（身份层，**对所有 Agent 适用**）；凭证虚拟 key 中介（host 边界注入真凭证）在 v1.4.0 **仅限自派 SubAgent 沙箱**（v1.3.0 为 middleware 层轻量拦截，无沙箱隔离）。
 
+**评估即需求（Eval as Spec）**：在 Agent 系统中，传统软件的需求文档（PRD）正在被评估用例取代——不是先写 PRD 再让 Agent 照着做，而是先定义"什么算做对了"（可量化、可执行的验收标准），让 Agent 在这个靶子里自主循环收敛。sofagent 的审计引擎就是这个理念的工程骨架：24 条规则 = 24 条可执行的验收标准（19 条纯 git-diff 零 token 确定性判定 + 5 条需语义理解），每次 commit 自动跑一轮回归——不是"写完看看对不对"，是"不满足标准就进不了主干"。这与 fresh-eyes 独立审查、release-gate 验收闭环同构：把"做完了的判定"（What + Done）从人的主观审查变成代码的确定性裁决。评估驱动的约束比提示词约束更坚固——提示词会被模型吞噬，可执行约束不会。
+
 **审计引擎的三重身份**：Code Review 体系化实践中，Review / Verification / Gate 是三个独立环节——sofagent 的审计引擎同时承担三者：
 
 | 环节 | 属性 | sofagent 对应 |
@@ -338,6 +340,8 @@ graph LR
 | Gate（决策管控） | 基于 Review+Verification 结果判断能否合并 | exit code 0/1/2 → 放行/WARN/阻断 commit |
 
 > **设计原则**：Review Agent 默认不配代码执行权限——纯静态分析避免执行逻辑干扰审查客观性。sofagent 审计引擎同样零执行权限，只看 git diff 硬证据。
+
+**审计引擎作为 E2E Test Harness**：对 Coding Agent 最有效的约束不是更多提示词（模型会内化文字约束），而是端到端测试 Harness——一套提交时自动触发、判定通过/不通过的执行层。sofagent 审计引擎就是这种 Harness：`git commit` 触发 → 24 条规则并行判定 → exit code 决定能否进主干。与 CI/CD 的测试管线相比，审计引擎的优势在"零执行权限"——不看 Agent 跑出来什么结果，只看 git diff 留下什么证据，因此不可被 Agent 的"好结果"说服而放过坏变更。可执行约束 > 提示词约束：前者是文件系统的是非题，后者是概率推理的判断题。
 
 **数据面参照：Langfuse**。[Langfuse](https://github.com/langfuse/langfuse)（开源 LLM 可观测与评估平台）做 trace 采集（每次调用的输入/输出/工具/耗时）+ 指标看板 + 评估数据集与回归，正好对位审计引擎的**数据面**；sofagent 做控制面（约束在先、变更留痕、经验回流）。两者互补——**可观测性是控制面的必要非充分条件**，看得见不等于管得住。
 
@@ -352,7 +356,7 @@ graph LR
 
 > 原计划 v1.2.4 统一为单一规则引擎（`ruleType: 'tool' | 'diff'`），未落地。**已承接至 v1.3.0**（详见 [ROADMAP v1.3.0](./ROADMAP.md)）——v1.3.0 的运行时审计 middleware 升级正好是统一规则引擎的天然时机（tool-gate 规则从硬编码升级为 middleware 拦截时，顺便统一 `ruleType` 字段）。两套规则触发时机不同（tool-level 在调用前拦截、audit 在 commit 后审计），统一后保留两种触发模式但共用一套规则定义。
 
-### 回溯能力（本质：git snapshot + revert 包装）
+### 回溯引擎（本质：git snapshot + revert 包装）
 
 行车记录仪，不是安检——事后快照，不依赖任何平台：
 
@@ -768,8 +772,9 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 | 1 | SKILL.md（宪法） | ❌ 不可改 | 最前面——开头注意力最高 |
 | 2 | fde.md（规范） | ✅ 可改 | 企业专属规则 |
 | 3 | think.md（反思） | ⚠️ 自动生成 | 上轮踩过的坑 |
+| 4 | knowledge/（知识） | 📚 自动积累 | 按需加载 top-N，不占基础预算 |
 
-三层之外还有 knowledge/（第四层，按需加载 top-N）。加载链总占用不超过上下文窗口的 3%，规范类文件（SKILL.md/fde.md 等）预算 ≤500 字，think.md 反思区单独预算 ≤2K token——这是 Agent 压缩后可读的最低保证。
+四层中前三层（SKILL.md / fde.md / think.md）在 Agent 启动时加载，第四层 knowledge/ 按需召回 top-N，不占基础预算。加载链总占用不超过上下文窗口的 3%，规范类文件（SKILL.md/fde.md 等）预算 ≤500 字，think.md 反思区单独预算 ≤2K token——这是 Agent 压缩后可读的最低保证。
 
 > 💡 **记忆系统的三软肋 = 知识健康巡检的防御目标**
 >
@@ -957,6 +962,8 @@ audit:
 **与路线图的契合**：v1.3.1「Ontology 本体结构」把这套隐喻落到产品（分布式 knowledge/ + 联邦查询 + git diff 硬证据）；v2.x「ontology I/O schema 硬化」把「根系」升级为 JSON Schema 校验的节点输入/输出形状约束——正是上表「根系」的工程化。5 阶段风险收敛（只读对象层→…→高风险 Action）则是「养护」的节奏参考：不要一上来就让 Agent 自动闭环。
 
 **养护的操作化身**：上表「养护」不是抽象姿态，而是由 fresh-eyes 独立审查机制兑现——`FORGE/playbook/fresh-eyes-review.md`（12 视角独立审查：零上下文、相信直觉、只报告不修复）正是护栏的审阅范式；FORGE `fresh-eyes-loop` 把这套独立视角自动化，ROADMAP v2.x 借 MLflow agent 评估为其补量化评审标准。换言之，本体分支要合入主干前，先过 fresh-eyes 这一关。
+
+**本体运维（OntologyOps = 知识资产的可版本化治理）**：本体结构不只是"一棵在长的树"，它还需要一套运维体系——把 DevOps 的版本化、可审计、可回滚实践应用到知识资产。sofagent 的落地：本体节点 = 带版本和 frontmatter 的文件（可 diff、可 review、可 revert）；knowledge/ 目录 = 可审计的知识仓库（daemon 的 conflict-check 巡检矛盾/孤儿/死链 = 知识层的 CI）；think.md append-only 契约 = 不可篡改的变更日志。换言之，Ledger-Views-Policy 三层不只是知识分类法，还是一套知识运维管线——Ledger 是 git 历史，Views 是构建产物，Policy 是合并保护规则。本体结构走向规模化的标志，不是"节点变多了"，而是"改一个节点有完整的 diff → review → merge → audit → rollback 流程"。
 
 ### Ontology 阶段匹配：不要提前进化（A1 实操）
 

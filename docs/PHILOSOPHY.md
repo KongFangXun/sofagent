@@ -35,7 +35,7 @@ Agent 越聪明，企业越不敢让它碰真活——真出事了，谁负责�
 
 sofagent 不替代大厂 Agent，而是建在它们之上——做河的约束层，不做河本身（River 比喻详见 [README（项目概览）](../README.md)）。FDE 进场四阶段：梳理→挖掘→交付→离场。离场后 AI 节点自己跑。
 
-> **🔗 激活链——从"交付"到"自运转"**：FDE 交付了 ontology + workflow.yml + skills/ 等静态文件后，交付物和"企业工作流自动运行"之间曾有一道**大断裂带**——企业 IT 拿到一堆 .md 和 .yml 不知道怎么跑起来。v1.2.5 起的**激活链**（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，规划中）解决这个问题：读交付物 → 注册企业 SubAgent → 构建 LangGraph StateGraph → DAG 运行 + HITL + 审计 → 持续优化自运转。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
+> **🔗 激活链——从"交付"到"自运转"**：FDE 交付了 ontology + workflow.yml + skills/ 等静态文件后，交付物和"企业工作流自动运行"之间曾有一道**大断裂带**——企业 IT 拿到一堆 .md 和 .yml 不知道怎么跑起来。v1.2.5 起的**激活链**（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，已交付）解决这个问题：读交付物 → 注册企业 SubAgent → 构建 LangGraph StateGraph → DAG 运行 + HITL + 审计 → 持续优化自运转。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 **③ 底层引擎：sofagent 的 Harness 中间件保证每次变更可审计、可回滚、可进化。**
 
@@ -60,6 +60,8 @@ sofagent 不替代大厂 Agent，而是建在它们之上——做河的约束�
 - 不是给 AI 写 SOP——SOP 保 60 分
 - 是装缰绳——让 AI 在个性化上下文里跑出 85-90 分而不越界
 - AI 是劳动力不是工具——产品设计是「管理 AI 的缰绳」
+
+> **数字劳动力的三代进化**：行业把 AI 工具演进划为三代——① 聊天机器人（Chatbot：一问一答，不动手）→ ② 数字分身（Digital Twin：按 SOP 模仿人的操作步骤）→ ③ 数字员工（Digital Employee：进组织架构、有账号、被派活、对结果负责）。三代分水岭不是"更聪明"，是**责任归属**——前两代产物归人，第三代产物归岗位。sofagent 管的就是第三代：约束底座 = 岗位职责说明书（什么能做什么不能做），审计引擎 = 绩效考核（每次变更留证据），回溯引擎 = 试错容错（做错了退得回），进化引擎 = 经验沉淀（越做越熟）。把 AI 当劳动力而不是工具，就需要劳动力管理基础设施——这正是 sofagent 的定位。
 
 ### sofagent 不管什么
 

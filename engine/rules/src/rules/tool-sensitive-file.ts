@@ -5,10 +5,9 @@
 
 import type { ToolRule, ToolCallContext, InterceptVerdict } from '../types';
 
-/** 敏感文件路径模式（与 audit rule-a1 对齐） */
+/** 敏感文件路径模式（与 audit rule-a1 取并集统一） */
 const SENSITIVE_PATTERNS: RegExp[] = [
-  /\.env$/i,
-  /\.env\./i,
+  /\.env[\w.-]*$/i,            // .env, .env.local, .env.production, .envrc 等
   /\.sofagent\/config/i,
   /\.sofagent\/knowledge/i,
   /\.sofagent\/audit/i,
@@ -17,6 +16,8 @@ const SENSITIVE_PATTERNS: RegExp[] = [
   /\/\.gnupg\//i,
   /\.pem$/i,
   /\.key$/i,
+  /\.pfx$/i,                   // *.pfx（与 audit rule-a1 对齐）
+  /\.p12$/i,                   // *.p12（与 audit rule-a1 对齐）
   /id_rsa/i,
   /id_ed25519/i,
   /\.kube\/config/i,
@@ -65,6 +66,9 @@ function extractFilePaths(args: Record<string, unknown>): string[] {
 /**
  * tool-sensitive-file 规则——检查 tool call 是否操作了敏感文件
  * 移植自 audit rule-a1（tool 视角）
+ *
+ * 同形字防御（与 audit rule-a1 对齐）：路径以点开头、含 "nv" 子串、且含非 ASCII 字符时，
+ * 视为可疑同形字文件名（如西里尔字母 е 替换拉丁 e 的 .еnv），按 FAIL 处理。
  */
 export const toolSensitiveFile: ToolRule = {
   name: 'tool-sensitive-file',
@@ -76,6 +80,12 @@ export const toolSensitiveFile: ToolRule = {
     const hits: string[] = [];
 
     for (const filePath of filePaths) {
+      // 同形字防御（与 audit rule-a1 对齐）
+      const baseName = filePath.split('/').pop() ?? filePath;
+      if (/^\..*nv/i.test(baseName) && /[^\x00-\x7f]/.test(baseName)) {
+        hits.push(`${filePath}（可疑同形字文件名）`);
+        continue;
+      }
       for (const pattern of SENSITIVE_PATTERNS) {
         if (pattern.test(filePath)) {
           hits.push(filePath);

@@ -47,7 +47,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 行业五层里「纯规则校验可脱离 AI 运行（模式 D）」直接支撑这点：部分「智能体」只需约束规则、不需要大模型。sofagent 24 条规则中 19 条纯 git-diff、零 token、不调 LLM，正是「AI 不可用时，纪律仍在」的工程实例——这与「约束层 = Harness 中间件」互为表里：Harness 的价值不绑定任何单一模型的可用性。
 
-### 去人化口径：human-in-the-loop 是「可靠优先」价值点（L3）
+### 反去人化命题：human-in-the-loop 是「可靠优先」价值点（L3）
 
 行业一派主张「去掉人」（L4 Hill-Climbing 去人化）。sofagent 反其道——human-in-the-loop 不是能力缺陷，而是**可靠优先于自主**的差异化优势。
 
@@ -228,7 +228,7 @@ sofagent 是**跨层约束**——不管企业用 WorkBuddy（L1）还是 LangGr
 > | 云厂商短板（Forrester/IDC） | sofagent 怎么补 |
 > |---|---|
 > | **跨栈深度归因**——多云可观测性不成熟，多 Agent 深度关联需第三方遥测 | 审计引擎做 git diff 深度归因——跨平台中立，不绑定任何云厂商 |
-> | **回溯能力缺位**——云平台只看实时指标，不存历史快照 | 回溯引擎做 commit 级快照 + revert——行车记录仪，不是仪表盘 |
+> | **回溯引擎缺位**——云平台只看实时指标，不存历史快照 | 回溯引擎做 commit 级快照 + revert——行车记录仪，不是仪表盘 |
 > | **治理闭环缺位**——云治理止于「告警」，缺「反思→进化」闭环 | Dream Cycle 闭环：审计→反思→知识沉淀→下一轮优化 |
 >
 > 精确定位：不是"我们也有治理"，是**"我们补巨头补不上的缺口"**——巨头做平台内治理（绑定自家云），sofagent 做平台外治理（不管你用哪个云）。
@@ -325,7 +325,7 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 
 | 层 | 是什么 | 行业五层中对应 |
 |----|--------|----------------|
-| **约束底座（Harness / Constraint Base）** | 四层加载链（SKILL.md→fde.md→think.md→knowledge/）+ 审计 / 回溯能力（本质：git snapshot） | 配置 + 指令 + 校验 |
+| **约束底座（Harness / Constraint Base）** | 四层加载链（SKILL.md→fde.md→think.md→knowledge/）+ 审计 / 回溯引擎（本质：git snapshot） | 配置 + 指令 + 校验 |
 | **知识层（Knowledge / Ontology）** | knowledge/ + 本体结构（FDE 在客户侧交付的业务资产，见 FDE/GUIDE.md 第三章 本体结构构建） | 知识 |
 | **编排层（Orchestration / Loop）** | 编排引擎 + 进化引擎 + 外层 FORGE | 编排 |
 
