@@ -18,5 +18,19 @@ inputs:
     required: false
     default: 'false'
 runs:
-  using: 'node20'
-  main: 'engine/audit/dist/index.js'
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: 20
+    - name: Run sofagent audit
+      shell: bash
+      run: |
+        npx -y -p @sofagent/audit sofagent-audit-full \
+          --diff "${{ inputs.diff-range }}" \
+          --ruleset "${{ inputs.ruleset }}" \
+          ${{ inputs.strict == 'true' && '--strict' || '' }} \
+          --ci
+      env:
+        GITHUB_TOKEN: ${{ github.token }}

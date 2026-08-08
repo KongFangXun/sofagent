@@ -37,7 +37,7 @@ graph LR
 
 **治理保障**
 
-- 🔍 **零配置审计**——`npx sofagent-audit`，任何 git 仓库 3 秒审计最近一次 commit
+- 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库 3 秒审计最近一次 commit
 - 🧱 **24 条审计规则**——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 
@@ -79,10 +79,14 @@ graph LR
 **30 秒，零配置**——在任何 git 仓库跑一次审计：
 
 ```bash
-npx sofagent-audit
+npx -y -p @sofagent/audit sofagent-audit
 ```
 
-拦截违规时是这样的（真实输出）：
+拦截特定格式密钥泄漏时是这样的（真实输出）：
+
+> ℹ️ A2 检测 AWS AKIA、OpenAI sk-*、GitHub ghp_、PEM 私钥块等已知格式。
+> 通用密钥形态（password=、secret 裸值）暂不在检测范围——保守设计防误报。
+> 完整检测能力见 [LIMITATIONS.md A2 节](./docs/LIMITATIONS.md#a2-密钥检测局限)。
 
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit 拦截 .env 提交" width="860" />
@@ -108,13 +112,13 @@ sofagent-audit --doctor    # 验证环境（可选）
 
 ```mermaid
 graph LR
-    A["个人<br/>npx sofagent-audit<br/>30 秒零配置审计"] --> B["团队<br/>规则市场 + GitHub Action<br/>PR 自动审计"]
+    A["个人<br/>npx -y -p @sofagent/audit sofagent-audit<br/>30 秒零配置审计"] --> B["团队<br/>规则市场 + GitHub Action<br/>PR 自动审计"]
     B --> C["企业<br/>FDE Agent<br/>全套部署·7×24 自运转"]
 ```
 
 | 入口 | 做什么 | 花多久 |
 |------|--------|:----:|
-| **`npx sofagent-audit`** | 零配置审计最近一次 commit，3 秒出结果 | 30 秒 |
+| **`npx -y -p @sofagent/audit sofagent-audit`** | 零配置审计最近一次 commit，3 秒出结果 | 30 秒 |
 | **`--ruleset` 规则市场** | 加载安全等规则集，或自定义 JSON 规则 | 1 分钟 |
 | **GitHub Action** | 每次 PR 自动审计，违规标注在 diff 行上 | 配置一次 |
 | **FDE Agent** | 进场梳理工作流 → 部署 AI 节点 → 7×24 自运转 | FDE 驻场 |
@@ -122,8 +126,8 @@ graph LR
 **规则市场**：
 
 ```bash
-npx sofagent-audit --list-rulesets      # 看有哪些规则集
-npx sofagent-audit --ruleset security   # 加载安全规则集
+npx -y -p @sofagent/audit sofagent-audit --list-rulesets      # 看有哪些规则集
+npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规则集
 ```
 
 社区规则集以 `sofagent-ruleset-*` npm 包发布，装上自动发现；也支持 `--ruleset-path` 指向你自己的 JSON 规则。
@@ -139,7 +143,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0        # 审计需要完整 diff 历史
-      - uses: KongFangXun/sofagent@v1.2.9
+      - uses: KongFangXun/sofagent@main
         with:
           ruleset: sofagent     # sofagent / security / 社区规则集
 ```
@@ -149,9 +153,9 @@ jobs:
 - **方法论路径**（零依赖）：读 [FDE/GUIDE.md](./FDE/GUIDE.md)，按手册手动梳理工作流，Excel + 人脑也能跑
 - **工具路径**（Node.js ≥ 18）：装好后在你的 AI 工具里说"帮我做 FDE 诊断"，Agent 从进场开始引导你
 
-> 🔬 **外部独立实验证据**（非官方自测）：HuggingFace 上 Joel Niklaus 的 harness-optimization 研究显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**。详见 [THANKS.md](./docs/THANKS.md)。
+> 🔬 **外部独立实验证据**（非官方自测）：Joel Niklaus 的 harness-optimization 研究（[研究代码仓库](https://github.com/JoelNiklaus/harness-optimization)，数据见仓库内实验）显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**。详见 [THANKS.md](./docs/THANKS.md)。
 
-> 🧪 **工程可信度**：1650 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes-loop 双盲审查连续 2 轮零 P0/P1。
+> 🧪 **工程可信度**：1658 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
 
 ## 文档
 

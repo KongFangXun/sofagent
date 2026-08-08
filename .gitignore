@@ -50,3 +50,7 @@ engine/daemon/data/
 engine/daemon/.sofagent/im-outbox/
 *.tmp.sh
 sofagent-audit-*.tgz
+
+# pnpm 误生成防护（本项目用 npm）
+pnpm-lock.yaml
+pnpm-workspace.yaml

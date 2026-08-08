@@ -117,7 +117,7 @@
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
 | 1 | **🔴 版本号 bump**：`./tools/bump-version.sh <旧> <新>` → `./tools/check-version.sh` 全绿。npm 不动。bump 后检查 hook 文件头版本（`head -2 engine/audit/hooks/commit-msg engine/audit/hooks/post-commit`）——两文件的 v 标记必须与 package.json version 一致（check-version.sh 已覆盖） | check-version.sh 全绿 |
-| 2 | **🔴 changelog 状态转正**：把 `docs/changelog/v<major>.<minor>/vX.Y.md` 头部「⚠️ 规划中，尚未实现」改为「✅ 已开发」——代码已落地，changelog 必须如实反映。删除「engine/ 下尚无对应代码」等过时警告，保留「前置依赖」 | 头部状态标注为已开发，无「规划中」残留 |
+| 2 | **🔴 changelog 状态转正**：把 `docs/changelog/v<major>.<minor>/vX.Y.md` 头部「⚠️ 尚未实现」+「状态：已排期」改为「✅ 已开发」——代码已落地，changelog 必须如实反映。删除「engine/ 下尚无对应代码」等过时警告，保留「前置依赖」 | 头部状态标注为已开发，无「尚未实现」残留 |
 | 3 | `npm run build` | exit 0 |
 | 4 | `npm test` | 全部通过 |
 | 5 | `shellcheck engine/scripts/*.sh tools/*.sh install.sh` | 零 error。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段九之后 |
@@ -336,7 +336,7 @@ VIEWS=$(grep -c '^### ' FORGE/playbook/fresh-eyes-review.md)
 - 守「章节顺序铁律」：新功能在前、BugFix 批次置后
 
 > 开发期间 changelog 是活文档（代码改完立刻回写，不要等）；但正式的「写全 + 归位 + 打勾」统一在阶段八，避免提前写漏掉后期 bug 修复。
-> 🔴 **v1.2.4 起「状态转正」已前置到阶段三步骤 1**——阶段八不再做「规划中→已开发」的头部状态更新（那必须在 fresh-eyes-loop 之前完成），只做「汇总 + 回填 + 打勾」。
+> 🔴 **v1.2.4 起「状态转正」已前置到阶段三步骤 1**——阶段八不再做「已排期→已开发」的头部状态更新（那必须在 fresh-eyes-loop 之前完成），只做「汇总 + 回填 + 打勾」。
 
 ### 根 CHANGELOG.md 索引维护（目录，非详情）
 
