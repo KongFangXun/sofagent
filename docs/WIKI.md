@@ -129,7 +129,7 @@
 | `docs/changelog/releasing.md` | **发版 SOP**——十二阶段全流程 |
 | `docs/evidence/` | 效果证据：案例、基准测试、反例 |
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |
-| `docs/guides/` | 专题指南：部署、测试、MCP 使用、Loop 开发等 |
+| `docs/guides/` | 专题指南：部署、测试、Dashboard 开发、Loop 开发等 |
 
 ### engine/（12 个 npm 发布包，workspace 含内部 hook 包共 13 个）
 
@@ -209,14 +209,12 @@
 | 查某个版本改了什么 | [CHANGELOG.md](../CHANGELOG.md) → `docs/changelog/vX.Y/vX.Y.Z.md` |
 | 了解审计规则 | [SECURITY.md](../SECURITY.md) + [ARCHITECTURE §三](./ARCHITECTURE.md) |
 | 了解 SKILL 约束体系 | [SKILL/SKILL.md](../SKILL/SKILL.md) |
-| 配置 MCP 调用 | [guides/mcp-usage.md](./guides/mcp-usage.md) |
 | 配置 GitHub Actions CI | [guides/github-action.md](./guides/github-action.md) |
 | 了解文件系统审计 | [guides/filesystem-audit.md](./guides/filesystem-audit.md) |
 | 开发/维护 HTML Dashboard | [guides/dashboard-html-dev.md](./guides/dashboard-html-dev.md)（V1.0 · 设计原则 · 数据链路 · 视觉规范 · 踩坑记录） |
 | 企业部署指南 | [guides/enterprise-deploy.md](./guides/enterprise-deploy.md) |
 | 多设备联邦同步 | [guides/multi-device-sync.md](./guides/multi-device-sync.md) |
 | 团队批量部署 | [guides/team-deploy.md](./guides/team-deploy.md) |
-| 了解插件机制 | [guides/plugins.md](./guides/plugins.md) |
 | 运行测试 / 验证效果 | [guides/testing.md](./guides/testing.md) |
 | 添加新审计规则 | `engine/audit/src/rules/` → 对照现有规则模式（defaultRules / extendedRules） |
 | 新建 Sub Agent | `SKILL/agents/` → 参照 `agents/engineer/SKILL.md` |

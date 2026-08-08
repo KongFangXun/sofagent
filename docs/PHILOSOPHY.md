@@ -491,7 +491,6 @@ sofagent 的版本演进不是拍脑袋排的——它遵循 Agent 工程的生�
 | [HANDBOOK.md](./HANDBOOK.md) | 用户手册——怎么用 |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | 架构设计——怎么设计 |
 | [DEVELOPMENT.md](./DEVELOPMENT.md) | 开发者文档——怎么参与 |
-| [MCP 使用指南](./guides/mcp-usage.md) | MCP 调用 + push target 配置 + 输出说明 |
 | [ROADMAP.md](./ROADMAP.md) | 路线图——过去和未来 |
 | [CHANGELOG.md](../CHANGELOG.md) | 版本历史——每个版本做了什么 |
 

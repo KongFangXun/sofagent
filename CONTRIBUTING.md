@@ -70,7 +70,7 @@ bash install.sh && bash engine/scripts/verify.sh
 | 1 | 改一条审计规则的正则 | `engine/audit/src/rules/rule-a*.ts` | ⭐ | 5 min |
 | 2 | 给 install.sh lib 模块加参数校验 | `engine/scripts/lib/*.sh` | ⭐ | 10 min |
 | 3 | 修复一个 ShellCheck 警告 | 见 ShellCheck Action 报告 | ⭐⭐ | 10 min |
-| 4 | 补一个规则示例 | `docs/guides/plugins.md` | ⭐ | 15 min |
+| 4 | 补一条审计规则 + 测试 | `engine/audit/src/rules/rule-a*.ts` + `.test.ts` | ⭐ | 15 min |
 | 5 | 翻译一段 README 到英文 | `README.en.md` | ⭐⭐ | 15 min |
 
 ---
