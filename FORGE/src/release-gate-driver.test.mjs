@@ -53,7 +53,11 @@ function extractFunctionBody(source, funcName) {
 // ═══════════════════════════════════════════════════════════
 
 function createSliceMultiOutput() {
-  const { fullBody } = extractFunctionBody(SOURCE_CODE, 'sliceMultiOutput');
+  // v1.2.7 功能⑤：sliceMultiOutput 移至 driver-base.mjs 闭包内，
+  // release-gate-driver.mjs 只保留 `const sliceMultiOutput = base.sliceMultiOutput`。
+  // 从 driver-base.mjs 源码提取函数体（而非 release-gate-driver.mjs）。
+  const BASE_SOURCE = readFileSync(new URL('./driver-base.mjs', import.meta.url), 'utf-8');
+  const { fullBody } = extractFunctionBody(BASE_SOURCE, 'sliceMultiOutput');
   const wrapper = new Function(fullBody + '\nreturn sliceMultiOutput;');
   return wrapper();
 }
@@ -409,26 +413,27 @@ describe('parseVerdict', () => {
     expect(result.reason).toContain('不存在');
   });
 
-  // 测试：verdict.md 无明确判定但有 FAIL 标记 → fallback 判 FAIL
-  it('verdict.md 无判定行但有 FAIL 标记 → fallback FAIL', () => {
+  // 测试：verdict.md 无判定行但有 FAIL 标记 → v1.2.7 起报 ERROR（不再弱兜底 FAIL）
+  // 旧逻辑「全文含 FAIL 即判 FAIL」会误判负向测试输出/日志转储，L1625 有意改为 ERROR
+  it('verdict.md 无判定行但有 FAIL 标记 → fallback ERROR', () => {
     writeFileSync(join(tmpRoot, 'verdict.md'),
       '# 裁决\n\nacceptance-test 结果为 FAIL\n场景 #045 失败');
 
     const parse = makeParser(tmpRoot);
     const result = parse(tmpRoot);
 
-    expect(result.verdict).toBe('FAIL');
+    expect(result.verdict).toBe('ERROR');
   });
 
-  // 测试：verdict.md 无判定行无 FAIL 标记 → fallback PASS
-  it('verdict.md 无判定行无 FAIL 标记 → fallback PASS', () => {
+  // 测试：verdict.md 无判定行无 FAIL 标记 → v1.2.7 起报 ERROR（不再弱兜底 PASS）
+  it('verdict.md 无判定行无 FAIL 标记 → fallback ERROR', () => {
     writeFileSync(join(tmpRoot, 'verdict.md'),
       '# 裁决\n\n所有步骤均通过\n可进阶段七');
 
     const parse = makeParser(tmpRoot);
     const result = parse(tmpRoot);
 
-    expect(result.verdict).toBe('PASS');
+    expect(result.verdict).toBe('ERROR');
   });
 
   // 测试：判定行用英文冒号也能匹配
