@@ -57,6 +57,7 @@ export const toolInjection: ToolRule = {
   name: 'tool-injection',
   number: 9,
   ruleClass: '业务底线',
+  ruleType: 'tool',
 
   check(ctx: ToolCallContext): InterceptVerdict {
     const allStrings = extractStrings(ctx.args);

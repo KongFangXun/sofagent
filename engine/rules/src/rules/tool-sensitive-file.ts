@@ -74,6 +74,7 @@ export const toolSensitiveFile: ToolRule = {
   name: 'tool-sensitive-file',
   number: 1,
   ruleClass: '业务底线',
+  ruleType: 'tool',
 
   check(ctx: ToolCallContext): InterceptVerdict {
     const filePaths = extractFilePaths(ctx.args);

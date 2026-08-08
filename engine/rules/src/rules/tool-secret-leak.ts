@@ -30,6 +30,7 @@ export const toolSecretLeak: ToolRule = {
   name: 'tool-secret-leak',
   number: 2,
   ruleClass: '业务底线',
+  ruleType: 'tool',
 
   check(ctx: ToolCallContext): InterceptVerdict {
     const allStrings = extractStrings(ctx.args);

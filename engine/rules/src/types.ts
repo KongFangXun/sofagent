@@ -39,6 +39,8 @@ export interface InterceptVerdict {
   details: string[];
   /** 修复建议 */
   suggestion: string;
+  /** v1.3.0 新增：需要人工批准（HITL 挂起，交付 3 消费） */
+  requireApproval?: boolean;
 }
 
 /**
@@ -52,6 +54,8 @@ export interface ToolRule {
   number: number;
   /** 规则等级 */
   ruleClass: RuleClass;
+  /** v1.3.0 (交付 7)：双规则统一——'tool' = 运行时拦截工具调用 */
+  ruleType: 'tool';
   /**
    * 检查 tool call 是否违规
    * @param ctx tool call 上下文
