@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v1.3.0 · 2026-08-08（UTC）· 孔放勋
+> v1.3.0 · 2026-08-09（UTC）· 孔放勋
 
 > 🧭 **阅读引导**：本文档按严重度分节——**安全/合规局限**（一、二节）面向强合规选型，**能力边界**（三节起）是设计取舍而非缺陷。通读一遍即可建立心智模型：**大多数局限有明确版本路线（v1.3.x / v1.4.0），不是"永远做不到"**。首次阅读建议先看目录 + 每节第一段，无需逐条读完。
 
@@ -37,7 +37,7 @@
 | 4 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排引擎稳定性](#五审计与工程局限) |
 | 5 | **数据明文存储无加密**——`~/.sofagent/data/` 下所有数据为明文 Markdown，无传输加密、无静态加密。age 加密已纳入 v1.4.0 roadmap（见 ROADMAP.md 和 SECURITY.md）。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
 | 6 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#单平台用户建议)
-| 7 | **FDE 交付物激活断裂带（v1.2.5+ 解决中）**——FDE 诊断交付的 ontology + workflow.yml + skills/ 是静态文件，企业 IT 拿到不知道怎么跑起来。激活链 Phase 1-3（ACTIVATE+ORCHESTRATE+EXECUTE 前半）已于 v1.2.5-v1.2.8 交付，Phase 3 后半（v1.2.9）已交付，Phase 4（v1.3.0 SUSTAIN）开发中。 | [十二、FDE 交付物激活断裂带（v1.2.5+ 解决中）](#十二fde-交付物激活断裂带v125-解决中) |
+| 7 | **FDE 交付物激活断裂带（v1.2.5-v1.3.0 已解决）**——FDE 诊断交付的 ontology + workflow.yml + skills/ 是静态文件，企业 IT 拿到不知道怎么跑起来。激活链 Phase 1-4（ACTIVATE+ORCHESTRATE+EXECUTE+SUSTAIN）已于 v1.2.5-v1.3.0 全部交付。 | [十二、FDE 交付物激活断裂带（v1.2.5-v1.3.0 已解决）](#十二fde-交付物激活断裂带v125-v130-已解决) |
 
 > ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。config.yml 有两个有效位置——项目级 `${cwd}/.sofagent/config.yml` 和全局级 `~/.sofagent/config.yml`（config-loader.ts 三级 fallback，项目级优先）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 ~/.sofagent/config.yml` 和 `chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。
 >
@@ -563,4 +563,4 @@ FDE §7 交付（静态文件就绪）
 - **v1.2.5 前**：大断裂带存在，FDE 交付物需人工解读
 - **v1.2.5 后**：ACTIVATE 已交付，activate 命令可注册企业 Agent
 - **v1.2.8 后**：ORCHESTRATE + EXECUTE 前半已交付，企业 Agent 可编排 + 运行 + 每步审计
-- **v1.3.0 后（规划）**：全链路打通（SUSTAIN），企业工作流自运转
+- **v1.3.0（已交付）**：全链路打通（SUSTAIN），企业工作流自运转

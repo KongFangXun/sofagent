@@ -2,6 +2,7 @@
   "name": "sofagent-monorepo",
   "version": "1.3.0",
   "private": true,
+  "license": "MIT",
   "engines": {
     "node": ">=18"
   },

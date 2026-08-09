@@ -27,7 +27,7 @@ runs:
     - name: Run sofagent audit
       shell: bash
       run: |
-        npx -y -p @sofagent/audit sofagent-audit-full \
+        npx -y -p @sofagent/audit@1.3.0 sofagent-audit-full \
           --diff "${{ inputs.diff-range }}" \
           --ruleset "${{ inputs.ruleset }}" \
           ${{ inputs.strict == 'true' && '--strict' || '' }} \
