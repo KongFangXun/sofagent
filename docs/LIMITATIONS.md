@@ -4,7 +4,7 @@
 >
 > v1.3.0 · 2026-08-09（UTC）· 孔放勋
 
-> 🧭 **阅读引导**：本文档按严重度分节——**安全/合规局限**（一、二节）面向强合规选型，**能力边界**（三节起）是设计取舍而非缺陷。通读一遍即可建立心智模型：**大多数局限有明确版本路线（v1.3.x / v1.4.0），不是"永远做不到"**。首次阅读建议先看目录 + 每节第一段，无需逐条读完。
+> 🧭 **阅读引导**：本文档按严重度分节——**安全/合规局限**（一、二节）面向强合规选型，**能力边界**（三节起）是设计取舍而非缺陷。通读一遍即可建立心智模型：**大多数局限有明确版本路线（v1.3.x），不是"永远做不到"**。首次阅读建议先看目录 + 每节第一段，无需逐条读完。
 
 ---
 
@@ -35,7 +35,7 @@
 | 2 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
 | 3 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
 | 4 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排引擎稳定性](#五审计与工程局限) |
-| 5 | **数据明文存储无加密**——`~/.sofagent/data/` 下所有数据为明文 Markdown，无传输加密、无静态加密。age 加密已纳入 v1.4.0 roadmap（见 ROADMAP.md 和 SECURITY.md）。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
+| 5 | **数据明文存储无加密**——`~/.sofagent/data/` 下所有数据为明文 Markdown，无传输加密、无静态加密。age 加密已排 v1.3.8（见 ROADMAP.md 和 SECURITY.md）。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
 | 6 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#单平台用户建议)
 | 7 | **FDE 交付物激活断裂带（v1.2.5-v1.3.0 已解决）**——FDE 诊断交付的 ontology + workflow.yml + skills/ 是静态文件，企业 IT 拿到不知道怎么跑起来。激活链 Phase 1-4（ACTIVATE+ORCHESTRATE+EXECUTE+SUSTAIN）已于 v1.2.5-v1.3.0 全部交付。 | [十二、FDE 交付物激活断裂带（v1.2.5-v1.3.0 已解决）](#十二fde-交付物激活断裂带v125-v130-已解决) |
 
@@ -210,7 +210,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 > ⚠️ **知识库同样全局共享**：`~/.sofagent/data/knowledge/` 单目录遍历、无租户/项目维度隔离——多项目、多 Agent 的知识沉淀（entities/concepts/comparisons/summaries）混合存储，查询时全局命中。财务与人事等不同域 Agent 的数据会串。按项目/Agent 隔离计划在 v1.3.x 落地。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录（见 [企业部署指南](./guides/enterprise-deploy.md#多项目数据隔离v128)）。
 
-task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。age 加密已纳入 v1.4.0 roadmap（见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](../SECURITY.md)）。
+task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。age 加密已排 v1.3.8（见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](../SECURITY.md)）。
 - history.jsonl 存审计判定详情，A2/A9 已脱敏，其他规则 details 可能含代码片段或文件路径，敏感场景请配合外部加密卷
 
 ---
@@ -393,7 +393,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 v1.0 新增 `FORGE/playbook/acceptance-test.sh`（102 个场景，含子断言），覆盖范围持续扩展：
 
 - **CI 已覆盖**：单元测试审计核心 696 个、全 workspace 1712 个测试（全绿，详见上方「测试覆盖范围」节，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
-- **发版前手动覆盖**：acceptance-test.sh 162 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
+- **发版前手动覆盖**：acceptance-test.sh 164 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
 
