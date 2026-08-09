@@ -1139,10 +1139,20 @@ async function runWorker(step, roundDir, target) {
     }
     // v1.3.0 run-21 修复：a-consolidate 产物无 ===FILE: 分隔符时，sliceMultiOutput
     // 把 result.md 判空 → b-fix 拿 0 finding → 假绿停止（3 轮 findings 全丢）。
-    // 检测空占位并触发 fallback 重建，让循环能真正消费 findings。
-    if (step === 'a-consolidate' && isPlaceholderOutput(slices['result.md'])) {
-      console.warn(`  ⚠️ [worker:${step}] result.md 为空占位（产物缺 ===FILE: 分隔符），触发 fallback 重建`);
-      writeFallbackFindings(roundDir);
+    // run-22 补充：result.md 有内容但用分类段落（### 🔴 P0 阻塞项）而非 finding-NN
+    // 结构时，splitFindings 同样切 0 条 → 假绿。检测扩展为：
+    //   空占位 / 无内容 → 重建；有内容且含 P0/P1/P2 标记但切不出 finding → 重建。
+    //   无任何 P 标记 → 视为确实干净，不重建（避免真干净轮被降级标记拖成永不停止）。
+    if (step === 'a-consolidate') {
+      const rPath = join(roundDir, 'result.md');
+      const rText = existsSync(rPath) ? readFileSync(rPath, 'utf-8') : '';
+      const isEmpty = isPlaceholderOutput(rText) || !rText.trim();
+      const noFindings = splitFindings(rText).length === 0;
+      const hasPrioMarkers = /\bP0\b|\bP1\b|\bP2\b/.test(rText);
+      if (isEmpty || (noFindings && hasPrioMarkers)) {
+        console.warn(`  ⚠️ [worker:${step}] result.md 不可消费（${isEmpty ? '空占位' : `切 0 finding 但含 P 标记`}），触发 fallback 重建`);
+        writeFallbackFindings(roundDir);
+      }
     }
   }
 }
@@ -1295,10 +1305,18 @@ async function generateReportWithoutTools(model, messages, step, role, stepDef) 
     // v1.3.0 run-21 修复：多产物步骤（a-consolidate 产 findings.md+result.md）的
     // 兜底报告也必须带 ===FILE: 分隔符，否则 sliceMultiOutput 把 result.md 判空，
     // b-fix 拿不到 finding → 假绿停止（run-21 3 轮全丢的根因）。
+    // run-22 补充：result.md 正文还必须用 `### finding-NN` 结构（splitFindings 只认
+    // 该格式），分类段落（### 🔴 P0 阻塞项）切不出 finding 同样假绿。
     ...(stepDef && stepDef.outputs && stepDef.outputs.length > 1
       ? ['',
          '🔴 本步骤产出多个文件，必须用 ===FILE: <文件名>=== 分隔各产物，格式：',
          ...stepDef.outputs.map(f => `===FILE: ${f}===\n<${f} 正文>`),
+         ...(stepDef.outputs.includes('result.md')
+           ? ['',
+              '🔴 result.md 是 B 的执行 prompt，每条修复指令必须用 `### finding-NN` 开头',
+              '（NN=两位数字 01/02/03…），正文含 **问题** / **修复方案** / **验证** 三段。',
+              '禁止用 `### 🔴 P0 阻塞项` 等分类段落标题——解析器只认 finding-NN 格式。']
+           : []),
          '']
       : []),
     '',
