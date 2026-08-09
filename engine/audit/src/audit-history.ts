@@ -115,6 +115,12 @@ export interface AuditHistoryEntry {
   envFingerprint?: string;
   /** v1.1.3+: 审计引擎标识，用于追溯记录来源 */
   engine?: string;
+  /**
+   * v1.3.1 交付 6: 审计记录关联的 Agent 身份码（AgentIdentity.agentId）。
+   * 可选字段——旧记录无此字段时读侧/验链侧全部向后兼容
+   *（HMAC 链校验只依赖链字段，新增业务字段天然兼容，先脱敏再签名语义不变）。
+   */
+  agentId?: string;
   /** Action Governance 审计 5 字段 schema + 决策溯源组（A4 研读落地）。可选项——旧记录无此字段时向后兼容。 */
   actionGovernance?: ActionGovernance;
 }

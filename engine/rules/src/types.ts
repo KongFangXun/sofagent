@@ -41,6 +41,8 @@ export interface InterceptVerdict {
   suggestion: string;
   /** v1.3.0 新增：需要人工批准（HITL 挂起，交付 3 消费） */
   requireApproval?: boolean;
+  /** v1.3.1 交付 10：工具权限标记——'r' = 只读，'rw' = 读写（审批模式判定消费） */
+  permission?: 'r' | 'rw';
 }
 
 /**
