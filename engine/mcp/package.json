@@ -59,9 +59,9 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "types": "./dist/mcp-server.d.ts",
+      "require": "./dist/mcp-server.js",
+      "default": "./dist/mcp-server.js"
     },
     "./package.json": "./package.json"
   }
