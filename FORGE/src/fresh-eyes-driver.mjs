@@ -2828,6 +2828,12 @@ async function main() {
     }
     try {
       await runWorker(args.step, args.roundDir, args.target);
+      // v1.3.0 run-23 修复：worker 写完产物后强制退出。
+      // 若 runWorker 内部残留未清理句柄（LangGraph stream / API 长连接 / 定时器 /
+      // audit middleware 监听器），事件循环不清空 → 进程永不退出 → driver 的
+      // spawnWorkerStep await 永久挂起（run-23 round-5 b-fix 第 3 批实测 hang 18 分钟）。
+      // process.exit 无视残留句柄，强制回收 worker 进程。
+      process.exit(0);
     } catch (err) {
       console.error(`[worker:${args.step}] 失败: ${err.message}`);
       // 打印复合错误的子错误（DeepAgents 的 Multiple errors）

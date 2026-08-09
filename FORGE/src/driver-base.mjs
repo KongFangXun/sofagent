@@ -165,6 +165,12 @@ export function createForgeDriverBase(config = {}) {
    */
   function spawnWorkerStep(scriptPath, opts = {}) {
     const { step, runDir, target, extraArgs = [] } = opts;
+    // v1.3.0 run-23 修复：worker 超时兜底。worker 写完产物后若残留未清理句柄
+    // （LangGraph stream / API 长连接）进程不退出 → 本 Promise 永不 resolve →
+    // driver 永久 await（run-23 round-5 实测 hang 18 分钟，最终靠 worker 自行退出）。
+    // 超时强制 kill + resolve 非零码（124），调用方 catch 后把该批记为失败继续流程。
+    // 正常 worker 最久 ~15 分钟（consolidate 撞 80 熔断 + 兜底），30 分钟给足余量。
+    const WORKER_TIMEOUT_MS = 30 * 60 * 1000;
     const workerArgs = ['--worker', '--step', step, '--run-dir', runDir, '--target', target, ...extraArgs];
 
     return new Promise((resolvePromise) => {
@@ -174,14 +180,29 @@ export function createForgeDriverBase(config = {}) {
       });
 
       let stdout = '', stderr = '';
+      let settled = false;
+      const timeoutTimer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        console.error(`  ⚠️ [spawnWorker:${step}] worker 超时（30 分钟），强制 kill（pid=${child.pid}）`);
+        child.kill('SIGKILL');
+        resolvePromise(124); // 超时退出码（与 GNU timeout 一致）
+      }, WORKER_TIMEOUT_MS);
+
       child.stdout.on('data', (d) => { stdout += d; });
       child.stderr.on('data', (d) => { stderr += d; });
       child.on('close', (code) => {
+        clearTimeout(timeoutTimer);
+        if (settled) return;
+        settled = true;
         if (stdout.trim()) console.log(stdout.trim());
         if (stderr.trim() && code !== 0) console.error(stderr.trim());
         resolvePromise(code ?? 0);
       });
-      child.on('error', () => resolvePromise(1));
+      child.on('error', () => {
+        clearTimeout(timeoutTimer);
+        if (!settled) { settled = true; resolvePromise(1); }
+      });
     });
   }
 
