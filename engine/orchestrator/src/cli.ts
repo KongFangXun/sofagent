@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// orchestrator CLI · v1.2.9
+// orchestrator CLI · v1.3.0
 //
-// loop 子命令 v1.2.9 升级：默认走 LangGraph StateGraph 节点级流转
+// loop 子命令 v1.3.0 升级：默认走 LangGraph StateGraph 节点级流转
 // （engineer→audit→reviewer→human_confirm），支持 --resume 从 checkpoint
 // 恢复。旧版串行路径通过 --legacy 保留兼容。
 
@@ -88,7 +88,8 @@ async function main() {
       const { agentName, task: taskDesc, mode } = parsed!;
       const { listAgents } = await import('./registry');
       const { spawnSubAgent } = await import('./launcher');
-      const dataDir = process.env.SOFAGENT_DATA_DIR || '.sofagent';
+      const { loadEnvConfig } = await import('@sofagent/core');
+      const dataDir = loadEnvConfig().dataDir;
       const agents = listAgents(dataDir);
       const definition = agents.find((a) => a.name === agentName);
       if (!definition) {

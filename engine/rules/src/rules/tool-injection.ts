@@ -1,6 +1,6 @@
 // ============================================================
 // tool-injection.ts · 移植 audit rule-a9（prompt injection 检测）
-// v1.2.9：tool 视角——扫 args 里的 prompt injection 模式
+// v1.3.0：tool 视角——扫 args 里的 prompt injection 模式
 // ============================================================
 
 import type { ToolRule, ToolCallContext, InterceptVerdict } from '../types';
@@ -57,6 +57,7 @@ export const toolInjection: ToolRule = {
   name: 'tool-injection',
   number: 9,
   ruleClass: '业务底线',
+  ruleType: 'tool',
 
   check(ctx: ToolCallContext): InterceptVerdict {
     const allStrings = extractStrings(ctx.args);

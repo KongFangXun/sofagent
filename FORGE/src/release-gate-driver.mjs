@@ -98,12 +98,22 @@ const base = createForgeDriverBase({
 // consolidate 需合并 acceptance/regression/coverage 三份完整报告为单份 stage6-report，输出超长，
 // 单独调高到 32000，避免顶格 16000 被截断生成不了合法报告（整轮降级根因）。
 // ─── v1.2.9 功能①：acceptance 维度分片 ──────────────────────
-// 把 acceptance-test.sh 的 148 个场景按 12 个维度分片，每片一个独立 worker 分析。
+// 把 acceptance-test.sh 的 N 个场景按 12 个维度分片，每片一个独立 worker 分析。
 // 每个 worker 只分析分配到的场景编号范围（从 acceptance-raw.log 中提取），
 // 产出 acceptance-sN.md，最后 acceptance-consolidate 合并为单份 acceptance.md。
 //
-// 分片策略：按场景编号均分（148 / 12 ≈ 12-13 个场景/片）。
-const ACCEPTANCE_TOTAL_SCENARIOS = 148;
+// 分片策略：按场景编号均分（N / 12 个场景/片）。
+// v1.3.0 修复：场景数硬编码 148 → 动态从 acceptance-test.sh 提取（与 check-test-count.sh 同口径），
+// 防场景数增长后（S149+）超出分片范围导致新场景零分析。
+const ACCEPTANCE_TOTAL_SCENARIOS = (() => {
+  const scriptPath = join(__dirname, '../../FORGE/playbook/acceptance-test.sh');
+  try {
+    const s = readFileSync(scriptPath, 'utf8');
+    const m = s.match(/^scenario (\d+)[a-z]? "/gm);
+    const maxNum = m ? Math.max(...m.map(x => parseInt(x.match(/\d+/)[0], 10))) : 148;
+    return maxNum;
+  } catch { return 148; }
+})();
 const ACCEPTANCE_SHARD_COUNT = parseInt(process.env.FORGE_ACCEPTANCE_SHARDS || '12', 10);
 
 /**
@@ -598,6 +608,8 @@ async function runWorker(step, runDir, target) {
     '--- driver 注入 ---',
     `本次验证对象 = sofagent ${target} 完整交付物`,
     `项目根目录 = ${REPO_ROOT}`,
+    // v1.3.0 修复：acceptance shard 动态注入实际场景范围（覆盖模板写死的旧范围文字）
+    stepDef.shard ? `你负责的实际场景范围 = S${stepDef.shard.start} 到 S${stepDef.shard.end}（以本注入为准，忽略 prompt 模板中写死的范围数字）` : '',
     inputPaths ? `输入文件（已由 driver 中转）：\n${inputPaths}` : '',
     `Changelog 路径 = ${changelogPath}`,
     `产物输出路径（把你的输出写到这个文件）：\n${outputPaths}`,
@@ -1671,8 +1683,36 @@ function parseStepResults(runDir) {
     return 'SKIP';
   }
 
+  // v1.3.0 run-21 修复：acceptance 结果用确定性日志判定，不依赖 LLM worker 解读。
+  //
+  // 背景：acceptance-consolidate/分片 worker 解读预跑日志不可靠——run-21 实测：
+  //   ① 把 grep 命令的 exit code（无匹配→1）误当脚本退出码，幻觉「EXIT: 1」；
+  //   ② 不懂场景编号非连续设计，把不存在的编号（105/107/109-116）当「9 场景缺失」；
+  //   ③ 把 S028 的 ⚠️ WARN 当缺陷 → 误判 acceptance FAIL → F 修复链对假 FAIL 空跑一轮。
+  //
+  // 修复：预跑日志总结行是权威（「验收测试结果：N 通过 / M 失败」+「✅ 全部通过」），
+  // driver 用确定性正则判定。日志存在且可解析 → 直接给结论（覆盖 LLM 解读）；
+  // 日志缺失/不可解析 → 回退 extractResult('acceptance.md')（LLM 解读兜底）。
+  function extractAcceptanceResult() {
+    const logPath = join(runDir, 'acceptance-raw.log');
+    if (existsSync(logPath)) {
+      const raw = readFileSync(logPath, 'utf-8');
+      // 剥离 ANSI 颜色码——acceptance-test.sh 输出带 \x1b[0;32m 等转义，
+      // 「241 通过」实为「\x1b[0;32m241 通过\x1b[0m」，直接正则匹配会失败（run-21 回放实测）。
+      const log = raw.replace(/\x1b\[[0-9;]*m/g, '');
+      const summaryMatch = log.match(/验收测试结果：\s*(\d+)\s*通过\s*\/\s*(\d+)\s*失败/);
+      if (summaryMatch) {
+        const passCount = parseInt(summaryMatch[1], 10);
+        const failCount = parseInt(summaryMatch[2], 10);
+        if (passCount > 0 && failCount === 0 && /全部通过/.test(log)) return 'PASS';
+        return 'FAIL';
+      }
+    }
+    return extractResult('acceptance.md');
+  }
+
   return {
-    acceptance:  extractResult('acceptance.md'),
+    acceptance:  extractAcceptanceResult(),
     regression:  extractResult('regression.md'),
     coverage:    extractResult('coverage.md'),
   };
@@ -2305,6 +2345,19 @@ async function main() {
       console.log(`\n  [F/${round}] audit gate 通过（无违规），F 修复链收敛`);
       verdict = 'PASS';
       reason = `F 修复链 Round ${round} 后 audit 通过`;
+      // v1.3.0 run-21 修复：F 收敛后同步 verdict.md——否则文件仍是 V 阶段 FAIL 文本，
+      // 监控端读 verdict.md(FAIL) 与 status.json(PASS) 矛盾（run-21 实测）。
+      // 追加收敛记录而非覆盖（保留 V 阶段 FAIL 依据可追溯）。
+      try {
+        const verdictPath = join(runDir, 'verdict.md');
+        if (existsSync(verdictPath)) {
+          appendFileSync(verdictPath,
+            `\n---\n\n## F 修复链收敛（Round ${round}）\n\n判定更新：FAIL → **PASS**\n依据：f-audit 通过（无 VIOLATIONS），F 修复链收敛\n`,
+            'utf-8');
+        }
+      } catch (vErr) {
+        console.warn(`  ⚠️  verdict.md 同步失败（不影响主流程）: ${vErr.message}`);
+      }
       // Bug-F2 修复：F 修复链收敛为 PASS 后，重新解析 results 确保状态一致。
       // 原 bug：results 只在 V 阶段结束后解析一次（L1980），F 修复后 verdict 改为 PASS
       // 但 results.acceptance/regression 仍为初始 FAIL 值——状态不一致。

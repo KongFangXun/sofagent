@@ -52,11 +52,27 @@ L3 框架兜底 recursionLimit=130（GraphRecursionError 兜底）
 ```
 
 ```js
-const TOOL_SOFT_LIMIT  = 100;  // L1: 超此值注入"立即写报告"HumanMessage
-const TOOL_HARD_LIMIT  = 100;  // L2: 超此值进入"写报告窗口"
-const REVIEW_GRACE_STEPS = 80; // L2 触发后审查步骤的写报告窗口（superstep 数）
-const DEFAULT_GRACE_STEPS = 5; // L2 触发后其他步骤的写报告窗口（superstep 数）
+// v1.2.7 run-07 下调（原 100/100 导致 run-06 空转）：零窗口=撞硬上限立即中断
+const TOOL_SOFT_LIMIT  = 35;  // L1: 超此值注入"立即写报告"HumanMessage
+const TOOL_HARD_LIMIT  = 45;  // L2: 超此值进入"写报告窗口"
+const REVIEW_GRACE_STEPS = 0; // L2 触发后审查步骤的写报告窗口（v1.2.7 起 0=立即中断）
+const DEFAULT_GRACE_STEPS = 0; // 其他步骤同上
 ```
+
+#### 并行工具调用让硬熔断"超发" + 步骤级预算覆盖（v1.3.0 run-21）
+
+**并行超发**：硬熔断检查在**回合边界**（stream chunk）执行，而 GLM-5.2 单个回合可并行发出多个 tool_call——计数跳跃式增长，`TOOL_HARD_LIMIT=45` 实际在 48/54/60 次才熔断。**硬上限是下限不是精确值**，关键步骤不能依赖"45 就停"。
+
+**步骤级预算**：`stepDef` 支持 `toolSoftLimit` / `toolHardLimit` 覆盖（v1.2.9 功能①加给 perspective worker 12/15）。对"必须读 N 份文件"的步骤（如 a-consolidate 要 sf_read 24 份 check 报告，天然 40-60 次调用），**必须单独配预算**，别用全局值：
+
+```js
+// ✅ a-consolidate：读 24 份报告 + 写长输出，60/80 足够且不会空转
+// （run-21 教训：用全局 45 必然熔断 → 兜底产物格式坏 → 假绿停止）
+'a-consolidate': { toolSoftLimit: 60, toolHardLimit: 80, ... },
+// ❌ 不重蹈 run-06：全局 60/80 让 check 类步骤无限探索空转——check 有自己的 12/15
+```
+
+**判断标准**：步骤的工具调用数 = 必读文件数 + 探索余量。必读文件多的步骤单独提预算；开放探索类步骤压低预算（12/15）。
 
 #### L2 两阶段写报告窗口（关键设计）
 
@@ -116,6 +132,46 @@ const isClean = !isDegraded && (p0 === 0 && p1 === 0 && p2 === 0 && !hasFail);
 
 **核心原则**：占位/降级产物**永远不算干净轮**。
 
+#### 🔴 产物完整性校验（防"假成功"——v1.3.0 run-21 教训）
+
+> **来源**（run-21，2026-08-09）：driver 报 `2-rounds-clean`（P0=0/P1=0/P2=0），实际 3 轮 findings 全丢——**现有降级检测只防「失败→降级」，没防「成功但格式坏→静默判空」**。
+
+**假成功根因链**：
+
+```
+a-consolidate 撞硬熔断（40-60 次调用 vs 全局 45）
+  → generateReportWithoutTools 兜底返回"非空文本"  ← driver 视为成功
+  → 但文本缺 ===FILE: 分隔符
+  → sliceMultiOutput fallback：findings.md=全文 ✓ / result.md=空占位 ✗
+  → splitFindings(result.md)=0 条 → b-fix 跳过 → 连续 2 轮"干净" → 假绿停止
+```
+
+**铁律**：
+1. **"有输出" ≠ "解析成功"**。兜底/正常路径产出的文本必须过**产物完整性校验**：多产物步骤写盘后检查每个判定产物，`result.md` 为空占位（匹配 `未检测到 ===FILE:|agent 未产出此文件`）→ 立即触发降级重建（writeFallbackFindings），不得静默跳过。
+2. **判定产物与展示产物解耦的盲区**：sliceMultiOutput 无分隔符 fallback 是「findings.md 拿全文、result.md 只写占位」——但停止判定（splitFindings/parseStopCondition）只看 result.md。**判定产物必须永远有可解析内容**（哪怕降级重建为 `### finding-NN` 最小结构），展示产物内容再全也救不了空判定产物。
+3. **降级重建的 result.md 要可消费**：重建格式用 `### finding-NN`（带 `**优先级**: P0/P1`），splitFindings 才能切片、b-fix 才能真修、parseStopCondition 才能数对——只写 `| fallback | SKIP |` 表格会让 b-fix 空转重试（"不假绿"但"修不了"）。
+4. **排查陷阱**：grep `===FILE:` 判断分隔符存在时，占位注释文本本身含该字样（`未检测到 ===FILE: 分隔符`）→ `grep -c` 假阳性 1。用排除法或更精确 pattern（如 `grep '^===FILE:'` 只匹配行首）。
+
+**run-22 补充（finding-NN 格式铁律）**：result.md **有内容但用分类段落**（`### 🔴 P0 阻塞项`）而非 `### finding-NN` 时，splitFindings 同样切 0 条 → 假绿。修复：① 兜底报告生成器 prompt 强制 result.md 每条用 `### finding-NN`（含 **问题**/**修复方案**/**验证** 三段，禁止分类段落标题）；② 检测扩展：result.md 空占位 **或**（切 0 finding 且含 P0/P1/P2 标记）→ 触发降级重建；无任何 P 标记才视为真干净（避免真干净轮被拖成永不停止）。
+
+**run-23 补充（降级标记持久化）**：降级标记（`降级生成` 文本）**不能只写在会被下游覆盖的产物里**——a-verify 会覆盖 result.md（回填 verify 列）把标记抹掉 → 降级轮被误判 isClean=true（run-23 R1 实测）。**降级状态必须独立持久化**：writeFallbackFindings 额外写 `roundDir/degraded.flag`，parseStopCondition 优先查 flag（existsSync），文本标记匹配保留做旧 run 数据兼容（取或）。原则：**会被下游覆盖/重写的文件，不能承载跨步骤的判定状态**。
+
+**修复范式（三层防御）**：防熔断（步骤级预算）→ 兜底格式（裸 LLM 生成器对多产物步骤也输出 `===FILE:` 分隔符 + finding-NN 结构）→ 最后保险（判定产物空占位/格式不符检测 + 降级重建 + isDegraded 强制不干净）。
+
+#### 🔴 worker 写完产物不退出 → driver 永久 await（v1.3.0 run-23）
+
+> **来源**（run-23 round-5，2026-08-09）：b-fix 第 3 批 worker 写完 `summary-batch-3.md` 后进程不退出，driver 的 `spawnWorkerStep` await 挂起 18 分钟（heartbeat 正常——await 不阻塞 event loop，心跳定时器照跑——但流程完全冻结）。
+
+**根因**：worker 模式 `await runWorker()` 成功后**直接 return，无 `process.exit`**。runWorker 内部残留未清理句柄（LangGraph stream / API 长连接 / 定时器 / audit middleware 监听器）时，Node 事件循环不清空 → 进程永不退出。
+
+**判断特征**：心跳正常（15s 更新）+ 某步产物已写全 + 下一步产物迟迟不出 + 工作区改动未 auto-commit——即 driver 卡在 await 某个 worker。
+
+**两层修复**：
+1. **worker 侧（治本）**：worker 写完产物后强制 `process.exit(0)`，无视残留句柄——`process.exit` 直接终止事件循环。
+2. **driver 侧（兜底）**：`spawnWorkerStep` 加 30 分钟超时（正常 worker 最久 ~15 分钟），超时 `SIGKILL` + resolve 124，调用方 catch 后把该批记为失败继续流程——**任何 worker hang 都不会再卡死 driver**。
+
+**铁律**：spawn 子进程必须配套超时兜底；子进程写完全部产物后必须显式退出（`process.exit`），不能依赖"事件循环自然清空"。
+
 #### 连续降级 error 退出
 
 连续 2 轮降级 → `fatal-error` 退出，不浪费 token 跑无意义循环。
@@ -156,6 +212,12 @@ function computeBatchSize(n) { return n <= 20 ? 5 : n <= 35 ? 3 : 2; }
 Driver 唯一做语义判断的地方——数 P0/P1/P2 + FAIL，不做语义审查。收敛策略：连续 2 轮干净（`cleanStreak >= 2`）。
 
 > **🔴 假阳性干净**（run-05）：降级占位无 P0/P1 被当"审查通过"→ driver 误收敛。**降级轮的 isClean 永远为 false**。
+
+#### LEDGER 会被假阳性 run 污染（v1.3.0 run-21）
+
+LEDGER.md 是 append-only 永久索引，假阳性 run 的 `2-rounds-clean 0/0/0` 会**永久入册且无法事后纠正**（run-21 实例）。两条应对：
+1. **修复后重跑才是纠错手段**——真 run（如 run-22）的干净记录会覆盖统计口径；
+2. 若需历史可审计，给 LEDGER 条目加 `isDegraded`/`suspect` 标记列（当前未做，列为已知改进项）。
 
 ---
 
@@ -329,3 +391,28 @@ node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9 2>&1
 4. 检查命令的豁免逻辑（历史文档目录、运行时文件、HOME 部署路径）是误报最高发区，新增检查项时先想豁免
 
 > **判定流程**：release-gate FAIL → 零信任复核（亲手跑）→ 产品 bug？修代码 ：命令 bug？修 checklist → 重跑验证全绿
+
+---
+
+### 🔴 确定性判定优先：别让 LLM 解读能确定性解析的日志（v1.3.0 run-21）
+
+> **来源**（release-gate run-21，2026-08-09）：acceptance 实际 PASS（241/0/241，exit 0），但 acceptance-consolidate worker 误判 FAIL，F 修复链对假 FAIL 空跑一轮。
+
+**LLM 解读预跑日志的三个误判模式**：
+1. **grep exit code 幻觉**：worker 跑 `grep -c "EXIT"` 无匹配 → 命令 exit 1 → worker 把**自己 grep 命令的退出码**当成验收脚本退出码，幻觉「EXIT: 1」——日志里根本无此字样。
+2. **不懂领域设计**：acceptance 场景编号非连续是设计（编号间有缺失），worker 把不存在的编号当「9 个场景验收证据缺失」。
+3. **WARN ≠ FAIL**：S028 输出 `⚠️ WARN`，worker 当缺陷上报。
+
+**铁律**：**能用确定性规则判定的结果，不要让 LLM 去解读**——脚本日志的总结行是权威（如「验收测试结果：N 通过 / M 失败」+「✅ 全部通过」），driver 用正则直接判定（PASS/FAIL），LLM 解读只做日志不可解析时的兜底。
+
+**🔴 ANSI 坑**：shell 脚本输出带颜色码（`验收测试结果：\x1b[0;32m241 通过\x1b[0m`）——数字与文字间插着 `\x1b[...m` 转义，直接正则匹配失败。**解析脚本日志前必须先剥离 ANSI**：`raw.replace(/\x1b\[[0-9;]*m/g, '')`。
+
+---
+
+### 🔴 F 链收敛要回写权威产物（verdict.md 同步）
+
+> **来源**（release-gate run-21）：V 阶段 verdict.md 写 FAIL → F 修复链收敛（f-audit 通过）→ driver 变量改 PASS → loop-end 写 PASS——但 **verdict.md 文件还是 FAIL 文本**，监控端读文件(FAIL) 与 status.json(PASS) 矛盾。
+
+**铁律**：**driver 内部状态变量变化后，必须回写承载该状态的权威产物文件**——否则文件与 status 不一致，监控端/下游拿到的结论互相矛盾。F 链收敛 PASS 时向 verdict.md 追加「F 修复链收敛」记录（保留 V 阶段 FAIL 依据可追溯，不覆盖）。
+
+> 与「degraded.flag 持久化」是姊妹篇：一个说"状态别放会被下游覆盖的文件"，一个说"状态变化要回写权威文件"——**跨步骤状态的一致性是 driver 编排的核心责任**。

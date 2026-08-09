@@ -5,11 +5,11 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.9-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.0-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center">
-  <a href="README.en.md">English</a> · <a href="#这是什么">这是什么</a> · <a href="#fde-方法论">FDE 方法论</a> · <a href="#快速开始">快速开始</a> · <a href="#三个入口从-30-秒到全套部署">三个入口</a> · <a href="#文档">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
+  <a href="README.en.md">English</a> · <a href="#这是什么">这是什么</a> · <a href="#fde-方法论">FDE 方法论</a> · <a href="#快速开始">快速开始</a> · <a href="#三个入口从-30-秒到全套部署">三个入口</a> · <a href="#为什么选-sofagent">为什么选</a> · <a href="#文档">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
 
 ---
@@ -26,6 +26,17 @@ graph LR
 ```
 
 > 🏞️ 大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是帮你把河里的水让整个城市用起来的工程——堤坝不让水泛滥、自来水厂把原水变直饮水、管网把水送到每家每户的水龙头。模型给 90% 的智力，sofagent 补 10% 的可靠执行。
+>
+> 🌳 往远看，sofagent 帮企业长出一棵**会自我养护的 AI 能力树**——每个 AI 节点是一根枝条，审计是护栏，经验沉淀是根系，离场后 FDE 留下养护这棵树（7×24 巡检 + 审计 + 进化）。从「AI 替我干活」到「企业长出会养护的 AI 能力树」，详见 [FDE 方法论](./FDE/GUIDE.md)。
+
+### 和裸 Agent 有什么不同
+
+| 维度 | 裸 Agent（ChatGPT / Copilot） | sofagent |
+|:-----|:------|:------|
+| 变更审计 | 无 | git diff 24 条规则，硬证据判定 |
+| 越界拦截 | 靠 prompt 自觉 | 违规当场阻断 + 审计留证 |
+| 出事回滚 | 手动翻 commit | 一键快照回到任意节点 |
+| 经验积累 | 每次从零开始 | 自动沉淀进知识库，越跑越聪明 |
 
 ## 核心特性
 
@@ -37,7 +48,7 @@ graph LR
 
 **治理保障**
 
-- 🔍 **零配置审计**——`npx sofagent-audit`，任何 git 仓库 3 秒审计最近一次 commit
+- 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库 3 秒审计最近一次 commit
 - 🧱 **24 条审计规则**——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 
@@ -57,7 +68,7 @@ graph LR
 
 ## FDE Skill 体系
 
-把 AI 节点部署出去只是第一步——让它**每次都守规矩**，靠的是随节点一起加载的 FDE Skill 体系：
+部署 AI 节点只是第一步——上面讲的是**怎么梳理、放哪里**，接下来是**怎么让它每次都守规矩**。随节点一起加载的 FDE Skill 体系解决这个问题：
 
 - 📜 **SKILL.md**——唯一主入口，由你的 AI 工具加载：按阶段路由到对应子 Skill，岗位规范按任务类型自动注入（梳理 / 审计 / 编排）
 - 🧩 **阶段子 Skill**——进场 → 深挖 → 量化 → 交付 → 离场五步闭环（`01-entry` → `05-exit`），每一步该做什么、交付什么都定义清楚
@@ -72,17 +83,19 @@ graph LR
   <img src="docs/assets/dashboard.png" alt="sofagent Dashboard 驾驶舱" width="100%" />
 </p>
 
-<p align="center"><sub>Dashboard 驾驶舱：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清</sub></p>
+<p align="center"><sub>Dashboard 驾驶舱：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。安装后运行 <code>sofagent-dashboard --full</code> 启动</sub></p>
 
 ## 快速开始
 
 **30 秒，零配置**——在任何 git 仓库跑一次审计：
 
 ```bash
-npx sofagent-audit
+npx -y -p @sofagent/audit sofagent-audit
 ```
 
-拦截违规时是这样的（真实输出）：
+拦截特定格式密钥泄漏时是这样的（真实输出）：
+
+> ℹ️ A2 检测 AWS AKIA、OpenAI sk-*、GitHub ghp_、PEM 私钥等已知格式；通用密钥形态（password=、secret 裸值）暂不覆盖——保守设计防误报。详见 [LIMITATIONS A2](./docs/LIMITATIONS.md#a2-密钥检测局限编码与格式绕过v125-披露)。
 
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit 拦截 .env 提交" width="860" />
@@ -108,13 +121,13 @@ sofagent-audit --doctor    # 验证环境（可选）
 
 ```mermaid
 graph LR
-    A["个人<br/>npx sofagent-audit<br/>30 秒零配置审计"] --> B["团队<br/>规则市场 + GitHub Action<br/>PR 自动审计"]
+    A["个人<br/>npx -y -p @sofagent/audit sofagent-audit<br/>30 秒零配置审计"] --> B["团队<br/>规则市场 + GitHub Action<br/>PR 自动审计"]
     B --> C["企业<br/>FDE Agent<br/>全套部署·7×24 自运转"]
 ```
 
 | 入口 | 做什么 | 花多久 |
 |------|--------|:----:|
-| **`npx sofagent-audit`** | 零配置审计最近一次 commit，3 秒出结果 | 30 秒 |
+| **`npx -y -p @sofagent/audit sofagent-audit`** | 零配置审计最近一次 commit，3 秒出结果 | 30 秒 |
 | **`--ruleset` 规则市场** | 加载安全等规则集，或自定义 JSON 规则 | 1 分钟 |
 | **GitHub Action** | 每次 PR 自动审计，违规标注在 diff 行上 | 配置一次 |
 | **FDE Agent** | 进场梳理工作流 → 部署 AI 节点 → 7×24 自运转 | FDE 驻场 |
@@ -122,36 +135,34 @@ graph LR
 **规则市场**：
 
 ```bash
-npx sofagent-audit --list-rulesets      # 看有哪些规则集
-npx sofagent-audit --ruleset security   # 加载安全规则集
+npx -y -p @sofagent/audit sofagent-audit --list-rulesets      # 看有哪些规则集
+npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规则集
 ```
 
 社区规则集以 `sofagent-ruleset-*` npm 包发布，装上自动发现；也支持 `--ruleset-path` 指向你自己的 JSON 规则。
-
-**GitHub Action**——在仓库加 `.github/workflows/sofagent-audit.yml`：
-
-```yaml
-on: [pull_request]
-jobs:
-  audit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0        # 审计需要完整 diff 历史
-      - uses: KongFangXun/sofagent@v1.2.9
-        with:
-          ruleset: sofagent     # sofagent / security / 社区规则集
-```
 
 **FDE Agent**——进场梳理 + 部署 + 常驻，两条路径任选：
 
 - **方法论路径**（零依赖）：读 [FDE/GUIDE.md](./FDE/GUIDE.md)，按手册手动梳理工作流，Excel + 人脑也能跑
 - **工具路径**（Node.js ≥ 18）：装好后在你的 AI 工具里说"帮我做 FDE 诊断"，Agent 从进场开始引导你
 
-> 🔬 **外部独立实验证据**（非官方自测）：HuggingFace 上 Joel Niklaus 的 harness-optimization 研究显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**。详见 [THANKS.md](./docs/THANKS.md)。
+## 为什么选 sofagent
 
-> 🧪 **工程可信度**：1650 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes-loop 双盲审查连续 2 轮零 P0/P1。
+| 维度 | 通用 Agent 框架 | sofagent |
+|------|----------------|----------|
+| 核心问题 | 怎么造 Agent | **AI 该放在哪**（先梳理再部署） |
+| 安全保障 | 靠 prompt 约束 | git diff 硬证据审计 + 运行时拦截 + 一键回滚 |
+| 知识积累 | 从零开始 | 经验自动沉淀进 knowledge 知识库，越跑越好 |
+| 数据主权 | 云端托管 | 全量本地，永不离开设备 |
+| 部署方式 | 学新平台 | 装进你已有的 AI 工具（Claude Code / Cursor / WorkBuddy…） |
+
+## 证据与可信度
+
+> 🔬 **外部独立实验证据**（非官方自测）：Joel Niklaus 的 harness-optimization 研究（[研究代码仓库](https://github.com/JoelNiklaus/harness-optimization)，数据见仓库内实验）显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**。详见 [THANKS.md](./docs/THANKS.md)。
+
+> 🧪 **工程可信度**：1712 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
+
+> 🔐 **v1.3.0 新能力**：运行时审计（tool wrapper 动态拦截 + 审计留证）· 决策审计（意图问责：`emitDecision` + HMAC 链 + kind-wise 查询）· 规则透明化（`list_rules` MCP tool）· HITL 人工批准钩子 · 审计日志按 git 仓库隔离 · 激活链 Phase 4 收尾 · 外部记忆后端 Path A（可选，缺省关闭）· 进化链路写保护。详见 [v1.3.0 开发日志](./docs/changelog/v1.3/v1.3.0.md)。
 
 ## 文档
 
@@ -162,6 +173,7 @@ jobs:
 | 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | 行业印证与生态定位（与现有工具的差异） | [VALIDATION](./docs/VALIDATION.md) |
 | 版本路线图 | [ROADMAP](./docs/ROADMAP.md) |
+| 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
 | FDE 诊断方法论（四阶段十二步） | [FDE/GUIDE.md](./FDE/GUIDE.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |

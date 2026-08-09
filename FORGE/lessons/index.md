@@ -4,9 +4,15 @@
 >
 > 这不是"踩坑参考"，是**开发参照**——下次开发新的 loop 或 sub-agent 时，必须逐条对照本文档执行。每条标准都来自真实 debug 会话（附 commit hash + 根因），不是理论推演。
 >
-> v1.2.9 · 2026-08-08（UTC）· 孔放勋
+> v1.3.0 · 2026-08-09（UTC）· 孔放勋
 >
 > v1.2.9 run-12 更新（2026-08-08）：跨闭包变量引用、nohup 后台死亡、8GB 并发 OOM 三项新坑位
+>
+> v1.3.0 run-21 更新（2026-08-09）：**产物完整性校验（防"假成功"）**、并行工具调用硬熔断超发、步骤级工具预算、LEDGER 假阳性污染四项新坑位
+>
+> v1.3.0 run-22/23 更新（2026-08-09）：finding-NN 格式铁律（分类段落切 0 finding 假绿）、worker 写完产物不退出 → driver 永久 await（process.exit + spawn 超时兜底）、降级标记持久化（degraded.flag 防 a-verify 覆盖抹标记）
+>
+> v1.3.0 release-gate run-21 更新（2026-08-09）：确定性判定优先（别让 LLM 解读可确定性解析的日志 + ANSI 剥离坑）、F 链收敛回写权威产物（verdict.md 同步）
 
 ## 本文档定位
 
@@ -68,6 +74,16 @@
 - [ ] **extractAgentText 跳过空 content**（createReactAgent 中间消息全空）（[四·兜底报告](./driver.md#兜底报告合成)）
 - [ ] **并行 Worker 用 allSettled**（[四·allSettled](./driver.md#allsettled-并行降级)）
 - [ ] **parseStopCondition 做降级检测**（占位报告不算干净轮）（[四·降级检测](./driver.md#降级检测防假阳性干净)）
+- [ ] **产物完整性校验**（"有输出"≠"解析成功"；判定产物 result.md 空占位→降级重建，绝不静默跳过）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
+- [ ] **判定产物必须可消费**（降级重建 result.md 用 `### finding-NN` 带优先级，别写 SKIP 表格让 b-fix 空转）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
+- [ ] **必读文件多的步骤单独配工具预算**（a-consolidate 60/80；开放探索类压低 12/15；并行 tool_call 让硬熔断超发，45 实际撞 48-60）（[四·并行超发](./driver.md#并行工具调用让硬熔断超发--步骤级预算覆盖v130-run-21)）
+- [ ] **排查标记字符串防假阳性**（grep `===FILE:` 命中占位注释文本自身，用 `^===FILE:` 只匹配行首）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
+- [ ] **result.md 必须用 finding-NN 结构**（分类段落 `### 🔴 P0 阻塞项` 切 0 finding 假绿；兜底 prompt 强制 + 检测扩展）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
+- [ ] **worker 写完产物必须显式 process.exit(0)**（残留句柄让事件循环不清空 → 进程不退出 → driver 永久 await；心跳正常≠流程在走）（[四·worker 不退出](./driver.md#worker-写完产物不退出--driver-永久-awaitv130-run-23)）
+- [ ] **spawn 子进程必须配超时兜底**（30 分钟 SIGKILL + resolve 124，防任何 worker hang 卡死 driver）（[四·worker 不退出](./driver.md#worker-写完产物不退出--driver-永久-awaitv130-run-23)）
+- [ ] **降级状态独立持久化**（degraded.flag，勿放会被下游覆盖的产物里——a-verify 覆盖 result.md 抹掉标记致假绿）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
+- [ ] **确定性判定优先**（能用正则/确定性规则判定的结果不让 LLM 解读——日志总结行是权威；解析脚本日志先剥离 ANSI 颜色码）（[四·确定性判定](./driver.md#确定性判定优先别让-llm-解读能确定性解析的日志v130-run-21)）
+- [ ] **driver 状态变量变化要回写权威产物**（F 链收敛 PASS 必须同步 verdict.md，否则文件与 status 矛盾）（[四·F 链收敛](./driver.md#f-链收敛要回写权威产物verdictmd-同步)）
 - [ ] **连续 2 轮降级直接 error 退出**（[四·连续降级](./driver.md#连续降级-error-退出)）
 - [ ] **硬熔断 break 后 stream.return()**（防幽灵请求）（[四·stream.return](./driver.md#streamreturn-防幽灵api-请求)）
 - [ ] **每个步骤 try/catch + 降级兜底**（[四·失败路径容错](./driver.md#失败路径容错)）
@@ -144,6 +160,13 @@
 | 08-08 | run-07 | effectiveHardLimit 跨闭包引用——stateModifier 定义→invokeAgent 引用 | P0 | 四·跨闭包变量引用 |
 | 08-08 | run-07~11 | nohup+disown 后台进程被 WorkBuddy 清理（4 次静默死亡） | P0 | 四·nohup 不安全 |
 | 08-08 | run-08~09 | 8GB 机器并发 3/6 worker OOM（各 worker 2GB heap） | P0 | 三·并发 worker 总内存 |
+| 08-09 | d152f1d2 | a-consolidate 假成功——兜底产物缺 ===FILE: 分隔符→result.md 判空→假 2-rounds-clean（findings 全丢） | P0（假阳性） | 四·产物完整性校验 |
+| 08-09 | d152f1d2 | 并行 tool_call 回合边界检查超发 + 步骤级工具预算（a-consolidate 60/80） | P1 | 四·并行超发 |
+| 08-09 | 30c31afe | result.md 分类段落格式切 0 finding 假绿（finding-NN 格式铁律 + 检测扩展） | P0（假阳性） | 四·产物完整性校验 |
+| 08-09 | 3b99a853 | worker 写完产物不退出 → driver 永久 await 18 分钟（process.exit + spawn 30min 超时兜底） | P0（卡死） | 四·worker 不退出 |
+| 08-09 | 33bbb6eb | a-verify 覆盖 result.md 抹掉降级标记 → 降级轮假绿（degraded.flag 持久化） | P0（假阳性） | 四·产物完整性校验 |
+| 08-09 | d4c797c3 | release-gate acceptance 误判 FAIL——worker 把 grep exit code 当脚本退出码 + ANSI 码致正则失败（确定性日志判定） | P0（假 FAIL） | 四·确定性判定 |
+| 08-09 | d4c797c3 | F 链收敛 PASS 但 verdict.md 仍 FAIL——状态变化未回写权威产物 | P1 | 四·F 链收敛 |
 
 ### 历史坑位索引
 
@@ -173,6 +196,14 @@
 | 22 | effectiveHardLimit 跨闭包引用——JS 作用域陷阱 | 四·跨闭包变量引用 |
 | 23 | nohup+disown 后台进程被 WorkBuddy 清理 | 四·nohup 不安全 |
 | 24 | 并发 worker 总内存超物理内存 → 系统级 OOM | 三·并发 worker 总内存 |
+| 25 | 假成功——兜底产物格式坏被当"成功"，判定产物判空→假绿停止 | 四·产物完整性校验 |
+| 26 | 并行 tool_call 让硬熔断超发（45 实际撞 48-60）+ 必读文件多须步骤级预算 | 四·并行超发 |
+| 27 | result.md 分类段落格式（### 🔴 P0 阻塞项）切 0 finding 假绿 | 四·产物完整性校验 |
+| 28 | worker 写完产物不退出（残留句柄）→ driver 永久 await，心跳正常≠流程在走 | 四·worker 不退出 |
+| 29 | a-verify 覆盖 result.md 抹掉降级标记 → 降级轮假绿 | 四·产物完整性校验（degraded.flag） |
+| 30 | LLM 解读日志误判——grep exit code 幻觉 / 不懂非连续编号 / WARN 当 FAIL | 四·确定性判定优先 |
+| 31 | ANSI 颜色码插入文本导致正则匹配失败 | 四·确定性判定优先（剥离 \x1b[...m） |
+| 32 | F 链收敛状态未回写 verdict.md → 文件与 status 矛盾 | 四·F 链收敛回写权威产物 |
 
 ### 关键设计决策速查
 
@@ -195,3 +226,8 @@
 | 死循环防护 | 三层熔断（L1 软 50→L2 硬 60 窗口 5→L3 recursionLimit 130） | prompt 管不住 Qwen3.8 |
 | 降级检测 | DEGRADATION_MARKERS 5 标记词 + isClean 前置 !isDegraded | 占位报告不算干净轮 |
 | 连续降级 | 2 轮直接 fatal-error 退出 | 三层熔断全被打穿时止损 |
+| 产物完整性 | 判定产物（result.md）空占位/格式不符→降级重建为可修 finding | "有输出"≠"解析成功"；判定产物永远可解析（run-21/22 假成功教训） |
+| 步骤级工具预算 | 必读文件多→单独 toolSoftLimit/toolHardLimit（consolidate 60/80） | 并行 tool_call 让硬熔断超发；开放探索类压低（12/15） |
+| worker 退出 | 写完全部产物后强制 process.exit(0) + spawn 30min 超时 SIGKILL | 残留句柄让事件循环不清空→进程不退出→driver 永久 await（run-23） |
+| 结果判定 | 确定性规则优先（日志总结行正则 + ANSI 剥离），LLM 解读仅兜底 | LLM 解读日志误判（grep exit code 幻觉/WARN 当 FAIL）致 F 链空跑（run-21） |
+| 状态一致性 | driver 状态变化必须回写权威产物（F 收敛同步 verdict.md） | 文件与 status 矛盾，监控端拿到互相冲突的结论（run-21） |

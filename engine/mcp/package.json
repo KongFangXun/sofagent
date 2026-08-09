@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/mcp",
-  "version": "1.2.9",
+  "version": "1.3.0",
   "description": "sofagent MCP Server — 暴露审计能力给 MCP Client（JSON-RPC 2.0 over stdio）",
   "main": "dist/mcp-server.js",
   "types": "dist/mcp-server.d.ts",
@@ -15,9 +15,9 @@
     "sofagent-mcp": "dist/mcp-server.js"
   },
   "scripts": {
-    "clean": "rm -rf dist",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",
-    "prepublishOnly": "rm -rf dist/ && npm run build && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete",
+    "prepublishOnly": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && npm run build && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete",
     "check": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -38,15 +38,16 @@
   },
   "homepage": "https://github.com/KongFangXun/sofagent#readme",
   "dependencies": {
-    "@sofagent/audit": "1.2.9",
-    "@sofagent/core": "1.2.9",
-    "@sofagent/think": "1.2.9",
-    "@sofagent/ontology": "1.2.9",
-    "@sofagent/eval": "1.2.9",
-    "@sofagent/skillopt": "1.2.9"
+    "@sofagent/audit": "1.3.0",
+    "@sofagent/core": "1.3.0",
+    "@sofagent/think": "1.3.0",
+    "@sofagent/ontology": "1.3.0",
+    "@sofagent/eval": "1.3.0",
+    "@sofagent/skillopt": "1.3.0",
+    "@sofagent/rules": "1.3.0"
   },
   "optionalDependencies": {
-    "@sofagent/daemon": "1.2.9"
+    "@sofagent/daemon": "1.3.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -58,9 +59,9 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "types": "./dist/mcp-server.d.ts",
+      "require": "./dist/mcp-server.js",
+      "default": "./dist/mcp-server.js"
     },
     "./package.json": "./package.json"
   }

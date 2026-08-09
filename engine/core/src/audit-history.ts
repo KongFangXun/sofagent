@@ -1,7 +1,7 @@
 // ============================================================
 // audit-history.ts · audit history chain integrity (sunk to core)
 //
-// v1.2.9: Sunk from @sofagent/audit/audit-history.ts to eliminate
+// v1.3.0: Sunk from @sofagent/audit/audit-history.ts to eliminate
 // core's reverse dependency on audit (core → audit is forbidden;
 // core is the zero-upper-layer-dependency base package).
 //
@@ -29,7 +29,7 @@ import { join } from 'path';
 import { createHash, createHmac } from 'crypto';
 import { hostname, userInfo, homedir } from 'os';
 import { execSync } from 'child_process';
-import { AUDIT_HISTORY } from './data-paths';
+import { AUDIT_HISTORY, AUDIT_DECISION_LOG } from './data-paths';
 
 /**
  * 获取审计历史文件路径
@@ -41,6 +41,18 @@ export function getHistoryFilePath(dataDir?: string): string {
   if (dir) return join(dir, 'audit', 'history.jsonl');
   // v1.2.1：默认路径从 .sofagent/audit/ 迁移到 data/audit/
   return AUDIT_HISTORY;
+}
+
+/**
+ * 获取决策审计日志文件路径（v1.3.0 交付 6 T01）
+ * 解析链与 getHistoryFilePath 完全一致（显式 dataDir 参数 > SOFAGENT_DATA 环境变量 > data/audit/decision-log.jsonl）。
+ * 决策日志与 history.jsonl 同级兄弟文件——共用同一防篡改 HMAC 哈希链语义。
+ * @param dataDir 可选的数据目录覆盖（用于测试）
+ */
+export function getDecisionLogPath(dataDir?: string): string {
+  const dir = dataDir ?? process.env.SOFAGENT_DATA;
+  if (dir) return join(dir, 'audit', 'decision-log.jsonl');
+  return AUDIT_DECISION_LOG;
 }
 
 /**

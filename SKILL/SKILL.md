@@ -1,7 +1,7 @@
 ---
 name: sofagent
 slug: sofagent
-version: 1.2.9
+version: 1.3.0
 displayName: FDE Agent
 description: >
   FDE Agent——约束 Agent 行为、审计每次变更、沉淀经验。对外统一身份是 FDE Agent（用户面对的唯一入口），
@@ -150,7 +150,7 @@ metadata:
 
 ---
 
-## MCP 工具速查（v1.2.8 · 31 tools）
+## MCP 工具速查（v1.3.0 · 32 tools）
 
 > 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。
 
@@ -163,3 +163,4 @@ metadata:
 | **评估优化** | `evaluate_output` `optimize_skill` `health_check` |
 | **数据/编排** | `data_sovereignty_report` `sofagent_compose` `notify_session` |
 | **能力清单** | `list_capabilities` |
+| **规则透明化** | `list_rules` |

@@ -1,13 +1,13 @@
 // ============================================================
 // config-loader.ts · .sofagent/config.yml 配置加载器
-// v0.95 新增：三级 fallback（v1.2.9，js-yaml 替代手写 YAML 解析器）
+// v0.95 新增：三级 fallback（v1.3.0，js-yaml 替代手写 YAML 解析器）
 // v0.97 扩展：环境变量配置（从 lib/config.sh 合并）
-// v1.2.9 重构：用 js-yaml 替代手写 YAML 解析器
-// v1.2.9 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
-// v1.2.9：新增 ConfigParseError（含 cause 链），audit.strict fail-closed 选项
+// v1.3.0 重构：用 js-yaml 替代手写 YAML 解析器
+// v1.3.0 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
+// v1.3.0：新增 ConfigParseError（含 cause 链），audit.strict fail-closed 选项
 // ============================================================
 //
-// 三级 fallback（v1.2.9: 增加 SOFAGENT_CONFIG 环境变量为最高优先级）：
+// 三级 fallback（v1.3.0: 增加 SOFAGENT_CONFIG 环境变量为最高优先级）：
 //   0. $SOFAGENT_CONFIG（环境变量指定路径，企业集中管控）
 //   1. ${cwd}/.sofagent/config.yml
 //   2. ~/.sofagent/config.yml
@@ -84,6 +84,29 @@ export interface AuditConfig {
   };
   /** v1.2.8: 自定义脱敏正则——企业业务机密（合同名称/客户名单/工资表等） */
   sanitizePatterns?: { pattern: string; replacement: string }[];
+  /** v1.3.0 (交付 10 MA1): 外部记忆后端配置——缺省 undefined = 不加载 */
+  memory_backends?: MemoryBackend[];
+}
+
+/**
+ * 外部记忆后端（v1.3.0 交付 10 MA1 · Path A）
+ *
+ * 弱依赖外部 MCP connector——不替换 sofagent Ledger-Views-Policy，
+ * 零架构改造，纯增量配置。enabled 缺省 false（不启用时行为与 v1.2.9 完全一致）。
+ */
+export interface MemoryBackend {
+  /** 后端名称（如 tencentdb-agent-memory） */
+  name: string;
+  /** 是否启用——缺省 false（缺省关闭铁律） */
+  enabled: boolean;
+  /** 后端类型：mcp（外部 MCP server）/ workbuddy（本机 WorkBuddy 会话） */
+  type: 'mcp' | 'workbuddy';
+  /** MCP server URL（type='mcp' 时必填） */
+  endpoint?: string;
+  /** 声明可用的工具列表 */
+  tools: string[];
+  /** 敏感度 → ACL 映射（restricted Agent 只能拿 restricted 记忆） */
+  sensitivity_map?: Record<string, 'public' | 'internal' | 'restricted'>;
 }
 
 /**
@@ -254,7 +277,7 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
       const topLevelAuditKeys: (keyof AuditConfig)[] = [
         'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
         'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17',
-        'loop', 'webhook', 'sanitizePatterns',
+        'loop', 'webhook', 'sanitizePatterns', 'memory_backends',
       ];
       const hasAny = topLevelAuditKeys.some(k => k in parsed);
       if (hasAny) {
@@ -437,6 +460,8 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     // v1.1.6: webhook 配置透传（CLI 未传 --webhook 时回退到此）
     webhook: partial.webhook,
     sanitizePatterns: partial.sanitizePatterns,
+    // v1.3.0 (交付 10 MA1): 外部记忆后端配置透传——缺省 undefined = 不加载
+    memory_backends: partial.memory_backends,
   };
 
   // 校验 rules key——未知规则名输出警告

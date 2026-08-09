@@ -200,11 +200,11 @@ LAYER_E=${LAYER_E:-0}
 
 # 上限定义
 LIMIT_A=6400  # v1.2.8: A 层 6379 行（v1.2.8 开发日志 + 功能描述自然增长），上调 6300→6400 留余量
-LIMIT_B=8000  # v1.2.9: B 层 7657 行（FORGE 短任务化 24 perspective prompts + lessons 沉淀自然增长），上调 6000→8000 留余量
+LIMIT_B=8300  # v1.3.0: B 层 8131 行（FORGE 短任务化 prompts + lessons 沉淀 + release-gate shard 模板铁律 + 开发日志定稿自然增长），上调 8000→8300 留余量
 LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
 LIMIT_D=2000  # v1.1.9: D 层纳入口径修正——docs/architecture（v1.1.9 设计 876 行）+ docs/prd（193 行）从 A 层归入 D 层（工程文档与设计文档同语义），700→2000 容纳
 LIMIT_E=3100  # v1.2.5: E 层 2905 行（新增 dashboard-html-dev.md 219 行 + enterprise-deploy 扩展），上调 2700→3100 留余量
-LIMIT_TOTAL=14400  # v1.2.9: 随 LIMIT_B 6000→8000 同步上调（A+B=6400+8000）
+LIMIT_TOTAL=14700  # v1.3.0: 随 LIMIT_B 8000→8300 同步上调（A+B=6400+8300）
 
 # 输出各层
 echo "  A 用户文档:     ${LAYER_A} 行 / ${LIMIT_A} 上限"

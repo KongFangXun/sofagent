@@ -712,7 +712,7 @@ echo ""
 
 # ── 文案数字漂移扫描（v1.1.6 新增 · 维度八·任务5 强化）──────────
 # 扫描 audit 源码中疑似硬编码的「N 条规则」类声称，与 SSOT 对账
-# SSOT: defaultRules.length（当前 13）/ 注册总数（21）
+# SSOT: defaultRules.length（当前 17）/ 注册总数（24）
 # 防止 init.ts 输出文案、fix-suggestions.ts/qa-boundary-verify.test.ts 注释等小数字无人对账
 echo "=== 13. 文案数字漂移扫描（audit 源码硬编码规则条数）==="
 DOC_DRIFT_OK=true
@@ -738,7 +738,7 @@ echo ""
 echo "=== 13b. WIKI/README 表格数字漂移扫描 ==="
 TABLE_DRIFT_OK=true
 # 扫描 WIKI.md 和 README*.md 中的「N rules」「N 条规则」「N 个发布到 npm」
-# 与 SSOT（TOTAL_RULES_COUNT / 13）对账
+# 与 SSOT（TOTAL_RULES_COUNT / NPM_PKG_COUNT）对账
 WIKI_DRIFT_FILES="docs/WIKI.md README.md README.en.md"
 while IFS= read -r line; do
   # 提取行中的数字 + 单位模式
@@ -749,11 +749,12 @@ while IFS= read -r line; do
     ERRORS=$((ERRORS + 1))
   fi
 done < <(grep -rnE "[0-9]+ (rules|条规则)" $WIKI_DRIFT_FILES 2>/dev/null | grep -v "node_modules" | grep -v "changelog")
-# 检查「N 个发布到 npm」——SSOT 为 13
+# 检查「N 个发布到 npm」——SSOT 从 package.json workspaces 动态提取
+NPM_PKG_COUNT=$(node -e "const p=require('./package.json'); console.log(p.workspaces.length)" 2>/dev/null || echo 13)
 while IFS= read -r line; do
   num_npm=$(echo "$line" | grep -oE "[0-9]+ 个发布到 npm" | grep -oE "^[0-9]+" | head -1)
-  if [ -n "$num_npm" ] && [ "$num_npm" != "13" ]; then
-    echo "  ❌ $line （npm 包数 $num_npm ≠ SSOT 13）"
+  if [ -n "$num_npm" ] && [ "$num_npm" != "$NPM_PKG_COUNT" ]; then
+    echo "  ❌ $line （npm 包数 $num_npm ≠ SSOT $NPM_PKG_COUNT）"
     TABLE_DRIFT_OK=false
     ERRORS=$((ERRORS + 1))
   fi
@@ -770,7 +771,7 @@ echo ""
 # 同步修改下方 EXPECTED_DOC_DATE 与 bump-version.sh。
 echo "=== 14. 文档头日期一致性扫描（> vX.Y · YYYY-MM-DD）==="
 DOC_DATE_OK=true
-EXPECTED_DOC_DATE="2026-08-08"
+EXPECTED_DOC_DATE="2026-08-09"
 while IFS= read -r md; do
   match=$(grep -m1 -nE "^> v[0-9]+\.[0-9]+(\.[0-9]+)? · [0-9]{4}-[0-9]{2}-[0-9]{2}" "$md" 2>/dev/null)
   if [ -n "$match" ]; then
@@ -888,6 +889,45 @@ if [[ -d "${MCP_SRC_DIR}" ]] && [[ -f "${SKILL_FILE}" ]]; then
     ERRORS=$((ERRORS + 1))
   elif [[ -n "$SKILL_CLAIMED" ]]; then
     echo -e "  ${GREEN}✓${NC} MCP 工具数一致：${REGISTERED_COUNT} tools"
+    CHECKS=$((CHECKS + 1))
+  fi
+fi
+echo ""
+
+# ── v1.3.0: package.json license 字段检查（fresh-eyes P1-8）──
+echo "=== 18. package.json license 字段 ==="
+LICENSE=$(node -e "const p=require('./package.json'); console.log(p.license || '')" 2>/dev/null || echo "")
+if [[ -n "$LICENSE" ]]; then
+  echo -e "  ${GREEN}✓${NC} license = ${LICENSE}"
+  CHECKS=$((CHECKS + 1))
+else
+  echo -e "  ${RED}✗${NC} package.json 缺少 license 字段"
+  ERRORS=$((ERRORS + 1))
+fi
+echo ""
+
+# ── v1.3.0: action.yml 版本锁定检查（fresh-eyes P1-10）──
+echo "=== 19. action.yml @sofagent/* 版本锁定 ==="
+ACTION_FILE="${PROJECT_ROOT}/action.yml"
+if [[ -f "${ACTION_FILE}" ]]; then
+  ACTION_LOCK_OK=true
+  # 扫描 action.yml 中所有 @sofagent/* 引用，检查是否锁定到当前版本
+  while IFS= read -r line; do
+    # 提取 @sofagent/xxx@x.y.z 中的版本号
+    locked_ver=$(echo "$line" | grep -oE '@sofagent/[a-z-]+@[0-9]+\.[0-9]+\.[0-9]+' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    unlocked=$(echo "$line" | grep -oE '@sofagent/[a-z-]+[^@]' | head -1)
+    if [[ -z "$locked_ver" ]] && [[ -n "$unlocked" ]]; then
+      echo -e "  ${RED}✗${NC} 版本未锁定: $(echo "$line" | sed 's/^[[:space:]]*//' | head -c 80)"
+      ACTION_LOCK_OK=false
+      ERRORS=$((ERRORS + 1))
+    elif [[ -n "$locked_ver" ]] && [[ "$locked_ver" != "$SSOT_VERSION" ]]; then
+      echo -e "  ${RED}✗${NC} 版本漂移: @sofagent/*@${locked_ver} ≠ SSOT ${SSOT_VERSION}"
+      ACTION_LOCK_OK=false
+      ERRORS=$((ERRORS + 1))
+    fi
+  done < <(grep -E '@sofagent/' "${ACTION_FILE}" 2>/dev/null)
+  if $ACTION_LOCK_OK; then
+    echo -e "  ${GREEN}✓${NC} action.yml 中所有 @sofagent/* 引用已锁定到 v${SSOT_VERSION}"
     CHECKS=$((CHECKS + 1))
   fi
 fi

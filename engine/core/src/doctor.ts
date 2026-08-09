@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 // doctor.ts · sofagent 健康检查
-// v1.2.9 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
-// v1.2.9 维护：新增 post-commit hook 存在性检查
-// v1.2.9 新增：每项 fail/warn 附修复命令 + --repair 自动修复模式
+// v1.3.0 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
+// v1.3.0 维护：新增 post-commit hook 存在性检查
+// v1.3.0 新增：每项 fail/warn 附修复命令 + --repair 自动修复模式
 //
 // 检查项：
 //   1. 环境检查（Node / git / npm / disk / bash）
 //   2. 配置检查（.sofagent/config.yml 是否存在且有效）
-//   3. 数据目录结构（v1.2.9：data/ 用户可见数据 + .sofagent/ 引擎内部状态）
+//   3. 数据目录结构（v1.3.0：data/ 用户可见数据 + .sofagent/ 引擎内部状态）
 //   4. Hook 状态（commit-msg 是否安装含 sofagent 标识 + post-commit 是否存在）
 //   5. 包完整性（node_modules 依赖）
 //
@@ -60,6 +60,10 @@ export interface DoctorReport {
   deps: boolean;
   auditLog: boolean;
   allOk: boolean;
+  /** v1.3.0 (F-23): warning 条数——调用方据此区分「仅警告（EXIT=0）」与「有错误（EXIT≠0）」 */
+  warnCount: number;
+  /** v1.3.0 (F-23): error 条数 */
+  failCount: number;
 }
 
 /**
@@ -384,6 +388,8 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
     deps: depsOk,
     auditLog: auditLogOk,
     allOk,
+    warnCount: _warnCount,
+    failCount: _failCount,
   };
 }
 
@@ -443,14 +449,7 @@ export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: 
       }
     }
     if (!jsYamlInstalled) {
-      try {
-        console.log('  📦 正在安装 js-yaml...');
-        execFileSync('npm', ['install', 'js-yaml'], { cwd: projectDir, stdio: 'pipe' });
-        ok('js-yaml 已自动安装');
-        repairsApplied++;
-      } catch {
-        warn('js-yaml 自动安装失败——请手动运行 npm install js-yaml');
-      }
+      warn('js-yaml 未安装——请手动运行: npm install js-yaml');
     }
 
     // 3. HMAC 密钥缺失 → 提示运行 --init（不自动执行，因为会重置审计链）

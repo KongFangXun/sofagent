@@ -5,11 +5,11 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.2.9-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.0-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center">
-  <a href="README.md">中文</a> · <a href="#what-is-this">What is this</a> · <a href="#fde-methodology">FDE Methodology</a> · <a href="#quick-start">Quick Start</a> · <a href="#three-entries-from-30-seconds-to-full-deployment">Three Entries</a> · <a href="#docs">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
+  <a href="README.md">中文</a> · <a href="#what-is-this">What is this</a> · <a href="#fde-methodology">FDE Methodology</a> · <a href="#quick-start">Quick Start</a> · <a href="#three-entries-from-30-seconds-to-full-deployment">Three Entries</a> · <a href="#why-sofagent">Why</a> · <a href="#docs">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
 
 ---
@@ -27,6 +27,15 @@ graph LR
 
 > 🏞️ Big vendors hand you "water" (the LLM) and a "riverbed" (the Agent platform), but the water is raw — you wouldn't dare drink it straight. sofagent is the engineering that makes the river water usable across a whole city: the dam stops floods, the treatment plant turns raw water into drinking water, and the pipe network delivers it to every faucet. The model provides 90% of the intelligence; sofagent adds the 10% of reliable execution.
 
+### How is this different from a bare Agent
+
+| Dimension | Bare Agent (ChatGPT / Copilot) | sofagent |
+|:-----|:------|:------|
+| Change auditing | None | 24 rules on git diff, hard-evidence verdicts |
+| Out-of-bounds blocking | Relies on prompt self-discipline | Violations blocked on the spot + audit trail |
+| Rollback after breakage | Manually dig through commits | One-click snapshot restore to any point |
+| Experience accumulation | Starts from zero every time | Auto-captured into knowledge base, keeps improving |
+
 ## Key Features
 
 **FDE Agent delivery**
@@ -37,7 +46,7 @@ graph LR
 
 **Governance guarantees**
 
-- 🔍 **Zero-setup audit** — `npx sofagent-audit`, audits your last commit in any git repo in 3 seconds
+- 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, audits your last commit in any git repo in 3 seconds
 - 🧱 **24 audit rules** — secret leaks, out-of-scope edits, injection defense, privilege red lines — judged on hard git diff evidence, violations blocked on the spot
 - 🛡️ **Automatic snapshot & rollback** — auto-archived after every audit, one-click restore to any snapshot
 
@@ -57,7 +66,7 @@ Full methodology (four phases, twelve steps) in [FDE/GUIDE.md](./FDE/GUIDE.md) �
 
 ## FDE Skill System
 
-Deploying AI nodes is only step one — what keeps them **on track every time** is the FDE Skill system loaded with each node:
+Deploying AI nodes is only step one — above we covered **how to map and where to place them**; next is **how to keep them on track every time**. The FDE Skill system loaded with each node solves this:
 
 - 📜 **SKILL.md** — the single entry point, loaded by your AI tool: routes to the matching stage sub-Skill, and auto-injects job specs by task type (mapping / audit / orchestration)
 - 🧩 **Stage sub-Skills** — a five-step closed loop: entry → discovery → quantify → deliver → exit (`01-entry` → `05-exit`), with every step's tasks and deliverables defined upfront
@@ -72,17 +81,19 @@ Deploying AI nodes is only step one — what keeps them **on track every time** 
   <img src="docs/assets/dashboard.png" alt="sofagent Dashboard cockpit" width="100%" />
 </p>
 
-<p align="center"><sub>Dashboard cockpit: rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing</sub></p>
+<p align="center"><sub>Dashboard cockpit: rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing. After install, run <code>sofagent-dashboard --full</code> to launch</sub></p>
 
 ## Quick Start
 
 **30 seconds, zero setup** — run an audit in any git repo:
 
 ```bash
-npx sofagent-audit
+npx -y -p @sofagent/audit sofagent-audit
 ```
 
-Here's what it looks like when a violation is blocked (real output):
+Here's what it looks like when a known-format secret leak is blocked (real output):
+
+> ℹ️ Rule A2 detects known formats: AWS AKIA, OpenAI sk-*, GitHub ghp_, PEM private keys, etc.; generic secret shapes (bare `password=`, `secret` values) are intentionally out of scope — conservative design to avoid false positives. See [LIMITATIONS A2](./docs/LIMITATIONS.md#a2-密钥检测局限编码与格式绕过v125-披露).
 
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" />
@@ -108,13 +119,13 @@ No need to commit to the full package up front — start with a 30-second trial,
 
 ```mermaid
 graph LR
-    A["Individual<br/>npx sofagent-audit<br/>30-second zero-setup audit"] --> B["Team<br/>Rule marketplace + GitHub Action<br/>PR auto-audit"]
+    A["Individual<br/>npx -y -p @sofagent/audit sofagent-audit<br/>30-second zero-setup audit"] --> B["Team<br/>Rule marketplace + GitHub Action<br/>PR auto-audit"]
     B --> C["Enterprise<br/>FDE Agent<br/>full deployment · 7×24 self-running"]
 ```
 
 | Entry | What it does | Time needed |
 |------|--------|:----:|
-| **`npx sofagent-audit`** | Zero-setup audit of the last commit, results in 3 seconds | 30 sec |
+| **`npx -y -p @sofagent/audit sofagent-audit`** | Zero-setup audit of the last commit, results in 3 seconds | 30 sec |
 | **`--ruleset` rule marketplace** | Load rulesets like security, or use custom JSON rules | 1 min |
 | **GitHub Action** | Auto-audit every PR, violations annotated on the diff lines | Set up once |
 | **FDE Agent** | Map workflows on-site → deploy AI nodes → 7×24 self-running | FDE residency |
@@ -122,36 +133,34 @@ graph LR
 **Rule marketplace**:
 
 ```bash
-npx sofagent-audit --list-rulesets      # see available rulesets
-npx sofagent-audit --ruleset security   # load the security ruleset
+npx -y -p @sofagent/audit sofagent-audit --list-rulesets      # see available rulesets
+npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the security ruleset
 ```
 
 Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-discovered once installed; `--ruleset-path` can also point to your own JSON rules.
-
-**GitHub Action** — add `.github/workflows/sofagent-audit.yml` to your repo:
-
-```yaml
-on: [pull_request]
-jobs:
-  audit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0        # auditing needs full diff history
-      - uses: KongFangXun/sofagent@v1.2.9
-        with:
-          ruleset: sofagent     # sofagent / security / community rulesets
-```
 
 **FDE Agent** — on-site mapping + deployment + residency, pick either of two paths:
 
 - **Methodology path** (zero dependencies): read [FDE/GUIDE.md](./FDE/GUIDE.md) and map workflows manually following the handbook — Excel + your own brain is enough
 - **Tooling path** (Node.js ≥ 18): after installing, tell your AI tool "run an FDE diagnosis for me" and the Agent guides you from the entry phase
 
-> 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research on HuggingFace shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
+## Why sofagent
 
-> 🧪 **Engineering credibility**: 1650 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes-loop double-blind review with zero P0/P1 for 2 consecutive rounds.
+| Dimension | Generic Agent frameworks | sofagent |
+|------|----------------|----------|
+| Core question | How to build an Agent | **Where AI should go** (map first, then deploy) |
+| Safety guarantee | Relies on prompt constraints | git diff hard-evidence audit + runtime interception + one-click rollback |
+| Knowledge accumulation | Starts from zero | Experience auto-captured into knowledge base, keeps improving |
+| Data sovereignty | Cloud-hosted | Fully local, never leaves the device |
+| Deployment | Learn a new platform | Runs inside your existing AI tools (Claude Code / Cursor / WorkBuddy…) |
+
+## Evidence & Credibility
+
+> 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research ([research code repository](https://github.com/JoelNiklaus/harness-optimization), data in the repo experiments) shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
+
+> 🧪 **Engineering credibility**: 1712 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
+
+> 🔐 **v1.3.0 new capabilities**: runtime audit (tool wrapper dynamic interception + audit trail) · decision audit (intent accountability: `emitDecision` + HMAC chain + kind-wise queries) · rule transparency (`list_rules` MCP tool) · HITL approval hooks · audit logs isolated per git repo · activation chain Phase 4 · external memory backend Path A (optional, off by default) · evolution-chain write protection. See [v1.3.0 devlog](./docs/changelog/v1.3/v1.3.0.md).
 
 ## Docs
 
@@ -162,6 +171,7 @@ jobs:
 | Design philosophy | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | Industry validation & ecosystem positioning (differences from existing tools) | [VALIDATION](./docs/VALIDATION.md) |
 | Version roadmap | [ROADMAP](./docs/ROADMAP.md) |
+| What each version delivered | [CHANGELOG](./CHANGELOG.md) |
 | FDE diagnostic methodology (four phases, twelve steps) | [FDE/GUIDE.md](./FDE/GUIDE.md) |
 | Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |

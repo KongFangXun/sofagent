@@ -2,11 +2,11 @@
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离 + v1.2.5 激活链Phase1 + v1.2.5 审计加固A20-A23 + v1.2.5 daemon可靠性 + v1.2.5 多设备前置 + v1.2.9 短任务化 + checkpoint/resume worker级 + PM2 + HITL + mcp拆分 + 叙事重构 + 入口产品
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
-# 场景数：158 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
-#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 224 为编号上限，非场景数；S197 归并至 S164
+# 场景数：164 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
+#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 230 为编号上限，非场景数；S197 归并至 S164；v1.3.0 新增 S225-S230
 #   ⚠️ 口径注意（P2-31）：底部输出的「$PASSED 通过」是**断言通过数**（含跳过的场景也计 PASS），
-#   与「158 场景」不同——158 是 scenario 定义数，PASSED 可能 >158（条件跳过的场景也 +1）。
-#   文档引用 158 时指 scenario 定义数；引用「XXX 通过」时指断言通过数，勿混用。
+#   与「164 场景」不同——164 是 scenario 定义数，PASSED 可能 >164（条件跳过的场景也 +1）。
+#   文档引用 162 时指 scenario 定义数；引用「XXX 通过」时指断言通过数，勿混用。
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
 RUN_MODE="all"
@@ -962,8 +962,8 @@ FDE_COUNT=$(grep -c "FDE Agent" "$README" 2>/dev/null || echo 0)
 [ "$FDE_COUNT" -ge 3 ] || { fail "README 'FDE Agent' 出现 $FDE_COUNT 次（期望 ≥3）"; S120_OK=false; }
 # v1.2.9 技术描述移入 ARCHITECTURE.md，改为检查 ARCHITECTURE（措辞已从 README 的"审计引擎核心规则零 token"改为 ARCHITECTURE 的"19 条纯 git-diff 零 token"）
 grep -qE '(纯\s*git-diff|零\s*token|不调\s*LLM)' "$PROJECT_ROOT/docs/ARCHITECTURE.md" || { fail "ARCHITECTURE 缺 '零 token' 审计描述"; S120_OK=false; }
-# v1.2.9 README 不再列历史版本号，检查当前版本标记即可
-grep -qE 'v1\.2\.[89]' "$README" || { fail "README 缺 v1.2.x 版本标记"; S120_OK=false; }
+# v1.3.0 README 不再列历史版本号，检查当前版本标记即可
+grep -qE 'v1\.3\.0|v1\.2\.9' "$README" || { fail "README 缺 v1.3.x 版本标记"; S120_OK=false; }
 $S120_OK && pass
 S121_OK=true; DAG_RUNNER="$PROJECT_ROOT/engine/orchestrator/src/dag-runner.ts"
 SANITIZER="$PROJECT_ROOT/engine/core/src/security/prompt-sanitizer.ts"
@@ -1240,7 +1240,7 @@ echo "$S152_OUT" | grep -q "^OK" || { fail "P4 Graph Engine 端到端失败: $S1
 $S152_OK && pass "P4 Graph Engine 端到端完整（Planner 解析+降级+降级链四路径+decide/execute 分离）"
 scenario 153 "v1.2.3 权限加固——core 包所有 mkdirSync 必须带 mode: 0o700"
 # fresh-eyes P0「数据明文存储」过渡防线：目录默认 755 时同机其他用户可读审计数据，
-# 收紧为 0o700（仅属主可访问），age 加密（v1.4.0）落地前的纵深防御。
+# 收紧为 0o700（仅属主可访问），age 加密（v1.3.8）落地前的纵深防御。
 S153_OK=true
 # 断言 1：无 mode 的 mkdirSync 调用必须零命中（排除 import 行 + 测试文件）
 # v1.2.3 修复：0o700 加固后 grep -v "mode:" 过滤掉全部行 → 退出码 1 → pipefail 炸脚本，用 { ||true; } 兜底
@@ -1382,8 +1382,11 @@ if [ -n "$TEST_COUNT" ] && [ "$TEST_COUNT" -gt 0 ] 2>/dev/null; then
   for f in README.md docs/WIKI.md; do grep -q "$TEST_COUNT" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 $TEST_COUNT（数字漂移）"; S165_OK=false; }; done
 fi
 for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do grep -q "24 条\|24 个\|24 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 24（数字漂移）"; S165_OK=false; }; done
-for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "158" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 158"; S165_OK=false; }; done
-$S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / 158）"
+# acceptance 场景数动态计算（防止每次加场景后硬编码漂移）
+S165_SCEN_COUNT=$(grep -oE 'scenario [0-9]+[a-z]? "' "$SCRIPT_DIR/acceptance-test.sh" | wc -l | tr -d ' ' || echo 0)
+S165_SCEN_COUNT=${S165_SCEN_COUNT:-0}
+for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "$S165_SCEN_COUNT" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 ${S165_SCEN_COUNT}（数字漂移）"; S165_OK=false; }; done
+$S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / ${S165_SCEN_COUNT}）"
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
 S166_OK=true
 node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}process.exit(bad.length?(console.log('U+FFFD:',bad.join(',')),1):0);" >/dev/null 2>&1 || { fail "活跃文档存在 U+FFFD 编码污染"; S166_OK=false; }
@@ -1930,6 +1933,86 @@ if $S224_OK; then
   assert_grep "::error\|::warning" "$GF" || S224_OK=false
   $S224_OK && pass "GitHub Action（action.yml node runtime + github-formatter.ts ::error/::warning Annotations）"
 fi
+
+# ── v1.3.0 场景（S225-S228：运行时审计 + 决策审计 + list_rules + 双规则统一） ──
+
+scenario 225 "v1.3.0 交付 1 tool wrapper 拦截（audit-middleware FAIL 拦截）"
+S225_OK=true
+AMW="$PROJECT_ROOT/FORGE/src/audit-middleware.mjs"
+[ -f "$AMW" ] || { fail "audit-middleware.mjs 不存在"; S225_OK=false; }
+if $S225_OK; then
+  # createAuditMiddleware + wrapTool + check 导出
+  assert_grep "createAuditMiddleware" "$AMW" || S225_OK=false
+  assert_grep "wrapTool" "$AMW" || S225_OK=false
+  # FAIL 拦截逻辑（.env 敏感文件 → 拦截消息）
+  assert_grep "Audit 拦截" "$AMW" || S225_OK=false
+  # fresh-eyes-driver 已接线 loadTools auditMw
+  assert_grep "auditMw" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S225_OK=false
+  $S225_OK && pass "tool wrapper（audit-middleware.mjs + fresh-eyes-driver 接线 + FAIL 拦截消息）"
+fi
+
+scenario 226 "v1.3.0 交付 6 emitDecision 决策日志写入"
+S226_OK=true
+[ -f "$PROJECT_ROOT/engine/audit/src/decision-log.ts" ] || { fail "decision-log.ts 不存在"; S226_OK=false; }
+[ -f "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" ] || { fail "decision-schema.ts 不存在"; S226_OK=false; }
+if $S226_OK; then
+  # emitDecision 导出 + DecisionLogEntry 完整 schema + sanitizeWhy 铁律
+  assert_grep "emitDecision" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" || S226_OK=false
+  assert_grep "DecisionSchemaError" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" || S226_OK=false
+  assert_grep "sanitizeWhy" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S226_OK=false
+  # 先脱敏再签名（HMAC 基于脱敏后内容）
+  assert_grep "envFingerprint" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S226_OK=false
+  # 查询层（kind-wise back）
+  assert_grep "queryByKind" "$PROJECT_ROOT/engine/audit/src/decision-query.ts" || S226_OK=false
+  assert_grep "traceBack" "$PROJECT_ROOT/engine/audit/src/decision-query.ts" || S226_OK=false
+  $S226_OK && pass "决策审计（emitDecision + schema + sanitizeWhy + query 层）"
+fi
+
+scenario 227 "v1.3.0 交付 4 list_rules MCP tool 响应"
+S227_OK=true
+[ -f "$PROJECT_ROOT/engine/mcp/src/tools/list-rules.ts" ] || { fail "list-rules.ts 不存在"; S227_OK=false; }
+if $S227_OK; then
+  # 注册到 tool-registry + mcp-server case 分支
+  assert_grep "list_rules" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S227_OK=false
+  assert_grep "list_rules" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" || S227_OK=false
+  # 只读不暴露实现（无 check 函数字段）
+  assert_grep "不暴露规则实现逻辑\|不暴露实现" "$PROJECT_ROOT/engine/mcp/src/tools/list-rules.ts" || S227_OK=false
+  # 支持 type 参数（tool/diff/all）
+  assert_grep "tool.*diff.*all\|'tool' | 'diff' | 'all'" "$PROJECT_ROOT/engine/mcp/src/tools/list-rules.ts" || S227_OK=false
+  $S227_OK && pass "list_rules（注册 + case 分发 + 只读清单 + type 参数）"
+fi
+
+scenario 228 "v1.3.0 交付 7 双规则系统统一（ruleType 字段）"
+S228_OK=true
+# tool 规则带 ruleType:'tool'
+grep -q "ruleType: 'tool'" "$PROJECT_ROOT/engine/rules/src/rules/tool-sensitive-file.ts" || S228_OK=false
+grep -q "ruleType: 'tool'" "$PROJECT_ROOT/engine/rules/src/rules/tool-secret-leak.ts" || S228_OK=false
+grep -q "ruleType: 'tool'" "$PROJECT_ROOT/engine/rules/src/rules/tool-injection.ts" || S228_OK=false
+# audit diff 规则带 ruleType:'diff'
+grep -q "ruleType: 'diff'" "$PROJECT_ROOT/engine/audit/src/rules/index.ts" || S228_OK=false
+# 共享检测逻辑（SECRET_PATTERNS 统一来源）
+grep -q "SECRET_PATTERNS" "$PROJECT_ROOT/engine/core/src/shared/secret-patterns.ts" || S228_OK=false
+$S228_OK && pass "双规则统一（tool 3 条 ruleType + diff 24 条 ruleType + SECRET_PATTERNS 共享）"
+
+scenario 229 "v1.3.0 交付 2 shouldAllow 拦截 API（InterceptVerdict + requireApproval）"
+S229_OK=true
+# shouldAllow 函数存在
+grep -q "export function shouldAllow" "$PROJECT_ROOT/engine/rules/src/should-allow.ts" || S229_OK=false
+# 返回 InterceptVerdict 含 allow/reason/requireApproval
+grep -q "allow" "$PROJECT_ROOT/engine/rules/src/should-allow.ts" || S229_OK=false
+grep -q "reason" "$PROJECT_ROOT/engine/rules/src/should-allow.ts" || S229_OK=false
+grep -q "requireApproval" "$PROJECT_ROOT/engine/rules/src/should-allow.ts" || S229_OK=false
+$S229_OK && pass "shouldAllow API（函数存在 + InterceptVerdict 三字段）"
+
+scenario 230 "v1.3.0 交付 8 运行时审计日志仓库隔离（repo-hash）"
+S230_OK=true
+# audit-middleware 含 repo-hash 隔离路径
+grep -q "data/audit/runtime" "$PROJECT_ROOT/FORGE/src/audit-middleware.mjs" || S230_OK=false
+# resolveRuntimeAuditPath 函数存在
+grep -q "resolveRuntimeAuditPath" "$PROJECT_ROOT/FORGE/src/audit-middleware.mjs" || S230_OK=false
+# repo-hash 基于 git rev-parse（非硬编码）
+grep -q "rev-parse\|repo.*hash" "$PROJECT_ROOT/FORGE/src/audit-middleware.mjs" || S230_OK=false
+$S230_OK && pass "运行时审计仓库隔离（repo-hash 路径 + rev-parse + resolveRuntimeAuditPath）"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

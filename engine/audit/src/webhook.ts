@@ -112,12 +112,12 @@ function getTracingContext(): { repo: string; sha: string; machine: string } {
   let repo = '';
   let sha = '';
   try {
-    repo = execSync('git rev-parse --show-toplevel 2>/dev/null', { encoding: 'utf-8' }).trim() || cwd();
+    repo = execSync('git rev-parse --show-toplevel', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim() || cwd();
   } catch {
     repo = cwd();
   }
   try {
-    sha = execSync('git rev-parse --short HEAD 2>/dev/null', { encoding: 'utf-8' }).trim() || '';
+    sha = execSync('git rev-parse --short HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim() || '';
   } catch {
     sha = '';
   }

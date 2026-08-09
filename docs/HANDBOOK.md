@@ -2,7 +2,7 @@
 
 > **sofagent 是一个 FDE Agent——进场梳理你的工作流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent（WorkBuddy / Codex / Claude Code）里说一句话，它就帮你干活——审计每次变更、沉淀每次经验、越用越好。下面从装到用到查问题，全流程走一遍。
 >
-> v1.2.9 · 2026-08-08（UTC）· 孔放勋
+> v1.3.0 · 2026-08-09（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -32,7 +32,6 @@
 | 想理解内部机制 | [开发文档](./DEVELOPMENT.md) |
 | 想理解设计哲学 | [设计文档](./ARCHITECTURE.md) |
 | 想理解为什么这么做 | [设计哲学](./PHILOSOPHY.md)（**强烈推荐，读 5 分钟**） |
-| 想配置 MCP 推送 | [MCP 使用指南](./guides/mcp-usage.md) |
 
 > 📁 **项目文件导航**：根目录 6 个 .md 文件各司其职——[README.md](../README.md)（项目概览）、[README.en.md](../README.en.md)（英文概览）、[CHANGELOG.md](../CHANGELOG.md)（版本索引）、[SECURITY.md](../SECURITY.md)（安全策略）、[CONTRIBUTING.md](../CONTRIBUTING.md)（贡献指南）、[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)（行为准则）。[ROADMAP.md](./ROADMAP.md)（路线图）和 [LIMITATIONS.md](./LIMITATIONS.md)（已知局限）在 `docs/` 下。
 
@@ -55,7 +54,7 @@
 
 ## FDE Agent 能替你干什么
 
-> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是一个**能进场、能部署、能离场常驻的 硅基员工**——它替企业把大模型变成日常能干活的资产。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览v128)。
+> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是一个**能进场、能部署、能离场常驻的 硅基员工**——它替企业把大模型变成日常能干活的资产。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览v130)。
 
 **已经能替你干的事（v1.2.0 开发完成）**：
 
@@ -64,9 +63,9 @@
 - **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
 - **平台无关、即挂即用**：骑在你自选的大厂 Agent（Claude Code / Codex / WorkBuddy / 扣子 / OpenClaw）之上，不替代模型，只补「可靠执行」。（Cursor 社区验证中）
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
-- **🔗 激活链（v1.2.5+ 已实现 Phase 1-3）**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。Phase 4（SUSTAIN）在 v1.3.0 规划中。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
+- **🔗 激活链（v1.2.5+ 已实现 Phase 1-3）**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。Phase 4（SUSTAIN）在 v1.3.0 开发中。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
-**现在还干不了的事（规划中，暂无代码）**：完整多设备协同、并行编排、SubAgent 生产级沙箱、本地推理小模型——路线见 [ROADMAP](./ROADMAP.md)。
+**现在还干不了的事（已排期，暂无代码）**：完整多设备协同、并行编排、SubAgent 生产级沙箱、本地推理小模型——路线见 [ROADMAP](./ROADMAP.md)。
 
 ---
 
@@ -390,7 +389,7 @@ jobs:
 
 ## 进化：知识自动沉淀
 
-> 这一幕讲「长本事」——硅基员工怎么把每次任务变成企业资产，越用越懂你的业务。以下功能 daemon 自动运行，装完即生效，你不需要做任何配置。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览v128)；下表只列「装完即自动生效」的新能力。
+> 这一幕讲「长本事」——硅基员工怎么把每次任务变成企业资产，越用越懂你的业务。以下功能 daemon 自动运行，装完即生效，你不需要做任何配置。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览v130)；下表只列「装完即自动生效」的新能力。
 
 ### 近期版本新功能速览
 
@@ -441,7 +440,7 @@ jobs:
 > - **内存**：daemon 常驻进程（~50 MB）+ Node.js 运行时（~200 MB/并发 Agent）
 > - **网络**：仅 LLM API 出站，无入站端口需求
 
-⚠️ **数据存储说明**：当前版本将审计数据以 Markdown 明文存储在 `~/.sofagent/data/`。内置加密（age）计划在 v1.4.0 引入。生产环境使用前建议将 `~/.sofagent/` 放在加密卷中。详见 [SECURITY.md](../SECURITY.md)。
+⚠️ **数据存储说明**：当前版本将审计数据以 Markdown 明文存储在 `~/.sofagent/data/`。内置加密（age）已排 v1.3.8。生产环境使用前建议将 `~/.sofagent/` 放在加密卷中。详见 [SECURITY.md](../SECURITY.md)。
 
 **节点类型选择**：自动运行节点（需 OpenClaw 或其他企业级平台全栈）vs 个人增强节点（WorkBuddy / Codex，无需平台全栈）。完整对照表见 [ARCHITECTURE 双节点架构](./ARCHITECTURE.md#双节点架构)。
 
@@ -619,4 +618,4 @@ loop-engineering 社区总结了 10 个生产反模式，以下 4 个直接适�
 
 > 大半年 Agent 平台实战笔记（OpenClaw / WorkBuddy / Claude Code / Codex）。如有更好的用法，欢迎开 Issue。
 >
-> *v1.2.8，2026 年 8 月 6 日*
+> *v1.3.8，2026 年 8 月 6 日*

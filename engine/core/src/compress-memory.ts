@@ -8,11 +8,12 @@
 //   3. 提取 think.md 摘要（最近 N 条的标签和结论）
 // ============================================================
 
-import { existsSync, readFileSync, writeFileSync, copyFileSync, mkdirSync, readdirSync, unlinkSync, statSync } from 'fs';
+import { existsSync, readFileSync, copyFileSync, mkdirSync, readdirSync, unlinkSync, statSync } from 'fs';
 import { join } from 'path';
 import { VERSION } from './shared/constants.js';
 import { getThinkPath } from './memory-contract.js';
 import { DATA_DIR } from './data-paths.js';
+import { atomicWriteSync, atomicWriteWithMergeSync } from './shared/atomic-write.js';
 
 // ⚠️ think.md 是 Ledger（原始数据层，append-only）。本文件的归档 / 备份 / 摘要
 // 是**授权的生命周期运维操作**，不改变"反思只追加"的契约——它管理 Ledger 的留存，
@@ -80,11 +81,22 @@ export function archiveOldEntries(dataBase?: string): number {
   }
 
   if (moved > 0 && archive.length > 0) {
-    writeFileSync(thinkPath, active.join('\n'));
+    // v1.3.0 (交付 11)：进化链路写保护——think.md 接入原子写 + 写前 mtime 检测。
+    // 归档是把 active 区写回 think.md。并发防护语义：只保留「本进程读取快照之后
+    // 新追加的行」（即 existing 中不属于原始快照的行），而不是保留所有 existing 行
+    // ——否则会把本应归档移除的旧条目又合并回来（prime-agent _sync_from_disk 启发）。
+    const snapshotLines = new Set(content.split('\n'));
+    atomicWriteWithMergeSync(thinkPath, active.join('\n'), (existing, incoming) => {
+      if (!existing) return incoming;
+      if (existing === incoming) return incoming;
+      // 只保留快照之后新增的行（并发追加的反思条目）
+      const extra = existing.split('\n').filter((l) => !snapshotLines.has(l));
+      return extra.length > 0 ? incoming + '\n' + extra.join('\n') : incoming;
+    });
     const archiveContent = existsSync(archivePath)
       ? readFileSync(archivePath, 'utf-8') + '\n' + archive.join('\n')
       : archive.join('\n');
-    writeFileSync(archivePath, archiveContent);
+    atomicWriteSync(archivePath, archiveContent);
   }
 
   return moved;

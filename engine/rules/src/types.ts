@@ -1,6 +1,6 @@
 // ============================================================
 // types.ts · P3 编排引擎内嵌——tool call 拦截器类型定义
-// v1.2.9：从 audit 规则抽出为纯函数，零 fs/git 依赖
+// v1.3.0：从 audit 规则抽出为纯函数，零 fs/git 依赖
 // ============================================================
 
 /** 规则等级——与 audit 的 RuleClass 对齐 */
@@ -39,6 +39,8 @@ export interface InterceptVerdict {
   details: string[];
   /** 修复建议 */
   suggestion: string;
+  /** v1.3.0 新增：需要人工批准（HITL 挂起，交付 3 消费） */
+  requireApproval?: boolean;
 }
 
 /**
@@ -52,6 +54,10 @@ export interface ToolRule {
   number: number;
   /** 规则等级 */
   ruleClass: RuleClass;
+  /** v1.3.0 (交付 7)：双规则统一——'tool' = 运行时拦截工具调用 */
+  ruleType: 'tool';
+  /** v1.3.0 (交付 10 MA7)：规则「为什么」记忆 namespace——提取规则触发上下文时按此分组 */
+  whyMemoryNamespace?: string;
   /**
    * 检查 tool call 是否违规
    * @param ctx tool call 上下文

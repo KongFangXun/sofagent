@@ -353,4 +353,15 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 - **Mermaid 图跟正文不一致**——正文说"一底座·三引擎"（4 节点），Mermaid 图画了 5 个节点（审计引擎重复了一次）。**教训：改了正文概念要回头检查 Mermaid 图是否对应**
 - **迁移注释当结构**——VALIDATION 开头写"§十~十一 原属 PHILOSOPHY，§十二 原 ARCHITECTURE §七"——读者打开就知道这是拼盘。**教训：文档迁移后要建立自己的主线叙事，不能留迁移注释当结构骨架**
 
+**v1.3.0 新增经验（fresh-eyes run-21 过程中暴露）**：
+
+- **假阳性 clean——a-consolidate 硬熔断后 findings 丢失**——run-21 报 `2-rounds-clean`，但实际 a-consolidate 3 轮全撞工具预算硬上限，findings 被丢弃后输出空列表。driver 停止逻辑看到"空 findings"判定 clean，不知道是"真 clean"还是"全丢了"。**教训：停止条件必须校验每轮 agent 是否正常退出，否则"全丢了"会被误判为"干净了"**
+- **开源元数据盲区**——审查视角没覆盖 `package.json license` 缺失和 `action.yml` 版本锁定。无 license = 默认"保留所有权利"，未锁定版本 = GitHub Action 拉到不兼容版本。**教训："开源审查员"和"npm 用户"视角应保持对 license 和依赖版本锁定的敏感**
+
+**v1.3.0 新增经验（release-gate run-21 过程中暴露）**：
+
+- **LLM 解读日志的三种误判**——release-gate acceptance 分片 worker 从日志判 PASS/FAIL，run-21 把真实 PASS（241/241 exit 0）误判 FAIL：① **grep exit code 幻觉**——把日志中间 `echo "EXIT: $?"` 的打印当成脚本真实退出码；② **不懂非连续编号**——acceptance 场景编号跳号是设计模式（历史场景归并/移除后编号不回收），worker 把"编号在日志中找不到"当"测试缺失"（run-21 误报"9 场景缺失"）；③ **WARN 当 FAIL**——场景代码三选一（pass/pass/warn）的兜底 warn 分支被当缺陷。**教训：能用确定性正则判定的结果（日志总结行「N 通过/M 失败」+「全部通过」）不让 LLM 解读；LLM 解读日志前必须理解日志的格式约定（跳号设计、WARN 语义、内嵌打印 vs 真实退出码）**
+- **🔴 ANSI 颜色码坑**——acceptance 日志实际带 `\x1b[0;32m241 通过\x1b[0m` ANSI 码，正则 `验收测试结果：N 通过` 直接匹配失败（run-21 实测）。**教训：解析 shell 日志前必须剥离 `\x1b[...m`，否则确定性判定会因格式噪音失效**
+- **跨步骤状态不一致（verdict.md vs status.json）**——F 修复链收敛 PASS 后，verdict.md 仍是 V 阶段的 FAIL 文本，status.json 却已是 PASS——文件与状态矛盾。**教训：driver 状态变量变化后必须同步回写权威产物文件，否则"哪个是真的"要靠人猜**
+
 这些方向值得你保持**额外敏感**——但不要把它们当成清单。你今天发现的问题可能完全不在这个列表上。**那才是最值钱的发现。**

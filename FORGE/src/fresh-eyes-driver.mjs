@@ -38,6 +38,11 @@ import { createVisibility, EVENTS } from './visibility.mjs';
 // v1.2.4 新增 StallError 导出（watchdog 停顿检测错误类）
 import { createProgressMiddleware, StallError } from './progress-middleware.mjs';
 
+// v1.3.0 (交付 10 MA4)：FORGE worker 经验共享飞轮——FORGE_MEMORY_BACKEND
+// 启用时 worker 启动前检索历史经验、完成后写入本次发现。
+// 缺省 unset = 完全不变（与 v1.2.9 行为一致）。
+import { memorySearch, memoryWrite, getMemoryBackendEndpoint } from './memory-client.mjs';
+
 // 模块级引用——让 catch 块也能写可见性事件（失败场景覆盖）
 let globalVisibility = null;
 
@@ -202,12 +207,18 @@ const STEPS = {
   // maxTokens：步骤级输出 token 上限覆盖。未定义时回退到 MODEL_CONFIGS[role].maxTokens。
   // a-consolidate 需合并 A/B 两份完整 12 视角报告为单份 findings，输出超长，
   // 单独调高到 32000，避免顶格 16000 被截断生成不了合法 result.md（整轮降级根因）。
+  // v1.3.0 run-21 修复：a-consolidate 必须读 24 份 check 报告（inputs 只注入路径，
+  // 内容仍需 sf_read），工具调用天然 40-60 次，撞全局 45 硬熔断后裸 LLM 兜底产物
+  // 缺 ===FILE: 分隔符 → result.md 判空 → b-fix 跳过 → 假绿停止（run-21 3 轮全丢）。
+  // 单独提高预算：check worker 已有 12/15 覆盖（不受影响），不重蹈 run-06 全局 60/80 覆辙。
   'a-consolidate': {
     role: 'A',
     prompt: 'a-consolidate.md',
     outputs: ['findings.md', 'result.md'],
     inputs: PERSPECTIVES.flatMap(p => [`check-a-p${p.id}.md`, `check-b-p${p.id}.md`]),
     maxTokens: 32000,
+    toolSoftLimit: 60,
+    toolHardLimit: 80,
   },
   'b-fix':         { role: 'B', prompt: 'b-fix.md',         outputs: ['summary.md'],             inputs: ['result.md','findings.md'] },
   // v1.2.8 功能⑥：b-audit 步骤——b-fix 改完代码后 driver 自动跑 sofagent-audit
@@ -405,7 +416,7 @@ async function createModel(role, maxTokensOverride) {
 // 不再在此文件内联定义。删除旧实现 L317-349。
 import { truncateToolOutput, createToolOutputBudget, DEFAULT_BUDGET as TOOL_OUTPUT_MAX_LINES } from './tool-output-budget.mjs';
 
-function loadTools(role, progressMw = null) {
+function loadTools(role, progressMw = null, auditMw = null) {
   const cfg = MODEL_CONFIGS[role];
   const toolsModule = require('../../engine/orchestrator/dist/tools.js');
   const rawTools = toolsModule[cfg.toolsKey];
@@ -448,6 +459,15 @@ function loadTools(role, progressMw = null) {
 
     const wrappedTool = tool(
       async (input) => {
+        // v1.3.0 (交付 1)：运行时审计 tool wrapper——audit 检查在最外层，
+        // FAIL 拦截优先于 progress 埋点（被拦截的工具不执行、不埋 start/end）。
+        if (auditMw) {
+          const verdict = auditMw.check(rawTool.name, input ?? {});
+          if (verdict?.blocked) {
+            return `⛔ [Audit 拦截] ${rawTool.name} 被拒绝执行：${verdict.reason}`;
+          }
+        }
+
         // v1.2.1 L2：工具调用埋点（start → handler → end，含 duration）
         // v1.2.5：工具输出截断——超过 200 行的输出只保留头尾，防止上下文膨胀
         const execFn = async () => {
@@ -673,7 +693,24 @@ async function runWorker(step, roundDir, target) {
   } catch (mwErr) {
     console.warn(`[worker:${step}] ProgressMiddleware 创建失败（不影响主流程）: ${mwErr.message}`);
   }
-  const tools = loadTools(role, progressMw);
+
+  // v1.3.0 (交付 1)：运行时审计 tool wrapper——tool-gate 规则动态拦截 + 审计日志留证。
+  // 创建失败不阻断 worker（与 L1 visibility 容错策略一致）。
+  let auditMw = null;
+  try {
+    const { createAuditMiddleware } = await import('./audit-middleware.mjs');
+    const { RulesEngine, defaultToolRules } = require('../../engine/rules/dist/index.js');
+    auditMw = createAuditMiddleware(new RulesEngine(defaultToolRules), {
+      agentName: role,
+      taskDesc: stepDef?.task ?? '',
+      cwd: process.cwd(),
+      sessionId: `forge-${role}-${step}`,
+      emitDecision: true,
+    });
+  } catch (auditErr) {
+    console.warn(`[worker:${step}] AuditMiddleware 创建失败（不影响主流程）: ${auditErr.message}`);
+  }
+  const tools = loadTools(role, progressMw, auditMw);
 
   // 用 @langchain/langgraph 的 createReactAgent 替代 deepagents createDeepAgent。
   //
@@ -1100,6 +1137,23 @@ async function runWorker(step, roundDir, target) {
       writeFileSync(outPath, slices[filename], 'utf-8');
       console.log(`[worker:${step}] 产物已写入 ${outPath}`);
     }
+    // v1.3.0 run-21 修复：a-consolidate 产物无 ===FILE: 分隔符时，sliceMultiOutput
+    // 把 result.md 判空 → b-fix 拿 0 finding → 假绿停止（3 轮 findings 全丢）。
+    // run-22 补充：result.md 有内容但用分类段落（### 🔴 P0 阻塞项）而非 finding-NN
+    // 结构时，splitFindings 同样切 0 条 → 假绿。检测扩展为：
+    //   空占位 / 无内容 → 重建；有内容且含 P0/P1/P2 标记但切不出 finding → 重建。
+    //   无任何 P 标记 → 视为确实干净，不重建（避免真干净轮被降级标记拖成永不停止）。
+    if (step === 'a-consolidate') {
+      const rPath = join(roundDir, 'result.md');
+      const rText = existsSync(rPath) ? readFileSync(rPath, 'utf-8') : '';
+      const isEmpty = isPlaceholderOutput(rText) || !rText.trim();
+      const noFindings = splitFindings(rText).length === 0;
+      const hasPrioMarkers = /\bP0\b|\bP1\b|\bP2\b/.test(rText);
+      if (isEmpty || (noFindings && hasPrioMarkers)) {
+        console.warn(`  ⚠️ [worker:${step}] result.md 不可消费（${isEmpty ? '空占位' : `切 0 finding 但含 P 标记`}），触发 fallback 重建`);
+        writeFallbackFindings(roundDir);
+      }
+    }
   }
 }
 
@@ -1248,6 +1302,23 @@ async function generateReportWithoutTools(model, messages, step, role, stepDef) 
     '- 基于摘要中能看到的实际证据做判断——如果摘要中有明确的代码/配置/路径问题，标 P0 或 P1',
     '- 只有当摘要信息确实不足以确认时才标 P2"待证实"',
     '- 用中文写，Markdown 格式',
+    // v1.3.0 run-21 修复：多产物步骤（a-consolidate 产 findings.md+result.md）的
+    // 兜底报告也必须带 ===FILE: 分隔符，否则 sliceMultiOutput 把 result.md 判空，
+    // b-fix 拿不到 finding → 假绿停止（run-21 3 轮全丢的根因）。
+    // run-22 补充：result.md 正文还必须用 `### finding-NN` 结构（splitFindings 只认
+    // 该格式），分类段落（### 🔴 P0 阻塞项）切不出 finding 同样假绿。
+    ...(stepDef && stepDef.outputs && stepDef.outputs.length > 1
+      ? ['',
+         '🔴 本步骤产出多个文件，必须用 ===FILE: <文件名>=== 分隔各产物，格式：',
+         ...stepDef.outputs.map(f => `===FILE: ${f}===\n<${f} 正文>`),
+         ...(stepDef.outputs.includes('result.md')
+           ? ['',
+              '🔴 result.md 是 B 的执行 prompt，每条修复指令必须用 `### finding-NN` 开头',
+              '（NN=两位数字 01/02/03…），正文含 **问题** / **修复方案** / **验证** 三段。',
+              '禁止用 `### 🔴 P0 阻塞项` 等分类段落标题——解析器只认 finding-NN 格式。']
+           : []),
+         '']
+      : []),
     '',
     `以下是 ${unique.length} 条工具结果摘要：`,
     '---',
@@ -1722,6 +1793,21 @@ function spawnWorker(step, roundDir, target, round, options = {}) {
     return new Promise((resolveP, rejectP) => {
       const env = { ...process.env, FORGE_ROUND: String(round) };
 
+      // v1.3.0 (交付 10 MA4)：worker 启动前检索历史经验（仅 FORGE_MEMORY_BACKEND 启用时）。
+      // 检索结果注入 FORGE_MEMORY_CONTEXT 环境变量，worker 读取后拼入 system prompt。
+      // 缺省 unset / 不可达 → 不注入（与 v1.2.9 完全一致）。
+      const memoryEndpoint = getMemoryBackendEndpoint();
+      if (memoryEndpoint) {
+        memorySearch(`forge/fresh-eyes/${step}`, target)
+          .then((hits) => {
+            if (hits && hits.length > 0) {
+              const ctx = hits.map((h) => h.content ?? '').filter(Boolean).join('\n').slice(0, 4000);
+              if (ctx) env.FORGE_MEMORY_CONTEXT = ctx;
+            }
+          })
+          .catch(() => { /* 检索失败不阻断 spawn */ });
+      }
+
       // 步骤级 stall 超时覆盖（run-05 教训：a-consolidate 合并双份完整报告，
       // 输入 check-a.md(~10KB)+check-b.md(~5KB)，deepseek-v4-flash/glm-5.2
       // 在长文本合并时事件循环长时间不推进，默认 STALL_MAX=3（~9min）不够，
@@ -1763,6 +1849,14 @@ function spawnWorker(step, roundDir, target, round, options = {}) {
       });
 
       child.on('close', (code, signal) => {
+        // v1.3.0 (交付 10 MA4)：worker 完成后写入本次发现（仅 FORGE_MEMORY_BACKEND 启用时）。
+        // 写入失败 warn + 不阻断（优雅降级铁律）。
+        if (code === 0 && getMemoryBackendEndpoint()) {
+          const summary = (options.customOutput || options.customInputs?.['result.md'] || `step=${step} round=${round}`).slice(0, 2000);
+          memoryWrite(`forge/fresh-eyes/${step}`, summary, { perspective: step, round: String(round), ts: new Date().toISOString() })
+            .catch(() => { /* 写入失败不阻断 */ });
+        }
+
         if (code === 0) {
           resolveP();
         } else if (code === null) {
@@ -1859,6 +1953,99 @@ function spawnParallel(workers, round) {
 }
 
 /**
+ * 从单份 check 报告中提取结构化 finding（P0/P1 级）。
+ *
+ * v1.3.0 run-21 修复：a-consolidate 产物解析失败时，从 24 份 check 报告
+ * 直接提取 finding 生成可修的 result.md（### finding-NN 格式），
+ * 让 b-fix 能真正修复，而不是空转重试。
+ *
+ * 兼容两种 check 报告格式：
+ *   A 侧：## 🔴 P1 发现项 段落 + ### N. 标题 + - **文件路径**: X + - **具体描述**: Y
+ *   B 侧：| 视角 | 文件路径 | 具体描述 | 优先级 | 表格行（末列 P0/P1/P2）
+ *
+ * @param {string} text   check 报告全文
+ * @param {string} source 来源标签（如 A-陌生人 / B-陌生人）
+ * @returns {Array<{title:string, filePath:string, desc:string, source:string}>}
+ */
+function extractFindingsFromCheck(text, source) {
+  const items = [];
+  const lines = text.split('\n');
+
+  // ── 路径 A：标题块格式（### N. 标题 + 属性列表）──
+  let currentPrio = null;
+  let currentTitle = null;
+  let currentFile = null;
+  const currentDesc = [];
+  let inFinding = false;
+  const flush = () => {
+    if (inFinding && (currentPrio === 'P0' || currentPrio === 'P1')) {
+      items.push({
+        title: (currentTitle || '未命名 finding').slice(0, 80),
+        filePath: (currentFile || '(文件待确认)').trim(),
+        desc: currentDesc.join(' ').replace(/\s+/g, ' ').trim().slice(0, 200),
+        source,
+        prio: currentPrio,
+      });
+    }
+    currentTitle = null;
+    currentFile = null;
+    currentDesc.length = 0;
+    inFinding = false;
+  };
+  for (const line of lines) {
+    // 段落标题（## ...）→ 切出上一个 finding，更新当前优先级
+    if (/^#{1,2}\s/.test(line)) {
+      flush();
+      currentPrio = null;
+      const pm = line.match(/\b(P[0-3])\b/);
+      if (pm) currentPrio = pm[1];
+      continue;
+    }
+    const titleMatch = line.match(/^###+\s+\d+[.、]\s*(.+)/);
+    if (titleMatch) {
+      flush();
+      currentTitle = titleMatch[1].trim();
+      inFinding = true;
+      continue;
+    }
+    if (inFinding) {
+      const fileMatch = line.match(/-\s*\*\*文件路径\*\*\s*[:：]\s*(.+)/);
+      if (fileMatch) { currentFile = fileMatch[1].trim(); continue; }
+      const descMatch = line.match(/-\s*\*\*具体描述\*\*\s*[:：]\s*(.+)/);
+      if (descMatch) { currentDesc.push(descMatch[1].trim()); continue; }
+    }
+  }
+  flush();
+
+  // ── 路径 B：表格行格式（| 视角 | 文件路径 | 具体描述 | 优先级 |）──
+  // 四列，末列为 P0/P1/P2；路径列可能含反引号，描述列可能很长
+  for (const line of lines) {
+    const rowMatch = line.match(/^\|\s*[^|]+\|\s*`?([^`|]+)`?\s*\|\s*(.+?)\s*\|\s*(P[0-3])\s*\|$/);
+    if (!rowMatch) continue;
+    const prio = rowMatch[3];
+    if (prio !== 'P0' && prio !== 'P1') continue;
+    const filePath = rowMatch[1].trim();
+    const desc = rowMatch[2].trim();
+    items.push({
+      title: desc.slice(0, 80),
+      filePath,
+      desc: desc.slice(0, 200),
+      source,
+      prio,
+    });
+  }
+
+  return items;
+}
+
+/**
+ * 判断多产物切片是否为"空占位"（sliceMultiOutput 无分隔符 fallback 产生）。
+ */
+function isPlaceholderOutput(content) {
+  return /未检测到 ===FILE:|agent 未产出此文件/.test(content || '');
+}
+
+/**
  * 降级兜底：a-consolidate 失败时，直接拼接所有 perspective 报告作为 findings.md。
  *
  * v1.2.9 功能①：短任务化后 check 产物从 check-a.md/check-b.md 变为
@@ -1927,20 +2114,75 @@ function writeFallbackFindings(roundDir) {
   const findingsText = parts.join('\n');
   writeFileSync(join(roundDir, 'findings.md'), findingsText, 'utf-8');
 
-  // result.md 写最小结构——parseStopCondition 靠数 P0/P1/P2 标记判定
-  const p0 = (findingsText.match(/\bP0\b/g) || []).length;
-  const p1 = (findingsText.match(/\bP1\b/g) || []).length;
-  const resultContent = [
-    '# 修复结果（降级生成——a-consolidate 失败）',
-    '',
-    `| # | 发现 | 优先级 | 状态 |`,
-    `|---|------|--------|------|`,
-    `| fallback | a-consolidate 失败，findings 由各 perspective 报告摘要拼接 | P0×${p0} P1×${p1} | SKIP |`,
-    '',
-  ].join('\n');
+  // v1.3.0 run-21 修复：result.md 从 24 份 check 报告提取可修 finding（### finding-NN 格式），
+  // 让 b-fix 能真正修复而非空转重试。保留"降级生成"标记 → parseStopCondition 判 isDegraded
+  // → 本轮不判 clean；修复经 b-audit auto-commit 后，下一轮在新代码上重审（保守正确）。
+  const extracted = [];
+  for (const p of PERSPECTIVES) {
+    for (const [label, fileName] of [
+      ['A', `check-a-p${p.id}.md`],
+      ['B', `check-b-p${p.id}.md`],
+    ]) {
+      const filePath = join(roundDir, fileName);
+      if (!existsSync(filePath)) continue;
+      const items = extractFindingsFromCheck(readFileSync(filePath, 'utf-8'), `${label}-${p.label}`);
+      for (const it of items) extracted.push(it);
+    }
+  }
+
+  let resultContent;
+  if (extracted.length > 0) {
+    const findingBlocks = extracted.map((it, i) => {
+      const seq = String(i + 1).padStart(2, '0');
+      return [
+        `### finding-${seq}: ${it.title}`,
+        '',
+        `**来源**: ${it.source}（fallback 从 check 报告提取，请 b-fix 核实后再改）`,
+        '',
+        `**优先级**: ${it.prio}`,
+        '',
+        `**问题**: ${it.desc}`,
+        '',
+        `**修复方案**:`,
+        `- 文件：\`${it.filePath}\``,
+        `- 操作：${it.desc}（具体改法以 check 报告原文为准，b-fix 需读文件核实）`,
+        '',
+        `**验证**: 依据 check 报告原文中的验证建议执行`,
+      ].join('\n');
+    });
+    resultContent = [
+      '# 修复结果（降级生成——a-consolidate 产物解析失败，由 check 报告提取）',
+      '',
+      `> ⚠️ 降级生成——a-consolidate 失败。以下 ${extracted.length} 条 finding 由各 check 报告提取，优先级基于原文标记。`,
+      '',
+      ...findingBlocks,
+      '',
+    ].join('\n');
+  } else {
+    const p0 = (findingsText.match(/\bP0\b/g) || []).length;
+    const p1 = (findingsText.match(/\bP1\b/g) || []).length;
+    resultContent = [
+      '# 修复结果（降级生成——a-consolidate 失败）',
+      '',
+      `| # | 发现 | 优先级 | 状态 |`,
+      `|---|------|--------|------|`,
+      `| fallback | a-consolidate 失败，findings 由各 perspective 报告摘要拼接 | P0×${p0} P1×${p1} | SKIP |`,
+      '',
+    ].join('\n');
+  }
   writeFileSync(join(roundDir, 'result.md'), resultContent, 'utf-8');
 
-  console.log(`     降级 findings.md 已写入（P0×${p0} P1×${p1}，摘要模式）`);
+  // v1.3.0 run-23 修复：写独立降级标记文件 degraded.flag。
+  // 降级标记不能只存在 result.md——a-verify 步骤会覆盖 result.md（回填 verify 列），
+  // 把"降级生成"文本抹掉 → parseStopCondition 读到干净 result.md → 降级轮被误判
+  // isClean=true（run-23 R1 实测）。flag 与 result.md 解耦，a-verify 覆盖不影响。
+  // parseStopCondition 优先查 flag；文本标记匹配保留做旧 run 数据兼容。
+  const degradedFlag = join(roundDir, 'degraded.flag');
+  writeFileSync(degradedFlag,
+    `fallback-rebuild\nreason: a-consolidate 产物解析失败，由 check 报告降级重建\ntime: ${new Date().toISOString()}\nfindings: ${extracted.length}\n`,
+    'utf-8');
+
+  console.log(`     降级 findings.md 已写入（check 提取 ${extracted.length} 条可修 finding，degraded.flag 已标记）`);
 }
 
 /**
@@ -1996,7 +2238,15 @@ function parseStopCondition(roundDir) {
   // run-05 教训：4 个 worker 全崩 → 降级写 3 行模板占位 →
   // parseStopCondition 数正则标记全是 0 → isClean=true → 连续 2 轮误判"成功完成"。
   // 占位文件内容特征：包含"崩溃""降级占位""worker 异常终止""a-consolidate 失败"等标记。
+  //
+  // v1.3.0 run-23 修复：优先查独立降级标记文件 degraded.flag——文本标记存在 result.md
+  // 里会被 a-verify 覆盖抹掉（run-23 R1 实测降级轮被误判 isClean=true）。flag 与
+  // result.md 解耦，任何下游覆盖都不影响。文本标记匹配保留做旧 run 数据兼容（取或）。
   let isDegraded = false;
+  const degradedFlagPath = join(roundDir, 'degraded.flag');
+  if (existsSync(degradedFlagPath)) {
+    isDegraded = true;
+  }
   const degradedMarkers = [
     '崩溃（降级占位）',
     'worker 异常终止',
@@ -2004,16 +2254,18 @@ function parseStopCondition(roundDir) {
     'b-fix 降级（未完成）',
     '降级占位',
   ];
-  for (const filePath of [findingsPath, resultPath]) {
-    if (!existsSync(filePath)) continue;
-    const text = readFileSync(filePath, 'utf-8');
-    for (const marker of degradedMarkers) {
-      if (text.includes(marker)) {
-        isDegraded = true;
-        break;
+  if (!isDegraded) {
+    for (const filePath of [findingsPath, resultPath]) {
+      if (!existsSync(filePath)) continue;
+      const text = readFileSync(filePath, 'utf-8');
+      for (const marker of degradedMarkers) {
+        if (text.includes(marker)) {
+          isDegraded = true;
+          break;
+        }
       }
+      if (isDegraded) break;
     }
-    if (isDegraded) break;
   }
 
   // 碎片内容假阳性干净——check 产物最小内容阈值检查
@@ -2596,6 +2848,12 @@ async function main() {
     }
     try {
       await runWorker(args.step, args.roundDir, args.target);
+      // v1.3.0 run-23 修复：worker 写完产物后强制退出。
+      // 若 runWorker 内部残留未清理句柄（LangGraph stream / API 长连接 / 定时器 /
+      // audit middleware 监听器），事件循环不清空 → 进程永不退出 → driver 的
+      // spawnWorkerStep await 永久挂起（run-23 round-5 b-fix 第 3 批实测 hang 18 分钟）。
+      // process.exit 无视残留句柄，强制回收 worker 进程。
+      process.exit(0);
     } catch (err) {
       console.error(`[worker:${args.step}] 失败: ${err.message}`);
       // 打印复合错误的子错误（DeepAgents 的 Multiple errors）

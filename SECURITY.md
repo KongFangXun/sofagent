@@ -1,6 +1,6 @@
 # 安全策略
 
-> v1.2.9 · 2026-08-08（UTC）· 孔放勋
+> v1.3.0 · 2026-08-09（UTC）· 孔放勋
 >
 > 按安全主题组织，版本号作为括号注释。企业 IT 可按主题快速定位。
 
@@ -38,16 +38,16 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 | `knowledge/` | `data/knowledge/` | 知识库 / 评估反馈（eval 体系；旧 `scoring/` 已废弃） |
 | `orchestrator/` | `data/orchestrator/` | 编排决策历史 |
 
-**当前状态（v1.2.8）**：
+**当前状态（v1.3.0）**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
 - ⚠️ 明文存储：`data/` 下文件仍为 Markdown 明文，未做加密
-- ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**预计 v1.4.0（与沙箱/权限/网关同批安全加固）落地**。合规审查员请注意：v1.2.x 版本不适合直接用于强合规场景，需配合外部加密卷（gpg / disk encryption）。
+- ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**已排 v1.3.8（与沙箱/权限/网关同批安全加固）落地**。合规审查员请注意：v1.2.x 版本不适合直接用于强合规场景，需配合外部加密卷（gpg / disk encryption）。
 
-### 当前版本（v1.2.8）临时缓解措施
+### 当前版本（v1.3.0）临时缓解措施
 
-在 age 加密（目标 v1.4.0）交付之前，建议：
+在 age 加密（目标 v1.3.8）交付之前，建议：
 1. **设置 `~/.sofagent/data/` 目录权限为 700**：`chmod 700 ~/.sofagent/data/`（用户可见运行时数据；`~/.sofagent/internal/` 引擎内部状态同样 700）
 2. **将 `~/.sofagent/` 父目录放在加密文件系统上**（如 macOS APFS 加密卷）
 3. **定期轮换 `~/.sofagent/data/` 中的历史审计数据**
@@ -241,7 +241,7 @@ history.jsonl 存储审计拦截记录（含被拦截的 diff 摘要）。以下
 | 写入 | ✅ 能 | Agent 可以追加/删除/篡改 history.jsonl |
 | 检测篡改 | ⚠️ --doctor 第 8 项检查 | 通过 hash chain 验证——但 Agent 可以在篡改后重新计算整条链 |
 
-**缓解**：sanitize() 管道在写入前对密钥/密码/手机号打码。但这不是加密——Agent 可以从原始 git diff 中直接读到敏感内容。根治方案：age 加密（v1.4.0 落地，参见 ROADMAP.md）+ 独立审计存储（更后期规划）。
+**缓解**：sanitize() 管道在写入前对密钥/密码/手机号打码。但这不是加密——Agent 可以从原始 git diff 中直接读到敏感内容。根治方案：age 加密（v1.3.8 落地，参见 ROADMAP.md）+ 独立审计存储（更后期规划）。
 
 #### 审计日志脱敏与访问控制
 
@@ -410,7 +410,7 @@ install.sh 拆分为以下模块，便于逐模块审查：
 
 `automerge@1.0.1-preview.7` 为 preview 版（非稳定版），API 可能在后续版本变更。截至 v1.2.7 复核，npm 仍无 stable（latest=2.0.0-alpha.3），uuid 弃用警告为已知观感问题；federation 功能不使用时该依赖路径不触达。daemon 精确锁定版本号（`"automerge": "1.0.1-preview.7"`，非 `^` 前缀）避免意外升级。如 automerge 发布 stable 版本或 breaking change，`engine/core/src/federation.ts` 的 `Automerge.change/clone/merge` 调用需重新验证。
 
-**uuid@3.4.0 漏洞可利用性评估（GHSA-w5hq-g745-h8pq · v1.2.7 F13）**：
+**uuid@3.4.0 漏洞可利用性评估（GHSA-w5hq-g745-h8pq · v1.3.7 F13）**：
 
 automerge preview 版传递依赖 `uuid@3.4.0`（2018 弃用），存在 `uuid()` 默认 RNG 可预测漏洞。评估结论：uuid v3 的漏洞面在 `uuid()` 默认 RNG 可预测——automerge 用它生成文档 ID，非安全凭据，实际可利用性极低。v1.3.x 将重新评估 automerge stable 升级路径或 federation 换用其他 CRDT（如 yjs）。
 

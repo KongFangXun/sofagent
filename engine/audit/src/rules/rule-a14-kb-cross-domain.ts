@@ -2,7 +2,7 @@
 // A14 知识库越权访问（扩展层 · 能力拐杖）
 // 检测 Agent 是否读取了不在当前 Workflow 节点 knowledge-domain 内的页面
 // evidenceMode: hybrid——有日志走精确检查，无日志跳过
-// v1.2.9 新增
+// v1.3.0 新增
 // ============================================================
 
 import { existsSync, readFileSync } from 'fs';

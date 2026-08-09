@@ -2,7 +2,7 @@
 
 > 项目：sofagent · 2026-08-01 战略讨论
 > 作者：孔放勋
-> 状态：Phase 1-3（v1.2.5-v1.2.8）已实现 · Phase 3 后半（v1.2.9 开发中）· Phase 4（v1.3.0 规划中）
+> 状态：Phase 1-3（v1.2.5-v1.2.8）已实现 · Phase 3 后半（v1.2.9 开发中）· Phase 4（v1.3.0 开发中）
 > 灵感来源：用户提出"FDE Agent 读自己的交付物，自动生成企业 sub-agent"
 
 ---
@@ -607,7 +607,7 @@ dag-runner.ts（修改）
 | **S1-S5（Skill × MCP 集成）** | S1-S5 完成后 FDE Skill 有 MCP 工具调用能力。激活链的 `activate_workflow` 是新增的第 9 个 MCP tool |
 | **Skill 分包（README/GUIDE/SKILL/skills/）** | FDE 分包后，skills/04-deliver.md 中应加入 activate 引导——交付后不是结束，activate 才是 |
 | **v1.3.0 运行时审计** | v1.3.0 的 LangGraph middleware wrapToolCall 与激活链的"每个节点执行后审计"互补。v1.3.0 是通用拦截，激活链是企业专属 |
-| **v1.4.0 沙箱** | 激活链生成的企业 Agent 最终也需要沙箱隔离 |
+| **v1.3.7 沙箱** | 激活链生成的企业 Agent 最终也需要沙箱隔离 |
 
 ---
 

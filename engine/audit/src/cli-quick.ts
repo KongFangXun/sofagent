@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // cli-quick.ts · npx sofagent-audit 零配置 CLI 入口
-// v1.2.9 (⑧-1)：30 秒 aha moment——任何 git repo 都能跑
+// v1.3.0 (⑧-1)：30 秒 aha moment——任何 git repo 都能跑
 //
 // 用法：
 //   npx sofagent-audit              # 审计最近一次 commit
@@ -20,7 +20,7 @@
 //   3 = 非 git 仓库
 // ============================================================
 
-import { execFileSync } from 'child_process';
+import { execFileSync, spawnSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { parseDiff, isInGitRepo, type DiffFile } from '@sofagent/core';
@@ -131,6 +131,52 @@ export function generateQuickOutput(
  * @returns 退出码
  */
 export function runCliQuick(argv: string[]): number {
+  // F-13 (v1.3.0 bugfix)：拦截需要完整引擎的参数，路由到 dist/index.js（spawn 方式）
+  // ⚠️ 清单已按 engine/audit/src/index.ts 实测校准（2026-08-09）：
+  //    - 删除 '--repair'（完整版不存在该 flag）
+  //    - 删除 '--verify'（不是 flag；verify 子命令是弃用 shim，走子命令路径即可）
+  //    - 新增 '--verify-commit'（v1.2.9 新增 flag，需要完整引擎，否则会被 quick 吞掉）
+  const FULL_ONLY_FLAGS = ['--init', '--doctor', '--install-hook',
+    '--list-rulesets', '--ruleset', '--ruleset-path',
+    '--support-bundle', '--sign-config', '--verify-chain', '--verify-commit'];
+
+  for (const arg of argv.slice(2)) {
+    if (FULL_ONLY_FLAGS.includes(arg)) {
+      // 路由到完整引擎（dist/index.js）
+      const indexPath = join(__dirname, 'index.js');
+      try {
+        const result = spawnSync(process.execPath, [indexPath, ...argv.slice(2)], {
+          stdio: 'inherit',
+          cwd: process.cwd(),
+        });
+        return result.status ?? 1;
+      } catch {
+        console.log('⚠️  此命令需要完整安装：');
+        console.log('   npm install -g @sofagent/audit');
+        console.log('   或使用 sofagent-audit-full ' + arg);
+        return 1;
+      }
+    }
+  }
+
+  // 拦截 --help / --version
+  if (argv.includes('--help') || argv.includes('-h')) {
+    console.log('sofagent-audit — AI Agent 行为审计\n');
+    console.log('用法：');
+    console.log('  npx sofagent-audit              审计最近一次 commit');
+    console.log('  npx sofagent-audit HEAD~3..HEAD 审计指定范围');
+    console.log('  npx sofagent-audit-full --init  安装 git hook（需完整安装）');
+    console.log('  npx sofagent-audit-full --doctor 健康诊断（需完整安装）');
+    return 0;
+  }
+
+  if (argv.includes('--version') || argv.includes('-v')) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const pkg = require('../package.json');
+    console.log(`sofagent-audit v${pkg.version}`);
+    return 0;
+  }
+
   // 1. 检测 git 仓库
   const cwd = process.cwd();
   const isGitRepo = existsSync(join(cwd, '.git')) || isInGitRepo();

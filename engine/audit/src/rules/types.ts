@@ -119,5 +119,7 @@ export interface Rule {
   ruleClass?: RuleClass;
   /** 规则描述（v1.0.9） */
   description?: string;
+  /** v1.3.0 (交付 7)：双规则统一——'diff' = 提交时扫 git diff */
+  ruleType: 'diff';
   check(ctx: AuditContext): RuleCheck;
 }

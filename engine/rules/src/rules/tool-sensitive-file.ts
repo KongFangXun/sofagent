@@ -1,6 +1,6 @@
 // ============================================================
 // tool-sensitive-file.ts · 移植 audit rule-a1（敏感文件保护）
-// v1.2.9：tool 视角——校验 args 里的文件路径
+// v1.3.0：tool 视角——校验 args 里的文件路径
 // ============================================================
 
 import type { ToolRule, ToolCallContext, InterceptVerdict } from '../types';
@@ -74,6 +74,7 @@ export const toolSensitiveFile: ToolRule = {
   name: 'tool-sensitive-file',
   number: 1,
   ruleClass: '业务底线',
+  ruleType: 'tool',
 
   check(ctx: ToolCallContext): InterceptVerdict {
     const filePaths = extractFilePaths(ctx.args);

@@ -45,7 +45,7 @@ export type {
 } from './federation';
 
 // ── 原子写入 ──
-export { atomicWriteSync, atomicAppendSync } from './shared/atomic-write';
+export { atomicWriteSync, atomicAppendSync, atomicWriteWithMergeSync, mergeAppendMissing } from './shared/atomic-write';
 
 // ── Git Diff 解析 ──
 export {
@@ -71,7 +71,7 @@ export {
   ConfigParseError,
   signConfig,
 } from './config-loader';
-export type { AuditConfig, SofaEnvConfig } from './config-loader';
+export type { AuditConfig, SofaEnvConfig, MemoryBackend } from './config-loader';
 
 // ── 数据目录路径（v1.2.1 安装路径分离：SOFAGENT_HOME 优先） ──
 export {
@@ -258,7 +258,7 @@ export { runDoctor } from './doctor';
 export type { DoctorReport } from './doctor';
 
 // ── 审计历史链校验（v1.2.0 从 @sofagent/audit 下沉，消除 core 反向依赖） ──
-export { getHistoryFilePath, getEnvFingerprint, getHmacKey, checkHistoryChainIntegrity, checkHistoryChainDetailed, stableStringify, validateHmacKey } from './audit-history';
+export { getHistoryFilePath, getDecisionLogPath, getEnvFingerprint, getHmacKey, checkHistoryChainIntegrity, checkHistoryChainDetailed, stableStringify, validateHmacKey } from './audit-history';
 
 // ── 装后验证 ──
 export { verifyEvidence } from './verify-evidence';

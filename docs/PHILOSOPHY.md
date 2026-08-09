@@ -2,7 +2,7 @@
 
 > **本文档是 sofagent 最核心的一份「为什么」。** 读完你能回答：sofagent 是什么、怎么用、怎么跑、怎么管、怎么记、怎么装、怎么进化、以及不做什么。
 >
-> v1.2.9 · 2026-08-08（UTC）· 孔放勋
+> v1.3.0 · 2026-08-09（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -156,9 +156,9 @@ sofagent 的生存位不在"写更聪明的约束文字"，而在**细分业务 
 
 **四阶段路线**（详见 ROADMAP「Subagent 内置专精小模型」）：v1.2.x 架构预留（`inference` 字段支持 Ollama）→ v3.x 工具链（`sofagent-model` 微调 CLI）→ v4.x 本地推理（业务 workflow 跑精调模型；代码/强推理直连云端最强 LLM）→ v4.x+ 离线节点（USB key 完整离线 AI 节点，覆盖业务 workflow）。
 
-### 远期演化愿景：从「内置小模型」到「自动化企业后训练引擎」（2026-07-30 战略讨论）
+### 远期演化愿景：从「内置小模型」到「自动化企业后训练引擎」
 
-> 📖 来源：产品战略讨论 2026-07-30（尚未实现，属远期愿景，非当前能力）
+> ⚠️ 远期愿景，尚未实现，非当前能力
 
 上文「水龙头自带净水设备」描述的是 sofagent **自身** Subagent 内置专精小模型的单体路线。更远的演化终态是将其平台化：**ontology 驱动的后训练模型自动部署引擎**——
 
@@ -314,7 +314,7 @@ sofagent 的三条中立性原则：
 
 知识不囤在一台设备上。Dream Cycle 管道自动从 think.md 提取 fact→atom→concept，联邦查询跨设备共享经验。设备 A 踩的坑，设备 B 的 Agent 不问就知道。AES-256-GCM 加密全程保护传输。
 
-### 知识库作为 Agent 可信调用载体（2026-07 行业印证）
+### 知识库作为 Agent 可信调用载体
 
 企业知识库正从「问答工具」升级为「Agent 可信调用载体」。行业研报的 4 道关卡模型可直接映射到 sofagent 三层治理：
 
@@ -378,7 +378,7 @@ FDE 一线观察指出：AI 项目失败的最根因往往不是技术，而是"
 | ① 交付物 | workflow.yml + ontology + skills/ | `.sofagent/` 目录（activate 读它） | ✅ 已实现 |
 | ② 离场报告 | FDE 经验（踩坑/调试难点/可复用模式） | `delivery-report.md`（FDE/templates/） | ✅ 模板已建 |
 | ③ 知识聚合 | 多客户报告 → 统一知识库 | `knowledge/`（Dream Cycle 自动派生） | ✅ 已实现 |
-| ④ 模型精调 | 知识库 → QLoRA 训练语料 | `sofagent-model` CLI（v3.x） | 🔴 规划中 |
+| ④ 模型精调 | 知识库 → QLoRA 训练语料 | `sofagent-model` CLI（v3.x） | 🔴 远期（见 ROADMAP） |
 
 **为什么离场报告是关键**：交付物（①）是结构化的，但 FDE 脑子里的经验（②）是非结构化的——散落在对话、录音、个人笔记里，会随时间流失。`delivery-report.md` 就是把这个"漏斗"接住：离场时强制回写一份，飞轮才有数据可转。没有它，飞轮缺一齿，转不起来。
 
@@ -491,7 +491,6 @@ sofagent 的版本演进不是拍脑袋排的——它遵循 Agent 工程的生�
 | [HANDBOOK.md](./HANDBOOK.md) | 用户手册——怎么用 |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | 架构设计——怎么设计 |
 | [DEVELOPMENT.md](./DEVELOPMENT.md) | 开发者文档——怎么参与 |
-| [MCP 使用指南](./guides/mcp-usage.md) | MCP 调用 + push target 配置 + 输出说明 |
 | [ROADMAP.md](./ROADMAP.md) | 路线图——过去和未来 |
 | [CHANGELOG.md](../CHANGELOG.md) | 版本历史——每个版本做了什么 |
 

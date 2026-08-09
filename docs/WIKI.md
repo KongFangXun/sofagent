@@ -9,7 +9,7 @@
 > - **[ARCHITECTURE.md](./ARCHITECTURE.md)**（94KB）：双层架构设计（约束层 × 生命周期）+ 约束层工程三层嵌套（约束层 → Graph → Loop），关键技术决策记录。**3 秒版**：约束层管"做对"（注入·审计·回溯·进化）· 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
 > - **[VALIDATION.md](./VALIDATION.md)**（47KB）：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射。
 > - **[PHILOSOPHY.md](./PHILOSOPHY.md)**（44KB）：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
-> - **[ROADMAP.md](./ROADMAP.md)**（34KB）：版本路线图 + 迭代历程。当前 v1.2.9。
+> - **[ROADMAP.md](./ROADMAP.md)**（34KB）：版本路线图 + 迭代历程。当前 v1.3.0。
 
 ---
 
@@ -56,7 +56,7 @@
 │  内部：编排引擎 @sofagent/orchestrator            │
 │        （LangGraph ReactAgent，非对外产品引擎）   │
 ├─────────────────────────────────────────────────┤
-│  data/（运行时数据） │ engine/（13 个 npm 包）     │
+│  data/（运行时数据） │ engine/（12 个 npm 包）     │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -125,13 +125,13 @@
 | `docs/HANDBOOK.md` | FDE 操作手册：进场流程、节点部署、持续维护 |
 | `docs/guides/fde-activation-chain.md` | 🔗 激活链设计（v1.2.5+）：FDE 交付物 → 企业工作流自动运转（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN） |
 | `docs/THANKS.md` | 致谢——谁启发了哪个设计决策 |
-| `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/`）。⚠️ 早期版本日志含"审查元信息/开发过程备注"等非产品文档内容，属当时开发留痕，不代表产品能力声明；以各版本 changelog 顶部的"已开发/规划中"标记为准 |
+| `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/` `v1.4/`）。⚠️ 早期版本日志含"审查元信息/开发过程备注"等非产品文档内容，属当时开发留痕，不代表产品能力声明；以各版本 changelog 顶部的"已开发/已排期"标记为准。规划中版本的开发排期见 [ROADMAP](./ROADMAP.md) |
 | `docs/changelog/releasing.md` | **发版 SOP**——十二阶段全流程 |
 | `docs/evidence/` | 效果证据：案例、基准测试、反例 |
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |
-| `docs/guides/` | 专题指南：部署、测试、MCP 使用、Loop 开发等 |
+| `docs/guides/` | 专题指南：部署、测试、Dashboard 开发、Loop 开发等 |
 
-### engine/（13 个 workspace 包，13 个发布到 npm）
+### engine/（12 个 npm 发布包，workspace 含内部 hook 包共 13 个）
 
 | 包 | 职责 |
 |----|------|
@@ -160,9 +160,9 @@
 
 | 项 | 值 |
 |----|-----|
-| 当前版本 | **v1.2.9**（2026-08-08） |
-| 下一版 | v1.3.0（参见 docs/ROADMAP.md） |
-| 测试覆盖 | 1650 测试 / 12 包（测试统计标准：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，见 check-test-count.sh） |
+| 当前版本 | **v1.3.0**（2026-08-08） |
+| 下一版 | v1.3.1（开发中，参见 docs/ROADMAP.md） |
+| 测试覆盖 | 1712 测试 / 12 包（测试统计标准：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，见 check-test-count.sh） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1-E2/E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
@@ -209,14 +209,12 @@
 | 查某个版本改了什么 | [CHANGELOG.md](../CHANGELOG.md) → `docs/changelog/vX.Y/vX.Y.Z.md` |
 | 了解审计规则 | [SECURITY.md](../SECURITY.md) + [ARCHITECTURE §三](./ARCHITECTURE.md) |
 | 了解 SKILL 约束体系 | [SKILL/SKILL.md](../SKILL/SKILL.md) |
-| 配置 MCP 调用 | [guides/mcp-usage.md](./guides/mcp-usage.md) |
 | 配置 GitHub Actions CI | [guides/github-action.md](./guides/github-action.md) |
 | 了解文件系统审计 | [guides/filesystem-audit.md](./guides/filesystem-audit.md) |
 | 开发/维护 HTML Dashboard | [guides/dashboard-html-dev.md](./guides/dashboard-html-dev.md)（V1.0 · 设计原则 · 数据链路 · 视觉规范 · 踩坑记录） |
 | 企业部署指南 | [guides/enterprise-deploy.md](./guides/enterprise-deploy.md) |
 | 多设备联邦同步 | [guides/multi-device-sync.md](./guides/multi-device-sync.md) |
 | 团队批量部署 | [guides/team-deploy.md](./guides/team-deploy.md) |
-| 了解插件机制 | [guides/plugins.md](./guides/plugins.md) |
 | 运行测试 / 验证效果 | [guides/testing.md](./guides/testing.md) |
 | 添加新审计规则 | `engine/audit/src/rules/` → 对照现有规则模式（defaultRules / extendedRules） |
 | 新建 Sub Agent | `SKILL/agents/` → 参照 `agents/engineer/SKILL.md` |
@@ -234,4 +232,4 @@
 
 ---
 
-> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.2.9 · 孔放勋 · 2026-08-06。
+> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.3.0 · 孔放勋 · 2026-08-08。

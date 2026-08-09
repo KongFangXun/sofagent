@@ -18,6 +18,7 @@ function makeMockRule(
     name,
     number: 1,
     evidenceMode: 'git-diff',
+    ruleType: 'diff',
     check: (_ctx: AuditContext): RuleCheck => ({
       name,
       number: 1,

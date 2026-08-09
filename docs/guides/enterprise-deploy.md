@@ -208,12 +208,12 @@ sofagent 对 Windows 的支持是**实验性**的：
 | git hook（commit-msg / post-commit） | ✅ 完全支持 | ⚠️ 需 Git Bash（原生 cmd.exe 不支持 bash hook 脚本） |
 | 审计引擎（sofagent-audit） | ✅ 完全支持 | ✅ 支持（Node.js 跨平台） |
 | MCP Server | ✅ | ✅ |
-| daemon 常驻进程 | ✅ | ❌ 不支持（v1.2.9 PM2 守护面向 macOS/Linux，Windows 待 v1.4.0） |
+| daemon 常驻进程 | ✅ | ❌ 不支持（v1.2.9 PM2 守护面向 macOS/Linux，Windows 待排期） |
 | orchestrator 编排 | ✅ | ⚠️ 部分功能依赖 Unix signal |
 | install.sh 安装脚本 | ✅ | ❌ 需 WSL 或 Git Bash 运行 |
 | `tools/windows/*.ps1` PowerShell 脚本 | N/A | ⚠️ 覆盖核心功能（约 25%），非完整替代 |
 
-> Windows 用户建议使用 WSL2 或 Git Bash 环境。原生 PowerShell 支持规划在 v1.4.0。
+> Windows 用户建议使用 WSL2 或 Git Bash 环境。原生 PowerShell 支持待排期。
 
 ---
 
