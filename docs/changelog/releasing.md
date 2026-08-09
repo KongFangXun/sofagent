@@ -155,7 +155,7 @@
 > 铁律：修复只本地 commit、绝不 push；不要干涉 driver 内部、不要探索项目源码——你只做启动 + 持续轮询监控 + 汇报。
 > ```
 >
-> ⚠️ **AI 输出 prompt 时必须替换的占位符**：`{项目实际路径}`（如 `/Users/kongfangxun/Workbuddy/sofagent`）、`{实际版本号}`（如 `v1.2.5`）。输出前检查：prompt 中不得残留任何花括号占位符。prompt 中的监控协议细节（heartbeat 检测、轮询节奏）是"不读 SKILL.md 就一定踩坑"的关键约束，必须内联——不能只依赖新 session 的 AI 自己去读 SKILL.md。
+> ⚠️ **AI 输出 prompt 时必须替换的占位符**：`{项目实际路径}`（如 `/path/to/your-project/sofagent`）、`{实际版本号}`（如 `v1.2.5`）。输出前检查：prompt 中不得残留任何花括号占位符。prompt 中的监控协议细节（heartbeat 检测、轮询节奏）是"不读 SKILL.md 就一定踩坑"的关键约束，必须内联——不能只依赖新 session 的 AI 自己去读 SKILL.md。
 
 | 2 | **🔴 汇总 fresh-eyes-loop 修复并整合 changelog（human-in-the-loop）**：loop（步骤 1）跑完后，用户以 `fresh-eyes-review.md` 方法论为参考**人肉**复核，① 汇总 loop 所有的 bug 修改，整合到本版本 changelog 开发日志（`docs/changelog/v<major>.<minor>/vX.Y.Z.md`）；② 将 loop 全部修复计入本版本 changelog 并打勾——此时所有修复仍本地未推，这是设计内正确状态 | 本版本 changelog 的「发布检查清单」含 loop 全部修复项且全部 `[x]`，开发日志已整合 loop 全部 bug 修改 |
 | 3 | **逐项核对 changelog 每一项**（含 fresh-eyes-loop 修复项） | 当前 session | 逐文件读源码/diff，逐项确认改动存在且正确，标记 PASS/FAIL |
@@ -505,6 +505,7 @@ shellcheck engine/scripts/*.sh tools/*.sh install.sh   # 期望：零 error
 | 2 | **三脚本对照检查**<br><br>① `check-version.sh` 检查的每一类文件，`bump-version.sh` 是否都有对应的 bump 步骤？（缺口 = check 能发现但不自动修复——如 v1.1.3 发现的 10 个 workspace 子包 version 字段）<br>② `pre-push-check.sh` 的检查项数量是否和 CHANGELOG/ROADMAP 声明的一致？（v1.1.3 教训：声明 13 通过，实际 15 通过/16 项）<br>③ `check-version.sh` 的检查项编号分母是否和实际检查项数一致？（v1.1.3 教训：`[1/13]~[12/13]+[13/14]+[14/14]` 分母跳变）<br>④ **🔴 v1.2.2 教训：bump-version.sh --dry-run 必须验证为纯只读**——步骤 9b 的 node 脚本段无条件 `fs.writeFileSync` 写盘，导致 `--dry-run` 实际修改了 9 个 package.json。验证方式：跑完 dry-run 后 `git diff --stat` 必须零改动；有改动 = P0 bug | ① 跑 `./tools/check-version.sh` 看末尾「检查通过: N/N 项」，再跑 `./tools/bump-version.sh --dry-run` 对照 bump 步骤数，两者覆盖范围应一致<br>② `./tools/pre-push-check.sh 2>&1 \| grep '结果:'` 的数字和 CHANGELOG 质量验证段对比<br>③ `grep '── \[' tools/check-version.sh` 看实际打印的分母是否全一致（注释中的引用不算）<br>④ `bash tools/bump-version.sh X Y --dry-run > /dev/null 2>&1; git diff --stat` 零改动 |
 | 3 | **过时检查清理** | ... |
 | 4 | **🔴 `npm run build` 重建 dist 产物**（v1.2.2 P0-01 教训：bump-version 只改源码不改 dist/，fresh-eyes-loop 修复了代码但 dist 仍是旧版本。**必须在所有代码修复完成后、发版前重建**——确保 CLI --help 显示正确版本号，dist 产出包含全部修复） | `node engine/audit/dist/index.js --help` 输出 vX.Y.Z |
+| 5 | **🔴 hook 端到端实测（v1.3.1 补 · P0 发版门禁盲区）**——真装 hook + 真提交密钥验证拦截链路：<br><br>① **准备隔离测试 bin**：`mkdir -p /tmp/fe-verify-bin && printf '#!/bin/bash\nexec node <repo>/engine/audit/dist/cli-quick.js "$@"\n' > /tmp/fe-verify-bin/sofagent-audit && chmod +x /tmp/fe-verify-bin/sofagent-audit`<br>⚠️ **先 `rm -f` 确认目标路径不是 symlink**（v1.3.1 血泪：`/tmp/fe-bin/sofagent-audit` 是历史测试遗留的 symlink 指向仓库 dist，`cat >` 会跟随 symlink **直接覆盖 dist 产物**且 git 不跟踪 dist 无法恢复）<br>② 新仓库装 hook：`git init && node -e "require('<repo>/engine/core/dist/config-template.js').HOOK_TEMPLATE" > .git/hooks/commit-msg && chmod +x .git/hooks/commit-msg`<br>③ **拦截验证**：`export PATH=/tmp/fe-verify-bin:$PATH SOFAGENT_DATA=/tmp/fe-vd SOFAGENT_HOME=/tmp/fe-vh` → 提交含密钥 `.env` → **必须 A1+A2 拦截 exit 2 且 `git show HEAD:.env` fatal**（密钥未入库）<br>④ ⚠️ **拦截后清暂存区再测下一场景**：`git reset HEAD -- .env && rm .env`（v1.3.1 血泪：被拦的 `.env` 留在暂存区，直接测"干净提交"会被残留误拦——那是测试污染不是产品 bug）<br>⑤ **干净提交验证**：改 app.py → commit → WARN 放行 exit 0 | 拦截：密钥提交被 A1+A2 拦，`git show HEAD:.env` fatal；放行：干净提交成功 |
 
 ---
 

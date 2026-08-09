@@ -16,9 +16,10 @@
 //
 // 并发安全说明：appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的。
 // 审计历史条目通常 < 1KB，单次写入安全。多进程同时写入可能导致行交错，
-// 但概率极低（审计触发频率 < 1次/分钟）。TODO(v1.3.0): 加 file lock 或改为单 writer 模式。
-// 风险：daemon 文件监控 + Agent commit 并发写 history.jsonl 可能产生损坏行
-// 触发概率：低（< 1次/分钟），但损坏会导致 hash chain 完整性校验失败
+// 但概率极低（审计触发频率 < 1次/分钟）。
+// v1.3.1 #44: 这是已知限制（无文件锁/单 writer），已记录到 docs/LIMITATIONS.md。
+// daemon 文件监控 + Agent commit 并发写 history.jsonl 可能产生损坏行，
+// 导致 hash chain 完整性校验失败。如需强一致，应加文件锁或改为单 writer 模式（未来版本）。
 //
 // 每次 sofagent-audit 运行后，把结果追加到
 // ${SOFAGENT_DATA}/audit/history.jsonl（JSONL 格式；v1.2.2 起默认 data/audit/history.jsonl）。

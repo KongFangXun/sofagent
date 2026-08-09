@@ -125,11 +125,15 @@ interface Args {
   rulesetPath?: string;
   /** v1.3.9 (⑧-2): --list-rulesets 列出可用规则集 */
   listRulesets?: boolean;
+  /** v1.3.1 #15: --warn-as-error 让 WARN 返回 exit 2（安全优先，CI 阻断） */
+  warnAsError: boolean;
+  /** v1.3.1 #15: --warn-as-info 让 WARN 返回 exit 0（CI 不阻断，仅信息性） */
+  warnAsInfo: boolean;
 }
 
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, supportBundle: false, format: undefined, ruleset: undefined, rulesetPath: undefined, listRulesets: false };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, supportBundle: false, format: undefined, ruleset: undefined, rulesetPath: undefined, listRulesets: false, warnAsError: false, warnAsInfo: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff') {
       // --diff 无显式值（末尾或后跟其他 flag）→ 用默认 HEAD~1..HEAD，
@@ -153,6 +157,12 @@ function parseArgs(argv: string[]): Args {
       args.commitMsgArg = argv[i] as string;
     } else if (argv[i] === '--strict') {
       args.strict = true;
+    } else if (argv[i] === '--warn-as-error') {
+      // v1.3.1 #15: WARN 视为 error（exit 2），CI 阻断。安全优先。
+      args.warnAsError = true;
+    } else if (argv[i] === '--warn-as-info') {
+      // v1.3.1 #15: WARN 视为 info（exit 0），CI 不阻断。仅信息性输出。
+      args.warnAsInfo = true;
     } else if (argv[i] === '--silent') {
       args.silent = true;
     } else if (argv[i] === '--ci') {
@@ -213,6 +223,11 @@ function parseArgs(argv: string[]): Args {
       args.supportBundle = true;
     } else if (argv[i] === '--no-session') {
       args.noSession = true;
+    } else if (argv[i] === '--no-daemon') {
+      // v1.3.1 #48: --no-daemon flag——跳过 daemon 注册（init 流程使用）。
+      // init.ts 通过 process.argv.includes('--no-daemon') 消费，
+      // 此处仅注册为已知 flag，避免 parseArgs 误报「不支持的参数」。
+      // 值由 init 流程直接从 process.argv 读取，不存入 args。
     } else if (argv[i] === '--format' && argv[i + 1]) {
       i++;
       args.format = argv[i] as string;
@@ -1251,6 +1266,19 @@ async function main(): Promise<void> {
   // think.md 生成由 @sofagent/think 的 generateThinkEntry 负责（审计后反思生成器），
   // 其内部经 @sofagent/core 的 appendThinkEntry 契约写入，保证 append-only 不变量。
   // audit 包不直接写 think.md（避免反向依赖 think 生成器）。
+
+  // v1.3.1 #15: WARN 退出码可配——默认 WARN→exit 1（安全优先）。
+  // --warn-as-error: WARN→exit 2（CI 阻断，要求零警告）
+  // --warn-as-info: WARN→exit 0（CI 不阻断，仅信息性）
+  // 两者互斥时 --warn-as-error 优先（安全优先）。仅影响 WARN（exit 1）场景，不改 FAIL（exit 2）。
+  // --strict 已覆盖「WARN→2」语义，--warn-as-error 与之等价但语义更明确。
+  if (results.exitCode === 1) {
+    if (args.warnAsError) {
+      results.exitCode = 2;
+    } else if (args.warnAsInfo) {
+      results.exitCode = 0;
+    }
+  }
 
   exit(results.exitCode as 0 | 1 | 2);
 }

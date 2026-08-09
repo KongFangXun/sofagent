@@ -340,9 +340,11 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   }
 
   // 实际校验链完整性（v1.2.0: checkHistoryChainDetailed 已下沉到 core，区分篡改 vs 历史不可复验 vs 不可信）
+  // v1.3.1 #14: doctor 只校验最近 500 条（而非全量）——大量历史记录时全量校验性能开销大，
+  // doctor 是健康检查不应耗时过久。--verify-chain 命令仍全量校验。
   let auditLogOk = true;
   try {
-    const result = checkHistoryChainDetailed();
+    const result = checkHistoryChainDetailed(undefined, 500);
     if (result.status === 'ok') {
       ok('审计日志 hash chain 完整性校验通过');
     } else if (result.status === 'tampered') {

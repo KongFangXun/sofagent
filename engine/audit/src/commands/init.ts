@@ -300,16 +300,14 @@ ${entry.args.map((a) => `        <string>${a}</string>`).join('\n')}
  * 运行初始化
  * 幂等：已存在的配置不覆盖，已安装的 hook 不重复写入
  *
- * v1.2.5: 设置 SOFAGENT_SKIP_HOOK=1 防止 init 内部的 git 操作触发刚安装的 hook
- * v1.2.9: SOFAGENT_SKIP_HOOK 是公开旁路（任何进程可绕过审计），改为 SOFAGENT_INTERNAL_INIT
- * （hook 模板检测到此环境变量时直接 exit 0）
+ * v1.3.1 #2: 不再设置 SOFAGENT_INTERNAL_INIT 环境变量（可被任何进程设置，构成审计绕过）。
+ * init 流程中的 git 操作改用 `git -c core.hooksPath=/dev/null commit`（Git 原生 hook 旁路）。
  */
 export function runInit(): void {
   const cwd = process.cwd();
 
-  // v1.2.9: 防止 init 流程中的 git 操作触发 commit-msg hook（递归保护）
-  // 不再使用公开的 SOFAGENT_SKIP_HOOK——任何进程都能设它来绕过审计
-  process.env.SOFAGENT_INTERNAL_INIT = '1';
+  // v1.3.1 #2: 移除 SOFAGENT_INTERNAL_INIT——改由调用方使用 git -c core.hooksPath=/dev/null 旁路。
+  // 此处不再设置任何环境变量（原 process.env.SOFAGENT_INTERNAL_INIT = '1' 已删除）。
 
   console.log('');
   console.log(`sofagent v${VERSION}`);
@@ -468,10 +466,15 @@ export function runInit(): void {
     const hookPath = join(hooksDir, 'commit-msg');
 
     // 幂等检查：版本号比较——v1.0.8 以下覆盖，≥v1.0.8 保留
+    // v1.3.1 #13: 额外验证 hook 文件实际包含审计调用逻辑（sofagent-audit 命令），
+    //             防止占坑 hook（含版本号正则但不调审计）欺骗幂等检查。
     let hasSofagentHook = false;
     if (existsSync(hookPath)) {
       try {
         const content = readFileSync(hookPath, 'utf-8');
+        // v1.3.1 #13: 先验证 hook 内容确实包含审计调用——占坑 hook 只含版本号字符串
+        // 但不调用 sofagent-audit，应视为需要覆盖。
+        const hasAuditCall = content.includes('sofagent-audit') || content.includes('AUDIT_CMD');
         const versionMatch = content.match(/v(\d+)\.(\d+)\.(\d+)/);
         if (versionMatch) {
           const major = parseInt(versionMatch[1]!, 10);
@@ -479,8 +482,10 @@ export function runInit(): void {
           const patch = parseInt(versionMatch[3]!, 10);
           if (major < 1 || (major === 1 && minor === 0 && patch < 8)) {
             hasSofagentHook = false;  // 旧版本 → 覆盖
+          } else if (!hasAuditCall) {
+            hasSofagentHook = false;  // 版本号达标但无审计调用 → 占坑 hook，覆盖
           } else {
-            hasSofagentHook = true;   // 当前版本或更新 → 保留
+            hasSofagentHook = true;   // 版本达标且含审计调用 → 保留
           }
         } else {
           hasSofagentHook = false;  // 无版本号 → 覆盖
@@ -505,7 +510,7 @@ export function runInit(): void {
     // v1.2.9: post-commit hook 重写——commit hash 对账替代 timestamp 近邻匹配 + 读全局 history 路径
     // v1.2.9 对账逻辑适配 parentSha（commit-msg hook 记录的是父提交 SHA）
     const POST_COMMIT_TEMPLATE = `#!/bin/bash
-# sofagent post-commit hook v1.2.9
+# sofagent post-commit hook v${VERSION}
 # 检测策略：commit hash 对账——检查当前 commit 的 SHA 是否在审计记录中有对应条目
 # （commitSha 精确匹配 + commitPhase='pre-commit' 记录的 parentSha 匹配）
 # 如果没有，判定为绕过（--no-verify 或 hook 被删/失效）
@@ -588,6 +593,8 @@ exit 0
         const pcContent = readFileSync(postCommitPath, 'utf-8');
         // v1.0.8 修复：不再用模糊匹配 `includes('sofagent')`——旧 hook 也会命中，导致存量用户无法升级
         // 改为检查版本号：v1.0.7 及以下 → 覆盖为当前版本；v1.0.8 及以上 → 跳过
+        // v1.3.1 #13: 额外验证 hook 内容含审计对账逻辑（占坑 hook 防护）
+        const hasAuditCall = pcContent.includes('sofagent-audit') || pcContent.includes('HISTORY_FILE') || pcContent.includes('verify-commit');
         const versionMatch = pcContent.match(/v(\d+)\.(\d+)\.(\d+)/);
         if (versionMatch) {
           const major = parseInt(versionMatch[1]!, 10);
@@ -597,6 +604,8 @@ exit 0
         // v1.2.9 对账逻辑适配 parentSha，强制覆盖 1.2.8 及以下（否则 A8 误报自愈不生效）
         if (major < 1 || (major === 1 && (minor < 2 || (minor === 2 && patch < 9)))) {
             hasPostCommitHook = false;  // 旧版本 → 覆盖
+          } else if (!hasAuditCall) {
+            hasPostCommitHook = false;  // 版本达标但无审计对账逻辑 → 占坑 hook，覆盖
           } else {
             hasPostCommitHook = true;   // 当前版本或更新 → 保留
           }

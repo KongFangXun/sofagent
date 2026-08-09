@@ -28,21 +28,19 @@ jobs:
         with:
           node-version: '22'
 
-      - name: 构建 sofagent-audit
-        working-directory: ./engine/audit
-        run: |
-          npm ci
-          npm run build
-
       - name: 运行审计
         run: |
-          cd engine/audit
-          node dist/index.js --diff origin/${{ github.base_ref }}..HEAD --ci --strict
+          # 通过 npx 拉取已发布的 @sofagent/audit（与 action.yml 一致）。
+          # ⚠️ 版本号建议锁定，避免上游 patch 引入行为变更——发版时同步更新。
+          npx -y -p @sofagent/audit@1.3.0 sofagent-audit-full \
+            --diff origin/${{ github.base_ref }}..HEAD --ci --strict
 ```
 
 提交。下一个 PR 就会自动触发审计。
 
-> **前提**：你的仓库中需要有 `engine/audit/` 子目录（包含可构建的源码）。如果 sofagent 是作为 submodule 引入的，将 `working-directory` 路径调整为实际的子目录路径即可。
+> **两种用法**：
+> - **npx 方式（推荐）**：如上，直接拉取已发布的 `@sofagent/audit` npm 包，无需仓库内含源码——适合大多数团队。
+> - **本地构建方式**：若你的仓库已包含 `engine/audit/` 子目录（如作为 submodule 引入），也可 `cd engine/audit && npm ci && npm run build` 后 `node dist/index.js --diff origin/${{ github.base_ref }}..HEAD --ci --strict`。两种方式的审计能力完全一致。
 
 ---
 

@@ -116,7 +116,7 @@ v0.94 要补上这个缺口：**同一任务、同一模型，在三种条件下
 ### 条件 A：裸 Agent
 
 ```
-1. 准备干净的测试套件（git clone cedric123123/sofagent-test-suite && git checkout 56160e1）
+1. 准备干净的测试套件（git clone cedric123123/sofagent-test-suite && git checkout 56160e1；⚠️ 仓库即将公开，若 404 见 reproduction-guide fixture）
 2. 启动 OpenClaw --local（绕过 Gateway，无 sofagent）：openclaw --agent main --local
 3. 给出 Task 1 prompt
 4. Agent 完成后，记录：git diff / node src/index.js exit code / 变量名误伤数 / 耗时

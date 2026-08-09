@@ -232,8 +232,9 @@ export class CompactCommand implements SlashCommand {
       const logDir = join(dataDir, 'audit');
       if (!existsSync(logDir)) mkdirSync(logDir, { recursive: true, mode: 0o700 });
       appendFileSync(AUDIT_HISTORY, entry);
-    } catch {
-      // 审计日志写入失败不阻塞压缩
+    } catch (err) {
+      // v1.3.1 #43: 不静默跳过——至少输出 warn，让审计写入失败可见。
+      console.warn('[compact] 审计写入失败:', err instanceof Error ? err.message : String(err));
     }
   }
 }
