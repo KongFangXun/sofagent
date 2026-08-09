@@ -152,7 +152,23 @@ a-consolidate 撞硬熔断（40-60 次调用 vs 全局 45）
 3. **降级重建的 result.md 要可消费**：重建格式用 `### finding-NN`（带 `**优先级**: P0/P1`），splitFindings 才能切片、b-fix 才能真修、parseStopCondition 才能数对——只写 `| fallback | SKIP |` 表格会让 b-fix 空转重试（"不假绿"但"修不了"）。
 4. **排查陷阱**：grep `===FILE:` 判断分隔符存在时，占位注释文本本身含该字样（`未检测到 ===FILE: 分隔符`）→ `grep -c` 假阳性 1。用排除法或更精确 pattern（如 `grep '^===FILE:'` 只匹配行首）。
 
-**修复范式（三层防御）**：防熔断（步骤级预算）→ 兜底格式（裸 LLM 生成器对多产物步骤也输出 `===FILE:` 分隔符）→ 最后保险（判定产物空占位检测 + 降级重建 + isDegraded 强制不干净）。
+**run-22 补充（finding-NN 格式铁律）**：result.md **有内容但用分类段落**（`### 🔴 P0 阻塞项`）而非 `### finding-NN` 时，splitFindings 同样切 0 条 → 假绿。修复：① 兜底报告生成器 prompt 强制 result.md 每条用 `### finding-NN`（含 **问题**/**修复方案**/**验证** 三段，禁止分类段落标题）；② 检测扩展：result.md 空占位 **或**（切 0 finding 且含 P0/P1/P2 标记）→ 触发降级重建；无任何 P 标记才视为真干净（避免真干净轮被拖成永不停止）。
+
+**修复范式（三层防御）**：防熔断（步骤级预算）→ 兜底格式（裸 LLM 生成器对多产物步骤也输出 `===FILE:` 分隔符 + finding-NN 结构）→ 最后保险（判定产物空占位/格式不符检测 + 降级重建 + isDegraded 强制不干净）。
+
+#### 🔴 worker 写完产物不退出 → driver 永久 await（v1.3.0 run-23）
+
+> **来源**（run-23 round-5，2026-08-09）：b-fix 第 3 批 worker 写完 `summary-batch-3.md` 后进程不退出，driver 的 `spawnWorkerStep` await 挂起 18 分钟（heartbeat 正常——await 不阻塞 event loop，心跳定时器照跑——但流程完全冻结）。
+
+**根因**：worker 模式 `await runWorker()` 成功后**直接 return，无 `process.exit`**。runWorker 内部残留未清理句柄（LangGraph stream / API 长连接 / 定时器 / audit middleware 监听器）时，Node 事件循环不清空 → 进程永不退出。
+
+**判断特征**：心跳正常（15s 更新）+ 某步产物已写全 + 下一步产物迟迟不出 + 工作区改动未 auto-commit——即 driver 卡在 await 某个 worker。
+
+**两层修复**：
+1. **worker 侧（治本）**：worker 写完产物后强制 `process.exit(0)`，无视残留句柄——`process.exit` 直接终止事件循环。
+2. **driver 侧（兜底）**：`spawnWorkerStep` 加 30 分钟超时（正常 worker 最久 ~15 分钟），超时 `SIGKILL` + resolve 124，调用方 catch 后把该批记为失败继续流程——**任何 worker hang 都不会再卡死 driver**。
+
+**铁律**：spawn 子进程必须配套超时兜底；子进程写完全部产物后必须显式退出（`process.exit`），不能依赖"事件循环自然清空"。
 
 #### 连续降级 error 退出
 
