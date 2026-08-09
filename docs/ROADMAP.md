@@ -164,6 +164,11 @@ sofagent v1.3.1 的 Ontology 本体结构方向与之高度同构，但走**分�
 | 异步长任务自治 | daemon 从文件监控升级为长任务自主运行 |
 | 双闸验证 | 工具执行前 gate + 执行后副作用复查 |
 | Agent 疲劳度检测 | 监控上下文窗口污染和决策质量衰减信号 |
+| **企业专属 eval 套件（a16z 法则6 印证 · 缺口）** | 把「企业专属评测」产品化——FDE 交付时带一套可跑的 eval（对标 Satya Nadella「每个公司有自己的 private eval」），审计 A1-A23 是底座，缺口在行业模板层（v1.3.1+ 评估） |
+| **可视化 DAG 画布（DataFlow 启发）** | Dashboard 补「workflow 可视图」——会话 Agent 与 DAG 画布实时同步同一 pipeline 表示（v2.x 远景） |
+| **Ontology I/O schema 硬化（DataFlow 启发）** | 本体从目录级升级为带 JSON Schema 校验的约束图——Validation Engine（DAG 无环 + schema 兼容），节点输入/输出形状约束（v2.x，与「本体结构 = GitHub 生长树」的根系工程化合并） |
+| **MCP 暴露 ontology/audit（DataFlow 启发）** | 对外 MCP server 暴露算子注册表 / pipeline 状态 / audit 数据给 Agent（v2.x+，已有 MCP 底座，缺对外暴露面） |
+| **GEPA / MemEx / RLM 评估（Omnigent 路线图参考）** | Omnigent 路线图四项（GEPA 自动优化 / MemEx 持久记忆 / RLM 强化学习 / Server MCP）方向值得在 v2.x 评估框架时参考——跟踪其落地后再对齐，不抢跑 |
 | **SkillScan 安全扫描器（DeerFlow 启发）** | 安装第三方 Skill 前静态扫描注入/越权风险（v1.4.x） |
 | **Agentic Browser / Playwright（DeerFlow 启发）** | Agent 驱动浏览器做端到端操作，与「智能 E2E 测试 Agent」探索同源（v1.4.x） |
 | **TUI / Dashboard / 对话分支（DeerFlow 启发）** | 终端 UI + 可视化面板 + 对话分支回溯（v2.x 远景） |
