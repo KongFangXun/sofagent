@@ -142,4 +142,55 @@ describe('memory-backend (MA1/MA3/MA6)', () => {
     expect(getDynamicTool('memory_search')).toBeDefined();
     expect(getDynamicTool('nonexistent')).toBeUndefined();
   });
+
+  // ── v1.3.1 接口对齐：TencentDB /v3/tools/call 契约（knowledge_id + service_id）──
+  it('v1.3.1: proxyMemoryToolCall 带 knowledge_id 发 {knowledge_id, tool_name, params} + x-tdai-service-id', async () => {
+    const backend = makeBackend({
+      endpoint: 'http://127.0.0.1:9', // 不可达——但先验证请求构造（fetch mock）
+      knowledge_id: 'wiki_test',
+      service_id: 'local',
+    });
+    // mock fetch 捕获请求
+    const calls: { url: string; init: RequestInit }[] = [];
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: any, init?: any) => {
+      calls.push({ url: String(url), init: init ?? {} });
+      return { ok: true, json: async () => ({ ok: true }) } as Response;
+    }) as typeof fetch;
+
+    try {
+      await proxyMemoryToolCall('search', { query: 'x' }, backend, 'internal');
+    } finally {
+      globalThis.fetch = origFetch;
+    }
+
+    expect(calls.length).toBe(1);
+    expect(calls[0].url).toBe('http://127.0.0.1:9/v3/tools/call');
+    const headers = calls[0].init.headers as Record<string, string>;
+    expect(headers['x-tdai-service-id']).toBe('local');
+    const body = JSON.parse(String(calls[0].init.body));
+    expect(body).toHaveProperty('knowledge_id', 'wiki_test');
+    expect(body).toHaveProperty('tool_name', 'search');
+    expect(body.params).toHaveProperty('query', 'x');
+  });
+
+  it('v1.3.1: 无 knowledge_id 的 proxyMemoryToolCall 降级为旧 {tool, arguments} 格式', async () => {
+    const backend = makeBackend({ endpoint: 'http://127.0.0.1:9' });
+    const calls: { url: string; init: RequestInit }[] = [];
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: any, init?: any) => {
+      calls.push({ url: String(url), init: init ?? {} });
+      return { ok: true, json: async () => ({ ok: true }) } as Response;
+    }) as typeof fetch;
+
+    try {
+      await proxyMemoryToolCall('memory_search', { query: 'x' }, backend, 'internal');
+    } finally {
+      globalThis.fetch = origFetch;
+    }
+
+    const body = JSON.parse(String(calls[0].init.body));
+    expect(body).toHaveProperty('tool', 'memory_search');
+    expect(body.arguments).toHaveProperty('query', 'x');
+  });
 });

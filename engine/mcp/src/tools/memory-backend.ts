@@ -105,10 +105,25 @@ export async function proxyMemoryToolCall(
 
   const acl = mapSensitivityToACL(agentSensitivity, backend);
   try {
+    // v1.3.1 接口对齐：TencentDB-Agent-Memory 的 /v3/tools/call 契约是
+    //   header: x-tdai-service-id（必填，服务标识）
+    //   body:   { knowledge_id, tool_name, params }（knowledge_id 定位 wiki/code-graph 资源）
+    // 旧实现发 { tool, arguments } 会 400/404——对齐后按后端真实协议转发。
+    // 无 knowledge_id 的后端（如自定义 MCP）降级为旧 { tool, arguments } 格式。
+    const headers: Record<string, string> = { 'content-type': 'application/json' };
+    const body = backend.knowledge_id
+      ? {
+          knowledge_id: backend.knowledge_id,
+          tool_name: toolName,
+          params: { ...(args as Record<string, unknown>), _acl: acl },
+        }
+      : { tool: toolName, arguments: { ...(args as Record<string, unknown>), _acl: acl } };
+    if (backend.service_id) headers['x-tdai-service-id'] = backend.service_id;
+
     const resp = await fetch(`${backend.endpoint}/v3/tools/call`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ tool: toolName, arguments: { ...(args as Record<string, unknown>), _acl: acl } }),
+      headers,
+      body: JSON.stringify(body),
       signal: AbortSignal.timeout(5000),
     });
     if (!resp.ok) {
@@ -219,9 +234,22 @@ export async function registerMemoryBackends(config?: ReturnType<typeof loadConf
       console.warn(`[memory-backend] ${backend.name} 缺少 endpoint，跳过（缺省关闭）`);
       continue;
     }
+    // v1.3.1 接口对齐：TencentDB /v3/tools/list 是 POST + knowledge_id + x-tdai-service-id（非 GET）。
+    // 无 knowledge_id 时无法做资源定位，跳过（缺省关闭铁律：不注册就不发起外部请求）。
+    if (!backend.knowledge_id) {
+      console.warn(`[memory-backend] ${backend.name} 缺 knowledge_id（TencentDB 资源 ID），跳过——需配置 knowledge_id 才启用`);
+      continue;
+    }
     let reachable = false;
     try {
-      const resp = await fetch(`${backend.endpoint}/v3/tools/list`, { signal: AbortSignal.timeout(3000) });
+      const headers: Record<string, string> = { 'content-type': 'application/json' };
+      if (backend.service_id) headers['x-tdai-service-id'] = backend.service_id;
+      const resp = await fetch(`${backend.endpoint}/v3/tools/list`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ knowledge_id: backend.knowledge_id }),
+        signal: AbortSignal.timeout(3000),
+      });
       reachable = resp.ok;
     } catch {
       reachable = false;
