@@ -607,7 +607,7 @@ dag-runner.ts（修改）
 | **S1-S5（Skill × MCP 集成）** | S1-S5 完成后 FDE Skill 有 MCP 工具调用能力。激活链的 `activate_workflow` 是新增的第 9 个 MCP tool |
 | **Skill 分包（README/GUIDE/SKILL/skills/）** | FDE 分包后，skills/04-deliver.md 中应加入 activate 引导——交付后不是结束，activate 才是 |
 | **v1.3.0 运行时审计** | v1.3.0 的 LangGraph middleware wrapToolCall 与激活链的"每个节点执行后审计"互补。v1.3.0 是通用拦截，激活链是企业专属 |
-| **v1.4.0 沙箱** | 激活链生成的企业 Agent 最终也需要沙箱隔离 |
+| **v1.3.7 沙箱** | 激活链生成的企业 Agent 最终也需要沙箱隔离 |
 
 ---
 
