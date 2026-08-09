@@ -779,6 +779,28 @@ gh api repos/KongFangXun/sofagent/git/refs -X POST \
   -f ref="refs/tags/vX.Y.Z" -f sha="$(git rev-parse HEAD)"
 ```
 
+> **🔴 v1.3.0 教训·git 代理失效时用 gh api 建 PR+merge 替代直接 push**：
+>
+> 发布时 git HTTPS 代理（全局配置的端口）可能已失效（CONNECT tunnel 502），但 **gh api（api.github.com）通道独立可用**。此时不要干等 push——直接走 PR 流程：
+> ```bash
+> # ① push 分支（网络恢复时重试；仍失败则暂存到后面）
+> git -c http.proxy=<当前session代理> -c https.proxy=<当前session代理> push --no-thin origin dev/vX.Y.Z
+> # ② 建 PR + merge（gh api 通道，不依赖 git HTTPS）
+> gh api repos/KongFangXun/sofagent/pulls -X POST -f title="vX.Y.Z — ..." -f head="dev/vX.Y.Z" -f base="main" -f body="..." --jq '.number'
+> gh api repos/KongFangXun/sofagent/pulls/<N>/merge -X PUT -f merge_method=merge
+> # ③ 打 tag 指向 merge commit（从 PR merge 返回的 sha 获取）
+> git tag vX.Y.Z <merge_sha> && git -c http.proxy=... push --no-thin origin vX.Y.Z
+> ```
+> 注意：git push 502 常是**暂时的**（网络波动），先重试几次；gh api 通道作为降级备份始终可用。
+
+> **🔴 v1.3.0 教训·发布前必跑 pre-push-check 依赖图循环检测**：
+>
+> round-2 auto-commit 把 `@sofagent/daemon` 从 orchestrator devDependencies 移进 dependencies（round-2 批量依赖调整误伤），形成 daemon↔orchestrator 循环依赖。**pre-push-check 的依赖图循环检测（步骤 8）在发布前抓到了它**——发布前必须跑 pre-push-check，不能跳过。修复：测试用的 @sofagent 依赖必须放 devDependencies（运行时不用 ≠ 可以放 dependencies）。
+
+> **🔴 v1.3.0 教训·ClawHub 版本号与 npm 独立，发布前先查冲突**：
+>
+> clawhub 上 sofagent 早已存在 7-29 的旧 1.3.0（内容过期 + security=suspicious 含 .DS_Store），同版本不可覆盖 → skill 分发被迫留到下个版本。**发布前先查**：`clawhub skill verify <slug> 2>&1 | grep version` 看现有版本，冲突则递增（如 npm 1.3.0 → clawhub 1.3.1）。同时发布目录先清理 `.DS_Store`（macOS 残留会触发 security 扫描 not_clean）。
+
 ### 🔴 tag 后 commit 校验（F-10 / fresh-eyes F-03 教训）
 
 tag 打好后，检查是否有新的 commit：
