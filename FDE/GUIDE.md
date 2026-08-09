@@ -446,7 +446,7 @@ memory_backends:
 - 零架构改造——不替换 sofagent Ledger-Views-Policy，记忆后端只做增量检索/沉淀
 - 权限映射——restricted Agent 只能检索 restricted 记忆；internal Agent 可用 team 级；public 不走记忆后端
 - endpoint 不可达时优雅降级（warn + skip），不 crash、不影响主流程
-- `type: "workbuddy"` 为降级通道：`memory_write` 写本机 `.workbuddy/memory/`；`conversation_search` 标注待 v1.3.1
+- `type: "workbuddy"` 为降级通道：`memory_write` 写本机 `.workbuddy/memory/`；`conversation_search` 走 WorkBuddy 会话检索（v1.3.0 已支持，MA6）
 
 > 完整开发日志见 `docs/changelog/v1.3/v1.3.0.md §外部记忆后端 Path A 专项`
 

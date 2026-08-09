@@ -1240,7 +1240,7 @@ echo "$S152_OUT" | grep -q "^OK" || { fail "P4 Graph Engine 端到端失败: $S1
 $S152_OK && pass "P4 Graph Engine 端到端完整（Planner 解析+降级+降级链四路径+decide/execute 分离）"
 scenario 153 "v1.2.3 权限加固——core 包所有 mkdirSync 必须带 mode: 0o700"
 # fresh-eyes P0「数据明文存储」过渡防线：目录默认 755 时同机其他用户可读审计数据，
-# 收紧为 0o700（仅属主可访问），age 加密（v1.4.0）落地前的纵深防御。
+# 收紧为 0o700（仅属主可访问），age 加密（v1.3.8）落地前的纵深防御。
 S153_OK=true
 # 断言 1：无 mode 的 mkdirSync 调用必须零命中（排除 import 行 + 测试文件）
 # v1.2.3 修复：0o700 加固后 grep -v "mode:" 过滤掉全部行 → 退出码 1 → pipefail 炸脚本，用 { ||true; } 兜底
