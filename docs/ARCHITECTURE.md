@@ -168,7 +168,7 @@ graph TD
 
 ### 已排期（开发中或即将开发，详见 ROADMAP）
 
-Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2 / 组织能力市场 · 并行编排 DAG 波次并行（v1.3.1）· Ontology 升级为可运行推理底座 + 国标对齐（v1.3.1）· **Benchmark 评测体系 + 工具审批模式（v1.3.1 · PenguinHarness 方法论借鉴）** · SubAgent 完整沙箱（v1.4.0）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
+Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2 / 组织能力市场 · 并行编排 DAG 波次并行（v1.3.1）· Ontology 升级为可运行推理底座 + 国标对齐（v1.3.1）· **Benchmark 评测体系 + 工具审批模式（v1.3.1 · PenguinHarness 方法论借鉴）** · SubAgent 完整沙箱（v1.3.7）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
 
 ---
 
@@ -325,9 +325,9 @@ graph LR
 | 工程层 | 约束行为 + 变更审计 + 责任归属 | 事后护栏——每次变更都可追溯 |
 | 叙事层 | Agent 责任确权底座 | **轻量级 KYA（Know Your Agent）**——Agent 的每一次行动都有加密签名凭证 + 不可伪造的硬证据链 |
 
-在 agent-wrapping-agent 多层嵌套的架构趋势下（a16z 2026 研判），审计不仅是「事后护栏」——它是 Agent 嵌套体系中的**一等架构评估层**：外层 Agent 在运行期评估子 Agent 的方法论质量（评估层定位，非运行时实时拦截；实时拦截治理：v1.3.0 起 middleware 层轻量拦截，v1.4.0 完整沙箱），层层筛选合成高价值结论。审计是这个评估层的基础设施。
+在 agent-wrapping-agent 多层嵌套的架构趋势下（a16z 2026 研判），审计不仅是「事后护栏」——它是 Agent 嵌套体系中的**一等架构评估层**：外层 Agent 在运行期评估子 Agent 的方法论质量（评估层定位，非运行时实时拦截；实时拦截治理：v1.3.0 起 middleware 层轻量拦截，v1.3.7 完整沙箱），层层筛选合成高价值结论。审计是这个评估层的基础设施。
 
-> a16z 研判：智能体经济瓶颈从「智力」转向「身份」——非人类身份:人类 = 96:1，急需 KYA。审计 + 约束底座 = 企业内部轻量版 KYA。v1.2.x 评估引入签名凭证做 Agent 行动的可审计绑定（身份层，**对所有 Agent 适用**）；凭证虚拟 key 中介（host 边界注入真凭证）在 v1.4.0 **仅限自派 SubAgent 沙箱**（v1.3.0 为 middleware 层轻量拦截，无沙箱隔离）。
+> a16z 研判：智能体经济瓶颈从「智力」转向「身份」——非人类身份:人类 = 96:1，急需 KYA。审计 + 约束底座 = 企业内部轻量版 KYA。v1.2.x 评估引入签名凭证做 Agent 行动的可审计绑定（身份层，**对所有 Agent 适用**）；凭证虚拟 key 中介（host 边界注入真凭证）在 v1.3.7 **仅限自派 SubAgent 沙箱**（v1.3.0 为 middleware 层轻量拦截，无沙箱隔离）。
 
 #### 运行时审计 tool wrapper（v1.3.0）
 
@@ -392,7 +392,7 @@ graph LR
 | 2 | 何时（时间戳） | 跨系统时间戳需可对齐 | ✅ 审计记录 timestamp |
 | 3 | 对哪个对象 | 改了哪个文件 / 哪条记录 | ✅ git diff 文件路径 |
 | 4 | 执行了什么 | 动作类型 + 参数 | 🟡 部分覆盖（diff 可推断） |
-| 5 | 改前改后值 | 对比才能判断影响 | 🟡 v1.4.0 补全（需差异快照） |
+| 5 | 改前改后值 | 对比才能判断影响 | 🟡 v1.3.8 补全（需差异快照） |
 | 6 | 是否可回滚 | 有回滚路径才能撤销 | 🟡 回溯引擎有，日志未显式标记 |
 
 字段 5/6 是当前缺口——git diff 隐含改前值但不显式记录，回滚路径存在但审计日志未标记。v1.3.0 运行时审计 middleware 和 v1.4.0 审计日志存储补齐后，六项字段将完整覆盖。离开 Foundry 这类平台的统一权限模型后，这六项必留痕是不可省的工程门槛——平台原生留痕通常只含时点、数据版本、经手应用三项，不含操作主体、改前改后值与回滚标记。
@@ -530,7 +530,7 @@ flowchart LR
 >
 > - **接口契约**：每个节点必须明确输入输出（少一项不算完成）。sofagent 的 LoopArtifacts 表就是契约——engineer 交 `engineerOutput` + 追加 `engineerOutputs`，audit 交 `auditReport`，字段缺失则路由判定直接 FAIL。**别只给 Agent 分岗位，还要规定他怎么交差。**
 > - **共享状态**：整张图有一份持续更新的公共记事本（任务 ID、版本、证据、修改记录、当前步骤）。LoopArtifacts 的浅合并 reducer 就是这个公共记事本。
-> - **上下文隔离**：不是所有节点都能看全部信息——前端调查 Agent 不需要生产数据库凭证。sofagent v1.4.0 的 SubAgent 沙箱（文件系统隔离 + 虚拟 key 边界注入）正是上下文隔离的工程落地。Graph 决定信息往哪儿走，Context Engineering 决定每个节点具体看到什么。
+> - **上下文隔离**：不是所有节点都能看全部信息——前端调查 Agent 不需要生产数据库凭证。sofagent v1.3.7 的 SubAgent 沙箱（文件系统隔离 + 虚拟 key 边界注入）正是上下文隔离的工程落地。Graph 决定信息往哪儿走，Context Engineering 决定每个节点具体看到什么。
 
 #### Graph Engineering 视角（控制图 = StateGraph）
 
@@ -578,7 +578,7 @@ START → plan（拆解："调研 AI 笔记产品"）
 
 **Loop 四类失败（行业科普版）**（2026-08【得到大脑】拆解，与 Carlos 四类失效同源互补，偏「业务表现」视角）：① **指标异化**——优化解决率 → 客户流失率翻倍 → audit 节点看 git diff 硬证据兜底；② **目标僵化**——Agent 不质疑目标本身 → human_confirm 节点 + 危险操作前人工批准钩子兜底；③ **多目标冲突**——两个 loop 互相打架 → ★Reality Anchor guard edge 统一裁决；④ **测量衰退**——测试数据老化 95% 通过率是假象 → audit 规则不可篡改（ground-truth）+ acceptance-test 冻结验收标准。完整映射见 [VALIDATION §三](./VALIDATION.md)。
 
-**Loop → Graph 六触发信号**（什么时候该升级，sofagent 并行编排 v1.3.1 的适用性判断框架）：任务需交接 / 需散出汇合 / 每步不同模型工具 / 需显式可审计角色 / 节点失败需隔离 / 需独立 reviewer——满足其一才上 Graph，否则用 Loop 就够（"先用 loop，复杂到需要多角色协作再 graph"，避免过度设计）。sofagent 落点对照（dag-runner vs Send API 并行 / worktree 隔离 / StateGraph 四节点 / audit+fresh-eyes 独立审查）见 [VALIDATION §三](./VALIDATION.md#graph-engineering-六触发信号--单-loop-四类失败2026-08-行业拆解)。
+**Loop → Graph 六触发信号**（什么时候该升级，sofagent 并行编排 v1.3.1 的适用性判断框架）：任务需交接 / 需散出汇合 / 每步不同模型工具 / 需显式可审计角色 / 节点失败需隔离 / 需独立 reviewer——满足其一才上 Graph，否则用 Loop 就够（"先用 loop，复杂到需要多角色协作再 graph"，避免过度设计）。sofagent 落点对照（dag-runner vs Send API 并行 / worktree 隔离 / StateGraph 四节点 / audit+fresh-eyes 独立审查）见 [VALIDATION §三](./VALIDATION.md#循环的边界从-loop-到-graph-的升级判据)。
 
 **五类边契约**（行业共识）：当前实现仅有 **数据流**（`artifacts` 传递）和 **控制流**（`routeAfterAudit`/`routeAfterHuman`）——**缺权限流、证据流、失败流**。待 v1.3.1 并行编排落地时形式化全部五类边。
 
@@ -986,7 +986,7 @@ audit:
 **未来方向**：
 - **v1.3.0**：**🔗 激活链 Phase 4 收尾（SUSTAIN）**——全链路验证（activate→compose→run→HITL→audit→sustain）+ `wrapToolCall` middleware 联动 + FDE SKILL.md 新增 activate 引导。Phase 1-3（v1.2.5-v1.2.8）已交付。详见 [激活链设计文档](./guides/fde-activation-chain.md)
 - **v1.3.1-v1.3.5**：Ontology 本体结构 + 并行编排 + Agent 身份码 + Onboard/Refine Agent + 团队协作协议 + 组织能力市场
-- **v1.4.x**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界 + SubAgent 沙箱
+- **v1.3.x 后期**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限（v1.3.7）+ 代理网关硬边界（v1.3.8）+ SubAgent 沙箱（v1.3.7）
 - **v2.x**：组织级共享记忆 + 协同层 + **分层模型路由**（Harness 按任务复杂度路由到云端大模型/本地 7B/本地 0.5B，数据主权驱动——敏感数据不出内网）
 - **v3.x-v4.x+**：企业专属小模型精调（`sofagent-model distill` QLoRA）+ 本地推理 + 离线 USB 节点。详见 [ROADMAP · 分层模型架构](./ROADMAP.md#分层模型架构v3x-远景概述)
 - **远期护城河演进方向（非当前能力 · 2026-07-30 战略讨论）**：当前护城河 = 约束底座 + 审计能力（模型越强越值钱）。更远的演进方向：把「帮 sofagent 自身进化」的 Harness + 进化引擎能力，泛化为「**自动帮企业部署后训练模型**」的引擎。届时护城河从「约束能力」升维为「**后训练模型的自动化部署能力**」——交付物是部署在企业侧的定制模型（基于企业自有/通用基座后训练，非 sofagent 自制大模型），使用者是企业客户而非 sofagent 自身；ontology 在此既是企业数字孪生（语义层），也是后训练规格来源（每个 workflow 节点 → 一个专精模型）。**此为长期目标蓝图，当前完全不具备该能力**，仅作演进方向记录，不视为现状或近期计划。> 来源：产品战略讨论 2026-07-30（尚未实现）
@@ -1006,7 +1006,7 @@ audit:
 | skill-staleness | @weekly（默认禁用） | Skill 陈旧度（需 eval 数据支持） |
 | warn-accumulator | @daily | 连续未处理 WARN 累积（阈值 3，含文件级追踪） |
 
-> **范围声明**：sofagent 是 Harness 中间件——覆盖行为约束 + 变更审计 + 经验沉淀 + 持续优化。不覆盖**主 Agent 平台**本身（IM 渠道 / 第三方平台托管的沙箱 / 工具调用——WorkBuddy / OpenClaw 等大厂平台的事），也不覆盖运维层（监控/告警/重启/日志轮转）。**例外**：sofagent 托管**自派 SubAgent** 的运行时治理——v1.3.0 起为 middleware 层轻量拦截（工具调用中介 + 人工批准钩子），v1.4.0 扩展为完整沙箱（文件系统隔离 + 网络出站白名单 + 工具调用前置 allow/deny + 虚拟 key 边界注入），因 sofagent 既起环境又发凭证、天然拥有执行边界。**运行时治理仅限自派 SubAgent，主 Agent 永远事后审计**。扣子（Coze，字节跳动） 类全栈产品管从 Agent 到权限的全部层，sofagent 管其中可独立标准化的约束+审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立底线守卫。
+> **范围声明**：sofagent 是 Harness 中间件——覆盖行为约束 + 变更审计 + 经验沉淀 + 持续优化。不覆盖**主 Agent 平台**本身（IM 渠道 / 第三方平台托管的沙箱 / 工具调用——WorkBuddy / OpenClaw 等大厂平台的事），也不覆盖运维层（监控/告警/重启/日志轮转）。**例外**：sofagent 托管**自派 SubAgent** 的运行时治理——v1.3.0 起为 middleware 层轻量拦截（工具调用中介 + 人工批准钩子），v1.3.7 扩展为完整沙箱（文件系统隔离 + 网络出站白名单 + 工具调用前置 allow/deny + 虚拟 key 边界注入），因 sofagent 既起环境又发凭证、天然拥有执行边界。**运行时治理仅限自派 SubAgent，主 Agent 永远事后审计**。扣子（Coze，字节跳动） 类全栈产品管从 Agent 到权限的全部层，sofagent 管其中可独立标准化的约束+审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立底线守卫。
 
 ---
 
