@@ -96,12 +96,14 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.3.3** | 📋 规划中 | **L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版 + 🧭 主 agent 编排**：① 协作协议——共享态/意图广播/触发反应/冲突消解/反馈放大 + 团队状态管理 ② Refine Agent——复用 Onboard 循环引擎，判据从 Ontology 换成质量规则集（好不好），五层一次交付 ③ 主 agent 四合一角色（分发/监控/审计/通讯）——编排 v1.3.2 批量生成的 sub-agent | [日志](./changelog/v1.3/v1.3.3.md) |
 | **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价→养护）**：Skill/Agent/流程打包发布 + 目录检索 + 调用挂载 + 评分聚合（评分 × 调用量加权自然选择）+ 全程审计 + **养护环（owner 声明 + 失效退役 + 变更记录，GitHub 模式「持续养护」）** | [日志](./changelog/v1.3/v1.3.4.md) |
 | **v1.3.5** | 📋 规划中 | **自进化与运维闭环（MCP 覆盖度审计缺口补全）**：`run_ab_test` / `promote_ab`（晋升强制人审）+ `snapshot_list` / `snapshot_restore`（恢复强制人审） | [日志](./changelog/v1.3/v1.3.5.md) |
-| **v1.4.0** | 📋 规划中 | **SubAgent 完整沙箱执行环境 + 场景驱动权限体系 + 代理网关硬边界 + 数据静态加密**：① 沙箱——虚拟文件系统隔离 + 网络出站白名单 + 工具调用中介（前置 allow/deny）+ 虚拟 key 凭证边界注入 + AsyncSubAgent + 真·实时 A/B 双跑 ② 场景驱动权限体系（身份→场景匹配→风险等级→放行）③ 代理网关硬边界（唯一出入口）④ 数据静态加密（age）——审计从「事后」扩展到「运行时」（范围限定 SubAgent） | [日志](./changelog/v1.4/v1.4.0.md) |
-| **v2.0** | 📋 规划中 | **引擎层接口外化**：① 约束导出通道（审计规则导出为机器可读标准格式）② Workflow 标准格式 + 运行容器 ③ Ontology 标准 Schema + 注册接口 ④ 官方 AST 规则引擎参考实现（v1.2.9 已开放插件接口 `type: "plugin"` + `sofagent-ruleset-*` npm 包约定，v2.0 官方出 `sofagent-ruleset-ast` 示范——用 TypeScript compiler / tree-sitter 做语义级规则，社区可照着写自己的引擎）。前置依赖：v1.3.1 Ontology 落地 + v1.4.0 沙箱底座就绪 | — |
+| **v1.3.6** | 📋 规划中 | **🔌 引擎接口外化完整版（模型层接入前置 · 原 v2.0 前移）**：① Workflow 标准格式 + 运行容器（JSON Schema + MCP `workflow_submit`）② Ontology 注册接口（MCP `ontology_import` + D1-D5 审计）③ **训练语料导出三件套**（规则 + FDE 方法论 + 审计样本，HMAC 签名——AIR 训练信号前置，从 v1.3.9 提前）④ **SubAgent 托管 SDK**（`harness.wrap` 包装 LangGraph 自定义 Agent → 自动获得审计/审批/身份/Trace——AIR C6 落点） | [日志](./changelog/v1.3/v1.3.6.md) |
+| **v1.3.7** | 📋 规划中 | **🔒 SubAgent 完整沙箱 + 场景驱动权限（原 v1.4.0 前移）**：① 沙箱——虚拟文件系统隔离 + 网络出站白名单 + 工具调用中介（前置 allow/deny）+ 虚拟 key 凭证边界注入 + AsyncSubAgent + 真·实时 A/B 双跑 ② 场景驱动权限体系（身份→场景匹配→风险等级→放行）——审计从「事后」扩展到「运行时」（范围限定 SubAgent） | [日志](./changelog/v1.3/v1.3.7.md) |
+| **v1.3.8** | 📋 规划中 | **🛡️ 代理网关硬边界 + 数据静态加密 + Durable L3（原 v1.4.0 前移）**：① 代理网关（唯一出入口 + 风险分级 + 超阈值人工批准）② 数据静态加密（age）③ Durable Execution L3（WAL 写在网关层）④ **托管 SDK `sandbox: true` 选项启用**（v1.3.6 SDK 的沙箱接线） | [日志](./changelog/v1.3/v1.3.8.md) |
+| **v1.3.9** | 📋 规划中 | **🛠️ 官方 AST 规则引擎 + meta-harness（原 v1.5.0 + v2.0 前移）**：① 官方 `sofagent-ruleset-ast` 语义级规则引擎参考实现（TypeScript compiler / tree-sitter）② meta-harness 多 harness 统一编排（策略强制在基础设施层 + 跨会话协作）——约束导出通道已并入 v1.3.6 训练语料导出三件套 | [日志](./changelog/v1.3/v1.3.9.md) |
 
 #### v1.3.x 里程碑拆分
 
-> 运行时审计最小闭环（v1.3.0）是 v1.3.x 第一刀：不替换 harness，只在 createReactAgent 上加 middleware 层。完整运行时审计（策略强制 + 沙箱 + 状态化拦截）仍留 v1.4.0；meta-harness 多 harness 编排已前移到 v1.5.0（承接 v1.4.0 沙箱底座）。
+> 运行时审计最小闭环（v1.3.0）是 v1.3.x 第一刀：不替换 harness，只在 createReactAgent 上加 middleware 层。**2026-08-09 版本重排**：原 v1.4.0（沙箱/权限/网关/加密/WAL）、v1.5.0（meta-harness）、v2.0（引擎接口外化）内容全部提前进 v1.3.6-v1.3.9——依赖链在 v1.3.x 内已满足（v1.3.1 Ontology/身份码 + v1.3.3 L2 + v1.3.4 L3），且模型层（AIR）接入需要接口尽早就绪。v1.4.0 / v1.5.0 / v2.0 版本号留空，未来按需重新规划。
 
 | 版本 | 主题 | 核心交付 |
 |------|------|------|
@@ -111,7 +113,10 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.3.3** | **L2 团队协作协议 + ✨ Refine Agent + 🧭 主 agent 编排** | 协作五大机制 + Refine Agent 完整版（质量规则集判据，复用 Onboard 循环引擎）+ 主 agent 四合一（分发/监控/审计/通讯）（详见 开发日志 ./changelog/v1.3/v1.3.3.md）|
 | **v1.3.4** | **L3 组织能力市场（五环）** | 发布→发现→调用→评价→养护（owner 声明 + 失效退役）+ 评分聚合自然选择 + 全程审计（详见 开发日志 ./changelog/v1.3/v1.3.4.md）|
 | **v1.3.5** | **自进化与运维闭环（MCP 覆盖度审计缺口补全）** | `run_ab_test` / `promote_ab` + `snapshot_list` / `snapshot_restore` 四个 MCP tool（详见 开发日志 ./changelog/v1.3/v1.3.5.md）|
-| **v1.3.6-v1.3.9** | 🔒 弹性预留 | 紧急修复 / 探索项按需取用 |
+| **v1.3.6** | **🔌 引擎接口外化完整版（模型层接入前置）** | Workflow 标准格式 + 运行容器（`workflow_submit`）+ Ontology 注册接口（`ontology_import`）+ 训练语料导出三件套（`corpus_export`）+ SubAgent 托管 SDK（`harness.wrap`）（详见 开发日志 ./changelog/v1.3/v1.3.6.md）|
+| **v1.3.7** | **🔒 SubAgent 完整沙箱 + 场景驱动权限** | 虚拟 FS + 网络白名单 + 工具中介 + 虚拟 key + AsyncSubAgent + 真·实时 A/B + 场景权限判定链（详见 开发日志 ./changelog/v1.3/v1.3.7.md）|
+| **v1.3.8** | **🛡️ 代理网关 + 静态加密 + Durable L3** | 网关唯一出入口 + age 加密落盘 + WAL 写在网关层 + SDK `sandbox: true` 启用（详见 开发日志 ./changelog/v1.3/v1.3.8.md）|
+| **v1.3.9** | **🛠️ AST 规则引擎 + meta-harness** | `sofagent-ruleset-ast` 参考实现 + 多 harness 统一编排（约束导出已并入 v1.3.6）（详见 开发日志 ./changelog/v1.3/v1.3.9.md）|
 
 ### v1.3.1 — Ontology 本体结构（操作型本体论落地）
 
@@ -144,8 +149,8 @@ sofagent v1.3.1 的 Ontology 本体结构方向与之高度同构，但走**分�
 
 **运行时审计演进路线**（meta-harness 三问作答）：
 - **v1.3.x**：最小运行时审计——wrapToolCall middleware 包 createReactAgent（FORGE 已跑 createReactAgent，加 middleware 即可）
-- **v1.4.0**：完整运行时审计——策略强制 + 沙箱 + 状态化拦截（范围限定 SubAgent）
-- **v1.5.0**：meta-harness——多 harness 编排（承接 v1.4.0 沙箱底座）
+- **v1.3.7**：完整运行时审计——策略强制 + 沙箱 + 状态化拦截（范围限定 SubAgent）
+- **v1.3.9**：meta-harness——多 harness 编排（承接 v1.3.7 沙箱底座）
 
 **落地纪律**：以上均为「用行业术语框定已有/规划能力」，不新增能力范围。外部框架是设计启发 + 开源借力，非依赖引入。
 
@@ -169,33 +174,33 @@ sofagent v1.3.1 的 Ontology 本体结构方向与之高度同构，但走**分�
 | 双闸验证 | 工具执行前 gate + 执行后副作用复查 |
 | Agent 疲劳度检测 | 监控上下文窗口污染和决策质量衰减信号 |
 | **可视化 DAG 画布（DataFlow 启发）** | Dashboard 补「workflow 可视图」——会话 Agent 与 DAG 画布实时同步同一 pipeline 表示（v2.x 远景） |
-| **Ontology I/O schema 硬化（DataFlow 启发）** | 本体从目录级升级为带 JSON Schema 校验的约束图——Validation Engine（DAG 无环 + schema 兼容），节点输入/输出形状约束（v2.x，与「本体结构 = GitHub 生长树」的根系工程化合并） |
-| **MCP 暴露 ontology/audit（DataFlow 启发）** | 对外 MCP server 暴露算子注册表 / pipeline 状态 / audit 数据给 Agent（v2.x+，已有 MCP 底座，缺对外暴露面） |
+| **Ontology I/O schema 硬化（DataFlow 启发）** | 本体从目录级升级为带 JSON Schema 校验的约束图——Validation Engine（DAG 无环 + schema 兼容），节点输入/输出形状约束。**v1.3.1 Schema 定义 + v1.3.6 注册接口已落骨架**，Validation Engine 部分 v1.3.x 后期（与「本体结构 = GitHub 生长树」的根系工程化合并） |
+| **MCP 暴露 ontology/audit（DataFlow 启发）** | 对外 MCP server 暴露算子注册表 / pipeline 状态 / audit 数据给 Agent——**v1.3.6 已落地**（`ontology_import` + `workflow_submit` + D1-D5 审计），剩余 audit 数据对外暴露面 v1.3.x 后期补全 |
 | **GEPA / MemEx / RLM 评估（Omnigent 路线图参考）** | Omnigent 路线图四项（GEPA 自动优化 / MemEx 持久记忆 / RLM 强化学习 / Server MCP）方向值得在 v2.x 评估框架时参考——跟踪其落地后再对齐，不抢跑 |
-| **SkillScan 安全扫描器（DeerFlow 启发）** | 安装第三方 Skill 前静态扫描注入/越权风险（v1.4.x） |
-| **Agentic Browser / Playwright（DeerFlow 启发）** | Agent 驱动浏览器做端到端操作，与「智能 E2E 测试 Agent」探索同源（v1.4.x） |
+| **SkillScan 安全扫描器（DeerFlow 启发）** | 安装第三方 Skill 前静态扫描注入/越权风险（v1.3.x 后期） |
+| **Agentic Browser / Playwright（DeerFlow 启发）** | Agent 驱动浏览器做端到端操作，与「智能 E2E 测试 Agent」探索同源（v1.3.x 后期） |
 | **TUI / Dashboard / 对话分支（DeerFlow 启发）** | 终端 UI + 可视化面板 + 对话分支回溯（v2.x 远景） |
 | **spec-first 硬禁令（OpenFDE 启发 · 最高优先）** | 单一事实源——transcript 永不直驱代码，spec 才是唯一驱动（设计约束） |
 | **decisions.jsonl 判断时刻日志（OpenFDE 启发 · 最高优先）** | 每次判断落 `{kind, moment, why, spec_ref}`，决策审计底座（v1.3.x 意图审计） |
 | **分级降级梯队（OpenFDE 启发 · 最高优先）** | console→TUI→spec 逐级降级，workflow never stops（韧性设计） |
-| **Durable Execution（Pydantic AI 启发）** | 长任务 checkpoint 续跑——与回溯引擎互补（回溯=向后回滚，Durable=向前续跑），v1.3.1-1.4.0 窗口评估 |
+| **Durable Execution（Pydantic AI 启发）** | 长任务 checkpoint 续跑——与回溯引擎互补（回溯=向后回滚，Durable=向前续跑），L1+L2 已排 v1.3.1，L3 WAL 排 v1.3.8 |
 
 > 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./VALIDATION.md)。
 
 | 借鉴项 | 说明 |
 | --- | --- |
 | **运行时审计接入点（v1.3.x · LangGraph middleware）** | wrapToolCall middleware 包 createReactAgent，把 tool-gate 规则升级为运行时拦截 + 审计日志 |
-| **EnkryptAI Secure MCP Gateway（v1.4.x · 开源借力）** | pre_model_hook / post_model_hook 安全护栏，audit_only 模式 |
-| **LiteLLM 控制平面（v1.4.x · 开源借力）** | 开源 LLM gateway：成本追踪 / 预算 / 路由 / 护栏 |
+| **EnkryptAI Secure MCP Gateway（v1.3.7-1.3.8 · 开源借力）** | pre_model_hook / post_model_hook 安全护栏，audit_only 模式 |
+| **LiteLLM 控制平面（v1.3.7 · 开源借力）** | 开源 LLM gateway：成本追踪 / 预算 / 路由 / 护栏 |
 | **OpenWorker 权限模型（v1.3.x · 设计启发）** | 四级权限 + 命令白名单 + 无人值守收件箱（详见 [VALIDATION](./VALIDATION.md)）|
-| **bubblewrap / seatbelt 沙箱（v1.4.0 · 开源借力）** | OS 级沙箱原语（Linux bwrap+seccomp / macOS seatbelt），SubAgent 沙箱底座 |
+| **bubblewrap / seatbelt 沙箱（v1.3.7-1.3.9 · 开源借力）** | OS 级沙箱原语（Linux bwrap+seccomp / macOS seatbelt），SubAgent 沙箱底座 |
 | **MLflow agent 评估（v2.x · 开源借力）** | 50+ agent 评估指标 + LLM-as-Judge，FORGE 评估框架参考 |
 
 > 以下「分层模型架构」为探索方向的核心技术骨架概述。当前版本（v1.2.x）未涉及，v3.x 才启动。
 
 ## 分层模型架构（v3.x 远景概述）
 
-核心驱动力 = **数据主权**（企业数据进 API key 大模型 = 一定被拿去训练）。三层模型 + Harness 路由：云端 32B+ 负责规划推理 → 翻译成标准化指令 → 本地 7B 执行多步 workflow → 本地 0.5B 跑管道层（模板/格式/字段提取）。敏感数据只在本地处理，通用知识才走云端。**引擎层只做模型路由（model-router.ts 已有四档插槽），精调 pipeline 属模型层非开源范围。** 路由层可提前到 v2.x 做（不依赖精调模型），离线 USB 节点是 v3.x-v4.x+ 的工作。完整技术骨架（Mermaid 图 + 选型表 + 实现难度）见 [PHILOSOPHY · 远期演化愿景](./PHILOSOPHY.md#远期演化愿景从内置小模型到自动化企业后训练引擎2026-07-30-战略讨论)。
+核心驱动力 = **数据主权**（企业数据进 API key 大模型 = 一定被拿去训练）。三层模型 + Harness 路由：云端 32B+ 负责规划推理 → 翻译成标准化指令 → 本地 7B 执行多步 workflow → 本地 0.5B 跑管道层（模板/格式/字段提取）。敏感数据只在本地处理，通用知识才走云端。**引擎层只做模型路由（model-router.ts 已有四档插槽），精调 pipeline 属模型层非开源范围。** 路由层可提前到 v2.x 做（不依赖精调模型），离线 USB 节点是 v3.x-v4.x+ 的工作。完整技术骨架（Mermaid 图 + 选型表 + 实现难度）见 [PHILOSOPHY · 远期演化愿景](./PHILOSOPHY.md#远期演化愿景从内置小模型到自动化企业后训练引擎)。
 
 ---
 
