@@ -69,7 +69,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 > 📖 来源：联网核验（2026-07-20）· Gartner / MIT NANDA / Governance Decay 论文
 
-### a16z《你刚雇了一百万个糟糕员工》印证（2026-07）
+### a16z 七法则映射
 
 > 📐 来源：a16z（2026-07-15，Hebbia 创始人 George Sivulka）[《You Just Hired a Million Bad Employees》](https://www.a16z.news/) 核心判断——「人类历史上第一次，人比软件便宜」；每家公司在雇「一百万个糟糕的硅基员工」，80% 的 token 在空转浪费。解法不是更强的模型、也不是更多算力，而是 185 年前诞生的老手艺：**管理**。
 
@@ -94,7 +94,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 | 9 | 法则6 考核 Evals | 审计 A1-A11、A14-A23 + E1-E2/E4（共 24 条）= Reality Anchor + Dream Cycle eval 驱动 | 已具备（底座）+ 缺口 | v1.3.1+ 产品化 | 企业专属 eval 套件缺口 |
 | 10 | 法则7 万亿转型服务 | FDE = Services-as-Software + 市场信号互证 | 已具备（核心背书） | 印证 + 规模化缺口 | a16z 最重磅外部背书；规模化交付进未来迭代 |
 
-### 硅基员工论再印证：Org Graph 与 Ontology Runtime（2026-07 研报补充）
+### 硅基员工论：Org Graph 与 Ontology Runtime
 
 - **Org Graph = 进组织架构的硅基员工**：研报把「长期存活、固定领域、保留上下文与工具权限」的 Agent 称为 Org Graph 节点，与 sofagent 核心定位字面对应——AI 不是效率工具，是进组织编制、有独立账号、接受绩效考核的硅基员工；FDE 交付的「常驻 Agent」正是 Org Graph 的企业落地形态。
 - **Ontology Runtime 是 AI Native 企业底座，非 API 网关**：研报强调 Runtime 接管的是「语义边界」而非重建核心系统（CRM/OMS/ERP 之上的一层），企业系统边界从「系统接口」转移到「业务对象运行时」。与 sofagent「约束层 = 给模型搭脚手架、约束注入链永远在线」同源——我们不做业务系统，做业务系统之上的约束层。
@@ -110,7 +110,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 **结果负责三要素**（与审计 / 回溯引擎对齐）：可观测（行为留痕）/ 可归因（责任到人 · Agent 身份）/ 可回滚（出错能退）。
 
-### DeerFlow 2.0：大厂用「Harness」命名的活样本（2026-07 行业印证）
+### DeerFlow：大厂用「Harness」命名
 
 字节跳动开源的 [DeerFlow 2.0](https://github.com/bytedance/deer-flow) 自称 **"super agent harness"**——与 sofagent 的 **Harness 中间件**品类判断**字面一致**。这是继 OpenAI《Harness Engineering》、Anthropic《Effective Harnesses》之后，**又一家头部厂商用 Harness 命名 Agent 运行时框架**，说明这个品类词已经站住。
 
@@ -128,7 +128,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 > 📖 来源：DeerFlow 2.0 README（github.com/bytedance/deer-flow），2026-02-28 登顶 GitHub Trending #1
 
-### Databricks Omnigent：meta-harness 把策略强制在基础设施层（2026-07 行业印证）
+### Omnigent：meta-harness 把策略强制在基础设施层
 
 [Omnigent](https://github.com/omnigent-ai/omnigent)（Databricks 系团队开源，Apache-2.0，alpha，31 天 7091 star）自称 **meta-harness**——坐在 Claude Code / Codex / Pi 等 harness 之上的一层。它把我们的「Harness 中间件」判断又往前推了一步，给了两个可引用的硬证据：
 
@@ -141,7 +141,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 > 📖 来源：Databricks blog《Introducing Omnigent》(2026-06) + 技术解析（techtimes / chatforest / aixq.cc），GitHub omnigent-ai/omnigent
 
-### DataFlow：顶尖高校独立用「Harness」命名做 Agent 约束（2026-07 行业印证）
+### DataFlow：顶尖高校独立用「Harness」命名
 
 [DataFlow](https://github.com/OpenDCAI/DataFlow)（论文 [arXiv:2607.16617](https://arxiv.org/abs/2607.16617)，HuggingFace Paper of the day）来自**北京大学 DCAI**团队——与 DeerFlow 2.0（字节）、Omnigent（Databricks）**同月**，再次以独立开源项目用「Harness」一词命名其 Agent 约束层。这是**第三个、且来自顶尖高校的第三方独立佐证**：Harness 作为 Agent 工程化品类的共识已非孤证。
 
@@ -153,7 +153,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 > 📖 来源：[DataFlow](https://github.com/OpenDCAI/DataFlow) + 论文 arXiv:2607.16617（2026-07，HuggingFace Paper of the day）
 
-### OpenFDE/ChatDemo：FDE 术语同源佐证（2026-07 行业印证）
+### OpenFDE：FDE 术语同源佐证
 
 [OpenFDEAI/ChatDemo](https://github.com/OpenFDEAI/ChatDemo)（OpenFDEAI 组织，MIT）以 **Forward Deployed Engineer** 命名其「边聊边出 Demo」的售前工作流——FDE 坐在客户对面，边聊边把需求变成可点的 Demo，散会时客户手里已有一个能点的 Demo + 一页可确认的需求清单。它和 sofagent 的**「前线部署工程师 / Forward Deployed Engineer」同源、同英文写法、来自同一 Palantir 脉络**——印证我们 FDE 术语的正统性：把工程师部署到客户现场、用一套纪律化交付流程、把经验沉淀为可复用资产，本就是行业共识的 FDE 内核。进一步佐证来自 OpenFDE **主仓**：它把 **INDUC 显式成 FDE Loop 的一个阶段、产出可开关的 Judgment Unit**（专家判断资产化、规则可开可关可版本化）——与我们「蓄水池/知识库 → A1-A19 判定层」同源，但它把知识归纳提升为 Loop 的一等公民阶段。
 
@@ -167,7 +167,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 ---
 
-### OpenAI Deployment Company：build-prove-generalize 三段循环（2026-08 行业印证）
+### OpenAI：build-prove-generalize 三段循环
 
 [OpenAI 官方业务页](https://openai.com/business/the-openai-deployment-company/) 把 FDE 的工作方式写成一条公开方法论：「与其从一个通用产品出发，FDE 团队直接与客户合作解决一个**具体**问题，验证影响，然后识别出可规模化的**模式**」——这个循环被官方命名为 **build, prove, generalize**，作用是「把部署与产品开发连接起来」。
 
@@ -389,7 +389,7 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 
 > 完整行业对标（a16z 七法则 / Ontology Runtime 六组件 / 工具网关 / MoA 四层 / AI to B 三层基建 / 自主级别 L1-L3 / 贝恩控制面）统一见本文件 §一~§四及 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)。
 
-### OLAF-I 五块骨架：Ontology 的最小不可再分集（2026-08）
+### OLAF-I 五块骨架：Ontology 的最小不可再分集
 
 Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object Type / Link Type / Action Type / Function / Interface**（缩写 OLAF-I）。不是 3 块不是 7 块，5 块是数字孪生的最小够用集。
 
@@ -423,6 +423,48 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 | **动手前先搜索**（设计前搜方法论、审查前搜安全清单） | Ontology knowledge/ + search_knowledge MCP tool | 完全同构——知识库 + MCP 搜索即先搜索后动手 |
 
 顶尖团队用 Harness 的工业级验证数据：OpenAI Codex 团队 3-7 人 5 个月产出 100 万行生产级代码；LangChain + Deep Agents 在 Terminal 基准测试排名从 30 名升到前五。不改底层模型，只加 Harness 就能大幅提效——与 sofagent「能力长在代码里不长在 prompt 里」的产品哲学一致。
+
+### 企业级 Agent 的确定性执行底线
+
+企业落地 AI 的三条底线（零数据权限 / 全链路留痕 / 确定性执行）——与 sofagent 的「LLM 动脑指挥，Ontology 指路，确定性工具执行」分工完全同构：
+
+| 底线 | 含义 | sofagent 落点 |
+|------|------|--------------|
+| **零数据权限** | LLM 不直接写 SQL / 连数据库，与原始数据隔离 | 零凭证沙箱 + v1.4.0 虚拟 key 边界注入——LLM 只按按钮，不碰数据 |
+| **全链路留痕** | 每操作步骤有日志，可追踪可回溯可审计 | 审计引擎（git diff 硬证据 + HMAC 链）+ 运行时审计（v1.3.0） |
+| **确定性执行** | 工具函数预先写好，参数固定，同样输入同样输出 | 工具审批四模式（v1.3.1）+ Ontology Action 七步管线——LLM 当翻译官，不当写逻辑的人 |
+
+### 循环的边界：从 Loop 到 Graph 的升级判据
+
+**Loop 是 Graph 的特例**（包含关系，非替代）。单 Loop 有四种典型失败，sofagent 的审计节点（★Reality Anchor）逐一对应解法；当任务复杂度触及任一升级信号时，才从 Loop 升级到 Graph（满足其一才升级，否则 Loop 就够，避免过度设计）：
+
+**单 Loop 四类失败 → sofagent 解法**：指标异化（优化解决率→流失率翻倍）→ audit 节点看 git diff 硬证据不信自报；目标僵化（Agent 不质疑目标本身）→ human_confirm 节点 + 危险操作前人工批准钩子；多目标冲突（两个 loop 打架）→ ★Reality Anchor guard edge 统一裁决；测量衰退（测试数据老化假象）→ audit 规则不可篡改 + acceptance-test 冻结验收标准。
+
+**升级六信号 → sofagent 落点**：任务需交接（dag-runner 单任务 vs 并行编排波次）/ 需散出汇合（Send API 并行 + MergeQueue，v1.3.1）/ 每步不同模型工具（model-router 路由）/ 需显式可审计角色（StateGraph 四节点）/ 节点失败需隔离（git worktree，v1.2.3）/ 需独立 reviewer（audit + fresh-eyes）。完整对照见 [ARCHITECTURE §Graph Engineering 视角](./ARCHITECTURE.md#graph-engineering-视角控制图--stategraph)。
+
+### 循环系统的鲁棒性：四类故障与六要素
+
+自主循环系统稳定运行需要六要素（自动化触发 / 隔离演练 / 安全边界 / 工具连接 / 角色分离 / 记忆分层）——sofagent 全部已有：pre/post hook = 激活链 + daemon cron；隔离演练 = git worktree（v1.2.3）；安全边界 = 工具审批 + HITL；工具连接 = MCP server；角色分离 = Explore/Code Agent 拆分；记忆分层 = v1.2.8 记忆分层 + 四层加载链。
+
+四类故障模式与 Onboard Agent 收敛判据直接对应（L1 判定 crash/error/超时，L5 连续 PASS 判收敛 / 连续 FAIL 判发散）：
+
+| 故障模式 | 表现 | sofagent 对应 |
+|------|------|------|
+| **空转** | 反复改几十次测试通不过 | Onboard L5 连续 FAIL 判发散（v1.3.2）|
+| **过拟合测试** | 单元测试全过，业务不能用 | Benchmark 评测（v1.3.1）+ 人工验收 |
+| **上下文漂移** | 基于过期假设写代码 | Durable Execution L1 checkpoint 续跑（v1.3.1）|
+| **不安全自主** | AI 越权搞破坏 | 工具审批四模式 + 保守默认拒绝（v1.3.1）|
+
+> 💡 **核心定律**：「测试失败 = 最高质量的下一轮上下文」「仓库记得，即使模型不记得」——与「Agent 会失忆，文件不会」（Ralph Loop）同源：git diff 是无状态的地面真相，仓库是模型永远可以回读的外部记忆。
+
+### 模型层判断：组合优于单一，本地模型可行
+
+AI 从「程序」（单一模型）走向「协议」（多模型组合）是 Scaling Law 资源天花板的必然结果。两个对 sofagent 有直接影响的判断：
+
+1. **智能密度提升**——小模型与大模型能力差距从 2 年缩到 1 年甚至半年。这印证 sofagent v3.x 分层模型架构的可行性（本地 7B 执行 workflow + 本地 0.5B 跑管道层）：小模型够用时，本地推理的成本/隐私优势才真正成立。
+2. **运行时动态路由**——推理框架自动化后，runtime 动态把请求路由到最优模型组合。与 sofagent model-router（敏感度×复杂度四档路由）同构：public/internal 走云端，restricted/confidential 走本地，confidential 超复杂阻断。
+
+> 💡 **self-recording improvement**：模型协作产生 trace → 用 trace 训练单模型 → 个体变强 → 增强协作边界。与 sofagent 进化能力同源：Dream Cycle 从 think.md 派生 knowledge/（Ledger→Views 单向），进化闭环（v1.3.3）用 Benchmark 分数驱动经验层优化——都是「把执行经验沉淀回个体」。
 
 ---
 
