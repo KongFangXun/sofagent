@@ -168,7 +168,7 @@ graph TD
 
 ### 已排期（开发中或即将开发，详见 ROADMAP）
 
-Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2 / 组织能力市场 · 并行编排 DAG 波次并行（v1.3.1）· Ontology 升级为可运行推理底座 + 国标对齐（v1.3.1）· **Benchmark 评测体系 + 工具审批模式（v1.3.1 · PenguinHarness 方法论借鉴）** · SubAgent 完整沙箱（v1.3.7）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
+Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2 / 组织能力市场 · 并行编排 DAG 波次并行（v1.3.1）· Ontology 升级为可运行推理底座 + 国标对齐（v1.3.1）· **Benchmark 评测体系 + 工具审批模式（v1.3.1 · PenguinHarness 方法论借鉴）** · **引擎接口外化完整版（v1.3.6 · workflow 标准格式/ontology 注册/训练语料导出/托管 SDK/模型注册——模型层 AIR 接入前置）** · SubAgent 完整沙箱（v1.3.7）· 代理网关 + 静态加密（v1.3.8）· meta-harness 多 harness 编排（v1.3.9）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
 
 ---
 

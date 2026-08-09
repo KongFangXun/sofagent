@@ -43,11 +43,11 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
 - ⚠️ 明文存储：`data/` 下文件仍为 Markdown 明文，未做加密
-- ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**预计 v1.4.0（与沙箱/权限/网关同批安全加固）落地**。合规审查员请注意：v1.2.x 版本不适合直接用于强合规场景，需配合外部加密卷（gpg / disk encryption）。
+- ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**已排 v1.3.8（与沙箱/权限/网关同批安全加固）落地**。合规审查员请注意：v1.2.x 版本不适合直接用于强合规场景，需配合外部加密卷（gpg / disk encryption）。
 
 ### 当前版本（v1.3.0）临时缓解措施
 
-在 age 加密（目标 v1.4.0）交付之前，建议：
+在 age 加密（目标 v1.3.8）交付之前，建议：
 1. **设置 `~/.sofagent/data/` 目录权限为 700**：`chmod 700 ~/.sofagent/data/`（用户可见运行时数据；`~/.sofagent/internal/` 引擎内部状态同样 700）
 2. **将 `~/.sofagent/` 父目录放在加密文件系统上**（如 macOS APFS 加密卷）
 3. **定期轮换 `~/.sofagent/data/` 中的历史审计数据**
@@ -241,7 +241,7 @@ history.jsonl 存储审计拦截记录（含被拦截的 diff 摘要）。以下
 | 写入 | ✅ 能 | Agent 可以追加/删除/篡改 history.jsonl |
 | 检测篡改 | ⚠️ --doctor 第 8 项检查 | 通过 hash chain 验证——但 Agent 可以在篡改后重新计算整条链 |
 
-**缓解**：sanitize() 管道在写入前对密钥/密码/手机号打码。但这不是加密——Agent 可以从原始 git diff 中直接读到敏感内容。根治方案：age 加密（v1.4.0 落地，参见 ROADMAP.md）+ 独立审计存储（更后期规划）。
+**缓解**：sanitize() 管道在写入前对密钥/密码/手机号打码。但这不是加密——Agent 可以从原始 git diff 中直接读到敏感内容。根治方案：age 加密（v1.3.8 落地，参见 ROADMAP.md）+ 独立审计存储（更后期规划）。
 
 #### 审计日志脱敏与访问控制
 
