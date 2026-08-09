@@ -1383,9 +1383,10 @@ if [ -n "$TEST_COUNT" ] && [ "$TEST_COUNT" -gt 0 ] 2>/dev/null; then
 fi
 for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do grep -q "24 条\|24 个\|24 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 24（数字漂移）"; S165_OK=false; }; done
 # acceptance 场景数动态计算（防止每次加场景后硬编码漂移）
-S165_SCEN_COUNT=$(grep -oE 'scenario [0-9]+[a-z]? "' "$SCRIPT_DIR/acceptance-test.sh" | wc -l | tr -d ' ')
-for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "$S165_SCEN_COUNT" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 $S165_SCEN_COUNT（数字漂移）"; S165_OK=false; }; done
-$S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / $S165_SCEN_COUNT）"
+S165_SCEN_COUNT=$(grep -oE 'scenario [0-9]+[a-z]? "' "$SCRIPT_DIR/acceptance-test.sh" | wc -l | tr -d ' ' || echo 0)
+S165_SCEN_COUNT=${S165_SCEN_COUNT:-0}
+for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "$S165_SCEN_COUNT" "$PROJECT_ROOT/$f" || { fail "$f 缺少 acceptance 场景数 ${S165_SCEN_COUNT}（数字漂移）"; S165_OK=false; }; done
+$S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / ${S165_SCEN_COUNT}）"
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
 S166_OK=true
 node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}process.exit(bad.length?(console.log('U+FFFD:',bad.join(',')),1):0);" >/dev/null 2>&1 || { fail "活跃文档存在 U+FFFD 编码污染"; S166_OK=false; }
