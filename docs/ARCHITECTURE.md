@@ -1,7 +1,7 @@
 # sofagent Architecture
 
 > 设计决策记录——从为什么存在、约束层四种能力如何协作，到每个关键决策的工程理由。
-> v1.3.0 · 2026-08-08（UTC）
+> v1.3.0 · 2026-08-09（UTC）
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
