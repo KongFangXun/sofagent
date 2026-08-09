@@ -94,7 +94,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.3.1** | 📋 规划中 | **Ontology 本体结构 + 国标对齐 + 并行编排 + Agent 身份码 + 跨设备审计聚合 + 🚀 Onboard Agent L1 + 📊 Benchmark 评测体系 + 🔒 工具审批模式**（详见 [下方详解](#v131--ontology-本体结构操作型本体论落地)） | [日志](./changelog/v1.3/v1.3.1.md) |
 | **v1.3.2** | 📋 规划中 | **🚀 Onboard Agent 完整版（L2-L5 · FORGE 产品化第二刀）+ 🎯 企业专属 eval 套件 + ⚡ workflow 批量自动生成**：① L2 语义判定（Ontology 判据）② L3 自动定位（LLM 推理）③ L4 自动修复（审计兜底）④ L5 循环收敛（回归+连续 PASS）⑤ 企业行业 eval 模板（金融/制造/供应链，FDE 交付时实例化 + 基线冻结 + 回归门禁，a16z 法则6 产品化）⑥ workflow.yml → 自动为每个节点生成 sub-agent（agent-creation 规模化，PenguinHarness「用 Agent 构建 Agent」启发） | [日志](./changelog/v1.3/v1.3.2.md) |
 | **v1.3.3** | 📋 规划中 | **L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版 + 🧭 主 agent 编排**：① 协作协议——共享态/意图广播/触发反应/冲突消解/反馈放大 + 团队状态管理 ② Refine Agent——复用 Onboard 循环引擎，判据从 Ontology 换成质量规则集（好不好），五层一次交付 ③ 主 agent 四合一角色（分发/监控/审计/通讯）——编排 v1.3.2 批量生成的 sub-agent | [日志](./changelog/v1.3/v1.3.3.md) |
-| **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价）**：Skill/Agent/流程打包发布 + 目录检索 + 调用挂载 + 评分聚合（评分 × 调用量加权自然选择）+ 全程审计 | [日志](./changelog/v1.3/v1.3.4.md) |
+| **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价→养护）**：Skill/Agent/流程打包发布 + 目录检索 + 调用挂载 + 评分聚合（评分 × 调用量加权自然选择）+ 全程审计 + **养护环（owner 声明 + 失效退役 + 变更记录，GitHub 模式「持续养护」）** | [日志](./changelog/v1.3/v1.3.4.md) |
 | **v1.3.5** | 📋 规划中 | **自进化与运维闭环（MCP 覆盖度审计缺口补全）**：`run_ab_test` / `promote_ab`（晋升强制人审）+ `snapshot_list` / `snapshot_restore`（恢复强制人审） | [日志](./changelog/v1.3/v1.3.5.md) |
 | **v1.4.0** | 📋 规划中 | **SubAgent 完整沙箱执行环境 + 场景驱动权限体系 + 代理网关硬边界 + 数据静态加密**：① 沙箱——虚拟文件系统隔离 + 网络出站白名单 + 工具调用中介（前置 allow/deny）+ 虚拟 key 凭证边界注入 + AsyncSubAgent + 真·实时 A/B 双跑 ② 场景驱动权限体系（身份→场景匹配→风险等级→放行）③ 代理网关硬边界（唯一出入口）④ 数据静态加密（age）——审计从「事后」扩展到「运行时」（范围限定 SubAgent） | [日志](./changelog/v1.4/v1.4.0.md) |
 | **v2.0** | 📋 规划中 | **引擎层接口外化**：① 约束导出通道（审计规则导出为机器可读标准格式）② Workflow 标准格式 + 运行容器 ③ Ontology 标准 Schema + 注册接口 ④ 官方 AST 规则引擎参考实现（v1.2.9 已开放插件接口 `type: "plugin"` + `sofagent-ruleset-*` npm 包约定，v2.0 官方出 `sofagent-ruleset-ast` 示范——用 TypeScript compiler / tree-sitter 做语义级规则，社区可照着写自己的引擎）。前置依赖：v1.3.1 Ontology 落地 + v1.4.0 沙箱底座就绪 | — |
@@ -109,7 +109,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.3.1** | **Ontology + 并行编排 + 身份码 + Onboard L1 + Benchmark 评测 + 工具审批模式** | 见上方主表 + [Ontology 详解](#v131--ontology-本体结构操作型本体论落地) |
 | **v1.3.2** | **🚀 Onboard Agent 完整版（L2-L5）+ 🎯 企业专属 eval 套件 + ⚡ workflow 批量自动生成** | L2 语义判定（Ontology 判据）+ L3 自动定位（LLM 推理）+ L4 自动修复（审计兜底）+ L5 循环收敛（回归+连续 PASS）+ 企业行业 eval 模板（a16z 法则6 产品化）+ workflow 节点自动生成 sub-agent（详见 开发日志 ./changelog/v1.3/v1.3.2.md）|
 | **v1.3.3** | **L2 团队协作协议 + ✨ Refine Agent + 🧭 主 agent 编排** | 协作五大机制 + Refine Agent 完整版（质量规则集判据，复用 Onboard 循环引擎）+ 主 agent 四合一（分发/监控/审计/通讯）（详见 开发日志 ./changelog/v1.3/v1.3.3.md）|
-| **v1.3.4** | **L3 组织能力市场** | 发布→发现→调用→评价 + 评分聚合自然选择 + 全程审计（详见 开发日志 ./changelog/v1.3/v1.3.4.md）|
+| **v1.3.4** | **L3 组织能力市场（五环）** | 发布→发现→调用→评价→养护（owner 声明 + 失效退役）+ 评分聚合自然选择 + 全程审计（详见 开发日志 ./changelog/v1.3/v1.3.4.md）|
 | **v1.3.5** | **自进化与运维闭环（MCP 覆盖度审计缺口补全）** | `run_ab_test` / `promote_ab` + `snapshot_list` / `snapshot_restore` 四个 MCP tool（详见 开发日志 ./changelog/v1.3/v1.3.5.md）|
 | **v1.3.6-v1.3.9** | 🔒 弹性预留 | 紧急修复 / 探索项按需取用 |
 

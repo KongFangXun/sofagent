@@ -1991,6 +1991,26 @@ grep -q "ruleType: 'diff'" "$PROJECT_ROOT/engine/audit/src/rules/index.ts" || S2
 grep -q "SECRET_PATTERNS" "$PROJECT_ROOT/engine/core/src/shared/secret-patterns.ts" || S228_OK=false
 $S228_OK && pass "双规则统一（tool 3 条 ruleType + diff 24 条 ruleType + SECRET_PATTERNS 共享）"
 
+scenario 229 "v1.3.0 交付 2 shouldAllow 拦截 API（InterceptVerdict + requireApproval）"
+S229_OK=true
+# shouldAllow 函数存在
+grep -q "export function shouldAllow" "$PROJECT_ROOT/engine/rules/src/should-allow.ts" || S229_OK=false
+# 返回 InterceptVerdict 含 allow/reason/requireApproval
+grep -q "allow" "$PROJECT_ROOT/engine/rules/src/should-allow.ts" || S229_OK=false
+grep -q "reason" "$PROJECT_ROOT/engine/rules/src/should-allow.ts" || S229_OK=false
+grep -q "requireApproval" "$PROJECT_ROOT/engine/rules/src/should-allow.ts" || S229_OK=false
+$S229_OK && pass "shouldAllow API（函数存在 + InterceptVerdict 三字段）"
+
+scenario 230 "v1.3.0 交付 8 运行时审计日志仓库隔离（repo-hash）"
+S230_OK=true
+# audit-middleware 含 repo-hash 隔离路径
+grep -q "data/audit/runtime" "$PROJECT_ROOT/FORGE/src/audit-middleware.mjs" || S230_OK=false
+# resolveRuntimeAuditPath 函数存在
+grep -q "resolveRuntimeAuditPath" "$PROJECT_ROOT/FORGE/src/audit-middleware.mjs" || S230_OK=false
+# repo-hash 基于 git rev-parse（非硬编码）
+grep -q "rev-parse\|repo.*hash" "$PROJECT_ROOT/FORGE/src/audit-middleware.mjs" || S230_OK=false
+$S230_OK && pass "运行时审计仓库隔离（repo-hash 路径 + rev-parse + resolveRuntimeAuditPath）"
+
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 if [ "$FAILED" -gt 0 ]; then echo -e "${RED}❌ 有 $FAILED 个场景失败，请修复后再发版${NC}"; exit "$FAILED"

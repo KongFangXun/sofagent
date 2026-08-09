@@ -189,13 +189,13 @@
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 4 | **行数警戒线 + 声称一致性自检**：<br>**① 行数**：`wc -l < FORGE/playbook/regression-checklist.md` 超 1200 → 触发深度瘦身；`wc -l < FORGE/playbook/acceptance-test.sh` 超 2000 → 触发深度瘦身<br>**② 维度声称数**：跑 `regression-checklist.md` 顶部「清单自身健康度自校验」代码块（比对标题声称维度数 vs 实际 `#### ` 数）<br>**③ 场景数**：跑 `bash tools/check-test-count.sh --quiet` 确认 acceptance 场景数声称与实际一致<br>**🔴 禁止手动报数——必须跑脚本拿实际值，硬编码基准必然漂移** | 当前 session | 行数均在警戒线内 + 自校验脚本 + check-test-count.sh 均全绿 |
+| 4 | **行数警戒线 + 声称一致性自检**：<br>**① 行数**：`wc -l < FORGE/playbook/regression-checklist.md` 超 1250 → 触发深度瘦身；`wc -l < FORGE/playbook/acceptance-test.sh` 超 2050 → 触发深度瘦身<br>**② 维度声称数**：跑 `regression-checklist.md` 顶部「清单自身健康度自校验」代码块（比对标题声称维度数 vs 实际 `#### ` 数）<br>**③ 场景数**：跑 `bash tools/check-test-count.sh --quiet` 确认 acceptance 场景数声称与实际一致<br>**🔴 禁止手动报数——必须跑脚本拿实际值，硬编码基准必然漂移** | 当前 session | 行数均在警戒线内 + 自校验脚本 + check-test-count.sh 均全绿 |
 
 **深度瘦身（每版本，步骤 4 之后）**
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 5 | **逐维度/逐场景瘦身**：<br>**回归清单**：① 已被 pre-push-check.sh / check-docs.sh / acceptance-test.sh 全量覆盖的维度 → 移除 ② 引用的路径/CLI/grep 模式失效 >2 版 → 移除或更新 ③ 与其它维度重叠 ≥50% → 归并（主编号保留，其余降为子项）<br>**验收脚本**：④ 相同 git 脚手架 / dist 检查 / node -e 内联重复 ≥3 次 → 抽为公共函数 ⑤ 相邻场景在做同一能力 → 合并为一个场景内多断言 | 当前 session | 清单 ≤1200 行；脚本 ≤2000 行；归并有注释；移除有标注 |
+| 5 | **逐维度/逐场景瘦身**：<br>**回归清单**：① 已被 pre-push-check.sh / check-docs.sh / acceptance-test.sh 全量覆盖的维度 → 移除 ② 引用的路径/CLI/grep 模式失效 >2 版 → 移除或更新 ③ 与其它维度重叠 ≥50% → 归并（主编号保留，其余降为子项）<br>**验收脚本**：④ 相同 git 脚手架 / dist 检查 / node -e 内联重复 ≥3 次 → 抽为公共函数 ⑤ 相邻场景在做同一能力 → 合并为一个场景内多断言 | 当前 session | 清单 ≤1250 行；脚本 ≤2050 行；归并有注释；移除有标注 |
 | 6 | **瘦身自验证**：① 跑 checklist 自校验脚本确认维度数一致 + 行数绿 ② `bash -n acceptance-test.sh` 语法通过 ③ 跑 `bash acceptance-test.sh` 场景数不变全 PASS ④ `bash tools/check-test-count.sh --quiet` 场景数一致 | 当前 session | 四项全 PASS |
 
 > 💡 **节奏**：每版本必做步骤 4-6。每版都做，单次瘦身量小、负担可控——验证文件一旦放任堆积，几版就会回到不可维护状态。

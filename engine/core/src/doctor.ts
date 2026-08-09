@@ -449,14 +449,7 @@ export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: 
       }
     }
     if (!jsYamlInstalled) {
-      try {
-        console.log('  📦 正在安装 js-yaml...');
-        execFileSync('npm', ['install', 'js-yaml'], { cwd: projectDir, stdio: 'pipe' });
-        ok('js-yaml 已自动安装');
-        repairsApplied++;
-      } catch {
-        warn('js-yaml 自动安装失败——请手动运行 npm install js-yaml');
-      }
+      warn('js-yaml 未安装——请手动运行: npm install js-yaml');
     }
 
     // 3. HMAC 密钥缺失 → 提示运行 --init（不自动执行，因为会重置审计链）

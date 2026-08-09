@@ -157,13 +157,15 @@ function resolveDaemonEntry(cwd: string): { cliPath: string; args: string[] } | 
 
   // 1. 全局 sofagent-daemon
   try {
-    const p = execSync('which sofagent-daemon', { encoding: 'utf-8' }).trim();
+    const cmd = platform() === 'win32' ? 'where sofagent-daemon' : 'which sofagent-daemon';
+    const p = (execSync(cmd, { encoding: 'utf-8' }).trim().split('\n')[0]) || '';
     if (p) candidates.push(p);
   } catch { /* 未安装 */ }
 
   // 2. sofagent-audit 同 bin 目录下的 sofagent-daemon
   try {
-    const auditPath = execSync('which sofagent-audit', { encoding: 'utf-8' }).trim();
+    const cmd = platform() === 'win32' ? 'where sofagent-audit' : 'which sofagent-audit';
+    const auditPath = (execSync(cmd, { encoding: 'utf-8' }).trim().split('\n')[0]) || '';
     const auditBinDir = auditPath.substring(0, auditPath.lastIndexOf('/'));
     const candidateDaemon = `${auditBinDir}/sofagent-daemon`;
     if (existsSync(candidateDaemon)) candidates.push(candidateDaemon);
