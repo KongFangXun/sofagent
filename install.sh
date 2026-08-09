@@ -65,8 +65,10 @@ LIB_DIR="${SCRIPT_DIR}/engine/scripts/lib"
 export PROJECT_ROOT="${SCRIPT_DIR}"
 
 # ── 安装日志 ──
-INSTALL_LOG=""
-_log() { echo "[$(date '+%H:%M:%S')] $1" >> "${INSTALL_LOG:-/dev/null}"; }
+# v1.3.0-fix: INSTALL_LOG 原为空字符串导致日志写入 /dev/null，排查时无任何记录
+INSTALL_LOG="${HOME}/.sofagent/install.log"
+mkdir -p "${HOME}/.sofagent"
+_log() { echo "[$(date '+%H:%M:%S')] $1" >> "${INSTALL_LOG}"; }
 
 # ── 快速模式（v0.73：初始化在参数解析之前，set -u 兼容）──
 QUICK_MODE="${QUICK_MODE:-0}"; REMOTE_MODE="${REMOTE_MODE:-0}"
