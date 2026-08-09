@@ -14,6 +14,7 @@
 | `nodes/node-template.md` | §7 产出，§8-§10 更新 | FDE Agent | 工作流节点文档（人读） |
 | `skills/skill-template/SKILL.md` | §7-§8 定制 | FDE Agent | 工作流节点 Skill 层（AI 读） |
 | `delivery-report.md` | §5.9 离场时回写 | FDE 工程师 | **FDE 内部经验沉淀**（非给客户）——飞轮闭环数据入口 |
+| `plan-review.md` | 开工前（任何计划） | FDE Agent / 计划负责人 | **计划自梳理**：把商业计划当客户拆——五要素 × 三问 × 五问预检，判定计划能不能开工（真实案例：AIR 商业计划） |
 
 ## 为什么填 sofagent 自己
 
