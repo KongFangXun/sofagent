@@ -52,11 +52,27 @@ L3 框架兜底 recursionLimit=130（GraphRecursionError 兜底）
 ```
 
 ```js
-const TOOL_SOFT_LIMIT  = 100;  // L1: 超此值注入"立即写报告"HumanMessage
-const TOOL_HARD_LIMIT  = 100;  // L2: 超此值进入"写报告窗口"
-const REVIEW_GRACE_STEPS = 80; // L2 触发后审查步骤的写报告窗口（superstep 数）
-const DEFAULT_GRACE_STEPS = 5; // L2 触发后其他步骤的写报告窗口（superstep 数）
+// v1.2.7 run-07 下调（原 100/100 导致 run-06 空转）：零窗口=撞硬上限立即中断
+const TOOL_SOFT_LIMIT  = 35;  // L1: 超此值注入"立即写报告"HumanMessage
+const TOOL_HARD_LIMIT  = 45;  // L2: 超此值进入"写报告窗口"
+const REVIEW_GRACE_STEPS = 0; // L2 触发后审查步骤的写报告窗口（v1.2.7 起 0=立即中断）
+const DEFAULT_GRACE_STEPS = 0; // 其他步骤同上
 ```
+
+#### 并行工具调用让硬熔断"超发" + 步骤级预算覆盖（v1.3.0 run-21）
+
+**并行超发**：硬熔断检查在**回合边界**（stream chunk）执行，而 GLM-5.2 单个回合可并行发出多个 tool_call——计数跳跃式增长，`TOOL_HARD_LIMIT=45` 实际在 48/54/60 次才熔断。**硬上限是下限不是精确值**，关键步骤不能依赖"45 就停"。
+
+**步骤级预算**：`stepDef` 支持 `toolSoftLimit` / `toolHardLimit` 覆盖（v1.2.9 功能①加给 perspective worker 12/15）。对"必须读 N 份文件"的步骤（如 a-consolidate 要 sf_read 24 份 check 报告，天然 40-60 次调用），**必须单独配预算**，别用全局值：
+
+```js
+// ✅ a-consolidate：读 24 份报告 + 写长输出，60/80 足够且不会空转
+// （run-21 教训：用全局 45 必然熔断 → 兜底产物格式坏 → 假绿停止）
+'a-consolidate': { toolSoftLimit: 60, toolHardLimit: 80, ... },
+// ❌ 不重蹈 run-06：全局 60/80 让 check 类步骤无限探索空转——check 有自己的 12/15
+```
+
+**判断标准**：步骤的工具调用数 = 必读文件数 + 探索余量。必读文件多的步骤单独提预算；开放探索类步骤压低预算（12/15）。
 
 #### L2 两阶段写报告窗口（关键设计）
 
@@ -116,6 +132,28 @@ const isClean = !isDegraded && (p0 === 0 && p1 === 0 && p2 === 0 && !hasFail);
 
 **核心原则**：占位/降级产物**永远不算干净轮**。
 
+#### 🔴 产物完整性校验（防"假成功"——v1.3.0 run-21 教训）
+
+> **来源**（run-21，2026-08-09）：driver 报 `2-rounds-clean`（P0=0/P1=0/P2=0），实际 3 轮 findings 全丢——**现有降级检测只防「失败→降级」，没防「成功但格式坏→静默判空」**。
+
+**假成功根因链**：
+
+```
+a-consolidate 撞硬熔断（40-60 次调用 vs 全局 45）
+  → generateReportWithoutTools 兜底返回"非空文本"  ← driver 视为成功
+  → 但文本缺 ===FILE: 分隔符
+  → sliceMultiOutput fallback：findings.md=全文 ✓ / result.md=空占位 ✗
+  → splitFindings(result.md)=0 条 → b-fix 跳过 → 连续 2 轮"干净" → 假绿停止
+```
+
+**铁律**：
+1. **"有输出" ≠ "解析成功"**。兜底/正常路径产出的文本必须过**产物完整性校验**：多产物步骤写盘后检查每个判定产物，`result.md` 为空占位（匹配 `未检测到 ===FILE:|agent 未产出此文件`）→ 立即触发降级重建（writeFallbackFindings），不得静默跳过。
+2. **判定产物与展示产物解耦的盲区**：sliceMultiOutput 无分隔符 fallback 是「findings.md 拿全文、result.md 只写占位」——但停止判定（splitFindings/parseStopCondition）只看 result.md。**判定产物必须永远有可解析内容**（哪怕降级重建为 `### finding-NN` 最小结构），展示产物内容再全也救不了空判定产物。
+3. **降级重建的 result.md 要可消费**：重建格式用 `### finding-NN`（带 `**优先级**: P0/P1`），splitFindings 才能切片、b-fix 才能真修、parseStopCondition 才能数对——只写 `| fallback | SKIP |` 表格会让 b-fix 空转重试（"不假绿"但"修不了"）。
+4. **排查陷阱**：grep `===FILE:` 判断分隔符存在时，占位注释文本本身含该字样（`未检测到 ===FILE: 分隔符`）→ `grep -c` 假阳性 1。用排除法或更精确 pattern（如 `grep '^===FILE:'` 只匹配行首）。
+
+**修复范式（三层防御）**：防熔断（步骤级预算）→ 兜底格式（裸 LLM 生成器对多产物步骤也输出 `===FILE:` 分隔符）→ 最后保险（判定产物空占位检测 + 降级重建 + isDegraded 强制不干净）。
+
 #### 连续降级 error 退出
 
 连续 2 轮降级 → `fatal-error` 退出，不浪费 token 跑无意义循环。
@@ -156,6 +194,12 @@ function computeBatchSize(n) { return n <= 20 ? 5 : n <= 35 ? 3 : 2; }
 Driver 唯一做语义判断的地方——数 P0/P1/P2 + FAIL，不做语义审查。收敛策略：连续 2 轮干净（`cleanStreak >= 2`）。
 
 > **🔴 假阳性干净**（run-05）：降级占位无 P0/P1 被当"审查通过"→ driver 误收敛。**降级轮的 isClean 永远为 false**。
+
+#### LEDGER 会被假阳性 run 污染（v1.3.0 run-21）
+
+LEDGER.md 是 append-only 永久索引，假阳性 run 的 `2-rounds-clean 0/0/0` 会**永久入册且无法事后纠正**（run-21 实例）。两条应对：
+1. **修复后重跑才是纠错手段**——真 run（如 run-22）的干净记录会覆盖统计口径；
+2. 若需历史可审计，给 LEDGER 条目加 `isDegraded`/`suspect` 标记列（当前未做，列为已知改进项）。
 
 ---
 
