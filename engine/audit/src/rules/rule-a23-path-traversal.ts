@@ -64,6 +64,41 @@ export function checkRuleA23(ctx: AuditContext): RuleCheck {
     if (file.path.includes('.test.') || file.path.includes('__tests__/')) continue;
 
     const addedLines = getAddedLines(file);
+
+    // v1.3.1 #47: 真实 symlink 检测——解析 diff 文件头中的 new mode 120000（symlink），
+    // 提取 symlink target 路径，对 target 做绝对路径 / ../ 穿越检测。
+    // git diff 中 symlink 文件的 `+++` 行后跟 target 路径（非 + 前缀内容）。
+    let symlinkTarget: string | null = null;
+    for (const rawLine of file.lines) {
+      // 检测 new mode 120000（symlink）
+      if (rawLine.startsWith('new mode 120000')) {
+        // 寻找紧随其后的 symlink target（以 + 开头，不含 +++）
+        // git diff symlink 格式：+<target_path>
+        for (const l of file.lines) {
+          if (l.startsWith('+') && !l.startsWith('+++') && !l.startsWith('+-')) {
+            symlinkTarget = l.substring(1).trim();
+            break;
+          }
+        }
+        break;
+      }
+    }
+
+    if (symlinkTarget) {
+      // 对 symlink target 做路径穿越检测
+      const isAbsolute = symlinkTarget.startsWith('/');
+      const hasTraversal = /(\.\.\/){2,}/.test(symlinkTarget);
+      const targetsSensitive = /(\.ssh\/|\.env$|\.env\b|etc\/passwd|etc\/shadow|id_rsa|id_dsa|id_ecdsa|authorized_keys|known_hosts)/i.test(symlinkTarget);
+
+      if (isAbsolute || hasTraversal || targetsSensitive) {
+        hits.push({
+          file: file.path,
+          line: `symlink → ${symlinkTarget.slice(0, 100)}`,
+          pattern: '真实 symlink 指向敏感/穿越路径（diff mode 120000）',
+        });
+      }
+    }
+
     for (const line of addedLines) {
       // 检查路径穿越
       for (const { pattern, name } of TRAVERSAL_PATTERNS) {

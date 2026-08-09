@@ -138,7 +138,10 @@ export function runCliQuick(argv: string[]): number {
   //    - 新增 '--verify-commit'（v1.2.9 新增 flag，需要完整引擎，否则会被 quick 吞掉）
   const FULL_ONLY_FLAGS = ['--init', '--doctor', '--install-hook',
     '--list-rulesets', '--ruleset', '--ruleset-path',
-    '--support-bundle', '--sign-config', '--verify-chain', '--verify-commit'];
+    '--support-bundle', '--sign-config', '--verify-chain', '--verify-commit',
+    // v1.3.1 #1: 以下参数需要完整引擎——quick 模式不审计暂存区/commit-msg，
+    // 会静默吞掉这些参数导致 hook 审计滞后。
+    '--diff', '--cached', '--silent', '--ci', '--task', '--commit-msg'];
 
   for (const arg of argv.slice(2)) {
     if (FULL_ONLY_FLAGS.includes(arg)) {
@@ -162,11 +165,30 @@ export function runCliQuick(argv: string[]): number {
   // 拦截 --help / --version
   if (argv.includes('--help') || argv.includes('-h')) {
     console.log('sofagent-audit — AI Agent 行为审计\n');
-    console.log('用法：');
+    console.log('用法（quick 只读审计，零安装）：');
     console.log('  npx sofagent-audit              审计最近一次 commit');
-    console.log('  npx sofagent-audit HEAD~3..HEAD 审计指定范围');
-    console.log('  npx sofagent-audit-full --init  安装 git hook（需完整安装）');
-    console.log('  npx sofagent-audit-full --doctor 健康诊断（需完整安装）');
+    console.log('  npx sofagent-audit HEAD~3..HEAD 审计指定范围（路由到完整引擎）');
+    console.log('  npx sofagent-audit -v, --version 显示版本号');
+    console.log('  npx sofagent-audit -h, --help    显示此帮助\n');
+    console.log('以下 flag 需完整引擎（sofagent-audit-full 或全局安装），quick 模式会自动路由或提示安装：');
+    console.log('  --init              安装 git hook（每次 commit 自动审计）');
+    console.log('  --doctor            健康诊断 + 完整性校验');
+    console.log('  --install-hook      仅安装 hook');
+    console.log('  --diff <range>      审计指定 diff 范围（如 origin/main..HEAD）');
+    console.log('  --cached            审计暂存区（pre-commit 场景）');
+    console.log('  --ruleset <name>    加载规则集（sofagent / security / 社区包）');
+    console.log('  --ruleset-path <p>  加载自定义 JSON 规则路径');
+    console.log('  --list-rulesets     列出可用规则集');
+    console.log('  --silent            静默模式');
+    console.log('  --ci                CI 模式（输出适合 CI 解析）');
+    console.log('  --strict            严格模式（无日志时 WARN 升级为 FAIL）');
+    console.log('  --task <subject>    传入任务标题（A3 越界检查用）');
+    console.log('  --commit-msg <msg>  传入完整 commit message（A9 注入检查用）');
+    console.log('  --sign-config       对 config.yml 签名（防篡改）');
+    console.log('  --verify-chain      校验审计历史 HMAC 链完整性');
+    console.log('  --verify-commit     校验单个 commit 完整性（v1.2.9+）');
+    console.log('  --support-bundle    打包诊断信息\n');
+    console.log('完整安装：npm install -g @sofagent/audit');
     return 0;
   }
 
@@ -175,6 +197,21 @@ export function runCliQuick(argv: string[]): number {
     const pkg = require('../package.json');
     console.log(`sofagent-audit v${pkg.version}`);
     return 0;
+  }
+
+  // v1.3.1 #12: 未知 flag 检测——quick 模式支持的参数有限，
+  // 不在此列表中的 `-` 开头参数会被静默忽略，用户误以为审计已覆盖。
+  const QUICK_KNOWN_FLAGS = new Set([
+    '--help', '-h', '--version', '-v',
+  ]);
+  const warnedFlags = new Set<string>();
+  for (const arg of argv.slice(2)) {
+    if (arg.startsWith('-') && !FULL_ONLY_FLAGS.includes(arg) && !QUICK_KNOWN_FLAGS.has(arg)) {
+      if (!warnedFlags.has(arg)) {
+        console.warn(`⚠️  未知参数: ${arg}，请检查 --help`);
+        warnedFlags.add(arg);
+      }
+    }
   }
 
   // 1. 检测 git 仓库

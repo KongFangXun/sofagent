@@ -18,6 +18,7 @@ sofagent 声称：给 AI Agent 加纪律约束后，代码重构任务的变量�
 
 1. 克隆测试套件（或手动创建 6 个 fixture 文件）：
    ```bash
+   # ⚠️ sofagent-test-suite 仓库即将公开，若克隆 404 请按下方 fixture 手动创建
    git clone https://github.com/cedric123123/sofagent-test-suite
    cd sofagent-test-suite
    git checkout 56160e1

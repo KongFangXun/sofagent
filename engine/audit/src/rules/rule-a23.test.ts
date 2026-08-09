@@ -84,4 +84,46 @@ describe('A23 不逃路径', () => {
     const result = checkRuleA23(ctx);
     expect(result.status).toBe('FAIL');
   });
+
+  // v1.3.1 #47: 真实 symlink 检测——diff 文件头含 new mode 120000
+  it('真实 symlink（new mode 120000）指向绝对路径 → FAIL', () => {
+    const ctx = makeCtx([
+      makeDiffFile('evil-link', [
+        'new mode 120000',
+        'index 0000000..abc1234',
+        '--- /dev/null',
+        '+++ b/evil-link',
+        '+/etc/passwd',
+      ]),
+    ]);
+    const result = checkRuleA23(ctx);
+    expect(result.status).toBe('FAIL');
+    expect(result.details[0]).toContain('symlink');
+  });
+
+  it('真实 symlink（new mode 120000）指向 .ssh/id_rsa → FAIL', () => {
+    const ctx = makeCtx([
+      makeDiffFile('shortcut', [
+        'new mode 120000',
+        '--- /dev/null',
+        '+++ b/shortcut',
+        '+/home/user/.ssh/id_rsa',
+      ]),
+    ]);
+    const result = checkRuleA23(ctx);
+    expect(result.status).toBe('FAIL');
+  });
+
+  it('真实 symlink 指向正常相对路径 → PASS', () => {
+    const ctx = makeCtx([
+      makeDiffFile('config-link', [
+        'new mode 120000',
+        '--- /dev/null',
+        '+++ b/config-link',
+        '+./config/default.yml',
+      ]),
+    ]);
+    const result = checkRuleA23(ctx);
+    expect(result.status).toBe('PASS');
+  });
 });

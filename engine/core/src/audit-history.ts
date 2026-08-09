@@ -175,7 +175,7 @@ export interface ChainCheckResult {
  * @param dataDir 可选的数据目录覆盖
  * @returns ChainCheckResult
  */
-export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
+export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number): ChainCheckResult {
   const filePath = getHistoryFilePath(dataDir);
 
   if (!existsSync(filePath)) {
@@ -206,9 +206,23 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
     }
   }
 
-  // 0 或 1 条记录无法构成可验证链 → insufficient（不再报 ok）
-  if (entries.length <= 1) {
-    return { status: 'insufficient', detail: '审计历史不足 2 条，无法构成可验证的防篡改链' };
+  // v1.3.1 #14: 大量历史记录时全量校验性能开销大——支持 maxEntries 限制，
+  // 只校验最近 N 条（doctor 默认 500）。--verify-chain 仍全量校验（传 undefined）。
+  let entriesToCheck = entries;
+  if (maxEntries !== undefined && maxEntries > 0 && entries.length > maxEntries) {
+    entriesToCheck = entries.slice(entries.length - maxEntries);
+  }
+
+  // v1.3.1 #14: 当使用 maxEntries 截断时，insufficient 判定基于截断后的条目数。
+  // entriesToCheck.length <= 1 → 无法构成可验证链
+  if (entriesToCheck.length <= 1) {
+    // 全量不足的特殊情况：若原始条目本身就 ≤1，报告真实不足；
+    // 若是截断后只剩 1 条，报告「截断范围内不足」。
+    if (entries.length <= 1) {
+      return { status: 'insufficient', detail: '审计历史不足 2 条，无法构成可验证的防篡改链' };
+    }
+    // 有足够记录但截断范围内不足（极少发生，maxEntries=1 之类）
+    return { status: 'insufficient', detail: `最近 ${maxEntries} 条范围内审计历史不足 2 条，无法构成可验证的防篡改链` };
   }
 
   // v1.0.6: 逐条判断 hashVersion——支持新旧格式混合
@@ -224,11 +238,11 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
   // 因为这些异常无法在当前侧区分「真·篡改」与「密钥轮换 / 环境漂移」。
   let foundUnverifiable = false;
 
-  // v1.2.6 创世条目（entries[0]）HMAC 验签——
-  // 主循环从 i=1 开始（校验 prevHash 链），entries[0] 从未被独立校验。
+  // v1.2.6 创世条目（entriesToCheck[0]）HMAC 验签——
+  // 主循环从 i=1 开始（校验 prevHash 链），entriesToCheck[0] 从未被独立校验。
   // 攻击者可篡改创世条目内容（如修改初始审计结果）而不被检测。
   // 在主循环之前对创世条目做 HMAC 验签（复用已有逻辑，不引入新字段）。
-  const genesisEntry = entries[0]!;
+  const genesisEntry = entriesToCheck[0]!;
   if (
     genesisEntry &&
     typeof genesisEntry.hmacSig === 'string' &&
@@ -261,9 +275,9 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
     }
   }
 
-  for (let i = 1; i < entries.length; i++) {
-    const prev = entries[i - 1]!;
-    const curr = entries[i]!;
+  for (let i = 1; i < entriesToCheck.length; i++) {
+    const prev = entriesToCheck[i - 1]!;
+    const curr = entriesToCheck[i]!;
 
     // 用当前条目的 hashVersion 决定算法（而非 firstEntry 一刀切）
     // hashVersion === 2：写入时用了环境指纹，校验也用指纹
@@ -271,8 +285,13 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
     const currUseFingerprint = curr.hashVersion === 2;
 
     // 1) prevHash 链校验（权威完整性判定，key 顺序无关）
-    // 修复：跳过无 prevHash 的 legacy 条目（本就不在链上，避免假阳性）。
-    if (curr.prevHash == null || curr.prevHash === 'unknown') continue;
+    // v1.3.1 #4: 无 prevHash 的 legacy 条目不直接 continue（静默跳过），
+    // 而是标记为 unverified——这些条目不在链上，无法验证完整性（可能伪造）。
+    // 报告区分: verified（链上） / legacy（旧格式标记） / unverified（无链字段）。
+    if (curr.prevHash == null || curr.prevHash === 'unknown') {
+      foundUnverifiable = true;
+      continue;
+    }
 
     const recordForHash = { ...prev, prevHash: undefined, hashVersion: undefined };
     const hashInput = currUseFingerprint
@@ -344,7 +363,7 @@ export function checkHistoryChainDetailed(dataDir?: string): ChainCheckResult {
   if (foundUnverifiable) {
     return {
       status: 'unverifiable',
-      detail: '部分历史段（v2 含环境指纹条目）因 ~/.sofagent-key 或环境指纹漂移无法复验，属历史证据不可复验，非篡改',
+      detail: '部分历史段无法复验（含无 prevHash 的 legacy 条目 / v2 含环境指纹条目因 ~/.sofagent-key 或环境指纹漂移），属历史证据不可复验，非篡改',
     };
   }
 

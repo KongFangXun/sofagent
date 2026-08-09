@@ -21,7 +21,7 @@
 - [九、v1.1.7-v1.1.9 新功能局限](#九v117-v119-新功能局限)
 - [十、行业研报印证的新增局限（2026-07）](#十行业研报印证的新增局限2026-07)
 - [十一、架构反模式：五种常见 Agent 工程错误](#十一架构反模式五种常见-agent-工程错误)
-- [十二、FDE 交付物激活断裂带（v1.2.5+ 解决中）](#十二fde-交付物激活断裂带v125-解决中)
+- [十二、FDE 交付物激活断裂带（v1.2.5-v1.3.0 已解决）](#十二fde-交付物激活断裂带v125-v130-已解决)
 
 ---
 
@@ -212,6 +212,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。age 加密已排 v1.3.8（见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](../SECURITY.md)）。
 - history.jsonl 存审计判定详情，A2/A9 已脱敏，其他规则 details 可能含代码片段或文件路径，敏感场景请配合外部加密卷
+- **v1.3.1 #44 披露：审计历史并发写入无文件锁**——appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的，审计历史条目通常 < 1KB，单次写入安全。但多进程同时写入（daemon 文件监控 + Agent commit）可能导致行交错，产生损坏行触发 hash chain 完整性校验失败。概率极低（审计触发频率 < 1次/分钟），但损坏会导致校验失败。未来版本计划加文件锁或改为单 writer 模式。
 
 ---
 
@@ -229,6 +230,8 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API �
 > - 历史提交中的密钥（A2 只扫当前 diff 新增行，不扫全量历史）
 >
 > **改名 + 编码/短 key 可组合绕过 A1+A2 双拦截**（如 `.env` → `app.config.js` + base64）。建议 CI 侧补 gitleaks / detect-secrets 做全量历史扫描。
+
+> **v1.3.1 披露：>5MB diff 残余缝隙**——diff-parser 对单个文件 diff 超过 5MB（maxBuffer）时置 `oversized` 标记，A2 无法扫描其内容。audit/index.ts 已对此注入 WARN（安全敏感文件名升级为 FAIL），但内容本身仍跳过——攻击者可故意构造超大 diff 藏密钥。A2 归一化已补 NFKC Unicode 处理（v1.3.1 #46），sk-* 正则已扩展连字符/下划线支持。
 
 ---
 
@@ -315,7 +318,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 696 个、全 workspace 1712 个测试（全绿，实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 701 个、全 workspace 1719 个测试（全绿，实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -392,7 +395,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 v1.0 新增 `FORGE/playbook/acceptance-test.sh`（102 个场景，含子断言），覆盖范围持续扩展：
 
-- **CI 已覆盖**：单元测试审计核心 696 个、全 workspace 1712 个测试（全绿，详见上方「测试覆盖范围」节，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 701 个、全 workspace 1719 个测试（全绿，详见上方「测试覆盖范围」节，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 164 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
@@ -520,7 +523,7 @@ ab-scheduler 连续 2 轮更好即 promote。如果 eval 场景偏窄（只测�
 
 ---
 
-## 十二、FDE 交付物激活断裂带（v1.2.5+ 解决中）
+## 十二、FDE 交付物激活断裂带（v1.2.5-v1.3.0 已解决）
 
 ### 大断裂带
 

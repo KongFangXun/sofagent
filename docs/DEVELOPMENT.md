@@ -8,7 +8,7 @@
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
-> 💡 **行业背景**：sofagent 是一个 FDE Agent——进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎（Harness 中间件）**能力底座 × 生命周期**双层架构：能力底座 = 约束层四种能力（注入·审计·回溯·进化），生命周期 = 激活链四阶段（诊断→激活→编排→执行→进化，v1.2.5+）。不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/GUIDE.md](../FDE/GUIDE.md)。
+> 💡 **行业背景**：sofagent 是一个 FDE Agent——进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎（Harness 中间件）**约束层 × 生命周期**双层架构：约束层 = 约束层四种能力（注入·审计·回溯·进化），生命周期 = 激活链四阶段（诊断→激活→编排→执行→进化，v1.2.5+）。不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/GUIDE.md](../FDE/GUIDE.md)。
 
 > 💬 **开发铁律**：sofagent 不建编辑器类交互界面。只读 Dashboard 面板（如 `dashboard.html`）例外——它是状态可视化，不做双向编辑。核心能力通过 MCP 协议暴露。Agent 首次连接时主动推送 `list_capabilities`。开发任何新功能前，先回答三个问题：（1）用户怎么通过对话发现这个能力？（2）结果推到哪？（3）用户怎么知道这个结果是 sofagent 做的，不是模型做的？——任何面向用户的输出必须带 `[sofagent]` 签名标注来源。详见 [设计哲学](./PHILOSOPHY.md)。
 
@@ -96,7 +96,7 @@
 
 > 三层闸门 + 一条回环：入境 → 每任务 → Loop → 离境。四个全走才能保证 `.sofagent/` 数据层被激活。
 
-sofagent **能力底座（约束层四种能力）** 各有分工。**审计**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义，之后 Sub Agent 自加载约束执行。两种调用路径：支持 Hook 的平台节点走内部 API，其他节点走 CLI。两者通过 think.md 交汇——审计基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
+sofagent **约束层（约束层四种能力）** 各有分工。**审计**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义，之后 Sub Agent 自加载约束执行。两种调用路径：支持 Hook 的平台节点走内部 API，其他节点走 CLI。两者通过 think.md 交汇——审计基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
 
 主 Agent 的日常：接活 → 看 `data/eval/` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE 编排收敛](./ARCHITECTURE.md#编排收敛与-ab-测试)。
 

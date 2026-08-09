@@ -17,7 +17,8 @@ export const SECRET_PATTERNS: { pattern: RegExp; label: string }[] = [
   { pattern: /sk-admin-[a-zA-Z0-9_]{40,}/, label: 'OpenAI Admin Key' },
   // 通用 sk- key（48 位匹配 OpenAI，32-47 位匹配 DeepSeek 等短 key 厂商）——
   // ⚠️ 必须保持 32+ 宽口径，勿改回严格 48(修复：ToolGate 曾放行 32-47 位）
-  { pattern: /sk-[a-zA-Z0-9]{32,}/, label: 'Possible API Key (OpenAI/DeepSeek)' },
+  // v1.3.1 #46: 扩展支持连字符/下划线（部分厂商 key 含分隔符），首字符仍限字母数字。
+  { pattern: /sk-[a-zA-Z0-9][a-zA-Z0-9_\-]{31,}/, label: 'Possible API Key (OpenAI/DeepSeek)' },
   { pattern: /gh[ps]_[A-Za-z0-9]{36}/, label: 'GitHub Token' },
 ];
 
