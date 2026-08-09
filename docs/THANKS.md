@@ -2,7 +2,7 @@
 
 > sofagent 站在巨人肩膀上。以下每一个项目、文章和作者，都在某个设计决策里留下了痕迹。
 
-> v1.2.9 · 2026-08-08 · 孔放勋
+> v1.3.0 · 2026-08-08 · 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -70,6 +70,7 @@
 - **[ChatDemo](https://github.com/OpenFDEAI/ChatDemo)** · OpenFDEAI — 以 Forward Deployed Engineer 命名售前工作流，印证 FDE 术语同源
 - **[钉钉 CTO 一粟](https://mp.weixin.qq.com/s/ljBRFFAdFHkyAiJnpkAewQ)（微信公众号：hugozhu.site）** — 数字员工、MoA 四层编排、Agent 权限治理等洞见，为 sofagent 信任模型与自主级别提供了产业一线的操作性验证
 - **[PenguinHarness](https://github.com/Prism-Shadow/penguin-harness)** · Yaowei Zheng（LlamaFactory 作者）— 开源 Agent 自我进化平台（Apache-2.0），Benchmark 评测与工具审批四模式方法论为 v1.3.x 提供设计参考
+- **[prime-agent](https://github.com/PrimeIntellect-ai/prime-agent)** · Prime Intellect — 开源 RLM 持续运行 Agent（MIT）。Continual Harness 的跨进程写保护与 RefinementEvent 证据记录，为 v1.3.3 进化链路可靠性提供设计参考
 
 ### 认知与反馈
 
