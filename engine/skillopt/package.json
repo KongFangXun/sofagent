@@ -8,7 +8,7 @@
     "sofagent-skillopt": "dist/cli.js"
   },
   "scripts": {
-    "clean": "rm -rf dist",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",
     "test": "vitest run",
     "check": "tsc --noEmit"

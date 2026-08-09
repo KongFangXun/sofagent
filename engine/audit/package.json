@@ -15,7 +15,7 @@
     "sofagent-audit-full": "dist/index.js"
   },
   "scripts": {
-    "clean": "rm -rf dist",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc && npm run copy-assets",
     "copy-assets": "cp -r src/rulesets dist/rulesets 2>/dev/null || true",
     "prepublishOnly": "npm run build && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete",
