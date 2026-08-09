@@ -17,7 +17,7 @@
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",
-    "prepublishOnly": "node -e \"require(\"fs\").rmSync(\"dist\",{recursive:true,force:true})\" &&  && npm run build && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete",
+    "prepublishOnly": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && npm run build && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete",
     "check": "tsc --noEmit",
     "test": "vitest run"
   },
