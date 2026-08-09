@@ -103,6 +103,16 @@ export interface MemoryBackend {
   type: 'mcp' | 'workbuddy';
   /** MCP server URL（type='mcp' 时必填） */
   endpoint?: string;
+  /**
+   * TencentDB-Agent-Memory 等后端的服务标识（x-tdai-service-id header）。
+   * standalone 模式默认 'local'；service 模式为部署的 service_id。
+   */
+  service_id?: string;
+  /**
+   * 知识资源 ID（knowledge_id）——TencentDB 的 wiki 或 code-graph 资源。
+   * tools/list + tools/call 都需要它定位资源。缺省时跳过可达性检查（不注册）。
+   */
+  knowledge_id?: string;
   /** 声明可用的工具列表 */
   tools: string[];
   /** 敏感度 → ACL 映射（restricted Agent 只能拿 restricted 记忆） */
