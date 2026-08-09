@@ -85,7 +85,7 @@ graph TD
 ## 目录
 
 - [术语对照](#术语对照)
-- [能力与状态总览（v1.2.9）](#能力与状态总览v129)
+- [能力与状态总览（v1.3.0）](#能力与状态总览v130)
 - [一、核心理念与架构全景](#一核心理念与架构全景)
 - [二、约束层（Harness）设计——一个层，四种能力](#二约束层harness设计一个层四种能力)
 - [三、部署与运行架构](#三部署与运行架构)
@@ -128,7 +128,7 @@ graph TD
 
 ---
 
-## 能力与状态总览（v1.2.9）
+## 能力与状态总览（v1.3.0）
 
 > 这份清单是「现在能干什么」的单一索引。约束层内部设计见 [二、约束层（Harness）设计——一个层，四种能力](#二约束层harness设计一个层四种能力)；未来方向见 [六、已知局限与未来方向](#六已知局限与未来方向)。
 
@@ -676,11 +676,11 @@ graph LR
 │ @sofagent/audit ⭐ v1.2.7                │  │ support-bundles/ ⭐   │  │ 人类（报障附件）                      │
 │   --support-bundle → generateSupportBundle│→ │   <timestamp>.zip    │→ │   （脱敏后的诊断快照）               │
 ├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ @sofagent/core ⭐ v1.2.9                 │  │ memory/ ⭐ v1.2.9     │  │ @sofagent/daemon（dream-cycle）      │
+│ @sofagent/core ⭐ v1.3.0                 │  │ memory/ ⭐ v1.3.0     │  │ @sofagent/daemon（dream-cycle）      │
 │   createMemoryStore → per-fact Markdown  │→ │   memory.json 索引   │→ │   extract-facts 写入事实级记忆       │
 │   （事实级记忆存储）                      │→ │   __default__/*.md   │→ │ @sofagent/core（search/list/delete）│
 ├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ @sofagent/daemon ⭐ v1.2.9               │  │ scheduler/ ⭐ v1.2.9  │  │ CLI（scheduler list/history）        │
+│ @sofagent/daemon ⭐ v1.3.0               │  │ scheduler/ ⭐ v1.3.0  │  │ CLI（scheduler list/history）        │
 │   createScheduler → cron/once 定时任务   │→ │   tasks.json 索引    │→ │   daemon start → getDueTasks()       │
 │   （定时任务调度器）                      │→ │   history/<id>/*.json│→ │                                     │
 └─────────────────────────────────────────┘  └──────────────────────┘  └─────────────────────────────────────┘
