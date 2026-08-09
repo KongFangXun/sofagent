@@ -1,6 +1,6 @@
 # sofagent 版本开发 SOP
 
-> **十二阶段**：审查（fresh-eyes-loop 找齐上版本 bug）→开发（先修上版本 bug，再做新功能）→基础自测（bump + build + test + shellcheck）→fresh-eyes-loop 质量循环 + 代码审核 + 验收测试→审查体系合并更新（含瘦身检查）→release-gate-loop 发版闸门→审查体系最终确认→文档收尾→工具脚本健康检查→确认关口→发布（含设备端安装）→发布后（含独立审查）。
+> **十二阶段**：审查（fresh-eyes-loop 找齐上版本 bug）→开发（先修上版本 bug，再做新功能）→基础自测（bump + build + test + shellcheck）→fresh-eyes-loop 质量循环 + 代码审核 + 验收测试→审查体系合并更新（回归清单 + 发布后审查 + 验收测试 + 版本检查脚本扩展，含瘦身检查）→release-gate-loop 发版闸门→审查体系最终确认→文档收尾→工具脚本健康检查→确认关口→发布（含设备端安装）→发布后（含独立审查）。
 > 🔴 版本号操作用 `bump-version.sh` + `check-version.sh`，禁止手动 grep/sed。
 > 🔴 文档预算分层检查（A 用户文档 / B 开发者参考 / C 审查体系 / E 指南），见 `check-docs.sh`。
 > 🔴 回归检查已升格为**独立阶段**（阶段六）——开发 session 直连预跑 acceptance-test，然后**开新监控 session** 启动 driver（sandbox 杀后台进程的 10 轮血泪已根治），driver 只负责 regression + coverage + consolidate + verdict。acceptance-test 预跑 + fresh-eyes-loop 在阶段四。
@@ -167,7 +167,7 @@
 
 ---
 
-## 🔴 阶段五：审查体系合并更新（回归清单 + 发布后审查 + 验收测试，一步完成）
+## 🔴 阶段五：审查体系合并更新（回归清单 + 发布后审查 + 验收测试 + 版本检查脚本，一步完成）
 
 > ⚠️ 本版本已开发完成，遇到的问题和情况都已清楚——**回归清单维度**、**发布后审查**和**验收测试场景**在**同一步骤**一并更新，不要拆成多步。趁记忆最新，把"修过什么"和"下次从什么角度能一眼看出"和"下次怎么能自动检出"同时写进去。
 
@@ -175,7 +175,7 @@
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 1 | **合并更新三份审查文档（三份逻辑不同，区分对待）**：<br>**① regression-checklist.md（加法）**：汇总本版本所有修复项，抽象为回归检查维度（编号递增）写入。每发现一个问题加一条——这是精确清单，膨胀靠瘦身控制<br>**② fresh-eyes-review.md（校准，不是加法）**：按下方「fresh-eyes-review 升级优化」决策树处理本版本审查中的预料外发现。**⚠️ 不要往 fresh-eyes-review 里加精确检查项**——它是留白式的直觉审查，加检查项会让它退化成第二个 regression-checklist（v1.2.0 刚从 826 行砍到 274 行修复了这个问题）<br>**③ acceptance-test.sh（可自动化验证的发现）**：如果 fresh-eyes 审查报告中的 P0/P1 问题可以通过 CLI 命令/grep/bash 自动化验证，**同步追加到 `FORGE/playbook/acceptance-test.sh`**（追加场景，编号递增）。手法与阶段四·步骤 6 Step B 相同——`scenario` 编号 + 中文注释 + 断言。**为什么需要这一步**：regression-checklist 是人工巡检用的，acceptance-test 是机器跑的——如果一个 bug 可以被自动化检出，把它只放在 regression-checklist 里等于每次发版都要人工跑一遍。让它进 acceptance-test 才能让机器替你记住。 | 当前 session | `git diff` 显示三份文档均有更新（fresh-eyes 可能无变更，见下说明）；regression 新增维度 + acceptance-test 新增场景 ≥ 本版本修复数 |
+| 1 | **合并更新四份审查文档（四份逻辑不同，区分对待）**：<br>**① regression-checklist.md（加法）**：汇总本版本所有修复项，抽象为回归检查维度（编号递增）写入。每发现一个问题加一条——这是精确清单，膨胀靠瘦身控制<br>**② fresh-eyes-review.md（校准，不是加法）**：按下方「fresh-eyes-review 升级优化」决策树处理本版本审查中的预料外发现。**⚠️ 不要往 fresh-eyes-review 里加精确检查项**——它是留白式的直觉审查，加检查项会让它退化成第二个 regression-checklist（v1.2.0 刚从 826 行砍到 274 行修复了这个问题）<br>**③ acceptance-test.sh（可自动化验证的发现）**：如果 fresh-eyes 审查报告中的 P0/P1 问题可以通过 CLI 命令/grep/bash 自动化验证，**同步追加到 `FORGE/playbook/acceptance-test.sh`**（追加场景，编号递增）。手法与阶段四·步骤 6 Step B 相同——`scenario` 编号 + 中文注释 + 断言。**为什么需要这一步**：regression-checklist 是人工巡检用的，acceptance-test 是机器跑的——如果一个 bug 可以被自动化检出，把它只放在 regression-checklist 里等于每次发版都要人工跑一遍。让它进 acceptance-test 才能让机器替你记住。<br>**④ check-version.sh（v1.3.0 起）**：本版本如果引入了新的**结构性检查点**（如 package.json 新增字段、action.yml 版本锁定、新的对外声称数字），**同步给 `tools/check-version.sh` 增加自动化检查**。check-version.sh 是发版版本号一致性的自动门禁——如果这个版本新增了一个结构性位置（新文件、新字段、新配置项），它不在 check-version.sh 的扫描范围里就是盲区。**判断标准**：如果某个检查点可以用 grep/node 解析自动判定对错 → 加进 check-version.sh；如果需要上下文判断 → 只进 regression-checklist | 当前 session | `git diff` 显示三份文档均有更新（fresh-eyes 可能无变更，见下说明）；regression 新增维度 + acceptance-test 新增场景 + check-version 新增检查项 ≥ 本版本修复数 |
 | 2 | **当前 session 逐项验证**：每条新增回归维度跑一遍命令确认可执行；确认 `fresh-eyes-review.md` 新维度与回归维度互相印证、无矛盾 | 当前 session | 所有新增维度可执行 + 两份文档互相印证 |
 
 > ✅ 完成阶段四（fresh-eyes-loop + 代码审核 + 验收测试）后，**开发 session 的文档工作已一气呵成**——回归清单 + 发布后审查全部在当前 session 更新完。接下来**阶段六在新 session 直连跑 acceptance-test.sh**（acceptance 直连绕过 sandbox kill），然后**开新监控 session 启动 driver**（只跑 regression/coverage/consolidate/verdict）。🔴 阶段六 verdict=PASS 前，开发 session 不进阶段七~八——等 PASS 回来再继续。
@@ -186,13 +186,13 @@
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 3 | **🔴 防膨胀轻量自检（每版本）**：更新完两份审查文档 + acceptance-test.sh 后，立即跑以下自检：<br>**① 行数警戒线**：`WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md)` 超 1100 → 触发深度瘦身；`WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)` 超 1850 → 触发深度瘦身<br>**② 声称一致性（v1.2.6 教训：加维度时漏改标题声称数）**：直接跑 `regression-checklist.md` 顶部「清单自身健康度自校验」代码块——它比对标题声称维度数 vs 实际 `#### ` 数。再跑 `bash tools/check-test-count.sh --quiet` 确认 acceptance 场景数声称 vs 实际一致。**🔴 禁止手动报数（"当前 49"）——硬编码基准必然漂移，本轮 v1.2.6 就是加维度 70 时漏改 L25 标题声称 49→50，靠自校验脚本才发现的。必须跑脚本拿实际值** | 当前 session | 两份文件行数均在警戒线内 + 自校验脚本 + check-test-count.sh 均全绿 |
+| 3 | **🔴 防膨胀轻量自检（每版本）**：更新完四份审查文档后，立即跑以下自检：<br>**① 行数警戒线**：`WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md)` 超 1200 → 触发深度瘦身；`WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)` 超 2000 → 触发深度瘦身（v1.3.0 起从 1100/1850 上调）<br>**② 声称一致性（v1.2.6 教训：加维度时漏改标题声称数）**：直接跑 `regression-checklist.md` 顶部「清单自身健康度自校验」代码块——它比对标题声称维度数 vs 实际 `#### ` 数。再跑 `bash tools/check-test-count.sh --quiet` 确认 acceptance 场景数声称 vs 实际一致。**🔴 禁止手动报数（"当前 49"）——硬编码基准必然漂移，本轮 v1.2.6 就是加维度 70 时漏改 L25 标题声称 49→50，靠自校验脚本才发现的。必须跑脚本拿实际值** | 当前 session | 两份文件行数均在警戒线内 + 自校验脚本 + check-test-count.sh 均全绿 |
 
 **Tier 2 — 深度瘦身（每版本，步骤 3 之后）**
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 4 | **深度瘦身—逐维度/逐场景过检查项**：<br>**回归清单（regression-checklist.md）**：① **工具覆盖？**该维度是否已被 pre-push-check.sh / check-docs.sh / acceptance-test.sh 全量覆盖 → 移除（标 `[vX.Y.Z 移除: 被XX工具覆盖]`）② **命令还跑得通？**引用的路径/CLI 名/grep 模式是否仍有效，失效 >2 版 → 移除，小修可用 → 更新 ③ **与其它维度重叠？**关键词 grep 同 section ≥50% 目标文件重叠 → 归并，主编号保留、其余降为 `# 子项:`，空闲编号回收<br>**验收脚本（FORGE/playbook/acceptance-test.sh）**：④ **重复可抽？**同一段 git 脚手架 / dist 检查 / node -e 内联 / 多行 if-else 重复 ≥3 次 → 抽为公共函数（如 `mktmp_repo`/`require_dist`/`assert_js`/`assert_rc`/`assert_grep`），场景改单行调用 ⑤ **场景可并？**相邻场景是否在做同一能力正常/异常触发 → 合并为一个场景内多断言，减场景总数膨胀 | 当前 session | 清单 ≤1100 行；脚本 ≤1850 行；归并维度有 `> 归并自：` 注释；移除维度有 `[vX.Y.Z 移除]` 标注 |
+| 4 | **深度瘦身—逐维度/逐场景过检查项**：<br>**回归清单（regression-checklist.md）**：① **工具覆盖？**该维度是否已被 pre-push-check.sh / check-docs.sh / acceptance-test.sh 全量覆盖 → 移除（标 `[vX.Y.Z 移除: 被XX工具覆盖]`）② **命令还跑得通？**引用的路径/CLI 名/grep 模式是否仍有效，失效 >2 版 → 移除，小修可用 → 更新 ③ **与其它维度重叠？**关键词 grep 同 section ≥50% 目标文件重叠 → 归并，主编号保留、其余降为 `# 子项:`，空闲编号回收<br>**验收脚本（FORGE/playbook/acceptance-test.sh）**：④ **重复可抽？**同一段 git 脚手架 / dist 检查 / node -e 内联 / 多行 if-else 重复 ≥3 次 → 抽为公共函数（如 `mktmp_repo`/`require_dist`/`assert_js`/`assert_rc`/`assert_grep`），场景改单行调用 ⑤ **场景可并？**相邻场景是否在做同一能力正常/异常触发 → 合并为一个场景内多断言，减场景总数膨胀 | 当前 session | 清单 ≤1200 行；脚本 ≤2000 行；归并维度有 `> 归并自：` 注释；移除维度有 `[vX.Y.Z 移除]` 标注 |
 | 5 | **瘦身自验证**：① 跑 `regression-checklist.md` 顶部「清单自身健康度自校验」代码块确认维度声称数 = 实际 `#### ` 数 + 行数警戒线绿 ② `bash -n FORGE/playbook/acceptance-test.sh` 语法通过 ③ 跑 `bash FORGE/playbook/acceptance-test.sh` 确认场景数不变、全 PASS ④ 跑 `bash tools/check-test-count.sh --quiet` 确认场景数声称一致 | 当前 session | 四项全 PASS |
 
 > 💡 **节奏**：每版本必跑 Tier 1（步骤 3）+ Tier 2（步骤 4-5）。因为每版都做，单次瘦身量小、负担可控——这也是 v1.1.7 的教训：验证文件一旦放任堆积，几版就会回到 3000+ 行不可维护状态。
@@ -239,9 +239,9 @@
 **风格守护自检**（每次更新 fresh-eyes-review 后必跑，防止退化）：
 
 ```bash
-# 1. 行数守护：不超过 360 行（v1.2.0 重写后基线 274 行，v1.2.8 起从 350 上调，历史教训自然增长）
+# 1. 行数守护：不超过 370 行（v1.2.0 重写后基线 274 行，v1.2.8 起从 350 上调，v1.3.0 起从 360 上调，历史教训自然增长）
 WC=$(wc -l < FORGE/playbook/fresh-eyes-review.md)
-[ "$WC" -gt 360 ] && echo "🔴 行数膨胀（$WC > 360）——检查是否在加精确检查项" || echo "✅ 行数正常（$WC）"
+[ "$WC" -gt 370 ] && echo "🔴 行数膨胀（$WC > 370）——检查是否在加精确检查项" || echo "✅ 行数正常（$WC）"
 
 # 2. 反清单化守护：不应出现精确检查命令（grep/命令式断言应为 0 或极少）
 #    fresh-eyes 的举例应该是"你可能会注意到……"，不是"跑 grep X 确认 Y"
@@ -1020,7 +1020,7 @@ bash tools/check-version.sh   # 期望：全绿
 | 二 | 开发 | 工程师 | 否 | 代码 + 随修随记的回归维度 |
 | 三 | 基础自测 | 工程师 | 否 | bump + build/test 全绿 + shellcheck + diff 核对 |
 | 四 | fresh-eyes-loop 质量循环 + 代码审核 + 验收测试 | 工程师自测 → 新 session（loop）→ 当前 session（审核+验收测试更新） | **🔴 是（步骤 1 开新 session 跑 fresh-eyes-loop）** | loop 修复 + changelog 汇总打勾 + 逐项 PASS 或 FAIL→修复 + 更新验收测试文件 |
-| 五 | 审查体系合并更新（含瘦身检查） | 当前 session | 否 | regression-checklist（加法）+ fresh-eyes-review（校准，Tier 3 守护留白风格）+ acceptance-test.sh（可自动化验证的发现追加入场景）+ 防膨胀瘦身 |
+| 五 | 审查体系合并更新（含瘦身检查） | 当前 session | 否 | regression-checklist（加法）+ fresh-eyes-review（校准，Tier 3 守护留白风格）+ acceptance-test.sh（可自动化验证的发现追加入场景）+ check-version.sh（新增结构性检查点自动门禁）+ 防膨胀瘦身 |
 | **六** | **release-gate-loop 发版闸门（开新 session，一步到位）** | **新 session：acceptance 预跑 → driver 启动 → 轮询监控 → 最终汇报** | **🔴 是（新 session 一段 prompt 跑完全部 5 步；FAIL 回阶段五循环）** | **verdict = PASS** |
 | 七 | 审查体系最终确认 | 作者 | 否 | 两份审查文档状态一致、无遗漏（初版已在阶段五写入） |
 | 八 | 开发日志定稿 + 文档收尾 | 作者 | 否 | **开发日志定稿（含发布检查清单打勾）** + CHANGELOG/ROADMAP 五步/版本号/**发版日期同步**/测试数一致性/**🔴 文档同步闭环（D6 落地：changelog 功能点→项目文档覆盖率对照）**。涉及 CLI 迁移时 shellcheck 在此补跑 |
@@ -1060,6 +1060,7 @@ bash tools/check-version.sh   # 期望：全绿
 | v1.1.8 | 网络降级策略（git push 超时时 gh release/Skill 分发不依赖 main push） | 阶段十一 |
 | v1.1.7 | changelog 章节顺序铁律（新功能在前、BugFix 在后） | 阶段一 |
 | v1.1.7 | 验证文件防膨胀瘦身（回归清单≤1000 行、acceptance-test≤1500 行） | 阶段五 |
+| v1.3.0 | 阶段五覆盖 check-version.sh 检查项扩展（不只是三份审查文档） | 阶段五 |
 | v1.1.6 | shellcheck 扫描范围与 CI 一致性（新增含 .sh 的目录须同步 find 范围） | 阶段九 |
 | v1.1.4 | acceptance-test 对新功能零覆盖（覆盖率交叉检查） | 阶段六 |
 | v1.1.4 | ClawHub 版本号从 1.0.0 自增（必须显式 `--version X.Y.Z`） | 阶段十一 |
