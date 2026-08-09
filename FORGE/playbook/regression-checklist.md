@@ -1,11 +1,11 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
-> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。v1.2.9 新增维度 75-78（check-version MCP 扫描路径 / JS RegExp (?i) 不支持 / drift 排除 .test. / 新文件版本头匹配 SSOT），归并 65+66（FORGE stream 数据处理）、73+74（ESM named export + FORGE 烟测）。
-> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：55 维（v1.2.9）
+> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。v1.2.9 新增维度 75-78（check-version MCP 扫描路径 / JS RegExp (?i) 不支持 / drift 排除 .test. / 新文件版本头匹配 SSOT），归并 65+66（FORGE stream 数据处理）、73+74（ESM named export + FORGE 烟测）。v1.3.0 新增维度 79-82（运行时审计 tool wrapper / 决策审计 HMAC 链 / 外部记忆后端 + sensitivity ACL / 进化链路写保护），归并无。v1.3.0 fresh-eyes 复审新增维度 83（license + action.yml 版本锁定）。
+> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：60 维（v1.3.0）
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1100 行（v1.2.9 起保持 1100，55 维度）、`acceptance-test.sh` ≤ 1950 行（v1.2.9 起从 1850 上调，158 场景自然增长），越线触发瘦身（releasing.md 阶段四 Tier 2）。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1200 行（v1.3.0 起从 1100 上调，59 维度）、`acceptance-test.sh` ≤ 2000 行（v1.3.0 起从 1950 上调，170 场景自然增长），越线触发瘦身（releasing.md 阶段四 Tier 2）。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
@@ -15,14 +15,14 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段四 Tier 1 警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1100 ] && echo "✅ checklist $WC_CHK (≤1100)" || echo "⚠️ checklist $WC_CHK 超 1100"
-[ "$WC_ACC" -le 1850 ] && echo "✅ acceptance $WC_ACC (≤1850)" || echo "⚠️ acceptance $WC_ACC 超 1850"
+[ "$WC_CHK" -le 1200 ] && echo "✅ checklist $WC_CHK (≤1200)" || echo "⚠️ checklist $WC_CHK 超 1200"
+[ "$WC_ACC" -le 2000 ] && echo "✅ acceptance $WC_ACC (≤2000)" || echo "⚠️ acceptance $WC_ACC 超 2000"
 ```
 ## 你的身份
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（55 项 · 编号 1–78，19 个归并/移除项已转为 HTML 注释；v1.2.9 新增 #75-78，归并 #66→#65、#74→#73）
+## 审查维度（60 项 · 编号 1–83，19 个归并/移除项已转为 HTML 注释；v1.3.0 新增 #79-83）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -1093,4 +1093,93 @@ grep 'grep.*条规则' tools/check-version.sh | grep -q '\.test\.' && echo "❌ 
 ```bash
 # 跑 check-version.sh 确认 TS 文件头版本号与 SSOT 一致（零不一致）
 bash tools/check-version.sh 2>&1 | grep "TS 文件头" | grep -q "✓" && echo "✅ 版本头一致" || echo "❌ 有不一致"
+```
+
+
+#### 79. 运行时审计 tool wrapper——gate 拦截优先于 progress 埋点（v1.3.0 新增 · 交付 1）
+
+> v1.3.0 运行时审计最小闭环：orchestrator 的 node-executor 通过 `wrapToolsWithGate` 包装每个 tool 调用，gate 在 tool 执行前调 `auditMw.check()` 拦截。**审计拦截必须在 progress 埋点之前执行**——否则 FAIL 的工具调用会先记录 progress 再被拦截，导致 audit log 与实际执行不一致。
+
+```bash
+# 子项 a: node-executor 含 wrapToolsWithGate + createToolGate
+grep -c "wrapToolsWithGate\|createToolGate" engine/orchestrator/src/node-executor.ts   # ≥2
+# 子项 b: wrapToolsWithGate 在 tools.ts 中定义
+grep -c "export function wrapToolsWithGate\|export.*wrapToolsWithGate" engine/orchestrator/src/tools.ts   # ≥1
+# 子项 c: FORGE audit-middleware.mjs 含 createAuditMiddleware + check()
+grep -c "createAuditMiddleware" FORGE/src/audit-middleware.mjs   # ≥2
+grep -c "function check(" FORGE/src/audit-middleware.mjs   # ≥1
+# 子项 d: FORGE fresh-eyes-driver loadTools 中 auditMw.check 在 progress 回调之前（防 FAIL 漏拦）
+grep -B5 -A5 "auditMw.check\|auditMiddleware.*check" FORGE/src/fresh-eyes-driver.mjs | head -15   # 人工核对：check 调用在 progress 之前
+# 子项 e: HITL 审计记录（recordHitlAudit 存在）
+grep -c "recordHitlAudit" FORGE/src/audit-middleware.mjs   # ≥1
+```
+
+
+#### 80. 决策审计——emitDecision + HMAC 签名链 + 链验证 + 查询接口（v1.3.0 新增 · 交付 6）
+
+> v1.3.0 意图层审计：每个 Agent 决策经 `emitDecision()` 写入 decision log，签名顺序为「先脱敏再 HMAC」——`sanitizeWhy(why)` 先剥离敏感内容，HMAC 基于已脱敏的 payload 计算。链式校验（prevHash）+ 三态判定（ok/tampered/unverifiable）与 audit-history 一致。
+
+```bash
+# 子项 a: decision-schema.ts 有 DecisionKind/DecisionWhy/DecisionProvenance 定义
+grep -c "DecisionKind\|DecisionWhy\|DecisionProvenance" engine/audit/src/decision-schema.ts   # ≥3
+# 子项 b: emitDecision 签名顺序——先 sanitizeWhy 再 hmacSig（防泄漏→签名泄漏）
+grep -c "sanitizeWhy\|hmacSig\|recordForSig" engine/audit/src/decision-log.ts   # ≥3
+# 子项 c: 签名基于脱敏后 payload（prevHash/hashVersion/hmacSig 排除后计算）
+grep "recordForSig.*prevHash.*undefined\|recordForSig.*hmacSig.*undefined" engine/audit/src/decision-log.ts   # 期望：有匹配
+# 子项 d: decision-chain.ts 含链式验证 + 三态（ok/tampered/unverifiable）
+grep -c "'ok'\|'tampered'\|'unverifiable'" engine/audit/src/decision-chain.ts   # ≥3
+# 子项 e: decision-query.ts 查询接口存在（queryByKind/traceBack/getHighFrequencyPatterns）
+grep -c "export function" engine/audit/src/decision-query.ts   # ≥3
+# 子项 f: envFingerprint 在签名 payload 中（防止跨环境篡改）
+grep -c "envFingerprint" engine/audit/src/decision-log.ts   # ≥1
+```
+
+
+#### 81. 外部记忆后端——动态 tool 注册 + sensitivity ACL 映射（v1.3.0 新增 · 交付 10）
+
+> v1.3.0 MCP 记忆后端：`getDynamicTools()` 从 config 读取 `memory_backends` 配置，动态注册 search/write tool。每个后端有独立的 sensitivity ACL——`mapSensitivityToACL()` 将 agent 的 sensitivity level 映射到后端可见范围。dynamic tools 与 static tools 合并注入 MCP server。
+
+```bash
+# 子项 a: getDynamicTools 函数存在 + 返回 DynamicToolDef[]
+grep -c "getDynamicTools\|DynamicToolDef" engine/mcp/src/tools/memory-backend.ts   # ≥2
+# 子项 b: mapSensitivityToACL 存在
+grep -c "mapSensitivityToACL" engine/mcp/src/tools/memory-backend.ts   # ≥2
+# 子项 c: registerMemoryBackends 从 config 读取注册
+grep -c "registerMemoryBackends" engine/mcp/src/tools/memory-backend.ts   # ≥1
+# 子项 d: mcp-server.ts 合并 static + dynamic tools
+grep -c "\.\.\.TOOLS.*getDynamicTools\|\.\.\.getDynamicTools" engine/mcp/src/mcp-server.ts engine/mcp/src/tool-registry.ts   # ≥1
+# 子项 e: sensitivity ACL 不泄露 restricted（mapSensitivityToACL 对 restricted 后端返回空/过滤）
+grep -A5 "mapSensitivityToACL" engine/mcp/src/tools/memory-backend.ts | grep -c "restricted\|internal\|public"   # ≥1
+```
+
+
+#### 82. 进化链路写保护——atomicWriteWithMergeSync 原子合并 + 锁机制（v1.3.0 新增 · 交付 11）
+
+> v1.3.0 进化链路安全：think.md / entities/ 等进化产物写入必须经 `atomicWriteWithMergeSync()`——先读现有内容→深度合并新数据→写临时文件→原子 rename。锁机制防止并发写入冲突。**进化链路的写入不允许裸 writeFileSync，必须经过原子合并入口。**
+
+```bash
+# 子项 a: atomicWriteWithMergeSync 存在
+grep -c "atomicWriteWithMergeSync" engine/core/src/shared/atomic-write.ts   # ≥1
+# 子项 b: 使用 writeFileSync→tmp→renameSync 原子模式（非裸写）
+grep -c "writeFileSync(tmp\|renameSync(tmp" engine/core/src/shared/atomic-write.ts   # ≥2
+# 子项 c: 锁机制存在（lockfile + PID）
+grep -c "lock\|PID\|process\.pid" engine/core/src/shared/atomic-write.ts   # ≥2
+# 子项 d: mergeDeep 深度合并函数存在
+grep -c "mergeDeep\|deepMerge" engine/core/src/shared/atomic-write.ts   # ≥1
+# 子项 e: think.md 写入路径使用 atomicWriteWithMergeSync（而非裸 writeFileSync）
+grep -rn "writeFileSync.*think\.md\|writeFile.*think\.md" engine/ --include="*.ts" | grep -v node_modules | grep -v dist | grep -v __tests__ | grep -v "atomic-write"   # 期望：零命中（think.md 写入须经 atomicWriteWithMergeSync）
+```
+
+
+#### 83. 开源元数据完整性——package.json license + action.yml 版本锁定（v1.3.0 新增 · fresh-eyes run-21 P1-8/P1-10）
+
+> v1.3.0 fresh-eyes run-21 发现两个开源元数据缺陷：① package.json 缺少 `license` 字段（MIT 开源仓库缺 license 是硬伤）② action.yml 引用 `@sofagent/audit` 未锁定版本号（会导致 GitHub Action 拉到不兼容版本）。两者都是 check-version.sh 此前未覆盖的结构性检查点。
+
+```bash
+# 子项 a: package.json 含 license 字段
+node -e "const p=require('./package.json'); console.log(p.license || 'MISSING')"   # 期望：MIT（非 MISSING）
+# 子项 b: action.yml 中 @sofagent/* 引用全部锁定到 vX.Y.Z（不能裸引用）
+grep -E '@sofagent/' action.yml | grep -vE '@sofagent/[a-z-]+@[0-9]+\.[0-9]+\.[0-9]+'   # 期望：零命中（裸引用 = 未锁定）
+# 子项 c: action.yml 锁定版本 = SSOT 版本号
+grep -oE '@sofagent/[a-z-]+@[0-9]+\.[0-9]+\.[0-9]+' action.yml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | sort -u   # 期望：仅一个版本号 = SSOT
 ```

@@ -353,4 +353,9 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 - **Mermaid 图跟正文不一致**——正文说"一底座·三引擎"（4 节点），Mermaid 图画了 5 个节点（审计引擎重复了一次）。**教训：改了正文概念要回头检查 Mermaid 图是否对应**
 - **迁移注释当结构**——VALIDATION 开头写"§十~十一 原属 PHILOSOPHY，§十二 原 ARCHITECTURE §七"——读者打开就知道这是拼盘。**教训：文档迁移后要建立自己的主线叙事，不能留迁移注释当结构骨架**
 
+**v1.3.0 新增经验（fresh-eyes run-21 过程中暴露）**：
+
+- **假阳性 clean——a-consolidate 硬熔断后 findings 丢失**——run-21 报 `2-rounds-clean`，但实际 a-consolidate 3 轮全撞工具预算硬上限，findings 被丢弃后输出空列表。driver 停止逻辑看到"空 findings"判定 clean，不知道是"真 clean"还是"全丢了"。**教训：停止条件必须校验每轮 agent 是否正常退出，否则"全丢了"会被误判为"干净了"**
+- **开源元数据盲区**——审查视角没覆盖 `package.json license` 缺失和 `action.yml` 版本锁定。无 license = 默认"保留所有权利"，未锁定版本 = GitHub Action 拉到不兼容版本。**教训："开源审查员"和"npm 用户"视角应保持对 license 和依赖版本锁定的敏感**
+
 这些方向值得你保持**额外敏感**——但不要把它们当成清单。你今天发现的问题可能完全不在这个列表上。**那才是最值钱的发现。**
