@@ -168,7 +168,7 @@ graph TD
 
 ### 已排期（开发中或即将开发，详见 ROADMAP）
 
-Dashboard Web 前端（仅控制图数据层已落）· 完整多设备协同 L2 / 组织能力市场 · 并行编排 DAG 波次并行（v1.3.1）· Ontology 升级为可运行推理底座 + 国标对齐（v1.3.1）· **Benchmark 评测体系 + 工具审批模式（v1.3.1 · PenguinHarness 方法论借鉴）** · **引擎接口外化完整版（v1.3.6 · workflow 标准格式/ontology 注册/训练语料导出/托管 SDK/模型注册——模型层 AIR 接入前置）** · SubAgent 完整沙箱（v1.3.7）· 代理网关 + 静态加密（v1.3.8）· meta-harness 多 harness 编排（v1.3.9）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
+Dashboard Web 前端（`dashboard.html` 单文件控制台已落：驾驶舱/FDE 引导/AI 节点/本体结构/知识库/工具箱 6 页 + `tools/serve-dashboard.mjs` 服务，读 `data/` 实时数据 + 示例降级；工作明细数据层 v1.3.9 + Web 工作明细页 v1.4.0）· 完整多设备协同 L2 / 组织能力市场 · 并行编排 DAG 波次并行（v1.3.1）· Ontology 升级为可运行推理底座 + 国标对齐（v1.3.1）· **Benchmark 评测体系 + 工具审批模式（v1.3.1 · PenguinHarness 方法论借鉴）** · **引擎接口外化完整版（v1.3.6 · workflow 标准格式/ontology 注册/训练语料导出/托管 SDK/模型注册——模型层 AIR 接入前置）** · SubAgent 完整沙箱（v1.3.7）· 代理网关 + 静态加密（v1.3.8）· meta-harness 多 harness 编排（v1.3.9）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
 
 ---
 
@@ -395,7 +395,7 @@ graph LR
 | 5 | 改前改后值 | 对比才能判断影响 | 🟡 v1.3.8 补全（需差异快照） |
 | 6 | 是否可回滚 | 有回滚路径才能撤销 | 🟡 回溯引擎有，日志未显式标记 |
 
-字段 5/6 是当前缺口——git diff 隐含改前值但不显式记录，回滚路径存在但审计日志未标记。v1.3.0 运行时审计 middleware 和 v1.4.0 审计日志存储补齐后，六项字段将完整覆盖。离开 Foundry 这类平台的统一权限模型后，这六项必留痕是不可省的工程门槛——平台原生留痕通常只含时点、数据版本、经手应用三项，不含操作主体、改前改后值与回滚标记。
+字段 5/6 是当前缺口——git diff 隐含改前值但不显式记录，回滚路径存在但审计日志未标记。v1.3.0 运行时审计 middleware 和 v1.3.8 审计日志存储补齐后（差异快照 + WAL，见上表），六项字段将完整覆盖。离开 Foundry 这类平台的统一权限模型后，这六项必留痕是不可省的工程门槛——平台原生留痕通常只含时点、数据版本、经手应用三项，不含操作主体、改前改后值与回滚标记。
 
 > 📖 来源：OWASP LLM Top 10 2025（LLM06:2025）/ Microsoft Security Blog 2026-07-16「Least Privilege for AI Agents」/ SAP Architecture Center ref-arch 137800 / Palantir Foundry 官方文档（Ontology 留痕能力对照）
 
