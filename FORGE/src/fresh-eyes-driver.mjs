@@ -2172,7 +2172,17 @@ function writeFallbackFindings(roundDir) {
   }
   writeFileSync(join(roundDir, 'result.md'), resultContent, 'utf-8');
 
-  console.log(`     降级 findings.md 已写入（check 提取 ${extracted.length} 条可修 finding）`);
+  // v1.3.0 run-23 修复：写独立降级标记文件 degraded.flag。
+  // 降级标记不能只存在 result.md——a-verify 步骤会覆盖 result.md（回填 verify 列），
+  // 把"降级生成"文本抹掉 → parseStopCondition 读到干净 result.md → 降级轮被误判
+  // isClean=true（run-23 R1 实测）。flag 与 result.md 解耦，a-verify 覆盖不影响。
+  // parseStopCondition 优先查 flag；文本标记匹配保留做旧 run 数据兼容。
+  const degradedFlag = join(roundDir, 'degraded.flag');
+  writeFileSync(degradedFlag,
+    `fallback-rebuild\nreason: a-consolidate 产物解析失败，由 check 报告降级重建\ntime: ${new Date().toISOString()}\nfindings: ${extracted.length}\n`,
+    'utf-8');
+
+  console.log(`     降级 findings.md 已写入（check 提取 ${extracted.length} 条可修 finding，degraded.flag 已标记）`);
 }
 
 /**
@@ -2228,7 +2238,15 @@ function parseStopCondition(roundDir) {
   // run-05 教训：4 个 worker 全崩 → 降级写 3 行模板占位 →
   // parseStopCondition 数正则标记全是 0 → isClean=true → 连续 2 轮误判"成功完成"。
   // 占位文件内容特征：包含"崩溃""降级占位""worker 异常终止""a-consolidate 失败"等标记。
+  //
+  // v1.3.0 run-23 修复：优先查独立降级标记文件 degraded.flag——文本标记存在 result.md
+  // 里会被 a-verify 覆盖抹掉（run-23 R1 实测降级轮被误判 isClean=true）。flag 与
+  // result.md 解耦，任何下游覆盖都不影响。文本标记匹配保留做旧 run 数据兼容（取或）。
   let isDegraded = false;
+  const degradedFlagPath = join(roundDir, 'degraded.flag');
+  if (existsSync(degradedFlagPath)) {
+    isDegraded = true;
+  }
   const degradedMarkers = [
     '崩溃（降级占位）',
     'worker 异常终止',
@@ -2236,16 +2254,18 @@ function parseStopCondition(roundDir) {
     'b-fix 降级（未完成）',
     '降级占位',
   ];
-  for (const filePath of [findingsPath, resultPath]) {
-    if (!existsSync(filePath)) continue;
-    const text = readFileSync(filePath, 'utf-8');
-    for (const marker of degradedMarkers) {
-      if (text.includes(marker)) {
-        isDegraded = true;
-        break;
+  if (!isDegraded) {
+    for (const filePath of [findingsPath, resultPath]) {
+      if (!existsSync(filePath)) continue;
+      const text = readFileSync(filePath, 'utf-8');
+      for (const marker of degradedMarkers) {
+        if (text.includes(marker)) {
+          isDegraded = true;
+          break;
+        }
       }
+      if (isDegraded) break;
     }
-    if (isDegraded) break;
   }
 
   // 碎片内容假阳性干净——check 产物最小内容阈值检查
