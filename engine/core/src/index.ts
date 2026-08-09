@@ -18,14 +18,47 @@ export type { BaselineRuleKey } from './shared/rule-constants';
 // v1.2.5: 扩展为全规则共享库——新增 REDACTION_PATTERNS / DOMAIN_WHITELIST / DANGEROUS_SCRIPT_CMDS
 export { SECRET_PATTERNS, REDACTION_PATTERNS, DOMAIN_WHITELIST, DANGEROUS_SCRIPT_CMDS } from './shared/secret-patterns';
 
-// ── v1.2.5 §3.1: Agent 身份码轻量版 ──
+// ── v1.2.5 §3.1: Agent 身份码轻量版 → v1.3.1 交付 6 Ed25519 完整版 ──
 export {
   generateAgentIdentity,
   computeFingerprint,
   computeShortCode,
   extractConstraintsFromPrompt,
+  generateEd25519KeyPair,
+  buildSignaturePayload,
+  signIdentityPayload,
+  verifyAgentIdentity,
 } from './agent-identity';
-export type { AgentIdentity } from './agent-identity';
+export type { AgentIdentity, Ed25519KeyPair } from './agent-identity';
+
+// ── v1.3.1 交付 6: Agent 身份注册表 ──
+export {
+  registerIdentity,
+  getIdentity,
+  listIdentities,
+  revokeIdentity,
+  getIdentityStorePath,
+} from './identity-store';
+export type { IdentityRecord, ListIdentitiesOptions } from './identity-store';
+
+// ── v1.3.1 交付 12: stop_reason 六值分类 + 指数退避 ──
+export {
+  classifyError,
+  isRetryableStopReason,
+  backoffDelayMs,
+  BACKOFF_SCHEDULE_MS,
+  MAX_RETRY_COUNT,
+} from './stop-reason';
+export type { StopReason } from './stop-reason';
+
+// ── v1.3.1 交付 11: LLM 调用级 Trace ──
+export {
+  appendLlmCallRecord,
+  readLlmCallTrace,
+  verifyLlmCallChain,
+  getLlmCallTracePath,
+} from './llm-call-trace';
+export type { LlmCallTraceInput, LlmCallRecord, LlmCallTraceFilter } from './llm-call-trace';
 
 // ── 环境变量统一读取（SOFAGENT_* 主名 + 旧名别名兜底）──
 export { resolveEnvVar, resolveEnvBool, resolveEnvNumber } from './shared/env';
@@ -123,9 +156,9 @@ export {
 } from './config/watch-config';
 export type { WatchConfig, CronJob } from './config/watch-config';
 
-// ── 模型客户端 ──
-export { callModelAPI } from './model-client';
-export type { ModelCallOptions, ModelMessage } from './model-client';
+// ── 模型客户端（v1.3.1：stop_reason 分类 + 退避重连 + 错误收敛） ──
+export { callModelAPI, convergeToolError, ModelCallError } from './model-client';
+export type { ModelCallOptions, ModelMessage, ConvergedToolError } from './model-client';
 
 // ── 日志读取 ──
 export {

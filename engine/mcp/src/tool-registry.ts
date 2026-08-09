@@ -304,4 +304,15 @@ export const TOOLS: ToolDef[] = [
       },
     },
   },
+  {
+    // v1.3.1 (交付 6)：Agent 独立身份码查询（Ed25519 完整版）
+    name: 'agent_identity',
+    description: '查询 Agent 身份码（v1.3.1 Ed25519 完整版）——无参数查自己，传 agent_id 查他人。返回委托人/约束版本/责任声明/公钥/签名验证结果（不含私钥）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        agent_id: { type: 'string', description: '目标 Agent 身份码（缺省 = 查自己）' },
+      },
+    },
+  },
 ];
