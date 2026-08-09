@@ -10,7 +10,7 @@
 >
 > v1.3.0 run-21 更新（2026-08-09）：**产物完整性校验（防"假成功"）**、并行工具调用硬熔断超发、步骤级工具预算、LEDGER 假阳性污染四项新坑位
 >
-> v1.3.0 run-22/23 更新（2026-08-09）：finding-NN 格式铁律（分类段落切 0 finding 假绿）、worker 写完产物不退出 → driver 永久 await（process.exit + spawn 超时兜底）
+> v1.3.0 run-22/23 更新（2026-08-09）：finding-NN 格式铁律（分类段落切 0 finding 假绿）、worker 写完产物不退出 → driver 永久 await（process.exit + spawn 超时兜底）、降级标记持久化（degraded.flag 防 a-verify 覆盖抹标记）
 
 ## 本文档定位
 
@@ -79,6 +79,7 @@
 - [ ] **result.md 必须用 finding-NN 结构**（分类段落 `### 🔴 P0 阻塞项` 切 0 finding 假绿；兜底 prompt 强制 + 检测扩展）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
 - [ ] **worker 写完产物必须显式 process.exit(0)**（残留句柄让事件循环不清空 → 进程不退出 → driver 永久 await；心跳正常≠流程在走）（[四·worker 不退出](./driver.md#worker-写完产物不退出--driver-永久-awaitv130-run-23)）
 - [ ] **spawn 子进程必须配超时兜底**（30 分钟 SIGKILL + resolve 124，防任何 worker hang 卡死 driver）（[四·worker 不退出](./driver.md#worker-写完产物不退出--driver-永久-awaitv130-run-23)）
+- [ ] **降级状态独立持久化**（degraded.flag，勿放会被下游覆盖的产物里——a-verify 覆盖 result.md 抹掉标记致假绿）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
 - [ ] **连续 2 轮降级直接 error 退出**（[四·连续降级](./driver.md#连续降级-error-退出)）
 - [ ] **硬熔断 break 后 stream.return()**（防幽灵请求）（[四·stream.return](./driver.md#streamreturn-防幽灵api-请求)）
 - [ ] **每个步骤 try/catch + 降级兜底**（[四·失败路径容错](./driver.md#失败路径容错)）
@@ -159,6 +160,7 @@
 | 08-09 | d152f1d2 | 并行 tool_call 回合边界检查超发 + 步骤级工具预算（a-consolidate 60/80） | P1 | 四·并行超发 |
 | 08-09 | 30c31afe | result.md 分类段落格式切 0 finding 假绿（finding-NN 格式铁律 + 检测扩展） | P0（假阳性） | 四·产物完整性校验 |
 | 08-09 | 3b99a853 | worker 写完产物不退出 → driver 永久 await 18 分钟（process.exit + spawn 30min 超时兜底） | P0（卡死） | 四·worker 不退出 |
+| 08-09 | 33bbb6eb | a-verify 覆盖 result.md 抹掉降级标记 → 降级轮假绿（degraded.flag 持久化） | P0（假阳性） | 四·产物完整性校验 |
 
 ### 历史坑位索引
 
@@ -192,6 +194,7 @@
 | 26 | 并行 tool_call 让硬熔断超发（45 实际撞 48-60）+ 必读文件多须步骤级预算 | 四·并行超发 |
 | 27 | result.md 分类段落格式（### 🔴 P0 阻塞项）切 0 finding 假绿 | 四·产物完整性校验 |
 | 28 | worker 写完产物不退出（残留句柄）→ driver 永久 await，心跳正常≠流程在走 | 四·worker 不退出 |
+| 29 | a-verify 覆盖 result.md 抹掉降级标记 → 降级轮假绿 | 四·产物完整性校验（degraded.flag） |
 
 ### 关键设计决策速查
 
