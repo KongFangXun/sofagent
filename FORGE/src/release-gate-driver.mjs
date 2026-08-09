@@ -608,6 +608,8 @@ async function runWorker(step, runDir, target) {
     '--- driver 注入 ---',
     `本次验证对象 = sofagent ${target} 完整交付物`,
     `项目根目录 = ${REPO_ROOT}`,
+    // v1.3.0 修复：acceptance shard 动态注入实际场景范围（覆盖模板写死的旧范围文字）
+    stepDef.shard ? `你负责的实际场景范围 = S${stepDef.shard.start} 到 S${stepDef.shard.end}（以本注入为准，忽略 prompt 模板中写死的范围数字）` : '',
     inputPaths ? `输入文件（已由 driver 中转）：\n${inputPaths}` : '',
     `Changelog 路径 = ${changelogPath}`,
     `产物输出路径（把你的输出写到这个文件）：\n${outputPaths}`,

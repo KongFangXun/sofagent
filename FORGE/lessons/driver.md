@@ -391,3 +391,28 @@ node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9 2>&1
 4. 检查命令的豁免逻辑（历史文档目录、运行时文件、HOME 部署路径）是误报最高发区，新增检查项时先想豁免
 
 > **判定流程**：release-gate FAIL → 零信任复核（亲手跑）→ 产品 bug？修代码 ：命令 bug？修 checklist → 重跑验证全绿
+
+---
+
+### 🔴 确定性判定优先：别让 LLM 解读能确定性解析的日志（v1.3.0 run-21）
+
+> **来源**（release-gate run-21，2026-08-09）：acceptance 实际 PASS（241/0/241，exit 0），但 acceptance-consolidate worker 误判 FAIL，F 修复链对假 FAIL 空跑一轮。
+
+**LLM 解读预跑日志的三个误判模式**：
+1. **grep exit code 幻觉**：worker 跑 `grep -c "EXIT"` 无匹配 → 命令 exit 1 → worker 把**自己 grep 命令的退出码**当成验收脚本退出码，幻觉「EXIT: 1」——日志里根本无此字样。
+2. **不懂领域设计**：acceptance 场景编号非连续是设计（编号间有缺失），worker 把不存在的编号当「9 个场景验收证据缺失」。
+3. **WARN ≠ FAIL**：S028 输出 `⚠️ WARN`，worker 当缺陷上报。
+
+**铁律**：**能用确定性规则判定的结果，不要让 LLM 去解读**——脚本日志的总结行是权威（如「验收测试结果：N 通过 / M 失败」+「✅ 全部通过」），driver 用正则直接判定（PASS/FAIL），LLM 解读只做日志不可解析时的兜底。
+
+**🔴 ANSI 坑**：shell 脚本输出带颜色码（`验收测试结果：\x1b[0;32m241 通过\x1b[0m`）——数字与文字间插着 `\x1b[...m` 转义，直接正则匹配失败。**解析脚本日志前必须先剥离 ANSI**：`raw.replace(/\x1b\[[0-9;]*m/g, '')`。
+
+---
+
+### 🔴 F 链收敛要回写权威产物（verdict.md 同步）
+
+> **来源**（release-gate run-21）：V 阶段 verdict.md 写 FAIL → F 修复链收敛（f-audit 通过）→ driver 变量改 PASS → loop-end 写 PASS——但 **verdict.md 文件还是 FAIL 文本**，监控端读文件(FAIL) 与 status.json(PASS) 矛盾。
+
+**铁律**：**driver 内部状态变量变化后，必须回写承载该状态的权威产物文件**——否则文件与 status 不一致，监控端/下游拿到的结论互相矛盾。F 链收敛 PASS 时向 verdict.md 追加「F 修复链收敛」记录（保留 V 阶段 FAIL 依据可追溯，不覆盖）。
+
+> 与「degraded.flag 持久化」是姊妹篇：一个说"状态别放会被下游覆盖的文件"，一个说"状态变化要回写权威文件"——**跨步骤状态的一致性是 driver 编排的核心责任**。
