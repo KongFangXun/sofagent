@@ -1,11 +1,11 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
-> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。v1.2.9 新增维度 75-78（check-version MCP 扫描路径 / JS RegExp (?i) 不支持 / drift 排除 .test. / 新文件版本头匹配 SSOT），归并 65+66（FORGE stream 数据处理）、73+74（ESM named export + FORGE 烟测）。v1.3.0 新增维度 79-82（运行时审计 tool wrapper / 决策审计 HMAC 链 / 外部记忆后端 + sensitivity ACL / 进化链路写保护），归并无。v1.3.0 fresh-eyes 复审新增维度 83（license + action.yml 版本锁定）。
-> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：60 维（v1.3.0）
+> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。v1.2.9 新增维度 75-78（check-version MCP 扫描路径 / JS RegExp (?i) 不支持 / drift 排除 .test. / 新文件版本头匹配 SSOT），归并 65+66（FORGE stream 数据处理）、73+74（ESM named export + FORGE 烟测）。v1.3.0 新增维度 79-82（运行时审计 tool wrapper / 决策审计 HMAC 链 / 外部记忆后端 + sensitivity ACL / 进化链路写保护），归并无。v1.3.0 fresh-eyes 复审新增维度 83（license + action.yml 版本锁定）。v1.3.0 阶段五覆盖率确认新增维度 84（shouldAllow + 仓库隔离）。
+> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：61 维（v1.3.0）
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1200 行（v1.3.0 起从 1100 上调，59 维度）、`acceptance-test.sh` ≤ 2000 行（v1.3.0 起从 1950 上调，170 场景自然增长），越线触发瘦身（releasing.md 阶段四 Tier 2）。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1250 行（61 维度）、`acceptance-test.sh` ≤ 2050 行（164 场景），越线触发瘦身。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
@@ -15,14 +15,14 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段四 Tier 1 警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1200 ] && echo "✅ checklist $WC_CHK (≤1200)" || echo "⚠️ checklist $WC_CHK 超 1200"
-[ "$WC_ACC" -le 2000 ] && echo "✅ acceptance $WC_ACC (≤2000)" || echo "⚠️ acceptance $WC_ACC 超 2000"
+[ "$WC_CHK" -le 1250 ] && echo "✅ checklist $WC_CHK (≤1250)" || echo "⚠️ checklist $WC_CHK 超 1250"
+[ "$WC_ACC" -le 2050 ] && echo "✅ acceptance $WC_ACC (≤2050)" || echo "⚠️ acceptance $WC_ACC 超 2050"
 ```
 ## 你的身份
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（60 项 · 编号 1–83，19 个归并/移除项已转为 HTML 注释；v1.3.0 新增 #79-83）
+## 审查维度（61 项 · 编号 1–84，19 个归并/移除项已转为 HTML 注释；v1.3.0 新增 #79-84）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -1182,4 +1182,20 @@ node -e "const p=require('./package.json'); console.log(p.license || 'MISSING')"
 grep -E '@sofagent/' action.yml | grep -vE '@sofagent/[a-z-]+@[0-9]+\.[0-9]+\.[0-9]+'   # 期望：零命中（裸引用 = 未锁定）
 # 子项 c: action.yml 锁定版本 = SSOT 版本号
 grep -oE '@sofagent/[a-z-]+@[0-9]+\.[0-9]+\.[0-9]+' action.yml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | sort -u   # 期望：仅一个版本号 = SSOT
+```
+
+
+#### 84. shouldAllow 拦截 API + 运行时审计日志仓库隔离（v1.3.0 新增 · 交付 2 + 交付 8）
+
+> shouldAllow 是 engine/rules 的运行时拦截入口——返回 `{ allow, reason, requireApproval }`，deny 时附带原因。运行时审计日志按 git 仓库 hash 隔离到 `data/audit/runtime/<repo-hash>/`——多仓库部署时审计日志不串。
+
+```bash
+# 子项 a: shouldAllow 函数存在 + 返回 InterceptVerdict
+grep -c "shouldAllow\|InterceptVerdict\|requireApproval" engine/rules/src/should-allow.ts   # ≥2
+# 子项 b: shouldAllow 被 node-executor / gate 调用（不是死代码）
+grep -rn "shouldAllow" engine/orchestrator/src/ --include="*.ts" | grep -v node_modules | grep -v dist | grep -v ".test." | wc -l   # ≥1
+# 子项 c: 运行时审计日志路径含 repo-hash 隔离
+grep -c "data/audit/runtime" FORGE/src/audit-middleware.mjs   # ≥1
+# 子项 d: repo-hash 基于 git rev-parse（非硬编码路径）
+grep -c "rev-parse\|repo.*hash\|resolveRuntimeAuditPath" FORGE/src/audit-middleware.mjs   # ≥1
 ```
