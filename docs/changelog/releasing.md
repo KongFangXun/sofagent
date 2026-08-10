@@ -143,19 +143,19 @@
 >
 > 先读 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按协议执行：
 >
-> 1. 后台启动 driver——🔴 必须用 Bash 工具的 run_in_background: true + dangerouslyDisableSandbox: true（否则三层进程嵌套会被 sandbox SIGKILL，run-01~03 血泪教训；🔴 禁止用 nohup+disown，WorkBuddy 会清理脱离 session 的后台进程，run-07~11 教训）：
->    node FORGE/src/fresh-eyes-driver.mjs --target {实际版本号} --max-rounds 10
+> 1. 后台启动 driver——🔴 必须用 Bash 工具的 run_in_background: true + dangerouslyDisableSandbox: true（否则三层进程嵌套会被 sandbox SIGKILL，run-01~03 血泪教训；🔴 禁止用 nohup+disown，WorkBuddy 会清理脱离 session 的后台进程，run-07~11 教训）：<br>🔴 **输出必须重定向到日志文件，禁止管道截断**（如 `\| head`）：`node FORGE/src/fresh-eyes-driver.mjs --target {实际版本号} --max-rounds 10 > /tmp/fresh-eyes-{实际版本号}-run.log 2>&1`——管道截断会 SIGPIPE 杀死 driver（v1.3.1 run-02 血泪教训：`\| head -20` 启动 12 秒后 driver 静默死亡，runDir 停在 round-start 无产出）
 > 2. 记住 runDir（启动日志第一行打印的路径，格式如 `~/.sofagent/data/forge-runs/fresh-eyes-loop/<date>/run-XX/`）
 > 3. **在 session 内持续轮询**——每 120 秒一个工作周期，每个周期做两件事：
 >    ① 读 `<runDir>/status.json` 看 phase 变化，phase 变化时一句话汇报（如"审查第 2 轮进行中""B 模型修复中"）
 >    ② 读 `status.json` 的 `heartbeat` 字段时间戳——如果距今 > 90 秒，说明 driver 可能已死（SIGKILL 绕过所有 handler），用 `pgrep -f "fresh-eyes-driver"` 确认进程是否存活：无输出 = 已死，汇报死亡并退出；有输出 = 活着，继续轮询
 >    phase 不变且 heartbeat 正常 → 继续轮询。session 要一直在转，不要 sleep 空转——每 120 秒就是一个工作周期
-> 4. phase 变成 completed 或 error 时，读最终报告，用 2-3 行汇报：轮数 + 停止原因 + 最终 P0/P1/P2 计数
+> 4. phase 变成 completed 或 error 时，读最终报告，用 2-3 行汇报：轮数 + 停止原因 + 最终 P0/P1/P2 计数 + **是否 isDegraded**（v1.3.1 run-01 教训：降级轮的 finding 大量误报——install.sh rm -rf 有守卫/npm pack 实测成功/24 规则实体在 audit 包存在，四例全为 worker cwd 错误导致的假 finding；降级轮结论不可信，必须明确标注，由主 session 人工核实，**不要自行修复**——修复是 driver 内部 b-fix 步骤的职责，监控 session 只汇报）
 >
 > 铁律：修复只本地 commit、绝不 push；不要干涉 driver 内部、不要探索项目源码——你只做启动 + 持续轮询监控 + 汇报。
 > ```
 >
 > ⚠️ **AI 输出 prompt 时必须替换的占位符**：`{项目实际路径}`（如 `/path/to/your-project/sofagent`）、`{实际版本号}`（如 `v1.2.5`）。输出前检查：prompt 中不得残留任何花括号占位符。prompt 中的监控协议细节（heartbeat 检测、轮询节奏）是"不读 SKILL.md 就一定踩坑"的关键约束，必须内联——不能只依赖新 session 的 AI 自己去读 SKILL.md。
+> ⚠️ **v1.3.1 补充：prompt 必须带前置状态说明**——若本轮 loop 之前有降级/废弃的 run，输出 prompt 时在开头加 2-3 行背景（哪个 run 为何废弃、哪些修复已提交、旧 finding 为何不可信）。新 session 的 AI 没有本 session 上下文，不给背景它会把旧 run 的产物当真相（v1.3.1 run-01→run-02 教训：监控 session 曾想"核实并修复"降级轮的假 finding，实际修复是 driver 内部 b-fix 的职责）。
 
 | 2 | **🔴 汇总 fresh-eyes-loop 修复并整合 changelog（human-in-the-loop）**：loop（步骤 1）跑完后，用户以 `fresh-eyes-review.md` 方法论为参考**人肉**复核，① 汇总 loop 所有的 bug 修改，整合到本版本 changelog 开发日志（`docs/changelog/v<major>.<minor>/vX.Y.Z.md`）；② 将 loop 全部修复计入本版本 changelog 并打勾——此时所有修复仍本地未推，这是设计内正确状态 | 本版本 changelog 的「发布检查清单」含 loop 全部修复项且全部 `[x]`，开发日志已整合 loop 全部 bug 修改 |
 | 3 | **逐项核对 changelog 每一项**（含 fresh-eyes-loop 修复项） | 当前 session | 逐文件读源码/diff，逐项确认改动存在且正确，标记 PASS/FAIL |
