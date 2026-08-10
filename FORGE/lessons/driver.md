@@ -509,3 +509,13 @@ node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9 2>&1
 **铁律**：**driver 内部状态变量变化后，必须回写承载该状态的权威产物文件**——否则文件与 status 不一致，监控端/下游拿到的结论互相矛盾。F 链收敛 PASS 时向 verdict.md 追加「F 修复链收敛」记录（保留 V 阶段 FAIL 依据可追溯，不覆盖）。
 
 > 与「degraded.flag 持久化」是姊妹篇：一个说"状态别放会被下游覆盖的文件"，一个说"状态变化要回写权威文件"——**跨步骤状态的一致性是 driver 编排的核心责任**。
+
+### F 修复链"audit 通过 = 收敛 = PASS"逻辑漏洞（v1.3.1 release-gate run-10）
+
+**场景**：V 阶段裁决 FAIL（acceptance 2 项阻塞），driver 启动 F 修复链；F 跑 f-audit 检测代码违规，无 VIOLATIONS → driver 判定"收敛" → 把 V 的 FAIL 翻成 PASS。
+
+**根因**：`f-audit` 检测的是**代码违规**（git diff 跑审计规则），而 V 阶段 verdict.md 列的阻塞项是**验收测试基础设施缺陷**（输出编码/汇总行）——两者是完全不同的维度。F 修复链的 audit 通过只能证明"代码没有 VIOLATIONS"，不能证明"verdict 列的阻塞项已修复"。
+
+**修复方向**（待实现）：F 修复链收敛条件应该是"重跑 V 阶段 verdict 从 FAIL 变 PASS"，而非"f-audit 无 VIOLATIONS"。当前逻辑把 audit（代码违规检测）和 verdict（验收阻塞裁决）混为一谈。
+
+**临时缓解**：人工核实——driver 报 PASS 但 status.json results 含 FAIL 时，必须读 verdict.md 确认 V 阶段裁决的真实状态，不信任 F 修复链的 FAIL→PASS 翻转。
