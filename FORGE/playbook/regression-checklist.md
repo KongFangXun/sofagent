@@ -1004,17 +1004,17 @@ grep -q "Current version" tools/check-version.sh && echo "✓ 英文检查已覆
 bash tools/check-version.sh 2>&1 | grep "中英文"
 ```
 
-#### 70. MCP tool 注册三处一致性——新增 tool 必须在 tools 数组 + case dispatch + capabilities 三处都注册（v1.2.6 新盲区）
+#### 70. MCP tool 注册三处一致性——新增 tool 必须在 tool-registry + case dispatch + capabilities 三处都注册（v1.2.6 新盲区 · v1.3.1 修：跟上 v1.2.9 tool-registry.ts 拆分）
 
-> v1.2.6 教训：新增 4 个 MCP tool（daemon_status / list_agents / list_concepts / hitl_resolve）时，每个 tool 必须在 mcp-server.ts 的三个位置同步注册：① `import` 行 + tools 数组 `name:` 声明 ② `case` dispatch 分支 ③ `toolListCapabilities` 描述。漏任一处 → tool 对外不可见或调用报 not found。验收测试 scenario 192 已覆盖此检查。
+> v1.2.6 教训：新增 MCP tool 时每个 tool 必须在三处同步注册。v1.2.9 mcp 拆分后工具注册从 mcp-server.ts 迁移到 **tool-registry.ts**（`import { TOOLS } from './tool-registry'`）——原检查命令查 mcp-server.ts 的 name: 字段恒得 0（架构迁移后该字段已移走），需改查 tool-registry.ts。验收测试 scenario 192 已覆盖此检查。
 
 ```bash
-# 验证三处注册点数量一致
+# v1.3.1 修：跟上 v1.2.9 架构迁移（mcp-server.ts → tool-registry.ts）
 IMPORTS=$(grep -cE "import.*from.*'./(tools/)?" engine/mcp/src/mcp-server.ts | head -1)
-TOOLS_ARRAY=$(grep -cE "name:\s*'" engine/mcp/src/mcp-server.ts)
+TOOLS_ARRAY=$(grep -cE "name:\s*'" engine/mcp/src/tool-registry.ts)   # v1.3.1：改查 tool-registry.ts
 CASES=$(grep -cE "case '" engine/mcp/src/mcp-server.ts)
 echo "imports=$IMPORTS tools_array=$TOOLS_ARRAY cases=$CASES"
-# 期望：三者数量接近一致（tools_array 含历史 tool，但不应有 import 的 tool 缺 case）
+# 期望：tools_array（tool-registry.ts）≈ imports（mcp-server.ts 引用） + cases（dispatch）
 # v1.2.8 补充：check-version.sh 的 MCP tool count 正则须精确匹配独立行
 # 错误正则 name: '[a-z_]+' 会匹配 capabilities 数组内联条目（54 误报 vs 实际 27）
 # 正确正则 ^\s+name: '[a-z_]+',$（行首缩进+逗号结尾=独立声明行）

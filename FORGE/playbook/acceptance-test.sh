@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# 🔴 v1.3.1 release-gate run-10 教训：强制 UTF-8 编码——release-gate sandbox
+# 默认 LANG=C 导致场景 165 中文输出 ANSI 乱码 + 日志末尾截断，driver 无法解析结果。
+# 显式 export 确保 release-gate-loop（spawn 子进程）继承 UTF-8 环境。
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离 + v1.2.5 激活链Phase1 + v1.2.5 审计加固A20-A23 + v1.2.5 daemon可靠性 + v1.2.5 多设备前置 + v1.2.9 短任务化 + checkpoint/resume worker级 + PM2 + HITL + mcp拆分 + 叙事重构 + 入口产品
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
@@ -2194,5 +2199,11 @@ $S244_OK && pass "L4 经验层渐进加载（热点全文 + 索引摘要 ≤150 
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+# 🔴 v1.3.1 release-gate run-10 教训：补 ANSI-stripped 纯文本汇总行
+# driver 用 grep 解析验收结果，上面带 ANSI 色码的行 grep 不稳定（场景 165 截断后丢失）。
+# 此行无色码，格式固定，driver 能可靠 grep 到：
+#   EXIT: 0          （全 PASS）
+#   EXIT: <N>        （N 个失败）
+echo "SUMMARY: ${PASSED}/$((PASSED + FAILED)) passed · EXIT: ${FAILED}"
 if [ "$FAILED" -gt 0 ]; then echo -e "${RED}❌ 有 $FAILED 个场景失败，请修复后再发版${NC}"; exit "$FAILED"
 else echo -e "${GREEN}✅ 全部通过，可以进入发版流程${NC}"; exit 0; fi
