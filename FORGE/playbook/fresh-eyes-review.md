@@ -38,7 +38,7 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 
 ---
 
-### 🧑‍💻 视角一：陌生人
+### 🧑‍💻 视角一 [1]：陌生人
 
 你在 GitHub Explore 或技术群里看到了这个项目。你没听过它，不知道作者是谁。你只是好奇——点进去了。
 

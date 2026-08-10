@@ -30,7 +30,7 @@ cleanup() { cd "$ORIG_DIR" 2>/dev/null || true; [ -n "$TMP_REPO" ] && [ -d "$TMP
 trap cleanup EXIT
 WRAPPER_DIR=$(mktemp -d /tmp/sofagent-wrapper-XXXX)
 mkdir -p "$WRAPPER_DIR/bin"
-printf '#!/bin/bash\nexec node "%s/dist/index.js" "$@"\n' "$AUDIT_DIR" > "$WRAPPER_DIR/bin/sofagent-audit"
+printf '#!/usr/bin/env bash\nexec node "%s/dist/index.js" "$@"\n' "$AUDIT_DIR" > "$WRAPPER_DIR/bin/sofagent-audit"
 chmod +x "$WRAPPER_DIR/bin/sofagent-audit"
 export PATH="$WRAPPER_DIR/bin:$PATH"
 WRAPPER_CLEANUP="$WRAPPER_DIR"
@@ -192,7 +192,7 @@ $MIGRATION_PASS && pass || fail "旧版 sofagent pre-commit 未被清理 或 com
 scenario 17 "post-commit hook 正常触发 + --no-verify 绕不过"
 $CLI --install-hook > /dev/null 2>&1
 cat > "$TMP_REPO/.git/hooks/post-commit" << 'POSTHOOK'
-#!/bin/bash
+#!/usr/bin/env bash
 # sofagent post-commit hook v1.0.8
 if ! command -v node &>/dev/null; then exit 0; fi
 if command -v sofagent-audit &>/dev/null; then AUDIT_CMD="sofagent-audit"
