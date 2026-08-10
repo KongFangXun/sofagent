@@ -880,9 +880,12 @@ echo "=== 17. MCP 工具数一致性 ==="
 MCP_SRC_DIR="${PROJECT_ROOT}/engine/mcp/src"
 SKILL_FILE="${PROJECT_ROOT}/SKILL/SKILL.md"
 if [[ -d "${MCP_SRC_DIR}" ]] && [[ -f "${SKILL_FILE}" ]]; then
-  # v1.2.9 功能⑤：mcp-server.ts 拆分后工具定义在 tool-registry.ts + resources.ts
-  # 只扫这两个文件（不递归整个 src/，否则会数到测试 mock 和 response schema 的 name 字段）
-  REGISTERED_COUNT=$(cat "${MCP_SRC_DIR}/tool-registry.ts" "${MCP_SRC_DIR}/resources.ts" 2>/dev/null | grep -oE "name: '[^']+'" | sed "s/.*name: '//;s/'//" | sort -u | wc -l | tr -d ' ')
+  # v1.2.9 功能⑤：mcp-server.ts 拆分后工具定义在 tool-registry.ts（TOOLS 数组）+ resources.ts
+  # v1.3.2 P0-R4 修正：tools/list 实际返回 [...TOOLS, ...getDynamicTools()]（动态工具默认空），
+  #   权威计数 = tool-registry.ts 的 TOOLS 数组顶层 name（不含 resources.ts——资源不是工具，
+  #   旧实现把 4 个 resource 也算进去导致 39 虚高；旧 grep 只扫 tools/*.ts 又低估为 29）。
+  # 只数 tool-registry.ts 顶层 name:（4 空格缩进开头，避免嵌套 schema 字段误计）
+  REGISTERED_COUNT=$(grep -oE "^    name: '[^']+'" "${MCP_SRC_DIR}/tool-registry.ts" 2>/dev/null | sed "s/.*name: '//;s/'//" | sort -u | wc -l | tr -d ' ')
   # 从 SKILL.md 提取标题中声称的工具数
   SKILL_CLAIMED=$(grep -oE '[0-9]+ tools' "${SKILL_FILE}" | grep -oE '^[0-9]+' | head -1)
   if [[ -n "$SKILL_CLAIMED" ]] && [[ "$SKILL_CLAIMED" != "$REGISTERED_COUNT" ]]; then
