@@ -19,7 +19,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——27 个 tool（不含 4 个 resource shortcut）
+ * 完整工具清单——35 个 tool（v1.3.2 修正：按 name+description 配对实测；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
