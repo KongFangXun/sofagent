@@ -48,13 +48,17 @@ function sampleRecord(
   finalStatus: string,
   node = 'engineer',
   phase: 'before' | 'after' = 'before',
+  /** 可选时间偏移（毫秒），用于保证两个 checkpoint 的 savedAt 有明确先后 */
+  timeOffsetMs = 0,
 ): import('../graph/checkpoint').CheckpointRecord {
+  const d = new Date();
+  if (timeOffsetMs) d.setTime(d.getTime() + timeOffsetMs);
   return {
     schemaVersion: 'v1',
     checkpointId,
     phase,
     node,
-    savedAt: new Date().toISOString(),
+    savedAt: d.toISOString(),
     state: sampleState({ checkpointId, finalStatus }),
   };
 }
@@ -98,8 +102,11 @@ describe('Durable L1 · checkpoint 扫描与状态恢复（v1.3.1 交付 4）', 
 
   it('resumePendingLoops：有 pending → resumeFn 被调用一次（最近一个）', async () => {
     const cp = new FileCheckpointer(checkpointDir);
-    cp.save(sampleState({ checkpointId: 'older-running' }), 'engineer', 'before');
-    cp.save(sampleState({ checkpointId: 'latest-running' }), 'audit', 'after');
+    // 🔴 savedAtOverride 保证明确时间序（CI 同毫秒排序问题）
+    const olderTime = new Date(Date.now() - 1000).toISOString();
+    const latestTime = new Date().toISOString();
+    cp.save(sampleState({ checkpointId: 'older-running' }), 'engineer', 'before', { savedAtOverride: olderTime });
+    cp.save(sampleState({ checkpointId: 'latest-running' }), 'audit', 'after', { savedAtOverride: latestTime });
 
     const resumeFn = vi.fn().mockResolvedValue({ finalStatus: 'completed', state: {}, checkpointId: 'latest-running', retryCount: 0 });
     const summary = await resumePendingLoops({ checkpointDir, resumeFn });
