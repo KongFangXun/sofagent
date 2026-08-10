@@ -128,6 +128,26 @@ export type {
 export { runMergeGate } from './worktree-merge-gate';
 export type { MergeGateOptions, MergeGateResult, MergeGateStatus } from './worktree-merge-gate';
 
+// v1.3.1 交付 3：并行编排（ParallelScheduler / 波次卡关 / MergeQueue）
+export { ParallelScheduler } from './loop/parallel-scheduler';
+export type {
+  ParallelTask,
+  ParallelTaskResult,
+  ParallelWaveResult,
+  ParallelSchedulerOptions,
+} from './loop/parallel-scheduler';
+export { runWaveMergeGate, isMergeGatePass } from './loop/merge-gate';
+export type {
+  WaveWorktree,
+  WaveGateDecision,
+  WaveGateOptions,
+} from './loop/merge-gate';
+export { MergeQueue } from './loop/merge-queue';
+export type {
+  MergeQueueItem,
+  DuplicatePushPolicy,
+} from './loop/merge-queue';
+
 // Conflict Resolver（v1.2.3 · merge 文本冲突仲裁）
 export {
   resolveWorktreeConflict,

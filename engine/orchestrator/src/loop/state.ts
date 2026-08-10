@@ -34,8 +34,18 @@ export interface SessionGoalState {
  * StateGraph 节点名
  * v1.2.2 P4：新增 'plan'（Planner 节点，START → plan → engineer）
  * v1.2.4 P2b：新增 'checker'（多类型 Checker 节点，audit → checker → reviewer）
+ * v1.3.1 交付 3：新增 'parallel_wave'（并行波次节点——并行模式可选路径，
+ *   默认串行不经过；plan 条件路由 parallel_wave / engineer）
  */
-export type LoopNodeName = 'plan' | 'engineer' | 'audit' | 'checker' | 'reviewer' | 'human_confirm' | 'goal_eval';
+export type LoopNodeName =
+  | 'plan'
+  | 'engineer'
+  | 'audit'
+  | 'checker'
+  | 'reviewer'
+  | 'human_confirm'
+  | 'goal_eval'
+  | 'parallel_wave';
 
 /**
  * Planner 产出的子任务（v1.2.2 P4）

@@ -53,6 +53,10 @@ import {
   type CheckerResult,
   type ControlledLoopMode,
 } from './checker-nodes';
+// v1.3.1 交付 3：并行波次（可选路径）——调度器 + worktree 隔离底座
+import { ParallelScheduler, type ParallelTask } from './parallel-scheduler';
+import type { WaveGateOptions } from './merge-gate';
+import { createWorktree, type WorktreeHandle } from '../worktree-isolation';
 
 /**
  * v1.2.9 运行时守卫——从 CheckpointRecord.state（Record<string, unknown>）安全恢复为 LoopGraphState。
@@ -112,6 +116,26 @@ export interface LoopGraphOptions {
   dataDir?: string;
   /** 依赖注入覆盖（测试用） */
   deps?: Partial<LoopGraphDeps>;
+  /**
+   * v1.3.1 交付 3：并行编排开关（可选路径）。
+   * true → plan 后进 parallel_wave 节点（并行 SubAgent + worktree 隔离 + 波次卡关）；
+   * false/缺省 → 保持 v1.3.0 串行路径零变化。
+   */
+  parallel?: boolean;
+  /** v1.3.1 交付 3：并行波次依赖注入（测试用——mock runSubAgent / worktree 工厂） */
+  parallelWave?: ParallelWaveDeps;
+}
+
+/** 并行波次可注入依赖（makeParallelWaveNode 消费） */
+export interface ParallelWaveDeps {
+  /** SubAgent 执行函数（测试 mock；生产由调用方注入） */
+  runSubAgent?: (task: ParallelTask, handle: WorktreeHandle) => Promise<{ status: 'success' | 'error'; output: string; error?: string }>;
+  /** worktree 工厂（测试 mock；默认 createWorktree） */
+  createWorktreeFn?: typeof createWorktree;
+  /** 主仓库根目录（默认 process.cwd()） */
+  repoRoot?: string;
+  /** 波次卡关选项（mergeFn 可注入 mock） */
+  gateOptions?: WaveGateOptions;
 }
 
 /**
@@ -189,6 +213,83 @@ function routeFromStart(state: LoopGraphState): LoopNodeName {
 }
 
 /**
+ * v1.3.1 交付 3：plan 之后的条件路由（并行可选路径）。
+ *
+ * 并行模式 + Planner 产出了子任务 → 进 parallel_wave（波次并发分发）；
+ * 其余（串行模式 / 无子任务）→ 保持 v1.3.0 行为进 engineer。
+ */
+function routeAfterPlan(state: LoopGraphState, parallelEnabled: boolean): 'parallel_wave' | 'engineer' {
+  if (parallelEnabled && state.artifacts.subtasks.length > 0) {
+    return 'parallel_wave';
+  }
+  return 'engineer';
+}
+
+/**
+ * v1.3.1 交付 3：parallel_wave 节点——并行波次分发 + 波次卡关汇总。
+ *
+ * 读取 plan 产出的 artifacts.subtasks → 交给 ParallelScheduler.dispatchWave
+ * （并发 SubAgent + worktree 隔离 + merge-gate 审计卡关）→ 把波次结果
+ * （到达序重排后的产出 + 卡关决策摘要）合并进 artifacts，交给下游 audit 节点。
+ *
+ * 审计语义：merge-gate 是每分支的 guard edge（FAIL → 丢弃 worktree）；
+ * 下游既有 audit 节点对「已合并的产出」做聚合审计——双层卡关。
+ */
+function makeParallelWaveNode(deps: LoopGraphDeps, pw: ParallelWaveDeps = {}) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return async (state: LoopGraphState): Promise<any> => {
+    const subtasks = state.artifacts.subtasks ?? [];
+    if (subtasks.length === 0) {
+      // 无子任务——退化串行（路由层会回 engineer；这里只留痕）
+      const note = 'parallel_wave: Planner 未产出子任务，退化串行';
+      deps.log(`⚠️ ${note}`);
+      return {
+        artifacts: {
+          engineerOutput: note,
+          auditReport: note,
+        },
+      };
+    }
+
+    const scheduler = new ParallelScheduler({
+      repoRoot: pw.repoRoot ?? process.cwd(),
+      task: state.artifacts.task,
+      runSubAgent: pw.runSubAgent,
+      createWorktreeFn: pw.createWorktreeFn,
+      gateOptions: pw.gateOptions,
+      log: deps.log,
+    });
+
+    // Planner 子任务 → 并行任务（taskId = 子任务 id，数组序 = 原始调用序）
+    const tasks: ParallelTask[] = subtasks.map((s, i) => ({
+      taskId: s.id,
+      agentId: `engineer-${i + 1}`,
+      task: s.description,
+    }));
+
+    deps.log(`🔀 parallel_wave: 分发 ${tasks.length} 个并行任务`);
+    const wave = await scheduler.dispatchWave(tasks);
+
+    // 进模型上下文前重排回原始调用序（MergeQueue 保证上下文序不被打乱）
+    const reordered = wave.queue.reordered();
+    const outputs = reordered
+      .map((item) => `[${item.result.agentId}] ${item.result.status}: ${item.result.output}`)
+      .join('\n');
+    const waveReport = wave.decision.summary;
+    deps.log(`🏁 ${waveReport}`);
+
+    return {
+      artifacts: {
+        engineerOutput: outputs,
+        auditReport: waveReport,
+        engineerOutputs: [...state.artifacts.engineerOutputs, outputs],
+        auditReports: [...state.artifacts.auditReports, waveReport],
+      },
+    };
+  };
+}
+
+/**
  * v1.2.7: goal_eval 之后的条件路由：
  *   completed/blocked → END（goal 已满足/无法满足）
  *   running + goal CONTINUE → engineer（继续下一轮）
@@ -226,8 +327,16 @@ function withCheckpoint<S extends LoopGraphState>(
  * 组装 LOOP StateGraph（编译后的可执行图）
  * v1.2.2 P4：新增 plan 节点（START → plan → engineer）+ audit 降级链五分支
  * v1.2.4 P2b：新增 checker 节点（audit PASS/WARN → checker → reviewer）
+ * v1.3.1 交付 3：新增 parallel_wave 节点（并行可选路径）——
+ *   parallel=true 时 plan 条件路由进 parallel_wave（波次并发分发 + 卡关），
+ *   否则保持 v1.3.0 串行路径零变化（plan → engineer）。
+ *
+ * @param deps LOOP 依赖
+ * @param options 构建选项（parallel 开关 + parallelWave 注入）
  */
-export function buildLoopGraph(deps: LoopGraphDeps) {
+export function buildLoopGraph(deps: LoopGraphDeps, options: { parallel?: boolean; parallelWave?: ParallelWaveDeps } = {}) {
+  const parallelEnabled = options.parallel === true;
+
   const graph = new StateGraph(LoopStateAnnotation)
     .addNode('plan', withCheckpoint('plan', deps.checkpointer, makePlanNode({
       runPlannerDecide: deps.runPlannerDecide ?? defaultRunPlannerDecide,
@@ -244,6 +353,8 @@ export function buildLoopGraph(deps: LoopGraphDeps) {
     .addNode('checker', withCheckpoint('checker', deps.checkpointer, makeCheckerNode(deps)))
     // v1.2.7: goal_eval 节点（每轮后评估 SessionGoal 是否满足）
     .addNode('goal_eval', withCheckpoint('goal_eval' as LoopNodeName, deps.checkpointer, makeGoalEvalNode(deps)))
+    // v1.3.1 交付 3：parallel_wave 节点（并行可选路径；串行模式不路由到它）
+    .addNode('parallel_wave', withCheckpoint('parallel_wave' as LoopNodeName, deps.checkpointer, makeParallelWaveNode(deps, options.parallelWave)))
     .addConditionalEdges(START, routeFromStart, {
       plan: 'plan',
       engineer: 'engineer',
@@ -251,9 +362,16 @@ export function buildLoopGraph(deps: LoopGraphDeps) {
       checker: 'checker',
       reviewer: 'reviewer',
       human_confirm: 'human_confirm',
+      parallel_wave: 'parallel_wave',
     })
-    .addEdge('plan', 'engineer')
+    // v1.3.1 交付 3：plan 条件路由——并行模式 + 有子任务 → parallel_wave；否则串行 engineer
+    .addConditionalEdges('plan', (state) => routeAfterPlan(state, parallelEnabled), {
+      parallel_wave: 'parallel_wave',
+      engineer: 'engineer',
+    })
     .addEdge('engineer', 'audit')
+    // v1.3.1 交付 3：并行波次完成后统一送审计节点（聚合审计）
+    .addEdge('parallel_wave', 'audit')
     .addConditionalEdges('audit', routeAfterAudit, {
       engineer: 'engineer',
       checker: 'checker',
@@ -329,7 +447,10 @@ export async function runLoopGraph(
   options: LoopGraphOptions = {}
 ): Promise<LoopGraphResult> {
   const deps = buildDeps(options);
-  const app = buildLoopGraph(deps);
+  const app = buildLoopGraph(deps, {
+    parallel: options.parallel === true,
+    parallelWave: options.parallelWave,
+  });
 
   const checkpointId = FileCheckpointer.newCheckpointId();
   deps.log(`🔁 LOOP StateGraph 启动 · checkpointId=${checkpointId}`);
@@ -527,7 +648,10 @@ export async function resumeLoopGraph(
     `♻️ 从 checkpoint 恢复 · checkpointId=${record.checkpointId} · 入口节点=${entry}（${record.phase}@${record.node}）`
   );
 
-  const app = buildLoopGraph(deps);
+  const app = buildLoopGraph(deps, {
+    parallel: options.parallel === true,
+    parallelWave: options.parallelWave,
+  });
   const resumedInitial: LoopGraphState = { ...restoreState(record), resumeFrom: entry };
   const finalState = (await app.invoke(resumedInitial, {
     recursionLimit: RECURSION_LIMIT,
