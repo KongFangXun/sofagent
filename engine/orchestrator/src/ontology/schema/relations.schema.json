@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "sofagent://ontology/schema/relations.schema.json",
+  "title": "relations（对齐内核契约 CORE-LNK）",
+  "description": "对象间关联关系的机器可读 Schema（v1.3.1 交付 1）。CORE-LNK 要求每条链接声明 direction（方向）+ cardinality（基数）。兼容两种形态：① 简化形态——entity frontmatter 的 relations 对象（belongs_to/has_many 等键 → 目标名数组，方向与基数由键名隐含）；② 完整形态——显式声明 direction + cardinality 的关系条目数组（v1.3.6 标准接口）。",
+  "definitions": {
+    "relationEntry": {
+      "type": "object",
+      "required": ["target", "direction", "cardinality"],
+      "properties": {
+        "target": {
+          "type": "string",
+          "minLength": 1,
+          "description": "关系目标对象名"
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["outgoing", "incoming", "bidirectional"],
+          "description": "链接方向（CORE-LNK 必填）"
+        },
+        "cardinality": {
+          "type": "string",
+          "enum": ["one-to-one", "one-to-many", "many-to-one", "many-to-many"],
+          "description": "链接基数（CORE-LNK 必填）"
+        },
+        "description": {
+          "type": "string",
+          "description": "关系说明（可选）"
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "title": "简化形态（entity frontmatter relations）",
+      "type": "object",
+      "properties": {
+        "belongs_to": { "type": "array", "items": { "type": "string" } },
+        "has_many": { "type": "array", "items": { "type": "string" } },
+        "depends_on": { "type": "array", "items": { "type": "string" } },
+        "produces": { "type": "array", "items": { "type": "string" } },
+        "consumes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    {
+      "title": "完整形态（显式 direction + cardinality）",
+      "type": "array",
+      "items": { "$ref": "#/definitions/relationEntry" }
+    }
+  ]
+}
