@@ -143,6 +143,8 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 ## 探索方向
 
+> 探索方向 = 想到了但还没排进具体版本的方向。已交付的见[迭代历程](#迭代历程)，已排期的见[版本规划](#版本规划)。
+
 | 方向 | 一句话 |
 |------|------|
 | PE/VC 多企业审计仪表盘 | 投后管理场景——所有被投企业的 AI 审计数据汇总到一个面板 |
@@ -151,34 +153,25 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | ATTRIBUTION 归因引擎（v2.x） | 追踪审计决策→业务指标的因果链，依赖已交付的 v1.3.1 跨设备审计聚合数据积累 |
 | Dream Sandbox 沙盒审计（v2.x） | Agent 操作先在平行空间模拟运行，人类审批后点「合并」才生效——约束从事后升级为事前（来源：Palantir AIP） |
 | **自带净水设备的水龙头（v3.x+ 远景）** | Subagent 支持挂载外部精调小模型（引擎层提供路由与加载插槽），零投喂、本地推理、离线可用 |
-| **Onboard Agent（FORGE 产品化）** | L1 已交付（v1.3.1），L2-L5 排期 v1.3.2（见版本规划表） |
-| **Refine Agent（FORGE 产品化第三刀）** | 排期 v1.3.3（见版本规划表） |
-| **workflow 批量自动生成 + 主 agent 编排（PenguinHarness 启发）** | 排期 v1.3.2 + v1.3.3（见版本规划表） |
 | 国标 Agent 审计对位 | 关注国家 AI 智能体互联标准草案进展，标准正式发布后评估对齐 |
-| 异步长任务自治 | daemon 从文件监控升级为长任务自主运行 |
-| 双闸验证 | 工具执行前 gate + 执行后副作用复查 |
-| Agent 疲劳度检测 | 监控上下文窗口污染和决策质量衰减信号 |
-| **可视化 DAG 画布（DataFlow 启发）** | Dashboard 补「workflow 可视图」——会话 Agent 与 DAG 画布实时同步同一 pipeline 表示（v2.x 远景） |
-| **Ontology I/O schema 硬化（DataFlow 启发）** | 本体从目录级升级为带 JSON Schema 校验的约束图——Validation Engine（DAG 无环 + schema 兼容），节点输入/输出形状约束。Schema 定义已交付（v1.3.1）、注册接口规划于 v1.3.6，Validation Engine 部分 v1.3.x 后期（与「本体结构 = GitHub 生长树」的根系工程化合并） |
-| **MCP 暴露 ontology/audit（DataFlow 启发）** | 对外 MCP server 暴露算子注册表 / pipeline 状态 / audit 数据给 Agent——v1.3.6 规划中（`ontology_import` + `workflow_submit` + D1-D5 审计），剩余 audit 数据对外暴露面 v1.3.x 后期补全 |
-| **GEPA / MemEx / RLM 评估（Omnigent 路线图参考）** | Omnigent 路线图四项（GEPA 自动优化 / MemEx 持久记忆 / RLM 强化学习 / Server MCP）方向值得在 v2.x 评估框架时参考——跟踪其落地后再对齐，不抢跑 |
-| **SkillScan 安全扫描器（DeerFlow 启发）** | 安装第三方 Skill 前静态扫描注入/越权风险（v1.3.x 后期） |
-| **Agentic Browser / Playwright（DeerFlow 启发）** | Agent 驱动浏览器做端到端操作，与「智能 E2E 测试 Agent」探索同源（v1.3.x 后期） |
-| **TUI / Dashboard / 对话分支（DeerFlow 启发）** | 终端 UI + 可视化面板 + 对话分支回溯（v2.x 远景） |
-| **spec-first 硬禁令（OpenFDE 启发 · 最高优先）** | 单一事实源——transcript 永不直驱代码，spec 才是唯一驱动（设计约束） |
-| **decisions.jsonl 判断时刻日志（OpenFDE 启发 · 最高优先）** | 每次判断落 `{kind, moment, why, spec_ref}`，决策审计底座（v1.3.x 意图审计） |
-| **分级降级梯队（OpenFDE 启发 · 最高优先）** | console→TUI→spec 逐级降级，workflow never stops（韧性设计） |
-| **Durable Execution（Pydantic AI 启发）** | 长任务 checkpoint 续跑——与回溯引擎互补（回溯=向后回滚，Durable=向前续跑），L1+L2 已交付（v1.3.1），L3 WAL 排 v1.3.8 |
+| 异步长任务自治 | daemon 从文件监控升级为长任务自主运行（候选落点：v1.3.8 Durable L3 配套） |
+| 双闸验证 | 工具执行前 gate + 执行后副作用复查（候选落点：v1.3.5 运维闭环） |
+| Agent 疲劳度检测 | 监控上下文窗口污染和决策质量衰减信号（候选落点：v1.3.5 运维闭环） |
+| **可视化 DAG 画布（DataFlow 启发 · v2.x 远景）** | Dashboard 补「workflow 可视图」——会话 Agent 与 DAG 画布实时同步同一 pipeline 表示 |
+| **Ontology Validation Engine（DataFlow 启发）** | Schema 已交付（v1.3.1）+ 注册接口排期（v1.3.6），Validation Engine（DAG 无环 + schema 兼容）尚未排期——与「本体结构 = GitHub 生长树」的根系工程化合并 |
+| **MCP 暴露 audit 数据对外（DataFlow 启发）** | v1.3.6 已排期 ontology/workflow 暴露面，audit 数据对外暴露面尚未排期 |
+| **GEPA / MemEx / RLM 评估（Omnigent 路线图参考 · v2.x）** | Omnigent 路线图四项（GEPA 自动优化 / MemEx 持久记忆 / RLM 强化学习 / Server MCP）方向值得在 v2.x 评估框架时参考——跟踪其落地后再对齐，不抢跑 |
+| **SkillScan 安全扫描器（DeerFlow 启发）** | 安装第三方 Skill 前静态扫描注入/越权风险（候选落点：v1.3.4 L3 组织能力市场——第三方 Skill 安全扫描天然落点） |
+| **Agentic Browser / Playwright（DeerFlow 启发）** | Agent 驱动浏览器做端到端操作，与「智能 E2E 测试 Agent」探索同源（候选落点：v1.3.3 L2 协作协议——端到端操作能力） |
+| **TUI / Dashboard / 对话分支（DeerFlow 启发 · v2.x 远景）** | 终端 UI + 可视化面板 + 对话分支回溯 |
+| **spec-first 硬禁令（OpenFDE 启发 · 设计约束）** | 单一事实源——transcript 永不直驱代码，spec 才是唯一驱动 |
+| **decisions.jsonl 判断时刻日志（OpenFDE 启发）** | 每次判断落 `{kind, moment, why, spec_ref}`——v1.3.0 已交付 emitDecision（决策审计 MVP），完整版 judgment log 候选落点：v1.3.5 意图审计扩展 |
+| **分级降级梯队（OpenFDE 启发）** | console→TUI→spec 逐级降级，workflow never stops（韧性设计，候选落点：v1.3.5 运维闭环） |
 
 > 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./VALIDATION.md)。
 
 | 借鉴项 | 说明 |
 | --- | --- |
-| **运行时审计接入点（已交付 v1.3.0 · LangGraph middleware）** | wrapToolCall middleware 包 createReactAgent，把 tool-gate 规则升级为运行时拦截 + 审计日志——v1.3.0 已交付，后续 v1.3.7 扩展为完整沙箱 |
-| **EnkryptAI Secure MCP Gateway（v1.3.7-1.3.8 · 开源借力）** | pre_model_hook / post_model_hook 安全护栏，audit_only 模式 |
-| **LiteLLM 控制平面（v1.3.7 · 开源借力）** | 开源 LLM gateway：成本追踪 / 预算 / 路由 / 护栏 |
-| **OpenWorker 权限模型（设计启发）** | 四级权限 + 命令白名单 + 无人值守收件箱（详见 [VALIDATION](./VALIDATION.md)）——尚未排进具体版本 |
-| **bubblewrap / seatbelt 沙箱（v1.3.7-1.3.9 · 开源借力）** | OS 级沙箱原语（Linux bwrap+seccomp / macOS seatbelt），SubAgent 沙箱底座 |
 | **MLflow agent 评估（v2.x · 开源借力）** | 50+ agent 评估指标 + LLM-as-Judge，FORGE 评估框架参考 |
 
 > 以下「分层模型架构」为探索方向的核心技术骨架概述。当前版本（v1.2.x）未涉及，v3.x 才启动。
