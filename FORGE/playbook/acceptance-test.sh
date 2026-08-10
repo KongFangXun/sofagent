@@ -8,7 +8,7 @@ export LC_ALL=en_US.UTF-8
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离 + v1.2.5 激活链Phase1 + v1.2.5 审计加固A20-A23 + v1.2.5 daemon可靠性 + v1.2.5 多设备前置 + v1.2.9 短任务化 + checkpoint/resume worker级 + PM2 + HITL + mcp拆分 + 叙事重构 + 入口产品
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
 # 场景数：177 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
-#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 240 为编号上限，非场景数；S197 归并至 S164；v1.3.0 新增 S225-S230；v1.3.1 新增 S231-S240
+#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 244 为编号上限，非场景数；S197 归并至 S164；v1.3.0 新增 S225-S230；v1.3.1 新增 S241-S244（国标/CRUD/审计聚合/L4）+ S201/S202 归并（--doctor+--repair）
 #   ⚠️ 口径注意（P2-31）：底部输出的「$PASSED 通过」是**断言通过数**（含跳过的场景也计 PASS），
 #   与「164 场景」不同——164 是 scenario 定义数，PASSED 可能 >164（条件跳过的场景也 +1）。
 #   文档引用 162 时指 scenario 定义数；引用「XXX 通过」时指断言通过数，勿混用。
