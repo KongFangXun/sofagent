@@ -258,18 +258,20 @@ describe('sanitizeRecord', () => {
 
   it('脱敏 fields 中的 macOS 用户路径', () => {
     // 测试：/Users/xxx/ 路径被替换为 [USER_PATH]
+    // v1.3.2 P0-R1: 动态生成测试用户路径（不硬编码真实用户名，保证任意开发者机器可跑）
+    const testUserPath = join(homedir(), 'WorkBuddy');
     const record = makeRecord({
       dataFlow: {
         direction: 'local-only',
         sensitivity: 'internal',
-        fields: ['路径 /Users/kongfangxun/WorkBuddy/ 包含用户名'],
+        fields: [`路径 ${testUserPath}/ 包含用户名`],
         destination: 'local-file',
         redacted: false,
       },
     });
     const result = sanitizeRecord(record);
     expect(result.dataFlow.fields[0]).toContain('[USER_PATH]');
-    expect(result.dataFlow.fields[0]).not.toContain('/Users/kongfangxun/');
+    expect(result.dataFlow.fields[0]).not.toContain(`${homedir()}/`);
     expect(result.dataFlow.redacted).toBe(true);
   });
 
