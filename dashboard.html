@@ -1,4 +1,8 @@
 <!DOCTYPE html>
+<!--
+  sofagent Dashboard 驾驶舱——安装后运行 sofagent-dashboard --full 启动
+  开发预览：node tools/serve-dashboard.mjs（localhost:3780）
+-->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -286,7 +290,7 @@ a:hover{text-decoration:underline}
     <div class="header-left">
       <img src="docs/assets/sofagent.png" alt="sofagent" onerror="this.style.display='none'">
       <span class="logo-text">sofagent</span>
-      <span class="logo-version">v1.3.0</span>
+      <span class="logo-version">v1.3.1</span>
     </div>
     <nav class="nav" id="nav">
       <button class="nav-item active" onclick="goPage('cockpit')">驾驶舱</button>
@@ -317,7 +321,9 @@ a:hover{text-decoration:underline}
       <span class="pulse"></span>
       <span id="dataStatusText">使用示例数据</span>
     </span>
-    <button class="copy-btn light" id="connectDirBtn" onclick="connectDataDir()" style="display:none" title="Chrome 可直接选目录连接 ~/.sofagent/data">连接数据目录</button>
+    <button class="seg-btn seg-refresh" id="connectDirBtn" onclick="connectDataDir()" style="display:none" title="连接数据目录（Chrome 可直接选 ~/.sofagent/data 目录）" aria-label="连接数据目录">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:block"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
+    </button>
     <span style="margin-left:auto"></span>
     <span id="lastRefresh" style="color:var(--text-t)"></span>
     <button class="seg-btn seg-refresh" onclick="manualRefresh()" title="立即刷新一次" aria-label="立即刷新">
@@ -970,7 +976,7 @@ build → acceptance → regression → coverage，
 
   <div class="footer">
     <p>sofagent · FDE Agent — 梳理工作流 · 部署 AI 节点 · 审计每次变更</p>
-    <p style="margin-top:4px"><a href="https://github.com/KongFangXun/sofagent" target="_blank">GitHub</a> · MIT License · 孔放勋 · v1.3.0</p>
+    <p style="margin-top:4px"><a href="https://github.com/KongFangXun/sofagent" target="_blank">GitHub</a> · MIT License · 孔放勋 · v1.3.1</p>
   </div>
 </div>
 

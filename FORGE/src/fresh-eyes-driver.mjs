@@ -29,7 +29,7 @@ import { fileURLToPath } from 'url';
 import os from 'os';
 
 // v1.2.7 功能⑤：继承 driver-base 公共编排层
-import { createForgeDriverBase } from './driver-base.mjs';
+import { createForgeDriverBase, runPreflight, formatPreflightReport } from './driver-base.mjs';
 
 // 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
 import { createVisibility, EVENTS } from './visibility.mjs';
@@ -104,6 +104,10 @@ const TOOL_HARD_LIMIT  = 45;   // stream loop：超此值进入"写报告窗口"
 // 改为零窗口——撞硬上限立即 break，直接走 generateReportWithoutTools。
 const REVIEW_GRACE_STEPS  = 0;   // 审查步骤写报告窗口（0=撞硬上限立即中断）
 const DEFAULT_GRACE_STEPS = 0;   // 其他步骤同上
+// v1.3.2 preflight-check：perspective worker 工具预算提取为模块级常量，
+// 供 preflight 预算合理性检查引用（15/20 来自 v1.3.1 run-03 调优结论）。
+const PERSPECTIVE_TOOL_SOFT = 15;
+const PERSPECTIVE_TOOL_HARD = 20;
 
 // ─── 模型定价（从 FORGE/models/ 加载）──────────────────────
 // 单位：CNY per 1M tokens（百万 token 计价）
@@ -171,7 +175,7 @@ const PERSPECTIVES = [
  *   - prompt: a-check-perspective-N.md（N = perspective.id）
  *   - outputs: ['check-a-pN.md']
  *   - recursionLimit: 30（短任务——单视角只需读 2-3 个文件）
- *   - toolSoftLimit: 12, toolHardLimit: 15
+ *   - toolSoftLimit: 15, toolHardLimit: 20
  */
 function buildPerspectiveSteps() {
   const steps = {};
@@ -183,8 +187,8 @@ function buildPerspectiveSteps() {
       inputs: [],
       perspective: p.label,
       recursionLimit: 30,
-      toolSoftLimit: 12,
-      toolHardLimit: 15,
+      toolSoftLimit: PERSPECTIVE_TOOL_SOFT,
+      toolHardLimit: PERSPECTIVE_TOOL_HARD,
     };
     steps[`b-check-p${p.id}`] = {
       role: 'B',
@@ -193,8 +197,8 @@ function buildPerspectiveSteps() {
       inputs: [],
       perspective: p.label,
       recursionLimit: 30,
-      toolSoftLimit: 12,
-      toolHardLimit: 15,
+      toolSoftLimit: PERSPECTIVE_TOOL_SOFT,
+      toolHardLimit: PERSPECTIVE_TOOL_HARD,
     };
   }
   return steps;
@@ -229,10 +233,11 @@ const STEPS = {
 /**
  * v1.2.9 功能①：spawnParallel 并发限制。
  * 24 个 perspective worker 同时启动会触发 API rate limit（GLM Coding Plan
- * 并发上限）。MAX_CONCURRENCY=6 分批执行：6 个一批，全部完成后启动下一批。
- * 24 worker / 6 并发 = 4 批，每批约 2-3 分钟，总计 ~10 分钟。
+ * 并发上限）。MAX_CONCURRENCY=4 分批执行：4 个一批，全部完成后启动下一批
+ * （v1.3.1 P1-2：从 6 降到 4——run-01 实测并发 6 + 熔断重试触发 429）。
+ * 24 worker / 4 并发 = 6 批，每批约 2-3 分钟，总计 ~15 分钟。
  */
-const MAX_CONCURRENCY = parseInt(process.env.FORGE_MAX_CONCURRENCY || '6', 10);
+const MAX_CONCURRENCY = parseInt(process.env.FORGE_MAX_CONCURRENCY || '4', 10);
 
 // ═══════════════════════════════════════════════════════════
 //  CLI 参数解析
@@ -470,8 +475,36 @@ function loadTools(role, progressMw = null, auditMw = null) {
 
         // v1.2.1 L2：工具调用埋点（start → handler → end，含 duration）
         // v1.2.5：工具输出截断——超过 200 行的输出只保留头尾，防止上下文膨胀
+        // v1.3.1 P0-1 修复：run_bash 强制在 REPO_ROOT 执行——worker 模型经常
+        // 自己写 `cd /Users/<拼错用户名>/...` 导致 cwd 错误、bash 大面积失效。
+        // 修复：① 剥离命令开头错误的 cd 前缀 ② 用 execSync 注入 cwd=REPO_ROOT。
         const execFn = async () => {
-          const raw = await rawTool.func(input);
+          let raw;
+          if (rawTool.name === 'run_bash') {
+            const cmd = String((input && input.command) ?? '');
+            // 剥离开头 `cd <路径>` 或 `cd <路径> && ...` 前缀（模型常拼错用户名路径）
+            // 🔴 v1.3.1 P0-1 修复（正则修正）：分隔符须匹配 && || ; |（含多字符）
+            const stripped = cmd.replace(/^cd\s+("([^"]*)"|'([^']*)'|\S+)(\s*(?:&&|\|\||;|\|)\s*)?/, '');
+            const { execSync } = await import('child_process');
+            try {
+              const stdout = execSync(stripped, {
+                encoding: 'utf-8',
+                maxBuffer: 16 * 1024 * 1024,
+                timeout: 60_000,
+                cwd: REPO_ROOT,
+              });
+              raw = stdout || '(命令执行完成，无 stdout 输出)';
+            } catch (err) {
+              const e = err || {};
+              const stderr = e.stderr ? (typeof e.stderr === 'string' ? e.stderr : e.stderr.toString()) : '';
+              raw = `命令执行失败（exit ${e.status ?? '?'}）：${e.message ?? ''}\n${stderr}`;
+            }
+            if (cmd !== stripped) {
+              raw = `[已自动剥离 cd 前缀，在项目根目录执行]\n${raw}`;
+            }
+          } else {
+            raw = await rawTool.func(input);
+          }
           return truncateToolOutput(raw);
         };
         if (progressMw) {
@@ -1333,14 +1366,36 @@ async function generateReportWithoutTools(model, messages, step, role, stepDef) 
 
   // 3. 裸调用——不带 tools，模型只能输出文本
   const response = await model.invoke(reportMessages);
-  const respText = typeof response === 'string'
+  let respText = typeof response === 'string'
     ? response
     : (response?.content ?? '');
   // 处理数组格式 content
   if (Array.isArray(respText)) {
-    return respText.map(x => typeof x === 'string' ? x : x?.text ?? '').join('');
+    respText = respText.map(x => typeof x === 'string' ? x : x?.text ?? '').join('');
   }
-  return typeof respText === 'string' && respText.trim() ? respText : null;
+  respText = (typeof respText === 'string') ? respText.trim() : '';
+
+  // v1.3.1 run-03 教训：裸 LLM 降级产出的半截碎片（如 184 字节一句话中间思考）
+  // 被直接写入产物文件，下游 isDegraded 判定（CHECK_MIN_BYTES=200）刚卡不住，
+  // 但碎片不含任何有效审查内容，污染整轮 finding 计数。加结构校验：
+  // 降级产物必须满足"≥ REPORT_MIN_CHARS(500) 且含 ## 标题行"才算有效报告
+  // （与 extractAgentText 的 isReportText 门控一致）。不达标返回明确的占位
+  // 文本，让下游 parseStopCondition / b-fix 能识别"该视角审查未完成"而非误读
+  // 碎片为有效 finding。
+  if (respText && isReportText(respText)) {
+    return respText;
+  }
+  // 碎片不达标 → 返回结构化占位（含降级标记词，让 parseStopCondition 识别）
+  return [
+    `## ${step}（角色 ${role}）审查未完成`,
+    '',
+    '> **降级生成——裸 LLM 报告未达质量门控**',
+    `> 该视角的 worker 撞硬熔断后，裸 LLM 降级报告未通过结构校验`,
+    `> （要求 ≥${REPORT_MIN_CHARS} 字符 且 含 ## 标题行，实际 ${respText.length} 字符）。`,
+    '> 本份产物不含有效 finding，请人工复核该视角。',
+    '',
+    '降级占位',
+  ].join('\n');
 }
 
 /**
@@ -2274,21 +2329,34 @@ function parseStopCondition(roundDir) {
   // 补充检查：check 产物太短说明审查不完整，强制不干净。
   // v1.2.9 功能①：短任务化后 check 产物从 check-a.md/check-b.md 变为
   // check-a-p1~12.md / check-b-p1~12.md（24 份）。检查每份的最小字节数。
+  //
+  // v1.3.1 run-03 教训：原逻辑"任一 checkFile < 200 → isDegraded=true"是
+  // 一票否决——1 份短产物连累 23 份正常产物，整轮被误判降级。实测 run-03
+  // Round 1：24 份里只有 check-a-p6.md=184 字节触发降级（其余 2-7KB），
+  // 但整轮被标 isDegraded=true → 连续 2 轮降级触发熔断退出，循环白跑。
+  // 改为比例阈值：短产物占比 > 25% 才判整轮降级。单份短产物更可能是该
+  // 视角本身发现少（如"文件结构陌生人"对结构清晰的项目可能确实无话可说），
+  // 不该上升到整轮降级。25% 阈值仍能抓住真·大面积降级（run-05 的 4/4 全崩）。
   const CHECK_MIN_BYTES = 200;  // 单视角审查报告至少 200 字节才算真实产物（短任务阈值降低）
+  const CHECK_SHORT_RATIO = 0.25;  // 短产物占比超过 25% 才判整轮降级（防一票否决误伤）
   let hasAnyCheckProduct = false;
+  let shortCheckCount = 0;   // < CHECK_MIN_BYTES 的产物数
+  let totalCheckCount = 0;   // 产物总数（a + b 两份各算 1）
   for (const p of PERSPECTIVES) {
     for (const checkFile of [`check-a-p${p.id}.md`, `check-b-p${p.id}.md`]) {
       const checkPath = join(roundDir, checkFile);
       if (existsSync(checkPath)) {
         hasAnyCheckProduct = true;
+        totalCheckCount++;
         const stat = statSync(checkPath);
         if (stat.size < CHECK_MIN_BYTES) {
-          isDegraded = true;
-          break;
+          shortCheckCount++;
         }
       }
     }
-    if (isDegraded) break;
+  }
+  if (totalCheckCount > 0 && (shortCheckCount / totalCheckCount) > CHECK_SHORT_RATIO) {
+    isDegraded = true;
   }
   // 如果一份 check 产物都没有（全部 perspective worker 崩溃），也是降级
   if (!hasAnyCheckProduct && !isDegraded) {
@@ -2990,6 +3058,36 @@ async function main() {
     process.exit(1);
   }
 
+  // ─── preflight-check 跑前自检 ───
+  // 开跑前把环境前置条件全部验一遍（路径/管道/API/预算/目录/磁盘），
+  // 避免 15-60 分钟的长任务跑到一半因环境问题崩溃。
+  // 铁律：dry-run 跳过（不真跑 worker，检查无意义）；preflight 自身异常
+  // 降级 WARN 绝不阻塞；HALT 级失败才 exit(1)。
+  if (!args.dryRun) {
+    let preflightResult;
+    try {
+      preflightResult = await runPreflight({
+        repoRoot: REPO_ROOT,
+        runDir: join(RUNS_DIR, 'fresh-eyes-loop'), // 预检 runs 根目录可写（幂等 mkdir）
+        modelConfigs: MODEL_CONFIGS,
+        roles: ['A', 'B'],
+        loopName: 'fresh-eyes-loop',
+        toolConfig: {
+          globalSoft: TOOL_SOFT_LIMIT, globalHard: TOOL_HARD_LIMIT,
+          perspectiveSoft: PERSPECTIVE_TOOL_SOFT, perspectiveHard: PERSPECTIVE_TOOL_HARD,
+        },
+      });
+    } catch (pfErr) {
+      // preflight 模块自身异常——降级 WARN，绝不因检查工具故障阻塞主流程
+      console.warn(`   ⚠️ preflight-check 自身异常（降级跳过）: ${pfErr.message}`);
+      preflightResult = null;
+    }
+    if (preflightResult) {
+      console.log(formatPreflightReport(preflightResult));
+      if (preflightResult.shouldHalt) process.exit(1);
+    }
+  }
+
   // 建 run 目录（v1.2.8 功能⑦：resume 模式复用已有目录，不新建）
   const { runDir, runId, dateStr } = resumeRunDir
     ? resolveRunDirInfo(resumeRunDir)
@@ -3155,11 +3253,15 @@ async function main() {
       break;
     }
 
-    // v1.2.7：连续 2 轮降级 → 直接 error 退出
+    // v1.2.7：连续降级 → 直接 error 退出
     // run-06 教训：3 轮全降级消耗 132k tokens 零产出
+    // v1.3.1 run-03 教训：原阈值 >=2 太激进——run-03 因 P0 比例阈值修复前的
+    // 一票否决误伤（1 份短产物连累整轮），连续 2 轮误判降级即触发熔断，
+    // 循环在第 2 轮就被腰斩，没给第 3 轮自我修复机会。改为 >=3：与 run-06
+    // 原始教训（3 轮全降级）精确对齐，给偶发降级 1 次容错。
     if (counts.isDegraded) {
       consecutiveDegraded++;
-      if (consecutiveDegraded >= 2) {
+      if (consecutiveDegraded >= 3) {
         console.error(`\n💥 连续 ${consecutiveDegraded} 轮降级，循环无产出意义，直接退出`);
         stopReason = 'consecutive-degraded-error';
         preservedStopReason = stopReason;

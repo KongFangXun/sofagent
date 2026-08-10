@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.0-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.1-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center">
@@ -22,7 +22,7 @@
 graph LR
     A["① 进场梳理<br/>对话引导梳理工作流<br/>哪些自动化·哪些人工·哪些不动"] --> B["② 部署 AI 节点<br/>把自动化环节变成 SubAgent<br/>用你已有的 AI 工具，不用学新界面"]
     B --> C["③ 离场后自运转<br/>FDE 走了，sofagent 留下 7×24<br/>每次干活受检查·越界能拦·出事能回滚"]
-    C -.->|经验沉淀·越跑越好| C
+    C -.->|经验沉淀·持续优化| C
 ```
 
 > 🏞️ 大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是帮你把河里的水让整个城市用起来的工程——堤坝不让水泛滥、自来水厂把原水变直饮水、管网把水送到每家每户的水龙头。模型给 90% 的智力，sofagent 补 10% 的可靠执行。
@@ -36,7 +36,7 @@ graph LR
 | 变更审计 | 无 | git diff 24 条规则，硬证据判定 |
 | 越界拦截 | 靠 prompt 自觉 | 违规当场阻断 + 审计留证 |
 | 出事回滚 | 手动翻 commit | 一键快照回到任意节点 |
-| 经验积累 | 每次从零开始 | 自动沉淀进知识库，越跑越聪明 |
+| 经验积累 | 每次从零开始 | 自动沉淀进知识库，进化能力持续迭代中 |
 
 ## 核心特性
 
@@ -73,7 +73,7 @@ graph LR
 - 📜 **SKILL.md**——唯一主入口，由你的 AI 工具加载：按阶段路由到对应子 Skill，岗位规范按任务类型自动注入（梳理 / 审计 / 编排）
 - 🧩 **阶段子 Skill**——进场 → 深挖 → 量化 → 交付 → 离场五步闭环（`01-entry` → `05-exit`），每一步该做什么、交付什么都定义清楚
 - 🔒 **harness 约束骨架**——entry-gate / fde-template / engage / loop-check / task-closure…，从进场到离场每一步都有对应的约束模板
-- 🧬 **经验自动沉淀**——think.md 反思 + knowledge 维护，每次任务的经验教训自动进知识库，节点越跑越聪明
+- 🧬 **经验自动沉淀**——think.md 反思 + knowledge 维护，每次任务的经验教训自动进知识库，进化能力持续迭代中
 
 > 部署的不是裸 Agent，是**带约束骨架的 Agent**——约束是建议性的，审计是强制性的：Agent 可以不遵守约束，但每次变更都逃不过审计。
 
@@ -93,9 +93,11 @@ graph LR
 npx -y -p @sofagent/audit sofagent-audit
 ```
 
+> 💡 `sofagent-audit` 是 quick 只读审计（审计最近一次 commit，默认安全无副作用）；`sofagent-audit-full` 是完整审计，需显式指定操作（如 `--diff <range>` / `--init` 等）。
+
 拦截特定格式密钥泄漏时是这样的（真实输出）：
 
-> ℹ️ A2 检测 AWS AKIA、OpenAI sk-*、GitHub ghp_、PEM 私钥等已知格式；通用密钥形态（password=、secret 裸值）暂不覆盖——保守设计防误报。详见 [LIMITATIONS A2](./docs/LIMITATIONS.md#a2-密钥检测局限编码与格式绕过v125-披露)。
+> ℹ️ A2 检测 AWS AKIA、OpenAI sk-*、GitHub ghp_、PEM 私钥等已知格式；通用密钥形态（password=、secret 裸值）暂不覆盖——保守设计防误报。详见 [LIMITATIONS §三 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)。
 
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit 拦截 .env 提交" width="860" />
@@ -152,17 +154,17 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 |------|----------------|----------|
 | 核心问题 | 怎么造 Agent | **AI 该放在哪**（先梳理再部署） |
 | 安全保障 | 靠 prompt 约束 | git diff 硬证据审计 + 运行时拦截 + 一键回滚 |
-| 知识积累 | 从零开始 | 经验自动沉淀进 knowledge 知识库，越跑越好 |
-| 数据主权 | 云端托管 | 全量本地，永不离开设备 |
+| 知识积累 | 从零开始 | 经验自动沉淀进 knowledge 知识库，持续优化 |
+| 数据主权 | 云端托管 | 缺省全量本地，可选联邦查询 |
 | 部署方式 | 学新平台 | 装进你已有的 AI 工具（Claude Code / Cursor / WorkBuddy…） |
 
 ## 证据与可信度
 
 > 🔬 **外部独立实验证据**（非官方自测）：Joel Niklaus 的 harness-optimization 研究（[研究代码仓库](https://github.com/JoelNiklaus/harness-optimization)，数据见仓库内实验）显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**。详见 [THANKS.md](./docs/THANKS.md)。
 
-> 🧪 **工程可信度**：1712 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
+> 🧪 **工程可信度**：1962 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
 
-> 🔐 **v1.3.0 新能力**：运行时审计（tool wrapper 动态拦截 + 审计留证）· 决策审计（意图问责：`emitDecision` + HMAC 链 + kind-wise 查询）· 规则透明化（`list_rules` MCP tool）· HITL 人工批准钩子 · 审计日志按 git 仓库隔离 · 激活链 Phase 4 收尾 · 外部记忆后端 Path A（可选，缺省关闭）· 进化链路写保护。详见 [v1.3.0 开发日志](./docs/changelog/v1.3/v1.3.0.md)。
+> 🧠 **v1.3.1 新能力**：Ontology 运行时层（Action 注册表 + 执行前校验 + Schema 定稿）· 并行编排（波次并发 + 审计卡关 + MergeQueue）· Durable Execution（checkpoint 续跑 + 幂等）· Agent 身份码 Ed25519 · 🚀 Onboard Agent L1（`loop_debug`）· 📊 Benchmark 评测（`evaluate`）· 🔒 工具审批四模式 · 📜 LLM 调用级 Trace · 🔄 错误处理（stop_reason + 退避）· 📚 L4 渐进加载 · 国标对齐 GB/T 48000.3-2026（`--gb48000`）。详见 [v1.3.1 开发日志](./docs/changelog/v1.3/v1.3.1.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 文档
 

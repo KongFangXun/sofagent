@@ -29,18 +29,24 @@ describe('联邦知识注入（加载链第 3 层）', () => {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   });
 
-  // 用例 1：联邦知识包裹注入，位置优先于本地 knowledge
-  it('federation 目录有内容 → <untrusted source="federation"> 包裹注入，排在本地 knowledge 前', () => {
-    fs.writeFileSync(path.join(skillDir, 'knowledge', 'federation', 'peer-note.md'), 'peer 跨设备经验');
+  // 用例 1：联邦知识包裹注入（v1.3.1 交付 14 渐进加载——热点全文含联邦时仍强制 untrusted 包裹）
+  it('federation 热点内容 → <untrusted source="federation"> 包裹注入；本地知识不包裹', () => {
+    // 联邦文件设较新 mtime——确保进入「热点全文」注入
+    const fedPath = path.join(skillDir, 'knowledge', 'federation', 'peer-note.md');
+    fs.writeFileSync(fedPath, 'peer 跨设备经验');
     fs.writeFileSync(path.join(skillDir, 'knowledge', 'local-note.md'), '本机沉淀');
+    const newer = new Date(Date.now() + 60_000);
+    fs.utimesSync(fedPath, newer, newer);
+
     const prompt = buildConstrainedSystemPrompt(tmpRoot);
+    // 热点全文（含联邦）→ untrusted 包裹
     expect(prompt).toContain('<untrusted source="federation">');
     expect(prompt).toContain('peer 跨设备经验');
     expect(prompt).toContain('</untrusted>');
-    // 联邦在本地之前
-    expect(prompt.indexOf('peer 跨设备经验')).toBeLessThan(prompt.indexOf('本机沉淀'));
     // 本地知识不包裹
     expect(prompt).not.toContain('<untrusted source="federation">\n本机沉淀');
+    // 本地知识仍注入（热点或索引可寻址）
+    expect(prompt).toContain('本机沉淀');
   });
 
   // 用例 2：无 federation 目录 → 静默跳过

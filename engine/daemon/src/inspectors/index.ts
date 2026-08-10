@@ -1,6 +1,6 @@
 // ============================================================
 // inspectors/index.ts · 巡检器统一入口
-// v1.3.0 新增
+// v1.3.1 新增
 // ============================================================
 
 import type { InspectorConfig, InspectorResult } from './types';
@@ -16,8 +16,10 @@ import { generateDataSovereigntyDaily } from './data-sovereignty-daily';
 import { generateDataSovereigntyWeekly } from './data-sovereignty-weekly';
 import { generateDataSovereigntyMonthly } from './data-sovereignty-monthly';
 import { runWorkspaceSummary } from '../workspace-summary';
+// v1.3.1 交付 7：审计轨迹聚合巡检器（@daily）
+import { runAuditTrailInspector } from './audit-trail';
 
-export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFreshness, checkKnowledgeHealth, checkSkillStaleness, accumulateWarnings, runHealthReport, generateDataSovereigntyDaily, generateDataSovereigntyWeekly, generateDataSovereigntyMonthly, workspaceSummaryInspector };
+export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFreshness, checkKnowledgeHealth, checkSkillStaleness, accumulateWarnings, runHealthReport, generateDataSovereigntyDaily, generateDataSovereigntyWeekly, generateDataSovereigntyMonthly, workspaceSummaryInspector, runAuditTrailInspector };
 export type { InspectorConfig, InspectorResult } from './types';
 export type { DaemonHealth } from './health-reporter';
 
@@ -91,6 +93,8 @@ export function runInspectors(
     checkKnowledgeHealth(projectDir),
     checkSkillStaleness(projectDir),
     accumulateWarnings(projectDir),
+    // v1.3.1 交付 7：审计轨迹聚合巡检（@daily——按 agentId 归集跨设备审计轨迹）
+    runAuditTrailInspector(projectDir),
     // v1.2.3 交付五：workspace 变更摘要（checkpoint 联动）
     workspaceSummaryInspector(projectDir),
     // v1.2.4 P0 修复预存 bug：data-sovereignty 三档报告之前只注册不执行，补入执行数组

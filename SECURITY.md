@@ -1,6 +1,6 @@
 # 安全策略
 
-> v1.3.0 · 2026-08-09（UTC）· 孔放勋
+> v1.3.1 · 2026-08-09（UTC）· 孔放勋
 >
 > 按安全主题组织，版本号作为括号注释。企业 IT 可按主题快速定位。
 
@@ -38,14 +38,14 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 | `knowledge/` | `data/knowledge/` | 知识库 / 评估反馈（eval 体系；旧 `scoring/` 已废弃） |
 | `orchestrator/` | `data/orchestrator/` | 编排决策历史 |
 
-**当前状态（v1.3.0）**：
+**当前状态（v1.3.1）**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
 - ⚠️ 明文存储：`data/` 下文件仍为 Markdown 明文，未做加密
 - ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**已排 v1.3.8（与沙箱/权限/网关同批安全加固）落地**。合规审查员请注意：v1.2.x 版本不适合直接用于强合规场景，需配合外部加密卷（gpg / disk encryption）。
 
-### 当前版本（v1.3.0）临时缓解措施
+### 当前版本（v1.3.1）临时缓解措施
 
 在 age 加密（目标 v1.3.8）交付之前，建议：
 1. **设置 `~/.sofagent/data/` 目录权限为 700**：`chmod 700 ~/.sofagent/data/`（用户可见运行时数据；`~/.sofagent/internal/` 引擎内部状态同样 700）
@@ -203,7 +203,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 
 ## 四、审计与存储安全
 
-> ⚠️ **审计日志全局共享**：当前版本审计日志写入全局 `~/.sofagent/data/audit/history.jsonl`，不做项目级隔离。多项目场景下审计记录会混合存储。按 git 仓库隔离计划在 v1.3.x 落地。
+> 🔒 **运行时审计日志按 git 仓库隔离（v1.3.0 已交付）**：运行时审计日志（`runtime-audit.jsonl`）按 git 仓库隔离存储于 `data/audit/runtime/<repo-hash>/`（`git rev-parse --show-toplevel` hash；非 git 回退 `nogit-<cwd-hash>`）。注意：commit 级审计历史 `history.jsonl` 仍为全局存储，多项目场景下记录混合。
 
 ```
 ~/.sofagent/
@@ -215,19 +215,19 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 
 ### ActionGovernance 审计溯源（v1.1.7）
 
-审计记录升级为可问责的动作凭证：`ActionGovernance`（actor/timestamp/targetEntity/context）+ `DecisionProvenance` 决策溯源组，写入 `history.jsonl`。提供**事后可追溯性**，但不在运行时阻断——Agent 仍可伪造 actor 字段（信任模型同 §审计工具信任模型）。防篡改 HMAC 签名详见下方「HMAC 签名（v1.1.8+ 已落地）」。
+审计记录升级为可问责的动作凭证：`ActionGovernance`（actor/timestamp/targetEntity/context）+ `DecisionProvenance` 决策溯源组，写入 `history.jsonl`。提供**事后可追溯性**，但不在运行时阻断——Agent 仍可伪造 actor 字段（信任模型同 §审计引擎信任模型）。防篡改 HMAC 签名详见下方「HMAC 签名（v1.1.8+ 已落地）」。
 
 ### HMAC 签名（v1.1.8+ 已落地）
 
 `history.jsonl` 自 v1.1.8 起支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`）。有密钥时每条记录签名，Agent 无法在无密钥情况下伪造签名；无密钥时降级为 SHA-256 hash chain（Agent 可重算整链，仅事后可追溯非强防篡改）。`--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainIntegrity()` 校验链完整性。建议高安全场景配置 `~/.sofagent-key` 启用强校验。
 
-### 审计工具安全性（sofagent-audit）
+### 审计引擎安全性（sofagent-audit）
 
 sofagent-audit（v0.92+）是 TypeScript CLI，执行 `execFileSync('git', ...)` 读取 git diff 和文件系统。不使用 eval、不 spawn shell、不执行外部脚本。命令参数使用数组传入（`['diff', '--unified=3', range]`），range 参数经过正则校验 `[a-zA-Z0-9~^.\-]`，无命令注入风险。
 
 **数据访问**：审计引擎核心不发起网络请求（webhook 为可选功能，需显式配置 URL 后才启用）；写入仅限 `~/.sofagent/data/` 目录（审计历史、session 报告、快照等）。
 
-**信任边界**：审计工具本身是确定性的——给定相同的 git diff 和日志，输出相同。但审计 A7/A8 的结果依赖 Agent 日志的真实性（Agent 可以伪造日志）。这不是审计工具的安全漏洞，是架构级别的信任模型选择。详见 [LIMITATIONS.md](./docs/LIMITATIONS.md)（「审计工具信任模型：Agent 自我报告」节）。
+**信任边界**：审计引擎本身是确定性的——给定相同的 git diff 和日志，输出相同。但审计 A7/A8 的结果依赖 Agent 日志的真实性（Agent 可以伪造日志）。这不是审计引擎的安全漏洞，是架构级别的信任模型选择。详见 [LIMITATIONS.md](./docs/LIMITATIONS.md)（「审计引擎信任模型：Agent 自我报告」节）。
 
 > ⚠️ **A14/A15 是 commit 时审计，不是运行时阻断。** Agent 在 commit 前仍可能访问受限数据——审计只能事后发现。这不是运行时沙箱。
 
@@ -237,7 +237,7 @@ history.jsonl 存储审计拦截记录（含被拦截的 diff 摘要）。以下
 
 | 操作 | Agent 能否？ | 说明 |
 |------|:--:|------|
-| 读取 | ✅ 能（以当前用户身份） | Agent 和审计工具共享同一文件系统权限 |
+| 读取 | ✅ 能（以当前用户身份） | Agent 和审计引擎共享同一文件系统权限 |
 | 写入 | ✅ 能 | Agent 可以追加/删除/篡改 history.jsonl |
 | 检测篡改 | ⚠️ --doctor 第 8 项检查 | 通过 hash chain 验证——但 Agent 可以在篡改后重新计算整条链 |
 
@@ -303,7 +303,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 | 本地开发机 | 🟢 低 | 攻击者已能在本机设置环境变量 = 已拥有本机用户权限，游戏结束，审计重定向不构成额外提权 |
 | CI / 共享服务器 | 🟡 中 | 同机其他用户/作业可能注入环境变量，审计历史可被悄悄重定向 |
 
-**本版决策（方案 C · 声明而非改码）**：本版**不修改** `audit-history.ts` 的路径解析逻辑，仅在此明确声明信任边界。理由：① 本地低风险场景下白名单/固定路径会损害测试隔离与多实例部署的灵活性；② 共享服务器场景的正确防线是**环境隔离**（每用户独立 `~/.sofagent/`、CI 作业独立容器/沙箱、`env -i` 清洗环境），而非在审计工具内做路径白名单（白名单本身也可被同权限攻击者绕过）。
+**本版决策（方案 C · 声明而非改码）**：本版**不修改** `audit-history.ts` 的路径解析逻辑，仅在此明确声明信任边界。理由：① 本地低风险场景下白名单/固定路径会损害测试隔离与多实例部署的灵活性；② 共享服务器场景的正确防线是**环境隔离**（每用户独立 `~/.sofagent/`、CI 作业独立容器/沙箱、`env -i` 清洗环境），而非在审计引擎内做路径白名单（白名单本身也可被同权限攻击者绕过）。
 
 **共享服务器缓解建议**：① CI 作业运行在独立容器/沙箱，环境变量不可跨作业注入；② 启动入口用 `env -i` 或显式白名单透传环境变量；③ 对 `history.jsonl` 所在卷做完整性监控（文件路径 + mtime 基线告警）。路径白名单校验（方案 A）与审计路径固定（方案 B）作为可选加固，列入 ROADMAP 评估。
 
@@ -316,7 +316,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 | 伪造 Agent 日志（task/logs） | ❌ 无自动检测 | 人工抽查 + 交叉验证 git log 时间戳 |
 | 绕过 --init 直接手动修改 config.yml | ❌ 无自动检测 | config hash 校验（见 fail-closed 改进） |
 
-> ⚠️ 以上绕过路径均依赖 Agent 的"自觉"——这是 sofagent 架构级别的信任模型选择：审计工具是**协助**人类监督，不是**替代**人类监督。已知绕过路径详见 LIMITATIONS 已有信任模型描述。
+> ⚠️ 以上绕过路径均依赖 Agent 的"自觉"——这是 sofagent 架构级别的信任模型选择：审计引擎是**协助**人类监督，不是**替代**人类监督。已知绕过路径详见 LIMITATIONS 已有信任模型描述。
 
 > ⚠️ **企业高安全场景**：`config.yml` 篡改可绕过审计规则（如关闭规则、放宽阈值）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。
 
@@ -487,8 +487,8 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 
 如发现安全漏洞，请通过以下方式**私下**报告（不要在公开 Issue 中披露）：
 
-1. **邮箱**：kong.yao@evfrey.com
-2. **GitHub Security Advisory**：[提交私有报告](https://github.com/KongFangXun/sofagent/security/advisories/new)
+1. **GitHub Security Advisory**（推荐主通道）：[提交私有报告](https://github.com/KongFangXun/sofagent/security/advisories/new)
+2. **邮箱**（备选）：kong.yao@evfrey.com
 3. **响应时间**：我们承诺在 72 小时内确认收到报告，7 天内提供初步评估。
 
 ## 响应承诺
@@ -503,4 +503,4 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 
 ## 免责声明
 
-sofagent 基于 MIT 许可证发布，按「现状」（AS IS）提供，不附带任何明示或暗示的担保。作者不对因使用本软件而产生的任何直接、间接、附带或后果性损害承担责任。sofagent 是审计工具而非安全防线——它能检测常见的 Agent 违规模式，但不能保证拦截所有攻击向量。
+sofagent 基于 MIT 许可证发布，按「现状」（AS IS）提供，不附带任何明示或暗示的担保。作者不对因使用本软件而产生的任何直接、间接、附带或后果性损害承担责任。sofagent 是审计引擎而非安全防线——它能检测常见的 Agent 违规模式，但不能保证拦截所有攻击向量。

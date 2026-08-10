@@ -1,6 +1,6 @@
 // ============================================================
 // runner.ts · 审计规则运行器（fast-fail 优化）
-// v1.3.0 新增：按严重度分四优先级，critical 层 FAIL 即停
+// v1.3.1 新增：按严重度分四优先级，critical 层 FAIL 即停
 // ============================================================
 
 import type { DiffFile } from '@sofagent/core';
@@ -11,6 +11,11 @@ import type { AuditContext, RuleCheck, Rule } from './types';
 import { loadHistory } from '../audit-history';
 import type { AuditHistoryEntry } from '../audit-history';
 import { defaultRules, rules } from './index';
+// v1.3.1 交付 2：国标对齐 GB/T 48000.3-2026 审计维度（opt-in 默认 false）
+import { assessGb48000Coverage, buildGb48000RuleCheck } from '../gb48000';
+
+/** 国标对齐条目 name——exitCode 计算排除键（信息条目，不影响默认审计行为） */
+export const GB48000_RULE_NAME = 'GB48000';
 
 /**
  * 规则分组（24 条 = 17 默认 + 7 扩展）
@@ -119,7 +124,8 @@ export function runRules(
   silent?: boolean,
   commitMsg?: string,
   config?: AuditConfig,
-  history?: AuditHistoryEntry[]
+  history?: AuditHistoryEntry[],
+  gb48000?: boolean,
 ): AuditResult {
   // v1.1.0 修复(F2)：ctx.history 此前从未赋值，导致 A17 跨审计聚合（基于窗口内历史累计文件数）
   // 成为死代码。调用方显式传入 history 则优先；否则自动从审计历史加载。
@@ -204,6 +210,9 @@ export function runRules(
           });
         }
         // 汇总判定（有 FAIL 直接 exit 2）
+        if (gb48000 === true) {
+          results.push(buildGb48000RuleCheck(assessGb48000Coverage(ctx)));
+        }
         return { rules: results, exitCode: 2 };
       }
       // critical 全部 PASS → 进入下一层
@@ -225,8 +234,11 @@ export function runRules(
   // v1.1.0 P0 fix: '能力拐杖' rules (E1-E4, A4, A6-A8, A14, A15) should never
   // produce FAIL exit code. Even if a crutch rule returns FAIL, we demote it
   // to WARN level — extended/crutch rules are advisory, not blocking.
+  // v1.3.1 交付 2: GB48000 条目是信息维度（合规参考基线），排除出 exitCode——
+  // opt-in 也不影响默认审计判定。
   let exitCode = 0;
   for (const rule of results) {
+    if (rule.name === GB48000_RULE_NAME) continue;
     if (rule.status === 'FAIL') {
       if (rule.ruleClass === '能力拐杖') {
         // Crutch rules: FAIL → WARN (advisory only, never block commit)
@@ -249,6 +261,11 @@ export function runRules(
       status: 'WARN',
       details: [`基线规则 ${suppressedBaselineRules.join('、')} 为安全底线，config.yml 关闭指令已忽略——这些规则始终生效`],
     });
+  }
+
+  // v1.3.1 交付 2：国标对齐维度（opt-in 默认 false）——信息条目，不计 exitCode
+  if (gb48000 === true) {
+    results.push(buildGb48000RuleCheck(assessGb48000Coverage(ctx)));
   }
 
   return { rules: results, exitCode };

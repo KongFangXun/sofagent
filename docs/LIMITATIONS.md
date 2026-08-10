@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v1.3.0 · 2026-08-09（UTC）· 孔放勋
+> v1.3.1 · 2026-08-09（UTC）· 孔放勋
 
 > 🧭 **阅读引导**：本文档按严重度分节——**安全/合规局限**（一、二节）面向强合规选型，**能力边界**（三节起）是设计取舍而非缺陷。通读一遍即可建立心智模型：**大多数局限有明确版本路线（v1.3.x），不是"永远做不到"**。首次阅读建议先看目录 + 每节第一段，无需逐条读完。
 
@@ -21,7 +21,7 @@
 - [九、v1.1.7-v1.1.9 新功能局限](#九v117-v119-新功能局限)
 - [十、行业研报印证的新增局限（2026-07）](#十行业研报印证的新增局限2026-07)
 - [十一、架构反模式：五种常见 Agent 工程错误](#十一架构反模式五种常见-agent-工程错误)
-- [十二、FDE 交付物激活断裂带（v1.2.5+ 解决中）](#十二fde-交付物激活断裂带v125-解决中)
+- [十二、FDE 交付物激活断裂带（v1.2.5-v1.3.0 已解决）](#十二fde-交付物激活断裂带v125-v130-已解决)
 
 ---
 
@@ -39,7 +39,7 @@
 | 6 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#单平台用户建议)
 | 7 | **FDE 交付物激活断裂带（v1.2.5-v1.3.0 已解决）**——FDE 诊断交付的 ontology + workflow.yml + skills/ 是静态文件，企业 IT 拿到不知道怎么跑起来。激活链 Phase 1-4（ACTIVATE+ORCHESTRATE+EXECUTE+SUSTAIN）已于 v1.2.5-v1.3.0 全部交付。 | [十二、FDE 交付物激活断裂带（v1.2.5-v1.3.0 已解决）](#十二fde-交付物激活断裂带v125-v130-已解决) |
 
-> ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。config.yml 有两个有效位置——项目级 `${cwd}/.sofagent/config.yml` 和全局级 `~/.sofagent/config.yml`（config-loader.ts 三级 fallback，项目级优先）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 ~/.sofagent/config.yml` 和 `chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。
+> ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。config.yml 有两个有效位置——项目级 `${cwd}/.sofagent/config.yml` 和全局级 `~/.sofagent/config.yml`（config-loader.ts 三级 fallback，项目级优先）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 ~/.sofagent/config.yml` 和 `chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。**v1.3.7 部分覆盖**——SubAgent 侧 config 篡改被沙箱虚拟 FS 拦截（写入走虚拟层审批）；主 Agent 侧仍靠 CI 兜底 + 文件权限（主 Agent 不进沙箱，留 v1.3.9 meta-harness）。
 >
 > **建议缓解措施**：
 > 1. **CI 侧兜底（推荐）**：在 CI pipeline 中加入 `sofagent-audit --diff HEAD~1..HEAD`，
@@ -206,18 +206,19 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 ### 🔒 数据存储安全
 
-> ℹ️ **审计历史全局共享是设计决策**：审计历史（`history.jsonl` / `decision-log.jsonl`）写入全局 `~/.sofagent/data/audit/`，不做项目级隔离——这是**有意为之**：① HMAC 签名链完整性要求全量连续历史（`--verify-chain` 需要完整链）；② 跨仓库查询审计历史是运维刚需。多项目场景下审计记录会混合存储。**运行时审计日志（`runtime/`）已按 git 仓库隔离（v1.3.0 规划）**——tool wrapper 产出的运行时日志按仓库分目录存储，缓解多项目日志互串；审计历史保持全局。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录。
+> ℹ️ **审计历史全局共享是设计决策**：审计历史（`history.jsonl` / `decision-log.jsonl`）写入全局 `~/.sofagent/data/audit/`，不做项目级隔离——这是**有意为之**：① HMAC 签名链完整性要求全量连续历史（`--verify-chain` 需要完整链）；② 跨仓库查询审计历史是运维刚需。多项目场景下审计记录会混合存储。**运行时审计日志（`runtime/`）已按 git 仓库隔离（v1.3.0 已交付）**——tool wrapper 产出的运行时日志按仓库分目录存储，缓解多项目日志互串；审计历史保持全局。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录。
 
 > ⚠️ **知识库同样全局共享**：`~/.sofagent/data/knowledge/` 单目录遍历、无租户/项目维度隔离——多项目、多 Agent 的知识沉淀（entities/concepts/comparisons/summaries）混合存储，查询时全局命中。财务与人事等不同域 Agent 的数据会串。按项目/Agent 隔离计划在 v1.3.x 落地。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录（见 [企业部署指南](./guides/enterprise-deploy.md#多项目数据隔离v128)）。
 
 task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。age 加密已排 v1.3.8（见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](../SECURITY.md)）。
 - history.jsonl 存审计判定详情，A2/A9 已脱敏，其他规则 details 可能含代码片段或文件路径，敏感场景请配合外部加密卷
+- **v1.3.1 #44 披露：审计历史并发写入无文件锁**——appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的，审计历史条目通常 < 1KB，单次写入安全。但多进程同时写入（daemon 文件监控 + Agent commit）可能导致行交错，产生损坏行触发 hash chain 完整性校验失败。概率极低（审计触发频率 < 1次/分钟），但损坏会导致校验失败。**v1.3.8 解决**——WAL 写在网关层，天然单 writer 模式（所有工具调用经网关串行写入，消除并发写入）。
 
 ---
 
 ### A9 注入检测局限——编码绕过
 
-> ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文"忽略类"指令、英文"ignore 类"指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），规划在 v1.3.x 评估 LLM 辅助检测。
+> ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文"忽略类"指令、英文"ignore 类"指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），**v1.3.2 评估覆盖**——L3 自动定位（LLM 推理）可检测正则覆盖不了的语义级注入。
 
 ---
 
@@ -229,6 +230,8 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API �
 > - 历史提交中的密钥（A2 只扫当前 diff 新增行，不扫全量历史）
 >
 > **改名 + 编码/短 key 可组合绕过 A1+A2 双拦截**（如 `.env` → `app.config.js` + base64）。建议 CI 侧补 gitleaks / detect-secrets 做全量历史扫描。
+
+> **v1.3.1 披露：>5MB diff 残余缝隙**——diff-parser 对单个文件 diff 超过 5MB（maxBuffer）时置 `oversized` 标记，A2 无法扫描其内容。audit/index.ts 已对此注入 WARN（安全敏感文件名升级为 FAIL），但内容本身仍跳过——攻击者可故意构造超大 diff 藏密钥。A2 归一化已补 NFKC Unicode 处理（v1.3.1 #46），sk-* 正则已扩展连字符/下划线支持。**v1.3.9 评估覆盖**——AST 规则引擎走流式解析（不 maxBuffer），超大 diff 不再跳过内容。
 
 ---
 
@@ -315,7 +318,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 696 个、全 workspace 1712 个测试（全绿，实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 709 个、全 workspace 1962 个测试（全绿，实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -367,6 +370,8 @@ A20 定位为"审计信号"而非"安全屏障"，企业高安全场景应叠加
 
 缓解：审计层（git diff）不依赖编排层，独立工作。编排层是可选增强——即使编排不可用，核心约束和审计仍然生效。最终解决方案是 v2.x 协同层的确定性编排引擎（计划中，参见 ROADMAP.md）。
 
+> ℹ️ **设计取舍声明**：编排依赖模型质量是 LangGraph createReactAgent 架构选型的代价，非 bug——用「模型可插拔」（v1.3.2 client_type + v1.3.6 model_register）缓解（模型差可换），用「审计层独立」（不依赖编排）兜底。v2.x 确定性编排引擎是根本解但排期较远。
+
 ---
 
 ### FDE 端到端验证状态
@@ -384,7 +389,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 ### 组件间集成测试
 
-**状态：无集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排引擎 LangGraph createReactAgent compose 通过——但 daemon → MCP → webhook → 编排四组件串联行为未验证。未来版本计划补全链路 smoke test。
+**状态：无集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排引擎 LangGraph createReactAgent compose 通过——但 daemon → MCP → webhook → 编排四组件串联行为未验证。**v1.3.2 补全**——Onboard L2-L5 的循环引擎天然跑全链路（编排→审计→定位→修复→再跑），作为验收标准补 smoke test。
 
 ---
 
@@ -392,12 +397,12 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 v1.0 新增 `FORGE/playbook/acceptance-test.sh`（102 个场景，含子断言），覆盖范围持续扩展：
 
-- **CI 已覆盖**：单元测试审计核心 696 个、全 workspace 1712 个测试（全绿，详见上方「测试覆盖范围」节，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
-- **发版前手动覆盖**：acceptance-test.sh 164 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
+- **CI 已覆盖**：单元测试审计核心 709 个、全 workspace 1962 个测试（全绿，详见上方「测试覆盖范围」节，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
+- **发版前手动覆盖**：acceptance-test.sh 177 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
 
-未来版本计划将 acceptance-test.sh 纳入 CI 自动执行（当前为发版前手动），并补全组件串联 smoke test。
+未来版本计划将 acceptance-test.sh 纳入 CI 自动执行（当前为发版前手动），组件串联 smoke test 排入 v1.3.2。
 
 ---
 
@@ -412,7 +417,7 @@ v1.0 新增 `FORGE/playbook/acceptance-test.sh`（102 个场景，含子断言�
 - **影响包**：engine/audit（config-loader 2 + audit-history 7 + session-report 1 + usb-detect 3）
 - **原因**：WorkBuddy.app 内嵌的 genie-safe-delete.cjs shim 拦截 fs.rmSync 调用，测试清理临时文件被误判为大规模删除
 - **缓解**：在无 safe-delete shim 的环境中运行测试可全绿；或使用 `--no-safe-delete` 标志（如适用）
-- **计划修复**：v1.3.0 考虑使用 mock fs 隔离测试清理逻辑
+- **计划修复**：v1.3.2 考虑使用 mock fs 隔离测试清理逻辑（测试体系完善版）
 
 ### 组织记忆维护风险 / 模型依赖维护风险
 
@@ -488,7 +493,7 @@ U 盘本身即信任根——`federation.json` 的 `key` 字段（AES-256 解密
 
 ### A/B 自动调度 promote 风险（v1.1.9）
 
-ab-scheduler 连续 2 轮更好即 promote。如果 eval 场景偏窄（只测了简单 case），promote 的版本在复杂场景下可能更差。已有 `overallImprovement > 0` 守卫，但窄 eval 集的局限性无法靠代码解决——需要人工定期审查 promote 历史，确认 eval 集是否覆盖了真实业务场景的复杂度。
+ab-scheduler 连续 2 轮更好即 promote。如果 eval 场景偏窄（只测了简单 case），promote 的版本在复杂场景下可能更差。已有 `overallImprovement > 0` 守卫，但窄 eval 集的局限性无法靠代码解决——需要人工定期审查 promote 历史，确认 eval 集是否覆盖了真实业务场景的复杂度。**v1.3.2 缓解**——企业专属 eval 套件（金融/制造/供应链行业模板）扩充 eval 覆盖面，窄 eval 风险降低。
 
 ---
 
@@ -520,7 +525,7 @@ ab-scheduler 连续 2 轮更好即 promote。如果 eval 场景偏窄（只测�
 
 ---
 
-## 十二、FDE 交付物激活断裂带（v1.2.5+ 解决中）
+## 十二、FDE 交付物激活断裂带（v1.2.5-v1.3.0 已解决）
 
 ### 大断裂带
 

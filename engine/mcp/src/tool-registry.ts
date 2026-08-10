@@ -1,6 +1,6 @@
 // ============================================================
 // tool-registry.ts · MCP tools/list schema definitions
-// v1.3.0: 从 mcp-server.ts 提取
+// v1.3.1: 从 mcp-server.ts 提取
 // ============================================================
 
 import { VERSION } from '@sofagent/audit';
@@ -184,6 +184,49 @@ export const TOOLS: ToolDef[] = [
     },
   },
   {
+    // v1.3.1 (交付 5)：Ontology CRUD 补全——字段级更新
+    name: 'update_entity',
+    description: '字段级更新 entity 页（knowledge/entities/<name>.md，v1.3.1 交付 5）——只改传入字段（domain/description/relations/content/newName），保留其余 frontmatter 与正文，updated_at 自动刷新。写入前跑 D1-D5 数据审计，FAIL 时拒绝写入。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: '现有 entity 名称（不含 .md 后缀，定位目标文件）' },
+        newName: { type: 'string', description: '可选：改名（新名称，不含 .md 后缀）' },
+        domain: { type: 'string', description: '可选：改业务域归属' },
+        description: { type: 'string', description: '可选：改 entity 简述' },
+        relations: { type: 'string', description: '可选：JSON 格式关联关系（belongs_to / has_many），整体替换 relations' },
+        content: { type: 'string', description: '可选：正文内容（Markdown body，不含 frontmatter；省略 = 保留原正文）' },
+      },
+      required: ['name'],
+    },
+  },
+  {
+    // v1.3.1 (交付 5)：Ontology CRUD 补全——删除 entity，强制人审
+    name: 'delete_entity',
+    description: '删除 entity 页（knowledge/entities/<name>.md，v1.3.1 交付 5）——破坏性操作，强制人审确认：必须显式传 confirmed:true 才执行，否则只返回提示。删除全程 D1-D5 审计留痕。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'entity 名称（不含 .md 后缀）' },
+        confirmed: { type: 'boolean', description: '人工确认标志——必须显式 true 才执行删除' },
+      },
+      required: ['name', 'confirmed'],
+    },
+  },
+  {
+    // v1.3.1 (交付 5)：Ontology CRUD 补全——删除 concept，强制人审
+    name: 'delete_concept',
+    description: '删除 concept 页（knowledge/concepts/<name>.md，v1.3.1 交付 5）——破坏性操作，强制人审确认：必须显式传 confirmed:true 才执行，否则只返回提示。删除全程 D1-D5 审计留痕。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'concept 名称（不含 .md 后缀）' },
+        confirmed: { type: 'boolean', description: '人工确认标志——必须显式 true 才执行删除' },
+      },
+      required: ['name', 'confirmed'],
+    },
+  },
+  {
     name: 'validate_ontology',
     description: '检查本体结构完整性——实体数、关联断裂、孤儿实体、死链。复用 ontology merge-engine 逻辑。',
     inputSchema: {
@@ -301,6 +344,57 @@ export const TOOLS: ToolDef[] = [
       type: 'object',
       properties: {
         type: { type: 'string', enum: ['tool', 'diff', 'all'], description: '规则类型：tool（运行时）/ diff（提交时）/ all（默认）', default: 'all' },
+      },
+    },
+  },
+  {
+    // v1.3.1 (交付 6)：Agent 独立身份码查询（Ed25519 完整版）
+    name: 'agent_identity',
+    description: '查询 Agent 身份码（v1.3.1 Ed25519 完整版）——无参数查自己，传 agent_id 查他人。返回委托人/约束版本/责任声明/公钥/签名验证结果（不含私钥）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        agent_id: { type: 'string', description: '目标 Agent 身份码（缺省 = 查自己）' },
+      },
+    },
+  },
+  {
+    // v1.3.1 (交付 8)：Onboard Agent L1 调试循环
+    name: 'loop_debug',
+    description: 'Onboard Agent L1 调试循环（v1.3.1 交付 8）——传 task 触发 activate→run→judge→fix→re-run 循环（只判 crash/error/超时，不判语义对错）；不传 task 查询最近调试记录（带 agentId 可追溯）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        task: { type: 'string', description: '任务描述（缺省 = 查询模式，不触发新循环）' },
+        agent_id: { type: 'string', description: 'Agent 身份码（写入调试记录，交付 6 协同）' },
+        max_rounds: { type: 'number', description: '最大循环轮数（默认 3）' },
+        timeout_ms: { type: 'number', description: '超时阈值 ms（默认 120000）' },
+      },
+    },
+  },
+  {
+    // v1.3.1 (交付 9)：Benchmark 评测
+    name: 'evaluate',
+    description: 'Benchmark 评测（v1.3.1 交付 9）——传 benchmark_id 触发隔离评测（statement/rubric 物理分离 + Test Agent 强制 read-only，评分 0..100 写入 HMAC 链 evaluation-log）；传 query:true 查询评测日志。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        benchmark_id: { type: 'string', description: 'Benchmark ID（必填）' },
+        case_id: { type: 'string', description: 'Case ID（缺省 = 评测全部 cases）' },
+        query: { type: 'boolean', description: '查询模式（true = 只查日志不触发新评测）' },
+      },
+      required: ['benchmark_id'],
+    },
+  },
+  {
+    // v1.3.1 (交付 7)：跨设备审计轨迹查询
+    name: 'audit_trail',
+    description: '跨设备审计轨迹查询（v1.3.1 交付 7）——按 agent_id 查完整轨迹（合并跨设备审计记录，HMAC 验签 + trust 优先级裁决）；不传 agent_id 列出全部有轨迹的 agent。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        agent_id: { type: 'string', description: 'Agent 身份码（缺省 = 列出全部有轨迹的 agent）' },
+        include_peers: { type: 'boolean', description: '是否包含跨设备 peer 记录（缺省 false——仅本地）' },
       },
     },
   },

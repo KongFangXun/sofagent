@@ -7,6 +7,17 @@
 # 编译产物
 dist/
 
+# v1.3.1 防御：tsc 若从根目录误跑（根 tsconfig 无 outDir），产物会输出到 src 旁
+# 此规则防止误提交 src 下的 .js/.d.ts/.map（编译产物应在 dist/，不在 src/）
+engine/*/src/**/*.js
+engine/*/src/**/*.js.map
+engine/*/src/**/*.d.ts.map
+# 注意：engine/*/src/**/*.d.ts 不全 ignore——手写 ambient declaration（如 types/daemon.d.ts）需保留
+# 只 ignore 有对应 .d.ts.map 的（编译产物特征）。由于 gitignore 无法表达"有 .map 才 ignore"，
+# 此处只忽略 .d.ts.map（编译产物一定有 source map），.d.ts 本身靠 code review 把关
+engine/*/src/**/*.d.ts
+!engine/*/src/types/*.d.ts
+
 # 依赖（P2-38: 显式声明——此前仅靠全局 gitignore 兜底，clone 到无全局规则的环境会误提交）
 # ⚠️ P2-13 说明：仓库根 node_modules/ 是 npm workspace 依赖提升（hoisting）产生的物理目录，
 #    由 npm install 生成、不入库；各 engine/* 子包内也可能有局部 node_modules（仅个别包的

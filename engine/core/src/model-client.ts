@@ -1,9 +1,30 @@
 // ============================================================
 // model-client.ts · 模型 API 客户端
-// v1.3.0 新增
-// 用 Node.js 原生 fetch（Node 18+ 内置）调模型 API
-// API 配置从环境变量读取，支持 OpenAI 兼容接口
+// v1.3.1 新增：Node.js 原生 fetch（Node 18+ 内置）调 OpenAI 兼容接口
+// v1.3.1 交付 12：isRetryableError 字符串匹配 → stop_reason 六值分类
+//   + 指数退避重连（2s→4s→8s→16s→30s，≤5 次）+ auth 永不重试（铁律）
+//   + 工具失败收敛为结构化消息（convergeToolError，不 throw）
+// v1.3.1 交付 11：调用前后打点写 LLM 调用级 Trace（llm-calls.jsonl），
+//   打点失败不阻断调用（容错铁律：try/catch + warn）
 // ============================================================
+import { classifyError, isRetryableStopReason, backoffDelayMs, MAX_RETRY_COUNT } from './stop-reason';
+import type { StopReason } from './stop-reason';
+import { appendLlmCallRecord } from './llm-call-trace';
+
+/** 带 stop_reason 分类的模型调用错误（auth 永不重试直接抛出） */
+export class ModelCallError extends Error {
+  /** 终止原因六值分类 */
+  readonly stopReason: StopReason;
+  /** HTTP 状态码（若可识别） */
+  readonly httpStatus?: number;
+
+  constructor(message: string, stopReason: StopReason, httpStatus?: number) {
+    super(message);
+    this.name = 'ModelCallError';
+    this.stopReason = stopReason;
+    this.httpStatus = httpStatus;
+  }
+}
 
 /**
  * 模型 API 响应格式（OpenAI 兼容）
@@ -36,8 +57,18 @@ export interface ModelCallOptions {
   temperature?: number;
   /** 超时时间（ms），默认 60000 */
   timeout?: number;
-  /** 最大重试次数，默认 1 */
+  /** 最大重试次数，默认 5（v1.3.1：从 1 升级为退避阶梯上限） */
   maxRetries?: number;
+  /** v1.3.1 交付 11：发起调用的 Agent 身份码（写入调用 Trace） */
+  agentId?: string;
+  /** v1.3.1 交付 11：关联任务 ID（写入调用 Trace） */
+  taskId?: string;
+  /** v1.3.1 交付 12：可注入的 sleep 函数（测试用，默认真实延时） */
+  sleepFn?: (ms: number) => Promise<void>;
+  /** v1.3.1 交付 11：Trace 写入目录覆盖（测试隔离用 SOFAGENT_HOME） */
+  traceHome?: string;
+  /** v1.3.1 交付 11：Trace 打点开关（默认 true；设 false 可完全跳过打点） */
+  traceEnabled?: boolean;
 }
 
 /**
@@ -47,6 +78,10 @@ export interface ModelMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
+
+/** 默认 sleep 实现（真实等待） */
+const defaultSleepFn = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * 获取 API 配置（从环境变量读取）
@@ -58,9 +93,82 @@ function getAPIConfig(): { apiKey: string; baseUrl: string; modelName: string } 
   return { apiKey, baseUrl, modelName };
 }
 
+/** 从 baseUrl 提取 provider 标识（Trace 用，如 'api.openai.com'） */
+function providerFromBaseUrl(baseUrl: string): string {
+  try {
+    return new URL(baseUrl).host || 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+/**
+ * 单次 LLM 请求（不含重试）——返回内容 + token 用量。
+ * HTTP 非 2xx 抛带 httpStatus 的错误，便于外层 stop_reason 分类。
+ */
+async function singleRequest(
+  url: string,
+  apiKey: string,
+  body: string,
+  timeout: number,
+): Promise<{ content: string; tokenInput: number; tokenOutput: number }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '未知错误');
+      const err = new Error(`模型 API 返回错误 ${response.status}: ${errorText.slice(0, 200)}`);
+      (err as Error & { httpStatus?: number }).httpStatus = response.status;
+      throw err;
+    }
+
+    let data: ChatCompletionResponse;
+    try {
+      data = (await response.json()) as ChatCompletionResponse;
+    } catch (parseErr) {
+      // 流截断 / 非法 JSON → malformed 分类（消息带「解析」关键词供 classifyError 识别）
+      throw new Error(
+        `模型 API 响应解析失败（疑似流截断）: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`
+      );
+    }
+
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) {
+      throw new Error('模型 API 返回空内容');
+    }
+
+    return {
+      content,
+      tokenInput: data.usage?.prompt_tokens ?? 0,
+      tokenOutput: data.usage?.completion_tokens ?? 0,
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * 调用模型 API（OpenAI 兼容接口）
- * 使用 Node.js 原生 fetch，单次 60s 超时，失败重试 1 次
+ *
+ * v1.3.1 重试策略（替换字符串匹配 + 固定重试 1 次）：
+ *   - 每次失败先做 stop_reason 六值分类
+ *   - auth（401/403）→ 永不重试，直接抛带 stopReason 的 ModelCallError（铁律）
+ *   - aborted（用户中断）→ 不重试
+ *   - timeout / malformed / failed → 按退避阶梯重连（2s→4s→8s→16s→30s，≤maxRetries 次）
+ *
+ * 每次请求（成功与失败）都写一条 LLM 调用级 Trace（交付 11），
+ * 打点失败仅 warn，绝不阻断调用。
  *
  * @param messages 消息列表
  * @param options  调用选项
@@ -70,7 +178,16 @@ export async function callModelAPI(
   messages: ModelMessage[],
   options: ModelCallOptions = {}
 ): Promise<string> {
-  const { temperature = 0.3, timeout = 60_000, maxRetries = 1 } = options;
+  const {
+    temperature = 0.3,
+    timeout = 60_000,
+    maxRetries = MAX_RETRY_COUNT,
+    agentId,
+    taskId,
+    sleepFn = defaultSleepFn,
+    traceHome,
+    traceEnabled = true,
+  } = options;
   const { apiKey, baseUrl, modelName } = getAPIConfig();
 
   if (!apiKey) {
@@ -80,6 +197,7 @@ export async function callModelAPI(
   }
 
   const url = `${baseUrl.replace(/\/+$/, '')}/chat/completions`;
+  const provider = providerFromBaseUrl(baseUrl);
 
   const body = JSON.stringify({
     model: modelName,
@@ -87,47 +205,80 @@ export async function callModelAPI(
     temperature,
   });
 
+  // 交付 11：Trace 打点——容错铁律，打点失败不阻断调用
+  const writeTrace = (record: {
+    tokenInput: number;
+    tokenOutput: number;
+    durationMs: number;
+    stopReason: StopReason;
+    error: string | null;
+  }): void => {
+    if (!traceEnabled) return;
+    try {
+      appendLlmCallRecord(
+        {
+          ...(agentId ? { agentId } : {}),
+          ...(taskId ? { taskId } : {}),
+          provider,
+          model: modelName,
+          tokenInput: record.tokenInput,
+          tokenOutput: record.tokenOutput,
+          durationMs: record.durationMs,
+          stopReason: record.stopReason,
+          error: record.error,
+        },
+        traceHome,
+      );
+    } catch (err) {
+      console.warn(
+        `[sofagent] model-client: LLM 调用 Trace 写入失败（不影响调用）: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  };
+
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const startedAt = Date.now();
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeout);
-
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`,
-          },
-          body,
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text().catch(() => '未知错误');
-          throw new Error(
-            `模型 API 返回错误 ${response.status}: ${errorText.slice(0, 200)}`
-          );
-        }
-
-        const data = (await response.json()) as ChatCompletionResponse;
-        const content = data.choices?.[0]?.message?.content;
-
-        if (!content) {
-          throw new Error('模型 API 返回空内容');
-        }
-
-        return content;
-      } finally {
-        clearTimeout(timer);
-      }
+      const result = await singleRequest(url, apiKey, body, timeout);
+      // 成功打点：stopReason = completed
+      writeTrace({
+        tokenInput: result.tokenInput,
+        tokenOutput: result.tokenOutput,
+        durationMs: Date.now() - startedAt,
+        stopReason: 'completed',
+        error: null,
+      });
+      return result.content;
     } catch (err) {
+      const httpStatus =
+        typeof (err as { httpStatus?: unknown })?.httpStatus === 'number'
+          ? (err as { httpStatus: number }).httpStatus
+          : undefined;
+      const stopReason = classifyError(err, httpStatus);
       lastError = err instanceof Error ? err : new Error(String(err));
 
-      // 如果是超时或网络错误，且还有重试次数，则重试
-      if (attempt < maxRetries && isRetryableError(lastError)) {
+      // 失败打点（stop_reason 六值分类）
+      writeTrace({
+        tokenInput: 0,
+        tokenOutput: 0,
+        durationMs: Date.now() - startedAt,
+        stopReason,
+        error: lastError.message,
+      });
+
+      // 铁律：auth（401/403）永不重试——重试不会让错误凭证变有效
+      if (stopReason === 'auth') {
+        throw new ModelCallError(lastError.message, 'auth', httpStatus);
+      }
+      // 用户中断不重试
+      if (stopReason === 'aborted') {
+        break;
+      }
+      // timeout / malformed / failed → 退避重连
+      if (attempt < maxRetries && isRetryableStopReason(stopReason)) {
+        await sleepFn(backoffDelayMs(attempt));
         continue;
       }
       break;
@@ -137,21 +288,37 @@ export async function callModelAPI(
   throw lastError || new Error('模型 API 调用失败');
 }
 
+/** 工具失败收敛结果——结构化消息（不 throw，交回模型决策） */
+export interface ConvergedToolError {
+  /** 固定状态标记 */
+  status: 'tool_error';
+  /** 失败工具名 */
+  tool: string;
+  /** 错误信息（截断保护） */
+  error: string;
+  /** 给模型的处置建议 */
+  suggestion: string;
+}
+
+/** 收敛错误消息最大长度（防止大段错误文本灌入模型上下文） */
+const TOOL_ERROR_MAX_LEN = 500;
+
 /**
- * 判断错误是否可重试（超时、网络错误等）
+ * 工具失败收敛为结构化消息（v1.3.1 交付 12）。
+ *
+ * 工具执行失败不再抛异常中断任务——收敛为结构化消息返回给 Agent，
+ * 由模型决定重试/换方案/放弃。绝不 throw。
+ *
+ * @param tool 工具名
+ * @param err 错误对象（Error 或任意可字符串化值）
+ * @returns 结构化错误消息
  */
-function isRetryableError(err: Error): boolean {
-  const message = err.message.toLowerCase();
-  return (
-    message.includes('timeout') ||
-    message.includes('abort') ||
-    message.includes('fetch failed') ||
-    message.includes('network') ||
-    message.includes('econnrefused') ||
-    message.includes('econnreset') ||
-    message.includes('etimedout') ||
-    message.includes('429') ||
-    message.includes('503') ||
-    message.includes('502')
-  );
+export function convergeToolError(tool: string, err: unknown): ConvergedToolError {
+  const raw = err instanceof Error ? err.message : String(err ?? '未知错误');
+  return {
+    status: 'tool_error',
+    tool,
+    error: raw.slice(0, TOOL_ERROR_MAX_LEN),
+    suggestion: '工具执行失败。可检查参数/权限/路径后重试，或换用其他方案；若反复失败请放弃该路径并说明原因。',
+  };
 }

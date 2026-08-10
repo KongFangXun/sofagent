@@ -143,19 +143,19 @@
 >
 > 先读 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按协议执行：
 >
-> 1. 后台启动 driver——🔴 必须用 Bash 工具的 run_in_background: true + dangerouslyDisableSandbox: true（否则三层进程嵌套会被 sandbox SIGKILL，run-01~03 血泪教训；🔴 禁止用 nohup+disown，WorkBuddy 会清理脱离 session 的后台进程，run-07~11 教训）：
->    node FORGE/src/fresh-eyes-driver.mjs --target {实际版本号} --max-rounds 10
+> 1. 后台启动 driver——🔴 必须用 Bash 工具的 run_in_background: true + dangerouslyDisableSandbox: true（否则三层进程嵌套会被 sandbox SIGKILL，run-01~03 血泪教训；🔴 禁止用 nohup+disown，WorkBuddy 会清理脱离 session 的后台进程，run-07~11 教训）：<br>🔴 **输出必须重定向到日志文件，禁止管道截断**（如 `\| head`）：`node FORGE/src/fresh-eyes-driver.mjs --target {实际版本号} --max-rounds 10 > /tmp/fresh-eyes-{实际版本号}-run.log 2>&1`——管道截断会 SIGPIPE 杀死 driver（v1.3.1 run-02 血泪教训：`\| head -20` 启动 12 秒后 driver 静默死亡，runDir 停在 round-start 无产出）
 > 2. 记住 runDir（启动日志第一行打印的路径，格式如 `~/.sofagent/data/forge-runs/fresh-eyes-loop/<date>/run-XX/`）
 > 3. **在 session 内持续轮询**——每 120 秒一个工作周期，每个周期做两件事：
 >    ① 读 `<runDir>/status.json` 看 phase 变化，phase 变化时一句话汇报（如"审查第 2 轮进行中""B 模型修复中"）
 >    ② 读 `status.json` 的 `heartbeat` 字段时间戳——如果距今 > 90 秒，说明 driver 可能已死（SIGKILL 绕过所有 handler），用 `pgrep -f "fresh-eyes-driver"` 确认进程是否存活：无输出 = 已死，汇报死亡并退出；有输出 = 活着，继续轮询
 >    phase 不变且 heartbeat 正常 → 继续轮询。session 要一直在转，不要 sleep 空转——每 120 秒就是一个工作周期
-> 4. phase 变成 completed 或 error 时，读最终报告，用 2-3 行汇报：轮数 + 停止原因 + 最终 P0/P1/P2 计数
+> 4. phase 变成 completed 或 error 时，读最终报告，用 2-3 行汇报：轮数 + 停止原因 + 最终 P0/P1/P2 计数 + **是否 isDegraded**（v1.3.1 run-01 教训：降级轮的 finding 大量误报——install.sh rm -rf 有守卫/npm pack 实测成功/24 规则实体在 audit 包存在，四例全为 worker cwd 错误导致的假 finding；降级轮结论不可信，必须明确标注，由主 session 人工核实，**不要自行修复**——修复是 driver 内部 b-fix 步骤的职责，监控 session 只汇报）
 >
 > 铁律：修复只本地 commit、绝不 push；不要干涉 driver 内部、不要探索项目源码——你只做启动 + 持续轮询监控 + 汇报。
 > ```
 >
-> ⚠️ **AI 输出 prompt 时必须替换的占位符**：`{项目实际路径}`（如 `/Users/kongfangxun/Workbuddy/sofagent`）、`{实际版本号}`（如 `v1.2.5`）。输出前检查：prompt 中不得残留任何花括号占位符。prompt 中的监控协议细节（heartbeat 检测、轮询节奏）是"不读 SKILL.md 就一定踩坑"的关键约束，必须内联——不能只依赖新 session 的 AI 自己去读 SKILL.md。
+> ⚠️ **AI 输出 prompt 时必须替换的占位符**：`{项目实际路径}`（如 `/path/to/your-project/sofagent`）、`{实际版本号}`（如 `v1.2.5`）。输出前检查：prompt 中不得残留任何花括号占位符。prompt 中的监控协议细节（heartbeat 检测、轮询节奏）是"不读 SKILL.md 就一定踩坑"的关键约束，必须内联——不能只依赖新 session 的 AI 自己去读 SKILL.md。
+> ⚠️ **v1.3.1 补充：prompt 必须带前置状态说明**——若本轮 loop 之前有降级/废弃的 run，输出 prompt 时在开头加 2-3 行背景（哪个 run 为何废弃、哪些修复已提交、旧 finding 为何不可信）。新 session 的 AI 没有本 session 上下文，不给背景它会把旧 run 的产物当真相（v1.3.1 run-01→run-02 教训：监控 session 曾想"核实并修复"降级轮的假 finding，实际修复是 driver 内部 b-fix 的职责）。
 
 | 2 | **🔴 汇总 fresh-eyes-loop 修复并整合 changelog（human-in-the-loop）**：loop（步骤 1）跑完后，用户以 `fresh-eyes-review.md` 方法论为参考**人肉**复核，① 汇总 loop 所有的 bug 修改，整合到本版本 changelog 开发日志（`docs/changelog/v<major>.<minor>/vX.Y.Z.md`）；② 将 loop 全部修复计入本版本 changelog 并打勾——此时所有修复仍本地未推，这是设计内正确状态 | 本版本 changelog 的「发布检查清单」含 loop 全部修复项且全部 `[x]`，开发日志已整合 loop 全部 bug 修改 |
 | 3 | **逐项核对 changelog 每一项**（含 fresh-eyes-loop 修复项） | 当前 session | 逐文件读源码/diff，逐项确认改动存在且正确，标记 PASS/FAIL |
@@ -177,9 +177,9 @@
 
 | # | 步骤 | 谁做 | 验证方式 |
 |:--:|------|:--:|------|
-| 1 | **审查内容来源提取**：逐一过以下 5 个来源，产出 A/B/C 三类清单（对话中列出，不落盘）：<br>**来源①** fresh-eyes-loop 审查报告（阶段一/四）——每个 P0/P1 finding 对应的问题模式<br>**来源②** BugFix 交付清单（阶段二）——每个修复项是否已有 regression-checklist 覆盖<br>**来源③** 新功能交付清单（阶段二）——每个新交付引入的新代码路径/API/行为契约/对外声称<br>**来源④** fresh-eyes 复审报告（如有）——预料外盲区<br>**来源⑤** CHANGELOG 开发日志——交叉验证交付列表每项都有对应的审查内容提取<br><br>**三类清单**：<br>**A 类：新功能审查面**——新功能/新代码路径/API/行为契约在四份文档中有没有检查面？→ regression-checklist + acceptance-test + check-version.sh<br>**B 类：Bug 防回归**——下次怎么防止回退？→ regression-checklist + acceptance-test<br>**C 类：预料外盲区**——凭直觉发现、无法精确化的系统性问题 → fresh-eyes-review<br><br>**🔴 关键检查：新功能审查面覆盖率**——打开 changelog 交付列表，逐条问"这个交付引入的新代码路径/API/行为契约，在 regression-checklist 里有对应的检查维度吗？在 acceptance-test 里有对应的验证场景吗？新增的对外声称数字，check-version.sh 能对账吗？"有遗漏 → 标记，必须在步骤 2 中补上 | 当前 session | A/B/C 三类清单产出；changelog 每个交付项都有对应的审查内容提取（零遗漏） |
+| 1 | **审查内容来源提取**：逐一过以下 5 个来源，产出 A/B/C 三类清单（对话中列出，不落盘）：<br>**来源①** fresh-eyes-loop 审查报告（阶段一/四）——每个 P0/P1 finding 对应的问题模式<br>**来源②** BugFix 交付清单（阶段二）——每个修复项是否已有 regression-checklist 覆盖<br>**来源③** 新功能交付清单（阶段二）——每个新交付引入的新代码路径/API/行为契约/对外声称<br>**来源④** fresh-eyes 复审报告（如有）——预料外盲区<br>**来源⑤** CHANGELOG 开发日志——交叉验证交付列表每项都有对应的审查内容提取<br><br>**三类清单**：<br>**A 类：新功能审查面**——新功能/新代码路径/API/行为契约在四份文档中有没有检查面？→ regression-checklist + acceptance-test + check-version.sh<br>**B 类：Bug 防回归**——下次怎么防止回退？→ regression-checklist + acceptance-test<br>**C 类：预料外盲区**——凭直觉发现、无法精确化的系统性问题 → fresh-eyes-review<br><br>**🔴 关键检查 1：新功能审查面覆盖率**——打开 changelog 交付列表，逐条问"这个交付引入的新代码路径/API/行为契约，在 regression-checklist 里有对应的检查维度吗？在 acceptance-test 里有对应的验证场景吗？新增的对外声称数字，check-version.sh 能对账吗？"有遗漏 → 标记，必须在步骤 2 中补上<br><br>**🔴 关键检查 2：问题模式系统性提取（不只是功能覆盖，还要从 bug 中提取模式）**——手里有本轮所有审查报告（fresh-eyes findings / release-gate verdict / 人工审查），**逐份过一遍，每个真实发现（非误报）问三个问题**：<br>① 这个问题属于什么**模式**？（如"同一属性多处声明漂移""检查命令依赖具体措辞""架构迁移后检查命令没跟上"）<br>② 这个模式在四份文档里有对应的检查面吗？→ 没有就是新维度/场景/视角<br>③ 如果是"审查文档自身的检查命令过期"（如 grep 已不存在的措辞、查已迁移的路径）→ 这是**元模式**，需修旧检查命令 + 加元检查维度（扫 checklist 引用的路径是否都还存在）<br>**禁止只做功能覆盖检查不做模式提取**——功能覆盖只防"新功能没测"，模式提取防"同样的坑踩第二次"。历史教训：只做功能覆盖（交付项全有场景），漏了从审查报告的多个真实发现提取模式，被提醒后才补 | 当前 session | A/B/C 三类清单产出 + 问题模式清单产出；changelog 每个交付项都有审查覆盖（零遗漏）+ 本轮每个真实发现都有模式归类（已覆盖 or 新增） |
 | 2 | **四份文档分发升级（基于步骤 1 的 A/B/C 清单，四套逻辑区分对待）**：<br>**① regression-checklist.md（加法）**：A 类 + B 类中需要人工判断上下文的检查项 → 新增维度（编号递增）。每发现一个问题加一条，膨胀靠步骤 4-5 瘦身控制<br>**② acceptance-test.sh（加法）**：A 类 + B 类中可通过 CLI/grep/bash 自动化验证的 → 新增场景（编号递增）。regression-checklist 是人工巡检用的，acceptance-test 是机器跑的——能自动化检出的就别只放在人工清单里<br>**③ check-version.sh（加法）**：A 类中新增的结构性检查点（新文件/新字段/新配置项/新对外声称数字）→ 增加自动化检查。判断标准：能用 grep/node 解析自动判定的 → check-version.sh；需要上下文判断的 → regression-checklist<br>**④ fresh-eyes-review.md（校准，非加法）**：C 类按步骤 6 决策树处理。⚠️ 不要往 fresh-eyes-review 里加精确检查项——它是留白式的直觉审查，加检查项会让它退化成第二个 regression-checklist | 当前 session | `git diff` 显示文档更新（fresh-eyes 可能无变更）；A 类遗漏项已补齐 |
-| 3 | **逐项验证**：① 每条新增回归维度跑一遍命令确认可执行 ② 确认 fresh-eyes-review 新维度与回归维度互相印证、无矛盾 ③ **新功能审查面覆盖率确认**——步骤 1 标记的遗漏项在步骤 2 中是否全部补齐？逐条 `grep` 确认 changelog 每个交付的关键词在 regression-checklist 或 acceptance-test 中至少出现一次 | 当前 session | 所有新增维度可执行 + 两份文档互相印证 + 新功能审查面覆盖率 100% |
+| 3 | **逐项验证**：① 每条新增回归维度跑一遍命令确认可执行 ② 确认 fresh-eyes-review 新维度与回归维度互相印证、无矛盾 ③ **新功能审查面覆盖率确认**——步骤 1 标记的遗漏项在步骤 2 中是否全部补齐？逐条 `grep` 确认 changelog 每个交付的关键词在 regression-checklist 或 acceptance-test 中至少出现一次 ④ **问题模式提取闭环确认**——步骤 1 的"问题模式清单"中每个标记为"需新增"的模式，在步骤 2 中是否都落到了对应文档（regression-checklist / fresh-eyes-review / acceptance-test）？ | 当前 session | 所有新增维度可执行 + 两份文档互相印证 + 新功能审查面覆盖率 100% + 问题模式提取零遗漏 |
 
 > ✅ 完成阶段四后，**开发 session 的文档工作已一气呵成**——回归清单 + 发布后审查全部在当前 session 更新完。接下来**阶段六在新 session 直连跑 acceptance-test.sh**（acceptance 直连绕过 sandbox kill），然后**开新监控 session 启动 driver**（只跑 regression/coverage/consolidate/verdict）。🔴 阶段六 verdict=PASS 前，开发 session 不进阶段七~八——等 PASS 回来再继续。
 
@@ -470,11 +470,12 @@ ls docs/changelog/*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
 
 | 文档 | 什么时候更新 |
 |------|------|
-| `README.md` | FDE 完成度变化、效果证据更新、新功能入口 |
-| `ARCHITECTURE.md` | 架构决策或设计思路有变更 |
-| `DEVELOPMENT.md` | 开发流程有变更 |
-| `LIMITATIONS.md` | 新发现的局限或旧局限被消除 |
-| `HANDBOOK.md` | 用户使用习惯、FAQ 有变化 |
+| `README.md` | FDE 完成度变化、效果证据更新、**新功能入口（新增能力段 + changelog 链接）** · **🔴 新能力段只留最新版本——旧版本的新能力段直接删掉，不堆叠（v1.3.1 教训：读者看到两个版本的新能力段会困惑哪个是当前）** · **每版开发完成后顺手优化 README 的表达/结构/视觉**（不算改功能，算文档卫生） |
+| `README.en.md` | **与 README.md 同步**——badge 自动改，但**新能力段 + 测试数 + 规则数需手动同步**（英文版易漏，v1.3.1 教训） · 同样只留最新版本新能力段 |
+| `ARCHITECTURE.md` | 架构决策或设计思路有变更 · **13/12 包口径一致性**（13=npm 发布总数，12=有 test script，改包数时两处同步） |
+| `DEVELOPMENT.md` | 开发流程有变更 · **正文测试数声称同步**（grep `XX 测试`，bump 后数字会过时） |
+| `LIMITATIONS.md` | 新发现的局限或旧局限被消除 · **已知问题标注修复版本落点**（不写「未来版本」，写具体 v1.3.x） |
+| `HANDBOOK.md` | 用户使用习惯、FAQ 有变化 · **「已经能替你干的事」版本号 + 新能力列表** · **「现在还干不了的事」移除本版交付项** |
 | `COMMUNITY.md` | contributor 数据、社区状态有变化 |
 | `ROADMAP.md` | 五步更新（见上）。不要在「现在在哪」堆积历史版本详细表 |
 | `CHANGELOG.md` | 新增版本索引条目。版本历史的**唯一权威入口** |
@@ -505,6 +506,8 @@ shellcheck engine/scripts/*.sh tools/*.sh install.sh   # 期望：零 error
 | 2 | **三脚本对照检查**<br><br>① `check-version.sh` 检查的每一类文件，`bump-version.sh` 是否都有对应的 bump 步骤？（缺口 = check 能发现但不自动修复——如 v1.1.3 发现的 10 个 workspace 子包 version 字段）<br>② `pre-push-check.sh` 的检查项数量是否和 CHANGELOG/ROADMAP 声明的一致？（v1.1.3 教训：声明 13 通过，实际 15 通过/16 项）<br>③ `check-version.sh` 的检查项编号分母是否和实际检查项数一致？（v1.1.3 教训：`[1/13]~[12/13]+[13/14]+[14/14]` 分母跳变）<br>④ **🔴 v1.2.2 教训：bump-version.sh --dry-run 必须验证为纯只读**——步骤 9b 的 node 脚本段无条件 `fs.writeFileSync` 写盘，导致 `--dry-run` 实际修改了 9 个 package.json。验证方式：跑完 dry-run 后 `git diff --stat` 必须零改动；有改动 = P0 bug | ① 跑 `./tools/check-version.sh` 看末尾「检查通过: N/N 项」，再跑 `./tools/bump-version.sh --dry-run` 对照 bump 步骤数，两者覆盖范围应一致<br>② `./tools/pre-push-check.sh 2>&1 \| grep '结果:'` 的数字和 CHANGELOG 质量验证段对比<br>③ `grep '── \[' tools/check-version.sh` 看实际打印的分母是否全一致（注释中的引用不算）<br>④ `bash tools/bump-version.sh X Y --dry-run > /dev/null 2>&1; git diff --stat` 零改动 |
 | 3 | **过时检查清理** | ... |
 | 4 | **🔴 `npm run build` 重建 dist 产物**（v1.2.2 P0-01 教训：bump-version 只改源码不改 dist/，fresh-eyes-loop 修复了代码但 dist 仍是旧版本。**必须在所有代码修复完成后、发版前重建**——确保 CLI --help 显示正确版本号，dist 产出包含全部修复） | `node engine/audit/dist/index.js --help` 输出 vX.Y.Z |
+| 5 | **🔴 跨文档锚点校验**（v1.3.1 新增）——文档标题改动后 `](xxx.md#旧锚点)` 不会自动跟着改，导致链接跳不到精确位置。本步用 `tools/check-anchors.mjs` 按 GitHub 锚点归一化规则全量比对跨文件锚点引用 | `node tools/check-anchors.mjs` → `✓ 全部通过：N 个锚点引用全部有效`；有过时可用 `--fix` 模糊匹配自动修复 |
+| 6 | **🔴 hook 端到端实测（v1.3.1 补 · P0 发版门禁盲区）**——真装 hook + 真提交密钥验证拦截链路：<br><br>① **准备隔离测试 bin**：`mkdir -p /tmp/fe-verify-bin && printf '#!/bin/bash\nexec node <repo>/engine/audit/dist/cli-quick.js "$@"\n' > /tmp/fe-verify-bin/sofagent-audit && chmod +x /tmp/fe-verify-bin/sofagent-audit`<br>⚠️ **先 `rm -f` 确认目标路径不是 symlink**（v1.3.1 血泪：`/tmp/fe-bin/sofagent-audit` 是历史测试遗留的 symlink 指向仓库 dist，`cat >` 会跟随 symlink **直接覆盖 dist 产物**且 git 不跟踪 dist 无法恢复）<br>② 新仓库装 hook：`git init && node -e "require('<repo>/engine/core/dist/config-template.js').HOOK_TEMPLATE" > .git/hooks/commit-msg && chmod +x .git/hooks/commit-msg`<br>③ **拦截验证**：`export PATH=/tmp/fe-verify-bin:$PATH SOFAGENT_DATA=/tmp/fe-vd SOFAGENT_HOME=/tmp/fe-vh` → 提交含密钥 `.env` → **必须 A1+A2 拦截 exit 2 且 `git show HEAD:.env` fatal**（密钥未入库）<br>④ ⚠️ **拦截后清暂存区再测下一场景**：`git reset HEAD -- .env && rm .env`（v1.3.1 血泪：被拦的 `.env` 留在暂存区，直接测"干净提交"会被残留误拦——那是测试污染不是产品 bug）<br>⑤ **干净提交验证**：改 app.py → commit → WARN 放行 exit 0 | 拦截：密钥提交被 A1+A2 拦，`git show HEAD:.env` fatal；放行：干净提交成功 |
 
 ---
 
@@ -778,6 +781,28 @@ gh api repos/KongFangXun/sofagent/git/tags -X POST \
 gh api repos/KongFangXun/sofagent/git/refs -X POST \
   -f ref="refs/tags/vX.Y.Z" -f sha="$(git rev-parse HEAD)"
 ```
+
+> **🔴 v1.3.0 教训·git 代理失效时用 gh api 建 PR+merge 替代直接 push**：
+>
+> 发布时 git HTTPS 代理（全局配置的端口）可能已失效（CONNECT tunnel 502），但 **gh api（api.github.com）通道独立可用**。此时不要干等 push——直接走 PR 流程：
+> ```bash
+> # ① push 分支（网络恢复时重试；仍失败则暂存到后面）
+> git -c http.proxy=<当前session代理> -c https.proxy=<当前session代理> push --no-thin origin dev/vX.Y.Z
+> # ② 建 PR + merge（gh api 通道，不依赖 git HTTPS）
+> gh api repos/KongFangXun/sofagent/pulls -X POST -f title="vX.Y.Z — ..." -f head="dev/vX.Y.Z" -f base="main" -f body="..." --jq '.number'
+> gh api repos/KongFangXun/sofagent/pulls/<N>/merge -X PUT -f merge_method=merge
+> # ③ 打 tag 指向 merge commit（从 PR merge 返回的 sha 获取）
+> git tag vX.Y.Z <merge_sha> && git -c http.proxy=... push --no-thin origin vX.Y.Z
+> ```
+> 注意：git push 502 常是**暂时的**（网络波动），先重试几次；gh api 通道作为降级备份始终可用。
+
+> **🔴 v1.3.0 教训·发布前必跑 pre-push-check 依赖图循环检测**：
+>
+> round-2 auto-commit 把 `@sofagent/daemon` 从 orchestrator devDependencies 移进 dependencies（round-2 批量依赖调整误伤），形成 daemon↔orchestrator 循环依赖。**pre-push-check 的依赖图循环检测（步骤 8）在发布前抓到了它**——发布前必须跑 pre-push-check，不能跳过。修复：测试用的 @sofagent 依赖必须放 devDependencies（运行时不用 ≠ 可以放 dependencies）。
+
+> **🔴 v1.3.0 教训·ClawHub 版本号与 npm 独立，发布前先查冲突**：
+>
+> clawhub 上 sofagent 早已存在 7-29 的旧 1.3.0（内容过期 + security=suspicious 含 .DS_Store），同版本不可覆盖 → skill 分发被迫留到下个版本。**发布前先查**：`clawhub skill verify <slug> 2>&1 | grep version` 看现有版本，冲突则递增（如 npm 1.3.0 → clawhub 1.3.1）。同时发布目录先清理 `.DS_Store`（macOS 残留会触发 security 扫描 not_clean）。
 
 ### 🔴 tag 后 commit 校验（F-10 / fresh-eyes F-03 教训）
 

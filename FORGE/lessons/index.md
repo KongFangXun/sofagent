@@ -4,7 +4,7 @@
 >
 > 这不是"踩坑参考"，是**开发参照**——下次开发新的 loop 或 sub-agent 时，必须逐条对照本文档执行。每条标准都来自真实 debug 会话（附 commit hash + 根因），不是理论推演。
 >
-> v1.3.0 · 2026-08-09（UTC）· 孔放勋
+> v1.3.1 · 2026-08-09（UTC）· 孔放勋
 >
 > v1.2.9 run-12 更新（2026-08-08）：跨闭包变量引用、nohup 后台死亡、8GB 并发 OOM 三项新坑位
 >
@@ -13,6 +13,8 @@
 > v1.3.0 run-22/23 更新（2026-08-09）：finding-NN 格式铁律（分类段落切 0 finding 假绿）、worker 写完产物不退出 → driver 永久 await（process.exit + spawn 超时兜底）、降级标记持久化（degraded.flag 防 a-verify 覆盖抹标记）
 >
 > v1.3.0 release-gate run-21 更新（2026-08-09）：确定性判定优先（别让 LLM 解读可确定性解析的日志 + ANSI 剥离坑）、F 链收敛回写权威产物（verdict.md 同步）
+>
+> v1.3.1 run-03 更新（2026-08-10）：降级判定一票否决误伤（改比例阈值 25%）、perspective worker 工具预算偏紧（12/15→15/20）、裸 LLM 降级产物缺结构校验（补 isReportText 门控 + 结构化占位）、连续降级熔断阈值过激进（2→3 轮）四项新坑位
 
 ## 本文档定位
 
@@ -34,7 +36,7 @@
 | 一·架构设计 | [./architecture.md](./architecture.md) | createReactAgent 禁用 createDeepAgent · Driver-Worker 编排 · 步骤定义 · 目录架构 |
 | 二·模型配置 | [./models.md](./models.md) | MODEL_CONFIGS · Thinking-only 模型 · 步骤级 maxTokens · 计费模式 |
 | 三·性能优化 | [./performance.md](./performance.md) | 三层上下文裁剪（截断+stateModifier+preModelHook）· 效率铁律 · stream |
-| 四·Driver 编排 | [./driver.md](./driver.md) | recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step |
+| 四·Driver 编排 | [./driver.md](./driver.md) | **preflight-check 跑前自检** · recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step |
 | 五~八·Stream/Prompt/工具/可观测 | [./stream-prompt-tools.md](./stream-prompt-tools.md) | stream 迁移 P0 铁律 · BSD 约束 · 工具格式转换 · 两层可观测 |
 
 ---
@@ -68,15 +70,22 @@
 
 ### 🔧 Driver 编排
 
+- [ ] **长循环 driver 开跑前跑 preflight-check 自检**（路径/管道/API/预算/目录/磁盘六项；HALT 才阻塞，自身异常降级 WARN，worker/dry-run/--step 跳过）（[四·preflight-check](./driver.md#preflight-check-跑前自检)）
+- [ ] **preflight 不自动修复危险项**（只报问题 + 给可复制修复命令；唯一允许自动做的是幂等 mkdir runDir）（[四·preflight-check](./driver.md#preflight-check-跑前自检)）
+- [ ] **stdout 管道检测定 WARN 不定 HALT**（命令替换/重定向的 stdout 天然是管道，HALT 会误杀冒烟测试和合法日志重定向）（[四·preflight-check](./driver.md#preflight-check-跑前自检)）
 - [ ] **recursionLimit 按步骤区分**（审查类 130）（[四·recursionLimit](./driver.md#recursionlimit-按步骤区分)）
 - [ ] **三层熔断防护**（L1 软 50 + L2 硬 60 写报告窗口 5 + L3 recursionLimit 130）（[四·三层熔断](./driver.md#worker-工具调用死循环防护三层熔断)）
 - [ ] **L2 用两阶段写报告窗口**（不 break，进 5 superstep 窗口）（[四·L2 两阶段](./driver.md#l2-两阶段写报告窗口关键设计)）
 - [ ] **extractAgentText 跳过空 content**（createReactAgent 中间消息全空）（[四·兜底报告](./driver.md#兜底报告合成)）
 - [ ] **并行 Worker 用 allSettled**（[四·allSettled](./driver.md#allsettled-并行降级)）
 - [ ] **parseStopCondition 做降级检测**（占位报告不算干净轮）（[四·降级检测](./driver.md#降级检测防假阳性干净)）
+- [ ] **降级判定用比例阈值不用一票否决**（短产物占比 > 25% 才判整轮降级，防 1 份短产物连累整轮——run-03 教训）（[四·一票否决误伤](./driver.md#降级判定一票否决误伤v131-run-03-教训)）
+- [ ] **裸 LLM 降级产物过 isReportText 门控**（所有降级路径质量标准一致，不达标返回结构化占位）（[四·降级产物结构校验](./driver.md#裸-llm-降级产物需过结构校验v131-run-03-教训)）
 - [ ] **产物完整性校验**（"有输出"≠"解析成功"；判定产物 result.md 空占位→降级重建，绝不静默跳过）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
 - [ ] **判定产物必须可消费**（降级重建 result.md 用 `### finding-NN` 带优先级，别写 SKIP 表格让 b-fix 空转）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
-- [ ] **必读文件多的步骤单独配工具预算**（a-consolidate 60/80；开放探索类压低 12/15；并行 tool_call 让硬熔断超发，45 实际撞 48-60）（[四·并行超发](./driver.md#并行工具调用让硬熔断超发--步骤级预算覆盖v130-run-21)）
+- [ ] **必读文件多的步骤单独配工具预算**（a-consolidate 60/80；开放探索类压低 15/20；并行 tool_call 让硬熔断超发，45 实际撞 48-60）（[四·并行超发](./driver.md#并行工具调用让硬熔断超发--步骤级预算覆盖v130-run-21)）
+- [ ] **perspective worker 预算按真实负载调**（12 视角审查需读 3-5 文件，15/20 够用且不空转；别一刀切压太低导致普遍熔断——run-03 教训）（[四·perspective 预算偏紧](./driver.md#perspective-worker-工具预算偏紧导致普遍熔断v131-run-03-教训)）
+- [ ] **连续降级熔断阈值 >=3**（与 run-06 原始教训对齐，给偶发降级 1 次容错；>=2 在降级判定有误伤时会腰斩循环——run-03 教训）（[四·连续降级](./driver.md#连续降级-error-退出)）
 - [ ] **排查标记字符串防假阳性**（grep `===FILE:` 命中占位注释文本自身，用 `^===FILE:` 只匹配行首）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
 - [ ] **result.md 必须用 finding-NN 结构**（分类段落 `### 🔴 P0 阻塞项` 切 0 finding 假绿；兜底 prompt 强制 + 检测扩展）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
 - [ ] **worker 写完产物必须显式 process.exit(0)**（残留句柄让事件循环不清空 → 进程不退出 → driver 永久 await；心跳正常≠流程在走）（[四·worker 不退出](./driver.md#worker-写完产物不退出--driver-永久-awaitv130-run-23)）
@@ -167,6 +176,7 @@
 | 08-09 | 33bbb6eb | a-verify 覆盖 result.md 抹掉降级标记 → 降级轮假绿（degraded.flag 持久化） | P0（假阳性） | 四·产物完整性校验 |
 | 08-09 | d4c797c3 | release-gate acceptance 误判 FAIL——worker 把 grep exit code 当脚本退出码 + ANSI 码致正则失败（确定性日志判定） | P0（假 FAIL） | 四·确定性判定 |
 | 08-09 | d4c797c3 | F 链收敛 PASS 但 verdict.md 仍 FAIL——状态变化未回写权威产物 | P1 | 四·F 链收敛 |
+| 08-09 | 待提交 | preflight-check 跑前自检模块（六项检查；管道检测从 HALT 修正为 WARN 防误杀冒烟测试） | P1（预防） | 四·preflight-check |
 
 ### 历史坑位索引
 
@@ -204,6 +214,7 @@
 | 30 | LLM 解读日志误判——grep exit code 幻觉 / 不懂非连续编号 / WARN 当 FAIL | 四·确定性判定优先 |
 | 31 | ANSI 颜色码插入文本导致正则匹配失败 | 四·确定性判定优先（剥离 \x1b[...m） |
 | 32 | F 链收敛状态未回写 verdict.md → 文件与 status 矛盾 | 四·F 链收敛回写权威产物 |
+| 33 | 长循环跑到一半环境崩溃——缺跑前自检（preflight-check 六项检查） | 四·preflight-check |
 
 ### 关键设计决策速查
 

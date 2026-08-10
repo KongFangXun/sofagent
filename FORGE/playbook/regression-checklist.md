@@ -1,8 +1,8 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
-> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。v1.2.9 新增维度 75-78（check-version MCP 扫描路径 / JS RegExp (?i) 不支持 / drift 排除 .test. / 新文件版本头匹配 SSOT），归并 65+66（FORGE stream 数据处理）、73+74（ESM named export + FORGE 烟测）。v1.3.0 新增维度 79-82（运行时审计 tool wrapper / 决策审计 HMAC 链 / 外部记忆后端 + sensitivity ACL / 进化链路写保护），归并无。v1.3.0 fresh-eyes 复审新增维度 83（license + action.yml 版本锁定）。v1.3.0 阶段五覆盖率确认新增维度 84（shouldAllow + 仓库隔离）。
-> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：61 维（v1.3.0）
+> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。v1.2.9 新增维度 75-78（check-version MCP 扫描路径 / JS RegExp (?i) 不支持 / drift 排除 .test. / 新文件版本头匹配 SSOT），归并 65+66（FORGE stream 数据处理）、73+74（ESM named export + FORGE 烟测）。v1.3.0 新增维度 79-82（运行时审计 tool wrapper / 决策审计 HMAC 链 / 外部记忆后端 + sensitivity ACL / 进化链路写保护），归并无。v1.3.0 fresh-eyes 复审新增维度 83（license + action.yml 版本锁定）。v1.3.0 阶段五覆盖率确认新增维度 84（shouldAllow + 仓库隔离）。v1.3.1 新增维度 85-87（FORGE driver run_bash cwd 强制 / auto-commit 代码领域限定 / HMAC 密钥 Shannon 熵检测）+ 维度 88（根 tsconfig outDir 缺失根因待修）。
+> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：65 维（v1.3.1）
 ## 🔒 维护公约（防膨胀铁律）
 
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1250 行（61 维度）、`acceptance-test.sh` ≤ 2050 行（164 场景），越线触发瘦身。
@@ -22,7 +22,7 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（61 项 · 编号 1–84，19 个归并/移除项已转为 HTML 注释；v1.3.0 新增 #79-84）
+## 审查维度（69 项 · 编号 1–88，19 个归并/移除项已转为 HTML 注释；v1.3.0 新增 #79-84；v1.3.1 新增 #85-88）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -48,8 +48,6 @@ grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 �
 # 子项 h: SKILL.md 铁律/底线数标题声称与实际一致（原维度 48g）
 SKILL_BC=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || echo 0); SKILL_BA=$(sed -n '/^### [0-9] 底线/,/^### /p' SKILL/SKILL.md | grep -cE "^- " || echo 0); [ "$SKILL_BC" != "$SKILL_BA" ] && echo "⚠️ SKILL.md 底线数 $SKILL_BC vs $SKILL_BA"
 ```
-
-<!-- #2  [v1.2.1 移除：被 check-docs.sh 维度 1b 死链扫描全量覆盖] -->
 
 #### 3. 文档规范源与归属一致性
 
@@ -99,9 +97,6 @@ TABLE=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " engine/audit/README.md)
 echo "index=$INDEX / README表=$TABLE（期望 TABLE≥INDEX）"   # v1.1.4：A18/A19 漏更新
 grep "run_audit" engine/mcp/src/mcp-server.ts | grep -oE "[0-9]+ 条规则"   # MCP 数字一致
 ```
-
-<!-- #5  [v1.2.1 归并至维度 33：审计输出链路检查重叠] -->
-<!-- #6  [v1.2.1 移除：被 check-version.sh 13 类位置全量覆盖] -->
 
 #### 7. 感知层配置与推送链路
 
@@ -190,14 +185,6 @@ grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l   # 期望 4
 grep -cE "evidenceMode:" engine/audit/src/rules/index.ts   # 期望 24
 ```
 
-<!-- #10 [v1.2.1 移除：被 pre-push-check.sh 步骤 7+8 全量覆盖] -->
-
-<!-- #11 [v1.2.3 移除：被 pre-push-check.sh 步骤 8 依赖图循环检测全量覆盖] -->
-
-<!-- #12 [v1.2.3 移除：低频且有排除列表误报风险，由 fresh-eyes-review 覆盖] -->
-
-<!-- #13 [v1.2.1 移除：被 check-test-count.sh 一键校验全量覆盖] -->
-
 #### 14. enterprise-deploy 完整性
 
 ```bash
@@ -210,11 +197,15 @@ test -f docs/guides/enterprise-deploy.md && echo "✅ 文件存在"
 
 #### 15. Agent 身份感知有效性
 
+> 🔴 v1.3.1 教训：原检查命令 grep 具体措辞（"露个脸就够了"），措辞改后命令失效得 0。
+> 改为 grep 结构性标记（版本号签名 / 身份声明段落），不依赖具体文案。
+
 ```bash
-grep -c "露个脸就够了" SKILL/SKILL.md          # 期望：≥ 1
-grep -c "质量搭档" SKILL/harness/engage.md              # 期望：≥ 1
-grep -c "sofagent 已就绪" engine/scripts/lib/post-install.sh  # 期望：≥ 1
-grep -c "引擎身份提示" SKILL/SKILL.md                      # 期望：≥ 1
+# v1.3.1 修：检查结构性标记而非具体措辞（措辞易改，结构稳定）
+grep -c "sofagent" SKILL/SKILL.md | head -1           # 期望：≥ 5（身份声明贯穿全文）
+grep -c "质量搭档\|FDE\|约束" SKILL/harness/engage.md  # 期望：≥ 1（角色定位存在）
+grep -c "sofagent" engine/scripts/lib/post-install.sh  # 期望：≥ 1（安装后身份提示）
+node engine/audit/dist/index.js --version 2>&1 | grep -q "sofagent" && echo "✓ 版本签名"  # CLI 身份
 ```
 
 #### 16. 安全约束 fail-closed 与权限加固
@@ -279,8 +270,6 @@ grep "\"WARN\"" $F18   # 只产生 WARN
 grep "A18" engine/audit/src/rules/runner.ts   # extended 优先级 A18 排在 A17 之后
 ```
 
-<!-- #19 [v1.2.1 归并至维度 18：A19+A18 结构平行，合并为扩展规则回归锁] -->
-
 #### 20. daemon plist + watch.yml 正确性 + --init 覆盖防护（v1.2.1 归并 20+22）
 
 ```bash
@@ -319,8 +308,6 @@ grep -rl "sofagent-releaser\|releaser-skill" engine/scripts/lib/file-deploy.sh i
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · CHANGELOG 纯度 · 测试数一致 · 安全约束 fail-closed · npm 产物三方一致
 
-<!-- #22 [v1.2.1 归并至维度 20：plist 检查 grep 目标 100% 重叠] -->
-
 #### 23. FDE/LOOP 跨产品声称一致性
 
 > v1.1.4 暴露：FDE/LOOP 声称"独立产品"，但文档里步数、Agent 数、CLI 子命令存在矛盾
@@ -350,7 +337,6 @@ grep -H "v[0-9]\+\.[0-9]\+\.[0-9]\+" install.sh | head -4   # 期望：所有版
 grep -c "cross-product-contract\|cross_product_contract" .github/workflows/*.yml 2>/dev/null   # ≥1
 ```
 
-<!-- #24 [v1.2.0 移除：被 SOP 步骤 13 Step D 覆盖] -->
 #### 25. conflict-check 巡检器只读铁律 + schedule 正确性（v1.1.6 新增）
 
 ```bash
@@ -371,10 +357,6 @@ if (r.triggered) throw new Error('Expected triggered:false');
 if (r.severity !== 'info') throw new Error('Expected info');
 console.log('OK');"   # 期望：OK
 ```
-
-<!-- #27 [v1.2.3 归并至维度 3 子项 f：WIKI.md 存在性+结构+引用链检查] -->
-
-<!-- #27b [v1.2.1 移除：被 pre-push-check.sh 步骤 1 + CI shellcheck.yml 全量覆盖] -->
 
 #### 28. Skill 元数据完整性（v1.1.6 新增）
 
@@ -493,10 +475,6 @@ grep -c "向后兼容\|undefined\|actionGovernance" engine/audit/src/audit-histo
 # 子项 f: audit-history 测试用例数（测试数声称已被维度 13 SSOT 反查覆盖，此处只验证结构）
 grep -c "  it(" engine/audit/src/audit-history.test.ts   # ≥11
 ```
-<!-- #34 [v1.2.7 移除: 子项 a/c 被 check-version.sh + check-test-count.sh 全量覆盖；子项 b/d 被 acceptance-test S165 覆盖] -->
-<!-- #35 [v1.2.0 归并至维度 34] -->
-<!-- #36 [v1.2.3 归并至维度 23 子项 e：跨产品 install CI 验证检查] -->
-<!-- #37 [v1.2.1 归并至维度 8：red-team 场景检查是 acceptance-test 健壮性的子集] -->
 
 #### 38. daemon 审计集中收集 workaround + 安全文档时效性（v1.1.7 新增 · BugFix 9+13）
 
@@ -618,8 +596,6 @@ grep -c "buildConstrainedSystemPrompt\|约束.*加载链" engine/orchestrator/sr
 grep -c "dag-runner\|detectFileConflicts\|compose.*DAG" FORGE/playbook/acceptance-test.sh   # ≥2
 ```
 
-<!-- #43 [v1.2.1 归并至维度 29：pushKnowledgeSummary 依赖 dream-cycle/knowledge-health 触发] -->
-
 #### 44. USB 完整运行时——HMAC 签名 + AES-256 加密 + fail-closed 验签（v1.1.9 新增 · 交付一）
 
 > 通用安全 fail-closed 基线见维度 16。
@@ -674,8 +650,6 @@ grep -c "splitWaves\|mapNodeStates\|buildEvidenceChain" engine/orchestrator/src/
 grep -c "extractControlGraphState\|sanitizeLoopId\|路径穿越" FORGE/playbook/acceptance-test.sh   # ≥3
 ```
 
-<!-- #46 [v1.2.1 归并至维度 45：编排状态机 grep 目标重叠 ab-scheduler.ts] -->
-
 #### 47. 产品叙事收敛红线 + BugFix 42 项核心回归锁（v1.1.9 新增 · 交付四+五）
 
 ```bash
@@ -700,9 +674,6 @@ grep -c "MAX_NODES = 20\|MAX_TASK_LENGTH = 2000" engine/orchestrator/src/workflo
 # 子项 g: 验收场景覆盖（acceptance-test 场景 120-121）
 grep -c "FDE Agent\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODES" FORGE/playbook/acceptance-test.sh   # ≥4
 ```
-
-<!-- #48 [v1.2.0 归并至维度 1：子项 e-h 全部归入维度 1] -->
-
 
 #### 49. v1.2.0 物理结构大重构——旧路径零残留 + 新结构就位（v1.2.0 新增 · fresh-eyes 三轮审查）
 
@@ -742,7 +713,6 @@ grep -c 'sofagent-key' engine/scripts/lib/post-install.sh   # ≥2
 grep -c 'chmod 600' engine/scripts/lib/post-install.sh       # ≥1
 ```
 
-
 #### 50. 文档乱码扫描——U+FFFD + null byte + UTF-8 损坏检测（v1.2.0 新增）
 
 ```bash
@@ -761,7 +731,6 @@ node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL',
 # 子项 e: null byte 扫描（\x00 嵌入——逐字节扫 Buffer，\x00 在 JSON 字符串里会被吞掉）
 node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL','FDE','FORGE','tools'];const rootFiles=['README.md','README.en.md','CHANGELOG.md','ROADMAP.md','SECURITY.md','LIMITATIONS.md','CONTRIBUTING.md','install.sh'];const skips=['node_modules','dist','target','.workbuddy','.sofagent','archive','changelog'];let hits=[];function scan(f){try{const buf=fs.readFileSync(f);let line=1;for(let i=0;i<buf.length;i++){if(buf[i]===10)line++;if(buf[i]===0){const ctx=buf.slice(Math.max(0,i-10),Math.min(buf.length,i+10)).toString('utf8').replace(/\x00/g,'<NUL>');hits.push(f+':'+line+': null byte 上下文 ...'+ctx+'...');if(hits.length>20)break}}}catch(e){}}function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(skips.includes(e.name))continue;const f=path.join(dir,e.name);if(e.isDirectory())walk(f);else if(/\.(md|ts|sh|json|yml)$/.test(e.name))scan(f)}}dirs.forEach(d=>{if(fs.existsSync(d))walk(d)});rootFiles.forEach(f=>{if(fs.existsSync(f))scan(f)});console.log(hits.length===0?'✅ 零 null byte':'❌ FOUND '+hits.length);hits.forEach(h=>console.log('  '+h))"
 ```
-
 
 #### 51. v1.2.0 审计链安全加固回归——HMAC 写读一致 + doctor 三态 + config 签名 + 版本自检 + key 强度（v1.2.0 BugFix 批次新增）
 
@@ -784,10 +753,6 @@ grep -q "validateHmacKey" engine/core/src/audit-history.ts && echo "✅ validate
 grep -q "byteLen < 16\|16.*字节\|>=.*16" engine/core/src/audit-history.ts && echo "✅ 16 字节阈值" || echo "❌ 缺少阈值"
 ```
 
-
-<!-- #52 [v1.2.1 移除：方法论指导，非可执行巡检] -->
-
-
 #### 53. SSOT 零硬编码——产品代码不得绕过 data-paths.ts 拼路径（v1.2.1 新增）
 
 > ⚠️ **判定规则（防误报）**：data-paths.ts 管的是 `~/.sofagent/data/` **运行时数据路径**（resolveAuditDir/resolveDataDir 等）。包内自带的 fixture / golden-set 文件路径（如 `join(__dirname, '..', 'data', 'golden-set.yaml')`）是**随包发布的测试数据**，不是运行时数据，不适用此维度。仅当路径指向用户 home 下的运行时数据目录（如 `~/.sofagent/data/`、`data/audit/`）却绕过 data-paths.ts 时才算 FAIL。
@@ -801,17 +766,12 @@ grep -rn "join(.*'data'" engine/ --include="*.ts" | grep -v "data-paths.ts" | gr
 grep -c "resolveAuditDir\|resolveDataDir\|resolveTaskDir\|DATA_ROOT" engine/core/src/data-paths.ts   # ≥2
 ```
 
-
 #### 54. 环境变量命名 Unix 全大写——禁止驼峰（v1.2.1 新增）
 
 ```bash
 grep -rn "SOFAgent_" install.sh engine/ FORGE/ --include="*.sh" --include="*.ts" --include="*.mjs"   # 期望：零命中
 grep -rc "SOFAGENT_HOME\|SOFAGENT_DATA" engine/scripts/lib/platform-detect.sh engine/scripts/lib/config.sh   # ≥2
 ```
-
-
-<!-- #55 [v1.2.3 移除：被 pre-push-check.sh 步骤 1 shellcheck 全量覆盖] -->
-
 
 #### 56. trust-but-verify——mock 单测全绿 ≠ 真实引擎匹配（v1.2.1 P0b 新增）
 
@@ -825,7 +785,6 @@ grep -rc "SOFAGENT_HOME\|SOFAGENT_DATA" engine/scripts/lib/platform-detect.sh en
 # ab-test 包
 (cd engine/ab-test && node dist/cli.js run --golden-set 2>&1 | grep -E "passRate|通过率")
 ```
-
 
 #### 57. A2/A9 fixture 敏感内容安全——占位符 + base64 编码（v1.2.1 P0b 新增）
 
@@ -842,7 +801,6 @@ grep -c 'PLACEHOLDER_MAP\|SK_PREFIX\|INJ_PHRASE' engine/eval/src/eval-runner.ts 
 
 >
 > 🔴 **v1.2.2 再犯**：P0 补测试时 fixture 又写了字面量 `sk-abcdef...`，commit 被 A2 拦截 2 次。**此问题已复发两次（v1.2.1 eval + v1.2.2 P0 测试），铁律升级：测试文件中任何 secret-like 串（含 sk-/AKIA/ghp_ 前缀的假数据）必须运行时拼接（数组 join 或 base64 解码），绝不字面量。**
-
 
 #### 58. convertAuditResult 三态——WARN 不应当 FAIL（v1.2.1 P0b 新增）
 
@@ -877,7 +835,6 @@ grep -A10 'convertAuditResult' engine/eval/src/cli.ts | grep -E 'PASS|WARN|FAIL|
 
 > **路径迁移感知**：v1.2.1 起 `.sofagent/` 迁移到 `~/.sofagent/`，数据子目录从 `.sofagent/audit` 变为 `~/.sofagent/data/audit`。检查路径权限时认准 `~/.sofagent/`。
 
-
 #### 59. resolve*Dir 调用方传参——禁止传 process.cwd() 给 overrideHome 参数（v1.2.2 新增）
 
 ```bash
@@ -885,7 +842,6 @@ grep -A10 'convertAuditResult' engine/eval/src/cli.ts | grep -E 'PASS|WARN|FAIL|
 grep -rn "resolveAuditDir(process\|resolveKnowledgeDir(process\|resolveDataDir(process\|writeSessionReport.*process" engine/ --include="*.ts" | grep -v node_modules | grep -v dist | grep -v __tests__
 # 期望：无输出（exit 1）
 ```
-
 
 #### 60. barrel re-export 一致性——新增导出 public-api.ts 和 index.ts 要同步（v1.2.2 F2 新增）
 
@@ -901,7 +857,6 @@ node -e "const p=require('./engine/audit/package.json'); console.log(p.exports?.
 diff <(grep "^export " engine/audit/src/public-api.ts | sort) <(grep "^export " engine/audit/src/index.ts | sort) | grep "^<"   # 期望：无差异行
 ```
 
-
 #### 61. 新功能必须有自动化测试——禁止零覆盖交付（v1.2.2 F1 新增）
 
 > P0 数据主权 1504 行源码零测试交付，靠手动验证兜底。fresh-eyes 12 视角没覆盖"测试是否存在"这个维度。
@@ -914,7 +869,6 @@ for mod in data-sovereignty report-generator report-template model-router; do
 done
 # 期望：每个模块 ≥1 test file
 ```
-
 
 #### 62. 发版闸门裁决解析健壮性——禁止「全文含 FAIL 即判 FAIL」脆弱兜底（v1.2.3 阶段六新盲区）
 
@@ -957,7 +911,7 @@ grep -rnE "^#{1,4} .*(🔮|🔄|🪟|✨|[+/（）():：])" docs/ README.md SECU
 
 > **PASS 标准**：所有跨文档 `#锚点` 链接指向的标题，按 GitHub 渲染规则（剥 emoji/标点、空格→`-`）推算的锚点与链接一致。标题含特殊字符者重点核对。
 
-#### 65. FORGE stream 迁移数据处理——finalState 须累积 delta + extractAgentText 须防御对象 content（v1.2.4 新盲区 · v1.3.0 归并 65+66）
+#### 65. FORGE stream 迁移数据处理——finalState 须累积 delta + extractAgentText 须防御对象 content（v1.2.4 新盲区 · v1.3.1 归并 65+66）
 
 > v1.2.4 教训（归并原 65+66）：FORGE stream 迁移有两个数据处理陷阱：① `stream(streamMode: 'updates')` 的 chunk 是 `{ nodeName: stateDelta }`，直接 `finalState = chunk` 会丢 `result.messages` → 输出 `[object Object]`——必须 `Object.entries(chunk)` 累积。② LangGraph message content 可能是 `Array<{type, text}>` 或嵌套对象，`extractAgentText` 只做 string 判断时会 fallback 到 `String(message)` → 同样输出 `[object Object]`。
 
@@ -969,8 +923,6 @@ grep 'finalState = chunk$' FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gat
 grep -c 'Array.isArray(content)' FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gate-driver.mjs   # 期望：各 ≥1
 grep -c 'typeof content.*object' FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gate-driver.mjs   # 期望：各 ≥1
 ```
-
-<!-- #66 [v1.2.9 归并至 #65：均为 FORGE stream 迁移数据处理盲区] -->
 
 #### 67. FORGE ReAct 步骤预算——reviewer ≤50 步 / engineer ≤30 步（v1.2.4 效率铁律）
 
@@ -1004,17 +956,17 @@ grep -q "Current version" tools/check-version.sh && echo "✓ 英文检查已覆
 bash tools/check-version.sh 2>&1 | grep "中英文"
 ```
 
-#### 70. MCP tool 注册三处一致性——新增 tool 必须在 tools 数组 + case dispatch + capabilities 三处都注册（v1.2.6 新盲区）
+#### 70. MCP tool 注册三处一致性——新增 tool 必须在 tool-registry + case dispatch + capabilities 三处都注册（v1.2.6 新盲区 · v1.3.1 修：跟上 v1.2.9 tool-registry.ts 拆分）
 
-> v1.2.6 教训：新增 4 个 MCP tool（daemon_status / list_agents / list_concepts / hitl_resolve）时，每个 tool 必须在 mcp-server.ts 的三个位置同步注册：① `import` 行 + tools 数组 `name:` 声明 ② `case` dispatch 分支 ③ `toolListCapabilities` 描述。漏任一处 → tool 对外不可见或调用报 not found。验收测试 scenario 192 已覆盖此检查。
+> v1.2.6 教训：新增 MCP tool 时每个 tool 必须在三处同步注册。v1.2.9 mcp 拆分后工具注册从 mcp-server.ts 迁移到 **tool-registry.ts**（`import { TOOLS } from './tool-registry'`）——原检查命令查 mcp-server.ts 的 name: 字段恒得 0（架构迁移后该字段已移走），需改查 tool-registry.ts。验收测试 scenario 192 已覆盖此检查。
 
 ```bash
-# 验证三处注册点数量一致
+# v1.3.1 修：跟上 v1.2.9 架构迁移（mcp-server.ts → tool-registry.ts）
 IMPORTS=$(grep -cE "import.*from.*'./(tools/)?" engine/mcp/src/mcp-server.ts | head -1)
-TOOLS_ARRAY=$(grep -cE "name:\s*'" engine/mcp/src/mcp-server.ts)
+TOOLS_ARRAY=$(grep -cE "name:\s*'" engine/mcp/src/tool-registry.ts)   # v1.3.1：改查 tool-registry.ts
 CASES=$(grep -cE "case '" engine/mcp/src/mcp-server.ts)
 echo "imports=$IMPORTS tools_array=$TOOLS_ARRAY cases=$CASES"
-# 期望：三者数量接近一致（tools_array 含历史 tool，但不应有 import 的 tool 缺 case）
+# 期望：tools_array（tool-registry.ts）≈ imports（mcp-server.ts 引用） + cases（dispatch）
 # v1.2.8 补充：check-version.sh 的 MCP tool count 正则须精确匹配独立行
 # 错误正则 name: '[a-z_]+' 会匹配 capabilities 数组内联条目（54 误报 vs 实际 27）
 # 正确正则 ^\s+name: '[a-z_]+',$（行首缩进+逗号结尾=独立声明行）
@@ -1041,7 +993,7 @@ node -e "const fs=require('fs'),src=fs.readFileSync('FORGE/src/fresh-eyes-driver
 # 期望：OK
 ```
 
-#### 73. ESM named export 完整性 + FORGE 模块加载烟测（v1.2.8 新盲区 · v1.3.0 归并 73+74）
+#### 73. ESM named export 完整性 + FORGE 模块加载烟测（v1.2.8 新盲区 · v1.3.1 归并 73+74）
 
 > v1.2.9 教训（归并原 73+74）：FORGE/ 不在 npm workspaces → `npm test` 从不执行 FORGE/ 下的 `.test.mjs`。曾出过 `DEFAULT_BUDGET` 缺 `export` 关键字导致 3 个 driver 启动即崩溃的 P0 bug。补建 `tools/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件烟测，集成到 pre-push-check.sh。
 
@@ -1053,8 +1005,6 @@ bash tools/forge-smoke-test.sh 2>&1 | tail -3
 # ESM named export 检查（被 import 引用的符号须有 export 声明）
 node -e "const fs=require('fs');const files=fs.readdirSync('FORGE/src').filter(f=>f.endsWith('.mjs'));let issues=[];for(const f of files){const s=fs.readFileSync('FORGE/src/'+f,'utf8');const exp=new Set([...s.matchAll(/export\s+(?:const|function|class)\s+(\w+)/g)].map(m=>m[1]));for(const f2 of files){if(f2===f)continue;const s2=fs.readFileSync('FORGE/src/'+f2,'utf8');const imp=[...s2.matchAll(/import\s*\{([^}]+)\}\s*from\s*['\"]\.\/([\w.-]+)['\"]/g)];for(const i of imp){if(i[2].replace('.mjs','')===f.replace('.m','')){for(const n of i[1].split(',').map(x=>x.trim().split(/\s+as\s+/)[0])){if(n&&!exp.has(n)&&n!=='default')issues.push(f2+' imports {'+n+'} from '+f);}}}}}console.log(issues.length?'ISSUE: '+issues.join('; '):'OK')" 2>/dev/null
 ```
-
-<!-- #74 [v1.2.9 归并至 #73：均为 FORGE 模块加载/导出验证] -->
 
 #### 75. check-version MCP 工具扫描路径必须跟随拆分文件（v1.2.9 新盲区）
 
@@ -1095,7 +1045,6 @@ grep 'grep.*条规则' tools/check-version.sh | grep -q '\.test\.' && echo "❌ 
 bash tools/check-version.sh 2>&1 | grep "TS 文件头" | grep -q "✓" && echo "✅ 版本头一致" || echo "❌ 有不一致"
 ```
 
-
 #### 79. 运行时审计 tool wrapper——gate 拦截优先于 progress 埋点（v1.3.0 新增 · 交付 1）
 
 > v1.3.0 运行时审计最小闭环：orchestrator 的 node-executor 通过 `wrapToolsWithGate` 包装每个 tool 调用，gate 在 tool 执行前调 `auditMw.check()` 拦截。**审计拦截必须在 progress 埋点之前执行**——否则 FAIL 的工具调用会先记录 progress 再被拦截，导致 audit log 与实际执行不一致。
@@ -1113,7 +1062,6 @@ grep -B5 -A5 "auditMw.check\|auditMiddleware.*check" FORGE/src/fresh-eyes-driver
 # 子项 e: HITL 审计记录（recordHitlAudit 存在）
 grep -c "recordHitlAudit" FORGE/src/audit-middleware.mjs   # ≥1
 ```
-
 
 #### 80. 决策审计——emitDecision + HMAC 签名链 + 链验证 + 查询接口（v1.3.0 新增 · 交付 6）
 
@@ -1134,7 +1082,6 @@ grep -c "export function" engine/audit/src/decision-query.ts   # ≥3
 grep -c "envFingerprint" engine/audit/src/decision-log.ts   # ≥1
 ```
 
-
 #### 81. 外部记忆后端——动态 tool 注册 + sensitivity ACL 映射（v1.3.0 新增 · 交付 10）
 
 > v1.3.0 MCP 记忆后端：`getDynamicTools()` 从 config 读取 `memory_backends` 配置，动态注册 search/write tool。每个后端有独立的 sensitivity ACL——`mapSensitivityToACL()` 将 agent 的 sensitivity level 映射到后端可见范围。dynamic tools 与 static tools 合并注入 MCP server。
@@ -1151,7 +1098,6 @@ grep -c "\.\.\.TOOLS.*getDynamicTools\|\.\.\.getDynamicTools" engine/mcp/src/mcp
 # 子项 e: sensitivity ACL 不泄露 restricted（mapSensitivityToACL 对 restricted 后端返回空/过滤）
 grep -A5 "mapSensitivityToACL" engine/mcp/src/tools/memory-backend.ts | grep -c "restricted\|internal\|public"   # ≥1
 ```
-
 
 #### 82. 进化链路写保护——atomicWriteWithMergeSync 原子合并 + 锁机制（v1.3.0 新增 · 交付 11）
 
@@ -1170,7 +1116,6 @@ grep -c "mergeDeep\|deepMerge" engine/core/src/shared/atomic-write.ts   # ≥1
 grep -rn "writeFileSync.*think\.md\|writeFile.*think\.md" engine/ --include="*.ts" | grep -v node_modules | grep -v dist | grep -v __tests__ | grep -v "atomic-write"   # 期望：零命中（think.md 写入须经 atomicWriteWithMergeSync）
 ```
 
-
 #### 83. 开源元数据完整性——package.json license + action.yml 版本锁定（v1.3.0 新增 · fresh-eyes run-21 P1-8/P1-10）
 
 > v1.3.0 fresh-eyes run-21 发现两个开源元数据缺陷：① package.json 缺少 `license` 字段（MIT 开源仓库缺 license 是硬伤）② action.yml 引用 `@sofagent/audit` 未锁定版本号（会导致 GitHub Action 拉到不兼容版本）。两者都是 check-version.sh 此前未覆盖的结构性检查点。
@@ -1183,7 +1128,6 @@ grep -E '@sofagent/' action.yml | grep -vE '@sofagent/[a-z-]+@[0-9]+\.[0-9]+\.[0
 # 子项 c: action.yml 锁定版本 = SSOT 版本号
 grep -oE '@sofagent/[a-z-]+@[0-9]+\.[0-9]+\.[0-9]+' action.yml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | sort -u   # 期望：仅一个版本号 = SSOT
 ```
-
 
 #### 84. shouldAllow 拦截 API + 运行时审计日志仓库隔离（v1.3.0 新增 · 交付 2 + 交付 8）
 
@@ -1198,4 +1142,108 @@ grep -rn "shouldAllow" engine/orchestrator/src/ --include="*.ts" | grep -v node_
 grep -c "data/audit/runtime" FORGE/src/audit-middleware.mjs   # ≥1
 # 子项 d: repo-hash 基于 git rev-parse（非硬编码路径）
 grep -c "rev-parse\|repo.*hash\|resolveRuntimeAuditPath" FORGE/src/audit-middleware.mjs   # ≥1
+```
+
+---
+
+#### 85. FORGE driver run_bash cwd 强制——防 worker 路径错误大面积降级（v1.3.1 新增 · fresh-eyes run-01 P0-1 教训）
+
+**背景**：worker 模型自己写 `cd /Users/<拼错用户名>/...`，bash 大面积 No such file or directory → 24 worker 硬熔断降级，审查结论不可信。
+
+**检查命令**：
+```bash
+# run_bash 包装层强制 cwd=REPO_ROOT + 剥离 cd 前缀
+grep -c "cwd: REPO_ROOT" FORGE/src/fresh-eyes-driver.mjs   # ≥1
+grep -c "stripped.*replace.*cd" FORGE/src/fresh-eyes-driver.mjs   # ≥1
+```
+
+#### 86. FORGE driver auto-commit 代码领域限定——防卷队友未提交内容（v1.3.1 新增 · fresh-eyes run-01/run-03 P0-2 教训）
+
+**背景**：driver 用 `git add -A` 把队友并行编辑的规划文档（docs/changelog/v1.4/*.md）一起卷进 auto-commit；修复改为只 add 代码领域（engine/FORGE/src/tools/SKILL）。
+
+**检查命令**：
+```bash
+# driver-base runAuditGate 不含 git add -A
+grep -c "git add -A" FORGE/src/driver-base.mjs   # 0（仅注释引用）
+# 改为显式代码领域 add
+grep -c "git diff --name-only HEAD -- engine/" FORGE/src/driver-base.mjs   # ≥1
+```
+
+#### 87. HMAC 密钥熵检测——Shannon 熵替代唯一字符占比（v1.3.1 新增 · P2-1 真 bug）
+
+**背景**：原 validateHmacKey 用"唯一字符占比"判断强度，但 openssl rand -hex 32 的 hex 字符集天然 16 种 → 官方推荐生成方式永远误报"弱密钥"（重复度 75%）。改用 Shannon 熵检测。
+
+**检查命令**：
+```bash
+# audit-history.ts 用 Shannon 熵（非重复度占比）
+grep -c "shannonEntropy" engine/core/src/audit-history.ts   # ≥1
+# 阈值 3.0 bit/char（随机 hex ≈4.0 通过，弱密钥 <3.0 拦截）
+grep -c "shannonEntropy < 3" engine/core/src/audit-history.ts   # ≥1
+```
+
+#### 88. 根 tsconfig.json outDir 缺失——tsc 误输出到 src（v1.3.1 新增 · C1 预料外盲区 · 根因待修）
+
+**背景**：根 tsconfig.json 未设 outDir，若从根目录跑 tsc（而非各包 npm run build），产物输出到 src 旁（910 个文件）。v1.3.1 已用 .gitignore 防御（engine/*/src/**/*.js 等），但根因（根 tsconfig 加 outDir）待后续版本修。
+
+**检查命令**：
+```bash
+# 根 tsconfig 有 outDir（v1.3.1 暂用 .gitignore 兜底，根因待修）
+grep -c '"outDir"' tsconfig.json   # v1.3.1 期望 0（待修），修后期望 ≥1
+# .gitignore 防御规则存在（过渡期）
+grep -c "engine/\*/src/\*\*/\*.js" .gitignore   # ≥1
+```
+
+---
+
+#### 89. 审计规则 ruleClass 多处声明一致性（v1.3.1 新增 · run-13 维度 4 阻断）
+
+**背景**：A3 ruleClass 在 index.ts（注册中心）/ rule-a3-*.ts（规则实现）/ README（文档）三处声明，版本演进时容易只改一处忘记其他——run-13 捕获 A3 在 index.ts 标"能力拐杖"、rule-a3-*.ts 标"业务底线"的不一致。
+
+**检查命令**：
+```bash
+# 每条规则的 ruleClass 在 index.ts 和 rule-*.ts 必须一致
+for n in $(grep -oE "ruleClass: '[^']+'" engine/audit/src/rules/index.ts | sort -u); do
+  rule_name=$(echo "$n" | grep -oE "^rule-a[0-9]")
+  impl_class=$(grep -oE "ruleClass: '[^']+'" engine/audit/src/rules/${rule_name}*.ts 2>/dev/null | head -1)
+  [ "$n" = "$impl_class" ] || echo "⚠️ $rule_name: index=$n vs impl=$impl_class"
+done
+# 期望：无 ⚠️ 输出（index.ts SSOT，rule-*.ts 对齐）
+```
+
+#### 90. shell 脚本 locale 防御——CI/sandbox 默认 LANG=C 导致中文乱码（v1.3.1 新增 · run-10 阻塞 1）
+
+**背景**：release-gate sandbox 默认 LANG=C，acceptance-test.sh 中文输出 ANSI 乱码 + 日志末尾截断，driver 无法解析结果。本地（LANG=en_US.UTF-8）无法复现——只在 CI/sandbox 暴露。
+
+**检查命令**：
+```bash
+# 含中文输出的 shell 脚本必须头部 export LANG/LC_ALL
+for f in FORGE/playbook/acceptance-test.sh tools/check-version.sh tools/check-docs.sh; do
+  head -10 "$f" | grep -q "LANG=en_US.UTF-8\|LC_ALL=en_US.UTF-8" || echo "⚠️ $f 缺 locale export"
+done
+# 期望：无 ⚠️ 输出
+```
+
+#### 91. 人读输出 vs 机器解析输出分离——ANSI 色码干扰 grep（v1.3.1 新增 · run-10 阻塞 2）
+
+**背景**：acceptance-test.sh 汇总行 `验收测试结果：${GREEN}...${NC}` 带 ANSI 色码，driver 用 `grep '验收测试结果：N 通过'` 匹配失败（色码夹在中间）。修复：补一行 ANSI-stripped 纯文本 SUMMARY 供机器解析。
+
+**检查命令**：
+```bash
+# 被自动化解析的脚本必须有 ANSI-stripped 纯文本汇总行
+grep -q "^SUMMARY:" FORGE/playbook/acceptance-test.sh && echo "✓ 有纯文本 SUMMARY" || echo "⚠️ 缺机器可解析汇总行"
+# 通用规则：任何被 driver/grep 解析的输出行，不应依赖 ANSI 色码
+```
+
+#### 92. 审查文档自身检查命令的架构迁移同步（v1.3.1 新增 · 元维度 · run-13 维度 70 误报）
+
+**背景**：维度 70 检查 MCP tool 注册查 mcp-server.ts，但 v1.2.9 架构迁移后工具注册移到 tool-registry.ts——检查命令得 tools_array=0 误报。这是"审查文档自身的检查命令也会过期"的元模式。
+
+**检查命令**：
+```bash
+# 元检查：regression-checklist 中引用的 engine/ 路径是否都还存在
+grep -oE 'engine/[a-zA-Z_/]+\.ts' FORGE/playbook/regression-checklist.md | sort -u | while read f; do
+  [ -f "$f" ] || echo "⚠️ 路径失效: $f（架构迁移后未更新检查命令）"
+done
+# 期望：无 ⚠️ 输出（所有引用路径有效）
+# 🔴 每次架构迁移（文件改名/目录调整）后必须跑此元检查
 ```

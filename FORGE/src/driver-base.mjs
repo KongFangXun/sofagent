@@ -18,6 +18,8 @@
 //  13. resolveVisibleFiles()  — 文件可见性控制
 //  16. saveResumePoint()     — 断点续跑：写 resume-point.json（v1.2.8 功能⑦）
 //  17. loadResumePoint()     — 断点续跑：读 resume-point.json（v1.2.8 功能⑦）
+//  18. runPreflight()        — FORGE preflight-check 跑前自检（模块级导出，非工厂内函数）
+//      formatPreflightReport() — preflight 结果格式化输出
 //
 // ⚠️ 抽象边界（已定稿）：
 //   base 只提取公共工具函数，不提取 main() 框架。
@@ -32,7 +34,14 @@ import { createRequire } from 'module';
 import {
   readFileSync, writeFileSync, mkdirSync, existsSync,
   appendFileSync, readdirSync, renameSync,
+  statSync as statSyncReal, fstatSync as fstatSyncReal, unlinkSync,
 } from 'fs';
+// preflight 磁盘检查：fs.statfs（Node 18.15+ 的异步版本）——低版本 Node 该导出
+// 为 undefined，runPreflight 内部检测到 undefined 自动跳过磁盘检查（降级不阻塞）。
+import * as fsModule from 'fs';
+const statfsReal = typeof fsModule.statfs === 'function'
+  ? (path) => new Promise((res, rej) => fsModule.statfs(path, (err, stats) => (err ? rej(err) : res(stats))))
+  : undefined;
 import { join, resolve, dirname, relative, sep } from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
@@ -41,6 +50,16 @@ import { createVisibility, EVENTS } from './visibility.mjs';
 import { createProgressMiddleware } from './progress-middleware.mjs';
 // v1.2.8 功能③：统一工具输出截断中间件（替代下方内联实现）
 import { truncateToolOutput as truncateToolOutputUnified, createToolOutputBudget, DEFAULT_BUDGET as TOOL_OUTPUT_DEFAULT } from './tool-output-budget.mjs';
+
+/**
+ * 给 shell 命令中的文件路径加单引号转义（防止路径含空格/特殊字符）。
+ * v1.3.1 P0-2 修复：git add 显式文件清单时使用。
+ * @param {string} p 文件路径
+ * @returns {string} 单引号包裹的路径（内部 ' 转义为 '\''）
+ */
+function quotePath(p) {
+  return `'${String(p).replace(/'/g, `'\\''`)}'`;
+}
 
 // ─── 工厂函数 ────────────────────────────────────────────────
 
@@ -523,7 +542,7 @@ export function createForgeDriverBase(config = {}) {
    * 在 FORGE loop 的代码变更步骤后自动跑 sofagent-audit。
    *
    * 流程：
-   *   1. B/F 步骤执行完毕后，driver 自动 git add -A && git commit
+   *   1. B/F 步骤执行完毕后，driver 自动 add 本轮改动文件（显式清单，非 git add -A）并 commit
    *   2. 跑 node engine/audit/dist/index.js --diff HEAD~1..HEAD --silent
    *   3. exit 0 → passed=true（全过）
    *   4. exit 1 → passed=true（有警告，不阻塞）
@@ -539,10 +558,29 @@ export function createForgeDriverBase(config = {}) {
     const auditResultPath = join(runDir, 'audit-result.md');
 
     // 1. auto-commit B/F 的改动
+    // 🔴 v1.3.1 P0-2 修复：禁止 `git add -A`——会把队友并行编辑的未提交
+    // 规划文档（如 docs/changelog/v1.4/*.md）一起卷进 auto-commit（03a548d5 事故）。
+    // 🔴 v1.3.1 P0-2 修复增强（run-03 教训）：原修复用 `git diff --name-only HEAD`
+    // 仍会列出所有工作区改动（含队友规划文档），无差别 add 全部。
+    // 正确方案：只 commit B/F worker 的代码领域（engine/ + FORGE/src/ + tools/ + SKILL/），
+    // 排除 docs/changelog/（PM/队友规划领域）和 .workbuddy/（AI 工作记忆）。
     const commitMsg = `FORGE auto-commit: ${stepName} round-${round}`;
     try {
       const { execSync } = await import('child_process');
-      execSync('git add -A', { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
+      // 只检测代码领域的改动文件（排除规划文档 + AI 工作记忆 + FORGE 产物目录）
+      const changedFiles = execSync(
+        'git diff --name-only HEAD -- engine/ FORGE/src/ FORGE/LEDGER.md FORGE/lessons/ tools/ SKILL/ install.sh bootstrap.sh 2>/dev/null',
+        { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 },
+      ).toString().split('\n').map((s) => s.trim()).filter(Boolean);
+      // 未跟踪新文件：只纳入代码领域 + FORGE 产物
+      const untrackedFiles = execSync(
+        'git ls-files --others --exclude-standard -- engine/ FORGE/src/ FORGE/LEDGER.md FORGE/lessons/ tools/ SKILL/',
+        { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 },
+      ).toString().split('\n').map((s) => s.trim()).filter(Boolean);
+      const filesToAdd = [...changedFiles, ...untrackedFiles];
+      if (filesToAdd.length > 0) {
+        execSync(`git add ${filesToAdd.map(quotePath).join(' ')}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
+      }
       execSync(`git commit -m "${commitMsg}"`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
     } catch (err) {
       // commit 可能因为 "nothing to commit" 而失败——这是正常的（B/F 可能没改任何东西）
@@ -722,4 +760,290 @@ export function createForgeDriverBase(config = {}) {
     SOFAGENT_HOME,
     TOOL_OUTPUT_MAX_LINES,
   };
+}
+
+// ════════════════════════════════════════════════════════════
+// 18. runPreflight — FORGE preflight-check 跑前自检模块
+// ════════════════════════════════════════════════════════════
+//
+// 背景：fresh-eyes-loop / release-gate-loop 单次运行 15-60 分钟、烧真金白银
+// 的 API 额度，环境不健康时中途崩溃的代价极高（进度丢失、需要 --resume 抢救）。
+// 与其跑到一半崩，不如开跑前 1 分钟内把所有环境前置条件检查一遍。
+//
+// 六项检查（HALT = 阻塞退出；WARN = 警告继续）：
+//   ① cwd 路径存在性     [HALT] 目录不存在/不可读 = git 命令全部崩
+//   ② stdout 管道 SIGPIPE [WARN] ⚠️ 设计修正：原 spec 定 HALT，但
+//      tools/forge-smoke-test.sh 用 $(node driver --dry-run) 命令替换调用
+//      driver，其 stdout 天然是管道——HALT 会打破冒烟测试的 RC=0 契约。
+//      故降级 WARN：只提醒"别用 | head"，不阻塞合法管道调用。
+//   ③ 模型 API 可达      [HALT] fetch baseURL/models，3s 超时，最多一次
+//   ④ 工具预算配置       [HALT] soft <= hard（预算倒挂 = 熔断逻辑失效）
+//   ⑤ runDir 可写        [HALT] 允许幂等自动 mkdir（目录非危险项）
+//   ⑥ 磁盘空间 >= 200MB  [WARN] fs.statfs（Node 18.15+，低版本自动跳过）
+//
+// 铁律：
+//   - 不自动修复危险项：只报问题 + 给可复制修复命令，人来执行
+//   - preflight 自身异常降级 WARN：检查工具坏了绝不阻塞主流程
+//   - API 检查最多一次：同 baseURL 去重；key 缺失不探测（避免 401 误判）
+//   - worker 模式跳过：子进程环境继承自主 driver，重复检查纯浪费
+//   - dry-run 跳过：dry-run 不真跑 worker，环境检查无意义且会打破
+//     forge-smoke-test.sh 的 dry-run RC=0 契约
+
+/** 磁盘空间最低阈值（200MB——一轮 run 产物 < 10MB，留足余量即可） */
+export const PREFLIGHT_MIN_DISK_MB = 200;
+
+/** API 探测超时（3 秒——网络正常时 < 500ms，3s 足够判"不可达"） */
+export const PREFLIGHT_API_TIMEOUT_MS = 3000;
+
+/**
+ * 单项检查结果的构造器（内部使用）。
+ * level: 'HALT' | 'WARN'；detail: 问题详情；fix: 可复制的修复命令（无则空）。
+ */
+function makeCheck(id, label, level, status, detail = '', fix = '') {
+  return { id, label, level, status, detail, fix };
+}
+
+/**
+ * FORGE driver 跑前自检。
+ *
+ * @param {Object} config
+ * @param {string} config.repoRoot - 仓库根目录（检查存在性/可读性）
+ * @param {string|null} [config.runDir] - run 目录（允许幂等 mkdir；不传跳过）
+ * @param {Object} [config.modelConfigs] - MODEL_CONFIGS（含 baseURL/apiKeyEnv）
+ * @param {string[]} [config.roles] - 需要探测 API 的角色子集（默认全部）
+ * @param {string} [config.loopName] - loop 名（报告标题用）
+ * @param {Object} [config.toolConfig] - { globalSoft, globalHard, perspectiveSoft, perspectiveHard }
+ * @param {Object} [config.__inject] - 测试注入点（{ fetchImpl, statfsImpl,
+ *   statSyncImpl, fstatSyncImpl, mkdirSyncImpl, writeFileSyncImpl, unlinkSyncImpl }）
+ * @returns {Promise<{shouldHalt: boolean, passed: boolean, warnings: Object[],
+ *   failures: Object[], checks: Object[]}>}
+ *   - shouldHalt: 存在任一 HALT 级失败时为 true（调用方应 exit(1)）
+ *   - passed: 无任何失败（含 WARN）时为 true
+ *   - failures: HALT 级失败项；warnings: WARN 级失败项；checks: 全部检查结果
+ */
+export async function runPreflight(config = {}) {
+  const {
+    repoRoot,
+    runDir = null,
+    modelConfigs = {},
+    roles = null,
+    loopName = 'FORGE',
+    toolConfig = {},
+    __inject = {},
+  } = config;
+
+  const checks = [];   // 全部检查结果（PASS + FAIL）
+  const failures = []; // HALT 级失败
+  const warnings = []; // WARN 级失败
+
+  // 记录单项结果；FAIL 时按级别归类
+  function record(check) {
+    checks.push(check);
+    if (check.status === 'FAIL') {
+      if (check.level === 'HALT') failures.push(check);
+      else warnings.push(check);
+    }
+  }
+
+  // ── ① cwd / repoRoot 路径存在性 [HALT] ──────────────────
+  try {
+    const statSync = __inject.statSyncImpl || statSyncReal;
+    const st = statSync(repoRoot);
+    if (!st.isDirectory()) {
+      record(makeCheck('cwd', 'repoRoot 路径', 'HALT', 'FAIL',
+        `${repoRoot} 不是目录`,
+        `cd 到正确的仓库根目录后重试`));
+    } else {
+      // 可读性：读 .git 目录存在性顺带验证（git 命令依赖它）
+      const gitDir = join(repoRoot, '.git');
+      let gitExists = false;
+      try { gitExists = statSync(gitDir) != null; } catch { gitExists = false; }
+      if (gitExists) {
+        record(makeCheck('cwd', 'repoRoot 路径', 'HALT', 'PASS', repoRoot));
+      } else {
+        // .git 缺失不致命（worktree 场景是文件），降为提醒性 PASS 详情
+        record(makeCheck('cwd', 'repoRoot 路径', 'HALT', 'PASS',
+          `${repoRoot}（未检测到 .git，若为 worktree 属正常）`));
+      }
+    }
+  } catch (err) {
+    record(makeCheck('cwd', 'repoRoot 路径', 'HALT', 'FAIL',
+      `${repoRoot} 不存在或不可读（${err.code || err.message}）`,
+      `cd 到正确的仓库根目录后重试`));
+  }
+
+  // ── ② stdout 管道 / SIGPIPE 风险 [WARN]（设计修正，见文件头注释）──
+  try {
+    const fstatSync = __inject.fstatSyncImpl || fstatSyncReal;
+    const st = fstatSync(1); // fd 1 = stdout
+    if (st.isFIFO()) {
+      record(makeCheck('stdout', 'stdout 管道', 'WARN', 'FAIL',
+        'stdout 是管道（被重定向/管道连接）——下游 | head -N 类截断会触发 SIGPIPE 杀死 driver',
+        '改用终端直跑，或重定向到文件：node FORGE/src/<driver>.mjs --target vX.Y.Z > run.log 2>&1'));
+    } else {
+      record(makeCheck('stdout', 'stdout 管道', 'WARN', 'PASS', '终端直连'));
+    }
+  } catch {
+    // fstatSync(1) 失败极罕见——不阻塞，记 PASS 放行
+    record(makeCheck('stdout', 'stdout 管道', 'WARN', 'PASS', '无法检测（跳过）'));
+  }
+
+  // ── ③ 模型 API 可达 [HALT]（同 baseURL 只探测一次，3s 超时）──
+  const fetchImpl = __inject.fetchImpl || globalThis.fetch;
+  if (modelConfigs && Object.keys(modelConfigs).length > 0 && fetchImpl) {
+    const targetRoles = roles || Object.keys(modelConfigs);
+    const probed = new Map(); // baseURL -> ok(boolean)
+    for (const role of targetRoles) {
+      const cfg = modelConfigs[role];
+      if (!cfg || !cfg.baseURL) continue;
+      // key 缺失不探测：driver main() 已有 missingEnvs 检查负责拦截，
+      // 无 key 探测必然 401，preflight 不应重复报错造成误导
+      if (cfg.apiKeyEnv && !process.env[cfg.apiKeyEnv]) continue;
+
+      let ok = probed.get(cfg.baseURL);
+      if (ok === undefined) {
+        ok = await probeApi(fetchImpl, cfg.baseURL);
+        probed.set(cfg.baseURL, ok);
+      }
+      if (ok) {
+        record(makeCheck('api', `API 可达 [${role}]`, 'HALT', 'PASS', cfg.baseURL));
+      } else {
+        record(makeCheck('api', `API 可达 [${role}]`, 'HALT', 'FAIL',
+          `${cfg.baseURL} 不可达（超时 ${PREFLIGHT_API_TIMEOUT_MS}ms 或网络错误）`,
+          `curl -s -o /dev/null -w '%{http_code}' ${cfg.baseURL}/models -H 'Authorization: Bearer $KEY'  # 先自查网络`));
+      }
+    }
+  }
+
+  // ── ④ 工具预算配置合理性 [HALT]（soft <= hard，否则熔断逻辑失效）──
+  const pairs = [];
+  if (toolConfig.globalSoft != null && toolConfig.globalHard != null) {
+    pairs.push(['全局', toolConfig.globalSoft, toolConfig.globalHard]);
+  }
+  if (toolConfig.perspectiveSoft != null && toolConfig.perspectiveHard != null) {
+    pairs.push(['perspective', toolConfig.perspectiveSoft, toolConfig.perspectiveHard]);
+  }
+  if (pairs.length === 0) {
+    record(makeCheck('budget', '工具预算配置', 'HALT', 'PASS', '未传入（跳过）'));
+  } else {
+    let budgetOk = true;
+    const badParts = [];
+    for (const [name, soft, hard] of pairs) {
+      const s = Number(soft); const h = Number(hard);
+      if (!Number.isFinite(s) || !Number.isFinite(h) || s <= 0 || h <= 0) {
+        budgetOk = false; badParts.push(`${name}: 预算必须是正数（实际 soft=${soft} hard=${hard}）`);
+      } else if (s > h) {
+        budgetOk = false; badParts.push(`${name}: soft(${s}) > hard(${h})，软熔断将先于硬熔断失效`);
+      }
+    }
+    if (budgetOk) {
+      record(makeCheck('budget', '工具预算配置', 'HALT', 'PASS',
+        pairs.map(([n, s, h]) => `${n} ${s}/${h}`).join(' · ')));
+    } else {
+      record(makeCheck('budget', '工具预算配置', 'HALT', 'FAIL',
+        badParts.join('；'),
+        '修正 driver 顶部 TOOL_SOFT_LIMIT / TOOL_HARD_LIMIT 常量（soft 必须 ≤ hard）'));
+    }
+  }
+
+  // ── ⑤ runDir 可写 [HALT]（幂等自动 mkdir——目录是安全项，允许自动创建）──
+  if (runDir) {
+    try {
+      const mkdirSyncImpl = __inject.mkdirSyncImpl || mkdirSync;
+      const writeFileSyncImpl = __inject.writeFileSyncImpl || writeFileSync;
+      const unlinkSyncImpl = __inject.unlinkSyncImpl || unlinkSync;
+      mkdirSyncImpl(runDir, { recursive: true }); // 幂等：已存在不报错
+      const probeFile = join(runDir, '.preflight-probe');
+      writeFileSyncImpl(probeFile, '1');
+      try { unlinkSyncImpl(probeFile); } catch { /* 清理失败不影响判定 */ }
+      record(makeCheck('rundir', 'runDir 可写', 'HALT', 'PASS', runDir));
+    } catch (err) {
+      record(makeCheck('rundir', 'runDir 可写', 'HALT', 'FAIL',
+        `${runDir} 无法创建或不可写（${err.code || err.message}）`,
+        `mkdir -p ${runDir} && chmod u+w ${runDir}`));
+    }
+  } else {
+    record(makeCheck('rundir', 'runDir 可写', 'HALT', 'PASS', '未传入（跳过）'));
+  }
+
+  // ── ⑥ 磁盘空间 [WARN]（fs.statfs Node 18.15+；低版本自动跳过）──
+  try {
+    // 注入语义：显式传 statfsImpl（含 null）优先，未传用真实实现。
+    // null = 模拟低版本 Node 无 statfs 的跳过分支（测试用）。
+    const statfsImpl = ('statfsImpl' in __inject) ? __inject.statfsImpl : statfsReal;
+    if (!statfsImpl) {
+      record(makeCheck('disk', '磁盘空间', 'WARN', 'PASS', '当前 Node 版本不支持 statfs（跳过）'));
+    } else {
+      const usage = await statfsImpl(repoRoot || '.');
+      const freeMb = Math.floor((usage.bavail * usage.bsize) / (1024 * 1024));
+      if (freeMb < PREFLIGHT_MIN_DISK_MB) {
+        record(makeCheck('disk', '磁盘空间', 'WARN', 'FAIL',
+          `剩余 ${freeMb}MB < ${PREFLIGHT_MIN_DISK_MB}MB`,
+          'df -h .  # 查看磁盘占用，清理后重试'));
+      } else {
+        record(makeCheck('disk', '磁盘空间', 'WARN', 'PASS', `剩余 ${freeMb}MB`));
+      }
+    }
+  } catch (err) {
+    // statfs 失败（如平台不支持）——降级跳过，不阻塞
+    record(makeCheck('disk', '磁盘空间', 'WARN', 'PASS', `检测失败跳过（${err.code || err.message}）`));
+  }
+
+  return {
+    shouldHalt: failures.length > 0,
+    passed: failures.length === 0 && warnings.length === 0,
+    failures,
+    warnings,
+    checks,
+    loopName,
+  };
+}
+
+/**
+ * API 可达性探测（最多一次调用，3s 超时）。
+ * GET {baseURL}/models——OpenAI 兼容端点通用；401/403 也算"可达"
+ * （能拿到 HTTP 响应说明网络通，鉴权问题由 driver 的 missingEnvs 检查负责）。
+ *
+ * @param {Function} fetchImpl - fetch 实现（测试可注入）
+ * @param {string} baseURL - API base URL
+ * @returns {Promise<boolean>} true = 可达
+ */
+async function probeApi(fetchImpl, baseURL) {
+  try {
+    const res = await fetchImpl(`${baseURL.replace(/\/+$/, '')}/models`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(PREFLIGHT_API_TIMEOUT_MS),
+    });
+    return typeof res.status === 'number'; // 拿到任何 HTTP 状态码都算可达
+  } catch {
+    return false; // 超时 / DNS 失败 / 连接拒绝
+  }
+}
+
+/**
+ * 格式化 preflight 结果为终端输出文本。
+ *
+ * @param {Object} result - runPreflight 的返回值
+ * @returns {string} 可直接 console.log 的多行文本
+ */
+export function formatPreflightReport(result) {
+  const lines = [];
+  lines.push(`🔍 preflight-check · ${result.loopName || 'FORGE'} 跑前自检`);
+  for (const c of result.checks) {
+    const icon = c.status === 'PASS' ? '✅' : (c.level === 'HALT' ? '❌' : '⚠️');
+    let line = `  ${icon} [${c.level}] ${c.label}`;
+    if (c.status === 'FAIL') line += `：${c.detail}`;
+    lines.push(line);
+    if (c.status === 'FAIL' && c.fix) {
+      lines.push(`     修复建议：${c.fix}`);
+    }
+  }
+  if (result.shouldHalt) {
+    lines.push(`❌ preflight 未通过（${result.failures.length} 项 HALT）——请修复后重跑`);
+  } else if (result.warnings.length > 0) {
+    lines.push(`⚠️ preflight 通过（${result.warnings.length} 项警告，继续执行）`);
+  } else {
+    lines.push(`✅ preflight 全部通过（${result.checks.length} 项）`);
+  }
+  return lines.join('\n');
 }

@@ -1,13 +1,13 @@
 // ============================================================
 // config-loader.ts · .sofagent/config.yml 配置加载器
-// v0.95 新增：三级 fallback（v1.3.0，js-yaml 替代手写 YAML 解析器）
+// v0.95 新增：三级 fallback（v1.3.1，js-yaml 替代手写 YAML 解析器）
 // v0.97 扩展：环境变量配置（从 lib/config.sh 合并）
-// v1.3.0 重构：用 js-yaml 替代手写 YAML 解析器
-// v1.3.0 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
-// v1.3.0：新增 ConfigParseError（含 cause 链），audit.strict fail-closed 选项
+// v1.3.1 重构：用 js-yaml 替代手写 YAML 解析器
+// v1.3.1 fail-closed：YAML 解析失败时回退到安全默认值（所有规则启用）
+// v1.3.1：新增 ConfigParseError（含 cause 链），audit.strict fail-closed 选项
 // ============================================================
 //
-// 三级 fallback（v1.3.0: 增加 SOFAGENT_CONFIG 环境变量为最高优先级）：
+// 三级 fallback（v1.3.1: 增加 SOFAGENT_CONFIG 环境变量为最高优先级）：
 //   0. $SOFAGENT_CONFIG（环境变量指定路径，企业集中管控）
 //   1. ${cwd}/.sofagent/config.yml
 //   2. ~/.sofagent/config.yml
@@ -103,6 +103,16 @@ export interface MemoryBackend {
   type: 'mcp' | 'workbuddy';
   /** MCP server URL（type='mcp' 时必填） */
   endpoint?: string;
+  /**
+   * TencentDB-Agent-Memory 等后端的服务标识（x-tdai-service-id header）。
+   * standalone 模式默认 'local'；service 模式为部署的 service_id。
+   */
+  service_id?: string;
+  /**
+   * 知识资源 ID（knowledge_id）——TencentDB 的 wiki 或 code-graph 资源。
+   * tools/list + tools/call 都需要它定位资源。缺省时跳过可达性检查（不注册）。
+   */
+  knowledge_id?: string;
   /** 声明可用的工具列表 */
   tools: string[];
   /** 敏感度 → ACL 映射（restricted Agent 只能拿 restricted 记忆） */

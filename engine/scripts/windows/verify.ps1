@@ -21,7 +21,7 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
-$VERSION_STR = "1.3.0"
+$VERSION_STR = "1.3.1"
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
 
 $cfg = Join-Path $PSScriptRoot "lib\config.ps1"

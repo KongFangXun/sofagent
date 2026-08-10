@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ============================================================
 # pre-push-check.sh · 推前预检（本地 CI 等价检查）
 # ============================================================
@@ -153,10 +153,24 @@ if [ "$MINIMAL" = false ]; then
 fi
 
 # ════════════════════════════════════════
+# 3b. 跨文档锚点校验（check-anchors.mjs · v1.3.1 新增）
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 4. 跨文档锚点校验 ──${NC}"
+  if node tools/check-anchors.mjs >/dev/null 2>&1; then
+    check_pass "check-anchors.mjs 全部通过（跨文件锚点引用有效）"
+  else
+    check_fail "check-anchors.mjs 发现锚点过时"
+    node tools/check-anchors.mjs 2>&1 | grep "✗" | head -10
+    echo "  提示：node tools/check-anchors.mjs --fix 可自动修复"
+  fi
+fi
+
+# ════════════════════════════════════════
 # 4. 审计引擎构建 + 测试数汇总（对应 verify.yml + test-count.sh 门禁）
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
-  echo -e "\n${BOLD}── 4. 审计引擎构建 + 测试数汇总 ──${NC}"
+  echo -e "\n${BOLD}── 5. 审计引擎构建 + 测试数汇总 ──${NC}"
   echo "  构建中..."
   if (npm run build >/dev/null 2>&1); then
     check_pass "npm run build (workspace 拓扑序)"
@@ -192,7 +206,7 @@ fi
 # driver 的接线断裂（如 DEFAULT_BUDGET 缺 export）只有手动跑 driver 时才暴露。
 # 此步在推前自动验证：模块可加载 + dry-run 不崩 + 测试文件可运行。
 if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
-  echo -e "\n${BOLD}── 4b. FORGE driver 冒烟测试 ──${NC}"
+  echo -e "\n${BOLD}── 6. FORGE driver 冒烟测试 ──${NC}"
   FORGE_OUT=$(bash tools/forge-smoke-test.sh 2>&1)
   FORGE_RC=$?
   echo "$FORGE_OUT" | grep -E "通过|失败|✗|⚠" | sed 's/^/  /'
@@ -206,7 +220,7 @@ fi
 # ════════════════════════════════════════
 # 5. sofagent-audit（对应 sofagent-audit.yml）
 # ════════════════════════════════════════
-echo -e "\n${BOLD}── 5. CLI 二进制验证 ──${NC}"
+echo -e "\n${BOLD}── 7. CLI 二进制验证 ──${NC}"
 for bin_name in sofagent-audit sofagent-orchestrator sofagent-daemon sofagent-ontology sofagent-ab-test sofagent-think sofagent-skillopt sofagent-core; do
   pkg=$(echo "$bin_name" | sed 's/sofagent-//')
   if [ -f "engine/$pkg/dist/cli.js" ]; then
@@ -217,7 +231,7 @@ done
 # ════════════════════════════════════════
 # 6. install.sh 关键路径检查（fde.md 迁移断裂防护）
 # ════════════════════════════════════════
-echo -e "\n${BOLD}── 6. install.sh 关键路径 ──${NC}"
+echo -e "\n${BOLD}── 8. install.sh 关键路径 ──${NC}"
 # v0.99.8 教训：fde.md 从 skill/ 迁到 skill/data/，8 处引用需要同步。
 # pre-push-check 之前不覆盖 install.sh，路径断裂检测不到。此步补盲。
 # v1.2.2 更新：harness/data/ 目录取消，fde.md 提升为 harness/fde-template.md
@@ -266,7 +280,7 @@ fi
 # ════════════════════════════════════════
 # 7. Tag message 校验
 # ════════════════════════════════════════
-echo -e "\n${BOLD}── 7. Tag message 校验 ──${NC}"
+echo -e "\n${BOLD}── 9. Tag message 校验 ──${NC}"
 SSOT_VERSION=$(node -e "console.log(require('./package.json').version)" 2>/dev/null) || true
 if [ -n "$SSOT_VERSION" ] && git tag -l "v${SSOT_VERSION}" | grep -q "v${SSOT_VERSION}" 2>/dev/null; then
   TAG_MSG=$(git tag -l "v${SSOT_VERSION}" --format='%(subject)' 2>/dev/null || true)
@@ -342,7 +356,7 @@ fi
 # ════════════════════════════════════════
 # 8. 依赖图循环检测
 # ════════════════════════════════════════
-echo -e "\n${BOLD}── 8. 依赖图循环检测 ──${NC}"
+echo -e "\n${BOLD}── 10. 依赖图循环检测 ──${NC}"
 CYCLE_CHECK=$(node -e '
 const fs = require("fs");
 const path = require("path");
@@ -391,7 +405,7 @@ fi
 # ════════════════════════════════════════
 # F-17: CHANGELOG 纯度扫描
 # ════════════════════════════════════════
-echo -e "\n${BOLD}── 9. CHANGELOG 纯度扫描 ──${NC}"
+echo -e "\n${BOLD}── 11. CHANGELOG 纯度扫描 ──${NC}"
 CHANGELOG_FILE="CHANGELOG.md"
 if [ -f "$CHANGELOG_FILE" ]; then
   # 提取当前版本号：优先从 package.json（SSOT），fallback 到 CHANGELOG

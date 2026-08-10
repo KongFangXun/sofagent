@@ -1,6 +1,6 @@
 // ============================================================
 // audit-history.ts · 审计历史持久化
-// v1.3.0 env fingerprint: hash chain 加环境指纹防 Agent 重算整链
+// v1.3.1 env fingerprint: hash chain 加环境指纹防 Agent 重算整链
 // ============================================================
 //
 // ⚠️ 双副本说明（勿混淆）：本仓库有两份同名 audit-history.ts，职责不同、**不可合并**：
@@ -16,9 +16,10 @@
 //
 // 并发安全说明：appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的。
 // 审计历史条目通常 < 1KB，单次写入安全。多进程同时写入可能导致行交错，
-// 但概率极低（审计触发频率 < 1次/分钟）。TODO(v1.3.0): 加 file lock 或改为单 writer 模式。
-// 风险：daemon 文件监控 + Agent commit 并发写 history.jsonl 可能产生损坏行
-// 触发概率：低（< 1次/分钟），但损坏会导致 hash chain 完整性校验失败
+// 但概率极低（审计触发频率 < 1次/分钟）。
+// v1.3.1 #44: 这是已知限制（无文件锁/单 writer），已记录到 docs/LIMITATIONS.md。
+// daemon 文件监控 + Agent commit 并发写 history.jsonl 可能产生损坏行，
+// 导致 hash chain 完整性校验失败。如需强一致，应加文件锁或改为单 writer 模式（未来版本）。
 //
 // 每次 sofagent-audit 运行后，把结果追加到
 // ${SOFAGENT_DATA}/audit/history.jsonl（JSONL 格式；v1.2.2 起默认 data/audit/history.jsonl）。
@@ -114,6 +115,12 @@ export interface AuditHistoryEntry {
   envFingerprint?: string;
   /** v1.1.3+: 审计引擎标识，用于追溯记录来源 */
   engine?: string;
+  /**
+   * v1.3.1 交付 6: 审计记录关联的 Agent 身份码（AgentIdentity.agentId）。
+   * 可选字段——旧记录无此字段时读侧/验链侧全部向后兼容
+   *（HMAC 链校验只依赖链字段，新增业务字段天然兼容，先脱敏再签名语义不变）。
+   */
+  agentId?: string;
   /** Action Governance 审计 5 字段 schema + 决策溯源组（A4 研读落地）。可选项——旧记录无此字段时向后兼容。 */
   actionGovernance?: ActionGovernance;
 }

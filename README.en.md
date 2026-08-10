@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.0-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.1-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center">
@@ -34,7 +34,7 @@ graph LR
 | Change auditing | None | 24 rules on git diff, hard-evidence verdicts |
 | Out-of-bounds blocking | Relies on prompt self-discipline | Violations blocked on the spot + audit trail |
 | Rollback after breakage | Manually dig through commits | One-click snapshot restore to any point |
-| Experience accumulation | Starts from zero every time | Auto-captured into knowledge base, keeps improving |
+| Experience accumulation | Starts from zero every time | Auto-captured into knowledge base, evolution capabilities under continuous iteration |
 
 ## Key Features
 
@@ -71,7 +71,7 @@ Deploying AI nodes is only step one — above we covered **how to map and where 
 - 📜 **SKILL.md** — the single entry point, loaded by your AI tool: routes to the matching stage sub-Skill, and auto-injects job specs by task type (mapping / audit / orchestration)
 - 🧩 **Stage sub-Skills** — a five-step closed loop: entry → discovery → quantify → deliver → exit (`01-entry` → `05-exit`), with every step's tasks and deliverables defined upfront
 - 🔒 **Harness constraint skeleton** — entry-gate / fde-template / engage / loop-check / task-closure…, a constraint template for every step from entry to departure
-- 🧬 **Automatic experience capture** — think.md reflection + knowledge maintenance; lessons from every task flow into the knowledge base automatically, so nodes get smarter as they run
+- 🧬 **Automatic experience capture** — think.md reflection + knowledge maintenance; lessons from every task flow into the knowledge base automatically, with evolution capabilities under continuous iteration
 
 > What gets deployed is not a bare Agent, but an **Agent with a constraint skeleton** — constraints are advisory, audits are mandatory: the Agent may ignore the constraints, but every change gets audited without exception.
 
@@ -90,6 +90,8 @@ Deploying AI nodes is only step one — above we covered **how to map and where 
 ```bash
 npx -y -p @sofagent/audit sofagent-audit
 ```
+
+> 💡 `sofagent-audit` is the quick read-only audit (audits the last commit, safe and side-effect-free by default); `sofagent-audit-full` is the full audit and requires an explicit operation (e.g. `--diff <range>` / `--init`).
 
 Here's what it looks like when a known-format secret leak is blocked (real output):
 
@@ -150,17 +152,17 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 |------|----------------|----------|
 | Core question | How to build an Agent | **Where AI should go** (map first, then deploy) |
 | Safety guarantee | Relies on prompt constraints | git diff hard-evidence audit + runtime interception + one-click rollback |
-| Knowledge accumulation | Starts from zero | Experience auto-captured into knowledge base, keeps improving |
-| Data sovereignty | Cloud-hosted | Fully local, never leaves the device |
+| Knowledge accumulation | Starts from zero | Experience auto-captured into knowledge base, continuously optimized |
+| Data sovereignty | Cloud-hosted | Local by default, optional federated queries |
 | Deployment | Learn a new platform | Runs inside your existing AI tools (Claude Code / Cursor / WorkBuddy…) |
 
 ## Evidence & Credibility
 
 > 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research ([research code repository](https://github.com/JoelNiklaus/harness-optimization), data in the repo experiments) shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
 
-> 🧪 **Engineering credibility**: 1712 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
+> 🧪 **Engineering credibility**: 1962 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
 
-> 🔐 **v1.3.0 new capabilities**: runtime audit (tool wrapper dynamic interception + audit trail) · decision audit (intent accountability: `emitDecision` + HMAC chain + kind-wise queries) · rule transparency (`list_rules` MCP tool) · HITL approval hooks · audit logs isolated per git repo · activation chain Phase 4 · external memory backend Path A (optional, off by default) · evolution-chain write protection. See [v1.3.0 devlog](./docs/changelog/v1.3/v1.3.0.md).
+> 🧠 **v1.3.1 new capabilities**: Ontology runtime layer (Action registry + pre-execution validation + Schema finalization) · parallel orchestration (wave concurrency + audit gating + MergeQueue) · Durable Execution (checkpoint resume + idempotency) · Agent identity Ed25519 · 🚀 Onboard Agent L1 (`loop_debug`) · 📊 Benchmark evaluation (`evaluate`) · 🔒 tool approval four-mode · 📜 LLM call-level Trace · 🔄 error handling (stop_reason + backoff) · 📚 L4 progressive loading · national standard alignment GB/T 48000.3-2026 (`--gb48000`). See [v1.3.1 devlog](./docs/changelog/v1.3/v1.3.1.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## Docs
 

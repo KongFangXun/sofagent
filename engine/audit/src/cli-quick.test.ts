@@ -283,4 +283,28 @@ describe('runCliQuick 参数拦截（F-13）', () => {
     expect(spawnSync).not.toHaveBeenCalled();
     expect(parseDiff).toHaveBeenCalledWith('HEAD~3..HEAD');
   });
+
+  // v1.3.1 #1: FULL_ONLY_FLAGS 扩展——--diff/--cached/--silent/--ci 等需完整引擎参数
+  // 不应被 quick 模式吞掉（否则 hook 审计滞后）
+  it('--diff --cached --silent --ci 路由到完整引擎（不吞掉审计参数）', () => {
+    const code = runCliQuick(['node', 'cli-quick.js', '--diff', '--cached', '--silent', '--ci']);
+    expect(code).toBe(0);
+    expect(spawnSync).toHaveBeenCalledTimes(1);
+    const [execPath, args] = vi.mocked(spawnSync).mock.calls[0] as [string, string[]];
+    expect(execPath).toBe(process.execPath);
+    expect(args[0]).toContain('index.js');
+    expect(args).toContain('--diff');
+    expect(args).toContain('--cached');
+    expect(args).toContain('--silent');
+    expect(args).toContain('--ci');
+  });
+
+  it('--task --commit-msg 路由到完整引擎', () => {
+    const code = runCliQuick(['node', 'cli-quick.js', '--task', '修复 bug', '--commit-msg', 'fix: issue']);
+    expect(code).toBe(0);
+    expect(spawnSync).toHaveBeenCalledTimes(1);
+    const [, args] = vi.mocked(spawnSync).mock.calls[0] as [string, string[]];
+    expect(args).toContain('--task');
+    expect(args).toContain('--commit-msg');
+  });
 });

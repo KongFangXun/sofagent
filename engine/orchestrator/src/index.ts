@@ -128,6 +128,100 @@ export type {
 export { runMergeGate } from './worktree-merge-gate';
 export type { MergeGateOptions, MergeGateResult, MergeGateStatus } from './worktree-merge-gate';
 
+// v1.3.1 交付 3：并行编排（ParallelScheduler / 波次卡关 / MergeQueue）
+export { ParallelScheduler } from './loop/parallel-scheduler';
+export type {
+  ParallelTask,
+  ParallelTaskResult,
+  ParallelWaveResult,
+  ParallelSchedulerOptions,
+} from './loop/parallel-scheduler';
+export { runWaveMergeGate, isMergeGatePass } from './loop/merge-gate';
+export type {
+  WaveWorktree,
+  WaveGateDecision,
+  WaveGateOptions,
+} from './loop/merge-gate';
+export { MergeQueue } from './loop/merge-queue';
+export type {
+  MergeQueueItem,
+  DuplicatePushPolicy,
+} from './loop/merge-queue';
+
+// v1.3.1 交付 4：Durable Execution（L1 checkpoint 续跑 + L2 工具幂等性）
+export { CheckpointManager, DEFAULT_CHECKPOINT_RETENTION_DAYS } from './durable/checkpoint-manager';
+export type { CheckpointManagerOptions, CheckpointFileInfo } from './durable/checkpoint-manager';
+export {
+  SideEffectLedger,
+  sideEffectId,
+  resolveSideEffectLedgerPath,
+  SIDE_EFFECT_LEDGER_REL,
+} from './durable/side-effect-ledger';
+export type { SideEffectEntry } from './durable/side-effect-ledger';
+export { shouldExecute, markExecuted } from './durable/idempotency-check';
+export type { IdempotencyDecision } from './durable/idempotency-check';
+export { resumePendingLoops, scanPendingCheckpoints, isPendingRecord } from './durable/resume';
+export type {
+  PendingCheckpointInfo,
+  ResumeLoopsOptions,
+  ResumeLoopsSummary,
+} from './durable/resume';
+
+// v1.3.1 交付 8：Onboard Agent L1（循环驱动 + L1 判定器）
+export { runOnboardLoop, defaultDagRunner, defaultTraceFixer, appendLoopDebugRecord, readLoopDebugRecords, resolveLoopDebugLogPath } from './loop-agent/driver';
+export type {
+  OnboardDriverOptions,
+  OnboardRound,
+  OnboardRunOutcome,
+  OnboardLoopResult,
+  LoopDebugRecord,
+  FixFeedback,
+} from './loop-agent/driver';
+export { judgeRunResult, DEFAULT_TIMEOUT_MS } from './loop-agent/judge';
+export type {
+  JudgeState,
+  JudgeOptions,
+  JudgeVerdict,
+} from './loop-agent/judge';
+
+// v1.3.1 交付 9：Benchmark 评测体系（题库设计 / 隔离评测 / HMAC 链日志）
+export {
+  createBenchmark,
+  addCase,
+  calibrateCase,
+  freezeBenchmark,
+  writeBenchmarkLayout,
+  readBenchmarkLayout,
+  benchmarksRoot,
+  serializeBenchmarkConfig,
+  parseBenchmarkConfig,
+} from './benchmark/benchmark-designer';
+export type {
+  BenchmarkDefinition,
+  BenchmarkCase,
+  CalibrationRecord,
+  CreateBenchmarkOptions,
+  Difficulty,
+  ParsedBenchmarkConfig,
+} from './benchmark/benchmark-designer';
+export { evaluateCase, defaultScoringFn, DEFAULT_EVALUATE_TIMEOUT_MS } from './benchmark/case-evaluator';
+export type {
+  EvaluateCaseInput,
+  AgentExecutionContext,
+  CaseEvaluation,
+  EvaluationFailureCode,
+} from './benchmark/case-evaluator';
+export {
+  appendEvaluationRecord,
+  readEvaluationLog,
+  verifyEvaluationChain,
+  getEvaluationLogPath,
+} from './benchmark/evaluation-log';
+export type {
+  EvaluationLogInput,
+  EvaluationLogRecord,
+} from './benchmark/evaluation-log';
+
 // Conflict Resolver（v1.2.3 · merge 文本冲突仲裁）
 export {
   resolveWorktreeConflict,

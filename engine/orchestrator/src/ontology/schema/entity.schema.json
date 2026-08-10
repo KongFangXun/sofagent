@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "sofagent://ontology/schema/entity.schema.json",
+  "title": "entity（对齐内核契约 CORE-OBJ）",
+  "description": "knowledge/entities/<name>.md frontmatter 的机器可读 Schema（v1.3.1 交付 1）。字段约束对齐真实 frontmatter：name/domain/created_at/updated_at 必填，relations 可选（belongs_to/has_many 等）。v1.3.6 注册接口复用本定义（单一事实源）。",
+  "type": "object",
+  "required": ["name", "domain", "created_at", "updated_at"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "entity 名称（与文件名一致，不含 .md 后缀）"
+    },
+    "domain": {
+      "type": "string",
+      "minLength": 1,
+      "description": "业务域归属（D1 关键字段：不允许从有值改为空）"
+    },
+    "created_at": {
+      "type": "string",
+      "minLength": 1,
+      "description": "创建时间（ISO 8601；D4 格式一致性必填）"
+    },
+    "updated_at": {
+      "type": "string",
+      "minLength": 1,
+      "description": "更新时间（ISO 8601；D4 格式一致性必填）"
+    },
+    "description": {
+      "type": "string",
+      "description": "entity 简述（可选）"
+    },
+    "relations": {
+      "type": "object",
+      "description": "关联关系（对齐 CORE-LNK；值为目标 entity 名数组）",
+      "properties": {
+        "belongs_to": { "type": "array", "items": { "type": "string" } },
+        "has_many": { "type": "array", "items": { "type": "string" } },
+        "depends_on": { "type": "array", "items": { "type": "string" } },
+        "produces": { "type": "array", "items": { "type": "string" } },
+        "consumes": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

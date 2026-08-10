@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # daemon-register.sh · Hook 部署(Step 6) + 断路器注入(Step 7) + daemon(Step 6b)
 # 导出：deploy_hook / inject_loopdetect / install_daemon
 # OpenClaw 2026.6.x 声明式 hook：HOOK.md+handler.ts → ~/.openclaw/hooks/sofagent-load-chain/

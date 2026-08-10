@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "sofagent://ontology/schema/concept.schema.json",
+  "title": "concept（业务概念页）",
+  "description": "knowledge/concepts/<name>.md frontmatter 的机器可读 Schema（v1.3.1 交付 1）。对齐 create-concept 真实 frontmatter：name/created_at/updated_at 必填（concept 无 domain 字段——区别于 entity）。v1.3.6 注册接口复用本定义（单一事实源）。",
+  "type": "object",
+  "required": ["name", "created_at", "updated_at"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "concept 名称（与文件名一致，不含 .md 后缀）"
+    },
+    "created_at": {
+      "type": "string",
+      "minLength": 1,
+      "description": "创建时间（ISO 8601）"
+    },
+    "updated_at": {
+      "type": "string",
+      "minLength": 1,
+      "description": "更新时间（ISO 8601）"
+    },
+    "description": {
+      "type": "string",
+      "description": "concept 简述（可选）"
+    }
+  }
+}

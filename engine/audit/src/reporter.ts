@@ -4,7 +4,7 @@
 // 循环调用 rule.check(ctx)，不再硬编码 import 4 条规则
 // v0.94：runRules 签名扩展，支持 silent/commitMsg 参数
 // v0.95：支持 config 注入 AuditContext + extendedRules 开关
-// v1.3.0：fast-fail 优化——委托到 rules/runner.ts
+// v1.3.1：fast-fail 优化——委托到 rules/runner.ts
 //
 // 本文件专用于 @sofagent/audit，包含 runRules 运行时实现（依赖 rules/runner）。
 // 与 core/src/reporter.ts 的关系：
@@ -61,6 +61,7 @@ export function productSignature(exitCode: number, ruleCount: number): string {
  * @param commitMsg commit message（用于 E2/A5 规则及 #10 回退）
  * @param config 审计配置（.sofagent/config.yml 加载，三级 fallback）
  * @param history 历史审计记录（可选；不传则 runner 自动从文件加载）
+ * @param gb48000 v1.3.1 交付 2：国标对齐 GB/T 48000.3-2026 维度（opt-in 默认 false）
  */
 export function runRules(
   diffFiles: DiffFile[],
@@ -70,7 +71,8 @@ export function runRules(
   silent?: boolean,
   commitMsg?: string,
   config?: AuditConfig,
-  history?: AuditHistoryEntry[]
+  history?: AuditHistoryEntry[],
+  gb48000?: boolean
 ): AuditResult {
-  return runRulesWithFastFail(diffFiles, logEntries, task, strict, silent, commitMsg, config, history);
+  return runRulesWithFastFail(diffFiles, logEntries, task, strict, silent, commitMsg, config, history, gb48000);
 }

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // ============================================================
 // mcp-server.ts · MCP Server (Model Context Protocol)
-// v1.3.0: 拆分为 ≤300 行主文件 + tools/ 子目录按功能分组
-// v1.3.0: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
+// v1.3.1: 拆分为 ≤300 行主文件 + tools/ 子目录按功能分组
+// v1.3.1: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
 //
 // 协议：https://spec.modelcontextprotocol.io/
 // 传输：stdio（stdin/stdout，每行一个 JSON-RPC 消息）
@@ -32,6 +32,9 @@ import { listCapabilities } from './tools/report-tools';
 import { queryDataSovereigntyReport } from './tools/data-sovereignty-report';
 import { createEntity } from './tools/create-entity';
 import { createConcept } from './tools/create-concept';
+import { updateEntity } from './tools/update-entity';
+import { deleteEntity } from './tools/delete-entity';
+import { deleteConcept } from './tools/delete-concept';
 import { validateOntology } from './tools/validate-ontology';
 import { evaluateOutput } from './tools/evaluate-output';
 import { optimizeSkill } from './tools/optimize-skill';
@@ -44,6 +47,10 @@ import { listAgentsTool } from './tools/list-agents';
 import { listConcepts } from './tools/list-concepts';
 import { hitlResolve } from './tools/hitl-resolve';
 import { listRules } from './tools/list-rules';
+import { agentIdentityTool } from './tools/agent-identity';
+import { loopDebug } from './tools/loop-debug';
+import { evaluate } from './tools/evaluate';
+import { auditTrail } from './tools/audit-trail';
 import { getDynamicTools, getDynamicTool, registerMemoryBackends } from './tools/memory-backend';
 
 // ============================================================
@@ -183,6 +190,9 @@ class McpServer {
         case 'data_sovereignty_report': { try { const r = queryDataSovereigntyReport({ date: args.date as string | undefined }); this.sendTool(id, r); } catch (e) { this.sendTool(id, { text: `[sofagent] 数据主权审计查询失败：${e instanceof Error ? e.message : String(e)}`, data: { ok: false } }); } break; }
         case 'create_entity': { if (!args.name || !args.domain || !args.content) { this.sendError(id, -32602, 'Missing required argument: name, domain, and content are required'); break; } const r = createEntity({ name: args.name as string, domain: args.domain as string, content: args.content as string, ...(args.relations ? { relations: args.relations as string } : {}) }); this.sendTool(id, r, r.data.isError); break; }
         case 'create_concept': { if (!args.name || !args.content) { this.sendError(id, -32602, 'Missing required argument: name and content are required'); break; } const r = createConcept({ name: args.name as string, content: args.content as string }); this.sendTool(id, r, r.data.isError); break; }
+        case 'update_entity': { if (!args.name) { this.sendError(id, -32602, 'Missing required argument: name is required'); break; } const ur = updateEntity({ name: args.name as string, ...(args.newName ? { newName: args.newName as string } : {}), ...(args.domain !== undefined ? { domain: args.domain as string } : {}), ...(args.description !== undefined ? { description: args.description as string } : {}), ...(args.relations !== undefined ? { relations: args.relations as string } : {}), ...(args.content !== undefined ? { content: args.content as string } : {}) }); this.sendTool(id, ur, ur.data.isError); break; }
+        case 'delete_entity': { if (!args.name) { this.sendError(id, -32602, 'Missing required argument: name is required'); break; } const dr = deleteEntity({ name: args.name as string, confirmed: args.confirmed === true }); this.sendTool(id, dr, dr.data.isError); break; }
+        case 'delete_concept': { if (!args.name) { this.sendError(id, -32602, 'Missing required argument: name is required'); break; } const cr = deleteConcept({ name: args.name as string, confirmed: args.confirmed === true }); this.sendTool(id, cr, cr.data.isError); break; }
         case 'validate_ontology': { this.sendTool(id, validateOntology({ ...(args.fix !== undefined ? { fix: args.fix as boolean } : {}) })); break; }
         case 'evaluate_output': { this.sendTool(id, await evaluateOutput({ ...(args.golden_set_path ? { golden_set_path: args.golden_set_path as string } : {}), ...(args.verbose !== undefined ? { verbose: args.verbose as boolean } : {}) })); break; }
         case 'optimize_skill': { if (!args.skill_path) { this.sendError(id, -32602, 'Missing required argument: skill_path'); break; } this.sendTool(id, optimizeSkill({ skill_path: args.skill_path as string, ...(args.check_only !== undefined ? { check_only: args.check_only as boolean } : {}) })); break; }
@@ -195,6 +205,10 @@ class McpServer {
         case 'list_concepts': { this.sendTool(id, listConcepts()); break; }
         case 'hitl_resolve': { this.sendTool(id, await hitlResolve({ checkpoint_id: args.checkpoint_id as string, decision: args.decision as 'approve' | 'reject' | 'aborted', ...(args.comment ? { comment: args.comment as string } : {}) })); break; }
         case 'list_rules': { const r = listRules({ type: args.type as 'tool' | 'diff' | 'all' | undefined }); this.sendTool(id, r); break; }
+        case 'agent_identity': { const r = agentIdentityTool({ ...(args.agent_id ? { agentId: args.agent_id as string } : {}) }); this.sendTool(id, r); break; }
+        case 'loop_debug': { const r = await loopDebug({ ...(typeof args.task === 'string' ? { task: args.task } : {}), ...(typeof args.agent_id === 'string' ? { agent_id: args.agent_id } : {}), ...(typeof args.max_rounds === 'number' ? { max_rounds: args.max_rounds } : {}), ...(typeof args.timeout_ms === 'number' ? { timeout_ms: args.timeout_ms } : {}) }); this.sendTool(id, r, r.data.isError); break; }
+        case 'evaluate': { if (!args.benchmark_id) { this.sendError(id, -32602, 'Missing required argument: benchmark_id'); break; } const r = await evaluate({ benchmark_id: args.benchmark_id as string, ...(typeof args.case_id === 'string' ? { case_id: args.case_id } : {}), ...(args.query === true ? { query: true } : {}) }); this.sendTool(id, r, r.data.isError); break; }
+        case 'audit_trail': { const r = await auditTrail({ ...(typeof args.agent_id === 'string' ? { agent_id: args.agent_id } : {}), ...(args.include_peers === true ? { include_peers: true } : {}) }); this.sendTool(id, r, r.data.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {

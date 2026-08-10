@@ -1,6 +1,6 @@
 # @sofagent/audit
 
-> v1.3.0 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
+> v1.3.1 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
 >
 > **安装后运行：`sofagent-audit --init`**（一键初始化 config + hook + 冒烟测试）
 >
@@ -228,7 +228,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
   "verdict": "WARN",
   "fileCount": 3,
   "triggeredRules": [
-    { "name": "A3 不改越界", "status": "WARN", "ruleClass": "业务底线" }
+    { "name": "A3 不改越界", "status": "WARN", "ruleClass": "能力拐杖" }
   ],
   "allRules": [
     { "name": "A1 不碰敏感", "status": "PASS" },
@@ -262,7 +262,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 |------|------|:--:|------|
 | A1 不碰敏感 | `.env` / `*.pem` / `id_rsa` / 密钥文件被修改 | FAIL | 业务底线 |
 | A2 不泄密钥 | 代码中出现 API Key（OpenAI / Anthropic / DeepSeek）/ Token / Password 模式 | FAIL | 业务底线 |
-| A3 不改越界 | 修改文件路径与任务描述不匹配 | WARN | 业务底线 |
+| A3 不改越界 | 修改文件路径与任务描述不匹配 | WARN | 能力拐杖 |
 | A4 不删配置 | 配置文件被删除 | FAIL | 业务底线 |
 | A5 不瞒真相 | commit message 为空或纯占位符（fix/update/wip 等） | WARN | 业务底线 |
 | A6 不坏构建 | 构建配置文件异常改动 | WARN | 能力拐杖 |
@@ -355,7 +355,7 @@ cd engine/sofagent/audit
 
 npm ci           # 安装依赖
 npm run build    # 编译 TypeScript
-npm test         # 运行测试（504 tests，P1-20 修正：原写 405 与实际漂移）
+npm test         # 运行测试（测试数量以 tools/test-count.sh 实测为准，P1-20 修正：原写 405/504 与实际漂移）
 npm run check    # 类型检查（tsc --noEmit）
 ```
 

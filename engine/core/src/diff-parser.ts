@@ -1,6 +1,6 @@
 // ============================================================
 // diff-parser.ts · git diff 解析器
-// v1.3.0: 添加 isomorphic-git fallback（当系统 git 不可用时）
+// v1.3.1: 添加 isomorphic-git fallback（当系统 git 不可用时）
 // ============================================================
 
 import { execFileSync } from 'child_process';
@@ -101,7 +101,9 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
           stdio: ['pipe', 'pipe', 'pipe'],
         });
       } catch (err) {
-        console.error('[diff-parser] 验证 git ref 失败:', err);
+        // v1.3.1 #11: 不打印整个 err 对象（首跑会输出完整 stack trace），
+        // 只输出 message——首跑（空 HEAD）是正常场景，不应打原生 Node 堆栈。
+        console.error('[diff-parser] 验证 git ref 失败:', err instanceof Error ? err.message : String(err));
         console.log('首次提交，无需审计（没有前一个版本可对比）。审计引擎已就绪，下次提交生效。');
         return files;
       }

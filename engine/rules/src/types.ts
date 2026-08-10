@@ -1,6 +1,6 @@
 // ============================================================
 // types.ts · P3 编排引擎内嵌——tool call 拦截器类型定义
-// v1.3.0：从 audit 规则抽出为纯函数，零 fs/git 依赖
+// v1.3.1：从 audit 规则抽出为纯函数，零 fs/git 依赖
 // ============================================================
 
 /** 规则等级——与 audit 的 RuleClass 对齐 */
@@ -41,6 +41,8 @@ export interface InterceptVerdict {
   suggestion: string;
   /** v1.3.0 新增：需要人工批准（HITL 挂起，交付 3 消费） */
   requireApproval?: boolean;
+  /** v1.3.1 交付 10：工具权限标记——'r' = 只读，'rw' = 读写（审批模式判定消费） */
+  permission?: 'r' | 'rw';
 }
 
 /**

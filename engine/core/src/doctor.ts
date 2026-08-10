@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 // doctor.ts · sofagent 健康检查
-// v1.3.0 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
-// v1.3.0 维护：新增 post-commit hook 存在性检查
-// v1.3.0 新增：每项 fail/warn 附修复命令 + --repair 自动修复模式
+// v1.3.1 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
+// v1.3.1 维护：新增 post-commit hook 存在性检查
+// v1.3.1 新增：每项 fail/warn 附修复命令 + --repair 自动修复模式
 //
 // 检查项：
 //   1. 环境检查（Node / git / npm / disk / bash）
 //   2. 配置检查（.sofagent/config.yml 是否存在且有效）
-//   3. 数据目录结构（v1.3.0：data/ 用户可见数据 + .sofagent/ 引擎内部状态）
+//   3. 数据目录结构（v1.3.1：data/ 用户可见数据 + .sofagent/ 引擎内部状态）
 //   4. Hook 状态（commit-msg 是否安装含 sofagent 标识 + post-commit 是否存在）
 //   5. 包完整性（node_modules 依赖）
 //
@@ -340,9 +340,11 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   }
 
   // 实际校验链完整性（v1.2.0: checkHistoryChainDetailed 已下沉到 core，区分篡改 vs 历史不可复验 vs 不可信）
+  // v1.3.1 #14: doctor 只校验最近 500 条（而非全量）——大量历史记录时全量校验性能开销大，
+  // doctor 是健康检查不应耗时过久。--verify-chain 命令仍全量校验。
   let auditLogOk = true;
   try {
-    const result = checkHistoryChainDetailed();
+    const result = checkHistoryChainDetailed(undefined, 500);
     if (result.status === 'ok') {
       ok('审计日志 hash chain 完整性校验通过');
     } else if (result.status === 'tampered') {

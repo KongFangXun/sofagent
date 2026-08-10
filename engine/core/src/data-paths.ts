@@ -1,6 +1,6 @@
 // ============================================================
 // data-paths.ts · 数据目录路径单一事实来源（SSOT）
-// v1.3.0 安装路径分离：代码仓库与运行时数据物理分离
+// v1.3.1 安装路径分离：代码仓库与运行时数据物理分离
 // ============================================================
 //
 // 核心原则：
@@ -26,7 +26,13 @@ import path from 'path';
 import os from 'os';
 
 // v1.2.1 安装路径分离：优先读环境变量，fallback 到 ~/.sofagent
-const SOFAGENT_HOME = process.env.SOFAGENT_HOME || path.join(os.homedir(), '.sofagent');
+// v1.3.1 #8: 空串陷阱修复——SOFAGENT_HOME="" 会被 || 视为 falsy 而 fallback，
+//   但严格来说用户显式设了空串应被尊重。然而空串意味着「数据写到 cwd 相对路径」，
+//   几乎肯定是误配（如 SOFAGENT_HOME= 前缀缺失值）。
+//   改为：undefined → fallback；空串 "" → 也 fallback（避免误配导致数据写入意外位置）。
+const SOFAGENT_HOME = process.env.SOFAGENT_HOME !== undefined && process.env.SOFAGENT_HOME !== ''
+  ? process.env.SOFAGENT_HOME
+  : path.join(os.homedir(), '.sofagent');
 
 /** sofagent 安装根目录 */
 export const HOME_DIR = SOFAGENT_HOME;

@@ -1,8 +1,8 @@
 // ============================================================
 // A2 不泄密钥（安全层 · 业务底线）
 // 检测 diff 新增行内容是否含密钥字符串 → 命中任意一条 → FAIL
-// v1.3.0：输出聚合——同文件同模式多次命中时限量显示，避免超大 diff 输出爆炸
-// v1.3.0 补编码绕过检测——新增行尝试 base64/hex 解码后再跑正则，
+// v1.3.1：输出聚合——同文件同模式多次命中时限量显示，避免超大 diff 输出爆炸
+// v1.3.1 补编码绕过检测——新增行尝试 base64/hex 解码后再跑正则，
 //   命中则报警（此前 `printf 'AKIA...' | base64 > encoded.txt` 即可绕过）。
 //   另补 .gitattributes -diff 绕过检测——把文件标记为 -diff 会让 git diff
 //   不输出内容行，A2 扫不到任何新增行（静默全绿），检测到该模式时 WARN。
@@ -135,7 +135,14 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
       if (line.startsWith('+') && !line.startsWith('+++')) {
         const content = line.substring(1);
         // v1.2.9: — zero-width 字符归一化（防止 U+200B/U+200C/U+200D/U+FEFF 拆分密钥绕过）
-        const normalized = content.replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
+        let normalized = content.replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
+        // v1.3.1 #46: NFKC Unicode 归一化——防止全角字符（如 ｓｋ-）或同形字符绕过密钥检测。
+        // NFKC 将兼容性字符折叠为标准形式（全角字母→半角、连字→拆分），堵住 Unicode 同形攻击。
+        try {
+          normalized = normalized.normalize('NFKC');
+        } catch {
+          // normalize 在极少数情况下可能失败（无效 surrogate pair），保留原值继续
+        }
         // 原行 + base64/hex 解码候选（v1.2.9: 用归一化后的内容防 zero-width 绕过）
         for (const candidate of candidatePlaintexts(normalized)) {
           for (const { pattern, label } of SECRET_PATTERNS) {

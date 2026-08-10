@@ -125,3 +125,9 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-08-09     | 20260809-21    | fresh-eyes  | 3    | 0   | 0   | 0   | 2-rounds-clean  | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-09/run-21
 
 2026-08-09     | 20260809-21    | release-gate | 20   | FAIL       | PASS       | PASS     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-09/run-21
+
+2026-08-10     | 20260810-03    | fresh-eyes  | 2    | 0   | 10  | 1   | consecutive-degraded-error | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-10/run-03
+
+2026-08-10     | 20260810-10    | release-gate | 20   | FAIL       | SKIP       | FAIL     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-10/run-10
+
+2026-08-10     | 20260810-13    | release-gate | 20   | PASS       | FAIL       | PASS     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-10/run-13

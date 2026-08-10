@@ -1,7 +1,7 @@
 // ============================================================
 // tools.ts · LOOP 工具注入 + ToolGate 事前拦截
-// v1.3.0 新增（骨架）· v1.2.0 正式启用（工具注入路径落地）
-// v1.3.0 新增：ToolGate——接入 @sofagent/rules 做 tool call 事前拦截
+// v1.3.1 新增（骨架）· v1.2.0 正式启用（工具注入路径落地）
+// v1.3.1 新增：ToolGate——接入 @sofagent/rules 做 tool call 事前拦截
 //
 // 设计核心——双重防御（defense-in-depth）：
 //   第一层：约束通过 description 注入，让 Agent 自觉不犯（软约束）
@@ -26,6 +26,7 @@ import { tool, type DynamicStructuredTool, type StructuredToolParams } from '@la
 import { z } from 'zod';
 import { RulesEngine, defaultToolRules } from '@sofagent/rules';
 import type { ToolCallContext } from '@sofagent/rules';
+import type { OntologyValidator } from './ontology';
 
 // ────────────────────────────────
 // 工具类型辅助
@@ -602,21 +603,54 @@ export const toolGate = createToolGate();
  * 本函数让 nodes.ts 在创建 ReactAgent 时调用 wrapToolsWithGate(ENGINEER_TOOLS, gate)，
  * 真正实现 tool call 事前拦截。
  *
+ * v1.3.1 扩展（交付 1 Ontology 运行时层）：可选 ontologyValidator 参数。
+ *   不传 = v1.3.0 行为零变化（4 处既有调用——loop/nodes.ts L328/L471/L641 +
+ *   node-executor.ts L204——零改动）。
+ *   传入后：gate 判定放行（allowed=true）→ 再过 Ontology Action 校验：
+ *     PASS → 正常执行；
+ *     WARN → 执行但返回值前拼 ⚠️ Ontology 告警（ruleName=ontology-action，含 Action Type）；
+ *     FAIL（strict 模式拦截）→ 不执行原 func，返回 ⛔ Ontology 拦截信息。
+ *
  * @param tools 原始工具集
  * @param gate ToolGate gate 函数（由 createToolGate 创建）
+ * @param ontologyValidator Ontology 校验器闭包（可选；createOntologyValidator 创建）
  * @returns 包装后的新工具集（不改原数组）
  */
 export function wrapToolsWithGate(
   tools: ExecutableTool[],
   gate: ReturnType<typeof createToolGate>,
+  ontologyValidator?: OntologyValidator,
 ): ExecutableTool[] {
   return tools.map((tool) => ({
     ...tool,
     func: (input: Record<string, unknown>): string => {
+      // 第一层：ToolGate 规则引擎判定（v1.2.0 既有行为，FAIL 硬拦截）
       const check = gate(tool.name, input);
       if (!check.allowed) {
         return `⛔ [ToolGate 拦截] ${tool.name} 被拒绝执行：${check.reason ?? '未知原因'}`;
       }
+
+      // 第二层（v1.3.1 新增）：Ontology Action 校验——gate 放行后、工具执行前。
+      // 未传 validator = 跳过本层，保持 v1.3.0 行为零变化。
+      if (ontologyValidator) {
+        const verdict = ontologyValidator(tool.name, input);
+        if (verdict.status === 'FAIL') {
+          // strict-FAIL：未注册 Action 的工具调用被拦截（LLM 无法绕过 Ontology 层）
+          return `⛔ [Ontology 拦截] ${tool.name} 被拒绝执行：[${verdict.ruleName}] ${verdict.reason}`;
+        }
+        if (verdict.status === 'WARN') {
+          // WARN：放行但留痕——返回值前拼 Ontology 告警（含 Action Type）
+          const result = tool.func(input);
+          const actionNote = verdict.actionType ? `（Action: ${verdict.actionType}）` : '';
+          const warnParts = [`⚠️ [Ontology 告警] [${verdict.ruleName}] ${verdict.reason}${actionNote}`];
+          if (check.reason) {
+            warnParts.push(`[ToolGate 告警] ${check.reason}`);
+          }
+          return `${warnParts.join('\n\n')}\n\n${result}`;
+        }
+        // PASS：有 Action 定义——继续执行（verdict.actionType 供审计报告引用）
+      }
+
       const result = tool.func(input);
       if (check.reason) {
         return `⚠️ [ToolGate 告警] ${check.reason}\n\n${result}`;

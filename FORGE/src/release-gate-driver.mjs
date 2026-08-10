@@ -36,7 +36,7 @@ import { fileURLToPath } from 'url';
 import os from 'os';
 
 // v1.2.7 功能⑤：继承 driver-base 公共编排层
-import { createForgeDriverBase } from './driver-base.mjs';
+import { createForgeDriverBase, runPreflight, formatPreflightReport } from './driver-base.mjs';
 
 // 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
 import { createVisibility, EVENTS } from './visibility.mjs';
@@ -2012,6 +2012,36 @@ async function main() {
     console.error(`缺少环境变量: ${missingEnvs.join(', ')}`);
     console.error('请在 ~/.zshrc 中设置后 source ~/.zshrc');
     process.exit(1);
+  }
+
+  // ─── preflight-check 跑前自检 ───
+  // 发版门禁单次跑 30-60 分钟（V 阶段 + 可能的 F 修复链），环境不健康时
+  // 中途崩溃代价极高。开跑前把路径/管道/API/预算/目录/磁盘全部验一遍。
+  // 铁律：dry-run 跳过（不真跑 worker）；--step 单步模式跳过（外层编排每步
+  // 一个全新进程，重复自检纯浪费且会拖慢编排）；preflight 自身异常降级
+  // WARN 绝不阻塞；HALT 级失败才 exit(1)。
+  if (!args.dryRun && !args.step) {
+    let preflightResult;
+    try {
+      preflightResult = await runPreflight({
+        repoRoot: REPO_ROOT,
+        runDir: join(RUNS_DIR, 'release-gate-loop'), // 预检 runs 根目录可写（幂等 mkdir）
+        modelConfigs: MODEL_CONFIGS,
+        roles: ['V', 'F'],
+        loopName: 'release-gate-loop',
+        toolConfig: {
+          globalSoft: TOOL_SOFT_LIMIT, globalHard: TOOL_HARD_LIMIT,
+        },
+      });
+    } catch (pfErr) {
+      // preflight 模块自身异常——降级 WARN，绝不因检查工具故障阻塞主流程
+      console.warn(`   ⚠️ preflight-check 自身异常（降级跳过）: ${pfErr.message}`);
+      preflightResult = null;
+    }
+    if (preflightResult) {
+      console.log(formatPreflightReport(preflightResult));
+      if (preflightResult.shouldHalt) process.exit(1);
+    }
   }
 
   // ─── 单步模式 (--step，非 worker) ───

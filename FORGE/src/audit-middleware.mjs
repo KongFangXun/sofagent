@@ -1,6 +1,15 @@
 // ============================================================
 // audit-middleware.mjs · 运行时审计 tool wrapper（v1.3.0 交付 1）
 // + 交付 8：运行时审计日志按 git 仓库隔离存储
+// + v1.3.1 交付 10：工具审批四模式（allow-with-audit / deny-all /
+//   read-only / always-ask）——规则引擎判定通过后增加审批模式判定分支，
+//   每次审批决定（放行与拒绝都记）写 approval_decision 审计事件；
+//   保守默认拒绝（无审批回调时拒绝一切）；子 Agent 审批继承（模块默认值）。
+// + v1.3.1 交付 4 L2：副作用登记簿（Durable Execution 工具幂等性）——
+//   wrapTool 在审批放行后、执行原 func 前，按 taskId+action 写一条
+//   副作用登记（JSONL append-only，复用 @sofagent/orchestrator 的
+//   SideEffectLedger）。默认关闭（不传 opts.sideEffectLedgerPath 时
+//   行为零变化）；写失败仅告警不阻断工具执行（容错铁律）。
 // ============================================================
 //
 // 定位：在 createReactAgent 的 tools 上包一层 tool wrapper（对标
@@ -34,6 +43,7 @@ const require = createRequire(import.meta.url);
 let _core = null;
 let _audit = null;
 let _rules = null;
+let _orchestrator = null;
 function core() {
   if (!_core) _core = require('../../engine/core/dist/index.js');
   return _core;
@@ -45,6 +55,11 @@ function audit() {
 function rules() {
   if (!_rules) _rules = require('../../engine/rules/dist/index.js');
   return _rules;
+}
+// v1.3.1 交付 4 L2：副作用登记簿（Durable Execution 工具幂等性）
+function orchestrator() {
+  if (!_orchestrator) _orchestrator = require('../../engine/orchestrator/dist/index.js');
+  return _orchestrator;
 }
 
 /**
@@ -179,17 +194,86 @@ export function recordHitlAudit({ toolName, decision, reason = '', cwd = process
   }, cwd);
 }
 
+// ============================================================
+// v1.3.1 交付 10：审批模式——模块默认值（审批继承）
+//
+// 子 Agent 创建 middleware 不传 opts.approvalMode 时继承模块默认值
+// （父 Agent 用 setDefaultApprovalMode 设置）——审批继承。
+// 默认 'allow-with-audit' = v1.3.0 行为 + 审计（不破坏既有）。
+// ============================================================
+
+let _defaultApprovalMode = 'allow-with-audit';
+
+/**
+ * 设置模块级默认审批模式（父 Agent 调用，子 Agent 继承）。
+ * @param {'allow-with-audit'|'deny-all'|'read-only'|'always-ask'} mode 审批模式
+ */
+export function setDefaultApprovalMode(mode) {
+  _defaultApprovalMode = mode;
+}
+
+/**
+ * 读取模块级默认审批模式。
+ * @returns {'allow-with-audit'|'deny-all'|'read-only'|'always-ask'} 当前默认模式
+ */
+export function getDefaultApprovalMode() {
+  return _defaultApprovalMode;
+}
+
+/**
+ * 写一条 approval_decision 审计事件（复用 appendRuntimeAuditLog 通道）。
+ *
+ * verdict.status = APPROVAL_ALLOWED / APPROVAL_DENIED——放行与拒绝都记录，
+ * 审计可回放每一次审批决定。
+ *
+ * @param {object} p 事件参数
+ * @param {string} p.toolName 工具名
+ * @param {string} p.agentName Agent 名称
+ * @param {string} p.mode 审批模式
+ * @param {'r'|'rw'} p.permission 工具权限标记
+ * @param {boolean} p.allowed 是否放行
+ * @param {string} p.reason 判定理由
+ * @param {string} p.sessionId 会话 ID
+ * @param {string} [p.cwd] 工作目录
+ */
+function appendApprovalDecision({ toolName, agentName, mode, permission, allowed, reason, sessionId, cwd }) {
+  appendRuntimeAuditLog({
+    toolName,
+    agentName,
+    args_summary: {},
+    verdict: {
+      status: allowed ? 'APPROVAL_ALLOWED' : 'APPROVAL_DENIED',
+      ruleName: 'approval_decision',
+      details: [reason],
+    },
+    approval: { mode, permission, allowed },
+    session_id: sessionId,
+  }, cwd);
+}
+
 /**
  * 创建运行时审计 middleware——返回 { wrapTool, check }。
  *
- * wrapTool(originalFunc, toolName)：包裹工具 func，执行前跑规则引擎检查，
+ * wrapTool(originalFunc, toolName, permission='rw')：包裹工具 func，执行前跑规则引擎检查，
  *   FAIL → 拦截（返回拒绝消息，不执行原 func）；WARN → 放行但记日志；
- *   PASS → 放行。所有判定写运行时审计日志。
+ *   PASS → 放行，随后进入 v1.3.1 审批模式判定分支。所有判定写运行时审计日志。
  *
  * check(ctx)：独立检查入口（供 loadTools 回调最外层调用）。
  *
+ * v1.3.1 交付 10 审批模式：
+ *   opts.approvalMode 缺省 → 继承模块默认值（setDefaultApprovalMode，审批继承）；
+ *   模块默认初始为 'allow-with-audit'（= v1.3.0 行为 + 审计，不破坏既有）。
+ *   opts.approvalCallback 可选人工确认回调 async ({toolName, permission, reason}) => boolean；
+ *   read-only 遇 rw 工具 / always-ask 需人工确认——无回调时**保守默认拒绝**（铁律 #7）。
+ *   每次审批决定（放行与拒绝）写 approval_decision 审计事件；
+ *   拒绝返回合成中止消息「工具调用被拒绝（模式：{mode}）」，不崩溃。
+ *
  * @param {object} rulesEngine RulesEngine 实例（来自 @sofagent/rules）
- * @param {object} opts 可选配置 { agentName, taskDesc, cwd, sessionId, emitDecision:boolean }
+ * @param {object} opts 可选配置 { agentName, taskDesc, cwd, sessionId, emitDecision:boolean,
+ *   approvalMode?: 'allow-with-audit'|'deny-all'|'read-only'|'always-ask',
+ *   approvalCallback?: ({toolName, permission, reason}) => Promise<boolean>|boolean,
+ *   sideEffectLedgerPath?: string|null,   // v1.3.1 交付 4 L2：副作用登记簿路径（不传=不登记）
+ *   taskId?: string }                      // v1.3.1 交付 4 L2：登记维度（缺省用 sessionId）
  * @returns {{ wrapTool: Function, check: Function }}
  */
 export function createAuditMiddleware(rulesEngine, opts = {}) {
@@ -198,6 +282,38 @@ export function createAuditMiddleware(rulesEngine, opts = {}) {
   const cwd = opts.cwd ?? process.cwd();
   const sessionId = opts.sessionId ?? `sess-${process.pid}`;
   const emitDecisionEnabled = opts.emitDecision !== false;
+  // v1.3.1 交付 10：审批模式——未传时继承模块默认值（审批继承）
+  const approvalMode = opts.approvalMode ?? getDefaultApprovalMode();
+  const approvalCallback = typeof opts.approvalCallback === 'function' ? opts.approvalCallback : null;
+  // v1.3.1 交付 4 L2：副作用登记簿——不传 sideEffectLedgerPath = 不登记（行为零变化）
+  const sideEffectLedgerPath = opts.sideEffectLedgerPath ?? null;
+  const taskId = opts.taskId ?? sessionId;
+
+  // 副作用登记簿实例（懒加载——仅在提供路径时创建）
+  let _ledger = null;
+  function ledger() {
+    if (!_ledger) {
+      const { SideEffectLedger } = orchestrator();
+      _ledger = new SideEffectLedger(sideEffectLedgerPath);
+    }
+    return _ledger;
+  }
+
+  /**
+   * v1.3.1 交付 4 L2：工具执行前写副作用登记（append-only JSONL）。
+   * 容错铁律：登记失败仅告警，绝不阻断工具执行。
+   *
+   * @param {string} toolName 工具名
+   * @param {object} args 工具参数（脱敏摘要后登记）
+   */
+  function recordSideEffect(toolName, args) {
+    if (!sideEffectLedgerPath) return;
+    try {
+      ledger().record(taskId, `tool.${toolName}`, { args: summarizeArgs(args) });
+    } catch (err) {
+      console.warn(`[audit-middleware] 副作用登记失败（不影响工具执行）: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
 
   /**
    * 执行规则检查 + 记日志 + 返回判定。
@@ -291,12 +407,14 @@ export function createAuditMiddleware(rulesEngine, opts = {}) {
 
   /**
    * 包裹工具 func——执行前检查，FAIL 拦截优先，requireApproval 挂起 HITL。
+   * 规则引擎判定通过后进入审批模式判定分支（v1.3.1 交付 10）。
    *
    * @param {Function} originalFunc 原始工具函数
    * @param {string} toolName 工具名
+   * @param {'r'|'rw'} [permission='rw'] 工具权限标记（只读 'r' / 读写 'rw'，默认 'rw'）
    * @returns {Function} 包裹后的 async 函数
    */
-  function wrapTool(originalFunc, toolName) {
+  function wrapTool(originalFunc, toolName, permission = 'rw') {
     return async function (...args) {
       const input = args[0] ?? {};
       const verdict = check(toolName, input);
@@ -308,6 +426,54 @@ export function createAuditMiddleware(rulesEngine, opts = {}) {
       if (verdict.blocked) {
         return `⛔ [Audit 拦截] ${toolName} 被拒绝执行：${verdict.reason}`;
       }
+
+      // ── v1.3.1 交付 10：审批模式判定分支（规则引擎通过后） ──
+      const { shouldApprove } = rules();
+      const approval = shouldApprove(approvalMode, permission);
+      if (!approval.allow) {
+        // 需人工确认的场景（read-only 遇 rw / always-ask）
+        if (approvalCallback) {
+          let humanAllowed = false;
+          try {
+            humanAllowed = await approvalCallback({ toolName, permission, reason: approval.reason });
+          } catch (err) {
+            // 回调异常 → 保守拒绝（不放行）
+            console.warn(`[audit-middleware] approvalCallback 异常，保守拒绝 ${toolName}: ${err instanceof Error ? err.message : String(err)}`);
+            humanAllowed = false;
+          }
+          if (!humanAllowed) {
+            // 人工拒绝（或回调异常）→ 写 APPROVAL_DENIED 审计事件 + 合成中止消息
+            appendApprovalDecision({
+              toolName, agentName, mode: approvalMode, permission,
+              allowed: false, reason: `人工确认拒绝：${approval.reason}`, sessionId, cwd,
+            });
+            return `工具调用被拒绝（模式：${approvalMode}）`;
+          }
+          // 人工放行 → 写 APPROVAL_ALLOWED 审计事件后执行
+          appendApprovalDecision({
+            toolName, agentName, mode: approvalMode, permission,
+            allowed: true, reason: `人工确认放行：${approval.reason}`, sessionId, cwd,
+          });
+          // v1.3.1 交付 4 L2：执行前写副作用登记（幂等查重底座）
+          recordSideEffect(toolName, input);
+          return await originalFunc(...args);
+        }
+
+        // 保守默认拒绝铁律（#7）：需人工确认但 SDK 未传审批回调 → 拒绝一切，不放行
+        appendApprovalDecision({
+          toolName, agentName, mode: approvalMode, permission,
+          allowed: false, reason: `${approval.reason}；未提供审批回调，保守默认拒绝`, sessionId, cwd,
+        });
+        return `工具调用被拒绝（模式：${approvalMode}）`;
+      }
+
+      // 放行（allow-with-audit / read-only 只读）——放行也记 approval_decision
+      appendApprovalDecision({
+        toolName, agentName, mode: approvalMode, permission,
+        allowed: true, reason: approval.reason, sessionId, cwd,
+      });
+      // v1.3.1 交付 4 L2：执行前写副作用登记（幂等查重底座）
+      recordSideEffect(toolName, input);
       return await originalFunc(...args);
     };
   }
