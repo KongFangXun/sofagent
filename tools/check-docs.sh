@@ -268,7 +268,7 @@ echo "=== 6. 铁律措辞检查 ==="
 IRON_FAIL=0
 for f in SKILL/harness/*.md SKILL/skills/*.md; do
   if [ -f "$f" ]; then
-    WEAK=$(grep -n '建议\|应该\|尽量' "$f" 2>/dev/null | grep -v 'not_when\|Gotcha\|场景\|如果\|注\|说明\|这不是\|给用户看\|咨询式\|FDE Agent\|人工确认\|用户拍板\|展示推导' || true)
+    WEAK=$(grep -n '建议\|应该\|尽量' "$f" 2>/dev/null | grep -v 'not_when\|Gotcha\|场景\|如果\|注\|说明\|这不是\|给用户看\|咨询式\|FDE Agent\|人工确认\|用户拍板\|展示推导\|辅助\|LLM' || true)
     if [ -n "$WEAK" ]; then
       echo "  $(basename "$f") 有弱措辞残留:"
       echo "$WEAK" | sed 's/^/     /'
