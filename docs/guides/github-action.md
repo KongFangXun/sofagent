@@ -31,8 +31,9 @@ jobs:
       - name: 运行审计
         run: |
           # 通过 npx 拉取已发布的 @sofagent/audit（与 action.yml 一致）。
-          # ⚠️ 版本号建议锁定，避免上游 patch 引入行为变更——发版时同步更新。
-          npx -y -p @sofagent/audit@1.3.0 sofagent-audit-full \
+          # ⚠️ 把 <LATEST> 换成当前发布版本（查 npm：npm view @sofagent/audit version）。
+          #    锁定版本号可避免上游 patch 引入行为变更。
+          npx -y -p @sofagent/audit@<LATEST> sofagent-audit-full \
             --diff origin/${{ github.base_ref }}..HEAD --ci --strict
 ```
 
