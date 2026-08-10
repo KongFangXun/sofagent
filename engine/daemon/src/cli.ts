@@ -76,6 +76,25 @@ async function main() {
         console.log(`  💚 健康报告已生成: data/dashboard/daemon-health.json (status=${health.status})`);
       }
 
+      // v1.3.1 交付 4 L1：启动时检查未完成 LOOP graph → 自动续跑（Durable Execution）
+      // 容错铁律：续跑检查失败不影响 daemon 启动（观测失败仅告警）。
+      try {
+        const { resumePendingLoops } = await import('@sofagent/orchestrator');
+        const summary = await resumePendingLoops({ silent: true });
+        if (summary.resumed > 0) {
+          console.log(`  ♻️ LOOP 续跑: 已恢复 ${summary.resumed} 个未完成任务（${summary.results.map((r) => `${r.checkpointId} → ${r.finalStatus}`).join('；')}）`);
+        } else if (summary.pending.length > 0) {
+          console.log(`  ⏸️ LOOP 续跑: ${summary.pending.length} 个未完成 checkpoint（本次未自动恢复）`);
+        } else {
+          console.log('  ✅ LOOP 续跑: 无未完成任务');
+        }
+        if (summary.cleaned > 0) {
+          console.log(`  🧹 LOOP 续跑: 已清理 ${summary.cleaned} 个过期 checkpoint`);
+        }
+      } catch (err) {
+        console.warn(`  ⚠️ LOOP 续跑检查失败（不影响 daemon 启动）: ${err instanceof Error ? err.message : String(err)}`);
+      }
+
       // 启动 cron 定时任务
       startCron(projectDir);
       console.log('  ✅ cron 定时任务已启动');
