@@ -36,7 +36,7 @@
 | 一·架构设计 | [./architecture.md](./architecture.md) | createReactAgent 禁用 createDeepAgent · Driver-Worker 编排 · 步骤定义 · 目录架构 |
 | 二·模型配置 | [./models.md](./models.md) | MODEL_CONFIGS · Thinking-only 模型 · 步骤级 maxTokens · 计费模式 |
 | 三·性能优化 | [./performance.md](./performance.md) | 三层上下文裁剪（截断+stateModifier+preModelHook）· 效率铁律 · stream |
-| 四·Driver 编排 | [./driver.md](./driver.md) | recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step |
+| 四·Driver 编排 | [./driver.md](./driver.md) | **preflight-check 跑前自检** · recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step |
 | 五~八·Stream/Prompt/工具/可观测 | [./stream-prompt-tools.md](./stream-prompt-tools.md) | stream 迁移 P0 铁律 · BSD 约束 · 工具格式转换 · 两层可观测 |
 
 ---
@@ -70,6 +70,9 @@
 
 ### 🔧 Driver 编排
 
+- [ ] **长循环 driver 开跑前跑 preflight-check 自检**（路径/管道/API/预算/目录/磁盘六项；HALT 才阻塞，自身异常降级 WARN，worker/dry-run/--step 跳过）（[四·preflight-check](./driver.md#preflight-check-跑前自检)）
+- [ ] **preflight 不自动修复危险项**（只报问题 + 给可复制修复命令；唯一允许自动做的是幂等 mkdir runDir）（[四·preflight-check](./driver.md#preflight-check-跑前自检)）
+- [ ] **stdout 管道检测定 WARN 不定 HALT**（命令替换/重定向的 stdout 天然是管道，HALT 会误杀冒烟测试和合法日志重定向）（[四·preflight-check](./driver.md#preflight-check-跑前自检)）
 - [ ] **recursionLimit 按步骤区分**（审查类 130）（[四·recursionLimit](./driver.md#recursionlimit-按步骤区分)）
 - [ ] **三层熔断防护**（L1 软 50 + L2 硬 60 写报告窗口 5 + L3 recursionLimit 130）（[四·三层熔断](./driver.md#worker-工具调用死循环防护三层熔断)）
 - [ ] **L2 用两阶段写报告窗口**（不 break，进 5 superstep 窗口）（[四·L2 两阶段](./driver.md#l2-两阶段写报告窗口关键设计)）
@@ -173,6 +176,7 @@
 | 08-09 | 33bbb6eb | a-verify 覆盖 result.md 抹掉降级标记 → 降级轮假绿（degraded.flag 持久化） | P0（假阳性） | 四·产物完整性校验 |
 | 08-09 | d4c797c3 | release-gate acceptance 误判 FAIL——worker 把 grep exit code 当脚本退出码 + ANSI 码致正则失败（确定性日志判定） | P0（假 FAIL） | 四·确定性判定 |
 | 08-09 | d4c797c3 | F 链收敛 PASS 但 verdict.md 仍 FAIL——状态变化未回写权威产物 | P1 | 四·F 链收敛 |
+| 08-09 | 待提交 | preflight-check 跑前自检模块（六项检查；管道检测从 HALT 修正为 WARN 防误杀冒烟测试） | P1（预防） | 四·preflight-check |
 
 ### 历史坑位索引
 
@@ -210,6 +214,7 @@
 | 30 | LLM 解读日志误判——grep exit code 幻觉 / 不懂非连续编号 / WARN 当 FAIL | 四·确定性判定优先 |
 | 31 | ANSI 颜色码插入文本导致正则匹配失败 | 四·确定性判定优先（剥离 \x1b[...m） |
 | 32 | F 链收敛状态未回写 verdict.md → 文件与 status 矛盾 | 四·F 链收敛回写权威产物 |
+| 33 | 长循环跑到一半环境崩溃——缺跑前自检（preflight-check 六项检查） | 四·preflight-check |
 
 ### 关键设计决策速查
 

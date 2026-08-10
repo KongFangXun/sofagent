@@ -29,7 +29,7 @@ import { fileURLToPath } from 'url';
 import os from 'os';
 
 // v1.2.7 功能⑤：继承 driver-base 公共编排层
-import { createForgeDriverBase } from './driver-base.mjs';
+import { createForgeDriverBase, runPreflight, formatPreflightReport } from './driver-base.mjs';
 
 // 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
 import { createVisibility, EVENTS } from './visibility.mjs';
@@ -104,6 +104,10 @@ const TOOL_HARD_LIMIT  = 45;   // stream loop：超此值进入"写报告窗口"
 // 改为零窗口——撞硬上限立即 break，直接走 generateReportWithoutTools。
 const REVIEW_GRACE_STEPS  = 0;   // 审查步骤写报告窗口（0=撞硬上限立即中断）
 const DEFAULT_GRACE_STEPS = 0;   // 其他步骤同上
+// v1.3.2 preflight-check：perspective worker 工具预算提取为模块级常量，
+// 供 preflight 预算合理性检查引用（15/20 来自 v1.3.1 run-03 调优结论）。
+const PERSPECTIVE_TOOL_SOFT = 15;
+const PERSPECTIVE_TOOL_HARD = 20;
 
 // ─── 模型定价（从 FORGE/models/ 加载）──────────────────────
 // 单位：CNY per 1M tokens（百万 token 计价）
@@ -183,8 +187,8 @@ function buildPerspectiveSteps() {
       inputs: [],
       perspective: p.label,
       recursionLimit: 30,
-      toolSoftLimit: 15,
-      toolHardLimit: 20,
+      toolSoftLimit: PERSPECTIVE_TOOL_SOFT,
+      toolHardLimit: PERSPECTIVE_TOOL_HARD,
     };
     steps[`b-check-p${p.id}`] = {
       role: 'B',
@@ -193,8 +197,8 @@ function buildPerspectiveSteps() {
       inputs: [],
       perspective: p.label,
       recursionLimit: 30,
-      toolSoftLimit: 15,
-      toolHardLimit: 20,
+      toolSoftLimit: PERSPECTIVE_TOOL_SOFT,
+      toolHardLimit: PERSPECTIVE_TOOL_HARD,
     };
   }
   return steps;
@@ -3052,6 +3056,36 @@ async function main() {
     console.error(`缺少环境变量: ${missingEnvs.join(', ')}`);
     console.error('请在 ~/.zshrc 中设置后 source ~/.zshrc');
     process.exit(1);
+  }
+
+  // ─── preflight-check 跑前自检 ───
+  // 开跑前把环境前置条件全部验一遍（路径/管道/API/预算/目录/磁盘），
+  // 避免 15-60 分钟的长任务跑到一半因环境问题崩溃。
+  // 铁律：dry-run 跳过（不真跑 worker，检查无意义）；preflight 自身异常
+  // 降级 WARN 绝不阻塞；HALT 级失败才 exit(1)。
+  if (!args.dryRun) {
+    let preflightResult;
+    try {
+      preflightResult = await runPreflight({
+        repoRoot: REPO_ROOT,
+        runDir: join(RUNS_DIR, 'fresh-eyes-loop'), // 预检 runs 根目录可写（幂等 mkdir）
+        modelConfigs: MODEL_CONFIGS,
+        roles: ['A', 'B'],
+        loopName: 'fresh-eyes-loop',
+        toolConfig: {
+          globalSoft: TOOL_SOFT_LIMIT, globalHard: TOOL_HARD_LIMIT,
+          perspectiveSoft: PERSPECTIVE_TOOL_SOFT, perspectiveHard: PERSPECTIVE_TOOL_HARD,
+        },
+      });
+    } catch (pfErr) {
+      // preflight 模块自身异常——降级 WARN，绝不因检查工具故障阻塞主流程
+      console.warn(`   ⚠️ preflight-check 自身异常（降级跳过）: ${pfErr.message}`);
+      preflightResult = null;
+    }
+    if (preflightResult) {
+      console.log(formatPreflightReport(preflightResult));
+      if (preflightResult.shouldHalt) process.exit(1);
+    }
   }
 
   // 建 run 目录（v1.2.8 功能⑦：resume 模式复用已有目录，不新建）

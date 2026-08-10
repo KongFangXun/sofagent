@@ -712,4 +712,11 @@ if ! $DRY_RUN; then
   echo "    3. CHANGELOG.md 是否已新增新版本的索引条目？"
   echo "    4. docs/ROADMAP.md 迭代历程表是否已新增新版本行？"
   echo ""
+  echo -e "  ${YELLOW}⚠️  用户文档同步检查（v1.3.1 发版新增——bump 只改版本号，用户文档的叙事/能力列表/数字需手动同步）：${NC}"
+  echo "    5. README.md 新能力段是否已新增？（v1.3.x 新增能力一句话摘要 + changelog 链接）"
+  echo "    6. README.en.md 是否同步？（badge 自动改，但新能力段 + 测试数需手动——英文版易漏）"
+  echo "    7. docs/HANDBOOK.md「已经能替你干的事」是否已更新版本号 + 补新能力？"
+  echo "    8. docs/HANDBOOK.md「现在还干不了的事」是否已移除本版交付的能力？"
+  echo "    9. docs/DEVELOPMENT.md 正文中的测试数声称是否同步？（grep 'XX 测试'）"
+  echo ""
 fi
