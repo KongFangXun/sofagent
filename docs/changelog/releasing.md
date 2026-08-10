@@ -470,11 +470,12 @@ ls docs/changelog/*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
 
 | 文档 | 什么时候更新 |
 |------|------|
-| `README.md` | FDE 完成度变化、效果证据更新、新功能入口 |
-| `ARCHITECTURE.md` | 架构决策或设计思路有变更 |
-| `DEVELOPMENT.md` | 开发流程有变更 |
-| `LIMITATIONS.md` | 新发现的局限或旧局限被消除 |
-| `HANDBOOK.md` | 用户使用习惯、FAQ 有变化 |
+| `README.md` | FDE 完成度变化、效果证据更新、**新功能入口（新增能力段 + changelog 链接）** · **🔴 新能力段只留最新版本——旧版本的新能力段直接删掉，不堆叠（v1.3.1 教训：读者看到两个版本的新能力段会困惑哪个是当前）** · **每版开发完成后顺手优化 README 的表达/结构/视觉**（不算改功能，算文档卫生） |
+| `README.en.md` | **与 README.md 同步**——badge 自动改，但**新能力段 + 测试数 + 规则数需手动同步**（英文版易漏，v1.3.1 教训） · 同样只留最新版本新能力段 |
+| `ARCHITECTURE.md` | 架构决策或设计思路有变更 · **13/12 包口径一致性**（13=npm 发布总数，12=有 test script，改包数时两处同步） |
+| `DEVELOPMENT.md` | 开发流程有变更 · **正文测试数声称同步**（grep `XX 测试`，bump 后数字会过时） |
+| `LIMITATIONS.md` | 新发现的局限或旧局限被消除 · **已知问题标注修复版本落点**（不写「未来版本」，写具体 v1.3.x） |
+| `HANDBOOK.md` | 用户使用习惯、FAQ 有变化 · **「已经能替你干的事」版本号 + 新能力列表** · **「现在还干不了的事」移除本版交付项** |
 | `COMMUNITY.md` | contributor 数据、社区状态有变化 |
 | `ROADMAP.md` | 五步更新（见上）。不要在「现在在哪」堆积历史版本详细表 |
 | `CHANGELOG.md` | 新增版本索引条目。版本历史的**唯一权威入口** |
@@ -505,7 +506,8 @@ shellcheck engine/scripts/*.sh tools/*.sh install.sh   # 期望：零 error
 | 2 | **三脚本对照检查**<br><br>① `check-version.sh` 检查的每一类文件，`bump-version.sh` 是否都有对应的 bump 步骤？（缺口 = check 能发现但不自动修复——如 v1.1.3 发现的 10 个 workspace 子包 version 字段）<br>② `pre-push-check.sh` 的检查项数量是否和 CHANGELOG/ROADMAP 声明的一致？（v1.1.3 教训：声明 13 通过，实际 15 通过/16 项）<br>③ `check-version.sh` 的检查项编号分母是否和实际检查项数一致？（v1.1.3 教训：`[1/13]~[12/13]+[13/14]+[14/14]` 分母跳变）<br>④ **🔴 v1.2.2 教训：bump-version.sh --dry-run 必须验证为纯只读**——步骤 9b 的 node 脚本段无条件 `fs.writeFileSync` 写盘，导致 `--dry-run` 实际修改了 9 个 package.json。验证方式：跑完 dry-run 后 `git diff --stat` 必须零改动；有改动 = P0 bug | ① 跑 `./tools/check-version.sh` 看末尾「检查通过: N/N 项」，再跑 `./tools/bump-version.sh --dry-run` 对照 bump 步骤数，两者覆盖范围应一致<br>② `./tools/pre-push-check.sh 2>&1 \| grep '结果:'` 的数字和 CHANGELOG 质量验证段对比<br>③ `grep '── \[' tools/check-version.sh` 看实际打印的分母是否全一致（注释中的引用不算）<br>④ `bash tools/bump-version.sh X Y --dry-run > /dev/null 2>&1; git diff --stat` 零改动 |
 | 3 | **过时检查清理** | ... |
 | 4 | **🔴 `npm run build` 重建 dist 产物**（v1.2.2 P0-01 教训：bump-version 只改源码不改 dist/，fresh-eyes-loop 修复了代码但 dist 仍是旧版本。**必须在所有代码修复完成后、发版前重建**——确保 CLI --help 显示正确版本号，dist 产出包含全部修复） | `node engine/audit/dist/index.js --help` 输出 vX.Y.Z |
-| 5 | **🔴 hook 端到端实测（v1.3.1 补 · P0 发版门禁盲区）**——真装 hook + 真提交密钥验证拦截链路：<br><br>① **准备隔离测试 bin**：`mkdir -p /tmp/fe-verify-bin && printf '#!/bin/bash\nexec node <repo>/engine/audit/dist/cli-quick.js "$@"\n' > /tmp/fe-verify-bin/sofagent-audit && chmod +x /tmp/fe-verify-bin/sofagent-audit`<br>⚠️ **先 `rm -f` 确认目标路径不是 symlink**（v1.3.1 血泪：`/tmp/fe-bin/sofagent-audit` 是历史测试遗留的 symlink 指向仓库 dist，`cat >` 会跟随 symlink **直接覆盖 dist 产物**且 git 不跟踪 dist 无法恢复）<br>② 新仓库装 hook：`git init && node -e "require('<repo>/engine/core/dist/config-template.js').HOOK_TEMPLATE" > .git/hooks/commit-msg && chmod +x .git/hooks/commit-msg`<br>③ **拦截验证**：`export PATH=/tmp/fe-verify-bin:$PATH SOFAGENT_DATA=/tmp/fe-vd SOFAGENT_HOME=/tmp/fe-vh` → 提交含密钥 `.env` → **必须 A1+A2 拦截 exit 2 且 `git show HEAD:.env` fatal**（密钥未入库）<br>④ ⚠️ **拦截后清暂存区再测下一场景**：`git reset HEAD -- .env && rm .env`（v1.3.1 血泪：被拦的 `.env` 留在暂存区，直接测"干净提交"会被残留误拦——那是测试污染不是产品 bug）<br>⑤ **干净提交验证**：改 app.py → commit → WARN 放行 exit 0 | 拦截：密钥提交被 A1+A2 拦，`git show HEAD:.env` fatal；放行：干净提交成功 |
+| 5 | **🔴 跨文档锚点校验**（v1.3.1 新增）——文档标题改动后 `](xxx.md#旧锚点)` 不会自动跟着改，导致链接跳不到精确位置。本步用 `tools/check-anchors.mjs` 按 GitHub 锚点归一化规则全量比对跨文件锚点引用 | `node tools/check-anchors.mjs` → `✓ 全部通过：N 个锚点引用全部有效`；有过时可用 `--fix` 模糊匹配自动修复 |
+| 6 | **🔴 hook 端到端实测（v1.3.1 补 · P0 发版门禁盲区）**——真装 hook + 真提交密钥验证拦截链路：<br><br>① **准备隔离测试 bin**：`mkdir -p /tmp/fe-verify-bin && printf '#!/bin/bash\nexec node <repo>/engine/audit/dist/cli-quick.js "$@"\n' > /tmp/fe-verify-bin/sofagent-audit && chmod +x /tmp/fe-verify-bin/sofagent-audit`<br>⚠️ **先 `rm -f` 确认目标路径不是 symlink**（v1.3.1 血泪：`/tmp/fe-bin/sofagent-audit` 是历史测试遗留的 symlink 指向仓库 dist，`cat >` 会跟随 symlink **直接覆盖 dist 产物**且 git 不跟踪 dist 无法恢复）<br>② 新仓库装 hook：`git init && node -e "require('<repo>/engine/core/dist/config-template.js').HOOK_TEMPLATE" > .git/hooks/commit-msg && chmod +x .git/hooks/commit-msg`<br>③ **拦截验证**：`export PATH=/tmp/fe-verify-bin:$PATH SOFAGENT_DATA=/tmp/fe-vd SOFAGENT_HOME=/tmp/fe-vh` → 提交含密钥 `.env` → **必须 A1+A2 拦截 exit 2 且 `git show HEAD:.env` fatal**（密钥未入库）<br>④ ⚠️ **拦截后清暂存区再测下一场景**：`git reset HEAD -- .env && rm .env`（v1.3.1 血泪：被拦的 `.env` 留在暂存区，直接测"干净提交"会被残留误拦——那是测试污染不是产品 bug）<br>⑤ **干净提交验证**：改 app.py → commit → WARN 放行 exit 0 | 拦截：密钥提交被 A1+A2 拦，`git show HEAD:.env` fatal；放行：干净提交成功 |
 
 ---
 

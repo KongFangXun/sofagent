@@ -160,9 +160,9 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 
 > 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research ([research code repository](https://github.com/JoelNiklaus/harness-optimization), data in the repo experiments) shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
 
-> 🧪 **Engineering credibility**: 1719 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
+> 🧪 **Engineering credibility**: 1962 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
 
-> 🔐 **v1.3.0 new capabilities**: runtime audit (tool wrapper dynamic interception + audit trail) · decision audit (intent accountability: `emitDecision` + HMAC chain + kind-wise queries) · rule transparency (`list_rules` MCP tool) · HITL approval hooks · runtime audit logs isolated per git repo · activation chain Phase 4 · external memory backend Path A (optional, off by default) · evolution-chain write protection. See [v1.3.0 devlog](./docs/changelog/v1.3/v1.3.0.md).
+> 🧠 **v1.3.1 new capabilities**: Ontology runtime layer (Action registry + pre-execution validation + Schema finalization) · parallel orchestration (wave concurrency + audit gating + MergeQueue) · Durable Execution (checkpoint resume + idempotency) · Agent identity Ed25519 · 🚀 Onboard Agent L1 (`loop_debug`) · 📊 Benchmark evaluation (`evaluate`) · 🔒 tool approval four-mode · 📜 LLM call-level Trace · 🔄 error handling (stop_reason + backoff) · 📚 L4 progressive loading · national standard alignment GB/T 48000.3-2026 (`--gb48000`). See [v1.3.1 devlog](./docs/changelog/v1.3/v1.3.1.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## Docs
 

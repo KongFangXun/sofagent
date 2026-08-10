@@ -21,7 +21,7 @@
 | ACTIVATE 进场 | pt-need-collect |
 | ORCHESTRATE 编排 | pt-env-check → pt-model-select |
 | EXECUTE 执行 | pt-data-prep → pt-train-run → pt-eval-gate |
-| SUSTAIN 运转 | pt-deploy（+ 持续后训练 E2 扩展） |
+| SUSTAIN 运转 | pt-deploy（+ 持续后训练扩展） |
 
 ## 依赖的训练引擎版本
 
@@ -32,4 +32,4 @@
 | pt-data-prep | 数据管道 + 训练集版本 | v1.4.2 |
 | pt-train-run | train-job 编排 + 预算控制 | v1.4.1 |
 | pt-eval-gate | eval 闭环 | v1.4.2 |
-| pt-deploy | C13 权重部署 + 产物注册衔接 | v1.4.4 |
+| pt-deploy | 企业专属模型权重部署 + 产物注册衔接 | v1.4.4 |
