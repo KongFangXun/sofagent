@@ -5,6 +5,11 @@
 //   read-only / always-ask）——规则引擎判定通过后增加审批模式判定分支，
 //   每次审批决定（放行与拒绝都记）写 approval_decision 审计事件；
 //   保守默认拒绝（无审批回调时拒绝一切）；子 Agent 审批继承（模块默认值）。
+// + v1.3.1 交付 4 L2：副作用登记簿（Durable Execution 工具幂等性）——
+//   wrapTool 在审批放行后、执行原 func 前，按 taskId+action 写一条
+//   副作用登记（JSONL append-only，复用 @sofagent/orchestrator 的
+//   SideEffectLedger）。默认关闭（不传 opts.sideEffectLedgerPath 时
+//   行为零变化）；写失败仅告警不阻断工具执行（容错铁律）。
 // ============================================================
 //
 // 定位：在 createReactAgent 的 tools 上包一层 tool wrapper（对标
@@ -38,6 +43,7 @@ const require = createRequire(import.meta.url);
 let _core = null;
 let _audit = null;
 let _rules = null;
+let _orchestrator = null;
 function core() {
   if (!_core) _core = require('../../engine/core/dist/index.js');
   return _core;
@@ -49,6 +55,11 @@ function audit() {
 function rules() {
   if (!_rules) _rules = require('../../engine/rules/dist/index.js');
   return _rules;
+}
+// v1.3.1 交付 4 L2：副作用登记簿（Durable Execution 工具幂等性）
+function orchestrator() {
+  if (!_orchestrator) _orchestrator = require('../../engine/orchestrator/dist/index.js');
+  return _orchestrator;
 }
 
 /**
@@ -260,7 +271,9 @@ function appendApprovalDecision({ toolName, agentName, mode, permission, allowed
  * @param {object} rulesEngine RulesEngine 实例（来自 @sofagent/rules）
  * @param {object} opts 可选配置 { agentName, taskDesc, cwd, sessionId, emitDecision:boolean,
  *   approvalMode?: 'allow-with-audit'|'deny-all'|'read-only'|'always-ask',
- *   approvalCallback?: ({toolName, permission, reason}) => Promise<boolean>|boolean }
+ *   approvalCallback?: ({toolName, permission, reason}) => Promise<boolean>|boolean,
+ *   sideEffectLedgerPath?: string|null,   // v1.3.1 交付 4 L2：副作用登记簿路径（不传=不登记）
+ *   taskId?: string }                      // v1.3.1 交付 4 L2：登记维度（缺省用 sessionId）
  * @returns {{ wrapTool: Function, check: Function }}
  */
 export function createAuditMiddleware(rulesEngine, opts = {}) {
@@ -272,6 +285,35 @@ export function createAuditMiddleware(rulesEngine, opts = {}) {
   // v1.3.1 交付 10：审批模式——未传时继承模块默认值（审批继承）
   const approvalMode = opts.approvalMode ?? getDefaultApprovalMode();
   const approvalCallback = typeof opts.approvalCallback === 'function' ? opts.approvalCallback : null;
+  // v1.3.1 交付 4 L2：副作用登记簿——不传 sideEffectLedgerPath = 不登记（行为零变化）
+  const sideEffectLedgerPath = opts.sideEffectLedgerPath ?? null;
+  const taskId = opts.taskId ?? sessionId;
+
+  // 副作用登记簿实例（懒加载——仅在提供路径时创建）
+  let _ledger = null;
+  function ledger() {
+    if (!_ledger) {
+      const { SideEffectLedger } = orchestrator();
+      _ledger = new SideEffectLedger(sideEffectLedgerPath);
+    }
+    return _ledger;
+  }
+
+  /**
+   * v1.3.1 交付 4 L2：工具执行前写副作用登记（append-only JSONL）。
+   * 容错铁律：登记失败仅告警，绝不阻断工具执行。
+   *
+   * @param {string} toolName 工具名
+   * @param {object} args 工具参数（脱敏摘要后登记）
+   */
+  function recordSideEffect(toolName, args) {
+    if (!sideEffectLedgerPath) return;
+    try {
+      ledger().record(taskId, `tool.${toolName}`, { args: summarizeArgs(args) });
+    } catch (err) {
+      console.warn(`[audit-middleware] 副作用登记失败（不影响工具执行）: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
 
   /**
    * 执行规则检查 + 记日志 + 返回判定。
@@ -412,6 +454,8 @@ export function createAuditMiddleware(rulesEngine, opts = {}) {
             toolName, agentName, mode: approvalMode, permission,
             allowed: true, reason: `人工确认放行：${approval.reason}`, sessionId, cwd,
           });
+          // v1.3.1 交付 4 L2：执行前写副作用登记（幂等查重底座）
+          recordSideEffect(toolName, input);
           return await originalFunc(...args);
         }
 
@@ -428,6 +472,8 @@ export function createAuditMiddleware(rulesEngine, opts = {}) {
         toolName, agentName, mode: approvalMode, permission,
         allowed: true, reason: approval.reason, sessionId, cwd,
       });
+      // v1.3.1 交付 4 L2：执行前写副作用登记（幂等查重底座）
+      recordSideEffect(toolName, input);
       return await originalFunc(...args);
     };
   }
