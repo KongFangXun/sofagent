@@ -95,8 +95,9 @@ export class MergeQueue<T = unknown> {
     const existingIndex = this.arrival.findIndex((item) => item.taskId === taskId);
     if (existingIndex !== -1) {
       if (this.duplicatePolicy === 'replace') {
+        const existing = this.arrival[existingIndex]!;
         this.arrival[existingIndex] = {
-          ...this.arrival[existingIndex],
+          ...existing,
           producer,
           result,
           arrivedAt: new Date().toISOString(),
