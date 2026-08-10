@@ -358,4 +358,18 @@ export const TOOLS: ToolDef[] = [
       },
     },
   },
+  {
+    // v1.3.1 (交付 8)：Onboard Agent L1 调试循环
+    name: 'loop_debug',
+    description: 'Onboard Agent L1 调试循环（v1.3.1 交付 8）——传 task 触发 activate→run→judge→fix→re-run 循环（只判 crash/error/超时，不判语义对错）；不传 task 查询最近调试记录（带 agentId 可追溯）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        task: { type: 'string', description: '任务描述（缺省 = 查询模式，不触发新循环）' },
+        agent_id: { type: 'string', description: 'Agent 身份码（写入调试记录，交付 6 协同）' },
+        max_rounds: { type: 'number', description: '最大循环轮数（默认 3）' },
+        timeout_ms: { type: 'number', description: '超时阈值 ms（默认 120000）' },
+      },
+    },
+  },
 ];

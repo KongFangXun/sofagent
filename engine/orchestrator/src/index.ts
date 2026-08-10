@@ -167,6 +167,23 @@ export type {
   ResumeLoopsSummary,
 } from './durable/resume';
 
+// v1.3.1 交付 8：Onboard Agent L1（循环驱动 + L1 判定器）
+export { runOnboardLoop, defaultDagRunner, defaultTraceFixer, appendLoopDebugRecord, readLoopDebugRecords, resolveLoopDebugLogPath } from './loop-agent/driver';
+export type {
+  OnboardDriverOptions,
+  OnboardRound,
+  OnboardRunOutcome,
+  OnboardLoopResult,
+  LoopDebugRecord,
+  FixFeedback,
+} from './loop-agent/driver';
+export { judgeRunResult, DEFAULT_TIMEOUT_MS } from './loop-agent/judge';
+export type {
+  JudgeState,
+  JudgeOptions,
+  JudgeVerdict,
+} from './loop-agent/judge';
+
 // Conflict Resolver（v1.2.3 · merge 文本冲突仲裁）
 export {
   resolveWorktreeConflict,
