@@ -229,10 +229,11 @@ const STEPS = {
 /**
  * v1.2.9 功能①：spawnParallel 并发限制。
  * 24 个 perspective worker 同时启动会触发 API rate limit（GLM Coding Plan
- * 并发上限）。MAX_CONCURRENCY=6 分批执行：6 个一批，全部完成后启动下一批。
- * 24 worker / 6 并发 = 4 批，每批约 2-3 分钟，总计 ~10 分钟。
+ * 并发上限）。MAX_CONCURRENCY=4 分批执行：4 个一批，全部完成后启动下一批
+ * （v1.3.1 P1-2：从 6 降到 4——run-01 实测并发 6 + 熔断重试触发 429）。
+ * 24 worker / 4 并发 = 6 批，每批约 2-3 分钟，总计 ~15 分钟。
  */
-const MAX_CONCURRENCY = parseInt(process.env.FORGE_MAX_CONCURRENCY || '6', 10);
+const MAX_CONCURRENCY = parseInt(process.env.FORGE_MAX_CONCURRENCY || '4', 10);
 
 // ═══════════════════════════════════════════════════════════
 //  CLI 参数解析
@@ -470,8 +471,36 @@ function loadTools(role, progressMw = null, auditMw = null) {
 
         // v1.2.1 L2：工具调用埋点（start → handler → end，含 duration）
         // v1.2.5：工具输出截断——超过 200 行的输出只保留头尾，防止上下文膨胀
+        // v1.3.1 P0-1 修复：run_bash 强制在 REPO_ROOT 执行——worker 模型经常
+        // 自己写 `cd /Users/<拼错用户名>/...` 导致 cwd 错误、bash 大面积失效。
+        // 修复：① 剥离命令开头错误的 cd 前缀 ② 用 execSync 注入 cwd=REPO_ROOT。
         const execFn = async () => {
-          const raw = await rawTool.func(input);
+          let raw;
+          if (rawTool.name === 'run_bash') {
+            const cmd = String((input && input.command) ?? '');
+            // 剥离开头 `cd <路径>` 或 `cd <路径> && ...` 前缀（模型常拼错用户名路径）
+            // 🔴 v1.3.1 P0-1 修复（正则修正）：分隔符须匹配 && || ; |（含多字符）
+            const stripped = cmd.replace(/^cd\s+("([^"]*)"|'([^']*)'|\S+)(\s*(?:&&|\|\||;|\|)\s*)?/, '');
+            const { execSync } = await import('child_process');
+            try {
+              const stdout = execSync(stripped, {
+                encoding: 'utf-8',
+                maxBuffer: 16 * 1024 * 1024,
+                timeout: 60_000,
+                cwd: REPO_ROOT,
+              });
+              raw = stdout || '(命令执行完成，无 stdout 输出)';
+            } catch (err) {
+              const e = err || {};
+              const stderr = e.stderr ? (typeof e.stderr === 'string' ? e.stderr : e.stderr.toString()) : '';
+              raw = `命令执行失败（exit ${e.status ?? '?'}）：${e.message ?? ''}\n${stderr}`;
+            }
+            if (cmd !== stripped) {
+              raw = `[已自动剥离 cd 前缀，在项目根目录执行]\n${raw}`;
+            }
+          } else {
+            raw = await rawTool.func(input);
+          }
           return truncateToolOutput(raw);
         };
         if (progressMw) {

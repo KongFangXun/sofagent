@@ -409,11 +409,21 @@ export function validateHmacKey(): HmacKeyStatus {
     return { configured: true, strong: false, reason: `密钥长度不足（${byteLen} 字节，建议 ≥16 字节 / 128-bit）` };
   }
   // v1.2.9: — 熵检测（弱密钥模式识别）
-  // 检查重复字符占比（如 "1234567890123456" 重复度高）
-  const uniqueChars = new Set(trimmed).size;
-  const repetitionRatio = 1 - (uniqueChars / trimmed.length);
-  if (repetitionRatio > 0.6) {
-    return { configured: true, strong: false, reason: `密钥重复度过高（${(repetitionRatio * 100).toFixed(0)}%，可能为弱密钥）——建议用 openssl rand -hex 32 重新生成` };
+  // 🔴 v1.3.1 P2 修复：原实现用「唯一字符占比」判断，但 openssl rand -hex 32
+  // 生成的密钥是 hex 编码（字符集天然只有 0-9a-f 16 种），64 字符重复度恒 ≥75%，
+  // 导致官方推荐的生成方式永远被判「弱密钥」误报。改用 Shannon 熵（bit/char）：
+  //   随机 hex ≈ 4.0 bit/char（通过）；手工弱密钥（重复/递增/单词）显著低于 3.0。
+  // 示例：aaaaaaaaaaaa = 0；abcdabcdabcd = 2.0；qwertyqwerty = 2.58；
+  //       1234567890123456 = 3.32（另有 weakPatterns 拦截）；随机 hex = 4.0。
+  const charFreq: Record<string, number> = {};
+  for (const c of trimmed) charFreq[c] = (charFreq[c] ?? 0) + 1;
+  let shannonEntropy = 0;
+  for (const c of Object.keys(charFreq)) {
+    const p = charFreq[c]! / trimmed.length;
+    shannonEntropy -= p * Math.log2(p);
+  }
+  if (shannonEntropy < 3.0) {
+    return { configured: true, strong: false, reason: `密钥熵过低（${shannonEntropy.toFixed(2)} bit/char，可能为弱密钥）——建议用 openssl rand -hex 32 重新生成` };
   }
   // 检查常见弱密钥
   const weakPatterns = ['test-hmac-key', '1234567890', 'password', 'secret', 'changeme', 'aaaaaaaa'];
