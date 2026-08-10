@@ -1,8 +1,8 @@
 // ============================================================
-// progress-mw.ts · SubAgent 进度遥测 middleware（v1.3.0 · P2b）
+// progress-mw.ts · SubAgent 进度遥测 middleware（v1.3.1 · P2b）
 // ============================================================
 //
-// 背景：v1.3.0 ROADMAP 声称 ProgressMiddleware 已交付，实际代码不存在
+// 背景：v1.3.1 ROADMAP 声称 ProgressMiddleware 已交付，实际代码不存在
 // （全仓 grep 零命中）。本文件为净新增实现，与 data-sovereignty-mw
 // 同目录平铺，为 FDE Dashboard「工作状态栏」提供实时数据源。
 //
