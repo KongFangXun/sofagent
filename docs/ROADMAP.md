@@ -22,7 +22,7 @@
 | 版本 | 核心交付 |
 |------|------|
 | **v1.3.1** | 🧠 Ontology 运行时层（Action 注册表 + validator 三态 + Schema 定稿）+ 🔀 并行编排（ParallelScheduler + 波次审计卡关 + MergeQueue）+ ⏸️ Durable Execution（checkpoint 续跑 + 副作用幂等）+ 🆔 Agent 身份码 Ed25519 + 🚀 Onboard Agent L1 + 📊 Benchmark 评测（隔离执行 + HMAC 链）+ 🔒 工具审批四模式 + 📜 LLM 调用级 Trace + 🔄 错误处理（stop_reason + 退避 + 收敛）+ 📚 L4 渐进加载 + 🏛️ 国标对齐 GB/T 48000.3-2026 |
-| **v1.3.0** | 🛡️ 运行时审计最小闭环（wrapToolCall middleware + tool-gate 动态拦截 + 审计日志）+ 🧠 决策审计（emitDecision + HMAC 链 + kind-wise back）+ 🔗 激活链 Phase 4 收尾（SUSTAIN）+ 📋 list_rules MCP tool + 🔧 双规则系统统一（ruleType）+ 📦 外部记忆后端 Path A（MA1-MA7）+ 🔧 进化链路写保护 + 🔓 运行时审计日志按 git 仓库隔离 + 🔧 危险操作 HITL 钩子 |
+| **v1.3.0** | 🛡️ 运行时审计最小闭环（wrapToolCall middleware + tool-gate 动态拦截 + 审计日志）+ 🧠 决策审计（emitDecision + HMAC 链 + kind-wise back）+ 🔗 激活链 Phase 4 收尾（SUSTAIN）+ 📋 list_rules MCP tool + 🔧 双规则系统统一（ruleType）+ 📦 外部记忆后端 Path A（7 个交付项）+ 🔧 进化链路写保护 + 🔓 运行时审计日志按 git 仓库隔离 + 🔧 危险操作 HITL 钩子 |
 | **v1.2.9** | 🐛 FORGE Driver 短任务化（12 独立 worker 各跑 1 视角）+ ⏸️ Checkpoint/Resume worker 级断点 + 🏠 PM2 守护进程 + 🔗 激活链 Phase 3 后半（HITL + 审计 + 异常处理）+ 📐 约束层叙事重构 + 🚪 三个入口产品（npx CLI + 规则市场 + GitHub Action） |
 | **v1.2.8** | 记忆分层 + 定时任务 + 🔗 激活链 Phase 3 前半（dag-runner 企业 Agent + node-executor + run-enterprise CLI）+ 🚪 release-gate-loop F 修复者（验-改循环）+ 🔍 FORGE 全 loop 接入 audit（dogfooding）+ ⏸️ Checkpoint/Resume 轮级断点 |
 | **v1.2.7** | 编排引擎增强（Session Goals `/goal` + `/compact` + Skill 渐进加载 + doctor --repair + FORGE driver-base + enterprise-graph StateGraph 构建 + --support-bundle + One-Line bootstrap.sh + Agent Mailbox）+ 🔗 激活链 Phase 2 后半 |
@@ -86,7 +86,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.3.3** | 📋 规划中 | **L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版 + 🧭 主 agent 编排 + 🚪 入口路由**：① 协作协议——共享态/意图广播/触发反应/冲突消解/反馈放大 + 团队状态管理 ② Refine Agent——复用 Onboard 循环引擎，判据从 Ontology 换成质量规则集（好不好），五层一次交付 ③ 主 agent 四合一角色（分发/监控/审计/通讯）——编排 v1.3.2 批量生成的 sub-agent ④ **入口路由**（`route_workflow` MCP tool + workflow 节点 type 机器化）——用户自有 Agent（WorkBuddy/Codex）协同时判断请求是否命中 workflow 强化人/自动节点 → 进 workflow / 落回用户模型（模型分层 = 入口判断，2026-08-10 新增） | [日志](./changelog/v1.3/v1.3.3.md) |
 | **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价→养护）**：Skill/Agent/流程打包发布 + 目录检索 + 调用挂载 + 评分聚合（评分 × 调用量加权自然选择）+ 全程审计 + **养护环（owner 声明 + 失效退役 + 变更记录，GitHub 模式「持续养护」）** | [日志](./changelog/v1.3/v1.3.4.md) |
 | **v1.3.5** | 📋 规划中 | **自进化与运维闭环（MCP 覆盖度审计缺口补全）**：`run_ab_test` / `promote_ab`（晋升强制人审）+ `snapshot_list` / `snapshot_restore`（恢复强制人审） | [日志](./changelog/v1.3/v1.3.5.md) |
-| **v1.3.6** | 📋 规划中 | **🔌 引擎接口外化完整版（模型层接入前置 · 原 v2.0 前移）**：① Workflow 标准格式 + 运行容器（JSON Schema + MCP `workflow_submit`）② Ontology 注册接口（MCP `ontology_import` + D1-D5 审计）③ **SubAgent 托管 SDK**（`harness.wrap` 包装 LangGraph 自定义 Agent → 自动获得审计/审批/身份/Trace，createReactAgent + 纯 StateGraph 双形态——模型层 sub-agent 托管的落点）④ **模型注册 + 灰度切换**（`model_register` / `model_switch`，评测 → 注册 → 灰度 → 晋升全流程审计 + 强制人审；`source: 'local-path'` 扩展位预留，企业专属模型本地权重部署在 v1.4.1 填充；**通用模型路由不自研——企业挂第三方 model router（LiteLLM/OpenRouter），sofagent 只保留数据主权路由 + 注册/灰度/退役，2026-08-10 补充**）——**训练语料导出三件套已移至 v1.4.1 训练引擎**（2026-08-10 拍板：训练相关内容统一从 v1.4.x 开始） | [日志](./changelog/v1.3/v1.3.6.md) |
+| **v1.3.6** | 📋 规划中 | **🔌 引擎接口外化完整版（模型层接入前置 · 原 v2.0 前移）**：① Workflow 标准格式 + 运行容器（JSON Schema + MCP `workflow_submit`）② Ontology 注册接口（MCP `ontology_import` + D1-D5 审计）③ **SubAgent 托管 SDK**（`harness.wrap` 包装 LangGraph 自定义 Agent → 自动获得审计/审批/身份/Trace，createReactAgent + 纯 StateGraph 双形态——模型层 sub-agent 托管的落点）④ **模型注册 + 灰度切换**（`model_register` / `model_switch`，评测 → 注册 → 灰度 → 晋升全流程审计 + 强制人审；`source: 'local-path'` 扩展位预留，企业专属模型本地权重部署在 v1.4.1 填充；**通用模型路由不自研——企业挂第三方 model router（LiteLLM/OpenRouter），sofagent 只保留数据主权路由 + 注册/灰度/退役，2026-08-10 补充**）——**训练语料导出三件套已移至 v1.4.1 训练引擎**（2026-08-10 决策已定：训练相关内容统一从 v1.4.x 开始） | [日志](./changelog/v1.3/v1.3.6.md) |
 | **v1.3.7** | 📋 规划中 | **🔒 SubAgent 完整沙箱 + 场景驱动权限（原 v1.4.0 前移）**：① 沙箱——虚拟文件系统隔离 + 网络出站白名单 + 工具调用中介（前置 allow/deny）+ 虚拟 key 凭证边界注入 + AsyncSubAgent + 真·实时 A/B 双跑 ② 场景驱动权限体系（身份→场景匹配→风险等级→放行）——审计从「事后」扩展到「运行时」（范围限定 SubAgent） | [日志](./changelog/v1.3/v1.3.7.md) |
 | **v1.3.8** | 📋 规划中 | **🛡️ 代理网关硬边界 + 数据静态加密 + Durable L3（原 v1.4.0 前移）**：① 代理网关（唯一出入口 + 风险分级 + 超阈值人工批准）② 数据静态加密（age）③ Durable Execution L3（WAL 写在网关层）④ **托管 SDK `sandbox: true` 选项启用**（v1.3.6 SDK 的沙箱接线） | [日志](./changelog/v1.3/v1.3.8.md) |
 | **v1.3.9** | 📋 规划中 | **🛠️ 官方 AST 规则引擎 + meta-harness + 📊 AI 工作明细数据层（原 v1.5.0 + v2.0 前移）**：① 官方 `sofagent-ruleset-ast` 语义级规则引擎参考实现（TypeScript compiler / tree-sitter）② meta-harness 多 harness 统一编排（策略强制在基础设施层 + 跨会话协作）③ AI 工作明细数据层（业务视角：按 Agent/按 Workflow/按周 + 人工介入记录，零新数据——复用审计 + decision-log + LLM Trace；**补节点实际耗时采集——绩效量化引擎 `年节省=日耗时×时薪×250` 的直接输入**，2026-08-10 新增；`worklog_query` MCP + 落盘 `worklog.json`；终端 ASCII 视图可选；**Web 工作明细页 v1.4.0**，Startwork 启发） | [日志](./changelog/v1.3/v1.3.9.md) |
@@ -159,10 +159,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 > 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./VALIDATION.md)。
 
-| 借鉴项 | 说明 |
-| --- | --- |
-
-> 以下「分层模型架构」为探索方向的核心技术骨架概述。当前版本（v1.2.x）未涉及，v3.x 才启动。
+> 以下「分层模型架构」为探索方向的核心技术骨架概述。当前版本（v1.3.x）引擎层未涉及，v3.x 才启动。
 
 ## 分层模型架构（v3.x 远景概述）
 
