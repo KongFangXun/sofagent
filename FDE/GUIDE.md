@@ -303,6 +303,14 @@ AI 不是司令员只是援军。先集中资源打一场能计算结果的小�
 - 推导出：「合同」entity（业务对象）→「审核通过」action（动作）→「belongs_to 法务域」relation（归属）
 - 补上边界：「knowledge-domain include = 合同库、审批流；exclude = 人事档案」
 
+> 🤝 **交互模式（2026-08-10 落盘）**：本体推导是**咨询产物**，不是 Agent 单方面生成——**FDE Agent 引导提问，用户拍板确认**：
+> 1. **Agent 引导**：拿五要素当提问脚本，一句句问（「这个节点输入是什么？输出给谁？最卡在哪？」）
+> 2. **Agent 给建议**：根据五要素给出 entity/concept/relations 推导建议（LLM 辅助，供用户参考）
+> 3. **用户拍板**：每个 entity/concept/relations 用户可改、可否定——「合同 belongs_to 订单」对不对只有用户知道
+> 4. **确认后写入**：用户确认 → 落盘 `knowledge/entities/` + `knowledge/concepts/` → `validate_ontology` 校验 → D1-D5 审计
+>
+> **为什么必须咨询**：ontology 是**企业业务知识的结构化表达**——只有用户自己知道业务关系是不是真的。模型只能当「建议引擎」，不能替代用户确认。这也保证了**没有模型也能生成 ontology**（FDE 的咨询能力，不是模型能力）。
+
 ### 3.6 entity / concept / relations 怎么建
 
 **entity 页模板**（业务实体）：

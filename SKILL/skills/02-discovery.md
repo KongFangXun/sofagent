@@ -35,9 +35,14 @@
    - **domain**：产出服务哪个部门？
    - **relations**：输入从哪来（belongs_to）？产出交给谁（has_many）？
    - **knowledge-domain**：Agent 有权读哪些（include）？不能读哪些（exclude）？
-9. 现场可配合**业务动作访谈表**（9 栏）把业务方口中的「愿望」拆成可执行动作链：谁触发 → 触发条件 → 读哪些系统 → 影响哪些业务对象 → 输出什么 → 写回哪里 → 出错谁负责 → 怎么审批 → 怎么复盘。访谈填完，frontmatter 的输入/产出/风险等级几乎是照抄
-10. 每个节点补完后调 `read_entity`（name: 节点名）验证一致性 → `search_knowledge`（query: 关联节点）检查上下游 → `stats` 确认增长
-11. 产出：富本体节点文档集 + `workflow.yml`（汇总所有节点的 relations + knowledge-domain）
+9. **给用户看建议，等用户拍板（2026-08-10 落盘 · 咨询式生成）**——补完三字段后，**不要直接写入**：
+   - 向用户展示推导建议：「根据五要素，我建议：「合同」entity →「审核通过」action → belongs_to 法务域；「审批流」concept → depends_on 合同。请确认或修改。」
+   - 用户可改 entity/concept 名称、relations 方向、domain 归属——**每一步确认制**
+   - 用户确认后才调 `create_entity` / `create_concept` 写入
+   - 📌 为什么：ontology 是**企业业务知识的结构化表达**，只有用户知道「合同 belongs_to 订单」是不是真的；LLM 只辅助建议，不替代用户确认（没有模型也能生成 ontology）
+10. 现场可配合**业务动作访谈表**（9 栏）把业务方口中的「愿望」拆成可执行动作链：谁触发 → 触发条件 → 读哪些系统 → 影响哪些业务对象 → 输出什么 → 写回哪里 → 出错谁负责 → 怎么审批 → 怎么复盘。访谈填完，frontmatter 的输入/产出/风险等级几乎是照抄
+11. 每个节点补完后调 `read_entity`（name: 节点名）验证一致性 → `search_knowledge`（query: 关联节点）检查上下游 → `stats` 确认增长
+12. 产出：富本体节点文档集 + `workflow.yml`（汇总所有节点的 relations + knowledge-domain）
 
 > 📌 本体 ≠ 知识图谱数据库：本体的核心是**业务刻画**——完整呈现业务领域的客观事实与关联关系（如「客户下单 → 订单含哪些产品 → 产品由哪些零部件构成 → 零部件从哪些供应商采购」）。sofagent 的 ontology 包（objects.yml / actions.yml / constraints.yml）是这一业务刻画的机器可读层。
 
