@@ -42,6 +42,16 @@ import { createProgressMiddleware } from './progress-middleware.mjs';
 // v1.2.8 功能③：统一工具输出截断中间件（替代下方内联实现）
 import { truncateToolOutput as truncateToolOutputUnified, createToolOutputBudget, DEFAULT_BUDGET as TOOL_OUTPUT_DEFAULT } from './tool-output-budget.mjs';
 
+/**
+ * 给 shell 命令中的文件路径加单引号转义（防止路径含空格/特殊字符）。
+ * v1.3.1 P0-2 修复：git add 显式文件清单时使用。
+ * @param {string} p 文件路径
+ * @returns {string} 单引号包裹的路径（内部 ' 转义为 '\''）
+ */
+function quotePath(p) {
+  return `'${String(p).replace(/'/g, `'\\''`)}'`;
+}
+
 // ─── 工厂函数 ────────────────────────────────────────────────
 
 /**
@@ -523,7 +533,7 @@ export function createForgeDriverBase(config = {}) {
    * 在 FORGE loop 的代码变更步骤后自动跑 sofagent-audit。
    *
    * 流程：
-   *   1. B/F 步骤执行完毕后，driver 自动 git add -A && git commit
+   *   1. B/F 步骤执行完毕后，driver 自动 add 本轮改动文件（显式清单，非 git add -A）并 commit
    *   2. 跑 node engine/audit/dist/index.js --diff HEAD~1..HEAD --silent
    *   3. exit 0 → passed=true（全过）
    *   4. exit 1 → passed=true（有警告，不阻塞）
@@ -539,10 +549,33 @@ export function createForgeDriverBase(config = {}) {
     const auditResultPath = join(runDir, 'audit-result.md');
 
     // 1. auto-commit B/F 的改动
+    // 🔴 v1.3.1 P0-2 修复：禁止 `git add -A`——会把队友并行编辑的未提交
+    // 规划文档（如 docs/changelog/v1.4/*.md）一起卷进 auto-commit（03a548d5 事故）。
+    // 只 add 本轮 B/F 步骤实际改动的文件（git diff --name-only 检测）。
     const commitMsg = `FORGE auto-commit: ${stepName} round-${round}`;
     try {
       const { execSync } = await import('child_process');
-      execSync('git add -A', { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
+      // 检测 B/F 步骤改动了哪些文件（相对上次 commit）
+      const changedFiles = execSync(
+        'git diff --name-only HEAD -- . ":(exclude).workbuddy/**"',
+        { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 },
+      ).toString().split('\n').map((s) => s.trim()).filter(Boolean);
+      // 未跟踪的新文件也纳入（git diff --name-only 不含未跟踪文件）
+      const untrackedFiles = execSync(
+        'git ls-files --others --exclude-standard',
+        { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 },
+      ).toString().split('\n').map((s) => s.trim()).filter(Boolean);
+      // 只提交 B/F 步骤产物目录 + 明确改动文件；未跟踪文件仅当在改动清单/产物目录内
+      const trackedOnly = changedFiles;
+      if (trackedOnly.length > 0) {
+        execSync(`git add ${trackedOnly.map(quotePath).join(' ')}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
+      }
+      // 未跟踪文件：只提交本轮产物路径（runDir 内已知文件），绝不 add 全部未跟踪
+      // （队友的 docs/changelog/v1.4/*.md 等未跟踪规划文档不能被卷进来）
+      const runDirFiles = untrackedFiles.filter((f) => f.includes('runs/') || f.includes('forge-runs/'));
+      if (runDirFiles.length > 0) {
+        execSync(`git add ${runDirFiles.map(quotePath).join(' ')}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
+      }
       execSync(`git commit -m "${commitMsg}"`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
     } catch (err) {
       // commit 可能因为 "nothing to commit" 而失败——这是正常的（B/F 可能没改任何东西）
