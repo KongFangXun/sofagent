@@ -19,31 +19,13 @@
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { shouldApprove } from '@sofagent/rules';
+import type { ApprovalMode } from '@sofagent/rules';
 
-// ⚠️ 环境说明：本 workspace 的 node_modules/@sofagent/rules 链接到 npm registry
-// 的 1.2.9（旧版无 approval-mode），workspace 内 engine/rules@1.3.0 的
-// shouldApprove 未接入 node_modules。为不触碰 node_modules 基建（铁律：
-// 小步不破坏），本文件本地镜像 shouldApprove('read-only', permission) 的
-// 语义（r 放行 / rw 拒绝，保守默认拒绝）——行为与交付 10 read-only 模式一致。
-// （FORGE/src/audit-middleware.mjs 直接 require workspace dist，不受此影响）
-
-/** 审批模式（镜像 @sofagent/rules 的 ApprovalMode——read-only 是本文件关注点） */
-type ApprovalMode = 'allow-with-audit' | 'deny-all' | 'read-only' | 'always-ask';
-
-/**
- * read-only 审批判定（镜像 shouldApprove('read-only', permission)）：
- *   r  → 放行；rw → 拒绝（保守默认拒绝——Benchmark 评测强制只读）。
- */
-function approveReadOnly(mode: ApprovalMode, permission: 'r' | 'rw'): { allow: boolean; reason: string } {
-  if (mode === 'allow-with-audit') return { allow: true, reason: '放行（审计日志已写）' };
-  if (mode === 'deny-all') return { allow: false, reason: 'deny-all 模式拦截' };
-  if (mode === 'read-only') {
-    if (permission === 'r') return { allow: true, reason: 'read-only 放行只读' };
-    return { allow: false, reason: 'read-only 拦截读写' };
-  }
-  // always-ask 在评测环境无人工回调 → 保守拒绝
-  return { allow: false, reason: 'always-ask 待人工确认（评测无回调，保守拒绝）' };
-}
+// ⚠️ 环境修复说明：波次 4 曾因 node_modules/@sofagent/rules 链接到 registry
+// 1.2.9（旧版无 approval-mode）本地镜像 read-only 判定；波次 5 npm install
+// 重链后 workspace engine/rules@1.3.0 已接入 node_modules，恢复官方 import
+// （单一事实源——与 FORGE/audit-middleware 同源 shouldApprove）。
 
 /** 四种失败码 */
 export type EvaluationFailureCode =
@@ -143,7 +125,7 @@ function makeReadOnlyTools(
     name: t.name,
     permission: t.permission,
     call: (args) => {
-      const approval = approveReadOnly(approvalMode, t.permission);
+      const approval = shouldApprove(approvalMode, t.permission);
       if (!approval.allow) {
         log(`⛔ [read-only] ${t.name} 被拦截：${approval.reason}`);
         return `工具调用被拒绝（模式：${approvalMode}）——${approval.reason}`;
