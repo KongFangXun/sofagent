@@ -5,6 +5,8 @@
 # 离线：./bootstrap.sh --local /path/to/install.sh
 # 透传：curl ... | bash -s -- --base-only
 set -euo pipefail
+# ERR trap 品牌兜底：崩溃时用户看到产品信息而非裸 bash 报错（v1.3.2 P0-B1/P2-37）
+trap 'echo "❌ sofagent bootstrap 失败（exit $?）——请截图此信息到 GitHub Issues（github.com/KongFangXun/sofagent/issues）"' ERR
 INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/main/install.sh"
 LOCAL_PATH=""; PASSTHROUGH=()
 while [[ $# -gt 0 ]]; do
@@ -26,6 +28,12 @@ else
   SCRIPT="$TMP_FILE"
 fi
 echo "🚀 启动 sofagent 安装..."
-bash "$SCRIPT" "${PASSTHROUGH[@]}"
-[[ -n "$TMP_FILE" ]] && rm -f "$TMP_FILE"
+# bash 3.2 兼容：set -u 下空数组展开会报 unbound variable，先判长度再展开
+if [ ${#PASSTHROUGH[@]} -gt 0 ]; then
+  bash "$SCRIPT" "${PASSTHROUGH[@]}"
+else
+  bash "$SCRIPT"
+fi
+# set -e 安全：--local 模式下 TMP_FILE 为空，条件为假会触发 exit 1，改用 if
+if [[ -n "$TMP_FILE" ]]; then rm -f "$TMP_FILE"; fi
 echo "✅ bootstrap 完成"
