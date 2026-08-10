@@ -206,7 +206,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 ### 🔒 数据存储安全
 
-> ℹ️ **审计历史全局共享是设计决策**：审计历史（`history.jsonl` / `decision-log.jsonl`）写入全局 `~/.sofagent/data/audit/`，不做项目级隔离——这是**有意为之**：① HMAC 签名链完整性要求全量连续历史（`--verify-chain` 需要完整链）；② 跨仓库查询审计历史是运维刚需。多项目场景下审计记录会混合存储。**运行时审计日志（`runtime/`）已按 git 仓库隔离（v1.3.0 规划）**——tool wrapper 产出的运行时日志按仓库分目录存储，缓解多项目日志互串；审计历史保持全局。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录。
+> ℹ️ **审计历史全局共享是设计决策**：审计历史（`history.jsonl` / `decision-log.jsonl`）写入全局 `~/.sofagent/data/audit/`，不做项目级隔离——这是**有意为之**：① HMAC 签名链完整性要求全量连续历史（`--verify-chain` 需要完整链）；② 跨仓库查询审计历史是运维刚需。多项目场景下审计记录会混合存储。**运行时审计日志（`runtime/`）已按 git 仓库隔离（v1.3.0 已交付）**——tool wrapper 产出的运行时日志按仓库分目录存储，缓解多项目日志互串；审计历史保持全局。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录。
 
 > ⚠️ **知识库同样全局共享**：`~/.sofagent/data/knowledge/` 单目录遍历、无租户/项目维度隔离——多项目、多 Agent 的知识沉淀（entities/concepts/comparisons/summaries）混合存储，查询时全局命中。财务与人事等不同域 Agent 的数据会串。按项目/Agent 隔离计划在 v1.3.x 落地。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录（见 [企业部署指南](./guides/enterprise-deploy.md#多项目数据隔离v128)）。
 
@@ -415,7 +415,7 @@ v1.0 新增 `FORGE/playbook/acceptance-test.sh`（102 个场景，含子断言�
 - **影响包**：engine/audit（config-loader 2 + audit-history 7 + session-report 1 + usb-detect 3）
 - **原因**：WorkBuddy.app 内嵌的 genie-safe-delete.cjs shim 拦截 fs.rmSync 调用，测试清理临时文件被误判为大规模删除
 - **缓解**：在无 safe-delete shim 的环境中运行测试可全绿；或使用 `--no-safe-delete` 标志（如适用）
-- **计划修复**：v1.3.0 考虑使用 mock fs 隔离测试清理逻辑
+- **计划修复**：未来版本考虑使用 mock fs 隔离测试清理逻辑
 
 ### 组织记忆维护风险 / 模型依赖维护风险
 
