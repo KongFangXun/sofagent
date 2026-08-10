@@ -3,7 +3,7 @@
 // v1.0.4 新增
 // ============================================================
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, afterAll } from 'vitest';
 import { existsSync, mkdirSync, writeFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { checkRuleA15 } from '../rules/rule-a15-action-constraint';
@@ -27,13 +27,19 @@ describe('A15 不盲动', () => {
   // 保存/恢复 SOFAGENT_DATA，避免污染其他测试
   let savedDataDir: string | undefined;
 
+  // v1.3.2 P2-30: afterAll 强制清理——测试崩溃/中断时 afterEach 可能不执行，
+  // 偶发留下 __test_a15_tmp__ 目录（git status 出现 ?? 条目）。
+  afterAll(() => {
+    try { if (existsSync(testDir)) rmSync(testDir, { recursive: true, force: true }); } catch {}
+  });
+
   beforeEach(() => {
     try { if (existsSync(testDir)) rmSync(testDir, { recursive: true }); } catch {}
     savedDataDir = process.env.SOFAGENT_DATA;
   });
 
   afterEach(() => {
-    try { if (existsSync(testDir)) rmSync(testDir, { recursive: true }); } catch {}
+    try { if (existsSync(testDir)) rmSync(testDir, { recursive: true, force: true }); } catch {}
     if (savedDataDir !== undefined) {
       process.env.SOFAGENT_DATA = savedDataDir;
     } else {
