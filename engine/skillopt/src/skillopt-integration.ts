@@ -81,7 +81,7 @@ export function runSkillOpt(
     const msg = err instanceof Error ? err.message : String(err);
     // 如果 skillopt-sleep 未安装
     if (msg.includes('ENOENT') || msg.includes('not found')) {
-      console.warn('⚠️ skillopt-sleep 未安装。安装方式：git clone https://github.com/microsoft/SkillOpt.git ~/SkillOpt && cd ~/SkillOpt && pip install -e .');
+      console.warn('⚠️ skillopt-sleep 未安装。安装方式：pip install skillopt（v0.2.0+ 已含 skillopt-sleep CLI）。如需 Claude Code/Codex/Copilot/Devin 集成 shell，改用源码安装：git clone https://github.com/microsoft/SkillOpt.git ~/SkillOpt && cd ~/SkillOpt && pip install -e ".[all]"');
     }
     return { success: false, error: msg };
   }

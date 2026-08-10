@@ -232,7 +232,7 @@ _main_loop() {
       # 检测 skillopt-sleep 是否可用
       if ! command -v skillopt-sleep &>/dev/null; then
         # v1.2.1：不再追加到 daemon-notice.md，改写 daemon.log（健康报告由 health-reporter.ts 生成 JSON）
-        daemon_log "SkillOpt: skillopt-sleep 未安装（需 clone github.com/microsoft/SkillOpt + pip install -e .）。eval.md 已积累 ${score_count} 条，触发条件已满足但引擎不可用。"
+        daemon_log "SkillOpt: skillopt-sleep 未安装（需 pip install skillopt，v0.2.0+ 已含 sleep CLI）。eval.md 已积累 ${score_count} 条，触发条件已满足但引擎不可用。"
         return
       fi
 

@@ -26,7 +26,7 @@ async function main() {
       const { runSkillOpt, validateCandidate, isSkillOptAvailable } = await import('./skillopt-integration');
 
       if (!isSkillOptAvailable()) {
-        console.error('❌ skillopt-sleep CLI 不可用。请确保已安装 skillopt-sleep。');
+        console.error('❌ skillopt-sleep CLI 不可用。请安装：pip install skillopt（v0.2.0+ 已含 skillopt-sleep CLI）。');
         process.exit(1);
       }
 
