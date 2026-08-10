@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # file-deploy.sh · 文件部署（Step 4 宪法 / Step 5 Skill / Step 5b 脚本）
 # 导出：deploy_constitution / deploy_skill_files / deploy_scripts
 

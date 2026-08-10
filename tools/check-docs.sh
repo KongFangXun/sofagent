@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # 文档一致性自动化检查
 set -uo pipefail
 shopt -s nullglob

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # post-install.sh · 种子指令 + 完成输出 + 审计日志
 # 导出：write_seed_instructions / print_completion_summary / log_install_audit
 

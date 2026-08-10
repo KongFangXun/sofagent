@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ============================================================
 # sofagent U 盘启动脚本（Linux · bash start.sh 或双击）
 # v1.1.8 新增

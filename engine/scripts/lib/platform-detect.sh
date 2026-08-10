@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # platform-detect.sh · 环境检测 + 参数解析 + 数据目录（平台无关重构后不再探测平台）
 # 导出：detect_env / parse_args / auto_detect_platform / resolve_data_dir
 # 平台无关原则：默认安装只写 ~/.sofagent/，不探测/不枚举/不修改任何第三方平台目录；
