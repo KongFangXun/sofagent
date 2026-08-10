@@ -553,7 +553,7 @@ if [ -z "$COMMIT_SHA" ]; then exit 0; fi
 # commit hash 对账：检查当前 commit SHA 是否在审计记录中
 node -e "
 const fs = require('fs');
-const lines = fs.readFileSync('$HISTORY_FILE', 'utf-8').trim().split('\\\\n').filter(Boolean);
+const lines = fs.readFileSync('$HISTORY_FILE', 'utf-8').trim().split('\\n').filter(Boolean);
 if (lines.length === 0) process.exit(0);
 try {
   // 反向查找（最新记录在末尾）
