@@ -7,7 +7,8 @@
 
 ## 正式版（v1.0.0+）
 
-> 未来版本规划见 [ROADMAP.md](./docs/ROADMAP.md)
+> 未来版本规划见 [ROADMAP.md](./docs/ROADMAP.md)。
+> 未来版本的规划文件在 `docs/changelog/v1.3/` 下（标注"尚未实现"），不纳入本索引。
 
 - **v1.3.1** — 🧠 Ontology 运行时层（Action 注册表 + validator 三态 + Schema 定稿）+ 并行编排（ParallelScheduler + 波次审计卡关 + MergeQueue）+ Durable Execution（checkpoint 续跑 + 副作用幂等）+ Agent 身份码 Ed25519 + 🚀 Onboard Agent L1 + 📊 Benchmark 评测（隔离执行 + HMAC 链）+ 🔒 工具审批四模式 + 📜 LLM 调用级 Trace + 🔄 错误处理（stop_reason + 退避 + 收敛）+ 📚 L4 渐进加载 + 国标对齐 GB/T 48000.3-2026 · 2026-08-09 · [开发日志](./docs/changelog/v1.3/v1.3.1.md)
 - **v1.3.0** — 🔐 运行时审计最小闭环（tool wrapper 拦截层）+ 决策审计（意图问责 MVP）+ 双规则统一 + 运行时审计日志按 git 仓库隔离（commit 级 history.jsonl 仍全局）+ HITL 钩子 + list_rules 规则透明化 + 激活链收尾 + 外部记忆后端 Path A + 进化链路写保护 · 2026-08-09 · [开发日志](./docs/changelog/v1.3/v1.3.0.md)

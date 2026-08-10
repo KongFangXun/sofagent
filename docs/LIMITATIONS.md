@@ -27,17 +27,19 @@
 
 ## Key Limitations
 
-> 最关键 7 条局限，快速了解 sofagent 的边界：
+> 最关键 5 条局限，快速了解 sofagent 的边界：
 
 | # | 局限 | 详见 |
 |:--:|------|------|
-| 1 | ~~**audit ↔ daemon 循环依赖**~~ —— **已于 v1.2.3 消除**：snapshot helpers 从 `@sofagent/daemon` 迁移到 `@sofagent/core`，`audit` 不再依赖 `daemon`（含 `optionalDependencies`），依赖图恢复为单向 `daemon → audit → core`。 | [八、包依赖与编排局限 → audit ↔ daemon 循环依赖（v1.2.3 已解决）](#八包依赖与编排局限v113-起) |
-| 2 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
-| 3 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
-| 4 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排引擎稳定性](#五审计与工程局限) |
-| 5 | **数据明文存储无加密**——`~/.sofagent/data/` 下所有数据为明文 Markdown，无传输加密、无静态加密。age 加密已排 v1.3.8（见 ROADMAP.md 和 SECURITY.md）。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
-| 6 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#单平台用户建议)
-| 7 | **FDE 交付物激活断裂带（v1.2.5-v1.3.0 已解决）**——FDE 诊断交付的 ontology + workflow.yml + skills/ 是静态文件，企业 IT 拿到不知道怎么跑起来。激活链 Phase 1-4（ACTIVATE+ORCHESTRATE+EXECUTE+SUSTAIN）已于 v1.2.5-v1.3.0 全部交付。 | [十二、FDE 交付物激活断裂带（v1.2.5-v1.3.0 已解决）](#十二fde-交付物激活断裂带v125-v130-已解决) |
+| 1 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
+| 2 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
+| 3 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排引擎稳定性](#五审计与工程局限) |
+| 4 | **数据明文存储无加密**——`~/.sofagent/data/` 下所有数据为明文 Markdown，无传输加密、无静态加密。age 加密已排 v1.3.8（见 ROADMAP.md 和 SECURITY.md）。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
+| 5 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#单平台用户建议) |
+
+> ✅ **已解决的历史问题**（v1.3.2 移出 Key Limitations，不再计入当前边界）：
+> - ~~audit ↔ daemon 循环依赖~~（v1.2.3 消除：snapshot helpers 迁移至 `@sofagent/core`，依赖图恢复单向 `daemon → audit → core`，详见 §八）
+> - ~~FDE 交付物激活断裂带~~（v1.2.5-v1.3.0 消除：激活链 Phase 1-4 全部交付，详见 §十二）
 
 > ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。config.yml 有两个有效位置——项目级 `${cwd}/.sofagent/config.yml` 和全局级 `~/.sofagent/config.yml`（config-loader.ts 三级 fallback，项目级优先）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 ~/.sofagent/config.yml` 和 `chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。**v1.3.7 部分覆盖**——SubAgent 侧 config 篡改被沙箱虚拟 FS 拦截（写入走虚拟层审批）；主 Agent 侧仍靠 CI 兜底 + 文件权限（主 Agent 不进沙箱，留 v1.3.9 meta-harness）。
 >
@@ -274,13 +276,13 @@ SKILL.md 的回复前闸门和闭合清单由 Agent 自觉执行——没有 Hoo
 
 ### 核心效果实测情况
 
-本项目核心宣称（越用越聪明、约束效果提升）已有 11 个实测 Case，但全部为一次性测试，缺乏持续使用 ≥1 周的样本和 A/B 对照数据。v0.84 跑了 5 组 A/B——约束层增量天花板低（0/16），Harness 层有 promising 信号但存在方法论局限。
+本项目核心宣称（越用越聪明、约束效果提升）已有 11 个实测 Case，但全部为一次性测试，缺乏持续使用 ≥1 周的样本和 A/B 对照数据。历史版本曾跑 5 组 A/B——约束层增量天花板低（0/16），Harness 层有 promising 信号但存在方法论局限。
 
 ---
 
 ### 运行时约束 vs 提交时审计
 
-当前架构是**运行时约束**——依赖 Agent 配合读取 MD 文件。v0.85 确立新方向：**提交时审计**（sofagent-audit），不依赖 Agent 运行时配合（看的是 git diff），但依赖日志真实性。
+当前架构是**运行时约束**——依赖 Agent 配合读取 MD 文件。早期版本确立新方向：**提交时审计**（sofagent-audit），不依赖 Agent 运行时配合（看的是 git diff），但依赖日志真实性。
 
 | 维度 | 运行时约束 | 提交时审计 |
 |------|------|------|
@@ -333,7 +335,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 审计工具信任模型：Agent 自我报告
 
-sofagent-audit 的全部证据来源是 Agent 自己写的 `~/.sofagent/data/task/logs/*.md` 文件。审计工具的可靠性上限 = Agent 日志的真实性。v0.94 起提供 `--silent` 模式：只跑纯 git-diff 规则，不依赖 Agent 日志。
+sofagent-audit 的全部证据来源是 Agent 自己写的 `~/.sofagent/data/task/logs/*.md` 文件。审计工具的可靠性上限 = Agent 日志的真实性。当前版本提供 `--silent` 模式：只跑纯 git-diff 规则，不依赖 Agent 日志。
 
 企业用户缓解措施：交叉验证（git log 与日志文件列表做时间戳对比）、人工抽查、`--strict` 模式。
 
@@ -345,7 +347,7 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `~/.sofagent/data/tas
 
 ### 审计 A7 检测可靠性边界 / bash 重复代码债 / 架构概念过载 / 缺少恢复路径
 
-- **审计 A7**：检测基于 Agent 日志的正则匹配，v0.92 已做 5 项加固，根本解法是结构化日志（JSONL）
+- **审计 A7**：检测基于 Agent 日志的正则匹配，历史版本已做 5 项加固，根本解法是结构化日志（JSONL）
 - **bash 代码债**：~450 行重复代码（颜色常量/日志函数/平台探测），方向是 bash → TypeScript 迁移，不新建 bash 基础设施
 - **架构概念过载**：概念密度对新手不友好，缓解措施是 CONTRIBUTING 的「10 分钟速览」
 - **缺少恢复路径**：think.md 记录了踩坑，但没有结构化的「失败了怎么恢复」机制，等 JSONL 落地
