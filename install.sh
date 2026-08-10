@@ -269,6 +269,12 @@ migrate_to_install_dir() {
 }
 migrate_to_install_dir
 
+# v1.3.2 P1-8: 清理仓库内 .sofagent/ 残留（运行时数据应全在 ~/.sofagent/，仓库内不保留）
+if [ -d "${SCRIPT_DIR}/.sofagent" ] && [ "$SCRIPT_DIR" != "$HOME" ]; then
+  warn "检测到仓库内 .sofagent/ 残留，清理中..."
+  rm -rf "${SCRIPT_DIR}/.sofagent"
+fi
+
 ok "  安装目录结构就绪：${SOFAGENT_HOME}/ (data/ + internal/ + bin/ + skill/)"
 _log "SOFAGENT_HOME=${SOFAGENT_HOME} structure created"
 
@@ -281,7 +287,7 @@ _log "TARGET=$TARGET"; _log "SCRIPT_DIR=$SCRIPT_DIR"
 
 RULES_SRC="${SCRIPT_DIR}/SKILL/harness/fde-template.md"
 if [ ! -f "$RULES_SRC" ]; then
-  err "找不到 fde.md。请在 sofagent 项目根目录下运行此脚本。"
+  err "找不到 fde-template.md（FDE 运行规则模板）。请在 sofagent 项目根目录下运行此脚本。"
   err "  当前脚本位置: $SCRIPT_DIR"; err "  期望文件: $RULES_SRC"; exit 1
 fi
 # CONFIG_FILE 不预声明——Step 7 中用 local 声明（避免 SC2034 unused 警告）
