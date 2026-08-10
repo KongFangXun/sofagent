@@ -386,4 +386,16 @@ export const TOOLS: ToolDef[] = [
       required: ['benchmark_id'],
     },
   },
+  {
+    // v1.3.1 (交付 7)：跨设备审计轨迹查询
+    name: 'audit_trail',
+    description: '跨设备审计轨迹查询（v1.3.1 交付 7）——按 agent_id 查完整轨迹（合并跨设备审计记录，HMAC 验签 + trust 优先级裁决）；不传 agent_id 列出全部有轨迹的 agent。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        agent_id: { type: 'string', description: 'Agent 身份码（缺省 = 列出全部有轨迹的 agent）' },
+        include_peers: { type: 'boolean', description: '是否包含跨设备 peer 记录（缺省 false——仅本地）' },
+      },
+    },
+  },
 ];
