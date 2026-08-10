@@ -37,6 +37,9 @@ import { resolveDiffEndpoint } from './diff-ref';
 import { checkLogs } from '@sofagent/core';
 import { createShadowRepo, commitSnapshot, hasShadowRepo } from '@sofagent/core';
 import { runRules, productSignature, type AuditResult } from './reporter';
+// v1.3.1 交付 2：国标对齐 GB/T 48000.3-2026（条款映射清单 + 覆盖度评估）
+export { GB48000_CLAUSE_MAP, assessGb48000Coverage, buildGb48000RuleCheck } from './gb48000';
+export type { Gb48000ClauseMapping, Gb48000Status, Gb48000Coverage } from './gb48000';
 import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-history';
 
 // Re-export for external consumers —— doctor 等外部调用方需要通过
@@ -91,6 +94,8 @@ interface Args {
   verifyChain: boolean;
   /** v1.3.9: --verify-commit <hash> 检查 commit 是否有审计记录 */
   verifyCommit?: string;
+  /** v1.3.1 交付 2：--gb48000 国标对齐维度（opt-in 默认 false，不影响默认审计行为） */
+  gb48000: boolean;
   regressionDir?: string;
   webhook?: WebhookPlatform;
   webhookUrl?: string;
@@ -133,7 +138,7 @@ interface Args {
 
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, supportBundle: false, format: undefined, ruleset: undefined, rulesetPath: undefined, listRulesets: false, warnAsError: false, warnAsInfo: false };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, supportBundle: false, format: undefined, ruleset: undefined, rulesetPath: undefined, listRulesets: false, warnAsError: false, warnAsInfo: false, gb48000: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff') {
       // --diff 无显式值（末尾或后跟其他 flag）→ 用默认 HEAD~1..HEAD，
@@ -157,6 +162,9 @@ function parseArgs(argv: string[]): Args {
       args.commitMsgArg = argv[i] as string;
     } else if (argv[i] === '--strict') {
       args.strict = true;
+    } else if (argv[i] === '--gb48000') {
+      // v1.3.1 交付 2：国标对齐维度（opt-in——信息条目，不影响 exitCode）
+      args.gb48000 = true;
     } else if (argv[i] === '--warn-as-error') {
       // v1.3.1 #15: WARN 视为 error（exit 2），CI 阻断。安全优先。
       args.warnAsError = true;
@@ -1032,7 +1040,7 @@ async function main(): Promise<void> {
   }
 
   // 5. 运行规则
-  const results = runRules(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config);
+  const results = runRules(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config, undefined, args.gb48000);
 
   // v1.3.9 (⑧-2): --ruleset / --ruleset-path → 运行 JSON 规则集（叠加在内置规则之上）
   if (args.ruleset || args.rulesetPath) {
