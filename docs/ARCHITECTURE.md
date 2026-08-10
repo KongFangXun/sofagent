@@ -132,7 +132,7 @@ graph TD
 
 > 这份清单是「现在能干什么」的单一索引。约束层内部设计见 [二、约束层（Harness）设计——一个层，四种能力](#二约束层harness设计一个层四种能力)；未来方向见 [六、已知局限与未来方向](#六已知局限与未来方向)。
 
-### 13 个 workspace 包（全部 @sofagent/*，13 个均发布到 npm）
+### 13 个 workspace 包（全部 @sofagent/*，13 个均发布到 npm；其中 12 个有 test script，1 个纯类型包无测试——测试统计口径「12 包」指有 test script 的包）
 
 | 包 | 职责 | 状态 |
 |---|---|---|
@@ -168,7 +168,7 @@ graph TD
 
 ### 已排期（开发中或即将开发，详见 ROADMAP）
 
-Dashboard Web 前端（`dashboard.html` 单文件控制台已落：驾驶舱/FDE 引导/AI 节点/本体结构/知识库/工具箱 6 页 + `tools/serve-dashboard.mjs` 服务，读 `data/` 实时数据 + 示例降级；工作明细数据层 v1.3.9 + Web 工作明细页 v1.4.0）· 完整多设备协同 L2 / 组织能力市场 · 并行编排 DAG 波次并行（v1.3.1）· Ontology 升级为可运行推理底座 + 国标对齐（v1.3.1）· **Benchmark 评测体系 + 工具审批模式（v1.3.1 · PenguinHarness 方法论借鉴）** · **引擎接口外化完整版（v1.3.6 · workflow 标准格式/ontology 注册/训练语料导出/托管 SDK/模型注册——模型层 商业模型层 接入前置）** · SubAgent 完整沙箱（v1.3.7）· 代理网关 + 静态加密（v1.3.8）· meta-harness 多 harness 编排（v1.3.9）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
+Dashboard Web 前端（`dashboard.html` 单文件控制台已落：驾驶舱/FDE 引导/AI 节点/本体结构/知识库/工具箱 6 页 + `tools/serve-dashboard.mjs` 服务，读 `data/` 实时数据 + 示例降级；工作明细数据层 v1.3.9 + Web 工作明细页 v1.4.0）· 完整多设备协同 L2 / 组织能力市场 · 并行编排 DAG 波次并行（v1.3.1）· Ontology 升级为可运行推理底座 + 国标对齐（v1.3.1）· **Benchmark 评测体系 + 工具审批模式（v1.3.1 · PenguinHarness 方法论借鉴）** · **引擎接口外化完整版（v1.3.6 · workflow 标准格式/ontology 注册/训练语料导出/托管 SDK/模型注册——模型层接入前置）** · SubAgent 完整沙箱（v1.3.7）· 代理网关 + 静态加密（v1.3.8）· meta-harness 多 harness 编排（v1.3.9）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
 
 ---
 
@@ -410,7 +410,7 @@ graph LR
 | OBJ-01 | 对象建模要求（实体/概念定义） | CORE-OBJ · ontology/schema/entity.schema.json + concept.schema.json | ✅ 已对齐 |
 | LNK-01 | 关系建模要求（关联方向与基数） | CORE-LNK · ontology/schema/relations.schema.json | ✅ 已对齐 |
 | ACT-01 | 动作/行为建模要求（动作→载体映射） | CORE-ACT · ontology/action-registry.ts | ✅ 已对齐 |
-| STM-01 | 状态建模要求（生命周期状态迁移） | CORE-STM · ontology/contracts.ts 状态机契约 | 🟡 部分对齐（迁移执行引擎留 v1.4.0） |
+| STM-01 | 状态建模要求（生命周期状态迁移） | CORE-STM · ontology/contracts.ts 状态机契约 | 🟡 部分对齐（迁移执行引擎待规划） |
 | META-01 | 元数据/标识要求 | frontmatter name + created_at/updated_at（D4 规则） | ✅ 已对齐 |
 | VAL-01 | 一致性/校验要求 | validateAgainstSchema + 审计 D 规则 | ✅ 已对齐 |
 | VER-01 | 版本/演进要求 | Benchmark revision freeze + Durable checkpoint | 🟡 部分对齐（本体 Schema 版本迁移待 v1.3.6） |

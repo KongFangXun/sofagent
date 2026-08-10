@@ -97,7 +97,7 @@ npx -y -p @sofagent/audit sofagent-audit
 
 拦截特定格式密钥泄漏时是这样的（真实输出）：
 
-> ℹ️ A2 检测 AWS AKIA、OpenAI sk-*、GitHub ghp_、PEM 私钥等已知格式；通用密钥形态（password=、secret 裸值）暂不覆盖——保守设计防误报。详见 [LIMITATIONS A2](./docs/LIMITATIONS.md#a2-密钥检测局限编码与格式绕过v125-披露)。
+> ℹ️ A2 检测 AWS AKIA、OpenAI sk-*、GitHub ghp_、PEM 私钥等已知格式；通用密钥形态（password=、secret 裸值）暂不覆盖——保守设计防误报。详见 [LIMITATIONS §三 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)。
 
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit 拦截 .env 提交" width="860" />
@@ -164,9 +164,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 > 🧪 **工程可信度**：1962 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
 
-> 🧠 **v1.3.1 新能力**：Ontology 运行时层（Action 注册表 + 执行前校验 + Schema 定稿）· 并行编排（波次并发 + 审计卡关 + MergeQueue）· Durable Execution（checkpoint 续跑 + 幂等）· Agent 身份码 Ed25519 · 🚀 Onboard Agent L1（`loop_debug`）· 📊 Benchmark 评测（`evaluate`）· 🔒 工具审批四模式 · 📜 LLM 调用级 Trace · 🔄 错误处理（stop_reason + 退避）· 📚 L4 渐进加载 · 国标对齐 GB/T 48000.3-2026（`--gb48000`）。详见 [v1.3.1 开发日志](./docs/changelog/v1.3/v1.3.1.md)。
-
-> 🔐 **v1.3.0 新能力**：运行时审计（tool wrapper 动态拦截 + 审计留证）· 决策审计（意图问责：`emitDecision` + HMAC 链 + kind-wise 查询）· 规则透明化（`list_rules` MCP tool）· HITL 人工批准钩子 · 运行时审计日志按 git 仓库隔离 · 激活链 Phase 4 收尾 · 外部记忆后端 Path A（可选，缺省关闭）· 进化链路写保护。详见 [v1.3.0 开发日志](./docs/changelog/v1.3/v1.3.0.md)。
+> 🧠 **v1.3.1 新能力**：Ontology 运行时层（Action 注册表 + 执行前校验 + Schema 定稿）· 并行编排（波次并发 + 审计卡关 + MergeQueue）· Durable Execution（checkpoint 续跑 + 幂等）· Agent 身份码 Ed25519 · 🚀 Onboard Agent L1（`loop_debug`）· 📊 Benchmark 评测（`evaluate`）· 🔒 工具审批四模式 · 📜 LLM 调用级 Trace · 🔄 错误处理（stop_reason + 退避）· 📚 L4 渐进加载 · 国标对齐 GB/T 48000.3-2026（`--gb48000`）。详见 [v1.3.1 开发日志](./docs/changelog/v1.3/v1.3.1.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 文档
 
