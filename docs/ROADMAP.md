@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.3.1 · 2026-08-10（UTC）· 🧠 Ontology 运行时层 + 并行编排 + Durable Execution + Agent 身份码 + Onboard L1 + Benchmark 评测 + 工具审批模式 + LLM Trace + 错误处理 + MergeQueue + L4 渐进加载 + 国标对齐
+> v1.3.1 · 2026-08-09（UTC）· 🧠 Ontology 运行时层 + 并行编排 + Durable Execution + Agent 身份码 + Onboard L1 + Benchmark 评测 + 工具审批模式 + LLM Trace + 错误处理 + MergeQueue + L4 渐进加载 + 国标对齐
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
