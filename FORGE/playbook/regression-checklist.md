@@ -1,8 +1,8 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
-> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。v1.2.9 新增维度 75-78（check-version MCP 扫描路径 / JS RegExp (?i) 不支持 / drift 排除 .test. / 新文件版本头匹配 SSOT），归并 65+66（FORGE stream 数据处理）、73+74（ESM named export + FORGE 烟测）。v1.3.0 新增维度 79-82（运行时审计 tool wrapper / 决策审计 HMAC 链 / 外部记忆后端 + sensitivity ACL / 进化链路写保护），归并无。v1.3.0 fresh-eyes 复审新增维度 83（license + action.yml 版本锁定）。v1.3.0 阶段五覆盖率确认新增维度 84（shouldAllow + 仓库隔离）。
-> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：61 维（v1.3.0）
+> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。v1.2.9 新增维度 75-78（check-version MCP 扫描路径 / JS RegExp (?i) 不支持 / drift 排除 .test. / 新文件版本头匹配 SSOT），归并 65+66（FORGE stream 数据处理）、73+74（ESM named export + FORGE 烟测）。v1.3.0 新增维度 79-82（运行时审计 tool wrapper / 决策审计 HMAC 链 / 外部记忆后端 + sensitivity ACL / 进化链路写保护），归并无。v1.3.0 fresh-eyes 复审新增维度 83（license + action.yml 版本锁定）。v1.3.0 阶段五覆盖率确认新增维度 84（shouldAllow + 仓库隔离）。v1.3.1 新增维度 85-87（FORGE driver run_bash cwd 强制 / auto-commit 代码领域限定 / HMAC 密钥 Shannon 熵检测）+ 维度 88（根 tsconfig outDir 缺失根因待修）。
+> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：65 维（v1.3.1）
 ## 🔒 维护公约（防膨胀铁律）
 
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1250 行（61 维度）、`acceptance-test.sh` ≤ 2050 行（164 场景），越线触发瘦身。
@@ -22,7 +22,7 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（61 项 · 编号 1–84，19 个归并/移除项已转为 HTML 注释；v1.3.0 新增 #79-84）
+## 审查维度（65 项 · 编号 1–88，19 个归并/移除项已转为 HTML 注释；v1.3.0 新增 #79-84；v1.3.1 新增 #85-88）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -1198,4 +1198,53 @@ grep -rn "shouldAllow" engine/orchestrator/src/ --include="*.ts" | grep -v node_
 grep -c "data/audit/runtime" FORGE/src/audit-middleware.mjs   # ≥1
 # 子项 d: repo-hash 基于 git rev-parse（非硬编码路径）
 grep -c "rev-parse\|repo.*hash\|resolveRuntimeAuditPath" FORGE/src/audit-middleware.mjs   # ≥1
+```
+
+---
+
+#### 85. FORGE driver run_bash cwd 强制——防 worker 路径错误大面积降级（v1.3.1 新增 · fresh-eyes run-01 P0-1 教训）
+
+**背景**：worker 模型自己写 `cd /Users/<拼错用户名>/...`，bash 大面积 No such file or directory → 24 worker 硬熔断降级，审查结论不可信。
+
+**检查命令**：
+```bash
+# run_bash 包装层强制 cwd=REPO_ROOT + 剥离 cd 前缀
+grep -c "cwd: REPO_ROOT" FORGE/src/fresh-eyes-driver.mjs   # ≥1
+grep -c "stripped.*replace.*cd" FORGE/src/fresh-eyes-driver.mjs   # ≥1
+```
+
+#### 86. FORGE driver auto-commit 代码领域限定——防卷队友未提交内容（v1.3.1 新增 · fresh-eyes run-01/run-03 P0-2 教训）
+
+**背景**：driver 用 `git add -A` 把队友并行编辑的规划文档（docs/changelog/v1.4/*.md）一起卷进 auto-commit；修复改为只 add 代码领域（engine/FORGE/src/tools/SKILL）。
+
+**检查命令**：
+```bash
+# driver-base runAuditGate 不含 git add -A
+grep -c "git add -A" FORGE/src/driver-base.mjs   # 0（仅注释引用）
+# 改为显式代码领域 add
+grep -c "git diff --name-only HEAD -- engine/" FORGE/src/driver-base.mjs   # ≥1
+```
+
+#### 87. HMAC 密钥熵检测——Shannon 熵替代唯一字符占比（v1.3.1 新增 · P2-1 真 bug）
+
+**背景**：原 validateHmacKey 用"唯一字符占比"判断强度，但 openssl rand -hex 32 的 hex 字符集天然 16 种 → 官方推荐生成方式永远误报"弱密钥"（重复度 75%）。改用 Shannon 熵检测。
+
+**检查命令**：
+```bash
+# audit-history.ts 用 Shannon 熵（非重复度占比）
+grep -c "shannonEntropy" engine/core/src/audit-history.ts   # ≥1
+# 阈值 3.0 bit/char（随机 hex ≈4.0 通过，弱密钥 <3.0 拦截）
+grep -c "shannonEntropy < 3" engine/core/src/audit-history.ts   # ≥1
+```
+
+#### 88. 根 tsconfig.json outDir 缺失——tsc 误输出到 src（v1.3.1 新增 · C1 预料外盲区 · 根因待修）
+
+**背景**：根 tsconfig.json 未设 outDir，若从根目录跑 tsc（而非各包 npm run build），产物输出到 src 旁（910 个文件）。v1.3.1 已用 .gitignore 防御（engine/*/src/**/*.js 等），但根因（根 tsconfig 加 outDir）待后续版本修。
+
+**检查命令**：
+```bash
+# 根 tsconfig 有 outDir（v1.3.1 暂用 .gitignore 兜底，根因待修）
+grep -c '"outDir"' tsconfig.json   # v1.3.1 期望 0（待修），修后期望 ≥1
+# .gitignore 防御规则存在（过渡期）
+grep -c "engine/\*/src/\*\*/\*.js" .gitignore   # ≥1
 ```

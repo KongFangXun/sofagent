@@ -2,7 +2,7 @@
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离 + v1.2.5 激活链Phase1 + v1.2.5 审计加固A20-A23 + v1.2.5 daemon可靠性 + v1.2.5 多设备前置 + v1.2.9 短任务化 + checkpoint/resume worker级 + PM2 + HITL + mcp拆分 + 叙事重构 + 入口产品
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
-# 场景数：174 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
+# 场景数：177 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
 #   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 240 为编号上限，非场景数；S197 归并至 S164；v1.3.0 新增 S225-S230；v1.3.1 新增 S231-S240
 #   ⚠️ 口径注意（P2-31）：底部输出的「$PASSED 通过」是**断言通过数**（含跳过的场景也计 PASS），
 #   与「164 场景」不同——164 是 scenario 定义数，PASSED 可能 >164（条件跳过的场景也 +1）。
@@ -1606,16 +1606,12 @@ S200_OK=true
 assert_grep "core-rules\|role-audit\|role-fde\|role-orchestrate" "$PROJECT_ROOT/engine/hooks/sofagent-load-chain/src/handler.ts" || S200_OK=false
 $S200_OK && pass "Skill 渐进式加载（core-rules + role-*.md 四文件 + handler 映射）"
 
-scenario 201 "v1.2.7 ④a --doctor 修复提示 — 检测问题时输出可执行修复建议"
+scenario 201 "v1.2.7 ④ --doctor 修复提示 + --repair 模式（合并 201+202）"
 S201_OK=true
 assert_grep "repairHint\|repairCommand\|修复.*命令\|如何修复\|安装命令" "$PROJECT_ROOT/engine/core/src/doctor.ts" || S201_OK=false
-$S201_OK && pass "--doctor 修复提示（repairHint/repairCommand 字段存在）"
-
-scenario 202 "v1.2.7 ④b --repair 模式 — cli.ts 支持 --repair 参数"
-S202_OK=true
-assert_grep "repair\|--repair\|isRepair" "$PROJECT_ROOT/engine/core/src/cli.ts" || S202_OK=false
-assert_grep "runDoctorWithRepair\|repair.*doctor\|doctor.*repair" "$PROJECT_ROOT/engine/core/src/cli.ts" || S202_OK=false
-$S202_OK && pass "--repair 模式（cli.ts 有 --repair 参数 + runDoctorWithRepair 调用）"
+assert_grep "repair\|--repair\|isRepair" "$PROJECT_ROOT/engine/core/src/cli.ts" || S201_OK=false
+assert_grep "runDoctorWithRepair\|repair.*doctor\|doctor.*repair" "$PROJECT_ROOT/engine/core/src/cli.ts" || S201_OK=false
+$S201_OK && pass "--doctor 修复提示 + --repair 模式（repairHint 字段 + cli.ts --repair 参数）"
 
 scenario 203 "v1.2.7 ⑤ FORGE driver 三方抽象 — driver-base.mjs 存在 + 公共函数"
 S203_OK=true
@@ -2150,6 +2146,51 @@ grep -q "BACKOFF_SCHEDULE_MS" "$PROJECT_ROOT/engine/core/src/stop-reason.ts" || 
 # 工具失败收敛为消息（不 throw）
 grep -q "convergeToolError" "$PROJECT_ROOT/engine/core/src/model-client.ts" || S240_OK=false
 $S240_OK && pass "错误处理升级（stop_reason 六值 + auth 不重试 + 退避 + 收敛）"
+
+scenario 241 "v1.3.1 交付 2 国标对齐 GB/T 48000.3-2026（--gb48000 opt-in）"
+S241_OK=true
+[ -f "$PROJECT_ROOT/engine/audit/src/gb48000.ts" ] || S241_OK=false
+# 8 条映射条款
+grep -q "已对齐" "$PROJECT_ROOT/engine/audit/src/gb48000.ts" || S241_OK=false
+grep -q "部分对齐" "$PROJECT_ROOT/engine/audit/src/gb48000.ts" || S241_OK=false
+# opt-in flag（默认 false，不影响默认审计行为）
+grep -q "gb48000" "$PROJECT_ROOT/engine/audit/src/index.ts" || S241_OK=false
+grep -q "gb48000: false" "$PROJECT_ROOT/engine/audit/src/index.ts" || S241_OK=false
+$S241_OK && pass "国标对齐 GB/T 48000.3-2026（--gb48000 opt-in）"
+
+scenario 242 "v1.3.1 交付 5 Ontology CRUD 补全（字段级更新 + 强制人审）"
+S242_OK=true
+[ -f "$PROJECT_ROOT/engine/mcp/src/tools/update-entity.ts" ] || S242_OK=false
+[ -f "$PROJECT_ROOT/engine/mcp/src/tools/delete-entity.ts" ] || S242_OK=false
+[ -f "$PROJECT_ROOT/engine/mcp/src/tools/delete-concept.ts" ] || S242_OK=false
+# 强制人审（confirmed=false 不执行）
+grep -q "confirmed" "$PROJECT_ROOT/engine/mcp/src/tools/delete-entity.ts" || S242_OK=false
+# D1-D5 审计留痕
+grep -q "D1-D5\|diffDataChange" "$PROJECT_ROOT/engine/mcp/src/tools/update-entity.ts" || S242_OK=false
+$S242_OK && pass "Ontology CRUD 补全（字段级更新 + 强制人审 + D1-D5）"
+
+scenario 243 "v1.3.1 交付 7 跨设备审计轨迹聚合（HMAC 验签 + TRUST_ORDER 裁决）"
+S243_OK=true
+[ -f "$PROJECT_ROOT/engine/daemon/src/federation/audit-merge.ts" ] || S243_OK=false
+[ -f "$PROJECT_ROOT/engine/daemon/src/inspectors/audit-trail.ts" ] || S243_OK=false
+[ -f "$PROJECT_ROOT/engine/mcp/src/tools/audit-trail.ts" ] || S243_OK=false
+# TRUST_ORDER 裁决（official>internal>user>web）
+grep -q "TRUST_ORDER" "$PROJECT_ROOT/engine/daemon/src/federation/audit-merge.ts" || S243_OK=false
+# HMAC 验签（篡改丢弃）
+grep -q "getHmacKey\|stableStringify" "$PROJECT_ROOT/engine/daemon/src/federation/audit-merge.ts" || S243_OK=false
+# MCP audit_trail 注册
+grep -q "audit_trail" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S243_OK=false
+$S243_OK && pass "跨设备审计轨迹聚合（HMAC 验签 + TRUST_ORDER + MCP audit_trail）"
+
+scenario 244 "v1.3.1 交付 14 L4 经验层渐进加载（热点全文 + 索引摘要）"
+S244_OK=true
+[ -f "$PROJECT_ROOT/engine/harness/src/knowledge-index.ts" ] || S244_OK=false
+# 热点全文 + 索引摘要注入逻辑
+grep -q "topKnowledgeByMtime\|热点" "$PROJECT_ROOT/engine/harness/src/index.ts" || S244_OK=false
+grep -q "knowledge-index\|knowledgeIndex" "$PROJECT_ROOT/engine/harness/src/index.ts" || S244_OK=false
+# 索引每条 ≤150 字符（摘要截断）
+grep -q "150" "$PROJECT_ROOT/engine/harness/src/knowledge-index.ts" || S244_OK=false
+$S244_OK && pass "L4 经验层渐进加载（热点全文 + 索引摘要 ≤150 字符）"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
