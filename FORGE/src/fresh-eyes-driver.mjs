@@ -171,7 +171,7 @@ const PERSPECTIVES = [
  *   - prompt: a-check-perspective-N.md（N = perspective.id）
  *   - outputs: ['check-a-pN.md']
  *   - recursionLimit: 30（短任务——单视角只需读 2-3 个文件）
- *   - toolSoftLimit: 12, toolHardLimit: 15
+ *   - toolSoftLimit: 15, toolHardLimit: 20
  */
 function buildPerspectiveSteps() {
   const steps = {};
@@ -183,8 +183,8 @@ function buildPerspectiveSteps() {
       inputs: [],
       perspective: p.label,
       recursionLimit: 30,
-      toolSoftLimit: 12,
-      toolHardLimit: 15,
+      toolSoftLimit: 15,
+      toolHardLimit: 20,
     };
     steps[`b-check-p${p.id}`] = {
       role: 'B',
@@ -193,8 +193,8 @@ function buildPerspectiveSteps() {
       inputs: [],
       perspective: p.label,
       recursionLimit: 30,
-      toolSoftLimit: 12,
-      toolHardLimit: 15,
+      toolSoftLimit: 15,
+      toolHardLimit: 20,
     };
   }
   return steps;
@@ -1362,14 +1362,36 @@ async function generateReportWithoutTools(model, messages, step, role, stepDef) 
 
   // 3. 裸调用——不带 tools，模型只能输出文本
   const response = await model.invoke(reportMessages);
-  const respText = typeof response === 'string'
+  let respText = typeof response === 'string'
     ? response
     : (response?.content ?? '');
   // 处理数组格式 content
   if (Array.isArray(respText)) {
-    return respText.map(x => typeof x === 'string' ? x : x?.text ?? '').join('');
+    respText = respText.map(x => typeof x === 'string' ? x : x?.text ?? '').join('');
   }
-  return typeof respText === 'string' && respText.trim() ? respText : null;
+  respText = (typeof respText === 'string') ? respText.trim() : '';
+
+  // v1.3.1 run-03 教训：裸 LLM 降级产出的半截碎片（如 184 字节一句话中间思考）
+  // 被直接写入产物文件，下游 isDegraded 判定（CHECK_MIN_BYTES=200）刚卡不住，
+  // 但碎片不含任何有效审查内容，污染整轮 finding 计数。加结构校验：
+  // 降级产物必须满足"≥ REPORT_MIN_CHARS(500) 且含 ## 标题行"才算有效报告
+  // （与 extractAgentText 的 isReportText 门控一致）。不达标返回明确的占位
+  // 文本，让下游 parseStopCondition / b-fix 能识别"该视角审查未完成"而非误读
+  // 碎片为有效 finding。
+  if (respText && isReportText(respText)) {
+    return respText;
+  }
+  // 碎片不达标 → 返回结构化占位（含降级标记词，让 parseStopCondition 识别）
+  return [
+    `## ${step}（角色 ${role}）审查未完成`,
+    '',
+    '> **降级生成——裸 LLM 报告未达质量门控**',
+    `> 该视角的 worker 撞硬熔断后，裸 LLM 降级报告未通过结构校验`,
+    `> （要求 ≥${REPORT_MIN_CHARS} 字符 且 含 ## 标题行，实际 ${respText.length} 字符）。`,
+    '> 本份产物不含有效 finding，请人工复核该视角。',
+    '',
+    '降级占位',
+  ].join('\n');
 }
 
 /**
@@ -2303,21 +2325,34 @@ function parseStopCondition(roundDir) {
   // 补充检查：check 产物太短说明审查不完整，强制不干净。
   // v1.2.9 功能①：短任务化后 check 产物从 check-a.md/check-b.md 变为
   // check-a-p1~12.md / check-b-p1~12.md（24 份）。检查每份的最小字节数。
+  //
+  // v1.3.1 run-03 教训：原逻辑"任一 checkFile < 200 → isDegraded=true"是
+  // 一票否决——1 份短产物连累 23 份正常产物，整轮被误判降级。实测 run-03
+  // Round 1：24 份里只有 check-a-p6.md=184 字节触发降级（其余 2-7KB），
+  // 但整轮被标 isDegraded=true → 连续 2 轮降级触发熔断退出，循环白跑。
+  // 改为比例阈值：短产物占比 > 25% 才判整轮降级。单份短产物更可能是该
+  // 视角本身发现少（如"文件结构陌生人"对结构清晰的项目可能确实无话可说），
+  // 不该上升到整轮降级。25% 阈值仍能抓住真·大面积降级（run-05 的 4/4 全崩）。
   const CHECK_MIN_BYTES = 200;  // 单视角审查报告至少 200 字节才算真实产物（短任务阈值降低）
+  const CHECK_SHORT_RATIO = 0.25;  // 短产物占比超过 25% 才判整轮降级（防一票否决误伤）
   let hasAnyCheckProduct = false;
+  let shortCheckCount = 0;   // < CHECK_MIN_BYTES 的产物数
+  let totalCheckCount = 0;   // 产物总数（a + b 两份各算 1）
   for (const p of PERSPECTIVES) {
     for (const checkFile of [`check-a-p${p.id}.md`, `check-b-p${p.id}.md`]) {
       const checkPath = join(roundDir, checkFile);
       if (existsSync(checkPath)) {
         hasAnyCheckProduct = true;
+        totalCheckCount++;
         const stat = statSync(checkPath);
         if (stat.size < CHECK_MIN_BYTES) {
-          isDegraded = true;
-          break;
+          shortCheckCount++;
         }
       }
     }
-    if (isDegraded) break;
+  }
+  if (totalCheckCount > 0 && (shortCheckCount / totalCheckCount) > CHECK_SHORT_RATIO) {
+    isDegraded = true;
   }
   // 如果一份 check 产物都没有（全部 perspective worker 崩溃），也是降级
   if (!hasAnyCheckProduct && !isDegraded) {
@@ -3184,11 +3219,15 @@ async function main() {
       break;
     }
 
-    // v1.2.7：连续 2 轮降级 → 直接 error 退出
+    // v1.2.7：连续降级 → 直接 error 退出
     // run-06 教训：3 轮全降级消耗 132k tokens 零产出
+    // v1.3.1 run-03 教训：原阈值 >=2 太激进——run-03 因 P0 比例阈值修复前的
+    // 一票否决误伤（1 份短产物连累整轮），连续 2 轮误判降级即触发熔断，
+    // 循环在第 2 轮就被腰斩，没给第 3 轮自我修复机会。改为 >=3：与 run-06
+    // 原始教训（3 轮全降级）精确对齐，给偶发降级 1 次容错。
     if (counts.isDegraded) {
       consecutiveDegraded++;
-      if (consecutiveDegraded >= 2) {
+      if (consecutiveDegraded >= 3) {
         console.error(`\n💥 连续 ${consecutiveDegraded} 轮降级，循环无产出意义，直接退出`);
         stopReason = 'consecutive-degraded-error';
         preservedStopReason = stopReason;

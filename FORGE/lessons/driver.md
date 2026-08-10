@@ -132,6 +132,63 @@ const isClean = !isDegraded && (p0 === 0 && p1 === 0 && p2 === 0 && !hasFail);
 
 **核心原则**：占位/降级产物**永远不算干净轮**。
 
+#### 🔴 降级判定一票否决误伤（v1.3.1 run-03 教训）
+
+> **来源**（run-03，2026-08-10）：driver 报 `consecutive-degraded-error`（连续 2 轮降级熔断），实际 Round 1 的 24 份 check 产物里只有 1 份 `check-a-p6.md` = 184 字节触发降级（其余 22 份都是 2-7KB 正常报告）。**1 份短产物连累 23 份正常产物**，整轮被误判 `isDegraded=true` → 与 Round 2 叠加触发熔断 → 循环白跑两轮退出。
+
+**根因**：原降级判定逻辑（`parseStopCondition`）是「**任一** checkFile < 200 字节 → `isDegraded = true`」——一票否决。但单份短产物更可能是该视角本身发现少（如"文件结构陌生人"对结构清晰的项目确实无话可说），不该上升到整轮降级。
+
+**修复**：改为比例阈值——短产物占比 > 25%（24 份中 > 6 份）才判整轮降级。25% 阈值仍能抓住真·大面积降级（run-05 的 4/4 全崩），同时放过单视角偶发短产物。
+
+```js
+// ❌ 改前：任一短产物 → 整轮降级（一票否决误伤）
+if (stat.size < CHECK_MIN_BYTES) { isDegraded = true; break; }
+
+// ✅ 改后：比例阈值（短产物 > 25% 才判整轮降级）
+const CHECK_SHORT_RATIO = 0.25;
+let shortCheckCount = 0, totalCheckCount = 0;
+// ... 循环累计
+if (totalCheckCount > 0 && (shortCheckCount / totalCheckCount) > CHECK_SHORT_RATIO) {
+  isDegraded = true;
+}
+```
+
+**判断标准**：降级判定要区分「单点偶发」与「系统性失效」。一票否决适合「该产物必须完整否则整轮不可信」的场景（如 result.md 空占位），不适合「多产物中一份偏短」的场景——后者应该看比例。
+
+#### 🔴 perspective worker 工具预算偏紧导致普遍熔断（v1.3.1 run-03 教训）
+
+> **来源**（run-03，2026-08-10）：58 次撞硬上限 + 51 次裸 LLM 降级——24 个 perspective worker 几乎全部靠裸 LLM 兜底产出报告，而非正常的"工具调用 + 分析"流程。根因是 `toolHardLimit=15` 对 12 视角审查（每个视角需读 README → grep → 读 SECURITY → 跑 check-version → 写报告，轻松 15+ 次调用）偏紧。
+
+**修复**：perspective worker `toolSoftLimit` 12→15、`toolHardLimit` 15→20。代价是单轮 token 涨 ~15-20%，但换来 worker 能完成完整审查而非被迫降级。
+
+**权衡原则**：工具预算 = 必读文件数 + 探索余量。短任务化（v1.2.9）时把 perspective 压到 12/15 是为了防 run-06 式无限探索空转，但实测在「每个视角都要读 3-5 个文件」的真实负载下偏紧。开放探索类步骤压低预算（防空转），固定读取类步骤保证预算（防熔断）——**按步骤真实负载调，别一刀切**。
+
+> 注：a-consolidate 已单独配 60/80（v1.3.0 run-21 修复），本次只动 perspective worker。
+
+#### 🔴 裸 LLM 降级产物需过结构校验（v1.3.1 run-03 教训）
+
+> **来源**（run-03，2026-08-10）：裸 LLM 降级报告（`generateReportWithoutTools`）产出的半截碎片（如 184 字节一句话中间思考）被直接写入产物文件，下游 `parseStopCondition` 的 `CHECK_MIN_BYTES=200` 刚卡不住，但碎片不含任何有效审查内容，污染整轮 finding 计数。
+
+**根因**：`generateReportWithoutTools` 的返回值只做了 `respText.trim()` 非空检查，没过 `isReportText` 质量门控（≥500 字符 或 含 ## 标题行）。而 stream loop 路径的 `extractAgentText` 早就有这个门控（v1.2.7 run-07 修复）——两条路径质量标准不一致。
+
+**修复**：`generateReportWithoutTools` 返回前加 `isReportText(respText)` 校验。不达标的碎片返回**结构化占位**（含「降级生成——裸 LLM 报告未达质量门控」标记词 + 该视角审查未完成说明），让下游 `parseStopCondition` 能识别降级、b-fix 不会误读碎片为有效 finding。
+
+```js
+// ❌ 改前：只查非空
+return typeof respText === 'string' && respText.trim() ? respText : null;
+
+// ✅ 改后：过 isReportText 门控，不达标返回结构化占位
+if (respText && isReportText(respText)) return respText;
+return [
+  `## ${step}（角色 ${role}）审查未完成`,
+  '> **降级生成——裸 LLM 报告未达质量门控**',
+  '> 本份产物不含有效 finding，请人工复核该视角。',
+  '降级占位',
+].join('\n');
+```
+
+**核心原则**：所有降级路径（stream loop 兜底 / generateReportWithoutTools / synthesizeFallback）的产物质量标准必须一致——都过 `isReportText` 门控。任何一条路径放宽标准，都会成为碎片污染整轮的漏洞。
+
 #### 🔴 产物完整性校验（防"假成功"——v1.3.0 run-21 教训）
 
 > **来源**（run-21，2026-08-09）：driver 报 `2-rounds-clean`（P0=0/P1=0/P2=0），实际 3 轮 findings 全丢——**现有降级检测只防「失败→降级」，没防「成功但格式坏→静默判空」**。
@@ -174,7 +231,11 @@ a-consolidate 撞硬熔断（40-60 次调用 vs 全局 45）
 
 #### 连续降级 error 退出
 
-连续 2 轮降级 → `fatal-error` 退出，不浪费 token 跑无意义循环。
+连续 3 轮降级 → `fatal-error` 退出，不浪费 token 跑无意义循环。
+
+> **阈值演变**：
+> - v1.2.7（run-06 教训）：3 轮全降级消耗 132k tokens 零产出 → 原始教训就是「3 轮」，阈值设为 `>=2` 偏激进。
+> - v1.3.1 run-03 修正：原 `>=2` 在「降级判定本身有误伤」（见下方[降级判定一票否决误伤](#降级判定一票否决误伤v131-run-03-教训)）时，连续 2 轮误判降级即触发熔断，循环在第 2 轮被腰斩，没给第 3 轮自我修复机会。改回 `>=3`，与 run-06 原始教训精确对齐，给偶发降级 1 次容错。
 
 #### stream.return() 防"幽灵"API 请求
 

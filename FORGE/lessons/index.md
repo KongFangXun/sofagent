@@ -13,6 +13,8 @@
 > v1.3.0 run-22/23 更新（2026-08-09）：finding-NN 格式铁律（分类段落切 0 finding 假绿）、worker 写完产物不退出 → driver 永久 await（process.exit + spawn 超时兜底）、降级标记持久化（degraded.flag 防 a-verify 覆盖抹标记）
 >
 > v1.3.0 release-gate run-21 更新（2026-08-09）：确定性判定优先（别让 LLM 解读可确定性解析的日志 + ANSI 剥离坑）、F 链收敛回写权威产物（verdict.md 同步）
+>
+> v1.3.1 run-03 更新（2026-08-10）：降级判定一票否决误伤（改比例阈值 25%）、perspective worker 工具预算偏紧（12/15→15/20）、裸 LLM 降级产物缺结构校验（补 isReportText 门控 + 结构化占位）、连续降级熔断阈值过激进（2→3 轮）四项新坑位
 
 ## 本文档定位
 
@@ -74,9 +76,13 @@
 - [ ] **extractAgentText 跳过空 content**（createReactAgent 中间消息全空）（[四·兜底报告](./driver.md#兜底报告合成)）
 - [ ] **并行 Worker 用 allSettled**（[四·allSettled](./driver.md#allsettled-并行降级)）
 - [ ] **parseStopCondition 做降级检测**（占位报告不算干净轮）（[四·降级检测](./driver.md#降级检测防假阳性干净)）
+- [ ] **降级判定用比例阈值不用一票否决**（短产物占比 > 25% 才判整轮降级，防 1 份短产物连累整轮——run-03 教训）（[四·一票否决误伤](./driver.md#降级判定一票否决误伤v131-run-03-教训)）
+- [ ] **裸 LLM 降级产物过 isReportText 门控**（所有降级路径质量标准一致，不达标返回结构化占位）（[四·降级产物结构校验](./driver.md#裸-llm-降级产物需过结构校验v131-run-03-教训)）
 - [ ] **产物完整性校验**（"有输出"≠"解析成功"；判定产物 result.md 空占位→降级重建，绝不静默跳过）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
 - [ ] **判定产物必须可消费**（降级重建 result.md 用 `### finding-NN` 带优先级，别写 SKIP 表格让 b-fix 空转）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
-- [ ] **必读文件多的步骤单独配工具预算**（a-consolidate 60/80；开放探索类压低 12/15；并行 tool_call 让硬熔断超发，45 实际撞 48-60）（[四·并行超发](./driver.md#并行工具调用让硬熔断超发--步骤级预算覆盖v130-run-21)）
+- [ ] **必读文件多的步骤单独配工具预算**（a-consolidate 60/80；开放探索类压低 15/20；并行 tool_call 让硬熔断超发，45 实际撞 48-60）（[四·并行超发](./driver.md#并行工具调用让硬熔断超发--步骤级预算覆盖v130-run-21)）
+- [ ] **perspective worker 预算按真实负载调**（12 视角审查需读 3-5 文件，15/20 够用且不空转；别一刀切压太低导致普遍熔断——run-03 教训）（[四·perspective 预算偏紧](./driver.md#perspective-worker-工具预算偏紧导致普遍熔断v131-run-03-教训)）
+- [ ] **连续降级熔断阈值 >=3**（与 run-06 原始教训对齐，给偶发降级 1 次容错；>=2 在降级判定有误伤时会腰斩循环——run-03 教训）（[四·连续降级](./driver.md#连续降级-error-退出)）
 - [ ] **排查标记字符串防假阳性**（grep `===FILE:` 命中占位注释文本自身，用 `^===FILE:` 只匹配行首）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
 - [ ] **result.md 必须用 finding-NN 结构**（分类段落 `### 🔴 P0 阻塞项` 切 0 finding 假绿；兜底 prompt 强制 + 检测扩展）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
 - [ ] **worker 写完产物必须显式 process.exit(0)**（残留句柄让事件循环不清空 → 进程不退出 → driver 永久 await；心跳正常≠流程在走）（[四·worker 不退出](./driver.md#worker-写完产物不退出--driver-永久-awaitv130-run-23)）
