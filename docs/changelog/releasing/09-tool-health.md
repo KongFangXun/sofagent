@@ -1,0 +1,52 @@
+# 阶段九：工具脚本健康检查
+
+> 工具脚本和产品代码同步演进，不要等脚本报错才发现缺口。每次发版前过一遍——防止「check 能查但 bump 不改」「新增目录没进排除规则」「regression-checklist 路径过时」三类结构性盲区。
+
+---
+
+## 步骤
+
+| # | 步骤 | 验证方式 |
+|:--:|------|------|
+| 1 | **新增文件类型/目录排查**：本版本有没有新增文件类型（`.yaml`/`.toml`/`.json5`）？→ check-version.sh 是否需要加检查项？bump-version.sh 是否需要加对应 bump 步骤？本版本有没有新增目录？→ find 排除规则是否需要更新？文件迁移？→ regression-checklist 路径是否需要更新？孤儿配置文件排查（`pnpm-workspace.yaml`/`yarn.lock` 等不属于本项目技术栈的）。shellcheck 扫描范围与 CI 一致性。CI yaml paths 引用是否有效。归档排除规则完整性。 | 七项逐一确认；shellcheck 覆盖对齐；归档排除完整性 |
+| 2 | **三脚本对照检查**：① check-version.sh 检查的每一类文件，bump-version.sh 是否都有对应的 bump 步骤？② pre-push-check.sh 的检查项数量是否和 CHANGELOG/ROADMAP 声明的一致？③ check-version.sh 的检查项编号分母是否和实际检查项数一致？④ bump-version.sh --dry-run 必须验证为纯只读（跑完后 `git diff --stat` 零改动） | 跑脚本对照 |
+| 3 | **过时检查清理**：regression-checklist 引用的路径是否还存在？CI yaml paths 是否有效？ | grep 确认 |
+| 4 | **🔴 `npm run build` 重建 dist 产物**（源码改了 dist 没改 = CLI 版本号不对） | `node engine/audit/dist/index.js --help` 显示正确版本 |
+| 5 | **跨文档锚点校验** | `node tools/check-anchors.mjs` 全绿 |
+| 6 | **🔴 hook 端到端实测**（见下方脚本） | 拦截 exit 2 + 放行 exit 0 |
+
+---
+
+## hook 端到端实测脚本（步骤 6）
+
+真装 hook + 真提交密钥验证拦截链路：
+
+```bash
+# 1. 准备隔离测试 bin（⚠️ 先 rm -f 确认不是 symlink——历史遗留 symlink 会覆盖 dist）
+mkdir -p /tmp/fe-verify-bin
+rm -f /tmp/fe-verify-bin/sofagent-audit  # 确认不是 symlink
+printf '#!/bin/bash\nexec node %s/engine/audit/dist/cli-quick.js "$@"\n' "$(pwd)" > /tmp/fe-verify-bin/sofagent-audit
+chmod +x /tmp/fe-verify-bin/sofagent-audit
+
+# 2. 新仓库装 hook
+mkdir -p /tmp/hook-test && cd /tmp/hook-test && rm -rf .git && git init
+node -e "require('$(pwd)/../../engine/core/dist/config-template.js').HOOK_TEMPLATE" > .git/hooks/commit-msg 2>/dev/null || \
+  node -e "console.log(require('./engine/core/dist/config-template.js').HOOK_TEMPLATE)" > .git/hooks/commit-msg
+chmod +x .git/hooks/commit-msg
+
+# 3. 拦截验证：提交含密钥 .env
+export PATH=/tmp/fe-verify-bin:$PATH SOFAGENT_DATA=/tmp/fe-vd SOFAGENT_HOME=/tmp/fe-vh
+echo "AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" > .env
+git add .env
+git commit -m "test"  # 期望：A1+A2 拦截 exit 2，.env 未入库
+git show HEAD:.env 2>&1 | grep -q "fatal" && echo "✅ 密钥被拦截" || echo "❌ 密钥入库了"
+
+# 4. 清暂存区后测干净提交（⚠️ 必须清，否则残留 .env 会误拦）
+git reset HEAD -- .env && rm .env
+echo "print('hello')" > app.py && git add app.py
+git commit -m "add app"  # 期望：WARN 放行 exit 0
+git log --oneline -1 | grep -q "add app" && echo "✅ 干净提交放行" || echo "❌ 干净提交被拦"
+
+# 5. 清理
+cd - && rm -rf /tmp/hook-test /tmp/fe-verify-bin /tmp/fe-vd /tmp/fe-vh
+```
