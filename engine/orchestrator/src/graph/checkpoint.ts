@@ -208,10 +208,11 @@ export class FileCheckpointer {
    *
    * @returns 落盘的 checkpoint 文件绝对路径
    */
-  save(state: CheckpointState, node: string, phase: 'before' | 'after'): string {
+  save(state: CheckpointState, node: string, phase: 'before' | 'after', opts?: { savedAtOverride?: string }): string {
     this.ensureDirs();
 
-    const savedAt = new Date().toISOString();
+    // 🔴 测试支持：opts.savedAtOverride 允许测试注入明确时间序（CI 同毫秒排序问题）
+    const savedAt = opts?.savedAtOverride ?? new Date().toISOString();
     const fileTs = savedAt.replace(/[:.]/g, '-');
     const fileName = `checkpoint-${fileTs}-${randomBytes(3).toString('hex')}.json`;
     const filePath = join(this.dir, fileName);
