@@ -3,6 +3,13 @@
 // cli-quick.ts · npx sofagent-audit 零配置 CLI 入口
 // v1.3.1 (⑧-1)：30 秒 aha moment——任何 git repo 都能跑
 //
+// 依赖说明（v1.3.2 P0-R13）：
+//   本文件 import @sofagent/core（见 package.json dependencies）。
+//   git clone 后直接跑 dist/cli-quick.js 会报 MODULE_NOT_FOUND——
+//   需先 `npm install`（根目录安装会 link workspace 依赖）或
+//   `npm install -g @sofagent/audit` 全局安装后再用 npx sofagent-audit。
+//   构建产物 dist/ 会被 npm run build 覆盖，勿直接改 dist 文件。
+//
 // 用法：
 //   npx sofagent-audit              # 审计最近一次 commit
 //   npx sofagent-audit HEAD~3..HEAD # 审计指定范围

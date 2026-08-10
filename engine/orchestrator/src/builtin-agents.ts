@@ -7,10 +7,24 @@
 //
 // 如果文件找不到（如 npm 全局安装路径不同），回退到硬编码精简版。
 // v1.3.1：迁移至 @sofagent/orchestrator
+// v1.3.2 P0-R2: npm 全局安装后 __dirname 不再是仓库内相对位置，
+//   包相对路径（多层上级目录拼 SKILL）会失效。新增 SOFAGENT_REPO_ROOT
+//   环境变量作为最高优先级解析：git clone 安装场景下显式指定仓库根，
+//   即可让 npm 全局安装的 orchestrator 也能加载 SKILL/agents 的 md。
+//   优先级：SOFAGENT_REPO_ROOT > cwd 相对路径 > 包相对路径 > fallback。
 // ============================================================
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import type { SubAgentDefinition } from './registry';
+
+/**
+ * 仓库根目录（SOFAGENT_REPO_ROOT 环境变量，npm 全局安装场景指定源码仓库位置）
+ * 未设置时返回 null，回退到 cwd / 包相对路径解析。
+ */
+function repoRoot(): string | null {
+  const root = process.env.SOFAGENT_REPO_ROOT;
+  return root !== undefined && root !== '' ? root : null;
+}
 
 /**
  * 解析 SKILL.md 为 system prompt
@@ -60,6 +74,15 @@ function parseSkillMd(content: string): string {
 }
 
 function loadAgentMd(skillName: string, fallback: string): string {
+  // 路径 0: SOFAGENT_REPO_ROOT/SKILL/agents/<skillName>/SKILL.md（v1.3.2 P0-R2：npm 全局安装场景）
+  const root = repoRoot();
+  if (root !== null) {
+    const repoPath = join(root, 'SKILL', 'agents', skillName, 'SKILL.md');
+    if (existsSync(repoPath)) {
+      return parseSkillMd(readFileSync(repoPath, 'utf-8'));
+    }
+  }
+
   // 路径 1: cwd/SKILL/agents/<skillName>/SKILL.md
   const cwdPath = join(process.cwd(), 'SKILL', 'agents', skillName, 'SKILL.md');
   if (existsSync(cwdPath)) {
@@ -81,6 +104,20 @@ function loadAgentMd(skillName: string, fallback: string): string {
  * 搜索优先级：FORGE/agents/ > agents/ > 包相对路径
  */
 function loadAgentMdFile(name: string, fallback: string): string {
+  // 路径 0: SOFAGENT_REPO_ROOT/FORGE/agents/<name>.md 或 SOFAGENT_REPO_ROOT/agents/<name>.md
+  //（v1.3.2 P0-R2：npm 全局安装场景，显式指定仓库根）
+  const root = repoRoot();
+  if (root !== null) {
+    const repoLoopPath = join(root, 'FORGE', 'agents', `${name}.md`);
+    if (existsSync(repoLoopPath)) {
+      return parseSkillMd(readFileSync(repoLoopPath, 'utf-8'));
+    }
+    const repoAgentsPath = join(root, 'agents', `${name}.md`);
+    if (existsSync(repoAgentsPath)) {
+      return parseSkillMd(readFileSync(repoAgentsPath, 'utf-8'));
+    }
+  }
+
   // 路径 1: cwd/FORGE/agents/<name>.md（v1.1.4 新增）
   const loopPath = join(process.cwd(), 'FORGE', 'agents', `${name}.md`);
   if (existsSync(loopPath)) {
