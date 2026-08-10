@@ -82,8 +82,6 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.2.9** | ✅ 已交付 | **🐛 v1.2.8 发版遗留 BugFix + 🔧 FORGE Driver 短任务化 + ⏸️ Checkpoint/Resume 升级 + 🏠 PM2 守护 + 🔗 激活链 Phase 3 后半 + 📐 约束层叙事重构 + 🚪 三个入口产品**：① 短任务化——a-check/b-check 从"1 worker 跑 12 视角"拆成"12 独立 worker 各跑 1 视角"（5-8 次工具调用）② Checkpoint/Resume 从轮级升级为 worker 级断点（`completedWorkers: string[]`）③ PM2 守护进程（脱离 session 生命周期，崩溃自动重启+日志持久化+开机自启）④ 激活链 Phase 3 后半（HITL 中断处理 + 每节点执行后自动审计 + 异常处理）⑤ 工程债务——mcp-server.ts 1899 行拆分 ⑥ v1.2.8 发版遗留 BugFix——driver 修复链 bug（verdict PASS 时 results 状态一致 + f-fix 硬上限由短任务化覆盖；driver-base 继承重构已消化相关缺陷）⑦ 约束层叙事重构——"一底座·三引擎"统一为"约束层（Harness）：一个层四种能力（注入·审计·回溯·进化）"，纯文档改写 ⑧ 三个入口产品——`npx sofagent-audit` 零配置 CLI + 规则市场（`--ruleset` + 插件接口 `type: "plugin"` 支持外部 npm 包注册 AST/语义规则）+ GitHub Action（PR 自动审计） | [日志](./changelog/v1.2/v1.2.9.md) |
-| **v1.3.0** | ✅ 已交付 | **运行时审计最小闭环 + 🔗 激活链 Phase 4 收尾（SUSTAIN）**：① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 运行时审计日志按 git 仓库隔离 ⑥ 决策审计 Judgment Unit（emitDecision + kind-wise back）⑦ **🔗 激活链收尾**：全链路验证（activate→compose→run→HITL→audit→sustain）+ wrapToolCall 自动覆盖企业 Agent + FDE SKILL.md 新增 activate 引导 ⑧ **list_rules** MCP tool（tool-gate 规则透明化，覆盖度审计缺口补全）⑨ **🔧 技术债回收：双规则系统统一**——`engine/rules/`（tool-level）与 `engine/audit/src/rules/`（git-diff）统一为单一规则引擎（`ruleType: 'tool' | 'diff'`），消除 secret-leak 检测的行为不一致风险（详见 [ARCHITECTURE 已知技术债](./ARCHITECTURE.md#已知技术债双规则系统重叠已在-v130-交付)）⑩ **📦 外部记忆后端 Path A**——TencentDB-Agent-Memory MCP connector（弱依赖、缺省关闭、零架构改造，MA1-MA7；详见开发日志 §外部记忆后端 Path A 专项） | [日志](./changelog/v1.3/v1.3.0.md) |
 | **v1.3.2** | 📋 规划中 | **🚀 Onboard Agent 完整版（L2-L5 · FORGE 产品化第二刀）+ 🎯 企业专属 eval 套件 + ⚡ workflow 批量自动生成 + 🧩 模型接入插槽扩展 + 🎙️ FDE 梳理辅助工具（含 ontology 咨询式生成）+ 🧵 LLM Trace 任务级轨迹**：① L2 语义判定（Ontology 判据）② L3 自动定位（LLM 推理）③ L4 自动修复（审计兜底）④ L5 循环收敛（回归+连续 PASS）⑤ 企业行业 eval 模板（金融/制造/供应链，FDE 交付时实例化 + 基线冻结 + 回归门禁，a16z 法则6 产品化）⑥ workflow.yml → 自动为每个节点生成 sub-agent（agent-creation 规模化，PenguinHarness「用 Agent 构建 Agent」启发）⑦ `client_type: 'ollama' | 'openai-compatible'` 模型接入插槽（后训练模型 vLLM/OpenAI 兼容接入的地基，2026-08-09 从 v1.3.1 移入）⑧ FDE 梳理辅助（五要素引导 → workflow.yml 草稿 → 人工确认，规则驱动不抢模型层主战场）⑨ **Ontology 咨询式生成端**（五要素 → entity/concept/relations 草稿 → 人工确认 → v1.3.6 ② 注册——FDE Agent 靠咨询生成 ontology，不靠模型，2026-08-10 新增）⑩ **LLM Trace 任务级轨迹视图**（taskId 完整调用链含工具结果——调试可观测通用能力，RL 训练消费在 v1.4.1 衔接，2026-08-10 新增） | [日志](./changelog/v1.3/v1.3.2.md) |
 | **v1.3.3** | 📋 规划中 | **L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版 + 🧭 主 agent 编排 + 🚪 入口路由**：① 协作协议——共享态/意图广播/触发反应/冲突消解/反馈放大 + 团队状态管理 ② Refine Agent——复用 Onboard 循环引擎，判据从 Ontology 换成质量规则集（好不好），五层一次交付 ③ 主 agent 四合一角色（分发/监控/审计/通讯）——编排 v1.3.2 批量生成的 sub-agent ④ **入口路由**（`route_workflow` MCP tool + workflow 节点 type 机器化）——用户自有 Agent（WorkBuddy/Codex）协同时判断请求是否命中 workflow 强化人/自动节点 → 进 workflow / 落回用户模型（模型分层 = 入口判断，2026-08-10 新增） | [日志](./changelog/v1.3/v1.3.3.md) |
 | **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价→养护）**：Skill/Agent/流程打包发布 + 目录检索 + 调用挂载 + 评分聚合（评分 × 调用量加权自然选择）+ 全程审计 + **养护环（owner 声明 + 失效退役 + 变更记录，GitHub 模式「持续养护」）** | [日志](./changelog/v1.3/v1.3.4.md) |
@@ -106,7 +104,6 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 主题 | 核心交付 |
 |------|------|------|
-| **v1.3.0** | **运行时审计最小闭环（LangGraph middleware）** | ① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 运行时审计日志按 git 仓库隔离 ⑥ **list_rules** MCP tool ⑦ **🔧 双规则系统统一**（`ruleType: 'tool' | 'diff'`，消除技术债）⑧ **📦 外部记忆后端 Path A**（TencentDB-Agent-Memory MCP connector，缺省关闭）（详见 开发日志 ./changelog/v1.3/v1.3.0.md）|
 | **v1.3.2** | **🚀 Onboard Agent 完整版（L2-L5）+ 🎯 企业专属 eval 套件 + ⚡ workflow 批量自动生成 + 🧩 模型接入插槽扩展 + 🎙️ FDE 梳理辅助 + 🧵 Trace 任务级轨迹** | L2 语义判定（Ontology 判据）+ L3 自动定位（LLM 推理）+ L4 自动修复（审计兜底）+ L5 循环收敛（回归+连续 PASS）+ 企业行业 eval 模板（a16z 法则6 产品化）+ workflow 节点自动生成 sub-agent + `client_type` 模型接入插槽（openai-compatible）+ FDE 梳理辅助（五要素→workflow.yml 草稿）+ **LLM Trace 任务级轨迹视图（调试可观测通用能力，RL 消费在 v1.4.1）**（详见 开发日志 ./changelog/v1.3/v1.3.2.md）|
 | **v1.3.3** | **L2 团队协作协议 + ✨ Refine Agent + 🧭 主 agent 编排** | 协作五大机制 + Refine Agent 完整版（质量规则集判据，复用 Onboard 循环引擎）+ 主 agent 四合一（分发/监控/审计/通讯）（详见 开发日志 ./changelog/v1.3/v1.3.3.md）|
 | **v1.3.4** | **L3 组织能力市场（五环）** | 发布→发现→调用→评价→养护（owner 声明 + 失效退役）+ 评分聚合自然选择 + 全程审计（详见 开发日志 ./changelog/v1.3/v1.3.4.md）|
@@ -123,26 +120,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.4.5** | **🚀 训练引擎 · 服务与持续** | train serve 推理服务 + 持续后训练 + 数据合规扫描（合规红线）+ **FDE 训练交付包** + **归档保留策略** + **Quickstart 示例**（详见 开发日志 ./changelog/v1.4/v1.4.5.md）|
 | **v1.4.6** | **🚀 训练引擎 · 分布式与云端** | 多卡/分布式训练（verl/DeepSpeed 集群）+ 云 VM 执行面（控制面本地/执行面云上，全托管底座；敏感数据不上公有云）（详见 开发日志 ./changelog/v1.4/v1.4.6.md）|
 
-### v1.3.1 — Ontology 本体结构（操作型本体论落地）
-
-> 💡 来自 Palantir 操作型本体论系列研报（2026-07）的启发。Palantir 4000 亿美元市值的核心护城河不是"本体论"概念包装，而是 **Action Types 作为类型系统一等公民**——操作语义与数据定义同层建模，LLM 所有调用必须经过本体层定义的 Action 执行，无法绕过直接写库。
-
-sofagent v1.3.1 的 Ontology 本体结构方向与之高度同构，但走**分布式路线**——不建中央本体操作系统，让每个 Agent 自建本体（Ledger-Views-Policy），联邦查询跨设备共享，git diff + audit history 做硬证据链：
-
-| Palantir 做法 | sofagent 做法 | 差异化 |
-|------|------|------|
-| Action Types 内嵌本体，LLM 调用必经 | A15 约束验证（事后）+ fde.md Policy（事前声明） | 事后审计 + 逐步前移 |
-| OAG 五层确定性架构 | Harness 约束底座 + MCP + FORGE 双 Agent | 同构轻量，无需五层就位即可工作 |
-| 集中式 Ontology OS，重度物化索引 | 分布式 knowledge/，联邦查询按需获取 | MIT 开源、零锁定、数据主权本地 |
-| Markings + CBAC 本体级安全 | sensitivity frontmatter + 跨设备联邦过滤 | 渐进式演进 |
-
-> 💡 **核心设计原则**：本体结构 = GitHub 生长树——树干 = 本体结构本身，分支 = 单个 ontology 节点新增，护栏 = 审计引擎，根系 = 每个节点的强制 frontmatter（输入 / 产出 / 通过标准 / 哪些数据禁用），养护 = 本体变更的 review + rollback。完整映射与 v2.x「ontology I/O schema 硬化」的契合见 [ARCHITECTURE.md · 本体结构 = GitHub 生长树](./ARCHITECTURE.md)。
-
-**v1.3.1 完整交付清单**：① 本体结构升级为可运行推理底座（对齐 24 条审计规则 + Ledger-Views-Policy）② 三层落地法（统一元模型 → 企业通用 Ontology 规范 → 与 Agent 平台打通）③ 国标对齐 GB/T 48000.3-2026 ④ **并行编排**——LangGraph 原生 DAG 并行（StateGraph + Send API），每波次经审计节点（★Reality Anchor）卡关，git worktree 隔离（v1.2.3 底座），幂等性保证 ⑤ **Ontology CRUD 补全**——`update_entity`/`delete_entity`/`delete_concept` 三个 MCP tool ⑥ **Agent 独立身份码 + KYA 完整版**（Ed25519 签发/验证）+ 跨设备审计轨迹聚合 + MCP `agent_identity`/`audit_trail` tool ⑦ **🚀 Onboard Agent L1（FORGE 产品化第一刀 · 工程判定层）**：企业 AI 节点 activate 后自动跑一轮 → crash/error 判定 → 报错人工修 → 再跑 ⑧ **📊 Benchmark 评测体系**（PenguinHarness 方法论借鉴）：statement/rubric 物理分离 + Pilot 校准 + Freeze + 隔离执行 + 四种失败码 ⑨ **🔒 工具审批模式**（PenguinHarness CLI 借鉴）：四模式（allow-with-audit/deny-all/read-only/always-ask）+ 保守默认拒绝 + 审批继承，Benchmark 评测强制 read-only ⑩ **Durable Execution L1+L2**：graph checkpoint 续跑（L1）+ 工具幂等性保证（L2，副作用登记簿）⑪ **📜 LLM 调用级 Trace**：每次模型请求写 llm-calls.jsonl（token/耗时/stopReason/error），HMAC 链防篡改 ⑫ **🔄 错误处理升级**：stop_reason 六值分类 + 指数退避重连 + 错误收敛为消息（auth 永不重试）⑬ **🔀 MergeQueue 并发合并**：并行编排的并发一致性底座（到达序 yield + 原始序重排）⑭ **📚 L4 渐进加载增强**：索引注入 + 按需读取（热点 2 篇全文 + 索引 9 条摘要）
-
-> 🔗 **Graph Engineering 定位**：sofagent 已经在做 Graph Engineering——`engine/orchestrator/src/loop/graph.ts` 用 LangGraph StateGraph 实现 `START→engineer→audit→reviewer→human_confirm→END`，`audit` 节点即 ★Reality Anchor（真实 git diff 24 条规则作 guard edge）。v1.3.1 的「控制图多循环 DAG 波次并行」是这一定位的自然延伸。理论框架详见 [VALIDATION](./VALIDATION.md) 和 [ARCHITECTURE §Graph Engineering 视角](./ARCHITECTURE.md#graph-engineering-视角控制图--stategraph)。
->
-> 📌 **本文档聚焦技术路线。** 终局愿景与转折点信号概述见上方「未来去哪」；商业化方向与市场定位（产品化四条 / 市场信号 / 价值度量 / SMB 断层）见 [VALIDATION §四](./VALIDATION.md)；Agent 时代组织哲学（Conway/Coase 双重反转）见 [PHILOSOPHY 附章](./PHILOSOPHY.md)。
+> 📖 **已交付版本**（v1.0.0~v1.3.1）的详细交付清单见 [迭代历程](#迭代历程) + 各版本 [开发日志](./changelog/)。ROADMAP 只规划未来版本，不保留已交付版本的详细说明——交付即移出。
 
 ---
 
