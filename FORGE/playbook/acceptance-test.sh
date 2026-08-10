@@ -2,8 +2,8 @@
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离 + v1.2.5 激活链Phase1 + v1.2.5 审计加固A20-A23 + v1.2.5 daemon可靠性 + v1.2.5 多设备前置 + v1.2.9 短任务化 + checkpoint/resume worker级 + PM2 + HITL + mcp拆分 + 叙事重构 + 入口产品
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
-# 场景数：164 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
-#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 230 为编号上限，非场景数；S197 归并至 S164；v1.3.0 新增 S225-S230
+# 场景数：174 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
+#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 240 为编号上限，非场景数；S197 归并至 S164；v1.3.0 新增 S225-S230；v1.3.1 新增 S231-S240
 #   ⚠️ 口径注意（P2-31）：底部输出的「$PASSED 通过」是**断言通过数**（含跳过的场景也计 PASS），
 #   与「164 场景」不同——164 是 scenario 定义数，PASSED 可能 >164（条件跳过的场景也 +1）。
 #   文档引用 162 时指 scenario 定义数；引用「XXX 通过」时指断言通过数，勿混用。
@@ -2013,6 +2013,143 @@ grep -q "resolveRuntimeAuditPath" "$PROJECT_ROOT/FORGE/src/audit-middleware.mjs"
 # repo-hash 基于 git rev-parse（非硬编码）
 grep -q "rev-parse\|repo.*hash" "$PROJECT_ROOT/FORGE/src/audit-middleware.mjs" || S230_OK=false
 $S230_OK && pass "运行时审计仓库隔离（repo-hash 路径 + rev-parse + resolveRuntimeAuditPath）"
+
+scenario 231 "v1.3.1 交付 1 Ontology Action 校验（validator 三态 + 注册表）"
+S231_OK=true
+# Action 注册表存在
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/ontology/action-registry.ts" ] || S231_OK=false
+# validator 三态（PASS/WARN/FAIL）
+grep -q "status: strict ? 'FAIL' : 'WARN'" "$PROJECT_ROOT/engine/orchestrator/src/ontology/validator.ts" || S231_OK=false
+# ruleName=ontology-action（审计引用）
+grep -q "ontology-action" "$PROJECT_ROOT/engine/orchestrator/src/ontology/validator.ts" || S231_OK=false
+# wrapToolsWithGate 可选集成（不传 = 零变化）
+grep -q "ontologyValidator?: OntologyValidator" "$PROJECT_ROOT/engine/orchestrator/src/tools.ts" || S231_OK=false
+$S231_OK && pass "Ontology Action 注册表 + validator 三态 + wrapToolsWithGate 可选集成"
+
+scenario 232 "v1.3.1 交付 3 并行编排审计卡关（全 PASS 合并 / 任一 FAIL 丢弃）"
+S232_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/loop/parallel-scheduler.ts" ] || S232_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/loop/merge-gate.ts" ] || S232_OK=false
+# 波次卡关判定：全 PASS 合并 / 任一 FAIL 丢弃
+grep -q "allMerged" "$PROJECT_ROOT/engine/orchestrator/src/loop/merge-gate.ts" || S232_OK=false
+# 复用 worktree-merge-gate runMergeGate
+grep -q "runMergeGate" "$PROJECT_ROOT/engine/orchestrator/src/loop/merge-gate.ts" || S232_OK=false
+# graph.ts 并行可选路径（默认串行）
+grep -q "parallel_wave" "$PROJECT_ROOT/engine/orchestrator/src/loop/graph.ts" || S232_OK=false
+$S232_OK && pass "并行编排（ParallelScheduler + 波次卡关 + graph 并行可选路径）"
+
+scenario 233 "v1.3.1 交付 13 MergeQueue 并发合并（到达序 + 原始序重排 + 配对）"
+S233_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/loop/merge-queue.ts" ] || S233_OK=false
+# 到达序 yield
+grep -q "arrivalOrder" "$PROJECT_ROOT/engine/orchestrator/src/loop/merge-queue.ts" || S233_OK=false
+# 原始 taskId 序重排
+grep -q "reordered" "$PROJECT_ROOT/engine/orchestrator/src/loop/merge-queue.ts" || S233_OK=false
+# taskId 配对保证（重复 push 拒绝）
+grep -q "duplicatePolicy" "$PROJECT_ROOT/engine/orchestrator/src/loop/merge-queue.ts" || S233_OK=false
+$S233_OK && pass "MergeQueue 并发合并（到达序 yield + 原始序重排 + 配对保证）"
+
+scenario 234 "v1.3.1 交付 4 Durable Execution checkpoint 恢复（L1 续跑）"
+S234_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/durable/resume.ts" ] || S234_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/durable/checkpoint-manager.ts" ] || S234_OK=false
+# 扫描未完成 checkpoint
+grep -q "scanPendingCheckpoints" "$PROJECT_ROOT/engine/orchestrator/src/durable/resume.ts" || S234_OK=false
+# 恢复入口（resumeLoopGraph）
+grep -q "resumeLoopGraph" "$PROJECT_ROOT/engine/orchestrator/src/durable/resume.ts" || S234_OK=false
+# checkpoint 清理（默认 7 天可配置）
+grep -q "DEFAULT_CHECKPOINT_RETENTION_DAYS = 7" "$PROJECT_ROOT/engine/orchestrator/src/durable/checkpoint-manager.ts" || S234_OK=false
+# daemon 启动续跑接线
+grep -q "resumePendingLoops" "$PROJECT_ROOT/engine/daemon/src/cli.ts" || S234_OK=false
+$S234_OK && pass "Durable L1（checkpoint 扫描/恢复/清理 + daemon 启动续跑）"
+
+scenario 235 "v1.3.1 交付 6 Agent 身份码 Ed25519 签名验证"
+S235_OK=true
+grep -q "ed25519\|Ed25519" "$PROJECT_ROOT/engine/core/src/agent-identity.ts" || S235_OK=false
+# 签发 + 验证
+grep -q "sign" "$PROJECT_ROOT/engine/core/src/agent-identity.ts" || S235_OK=false
+grep -q "verify" "$PROJECT_ROOT/engine/core/src/agent-identity.ts" || S235_OK=false
+# 身份注册表
+[ -f "$PROJECT_ROOT/engine/core/src/identity-store.ts" ] || S235_OK=false
+# MCP agent_identity 工具
+grep -q "agent_identity" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S235_OK=false
+$S235_OK && pass "Agent 身份码 Ed25519（签发/验证 + 注册表 + MCP agent_identity）"
+
+scenario 236 "v1.3.1 交付 8 Onboard Agent L1 循环（judge 三态 + driver）"
+S236_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/judge.ts" ] || S236_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/driver.ts" ] || S236_OK=false
+# crash/error/超时三态判定
+grep -q "crash" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/judge.ts" || S236_OK=false
+grep -q "timeout" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/judge.ts" || S236_OK=false
+# activate→run→judge→fix→re-run
+grep -q "runOnboardLoop" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/driver.ts" || S236_OK=false
+# 工具失败收敛（convergeToolError 联动）
+grep -q "convergeToolError" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/driver.ts" || S236_OK=false
+# MCP loop_debug
+grep -q "loop_debug" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S236_OK=false
+$S236_OK && pass "Onboard L1 循环（judge 三态 + driver + loop_debug）"
+
+scenario 237 "v1.3.1 交付 9 Benchmark 评测隔离执行（statement/rubric 物理分离 + read-only）"
+S237_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/benchmark/benchmark-designer.ts" ] || S237_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/benchmark/case-evaluator.ts" ] || S237_OK=false
+# statement/rubric 物理分离（写布局）
+grep -q "statement/README.md" "$PROJECT_ROOT/engine/orchestrator/src/benchmark/benchmark-designer.ts" || S237_OK=false
+grep -q "rubric/README.md" "$PROJECT_ROOT/engine/orchestrator/src/benchmark/benchmark-designer.ts" || S237_OK=false
+# 强制 read-only（shouldApprove 官方原语）
+grep -q "shouldApprove" "$PROJECT_ROOT/engine/orchestrator/src/benchmark/case-evaluator.ts" || S237_OK=false
+# 四失败码
+grep -q "invalid_request" "$PROJECT_ROOT/engine/orchestrator/src/benchmark/case-evaluator.ts" || S237_OK=false
+grep -q "version_changed" "$PROJECT_ROOT/engine/orchestrator/src/benchmark/case-evaluator.ts" || S237_OK=false
+# evaluation-log HMAC 链
+grep -q "hmacSig" "$PROJECT_ROOT/engine/orchestrator/src/benchmark/evaluation-log.ts" || S237_OK=false
+# MCP evaluate
+grep -q "evaluate" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S237_OK=false
+$S237_OK && pass "Benchmark 评测（物理分离 + read-only + 失败码 + HMAC 链 + evaluate）"
+
+scenario 238 "v1.3.1 交付 10 工具审批四模式（approval-mode）"
+S238_OK=true
+[ -f "$PROJECT_ROOT/engine/rules/src/approval-mode.ts" ] || S238_OK=false
+# 四模式
+grep -q "allow-with-audit" "$PROJECT_ROOT/engine/rules/src/approval-mode.ts" || S238_OK=false
+grep -q "deny-all" "$PROJECT_ROOT/engine/rules/src/approval-mode.ts" || S238_OK=false
+grep -q "read-only" "$PROJECT_ROOT/engine/rules/src/approval-mode.ts" || S238_OK=false
+grep -q "always-ask" "$PROJECT_ROOT/engine/rules/src/approval-mode.ts" || S238_OK=false
+# 保守默认拒绝（read-only 遇 rw 拦截）
+grep -q "read-only 拦截读写" "$PROJECT_ROOT/engine/rules/src/approval-mode.ts" || S238_OK=false
+# audit-middleware 审批分支（approval_decision 事件）
+grep -q "approval_decision" "$PROJECT_ROOT/FORGE/src/audit-middleware.mjs" || S238_OK=false
+$S238_OK && pass "工具审批四模式（approval-mode + 保守拒绝 + approval_decision 审计）"
+
+scenario 239 "v1.3.1 交付 11 LLM 调用 Trace 写入（HMAC 链 + 白名单脱敏）"
+S239_OK=true
+[ -f "$PROJECT_ROOT/engine/core/src/llm-call-trace.ts" ] || S239_OK=false
+# append-only 写入入口
+grep -q "appendLlmCallRecord" "$PROJECT_ROOT/engine/core/src/llm-call-trace.ts" || S239_OK=false
+# HMAC 链（复用 core 原语）
+grep -q "getHmacKey" "$PROJECT_ROOT/engine/core/src/llm-call-trace.ts" || S239_OK=false
+grep -q "stableStringify" "$PROJECT_ROOT/engine/core/src/llm-call-trace.ts" || S239_OK=false
+# 先脱敏再签名（白名单）
+grep -q "sanitizeTraceInput" "$PROJECT_ROOT/engine/core/src/llm-call-trace.ts" || S239_OK=false
+# stopReason 写入（交付 12 联动）
+grep -q "stopReason" "$PROJECT_ROOT/engine/core/src/llm-call-trace.ts" || S239_OK=false
+$S239_OK && pass "LLM 调用 Trace（append + HMAC 链 + 脱敏 + stopReason）"
+
+scenario 240 "v1.3.1 交付 12 错误处理（stop_reason 六值 + auth 永不重试 + 收敛）"
+S240_OK=true
+[ -f "$PROJECT_ROOT/engine/core/src/stop-reason.ts" ] || S240_OK=false
+# 六值分类
+grep -q "completed" "$PROJECT_ROOT/engine/core/src/stop-reason.ts" || S240_OK=false
+grep -q "auth" "$PROJECT_ROOT/engine/core/src/stop-reason.ts" || S240_OK=false
+grep -q "malformed" "$PROJECT_ROOT/engine/core/src/stop-reason.ts" || S240_OK=false
+# auth 永不重试（铁律 #8）
+grep -q "auth 永不重试" "$PROJECT_ROOT/engine/core/src/stop-reason.ts" || S240_OK=false
+# 指数退避 2s→4s→8s→16s→30s
+grep -q "BACKOFF_SCHEDULE_MS" "$PROJECT_ROOT/engine/core/src/stop-reason.ts" || S240_OK=false
+# 工具失败收敛为消息（不 throw）
+grep -q "convergeToolError" "$PROJECT_ROOT/engine/core/src/model-client.ts" || S240_OK=false
+$S240_OK && pass "错误处理升级（stop_reason 六值 + auth 不重试 + 退避 + 收敛）"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
