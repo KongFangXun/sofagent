@@ -8,7 +8,7 @@
 |------|------|--------|
 | `sofagent.png` | 项目 Logo（200px），README.md 头部引用 | GitHub README、npm 包页面 |
 | `favicon.png` | 网站图标 | HTML Dashboard（`<link rel="icon">`） |
-| `fde-training.html` | FDE 训练材料页面（早期内部培训用，当前为遗留文件） | 内部培训参考；后续版本考虑归档或合并到 docs/guides/ |
+| ~~`fde-training.html`~~ | FDE 训练材料页面（早期内部培训用，v1.3.2 已归档到 `docs/archive/fde-training-2026-07.html`） | 历史参考 |
 
 ## 与 dashboard.html 的关系
 
@@ -20,4 +20,4 @@
 ## 维护说明
 
 - 新增静态资源时在此表格中登记
-- `fde-training.html` 如不再使用，建议在 v1.3.x 清理周期中归档到 `docs/archive/`
+- ~~`fde-training.html`~~ 已归档到 `docs/archive/fde-training-2026-07.html`（v1.3.2 完成）
