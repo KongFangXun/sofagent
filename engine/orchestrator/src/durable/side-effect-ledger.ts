@@ -45,13 +45,20 @@ export interface SideEffectEntry {
 
 /**
  * 计算幂等键——taskId:action 为基本维度（meta 摘要可选扩展）。
+ *
+ * meta 值序列化：标量用 String，嵌套对象用 JSON.stringify（避免
+ * String({}) 退化为 '[object Object]' 导致不同参数误判同键）。
  */
 export function sideEffectId(taskId: string, action: string, meta?: Record<string, unknown>): string {
   const base = `${taskId}:${action}`;
   if (!meta || Object.keys(meta).length === 0) return base;
   // 稳定序列化 meta 作为键的一部分（区分同一任务同一动作的不同参数）
   const keys = Object.keys(meta).sort();
-  const parts = keys.map((k) => `${k}=${String(meta[k])}`);
+  const parts = keys.map((k) => {
+    const v = meta[k];
+    const str = v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v);
+    return `${k}=${str}`;
+  });
   return `${base}?${parts.join('&')}`;
 }
 
