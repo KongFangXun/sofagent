@@ -52,6 +52,20 @@ fi
 # 在 CI 非 TTY 环境下 grep '总计: [0-9]+' 恒失败。优先信任 test-count.sh 末尾的机器可读行
 # TOTAL_TESTS=NNN（该行不受 ANSI/quiet 守卫影响，恒输出），再回退到 quiet 模式与「总计」行。
 TC_OUT=$(bash tools/test-count.sh 2>/dev/null)
+TC_RC=$?
+# v1.3.2 P0-R8 (P1-15): 修复门禁假绿——test-count.sh 的退出码此前被 $() 吞掉。
+# 若任一包测试失败，test-count.sh 退出 1 但其输出仍含 TOTAL_TESTS=NNN（总数不变），
+# 旧脚本只看 TOTAL_TESTS 与文档比对 → 文档匹配就返回 OK/EXIT=0，测试实际失败仍被放行。
+# 修复：test-count.sh 自身失败（RC≠0）时直接 FAIL/exit 1，门禁真实反映测试状态。
+if [ "$TC_RC" -ne 0 ]; then
+  if [ "$QUIET" = false ]; then
+    echo -e "  ${RED}✗ test-count.sh 失败（RC=$TC_RC）——有包测试失败或脚本错误，门禁红${NC}"
+    echo -e "  ${YELLOW}修法：跑 bash tools/test-count.sh 看哪个包失败，修复测试后再跑本脚本${NC}"
+  else
+    echo "FAIL"
+  fi
+  exit 1
+fi
 # 主路径：机器可读行 TOTAL_TESTS=NNN（strip ANSI 后 grep，最鲁棒）
 TOTAL_TESTS=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+' || echo "0")
 # 回退 1：quiet 模式（同样有机器可读行）
