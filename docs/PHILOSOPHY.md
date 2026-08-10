@@ -117,7 +117,7 @@ sofagent 的约束层就是这条原则的工程实现：审计能力（24 条�
 | L1 | Copilot（副驾驶） | 仅提供决策建议 | 早期 SOP 辅助 |
 | L2 | Operator（执行者） | 按预设步骤完成固定操作 | SKILL 约束底座 + 提交时审计 |
 | L3 | Bonded Agent（受限代理） | 在预算/规则范围内自主循环执行 | fresh-eyes-loop 自主循环 + tool-gate 三色 |
-| L4 | Accountable System（可问责系统） | 全流程留证据、可解释决策、责任可追溯 | **sofagent 目标态**：append-only A1-A19 审计 + 控制平面治理 + 责任可追溯 |
+| L4 | Accountable System（可问责系统） | 全流程留证据、可解释决策、责任可追溯 | **sofagent 目标态**：append-only A1-A23 审计 + 控制平面治理 + 责任可追溯 |
 
 > 注：命名「受治理的自主性」对齐既有「受控自主性」，不另起术语；4 级框架为净新增定位资产。
 

@@ -35,7 +35,7 @@
    - **domain**：产出服务哪个部门？
    - **relations**：输入从哪来（belongs_to）？产出交给谁（has_many）？
    - **knowledge-domain**：Agent 有权读哪些（include）？不能读哪些（exclude）？
-9. **给用户看建议，等用户拍板（2026-08-10 落盘 · 咨询式生成）**——补完三字段后，**不要直接写入**：
+9. **给用户看建议，等用户确认（2026-08-10 落盘 · 咨询式生成）**——补完三字段后，**不要直接写入**：
    - 向用户展示推导建议：「根据五要素，我建议：「合同」entity →「审核通过」action → belongs_to 法务域；「审批流」concept → depends_on 合同。请确认或修改。」
    - 用户可改 entity/concept 名称、relations 方向、domain 归属——**每一步确认制**
    - 用户确认后才调 `create_entity` / `create_concept` 写入

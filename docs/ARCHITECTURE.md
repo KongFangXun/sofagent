@@ -27,7 +27,7 @@ graph TD
 
 ```mermaid
 graph LR
-    subgraph 层2 · 生命周期（流程视角 · v1.3.5+）
+    subgraph 层2 · 生命周期（流程视角 · v1.3.1+）
         D1[诊断<br/>FDE 四阶段] --> D2[激活 ACTIVATE<br/>交付物→SubAgent]
         D2 --> D3[编排 ORCHESTRATE<br/>多 Agent→StateGraph]
         D3 --> D4[执行 EXECUTE<br/>DAG + HITL + 审计]
@@ -160,7 +160,7 @@ graph TD
 
 | 安装器 | 装什么 | 不装 | 适用 |
 |---|---|---|---|
-| `install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（@sofagent-fde / @sofagent-audit）+ hook | FORGE | 企业 / FDE：要常驻硅基员工 |
+| `install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（@sofagent-fde / @sofagent-audit）+ hook | FORGE | 企业 / FDE：要常驻 Agent（7×24 自动执行的 AI 节点） |
 | `install.sh --base-only` | 仅底座（注入·审计·回溯·进化） | FDE / FORGE | 开发者 / 企业 IT：只要核心约束层 |
 
 > 最小可用：只装 `@sofagent/audit` 就有纯审计（24 条规则，17 默认启用 + 7 扩展 opt-in + 快照 + 回滚）；五包全装才是完整约束层（Harness）。
@@ -169,6 +169,8 @@ graph TD
 ### 已排期（开发中或即将开发，详见 ROADMAP）
 
 Dashboard Web 前端（`dashboard.html` 单文件控制台已落：驾驶舱/FDE 引导/AI 节点/本体结构/知识库/工具箱 6 页 + `tools/serve-dashboard.mjs` 服务，读 `data/` 实时数据 + 示例降级；工作明细数据层 v1.3.9 + Web 工作明细页 v1.4.0）· 完整多设备协同 L2 / 组织能力市场 · 并行编排 DAG 波次并行（v1.3.1）· Ontology 升级为可运行推理底座 + 国标对齐（v1.3.1）· **Benchmark 评测体系 + 工具审批模式（v1.3.1 · PenguinHarness 方法论借鉴）** · **引擎接口外化完整版（v1.3.6 · workflow 标准格式/ontology 注册/训练语料导出/托管 SDK/模型注册——模型层接入前置）** · SubAgent 完整沙箱（v1.3.7）· 代理网关 + 静态加密（v1.3.8）· meta-harness 多 harness 编排（v1.3.9）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
+>
+> **Dashboard 双实现说明（v1.3.2 补充）**：`dashboard.html`（根目录，开发预览版，`node tools/serve-dashboard.mjs` 起服务）与 `tools/sofagent-dashboard.sh`（生产版，装到 `~/.sofagent/bin/`，零依赖 bash）是同一 Dashboard 的两套形态——HTML 版给开发者本地预览（读 `data/` 实时数据），bash 版给终端用户零依赖控制台。二者职责不同，勿混用/勿删其一。
 
 ---
 
@@ -353,7 +355,7 @@ graph LR
 
 #### 决策审计（v1.3.0 · 意图层审计 MVP）
 
-把 A1-A19 的「行为问责（扫 git diff）」升级为「意图问责（运行时记决策理由链）」：
+把 A1-A23 的「行为问责（扫 git diff）」升级为「意图问责（运行时记决策理由链）」：
 
 | 组件 | 文件 | 作用 |
 |------|------|------|
@@ -595,7 +597,7 @@ START → plan（拆解："调研 AI 笔记产品"）
 
 **单闭环四类失效 → sofagent 解法**（Carlos E. Perez）：① Goodhart 目标漂移→audit 用 git diff 不信自报；② 参照盲→audit 规则硬编码不随模型波动；③ 耦合冲突→Maker-Checker 职责硬分离；④ 测量退化→指标来自事实层非主观报告。
 
-**Loop 四类失败（行业科普版）**（2026-08【得到大脑】拆解，与 Carlos 四类失效同源互补，偏「业务表现」视角）：① **指标异化**——优化解决率 → 客户流失率翻倍 → audit 节点看 git diff 硬证据兜底；② **目标僵化**——Agent 不质疑目标本身 → human_confirm 节点 + 危险操作前人工批准钩子兜底；③ **多目标冲突**——两个 loop 互相打架 → ★Reality Anchor guard edge 统一裁决；④ **测量衰退**——测试数据老化 95% 通过率是假象 → audit 规则不可篡改（ground-truth）+ acceptance-test 冻结验收标准。完整映射见 [VALIDATION §三](./VALIDATION.md)。
+**Loop 四类失败（行业科普版）**（与 Carlos 四类失效同源互补，偏「业务表现」视角）：① **指标异化**——优化解决率 → 客户流失率翻倍 → audit 节点看 git diff 硬证据兜底；② **目标僵化**——Agent 不质疑目标本身 → human_confirm 节点 + 危险操作前人工批准钩子兜底；③ **多目标冲突**——两个 loop 互相打架 → ★Reality Anchor guard edge 统一裁决；④ **测量衰退**——测试数据老化 95% 通过率是假象 → audit 规则不可篡改（ground-truth）+ acceptance-test 冻结验收标准。完整映射见 [VALIDATION §三](./VALIDATION.md)。
 
 **Loop → Graph 六触发信号**（什么时候该升级，sofagent 并行编排 v1.3.1 的适用性判断框架）：任务需交接 / 需散出汇合 / 每步不同模型工具 / 需显式可审计角色 / 节点失败需隔离 / 需独立 reviewer——满足其一才上 Graph，否则用 Loop 就够（"先用 loop，复杂到需要多角色协作再 graph"，避免过度设计）。sofagent 落点对照（dag-runner vs Send API 并行 / worktree 隔离 / StateGraph 四节点 / audit+fresh-eyes 独立审查）见 [VALIDATION §三](./VALIDATION.md#循环的边界从-loop-到-graph-的升级判据)。
 
@@ -757,7 +759,7 @@ River 的载体是 Agent 平台（OpenClaw / WorkBuddy 等）+ sofagent + Channe
 
 > 🏞️ **River 比喻完整映射**见 [README（项目概览）](../README.md)——sofagent 做堤坝 + 自来水厂 + 管网 + 水龙头，不做河本身。
 
-> **Workflow 的混合架构**：每条 Workflow 采用「外层 Graph 骨架 + 内层 ReAct 节点」——`workflow.yml` 的 `nextNodes` 锁定全链路步骤、保证可追溯（对应行业笔记中的「Graph 实现全局流程骨架」），单个节点的 `prompt` 保留模型自主规划能力（对应「内层 ReAct Agent」）。这一设计兼顾全局稳定性与局部灵活性：低容错业务靠 Graph 锁死流程，复杂节点靠 ReAct 保灵活。
+> **Workflow 的混合架构**：每条 Workflow 采用「外层 Graph 骨架 + 内层 ReAct 节点」——`workflow.yml` 的 `nextNodes` 锁定全链路步骤、保证可追溯（对应 Graph 实现全局流程骨架），单个节点的 `prompt` 保留模型自主规划能力（对应内层 ReAct Agent）。这一设计兼顾全局稳定性与局部灵活性：低容错业务靠 Graph 锁死流程，复杂节点靠 ReAct 保灵活。
 
 #### MCP 触发完整链路（v1.1.8+）
 
@@ -1004,7 +1006,7 @@ audit:
 
 **未来方向**：
 - **v1.3.0**：**🔗 激活链 Phase 4 收尾（SUSTAIN）**——全链路验证（activate→compose→run→HITL→audit→sustain）+ `wrapToolCall` middleware 联动 + FDE SKILL.md 新增 activate 引导。Phase 1-3（v1.2.5-v1.2.8）已交付。详见 [激活链设计文档](./guides/fde-activation-chain.md)
-- **v1.3.1-v1.3.5**：Ontology 本体结构 + 并行编排 + Agent 身份码 + Onboard/Refine Agent + 团队协作协议 + 组织能力市场
+- **v1.3.1**：Ontology 本体结构 + 并行编排 + Agent 身份码 + Onboard Agent L1（v1.3.2-v1.3.5 规划中：Refine Agent / 团队协作协议 / 组织能力市场）
 - **v1.3.x 后期**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限（v1.3.7）+ 代理网关硬边界（v1.3.8）+ SubAgent 沙箱（v1.3.7）
 - **v2.x**：组织级共享记忆 + 协同层 + **分层模型路由**（Harness 按任务复杂度路由到云端大模型/本地 7B/本地 0.5B，数据主权驱动——敏感数据不出内网）
 - **v3.x-v4.x+**：企业专属小模型精调（`sofagent-model distill` QLoRA）+ 本地推理 + 离线 USB 节点。详见 [ROADMAP · 分层模型架构](./ROADMAP.md#分层模型架构v3x-远景概述)
@@ -1110,12 +1112,9 @@ Action Type = 一个**有身份的变更请求**：携带参数 + 校验 + 权�
 
 ---
 
-## 八、数据层路线建议【草案】（待审阅 · 2026-08-07）
+## 八、数据层路线建议（v1.3.2 转正为正式章节）
 
-> 🚧 **本章为待审阅草案，非正式架构决策**——尚未纳入正式架构约束，不代表 sofagent 已采纳的设计。请读者不要将其作为架构事实引用；审阅确认前其内容可能整体移除或大幅修改。
->
-> ⚠️ 本节约等同于决策草案，尚未纳入正式架构约束，待审阅确认。
-> 本节记录建议与设计理由，不修改任何既有引擎行为。
+> 本节为数据层路线建议——已审阅确认并纳入正式架构讨论，作为后续数据层演进的参考基线。本节记录建议与设计理由，不修改任何既有引擎行为。
 
 ### 8.1 问题：语义层 / 本体该由谁建
 
@@ -1148,9 +1147,9 @@ sofagent 的现有架构**天然已是这种混合结构**，只是还没把"谁
 - **进化引擎加权改造**：经验条目从"纯命中次数"改为"命中次数 × 来源可信度"，`certified` 条目权重视为 ∞（不可被高频非认证条目挤掉）。
 - **巡检联动**：`conflict-check` 增加"认证条目被高频非认证条目反向影响"的告警维度。
 
-### 8.5 待确认的问题
+### 8.5 后续待办的问题
 
 1. 是否将"人工认证压顶"上升为 **A 系列审计规则**（类似 A15 的约束验证），在 commit 时硬拦截反向覆盖？
 2. knowledge/ 自动条目是否**强制带 `certified` 字段**（缺省 = false，不得压顶）？
 3. 此混合路线是否写入 **PHILOSOPHY.md §五 世界模型**，作为"世界模型优先于语言模型"的工程补充？
-4. 若采纳，ARCHITECTURE.md 本节的"待审阅"标记何时转为正式约束（建议随 v1.3.0  hardening 一并转正）？
+4. 本节建议若后续细化为正式实现方案，需在实现前补充实施步骤与迁移影响评估。
