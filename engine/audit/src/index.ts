@@ -1483,7 +1483,8 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
 
   // 扩展规则状态
   if (!results.rules.some((r) => r.number > 11)) {
-    console.log('  扩展规则   未启用（E1 E2 E3 E4，config 中开启）');
+    // v1.3.2 P2-23: E3 已并入 A11（不滥资源），不再单独列出，避免用户误以为存在 E3 规则
+    console.log('  扩展规则   未启用（E1 E2 E4 + A14-A17，config 中开启）');
   }
 
   // 历史拦截统计(loadHistory(500) 是"最近 500 条"截断语义，不是全量统计——

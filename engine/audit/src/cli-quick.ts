@@ -114,7 +114,8 @@ export function generateQuickOutput(
   // 汇总行
   parts.push('');
   if (violationCount === 0 && warnCount === 0) {
-    parts.push(`✅ 全部 ${passCount} 条规则通过${skipCount > 0 ? `（${skipCount} 条跳过）` : ''}`);
+    // v1.3.2 P2-17: 解释 17 条默认 vs 24 条总量，消除「少装了什么」的认知落差
+    parts.push(`✅ 全部 ${passCount} 条默认规则通过（共 24 条，扩展规则用 --ruleset 加载）${skipCount > 0 ? `（${skipCount} 条跳过）` : ''}`);
   } else {
     const summaryParts: string[] = [];
     if (violationCount > 0) summaryParts.push(`${violationCount} 条违规`);
