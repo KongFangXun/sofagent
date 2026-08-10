@@ -551,30 +551,26 @@ export function createForgeDriverBase(config = {}) {
     // 1. auto-commit B/F 的改动
     // 🔴 v1.3.1 P0-2 修复：禁止 `git add -A`——会把队友并行编辑的未提交
     // 规划文档（如 docs/changelog/v1.4/*.md）一起卷进 auto-commit（03a548d5 事故）。
-    // 只 add 本轮 B/F 步骤实际改动的文件（git diff --name-only 检测）。
+    // 🔴 v1.3.1 P0-2 修复增强（run-03 教训）：原修复用 `git diff --name-only HEAD`
+    // 仍会列出所有工作区改动（含队友规划文档），无差别 add 全部。
+    // 正确方案：只 commit B/F worker 的代码领域（engine/ + FORGE/src/ + tools/ + SKILL/），
+    // 排除 docs/changelog/（PM/队友规划领域）和 .workbuddy/（AI 工作记忆）。
     const commitMsg = `FORGE auto-commit: ${stepName} round-${round}`;
     try {
       const { execSync } = await import('child_process');
-      // 检测 B/F 步骤改动了哪些文件（相对上次 commit）
+      // 只检测代码领域的改动文件（排除规划文档 + AI 工作记忆 + FORGE 产物目录）
       const changedFiles = execSync(
-        'git diff --name-only HEAD -- . ":(exclude).workbuddy/**"',
+        'git diff --name-only HEAD -- engine/ FORGE/src/ FORGE/LEDGER.md FORGE/lessons/ tools/ SKILL/ install.sh bootstrap.sh 2>/dev/null',
         { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 },
       ).toString().split('\n').map((s) => s.trim()).filter(Boolean);
-      // 未跟踪的新文件也纳入（git diff --name-only 不含未跟踪文件）
+      // 未跟踪新文件：只纳入代码领域 + FORGE 产物
       const untrackedFiles = execSync(
-        'git ls-files --others --exclude-standard',
+        'git ls-files --others --exclude-standard -- engine/ FORGE/src/ FORGE/LEDGER.md FORGE/lessons/ tools/ SKILL/',
         { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 },
       ).toString().split('\n').map((s) => s.trim()).filter(Boolean);
-      // 只提交 B/F 步骤产物目录 + 明确改动文件；未跟踪文件仅当在改动清单/产物目录内
-      const trackedOnly = changedFiles;
-      if (trackedOnly.length > 0) {
-        execSync(`git add ${trackedOnly.map(quotePath).join(' ')}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
-      }
-      // 未跟踪文件：只提交本轮产物路径（runDir 内已知文件），绝不 add 全部未跟踪
-      // （队友的 docs/changelog/v1.4/*.md 等未跟踪规划文档不能被卷进来）
-      const runDirFiles = untrackedFiles.filter((f) => f.includes('runs/') || f.includes('forge-runs/'));
-      if (runDirFiles.length > 0) {
-        execSync(`git add ${runDirFiles.map(quotePath).join(' ')}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
+      const filesToAdd = [...changedFiles, ...untrackedFiles];
+      if (filesToAdd.length > 0) {
+        execSync(`git add ${filesToAdd.map(quotePath).join(' ')}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
       }
       execSync(`git commit -m "${commitMsg}"`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
     } catch (err) {
