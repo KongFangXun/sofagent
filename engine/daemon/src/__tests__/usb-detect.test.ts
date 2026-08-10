@@ -3,7 +3,7 @@
  * 覆盖：合法导入 / 签名错误 / schema 错误 / 目标已存在 四分支
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -16,28 +16,38 @@ import {
   type FederationConfig,
 } from '../usb-detect';
 
+// v1.3.2 P2-34: 隔离测试 HOME——mock os.homedir() 指向临时目录，
+// 使 applyFederation / loadOrCreateSecretKey 等写 ~/.sofagent/... 的逻辑
+// 全部落在 fakeHome 内，绝不触碰真实 HOME（沙箱环境安全）。
+// 注意：Node 的 os 模块属性不可重定义，vi.spyOn(os,'homedir') 会抛
+// "Cannot redefine property"，必须用 vi.mock('os') + hoisted 变量。
+const homedirMock = vi.hoisted(() => ({ current: '' }));
+vi.mock('os', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('os')>();
+  return {
+    ...actual,
+    homedir: () => homedirMock.current,
+  };
+});
+
 let tmpDir: string;
 let fakeHome: string;
-let secretKeyBackup: string | null = null;
+let savedHome: string | undefined;
 
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'usb-test-'));
   fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'home-test-'));
-  // 备份 ~/.sofagent/usb-secret.key（避免污染用户环境）
-  const keyPath = path.join(os.homedir(), '.sofagent', 'usb-secret.key');
-  if (fs.existsSync(keyPath)) {
-    secretKeyBackup = fs.readFileSync(keyPath, 'utf-8');
-  }
+  homedirMock.current = fakeHome;
+  savedHome = process.env.SOFAGENT_DATA;
+  process.env.SOFAGENT_DATA = tmpDir;
 });
 
 afterEach(() => {
+  homedirMock.current = '';
+  if (savedHome === undefined) delete process.env.SOFAGENT_DATA;
+  else process.env.SOFAGENT_DATA = savedHome;
   fs.rmSync(tmpDir, { recursive: true, force: true });
   fs.rmSync(fakeHome, { recursive: true, force: true });
-  // 恢复密钥
-  if (secretKeyBackup !== null) {
-    const keyPath = path.join(os.homedir(), '.sofagent', 'usb-secret.key');
-    fs.writeFileSync(keyPath, secretKeyBackup, 'utf-8');
-  }
 });
 
 describe('USB 签名 / 验签', () => {
