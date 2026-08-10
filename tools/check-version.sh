@@ -25,6 +25,7 @@
 #  11. package-lock.json 双包版本
 #  12. .ts 文件头注释版本号
 #  13. 全局 npm 二进制版本（sofagent-audit --version）
+#  14. 文档示例版本号占位符（docs/ 下 @sofagent/*@<真实版本> = bug，应用 <LATEST>）
 #
 # 排除目录: docs/changelog/, node_modules/, .git/, dist/
 #
@@ -930,6 +931,34 @@ if [[ -f "${ACTION_FILE}" ]]; then
     echo -e "  ${GREEN}✓${NC} action.yml 中所有 @sofagent/* 引用已锁定到 v${SSOT_VERSION}"
     CHECKS=$((CHECKS + 1))
   fi
+fi
+echo ""
+
+# ── v1.3.1: 文档示例版本号占位符检查（fresh-eyes 数字侦探补盲）──
+# action.yml 必须锁定真实版本号（维度 19），但 docs/ 下的示例代码应该用
+# 占位符（如 <LATEST>）——否则每次 bump 都会漏改文档示例（v1.3.1 发版时
+# github-action.md 漏改就是这个坑）。文档示例里出现真实版本号 = bug。
+echo "=== 19b. 文档示例 @sofagent/* 版本号占位符 ==="
+DOC_PLACEHOLDER_OK=true
+while IFS= read -r md; do
+  # 扫描文档中 @sofagent/xxx@<数字开头版本号>（真实版本号）
+  while IFS=: read -r line_num line_content; do
+    real_ver=$(echo "$line_content" | grep -oE '@sofagent/[a-z-]+@[0-9]+\.[0-9]+\.[0-9]+' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    if [[ -n "$real_ver" ]]; then
+      echo -e "  ${RED}✗${NC} ${md}:${line_num} 文档示例含真实版本号 @sofagent/*@${real_ver}"
+      echo -e "    ${RED}应改为占位符（如 <LATEST>），避免 bump 时漏改${NC}"
+      DOC_PLACEHOLDER_OK=false
+      ERRORS=$((ERRORS + 1))
+    fi
+  done < <(grep -nE '@sofagent/[a-z-]+@[0-9]' "$md" 2>/dev/null || true)
+done < <(find "${PROJECT_ROOT}/docs" \
+  -name '*.md' \
+  -not -path '*/archive/*' \
+  -not -path '*/changelog/*' \
+  -type f 2>/dev/null || true)
+if $DOC_PLACEHOLDER_OK; then
+  echo -e "  ${GREEN}✓${NC} 文档示例无真实版本号（均用占位符或已排除）"
+  CHECKS=$((CHECKS + 1))
 fi
 echo ""
 
