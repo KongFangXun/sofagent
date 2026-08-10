@@ -372,4 +372,18 @@ export const TOOLS: ToolDef[] = [
       },
     },
   },
+  {
+    // v1.3.1 (交付 9)：Benchmark 评测
+    name: 'evaluate',
+    description: 'Benchmark 评测（v1.3.1 交付 9）——传 benchmark_id 触发隔离评测（statement/rubric 物理分离 + Test Agent 强制 read-only，评分 0..100 写入 HMAC 链 evaluation-log）；传 query:true 查询评测日志。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        benchmark_id: { type: 'string', description: 'Benchmark ID（必填）' },
+        case_id: { type: 'string', description: 'Case ID（缺省 = 评测全部 cases）' },
+        query: { type: 'boolean', description: '查询模式（true = 只查日志不触发新评测）' },
+      },
+      required: ['benchmark_id'],
+    },
+  },
 ];

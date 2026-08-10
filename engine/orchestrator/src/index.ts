@@ -184,6 +184,44 @@ export type {
   JudgeVerdict,
 } from './loop-agent/judge';
 
+// v1.3.1 交付 9：Benchmark 评测体系（题库设计 / 隔离评测 / HMAC 链日志）
+export {
+  createBenchmark,
+  addCase,
+  calibrateCase,
+  freezeBenchmark,
+  writeBenchmarkLayout,
+  readBenchmarkLayout,
+  benchmarksRoot,
+  serializeBenchmarkConfig,
+  parseBenchmarkConfig,
+} from './benchmark/benchmark-designer';
+export type {
+  BenchmarkDefinition,
+  BenchmarkCase,
+  CalibrationRecord,
+  CreateBenchmarkOptions,
+  Difficulty,
+  ParsedBenchmarkConfig,
+} from './benchmark/benchmark-designer';
+export { evaluateCase, defaultScoringFn, DEFAULT_EVALUATE_TIMEOUT_MS } from './benchmark/case-evaluator';
+export type {
+  EvaluateCaseInput,
+  AgentExecutionContext,
+  CaseEvaluation,
+  EvaluationFailureCode,
+} from './benchmark/case-evaluator';
+export {
+  appendEvaluationRecord,
+  readEvaluationLog,
+  verifyEvaluationChain,
+  getEvaluationLogPath,
+} from './benchmark/evaluation-log';
+export type {
+  EvaluationLogInput,
+  EvaluationLogRecord,
+} from './benchmark/evaluation-log';
+
 // Conflict Resolver（v1.2.3 · merge 文本冲突仲裁）
 export {
   resolveWorktreeConflict,
