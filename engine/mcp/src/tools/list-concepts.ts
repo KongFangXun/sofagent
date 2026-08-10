@@ -1,5 +1,5 @@
 // ============================================================
-// list-concepts.ts · MCP tool：列出 knowledge/concepts/ 下所有 concept（v1.3.0 新增）
+// list-concepts.ts · MCP tool：列出 knowledge/concepts/ 下所有 concept（v1.3.1 新增）
 // ============================================================
 //
 // 照抄 mcp-server.ts toolListEntities 的实现模式，

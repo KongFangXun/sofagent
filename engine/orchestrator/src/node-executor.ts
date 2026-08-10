@@ -1,5 +1,5 @@
 // ============================================================
-// node-executor.ts · 企业节点执行器（v1.3.0 功能④ 激活链 Phase 3 前半）
+// node-executor.ts · 企业节点执行器（v1.3.1 功能④ 激活链 Phase 3 前半）
 //
 // 包装 createReactAgent + 企业 Agent 配置，为 dag-runner 的
 // run-enterprise 模式提供逐节点执行能力。

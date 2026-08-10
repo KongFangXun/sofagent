@@ -1,7 +1,7 @@
 // ============================================================
 // permission/checker.ts · 权限检查逻辑
-// v1.3.0 新增
-// v1.3.0 RegExp 构造加 try/catch——非法正则（如 `finance/(unclosed`）
+// v1.3.1 新增
+// v1.3.1 RegExp 构造加 try/catch——非法正则（如 `finance/(unclosed`）
 //   不再让审计进程崩溃（此前 new RegExp(用户串) 无保护 = 权限配置 DoS：
 //   攻击者写一个语法错误的正则就能让整个审计停摆且 commit 照过）。
 //   构造失败时 WARN 并跳过该条规则，不崩溃进程。

@@ -1,5 +1,5 @@
 // ============================================================
-// decision-chain.ts · 决策日志链完整性校验（v1.3.0 交付 6 T02）
+// decision-chain.ts · 决策日志链完整性校验（v1.3.1 交付 6 T02）
 //
 // mirror core/audit-history.ts 的 checkHistoryChainDetailed 范式——
 // 校验 decision-log.jsonl 的 HMAC 哈希链，区分三类异常：

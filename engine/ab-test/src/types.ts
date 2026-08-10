@@ -1,7 +1,7 @@
 // ============================================================
 // ab-test/types.ts · Sub Agent A/B 自进化类型定义
-// v1.3.0 新增
-// v1.3.0：迁移至 @sofagent/ab-test
+// v1.3.1 新增
+// v1.3.1：迁移至 @sofagent/ab-test
 // ============================================================
 
 import type { EvalBreakdown } from '@sofagent/eval';
