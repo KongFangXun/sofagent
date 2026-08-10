@@ -273,7 +273,7 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit --verify-chain                   审计链完整性校验');
       console.log('  sofagent-audit --verify-commit <hash>           检查 commit 审计记录');
       console.log('  sofagent-audit --regression <dir>               回归验证');
-      console.log('  sofagent-audit --install-hook                   安装 commit-msg hook');
+      console.log('  sofagent-audit --install-hook                   安装 commit-msg + post-commit hook');
       console.log('  sofagent-audit --revert <snapshot-sha>              恢复到指定快照');
       console.log('  sofagent-audit --timeline [N]                      查看快照时间线');
       console.log('  sofagent-audit ontology view                        本体人类可读视图');
@@ -300,7 +300,7 @@ function parseArgs(argv: string[]): Args {
         console.log('  --silent           静默模式');
         console.log('  --ci               CI 模式（= --silent，CI 友好输出，无交互提示）');
         console.log('  --json             JSON 输出');
-        console.log('  --install-hook     安装 commit-msg hook');
+        console.log('  --install-hook     安装 commit-msg + post-commit hook');
         console.log('  --root-cause       根因分析');
         console.log('  --verify-chain     审计链完整性校验');
         console.log('  --verify-commit    检查 commit 审计记录');
@@ -345,9 +345,12 @@ function parseArgs(argv: string[]): Args {
 }
 
 /**
- * 安装 git commit-msg hook
- * 从 cwd 往上查找 .git 目录，将 hooks/commit-msg 模板复制到 .git/hooks/
+ * 安装 git commit-msg + post-commit hook
+ * 从 cwd 往上查找 .git 目录，将 hooks/commit-msg 与 hooks/post-commit 模板复制到 .git/hooks/
  * 迁移：如果 .git/hooks/pre-commit 含 sofagent 标识，自动移除旧 hook
+ *
+ * v1.3.2 P0-RC3: hook 安装清单与 --init 对齐——installHook() 也安装 post-commit。
+ * 老用户 `sofagent-audit --install-hook` 升级时不再 miss post-commit（--no-verify 绕过的唯一防线）。
  */
 function installHook(): void {
   // 从 cwd 往上查找 .git 目录
@@ -373,12 +376,13 @@ function installHook(): void {
     exit(1);
   }
 
-  // 定位 commit-msg 模板
-  // dist/index.js 编译后，模板在 ../../hooks/commit-msg（相对于 dist/）
-  const hookTemplate = join(__dirname, '..', 'hooks', 'commit-msg');
+  // 定位 hook 模板（dist/index.js 编译后，模板在 ../../hooks/ 相对于 dist/）
+  const hooksTemplateDir = join(__dirname, '..', 'hooks');
+  const commitMsgTemplate = join(hooksTemplateDir, 'commit-msg');
+  const postCommitTemplate = join(hooksTemplateDir, 'post-commit');
 
-  if (!existsSync(hookTemplate)) {
-    console.error(`❌ sofagent 内部错误：commit-msg 模板文件缺失——${hookTemplate}`);
+  if (!existsSync(commitMsgTemplate) || !existsSync(postCommitTemplate)) {
+    console.error(`❌ sofagent 内部错误：hook 模板文件缺失——${commitMsgTemplate} / ${postCommitTemplate}`);
     exit(1);
   }
 
@@ -402,27 +406,32 @@ function installHook(): void {
     }
   }
 
-  const destPath = join(hooksDir, 'commit-msg');
-
-  // v1.3.9: 覆盖前备份已有 hook（如果有）
-  if (existsSync(destPath)) {
-    const backupPath = join(hooksDir, 'commit-msg.bak');
-    try {
-      const existingContent = readFileSync(destPath, 'utf-8');
-      writeFileSync(backupPath, existingContent);
-      console.log(`  → 已备份旧 commit-msg hook 到 ${backupPath}`);
-    } catch (e) {
-      console.warn('[sofagent] 警告：备份旧 hook 失败，继续覆盖', e instanceof Error ? e.message : String(e));
+  // 安装单个 hook：备份旧文件 → 写入模板 → chmod 755
+  // v1.3.2 P0-RC3: commit-msg 与 post-commit 共用此逻辑，保证两个入口（--init / --install-hook）安装清单一致
+  function installOneHook(hookName: string, templatePath: string, destName: string): void {
+    const destPath = join(hooksDir, destName);
+    // v1.3.9: 覆盖前备份已有 hook（如果有）
+    if (existsSync(destPath)) {
+      const backupPath = join(hooksDir, `${destName}.bak`);
+      try {
+        const existingContent = readFileSync(destPath, 'utf-8');
+        writeFileSync(backupPath, existingContent);
+        console.log(`  → 已备份旧 ${destName} hook 到 ${backupPath}`);
+      } catch (e) {
+        console.warn('[sofagent] 警告：备份旧 hook 失败，继续覆盖', e instanceof Error ? e.message : String(e));
+      }
     }
+
+    const templateContent = readFileSync(templatePath, 'utf-8');
+    writeFileSync(destPath, templateContent);
+    chmodSync(destPath, 0o755);
+    console.log(`✅ ${hookName} hook 已安装到 ${destPath}`);
   }
 
-  // 读取模板并写入
-  const templateContent = readFileSync(hookTemplate, 'utf-8');
-  writeFileSync(destPath, templateContent);
-  chmodSync(destPath, 0o755);
-
-  console.log(`✅ commit-msg hook 已安装到 ${destPath}`);
-  console.log('   每次 git commit 时会自动运行 sofagent-audit 检查。');
+  installOneHook('commit-msg', commitMsgTemplate, 'commit-msg');
+  // v1.3.2 P0-RC3: 补装 post-commit（--no-verify 绕过检测）
+  installOneHook('post-commit', postCommitTemplate, 'post-commit');
+  console.log('   每次 git commit 时会自动运行 sofagent-audit 检查；post-commit 在提交后对账 --no-verify 绕过。');
   exit(0);
 }
 

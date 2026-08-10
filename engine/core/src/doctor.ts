@@ -241,13 +241,28 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
       repairHint('sofagent-audit --install-hook');
     }
 
-    // post-commit：仅检查存在性，不检查内容
+    // post-commit：检查存在性 + 内容是否含审计对账逻辑（v1.3.2 P0-RC3 加强）
     const postCommitPath = join(gitDir, 'hooks', 'post-commit');
     if (existsSync(postCommitPath)) {
-      ok('post-commit hook 已安装');
+      try {
+        const pcContent = readFileSync(postCommitPath, 'utf-8');
+        const hasAuditLogic = pcContent.includes('sofagent-audit')
+          || pcContent.includes('HISTORY_FILE')
+          || pcContent.includes('verify-commit')
+          || pcContent.includes('parentSha');
+        if (hasAuditLogic) {
+          ok('post-commit hook 已安装并包含审计对账逻辑');
+        } else {
+          warn('post-commit hook 存在但不包含 sofagent 审计对账逻辑（可能是占坑 hook）');
+          repairHint('sofagent-audit --install-hook');
+        }
+      } catch (err) {
+        warn(`post-commit hook 存在但无法读取: ${err instanceof Error ? err.message : String(err)}`);
+        repairHint(`检查文件权限（chmod 755 ${postCommitPath}）`);
+      }
     } else {
-      warn('post-commit hook 未安装——绕过检测不可用。运行 sofagent-audit --init 自动安装');
-      repairHint('sofagent-audit --init');
+      warn('post-commit hook 未安装——绕过检测不可用。运行 sofagent-audit --init 或 --install-hook 自动安装');
+      repairHint('sofagent-audit --install-hook');
     }
   } catch (err) {
     info(`非 git 仓库，跳过 hook 检查（${err instanceof Error ? err.message : String(err)}）`);
