@@ -62,7 +62,7 @@ describe('buildConstrainedSystemPrompt', () => {
     expect(result).toContain('# Knowledge 1');
   });
 
-  it('knowledge top-5 截断', () => {
+  it('knowledge 渐进加载（v1.3.1 交付 14）：热点 ≤2 全文 + 索引 ≤9 条', () => {
     const kd = path.join(tmpDir, '.sofagent', 'knowledge');
     fs.mkdirSync(kd, { recursive: true });
     // 用大时间跨度确保不同的 mtime
@@ -74,12 +74,27 @@ describe('buildConstrainedSystemPrompt', () => {
       fs.utimesSync(p, ts, ts);
     }
     const result = buildConstrainedSystemPrompt(tmpDir);
-    // 只取前 5 个（其余 5 个不会出现）
-    let count = 0;
+
+    // 1. 热点全文 ≤2 篇——热点段内出现的 marker ≤2
+    const hotSection = result.split('当前任务热点')[1]?.split('知识索引')[0] ?? '';
+    let hotCount = 0;
     for (let i = 1; i <= 10; i++) {
-      if (result.includes(`# Knowledge ${i}`)) count++;
+      if (hotSection.includes(`# Knowledge ${i}`)) hotCount++;
     }
-    expect(count).toBe(5);
+    expect(hotCount).toBeLessThanOrEqual(2);
+
+    // 2. 索引条数 ≤9（文件名 + 摘要，Agent 按需 read_file 拉全文）
+    const indexSection = result.split('知识索引')[1] ?? '';
+    const indexLines = indexSection.split('\n').filter((l) => l.startsWith('- '));
+    expect(indexLines.length).toBeLessThanOrEqual(9);
+
+    // 3. 渐进加载语义：索引 9 条 + 热点全文 2 篇 → 至少 9 个文件可寻址（文件名出现），
+    //    但只有 ≤2 篇以全文形式注入
+    let addressable = 0;
+    for (let i = 1; i <= 10; i++) {
+      if (result.includes(`k${i}`)) addressable++;
+    }
+    expect(addressable).toBeGreaterThanOrEqual(9);
   });
 
   it('knowledge 每篇截断 2000 字符', () => {

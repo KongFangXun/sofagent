@@ -5,6 +5,13 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+// v1.3.1 交付 14：L4 经验层渐进加载增强——知识索引构建（文件名 + frontmatter 摘要 + 首行）
+import {
+  buildKnowledgeIndex,
+  formatKnowledgeIndex,
+  topKnowledgeByMtime,
+  INDEX_ENTRY_MAX_CHARS,
+} from './knowledge-index';
 
 // ============================================================
 // 辅助函数
@@ -55,41 +62,6 @@ function listCustomOverrides(dir: string, maxFiles = 4): string[] {
   return results;
 }
 
-/**
- * 扫描知识库目录，按 mtime 降序取前 N 个 .md 文件
- * 每篇截取前 2000 字符
- */
-function listKnowledgeTopN(dir: string, n: number): string[] {
-  const results: string[] = [];
-  try {
-    if (!fs.existsSync(dir)) return results;
-
-    const files = fs.readdirSync(dir)
-      .filter(f => f.endsWith('.md'))
-      .map(f => path.join(dir, f))
-      .filter(f => {
-        try { return fs.statSync(f).isFile(); } catch { return false; }
-      })
-      .sort((a, b) => {
-        try {
-          return fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs;
-        } catch {
-          return 0;
-        }
-      });
-
-    for (let i = 0; i < Math.min(files.length, n); i++) {
-      const content = tryRead(files[i]!);
-      if (content) {
-        results.push(content.slice(0, 2000));
-      }
-    }
-  } catch {
-    // 目录不存在等异常静默跳过
-  }
-  return results;
-}
-
 // ============================================================
 // 四层约束加载链
 // ============================================================
@@ -118,6 +90,7 @@ export function buildConstrainedSystemPrompt(
 ): string {
   const skillDir = path.join(projectRoot, opts?.skillDir ?? '.sofagent');
   const parts: string[] = [];
+  const MAX_PARTS = 20;
 
   // 1. 宪法层：SKILL.md
   const skillContent = tryRead(path.join(skillDir, 'SKILL.md'));
@@ -139,32 +112,56 @@ export function buildConstrainedSystemPrompt(
     parts.push(`# 用户自定义规则（custom/）\n${rule}`);
   }
 
-  // 4a. knowledge/shared/ top-3（跨设备共享经验，优先注入）
-  const sharedDir = path.join(skillDir, 'knowledge', 'shared');
-  const sharedKnowledge = listKnowledgeTopN(sharedDir, 3);
-
-  // 4a+. v1.1.8 新增：联邦知识注入（第 3 层——低于 SKILL.md 宪法层，
-  // 高于本地 knowledge/）。来源：knowledge/federation/ 目录
-  // （daemon 联邦查询落盘的 peer 知识快照）。联邦内容是外部来源，
-  // 强制 <untrusted> 包裹（prompt 注入防线层 1，与 trust 分级层 5 联动）。
-  const federationDir = path.join(skillDir, 'knowledge', 'federation');
-  const federationKnowledge = listKnowledgeTopN(federationDir, 3).map(
-    (content) => `<untrusted source="federation">\n${content}\n</untrusted>`,
-  );
-
-  // 4b. knowledge/ top-5（本机知识）
+  // 4. 知识库：knowledge/（v1.3.1 交付 14：渐进加载增强——「热点全文 + 索引」）
+  //    热点 2 篇：全文注入（mtime 最新，保持现有注入语义）；
+  //    索引 9 条：只注入文件名 + frontmatter 摘要 + 首行（每条 ≤150 字符），
+  //    需要完整内容时用 read_file 按文件名拉全文。
   const knowledgeDir = path.join(skillDir, 'knowledge');
-  const localKnowledge = listKnowledgeTopN(knowledgeDir, 5);
+  const knowledgeParts: string[] = [];
 
-  // 合并去重（按内容前 100 字符），shared + federation 排在前（联邦低于
-  // 宪法层但优先于本地 knowledge/）
-  const MAX_PARTS = 20;
-  const seen = new Set<string>();
-  for (const file of [...sharedKnowledge, ...federationKnowledge, ...localKnowledge]) {
-    const key = file.slice(0, 100);
-    if (!seen.has(key) && parts.length < MAX_PARTS) {
-      parts.push(file);
-      seen.add(key);
+  // 4a. 热点 2 篇全文（跨 shared/federation/local 按 mtime 最新）
+  const hotEntries = topKnowledgeByMtime(knowledgeDir, 2);
+  for (const entry of hotEntries) {
+    const filePath = path.join(
+      entry.kind === 'shared'
+        ? path.join(knowledgeDir, 'shared')
+        : entry.kind === 'federation'
+          ? path.join(knowledgeDir, 'federation')
+          : knowledgeDir,
+      `${entry.fileName}.md`,
+    );
+    let content = tryRead(filePath) ?? '';
+    content = content.slice(0, 2000); // 每篇截取前 2000 字符（保持现有行为）
+    if (!content) continue;
+    // 联邦来源强制 <untrusted> 包裹（prompt 注入防线层 1，与 trust 分级联动）
+    knowledgeParts.push(
+      entry.kind === 'federation'
+        ? `<untrusted source="federation">\n${content}\n</untrusted>`
+        : content,
+    );
+  }
+
+  // 4b. 知识索引（shared 3 + federation 3 + local 3 = 9 条摘要）
+  const indexEntries = buildKnowledgeIndex(knowledgeDir);
+  const indexText = formatKnowledgeIndex(indexEntries, 9);
+
+  // 4c. 组装知识库段——热点全文在前，索引在后（总注入量从 ~4000 降到 ~1500 token）。
+  //     无任何知识内容时整个知识库段不注入（保持「无约束目录返回空串」契约）。
+  const hasKnowledgeContent = knowledgeParts.length > 0 || indexText.length > 0;
+  if (hasKnowledgeContent) {
+    const knowledgeSection = [
+      '# 知识库（L4 经验层）',
+      '## 当前任务热点（全文注入，top-2 by mtime）',
+      ...knowledgeParts,
+      '## 知识索引（按需读取）',
+      indexText
+        ? `${indexText}\n\n需要完整内容时用 read_file 读取 knowledge/ 下对应文件。`
+        : '（暂无知识索引）',
+    ].filter((p) => p.length > 0);
+    for (const part of knowledgeSection) {
+      if (parts.length < MAX_PARTS) {
+        parts.push(part);
+      }
     }
   }
 
