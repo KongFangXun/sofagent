@@ -136,6 +136,22 @@ export type { MergedKnowledge } from './federation/merge';
 export { withOfflineFallback } from './federation/offline-fallback';
 export type { FederationAuditEntry, AuditWriter } from './federation/offline-fallback';
 
+// v1.3.1 交付 7：跨设备审计轨迹聚合（按 agentId 合并 + HMAC 验签 + trust 裁决）
+export {
+  mergeAuditTrails,
+  buildAuditTrailByAgent,
+  verifyAuditEntryHmac,
+  auditMergeKey,
+  readLocalAuditHistory,
+} from './federation/audit-merge';
+export type {
+  DeviceAuditRecord,
+  MergedAuditEntry,
+  EntryHmacStatus,
+} from './federation/audit-merge';
+export { runAuditTrailInspector, aggregateAuditTrails } from './inspectors/audit-trail';
+export type { AuditTrailInspectorOptions } from './inspectors/audit-trail';
+
 // v1.2.5 §8.2 daemon 可靠性——推送重试 + 健康自检 + outbox 生命周期
 export { withRetry, withRetryBestEffort, computeBackoff } from './with-retry';
 export type { RetryOptions } from './with-retry';
