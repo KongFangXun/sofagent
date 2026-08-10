@@ -228,7 +228,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
   "verdict": "WARN",
   "fileCount": 3,
   "triggeredRules": [
-    { "name": "A3 不改越界", "status": "WARN", "ruleClass": "业务底线" }
+    { "name": "A3 不改越界", "status": "WARN", "ruleClass": "能力拐杖" }
   ],
   "allRules": [
     { "name": "A1 不碰敏感", "status": "PASS" },
@@ -262,7 +262,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 |------|------|:--:|------|
 | A1 不碰敏感 | `.env` / `*.pem` / `id_rsa` / 密钥文件被修改 | FAIL | 业务底线 |
 | A2 不泄密钥 | 代码中出现 API Key（OpenAI / Anthropic / DeepSeek）/ Token / Password 模式 | FAIL | 业务底线 |
-| A3 不改越界 | 修改文件路径与任务描述不匹配 | WARN | 业务底线 |
+| A3 不改越界 | 修改文件路径与任务描述不匹配 | WARN | 能力拐杖 |
 | A4 不删配置 | 配置文件被删除 | FAIL | 业务底线 |
 | A5 不瞒真相 | commit message 为空或纯占位符（fix/update/wip 等） | WARN | 业务底线 |
 | A6 不坏构建 | 构建配置文件异常改动 | WARN | 能力拐杖 |
