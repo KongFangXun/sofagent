@@ -32,6 +32,9 @@ import { listCapabilities } from './tools/report-tools';
 import { queryDataSovereigntyReport } from './tools/data-sovereignty-report';
 import { createEntity } from './tools/create-entity';
 import { createConcept } from './tools/create-concept';
+import { updateEntity } from './tools/update-entity';
+import { deleteEntity } from './tools/delete-entity';
+import { deleteConcept } from './tools/delete-concept';
 import { validateOntology } from './tools/validate-ontology';
 import { evaluateOutput } from './tools/evaluate-output';
 import { optimizeSkill } from './tools/optimize-skill';
@@ -184,6 +187,9 @@ class McpServer {
         case 'data_sovereignty_report': { try { const r = queryDataSovereigntyReport({ date: args.date as string | undefined }); this.sendTool(id, r); } catch (e) { this.sendTool(id, { text: `[sofagent] 数据主权审计查询失败：${e instanceof Error ? e.message : String(e)}`, data: { ok: false } }); } break; }
         case 'create_entity': { if (!args.name || !args.domain || !args.content) { this.sendError(id, -32602, 'Missing required argument: name, domain, and content are required'); break; } const r = createEntity({ name: args.name as string, domain: args.domain as string, content: args.content as string, ...(args.relations ? { relations: args.relations as string } : {}) }); this.sendTool(id, r, r.data.isError); break; }
         case 'create_concept': { if (!args.name || !args.content) { this.sendError(id, -32602, 'Missing required argument: name and content are required'); break; } const r = createConcept({ name: args.name as string, content: args.content as string }); this.sendTool(id, r, r.data.isError); break; }
+        case 'update_entity': { if (!args.name) { this.sendError(id, -32602, 'Missing required argument: name is required'); break; } const ur = updateEntity({ name: args.name as string, ...(args.newName ? { newName: args.newName as string } : {}), ...(args.domain !== undefined ? { domain: args.domain as string } : {}), ...(args.description !== undefined ? { description: args.description as string } : {}), ...(args.relations !== undefined ? { relations: args.relations as string } : {}), ...(args.content !== undefined ? { content: args.content as string } : {}) }); this.sendTool(id, ur, ur.data.isError); break; }
+        case 'delete_entity': { if (!args.name) { this.sendError(id, -32602, 'Missing required argument: name is required'); break; } const dr = deleteEntity({ name: args.name as string, confirmed: args.confirmed === true }); this.sendTool(id, dr, dr.data.isError); break; }
+        case 'delete_concept': { if (!args.name) { this.sendError(id, -32602, 'Missing required argument: name is required'); break; } const cr = deleteConcept({ name: args.name as string, confirmed: args.confirmed === true }); this.sendTool(id, cr, cr.data.isError); break; }
         case 'validate_ontology': { this.sendTool(id, validateOntology({ ...(args.fix !== undefined ? { fix: args.fix as boolean } : {}) })); break; }
         case 'evaluate_output': { this.sendTool(id, await evaluateOutput({ ...(args.golden_set_path ? { golden_set_path: args.golden_set_path as string } : {}), ...(args.verbose !== undefined ? { verbose: args.verbose as boolean } : {}) })); break; }
         case 'optimize_skill': { if (!args.skill_path) { this.sendError(id, -32602, 'Missing required argument: skill_path'); break; } this.sendTool(id, optimizeSkill({ skill_path: args.skill_path as string, ...(args.check_only !== undefined ? { check_only: args.check_only as boolean } : {}) })); break; }
