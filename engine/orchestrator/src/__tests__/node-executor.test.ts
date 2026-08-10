@@ -53,6 +53,7 @@ describe('node-executor', () => {
   });
 
   describe('executeNode - 降级模式', () => {
+    // v1.3.2 P2-33: 显式 testTimeout（20s）——全量并行负载下 5s 默认超时偶发失败（单跑通过）。
     it('LLM 不可用时降级执行并返回模拟输出', async () => {
       const node: WorkflowNode = {
         id: 'test-node',
@@ -85,10 +86,11 @@ describe('node-executor', () => {
       expect(result.output).toContain('降级执行');
       expect(result.agentName).toBe('test-agent');
       expect(result.durationMs).toBeGreaterThanOrEqual(0);
-    });
+    }, 20000);
   });
 
   describe('executeNode - mock LLM', () => {
+    // v1.3.2 P2-33: 显式 testTimeout（20s）——全量并行负载下 5s 默认超时偶发失败（单跑通过）。
     it('注入 mock createReactAgent 后正常执行', async () => {
       const node: WorkflowNode = {
         id: 'mock-node',
@@ -130,7 +132,7 @@ describe('node-executor', () => {
 
       expect(result.success).toBe(true);
       expect(result.output).toBe('Mock 执行完成');
-    });
+    }, 20000);
 
     it('LLM 抛异常时返回 failure', async () => {
       const node: WorkflowNode = {
@@ -171,6 +173,6 @@ describe('node-executor', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('LLM 超时');
-    });
+    }, 20000);
   });
 });
