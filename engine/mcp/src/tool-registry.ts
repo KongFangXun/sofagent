@@ -184,6 +184,49 @@ export const TOOLS: ToolDef[] = [
     },
   },
   {
+    // v1.3.1 (交付 5)：Ontology CRUD 补全——字段级更新
+    name: 'update_entity',
+    description: '字段级更新 entity 页（knowledge/entities/<name>.md，v1.3.1 交付 5）——只改传入字段（domain/description/relations/content/newName），保留其余 frontmatter 与正文，updated_at 自动刷新。写入前跑 D1-D5 数据审计，FAIL 时拒绝写入。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: '现有 entity 名称（不含 .md 后缀，定位目标文件）' },
+        newName: { type: 'string', description: '可选：改名（新名称，不含 .md 后缀）' },
+        domain: { type: 'string', description: '可选：改业务域归属' },
+        description: { type: 'string', description: '可选：改 entity 简述' },
+        relations: { type: 'string', description: '可选：JSON 格式关联关系（belongs_to / has_many），整体替换 relations' },
+        content: { type: 'string', description: '可选：正文内容（Markdown body，不含 frontmatter；省略 = 保留原正文）' },
+      },
+      required: ['name'],
+    },
+  },
+  {
+    // v1.3.1 (交付 5)：Ontology CRUD 补全——删除 entity，强制人审
+    name: 'delete_entity',
+    description: '删除 entity 页（knowledge/entities/<name>.md，v1.3.1 交付 5）——破坏性操作，强制人审确认：必须显式传 confirmed:true 才执行，否则只返回提示。删除全程 D1-D5 审计留痕。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'entity 名称（不含 .md 后缀）' },
+        confirmed: { type: 'boolean', description: '人工确认标志——必须显式 true 才执行删除' },
+      },
+      required: ['name', 'confirmed'],
+    },
+  },
+  {
+    // v1.3.1 (交付 5)：Ontology CRUD 补全——删除 concept，强制人审
+    name: 'delete_concept',
+    description: '删除 concept 页（knowledge/concepts/<name>.md，v1.3.1 交付 5）——破坏性操作，强制人审确认：必须显式传 confirmed:true 才执行，否则只返回提示。删除全程 D1-D5 审计留痕。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'concept 名称（不含 .md 后缀）' },
+        confirmed: { type: 'boolean', description: '人工确认标志——必须显式 true 才执行删除' },
+      },
+      required: ['name', 'confirmed'],
+    },
+  },
+  {
     name: 'validate_ontology',
     description: '检查本体结构完整性——实体数、关联断裂、孤儿实体、死链。复用 ontology merge-engine 逻辑。',
     inputSchema: {
