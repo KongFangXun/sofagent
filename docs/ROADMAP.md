@@ -5,19 +5,22 @@
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
-## 现在在哪：v1.3.1（已发布 · 2026-08-09）
+## 现在在哪：v1.3.1（已交付 · 2026-08-10）
 
-> **v1.3.0 交付内容**：
-> **🛡️ 运行时审计最小闭环**——wrapToolCall middleware 包 createReactAgent，tool-gate 规则从静态 gate 升级为运行时动态拦截 + 审计日志
-> **🧠 决策审计（意图层审计 MVP）**——emitDecision + HMAC 链 + kind-wise back 查询，从「行为问责」迈向「意图问责」
-> **🔗 激活链 Phase 4 收尾（SUSTAIN）**——全链路验证 + FDE SKILL.md activate 引导
-> **📋 list_rules MCP tool**——规则透明化（只读列出，不暴露实现）
-> **🔧 双规则系统统一**——engine/rules（tool-level）与 engine/audit（git-diff）统一为单一规则引擎
-> **📦 外部记忆后端 Path A**——TencentDB-Agent-Memory MCP connector（弱依赖、缺省关闭、零架构改造，MA1-MA7）
-> **🔧 进化链路写保护**——atomicWriteWithMergeSync（mtime 检测 + 合并写）
-> **🔓 运行时审计日志按 git 仓库隔离**——data/audit/runtime/<repo-hash>/runtime-audit.jsonl
+> **v1.3.1 交付内容**：
+> **🧠 Ontology 运行时层（P0）**——Action 注册表 + 执行前 validator 三态（PASS/WARN/strict-FAIL）+ CORE-OBJ/ACT/LNK/STM 四类内核契约 + entity/concept/relations JSON Schema 定稿（零依赖手写校验器，v1.3.6 注册接口复用）+ wrapToolsWithGate 可选集成（不传 = 零变化）
+> **🔀 并行编排 + MergeQueue**——ParallelScheduler 波次并发分发（worktree 隔离）+ 波次审计卡关（全 PASS 合并/任一 FAIL 丢弃）+ MergeQueue 并发合并（到达序 yield + 原始序重排 + 配对保证）；并行是可选路径，默认串行
+> **⏸️ Durable Execution L1+L2**——checkpoint 续跑（daemon 重启自动恢复）+ 副作用登记簿幂等查重（JSONL append-only）
+> **🚀 Onboard Agent L1（P0）**——activate→run→judge→fix→re-run 循环（crash/error/超时三态，不判语义）+ MCP loop_debug
+> **📊 Benchmark 评测体系**——题库设计 + Pilot 校准 + Freeze + 隔离执行（statement/rubric 物理分离 + Test Agent 强制 read-only）+ 0..100 评分 + HMAC 链 evaluation-log + MCP evaluate
+> **🆔 Agent 身份码 Ed25519**——签发/验证完整版 + 本地身份注册表 + MCP agent_identity
+> **🔒 工具审批四模式**——allow-with-audit / deny-all / read-only / always-ask（保守默认拒绝 + 审批继承 + approval_decision 审计）
+> **📜 LLM 调用级 Trace**——全量追踪（HMAC 链 + 白名单脱敏）
+> **🔄 错误处理升级**——stop_reason 六值分类 + 指数退避（auth 永不重试）+ 工具失败收敛为消息
+> **📚 L4 经验层渐进加载**——热点全文 2 + 索引 9（注入量 ~4000→~1500 token）
+> **🏛️ 国标对齐 GB/T 48000.3-2026**——条款映射基线 + 审计维度 opt-in（`--gb48000`，默认不影响行为）
 >
-> 📖 [v1.3.0 开发日志](./changelog/v1.3/v1.3.0.md) · 完整版本历史见 [CHANGELOG](../CHANGELOG.md) 和 [迭代历程](#迭代历程)
+> 📖 [v1.3.1 开发日志](./changelog/v1.3/v1.3.1.md) · 完整版本历史见 [CHANGELOG](../CHANGELOG.md) 和 [迭代历程](#迭代历程)
 
 > ✅ **企业采购阻塞项 · Webhook 推送已于 v1.2.1 交付**：v1.1.6 接通 webhook **PASS/WARN/FAIL 三态推送**，v1.2.1 补齐企业协同平台（飞书/钉钉/企微）完整 Webhook 推送能力（见 SECURITY.md「审计结果推送」）。采购阻塞项已解除。
 
@@ -29,6 +32,7 @@
 
 | 版本 | 核心交付 |
 |------|------|
+| **v1.3.1** | 🧠 Ontology 运行时层（Action 注册表 + validator 三态 + Schema 定稿）+ 🔀 并行编排（ParallelScheduler + 波次审计卡关 + MergeQueue）+ ⏸️ Durable Execution（checkpoint 续跑 + 副作用幂等）+ 🆔 Agent 身份码 Ed25519 + 🚀 Onboard Agent L1 + 📊 Benchmark 评测（隔离执行 + HMAC 链）+ 🔒 工具审批四模式 + 📜 LLM 调用级 Trace + 🔄 错误处理（stop_reason + 退避 + 收敛）+ 📚 L4 渐进加载 + 🏛️ 国标对齐 GB/T 48000.3-2026 |
 | **v1.3.0** | 🛡️ 运行时审计最小闭环（wrapToolCall middleware + tool-gate 动态拦截 + 审计日志）+ 🧠 决策审计（emitDecision + HMAC 链 + kind-wise back）+ 🔗 激活链 Phase 4 收尾（SUSTAIN）+ 📋 list_rules MCP tool + 🔧 双规则系统统一（ruleType）+ 📦 外部记忆后端 Path A（MA1-MA7）+ 🔧 进化链路写保护 + 🔓 运行时审计日志按 git 仓库隔离 + 🔧 危险操作 HITL 钩子 |
 | **v1.2.9** | 🐛 FORGE Driver 短任务化（12 独立 worker 各跑 1 视角）+ ⏸️ Checkpoint/Resume worker 级断点 + 🏠 PM2 守护进程 + 🔗 激活链 Phase 3 后半（HITL + 审计 + 异常处理）+ 📐 约束层叙事重构 + 🚪 三个入口产品（npx CLI + 规则市场 + GitHub Action） |
 | **v1.2.8** | 记忆分层 + 定时任务 + 🔗 激活链 Phase 3 前半（dag-runner 企业 Agent + node-executor + run-enterprise CLI）+ 🚪 release-gate-loop F 修复者（验-改循环）+ 🔍 FORGE 全 loop 接入 audit（dogfooding）+ ⏸️ Checkpoint/Resume 轮级断点 |
@@ -91,7 +95,6 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 |------|:--:|------|:--:|
 | **v1.2.9** | ✅ 已交付 | **🐛 v1.2.8 发版遗留 BugFix + 🔧 FORGE Driver 短任务化 + ⏸️ Checkpoint/Resume 升级 + 🏠 PM2 守护 + 🔗 激活链 Phase 3 后半 + 📐 约束层叙事重构 + 🚪 三个入口产品**：① 短任务化——a-check/b-check 从"1 worker 跑 12 视角"拆成"12 独立 worker 各跑 1 视角"（5-8 次工具调用）② Checkpoint/Resume 从轮级升级为 worker 级断点（`completedWorkers: string[]`）③ PM2 守护进程（脱离 session 生命周期，崩溃自动重启+日志持久化+开机自启）④ 激活链 Phase 3 后半（HITL 中断处理 + 每节点执行后自动审计 + 异常处理）⑤ 工程债务——mcp-server.ts 1899 行拆分 ⑥ v1.2.8 发版遗留 BugFix——driver 修复链 bug（verdict PASS 时 results 状态一致 + f-fix 硬上限由短任务化覆盖；driver-base 继承重构已消化相关缺陷）⑦ 约束层叙事重构——"一底座·三引擎"统一为"约束层（Harness）：一个层四种能力（注入·审计·回溯·进化）"，纯文档改写 ⑧ 三个入口产品——`npx sofagent-audit` 零配置 CLI + 规则市场（`--ruleset` + 插件接口 `type: "plugin"` 支持外部 npm 包注册 AST/语义规则）+ GitHub Action（PR 自动审计） | [日志](./changelog/v1.2/v1.2.9.md) |
 | **v1.3.0** | ✅ 已交付 | **运行时审计最小闭环 + 🔗 激活链 Phase 4 收尾（SUSTAIN）**：① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 运行时审计日志按 git 仓库隔离 ⑥ 决策审计 Judgment Unit（emitDecision + kind-wise back）⑦ **🔗 激活链收尾**：全链路验证（activate→compose→run→HITL→audit→sustain）+ wrapToolCall 自动覆盖企业 Agent + FDE SKILL.md 新增 activate 引导 ⑧ **list_rules** MCP tool（tool-gate 规则透明化，覆盖度审计缺口补全）⑨ **🔧 技术债回收：双规则系统统一**——`engine/rules/`（tool-level）与 `engine/audit/src/rules/`（git-diff）统一为单一规则引擎（`ruleType: 'tool' | 'diff'`），消除 secret-leak 检测的行为不一致风险（详见 [ARCHITECTURE 已知技术债](./ARCHITECTURE.md#已知技术债双规则系统重叠已在-v130-交付)）⑩ **📦 外部记忆后端 Path A**——TencentDB-Agent-Memory MCP connector（弱依赖、缺省关闭、零架构改造，MA1-MA7；详见开发日志 §外部记忆后端 Path A 专项） | [日志](./changelog/v1.3/v1.3.0.md) |
-| **v1.3.1** | 📋 规划中 | **Ontology 本体结构 + 国标对齐 + 并行编排 + Durable Execution + Ontology CRUD + Agent 身份码 + 跨设备审计聚合 + 🚀 Onboard Agent L1 + 📊 Benchmark 评测体系 + 🔒 工具审批模式 + 📜 LLM 调用 Trace + 🔄 错误处理升级 + 🔀 MergeQueue + 📚 L4 渐进加载**（详见 [下方详解](#v131--ontology-本体结构操作型本体论落地)） | [日志](./changelog/v1.3/v1.3.1.md) |
 | **v1.3.2** | 📋 规划中 | **🚀 Onboard Agent 完整版（L2-L5 · FORGE 产品化第二刀）+ 🎯 企业专属 eval 套件 + ⚡ workflow 批量自动生成 + 🧩 模型接入插槽扩展 + 🎙️ FDE 梳理辅助工具 + 🧵 LLM Trace 任务级轨迹**：① L2 语义判定（Ontology 判据）② L3 自动定位（LLM 推理）③ L4 自动修复（审计兜底）④ L5 循环收敛（回归+连续 PASS）⑤ 企业行业 eval 模板（金融/制造/供应链，FDE 交付时实例化 + 基线冻结 + 回归门禁，a16z 法则6 产品化）⑥ workflow.yml → 自动为每个节点生成 sub-agent（agent-creation 规模化，PenguinHarness「用 Agent 构建 Agent」启发）⑦ `client_type: 'ollama' | 'openai-compatible'` 模型接入插槽（商业模型层 后训练模型 vLLM/OpenAI 兼容接入的地基，2026-08-09 从 v1.3.1 移入）⑧ FDE 梳理辅助（五要素引导 → workflow.yml 草稿 → 人工确认，规则驱动不抢 商业模型层 C2/C3）⑨ **LLM Trace 任务级轨迹视图**（taskId 完整调用链含工具结果——调试可观测通用能力，RL 训练消费在 v1.4.1 衔接，2026-08-10 新增） | [日志](./changelog/v1.3/v1.3.2.md) |
 | **v1.3.3** | 📋 规划中 | **L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版 + 🧭 主 agent 编排**：① 协作协议——共享态/意图广播/触发反应/冲突消解/反馈放大 + 团队状态管理 ② Refine Agent——复用 Onboard 循环引擎，判据从 Ontology 换成质量规则集（好不好），五层一次交付 ③ 主 agent 四合一角色（分发/监控/审计/通讯）——编排 v1.3.2 批量生成的 sub-agent | [日志](./changelog/v1.3/v1.3.3.md) |
 | **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价→养护）**：Skill/Agent/流程打包发布 + 目录检索 + 调用挂载 + 评分聚合（评分 × 调用量加权自然选择）+ 全程审计 + **养护环（owner 声明 + 失效退役 + 变更记录，GitHub 模式「持续养护」）** | [日志](./changelog/v1.3/v1.3.4.md) |
@@ -101,7 +104,10 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.3.8** | 📋 规划中 | **🛡️ 代理网关硬边界 + 数据静态加密 + Durable L3（原 v1.4.0 前移）**：① 代理网关（唯一出入口 + 风险分级 + 超阈值人工批准）② 数据静态加密（age）③ Durable Execution L3（WAL 写在网关层）④ **托管 SDK `sandbox: true` 选项启用**（v1.3.6 SDK 的沙箱接线） | [日志](./changelog/v1.3/v1.3.8.md) |
 | **v1.3.9** | 📋 规划中 | **🛠️ 官方 AST 规则引擎 + meta-harness + 📊 AI 工作明细数据层（原 v1.5.0 + v2.0 前移）**：① 官方 `sofagent-ruleset-ast` 语义级规则引擎参考实现（TypeScript compiler / tree-sitter）② meta-harness 多 harness 统一编排（策略强制在基础设施层 + 跨会话协作）③ AI 工作明细数据层（业务视角：按 Agent/按 Workflow/按周 + 人工介入记录，零新数据——复用审计 + decision-log + LLM Trace；**补节点实际耗时采集——商业模型层 C8 绩效量化引擎 `年节省=日耗时×时薪×250` 的直接输入**，2026-08-10 新增；`worklog_query` MCP + 落盘 `worklog.json`；终端 ASCII 视图可选；**Web 工作明细页 v1.4.0**，Startwork 启发） | [日志](./changelog/v1.3/v1.3.9.md) |
 | **v1.4.0** | 📋 规划中 | **📊 Web 工作明细页（企业 AI 工作记录视图 · 版本号重新启用）**：`dashboard.html` 加「工作明细」区块（按 Agent/按 Workflow/按周 + 人工介入记录，读 v1.3.9 落盘的 `worklog.json`，降级示例对齐现有模式）——Dashboard Web 前端已就绪（dashboard.html 6 页 + serve-dashboard.mjs），v1.3.9 已承载 AST + meta 两个大交付，Web 页单独一版 | [日志](./changelog/v1.4/v1.4.0.md) |
-| **v1.4.1** | 📋 规划中 | **🚀 训练引擎（把「后训练」变成可交付能力 · 商业模型层 支撑 · 训练相关内容统一从此开始）**：① **双栈架构决策**——Node 控制面 + Python 执行面（verl/TRL/NeMo RL 均 Python；个人 Mac 阶段 0 用 @mlx-node/trl 纯 Node 验证）② **train-job 编排层**（train_submit / 监控 / 取消 / checkpoint 续跑，状态机 + 幂等）③ **企业数据 → 训练集管道**（CSV/Excel 异构接入 + instruction/偏好对构建 + 质量闸门 + 训练入口脱敏）④ **训练中 eval 闭环**（复用 v1.3.1 Benchmark，阈值外部化——机制开源/阈值外部化）⑤ **train_job 审计**（训练本身可审计可回滚 + 数据源 hash 溯源）⑥ **训练沙箱 + 设备打包**（扩展 v1.3.7，数据不出边界 + 离线可训 + E4 前置）⑦ **训练需求推导方法论**（`train analyze`：workflow 节点 → 训练目标/数据需求/评估标准/QLoRA 配置）⑧ **训练语料导出三件套**（规则 + GUIDE 方法论 + 样本四源 [decision-log/llm-calls/evaluation-log/runtime-audit] + Trace 轨迹 + 通用脱敏管线 + HMAC 签名 + 合规红线——含 human-fde 人工基准，从 v1.3.2/v1.3.6 归集）⑨ **C13 本地权重部署链路**（权重目录规范 + 本地加载 + 版本回滚，从 v1.3.6 归集） | [日志](./changelog/v1.4/v1.4.1.md) |
+| **v1.4.1** | 📋 规划中 | **🚀 训练引擎 · 地基（协议 + 编排 + 审计 + 预算）**：① **双栈架构决策 + 训练协议三约定**——Node 控制面 + Python 执行面（spawn + config JSON + stdout JSON 流 + SIGINT 信号，接口即解耦；个人 Mac 阶段 0 用 @mlx-node/trl 纯 Node 验证）② **train-job 编排层**（train_submit / 监控 / 取消 / checkpoint 续跑，状态机 + 幂等）③ **train_job 审计**（训练本身可审计可回滚 + 数据源 hash 溯源）④ **训练预算控制**（train budget：时间/算力预算，超预算暂停 + 人审，成本透明） | [日志](./changelog/v1.4/v1.4.1.md) |
+| **v1.4.2** | 📋 规划中 | **🚀 训练引擎 · 数据与评估（管道 + 版本 + eval + 环境 + 报告）**：① **企业数据 → 训练集管道**（CSV/Excel 异构接入 + instruction/偏好对构建 + 质量闸门 + 训练入口脱敏）② **训练集版本管理**（dataset_version，eval 引用版本可复现）③ **训练中 eval 闭环**（复用 v1.3.1 Benchmark，阈值外部化——机制开源/阈值外部化）④ **训练环境管理**（train env init + train doctor + 环境版本清单）⑤ **训练报告**（train report：客户可读交付物 + 量化四字段，商业模型层 C8 输入） | [日志](./changelog/v1.4/v1.4.2.md) |
+| **v1.4.3** | 📋 规划中 | **🚀 训练引擎 · 运行与需求（监控 + 诊断 + 沙箱 + 推导 + 模板）**：① **训练监控与 GPU 队列**（train_status MCP tool + 显存预算排队 + webhook 推送）② **训练失败诊断**（train diagnose：OOM/数据/发散/框架/环境五类 + 修复建议）③ **训练沙箱 + 设备打包**（扩展 v1.3.7，数据不出边界 + 离线可训 + E4 前置）④ **训练需求推导 + 模板库**（`train analyze`：workflow 节点 → 训练目标/数据需求/评估标准/QLoRA 配置；场景化模板库） | [日志](./changelog/v1.4/v1.4.3.md) |
+| **v1.4.4** | 📋 规划中 | **🚀 训练引擎 · 信号与部署闭环（语料 + 权重 + 注册 + 对比）**：① **训练语料导出三件套**（规则 + GUIDE 方法论 + 样本四源 [decision-log/llm-calls/evaluation-log/runtime-audit] + Trace 轨迹 + 通用脱敏管线 + HMAC 签名 + 合规红线——含 human-fde 人工基准，从 v1.3.2/v1.3.6 归集）② **C13 本地权重部署链路**（权重目录规范 + 本地加载 + 版本回滚，从 v1.3.6 归集）③ **训练产物 → 模型注册自动衔接**（train done + eval pass → model_register，闭环最后一步）④ **多基座对比训练**（train compare：同数据多基座并行 + ROI 排序，阶段 2 选型前置） | [日志](./changelog/v1.4/v1.4.4.md) |
 
 #### v1.3.x 里程碑拆分
 
@@ -110,7 +116,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | 版本 | 主题 | 核心交付 |
 |------|------|------|
 | **v1.3.0** | **运行时审计最小闭环（LangGraph middleware）** | ① wrapToolCall middleware 包 createReactAgent ② engine/rules 3 条 tool-gate 规则升级为运行时拦截 + 审计日志 ③ 危险操作前人工批准钩子 ④ 复用 FORGE 已跑 createReactAgent ⑤ 运行时审计日志按 git 仓库隔离 ⑥ **list_rules** MCP tool ⑦ **🔧 双规则系统统一**（`ruleType: 'tool' | 'diff'`，消除技术债）⑧ **📦 外部记忆后端 Path A**（TencentDB-Agent-Memory MCP connector，缺省关闭）（详见 开发日志 ./changelog/v1.3/v1.3.0.md）|
-| **v1.3.1** | **Ontology + 并行编排 + 身份码 + Onboard L1 + Benchmark 评测 + 工具审批模式 + Durable Execution + CRUD + 审计聚合 + LLM Trace + 错误处理 + MergeQueue + L4 渐进加载 + 国标对齐** | 见上方主表 + [Ontology 详解](#v131--ontology-本体结构操作型本体论落地) |
+| **v1.3.1** | ✅ 已交付 | **Ontology + 并行编排 + 身份码 + Onboard L1 + Benchmark 评测 + 工具审批模式 + Durable Execution + CRUD + LLM Trace + 错误处理 + MergeQueue + L4 渐进加载 + 国标对齐**（详见 [v1.3.1 开发日志](./changelog/v1.3/v1.3.1.md) + [Ontology 详解](#v131--ontology-本体结构操作型本体论落地)） |
 | **v1.3.2** | **🚀 Onboard Agent 完整版（L2-L5）+ 🎯 企业专属 eval 套件 + ⚡ workflow 批量自动生成 + 🧩 模型接入插槽扩展 + 🎙️ FDE 梳理辅助 + 🧵 Trace 任务级轨迹** | L2 语义判定（Ontology 判据）+ L3 自动定位（LLM 推理）+ L4 自动修复（审计兜底）+ L5 循环收敛（回归+连续 PASS）+ 企业行业 eval 模板（a16z 法则6 产品化）+ workflow 节点自动生成 sub-agent + `client_type` 模型接入插槽（openai-compatible）+ FDE 梳理辅助（五要素→workflow.yml 草稿）+ **LLM Trace 任务级轨迹视图（调试可观测通用能力，RL 消费在 v1.4.1）**（详见 开发日志 ./changelog/v1.3/v1.3.2.md）|
 | **v1.3.3** | **L2 团队协作协议 + ✨ Refine Agent + 🧭 主 agent 编排** | 协作五大机制 + Refine Agent 完整版（质量规则集判据，复用 Onboard 循环引擎）+ 主 agent 四合一（分发/监控/审计/通讯）（详见 开发日志 ./changelog/v1.3/v1.3.3.md）|
 | **v1.3.4** | **L3 组织能力市场（五环）** | 发布→发现→调用→评价→养护（owner 声明 + 失效退役）+ 评分聚合自然选择 + 全程审计（详见 开发日志 ./changelog/v1.3/v1.3.4.md）|
@@ -120,7 +126,10 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.3.8** | **🛡️ 代理网关 + 静态加密 + Durable L3** | 网关唯一出入口 + age 加密落盘 + WAL 写在网关层 + SDK `sandbox: true` 启用（详见 开发日志 ./changelog/v1.3/v1.3.8.md）|
 | **v1.3.9** | **🛠️ AST 规则引擎 + meta-harness + 📊 工作明细数据层** | `sofagent-ruleset-ast` 参考实现 + 多 harness 统一编排 + AI 工作明细（`worklog_query` + 落盘 `worklog.json`，**补节点实际耗时采集，商业模型层 C8 输入**，终端 ASCII 可选）（详见 开发日志 ./changelog/v1.3/v1.3.9.md）|
 | **v1.4.0** | **📊 Web 工作明细页（版本号重新启用）** | `dashboard.html` 加「工作明细」区块，读 `worklog.json`（v1.3.9 落盘）（详见 开发日志 ./changelog/v1.4/v1.4.0.md）|
-| **v1.4.1** | **🚀 训练引擎（商业模型层 支撑 · 训练相关内容统一从此开始）** | 双栈决策（Node 控制面 + Python 执行面，Mac 阶段 0 用 @mlx-node/trl）+ train-job 编排 + 数据→训练集管道 + 训练中 eval 闭环 + train_job 审计 + 训练沙箱/设备打包 + 训练需求推导 + 语料导出三件套（从 v1.3.x 归集）+ C13 本地权重部署（从 v1.3.6 归集）（详见 开发日志 ./changelog/v1.4/v1.4.1.md）|
+| **v1.4.1** | **🚀 训练引擎 · 地基** | 双栈协议三约定 + train-job 编排 + train_job 审计 + 训练预算控制（详见 开发日志 ./changelog/v1.4/v1.4.1.md）|
+| **v1.4.2** | **🚀 训练引擎 · 数据与评估** | 数据→训练集管道 + 训练集版本 + eval 闭环 + 环境管理 + 训练报告（详见 开发日志 ./changelog/v1.4/v1.4.2.md）|
+| **v1.4.3** | **🚀 训练引擎 · 运行与需求** | train_status/GPU 队列 + 失败诊断 + 训练沙箱/设备打包 + 需求推导/模板库（详见 开发日志 ./changelog/v1.4/v1.4.3.md）|
+| **v1.4.4** | **🚀 训练引擎 · 信号与部署闭环** | 语料导出三件套 + C13 权重部署 + 产物→注册衔接 + 多基座对比（详见 开发日志 ./changelog/v1.4/v1.4.4.md）|
 
 ### v1.3.1 — Ontology 本体结构（操作型本体论落地）
 

@@ -9,6 +9,7 @@
 
 > 未来版本规划见 [ROADMAP.md](./docs/ROADMAP.md)
 
+- **v1.3.1** — 🧠 Ontology 运行时层（Action 注册表 + validator 三态 + Schema 定稿）+ 并行编排（ParallelScheduler + 波次审计卡关 + MergeQueue）+ Durable Execution（checkpoint 续跑 + 副作用幂等）+ Agent 身份码 Ed25519 + 🚀 Onboard Agent L1 + 📊 Benchmark 评测（隔离执行 + HMAC 链）+ 🔒 工具审批四模式 + 📜 LLM 调用级 Trace + 🔄 错误处理（stop_reason + 退避 + 收敛）+ 📚 L4 渐进加载 + 国标对齐 GB/T 48000.3-2026 · 2026-08-10 · [开发日志](./docs/changelog/v1.3/v1.3.1.md)
 - **v1.3.0** — 🔐 运行时审计最小闭环（tool wrapper 拦截层）+ 决策审计（意图问责 MVP）+ 双规则统一 + 审计日志仓库隔离 + HITL 钩子 + list_rules 规则透明化 + 激活链收尾 + 外部记忆后端 Path A + 进化链路写保护 · 2026-08-09· [开发日志](./docs/changelog/v1.3/v1.3.0.md)
 - **v1.2.9** — 🔧 FORGE 短任务化 + ⏸️ Checkpoint/Resume + 🏠 PM2 守护 + 🔗 激活链 Phase 3 后半 + mcp-server 拆分 + 📐 约束层叙事重构 + 🚪 三个入口产品（npx CLI + 规则市场 + GitHub Action） · 2026-08-08 · [开发日志](./docs/changelog/v1.2/v1.2.9.md)
 - **v1.2.8** — 记忆分层 + 定时任务 + 🔗 激活链 Phase 3 前半 + 🚪 release-gate-loop F 修复者 + 🔍 FORGE 全 loop 接入 audit + ⏸️ Checkpoint/Resume · 2026-08-07 · [开发日志](./docs/changelog/v1.2/v1.2.8.md)
