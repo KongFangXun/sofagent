@@ -2,6 +2,38 @@
 
 > [← 返回索引](./index.md)
 
+### preflight-check 跑前自检
+
+> **来源**：FORGE preflight-check 模块（`FORGE/src/driver-base.mjs` 导出 `runPreflight`）。fresh-eyes-loop / release-gate-loop 单次跑 15-60 分钟、烧真实 API 额度，环境不健康时中途崩溃代价极高。开跑前 1 分钟内把环境前置条件全部验一遍。
+
+**六项检查与阻塞策略**：
+
+| # | 检查项 | 级别 | 失败表现 |
+|---|--------|------|---------|
+| ① | cwd / repoRoot 路径 | HALT | 目录不存在/不是目录 → git 命令全崩 |
+| ② | stdout 管道 SIGPIPE | **WARN** | stdout 是管道 → 下游 `| head` 截断会杀 driver |
+| ③ | 模型 API 可达 | HALT | fetch 超时/网络错误 → 长任务必然中途断 |
+| ④ | 工具预算配置 | HALT | soft > hard 预算倒挂 → 熔断逻辑失效 |
+| ⑤ | runDir 可写 | HALT | 无法创建/写入 → 产物写不出去 |
+| ⑥ | 磁盘空间 ≥ 200MB | WARN | 磁盘快满 → 产物写一半断 |
+
+**🔴 关键设计修正：② stdout 管道定为 WARN 而非 HALT。** 原因：`tools/forge-smoke-test.sh` 用 `$(node driver --dry-run)` 命令替换调用 driver，命令替换的 stdout 天然是管道——若管道判 HALT 会打破冒烟测试的 exit 0 契约，也会误杀一切合法的 `> log` 重定向场景。因此管道只 WARN 提醒"别用 `| head`"，不阻塞。
+
+**四条铁律**：
+1. **不自动修复危险项**：只报问题 + 给可复制的修复命令（`mkdir -p ...`、`curl ...`），人来执行；唯一允许自动做的是幂等 `mkdir runDir`（目录非危险项）
+2. **preflight 自身异常降级 WARN**：检查工具坏了绝不阻塞主流程（driver 里 `try/catch` 包裹 `runPreflight`，异常打 warn 后置 `null` 继续）
+3. **API 检查最多一次**：同 baseURL 的角色去重只探测一次；key 缺失不探测（交给 driver 的 `missingEnvs` 检查拦截，避免无 key 探测必然 401 造成误导）；3 秒超时
+4. **worker / dry-run / --step 模式跳过**：worker 子进程环境继承主 driver 重复检查纯浪费；dry-run 不真跑 worker 无意义且会打破冒烟测试 RC=0；release-gate `--step` 单步模式外层编排每步一个全新进程，重复自检拖慢编排
+
+**集成点**（都在 main() 的环境变量检查之后）：
+- fresh-eyes：`--dry-run` 之外的 Driver 模式，`roles:['A','B']`，预算含 perspective 15/20
+- release-gate：`!dryRun && !step` 时，`roles:['V','F']`，仅全局预算 35/45
+- 两者 `shouldHalt` 为 true 时 `process.exit(1)`
+
+**测试注入点**（`__inject`）：`fetchImpl / statfsImpl / statSyncImpl / fstatSyncImpl / mkdirSyncImpl / writeFileSyncImpl / unlinkSyncImpl`——FAIL 分支全部靠注入模拟，不依赖真实断网/满磁盘。见 `FORGE/src/preflight-check.test.mjs`（27 用例，六项检查 PASS+FAIL 全覆盖）。
+
+---
+
 ### recursionLimit 按步骤区分
 
 | 步骤类型 | recursionLimit | 理由 |

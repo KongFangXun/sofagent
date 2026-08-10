@@ -125,6 +125,7 @@ if [ "$LOAD_ONLY" = false ]; then
     "FORGE/src/driver-base.test.mjs"
     "FORGE/src/fresh-eyes-driver.test.mjs"
     "FORGE/src/release-gate-driver.test.mjs"
+    "FORGE/src/preflight-check.test.mjs"
   )
 
   # 已知失败的测试文件——parseVerdict fallback 逻辑变更后未同步测试
