@@ -30,9 +30,33 @@ import os from 'os';
 //   但严格来说用户显式设了空串应被尊重。然而空串意味着「数据写到 cwd 相对路径」，
 //   几乎肯定是误配（如 SOFAGENT_HOME= 前缀缺失值）。
 //   改为：undefined → fallback；空串 "" → 也 fallback（避免误配导致数据写入意外位置）。
-const SOFAGENT_HOME = process.env.SOFAGENT_HOME !== undefined && process.env.SOFAGENT_HOME !== ''
-  ? process.env.SOFAGENT_HOME
-  : path.join(os.homedir(), '.sofagent');
+// v1.3.2 P0-RC2: path-traversal 防护——SOFAGENT_HOME 必须在允许前缀白名单内，
+//   否则回退到 ~/.sofagent 并告警。允许前缀：用户 home 目录 + SOFAGENT_HOME_ALLOWED_PREFIXES
+//   （冒号分隔，企业场景可显式扩展）。
+function sanitizeSofagentHome(raw: string | undefined): string {
+  const userHome = os.homedir();
+  const fallback = path.join(userHome, '.sofagent');
+  if (raw === undefined || raw === '') return fallback;
+  const resolved = path.resolve(raw);
+  const allowedPrefixes: string[] = [userHome, '/opt/sofagent', '/var/lib/sofagent'];
+  const extra = process.env.SOFAGENT_HOME_ALLOWED_PREFIXES;
+  if (extra !== undefined && extra !== '') {
+    for (const p of extra.split(':')) {
+      const trimmed = p.trim();
+      if (trimmed !== '') allowedPrefixes.push(path.resolve(trimmed));
+    }
+  }
+  const inAllowed = allowedPrefixes.some(
+    (prefix) => resolved === prefix || resolved.startsWith(prefix + path.sep)
+  );
+  if (!inAllowed) {
+    console.error(`⚠️ SOFAGENT_HOME 越界：${resolved} 不在允许前缀内，回退到 ${fallback}`);
+    return fallback;
+  }
+  return resolved;
+}
+
+const SOFAGENT_HOME = sanitizeSofagentHome(process.env.SOFAGENT_HOME);
 
 /** sofagent 安装根目录 */
 export const HOME_DIR = SOFAGENT_HOME;
