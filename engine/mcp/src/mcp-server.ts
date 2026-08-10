@@ -49,6 +49,7 @@ import { hitlResolve } from './tools/hitl-resolve';
 import { listRules } from './tools/list-rules';
 import { agentIdentityTool } from './tools/agent-identity';
 import { loopDebug } from './tools/loop-debug';
+import { evaluate } from './tools/evaluate';
 import { getDynamicTools, getDynamicTool, registerMemoryBackends } from './tools/memory-backend';
 
 // ============================================================
@@ -205,6 +206,7 @@ class McpServer {
         case 'list_rules': { const r = listRules({ type: args.type as 'tool' | 'diff' | 'all' | undefined }); this.sendTool(id, r); break; }
         case 'agent_identity': { const r = agentIdentityTool({ ...(args.agent_id ? { agentId: args.agent_id as string } : {}) }); this.sendTool(id, r); break; }
         case 'loop_debug': { const r = await loopDebug({ ...(typeof args.task === 'string' ? { task: args.task } : {}), ...(typeof args.agent_id === 'string' ? { agent_id: args.agent_id } : {}), ...(typeof args.max_rounds === 'number' ? { max_rounds: args.max_rounds } : {}), ...(typeof args.timeout_ms === 'number' ? { timeout_ms: args.timeout_ms } : {}) }); this.sendTool(id, r, r.data.isError); break; }
+        case 'evaluate': { if (!args.benchmark_id) { this.sendError(id, -32602, 'Missing required argument: benchmark_id'); break; } const r = await evaluate({ benchmark_id: args.benchmark_id as string, ...(typeof args.case_id === 'string' ? { case_id: args.case_id } : {}), ...(args.query === true ? { query: true } : {}) }); this.sendTool(id, r, r.data.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {
