@@ -36,7 +36,7 @@ graph LR
 | 变更审计 | 无 | git diff 24 条规则，硬证据判定 |
 | 越界拦截 | 靠 prompt 自觉 | 违规当场阻断 + 审计留证 |
 | 出事回滚 | 手动翻 commit | 一键快照回到任意节点 |
-| 经验积累 | 每次从零开始 | 自动沉淀进知识库，进化能力持续迭代中 |
+| 经验积累 | 每次从零开始 | 自动沉淀进知识库（开发中，进化闭环在 v1.3.x 持续打磨） |
 
 ## 核心特性
 
@@ -49,7 +49,7 @@ graph LR
 **治理保障**
 
 - 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库 3 秒审计最近一次 commit
-- 🧱 **24 条审计规则**——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截
+- 🧱 **24 条审计规则**（17 默认启用 + 7 扩展可选）——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 
 ## FDE 方法论
@@ -73,7 +73,7 @@ graph LR
 - 📜 **SKILL.md**——唯一主入口，由你的 AI 工具加载：按阶段路由到对应子 Skill，岗位规范按任务类型自动注入（梳理 / 审计 / 编排）
 - 🧩 **阶段子 Skill**——进场 → 深挖 → 量化 → 交付 → 离场五步闭环（`01-entry` → `05-exit`），每一步该做什么、交付什么都定义清楚
 - 🔒 **harness 约束骨架**——entry-gate / fde-template / engage / loop-check / task-closure…，从进场到离场每一步都有对应的约束模板
-- 🧬 **经验自动沉淀**——think.md 反思 + knowledge 维护，每次任务的经验教训自动进知识库，进化能力持续迭代中
+- 🧬 **经验自动沉淀（开发中）**——think.md 反思 + knowledge 维护，每次任务的经验教训自动进知识库，进化闭环在 v1.3.x 持续打磨
 
 > 部署的不是裸 Agent，是**带约束骨架的 Agent**——约束是建议性的，审计是强制性的：Agent 可以不遵守约束，但每次变更都逃不过审计。
 
@@ -87,7 +87,7 @@ graph LR
 
 ## 快速开始
 
-**30 秒，零配置**——在任何 git 仓库跑一次审计：
+**30 秒，零配置**——在任何 git 仓库跑一次审计（开发/测试场景；强合规场景见 [SECURITY](./SECURITY.md)）：
 
 ```bash
 npx -y -p @sofagent/audit sofagent-audit
@@ -154,7 +154,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 |------|----------------|----------|
 | 核心问题 | 怎么造 Agent | **AI 该放在哪**（先梳理再部署） |
 | 安全保障 | 靠 prompt 约束 | git diff 硬证据审计 + 运行时拦截 + 一键回滚 |
-| 知识积累 | 从零开始 | 经验自动沉淀进 knowledge 知识库，持续优化 |
+| 知识积累 | 从零开始 | 经验自动沉淀进 knowledge 知识库（开发中，进化闭环在 v1.3.x 持续打磨） |
 | 数据主权 | 云端托管 | 缺省全量本地，可选联邦查询 |
 | 部署方式 | 学新平台 | 装进你已有的 AI 工具（Claude Code / Cursor / WorkBuddy…） |
 
@@ -164,14 +164,18 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 > 🧪 **工程可信度**：1962 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
 
-> 🧠 **v1.3.1 新能力**：Ontology 运行时层（Action 注册表 + 执行前校验 + Schema 定稿）· 并行编排（波次并发 + 审计卡关 + MergeQueue）· Durable Execution（checkpoint 续跑 + 幂等）· Agent 身份码 Ed25519 · 🚀 Onboard Agent L1（`loop_debug`）· 📊 Benchmark 评测（`evaluate`）· 🔒 工具审批四模式 · 📜 LLM 调用级 Trace · 🔄 错误处理（stop_reason + 退避）· 📚 L4 渐进加载 · 国标对齐 GB/T 48000.3-2026（`--gb48000`）。详见 [v1.3.1 开发日志](./docs/changelog/v1.3/v1.3.1.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
+> 🧠 **v1.3.1 新能力**（按主题分组）：
+> - **运行时层**：Ontology 运行时层（Action 注册表 + 执行前校验 + Schema 定稿）· 并行编排（波次并发 + 审计卡关 + MergeQueue）· Durable Execution（checkpoint 续跑 + 幂等）
+> - **身份与评测**：Agent 身份码 Ed25519 · 📊 Benchmark 评测（`evaluate`）· 🚀 Onboard Agent L1（`loop_debug`）
+> - **治理与可观测**：🔒 工具审批四模式 · 📜 LLM 调用级 Trace · 🔄 错误处理（stop_reason + 退避）· 📚 L4 渐进加载 · 国标对齐 GB/T 48000.3-2026（`--gb48000`）
+> 详见 [v1.3.1 开发日志](./docs/changelog/v1.3/v1.3.1.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 文档
 
 | 你想了解 | 看哪里 |
 |:---------|:--------|
 | 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
-| 架构设计（约束层 · 注入链 · 进化机制 · 24 条规则） | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
+| 架构设计（约束层「对内的技术名字」 · 注入链 · 进化机制 · 24 条规则） | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | 行业印证与生态定位（与现有工具的差异） | [VALIDATION](./docs/VALIDATION.md) |
 | 版本路线图 | [ROADMAP](./docs/ROADMAP.md) |
