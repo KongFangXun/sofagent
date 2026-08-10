@@ -2,6 +2,13 @@
  * @sofagent/harness — 四层约束加载链
  * 生成 Sub Agent 启动时的 context prompt：SKILL.md → fde.md → think.md → knowledge/
  * v1.2.0 从 sofagent/audit/src/subagents/launcher.ts 迁出
+ *
+ * ⚠️ 职责分工（v1.3.2 P0-R11）：
+ *   本文件是 **npm API 形态**的加载链实现（createReactAgent 构建 system prompt 时
+ *   调用 buildConstrainedSystemPrompt）。
+ *   OpenClaw 平台 hook 部署形态由 engine/hooks/sofagent-load-chain/src/handler.ts
+ *   （.openclaw/hooks/sofagent-load-chain/handler.ts）负责——两份实现职责不同、
+ *   服务不同部署形态，**不要合并**。改动加载链逻辑时需两处同步评估。
  */
 import * as fs from 'fs';
 import * as path from 'path';

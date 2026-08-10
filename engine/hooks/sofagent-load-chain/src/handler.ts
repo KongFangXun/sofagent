@@ -5,6 +5,13 @@
 //   L3 fde.md（用户规则）
 // 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
 //
+// ⚠️ 职责分工（v1.3.2 P0-R11）：
+//   本文件服务 **OpenClaw 平台 hook 部署形态**（.openclaw/hooks/sofagent-load-chain/handler.ts），
+//   由 OpenClaw 的 agent:bootstrap 事件触发注入 prompt。
+//   npm API 场景（createReactAgent 构建 system prompt）用 @sofagent/harness 的
+//   buildConstrainedSystemPrompt（engine/harness/src/index.ts）——两份实现职责不同、
+//   服务不同部署形态，**不要合并**。改动加载链逻辑时需两处同步评估。
+//
 // v1.3.1 渐进式加载改造：
 //   L1 从"注入完整 SKILL.md（149 行）"改为"注入 core-rules.md（~30 行核心铁律）"
 //   + 根据 event.context 中的 task description 判断 task type
