@@ -43,7 +43,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
 - ⚠️ 明文存储：`data/` 下文件仍为 Markdown 明文，未做加密
-- ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**已排 v1.3.8（与沙箱/权限/网关同批安全加固）落地**。合规审查员请注意：v1.2.x 版本不适合直接用于强合规场景，需配合外部加密卷（gpg / disk encryption）。
+- ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**已排 v1.3.8（与沙箱/权限/网关同批安全加固）落地**。合规审查员请注意：**当前版本（v1.3.x）仍不适合直接用于强合规场景**，需配合外部加密卷（gpg / disk encryption）。
 
 ### 当前版本（v1.3.1）临时缓解措施
 
@@ -315,10 +315,13 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 | 删除 commit-msg hook 文件 | ⚠️ `--doctor` 可检测 | daemon 监控 .git/hooks/ 目录变化（v1.x 计划） |
 | 伪造 Agent 日志（task/logs） | ❌ 无自动检测 | 人工抽查 + 交叉验证 git log 时间戳 |
 | 绕过 --init 直接手动修改 config.yml | ❌ 无自动检测 | config hash 校验（见 fail-closed 改进） |
+| `SOFAGENT_CONFIG` 环境变量指向恶意 config（v1.2.9 起最高优先级配置入口） | ⚠️ `--doctor` 可检测环境变量 | 启动入口用 `env -i` 或显式白名单透传环境变量（见共享服务器缓解建议）；CI 侧用受控 config |
 
 > ⚠️ 以上绕过路径均依赖 Agent 的"自觉"——这是 sofagent 架构级别的信任模型选择：审计引擎是**协助**人类监督，不是**替代**人类监督。已知绕过路径详见 LIMITATIONS 已有信任模型描述。
 
 > ⚠️ **企业高安全场景**：`config.yml` 篡改可绕过审计规则（如关闭规则、放宽阈值）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。
+>
+> ⚠️ **企业高安全默认（v1.3.2 补充）**：基线规则（A1/A2/A9/A10/A11/A20-A23）有强制保护不可禁用，但**非基线规则（A3-A8、A14-A19）可经 `rules:{x:false}` 关闭**。高安全场景建议显式锁定所有规则：`extendedRulesEnabled: true` + 在 config 中对全部非基线规则显式 `rules:{a3:true, a4:true, ...}`（禁止依赖默认值），并配合 `chmod 444 .sofagent/config.yml` 只读锁定。代码侧 `hardenedMode: true`（一键全规则基线化）已列入 ROADMAP 评估。
 
 > ⚠️ **影子审计器劫持（v1.2.7 已知风险）**：本地安装的 `engine/audit/dist/index.js` 无完整性校验（dist 目录不随 git 版本控制），恶意 Agent 可替换 dist 绕过所有审计规则——比 `--no-verify` 更隐蔽（hook 仍在运行，看不出绕过）。`--doctor` 已增加 dist 哈希校验（SHA-256 比对 `~/.sofagent/internal/audit-hash.txt`），但根治需 v1.3.x 代码签名 + 运行时验证。**CI 侧 `sofagent-audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。
 
@@ -488,7 +491,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 如发现安全漏洞，请通过以下方式**私下**报告（不要在公开 Issue 中披露）：
 
 1. **GitHub Security Advisory**（推荐主通道）：[提交私有报告](https://github.com/KongFangXun/sofagent/security/advisories/new)
-2. **邮箱**（备选）：kong.yao@evfrey.com
+2. **邮箱**（备选）：kongfangxun@users.noreply.github.com
 3. **响应时间**：我们承诺在 72 小时内确认收到报告，7 天内提供初步评估。
 
 ## 响应承诺
