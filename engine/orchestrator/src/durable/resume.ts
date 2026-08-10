@@ -94,6 +94,13 @@ export function scanPendingCheckpoints(checkpointDir: string): PendingCheckpoint
       savedAt: record.savedAt,
     });
   }
+  // 🔴 修复：按 savedAt 时间排序（旧→新），确保 pending[length-1] 是最近的
+  // CI 教训：readdir 顺序不保证时间序，导致 resume 选了较旧的而非最近的
+  pending.sort((a, b) => {
+    const ta = new Date(a.savedAt).getTime() || 0;
+    const tb = new Date(b.savedAt).getTime() || 0;
+    return ta - tb;
+  });
   return pending;
 }
 
