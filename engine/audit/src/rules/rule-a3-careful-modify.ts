@@ -1,5 +1,7 @@
 // ============================================================
-// A3 不改越界（边界层 · 业务底线）
+// A3 不改越界（边界层 · 能力拐杖）
+// 🔴 v1.3.1 修：ruleClass 从 '业务底线' 改为 '能力拐杖'——与 index.ts 注册中心对齐
+// （A3 启发式检测误报率高，WARN 不硬拦，归「能力拐杖」；index.ts:46 SSOT）
 // 合并自旧 #7 谨慎修改 + R1 无关文件
 // diff 中是否有不在 --task 描述关键词范围内的文件
 // v0.95：文件路径匹配改用 basename 精确匹配，关键词匹配兼容 Unicode（中文路径）
@@ -131,7 +133,7 @@ export function checkRuleA3(ctx: AuditContext): RuleCheck {
     status: 'PASS',
     details: [],
     evidenceMode: 'git-diff',
-    ruleClass: '业务底线',
+    ruleClass: '能力拐杖',  // v1.3.1 修：与 index.ts SSOT 对齐（启发式检测误报率高，WARN 不硬拦）
   };
 
   // 确定低风险模式和阈值——优先用 config，fallback 到硬编码默认值
