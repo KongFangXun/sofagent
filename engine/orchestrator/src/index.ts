@@ -148,6 +148,25 @@ export type {
   DuplicatePushPolicy,
 } from './loop/merge-queue';
 
+// v1.3.1 交付 4：Durable Execution（L1 checkpoint 续跑 + L2 工具幂等性）
+export { CheckpointManager, DEFAULT_CHECKPOINT_RETENTION_DAYS } from './durable/checkpoint-manager';
+export type { CheckpointManagerOptions, CheckpointFileInfo } from './durable/checkpoint-manager';
+export {
+  SideEffectLedger,
+  sideEffectId,
+  resolveSideEffectLedgerPath,
+  SIDE_EFFECT_LEDGER_REL,
+} from './durable/side-effect-ledger';
+export type { SideEffectEntry } from './durable/side-effect-ledger';
+export { shouldExecute, markExecuted } from './durable/idempotency-check';
+export type { IdempotencyDecision } from './durable/idempotency-check';
+export { resumePendingLoops, scanPendingCheckpoints, isPendingRecord } from './durable/resume';
+export type {
+  PendingCheckpointInfo,
+  ResumeLoopsOptions,
+  ResumeLoopsSummary,
+} from './durable/resume';
+
 // Conflict Resolver（v1.2.3 · merge 文本冲突仲裁）
 export {
   resolveWorktreeConflict,
