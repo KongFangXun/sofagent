@@ -48,6 +48,7 @@ import { listConcepts } from './tools/list-concepts';
 import { hitlResolve } from './tools/hitl-resolve';
 import { listRules } from './tools/list-rules';
 import { agentIdentityTool } from './tools/agent-identity';
+import { loopDebug } from './tools/loop-debug';
 import { getDynamicTools, getDynamicTool, registerMemoryBackends } from './tools/memory-backend';
 
 // ============================================================
@@ -203,6 +204,7 @@ class McpServer {
         case 'hitl_resolve': { this.sendTool(id, await hitlResolve({ checkpoint_id: args.checkpoint_id as string, decision: args.decision as 'approve' | 'reject' | 'aborted', ...(args.comment ? { comment: args.comment as string } : {}) })); break; }
         case 'list_rules': { const r = listRules({ type: args.type as 'tool' | 'diff' | 'all' | undefined }); this.sendTool(id, r); break; }
         case 'agent_identity': { const r = agentIdentityTool({ ...(args.agent_id ? { agentId: args.agent_id as string } : {}) }); this.sendTool(id, r); break; }
+        case 'loop_debug': { const r = await loopDebug({ ...(typeof args.task === 'string' ? { task: args.task } : {}), ...(typeof args.agent_id === 'string' ? { agent_id: args.agent_id } : {}), ...(typeof args.max_rounds === 'number' ? { max_rounds: args.max_rounds } : {}), ...(typeof args.timeout_ms === 'number' ? { timeout_ms: args.timeout_ms } : {}) }); this.sendTool(id, r, r.data.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {
