@@ -16,7 +16,7 @@ jobs:
           # 🔴 v1.2.5 教训：原 node-version 18 导致 orchestrator 集成测试报
           # `ReferenceError: crypto is not defined`——@langchain/core uuid rng.ts 依赖
           # Web Crypto 全局（globalThis.crypto），Node 18 不稳定可用（Node 19+ 才 flag-free）。
-          # pr-check 用 Node 22 跑同一套 1719 测试全绿，对齐到 Node 22。
+          # pr-check 用 Node 22 跑同一套测试全绿（测试数动态见 tools/test-count.sh），对齐到 Node 22。
           node-version: 22
 
       - name: Setup minimal sofagent environment
