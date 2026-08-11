@@ -28,6 +28,9 @@ import {
   type RunOutcome,
 } from './judge';
 import type { LlmCallRecord } from '@sofagent/core';
+import type { DiffReport } from './diff-report';
+import type { LocalizationResult } from './error-localizer';
+import type { FixApplyResult } from './fix-applier';
 
 /** 调试记录默认相对路径：{dataDir}/audit/runtime/loop-debug.jsonl */
 export const LOOP_DEBUG_LOG_REL = 'audit/runtime/loop-debug.jsonl';
@@ -89,6 +92,14 @@ export interface OnboardDriverOptions {
   debugLogPath?: string;
   /** 日志输出 */
   log?: (msg: string) => void;
+  /** v1.3.2 交付 4：L5 收敛参数 */
+  l5Config?: L5ConvergenceConfig;
+  /** v1.3.2 交付 1：L2 语义判定器（可注入 mock；默认 null = 跳过 L2） */
+  l2Judge?: (outcome: OnboardRunOutcome, taskId: string) => Promise<DiffReport>;
+  /** v1.3.2 交付 2：L3 定位器（可注入 mock；L2 有差异时调用） */
+  l3Localizer?: (diffReport: DiffReport) => Promise<LocalizationResult>;
+  /** v1.3.2 交付 3：L4 修复器（可注入 mock；L3 定位后调用） */
+  l4Fixer?: (localization: LocalizationResult, diffReport: DiffReport) => Promise<FixApplyResult>;
 }
 
 /** 单轮记录 */
@@ -103,6 +114,12 @@ export interface OnboardRound {
   verdict: JudgeVerdict;
   /** 修复反馈（非末轮时存在） */
   fixFeedback?: string;
+  /** v1.3.2 交付 1：L2 语义判定差异报告 */
+  diffReport?: DiffReport;
+  /** v1.3.2 交付 2：L3 定位结果 */
+  localization?: LocalizationResult;
+  /** v1.3.2 交付 3：L4 修复结果 */
+  fixResult?: FixApplyResult;
 }
 
 /** 循环结果 */
@@ -117,7 +134,26 @@ export interface OnboardLoopResult {
   finalState: JudgeState;
   /** 总耗时（ms） */
   totalDurationMs: number;
+  /** v1.3.2 交付 4：L5 收敛状态 */
+  convergence?: ConvergenceState;
 }
+
+/** v1.3.2 交付 4：L5 收敛状态 */
+export type ConvergenceState = 'converged' | 'diverged' | 'max-rounds';
+
+/** v1.3.2 交付 4：L5 收敛判定参数 */
+export interface L5ConvergenceConfig {
+  /** 连续 N 轮 L1 crash-free 且 L2 无差异 → 判收敛（默认 3） */
+  convergeThreshold?: number;
+  /** 连续 M 轮 L4 改了仍 FAIL → 判发散（默认 5） */
+  divergeThreshold?: number;
+}
+
+/** 默认收敛参数 */
+export const DEFAULT_L5_CONFIG: Required<L5ConvergenceConfig> = {
+  convergeThreshold: 3,
+  divergeThreshold: 5,
+};
 
 /** 解析默认调试记录路径（SOFAGENT_HOME 可覆盖——测试隔离） */
 export function resolveLoopDebugLogPath(dataDir?: string, override?: string): string {
@@ -246,10 +282,19 @@ export async function runOnboardLoop(
     (async (t: string, o: OnboardRunOutcome, v: JudgeVerdict) =>
       defaultTraceFixer(t, o, v, taskId));
   const debugLogPath = resolveLoopDebugLogPath(undefined, options.debugLogPath);
+  const l5Config = { ...DEFAULT_L5_CONFIG, ...options.l5Config };
+  const l2Judge = options.l2Judge;
+  const l3Localizer = options.l3Localizer;
+  const l4Fixer = options.l4Fixer;
 
   const startedAt = Date.now();
   const rounds: OnboardRound[] = [];
   let currentTask = task;
+
+  // v1.3.2 交付 4：L5 收敛追踪
+  let consecutivePassCount = 0;
+  let consecutiveFailAfterFixCount = 0;
+  let convergenceState: ConvergenceState | undefined;
 
   log(`🚀 Onboard L1 启动 · taskId=${taskId}${agentId ? ` · agentId=${agentId}` : ''}`);
 
@@ -281,7 +326,7 @@ export async function runOnboardLoop(
     }
 
     const verdict = judge(outcome, { timeoutMs });
-    log(`🧭 第 ${round} 轮判定：${verdict.state}（${verdict.detail.slice(0, 80)}）`);
+    log(`🧭 第 ${round} 轮 L1 判定：${verdict.state}（${verdict.detail.slice(0, 80)}）`);
 
     // 写调试记录（带 agentId——交付 6/7 协同）
     appendLoopDebugRecord({
@@ -294,32 +339,99 @@ export async function runOnboardLoop(
       durationMs: verdict.durationMs ?? outcome.durationMs,
     }, debugLogPath);
 
-    // passed → 收敛结束；否则 fix → re-run
-    if (verdict.state === 'passed') {
+    // v1.3.2 交付 1：L2 语义判定（L1 passed 时才判语义对错）
+    let diffReport: DiffReport | undefined;
+    let localization: LocalizationResult | undefined;
+    let fixResult: FixApplyResult | undefined;
+
+    const l1Passed = verdict.state === 'passed';
+
+    if (l1Passed && l2Judge) {
+      diffReport = await l2Judge(outcome, taskId);
+      log(`🔬 第 ${round} 轮 L2 语义判定：${diffReport.mismatches.length} 条差异`);
+
+      if (diffReport.mismatches.length > 0) {
+        // L2 有差异 → L3 定位 → L4 修复
+        if (l3Localizer) {
+          localization = await l3Localizer(diffReport);
+          log(`🔍 第 ${round} 轮 L3 定位：${localization.errorSource}（置信度 ${localization.confidence}）`);
+        }
+        if (l4Fixer && localization) {
+          fixResult = await l4Fixer(localization, diffReport);
+          log(`🔧 第 ${round} 轮 L4 修复：${fixResult.applied ? '审计通过' : '审计拦截已回滚'}`);
+        }
+      }
+    }
+
+    // v1.3.2 交付 4：L5 收敛判定
+    // FAIL 定义：L1 crash/error/timeout 或 L2 有 mismatch
+    const l2Failed = diffReport ? diffReport.mismatches.length > 0 : false;
+    const roundFailed = !l1Passed || l2Failed;
+    const l4Applied = fixResult?.applied === true;
+
+    // 无 L2 时保持 v1.3.1 L1 原始行为（passed → 立即 break）
+    if (!l2Judge && l1Passed) {
       rounds.push({ round, task: currentTask, outcome, verdict });
       break;
+    }
+
+    // 有 L2 时走 L5 收敛/发散逻辑
+    if (!roundFailed) {
+      // L1 crash-free 且 L2 无差异 → 连续 PASS 计数
+      consecutivePassCount++;
+      consecutiveFailAfterFixCount = 0;
+      if (consecutivePassCount >= l5Config.convergeThreshold) {
+        convergenceState = 'converged';
+        rounds.push({ round, task: currentTask, outcome, verdict, diffReport, localization, fixResult });
+        log(`✅ L5 收敛：连续 ${consecutivePassCount} 轮 L1 crash-free 且 L2 无差异`);
+        break;
+      }
+    } else {
+      consecutivePassCount = 0;
+      // L4 改了仍 FAIL → 发散计数
+      if (l4Applied || (!l1Passed && round > 1)) {
+        consecutiveFailAfterFixCount++;
+        if (consecutiveFailAfterFixCount >= l5Config.divergeThreshold) {
+          convergenceState = 'diverged';
+          rounds.push({ round, task: currentTask, outcome, verdict, diffReport, localization, fixResult });
+          log(`⚠️ L5 发散：连续 ${consecutiveFailAfterFixCount} 轮 L4 改了仍 FAIL，报人`);
+          break;
+        }
+      }
+    }
+
+    // passed（L1 + L2 都通过）但未达收敛阈值 → 继续
+    if (!roundFailed) {
+      rounds.push({ round, task: currentTask, outcome, verdict, diffReport, localization, fixResult });
+      if (round >= maxRounds) {
+        convergenceState = convergenceState ?? 'max-rounds';
+        break;
+      }
+      continue;
     }
 
     let fixFeedback: string | undefined;
     if (round < maxRounds) {
       fixFeedback = await fixer(currentTask, outcome, verdict);
-      rounds.push({ round, task: currentTask, outcome, verdict, fixFeedback });
+      rounds.push({ round, task: currentTask, outcome, verdict, fixFeedback, diffReport, localization, fixResult });
       currentTask = fixFeedback;
       log(`🛠️ 第 ${round} 轮修复反馈已生成，re-run`);
     } else {
       // 达最大轮数仍失败——不再 fix
-      rounds.push({ round, task: currentTask, outcome, verdict });
+      convergenceState = convergenceState ?? 'max-rounds';
+      rounds.push({ round, task: currentTask, outcome, verdict, diffReport, localization, fixResult });
       log(`⛔ 达最大轮数 ${maxRounds}，循环停止（finalState=${verdict.state}）`);
     }
   }
 
   const finalState = rounds[rounds.length - 1]?.verdict.state ?? 'error';
-  log(`🏁 Onboard L1 结束 · finalState=${finalState} · 共 ${rounds.length} 轮`);
+  log(`🏁 Onboard 结束 · finalState=${finalState} · convergence=${convergenceState ?? 'n/a'} · 共 ${rounds.length} 轮`);
   return {
     taskId,
     agentId,
     rounds,
     finalState,
     totalDurationMs: Date.now() - startedAt,
+    ...(convergenceState ? { convergence: convergenceState } : {}),
   };
 }
