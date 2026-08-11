@@ -1,15 +1,15 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.3.2 · 2026-08-09（UTC）· 🧠 Ontology 运行时层 + 并行编排 + Durable Execution + Agent 身份码 + Onboard L1 + Benchmark 评测 + 工具审批模式 + LLM Trace + 错误处理 + MergeQueue + L4 渐进加载 + 国标对齐
+> v1.3.2 · 2026-08-11（UTC）· 🔄 Onboard Agent 完整版（L2-L5 · FORGE 产品化第二刀）+ 企业专属 eval 套件 + workflow 批量自动生成 + 模型接入插槽扩展 + FDE 梳理辅助 + LLM Trace 任务级轨迹
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
-## 现在在哪：v1.3.2（开发中 · Onboard L2-L5 + agent-creation + 企业 eval + 模型插槽 + FDE 梳理辅助 + Trace 任务级轨迹）
+## 现在在哪：v1.3.2（已发布 · 2026-08-11）
 
 > **v1.3.2 规划方向**：🚀 Onboard Agent 完整版（L2-L5 · FORGE 产品化第二刀）+ 🎯 企业专属 eval 套件 + ⚡ workflow 批量自动生成 + 🧩 模型接入插槽扩展 + 🎙️ FDE 梳理辅助工具（含 ontology 咨询式生成）+ 🧵 LLM Trace 任务级轨迹。
 >
-> **v1.3.1 已于 2026-08-09 交付**——Ontology 运行时层 + 并行编排 + Durable Execution + Agent 身份码 + Onboard L1 + Benchmark 评测 + 工具审批四模式 + LLM Trace + 错误处理 + MergeQueue + L4 渐进加载 + 国标对齐。详见 [v1.3.1 开发日志](./changelog/v1.3/v1.3.1.md) 和 [迭代历程](#迭代历程)。
+> **v1.3.2 已于 2026-08-11 交付**——🔄 Onboard Agent 完整版（L2-L5 · FORGE 产品化第二刀）+ 🎯 企业专属 eval 套件 + ⚡ workflow 批量自动生成 + 🧩 模型接入插槽扩展 + 🎙️ FDE 梳理辅助（含 ontology 咨询式生成）+ 🧵 LLM Trace 任务级轨迹。详见 [v1.3.2 开发日志](./changelog/v1.3/v1.3.2.md) 和 [迭代历程](#迭代历程)。
 
 > ✅ **企业采购阻塞项 · Webhook 推送已于 v1.2.1 交付**：v1.1.6 接通 webhook **PASS/WARN/FAIL 三态推送**，v1.2.1 补齐企业协同平台（飞书/钉钉/企微）完整 Webhook 推送能力（见 SECURITY.md「审计结果推送」）。采购阻塞项已解除。
 
