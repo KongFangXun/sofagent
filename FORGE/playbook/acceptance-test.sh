@@ -962,9 +962,15 @@ if $S119_OK; then S119_RESULT=$(LSE="$PROJECT_ROOT/engine/orchestrator/dist/loop
 $S119_OK && pass
 scenario 120 "v1.1.9 叙事收敛 + BugFix 回归锁"
 S120_OK=true; README="$PROJECT_ROOT/README.md"
-# v1.2.9 README 精简为产品落地页，FDE Agent 提及次数从 ≥5 降到 ≥3（精简后技术细节移入 ARCHITECTURE）
-FDE_COUNT=$(grep -c "FDE Agent" "$README" 2>/dev/null || echo 0)
-[ "$FDE_COUNT" -ge 3 ] || { fail "README 'FDE Agent' 出现 $FDE_COUNT 次（期望 ≥3）"; S120_OK=false; }
+# v1.3.2 优化：原锁是 "FDE Agent" 字面出现 ≥3 次，但 README 重写后用三个身份并列
+# 表达（FDE Skill / 约束层引擎 / FDE Agent），字面计数掉了但叙事更精确。
+# 改为检查"产品身份叙事三要素"：FDE + 约束层 + 审计（任一组合 ≥1 次即算叙事完整）。
+# 仍保留 "FDE Agent" 出现 ≥1 次作为品牌主身份防退化（≥1 比 ≥3 更稳——只防"完全消失"，
+# 不死锁"必须出现几次"的具体数字，避免每次 README 精简都要回来改这个锁）。
+FDE_AGENT_COUNT=$(grep -c "FDE Agent" "$README" 2>/dev/null || echo 0)
+[ "$FDE_AGENT_COUNT" -ge 1 ] || { fail "README 'FDE Agent' 完全消失（品牌主身份丢失，期望 ≥1）"; S120_OK=false; }
+grep -qE '(约束层|Harness)' "$README" || { fail "README 缺 '约束层/Harness' 身份描述"; S120_OK=false; }
+grep -qE '(审计|audit)' "$README" || { fail "README 缺 '审计' 身份描述"; S120_OK=false; }
 # v1.2.9 技术描述移入 ARCHITECTURE.md，改为检查 ARCHITECTURE（措辞已从 README 的"审计引擎核心规则零 token"改为 ARCHITECTURE 的"19 条纯 git-diff 零 token"）
 grep -qE '(纯\s*git-diff|零\s*token|不调\s*LLM)' "$PROJECT_ROOT/docs/ARCHITECTURE.md" || { fail "ARCHITECTURE 缺 '零 token' 审计描述"; S120_OK=false; }
 # v1.3.0 README 不再列历史版本号，检查当前版本标记即可
