@@ -500,3 +500,124 @@ describe('ModelRouter · 消费 P0 审计日志辅助敏感度判定', () => {
     expect(route.target).toBe('local-executor');
   });
 });
+
+// ════════════════════════════════════════
+// v1.3.2 交付 7：client_type 模型接入插槽
+// ════════════════════════════════════════
+
+describe('ModelRouter · v1.3.2 交付 7 client_type 模型插槽', () => {
+  it('默认配置 client_type=ollama（向后兼容）', () => {
+    expect(DEFAULT_ROUTER_CONFIG.local.executor.client_type).toBe('ollama');
+    expect(DEFAULT_ROUTER_CONFIG.local.pipeline.client_type).toBe('ollama');
+  });
+
+  it('schema 缺省 client_type 时默认 ollama（向后兼容）', () => {
+    const dir = tmpDir();
+    const configPath = path.join(dir, 'model-router.json');
+    // 不含 client_type 字段——向后兼容
+    fs.writeFileSync(configPath, JSON.stringify({
+      cloud: {
+        strong: { provider: 'openai', model: 'gpt-4o' },
+        fast: { provider: 'deepseek', model: 'deepseek-chat' },
+      },
+      local: {
+        executor: { provider: 'ollama', model: 'qwen2.5:7b', endpoint: 'http://localhost:11434' },
+        pipeline: { provider: 'ollama', model: 'qwen2.5:0.5b', endpoint: 'http://localhost:11434' },
+      },
+      policy: {
+        restrictedForcesLocal: true,
+        confidentialForcesPipeline: true,
+        fallbackOnLocalFailure: {
+          public: 'cloud-strong',
+          internal: 'cloud-strong',
+          restricted: 'block-and-alert',
+          confidential: 'block-and-alert',
+        },
+      },
+    }));
+    const config = loadModelRouterConfig(dir, configPath);
+    expect(config.local.executor.client_type).toBe('ollama');
+    expect(config.local.pipeline.client_type).toBe('ollama');
+  });
+
+  it('schema 接受 client_type=openai-compatible 配置', () => {
+    const dir = tmpDir();
+    const configPath = path.join(dir, 'model-router.json');
+    fs.writeFileSync(configPath, JSON.stringify({
+      cloud: {
+        strong: { provider: 'openai', model: 'gpt-4o' },
+        fast: { provider: 'deepseek', model: 'deepseek-chat' },
+      },
+      local: {
+        executor: { provider: 'openai-compatible', model: 'Qwen2.5-32B', endpoint: 'http://localhost:8000/v1', client_type: 'openai-compatible', apiKey: 'sk-test' },
+        pipeline: { provider: 'ollama', model: 'qwen2.5:0.5b', endpoint: 'http://localhost:11434', client_type: 'ollama' },
+      },
+      policy: {
+        restrictedForcesLocal: true,
+        confidentialForcesPipeline: true,
+        fallbackOnLocalFailure: {
+          public: 'cloud-strong',
+          internal: 'cloud-strong',
+          restricted: 'block-and-alert',
+          confidential: 'block-and-alert',
+        },
+      },
+    }));
+    const config = loadModelRouterConfig(dir, configPath);
+    expect(config.local.executor.client_type).toBe('openai-compatible');
+    expect(config.local.executor.provider).toBe('openai-compatible');
+    expect(config.local.executor.apiKey).toBe('sk-test');
+  });
+
+  it('数据主权铁律不破：client_type 变化时 restricted 仍 block-and-alert', async () => {
+    const openaiConfig = {
+      ...DEFAULT_ROUTER_CONFIG,
+      local: {
+        ...DEFAULT_ROUTER_CONFIG.local,
+        executor: {
+          provider: 'openai-compatible' as const,
+          model: 'Qwen2.5-32B',
+          endpoint: 'http://localhost:8000/v1',
+          client_type: 'openai-compatible' as const,
+          apiKey: 'sk-test',
+        },
+      },
+    };
+    const router = new ModelRouter({
+      config: openaiConfig,
+      localProbe: async () => false,  // 本地不可达
+      alert: () => {},
+    });
+    const route = await router.routeWithProbe('处理敏感数据', {
+      frontmatter: { sensitivity: 'restricted' },
+    });
+    // restricted 本地不可达 → 必须 block（不 fallback 云端）
+    expect(route.target).toBe('block');
+    expect(route.blockReason).toContain('本地模型不可用');
+  });
+
+  it('openai-compatible 可达时 restricted 走本地执行', async () => {
+    const openaiConfig = {
+      ...DEFAULT_ROUTER_CONFIG,
+      local: {
+        ...DEFAULT_ROUTER_CONFIG.local,
+        executor: {
+          provider: 'openai-compatible' as const,
+          model: 'Qwen2.5-32B',
+          endpoint: 'http://localhost:8000/v1',
+          client_type: 'openai-compatible' as const,
+          apiKey: 'sk-test',
+        },
+      },
+    };
+    const router = new ModelRouter({
+      config: openaiConfig,
+      localProbe: async () => true,
+      alert: () => {},
+    });
+    const route = await router.routeWithProbe('处理敏感数据', {
+      frontmatter: { sensitivity: 'restricted' },
+    });
+    expect(route.target).toBe('local-executor');
+  });
+});

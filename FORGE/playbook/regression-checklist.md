@@ -5,7 +5,7 @@
 > **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：69 维（v1.3.1）
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1250 行（69 维度）、`acceptance-test.sh` ≤ 2050 行（177 场景），越线触发瘦身。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1250 行（69 维度）、`acceptance-test.sh` ≤ 2250 行（177 场景 · v1.3.2 从 2050 上调，releasing.md 阶段五方针「超标上调 LIMIT 不删内容」），越线触发瘦身。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
@@ -16,7 +16,7 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段四 Tier 1 警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
 [ "$WC_CHK" -le 1250 ] && echo "✅ checklist $WC_CHK (≤1250)" || echo "⚠️ checklist $WC_CHK 超 1250"
-[ "$WC_ACC" -le 2050 ] && echo "✅ acceptance $WC_ACC (≤2050)" || echo "⚠️ acceptance $WC_ACC 超 2050"
+[ "$WC_ACC" -le 2250 ] && echo "✅ acceptance $WC_ACC (≤2250)" || echo "⚠️ acceptance $WC_ACC 超 2250"
 ```
 ## 你的身份
 

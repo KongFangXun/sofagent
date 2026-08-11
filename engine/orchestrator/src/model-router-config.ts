@@ -26,11 +26,25 @@ const CloudModelSchema = z.object({
   model: z.string().min(1),
 });
 
-/** 本地模型配置（Ollama） */
+/**
+ * 本地模型配置（v1.3.2 交付 7：支持 client_type 扩展）
+ *
+ * client_type 决定本地模型走哪种客户端协议：
+ *   - 'ollama'（缺省，向后兼容）：走 Ollama 原生 API（/api/chat、/api/tags 探针）
+ *   - 'openai-compatible'：走标准 OpenAI 兼容协议（/v1/chat/completions）
+ *     适用于 vLLM / 自建 OpenAI 兼容服务 / Ollama OpenAI 兼容模式
+ *
+ * 安全铁律不变：client_type 只改变连接协议，不改变数据主权策略
+ * （restricted/confidential 仍 block-and-alert，不因 client_type 变化逃逸）。
+ */
 const LocalModelSchema = z.object({
-  provider: z.literal('ollama'),
+  provider: z.enum(['ollama', 'openai-compatible']),
   model: z.string().min(1),
   endpoint: z.string().url(),
+  /** v1.3.2 交付 7：客户端协议类型（缺省 ollama，向后兼容） */
+  client_type: z.enum(['ollama', 'openai-compatible']).default('ollama'),
+  /** v1.3.2 交付 7：openai-compatible 模式的 API key（环境变量注入优先） */
+  apiKey: z.string().optional(),
 });
 
 /**
@@ -77,8 +91,8 @@ export const DEFAULT_ROUTER_CONFIG: ModelRouterConfig = {
     fast: { provider: 'deepseek', model: 'deepseek-chat' },
   },
   local: {
-    executor: { provider: 'ollama', model: 'qwen2.5:7b', endpoint: 'http://localhost:11434' },
-    pipeline: { provider: 'ollama', model: 'qwen2.5:0.5b', endpoint: 'http://localhost:11434' },
+    executor: { provider: 'ollama', model: 'qwen2.5:7b', endpoint: 'http://localhost:11434', client_type: 'ollama' },
+    pipeline: { provider: 'ollama', model: 'qwen2.5:0.5b', endpoint: 'http://localhost:11434', client_type: 'ollama' },
   },
   policy: {
     restrictedForcesLocal: true,

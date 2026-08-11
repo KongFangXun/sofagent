@@ -69,6 +69,24 @@ export interface ModelCallOptions {
   traceHome?: string;
   /** v1.3.1 交付 11：Trace 打点开关（默认 true；设 false 可完全跳过打点） */
   traceEnabled?: boolean;
+  /** v1.3.2 交付 7：本地模型端点注入（client_type='openai-compatible' 接入 vLLM 等） */
+  endpointConfig?: LocalEndpointConfig;
+}
+
+/**
+ * v1.3.2 交付 7：本地模型端点配置（用于 openai-compatible 路径）
+ * 传入此配置时，model-client 直接用注入的 base_url + key + model，
+ * 不读环境变量，复用同一 Trace + 错误处理链路。
+ */
+export interface LocalEndpointConfig {
+  /** base URL（如 http://localhost:8000/v1） */
+  baseUrl: string;
+  /** API key（本地 vLLM 等可不鉴权，留空即可） */
+  apiKey?: string;
+  /** 模型名 */
+  model: string;
+  /** provider 标识（Trace 用，如 'vllm' / 'openai-compatible'） */
+  provider?: string;
 }
 
 /**
@@ -170,6 +188,10 @@ async function singleRequest(
  * 每次请求（成功与失败）都写一条 LLM 调用级 Trace（交付 11），
  * 打点失败仅 warn，绝不阻断调用。
  *
+ * v1.3.2 交付 7：支持本地配置注入（client_type='openai-compatible' 接入 vLLM 等）。
+ * 传入 endpointConfig 时优先使用注入的 base_url + key + model（不经环境变量），
+ * 复用同一 Trace 写入点 + stop_reason 错误处理链路。
+ *
  * @param messages 消息列表
  * @param options  调用选项
  * @returns 模型返回的文本内容
@@ -188,16 +210,35 @@ export async function callModelAPI(
     traceHome,
     traceEnabled = true,
   } = options;
-  const { apiKey, baseUrl, modelName } = getAPIConfig();
 
-  if (!apiKey) {
+  // v1.3.2 交付 7：本地配置注入优先（client_type='openai-compatible'）
+  let apiKey: string;
+  let baseUrl: string;
+  let modelName: string;
+  let provider: string;
+
+  if (options.endpointConfig) {
+    const ec = options.endpointConfig;
+    apiKey = ec.apiKey || '';
+    baseUrl = ec.baseUrl;
+    modelName = ec.model;
+    provider = ec.provider || providerFromBaseUrl(ec.baseUrl);
+    // openai-compatible 本地模型不需要 key（vLLM 等可不鉴权）——空 key 不拦截
+  } else {
+    const envConfig = getAPIConfig();
+    apiKey = envConfig.apiKey;
+    baseUrl = envConfig.baseUrl;
+    modelName = envConfig.modelName;
+    provider = providerFromBaseUrl(baseUrl);
+  }
+
+  if (!apiKey && !options.endpointConfig) {
     throw new Error(
       'SOFAGENT_MODEL_API_KEY 环境变量未设置。请设置 API key 后重试。'
     );
   }
 
   const url = `${baseUrl.replace(/\/+$/, '')}/chat/completions`;
-  const provider = providerFromBaseUrl(baseUrl);
 
   const body = JSON.stringify({
     model: modelName,

@@ -13,7 +13,7 @@
 | 1 | **来源提取**：过 5 个来源（fresh-eyes 报告 / BugFix 清单 / 新功能清单 / 复审报告 / CHANGELOG），产出 A/B/C 三类清单 + 问题模式清单。关键：新功能审查面零遗漏 + 每个真实发现都有模式归类 | A/B/C 清单 |
 | 2 | **四份文档分发**：A+B 类 → regression-checklist + acceptance-test + check-version.sh（加法）；C 类 → fresh-eyes-review（校准非加法） | 四份文档更新 |
 | 3 | **覆盖率确认**：grep 确认 CHANGELOG 每个交付关键词在审查文档中至少出现一次 | 零遗漏 |
-| 4 | **防膨胀瘦身**：移除已被工具覆盖的维度 / 归并重叠维度 / 抽公共函数。行数警戒线：checklist≤1250 / acceptance≤2050 / fresh-eyes≤370。**超标上调 LIMIT 不删内容** | 自校验脚本全 PASS |
+| 4 | **防膨胀瘦身**：移除已被工具覆盖的维度 / 归并重叠维度 / 抽公共函数。行数警戒线：checklist≤1250 / acceptance≤2250（v1.3.2 从 2050 上调）/ fresh-eyes≤370。**超标上调 LIMIT 不删内容** | 自校验脚本全 PASS |
 | 5 | **fresh-eyes-review 校准**：C 类走决策树（新视角 / 校准视角 / 历史教训），不往留白式审查里加精确检查项 | 校准完成 + 风格守护自检全 PASS |
 
 ---

@@ -147,9 +147,11 @@ export class ModelRouter {
       return base;
     }
 
-    const endpoint = base.target === 'local-pipeline'
-      ? this.config.local.pipeline.endpoint
-      : this.config.local.executor.endpoint;
+    const localConfig = base.target === 'local-pipeline'
+      ? this.config.local.pipeline
+      : this.config.local.executor;
+    const endpoint = localConfig.endpoint;
+    const clientType = localConfig.client_type ?? 'ollama';
     const reachable = await this.localProbe(endpoint);
     if (reachable) return base;
 
@@ -277,16 +279,17 @@ export class ModelRouter {
 
   /** 本地不可达 + restricted/confidential → 写 FAIL 审计 */
   private writeBlockAudit(route: ModelRoute, context: TaskContext): void {
+    const localConfig = route.target === 'local-pipeline'
+      ? this.config.local.pipeline
+      : this.config.local.executor;
     const record: DataSovereigntyRecord = {
       cloudCall: {
         timestamp: new Date().toISOString(),
-        provider: 'ollama',
-        model: route.target === 'local-pipeline'
-          ? this.config.local.pipeline.model
-          : this.config.local.executor.model,
-        endpoint: route.target === 'local-pipeline'
-          ? this.config.local.pipeline.endpoint
-          : this.config.local.executor.endpoint,
+        provider: localConfig.client_type === 'openai-compatible'
+          ? `openai-compatible:${localConfig.provider}`
+          : 'ollama',
+        model: localConfig.model,
+        endpoint: localConfig.endpoint,
         tokenCount: { input: 0, output: 0 },
         purpose: 'model-router-block',
       },
@@ -333,12 +336,21 @@ function isSensitivity(v: string): v is Sensitivity {
   return v === 'public' || v === 'internal' || v === 'restricted' || v === 'confidential';
 }
 
-/** 默认本地可达性探针：GET /api/tags */
+/**
+ * 默认本地可达性探针
+ * - Ollama 原生：GET /api/tags
+ * - openai-compatible：GET /v1/models（标准 OpenAI 兼容端点）
+ */
 async function defaultLocalProbe(endpoint: string): Promise<boolean> {
   try {
-    const url = endpoint.replace(/\/$/, '') + '/api/tags';
+    const base = endpoint.replace(/\/$/, '');
+    const url = base + '/api/tags';
     const res = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(2000) });
-    return res.ok;
+    if (res.ok) return true;
+    // /api/tags 失败 → 尝试 openai-compatible 的 /v1/models
+    const url2 = base + '/v1/models';
+    const res2 = await fetch(url2, { method: 'GET', signal: AbortSignal.timeout(2000) });
+    return res2.ok;
   } catch {
     return false;
   }
