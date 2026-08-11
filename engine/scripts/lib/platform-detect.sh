@@ -42,8 +42,8 @@ parse_args() {
                  [--base-only]
 
 模式说明：
-  默认模式         平台无关安装（只写 ~/.sofagent/）+ FDE Agent Skill（企业部署能力）
-  --base-only      仅安装约束底座 + 四引擎（不装 FDE Agent Skill）
+  默认模式         平台无关安装（只写 ~/.sofagent/）+ FDE Skill（企业部署能力）
+  --base-only      仅安装约束底座 + 四引擎（不装 FDE Skill）
 
 平台说明（默认不探测、不枚举任何平台——平台集成为显式 opt-in）：
   （不传）    通用安装：只写 sofagent 自己的目录 ~/.sofagent/，不碰任何第三方平台目录
@@ -56,7 +56,7 @@ parse_args() {
   --no-config-inject  跳过自动注入 OpenClaw config.json（企业环境用）
   --quick             快速模式——跳过交互确认和验证等待，直接完整安装
   --lite              精简模式——仅部署核心约束文件，跳过 daemon/配置注入（= --quick + --no-daemon + --no-config-inject）
-  --base-only         仅装底座（约束层+审计+编排），跳过 FDE Agent Skill 部署
+  --base-only         仅装底座（约束层+审计+编排），跳过 FDE Skill 部署
   --remote            远程安装模式——自动 git clone 仓库后安装（配合 curl pipe bash 使用）
   --force             升级时强制覆盖 custom/ 用户层（交互确认 + 自动备份，恢复官方默认）
   --merge             升级时三路合并 custom/ 用户层（冲突生成 .merge-conflict，不覆盖原文件）

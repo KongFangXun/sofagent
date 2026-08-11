@@ -1,13 +1,13 @@
 # sofagent Architecture
 
 > 设计决策记录——从为什么存在、约束层四种能力如何协作，到每个关键决策的工程理由。
-> v1.3.2 · 2026-08-09（UTC）
+> v1.3.2 · 2026-08-11（UTC）
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
 ## 心智模型（先读这个）
 
-> **sofagent 是一个 FDE Agent**（开源 MIT）——对外帮你进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎是一套约束 Agent 行为的约束层（Harness），**约束层 × 生命周期**双层架构：层 1 约束层 = 一个层四种能力（注入·审计·回溯·进化）；层 2 生命周期 = 诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，保证每次变更可审计、可回滚、可进化。
+> **sofagent 是一个开源约束层**（MIT）——装在企业跑 AI 节点的设备上盯 Agent 干活：对外帮你进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎是一套约束 Agent 行为的约束层（Harness），**约束层 × 生命周期**双层架构：层 1 约束层 = 一个层四种能力（注入·审计·回溯·进化）；层 2 生命周期 = 诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，保证每次变更可审计、可回滚、可进化。
 
 ```mermaid
 graph TD
@@ -164,9 +164,9 @@ graph TD
 
 | 位置 | 装什么 | 目的 |
 |------|--------|------|
-| **FDE 的电脑** | FDE Skill（SkillHub 装）+ 未来 商业模型层 FDE 模型 | FDE 做诊断——五要素拆解、建 workflow、搭 ontology |
+| **FDE 的电脑** | FDE Skill（ClawHub 装）+ 未来 商业模型层 FDE 模型 | FDE 做诊断——五要素拆解、建 workflow、搭 ontology |
 | **企业设备**（跑 AI 节点）| **sofagent install.sh 全套** | **盯 Agent**——审计每次变更、回溯、注入铁律、daemon 7×24 巡检 |
-| **企业员工的 Agent 平台**（WorkBuddy/Codex） | sofagent Skill（SkillHub 装）| 员工的 Agent 受铁律约束干活 |
+| **企业员工的 Agent 平台**（WorkBuddy/Codex） | sofagent Skill（ClawHub 装）| 员工的 Agent 受铁律约束干活 |
 
 **install.sh 装什么——企业设备需要全套（事前约束 + 事后拦截）**：
 
@@ -189,7 +189,7 @@ graph TD
 | `install.sh --base-only` | 仅底座（审计·回溯·daemon） | 企业 IT：只要核心监控，不装 Agent Skill |
 | `npx -y -p @sofagent/audit sofagent-audit` | 零安装，临时审计 | 开发者：30 秒体验，在任何 git 仓库跑一次 |
 
-> ⚠️ **FDE 不该在自己电脑跑 install.sh**——install.sh 是企业设备安装器，不是 FDE 工具。FDE 的工具是 Skill（SkillHub 装）+ 未来 商业模型层 模型。
+> ⚠️ **FDE 不该在自己电脑跑 install.sh**——install.sh 是企业设备安装器，不是 FDE 工具。FDE 的工具是 Skill（ClawHub 装）+ 未来 商业模型层 模型。
 >
 > ⚠️ **dashboard 是单机监控面板**——每台装了 sofagent 的设备一个 dashboard，盯本机 Agent。多设备聚合是企业级需求，走 模板市场（未来 SaaS）。
 
