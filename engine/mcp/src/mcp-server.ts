@@ -51,6 +51,9 @@ import { agentIdentityTool } from './tools/agent-identity';
 import { loopDebug } from './tools/loop-debug';
 import { evaluate } from './tools/evaluate';
 import { auditTrail } from './tools/audit-trail';
+import { createAgent } from './tools/create-agent';
+import { evalSuite } from './tools/eval-suite';
+import { fdeCompose } from './tools/fde-compose';
 import { getDynamicTools, getDynamicTool, registerMemoryBackends } from './tools/memory-backend';
 
 // ============================================================
@@ -209,6 +212,10 @@ class McpServer {
         case 'loop_debug': { const r = await loopDebug({ ...(typeof args.task === 'string' ? { task: args.task } : {}), ...(typeof args.agent_id === 'string' ? { agent_id: args.agent_id } : {}), ...(typeof args.max_rounds === 'number' ? { max_rounds: args.max_rounds } : {}), ...(typeof args.timeout_ms === 'number' ? { timeout_ms: args.timeout_ms } : {}) }); this.sendTool(id, r, r.data.isError); break; }
         case 'evaluate': { if (!args.benchmark_id) { this.sendError(id, -32602, 'Missing required argument: benchmark_id'); break; } const r = await evaluate({ benchmark_id: args.benchmark_id as string, ...(typeof args.case_id === 'string' ? { case_id: args.case_id } : {}), ...(args.query === true ? { query: true } : {}) }); this.sendTool(id, r, r.data.isError); break; }
         case 'audit_trail': { const r = await auditTrail({ ...(typeof args.agent_id === 'string' ? { agent_id: args.agent_id } : {}), ...(args.include_peers === true ? { include_peers: true } : {}) }); this.sendTool(id, r, r.data.isError); break; }
+        // v1.3.2 新增 tool（交付 5/6/7右）
+        case 'create_agent': { if (!args.requirement) { this.sendError(id, -32602, 'Missing required argument: requirement'); break; } const r = await createAgent({ requirement: args.requirement as string, ...(typeof args.target_dir === 'string' ? { targetDir: args.target_dir } : {}) }); this.sendTool(id, r, r.data?.isError); break; }
+        case 'eval_suite': { if (!args.action || !args.enterprise_id) { this.sendError(id, -32602, 'Missing required arguments: action and enterprise_id'); break; } const er = await evalSuite({ action: args.action as 'instantiate' | 'freeze' | 'run' | 'query', enterprise_id: args.enterprise_id as string, ...(args.industry ? { industry: args.industry as 'finance' | 'manufacturing' | 'supplychain' | 'customerservice' | 'generic' } : {}), ...(args.custom_cases ? { custom_cases: args.custom_cases as any } : {}) }); this.sendTool(id, er, er.data?.isError); break; }
+        case 'fde_compose': { if (!args.action || !args.session) { this.sendError(id, -32602, 'Missing required arguments: action and session'); break; } const fr = await fdeCompose({ action: args.action as 'workflow' | 'ontology', session: args.session as any }); this.sendTool(id, fr, fr.data?.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {

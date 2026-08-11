@@ -398,4 +398,45 @@ export const TOOLS: ToolDef[] = [
       },
     },
   },
+  {
+    // v1.3.2 (交付 5)：一句话需求 → 自动建节点
+    name: 'create_agent',
+    description: '一句话需求自动推导 Agent 配置（角色 + 域规则 + think.md + knowledge 安装）。需求够具体就不追问（如「回答金融合规问题的专家」→直接推导；「有用的助手」→追问）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        requirement: { type: 'string', description: '一句话需求（必填，如「回答金融合规问题的专家」）' },
+        target_dir: { type: 'string', description: '可选：落盘到指定 Agent 目录（默认不落盘，只返回配置）' },
+      },
+      required: ['requirement'],
+    },
+  },
+  {
+    // v1.3.2 (交付 6)：企业专属 eval 套件
+    name: 'eval_suite',
+    description: '企业专属 eval 套件管理（行业模板加载 + 基线冻结 + 运行评测 + 查询日志）。支持金融/制造/供应链行业模板，首次冻结基线调 freezeBenchmark，运行评测写 evaluation-log（HMAC 链）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['instantiate', 'freeze', 'run', 'query'], description: '操作类型：instantiate=加载模板 / freeze=冻结基线 / run=运行评测 / query=查询日志' },
+        enterprise_id: { type: 'string', description: '企业 ID（必填）' },
+        industry: { type: 'string', enum: ['finance', 'manufacturing', 'supplychain', 'customerservice', 'generic'], description: '行业（instantiate 时选）' },
+        custom_cases: { type: 'array', description: '自定义 case（instantiate 时可选）', items: { type: 'object' } },
+      },
+      required: ['action', 'enterprise_id'],
+    },
+  },
+  {
+    // v1.3.2 (交付 7右)：FDE 梳理辅助
+    name: 'fde_compose',
+    description: 'FDE 梳理辅助——五要素引导 → workflow.yml 草稿或 ontology 草稿生成。纯规则驱动（LLM 不参与），action=workflow 生成 workflow 草稿，action=ontology 生成 entity/concept/relations 草稿。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['workflow', 'ontology'], description: '生成类型：workflow=workflow.yml 草稿 / ontology=entity/concept/relations 草稿' },
+        session: { type: 'object', description: '梳理会话 JSON（含 enterpriseId / nodes / workflowName 等，由 compose-interview 收集）' },
+      },
+      required: ['action', 'session'],
+    },
+  },
 ];

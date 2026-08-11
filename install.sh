@@ -244,13 +244,13 @@ migrate_to_install_dir() {
     # 不覆盖已有文件（cp -Rn）
     cp -Rn "$old_data"/. "$new_data"/ 2>/dev/null || true
     # 迁移成功后清理仓库内的 data/
-    rm -rf "$old_data"
+    [ -n "$old_data" ] && rm -rf "$old_data"
     # 同步迁移引擎内部状态（.sofagent/ → internal/）
     local old_internal="${SCRIPT_DIR}/.sofagent"
     local new_internal="$SOFAGENT_HOME/internal"
     if [ -d "$old_internal" ]; then
       cp -Rn "$old_internal"/. "$new_internal"/ 2>/dev/null || true
-      rm -rf "$old_internal"
+      [ -n "$old_internal" ] && rm -rf "$old_internal"
     fi
     ok "数据已迁移到 ${SOFAGENT_HOME}"
   fi
@@ -672,7 +672,7 @@ _rotate_backups() {
   if [ "$count" -gt "$SOFAGENT_BACKUP_KEEP" ]; then
     local to_delete=$((count - SOFAGENT_BACKUP_KEEP))
     find "$backup_root" -mindepth 1 -maxdepth 1 -type d | sort | head -n "$to_delete" | while read -r old; do
-      rm -rf "$old"
+      [ -n "$old" ] && rm -rf "$old"
     done
     _log "backup rotated: removed ${to_delete} oldest"
   fi

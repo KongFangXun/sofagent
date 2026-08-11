@@ -46,6 +46,8 @@ export interface LlmCallTraceInput {
   error?: string | null;
   /** v1.3.2 交付 8：LLM 原始响应（provider 透传，不归一化——OmniMessage fidelity 无损回放） */
   rawResponse?: string;
+  /** v1.3.2 交付 7：本地模型客户端协议类型（ollama | openai-compatible，云端模型缺省 null）——数据链 Trace→client_type→语料导出 */
+  clientType?: 'ollama' | 'openai-compatible' | null;
 }
 
 /** 落盘的完整调用记录（白名单字段 + 链字段） */
