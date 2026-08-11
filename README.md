@@ -160,10 +160,10 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 社区规则集以 `sofagent-ruleset-*` npm 包发布，装上自动发现；也支持 `--ruleset-path` 指向你自己的 JSON 规则。
 
-**FDE Agent**——进场梳理 + 部署 + 常驻，两条路径任选：
+**FDE 进场部署**——两条路径任选：
 
 - **方法论路径**（零依赖）：读 [FDE/GUIDE.md](./FDE/GUIDE.md)，按手册手动梳理工作流，Excel + 人脑也能跑
-- **工具路径**（Node.js ≥ 18）：装好后在你的 AI 工具里说"帮我做 FDE 诊断"，Agent 从进场开始引导你
+- **工具路径**（Node.js ≥ 18）：FDE 在企业设备上跑 install.sh 装好约束层后，用自己的 AI 工具说"帮我做 FDE 诊断"，Agent 从进场开始引导
 
 ## 为什么选 sofagent
 
