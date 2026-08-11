@@ -1,0 +1,36 @@
+{
+  "industry": "finance",
+  "description": "金融合规行业 eval 模板——FDE 交付时按企业 workflow 实例化",
+  "cases": [
+    {
+      "id": "FIN-001",
+      "statement": "客户询问某理财产品是否符合银保监会最新合规要求，请给出合规性分析",
+      "rubric": "引用正确法规 + 合规判定清晰 + 标注风险等级 + 不越权决策",
+      "expectedOutput": {
+        "compliance_status": "enum[compliant|non-compliant|requires-review]",
+        "regulation_reference": "string",
+        "risk_level": "enum[low|medium|high]"
+      }
+    },
+    {
+      "id": "FIN-002",
+      "statement": "一笔跨境支付交易触发了反洗钱预警，请分析交易特征并给出处置建议",
+      "rubric": "识别可疑特征 + 引用反洗钱规则 + 给出合规处置路径 + 标注上报要求",
+      "expectedOutput": {
+        "suspicious_indicators": "array",
+        "aml_rule_reference": "string",
+        "disposition": "enum[report|monitor|release]"
+      }
+    },
+    {
+      "id": "FIN-003",
+      "statement": "请审核一份贷款申请材料的完整性，指出缺失文件和风险点",
+      "rubric": "逐项检查必需文件 + 识别风险点 + 给出补充清单 + 不遗漏关键项",
+      "expectedOutput": {
+        "missing_documents": "array",
+        "risk_points": "array",
+        "completeness_score": "number"
+      }
+    }
+  ]
+}

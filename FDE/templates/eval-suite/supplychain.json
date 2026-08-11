@@ -1,0 +1,36 @@
+{
+  "industry": "supplychain",
+  "description": "供应链物流行业 eval 模板——FDE 交付时按企业 workflow 实例化",
+  "cases": [
+    {
+      "id": "SCM-001",
+      "statement": "供应商交期延迟预警：核心物料预计延迟 5 天，请评估影响并给出应对方案",
+      "rubric": "识别受影响订单 + 评估库存缓冲 + 给出替代方案 + 标注客户影响",
+      "expectedOutput": {
+        "affected_orders": "array",
+        "buffer_days": "number",
+        "mitigation_plan": "string"
+      }
+    },
+    {
+      "id": "SCM-002",
+      "statement": "仓库盘点发现 A 类物料账实不符，请分析差异原因",
+      "rubric": "列出可能原因 + 关联出入库记录 + 给出核查步骤 + 建议纠正措施",
+      "expectedOutput": {
+        "discrepancy_reasons": "array",
+        "verification_steps": "array",
+        "corrective_action": "string"
+      }
+    },
+    {
+      "id": "SCM-003",
+      "statement": "请根据历史销量数据为 3 个 SKU 生成下周补货建议",
+      "rubric": "基于销量趋势 + 考虑安全库存 + 给出补货量 + 标注置信度",
+      "expectedOutput": {
+        "replenishment_plan": "array",
+        "safety_stock_adjusted": "boolean",
+        "confidence": "number"
+      }
+    }
+  ]
+}

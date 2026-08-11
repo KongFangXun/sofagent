@@ -204,6 +204,20 @@ export type { AgentCreationResult, DerivedAgentConfig } from './onboard/agent-cr
 export { validateAgentCreation, checkNoModelPersistence } from './onboard/creation-validator';
 export type { ValidationResult } from './onboard/creation-validator';
 
+// v1.3.2 交付 6：企业专属 eval 套件
+export {
+  instantiateEvalSuite,
+  freezeEvalBaseline,
+  runEvalSuite,
+  loadIndustryTemplate,
+} from './loop-agent/eval-suite';
+export type {
+  EnterpriseEvalSuite,
+  EvalCase,
+  Industry,
+  EvalSuiteRunResult,
+} from './loop-agent/eval-suite';
+
 // v1.3.1 交付 9：Benchmark 评测体系（题库设计 / 隔离评测 / HMAC 链日志）
 export {
   createBenchmark,

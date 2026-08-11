@@ -1,0 +1,36 @@
+{
+  "industry": "manufacturing",
+  "description": "制造生产行业 eval 模板——FDE 交付时按企业 workflow 实例化",
+  "cases": [
+    {
+      "id": "MFG-001",
+      "statement": "产线良率连续 3 天低于目标值 95%，请分析可能原因并给出改善建议",
+      "rubric": "识别关键工序 + 数据支撑分析 + 给出可执行改善措施 + 标注优先级",
+      "expectedOutput": {
+        "root_causes": "array",
+        "improvement_actions": "array",
+        "priority": "enum[high|medium|low]"
+      }
+    },
+    {
+      "id": "MFG-002",
+      "statement": "一批产品质检发现 3 项不合格，请生成质量异常报告",
+      "rubric": "记录不合格项 + 标注影响范围 + 给出处置方案 + 追溯工序",
+      "expectedOutput": {
+        "defect_items": "array",
+        "affected_batch": "string",
+        "disposition": "enum[rework|scrap|release-with-deviation]"
+      }
+    },
+    {
+      "id": "MFG-003",
+      "statement": "设备 OEE 数据显示某工位停机时间异常，请诊断故障类别",
+      "rubric": "分类故障类型 + 关联设备历史 + 给出维修建议 + 估算恢复时间",
+      "expectedOutput": {
+        "fault_category": "enum[mechanical|electrical|software|operational]",
+        "maintenance_action": "string",
+        "estimated_downtime": "string"
+      }
+    }
+  ]
+}

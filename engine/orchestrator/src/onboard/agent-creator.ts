@@ -207,7 +207,7 @@ function detectSpecificAction(text: string): string | null {
   }
   // process 类型：只在文本中有明确的「执行/完成」语义且非泛化时匹配
   // 如「执行工单处理」中的「执行」是具体的
-  if (ACTION_KEYWORDS.process.some((kw) => text.includes(kw.toLowerCase()))) {
+  if (ACTION_KEYWORDS.process?.some((kw) => text.includes(kw.toLowerCase()))) {
     // 检查是否伴随更具体的上下文词
     const hasExecutionContext = ['执行', '完成', '自动', 'execute', 'automate'].some((w) => text.includes(w));
     if (hasExecutionContext) {
