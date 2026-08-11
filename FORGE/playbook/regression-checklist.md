@@ -2,10 +2,10 @@
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
 > ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。v1.2.9 新增维度 75-78（check-version MCP 扫描路径 / JS RegExp (?i) 不支持 / drift 排除 .test. / 新文件版本头匹配 SSOT），归并 65+66（FORGE stream 数据处理）、73+74（ESM named export + FORGE 烟测）。v1.3.0 新增维度 79-82（运行时审计 tool wrapper / 决策审计 HMAC 链 / 外部记忆后端 + sensitivity ACL / 进化链路写保护），归并无。v1.3.0 fresh-eyes 复审新增维度 83（license + action.yml 版本锁定）。v1.3.0 阶段五覆盖率确认新增维度 84（shouldAllow + 仓库隔离）。v1.3.1 新增维度 85-87（FORGE driver run_bash cwd 强制 / auto-commit 代码领域限定 / HMAC 密钥 Shannon 熵检测）+ 维度 88（根 tsconfig outDir 缺失根因待修）。
-> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：69 维（v1.3.1）
+> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：69 维（v1.3.2）
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1250 行（69 维度）、`acceptance-test.sh` ≤ 2250 行（177 场景 · v1.3.2 从 2050 上调，releasing.md 阶段五方针「超标上调 LIMIT 不删内容」），越线触发瘦身。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1350 行（v1.3.2 从 1250 上调，releasing.md 方针「超标上调 LIMIT 不删内容」）、`acceptance-test.sh` ≤ 2250 行（v1.3.2 从 2050 上调），越线触发瘦身。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
@@ -1246,4 +1246,30 @@ grep -oE 'engine/[a-zA-Z_/]+\.ts' FORGE/playbook/regression-checklist.md | sort 
 done
 # 期望：无 ⚠️ 输出（所有引用路径有效）
 # 🔴 每次架构迁移（文件改名/目录调整）后必须跑此元检查
+```
+
+#### 93. MCP tool 注册三步完整性——TOOLS 数组 + switch case + import（v1.3.2 新增 · 五轮审查发现）
+
+**背景**：v1.3.2 新增 create_agent/eval_suite/fde_compose 三个 MCP tool，功能函数写了但没注册到 tool-registry.ts TOOLS 数组 + mcp-server.ts switch 路由，MCP 客户端无法发现。
+
+**检查命令**：
+```bash
+# 新增 MCP tool 时：tool-registry.ts 的 TOOLS 数组 name 数 = mcp-server.ts 的 case 数 = tools/ 下 export function 数
+REG=$(awk '/^export const TOOLS/,/^];/' engine/mcp/src/tool-registry.ts | grep -c "name: '")
+CASES=$(grep -c "case '" engine/mcp/src/mcp-server.ts)
+echo "TOOLS 数组: $REG / switch cases: $CASES"
+# 期望：TOOLS ≥ CASES（dynamic tools 不算在 TOOLS 里但算在 case 里）
+```
+
+#### 94. bash 3.2 兼容性——空数组 + set -u + 尾行条件（v1.3.2 新增 · 五轮审查 P0-B1）
+
+**背景**：bootstrap.sh 在 macOS 默认 `/bin/bash` 3.2 下崩溃——空数组 `${arr[@]}` + `set -u` = unbound variable；尾行 `[[ ]] && cmd` + `set -e` = 成功也 exit 1。
+
+**检查命令**：
+```bash
+# 新增 shell 脚本在 macOS 默认 bash 3.2 下测过
+/bin/bash --version | head -1  # 确认 3.2
+/bin/bash <script.sh> --help 2>&1; echo "EXIT=$?"
+# 期望：EXIT=0
+# 危险模式：${arr[@]} + set -u / [[ ]] && + set -e
 ```

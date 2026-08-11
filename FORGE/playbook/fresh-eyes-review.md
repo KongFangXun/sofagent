@@ -358,13 +358,13 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 
 **v1.3.0 新增经验（release-gate run-21 过程中暴露）**：
 
-- **LLM 解读日志的三种误判**——release-gate acceptance 分片 worker 从日志判 PASS/FAIL，run-21 把真实 PASS（241/241 exit 0）误判 FAIL：① **grep exit code 幻觉**——把日志中间 `echo "EXIT: $?"` 的打印当成脚本真实退出码；② **不懂非连续编号**——acceptance 场景编号跳号是设计模式（历史场景归并/移除后编号不回收），worker 把"编号在日志中找不到"当"测试缺失"（run-21 误报"9 场景缺失"）；③ **WARN 当 FAIL**——场景代码三选一（pass/pass/warn）的兜底 warn 分支被当缺陷。**教训：能用确定性正则判定的结果（日志总结行「N 通过/M 失败」+「全部通过」）不让 LLM 解读；LLM 解读日志前必须理解日志的格式约定（跳号设计、WARN 语义、内嵌打印 vs 真实退出码）**
-- **🔴 ANSI 颜色码坑**——acceptance 日志实际带 `\x1b[0;32m241 通过\x1b[0m` ANSI 码，正则 `验收测试结果：N 通过` 直接匹配失败（run-21 实测）。**教训：解析 shell 日志前必须剥离 `\x1b[...m`，否则确定性判定会因格式噪音失效**
-- **跨步骤状态不一致（verdict.md vs status.json）**——F 修复链收敛 PASS 后，verdict.md 仍是 V 阶段的 FAIL 文本，status.json 却已是 PASS——文件与状态矛盾。**教训：driver 状态变量变化后必须同步回写权威产物文件，否则"哪个是真的"要靠人猜**
+- **LLM 解读日志的三种误判 + ANSI + 状态不一致**——run-21 把真实 PASS 误判 FAIL：① grep exit code 幻觉（日志内嵌打印 ≠ 真实退出码）② 不懂非连续编号（跳号是设计模式）③ WARN 当 FAIL ④ ANSI 颜色码致正则失配 ⑤ verdict.md vs status.json 状态矛盾。**教训：能用确定性正则判定的不让 LLM 解读；解析 shell 日志前剥离 ANSI + 理解格式约定；driver 状态变化必须同步回写权威产物文件**
 
-**v1.3.1 新增经验（fresh-eyes run-01/03 + release-gate run-10/13 过程中暴露）**：
+**v1.3.1 新增经验（fresh-eyes run-01/03 + release-gate run-10/13）**：
+- **driver 工程管道的四种死亡**——SIGPIPE / cwd 拼错 / F 修复链漏洞 / 标题 grep 失败。**教训：每种死亡模式都要有防御（输出重定向 / cwd 强制 / F 收敛重跑 verdict / 标题加 [N] 锚点）**
+- **降级轮 finding 不可信**——worker 降级时只读部分文件，finding 大量误报。**教训：isDegraded=true 必须人工核实**
 
-- **driver 工程管道的四种死亡**——① SIGPIPE（`| head` 截断杀进程）② cwd 路径拼错（模型写错用户名→bash 全废→降级）③ F 修复链逻辑漏洞（audit 无违规 ≠ verdict 阻塞已修）④ 视角标题 grep 失败（汉字数字 vs 阿拉伯数字）。**教训：driver 是三层进程嵌套的脆弱管道，每种死亡模式都要有防御（输出重定向 / cwd 强制 / F 收敛重跑 verdict / 标题加 [N] 锚点）**
-- **降级轮的 finding 不可信**——worker 降级时只能读部分文件，产出的 finding 大量误报（install.sh 有守卫报"裸变量" / 24 规则在 audit 包报"仅 4 文件"）。**教训：isDegraded=true 的轮次结论必须人工核实，不能当真相**
+**v1.3.2 新增经验（fresh-eyes 五轮 + run-11）**：
+- **假阳性 clean + MCP 注册遗漏 + bash 3.2 兼容 + 文档头日期漂移**——四种新模式：① splitFindings 格式不匹配→误判 clean（需 fallback+sanity check）② 功能函数没注册到 TOOLS+switch（三步必查）③ macOS bash 3.2 空数组+set -u 崩溃（须 3.2 下测）④ bump 版本后文档头日期没跟改（应动态提取）
 
 这些方向值得你保持**额外敏感**——但不要把它们当成清单。你今天发现的问题可能完全不在这个列表上。**那才是最值钱的发现。**
