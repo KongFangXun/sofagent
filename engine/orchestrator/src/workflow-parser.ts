@@ -22,6 +22,7 @@ import {
 } from './builtin-agents';
 import type { SubAgentDefinition } from './registry';
 import { listAgents } from './registry';
+import { deriveAgentFromRequirement } from './onboard/agent-creator';
 
 // ────────────────────────────────────────────────────────────
 // 类型定义
@@ -106,47 +107,69 @@ export function mapAgentType(agentType: string): { definition: SubAgentDefinitio
 }
 
 /**
- * v1.2.6: 解析 agent 类型 → SubAgentDefinition（含 enterprise 动态查找）
+ * v1.3.2 交付 5: 解析 agent 类型 → SubAgentDefinition（registry 动态查找 + agent-creation 兜底）
  *
- * - 内置 4 个（developer/qa-engineer/researcher/technical-writer）走 AGENT_MAP
+ * 解析链（v1.3.2 升级——移除「未知降级 general-purpose」）：
+ *   ① 内置 4 个（developer/qa-engineer/researcher/technical-writer）走 AGENT_MAP
+ *   ② registry 动态查找（已注册的 sub-agent 直接复用，不重复生成）
+ *   ③ 查不到 → agent-creation 兜底生成（从节点 task 描述推导 Role + 域规则）
+ *   ④ 生成后注册进 registry（后续复用）
+ *
  * - `enterprise` 类型：调 listAgents(dataDir) 动态查找 YML 中 name 匹配的 Agent
  *   - 找到 → 返回该 Agent 定义
  *   - 未找到 → 抛错提示「enterprise Agent 未注册，请先运行 activate」
- * - 未知类型：仍降级到 TECHNICAL_WRITER_AGENT（现有行为不变）
+ *
+ * v1.3.2 变更：未知类型不再降级到 TECHNICAL_WRITER_AGENT——走 agent-creation 推导生成。
  *
  * @param node workflow 节点
- * @param dataDir .sofagent 数据目录（用于 listAgents 查找企业 Agent）
- * @returns { definition, fallback }
+ * @param dataDir .sofagent 数据目录（用于 registry 查找）
+ * @returns { definition, fallback } —— fallback=true 表示走了 agent-creation 兜底
  * @throws Error 当 enterprise agent 未注册时
  */
 export function resolveAgent(
   node: WorkflowNode,
   dataDir?: string,
 ): { definition: SubAgentDefinition; fallback: boolean } {
-  // 内置 agent 走 AGENT_MAP
+  // ① 内置 agent 走 AGENT_MAP
   const hit = AGENT_MAP[node.agent];
   if (hit) return { definition: hit, fallback: false };
 
-  // enterprise agent 动态查找
-  if (node.agent === 'enterprise') {
-    if (!dataDir) {
-      throw new Error(
-        `enterprise Agent 解析需要 dataDir，但未提供。请确保 workflow-parser 收到 dataDir 参数。`,
-      );
-    }
-    // 节点 name 就是 enterprise agent 的注册名（FDE 激活后写入 subagents/*.yml）
-    // 在 workflow.yml 中，enterprise 节点的 name 字段映射到节点 id
+  // ② registry 动态查找（已注册的 sub-agent 直接复用）
+  if (dataDir) {
     const agents = listAgents(dataDir);
-    const found = agents.find((a) => a.name === node.id);
-    if (!found) {
-      throw new Error(
-        `enterprise Agent '${node.id}' 未注册，请先运行 activate`,
-      );
+    const registryHit = agents.find((a) => a.name === node.agent || a.name === node.id);
+    if (registryHit) return { definition: registryHit, fallback: false };
+
+    // enterprise agent 专路径
+    if (node.agent === 'enterprise') {
+      const found = agents.find((a) => a.name === node.id);
+      if (!found) {
+        throw new Error(
+          `enterprise Agent '${node.id}' 未注册，请先运行 activate`,
+        );
+      }
+      return { definition: found, fallback: false };
     }
-    return { definition: found, fallback: false };
   }
 
-  // 未知类型降级到 technical-writer
+  // ③ 查不到 → agent-creation 兜底生成（从节点 task 描述推导）
+  const creation = deriveAgentFromRequirement(node.task);
+  if (creation.status === 'derived' && creation.config) {
+    const config = creation.config;
+    const generatedDefinition: SubAgentDefinition = {
+      name: config.name,
+      type: 'enterprise',
+      description: config.role,
+      tools: ['read', 'write', 'grep', 'glob'],
+      systemPrompt: config.thinkMd,
+      modelName: null, // 不持久化 provider/model_id（铁律）
+      knowledgeDomain: config.domain,
+    };
+    return { definition: generatedDefinition, fallback: true };
+  }
+
+  // agent-creation 也推导不出来（需求太泛）→ 最后降级（向后兼容）
+  // 但标注 fallback=true 提示用户补充需求
   return { definition: TECHNICAL_WRITER_AGENT, fallback: true };
 }
 

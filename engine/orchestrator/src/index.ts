@@ -184,6 +184,26 @@ export type {
   JudgeVerdict,
 } from './loop-agent/judge';
 
+// v1.3.2 交付 1-4：Onboard L2-L5（语义判定 / 自动定位 / 自动修复 / 循环收敛）
+export { compareWithOntology, compareWithOntologySync } from './loop-agent/ontology-comparator';
+export type { OntologyExpectedOutput, OntologyFieldExpectation, ComparatorOptions } from './loop-agent/ontology-comparator';
+export { extractStructuredOutput } from './loop-agent/output-extractor';
+export type { ExtractionResult, LlmExtractOptions } from './loop-agent/output-extractor';
+export { emptyDiffReport, isDiffPass, hasErrorMismatch, summarizeDiff } from './loop-agent/diff-report';
+export type { DiffReport, DiffMismatch } from './loop-agent/diff-report';
+export { localizeError } from './loop-agent/error-localizer';
+export type { LocalizationResult, ErrorSource, LocalizationContext, LlmLocalizerDeps } from './loop-agent/error-localizer';
+export { applyFix } from './loop-agent/fix-applier';
+export type { FixProposal, FixApplyResult, LlmFixerDeps, AuditGateDeps, FileOpsDeps } from './loop-agent/fix-applier';
+export { DEFAULT_L5_CONFIG } from './loop-agent/driver';
+export type { ConvergenceState, L5ConvergenceConfig } from './loop-agent/driver';
+
+// v1.3.2 交付 5：agent-creation（一句话需求 → 自动建节点）
+export { deriveAgentFromRequirement } from './onboard/agent-creator';
+export type { AgentCreationResult, DerivedAgentConfig } from './onboard/agent-creator';
+export { validateAgentCreation, checkNoModelPersistence } from './onboard/creation-validator';
+export type { ValidationResult } from './onboard/creation-validator';
+
 // v1.3.1 交付 9：Benchmark 评测体系（题库设计 / 隔离评测 / HMAC 链日志）
 export {
   createBenchmark,
