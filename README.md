@@ -103,7 +103,7 @@ npx -y -p @sofagent/audit sofagent-audit
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit 拦截 .env 提交" width="860" />
 </p>
 
-**完整安装**（Node.js ≥ 18，先下载审查再执行）：
+**完整安装**（Node.js ≥ 18，先下载审查再执行）——**装在企业跑 AI 节点的设备上**：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh -o bootstrap.sh
@@ -114,6 +114,8 @@ sofagent-audit --doctor    # 验证环境（可选）
 ```
 
 > 💡 所有安装脚本只写入 `~/.sofagent/`，不修改系统文件。`--no-verify` 可绕过本地 hook——sofagent 防的是诚实 Agent 的疏忽，不是恶意绕过；高安全场景请在 CI 侧加 `sofagent-audit --diff` 兜底。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
+>
+> 📌 **install.sh 是企业设备安装器**——装在跑 AI 节点的服务器/电脑上，给 Agent 当监控约束层（审计 + 回溯 + 注入 + daemon 巡检 + 单机 dashboard）。FDE 自己的电脑不需要跑 install.sh，FDE 的工具是 [Skill](https://skillhub.com)（方法论）+ 未来 商业模型层 模型。详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构)。
 
 更多安装方式（clone 安装 / npx 完整安装 / 最小安装 / 企业部署）见 [HANDBOOK](./docs/HANDBOOK.md)。企业用户想直接用 FDE 方法论梳理工作流，看 [FDE/README.md](./FDE/README.md)（零依赖，不需要 Node.js）。
 
@@ -127,12 +129,12 @@ graph LR
     B --> C["企业<br/>FDE Agent<br/>全套部署·7×24 自运转"]
 ```
 
-| 入口 | 做什么 | 花多久 |
-|------|--------|:----:|
-| **`npx -y -p @sofagent/audit sofagent-audit`** | 零配置审计最近一次 commit，3 秒出结果 | 30 秒 |
-| **`--ruleset` 规则市场** | 加载安全等规则集，或自定义 JSON 规则 | 1 分钟 |
-| **GitHub Action** | 每次 PR 自动审计，违规标注在 diff 行上 | 配置一次 |
-| **FDE Agent** | 进场梳理工作流 → 部署 AI 节点 → 7×24 自运转 | FDE 驻场 |
+| 入口 | 做什么 | 装在哪 | 花多久 |
+|------|--------|--------|:----:|
+| **`npx -y -p @sofagent/audit sofagent-audit`** | 零配置审计最近一次 commit，3 秒出结果 | 任意 git 仓库（临时） | 30 秒 |
+| **`--ruleset` 规则市场** | 加载安全等规则集，或自定义 JSON 规则 | 同上 | 1 分钟 |
+| **GitHub Action** | 每次 PR 自动审计，违规标注在 diff 行上 | CI/CD | 配置一次 |
+| **install.sh 全套** | 审计 + 回溯 + 注入 + daemon 巡检 + dashboard——Agent 的完整监控约束层 | **企业设备**（跑 AI 节点的服务器/电脑） | FDE 驻场安装 |
 
 **规则市场**：
 
@@ -164,11 +166,11 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 > 🧪 **工程可信度**：2016 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
 
-> 🧠 **v1.3.1 新能力**（按主题分组）：
+> 🧠 **v1.3.2 新能力**（按主题分组）：
 > - **运行时层**：Ontology 运行时层（Action 注册表 + 执行前校验 + Schema 定稿）· 并行编排（波次并发 + 审计卡关 + MergeQueue）· Durable Execution（checkpoint 续跑 + 幂等）
 > - **身份与评测**：Agent 身份码 Ed25519 · 📊 Benchmark 评测（`evaluate`）· 🚀 Onboard Agent L1（`loop_debug`）
 > - **治理与可观测**：🔒 工具审批四模式 · 📜 LLM 调用级 Trace · 🔄 错误处理（stop_reason + 退避）· 📚 L4 渐进加载 · 国标对齐 GB/T 48000.3-2026（`--gb48000`）
-> 详见 [v1.3.1 开发日志](./docs/changelog/v1.3/v1.3.1.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
+> 详见 [v1.3.2 开发日志](./docs/changelog/v1.3/v1.3.2.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 文档
 

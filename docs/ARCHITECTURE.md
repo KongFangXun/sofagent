@@ -144,7 +144,7 @@ graph TD
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
 | orchestrator | 编排引擎：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 | ✅ 已实现（546 测试） |
 | daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 | ✅ 已实现（205 测试） |
-| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（35 tools） | ✅ 已实现 |
+| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（38 tools） | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | skillopt | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填 | ✅ 已实现 |
 | think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成） |
@@ -156,15 +156,44 @@ graph TD
 
 > **v1.2.0 审计链安全加固**（BugFix 批次）：`--doctor` hash chain 三态判定（ok / tampered / unverifiable，`checkHistoryChainDetailed`）· HMAC key ≥16 字节强校验（`validateHmacKey`）· HMAC 签名改为基于脱敏记录（先 sanitize 再签名，写读一致）· config 可选签名校验（`verifyConfigSignature` + `signConfig` CLI）· CLI 版本一致性自检（`checkVersionConsistency`）。详见 `engine/core/src/audit-history.ts`、`engine/core/src/config-loader.ts`。
 
-### 安装包边界（v1.2.0 设计）
+### 安装包边界与部署架构（v1.3.2 定位校准）
 
-| 安装器 | 装什么 | 不装 | 适用 |
-|---|---|---|---|
-| `install.sh`（根，FDE 主安装器） | 底座 + FDE Agent Skill（@sofagent-fde / @sofagent-audit）+ hook | FORGE | 企业 / FDE：要常驻 Agent（7×24 自动执行的 AI 节点） |
-| `install.sh --base-only` | 仅底座（注入·审计·回溯·进化） | FDE / FORGE | 开发者 / 企业 IT：只要核心约束层 |
+> **核心定位**：sofagent 装在**企业跑 AI 节点的设备**上，是 Agent 的监控约束层。FDE 自己的电脑不该跑 install.sh——FDE 的工具是 Skill（方法论）+ 未来 商业模型层 模型。
+
+**谁装什么——三个位置各归各位**：
+
+| 位置 | 装什么 | 目的 |
+|------|--------|------|
+| **FDE 的电脑** | FDE Skill（SkillHub 装）+ 未来 商业模型层 FDE 模型 | FDE 做诊断——五要素拆解、建 workflow、搭 ontology |
+| **企业设备**（跑 AI 节点）| **sofagent install.sh 全套** | **盯 Agent**——审计每次变更、回溯、注入铁律、daemon 7×24 巡检 |
+| **企业员工的 Agent 平台**（WorkBuddy/Codex） | sofagent Skill（SkillHub 装）| 员工的 Agent 受铁律约束干活 |
+
+**install.sh 装什么——企业设备需要全套（事前约束 + 事后拦截）**：
+
+| install.sh 装的 | 为什么企业设备需要 |
+|---|---|
+| @sofagent/audit + git hook | 事后拦截——Agent commit 时扫 24 条规则 |
+| daemon | 7×24 巡检（数据主权 / 知识健康 / 失败模式） |
+| dashboard | **单机监控面板**——企业 IT 看本设备 Agent 运行状态（多设备聚合走未来 模板市场） |
+| SKILL.md + fde.md + core-rules.md + role-*.md | **事前约束**——Agent 启动时读铁律，知道规则才能遵守 |
+| 4 个 Agent Skill（fde/audit/engineer/reviewer）| SubAgent 岗位定义 |
+| HMAC key | 审计记录防篡改 |
+
+> **事前约束（Skill 注入）+ 事后拦截（审计引擎）缺一不可**——只有审计没 Skill = Agent 不知道规则；只有 Skill 没审计 = Agent 知道规则但可以不遵守。install.sh 是这两者的完整闭环。
+
+**安装器模式**：
+
+| 命令 | 装什么 | 适用 |
+|---|---|---|
+| `install.sh`（默认） | 底座 + FDE Agent Skill + hook（全套） | **企业设备**：要常驻 Agent + 7×24 监控 |
+| `install.sh --base-only` | 仅底座（审计·回溯·daemon） | 企业 IT：只要核心监控，不装 Agent Skill |
+| `npx -y -p @sofagent/audit sofagent-audit` | 零安装，临时审计 | 开发者：30 秒体验，在任何 git 仓库跑一次 |
+
+> ⚠️ **FDE 不该在自己电脑跑 install.sh**——install.sh 是企业设备安装器，不是 FDE 工具。FDE 的工具是 Skill（SkillHub 装）+ 未来 商业模型层 模型。
+>
+> ⚠️ **dashboard 是单机监控面板**——每台装了 sofagent 的设备一个 dashboard，盯本机 Agent。多设备聚合是企业级需求，走 模板市场（未来 SaaS）。
 
 > 最小可用：只装 `@sofagent/audit` 就有纯审计（24 条规则，17 默认启用 + 7 扩展 opt-in + 快照 + 回滚）；五包全装才是完整约束层（Harness）。
-> 注：v1.2.0 起 `install.sh`（根目录）成为主安装器并新增 `--base-only`，详见发版说明。
 
 ### 已排期（开发中或即将开发，详见 ROADMAP）
 
