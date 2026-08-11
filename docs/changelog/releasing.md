@@ -10,7 +10,7 @@
 
 > 每次新 session 或新阶段开始时，先读这 12 行确认进度。打勾的 = 已完成，第一个未打勾的 = 当前要做。
 
-- [ ] 一 · 审查上版本（fresh-eyes-loop · 新 session）→ [01-review.md](./releasing/01-review.md)
+- [ ] 一 · 审查上版本（fresh-eyes-loop 自动化审查循环 · 新 session）→ [01-review.md](./releasing/01-review.md)
 - [ ] 二 · 开发 → [02-dev.md](./releasing/02-dev.md)
 - [ ] 三 · 基础自测 → [03-selftest.md](./releasing/03-selftest.md)
 - [ ] 四 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session）→ [04-quality-loop.md](./releasing/04-quality-loop.md)
