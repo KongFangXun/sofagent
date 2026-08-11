@@ -129,7 +129,7 @@ async function singleRequest(
   apiKey: string,
   body: string,
   timeout: number,
-): Promise<{ content: string; tokenInput: number; tokenOutput: number }> {
+): Promise<{ content: string; tokenInput: number; tokenOutput: number; rawResponse: string }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
 
@@ -151,9 +151,12 @@ async function singleRequest(
       throw err;
     }
 
+    // v1.3.2 交付 8：先取原始响应文本（provider 透传 rawResponse，不归一化）
+    const rawText = await response.text();
+
     let data: ChatCompletionResponse;
     try {
-      data = (await response.json()) as ChatCompletionResponse;
+      data = JSON.parse(rawText) as ChatCompletionResponse;
     } catch (parseErr) {
       // 流截断 / 非法 JSON → malformed 分类（消息带「解析」关键词供 classifyError 识别）
       throw new Error(
@@ -170,6 +173,7 @@ async function singleRequest(
       content,
       tokenInput: data.usage?.prompt_tokens ?? 0,
       tokenOutput: data.usage?.completion_tokens ?? 0,
+      rawResponse: rawText,
     };
   } finally {
     clearTimeout(timer);
@@ -253,6 +257,7 @@ export async function callModelAPI(
     durationMs: number;
     stopReason: StopReason;
     error: string | null;
+    rawResponse?: string;
   }): void => {
     if (!traceEnabled) return;
     try {
@@ -267,6 +272,7 @@ export async function callModelAPI(
           durationMs: record.durationMs,
           stopReason: record.stopReason,
           error: record.error,
+          ...(record.rawResponse ? { rawResponse: record.rawResponse } : {}),
         },
         traceHome,
       );
@@ -283,13 +289,14 @@ export async function callModelAPI(
     const startedAt = Date.now();
     try {
       const result = await singleRequest(url, apiKey, body, timeout);
-      // 成功打点：stopReason = completed
+      // 成功打点：stopReason = completed（v1.3.2 交付 8：携带 rawResponse）
       writeTrace({
         tokenInput: result.tokenInput,
         tokenOutput: result.tokenOutput,
         durationMs: Date.now() - startedAt,
         stopReason: 'completed',
         error: null,
+        rawResponse: result.rawResponse,
       });
       return result.content;
     } catch (err) {

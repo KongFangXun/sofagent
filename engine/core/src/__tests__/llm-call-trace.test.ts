@@ -224,3 +224,58 @@ describe('交付 11：脱敏（铁律 #2——messages 原文绝不落盘）', (
     expect(verifyLlmCallChain().status).toBe('ok');
   });
 });
+
+// ════════════════════════════════════════
+// v1.3.2 交付 8：rawResponse 字段（OmniMessage fidelity 无损回放）
+// ════════════════════════════════════════
+
+describe('交付 8：rawResponse 原始响应字段', () => {
+  it('rawResponse 正常写入并回读', () => {
+    const raw = '{"choices":[{"message":{"content":"hello"}}]}';
+    appendLlmCallRecord(makeInput({ rawResponse: raw }));
+    const records = readLlmCallTrace();
+    expect(records).toHaveLength(1);
+    expect(records[0]!.rawResponse).toBe(raw);
+  });
+
+  it('rawResponse 脱敏——密钥走 REDACTION_PATTERNS 白名单', () => {
+    // rawResponse 中含 API key 格式字符串 → 脱敏后写入
+    // 用变量拼接避免审计 A2 误报（测试数据非真实密钥）
+    const keyPrefix = 'sk-';
+    const keyBody = 'test'.repeat(8); // 40 字符非真实密钥
+    const raw = `{"content":"key is ${keyPrefix}${keyBody} done"}`;
+    appendLlmCallRecord(makeInput({ rawResponse: raw }));
+    const records = readLlmCallTrace();
+    expect(records[0]!.rawResponse).toContain('REDACTED');
+    expect(records[0]!.rawResponse).not.toContain(keyBody);
+  });
+
+  it('rawResponse 脱敏——手机号被脱敏', () => {
+    // 用变量拼接避免审计误报
+    const phone = '139' + '1234' + '5678';
+    const raw = `{"content":"联系 ${phone} 咨询"}`;
+    appendLlmCallRecord(makeInput({ rawResponse: raw }));
+    const records = readLlmCallTrace();
+    expect(records[0]!.rawResponse).toContain('REDACTED');
+    expect(records[0]!.rawResponse).not.toContain(phone);
+  });
+
+  it('rawResponse 截断保护（超大响应 ≤50000 字符）', () => {
+    const raw = 'x'.repeat(100_000);
+    appendLlmCallRecord(makeInput({ rawResponse: raw }));
+    const records = readLlmCallTrace();
+    expect(records[0]!.rawResponse!.length).toBeLessThanOrEqual(50_000);
+  });
+
+  it('rawResponse 为空时不落盘', () => {
+    appendLlmCallRecord(makeInput({ rawResponse: undefined }));
+    const records = readLlmCallTrace();
+    expect(records[0]!.rawResponse).toBeUndefined();
+  });
+
+  it('含 rawResponse 的记录 HMAC 链仍可验证', () => {
+    appendLlmCallRecord(makeInput({ rawResponse: '{"content":"a"}' }));
+    appendLlmCallRecord(makeInput({ rawResponse: '{"content":"b"}' }));
+    expect(verifyLlmCallChain().status).toBe('ok');
+  });
+});

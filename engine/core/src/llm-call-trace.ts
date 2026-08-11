@@ -22,6 +22,7 @@ import { getEnvFingerprint, getHmacKey, stableStringify } from './audit-history'
 import type { ChainCheckResult } from './audit-history';
 import { resolveAuditDir } from './data-paths';
 import { atomicAppendSync } from './shared/atomic-write';
+import { REDACTION_PATTERNS } from './shared/secret-patterns';
 
 /** LLM 调用记录写入输入（脱敏白名单字段） */
 export interface LlmCallTraceInput {
@@ -43,6 +44,8 @@ export interface LlmCallTraceInput {
   stopReason: string;
   /** 错误信息（正常完成为 null） */
   error?: string | null;
+  /** v1.3.2 交付 8：LLM 原始响应（provider 透传，不归一化——OmniMessage fidelity 无损回放） */
+  rawResponse?: string;
 }
 
 /** 落盘的完整调用记录（白名单字段 + 链字段） */
@@ -58,6 +61,8 @@ export interface LlmCallRecord {
   durationMs: number;
   stopReason: string;
   error: string | null;
+  /** v1.3.2 交付 8：LLM 原始响应（脱敏后，不归一化） */
+  rawResponse?: string | null;
   /** 前一条记录的 hash（链完整性） */
   prevHash: string;
   /** hash 算法版本（恒为 2 = 含环境指纹） */
@@ -81,6 +86,23 @@ export interface LlmCallTraceFilter {
 /** error 字段落盘最大长度（截断，防止大段错误文本入链） */
 const ERROR_FIELD_MAX_LEN = 500;
 
+/** v1.3.2 交付 8：rawResponse 字段落盘最大长度（截断，防止超大响应入链） */
+const RAW_RESPONSE_MAX_LEN = 50_000;
+
+/**
+ * v1.3.2 交付 8：rawResponse 脱敏——复用 v1.3.1 REDACTION_PATTERNS 白名单
+ * 对密钥/PII 脱敏（sk-***REDACTED*** / AKIA***REDACTED*** / 手机号），
+ * 保留响应原文用于 OmniMessage fidelity 无损回放 + L3 定位推理。
+ */
+function sanitizeRawResponse(raw: string | undefined): string | null {
+  if (raw == null || typeof raw !== 'string' || raw.length === 0) return null;
+  let result = raw.slice(0, RAW_RESPONSE_MAX_LEN);
+  for (const { pattern, replacement } of REDACTION_PATTERNS) {
+    result = result.replace(pattern, replacement);
+  }
+  return result;
+}
+
 /**
  * 脱敏（白名单制）——只保留统计/诊断必需字段，
  * 杜绝 messages 原文或任意附加字段进入审计链。
@@ -96,8 +118,20 @@ function sanitizeTraceInput(input: LlmCallTraceInput): {
   durationMs: number;
   stopReason: string;
   error: string | null;
+  rawResponse?: string | null;
 } {
-  return {
+  const sanitized: {
+    agentId?: string;
+    taskId?: string;
+    provider: string;
+    model: string;
+    tokenInput: number;
+    tokenOutput: number;
+    durationMs: number;
+    stopReason: string;
+    error: string | null;
+    rawResponse?: string | null;
+  } = {
     ...(typeof input.agentId === 'string' && input.agentId.length > 0 ? { agentId: input.agentId } : {}),
     ...(typeof input.taskId === 'string' && input.taskId.length > 0 ? { taskId: input.taskId } : {}),
     provider: String(input.provider ?? 'unknown'),
@@ -108,6 +142,12 @@ function sanitizeTraceInput(input: LlmCallTraceInput): {
     stopReason: String(input.stopReason ?? 'failed'),
     error: input.error == null ? null : String(input.error).slice(0, ERROR_FIELD_MAX_LEN),
   };
+  // v1.3.2 交付 8：rawResponse 脱敏后写入（密钥/PII 走 v1.3.1 白名单）
+  const raw = sanitizeRawResponse(input.rawResponse);
+  if (raw !== null) {
+    sanitized.rawResponse = raw;
+  }
+  return sanitized;
 }
 
 /**
