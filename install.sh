@@ -1,31 +1,32 @@
 #!/usr/bin/env bash
 # ============================================================
-# sofagent install.sh · 主安装器 / FDE 入口 · v1.3.2
+# sofagent install.sh · 企业设备安装器 · v1.3.2
 # ============================================================
-# 将 sofagent 约束层部署到目标平台，让 Agent 获得治理能力。
+# 将 sofagent 约束层部署到企业跑 AI 节点的设备上，让 Agent 获得监控约束。
 #
-# 🧭 路径声明（v1.2.0）：本脚本在仓库根目录，是主安装器。
-#    默认模式 = FDE 模式（底座 + FDE Agent Skill）。
-#    --base-only 模式 = 仅装约束层（注入·审计·回溯·进化四种能力）。
+# 🧭 路径声明（v1.3.2 定位校准）：本脚本装在**企业设备**上（不是 FDE 的电脑）。
+#    默认模式 = 全套（底座 + Agent Skill）——事前约束 + 事后拦截完整闭环。
+#    --base-only 模式 = 仅装约束层（审计·回溯·daemon），不装 Agent Skill。
 #
-# 📦 安装包边界（v1.2.0）：
-#    ┌─────────────────────────┬──────────┬──────────────────────┐
-#    │ 脚本                    │ 给谁     │ 装什么               │
-#    ├─────────────────────────┼──────────┼──────────────────────┤
-#    │ install.sh              │ 所有用户 │ 底座+FDE Agent Skill │
-#    │ install.sh --base-only  │ 所有用户 │ 约束层              │
-#    └─────────────────────────┴──────────┴──────────────────────┘
-#    原则：FORGE 由 `FORGE/SKILL/<loop>/` 定义驱动，无需单独安装脚本——
+# 📦 安装包边界（v1.3.2）：
+#    ┌─────────────────────────┬──────────────┬──────────────────────┐
+#    │ 脚本                    │ 装在哪       │ 装什么               │
+#    ├─────────────────────────┼──────────────┼──────────────────────┤
+#    │ install.sh              │ 企业设备     │ 底座 + Agent Skill   │
+#    │ install.sh --base-only  │ 企业设备     │ 约束层（无 Skill）   │
+#    │ npx @sofagent/audit     │ 任意（临时） │ 零安装审计           │
+#    └─────────────────────────┴──────────────┴──────────────────────┘
+#    ⚠️ FDE 不该在自己电脑跑 install.sh——FDE 的工具是 Skill + 未来 商业模型层 模型。
 #    FORGE 是 sofagent 项目的自迭代开发工具包（管理代码变更，给开发者用），
 #    不属于企业交付物。
 #
-# 🔗 编排契约：FDE 调用本脚本（--base-only 模式）作为底座安装入口。
+# 🔗 编排契约：FDE 部署时调用本脚本安装到底座到企业设备。
 #    改动此文件前确认调用方不受影响：
 #    - FDE 通过 `bash install.sh --base-only --platform "$PLATFORM"` 安装底座
 #    - 删被依赖文件（如 SKILL/harness/fde-template.md）前确认无调用方引用
 # v0.98: 从 941 行拆分为 4 个 lib 模块 + 纯组装入口
 # v1.0.7: ao 退役，移除 agency-orchestrator 安装逻辑
-# v1.2.0: install.sh 吸收 FDE/fde-install.sh，成为主安装器+FDE 入口
+# v1.2.0: install.sh 吸收 FDE/fde-install.sh，成为企业设备安装器
 #
 # 平台无关重构：默认安装不探测/不枚举任何平台，只写 sofagent 自己的目录 ~/.sofagent/；
 # 平台集成改为显式 opt-in：--platform openclaw（完整）/ workbuddy / claude / codex / hermes
@@ -73,7 +74,7 @@ _log() { echo "[$(date '+%H:%M:%S')] $1" >> "${INSTALL_LOG}"; }
 # ── 快速模式（v0.73：初始化在参数解析之前，set -u 兼容）──
 QUICK_MODE="${QUICK_MODE:-0}"; REMOTE_MODE="${REMOTE_MODE:-0}"
 
-# ── FDE 模式（默认开启，--base-only 关闭）──
+# ── 全套模式（默认开启，--base-only 关闭）——底座 + Agent Skill ──
 BASE_ONLY=0
 
 # ── 预扫描 --base-only（在 source/参数解析前捕获）──
@@ -92,7 +93,7 @@ source "${LIB_DIR}/post-install.sh"
 # ── 帮助 ──
 show_help() {
   cat <<EOF
-sofagent install.sh v${VERSION} — 主安装器（平台无关）
+sofagent install.sh v${VERSION} — 企业设备安装器（平台无关）
 
 用法:
   bash install.sh                       默认模式：平台无关安装（只写 ~/.sofagent/）+ FDE Agent Skill
@@ -127,7 +128,7 @@ if [ "$QUICK_MODE" = "0" ]; then
   echo ""
   if [ "${BASE_ONLY:-0}" = "0" ]; then
     echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
-    echo -e "${BOLD}${CYAN}  sofagent 主安装器 · 底座 + FDE Agent${NC}"
+    echo -e "${BOLD}${CYAN}  sofagent 企业设备安装器 · 底座 + Agent Skill${NC}"
     echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
   else
     echo "  ╔═══════════════════════════════════╗"
