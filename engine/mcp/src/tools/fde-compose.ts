@@ -7,6 +7,8 @@
 //   action=ontology → 从五要素推导 ontology 草稿并落盘
 // ============================================================
 
+import type { ComposeSession, NodeInterview } from '@sofagent/orchestrator';
+
 export interface FdeComposeArgs {
   action: 'workflow' | 'ontology';
   /** 梳理会话 JSON（含 enterpriseId / nodes / workflowName 等） */
@@ -58,7 +60,7 @@ export async function fdeCompose(args: FdeComposeArgs): Promise<FdeComposeResult
 
   try {
     const orchestrator = await import('@sofagent/orchestrator');
-    const { classifyAutomation, type ComposeSession, type NodeInterview } = orchestrator;
+    const { classifyAutomation } = orchestrator;
 
     // 构造 ComposeSession（补充自动化标签）
     const session: ComposeSession = {
