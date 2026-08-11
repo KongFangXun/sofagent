@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# bootstrap.sh · sofagent 一行安装入口（v1.3.2 · 功能 ⑧）
+# bootstrap.sh · sofagent 一行安装入口（装在企业跑 AI 节点的设备上）
 # 纯新增独立入口——install.sh（~980 行）不动，零回归面。
 # 用法：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh | bash
 # 离线：./bootstrap.sh --local /path/to/install.sh

@@ -2,9 +2,9 @@
 name: sofagent
 slug: sofagent
 version: 1.3.2
-displayName: FDE Agent
+displayName: FDE Skill
 description: >
-  FDE Agent——约束 Agent 行为、审计每次变更、沉淀经验。对外统一身份是 FDE Agent（用户面对的唯一入口），
+  FDE Skill——帮 FDE（前线部署工程师）更好完成企业 AI 落地的方法论 Skill。约束 Agent 行为、审计每次变更、沉淀经验。
   底层实现叫约束层（Harness）——一个层四种能力：注入·审计·回溯·进化。FORGE 自迭代工具链是内部开发工具。
   内置持续优化模式（sustain），自动读 audit 报告趋势生成优化报告。
 tags:
@@ -22,7 +22,7 @@ metadata:
     requires: {}
 ---
 
-# FDE Agent Skill · 唯一主入口（引擎底座 + FDE 入口合一）
+# FDE Skill · 唯一主入口（引擎底座 + FDE 方法论合一）
 
 > 本文件是 sofagent **唯一主入口**，随 skill 调用自动注入。人读方法论见 `FDE/GUIDE.md`；按阶段执行读 `skills/01-entry.md` ~ `skills/05-exit.md`。
 

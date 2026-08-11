@@ -96,7 +96,7 @@ show_help() {
 sofagent install.sh v${VERSION} — 企业设备安装器（平台无关）
 
 用法:
-  bash install.sh                       默认模式：平台无关安装（只写 ~/.sofagent/）+ FDE Agent Skill
+  bash install.sh                       默认模式：平台无关安装（只写 ~/.sofagent/）+ FDE Skill
   bash install.sh --base-only           仅装约束层（审计/回溯/进化）
   bash install.sh --platform <name>     显式平台集成（opt-in）：openclaw / workbuddy / claude / codex / hermes
   bash install.sh --quick               完整安装（静默模式，跳过交互确认）⚠️ 非预览，会写入文件
@@ -132,7 +132,7 @@ if [ "$QUICK_MODE" = "0" ]; then
     echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
   else
     echo "  ╔═══════════════════════════════════╗"
-    echo "  ║   sofagent Harness · installer   ║"
+    echo "  ║  sofagent 约束层 · 企业设备安装   ║"
     echo "  ╚═══════════════════════════════════╝"
   fi
   echo ""
@@ -908,7 +908,7 @@ if [ "${BASE_ONLY:-0}" = "0" ]; then
     SKILL_DIR="$(dirname "$FDE_MD_TARGET")"
     if [ -f "$SKILL_SRC/SKILL.md" ]; then
       cp "$SKILL_SRC/SKILL.md" "$SKILL_DIR/sofagent-fde/SKILL.md" 2>/dev/null || cp "$SKILL_SRC/SKILL.md" "$SKILL_DIR/SKILL.md"
-      echo -e "${GREEN}✅ FDE Agent Skill 已安装（@sofagent-fde 可用）${NC}"
+      echo -e "${GREEN}✅ FDE Skill 已安装（@sofagent-fde 可用）${NC}"
       # v1.2.7: 补充分层文件到 sofagent-fde 目录（handler.ts L1 渐进式加载依赖）
       for layer_file in core-rules.md role-audit.md role-fde.md role-orchestrate.md; do
         if [ -f "$SKILL_SRC/$layer_file" ]; then

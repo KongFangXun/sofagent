@@ -185,7 +185,7 @@ graph TD
 
 | 命令 | 装什么 | 适用 |
 |---|---|---|
-| `install.sh`（默认） | 底座 + FDE Agent Skill + hook（全套） | **企业设备**：要常驻 Agent + 7×24 监控 |
+| `install.sh`（默认） | 底座 + FDE Skill + hook（全套） | **企业设备**：要常驻 Agent + 7×24 监控 |
 | `install.sh --base-only` | 仅底座（审计·回溯·daemon） | 企业 IT：只要核心监控，不装 Agent Skill |
 | `npx -y -p @sofagent/audit sofagent-audit` | 零安装，临时审计 | 开发者：30 秒体验，在任何 git 仓库跑一次 |
 
