@@ -16,7 +16,9 @@
 
 ## 这是什么
 
-**sofagent 是一个开源 FDE Agent**（Forward Deployed Engineer Agent）——进场帮你梳理业务工作流，把能自动化的环节变成 AI 节点；交付完成后 FDE 离场，AI 节点继续 7×24 自动执行任务，每次干活受审计、越界能拦截、出事能回滚。
+**sofagent 是一个开源约束层**（MIT）——装在企业跑 AI 节点的设备上，盯 Agent 干活：进场帮你梳理业务工作流，把能自动化的环节变成 AI 节点；交付完成后 FDE 离场，AI 节点继续 7×24 自动执行任务，每次干活受审计、越界能拦截、出事能回滚。
+
+> 📌 **sofagent 的三个身份**：① 在 [SkillHub](https://clawhub.com) 上以 **FDE Skill** 分发（帮 FDE 做 FDE 的方法论 Skill）② 在企业设备上以**约束层引擎**运行（审计 + 回溯 + 注入 + daemon 监控）③ 品牌身份是 **FDE Agent**（对外统一名称）。三者是同一产品的不同侧面。
 
 ```mermaid
 graph LR
@@ -40,7 +42,7 @@ graph LR
 
 ## 核心特性
 
-**FDE Agent 交付**
+**FDE 交付（进场 → 部署 → 离场 → 自运转）**
 
 - 🧭 **进场梳理工作流**——五要素深挖 + 三问判定法，把每个岗位环节摸清，算清每个 AI 节点值多少钱
 - 🤖 **部署 AI 节点**——三层交付物（文档层 + Skill 层 + 运行层），装进你已有的 AI 工具，从"你干活"变"你派活"
@@ -83,7 +85,17 @@ graph LR
   <img src="docs/assets/dashboard.png" alt="sofagent Dashboard 驾驶舱" width="100%" />
 </p>
 
-<p align="center"><sub>Dashboard 驾驶舱：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。安装后运行 <code>sofagent-dashboard --full</code> 启动</sub></p>
+<p align="center"><sub>Dashboard 驾驶舱：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。</sub></p>
+
+> 📊 **Dashboard 有三个入口，各归各位**：
+>
+> | 入口 | 命令 | 形态 | 给谁看 |
+> |------|------|------|--------|
+> | **终端版** | `sofagent-dashboard --full` | 终端 ASCII 三栏（零前端依赖） | 开发者 / FDE 快速看 |
+> | **Web 版** | `node tools/serve-dashboard.mjs` | 浏览器可视化（localhost:3780） | 老板 / IT 可视化看 |
+> | **macOS 双击** | 双击 `start-dashboard.command` | Web 版的 macOS 快捷方式 | macOS 用户 |
+>
+> ⚠️ **Dashboard 是已用用户的运维面板，不是首次体验入口。** 数据源是 `~/.sofagent/data/` 下的审计记录——没跑过 `sofagent-audit` 就没数据（Web 版降级显示示例数据）。第一次用？先在你的项目里跑 `npx -y -p @sofagent/audit sofagent-audit`，跑完 Dashboard 才有真实数据。
 
 ## 快速开始
 
@@ -115,7 +127,9 @@ sofagent-audit --doctor    # 验证环境（可选）
 
 > 💡 所有安装脚本只写入 `~/.sofagent/`，不修改系统文件。`--no-verify` 可绕过本地 hook——sofagent 防的是诚实 Agent 的疏忽，不是恶意绕过；高安全场景请在 CI 侧加 `sofagent-audit --diff` 兜底。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
 >
-> 📌 **install.sh 是企业设备安装器**——装在跑 AI 节点的服务器/电脑上，给 Agent 当监控约束层（审计 + 回溯 + 注入 + daemon 巡检 + 单机 dashboard）。FDE 自己的电脑不需要跑 install.sh，FDE 的工具是 [Skill](https://skillhub.com)（方法论）+ 未来 商业模型层 模型。详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构)。
+> 📌 **install.sh 是企业设备安装器**——装在跑 AI 节点的服务器/电脑上，给 Agent 当监控约束层（审计 + 回溯 + 注入 + daemon 巡检 + 单机 dashboard）。FDE 自己的电脑不需要跑 install.sh，FDE 的工具是 [Skill](https://clawhub.com)（方法论）+ 未来 商业模型层 模型。详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构)。
+>
+> 📌 **bootstrap.sh 和 install.sh 的关系**：bootstrap.sh 是 install.sh 的一行下载包装器——`curl bootstrap.sh | bash` 等价于"下载 install.sh + 运行 install.sh"。两个脚本装的东西完全一样，bootstrap 只是省去手动 clone/下载的步骤。
 
 更多安装方式（clone 安装 / npx 完整安装 / 最小安装 / 企业部署）见 [HANDBOOK](./docs/HANDBOOK.md)。企业用户想直接用 FDE 方法论梳理工作流，看 [FDE/README.md](./FDE/README.md)（零依赖，不需要 Node.js）。
 
@@ -125,8 +139,9 @@ sofagent-audit --doctor    # 验证环境（可选）
 
 ```mermaid
 graph LR
-    A["个人<br/>npx -y -p @sofagent/audit sofagent-audit<br/>30 秒零配置审计"] --> B["团队<br/>规则市场 + GitHub Action<br/>PR 自动审计"]
-    B --> C["企业<br/>FDE Agent<br/>全套部署·7×24 自运转"]
+    A["① 试用<br/>npx -y -p @sofagent/audit sofagent-audit<br/>30 秒零配置审计·任意 git 仓库"] --> B["② 团队<br/>规则市场 + GitHub Action<br/>PR 自动审计·CI/CD"]
+    B --> C["③ 企业<br/>install.sh 全套<br/>装在企业设备·7×24 监控"]
+    C -.->|FDE 离场后| D["④ 自运转<br/>Agent 干活·sofagent 盯着<br/>审计·回滚·巡检"]
 ```
 
 | 入口 | 做什么 | 装在哪 | 花多久 |

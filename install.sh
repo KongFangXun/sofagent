@@ -97,7 +97,7 @@ sofagent install.sh v${VERSION} — 企业设备安装器（平台无关）
 
 用法:
   bash install.sh                       默认模式：平台无关安装（只写 ~/.sofagent/）+ FDE Skill
-  bash install.sh --base-only           仅装约束层（审计/回溯/进化）
+  bash install.sh --base-only           仅装约束层（审计·回溯·daemon·dashboard，不装 Agent Skill）
   bash install.sh --platform <name>     显式平台集成（opt-in）：openclaw / workbuddy / claude / codex / hermes
   bash install.sh --quick               完整安装（静默模式，跳过交互确认）⚠️ 非预览，会写入文件
   bash install.sh --remote              远程安装模式（git clone）

@@ -2,7 +2,7 @@
 
 > **sofagent 是一个 FDE Agent——进场梳理你的工作流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent（WorkBuddy / Codex / Claude Code）里说一句话，它就帮你干活——审计每次变更、沉淀每次经验、越用越好。下面从装到用到查问题，全流程走一遍。
 >
-> v1.3.2 · 2026-08-09（UTC）· 孔放勋
+> v1.3.2 · 2026-08-11（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -351,7 +351,7 @@ sofagent-dashboard --full    # 展开：编排控制图 + FORGE 审查进度 + �
 | **AI 犯规了吗**（规则审计） | AI 有没有越权改文件、存数据？ | 审计引擎 24 条规则结果 |
 | **任务跑到哪了**（工作状态） | 后台 daemon 和 sub-agent 是活的还是挂了？ | daemon-health.json |
 
-> 前置依赖：需要 `jq`（`brew install jq` / `apt install jq`）。`--full` 追加编排控制图（Org Graph + Work Graph）、FORGE 审查进度、最近文件变更三个扩展面板。
+> 前置依赖：需要 `jq`（`brew install jq` / `apt install jq`）。`--full` 追加编排控制图（Org Graph + Work Graph）、FORGE 审查进度、最近文件变更三个扩展面板。FORGE 是 sofagent 项目的内部开发工具链（非对外引擎），企业用户可忽略 FORGE 审查进度面板。
 
 ### CI 集成
 
