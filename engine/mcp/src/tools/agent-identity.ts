@@ -1,5 +1,5 @@
 // ============================================================
-// agent-identity.ts · MCP tool：查询 Agent 身份码（v1.3.1 交付 6）
+// agent-identity.ts · MCP tool：查询 Agent 身份码（v1.3.2 交付 6）
 //
 // agent_identity tool：
 //   - 无参数 → 查自己（当前 Agent，身份来自 SOFAGENT_AGENT_ID 环境变量

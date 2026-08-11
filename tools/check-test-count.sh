@@ -134,6 +134,12 @@ CUR_VERSION=$(node -p "require('./engine/audit/package.json').version" 2>/dev/nu
 CUR_MAJOR_MINOR=$(echo "$CUR_VERSION" | cut -d. -f1-2)
 DEVLOG_FILE="docs/changelog/v${CUR_MAJOR_MINOR}/v${CUR_VERSION}.md"
 if [ -f "$DEVLOG_FILE" ]; then
+  # v1.3.2 修复：未发版的占位 changelog（含「尚未实现」）跳过校验，不算 FAIL
+  if grep -q '尚未实现' "$DEVLOG_FILE" 2>/dev/null; then
+    if [ "$QUIET" = false ]; then
+      echo -e "  ${YELLOW}⚠ ${DEVLOG_FILE}：占位文件（尚未实现），跳过测试数校验${NC}"
+    fi
+  else
   # 优先「开发完成快照」行的单元数（1650 单元），回退 "NNN tests across"
   DEVLOG_LINE=$(grep -nE '开发完成快照.*[0-9]+ 单元|[0-9]+ tests across' "$DEVLOG_FILE" | head -1)
   if [ -n "$DEVLOG_LINE" ]; then
@@ -159,6 +165,7 @@ if [ -f "$DEVLOG_FILE" ]; then
     echo -e "    提示：CHANGELOG 已改为纯索引，测试数声明在开发日志中。请在本脚本校验目标处补正则。"
     ((FAIL++)) || true
   fi
+  fi  # v1.3.2 修复：闭合「尚未实现」占位跳过的 if-else
 else
   echo -e "  ${RED}✗ 当前版本开发日志 ${DEVLOG_FILE} 不存在（无法校验 → FAIL，禁止静默跳过）${NC}"
   ((FAIL++)) || true

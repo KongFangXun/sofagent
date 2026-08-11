@@ -4,7 +4,7 @@
 //   新增文件数 > 50 → WARN
 //   单文件新增行 > 10000 → WARN
 //   删除文件 > 20 → FAIL
-//   v1.3.1: 单文件删除 > 100 行且与 task 无关 → WARN（原 E3 并入）
+//   v1.3.2: 单文件删除 > 100 行且与 task 无关 → WARN（原 E3 并入）
 // evidenceMode: git-diff
 // ============================================================
 import { getAddedLines } from '@sofagent/core';

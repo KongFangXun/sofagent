@@ -1,5 +1,5 @@
 // ============================================================
-// llm-call-trace.test.ts · LLM 调用级 Trace 测试（v1.3.1 交付 11）
+// llm-call-trace.test.ts · LLM 调用级 Trace 测试（v1.3.2 交付 11）
 //
 // 覆盖：
 //   - 写入（appendLlmCallRecord）/ 回读（readLlmCallTrace 过滤）

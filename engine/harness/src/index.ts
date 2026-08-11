@@ -12,7 +12,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-// v1.3.1 交付 14：L4 经验层渐进加载增强——知识索引构建（文件名 + frontmatter 摘要 + 首行）
+// v1.3.2 交付 14：L4 经验层渐进加载增强——知识索引构建（文件名 + frontmatter 摘要 + 首行）
 import {
   buildKnowledgeIndex,
   formatKnowledgeIndex,

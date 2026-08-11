@@ -1,5 +1,5 @@
 // ============================================================
-// identity-ed25519.test.ts · Agent 身份码 Ed25519 完整版测试（v1.3.1 交付 6）
+// identity-ed25519.test.ts · Agent 身份码 Ed25519 完整版测试（v1.3.2 交付 6）
 //
 // 覆盖：
 //   - Ed25519 签发（generateEd25519KeyPair / generateAgentIdentity 升级）

@@ -1,6 +1,6 @@
 // ============================================================
 // runner.ts · 审计规则运行器（fast-fail 优化）
-// v1.3.1 新增：按严重度分四优先级，critical 层 FAIL 即停
+// v1.3.2 新增：按严重度分四优先级，critical 层 FAIL 即停
 // ============================================================
 
 import type { DiffFile } from '@sofagent/core';
@@ -11,7 +11,7 @@ import type { AuditContext, RuleCheck, Rule } from './types';
 import { loadHistory } from '../audit-history';
 import type { AuditHistoryEntry } from '../audit-history';
 import { defaultRules, rules } from './index';
-// v1.3.1 交付 2：国标对齐 GB/T 48000.3-2026 审计维度（opt-in 默认 false）
+// v1.3.2 交付 2：国标对齐 GB/T 48000.3-2026 审计维度（opt-in 默认 false）
 import { assessGb48000Coverage, buildGb48000RuleCheck } from '../gb48000';
 
 /** 国标对齐条目 name——exitCode 计算排除键（信息条目，不影响默认审计行为） */

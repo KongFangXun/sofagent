@@ -1,6 +1,6 @@
 // ============================================================
 // audit-history.ts · 审计历史持久化
-// v1.3.1 env fingerprint: hash chain 加环境指纹防 Agent 重算整链
+// v1.3.2 env fingerprint: hash chain 加环境指纹防 Agent 重算整链
 // ============================================================
 //
 // ⚠️ 双副本说明（勿混淆）：本仓库有两份同名 audit-history.ts，职责不同、**不可合并**：
@@ -17,7 +17,7 @@
 // 并发安全说明：appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的。
 // 审计历史条目通常 < 1KB，单次写入安全。多进程同时写入可能导致行交错，
 // 但概率极低（审计触发频率 < 1次/分钟）。
-// v1.3.1 #44: 这是已知限制（无文件锁/单 writer），已记录到 docs/LIMITATIONS.md。
+// v1.3.2 #44: 这是已知限制（无文件锁/单 writer），已记录到 docs/LIMITATIONS.md。
 // daemon 文件监控 + Agent commit 并发写 history.jsonl 可能产生损坏行，
 // 导致 hash chain 完整性校验失败。如需强一致，应加文件锁或改为单 writer 模式（未来版本）。
 //

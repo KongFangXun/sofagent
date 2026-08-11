@@ -1,6 +1,6 @@
 // sofagent load-chain hook · OpenClaw 2026.6.x
 // 注入三层加载链到 agent:bootstrap：
-//   L1 core-rules.md（核心铁律 ~30 行，始终注入）+ 按 task type 追加岗位规范（v1.3.1 渐进式加载）
+//   L1 core-rules.md（核心铁律 ~30 行，始终注入）+ 按 task type 追加岗位规范（v1.3.2 渐进式加载）
 //   L2 think.md（反思区）
 //   L3 fde.md（用户规则）
 // 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
@@ -12,7 +12,7 @@
 //   buildConstrainedSystemPrompt（engine/harness/src/index.ts）——两份实现职责不同、
 //   服务不同部署形态，**不要合并**。改动加载链逻辑时需两处同步评估。
 //
-// v1.3.1 渐进式加载改造：
+// v1.3.2 渐进式加载改造：
 //   L1 从"注入完整 SKILL.md（149 行）"改为"注入 core-rules.md（~30 行核心铁律）"
 //   + 根据 event.context 中的 task description 判断 task type
 //   + 按需追加注入对应岗位规范文件（role-audit.md / role-fde.md / role-orchestrate.md）

@@ -1,6 +1,6 @@
 // ============================================================
 // inspectors/index.ts · 巡检器统一入口
-// v1.3.1 新增
+// v1.3.2 新增
 // ============================================================
 
 import type { InspectorConfig, InspectorResult } from './types';
@@ -16,7 +16,7 @@ import { generateDataSovereigntyDaily } from './data-sovereignty-daily';
 import { generateDataSovereigntyWeekly } from './data-sovereignty-weekly';
 import { generateDataSovereigntyMonthly } from './data-sovereignty-monthly';
 import { runWorkspaceSummary } from '../workspace-summary';
-// v1.3.1 交付 7：审计轨迹聚合巡检器（@daily）
+// v1.3.2 交付 7：审计轨迹聚合巡检器（@daily）
 import { runAuditTrailInspector } from './audit-trail';
 
 export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFreshness, checkKnowledgeHealth, checkSkillStaleness, accumulateWarnings, runHealthReport, generateDataSovereigntyDaily, generateDataSovereigntyWeekly, generateDataSovereigntyMonthly, workspaceSummaryInspector, runAuditTrailInspector };

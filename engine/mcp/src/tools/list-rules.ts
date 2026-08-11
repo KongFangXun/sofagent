@@ -1,5 +1,5 @@
 // ============================================================
-// list-rules.ts · list_rules MCP tool（v1.3.1 交付 4）
+// list-rules.ts · list_rules MCP tool（v1.3.2 交付 4）
 //
 // 规则透明化——列出所有运行时/提交时审计规则清单（只读）。
 // type='tool' → engine/rules defaultToolRules（运行时 tool-gate 规则）

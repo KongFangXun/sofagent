@@ -4,7 +4,7 @@
 // 循环调用 rule.check(ctx)，不再硬编码 import 4 条规则
 // v0.94：runRules 签名扩展，支持 silent/commitMsg 参数
 // v0.95：支持 config 注入 AuditContext + extendedRules 开关
-// v1.3.1：fast-fail 优化——委托到 rules/runner.ts
+// v1.3.2：fast-fail 优化——委托到 rules/runner.ts
 //
 // 本文件专用于 @sofagent/audit，包含 runRules 运行时实现（依赖 rules/runner）。
 // 与 core/src/reporter.ts 的关系：

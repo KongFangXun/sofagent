@@ -1,6 +1,6 @@
 // ============================================================
 // mailbox/message-injector.ts · 节点开始前扫描邮箱 → 注入 system prompt
-// v1.3.1 新建 · 功能 ⑨
+// v1.3.2 新建 · 功能 ⑨
 //
 // 消息注入流程：
 //   1. SubAgent A 调 send() 投递消息 → 写入目标 agent inbox JSON 文件

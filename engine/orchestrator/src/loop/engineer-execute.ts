@@ -1,5 +1,5 @@
 // ============================================================
-// loop/engineer-execute.ts · engineer execute 层（v1.3.1 · P4）
+// loop/engineer-execute.ts · engineer execute 层（v1.3.2 · P4）
 // ============================================================
 //
 // 职责：确定性执行 decide 层输出的决策 JSON——

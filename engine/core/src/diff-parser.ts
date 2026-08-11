@@ -1,6 +1,6 @@
 // ============================================================
 // diff-parser.ts · git diff 解析器
-// v1.3.1: 添加 isomorphic-git fallback（当系统 git 不可用时）
+// v1.3.2: 添加 isomorphic-git fallback（当系统 git 不可用时）
 // ============================================================
 
 import { execFileSync } from 'child_process';

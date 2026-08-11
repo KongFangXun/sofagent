@@ -3,7 +3,7 @@
 // v0.97: 从 audit.sh 迁移到 TS，最小运行时依赖：仅 js-yaml
 // ============================================================
 // 功能：追加审计日志到 MD 表格。
-// 读取 data/task/logs/（v1.3.1 起，原 .sofagent/task/logs/）→ 提取关键字段 → 追加到 audit.md
+// 读取 data/task/logs/（v1.3.2 起，原 .sofagent/task/logs/）→ 提取关键字段 → 追加到 audit.md
 // ============================================================
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, appendFileSync } from 'fs';

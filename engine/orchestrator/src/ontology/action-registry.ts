@@ -1,5 +1,5 @@
 // ============================================================
-// action-registry.ts · Ontology Action 注册表（v1.3.1 交付 1）
+// action-registry.ts · Ontology Action 注册表（v1.3.2 交付 1）
 //
 // Ontology Action → 工具映射的单一事实源。
 // LLM 调用必须经过 Ontology 层定义的 Action 执行，无法绕过——

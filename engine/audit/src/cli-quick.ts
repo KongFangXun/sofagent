@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // cli-quick.ts · npx sofagent-audit 零配置 CLI 入口
-// v1.3.1 (⑧-1)：30 秒 aha moment——任何 git repo 都能跑
+// v1.3.2 (⑧-1)：30 秒 aha moment——任何 git repo 都能跑
 //
 // 依赖说明（v1.3.2 P0-R13）：
 //   本文件 import @sofagent/core（见 package.json dependencies）。

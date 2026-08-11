@@ -1,5 +1,5 @@
 // ============================================================
-// agent-identity.ts · Agent 独立身份码（v1.3.1 Ed25519 完整版，自 v1.2.5 轻量版升级）
+// agent-identity.ts · Agent 独立身份码（v1.3.2 Ed25519 完整版，自 v1.2.5 轻量版升级）
 //
 // 企业 SubAgent 注册后（activate 写入 subagents/*.yml）即带独立身份码。
 //
@@ -9,7 +9,7 @@
 //   - fingerprint = SHA-256(agentName + systemPrompt + tools + constraints
 //                   + hostname + sofagent-key) 前 16 位
 //
-// v1.3.1 升级（交付 6）：
+// v1.3.2 升级（交付 6）：
 //   - Ed25519 keypair（Node.js crypto.generateKeyPairSync，零新依赖）
 //   - signature = Ed25519 签名（对 委托人 + 约束版本 + 责任声明 的稳定序列化）
 //   - 绑定信息：principal（委托人）/ constraintVersion（约束版本）/

@@ -1,11 +1,11 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.3.1 · 2026-08-09（UTC）· 🧠 Ontology 运行时层 + 并行编排 + Durable Execution + Agent 身份码 + Onboard L1 + Benchmark 评测 + 工具审批模式 + LLM Trace + 错误处理 + MergeQueue + L4 渐进加载 + 国标对齐
+> v1.3.2 · 2026-08-09（UTC）· 🧠 Ontology 运行时层 + 并行编排 + Durable Execution + Agent 身份码 + Onboard L1 + Benchmark 评测 + 工具审批模式 + LLM Trace + 错误处理 + MergeQueue + L4 渐进加载 + 国标对齐
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
-## 现在在哪：v1.3.2（规划中 · 下一版）
+## 现在在哪：v1.3.2（开发中 · Onboard L2-L5 + agent-creation + 企业 eval + 模型插槽 + FDE 梳理辅助 + Trace 任务级轨迹）
 
 > **v1.3.2 规划方向**：🚀 Onboard Agent 完整版（L2-L5 · FORGE 产品化第二刀）+ 🎯 企业专属 eval 套件 + ⚡ workflow 批量自动生成 + 🧩 模型接入插槽扩展 + 🎙️ FDE 梳理辅助工具（含 ontology 咨询式生成）+ 🧵 LLM Trace 任务级轨迹。
 >

@@ -1,5 +1,5 @@
 // ============================================================
-// benchmark/evaluation-log.ts · Benchmark 评测日志（v1.3.1 交付 9）
+// benchmark/evaluation-log.ts · Benchmark 评测日志（v1.3.2 交付 9）
 // ============================================================
 //
 // evaluation-log.jsonl 读写 + HMAC 防篡改链。
