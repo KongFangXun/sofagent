@@ -71,7 +71,7 @@ const ACTION_KEYWORDS: Record<string, string[]> = {
   answer: ['回答', '解答', '咨询', '解释', 'answer', 'explain', 'respond'],
   transform: ['转换', '转成', '提取', '解析', '识别', 'transform', 'convert', 'extract', 'parse', 'ocr'],
   analyze: ['分析', '评估', '诊断', '检测', '监控', 'analyze', 'evaluate', 'diagnose', 'monitor'],
-  process: ['处理', '执行', '完成', 'process', 'execute', 'handle'],
+  process: ['执行', '完成', 'process', 'execute'],
   generate: ['生成', '创建', '撰写', '编写', 'generate', 'create', 'write', 'draft'],
   review: ['审查', '审核', '检查', '校验', 'review', 'audit', 'check', 'verify'],
   classify: ['分类', '归类', '标签', 'classify', 'categorize', 'tag'],
