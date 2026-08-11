@@ -218,6 +218,53 @@ export type {
   EvalSuiteRunResult,
 } from './loop-agent/eval-suite';
 
+// v1.3.2 交付 7右半 + 10：FDE 梳理辅助 + Ontology 咨询式生成
+export {
+  classifyAutomation,
+  validateFiveElements,
+  deriveOntologyDraft,
+} from './fde/compose-interview';
+export type {
+  FiveElements,
+  ThreeQuestions,
+  NodeInterview,
+  ComposeSession,
+  OntologyDraftResult,
+  AutomationTag,
+} from './fde/compose-interview';
+export { generateWorkflowDraft, validateDraftDag } from './fde/workflow-draft';
+export type { WorkflowDraft } from './fde/workflow-draft';
+export {
+  generateOntologyDraft,
+  saveOntologyDraft,
+  validateOntologyDraft,
+} from './fde/ontology-draft';
+export type { OntologyDraftJson } from './fde/ontology-draft';
+
+// v1.3.2 交付 9：Session 级隔离（Builder vs Optimizer 分离）
+export {
+  createSessionWorkspace,
+  runInIsolatedSession,
+  handoffSessionData,
+} from './session-isolator';
+export type {
+  SessionType,
+  SessionIsolatorConfig,
+  SessionRunResult,
+} from './session-isolator';
+
+// v1.3.2 交付 11：LLM Trace 任务级轨迹视图
+export {
+  aggregateTrajectory,
+  exportTrajectoryJson,
+  exportTrajectoryForRL,
+} from './trace/trajectory';
+export type {
+  TaskTrajectory,
+  TrajectoryStep,
+  TrajectoryOptions,
+} from './trace/trajectory';
+
 // v1.3.1 交付 9：Benchmark 评测体系（题库设计 / 隔离评测 / HMAC 链日志）
 export {
   createBenchmark,
