@@ -306,6 +306,22 @@ Driver 唯一做语义判断的地方——数 P0/P1/P2 + FAIL，不做语义审
 
 > **🔴 假阳性干净**（run-05）：降级占位无 P0/P1 被当"审查通过"→ driver 误收敛。**降级轮的 isClean 永远为 false**。
 
+#### splitFindings 切 0 条 → 计数全 0 → 假阳性 clean（v1.3.2 run-11）
+
+**复现**：worker 不按 `### finding-XXX` 格式写，而是用自由编号 `### 1. xxx` / `### 2. xxx`。`splitFindings` 的正则 `^### finding-([A-Z0-9-]+)` 一个都匹配不上 → 返回空数组 → P0/P1/P2 全 0 → `isClean=true`。**run-11 Round 1 + Round 2 都触发**：worker 输出有 1 个 P0 + 6 个 P1，但 driver 报 `2-rounds-clean` 直接退出。
+
+**根因**：driver 的 stop 判定**强依赖** worker 按 `### finding-P0-NN` 格式输出，但 worker prompt 没强制约束这个格式。worker 自由发挥时解析返回 0。
+
+**三层防御**（已在 v1.3.2 实现）：
+
+1. **Fallback 解析**（`parseStopCondition` 改造）：`splitFindings` 切出 0 条时，回退到正则数 markdown 表格行 `| **P0** |` + 标题前缀 `^#{1,4}\s+.*\bP0\b`。已知会因叙述性文字（"无 P0""P2/待证实"）出现假阳性计数偏高——但**"偏高让 driver 多跑几轮"比"为 0 让 driver 误判完成"安全得多**（fail-safe 原则）。
+
+2. **Sanity check 兜底**（`parseStopCondition` 出口处）：即使 fallback 也走错（极小概率），只要 reports.md/findings.md 含 P0/P1 markdown 标记，强制把 `isClean` 改 false。这是治本兜底——下次 worker 又换新格式时仍能拦住。
+
+3. **回归测试**（`fresh-eyes-driver.test.mjs: testParseStopConditionFallbackForFreeFormHeadings`）：模拟自由编号格式 + markdown 表格的 reports.md，断言 fallback 能数到 P0/P1，且 `isClean` 不为 true。
+
+**教训**：测试只覆盖了 `splitFindings`（结构化格式正常路径），没覆盖 `parseStopCondition` 整体（结构化失败后的 fallback 路径）。下次新增任何解析逻辑时，**必须同时测"正常格式 + 异常格式 + 空文件 + 损坏文件"四个分支**，不能只测 happy path。
+
 #### LEDGER 会被假阳性 run 污染（v1.3.0 run-21）
 
 LEDGER.md 是 append-only 永久索引，假阳性 run 的 `2-rounds-clean 0/0/0` 会**永久入册且无法事后纠正**（run-21 实例）。两条应对：

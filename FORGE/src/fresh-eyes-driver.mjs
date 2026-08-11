@@ -2262,22 +2262,59 @@ function parseStopCondition(roundDir) {
   let p0 = 0, p1 = 0, p2 = 0;
 
   // 从 result.md 结构化解析（不再从 findings.md 裸文本数正则）
+  let structuredParseUsed = false;  // 标记是否走了结构化路径
   if (existsSync(resultPath)) {
     const resultText = readFileSync(resultPath, 'utf-8');
     const findingsList = splitFindings(resultText);
-    for (const f of findingsList) {
-      // finding ID 含 P0/P1/P2 前缀（如 finding-）
-      const idLower = f.id.toLowerCase();
-      if (idLower.includes('p0')) { p0++; continue; }
-      if (idLower.includes('p1')) { p1++; continue; }
-      if (idLower.includes('p2')) { p2++; continue; }
-      // ID 无前缀时从正文找 priority 标记（表格行的 priority 列）
-      const content = f.content;
-      if (/\bP0\b/.test(content)) { p0++; continue; }
-      if (/\bP1\b/.test(content)) { p1++; continue; }
-      if (/\bP2\b/.test(content)) { p2++; continue; }
-      // 无法确定优先级的 finding 计为 P2（保守不丢）
-      p2++;
+    if (findingsList.length > 0) {
+      structuredParseUsed = true;
+      for (const f of findingsList) {
+        // finding ID 含 P0/P1/P2 前缀（如 finding-）
+        const idLower = f.id.toLowerCase();
+        if (idLower.includes('p0')) { p0++; continue; }
+        if (idLower.includes('p1')) { p1++; continue; }
+        if (idLower.includes('p2')) { p2++; continue; }
+        // ID 无前缀时从正文找 priority 标记（表格行的 priority 列）
+        const content = f.content;
+        if (/\bP0\b/.test(content)) { p0++; continue; }
+        if (/\bP1\b/.test(content)) { p1++; continue; }
+        if (/\bP2\b/.test(content)) { p2++; continue; }
+        // 无法确定优先级的 finding 计为 P2（保守不丢）
+        p2++;
+      }
+    }
+  }
+
+  // 🔴 fallback：splitFindings 切出 0 条说明 result.md 没按 "### finding-XXX" 格式写
+  // （v1.3.2 run-11 教训：worker 用 "### 1. xxx" 自由编号 → splitFindings 返回空 → 计数全 0
+  // → isClean=true → 假阳性 clean → driver 误判完成）
+  // 此时直接在 result.md + findings.md 裸文本里数 P0/P1 标记。
+  // 已知假阳性：叙述性文字（"无 P0""P2/待证实"）也会命中，导致计数偏高——
+  // 但"偏高让 driver 多跑几轮"比"为 0 让 driver 误判完成"安全得多（fail-safe 原则）。
+  if (!structuredParseUsed) {
+    for (const filePath of [resultPath, findingsPath]) {
+      if (!existsSync(filePath)) continue;
+      const text = readFileSync(filePath, 'utf-8');
+      // 优先匹配 markdown 表格 priority 列（如 "| **P0** |" 或 "| P0 |"）
+      const p0TableMatches = text.match(/\|\s*\**P0\**\s*\|/gi) || [];
+      const p1TableMatches = text.match(/\|\s*\**P1\**\s*\|/gi) || [];
+      const p2TableMatches = text.match(/\|\s*\**P2\**\s*\|/gi) || [];
+      // 再匹配 ### 标题前缀（如 "### P0" / "### 🔴 P0"）
+      const p0HeadingMatches = text.match(/^#{1,4}\s+.*\bP0\b/gm) || [];
+      const p1HeadingMatches = text.match(/^#{1,4}\s+.*\bP1\b/gm) || [];
+      // 取两种匹配的较大值（去重：一行同时含表格 + 标题算 1 条）
+      p0 += Math.max(p0TableMatches.length, p0HeadingMatches.length);
+      p1 += Math.max(p1TableMatches.length, p1HeadingMatches.length);
+      p2 += p2TableMatches.length;
+    }
+    // 没匹配到任何 P0/P1 标记，但两个文件都存在且非空——保守判 P2=1（防漏）
+    if (p0 === 0 && p1 === 0 && p2 === 0) {
+      for (const filePath of [resultPath, findingsPath]) {
+        if (existsSync(filePath) && readFileSync(filePath, 'utf-8').trim().length > 100) {
+          p2 = 1;
+          break;
+        }
+      }
     }
   }
 
@@ -2365,6 +2402,27 @@ function parseStopCondition(roundDir) {
 
   // 干净轮 = 无 P0 无 P1 无 P2 闭环失败 且 非降级产物
   const isClean = !isDegraded && (p0 === 0 && p1 === 0 && p2 === 0 && !hasFail);
+
+  // 🔴 v1.3.2 run-11 sanity check（postflight）——防 parseStopCondition 本身有 bug
+  // 假装判 isClean=true 但 reports.md/findings.md 里明明有 P0/P1 标记。
+  // 触发条件：isClean=true 但任一文件含 markdown P0/P1 表格行或标题前缀。
+  // 行为：把 isClean 强制改 false 并 console.warn——治本是 driver 自己的解析逻辑，
+  // 但这是兜底防线，防止下次 worker 又换格式时再次假阳性 clean。
+  if (isClean) {
+    for (const filePath of [findingsPath, resultPath]) {
+      if (!existsSync(filePath)) continue;
+      const text = readFileSync(filePath, 'utf-8');
+      const hasP0Marker = /\|\s*\**P0\**\s*\|/i.test(text) || /^#{1,4}\s+.*\bP0\b/im.test(text);
+      const hasP1Marker = /\|\s*\**P1\**\s*\|/i.test(text) || /^#{1,4}\s+.*\bP1\b/im.test(text);
+      if (hasP0Marker || hasP1Marker) {
+        console.warn(
+          `\n  ⚠️  [parseStopCondition sanity] ${filePath} 含 P0/P1 标记但解析计数为 0 — ` +
+          `判定强制降级为 isClean=false（防假阳性 clean，见 v1.3.2 run-11 教训）`
+        );
+        return { p0: Math.max(p0, 1), p1: Math.max(p1, 1), p2, hasFail, isClean: false, isDegraded };
+      }
+    }
+  }
 
   return { p0, p1, p2, hasFail, isClean, isDegraded };
 }

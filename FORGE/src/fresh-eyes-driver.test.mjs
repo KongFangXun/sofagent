@@ -5,10 +5,16 @@
 // 用法：node FORGE/src/fresh-eyes-driver.test.mjs
 // ============================================================
 
-import { readFileSync } from 'fs';
+import { readFileSync, mkdtempSync, writeFileSync, rmSync, existsSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { tmpdir } from 'os';
 import assert from 'assert';
+
+// testParseStopConditionFallbackForFreeFormHeadings 使用 fs.*Sync 全套 + os.tmpdir()
+// 这里 alias 给内部用 fs 命名空间访问的代码
+const fs = { readFileSync, mkdtempSync, writeFileSync, rmSync, existsSync, statSync };
+const os = { tmpdir };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -347,6 +353,63 @@ function testRealResultMd() {
   console.log('  ✓ testRealResultMd');
 }
 
+// 🔴 v1.3.2 run-11 回归测试：worker 用 "### 1. xxx" 自由编号（splitFindings 切 0 条）时，
+// parseStopCondition 必须走 fallback 路径，不能误判 isClean=true。
+// 复现场景：worker 不按 "### finding-XXX" 格式写，driver 旧逻辑会 P0/P1 全 0 → 假阳性 clean。
+function testParseStopConditionFallbackForFreeFormHeadings() {
+  const tmpDir = fs.mkdtempSync(join(os.tmpdir(), 'fe-fallback-'));
+  try {
+    // 复刻 driver 里 parseStopCondition 的 fallback 逻辑（splitFindings 切 0 条时的回退路径）。
+    // 注意：driver 没 export 这些函数（main 是无条件触发的，import 会跑 main），
+    // 测试必须内联实现 —— 与文件头 splitFindings 同理：driver 改了 fallback 这里也要同步。
+    const resultMd = `# result.md · a-verify 分片合并（已回填 verify 列）
+
+## 📊 发现统计
+
+| 优先级 | 数量 | 说明 |
+|--------|------|------|
+| **P0** | 1 | 严重缺陷导致核心功能不可用（阻塞） |
+| **P1** | 2 | 应该修复的问题 |
+| **P2** | 1 | 观察项 |
+
+## 🔴 P0 阻塞项
+
+### 1. CLI 核心入口文件缺失
+- 内容...
+`;
+    writeFileSync(join(tmpDir, 'result.md'), resultMd);
+
+    // 内联 parseStopCondition 的 fallback 段（与 fresh-eyes-driver.mjs:parseStopCondition 同步）
+    const findingsList = splitFindings(resultMd);  // 自由编号会切 0 条
+    assert.strictEqual(findingsList.length, 0, '前置条件：自由编号格式 splitFindings 必须切 0 条');
+
+    // fallback 路径（与 driver 同一段逻辑）
+    let p0 = 0, p1 = 0, p2 = 0;
+    for (const text of [resultMd]) {
+      const p0TableMatches = text.match(/\|\s*\**P0\**\s*\|/gi) || [];
+      const p1TableMatches = text.match(/\|\s*\**P1\**\s*\|/gi) || [];
+      const p2TableMatches = text.match(/\|\s*\**P2\**\s*\|/gi) || [];
+      const p0HeadingMatches = text.match(/^#{1,4}\s+.*\bP0\b/gm) || [];
+      const p1HeadingMatches = text.match(/^#{1,4}\s+.*\bP1\b/gm) || [];
+      p0 += Math.max(p0TableMatches.length, p0HeadingMatches.length);
+      p1 += Math.max(p1TableMatches.length, p1HeadingMatches.length);
+      p2 += p2TableMatches.length;
+    }
+    const isClean = (p0 === 0 && p1 === 0 && p2 === 0);
+
+    // 关键断言：fallback 必须能数到 P0/P1（旧逻辑因为 splitFindings 返回空直接判 isClean=true 是 bug）
+    assert.ok(!isClean,
+      `自由编号格式不应被误判 isClean=true，但 fallback 计数 P0=${p0} P1=${p1} P2=${p2} 全 0`);
+    assert.ok(p0 >= 1,
+      `P0 计数应 ≥ 1（表格里有 | **P0** | 1 |），实际 P0=${p0}`);
+    assert.ok(p1 >= 1,
+      `P1 计数应 ≥ 1（表格里有 | **P1** | 2 |），实际 P1=${p1}`);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+  console.log('  ✓ testParseStopConditionFallbackForFreeFormHeadings');
+}
+
 // ─── 运行测试 ────────────────────────────────────────────────
 console.log('\n🧪 fresh-eyes-driver splitFindings / chunk / a-verify 分片单元测试\n');
 
@@ -367,6 +430,8 @@ const tests = [
   testAVerifyShardBatchFailure,
   testAVerifyShardExactDivision,
   testRealResultMd,
+  // v1.3.2 run-11 回归：parseStopCondition fallback for 自由编号格式
+  testParseStopConditionFallbackForFreeFormHeadings,
 ];
 
 for (const test of tests) {
