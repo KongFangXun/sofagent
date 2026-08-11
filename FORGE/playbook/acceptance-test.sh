@@ -968,7 +968,7 @@ FDE_COUNT=$(grep -c "FDE Agent" "$README" 2>/dev/null || echo 0)
 # v1.2.9 技术描述移入 ARCHITECTURE.md，改为检查 ARCHITECTURE（措辞已从 README 的"审计引擎核心规则零 token"改为 ARCHITECTURE 的"19 条纯 git-diff 零 token"）
 grep -qE '(纯\s*git-diff|零\s*token|不调\s*LLM)' "$PROJECT_ROOT/docs/ARCHITECTURE.md" || { fail "ARCHITECTURE 缺 '零 token' 审计描述"; S120_OK=false; }
 # v1.3.0 README 不再列历史版本号，检查当前版本标记即可
-grep -qE 'v1\.3\.0|v1\.2\.9' "$README" || { fail "README 缺 v1.3.x 版本标记"; S120_OK=false; }
+grep -qE 'v1\.3\.|v1\.2\.9' "$README" || { fail "README 缺 v1.3.x 版本标记"; S120_OK=false; }
 $S120_OK && pass
 S121_OK=true; DAG_RUNNER="$PROJECT_ROOT/engine/orchestrator/src/dag-runner.ts"
 SANITIZER="$PROJECT_ROOT/engine/core/src/security/prompt-sanitizer.ts"
@@ -2196,6 +2196,88 @@ grep -q "knowledge-index\|knowledgeIndex" "$PROJECT_ROOT/engine/harness/src/inde
 # 索引每条 ≤150 字符（摘要截断）
 grep -q "150" "$PROJECT_ROOT/engine/harness/src/knowledge-index.ts" || S244_OK=false
 $S244_OK && pass "L4 经验层渐进加载（热点全文 + 索引摘要 ≤150 字符）"
+
+# ═══════════════════════════════════════════════════════════
+# v1.3.2 交付场景（S245-S255）
+# ═══════════════════════════════════════════════════════════
+
+scenario 245 "v1.3.2 交付 1 L2 语义判定——diff-report 三类 mismatch"
+S245_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/diff-report.ts" ] || S245_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/output-extractor.ts" ] || S245_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/ontology-comparator.ts" ] || S245_OK=false
+grep -q "field_missing\|value_error\|relation_broken" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/diff-report.ts" || S245_OK=false
+$S245_OK && pass "L2 语义判定（diff-report 三类 mismatch + ontology-comparator + output-extractor）"
+
+scenario 246 "v1.3.2 交付 2-3 L3 自动定位 + L4 自动修复"
+S246_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/error-localizer.ts" ] || S246_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/fix-applier.ts" ] || S246_OK=false
+grep -q "skill.*ontology.*prompt.*knowledge" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/error-localizer.ts" || S246_OK=false
+grep -q "FixProposal" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/fix-applier.ts" || S246_OK=false
+$S246_OK && pass "L3 自动定位（四类错误源）+ L4 自动修复（FixProposal + 审计兜底）"
+
+scenario 247 "v1.3.2 交付 4 L5 循环收敛"
+S247_OK=true
+grep -q "convergeThreshold\|divergeThreshold" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/driver.ts" || S247_OK=false
+grep -q "converged\|diverged" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/driver.ts" || S247_OK=false
+$S247_OK && pass "L5 循环收敛（连续 3 轮 PASS 收敛 / 连续 5 轮 FAIL 发散）"
+
+scenario 248 "v1.3.2 交付 5 agent-creation"
+S248_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/onboard/agent-creator.ts" ] || S248_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/onboard/creation-validator.ts" ] || S248_OK=false
+[ -f "$PROJECT_ROOT/engine/mcp/src/tools/create-agent.ts" ] || S248_OK=false
+grep -q "deriveAgentFromRequirement" "$PROJECT_ROOT/engine/orchestrator/src/onboard/agent-creator.ts" || S248_OK=false
+grep -q "thinkingLevel" "$PROJECT_ROOT/engine/orchestrator/src/onboard/agent-creator.ts" || S248_OK=false
+$S248_OK && pass "agent-creation（一句话需求推导 + 不持久化 model_id）"
+
+scenario 249 "v1.3.2 交付 5 workflow-parser 节点类型动态解析链"
+S249_OK=true
+grep -q "agent-creator\|deriveAgentFromRequirement" "$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts" || S249_OK=false
+$S249_OK && pass "workflow-parser registry 动态查找 + agent-creation 兜底"
+
+scenario 250 "v1.3.2 交付 6 企业专属 eval 套件"
+S250_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/eval-suite.ts" ] || S250_OK=false
+[ -f "$PROJECT_ROOT/FDE/templates/eval-suite/finance.json" ] || S250_OK=false
+grep -q "freezeEvalBaseline\|freezeBenchmark" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/eval-suite.ts" || S250_OK=false
+$S250_OK && pass "企业 eval 套件（行业模板 + 基线冻结）"
+
+scenario 251 "v1.3.2 交付 7 模型接入插槽 client_type"
+S251_OK=true
+grep -q "client_type" "$PROJECT_ROOT/engine/orchestrator/src/model-router-config.ts" || S251_OK=false
+grep -q "ollama.*openai-compatible" "$PROJECT_ROOT/engine/orchestrator/src/model-router-config.ts" || S251_OK=false
+grep -q "endpointConfig\|LocalEndpointConfig" "$PROJECT_ROOT/engine/core/src/model-client.ts" || S251_OK=false
+$S251_OK && pass "模型接入插槽 client_type（ollama | openai-compatible）"
+
+scenario 252 "v1.3.2 交付 7右半+10 FDE 梳理辅助 + Ontology 咨询式生成"
+S252_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/fde/compose-interview.ts" ] || S252_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/fde/workflow-draft.ts" ] || S252_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/fde/ontology-draft.ts" ] || S252_OK=false
+grep -q "data/ontology/drafts" "$PROJECT_ROOT/engine/orchestrator/src/fde/ontology-draft.ts" || S252_OK=false
+$S252_OK && pass "FDE 梳理辅助 + Ontology 咨询式生成（草稿落盘不注册）"
+
+scenario 253 "v1.3.2 交付 8 LLM Trace rawResponse 字段"
+S253_OK=true
+grep -q "rawResponse" "$PROJECT_ROOT/engine/core/src/llm-call-trace.ts" || S253_OK=false
+grep -q "rawResponse" "$PROJECT_ROOT/engine/core/src/model-client.ts" || S253_OK=false
+$S253_OK && pass "LLM Trace rawResponse（provider 透传原始响应）"
+
+scenario 254 "v1.3.2 交付 9 Session 级隔离"
+S254_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/session-isolator.ts" ] || S254_OK=false
+grep -q "runInIsolatedSession\|spawn" "$PROJECT_ROOT/engine/orchestrator/src/session-isolator.ts" || S254_OK=false
+grep -q "handoffSessionData\|appendEvaluationRecord" "$PROJECT_ROOT/engine/orchestrator/src/session-isolator.ts" || S254_OK=false
+$S254_OK && pass "Session 级隔离（Builder vs Optimizer 分离 + evaluation-log 传递）"
+
+scenario 255 "v1.3.2 交付 11 LLM Trace 任务级轨迹视图"
+S255_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/trace/trajectory.ts" ] || S255_OK=false
+grep -q "aggregateTrajectory\|TaskTrajectory" "$PROJECT_ROOT/engine/orchestrator/src/trace/trajectory.ts" || S255_OK=false
+grep -q "exportTrajectoryForRL" "$PROJECT_ROOT/engine/orchestrator/src/trace/trajectory.ts" || S255_OK=false
+$S255_OK && pass "LLM Trace 任务级轨迹视图（按 taskId 聚合 + RL 训练导出）"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
