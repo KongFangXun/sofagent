@@ -95,34 +95,48 @@ echo "npm 包洁净度 + 类型检查完成"
 
 ---
 
-## 步骤 3：npm 分批发布
+## 步骤 3：push main + 等 CI 全绿
+
+> **tag 先行策略**（v1.3.2 起统一）：先 push main → 等 CI 全绿验证 → 才打 tag。tag 一定指向 CI 验证过的 commit，不会 tag 了之后才发现 CI 红。
 
 ```bash
-# 一键发布：动态读包列表 + 拓扑序分批 + 版本验证
-bash tools/publish-packages.sh <版本号>
+# ── push main ──
+git push origin main
+
+# ── 等 CI 全绿（通常 2-5 分钟）──
+sleep 30
+gh run list -b main -L 8 --json status,conclusion,name | node -e '
+const runs = JSON.parse(require("fs").readFileSync("/dev/stdin","utf8"));
+let pending = 0, failed = 0;
+for (const r of runs) {
+  const status = r.status || "";
+  const conclusion = r.conclusion || "";
+  const icon = conclusion === "success" ? "✅" : conclusion === "failure" || conclusion === "cancelled" ? "🔴" : "⏳";
+  console.log(`${icon} ${r.name}: ${conclusion || status}`);
+  if (status === "in_progress" || status === "queued") pending++;
+  if (conclusion === "failure" || conclusion === "cancelled") failed++;
+}
+if (pending > 0) { console.log(`\n⏳ ${pending} 个 CI 运行中，继续等待`); process.exit(2); }
+if (failed > 0) { console.log(`\n🔴 ${failed} 个 CI 失败，先修`); process.exit(1); }
+console.log("\n✅ CI 全绿，可以打 tag");
+'
+# exit 2 = 还在跑（循环重跑本步骤） / exit 1 = 有失败（gh run view --log-failed 定位 → 修 → push → 重等） / exit 0 = 全绿
+# 任一 failure → gh run view --log-failed 定位 → 修复 → push → 重新等待
 ```
-
-脚本自动完成：重新 build → 按依赖拓扑序分批 publish → 验证全部包版本一致。
-
-> npm 先行策略：先手动发布 npm 全部包（按依赖顺序），再 git tag + push。即使 CI 失败，npm 包已就位。
 
 ---
 
-## 步骤 4：git tag + push
+## 步骤 4：git tag + push tag
 
 ```bash
 # ── tag 前确认 ──
-# 确认所有改动都已纳入本次 tag（无 fix 漏网）
 LAST_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
 [ -n "$LAST_TAG" ] && echo "上一 tag: $LAST_TAG" && git log --oneline ${LAST_TAG}..HEAD | head -20
 # 确认 check-version + check-test-count 全绿（tag 不得在代码/文档未就绪时打）
 bash tools/check-version.sh && bash tools/check-test-count.sh --quiet
 
 # ── 打 tag + push ──
-git tag vX.Y.Z
-# tag message 校验：tag 必须含版本号
-git tag -l "vX.Y.Z" --format='%(subject)' | grep -q "vX.Y.Z" && echo "✅ tag message 含版本号" || echo "⚠️ tag message 不匹配，建议重新打 tag"
-git push origin main --no-thin
+git tag -a vX.Y.Z -m "vX.Y.Z · {一句话版本摘要}"
 git push origin vX.Y.Z
 
 # ── tag 后零 commit 校验 ──
@@ -132,49 +146,89 @@ if [ "$TAG_SHA" = "$HEAD_SHA" ]; then
   echo "✅ tag 指向 HEAD（零游离 commit）"
 else
   echo "🔴 tag ($TAG_SHA) ≠ HEAD ($HEAD_SHA)——tag 后有游离 commit"
-  git log --oneline vX.Y.Z..HEAD   # 查看游离的 commit
+  git log --oneline vX.Y.Z..HEAD
   echo "⚠️ 如果游离 commit 属于本版本，需要重新打 tag"
 fi
 ```
 
 ---
 
-## 步骤 5：等 CI 全绿
+## 步骤 5：gh release（触发 release.yml 自动 publish audit + mcp）
+
+> GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 10 包在步骤 6 手动 publish。
 
 ```bash
-# 等 GitHub 启动 CI（给 30 秒窗口）
-sleep 30
+gh release create vX.Y.Z --title "vX.Y.Z — {核心变更摘要}" --notes "$(cat <<'EOF'
+vX.Y.Z — {一句话定位}
 
-# 轮询 CI 状态（通常 2-5 分钟全绿）
-gh run list -b main -L 5 --json conclusion,name,headSha | node -e '
-const runs = JSON.parse(require("fs").readFileSync("/dev/stdin","utf8"));
-let allGreen = true;
-for (const r of runs) {
-  const status = r.conclusion || "running";
-  const icon = status === "success" ? "✅" : status === "failure" || status === "cancelled" ? "🔴" : "⏳";
-  console.log(`${icon} ${r.name}: ${status}`);
-  if (status !== "success") allGreen = false;
-}
-console.log(allGreen ? "\n✅ CI 全绿，继续" : "\n🔴 CI 未全绿，先修");
-process.exit(allGreen ? 0 : 1);
-'
-# 任一 failure → gh run view --log-failed 定位 → 修复 → push → 重新等待
+## 🔨 核心变更
+
+### {功能领域 1}
+- {变更点 1}
+- {变更点 2}
+
+### {功能领域 2}
+- {变更点}
+
+### BugFix（上版本遗留）
+- {修复点}
+
+## ✅ 质量验证
+
+| 检查项 | 结果 |
+|------|:--:|
+| npm test | {N} tests 全绿 ✅ |
+| acceptance-test | {N}/{N} 场景全绿 ✅ |
+| shellcheck | 零 error ✅ |
+| check-version | 71/71 全绿 ✅ |
+| 回归检查 | {N} 维度 ✅ |
+| release-gate | verdict=PASS ✅ |
+| fresh-eyes | {N} 轮独立审查 ✅ |
+
+📖 [详细开发日志](./docs/changelog/v{major}.{minor}/vX.Y.Z.md)
+EOF
+)"
+```
+
+### Release Notes 格式规范
+
+- **Title**：`vX.Y.Z — {核心变更摘要}`（常规）/ `🎉`（里程碑如 vX.Y.0）
+- **Body 结构**：
+  - `## 🔨 核心变更`——功能按重要性降序，安全修复优先于文档修复。每个变更点用 `-` 列表，一句话说清楚做了什么（不写「为什么」——那在开发日志里）
+  - `## ✅ 质量验证`——表格固定项（npm test / acceptance-test / shellcheck / check-version / 回归检查 / release-gate / fresh-eyes），结果列每项带 ✅
+  - `📖 [详细开发日志](./docs/changelog/v<major>.<minor>/vX.Y.Z.md)`——必须用 markdown 链接语法
+- **功能领域 emoji 按语义选**：🔧 功能 / 🛡️ 安全 / 📝 文档 / 🔍 审查 / 🆕 新建 / 📊 可视化 / ⚡ 自动化 / 🔗 集成 / 📦 打包 / 🎨 UI
+- **不含审查元信息**（模型名、审查轮次、P0/P1 标签）——那是内部过程
+- **测试数字写实际值**（从 `npm test 2>&1 | tail -5` 获取），不写约数
+
+---
+
+## 步骤 6：npm 手动 publish 其余 10 包
+
+> `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 10 包手动 publish。
+
+```bash
+# 等 release.yml 完成（通常 3-5 分钟），确认 audit + mcp 已到 npm
+npm view @sofagent/audit@vX.Y.Z version  # 期望返回版本号
+npm view @sofagent/mcp@vX.Y.Z version    # 期望返回版本号
+
+# 手动 publish 其余 10 包
+for pkg in core daemon eval harness ontology orchestrator rules skillopt think ab-test; do
+  echo "--- @sofagent/$pkg ---"
+  cd "engine/$pkg" && npm publish --access public && cd ../..
+done
+
+# 验证全部 12 包
+for pkg in audit core daemon eval harness ontology orchestrator rules skillopt think ab-test mcp; do
+  V=$(npm view @sofagent/$pkg version 2>/dev/null || echo "❌ 未发布")
+  echo "  @sofagent/$pkg: $V"
+done
+# 期望：全部 = 当前版本号（npm 缓存可能延迟 15 秒，未到则等一下重查）
 ```
 
 ---
 
-## 步骤 6：gh release + Skill 分发
-
-### Release Notes 格式规范
-
-- **Title**：`vX.Y.Z — {核心变更摘要} 🔧`（常规）/ `🎉`（里程碑如 vX.Y.0）
-- **Body 结构**：
-  - `## 🔨 核心变更`——功能按重要性降序，安全修复优先于文档修复。每个变更点用 `-` 列表，一句话说清楚做了什么（不写「为什么」——那在开发日志里）
-  - `## ✅ 质量验证`——表格固定 6 项（npm test / acceptance-test / OpenClaw 验收 / shellcheck / pre-push-check / 回归检查），结果列每项带 ✅
-  - `📖 [详细开发日志](./docs/changelog/v<major>.<minor>/vX.Y.Z.md)`——必须用 markdown 链接语法（反引号包裹的纯文本路径在 GitHub 上不可点击）
-- **功能领域 emoji 按语义选**：🔧 功能 / 🛡️ 安全 / 📝 文档 / 🔍 审查 / 🆕 新建 / 📊 可视化 / ⚡ 自动化 / 🔗 集成 / 📦 打包 / 🎨 UI
-- **不含审查元信息**（模型名、审查轮次、P0/P1 标签）——那是内部过程
-- **测试数字写实际值**（从 `npm test 2>&1 | tail -5` 获取），不写约数
+## 步骤 7：Skill 分发
 
 ```bash
 # 发布前确认 slug（SSOT）
@@ -203,7 +257,7 @@ skillhub publish "$tmpdir/SKILL" --version <版本号> --changelog "vX.Y.Z: 简�
 
 ---
 
-## 步骤 7：设备端安装
+## 步骤 8：设备端安装
 
 ```bash
 # 1. 全局包更新（audit + core）
