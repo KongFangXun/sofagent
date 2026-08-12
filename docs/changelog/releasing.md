@@ -10,18 +10,18 @@
 
 > 每次新 session 或新阶段开始时，先读这 12 行确认进度。打勾的 = 已完成，第一个未打勾的 = 当前要做。
 
-- [x] 一 · 审查上版本（fresh-eyes-loop 自动化审查循环 · 新 session）→ [01-review.md](./releasing/01-review.md)
-- [x] 二 · 开发 → [02-dev.md](./releasing/02-dev.md)
-- [x] 三 · 基础自测 → [03-selftest.md](./releasing/03-selftest.md)
-- [x] 四 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session）→ [04-quality-loop.md](./releasing/04-quality-loop.md)
-- [x] 五 · 审查体系合并更新 → [05-review-system.md](./releasing/05-review-system.md)
-- [x] 六 · release-gate-loop 发版闸门（新 session · 必须 PASS 才继续）→ [06-release-gate.md](./releasing/06-release-gate.md)
-- [x] 七 · 审查体系最终确认 → [07-final-confirm.md](./releasing/07-final-confirm.md)
-- [x] 八 · 开发日志定稿 + 文档收尾 → [08-doc-finalize.md](./releasing/08-doc-finalize.md)
-- [x] 九 · 工具脚本健康检查 → [09-tool-health.md](./releasing/09-tool-health.md)
-- [x] 十 · 确认关口 → [10-confirm.md](./releasing/10-confirm.md)
-- [x] 十一 · 发布（项目负责人或授权 AI）→ [11-publish.md](./releasing/11-publish.md)
-- [x] 十二 · 发布后 → [12-post-publish.md](./releasing/12-post-publish.md)
+- [ ] 一 · 审查上版本（fresh-eyes-loop 自动化审查循环 · 新 session）→ [01-review.md](./releasing/01-review.md)
+- [ ] 二 · 开发 → [02-dev.md](./releasing/02-dev.md)
+- [ ] 三 · 基础自测 → [03-selftest.md](./releasing/03-selftest.md)
+- [ ] 四 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session）→ [04-quality-loop.md](./releasing/04-quality-loop.md)
+- [ ] 五 · 审查体系合并更新 → [05-review-system.md](./releasing/05-review-system.md)
+- [ ] 六 · release-gate-loop 发版闸门（新 session · 必须 PASS 才继续）→ [06-release-gate.md](./releasing/06-release-gate.md)
+- [ ] 七 · 审查体系最终确认 → [07-final-confirm.md](./releasing/07-final-confirm.md)
+- [ ] 八 · 开发日志定稿 + 文档收尾 → [08-doc-finalize.md](./releasing/08-doc-finalize.md)
+- [ ] 九 · 工具脚本健康检查 → [09-tool-health.md](./releasing/09-tool-health.md)
+- [ ] 十 · 确认关口 → [10-confirm.md](./releasing/10-confirm.md)
+- [ ] 十一 · 发布（项目负责人或授权 AI）→ [11-publish.md](./releasing/11-publish.md)
+- [ ] 十二 · 发布后 → [12-post-publish.md](./releasing/12-post-publish.md)
 
 > **铁律**：阶段六 verdict=PASS 前，不进阶段七~八。FAIL 回阶段五修复后重跑。
 
