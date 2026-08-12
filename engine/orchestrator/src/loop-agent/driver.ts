@@ -100,6 +100,13 @@ export interface OnboardDriverOptions {
   l3Localizer?: (diffReport: DiffReport) => Promise<LocalizationResult>;
   /** v1.3.2 交付 3：L4 修复器（可注入 mock；L3 定位后调用） */
   l4Fixer?: (localization: LocalizationResult, diffReport: DiffReport) => Promise<FixApplyResult>;
+  /** v1.3.3 交付 T04：L5 收敛回调（Onboard 收敛 PASS 后触发——Refine Agent 自动触发挂点）
+   *
+   * 调用方注入此回调以实现「Onboard 收敛 → Refine 自动触发」。
+   * driver.ts 本身不 import refine-agent（保持单向依赖）。
+   * 回调异步执行，异常仅告警不中断（Refine 失败不影响 Onboard 结果）。
+   */
+  onConverged?: (ctx: { taskId: string; agentId?: string; rounds: number }) => Promise<void> | void;
 }
 
 /** 单轮记录 */
@@ -286,6 +293,7 @@ export async function runOnboardLoop(
   const l2Judge = options.l2Judge;
   const l3Localizer = options.l3Localizer;
   const l4Fixer = options.l4Fixer;
+  const onConverged = options.onConverged;
 
   const startedAt = Date.now();
   const rounds: OnboardRound[] = [];
@@ -384,6 +392,15 @@ export async function runOnboardLoop(
         convergenceState = 'converged';
         rounds.push({ round, task: currentTask, outcome, verdict, diffReport, localization, fixResult });
         log(`✅ L5 收敛：连续 ${consecutivePassCount} 轮 L1 crash-free 且 L2 无差异`);
+        // v1.3.3 交付 T04：Onboard 收敛 → 自动触发 Refine Agent（唯一挂点）
+        if (onConverged) {
+          try {
+            await onConverged({ taskId, ...(agentId ? { agentId } : {}), rounds: round });
+          } catch (err) {
+            // Refine 触发失败不阻断 Onboard 结果（仅告警）
+            log(`⚠️ onConverged 回调异常（不影响 Onboard 结果）：${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
         break;
       }
     } else {

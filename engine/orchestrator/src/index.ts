@@ -290,6 +290,37 @@ export type {
   LoadRuleSetOptions,
 } from './refine-agent/quality-rule-set';
 
+// v1.3.3 交付 T05：进化闭环（Benchmark 驱动 Dream Cycle）
+export { runOptimizationLoop } from './refine-agent/optimization-loop';
+export type {
+  OptimizationLoopOptions,
+  OptimizationIteration,
+  OptimizationLoopResult,
+} from './refine-agent/optimization-loop';
+export {
+  readAgentVersion,
+  writeAgentVersion,
+  takeSnapshot,
+  rollbackToSnapshot,
+  advanceVersion,
+  verifyVersionMonotonic,
+  EXPERIENCE_LAYER_PATTERNS,
+} from './refine-agent/snapshot-manager';
+export type {
+  AgentVersion,
+  AgentVersionEntry,
+} from './refine-agent/snapshot-manager';
+export {
+  checkContamination,
+  assertNoContamination,
+} from './refine-agent/contamination-guard';
+export type {
+  ContaminationCheckInput,
+  ContaminationResult,
+  ContaminationType,
+} from './refine-agent/contamination-guard';
+export { ContaminationError } from './refine-agent/contamination-guard';
+
 // v1.3.2 交付 5：agent-creation（一句话需求 → 自动建节点）
 export { deriveAgentFromRequirement } from './onboard/agent-creator';
 export type { AgentCreationResult, DerivedAgentConfig } from './onboard/agent-creator';
