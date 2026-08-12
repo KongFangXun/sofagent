@@ -121,6 +121,15 @@ export interface Rule {
   ruleClass?: RuleClass;
   /** 规则描述（v1.0.9） */
   description?: string;
+  /**
+   * v1.3.3 #11：审计优先级分组（单源化——不再在 runner.ts 维护独立 AUDIT_PRIORITY）
+   * - critical: 安全红线——fast-fail 后续层（A1/A2/A9/A10/A20-A23）
+   * - warning:  业务底线（A3/A4/A5/A11/A19）
+   * - crutch:   拐杖规则，依赖日志最慢（A6/A7/A8/A18）
+   * - extended: 扩展规则（A14-A17/E1/E2/E4）
+   * 新增规则只需在此填 priority，runner.ts 自动按组执行，无需双注册。
+   */
+  priority?: 'critical' | 'warning' | 'crutch' | 'extended';
   /** v1.3.0 (交付 7)：双规则统一——'diff' = 提交时扫 git diff */
   ruleType: 'diff';
   check(ctx: AuditContext): RuleCheck;

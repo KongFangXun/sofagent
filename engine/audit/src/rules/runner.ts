@@ -72,17 +72,31 @@ export interface AuditResult {
  *   - E3 已并入 A11，从 extended 删除
  *   - critical 层从"命中即停"改为"全量收集所有 FAIL 后统一 fast-fail"（§4.9.2）
  *
- * @see engine/audit/src/rules/index.ts  defaultRules/extendedRules 数组——新增规则时需同时在两处注册：
- *      ① 在 index.ts 的 defaultRules 或 extendedRules 数组中添加规则对象；
- *      ② 在此处的 AUDIT_PRIORITY 分组中添加对应的规则 ID。
- *      两边顺序一致才能保证优先级分组正确。
+ * v1.3.3 #11 单源化：priority 现在定义在 rules/index.ts 的规则对象里（Rule.priority 字段），
+ *   本文件不再维护独立 AUDIT_PRIORITY 常量——新增规则只需在 index.ts 填 priority 字段，
+ *   下方的 groupRulesByPriority() 自动按组归类执行，杜绝双注册漂移。
+ *   下方的 PRIORITY_ORDER 定义执行顺序（组间），组内顺序按规则 number 正序。
  */
-export const AUDIT_PRIORITY = {
-  critical: ['A1', 'A2', 'A9', 'A10', 'A20', 'A21', 'A22', 'A23'],
-  warning:  ['A3', 'A4', 'A5', 'A11', 'A19'],
-  crutch:   ['A6', 'A7', 'A8', 'A18'],
-  extended: ['A14', 'A15', 'A16', 'A17', 'E1', 'E2', 'E4'],
-} as const;
+const PRIORITY_ORDER = ['critical', 'warning', 'crutch', 'extended'] as const;
+type Priority = (typeof PRIORITY_ORDER)[number];
+
+/**
+ * v1.3.3 #11：从规则定义的 priority 字段动态构建分组（单源化）。
+ * 规则未声明 priority 时归入 'extended' 兜底（不漏跑）。
+ * 组内按规则 number 正序排列（与旧 AUDIT_PRIORITY 显式顺序一致）。
+ */
+function groupRulesByPriority(activeRules: Rule[]): Record<Priority, Rule[]> {
+  const groups: Record<Priority, Rule[]> = { critical: [], warning: [], crutch: [], extended: [] };
+  for (const rule of activeRules) {
+    const p = (rule.priority ?? 'extended') as Priority;
+    groups[p].push(rule);
+  }
+  // 组内按 number 正序（critical: A1<A2<A9<A10<A20<A21<A22<A23 等）
+  for (const key of PRIORITY_ORDER) {
+    groups[key].sort((a, b) => a.number - b.number);
+  }
+  return groups;
+}
 
 /**
  * 将规则编号转换为 AUDIT_PRIORITY 中的 key
@@ -158,10 +172,8 @@ export function runRules(
     : rulesToRun;
 
   const allRuleIds = getAllRuleIds(activeRules);
-  const ruleMap = new Map<string, Rule>();
-  for (const r of activeRules) {
-    ruleMap.set(ruleToId(r), r);
-  }
+  // v1.3.3 #11: 从规则定义的 priority 字段动态分组（单源化），替代旧 AUDIT_PRIORITY 常量
+  const priorityGroups = groupRulesByPriority(activeRules);
 
   // 按优先级分组执行
   // v1.2.5 §4.9.2: critical 层从"命中即停"改为"全量收集所有 FAIL"
@@ -170,15 +182,12 @@ export function runRules(
   // 新逻辑：critical 8 条全跑完，收集所有 FAIL，审计报告展示完整安全画像。
   let criticalFailCount = 0;
 
-  for (const priority of ['critical', 'warning', 'crutch', 'extended'] as const) {
-    const ruleIds = AUDIT_PRIORITY[priority];
+  for (const priority of PRIORITY_ORDER) {
+    const groupRules = priorityGroups[priority];
 
     if (priority === 'critical') {
       // critical 层：全部跑完，收集所有 FAIL
-      for (const ruleId of ruleIds) {
-        const rule = ruleMap.get(ruleId);
-        if (!rule) continue;
-
+      for (const rule of groupRules) {
         const result = rule.check(ctx);
         results.push(result);
 
@@ -221,10 +230,7 @@ export function runRules(
     }
 
     // warning/crutch/extended 层：原有逻辑不变
-    for (const ruleId of ruleIds) {
-      const rule = ruleMap.get(ruleId);
-      if (!rule) continue;
-
+    for (const rule of groupRules) {
       const result = rule.check(ctx);
       results.push(result);
     }

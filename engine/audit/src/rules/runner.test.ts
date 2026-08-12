@@ -4,8 +4,23 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { runRules, AUDIT_PRIORITY } from './runner';
+import { runRules } from './runner';
+import { rules } from './index';
 import { makeDiffFile } from '../test-utils';
+
+// v1.3.3 #11: priority 单源化后，AUDIT_PRIORITY 常量已删除。
+// 从规则定义的 priority 字段重建分组（与 runner.ts groupRulesByPriority 同口径），
+// 保留对优先级分组的回归断言。
+function buildPriorityGroups(): Record<string, string[]> {
+  const groups: Record<string, string[]> = { critical: [], warning: [], crutch: [], extended: [] };
+  for (const r of rules) {
+    const id = r.number >= 200 ? `E${r.number - 200}` : `A${r.number}`;
+    const p = r.priority ?? 'extended';
+    groups[p].push(id);
+  }
+  return groups;
+}
+const AUDIT_PRIORITY = buildPriorityGroups();
 
 // 最小完整 config，避免规则依赖 config 字段时 crash
 const minimalConfig = {
