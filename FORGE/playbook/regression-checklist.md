@@ -2,7 +2,7 @@
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
 > ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。v1.2.9 新增维度 75-78（check-version MCP 扫描路径 / JS RegExp (?i) 不支持 / drift 排除 .test. / 新文件版本头匹配 SSOT），归并 65+66（FORGE stream 数据处理）、73+74（ESM named export + FORGE 烟测）。v1.3.0 新增维度 79-82（运行时审计 tool wrapper / 决策审计 HMAC 链 / 外部记忆后端 + sensitivity ACL / 进化链路写保护），归并无。v1.3.0 fresh-eyes 复审新增维度 83（license + action.yml 版本锁定）。v1.3.0 阶段五覆盖率确认新增维度 84（shouldAllow + 仓库隔离）。v1.3.1 新增维度 85-87（FORGE driver run_bash cwd 强制 / auto-commit 代码领域限定 / HMAC 密钥 Shannon 熵检测）+ 维度 88（根 tsconfig outDir 缺失根因待修）。
-> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：69 维（v1.3.2）
+> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：74 维（v1.3.2 发版后回写）
 ## 🔒 维护公约（防膨胀铁律）
 
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1350 行（v1.3.2 从 1250 上调，releasing.md 方针「超标上调 LIMIT 不删内容」）、`acceptance-test.sh` ≤ 2250 行（v1.3.2 从 2050 上调），越线触发瘦身。
@@ -1272,4 +1272,45 @@ echo "TOOLS 数组: $REG / switch cases: $CASES"
 /bin/bash <script.sh> --help 2>&1; echo "EXIT=$?"
 # 期望：EXIT=0
 # 危险模式：${arr[@]} + set -u / [[ ]] && + set -e
+```
+
+#### 95. check-version 日期硬编码——EXPECTED_DOC_DATE 每次发版要手动改（v1.3.2 新增 · 发版阻塞）
+
+**背景**：check-version.sh L775 `EXPECTED_DOC_DATE="2026-08-09"` 硬编码 v1.3.1 发版日期，v1.3.2 发版时漏改导致 10 个文档头日期全部报漂移。
+
+**检查命令**：
+```bash
+# 确认 EXPECTED_DOC_DATE 与当前版本发版日期一致
+grep "EXPECTED_DOC_DATE" tools/check-version.sh
+# 与 CHANGELOG.md 最新版本行日期对比
+grep "$(node -p "require('./package.json').version")" CHANGELOG.md | grep -oE "2026-[0-9]{2}-[0-9]{2}"
+# 期望：两者一致；根治方案：bump-version.sh 同时改 EXPECTED_DOC_DATE 或从 CHANGELOG 动态提取
+```
+
+#### 96. 警戒线声明多处同步——改一处要改 4 处（v1.3.2 新增 · 元维度）
+
+**背景**：acceptance 警戒线 2050→2250 需同步改 4 处（regression-checklist + releasing/05 + guides/review-system + acceptance-test 头部），漏改任一处会导致发版 SOP 与实际不一致。
+
+**检查命令**：
+```bash
+# 同步一致性检查：4 处声明的警戒线值一致
+for v in "2250" "1350" "370"; do
+  COUNT=$(grep -rn "$v" FORGE/playbook/regression-checklist.md docs/changelog/releasing/05-review-system.md docs/guides/review-system.md 2>/dev/null | wc -l | tr -d ' ')
+  echo "  警戒线 $v: $COUNT 处声明"
+  [ "$COUNT" -lt 2 ] && echo "  ⚠️ 声明不足 2 处——可能漏改"
+done
+```
+
+#### 97. npm publish workspace 限制——12 包分两批发布（v1.3.2 新增 · 发版阻塞）
+
+**背景**：release.yml 只 auto-publish @sofagent/audit + @sofagent/mcp（Release 触发）；其余 10 包需手动 `cd engine/<pkg> && npm publish`。`npm publish --workspaces` 不支持 workspace 全局发布。
+
+**检查命令**：
+```bash
+# 发版后验证 12 包全部到 npm
+for pkg in audit core daemon eval harness ontology orchestrator rules skillopt think ab-test mcp; do
+  V=$(npm view @sofagent/$pkg version 2>/dev/null || echo "❌ 未发布")
+  echo "  @sofagent/$pkg: $V"
+done
+# 期望：全部 = 当前版本号；未到 → cd engine/<pkg> && npm publish --access public
 ```
