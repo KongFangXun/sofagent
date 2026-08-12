@@ -31,3 +31,6 @@ export { mergeFederationResults, pickWinner } from './merge';
 export type { MergedKnowledge } from './merge';
 export { withOfflineFallback } from './offline-fallback';
 export type { FederationAuditEntry, AuditWriter } from './offline-fallback';
+
+// v1.3.3 新增：团队协作联邦同步通道（实现 orchestrator 的 TeamSyncChannel 接口）
+export { FederatedTeamSyncChannel } from './team-channel';

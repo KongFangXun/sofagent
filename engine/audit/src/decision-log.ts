@@ -36,6 +36,12 @@ export interface EmitDecisionInput {
   artifactRef?: string;
   /** 决策引擎标识（缺省 'sofagent-audit'） */
   engine?: string;
+  /** 触发证据链（字符串数组，可空）—— v1.3.3 新增
+   *
+   * kind=EVOLUTION 时必附（运行时不强制 schema 校验，但建议调用方传入）。
+   * 格式：字符串数组，每项为一条证据描述。非数组值将被拒绝。
+   */
+  evidence?: string[];
 }
 
 /** schema 校验失败（kind/moment 非法、必填缺失）——不写文件 */
@@ -59,6 +65,7 @@ const VALID_KINDS: readonly string[] = [
   'SPEC_CHANGE', 'ARTIFACT_EDIT', 'TOOL_GATE', 'RULE_TOGGLE',
   'ESCALATE_REPORT', 'FALLBACK_DEGRADE', 'CONFIG_CHANGE',
   'KNOWLEDGE_DISTILL', 'ORCHESTRATION',
+  'EVOLUTION', 'TEAM',
 ];
 
 /** 合法 LoopPhase 集合 */
@@ -105,6 +112,17 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
   if (typeof input.sessionId !== 'string' || input.sessionId.trim() === '') {
     throw new DecisionSchemaError('sessionId 必填且不能为空');
   }
+  // evidence 格式校验（v1.3.3 新增）：字符串数组，可空。非数组 / 含非字符串项 → 拒绝
+  if (input.evidence !== undefined) {
+    if (!Array.isArray(input.evidence)) {
+      throw new DecisionSchemaError('evidence 必须是字符串数组');
+    }
+    for (let i = 0; i < input.evidence.length; i++) {
+      if (typeof input.evidence[i] !== 'string') {
+        throw new DecisionSchemaError(`evidence[${i}] 必须是字符串`);
+      }
+    }
+  }
 
   const filePath = getDecisionLogPath(dataDir);
   const dir = dirname(filePath);
@@ -150,6 +168,7 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
     why: sanitizeWhy(normalizeWhy(input.why)),
     ...(input.specRef ? { specRef: input.specRef } : {}),
     ...(input.artifactRef ? { artifactRef: input.artifactRef } : {}),
+    ...(input.evidence !== undefined ? { evidence: input.evidence } : {}),
     prevHash,
     hashVersion: 2,
     envFingerprint: fingerprint,

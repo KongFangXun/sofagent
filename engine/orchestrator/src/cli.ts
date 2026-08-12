@@ -319,6 +319,8 @@ async function main() {
               agent: graphNode.agent,
               task: graphNode.task,
               depends_on: graphNode.dependsOn,
+              type: 'auto',
+              hitl: false,
             },
             dataDir,
             projectRoot: process.cwd(),

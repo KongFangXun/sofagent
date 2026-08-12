@@ -11,7 +11,13 @@
 
 import { REDACTION_PATTERNS } from '@sofagent/core';
 
-/** 决策种类（9 类）——覆盖 Agent 生命周期内所有可问责决策 */
+/** 决策种类（11 类）——覆盖 Agent 生命周期内所有可问责决策
+ *
+ * v1.3.3 新增 EVOLUTION（进化动作）+ TEAM（团队协作动作）：
+ *   - EVOLUTION：优化器修改经验层（think.md / knowledge）、Benchmark 评估 accept/reject、
+ *     git snapshot 回滚等——每次必附 evidence 留痕（触发证据链）
+ *   - TEAM：团队协作动作（冲突消解裁决、意图广播、反馈放大写入、自动入队等）
+ */
 export type DecisionKind =
   | 'SPEC_CHANGE'       // 改变需求/规格（范围变更）
   | 'ARTIFACT_EDIT'     // 编辑产物文件（代码/文档/配置）
@@ -21,7 +27,9 @@ export type DecisionKind =
   | 'FALLBACK_DEGRADE'  // 降级执行（LLM 不可用等）
   | 'CONFIG_CHANGE'     // 修改运行时配置
   | 'KNOWLEDGE_DISTILL' // 知识蒸馏/沉淀
-  | 'ORCHESTRATION';    // 编排决策（子 Agent 委派/图路由）
+  | 'ORCHESTRATION'     // 编排决策（子 Agent 委派/图路由）
+  | 'EVOLUTION'         // 进化动作（优化器改经验层 / Benchmark accept-reject / 回滚）
+  | 'TEAM';             // 团队协作动作（冲突消解 / 意图广播 / 反馈放大 / 自动入队）
 
 /** 决策发生时刻（7 阶段）——对齐 FORGE loop / 激活链生命周期 */
 export type LoopPhase =
@@ -76,6 +84,15 @@ export interface DecisionLogEntry {
   envFingerprint?: string;
   /** 决策引擎标识（缺省 'sofagent-audit'） */
   engine?: string;
+  /** 触发证据链（字符串数组，可空）—— v1.3.3 新增
+   *
+   * 进化动作（kind=EVOLUTION）必附：记录触发该决策的证据来源
+   * （如 Benchmark 评分、审计规则命中、git snapshot commit 等）。
+   * 团队动作（kind=TEAM）可选附。其余 kind 不强制。
+   *
+   * 格式：字符串数组，每项为一条证据描述（自由文本，如文件路径 / commitSha / 评分值）。
+   */
+  evidence?: string[];
 }
 
 /**

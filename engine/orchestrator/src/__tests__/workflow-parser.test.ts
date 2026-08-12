@@ -57,7 +57,7 @@ describe('workflow-parser · YAML 解析', () => {
     expect(parsed.name).toBe('用户登录功能');
     expect(parsed.description).toBe('实现登录 + 测试 + 文档');
     expect(parsed.nodes.length).toBe(3);
-    expect(parsed.nodes[0]).toEqual({ id: 'impl', agent: 'developer', task: '实现登录接口', depends_on: [] });
+    expect(parsed.nodes[0]).toEqual({ id: 'impl', agent: 'developer', task: '实现登录接口', depends_on: [], type: 'auto', hitl: false });
     expect(parsed.nodes[1]!.depends_on).toEqual(['impl']);
   });
 

@@ -34,6 +34,22 @@ export interface WorkflowNode {
   agent: string;
   task: string;
   depends_on: string[];
+  /**
+   * 节点类型——控制执行引擎选择（v1.3.3 新增）
+   * - 'loop'：循环引擎（Onboard/Refine Agent），需迭代收敛
+   * - 'auto'：自动执行（默认值），一次性产出
+   * - 'manual'：人工节点（HITL 确认）
+   *
+   * 缺省值 'auto'——向后兼容旧 workflow YAML（无 type 字段时归一化为 auto）。
+   */
+  type: 'loop' | 'auto' | 'manual';
+  /**
+   * 是否需要人工确认（HITL）——v1.3.3 新增。
+   *
+   * type='manual' 时隐含 hitl=true；其余类型可选显式声明 hitl=true 强制卡关。
+   * 缺省值 false。
+   */
+  hitl?: boolean;
 }
 
 /** 解析后的 workflow（结构化） */
@@ -121,14 +137,20 @@ export function mapAgentType(agentType: string): { definition: SubAgentDefinitio
  *
  * v1.3.2 变更：未知类型不再降级到 TECHNICAL_WRITER_AGENT——走 agent-creation 推导生成。
  *
+ * v1.3.3 变更（T03）：deriveAgentFromRequirement 调用后接入 team-manager 入队 API
+ * （协议设计 §6.2 自动入队挂点）。传入 onAgentDerived 回调时，推导生成的 sub-agent
+ * 自动入队。回调由调用方注入（team-manager 实例），workflow-parser 不直接依赖 team-manager。
+ *
  * @param node workflow 节点
  * @param dataDir .sofagent 数据目录（用于 registry 查找）
+ * @param onAgentDerived v1.3.3 新增：agent 推导生成后的入队回调（自动入队挂点）
  * @returns { definition, fallback } —— fallback=true 表示走了 agent-creation 兜底
  * @throws Error 当 enterprise agent 未注册时
  */
 export function resolveAgent(
   node: WorkflowNode,
   dataDir?: string,
+  onAgentDerived?: (agentId: string) => void,
 ): { definition: SubAgentDefinition; fallback: boolean } {
   // ① 内置 agent 走 AGENT_MAP
   const hit = AGENT_MAP[node.agent];
@@ -165,6 +187,18 @@ export function resolveAgent(
       modelName: null, // 不持久化 provider/model_id（铁律）
       knowledgeDomain: config.domain,
     };
+
+    // v1.3.3 T03：自动入队挂点——推导生成的 sub-agent 自动加入团队（协议设计 §6.2）
+    // 回调由调用方注入（team-manager.enqueueSubAgent），workflow-parser 不直接依赖 team-manager
+    if (onAgentDerived) {
+      try {
+        onAgentDerived(config.name);
+      } catch (err) {
+        // 入队失败不阻断 workflow 解析（best-effort——团队功能是可选增强）
+        console.warn(`[workflow-parser] sub-agent 自动入队失败（不阻断）: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
     return { definition: generatedDefinition, fallback: true };
   }
 
@@ -224,11 +258,36 @@ export function parseWorkflowYaml(workflowYaml: string): ParsedWorkflow {
     if (deps !== undefined && !Array.isArray(deps)) {
       throw new WorkflowParseError(`节点 ${n.id} 的 depends_on 不是数组`);
     }
+
+    // ── type / hitl 字段解析（v1.3.3 新增）──
+    // type：可选，缺省 'auto'；仅接受 'loop' | 'auto' | 'manual'
+    const rawType = n.type;
+    let nodeType: 'loop' | 'auto' | 'manual' = 'auto';
+    if (rawType !== undefined) {
+      if (rawType !== 'loop' && rawType !== 'auto' && rawType !== 'manual') {
+        throw new WorkflowParseError(
+          `节点 ${n.id} 的 type 非法（${String(rawType)}），必须为 loop|auto|manual`,
+        );
+      }
+      nodeType = rawType;
+    }
+
+    // hitl：可选布尔；type='manual' 时隐含 true
+    let hitl = false;
+    if (typeof n.hitl === 'boolean') {
+      hitl = n.hitl;
+    }
+    if (nodeType === 'manual') {
+      hitl = true; // manual 节点强制 HITL
+    }
+
     return {
       id: n.id.trim(),
       agent: n.agent.trim(),
       task: n.task,
       depends_on: (deps as unknown[] | undefined)?.map((d) => String(d)) ?? [],
+      type: nodeType,
+      hitl,
     };
   });
 
@@ -301,12 +360,17 @@ function assertAcyclic(nodes: WorkflowNode[]): void {
  *
  * @param parsed 已解析的 workflow
  * @param dataDir .sofagent 数据目录（v1.2.6: 用于 resolveAgent 查找 enterprise Agent）
+ * @param onAgentDerived v1.3.3：agent 推导生成后的入队回调（自动入队挂点）
  * @returns SubAgentConfig 数组（每个节点一个 SubAgent）
  */
-export function toSubAgentConfigs(parsed: ParsedWorkflow, dataDir?: string): SubAgentConfig[] {
+export function toSubAgentConfigs(
+  parsed: ParsedWorkflow,
+  dataDir?: string,
+  onAgentDerived?: (agentId: string) => void,
+): SubAgentConfig[] {
   const seenAgent = new Map<string, number>();
   return parsed.nodes.map((node) => {
-    const { definition, fallback } = resolveAgent(node, dataDir);
+    const { definition, fallback } = resolveAgent(node, dataDir, onAgentDerived);
     const count = (seenAgent.get(node.agent) ?? 0) + 1;
     seenAgent.set(node.agent, count);
     // 同类型第二个起加节点 id 后缀保唯一
@@ -327,7 +391,12 @@ export function toSubAgentConfigs(parsed: ParsedWorkflow, dataDir?: string): Sub
  * 一站式入口：YAML 文本 → SubAgent 配置数组
  * @param workflowYaml compose 产出的 YAML 文本
  * @param dataDir .sofagent 数据目录（v1.2.6: 用于 resolveAgent 查找 enterprise Agent）
+ * @param onAgentDerived v1.3.3：agent 推导生成后的入队回调（自动入队挂点）
  */
-export function parseWorkflowToSubAgents(workflowYaml: string, dataDir?: string): SubAgentConfig[] {
-  return toSubAgentConfigs(parseWorkflowYaml(workflowYaml), dataDir);
+export function parseWorkflowToSubAgents(
+  workflowYaml: string,
+  dataDir?: string,
+  onAgentDerived?: (agentId: string) => void,
+): SubAgentConfig[] {
+  return toSubAgentConfigs(parseWorkflowYaml(workflowYaml), dataDir, onAgentDerived);
 }

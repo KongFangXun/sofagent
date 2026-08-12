@@ -54,6 +54,10 @@ import { auditTrail } from './tools/audit-trail';
 import { createAgent } from './tools/create-agent';
 import { evalSuite } from './tools/eval-suite';
 import { fdeCompose } from './tools/fde-compose';
+import { routeWorkflowTool } from './tools/route-workflow';
+import { teamCreate } from './tools/team-create';
+import { teamBroadcast } from './tools/team-broadcast';
+import { refine } from './tools/refine';
 import { getDynamicTools, getDynamicTool, registerMemoryBackends } from './tools/memory-backend';
 
 // ============================================================
@@ -216,6 +220,13 @@ class McpServer {
         case 'create_agent': { if (!args.requirement) { this.sendError(id, -32602, 'Missing required argument: requirement'); break; } const r = await createAgent({ requirement: args.requirement as string, ...(typeof args.target_dir === 'string' ? { targetDir: args.target_dir } : {}) }); this.sendTool(id, r, r.data?.isError); break; }
         case 'eval_suite': { if (!args.action || !args.enterprise_id) { this.sendError(id, -32602, 'Missing required arguments: action and enterprise_id'); break; } const er = await evalSuite({ action: args.action as 'instantiate' | 'freeze' | 'run' | 'query', enterprise_id: args.enterprise_id as string, ...(args.industry ? { industry: args.industry as 'finance' | 'manufacturing' | 'supplychain' | 'customerservice' | 'generic' } : {}), ...(args.custom_cases ? { custom_cases: args.custom_cases as any } : {}) }); this.sendTool(id, er, er.data?.isError); break; }
         case 'fde_compose': { if (!args.action || !args.session) { this.sendError(id, -32602, 'Missing required arguments: action and session'); break; } const fr = await fdeCompose({ action: args.action as 'workflow' | 'ontology', session: args.session as any }); this.sendTool(id, fr, fr.data?.isError); break; }
+        // v1.3.3 新增 tool（交付 T01）
+        case 'route_workflow': { if (!args.task || !args.workflow) { this.sendError(id, -32602, 'Missing required arguments: task and workflow'); break; } const rr = routeWorkflowTool({ task: args.task as string, workflow: args.workflow as any }); this.sendTool(id, rr, rr.isError); break; }
+        // v1.3.3 新增 tool（交付 T02）
+        case 'team_create': { if (!args.team_yaml) { this.sendError(id, -32602, 'Missing required argument: team_yaml'); break; } const tcr = teamCreate({ teamYaml: args.team_yaml as string }); this.sendTool(id, tcr, tcr.isError); break; }
+        case 'team_broadcast': { if (!args.team_id || !args.source || !args.intent || !args.target) { this.sendError(id, -32602, 'Missing required arguments: team_id, source, intent, and target'); break; } const tbr = teamBroadcast({ teamId: args.team_id as string, source: args.source as string, intent: args.intent as string, target: args.target as string, ...(typeof args.payload === 'string' ? { payload: args.payload } : {}) }); this.sendTool(id, tbr, tbr.isError); break; }
+        // v1.3.3 新增 tool（交付 T03/T04）
+        case 'refine': { if (!args.action) { this.sendError(id, -32602, 'Missing required argument: action'); break; } const rfr = await refine({ action: args.action as 'trigger' | 'query', ...(typeof args.agent_id === 'string' ? { agentId: args.agent_id } : {}), ...(typeof args.task === 'string' ? { task: args.task } : {}), ...(typeof args.team_id === 'string' ? { teamId: args.team_id } : {}) }); this.sendTool(id, rfr, rfr.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {

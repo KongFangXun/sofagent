@@ -1,69 +1,178 @@
+%% v1.3.3 时序图 · 完整版
+%% 包含：团队协作 / Onboard→Refine→进化闭环 / 入口路由
+
+%% ════════════════════════════════════════════════════════════
+%% 时序图 1：团队协作（意图广播 → 触发反应 → 冲突消解 → 反馈放大）
+%% ════════════════════════════════════════════════════════════
+
 sequenceDiagram
-    %% ============================================================
-    %% sofagent v1.2.3 调用流 — 三条主链
-    %% ============================================================
-
-    %% ── 链 ①：LOOP 运行 + graph-state v2 落盘（交付二 TS 侧） ──
     autonumber
-    participant CLI as sofagent-orchestrator
-    participant G as loop/graph.ts
-    participant D as LoopGraphDeps
-    participant PN as loop/plan-node.ts
-    participant ND as loop/nodes.ts
-    participant FS as $SOFAGENT_HOME/data/dashboard/
+    participant A as Agent A (leader, trust=0.9)
+    participant B as Agent B (member, trust=0.7)
+    participant TM as TeamManager
+    participant IB as IntentBus
+    participant TS as TeamStateCRDT
+    participant CR as ConflictResolver
+    participant FA as FeedbackAmplifier
+    participant AL as AuditLog (decision-log)
+    participant TK as think.md
 
-    CLI->>G: runLoopGraph(task)
-    G->>D: buildDeps() 注入 dashboardDir=resolveDashboardDir()
-    Note over D: AD-2: $SOFAGENT_HOME/data<br/>(不再用 cwd/.sofagent)
-    G->>PN: plan 节点执行
-    PN->>FS: writeGraphState(dashboardDir, v2快照)
-    Note over FS: 保旧3字段 + version/nodes/<br/>edges/wave/degradationLevel
-    loop 每个节点 (engineer/audit/reviewer/human_confirm)
-        G->>ND: withCheckpoint 包装执行
-        ND->>FS: writeGraphState(dashboardDir, 增量状态)
+    Note over A,B: ① 建队 + 成员加入
+    A->>TM: createTeam(team-finance-001)
+    TM->>TS: initTeamState({ teamId, name })
+    TM->>TM: saveState() → data/teams/<id>/team-state.automerge
+    A->>TM: joinTeam(teamId, agent-a, leader, 0.9)
+    B->>TM: joinTeam(teamId, agent-b, member, 0.7)
+    TM->>TS: updateMember(doc, memberState)
+
+    Note over A,B: ② 意图广播 → 触发反应
+    A->>TM: broadcastIntent(intent.create.report, reports/q4.md)
+    TM->>IB: broadcast(IntentEvent)
+    IB->>IB: matchIntent("intent.create.*", event.intent)
+    IB->>B: notifySubscribers(event)
+    Note right of B: B 订阅了 intent.create.* → 触发
+    B->>TM: dispatchTask(task-001, agent-b)
+
+    Note over A,B: ③ 文件锁冲突 → 冲突消解
+    A->>TM: acquireFileLock(reports/q4.md)
+    B->>TM: acquireFileLock(reports/q4.md)
+    TM->>CR: resolveConflict([A(0.9, ts1), B(0.7, ts2)])
+    Note right of CR: ① trust 降序：A(0.9) > B(0.7) → A 胜
+    CR-->>TM: winner = Agent A
+    TM->>AL: emitDecision(kind=TEAM, moment=ACT,<br/>why="文件锁冲突消解：A(trust=0.9) 胜出 B(trust=0.7)")
+    TM-->>B: lock denied（等待 A 完成）
+    TM-->>A: lock acquired
+
+    Note over A,B: ④ A 完成任务 → B 重试
+    A->>TM: collectResult(task-001) → releaseLock
+    TM->>TS: updateTask(doc, { status: done })
+    B->>TM: acquireFileLock(reports/q4.md) → acquired
+
+    Note over A,B: ⑤ 反馈放大（团队级学习）
+    B->>TM: 报告人工纠正："工具描述必须带 example"
+    TM->>FA: amplify(correction)
+    FA->>FA: isTeamReusable? → yes (quality_rule)
+    FA->>IB: broadcast(intent.share.quality_rule)
+    FA->>TS: addFeedback(doc, { type: quality_rule, content })
+    FA->>TK: appendToMemberThink(agent-a, entry) via atomicAppendSync
+    FA->>TK: appendToMemberThink(agent-b, entry) via atomicAppendSync
+    Note right of FA: 团队成员都学到了<br/>Refine quality-rule-set 也会加载
+
+
+%% ════════════════════════════════════════════════════════════
+%% 时序图 2：Onboard → Refine 自动触发 → 进化闭环
+%% ════════════════════════════════════════════════════════════
+
+sequenceDiagram
+    autonumber
+    participant OD as OnboardDriver (loop-agent)
+    participant RD as RefineDriver
+    participant QJ as QualityJudge
+    participant QRS as QualityRuleSet
+    participant OL as OptimizationLoop
+    participant CG as ContaminationGuard
+    participant SM as SnapshotManager
+    participant BM as Benchmark (case-evaluator)
+    participant EL as EvaluationLog
+    participant AL as AuditLog (decision-log)
+
+    Note over OD: Onboard L1-L5 循环（v1.3.2 已有）
+    OD->>OD: L1 run → judge (crash/error/timeout/passed)
+    OD->>OD: L2 ontology-comparator → DiffReport
+    OD->>OD: L3 error-localizer → L4 fix-applier → L5 收敛判定
+
+    Note over OD: L5 收敛出口（driver.ts:383）
+    OD->>OD: consecutivePassCount >= convergeThreshold
+    OD->>OD: convergenceState = 'converged'
+    OD->>RD: onConverged({ taskId, agentId })
+
+    Note over RD: Refine 循环启动（复用 loop-agent L1/L3/L4/L5）
+    RD->>QRS: all()（三来源合并）
+    QRS->>QRS: loadBuiltin()（内置模板）
+    QRS->>QRS: loadCustomer(delivery-report.md)
+    QRS->>QRS: loadTeam(team-state.feedback[])
+    QRS-->>RD: QualityRule[]
+
+    RD->>RD: L1 run → judge (复用 judge.ts)
+    RD->>QJ: judge(output, ruleSet, taskId)
+    Note right of QJ: 替代 ontology-comparator<br/>接口对齐 DiffReport
+    QJ->>QJ: checkRule(output, rule) → DiffMismatch[]
+    QJ-->>RD: DiffReport (质量差异)
+
+    alt 有质量差异
+        RD->>RD: L3 localizeError (复用 error-localizer.ts)
+        RD->>RD: L4 applyFix (复用 fix-applier.ts)
+        Note right of RD: 只改经验层<br/>审计引擎卡关
     end
 
-    %% ── 链 ②：worktree 全生命周期（交付一原语 + 单测模拟并行） ──
-    participant T as vitest 单测
-    participant WI as worktree-isolation.ts
-    participant MG as worktree-merge-gate.ts
-    participant CR as conflict-resolver.ts
-    participant AU as @sofagent/audit
-    participant GIT as git CLI
+    Note over RD: Refine 收敛 → 触发进化闭环
+    RD->>OL: run(benchmarkId, agentId)
 
-    T->>WI: sweepStaleWorktrees(repoDir)
-    WI->>GIT: worktree prune + 注册表比对
-    GIT-->>WI: 回收残留(有create无cleanup)
-    par 模拟两个并行 SubAgent
-        T->>WI: handleA.create() → wt-{uuidA}
-        WI->>GIT: worktree add .sofagent/worktrees/wt-A
-    and
-        T->>WI: handleB.create() → wt-{uuidB}
-        WI->>GIT: worktree add .sofagent/worktrees/wt-B
+    Note over OL: evidence → hypothesis → Candidate → eval → accept/rollback
+    OL->>CG: check(optimizer context)
+    CG->>CG: scanForRubric / scanForGold
+    alt 检测到污染
+        CG->>CG: recover() + 停止
+        OL-->>RD: aborted (contamination detected)
     end
-    T->>WI: handleA.diff()
-    WI->>MG: evaluate(handleA)
-    MG->>AU: 21 条规则审计(diff 硬证据)
-    alt audit PASS
-        MG->>GIT: merge --no-ff sofagent/wt-A
-    else audit FAIL
-        MG->>FS: 丢弃 + 证据落 data/audit/
+
+    OL->>SM: createSnapshot()
+    SM-->>OL: snapshotId = v3
+
+    OL->>OL: formHypothesis(evidence)
+    Note right of OL: Candidate 只修改<br/>think.md + knowledge/
+    OL->>OL: applyCandidate(hypothesis) via atomicWriteSync
+
+    OL->>BM: evaluateCase() 重跑评分
+    BM-->>OL: score = 78
+
+    OL->>EL: appendEvaluationRecord(input) HMAC 链落盘
+
+    alt score (78) > Reference (75) → strictly improves
+        OL->>SM: bumpVersion() → v4
+        OL->>AL: emitDecision(kind=EVOLUTION,<br/>evidence=["case-003: 78>75", "hypothesis: 补充 few-shot"])
+        Note right of OL: accept（版本号只增不减）
+    else score ≤ Reference
+        OL->>SM: rollback(snapshotId=v3)
+        OL->>AL: emitDecision(kind=EVOLUTION,<br/>evidence=["rollback: 73<75"])
+        Note right of OL: rollback（版本号不重用）
     end
-    T->>CR: detect([handleA, handleB])
-    CR-->>T: scope优先→先到先得→HITL
-    CR->>FS: worktree-conflicts.jsonl
 
-    %% ── 链 ③：Dashboard 整帧渲染（交付二/三/五/六 bash 侧） ──
-    participant U as 用户终端
-    participant SH as sofagent-dashboard.sh
-    participant FR as forge-runs/latest.json
-    participant WS as workspace-changes.jsonl
 
-    U->>SH: sofagent-dashboard --watch [--technical]
-    loop 每 2s
-        SH->>FS: jq graph-state.json (// empty 兜底旧格式)
-        SH->>FR: jq latest.json → status.json + sub-progress
-        SH->>WS: tail workspace-changes.jsonl
-        Note over SH: humanize_status() 翻译状态词<br/>(--technical 时跳过)
-        SH-->>U: 三栏 + 全宽控制图/FORGE/最近变更
+%% ════════════════════════════════════════════════════════════
+%% 时序图 3：入口路由（用户 Agent 请求 → workflow 匹配）
+%% ════════════════════════════════════════════════════════════
+
+sequenceDiagram
+    autonumber
+    participant UA as User Agent (WorkBuddy/Codex)
+    participant MCP as MCP Server
+    participant RR as RouteRequest
+    participant WP as WorkflowParser
+    participant AL as AuditLog
+
+    UA->>MCP: route_workflow({ request: "生成季度财报" })
+
+    MCP->>WP: parseWorkflowYaml(workflowYaml)
+    Note over WP: WorkflowNode 现解析 type + hitl 字段<br/>type: 🔄/⚡/👤 → machine / auto / human
+    WP-->>MCP: ParsedWorkflow (nodes with type)
+
+    MCP->>RR: route("生成季度财报", workflow)
+
+    loop 遍历节点
+        RR->>RR: matchNode(request, node)
+        RR->>RR: semanticSimilarity(request, node.task) → 0.85
+        RR->>RR: checkType(node) → type=⚡ → 可路由
+    end
+
+    alt 命中 ⚡/🔄 节点（相似度 > 阈值）
+        RR-->>MCP: { route: 'workflow', node: 'financial-report', confidence: 0.85 }
+        MCP->>AL: emitDecision(kind=ORCHESTRATION,<br/>why="路由命中 financial-report (⚡)")
+        MCP-->>UA: { route: 'workflow', node: 'financial-report' }
+        Note right of UA: 用户 Agent 调用 sofagent workflow 节点
+    else 不命中（相似度 < 阈值 或 type=👤）
+        RR-->>MCP: { route: 'fallback', reason: "无匹配节点" }
+        MCP->>AL: emitDecision(kind=ORCHESTRATION,<br/>why="路由 fallback：无匹配节点")
+        MCP-->>UA: { route: 'fallback', reason }
+        Note right of UA: fallback → 用户 Agent 用自己的 LLM 处理<br/>sofagent 不强制
     end

@@ -157,6 +157,62 @@ describe('decision-log emitDecision', () => {
     expect(parsed.specRef).toBe('spec-42');
     expect(parsed.artifactRef).toBe('abc1234');
   });
+
+  // ── v1.3.3 新增：evidence 字段 + EVOLUTION/TEAM kind ──
+
+  it('evidence 字段正确写入（字符串数组）', () => {
+    emitDecision(
+      makeInput({
+        kind: 'EVOLUTION',
+        evidence: ['benchmark-score: 87 > 80', 'git-snapshot: abc1234', 'rule: A3 命中越界'],
+      }),
+      testDir,
+    );
+    const filePath = getDecisionLogPath(testDir);
+    const parsed = JSON.parse(readFileSync(filePath, 'utf-8').trim().split('\n')[0]!) as DecisionLogEntry;
+    expect(parsed.evidence).toEqual(['benchmark-score: 87 > 80', 'git-snapshot: abc1234', 'rule: A3 命中越界']);
+    expect(parsed.kind).toBe('EVOLUTION');
+  });
+
+  it('evidence 空数组可写入', () => {
+    emitDecision(makeInput({ evidence: [] }), testDir);
+    const filePath = getDecisionLogPath(testDir);
+    const parsed = JSON.parse(readFileSync(filePath, 'utf-8').trim().split('\n')[0]!) as DecisionLogEntry;
+    expect(parsed.evidence).toEqual([]);
+  });
+
+  it('不传 evidence 时字段缺省（undefined）', () => {
+    emitDecision(makeInput(), testDir);
+    const filePath = getDecisionLogPath(testDir);
+    const parsed = JSON.parse(readFileSync(filePath, 'utf-8').trim().split('\n')[0]!) as DecisionLogEntry;
+    expect(parsed.evidence).toBeUndefined();
+  });
+
+  it('非法 evidence（非数组）抛 DecisionSchemaError', () => {
+    expect(() =>
+      emitDecision(makeInput({ evidence: 'not-an-array' as unknown as string[] }), testDir),
+    ).toThrow(DecisionSchemaError);
+  });
+
+  it('非法 evidence（含非字符串项）抛 DecisionSchemaError', () => {
+    expect(() =>
+      emitDecision(makeInput({ evidence: ['ok', 42 as unknown as string] }), testDir),
+    ).toThrow(DecisionSchemaError);
+  });
+
+  it('EVOLUTION kind 正确写入', () => {
+    emitDecision(makeInput({ kind: 'EVOLUTION', moment: 'EVOLVE', evidence: ['think.md 追加 quality_rule'] }), testDir);
+    const filePath = getDecisionLogPath(testDir);
+    const parsed = JSON.parse(readFileSync(filePath, 'utf-8').trim().split('\n')[0]!) as DecisionLogEntry;
+    expect(parsed.kind).toBe('EVOLUTION');
+  });
+
+  it('TEAM kind 正确写入', () => {
+    emitDecision(makeInput({ kind: 'TEAM', moment: 'ACT', why: '冲突消解：trust 高者胜出' }), testDir);
+    const filePath = getDecisionLogPath(testDir);
+    const parsed = JSON.parse(readFileSync(filePath, 'utf-8').trim().split('\n')[0]!) as DecisionLogEntry;
+    expect(parsed.kind).toBe('TEAM');
+  });
 });
 
 function chmodSyncRecursive(dir: string): void {

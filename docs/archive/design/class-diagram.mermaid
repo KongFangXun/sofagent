@@ -1,119 +1,451 @@
+%% v1.3.3 Class Diagram · 完整版
+%% 包含：团队协作协议 / 入口路由 / Refine Agent / 进化闭环 / Evidence
+
 classDiagram
-    %% ============================================================
-    %% sofagent v1.2.3 类图 — 编排隔离底座 + Dashboard 数据通道
-    %% ============================================================
+    direction TB
 
-    %% ── 交付一：worktree 隔离原语 ──
-    class WorktreeHandle {
+    %% ════════════════════════════════════════════════════════════
+    %% 交付 1+2：团队协作协议 + 主 Agent 编排
+    %% ════════════════════════════════════════════════════════════
+
+    class TeamConfig {
+        +name: string
+        +teamId: string
+        +members: TeamMemberConfig[]
+        +sharedState: string[]
+        +broadcastChannels: BroadcastChannelConfig[]
+    }
+
+    class TeamMemberConfig {
+        +agentId: string
+        +role: "leader" | "member"
+        +trust: number
+    }
+
+    class BroadcastChannelConfig {
+        +name: string
+        +subscribe: string[]
+        +triggerOn: string[]
+    }
+
+    class TeamManager {
+        -teamState: TeamStateDoc
+        -intentBus: IntentBus
+        -syncChannel: TeamSyncChannel
+        -dataDir: string
+        -teamId: string
+        +createTeam(config: TeamConfig): string
+        +dissolveTeam(teamId: string): void
+        +joinTeam(teamId: string, agentId: string, role: string, trust: number): void
+        +leaveTeam(teamId: string, agentId: string): void
+        +enqueueSubAgent(definition: SubAgentDefinition): void
+        +broadcastIntent(event: IntentEvent): void
+        +dispatchTask(taskId: string, assignee: string): void
+        +collectResult(taskId: string): TaskResult
+        +acquireFileLock(filePath: string, agentId: string): boolean
+        +saveState(): void
+        +loadState(teamId: string): void
+    }
+
+    class IntentEvent {
+        +id: string
+        +source: string
+        +intent: string
+        +target: string
+        +payload: unknown
+        +ts: string
+        +teamId: string
+    }
+
+    class Subscription {
+        +subscriber: string
+        +pattern: string
+        +onMatch: (event: IntentEvent) => void
+    }
+
+    class IntentBus {
+        -subscriptions: Subscription[]
+        -events: IntentEvent[]
+        -windowMs: number
+        -timer: NodeJSTimer
+        -onConverged: Function
+        +subscribe(sub: Subscription): void
+        +broadcast(event: IntentEvent): void
+        -notifySubscribers(event: IntentEvent): void
+        -resetConvergenceTimer(): void
+        +matchIntent(pattern: string, intent: string): boolean
+    }
+
+    class TeamStateDoc {
+        +meta: TeamMeta
+        +members: Record~string, MemberState~
+        +tasks: Record~string, TaskState~
+        +fileLocks: Record~string, FileLockEntry~
+        +feedback: FeedbackEntry[]
+    }
+
+    class TeamMeta {
+        +teamId: string
+        +name: string
+        +createdAt: string
+    }
+
+    class MemberState {
+        +agentId: string
+        +role: "leader" | "member"
+        +trust: number
+        +status: "idle" | "busy" | "blocked" | "offline"
+        +currentTask: string
+        +lastHeartbeat: string
+    }
+
+    class TaskState {
+        +taskId: string
+        +description: string
+        +assignee: string
+        +status: "pending" | "running" | "done" | "failed"
+        +result: string
+        +updatedAt: string
+    }
+
+    class FileLockEntry {
+        +filePath: string
+        +holder: string
+        +acquiredAt: string
+    }
+
+    class FeedbackEntry {
+        +id: string
+        +agentId: string
+        +type: "correction" | "confirmation" | "quality_rule"
+        +content: string
+        +ts: string
+    }
+
+    class TeamStateCRDT {
+        <<utility>>
+        +initTeamState(meta: TeamMeta): TeamStateDoc
+        +updateMember(doc: TeamStateDoc, member: MemberState): TeamStateDoc
+        +updateTask(doc: TeamStateDoc, task: TaskState): TeamStateDoc
+        +acquireFileLock(doc: TeamStateDoc, entry: FileLockEntry): TeamStateDoc
+        +addFeedback(doc: TeamStateDoc, entry: FeedbackEntry): TeamStateDoc
+        +mergeDocs(local: TeamStateDoc, remote: TeamStateDoc): TeamStateDoc
+        +save(doc: TeamStateDoc): Uint8Array
+        +load(binary: Uint8Array): TeamStateDoc
+    }
+
+    class TeamSyncChannel {
         <<interface>>
-        +string path
-        +string branch
-        +string agentId
-        +create() Promise~void~
-        +cleanup() Promise~void~
-        +diff() Promise~string~
+        +syncTeamState(binary: Uint8Array): Promise~void~
+        +onRemoteUpdate(cb: (binary: Uint8Array) => void): void
     }
 
-    class GitWorktreeHandle {
-        -string repoDir
-        -string baseBranch
-        -AuditWriter registry
-        +create() Promise~void~
-        +cleanup() Promise~void~
-        +diff() Promise~string~
-        +sweepStaleWorktrees(repoDir)$ Promise~number~
+    class LocalTeamSyncChannel {
+        +syncTeamState(binary: Uint8Array): Promise~void~
+        +onRemoteUpdate(cb: Function): void
     }
 
-    class WorktreeMergeGate {
-        -runAudit diffPromise~AuditVerdict~
-        +evaluate(handle WorktreeHandle) Promise~MergeDecision~
+    class FederatedTeamSyncChannel {
+        -channel: FederationChannel
+        -peers: PairedPeer[]
+        -teamId: string
+        +syncTeamState(binary: Uint8Array): Promise~void~
+        +onRemoteUpdate(cb: Function): void
+        -encryptAndSend(binary: Uint8Array): Promise~void~
     }
 
-    class MergeDecision {
-        <<union>>
-        +action merge|discard
-        +string diff
-        +string report
-        +string evidencePath
+    class ConflictParty {
+        +agentId: string
+        +trust: number
+        +ts: string
+        +role: "leader" | "member"
+        +change: unknown
     }
 
     class ConflictResolver {
-        +detect(handles WorktreeHandle[]) Promise~ConflictSet~
-        +resolve(conflicts ConflictSet) Resolution[]
-        -strategies ConflictStrategy[]
+        <<utility>>
+        +resolveConflict(parties: ConflictParty[]): ConflictParty
+        -compareTrust(a: ConflictParty, b: ConflictParty): number
+        -compareTimestamp(a: ConflictParty, b: ConflictParty): number
+        -compareRole(a: ConflictParty, b: ConflictParty): number
     }
 
-    class ConflictStrategy {
+    class Correction {
+        +agentId: string
+        +type: "correction" | "confirmation"
+        +content: string
+        +ts: string
+    }
+
+    class FeedbackAmplifier {
+        -teamManager: TeamManager
+        +amplify(correction: Correction): void
+        +isTeamReusable(correction: Correction): boolean
+        +broadcastQualityRule(rule: QualityRule): void
+        +appendToMemberThink(agentId: string, entry: string): void
+    }
+
+    TeamManager --> IntentBus : owns
+    TeamManager --> TeamSyncChannel : injects
+    TeamManager --> TeamStateCRDT : uses
+    TeamManager --> ConflictResolver : uses
+    TeamManager --> FeedbackAmplifier : owns
+    TeamManager --> TeamStateDoc : manages
+    TeamSyncChannel <|.. LocalTeamSyncChannel
+    TeamSyncChannel <|.. FederatedTeamSyncChannel
+    IntentBus --> Subscription : manages
+    IntentBus --> IntentEvent : emits
+    TeamStateDoc *-- TeamMeta
+    TeamStateDoc *-- MemberState
+    TeamStateDoc *-- TaskState
+    TeamStateDoc *-- FileLockEntry
+    TeamStateDoc *-- FeedbackEntry
+    TeamConfig *-- TeamMemberConfig
+    TeamConfig *-- BroadcastChannelConfig
+
+    %% ════════════════════════════════════════════════════════════
+    %% 交付 3：入口路由
+    %% ════════════════════════════════════════════════════════════
+
+    class NodeType {
         <<enumeration>>
-        scope-priority
-        first-come
-        hitl
+        MACHINE
+        AUTO
+        HUMAN
     }
 
-    %% ── 交付二：graph-state v2 ──
-    class GraphStateFileV2 {
-        +int version
-        +string activeNode
-        +int workGraphTasks
-        +string updatedAt
-        +int wave
-        +int degradationLevel
-        +GraphNodeState[] nodes
-        +GraphEdge[] edges
-        +SubtaskState[] subtasks
+    class WorkflowNode {
+        +id: string
+        +agent: string
+        +task: string
+        +depends_on: string[]
+        +type: NodeType
+        +hitl: boolean
     }
 
-    class GraphNodeState {
-        +LoopNodeName name
-        +NodeStatus status
-        +WorktreeRef worktree
+    class RouteResult {
+        +route: "workflow" | "fallback"
+        +node: string
+        +reason: string
+        +confidence: number
     }
 
-    class GraphEdge {
-        +string from
-        +string to
+    class RouteRequest {
+        <<utility>>
+        +route(request: string, workflow: ParsedWorkflow): RouteResult
+        -matchNode(request: string, node: WorkflowNode): number
+        -checkType(node: WorkflowNode): boolean
+        -semanticSimilarity(a: string, b: string): number
     }
 
-    class LoopGraphDeps {
-        <<existing·extended>>
-        +string dataDir
-        +string dashboardDir 新增(AD-2)
-        +WorktreeFactory worktreeFactory 新增(AD-4·可选)
-        +runEngineer()
-        +runAudit()
-        +recordBlocked()
+    RouteRequest ..> WorkflowNode : reads
+    RouteRequest ..> RouteResult : outputs
+    WorkflowNode --> NodeType
+
+    %% ════════════════════════════════════════════════════════════
+    %% 交付 4：Refine Agent（复用 loop-agent）
+    %% ════════════════════════════════════════════════════════════
+
+    class QualityRule {
+        +id: string
+        +name: string
+        +description: string
+        +source: "builtin" | "customer" | "team"
+        +check: (output: string) => boolean
+        +severity: "error" | "warn"
     }
 
-    %% ── 交付五：workspace 摘要 ──
-    class WorkspaceSummary {
-        <<module>>
-        +captureWorkspaceStatus(projectDir)$ WorkspaceChange
-        +appendWorkspaceSummary(dataRoot, record)$ void
+    class QualityRuleSet {
+        -builtinRules: QualityRule[]
+        -customerRules: QualityRule[]
+        -teamRules: QualityRule[]
+        +loadBuiltin(): QualityRule[]
+        +loadCustomer(deliveryReport: string): QualityRule[]
+        +loadTeam(feedback: FeedbackEntry[]): QualityRule[]
+        +all(): QualityRule[]
+        +match(output: string): QualityRule[]
     }
 
-    class WorkspaceChangeRecord {
-        +string timestamp
-        +string runId
-        +string[] created
-        +string[] modified
-        +string[] deleted
+    class QualityJudge {
+        +judge(output: string, ruleSet: QualityRuleSet, taskId: string): Promise~DiffReport~
+        -checkRule(output: string, rule: QualityRule): DiffMismatch[]
     }
 
-    %% ── 交付三：FORGE 指针 ──
-    class ForgeLatestPointer {
-        +string runDir
-        +string phase
-        +string updatedAt
+    class RefineOptions {
+        +agentId: string
+        +taskId: string
+        +maxRounds: number
+        +deliveryReportPath: string
+        +onConverged: Function
     }
 
-    %% ── 关系 ──
-    WorktreeHandle <|.. GitWorktreeHandle : 实现
-    WorktreeMergeGate ..> WorktreeHandle : evaluate(diff)
-    WorktreeMergeGate ..> MergeDecision : 产出
-    ConflictResolver ..> WorktreeHandle : 检测多棵树冲突
-    ConflictResolver ..> ConflictStrategy : 按序仲裁
-    GraphStateFileV2 *-- GraphNodeState : nodes[]
-    GraphStateFileV2 *-- GraphEdge : edges[]
-    GraphNodeState o-- WorktreeHandle : 可选引用(v1.2.3恒null)
-    LoopGraphDeps ..> GraphStateFileV2 : writeGraphState落盘
-    WorkspaceSummary ..> WorkspaceChangeRecord : 追加jsonl(留100)
+    class RefineLoopResult {
+        +taskId: string
+        +agentId: string
+        +rounds: OnboardRound[]
+        +finalState: JudgeState
+        +convergence: ConvergenceState
+    }
+
+    class RefineDriver {
+        -ruleSet: QualityRuleSet
+        -qualityJudge: QualityJudge
+        +runRefineLoop(task: string, options: RefineOptions): Promise~RefineLoopResult~
+        -injectL2Judge(): void
+    }
+
+    class DiffReport {
+        +taskId: string
+        +timestamp: string
+        +expectedSource: string
+        +mismatches: DiffMismatch[]
+    }
+
+    class DiffMismatch {
+        +type: string
+        +field: string
+        +expected: string
+        +actual: string
+        +severity: string
+    }
+
+    RefineDriver --> QualityRuleSet : uses
+    RefineDriver --> QualityJudge : uses
+    RefineDriver ..> RefineLoopResult : outputs
+    RefineDriver ..> RefineOptions : inputs
+    QualityRuleSet --> QualityRule : manages
+    QualityRuleSet ..> FeedbackEntry : reads team source
+    QualityJudge ..> DiffReport : outputs
+    DiffReport *-- DiffMismatch
+
+    %% ════════════════════════════════════════════════════════════
+    %% 交付 5：进化闭环
+    %% ════════════════════════════════════════════════════════════
+
+    class Evidence {
+        +benchmarkScore: number
+        +trace: string
+        +auditWarnings: string[]
+    }
+
+    class Hypothesis {
+        +id: string
+        +capabilityGap: string
+        +predictedBehavior: string
+        +changes: Change[]
+    }
+
+    class Change {
+        +target: string
+        +operation: "replace" | "append"
+        +content: string
+        +layer: "L2_think" | "L4_knowledge"
+    }
+
+    class Candidate {
+        +hypothesis: Hypothesis
+        +versionBefore: number
+        +versionAfter: number
+    }
+
+    class EvaluationScore {
+        +score: number
+        +referenceScore: number
+        +strictlyImproves: boolean
+        +caseResults: CaseScore[]
+    }
+
+    class OptimizationResult {
+        +accepted: boolean
+        +version: number
+        +score: EvaluationScore
+        +rollbackReason: string
+    }
+
+    class OptimizationLoop {
+        -snapshotManager: SnapshotManager
+        -contaminationGuard: ContaminationGuard
+        -benchmarkId: string
+        +run(benchmarkId: string, agentId: string): Promise~OptimizationResult~
+        -formHypothesis(evidence: Evidence): Hypothesis
+        -applyCandidate(hypothesis: Hypothesis): Candidate
+        -evaluate(candidate: Candidate): EvaluationScore
+        -acceptOrRollback(candidate: Candidate, score: EvaluationScore): boolean
+        -emitEvolutionDecision(result: OptimizationResult): void
+    }
+
+    class SnapshotManager {
+        -agentDir: string
+        -version: number
+        +createSnapshot(): string
+        +rollback(snapshotId: string): void
+        +bumpVersion(): number
+        +currentVersion(): number
+    }
+
+    class ContaminationGuard {
+        +check(context: string): boolean
+        -scanForRubric(text: string): boolean
+        -scanForGold(text: string): boolean
+        +recover(): void
+    }
+
+    OptimizationLoop --> SnapshotManager : uses
+    OptimizationLoop --> ContaminationGuard : uses
+    OptimizationLoop ..> OptimizationResult : outputs
+    OptimizationLoop ..> Evidence : inputs
+    Hypothesis *-- Change
+    Candidate --> Hypothesis
+    OptimizationLoop ..> Candidate : creates
+    OptimizationLoop ..> EvaluationScore : evaluates
+    OptimizationLoop ..> Hypothesis : forms
+    Change --> Change : layer whitelist: L2/L4 only
+
+    %% ════════════════════════════════════════════════════════════
+    %% 交付 6：Evidence 字段（DecisionLogEntry 扩展）
+    %% ════════════════════════════════════════════════════════════
+
+    class DecisionKind {
+        <<enumeration>>
+        SPEC_CHANGE
+        ARTIFACT_EDIT
+        TOOL_GATE
+        RULE_TOGGLE
+        ESCALATE_REPORT
+        FALLBACK_DEGRADE
+        CONFIG_CHANGE
+        KNOWLEDGE_DISTILL
+        ORCHESTRATION
+        EVOLUTION
+        TEAM
+    }
+
+    class DecisionWhy {
+        +text: string
+        +tags: string[]
+        +confidence: string
+        +triggeredRule: string
+    }
+
+    class DecisionLogEntry {
+        +ts: string
+        +agentId: string
+        +sessionId: string
+        +kind: DecisionKind
+        +moment: LoopPhase
+        +why: DecisionWhy
+        +evidence: string[]
+        +specRef: string
+        +artifactRef: string
+        +prevHash: string
+        +hashVersion: number
+        +hmacSig: string
+        +hmacAlgo: string
+        +envFingerprint: string
+        +engine: string
+    }
+
+    DecisionLogEntry --> DecisionKind
+    DecisionLogEntry *-- DecisionWhy
+    Note for DecisionLogEntry "evidence?: string[] 是 v1.3.3 新增字段<br/>进化动作(kind=EVOLUTION)必附触发证据链"
+    Note for DecisionKind "v1.3.3 新增 EVOLUTION + TEAM<br/>原 9 个值 + 2 个 = 11 个"

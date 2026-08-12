@@ -19,7 +19,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——35 个 tool（v1.3.2 修正：按 name+description 配对实测；不含 4 个 resource shortcut）
+ * 完整工具清单——39 个 tool（v1.3.3：route_workflow + team_create + team_broadcast + refine 新增；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -437,6 +437,62 @@ export const TOOLS: ToolDef[] = [
         session: { type: 'object', description: '梳理会话 JSON（含 enterpriseId / nodes / workflowName 等，由 compose-interview 收集）' },
       },
       required: ['action', 'session'],
+    },
+  },
+  {
+    // v1.3.3 (交付 T01)：入口路由
+    name: 'route_workflow',
+    description: '入口路由（v1.3.3）——传入用户请求 task + 已解析的 workflow，返回路由结果：命中 workflow 节点（route=workflow）或走 fallback 直答（route=fallback）。匹配判定记 audit decision（可审计）。⚡/🔄 节点路由进 workflow，👤 节点和不命中走 fallback。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        task: { type: 'string', description: '用户请求文本（自然语言，如「帮我写一份财报分析」）' },
+        workflow: { type: 'object', description: '已解析的 workflow JSON（ParsedWorkflow 结构，含 nodes 数组）' },
+      },
+      required: ['task', 'workflow'],
+    },
+  },
+  {
+    // v1.3.3 (交付 T02)：团队协作——建队
+    name: 'team_create',
+    description: '创建团队（v1.3.3 L2 协作协议）——传入 team.yml 文本，解析校验后写入 data/teams/<team-id>/team.yml。team.yml 含 name/team_id/members[agent_id,role,trust]/shared_state/broadcast_channels。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        team_yaml: { type: 'string', description: 'team.yml 文本内容（YAML 格式）' },
+      },
+      required: ['team_yaml'],
+    },
+  },
+  {
+    // v1.3.3 (交付 T02)：团队协作——意图广播
+    name: 'team_broadcast',
+    description: '意图广播（v1.3.3 L2 协作协议）——Agent 广播「我要做什么」到团队意图总线。匹配的订阅者触发反应。意图类型支持 glob 匹配（intent.create.* / intent.modify.*）。记 audit decision（kind=TEAM）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        team_id: { type: 'string', description: '团队 ID' },
+        source: { type: 'string', description: '发送者 agentId' },
+        intent: { type: 'string', description: '意图类型（glob 可匹配：intent.create.report）' },
+        target: { type: 'string', description: '意图目标（文件/实体/key）' },
+        payload: { type: 'string', description: '意图载荷（可选）' },
+      },
+      required: ['team_id', 'source', 'intent', 'target'],
+    },
+  },
+  {
+    // v1.3.3 (交付 T03/T04)：Refine Agent 质量优化循环
+    name: 'refine',
+    description: 'Refine Agent 质量优化循环（v1.3.3）——复用 loop-agent 引擎（L1/L3/L4/L5），只换 L2 判据（质量规则集）。action=trigger 触发质量循环（针对 Agent 产出做质量优化），action=query 查询结果。Onboard 收敛 PASS 后自动触发。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['trigger', 'query'], description: '操作类型：trigger=触发质量循环 / query=查询结果' },
+        agent_id: { type: 'string', description: '目标 Agent 身份码（trigger 时必填）' },
+        task: { type: 'string', description: '任务描述（trigger 时必填——Refine 针对哪个产出）' },
+        team_id: { type: 'string', description: '团队 ID（可选——加载团队质量规则）' },
+      },
+      required: ['action'],
     },
   },
 ];

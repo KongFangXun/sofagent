@@ -23,6 +23,70 @@ export {
 } from './workflow-parser';
 export type { WorkflowNode, ParsedWorkflow, SubAgentConfig } from './workflow-parser';
 
+// Route（入口路由 · v1.3.3 新增）
+export { routeRequest } from './route/route-request';
+export type {
+  RouteRequestInput,
+  RouteResult,
+  RouteWorkflowResult,
+  RouteFallbackResult,
+} from './route/route-request';
+
+// Team（L2 团队协作协议 · v1.3.3 新增）
+// team-state：CRDT 文档 + 同步通道抽象
+export {
+  initTeamState,
+  addMember,
+  updateMemberStatus,
+  addTask,
+  setFileLock,
+  appendFeedback,
+  saveTeamState,
+  loadTeamState,
+  mergeTeamState,
+  LocalTeamSyncChannel,
+} from './team/team-state';
+export type {
+  TeamStateDoc,
+  MemberState,
+  TaskState,
+  FileLockEntry,
+  FeedbackEntry,
+  TeamSyncChannel,
+} from './team/team-state';
+// intent-bus：意图总线
+export { IntentBus, matchIntent } from './team/intent-bus';
+export type { IntentEvent, Subscription, ConvergenceResult } from './team/intent-bus';
+// protocol：冲突消解 + 反馈放大
+export {
+  resolveConflict,
+  detectFileLockConflict,
+  amplifyFeedback,
+  getFeedback,
+  getFeedbackByType,
+} from './team/protocol';
+export type {
+  TeamConflictParty,
+  ConflictResolutionResult,
+  FeedbackType,
+  AmplifyFeedbackInput,
+} from './team/protocol';
+// team-manager：团队生命周期 + 编排
+export {
+  TeamManager,
+  createTeam,
+  parseTeamYaml,
+  getTeamStatePath,
+  TeamYamlError,
+} from './team/team-manager';
+export type {
+  TeamYaml,
+  TeamYamlMember,
+  TeamYamlBroadcastChannel,
+  TeamManagerOptions,
+  EnqueueSubAgentInput,
+} from './team/team-manager';
+
 // Registry & Definitions
 export { loadDefinition, listAgents } from './registry';
 export type { SubAgentDefinition } from './registry';
@@ -197,6 +261,34 @@ export { applyFix } from './loop-agent/fix-applier';
 export type { FixProposal, FixApplyResult, LlmFixerDeps, AuditGateDeps, FileOpsDeps } from './loop-agent/fix-applier';
 export { DEFAULT_L5_CONFIG } from './loop-agent/driver';
 export type { ConvergenceState, L5ConvergenceConfig } from './loop-agent/driver';
+
+// v1.3.3 交付 T04：Refine Agent（质量循环——复用 loop-agent 引擎，换 L2 质量判据）
+export { runRefineLoop, createRefineOnConvergedCallback } from './refine-agent/refine-driver';
+export type { RefineDriverOptions, RefineLoopResult, RefineTriggerConfig, OnboardConvergedContext } from './refine-agent/refine-driver';
+export { judgeQuality, qualityFeedbackText, QUALITY_TARGET_FIELDS } from './refine-agent/quality-judge';
+export type { QualityJudgeOptions } from './refine-agent/quality-judge';
+export {
+  loadQualityRuleSet,
+  builtinQualityRules,
+  parseFdeDeliveryReport,
+  fdeFeedbacksToRules,
+  teamFeedbacksToRules,
+  matchQualityRules,
+  evaluateRule,
+  summarizeQualityResults,
+} from './refine-agent/quality-rule-set';
+export type {
+  QualityRule,
+  QualityRuleSet,
+  QualityCheckType,
+  QualitySeverity,
+  QualityRuleParams,
+  QualityCheckResult,
+  FdeQualityFeedback,
+  TeamFeedbackEntry,
+  NodeOutputFields,
+  LoadRuleSetOptions,
+} from './refine-agent/quality-rule-set';
 
 // v1.3.2 交付 5：agent-creation（一句话需求 → 自动建节点）
 export { deriveAgentFromRequirement } from './onboard/agent-creator';
