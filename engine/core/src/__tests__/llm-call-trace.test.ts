@@ -42,7 +42,7 @@ afterEach(() => {
   else process.env.SOFAGENT_HOME = savedHome;
   if (savedKeyPath === undefined) delete process.env.SOFAGENT_KEY_PATH;
   else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
-  rmSync(homeDir, { recursive: true, force: true });
+  try { rmSync(homeDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
 });
 
 /** 构造一条标准写入输入 */

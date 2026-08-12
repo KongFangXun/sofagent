@@ -223,7 +223,7 @@ describe('workflow-parser · enterprise agent（v1.2.6）', () => {
     expect(result.definition.knowledgeDomain).toBe('客户域');
 
     // 清理
-    rmSync(tmpDir, { recursive: true, force: true });
+    try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   // 用例：enterprise agent 未注册 → 抛错
@@ -234,7 +234,7 @@ describe('workflow-parser · enterprise agent（v1.2.6）', () => {
     const node = { id: 'unknown-agent', agent: 'enterprise', task: '未知任务', depends_on: [] };
     expect(() => resolveAgent(node, tmpDir)).toThrow(/未注册/);
 
-    rmSync(tmpDir, { recursive: true, force: true });
+    try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   // 用例：toSubAgentConfigs 传入 dataDir 后 enterprise 节点解析成功
@@ -264,7 +264,7 @@ workflow:
     expect(configs[0]!.name).toBe('data-entry');
     expect(configs[0]!.description).toBe('数据录入');
 
-    rmSync(tmpDir, { recursive: true, force: true });
+    try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 });
 

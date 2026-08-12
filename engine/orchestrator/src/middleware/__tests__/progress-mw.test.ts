@@ -52,7 +52,7 @@ beforeEach(() => {
 afterEach(() => {
   delete process.env.SOFAGENT_HOME;
   setLoopProgressMwForTest(null);
-  fs.rmSync(tmpHome, { recursive: true, force: true });
+  try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
 });
 
 // ════════════════════════════════════════

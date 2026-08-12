@@ -63,7 +63,7 @@ describe('conflict-check · knowledge 矛盾/孤儿/死链巡检', () => {
   });
 
   afterEach(() => {
-    fs.rmSync(dir, { recursive: true, force: true });
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   // 用例 1：空 knowledge 目录 → triggered: false

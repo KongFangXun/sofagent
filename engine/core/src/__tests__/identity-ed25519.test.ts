@@ -42,7 +42,7 @@ beforeEach(() => {
 afterEach(() => {
   if (savedHome === undefined) delete process.env.SOFAGENT_HOME;
   else process.env.SOFAGENT_HOME = savedHome;
-  rmSync(homeDir, { recursive: true, force: true });
+  try { rmSync(homeDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
 });
 
 describe('交付 6：Ed25519 签发', () => {

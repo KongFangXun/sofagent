@@ -284,7 +284,7 @@ describe('ModelRouter · block-and-alert（本地不可达 + 敏感数据）', (
   });
 
   afterEach(() => {
-    fs.rmSync(dir, { recursive: true, force: true });
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   it('restricted + Ollama 不可达 → block + 写 FAIL 审计 + stderr 告警', async () => {
@@ -421,7 +421,7 @@ describe('ModelRouter · 配置加载', () => {
   });
 
   afterEach(() => {
-    fs.rmSync(dir, { recursive: true, force: true });
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   it('配置文件缺失 → 返回 DEFAULT_ROUTER_CONFIG', () => {
@@ -467,7 +467,7 @@ describe('ModelRouter · 消费 P0 审计日志辅助敏感度判定', () => {
   });
 
   afterEach(() => {
-    fs.rmSync(dir, { recursive: true, force: true });
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   it('audit 历史中同 filePath 的敏感度被消费', () => {

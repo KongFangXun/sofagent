@@ -41,7 +41,7 @@ describe('runDreamCycle 状态机 e2e', () => {
 
   afterEach(() => {
     delete process.env.SOFAGENT_HOME;
-    fs.rmSync(dir, { recursive: true, force: true });
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   // 用例 1：空 Ledger → 空转不报错

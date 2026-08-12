@@ -41,7 +41,7 @@ describe('warn-accumulator QA 验证', () => {
   });
 
   afterEach(() => {
-    fs.rmSync(dir, { recursive: true, force: true });
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   // 测试：无 history 文件 → triggered=false

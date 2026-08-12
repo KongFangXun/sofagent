@@ -103,8 +103,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  fs.rmSync(tmpDir, { recursive: true, force: true });
-  fs.rmSync(fakeSrcDir, { recursive: true, force: true });
+  try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
+  try { fs.rmSync(fakeSrcDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   cleanupMemoryKeys();
   if (savedEnv.SOFAGENT_DATA === undefined) delete process.env.SOFAGENT_DATA;
   else process.env.SOFAGENT_DATA = savedEnv.SOFAGENT_DATA;

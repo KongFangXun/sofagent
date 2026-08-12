@@ -117,7 +117,7 @@ describe('§8.2 withRetry', () => {
         expect(entry.retries).toBe(2);
       } finally {
         delete process.env.SOFAGENT_DATA;
-        fs.rmSync(tmpDir, { recursive: true, force: true });
+        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
       }
     });
   });

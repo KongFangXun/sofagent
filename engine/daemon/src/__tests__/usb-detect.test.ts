@@ -46,8 +46,8 @@ afterEach(() => {
   homedirMock.current = '';
   if (savedHome === undefined) delete process.env.SOFAGENT_DATA;
   else process.env.SOFAGENT_DATA = savedHome;
-  fs.rmSync(tmpDir, { recursive: true, force: true });
-  fs.rmSync(fakeHome, { recursive: true, force: true });
+  try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
+  try { fs.rmSync(fakeHome, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
 });
 
 describe('USB 签名 / 验签', () => {

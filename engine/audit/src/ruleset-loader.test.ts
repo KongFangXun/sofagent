@@ -120,7 +120,7 @@ describe('loadRulesetFile', () => {
   });
 
   afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true });
+    try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   it('加载合法 JSON 规则集文件', () => {
@@ -163,7 +163,7 @@ describe('loadRulesetFromPath', () => {
   });
 
   afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true });
+    try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   it('优先加载 index.json', () => {
@@ -237,7 +237,7 @@ describe('listAvailableRulesets', () => {
     expect(localRs).toBeDefined();
     expect(localRs?.description).toBe('自定义');
 
-    rmSync(tmpDir, { recursive: true, force: true });
+    try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 });
 

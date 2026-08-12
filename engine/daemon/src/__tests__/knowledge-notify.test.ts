@@ -67,7 +67,7 @@ describe('pushKnowledgeSummary · 双通道推送（best-effort）', () => {
   afterEach(() => {
     if (savedData === undefined) delete process.env.SOFAGENT_DATA;
     else process.env.SOFAGENT_DATA = savedData;
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   // 用例 4：双通道推送

@@ -61,7 +61,7 @@ describe('LOOP audit history 完整性（v1.1.5 端到端）', () => {
   });
 
   afterEach(() => {
-    fs.rmSync(dir, { recursive: true, force: true });
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   it('三态序列（PASS → WARN → FAIL）都写 history，warn-accumulator 不触发（FAIL 中断连续性）', () => {

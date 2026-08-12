@@ -22,7 +22,7 @@ beforeEach(() => {
 afterEach(() => {
   delete process.env.SOFAGENT_HOME;
   if (existsSync(tempHome)) {
-    rmSync(tempHome, { recursive: true, force: true });
+    try { rmSync(tempHome, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   }
 });
 

@@ -11,6 +11,6 @@ describe('runInspectors', () => {
     const results = runInspectors(tmpDir);
     expect(Array.isArray(results)).toBe(true);
     expect(results.length).toBeGreaterThanOrEqual(0);
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 });

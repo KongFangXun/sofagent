@@ -258,7 +258,7 @@ describe('resolveMaxTurns 可配置化（v1.1.5）', () => {
     // 空目录——loadConfig 走 DEFAULT_CONFIG，无 loop 字段
     expect(resolveMaxTurns('engineer', tmp)).toBe(20);
     expect(resolveMaxTurns('reviewer', tmp)).toBe(15);
-    fs.rmSync(tmp, { recursive: true, force: true });
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   it('config 配置 engineer=5 时返回 5', () => {
@@ -270,7 +270,7 @@ describe('resolveMaxTurns 可配置化（v1.1.5）', () => {
     );
     expect(resolveMaxTurns('engineer', tmp)).toBe(5);
     expect(resolveMaxTurns('reviewer', tmp)).toBe(10);
-    fs.rmSync(tmp, { recursive: true, force: true });
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   it('只配 engineer 时 reviewer fallback 到默认值', () => {
@@ -282,6 +282,6 @@ describe('resolveMaxTurns 可配置化（v1.1.5）', () => {
     );
     expect(resolveMaxTurns('engineer', tmp)).toBe(7);
     expect(resolveMaxTurns('reviewer', tmp)).toBe(15); // fallback
-    fs.rmSync(tmp, { recursive: true, force: true });
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 });

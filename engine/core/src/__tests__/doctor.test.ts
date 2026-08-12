@@ -22,7 +22,7 @@ describe('doctor 审计日志链完整性校验', () => {
   });
 
   afterEach(() => {
-    rmSync(tmp, { recursive: true, force: true });
+    try { rmSync(tmp, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
     vi.restoreAllMocks();
   });
 

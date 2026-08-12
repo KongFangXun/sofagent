@@ -115,7 +115,7 @@ describe('benchmark-designer · 题库设计 + Pilot 校准 + Freeze（v1.3.1 �
       expect(back?.cases[0]?.rubric).toBe('rubric 内容');
       expect(back?.cases[0]?.goldScore).toBe(95);
     } finally {
-      fs.rmSync(root, { recursive: true, force: true });
+      try { fs.rmSync(root, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
     }
   });
 });

@@ -831,6 +831,10 @@ grep -A10 'convertAuditResult' engine/eval/src/cli.ts | grep -E 'PASS|WARN|FAIL|
 > - ❌ **绝对禁止**：`npx jest`、`npx jest --config jest.config.js`
 > - 判定：如果测试失败信息含 `from 'vitest'` 或 `import type` 解析错误 → 你用了 Jest，立刻换 vitest 重跑
 
+> **WorkBuddy 沙箱测试假失败铁律（v1.3.3）**：在 WorkBuddy.app 内跑 `npm test` 时，genie-safe-delete.cjs shim 可能拦截测试清理用的 `fs.rmSync(..., { recursive: true })`，导致 ETIMEDOUT 假失败——测试断言本身已通过，只是 `finally`/`afterEach` 清理块超时。**这是环境问题，非源码 bug**。
+> - 判定：失败信息含 `ETIMEDOUT` / `rmSync` / 清理临时目录超时 → 先在**非 shim 环境**（终端裸跑 / CI）复验，确认是否 shim 假失败
+> - v1.3.3 起所有测试清理 rmSync 已 try-catch 包裹，WorkBuddy 下应稳定全绿；仍偶现 FAIL 先复验再修，勿在 shim 环境下盲目改源码
+
 > **grep 匹配铁律**：检查文档是否包含某关键词时，**必须用 `-i`（大小写不敏感）**，因为文档中可能是 `Filebeat` 而不是 `filebeat`。漏匹配导致的误报会浪费修复轮次。
 
 > **路径迁移感知**：v1.2.1 起 `.sofagent/` 迁移到 `~/.sofagent/`，数据子目录从 `.sofagent/audit` 变为 `~/.sofagent/data/audit`。检查路径权限时认准 `~/.sofagent/`。

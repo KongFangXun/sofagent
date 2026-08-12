@@ -64,7 +64,7 @@ describe('knowledge-health · knowledge 健康巡检', () => {
   });
 
   afterEach(() => {
-    fs.rmSync(dir, { recursive: true, force: true });
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   // 用例 1：knowledge/ 整个不存在 → info，不抛异常

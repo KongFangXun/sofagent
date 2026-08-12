@@ -50,7 +50,7 @@
 >    # GitHub Actions 示例
 >    - name: sofagent 审计检查
 >      run: |
->        npx @sofagent/audit --diff HEAD~1..HEAD
+>        npx -y -p @sofagent/audit sofagent-audit --diff HEAD~1..HEAD --ci
 >    ```
 > 2. **定期自动 doctor**：配置 cron job 每周运行 `sofagent-core --doctor`，
 >    并将结果发送到监控频道，检测 hooks 是否被意外移除。
@@ -419,9 +419,10 @@ v1.0 新增 `FORGE/playbook/acceptance-test.sh`（102 个场景，含子断言�
 ### safe-delete 环境下的测试预期失败（16 个）
 
 - **影响包**：engine/audit（config-loader 2 + audit-history 7 + session-report 1 + usb-detect 3）
-- **原因**：WorkBuddy.app 内嵌的 genie-safe-delete.cjs shim 拦截 fs.rmSync 调用，测试清理临时文件被误判为大规模删除
-- **缓解**：在无 safe-delete shim 的环境中运行测试可全绿；或使用 `--no-safe-delete` 标志（如适用）
-- **计划修复**：v1.3.2 考虑使用 mock fs 隔离测试清理逻辑（测试体系完善版）
+- **原因**：WorkBuddy.app 内嵌的 genie-safe-delete.cjs shim 拦截 fs.rmSync 调用，测试清理临时文件被误判为大规模删除，导致 ETIMEDOUT。**非源码 bug**——CI / 本地开发机（无 shim）无此问题。
+- **v1.3.3 缓解**：所有测试清理 `rmSync(..., { recursive: true })` 已用 `try-catch` 包裹，断言通过后清理失败不再让测试 FAIL。WorkBuddy 沙箱下连续跑 `bash tools/test-count.sh` 应稳定全绿（FAILED=0）。
+- **残余**：极少数在测试**函数体**内（非清理块）调用 rmSync 的用例仍未包裹——那是测试逻辑的一部分，包裹会掩盖真实失败，维持原样。
+- **环境判据**：在 WorkBuddy 下遇到测试 FAIL，先在非 shim 环境（终端裸跑 / CI）复验，确认是否为 shim 环境假失败。
 
 ### 组织记忆维护风险 / 模型依赖维护风险
 

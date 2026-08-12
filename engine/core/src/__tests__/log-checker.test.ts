@@ -15,7 +15,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  rmSync(tempDir, { recursive: true, force: true });
+  try { rmSync(tempDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
 });
 
 function writeLog(content: string): void {

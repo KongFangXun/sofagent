@@ -45,7 +45,7 @@ describe('Dream Cycle 6 阶段', () => {
 
   afterEach(() => {
     delete process.env.SOFAGENT_HOME;
-    fs.rmSync(dir, { recursive: true, force: true });
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   // 用例 1：extract_facts — 空 Ledger → 空数组，不报错

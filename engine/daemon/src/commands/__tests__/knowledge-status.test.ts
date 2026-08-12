@@ -50,7 +50,7 @@ describe('knowledgeStatus · 聚合命令', () => {
   });
 
   afterEach(() => {
-    fs.rmSync(dir, { recursive: true, force: true });
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   // 用例 1：空知识库 → 优雅降级

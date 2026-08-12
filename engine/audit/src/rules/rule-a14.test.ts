@@ -41,7 +41,7 @@ beforeEach(() => {
 afterEach(() => {
   delete process.env.SOFAGENT_DATA;
   if (existsSync(tempDataDir)) {
-    rmSync(tempDataDir, { recursive: true, force: true });
+    try { rmSync(tempDataDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   }
 });
 

@@ -46,7 +46,7 @@ describe('enterprise-graph', () => {
   });
 
   afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true });
+    try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   describe('buildEnterpriseStateGraph', () => {
@@ -165,7 +165,7 @@ describe('entity-store', () => {
   });
 
   afterEach(() => {
-    rmSync(tmpDir, { recursive: true, force: true });
+    try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   describe('writeEntity / readEntity', () => {

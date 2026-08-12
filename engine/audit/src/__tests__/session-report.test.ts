@@ -66,10 +66,10 @@ describe('session-report · buildSessionReport', () => {
 
 describe('session-report · writeSessionReport', () => {
   beforeEach(() => {
-    if (existsSync(tmpDir)) rmSync(tmpDir, { recursive: true, force: true });
+    try { if (existsSync(tmpDir)) rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
   afterEach(() => {
-    if (existsSync(tmpDir)) rmSync(tmpDir, { recursive: true, force: true });
+    try { if (existsSync(tmpDir)) rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   it('case2: 写入 json + md，JSON 可解析、MD 含 [sofagent] 前缀与状态行', () => {

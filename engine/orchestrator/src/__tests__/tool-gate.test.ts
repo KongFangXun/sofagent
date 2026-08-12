@@ -197,7 +197,7 @@ describe('ToolGate · wrapToolsWithGate 拦截语义（v1.2.1 P0）', () => {
       // func 未执行的物理证据：.env 文件不存在
       expect(fs.existsSync(envPath)).toBe(false);
     } finally {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
+      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
     }
   });
 
@@ -219,7 +219,7 @@ describe('ToolGate · wrapToolsWithGate 拦截语义（v1.2.1 P0）', () => {
       expect(fs.existsSync(filePath)).toBe(true);
       expect(fs.readFileSync(filePath, 'utf-8')).toBe('hi');
     } finally {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
+      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
     }
   });
 });

@@ -26,7 +26,7 @@ describe('联邦知识注入（加载链第 3 层）', () => {
   });
 
   afterEach(() => {
-    fs.rmSync(tmpRoot, { recursive: true, force: true });
+    try { fs.rmSync(tmpRoot, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   // 用例 1：联邦知识包裹注入（v1.3.1 交付 14 渐进加载——热点全文含联邦时仍强制 untrusted 包裹）

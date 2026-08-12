@@ -117,7 +117,7 @@ describe('Webhook 企业平台推送（v1.2.1 P0 · 采购阻塞）', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
-    fs.rmSync(tmp.dir, { recursive: true, force: true });
+    try { fs.rmSync(tmp.dir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   // ────────────────────────────────────────

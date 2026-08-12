@@ -64,7 +64,9 @@ describe('config-loader', () => {
         expect(warned).toBe(true);
         warnSpy.mockRestore();
       } finally {
-        rmSync(tmpDir, { recursive: true, force: true });
+        // v1.3.3 #9: WorkBuddy 沙箱下 rmSync 可能被 genie-safe-delete shim 拦截导致 ETIMEDOUT，
+        // 清理失败不应影响测试断言结果（断言已在上文通过）。
+        try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* shim 环境下清理失败可接受 */ }
       }
     });
 
@@ -110,7 +112,8 @@ describe('config-loader', () => {
         expect(mismatchWarned).toBe(false);
         warnSpy.mockRestore();
       } finally {
-        rmSync(tmpDir, { recursive: true, force: true });
+        // v1.3.3 #9: WorkBuddy 沙箱下 rmSync 可能被 genie-safe-delete shim 拦截导致 ETIMEDOUT
+        try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* shim 环境下清理失败可接受 */ }
       }
     });
   });

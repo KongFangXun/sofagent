@@ -23,7 +23,7 @@ describe('memory-store', () => {
   });
 
   afterEach(() => {
-    rmSync(testDir, { recursive: true, force: true });
+    try { rmSync(testDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   describe('set + get', () => {

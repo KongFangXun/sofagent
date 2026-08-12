@@ -20,7 +20,7 @@ describe('loadPermission', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 
   it('两个文件都不存在 → 返回空规则集', () => {
