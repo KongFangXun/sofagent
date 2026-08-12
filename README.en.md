@@ -163,9 +163,9 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 > 🧪 **Engineering credibility**: 2016 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
 
 > 🧠 **v1.3.2 new capabilities** (grouped by theme):
-> - **Runtime layer**: Ontology runtime layer (Action registry + pre-execution validation + Schema finalization) · parallel orchestration (wave concurrency + audit gating + MergeQueue) · Durable Execution (checkpoint resume + idempotency)
-> - **Identity & evaluation**: Agent identity Ed25519 · 📊 Benchmark evaluation (`evaluate`) · 🚀 Onboard Agent L1 (`loop_debug`)
-> - **Governance & observability**: 🔒 tool approval four-mode · 📜 LLM call-level Trace · 🔄 error handling (stop_reason + backoff) · 📚 L4 progressive loading · national standard alignment GB/T 48000.3-2026 (`--gb48000`)
+> - **Onboard Agent full release**: 🔄 L2-L5 loop engine (locate → fix → re-run → converge, FORGE's second productization cut)
+> - **Enterprise capabilities**: 🎯 enterprise eval suite (finance / manufacturing / supply-chain templates) · ⚡ workflow batch auto-generation (build N sub-agents at once)
+> - **Models & observability**: 🧩 model adapter slots (`client_type`) · 🎙️ FDE mapping assist (ontology consultative generation) · 🧵 LLM Trace task-level trajectory
 > See [v1.3.2 devlog](./docs/changelog/v1.3/v1.3.2.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## Docs

@@ -10,7 +10,7 @@
 
 > 💡 **行业背景**：sofagent 是一个 FDE Agent——进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎（Harness 中间件）**约束层 × 生命周期**双层架构：约束层 = 约束层四种能力（注入·审计·回溯·进化），生命周期 = 激活链四阶段（诊断→激活→编排→执行→进化，v1.2.5+）。不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/GUIDE.md](../FDE/GUIDE.md)。
 
-> 💬 **开发铁律**：sofagent 不建编辑器类交互界面。只读 Dashboard 面板（如 `dashboard.html`）例外——它是状态可视化，不做双向编辑。核心能力通过 MCP 协议暴露。Agent 首次连接时主动推送 `list_capabilities`。开发任何新功能前，先回答三个问题：（1）用户怎么通过对话发现这个能力？（2）结果推到哪？（3）用户怎么知道这个结果是 sofagent 做的，不是模型做的？——任何面向用户的输出必须带 `[sofagent]` 签名标注来源。详见 [设计哲学](./PHILOSOPHY.md)。
+> 💬 **开发铁律**：sofagent 不建编辑器类交互界面。只读 Dashboard 面板（如 `docs/demo/dashboard.html`）例外——它是状态可视化，不做双向编辑。核心能力通过 MCP 协议暴露。Agent 首次连接时主动推送 `list_capabilities`。开发任何新功能前，先回答三个问题：（1）用户怎么通过对话发现这个能力？（2）结果推到哪？（3）用户怎么知道这个结果是 sofagent 做的，不是模型做的？——任何面向用户的输出必须带 `[sofagent]` 签名标注来源。详见 [设计哲学](./PHILOSOPHY.md)。
 
 ---
 

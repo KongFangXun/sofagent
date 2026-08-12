@@ -603,7 +603,7 @@ done < <(grep -rn "Current version: v[0-9]" --include="*.md" . 2>/dev/null | gre
 
 # v1.2.5 阶段八① 补：dashboard.html 当前版本活引用（logo 徽章 + 页脚署名）。
 # 只校验两处"当前版本"锚点；激活链里程碑标记（v1.2.5+ / ✅）属历史叙述，不校验。
-dash_html="${PROJECT_ROOT}/dashboard.html"
+dash_html="${PROJECT_ROOT}/docs/demo/dashboard.html"
 if [[ -f "$dash_html" ]]; then
   for anchor in "logo-version\">v" "孔放勋 · v"; do
     found_ver=$(grep -F "$anchor" "$dash_html" | grep -oE "v[0-9]+\.[0-9]+(\.[0-9]+)?" | head -1 | sed 's/^v//')

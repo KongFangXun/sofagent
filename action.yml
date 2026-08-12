@@ -4,6 +4,8 @@ author: 'KongFangXun'
 branding:
   icon: 'shield'
   color: 'blue'
+# ⚠️ 发版同步提醒：版本锁定在下方 run 块的 npx 命令。
+# 每次发版必须同步更新此版本号 + package.json version + CHANGELOG，三者保持一致。
 inputs:
   ruleset:
     description: '规则集名称（sofagent / security / 社区包名）'
@@ -27,7 +29,7 @@ runs:
     - name: Run sofagent audit
       shell: bash
       run: |
-        # ⚠️ 版本锁定：npx -p 的包名固定到具体版本（下方 1.3.1），避免上游 patch 引入行为变更。
+        # ⚠️ 版本锁定：npx -p 的包名固定到具体版本（下方 1.3.2），避免上游 patch 引入行为变更。
         # 发版时同步更新此版本号（与 package.json version + CHANGELOG 对齐）。
         npx -y -p @sofagent/audit@1.3.2 sofagent-audit-full \
           --diff "${{ inputs.diff-range }}" \

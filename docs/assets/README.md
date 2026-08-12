@@ -12,10 +12,10 @@
 
 ## 与 dashboard.html 的关系
 
-`dashboard.html`（位于**仓库根目录**，不在本目录）是 HTML Dashboard 主页面，
-由 `tools/serve-dashboard.mjs` 直接从仓库根提供服务。
+`dashboard.html`（位于 `docs/demo/`，不在本目录）是 HTML Dashboard 主页面，
+由 `tools/serve-dashboard.mjs` 提供服务。
 
-- `dashboard.html`（根目录）→ 开发者审计面板（localhost:3780）
+- `docs/demo/dashboard.html` → 开发者审计面板（localhost:3780）
 
 ## 维护说明
 

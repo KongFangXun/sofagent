@@ -33,13 +33,13 @@
 
 | 文件 | 职责 |
 |------|------|
-| `dashboard.html`（仓库根目录） | 单文件零依赖 SPA，6 页导航：驾驶舱 / FDE引导 / AI节点 / 本体结构 / 知识库 / 工具箱 |
-| `start-dashboard.command`（仓库根目录） | macOS 一键启动快捷指令（双击即开，关窗口即停；本质是 `node tools/serve-dashboard.mjs` 包装） |
+| `docs/demo/dashboard.html` | 单文件零依赖 SPA，6 页导航：驾驶舱 / FDE引导 / AI节点 / 本体结构 / 知识库 / 工具箱 |
+| `start-dashboard.command`（仓库根目录） | macOS 一键启动快捷指令（双击即开，关窗口即停；本质是 `node tools/serve-dashboard.mjs` 包装；仅 macOS 双击入口） |
 | `tools/serve-dashboard.mjs` | 本地 HTTP 服务器：页面 + `/data/*` 原始数据 + 4 个聚合 API |
 | `tools/gen-weekly-report.mjs` | 手动生成持续优化周报（daily + weekly） |
 | `docs/assets/` | logo/favicon 等静态资源（dashboard 用 `docs/assets/` 相对路径引用，不建软链） |
 
-> ⚠️ **dashboard.html 必须在仓库根目录**（不在 docs/）——用户 clone 后一眼可见。历史教训（V6.5）：放 docs/ 里"藏身"了，用户找不到。
+> ⚠️ **dashboard.html 位于 `docs/demo/`**——Web Dashboard 开发预览版，由 `tools/serve-dashboard.mjs` 提供服务。历史教训（V6.5）：最初放 docs/ 里"藏身"用户找不到 → V6.5 曾移到根目录 → v1.3.3 移到 `docs/demo/`（根目录整洁 + `serve-dashboard.mjs` 自动路由）。
 
 ### 1.2 数据链路（关键设计）
 
@@ -262,7 +262,7 @@ node tools/gen-weekly-report.mjs      # 从 audit/history.jsonl 生成 daily + w
 | 单文件零依赖 | 用户只保存 HTML 也能用；外部 CDN 会 404 废掉功能 |
 | 图标用 emoji/SVG 不用图片 | 零依赖 + 轻量 |
 | /api/summary 复用 bash jq | HTML 与终端同一份数据，口径不漂移 |
-| dashboard.html 在根目录 | 用户 clone 一眼可见 |
+| dashboard.html 在 docs/demo/ | 根目录整洁 + serve-dashboard.mjs 自动路由 |
 | 内置模板与用户数据分离 | AI 节点页=用户业务节点；FDE 引导页=方法论模板，避免"死的介绍页"混淆 |
 | 数据源没数据→诚实显示"待生成" | 不吹牛；数据驱动胜过话术 |
 | 驾驶舱统一规则检查口径（V10） | 任务级 40% 太低会被疑系统有问题；规则级 90%+ 且图内可自验算；同名指标禁双口径 |

@@ -85,7 +85,7 @@ graph TD
 ## 目录
 
 - [术语对照](#术语对照)
-- [能力与状态总览（v1.3.1）](#能力与状态总览v131)
+- [能力与状态总览（v1.3.2）](#能力与状态总览v132)
 - [一、核心理念与架构全景](#一核心理念与架构全景)
 - [二、约束层（Harness）设计——一个层，四种能力](#二约束层harness设计一个层四种能力)
 - [三、部署与运行架构](#三部署与运行架构)
@@ -128,7 +128,7 @@ graph TD
 
 ---
 
-## 能力与状态总览（v1.3.1）
+## 能力与状态总览（v1.3.2）
 
 > 这份清单是「现在能干什么」的单一索引。约束层内部设计见 [二、约束层（Harness）设计——一个层，四种能力](#二约束层harness设计一个层四种能力)；未来方向见 [六、已知局限与未来方向](#六已知局限与未来方向)。
 
@@ -136,7 +136,7 @@ graph TD
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，详见 WIKI.md）硬证据扫描 + 快照/回滚/webhook + 国标对齐维度（`--gb48000` opt-in） | ✅ 已实现（709 测试） |
+| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，详见 WIKI.md）硬证据扫描 + 快照/回滚/webhook + 国标对齐维度（`--gb48000` opt-in） | ✅ 已实现（710 测试） |
 | core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519 | ✅ 已实现（298 测试） |
 | harness | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 fs/git 依赖），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
@@ -199,7 +199,7 @@ graph TD
 
 Dashboard Web 前端（`dashboard.html` 单文件控制台已落：驾驶舱/FDE 引导/AI 节点/本体结构/知识库/工具箱 6 页 + `tools/serve-dashboard.mjs` 服务，读 `data/` 实时数据 + 示例降级；工作明细数据层 v1.3.9 + Web 工作明细页 v1.4.0）· 完整多设备协同 L2 / 组织能力市场 · 并行编排 DAG 波次并行（v1.3.1）· Ontology 升级为可运行推理底座 + 国标对齐（v1.3.1）· **Benchmark 评测体系 + 工具审批模式（v1.3.1 · PenguinHarness 方法论借鉴）** · **引擎接口外化完整版（v1.3.6 · workflow 标准格式/ontology 注册/训练语料导出/托管 SDK/模型注册——模型层接入前置）** · SubAgent 完整沙箱（v1.3.7）· 代理网关 + 静态加密（v1.3.8）· meta-harness 多 harness 编排（v1.3.9）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
 >
-> **Dashboard 双实现说明（v1.3.2 补充）**：`dashboard.html`（根目录，开发预览版，`node tools/serve-dashboard.mjs` 起服务）与 `tools/sofagent-dashboard.sh`（生产版，装到 `~/.sofagent/bin/`，零依赖 bash）是同一 Dashboard 的两套形态——HTML 版给开发者本地预览（读 `data/` 实时数据），bash 版给终端用户零依赖控制台。二者职责不同，勿混用/勿删其一。
+> **Dashboard 双实现说明（v1.3.2 补充）**：`docs/demo/dashboard.html`（开发预览版，`node tools/serve-dashboard.mjs` 起服务）与 `tools/sofagent-dashboard.sh`（生产版，装到 `~/.sofagent/bin/`，零依赖 bash）是同一 Dashboard 的两套形态——HTML 版给开发者本地预览（读 `data/` 实时数据），bash 版给终端用户零依赖控制台。二者职责不同，勿混用/勿删其一。
 
 ---
 
