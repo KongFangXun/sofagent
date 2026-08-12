@@ -1,5 +1,5 @@
 // ============================================================
-// action-registry.ts · Ontology Action 注册表（v1.3.2 交付 1）
+// action-registry.ts · Ontology Action 注册表（v1.3.3 交付 1）
 //
 // Ontology Action → 工具映射的单一事实源。
 // LLM 调用必须经过 Ontology 层定义的 Action 执行，无法绕过——
@@ -7,7 +7,6 @@
 //
 // 类型复用 @sofagent/ontology 的 OntologyAction（铁律：不重定义）。
 // ============================================================
-
 import type { OntologyAction } from '@sofagent/ontology';
 
 /** Action 注册元数据——在 OntologyAction 基础上叠加运行时映射字段 */

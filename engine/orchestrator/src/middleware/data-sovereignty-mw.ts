@@ -1,9 +1,9 @@
 // ============================================================
-// data-sovereignty-mw.ts · 数据主权审计 middleware（v1.3.2 · P0）
+// data-sovereignty-mw.ts · 数据主权审计 middleware（v1.3.3 · P0）
 // ============================================================
 //
 // LangChain middleware：拦截每次模型调用 / 工具调用 → 写 DataSovereigntyRecord。
-// 与 v1.3.2 运行时审计 middleware 无缝衔接（同一 middleware 链，职责分离）。
+// 与 v1.3.3 运行时审计 middleware 无缝衔接（同一 middleware 链，职责分离）。
 //
 // 设计要点：
 //   1. wrapModelCall / wrapToolCall 双拦截——覆盖 LLM 与 tool 两个出口

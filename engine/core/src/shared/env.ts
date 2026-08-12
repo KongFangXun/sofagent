@@ -1,6 +1,6 @@
 // ============================================================
 // shared/env.ts · 环境变量统一读取
-// v1.3.2 环境变量三套命名（SOFA_* vs SOFAGENT_*、DATA_DIR vs SOFAGENT_DATA、
+// v1.3.3 环境变量三套命名（SOFA_* vs SOFAGENT_*、DATA_DIR vs SOFAGENT_DATA、
 //   LLM_* vs MODEL_*）统一为 SOFAGENT_* 一套；旧名保留为向后兼容别名。
 //   所有读取点都应走本 helper，避免各自 process.env 直读导致前缀漂移。
 // ============================================================

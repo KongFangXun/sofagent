@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/orchestrator",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "sofagent 编排引擎 — 多 Agent 协作 / 工作流调度 / prompt 模板",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,22 +22,22 @@
   ],
   "license": "MIT",
   "author": "KongFangXun",
+  "//automerge": "精确锁版 1.0.1-preview.7：禁止 ^（与 core 锁版纪律一致）。2.x 稳定版 API 不兼容本项目 CRDT 同步用法（TeamState / 联邦合并），preview 版是唯一可用版本。bump-version.sh 只对齐 @sofagent/* 依赖，第三方依赖不动它，写 ^ 等于把锁版纪律让给 npm 裁决",
   "dependencies": {
     "@langchain/core": "^1.2.3",
     "@langchain/langgraph": "^1.4.7",
     "@langchain/openai": "^1.5.5",
-    "@sofagent/audit": "1.3.2",
-    "@sofagent/core": "1.3.2",
-    "@sofagent/harness": "1.3.2",
-    "@sofagent/rules": "1.3.2",
-    "@sofagent/skillopt": "1.3.2",
-    "//": "automerge 精确锁版 1.0.1-preview.7：禁止 ^（与 core 锁版纪律一致）。2.x 稳定版 API 不兼容本项目 CRDT 同步用法（TeamState / 联邦合并），preview 版是唯一可用版本。bump-version.sh 只对齐 @sofagent/* 依赖，第三方依赖不动它，写 ^ 等于把锁版纪律让给 npm 裁决",
+    "@sofagent/audit": "1.3.3",
+    "@sofagent/core": "1.3.3",
+    "@sofagent/harness": "1.3.3",
+    "@sofagent/rules": "1.3.3",
+    "@sofagent/skillopt": "1.3.3",
     "automerge": "1.0.1-preview.7",
     "js-yaml": "^5.2.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@sofagent/daemon": "1.3.2"
+    "@sofagent/daemon": "1.3.3"
   },
   "exports": {
     ".": {

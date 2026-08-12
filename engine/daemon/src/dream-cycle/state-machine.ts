@@ -1,6 +1,6 @@
 // ============================================================
 // dream-cycle/state-machine.ts · Dream Cycle 6 阶段编排状态机
-// v1.3.2 新增
+// v1.3.3 新增
 //
 // 职责：
 //   - 按序串 6 个 stage（extract_facts → … → embed）

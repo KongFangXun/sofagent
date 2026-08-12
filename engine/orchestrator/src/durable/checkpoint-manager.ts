@@ -1,5 +1,5 @@
 // ============================================================
-// durable/checkpoint-manager.ts · checkpoint 写入/读取/清理（v1.3.2 交付 4 L1）
+// durable/checkpoint-manager.ts · checkpoint 写入/读取/清理（v1.3.3 交付 4 L1）
 // ============================================================
 //
 // 在 graph/checkpoint.ts 的 FileCheckpointer（单文件级原语）之上，

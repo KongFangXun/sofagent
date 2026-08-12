@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.2-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.3-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center">
@@ -162,11 +162,14 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 
 > 🧪 **Engineering credibility**: 2016 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
 
-> 🧠 **v1.3.2 new capabilities** (grouped by theme):
-> - **Onboard Agent full release**: 🔄 L2-L5 loop engine (locate → fix → re-run → converge, FORGE's second productization cut)
-> - **Enterprise capabilities**: 🎯 enterprise eval suite (finance / manufacturing / supply-chain templates) · ⚡ workflow batch auto-generation (build N sub-agents at once)
-> - **Models & observability**: 🧩 model adapter slots (`client_type`) · 🎙️ FDE mapping assist (ontology consultative generation) · 🧵 LLM Trace task-level trajectory
-> See [v1.3.2 devlog](./docs/changelog/v1.3/v1.3.2.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
+> 🧠 **v1.3.3 new capabilities** (grouped by theme):
+> - **L2 Team Collaboration Protocol**: 🤝 Five mechanisms (shared state / intent broadcast / trigger reaction / conflict resolution / feedback amplification) · 🎯 Team setup (team.yml + team_broadcast / team_create MCP tools)
+> - **Refine Agent**: ✨ Reuses Onboard loop engine with L2 criteria swapped (Ontology → quality rule set), from "works" to "works well"
+> - **Entry Routing**: 🚪 route_workflow MCP tool + workflow node type machine-readable (user's own Agent coordination judgment)
+> - **Lead Agent Orchestration**: 🧭 Four-in-one role (dispatch/monitor/audit/comms) · auto-enqueue v1.3.2 generated sub-agents
+> - **Evolution Loop Upgrade**: 📈 Benchmark-driven Dream Cycle (evidence→hypothesis→Candidate→eval→accept/rollback, experience layer only)
+> - **Audit Trace**: 📜 DecisionLogEntry adds evidence field + DecisionKind adds EVOLUTION/TEAM
+> See [v1.3.3 devlog](./docs/changelog/v1.3/v1.3.3.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## Docs
 

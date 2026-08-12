@@ -1,6 +1,6 @@
 // ============================================================
 // ontology/merge-engine.ts · Ontology 合并引擎
-// v1.3.2 从 sofagent/audit/src/ontology/merge-engine.ts 迁出
+// v1.3.3 从 sofagent/audit/src/ontology/merge-engine.ts 迁出
 //
 // 数据源：
 //   1. entities/ 页面的 frontmatter relations 字段 → objects.yml

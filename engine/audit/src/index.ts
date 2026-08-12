@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.3.2 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.3.3 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // v1.0.8 精简（历史）：compose→orchestrator, subagent→orchestrator,
 //          skillopt-run→skillopt, ab-test→ab-test,
 //          daemon→daemon, doctor/verify→core (deprecation shim)
@@ -54,7 +54,7 @@ export type { AuditHistoryEntry } from './audit-history';
 // Re-export core diff/log/config 原语（mcp-server.ts 从 audit 消费 parseDiff/checkLogs/loadConfig/VERSION）
 export { parseDiff, checkLogs, loadConfig, VERSION } from '@sofagent/core';
 
-// v1.3.2: re-export P0 数据主权 + skill 安全审查，供 daemon/mcp/orchestrator/skillopt 消费
+// v1.3.3: re-export P0 数据主权 + skill 安全审查，供 daemon/mcp/orchestrator/skillopt 消费
 export { DataSovereigntyLogger, resolveSovereigntyLogPath, resolveDateArg, sanitizeRecord } from './data-sovereignty';
 export type { DataSovereigntyRecord, SovereigntyLogEntry } from './data-sovereignty';
 export { generateDailyReport, generateWeeklyReport, generateMonthlyReport, generateReport, aggregateStats } from './report-generator';
@@ -349,7 +349,7 @@ function parseArgs(argv: string[]): Args {
  * 从 cwd 往上查找 .git 目录，将 hooks/commit-msg 与 hooks/post-commit 模板复制到 .git/hooks/
  * 迁移：如果 .git/hooks/pre-commit 含 sofagent 标识，自动移除旧 hook
  *
- * v1.3.2 P0-RC3: hook 安装清单与 --init 对齐——installHook() 也安装 post-commit。
+ * v1.3.3 P0-RC3: hook 安装清单与 --init 对齐——installHook() 也安装 post-commit。
  * 老用户 `sofagent-audit --install-hook` 升级时不再 miss post-commit（--no-verify 绕过的唯一防线）。
  */
 function installHook(): void {
@@ -407,7 +407,7 @@ function installHook(): void {
   }
 
   // 安装单个 hook：备份旧文件 → 写入模板 → chmod 755
-  // v1.3.2 P0-RC3: commit-msg 与 post-commit 共用此逻辑，保证两个入口（--init / --install-hook）安装清单一致
+  // v1.3.3 P0-RC3: commit-msg 与 post-commit 共用此逻辑，保证两个入口（--init / --install-hook）安装清单一致
   function installOneHook(hookName: string, templatePath: string, destName: string): void {
     const destPath = join(hooksDir, destName);
     // v1.3.9: 覆盖前备份已有 hook（如果有）
@@ -429,7 +429,7 @@ function installHook(): void {
   }
 
   installOneHook('commit-msg', commitMsgTemplate, 'commit-msg');
-  // v1.3.2 P0-RC3: 补装 post-commit（--no-verify 绕过检测）
+  // v1.3.3 P0-RC3: 补装 post-commit（--no-verify 绕过检测）
   installOneHook('post-commit', postCommitTemplate, 'post-commit');
   console.log('   每次 git commit 时会自动运行 sofagent-audit 检查；post-commit 在提交后对账 --no-verify 绕过。');
   exit(0);
@@ -591,7 +591,7 @@ function confirm(question: string): Promise<boolean> {
 }
 
 /**
- * v1.3.2 (DP-1) 版本一致性自检——检测陈旧全局安装。
+ * v1.3.3 (DP-1) 版本一致性自检——检测陈旧全局安装。
  *
  * 原理：运行中的产物有自己的 package.json（与 dist/index.js 同级上层目录），
  * 读取其实际 version，与编译进代码的 VERSION 常量（来自 @sofagent/core/constants.ts）比对。
@@ -1250,7 +1250,7 @@ async function main(): Promise<void> {
     process.stderr.write('[sofagent-audit] 警告: 审计历史写入失败，跳过（不影响审计结果）\n');
   }
 
-  // 8.5 session 产物（P0：审计结果 session 可见性）——v1.3.2
+  // 8.5 session 产物（P0：审计结果 session 可见性）——v1.3.3
   if (!args.noSession) {
     try {
       const report = buildSessionReport(results, diffFiles, { task: args.task, commitSha });
@@ -1483,7 +1483,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
 
   // 扩展规则状态
   if (!results.rules.some((r) => r.number > 11)) {
-    // v1.3.2 P2-23: E3 已并入 A11（不滥资源），不再单独列出，避免用户误以为存在 E3 规则
+    // v1.3.3 P2-23: E3 已并入 A11（不滥资源），不再单独列出，避免用户误以为存在 E3 规则
     console.log('  扩展规则   未启用（E1 E2 E4 + A14-A17，config 中开启）');
   }
 

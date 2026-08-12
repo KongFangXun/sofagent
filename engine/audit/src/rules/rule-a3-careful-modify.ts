@@ -1,13 +1,12 @@
 // ============================================================
 // A3 不改越界（边界层 · 能力拐杖）
-// 🔴 v1.3.2 修：ruleClass 从 '业务底线' 改为 '能力拐杖'——与 index.ts 注册中心对齐
+// 🔴 v1.3.3 修：ruleClass 从 '业务底线' 改为 '能力拐杖'——与 index.ts 注册中心对齐
 // （A3 启发式检测误报率高，WARN 不硬拦，归「能力拐杖」；index.ts:46 SSOT）
 // 合并自旧 #7 谨慎修改 + R1 无关文件
 // diff 中是否有不在 --task 描述关键词范围内的文件
 // v0.95：文件路径匹配改用 basename 精确匹配，关键词匹配兼容 Unicode（中文路径）
 // 配置：LOW_RISK_PATTERNS 和阈值从 ctx.config 取值（三级 fallback）
 // ============================================================
-
 import { basename } from 'path';
 import type { AuditContext, RuleCheck } from './types';
 import type { AuditConfig } from '@sofagent/core';

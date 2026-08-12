@@ -1,5 +1,5 @@
 // ============================================================
-// worktree-merge-gate.ts · 审计合并卡关（v1.3.2 · 交付一）
+// worktree-merge-gate.ts · 审计合并卡关（v1.3.3 · 交付一）
 //
 // 流程：
 //   worktree.diff() → audit diff（复用 @sofagent/audit 现有规则，不新写）

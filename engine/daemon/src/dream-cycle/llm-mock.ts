@@ -1,11 +1,11 @@
 // ============================================================
 // dream-cycle/llm-mock.ts · LLMProvider mock 实现 + RealLLM 占位
-// v1.3.2 新增
+// v1.3.3 新增
 //
 // 铁律：Dream Cycle 任何 stage 不直接调 LLM SDK，必须经 LLMProvider。
-// v1.3.2 只实现 MockLLM——确定性输出（基于输入 hash），开发期验证
+// v1.3.3 只实现 MockLLM——确定性输出（基于输入 hash），开发期验证
 // pipeline 串接，避免烧钱不稳。RealLLM 只写类型签名，构造器抛
-// 用户可读错「本版仅支持 mock，v1.3.2 接入」。
+// 用户可读错「本版仅支持 mock，v1.3.3 接入」。
 // ============================================================
 import { createHash } from 'crypto';
 

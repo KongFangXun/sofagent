@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.2-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.3-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center">
@@ -181,13 +181,16 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 > 🔬 **外部独立实验证据**（非官方自测）：Joel Niklaus 的 harness-optimization 研究（[研究代码仓库](https://github.com/JoelNiklaus/harness-optimization)，数据见仓库内实验）显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**。详见 [THANKS.md](./docs/THANKS.md)。
 
-> 🧪 **工程可信度**：2017 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
+> 🧪 **工程可信度**：2100 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
 
-> 🧠 **v1.3.2 新能力**（按主题分组）：
-> - **Onboard Agent 完整版**：🔄 L2-L5 循环引擎（定位→修复→再跑→收敛，FORGE 产品化第二刀）
-> - **企业专属能力**：🎯 企业 eval 套件（金融/制造/供应链模板）· ⚡ workflow 批量自动生成（一次建 N 个 sub-agent）
-> - **模型与可观测**：🧩 模型接入插槽扩展（client_type）· 🎙️ FDE 梳理辅助（ontology 咨询式生成）· 🧵 LLM Trace 任务级轨迹
-> 详见 [v1.3.2 开发日志](./docs/changelog/v1.3/v1.3.2.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
+> 🧠 **v1.3.3 新能力**（按主题分组）：
+> - **L2 团队协作协议**：🤝 五大机制（共享态/意图广播/触发反应/冲突消解/反馈放大）· 🎯 建队机制（team.yml + team_broadcast / team_create MCP tool）
+> - **Refine Agent**：✨ 复用 Onboard 循环引擎换 L2 判据（Ontology → 质量规则集），从「能用」到「好用」
+> - **入口路由**：🚪 route_workflow MCP tool + workflow 节点 type 机器化（用户自有 Agent 协同判断）
+> - **主 agent 编排**：🧭 四合一角色（分发/监控/审计/通讯）· 自动入队 v1.3.2 生成的 sub-agent
+> - **进化闭环升级**：📈 Benchmark 驱动 Dream Cycle（evidence→hypothesis→Candidate→eval→accept/rollback，只动经验层）
+> - **审计留痕**：📜 DecisionLogEntry 加 evidence 字段 + DecisionKind 加 EVOLUTION/TEAM
+> 详见 [v1.3.3 开发日志](./docs/changelog/v1.3/v1.3.3.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 文档
 

@@ -1,6 +1,6 @@
 // ============================================================
 // enterprise-graph.ts · 企业编排图构建核心
-// v1.3.2 新建 · 功能 ⑥ 激活链 Phase 2 后半
+// v1.3.3 新建 · 功能 ⑥ 激活链 Phase 2 后半
 //
 // 从 workflow.yml 直接构建 LangGraph StateGraph：
 //   1. 读 workflow.yml → parseWorkflowYaml() → ParsedWorkflow

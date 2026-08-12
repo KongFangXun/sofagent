@@ -1,7 +1,7 @@
 ---
 name: sofagent
 slug: sofagent
-version: 1.3.2
+version: 1.3.3
 displayName: FDE Skill
 description: >
   FDE Skill——帮 FDE（前线部署工程师）更好完成企业 AI 落地的方法论 Skill。约束 Agent 行为、审计每次变更、沉淀经验。
@@ -150,7 +150,7 @@ metadata:
 
 ---
 
-## MCP 工具速查（v1.3.2 · 38 tools）
+## MCP 工具速查（v1.3.3 · 42 tools）
 
 > 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。
 

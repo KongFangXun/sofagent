@@ -1,15 +1,15 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.3.2 · 2026-08-11（UTC）· 🔄 Onboard Agent 完整版（L2-L5 · FORGE 产品化第二刀）+ 企业专属 eval 套件 + workflow 批量自动生成 + 模型接入插槽扩展 + FDE 梳理辅助 + LLM Trace 任务级轨迹
+> v1.3.3 · 2026-08-12（UTC）· 🤝 L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版 + 🧭 主 agent 编排 + 🚪 入口路由 + 📈 进化闭环升级 + 📜 evidence 字段
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
-## 现在在哪：v1.3.3（开发中）
+## 现在在哪：v1.3.4（开发中）
 
-> **v1.3.3 规划方向**：L2 团队协作协议（五大机制）+ Refine Agent 完整版 + 主 agent 编排 + 入口路由 + 进化闭环升级 + evidence 字段。
+> **v1.3.4 规划方向**：L3 组织能力市场（发布→发现→调用→评价→养护）。
 >
-> **v1.3.2 已于 2026-08-11 交付**——🔄 Onboard Agent 完整版（L2-L5 · FORGE 产品化第二刀）+ 🎯 企业专属 eval 套件 + ⚡ workflow 批量自动生成 + 🧩 模型接入插槽扩展 + 🎙️ FDE 梳理辅助（含 ontology 咨询式生成）+ 🧵 LLM Trace 任务级轨迹。详见 [v1.3.2 开发日志](./changelog/v1.3/v1.3.2.md) 和 [迭代历程](#迭代历程)。
+> **v1.3.3 已于 2026-08-12 交付**——🤝 L2 团队协作协议（五大机制：共享态/意图广播/触发反应/冲突消解/反馈放大）+ ✨ Refine Agent 完整版（复用 Onboard 循环引擎换 L2 判据）+ 🧭 主 agent 编排（四合一角色）+ 🚪 入口路由（route_workflow MCP tool）+ 📈 进化闭环升级（Benchmark 驱动 Dream Cycle，只动经验层）+ 📜 evidence 字段（DecisionLogEntry + DecisionKind 加 EVOLUTION/TEAM）。详见 [v1.3.3 开发日志](./changelog/v1.3/v1.3.3.md) 和 [迭代历程](#迭代历程)。
 
 > ✅ **企业采购阻塞项 · Webhook 推送已于 v1.2.1 交付**：v1.1.6 接通 webhook **PASS/WARN/FAIL 三态推送**，v1.2.1 补齐企业协同平台（飞书/钉钉/企微）完整 Webhook 推送能力（见 SECURITY.md「审计结果推送」）。采购阻塞项已解除。
 
@@ -83,7 +83,6 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.3.3** | 📋 规划中 | **L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版 + 🧭 主 agent 编排 + 🚪 入口路由**：① 协作协议——共享态/意图广播/触发反应/冲突消解/反馈放大 + 团队状态管理 ② Refine Agent——复用 Onboard 循环引擎，判据从 Ontology 换成质量规则集（好不好），五层一次交付 ③ 主 agent 四合一角色（分发/监控/审计/通讯）——编排 v1.3.2 批量生成的 sub-agent ④ **入口路由**（`route_workflow` MCP tool + workflow 节点 type 机器化）——用户自有 Agent（WorkBuddy/Codex）协同时判断请求是否命中 workflow 强化人/自动节点 → 进 workflow / 落回用户模型（模型分层 = 入口判断，2026-08-10 新增） | [日志](./changelog/v1.3/v1.3.3.md) |
 | **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价→养护）**：Skill/Agent/流程打包发布 + 目录检索 + 调用挂载 + 评分聚合（评分 × 调用量加权自然选择）+ 全程审计 + **养护环（owner 声明 + 失效退役 + 变更记录，GitHub 模式「持续养护」）** | [日志](./changelog/v1.3/v1.3.4.md) |
 | **v1.3.5** | 📋 规划中 | **自进化与运维闭环（MCP 覆盖度审计缺口补全）**：`run_ab_test` / `promote_ab`（晋升强制人审）+ `snapshot_list` / `snapshot_restore`（恢复强制人审） | [日志](./changelog/v1.3/v1.3.5.md) |
 | **v1.3.6** | 📋 规划中 | **🔌 引擎接口外化完整版（模型层接入前置 · 原 v2.0 前移）**：① Workflow 标准格式 + 运行容器（JSON Schema + MCP `workflow_submit`）② Ontology 注册接口（MCP `ontology_import` + D1-D5 审计）③ **SubAgent 托管 SDK**（`harness.wrap` 包装 LangGraph 自定义 Agent → 自动获得审计/审批/身份/Trace，createReactAgent + 纯 StateGraph 双形态——模型层 sub-agent 托管的落点）④ **模型注册 + 灰度切换**（`model_register` / `model_switch`，评测 → 注册 → 灰度 → 晋升全流程审计 + 强制人审；`source: 'local-path'` 扩展位预留，企业专属模型本地权重部署在 v1.4.1 填充；**通用模型路由不自研——企业挂第三方 model router（LiteLLM/OpenRouter），sofagent 只保留数据主权路由 + 注册/灰度/退役，2026-08-10 补充**）⑤ **训练协议三约定 + 训练预算控制（B2 决策前移自 v1.4.1，2026-08-12）**——双栈架构契约（Node 控制面 spawn Python + stdout JSON 流 + SIGINT 控制）+ 成本透明（超预算暂停 + 人审），让 C13 PoC 客户更早接入 ——**训练语料导出三件套已移至 v1.4.1 训练引擎**（2026-08-10 决策已定：训练相关内容统一从 v1.4.x 开始） | [日志](./changelog/v1.3/v1.3.6.md) |

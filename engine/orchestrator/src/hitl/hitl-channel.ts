@@ -1,6 +1,6 @@
 // ============================================================
 // hitl/hitl-channel.ts · Storage-backed HITL 异步人工确认通道
-// v1.3.2 P3b 新增：把 HITL 从「readline 阻塞等终端输入」改为
+// v1.3.3 P3b 新增：把 HITL 从「readline 阻塞等终端输入」改为
 // 「写请求文件 → 图挂起 → 外部信号触发 → resume」
 //
 // 设计（借鉴 Mastra suspend/resume）：

@@ -1,8 +1,8 @@
-// notify.ts · daemon 通知模块（v1.3.2）
+// notify.ts · daemon 通知模块（v1.3.3）
 // 所有 daemon 对外通知统一走此模块，确保 sofagent 品牌归属
 // ============================================================
 
-const VERSION = '1.3.2';
+const VERSION = '1.3.3';
 
 /** 通知级别 */
 export type NotifyLevel = 'info' | 'warn' | 'error';

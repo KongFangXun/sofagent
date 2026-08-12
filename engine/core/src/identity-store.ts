@@ -1,5 +1,5 @@
 // ============================================================
-// identity-store.ts · Agent 身份注册表（v1.3.2 交付 6）
+// identity-store.ts · Agent 身份注册表（v1.3.3 交付 6）
 //
 // 身份码本地持久化：JSON 存储于 data/identity/identities.json
 //（走 core resolveDataDir()——SOFAGENT_HOME 可被环境变量覆盖，测试可隔离）。
@@ -7,7 +7,6 @@
 // API：register / get / list / revoke（撤销标记 revoked:true）。
 // 注册同一 agentId 时覆盖更新（幂等——activate 重复执行不产生重复记录）。
 // ============================================================
-
 import { existsSync, readFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { atomicWriteSync } from './shared/atomic-write';

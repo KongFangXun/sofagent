@@ -1,13 +1,13 @@
 // ============================================================
-// builtin-agents.ts · 预装 Agent 定义（v1.3.2）
+// builtin-agents.ts · 预装 Agent 定义（v1.3.3）
 //
 // 每个 Agent 的 systemPrompt 来自 SKILL/agents/<name>/ 下的
 // Agency Agents 格式 .md 文件。createReactAgent 启动时读取文件、
 // 剥离 frontmatter、注入为 system prompt。
 //
 // 如果文件找不到（如 npm 全局安装路径不同），回退到硬编码精简版。
-// v1.3.2：迁移至 @sofagent/orchestrator
-// v1.3.2 P0-R2: npm 全局安装后 __dirname 不再是仓库内相对位置，
+// v1.3.3：迁移至 @sofagent/orchestrator
+// v1.3.3 P0-R2: npm 全局安装后 __dirname 不再是仓库内相对位置，
 //   包相对路径（多层上级目录拼 SKILL）会失效。新增 SOFAGENT_REPO_ROOT
 //   环境变量作为最高优先级解析：git clone 安装场景下显式指定仓库根，
 //   即可让 npm 全局安装的 orchestrator 也能加载 SKILL/agents 的 md。

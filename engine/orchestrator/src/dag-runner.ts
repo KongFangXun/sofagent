@@ -1,13 +1,13 @@
 // ============================================================
 // dag-runner.ts · 编排执行器（createReactAgent SubAgent 调度）
-// v1.3.2 新增 · v1.2.0 迁移至 LangGraph createReactAgent（方案 B）
+// v1.3.3 新增 · v1.2.0 迁移至 LangGraph createReactAgent（方案 B）
 // ============================================================
 //
 // ⚠️ 命名说明：文件名 dag-runner 指向最终目标（DAG 并行调度），
-//    v1.3.2 当前实现为**串行状态机**——主 Agent 按 depends_on
+//    v1.3.3 当前实现为**串行状态机**——主 Agent 按 depends_on
 //    顺序委派 Sub Agent，无依赖的节点可同步并行（取决于 LLM
 //    是否在一次回复中发出多个 task 调用）。完整 DAG 并行调度
-//    + 沙箱隔离规划在 v1.3.2。
+//    + 沙箱隔离规划在 v1.3.3。
 //
 // 把 compose 产出的 workflow YAML 真正跑起来：
 //   1. parseWorkflowYaml → SubAgentConfig[]（workflow-parser）

@@ -1,5 +1,5 @@
 // ============================================================
-// workspace-summary.ts · Workspace 变更摘要（v1.3.2 · 交付五）
+// workspace-summary.ts · Workspace 变更摘要（v1.3.3 · 交付五）
 //
 // daemon 在编排引擎运行结束后，自动记录创建/修改/删除的文件清单，
 // 写入 data/dashboard/workspace-changes.jsonl（只记文件路径列表，
