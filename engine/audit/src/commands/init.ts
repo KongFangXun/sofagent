@@ -546,41 +546,58 @@ SOFAGENT_HOME="\${SOFAGENT_HOME:-\$HOME/.sofagent}"
 HISTORY_FILE="$SOFAGENT_HOME/data/audit/history.jsonl"
 if [ ! -f "$HISTORY_FILE" ]; then exit 0; fi
 
-# 当前 commit SHA
+# 当前 commit SHA（= 已创建的新提交自身）
 COMMIT_SHA=$(git rev-parse HEAD 2>/dev/null)
 if [ -z "$COMMIT_SHA" ]; then exit 0; fi
 
-# commit hash 对账：检查当前 commit SHA 是否在审计记录中
-node -e "
-const fs = require('fs');
-const lines = fs.readFileSync('$HISTORY_FILE', 'utf-8').trim().split('\\n').filter(Boolean);
+# v1.3.3 #13: 父提交 SHA——用于和 commit-msg hook 记录的 parentSha 对账。
+# commit-msg hook 在 commit 对象生成前运行，记录的 parentSha = 审计时 HEAD = 新提交的父提交。
+# post-commit 在 commit 生成后运行，HEAD = 新提交自身，因此需取 HEAD^ 才能对上 parentSha。
+# 首次提交无父（unborn HEAD 场景）：HEAD^ 不存在，git rev-parse 返回非零并把字面量 "HEAD^"
+# 写到 stdout（而非空串），必须检查退出码而非判空，否则兜底失效。
+PARENT_SHA=''
+if git rev-parse HEAD^ >/dev/null 2>&1; then
+  PARENT_SHA=$(git rev-parse HEAD^ 2>/dev/null)
+fi
+if [ -z "\$PARENT_SHA" ]; then
+  PARENT_SHA='4b825dc642cb6eb9a060e54bf8d69288fbee4904'
+fi
+
+# v1.3.3 #17E: SHA / 路径通过 process.env 传入 node -e，不再字符串拼接（命令注入加固）
+# commit hash 对账：检查当前 commit 是否在审计记录中有对应条目
+COMMIT_SHA="$COMMIT_SHA" PARENT_SHA="$PARENT_SHA" HISTORY_FILE="$HISTORY_FILE" node -e '
+const fs = require("fs");
+const COMMIT_SHA = process.env.COMMIT_SHA;
+const PARENT_SHA = process.env.PARENT_SHA;
+const HISTORY_FILE = process.env.HISTORY_FILE;
+if (!HISTORY_FILE) process.exit(0);
+const lines = fs.readFileSync(HISTORY_FILE, "utf-8").trim().split("\\n").filter(Boolean);
 if (lines.length === 0) process.exit(0);
 try {
   // 反向查找（最新记录在末尾）
-  // 匹配规则（v1.2.9 ）：
-  //   1. commitSha 精确匹配（手动 --diff 场景记录）
-  //   2. parentSha 匹配（commit-msg hook 场景记录——commitPhase='pre-commit'，
-  //      parentSha = 审计时 HEAD = 新提交的父提交，见 engine/audit/src/index.ts）
+  // 匹配规则（v1.3.3 #13 修正）：
+  //   1. commitSha 精确匹配（手动 --diff 场景记录，HEAD 已存在）
+  //   2. commitPhase=pre-commit 记录：parentSha = 审计时 HEAD = 新提交的父提交，
+  //      post-commit 用 HEAD^（当前提交的父）与之对账——父子关系正确匹配。
   //   旧记录无 parentSha/commitPhase 字段时规则 2 不生效，行为与旧版一致。
   for (let i = lines.length - 1; i >= 0; i--) {
     const entry = JSON.parse(lines[i]);
-    const entryCommit = entry.commitSha || '';
-    if (entryCommit === '$COMMIT_SHA') {
+    const entryCommit = entry.commitSha || "";
+    if (entryCommit === COMMIT_SHA) {
       process.exit(0);  // 找到匹配——审计已运行
     }
-    if (entry.commitPhase === 'pre-commit' && entry.parentSha === '$COMMIT_SHA') {
-      process.exit(0);  // pre-commit 记录按父提交 SHA 匹配——审计已运行
+    if (entry.commitPhase === "pre-commit" && entry.parentSha === PARENT_SHA) {
+      process.exit(0);  // pre-commit 记录按父提交 SHA 对账命中——审计已运行
     }
   }
-  // 未找到匹配——可能 --no-verify 绕过或 hook 失效
-  console.log('');
-  console.log('  ⚠️ [sofagent] 当前 commit 未找到审计记录。');
-  console.log('  可能使用了 --no-verify 绕过审计 hook。');
-  console.log('  运行 sofagent-audit --verify-commit $COMMIT_SHA 确认。');
+  // 未找到匹配——降级为 INFO 提示（避免狼来了）。真绕过仍由 --verify-commit 复核。
+  console.log("");
+  console.log("  ℹ️ [sofagent] 未确认审计记录（post-commit 对账未命中）。");
+  console.log("  如未使用 --no-verify 可忽略；如需确认运行 sofagent-audit --verify-commit " + COMMIT_SHA);
 } catch (e) {
   // 解析失败不影响提交
 }
-" 2>/dev/null
+' 2>/dev/null
 
 exit 0
 `;
@@ -595,6 +612,9 @@ exit 0
         // 改为检查版本号：v1.0.7 及以下 → 覆盖为当前版本；v1.0.8 及以上 → 跳过
         // v1.3.1 #13: 额外验证 hook 内容含审计对账逻辑（占坑 hook 防护）
         const hasAuditCall = pcContent.includes('sofagent-audit') || pcContent.includes('HISTORY_FILE') || pcContent.includes('verify-commit');
+        // v1.3.3 #13: 旧版 post-commit 用 $COMMIT_SHA 对账 parentSha（永远不匹配，假阳性），
+        // v1.3.3 改为 HEAD^ + process.env.PARENT_SHA。检测旧逻辑标记以强制覆盖 v1.2.9–v1.3.2。
+        const hasNewPARENT_SHALogic = pcContent.includes('PARENT_SHA');
         const versionMatch = pcContent.match(/v(\d+)\.(\d+)\.(\d+)/);
         if (versionMatch) {
           const major = parseInt(versionMatch[1]!, 10);
@@ -602,10 +622,13 @@ exit 0
           const patch = parseInt(versionMatch[3]!, 10);
         // v1.2.9: post-commit 大改（路径+对账机制），强制覆盖 1.2.7 及以下
         // v1.2.9 对账逻辑适配 parentSha，强制覆盖 1.2.8 及以下（否则 A8 误报自愈不生效）
-        if (major < 1 || (major === 1 && (minor < 2 || (minor === 2 && patch < 9)))) {
+        // v1.3.3 #13: parentSha 对账根因修复（HEAD^ + PARENT_SHA），强制覆盖 1.3.2 及以下
+        if (major < 1 || (major === 1 && (minor < 3 || (minor === 3 && patch < 3)))) {
             hasPostCommitHook = false;  // 旧版本 → 覆盖
           } else if (!hasAuditCall) {
             hasPostCommitHook = false;  // 版本达标但无审计对账逻辑 → 占坑 hook，覆盖
+          } else if (!hasNewPARENT_SHALogic) {
+            hasPostCommitHook = false;  // 版本达标但仍是旧 $COMMIT_SHA 对账逻辑 → 覆盖为 HEAD^ 修复版
           } else {
             hasPostCommitHook = true;   // 当前版本或更新 → 保留
           }
