@@ -136,4 +136,4 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 **v1.3.2 发版后的自迭代记录**（示例，每次发版后追加一条）：
 
 - **步骤 3 新增**（审查三文档回写）：阶段五管代码质量，本步骤管发版流程——v1.3.2 阶段十一~十二暴露的 3 个问题（日期硬编码/警戒线多处同步/npm workspace 限制）进了 regression-checklist 95-97
-- **阶段十一待拍板**：npm 先行策略（SOP 写的）vs tag 先行策略（v1.3.2 实际走的）——两种都合法，需项目负责人确认用哪种后统一 SOP
+- **阶段十一策略统一**：从 npm 先行改为 tag 先行（push main → 等 CI → tag → release auto-publish → 手动 publish 10 包）——v1.3.2 实际验证，tag 一定指向 CI 全绿 commit 更安全

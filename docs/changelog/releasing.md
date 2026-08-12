@@ -21,7 +21,7 @@
 - [ ] 九 · 工具脚本健康检查 → [09-tool-health.md](./releasing/09-tool-health.md)
 - [ ] 十 · 确认关口 → [10-confirm.md](./releasing/10-confirm.md)
 - [ ] 十一 · 发布（项目负责人或授权 AI）→ [11-publish.md](./releasing/11-publish.md)
-- [ ] 十二 · 发布后 → [12-post-publish.md](./releasing/12-post-publish.md)
+- [ ] 十二 · 发布后（验证 + 三文档回写 + SOP 自迭代 + 下版 prompt）→ [12-post-publish.md](./releasing/12-post-publish.md)
 
 > **铁律**：阶段六 verdict=PASS 前，不进阶段七~八。FAIL 回阶段五修复后重跑。
 >
