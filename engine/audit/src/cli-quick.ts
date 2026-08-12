@@ -258,7 +258,9 @@ export function runCliQuick(argv: string[]): number {
   }
 
   // 6. 运行审计规则（quick 模式：silent=true，零日志依赖）
-  const result = runRules(diffFiles, [], 'quick-audit', false, true);
+  // v1.3.3 #8: quickMode=true 标记——A3（不改越界）见到跳过：quick 模式无真实任务描述，
+  // task='quick-audit' 与任何文件都不匹配，必然 100% 误报越界 WARN。
+  const result = runRules(diffFiles, [], 'quick-audit', false, true, undefined, undefined, undefined, false, true);
 
   // 7. 格式化输出
   const output = generateQuickOutput(result, commitSha);

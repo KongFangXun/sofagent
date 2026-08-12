@@ -16,6 +16,17 @@ describe('A3 不改越界', () => {
     expect(result.details[0]).toContain('未提供');
   });
 
+  it('quick 模式（quickMode=true）→ PASS（v1.3.3 #8：quick 无真实任务描述，跳过越界检查）', () => {
+    // quick 模式 task='quick-audit' 占位值与任何文件都不匹配，必然 100% 误报 → 跳过
+    const ctx = makeCtx(
+      [makeDiffFile('src/index.ts'), makeDiffFile('src/auth.ts')],
+      { task: 'quick-audit', quickMode: true }
+    );
+    const result = checkRuleA3(ctx);
+    expect(result.status).toBe('PASS');
+    expect(result.details[0]).toContain('quick 模式跳过');
+  });
+
   it('任务描述含英文文件名 + diff 文件匹配 → PASS', () => {
     const ctx = makeCtx(
       [makeDiffFile('src/components/login.tsx')],

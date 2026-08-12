@@ -136,6 +136,13 @@ export function checkRuleA3(ctx: AuditContext): RuleCheck {
     ruleClass: '能力拐杖',  // v1.3.1 修：与 index.ts SSOT 对齐（启发式检测误报率高，WARN 不硬拦）
   };
 
+  // v1.3.3 #8: quick 模式（cli-quick 零配置审计）无真实任务描述，task 占位值
+  // 与任何文件都不匹配，越界检查必然 100% 误报 → 直接跳过。
+  if (ctx.quickMode) {
+    rule.details.push('quick 模式跳过越界检查（无真实任务描述，需 --init 安装 hook 走完整审计）');
+    return rule;
+  }
+
   // 确定低风险模式和阈值——优先用 config，fallback 到硬编码默认值
   const effectiveConfig: AuditConfig = config ?? DEFAULT_CONFIG;
   const lowRiskRegexes = compileLowRiskPatterns(effectiveConfig.lowRiskPatterns);

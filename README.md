@@ -38,7 +38,7 @@ graph LR
 | 变更审计 | 无 | git diff 24 条规则，硬证据判定 |
 | 越界拦截 | 靠 prompt 自觉 | 违规当场阻断 + 审计留证 |
 | 出事回滚 | 手动翻 commit | 一键快照回到任意节点 |
-| 经验积累 | 每次从零开始 | 自动沉淀进知识库（开发中，进化闭环在 v1.3.x 持续打磨） |
+| 经验积累 | 每次从零开始 | 自动沉淀进知识库（think.md + Dream Cycle + skillopt，v1.3.x 持续增强） |
 
 ## 核心特性
 
@@ -75,7 +75,7 @@ graph LR
 - 📜 **SKILL.md**——唯一主入口，由你的 AI 工具加载：按阶段路由到对应子 Skill，岗位规范按任务类型自动注入（梳理 / 审计 / 编排）
 - 🧩 **阶段子 Skill**——进场 → 深挖 → 量化 → 交付 → 离场五步闭环（`01-entry` → `05-exit`），每一步该做什么、交付什么都定义清楚
 - 🔒 **harness 约束骨架**——entry-gate / fde-template / engage / loop-check / task-closure…，从进场到离场每一步都有对应的约束模板
-- 🧬 **经验自动沉淀（开发中）**——think.md 反思 + knowledge 维护，每次任务的经验教训自动进知识库，进化闭环在 v1.3.x 持续打磨
+- 🧬 **经验自动沉淀**——think.md 反思 + knowledge 维护，每次任务的经验教训自动进知识库
 
 > 部署的不是裸 Agent，是**带约束骨架的 Agent**——约束是建议性的，审计是强制性的：Agent 可以不遵守约束，但每次变更都逃不过审计。
 
@@ -93,7 +93,7 @@ graph LR
 > |------|------|------|--------|
 > | **终端版** | `sofagent-dashboard --full` | 终端 ASCII 三栏（零前端依赖） | 开发者 / FDE 快速看 |
 > | **Web 版** | `node tools/serve-dashboard.mjs` | 浏览器可视化（localhost:3780） | 老板 / IT 可视化看 |
-> | **macOS 双击** | 双击 `start-dashboard.command` | Web 版的 macOS 快捷方式 | macOS 用户 |
+> | **macOS 双击** | 双击 `start-dashboard.command` | Web 版的 macOS 快捷方式（仅 macOS 双击入口） | macOS 用户 |
 >
 > ⚠️ **Dashboard 是已用用户的运维面板，不是首次体验入口。** 数据源是 `~/.sofagent/data/` 下的审计记录——没跑过 `sofagent-audit` 就没数据（Web 版降级显示示例数据）。第一次用？先在你的项目里跑 `npx -y -p @sofagent/audit sofagent-audit`，跑完 Dashboard 才有真实数据。
 
@@ -106,6 +106,8 @@ npx -y -p @sofagent/audit sofagent-audit
 ```
 
 > 💡 `sofagent-audit` 是 quick 只读审计（审计最近一次 commit，默认安全无副作用）；`sofagent-audit-full` 是完整审计，需显式指定操作（如 `--diff <range>` / `--init` 等）。
+>
+> ⚠️ **quick 模式范围**：quick 是零配置快速审计，**不扫 commit message 注入（A9）**、**不做任务越界检查（A3）**——这两项依赖 commit message / 任务描述，quick 模式无此输入。完整防护（commit msg 注入拦截 + 越界检查 + hook 自动审计）需 `--init` 安装 git hook 走完整引擎。详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
 
 拦截特定格式密钥泄漏时是这样的（真实输出）：
 
@@ -171,7 +173,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 |------|----------------|----------|
 | 核心问题 | 怎么造 Agent | **AI 该放在哪**（先梳理再部署） |
 | 安全保障 | 靠 prompt 约束 | git diff 硬证据审计 + 运行时拦截 + 一键回滚 |
-| 知识积累 | 从零开始 | 经验自动沉淀进 knowledge 知识库（开发中，进化闭环在 v1.3.x 持续打磨） |
+| 知识积累 | 从零开始 | 经验自动沉淀进 knowledge 知识库（think.md + Dream Cycle，v1.3.x 持续增强） |
 | 数据主权 | 云端托管 | 缺省全量本地，可选联邦查询 |
 | 部署方式 | 学新平台 | 装进你已有的 AI 工具（Claude Code / Cursor / WorkBuddy…） |
 
@@ -182,9 +184,9 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 > 🧪 **工程可信度**：2016 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
 
 > 🧠 **v1.3.2 新能力**（按主题分组）：
-> - **运行时层**：Ontology 运行时层（Action 注册表 + 执行前校验 + Schema 定稿）· 并行编排（波次并发 + 审计卡关 + MergeQueue）· Durable Execution（checkpoint 续跑 + 幂等）
-> - **身份与评测**：Agent 身份码 Ed25519 · 📊 Benchmark 评测（`evaluate`）· 🚀 Onboard Agent L1（`loop_debug`）
-> - **治理与可观测**：🔒 工具审批四模式 · 📜 LLM 调用级 Trace · 🔄 错误处理（stop_reason + 退避）· 📚 L4 渐进加载 · 国标对齐 GB/T 48000.3-2026（`--gb48000`）
+> - **Onboard Agent 完整版**：🔄 L2-L5 循环引擎（定位→修复→再跑→收敛，FORGE 产品化第二刀）
+> - **企业专属能力**：🎯 企业 eval 套件（金融/制造/供应链模板）· ⚡ workflow 批量自动生成（一次建 N 个 sub-agent）
+> - **模型与可观测**：🧩 模型接入插槽扩展（client_type）· 🎙️ FDE 梳理辅助（ontology 咨询式生成）· 🧵 LLM Trace 任务级轨迹
 > 详见 [v1.3.2 开发日志](./docs/changelog/v1.3/v1.3.2.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 文档

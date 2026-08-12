@@ -104,6 +104,8 @@ export interface AuditContext {
   config?: AuditConfig;
   /** v1.0.9: 窗口内历史审计记录（A17 跨审计聚合用） */
   history?: { timestamp: string; diffFileCount: number }[];
+  /** v1.3.3 #8: quick 模式标记（cli-quick 零配置审计）——A3 见到跳过越界检查（无任务描述必然误报） */
+  quickMode?: boolean;
 }
 
 /**

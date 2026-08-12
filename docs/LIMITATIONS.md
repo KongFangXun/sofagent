@@ -224,6 +224,8 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API �
 
 > ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文"忽略类"指令、英文"ignore 类"指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），**v1.3.2 评估覆盖**——L3 自动定位（LLM 推理）可检测正则覆盖不了的语义级注入。
 
+> ⚠️ **A9 commit msg 检测仅 full 模式生效（v1.3.3）**：A9 扫描 commit message 中的注入指令，需要 commit message 作为输入。quick 模式（`npx sofagent-audit`，零配置审计最近一次 commit）**不读 commit message**，A9 在 quick 模式完全不生效。同理 A3（不改越界）依赖任务描述，quick 模式无此输入 → v1.3.3 起 quick 模式跳过 A3（避免占位 task 'quick-audit' 100% 误报越界）。完整防护（A9 commit msg 注入拦截 + A3 越界检查）需 `--init` 安装 git hook 走完整引擎，或手动 `sofagent-audit --diff <range> --commit-msg <msg>`。
+
 ---
 
 ### A2 密钥检测局限——编码与格式绕过（v1.2.5 披露）

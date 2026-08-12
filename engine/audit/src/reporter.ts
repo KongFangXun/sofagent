@@ -62,6 +62,7 @@ export function productSignature(exitCode: number, ruleCount: number): string {
  * @param config 审计配置（.sofagent/config.yml 加载，三级 fallback）
  * @param history 历史审计记录（可选；不传则 runner 自动从文件加载）
  * @param gb48000 v1.3.1 交付 2：国标对齐 GB/T 48000.3-2026 维度（opt-in 默认 false）
+ * @param quickMode v1.3.3 #8：quick 模式标记（cli-quick 零配置审计），A3 见到跳过越界检查
  */
 export function runRules(
   diffFiles: DiffFile[],
@@ -72,7 +73,8 @@ export function runRules(
   commitMsg?: string,
   config?: AuditConfig,
   history?: AuditHistoryEntry[],
-  gb48000?: boolean
+  gb48000?: boolean,
+  quickMode?: boolean,
 ): AuditResult {
-  return runRulesWithFastFail(diffFiles, logEntries, task, strict, silent, commitMsg, config, history, gb48000);
+  return runRulesWithFastFail(diffFiles, logEntries, task, strict, silent, commitMsg, config, history, gb48000, quickMode);
 }

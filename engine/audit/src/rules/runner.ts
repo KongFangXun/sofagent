@@ -126,11 +126,12 @@ export function runRules(
   config?: AuditConfig,
   history?: AuditHistoryEntry[],
   gb48000?: boolean,
+  quickMode?: boolean,
 ): AuditResult {
   // v1.1.0 修复(F2)：ctx.history 此前从未赋值，导致 A17 跨审计聚合（基于窗口内历史累计文件数）
   // 成为死代码。调用方显式传入 history 则优先；否则自动从审计历史加载。
   const auditHistory = history ?? loadHistory();
-  const ctx: AuditContext = { diffFiles, logEntries, task, strict, silent, commitMsg, config, history: auditHistory };
+  const ctx: AuditContext = { diffFiles, logEntries, task, strict, silent, commitMsg, config, history: auditHistory, quickMode };
   const results: RuleCheck[] = [];
 
   // 根据 config.extendedRulesEnabled 决定运行哪些规则
