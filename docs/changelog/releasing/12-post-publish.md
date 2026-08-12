@@ -8,12 +8,13 @@
 |:--:|------|------|
 | 1 | **发布后验证**（见下方脚本） | 全绿 |
 | 2 | CI 全绿检查 | CI 全绿 |
-| 3 | 流程漏洞吸收：本次迭代暴露的流程问题直接吸收进本 SOP 对应阶段 | SOP 更新 |
-| 4 | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
-| 5 | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
-| 6 | **开发 Prompt 校验循环**（详见下方） | prompt 定稿 |
-| 7 | **下版本内容对话讲解**（详见下方） | 项目负责人理解下版本方向 |
-| 8 | **进度追踪清零**：把 `releasing.md` 进度追踪的 12 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备 | 进度追踪重置 |
+| 3 | **审查三文档回写**：发版过程（阶段六~十一）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段五分工：阶段五管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等） | 三文档更新 |
+| 4 | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
+| 5 | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
+| 6 | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
+| 7 | **开发 Prompt 校验循环**（详见下方） | prompt 定稿 |
+| 8 | **下版本内容对话讲解**（详见下方） | 项目负责人理解下版本方向 |
+| 9 | **进度追踪清零**：把 `releasing.md` 进度追踪的 12 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备 | 进度追踪重置 |
 
 ---
 
@@ -44,7 +45,7 @@ bash tools/check-version.sh        # 期望全绿
 
 ---
 
-## 开发 Prompt 校验循环（步骤 6）
+## 开发 Prompt 校验循环（步骤 7）
 
 ```
 ① 跑 ./tools/check-dev-prompt.sh ~/Desktop/vX.Y-dev-prompt.md（查"引用的东西存不存在"）
@@ -64,7 +65,7 @@ bash tools/check-version.sh        # 期望全绿
 
 ---
 
-## 下一版本开发 Prompt 生成说明（步骤 5）
+## 下一版本开发 Prompt 生成说明（步骤 6）
 
 > 来源：下一版本的「开发日志」——在 `docs/changelog/` 中查找（若不存在则先按下方流程补建）。辅助输入：`ROADMAP.md`（未来去哪 / 规划）+ `CHANGELOG.md`（版本索引）。
 
@@ -73,7 +74,7 @@ bash tools/check-version.sh        # 期望全绿
 2. 读 `CHANGELOG.md` 确认下一版本号与索引条目
 3. 读 `docs/changelog/v<major>.<minor>/vX.Y.md`（下一版本开发日志，若存在）—— 这是开发 prompt 的主体来源
 4. 综合上述，生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`（结构：问题描述 → 修复方案 → 验证方式 → 发布检查清单）
-5. 跑步骤 6 校验循环
+5. 跑步骤 7 校验循环
 
 **若下一版本 changelog 尚未创建**：
 1. 先写新版本需求，产出 `docs/changelog/v<major>.<minor>/vX.Y.md`
@@ -81,9 +82,9 @@ bash tools/check-version.sh        # 期望全绿
 
 ---
 
-## 下版本内容对话讲解（步骤 7）
+## 下版本内容对话讲解（步骤 8）
 
-> prompt 文件是给 AI 执行用的（精确的技术指令），但项目负责人（人）需要的是**用"人话"理解下版本要干什么**。步骤 7 在 prompt 定稿后，用对话形式向项目负责人讲解三个问题，帮助其理解方向、做出决策。
+> prompt 文件是给 AI 执行用的（精确的技术指令），但项目负责人（人）需要的是**用"人话"理解下版本要干什么**。步骤 8 在 prompt 定稿后，用对话形式向项目负责人讲解三个问题，帮助其理解方向、做出决策。
 
 **讲解三个问题**（用大白话，不堆术语）：
 
@@ -101,7 +102,7 @@ bash tools/check-version.sh        # 期望全绿
 
 ---
 
-## 进度追踪清零（步骤 8）
+## 进度追踪清零（步骤 9）
 
 > 本版本发版流程全部完成后，最后一步——把 `releasing.md` 进度追踪的 12 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备。
 
