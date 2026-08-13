@@ -163,7 +163,7 @@
 | 项 | 值 |
 |----|-----|
 | 当前版本 | **v1.3.3**（2026-08-12） |
-| 下一版 | v1.3.3（规划中，参见 docs/ROADMAP.md） |
+| 下一版 | v1.3.4（规划中，参见 docs/ROADMAP.md） |
 | 测试覆盖 | 2100 测试 / 12 包（测试统计标准：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，见 check-test-count.sh） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1-E2/E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
