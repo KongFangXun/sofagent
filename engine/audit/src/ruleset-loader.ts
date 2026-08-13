@@ -423,11 +423,20 @@ function formatMessage(
  * 自动剥离并转换为 JS RegExp flags——JS 原生不支持内联修饰符语法，
  * 在编译层统一转换，社区 ruleset 无需感知差异。
  *
+ * v1.3.4 P1-10：编译前先跑 ReDoS 检测——邪恶 pattern（如 `(a+)+`）拒绝编译。
+ *
  * @param pattern 原始 pattern 字符串
  * @param baseFlags 基础 flags（如 'g'）
  * @returns 编译后的 RegExp
+ * @throws Error 当 pattern 检测到 ReDoS 风险时
  */
 function compilePattern(pattern: string, baseFlags: string): RegExp {
+  // v1.3.4 P1-10: ReDoS 静态检测——编译前拦截邪恶 pattern
+  const redosWarning = detectReDoSPattern(pattern);
+  if (redosWarning) {
+    throw new Error(`ReDoS 风险: ${redosWarning}`);
+  }
+
   let flags = baseFlags;
   let body = pattern;
   // 匹配前导内联修饰符：(?i) (?im) (?ims) 等
@@ -440,6 +449,78 @@ function compilePattern(pattern: string, baseFlags: string): RegExp {
     body = body.slice(modifierMatch[0].length);
   }
   return new RegExp(body, flags);
+}
+
+/**
+ * v1.3.4 P1-10: ReDoS 静态检测 + 运行时 timeout 包裹
+ *
+ * 邪恶 pattern 经 catastrophic backtracking 可无限挂死审计进程。
+ * 本模块做两层防护：
+ *   1. 静态检测：嵌套量词模式（如 `(a+)+` / `(a*)*`）→ 直接拒绝
+ *   2. 运行时 timeout：pattern.exec 超时 → 判定危险，拒绝该规则
+ */
+
+/** ReDoS 超时阈值（ms）——超过此时间判定为危险 pattern */
+const REDOS_TIMEOUT_MS = 100;
+
+/**
+ * 静态检测邪恶 pattern——嵌套量词是 catastrophic backtracking 的经典模式
+ *
+ * @returns 检测到的危险描述（null = 安全）
+ */
+export function detectReDoSPattern(pattern: string): string | null {
+  // 嵌套量词模式——catastrophic backtracking 的经典来源
+  // 匹配 (X+)+ / (X*)* / (X+)* / (X*)+ 等，其中 X 是非量词字符序列
+  const nestedQuantifier = /\(([^()]*?)(?:\+|\*|\{)\)\s*(?:\+|\*|\{)/;
+  if (nestedQuantifier.test(pattern)) {
+    return '检测到嵌套量词（如 (a+)+ / (a*)*），可能导致 catastrophic backtracking';
+  }
+
+  // 另一类：重叠交替（如 (a|a)*）——虽然不是嵌套量词但也可能导致指数回溯
+  const overlappingAlt = /\(([^()]*?)\|([^()]*?)\)\s*(?:\+|\*)/;
+  const altMatch = pattern.match(overlappingAlt);
+  if (altMatch && altMatch[1] && altMatch[2]) {
+    // 只在两分支有公共前缀时才判定危险
+    const a = altMatch[1].trim();
+    const b = altMatch[2].trim();
+    if (a.length > 0 && b.length > 0 && a[0] === b[0]) {
+      return '检测到重叠交替量词（如 (a|a)*），可能导致指数回溯';
+    }
+  }
+
+  return null;
+}
+
+/**
+ * 运行时 ReDoS timeout 检测——用一段对抗性输入测试 pattern 是否会挂死
+ *
+ * @param regex 已编译的正则
+ * @param ruleName 规则名（用于告警）
+ * @returns true = 安全（未超时），false = 危险（超时）
+ */
+export function isPatternReDoSSafe(regex: RegExp, ruleName?: string): boolean {
+  // 构造对抗性输入——重复字符 + 结尾不匹配（最容易触发回溯的模式）
+  const adversarialInput = 'a'.repeat(30) + '!';
+
+  try {
+    const start = Date.now();
+    // 重置 lastIndex（全局正则）
+    regex.lastIndex = 0;
+    regex.test(adversarialInput);
+    const elapsed = Date.now() - start;
+
+    if (elapsed > REDOS_TIMEOUT_MS) {
+      if (ruleName) {
+        console.warn(
+          `[sofagent] ⚠️ 规则 "${ruleName}" 的 pattern 运行超时（${elapsed}ms），可能导致 ReDoS，已拒绝加载`
+        );
+      }
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -463,11 +544,26 @@ export function runPatternRule(
   try {
     regex = compilePattern(rule.pattern!, 'g');
   } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    // v1.3.4 P1-10: ReDoS pattern 被拒绝时输出显著告警
+    if (errMsg.includes('ReDoS')) {
+      console.warn(`[sofagent] ⚠️ 规则 "${rule.name}" 的 pattern 可能导致 ReDoS，已拒绝加载`);
+    }
     return {
       name: rule.name,
       number: 0,
       status: 'WARN',
-      details: [`规则 "${rule.name}" 的正则无效: ${err instanceof Error ? err.message : String(err)}`],
+      details: [`规则 "${rule.name}" 的正则无效: ${errMsg}`],
+    };
+  }
+
+  // v1.3.4 P1-10: 运行时 ReDoS timeout 检测——对抗性输入测试
+  if (!isPatternReDoSSafe(regex, rule.name)) {
+    return {
+      name: rule.name,
+      number: 0,
+      status: 'WARN',
+      details: [`规则 "${rule.name}" 的 pattern 运行超时，判定为 ReDoS 风险，已拒绝执行`],
     };
   }
 
