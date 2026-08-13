@@ -13,6 +13,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync } from 'fs';
 import { join, dirname, relative } from 'path';
 import { randomBytes } from 'crypto';
+import { REDACTION_PATTERNS } from '../shared/secret-patterns';
 
 /** 被追踪的文件信息 */
 interface TrackedFile {
@@ -34,6 +35,25 @@ export interface SnapshotEntry {
   timestamp: string;
   files: Record<string, string>; // path → content
 }
+
+/**
+ * v1.3.4 交付 1（P0）：对快照内容做脱敏处理——复用 shared/secret-patterns 的
+ * REDACTION_PATTERNS（AKIA / sk- / ghp_ / 手机号等），防止密钥明文写进 snapshots.json。
+ *
+ * 扫描机制自己的快照不能成为密钥泄漏点（审计工具自查）。
+ */
+function sanitizeSnapshotContent(content: string): string {
+  let sanitized = content;
+  for (const { pattern, replacement } of REDACTION_PATTERNS) {
+    // REDACTION_PATTERNS 的 pattern 带 g flag，每次替换后需重置 lastIndex
+    pattern.lastIndex = 0;
+    sanitized = sanitized.replace(pattern, replacement);
+  }
+  return sanitized;
+}
+
+/** 快照上限——防止 snapshots.json 无限增长（主仓曾达 317MB）。超出时滚动覆盖最旧。 */
+const MAX_SNAPSHOTS = 50;
 
 /**
  * 为目录创建 shadow git 仓库（.sofagent/.git-shadow/）
@@ -90,20 +110,36 @@ function loadSnapshots(shadowDir: string): SnapshotEntry[] {
 
 /**
  * 保存快照索引到 shadow repo
+ *
+ * v1.3.4 交付 1（P0）：保存前做滚动裁剪——超过 MAX_SNAPSHOTS（50）时移除最旧的，
+ * 避免 snapshots.json 无限增长（主仓曾达 317MB）。
  */
 function saveSnapshots(shadowDir: string, snapshots: SnapshotEntry[]): void {
+  // 滚动覆盖——超限时移除最旧的（数组首部）
+  const toSave = snapshots.length > MAX_SNAPSHOTS
+    ? snapshots.slice(snapshots.length - MAX_SNAPSHOTS)
+    : snapshots;
   const snapshotsPath = join(shadowDir, 'snapshots.json');
-  writeFileSync(snapshotsPath, JSON.stringify({ snapshots }, null, 2), 'utf-8');
+  writeFileSync(snapshotsPath, JSON.stringify({ snapshots: toSave }, null, 2), 'utf-8');
 }
 
 /**
- * 扫描目录中所有文件（排除 .sofagent/ 和 node_modules/）
+ * 扫描目录中所有文件（排除 .sofagent/ 和 node_modules/ 等）
+ *
+ * v1.3.4 交付 1（P0）扩展排除规则：
+ *   - 现有：.sofagent / node_modules / .git / dist / .git-shadow
+ *   - 新增：fixtures/ 目录（含已知密钥样本）、*.test.ts（测试文件）、.env.example
+ *   - 原因：测试 fixture 和示例文件含合法密钥样本，不应进快照（否则审计自己会扫到自己）
+ *
  * @param dir 要扫描的目录
- * @returns TrackedFile 数组
+ * @returns TrackedFile 数组（content 已经过 sanitize 脱敏）
  */
 function scanFiles(dir: string): TrackedFile[] {
   const files: TrackedFile[] = [];
   const excludePatterns = ['.sofagent', 'node_modules', '.git', 'dist', '.git-shadow'];
+  // v1.3.4 交付 1：测试 fixture / 密钥样本文件不应进快照
+  const excludeFileSuffixes = ['.test.ts', '.env.example'];
+  const excludeDirNames = ['fixtures', '__tests__', '__fixtures__'];
 
   function walk(currentDir: string): void {
     let entries: string[];
@@ -116,6 +152,8 @@ function scanFiles(dir: string): TrackedFile[] {
     for (const entry of entries) {
       // 跳过排除目录
       if (excludePatterns.includes(entry)) continue;
+      // v1.3.4: 跳过测试 fixture 目录
+      if (excludeDirNames.includes(entry)) continue;
       if (entry.startsWith('.')) continue;
 
       const fullPath = join(currentDir, entry);
@@ -129,8 +167,13 @@ function scanFiles(dir: string): TrackedFile[] {
       if (stat.isDirectory()) {
         walk(fullPath);
       } else if (stat.isFile()) {
+        // v1.3.4: 跳过测试文件 / 密钥样本文件
+        if (excludeFileSuffixes.some((sfx) => entry.endsWith(sfx))) continue;
+
         try {
-          const content = readFileSync(fullPath, 'utf-8');
+          const rawContent = readFileSync(fullPath, 'utf-8');
+          // v1.3.4 交付 1（P0）：写入快照前做脱敏——密钥明文打码
+          const content = sanitizeSnapshotContent(rawContent);
           const relativePath = relative(dir, fullPath);
           files.push({ path: relativePath, content });
         } catch {
