@@ -18,8 +18,10 @@ import { generateDataSovereigntyMonthly } from './data-sovereignty-monthly';
 import { runWorkspaceSummary } from '../workspace-summary';
 // v1.3.2 交付 7：审计轨迹聚合巡检器（@daily）
 import { runAuditTrailInspector } from './audit-trail';
+// v1.3.4 交付 1：能力目录日更生成（@daily）
+import { runMarketCatalogDaily } from './market-catalog-daily';
 
-export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFreshness, checkKnowledgeHealth, checkSkillStaleness, accumulateWarnings, runHealthReport, generateDataSovereigntyDaily, generateDataSovereigntyWeekly, generateDataSovereigntyMonthly, workspaceSummaryInspector, runAuditTrailInspector };
+export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFreshness, checkKnowledgeHealth, checkSkillStaleness, accumulateWarnings, runHealthReport, generateDataSovereigntyDaily, generateDataSovereigntyWeekly, generateDataSovereigntyMonthly, workspaceSummaryInspector, runAuditTrailInspector, runMarketCatalogDaily };
 export type { InspectorConfig, InspectorResult } from './types';
 export type { DaemonHealth } from './health-reporter';
 

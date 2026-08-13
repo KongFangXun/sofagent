@@ -19,7 +19,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——39 个 tool（v1.3.3：route_workflow + team_create + team_broadcast + refine 新增；不含 4 个 resource shortcut）
+ * 完整工具清单——44 个 tool（v1.3.4：market_publish + market_search 新增；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -493,6 +493,44 @@ export const TOOLS: ToolDef[] = [
         team_id: { type: 'string', description: '团队 ID（可选——加载团队质量规则）' },
       },
       required: ['action'],
+    },
+  },
+  {
+    // v1.3.4 (交付 1)：能力发布
+    name: 'market_publish',
+    description: '能力发布（v1.3.4 L3 组织能力市场）——将 Skill/Agent/流程发布到企业能力市场。发布前校验元数据完整性 + SkillScan 安全门（DANGEROUS 拦截）。发布后能力可被其他 Agent 检索发现。全程记审计（kind=MARKET）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        metadata: {
+          type: 'object',
+          description: '能力元数据（含 id/kind/name/description/version/owner/tags/sourcePath）',
+          properties: {
+            id: { type: 'string', description: '能力唯一标识（slug）' },
+            kind: { type: 'string', enum: ['skill', 'agent', 'flow'], description: '能力类型' },
+            name: { type: 'string', description: '人类可读名称' },
+            description: { type: 'string', description: '简短描述' },
+            version: { type: 'string', description: '版本号（semver）' },
+            owner: { type: 'string', description: '维护人 agentId（对接身份码，必填）' },
+            tags: { type: 'array', items: { type: 'string' }, description: '标签（用于检索）' },
+            sourcePath: { type: 'string', description: '源文件/目录路径' },
+          },
+        },
+      },
+      required: ['metadata'],
+    },
+  },
+  {
+    // v1.3.4 (交付 1)：能力检索
+    name: 'market_search',
+    description: '能力检索（v1.3.4 L3 组织能力市场）——按标签/关键词/类型检索企业能力市场目录。复用 searchKnowledge 的模糊匹配链路（匹配名称/描述/标签）。无参数列出全部已发布能力。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: '检索关键词（模糊匹配名称/描述/标签）' },
+        tag: { type: 'string', description: '按标签精确匹配（优先级高于 query）' },
+        kind: { type: 'string', enum: ['skill', 'agent', 'flow'], description: '按类型过滤' },
+      },
     },
   },
 ];

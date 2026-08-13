@@ -72,7 +72,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价→养护）+ 评估体系三步落地**：Skill/Agent/流程打包发布 + 目录检索 + 调用挂载 + 评分聚合（评分 × 调用量加权自然选择）+ 全程审计 + **养护环（owner 声明 + 失效退役 + 变更记录，GitHub 模式「持续养护」）** + **评估体系三步**（真实案例长出来 → 业务方当评委 → 接到生产回路上——Refine Agent 质量规则集的设计依据，范冰《前线部署工程师》方法论借鉴，2026-08-13 补充） | [日志](./changelog/v1.3/v1.3.4.md) |
+| **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价→养护）+ SkillScan 安全门 + 评估体系三步落地**：Skill/Agent/流程打包发布 + 目录检索 + 调用挂载 + 评分聚合（评分 × 调用量加权自然选择）+ 全程审计 + **养护环（owner 声明 + 失效退役 + 变更记录，GitHub 模式「持续养护」）** + **SkillScan 安全门**（第三方 Skill 发布/安装前静态扫描——注入/越权/泄漏检测，DeerFlow 启发，三态判定 SAFE/SUSPICIOUS/DANGEROUS + 双触发发布侧&安装侧） + **评估体系三步**（真实案例长出来 → 业务方当评委 → 接到生产回路上——Refine Agent 质量规则集的设计依据，范冰《前线部署工程师》方法论借鉴，2026-08-13 补充） | [日志](./changelog/v1.3/v1.3.4.md) |
 | **v1.3.5** | 📋 规划中 | **自进化与运维闭环（MCP 覆盖度审计缺口补全 + instinct 自动进化）**：`run_ab_test` / `promote_ab`（晋升强制人审）+ `snapshot_list` / `snapshot_restore`（恢复强制人审）+ **instinct→skill 自动进化**（从 session 提取模式→置信度评分≥阈值自动注入 context→`/evolve` 聚合成正式 skill——Dream Cycle 从「文档沉淀」升级到「自动聚合成 skill」，ECC continuous-learning-v2 启发，2026-08-13 补充） | [日志](./changelog/v1.3/v1.3.5.md) |
 | **v1.3.6** | 📋 规划中 | **🔌 引擎接口外化完整版（模型层接入前置 · 原 v2.0 前移）**：① Workflow 标准格式 + 运行容器（JSON Schema + MCP `workflow_submit`）② Ontology 注册接口（MCP `ontology_import` + D1-D5 审计）③ **SubAgent 托管 SDK**（`harness.wrap` 包装 LangGraph 自定义 Agent → 自动获得审计/审批/身份/Trace，createReactAgent + 纯 StateGraph 双形态——模型层 sub-agent 托管的落点）④ **模型注册 + 灰度切换**（`model_register` / `model_switch`，评测 → 注册 → 灰度 → 晋升全流程审计 + 强制人审；`source: 'local-path'` 扩展位预留，企业专属模型本地权重部署在 v1.4.1 填充；**通用模型路由不自研——企业挂第三方 model router（LiteLLM/OpenRouter），sofagent 只保留数据主权路由 + 注册/灰度/退役，2026-08-10 补充**）⑤ **训练协议三约定 + 训练预算控制（B2 决策前移自 v1.4.1，2026-08-12）**——双栈架构契约（Node 控制面 spawn Python + stdout JSON 流 + SIGINT 控制）+ 成本透明（超预算暂停 + 人审），让 C13 PoC 客户更早接入 ⑥ **路由决策可解释性（role-model 启发，2026-08-13 新增）**——补 Profiles 半个（端点能力画像）+ Policy 半个（偏好/预算/决胜规则）+ routeReason 结构化决策字段，**不自研路由器只补决策可审计性** ——**训练语料导出三件套已移至 v1.4.1 训练引擎**（2026-08-10 决策已定：训练相关内容统一从 v1.4.x 开始） | [日志](./changelog/v1.3/v1.3.6.md) |
 | **v1.3.7** | 📋 规划中 | **🔒 SubAgent 完整沙箱 + 场景驱动权限 + 🛡️ AgentShield + 行业 overlay（原 v1.4.0 前移）**：① 沙箱——虚拟文件系统隔离 + 网络出站白名单 + 工具调用中介（前置 allow/deny）+ 虚拟 key 凭证边界注入 + AsyncSubAgent + 真·实时 A/B 双跑 ② 场景驱动权限体系（身份→场景匹配→风险等级→放行）——审计从「事后」扩展到「运行时」（范围限定 SubAgent）③ **AgentShield 审计维度扩展**（agent 配置/hook/MCP 攻击面静态扫描——密钥检测增强 + hook 注入分析 + MCP 风险画像 + agent 配置审查，ECC AgentShield 102 规则/1282 测试启发，填补「Agent 配置本身是攻击面」维度，2026-08-13 补充）④ **行业 overlay 规则包**（金融/医疗/政务/AI 四行业自动激活额外约束——复用 `--ruleset` 规则市场机制，fdeops 5 overlays 启发，2026-08-13 补充）⑤ **断路器 + 行为监控**（OWASP ASI08 级联故障 + ASI10 失控 agent——连续 N 次失败自动熔断 + agent 行为指标超阈值自动隔离，Microsoft AGT Agent SRE + Agent Hypervisor 启发，2026-08-13 补充） | [日志](./changelog/v1.3/v1.3.7.md) |
@@ -133,6 +133,11 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **FDE 节点注册表（loop-engineering 启发）** | 为 FDE 模板建 `fde-registry.yaml`（机器可读：id/cadence/risk/skills/human_gates），audit 引擎直接读取——从手动排查到机器可读 |
 | **执行层隔离 Worktree 模式（loop-engineering 启发）** | 每个 code-change 跑在隔离 git worktree——短期推荐实践 → 中期编排引擎内置 `worktree create` → 远期 L2+ 硬性要求 |
 | **理解债务应对（loop-engineering 启发）** | Comprehension Debt Spiral（S2 级故障）——审计已覆盖「发生了什么」，需补「为什么这么做」（auto-PR 要求 Agent 解释决策）+「本周摘要」（daemon 周报）|
+| **DSH Cordis 插件适配（DeepSeek Harness 启发）** | 把 sofagent @public API 包装成 Cordis 插件（`@sofagent/cordis-plugin`），DSH 成为可选执行后端——LangGraph 管编排（图结构+审计卡关），DSH 管执行（SubAgent 单步+loop 循环）。依赖链：v1.3.6 harness.wrap 接口预留 → v1.3.9 API 分级 → v1.4.0 插件包装 |
+| **ACS YAML 策略引擎（Microsoft AGT 启发）** | 现有 ruleset 是 JSON，AGT 的 ACS 用 YAML + OPA Rego + Cedar 三引擎——策略更人类可读，需评估兼容性 |
+| **Shadow AI Discovery（Microsoft AGT 启发）** | 扫描进程/配置/仓库发现未注册「影子 agent」——审计盲区，与 v1.3.7 行为监控互补 |
+| **RL 训练治理（Microsoft AGT Agent Lightning 启发）** | 训练期间策略违规惩罚——与 v1.4.1 训练引擎预算控制同向 |
+| **OWASP Agentic Top 10 全覆盖路线（Microsoft AGT 启发）** | v1.3.7 补 ASI08+ASI10，v1.3.9 补 ASI01+ASI04，远期 10/10 全覆盖对齐 AGT |
 
 > 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./VALIDATION.md)。
 

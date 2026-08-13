@@ -59,6 +59,9 @@ import { teamCreate } from './tools/team-create';
 import { teamBroadcast } from './tools/team-broadcast';
 import { refine } from './tools/refine';
 import { getDynamicTools, getDynamicTool, registerMemoryBackends } from './tools/memory-backend';
+// v1.3.4 交付 1：L3 组织能力市场
+import { marketPublish } from './tools/market-publish';
+import { marketSearch } from './tools/market-search';
 
 // ============================================================
 // 常量
@@ -227,6 +230,9 @@ class McpServer {
         case 'team_broadcast': { if (!args.team_id || !args.source || !args.intent || !args.target) { this.sendError(id, -32602, 'Missing required arguments: team_id, source, intent, and target'); break; } const tbr = teamBroadcast({ teamId: args.team_id as string, source: args.source as string, intent: args.intent as string, target: args.target as string, ...(typeof args.payload === 'string' ? { payload: args.payload } : {}) }); this.sendTool(id, tbr, tbr.isError); break; }
         // v1.3.3 新增 tool（交付 T03/T04）
         case 'refine': { if (!args.action) { this.sendError(id, -32602, 'Missing required argument: action'); break; } const rfr = await refine({ action: args.action as 'trigger' | 'query', ...(typeof args.agent_id === 'string' ? { agentId: args.agent_id } : {}), ...(typeof args.task === 'string' ? { task: args.task } : {}), ...(typeof args.team_id === 'string' ? { teamId: args.team_id } : {}) }); this.sendTool(id, rfr, rfr.isError); break; }
+        // v1.3.4 新增 tool（交付 1：L3 能力市场）
+        case 'market_publish': { if (!args.metadata) { this.sendError(id, -32602, 'Missing required argument: metadata'); break; } const mpr = marketPublish({ metadata: args.metadata as any }); this.sendTool(id, mpr, mpr.isError); break; }
+        case 'market_search': { const msr = marketSearch({ ...(typeof args.query === 'string' ? { query: args.query } : {}), ...(typeof args.tag === 'string' ? { tag: args.tag } : {}), ...(typeof args.kind === 'string' ? { kind: args.kind as 'skill' | 'agent' | 'flow' } : {}) }); this.sendTool(id, msr); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {

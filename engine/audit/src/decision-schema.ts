@@ -11,12 +11,18 @@
 
 import { REDACTION_PATTERNS } from '@sofagent/core';
 
-/** 决策种类（11 类）——覆盖 Agent 生命周期内所有可问责决策
+/** 决策种类（12 类）——覆盖 Agent 生命周期内所有可问责决策
  *
  * v1.3.3 新增 EVOLUTION（进化动作）+ TEAM（团队协作动作）：
  *   - EVOLUTION：优化器修改经验层（think.md / knowledge）、Benchmark 评估 accept/reject、
  *     git snapshot 回滚等——每次必附 evidence 留痕（触发证据链）
  *   - TEAM：团队协作动作（冲突消解裁决、意图广播、反馈放大写入、自动入队等）
+ *
+ * v1.3.4 新增 MARKET（市场能力动作）：
+ *   - MARKET：组织能力市场的发布/调用/评分/退役等动作（L3 能力市场）
+ *     evidence 字段记能力名 + 调用结果 + 评分 + 扫描判定。
+ *     与 ORCHESTRATION（编排委派）/ EVOLUTION（经验层进化）语义区分——
+ *     市场是能力流转层，既非编排也非进化。
  */
 export type DecisionKind =
   | 'SPEC_CHANGE'       // 改变需求/规格（范围变更）
@@ -29,7 +35,8 @@ export type DecisionKind =
   | 'KNOWLEDGE_DISTILL' // 知识蒸馏/沉淀
   | 'ORCHESTRATION'     // 编排决策（子 Agent 委派/图路由）
   | 'EVOLUTION'         // 进化动作（优化器改经验层 / Benchmark accept-reject / 回滚）
-  | 'TEAM';             // 团队协作动作（冲突消解 / 意图广播 / 反馈放大 / 自动入队）
+  | 'TEAM'              // 团队协作动作（冲突消解 / 意图广播 / 反馈放大 / 自动入队）
+  | 'MARKET';           // 市场能力动作（能力发布 / 调用 / 评分 / 退役 / SkillScan）
 
 /** 决策发生时刻（7 阶段）——对齐 FORGE loop / 激活链生命周期 */
 export type LoopPhase =

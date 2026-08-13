@@ -510,3 +510,17 @@ export type {
   Evidence,
   WaveTrigger,
 } from './loop-state-extractor';
+
+// v1.3.4 交付 1+4：L3 组织能力市场（发布→发现 + SkillScan 安全门）
+export { publishCapability, validateMetadata, scanSkillSafetyStub } from './market/publisher';
+export type { CapabilityKind, CapabilityMetadata, PublishResult } from './market/publisher';
+export {
+  readCatalog,
+  searchCatalog,
+  searchByTag,
+  searchByKind,
+  getCapability,
+} from './market/catalog';
+export type { CatalogEntry, CatalogSearchResult } from './market/catalog';
+export { scanForPublish, scanForInstall, mapSafetyResult } from './market/skill-scan';
+export type { ScanResult, ScanVerdict } from './market/skill-scan';

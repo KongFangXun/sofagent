@@ -33,6 +33,8 @@ import { runSkilloptTrigger } from './inspectors/skillopt-trigger';
 import { runDailySnapshot } from './inspectors/daily-snapshot';
 import { runTrendAggregator } from './inspectors/trend-aggregator';
 import { runTaskStats } from './inspectors/task-stats';
+// v1.3.4 交付 1：能力目录日更生成（@daily）
+import { runMarketCatalogDaily } from './inspectors/market-catalog-daily';
 
 /** 巡检层级 */
 export type InspectorLayer = 'L1' | 'L2' | 'L3';
@@ -61,6 +63,8 @@ const LAYER_INSPECTORS: Record<InspectorLayer, { name: string; fn: InspectorFn }
     { name: 'daily-snapshot', fn: runDailySnapshot },
     // v1.2.4 P1b：任务成功率统计
     { name: 'task-stats', fn: runTaskStats },
+    // v1.3.4 交付 1：能力目录日更生成（@daily）
+    { name: 'market-catalog-daily', fn: runMarketCatalogDaily },
   ],
   L2: [
     { name: 'conflict-check', fn: checkConflict },
