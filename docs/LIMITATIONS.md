@@ -43,9 +43,9 @@
 
 > ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。config.yml 有两个有效位置——项目级 `${cwd}/.sofagent/config.yml` 和全局级 `~/.sofagent/config.yml`（config-loader.ts 三级 fallback，项目级优先）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 ~/.sofagent/config.yml` 和 `chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。**规划中（v1.3.7 目标），当前 v1.3.3 未实现**：SubAgent 侧 config 篡改将被沙箱虚拟 FS 拦截（写入走虚拟层审批）；主 Agent 侧仍靠 CI 兜底 + 文件权限（主 Agent 不进沙箱，留 v1.3.9 meta-harness）。
 >
-> **建议缓解措施**：
-> 1. **CI 侧兜底（推荐）**：在 CI pipeline 中加入 `sofagent-audit --diff HEAD~1..HEAD`，
->    确保即使开发者本地用了 `--no-verify`，CI 仍会拦截。
+> **建议缓解措施**（按有效性排序）：
+> 1. **CI 侧兜底（最有效）**：在 CI pipeline 中加入 `sofagent-audit --diff HEAD~1..HEAD`，
+>    确保即使开发者本地用了 `--no-verify`，CI 仍会拦截。CI 以独立身份运行（非当前用户），Agent 无法篡改——这是唯一能防住「Agent 以当前用户身份写入篡改 config」的手段。
 >    ```yaml
 >    # GitHub Actions 示例
 >    - name: sofagent 审计检查
@@ -54,8 +54,8 @@
 >    ```
 > 2. **定期自动 doctor**：配置 cron job 每周运行 `sofagent-core --doctor`，
 >    并将结果发送到监控频道，检测 hooks 是否被意外移除。
-> 3. **推荐操作**：安装后立即执行 `chmod 400 ~/.sofagent/config.yml`（全局级）和 `chmod 400 .sofagent/config.yml`（项目级）使文件只读（需 root 或当前用户），
->    阻止 Agent 写入篡改。CI 中可增加 `sofagent-audit --diff` 校验步骤做双重保障。
+> 3. **文件权限锁（辅助，有局限）**：`chmod 400 ~/.sofagent/config.yml`（全局级）和 `chmod 400 .sofagent/config.yml`（项目级）使文件只读。
+>    ⚠️ **注意：`chmod 400` 仅防其他用户读取，不防 Agent 以当前用户身份写入篡改**——Agent 与你同身份运行，文件权限对同用户进程无效。真正能防住的是 CI 侧独立校验（见第 1 条）。chmod 是纵深防御的辅助层，不能单独依赖。
 
 ### 本地开发紧急缓解措施
 
@@ -225,6 +225,8 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API �
 > ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文"忽略类"指令、英文"ignore 类"指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），**v1.3.2 评估覆盖**——L3 自动定位（LLM 推理）可检测正则覆盖不了的语义级注入。
 
 > ⚠️ **A9 commit msg 检测仅 full 模式生效（v1.3.3）**：A9 扫描 commit message 中的注入指令，需要 commit message 作为输入。quick 模式（`npx sofagent-audit`，零配置审计最近一次 commit）**不读 commit message**，A9 在 quick 模式完全不生效。同理 A3（不改越界）依赖任务描述，quick 模式无此输入 → v1.3.3 起 quick 模式跳过 A3（避免占位 task 'quick-audit' 100% 误报越界）。完整防护（A9 commit msg 注入拦截 + A3 越界检查）需 `--init` 安装 git hook 走完整引擎，或手动 `sofagent-audit --diff <range> --commit-msg <msg>`。
+
+> ⚠️ **commit msg 注入伪造审计标记——A9 检测为 WARN 不阻断**：commit message 中如伪造 `[sofagent-audit PASS]` 等审计通过标记，A9 会检测到该注入并报 **WARN（exit 1），但不阻断 commit**——commit 仍然成功提交。人工 review 时需注意：commit message 中的审计标记可能是伪造的，**真实审计结果以 `~/.sofagent/data/audit/` 下的审计记录为准**，不要信任 commit message 自带的审计声明。
 
 ---
 
