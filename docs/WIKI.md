@@ -79,6 +79,8 @@
 
 ### 三层嵌套：Harness → Graph → Loop
 
+> 📌 **本节是三层嵌套架构图的唯一源（SSOT）**——ARCHITECTURE.md 的「补充视角」只做说明引用此处，不重复维护完整图。修改三层结构请改本段。
+
 上述架构全景中，约束层四种能力（注入·审计·回溯·进化）与 FORGE 内部编排不是并列关系——它们按 Agent 工程三层架构嵌套：
 
 ```
@@ -127,7 +129,7 @@
 | `docs/HANDBOOK.md` | FDE 操作手册：进场流程、节点部署、持续维护 |
 | `docs/guides/fde-activation-chain.md` | 🔗 激活链设计（v1.2.5+）：FDE 交付物 → 企业工作流自动运转（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN） |
 | `docs/THANKS.md` | 致谢——谁启发了哪个设计决策 |
-| `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/` `v1.4/`）。⚠️ 早期版本日志含"审查元信息/开发过程备注"等非产品文档内容，属当时开发留痕，不代表产品能力声明；以各版本 changelog 顶部的"已开发/已排期"标记为准。规划中版本的开发排期见 [ROADMAP](./ROADMAP.md) |
+| `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/` `v1.4/`）。⚠️ 早期版本日志含"审查元信息/开发过程备注"等非产品文档内容，属当时开发留痕，不代表产品能力声明。✅ **v1.3.3 起已清理审查元信息**（见 v1.3.4 bugfix），当前版本 changelog 只含产品变更声明。以各版本 changelog 顶部的"已开发/已排期"标记为准。规划中版本的开发排期见 [ROADMAP](./ROADMAP.md) |
 | `docs/changelog/releasing.md` | **发版 SOP**——十二阶段全流程 |
 | `docs/evidence/` | 效果证据：案例、基准测试、反例 |
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |
