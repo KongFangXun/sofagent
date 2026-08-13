@@ -20,7 +20,7 @@
 - [x] 八 · 开发日志定稿 + 文档收尾 → [08-doc-finalize.md](./releasing/08-doc-finalize.md) · 内容增强 7 文件（市场定位/FDE 方法论/职业道德/评估体系）+ v1.3.3.md 已定稿 + LEDGER run-04 记录
 - [x] 九 · 工具脚本健康检查 → [09-tool-health.md](./releasing/09-tool-health.md) · 6 步全过（无新文件类型 / dry-run 纯只读 / build EXIT=0 / anchors 84/84 / hook 拦截+放行实测）
 - [x] 十 · 确认关口 → [10-confirm.md](./releasing/10-confirm.md) · v1.3.3.md 27 项验收标准全打勾 + 门禁最终确认全绿 + 版本号确认
-- [ ] 十一 · 发布（项目负责人或授权 AI）→ [11-publish.md](./releasing/11-publish.md)
+- [x] 十一 · 发布（项目负责人或授权 AI）→ [11-publish.md](./releasing/11-publish.md) · push + CI 7/7 全绿 + tag v1.3.3 + GitHub Release 创建（release.yml 自动 publish audit+mcp）· npm 手动 publish 其余 10 包待项目负责人执行
 - [ ] 十二 · 发布后（验证 + 三文档回写 + SOP 自迭代 + 下版 prompt）→ [12-post-publish.md](./releasing/12-post-publish.md)
 
 > **铁律**：阶段六 verdict=PASS 前，不进阶段七~八。FAIL 回阶段五修复后重跑。
