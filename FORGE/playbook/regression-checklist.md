@@ -5,7 +5,7 @@
 > **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：74 维（v1.3.2 发版后回写）
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1350 行（v1.3.2 从 1250 上调，releasing.md 方针「超标上调 LIMIT 不删内容」）、`acceptance-test.sh` ≤ 2250 行（v1.3.2 从 2050 上调），越线触发瘦身。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1400 行（v1.3.3 从 1350 上调，releasing.md 方针「超标上调 LIMIT 不删内容」）、`acceptance-test.sh` ≤ 2400 行（v1.3.3 从 2250 上调），越线触发瘦身。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
@@ -15,8 +15,8 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段四 Tier 1 警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1250 ] && echo "✅ checklist $WC_CHK (≤1250)" || echo "⚠️ checklist $WC_CHK 超 1250"
-[ "$WC_ACC" -le 2250 ] && echo "✅ acceptance $WC_ACC (≤2250)" || echo "⚠️ acceptance $WC_ACC 超 2250"
+[ "$WC_CHK" -le 1400 ] && echo "✅ checklist $WC_CHK (≤1400)" || echo "⚠️ checklist $WC_CHK 超 1400"
+[ "$WC_ACC" -le 2400 ] && echo "✅ acceptance $WC_ACC (≤2400)" || echo "⚠️ acceptance $WC_ACC 超 2400"
 ```
 ## 你的身份
 
@@ -1298,7 +1298,7 @@ grep "$(node -p "require('./package.json').version")" CHANGELOG.md | grep -oE "2
 **检查命令**：
 ```bash
 # 同步一致性检查：4 处声明的警戒线值一致
-for v in "2250" "1350" "370"; do
+for v in "2400" "1400" "400"; do
   COUNT=$(grep -rn "$v" FORGE/playbook/regression-checklist.md docs/changelog/releasing/05-review-system.md docs/guides/review-system.md 2>/dev/null | wc -l | tr -d ' ')
   echo "  警戒线 $v: $COUNT 处声明"
   [ "$COUNT" -lt 2 ] && echo "  ⚠️ 声明不足 2 处——可能漏改"
@@ -1317,4 +1317,37 @@ for pkg in audit core daemon eval harness ontology orchestrator rules skillopt t
   echo "  @sofagent/$pkg: $V"
 done
 # 期望：全部 = 当前版本号；未到 → cd engine/<pkg> && npm publish --access public
+```
+
+#### 98. post-commit hook 对账逻辑——parentSha vs COMMIT_SHA 父子 SHA 不等（v1.3.3 新增 · P0 产品 bug）
+
+**背景**：v1.3.3 阶段三发现 post-commit hook 假阳性——每次正常 commit 都警告"可能使用了 --no-verify 绕过"。根因：commit-msg 记录的 `parentSha` = 新 commit 的**父**提交，post-commit 的 `$COMMIT_SHA` = 新 commit **自己**——父子 SHA 永远不等。
+
+**检查命令**：
+```bash
+# v1.3.3 修复：post-commit 取 HEAD^ 作为 PARENT_SHA 对账
+grep -q "PARENT_SHA\|HEAD\^" "$PROJECT_ROOT/engine/audit/src/commands/init.ts" || echo "⚠️ post-commit 未用 PARENT_SHA 对账"
+# 首次 commit（unborn HEAD）用空树常量兜底
+grep -q "4b825dc642cb6eb9a060e54bf8d69288fbee4904" "$PROJECT_ROOT/engine/audit/src/commands/init.ts" || echo "⚠️ 首次 commit 无空树兜底"
+```
+
+#### 99. AUDIT_PRIORITY 单源化后向后兼容导出（v1.3.3 新增 · release-gate S186）
+
+**背景**：v1.3.3 #11 把规则 priority 字段并入 index.ts 规则定义，runner.ts 删除独立 AUDIT_PRIORITY 常量。但 acceptance-test.sh S186 / 外部脚本仍依赖 `require('runner.js').AUDIT_PRIORITY.critical.includes('A20')` 形态查询。单源化 refactor 必须保留派生导出。
+
+**检查命令**：
+```bash
+node -e "const m=require('$PROJECT_ROOT/engine/audit/dist/rules/runner.js');const c=m.AUDIT_PRIORITY?.critical;if(!c||!c.includes('A20')){console.log('FAIL: AUDIT_PRIORITY 派生导出缺失');process.exit(1);}console.log('OK');" || echo "⚠️ AUDIT_PRIORITY 向后兼容导出缺失"
+```
+
+#### 100. check-test-count.sh 失败路径——set -u + $? 赋值 unbound（v1.3.3 新增 · 门禁假绿）
+
+**背景**：v1.3.3 发现 check-test-count.sh L62 在 set -uo pipefail 下，命令替换 exit N 时 `$?` 赋值被判 unbound，脚本中途崩溃，CI 永远判绿。
+
+**检查命令**：
+```bash
+# 强制触发失败路径（test-count.sh 不存在），验证 check-test-count.sh 能报红
+sed 's|bash tools/test-count.sh|bash /nonexistent/test-count.sh|' tools/check-test-count.sh > /tmp/cct-test.sh
+bash /tmp/cct-test.sh > /dev/null 2>&1; [ $? -eq 1 ] && echo "✅ 失败路径正确报红" || echo "⚠️ 失败路径崩溃或假绿"
+rm -f /tmp/cct-test.sh
 ```

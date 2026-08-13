@@ -367,4 +367,11 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 **v1.3.2 新增经验（fresh-eyes 五轮 + run-11）**：
 - **假阳性 clean + MCP 注册遗漏 + bash 3.2 兼容 + 文档头日期漂移**——四种新模式：① splitFindings 格式不匹配→误判 clean（需 fallback+sanity check）② 功能函数没注册到 TOOLS+switch（三步必查）③ macOS bash 3.2 空数组+set -u 崩溃（须 3.2 下测）④ bump 版本后文档头日期没跟改（应动态提取）
 
+**v1.3.3 新增经验（fresh-eyes 四轮手动 + release-gate run-01）**：
+- **post-commit hook 父子 SHA 假阳性**——commit-msg 记录的 parentSha 是新 commit 的**父**，post-commit 取的 COMMIT_SHA 是新 commit **自己**，父子 SHA 永远不等→每次正常 commit 都警告"可能绕过审计"。**教训：对账逻辑必须父对父或子对子，且首次 commit（unborn HEAD）用空树常量兜底。审查视角六必须真跑 git commit 验证 post-commit 闭环**
+- **单源化 refactor 删导出致 acceptance 炸**——#11 把 AUDIT_PRIORITY 并入规则 priority 字段，删了独立常量，但 S186 测试还在查旧导出→acceptance FAIL。**教训：refactor 删 export 前必须 grep 全仓引用（含测试 + acceptance-test.sh），删了要加向后兼容派生导出**
+- **门禁失败路径假绿——set -u + $? 赋值 unbound**——check-test-count.sh 在 set -uo pipefail 下，命令替换 exit N 时 $? 被判 unbound，脚本崩溃退出码被管道掩盖成 0，CI 永远判绿。**教训：审查门禁脚本必须测失败路径（强制触发 FAIL 看是否真报红），只跑正常路径是假绿温床**
+- **driver verdict 误判 PASS + changelogPath 路径偏差**——release-gate-loop driver 把"loop 无错误跑完"误判为 verdict=PASS（实际三项 results 全 FAIL）；resolveChangelogPath 指向不存在的 `docs/changelog/1.3.3.md`（实际在 `v1.3/v1.3.3.md`）。**教训：driver verdict 以 verdict.md 为准不看 status.json；changelogPath 路径要适配 `v{major}.{minor}/vX.Y.Z.md` 两级结构**
+- **WorkBuddy shim 环境假失败**——genie-safe-delete.cjs 拦截测试 finally 块的 rmSync→ETIMEDOUT，测试断言本身已 PASS 但清理超时报 FAIL。**教训：测试 finally rmSync 必须 try-catch 包裹；WorkBuddy 下测试 FAIL 先在非 shim 环境复验**
+
 这些方向值得你保持**额外敏感**——但不要把它们当成清单。你今天发现的问题可能完全不在这个列表上。**那才是最值钱的发现。**
