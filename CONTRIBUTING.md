@@ -105,6 +105,15 @@ bash install.sh && bash engine/scripts/verify.sh
 
 **文档修改**：改 HANDBOOK 必须同步更新 `SKILL/harness/` 下模板。详见 [DEVELOPER §七](./docs/DEVELOPMENT.md#七数据文件架构)。
 
+> 📋 **文档措辞规范（v1.3.4 起）**：sofagent 对「对外文档」和「内部文档」的措辞要求不同，避免审查者反复误报：
+>
+> | 文档类型 | 代表文件 | 「开发中 / WIP / draft」类措辞 | 说明 |
+> |---------|---------|------|------|
+> | **对外文档** | `README.md`、badge、`README.en.md` | ❌ **禁止** | 面向陌生读者和潜在用户，「开发中/WIP/draft」降低可信度。只允许发布版本号或「规划中」（指向明确路线） |
+> | **内部文档** | `docs/ROADMAP.md`、`docs/CHANGELOG.md`、`docs/changelog/` | ✅ **允许** | 面向贡献者，标注「开发中/已排期/尚未实现」是正常的项目状态披露，不违反铁律 |
+>
+> **规则**：看到 README/badge 出现「开发中/WIP/draft」→ 要改（对外文档必须显得已完成或有明确规划）；看到 ROADMAP/CHANGELOG 出现「开发中/已排期」→ 不用改（内部文档正常披露）。
+
 ## 项目维护模型
 
 代码主要由 AI 模型辅助生成，作者做产品决策和终审。PR 经 AI review 后作者终审。**Co-maintainer 诱因**：合入 5 个 PR → Admin；贡献跨平台修复 → README 留名；完成英文翻译 → 英文文档 Owner。
