@@ -32,17 +32,22 @@ graph LR
 ```
 
 > 🏞️ 大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是帮你把河里的水让整个城市用起来的工程——堤坝不让水泛滥、自来水厂把原水变直饮水、管网把水送到每家每户的水龙头。模型给 90% 的智力，sofagent 补 10% 的可靠执行。
->
-> 🌳 往远看，sofagent 帮企业长出一棵**会自我养护的 AI 能力树**——每个 AI 节点是一根枝条，审计是护栏，经验沉淀是根系，离场后 FDE 留下养护这棵树（7×24 巡检 + 审计 + 进化）。从「AI 替我干活」到「企业长出会养护的 AI 能力树」，详见 [FDE 方法论](./FDE/GUIDE.md)。
 
 ### 和裸 Agent 有什么不同
 
 | 维度 | 裸 Agent（ChatGPT / Copilot） | sofagent |
 |:-----|:------|:------|
-| 变更审计 | 无 | git diff 24 条规则，硬证据判定 |
-| 越界拦截 | 靠 prompt 自觉 | 违规当场阻断 + 审计留证 |
+| 变更审计 | 无（需自行配 pre-commit + gitleaks） | git diff 24 条规则，硬证据判定 |
+| 越界拦截 | 需自行拼装 hooks | 违规当场阻断 + 审计留证 |
 | 出事回滚 | 手动翻 commit | 一键快照回到任意节点 |
 | 经验积累 | 每次从零开始 | 自动沉淀进知识库（think.md + Dream Cycle + skillopt，v1.3.x 持续增强） |
+
+> 📝 **术语速查**（5 个名字，一句话各归各位）：
+> - **sofagent** = 项目名/仓库名
+> - **FDE Agent** = 对外的产品身份（进场 → 部署 → 离场）
+> - **约束层（Harness）** = 对内的技术身份（一个层四种能力：注入·审计·回溯·进化）
+> - **FORGE** = 内部开发工具（项目自迭代用，不对外、不独立发布）
+> - **FDE Skill** = 在 ClawHub 分发的 Skill 包（给 AI 工具加载的方法论约束文件）
 
 ## 核心特性
 
@@ -57,6 +62,44 @@ graph LR
 - 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库 3 秒审计最近一次 commit
 - 🧱 **24 条审计规则**（17 默认启用 + 7 扩展可选）——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
+
+## 快速开始
+
+**30 秒，零配置**——在任何 git 仓库跑一次审计（开发/测试场景；强合规场景见 [SECURITY](./SECURITY.md)）：
+
+```bash
+npx -y -p @sofagent/audit sofagent-audit
+```
+
+> 💡 `sofagent-audit` 是 quick 只读审计（审计最近一次 commit，默认安全无副作用）；`sofagent-audit-full` 是完整审计，需显式指定操作（如 `--diff <range>` / `--init` 等）。
+>
+> ⚠️ **quick 模式范围**：quick 是零配置快速审计，跑 **22/24 条规则**（不扫 A9 commit msg 注入 + A3 任务越界，这两项依赖 commit message / 任务描述输入，quick 模式无此输入）。完整 24 条防护（commit msg 注入拦截 + 越界检查 + hook 自动审计）需 `--init` 安装 git hook 走完整引擎。详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
+
+拦截特定格式密钥泄漏时是这样的（真实输出）：
+
+> ℹ️ A2 检测 AWS AKIA、OpenAI sk-*、GitHub ghp_、PEM 私钥等已知格式；通用密钥形态（password=、secret 裸值）暂不覆盖——保守设计防误报。详见 [LIMITATIONS §三 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)。
+
+<p align="center">
+  <img src="docs/assets/audit-terminal.png" alt="sofagent-audit 拦截 .env 提交" width="860" />
+</p>
+
+**完整安装**（Node.js ≥ 18，先下载审查再执行）——**装在企业跑 AI 节点的设备上**：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh -o bootstrap.sh
+less bootstrap.sh          # 先看一眼脚本内容，确认安全
+bash bootstrap.sh && rm bootstrap.sh
+sofagent-audit --init      # 装 git hook，之后每次 commit 自动审计
+sofagent-audit --doctor    # 验证环境（可选）
+```
+
+> 💡 所有安装脚本只写入 `~/.sofagent/`，不修改系统文件。`--no-verify` 可绕过本地 hook——sofagent 防的是诚实 Agent 的疏忽，不是恶意绕过；高安全场景请在 CI 侧加 `sofagent-audit --diff` 兜底。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
+>
+> 📌 **install.sh 是企业设备安装器**——装在跑 AI 节点的服务器/电脑上，给 Agent 当监控约束层（审计 + 回溯 + 注入 + daemon 巡检 + 单机 dashboard）。FDE 自己的电脑不需要跑 install.sh，FDE 的工具是 [FDE Skill](https://clawhub.ai)（方法论）+ 未来 商业模型层 模型。详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。
+>
+> 📌 **bootstrap.sh 和 install.sh 的关系**：bootstrap.sh 是 install.sh 的一行下载包装器——`curl bootstrap.sh | bash` 等价于"下载 install.sh + 运行 install.sh"。两个脚本装的东西完全一样，bootstrap 只是省去手动 clone/下载的步骤。
+
+更多安装方式（clone 安装 / npx 完整安装 / 最小安装 / 企业部署）见 [HANDBOOK](./docs/HANDBOOK.md)。企业用户想直接用 FDE 方法论梳理工作流，看 [FDE/README.md](./FDE/README.md)（零依赖，不需要 Node.js）。
 
 ## FDE 方法论
 
@@ -176,7 +219,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 维度 | 通用 Agent 框架 | sofagent |
 |------|----------------|----------|
 | 核心问题 | 怎么造 Agent | **AI 该放在哪**（先梳理再部署） |
-| 安全保障 | 靠 prompt 约束 | git diff 硬证据审计 + 运行时拦截 + 一键回滚 |
+| 安全保障 | 框架层无（需自行接 pre-commit / trufflehog） | git diff 硬证据审计 + 运行时拦截 + 一键回滚 |
 | 知识积累 | 从零开始 | 经验自动沉淀进 knowledge 知识库（think.md + Dream Cycle，v1.3.x 持续增强） |
 | 数据主权 | 云端托管 | 缺省全量本地，可选联邦查询 |
 | 部署方式 | 学新平台 | 装进你已有的 AI 工具（Claude Code / Cursor / WorkBuddy…） |
