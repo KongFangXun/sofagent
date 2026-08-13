@@ -17,7 +17,7 @@
 - [x] 五 · 审查体系合并更新 → [05-review-system.md](./releasing/05-review-system.md) · regression-checklist / acceptance-test / fresh-eyes-review 已更新
 - [x] 六 · release-gate-loop 发版闸门（新 session · 必须 PASS 才继续）→ [06-release-gate.md](./releasing/06-release-gate.md) · run-01 FAIL→修复→**run-04 verdict=PASS 三项全绿** · 7 项人工复核全部确认（维度 98/99 实测已修，96 一致，49/56/59/90 脚本健壮性不阻断）
 - [x] 七 · 审查体系最终确认 → [07-final-confirm.md](./releasing/07-final-confirm.md) · regression 补维度 98-100 + fresh-eyes 补 v1.3.3 经验 + 警戒线上调（1400/2400/400）
-- [ ] 八 · 开发日志定稿 + 文档收尾 → [08-doc-finalize.md](./releasing/08-doc-finalize.md)
+- [x] 八 · 开发日志定稿 + 文档收尾 → [08-doc-finalize.md](./releasing/08-doc-finalize.md) · 内容增强 7 文件（市场定位/FDE 方法论/职业道德/评估体系）+ v1.3.3.md 已定稿 + LEDGER run-04 记录
 - [ ] 九 · 工具脚本健康检查 → [09-tool-health.md](./releasing/09-tool-health.md)
 - [ ] 十 · 确认关口 → [10-confirm.md](./releasing/10-confirm.md)
 - [ ] 十一 · 发布（项目负责人或授权 AI）→ [11-publish.md](./releasing/11-publish.md)
