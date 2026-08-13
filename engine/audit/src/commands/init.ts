@@ -584,9 +584,13 @@ try {
     const entry = JSON.parse(lines[i]);
     const entryCommit = entry.commitSha || "";
     if (entryCommit === COMMIT_SHA) {
+      // v1.3.4 P1-8: 审计通过时输出轻量回声（可感知性——让用户知道 sofagent 在工作）
+      console.log("  ✓ [sofagent] 审计通过");
       process.exit(0);  // 找到匹配——审计已运行
     }
     if (entry.commitPhase === "pre-commit" && entry.parentSha === PARENT_SHA) {
+      // v1.3.4 P1-8: pre-commit 记录对账命中——审计已运行
+      console.log("  ✓ [sofagent] 审计通过");
       process.exit(0);  // pre-commit 记录按父提交 SHA 对账命中——审计已运行
     }
   }

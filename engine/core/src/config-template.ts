@@ -122,11 +122,22 @@ if ! command -v node &>/dev/null; then
 fi
 
 # 2. sofagent-audit 检测（v1.2.8: 只加载全局安装，不读仓库本地 dist——审计工具不能被审计对象篡改）
+# v1.3.4 P1-7: 无 dist + 无全局安装时输出显著提示（不静默 exit），告知用户如何修复
 if command -v sofagent-audit &>/dev/null; then
   AUDIT_CMD=(sofagent-audit)
 else
-  echo "❌ sofagent 提示：未找到 sofagent-audit 命令，审计无法运行"
-  echo "   请运行: npm install -g @sofagent/audit"
+  # v1.3.4 P1-7: clone 用户没 build dist 也没全局安装——显著提示而非只报错
+  echo ""
+  echo "  ╔════════════════════════════════════════════════════╗"
+  echo "  ║  ⚠️ [sofagent] 审计引擎未找到                       ║"
+  echo "  ║  未检测到 dist 构建产物且未全局安装 sofagent-audit  ║"
+  echo "  ╠════════════════════════════════════════════════════╣"
+  echo "  ║  解决方案（任选其一）：                              ║"
+  echo "  ║  1. 本地构建：npm install && npm run build          ║"
+  echo "  ║  2. 全局安装：npm install -g @sofagent/audit        ║"
+  echo "  ╚════════════════════════════════════════════════════╝"
+  echo ""
+  echo "  ❌ commit 已阻止——请安装审计引擎后重新提交。"
   exit 1
 fi
 
