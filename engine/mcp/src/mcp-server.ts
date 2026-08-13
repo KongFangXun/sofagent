@@ -62,6 +62,10 @@ import { getDynamicTools, getDynamicTool, registerMemoryBackends } from './tools
 // v1.3.4 交付 1：L3 组织能力市场
 import { marketPublish } from './tools/market-publish';
 import { marketSearch } from './tools/market-search';
+import { marketInvoke } from './tools/market-invoke';
+import { marketRate } from './tools/market-rate';
+import { marketRetire } from './tools/market-retire';
+import { marketHarvestRule } from './tools/market-harvest-rule';
 
 // ============================================================
 // 常量
@@ -233,6 +237,11 @@ class McpServer {
         // v1.3.4 新增 tool（交付 1：L3 能力市场）
         case 'market_publish': { if (!args.metadata) { this.sendError(id, -32602, 'Missing required argument: metadata'); break; } const mpr = marketPublish({ metadata: args.metadata as any }); this.sendTool(id, mpr, mpr.isError); break; }
         case 'market_search': { const msr = marketSearch({ ...(typeof args.query === 'string' ? { query: args.query } : {}), ...(typeof args.tag === 'string' ? { tag: args.tag } : {}), ...(typeof args.kind === 'string' ? { kind: args.kind as 'skill' | 'agent' | 'flow' } : {}) }); this.sendTool(id, msr); break; }
+        // v1.3.4 新增 tool（交付 2/3/5：L3 能力市场调用/评价/退役/规则提炼）
+        case 'market_invoke': { if (!args.capability_id || !args.caller_agent_id) { this.sendError(id, -32602, 'Missing required arguments: capability_id and caller_agent_id'); break; } const mir = await marketInvoke({ capability_id: args.capability_id as string, caller_agent_id: args.caller_agent_id as string, ...(args.input !== undefined ? { input: args.input } : {}) }); this.sendTool(id, mir, mir.isError); break; }
+        case 'market_rate': { if (!args.capability_id || !args.rater_id || !args.owner_agent_id || typeof args.score !== 'number') { this.sendError(id, -32602, 'Missing required arguments: capability_id, rater_id, score, owner_agent_id'); break; } const mrr = await marketRate({ capability_id: args.capability_id as string, rater_id: args.rater_id as string, score: args.score as number, owner_agent_id: args.owner_agent_id as string, ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, mrr, mrr.isError); break; }
+        case 'market_retire': { if (!args.capability_id || !args.action) { this.sendError(id, -32602, 'Missing required arguments: capability_id and action'); break; } const mtr = await marketRetire({ capability_id: args.capability_id as string, action: args.action as 'retire' | 'restore' | 'scan', ...(args.reason ? { reason: args.reason as 'owner_request' | 'low_invoke' | 'low_rating' | 'manual' } : {}), ...(args.confirmed !== undefined ? { confirmed: args.confirmed as boolean } : {}) }); this.sendTool(id, mtr, mtr.isError); break; }
+        case 'market_harvest_rule': { const mhr = await marketHarvestRule({ ...(args.action ? { action: args.action as 'harvest' | 'full' } : {}), ...(args.case_texts ? { case_texts: args.case_texts as string[] } : {}) }); this.sendTool(id, mhr, mhr.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {

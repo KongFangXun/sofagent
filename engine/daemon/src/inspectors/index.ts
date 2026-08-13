@@ -20,8 +20,10 @@ import { runWorkspaceSummary } from '../workspace-summary';
 import { runAuditTrailInspector } from './audit-trail';
 // v1.3.4 交付 1：能力目录日更生成（@daily）
 import { runMarketCatalogDaily } from './market-catalog-daily';
+// v1.3.4 交付 3：市场健康周检（@weekly）
+import { runMarketHealth } from './market-health';
 
-export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFreshness, checkKnowledgeHealth, checkSkillStaleness, accumulateWarnings, runHealthReport, generateDataSovereigntyDaily, generateDataSovereigntyWeekly, generateDataSovereigntyMonthly, workspaceSummaryInspector, runAuditTrailInspector, runMarketCatalogDaily };
+export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFreshness, checkKnowledgeHealth, checkSkillStaleness, accumulateWarnings, runHealthReport, generateDataSovereigntyDaily, generateDataSovereigntyWeekly, generateDataSovereigntyMonthly, workspaceSummaryInspector, runAuditTrailInspector, runMarketCatalogDaily, runMarketHealth };
 export type { InspectorConfig, InspectorResult } from './types';
 export type { DaemonHealth } from './health-reporter';
 

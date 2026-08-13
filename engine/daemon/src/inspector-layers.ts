@@ -35,6 +35,8 @@ import { runTrendAggregator } from './inspectors/trend-aggregator';
 import { runTaskStats } from './inspectors/task-stats';
 // v1.3.4 交付 1：能力目录日更生成（@daily）
 import { runMarketCatalogDaily } from './inspectors/market-catalog-daily';
+// v1.3.4 交付 3：市场健康周检（@weekly）
+import { runMarketHealth } from './inspectors/market-health';
 
 /** 巡检层级 */
 export type InspectorLayer = 'L1' | 'L2' | 'L3';
@@ -76,6 +78,8 @@ const LAYER_INSPECTORS: Record<InspectorLayer, { name: string; fn: InspectorFn }
     { name: 'skillopt-trigger', fn: runSkilloptTrigger },
     // v1.2.4 P1b：历史趋势聚合
     { name: 'trend-aggregator', fn: runTrendAggregator },
+    // v1.3.4 交付 3：市场健康周检（@weekly——退役候选/评分异常/目录完整性）
+    { name: 'market-health', fn: runMarketHealth },
   ],
   L3: [
     { name: 'federation-distillation', fn: runFederationDistillation },

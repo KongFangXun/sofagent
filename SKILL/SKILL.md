@@ -150,7 +150,7 @@ metadata:
 
 ---
 
-## MCP 工具速查（v1.3.3 · 42 tools）
+## MCP 工具速查（v1.3.4 · 48 tools）
 
 > 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。
 
@@ -164,3 +164,4 @@ metadata:
 | **数据/编排** | `data_sovereignty_report` `sofagent_compose` `notify_session` |
 | **能力清单** | `list_capabilities` |
 | **规则透明化** | `list_rules` |
+| **L3 能力市场** | `market_publish` `market_search` `market_invoke` `market_rate` `market_retire` `market_harvest_rule` |

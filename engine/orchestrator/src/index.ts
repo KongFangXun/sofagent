@@ -524,3 +524,71 @@ export {
 export type { CatalogEntry, CatalogSearchResult } from './market/catalog';
 export { scanForPublish, scanForInstall, mapSafetyResult } from './market/skill-scan';
 export type { ScanResult, ScanVerdict } from './market/skill-scan';
+// v1.3.4 交付 2：调用与评价
+export { invokeCapability, readInvokeLog } from './market/invoker';
+export type { InvokeInput, InvokeResult, InvokeOutcome, CapabilityExecutor, InvokeLogEntry } from './market/invoker';
+export {
+  addRating,
+  readRatings,
+  readRatingsForCapability,
+  aggregateRating,
+  computeRankScore,
+  coldStartFactor,
+  rankCapabilities,
+  getTrustStub,
+  getTrustForRating,
+  readInvokeCounts,
+  appendInvokeCount,
+  COLD_START_THRESHOLD,
+} from './market/rating';
+export type { RatingRecord, AggregatedRating } from './market/rating';
+// v1.3.4 交付 3：养护环（owner + 退役）
+export {
+  declareOwner,
+  getTrust,
+  getOwner,
+  updateTrustOnRating,
+  penalizeOnRetire,
+  clampTrust,
+  classifyTrust,
+  readOwners,
+  TRUST_INITIAL,
+  TRUST_GOOD_THRESHOLD,
+  TRUST_BAD_THRESHOLD,
+  TRUST_UPVOTE_COUNT,
+} from './market/owner';
+export type { OwnerRecord } from './market/owner';
+export {
+  markRetired,
+  restoreCapability,
+  getCapabilityStatus,
+  scanRetireCandidates,
+  LOW_INVOKE_THRESHOLD,
+  LOW_RATING_THRESHOLD,
+} from './market/retire';
+export type { RetireReason, RetireCandidate } from './market/retire';
+// v1.3.4 交付 5：评估体系三步
+export {
+  harvestRules,
+  collectLowScoreRatings,
+  collectRepeatFailCases,
+  harvestFromLowScore,
+  harvestFromRepeatFail,
+  harvestFromCaseTexts,
+  LOW_SCORE_THRESHOLD,
+  REPEAT_FAIL_THRESHOLD,
+} from './market/rule-harvest';
+export type { HarvestInput, HarvestResult } from './market/rule-harvest';
+export {
+  juryRules,
+  benchmarkRule,
+  requestBusinessApproval,
+  SCORE_DELTA_THRESHOLD,
+} from './market/rule-jury';
+export type { JuryInput, JuryResult, RuleBenchmarkResult } from './market/rule-jury';
+export {
+  promoteRules,
+  promoteRule,
+  isAlreadyBuiltin,
+} from './market/rule-promote';
+export type { PromoteInput, PromoteResult } from './market/rule-promote';

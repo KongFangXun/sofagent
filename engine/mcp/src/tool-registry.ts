@@ -19,7 +19,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——44 个 tool（v1.3.4：market_publish + market_search 新增；不含 4 个 resource shortcut）
+ * 完整工具清单——48 个 tool（v1.3.4：market_publish/search/invoke/rate/retire/harvest_rule 新增；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -530,6 +530,63 @@ export const TOOLS: ToolDef[] = [
         query: { type: 'string', description: '检索关键词（模糊匹配名称/描述/标签）' },
         tag: { type: 'string', description: '按标签精确匹配（优先级高于 query）' },
         kind: { type: 'string', enum: ['skill', 'agent', 'flow'], description: '按类型过滤' },
+      },
+    },
+  },
+  {
+    // v1.3.4 (交付 2)：能力调用
+    name: 'market_invoke',
+    description: '能力调用（v1.3.4 L3 组织能力市场）——发现能力 → 挂载调用 → 结果回流。挂载前强制 SkillScan（DANGEROUS 拦截 / SUSPICIOUS 走 HITL 人工确认）。调用全程审计（kind=MARKET，谁调了谁的能力、结果如何）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        capability_id: { type: 'string', description: '能力 ID（必填——先 market_search 发现）' },
+        caller_agent_id: { type: 'string', description: '调用者 agentId（必填）' },
+        input: { description: '调用入参（透传给被调能力）' },
+      },
+      required: ['capability_id', 'caller_agent_id'],
+    },
+  },
+  {
+    // v1.3.4 (交付 2)：能力评价
+    name: 'market_rate',
+    description: '能力评价（v1.3.4 L3 组织能力市场）——调用后累积评分（0.0~1.0），加权排序让高频高价值能力自然上浮。评分公式 = trust(owner) × 平均评分 × log(调用量+1)。防刷：同一评价者对同一能力仅一票（后评覆盖前评）。评价回流同时更新 owner trust 信誉分。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        capability_id: { type: 'string', description: '能力 ID（必填）' },
+        rater_id: { type: 'string', description: '评价者 agentId（必填）' },
+        score: { type: 'number', description: '评分 0.0~1.0（必填）' },
+        owner_agent_id: { type: 'string', description: '能力 owner agentId（必填——用于更新 trust）' },
+        comment: { type: 'string', description: '可选评论' },
+      },
+      required: ['capability_id', 'rater_id', 'score', 'owner_agent_id'],
+    },
+  },
+  {
+    // v1.3.4 (交付 3)：能力退役
+    name: 'market_retire',
+    description: '能力退役/恢复（v1.3.4 L3 组织能力市场养护环）——标记能力为退役（不删除，可恢复，保留审计轨迹）。强制 owner 确认（confirmed=true 才执行）。退役触发 owner trust 下调。action=retire 退役 / restore 恢复 / scan 扫描退役候选（低评分/低调用量）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        capability_id: { type: 'string', description: '能力 ID（必填）' },
+        action: { type: 'string', enum: ['retire', 'restore', 'scan'], description: '操作：retire=退役 / restore=恢复 / scan=扫描候选' },
+        reason: { type: 'string', enum: ['owner_request', 'low_invoke', 'low_rating', 'manual'], description: '退役原因（retire 时）' },
+        confirmed: { type: 'boolean', description: 'owner 确认（retire 时必须 true）' },
+      },
+      required: ['capability_id', 'action'],
+    },
+  },
+  {
+    // v1.3.4 (交付 5)：规则提炼
+    name: 'market_harvest_rule',
+    description: '评估体系三步（v1.3.4 L3 组织能力市场）——从市场调用日志低分差评 + Refine 循环反复触发 case 提炼质量规则候选（action=harvest），或全跑三步（action=full：提炼→业务方评审→晋升 builtin）。让 Refine 质量规则从生产中长出来。晋升记录 kind=EVOLUTION。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['harvest', 'full'], description: '操作：harvest=仅提炼候选 / full=三步全跑（提炼→评审→晋升）', default: 'harvest' },
+        case_texts: { type: 'array', items: { type: 'string' }, description: '可选：注入的案例文本（FDE delivery-report 格式）' },
       },
     },
   },
