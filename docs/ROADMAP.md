@@ -7,7 +7,7 @@
 
 ## 现在在哪：v1.3.4（开发中）
 
-> **v1.3.4 规划方向**：L3 组织能力市场（发布→发现→调用→评价→养护）。
+> **v1.3.4 规划方向**：L3 组织能力市场（发布→发现→调用→评价→养护）+ 评估体系三步落地（Refine Agent 质量规则集的设计依据）。
 >
 > **v1.3.3 已于 2026-08-12 交付**——🤝 L2 团队协作协议（五大机制：共享态/意图广播/触发反应/冲突消解/反馈放大）+ ✨ Refine Agent 完整版（复用 Onboard 循环引擎换 L2 判据）+ 🧭 主 agent 编排（四合一角色）+ 🚪 入口路由（route_workflow MCP tool）+ 📈 进化闭环升级（Benchmark 驱动 Dream Cycle，只动经验层）+ 📜 evidence 字段（DecisionLogEntry + DecisionKind 加 EVOLUTION/TEAM）。详见 [v1.3.3 开发日志](./changelog/v1.3/v1.3.3.md) 和 [迭代历程](#迭代历程)。
 
@@ -83,7 +83,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价→养护）**：Skill/Agent/流程打包发布 + 目录检索 + 调用挂载 + 评分聚合（评分 × 调用量加权自然选择）+ 全程审计 + **养护环（owner 声明 + 失效退役 + 变更记录，GitHub 模式「持续养护」）** | [日志](./changelog/v1.3/v1.3.4.md) |
+| **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价→养护）+ 评估体系三步落地**：Skill/Agent/流程打包发布 + 目录检索 + 调用挂载 + 评分聚合（评分 × 调用量加权自然选择）+ 全程审计 + **养护环（owner 声明 + 失效退役 + 变更记录，GitHub 模式「持续养护」）** + **评估体系三步**（真实案例长出来 → 业务方当评委 → 接到生产回路上——Refine Agent 质量规则集的设计依据，范冰《前线部署工程师》方法论借鉴，2026-08-13 补充） | [日志](./changelog/v1.3/v1.3.4.md) |
 | **v1.3.5** | 📋 规划中 | **自进化与运维闭环（MCP 覆盖度审计缺口补全）**：`run_ab_test` / `promote_ab`（晋升强制人审）+ `snapshot_list` / `snapshot_restore`（恢复强制人审） | [日志](./changelog/v1.3/v1.3.5.md) |
 | **v1.3.6** | 📋 规划中 | **🔌 引擎接口外化完整版（模型层接入前置 · 原 v2.0 前移）**：① Workflow 标准格式 + 运行容器（JSON Schema + MCP `workflow_submit`）② Ontology 注册接口（MCP `ontology_import` + D1-D5 审计）③ **SubAgent 托管 SDK**（`harness.wrap` 包装 LangGraph 自定义 Agent → 自动获得审计/审批/身份/Trace，createReactAgent + 纯 StateGraph 双形态——模型层 sub-agent 托管的落点）④ **模型注册 + 灰度切换**（`model_register` / `model_switch`，评测 → 注册 → 灰度 → 晋升全流程审计 + 强制人审；`source: 'local-path'` 扩展位预留，企业专属模型本地权重部署在 v1.4.1 填充；**通用模型路由不自研——企业挂第三方 model router（LiteLLM/OpenRouter），sofagent 只保留数据主权路由 + 注册/灰度/退役，2026-08-10 补充**）⑤ **训练协议三约定 + 训练预算控制（B2 决策前移自 v1.4.1，2026-08-12）**——双栈架构契约（Node 控制面 spawn Python + stdout JSON 流 + SIGINT 控制）+ 成本透明（超预算暂停 + 人审），让 C13 PoC 客户更早接入 ——**训练语料导出三件套已移至 v1.4.1 训练引擎**（2026-08-10 决策已定：训练相关内容统一从 v1.4.x 开始） | [日志](./changelog/v1.3/v1.3.6.md) |
 | **v1.3.7** | 📋 规划中 | **🔒 SubAgent 完整沙箱 + 场景驱动权限（原 v1.4.0 前移）**：① 沙箱——虚拟文件系统隔离 + 网络出站白名单 + 工具调用中介（前置 allow/deny）+ 虚拟 key 凭证边界注入 + AsyncSubAgent + 真·实时 A/B 双跑 ② 场景驱动权限体系（身份→场景匹配→风险等级→放行）——审计从「事后」扩展到「运行时」（范围限定 SubAgent） | [日志](./changelog/v1.3/v1.3.7.md) |
@@ -105,7 +105,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 |------|------|------|
 | **v1.3.2** | **🚀 Onboard Agent 完整版（L2-L5）+ 🎯 企业专属 eval 套件 + ⚡ workflow 批量自动生成 + 🧩 模型接入插槽扩展 + 🎙️ FDE 梳理辅助 + 🧵 Trace 任务级轨迹** | L2 语义判定（Ontology 判据）+ L3 自动定位（LLM 推理）+ L4 自动修复（审计兜底）+ L5 循环收敛（回归+连续 PASS）+ 企业行业 eval 模板（a16z 法则6 产品化）+ workflow 节点自动生成 sub-agent + `client_type` 模型接入插槽（openai-compatible）+ FDE 梳理辅助（五要素→workflow.yml 草稿）+ **LLM Trace 任务级轨迹视图（调试可观测通用能力，RL 消费在 v1.4.1）**（详见 开发日志 ./changelog/v1.3/v1.3.2.md）|
 | **v1.3.3** | **L2 团队协作协议 + ✨ Refine Agent + 🧭 主 agent 编排** | 协作五大机制 + Refine Agent 完整版（质量规则集判据，复用 Onboard 循环引擎）+ 主 agent 四合一（分发/监控/审计/通讯）（详见 开发日志 ./changelog/v1.3/v1.3.3.md）|
-| **v1.3.4** | **L3 组织能力市场（五环）** | 发布→发现→调用→评价→养护（owner 声明 + 失效退役）+ 评分聚合自然选择 + 全程审计（详见 开发日志 ./changelog/v1.3/v1.3.4.md）|
+| **v1.3.4** | **L3 组织能力市场（五环）+ 评估体系三步** | 发布→发现→调用→评价→养护（owner 声明 + 失效退役）+ 评分聚合自然选择 + 全程审计 + 评估体系三步（真实案例→业务方评委→生产回路，Refine 质量规则集依据）（详见 开发日志 ./changelog/v1.3/v1.3.4.md）|
 | **v1.3.5** | **自进化与运维闭环（MCP 覆盖度审计缺口补全）** | `run_ab_test` / `promote_ab` + `snapshot_list` / `snapshot_restore` 四个 MCP tool（详见 开发日志 ./changelog/v1.3/v1.3.5.md）|
 | **v1.3.6** | **🔌 引擎接口外化完整版（模型层接入前置）** | Workflow 标准格式 + 运行容器（`workflow_submit`）+ Ontology 注册接口（`ontology_import`）+ SubAgent 托管 SDK（`harness.wrap`）+ 模型注册/灰度切换（`model_register`/`model_switch`，`source: 'local-path'` 扩展位预留）+ **训练协议三约定 + 训练预算控制（B2 决策前移自 v1.4.1）**——**训练语料导出已移至 v1.4.1**（详见 开发日志 ./changelog/v1.3/v1.3.6.md）|
 | **v1.3.7** | **🔒 SubAgent 完整沙箱 + 场景驱动权限** | 虚拟 FS + 网络白名单 + 工具中介 + 虚拟 key + AsyncSubAgent + 真·实时 A/B + 场景权限判定链（详见 开发日志 ./changelog/v1.3/v1.3.7.md）|

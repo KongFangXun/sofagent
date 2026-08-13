@@ -525,6 +525,7 @@ SMB 断层解释了"为什么需要中间件"，产品化四条回答"中间件�
 
 产品化方向需要市场信号验证可行性：
 
+- **FDE 岗位爆发（量化锚点）**：MIT NANDA 实验室《生成式人工智能的鸿沟》报告指出，全球企业过去三年在生成式 AI 上烧了三四百亿美元，**95% 的项目没能产生能写进财务报表的价值**——与此同时，FDE 岗位发布量一年涨了 **729%**（Indeed 2025 数据；其他机构口径 800%-1165%）。一边是 95% 的阵亡率，一边是一个岗位一年暴涨七倍多的抢手度——**模型不稀缺了，能把模型塞进客户真实业务里的人/工具，才稀缺**。sofagent 的约束层正是这一层的工程化。a16z 的判断更直白：**「软件不再只是帮工人干活，软件自己就是工人。」** Foundation Capital 估计这波浪潮瞄准的是一个 **4.6 万亿美元**量级的市场——一半是企业付给销售/营销/工程的薪酬，一半是 IT 服务与外包支出，**软件的收费对象正在从「工具预算」换成「人力预算」**。
 - **FDE-as-a-Service / Services-as-Software 被资本验证**：Anthropic 收购 Fractional AI、Accenture×Anthropic 3 万人 FDE 受训、Blackstone+H&F+Goldman 共建企业 AI 服务公司、Anthropic 接入 Palantir FedStart。
 - **受监管行业规模化交付**：全球 Top-3 SI 将 FDE 能力标准化、规模化交付至强监管场景——TCS×Anthropic 在 56 国为 5 万员工与受监管行业部署 Claude；DXC×Anthropic 联盟（FDE 培训认证规模化）；Anthropic×Infosys 在电信等受监管行业共建 AI Agent。三者同源互证 sofagent「FDE 通用能力化 + Services-as-Software + 受监管行业护城河」定位，且印证「卖能力不卖工时」路线在强监管客户侧已被头部 SI 验证可行。
 - **PE/VC 多企业审计仪表盘**（探索方向）：投后管理场景，所有被投企业 AI 审计数据汇总到一个面板。

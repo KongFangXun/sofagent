@@ -18,6 +18,8 @@
 
 **sofagent is an open-source FDE Agent** (Forward Deployed Engineer Agent) — it comes in and maps your business workflows, turning the automatable steps into AI nodes. Once delivery is complete, the FDE departs while the AI nodes keep running 7×24 on their own — every action is audited, out-of-bounds moves are blocked, and anything that breaks can be rolled back.
 
+> 📊 **Why now**: MIT NANDA Lab's *The GenAI Divide* report shows that over the past three years, global enterprises burned $30–40 billion on generative AI, yet **95% of projects failed to produce value worth putting on a financial statement**. Meanwhile, job postings for a role called "Forward Deployed Engineer" (FDE) surged **729%** year-over-year (Indeed 2025 data). Models are no longer scarce — the scarce thing is people who can embed models into real customer operations. sofagent is the open-source substrate that engineers this.
+
 ```mermaid
 graph LR
     A["① Map workflows<br/>Guided conversation maps the workflow<br/>what to automate · what stays human · what to leave alone"] --> B["② Deploy AI nodes<br/>Turn automatable steps into SubAgents<br/>runs inside your existing AI tools, no new UI"]
