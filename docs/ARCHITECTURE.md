@@ -85,7 +85,7 @@ graph TD
 ## 目录
 
 - [术语对照](#术语对照)
-- [能力与状态总览（v1.3.2）](#能力与状态总览v132)
+- [能力与状态总览（v1.3.3）](#能力与状态总览v133)
 - [一、核心理念与架构全景](#一核心理念与架构全景)
 - [二、约束层（Harness）设计——一个层，四种能力](#二约束层harness设计一个层四种能力)
 - [三、部署与运行架构](#三部署与运行架构)
@@ -128,7 +128,7 @@ graph TD
 
 ---
 
-## 能力与状态总览（v1.3.2）
+## 能力与状态总览（v1.3.3）
 
 > 这份清单是「现在能干什么」的单一索引。约束层内部设计见 [二、约束层（Harness）设计——一个层，四种能力](#二约束层harness设计一个层四种能力)；未来方向见 [六、已知局限与未来方向](#六已知局限与未来方向)。
 
@@ -395,7 +395,7 @@ graph LR
 
 决策日志路径：`data/audit/decision-log.jsonl`（history.jsonl 同级兄弟文件）。Agent 只能经 `emitDecision` 落盘——**受控写铁律**。
 
-**评估即需求（Eval as Spec）**：在 Agent 系统中，传统软件的需求文档（PRD）正在被评估用例取代——不是先写 PRD 再让 Agent 照着做，而是先定义"什么算做对了"（可量化、可执行的验收标准），让 Agent 在这个靶子里自主循环收敛。sofagent 的审计就是这个理念的工程骨架：24 条规则 = 24 条可执行的验收标准（19 条纯 git-diff 零 token 确定性判定 + 5 条需语义理解），每次 commit 自动跑一轮回归——不是"写完看看对不对"，是"不满足标准就进不了主干"。这与 fresh-eyes 独立审查、release-gate 验收闭环同构：把"做完了的判定"（What + Done）从人的主观审查变成代码的确定性裁决。评估驱动的约束比提示词约束更坚固——提示词会被模型吞噬，可执行约束不会。
+**评估即需求（Eval as Spec）**：在 Agent 系统中，传统软件的需求文档（PRD）正在被评估用例取代——不是先写 PRD 再让 Agent 照着做，而是先定义"什么算做对了"（可量化、可执行的验收标准），让 Agent 在这个靶子里自主循环收敛。sofagent 的审计就是这个理念的工程骨架：24 条规则 = 24 条可执行的验收标准（19 条纯 git-diff 零 token 确定性判定 + 5 条非纯 git-diff：4 条 hybrid 需 Agent 日志 + 1 条 filesystem 扫描），每次 commit 自动跑一轮回归——不是"写完看看对不对"，是"不满足标准就进不了主干"。这与 fresh-eyes 独立审查、release-gate 验收闭环同构：把"做完了的判定"（What + Done）从人的主观审查变成代码的确定性裁决。评估驱动的约束比提示词约束更坚固——提示词会被模型吞噬，可执行约束不会。
 
 **审计的三重身份**：Code Review 体系化实践中，Review / Verification / Gate 是三个独立环节——sofagent 的审计同时承担三者：
 
@@ -1033,9 +1033,13 @@ audit:
 
 **已知局限**：详见 [LIMITATIONS.md](./LIMITATIONS.md)（按主题分章，含 Key Limitations 速览）。核心：Harness 层自身在上下文里、加载链步进脆弱性、Skill 自进化处于经验记录阶段。
 
-**未来方向**：
+**已交付（v1.3.0-v1.3.3）**：
 - **v1.3.0**：**🔗 激活链 Phase 4 收尾（SUSTAIN）**——全链路验证（activate→compose→run→HITL→audit→sustain）+ `wrapToolCall` middleware 联动 + FDE SKILL.md 新增 activate 引导。Phase 1-3（v1.2.5-v1.2.8）已交付。详见 [激活链设计文档](./guides/fde-activation-chain.md)
-- **v1.3.1**：Ontology 本体结构 + 并行编排 + Agent 身份码 + Onboard Agent L1（v1.3.2-v1.3.5 规划中：Refine Agent / 团队协作协议 / 组织能力市场）
+- **v1.3.1**：Ontology 本体结构 + 并行编排 + Agent 身份码 + Onboard Agent L1
+- **v1.3.2**：Onboard Agent 完整版（L2-L5）
+- **v1.3.3**：L2 团队协作协议 + Refine Agent 完整版 + 主 agent 编排 + 入口路由 + 进化闭环升级
+
+**未来方向（v1.3.4+）**：
 - **v1.3.x 后期**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限（v1.3.7）+ 代理网关硬边界（v1.3.8）+ SubAgent 沙箱（v1.3.7）
 - **v2.x**：组织级共享记忆 + 协同层 + **分层模型路由**（Harness 按任务复杂度路由到云端大模型/本地 7B/本地 0.5B，数据主权驱动——敏感数据不出内网）
 - **v3.x-v4.x+**：企业专属小模型精调（`sofagent-model distill` QLoRA）+ 本地推理 + 离线 USB 节点。详见 [ROADMAP · 分层模型架构](./ROADMAP.md#分层模型架构v3x-远景概述)
