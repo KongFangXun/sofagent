@@ -35,15 +35,20 @@ import { runRules, type AuditResult, type RuleCheck } from './reporter';
 
 /**
  * 获取最近一次 commit 的短 SHA
+ *
+ * v1.3.4 P2-15：git rev-parse 失败时返回 null（而非 'unknown'），
+ * 调用方在 SHA 为 null 时输出显著警告——避免 'unknown' 悄悄进审计记录导致后续对账 mismatch。
+ *
+ * @returns commit 短 SHA，或 null（非 git 仓库 / 无 commit）
  */
-function getLatestCommitSha(): string {
+function getLatestCommitSha(): string | null {
   try {
     const sha = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
       encoding: 'utf-8',
     }).trim();
     return sha;
   } catch {
-    return 'unknown';
+    return null;
   }
 }
 
@@ -81,18 +86,26 @@ export function formatQuickResult(rule: RuleCheck): string[] {
 /**
  * 生成完整的 quick 模式输出
  *
+ * v1.3.4 P1-8：PASS 时输出汇总回声（让用户感知到 sofagent 在工作，而非只感受 FAIL）。
+ * v1.3.4 P2-15：commitSha 为 null 时输出显著警告（非 git 仓库）。
+ *
  * @param result 审计结果
- * @param commitSha 最近一次 commit 的短 SHA
+ * @param commitSha 最近一次 commit 的短 SHA（null = 无法获取）
  * @returns 完整输出字符串
  */
 export function generateQuickOutput(
   result: AuditResult,
-  commitSha: string
+  commitSha: string | null
 ): string {
   const parts: string[] = [];
 
   // 标题行
-  parts.push(`🔍 审计最近一次 commit（${commitSha}）`);
+  if (commitSha) {
+    parts.push(`🔍 审计最近一次 commit（${commitSha}）`);
+  } else {
+    // v1.3.4 P2-15: SHA 为 null 时输出显著警告
+    parts.push(`🔍 审计最近一次 commit（⚠️ 无法获取 commit SHA）`);
+  }
   parts.push('');
 
   // 违规 / 警告详情
@@ -114,8 +127,13 @@ export function generateQuickOutput(
   // 汇总行
   parts.push('');
   if (violationCount === 0 && warnCount === 0) {
+    // v1.3.4 P1-8: PASS 时输出可感知回声——让用户明确知道「sofagent 在工作且通过了」
     // v1.3.2 P2-17: 解释 17 条默认 vs 24 条总量，消除「少装了什么」的认知落差
     parts.push(`✅ 全部 ${passCount} 条规则通过（默认规则 · 共 24 条，扩展规则用 --ruleset 加载）${skipCount > 0 ? `（${skipCount} 条跳过）` : ''}`);
+    // v1.3.4 P1-8: 显著回声行——用户用了三周可能不知道 sofagent 在工作，此行解决可感知性
+    if (commitSha) {
+      parts.push(`✓ [sofagent] ${passCount} 条规则全通过（commit ${commitSha}）`);
+    }
   } else {
     const summaryParts: string[] = [];
     if (violationCount > 0) summaryParts.push(`${violationCount} 条违规`);
@@ -241,6 +259,11 @@ export function runCliQuick(argv: string[]): number {
   // 3. 取 commit SHA
   const commitSha = getLatestCommitSha();
 
+  // v1.3.4 P2-15: SHA 为 null 时输出显著警告（而非静默用 'unknown' 填充）
+  if (commitSha === null) {
+    console.log('⚠️ [sofagent] 无法获取 commit SHA（当前目录可能不是 git 仓库或无 commit），审计记录将不含 commit 关联。');
+  }
+
   // 4. 解析 diff——parseDiff 接收 git refspec（如 HEAD~1..HEAD），内部执行 git diff
   let diffFiles: DiffFile[];
   try {
@@ -251,7 +274,8 @@ export function runCliQuick(argv: string[]): number {
   }
 
   if (diffFiles.length === 0) {
-    console.log(`🔍 审计最近一次 commit（${commitSha}）`);
+    const shaLabel = commitSha || '⚠️ 无 SHA';
+    console.log(`🔍 审计最近一次 commit（${shaLabel}）`);
     console.log('');
     console.log('✅ 无文件变更——没有需要审计的内容。');
     return 0;
