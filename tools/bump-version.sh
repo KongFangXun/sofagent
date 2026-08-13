@@ -682,6 +682,12 @@ while IFS= read -r -d '' pkg_json; do
     echo -e "  ${GREEN}✓${NC} $pkg_json (内部依赖已同步)"
   fi
 done < <(find "$PROJECT_ROOT/engine" -maxdepth 3 -name "package.json" -not -path "*/node_modules/*" -print0 2>/dev/null)
+# ⚠️ v1.3.3 复核澄清：本脚本的 find 用 `-name "package.json"` 精准匹配，
+# **不会**扫到 package-lock.json。package-lock.json 的 root version 字段
+# 由步骤 [1/13] 的 root package.json sed 间接覆盖（npm install 后自动同步）。
+# 如果发版后 npm install 报 ETARGET（第三方依赖幽灵版本），说明 lock 被外部
+# 手段误改过——跑 `git restore package-lock.json && npm install` 恢复。
+# v1.3.3 发版时 is-network-error@1.3.3 幽灵版本即属此情况（已被 git restore 修复）。
 TOTAL_CHANGED=$((TOTAL_CHANGED + BUMP_INTERNAL_DEPS_COUNT))
 
 # 10. 汇总

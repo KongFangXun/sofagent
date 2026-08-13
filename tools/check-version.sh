@@ -768,11 +768,26 @@ echo ""
 # ── 文档头日期一致性扫描（v1.1.7 新增 · 修复一）──────────────
 # 所有 `> vX.Y · YYYY-MM-DD` 文档头日期应与发版日期一致。
 # bump-version.sh 只改版本号不改日期，反复出现文档头日期漂移；
-# 本扫描以发版日期为唯一基准，任何不一致都报错。随版本更新时，
-# 同步修改下方 EXPECTED_DOC_DATE 与 bump-version.sh。
+# 本扫描以发版日期为唯一基准，任何不一致都报错。
+#
+# v1.3.3 复核修复：EXPECTED_DOC_DATE 改为从 CHANGELOG 当前版本段动态提取，
+# 不再硬编码——发版时无需手改脚本。提取逻辑：audit/package.json 的 version
+# → CHANGELOG 里 `vX.Y.Z — ... · YYYY-MM-DD ·` 的日期。兜底：提取不到时
+# 退回 LAST_KNOWN_DATE 并告警（避免开发中 CHANGELOG 还没更新时误报）。
 echo "=== 14. 文档头日期一致性扫描（> vX.Y · YYYY-MM-DD）==="
 DOC_DATE_OK=true
-EXPECTED_DOC_DATE="2026-08-12"
+# 动态提取：从 CHANGELOG 当前版本段读发版日期（SSOT）
+CUR_VER=$(node -p "require('${PROJECT_ROOT}/engine/audit/package.json').version" 2>/dev/null || echo "")
+EXPECTED_DOC_DATE=""
+if [ -n "$CUR_VER" ]; then
+  EXPECTED_DOC_DATE=$(grep -m1 "v${CUR_VER}.*—" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" || echo "")
+fi
+# 兜底：CHANGELOG 还没当前版本段（开发中）时退回最后已知日期
+LAST_KNOWN_DATE="2026-08-12"
+if [ -z "$EXPECTED_DOC_DATE" ]; then
+  echo "  ⚠ CHANGELOG 未找到 v${CUR_VER} 发版日期，退回 LAST_KNOWN_DATE=${LAST_KNOWN_DATE}（开发中版本可能如此）"
+  EXPECTED_DOC_DATE="$LAST_KNOWN_DATE"
+fi
 while IFS= read -r md; do
   match=$(grep -m1 -nE "^> v[0-9]+\.[0-9]+(\.[0-9]+)? · [0-9]{4}-[0-9]{2}-[0-9]{2}" "$md" 2>/dev/null)
   if [ -n "$match" ]; then
