@@ -1351,3 +1351,15 @@ sed 's|bash tools/test-count.sh|bash /nonexistent/test-count.sh|' tools/check-te
 bash /tmp/cct-test.sh > /dev/null 2>&1; [ $? -eq 1 ] && echo "✅ 失败路径正确报红" || echo "⚠️ 失败路径崩溃或假绿"
 rm -f /tmp/cct-test.sh
 ```
+
+#### 101. check-docs.sh LIMIT 超标——内容增强后 B 层行数超预算（v1.3.3 新增 · CI 阻塞）
+
+**背景**：v1.3.3 阶段八内容增强（FDE 方法论/职业道德/评估体系）导致 B 层（开发者参考）行数从 8302→8437，超 LIMIT_B=8400，CI pr-check 失败。发版过程中才发现——本地 check-docs.sh 在 WorkBuddy 环境下超时跑不完，CI 上才暴露。
+
+**检查命令**：
+```bash
+# CI 模拟：只跑 B 层行数检查（不跑锚点段避免超时）
+AB=$(cat docs/ARCHITECTURE.md docs/DEVELOPMENT.md docs/HANDBOOK.md docs/PHILOSOPHY.md docs/WIKI.md SECURITY.md docs/VALIDATION.md docs/THANKS.md docs/ROADMAP.md docs/LIMITATIONS.md FDE/GUIDE.md FDE/README.md 2>/dev/null | wc -l)
+echo "B 层: $AB 行（LIMIT_B=$(grep '^LIMIT_B=' tools/check-docs.sh | grep -oE '[0-9]+')）"
+[ "$AB" -le "$(grep '^LIMIT_B=' tools/check-docs.sh | grep -oE '[0-9]+')" ] && echo "✅" || echo "⚠️ 超标——内容增强后需上调 LIMIT_B"
+```

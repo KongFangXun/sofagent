@@ -192,14 +192,41 @@ EOF
 
 ### Release Notes 格式规范
 
-- **Title**：`vX.Y.Z — {核心变更摘要}`（常规）/ `🎉`（里程碑如 vX.Y.0）
-- **Body 结构**：
-  - `## 🔨 核心变更`——功能按重要性降序，安全修复优先于文档修复。每个变更点用 `-` 列表，一句话说清楚做了什么（不写「为什么」——那在开发日志里）
-  - `## ✅ 质量验证`——表格固定项（npm test / acceptance-test / shellcheck / check-version / 回归检查 / release-gate / fresh-eyes），结果列每项带 ✅
-  - `📖 [详细开发日志](./docs/changelog/v<major>.<minor>/vX.Y.Z.md)`——必须用 markdown 链接语法
+> **本节是 GitHub Release body 的强制规范——所有版本必须遵守，不可漂移。**
+> 历史教训：v1.3.0/v1.3.1 的 release body 含「CI (8 workflows)」却缺 release-gate / fresh-eyes；v1.3.2/v1.3.3 反过来——四版四样。本规范把质量表 7 项钉死，禁止增减。
+
+- **Title**：`vX.Y.Z — {核心变更摘要}`（常规）/ `🎉 vX.Y.Z — {核心变更摘要}`（里程碑如 vX.Y.0）
+- **Body 结构**（三段固定顺序，不可调）：
+  1. `## 🔨 核心变更`——功能按重要性降序，安全修复优先于文档修复。每个变更点用 `-` 列表，一句话说清楚做了什么（不写「为什么」——那在开发日志里）
+  2. `## ✅ 质量验证`——**固定 7 项表格**（见下方模板），结果列每项带 ✅，缺一项即视为体例不合规
+  3. `📖 [详细开发日志](./docs/changelog/v<major>.<minor>/vX.Y.Z.md)`——必须用 markdown 链接语法，放最末
+
+#### ✅ 质量验证表固定 7 项（不可增减）
+
+```markdown
+## ✅ 质量验证
+
+| 检查项 | 结果 |
+|------|:--:|
+| npm test | {N} tests 全绿 ✅ |
+| acceptance-test | {N}/{N} 场景全绿 ✅ |
+| shellcheck | 零 error ✅ |
+| check-version | 71/71 全绿 ✅ |
+| 回归检查 | {N} 维度 ✅ |
+| release-gate | verdict=PASS ✅ |
+| fresh-eyes | {N} 轮独立审查 ✅ |
+```
+
+**为什么是这 7 项**：
+- `CI (8 workflows)` 不单列——CI 跑的就是这 7 项的子集，单列等于重复
+- `release-gate` 是发版闸门、`fresh-eyes` 是独立审查——两者是「是否值得发版」的质量证据，必须列
+- v1.3.0/v1.3.1 缺这两项是因为当时还没跑通这两个 loop；v1.3.2+ 已跑通，禁止再省略
+
 - **功能领域 emoji 按语义选**：🔧 功能 / 🛡️ 安全 / 📝 文档 / 🔍 审查 / 🆕 新建 / 📊 可视化 / ⚡ 自动化 / 🔗 集成 / 📦 打包 / 🎨 UI
-- **不含审查元信息**（模型名、审查轮次、P0/P1 标签）——那是内部过程
+- **不含审查元信息**（模型名、审查轮次内部代号、P0/P1 标签）——那是内部过程，用户看不懂。「{N} 轮独立审查」可写，但不写「GLM-5.2 / run-11 / P0-3」这种
 - **测试数字写实际值**（从 `npm test 2>&1 | tail -5` 获取），不写约数
+- **BugFix 段在核心变更最末**（不独立成 H2）——`### 🔒 BugFix（上版遗留）`，用 `-` 列表
+- **与 changelog 内嵌「Release Notes」段的关系**：GitHub Release body = 面向 GitHub 用户（精炼版）；changelog 文件末尾的 `## Release Notes · vX.Y.Z` = 面向深度读者（含破坏性变更细节）。两者内容可重叠但读者层不同——GitHub body 偏精炼，changelog 段偏完整。
 
 ---
 
