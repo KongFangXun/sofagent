@@ -31,7 +31,7 @@
 | **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
 | **审计引擎** | git diff 驱动，24 条规则（17 默认 + 7 扩展），A1→A23 为活跃规则（A12/A13 已在 v0.99.4 合并入 A11，编号不再使用；v1.2.5 新增 A20-A23），每次 commit 自动跑 | [ARCHITECTURE §三](./ARCHITECTURE.md) |
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
-| **FORGE** | 自迭代引擎——通过 Workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
+| **FORGE** | 自迭代引擎（内部工具，外部用户可忽略）——通过 Workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ harness/（约束底座）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |
 | **激活链** | FDE 交付物→企业工作流自运转的四阶段生命周期：ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN（v1.2.5-v1.3.0） | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md) |
 | **data/** | ~/.sofagent/data/ v1.2.1 确立的 SSOT 数据目录（原 .sofagent/ 已迁移）：history.jsonl、knowledge/、audit/、config/ | [DEVELOPMENT §数据目录](./DEVELOPMENT.md) |
@@ -180,7 +180,7 @@
 | Ledger | 原始数据层（think.md + history.jsonl），append-only | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | Views | 派生视图层（knowledge/ 四子目录），Ledger 单向派生 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | Policy | 约束规则层（SKILL + fde.md），Agent 启动时注入 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
-| FORGE | 自迭代引擎——Agent 审查/修复/验证自己的代码 | [FORGE/README.md](../FORGE/README.md) |
+| FORGE | 自迭代引擎（内部工具，外部用户可忽略）——Agent 审查/修复/验证自己的代码 | [FORGE/README.md](../FORGE/README.md) |
 | fresh-eyes-loop | FORGE 的质量审查闭环（a-check→b-check→a-consolidate→b-fix→a-verify） | [FORGE/SKILL/fresh-eyes-loop/SKILL.md](../FORGE/SKILL/fresh-eyes-loop/SKILL.md) |
 | release-gate-loop | FORGE 的发版闸门闭环（acceptance-test + regression + 审查报告） | [FORGE/SKILL/release-gate-loop/SKILL.md](../FORGE/SKILL/release-gate-loop/SKILL.md) |
 | ToolGate | Agent 工具调用的前置门禁（A2 密钥/A9 注入/A14 越权等规则） | [DEVELOPMENT §ToolGate](./DEVELOPMENT.md) |
