@@ -78,3 +78,76 @@ export function runRules(
 ): AuditResult {
   return runRulesWithFastFail(diffFiles, logEntries, task, strict, silent, commitMsg, config, history, gb48000, quickMode);
 }
+
+// ============================================================
+// v1.3.4 P2-4: FAIL 报告规则明细格式化
+// ============================================================
+
+/**
+ * v1.3.4 P2-4: 格式化 FAIL/WARN 规则的详细明细
+ *
+ * 原 bug：二进制/大文件审计 FAIL 时报告只说「1 违规」，没指明是 A11 还是 A17 还是其他。
+ * 本函数对每条命中规则输出「规则名 + 触发原因 + 文件路径」，让用户一眼看到是哪条规则拦的。
+ *
+ * @param results 审计结果
+ * @returns 格式化后的明细行数组（每行包含规则名 + 原因 + 文件路径）
+ */
+export function formatRuleDetails(results: AuditResult): string[] {
+  const lines: string[] = [];
+  const problems = results.rules.filter((r) => r.status === 'FAIL' || r.status === 'WARN');
+
+  for (const rule of problems) {
+    const icon = rule.status === 'FAIL' ? '❌' : '⚠️';
+    const ruleId = rule.number >= 200 ? `E${rule.number - 200}` : `A${rule.number}`;
+    const classTag = rule.ruleClass === '业务底线' ? '[底线]'
+      : rule.ruleClass === '能力拐杖' ? '[拐杖]'
+      : rule.ruleClass === '工程规范' ? '[规范]'
+      : '';
+
+    if (rule.details.length === 0) {
+      // 无详情时仍输出规则名（让用户知道是哪条规则拦的）
+      lines.push(`${icon} [sofagent] ${rule.name} (${ruleId}) ${classTag}`);
+    } else {
+      for (const detail of rule.details) {
+        // 每条 detail 已经包含触发原因（规则 check 函数生成），这里补上规则名 + ID
+        lines.push(`${icon} [sofagent] ${rule.name} (${ruleId}) ${classTag}: ${detail}`);
+      }
+    }
+  }
+
+  return lines;
+}
+
+/**
+ * v1.3.4 P2-4: 生成 FAIL 报告汇总——含规则明细
+ *
+ * 用于 CLI / CI 输出场景，确保用户看到完整的安全画像：
+ *   - 总违规数 / 警告数
+ *   - 每条命中规则的规则名 + ID + 触发原因 + 文件路径
+ *
+ * @param results 审计结果
+ * @returns 汇总报告字符串（多行）
+ */
+export function generateFailReport(results: AuditResult): string {
+  const failCount = results.rules.filter((r) => r.status === 'FAIL').length;
+  const warnCount = results.rules.filter((r) => r.status === 'WARN').length;
+  const passCount = results.rules.filter((r) => r.status === 'PASS').length;
+
+  const lines: string[] = [];
+  lines.push(`━━━ sofagent 审计报告 ━━━`);
+  lines.push(`违规 ${failCount} · 警告 ${warnCount} · 通过 ${passCount}（共 ${results.rules.length} 条规则）`);
+  lines.push('');
+
+  const details = formatRuleDetails(results);
+  if (details.length > 0) {
+    lines.push('命中规则明细:');
+    for (const d of details) {
+      lines.push(`  ${d}`);
+    }
+  } else {
+    lines.push('✅ 全部规则通过');
+  }
+
+  lines.push('');
+  return lines.join('\n');
+}
