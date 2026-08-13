@@ -2285,6 +2285,69 @@ grep -q "aggregateTrajectory\|TaskTrajectory" "$PROJECT_ROOT/engine/orchestrator
 grep -q "exportTrajectoryForRL" "$PROJECT_ROOT/engine/orchestrator/src/trace/trajectory.ts" || S255_OK=false
 $S255_OK && pass "LLM Trace 任务级轨迹视图（按 taskId 聚合 + RL 训练导出）"
 
+# ═══════════════════════════════════════════════════════════════
+# v1.3.3 验收场景（scenario 256-262）——L2 团队协作 + Refine + 进化闭环 + 入口路由 + evidence
+# ═══════════════════════════════════════════════════════════════
+
+scenario 256 "v1.3.3 交付 1 L2 团队协作协议——五大机制 + 建队机制"
+S256_OK=true
+for f in protocol team-manager team-state intent-bus; do
+  [ -f "$PROJECT_ROOT/engine/orchestrator/src/team/${f}.ts" ] || S256_OK=false
+done
+grep -q "resolveConflict" "$PROJECT_ROOT/engine/orchestrator/src/team/protocol.ts" || S256_OK=false
+grep -q "amplifyFeedback" "$PROJECT_ROOT/engine/orchestrator/src/team/protocol.ts" || S256_OK=false
+grep -q "parseTeamYaml" "$PROJECT_ROOT/engine/orchestrator/src/team/team-manager.ts" || S256_OK=false
+grep -q "Automerge" "$PROJECT_ROOT/engine/orchestrator/src/team/team-state.ts" || S256_OK=false
+$S256_OK && pass "L2 五大机制（共享态/广播/触发/消解/放大）+ team.yml 建队" || fail "L2 团队协作协议核心缺失"
+
+scenario 257 "v1.3.3 交付 1b 团队联邦通道——daemon FederatedTeamSyncChannel"
+S257_OK=true
+[ -f "$PROJECT_ROOT/engine/daemon/src/federation/team-channel.ts" ] || S257_OK=false
+grep -q "FederatedTeamSyncChannel\|TeamSyncChannel" "$PROJECT_ROOT/engine/daemon/src/federation/team-channel.ts" || S257_OK=false
+$S257_OK && pass "daemon FederatedTeamSyncChannel（复用 v1.1.8 加密链路）" || fail "团队联邦通道缺失"
+
+scenario 258 "v1.3.3 交付 2 主 agent 编排——四合一角色 + 自动入队"
+S258_OK=true
+grep -q "enqueueSubAgent\|EnqueueSubAgentInput" "$PROJECT_ROOT/engine/orchestrator/src/team/team-manager.ts" || S258_OK=false
+grep -q "deriveAgentFromRequirement" "$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts" || S258_OK=false
+$S258_OK && pass "主 agent 编排（分发/监控/审计/通讯 + sub-agent 自动入队）" || fail "主 agent 编排挂点缺失"
+
+scenario 259 "v1.3.3 交付 3 入口路由——route_workflow MCP tool + workflow 节点 type"
+S259_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/route/route-request.ts" ] || S259_OK=false
+[ -f "$PROJECT_ROOT/engine/mcp/src/tools/route-workflow.ts" ] || S259_OK=false
+grep -q "route: 'workflow'\|route: 'fallback'" "$PROJECT_ROOT/engine/orchestrator/src/route/route-request.ts" || S259_OK=false
+grep -q "type: 'loop' | 'auto' | 'manual'" "$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts" || S259_OK=false
+$S259_OK && pass "route_workflow（命中 workflow / 不命中 fallback + 节点 type 机器化）" || fail "入口路由缺失"
+
+scenario 260 "v1.3.3 交付 4 Refine Agent——复用 loop-agent 换 L2 判据"
+S260_OK=true
+for f in refine-driver quality-rule-set quality-judge; do
+  [ -f "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/${f}.ts" ] || S260_OK=false
+done
+grep -q "onConverged" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/driver.ts" || S260_OK=false
+grep -q "qualityJudge\|QualityJudge" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/refine-driver.ts" || S260_OK=false
+[ -f "$PROJECT_ROOT/engine/mcp/src/tools/refine.ts" ] || S260_OK=false
+$S260_OK && pass "Refine Agent（复用 Onboard 引擎 + 质量规则集 + onConverged 自动触发）" || fail "Refine Agent 缺失"
+
+scenario 261 "v1.3.3 交付 5 进化闭环——Benchmark 驱动 + 范围白名单（只动经验层）"
+S261_OK=true
+for f in optimization-loop snapshot-manager contamination-guard; do
+  [ -f "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/${f}.ts" ] || S261_OK=false
+done
+grep -q "runOptimizationLoop" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/optimization-loop.ts" || S261_OK=false
+grep -q "SKILL\.md\|审计规则\|git snapshot" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/optimization-loop.ts" || S261_OK=false
+grep -q "checkContamination\|assertNoContamination" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/contamination-guard.ts" || S261_OK=false
+$S261_OK && pass "进化闭环（evidence→hypothesis→Candidate→eval→accept/rollback + 范围白名单 + 污染检测）" || fail "进化闭环缺失或范围白名单未落地"
+
+scenario 262 "v1.3.3 交付 6 evidence 字段 + DecisionKind 扩展（EVOLUTION/TEAM）"
+S262_OK=true
+grep -q "evidence" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S262_OK=false
+grep -q "'EVOLUTION'" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S262_OK=false
+grep -q "'TEAM'" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S262_OK=false
+grep -q "EVOLUTION\|TEAM" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" || S262_OK=false
+$S262_OK && pass "evidence 字段 + DecisionKind 加 EVOLUTION/TEAM" || fail "审计留痕字段缺失"
+
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 # 🔴 v1.3.1 release-gate run-10 教训：补 ANSI-stripped 纯文本汇总行

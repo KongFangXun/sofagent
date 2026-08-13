@@ -107,6 +107,27 @@ function ruleToId(r: Rule): string {
 }
 
 /**
+ * 向后兼容导出：派生的 AUDIT_PRIORITY（v1.3.3 #11 单源化后保留）
+ *
+ * v1.3.3 #11 把规则 priority 字段并入 index.ts 规则定义，runner.ts 不再维护
+ * 独立 AUDIT_PRIORITY 常量。但 acceptance-test.sh S186 / 外部脚本仍依赖
+ * `require('runner.js').AUDIT_PRIORITY.critical.includes('A20')` 形态的查询。
+ *
+ * 此导出从 index.ts 的规则定义 + defaultRules 动态派生，保证与 priority 字段
+ * 单源一致——新增规则只需在 index.ts 填 priority，本导出自动更新。
+ */
+export const AUDIT_PRIORITY: Record<Priority, string[]> = (() => {
+  const allRules = [...defaultRules];
+  const groups = groupRulesByPriority(allRules);
+  return {
+    critical: groups.critical.map(ruleToId),
+    warning: groups.warning.map(ruleToId),
+    crutch: groups.crutch.map(ruleToId),
+    extended: groups.extended.map(ruleToId),
+  };
+})();
+
+/**
  * 获取所有已知的规则 ID（用于 SKIPPED 填充）
  */
 function getAllRuleIds(activeRules: Rule[]): string[] {
