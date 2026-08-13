@@ -15,7 +15,7 @@
 - [x] 三 · 基础自测 → [03-selftest.md](./releasing/03-selftest.md) · build EXIT=0 + test 2100/2100
 - [x] 四 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session）→ [04-quality-loop.md](./releasing/04-quality-loop.md) · **v1.3.3 跳过 fresh-eyes-loop（项目负责人决定，下版恢复）；代码审核由项目负责人零信任复核完成**
 - [x] 五 · 审查体系合并更新 → [05-review-system.md](./releasing/05-review-system.md) · regression-checklist / acceptance-test / fresh-eyes-review 已更新
-- [x] 六 · release-gate-loop 发版闸门（新 session · 必须 PASS 才继续）→ [06-release-gate.md](./releasing/06-release-gate.md) · run-01 FAIL→修复（S186 + coverage）→ acceptance 272/272 全 PASS · 维度 4/96 确认 driver 误报
+- [x] 六 · release-gate-loop 发版闸门（新 session · 必须 PASS 才继续）→ [06-release-gate.md](./releasing/06-release-gate.md) · run-01 FAIL→修复→**run-04 verdict=PASS 三项全绿** · 7 项人工复核全部确认（维度 98/99 实测已修，96 一致，49/56/59/90 脚本健壮性不阻断）
 - [x] 七 · 审查体系最终确认 → [07-final-confirm.md](./releasing/07-final-confirm.md) · regression 补维度 98-100 + fresh-eyes 补 v1.3.3 经验 + 警戒线上调（1400/2400/400）
 - [ ] 八 · 开发日志定稿 + 文档收尾 → [08-doc-finalize.md](./releasing/08-doc-finalize.md)
 - [ ] 九 · 工具脚本健康检查 → [09-tool-health.md](./releasing/09-tool-health.md)
