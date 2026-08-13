@@ -140,4 +140,53 @@ describe('buildConstrainedSystemPrompt', () => {
     expect(result).not.toContain('# 企业规则');
     expect(result).not.toContain('# 历史经验');
   });
+
+  // ────────────────────────────────────────────────────────────
+  // v1.3.4 P1-18: 行为断言——不只测字段存在，测注入后行为符合约束
+  // ────────────────────────────────────────────────────────────
+
+  it('宪法层注入后包含「核心铁律」约束行为（P1-18 行为断言）', () => {
+    // SKILL.md 注入后应能约束 Agent 行为——验证宪法层确实起了"约束"作用，
+    // 而非只是把文件内容粘贴进去（测行为不测类型存在）
+    writeSkill('# My Skill\n你必须遵守以下底线：\n1. 不越界\n2. 不逃验证');
+    const result = buildConstrainedSystemPrompt(tmpDir);
+
+    // 行为断言 1：宪法层标题存在且内容完整注入
+    expect(result).toContain('# 宪法约束');
+    expect(result).toContain('你必须遵守以下底线');
+    expect(result).toContain('不越界');
+    expect(result).toContain('不逃验证');
+  });
+
+  it('四层加载链注入顺序正确——宪法在规范前，规范在经验前（P1-18 行为断言）', () => {
+    // 验证加载链的注入顺序符合约束优先级（宪法 > 规范 > 经验），
+    // 这是行为契约——顺序错误会导致 Agent 先看到经验再看到铁律，约束力降低
+    writeSkill('# Skill 铁律');
+    writeSkill('# FDE 规范', 'fde.md');
+    writeSkill('# Think 反思', 'think.md');
+    const result = buildConstrainedSystemPrompt(tmpDir);
+
+    const constitutionPos = result.indexOf('# 宪法约束');
+    const enterprisePos = result.indexOf('# 企业规则');
+    const historyPos = result.indexOf('# 历史经验');
+
+    // 行为断言：宪法层在规范层之前，规范层在经验层之前
+    expect(constitutionPos).toBeGreaterThanOrEqual(0);
+    expect(enterprisePos).toBeGreaterThan(constitutionPos);
+    expect(historyPos).toBeGreaterThan(enterprisePos);
+  });
+
+  it('约束内容被 Agent 可见且不被截断丢失（P1-18 行为断言）', () => {
+    // 验证较长的 SKILL.md 内容能完整注入——截断会丢失铁律，导致约束失效
+    const longRule = '禁止修改审计引擎自身代码（A1 铁律）'.repeat(10);
+    writeSkill(`# 规则\n${longRule}`);
+    const result = buildConstrainedSystemPrompt(tmpDir);
+
+    // 行为断言：关键约束文本完整注入，未截断
+    expect(result).toContain('# 规则');
+    expect(result).toContain('禁止修改审计引擎自身代码（A1 铁律）');
+    // 重复 10 次的内容应至少出现（验证未被意外截断）
+    const matchCount = (result.match(/禁止修改审计引擎自身代码/g) || []).length;
+    expect(matchCount).toBeGreaterThanOrEqual(10);
+  });
 });

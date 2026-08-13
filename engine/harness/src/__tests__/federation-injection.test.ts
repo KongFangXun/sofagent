@@ -57,4 +57,46 @@ describe('联邦知识注入（加载链第 3 层）', () => {
     expect(prompt).not.toContain('untrusted');
     expect(prompt).toContain('本机沉淀');
   });
+
+  // ────────────────────────────────────────────────────────────
+  // v1.3.4 P1-18: 行为断言——联邦知识包裹正确性（不只测标签存在，测包裹语义）
+  // ────────────────────────────────────────────────────────────
+
+  it('federation 内容被完整包裹——开标签在前内容在中闭标签在后（P1-18 行为断言）', () => {
+    const fedPath = path.join(skillDir, 'knowledge', 'federation', 'peer-note.md');
+    fs.writeFileSync(fedPath, '联邦敏感数据 ABC123');
+    const newer = new Date(Date.now() + 60_000);
+    fs.utimesSync(fedPath, newer, newer);
+
+    const prompt = buildConstrainedSystemPrompt(tmpRoot);
+
+    // 行为断言：包裹顺序正确（开标签 → 内容 → 闭标签），而非只是标签存在
+    const openPos = prompt.indexOf('<untrusted source="federation">');
+    const contentPos = prompt.indexOf('联邦敏感数据 ABC123');
+    const closePos = prompt.indexOf('</untrusted>');
+
+    expect(openPos).toBeGreaterThanOrEqual(0);
+    expect(contentPos).toBeGreaterThan(openPos);
+    expect(closePos).toBeGreaterThan(contentPos);
+  });
+
+  it('联邦知识注入不泄漏到本地知识段——隔离正确（P1-18 行为断言）', () => {
+    const fedPath = path.join(skillDir, 'knowledge', 'federation', 'secret.md');
+    fs.writeFileSync(fedPath, 'FEDERATION_ONLY_SECRET');
+    fs.writeFileSync(path.join(skillDir, 'knowledge', 'local.md'), 'LOCAL_KNOWLEDGE');
+    const newer = new Date(Date.now() + 60_000);
+    fs.utimesSync(fedPath, newer, newer);
+
+    const prompt = buildConstrainedSystemPrompt(tmpRoot);
+
+    // 行为断言：联邦内容只在 untrusted 包裹内出现，不会裸露到本地知识段
+    expect(prompt).toContain('FEDERATION_ONLY_SECRET');
+    const wrappedStart = prompt.indexOf('<untrusted source="federation">');
+    const wrappedEnd = prompt.indexOf('</untrusted>');
+    const fedContentPos = prompt.indexOf('FEDERATION_ONLY_SECRET');
+
+    // 联邦内容必须在包裹区间内
+    expect(fedContentPos).toBeGreaterThan(wrappedStart);
+    expect(fedContentPos).toBeLessThan(wrappedEnd);
+  });
 });
