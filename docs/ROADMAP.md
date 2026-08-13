@@ -24,36 +24,9 @@
 | **v1.3.2** | 🔄 Onboard Agent 完整版（L2-L5 循环引擎：定位→修复→再跑→收敛，FORGE 产品化第二刀）+ 🎯 企业专属 eval 套件（金融/制造/供应链模板）+ ⚡ workflow 批量自动生成（一次建 N 个 sub-agent）+ 🧩 模型接入插槽扩展（client_type）+ 🎙️ FDE 梳理辅助（ontology 咨询式生成）+ 🧵 LLM Trace 任务级轨迹 + Onboard/Refine Session 级隔离 |
 | **v1.3.1** | 🧠 Ontology 运行时层（Action 注册表 + validator 三态 + Schema 定稿）+ 🔀 并行编排（ParallelScheduler + 波次审计卡关 + MergeQueue）+ ⏸️ Durable Execution（checkpoint 续跑 + 副作用幂等）+ 🆔 Agent 身份码 Ed25519 + 🚀 Onboard Agent L1 + 📊 Benchmark 评测（隔离执行 + HMAC 链）+ 🔒 工具审批四模式 + 📜 LLM 调用级 Trace + 🔄 错误处理（stop_reason + 退避 + 收敛）+ 📚 L4 渐进加载 + 🏛️ 国标对齐 GB/T 48000.3-2026 |
 | **v1.3.0** | 🛡️ 运行时审计最小闭环（wrapToolCall middleware + tool-gate 动态拦截 + 审计日志）+ 🧠 决策审计（emitDecision + HMAC 链 + kind-wise back）+ 🔗 激活链 Phase 4 收尾（SUSTAIN）+ 📋 list_rules MCP tool + 🔧 双规则系统统一（ruleType）+ 📦 外部记忆后端 Path A（7 个交付项）+ 🔧 进化链路写保护 + 🔓 运行时审计日志按 git 仓库隔离 + 🔧 危险操作 HITL 钩子 |
-| **v1.2.9** | 🐛 FORGE Driver 短任务化（12 独立 worker 各跑 1 视角）+ ⏸️ Checkpoint/Resume worker 级断点 + 🏠 PM2 守护进程 + 🔗 激活链 Phase 3 后半（HITL + 审计 + 异常处理）+ 📐 约束层叙事重构 + 🚪 三个入口产品（npx CLI + 规则市场 + GitHub Action） |
-| **v1.2.8** | 记忆分层 + 定时任务 + 🔗 激活链 Phase 3 前半（dag-runner 企业 Agent + node-executor + run-enterprise CLI）+ 🚪 release-gate-loop F 修复者（验-改循环）+ 🔍 FORGE 全 loop 接入 audit（dogfooding）+ ⏸️ Checkpoint/Resume 轮级断点 |
-| **v1.2.7** | 编排引擎增强（Session Goals `/goal` + `/compact` + Skill 渐进加载 + doctor --repair + FORGE driver-base + enterprise-graph StateGraph 构建 + --support-bundle + One-Line bootstrap.sh + Agent Mailbox）+ 🔗 激活链 Phase 2 后半 |
-| **v1.2.6** | 🔗 激活链 Phase 2 前半（映射表 + 注册扩展）+ MCP 交付链路修补（daemon_status/list_agents/list_concepts/hitl_resolve 四 tool 三处注册）+ 文档死链清零（74 处）+ README Deployment Sizing |
-| **v1.2.5** | 激活链 Phase 1 ACTIVATE（activate.ts + MCP activate_workflow tool）+ 审计引擎加固（A20-A23 + 结构性地基加固 + 检测盲区补全）+ daemon 可靠性（推送重试 + plist 校验 + 健康自检）+ 多设备前置（Agent 身份码 + 跨设备审计聚合 + 协议中立） |
-| **v1.2.4** | 知识进化（分层巡检 L1/L2/L3 + skillopt 自动触发 + 失败清单 + 联邦蒸馏 + 进化引擎接通 eval）+ Dashboard 历史趋势 + Skill × MCP 集成（S1-S5）+ FDE 人机分离（README/GUIDE/SKILL.md 升格 + 子 Skill 分包 01-05）+ FORGE stream 迁移 + LESSONS 方法论 |
-| **v1.2.3** | Dashboard 产品化（控制图波次渲染 + 用户可读状态映射 + Fresh-Eyes 审查进度 + Workspace 变更摘要）+ 编排隔离底座（git worktree 三原语 + 审计合并卡关）+ Fresh-Eyes-Loop 移至阶段一 + v1.2.2 BugFix 31 项 + 裁决解析健壮性加固 |
-| **v1.2.2** | 数据主权审计（4 维追踪 + HMAC 链 + 日/周/月报告）+ 混合模型路由（ModelRouter + Ollama 接入）+ FDE Dashboard（终端三栏）+ Graph Engine（Planner + 降级链 + decide/execute 分层）+ 异步 HITL + Skill 升级三策略 + v1.2.1 BugFix 38 项 |
-| **v1.2.1** | 数据目录重构（.sofagent/ → data/）+ Webhook 推送 + SubAgent 可见性 L2 + custom/ 闭环 |
-| **v1.2.0** | 物理结构大重构（/sofagent/→/engine/ + SKILL 收敛 + 发版工具链拆散 + install.sh 提根 + rules 独立包） |
-| **v1.1.9** | 产品叙事收敛（FDE Agent）+ USB 完整运行时 + daemon A/B 自动调度器 + 控制图状态抽取 + v1.1.8 BugFix 42 项 |
-| **v1.1.8** | 安全层加密配对 + 联邦查询 + Prompt 注入防护补齐 + 编排引擎串行版（DAG 并行规划在 v1.3.1） |
-| **v1.1.7** | Dream Cycle 6 阶段 + sensitivity + 知识健康巡检 + 知识可观测性：gbrain 精简 pipeline 替换旧脚本 + knowledge 敏感度分级（缺省 internal）+ knowledge-health 5 项检查（@weekly）+ `knowledge status` 聚合命令 |
-| **v1.1.6** | BugFix 21 项 + LLM Wiki 3 层分层 + conflict-check：v1.1.5 遗留全数修复 + Ledger-Views-Policy 显式化（详见 [ARCHITECTURE §文件系统架构](./ARCHITECTURE.md#文件系统架构)）+ daemon 知识健康巡检（矛盾/孤儿/死链） |
-| **v1.1.5** | releasing.md SOP 集成 + MCP pipe + knowledge tool + USB federation HMAC |
-| **v1.1.4** | LOOP 独立产品化 + 工具注入 + A18/A19 规则 + CI 修复 |
-| **v1.1.3** | LangGraph StateGraph 直接编排 + Checkpoint + HITL |
-| **v1.1.2** | 测试体系修复 + 文档一致性 |
-| **v1.1.1** | LOOP 双 Agent 串联 + Harness 可见性 + 多设备同步指南 |
-| **v1.1.0** | 包结构纯度重构（12 包独立）+ 轻量多设备 |
-| **v1.0.9** | 二进制文件审计 + 快照时间线 + MCP compose tool + 安全加固 + 遗留补齐 |
-| **v1.0.8** | FDE Agent 自进化 + 文件系统审计 + 内嵌 isomorphic-git + Agent 定义去耦合 |
-| **v1.0.7** | 双节点架构 + Sub Agent 约束自加载 + ao 完全退役 |
-| **v1.0.6** | 编排迁移 + A/B 真实运行器 + 安全加固 + SkillOpt CLI 修复 |
-| **v1.0.5** | Ontology 统一层 + Work模板市场 |
-| **v1.0.4** | Sub Agent 自进化 |
-| **v1.0.3** | 编排引擎重构 + LOOP 自迭代 |
-| **v1.0.2** | 文档修正 + 规则对齐 |
-| **v1.0.1** | AI 知识库实现版 |
-| **v1.0.0** | 正式版发布：Agent 审计工具（2026-07-10） |
+| **v1.2.x**（10 版） | **激活链 ACTIVATE→ORCHESTRATE→EXECUTE 全线打通 + 约束层叙事统一 + 三个入口产品**：v1.2.0 物理结构大重构（/sofagent/→/engine/）→ v1.2.5 激活链 Phase 1 + A20-A23 规则 → v1.2.7 编排引擎增强（StateGraph + Session Goals）→ v1.2.9 FORGE 短任务化 + npx CLI/规则市场/GitHub Action 三入口 + 约束层叙事重构（详见 [CHANGELOG](../CHANGELOG.md)） |
+| **v1.1.x**（10 版） | **编排引擎从 ao → LangGraph + 多设备联邦 + Dream Cycle 知识进化**：v1.1.0 包结构纯度重构（12 包独立）→ v1.1.3 LangGraph StateGraph 直接编排 → v1.1.7 Dream Cycle 6 阶段 + 知识健康巡检 → v1.1.8 安全层加密 + 联邦查询 → v1.1.9 产品叙事收敛（FDE Agent）+ USB 完整运行时（详见 [CHANGELOG](../CHANGELOG.md)） |
+| **v1.0.x**（10 版） | **审计引擎奠基 + AI 知识库实现 + 双节点架构**：v1.0.0 正式版发布（Agent 审计工具，2026-07-10）→ v1.0.5 Ontology 统一层 + Work模板市场 → v1.0.7 双节点架构 + ao 退役 → v1.0.8 FDE Agent 自进化 + 文件系统审计 → v1.0.9 二进制审计 + MCP compose tool（详见 [CHANGELOG](../CHANGELOG.md)） |
 
 ## 未来去哪
 
