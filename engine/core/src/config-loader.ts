@@ -235,6 +235,97 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
   }
 }
 
+/**
+ * v1.3.4 交付 1-G（P1）：未知配置键检测 + 拼写建议
+ *
+ * 用户可能把 `extendedRulesEnabled` 写成 `extendedRules` / `extended_rules_enabled`
+ * 等变体，导致配置静默失效。本函数检测 audit 段中的未知键并输出显著警告 +
+ * 拼写建议（基于已知键做 Levenshtein 距离最近匹配）。
+ *
+ * @param auditObj audit 段原始对象（已解析的 YAML）
+ * @param filePath 配置文件路径（用于告警上下文）
+ */
+export function warnUnknownConfigKeys(auditObj: Record<string, unknown>, filePath: string): void {
+  const knownKeys = new Set<string>([
+    'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
+    'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17',
+    'loop', 'webhook', 'toolGate', 'sanitizePatterns', 'memory_backends',
+  ]);
+
+  for (const key of Object.keys(auditObj)) {
+    if (knownKeys.has(key)) continue;
+
+    // 拼写建议——找编辑距离最近的已知键
+    const suggestion = findClosestKey(key, knownKeys);
+    if (suggestion) {
+      console.warn(
+        `[sofagent] ⚠️ 配置键 "${key}" 未识别，是否想写 "${suggestion}"？当前扩展规则未启用（${filePath}）`
+      );
+    } else {
+      console.warn(
+        `[sofagent] ⚠️ 配置键 "${key}" 未识别，已忽略（${filePath}）`
+      );
+    }
+  }
+}
+
+/**
+ * 简单 Levenshtein 距离——找与 typoKey 最近的已知键（距离 ≤ 3 视为候选）
+ */
+function findClosestKey(typoKey: string, knownKeys: Set<string>): string | null {
+  let best: string | null = null;
+  let bestDist = Infinity;
+
+  // 常见拼写错误的直接映射（驼峰/蛇形/缺后缀）
+  const commonTypos: Record<string, string> = {
+    'extendedRules': 'extendedRulesEnabled',
+    'extended_rules_enabled': 'extendedRulesEnabled',
+    'extendedrules': 'extendedRulesEnabled',
+    'extendedRulesEnable': 'extendedRulesEnabled',
+    'extendedruleenabled': 'extendedRulesEnabled',
+    'extendedRule': 'extendedRulesEnabled',
+  };
+  const lower = typoKey.toLowerCase();
+  if (commonTypos[lower] || commonTypos[typoKey]) {
+    return commonTypos[lower] ?? commonTypos[typoKey]!;
+  }
+
+  for (const known of knownKeys) {
+    const dist = levenshtein(typoKey.toLowerCase(), known.toLowerCase());
+    if (dist < bestDist && dist <= 3) {
+      bestDist = dist;
+      best = known;
+    }
+  }
+  return best;
+}
+
+/**
+ * 经典 Levenshtein 距离算法（两字符串最小编辑距离）
+ */
+function levenshtein(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i]![0] = i;
+  for (let j = 0; j <= n; j++) dp[0]![j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i]![j] = Math.min(
+        dp[i - 1]![j]! + 1,
+        dp[i]![j - 1]! + 1,
+        dp[i - 1]![j - 1]! + cost,
+      );
+    }
+  }
+  return dp[m]![n]!;
+}
+
 // ============================================================
 // 内部实现
 // ============================================================
@@ -276,6 +367,8 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
       const loopSection = parsed['loop'];
       if (audit && typeof audit === 'object') {
         configStrict = !!(audit as Record<string, unknown>)['strict'];
+        // v1.3.4 交付 1-G（P1）：检测未知配置键 + 拼写建议（防止 extendedRules 静默失效）
+        warnUnknownConfigKeys(audit as Record<string, unknown>, filePath);
         const result: Partial<AuditConfig> = { ...(audit as Partial<AuditConfig>) };
         if (loopSection && typeof loopSection === 'object') {
           result.loop = loopSection as AuditConfig['loop'];

@@ -103,6 +103,7 @@ export {
   ConfigLoadError,
   ConfigParseError,
   signConfig,
+  warnUnknownConfigKeys,
 } from './config-loader';
 export type { AuditConfig, SofaEnvConfig, MemoryBackend } from './config-loader';
 
