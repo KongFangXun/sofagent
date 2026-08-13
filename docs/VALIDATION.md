@@ -19,45 +19,45 @@
 
 > 这一节不是新理论，而是把跨批行业研读（Palantir Ontology / 五层骨架 / Stage 渐进 / Loop / FDE 边界 / 王阳明）里反复出现、能**直接印证** sofagent 已有直觉的结论落到纸面。它们不替代正文，只是给「我们一直这么干」补上行业证据。有公开来源者已标注出处。
 
-### 骨架开场钩子（N5）
+### 骨架开场钩子
 
 一个能用的智能体 ≠ 一个 AI + 一段 prompt，它是一套由多层组成的**骨架**（配置 / 知识 / 指令 / 校验 / 编排）。sofagent 的约束层 = 骨架里的钢筋，审计能力 = 质检——模型是沙子水泥，但骨架决定了楼会不会塌。
 
-### Harness Engineering 范式锚点（X1）
+### Harness Engineering 范式锚点
 
 2025-2026 行业把「Harness Engineering」列为与 Prompt Engineering / Context Engineering / Loop 并列的**范式跃迁阶段**——定义 = 给 Agent 搭脚手架（工具 / 权限 / 沙箱 / 规则），让模型在受控环境里干活。sofagent 的「约束层（Harness）」定位与之字面对应：我们不是在做更聪明的模型，是在给模型搭脚手架。一句话：**我们正处在 Harness Engineering 这一跃迁阶段。**
 
-### 确定性迁移主线（N1）
+### 确定性迁移主线
 
 业务规则的刚性要求经历三段迁移：Phase 0（确定性全在 prompt 软约束，靠 Agent 自觉遵守）→ Phase 1（剥离到知识层结构化，用 YAML / DB 表达）→ Phase 2（迁移到代码层 100% 强制执行，AI 只负责概率性部分）。金句：**「桩径不能小于 600mm 这类刚性要求必须任何场景 100% 执行，AI 只能大概率，代码才能一定。」** 这正是 sofagent「刚性规则进代码、概率性判断留 LLM」的工程主线。
 
-### 知行合一注脚（T9）
+### 知行合一注脚
 
 王阳明「知而不行只是未知」——模型在训练里「知道」规则，却在推理时绕过它，说明它从未真正遵守。破局关键不是叠加更多规则（规则越多越易被绕过），而是让系统**理解规则的目的**，并在事前拦截（让违规根本发生不了），而非事后审计（违规已发生再追责）。这与 sofagent「约束注入链永远在线 + 审计能力硬证据」的双向设计同构。
 
-### 黑盒症结与工程可信度（N2）
+### 黑盒症结与工程可信度
 
 企业 AI 落地常败于「无法证明结果正确」——无来源 / 无置信度 / 无复查证据链。用户原话：「你们像黑盒，我们信托管公司不信托管盒子」。sofagent 的审计能力 = 把黑盒变白盒：每一次变更都留 git diff 硬证据、每一次行动都有可审计凭证，证据链可溯源、可复核、可问责。
 
-### Verifier 才是瓶颈（N3）
+### Verifier 才是瓶颈
 
 Loop 真正的瓶颈是 **Verifier**（定义什么是合格、何时算完成），不是生成器。模型生成能力已严重过剩，稀缺的是「定义合格与完成」的能力——可这正是 90/10 分层里那 10%——知行合一的「行」（模型给知、约束层补行）。sofagent 的审计能力 + 约束注入链做的正是「定义合格与完成」：把验收标准写进确定性规则，让 Loop 有判停依据。判停依据的本质是「健康」而非「能跑」——每次合并请求的判断标准不是「这段代码能不能运行」，而是「它能不能让这棵树（共同主线）长得更健康、朝着组织认定的方向生长」。能跑只是及格线，健康才是验收线；这正是 Verifier 比生成器更稀缺的原因。
 
-### 编排兜底：确定性规则引擎接管（E）
+### 编排兜底：确定性规则引擎接管
 
 Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不可用 / 不可靠 / 被降级时，确定性规则引擎（纯 git-diff 正则 + 配置化约束）照常运行，以 **deterministic guardrails** 身份兜底接管——Agent 的「智力」可以暂时离线，但「纪律」不能停。
 
 行业五层里「纯规则校验可脱离 AI 运行（模式 D）」直接支撑这点：部分「智能体」只需约束规则、不需要大模型。sofagent 24 条规则中 19 条纯 git-diff、零 token、不调 LLM，正是「AI 不可用时，纪律仍在」的工程实例——这与「约束层 = Harness」互为表里：约束层的价值不绑定任何单一模型的可用性。
 
-### 反去人化命题：human-in-the-loop 是「可靠优先」价值点（L3）
+### 反去人化命题：human-in-the-loop 是「可靠优先」价值点
 
 行业一派主张「去掉人」（L4 Hill-Climbing 去人化）。sofagent 反其道——human-in-the-loop 不是能力缺陷，而是**可靠优先于自主**的差异化优势。
 
 人在 loop 中可尽量简单（高风险才人工确认，常规受信自动执行，见 [ARCHITECTURE 四节点状态机](./ARCHITECTURE.md#四节点状态机v113)），但**必须存在**——主体性护栏不可外包（PHILOSOPHY §四）。这与「约束层永远在线 + 审计硬证据」同源：可靠不是靠更聪明的模型，靠「人在关键处 + 机器在每处」。
 
-### 90/10 价值分层 → 知行合一框架（N4）
+### 90/10 价值分层 → 知行合一框架
 
-模型给 90% 智力（**知**），sofagent 补 10% 可靠执行（**行**）——关键在「**合一**」：模型之「知」落到 sofagent 之「行」（约束注入链永远在线 + 审计硬证据 + 责任归属），让「知道」变成「做到」（完整论述见上方 [知行合一注脚（T9）](#知行合一注脚t9)）。模型越强，那 10% 的「行」越值钱。
+模型给 90% 智力（**知**），sofagent 补 10% 可靠执行（**行**）——关键在「**合一**」：模型之「知」落到 sofagent 之「行」（约束注入链永远在线 + 审计硬证据 + 责任归属），让「知道」变成「做到」（完整论述见上方 [知行合一注脚](#知行合一注脚)）。模型越强，那 10% 的「行」越值钱。
 
 ### 治理缺口的代价：三项联网核验证据
 
@@ -151,19 +151,19 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 其**独特点**是可借鉴方向：① **可视化 DAG 画布 + 双模态共享状态**（会话 Agent 与 DAG 画布实时同步同一 pipeline 表示）——补 sofagent Dashboard 缺的「workflow 可视图」，建议 v2.x 引入；② **MCP server 集成**（暴露算子注册表 / serving / pipeline 状态给 Agent）——印证「对外 MCP 暴露 ontology/audit」是合理路线，建议 v2.x+；③ **Validation Engine（DAG 无环 + schema 兼容）**——印证 ontology 从目录级升级为带 JSON Schema 校验的约束图，建议 v2.x 硬化节点 I/O。以上可借鉴项已落入 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)。
 
-**给我们的背书**：① Harness 品类被顶尖高校用真金白银验证（同月三家，含高校）；② 「约束 Agent 经受控接口、不自由写脚本」是跨团队共识；③ 我们的差异化仍在——DataFlow 只校验 pipeline 结构与 schema，**不审计 Agent 行为问责（无 append-only A1-A19）**，也无 7×24 常驻 FDE Agent 与「控制平面治理」定位。
+**给我们的背书**：① Harness 品类被顶尖高校用真金白银验证（同月三家，含高校）；② 「约束 Agent 经受控接口、不自由写脚本」是跨团队共识；③ 我们的差异化仍在——DataFlow 只校验 pipeline 结构与 schema，**不审计 Agent 行为问责（无 append-only A1-A23）**，也无 7×24 常驻 FDE Agent 与「控制平面治理」定位。
 
 > 📖 来源：[DataFlow](https://github.com/OpenDCAI/DataFlow) + 论文 arXiv:2607.16617（2026-07，HuggingFace Paper of the day）
 
 ### OpenFDE：FDE 术语同源佐证
 
-[OpenFDEAI/ChatDemo](https://github.com/OpenFDEAI/ChatDemo)（OpenFDEAI 组织，MIT）以 **Forward Deployed Engineer** 命名其「边聊边出 Demo」的售前工作流——FDE 坐在客户对面，边聊边把需求变成可点的 Demo，散会时客户手里已有一个能点的 Demo + 一页可确认的需求清单。它和 sofagent 的**「前线部署工程师 / Forward Deployed Engineer」同源、同英文写法、来自同一 Palantir 脉络**——印证我们 FDE 术语的正统性：把工程师部署到客户现场、用一套纪律化交付流程、把经验沉淀为可复用资产，本就是行业共识的 FDE 内核。进一步佐证来自 OpenFDE **主仓**：它把 **INDUC 显式成 FDE Loop 的一个阶段、产出可开关的 Judgment Unit**（专家判断资产化、规则可开可关可版本化）——与我们「蓄水池/知识库 → A1-A19 判定层」同源，但它把知识归纳提升为 Loop 的一等公民阶段。
+[OpenFDEAI/ChatDemo](https://github.com/OpenFDEAI/ChatDemo)（OpenFDEAI 组织，MIT）以 **Forward Deployed Engineer** 命名其「边聊边出 Demo」的售前工作流——FDE 坐在客户对面，边聊边把需求变成可点的 Demo，散会时客户手里已有一个能点的 Demo + 一页可确认的需求清单。它和 sofagent 的**「前线部署工程师 / Forward Deployed Engineer」同源、同英文写法、来自同一 Palantir 脉络**——印证我们 FDE 术语的正统性：把工程师部署到客户现场、用一套纪律化交付流程、把经验沉淀为可复用资产，本就是行业共识的 FDE 内核。进一步佐证来自 OpenFDE **主仓**：它把 **INDUC 显式成 FDE Loop 的一个阶段、产出可开关的 Judgment Unit**（专家判断资产化、规则可开可关可版本化）——与我们「蓄水池/知识库 → A1-A23 判定层」同源，但它把知识归纳提升为 Loop 的一等公民阶段。
 
 但两者**范围差一个数量级、且互补**：ChatDemo 的 FDE 是售前 POC 共创工具（Claude Code Skill + localhost 控制台，回合制 start/turn/wrap），散会即结束、无常驻员工；sofagent 的 FDE 是售后常驻部署+治理方法论（四阶段十二步→交付离场→sustain）。它做"漏斗前端"（拿 POC），我们做"漏斗后端"（常驻、可审计、受治理的硅基员工）——定位不冲突。
 
-其**独特点**是可借鉴方向（落盘 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)）:① 回合制协议 + FDE 控节拍（人控 Agent 不抢跑，我们已有同判断、它执行更细）；② **spec-first 硬禁令**（transcript 永不直接驱动代码——补我们"触发直驱工件"的明文铁律，最高优先）；③ **decisions.jsonl 判断时刻日志**（{kind, moment, why, spec_ref} 现场即时记，会后喂 FDE Loop→INDUCE→Judgment Unit——补 A1-A19 缺的"决策理由链"，最高优先）；④ 分级降级梯队（console→TUI、ASR→手敲、dev 挂→走 spec，workflow never stops——为 7×24 常驻员工补分级降级 SOP，最高优先）；⑤ 开源优先阶梯 + 预验证画廊 + 双引擎无状态 + 数据敏感度分层 + 一键启动器品牌化模板。
+其**独特点**是可借鉴方向（落盘 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)）:① 回合制协议 + FDE 控节拍（人控 Agent 不抢跑，我们已有同判断、它执行更细）；② **spec-first 硬禁令**（transcript 永不直接驱动代码——补我们"触发直驱工件"的明文铁律，最高优先）；③ **decisions.jsonl 判断时刻日志**（{kind, moment, why, spec_ref} 现场即时记，会后喂 FDE Loop→INDUCE→Judgment Unit——补 A1-A23 缺的"决策理由链"，最高优先）；④ 分级降级梯队（console→TUI、ASR→手敲、dev 挂→走 spec，workflow never stops——为 7×24 常驻员工补分级降级 SOP，最高优先）；⑤ 开源优先阶梯 + 预验证画廊 + 双引擎无状态 + 数据敏感度分层 + 一键启动器品牌化模板。
 
-**给我们的背书**：① FDE 作为"前线部署工程师"的方法论术语，已被 OpenFDE 以 Forward Deployed Engineer 独立命名并工程化，与我们同源、互为第三方佐证；② "约束 Agent 经受控接口"的同源判断在售前侧也成立（ChatDemo 约束在"何时/权限/来源"）；③ 我们的差异化仍在——ChatDemo **无 A1-A19 运行时行为审计、无 7×24 常驻 FDE Agent、无控制平面治理、让 Agent 直接写应用代码**，这些是我们的地盘。
+**给我们的背书**：① FDE 作为"前线部署工程师"的方法论术语，已被 OpenFDE 以 Forward Deployed Engineer 独立命名并工程化，与我们同源、互为第三方佐证；② "约束 Agent 经受控接口"的同源判断在售前侧也成立（ChatDemo 约束在"何时/权限/来源"）；③ 我们的差异化仍在——ChatDemo **无 A1-A23 运行时行为审计、无 7×24 常驻 FDE Agent、无控制平面治理、让 Agent 直接写应用代码**，这些是我们的地盘。
 
 > 📖 来源：[OpenFDEAI/ChatDemo](https://github.com/OpenFDEAI/ChatDemo)（github.com/OpenFDEAI/ChatDemo，2026-07），OpenFDE 主仓 Open-FDE/OpenFDE
 
@@ -179,7 +179,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 > 📖 来源：[The OpenAI Deployment Company](https://openai.com/business/the-openai-deployment-company/)（openai.com，2026）
 
-### 记忆要笨：应用层记忆的死亡测试（M1）
+### 记忆要笨：应用层记忆的死亡测试
 
 清华唐杰团队联合新国大、玻色 AI 的综述《Memory for Large Language Models》把记忆从「算力副产品」正式升格为「模型架构的第一性维度」——并给出两条与我们直觉直接对位的结论。
 

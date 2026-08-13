@@ -285,7 +285,7 @@ sofagent 不做 Prompt（那是模型的事），在 Context 层有约束注入�
 
 架构基因来自 Geoffrey Huntley 的 Ralph 循环：Agent 的记忆长在文件系统（git diff / task/logs / SKILL.md），不长在 Agent 内部。Agent 每次启动都是白纸——但它读到的文件，是上一次运行留下的完整经验。文件是持久证据，Agent 的记忆不是。
 
-> 📖 这条直觉已被清华唐杰团队的《Memory for Large Language Models》（2026）从架构层正面背书——应用层记忆要做的事不是「比模型更会回忆」（必输的赌局），而是守「模型永远给不了的」：全量 append-only 不忘、长在文件里可带走、入口在本地。详见 [VALIDATION · 记忆要笨](./VALIDATION.md#记忆要笨应用层记忆的死亡测试m1)。
+> 📖 这条直觉已被清华唐杰团队的《Memory for Large Language Models》（2026）从架构层正面背书——应用层记忆要做的事不是「比模型更会回忆」（必输的赌局），而是守「模型永远给不了的」：全量 append-only 不忘、长在文件里可带走、入口在本地。详见 [VALIDATION · 记忆要笨](./VALIDATION.md#记忆要笨应用层记忆的死亡测试)。
 
 ### 主体性护栏——执行可外包，判断不可外包
 
@@ -535,8 +535,6 @@ sofagent 的版本演进不是拍脑袋排的——它遵循 Agent 工程的生�
 ---
 
 ## 附：长期叙事——Conway/Coase 双重反转
-
-> 本节原属 ROADMAP.md「长期叙事」，v1.2.9 文档治理中迁入。这是 sofagent 对 Agent 时代组织形态演化的哲学判断，非技术路线。
 
 > **Conway 定律反转**：传统软件架构反映组织沟通结构。Agent 时代出现反转——Agent 架构（谁做什么、怎么协作）开始**反向塑造企业组织形态**。阿里巴巴 OPT 已观察到这一趋势：单人 + Agent Skill + 企业系统 → 闭环完成多岗工作，传统部门边界被 Agent 能力边界替代。
 >
