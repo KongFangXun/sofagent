@@ -428,6 +428,15 @@ jobs:
 
 没有 sofagent，梳理的 workflow 就是一份 PPT。引擎装到设备上，AI 节点才有纪律和审计。完整引擎对照表与部署步骤见 [FDE/GUIDE.md §5.3 部署流程](../FDE/GUIDE.md#53-部署流程人怎么看懂)。
 
+> 📋 **部署文档导航**：sofagent 的部署文档按场景分散在三处，各归各位，按需选读：
+>
+> | 文档 | 定位 | 给谁 |
+> |------|------|------|
+> | **本文档（HANDBOOK）** | 操作手册——部署规模参考、资源消耗、数据存储、USB 烧录、持续维护 | 所有人（先看这个） |
+> | [guides/enterprise-deploy.md](./guides/enterprise-deploy.md) | 单机详细部署——企业设备安装全流程、config 配置、daemon 常驻 | 企业 IT / FDE 驻场 |
+> | [guides/team-deploy.md](./guides/team-deploy.md) | 团队批量部署——多台机器批量安装、统一 config 分发 | 企业 IT（20 台+ 规模） |
+> | [guides/multi-device-sync.md](./guides/multi-device-sync.md) | 多设备联邦同步——knowledge/ + think.md 跨设备共享（iCloud / NAS / Dropbox / git submodule） | 多设备协同用户 |
+
 ### 部署规模参考（企业 IT）
 
 | 部署规模 | 并发 Agent | CPU | 内存 | 磁盘 | 适用场景 |
@@ -442,6 +451,8 @@ jobs:
 > - **网络**：仅 LLM API 出站，无入站端口需求
 
 ⚠️ **数据存储说明**：当前版本将审计数据以 Markdown 明文存储在 `~/.sofagent/data/`。内置加密（age）已排 v1.3.8。生产环境使用前建议将 `~/.sofagent/` 放在加密卷中。详见 [SECURITY.md](../SECURITY.md)。
+
+> ⚠️ **被审计仓库会生成 `.sofagent/` 隐藏目录**：sofagent 审计时会在被审计的 git 仓库根目录创建 `.sofagent/` 隐藏目录，存放审计快照（`.git-shadow/`）、运行时审计日志、dashboard 缓存等。该目录**已默认加入 `.gitignore`**，不会进入 git 提交，但 `ls -a` 可以看到。企业 IT 看到 `.sofagent/` 无需紧张——这是运行时产物，**可安全删除**（重新审计会自动重建，不影响功能）。
 
 **节点类型选择**：自动运行节点（需 OpenClaw 或其他企业级平台全栈）vs 个人增强节点（WorkBuddy / Codex，无需平台全栈）。完整对照表见 [ARCHITECTURE 双节点架构](./ARCHITECTURE.md#双节点架构)。
 
