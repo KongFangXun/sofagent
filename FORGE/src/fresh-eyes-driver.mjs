@@ -768,8 +768,6 @@ async function runWorker(step, roundDir, target) {
   // run-01 教训：A worker 调了 1119 次工具仍未收敛，撞 GraphRecursionError 零产出。
   const { SystemMessage, HumanMessage } = await import('@langchain/core/messages');
   const MAX_CONTEXT_MESSAGES = 16; // 最后 8 轮工具交互（调用+结果各 1 条）
-
-  const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
   const systemMsg = new SystemMessage(systemPrompt);
 
   // 🔴 v1.2.7 run-03/run-04 教训：消息裁剪会切断 tool_calls ↔ ToolMessage 配对。
@@ -868,10 +866,10 @@ async function runWorker(step, roundDir, target) {
   const effectiveSoftLimit = stepDef.toolSoftLimit ?? TOOL_SOFT_LIMIT;
   const effectiveHardLimit = stepDef.toolHardLimit ?? TOOL_HARD_LIMIT;
 
-  const agent = createReactAgent({
-    llm: model,
-    tools,
-    stateModifier: (state) => {
+  // v1.3.4 增量：stateModifier 构造为闭包——传给 langgraph-backend 作为 stateModifierFactory 回调。
+  // 逻辑零改动（保留所有 run-XX 教训沉淀）：工具预算软熔断 + 上下文裁剪 + tool_calls 配对清洗。
+  const buildStateModifier = ({ systemPrompt: _sp, toolBudget: _tb }) => {
+    return (state) => {
       const messages = state.messages ?? [];
 
       // 统计历史消息中所有 AI tool_calls 总数
@@ -923,11 +921,11 @@ async function runWorker(step, roundDir, target) {
       const first = messages[0];
       const recent = trimMessagesSafe(messages, MAX_CONTEXT_MESSAGES);
       return [systemMsg, first, ...recent];
-    },
-    preModelHook: (state) => {
-      // v1.2.9 功能⑨：动态 token 估算——只在 token 超硬阈值时激进裁剪。
-      // 消息条数裁剪已由 stateModifier 处理，这里只补 stateModifier 看不到的维度：
-      // 单条消息超长（如 500 行审查报告全文）导致总 token 爆炸但消息条数还不多。
+    };
+  };
+
+  // v1.3.4 增量：preModelHook 保留——传给 langgraph-backend 的 modelConfig.preModelHook
+  const preModelHook = (state) => {
       const TOKEN_HARD = 100000;
       const messages = state.messages ?? [];
       const tokenEst = estimateTokens(messages);
@@ -939,10 +937,9 @@ async function runWorker(step, roundDir, target) {
       }
 
       return state;
-    },
-  });
+    };
 
-  // 5. stream（计时）—— v1.2.5 改为流式输出，实时打印工具调用进度
+  // 5. 通过 ExecutionBackend 执行 agent（v1.3.4 增量）
   console.log(`[worker:${step}] 开始执行（role=${role}, model=${cfg.model}）`);
   const t0 = Date.now();
 
@@ -983,83 +980,53 @@ async function runWorker(step, roundDir, target) {
   // v1.2.7 run-09：isReportText 提到模块级（extractAgentText 也要用）
 
   const invokeAgent = async () => {
-    const stream = await agent.stream(
-      { messages: [{ role: 'user', content: userMessage }] },
-      { recursionLimit, streamMode: 'updates' }
-    );
-
-    const allMessages = [];  // 累积所有 delta.messages，模拟 invoke 返回的扁平结构
-    let toolCallCount = 0;
-    let graceStepCount = 0;        // L2 写报告窗口的 superstep 计数
-    let inGraceWindow = false;     // 是否在写报告窗口期
-    // v1.2.6：stream 层硬熔断——stateModifier 软熔断(50)兜底。
-    // v1.2.7：L2 改两阶段——撞硬上限后进入写报告窗口(graceSteps 步)，
-    // 不立即 break。窗口期内 stateModifier 每步注入更强的写报告指令，
-    // 如果模型输出了非空 content（写报告了）则正常结束；
-    // 窗口耗尽模型仍在调工具才真正 hardBreak。
-    // run-06 教训：直接 break 时所有 AI message 的 content 都是空的（模型
-    // 还没到写报告阶段），extractAgentText 从后往前找遍全部消息一条非空 content
-    // 都没有 → throw → 产物全部丢失。
+    // v1.3.4 增量：通过 ExecutionBackend 调用 agent
+    // streamHandler 回调维护 toolCallCount / graceWindow / hardBreak 状态——逻辑零改动
+    let streamToolCallCount = 0;
+    let inGraceWindow = false;
+    let graceStepCount = 0;
     let hardBreak = false;
-    let gotReport = false;         // 模型在窗口期输出了文本
-
-    // 窗口步数按步骤类型区分——审查类(a-check/b-check)探索深度高，
-    // 需要更多步切换到"报告模式"；修复/验证类是有限任务，5 步够用。
-    // run-07 教训：统一 5 步在审查步骤上 0% 成功率。
+    let gotReport = false;
     const graceSteps = (step === 'a-check' || step === 'b-check')
       ? REVIEW_GRACE_STEPS
       : DEFAULT_GRACE_STEPS;
 
-    for await (const chunk of stream) {
-      // chunk 是 { nodeName: stateDelta }——解包每个节点的 delta
+    const streamHandler = (chunk) => {
       for (const [, delta] of Object.entries(chunk)) {
         const msgs = delta?.messages;
         if (!Array.isArray(msgs)) continue;
         for (const msg of msgs) {
-          allMessages.push(msg);
           // 检测 AI message 是否有非空 content（模型开始写报告）
           if (msg?._getType?.() === 'ai') {
             const c = msg?.content;
             let textContent = '';
             if (typeof c === 'string') textContent = c;
             else if (Array.isArray(c)) textContent = c.map(x => typeof x === 'string' ? x : x?.text ?? '').join('');
-            // 报告质量门控——非空 content 不一定是报告（可能是中间思考碎片）
-            // run-07 Round 5：155 字节一句话（"Rule count checks out. Now let me verify..."）
-            // 被当"报告捕获"。真报告至少含 ## 标题行 或 ≥ 500 字符。
             if (inGraceWindow && isReportText(textContent)) {
               gotReport = true;
               console.log(`  ✅ [${step}#${role}] 写报告窗口内捕获到报告文本（${textContent.length} 字符）`);
             }
           }
-          // 工具调用消息（AI 发起 tool_call）
           if (msg?._getType?.() === 'ai' && msg.tool_calls?.length > 0) {
             for (const tc of msg.tool_calls) {
-              toolCallCount++;
-              console.log(`  → [${step}#${role}] tool #${toolCallCount}: ${tc.name}`);
+              streamToolCallCount++;
+              console.log(`  → [${step}#${role}] tool #${streamToolCallCount}: ${tc.name}`);
             }
-            // 🔴 v1.2.7 run-03 教训：写报告窗口期内模型仍调工具 = 它无视了
-            // stateModifier 注入的强制写报告指令。每调一次工具 graceStepCount
-            // 多加 1（加速熔断），避免 80 步窗口全浪费在无效工具调用上。
             if (inGraceWindow && !gotReport) {
-              graceStepCount += 2;  // 惩罚系数：工具调用 = 2 倍步数消耗
+              graceStepCount += 2;
               console.warn(`  ⚠️ [${step}#${role}] 写报告窗口内仍调工具（惩罚 +2，进度 ${graceStepCount}/${graceSteps}）`);
             }
           }
         }
       }
-      // 撞硬上限日志提前到 grace window 检查处——确保日志时序正确
-      // run-07 教训：原代码在工具计数循环内设置 inGraceWindow，日志可能与
-      // gotReport 日志交错，导致"报告已捕获"出现在"撞硬上限"之前。
-      // v1.2.9 功能①：perspective worker 用自己的 toolHardLimit
-      if (toolCallCount >= effectiveHardLimit && !inGraceWindow && !hardBreak) {
+      if (streamToolCallCount >= effectiveHardLimit && !inGraceWindow && !hardBreak) {
         inGraceWindow = true;
         if (graceSteps > 0) {
-          console.warn(`  ⏳ [${step}#${role}] 工具调用 ${toolCallCount} 次撞硬上限，进入 ${graceSteps} 步写报告窗口`);
+          console.warn(`  ⏳ [${step}#${role}] 工具调用 ${streamToolCallCount} 次撞硬上限，进入 ${graceSteps} 步写报告窗口`);
         } else {
-          console.warn(`  🛑 [${step}#${role}] 工具调用 ${toolCallCount} 次撞硬上限，立即中断（零窗口模式）`);
+          console.warn(`  🛑 [${step}#${role}] 工具调用 ${streamToolCallCount} 次撞硬上限，立即中断（零窗口模式）`);
         }
       }
-      // 写报告窗口期检查
       if (inGraceWindow && !gotReport && !hardBreak) {
         graceStepCount++;
         if (graceStepCount >= graceSteps) {
@@ -1067,36 +1034,35 @@ async function runWorker(step, roundDir, target) {
           if (graceSteps > 0) {
             console.warn(`  🛑 [${step}#${role}] 写报告窗口耗尽（${graceSteps} 步），模型仍未输出文本，强制中断`);
           }
-          break;
+          return { hardBreak: true };
         }
       }
-      // 窗口期内拿到报告 → 正常结束（stream 自然完成或我们主动 break）
       if (gotReport) {
         console.log(`  📝 [${step}#${role}] 报告已捕获，正常结束`);
-        break;
+        return { hardBreak: true };
       }
-    }
-    if (hardBreak) {
-      console.warn(`  🛑 [${step}#${role}] stream 已中断，从 ${allMessages.length} 条消息抢救产物`);
-      // 显式通知 generator 终止——break 会触发 return()，但某些实现可能
-      // 不在 return() 时取消底层 HTTP 请求。显式调用确保资源清理。
-      // 审查 P2 修复：避免 break 后的"幽灵"API 请求继续消耗 Token Plan 额度。
-      try {
-        await stream.return(undefined);
-      } catch {
-        // generator 已关闭或不可返回——忽略
-      }
-    }
-    // 返回扁平结构——与 invoke() 返回格式兼容，下游 extractAgentText / extractUsage 正常工作
-    // _hardBreak flag 让写产物逻辑能给报告加标记头
-    return { messages: allMessages, _hardBreak: hardBreak };
+      return {};
+    };
+
+    const { createExecutionBackend } = await import('../../engine/orchestrator/dist/execution-backend.js');
+    const backend = await createExecutionBackend();
+    const execResult = await backend.execute({
+      systemPrompt,
+      task: userMessage,
+      tools,
+      modelConfig: { model, preModelHook },
+      toolBudget: { softLimit: effectiveSoftLimit, hardLimit: effectiveHardLimit },
+      recursionLimit,
+      stateModifierFactory: buildStateModifier,
+      streamHandler,
+    });
+
+    return {
+      messages: execResult.rawMessages ?? [],
+      _hardBreak: execResult.hardBreak || hardBreak,
+    };
   };
 
-  // v1.2.1 L2：模型推理心跳。LangGraph 1.4.7 的 createReactAgent 无
-  // middleware 参数（deepagents 的 middleware 链又硬编码 FilesystemMiddleware
-  // 不可用——见上方注释），模型调用的可达接缝是 agent 运行期整体包裹：
-  // 多轮 superstep（LLM 推理 + 工具执行交替）期间持续发 llm-chunk 心跳，
-  // Dashboard 据最后一条事件时间戳判活；工具阶段另有 start/end 事件可区分。
   const result = progressMw
     ? await progressMw.wrapModelCall({ step, role, model: cfg.model }, invokeAgent)
     : await invokeAgent();

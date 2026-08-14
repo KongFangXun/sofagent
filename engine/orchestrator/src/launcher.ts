@@ -216,7 +216,17 @@ export { buildConstrainedSystemPrompt } from '@sofagent/harness';
 // ════════════════════════════════════════
 
 /**
- * 动态加载 @langchain/langgraph createReactAgent
+ * 动态加载执行后端——v1.3.4 增量：优先尝试 DSH，fallback 到 LangGraph。
+ *
+ * 接入门禁结论（2026-08-14）：DSH 候选包名全部 404，当前自动降级 LangGraph。
+ * DSH 上架后（npm-public PR #2519 已合并）无需改代码——动态 import 会成功。
+ *
+ * 本函数保留原有 createReactAgent 返回类型（ReactAgentFactory），launcher.ts
+ * 的 launch() 主入口暂不改调用方式（Sub Agent 用的 createReactAgent 调用较简单，
+ * 无需 stateModifier / 工具预算软熔断，保持原样避免回归）。
+ *
+ * FORGE driver 的复杂调用（stateModifier + stream + 硬熔断）改用
+ * createExecutionBackend().execute() 走 ExecutionBackend 接口。
  */
 async function loadReactAgent(): Promise<ReactAgentFactory | null> {
   try {

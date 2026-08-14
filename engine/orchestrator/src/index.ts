@@ -592,3 +592,13 @@ export {
   isAlreadyBuiltin,
 } from './market/rule-promote';
 export type { PromoteInput, PromoteResult } from './market/rule-promote';
+
+// v1.3.4 增量：编排层与执行层分离
+export {
+  createExecutionBackend,
+} from './execution-backend';
+export type {
+  ExecutionBackend,
+  ExecutionTask,
+  ExecutionResult,
+} from './execution-backend';

@@ -825,6 +825,43 @@ River 的载体是 Agent 平台（OpenClaw / WorkBuddy 等）+ sofagent + Channe
 
 **与 扣子（Coze，字节跳动） 在 Slack @tag 的区别**：扣子（Coze，字节跳动） 把 Agent 嵌入协同平台（Agent 还是通用 Agent），sofagent 把**约束过的专项 Workflow** 嵌入协同平台（Agent 行为被 Harness 限制在企业业务流程边界内）。
 
+### 编排层与执行层分离（v1.3.4 增量 · DSH 执行后端接入）
+
+> 📖 设计来源：DeepSeek Harness（DSH）「一切皆插件」Cordis 运行时 + sofagent「确定性审计依赖显式图结构」铁律的融合——编排层不换（确定性），执行层可换（灵活性）。
+
+sofagent 的编排引擎从 v1.3.4 起显式分为两层——**编排层不换（确定性），执行层可换（灵活性）**：
+
+```
+编排层（LangGraph StateGraph · 确定性 · 永不替换）
+├── 图结构定义：节点 + 边 + 条件路由（enterprise-graph.ts）
+├── 审计卡关：每个波次 git diff + decision-log（merge-gate.ts）
+├── Checker 节点：format/fact/source 三类检查（checker-nodes.ts）
+├── HITL 挂载：人工审批节点（graph.ts / nodes.ts）
+├── loop 编排规则：fresh-eyes / release-gate 的 A→B→汇总→修→验
+│   （verdict 解析 / 场景覆盖 / 行数警戒线 / 声称一致性检查）
+└── 并行调度：ParallelScheduler + MergeQueue（v1.3.1）
+        ↓ 通过 ExecutionBackend 接口调用执行层
+执行层（可替换 · 默认 DSH Cordis 运行时 · fallback createReactAgent）
+├── 默认后端：DSH Cordis 插件运行时（v1.3.4 接入）
+├── Fallback：LangGraph createReactAgent（DSH 不可用时自动降级）
+├── 可选后端：WorkBuddy / Claude Code / OpenClaw（现有三平台）
+└── 契约：实现 ExecutionBackend 接口 { execute(task) → result }
+```
+
+**边界规则**：
+- **编排层永远不换**——24 条 git diff 规则 + HMAC 链 + DAG 波次审计 + decision-log 全部依赖显式图结构，换掉编排层 = 放弃确定性审计
+- **执行层可换**——只要实现 `ExecutionBackend` 接口（`execute(task) → result`），任何框架都能挂载
+- **loop 的编排规则留编排层**（verdict 解析/场景覆盖/行数警戒线），**loop 内部 worker 跑 agent 的那一步可以让给执行层**——sofagent 管「循环逻辑」（判对错/定位/收敛），执行后端管「循环执行」（跑 agent 代码）
+- **工具 wrapper 原样透传**——audit-middleware（运行时审计）/ progress-middleware（进度监控）包裹在工具 func 上（v1.3.0 模式），随 `ExecutionTask.tools` 走，任何后端不得重包装或替换工具实现
+
+**迁移范围**：v1.3.4 完成第一波分离——`launcher.ts`（主入口）+ FORGE `fresh-eyes-driver` + `release-gate-driver` 三个调用点已改为通过 `ExecutionBackend.execute()` 调用。`dag-runner` / `composer` / `loop/nodes` / `node-executor` 等调用点列入后续迁移清单。
+
+**DSH 关系定位**：DSH 是「agent 框架插件化」路线，sofagent 是「FDE 方法论 + 确定性审计」路线。两者通过 `ExecutionBackend` 接口对接——DSH Cordis 运行时成为 sofagent 执行层默认后端，LangGraph createReactAgent 作为 fallback。
+
+> ⚠️ **接入门禁状态（2026-08-14）**：DSH 候选包名（deepseek-harness / @deepseek-ai/harness / @dsh/core 等）实测全部 404——npm-public PR #2519 2026-08-13 刚合并但包尚未实际可安装。当前走【分支 B：运行时动态 import + try-catch fallback】，DSH 后端实现完整适配器骨架，加载失败自动降级 LangGraph。DSH 上架后无需改代码——动态 import 会成功。
+
+> 💡 **为什么不把整个编排层也换成 DSH**：DSH 的事件驱动模型（插件 A 触发 B → B 触发 C）没有显式执行路径，运行时才确定——而 sofagent 的审计引擎（git diff 硬证据 + HMAC 链 + 波次审计卡关）全部依赖预先画好的 DAG 图结构。用 DSH 替代 LangGraph 编排 = 放弃确定性审计能力。分层使用 = 两者各取所长。
+
 ### Agent 基础设施层（v1.0.8+）
 
 两个内置 Agent 被所有 workflow 节点引用：

@@ -133,7 +133,8 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **FDE 节点注册表（loop-engineering 启发）** | 为 FDE 模板建 `fde-registry.yaml`（机器可读：id/cadence/risk/skills/human_gates），audit 引擎直接读取——从手动排查到机器可读 |
 | **执行层隔离 Worktree 模式（loop-engineering 启发）** | 每个 code-change 跑在隔离 git worktree——短期推荐实践 → 中期编排引擎内置 `worktree create` → 远期 L2+ 硬性要求 |
 | **理解债务应对（loop-engineering 启发）** | Comprehension Debt Spiral（S2 级故障）——审计已覆盖「发生了什么」，需补「为什么这么做」（auto-PR 要求 Agent 解释决策）+「本周摘要」（daemon 周报）|
-| **DSH Cordis 插件适配（DeepSeek Harness 启发）** | 把 sofagent @public API 包装成 Cordis 插件（`@sofagent/cordis-plugin`），DSH 成为可选执行后端——LangGraph 管编排（图结构+审计卡关），DSH 管执行（SubAgent 单步+loop 循环）。依赖链：v1.3.6 harness.wrap 接口预留 → v1.3.9 API 分级 → v1.4.0 插件包装 |
+| **DSH 正向执行后端接入（DeepSeek Harness 启发）** | 定义 `ExecutionBackend` 接口，DSH Cordis 运行时成为可选执行后端（fallback LangGraph createReactAgent）——编排层（图结构+审计卡关）与执行层显式分离。**v1.3.4 增量已交付第一波**（launcher 主入口 + FORGE 两 driver 迁移），dag-runner/composer/loop 节点等列入后续迁移清单 |
+| **DSH 反向插件适配（DeepSeek Harness 启发）** | 把 sofagent @public API 包装成 Cordis 插件（`@sofagent/cordis-plugin`），反向暴露给 DSH 生态——依赖链：v1.3.6 harness.wrap 接口预留 → v1.3.9 API 分级 → 插件包装（排期未定） |
 | **ACS YAML 策略引擎（Microsoft AGT 启发）** | 现有 ruleset 是 JSON，AGT 的 ACS 用 YAML + OPA Rego + Cedar 三引擎——策略更人类可读，需评估兼容性 |
 | **Shadow AI Discovery（Microsoft AGT 启发）** | 扫描进程/配置/仓库发现未注册「影子 agent」——审计盲区，与 v1.3.7 行为监控互补 |
 | **RL 训练治理（Microsoft AGT Agent Lightning 启发）** | 训练期间策略违规惩罚——与 v1.4.1 训练引擎预算控制同向 |

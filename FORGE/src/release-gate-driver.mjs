@@ -629,7 +629,9 @@ async function runWorker(step, runDir, target) {
   }
   const tools = loadTools(role, progressMw);
 
-  const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
+  // v1.3.4 增量：编排层与执行层分离——worker 通过 ExecutionBackend 接口调用 agent。
+  // createReactAgent 调用迁移到 langgraph-backend.ts 内部，stateModifier / stream 逻辑
+  // 作为回调传入（零改动、零回归风险——FORGE 精细逻辑保留在 driver 侧）。
   const { SystemMessage, HumanMessage } = await import('@langchain/core/messages');
 
   // v1.2.5 性能优化：stateModifier 同时实现「system prompt 注入」+「上下文裁剪」。
@@ -730,10 +732,10 @@ async function runWorker(step, runDir, target) {
     return Math.ceil(totalChars / 4);
   }
 
-  const agent = createReactAgent({
-    llm: model,
-    tools,
-    stateModifier: (state) => {
+  // v1.3.4 增量：stateModifier 构造为闭包——传给 langgraph-backend 作为 stateModifierFactory 回调。
+  // 逻辑零改动（保留所有 run-XX 教训沉淀）：工具预算软熔断 + 上下文裁剪 + tool_calls 配对清洗。
+  const buildStateModifier = ({ systemPrompt: _sp, toolBudget: _tb }) => {
+    return (state) => {
       const messages = state.messages ?? [];
 
       // 统计历史消息中所有 AI tool_calls 总数
@@ -777,10 +779,13 @@ async function runWorker(step, runDir, target) {
 
       // 正常：只做上下文裁剪
       return trimmed(null);
-    },
-    preModelHook: (state) => {
+    };
+  };
+
+  // v1.3.4 增量：preModelHook 保留（token 维度激进裁剪）——传给 langgraph-backend 的 modelConfig.preModelHook
+  const preModelHook = (state) => {
       // F-4：token 维度激进裁剪——只在 token 超硬阈值时裁剪。
-      // 消息条数裁剪已由 stateModifier 处理，这里补 stateModifier 看不到的维度：
+      // 消息条数裁剪已由 stateModifier 处理，这里补 stateModifier 看不见的维度：
       // 单条消息超长（如 500 行审查报告全文）导致总 token 爆炸但消息条数还不多。
       const messages = state.messages ?? [];
       const tokenEst = estimateTokens(messages);
@@ -793,97 +798,100 @@ async function runWorker(step, runDir, target) {
       }
 
       return state;
-    },
-  });
+    };
 
-  // 5. stream（计时）—— v1.2.5 改为流式输出
+  // 5. 通过 ExecutionBackend 执行 agent（v1.3.4 增量）
+  //    stream 循环逻辑（toolCallCount / hardBreak / gotReport / graceWindow）作为
+  //    streamHandler 回调传入——backend 在每个 chunk 调 streamHandler，返回
+  //    { hardBreak: true } 时中断 stream 并返回已累积的消息。
   console.log(`[worker:${step}] 开始执行（role=V, model=${cfg.model}）`);
   const t0 = Date.now();
 
-  // v1.2.9 功能①：acceptance shard 用 stepDef.recursionLimit（40），其他用 STEP_RECURSION_LIMITS
   const recursionLimit = STEP_RECURSION_LIMITS[step] ?? stepDef.recursionLimit ?? 50;
 
-  // v1.2.5：流式执行——实时打印工具调用
-  //
-  // 🔴 stream 数据结构适配（P0 bugfix da1039a → 本 commit）：
-  //   agent.stream(streamMode:'updates') 的 chunk 是 { [nodeName]: stateDelta }，
-  //   不是 invoke() 的扁平 { messages: [...] }。累积 delta.messages 到扁平数组，
-  //   返回格式兼容 invoke()，确保下游 extractAgentText / extractUsage 正常工作。
-  const invokeAgent = async () => {
-    const stream = await agent.stream(
-      { messages: [{ role: 'user', content: userMessage }] },
-      { recursionLimit, streamMode: 'updates' }
-    );
+  // streamHandler 闭包——维护 toolCallCount / graceWindow / hardBreak 状态
+  // 逻辑零改动（保留所有 run-XX 教训沉淀）
+  let streamToolCallCount = 0;
+  let inGraceWindow = false;
+  let graceStepCount = 0;
+  let hardBreak = false;
+  let gotReport = false;
+  const graceSteps = (step === 'coverage' || step === 'consolidate')
+    ? GRACE_STEPS_ANALYSIS : GRACE_STEPS_DEFAULT;
 
-    const allMessages = [];
-    let toolCallCount = 0;
-
-    // L2 硬熔断状态（移植自 fresh-eyes-driver）
-    let inGraceWindow = false;   // 是否进入写报告窗口期
-    let graceStepCount = 0;      // 窗口期 superstep 计数
-    let hardBreak = false;       // 窗口耗尽，强制中断
-    let gotReport = false;       // 窗口期内捕获到报告文本
-
-    // 报告质量门控：使用模块级 isReportText（v1.2.7：从局部提到模块级）
-    // 真报告至少含 ## 标题行 或 ≥ 300 字符
-
-    for await (const chunk of stream) {
-      for (const [, delta] of Object.entries(chunk)) {
-        const msgs = delta?.messages;
-        if (!Array.isArray(msgs)) continue;
-        for (const msg of msgs) {
-          allMessages.push(msg);
-
-          // 检测 AI 消息是否有非空 content（报告文本）
-          if (msg?._getType?.() === 'ai') {
-            const c = msg?.content;
-            let textContent = '';
-            if (typeof c === 'string') textContent = c;
-            else if (Array.isArray(c)) textContent = c.map(x => typeof x === 'string' ? x : x?.text ?? '').join('');
-            // 窗口期内检测报告质量
-            if (inGraceWindow && isReportText(textContent)) {
-              gotReport = true;
-              console.log(`  ✅ [${step}#V] 写报告窗口内捕获到报告文本（${textContent.length} 字符）`);
-            }
-          }
-
-          // 工具调用计数
-          if (msg?._getType?.() === 'ai' && msg.tool_calls?.length > 0) {
-            for (const tc of msg.tool_calls) {
-              toolCallCount++;
-              console.log(`  → [${step}#V] tool #${toolCallCount}: ${tc.name}`);
-            }
+  const streamHandler = (chunk) => {
+    for (const [, delta] of Object.entries(chunk)) {
+      const msgs = delta?.messages;
+      if (!Array.isArray(msgs)) continue;
+      for (const msg of msgs) {
+        // 检测 AI 消息是否有非空 content（报告文本）
+        if (msg?._getType?.() === 'ai') {
+          const c = msg?.content;
+          let textContent = '';
+          if (typeof c === 'string') textContent = c;
+          else if (Array.isArray(c)) textContent = c.map(x => typeof x === 'string' ? x : x?.text ?? '').join('');
+          // 窗口期内检测报告质量
+          if (inGraceWindow && isReportText(textContent)) {
+            gotReport = true;
+            console.log(`  ✅ [${step}#V] 写报告窗口内捕获到报告文本（${textContent.length} 字符）`);
           }
         }
-      }
 
-      // L2：撞硬上限 → 进入 grace window
-      // 分析型步骤（coverage/consolidate）给 10 步 grace，其他给 5 步
-      const graceSteps = (step === 'coverage' || step === 'consolidate')
-        ? GRACE_STEPS_ANALYSIS : GRACE_STEPS_DEFAULT;
-      if (toolCallCount >= TOOL_HARD_LIMIT && !inGraceWindow && !hardBreak) {
-        inGraceWindow = true;
-        console.warn(`  ⏳ [${step}#V] 工具调用 ${toolCallCount} 次撞硬上限，进入 ${graceSteps} 步写报告窗口`);
-      }
-
-      // Grace window 倒计时
-      if (inGraceWindow && !gotReport && !hardBreak) {
-        graceStepCount++;
-        if (graceStepCount >= graceSteps) {
-          hardBreak = true;
-          console.warn(`  🛑 [${step}#V] 写报告窗口耗尽（${graceSteps} 步），模型仍未输出文本，强制中断`);
-          break;
+        // 工具调用计数
+        if (msg?._getType?.() === 'ai' && msg.tool_calls?.length > 0) {
+          for (const tc of msg.tool_calls) {
+            streamToolCallCount++;
+            console.log(`  → [${step}#V] tool #${streamToolCallCount}: ${tc.name}`);
+          }
         }
-      }
-
-      // 窗口期内拿到报告 → 正常结束
-      if (gotReport) {
-        console.log(`  📝 [${step}#V] 报告已捕获，正常结束`);
-        break;
       }
     }
 
-    return { messages: allMessages, hardBreak };
+    // L2：撞硬上限 → 进入 grace window
+    if (streamToolCallCount >= TOOL_HARD_LIMIT && !inGraceWindow && !hardBreak) {
+      inGraceWindow = true;
+      console.warn(`  ⏳ [${step}#V] 工具调用 ${streamToolCallCount} 次撞硬上限，进入 ${graceSteps} 步写报告窗口`);
+    }
+
+    // Grace window 倒计时
+    if (inGraceWindow && !gotReport && !hardBreak) {
+      graceStepCount++;
+      if (graceStepCount >= graceSteps) {
+        hardBreak = true;
+        console.warn(`  🛑 [${step}#V] 写报告窗口耗尽（${graceSteps} 步），模型仍未输出文本，强制中断`);
+        return { hardBreak: true };
+      }
+    }
+
+    // 窗口期内拿到报告 → 正常结束
+    if (gotReport) {
+      console.log(`  📝 [${step}#V] 报告已捕获，正常结束`);
+      return { hardBreak: true };
+    }
+
+    return {};
+  };
+
+  const invokeAgent = async () => {
+    // v1.3.4 增量：通过 ExecutionBackend 调用 agent
+    const { createExecutionBackend } = await import('../../engine/orchestrator/dist/execution-backend.js');
+    const backend = await createExecutionBackend();
+    const execResult = await backend.execute({
+      systemPrompt,
+      task: userMessage,
+      tools,
+      modelConfig: { model, preModelHook },
+      toolBudget: { softLimit: TOOL_SOFT_LIMIT, hardLimit: TOOL_HARD_LIMIT },
+      recursionLimit,
+      stateModifierFactory: buildStateModifier,
+      streamHandler,
+    });
+
+    // 兼容下游 extractAgentText / extractUsage 的返回格式
+    return {
+      messages: execResult.rawMessages ?? [],
+      hardBreak: execResult.hardBreak || hardBreak,
+    };
   };
 
   const result = progressMw
