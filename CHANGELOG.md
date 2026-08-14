@@ -10,6 +10,7 @@
 > 未来版本规划见 [ROADMAP.md](./docs/ROADMAP.md)。
 > 未来版本的规划文件在 `docs/changelog/v1.3/` 下（标注"尚未实现"），不纳入本索引。
 
+- **v1.3.4** — 🏪 L3 组织能力市场（五环：发布→发现→调用→评价→养护 + 6 market MCP tool）+ 🛡️ SkillScan 安全门（三态判定 + 发布/安装双触发）+ 📊 评估体系三步（harvest→jury→promote）+ 🔌 编排层与执行层分离（ExecutionBackend + DSH 执行后端接入）+ 📜 DecisionKind.MARKET + daemon 市场双巡检 · 2026-08-14 · [开发日志](./docs/changelog/v1.3/v1.3.4.md)
 - **v1.3.3** — 🤝 L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版 + 🧭 主 agent 编排 + 🚪 入口路由 + 📈 进化闭环升级 + 📜 evidence 字段 · 2026-08-12 · [开发日志](./docs/changelog/v1.3/v1.3.3.md)
 - **v1.3.2** — 🔄 Onboard Agent 完整版（L2-L5）· 2026-08-11 · [开发日志](./docs/changelog/v1.3/v1.3.2.md)
 - **v1.3.1** — 🧠 Ontology 运行时层（Action 注册表 + validator 三态 + Schema 定稿）+ 并行编排（ParallelScheduler + 波次审计卡关 + MergeQueue）+ Durable Execution（checkpoint 续跑 + 副作用幂等）+ Agent 身份码 Ed25519 + 🚀 Onboard Agent L1 + 📊 Benchmark 评测（隔离执行 + HMAC 链）+ 🔒 工具审批四模式 + 📜 LLM 调用级 Trace + 🔄 错误处理（stop_reason + 退避 + 收敛）+ 📚 L4 渐进加载 + 国标对齐 GB/T 48000.3-2026 · 2026-08-09 · [开发日志](./docs/changelog/v1.3/v1.3.1.md)

@@ -111,7 +111,7 @@ echo "git-diff=$(grep -c "evidenceMode: 'git-diff'" engine/audit/src/rules/index
 INDEX=$(grep -cE "name:\s*'A[0-9]|name:\s*'E[0-9]" engine/audit/src/rules/index.ts)
 TABLE=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " engine/audit/README.md)
 echo "index=$INDEX / README表=$TABLE（期望 TABLE≥INDEX）"   # v1.1.4：A18/A19 漏更新
-grep "run_audit" engine/mcp/src/mcp-server.ts | grep -oE "[0-9]+ 条规则"   # MCP 数字一致
+grep "rulesCount" engine/mcp/src/tools/report-tools.ts | head -1   # MCP 数字动态化（v1.2.9 拆分后非硬编码）|| true
 ```
 
 #### 7. 感知层配置与推送链路
@@ -175,7 +175,7 @@ grep -c "defaultRules\.length\|defaultRules\[.length\]" engine/audit/src/command
 # 本项主体是人工巡检铁律（无法用单条 grep 干净断言「并发」——2>&1 / & 等会误报）：
 #   自测流程必须串行——先 build 完成、dist 稳定，再单独跑 acceptance-test.sh。
 # 辅助自动检查：确认没有脚本把两者用 nohup/后台符号显式并发拉起
-grep -rnE "nohup.*(build|acceptance-test)|npm run build[^&]*&[[:space:]]*$" tools/ .github/workflows/ 2>/dev/null   # 期望：零命中
+grep -rnE "nohup.*(build|acceptance-test)|npm run build[^&]*&[[:space:]]*$" tools/ .github/workflows/ 2>/dev/null   # 期望：零命中 || true   # 零命中=无并发隐患=PASS（grep exit 1 语义反转防误报）
 ```
 
 #### 9. 动态规则禁用逻辑 + 文档侧规则数声称一致性
@@ -915,7 +915,7 @@ grep -Fc 'replace(/```[\s\S]*?```/g' FORGE/src/release-gate-driver.mjs   # ≥2
 # 1. 全仓活跃文档 U+FFFD 扫描（期望 CLEAN）
 node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}if(bad.length){console.log('FAIL:',bad.join(','));process.exit(1);}console.log('CLEAN');"
 # 2. 引擎源码 U+FFFD 扫描（期望无输出）
-grep -rlP '\x{FFFD}' engine/*/src/ 2>/dev/null | grep -v node_modules
+grep -rlP '\x{FFFD}' engine/*/src/ 2>/dev/null | grep -v node_modules || true   # 零命中=PASS（grep exit 1 语义反转防误报）
 ```
 
 #### 64. GitHub 锚点剥除规则——跨文档链接须匹配渲染后锚点（v1.2.4 新盲区）
@@ -1316,7 +1316,7 @@ grep "$(node -p "require('./package.json').version")" CHANGELOG.md | grep -oE "2
 **检查命令**：
 ```bash
 # 同步一致性检查：4 处声明的警戒线值一致
-for v in "2400" "1400" "400"; do
+for v in "2500" "1500" "400"; do   # v1.3.4 上调后的警戒线（ ——改值时同步更新此处
   COUNT=$(grep -rn "$v" FORGE/playbook/regression-checklist.md docs/changelog/releasing/05-review-system.md docs/guides/review-system.md 2>/dev/null | wc -l | tr -d ' ')
   echo "  警戒线 $v: $COUNT 处声明"
   [ "$COUNT" -lt 2 ] && echo "  ⚠️ 声明不足 2 处——可能漏改"
