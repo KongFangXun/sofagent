@@ -16,7 +16,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { loadEnvConfig } from '@sofagent/core';
 import { emitDecision } from '@sofagent/audit';
-import { readCatalog } from './catalog';
+import { readCatalog, type CatalogEntry } from './catalog';
 import { getCapabilityStatus } from './retire';
 import { scanForInstall, type ScanResult } from './skill-scan';
 import { appendInvokeCount } from './rating';
@@ -165,8 +165,7 @@ export async function invokeCapability(
   const { capabilityId, callerAgentId } = input;
 
   // 1. 发现：读取能力详情（含已退役——以便给出准确的「已退役」而非「不存在」提示）
-  // CatalogEntry 类型未暴露 sourcePath，但 manifest 实际含此字段（publisher 写入），用宽类型读取
-  const cap = (readCatalog(dataDir, true) as unknown as Array<Record<string, string>>).find((e) => e.id === capabilityId) ?? null;
+  const cap: CatalogEntry | null = readCatalog(dataDir, true).find((e) => e.id === capabilityId) ?? null;
   if (!cap) {
     return {
       capabilityId,
@@ -176,8 +175,8 @@ export async function invokeCapability(
       reason: `能力「${capabilityId}」不存在（先 market_search 发现）`,
     };
   }
-  const capName = cap.name ?? '';
-  const capSourcePath = cap.sourcePath ?? '';
+  const capName = cap.name;
+  const capSourcePath = cap.sourcePath;
 
   // 2. 状态检查：已退役的能力不可调用
   const status = getCapabilityStatus(capabilityId, dataDir);
