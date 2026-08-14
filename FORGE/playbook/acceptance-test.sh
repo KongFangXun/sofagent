@@ -7,8 +7,8 @@ export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离 + v1.2.5 激活链Phase1 + v1.2.5 审计加固A20-A23 + v1.2.5 daemon可靠性 + v1.2.5 多设备前置 + v1.2.9 短任务化 + checkpoint/resume worker级 + PM2 + HITL + mcp拆分 + 叙事重构 + 入口产品
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
-# 场景数：195 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
-#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 262 为编号上限，非场景数；S197 归并至 S164；v1.3.0 新增 S225-S230；v1.3.1 新增 S241-S244（国标/CRUD/审计聚合/L4）+ S201/S202 归并（--doctor+--repair）；v1.3.2 新增 S245-S255（L2-L5/agent-creation/eval-suite/client_type/fde-compose/trace-raw/trajectory/session-isolation）；v1.3.3 新增 S256-S262（L2 五大机制/联邦通道/主 agent 编排/入口路由/Refine/进化闭环/evidence）
+# 场景数：202 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
+#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 269 为编号上限，非场景数；S197 归并至 S164；v1.3.0 新增 S225-S230；v1.3.1 新增 S241-S244（国标/CRUD/审计聚合/L4）+ S201/S202 归并（--doctor+--repair）；v1.3.2 新增 S245-S255（L2-L5/agent-creation/eval-suite/client_type/fde-compose/trace-raw/trajectory/session-isolation）；v1.3.3 新增 S256-S262（L2 五大机制/联邦通道/主 agent 编排/入口路由/Refine/进化闭环/evidence）；v1.3.4 新增 S263-S269（market 引擎+MCP 6tool/评分公式/trust 三态/SkillScan 三态/DSH 编排分离/DecisionKind.MARKET/inspector 双注册）
 #   ⚠️ 口径注意（P2-31）：底部输出的「$PASSED 通过」是**断言通过数**（含跳过的场景也计 PASS），
 #   与「164 场景」不同——164 是 scenario 定义数，PASSED 可能 >164（条件跳过的场景也 +1）。
 #   文档引用 162 时指 scenario 定义数；引用「XXX 通过」时指断言通过数，勿混用。
@@ -2347,6 +2347,70 @@ grep -q "'EVOLUTION'" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S26
 grep -q "'TEAM'" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S262_OK=false
 grep -q "EVOLUTION\|TEAM" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" || S262_OK=false
 $S262_OK && pass "evidence 字段 + DecisionKind 加 EVOLUTION/TEAM" || fail "审计留痕字段缺失"
+
+# ─── v1.3.4 新增场景 S263-S269（L3 组织能力市场 + SkillScan + MARKET 审计 + DSH 编排分离）───
+
+scenario 263 "v1.3.4 交付 1+2：market 引擎 10 模块 + MCP 6 tool 注册（48）"
+S263_OK=true
+for f in publisher catalog invoker rating owner retire skill-scan rule-harvest rule-jury rule-promote; do
+  [ -f "$PROJECT_ROOT/engine/orchestrator/src/market/$f.ts" ] || S263_OK=false
+done
+grep -q "market_publish" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
+grep -q "market_search" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
+grep -q "market_invoke" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
+grep -q "market_rate" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
+grep -q "market_retire" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
+grep -q "market_harvest_rule" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
+$S263_OK && pass "market 10 模块 + 6 MCP tool 注册" || fail "market 引擎或 MCP 注册缺失"
+
+scenario 264 "v1.3.4 交付 1：评分公式 trust×评分×log(量+1) + 防刷（同 rater 覆盖）"
+S264_OK=true
+grep -q "Math.log" "$PROJECT_ROOT/engine/orchestrator/src/market/rating.ts" || S264_OK=false
+grep -q "getTrustForRating\|getTrustStub" "$PROJECT_ROOT/engine/orchestrator/src/market/rating.ts" || S264_OK=false
+grep -qE "raterId|同 rater|覆盖" "$PROJECT_ROOT/engine/orchestrator/src/market/rating.ts" || S264_OK=false
+$S264_OK && pass "评分公式 + trust 接线 + 防刷覆盖" || fail "评分/防刷逻辑缺失"
+
+scenario 265 "v1.3.4 交付 3：owner trust 三态阈值（0.5/0.6/0.4）"
+S265_OK=true
+grep -q "TRUST_INITIAL = 0.5" "$PROJECT_ROOT/engine/orchestrator/src/market/owner.ts" || S265_OK=false
+grep -q "TRUST_GOOD_THRESHOLD = 0.6" "$PROJECT_ROOT/engine/orchestrator/src/market/owner.ts" || S265_OK=false
+grep -q "TRUST_BAD_THRESHOLD = 0.4" "$PROJECT_ROOT/engine/orchestrator/src/market/owner.ts" || S265_OK=false
+$S265_OK && pass "trust 三态阈值 0.5/0.6/0.4" || fail "trust 阈值缺失"
+
+scenario 266 "v1.3.4 交付 4：SkillScan 三态判定 + 发布/安装双触发"
+S266_OK=true
+grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" "$PROJECT_ROOT/engine/orchestrator/src/market/skill-scan.ts" || S266_OK=false
+grep -q "scanForPublish" "$PROJECT_ROOT/engine/orchestrator/src/market/skill-scan.ts" || S266_OK=false
+grep -q "scanForInstall" "$PROJECT_ROOT/engine/orchestrator/src/market/skill-scan.ts" || S266_OK=false
+grep -q "existsSync" "$PROJECT_ROOT/engine/orchestrator/src/market/skill-scan.ts" || S266_OK=false
+$S266_OK && pass "SkillScan 三态 + 双触发 + 前置存在性校验" || fail "SkillScan 判定链缺失"
+
+scenario 267 "v1.3.4 dsh 增量：编排/执行层分离（ExecutionBackend 接口 + 工厂 + rc 守卫 + FORGE 迁移）"
+S267_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts" ] || S267_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/execution-backends/dsh-backend.ts" ] || S267_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/execution-backends/langgraph-backend.ts" ] || S267_OK=false
+grep -q "export interface ExecutionBackend" "$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts" || S267_OK=false
+grep -q "export async function createExecutionBackend" "$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts" || S267_OK=false
+grep -q "rc|beta|alpha|pre" "$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts" || S267_OK=false
+grep -q "createExecutionBackend" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S267_OK=false
+grep -q "createExecutionBackend" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S267_OK=false
+$S267_OK && pass "ExecutionBackend 接口 + 工厂 + rc 守卫 + FORGE 两 driver 迁移" || fail "编排/执行分离缺失"
+
+scenario 268 "v1.3.4 交付 2：DecisionKind.MARKET 审计留痕（市场动作专用 kind）"
+S268_OK=true
+grep -q "'MARKET'" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S268_OK=false
+grep -q "MARKET" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" || S268_OK=false
+grep -q "EVOLUTION" "$PROJECT_ROOT/engine/orchestrator/src/market/retire.ts" || S268_OK=false
+$S268_OK && pass "DecisionKind.MARKET + 退役走 EVOLUTION" || fail "市场审计 kind 缺失"
+
+scenario 269 "v1.3.4 交付 1：daemon 市场巡检双注册（L1 目录日更 + L2 健康周检）"
+S269_OK=true
+grep -q "market-catalog-daily" "$PROJECT_ROOT/engine/daemon/src/inspector-layers.ts" || S269_OK=false
+grep -q "market-health" "$PROJECT_ROOT/engine/daemon/src/inspector-layers.ts" || S269_OK=false
+grep -q "runMarketCatalogDaily" "$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts" || S269_OK=false
+grep -q "runMarketHealth" "$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts" || S269_OK=false
+$S269_OK && pass "市场巡检 inspector 三步注册（L1+L2）" || fail "inspector 注册缺失"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

@@ -28,22 +28,16 @@ else
   SCRIPT="$TMP_FILE"
 fi
 echo "🚀 启动 sofagent 安装..."
-# v1.3.4 交付 1-E（P0）：捕获 install.sh 退出码——假绿修复
-# 原 bug：即使 install.sh 失败（非 0 退出），bootstrap.sh 也无条件打印「✅ bootstrap 完成」
-# 修复：用 `|| INSTALL_RC=$?` 捕获退出码（set -e 下 || 短路使其不立即退出），
-#       只有成功路径才打印「✅ bootstrap 完成」
+# v1.3.4 交付 1-E（P0 假绿修复）：`|| INSTALL_RC=$?` 捕获 install.sh 退出码（set -e 下 || 短路
+# 不立即退出），失败打 ❌ 透传退出码，只有 exit 0 才打 ✅。bash 3.2 兼容：空数组先判长度再展开。
 INSTALL_RC=0
-# bash 3.2 兼容：set -u 下空数组展开会报 unbound variable，先判长度再展开
 if [ ${#PASSTHROUGH[@]} -gt 0 ]; then
   bash "$SCRIPT" "${PASSTHROUGH[@]}" || INSTALL_RC=$?
 else
   bash "$SCRIPT" || INSTALL_RC=$?
 fi
-
-# set -e 安全：--local 模式下 TMP_FILE 为空，条件为假会触发 exit 1，改用 if
+# --local 模式 TMP_FILE 为空，set -e 下条件为假会触发 exit 1，改用 if
 if [[ -n "$TMP_FILE" ]]; then rm -f "$TMP_FILE"; fi
-
-# 交付 1-E：只在 install.sh 成功（exit 0）时打印完成消息
 if [ "$INSTALL_RC" -ne 0 ]; then
   echo "❌ sofagent 安装失败（exit $INSTALL_RC）——请截图此信息到 GitHub Issues（github.com/KongFangXun/sofagent/issues）"
   exit "$INSTALL_RC"
