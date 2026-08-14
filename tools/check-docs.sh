@@ -200,11 +200,11 @@ LAYER_E=${LAYER_E:-0}
 
 # 上限定义
 LIMIT_A=6400  # v1.2.8: A 层 6379 行（v1.2.8 开发日志 + 功能描述自然增长），上调 6300→6400 留余量
-LIMIT_B=8500  # v1.3.3: B 层 8437 行（FDE 方法论/职业道德/评估体系内容增强），上调 8400→8500 留余量
+LIMIT_B=8800  # v1.3.4: B 层 8703 行（发版收尾+stash 恢复竞品段+审查体系优化），上调 8500→8800 留余量
 LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
 LIMIT_D=2000  # v1.1.9: D 层纳入口径修正——docs/architecture（v1.1.9 设计 876 行）+ docs/prd（193 行）从 A 层归入 D 层（工程文档与设计文档同语义），700→2000 容纳
 LIMIT_E=3100  # v1.2.5: E 层 2905 行（新增 dashboard-html-dev.md 219 行 + enterprise-deploy 扩展），上调 2700→3100 留余量
-LIMIT_TOTAL=14900  # v1.3.3: 随 LIMIT_B 8400→8500 同步上调（A+B=6400+8500）
+LIMIT_TOTAL=15200  # v1.3.4: 随 LIMIT_B 8500→8800 同步上调（A+B=6400+8800）
 
 # 输出各层
 echo "  A 用户文档:     ${LAYER_A} 行 / ${LIMIT_A} 上限"
@@ -435,6 +435,12 @@ echo "=== 11. 跨文档 #锚点 死链扫描（F-20 · P0-13 起纳入 ERRORS）
 # 算法按 GitHub sanitize_anchor_name 修正（此前 [-\s]+ 折叠连字符 + 保留 emoji 导致
 # 11 条 100% 误报）：\p{Word}=字母/数字/下划线；保留空格/连字符；其余删除（含 emoji）；
 # 空格转连字符（不折叠已有连字符）。
+# v1.3.4：WorkBuddy 环境降级——shim 拦截嵌套 read 循环导致本项超时（维度 101 同款环境问题）。
+#   锚点死链检查由 tools/check-anchors.mjs（node 版，pre-push 第 4 步独立跑）全覆盖——
+#   本项是 bash 逐行重复实现。CI（非 shim 环境）跑完整版；本地设 SKIP_ANCHOR_SCAN=1 跳过。
+if [ "${SKIP_ANCHOR_SCAN:-0}" = "1" ]; then
+  echo "  ⏭️ 跳过（SKIP_ANCHOR_SCAN=1）——锚点检查由 check-anchors.mjs 覆盖（pre-push 第 4 步）"
+else
 ANCHOR_WARN=0
 while IFS= read -r -d '' mdfile; do
   in_fence=0
@@ -493,6 +499,7 @@ else
   echo "  共 ${ANCHOR_WARN} 处锚点死链（已计入 ERRORS）"
   ERRORS=$((ERRORS + ANCHOR_WARN))
 fi
+fi  # SKIP_ANCHOR_SCAN 降级块结束
 
 echo ""
 if [ "$ERRORS" -gt 0 ]; then
