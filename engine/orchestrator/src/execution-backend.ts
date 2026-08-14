@@ -12,11 +12,11 @@
 //   不是执行后端的事，是编排层在 execute 前后做的。执行后端只管「给我任务，
 //   给我结果」。但 toolBudget 软熔断和工具 wrapper 透传是所有后端的强制义务。
 //
-// 接入门禁结论（2026-08-14）：DSH 候选包名（deepseek-harness /
-// @deepseek-ai/harness / @dsh/core 等）实测全部 404——npm-public PR #2519
-// 刚合并但包尚未实际可安装。当前走【分支 B：运行时动态 import + try-catch
-// fallback】，DSH 后端实现 stub（加载失败自动降级 LangGraph）。
-// 开发启动当天再验一次，若已上架则切换 optionalDependencies 声明。
+// 接入门禁结论（2026-08-14 核实更新）：DSH 已于 2026-08-13 上架 npm
+// （@deepseek-ai/dsh@0.1.0-rc.6，PR #2519 合并）。候选列表已含 @deepseek-ai/dsh。
+// 当前仍走【分支 B：运行时动态 import + try-catch fallback】——因为 rc 版本
+// API 不稳定（createCordisRuntime 导出校验可能失败 → fallback）+ runCordisAgent
+// 是骨架。rc 转正式版 + 骨架补全后自动切换，无需改代码。
 
 /**
  * 执行后端契约——编排层通过这个接口调用执行层。
@@ -169,28 +169,30 @@ export async function createExecutionBackend(): Promise<ExecutionBackend> {
 
 /**
  * 尝试加载 DSH 后端（动态 import + try-catch）。
- * DSH 未上架期间（2026-08-14 实测 404），此函数返回 null，触发 fallback。
+ * DSH 已于 2026-08-13 上架 npm（@deepseek-ai/dsh@0.1.0-rc.6，PR #2519 合并）。
+ * 候选列表命中后仍需校验 mod.createCordisRuntime 导出——rc 版本 API 不稳定时自动 fallback LangGraph。
  */
 async function tryLoadDshBackend(): Promise<ExecutionBackend | null> {
   try {
-    // 动态 import——DSH 包名候选列表（按 npm-public PR #2519 后的可能命名猜测）。
-    // 包实际上架后只需确认最终包名，这里的候选列表会被命中。
+    // DSH 候选包名列表（2026-08-14 实测 @deepseek-ai/dsh@0.1.0-rc.6 已 public）。
+    // 顺序：已确认上架的真实包名优先，猜测名后补（兜底未来可能的别名）。
     const candidates = [
-      'deepseek-harness',
-      '@deepseek-ai/harness',
-      '@dsh/core',
-      '@deepseek-harness/core',
+      '@deepseek-ai/dsh',          // ✅ 已确认上架（0.1.0-rc.6，2026-08-13 PR #2519）
+      'deepseek-harness',           // 猜测名（仓库名 = deepseek-harness，但 npm 用 scope）
+      '@deepseek-ai/harness',       // 猜测名
+      '@dsh/core',                  // 猜测名
+      '@deepseek-harness/core',     // 猜测名
     ];
     for (const pkg of candidates) {
       try {
-        // @ts-ignore — DSH 尚未上架，类型不存在
+        // @ts-ignore — DSH 类型未安装（不进 dependencies，运行时动态 import）
         const mod = await import(pkg);
         if (mod && typeof mod.createCordisRuntime === 'function') {
           const { createDshBackend } = await import('./execution-backends/dsh-backend.js');
           return createDshBackend(mod);
         }
       } catch {
-        // 候选包名 miss，试下一个
+        // 候选包名 miss 或未安装，试下一个
       }
     }
     return null;

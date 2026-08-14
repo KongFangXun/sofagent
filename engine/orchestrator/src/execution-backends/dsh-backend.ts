@@ -1,13 +1,13 @@
 // dsh-backend.ts · v1.3.4 增量 · DSH Cordis 运行时适配器
 //
-// 接入门禁结论（2026-08-14）：
-// DSH（DeepSeek Harness）候选包名（deepseek-harness / @deepseek-ai/harness /
-// @dsh/core / @deepseek-harness/core）实测全部 404——npm-public PR #2519
-// 2026-08-13 刚合并但包尚未实际可安装。
-//
-// 当前状态：本文件是完整的适配器骨架——一旦 DSH 上架 npm，execution-backend.ts
-// 的 tryLoadDshBackend() 动态 import 成功，会调用 createDshBackend(mod) 挂载。
-// 上架前 tryLoadDshBackend 返回 null，自动 fallback 到 LangGraph。
+// 接入门禁结论（2026-08-14 核实更新）：
+// DSH（DeepSeek Harness）已于 2026-08-13 上架 npm：@deepseek-ai/dsh@0.1.0-rc.6（PR #2519 合并）。
+// 底层框架 @deepseek-ai/cordis@4.0.1 + cosmokit@1.8.2 也已 public。
+// 但当前仍走 fallback LangGraph——因为：
+//   1. rc 版本 API 不稳定（createCordisRuntime 导出可能不存在 → mod 检查失败 → fallback）
+//   2. 本文件 runCordisAgent() 是骨架（对照实际 Cordis API 重写前抛错）
+//   3. rc 版本不适合生产环境
+// 等 rc 转正式版 + runCordisAgent 对照实际 API 补全后，自动切到 DSH 后端。
 //
 // DSH Cordis 运行时的工具格式适配：
 // ExecutionTask.tools 是通用格式（LangGraph ToolInterface），DSH Cordis 插件
