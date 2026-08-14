@@ -5,7 +5,7 @@
 # 检查范围：
 #   🟢 通用工具库（js-yaml / zod / archiver）
 #   🟡 核心框架 LangGraph 三件套（langgraph / core / openai）
-#   🔴 精确锁版 automerge（1.0.1-preview.7 禁止升 2.x）
+#   🔴 automerge（v1.3.5 排期升级：automerge@1.0.1-preview.7 → @automerge/automerge@3.4.1，前置 multi-device-sync 回归测试）
 #   🔵 DSH deepseek-harness（npm 已发布 2026-08-14：@deepseek-ai/dsh + @deepseek-ai/cordis）
 #
 # 用法：
@@ -62,14 +62,16 @@ check_npm "@langchain/core" "1.2.3"
 check_npm "@langchain/openai" "1.5.5"
 
 echo ""
-echo "🔴 精确锁版（禁止自动升级）"
+echo "🔴 automerge（v1.3.5 排期升级）"
 echo "─────────────────────────────────────────────────────────────"
-# automerge 特殊处理——只报告最新版，不标"有新版本"（因为 2.x 不能升）
+# automerge 特殊处理——旧包名 automerge@1.0.1-preview.7 当前在用（v1.3.5 切换前）
+# 升级 PR 仅作参考（Dependabot 标 DO-NOT-MERGE），不自动合并
+# v1.3.5 排期切换到新包名 @automerge/automerge@^3.4.1（前置：multi-device-sync 回归测试跑绿）
 AUTOMERGE_LATEST=$(npm view automerge version 2>/dev/null || echo "❓")
-AUTOMERGE_ALPHA=$(npm view automerge dist-tags.alpha 2>/dev/null || echo "无 alpha")
-printf "%-40s %-22s %-18s %s\n" "automerge" "1.0.1-preview.7" "$AUTOMERGE_LATEST" "🔒 精确锁（禁升 2.x）"
-printf "%-40s %-22s %-18s %s\n" "  └ alpha 通道" "—" "$AUTOMERGE_ALPHA" "📌 跟踪用"
-echo "   ⚠️  升级条件：验证 multi-device-sync 测试全绿后手动评估"
+AUTOMERGE_NEW=$(npm view @automerge/automerge version 2>/dev/null || echo "❓")
+printf "%-40s %-22s %-18s %s\n" "automerge（旧包名）" "1.0.1-preview.7" "$AUTOMERGE_LATEST" "🔒 v1.3.5 前禁升"
+printf "%-40s %-22s %-18s %s\n" "@automerge/automerge（新包名）" "—" "$AUTOMERGE_NEW" "📋 v1.3.5 切换目标"
+echo "   ⚠️  切换前置：multi-device-sync 回归测试跑绿后再执行（7 处 API 调用同步改）"
 
 echo ""
 echo "🔵 DSH (DeepSeek Harness)"
@@ -81,12 +83,12 @@ DSH_GIT_TAG=$(git ls-remote --tags https://github.com/deepseek-ai/DeepSeek-Harne
 printf "%-40s %-22s %-18s %s\n" "@deepseek-ai/dsh" "未接入" "$DSH_VER" "🔵 npm 已发布"
 printf "%-40s %-22s %-18s %s\n" "@deepseek-ai/cordis" "未接入" "$CORDIS_VER" "🔵 npm 已发布"
 printf "%-40s %-22s %-18s %s\n" "  └ GitHub tag" "—" "$DSH_GIT_TAG" "📌"
-echo "   v1.3.4 接入方式：optionalDependencies（npm 依赖，rc 版本缺失不阻断安装）"
+echo "   v1.3.4 接入方式：运行时动态 import + 版本守卫拦截 rc（fallback LangGraph）——不进 dependencies，正式版发布后自动切换"
 
 echo ""
 echo "════════════════════════════════════════════════════════════"
 if [ "$HAS_OUTDATED" = "1" ]; then
-  echo "⚠️  有依赖落后于最新版本——评估是否升级（注意 automerge 禁升 2.x）"
+  echo "⚠️  有依赖落后于最新版本——按 SOP 步骤 3c 决策规则评估（automerge v1.3.5 前禁升）"
   exit 1
 else
   echo "✅ 所有可升级依赖均为最新"
