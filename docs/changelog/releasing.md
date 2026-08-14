@@ -20,7 +20,7 @@
 - [x] 八 · 开发日志定稿 + 文档收尾 → [08-doc-finalize.md](./releasing/08-doc-finalize.md) · **v1.3.4：定稿（速览表+39 项打勾+Release Notes）+ ROADMAP 五步 + 日期 14 文件 + HANDBOOK 能力表**
 - [x] 九 · 工具脚本健康检查 → [09-tool-health.md](./releasing/09-tool-health.md) · **v1.3.4：7 文件类型排查 + bump dry-run 纯只读 + dist v1.3.4 + hook 三测全过（拦密钥/放合格/短 message 拦）**
 - [x] 十 · 确认关口 → [10-confirm.md](./releasing/10-confirm.md) · **v1.3.4：469 文件 71 commit 全量复核 + 发布清单 39/39 勾 + 五门禁终验全绿**
-- [ ] 十一 · 发布（项目负责人或授权 AI）→ [11-publish.md](./releasing/11-publish.md)
+- [x] 十一 · 发布（项目负责人或授权 AI）→ [11-publish.md](./releasing/11-publish.md) · **v1.3.4：push（71 commit）→ CI 8/8 全绿 → tag 零游离 → GitHub Release（质量表 7 项）→ npm 12/12 包 1.3.4 → ClawHub + SkillHub 双分发**
 - [ ] 十二 · 发布后（验证 + 三文档回写 + SOP 自迭代 + 下版 prompt）→ [12-post-publish.md](./releasing/12-post-publish.md)
 
 > **铁律**：阶段六 verdict=PASS 前，不进阶段七~八。FAIL 回阶段五修复后重跑。
