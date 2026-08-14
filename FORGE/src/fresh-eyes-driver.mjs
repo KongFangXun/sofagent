@@ -105,9 +105,14 @@ const TOOL_HARD_LIMIT  = 45;   // stream loop：超此值进入"写报告窗口"
 const REVIEW_GRACE_STEPS  = 0;   // 审查步骤写报告窗口（0=撞硬上限立即中断）
 const DEFAULT_GRACE_STEPS = 0;   // 其他步骤同上
 // v1.3.2 preflight-check：perspective worker 工具预算提取为模块级常量，
-// 供 preflight 预算合理性检查引用（15/20 来自 v1.3.1 run-03 调优结论）。
-const PERSPECTIVE_TOOL_SOFT = 15;
-const PERSPECTIVE_TOOL_HARD = 20;
+// 供 preflight 预算合理性检查引用。
+// v1.3.4 run-01 调优（2026-08-14）：15/20 → 40/50。根因：零窗口模式下 20 次
+// 工具调用连 2870 文件 monorepo 的结构都摸不完，24 个 worker 全部撞硬熔断后
+// 走裸 LLM 兜底，拿着碎片上下文补全报告 → 审查臆造（"automerge 排期升级"
+// 等无中生有的 finding）→ b-fix 基于臆造越界改文件。40/50 保证单视角有
+// 充裕预算完成"摸地形 → 定点审查 → 输出报告"全流程。
+const PERSPECTIVE_TOOL_SOFT = 40;
+const PERSPECTIVE_TOOL_HARD = 50;
 
 // ─── 模型定价（从 FORGE/models/ 加载）──────────────────────
 // 单位：CNY per 1M tokens（百万 token 计价）
@@ -186,7 +191,10 @@ function buildPerspectiveSteps() {
       outputs: [`check-a-p${p.id}.md`],
       inputs: [],
       perspective: p.label,
-      recursionLimit: 30,
+      // v1.3.4：预算 15/20→40/50 后 recursionLimit 同步放大（30→110）。
+      // LangGraph recursionLimit 按 super-step 计：每轮 LLM 调用+工具执行 = 2 步，
+      // 50 次工具调用至少需 100 步，+10 冗余。原 30 会在工具预算用完前先熔断。
+      recursionLimit: 110,
       toolSoftLimit: PERSPECTIVE_TOOL_SOFT,
       toolHardLimit: PERSPECTIVE_TOOL_HARD,
     };
@@ -196,7 +204,7 @@ function buildPerspectiveSteps() {
       outputs: [`check-b-p${p.id}.md`],
       inputs: [],
       perspective: p.label,
-      recursionLimit: 30,
+      recursionLimit: 110,
       toolSoftLimit: PERSPECTIVE_TOOL_SOFT,
       toolHardLimit: PERSPECTIVE_TOOL_HARD,
     };
@@ -1286,6 +1294,27 @@ async function generateReportWithoutTools(model, messages, step, role, stepDef) 
   // 去重 + 最多 20 条（500 字符 × 20 = ~10K tokens prompt，控制总量）
   const unique = [...new Set(toolSummaries)].slice(0, 20);
 
+  // v1.3.4 run-01 臆造修复：工具结果摘要不足时禁止裸 LLM 生成报告。
+  // 根因：run-01 中 24 个 worker 全部撞硬熔断，裸 LLM 拿着几条碎片"补全"
+  // 审查报告，编造出"automerge 排期升级 v1.3.5"等项目中不存在的计划，
+  // b-fix 基于臆造越界改文件。没报告比有臆造报告好——信息不足直接
+  // 返回 INCOMPLETE 占位，让下游（parseStopCondition / a-consolidate /
+  // 人工复核）明确知道该视角审查未完成，而不是把臆造当 finding。
+  const MIN_TOOL_EVIDENCE = 5;  // 少于 5 条有效工具结果 = 证据不足
+  if (unique.length < MIN_TOOL_EVIDENCE) {
+    return [
+      `## ${step}（角色 ${role}）审查未完成 [INCOMPLETE]`,
+      '',
+      '> **降级占位——工具证据不足，禁止裸 LLM 生成报告**',
+      `> 该 worker 撞硬熔断时仅收集到 ${unique.length} 条工具结果摘要`,
+      `>（要求 ≥${MIN_TOOL_EVIDENCE} 条才允许裸 LLM 兜底）。`,
+      '> 信息不足时强行生成报告 = 鼓励模型臆造（v1.3.4 run-01 教训）。',
+      '> 本份产物不含任何 finding，请重跑该视角或人工复核。',
+      '',
+      'INCOMPLETE 降级占位（证据不足）',
+    ].join('\n');
+  }
+
   // 2. 构造裸 LLM 请求——无 tools，只有 system + user 消息
   const { SystemMessage, HumanMessage } = await import('@langchain/core/messages');
 
@@ -1298,8 +1327,14 @@ async function generateReportWithoutTools(model, messages, step, role, stepDef) 
     `- 产物文件：${(stepDef?.outputs ?? ['report.md']).join(', ')}`,
     '- 每条发现标注优先级：P0（严重/阻塞）/ P1（应该修）/ P2（观察项）',
     '- 给出文件路径和具体描述',
-    '- 基于摘要中能看到的实际证据做判断——如果摘要中有明确的代码/配置/路径问题，标 P0 或 P1',
-    '- 只有当摘要信息确实不足以确认时才标 P2"待证实"',
+    // v1.3.4 run-01 臆造修复：裸 LLM 兜底只允许"总结已证实的证据"，
+    // 禁止"基于合理推断"补全。臆造链：碎片摘要 → LLM 联想出项目中
+    // 不存在的计划/版本/决策 → b-fix 据此越界改文件。
+    '- 🔴 反臆造铁律：只允许报告摘要中有直接文字证据的内容。',
+    '  摘要里没有明确写的东西（版本计划、升级决策、路线图排期、',
+    '  文件内容、数字），一律不得出现在报告中——不知道就写"未确认"，',
+    '  宁可留空也不得推测补全。',
+    '- 只有摘要信息确实不足以确认时才标 P2"待证实"——禁止把推测升为 P0/P1',
     '- 用中文写，Markdown 格式',
     // v1.3.0 run-21 修复：多产物步骤（a-consolidate 产 findings.md+result.md）的
     // 兜底报告也必须带 ===FILE: 分隔符，否则 sliceMultiOutput 把 result.md 判空，
