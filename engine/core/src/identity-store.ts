@@ -1,5 +1,5 @@
 // ============================================================
-// identity-store.ts · Agent 身份注册表（v1.3.3 交付 6）
+// identity-store.ts · Agent 身份注册表（v1.3.4 交付 6）
 //
 // 身份码本地持久化：JSON 存储于 data/identity/identities.json
 //（走 core resolveDataDir()——SOFAGENT_HOME 可被环境变量覆盖，测试可隔离）。

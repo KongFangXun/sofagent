@@ -1,7 +1,7 @@
 ---
 name: sofagent
 slug: sofagent
-version: 1.3.3
+version: 1.3.4
 displayName: FDE Skill
 description: >
   FDE Skill——帮 FDE（前线部署工程师）更好完成企业 AI 落地的方法论 Skill。约束 Agent 行为、审计每次变更、沉淀经验。

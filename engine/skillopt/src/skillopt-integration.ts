@@ -1,9 +1,9 @@
 // ============================================================
 // skillopt-integration.ts · SkillOpt 自进化引擎集成
-// v1.3.3 新增：通过 CLI subprocess 调用 skillopt-sleep，验证 candidate skill
-// v1.3.3：迁移至 @sofagent/skillopt
+// v1.3.4 新增：通过 CLI subprocess 调用 skillopt-sleep，验证 candidate skill
+// v1.3.4：迁移至 @sofagent/skillopt
 //
-// v1.3.3 bugfix：对齐真实 skillopt-sleep CLI 契约。
+// v1.3.4 bugfix：对齐真实 skillopt-sleep CLI 契约。
 //   真实 CLI（Microsoft SkillOpt）是子命令式：
 //     skillopt-sleep status       -> exit 0（探活）
 //     skillopt-sleep run --target-skill-path <PATH> [--auto-adopt] [--json] ...

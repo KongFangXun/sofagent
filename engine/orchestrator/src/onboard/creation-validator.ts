@@ -1,5 +1,5 @@
 // ============================================================
-// onboard/creation-validator.ts · agent-creation 结构完整性验证（v1.3.3 交付 5）
+// onboard/creation-validator.ts · agent-creation 结构完整性验证（v1.3.4 交付 5）
 // ============================================================
 //
 // 建完 Agent 后自动检查验证清单（dev-prompt 验收标准）：

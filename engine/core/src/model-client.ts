@@ -1,10 +1,10 @@
 // ============================================================
 // model-client.ts · 模型 API 客户端
-// v1.3.3 新增：Node.js 原生 fetch（Node 18+ 内置）调 OpenAI 兼容接口
-// v1.3.3 交付 12：isRetryableError 字符串匹配 → stop_reason 六值分类
+// v1.3.4 新增：Node.js 原生 fetch（Node 18+ 内置）调 OpenAI 兼容接口
+// v1.3.4 交付 12：isRetryableError 字符串匹配 → stop_reason 六值分类
 //   + 指数退避重连（2s→4s→8s→16s→30s，≤5 次）+ auth 永不重试（铁律）
 //   + 工具失败收敛为结构化消息（convergeToolError，不 throw）
-// v1.3.3 交付 11：调用前后打点写 LLM 调用级 Trace（llm-calls.jsonl），
+// v1.3.4 交付 11：调用前后打点写 LLM 调用级 Trace（llm-calls.jsonl），
 //   打点失败不阻断调用（容错铁律：try/catch + warn）
 // ============================================================
 import { classifyError, isRetryableStopReason, backoffDelayMs, MAX_RETRY_COUNT } from './stop-reason';

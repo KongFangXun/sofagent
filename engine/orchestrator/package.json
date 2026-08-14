@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/orchestrator",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "sofagent 编排引擎 — 多 Agent 协作 / 工作流调度 / prompt 模板",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,17 +27,17 @@
     "@langchain/core": "^1.2.3",
     "@langchain/langgraph": "^1.4.7",
     "@langchain/openai": "^1.5.5",
-    "@sofagent/audit": "1.3.3",
-    "@sofagent/core": "1.3.3",
-    "@sofagent/harness": "1.3.3",
-    "@sofagent/rules": "1.3.3",
-    "@sofagent/skillopt": "1.3.3",
+    "@sofagent/audit": "1.3.4",
+    "@sofagent/core": "1.3.4",
+    "@sofagent/harness": "1.3.4",
+    "@sofagent/rules": "1.3.4",
+    "@sofagent/skillopt": "1.3.4",
     "automerge": "1.0.1-preview.7",
     "js-yaml": "^5.2.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@sofagent/daemon": "1.3.3"
+    "@sofagent/daemon": "1.3.4"
   },
   "exports": {
     ".": {

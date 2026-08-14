@@ -1,4 +1,4 @@
-<!-- role-fde.md · FDE 岗位规范 · v1.3.3 -->
+<!-- role-fde.md · FDE 岗位规范 · v1.3.4 -->
 <!-- 按需加载：task type = deploy 时注入 -->
 
 # 🚀 FDE 岗位规范（role-fde）

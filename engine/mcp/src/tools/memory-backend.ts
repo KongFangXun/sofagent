@@ -1,5 +1,5 @@
 // ============================================================
-// memory-backend.ts · 外部记忆后端适配器（v1.3.3 交付 10 MA1/MA3/MA6）
+// memory-backend.ts · 外部记忆后端适配器（v1.3.4 交付 10 MA1/MA3/MA6）
 //
 // Path A：弱依赖外部 MCP connector——不替换 Ledger-Views-Policy，
 // 零架构改造。MA1 提供动态工具注册（不污染静态 TOOLS 清单）；

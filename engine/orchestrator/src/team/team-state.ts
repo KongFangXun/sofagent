@@ -1,5 +1,5 @@
 // ============================================================
-// team-state.ts · TeamState CRDT 类型 + 同步通道抽象（v1.3.3 交付 T02）
+// team-state.ts · TeamState CRDT 类型 + 同步通道抽象（v1.3.4 交付 T02）
 //
 // 团队共享态的 CRDT 文档结构 + 跨设备同步通道接口。
 // 复用 automerge@1.0.1-preview.7（严禁升 2.x，API 不兼容）。

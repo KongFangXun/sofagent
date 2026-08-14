@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/rules",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "sofagent 规则引擎纯函数包——从 audit 抽出，零 fs/git 依赖，供编排引擎 tool call 事前拦截",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -28,6 +28,6 @@
     "README.md"
   ],
   "dependencies": {
-    "@sofagent/core": "1.3.3"
+    "@sofagent/core": "1.3.4"
   }
 }

@@ -1,9 +1,9 @@
 // ============================================================
-// worktree-isolation.ts · git worktree 隔离原语（v1.3.3 · 交付一）
+// worktree-isolation.ts · git worktree 隔离原语（v1.3.4 · 交付一）
 //
 // 为未来并行 SubAgent 提供文件级隔离底座——不是替换编排引擎，
 // 是加一层 worktree 隔离原语（AD-4：只交付三原语 + 单测 +
-// LoopGraphDeps 可选注点，默认不激活；并行调度接 graph.ts 留 v1.3.3）。
+// LoopGraphDeps 可选注点，默认不激活；并行调度接 graph.ts 留 v1.3.4）。
 //
 // ## filesValue vs worktree 隔离边界
 //

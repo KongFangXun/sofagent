@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# sofagent daemon-install.sh · daemon 安装脚本 · v1.3.3
+# sofagent daemon-install.sh · daemon 安装脚本 · v1.3.4
 # ============================================================
 # 部署 daemon.sh + daemon-lib.sh，注册系统服务（launchd/systemd）。
 # macOS: launchd plist → ~/Library/LaunchAgents/
@@ -12,7 +12,7 @@
 
 set -euo pipefail
 # shellcheck disable=SC2034  # VERSION 供版本追踪用，不直接引用
-VERSION="1.3.3"
+VERSION="1.3.4"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"

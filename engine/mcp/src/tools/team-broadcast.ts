@@ -1,5 +1,5 @@
 // ============================================================
-// team-broadcast.ts · MCP tool: team_broadcast（v1.3.3 新增）
+// team-broadcast.ts · MCP tool: team_broadcast（v1.3.4 新增）
 //
 // 意图广播 tool——Agent 通过 MCP 广播意图到团队意图总线。
 // 匹配的订阅者触发反应（§2 触发反应机制）。
@@ -7,7 +7,6 @@
 // ⚠️ type 修饰符不可运行时解构：
 //   顶层 import type { IntentEvent } + 运行时只解构值
 // ============================================================
-
 import { emitDecision } from '@sofagent/audit';
 
 /** team_broadcast tool 入参 */
