@@ -1,0 +1,114 @@
+# Dependabot 依赖追踪配置
+# 文档：https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# sofagent 依赖追踪策略：
+#   🟢 通用工具库（周检查，patch 可当场升）
+#   🟡 核心框架 LangGraph 三件套（周检查，人工审查 + fresh-eyes 验证）
+#   🔴 automerge（v1.3.5 排期升级：automerge@1.0.1-preview.7 → @automerge/automerge@3.4.1）
+#   🔵 DSH（npm 已发布 2026-08-14：@deepseek-ai/dsh + @deepseek-ai/cordis）
+
+version: 2
+
+updates:
+  # 🟡 LangGraph 三件套——周检查
+  - package-ecosystem: "npm"
+    directory: "/engine/orchestrator"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    allow:
+      - dependency-name: "@langchain/langgraph"
+      - dependency-name: "@langchain/core"
+      - dependency-name: "@langchain/openai"
+    labels:
+      - "deps"
+      - "langchain"
+    commit-message:
+      prefix: "deps(langchain)"
+
+  # 🟢 通用工具库——周检查
+  - package-ecosystem: "npm"
+    directory: "/engine/audit"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    allow:
+      - dependency-name: "js-yaml"
+      - dependency-name: "archiver"
+    labels:
+      - "deps"
+    commit-message:
+      prefix: "deps"
+
+  - package-ecosystem: "npm"
+    directory: "/engine/orchestrator"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    allow:
+      - dependency-name: "zod"
+      - dependency-name: "js-yaml"
+    labels:
+      - "deps"
+    commit-message:
+      prefix: "deps"
+
+  # 🔴 automerge——周检查，仅报告
+  # 旧包名 automerge@1.0.1-preview.7 当前在用（v1.3.5 切换前）——升级 PR 仅作参考，不自动合并
+  # v1.3.5 排期切换到新包名 @automerge/automerge@^3.4.1（前置：multi-device-sync 回归测试跑绿）
+  # 切换完成后：删除下方旧包名段，取消新包名段注释
+  - package-ecosystem: "npm"
+    directory: "/engine/orchestrator"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    allow:
+      - dependency-name: "automerge"
+    labels:
+      - "deps"
+      - "automerge"
+      - "DO-NOT-MERGE"
+    commit-message:
+      prefix: "deps(automerge)"
+
+  # 🔴 @automerge/automerge 新包名——v1.3.5 切换后取消注释
+  # - package-ecosystem: "npm"
+  #   directory: "/engine/orchestrator"
+  #   schedule:
+  #     interval: "weekly"
+  #     day: "monday"
+  #   allow:
+  #     - dependency-name: "@automerge/automerge"
+  #   labels:
+  #     - "deps"
+  #     - "automerge"
+  #   commit-message:
+  #     prefix: "deps(automerge)"
+
+  # 🔵 DSH——日检查（npm 已发布 2026-08-14 确认：@deepseek-ai/dsh + @deepseek-ai/cordis）
+  # rc 版本更新快，日检查；actualDependencies 在 engine/orchestrator/package.json（v1.3.4 起）
+  - package-ecosystem: "npm"
+    directory: "/engine/orchestrator"
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-name: "@deepseek-ai/dsh"
+      - dependency-name: "@deepseek-ai/cordis"
+    labels:
+      - "deps"
+      - "dsh"
+      - "P1"
+    commit-message:
+      prefix: "deps(dsh)"
+
+  # GitHub Actions 版本追踪
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "deps"
+      - "github-actions"
+    commit-message:
+      prefix: "deps(ci)"
