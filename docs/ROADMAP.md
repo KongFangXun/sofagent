@@ -1,15 +1,15 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.3.4 · 2026-08-12（UTC）· 🤝 L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版 + 🧭 主 agent 编排 + 🚪 入口路由 + 📈 进化闭环升级 + 📜 evidence 字段
+> v1.3.4 · 2026-08-14（UTC）· 🏪 L3 组织能力市场（五环）+ 🛡️ SkillScan 安全门 + 📊 评估体系三步 + 🔌 编排层与执行层分离（DSH 执行后端接入）
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
-## 现在在哪：v1.3.4（规划中）
+## 现在在哪：v1.3.5（规划中）
 
-> **v1.3.4 规划方向**：L3 组织能力市场（发布→发现→调用→评价→养护）+ 评估体系三步落地（Refine Agent 质量规则集的设计依据）。
+> **v1.3.5 规划方向**：自进化与运维闭环（MCP 覆盖度审计缺口补全 + instinct 自动进化 + 依赖升级 + 🔴 vitest critical 安全修复）。
 >
-> **v1.3.3 已于 2026-08-12 交付**——🤝 L2 团队协作协议（五大机制：共享态/意图广播/触发反应/冲突消解/反馈放大）+ ✨ Refine Agent 完整版（复用 Onboard 循环引擎换 L2 判据）+ 🧭 主 agent 编排（四合一角色）+ 🚪 入口路由（route_workflow MCP tool）+ 📈 进化闭环升级（Benchmark 驱动 Dream Cycle，只动经验层）+ 📜 evidence 字段（DecisionLogEntry + DecisionKind 加 EVOLUTION/TEAM）。详见 [v1.3.3 开发日志](./changelog/v1.3/v1.3.3.md) 和 [迭代历程](#迭代历程)。
+> **v1.3.4 已于 2026-08-14 交付**——🏪 L3 组织能力市场（五环：发布→发现→调用→评价→养护，6 market MCP tool）+ 🛡️ SkillScan 安全门（三态判定 + 双触发）+ 📊 评估体系三步（harvest→jury→promote）+ 🔌 编排层与执行层分离（ExecutionBackend + DSH 执行后端，rc 版守卫自动回退）+ 📜 DecisionKind.MARKET + 🤖 市场健康双巡检。详见 [v1.3.4 开发日志](./changelog/v1.3/v1.3.4.md) 和 [迭代历程](#迭代历程)。
 
 > ✅ **企业采购阻塞项 · Webhook 推送已于 v1.2.1 交付**：v1.1.6 接通 webhook **PASS/WARN/FAIL 三态推送**，v1.2.1 补齐企业协同平台（飞书/钉钉/企微）完整 Webhook 推送能力（见 SECURITY.md「审计结果推送」）。采购阻塞项已解除。
 
@@ -21,6 +21,8 @@
 
 | 版本 | 核心交付 |
 |------|------|
+| **v1.3.4** | 🏪 L3 组织能力市场（五环：发布→发现→调用→评价→养护 + 6 market MCP tool + trust 评分）+ 🛡️ SkillScan 安全门（发布/安装双触发，三态判定）+ 📊 评估体系三步（规则从生产中生长）+ 🔌 编排层与执行层分离（ExecutionBackend + DSH 执行后端接入，rc 守卫 + LangGraph fallback）+ 📜 DecisionKind.MARKET 审计分型 + 🤖 市场健康双巡检（daemon L1 日更 + L2 周检） |
+| **v1.3.3** | 🤝 L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版 + 🧭 主 agent 编排 + 🚪 入口路由 + 📈 进化闭环升级 + 📜 evidence 字段 |
 | **v1.3.2** | 🔄 Onboard Agent 完整版（L2-L5 循环引擎：定位→修复→再跑→收敛，FORGE 产品化第二刀）+ 🎯 企业专属 eval 套件（金融/制造/供应链模板）+ ⚡ workflow 批量自动生成（一次建 N 个 sub-agent）+ 🧩 模型接入插槽扩展（client_type）+ 🎙️ FDE 梳理辅助（ontology 咨询式生成）+ 🧵 LLM Trace 任务级轨迹 + Onboard/Refine Session 级隔离 |
 | **v1.3.1** | 🧠 Ontology 运行时层（Action 注册表 + validator 三态 + Schema 定稿）+ 🔀 并行编排（ParallelScheduler + 波次审计卡关 + MergeQueue）+ ⏸️ Durable Execution（checkpoint 续跑 + 副作用幂等）+ 🆔 Agent 身份码 Ed25519 + 🚀 Onboard Agent L1 + 📊 Benchmark 评测（隔离执行 + HMAC 链）+ 🔒 工具审批四模式 + 📜 LLM 调用级 Trace + 🔄 错误处理（stop_reason + 退避 + 收敛）+ 📚 L4 渐进加载 + 🏛️ 国标对齐 GB/T 48000.3-2026 |
 | **v1.3.0** | 🛡️ 运行时审计最小闭环（wrapToolCall middleware + tool-gate 动态拦截 + 审计日志）+ 🧠 决策审计（emitDecision + HMAC 链 + kind-wise back）+ 🔗 激活链 Phase 4 收尾（SUSTAIN）+ 📋 list_rules MCP tool + 🔧 双规则系统统一（ruleType）+ 📦 外部记忆后端 Path A（7 个交付项）+ 🔧 进化链路写保护 + 🔓 运行时审计日志按 git 仓库隔离 + 🔧 危险操作 HITL 钩子 |
@@ -72,7 +74,6 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.3.4** | 📋 规划中 | **L3 组织能力市场（发布→发现→调用→评价→养护）+ SkillScan 安全门 + 评估体系三步落地**：Skill/Agent/流程打包发布 + 目录检索 + 调用挂载 + 评分聚合（评分 × 调用量加权自然选择）+ 全程审计 + **养护环（owner 声明 + 失效退役 + 变更记录，GitHub 模式「持续养护」）** + **SkillScan 安全门**（第三方 Skill 发布/安装前静态扫描——注入/越权/泄漏检测，DeerFlow 启发，三态判定 SAFE/SUSPICIOUS/DANGEROUS + 双触发发布侧&安装侧） + **评估体系三步**（真实案例长出来 → 业务方当评委 → 接到生产回路上——Refine Agent 质量规则集的设计依据，范冰《前线部署工程师》方法论借鉴，2026-08-13 补充） | [日志](./changelog/v1.3/v1.3.4.md) |
 | **v1.3.5** | 📋 规划中 | **自进化与运维闭环（MCP 覆盖度审计缺口补全 + instinct 自动进化 + 依赖升级 + 🔴 安全修复 vitest critical）**：`run_ab_test` / `promote_ab`（晋升强制人审）+ `snapshot_list` / `snapshot_restore`（恢复强制人审）+ **instinct→skill 自动进化**（ECC 启发）+ **依赖升级**（LangGraph 三件套 1.4.7→1.4.9 + js-yaml 5.2.0→5.2.3 + archiver 7→8，2026-08-14 check-deps.sh 发现；🔴 **vitest→4.1.10 critical 漏洞链修复**（GHSA-5xrq-8626-4rwp CVSS 9.8，fresh-eyes run-02 发现 2026-08-14，三包统一升））+ **探索方向归并**（FDE 陪跑期/进场记忆目录工程化/失败记忆显式化/FDE 节点注册表/审计问卷脚本化可选） | [日志](./changelog/v1.3/v1.3.5.md) |
 | **v1.3.6** | 📋 规划中 | **🔌 引擎接口外化完整版（模型层接入前置 · 原 v2.0 前移）**：① Workflow 标准格式 + 运行容器（JSON Schema + MCP `workflow_submit`）② Ontology 注册接口（MCP `ontology_import` + D1-D5 审计）③ **SubAgent 托管 SDK**（`harness.wrap` 包装 LangGraph 自定义 Agent → 自动获得审计/审批/身份/Trace，createReactAgent + 纯 StateGraph 双形态——模型层 sub-agent 托管的落点）④ **模型注册 + 灰度切换**（`model_register` / `model_switch`，评测 → 注册 → 灰度 → 晋升全流程审计 + 强制人审；`source: 'local-path'` 扩展位预留，企业专属模型本地权重部署在 v1.4.1 填充；**通用模型路由不自研——企业挂第三方 model router（LiteLLM/OpenRouter），sofagent 只保留数据主权路由 + 注册/灰度/退役，2026-08-10 补充**）⑤ **训练协议三约定 + 训练预算控制（B2 决策前移自 v1.4.1，2026-08-12）**——双栈架构契约（Node 控制面 spawn Python + stdout JSON 流 + SIGINT 控制）+ 成本透明（超预算暂停 + 人审），让 C13 PoC 客户更早接入 ⑥ **路由决策可解释性（role-model 启发，2026-08-13 新增）**——补 Profiles 半个（端点能力画像）+ Policy 半个（偏好/预算/决胜规则）+ routeReason 结构化决策字段，**不自研路由器只补决策可审计性** ⑦ **DSH 正向执行后端补全（2026-08-14 新增）**——v1.3.4 已交付接口骨架 + 版本守卫（rc 拦截），本版补全：`runCordisAgent()` 对照 @deepseek-ai/dsh 正式版 Cordis API 重写 + `dag-runner`/`composer`/`loop/nodes`/`node-executor` 剩余调用点迁移到 ExecutionBackend + 正式版发布后版本守卫放开。**依赖：DSH 正式版发布（当前 rc.6）**——rc 期间版本守卫继续拦截，不阻塞 v1.3.6 其他交付项 ——**训练语料导出三件套已移至 v1.4.1 训练引擎**（2026-08-10 决策已定：训练相关内容统一从 v1.4.x 开始） | [日志](./changelog/v1.3/v1.3.6.md) |
 | **v1.3.7** | 📋 规划中 | **🔒 SubAgent 完整沙箱 + 场景驱动权限 + 🛡️ AgentShield + 行业 overlay（原 v1.4.0 前移）**：① 沙箱——虚拟文件系统隔离 + 网络出站白名单 + 工具调用中介（前置 allow/deny）+ 虚拟 key 凭证边界注入 + AsyncSubAgent + 真·实时 A/B 双跑 ② 场景驱动权限体系（身份→场景匹配→风险等级→放行）——审计从「事后」扩展到「运行时」（范围限定 SubAgent）③ **AgentShield 审计维度扩展**（agent 配置/hook/MCP 攻击面静态扫描——密钥检测增强 + hook 注入分析 + MCP 风险画像 + agent 配置审查，ECC AgentShield 102 规则/1282 测试启发，填补「Agent 配置本身是攻击面」维度，2026-08-13 补充）④ **行业 overlay 规则包**（金融/医疗/政务/AI 四行业自动激活额外约束——复用 `--ruleset` 规则市场机制，fdeops 5 overlays 启发，2026-08-13 补充）⑤ **断路器 + 行为监控**（OWASP ASI08 级联故障 + ASI10 失控 agent——连续 N 次失败自动熔断 + agent 行为指标超阈值自动隔离，Microsoft AGT Agent SRE + Agent Hypervisor 启发，2026-08-13 补充） | [日志](./changelog/v1.3/v1.3.7.md) |
@@ -86,7 +87,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **v1.4.5** | 📋 规划中 | **🚀 训练引擎 · 服务与持续（推理服务 + 持续后训练 + 合规扫描 + 交付包 + 归档 + quickstart · 生命周期补全）**：① **训练推理服务**（train serve + 健康检查 + model_switch 联动）② **持续后训练**（数据回流 + 阈值/定时/人工触发 + 回退保护）③ **训练数据合规扫描**（PII/敏感字段 + 合规闸门）④ **FDE 训练交付包**（配置+数据+eval 基线+运维手册+权重清单）⑤ **训练产物归档与保留策略**（train-retention + @weekly 归档 + 90 天销毁 + 空间预警）⑥ **训练引擎 Quickstart**（端到端示例文档 + 合成数据 + 最小 job.json） | [日志](./changelog/v1.4/v1.4.5.md) |
 | **v1.4.6** | 📋 规划中 | **🚀 训练引擎 · 分布式与云端（多卡 + 云 VM 执行面 · 规模化前置）**：① **多卡/分布式训练**（train multi：多卡/多机配置 + verl/DeepSpeed 集群 spawn + GPU 队列多卡拓扑感知 + 分布式失败诊断）② **云端 VM 执行面**（train cloud：Node 控制面本地 + Python 执行面云上——ssh/API 远程 spawn + 数据加密上传/训练后清理 + 云端成本入预算——「全托管」交付模式技术底座；⚠️ 敏感数据不上公有云，走客户机房联合训练） | [日志](./changelog/v1.4/v1.4.6.md) |
 
-> 📖 **已交付版本**（v1.0.0~v1.3.3）的详细交付清单见 [迭代历程](#迭代历程) + 各版本 [开发日志](./changelog/)。ROADMAP 只规划未来版本（v1.3.4+），不保留已交付版本的详细说明——交付即移出。
+> 📖 **已交付版本**（v1.0.0~v1.3.4）的详细交付清单见 [迭代历程](#迭代历程) + 各版本 [开发日志](./changelog/)。ROADMAP 只规划未来版本（v1.3.5+），不保留已交付版本的详细说明——交付即移出。
 
 > 🔗 **版本重排说明**（2026-08-09）：原 v1.4.0（沙箱/权限/网关/加密/WAL）→ v1.3.7/v1.3.8；原 v1.5.0（meta-harness）→ v1.3.9；原 v2.0（引擎接口外化）→ v1.3.6。依赖链在 v1.3.x 内已满足，模型层接入需要接口尽早就绪。v1.4.0 版本号重新启用（承载 Web 工作明细页 + 成本审计）；v1.5.0 / v2.0 版本号留空，未来按需重新规划。各版本详细重排原因见对应 [开发日志](./changelog/)。
 

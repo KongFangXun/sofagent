@@ -12,7 +12,7 @@
   <a href="README.en.md">English</a> · <a href="#这是什么">这是什么</a> · <a href="#快速开始">快速开始</a> · <a href="#fde-方法论">FDE 方法论</a> · <a href="#三个入口从-30-秒到全套部署">三个入口</a> · <a href="#为什么选-sofagent">为什么选</a> · <a href="#文档">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
 
-> v1.3.4 · 2026-08-12 · 孔放勋
+> v1.3.4 · 2026-08-14 · 孔放勋
 
 ---
 
