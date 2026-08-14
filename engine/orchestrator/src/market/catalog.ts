@@ -94,9 +94,16 @@ export function readCatalog(
 
   for (const line of lines) {
     try {
-      const entry = JSON.parse(line) as CatalogEntry;
-      // 同一能力取最后一条（最新版本覆盖旧版本）
-      byId.set(entry.id, entry);
+      const entry = JSON.parse(line) as Partial<CatalogEntry>;
+      // retire.ts 追加的是 status-only 记录（{ id, status, retiredReason, ... }），
+      // 不含 name/description/tags 等完整字段。用 merge 而非整体覆盖——
+      // 把 status 字段合并到已有的完整条目上（保留完整元数据）。
+      const existing = byId.get(entry.id ?? '');
+      if (existing) {
+        byId.set(entry.id!, { ...existing, ...entry } as CatalogEntry);
+      } else {
+        byId.set(entry.id!, entry as CatalogEntry);
+      }
     } catch {
       // 解析失败跳过（append-only 不阻断）
     }
