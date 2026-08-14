@@ -5,13 +5,25 @@
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
-# + FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收 + v1.2.1 数据目录重构 + custom/ 闭环 + ToolGate + SubAgent L2 + release-gate-loop + daemon-health + eval/ab-test 补全 + v1.2.2 data/ 不泄露 + Dashboard 渲染 + v1.2.3 权限加固 + v1.2.3 Dashboard波次拓扑 + v1.2.3 编排隔离底座 + v1.2.3 Fresh-Eyes集成 + v1.2.3 Workspace摘要 + v1.2.3 用户可读性 + v1.2.3 Dashboard软链 + v1.2.3 规则名可读性 + v1.2.3 Loop移至阶段一 + v1.2.3 术语统一 + v1.2.4 分层巡检 + v1.2.4 skillopt自动触发 + v1.2.4 失败清单 + v1.2.4 联邦蒸馏 + v1.2.4 Dashboard趋势 + v1.2.4 Skill×MCP + v1.2.4 FDE人机分离 + v1.2.5 激活链Phase1 + v1.2.5 审计加固A20-A23 + v1.2.5 daemon可靠性 + v1.2.5 多设备前置 + v1.2.9 短任务化 + checkpoint/resume worker级 + PM2 + HITL + mcp拆分 + 叙事重构 + 入口产品
+# 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
 # 详细功能映射见 FORGE/playbook/acceptance-coverage.md
+#
 # 场景数：202 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
-#   口径 = scenario 定义行去重数（check-test-count.sh L316 守卫）；最大编号 269 为编号上限，非场景数；S197 归并至 S164；v1.3.0 新增 S225-S230；v1.3.1 新增 S241-S244（国标/CRUD/审计聚合/L4）+ S201/S202 归并（--doctor+--repair）；v1.3.2 新增 S245-S255（L2-L5/agent-creation/eval-suite/client_type/fde-compose/trace-raw/trajectory/session-isolation）；v1.3.3 新增 S256-S262（L2 五大机制/联邦通道/主 agent 编排/入口路由/Refine/进化闭环/evidence）；v1.3.4 新增 S263-S269（market 引擎+MCP 6tool/评分公式/trust 三态/SkillScan 三态/DSH 编排分离/DecisionKind.MARKET/inspector 双注册）
+#   口径 = scenario 定义行去重数；最大编号 269 是编号上限，非场景数。
+#
+#   版本号段（分组注释标记各段起点，跳转用 grep "─── v" 定位）：
+#   | 版本 | 号段 | 内容 |
+#   |:--|:--|:--|
+#   | v1.2.x 基线 | 1-224 | 安装/审计/daemon/红队/各小版本验收 |
+#   | v1.2.7 | 198-207 | One-Line Setup / Mailbox 等 |
+#   | v1.3.0 | 225-230 | 分层巡检 / 审计 wrapper / HMAC 链 / 记忆 ACL |
+#   | v1.3.1 | 241-244 | 国标 / CRUD / 审计聚合 / L4（S201/202 归并，S197→S164） |
+#   | v1.3.2 | 245-255 | L2-L5 / agent-creation / eval-suite / session-isolation |
+#   | v1.3.3 | 256-262 | L2 五大机制 / 联邦通道 / 主 agent 编排 / Refine / evidence |
+#   | v1.3.4 | 263-269 | market 引擎+6tool / 评分公式 / trust 三态 / SkillScan / DSH 编排分离 / MARKET / inspector 双注册 |
+#
 #   ⚠️ 口径注意（P2-31）：底部输出的「$PASSED 通过」是**断言通过数**（含跳过的场景也计 PASS），
-#   与「164 场景」不同——164 是 scenario 定义数，PASSED 可能 >164（条件跳过的场景也 +1）。
-#   文档引用 162 时指 scenario 定义数；引用「XXX 通过」时指断言通过数，勿混用。
+#   与场景数不同——场景数是 scenario 定义数，PASSED 可能大于它。勿混用。
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
 set -euo pipefail
 RUN_MODE="all"
@@ -1943,6 +1955,7 @@ fi
 
 # ── v1.3.0 场景（S225-S228：运行时审计 + 决策审计 + list_rules + 双规则统一） ──
 
+# ─── v1.3.0 新增场景（S225-S230：分层巡检/审计wrapper/HMAC链/记忆ACL）───
 scenario 225 "v1.3.0 交付 1 tool wrapper 拦截（audit-middleware FAIL 拦截）"
 S225_OK=true
 AMW="$PROJECT_ROOT/FORGE/src/audit-middleware.mjs"
@@ -2158,6 +2171,7 @@ grep -q "BACKOFF_SCHEDULE_MS" "$PROJECT_ROOT/engine/core/src/stop-reason.ts" || 
 grep -q "convergeToolError" "$PROJECT_ROOT/engine/core/src/model-client.ts" || S240_OK=false
 $S240_OK && pass "错误处理升级（stop_reason 六值 + auth 不重试 + 退避 + 收敛）"
 
+# ─── v1.3.1 新增场景（S241-S244：国标/CRUD/审计聚合/L4；S201/202 已归并）───
 scenario 241 "v1.3.1 交付 2 国标对齐 GB/T 48000.3-2026（--gb48000 opt-in）"
 S241_OK=true
 [ -f "$PROJECT_ROOT/engine/audit/src/gb48000.ts" ] || S241_OK=false
@@ -2207,6 +2221,7 @@ $S244_OK && pass "L4 经验层渐进加载（热点全文 + 索引摘要 ≤150 
 # v1.3.2 交付场景（S245-S255）
 # ═══════════════════════════════════════════════════════════
 
+# ─── v1.3.2 新增场景（S245-S255：L2-L5/agent-creation/eval-suite/session-isolation）───
 scenario 245 "v1.3.2 交付 1 L2 语义判定——diff-report 三类 mismatch"
 S245_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/diff-report.ts" ] || S245_OK=false
@@ -2289,6 +2304,7 @@ $S255_OK && pass "LLM Trace 任务级轨迹视图（按 taskId 聚合 + RL 训�
 # v1.3.3 验收场景（scenario 256-262）——L2 团队协作 + Refine + 进化闭环 + 入口路由 + evidence
 # ═══════════════════════════════════════════════════════════════
 
+# ─── v1.3.3 新增场景（S256-S262：L2五大机制/联邦通道/主agent编排/Refine/evidence）───
 scenario 256 "v1.3.3 交付 1 L2 团队协作协议——五大机制 + 建队机制"
 S256_OK=true
 for f in protocol team-manager team-state intent-bus; do

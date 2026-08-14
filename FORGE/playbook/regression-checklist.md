@@ -1,28 +1,43 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
-> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。v1.2.9 新增维度 75-78（check-version MCP 扫描路径 / JS RegExp (?i) 不支持 / drift 排除 .test. / 新文件版本头匹配 SSOT），归并 65+66（FORGE stream 数据处理）、73+74（ESM named export + FORGE 烟测）。v1.3.0 新增维度 79-82（运行时审计 tool wrapper / 决策审计 HMAC 链 / 外部记忆后端 + sensitivity ACL / 进化链路写保护），归并无。v1.3.0 fresh-eyes 复审新增维度 83（license + action.yml 版本锁定）。v1.3.0 阶段五覆盖率确认新增维度 84（shouldAllow + 仓库隔离）。v1.3.1 新增维度 85-87（FORGE driver run_bash cwd 强制 / auto-commit 代码领域限定 / HMAC 密钥 Shannon 熵检测）+ 维度 88（根 tsconfig outDir 缺失根因待修）。v1.3.4 新增维度 102-104（市场五环完整性 / SkillScan 三态链+版本守卫 / DecisionKind.MARKET 语义分型）+ 维度 105-106（fresh-eyes worker 臆造链防回归 / 测试数文档同步双重保险）。
-> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：74 维（v1.3.2 发版后回写）
+> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量）
+>
+> **版本维度演进**（归并项直接删除，编号不复用；完整历史 `git log -p` 可溯）：
+>
+> | 版本 | 新增 | 归并/移除 |
+> |:--|:--|:--|
+> | v1.2.5- | #1-69 基线 | — |
+> | v1.2.6 | #70（MCP tool 注册三处一致性） | 48 子项 e-h 并入维度 1；16+44 加交叉引用 |
+> | v1.2.7 | #71-72（build 吞错误 / 函数作用域引用） | — |
+> | v1.2.8 | #73-74（ESM named export / FORGE 烟测） | #70 补 regex 精度说明 |
+> | v1.2.9 | #75-78（MCP 扫描路径 / RegExp (?i) / drift 排除 / 版本头匹配） | 65+66、73+74 归并 |
+> | v1.3.0 | #79-84（运行时审计 wrapper / HMAC 链 / 记忆后端 ACL / 写保护 / license / shouldAllow） | — |
+> | v1.3.1 | #85-88（run_bash cwd / auto-commit 限定 / Shannon 熵 / tsconfig outDir） | — |
+> | v1.3.3 | #89-101（AUDIT_PRIORITY / 失败路径 / LIMIT 超标等 release-gate 沉淀） | — |
+> | v1.3.4 | #102-106（市场五环 / SkillScan 三态链 / DecisionKind.MARKET / 臆造链防回归 / 测试数同步） | — |
+>
+> **当前 83 维 · 编号 1-106 · 23 个编号已归并删除**（2/5/6/10-13/19/22/24/26-27/34-37/43/46/48/52/55/66/74）。
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git show 43fac89:FORGE/playbook/regression-checklist.md` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1400 行（v1.3.3 从 1350 上调，releasing.md 方针「超标上调 LIMIT 不删内容」）、`acceptance-test.sh` ≤ 2400 行（v1.3.3 从 2250 上调），越线触发瘦身。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1500 行（v1.3.4 从 1400 上调）、`acceptance-test.sh` ≤ 2500 行（v1.3.4 从 2400 上调），越线触发瘦身；releasing.md 方针「超标上调 LIMIT 不删内容」。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
-HEAD_VAL=$(grep -oE '审查维度（[0-9]+ 项' FORGE/playbook/regression-checklist.md | grep -oE '[0-9]+')
+HEAD_VAL=$(grep -oE '当前 [0-9]+ 维' FORGE/playbook/regression-checklist.md | grep -oE '[0-9]+' | head -1)
 ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
-[ "$HEAD_VAL" = "$ACTUAL" ] && echo "✅ 维度数一致 ($HEAD_VAL)" || echo "❌ 标题声称 $HEAD_VAL ≠ 实际 $ACTUAL"
+[ "$HEAD_VAL" = "$ACTUAL" ] && echo "✅ 维度数一致 ($HEAD_VAL)" || echo "❌ 头部声称 $HEAD_VAL ≠ 实际 $ACTUAL"
 
-# 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段四 Tier 1 警戒线一致）
+# 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段五警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1400 ] && echo "✅ checklist $WC_CHK (≤1400)" || echo "⚠️ checklist $WC_CHK 超 1400"
-[ "$WC_ACC" -le 2400 ] && echo "✅ acceptance $WC_ACC (≤2400)" || echo "⚠️ acceptance $WC_ACC 超 2400"
+[ "$WC_CHK" -le 1500 ] && echo "✅ checklist $WC_CHK (≤1500)" || echo "⚠️ checklist $WC_CHK 超 1500"
+[ "$WC_ACC" -le 2500 ] && echo "✅ acceptance $WC_ACC (≤2500)" || echo "⚠️ acceptance $WC_ACC 超 2500"
 ```
 ## 你的身份
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（75 项 · 编号 1–106，31 个归并/移除项已转为 HTML 注释；v1.3.0 新增 #79-84；v1.3.1 新增 #85-88；v1.3.3 新增 #89-101；v1.3.4 新增 #102-106）
+## 审查维度（83 维 · 编号 1-106 · 版本演进见头部表格）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
