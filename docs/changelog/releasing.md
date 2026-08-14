@@ -13,7 +13,7 @@
 - [x] 一 · 审查上版本（fresh-eyes-loop 自动化审查循环 · 新 session）→ [01-review.md](./releasing/01-review.md) · **v1.3.4：4 轮独立审查（3 单人 + 1 团队 16 视角）+ bugfix prompt 整合 48 项问题**
 - [x] 二 · 开发 → [02-dev.md](./releasing/02-dev.md) · **v1.3.4：bugfix 34 commit + dev 10 commit + dsh 2 commit（L3 市场 + SkillScan + 评估三步 + 编排层分离）**
 - [x] 三 · 基础自测 → [03-selftest.md](./releasing/03-selftest.md) · **v1.3.4：bump 1.3.3→1.3.4 + changelog 转正 + build EXIT=0 + test 2235/2235 + check-version 71/71 + check-test-count 14/14 + check-anchors 88/88**
-- [ ] 四 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session）→ [04-quality-loop.md](./releasing/04-quality-loop.md)
+- [x] 四 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session）→ [04-quality-loop.md](./releasing/04-quality-loop.md) · **v1.3.4：run-01（臆造回滚+13 finding 终局判定）+ run-02（新防护 driver，20 finding 全实测证据，P0 vitest 排 v1.3.5）+ acceptance S263-S269 新增（195→202 场景，279 断言）**
 - [ ] 五 · 审查体系合并更新 → [05-review-system.md](./releasing/05-review-system.md)
 - [ ] 六 · release-gate-loop 发版闸门（新 session · 必须 PASS 才继续）→ [06-release-gate.md](./releasing/06-release-gate.md)
 - [ ] 七 · 审查体系最终确认 → [07-final-confirm.md](./releasing/07-final-confirm.md)
