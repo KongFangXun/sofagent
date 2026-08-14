@@ -35,17 +35,19 @@ node -e "require('$(pwd)/../../engine/core/dist/config-template.js').HOOK_TEMPLA
 chmod +x .git/hooks/commit-msg
 
 # 3. 拦截验证：提交含密钥 .env
+# ⚠️ message 必须够长够具体（≥8 有效字符）——A5 不瞒真相 + A19 msg 质量会拦截
+#    过短的 message（"test"/"init"），导致「密钥没测到先被 message 规则拦」的假失败（v1.3.4 教训）
 export PATH=/tmp/fe-verify-bin:$PATH SOFAGENT_DATA=/tmp/fe-vd SOFAGENT_HOME=/tmp/fe-vh
 echo "AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" > .env
-git add .env
-git commit -m "test"  # 期望：A1+A2 拦截 exit 2，.env 未入库
+git add -f .env   # ⚠️ 必须 -f——init 自带的 .gitignore 会挡 .env（git 层先拦是双保险，但那样测不到 hook 层）
+git commit -m "chore: add environment config for deployment"  # 期望：A1+A2 拦截 exit 2，.env 未入库
 git show HEAD:.env 2>&1 | grep -q "fatal" && echo "✅ 密钥被拦截" || echo "❌ 密钥入库了"
 
-# 4. 清暂存区后测干净提交（⚠️ 必须清，否则残留 .env 会误拦）
+# 4. 清暂存区后测干净提交（⚠️ 必须清，否则残留 .env 会误拦；首提对空树审计，message 同样要合格）
 git reset HEAD -- .env && rm .env
 echo "print('hello')" > app.py && git add app.py
-git commit -m "add app"  # 期望：WARN 放行 exit 0
-git log --oneline -1 | grep -q "add app" && echo "✅ 干净提交放行" || echo "❌ 干净提交被拦"
+git commit -m "feat: add hello application entry point"  # 期望：17 规则 PASS 放行 exit 0
+git log --oneline -1 | grep -q "hello application" && echo "✅ 干净提交放行" || echo "❌ 干净提交被拦"
 
 # 5. 清理
 cd - && rm -rf /tmp/hook-test /tmp/fe-verify-bin /tmp/fe-vd /tmp/fe-vh
