@@ -12,11 +12,10 @@
 //   不是执行后端的事，是编排层在 execute 前后做的。执行后端只管「给我任务，
 //   给我结果」。但 toolBudget 软熔断和工具 wrapper 透传是所有后端的强制义务。
 //
-// 接入门禁结论（2026-08-14 核实更新）：DSH 已于 2026-08-13 上架 npm
-// （@deepseek-ai/dsh@0.1.0-rc.6，PR #2519 合并）。候选列表已含 @deepseek-ai/dsh。
-// 当前仍走【分支 B：运行时动态 import + try-catch fallback】——因为 rc 版本
-// API 不稳定（createCordisRuntime 导出校验可能失败 → fallback）+ runCordisAgent
-// 是骨架。rc 转正式版 + 骨架补全后自动切换，无需改代码。
+// 接入门禁结论（2026-08-14 核实更新）：@deepseek-ai/cordis@4.0.1 + @deepseek-ai/dsh@0.1.0-rc.6
+// 均已 public（PR #2519 合并）。候选列表优先试 cordis（2 依赖轻量），再试 dsh（61 依赖兜底）。
+// 当前仍走 fallback LangGraph——因为 rc 版本被版本守卫拦截 + runCordisAgent 是骨架。
+// rc 转正式版 + 骨架补全（v1.3.6）后自动切换，无需改代码。
 
 /**
  * 执行后端契约——编排层通过这个接口调用执行层。
@@ -168,44 +167,42 @@ export async function createExecutionBackend(): Promise<ExecutionBackend> {
 }
 
 /**
- * 尝试加载 DSH 后端（动态 import + try-catch）。
- * DSH 已于 2026-08-13 上架 npm（@deepseek-ai/dsh@0.1.0-rc.6，PR #2519 合并）。
- * 候选列表命中后仍需校验 mod.createCordisRuntime 导出——rc 版本 API 不稳定时自动 fallback LangGraph。
+ * 尝试加载 DSH/Cordis 执行后端（动态 import + try-catch）。
+ *
+ * 2026-08-14 核实：@deepseek-ai/cordis@4.0.1（2 依赖，239KB）+ @deepseek-ai/dsh@0.1.0-rc.6
+ * 均已 public。sofagent 需要的是 Cordis 运行时（createCordisRuntime），不是 dsh CLI 壳。
+ * 候选顺序：cordis 优先（轻量 2 依赖）→ dsh 兜底（61 依赖但含 cordis re-export）。
+ *
+ * 版本守卫：rc/beta/alpha/pre 版本不加载——骨架未补全，加载了会 throw。
+ * 等 DSH/Cordis 正式版发布后自动通过守卫。
  */
 async function tryLoadDshBackend(): Promise<ExecutionBackend | null> {
-  try {
-    // DSH 候选包名列表（2026-08-14 实测 @deepseek-ai/dsh@0.1.0-rc.6 已 public）。
-    // 顺序：已确认上架的真实包名优先，猜测名后补（兜底未来可能的别名）。
-    const candidates = [
-      '@deepseek-ai/dsh',          // ✅ 已确认上架（0.1.0-rc.6，2026-08-13 PR #2519）
-      'deepseek-harness',           // 猜测名（仓库名 = deepseek-harness，但 npm 用 scope）
-      '@deepseek-ai/harness',       // 猜测名
-      '@dsh/core',                  // 猜测名
-      '@deepseek-harness/core',     // 猜测名
-    ];
-    for (const pkg of candidates) {
-      try {
-        // @ts-ignore — DSH 类型未安装（不进 dependencies，运行时动态 import）
-        const mod = await import(pkg);
-        if (mod && typeof mod.createCordisRuntime === 'function') {
-          // 版本守卫：rc / beta / alpha 版本不加载——骨架未补全，加载了会 throw。
-          // 等 DSH 正式版发布（无 prerelease tag）后自动通过。
-          const version = mod.version ?? mod.VERSION ?? '';
-          if (/rc|beta|alpha|pre/i.test(version)) {
-            // rc 版本 API 不稳定，跳过，继续 fallback
-            break;
-          }
-          const { createDshBackend } = await import('./execution-backends/dsh-backend.js');
-          return createDshBackend(mod);
+  // Cordis 运行时候选包名（按优先级排序）。
+  // cordis = 轻量框架包（2 依赖）；dsh = CLI 壳（61 依赖，re-export cordis）。
+  const candidates = [
+    '@deepseek-ai/cordis',  // ✅ 首选：轻量 Cordis 框架（4.0.1，2 依赖，239KB）
+    '@deepseek-ai/dsh',     // 备选：DSH CLI 壳（0.1.0-rc.6，61 依赖，re-export cordis）
+  ];
+  for (const pkg of candidates) {
+    try {
+      // @ts-ignore — Cordis/DSH 类型未安装（不进 dependencies，运行时动态 import）
+      const mod = await import(pkg);
+      if (mod && typeof mod.createCordisRuntime === 'function') {
+        // 版本守卫：rc / beta / alpha / pre 版本不加载——骨架未补全，加载了会 throw。
+        // 等 Cordis/DSH 正式版发布（无 prerelease tag）后自动通过。
+        const version = mod.version ?? mod.VERSION ?? '';
+        if (/rc|beta|alpha|pre/i.test(version)) {
+          // rc 版本 API 不稳定，跳过，继续试下一个候选或 fallback
+          continue;
         }
-      } catch {
-        // 候选包名 miss 或未安装，试下一个
+        const { createDshBackend } = await import('./execution-backends/dsh-backend.js');
+        return createDshBackend(mod);
       }
+    } catch {
+      // 候选包名未安装或导出不匹配，试下一个
     }
-    return null;
-  } catch {
-    return null;
   }
+  return null;
 }
 
 /**
