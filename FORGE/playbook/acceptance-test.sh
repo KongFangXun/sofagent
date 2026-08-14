@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 详细功能映射见 FORGE/playbook/acceptance-coverage.md
+#   功能与场景的映射 = 下方「版本号段」表 + 各场景标题自述
 #
 # 场景数：202 个场景（SSOT：所有文档引用此值，由 check-test-count.sh 校验）
 #   口径 = scenario 定义行去重数；最大编号 269 是编号上限，非场景数。

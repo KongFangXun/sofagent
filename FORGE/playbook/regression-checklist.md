@@ -18,6 +18,7 @@
 > | v1.3.4 | #102-106（市场五环 / SkillScan 三态链 / DecisionKind.MARKET / 臆造链防回归 / 测试数同步） | — |
 >
 > **当前 83 维 · 编号 1-106 · 23 个编号已归并删除**（2/5/6/10-13/19/22/24/26-27/34-37/43/46/48/52/55/66/74）。
+> 维度流连续不中断，仅插 3 个分组标题导航：基线组（#1 起）→ 审查约束组（#23-#77）→ 环境敏感组（#59 起，前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
 
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1500 行（v1.3.4 从 1400 上调）、`acceptance-test.sh` ≤ 2500 行（v1.3.4 从 2400 上调），越线触发瘦身；releasing.md 方针「超标上调 LIMIT 不删内容」。
@@ -39,7 +40,7 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 
 ## 审查维度（83 维 · 编号 1-106 · 版本演进见头部表格）
 
-### 跨版本核心维度（每次必跑基线，不编号）
+### 审查维度正文（#1-106 · 按版本演进排列 · 分组小节为历史分类，维度流连续不中断）
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · 测试数一致（维度 13 SSOT 反查） · git status 零未提交修改
 
@@ -319,7 +320,7 @@ grep "parseSubagentRunArgs\|--mode" engine/orchestrator/src/cli-args.ts   # --mo
 grep -rl "sofagent-releaser\|releaser-skill" engine/scripts/lib/file-deploy.sh install.sh 2>/dev/null | wc -l   # 期望=0（releaser 复制契约已移除，v1.2.0）
 ```
 
-## 审查约束（每次发版必验铁律）
+## 分组：审查约束类（维度 #23-#77 · 标题行是该组一句话基线，非独立检查项）
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · CHANGELOG 纯度 · 测试数一致 · 安全约束 fail-closed · npm 产物三方一致
 
@@ -838,7 +839,7 @@ grep -A10 'convertAuditResult' engine/eval/src/cli.ts | grep -E 'PASS|WARN|FAIL|
 
 ---
 
-## 🔴 环境验证铁律（防误报）
+## 🔴 环境验证铁律（防误报 · 先读再跑下面维度）
 
 > **测试框架铁律**：本项目使用 **vitest**，不是 Jest。
 > - ✅ 正确命令：`cd engine/<pkg> && npx vitest run --reporter=dot`
@@ -854,7 +855,9 @@ grep -A10 'convertAuditResult' engine/eval/src/cli.ts | grep -E 'PASS|WARN|FAIL|
 
 > **路径迁移感知**：v1.2.1 起 `.sofagent/` 迁移到 `~/.sofagent/`，数据子目录从 `.sofagent/audit` 变为 `~/.sofagent/data/audit`。检查路径权限时认准 `~/.sofagent/`。
 
-#### 59. resolve*Dir 调用方传参——禁止传 process.cwd() 给 overrideHome 参数（v1.2.2 新增）
+### 分组：环境敏感与后期维度（#59 起 · 含 v1.3.x 全部新增，上面铁律适用于本组所有维度）
+
+#### 59. resolve*Dir 调方传参——禁止传 process.cwd() 给 overrideHome 参数（v1.2.2 新增）
 
 ```bash
 # 搜索所有传 process.cwd() 给 resolve*Dir 或 writeSessionReport 的地方（排除测试）
