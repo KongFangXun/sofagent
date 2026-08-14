@@ -35,8 +35,12 @@ export interface CatalogEntry {
   owner: string;
   /** 标签 */
   tags: string[];
+  /** 源文件/目录路径（publisher 写入——调用时 SkillScan + executor 需要） */
+  sourcePath: string;
   /** 扫描判定 */
   scanVerdict: string;
+  /** 扫描原因 */
+  scanReason: string;
   /** 发布时间 ISO */
   publishedAt: string;
   /** 状态（active / retired） */
