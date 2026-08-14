@@ -16,10 +16,10 @@
 - [x] 四 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session）→ [04-quality-loop.md](./releasing/04-quality-loop.md) · **v1.3.4：run-01（臆造回滚+13 finding 终局判定）+ run-02（新防护 driver，20 finding 全实测证据，P0 vitest 排 v1.3.5）+ acceptance S263-S269 新增（195→202 场景，279 断言）**
 - [x] 五 · 审查体系合并更新 → [05-review-system.md](./releasing/05-review-system.md) · **v1.3.4：维度 102-106（A 类市场/SkillScan/MARKET + B 类臆造链/测试数同步）+ 覆盖率 18 关键词零遗漏 + README 新能力段换版**
 - [x] 六 · release-gate-loop 发版闸门（新 session · 必须 PASS 才继续）→ [06-release-gate.md](./releasing/06-release-gate.md) · **v1.3.4：run-01 FAIL（3 真 + 5 误报甄别修复，commit 56a08d0c）→ run-04 PASS（83 维 0 FAIL / acceptance 279 / coverage 0 高风险）**
-- [ ] 七 · 审查体系最终确认 → [07-final-confirm.md](./releasing/07-final-confirm.md)
-- [ ] 八 · 开发日志定稿 + 文档收尾 → [08-doc-finalize.md](./releasing/08-doc-finalize.md)
-- [ ] 九 · 工具脚本健康检查 → [09-tool-health.md](./releasing/09-tool-health.md)
-- [ ] 十 · 确认关口 → [10-confirm.md](./releasing/10-confirm.md)
+- [x] 七 · 审查体系最终确认 → [07-final-confirm.md](./releasing/07-final-confirm.md) · **v1.3.4：三文档闭环核对（83 维 ↔ 202 场景 ↔ 5 方向）+ 维度 56 补 v1.3.4 教训**
+- [x] 八 · 开发日志定稿 + 文档收尾 → [08-doc-finalize.md](./releasing/08-doc-finalize.md) · **v1.3.4：定稿（速览表+39 项打勾+Release Notes）+ ROADMAP 五步 + 日期 14 文件 + HANDBOOK 能力表**
+- [x] 九 · 工具脚本健康检查 → [09-tool-health.md](./releasing/09-tool-health.md) · **v1.3.4：7 文件类型排查 + bump dry-run 纯只读 + dist v1.3.4 + hook 三测全过（拦密钥/放合格/短 message 拦）**
+- [x] 十 · 确认关口 → [10-confirm.md](./releasing/10-confirm.md) · **v1.3.4：469 文件 71 commit 全量复核 + 发布清单 39/39 勾 + 五门禁终验全绿**
 - [ ] 十一 · 发布（项目负责人或授权 AI）→ [11-publish.md](./releasing/11-publish.md)
 - [ ] 十二 · 发布后（验证 + 三文档回写 + SOP 自迭代 + 下版 prompt）→ [12-post-publish.md](./releasing/12-post-publish.md)
 
