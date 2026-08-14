@@ -192,7 +192,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 > 🔬 **外部独立实验证据**（非官方自测）：Joel Niklaus 的 harness-optimization 研究（[研究代码仓库](https://github.com/JoelNiklaus/harness-optimization)，数据见仓库内实验）显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**。详见 [THANKS.md](./docs/THANKS.md)。
 
-> 🧪 **工程可信度**：2131 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
+> 🧪 **工程可信度**：2224 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
 
 > 🧠 **v1.3.3 新能力**（按主题分组）：
 > - **L2 团队协作协议**：🤝 五大机制（共享态/意图广播/触发反应/冲突消解/反馈放大）· 🎯 建队机制（team.yml + team_broadcast / team_create MCP tool）
