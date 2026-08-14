@@ -164,14 +164,13 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 
 > 🧪 **Engineering credibility**: 2235 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
 
-> 🧠 **v1.3.3 new capabilities** (grouped by theme):
-> - **L2 Team Collaboration Protocol**: 🤝 Five mechanisms (shared state / intent broadcast / trigger reaction / conflict resolution / feedback amplification) · 🎯 Team setup (team.yml + team_broadcast / team_create MCP tools)
-> - **Refine Agent**: ✨ Reuses Onboard loop engine with L2 criteria swapped (Ontology → quality rule set), from "works" to "works well"
-> - **Entry Routing**: 🚪 route_workflow MCP tool + workflow node type machine-readable (user's own Agent coordination judgment)
-> - **Lead Agent Orchestration**: 🧭 Four-in-one role (dispatch/monitor/audit/comms) · auto-enqueue v1.3.2 generated sub-agents
-> - **Evolution Loop Upgrade**: 📈 Benchmark-driven Dream Cycle (evidence→hypothesis→Candidate→eval→accept/rollback, experience layer only)
-> - **Audit Trace**: 📜 DecisionLogEntry adds evidence field + DecisionKind adds EVOLUTION/TEAM
-> See [v1.3.3 devlog](./docs/changelog/v1.3/v1.3.3.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
+> 🧠 **v1.3.4 new capabilities** (grouped by theme):
+> - **L3 Organizational Capability Market**: 🏪 Five-ring loop (publish → discover → invoke → rate → maintain) · 6 market MCP tools (publish / search / invoke / rate / retire / harvest_rule) · ranking formula trust × rating × log(invocations+1)
+> - **SkillScan Security Gate**: 🛡️ Static scan on both publish & install sides · three-state verdict (SAFE / SUSPICIOUS / DANGEROUS) · reuses skillopt scan engine, no duplication
+> - **Three-Step Evaluation System**: 📊 Harvest rules from real cases (rule-harvest) → Benchmark as judge (rule-jury) → promote rules (rule-promote, evidence triple)
+> - **Orchestration/Execution Separation**: 🔌 ExecutionBackend interface + DSH execution backend (rc version guard, auto-fallback to LangGraph) · FORGE drivers migrated
+> - **Market Audit Trace**: 📜 DecisionKind adds MARKET (dedicated audit type for market actions) · daemon dual inspection (daily catalog L1 + weekly health L2)
+> See [v1.3.4 devlog](./docs/changelog/v1.3/v1.3.4.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## Docs
 

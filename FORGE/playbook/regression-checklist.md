@@ -1,7 +1,7 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
-> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。v1.2.9 新增维度 75-78（check-version MCP 扫描路径 / JS RegExp (?i) 不支持 / drift 排除 .test. / 新文件版本头匹配 SSOT），归并 65+66（FORGE stream 数据处理）、73+74（ESM named export + FORGE 烟测）。v1.3.0 新增维度 79-82（运行时审计 tool wrapper / 决策审计 HMAC 链 / 外部记忆后端 + sensitivity ACL / 进化链路写保护），归并无。v1.3.0 fresh-eyes 复审新增维度 83（license + action.yml 版本锁定）。v1.3.0 阶段五覆盖率确认新增维度 84（shouldAllow + 仓库隔离）。v1.3.1 新增维度 85-87（FORGE driver run_bash cwd 强制 / auto-commit 代码领域限定 / HMAC 密钥 Shannon 熵检测）+ 维度 88（根 tsconfig outDir 缺失根因待修）。
+> ⚠️ **v1.2.x 归并记录**：维度 48 子项 e-h 并入维度 1；维度 16+44 加交叉引用（通用 fail-closed vs USB fail-closed）。v1.2.6 新增维度 70（MCP tool 注册三处一致性）。v1.2.7 新增维度 71-72（package.json build 吞错误 + 函数作用域引用）。v1.2.8 新增维度 73-74（ESM named export 完整性 + FORGE 模块加载烟测）、维度 70 补充 MCP regex 精度说明。v1.2.9 新增维度 75-78（check-version MCP 扫描路径 / JS RegExp (?i) 不支持 / drift 排除 .test. / 新文件版本头匹配 SSOT），归并 65+66（FORGE stream 数据处理）、73+74（ESM named export + FORGE 烟测）。v1.3.0 新增维度 79-82（运行时审计 tool wrapper / 决策审计 HMAC 链 / 外部记忆后端 + sensitivity ACL / 进化链路写保护），归并无。v1.3.0 fresh-eyes 复审新增维度 83（license + action.yml 版本锁定）。v1.3.0 阶段五覆盖率确认新增维度 84（shouldAllow + 仓库隔离）。v1.3.1 新增维度 85-87（FORGE driver run_bash cwd 强制 / auto-commit 代码领域限定 / HMAC 密钥 Shannon 熵检测）+ 维度 88（根 tsconfig outDir 缺失根因待修）。v1.3.4 新增维度 102-104（市场五环完整性 / SkillScan 三态链+版本守卫 / DecisionKind.MARKET 语义分型）+ 维度 105-106（fresh-eyes worker 臆造链防回归 / 测试数文档同步双重保险）。
 > **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量） · **当前维度**：74 维（v1.3.2 发版后回写）
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -22,7 +22,7 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（69 项 · 编号 1–88，19 个归并/移除项已转为 HTML 注释；v1.3.0 新增 #79-84；v1.3.1 新增 #85-88）
+## 审查维度（75 项 · 编号 1–106，31 个归并/移除项已转为 HTML 注释；v1.3.0 新增 #79-84；v1.3.1 新增 #85-88；v1.3.3 新增 #89-101；v1.3.4 新增 #102-106）
 
 ### 跨版本核心维度（每次必跑基线，不编号）
 
@@ -1362,4 +1362,85 @@ rm -f /tmp/cct-test.sh
 AB=$(cat docs/ARCHITECTURE.md docs/DEVELOPMENT.md docs/HANDBOOK.md docs/PHILOSOPHY.md docs/WIKI.md SECURITY.md docs/VALIDATION.md docs/THANKS.md docs/ROADMAP.md docs/LIMITATIONS.md FDE/GUIDE.md FDE/README.md 2>/dev/null | wc -l)
 echo "B 层: $AB 行（LIMIT_B=$(grep '^LIMIT_B=' tools/check-docs.sh | grep -oE '[0-9]+')）"
 [ "$AB" -le "$(grep '^LIMIT_B=' tools/check-docs.sh | grep -oE '[0-9]+')" ] && echo "✅" || echo "⚠️ 超标——内容增强后需上调 LIMIT_B"
+```
+
+---
+
+#### 102. 市场五环完整性——10 模块 + 6 MCP tool + inspector 双注册（v1.3.4 新增 · A 类新功能面）
+
+**背景**：v1.3.4 L3 组织能力市场五环（发布→发现→调用→评价→养护）。模块文件、MCP 注册、daemon 巡检三处任一缺失都导致市场断环（如 invoker 缺失则调用环断，retire 缺失则养护环断）。v1.3.1 教训：建了文件不注册 = 巡检不生效。
+
+**检查命令**：
+```bash
+# market 引擎 10 模块全存在
+for f in publisher catalog invoker rating owner retire skill-scan rule-harvest rule-jury rule-promote; do
+  [ -f "engine/orchestrator/src/market/$f.ts" ] || echo "⚠️ market/$f.ts 缺失"
+done
+# MCP 6 tool 注册（tool-registry + mcp-server 双处）
+for t in market_publish market_search market_invoke market_rate market_retire market_harvest_rule; do
+  grep -q "'$t'" engine/mcp/src/tool-registry.ts || echo "⚠️ $t 未注册 tool-registry"
+done
+# inspector 三步注册（index + layers × 2）
+grep -q "runMarketCatalogDaily" engine/daemon/src/inspectors/index.ts || echo "⚠️ 目录日更未注册"
+grep -q "runMarketHealth" engine/daemon/src/inspector-layers.ts || echo "⚠️ 健康周检未挂载"
+```
+
+---
+
+#### 103. SkillScan 三态链 + 版本守卫——DANGEROUS 拦截 / rc 禁入（v1.3.4 新增 · A 类新功能面）
+
+**背景**：v1.3.4 SkillScan 安全门。两个高危点：① 文件不存在时必须判 DANGEROUS 不能默认 SAFE（扫描不到 ≠ 安全）；② DSH 候选包 rc 版本（rc/beta/alpha/pre）必须被守卫拦截——否则骨架 runCordisAgent 被调用直接 throw，FORGE loop 崩溃。
+
+**检查命令**：
+```bash
+# 三态枚举 + 双触发 + 前置存在性校验
+grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" engine/orchestrator/src/market/skill-scan.ts || echo "⚠️ 三态枚举缺失"
+grep -q "scanForPublish\|scanForInstall" engine/orchestrator/src/market/skill-scan.ts || echo "⚠️ 双触发缺失"
+grep -q "existsSync" engine/orchestrator/src/market/skill-scan.ts || echo "⚠️ 存在性前置校验缺失"
+# 底层引擎接线：market/skill-scan.ts 应调用 @sofagent/skillopt 的 scanSkillSafety（不重复造扫描器）
+grep -q "scanSkillSafety" engine/orchestrator/src/market/skill-scan.ts || echo "⚠️ 未复用 scanSkillSafety——可能重复造扫描逻辑"
+# DSH 版本守卫（rc 拦截）
+grep -q "rc|beta|alpha|pre" engine/orchestrator/src/execution-backend.ts || echo "⚠️ rc 版本守卫缺失——骨架误调用会崩 loop"
+# @deepseek-ai/dsh 不进 dependencies/optionalDependencies（rc 版拉 61 子包污染依赖树）
+grep -q "@deepseek-ai/dsh" engine/orchestrator/package.json && echo "⚠️ DSH rc 版进了依赖声明——违背分支 B 决策"
+```
+
+---
+
+#### 104. DecisionKind.MARKET 语义分型——市场动作不与 ORCHESTRATION/EVOLUTION 混用（v1.3.4 新增 · A 类新功能面）
+
+**背景**：v1.3.4 铁律「市场调用走审计」。若市场事件塞进 ORCHESTRATION/EVOLUTION，`decision-log --kind MARKET` 查不到任何东西——审计语义分型失效。例外：退役走 EVOLUTION（生命周期事件非市场动作）是刻意设计。
+
+**检查命令**：
+```bash
+grep -q "'MARKET'" engine/audit/src/decision-schema.ts || echo "⚠️ DecisionKind.MARKET 缺失"
+grep -q "MARKET" engine/audit/src/decision-log.ts || echo "⚠️ decision-log 未支持 MARKET"
+grep -q "EVOLUTION" engine/orchestrator/src/market/retire.ts || echo "⚠️ 退役应走 EVOLUTION（刻意设计）"
+```
+
+---
+
+#### 105. fresh-eyes worker 臆造链——b-fix 越界 + 碎片上下文编造（v1.3.4 新增 · B 类防回归 · run-01 事故）
+
+**背景**：v1.3.4 run-01 的 b-fix worker 严重越界：臆造升级计划（automerge 排期）、新建 CI 配置（dependabot.yml）、改未来版本 changelog（v1.3.5/v1.4.x）。根因：工具预算 15/20 摸不完 2870 文件 → 撞硬熔断 → 碎片上下文编报告。be131c9e 三重防护（预算 40/50 + 证据门槛 + 反臆造铁律）已修，此维度守护防护不回归。
+
+**检查命令**：
+```bash
+# 三重防护在位（driver 常量 + prompt 模板）
+grep -q "PERSPECTIVE_TOOL_SOFT = 40" FORGE/src/fresh-eyes-driver.mjs || echo "⚠️ 预算回退到旧值"
+grep -q "40 次工具调用" FORGE/SKILL/fresh-eyes-loop/prompts/a-check-perspective-1.md || echo "⚠️ prompt 预算未同步"
+# b-fix 的 A3 审计拦截有效性（b-audit 对越界 commit FAILED）
+grep -q "任务范围" engine/audit/src/rules/rule-a3*.ts 2>/dev/null || echo "ℹ️ A3 文件越界检测依赖规则引擎，人工抽查 b-fix diff 范围"
+```
+
+---
+
+#### 106. 测试数文档同步——新增测试后文档声称数漂移（v1.3.4 新增 · B 类防回归 · 三次同坑）
+
+**背景**：v1.3.4 周期三次犯同一错误：bugfix +31 测试（8 处漂移）/ dev +93（11 处）/ dsh +11（7 处）——每次新增测试后 README/WIKI/LIMITATIONS/ARCHITECTURE 的声称数都没同步，check-test-count.sh FAIL。已写入 SOP 阶段三步骤 3b 强制门禁，此维度做双重保险。
+
+**检查命令**：
+```bash
+bash tools/check-test-count.sh --quiet   # 期望 OK / EXIT=0
+# 原则：新增/删除测试 = 必须同步文档声称数，check-test-count 不绿不算开发完成
 ```

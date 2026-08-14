@@ -194,14 +194,13 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 > 🧪 **工程可信度**：2235 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
 
-> 🧠 **v1.3.3 新能力**（按主题分组）：
-> - **L2 团队协作协议**：🤝 五大机制（共享态/意图广播/触发反应/冲突消解/反馈放大）· 🎯 建队机制（team.yml + team_broadcast / team_create MCP tool）
-> - **Refine Agent**：✨ 复用 Onboard 循环引擎换 L2 判据（Ontology → 质量规则集），从「能用」到「好用」
-> - **入口路由**：🚪 route_workflow MCP tool + workflow 节点 type 机器化（用户自有 Agent 协同判断）
-> - **主 agent 编排**：🧭 四合一角色（分发/监控/审计/通讯）· 自动入队 v1.3.2 生成的 sub-agent
-> - **进化闭环升级**：📈 Benchmark 驱动 Dream Cycle（evidence→hypothesis→Candidate→eval→accept/rollback，只动经验层）
-> - **审计留痕**：📜 DecisionLogEntry 加 evidence 字段 + DecisionKind 加 EVOLUTION/TEAM
-> 详见 [v1.3.3 开发日志](./docs/changelog/v1.3/v1.3.3.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
+> 🧠 **v1.3.4 新能力**（按主题分组）：
+> - **L3 组织能力市场**：🏪 五环闭环（发布→发现→调用→评价→养护）· 6 个 market MCP tool（publish / search / invoke / rate / retire / harvest_rule）· 评分公式 trust × 评分 × log(调用量+1)
+> - **SkillScan 安全门**：🛡️ 发布/安装双触发静态扫描 · 三态判定（SAFE / SUSPICIOUS / DANGEROUS）· 复用 skillopt 扫描引擎不重复建设
+> - **评估体系三步**：📊 真实案例长规则（rule-harvest）→ Benchmark 评委（rule-jury）→ 晋升规则（rule-promote，evidence 三件套）
+> - **编排层与执行层分离**：🔌 ExecutionBackend 接口 + DSH 执行后端接入（rc 版本守卫拦截，自动 fallback LangGraph）· FORGE 两 driver 迁移
+> - **市场审计留痕**：📜 DecisionKind 加 MARKET（市场动作专用审计分型）· daemon 双巡检（目录日更 L1 + 健康周检 L2）
+> 详见 [v1.3.4 开发日志](./docs/changelog/v1.3/v1.3.4.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 文档
 
