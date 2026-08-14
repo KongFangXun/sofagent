@@ -1,14 +1,14 @@
 // execution-backend.test.ts · v1.3.4 增量 · ExecutionBackend 接口 + 工厂函数单测
 //
 // 覆盖：
-// 1. createExecutionBackend() 工厂——DSH 不可用（实测 404）时 fallback 到 LangGraph
+// 1. createExecutionBackend() 工厂——DSH rc 版本不加载，fallback 到 LangGraph
 // 2. LangGraph 后端——默认 stateModifier（SystemMessage 注入）路径
 // 3. LangGraph 后端——自定义 stateModifierFactory（FORGE driver 回调）路径
 // 4. LangGraph 后端——streamHandler 硬熔断路径
 // 5. mock backend——execute 接口契约验证
 //
-// ⚠️ DSH 上架前，「DSH 加载成功」用例用 mock backend 替代真实包。
-//    DSH 上架后补真实加载测试。
+// ⚠️ DSH 已上架 @deepseek-ai/dsh@0.1.0-rc.6，但 rc 版本被版本守卫拦截（不走骨架）。
+//    正式版发布后补真实 DSH 加载测试。
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -31,9 +31,9 @@ describe('ExecutionBackend 接口 + 工厂函数', () => {
   });
 
   describe('createExecutionBackend 工厂', () => {
-    it('DSH 不可用时 fallback 到 LangGraph', async () => {
-      // DSH 候选包名全部 404（实测 2026-08-14），
-      // createExecutionBackend 应自动降级到 LangGraph
+    it('DSH rc 版本被版本守卫拦截时 fallback 到 LangGraph', async () => {
+      // DSH @deepseek-ai/dsh@0.1.0-rc.6 已上架但 rc 版本被版本守卫拦截
+      // （/rc|beta|alpha|pre/i 正则匹配 version 字段），createExecutionBackend 应降级到 LangGraph
       const { createExecutionBackend } = await import('../execution-backend.js');
       const backend = await createExecutionBackend();
 

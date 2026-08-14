@@ -188,6 +188,13 @@ async function tryLoadDshBackend(): Promise<ExecutionBackend | null> {
         // @ts-ignore — DSH 类型未安装（不进 dependencies，运行时动态 import）
         const mod = await import(pkg);
         if (mod && typeof mod.createCordisRuntime === 'function') {
+          // 版本守卫：rc / beta / alpha 版本不加载——骨架未补全，加载了会 throw。
+          // 等 DSH 正式版发布（无 prerelease tag）后自动通过。
+          const version = mod.version ?? mod.VERSION ?? '';
+          if (/rc|beta|alpha|pre/i.test(version)) {
+            // rc 版本 API 不稳定，跳过，继续 fallback
+            break;
+          }
           const { createDshBackend } = await import('./execution-backends/dsh-backend.js');
           return createDshBackend(mod);
         }

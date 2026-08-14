@@ -129,11 +129,12 @@ async function runCordisAgent(
     budgetGuard: { check: (count: number) => 'ok' | 'soft' | 'hard' };
   }
 ): Promise<{ output: string; rounds: number; hitRecursionLimit: boolean }> {
-  // ⚠️ 骨架实现——DSH 上架后对照 Cordis 运行时实际 API 重写。
-  // 当前抛错：如果代码走到这里说明 tryLoadDshBackend 误判成功（不该发生）。
+  // ⚠️ 骨架实现——DSH 正式版发布后对照 Cordis 运行时实际 API 重写。
+  // 当前抛错：如果代码走到这里说明 tryLoadDshBackend 的版本守卫漏了
+  // （rc/beta/alpha 应该在 execution-backend.ts 被拦截，不该走到这里）。
   throw new Error(
-    '[dsh-backend] runCordisAgent 骨架未实现——DSH 尚未上架（2026-08-14 实测 404）。' +
-    '此错误不应出现：tryLoadDshBackend 应在 DSH 上架前返回 null。' +
-    '如果看到此错误，请检查 execution-backend.ts 的候选包名列表。'
+    '[dsh-backend] runCordisAgent 骨架未实现——DSH 正式版尚未发布（当前 @deepseek-ai/dsh@0.1.0-rc.6）。' +
+    '此错误不应出现：tryLoadDshBackend 的版本守卫应拦截 rc 版本。' +
+    '如果看到此错误，请检查 execution-backend.ts 的版本守卫正则。'
   );
 }
