@@ -55,6 +55,11 @@ bash tools/pre-push-check.sh
 # 文档预算 + 死链 + Skill 行数（pre-push-check 内含，但发布前必须单独显式跑一次确认）
 bash tools/check-docs.sh
 
+# 测试数文档同步门禁（v1.3.4 教训：bugfix/dev/dsh 三阶段均漏此步，每次新增测试后文档声称数漂移）
+# 必须在发布前显式跑——check-test-count.sh 校验 README/WIKI/LIMITATIONS/ARCHITECTURE 的测试数与 test-count.sh SSOT 一致
+bash tools/check-test-count.sh --quiet
+# 期望输出 OK / EXIT=0。FAIL = 有文档测试数漂移，必须修后再 push
+
 # CI shellcheck workflow 单独跑（pre-push-check 内含，但 CI 扫描范围可能不同）
 shellcheck engine/scripts/*.sh tools/*.sh install.sh
 
