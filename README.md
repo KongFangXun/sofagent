@@ -22,7 +22,7 @@
 
 > 📊 **为什么是现在**：MIT NANDA 实验室《生成式人工智能的鸿沟》报告指出，全球企业过去三年在生成式 AI 上烧了三四百亿美元，**95% 的项目没能产生能写进财务报表的价值**；与此同时，一个叫「前线部署工程师」（Forward Deployed Engineer，FDE）的岗位发布量一年涨了 **729%**（Indeed 2025 数据）。模型不稀缺了，能把模型塞进客户真实业务里的人，才稀缺——sofagent 就是把这件事工程化的开源底座。（数据核验与多机构口径对照见 [VALIDATION §一·治理缺口的代价](./docs/VALIDATION.md#治理缺口的代价三项联网核验证据)，FDE 经济账见 [VALIDATION §四](./docs/VALIDATION.md#四市场印证行业判断被市场买单)。）
 
-> 📌 **sofagent 的两种形态**：① 在 [ClawHub](https://clawhub.ai) 上以 **FDE Skill** 分发——帮 FDE 做 FDE 的方法论 Skill；② 在企业设备上以**约束层引擎**运行——审计 + 回溯 + 注入 + daemon 监控。Skill 是入口，引擎是本体。
+> 📌 sofagent 在 [ClawHub](https://clawhub.ai) 上以 **FDE Skill** 分发（帮 FDE 做 FDE 的方法论 Skill），装到企业设备后以**约束层引擎**长期运行（审计 + 回溯 + 注入 + daemon 监控）。
 
 ```mermaid
 graph LR
