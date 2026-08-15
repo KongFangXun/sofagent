@@ -163,8 +163,8 @@ fi
 > GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 10 包在步骤 6 手动 publish。
 
 ```bash
-gh release create vX.Y.Z --title "vX.Y.Z — {核心变更摘要}" --notes "$(cat <<'EOF'
-vX.Y.Z — {一句话定位}
+gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" --notes "$(cat <<'EOF'
+{emoji 主题短语与 title 呼应}——{一句人话说明这版对用户意味着什么}
 
 ## 🔨 核心变更
 
@@ -203,7 +203,8 @@ EOF
 - **Title**：`vX.Y.Z — {emoji 主题短语} + {emoji 主题短语}`（常规，≤3 个短语）/ `🎉 vX.Y.Z — ...`（里程碑仅限 vX.Y.0，前缀不在尾部）
   - **主题短语 ≠ 交付名清单**——title 讲主线故事（如「🏪 组织能力市场（L3 五环）」），不逐项罗列交付名（那是 note 新功能段的事）。**title 与 note 新功能禁止逐字重复**（2026-08-15 拍板，五版已统一修正）
   - 每个主题短语带语义 emoji；尾部不加装饰后缀（🎉/🔧 等历史漂移已清理）
-- **Body 结构**（三段固定顺序，不可调）：
+- **Body 结构**（定位句 + 三段，固定顺序不可调）：
+  0. **首行定位句**——`{emoji 主题短语呼应 title}——{一句人话}`，如「🏪 协作成果像内部应用商店一样流转——Skill/Agent/流程可发布、可评分、可退役，第三方 Skill 先过安全门。」。**禁止用旧 title 清单复读**（v1.3.1-1.3.3 历史遗留：body 首行挂着交付名清单，title 改了 body 没跟——2026-08-15 已统一修正）。与 title/H1 分工：title 点主题（名词短语）/ H1 讲故事（动词句）/ 定位句说人话（给用户的价值）
   1. `## 🔨 核心变更`——功能按重要性降序，安全修复优先于文档修复。每个变更点用 `-` 列表，一句话说清楚做了什么（不写「为什么」——那在开发日志里）
   2. `## ✅ 质量验证`——**固定 7 项表格**（见下方模板），结果列每项带 ✅，缺一项即视为体例不合规
   3. `📖 [详细开发日志](./docs/changelog/v<major>.<minor>/vX.Y.Z.md)`——必须用 markdown 链接语法，放最末
