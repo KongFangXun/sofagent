@@ -29,6 +29,18 @@
 
 ---
 
+## Release Note 三层分工速查（v1.3.4 发版定稿 · 2026-08-15）
+
+> 完整规则见 [08 铁律 N1-N7](./releasing/08-doc-finalize.md) + [11 Title/Body 规范](./releasing/11-publish.md)。本节是速查——写 note 前先看这页。
+
+| 层 | 形态 | v1.3.4 示例 |
+|:--|:--|:--|
+| **Release title** | `vX.Y.Z — {名词化主题短语带 emoji}`（≤3 个，不逐项罗列交付名） | v1.3.4 — 🏪 组织能力市场（L3 五环）+ 🛡️ SkillScan 安全门 |
+| **Body 首行定位句** | `{emoji 主题短语呼应 title}——{一句人话价值}`；禁止旧 title 清单复读 | 🏪 协作成果像内部应用商店一样流转——Skill/Agent/流程可发布、可评分、可退役，第三方 Skill 先过安全门。 |
+| **changelog H1** | `vX.Y.Z 开发日志 — {动词化故事句}`（主语+变化/动作+括号内涵，无 emoji） | v1.3.4 开发日志 — 协作成果可流转（组织能力市场 + 安全门） |
+
+**三层刻意不同**：title 点主题 / 定位句说人话 / H1 讲故事。交付名逐项罗列只出现在 note 新功能段。历史教训：v1.3.1-1.3.3 的 body 首行挂旧 title 清单（title 改了 body 没跟）——改 title 必须连带检查 body 首行。
+
 ## 配套文档
 
 - [ROADMAP 同步规则](./releasing/08-roadmap-sync.md)——阶段八步骤 5 配套：本版移出规划表 / 探索方向清理 / 迭代表瘦身 / 发版后体检清单
