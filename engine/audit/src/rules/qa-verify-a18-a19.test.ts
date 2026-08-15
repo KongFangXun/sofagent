@@ -169,9 +169,9 @@ describe('A19 QA 边界验证', () => {
     expect(result.status).toBe('PASS');
   });
 
-  // 测试：A19 产生的是业务底线级 FAIL
-  it('ruleClass 为 业务底线', () => {
+  // 测试：A19 产生的是工程规范级 FAIL（v1.2.5 起 index.ts SSOT=工程规范）
+  it('ruleClass 为 工程规范', () => {
     const result = checkRuleA19(makeCtx([makeDiffFile('src/x.ts')], { commitMsg: 'valid' }));
-    expect(result.ruleClass).toBe('业务底线');
+    expect(result.ruleClass).toBe('工程规范');
   });
 });

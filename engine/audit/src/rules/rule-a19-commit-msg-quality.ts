@@ -40,7 +40,7 @@ export function checkRuleA19(ctx: AuditContext): RuleCheck {
     status: 'PASS',
     details: [],
     evidenceMode: 'git-diff',
-    ruleClass: '业务底线',
+    ruleClass: '工程规范',  // v1.3.4 对齐 index.ts（v1.2.5 起 SSOT=工程规范，impl 漏改）
   };
 
   const commitMsg = ctx.commitMsg;

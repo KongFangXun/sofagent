@@ -15,9 +15,9 @@
 > | v1.3.0 | #79-84（运行时审计 wrapper / HMAC 链 / 记忆后端 ACL / 写保护 / license / shouldAllow） | — |
 > | v1.3.1 | #85-88（run_bash cwd / auto-commit 限定 / Shannon 熵 / tsconfig outDir） | — |
 > | v1.3.3 | #89-101（AUDIT_PRIORITY / 失败路径 / LIMIT 超标等 release-gate 沉淀） | — |
-> | v1.3.4 | #102-106（市场五环 / SkillScan 三态链 / DecisionKind.MARKET / 臆造链防回归 / 测试数同步） | — |
+> | v1.3.4 | #102-109（市场五环 / SkillScan 三态链 / DecisionKind.MARKET / 臆造链防回归 / 测试数同步 + 阶段十二回写：CHANGELOG 索引链 / SOP hook 用例合格性 / 锚点扫描降级） | — |
 >
-> **当前 83 维 · 编号 1-106 · 23 个编号已归并删除**（2/5/6/10-13/19/22/24/26-27/34-37/43/46/48/52/55/66/74）。
+> **当前 86 维 · 编号 1-109 · 23 个编号已归并删除**（2/5/6/10-13/19/22/24/26-27/34-37/43/46/48/52/55/66/74）。
 > 维度流连续不中断，仅插 3 个分组标题导航：基线组（#1 起）→ 审查约束组（#23-#77）→ 环境敏感组（#59 起，前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -38,7 +38,7 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（83 维 · 编号 1-106 · 版本演进见头部表格）
+## 审查维度（86 维 · 编号 1-109 · 版本演进见头部表格）
 
 ### 审查维度正文（#1-106 · 按版本演进排列 · 分组小节为历史分类，维度流连续不中断）
 
@@ -831,6 +831,47 @@ grep -rn 'export function convertAuditResult\|export const convertAuditResult' e
 # 第二步：验证三态转换逻辑（用定位到的文件名替换 <file>）
 grep -A10 'convertAuditResult' engine/eval/src/cli.ts | grep -E 'PASS|WARN|FAIL|exitCode'
 # 期望：3 种状态都有分支处理（EXIT_CODE_TO_RESULT 含 0/1/2 三个映射）
+```
+
+---
+
+#### 107. CHANGELOG 索引条目就位——版本 bump 后日期提取链（v1.3.4 发版流程 · 阶段六暴露）
+
+**背景**：v1.3.4 bump 后 CHANGELOG.md 未及时补索引条目，check-version 的 EXPECTED_DOC_DATE 动态提取（从 CHANGELOG 当前版本行取日期）返回空——release-gate regression 维度 95 FAIL 才暴露。索引条目是日期链的上游，漏了整条链断。
+
+**检查命令**：
+```bash
+CUR_VER=$(node -p "require('./package.json').version")
+grep -q "\*\*v${CUR_VER}\*\* —" CHANGELOG.md || echo "⚠️ CHANGELOG 缺 v${CUR_VER} 索引条目（维度 95 日期链会断）"
+grep -m1 "v${CUR_VER}.*—" CHANGELOG.md | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" || echo "⚠️ 索引条目无日期"
+```
+
+---
+
+#### 108. SOP hook 测试用例自身合格性——message 长度 + git add -f（v1.3.4 发版流程 · 阶段九暴露）
+
+**背景**：09-tool-health.md 的 hook 测试用例 message 用 `test`/`add app`（太短），被 A5+A19 正确拦截——**测试用例自己不合格导致假失败**，误判为 hook 坏了。且 `.env` 被 init 自带 .gitignore 挡住时不 `-f` 强加，hook 层 A1/A2 根本测不到（只测到 git 层双保险）。SOP 已修，本维度防 SOP 再漂移。
+
+**检查命令**：
+```bash
+# SOP 用例 message 必须合格（≥8 有效字符，Conventional Commits）
+grep -A2 "拦截验证" docs/changelog/releasing/09-tool-health.md | grep -oE 'commit -m "[^"]+"' | while read -r c; do
+  msg=$(echo "$c" | grep -oE '"[^"]+"' | tr -d '"'); [ ${#msg} -lt 20 ] && echo "⚠️ SOP hook 测试 message 过短: $msg"
+done
+# -f 说明存在
+grep -q "git add -f .env" docs/changelog/releasing/09-tool-health.md || echo "⚠️ 缺 git add -f 说明（hook 层测不到）"
+```
+
+---
+
+#### 109. check-docs 锚点扫描环境降级——WorkBuddy shim 超时（v1.3.4 发版流程 · 阶段十一暴露）
+
+**背景**：check-docs.sh 第 11 项（bash 逐行嵌套循环锚点扫描）在 WorkBuddy 环境被 shim 拖慢必然超时，pre-push 因此失败——但它与 tools/check-anchors.mjs（node 版，pre-push 第 4 步独立跑）功能重复。已加 SKIP_ANCHOR_SCAN=1 降级。本维度守护降级开关不被误删 + CI 仍跑完整版。
+
+**检查命令**：
+```bash
+grep -q "SKIP_ANCHOR_SCAN" tools/check-docs.sh || echo "⚠️ 降级开关丢失——WorkBuddy 下 pre-push 必失败"
+# 本地 WorkBuddy 环境跑 pre-push 应带降级变量
 ```
 
 ---

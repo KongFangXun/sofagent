@@ -27,7 +27,7 @@ export function checkRuleA4(ctx: AuditContext): RuleCheck {
     status: 'PASS',
     details: [],
     evidenceMode: 'git-diff',
-    ruleClass: '能力拐杖',
+    ruleClass: '业务底线',  // v1.3.4 对齐 index.ts SSOT
   };
 
   const { diffFiles } = ctx;

@@ -122,6 +122,9 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **自带净水设备的水龙头（v3.x+ 远景）** | Subagent 支持挂载外部精调小模型（引擎层提供路由与加载插槽），零投喂、本地推理、离线可用 |
 | 国标 Agent 审计对位 | 关注国家 AI 智能体互联标准草案进展，标准正式发布后评估对齐 |
 | **Ontology Validation Engine（DataFlow 启发）** | Schema 已交付（v1.3.1）+ 注册接口排期（v1.3.6）+ Validation Engine（DAG 无环 + schema 兼容）与「本体结构 = GitHub 生长树」的根系工程化合并评估 |
+| **bash 3.2 真实环境验证（v1.3.4 release-gate 遗留）** | 全部 shell 脚本在真实 macOS bash 3.2（非 shim）跑一遍——空数组/pipefail/词边界差异 |
+| **trimMessagesSafe 作用域审计（v1.3.4 release-gate 遗留）** | FORGE 消息裁剪的作用域边界确认（跨闭包引用同款风险家族） |
+| **评估反哺闭环端到端场景（v1.3.4 verdict 遗留）** | harvest→jury→promote 全链路 acceptance 场景（当前只有 3 处单点覆盖） |
 | **MCP 暴露 audit 数据对外（DataFlow 启发）** | v1.3.6 已排期 ontology/workflow 暴露面；audit 数据对外暴露（读 history.jsonl/decision-log 的 MCP 接口）作为 meta-harness（v1.3.9）的延伸能力评估 |
 | **GEPA / MemEx / RLM 评估（Omnigent 路线图参考 · v2.x）** | Omnigent 路线图四项（GEPA 自动优化 / MemEx 持久记忆 / RLM 强化学习 / Server MCP）方向在 v2.x 评估框架时参考——跟踪其落地后再对齐，不抢跑 |
 | **spec-first 硬禁令（OpenFDE 启发 · 设计约束）** | 单一事实源——transcript 永不直驱代码，spec 才是唯一驱动 |

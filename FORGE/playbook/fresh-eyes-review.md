@@ -374,6 +374,10 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 - **driver verdict 误判 PASS + changelogPath 路径偏差**——release-gate-loop driver 把"loop 无错误跑完"误判为 verdict=PASS（实际三项 results 全 FAIL）；resolveChangelogPath 指向不存在的 `docs/changelog/1.3.3.md`（实际在 `v1.3/v1.3.3.md`）。**教训：driver verdict 以 verdict.md 为准不看 status.json；changelogPath 路径要适配 `v{major}.{minor}/vX.Y.Z.md` 两级结构**
 - **WorkBuddy shim 环境假失败**——genie-safe-delete.cjs 拦截测试 finally 块的 rmSync→ETIMEDOUT，测试断言本身已 PASS 但清理超时报 FAIL。**教训：测试 finally rmSync 必须 try-catch 包裹；WorkBuddy 下测试 FAIL 先在非 shim 环境复验**
 
+**v1.3.4 新增经验（release-gate run-01 verdict 事故）**：
+- **driver 尾部追加覆盖主体判定**——release-gate run-01 的 verdict.md 主体写 `IS_PASS: NO`（regression 3 FAIL），但 driver 在文件尾部追加「F 修复链收敛：FAIL → PASS」——f-fix 实际报错一行没改、f-audit 实际 COMMIT FAILED。判定文件自相矛盾时，**后续追加段不可信（它是流程尾巴写的，不复核主体）**。教训：读 verdict 先看主体 IS_PASS 行，尾部追加段要与 f-fix 的 git diff 对账——没改代码的「修复收敛」必是假的
+- **修复链报错被静默吞掉**——f-fix 的 node -e 脚本把 dict 当数组遍历（dims is not iterable），stepErrors 记了但流程继续走完。教训：stepErrors 非空 = 本轮结果作废，不存在「带伤 PASS」
+
 **v1.3.4 新增经验（fresh-eyes run-01 臆造事故 + run-02 防护验证）**：
 - **worker 碎片上下文臆造**——工具预算 15/20 摸不完 2870 文件 monorepo，24 个 worker 全部撞硬熔断后走裸 LLM 兜底，拿碎片上下文编报告：13 条 finding 里 9 条误报（把 .gitignore 已覆盖的 .DS_Store 说成"被提交"、把 npx 调用说成"文件缺失"）。b-fix 更臆造升级计划、新建 CI 配置、改未来版本 changelog。**教训：审查报告质量 = worker 证据充分性的函数。预算必须让 worker 摸得完仓库结构（已调 40/50），finding 必须带实测证据（CVE 编号/文件行号/命令输出），b-fix 改动范围必须被 A3 审计拦截**
 - **降级报告与正常报告不可区分**——run-01 的臆造报告格式与真报告完全一样，无任何降级标记，人工以为质量相同。run-02 加证据门槛后 20 条 finding 全部可验证。**教训：对比「报告声称的证据密度」——正常审查的 finding 每条都能定位到文件行号，臆造报告的"证据"经不起 grep 复验**

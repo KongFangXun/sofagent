@@ -79,9 +79,9 @@ describe('A19 msg 质量', () => {
     expect(result.evidenceMode).toBe('git-diff');
   });
 
-  it('ruleClass 标注为 业务底线', () => {
+  it('ruleClass 标注为 工程规范（v1.2.5 index.ts SSOT）', () => {
     const ctx = makeCtx([makeDiffFile('src/index.ts')], { commitMsg: 'valid message' });
     const result = checkRuleA19(ctx);
-    expect(result.ruleClass).toBe('业务底线');
+    expect(result.ruleClass).toBe('工程规范');
   });
 });

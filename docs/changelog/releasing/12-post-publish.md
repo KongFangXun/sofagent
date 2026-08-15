@@ -150,4 +150,9 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 
 **v1.3.4 发版后的自迭代记录**：
 
+- **阶段六 verdict 读取规则**：driver 在 verdict.md 尾部追加的「FAIL→PASS 修复收敛」段不可信——run-01 中 f-fix 报错没改任何代码，尾部照样写 PASS。阶段六模板加判定规则：verdict 以主体 `IS_PASS:` 行为准 + f-fix 有 git diff 才算修复收敛（stepErrors 非空 = 本轮作废）。已回写 regression-checklist 维度（臆造链家族）与 fresh-eyes-review 教训
+- **阶段九 hook 测试用例合格性**：SOP 自带的测试用例 message（"test"/"add app"）太短被 A5+A19 正确拦截——测试用例自己不合格导致假失败。已修 09-tool-health.md（合格 message + `git add -f` 说明），并回写 checklist 维度 108 防 SOP 再漂移
+- **阶段十一 pre-push 环境降级**：check-docs 第 11 项锚点扫描（bash 逐行）在 WorkBuddy shim 环境必然超时——与 check-anchors.mjs 功能重复。已加 `SKIP_ANCHOR_SCAN=1` 降级开关（CI 跑完整版）；WorkBuddy 环境跑 pre-push 应带此变量（4m43s vs 13min+）。回写 checklist 维度 109
+- **阶段十一 Git Data API 收尾通道实战**：发布完成后网络彻底断（github.com 443 不通），最后的打勾 commit 走 blobs→trees→commits→refs PATCH 完成。新增后续动作：**网络恢复后必须 `git pull --rebase` 对齐本地远端 SHA**（API commit 与本地 commit 同内容不同 SHA，git 会识别 cherry-pick 重复自动消化）
+- **阶段十二 stash 清理纳入发版收尾**：本轮发版过程发现 4 个历史 stash 残留——逐段甄别后 3 段有价值内容恢复进对应 changelog、其余确认覆盖后清理。原则：stash 是隐形技术债，发版收尾时顺手清（stash list 非空即处理）
 - **阶段三 + 阶段十一加 check-test-count 门禁**：v1.3.4 周期内 bugfix（+31 测试 → 8 处漂移）+ dev（+93 → 11 处）+ dsh（+11 → 7 处）**三次犯同类错误**——新增测试后文档声称数（README/WIKI/LIMITATIONS/ARCHITECTURE）未同步。根因：check-test-count.sh 只在 tag 前（阶段十一步骤 4）跑一次，开发过程中没人跑。修复：① 阶段三（自测）加步骤 3b——`check-test-count.sh --quiet` 作为开发完成后的强制门禁；② 阶段十一（发布）步骤 2 显式列 check-test-count 与 check-docs.sh 并列。**原则：新增/删除测试 = 必须同步文档声称数，check-test-count 不绿不算开发完成**
