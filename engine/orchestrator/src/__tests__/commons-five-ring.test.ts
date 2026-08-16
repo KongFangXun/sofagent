@@ -1,5 +1,5 @@
 // ============================================================
-// market-five-ring.test.ts · 端到端五环集成测试（v1.3.4 dev-prompt 全局验收第 1 条）
+// commons-five-ring.test.ts · 端到端五环集成测试（v1.3.4 dev-prompt 全局验收第 1 条）
 //
 // QA 报告：当前只有单块单测（publish / invoke / rating / owner 各自独立），
 // 没有串联五环的集成测试。dev-prompt 全局验收第 1 条要求：
@@ -29,25 +29,25 @@ import { randomBytes } from 'crypto';
 import {
   publishCapability,
   type CapabilityMetadata,
-} from '../market/publisher';
+} from '../commons/publisher';
 import {
   searchCatalog,
   searchByTag,
   getCapability,
   readCatalog,
-} from '../market/catalog';
+} from '../commons/catalog';
 import {
   invokeCapability,
   readInvokeLog,
   type CapabilityExecutor,
-} from '../market/invoker';
+} from '../commons/invoker';
 import {
   addRating,
   readRatingsForCapability,
   aggregateRating,
   readInvokeCounts,
   appendInvokeCount,
-} from '../market/rating';
+} from '../commons/rating';
 import {
   declareOwner,
   getTrust,
@@ -56,12 +56,12 @@ import {
   TRUST_INITIAL,
   TRUST_GOOD_THRESHOLD,
   updateTrustOnRating,
-} from '../market/owner';
+} from '../commons/owner';
 import {
   markRetired,
   restoreCapability,
   getCapabilityStatus,
-} from '../market/retire';
+} from '../commons/retire';
 
 /** 构造隔离的临时数据目录 */
 function tmpDir(): string {
@@ -74,7 +74,7 @@ function tmpDir(): string {
 }
 
 // v1.3.5 阶段五：全量并行 IO 争用偶发超时——文件级 timeout 20s
-describe('market-five-ring 端到端五环集成测试', { timeout: 20000 }, () => {
+describe('commons-five-ring 端到端五环集成测试', { timeout: 20000 }, () => {
   let testDir: string;
   let skillDir: string;
   let stubbedEnv: string;
@@ -134,7 +134,7 @@ describe('market-five-ring 端到端五环集成测试', { timeout: 20000 }, () 
     expect(pub.scan?.verdict).toBe('SAFE');
 
     // 跨文件数据流①：manifest.jsonl 已写入（publish 写）
-    const manifestPath = join(testDir, 'market', 'manifest.jsonl');
+    const manifestPath = join(testDir, 'commons', 'manifest.jsonl');
     expect(existsSync(manifestPath)).toBe(true);
     const manifestContent = readFileSync(manifestPath, 'utf-8');
     expect(manifestContent).toContain('test-skill');

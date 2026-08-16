@@ -1,7 +1,7 @@
 // ============================================================
 // rating.ts · 评分聚合（v1.3.6 交付 2）
 //
-// L3 组织能力市场的「评价」环节——每次调用后累积评分，
+// L3 组织能力公地的「评价」环节——每次调用后累积评分，
 // 按加权排序让高频高价值能力自然上浮。
 //
 // 评分公式（统一定稿）：
@@ -105,7 +105,7 @@ export interface AggregatedRating {
 /** ratings.jsonl 路径 */
 export function resolveRatingsPath(dataDir?: string): string {
   const dir = dataDir ?? loadEnvConfig().dataDir;
-  return join(dir, 'market', 'ratings.jsonl');
+  return join(dir, 'commons', 'ratings.jsonl');
 }
 
 /**
@@ -139,7 +139,7 @@ export function readRatings(dataDir?: string): RatingRecord[] {
 /** 调用量统计路径 */
 export function resolveInvokeCountPath(dataDir?: string): string {
   const dir = dataDir ?? loadEnvConfig().dataDir;
-  return join(dir, 'market', 'invoke-counts.jsonl');
+  return join(dir, 'commons', 'invoke-counts.jsonl');
 }
 
 /**

@@ -1,15 +1,15 @@
 // ============================================================
-// market-health.ts · 市场健康周检（v1.3.6 交付 3）
+// commons-health.ts · 公地健康周检（v1.3.6 交付 3）
 // ============================================================
 //
-// @weekly：市场健康巡检——目录完整性 + 评分异常 + 退役候选扫描。
+// @weekly：公地健康巡检——目录完整性 + 评分异常 + 退役候选扫描。
 //
-// 与 market-catalog-daily（@daily）的区别：
-//   - market-catalog-daily：日更目录生成（能力有哪些、最新版本是什么）
-//   - market-health：周检健康巡检（退役候选 / 评分异常 / 目录完整性）
+// 与 commons-catalog-daily（@daily）的区别：
+//   - commons-catalog-daily：日更目录生成（能力有哪些、最新版本是什么）
+//   - commons-health：周检健康巡检（退役候选 / 评分异常 / 目录完整性）
 //
 // 巡检内容：
-//   1. 目录完整性：market/manifest.jsonl 是否存在 + 条目数
+//   1. 目录完整性：commons/manifest.jsonl 是否存在 + 条目数
 //   2. 退役候选扫描：低评分 / 低调用量能力（延迟 require retire.scanRetireCandidates）
 //   3. 评分异常：无评价的能力（可能无人使用）
 //
@@ -22,23 +22,23 @@ import { loadEnvConfig } from '@sofagent/core';
 import type { InspectorResult } from './types';
 
 /**
- * 市场健康周检巡检器（@weekly）。
+ * 公地健康周检巡检器（@weekly）。
  *
  * @param _projectDir 项目根目录（数据走 SOFAGENT_HOME 路径 SSOT）
  * @returns InspectorResult
  */
-export function runMarketHealth(_projectDir: string): InspectorResult {
+export function runCommonsHealth(_projectDir: string): InspectorResult {
   void _projectDir;
   const env = loadEnvConfig();
-  const marketDir = join(env.dataDir, 'market');
-  const manifestPath = join(marketDir, 'manifest.jsonl');
+  const commonsDir = join(env.dataDir, 'commons');
+  const manifestPath = join(commonsDir, 'manifest.jsonl');
 
   // 1. 目录完整性检查
   if (!existsSync(manifestPath)) {
     return {
-      name: 'market-health',
+      name: 'commons-health',
       triggered: false,
-      message: '市场清单不存在（market/manifest.jsonl）——市场尚未启用',
+      message: '公地清单不存在（commons/manifest.jsonl）——公地尚未启用',
       severity: 'info',
     };
   }
@@ -64,9 +64,9 @@ export function runMarketHealth(_projectDir: string): InspectorResult {
     }
   } catch {
     return {
-      name: 'market-health',
+      name: 'commons-health',
       triggered: false,
-      message: '市场清单读取失败（manifest.jsonl 解析异常）',
+      message: '公地清单读取失败（manifest.jsonl 解析异常）',
       severity: 'warning',
     };
   }
@@ -96,11 +96,11 @@ export function runMarketHealth(_projectDir: string): InspectorResult {
 
   const severity = retireCandidateCount > 0 ? 'warning' : 'info';
   const message =
-    `市场健康：${entryCount} 个能力（active ${activeCount} / retired ${retiredCount}）` +
+    `公地健康：${entryCount} 个能力（active ${activeCount} / retired ${retiredCount}）` +
     (issues.length > 0 ? `——${issues.join('；')}` : '——正常');
 
   return {
-    name: 'market-health',
+    name: 'commons-health',
     triggered: retireCandidateCount > 0,
     message,
     severity: severity as 'info' | 'warning',

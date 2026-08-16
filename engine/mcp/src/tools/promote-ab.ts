@@ -13,7 +13,7 @@
 //     执行晋升（copyFileSync candidate → current 覆写）+ decision-log
 //     审计留痕（kind=EVOLUTION，evidence 附实验数据）。
 //
-// 人审交互模式说明：与 delete_entity / market_retire 的 confirmed 门控同款
+// 人审交互模式说明：与 delete_entity / commons_retire 的 confirmed 门控同款
 // （仓库先例），不走 hitl/pending/ 文件通道——该通道与 LOOP checkpoint
 // 强耦合（resumeLoopGraph 只恢复 LOOP），promote_ab 不是 LOOP 操作。
 // ============================================================
@@ -208,7 +208,7 @@ export async function promoteAb(args: PromoteAbArgs): Promise<PromoteAbResult> {
     return fail(`晋升覆写失败: ${err instanceof Error ? err.message : String(err)}`);
   }
 
-  // 审计留痕（kind=EVOLUTION——与 market rule-promote 同款）
+  // 审计留痕（kind=EVOLUTION——与 commons rule-promote 同款）
   let decisionLogged = false;
   try {
     const audit = (await import('@sofagent/audit')) as unknown as {

@@ -1,13 +1,13 @@
 // ============================================================
 // catalog.ts · 能力目录生成/检索（v1.3.6 交付 1）
 //
-// L3 组织能力市场的「发现」环节——读取 market/manifest.jsonl 能力清单，
+// L3 组织能力公地的「发现」环节——读取 commons/manifest.jsonl 能力清单，
 // 按标签 / 关键词 / 类型检索，复用 searchKnowledge 的模糊匹配链路。
 //
 // 复用机制（不重写）：
 //   - 检索链路：knowledge-tools.ts 的 searchKnowledge() 模糊匹配（名称 + 内容 contains）
-//   - 清单数据：publisher.ts 写入的 market/manifest.jsonl
-//   - 日更目录：daemon market-catalog-daily inspector（@daily 生成 market/index.md）
+//   - 清单数据：publisher.ts 写入的 commons/manifest.jsonl
+//   - 日更目录：daemon commons-catalog-daily inspector（@daily 生成 commons/index.md）
 // ============================================================
 
 import { existsSync, readFileSync } from 'fs';
@@ -62,7 +62,7 @@ export interface CatalogSearchResult {
 // ────────────────────────────────────────────────────────────
 
 /**
- * 读取市场能力清单（market/manifest.jsonl）。
+ * 读取公地能力清单（commons/manifest.jsonl）。
  *
  * 清单格式：每行一个 JSON 对象（append-only）。
  * 同一能力多次发布 → 取最后一条（最新版本）。
@@ -77,7 +77,7 @@ export function readCatalog(
   includeRetired = false,
 ): CatalogEntry[] {
   const dir = dataDir ?? loadEnvConfig().dataDir;
-  const manifestPath = join(dir, 'market', 'manifest.jsonl');
+  const manifestPath = join(dir, 'commons', 'manifest.jsonl');
   if (!existsSync(manifestPath)) {
     return [];
   }

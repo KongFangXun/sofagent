@@ -1,14 +1,14 @@
 // ============================================================
-// market-search.ts · MCP tool: market_search（v1.3.6 交付 1）
+// commons-search.ts · MCP tool: commons_search（v1.3.6 交付 1）
 //
-// 能力检索 tool——按标签/关键词搜索市场能力目录。
+// 能力检索 tool——按标签/关键词搜索公地能力目录。
 // 延迟导入 @sofagent/orchestrator 的 searchCatalog / searchByTag。
 // ============================================================
 
 import { loadEnvConfig } from '@sofagent/core';
 
-/** market_search tool 入参 */
-export interface MarketSearchArgs {
+/** commons_search tool 入参 */
+export interface CommonsSearchArgs {
   /** 检索关键词（模糊匹配名称/描述/标签） */
   query?: string;
   /** 按标签精确匹配（与 query 互斥，优先级高于 query） */
@@ -19,8 +19,8 @@ export interface MarketSearchArgs {
   dataDir?: string;
 }
 
-/** market_search tool 结果 */
-export interface MarketSearchResult {
+/** commons_search tool 结果 */
+export interface CommonsSearchResult {
   text: string;
   data: {
     query: string;
@@ -38,12 +38,12 @@ export interface MarketSearchResult {
 }
 
 /**
- * 检索市场能力目录——延迟导入 orchestrator 的检索函数。
+ * 检索公地能力目录——延迟导入 orchestrator 的检索函数。
  *
  * @param args 检索入参
  * @returns 检索结果
  */
-export function marketSearch(args: MarketSearchArgs): MarketSearchResult {
+export function commonsSearch(args: CommonsSearchArgs): CommonsSearchResult {
   const { query, tag, kind, dataDir } = args;
 
   let searchCatalog: (

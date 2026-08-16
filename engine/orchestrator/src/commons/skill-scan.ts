@@ -1,12 +1,12 @@
 // ============================================================
 // skill-scan.ts · SkillScan 安全门集成层（v1.3.6 交付 4）
 //
-// L3 组织能力市场的安全门——第三方 Skill 发布/安装前静态扫描。
+// L3 组织能力公地的安全门——第三方 Skill 发布/安装前静态扫描。
 // 复用 @sofagent/skillopt 的 scanSkillSafety()（核心引擎在 @sofagent/audit
 // 的 skill-safety-{engine,rules,reporter}.ts），不新写扫描逻辑。
 //
 // 双触发（发布者侧 + 调用者侧）：
-//   - 发布侧：scanForPublish() —— market_publish 时扫（发布者自己写的 Skill）
+//   - 发布侧：scanForPublish() —— commons_publish 时扫（发布者自己写的 Skill）
 //     DANGEROUS → 拦截发布；SUSPICIOUS → 警告但不阻断（发布者自己知道风险）
 //   - 安装侧：scanForInstall() —— 挂载调用前扫（调用者侧）
 //     DANGEROUS → 拦截安装；SUSPICIOUS → 复用 v1.3.1 HITL 弹人工确认
@@ -16,7 +16,7 @@
 //   - 集成层调用前先校验目标存在性：不存在 → 直接返回 DANGEROUS
 //     （发布/安装一个不存在的 Skill 目录比 SUSPICIOUS 更严重）
 //
-// 审计：扫描报告进 decision-log（kind=MARKET）
+// 审计：扫描报告进 decision-log（kind=COMMONS）
 // ============================================================
 
 import { existsSync } from 'fs';
@@ -93,7 +93,7 @@ export function mapSafetyResult(
 // ────────────────────────────────────────────────────────────
 
 /**
- * 发布侧扫描——market_publish 时调用（发布者侧）。
+ * 发布侧扫描——commons_publish 时调用（发布者侧）。
  *
  * DANGEROUS → 拦截发布
  * SUSPICIOUS → 警告但不阻断（发布者自己写的 Skill，自己知道风险）
@@ -158,13 +158,13 @@ export function scanForInstall(
   // 扫描报告进审计日志
   try {
     emitDecision({
-      agentId: 'market-install-scan',
-      sessionId: `market-install-${capabilityId ?? 'unknown'}`,
-      kind: 'MARKET',
+      agentId: 'commons-install-scan',
+      sessionId: `commons-install-${capabilityId ?? 'unknown'}`,
+      kind: 'COMMONS',
       moment: 'ACT',
       why: {
         text: `安装侧 SkillScan: ${target} → ${mapped.verdict}${needHITL ? '（需人工确认）' : ''}`,
-        tags: ['market', 'install', 'skillscan', mapped.verdict.toLowerCase()],
+        tags: ['commons', 'install', 'skillscan', mapped.verdict.toLowerCase()],
         confidence: mapped.verdict === 'DANGEROUS' ? 'high' : 'med',
       },
       artifactRef: target,

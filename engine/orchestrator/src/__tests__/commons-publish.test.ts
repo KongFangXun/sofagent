@@ -1,5 +1,5 @@
 // ============================================================
-// market-publish.test.ts · 能力发布测试（v1.3.4 交付 1）
+// commons-publish.test.ts · 能力发布测试（v1.3.4 交付 1）
 //
 // 验收：
 //   - 一个 Skill 可发布 → 目录可见
@@ -17,16 +17,16 @@ import {
   publishCapability,
   validateMetadata,
   type CapabilityMetadata,
-} from '../market/publisher';
+} from '../commons/publisher';
 import {
   searchCatalog,
   searchByTag,
   readCatalog,
   getCapability,
-} from '../market/catalog';
+} from '../commons/catalog';
 
 function tmpDir(): string {
-  const dir = join(tmpdir(), `sofagent-market-test-${Date.now()}-${randomBytes(4).toString('hex')}`);
+  const dir = join(tmpdir(), `sofagent-commons-test-${Date.now()}-${randomBytes(4).toString('hex')}`);
   mkdirSync(dir, { recursive: true });
   return dir;
 }
@@ -47,7 +47,7 @@ function makeMeta(overrides: Partial<CapabilityMetadata> = {}): CapabilityMetada
 }
 
 // v1.3.5 阶段五：全量并行 IO 争用偶发超时——文件级 timeout 20s
-describe('market-publish 能力发布', { timeout: 20000 }, () => {
+describe('commons-publish 能力发布', { timeout: 20000 }, () => {
   let testDir: string;
   let skillDir: string;
 
@@ -109,7 +109,7 @@ describe('market-publish 能力发布', { timeout: 20000 }, () => {
       expect(result.scan?.verdict).toBe('SAFE');
 
       // 目录文件已写入
-      const manifestPath = join(testDir, 'market', 'manifest.jsonl');
+      const manifestPath = join(testDir, 'commons', 'manifest.jsonl');
       expect(existsSync(manifestPath)).toBe(true);
 
       // 目录可检索

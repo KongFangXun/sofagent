@@ -1,23 +1,23 @@
 // ============================================================
-// market-harvest-rule.ts · MCP tool: market_harvest_rule（v1.3.6 交付 5）
+// commons-harvest-rule.ts · MCP tool: commons_harvest_rule（v1.3.6 交付 5）
 //
 // 评估体系三步编排——触发第一步提炼（harvest），可选连跑第二步（jury）+ 第三步（promote）。
 //
-// 复用 @sofagent/orchestrator 的 market/rule-harvest + rule-jury + rule-promote。
+// 复用 @sofagent/orchestrator 的 commons/rule-harvest + rule-jury + rule-promote。
 // ============================================================
 
 // ============================================================
 // 类型定义
 // ============================================================
 
-export interface MarketHarvestRuleArgs {
+export interface CommonsHarvestRuleArgs {
   /** 操作：harvest=提炼规则候选 / full=三步全跑（提炼→评审→晋升） */
   action?: 'harvest' | 'full';
   /** 可选：注入的案例文本（FDE delivery-report 格式） */
   case_texts?: string[];
 }
 
-export interface MarketHarvestRuleResult {
+export interface CommonsHarvestRuleResult {
   text: string;
   data: {
     ok: boolean;
@@ -41,7 +41,7 @@ export interface MarketHarvestRuleResult {
  * @param args 入参
  * @returns 结果
  */
-export async function marketHarvestRule(args: MarketHarvestRuleArgs): Promise<MarketHarvestRuleResult> {
+export async function commonsHarvestRule(args: CommonsHarvestRuleArgs): Promise<CommonsHarvestRuleResult> {
   const action = args.action ?? 'harvest';
 
   try {
@@ -108,7 +108,7 @@ export async function marketHarvestRule(args: MarketHarvestRuleArgs): Promise<Ma
     };
   } catch (err) {
     return {
-      text: `[sofagent] market_harvest_rule 失败: ${err instanceof Error ? err.message : String(err)}`,
+      text: `[sofagent] commons_harvest_rule 失败: ${err instanceof Error ? err.message : String(err)}`,
       data: { ok: false, error: err instanceof Error ? err.message : String(err) },
       isError: true,
     };

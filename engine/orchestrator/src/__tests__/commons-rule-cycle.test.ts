@@ -1,5 +1,5 @@
 // ============================================================
-// market-rule-cycle.test.ts · 评估体系三步闭环测试（v1.3.4 交付 5）
+// commons-rule-cycle.test.ts · 评估体系三步闭环测试（v1.3.4 交付 5）
 //
 // 验收：
 //   - 第一步 harvest：低分差评 + 反复失败 + 案例文本 → 规则候选（fixture mock）
@@ -20,25 +20,25 @@ import {
   harvestFromCaseTexts,
   LOW_SCORE_THRESHOLD,
   REPEAT_FAIL_THRESHOLD,
-} from '../market/rule-harvest';
+} from '../commons/rule-harvest';
 import {
   juryRules,
   benchmarkRule,
   requestBusinessApproval,
   SCORE_DELTA_THRESHOLD,
-} from '../market/rule-jury';
+} from '../commons/rule-jury';
 import {
   promoteRules,
   promoteRule,
   isAlreadyBuiltin,
-} from '../market/rule-promote';
+} from '../commons/rule-promote';
 import { builtinQualityRules } from '../refine-agent/quality-rule-set';
 import {
   FIXTURE_LOW_SCORE_RATINGS,
   FIXTURE_REPEAT_FAIL_CASES,
   FIXTURE_GOLDEN_SET,
   FIXTURE_CASE_TEXTS,
-} from './fixtures/market-rule-fixtures';
+} from './fixtures/commons-rule-fixtures';
 
 describe('评估体系三步闭环（rule-harvest → rule-jury → rule-promote）', { timeout: 20000 }, () => {
   describe('第一步 harvest：真实案例长规则', () => {

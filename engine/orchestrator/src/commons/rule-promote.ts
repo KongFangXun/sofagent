@@ -30,7 +30,7 @@ export interface PromoteInput {
   benchmarks: Array<{ ruleId: string; benchmarkHash: string; scoreDelta: number }>;
   /** 业务方签字 */
   approvals: Array<{ ruleId: string; signedBy?: string }>;
-  /** 市场调用量数据（证据三件套之一） */
+  /** 公地调用量数据（证据三件套之一） */
   invokeStats?: Array<{ capabilityId: string; invokeCount: number }>;
   /** Agent ID（审计用） */
   agentId?: string;
@@ -123,13 +123,13 @@ export function promoteRules(input: PromoteInput): PromoteResult {
 
     try {
       emitDecision({
-        agentId: input.agentId ?? 'market-rule-promote',
-        sessionId: `market-promote-${rule.id}`,
+        agentId: input.agentId ?? 'commons-rule-promote',
+        sessionId: `commons-promote-${rule.id}`,
         kind: 'EVOLUTION',
         moment: 'EVOLVE',
         why: {
           text: `质量规则「${rule.description}」晋升到 builtin（team_feedback → builtin）`,
-          tags: ['market', 'rule-promote', 'evolution'],
+          tags: ['commons', 'rule-promote', 'evolution'],
           confidence: 'high',
         },
         artifactRef: rule.id,

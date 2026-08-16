@@ -214,12 +214,12 @@ describe('decision-log emitDecision', () => {
     expect(parsed.kind).toBe('TEAM');
   });
 
-  // ── v1.3.4 新增：MARKET kind（市场能力动作）──
+  // ── v1.3.4 新增：COMMONS kind（公地能力动作）──
 
-  it('MARKET kind 正确写入（市场能力发布）', () => {
+  it('COMMONS kind 正确写入（公地能力发布）', () => {
     emitDecision(
       makeInput({
-        kind: 'MARKET',
+        kind: 'COMMONS',
         moment: 'DEPLOY',
         why: '发布能力「财报分析 Skill」（skill/finance-report-skill@1.0.0）',
         evidence: ['scan-verdict: SAFE', 'tags: finance, report', 'owner: agent-fde-001'],
@@ -228,15 +228,15 @@ describe('decision-log emitDecision', () => {
     );
     const filePath = getDecisionLogPath(testDir);
     const parsed = JSON.parse(readFileSync(filePath, 'utf-8').trim().split('\n')[0]!) as DecisionLogEntry;
-    expect(parsed.kind).toBe('MARKET');
+    expect(parsed.kind).toBe('COMMONS');
     expect(parsed.moment).toBe('DEPLOY');
     expect(parsed.evidence).toEqual(['scan-verdict: SAFE', 'tags: finance, report', 'owner: agent-fde-001']);
   });
 
-  it('MARKET kind 拦截事件（DANGEROUS 被扫）正确写入', () => {
+  it('COMMONS kind 拦截事件（DANGEROUS 被扫）正确写入', () => {
     emitDecision(
       makeInput({
-        kind: 'MARKET',
+        kind: 'COMMONS',
         moment: 'DEPLOY',
         why: '能力「恶意 Skill」发布被 SkillScan 拦截（DANGEROUS）',
         evidence: ['verdict: DANGEROUS', 'reason: rm -rf / 危险删除'],
@@ -245,7 +245,7 @@ describe('decision-log emitDecision', () => {
     );
     const filePath = getDecisionLogPath(testDir);
     const parsed = JSON.parse(readFileSync(filePath, 'utf-8').trim().split('\n')[0]!) as DecisionLogEntry;
-    expect(parsed.kind).toBe('MARKET');
+    expect(parsed.kind).toBe('COMMONS');
     expect(parsed.evidence![0]).toContain('DANGEROUS');
   });
 });

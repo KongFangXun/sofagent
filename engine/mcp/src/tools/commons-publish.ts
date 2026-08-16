@@ -1,14 +1,14 @@
 // ============================================================
-// market-publish.ts · MCP tool: market_publish（v1.3.6 交付 1）
+// commons-publish.ts · MCP tool: commons_publish（v1.3.6 交付 1）
 //
-// 能力发布 tool——校验元数据完整性 + SkillScan 安全门 + 写入市场清单 + 审计。
+// 能力发布 tool——校验元数据完整性 + SkillScan 安全门 + 写入公地清单 + 审计。
 // 延迟导入 @sofagent/orchestrator 的 publishCapability（与 team-create 同模式）。
 // ============================================================
 
 import { loadEnvConfig } from '@sofagent/core';
 
-/** market_publish tool 入参 */
-export interface MarketPublishArgs {
+/** commons_publish tool 入参 */
+export interface CommonsPublishArgs {
   /** 能力元数据（JSON 对象） */
   metadata: {
     id: string;
@@ -24,8 +24,8 @@ export interface MarketPublishArgs {
   dataDir?: string;
 }
 
-/** market_publish tool 结果 */
-export interface MarketPublishResult {
+/** commons_publish tool 结果 */
+export interface CommonsPublishResult {
   text: string;
   data: {
     ok: boolean;
@@ -38,12 +38,12 @@ export interface MarketPublishResult {
 }
 
 /**
- * 发布能力到市场——延迟导入 orchestrator 的 publishCapability。
+ * 发布能力到公地——延迟导入 orchestrator 的 publishCapability。
  *
  * @param args 发布入参
  * @returns 发布结果
  */
-export function marketPublish(args: MarketPublishArgs): MarketPublishResult {
+export function commonsPublish(args: CommonsPublishArgs): CommonsPublishResult {
   const { metadata, dataDir } = args;
 
   if (!metadata || typeof metadata !== 'object') {
@@ -56,7 +56,7 @@ export function marketPublish(args: MarketPublishArgs): MarketPublishResult {
 
   // 延迟导入 orchestrator（与 team-create 同模式）
   let publishCapability: (
-    meta: MarketPublishArgs['metadata'],
+    meta: CommonsPublishArgs['metadata'],
     dataDir?: string,
   ) => {
     ok: boolean;

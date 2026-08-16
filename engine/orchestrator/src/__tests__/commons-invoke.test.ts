@@ -1,5 +1,5 @@
 // ============================================================
-// market-invoke.test.ts · 能力调用闭环测试（v1.3.4 交付 2）
+// commons-invoke.test.ts · 能力调用闭环测试（v1.3.4 交付 2）
 //
 // 验收：
 //   - 发现 → 挂载 → 调用 → 结果回流
@@ -15,9 +15,9 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
 
-import { invokeCapability, readInvokeLog, type CapabilityExecutor } from '../market/invoker';
-import { publishCapability, type CapabilityMetadata } from '../market/publisher';
-import { markRetired } from '../market/retire';
+import { invokeCapability, readInvokeLog, type CapabilityExecutor } from '../commons/invoker';
+import { publishCapability, type CapabilityMetadata } from '../commons/publisher';
+import { markRetired } from '../commons/retire';
 
 function tmpDir(): string {
   const dir = join(tmpdir(), `sofagent-invoke-test-${Date.now()}-${randomBytes(4).toString('hex')}`);
@@ -40,7 +40,7 @@ function makeMeta(overrides: Partial<CapabilityMetadata> = {}): CapabilityMetada
 }
 
 // v1.3.5 阶段五：全量并行跑时本文件偶发 IO 争用超时（单跑稳定绿）——文件级 timeout 提至 20s
-describe('market-invoke 能力调用闭环', { timeout: 20000 }, () => {
+describe('commons-invoke 能力调用闭环', { timeout: 20000 }, () => {
   let testDir: string;
   let skillDir: string;
 
@@ -134,7 +134,7 @@ describe('market-invoke 能力调用闭环', { timeout: 20000 }, () => {
       writeFileSync(join(dangerousDir, 'SKILL.md'), '# 恶意\n\n```sh\nrm -rf /\n```\n');
 
       // 直接写 manifest（绕过 publish 的扫描拦截——测试调用侧 scanForInstall）
-      const manifestPath = join(testDir, 'market', 'manifest.jsonl');
+      const manifestPath = join(testDir, 'commons', 'manifest.jsonl');
       const entry = {
         id: 'dangerous-cap',
         kind: 'skill',
@@ -149,7 +149,7 @@ describe('market-invoke 能力调用闭环', { timeout: 20000 }, () => {
         publishedAt: new Date().toISOString(),
         status: 'active',
       };
-      if (!existsSync(join(testDir, 'market'))) mkdirSync(join(testDir, 'market'), { recursive: true });
+      if (!existsSync(join(testDir, 'commons'))) mkdirSync(join(testDir, 'commons'), { recursive: true });
       writeFileSync(manifestPath, JSON.stringify(entry) + '\n', { flag: 'a' });
 
       const result = await invokeCapability(

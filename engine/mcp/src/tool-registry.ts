@@ -19,7 +19,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——52 个 tool（v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore 新增；v1.3.4：market_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——53 个 tool（v1.3.6：workflow_submit 新增；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -497,8 +497,8 @@ export const TOOLS: ToolDef[] = [
   },
   {
     // v1.3.4 (交付 1)：能力发布
-    name: 'market_publish',
-    description: '能力发布（v1.3.4 L3 组织能力市场）——将 Skill/Agent/流程发布到企业能力市场。发布前校验元数据完整性 + SkillScan 安全门（DANGEROUS 拦截）。发布后能力可被其他 Agent 检索发现。全程记审计（kind=MARKET）。',
+    name: 'commons_publish',
+    description: '能力发布（v1.3.4 L3 组织能力公地）——将 Skill/Agent/流程发布到企业能力公地。发布前校验元数据完整性 + SkillScan 安全门（DANGEROUS 拦截）。发布后能力可被其他 Agent 检索发现。全程记审计（kind=COMMONS）。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -522,8 +522,8 @@ export const TOOLS: ToolDef[] = [
   },
   {
     // v1.3.4 (交付 1)：能力检索
-    name: 'market_search',
-    description: '能力检索（v1.3.4 L3 组织能力市场）——按标签/关键词/类型检索企业能力市场目录。复用 searchKnowledge 的模糊匹配链路（匹配名称/描述/标签）。无参数列出全部已发布能力。',
+    name: 'commons_search',
+    description: '能力检索（v1.3.4 L3 组织能力公地）——按标签/关键词/类型检索企业能力公地目录。复用 searchKnowledge 的模糊匹配链路（匹配名称/描述/标签）。无参数列出全部已发布能力。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -535,12 +535,12 @@ export const TOOLS: ToolDef[] = [
   },
   {
     // v1.3.4 (交付 2)：能力调用
-    name: 'market_invoke',
-    description: '能力调用（v1.3.4 L3 组织能力市场）——发现能力 → 挂载调用 → 结果回流。挂载前强制 SkillScan（DANGEROUS 拦截 / SUSPICIOUS 走 HITL 人工确认）。调用全程审计（kind=MARKET，谁调了谁的能力、结果如何）。',
+    name: 'commons_invoke',
+    description: '能力调用（v1.3.4 L3 组织能力公地）——发现能力 → 挂载调用 → 结果回流。挂载前强制 SkillScan（DANGEROUS 拦截 / SUSPICIOUS 走 HITL 人工确认）。调用全程审计（kind=COMMONS，谁调了谁的能力、结果如何）。',
     inputSchema: {
       type: 'object',
       properties: {
-        capability_id: { type: 'string', description: '能力 ID（必填——先 market_search 发现）' },
+        capability_id: { type: 'string', description: '能力 ID（必填——先 commons_search 发现）' },
         caller_agent_id: { type: 'string', description: '调用者 agentId（必填）' },
         input: { description: '调用入参（透传给被调能力）' },
       },
@@ -549,8 +549,8 @@ export const TOOLS: ToolDef[] = [
   },
   {
     // v1.3.4 (交付 2)：能力评价
-    name: 'market_rate',
-    description: '能力评价（v1.3.4 L3 组织能力市场）——调用后累积评分（0.0~1.0），加权排序让高频高价值能力自然上浮。评分公式 = trust(owner) × 平均评分 × log(调用量+1)。防刷：同一评价者对同一能力仅一票（后评覆盖前评）。评价回流同时更新 owner trust 信誉分。',
+    name: 'commons_rate',
+    description: '能力评价（v1.3.4 L3 组织能力公地）——调用后累积评分（0.0~1.0），加权排序让高频高价值能力自然上浮。评分公式 = trust(owner) × 平均评分 × log(调用量+1)。防刷：同一评价者对同一能力仅一票（后评覆盖前评）。评价回流同时更新 owner trust 信誉分。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -565,8 +565,8 @@ export const TOOLS: ToolDef[] = [
   },
   {
     // v1.3.4 (交付 3)：能力退役
-    name: 'market_retire',
-    description: '能力退役/恢复（v1.3.4 L3 组织能力市场养护环）——标记能力为退役（不删除，可恢复，保留审计轨迹）。强制 owner 确认（confirmed=true 才执行）。退役触发 owner trust 下调。action=retire 退役 / restore 恢复 / scan 扫描退役候选（低评分/低调用量）。',
+    name: 'commons_retire',
+    description: '能力退役/恢复（v1.3.4 L3 组织能力公地养护环）——标记能力为退役（不删除，可恢复，保留审计轨迹）。强制 owner 确认（confirmed=true 才执行）。退役触发 owner trust 下调。action=retire 退役 / restore 恢复 / scan 扫描退役候选（低评分/低调用量）。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -580,8 +580,8 @@ export const TOOLS: ToolDef[] = [
   },
   {
     // v1.3.4 (交付 5)：规则提炼
-    name: 'market_harvest_rule',
-    description: '评估体系三步（v1.3.4 L3 组织能力市场）——从市场调用日志低分差评 + Refine 循环反复触发 case 提炼质量规则候选（action=harvest），或全跑三步（action=full：提炼→业务方评审→晋升 builtin）。让 Refine 质量规则从生产中长出来。晋升记录 kind=EVOLUTION。',
+    name: 'commons_harvest_rule',
+    description: '评估体系三步（v1.3.4 L3 组织能力公地）——从公地调用日志低分差评 + Refine 循环反复触发 case 提炼质量规则候选（action=harvest），或全跑三步（action=full：提炼→业务方评审→晋升 builtin）。让 Refine 质量规则从生产中长出来。晋升记录 kind=EVOLUTION。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -646,6 +646,20 @@ export const TOOLS: ToolDef[] = [
         comment: { type: 'string', description: '决策备注（写入 decision-log）' },
       },
       required: ['sha'],
+    },
+  },
+  {
+    // v1.3.6 (交付 ①)：Workflow 外部提交通道——模型层生成的 workflow 从 MCP 进约束层
+    name: 'workflow_submit',
+    description: 'Workflow 外部提交通道（v1.3.6）——模型层生成的 workflow（YAML/JSON）从 MCP 进入约束层：schema 校验（单一事实源 workflow.schema.json）→ parser 解析（DAG/节点/审阅协议 merge_criteria+approver）→ 可执行句柄。mode=validate（默认）只校验返回结构化结论；mode=run 校验通过后经 dag-runner 执行。非法 workflow 返回结构化错误清单（issues），绝不 crash。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workflow: { type: 'string', description: 'workflow 文本（YAML 或 JSON——YAML 是 JSON 超集，统一走 YAML 解析）' },
+        mode: { type: 'string', enum: ['validate', 'run'], description: '执行模式：validate=只校验（默认）/ run=校验后执行', default: 'validate' },
+        task: { type: 'string', description: 'run 模式下的任务描述（供编排主 Agent 组装上下文）' },
+      },
+      required: ['workflow'],
     },
   },
 ];

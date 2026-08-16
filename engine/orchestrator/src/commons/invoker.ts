@@ -1,7 +1,7 @@
 // ============================================================
 // invoker.ts · 能力调用 + 结果记录（v1.3.6 交付 2）
 //
-// L3 组织能力市场的「调用」环节——发现能力 → 一键挂载到 Agent
+// L3 组织能力公地的「调用」环节——发现能力 → 一键挂载到 Agent
 // （复用 registry.ts 的 listAgents 注册机制）→ 调用 → 记录结果。
 //
 // 安全门：挂载前必须过 SkillScan（交付 4 的 scanForInstall）：
@@ -9,7 +9,7 @@
 //   - SUSPICIOUS → 复用 v1.3.1 HITL 弹人工确认
 //   - SAFE → 直接放行
 //
-// 调用全程审计：kind=MARKET（谁调了谁的能力、结果如何）。
+// 调用全程审计：kind=COMMONS（谁调了谁的能力、结果如何）。
 // ============================================================
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
@@ -79,7 +79,7 @@ export type CapabilityExecutor = (input: {
 /** 调用日志路径 */
 export function resolveInvokeLogPath(dataDir?: string): string {
   const dir = dataDir ?? loadEnvConfig().dataDir;
-  return join(dir, 'market', 'invoke-log.jsonl');
+  return join(dir, 'commons', 'invoke-log.jsonl');
 }
 
 /** 调用日志记录 */
@@ -149,7 +149,7 @@ function appendInvokeLog(entry: InvokeLogEntry, dataDir?: string): void {
  *      - SUSPICIOUS → 标记 needHITL（outcome=hitl_pending）
  *      - SAFE → 放行
  *   4. 执行：调用 executor（注入）
- *   5. 记录：invoke-log + invoke-count + 审计（kind=MARKET）
+ *   5. 记录：invoke-log + invoke-count + 审计（kind=COMMONS）
  *
  * @param input 调用入参
  * @param executor 能力执行函数（必填——真实执行或 mock）
@@ -172,7 +172,7 @@ export async function invokeCapability(
       capabilityName: '',
       outcome: 'blocked',
       durationMs: Date.now() - startTime,
-      reason: `能力「${capabilityId}」不存在（先 market_search 发现）`,
+      reason: `能力「${capabilityId}」不存在（先 commons_search 发现）`,
     };
   }
   const capName = cap.name;
@@ -263,7 +263,7 @@ export async function invokeCapability(
 }
 
 /**
- * 记录调用日志 + 审计（kind=MARKET）。
+ * 记录调用日志 + 审计（kind=COMMONS）。
  */
 function logAndAudit(
   result: InvokeResult,
@@ -283,16 +283,16 @@ function logAndAudit(
     dataDir,
   );
 
-  // 审计（kind=MARKET——市场调用走审计引擎）
+  // 审计（kind=COMMONS——公地调用走审计引擎）
   try {
     emitDecision({
       agentId: callerAgentId,
-      sessionId: `market-invoke-${result.capabilityId}`,
-      kind: 'MARKET',
+      sessionId: `commons-invoke-${result.capabilityId}`,
+      kind: 'COMMONS',
       moment: 'ACT',
       why: {
         text: `调用能力「${result.capabilityName}」(${result.capabilityId}) → ${result.outcome}`,
-        tags: ['market', 'invoke', result.outcome],
+        tags: ['commons', 'invoke', result.outcome],
         confidence: result.outcome === 'success' ? 'high' : 'med',
       },
       artifactRef: result.capabilityId,

@@ -1,7 +1,7 @@
 // ============================================================
 // owner.ts · 能力维护人声明 + trust 信誉分（v1.3.6 交付 3）
 //
-// L3 组织能力市场的「养护环」核心——每个能力强制声明维护人（owner），
+// L3 组织能力公地的「养护环」核心——每个能力强制声明维护人（owner），
 // owner 关联 trust 信誉分（对接 v1.3.1 Agent 身份码 agentId）。
 //
 // trust 机制（评分公式的第一因子，交付 2 rating.ts 调用）：
@@ -11,10 +11,10 @@
 //   - 三态：初始 0.5 → 收到 5 条好评 ≥0.6 → 退役后 ≤0.4
 //
 // 更新时机（交付 2 / 交付 3 共同维护）：
-//   - 每次 market_rate 评价回流（updateTrustOnRating）
-//   - market_retire 退役时（penalizeOnRetire）
+//   - 每次 commons_rate 评价回流（updateTrustOnRating）
+//   - commons_retire 退役时（penalizeOnRetire）
 //
-// 持久化：<dataDir>/market/owners.jsonl（append-only，同 ownerId 取末行）
+// 持久化：<dataDir>/commons/owners.jsonl（append-only，同 ownerId 取末行）
 // ============================================================
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
@@ -65,7 +65,7 @@ export interface OwnerRecord {
 /** owners.jsonl 路径解析 */
 export function resolveOwnersPath(dataDir?: string): string {
   const dir = dataDir ?? loadEnvConfig().dataDir;
-  return join(dir, 'market', 'owners.jsonl');
+  return join(dir, 'commons', 'owners.jsonl');
 }
 
 /**
@@ -163,14 +163,14 @@ export function declareOwner(
   try {
     emitDecision({
       agentId: ownerId,
-      sessionId: `market-owner-${ownerId}`,
+      sessionId: `commons-owner-${ownerId}`,
       kind: 'EVOLUTION',
       moment: 'DEPLOY',
       why: {
         text: existing
           ? `owner「${ownerId}」发布新能力（累计 ${rec.capabilityCount} 个，trust=${rec.trust.toFixed(2)}）`
           : `声明 owner「${ownerId}」（初始 trust=${TRUST_INITIAL}）`,
-        tags: ['market', 'owner', existing ? 'publish' : 'declare'],
+        tags: ['commons', 'owner', existing ? 'publish' : 'declare'],
         confidence: 'high',
       },
       evidence: [
@@ -244,7 +244,7 @@ export function classifyTrust(trust: number): 'initial' | 'good' | 'bad' {
 }
 
 /**
- * 评价回流时更新 trust（market_rate 后调用）。
+ * 评价回流时更新 trust（commons_rate 后调用）。
  *
  * 逻辑：
  *   - 评分 ≥ 0.7（好评）→ upvotes++，达到 5 条 → trust 上调到 ≥ 0.6
@@ -289,7 +289,7 @@ export function updateTrustOnRating(
 }
 
 /**
- * 能力退役时惩罚 trust（market_retire 后调用）。
+ * 能力退役时惩罚 trust（commons_retire 后调用）。
  *
  * 退役是负面信号 → trust 下调（向 ≤ 0.4 靠拢）。
  *

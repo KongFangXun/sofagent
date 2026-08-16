@@ -1,5 +1,5 @@
 // ============================================================
-// market-owner.test.ts · owner 声明 + trust 三态 + 退役恢复测试（v1.3.4 交付 3）
+// commons-owner.test.ts · owner 声明 + trust 三态 + 退役恢复测试（v1.3.4 交付 3）
 //
 // 验收：
 //   - owner 声明（新建初始 trust=0.5）
@@ -28,14 +28,14 @@ import {
   TRUST_GOOD_THRESHOLD,
   TRUST_BAD_THRESHOLD,
   TRUST_UPVOTE_COUNT,
-} from '../market/owner';
+} from '../commons/owner';
 import {
   markRetired,
   restoreCapability,
   getCapabilityStatus,
   scanRetireCandidates,
-} from '../market/retire';
-import { publishCapability, type CapabilityMetadata } from '../market/publisher';
+} from '../commons/retire';
+import { publishCapability, type CapabilityMetadata } from '../commons/publisher';
 
 function tmpDir(): string {
   const dir = join(tmpdir(), `sofagent-owner-test-${Date.now()}-${randomBytes(4).toString('hex')}`);
@@ -59,7 +59,7 @@ function makeMeta(overrides: Partial<CapabilityMetadata> = {}): CapabilityMetada
 }
 
 // v1.3.5 阶段五：全量并行 IO 争用偶发超时——文件级 timeout 20s
-describe('market-owner + retire 养护环', { timeout: 20000 }, () => {
+describe('commons-owner + retire 养护环', { timeout: 20000 }, () => {
   let testDir: string;
   let skillDir: string;
 

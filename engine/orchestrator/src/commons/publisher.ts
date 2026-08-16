@@ -1,13 +1,13 @@
 // ============================================================
 // publisher.ts · 能力发布（v1.3.6 交付 1）
 //
-// L3 组织能力市场的「发布」环节——Skill / Agent / 流程打包为可发布单元，
+// L3 组织能力公地的「发布」环节——Skill / Agent / 流程打包为可发布单元，
 // 发布前校验元数据完整性 + SkillScan 安全门（交付 4 接入）。
 //
 // 复用机制（不重写）：
 //   - SkillScan：交付 4 的 skill-scan.ts → scanForPublish()（发布者侧扫描）
-//   - 目录生成：catalog.ts（发布成功后写入 market/manifest.jsonl）
-//   - 审计：emitDecision（kind=MARKET, moment=DEPLOY）
+//   - 目录生成：catalog.ts（发布成功后写入 commons/manifest.jsonl）
+//   - 审计：emitDecision（kind=COMMONS, moment=DEPLOY）
 // ============================================================
 
 import { existsSync, writeFileSync, readFileSync, mkdirSync } from 'fs';
@@ -127,13 +127,13 @@ export function scanSkillSafetyStub(): ScanResult {
 // ────────────────────────────────────────────────────────────
 
 /**
- * 发布一个能力到市场。
+ * 发布一个能力到公地。
  *
  * 流程：
  *   1. 校验元数据完整性（必填字段 + owner + kind + tags）
  *   2. SkillScan 安全扫描（DANGEROUS → 拒绝发布）
- *   3. 写入 market/manifest.jsonl（能力清单——catalog.ts 读取此文件生成目录）
- *   4. 审计（kind=MARKET, moment=DEPLOY）
+ *   3. 写入 commons/manifest.jsonl（能力清单——catalog.ts 读取此文件生成目录）
+ *   4. 审计（kind=COMMONS, moment=DEPLOY）
  *
  * @param meta 能力元数据
  * @param dataDir 可选的数据目录覆盖（测试用）
@@ -159,12 +159,12 @@ export function publishCapability(
     try {
       emitDecision({
         agentId: meta.owner,
-        sessionId: `market-publish-${meta.id}`,
-        kind: 'MARKET',
+        sessionId: `commons-publish-${meta.id}`,
+        kind: 'COMMONS',
         moment: 'DEPLOY',
         why: {
           text: `能力「${meta.name}」发布被 SkillScan 拦截（DANGEROUS）`,
-          tags: ['market', 'publish', 'blocked', meta.id],
+          tags: ['commons', 'publish', 'blocked', meta.id],
           confidence: 'high',
         },
         artifactRef: meta.sourcePath,
@@ -183,10 +183,10 @@ export function publishCapability(
     };
   }
 
-  // 3. 写入市场清单（market/manifest.jsonl）
+  // 3. 写入公地清单（commons/manifest.jsonl）
   const dir = dataDir ?? loadEnvConfig().dataDir;
-  const marketDir = join(dir, 'market');
-  const manifestPath = join(marketDir, 'manifest.jsonl');
+  const commonsDir = join(dir, 'commons');
+  const manifestPath = join(commonsDir, 'manifest.jsonl');
   const entry = {
     ...meta,
     scanVerdict: scan.verdict,
@@ -196,29 +196,29 @@ export function publishCapability(
   };
 
   try {
-    if (!existsSync(marketDir)) {
-      mkdirSync(marketDir, { recursive: true });
+    if (!existsSync(commonsDir)) {
+      mkdirSync(commonsDir, { recursive: true });
     }
     writeFileSync(manifestPath, JSON.stringify(entry) + '\n', { flag: 'a' });
   } catch (err) {
     return {
       ok: false,
-      reason: `写入市场清单失败: ${err instanceof Error ? err.message : String(err)}`,
+      reason: `写入公地清单失败: ${err instanceof Error ? err.message : String(err)}`,
       scan,
       publishedAt,
     };
   }
 
-  // 4. 审计（kind=MARKET, moment=DEPLOY）
+  // 4. 审计（kind=COMMONS, moment=DEPLOY）
   try {
     emitDecision({
       agentId: meta.owner,
-      sessionId: `market-publish-${meta.id}`,
-      kind: 'MARKET',
+      sessionId: `commons-publish-${meta.id}`,
+      kind: 'COMMONS',
       moment: 'DEPLOY',
       why: {
         text: `发布能力「${meta.name}」(${meta.kind}/${meta.id}@${meta.version})`,
-        tags: ['market', 'publish', meta.kind, meta.id],
+        tags: ['commons', 'publish', meta.kind, meta.id],
         confidence: 'high',
       },
       artifactRef: manifestPath,

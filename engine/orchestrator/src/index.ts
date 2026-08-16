@@ -21,7 +21,20 @@ export {
   resolveAgent,
   WorkflowParseError,
 } from './workflow-parser';
-export type { WorkflowNode, ParsedWorkflow, SubAgentConfig } from './workflow-parser';
+export type { WorkflowNode, ParsedWorkflow, SubAgentConfig, MergeCriterion, WorkflowApprover } from './workflow-parser';
+
+// Workflow Container（外部提交通道 · v1.3.6 交付 ①）
+export {
+  submitWorkflow,
+  WorkflowSubmitError,
+  validateMergeCriteria,
+  validateApprover,
+  WORKFLOW_SCHEMA,
+} from './workflow/container';
+export type { WorkflowSubmitInput, WorkflowContainerHandle } from './workflow/container';
+// DSH workflow seam 互转契约位（v1.3.6 交付 ①——真实互转待 DSH 正式版）
+export { createDshSeamConverter, DSH_SEAM_FIELD_MAPPINGS } from './workflow/dsh-seam';
+export type { DshSeamConverter, DshSeamFieldMapping } from './workflow/dsh-seam';
 
 // Route（入口路由 · v1.3.3 新增）
 export { routeRequest } from './route/route-request';
@@ -511,22 +524,22 @@ export type {
   WaveTrigger,
 } from './loop-state-extractor';
 
-// v1.3.4 交付 1+4：L3 组织能力市场（发布→发现 + SkillScan 安全门）
-export { publishCapability, validateMetadata, scanSkillSafetyStub } from './market/publisher';
-export type { CapabilityKind, CapabilityMetadata, PublishResult } from './market/publisher';
+// v1.3.4 交付 1+4：L3 组织能力公地（发布→发现 + SkillScan 安全门）
+export { publishCapability, validateMetadata, scanSkillSafetyStub } from './commons/publisher';
+export type { CapabilityKind, CapabilityMetadata, PublishResult } from './commons/publisher';
 export {
   readCatalog,
   searchCatalog,
   searchByTag,
   searchByKind,
   getCapability,
-} from './market/catalog';
-export type { CatalogEntry, CatalogSearchResult } from './market/catalog';
-export { scanForPublish, scanForInstall, mapSafetyResult } from './market/skill-scan';
-export type { ScanResult, ScanVerdict } from './market/skill-scan';
+} from './commons/catalog';
+export type { CatalogEntry, CatalogSearchResult } from './commons/catalog';
+export { scanForPublish, scanForInstall, mapSafetyResult } from './commons/skill-scan';
+export type { ScanResult, ScanVerdict } from './commons/skill-scan';
 // v1.3.4 交付 2：调用与评价
-export { invokeCapability, readInvokeLog } from './market/invoker';
-export type { InvokeInput, InvokeResult, InvokeOutcome, CapabilityExecutor, InvokeLogEntry } from './market/invoker';
+export { invokeCapability, readInvokeLog } from './commons/invoker';
+export type { InvokeInput, InvokeResult, InvokeOutcome, CapabilityExecutor, InvokeLogEntry } from './commons/invoker';
 export {
   addRating,
   readRatings,
@@ -540,8 +553,8 @@ export {
   readInvokeCounts,
   appendInvokeCount,
   COLD_START_THRESHOLD,
-} from './market/rating';
-export type { RatingRecord, AggregatedRating } from './market/rating';
+} from './commons/rating';
+export type { RatingRecord, AggregatedRating } from './commons/rating';
 // v1.3.4 交付 3：养护环（owner + 退役）
 export {
   declareOwner,
@@ -556,8 +569,8 @@ export {
   TRUST_GOOD_THRESHOLD,
   TRUST_BAD_THRESHOLD,
   TRUST_UPVOTE_COUNT,
-} from './market/owner';
-export type { OwnerRecord } from './market/owner';
+} from './commons/owner';
+export type { OwnerRecord } from './commons/owner';
 export {
   markRetired,
   restoreCapability,
@@ -565,8 +578,8 @@ export {
   scanRetireCandidates,
   LOW_INVOKE_THRESHOLD,
   LOW_RATING_THRESHOLD,
-} from './market/retire';
-export type { RetireReason, RetireCandidate } from './market/retire';
+} from './commons/retire';
+export type { RetireReason, RetireCandidate } from './commons/retire';
 // v1.3.4 交付 5：评估体系三步
 export {
   harvestRules,
@@ -577,21 +590,21 @@ export {
   harvestFromCaseTexts,
   LOW_SCORE_THRESHOLD,
   REPEAT_FAIL_THRESHOLD,
-} from './market/rule-harvest';
-export type { HarvestInput, HarvestResult } from './market/rule-harvest';
+} from './commons/rule-harvest';
+export type { HarvestInput, HarvestResult } from './commons/rule-harvest';
 export {
   juryRules,
   benchmarkRule,
   requestBusinessApproval,
   SCORE_DELTA_THRESHOLD,
-} from './market/rule-jury';
-export type { JuryInput, JuryResult, RuleBenchmarkResult } from './market/rule-jury';
+} from './commons/rule-jury';
+export type { JuryInput, JuryResult, RuleBenchmarkResult } from './commons/rule-jury';
 export {
   promoteRules,
   promoteRule,
   isAlreadyBuiltin,
-} from './market/rule-promote';
-export type { PromoteInput, PromoteResult } from './market/rule-promote';
+} from './commons/rule-promote';
+export type { PromoteInput, PromoteResult } from './commons/rule-promote';
 
 // v1.3.4 增量：编排层与执行层分离
 export {

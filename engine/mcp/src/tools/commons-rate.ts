@@ -1,17 +1,17 @@
 // ============================================================
-// market-rate.ts · MCP tool: market_rate（v1.3.6 交付 2）
+// commons-rate.ts · MCP tool: commons_rate（v1.3.6 交付 2）
 //
 // 能力评价——调用后累积评分，加权排序让高频高价值能力自然上浮。
 // 防刷：同一 owner 对同一能力仅一票（后评覆盖前评）。
 //
-// 复用 @sofagent/orchestrator 的 market/rating.ts。
+// 复用 @sofagent/orchestrator 的 commons/rating.ts。
 // ============================================================
 
 // ============================================================
 // 类型定义
 // ============================================================
 
-export interface MarketRateArgs {
+export interface CommonsRateArgs {
   /** 能力 ID（必填） */
   capability_id: string;
   /** 评价者 agentId（必填——对接身份码） */
@@ -24,7 +24,7 @@ export interface MarketRateArgs {
   comment?: string;
 }
 
-export interface MarketRateResult {
+export interface CommonsRateResult {
   text: string;
   data: {
     ok: boolean;
@@ -51,10 +51,10 @@ export interface MarketRateResult {
  * @param args 入参
  * @returns 评价后的聚合评分
  */
-export async function marketRate(args: MarketRateArgs): Promise<MarketRateResult> {
+export async function commonsRate(args: CommonsRateArgs): Promise<CommonsRateResult> {
   if (!args.capability_id || !args.rater_id || !args.owner_agent_id) {
     return {
-      text: '[sofagent] market_rate 错误: capability_id、rater_id、owner_agent_id 必填',
+      text: '[sofagent] commons_rate 错误: capability_id、rater_id、owner_agent_id 必填',
       data: { ok: false, error: 'capability_id、rater_id、owner_agent_id 必填' },
       isError: true,
     };
@@ -62,7 +62,7 @@ export async function marketRate(args: MarketRateArgs): Promise<MarketRateResult
 
   if (typeof args.score !== 'number' || args.score < 0 || args.score > 1) {
     return {
-      text: '[sofagent] market_rate 错误: score 必须在 [0.0, 1.0] 范围内',
+      text: '[sofagent] commons_rate 错误: score 必须在 [0.0, 1.0] 范围内',
       data: { ok: false, error: 'score 必须在 [0.0, 1.0] 范围内' },
       isError: true,
     };
@@ -106,7 +106,7 @@ export async function marketRate(args: MarketRateArgs): Promise<MarketRateResult
     };
   } catch (err) {
     return {
-      text: `[sofagent] market_rate 失败: ${err instanceof Error ? err.message : String(err)}`,
+      text: `[sofagent] commons_rate 失败: ${err instanceof Error ? err.message : String(err)}`,
       data: { ok: false, error: err instanceof Error ? err.message : String(err) },
       isError: true,
     };

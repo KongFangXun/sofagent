@@ -1,7 +1,7 @@
 // ============================================================
 // retire.ts · 失效判定 + 退役标记（v1.3.6 交付 3）
 //
-// L3 组织能力市场的「养护环」——能力失效后退役，但**不删除**（可恢复），
+// L3 组织能力公地的「养护环」——能力失效后退役，但**不删除**（可恢复），
 // 保留历史审计轨迹。
 //
 // 退役触发条件：
@@ -66,7 +66,7 @@ interface RetireStatusEntry {
 }
 
 /**
- * 读取市场能力的状态映射（manifest.jsonl 中 status 字段，末行覆盖）。
+ * 读取公地能力的状态映射（manifest.jsonl 中 status 字段，末行覆盖）。
  *
  * publisher 写入的条目含 status='active'，retire 追加 status='retired'。
  *
@@ -74,7 +74,7 @@ interface RetireStatusEntry {
  */
 function readStatusMap(dataDir?: string): Map<string, RetireStatusEntry> {
   const dir = dataDir ?? loadEnvConfig().dataDir;
-  const manifestPath = join(dir, 'market', 'manifest.jsonl');
+  const manifestPath = join(dir, 'commons', 'manifest.jsonl');
   const map = new Map<string, RetireStatusEntry>();
   if (!existsSync(manifestPath)) return map;
 
@@ -162,10 +162,10 @@ export function scanRetireCandidates(
  */
 function appendStatusRecord(rec: RetireStatusEntry, dataDir?: string): void {
   const dir = dataDir ?? loadEnvConfig().dataDir;
-  const marketDir = join(dir, 'market');
-  const manifestPath = join(marketDir, 'manifest.jsonl');
-  if (!existsSync(marketDir)) {
-    mkdirSync(marketDir, { recursive: true });
+  const commonsDir = join(dir, 'commons');
+  const manifestPath = join(commonsDir, 'manifest.jsonl');
+  if (!existsSync(commonsDir)) {
+    mkdirSync(commonsDir, { recursive: true });
   }
   writeFileSync(manifestPath, JSON.stringify(rec) + '\n', { flag: 'a' });
 }
@@ -231,12 +231,12 @@ export function markRetired(
   try {
     emitDecision({
       agentId: entry.owner,
-      sessionId: `market-retire-${capabilityId}`,
+      sessionId: `commons-retire-${capabilityId}`,
       kind: 'EVOLUTION',
       moment: 'EVOLVE',
       why: {
         text: `能力「${entry.name}」(${capabilityId}) 被退役（${reason}）`,
-        tags: ['market', 'retire', reason],
+        tags: ['commons', 'retire', reason],
         confidence: 'high',
       },
       artifactRef: capabilityId,
@@ -289,12 +289,12 @@ export function restoreCapability(
   try {
     emitDecision({
       agentId: entry.owner,
-      sessionId: `market-restore-${capabilityId}`,
+      sessionId: `commons-restore-${capabilityId}`,
       kind: 'EVOLUTION',
       moment: 'EVOLVE',
       why: {
         text: `能力「${entry.name}」(${capabilityId}) 从退役恢复为 active`,
-        tags: ['market', 'restore'],
+        tags: ['commons', 'restore'],
         confidence: 'med',
       },
       artifactRef: capabilityId,

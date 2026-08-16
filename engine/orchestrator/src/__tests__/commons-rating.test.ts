@@ -1,5 +1,5 @@
 // ============================================================
-// market-rating.test.ts · 评分聚合 + 加权排序 + 防刷测试（v1.3.4 交付 2）
+// commons-rating.test.ts · 评分聚合 + 加权排序 + 防刷测试（v1.3.4 交付 2）
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -19,9 +19,9 @@ import {
   getTrustStub,
   getTrustForRating,
   COLD_START_THRESHOLD,
-} from '../market/rating';
-import { declareOwner, updateTrustOnRating } from '../market/owner';
-import { publishCapability, type CapabilityMetadata } from '../market/publisher';
+} from '../commons/rating';
+import { declareOwner, updateTrustOnRating } from '../commons/owner';
+import { publishCapability, type CapabilityMetadata } from '../commons/publisher';
 
 function tmpDir(): string {
   const dir = join(tmpdir(), `sofagent-rating-test-${Date.now()}-${randomBytes(4).toString('hex')}`);
@@ -44,7 +44,7 @@ function makeMeta(overrides: Partial<CapabilityMetadata> = {}): CapabilityMetada
 }
 
 // v1.3.5 阶段五：全量并行 IO 争用偶发超时——文件级 timeout 20s
-describe('market-rating 评分聚合 + 防刷', { timeout: 20000 }, () => {
+describe('commons-rating 评分聚合 + 防刷', { timeout: 20000 }, () => {
   let testDir: string;
   let skillDir: string;
 

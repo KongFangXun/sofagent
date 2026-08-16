@@ -3,7 +3,7 @@
 // ============================================================
 //
 // 🔴 强制人审（破坏性操作——覆写工作区文件），交互模式与 promote_ab 同款
-// confirmed 门控（delete_entity / market_retire 仓库先例；不走 hitl/pending/
+// confirmed 门控（delete_entity / commons_retire 仓库先例；不走 hitl/pending/
 // 文件通道——该通道与 LOOP checkpoint 强耦合）：
 //
 //   human_confirmed ≠ true（默认）：

@@ -59,18 +59,19 @@ import { teamCreate } from './tools/team-create';
 import { teamBroadcast } from './tools/team-broadcast';
 import { refine } from './tools/refine';
 import { getDynamicTools, getDynamicTool, registerMemoryBackends } from './tools/memory-backend';
-// v1.3.4 交付 1：L3 组织能力市场
-import { marketPublish } from './tools/market-publish';
-import { marketSearch } from './tools/market-search';
-import { marketInvoke } from './tools/market-invoke';
-import { marketRate } from './tools/market-rate';
-import { marketRetire } from './tools/market-retire';
-import { marketHarvestRule } from './tools/market-harvest-rule';
+// v1.3.4 交付 1：L3 组织能力公地
+import { commonsPublish } from './tools/commons-publish';
+import { commonsSearch } from './tools/commons-search';
+import { commonsInvoke } from './tools/commons-invoke';
+import { commonsRate } from './tools/commons-rate';
+import { commonsRetire } from './tools/commons-retire';
+import { commonsHarvestRule } from './tools/commons-harvest-rule';
 // v1.3.5 交付 1+2：MCP 自进化闭环（ab-test ×2）+ 运维闭环（snapshot ×2）
 import { runAbTest } from './tools/run-ab-test';
 import { promoteAb } from './tools/promote-ab';
 import { snapshotList } from './tools/snapshot-list';
 import { snapshotRestore } from './tools/snapshot-restore';
+import { workflowSubmit } from './tools/workflow-submit';
 
 // ============================================================
 // 常量
@@ -239,19 +240,20 @@ class McpServer {
         case 'team_broadcast': { if (!args.team_id || !args.source || !args.intent || !args.target) { this.sendError(id, -32602, 'Missing required arguments: team_id, source, intent, and target'); break; } const tbr = teamBroadcast({ teamId: args.team_id as string, source: args.source as string, intent: args.intent as string, target: args.target as string, ...(typeof args.payload === 'string' ? { payload: args.payload } : {}) }); this.sendTool(id, tbr, tbr.isError); break; }
         // v1.3.3 新增 tool（交付 T03/T04）
         case 'refine': { if (!args.action) { this.sendError(id, -32602, 'Missing required argument: action'); break; } const rfr = await refine({ action: args.action as 'trigger' | 'query', ...(typeof args.agent_id === 'string' ? { agentId: args.agent_id } : {}), ...(typeof args.task === 'string' ? { task: args.task } : {}), ...(typeof args.team_id === 'string' ? { teamId: args.team_id } : {}) }); this.sendTool(id, rfr, rfr.isError); break; }
-        // v1.3.4 新增 tool（交付 1：L3 能力市场）
-        case 'market_publish': { if (!args.metadata) { this.sendError(id, -32602, 'Missing required argument: metadata'); break; } const mpr = marketPublish({ metadata: args.metadata as any }); this.sendTool(id, mpr, mpr.isError); break; }
-        case 'market_search': { const msr = marketSearch({ ...(typeof args.query === 'string' ? { query: args.query } : {}), ...(typeof args.tag === 'string' ? { tag: args.tag } : {}), ...(typeof args.kind === 'string' ? { kind: args.kind as 'skill' | 'agent' | 'flow' } : {}) }); this.sendTool(id, msr); break; }
-        // v1.3.4 新增 tool（交付 2/3/5：L3 能力市场调用/评价/退役/规则提炼）
-        case 'market_invoke': { if (!args.capability_id || !args.caller_agent_id) { this.sendError(id, -32602, 'Missing required arguments: capability_id and caller_agent_id'); break; } const mir = await marketInvoke({ capability_id: args.capability_id as string, caller_agent_id: args.caller_agent_id as string, ...(args.input !== undefined ? { input: args.input } : {}) }); this.sendTool(id, mir, mir.isError); break; }
-        case 'market_rate': { if (!args.capability_id || !args.rater_id || !args.owner_agent_id || typeof args.score !== 'number') { this.sendError(id, -32602, 'Missing required arguments: capability_id, rater_id, score, owner_agent_id'); break; } const mrr = await marketRate({ capability_id: args.capability_id as string, rater_id: args.rater_id as string, score: args.score as number, owner_agent_id: args.owner_agent_id as string, ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, mrr, mrr.isError); break; }
-        case 'market_retire': { if (!args.capability_id || !args.action) { this.sendError(id, -32602, 'Missing required arguments: capability_id and action'); break; } const mtr = await marketRetire({ capability_id: args.capability_id as string, action: args.action as 'retire' | 'restore' | 'scan', ...(args.reason ? { reason: args.reason as 'owner_request' | 'low_invoke' | 'low_rating' | 'manual' } : {}), ...(args.confirmed !== undefined ? { confirmed: args.confirmed as boolean } : {}) }); this.sendTool(id, mtr, mtr.isError); break; }
-        case 'market_harvest_rule': { const mhr = await marketHarvestRule({ ...(args.action ? { action: args.action as 'harvest' | 'full' } : {}), ...(args.case_texts ? { case_texts: args.case_texts as string[] } : {}) }); this.sendTool(id, mhr, mhr.isError); break; }
+        // v1.3.4 新增 tool（交付 1：L3 能力公地）
+        case 'commons_publish': { if (!args.metadata) { this.sendError(id, -32602, 'Missing required argument: metadata'); break; } const mpr = commonsPublish({ metadata: args.metadata as any }); this.sendTool(id, mpr, mpr.isError); break; }
+        case 'commons_search': { const msr = commonsSearch({ ...(typeof args.query === 'string' ? { query: args.query } : {}), ...(typeof args.tag === 'string' ? { tag: args.tag } : {}), ...(typeof args.kind === 'string' ? { kind: args.kind as 'skill' | 'agent' | 'flow' } : {}) }); this.sendTool(id, msr); break; }
+        // v1.3.4 新增 tool（交付 2/3/5：L3 能力公地调用/评价/退役/规则提炼）
+        case 'commons_invoke': { if (!args.capability_id || !args.caller_agent_id) { this.sendError(id, -32602, 'Missing required arguments: capability_id and caller_agent_id'); break; } const mir = await commonsInvoke({ capability_id: args.capability_id as string, caller_agent_id: args.caller_agent_id as string, ...(args.input !== undefined ? { input: args.input } : {}) }); this.sendTool(id, mir, mir.isError); break; }
+        case 'commons_rate': { if (!args.capability_id || !args.rater_id || !args.owner_agent_id || typeof args.score !== 'number') { this.sendError(id, -32602, 'Missing required arguments: capability_id, rater_id, score, owner_agent_id'); break; } const mrr = await commonsRate({ capability_id: args.capability_id as string, rater_id: args.rater_id as string, score: args.score as number, owner_agent_id: args.owner_agent_id as string, ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, mrr, mrr.isError); break; }
+        case 'commons_retire': { if (!args.capability_id || !args.action) { this.sendError(id, -32602, 'Missing required arguments: capability_id and action'); break; } const mtr = await commonsRetire({ capability_id: args.capability_id as string, action: args.action as 'retire' | 'restore' | 'scan', ...(args.reason ? { reason: args.reason as 'owner_request' | 'low_invoke' | 'low_rating' | 'manual' } : {}), ...(args.confirmed !== undefined ? { confirmed: args.confirmed as boolean } : {}) }); this.sendTool(id, mtr, mtr.isError); break; }
+        case 'commons_harvest_rule': { const mhr = await commonsHarvestRule({ ...(args.action ? { action: args.action as 'harvest' | 'full' } : {}), ...(args.case_texts ? { case_texts: args.case_texts as string[] } : {}) }); this.sendTool(id, mhr, mhr.isError); break; }
         // v1.3.5 交付 1+2：MCP 自进化闭环 + 运维闭环
         case 'run_ab_test': { if (!args.current || !args.candidate) { this.sendError(id, -32602, 'Missing required arguments: current and candidate'); break; } const abr = await runAbTest({ current: args.current as string, candidate: args.candidate as string, ...(typeof args.eval_set === 'string' ? { eval_set: args.eval_set } : {}), ...(typeof args.promote_threshold === 'number' ? { promote_threshold: args.promote_threshold } : {}), ...(typeof args.previous_wins === 'number' ? { previous_wins: args.previous_wins } : {}) }); this.sendTool(id, abr, abr.data.isError); break; }
         case 'promote_ab': { if (!args.current || !args.candidate) { this.sendError(id, -32602, 'Missing required arguments: current and candidate'); break; } const pbr = await promoteAb({ current: args.current as string, candidate: args.candidate as string, ...(args.human_confirmed !== undefined ? { human_confirmed: args.human_confirmed === true } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, pbr, pbr.data.isError); break; }
         case 'snapshot_list': { const slr = snapshotList({ ...(typeof args.project_dir === 'string' ? { project_dir: args.project_dir } : {}), ...(typeof args.limit === 'number' ? { limit: args.limit } : {}) }); this.sendTool(id, slr, slr.data.isError); break; }
         case 'snapshot_restore': { if (!args.sha) { this.sendError(id, -32602, 'Missing required argument: sha'); break; } const srr = await snapshotRestore({ sha: args.sha as string, ...(typeof args.project_dir === 'string' ? { project_dir: args.project_dir } : {}), ...(args.human_confirmed !== undefined ? { human_confirmed: args.human_confirmed === true } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, srr, srr.data.isError); break; }
+        case 'workflow_submit': { if (!args.workflow) { this.sendError(id, -32602, 'Missing required argument: workflow'); break; } const wsr = await workflowSubmit({ workflow: args.workflow as string, ...(args.mode === 'run' ? { mode: 'run' as const } : {}), ...(typeof args.task === 'string' ? { task: args.task } : {}) }); this.sendTool(id, wsr, wsr.data.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {

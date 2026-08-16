@@ -1,5 +1,5 @@
 // ============================================================
-// market-skill-scan.test.ts · SkillScan 安全门测试（v1.3.4 交付 4）
+// commons-skill-scan.test.ts · SkillScan 安全门测试（v1.3.4 交付 4）
 //
 // 验收：
 //   - 三态判定正确（SAFE / SUSPICIOUS / DANGEROUS）
@@ -17,7 +17,7 @@ import {
   scanForPublish,
   scanForInstall,
   mapSafetyResult,
-} from '../market/skill-scan';
+} from '../commons/skill-scan';
 import type { SafetyResult } from '@sofagent/skillopt';
 
 function tmpDir(): string {
@@ -27,7 +27,7 @@ function tmpDir(): string {
 }
 
 // v1.3.5 阶段五：全量并行 IO 争用偶发超时——文件级 timeout 20s
-describe('market-skill-scan SkillScan 安全门', { timeout: 20000 }, () => {
+describe('commons-skill-scan SkillScan 安全门', { timeout: 20000 }, () => {
   let testDir: string;
 
   beforeEach(() => {

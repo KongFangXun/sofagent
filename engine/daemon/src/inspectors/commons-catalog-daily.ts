@@ -1,13 +1,13 @@
 // ============================================================
-// market-catalog-daily.ts · 能力目录日更生成（v1.3.6 交付 1）
+// commons-catalog-daily.ts · 能力目录日更生成（v1.3.6 交付 1）
 // ============================================================
 //
-// @daily：读取 market/manifest.jsonl 能力清单，生成人类可读的能力目录
-// market/index.md（自动汇总所有已发布能力——名称/类型/标签/owner/版本）。
+// @daily：读取 commons/manifest.jsonl 能力清单，生成人类可读的能力目录
+// commons/index.md（自动汇总所有已发布能力——名称/类型/标签/owner/版本）。
 //
-// 与 market-health（@weekly 周检）的区别：
-//   - market-catalog-daily：日更目录生成（能力有哪些、最新版本是什么）
-//   - market-health：周检健康巡检（目录完整性 / 评分异常 / 退役候选扫描）
+// 与 commons-health（@weekly 周检）的区别：
+//   - commons-catalog-daily：日更目录生成（能力有哪些、最新版本是什么）
+//   - commons-health：周检健康巡检（目录完整性 / 评分异常 / 退役候选扫描）
 //
 // 复用：@sofagent/orchestrator 的 readCatalog()（延迟 require 避免 daemon→orchestrator 编译依赖）
 // ============================================================
@@ -32,13 +32,13 @@ interface CatalogEntry {
 }
 
 /**
- * 读取市场能力清单（market/manifest.jsonl）。
+ * 读取公地能力清单（commons/manifest.jsonl）。
  *
  * @param dataDir 数据目录
  * @returns 能力条目数组
  */
 function readCatalogEntries(dataDir: string): CatalogEntry[] {
-  const manifestPath = join(dataDir, 'market', 'manifest.jsonl');
+  const manifestPath = join(dataDir, 'commons', 'manifest.jsonl');
   if (!existsSync(manifestPath)) return [];
 
   let content = '';
@@ -75,7 +75,7 @@ export function generateCatalogMarkdown(entries: CatalogEntry[]): string {
   lines.push('');
 
   if (entries.length === 0) {
-    lines.push('暂无已发布能力。使用 `market_publish` 发布能力后，目录将在此自动更新。');
+    lines.push('暂无已发布能力。使用 `commons_publish` 发布能力后，目录将在此自动更新。');
     return lines.join('\n');
   }
 
@@ -107,23 +107,23 @@ export function generateCatalogMarkdown(entries: CatalogEntry[]): string {
 /**
  * 能力目录日更生成巡检器（@daily）。
  *
- * 读取 market/manifest.jsonl → 生成 market/index.md。
+ * 读取 commons/manifest.jsonl → 生成 commons/index.md。
  *
  * @param _projectDir 项目根目录（数据走 SOFAGENT_HOME 路径 SSOT）
  * @returns InspectorResult
  */
-export function runMarketCatalogDaily(_projectDir: string): InspectorResult {
+export function runCommonsCatalogDaily(_projectDir: string): InspectorResult {
   void _projectDir;
   const env = loadEnvConfig();
-  const marketDir = join(env.dataDir, 'market');
-  const manifestPath = join(marketDir, 'manifest.jsonl');
+  const commonsDir = join(env.dataDir, 'commons');
+  const manifestPath = join(commonsDir, 'manifest.jsonl');
 
   // 无清单 → 不生成（info，不告警）
   if (!existsSync(manifestPath)) {
     return {
-      name: 'market-catalog-daily',
+      name: 'commons-catalog-daily',
       triggered: false,
-      message: '市场清单不存在（market/manifest.jsonl），跳过目录生成',
+      message: '公地清单不存在（commons/manifest.jsonl），跳过目录生成',
       severity: 'info',
     };
   }
@@ -131,16 +131,16 @@ export function runMarketCatalogDaily(_projectDir: string): InspectorResult {
   const entries = readCatalogEntries(env.dataDir);
   const markdown = generateCatalogMarkdown(entries);
 
-  // 确保 market 目录存在并写入 index.md
+  // 确保 commons 目录存在并写入 index.md
   try {
-    if (!existsSync(marketDir)) {
-      mkdirSync(marketDir, { recursive: true });
+    if (!existsSync(commonsDir)) {
+      mkdirSync(commonsDir, { recursive: true });
     }
-    const indexPath = join(marketDir, 'index.md');
+    const indexPath = join(commonsDir, 'index.md');
     writeFileSync(indexPath, markdown, 'utf-8');
   } catch (err) {
     return {
-      name: 'market-catalog-daily',
+      name: 'commons-catalog-daily',
       triggered: false,
       message: `目录生成失败：${err instanceof Error ? err.message : String(err)}`,
       severity: 'warning',
@@ -148,9 +148,9 @@ export function runMarketCatalogDaily(_projectDir: string): InspectorResult {
   }
 
   return {
-    name: 'market-catalog-daily',
+    name: 'commons-catalog-daily',
     triggered: true,
-    message: `能力目录已更新：${entries.length} 个能力（market/index.md）`,
+    message: `能力目录已更新：${entries.length} 个能力（commons/index.md）`,
     severity: 'info',
   };
 }

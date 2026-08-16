@@ -1,10 +1,10 @@
 // ============================================================
-// market-invoke.ts · MCP tool: market_invoke（v1.3.6 交付 2）
+// commons-invoke.ts · MCP tool: commons_invoke（v1.3.6 交付 2）
 //
 // 能力调用——发现能力 → 挂载调用 → 结果回流。
 // 挂载前强制 SkillScan（DANGEROUS 拦截 / SUSPICIOUS 走 HITL）。
 //
-// 复用 @sofagent/orchestrator 的 market/invoker.ts。
+// 复用 @sofagent/orchestrator 的 commons/invoker.ts。
 // executor 注入——MCP 层默认返回 dry-run 结果（真实执行由 Agent runtime 接入）。
 // ============================================================
 // 测试注入：MCP 单测不调真实被测能力——经 setInvokeTestExecutor 注入 fake executor
@@ -24,8 +24,8 @@ export function setInvokeTestExecutor(
 // 类型定义
 // ============================================================
 
-export interface MarketInvokeArgs {
-  /** 能力 ID（必填——先 market_search 发现） */
+export interface CommonsInvokeArgs {
+  /** 能力 ID（必填——先 commons_search 发现） */
   capability_id: string;
   /** 调用者 agentId（必填——谁调的） */
   caller_agent_id: string;
@@ -33,7 +33,7 @@ export interface MarketInvokeArgs {
   input?: unknown;
 }
 
-export interface MarketInvokeResult {
+export interface CommonsInvokeResult {
   text: string;
   data: {
     ok: boolean;
@@ -58,10 +58,10 @@ export interface MarketInvokeResult {
  * @param args 入参
  * @returns 调用结果
  */
-export async function marketInvoke(args: MarketInvokeArgs): Promise<MarketInvokeResult> {
+export async function commonsInvoke(args: CommonsInvokeArgs): Promise<CommonsInvokeResult> {
   if (!args.capability_id || !args.caller_agent_id) {
     return {
-      text: '[sofagent] market_invoke 错误: capability_id 和 caller_agent_id 必填',
+      text: '[sofagent] commons_invoke 错误: capability_id 和 caller_agent_id 必填',
       data: { ok: false, error: 'capability_id 和 caller_agent_id 必填' },
       isError: true,
     };
@@ -143,7 +143,7 @@ export async function marketInvoke(args: MarketInvokeArgs): Promise<MarketInvoke
     };
   } catch (err) {
     return {
-      text: `[sofagent] market_invoke 失败: ${err instanceof Error ? err.message : String(err)}`,
+      text: `[sofagent] commons_invoke 失败: ${err instanceof Error ? err.message : String(err)}`,
       data: { ok: false, error: err instanceof Error ? err.message : String(err) },
       isError: true,
     };

@@ -1,17 +1,17 @@
 // ============================================================
-// market-retire.ts · MCP tool: market_retire（v1.3.6 交付 3）
+// commons-retire.ts · MCP tool: commons_retire（v1.3.6 交付 3）
 //
 // 能力退役 / 恢复——强制 owner 确认（confirmed=true 才执行）。
 // 退役只标记（可恢复），不物理删除（保留审计轨迹）。
 //
-// 复用 @sofagent/orchestrator 的 market/retire.ts：
+// 复用 @sofagent/orchestrator 的 commons/retire.ts：
 //   markRetired / restoreCapability / scanRetireCandidates
 // ============================================================
 // ============================================================
 // 类型定义
 // ============================================================
 
-export interface MarketRetireArgs {
+export interface CommonsRetireArgs {
   /** 能力 ID（必填） */
   capability_id: string;
   /** 操作：retire=退役 / restore=恢复 / scan=扫描退役候选 */
@@ -22,7 +22,7 @@ export interface MarketRetireArgs {
   confirmed?: boolean;
 }
 
-export interface MarketRetireResult {
+export interface CommonsRetireResult {
   /** 首行必须 [sofagent] 前缀 */
   text: string;
   data: {
@@ -45,10 +45,10 @@ export interface MarketRetireResult {
  * @param args 入参
  * @returns 结果
  */
-export async function marketRetire(args: MarketRetireArgs): Promise<MarketRetireResult> {
+export async function commonsRetire(args: CommonsRetireArgs): Promise<CommonsRetireResult> {
   if (!args.capability_id || !args.action) {
     return {
-      text: '[sofagent] market_retire 错误: capability_id 和 action 必填',
+      text: '[sofagent] commons_retire 错误: capability_id 和 action 必填',
       data: { ok: false, error: 'capability_id 和 action 必填' },
       isError: true,
     };
@@ -111,7 +111,7 @@ export async function marketRetire(args: MarketRetireArgs): Promise<MarketRetire
     };
   } catch (err) {
     return {
-      text: `[sofagent] market_retire 失败: ${err instanceof Error ? err.message : String(err)}`,
+      text: `[sofagent] commons_retire 失败: ${err instanceof Error ? err.message : String(err)}`,
       data: { ok: false, error: err instanceof Error ? err.message : String(err) },
       isError: true,
     };

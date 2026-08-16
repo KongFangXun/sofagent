@@ -34,9 +34,9 @@ import { runDailySnapshot } from './inspectors/daily-snapshot';
 import { runTrendAggregator } from './inspectors/trend-aggregator';
 import { runTaskStats } from './inspectors/task-stats';
 // v1.3.4 交付 1：能力目录日更生成（@daily）
-import { runMarketCatalogDaily } from './inspectors/market-catalog-daily';
-// v1.3.4 交付 3：市场健康周检（@weekly）
-import { runMarketHealth } from './inspectors/market-health';
+import { runCommonsCatalogDaily } from './inspectors/commons-catalog-daily';
+// v1.3.4 交付 3：公地健康周检（@weekly）
+import { runCommonsHealth } from './inspectors/commons-health';
 // v1.3.5 交付 5：FDE 陪跑期日巡检（@daily——部署后前 2 周每日 Refine）
 import { runFdeCompanionDaily } from './inspectors/fde-companion-daily';
 // v1.3.5 交付 5：FDE 节点注册表巡检（@daily——fde-registry.yaml cadence 调度）
@@ -70,7 +70,7 @@ const LAYER_INSPECTORS: Record<InspectorLayer, { name: string; fn: InspectorFn }
     // v1.2.4 P1b：任务成功率统计
     { name: 'task-stats', fn: runTaskStats },
     // v1.3.4 交付 1：能力目录日更生成（@daily）
-    { name: 'market-catalog-daily', fn: runMarketCatalogDaily },
+    { name: 'commons-catalog-daily', fn: runCommonsCatalogDaily },
     // v1.3.5 交付 5：FDE 陪跑期日巡检（@daily——部署后前 2 周每日 Refine 巡检）
     { name: 'fde-companion-daily', fn: runFdeCompanionDaily },
     // v1.3.5 交付 5：FDE 节点注册表巡检（@daily——fde-registry.yaml cadence 调度）
@@ -86,8 +86,8 @@ const LAYER_INSPECTORS: Record<InspectorLayer, { name: string; fn: InspectorFn }
     { name: 'skillopt-trigger', fn: runSkilloptTrigger },
     // v1.2.4 P1b：历史趋势聚合
     { name: 'trend-aggregator', fn: runTrendAggregator },
-    // v1.3.4 交付 3：市场健康周检（@weekly——退役候选/评分异常/目录完整性）
-    { name: 'market-health', fn: runMarketHealth },
+    // v1.3.4 交付 3：公地健康周检（@weekly——退役候选/评分异常/目录完整性）
+    { name: 'commons-health', fn: runCommonsHealth },
   ],
   L3: [
     { name: 'federation-distillation', fn: runFederationDistillation },
